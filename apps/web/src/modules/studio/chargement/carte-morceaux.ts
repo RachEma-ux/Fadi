@@ -19,13 +19,24 @@ import { MOTEURS, type IdMoteur } from "./moteurs";
 
 export type Famille = "three" | "occt" | "manifold" | "atelier" | "studio-planche" | "studio-3d";
 
+/**
+ * Modules de `planche2d/` partagés avec la coquille de Studio (B.3-02) : le catalogue léger des outils et le profil du
+ * compte, que la coquille lit dès l'ouverture d'un projet (`DemarrageStudio` → `useProfilOutils`) pour que les barres
+ * le trouvent prêt. Ils ne contiennent que des descripteurs textuels (registre, raccourcis, préférences) et le
+ * gestionnaire « Outils », jamais l'éditeur, le rendu ni la géométrie de la planche. Tout autre module de
+ * `planche2d/` appartient à la famille `studio-planche`.
+ */
+export const PLANCHE_PARTAGES_COQUILLE: readonly string[] = Object.freeze(["CatalogueOutils.tsx", "catalogue.ts", "raccourcis.ts", "profils.ts"]);
+
+const echapper = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 /** Motifs des familles, sur l'identifiant de module de Rollup (chemin absolu, séparateurs `/`). */
 export const MOTIFS_FAMILLES: Readonly<Record<Famille, RegExp>> = Object.freeze({
   three: /\/node_modules\/three\//,
   occt: /\/node_modules\/occt-wasm\//,
   manifold: /\/node_modules\/manifold-3d\//,
   atelier: /\/src\/modules\/atelier\/nouveau\//,
-  "studio-planche": /\/src\/modules\/studio\/(VariantWorkspace\.tsx|planche2d\/Dessin2D\.tsx)/,
+  "studio-planche": new RegExp(`/src/modules/studio/(VariantWorkspace\\.tsx|planche2d/(?!(${PLANCHE_PARTAGES_COQUILLE.map(echapper).join("|")})(\\?|$)))`),
   "studio-3d": /\/src\/modules\/studio\/vue3d\/Vue3DStudio\.tsx/,
 });
 

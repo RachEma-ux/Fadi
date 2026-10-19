@@ -1,5 +1,6 @@
+import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { classesPrecache, construireCarte, famillesDe, fermetureStatique, verifierDecoupage, type SortieBuild } from "./carte-morceaux";
+import { classesPrecache, construireCarte, famillesDe, fermetureStatique, PLANCHE_PARTAGES_COQUILLE, verifierDecoupage, type SortieBuild } from "./carte-morceaux";
 
 const W = "/w/apps/web/src/modules/studio";
 const NM = "/w/node_modules";
@@ -25,6 +26,19 @@ describe("Carte des morceaux et contrôle du découpage (B.3-06)", () => {
     expect(famillesDe([`${NM}/three/build/three.module.js`, `${NM}/occt-wasm/x.js`, `${NM}/manifold-3d/m.js`])).toEqual(["three", "occt", "manifold"]);
     expect(famillesDe(["C:\\w\\apps\\web\\src\\modules\\studio\\vue3d\\Vue3DStudio.tsx"])).toEqual(["studio-3d"]);
     expect(famillesDe([`${W}/planche2d/raccourcis.ts`])).toEqual([]);
+  });
+
+  it("famille planche : tout planche2d/, sauf les modules légers partagés avec la coquille (liste explicite)", () => {
+    expect(PLANCHE_PARTAGES_COQUILLE).toEqual(["CatalogueOutils.tsx", "catalogue.ts", "raccourcis.ts", "profils.ts"]);
+    for (const m of PLANCHE_PARTAGES_COQUILLE) {
+      expect(famillesDe([`${W}/planche2d/${m}`]), m).toEqual([]);
+      expect(existsSync(new URL(`../planche2d/${m}`, import.meta.url)), m).toBe(true);
+    }
+    for (const m of ["Dessin2D.tsx", "BarreOutils.tsx", "brouillon.ts", "outils/ligne.ts", "rendus/canevas.ts", "accrochage/index.ts", "planche2d.css", "catalogue.test.ts", "profils-extra.ts"]) {
+      expect(famillesDe([`${W}/planche2d/${m}`]), m).toEqual(["studio-planche"]);
+    }
+    expect(famillesDe([`${W}/VariantWorkspace.tsx`])).toEqual(["studio-planche"]);
+    expect(famillesDe([`${W}/planche2d/catalogue.ts?used`])).toEqual([]);
   });
 
   it("build conforme : fichiers de chaque moteur, propres et partagés, verdict sans violation", () => {

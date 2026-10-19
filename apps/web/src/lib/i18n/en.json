@@ -10174,8 +10174,9 @@
 "Tous les outils du catalogue sont disponibles hors connexion sur cet appareil.": "All catalogue tools are available offline on this device.",
 "{0} outil(s) indisponible(s) hors connexion (fichiers absents du cache) :": "{0} tool(s) unavailable offline (files missing from the cache):",
 "{0} fichier(s) rangé(s) dans le cache, {1} échec(s).": "{0} file(s) stored in the cache, {1} failure(s).",
-"Commandes locales non synchronisées conservées sur cet appareil : {0}.": "Unsynchronised local commands kept on this device: {0}.",
-"Commandes locales non synchronisées : non évalué.": "Unsynchronised local commands: not evaluated.",
+"Brouillons locaux non synchronisés conservés sur cet appareil : {0}.": "Unsynchronised local drafts kept on this device: {0}.",
+"Brouillons locaux non synchronisés : non évalué.": "Unsynchronised local drafts: not evaluated.",
+"Le cache de cette version de l’application a été supprimé de l’appareil (mise à jour ou nettoyage du navigateur) : aucun outil n’est disponible hors connexion. Rechargez la page en ligne pour retrouver le travail hors connexion.": "The cache of this version of the application was removed from the device (update or browser clean-up): no tool is available offline. Reload the page online to restore offline work.",
 "Une nouvelle version de l’application est installée. Vos commandes locales non synchronisées restent sur cet appareil ; rechargez la page quand vous le souhaitez.": "A new version of the application is installed. Your unsynchronised local commands stay on this device; reload the page whenever you wish.",
 "Mesures PERF-01 à PERF-10": "PERF-01 to PERF-10 measurements",
 "Relevé de cette session, sans seuil ni verdict : les limites seront décidées (DEC-13).": "Record of this session, with no threshold or verdict: limits will be decided (DEC-13).",
@@ -10228,6 +10229,8 @@
 "Télécharger la file locale (JSON)": "Download the local queue (JSON)",
 "File locale téléchargée.": "Local queue downloaded.",
 "Abandonner la file locale…": "Discard the local queue…",
+"La file locale a changé depuis son téléchargement (autre onglet) : rien n’a été abandonné. Téléchargez-la de nouveau avant de l’abandonner.": "The local queue changed since it was downloaded (another tab): nothing was discarded. Download it again before discarding it.",
+"La file locale n’est plus sur cet appareil : rien à télécharger.": "The local queue is no longer on this device: nothing to download.",
 "Abandonner la file locale conservée sur cet appareil ? Ses commandes non synchronisées seront perdues pour Studio (le fichier téléchargé reste le vôtre).": "Discard the local queue kept on this device? Its unsynchronised commands will be lost to Studio (the downloaded file remains yours).",
 "{0} Mo (tas)": "{0} MB (heap)"
 }

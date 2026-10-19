@@ -68,6 +68,20 @@ async function coquilleDeCeBuild(response) {
   }
 }
 
+/**
+ * La réponse est-elle la carte des morceaux de CE build ? (JSON lisible, champ `build` identique) : la carte d'un
+ * déploiement plus récent (ou plus ancien) n'entre jamais dans ce cache, elle décrirait d'autres fichiers.
+ */
+async function carteDeCeBuild(response) {
+  if (!response.ok) return false;
+  try {
+    const carte = await response.clone().json();
+    return !!carte && typeof carte === "object" && carte.build === BUILD;
+  } catch {
+    return false;
+  }
+}
+
 self.addEventListener("install", (event) =>
   event.waitUntil(
     (async () => {
@@ -84,6 +98,7 @@ self.addEventListener("install", (event) =>
             if (!response.ok) return;
             // Le serveur sert déjà un autre build : sa page n'est pas la coquille de celui-ci.
             if (path === SHELL && !(await coquilleDeCeBuild(response))) return;
+            if (path === CARTE && !(await carteDeCeBuild(response))) return;
             await cache.put(path, response);
           } catch {
             /* fichier manquant ou réseau coupé : ignoré */
@@ -158,6 +173,20 @@ async function staticPage(request, url) {
   }
 }
 
+/** Carte des morceaux : réseau d'abord ; seule la carte de CE build est enregistrée ; hors ligne, sa copie de ce build. */
+async function carte(request) {
+  const cache = await caches.open(CACHE);
+  try {
+    const response = await fetch(request);
+    if (await carteDeCeBuild(response)) await cache.put(CARTE, response.clone());
+    return response;
+  } catch (err) {
+    const cached = await cache.match(CARTE);
+    if (cached) return cached;
+    throw err;
+  }
+}
+
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET") return;
@@ -169,7 +198,8 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(STATIC.test(url.pathname) ? staticPage(request, url) : shell(request));
     return;
   }
-  // Carte des morceaux de ce build (non empreinte) : réseau d'abord, sinon la copie de ce build (hors ligne).
-  if (url.pathname === CARTE) { event.respondWith(staticPage(request, url)); return; }
+  // Carte des morceaux de ce build (non empreinte) : réseau d'abord, sinon la copie de ce build (hors ligne) ; une carte
+  // d'un autre build reçue du réseau est rendue à la page mais jamais enregistrée.
+  if (url.pathname === CARTE) { event.respondWith(carte(request)); return; }
   if (STATIC.test(url.pathname) || url.pathname === "/favicon.svg") event.respondWith(cacheFirst(request, url));
 });

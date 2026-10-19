@@ -11,7 +11,13 @@
  *     ouverte, inactif sans réinitialisation à la réouverture ; le groupe de Workers est partagé puis libérable ;
  *  5. hors connexion véridique : un fichier du rendu 3D retiré du cache → outils 3D annoncés indisponibles, outils 2D
  *     disponibles ; « Préparer le profil hors ligne » le range à nouveau ;
- *  6. file locale incompatible (format futur) : ni envoyée ni effacée, exportée puis abandonnée sur confirmation.
+ *  6. file locale incompatible (format futur) : ni envoyée ni effacée, exportée (ligne relue au clic) puis abandonnée
+ *     sur confirmation ; une ligne réécrite après l'export n'est pas abandonnée (nouvel export exigé) ;
+ *  7. cache du build de la page purgé après avoir été vu : « non » hors connexion et avertissement.
+ *
+ * Les fichiers lourds (three.js, vue 3D, noyau exact, planche) sont désignés par la carte du build (`/chargement.json`),
+ * jamais par un nom de fichier supposé. PERF-01 : page ouverte sur la variante → depuis la navigation ; navigation
+ * interne vers la variante → depuis l'entrée sur sa route.
  *
  * BASE_URL=http://localhost:3001 node apps/web/e2e/studio-chargement.mjs
  */
@@ -29,8 +35,14 @@ function check(nom, ok, detail = "") {
 
 /** Fichiers JavaScript demandés par la page (hors service worker), par nom de morceau. */
 const scriptsDemandes = (page) => page.evaluate(() => performance.getEntriesByType("resource").map((e) => new URL(e.name).pathname).filter((p) => p.endsWith(".js")));
-const contient = (liste, motif) => liste.some((p) => motif.test(p));
-const LOURDS = { three: /\/three\.module-/, vue3d: /\/Vue3DStudio-/, occt: /\/occt-wasm/, manifold: /\/manifold-/, atelier: /\/AtelierNouveau-/ };
+const contient = (liste, fichiers) => liste.some((p) => fichiers.has(p));
+/**
+ * Fichiers lourds du build, lus dans la carte des morceaux (`/chargement.json`, familles relevées par Rollup) : aucun
+ * nom de fichier supposé (three.js peut être découpé en plusieurs morceaux, renommés d'une version à l'autre).
+ */
+const famille = (carte, f) => new Set(Object.entries(carte.morceaux).filter(([, m]) => m.familles.includes(f)).map(([p]) => p));
+let LOURDS = null;
+let PLANCHE = null;
 const etats = (page) => page.evaluate(() => Object.fromEntries(globalThis.__fadiRessources.etats().map((e) => [e.id, { ...e }])));
 
 try {
@@ -63,12 +75,15 @@ try {
   await page.locator('[data-studio="accueil"]').waitFor();
   await page.waitForFunction(() => !!globalThis.__fadiRessources);
   const auDemarrage = await scriptsDemandes(page);
-  check("démarrage : ni planche, ni three.js, ni noyau exact, ni Atelier exécutés (B.3-02, EX-038)",
-    !contient(auDemarrage, /\/VariantWorkspace-/) && !Object.values(LOURDS).some((m) => contient(auDemarrage, m)), auDemarrage.join(" "));
-  const e0 = await etats(page);
-  check("démarrage : seule la coquille est initialisée", e0["coquille-studio"].initialise && !e0["planche-2d"].initialise && !e0["rendu-3d"].initialise && !e0.calcul.initialise, JSON.stringify(Object.values(e0).map((e) => [e.id, e.phase])));
   const carte = await page.evaluate(async () => (await fetch("/chargement.json")).json());
   check("carte des morceaux du build : découpage conforme, build de la page", carte.verification.ok && carte.build === (await page.evaluate(() => document.querySelector('meta[name="fadi-build"]')?.content)), JSON.stringify(carte.verification));
+  LOURDS = { three: famille(carte, "three"), vue3d: famille(carte, "studio-3d"), occt: famille(carte, "occt"), manifold: famille(carte, "manifold"), atelier: famille(carte, "atelier") };
+  PLANCHE = famille(carte, "studio-planche");
+  check("carte : three.js, la vue 3D et la planche repérés dans le build", LOURDS.three.size > 0 && LOURDS.vue3d.size > 0 && PLANCHE.size > 0, JSON.stringify({ three: [...LOURDS.three], vue3d: [...LOURDS.vue3d], planche: [...PLANCHE] }));
+  check("démarrage : ni planche, ni three.js, ni noyau exact, ni Atelier exécutés (B.3-02, EX-038)",
+    !contient(auDemarrage, PLANCHE) && !Object.values(LOURDS).some((m) => contient(auDemarrage, m)), auDemarrage.join(" "));
+  const e0 = await etats(page);
+  check("démarrage : seule la coquille est initialisée", e0["coquille-studio"].initialise && !e0["planche-2d"].initialise && !e0["rendu-3d"].initialise && !e0.calcul.initialise, JSON.stringify(Object.values(e0).map((e) => [e.id, e.phase])));
 
   // 2. Ouverture d'une planche.
   await page.goto(url);
@@ -77,12 +92,22 @@ try {
   await page.waitForFunction(() => globalThis.__fadiPerf?.mesures("PERF-01").length > 0);
   const aLaPlanche = await scriptsDemandes(page);
   check("planche : l'éditeur est chargé, three.js / vue 3D / noyau exact toujours pas (B.3-03, EX-039)",
-    contient(aLaPlanche, /\/VariantWorkspace-/) && !Object.values(LOURDS).some((m) => contient(aLaPlanche, m)), aLaPlanche.filter((p) => !/index-/.test(p)).join(" "));
+    contient(aLaPlanche, PLANCHE) && !Object.values(LOURDS).some((m) => contient(aLaPlanche, m)), aLaPlanche.filter((p) => !/index-/.test(p)).join(" "));
   const e1 = await etats(page);
   check("planche : moteurs planche initialisés et actifs (outil Sélection), rendu 3D non initialisé (B.3-01)",
     e1["planche-2d"].initialise && e1["planche-2d"].actif && e1["coquille-studio"].actif && !e1["rendu-3d"].initialise && e1["planche-2d"].initialisations === 1);
   const perf01 = await page.evaluate(() => globalThis.__fadiPerf.mesures("PERF-01")[0]);
-  check("PERF-01 : ouverture de Studio jusqu'à la planche prête relevée, sans verdict", perf01.valeur > 0 && perf01.unite === "ms" && ["navigation", "coquille"].includes(perf01.etiquettes.depuis), JSON.stringify(perf01));
+  // Page ouverte directement sur la variante : la mesure part du début de la navigation.
+  check("PERF-01 : page ouverte sur la variante — mesurée depuis la navigation jusqu'à la planche prête, sans verdict", perf01.valeur > 0 && perf01.unite === "ms" && perf01.etiquettes.depuis === "navigation", JSON.stringify(perf01));
+  // Navigation interne : accueil de Studio, puis retour sur la variante — la mesure part de l'entrée sur sa route.
+  const naviguer = (chemin) => page.evaluate((c) => { history.pushState({}, "", c); dispatchEvent(new PopStateEvent("popstate")); }, chemin);
+  await naviguer("/studio");
+  await page.locator('[data-studio="accueil"]').waitFor();
+  await naviguer(new URL(url).pathname);
+  await outils.waitFor();
+  await page.waitForFunction(() => globalThis.__fadiPerf.mesures("PERF-01").length > 1);
+  const perf01b = await page.evaluate(() => globalThis.__fadiPerf.mesures("PERF-01")[1]);
+  check("PERF-01 : navigation interne vers la variante — mesurée depuis l'entrée sur sa route (pas depuis la coquille)", perf01b.etiquettes.depuis === "route" && perf01b.valeur > 0,JSON.stringify(perf01b));
 
   // 3. Tool Manager : états techniques distincts.
   const ouvrirGestionnaire = async () => {
@@ -127,7 +152,9 @@ try {
   await page.locator("[data-studio-vue3d] canvas[data-studio-vue3d-canvas]").waitFor({ timeout: 30000 });
   const e2 = await etats(page);
   const avec3d = await scriptsDemandes(page);
-  check("vue 3D : three.js chargé au premier usage, une seule fois (B.3-04)", avec3d.filter((p) => LOURDS.three.test(p)).length === 1 && contient(avec3d, LOURDS.vue3d) && !contient(avec3d, LOURDS.occt) && !contient(avec3d, LOURDS.manifold));
+  const threeDemandes = (l) => l.filter((p) => LOURDS.three.has(p));
+  const three1 = threeDemandes(avec3d);
+  check("vue 3D : three.js chargé au premier usage, chaque morceau une seule fois (B.3-04)", three1.length >= 1 && new Set(three1).size === three1.length && contient(avec3d, LOURDS.vue3d) && !contient(avec3d, LOURDS.occt) && !contient(avec3d, LOURDS.manifold), three1.join(" "));
   check("vue 3D : moteur initialisé une fois et actif", e2["rendu-3d"].initialise && e2["rendu-3d"].actif && e2["rendu-3d"].initialisations === 1);
   await page.waitForFunction(() => globalThis.__fadiRessources.etats().find((e) => e.id === "calcul").initialise, null, { timeout: 30000 });
   check("maillage 3D : groupe de Workers partagé initialisé (moteur calcul), jamais un noyau par outil (D.3-04)", (await etats(page)).calcul.initialisations === 1);
@@ -139,7 +166,7 @@ try {
   await page.keyboard.press("Shift+D");
   await page.locator("[data-studio-vue3d] canvas[data-studio-vue3d-canvas]").waitFor({ timeout: 30000 });
   const e4 = await etats(page);
-  check("vue 3D rouverte : même moteur, aucune seconde initialisation, three.js non redemandé (B.3-05)", e4["rendu-3d"].initialisations === 1 && (await scriptsDemandes(page)).filter((p) => LOURDS.three.test(p)).length === 1);
+  check("vue 3D rouverte : même moteur, aucune seconde initialisation, three.js non redemandé (B.3-05)", e4["rendu-3d"].initialisations === 1 && threeDemandes(await scriptsDemandes(page)).length === three1.length);
   await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press("Shift+D");
   await page.locator("[data-studio-vue3d]").waitFor({ state: "detached" });
@@ -161,12 +188,14 @@ try {
   await page.locator("[data-studio-vue3d]").waitFor({ state: "detached" });
 
   // 5. Hors connexion véridique : three.js retiré du cache de ce build.
-  const retire = await page.evaluate(async (motif) => {
+  // Fichier three.js propre au rendu 3D, désigné par la carte du build (le plus gros s'il y en a plusieurs).
+  const cibleThree = carte.moteurs["rendu-3d"].propres.filter((p) => LOURDS.three.has(p)).sort((a, b) => carte.morceaux[b].taille - carte.morceaux[a].taille)[0] ?? null;
+  const retire = await page.evaluate(async (cible) => {
+    if (!cible) return null;
     const build = document.querySelector('meta[name="fadi-build"]').content;
     const cache = await caches.open(`fadi-shell-${build}`);
-    const cible = (await cache.keys()).map((r) => new URL(r.url).pathname).find((p) => new RegExp(motif).test(p));
-    return cible && (await cache.delete(cible)) ? cible : null;
-  }, LOURDS.three.source);
+    return (await cache.delete(cible)) ? cible : null;
+  }, cibleThree);
   check("préparation : three.js retiré du cache du build (simulation d'un fichier absent)", !!retire, String(retire));
   g = await ouvrirGestionnaire();
   await g.locator("[data-studio-verifier-cache]").click();
@@ -185,11 +214,12 @@ try {
 
   // 6. File locale incompatible (écrite par un format futur) : ni envoyée, ni effacée ; exportée puis abandonnée.
   const futur = { cle, userId: moi.id, projectId: projet.id, stamp: "futur", majA: new Date().toISOString(), donnees: JSON.stringify({ version: 99, userId: moi.id, pas: [[{ toolId: "studio.dessin.ligne", params: {} }]] }) };
-  await page.evaluate((ligne) => new Promise((resolve, reject) => {
+  const ecrireLigne = (l) => page.evaluate((ligne) => new Promise((resolve, reject) => {
     const req = indexedDB.open("fadi-local");
     req.onerror = () => reject(req.error);
     req.onsuccess = () => { const db = req.result; const tx = db.transaction("studioBrouillons", "readwrite"); tx.objectStore("studioBrouillons").put(ligne); tx.oncomplete = () => { db.close(); resolve(); }; tx.onerror = () => reject(tx.error); };
-  }), futur);
+  }), l);
+  await ecrireLigne(futur);
   const commandes = [];
   page.on("request", (r) => { if (r.method() === "POST" && /\/commands$/.test(new URL(r.url()).pathname)) commandes.push(r.url()); });
   await page.reload();
@@ -204,11 +234,32 @@ try {
   await page.locator("[data-studio-exporter-file-locale]").click();
   const exporte = JSON.parse(readFileSync(await (await telechargement).path(), "utf8"));
   check("export de la file locale : ligne brute intacte", exporte.raison === "version-future" && exporte.ligne.stamp === "futur" && exporte.ligne.donnees === futur.donnees);
+  // Un autre onglet réécrit la ligne après l'export : l'abandon est refusé, rien n'est retiré, un nouvel export est demandé.
+  const reecrite = { ...futur, stamp: "futur-2", donnees: JSON.stringify({ version: 99, userId: moi.id, autre: true }) };
+  await ecrireLigne(reecrite);
+  await page.locator("[data-studio-abandonner-file-locale]").click();
+  await page.locator("[data-studio-file-locale-message]", { hasText: "a changé" }).waitFor();
+  check("abandon après réécriture par un autre onglet : refusé, ligne conservée, nouvel export exigé",
+    (await presente())?.stamp === "futur-2" && (await page.locator("[data-studio-abandonner-file-locale]").isDisabled()));
+  const telechargement2 = page.waitForEvent("download");
+  await page.locator("[data-studio-exporter-file-locale]").click();
+  const exporte2 = JSON.parse(readFileSync(await (await telechargement2).path(), "utf8"));
+  check("nouvel export : la ligne relue au clic (réécrite), pas la copie signalée", exporte2.ligne.stamp === "futur-2" && exporte2.ligne.donnees === reecrite.donnees);
   await page.locator("[data-studio-abandonner-file-locale]").click();
   await page.waitForLoadState("load");
   await outils.waitFor();
   await page.waitForFunction(() => !document.querySelector("[data-studio-file-locale-incompatible]"));
   check("abandon confirmé : file retirée, version serveur rouverte", (await presente()) === null && commandes.length === 0);
+
+  // 7. Cache du build de la page purgé après avoir été vu : « non » partout et avertissement (jamais « disponible »).
+  g = await ouvrirGestionnaire();
+  await page.evaluate(async () => { await caches.delete(`fadi-shell-${document.querySelector('meta[name="fadi-build"]').content}`); });
+  await g.locator("[data-studio-verifier-cache]").click();
+  await page.locator('[data-studio-ressources][data-studio-verification="cache-purge"]').waitFor();
+  check("cache purgé : avertissement affiché, planche et rendu 3D « non » hors connexion (B.3-09)",
+    (await g.locator("[data-studio-cache-purge]").count()) === 1 && (await attr("planche-2d")).h === "non" && (await attr("rendu-3d")).h === "non"
+    && (await g.locator('[data-studio-indisponible-hors-ligne="studio.dessin.ligne"]').count()) === 1);
+  await fermerGestionnaire();
 
   check("aucune erreur JavaScript non interceptée", erreurs.length === 0, erreurs.join(" | "));
   await context.close();

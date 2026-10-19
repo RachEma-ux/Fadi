@@ -116,6 +116,7 @@ export function PanneauRessources() {
       <p className="studio-dialogue-aide" data-studio-file-locale={hc.fileLocale ?? "non-evalue"} data-studio-persistance={hc.persistance}>
         {hc.fileLocale === null ? T.fileLocaleNonEvaluee : gabarit(T.fileLocale, hc.fileLocale)} {T.persistance[hc.persistance]}
       </p>
+      {v?.raison === "cache-purge" && <p className="studio-alert" role="alert" data-studio-cache-purge>{T.cachePurge}</p>}
       {hc.miseAJour && <p className="studio-alert" role="status" data-studio-mise-a-jour-sw>{T.miseAJour}</p>}
       <ReleverPerf />
     </section>

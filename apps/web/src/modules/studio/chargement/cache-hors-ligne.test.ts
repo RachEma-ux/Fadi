@@ -14,7 +14,7 @@ const carte = (build = "b1"): CarteChargement => ({
   morceaux: {}, verification: { ok: true, violations: [] },
 });
 
-function env(fichiers: string[], o: { build?: string | null; cache?: boolean; reseau?: Record<string, number> } = {}) {
+function env(fichiers: string[], o: { build?: string | null; cache?: boolean; reseau?: Record<string, number>; buildCarte?: string } = {}) {
   const contenu = new Set(fichiers);
   const ranges: string[] = [];
   const demandes: string[] = [];
@@ -24,7 +24,7 @@ function env(fichiers: string[], o: { build?: string | null; cache?: boolean; re
   };
   const e: EnvCache = {
     caches, build: o.build === undefined ? "b1" : o.build,
-    fetch: async (u) => { demandes.push(u); const s = o.reseau?.[u] ?? 200; return new Response("x", { status: s }); },
+    fetch: async (u) => { demandes.push(u); const s = o.reseau?.[u] ?? 200; return new Response(u === "/chargement.json" ? JSON.stringify(carte(o.buildCarte ?? "b1")) : "x", { status: s }); },
   };
   return { e, ranges, demandes, contenu };
 }
@@ -78,6 +78,22 @@ describe("Disponibilité hors connexion véridique (B.3-09, EX-043)", () => {
     expect(b.demandes.every((u) => u === "/chargement.json" || u.startsWith("/assets/"))).toBe(true);
     const v = await verifierHorsConnexion(b.e, carte());
     expect(v.moteurs).toMatchObject({ "rendu-3d": false, calcul: false, "planche-2d": true });
+  });
+
+  it("préparer : une carte d'un autre build servie par le réseau n'est jamais rangée", async () => {
+    const b = env(tous.filter((f) => f !== "/chargement.json"), { buildCarte: "b2" });
+    const r = await preparerHorsConnexion(b.e, carte(), ["planche-2d"]);
+    expect(r.ranges).not.toContain("/chargement.json");
+    expect(r.echecs).toEqual(["/chargement.json"]);
+  });
+
+  it("cache de ce build vu puis purgé : « non » pour chaque moteur, avant même la carte ; jamais supposé sans l'avoir vu", async () => {
+    const purge = await verifierHorsConnexion(env(tous, { cache: false }).e, carte("b2"), { cacheConnu: true });
+    expect(purge.raison).toBe("cache-purge");
+    expect(Object.values(purge.moteurs).every((x) => x === false)).toBe(true);
+    expect(outilsHorsConnexion(STUDIO_TOOLS, purge)?.disponibles).toEqual([]);
+    expect((await verifierHorsConnexion(env(tous, { cache: false }).e, carte())).raison).toBe("sans-cache-du-build");
+    expect((await verifierHorsConnexion(env(tous).e, carte(), { cacheConnu: true })).raison).toBe("evalue");
   });
 
   it("préparer sans service worker ou avec une carte d'un autre build : rien n'est téléchargé", async () => {

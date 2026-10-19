@@ -30,7 +30,7 @@ export interface DefinitionPerf {
 
 export const DEFINITIONS_PERF: readonly DefinitionPerf[] = Object.freeze([
   { code: "PERF-01", mesure: "Ouverture de Studio jusqu’à la première action utile.", profils: "Cache froid/chaud, réseau, CPU, appareil.", porte: "p50/p95 avec limite décidée.",
-    instrumentation: "Durée entre l’ouverture de Studio (premier rendu de la coquille, ou début de la navigation) et la planche prête à recevoir une commande (document lu, barres actives).", etat: "instrumente" },
+    instrumentation: "Durée entre l’entrée sur la route d’une variante (ou le début de la navigation quand la page s’ouvre directement sur une variante) et la planche prête à recevoir une commande (document lu, barres actives).", etat: "instrumente" },
   { code: "PERF-02", mesure: "Activation d’outil simple et spécialisé.", profils: "Bundle, dépendances, worker, première réponse.", porte: "Temps d’activation + bytes + mémoire.",
     instrumentation: "Durée d’activation de chaque outil (simple : moteurs déjà prêts ; spécialisé : moteur chargé à cette occasion), moteurs chargés ; octets et mémoire relevés par le script de mesure.", etat: "instrumente" },
   { code: "PERF-03", mesure: "Pointeur → preview visible.", profils: "Périphérique, FPS, densité de scène.", porte: "Latence de bout en bout.",
