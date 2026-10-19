@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { STUDIO_TOOLS } from "@parcours/atelier-model";
 import { CATALOGUE, rechercher, separerFavoris } from "./catalogue";
-import { GestionnaireOutils, PaletteCommandes } from "./CatalogueOutils";
+import { creerMagasinPreferences, etatPourCompte, GestionnaireOutils, PaletteCommandes } from "./CatalogueOutils";
 import {
   basculerFavori, basculerPersonnel, CHOIX_PROFILS, choisirProfil, favorisOrdonnes, filtreBarres, normaliserPreferences, OUTIL_TOUJOURS_VISIBLE,
   outilsDuProfil, PREFERENCES_DEFAUT, PROFILS_METIER, visibleDansBarres, type PreferencesOutils,
@@ -63,6 +63,68 @@ describe("profils d'outils : visibilité dans les barres seulement", () => {
     expect(normaliserPreferences({ profil: "metier:inconnu", favoris: ["studio.dessin.arc", "x", "studio.dessin.arc"], personnel: "non" }))
       .toEqual({ profil: "standard", favoris: ["studio.dessin.arc"], personnel: [] });
     expect(normaliserPreferences({ profil: "metier:volume", favoris: [], personnel: [] }).profil).toBe("metier:volume");
+  });
+});
+
+describe("magasin des préférences : rattaché au compte", () => {
+  /** API simulée : une réponse différée par compte, résolue à la main. */
+  function apiSimulee() {
+    const enAttente: { compte: string; resoudre: (v: unknown) => void }[] = [];
+    let compteCourant = "";
+    const api = {
+      studioToolPreferences: () => new Promise<unknown>((resoudre) => { enAttente.push({ compte: compteCourant, resoudre }); }),
+      setStudioToolPreferences: (_p: string, corps: unknown) => Promise.resolve(corps),
+    };
+    return { api, enAttente, connecter: (c: string) => { compteCourant = c; } };
+  }
+  const attendre = () => new Promise((r) => setTimeout(r, 0));
+  const PREFS_A = { profil: "metier:cotation", favoris: ["studio.dessin.cote"], personnel: [] };
+
+  it("un autre compte dans le même onglet ne voit jamais les préférences du précédent", async () => {
+    const sim = apiSimulee();
+    const m = creerMagasinPreferences(sim.api);
+    sim.connecter("a");
+    m.charger("a", "p1");
+    sim.enAttente.shift()!.resoudre(PREFS_A);
+    await attendre();
+    expect(m.lire()).toMatchObject({ compte: "a", etat: "pret", prefs: { profil: "metier:cotation", favoris: ["studio.dessin.cote"] } });
+    // Vue d'un autre compte avant toute remise à zéro : état vierge, pas celui de « a ».
+    expect(etatPourCompte(m.lire(), "b")).toMatchObject({ compte: "b", etat: "initial", prefs: PREFERENCES_DEFAUT });
+    // Déconnexion puis connexion de « b » : remise à zéro, puis lecture de ses propres préférences.
+    m.adopterCompte(null);
+    expect(m.lire()).toMatchObject({ compte: null, etat: "initial", prefs: PREFERENCES_DEFAUT });
+    sim.connecter("b");
+    m.charger("b", "p1");
+    expect(m.lire().prefs).toEqual(PREFERENCES_DEFAUT);
+    sim.enAttente.shift()!.resoudre({ profil: "standard", favoris: ["studio.dessin.arc"], personnel: [] });
+    await attendre();
+    expect(m.lire()).toMatchObject({ compte: "b", etat: "pret", prefs: { profil: "standard", favoris: ["studio.dessin.arc"] } });
+  });
+
+  it("une réponse tardive de l'ancien compte est écartée", async () => {
+    const sim = apiSimulee();
+    const m = creerMagasinPreferences(sim.api);
+    sim.connecter("a");
+    m.charger("a", "p1");
+    const reponseA = sim.enAttente.shift()!;
+    sim.connecter("b");
+    m.charger("b", "p1");
+    reponseA.resoudre(PREFS_A);
+    await attendre();
+    expect(m.lire()).toMatchObject({ compte: "b", etat: "chargement", prefs: PREFERENCES_DEFAUT });
+  });
+
+  it("un enregistrement n'est accepté que pour le compte rattaché", async () => {
+    const sim = apiSimulee();
+    const m = creerMagasinPreferences(sim.api);
+    m.charger("a", "p1");
+    sim.enAttente.shift()!.resoudre(PREFS_A);
+    await attendre();
+    m.enregistrer("b", "p1", (p) => basculerFavori(p, "studio.dessin.ligne"));
+    expect(m.lire().prefs.favoris).toEqual(["studio.dessin.cote"]);
+    m.enregistrer("a", "p1", (p) => basculerFavori(p, "studio.dessin.ligne"));
+    await attendre();
+    expect(m.lire()).toMatchObject({ compte: "a", enregistrement: "enregistre", prefs: { favoris: ["studio.dessin.cote", "studio.dessin.ligne"] } });
   });
 });
 
