@@ -146,6 +146,12 @@ export interface ProjectArchive {
   stageAttachments: ArchiveAttachment[];
   /** R2 : absent des archives antérieures ; aucune date n'est inventée à l'import. */
   planning?: ArchivePlanning | null;
+  /**
+   * Section Studio (R.1-02) : lignes des tables Studio, droits du projet, fichiers figés des paquets et manifeste
+   * (schéma, effectifs, empreintes). Opaque ici : revérifiée en entier par le serveur à l'import ; absente des
+   * archives antérieures et des projets sans donnée Studio.
+   */
+  studio?: Record<string, unknown> | null;
   warnings: string[];
 }
 
@@ -576,6 +582,7 @@ function fromFadiArchive(raw: Record<string, unknown>, definitions: readonly Par
     natif,
     manifeste: manifesteOf(raw["manifeste"]),
     planning: archivePlanningOf(raw["planning"]),
+    ...(isRecord(raw["studio"]) ? { studio: raw["studio"] } : {}),
     stageAttachments: attachmentsOf(raw["stageAttachments"], (f) => (validStep(Number(f["stepNumber"]), definitions.length) ? Number(f["stepNumber"]) : null)),
     warnings: Array.isArray(raw["warnings"]) ? raw["warnings"].filter((w): w is string => typeof w === "string") : [],
   };
