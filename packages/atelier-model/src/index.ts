@@ -1,5 +1,6 @@
 export * from "./unites.js";
 export * from "./studio/document-2d.js";
+export * from "./studio/courbes.js";
 export * from "./studio/registry.js";
 export * from "./studio/history.js";
 export * from "./studio/export.js";

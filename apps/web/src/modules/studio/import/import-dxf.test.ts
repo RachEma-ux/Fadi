@@ -100,17 +100,18 @@ describe("Enregistrement en plusieurs enveloppes", () => {
 describe("Boîte « Importer DXF »", () => {
   const doc = newStudioDocument("d");
 
-  it("rapport d'un DXF en millimètres : unité du fichier, 3 objets, 1 non pris (CIRCLE)", () => {
+  it("rapport d'un DXF en millimètres : unité du fichier, 4 objets dont 1 cercle, rien de non pris", () => {
     const lecture = lireDxf(petitDxf(4), doc, null);
     if (!("resultat" in lecture)) throw new Error("lecture attendue");
     const html = renderToStaticMarkup(createElement(Rapport, { nom: "plan.dxf", resultat: lecture.resultat, unite: null, surUnite: () => {} }));
     expect(html).toContain('data-studio-import-statut="pret"');
-    expect(html).toContain('data-studio-import-objets="3"');
-    expect(html).toContain('data-studio-import-non-pris="1"');
+    expect(html).toContain('data-studio-import-objets="4"');
+    expect(html).toContain('data-studio-import-non-pris="0"');
     expect(html).toContain('data-studio-import-unite="mm"');
-    expect(html).toMatch(/data-studio-import-non-pris-type="CIRCLE" data-studio-import-non-pris-nombre="1"/);
+    expect(html).not.toContain("data-studio-import-non-pris-type");
+    expect(html).toContain("Courbes : 1 cercle(s), 0 arc(s), 0 polyligne(s).");
     expect(html).toContain("Unité du fichier ($INSUNITS = 4) : mm · 1 unité = 0,001 m");
-    expect(html).toContain("3 objet(s) à ajouter : 2 ligne(s), 1 rectangle(s), 0 segment(s) de polyligne.");
+    expect(html).toContain("4 objet(s) à ajouter : 2 ligne(s), 1 rectangle(s), 0 segment(s) de polyligne.");
     expect(html).not.toContain("data-studio-import-choix-unite");
     expect(html).toContain('<span translate="no">plan.dxf</span>');
   });
@@ -124,7 +125,7 @@ describe("Boîte « Importer DXF »", () => {
     expect(html).toMatch(/<select[^>]*data-studio-import-choix-unite[^>]*><option value="" selected="">Choisir…<\/option>/);
     for (const u of UNITES_PROPOSEES) expect(html).toContain(`<option value="${u.valeur}">${u.libelle}</option>`);
     const choisie = lireDxf(petitDxf(), doc, "mm");
-    expect("resultat" in choisie && choisie.resultat.statut === "pret" && choisie.resultat.commandes.length === 4).toBe(true);
+    expect("resultat" in choisie && choisie.resultat.statut === "pret" && choisie.resultat.commandes.length === 5).toBe(true);
   });
 
   it("la boîte : bouton « Ajouter au brouillon » désactivé sans fichier ; lecture seule annoncée", () => {

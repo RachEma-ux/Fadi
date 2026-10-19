@@ -10,6 +10,7 @@ export type StudioToolEntry = (typeof STUDIO_TOOLS)[number];
 export type StudioToolId = StudioToolEntry["toolId"];
 export type IdCommandeEditeur =
   | "annuler" | "retablir" | "annuler-trace" | "enregistrer" | "tout-selectionner"
+  | "terminer-polyligne" | "fermer-polyligne"
   | "zoom-avant" | "zoom-arriere" | "cadrer" | "plein-ecran" | "vue-3d"
   | "accrochage-sommets" | "accrochage-grille"
   | "importer-dxf" | "exporter-svg" | "exporter-dxf" | "exporter-ifc" | "feuille"
@@ -18,6 +19,7 @@ export type GroupeCommande = "edition" | "vue" | "accrochage" | "import" | "expo
 export type BarreStudio = StudioToolGroup | GroupeCommande;
 export type IconeCommande =
   | "studio-undo" | "studio-redo" | "studio-cancel" | "studio-save" | "studio-select-all"
+  | "studio-polyline-finish" | "studio-polyline-close"
   | "studio-zoom-in" | "studio-zoom-out" | "studio-frame" | "studio-fullscreen" | "studio-view-3d"
   | "studio-snap-vertex" | "studio-snap-grid"
   | "studio-import-dxf" | "studio-export-svg" | "studio-export-dxf" | "studio-export-ifc" | "studio-sheet"
@@ -49,6 +51,9 @@ export const COMMANDES_EDITEUR: readonly CommandeEditeur[] = Object.freeze([
   { id: "annuler-trace", libelleFR: "Annuler / Désélectionner", raccourci: "Escape", iconeSymbolique: "studio-cancel", groupe: "edition", ecrit: false },
   { id: "enregistrer", libelleFR: "Enregistrer", raccourci: "Ctrl+S", iconeSymbolique: "studio-save", groupe: "edition", ecrit: true, dansUnChamp: true },
   { id: "tout-selectionner", libelleFR: "Tout sélectionner", raccourci: "Ctrl+A", iconeSymbolique: "studio-select-all", groupe: "edition", ecrit: false },
+  // Polyligne en cours : Entrée la termine ouverte, Maj+Entrée la ferme sur son premier sommet (hors des champs de saisie).
+  { id: "terminer-polyligne", libelleFR: "Terminer la polyligne", raccourci: "Enter", iconeSymbolique: "studio-polyline-finish", groupe: "edition", ecrit: true },
+  { id: "fermer-polyligne", libelleFR: "Fermer la polyligne", raccourci: "Shift+Enter", iconeSymbolique: "studio-polyline-close", groupe: "edition", ecrit: true },
   { id: "zoom-avant", libelleFR: "Zoom avant", raccourci: "=", autres: ["Shift+=", "+", "Shift++"], iconeSymbolique: "studio-zoom-in", groupe: "vue", ecrit: false },
   { id: "zoom-arriere", libelleFR: "Zoom arrière", raccourci: "-", iconeSymbolique: "studio-zoom-out", groupe: "vue", ecrit: false },
   { id: "cadrer", libelleFR: "Cadrer", raccourci: "Shift+Z", iconeSymbolique: "studio-frame", groupe: "vue", ecrit: false },
@@ -97,10 +102,11 @@ export const RACCOURCIS_RESERVES: readonly string[] = Object.freeze([
 
 /** Outils « mode » (on les choisit, puis on agit sur la planche ou le formulaire) ; les autres agissent aussitôt. */
 export const OUTILS_MODES: ReadonlySet<StudioToolId> = new Set<StudioToolId>([
-  "studio.dessin.selection", "studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cote", "studio.dessin.deplacer", "studio.dessin.modifier",
+  "studio.dessin.selection", "studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle", "studio.dessin.arc", "studio.dessin.polyligne",
+  "studio.dessin.cote", "studio.dessin.deplacer", "studio.dessin.modifier", "studio.dessin.decaler",
 ]);
 /** Outils qui posent des points sur la planche. */
-export const OUTILS_TRACE: ReadonlySet<StudioToolId> = new Set<StudioToolId>(["studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cote"]);
+export const OUTILS_TRACE: ReadonlySet<StudioToolId> = new Set<StudioToolId>(["studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle", "studio.dessin.arc", "studio.dessin.polyligne", "studio.dessin.cote"]);
 
 export const outilsDeBarre = (barre: BarreStudio): StudioToolEntry[] => STUDIO_TOOLS.filter((t) => t.groupe === barre);
 export const commandesDeBarre = (barre: BarreStudio): CommandeEditeur[] => COMMANDES_EDITEUR.filter((c) => c.groupe === barre);
@@ -138,7 +144,7 @@ export function actifDansUnChamp(c: string | null): boolean {
 
 /** Libellé affiché d'un raccourci (Maj, Suppr, Espace, Échap), traduit ensuite par le dictionnaire anglais. */
 export function libelleRaccourci(r: string): string {
-  return r.split("+").map((p) => ({ Shift: "Maj", Delete: "Suppr", Space: "Espace", Escape: "Échap" })[p] ?? p).join("+");
+  return r.split("+").map((p) => ({ Shift: "Maj", Delete: "Suppr", Space: "Espace", Escape: "Échap", Enter: "Entrée ↵" })[p] ?? p).join("+");
 }
 
 /** Valeur `aria-keyshortcuts` (WAI-ARIA : Control, Shift, Delete, Space, Escape). */

@@ -1,4 +1,4 @@
-import { STUDIO_CONTRACT, STUDIO_DEFAULT_LAYER_ID, STUDIO_LIMITS, type StudioCommandToolId } from "./document-2d.js";
+import { STUDIO_BULGE_MAX, STUDIO_CONTRACT, STUDIO_DEFAULT_LAYER_ID, STUDIO_FIXED_ANCHORS, STUDIO_INDEXED_ANCHOR, STUDIO_LIMITS, type StudioCommandToolId } from "./document-2d.js";
 
 /** Native registry, single source for the toolbar, shortcuts and the API enum. These tools never expose an agent or MCP entry point. */
 const id = { type: "string", minLength: 1, pattern: "^(?![\\s\\S]*\\u0000)[\\s\\S]*\\S[\\s\\S]*$" } as const;
@@ -12,8 +12,19 @@ const lineExtrusion = { type: "object", additionalProperties: false, required: [
 const rectangleExtrusion = { type: "object", additionalProperties: false, required: ["base", "height"], properties: { base: number, height: positive } } as const;
 const line = { type: "object", additionalProperties: false, required: ["id", "type", "start", "end"], properties: { id, type: { const: "line" }, layerId, start: point, end: point, extrusion: lineExtrusion } } as const;
 const rectangle = { type: "object", additionalProperties: false, required: ["id", "type", "origin", "width", "height"], properties: { id, type: { const: "rectangle" }, layerId, origin: point, width: positive, height: positive, extrusion: rectangleExtrusion } } as const;
-const shape = { oneOf: [line, rectangle] } as const;
-const anchor = { enum: ["start", "end", "corner-origin", "corner-width", "corner-height", "corner-opposite"] } as const;
+/** Angle en radians dans [0 ; 2π[ (sens trigonométrique, 0 sur +x). */
+const angle = { type: "number", minimum: 0, exclusiveMaximum: 2 * Math.PI } as const;
+const circle = { type: "object", additionalProperties: false, required: ["id", "type", "center", "radius"], properties: { id, type: { const: "circle" }, layerId, center: point, radius: positive, extrusion: rectangleExtrusion } } as const;
+const arc = { type: "object", additionalProperties: false, required: ["id", "type", "center", "radius", "startAngle", "endAngle"], properties: { id, type: { const: "arc" }, layerId, center: point, radius: positive, startAngle: angle, endAngle: angle, extrusion: lineExtrusion } } as const;
+const polyline = {
+  type: "object", additionalProperties: false, required: ["id", "type", "points", "closed"],
+  properties: {
+    id, type: { const: "polyline" }, layerId, points: { type: "array", minItems: 2, maxItems: STUDIO_LIMITS.polylinePoints, items: point }, closed: { type: "boolean" },
+    bulges: { type: "array", maxItems: STUDIO_LIMITS.polylinePoints, items: { type: "number", minimum: -STUDIO_BULGE_MAX, maximum: STUDIO_BULGE_MAX } }, extrusion: rectangleExtrusion,
+  },
+} as const;
+const shape = { oneOf: [line, rectangle, circle, arc, polyline] } as const;
+const anchor = { anyOf: [{ enum: [...STUDIO_FIXED_ANCHORS] }, { type: "string", pattern: STUDIO_INDEXED_ANCHOR.source }] } as const;
 const link = { oneOf: [{ type: "null" }, { type: "object", additionalProperties: false, required: ["objectId", "anchor"], properties: { objectId: id, anchor } }] } as const;
 const dimension = {
   type: "object", additionalProperties: false,
@@ -76,9 +87,14 @@ export const STUDIO_TOOLS = freezeTree([
   { ...common, toolId: "studio.dessin.selection", libelleFR: "Sélection", raccourci: "Space", iconeSymbolique: "studio-pointer", groupe: "dessin", nature: "lecture", inputSchema: { type: "object", additionalProperties: false, required: ["id"], properties: { id } }, outputSchema: { anyOf: [shape, { type: "null" }] } },
   { ...mutation, toolId: "studio.dessin.ligne", libelleFR: "Ligne", raccourci: "L", iconeSymbolique: "studio-line", groupe: "dessin", inputSchema: line },
   { ...mutation, toolId: "studio.dessin.rectangle", libelleFR: "Rectangle", raccourci: "R", iconeSymbolique: "studio-rectangle", groupe: "dessin", inputSchema: rectangle },
+  { ...mutation, toolId: "studio.dessin.cercle", libelleFR: "Cercle", raccourci: "C", iconeSymbolique: "studio-circle", groupe: "dessin", inputSchema: circle },
+  { ...mutation, toolId: "studio.dessin.arc", libelleFR: "Arc", raccourci: "A", iconeSymbolique: "studio-arc", groupe: "dessin", inputSchema: arc },
+  { ...mutation, toolId: "studio.dessin.polyligne", libelleFR: "Polyligne", raccourci: "P", iconeSymbolique: "studio-polyline", groupe: "dessin", inputSchema: polyline },
   { ...mutation, toolId: "studio.dessin.cote", libelleFR: "Cote", raccourci: "Shift+C", iconeSymbolique: "studio-dimension", groupe: "dessin", inputSchema: enteredDimension },
   { ...mutation, toolId: "studio.dessin.deplacer", libelleFR: "Déplacer", raccourci: "M", iconeSymbolique: "studio-move", groupe: "modification", inputSchema: { type: "object", additionalProperties: false, required: ["id", "dx", "dy"], properties: { id, dx: number, dy: number } } },
-  { ...mutation, toolId: "studio.dessin.modifier", libelleFR: "Modifier", raccourci: "E", iconeSymbolique: "studio-edit", groupe: "modification", inputSchema: { oneOf: [line, rectangle, enteredDimension] } },
+  { ...mutation, toolId: "studio.dessin.modifier", libelleFR: "Modifier", raccourci: "E", iconeSymbolique: "studio-edit", groupe: "modification", inputSchema: { oneOf: [line, rectangle, circle, arc, polyline, enteredDimension] } },
+  /** Décalage d'une forme d'une distance signée en une nouvelle forme `newId` (O, comme « offset » en DAO). */
+  { ...mutation, toolId: "studio.dessin.decaler", libelleFR: "Décaler", raccourci: "O", iconeSymbolique: "studio-offset", groupe: "modification", inputSchema: { type: "object", additionalProperties: false, required: ["id", "newId", "distance"], properties: { id, newId: id, distance: { type: "number", not: { const: 0 } } } } },
   { ...mutation, toolId: "studio.dessin.supprimer", libelleFR: "Supprimer", raccourci: "Delete", iconeSymbolique: "studio-delete", groupe: "modification", inputSchema: { type: "object", additionalProperties: false, required: ["ids"], properties: { ids } } },
   { ...mutation, toolId: "studio.calque.creer", libelleFR: "Nouveau calque", raccourci: "Shift+N", iconeSymbolique: "studio-layer-add", groupe: "calques", inputSchema: layer },
   { ...mutation, toolId: "studio.calque.modifier", libelleFR: "Régler le calque", raccourci: "Shift+L", iconeSymbolique: "studio-layer-edit", groupe: "calques", inputSchema: layer },

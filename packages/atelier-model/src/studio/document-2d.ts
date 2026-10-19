@@ -1,9 +1,12 @@
 import type { Point2 } from "../unites.js";
+import { studioArcEnds, studioOffset, studioPolylinePath, studioPolylineSegmentCount, studioPolylineSegments, studioRingSimple, studioSegmentMid, STUDIO_TWO_PI } from "./courbes.js";
 
 /**
  * Document 2D natif de Studio (`studio-document/1`). Extension additive et rétrocompatible : calques (`layers`) et cotes
  * associatives (`dimensions`) sont des champs facultatifs ; un document V1 (lignes et rectangles, sans calque) reste
- * valide et s'applique à l'identique. Toutes les coordonnées sont dans le repère explicite `local-2d`, en mètres.
+ * valide et s'applique à l'identique. Les courbes (cercle, arc, polyligne à renflements) sont des types d'objets ajoutés de
+ * la même façon, avec l'outil de décalage (`studio.dessin.decaler`) ; un document sans courbe ne change pas.
+ * Toutes les coordonnées sont dans le repère explicite `local-2d`, en mètres.
  * Pur : ni React, ni DOM, ni stockage.
  */
 
@@ -13,7 +16,13 @@ export type StudioPoint = Pick<Point2, "x" | "y">;
 /** Calque implicite des objets sans `layerId` ; il peut être matérialisé dans `layers` pour être réglé. */
 export const STUDIO_DEFAULT_LAYER_ID = "default" as const;
 /** Limites reprises de la Planche 2D de la pile (calques, objets) ; un document au-delà est refusé, jamais tronqué. */
-export const STUDIO_LIMITS = Object.freeze({ layers: 200, objects: 20_000, layerName: 80 } as const);
+export const STUDIO_LIMITS = Object.freeze({ layers: 200, objects: 20_000, layerName: 80, polylinePoints: 5000, extrudedRing: 1024 } as const);
+/**
+ * Bornes techniques des courbes (pas des valeurs métier) : `polylinePoints` sommets par polyligne ; `extrudedRing` sommets
+ * du contour discrétisé d'une polyligne fermée extrudée (contrôle de simplicité et triangulation bornés) ; renflement
+ * (`bulge`) de valeur absolue 10⁶ au plus.
+ */
+export const STUDIO_BULGE_MAX = 1e6;
 
 /**
  * Déclaration d'extrusion d'un objet (extension additive, facultative), en mètres : `base` = cote du bas, `height` =
@@ -44,12 +53,59 @@ export interface StudioRectangle {
   /** Un rectangle s'extrude en prisme sur son emprise : `thickness` y est refusée. */
   extrusion?: Omit<StudioExtrusion, "thickness">;
 }
-export type StudioShape = StudioLine | StudioRectangle;
+/** Cercle : centre et rayon strictement positif ; s'extrude en prisme (cylindre) sur son emprise, sans épaisseur. */
+export interface StudioCircle {
+  id: string;
+  type: "circle";
+  layerId?: string;
+  center: StudioPoint;
+  radius: number;
+  extrusion?: Omit<StudioExtrusion, "thickness">;
+}
+/**
+ * Arc de cercle parcouru dans le sens trigonométrique de `startAngle` à `endAngle` (radians, chacun dans [0 ; 2π[,
+ * distincts ; repère local-2d, angle 0 sur +x). S'extrude comme une ligne : avec épaisseur (mur courbe centré sur
+ * l'arc, épaisseur inférieure au diamètre) ou sans (surface verticale).
+ */
+export interface StudioArc {
+  id: string;
+  type: "arc";
+  layerId?: string;
+  center: StudioPoint;
+  radius: number;
+  startAngle: number;
+  endAngle: number;
+  extrusion?: StudioExtrusion;
+}
+/**
+ * Polyligne : deux sommets au moins, consécutifs distincts (fermeture comprise), `closed` explicite ; `bulges`
+ * facultatif, un renflement par segment (`tan(θ/4)`, 0 = droit, comme le DXF), omis quand tous sont nuls (forme
+ * canonique). Extrusion sans épaisseur seulement : fermée, prisme sur son emprise (contour simple exigé) ; ouverte,
+ * surface verticale. Une épaisseur (mur) n'y est pas définie aux jonctions : elle est refusée.
+ */
+export interface StudioPolyline {
+  id: string;
+  type: "polyline";
+  layerId?: string;
+  points: StudioPoint[];
+  closed: boolean;
+  bulges?: number[];
+  extrusion?: Omit<StudioExtrusion, "thickness">;
+}
+export type StudioShape = StudioLine | StudioRectangle | StudioCircle | StudioArc | StudioPolyline;
 
 export type StudioLineAnchor = "start" | "end";
 /** Sommets du rectangle nommés par construction (origine, origine + largeur, origine + hauteur, opposé). */
 export type StudioRectangleAnchor = "corner-origin" | "corner-width" | "corner-height" | "corner-opposite";
-export type StudioAnchor = StudioLineAnchor | StudioRectangleAnchor;
+/**
+ * Sommets des courbes et milieux : `mid` (milieu d'une ligne ou d'un arc), `center` (cercle, arc), quadrants d'un cercle
+ * (angle en degrés), `vertex-i` (sommet i d'une polyligne) et `mid-i` (milieu de son segment i).
+ */
+export type StudioCurveAnchor = "mid" | "center" | "quadrant-0" | "quadrant-90" | "quadrant-180" | "quadrant-270" | `vertex-${number}` | `mid-${number}`;
+export type StudioAnchor = StudioLineAnchor | StudioRectangleAnchor | StudioCurveAnchor;
+export const STUDIO_FIXED_ANCHORS: readonly StudioAnchor[] = Object.freeze(["start", "end", "corner-origin", "corner-width", "corner-height", "corner-opposite", "mid", "center", "quadrant-0", "quadrant-90", "quadrant-180", "quadrant-270"] as const);
+/** Sommet ou milieu indexé d'une polyligne (index canonique, sans zéro de tête). */
+export const STUDIO_INDEXED_ANCHOR = /^(vertex|mid)-(0|[1-9][0-9]{0,4})$/;
 export const STUDIO_LINE_ANCHORS: readonly StudioLineAnchor[] = Object.freeze(["start", "end"] as const);
 export const STUDIO_RECTANGLE_ANCHORS: readonly StudioRectangleAnchor[] = Object.freeze(["corner-origin", "corner-width", "corner-height", "corner-opposite"] as const);
 
@@ -97,6 +153,10 @@ export const STUDIO_CONTRACT = "studio-commands/1" as const;
 export type StudioCommand =
   | { toolId: "studio.dessin.ligne"; params: StudioLine }
   | { toolId: "studio.dessin.rectangle"; params: StudioRectangle }
+  | { toolId: "studio.dessin.cercle"; params: StudioCircle }
+  | { toolId: "studio.dessin.arc"; params: StudioArc }
+  | { toolId: "studio.dessin.polyligne"; params: StudioPolyline }
+  | { toolId: "studio.dessin.decaler"; params: { id: string; newId: string; distance: number } }
   | { toolId: "studio.dessin.deplacer"; params: { id: string; dx: number; dy: number } }
   | { toolId: "studio.dessin.modifier"; params: StudioItem }
   | { toolId: "studio.dessin.cote"; params: StudioDimension }
@@ -192,13 +252,13 @@ function discriminator(value: unknown, path: string): unknown {
 }
 
 /** Valeurs d'extrusion saisies : base finie, hauteur et épaisseur strictement positives, sommet fini. */
-function extrusionValues(o: Record<string, unknown>, path: string, thicknessAllowed: boolean): StudioExtrusion {
+function extrusionValues(o: Record<string, unknown>, path: string, thicknessAllowed: boolean, refus = "l’épaisseur ne s’applique qu’aux lignes (un rectangle s’extrude sur son emprise)"): StudioExtrusion {
   const base = finite(o.base, `${path}.base`);
   const height = finite(o.height, `${path}.height`);
   if (height <= 0) fail(`${path}.height`, "hauteur strictement positive attendue");
   finite(base + height, `${path}.top`);
   if (!Object.hasOwn(o, "thickness")) return { base, height };
-  if (!thicknessAllowed) fail(`${path}.thickness`, "l’épaisseur ne s’applique qu’aux lignes (un rectangle s’extrude sur son emprise)");
+  if (!thicknessAllowed) fail(`${path}.thickness`, refus);
   const thickness = finite(o.thickness, `${path}.thickness`);
   if (thickness <= 0) fail(`${path}.thickness`, "épaisseur strictement positive attendue");
   // Borne technique (pas une valeur métier) : l’emprise du mur reste finie, loin de tout débordement flottant.
@@ -206,10 +266,59 @@ function extrusionValues(o: Record<string, unknown>, path: string, thicknessAllo
   return { base, height, thickness };
 }
 
-function extrusionRef(o: Record<string, unknown>, path: string, thicknessAllowed: boolean): { extrusion?: StudioExtrusion } {
+function extrusionRef(o: Record<string, unknown>, path: string, thicknessAllowed: boolean, refus?: string): { extrusion?: StudioExtrusion } {
   if (!Object.hasOwn(o, "extrusion")) return {};
   const e = record(o.extrusion, ["base", "height"], `${path}.extrusion`, ["thickness"]);
-  return { extrusion: extrusionValues(e, `${path}.extrusion`, thicknessAllowed) };
+  return { extrusion: extrusionValues(e, `${path}.extrusion`, thicknessAllowed, refus) };
+}
+
+const REFUS_EPAISSEUR_COURBE = "l’épaisseur ne s’applique qu’aux lignes et aux arcs (un cercle ou une polyligne s’extrude sans épaisseur)";
+
+/** Centre et rayon : rayon fini strictement positif, emprise finie. */
+function centerRadius(o: Record<string, unknown>, path: string): { center: StudioPoint; radius: number } {
+  const center = point(o.center, `${path}.center`);
+  const radius = finite(o.radius, `${path}.radius`);
+  if (radius <= 0) fail(`${path}.radius`, "rayon strictement positif attendu");
+  for (const v of [center.x - radius, center.x + radius, center.y - radius, center.y + radius]) finite(v, `${path}.radius`);
+  return { center, radius };
+}
+
+function angle(value: unknown, path: string): number {
+  const a = finite(value, path);
+  if (a < 0 || a >= STUDIO_TWO_PI) fail(path, "angle en radians dans [0 ; 2π[ attendu");
+  return Object.is(a, -0) ? 0 : a;
+}
+
+function polyline(value: unknown, path: string): StudioPolyline {
+  const o = record(value, ["id", "type", "points", "closed"], path, ["layerId", "bulges", "extrusion"]);
+  const raw = array(o.points, `${path}.points`);
+  if (raw.length < 2) fail(`${path}.points`, "deux sommets au moins attendus");
+  if (raw.length > STUDIO_LIMITS.polylinePoints) fail(`${path}.points`, `${STUDIO_LIMITS.polylinePoints} sommets au plus`);
+  const points = raw.map((p, i) => point(p, `${path}.points[${i}]`));
+  const closed = boolean(o.closed, `${path}.closed`);
+  const segments = closed ? points.length : points.length - 1;
+  for (let i = 0; i < segments; i++) if (same(points[i]!, points[(i + 1) % points.length]!)) fail(`${path}.points[${(i + 1) % points.length}]`, "sommets consécutifs confondus");
+  let bulges: number[] | undefined;
+  if (Object.hasOwn(o, "bulges")) {
+    const b = array(o.bulges, `${path}.bulges`);
+    if (b.length !== segments) fail(`${path}.bulges`, `un renflement par segment attendu (${segments})`);
+    bulges = b.map((v, i) => {
+      const x = finite(v, `${path}.bulges[${i}]`);
+      if (Math.abs(x) > STUDIO_BULGE_MAX) fail(`${path}.bulges[${i}]`, "renflement de valeur absolue 1 000 000 au plus");
+      return Object.is(x, -0) ? 0 : x;
+    });
+    // Forme canonique : des renflements tous nuls s'omettent.
+    if (bulges.every((x) => x === 0)) bulges = undefined;
+  }
+  if (closed && points.length < 3 && !bulges) fail(`${path}.points`, "une polyligne fermée sans segment courbe a trois sommets au moins");
+  const extrusion = extrusionRef(o, path, false, REFUS_EPAISSEUR_COURBE);
+  const out: StudioPolyline = { id: identifier(o.id, `${path}.id`), type: "polyline", ...layerRef(o, path), points, closed, ...(bulges ? { bulges } : {}), ...extrusion };
+  if (extrusion.extrusion && closed) {
+    const ring = studioPolylinePath(out);
+    if (ring.length > STUDIO_LIMITS.extrudedRing) fail(`${path}.extrusion`, `contour de ${STUDIO_LIMITS.extrudedRing} sommets discrétisés au plus pour une extrusion`);
+    if (!studioRingSimple(ring)) fail(`${path}.extrusion`, "une polyligne fermée extrudée doit avoir un contour simple (sans croisement)");
+  }
+  return out;
 }
 
 function shape(value: unknown, path: string): StudioShape {
@@ -231,6 +340,21 @@ function shape(value: unknown, path: string): StudioShape {
     finite(origin.y + height, `${path}.top`);
     return { id: identifier(o.id, `${path}.id`), type, ...layerRef(o, path), origin, width, height, ...extrusionRef(o, path, false) };
   }
+  if (type === "circle") {
+    const o = record(value, ["id", "type", "center", "radius"], path, ["layerId", "extrusion"]);
+    return { id: identifier(o.id, `${path}.id`), type, ...layerRef(o, path), ...centerRadius(o, path), ...extrusionRef(o, path, false, REFUS_EPAISSEUR_COURBE) };
+  }
+  if (type === "arc") {
+    const o = record(value, ["id", "type", "center", "radius", "startAngle", "endAngle"], path, ["layerId", "extrusion"]);
+    const cr = centerRadius(o, path);
+    const startAngle = angle(o.startAngle, `${path}.startAngle`);
+    const endAngle = angle(o.endAngle, `${path}.endAngle`);
+    if (startAngle === endAngle) fail(path, "angles de début et de fin distincts attendus");
+    const extrusion = extrusionRef(o, path, true);
+    if (extrusion.extrusion?.thickness !== undefined && extrusion.extrusion.thickness >= 2 * cr.radius) fail(`${path}.extrusion.thickness`, "l’épaisseur d’un arc doit rester inférieure à son diamètre");
+    return { id: identifier(o.id, `${path}.id`), type, ...layerRef(o, path), ...cr, startAngle, endAngle, ...extrusion };
+  }
+  if (type === "polyline") return polyline(value, path);
   return fail(`${path}.type`, "type de géométrie non pris en charge");
 }
 
@@ -238,7 +362,7 @@ function link(value: unknown, path: string): StudioDimensionLink | null {
   if (value === null) return null;
   const l = record(value, ["objectId", "anchor"], path);
   const anchor = l.anchor;
-  if (typeof anchor !== "string" || !([...STUDIO_LINE_ANCHORS, ...STUDIO_RECTANGLE_ANCHORS] as string[]).includes(anchor)) fail(`${path}.anchor`, "sommet inconnu");
+  if (typeof anchor !== "string" || (!(STUDIO_FIXED_ANCHORS as readonly string[]).includes(anchor) && !STUDIO_INDEXED_ANCHOR.test(anchor))) fail(`${path}.anchor`, "sommet inconnu");
   return { objectId: identifier(l.objectId, `${path}.objectId`), anchor: anchor as StudioAnchor };
 }
 
@@ -270,14 +394,43 @@ function layer(value: unknown, path: string): StudioLayer {
 
 /** Sommet d'un objet nommé par un lien de cote, ou null si le sommet n'existe pas pour ce type. */
 export function studioAnchorPoint(target: StudioShape, anchor: StudioAnchor): StudioPoint | null {
-  if (target.type === "line") return anchor === "start" ? { ...target.start } : anchor === "end" ? { ...target.end } : null;
-  const { x, y } = target.origin;
-  switch (anchor) {
-    case "corner-origin": return { x, y };
-    case "corner-width": return { x: x + target.width, y };
-    case "corner-height": return { x, y: y + target.height };
-    case "corner-opposite": return { x: x + target.width, y: y + target.height };
-    default: return null;
+  switch (target.type) {
+    case "line":
+      return anchor === "start" ? { ...target.start } : anchor === "end" ? { ...target.end }
+        : anchor === "mid" ? { x: (target.start.x + target.end.x) / 2, y: (target.start.y + target.end.y) / 2 } : null;
+    case "rectangle": {
+      const { x, y } = target.origin;
+      switch (anchor) {
+        case "corner-origin": return { x, y };
+        case "corner-width": return { x: x + target.width, y };
+        case "corner-height": return { x, y: y + target.height };
+        case "corner-opposite": return { x: x + target.width, y: y + target.height };
+        default: return null;
+      }
+    }
+    case "circle": {
+      const { center: c, radius: r } = target;
+      switch (anchor) {
+        case "center": return { ...c };
+        case "quadrant-0": return { x: c.x + r, y: c.y };
+        case "quadrant-90": return { x: c.x, y: c.y + r };
+        case "quadrant-180": return { x: c.x - r, y: c.y };
+        case "quadrant-270": return { x: c.x, y: c.y - r };
+        default: return null;
+      }
+    }
+    case "arc": {
+      if (anchor === "center") return { ...target.center };
+      if (anchor !== "start" && anchor !== "end" && anchor !== "mid") return null;
+      return studioArcEnds(target)[anchor];
+    }
+    case "polyline": {
+      const m = STUDIO_INDEXED_ANCHOR.exec(anchor);
+      if (!m) return null;
+      const i = Number(m[2]);
+      if (m[1] === "vertex") return i < target.points.length ? { ...target.points[i]! } : null;
+      return i < studioPolylineSegmentCount(target) ? studioSegmentMid(studioPolylineSegments(target)[i]!) : null;
+    }
   }
 }
 
@@ -406,6 +559,16 @@ function followLinks(state: State, shapeId: string, path: string): void {
   });
 }
 
+/** Translation de tous les points d'une forme (rayons, angles, renflements inchangés). */
+function translateShape(o: StudioShape, t: (p: StudioPoint) => StudioPoint): StudioShape {
+  switch (o.type) {
+    case "line": return { ...o, start: t(o.start), end: t(o.end) };
+    case "rectangle": return { ...o, origin: t(o.origin) };
+    case "circle": case "arc": return { ...o, center: t(o.center) };
+    case "polyline": return { ...o, points: o.points.map(t) };
+  }
+}
+
 function createShape(type: StudioShape["type"]): Handler {
   return (state, params, path) => {
     const o = shape(params, `${path}.params`);
@@ -428,6 +591,9 @@ function enteredDimension(state: State, params: unknown, path: string): StudioDi
 const HANDLERS: Record<StudioCommandToolId, Handler> = {
   "studio.dessin.ligne": createShape("line"),
   "studio.dessin.rectangle": createShape("rectangle"),
+  "studio.dessin.cercle": createShape("circle"),
+  "studio.dessin.arc": createShape("arc"),
+  "studio.dessin.polyligne": createShape("polyline"),
   "studio.dessin.deplacer": (state, params, path) => {
     const p = record(params, ["id", "dx", "dy"], `${path}.params`);
     const id = identifier(p.id, `${path}.params.id`);
@@ -438,7 +604,7 @@ const HANDLERS: Record<StudioCommandToolId, Handler> = {
     const o = state.objects[index];
     if (o) {
       editable(state, o, path);
-      state.objects[index] = shape(o.type === "line" ? { ...o, start: translate(o.start), end: translate(o.end) } : { ...o, origin: translate(o.origin) }, path);
+      state.objects[index] = shape(translateShape(o, translate), path);
       followLinks(state, id, path);
       return;
     }
@@ -464,6 +630,21 @@ const HANDLERS: Record<StudioCommandToolId, Handler> = {
       state.objects[index] = o;
       followLinks(state, o.id, path);
     }
+  },
+  "studio.dessin.decaler": (state, params, path) => {
+    const p = record(params, ["id", "newId", "distance"], `${path}.params`);
+    const id = identifier(p.id, `${path}.params.id`);
+    const newId = identifier(p.newId, `${path}.params.newId`);
+    const distance = finite(p.distance, `${path}.params.distance`);
+    if (distance === 0) fail(`${path}.params.distance`, "distance non nulle attendue");
+    const source = state.objects.find((o) => o.id === id);
+    if (!source) fail(path, state.dimensions.some((d) => d.id === id) ? `une cote ne se décale pas : ${id}` : `objet introuvable : ${id}`);
+    editable(state, source, path);
+    freeId(state, newId, path);
+    const r = studioOffset(source, distance, newId);
+    if (!r.ok) fail(path, `décalage impossible : ${r.raison}`);
+    state.objects.push(shape(r.shape, path));
+    state.ids.add(newId);
   },
   "studio.dessin.cote": (state, params, path) => {
     const d = enteredDimension(state, params, path);
@@ -534,8 +715,9 @@ const HANDLERS: Record<StudioCommandToolId, Handler> = {
       if (i === undefined) fail(path, state.dimensions.some((d) => d.id === id) ? `une cote ne s’extrude pas : ${id}` : `objet introuvable : ${id}`);
       const o = state.objects[i]!;
       editable(state, o, path);
-      if (o.type === "rectangle" && values.thickness !== undefined) fail(`${path}.params.thickness`, `l’épaisseur ne s’applique qu’aux lignes : ${id}`);
-      state.objects[i] = { ...o, extrusion: { ...values } } as StudioShape;
+      if (values.thickness !== undefined && o.type !== "line" && o.type !== "arc") fail(`${path}.params.thickness`, `l’épaisseur ne s’applique qu’aux lignes et aux arcs : ${id}`);
+      // Contrôle complet de la forme extrudée (contour simple d'une polyligne fermée, épaisseur d'un arc).
+      state.objects[i] = shape({ ...o, extrusion: { ...values } }, `${path} (${id})`);
     }
   },
   "studio.objet.aplatir": (state, params, path) => {

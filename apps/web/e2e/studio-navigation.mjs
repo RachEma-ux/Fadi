@@ -577,8 +577,9 @@ try {
   check("exports : en révision historique, le lien porte la révision affichée", (await lienExport("svg")) === `${variantePath}/export?format=svg&revision=${encodeURIComponent(ancienne)}` && (await lienExport("dxf")) === `${variantePath}/export?format=dxf&revision=${encodeURIComponent(ancienne)}`);
 
   // Import DXF (Maj+U, barre Importer) : indisponible en révision historique ; un DXF en millimètres (2 LINE, 1
-  // LWPOLYLINE fermée, 1 CIRCLE) → rapport (1 non pris : CIRCLE), 3 objets convertis en mètres, annulable, enregistré,
-  // relu identique ; un import de 600 lignes part en deux enveloppes de 500 commandes au plus.
+  // LWPOLYLINE fermée, 1 CIRCLE, 1 ARC) → rapport (tout est pris : le cercle et l'arc deviennent des courbes), 5 objets
+  // convertis en mètres, annulable, enregistré, relu identique ; un import de 600 lignes part en deux enveloppes de
+  // 500 commandes au plus.
   const boutonImport = outils.locator('[data-studio-barre="import"] [data-studio-commande="importer-dxf"][aria-keyshortcuts="Shift+U"]');
   check("Import DXF : commande de la barre Importer (Maj+U), indisponible en lecture seule", (await boutonImport.count()) === 1 && (await boutonImport.isDisabled()));
   await page.goto(base);
@@ -593,6 +594,7 @@ try {
     "0", "LINE", "8", "0", "10", "20000", "20", "20000", "11", "20000", "21", "23000",
     "0", "LWPOLYLINE", "8", "0", "90", "4", "70", "1", "10", "21000", "20", "21000", "10", "23000", "20", "21000", "10", "23000", "20", "22500", "10", "21000", "20", "22500",
     "0", "CIRCLE", "8", "0", "10", "20500", "20", "20500", "30", "0", "40", "250",
+    "0", "ARC", "8", "0", "10", "22000", "20", "22000", "30", "0", "40", "500", "50", "0", "51", "90",
   ]);
   await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press("Shift+U");
@@ -603,18 +605,19 @@ try {
   const rapportImport = boiteImport.locator("[data-studio-import-rapport]");
   await rapportImport.waitFor();
   const nonPrisImport = await rapportImport.locator("[data-studio-import-non-pris-type]").evaluateAll((els) => els.map((e) => `${e.getAttribute("data-studio-import-non-pris-type")}:${e.getAttribute("data-studio-import-non-pris-nombre")}`));
-  check("Import DXF : rapport — unité mm lue dans le fichier, 3 objets, 1 non pris (CIRCLE)",
-    (await rapportImport.getAttribute("data-studio-import-statut")) === "pret" && (await rapportImport.getAttribute("data-studio-import-unite")) === "mm" && (await rapportImport.getAttribute("data-studio-import-objets")) === "3"
-    && (await rapportImport.getAttribute("data-studio-import-non-pris")) === "1" && nonPrisImport.join() === "CIRCLE:1" && (await rapportImport.locator("[data-studio-import-choix-unite]").count()) === 0
+  check("Import DXF : rapport — unité mm lue dans le fichier, 5 objets dont un cercle et un arc, rien de non pris",
+    (await rapportImport.getAttribute("data-studio-import-statut")) === "pret" && (await rapportImport.getAttribute("data-studio-import-unite")) === "mm" && (await rapportImport.getAttribute("data-studio-import-objets")) === "5"
+    && (await rapportImport.getAttribute("data-studio-import-non-pris")) === "0" && nonPrisImport.length === 0 && (await rapportImport.locator("[data-studio-import-choix-unite]").count()) === 0
+    && (await rapportImport.locator("[data-studio-import-courbes]").textContent()).includes("1 cercle(s), 1 arc(s), 0 polyligne(s)")
     && (await rapportImport.locator("[data-studio-import-unite-fichier]").textContent()).includes("1 unité = 0,001 m"), nonPrisImport.join());
   await boiteImport.locator("[data-studio-import-ajouter]").click();
   await boiteImport.waitFor({ state: "detached" });
-  check("Import DXF : un lot de 3 commandes en attente dans le brouillon", (await portee()).includes("(3 commande(s)"), await portee());
+  check("Import DXF : un lot de 5 commandes en attente dans le brouillon", (await portee()).includes("(5 commande(s)"), await portee());
   await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press("Control+z");
   check("Import DXF : annulable (Ctrl+Z retire tout le lot)", (await portee()).includes("(0 commande(s)"), await portee());
   await page.keyboard.press("Control+y");
-  check("Import DXF : rétabli (Ctrl+Y)", (await portee()).includes("(3 commande(s)"), await portee());
+  check("Import DXF : rétabli (Ctrl+Y)", (await portee()).includes("(5 commande(s)"), await portee());
   const avantImport = envois.length;
   await page.keyboard.press("Control+s");
   await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
@@ -623,19 +626,103 @@ try {
     { toolId: "studio.dessin.ligne", params: { type: "line", start: { x: 20, y: 20 }, end: { x: 24, y: 20 } } },
     { toolId: "studio.dessin.ligne", params: { type: "line", start: { x: 20, y: 20 }, end: { x: 20, y: 23 } } },
     { toolId: "studio.dessin.rectangle", params: { type: "rectangle", origin: { x: 21, y: 21 }, width: 2, height: 1.5 } },
+    { toolId: "studio.dessin.cercle", params: { type: "circle", center: { x: 20.5, y: 20.5 }, radius: 0.25 } },
+    { toolId: "studio.dessin.arc", params: { type: "arc", center: { x: 22, y: 22 }, radius: 0.5, startAngle: 0, endAngle: Math.PI / 2 } },
   ];
   const sansIdImport = (c) => { const { id, ...p } = c.params; return { toolId: c.toolId, params: p }; };
   check("Import DXF : enregistré en une enveloppe, millimètres convertis en mètres, identifiants « dxf-… »",
     envois.length === avantImport + 1 && envoiImport.baseRevisionId === teteAvantImport.id && JSON.stringify(envoiImport.commands.map(sansIdImport)) === JSON.stringify(attendus) && envoiImport.commands.every((c) => /^dxf-\d+$/.test(c.params.id)), JSON.stringify(envoiImport?.commands));
   const importe = await a.api("get", variantePath);
   const idsImport = envoiImport.commands.map((c) => c.params.id);
-  check("Import DXF : le serveur a ajouté les 3 objets, rien d'autre ne change", importe.revision.document.objects.length === teteAvantImport.document.objects.length + 3
+  check("Import DXF : le serveur a ajouté les 5 objets (cercle et arc compris), rien d'autre ne change", importe.revision.document.objects.length === teteAvantImport.document.objects.length + 5
     && JSON.stringify(importe.revision.document.objects.filter((o) => idsImport.includes(o.id)).map((o) => sansIdImport({ toolId: "", params: o }).params)) === JSON.stringify(attendus.map((x) => x.params))
     && JSON.stringify(importe.revision.document.objects.filter((o) => !idsImport.includes(o.id))) === JSON.stringify(teteAvantImport.document.objects));
   const empreinteImport = await empreinte();
   await page.reload();
   await page.locator(`[data-studio-objet="${idsImport[2]}"]`).waitFor({ state: "attached" });
   check("Import DXF : l'actualisation restitue le même dessin", (await empreinte()) === empreinteImport && JSON.stringify((await a.api("get", variantePath)).revision) === JSON.stringify(importe.revision));
+
+  // Courbes : Cercle (C), Arc (A, trois points puis centre-début-fin), Polyligne (P) fermée par Maj+Entrée, Décaler (O)
+  // de la polyligne ; enregistrement, actualisation identique ; export DXF (CIRCLE, ARC, POLYLINE R12) et SVG.
+  await page.evaluate(() => document.activeElement?.blur());
+  // Accrochage aux sommets coupé le temps du tracé : les points visés ne sont pas attirés par les objets existants.
+  await page.keyboard.press("Shift+S");
+  check("courbes : Cercle (C), Arc (A), Polyligne (P) dans la barre Dessin, Décaler (O) dans Modification, icônes propres",
+    (await outils.locator('[data-studio-barre="dessin"] [data-studio-outil="studio.dessin.cercle"][aria-keyshortcuts="C"] svg path').count()) === 1
+    && (await outils.locator('[data-studio-barre="dessin"] [data-studio-outil="studio.dessin.arc"][aria-keyshortcuts="A"]').count()) === 1
+    && (await outils.locator('[data-studio-barre="dessin"] [data-studio-outil="studio.dessin.polyligne"][aria-keyshortcuts="P"]').count()) === 1
+    && (await outils.locator('[data-studio-barre="modification"] [data-studio-outil="studio.dessin.decaler"][aria-keyshortcuts="O"]').count()) === 1
+    && (await outils.locator('[data-studio-barre="edition"] [data-studio-commande="fermer-polyligne"][aria-keyshortcuts="Shift+Enter"]').count()) === 1);
+  const idsDe = (type) => page.locator(`svg [data-studio-type="${type}"]`).evaluateAll((els) => els.map((e) => e.getAttribute("data-studio-objet")));
+  const avantCourbes = { circle: await idsDe("circle"), arc: await idsDe("arc"), polyline: await idsDe("polyline") };
+  const nouveaux = async (type) => (await idsDe(type)).filter((id) => !avantCourbes[type].includes(id));
+  await page.keyboard.press("c");
+  check("courbes : C choisit l'outil Cercle", (await outils.getByRole("button", { name: "Cercle", exact: true }).getAttribute("aria-pressed")) === "true");
+  await cliquer(15, 12);
+  await cliquer(16, 12);
+  check("courbes : deux clics (centre, point du cercle) tracent un cercle", (await nouveaux("circle")).length === 1);
+  await page.keyboard.press("a");
+  await cliquer(17, 10);
+  await cliquer(18, 11);
+  await cliquer(19, 10);
+  check("courbes : trois clics (début, passage, fin) tracent un arc", (await nouveaux("arc")).length === 1);
+  await page.locator("[data-studio-mode-arc]").selectOption("centre");
+  await page.evaluate(() => document.activeElement?.blur());
+  await cliquer(15, 3);
+  await cliquer(16, 3);
+  await cliquer(15, 4);
+  check("courbes : arc par centre, début et fin", (await nouveaux("arc")).length === 2);
+  await page.keyboard.press("p");
+  await cliquer(10, 12);
+  await cliquer(13, 12);
+  await cliquer(13, 14);
+  check("courbes : polyligne en cours, sommets posés affichés", (await page.locator("[data-studio-sommet-pose]").count()) === 2);
+  await page.keyboard.press("Shift+Enter");
+  const [polyId] = await nouveaux("polyline");
+  check("courbes : Maj+Entrée ferme la polyligne", !!polyId && (await page.locator(`[data-studio-objet="${polyId}"] path`).getAttribute("d")).endsWith("Z"));
+  await outils.getByRole("button", { name: "Sélection", exact: true }).click();
+  await page.locator(`[data-studio-objet="${polyId}"]`).focus();
+  await page.keyboard.press("Enter");
+  await page.locator(`[data-studio-selection="${polyId}"]`).waitFor();
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("o");
+  check("courbes : O choisit l'outil Décaler", (await outils.getByRole("button", { name: "Décaler", exact: true }).getAttribute("aria-pressed")) === "true");
+  await proprietes.getByLabel("Distance", { exact: true }).fill("0.5");
+  await proprietes.getByRole("button", { name: "Décaler la sélection", exact: true }).click();
+  const decalees = await nouveaux("polyline");
+  check("courbes : la polyligne décalée est un nouvel objet, sélectionné", decalees.length === 2 && (await page.locator("[data-studio-selection]").getAttribute("data-studio-selection")) === decalees.find((id) => id !== polyId));
+  await page.keyboard.press("Shift+S");
+  const avantCourbesEnvoi = envois.length;
+  await page.keyboard.press("Control+s");
+  await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
+  const envoiCourbes = envois[envois.length - 1];
+  check("courbes : enregistrées en une enveloppe (cercle, deux arcs, polyligne, décalage)", envois.length === avantCourbesEnvoi + 1
+    && JSON.stringify(envoiCourbes.commands.map((c) => c.toolId)) === JSON.stringify(["studio.dessin.cercle", "studio.dessin.arc", "studio.dessin.arc", "studio.dessin.polyligne", "studio.dessin.decaler"]), JSON.stringify(envoiCourbes?.commands.map((c) => c.toolId)));
+  const courbes = await a.api("get", variantePath);
+  const objet = (id) => courbes.revision.document.objects.find((o) => o.id === id);
+  const proche = (u, v) => Math.abs(u - v) < 0.06;
+  const cercle = objet((await nouveaux("circle"))[0]);
+  const [arc3, arcC] = (await nouveaux("arc")).map(objet);
+  const poly = objet(polyId), decale = objet(decalees.find((id) => id !== polyId));
+  check("courbes : géométrie relue du serveur (cercle r = 1, arc 3 points r = 1 de 0 à π, arc centré 0 → π/2, polyligne fermée et son décalé extérieur)",
+    proche(cercle.center.x, 15) && proche(cercle.center.y, 12) && proche(cercle.radius, 1)
+    && proche(arc3.center.x, 18) && proche(arc3.center.y, 10) && proche(arc3.radius, 1) && (arc3.startAngle < 0.1 || arc3.startAngle > 6.2) && proche(arc3.endAngle, Math.PI)
+    && proche(arcC.radius, 1) && (arcC.startAngle < 0.06 || arcC.startAngle > 2 * Math.PI - 0.06) && proche(arcC.endAngle, Math.PI / 2)
+    && poly.closed === true && poly.points.length === 3 && decale.type === "polyline" && decale.closed === true && decale.points.length === 3
+    && Math.min(...decale.points.map((q) => q.x)) < Math.min(...poly.points.map((q) => q.x)) && Math.max(...decale.points.map((q) => q.y)) > Math.max(...poly.points.map((q) => q.y)),
+    JSON.stringify({ cercle, arc3, arcC, poly, decale }));
+  const empreinteCourbes = await empreinte();
+  await page.reload();
+  await page.locator(`[data-studio-objet="${polyId}"]`).waitFor({ state: "attached" });
+  check("courbes : l'actualisation restitue le même dessin", (await empreinte()) === empreinteCourbes && JSON.stringify((await a.api("get", variantePath)).revision) === JSON.stringify(courbes.revision));
+  const dxfCourbes = await page.request.get(`${BASE}${variantePath}/export?format=dxf`);
+  if (dxfCourbes.status() === 404) console.log("· export DXF : point d'entrée absent de ce serveur");
+  else {
+    const t = await dxfCourbes.text();
+    check("courbes : l'export DXF contient CIRCLE, ARC et la polyligne (POLYLINE R12 fermée, 70 = 1)", /\r\nCIRCLE\r\n/.test(t) && /\r\nARC\r\n/.test(t) && (t.match(/\r\nPOLYLINE\r\n/g) ?? []).length >= 3 && /\r\n50\r\n/.test(t) && /\r\n51\r\n90\r\n/.test(t));
+    const svg = await (await page.request.get(`${BASE}${variantePath}/export?format=svg`)).text();
+    check("courbes : l'export SVG contient <circle> et des <path> d'arc et de polyligne", svg.includes(`<circle data-id="${cercle.id}"`) && svg.includes(`data-id="${arc3.id}" data-type="arc"`) && svg.includes(`data-id="${polyId}" data-type="polyline"`));
+  }
 
   // Grand import (600 lignes, mètres) sur la variante initiale : deux enveloppes chaînées (500 puis 100 commandes).
   const baseInitiale = `${BASE}/studio/projets/${pA.id}/etudes/${studyId}/variantes/${initialVariantId}`;

@@ -5,7 +5,7 @@
  * Les gestes (molette, panoramique, rectangle, glisser) sont interprétés par l'espace de travail.
  */
 import type { MouseEvent, PointerEvent, Ref } from "react";
-import type { StudioDimension, StudioDocument, StudioPoint, StudioShape } from "@parcours/atelier-model";
+import { studioSvgPath, type StudioDimension, type StudioDocument, type StudioPoint, type StudioShape } from "@parcours/atelier-model";
 import { LOCALE } from "../../../lib/i18n";
 import { estSelectionnable, estVisible } from "./calques";
 import { formaterMetres, traceCote, valeurCote, viewBox, type Cadre, type PointAccroche } from "./geometrie-2d";
@@ -30,6 +30,10 @@ export interface Dessin2DProps {
   rectangle: RectangleSelection | null;
   /** Un glisser de la sélection est en cours (aperçu). */
   glissement: boolean;
+  /** Aperçu d'une courbe en cours de tracé (cercle, arc, polyligne), calculé par l'espace de travail ; jamais une donnée. */
+  apercuForme?: StudioShape | null;
+  /** Sommets déjà posés d'un tracé en plusieurs points (polyligne, arc par trois points). */
+  sommetsPoses?: readonly StudioPoint[];
   /** Les clics sur un objet vont à la planche (pose de point) plutôt qu'à la sélection. */
   clicsVersPlanche: (o: { id: string }) => boolean;
   surPlanche: (e: MouseEvent<SVGSVGElement>) => void;
@@ -70,19 +74,41 @@ function Cote({ d, choisie, selectionnable, surSelection, versPlanche }: PropsEl
   );
 }
 
+/** Nom affiché du type d'objet (libellé d'accessibilité). */
+const NOMS: Record<StudioShape["type"], string> = { line: "Ligne", rectangle: "Rectangle", circle: "Cercle", arc: "Arc", polyline: "Polyligne" };
+
+/** Nombre du chemin arrondi au nanomètre (pas de résidu flottant comme 1e-16 dans l'attribut `d`). */
+const nano = (v: number): string => {
+  const r = Math.round(v * 1e9) / 1e9;
+  return String(Object.is(r, -0) ? 0 : r);
+};
+
+/** Tracé SVG d'une forme, dans le repère du document : arcs exacts (`studioSvgPath`). */
+export function TraceForme({ o, className }: { o: StudioShape; className?: string }) {
+  switch (o.type) {
+    case "line": return <line className={className} x1={o.start.x} y1={o.start.y} x2={o.end.x} y2={o.end.y} />;
+    case "rectangle": return <rect className={className} x={o.origin.x} y={o.origin.y} width={o.width} height={o.height} />;
+    case "circle": return <circle className={className} cx={o.center.x} cy={o.center.y} r={o.radius} />;
+    default: {
+      const ouvert = o.type === "arc" || !o.closed;
+      return <path className={[className, ouvert ? "studio-ouvert" : ""].filter(Boolean).join(" ") || undefined} d={studioSvgPath(o, false, nano)} />;
+    }
+  }
+}
+
 function Forme({ o, choisie, selectionnable, surSelection, versPlanche }: PropsElement & { o: StudioShape }) {
   return (
-    <g role="button" tabIndex={selectionnable ? 0 : -1} aria-disabled={!selectionnable || undefined} aria-label={`${o.type === "line" ? "Ligne" : "Rectangle"} ${o.id}`} aria-pressed={choisie}
-      data-studio-calque={o.layerId ?? "default"} data-studio-objet={o.id} data-studio-selectionnable={selectionnable || undefined}
+    <g role="button" tabIndex={selectionnable ? 0 : -1} aria-disabled={!selectionnable || undefined} aria-label={`${NOMS[o.type]} ${o.id}`} aria-pressed={choisie}
+      data-studio-calque={o.layerId ?? "default"} data-studio-objet={o.id} data-studio-type={o.type} data-studio-selectionnable={selectionnable || undefined}
       onKeyDown={(e) => { if (selectionnable && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); surSelection(o.id, e.shiftKey); } }}
       onClick={(e) => { if (versPlanche) return; e.stopPropagation(); if (selectionnable) surSelection(o.id, e.shiftKey); }}
       className={`studio-shape${choisie ? " selected" : ""}${selectionnable ? "" : " verrouille"}`}>
-      {o.type === "line" ? <line x1={o.start.x} y1={o.start.y} x2={o.end.x} y2={o.end.y} /> : <rect x={o.origin.x} y={o.origin.y} width={o.width} height={o.height} />}
+      <TraceForme o={o} />
     </g>
   );
 }
 
-export function Dessin2D({ svgRef, doc, cadre, pas, outil, selection, trace, survol, rectangle, glissement, clicsVersPlanche, surPlanche, surSurvol, surPointeurBas, surPointeurHaut, surClicCapture, surSelection }: Dessin2DProps) {
+export function Dessin2D({ svgRef, doc, cadre, pas, outil, selection, trace, survol, rectangle, glissement, apercuForme, sommetsPoses = [], clicsVersPlanche, surPlanche, surSurvol, surPointeurBas, surPointeurHaut, surClicCapture, surSelection }: Dessin2DProps) {
   const visible = (layerId: string | undefined) => estVisible(doc, layerId);
   const fin = survol?.point;
   const r = Math.max(cadre.w / 160, 0.08);
@@ -100,10 +126,12 @@ export function Dessin2D({ svgRef, doc, cadre, pas, outil, selection, trace, sur
         <Cote key={d.id} d={d} choisie={selection.has(d.id)} selectionnable={estSelectionnable(doc, d.layerId)} surSelection={surSelection} versPlanche={clicsVersPlanche(d)} />
       ))}
       <g className="studio-apercu" pointerEvents="none">
-        {trace && fin && (outil === "studio.dessin.rectangle"
-          ? <rect x={Math.min(trace.point.x, fin.x)} y={Math.min(trace.point.y, fin.y)} width={Math.abs(fin.x - trace.point.x)} height={Math.abs(fin.y - trace.point.y)} />
-          : <line x1={trace.point.x} y1={trace.point.y} x2={fin.x} y2={fin.y} />)}
+        {apercuForme ? <g data-studio-apercu-forme={apercuForme.type}><TraceForme o={apercuForme} className="studio-apercu-trace" /></g>
+          : trace && fin && (outil === "studio.dessin.rectangle"
+            ? <rect x={Math.min(trace.point.x, fin.x)} y={Math.min(trace.point.y, fin.y)} width={Math.abs(fin.x - trace.point.x)} height={Math.abs(fin.y - trace.point.y)} />
+            : <line x1={(sommetsPoses[sommetsPoses.length - 1] ?? trace.point).x} y1={(sommetsPoses[sommetsPoses.length - 1] ?? trace.point).y} x2={fin.x} y2={fin.y} />)}
         {trace && <circle className="studio-point-pose" cx={trace.point.x} cy={trace.point.y} r={r} />}
+        {sommetsPoses.map((p, i) => <circle key={i} className="studio-point-pose" data-studio-sommet-pose={i} cx={p.x} cy={p.y} r={r * 0.8} />)}
         {survol?.accroche && <rect className="studio-accroche" data-studio-accroche={`${survol.accroche.objectId}:${survol.accroche.anchor}`} x={survol.accroche.point.x - r} y={survol.accroche.point.y - r} width={2 * r} height={2 * r} />}
         {zone && rectangle && <rect className={`studio-rectangle-selection ${rectangle.mode}`} data-studio-rectangle-selection={rectangle.mode}
           x={zone.min.x} y={zone.min.y} width={zone.max.x - zone.min.x} height={zone.max.y - zone.min.y} />}

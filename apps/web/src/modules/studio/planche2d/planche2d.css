@@ -64,3 +64,8 @@
 .studio-catalogue-meta{font-size:11px;color:#587079}
 .studio-catalogue li button{min-height:36px;padding:4px 10px;font-size:12px;margin-left:auto}
 @media(max-width:540px){.studio-tools a.studio-lien-bouton{flex:1;justify-content:center}.studio-tools a.studio-lien-bouton kbd{display:none}}
+/* Courbes : tracé ouvert (arc, polyligne ouverte) sans remplissage, sélectionnable sur son trait ; aperçu en tirets. */
+.studio-shape path.studio-ouvert{fill:none;pointer-events:visibleStroke;stroke-width:3px}
+.studio-apercu .studio-apercu-trace{fill:none;stroke:#c3722f;stroke-width:2px;stroke-dasharray:6 4;vector-effect:non-scaling-stroke}
+.studio-properties label.studio-case{flex-direction:row;align-items:center}.studio-properties label.studio-case input{width:auto;min-height:0}
+.studio-properties select{border:1px solid #b9cbd0;border-radius:7px;padding:9px;font:inherit}
