@@ -32,6 +32,8 @@ export const LIBELLES_RAISON_FIDELITE: Readonly<Record<StudioRaisonFidelite, str
   "visualisation-hors-export": "Réglage de visualisation (scène, apparence d’affichage), jamais exporté",
   "type-sans-capacite": "Type sans capacité déclarée, non exporté",
   "propriete-non-exportee": "Propriété déclarée non écrite dans le fichier",
+  "propriete-en-pset": "Propriété déclarée écrite dans le jeu de propriétés du projet",
+  "propriete-non-evaluee": "Propriété déclarée sans valeur (non évaluée), non écrite",
 });
 
 /** Types d'éléments du document ; un type inconnu de cette table s'affiche tel quel (jamais masqué). */

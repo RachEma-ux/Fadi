@@ -4,6 +4,7 @@ import { bool, ref, refs, Step, studioIfcGuid, studioStepReal, studioStepString,
 import { typeObjet } from "./objets/index.js";
 import { studioIfcSolide } from "./objets-3d/ifc.js";
 import { studioIfcArchitecture } from "./architecture/ifc.js";
+import { studioIfcProprietes } from "./exigences/ifc.js";
 
 export { studioIfcGuid, studioStepReal, studioStepString, type StudioIfcSummary } from "./exporteurs/ifc-step.js";
 
@@ -34,6 +35,8 @@ export { studioIfcGuid, studioStepReal, studioStepString, type StudioIfcSummary 
  *   porte que les objets extrudés) ; elles sont comptées (`AnnotationsNotExported`) quand le document en contient ;
  * - calques : `IfcPresentationLayerWithStyle` (nom du calque, identifiant Studio, visibilité `LayerOn`, verrou
  *   `LayerBlocked`) sur les éléments de représentation ; les objets des calques masqués sont exportés, calque éteint ;
+ * - propriétés déclarées (E.1-01) : jeu de projet `Fadi_ProprietesDeclarees` sur l'entité de chaque objet porteur, les
+ *   propriétés valuées seulement (`exigences/ifc.ts`) ; les non évaluées sont comptées dans `Fadi_StudioExport` ;
  * - identités : GlobalId dérivé de la clé du document et de l'identifiant Studio ; l'identifiant est aussi le `Tag`.
  *
  * L'élément de chaque objet extrudé est écrit par son type (`objets/<type>.ts`, `ifc`) avec le contexte `IfcContexte` ;
@@ -129,6 +132,8 @@ function studioIfc(input: StudioDocument, meta: StudioIfcMeta): { content: strin
   const layerOf = (o: StudioShape) => o.layerId ?? STUDIO_DEFAULT_LAYER_ID;
   const hiddenLayers = new Set(layers.filter((l) => !l.visible).map((l) => l.id));
   const built: IfcConstruit[] = [];
+  /** Entité IFC de chaque objet porteur possible d'une propriété déclarée (objet extrudé, mur, ouverture). */
+  const entites = new Map<string, number>();
   const summary: StudioIfcSummary = { walls: 0, surfaces: 0, prisms: 0, nonExtruded: 0, dimensions: doc.dimensions?.length ?? 0, onHiddenLayers: 0 };
   // Annotations (cotes angulaires, textes) : non exportées, comptées (jamais omises en silence).
   if (doc.annotations?.length) summary.annotations = doc.annotations.length;
@@ -165,6 +170,7 @@ function studioIfc(input: StudioDocument, meta: StudioIfcMeta): { content: strin
     ]);
     if (hiddenLayers.has(b.layerId)) summary.onHiddenLayers++;
     built.push(b);
+    entites.set(o.id, b.element);
   }
   // Solides libres : un `IfcBuildingElementProxy` `.NOTDEFINED.` chacun (A.3-09), comptés parmi les prismes.
   const solides = doc.solides ?? [];
@@ -187,6 +193,7 @@ function studioIfc(input: StudioDocument, meta: StudioIfcMeta): { content: strin
     const a = studioIfcArchitecture(doc.architecture, contexte, { pset, prop, length, label });
     for (const b of a.construits) { if (hiddenLayers.has(b.layerId)) summary.onHiddenLayers++; built.push(b); }
     remplissages.push(...a.remplissages);
+    for (const [id, e] of a.entites) entites.set(id, e);
     summary.architecture = { walls: a.murs, openings: a.ouvertures, doors: a.portes, windows: a.fenetres };
   }
   if (built.length) s.add(`IFCRELCONTAINEDINSPATIALSTRUCTURE(${gid("rel-storey-elements")},$,$,$,${refs([...built.map((b) => b.element), ...remplissages])},${ref(storey)})`);
@@ -200,6 +207,12 @@ function studioIfc(input: StudioDocument, meta: StudioIfcMeta): { content: strin
     const items = built.filter((b) => b.layerId === l.id).map((b) => b.item);
     if (!items.length) continue;
     s.add(`IFCPRESENTATIONLAYERWITHSTYLE(${studioStepString(l.name)},$,${refs(items)},${studioStepString(l.id)},${bool(l.visible)},.F.,${bool(l.locked)},())`);
+  }
+
+  // Propriétés déclarées (E.1-01) : rien n'est écrit quand le document n'en porte pas (exports antérieurs inchangés).
+  if (doc.proprietes?.length) {
+    const p = studioIfcProprietes(s, gid, doc.proprietes, entites);
+    summary.proprietes = { exported: p.exportees, notEvaluated: p.nonEvaluees };
   }
 
   pset("export", "Fadi_StudioExport", project, [
@@ -218,6 +231,10 @@ function studioIfc(input: StudioDocument, meta: StudioIfcMeta): { content: strin
     ...(summary.architecture ? [
       prop("ArchitecturalWalls", integer(summary.architecture.walls)), prop("Openings", integer(summary.architecture.openings)),
       prop("DeclaredDoors", integer(summary.architecture.doors)), prop("DeclaredWindows", integer(summary.architecture.windows)),
+    ] : []),
+    ...(summary.proprietes ? [
+      prop("DeclaredPropertiesExported", integer(summary.proprietes.exported)),
+      prop("DeclaredPropertiesNotEvaluated", integer(summary.proprietes.notEvaluated)),
     ] : []),
   ]);
 

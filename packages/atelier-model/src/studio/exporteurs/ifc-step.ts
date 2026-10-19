@@ -94,6 +94,11 @@ export interface StudioIfcSummary {
   annotations?: number;
   /** Objets architecturaux (A.4), présents seulement quand le document en compte : murs, ouvertures, portes, fenêtres. */
   architecture?: { walls: number; openings: number; doors: number; windows: number };
+  /**
+   * Propriétés déclarées (E.1-01), présent seulement quand le document en porte : écrites dans `Fadi_ProprietesDeclarees`
+   * (valuées) et non écrites (sans valeur, « non évaluées »).
+   */
+  proprietes?: { exported: number; notEvaluated: number };
 }
 
 /** Élément IFC produit pour un objet extrudé : l'élément, l'item de représentation (calques) et le calque Studio. */
