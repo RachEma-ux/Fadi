@@ -802,6 +802,30 @@ export interface StudioStudySteps {
   available: { number: number; title: string; phase: string }[];
   canWrite: boolean;
 }
+/** Publication Studio d'une révision de variante (statuts, approbation liée, paquet figé ; le serveur fait autorité). */
+export type StudioPublicationStatus = "travail" | "soumis" | "approuve" | "refuse" | "diffuse" | "retire";
+export type StudioPublicationTransition = "soumettre" | "approuver" | "refuser" | "diffuser" | "retirer";
+export interface StudioPackageFile { format: "svg" | "dxf" | "ifc" | "pdf"; fileName: string; mime: string; size: number; sha256: string }
+export interface StudioPublicationEvent {
+  id: string; action: "creer" | StudioPublicationTransition; fromStatus: StudioPublicationStatus | null; toStatus: StudioPublicationStatus;
+  author: { id: string; email: string }; comment: string | null; revisionId: string; documentHash: string; headRevisionId: string; createdAt: string;
+}
+export interface StudioPublication {
+  id: string; projectId: string; studyId: string; variantId: string; variantName: string; title: string;
+  revisionId: string; documentHash: string; status: StudioPublicationStatus;
+  createdBy: { id: string; email: string }; createdAt: string; updatedAt: string;
+  approval: { revisionId: string; documentHash: string; by: { id: string; email: string } | null; at: string | null } | null;
+  diffusion: { by: { id: string; email: string } | null; at: string | null; packageHash: string; files: StudioPackageFile[] } | null;
+  headRevisionId: string; freshness: "a-jour" | "perimee"; replacedBy: string | null;
+  allowed: StudioPublicationTransition[];
+  events?: StudioPublicationEvent[];
+}
+export interface StudioPublicationTransitionInput { comment?: string; revisionId?: string; documentHash?: string }
+const studioPublicationPath = (p: string, s: string, id: string) => `${studioStudyPath(p, s)}/publications/${encodeURIComponent(id)}`;
+/** Fichier figé d'un paquet diffusé (téléchargement direct). */
+export function studioPackageFileUrl(p: string, s: string, id: string, format: StudioPackageFile["format"]): string {
+  return `${studioPublicationPath(p, s, id)}/files/${format}`;
+}
 export const api = {
   /** Études du projet ; `archives` : archivées comprises. */
   studioStudies: (p: string, archives?: boolean) => request<{ studies: StudioStudySummary[] }>(`${studioRoot(p)}${studioArchives(archives)}`),
@@ -833,6 +857,16 @@ export const api = {
   setStudioStudySteps: (p: string, s: string, steps: number[]) => request<StudioStudySteps>(`${studioStudyPath(p, s)}/steps`, { method: "PUT", body: JSON.stringify({ steps }) }),
   /** Études Studio rattachées à une étape du Parcours. */
   studioStudiesOfStep: (p: string, step: number) => request<{ studies: { id: string; name: string }[] }>(`/projects/${encodeURIComponent(p)}/studio/steps/${step}/studies`),
+  /** Publications d'une étude (tous statuts, plus récentes d'abord). */
+  studioPublications: (p: string, s: string) => request<{ publications: StudioPublication[] }>(`${studioStudyPath(p, s)}/publications`),
+  /** Détail d'une publication avec son journal. */
+  studioPublication: (p: string, s: string, id: string) => request<StudioPublication>(studioPublicationPath(p, s, id)),
+  /** Nouvelle publication `travail` d'une révision (tête par défaut) ; `requestId` : renvoi sans doublon. */
+  createStudioPublication: (p: string, s: string, v: string, input: { title?: string; revisionId?: string; comment?: string; requestId?: string }) => request<StudioPublication & { replayed: boolean }>(`${studioVariantPath(p, s, v)}/publications`, { method: "POST", body: JSON.stringify(input) }),
+  /** Transition (soumettre, approuver, refuser, diffuser, retirer) ; l'approbation porte revisionId + documentHash examinés. */
+  transitionStudioPublication: (p: string, s: string, id: string, action: StudioPublicationTransition, input: StudioPublicationTransitionInput) => request<StudioPublication>(`${studioPublicationPath(p, s, id)}/${action}`, { method: "POST", body: JSON.stringify(input) }),
+  /** Paquets diffusés du projet (pour le module Documents). */
+  studioPackages: (p: string) => request<{ packages: (StudioPublication & { studyName: string })[] }>(`/projects/${encodeURIComponent(p)}/studio/publications`),
   register: (email: string, password: string) =>
     request<CurrentUser>("/auth/register", { method: "POST", body: JSON.stringify({ email, password }) }),
   login: (email: string, password: string) =>

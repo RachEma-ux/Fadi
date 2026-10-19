@@ -1,0 +1,17 @@
+.studio-publications { margin-top: 24px; display: grid; gap: 12px; }
+.studio-publications-sub { margin: 0; opacity: 0.8; }
+.studio-publications-liste { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.studio-publication { border: 1px solid currentColor; border-color: rgba(127, 127, 127, 0.35); border-radius: 8px; padding: 12px; display: grid; gap: 8px; min-width: 0; }
+.studio-publication-tete { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; }
+.studio-publication-statut, .studio-publication-perimee { font-size: 0.8rem; border-radius: 999px; padding: 1px 8px; border: 1px solid rgba(127, 127, 127, 0.5); }
+.studio-publication-statut.statut-approuve, .studio-publication-statut.statut-diffuse { font-weight: 600; }
+.studio-publication-statut.statut-refuse, .studio-publication-statut.statut-retire { text-decoration: line-through; }
+.studio-publication-faits { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 0; }
+.studio-publication-faits dd { margin: 0; overflow-wrap: anywhere; }
+.studio-publication-paquet ul { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.studio-publication-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.studio-publication-confirmer { display: grid; gap: 6px; }
+.studio-publication-confirmer textarea { min-height: 3em; width: 100%; box-sizing: border-box; }
+.studio-publication-journal { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.studio-publication-journal q { display: block; opacity: 0.85; }
+.studio-publication-journal-bouton { justify-self: start; }

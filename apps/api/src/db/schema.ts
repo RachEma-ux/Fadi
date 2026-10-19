@@ -704,3 +704,60 @@ export const studioStudySteps = pgTable("studio_study_steps", {
   uniqueIndex("studio_study_steps_unique").on(t.studyId, t.stepNumber),
   index("studio_study_steps_step_idx").on(t.stepNumber),
 ]);
+
+/** Statuts d'une publication Studio : travail → soumis → approuve | refuse → diffuse ; retire (jamais supprimée). */
+export type StudioPublicationStatus = "travail" | "soumis" | "approuve" | "refuse" | "diffuse" | "retire";
+export type StudioPublicationAction = "creer" | "soumettre" | "approuver" | "refuser" | "diffuser" | "retirer";
+export type StudioPackageFormat = "svg" | "dxf" | "ifc" | "pdf";
+/** Fichier figé d'un paquet diffusé : contenu dans `volumes` (identifiant = SHA-256 du contenu). */
+export interface StudioPackageFile { format: StudioPackageFormat; fileName: string; mime: string; size: number; sha256: string }
+/** Paquet figé à la diffusion : révision, empreinte du document, métadonnées gelées des exports et fichiers. */
+export interface StudioPublicationPackage {
+  schema: "studio-publication-package/1";
+  revisionId: string;
+  documentHash: string;
+  meta: { projectCode: string; projectName: string; studyName: string; variantName: string; revisionCreatedAt: string };
+  files: StudioPackageFile[];
+}
+
+/** Publication d'une révision de variante Studio (FK composites « même étude / même variante » dans init.sql). */
+export const studioPublications = pgTable("studio_publications", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  studyId: text("study_id").notNull(),
+  variantId: text("variant_id").notNull(),
+  revisionId: text("revision_id").notNull(),
+  documentHash: text("document_hash").notNull(),
+  title: text("title").notNull(),
+  status: text("status").$type<StudioPublicationStatus>().notNull().default("travail"),
+  approvedRevisionId: text("approved_revision_id"),
+  approvedDocumentHash: text("approved_document_hash"),
+  approvedBy: text("approved_by").references(() => users.id, { onDelete: "restrict" }),
+  approvedAt: timestamp("approved_at", { withTimezone: true }),
+  package: jsonb("package").$type<StudioPublicationPackage | null>(),
+  packageHash: text("package_hash"),
+  diffusedBy: text("diffused_by").references(() => users.id, { onDelete: "restrict" }),
+  diffusedAt: timestamp("diffused_at", { withTimezone: true }),
+  requestId: text("request_id"),
+  createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  index("studio_publications_project_idx").on(t.projectId, t.createdAt),
+  index("studio_publications_study_idx").on(t.studyId, t.createdAt),
+]);
+
+/** Journal append-only des transitions d'une publication (UPDATE refusée par déclencheur, init.sql). */
+export const studioPublicationEvents = pgTable("studio_publication_events", {
+  id: text("id").primaryKey(),
+  publicationId: text("publication_id").notNull().references(() => studioPublications.id, { onDelete: "cascade" }),
+  action: text("action").$type<StudioPublicationAction>().notNull(),
+  fromStatus: text("from_status").$type<StudioPublicationStatus | null>(),
+  toStatus: text("to_status").$type<StudioPublicationStatus>().notNull(),
+  authorId: text("author_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  comment: text("comment"),
+  revisionId: text("revision_id").notNull(),
+  documentHash: text("document_hash").notNull(),
+  headRevisionId: text("head_revision_id").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("studio_publication_events_publication_idx").on(t.publicationId, t.createdAt)]);
