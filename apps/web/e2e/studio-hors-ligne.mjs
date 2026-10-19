@@ -133,7 +133,8 @@ try {
     await proprietes.getByRole("button", { name: "Ajouter au dessin", exact: true }).click();
   }
   const enregistrer = async () => (await atteindre(outils, ':is(button)[aria-label="Enregistrer"], :is(button)[aria-label="Réessayer la sauvegarde"]')).click();
-  const attendreEtat = (code) => page.locator(`[data-studio-hors-ligne="${code}"]`).waitFor();
+  // Un changement d'état peut suivre une relance différée (retour du réseau, renvoi d'enveloppe) : 40 s au plus.
+  const attendreEtat = (code) => page.locator(`[data-studio-hors-ligne="${code}"]`).waitFor({ timeout: 40000 });
 
   // Ouverture en ligne : la variante est lue (mémorisée sur l'appareil) et le service worker prend la page en charge.
   await page.goto(url);
@@ -274,9 +275,13 @@ try {
   check("annuler : seul le pas dessiné après l'enveloppe s'annule", (await rectangles.count()) === nbAvant + 1);
   await page.keyboard.press("Control+y");
   await nbRect(nbAvant + 2);
+  // Le brouillon est écrit dans IndexedDB de façon asynchrone (écritures sérialisées) : attendre qu'il porte les deux
+  // pas avant de recharger, puis que la planche rechargée les affiche — attendre l'état, ne pas le supposer.
+  for (let i = 0; i < 50 && (await brouillonLocal(page, cle))?.pas?.length !== 2; i++) await page.waitForTimeout(100);
   await page.reload();
   await outils.waitFor();
   await page.locator('[data-studio-hors-ligne="en-attente"][data-studio-en-attente="1"]').waitFor();
+  await nbRect(nbAvant + 2).catch(() => {});
   check("rechargement hors ligne : enveloppe et pas suivant conservés", (await rectangles.count()) === nbAvant + 2 && (await brouillonLocal(page, cle))?.pasCouverts === 1);
   envois.length = 0;
   await context.setOffline(false);
