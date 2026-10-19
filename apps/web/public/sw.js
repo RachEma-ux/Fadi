@@ -8,6 +8,16 @@
  * l'identifiant du build, est rempli dès l'installation (morceaux de
  * l'application, moteurs) et les caches des builds précédents sont
  * supprimés à l'activation.
+ *
+ * Studio (A.5-09, B.3-09, B.3-10) : la coquille et l'éditeur de Studio (routes
+ * /studio/…, morceaux chargés paresseusement, Worker de calcul) font partie de
+ * la liste anticipée ; une variante déjà lue s'ouvre donc sans réseau. Les
+ * brouillons et enveloppes non confirmées de Studio vivent dans IndexedDB
+ * (`studioBrouillons`) : ce service worker n'y touche jamais, une mise à jour
+ * ne peut donc pas les perdre. Pendant une mise à jour, le cache du build
+ * précédent est gardé tant qu'une page est ouverte (elle peut encore demander
+ * un morceau de son propre build, hors ligne) ; il disparaît à l'activation
+ * suivante.
  */
 // Les marqueurs ci-dessous sont remplacés au build (vite.config.ts) : l'identifiant du commit (un cache par build) et la
 // liste des fichiers à mettre en cache dès l'installation (application, morceaux chargés paresseusement, moteurs).
@@ -30,8 +40,13 @@ self.addEventListener("install", (event) =>
 self.addEventListener("activate", (event) =>
   event.waitUntil(
     (async () => {
-      // Purge des caches des builds précédents : rien de périmé ne survit à une mise à jour.
-      for (const name of await caches.keys()) if (name.startsWith("fadi-shell-") && name !== CACHE) await caches.delete(name);
+      // Purge des caches des builds précédents : rien de périmé ne survit à une mise à jour. Si une page est ouverte,
+      // le dernier cache précédent (les clés suivent l'ordre de création) reste le temps de cette page : ses morceaux
+      // paresseux (Studio compris) restent servis hors ligne, ses commandes non synchronisées restent utilisables.
+      const anciens = (await caches.keys()).filter((name) => name.startsWith("fadi-shell-") && name !== CACHE);
+      const ouvertes = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      const garde = ouvertes.length ? anciens[anciens.length - 1] : undefined;
+      for (const name of anciens) if (name !== garde) await caches.delete(name);
       await self.clients.claim();
     })(),
   ),
@@ -41,6 +56,9 @@ async function cacheFirst(request) {
   const cache = await caches.open(CACHE);
   const hit = await cache.match(request);
   if (hit) return hit;
+  // Morceau d'un build précédent encore ouvert (mise à jour en cours) : servi depuis le cache gardé.
+  const ancien = await caches.match(request);
+  if (ancien) return ancien;
   const response = await fetch(request);
   if (response.ok) cache.put(request, response.clone());
   return response;

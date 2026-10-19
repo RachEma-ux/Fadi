@@ -61,6 +61,7 @@ import { PanneauProprietes } from "./variante/PanneauProprietes";
 import { RevisionsPanel } from "./variante/PanneauRevisions";
 import { useClavierStudio } from "./variante/useClavierStudio";
 import { useEnregistrement } from "./variante/useEnregistrement";
+import { useChargementVariante } from "./hors-ligne/useChargementVariante";
 import { useGardeNavigation } from "./variante/useGardeNavigation";
 import { Vue3D } from "./variante/Vue3D";
 import "./studio.css";
@@ -119,13 +120,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const revisionsFeuille = useQuery({ queryKey: ["studio-revisions", projectId, studyId, variantId], queryFn: () => api.studioRevisions(projectId, studyId, variantId), retry: (n, e) => !refused(e) && n < 1, enabled: dialogue === "feuille" });
   const revisionAffichee = revisionsFeuille.data?.revisions.find(r => r.id === context?.revision.id);
 
-  useEffect(() => {
-    alive.current = true;
-    let active = true;
-    const read = revisionId === null ? api.studioContext(projectId, studyId, variantId) : api.studioRevision(projectId, studyId, variantId, revisionId);
-    void read.then(c => { if (active) { setContext(c); setBrouillon(creerBrouillon(c.revision.document)); } }).catch((e: unknown) => { if (active) { setLoadError(e); setError(refused(e) ? "" : "Étude indisponible ou accès refusé."); } }).finally(() => { if (active) setLoading(false); });
-    return () => { active = false; alive.current = false; };
-  }, [projectId, studyId, variantId, revisionId]);
+  // Lecture de la variante, avec reprise du brouillon hors ligne conservé sur l'appareil (`hors-ligne/`).
+  useChargementVariante({ projectId, studyId, variantId, revisionId, alive, setContext, setBrouillon, setLoadError, setError, setLoading, reprendre: enr.reprendre });
   useGardeNavigation(dirty);
 
   // ——— Sélection et calques (lectures dérivées du brouillon) ———
@@ -360,9 +356,10 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const etat = historical ? "Révision historique" : pending ? "Sauvegarde en cours…" : uncertain ? "Sauvegarde non confirmée" : commands.length ? "Brouillon non enregistré" : enr.saved ? "Enregistré sur le serveur" : "Version serveur chargée";
   return <section className="studio-workspace" ref={shell} aria-label="Studio" data-studio-variante={variantId} data-studio-revision-vue={historical ? revisionId : undefined}>
     <EnTeteStudio context={context} />
-    <AlerteStudio error={error} blocked={blocked} />
+    <AlerteStudio error={error} blocked={blocked && !enr.horsLigne.conflit} surRecharger={() => void enr.rechargerServeur()} />
     {loading && <p role="status">Chargement de la planche…</p>}
-    {context && drawing && <><BandeauVariante projectId={projectId} studyId={studyId} variantId={variantId} context={context} historical={historical} etat={etat} commentaires={commentaires} surCommentaires={() => setCommentaires(v => !v)} />
+    {context && drawing && <><BandeauVariante projectId={projectId} studyId={studyId} variantId={variantId} context={context} historical={historical} etat={etat} commentaires={commentaires} surCommentaires={() => setCommentaires(v => !v)}
+      connexion={{ etat: enr.horsLigne, surRecharger: () => void enr.rechargerServeur(), surReporter: () => void enr.reporter() }} />
     <BarreOutils outil={tool} outilDisponible={toolAvailable} commandeDisponible={commandAvailable} libelleCommande={uncertain ? { enregistrer: "Réessayer la sauvegarde" } : undefined}
       basculeActive={{ "accrochage-sommets": accrocheSommets, "accrochage-grille": accrocheGrille, "vue-3d": vue3d }} lienCommande={liens} surOutil={runTool} surCommande={runCommand} surLien={surLien} />
     <p className="studio-undo-scope" data-studio-annuler-portee>{`Annuler et Rétablir ne portent que sur les modifications non enregistrées (${commands.length} commande(s) en attente) ; une révision enregistrée ne s’annule pas ici.`}</p>
