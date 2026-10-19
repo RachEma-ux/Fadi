@@ -16,6 +16,7 @@ export const LIBELLES_RAISON_FIDELITE: Readonly<Record<StudioRaisonFidelite, str
   "texte-exact": "Texte exact",
   "extrusion-exacte": "Extrusion exacte",
   "profil-exact": "Profil exact",
+  "ouverture-evidee": "Ouverture évidée dans le mur (porte / fenêtre si déclarée)",
   "extrusion-non-portee": "Extrusion non portée (2D seulement)",
   "arcs-discretises": "Arcs discrétisés en segments",
   "cote-eclatee": "Cote éclatée en lignes et texte, non associative",
@@ -23,6 +24,7 @@ export const LIBELLES_RAISON_FIDELITE: Readonly<Record<StudioRaisonFidelite, str
   "texte-ascii-echappe": "Caractères accentués échappés en ASCII",
   "texte-remplace": "Caractères hors plan de base remplacés par « ? »",
   "texte-tronque": "Texte tronqué à 250 caractères",
+  "ouverture-en-lacune": "Ouverture tracée en lacune du mur, allège non représentée",
   "non-extrude": "Objet non extrudé, absent de l’IFC",
   "cote-hors-ifc": "Cote non écrite en IFC",
   "annotation-hors-ifc": "Annotation non écrite en IFC",
@@ -34,6 +36,7 @@ export const LIBELLES_RAISON_FIDELITE: Readonly<Record<StudioRaisonFidelite, str
 export const LIBELLES_TYPE_ELEMENT: Readonly<Record<string, string>> = Object.freeze({
   line: "Ligne", rectangle: "Rectangle", circle: "Cercle", arc: "Arc", polyline: "Polyligne",
   dimension: "Cote", "angular-dimension": "Cote angulaire", text: "Texte", box: "Boîte", prism: "Prisme",
+  wall: "Mur", opening: "Ouverture",
 });
 export const libelleType = (type: string): string => (Object.hasOwn(LIBELLES_TYPE_ELEMENT, type) ? LIBELLES_TYPE_ELEMENT[type]! : type);
 

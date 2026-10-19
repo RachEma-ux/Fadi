@@ -152,3 +152,27 @@ describe("Rapport de fidélité par format", () => {
     expect(() => studioRapportFidelite({ ...vide, units: "mm" } as never, "svg")).toThrow();
   });
 });
+
+describe("Architecture (A.4) : murs et ouvertures", () => {
+  const doc = (): StudioDocument => ({
+    id: "doc-archi", schemaVersion: "studio-document/1", units: "m", frame: "local-2d",
+    layers: [{ id: "cache", name: "Caché", visible: false, locked: false }],
+    objects: [],
+    architecture: [
+      { id: "m1", type: "wall", layerId: "cache", axis: [{ x: 0, y: 0 }, { x: 6, y: 0 }], thickness: 0.2, height: 3, base: 0, justification: "center" },
+      { id: "o1", type: "opening", hostId: "m1", position: 2.5, width: 1, height: 2.1, sill: 0, kind: "porte" },
+    ],
+  });
+  it("mur exact partout ; ouverture en lacune (approchée) en 2D, évidée (exacte) en IFC ; l'ouverture suit le calque de son mur", () => {
+    for (const f of ["svg", "dxf"] as const) {
+      const r = studioRapportFidelite(doc(), f);
+      expect(ligne(r.lignes, "wall", "trace-exact")).toMatchObject({ categorie: "architecture", statut: "exact", ids: ["m1"] });
+      expect(ligne(r.lignes, "opening", "ouverture-en-lacune")).toMatchObject({ statut: "approche", ids: ["o1"] });
+      expect(r.calques.elementsSurCalquesMasques).toBe(2);
+    }
+    const ifc = studioRapportFidelite(doc(), "ifc");
+    expect(ligne(ifc.lignes, "wall", "extrusion-exacte")?.statut).toBe("exact");
+    expect(ligne(ifc.lignes, "opening", "ouverture-evidee")?.statut).toBe("exact");
+    expect(ifc.lignes.some((l) => l.raison === "type-sans-capacite")).toBe(false);
+  });
+});

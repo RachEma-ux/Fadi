@@ -9667,5 +9667,7 @@
 "Type sans capacité déclarée, non exporté": "Type without a declared capability, not exported",
 "Prisme": "Prism",
 "Contenu conservé masqué, hors du cadrage": "Content kept hidden, outside the framing",
-"Calque éteint, contenu exporté": "Layer turned off, content exported"
+"Calque éteint, contenu exporté": "Layer turned off, content exported",
+"Ouverture évidée dans le mur (porte / fenêtre si déclarée)": "Opening voided in the wall (door / window if declared)",
+"Ouverture tracée en lacune du mur, allège non représentée": "Opening drawn as a gap in the wall, sill not shown"
 }
