@@ -28,7 +28,7 @@
  */
 import { useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { applyStudioCommands, STUDIO_DEFAULT_LAYER_ID, STUDIO_TOOLS, type StudioCommand, type StudioLayer, type StudioPoint } from "@parcours/atelier-model";
+import { applyStudioCommands, STUDIO_DEFAULT_LAYER_ID, STUDIO_TOOLS, type StudioCommand, type StudioLayer, type StudioPoint, type StudioWall } from "@parcours/atelier-model";
 import { api, studioExportUrl, type StudioContext } from "../../lib/api";
 import { useAuth } from "../../lib/auth-context";
 import { LOCALE } from "../../lib/i18n";
@@ -97,6 +97,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const [dialogue, setDialogue] = useState<DialogueStudio>(null);
   // Rapport de fidélité du dernier export lancé (E.6-03) : boîte non modale, fermée à la demande.
   const [rapportExport, setRapportExport] = useState<"exporter-svg" | "exporter-dxf" | "exporter-ifc" | null>(null);
+  // Compteur des lancements d'export : chaque export a son propre rapport (jamais celui d'une révision précédente).
+  const [exportsLances, setExportsLances] = useState(0);
   const { user } = useAuth();
   const [calqueActif, setCalqueActif] = useState<string>(STUDIO_DEFAULT_LAYER_ID);
   const [nomCalque, setNomCalque] = useState("");
@@ -150,6 +152,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const selectionIds = drawing ? selectionValide(drawing, selection) : [];
   const selectionSet = new Set(selectionIds);
   const itemDe = (id: string | undefined) => (id && drawing ? elements(drawing).find(e => e.id === id) ?? null : null);
+  // Calque d'un élément choisi, murs (A.4) compris : `elements` ne parcourt pas `architecture`.
+  const calqueDe = (id: string): string => itemDe(id)?.layerId ?? drawing?.architecture?.find((a): a is StudioWall => a.id === id && a.type === "wall")?.layerId ?? STUDIO_DEFAULT_LAYER_ID;
   const selected = selectionIds.length === 1 ? itemDe(selectionIds[0]) : null;
   // Objet du panneau Architecture : l'ouverture ou le mur désigné, ou le seul mur de la sélection.
   const panneauArchi = elementArchitectural(drawing, selectionArchi) ? selectionArchi
@@ -338,7 +342,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     }
     if (toolId === "studio.objet.calque") {
       if (!selectionIds.length || !actif) { setInfo("Sélectionnez d’abord l’objet à placer sur le calque actif."); return; }
-      const ids = selectionIds.filter(id => (itemDe(id)?.layerId ?? STUDIO_DEFAULT_LAYER_ID) !== actif.id);
+      const ids = selectionIds.filter(id => calqueDe(id) !== actif.id);
       if (!ids.length) { setInfo("L’objet est déjà sur le calque actif."); return; }
       apply([{ toolId: "studio.objet.calque", params: { ids, layerId: actif.id } }]);
     }
@@ -406,6 +410,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   function surLien(id: IdCommandeEditeur) {
     if (id !== "exporter-svg" && id !== "exporter-dxf" && id !== "exporter-ifc") return;
     if (commands.length) setInfo("L’export porte sur la révision enregistrée affichée, pas sur les modifications non enregistrées.");
+    setExportsLances((n) => n + 1);
     setRapportExport(id);
   }
   const formesChoisies = drawing ? formesSelectionnees(drawing, selectionIds) : [];
@@ -489,6 +494,6 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       surImporter={(cs, r) => { if (!apply(cs)) return false; setDialogue(null); setInfo(`Import DXF ajouté au brouillon : ${r.rapport.entites.total} objet(s). Enregistrez pour l’envoyer au serveur.`); return true; }}
       revision={context.revision.document} brouillonNonEnregistre={commands.length > 0}
       cartouche={() => cartoucheInitial({ projet: projet.data, etude: context.study, variante: context.variant, revision: { id: context.revision.id, ...revisionAffichee }, utilisateur: user })} />
-    {rapportExport && liens[rapportExport] && <RapportExport format={FORMATS_RAPPORT[rapportExport]!} urlExport={liens[rapportExport]!} surFermer={() => setRapportExport(null)} />}</>}
+    {rapportExport && liens[rapportExport] && <RapportExport format={FORMATS_RAPPORT[rapportExport]!} urlExport={liens[rapportExport]!} exportId={`${context?.revision.id ?? ""}#${exportsLances}`} surFermer={() => setRapportExport(null)} />}</>}
   </section>;
 }
