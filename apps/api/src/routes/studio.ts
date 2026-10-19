@@ -8,6 +8,7 @@ import { compareStudioRevisions, createStudioStudy, createStudioVariant, exportS
 import { createStudioComment, createStudioObservation, deleteStudioComment, listStudioComments, studioCommentSchema, studioObservationSchema, studioObservationTransitionSchema, transitionStudioObservation } from "../lib/studio-commentaires.js";
 import { listStudiesOfStep, listStudioStudySteps, setStudioStudySteps, studioStudyStepsSchema } from "../lib/studio-liens.js";
 import { renameStudioStudy, renameStudioVariant, setStudioStudyArchived, setStudioVariantArchived, studioRenameSchema } from "../lib/studio-variantes.js";
+import { studioExigencesRouter } from "./studio-exigences.js";
 import { studioPublicationsRouter } from "./studio-publications.js";
 import { studioPreferencesRouter } from "./studio-preferences.js";
 
@@ -216,3 +217,5 @@ studioRouter.get("/steps/:stepNumber/studies", endpoint(async (req, res) => {
   res.json(await listStudiesOfStep(scope(req).projectId, Number(raw), req.user!.id));
 }));
 studioRouter.use(studioPublicationsRouter);
+// Exigences versionnées et contrôles (E.1-02 à E.1-06) : `routes/studio-exigences.ts`.
+studioRouter.use(studioExigencesRouter);

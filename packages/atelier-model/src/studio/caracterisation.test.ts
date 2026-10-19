@@ -304,6 +304,8 @@ const AJOUTS = {
     "studio.dessin.cote-angulaire", "studio.dessin.texte",
     // Architecture (A.4, extension additive consignée) : murs et ouvertures.
     "studio.architecture.mur", "studio.architecture.ouverture", "studio.architecture.modifier", "studio.architecture.supprimer",
+    // Propriétés BIM déclarées (E.1-01, extension additive consignée, champ facultatif `proprietes` du document).
+    "studio.propriete.definir", "studio.propriete.retirer",
   ]),
   types: new Set(["angular-dimension", "text", "wall", "opening"]),
   exports: new Set([
@@ -316,6 +318,10 @@ const AJOUTS = {
     // Rapport de fidélité des exports (E.6-03, `echanges/rapport-fidelite.ts`).
     "STUDIO_CAPACITES_EXPORT", "STUDIO_FORMATS_ECHANGE", "STUDIO_LISTES_ECHANGE", "STUDIO_RAISONS_FIDELITE", "STUDIO_RAPPORT_FIDELITE_SCHEMA",
     "STUDIO_STATUTS_FIDELITE", "studioRapportFidelite",
+    // Propriétés, exigences versionnées et écarts (E.1-01 à E.1-06, `exigences/`).
+    "STUDIO_LIMITES_EXIGENCES", "STUDIO_LIMITES_PROPRIETES", "ciblePropriete", "proprietesDe", "validerPropriete", "valeurPropriete",
+    "SCHEMA_PROPRIETE", "SCHEMA_RETRAIT_PROPRIETE", "accepterExigence", "COMPARAISONS_EXIGENCE", "exigenceUtilisable", "preparerVersion",
+    "UNITE_NOMBRE", "uniteMetrique", "validerExigence", "validerExigences", "validerMetrique", "comparer", "controlerExigences", "mesurerMetrique",
   ]),
 };
 function sansAjouts(value: unknown): unknown {
@@ -327,7 +333,7 @@ function sansAjouts(value: unknown): unknown {
   if (!value || typeof value !== "object") return value;
   const out = Object.fromEntries(Object.entries(value).map(([k, v]) => [k, sansAjouts(v)]));
   const props = out.properties as Record<string, unknown> | undefined;
-  if (props && "schemaVersion" in props) { delete props.annotations; delete props.architecture; }
+  if (props && "schemaVersion" in props) { delete props.annotations; delete props.architecture; delete props.proprietes; }
   return out;
 }
 

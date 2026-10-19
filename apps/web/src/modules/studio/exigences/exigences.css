@@ -1,0 +1,20 @@
+/* Panneau « Propriétés et exigences » de Studio (E.1). */
+.studio-exigences{margin-top:24px;padding:22px;background:#fff;border:1px solid #d5e1e4;border-radius:12px;min-width:0;overflow-wrap:anywhere;font-size:13px}
+.studio-exigences h2{font-size:17px;margin:0 0 8px;display:flex;align-items:center;gap:8px}.studio-exigences h3{font-size:15px;margin:20px 0 8px}.studio-exigences h4{font-size:14px;margin:14px 0 6px}
+.studio-exigences p{color:#4f666d;margin:6px 0}
+.studio-exigences-formulaire{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:12px 0;align-items:end}
+.studio-exigences-formulaire label{display:flex;flex-direction:column;gap:6px;margin:0}
+.studio-exigences select,.studio-exigences input{border:1px solid #b9cbd0;border-radius:7px;padding:9px;font:inherit;min-height:40px;box-sizing:border-box;max-width:100%}
+.studio-exigences-actions{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0;grid-column:1/-1}
+.studio-exigences-bouton{display:inline-flex;align-items:center;gap:6px;min-height:44px;box-sizing:border-box;border:1px solid #b9cdd0;border-radius:8px;padding:9px 13px;background:#fff;color:var(--studio-ink,#173b43);font:inherit;cursor:pointer}
+.studio-exigences-bouton:hover:not(:disabled){background:#edf5f3;border-color:#1a6b70}.studio-exigences-bouton:disabled{opacity:.48;cursor:not-allowed}
+.studio-exigences-liste{padding-left:18px;display:grid;gap:8px}
+.studio-exigences-controles{padding-left:18px;display:grid;gap:8px}
+.studio-exigences-defile{overflow-x:auto;max-width:100%}
+.studio-exigences table{border-collapse:collapse;width:100%;min-width:520px}
+.studio-exigences th,.studio-exigences td{border-bottom:1px solid #e3eaec;padding:6px 8px;text-align:left;vertical-align:top}
+.studio-exigences tr[data-statut="non-satisfaite"] strong{color:#a23a1d}.studio-exigences tr[data-statut="satisfaite"] strong{color:#1a6b70}
+.studio-exigences-ne{color:#9a5b17;font-style:italic}
+.studio-exigences-etat{display:flex;flex-wrap:wrap;gap:4px}
+.studio-exigences-unite{font-size:12px}
+@media(max-width:540px){.studio-exigences{padding:14px}}
