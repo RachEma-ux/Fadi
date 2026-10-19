@@ -3,7 +3,7 @@ import dico from "../../../lib/i18n/en.json";
 import { Traducteur } from "../../../lib/i18n/traduire";
 import {
   COMMENTAIRE_REQUIS, corpsTransition, LIBELLE_ACTION, LIBELLE_ACTUALITE, LIBELLE_DIFFUSION, LIBELLE_EVENEMENT, LIBELLE_STATUT, LIBELLE_TRAVAIL,
-  libelleEcart, messageRefus, ORDRE_ACTIONS,
+  libelleActualite, libelleEcart, messageRefus, ORDRE_ACTIONS,
 } from "./publication-ui";
 
 const pub = { revisionId: "studio_revision_0123456789abcdef", documentHash: "a".repeat(64), manifestHash: "c".repeat(64) };
@@ -31,6 +31,13 @@ describe("Publications Studio — règles d'affichage pures", () => {
     expect(messageRefus(500, null)).toBe("Action refusée par le serveur.");
   });
 
+  it("actualité : « à jour » seulement après comparaison des documents, sinon « non vérifiés »", () => {
+    expect(libelleActualite({ freshness: "a-jour", documentsCheck: "verifiee" })).toBe("Contenus à jour");
+    expect(libelleActualite({ freshness: "a-jour", documentsCheck: "non-verifiee" })).toBe("Sources à jour, documents non vérifiés");
+    expect(libelleActualite({ freshness: "a-jour" })).toBe("Sources à jour, documents non vérifiés");
+    expect(libelleActualite({ freshness: "perimee", documentsCheck: "non-verifiee" })).toBe("Contenus périmés");
+  });
+
   it("écarts du manifeste : source déplacée, source introuvable, métadonnée", () => {
     expect(libelleEcart({ type: "source", role: "principale", variantId: "v", revisionFigee: "r_aaaaaaaa11111111", revisionCourante: "r_bbbbbbbb22222222" })).toContain("22222222");
     expect(libelleEcart({ type: "source", role: "coordonnee", variantId: "v", revisionFigee: "r_aaaaaaaa11111111", revisionCourante: null })).toContain("introuvable");
@@ -51,7 +58,7 @@ describe("Publications Studio — règles d'affichage pures", () => {
       libelleEcart({ type: "source", role: "principale", variantId: "v", revisionFigee: "r_aaaaaaaa11111111", revisionCourante: null }),
       libelleEcart({ type: "meta", champ: "variantName", figee: "A", courante: "B" }),
       libelleEcart({ type: "documents", formats: ["pdf"] }),
-      "Manifeste", "Remplacée", "Retirée par", "Travail", "Diffusion", "Actualité", "Variantes coordonnées (facultatif)",
+      libelleActualite({ freshness: "a-jour" }), "Manifeste", "Remplacée", "Retirée par", "Travail", "Diffusion", "Actualité", "Variantes coordonnées (facultatif)",
       "La révision courante de la variante, celle des variantes coordonnées et les empreintes des documents sont figées dans le manifeste.",
       "Le manifeste est reconstruit depuis les révisions courantes ; l’approbation précédente ne vaut plus et le dossier repasse en brouillon.",
       "Une publication porte sur une révision précise d’une variante, figée dans un manifeste. Propriétaire et éditeurs soumettent ; le propriétaire approuve, refuse, diffuse et retire ; un lecteur consulte. Une publication approuvée se diffuse tant que son manifeste n’a pas changé. Rien n’est supprimé : retrait et remplacement sont journalisés.",

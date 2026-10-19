@@ -226,6 +226,50 @@ export const actualiteDe = (ecarts: readonly EcartManifeste[]): Actualite => (ec
  */
 export const actualiteParEmpreinte = (figee: string | null, courante: string): Actualite => (figee !== null && figee === courante ? "a-jour" : "perimee");
 
+// --- Cache de régénération (vues de liste) ---------------------------------------------------------------------------
+
+/**
+ * Clé d'une régénération : empreinte du document de la révision figée, métadonnées figées (noms, date de révision), clé
+ * IFC (étude | variante) et version des exporteurs. Mêmes entrées, mêmes octets : la clé ne dépend de rien d'autre.
+ */
+export function cleRegeneration(entree: { documentHash: string; meta: ManifesteMeta; ifcKey: string; versionExporteurs: string }): string {
+  return sha256(canonicalJson({
+    schema: "studio-regeneration/1", documentHash: entree.documentHash, ifcKey: entree.ifcKey, versionExporteurs: entree.versionExporteurs,
+    meta: { projectCode: entree.meta.projectCode, projectName: entree.meta.projectName, studyName: entree.meta.studyName, variantName: entree.meta.variantName, revisionCreatedAt: entree.meta.revisionCreatedAt },
+  }));
+}
+
+/** Cache borné (le plus ancien sort en premier) des empreintes de documents régénérés, en mémoire du processus. */
+export class CacheRegeneration {
+  private entrees = new Map<string, ManifesteDocument[]>();
+  constructor(private readonly limite = 2000) {}
+  get(cle: string): ManifesteDocument[] | undefined {
+    const docs = this.entrees.get(cle);
+    if (docs) { this.entrees.delete(cle); this.entrees.set(cle, docs); }
+    return docs;
+  }
+  set(cle: string, docs: readonly ManifesteDocument[]): void {
+    this.entrees.delete(cle);
+    this.entrees.set(cle, docs.map((d) => ({ ...d })));
+    while (this.entrees.size > this.limite) this.entrees.delete(this.entrees.keys().next().value!);
+  }
+  get taille(): number { return this.entrees.size; }
+}
+
+/** Contrôle des documents régénérés : `verifiee` (comparés), `non-verifiee` (vue de liste sans régénération en cache). */
+export type ControleDocuments = "verifiee" | "non-verifiee";
+/**
+ * Actualité d'une vue : écarts de sources et de noms, plus les documents seulement s'ils sont connus. Sans documents
+ * régénérés (cache absent en vue de liste), l'actualité reste celle des sources et des noms et les documents sont
+ * déclarés « non vérifiée » — jamais « à jour » par défaut.
+ */
+export function actualiteVue(
+  m: ManifestePublication, courantes: readonly SourceCourante[], meta: Omit<ManifesteMeta, "revisionCreatedAt">, documents: readonly ManifesteDocument[] | undefined,
+): { ecarts: EcartManifeste[]; actualite: Actualite; documents: ControleDocuments } {
+  const ecarts = ecartsManifeste(m, courantes, meta, documents ?? null);
+  return { ecarts, actualite: actualiteDe(ecarts), documents: documents ? "verifiee" : "non-verifiee" };
+}
+
 /**
  * Diffusion plus récente de la même variante qui remplace un dossier antérieur au lot E.4 (sans colonne de remplacement) :
  * la première diffusion en vigueur postérieure à la sienne, sinon null.

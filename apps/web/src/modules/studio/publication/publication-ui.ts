@@ -19,6 +19,11 @@ export const LIBELLE_DIFFUSION: Readonly<Record<StudioPublicationDiffusionStatus
 export const LIBELLE_ACTUALITE: Readonly<Record<"a-jour" | "perimee", string>> = Object.freeze({
   "a-jour": "Contenus à jour", perimee: "Contenus périmés",
 });
+/** Libellé d'actualité : « à jour » seulement si les documents ont été comparés ; sinon la vérification est déclarée absente. */
+export function libelleActualite(p: Pick<StudioPublication, "freshness" | "documentsCheck">): string {
+  if (p.freshness === "perimee") return LIBELLE_ACTUALITE.perimee;
+  return p.documentsCheck === "verifiee" ? LIBELLE_ACTUALITE["a-jour"] : "Sources à jour, documents non vérifiés";
+}
 export const LIBELLE_ACTION: Readonly<Record<StudioPublicationTransition, string>> = Object.freeze({
   soumettre: "Soumettre", approuver: "Approuver", refuser: "Refuser", diffuser: "Diffuser", retirer: "Retirer", actualiser: "Actualiser le manifeste",
 });

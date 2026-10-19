@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  actualiteDe, actualiteParEmpreinte, besoinTransition, canonicalJson, construireManifeste, controlerApprobation, controlerEnsembleExamine, controlerTransition, diffusionPlusRecente, documentsRegeneres,
+  actualiteDe, actualiteParEmpreinte, actualiteVue, besoinTransition, CacheRegeneration, canonicalJson, cleRegeneration, construireManifeste, controlerApprobation, controlerEnsembleExamine, controlerTransition, diffusionPlusRecente, documentsRegeneres,
   dimensionsDe, ecartsManifeste, empreinteManifeste, REGLES_TRANSITION, ROLES_CAPACITE, sha256, statutCombine, STUDIO_PUBLICATION_ACTIONS,
   type EtatPublication, type ManifesteMeta, type ManifesteSource,
 } from "./studio-publication-statuts.js";
@@ -144,6 +144,39 @@ describe("Publications Studio — manifeste figé multi-sources (E.4-03 à E.4-0
     const v = controlerTransition("actualiser", etat({ travail: "approuve", actualite }));
     expect(v.ok && v.vers).toEqual({ travail: "brouillon", diffusion: "non-diffuse" });
     expect(controlerTransition("actualiser", etat({ travail: "approuve", actualite: actualiteParEmpreinte(figee, figee) })).ok).toBe(false);
+  });
+
+  it("cache de régénération : clé = empreinte du document figé, noms figés, clé IFC et version des exporteurs", () => {
+    const base = { documentHash: H("a"), meta, ifcKey: "s|v", versionExporteurs: "studio-package-exports/1" };
+    const k = cleRegeneration(base);
+    expect(k).toMatch(/^[0-9a-f]{64}$/);
+    expect(cleRegeneration({ ...base, meta: { ...meta } })).toBe(k);
+    expect(cleRegeneration({ versionExporteurs: base.versionExporteurs, ifcKey: base.ifcKey, meta: { ...meta }, documentHash: base.documentHash })).toBe(k);
+    for (const autre of [
+      { ...base, documentHash: H("b") }, { ...base, ifcKey: "s|w" }, { ...base, versionExporteurs: "studio-package-exports/2" },
+      { ...base, meta: { ...meta, variantName: "B" } }, { ...base, meta: { ...meta, projectCode: "P2" } }, { ...base, meta: { ...meta, revisionCreatedAt: "2026-10-20T00:00:00.000Z" } },
+    ]) expect(cleRegeneration(autre)).not.toBe(k);
+    const cache = new CacheRegeneration(2);
+    expect(cache.get(k)).toBeUndefined();
+    cache.set(k, docs);
+    expect(cache.get(k)).toEqual(docs);
+    cache.set("k2", docs); cache.get(k); cache.set("k3", docs);
+    expect(cache.taille).toBe(2);
+    expect(cache.get("k2")).toBeUndefined();
+    expect(cache.get(k)).toEqual(docs);
+  });
+
+  it("vue de liste sans régénération en cache : documents « non vérifiée », actualité des sources et des noms seulement", () => {
+    const m = construireManifeste([principale, coord], meta, docs);
+    const noms = { projectCode: "P1", projectName: "Projet", studyName: "Étude", variantName: "A" };
+    const tetes = [{ variantId: "v_a", headRevisionId: "r_a1" }, { variantId: "v_b", headRevisionId: "r_b1" }];
+    expect(actualiteVue(m, tetes, noms, undefined)).toEqual({ ecarts: [], actualite: "a-jour", documents: "non-verifiee" });
+    expect(actualiteVue(m, tetes, noms, docs)).toEqual({ ecarts: [], actualite: "a-jour", documents: "verifiee" });
+    const regeneres = [docs[0]!, { ...docs[1]!, sha256: H("9") }];
+    expect(actualiteVue(m, tetes, noms, regeneres)).toEqual({ ecarts: [{ type: "documents", formats: ["dxf"] }], actualite: "perimee", documents: "verifiee" });
+    const deplacee = actualiteVue(m, [tetes[0]!, { variantId: "v_b", headRevisionId: "r_b2" }], noms, undefined);
+    expect(deplacee.actualite).toBe("perimee");
+    expect(deplacee.documents).toBe("non-verifiee");
   });
 
   it("paquet antérieur au lot E.4 remplacé par une diffusion plus récente de la même variante : « remplacé », un seul en vigueur", () => {

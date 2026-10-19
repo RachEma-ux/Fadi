@@ -900,6 +900,8 @@ export interface StudioPublication {
   approval: { revisionId: string; documentHash: string; manifestHash?: string | null; by: { id: string; email: string } | null; at: string | null } | null;
   diffusion: { by: { id: string; email: string } | null; at: string | null; packageHash: string; manifestHash?: string | null; files: StudioPackageFile[] } | null;
   headRevisionId: string; freshness: "a-jour" | "perimee"; drift: StudioManifestDrift[]; replacedBy: string | null;
+  /** Documents régénérés comparés, ou non vérifiés (liste sans régénération en cache) ; l'actualité ne vaut alors que pour les sources et les noms. */
+  documentsCheck?: "verifiee" | "non-verifiee";
   replacement: { publicationId: string; by: { id: string; email: string } | null; at: string | null } | null;
   withdrawal: { by: { id: string; email: string }; at: string; comment: string | null } | null;
   allowed: StudioPublicationTransition[];

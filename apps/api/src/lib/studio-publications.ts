@@ -43,7 +43,7 @@ import { loadProjectAccess, projectAccessRefusal, type AccessibleProject } from 
 import type { Querier } from "./step-rows.js";
 import { assertAccess, lockedAccess, notFound, StudioRequestError, studioArchivedRefusal, studioFileSegment, studioIdentifierSchema, studyOf } from "./studio-commands.js";
 import {
-  actualiteDe, actualiteParEmpreinte, besoinTransition, canonicalJson, construireManifeste, controlerApprobation, controlerEnsembleExamine, controlerTransition,
+  actualiteDe, actualiteParEmpreinte, actualiteVue, besoinTransition, CacheRegeneration, cleRegeneration, type ControleDocuments, canonicalJson, construireManifeste, controlerApprobation, controlerEnsembleExamine, controlerTransition,
   diffusionPlusRecente, dimensionsDe, ecartsManifeste, empreinteManifeste, sha256, statutCombine, STUDIO_PUBLICATION_ACTIONS,
   type Actualite, type Dimensions, type EcartManifeste, type ManifesteDocument, type ManifesteMeta, type ManifesteSource, type StudioPublicationTransition,
 } from "./studio-publication-statuts.js";
@@ -93,6 +93,19 @@ export function studioPackageFiles(doc: StudioDocument, revisionId: string, meta
   };
   return STUDIO_PACKAGE_FORMATS.map((format) => ({ format, fileName: `${base}${format === "pdf" ? "-feuille" : ""}.${format}`, mime: MIME[format], body: bodies[format] }));
 }
+/**
+ * Version des exporteurs du paquet (SVG, DXF, IFC, feuille PDF), entrée de la clé du cache de régénération : à
+ * incrémenter avec toute modification des exporteurs ou de `studioPackageFiles`. Le cache vit en mémoire du processus :
+ * un déploiement (redémarrage) le vide de toute façon.
+ */
+export const STUDIO_PACKAGE_EXPORTER_VERSION = "studio-package-exports/1";
+/** Cache des empreintes de documents régénérés, lu par les vues de liste et rempli par les lectures exactes. */
+const regenerationCache = new CacheRegeneration();
+const regenerationKey = (documentHash: string, meta: StudioPublicationPackage["meta"], studyId: string, variantId: string): string =>
+  cleRegeneration({ documentHash, meta, ifcKey: `${studyId}|${variantId}`, versionExporteurs: STUDIO_PACKAGE_EXPORTER_VERSION });
+const manifestDocumentsOf = (files: ReturnType<typeof studioPackageFiles>) =>
+  files.map((f) => ({ format: f.format, fileName: f.fileName, mime: f.mime, size: f.body.byteLength, sha256: sha256(f.body) }));
+
 /** Empreinte globale d'un paquet : SHA-256 du manifeste canonique du paquet. */
 export const studioPackageHash = (pkg: StudioPublicationPackage): string => sha256(canonicalJson(pkg));
 
@@ -117,6 +130,8 @@ export interface StudioPublicationView {
   diffusion: { by: Who | null; at: string | null; packageHash: string; manifestHash: string | null; files: StudioPackageFile[] } | null;
   /** Actualité des contenus dérivés et écarts constatés (source déplacée, métadonnée renommée). */
   headRevisionId: string; freshness: Actualite; drift: EcartManifeste[];
+  /** Documents régénérés comparés (`verifiee`) ou non (`non-verifiee` : vue de liste sans régénération en cache, ou dossier déjà périmé par ses sources). */
+  documentsCheck: ControleDocuments;
   /** Diffusion plus récente qui remplace celle-ci, sinon null. */
   replacedBy: string | null;
   replacement: { publicationId: string; by: Who | null; at: string | null } | null;
@@ -157,29 +172,32 @@ function driftOf(access: AccessibleProject, row: PublicationRow, states: Map<str
     const head = primary?.headRevisionId ?? null;
     return head === row.revisionId ? [] : [{ type: "source", role: "principale", variantId: row.variantId, revisionFigee: row.revisionId, revisionCourante: head }];
   }
-  const courantes = row.manifest.sources.map((s) => ({ variantId: s.variantId, headRevisionId: states.get(s.variantId)?.headRevisionId ?? null }));
-  return ecartsManifeste(row.manifest, courantes, {
-    projectCode: access.code, projectName: access.name, studyName: primary?.studyName ?? "", variantName: primary?.name ?? "",
-  }, documents);
+  return ecartsManifeste(row.manifest, currentSources(row.manifest, states), currentNames(access, primary), documents);
 }
+const currentSources = (m: StudioPublicationManifest, states: Map<string, VariantState>) =>
+  m.sources.map((s) => ({ variantId: s.variantId, headRevisionId: states.get(s.variantId)?.headRevisionId ?? null }));
+const currentNames = (access: AccessibleProject, primary: VariantState | undefined) =>
+  ({ projectCode: access.code, projectName: access.name, studyName: primary?.studyName ?? "", variantName: primary?.name ?? "" });
 
 /**
  * Documents régénérés des dossiers dont les sources et les noms n'ont pas bougé (les autres sont déjà périmés) : mêmes
- * révision et métadonnées figées, exporteurs d'aujourd'hui. Un même jeu d'entrées n'est exporté qu'une fois.
+ * révision et métadonnées figées, exporteurs d'aujourd'hui.
+ *   - `exact` (lecture d'un dossier, transitions) : régénération complète, résultat rangé dans le cache ;
+ *   - liste : aucune exportation, seul le cache est lu ; un dossier absent du cache a ses documents « non vérifiée ».
  */
-async function regeneratedDocuments(q: Querier, access: AccessibleProject, rows: PublicationRow[], states: Map<string, VariantState>): Promise<Map<string, ManifesteDocument[]>> {
+async function regeneratedDocuments(q: Querier, access: AccessibleProject, rows: PublicationRow[], states: Map<string, VariantState>, exact: boolean): Promise<Map<string, ManifesteDocument[]>> {
   const out = new Map<string, ManifesteDocument[]>();
-  const memo = new Map<string, ManifesteDocument[]>();
   for (const row of rows) {
     if (!row.manifest || driftOf(access, row, states).length) continue;
-    const key = canonicalJson([row.revisionId, row.studyId, row.variantId, row.manifest.meta]);
-    let docs = memo.get(key);
-    if (!docs) {
-      const revision = await revisionOf(q, row.variantId, row.revisionId);
-      docs = studioPackageFiles(validateStudioDocument(revision.document), row.revisionId, row.manifest.meta, `${row.studyId}|${row.variantId}`)
-        .map((f) => ({ format: f.format, fileName: f.fileName, mime: f.mime, size: f.body.byteLength, sha256: sha256(f.body) }));
-      memo.set(key, docs);
+    const key = regenerationKey(row.documentHash, row.manifest.meta, row.studyId, row.variantId);
+    if (!exact) {
+      const cached = regenerationCache.get(key);
+      if (cached) out.set(row.id, cached);
+      continue;
     }
+    const revision = await revisionOf(q, row.variantId, row.revisionId);
+    const docs = manifestDocumentsOf(studioPackageFiles(validateStudioDocument(revision.document), row.revisionId, row.manifest.meta, `${row.studyId}|${row.variantId}`));
+    regenerationCache.set(key, docs);
     out.set(row.id, docs);
   }
   return out;
@@ -194,7 +212,10 @@ function allowedFor(access: AccessibleProject, actorId: string, dims: Dimensions
   });
 }
 
-/** Vues des dossiers : variantes sources, actualité, remplacement, retrait et droits calculés en une passe. */
+/**
+ * Vues des dossiers : variantes sources, actualité, remplacement, retrait et droits calculés en une passe. `withEvents`
+ * (lecture d'un dossier, réponse d'une transition) vaut aussi contrôle exact des documents ; une liste lit le cache seul.
+ */
 async function views(q: Querier, access: AccessibleProject, actorId: string, rows: PublicationRow[], withEvents = false): Promise<StudioPublicationView[]> {
   if (!rows.length) return [];
   const states = await variantStates(q, rows.flatMap(sourceIds));
@@ -209,11 +230,14 @@ async function views(q: Querier, access: AccessibleProject, actorId: string, row
     .orderBy(asc(studioPublicationEvents.createdAt), asc(studioPublicationEvents.id));
   const mails = await emails(q, [...rows.flatMap((r) => [r.createdBy, r.approvedBy, r.diffusedBy, r.replacedBy]), ...eventsRows.map((e) => e.authorId)]);
   const who = (id: string | null) => (id ? { id, email: mails.get(id) ?? "" } : null);
-  const regenerated = await regeneratedDocuments(q, access, rows, states);
+  const regenerated = await regeneratedDocuments(q, access, rows, states, withEvents);
   return rows.map((row) => {
     const variant = states.get(row.variantId);
-    const drift = driftOf(access, row, states, regenerated.get(row.id) ?? null);
-    const freshness = actualiteDe(drift);
+    // Documents : comparés si régénérés (lecture exacte ou cache), sinon « non vérifiée » ; jamais « à jour » par défaut.
+    const vue = row.manifest ? actualiteVue(row.manifest, currentSources(row.manifest, states), currentNames(access, variant), regenerated.get(row.id)) : null;
+    const drift = vue ? vue.ecarts : driftOf(access, row, states);
+    const freshness = vue ? vue.actualite : actualiteDe(drift);
+    const documentsCheck: ControleDocuments = vue ? vue.documents : "non-verifiee";
     // Dossier antérieur au lot E.4 : remplacement déduit de la diffusion plus récente (statut combiné inchangé).
     const later = row.replacedByPublicationId === null && row.diffusionStatus === null ? diffusionPlusRecente(row, diffused) : null;
     const derived = dimensionsDe(row);
@@ -231,7 +255,7 @@ async function views(q: Querier, access: AccessibleProject, actorId: string, row
         ? { revisionId: row.approvedRevisionId, documentHash: row.approvedDocumentHash, manifestHash: row.approvedManifestHash, by: who(row.approvedBy), at: row.approvedAt?.toISOString() ?? null } : null,
       diffusion: row.package && row.packageHash
         ? { by: who(row.diffusedBy), at: row.diffusedAt?.toISOString() ?? null, packageHash: row.packageHash, manifestHash: row.package.manifestHash ?? null, files: row.package.files } : null,
-      headRevisionId: variant?.headRevisionId ?? row.revisionId, freshness, drift,
+      headRevisionId: variant?.headRevisionId ?? row.revisionId, freshness, drift, documentsCheck,
       replacedBy,
       replacement: replacedBy ? { publicationId: replacedBy, by: who(row.replacedBy), at: row.replacedAt?.toISOString() ?? null } : null,
       withdrawal: retrait ? { by: who(retrait.authorId)!, at: retrait.createdAt.toISOString(), comment: retrait.comment } : null,
@@ -282,7 +306,9 @@ async function construireDossier(q: Querier, access: AccessibleProject, study: S
   }
   const meta: ManifesteMeta = { projectCode: access.code, projectName: access.name, studyName: study.name, variantName: variant.name, revisionCreatedAt: revision.createdAt.toISOString() };
   const files = studioPackageFiles(validateStudioDocument(revision.document), revision.id, meta, `${study.id}|${variant.id}`);
-  const manifest = construireManifeste(sources, meta, files.map((f) => ({ format: f.format, fileName: f.fileName, mime: f.mime, size: f.body.byteLength, sha256: sha256(f.body) })));
+  const documents = manifestDocumentsOf(files);
+  regenerationCache.set(regenerationKey(documentHash, meta, study.id, variant.id), documents);
+  const manifest = construireManifeste(sources, meta, documents);
   return { manifest, manifestHash: empreinteManifeste(manifest), documentHash, meta, files };
 }
 const coordinatedOf = (manifest: StudioPublicationManifest | null): string[] => manifest?.sources.filter((s) => s.role === "coordonnee").map((s) => s.variantId) ?? [];

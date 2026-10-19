@@ -211,6 +211,10 @@ await draw('l3', 8);
 check('actualité : périmée après une nouvelle révision', (await owner('GET', `${pubs}/${id4}`)).body?.freshness === 'perimee');
 const all = await reader('GET', pubs);
 check('lecteur : liste de l\'étude (4 publications, sans transition permise)', all.status === 200 && all.body.publications.length === 4 && all.body.publications.every((p) => p.allowed.length === 0), short(all.body));
+const single4 = (await reader('GET', `${pubs}/${id4}`)).body;
+check('lecture d\'un dossier : documents régénérés et comparés (contrôle exact)', single4?.documentsCheck === 'verifiee' || (single4?.freshness === 'perimee' && single4?.drift?.some((e) => e.type === 'source')), short([single4?.documentsCheck, single4?.freshness]));
+const single3 = (await reader('GET', `${pubs}/${id3}`)).body;
+check('liste : contrôle des documents déclaré (vérifié depuis le cache, sinon « non vérifiée », jamais inventé)', all.body.publications.every((p) => ['verifiee', 'non-verifiee'].includes(p.documentsCheck) && (p.documentsCheck === 'verifiee' || p.drift.every((e) => e.type !== 'documents'))) && ['verifiee', 'non-verifiee'].includes(single3?.documentsCheck), short(all.body.publications.map((p) => [p.documentsCheck, p.freshness])));
 check('action inconnue : 404', (await owner('POST', `${pubs}/${id4}/effacer`, {})).status === 404);
 
 // --- Lot E.4 : manifeste multi-sources, nouvelle approbation après modification, retrait, droits ------------------
@@ -244,6 +248,9 @@ check('E.4 : propriétaire approuve le manifeste examiné (son empreinte)', a5.s
 check('E.4 : éditeur ne diffuse pas (403)', (await editor('POST', `${pubs2}/${p5.id}/diffuser`, {})).status === 403);
 const d5 = await owner('POST', `${pubs2}/${p5.id}/diffuser`, {});
 check('E.4 : propriétaire diffuse (diffusée, à jour)', d5.status === 200 && d5.body.diffusionStatus === 'diffuse' && d5.body.freshness === 'a-jour' && d5.body.diffusion?.manifestHash === p5.manifestHash, short(d5.body));
+const r5 = (await reader('GET', `${pubs2}/${p5.id}`)).body;
+const l5 = ((await reader('GET', pubs2)).body?.publications ?? []).find((p) => p.id === p5.id);
+check('E.4 : lecture exacte « à jour » documents vérifiés ; liste servie par le cache, même verdict, sans exportation', d5.body?.documentsCheck === 'verifiee' && r5?.documentsCheck === 'verifiee' && r5.freshness === 'a-jour' && l5?.documentsCheck === 'verifiee' && l5.freshness === 'a-jour', short([d5.body?.documentsCheck, r5?.documentsCheck, l5?.documentsCheck]));
 const p6 = await prepare('Dossier coordonné F');
 await editor('POST', `${pubs2}/${p6.id}/soumettre`, {});
 check('E.4 : second dossier approuvé', (await owner('POST', `${pubs2}/${p6.id}/approuver`, { manifestHash: p6.manifestHash })).body?.workStatus === 'approuve');
