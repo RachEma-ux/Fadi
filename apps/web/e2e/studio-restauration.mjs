@@ -122,6 +122,12 @@ const r5 = await send(editorA, v1, [{ toolId: 'studio.dessin.deplacer', params: 
 check('A : révision 4 de la variante initiale — rectangle décalé', r5.status === 200, short(r5.body));
 const fixed = await editorA('POST', `${comments}/${remark.body.id}/observation/transitions`, { action: 'corriger', revisionId: r5.body.revision.id, note: 'Corrigé' });
 check('A : observation corrigée (journal à deux passages)', fixed.status === 200 && fixed.body.journal?.length === 2, short(fixed.body));
+// Suivi E.2 : la même observation suit un objet du modèle, porte une tâche confiée à l'éditeur et une proposition de l'éditeur.
+const obsPath = `${vPath(v1)}/observations/${remark.body.id}`;
+const lienA = await editorA('POST', `${obsPath}/liens`, { domaine: 'objet', ref: 'rect-rst', revisionId: r3.body.revision.id });
+const tacheA = await ownerA('POST', `${obsPath}/taches`, { libelle: 'Vérifier le décalage', assigneeId: editorIdA, echeance: '2026-12-20' });
+const propA = await editorA('POST', `${obsPath}/decisions`, { nature: 'proposition', portee: 'cloture', texte: 'Décalage fait : clôture proposée' });
+check('A : suivi E.2 — lien de domaine, tâche et proposition sur l\'observation', lienA.status === 201 && tacheA.status === 201 && propA.status === 201, short([lienA.status, tacheA.status, propA.status]));
 // Lot E.1 : un jeu d'exigences (version 1, saisi et sourcé pour la recette) et un contrôle de la tête de la variante.
 const exigenceObjets = { id: 'ex-objets', libelle: 'Nombre d\'objets dessinés', metrique: { type: 'nombre' }, comparaison: '>=', valeur: 1, unite: 'u', source: 'Programme de recette, saisi' };
 const setA = await ownerA('POST', `${root}/studies/${studyId}/exigences`, { baseVersion: 0, exigences: [exigenceObjets], motif: 'Jeu de recette' });
@@ -231,8 +237,10 @@ fs.writeFileSync(path.join(OUT, 'archive.json'), archiveText);
 const st = archive.studio;
 const counts = st ? Object.fromEntries(Object.entries(st.manifest.tables).map(([t, m]) => [t, m.count])) : {};
 check('sauvegarde : section Studio présente (schéma, version, manifeste)', archiveRes.status === 200 && st?.schema === 'fadi-studio-archive/1' && st.schemaVersion?.document === 'studio-document/1' && /^[0-9a-f]{64}$/.test(st.manifest?.hash ?? ''), short(st?.manifest ?? archive).slice(0, 200));
-check('sauvegarde : effectifs du manifeste (1 étude, 2 variantes, 7 révisions, 2 commentaires, 1 observation, 2 passages, 2 liens, 3 publications, 11 évènements, au moins 4 volumes, 1 jeu d\x27exigences, 1 contrôle, 1 membre, 1 préférence)',
+check('sauvegarde : effectifs du manifeste (1 étude, 2 variantes, 7 révisions, 2 commentaires, 1 observation, 2 passages, 1 lien de domaine, 1 tâche et son passage, 1 décision, 2 liens, 3 publications, 11 évènements, au moins 4 volumes, 1 jeu d\x27exigences, 1 contrôle, 1 membre, 1 préférence)',
   counts.studio_studies === 1 && counts.studio_variants === 2 && counts.studio_revisions === 7 && counts.studio_comments === 2 && counts.studio_observations === 1 && counts.studio_observation_events === 2
+  && counts.studio_observation_links === 1 && counts.studio_observation_tasks === 1 && counts.studio_observation_task_events === 1 && counts.studio_observation_decisions === 1
+  && st.schemaVersion?.tables === 'studio-v1/2026-10-19.2'
   && counts.studio_study_steps === 2 && counts.studio_requirement_sets === 1 && counts.studio_requirement_checks === 1 && counts.studio_publications === 3 && counts.studio_publication_events === 11 && counts.volumes >= 4 && counts.project_members === 1 && counts.studio_tool_preferences === 1, JSON.stringify(counts));
 // Chaque dossier est retrouvé par son identifiant : les lignes de l'archive sont triées par identifiant (aléatoire), la
 // position d'un dossier parmi les trois n'a aucun sens.

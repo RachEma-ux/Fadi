@@ -10,6 +10,7 @@ import { listStudiesOfStep, listStudioStudySteps, setStudioStudySteps, studioStu
 import { renameStudioStudy, renameStudioVariant, setStudioStudyArchived, setStudioVariantArchived, studioRenameSchema } from "../lib/studio-variantes.js";
 import { studioExigencesRouter } from "./studio-exigences.js";
 import { studioPublicationsRouter } from "./studio-publications.js";
+import { studioObservationsRouter } from "./studio-observations.js";
 import { studioPreferencesRouter } from "./studio-preferences.js";
 
 export const studioRouter = Router({ mergeParams: true });
@@ -219,3 +220,5 @@ studioRouter.get("/steps/:stepNumber/studies", endpoint(async (req, res) => {
 studioRouter.use(studioPublicationsRouter);
 // Exigences versionnées et contrôles (E.1-02 à E.1-06) : `routes/studio-exigences.ts`.
 studioRouter.use(studioExigencesRouter);
+// Observations : identité réemployée, contexte, tâches, décisions, clôture (E.2-01 à E.2-05) : `routes/studio-observations.ts`.
+studioRouter.use(studioObservationsRouter);

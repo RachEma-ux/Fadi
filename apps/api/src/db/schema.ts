@@ -710,7 +710,19 @@ export const studioObservations = pgTable("studio_observations", {
   createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  // Contexte de vue déclaré à l'ouverture (E.2-02) ; null pour une observation antérieure ou sans vue citée.
+  vueMode: text("vue_mode").$type<StudioObservationVueMode | null>(),
+  vueRef: text("vue_ref"),
 }, (t) => [index("studio_observations_variant_idx").on(t.variantId), index("studio_observations_responsable_idx").on(t.responsableId)]);
+
+/** Modes de l'espace de travail Studio cités comme contexte de vue d'une observation (E.2-02). */
+export type StudioObservationVueMode = "plan" | "3d" | "feuille" | "quantites" | "exigences" | "revue";
+/** Domaines où une même observation est réemployée (E.2-01). */
+export type StudioObservationDomaine = "exigence" | "metre" | "revue" | "objet";
+export type StudioObservationTacheStatut = "a-faire" | "faite" | "annulee";
+export type StudioObservationTacheAction = "creer" | "terminer" | "annuler" | "rouvrir" | "reattribuer";
+export type StudioObservationDecisionNature = "proposition" | "decision";
+export type StudioObservationDecisionPortee = "cloture" | "autre";
 
 /** Journal append-only des passages d'une observation (qui, quand, révision, note), ordonné par `seq`. */
 export const studioObservationEvents = pgTable("studio_observation_events", {
@@ -732,6 +744,79 @@ export const studioObservationEvents = pgTable("studio_observation_events", {
 }, (t) => [
   uniqueIndex("studio_observation_events_seq_unique").on(t.observationId, t.seq),
   index("studio_observation_events_at_idx").on(t.at),
+]);
+
+/**
+ * Lien d'une observation vers un élément d'un domaine (E.2-01) : exigence (et contrôle), ligne de métré
+ * (`objetId#grandeur`), revue (publication) ou objet du modèle, avec la révision citée. Un élément d'un domaine n'est
+ * suivi que par une observation de la variante (index unique `variant_id, domaine, ref`, init.sql). Jamais réécrit.
+ */
+export const studioObservationLinks = pgTable("studio_observation_links", {
+  id: text("id").primaryKey(),
+  observationId: text("observation_id").notNull(),
+  variantId: text("variant_id").notNull().references(() => studioVariants.id, { onDelete: "cascade" }),
+  domaine: text("domaine").$type<StudioObservationDomaine>().notNull(),
+  ref: text("ref").notNull(),
+  revisionId: text("revision_id"),
+  controleId: text("controle_id"),
+  createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
+  requestId: text("request_id"),
+  payloadHash: text("payload_hash"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  uniqueIndex("studio_observation_links_ref_unique").on(t.variantId, t.domaine, t.ref),
+  index("studio_observation_links_observation_idx").on(t.observationId),
+]);
+
+/** Tâche d'une observation (E.2-03) : état courant ; son journal est `studioObservationTaskEvents`. */
+export const studioObservationTasks = pgTable("studio_observation_tasks", {
+  id: text("id").primaryKey(),
+  observationId: text("observation_id").notNull().references(() => studioObservations.commentId, { onDelete: "cascade" }),
+  libelle: text("libelle").notNull(),
+  assigneeId: text("assignee_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  echeance: date("echeance", { mode: "string" }),
+  statut: text("statut").$type<StudioObservationTacheStatut>().notNull(),
+  createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("studio_observation_tasks_observation_idx").on(t.observationId), index("studio_observation_tasks_assignee_idx").on(t.assigneeId)]);
+
+/** Journal append-only des passages d'une tâche, ordonné par `seq`. */
+export const studioObservationTaskEvents = pgTable("studio_observation_task_events", {
+  id: text("id").primaryKey(),
+  taskId: text("task_id").notNull().references(() => studioObservationTasks.id, { onDelete: "cascade" }),
+  seq: integer("seq").notNull(),
+  action: text("action").$type<StudioObservationTacheAction>().notNull(),
+  fromStatut: text("from_statut").$type<StudioObservationTacheStatut | null>(),
+  toStatut: text("to_statut").$type<StudioObservationTacheStatut>().notNull(),
+  actorId: text("actor_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  assigneeId: text("assignee_id"),
+  note: text("note"),
+  requestId: text("request_id"),
+  payloadHash: text("payload_hash"),
+  at: timestamp("at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  uniqueIndex("studio_observation_task_events_seq_unique").on(t.taskId, t.seq),
+  index("studio_observation_task_events_at_idx").on(t.at),
+]);
+
+/** Décisions et propositions d'une observation (E.2-03 / E.2-04), distinctes des passages ; append-only, par `seq`. */
+export const studioObservationDecisions = pgTable("studio_observation_decisions", {
+  id: text("id").primaryKey(),
+  observationId: text("observation_id").notNull().references(() => studioObservations.commentId, { onDelete: "cascade" }),
+  seq: integer("seq").notNull(),
+  nature: text("nature").$type<StudioObservationDecisionNature>().notNull(),
+  portee: text("portee").$type<StudioObservationDecisionPortee>().notNull(),
+  texte: text("texte").notNull(),
+  actorId: text("actor_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  actorRole: text("actor_role").$type<"proprietaire" | "editeur">().notNull(),
+  revisionId: text("revision_id"),
+  requestId: text("request_id"),
+  payloadHash: text("payload_hash"),
+  at: timestamp("at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  uniqueIndex("studio_observation_decisions_seq_unique").on(t.observationId, t.seq),
+  index("studio_observation_decisions_at_idx").on(t.at),
 ]);
 
 /**

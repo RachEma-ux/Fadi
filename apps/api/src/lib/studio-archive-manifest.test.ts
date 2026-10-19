@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   STUDIO_ARCHIVE_SCHEMA, STUDIO_ARCHIVE_SCHEMA_VERSION, STUDIO_ARCHIVE_TABLES, buildStudioManifest, canonicalJson, checkStudioArchive,
   STUDIO_DOWNGRADE_COMMENT, distrustRequirementSets, distrustStudioPublications, orderPublicationsForInsert, emptyStudioTables, mapStudioAccounts, orderCommentsForInsert, packageVolumeIds, remapStudioJsonAccounts, remapStudioRows, studioAccountIds, studioExportAccountIds, studioJsonAccountIds,
-  STUDIO_JSON_ACCOUNT_FIELDS, STUDIO_JSON_FIELDS_WITHOUT_ACCOUNTS,
+  STUDIO_JSON_ACCOUNT_FIELDS, STUDIO_JSON_FIELDS_WITHOUT_ACCOUNTS, STUDIO_ARCHIVE_LEGACY_TABLES_VERSION, STUDIO_ARCHIVE_TABLES_E2,
   studioArchiveDocumentHash, studioTableHash, type StudioArchiveTables,
 } from "./studio-archive-manifest.js";
 
@@ -296,6 +296,46 @@ describe("section Studio : versions et forme (revue #198)", () => {
     autre.schemaVersion.tables = "studio-v1/2099-01-01";
     expect(errorsOf(autre)).toContain("version des tables Studio non prise en charge");
     expect(errorsOf(section)).toEqual([]);
+  });
+  it("suivi E.2 : liens, tâches, journal des tâches et décisions archivés, leurs comptes réattribués, leurs références contrôlées", () => {
+    const f = fixture();
+    f.tables.studio_observation_links = [{ id: "l1", observation_id: "c1", variant_id: "v1", domaine: "objet", ref: "l0", revision_id: "r2", controle_id: null, created_by: "uEditor" }];
+    f.tables.studio_observation_tasks = [{ id: "t1", observation_id: "c1", libelle: "Reprendre l'about", assignee_id: "uEditor", statut: "a-faire", created_by: "uOwner" }];
+    f.tables.studio_observation_task_events = [{ id: "te1", task_id: "t1", seq: 1, action: "creer", actor_id: "uOwner", assignee_id: "uEditor" }];
+    f.tables.studio_observation_decisions = [{ id: "d1", observation_id: "c1", seq: 1, nature: "proposition", portee: "cloture", texte: "Clore", actor_id: "uEditor", actor_role: "editeur", revision_id: "r2" }];
+    f.section["manifest"] = buildStudioManifest(f.tables, IDENT);
+    expect(errorsOf(clone(f.section))).toEqual([]);
+    const map = new Map([["uOwner", "uB1"], ["uEditor", "uB2"]]);
+    expect(remapStudioRows("studio_observation_tasks", f.tables.studio_observation_tasks, "pB", map)[0]).toMatchObject({ assignee_id: "uB2", created_by: "uB1" });
+    expect(remapStudioRows("studio_observation_task_events", f.tables.studio_observation_task_events, "pB", map)[0]).toMatchObject({ actor_id: "uB1", assignee_id: "uB2" });
+    expect(remapStudioRows("studio_observation_decisions", f.tables.studio_observation_decisions, "pB", map)[0]).toMatchObject({ actor_id: "uB2", texte: "Clore" });
+    expect(remapStudioRows("studio_observation_links", f.tables.studio_observation_links, "pB", map)[0]).toMatchObject({ created_by: "uB2", ref: "l0" });
+    // Références hors section : lien d'une autre variante, tâche sans observation, passage sans tâche, décision sur une révision étrangère.
+    const g = fixture();
+    g.tables.studio_observation_links = [{ id: "l2", observation_id: "c1", variant_id: "v2", domaine: "objet", ref: "x", revision_id: "r3", created_by: "uOwner" }];
+    g.tables.studio_observation_tasks = [{ id: "t2", observation_id: "inconnue", libelle: "x", assignee_id: "uOwner", statut: "a-faire", created_by: "uOwner" }];
+    g.tables.studio_observation_task_events = [{ id: "te2", task_id: "absente", seq: 1, action: "creer", actor_id: "uOwner" }];
+    g.tables.studio_observation_decisions = [{ id: "d2", observation_id: "c1", seq: 1, nature: "decision", portee: "autre", texte: "x", actor_id: "uOwner", actor_role: "proprietaire", revision_id: "r3" }];
+    g.section["manifest"] = buildStudioManifest(g.tables, IDENT);
+    expect(errorsOf(clone(g.section))).toEqual(expect.arrayContaining([
+      "lien l2 : observation absente", "tâche t2 : observation absente", "passage de tâche te2 : tâche absente", "décision d2 : révision absente",
+    ]));
+  });
+  it("version antérieure au suivi E.2 relue telle quelle (tables absentes = aucune ligne) ; une table E.2 y est inattendue", () => {
+    const { tables } = fixture();
+    const legacyTables = Object.fromEntries(Object.entries(clone(tables)).filter(([t]) => !STUDIO_ARCHIVE_TABLES_E2.includes(t as never)));
+    const manifest = buildStudioManifest(tables, IDENT, STUDIO_ARCHIVE_LEGACY_TABLES_VERSION);
+    expect(Object.keys(manifest.tables)).not.toContain("studio_observation_links");
+    const legacy = { schema: STUDIO_ARCHIVE_SCHEMA, schemaVersion: { document: "studio-document/1", tables: STUDIO_ARCHIVE_LEGACY_TABLES_VERSION }, sourceProjectId: "pA", ownerId: "uOwner", accounts: ACCOUNTS, tables: legacyTables, manifest };
+    const r = checkStudioArchive(clone(legacy));
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.section.tables.studio_observation_tasks).toEqual([]);
+    const extra = clone(legacy) as unknown as { tables: Record<string, unknown> };
+    extra.tables["studio_observation_tasks"] = [];
+    expect(errorsOf(extra)).toContain("table studio_observation_tasks inattendue dans cette version");
+    // Section courante : le manifeste couvre toutes les tables, la version antérieure ne remplace pas la courante.
+    expect(STUDIO_ARCHIVE_SCHEMA_VERSION.tables).not.toBe(STUDIO_ARCHIVE_LEGACY_TABLES_VERSION);
+    expect(Object.keys(buildStudioManifest(tables, IDENT).tables)).toEqual([...STUDIO_ARCHIVE_TABLES]);
   });
   it("une section présente mais mal formée (null, tableau, texte) est refusée", () => {
     for (const v of [null, [], "tronqué"]) expect(errorsOf(v).length).toBeGreaterThan(0);
