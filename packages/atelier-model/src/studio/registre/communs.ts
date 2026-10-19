@@ -3,7 +3,7 @@ import { STUDIO_DOCUMENT_SCHEMA } from "./schemas.js";
 
 /** Contrat d'un descripteur d'outil du registre et champs communs aux familles (`dessin`, `modification`, `calques`, `volume`). */
 
-export type StudioToolGroup = "dessin" | "modification" | "calques" | "volume" | "volume-libre" | "architecture" | "visualisation";
+export type StudioToolGroup = "dessin" | "modification" | "calques" | "volume" | "volume-libre" | "architecture" | "proprietes" | "visualisation";
 export interface StudioToolDescriptor {
   readonly toolId: string;
   readonly contractVersion: typeof STUDIO_CONTRACT;

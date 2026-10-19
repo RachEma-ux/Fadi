@@ -132,3 +132,15 @@ describe("cadrage", () => {
     expect(c.x + c.w).toBeGreaterThan(40);
   });
 });
+
+describe("Emprise : murs (A.4)", () => {
+  it("un mur épais est cadré sur son emprise dérivée, pas sur son seul axe", () => {
+    const doc = {
+      id: "d", schemaVersion: "studio-document/1", units: "m", frame: "local-2d", objects: [],
+      architecture: [{ id: "m1", type: "wall", axis: [{ x: 0, y: 0 }, { x: 1, y: 0 }], thickness: 2, height: 3, base: 0, justification: "center" }],
+    } as unknown as Parameters<typeof emprise>[0];
+    const e = emprise(doc, () => true)!;
+    expect(e.min.y).toBeCloseTo(-1);
+    expect(e.max.y).toBeCloseTo(1);
+  });
+});

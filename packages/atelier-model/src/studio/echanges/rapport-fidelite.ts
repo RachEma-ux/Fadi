@@ -5,6 +5,7 @@ import type { StudioAnnotation, StudioDocument, StudioShape } from "../noyau/typ
 import type { StudioDimension } from "../objets/cote.js";
 import type { StudioSolid } from "../objets-3d/solides.js";
 import type { StudioArchitectureItem } from "../architecture/types.js";
+import type { StudioPropriete } from "../exigences/proprietes.js";
 import type { StudioElementVisualisation } from "../scenes/scenes.js";
 
 /**
@@ -36,13 +37,15 @@ export const STUDIO_RAISONS_FIDELITE = Object.freeze([
   "ouverture-en-lacune",
   // Non couvert
   "non-extrude", "cote-hors-ifc", "annotation-hors-ifc", "solide-hors-2d", "visualisation-hors-export", "type-sans-capacite",
+  // Propriétés BIM déclarées (E.1-01) : aucun écrivain ne les porte encore.
+  "propriete-non-exportee",
 ] as const);
 export type StudioRaisonFidelite = (typeof STUDIO_RAISONS_FIDELITE)[number];
 
 /** Catégorie = liste du document qui porte l'élément. */
-export type StudioCategorieEchange = "objets" | "cotes" | "annotations" | "solides" | "architecture" | "scenes" | "inconnue";
+export type StudioCategorieEchange = "objets" | "cotes" | "annotations" | "solides" | "architecture" | "proprietes" | "scenes" | "inconnue";
 /** Liste du document de chaque catégorie connue (clé de `StudioDocument`). */
-export const STUDIO_LISTES_ECHANGE = Object.freeze({ objets: "objects", cotes: "dimensions", annotations: "annotations", solides: "solides", architecture: "architecture", scenes: "scenes" } as const);
+export const STUDIO_LISTES_ECHANGE = Object.freeze({ objets: "objects", cotes: "dimensions", annotations: "annotations", solides: "solides", architecture: "architecture", proprietes: "proprietes", scenes: "scenes" } as const);
 
 export interface StudioJugementFidelite { statut: StudioStatutFidelite; raison: StudioRaisonFidelite }
 type Juge<T> = (item: T) => StudioJugementFidelite;
@@ -96,6 +99,8 @@ export const STUDIO_CAPACITES_EXPORT: {
   readonly annotations: { readonly [K in StudioAnnotation["type"]]: ParFormat<Extract<StudioAnnotation, { type: K }>> };
   readonly solides: { readonly [K in StudioSolid["type"]]: ParFormat<Extract<StudioSolid, { type: K }>> };
   readonly architecture: { readonly [K in StudioArchitectureItem["type"]]: ParFormat<Extract<StudioArchitectureItem, { type: K }>> };
+  /** Propriétés déclarées (E.1-01) : sans discriminant de type, un seul type « propriete ». */
+  readonly proprietes: { readonly propriete: ParFormat<StudioPropriete> };
   readonly scenes: { readonly [K in StudioElementVisualisation["type"]]: ParFormat<Extract<StudioElementVisualisation, { type: K }>> };
 } = Object.freeze({
   objets: {
@@ -123,6 +128,10 @@ export const STUDIO_CAPACITES_EXPORT: {
   architecture: {
     wall: { svg: () => approche("extrusion-non-portee"), dxf: () => approche("extrusion-non-portee"), ifc: () => exact("extrusion-exacte") },
     opening: { svg: () => approche("ouverture-en-lacune"), dxf: () => approche("ouverture-en-lacune"), ifc: () => exact("ouverture-evidee") },
+  },
+  // Propriétés déclarées : ni le SVG, ni le DXF, ni l'IFC (aucun jeu de propriétés écrit) ne les portent.
+  proprietes: {
+    propriete: { svg: () => nonCouvert("propriete-non-exportee"), dxf: () => nonCouvert("propriete-non-exportee"), ifc: () => nonCouvert("propriete-non-exportee") },
   },
   scenes: {
     scene: { svg: () => nonCouvert("visualisation-hors-export"), dxf: () => nonCouvert("visualisation-hors-export"), ifc: () => nonCouvert("visualisation-hors-export") },
@@ -202,6 +211,8 @@ export function studioRapportFidelite(input: StudioDocument, format: StudioForma
   const avecCalque = (layerId: string | undefined): { layerId?: string } => (layerId === undefined ? {} : { layerId });
   const calqueMur = new Map((doc.architecture ?? []).filter((e) => e.type === "wall").map((m) => [m.id, (m as { layerId?: string }).layerId]));
   parcourir("architecture", (doc.architecture ?? []).map((e) => (e.type === "opening" ? { ...e, ...avecCalque(calqueMur.get(e.hostId)) } : e)));
+  // Propriétés déclarées : identifiées par « cible#nom » ; elles n'ont pas de calque propre (non comptées sur les calques).
+  for (const p of doc.proprietes ?? []) poser("proprietes", "propriete", STUDIO_CAPACITES_EXPORT.proprietes.propriete[format](p), `${p.cibleId}#${p.nom}`);
   // Scènes et apparences : sans calque propre (une apparence de calque ne pose rien sur ce calque).
   for (const s of doc.scenes ?? []) poser("scenes", s.type, STUDIO_CAPACITES_EXPORT.scenes[s.type][format](s as never), s.id);
   // Liste du document qu'aucune catégorie ne connaît : comptée non couverte, jamais omise.

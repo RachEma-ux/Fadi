@@ -80,6 +80,26 @@ describe("groupe de Workers sous l'ordonnanceur", () => {
     await expect(q.issue).resolves.toEqual({ etat: "done", valeur: "q" });
   });
 
+  it("document qui fait toujours planter le Worker : un seul échec compté par soumission (reprise non comptée), repli seulement à la troisième", async () => {
+    const { hotes, ord } = groupe(1);
+    const planterDeuxFois = async () => {
+      const p = ord.soumettre(dem("m", String(Math.random())));
+      dernier().emettre("error");
+      await flush();
+      dernier().emettre("error");
+      await expect(p.issue).resolves.toMatchObject({ etat: "failed", code: "plantage" });
+    };
+    await planterDeuxFois();
+    await planterDeuxFois();
+    // Sans la règle, quatre échecs auraient déjà abandonné le Worker (trois au plus).
+    expect(hotes[0]!.indisponible).toBe(false);
+    const p = ord.soumettre(dem("m", "3"));
+    dernier().emettre("error");
+    await flush();
+    expect(hotes[0]!.indisponible).toBe(true);
+    await expect(p.issue).resolves.toMatchObject({ etat: "failed", code: "indisponible" });
+  });
+
   it("un plantage sur un emplacement n'affecte pas la tâche de l'autre emplacement", async () => {
     const { ord } = groupe(2);
     const fond = ord.soumettre(dem("m"));

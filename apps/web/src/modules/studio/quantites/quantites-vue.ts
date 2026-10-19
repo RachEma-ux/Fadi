@@ -33,6 +33,12 @@ export const LIBELLE_REFUS: Readonly<Record<RefusAjustement, string>> = {
 };
 export const NON_EVALUE = "non évalué";
 
+/**
+ * Adresse du CSV exportable : seulement quand le métré correspond à la révision affichée (sinon le fichier porterait
+ * les chiffres d'une révision antérieure) ; `null` désactive « Exporter en CSV ».
+ */
+export const lienCsvExportable = (lien: string | null, aJour: boolean): string | null => (aJour ? lien : null);
+
 /** Nombre arrondi à l'affichage seulement (au plus 3 décimales), selon le paramètre régional. */
 export function formaterQuantite(v: number, locale: string): string {
   return v.toLocaleString(locale, { maximumFractionDigits: 3 });

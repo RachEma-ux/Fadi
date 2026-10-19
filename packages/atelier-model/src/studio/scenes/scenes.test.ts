@@ -86,7 +86,7 @@ describe("Scènes enregistrées (E.5-01)", () => {
   it("rappeler est une lecture du registre ; les mutations sont celles appliquées", () => {
     const famille = STUDIO_TOOLS.filter((t) => t.groupe === "visualisation");
     expect(famille.map((t) => [t.toolId, t.nature, t.raccourci])).toEqual([
-      ["studio.scene.creer", "mutation", "V"], ["studio.scene.modifier", "mutation", "F2"], ["studio.scene.rappeler", "lecture", "F"],
+      ["studio.scene.creer", "mutation", "V"], ["studio.scene.modifier", "mutation", "F2"], ["studio.scene.rappeler", "lecture", "Z"],
       ["studio.scene.supprimer", "mutation", "Ctrl+Shift+X"], ["studio.apparence.definir", "mutation", "T"], ["studio.apparence.retirer", "mutation", "Ctrl+Shift+L"],
     ]);
     expect(STUDIO_COMMAND_TOOL_IDS).not.toContain("studio.scene.rappeler");

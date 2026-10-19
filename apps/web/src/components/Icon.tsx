@@ -96,6 +96,9 @@ export type IconName =
   | "studio-opening"
   | "studio-architecture-edit"
   | "studio-architecture-delete"
+  | "studio-property-set"
+  | "studio-property-remove"
+  | "studio-requirements"
   | "studio-scene-add"
   | "studio-scene-update"
   | "studio-scene-recall"
@@ -213,6 +216,10 @@ const PATHS: Record<IconName, string> = {
   "studio-opening": "M2 8h7v8H2ZM15 8h7v8h-7ZM9 6v12M15 6v12M10.5 12h3",
   "studio-architecture-edit": "M2 13h11v6H2ZM6 13l-4 4M10 13l-6 6M14 14l7-7 2 2-7 7h-2Z",
   "studio-architecture-delete": "M2 9h6v6H2ZM12 9h6v6h-6ZM8 7v10M12 7v10M15 3l6 6M21 3l-6 6",
+  // Propriétés et exigences (E.1) : étiquette et signe plus ; étiquette barrée ; liste cochée et balance (écart).
+  "studio-property-set": "M3 4h9l8 8-8 8-9-9ZM7 8h.01M17 3v6M14 6h6",
+  "studio-property-remove": "M3 4h9l8 8-8 8-9-9ZM7 8h.01M15 3l6 6M21 3l-6 6",
+  "studio-requirements": "M4 5h9M4 10h9M4 15h5M15 4l1.5 1.5L19 3M12 20h9M16.5 13v7M13 16l3.5-3 3.5 3",
   // Visualisation (lot E.5) : caméra et plus (nouvelle scène) ; caméra et flèche circulaire (mettre à jour) ; caméra et
   // flèche de retour (rappeler) ; caméra barrée (supprimer) ; pot de peinture qui coule (apparence) ; nuancier barré
   // (retirer l'apparence) ; image et flèche de téléchargement (rendu PNG).

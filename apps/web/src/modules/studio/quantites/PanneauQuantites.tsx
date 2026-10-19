@@ -18,7 +18,7 @@ import { LOCALE } from "../../../lib/i18n";
 import { useAuth } from "../../../lib/auth-context";
 import { csvQuantites, nomFichierCsvQuantites, type SeparateurDecimal } from "./csv-quantites";
 import {
-  FILTRE_INITIAL, filtrerQuantites, formaterQuantite, LIBELLE_GRANDEUR, LIBELLE_MOTIF, LIBELLE_NATURE, LIBELLE_REFUS, lireNombre, NON_EVALUE, SYMBOLE_UNITE,
+  FILTRE_INITIAL, filtrerQuantites, lienCsvExportable, formaterQuantite, LIBELLE_GRANDEUR, LIBELLE_MOTIF, LIBELLE_NATURE, LIBELLE_REFUS, lireNombre, NON_EVALUE, SYMBOLE_UNITE,
   type FiltreQuantites,
 } from "./quantites-vue";
 import "./quantites.css";
@@ -84,7 +84,7 @@ export function PanneauQuantites({ doc, lectureSeule, ajustementsInitiaux, surAj
   const complet = useMemo(() => appliquerAjustementsQuantites(brut, ajustements), [brut, ajustements]);
   const vue = useMemo(() => appliquerAjustementsQuantites(filtrerQuantites(brut, filtre), ajustements), [brut, filtre, ajustements]);
   const csv = useMemo(() => csvQuantites(vue, { decimal }), [vue, decimal]);
-  const lienCsv = useLienCsv(csv);
+  const lienCsv = lienCsvExportable(useLienCsv(csv), aJour);
   const grandeurs = GRANDEURS_QUANTITE.filter((g) => brut.objets.some((o) => o.valeurs.some((v) => v.grandeur === g)));
 
   // Formulaire d'ajustement.
