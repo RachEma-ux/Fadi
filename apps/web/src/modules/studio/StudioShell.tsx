@@ -20,6 +20,7 @@ import { DemarrageStudio, PlancheDifferee } from "./chargement/DemarrageStudio";
 import { PageComparaison } from "./comparaison/PageComparaison";
 import { EtapesParcoursEtude } from "./liens/EtapesLiees";
 import { PanneauPublications } from "./publication/PanneauPublications";
+import { ApercuDomaines } from "./domaines/ApercuDomaines";
 import "./studio.css";
 
 /** Une création non confirmée (réseau, 5xx) se rejoue avec le même requestId : le serveur rend la même étude ou variante, sans doublon. */
@@ -262,6 +263,7 @@ function StudioProjet({ projectId, archives }: { projectId: string; archives: bo
           ))}
         </ul>
       )}
+      <ApercuDomaines ouvert={etudes.data?.studies.length === 0} />
       {lecteur
         ? <p data-studio-lecture-seule>Ce projet vous est partagé en lecture : la création d’études est réservée à son propriétaire et à ses éditeurs.</p>
         : <CreerEtude projectId={p.id} indisponible={etudes.isError} />}
