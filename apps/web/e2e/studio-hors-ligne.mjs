@@ -143,6 +143,17 @@ try {
   await outils.waitFor();
   await attendreEtat("en-ligne");
   check("en ligne : état « En ligne », aucun brouillon conservé", (await page.locator("[data-studio-connexion]").textContent()) === "En ligne" && (await brouillonLocal(page, cle)) === null);
+  // Cache versionné par build : un seul cache `fadi-shell-<build>`, celui de la page servie ; sa coquille porte le même
+  // identifiant ; aucune réponse de l'API n'y figure.
+  const cacheSw = await page.evaluate(async () => {
+    const build = document.querySelector('meta[name="fadi-build"]')?.getAttribute("content") ?? null;
+    const noms = (await caches.keys()).filter((n) => n.startsWith("fadi-shell-"));
+    const cache = build ? await caches.open(`fadi-shell-${build}`) : null;
+    const coquille = cache ? await (await cache.match("/index.html"))?.text() : null;
+    const chemins = cache ? (await cache.keys()).map((r) => new URL(r.url).pathname) : [];
+    return { build, noms, coquilleDuBuild: !!coquille && coquille.includes(`<meta name="fadi-build" content="${build}">`), api: chemins.filter((p) => /^\/(auth|projects|examples|library|notifications|preferences|health)(\/|$)/.test(p)) };
+  });
+  check("service worker : un cache par build (celui de la page), coquille du même build, aucune réponse de l'API en cache", !!cacheSw.build && JSON.stringify(cacheSw.noms) === JSON.stringify([`fadi-shell-${cacheSw.build}`]) && cacheSw.coquilleDuBuild && cacheSw.api.length === 0, JSON.stringify(cacheSw));
   const depart = (await revisions()).length;
 
   // 1. Dessin hors ligne, rechargement hors ligne, enveloppe conservée, retour en ligne.

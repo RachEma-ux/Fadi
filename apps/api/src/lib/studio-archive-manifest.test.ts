@@ -1,8 +1,10 @@
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   STUDIO_ARCHIVE_SCHEMA, STUDIO_ARCHIVE_SCHEMA_VERSION, STUDIO_ARCHIVE_TABLES, buildStudioManifest, canonicalJson, checkStudioArchive,
-  STUDIO_DOWNGRADE_COMMENT, distrustRequirementSets, distrustStudioPublications, orderPublicationsForInsert, emptyStudioTables, mapStudioAccounts, orderCommentsForInsert, packageVolumeIds, remapStudioRows, studioAccountIds,
+  STUDIO_DOWNGRADE_COMMENT, distrustRequirementSets, distrustStudioPublications, orderPublicationsForInsert, emptyStudioTables, mapStudioAccounts, orderCommentsForInsert, packageVolumeIds, remapStudioJsonAccounts, remapStudioRows, studioAccountIds, studioExportAccountIds, studioJsonAccountIds,
+  STUDIO_JSON_ACCOUNT_FIELDS, STUDIO_JSON_FIELDS_WITHOUT_ACCOUNTS,
   studioArchiveDocumentHash, studioTableHash, type StudioArchiveTables,
 } from "./studio-archive-manifest.js";
 
@@ -235,6 +237,49 @@ describe("section Studio de l'archive (logique pure)", () => {
     expect((sets[1]!["requirements"] as unknown[])[0]).toEqual(simple);
     expect(sets[0]).toEqual(f.tables.studio_requirement_sets[0]);
     expect((f.tables.studio_requirement_sets[1]!["requirements"] as { origine?: Record<string, unknown> }[])[1]!.origine!["acceptation"]).toBeDefined();
+  });
+
+  it("E.1 : comptes des champs JSON (acceptation partenaire) exportés avec leur adresse et réattribués à l'import vérifié", () => {
+    const acc = (par: string, parEmail?: string) => ({ id: `x-${par}`, libelle: "Surface", metrique: { type: "total", grandeur: "surface" }, comparaison: "<=", valeur: 10, unite: "m2", source: "Partenaire", origine: { reference: "R-12", acceptation: { par, ...(parEmail ? { parEmail } : {}), le: "2026-10-19T08:00:00.000Z" } } });
+    const simple = { id: "x2", libelle: "Objets", metrique: { type: "nombre" }, comparaison: ">=", valeur: 1, unite: "u", source: "Programme" };
+    const t = emptyStudioTables();
+    t.studio_requirement_sets = [{ id: "rs1", study_id: "s1", version: 1, requirements: [simple, acc("uPartner", "partner@example.test"), acc("uOwner", "owner@example.test"), acc("uGhost")], author_id: "uOwner" }];
+    expect(studioJsonAccountIds(t)).toEqual(["uGhost", "uOwner", "uPartner"]);
+    // Export : un acceptant cité seulement dans le JSON part avec son adresse ; le contrôle de relecture reste celui des colonnes.
+    expect(studioExportAccountIds(t, "uOwner")).toEqual(["uGhost", "uOwner", "uPartner"]);
+    expect(studioAccountIds(t, "uOwner")).toEqual(["uOwner"]);
+    const before = JSON.stringify(t.studio_requirement_sets);
+    const map = new Map([["uOwner", { id: "bOwner", email: "Owner@example.test" }], ["uPartner", { id: "bRestorer", email: "restorer@example.test" }]]);
+    const r = remapStudioJsonAccounts(t.studio_requirement_sets, map, { id: "bRestorer", email: "restorer@example.test" });
+    const list = r.sets[0]!["requirements"] as { origine?: { reference: string; acceptation?: Record<string, unknown> } }[];
+    expect(list[0]).toEqual(simple);
+    expect(list[1]!.origine).toEqual({ reference: "R-12", acceptation: { par: "bRestorer", parEmail: "restorer@example.test", le: "2026-10-19T08:00:00.000Z" } });
+    expect(list[2]!.origine!.acceptation).toEqual({ par: "bOwner", parEmail: "Owner@example.test", le: "2026-10-19T08:00:00.000Z" });
+    // Compte cité sans adresse : attribué au compte qui restaure, déclaré ; pas d'adresse ajoutée là où il n'y en avait pas.
+    expect(list[3]!.origine!.acceptation).toEqual({ par: "bRestorer", le: "2026-10-19T08:00:00.000Z" });
+    expect(r).toMatchObject({ remapped: 3, unknown: ["uGhost"] });
+    expect(JSON.stringify(t.studio_requirement_sets)).toBe(before);
+  });
+
+  it("inventaire : chaque colonne jsonb d'une table archivée est classée (comptes réattribués ou sans compte)", () => {
+    const initSql = readFileSync(new URL("../db/init.sql", import.meta.url), "utf8");
+    const found = new Set<string>();
+    let current = "";
+    for (const line of initSql.split("\n")) {
+      const create = /CREATE TABLE IF NOT EXISTS (\w+)/.exec(line);
+      if (create) current = create[1]!;
+      const alter = /ALTER TABLE (\w+) ADD COLUMN IF NOT EXISTS (\w+) jsonb/.exec(line);
+      if (alter) { found.add(`${alter[1]}.${alter[2]}`); continue; }
+      const column = /^\s+(\w+) jsonb\b/.exec(line);
+      if (column && current) found.add(`${current}.${column[1]}`);
+    }
+    const archived = [...found].filter((c) => (STUDIO_ARCHIVE_TABLES as readonly string[]).includes(c.split(".")[0]!)).sort();
+    const classified = [
+      ...Object.entries(STUDIO_JSON_ACCOUNT_FIELDS).flatMap(([t, fields]) => fields!.map((f) => `${t}.${f.split(/[[.]/)[0]}`)),
+      ...Object.entries(STUDIO_JSON_FIELDS_WITHOUT_ACCOUNTS).flatMap(([t, fields]) => fields!.map((f) => `${t}.${f}`)),
+    ];
+    expect(archived.length).toBeGreaterThan(5);
+    expect(archived).toEqual([...new Set(classified)].sort());
   });
 
   it("volumes cités par les paquets", () => {

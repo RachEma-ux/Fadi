@@ -24,7 +24,7 @@ import { signManifestHash, verifyArchiveSignature, type ArchiveTrust } from "./a
 import { currentSigningKey, verificationKeys } from "./archive-signing-key.js";
 import {
   STUDIO_ARCHIVE_SCHEMA, STUDIO_ARCHIVE_SCHEMA_VERSION, STUDIO_ARCHIVE_TABLES, STUDIO_IDENTITY_TABLES, STUDIO_TABLE_KEYS,
-  buildStudioManifest, checkStudioArchive, distrustRequirementSets, distrustStudioPublications,emptyStudioTables, mapStudioAccounts, packageVolumeIds, remapStudioRows, studioAccountIds,
+  buildStudioManifest, checkStudioArchive, distrustRequirementSets, distrustStudioPublications, emptyStudioTables, mapStudioAccounts, packageVolumeIds, remapStudioJsonAccounts, remapStudioRows, studioExportAccountIds,
   type StudioArchiveRow, type StudioArchiveSection, type StudioArchiveTable,
 } from "./studio-archive-manifest.js";
 
@@ -71,7 +71,8 @@ export async function exportStudioArchive(q: Querier, project: { id: string; own
   const tables = await loadStudioTables(q, project.id, project.ownerId);
   const meaningful = STUDIO_ARCHIVE_TABLES.some((t) => t !== "studio_tool_preferences" && tables[t].length > 0);
   if (!meaningful) return null;
-  const ids = studioAccountIds(tables, project.ownerId);
+  // Comptes des colonnes et des champs JSON (acceptations de référence partenaire) : chacun part avec son adresse.
+  const ids = studioExportAccountIds(tables, project.ownerId);
   const found = await rows(q, sql`SELECT jsonb_build_object('id', id, 'email', email) AS row FROM users WHERE id IN (${sql.join(ids.map((id) => sql`${id}`), sql`, `)}) ORDER BY id`);
   const emails = new Map(found.map((r) => [r["id"] as string, r["email"] as string]));
   // Un compte supprimé depuis (cascade impossible : RESTRICT) n'arrive pas ici ; l'adresse vide le signalerait.
@@ -121,10 +122,14 @@ export async function importStudioArchive(tx: Tx, projectId: string, importerId:
 
   let map: Map<string, string>;
   let reassigned: string[] = [];
+  let targetEmails = new Map<string, string>();
   if (trusted) {
     const emails = [...new Set(section.accounts.map((a) => a.email.toLowerCase()).filter(Boolean))];
     const found = emails.length ? await rows(tx, sql`SELECT jsonb_build_object('id', id, 'email', lower(email)) AS row FROM users WHERE lower(email) IN (${sql.join(emails.map((e) => sql`${e}`), sql`, `)})`) : [];
     ({ map, reassigned } = mapStudioAccounts(section.accounts, new Map(found.map((r) => [r["email"] as string, r["id"] as string])), importerId));
+    const targets = [...new Set([...map.values(), importerId])];
+    const targetRows = await rows(tx, sql`SELECT jsonb_build_object('id', id, 'email', email) AS row FROM users WHERE id IN (${sql.join(targets.map((id) => sql`${id}`), sql`, `)})`);
+    targetEmails = new Map(targetRows.map((r) => [r["id"] as string, r["email"] as string]));
   } else {
     // Rien n'est cru : tout acteur cité (auteur, approbateur, diffuseur, responsable) devient le compte qui restaure.
     map = new Map(section.accounts.map((a) => [a.id, importerId]));
@@ -156,7 +161,19 @@ export async function importStudioArchive(tx: Tx, projectId: string, importerId:
     let extraEvents: StudioArchiveRow[] = [];
     let requirementSets = tables.studio_requirement_sets;
     let clearedAcceptances = 0;
-    if (!trusted) {
+    if (trusted) {
+      // Comptes cités dans les champs JSON (STUDIO_JSON_ACCOUNT_FIELDS) : même correspondance que les colonnes. L'archive
+      // a déjà été vérifiée telle qu'écrite (manifeste, empreintes, signature) : la réattribution vient après.
+      const accountMap = new Map([...map].map(([source, target]) => [source, { id: target, email: targetEmails.get(target) ?? "" }]));
+      const importer = { id: importerId, email: targetEmails.get(importerId) ?? "" };
+      const reassignedIds = new Set(section.accounts.filter((a) => reassigned.includes(a.email || a.id)).map((a) => a.id));
+      const lost = requirementSets.flatMap((s) => (Array.isArray(s["requirements"]) ? s["requirements"] as { origine?: { acceptation?: { par?: unknown } } }[] : []))
+        .filter((e) => typeof e?.origine?.acceptation?.par === "string" && reassignedIds.has(e.origine.acceptation.par as string)).length;
+      const j = remapStudioJsonAccounts(requirementSets, accountMap, importer);
+      requirementSets = j.sets;
+      if (j.unknown.length) warnings.push(`Exigences : ${j.unknown.length} compte(s) d'acceptation sans adresse dans l'archive (${j.unknown.join(", ")}) ; acceptation(s) attribuée(s) au compte qui restaure.`);
+      if (lost) warnings.push(`Exigences : ${lost} acceptation(s) de référence partenaire attribuée(s) au compte qui restaure (compte d'origine absent de cette base).`);
+    } else {
       const d = distrustStudioPublications(publications, tables.studio_variants, importerId, new Date().toISOString(), () => newId("studio_publication_event"));
       ({ publications, downgraded } = d);
       extraEvents = d.events;

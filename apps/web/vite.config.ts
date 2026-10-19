@@ -1,4 +1,5 @@
 import { execSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { defineConfig, type Plugin } from "vite";
@@ -14,7 +15,12 @@ import { defineConfig, type Plugin } from "vite";
  *   paresseusement : projet, Atelier et sa vue 3D, bibliothèque), outil
  *   Parcelle — pour qu'un projet déjà ouvert s'ouvre entièrement sans
  *   réseau, même dans un écran jamais visité en ligne.
- * L'identifiant est le commit courant, sinon l'instant du build.
+ * L'identifiant affiché (page Paramètres) est le commit courant, sinon l'instant du build. Le cache du service worker
+ * porte en plus une empreinte du contenu du build : noms empreints des fichiers produits, `index.html`, fichiers non
+ * empreints de Parcelle et source du service worker. Deux builds du même commit au contenu différent (arbre modifié,
+ * dépendances) n'ouvrent donc jamais le même cache. `index.html` reçoit la balise `<meta name="fadi-build" content="…">` :
+ * le service worker n'en fait la coquille hors ligne que si elle porte son propre identifiant (jamais la page d'un
+ * autre build).
  */
 function buildId(): string {
   try {
@@ -48,7 +54,18 @@ function serviceWorkerBuildId(): Plugin {
       const assets = [...new Set(["/index.html", ...Object.keys(bundle).map((name) => `/${name}`), ...publicFiles("parcelle")])].filter((p) => /\.(js|css|html|svg|woff2?|png|json)$/.test(p) && !p.includes("three.webgpu"));
       // Le moteur WebGPU (option de la vue 3D, ~0,7 Mo) n'est pas préchargé : il ne sert que si l'option est cochée en ligne.
       try {
-        writeFileSync(file, readFileSync(file, "utf8").replaceAll("__FADI_BUILD__", buildId()).replace('"__FADI_ASSETS__"', JSON.stringify(assets)));
+        const template = readFileSync(file, "utf8");
+        const indexFile = join(outDir, "index.html");
+        const index = readFileSync(indexFile, "utf8");
+        const digest = createHash("sha256");
+        for (const name of Object.keys(bundle).filter((n) => n !== "index.html").sort()) digest.update(`${name}\n`);
+        for (const served of publicFiles("parcelle").sort()) digest.update(`${served}\n`).update(readFileSync(join("public", served.slice(1))));
+        digest.update(index).update(template);
+        const id = `${buildId()}-${digest.digest("hex").slice(0, 12)}`;
+        const marque = `<meta name="fadi-build" content="${id}">`;
+        const charset = /<meta charset="[^"]*">/i;
+        writeFileSync(indexFile, charset.test(index) ? index.replace(charset, (m) => `${m}${marque}`) : index.replace("<head>", `<head>${marque}`));
+        writeFileSync(file, template.replaceAll("__FADI_BUILD__", id).replace('"__FADI_ASSETS__"', JSON.stringify(assets)));
       } catch (err) {
         console.warn(`[fadi-sw-build-id] ${file} non réécrit : ${err instanceof Error ? err.message : String(err)}`);
       }

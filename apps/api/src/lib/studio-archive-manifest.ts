@@ -76,6 +76,29 @@ export const STUDIO_USER_COLUMNS: Readonly<Record<StudioArchiveTable, readonly s
   studio_tool_preferences: ["user_id"],
 });
 
+/**
+ * Inventaire des champs JSON (`jsonb`) des tables archivées qui citent un compte, réattribués à l'import d'une archive
+ * vérifiée par la même règle que les colonnes (adresse → compte de la base cible, sinon le compte qui restaure).
+ * Seul champ concerné : l'acceptation d'une référence partenaire (lot E.1), `par` (identifiant) et `parEmail` (adresse).
+ */
+export const STUDIO_JSON_ACCOUNT_FIELDS: Readonly<Partial<Record<StudioArchiveTable, readonly string[]>>> = Object.freeze({
+  studio_requirement_sets: ["requirements[].origine.acceptation.par", "requirements[].origine.acceptation.parEmail"],
+});
+/**
+ * Champs JSON des tables archivées examinés et sans compte : document, enveloppe et réponse des révisions (géométrie,
+ * commandes, contexte étude / variante / révision), ancrages des commentaires, résultat d'un contrôle (écarts par
+ * exigence), paquet et manifeste figés d'une publication (sources, métadonnées, fichiers), préférences d'outils
+ * (identifiants d'outils). Les journaux (publications, observations) n'ont pas de champ JSON : leurs acteurs sont des
+ * colonnes (`STUDIO_USER_COLUMNS`). Un test confronte ces deux listes aux colonnes `jsonb` de `init.sql`.
+ */
+export const STUDIO_JSON_FIELDS_WITHOUT_ACCOUNTS: Readonly<Partial<Record<StudioArchiveTable, readonly string[]>>> = Object.freeze({
+  studio_revisions: ["document", "envelope", "response"],
+  studio_comments: ["object_ids"],
+  studio_requirement_checks: ["result"],
+  studio_publications: ["package", "manifest"],
+  studio_tool_preferences: ["favorites", "personal"],
+});
+
 /** Colonnes qui portent l'identifiant du projet (remplacé par celui du projet restauré). */
 export const STUDIO_PROJECT_COLUMNS: Readonly<Partial<Record<StudioArchiveTable, readonly string[]>>> = Object.freeze({
   studio_studies: ["project_id"],
@@ -155,6 +178,55 @@ export function studioAccountIds(tables: StudioArchiveTables, ownerId: string): 
   const ids = new Set<string>([ownerId]);
   for (const t of STUDIO_ARCHIVE_TABLES) for (const row of tables[t]) for (const c of STUDIO_USER_COLUMNS[t]) if (typeof row[c] === "string" && row[c]) ids.add(row[c] as string);
   return [...ids].sort();
+}
+
+/** Acceptations de référence partenaire d'une version de jeu d'exigences (objets lus tels quels). */
+function acceptationsOf(set: StudioArchiveRow): Record<string, unknown>[] {
+  const list = Array.isArray(set["requirements"]) ? (set["requirements"] as unknown[]) : [];
+  return list.flatMap((e) => (isRecord(e) && isRecord(e["origine"]) && isRecord(e["origine"]["acceptation"]) ? [e["origine"]["acceptation"]] : []));
+}
+
+/** Identifiants de compte cités dans les champs JSON (`STUDIO_JSON_ACCOUNT_FIELDS`), triés. */
+export function studioJsonAccountIds(tables: StudioArchiveTables): string[] {
+  const ids = new Set<string>();
+  for (const s of tables.studio_requirement_sets) for (const a of acceptationsOf(s)) if (typeof a["par"] === "string" && a["par"]) ids.add(a["par"]);
+  return [...ids].sort();
+}
+
+/** Comptes à exporter : colonnes, propriétaire et champs JSON (l'adresse de chacun accompagne l'archive). */
+export function studioExportAccountIds(tables: StudioArchiveTables, ownerId: string): string[] {
+  return [...new Set([...studioAccountIds(tables, ownerId), ...studioJsonAccountIds(tables)])].sort();
+}
+
+/**
+ * Archive vérifiée : réattribution des comptes cités dans les champs JSON, par la même table de correspondance que les
+ * colonnes (`accountMap` : identifiant d'origine → compte de la base cible, identifiant et adresse). Un identifiant
+ * absent de la table (compte cité sans adresse dans l'archive) devient `fallback`, le compte qui restaure, et il est
+ * déclaré (`unknown`). `parEmail`, quand il est présent, prend l'adresse du compte retenu (jamais une adresse
+ * d'origine sous un identifiant de la base cible). Le reste du contenu est inchangé. Pure, sans effet sur l'entrée.
+ */
+export function remapStudioJsonAccounts(
+  sets: readonly StudioArchiveRow[], accountMap: ReadonlyMap<string, { id: string; email: string }>, fallback: { id: string; email: string },
+): { sets: StudioArchiveRow[]; remapped: number; unknown: string[] } {
+  let remapped = 0;
+  const unknown = new Set<string>();
+  const out = sets.map((s) => {
+    if (!Array.isArray(s["requirements"])) return { ...s };
+    return {
+      ...s,
+      requirements: (s["requirements"] as unknown[]).map((e) => {
+        if (!isRecord(e) || !isRecord(e["origine"]) || !isRecord(e["origine"]["acceptation"])) return e;
+        const acc = e["origine"]["acceptation"];
+        const source = typeof acc["par"] === "string" ? acc["par"] : "";
+        const target = accountMap.get(source);
+        if (!target) unknown.add(source || "(vide)");
+        const t = target ?? fallback;
+        remapped += 1;
+        return { ...e, origine: { ...e["origine"], acceptation: { ...acc, par: t.id, ...(acc["parEmail"] !== undefined ? { parEmail: t.email } : {}) } } };
+      }),
+    };
+  });
+  return { sets: out, remapped, unknown: [...unknown].sort() };
 }
 
 /** Volumes cités par les paquets diffusés (identifiant = SHA-256 du contenu). */
