@@ -377,6 +377,11 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/studio-accessibilite node apps/web/e2e/studio-accessibilite.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du métré Studio — ajustements enregistrés et versionnés, rechargement, « à revoir », CSV, refus et droits (apps/web/e2e/studio-quantites.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/studio-quantites.mjs 2>&1 | tee -a e2e.log
       - name: Recette des préférences de notification — type masqué, projet en sourdine, état lu relu (apps/web/e2e/notifications-preferences.mjs)
         if: ${{ matrix.shard == 'parcours' }}
         run: |

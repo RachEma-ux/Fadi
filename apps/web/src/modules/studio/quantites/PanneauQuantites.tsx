@@ -76,6 +76,7 @@ function CelluleTotal({ t }: { t: TotalAjusteEnregistre | undefined }) {
     {t.ajusteeCalque !== undefined && <><br /><small title={t.ajustementCalque?.motif}>total du calque ajusté</small></>}
     {t.aRevoirCalque && <><br /><small className="studio-quantites-revoir" data-a-revoir={t.aRevoirCalque.id} title={t.aRevoirCalque.motif}>à revoir : total du calque proposé, non appliqué</small></>}
     {t.nonEvalues > 0 && <><br /><small className="studio-quantites-ne">{`partiel : ${t.nonEvalues} non évalué(s)`}</small></>}
+    {t.ajustementsNonReportes ? <><br /><small className="studio-quantites-ne" data-non-reportes={t.ajustementsNonReportes}>{`partiel : ${t.ajustementsNonReportes} ajustement(s) sur des valeurs non évaluées`}</small></> : null}
   </td>;
 }
 
@@ -223,6 +224,7 @@ export function PanneauQuantites({ projectId, studyId, variantId, revisionId, do
 
     <h3>Ajustements manuels</h3>
     <p>La quantité brute n’est jamais remplacée : brute, ajustement et ajustée s’affichent ensemble. Chaque ajustement est enregistré avec la variante (journal versionné, jamais réécrit), avec son motif, son auteur, sa date et sa révision ; si sa cible change ensuite, il est « à revoir » et n’est plus appliqué.</p>
+    <p>Choix prudent : un ajustement d’objet enregistré après celui du total de son calque rend ce total « à revoir » ; une évolution du métré (nouvelle grandeur, motif « non évalué » renommé) rend aussi « à revoir » les ajustements concernés, à reconfirmer.</p>
     {lecture.isError && <p role="alert">{lecture.error instanceof Error ? lecture.error.message : String(lecture.error)}</p>}
     {!lectureSeule && <form className="studio-quantites-ajustement" onSubmit={(e) => void ajouter(e)} data-studio-quantites-ajustement>
       <fieldset disabled={!peutSaisir}>

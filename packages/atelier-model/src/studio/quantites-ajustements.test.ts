@@ -13,9 +13,9 @@ const calques = [{ id: "murs", name: "Murs", visible: true, locked: false }];
 
 let seq = 0;
 /** Ajustement tel que le serveur l'enregistre : état de la cible calculé sur la révision `d`. */
-function enregistre(d: StudioDocument, cible: CibleAjustementQuantite, grandeur: GrandeurQuantite, valeur: number | null, motif = "Relevé"): AjustementQuantiteEnregistre {
+function enregistre(d: StudioDocument, cible: CibleAjustementQuantite, grandeur: GrandeurQuantite, valeur: number | null, motif = "Relevé", journal: readonly AjustementQuantiteEnregistre[] = []): AjustementQuantiteEnregistre {
   const q = quantitesStudio(d);
-  const e = etatCibleQuantite(d, q, cible, grandeur);
+  const e = etatCibleQuantite(d, q, cible, grandeur, evaluerAjustementsQuantites(d, q, journal).objets);
   if ("refus" in e) throw new Error(e.refus);
   seq += 1;
   return { id: `a${seq}`, sequence: seq, revisionId: `r-${d.objects.length}`, cible, grandeur, unite: grandeur === "surface" ? "m2" : "m", valeur, motif, derivee: e.derivee, etatCible: JSON.parse(JSON.stringify(e.etat)), auteur: "u1", auteurEmail: "a@example.test", date: "2026-10-19T10:00:00.000Z" };
@@ -123,6 +123,41 @@ describe("ajustements de quantités enregistrés (E.3-05)", () => {
     const v = appliquerAjustementsEnregistres(q, evaluerAjustementsQuantites(d, q, [a])).objets[0]!.valeurs.find((x) => x.grandeur === "volume")!;
     expect(v).toMatchObject({ derivee: null, ajustee: 1.2, retenue: 1.2, ecart: null });
     expect(a.derivee).toBeNull();
+  });
+
+  it("total général : les écarts calculables sont reportés, un total de calque non évalué ajusté rend le total partiel (revue M2)", () => {
+    const d = doc([
+      ligne("a1", 3, "A"),
+      { id: "b1", type: "rectangle", layerId: "B", origin: { x: 0, y: 0 }, width: 1, height: 5, extrusion: { base: 0, height: 1 } },
+    ], { layers: [{ id: "A", name: "A", visible: true, locked: false }, { id: "B", name: "B", visible: true, locked: false }] });
+    const q = quantitesStudio(d);
+    const aA = enregistre(d, { type: "calque", id: "A" }, "volume", 10, "Volume du calque A relevé");
+    const aB = enregistre(d, { type: "calque", id: "B" }, "volume", 7, "Volume du calque B relevé");
+    const r = appliquerAjustementsEnregistres(q, evaluerAjustementsQuantites(d, q, [aA, aB]));
+    expect(r.calques.find((c) => c.calqueId === "A")!.totaux.find((t) => t.grandeur === "volume")).toMatchObject({ valeur: null, retenue: 10, ecart: null });
+    // B : +2 reporté ; A : base non évaluée, écart non calculable, compté à part (jamais inventé).
+    expect(r.totaux.find((t) => t.grandeur === "volume")).toMatchObject({ valeur: 5, retenue: 7, ecart: 2, ajustementsNonReportes: 1 });
+    // Ordre inverse des calques : même résultat (aucun cumul « bloqué » à null).
+    const r2 = appliquerAjustementsEnregistres(q, evaluerAjustementsQuantites(d, q, [aB, aA]));
+    expect(r2.totaux.find((t) => t.grandeur === "volume")).toMatchObject({ retenue: 7, ecart: 2, ajustementsNonReportes: 1 });
+  });
+
+  it("un ajustement d'objet enregistré après celui du total de son calque rend ce total « à revoir » (revue L1)", () => {
+    const aCalque = enregistre(d1, { type: "calque", id: "murs" }, "longueur", 11, "Total relevé");
+    const aObjet = enregistre(d1, { type: "objet", id: "l1" }, "longueur", 4.5, "Relevé", [aCalque]);
+    const e = evaluerAjustementsQuantites(d1, q1, [aCalque, aObjet]);
+    expect(e.journal.map((l) => [l.ajustement.id, l.statut, l.revue])).toEqual([[aCalque.id, "a-revoir", "cible-modifiee"], [aObjet.id, "en-vigueur", undefined]]);
+    const r = appliquerAjustementsEnregistres(q1, e);
+    const t = r.calques.find((c) => c.calqueId === "murs")!.totaux.find((x) => x.grandeur === "longueur")!;
+    expect(t).toMatchObject({ valeur: 10, retenue: 10.5 });
+    expect(t.aRevoirCalque?.id).toBe(aCalque.id);
+    // Total ressaisi après l'ajustement d'objet : son état comprend cet ajustement, il est en vigueur.
+    const aCalque2 = enregistre(d1, { type: "calque", id: "murs" }, "longueur", 11.5, "Total ressaisi", [aCalque, aObjet]);
+    const e2 = evaluerAjustementsQuantites(d1, q1, [aCalque, aObjet, aCalque2]);
+    expect(e2.journal.map((l) => l.statut)).toEqual(["remplace", "en-vigueur", "en-vigueur"]);
+    // Le retour de l'objet à sa brute change à nouveau l'état du total : à revoir.
+    const aRetour = enregistre(d1, { type: "objet", id: "l1" }, "longueur", null, "Erreur", [aCalque, aObjet, aCalque2]);
+    expect(evaluerAjustementsQuantites(d1, q1, [aCalque, aObjet, aCalque2, aRetour]).journal.at(2)!.statut).toBe("a-revoir");
   });
 
   it("état de cible : JSON canonique stable après un aller-retour de stockage (ordre des clés indifférent)", () => {

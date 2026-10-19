@@ -9,6 +9,8 @@
  * - Un ajustement se saisit sur la révision de **tête** de la variante (409 `revision_perimee` sinon) : le serveur
  *   calcule lui-même, depuis le document de cette révision, la quantité brute et l'état de la cible ; il ne croit rien
  *   du client que la saisie (cible, grandeur, unité, valeur, motif). Auteur et date : compte et horloge du serveur.
+ *   L'état d'un total de calque comprend les ajustements d'objets en vigueur sur cette tête (journal évalué ici).
+ * - Journal borné : au-delà de `STUDIO_LIMITES_AJUSTEMENTS.journal` ajustements, 409 `journal_plein`.
  * - La quantité brute n'est jamais remplacée ; un ajustement dont la cible a changé depuis sa révision est « à revoir »
  *   (`evaluerAjustementsQuantites`), jamais appliqué en silence.
  *
@@ -17,7 +19,7 @@
  */
 import { z } from "zod";
 import {
-  controlerSaisieAjustement, etatCibleQuantite, GRANDEURS_QUANTITE, quantitesStudio, STUDIO_LIMITES_AJUSTEMENTS, validateStudioDocument,
+  controlerSaisieAjustement, etatCibleQuantite, evaluerAjustementsQuantites, GRANDEURS_QUANTITE, quantitesStudio, STUDIO_LIMITES_AJUSTEMENTS, validateStudioDocument,
   type AjustementQuantiteEnregistre, type GrandeurQuantite, type RefusAjustementEnregistre, type SaisieAjustementQuantite, type StudioDocument,
 } from "@parcours/atelier-model";
 import { empreinte, type Decision } from "./studio-exigences.js";
@@ -88,8 +90,12 @@ export interface AjustementDecide {
  * du document de cette révision ; quantité brute et état de la cible calculés ici.
  */
 export function deciderAjustement(
-  input: StudioAjustementSaisi, contexte: { derniereSequence: number; headRevisionId: string; document: unknown },
+  input: StudioAjustementSaisi,
+  contexte: { derniereSequence: number; headRevisionId: string; document: unknown; journal?: readonly AjustementQuantiteEnregistre[] },
 ): Decision<AjustementDecide> {
+  if (contexte.derniereSequence >= STUDIO_LIMITES_AJUSTEMENTS.journal) {
+    return { refus: { status: 409, body: { error: "journal_plein", message: `Le journal des ajustements de cette variante est complet (${STUDIO_LIMITES_AJUSTEMENTS.journal} ajustements) : aucun nouvel ajustement n’est accepté.`, limite: STUDIO_LIMITES_AJUSTEMENTS.journal } } };
+  }
   if (input.baseSequence !== contexte.derniereSequence) {
     return { refus: { status: 409, body: { error: "journal_perime", message: "Le journal des ajustements a changé depuis votre lecture : relisez-le.", currentSequence: contexte.derniereSequence } } };
   }
@@ -101,7 +107,8 @@ export function deciderAjustement(
   const saisie: SaisieAjustementQuantite = { cible: input.cible, grandeur: input.grandeur, unite: input.unite, valeur: input.valeur, motif: input.motif };
   const refus = controlerSaisieAjustement(doc, q, saisie);
   if (refus) return { refus: { status: 400, body: { error: refus.replace(/-/g, "_"), message: MESSAGES_REFUS[refus] } } };
-  const e = etatCibleQuantite(doc, q, input.cible, input.grandeur);
+  const enVigueur = evaluerAjustementsQuantites(doc, q, contexte.journal ?? []).objets;
+  const e = etatCibleQuantite(doc, q, input.cible, input.grandeur, enVigueur);
   if ("refus" in e) return { refus: { status: 400, body: { error: e.refus.replace(/-/g, "_"), message: MESSAGES_REFUS[e.refus] } } };
   return {
     ok: {

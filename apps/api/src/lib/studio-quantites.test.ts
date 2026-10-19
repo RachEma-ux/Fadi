@@ -55,6 +55,25 @@ describe("ajustements du métré Studio — règles du serveur (E.3-05)", () => 
     expect(evaluerAjustementsQuantites(surB, quantitesStudio(surB), [a]).journal[0]).toMatchObject({ statut: "a-revoir", revue: "cible-modifiee" });
   });
 
+  it("journal borné : au-delà de la limite, 409 journal_plein (message en français)", () => {
+    const ctx = { derniereSequence: 5000, headRevisionId: "rev-a", document: json(docA) };
+    expect(deciderAjustement(saisie({ baseSequence: 5000 }), ctx)).toMatchObject({ refus: { status: 409, body: { error: "journal_plein", limite: 5000 } } });
+    expect(deciderAjustement(saisie({ baseSequence: 4999 }), { ...ctx, derniereSequence: 4999 })).toMatchObject({ ok: { seq: 5000 } });
+  });
+
+  it("total de calque : son état comprend les ajustements d'objets en vigueur sur la tête (journal évalué par le serveur)", () => {
+    const ctx = { derniereSequence: 0, headRevisionId: "rev-a", document: json(docA) };
+    const d1 = deciderAjustement(saisie(), ctx);
+    if ("refus" in d1) throw new Error("refus");
+    const row: LigneAjustement = { id: "qa1", studyId: "s", variantId: "v", revisionId: "rev-a", ...d1.ok, authorId: "u1", requestId: null, payloadHash: null, createdAt: new Date() };
+    const journal = [ajustementDe(row, new Map())];
+    const d2 = deciderAjustement(saisie({ baseSequence: 1, cible: { type: "calque", id: "default" }, valeur: 5 }), { ...ctx, derniereSequence: 1, journal });
+    if ("refus" in d2) throw new Error("refus");
+    expect(JSON.stringify(d2.ok.targetState)).toContain('"ajustement":{"id":"qa1","valeur":4.2}');
+    const sansJournal = deciderAjustement(saisie({ baseSequence: 1, cible: { type: "calque", id: "default" }, valeur: 5 }), { ...ctx, derniereSequence: 1 });
+    expect(JSON.stringify("ok" in sansJournal && sansJournal.ok.targetState)).not.toContain("ajustement");
+  });
+
   it("empreinte de la saisie : stable, sensible au contenu (rejeu par requestId)", () => {
     expect(empreinteAjustement(saisie())).toBe(empreinteAjustement({ ...saisie(), requestId: "autre" }));
     expect(empreinteAjustement(saisie())).not.toBe(empreinteAjustement(saisie({ valeur: 4.3 })));

@@ -16,10 +16,12 @@ export type SeparateurDecimal = "," | ".";
 /**
  * Cellule texte : entre guillemets si elle contient le séparateur, un guillemet, un retour à la ligne ou des espaces de
  * bord (guillemets doublés). Une cellule commençant par = + - @ (ou une tabulation) est préfixée d'une apostrophe pour
- * qu'un tableur ne l'exécute jamais comme formule.
+ * qu'un tableur ne l'exécute jamais comme formule. Un nombre écrit par `nombreCsv` (négatif compris, par exemple un
+ * écart d'ajustement −0,05) n'est pas une formule : il reste tel quel, lisible comme nombre.
  */
 export function celluleCsv(texte: string): string {
-  const t = /^[=+\-@\t\r]/.test(texte) ? `'${texte}` : texte;
+  const nombre = /^-?\d+([.,]\d+)?$/.test(texte);
+  const t = !nombre && /^[=+\-@\t\r]/.test(texte) ? `'${texte}` : texte;
   return /[;"\r\n]/.test(t) || t !== t.trim() ? `"${t.replace(/"/g, '""')}"` : t;
 }
 
@@ -75,7 +77,10 @@ function ligneValeur(c: CalqueExporte, o: CalqueExporte["objets"][number], v: Va
 
 function ligneTotal(calque: string, masque: string, objet: string, t: TotalAjusteEnregistre, d: SeparateurDecimal, remarque = ""): string[] {
   const n = (x: number | null | undefined) => (x === null ? NON_EVALUE : x === undefined ? "" : nombreCsv(x, d));
-  const notes = [t.nonEvalues ? `partiel : ${t.nonEvalues} non évalué(s)` : "", t.ajustes ? `${t.ajustes} ajusté(s)` : "", remarque].filter(Boolean).join(", ");
+  const notes = [
+    t.nonEvalues ? `partiel : ${t.nonEvalues} non évalué(s)` : "", t.ajustes ? `${t.ajustes} ajusté(s)` : "",
+    t.ajustementsNonReportes ? `partiel : ${t.ajustementsNonReportes} ajustement(s) sur des valeurs non évaluées` : "", remarque,
+  ].filter(Boolean).join(", ");
   const { trace, suite } = colonnesAjustement(t.ajustementCalque, t.aRevoirCalque, t.ecart, n);
   const [motif = "", auteur = "", date = ""] = trace;
   // Total général : l'écart reporte les totaux de calque ajustés (sans ligne d'ajustement propre).
