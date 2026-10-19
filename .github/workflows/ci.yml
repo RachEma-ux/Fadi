@@ -420,6 +420,11 @@ jobs:
         run: |
           set -o pipefail
           node apps/web/e2e/studio-dossier.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de la matrice d'échanges Studio — commande Q, entrées livrées et reportées, couverture IFC par type, filtre, lecture seule (apps/web/e2e/studio-echanges.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/studio-echanges.mjs 2>&1 | tee -a e2e.log
       - name: Recette des préférences de notification — type masqué, projet en sourdine, état lu relu (apps/web/e2e/notifications-preferences.mjs)
         if: ${{ matrix.shard == 'parcours' }}
         run: |

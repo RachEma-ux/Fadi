@@ -433,6 +433,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       case "importer-dxf": return setDialogue("import-dxf");
       case "feuille": return setDialogue("feuille");
       case "dossier": return setDialogue("dossier");
+      case "echanges": return setDialogue("echanges");
       case "outils": return setDialogue("outils");
       case "palette": return setDialogue("palette");
       case "exigences": { const s = shell.current?.querySelector<HTMLElement>("[data-studio-exigences]"); s?.scrollIntoView({ block: "start" }); s?.focus(); return; }

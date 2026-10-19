@@ -19,7 +19,7 @@ describe("Barre compacte — familles", () => {
     expect(ELEMENTS_FAMILLE.get("annotation")?.map((e) => e.id)).toEqual(["studio.dessin.cote", "studio.dessin.cote-angulaire", "studio.dessin.texte"]);
     expect(ELEMENTS_FAMILLE.get("selection")?.map((e) => e.id)).toEqual(["studio.dessin.selection", "tout-selectionner"]);
     expect(ELEMENTS_FAMILLE.get("vue")?.map((e) => e.id)).toContain("accrochage-grille");
-    expect(ELEMENTS_FAMILLE.get("echanges")?.map((e) => e.id)).toEqual(["importer-dxf", "exporter-svg", "exporter-dxf", "exporter-ifc"]);
+    expect(ELEMENTS_FAMILLE.get("echanges")?.map((e) => e.id)).toEqual(["importer-dxf", "exporter-svg", "exporter-dxf", "exporter-ifc", "echanges"]);
     expect(familleDeOutil("studio.dessin.cote")).toBe("annotation");
     expect(familleDeOutil("studio.objet.extruder")).toBe("volume");
   });
