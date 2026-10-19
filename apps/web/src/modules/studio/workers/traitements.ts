@@ -6,12 +6,14 @@
  *   est le fichier choisi (lu dans le Worker) ou son texte.
  * - `feuille.composer` : composition de la feuille (`composerFeuilleStudio`), puis SVG et PDF.
  * - `maillage.3d` : maillage dérivé de la vue 3D (`studioMesh3d`), tâche de fond (D.1-01).
+ * - `maillage.3d.objets` : morceaux du maillage des seuls objets invalidés (`studioMaillerObjets`, tous si `ids` est
+ *   null), assemblés sur le fil principal avec le cache de la vue 3D (lot C.2).
  * - `quantites.calculer` : métré brut (`quantitesStudio`), tâche de fond (D.1-01).
  *
  * Pur : ni React ni DOM (seul `Blob.text()` est appelé, disponible dans un Worker).
  */
 import {
-  composerFeuilleStudio, quantitesStudio, studioMesh3d, studioSheetPdf, studioSheetSvg,
+  composerFeuilleStudio, quantitesStudio, studioMaillerObjets, studioMesh3d, studioSheetPdf, studioSheetSvg,
   type StudioDocument, type StudioDxfUnite, type StudioSheet, type StudioSheetOptions,
 } from "@parcours/atelier-model";
 import { lireDxf, type LectureDxf } from "../import/import-dxf-ui";
@@ -67,5 +69,6 @@ export const TRAITEMENTS_STUDIO: Traitements = {
     transfert: (r: ResultatFeuille) => (r.pdf ? [r.pdf.buffer as ArrayBuffer] : []),
   },
   "maillage.3d": { executer: (c: { document: StudioDocument }) => studioMesh3d(c.document) },
+  "maillage.3d.objets": { executer: (c: { document: StudioDocument; ids: string[] | null }) => studioMaillerObjets(c.document, c.ids) },
   "quantites.calculer": { executer: (c: { document: StudioDocument }) => quantitesStudio(c.document) },
 };

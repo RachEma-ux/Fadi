@@ -328,6 +328,9 @@ const AJOUTS = {
     "SCHEMA_APPARENCE", "SCHEMA_ELEMENT_VISUALISATION", "SCHEMA_SCENE", "STUDIO_FINITIONS_AFFICHAGE", "STUDIO_FRAME_SCENES", "STUDIO_LIMITES_SCENES",
     "STUDIO_MODES_AFFICHAGE", "STUDIO_PROJECTIONS_SCENE", "validerElementVisualisation", "studioApparenceResolue", "studioApparences", "studioDocumentToutVisible", "studioFiltrerMaillageScene", "studioMeshScene",
     "studioRappelerScene", "studioScenes", "STUDIO_NATURE_RENDU", "STUDIO_RENDU_SCHEMA", "studioNomFichierRendu", "studioProvenanceRendu",
+    // Projections versionnées et invalidation minimale (lot C.2, `projections.ts`).
+    "STUDIO_PROJECTIONS", "STUDIO_SEUIL_INVALIDATION", "projectionsAInvalider", "studioAssemblerMaillage", "studioClesProjection", "studioEmpreinteContenu",
+    "studioFusionnerMorceaux", "studioJsonStable", "studioMaillerObjets", "studioMesh3dIncremental", "studioVersionProjection",
   ]),
 };
 function sansAjouts(value: unknown): unknown {

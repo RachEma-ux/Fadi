@@ -820,9 +820,37 @@ try {
   check("sélection 3D : déplacer (dx, dy, dz) — origine (2 ; 1 ; 0,5)", (await choisi.textContent()).includes("origine (2 ; 1 ; 0,5) m"), await choisi.textContent());
   await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press("Control+z");
+  // C.2-02 / C.2-03 (projections versionnées) : un clic à l'endroit de la boîte la désigne ; supprimée, le même clic ne
+  // désigne jamais son identifiant (rien, ou l'objet derrière), ni tout de suite (maillage encore en calcul), ni après.
+  const maillageAJour3d = () => page.waitForFunction(() => {
+    const v = document.querySelector("[data-studio-vue3d]");
+    return v?.getAttribute("data-studio-maillage") === "done" && v.getAttribute("data-studio-maillage-revision") === v.getAttribute("data-studio-revision-courante");
+  });
+  await page.waitForFunction(() => document.querySelector("[data-studio-annuler-portee]")?.textContent?.includes("(2 commande(s)"));
+  await maillageAJour3d();
+  await vueLibre.locator(`[data-studio-solide="${idBoite}"][aria-pressed="true"]`).click();
+  await page.locator(`[data-studio-solide-choisi="${idBoite}"]`).waitFor({ state: "detached" });
+  await canevasLibre.evaluate((c) => c.scrollIntoView({ block: "center" }));
+  const ecranBoite = await page.evaluate((id) => globalThis.__fadiVue3d?.ecran(id) ?? null, idBoite);
+  await page.mouse.click(ecranBoite.x, ecranBoite.y);
+  const designeAvant = await vueLibre.locator(`[data-studio-solide-choisi="${idBoite}"]`).waitFor({ timeout: 5000 }).then(() => 1, () => 0);
+  check("désignation 3D : un clic à l'endroit de la boîte la sélectionne (table de désignation)", !!ecranBoite && designeAvant === 1, JSON.stringify(ecranBoite));
+  await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press("Shift+Delete");
   await page.locator('[data-studio-vue3d][data-studio-solides-libres="1"]').waitFor();
   check("Maj+Suppr supprime le solide sélectionné", (await portee()).includes("(3 commande(s)"), await portee());
+  const choisiApres = async () => vueLibre.locator("[data-studio-solide-choisi]").evaluateAll((els) => els.map((e) => e.getAttribute("data-studio-solide-choisi")));
+  await page.mouse.click(ecranBoite.x, ecranBoite.y);
+  await page.waitForTimeout(300);
+  const aussitot = await choisiApres();
+  await maillageAJour3d();
+  await page.mouse.click(ecranBoite.x, ecranBoite.y);
+  await page.waitForTimeout(300);
+  const ensuite = await choisiApres();
+  check("désignation 3D : boîte supprimée, un clic à son endroit ne désigne jamais son identifiant (tout de suite et après remaillage)",
+    !aussitot.includes(idBoite) && !ensuite.includes(idBoite) && ensuite.length <= 1 && (await vueLibre.locator(`[data-studio-solide="${idBoite}"]`).count()) === 0,
+    JSON.stringify({ aussitot, ensuite }));
+  await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press("Control+z");
   await page.locator('[data-studio-vue3d][data-studio-solides-libres="2"]').waitFor();
   check("annuler : déplacement et suppression retirés, la boîte et le prisme restent", (await portee()).includes("(2 commande(s)"), await portee());
