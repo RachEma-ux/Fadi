@@ -448,6 +448,11 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   }
 
   // ——— Outils et commandes ———
+  // Un outil actif absent de la palette du domaine affiché (Ligne puis BIM, par l'onglet, le menu ou l'historique)
+  // n'agirait plus sur le canevas sans être montré : on revient à Sélection (revue #207).
+  useEffect(() => {
+    if (tool !== "studio.dessin.selection" && !dansPaletteDuDomaine({ type: "outil", id: tool }, domaineActif)) { setTool("studio.dessin.selection"); cancelTrace(); }
+  }, [domaineActif]);
   function cancelTrace() { setTrace(null); setSuite([]); gestes.setSurvol(null); }
   function runTool(toolId: StudioToolId) {
     // Les outils du volume libre agissent dans la vue 3D : ils l'ouvrent.
@@ -591,7 +596,10 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     // Un outil ou une commande d'un autre domaine (raccourci, palette, Tool Manager) ouvre son domaine.
     const vers = domaineExecution(cible.type === "outil" ? { type: "outil", id: cible.toolId } : { type: "commande", id: cible.id }, domaineActif);
     const outilCible = cible.type === "outil" ? STUDIO_TOOLS.find(x => x.toolId === cible.toolId) : undefined;
-    if (vers !== domaineActif && (cible.type === "commande" || (!!outilCible && toolAvailable(outilCible)))) choisirDomaine(vers);
+    // Outils de la vue 3D (volume libre, visualisation) : `runTool` ouvre lui-même leur domaine et leur planche
+    // (`ouvrir3d`, `demander3d`) ; naviguer ici d'abord ajouterait une seconde entrée d'historique (revue #207).
+    const navigueSeul = cible.type === "outil" && (OUTILS_VOLUME_LIBRE.has(cible.toolId) || OUTILS_VISUALISATION.has(cible.toolId));
+    if (!navigueSeul && vers !== domaineActif && (cible.type === "commande" || (!!outilCible && toolAvailable(outilCible)))) choisirDomaine(vers);
     if (cible.type === "outil") {
       const t = STUDIO_TOOLS.find(x => x.toolId === cible.toolId);
       if (t && toolAvailable(t)) runTool(cible.toolId);
