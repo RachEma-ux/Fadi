@@ -91,7 +91,7 @@ export function canonicalJson(value: unknown): string {
   return JSON.stringify(value) ?? "null";
 }
 const sha256 = (data: string | Uint8Array): string => createHash("sha256").update(data).digest("hex");
-/** Empreinte du document d'une révision : SHA-256 de son JSON canonique. */
+/** Empreinte du document d'une révision : SHA-256 du JSON canonique du document tel qu'il est stocké (jamais de sa forme validée). */
 export const studioDocumentHash = (doc: StudioDocument): string => sha256(canonicalJson(doc));
 
 /** Fichiers d'un paquet, pur et déterministe : mêmes document et métadonnées, mêmes octets. */
@@ -212,6 +212,15 @@ async function journal(tx: Tx, row: Pick<PublicationRow, "id" | "revisionId" | "
   });
 }
 
+/** Refus de suppression d'un projet (E.4-06) : une publication diffusée ou retirée ne s'efface jamais. */
+export const PUBLICATIONS_DIFFUSEES_MESSAGE =
+  "Ce projet porte des publications Studio diffusées ou retirées : elles sont conservées et le projet ne peut pas être supprimé.";
+export async function projectHasIssuedStudioPublications(q: Querier, projectId: string): Promise<boolean> {
+  const [row] = await q.select({ id: studioPublications.id }).from(studioPublications)
+    .where(and(eq(studioPublications.projectId, projectId), inArray(studioPublications.status, ["diffuse", "retire"]))).limit(1);
+  return row !== undefined;
+}
+
 /** Publications d'une étude (tous statuts), plus récentes d'abord ; droit `read`. */
 export async function listStudyPublications(projectId: string, studyId: string, actorId: string): Promise<{ publications: StudioPublicationView[] }> {
   const access = assertAccess(await loadProjectAccess(projectId, actorId), actorId, "read");
@@ -250,12 +259,12 @@ export async function createStudioPublication(projectId: string, studyId: string
     const variant = await variantOf(tx, study.id, variantId);
     assertAccess(access, actorId, "write");
     const revision = await revisionOf(tx, variant.id, input.revisionId ?? variant.headRevisionId);
-    const documentHash = studioDocumentHash(validateStudioDocument(revision.document));
+    const documentHash = studioDocumentHash(revision.document);
     const title = input.title ?? `${study.name} — ${variant.name}`;
     if (input.requestId !== undefined) {
       const [previous] = await tx.select().from(studioPublications).where(and(eq(studioPublications.variantId, variant.id), eq(studioPublications.requestId, input.requestId))).limit(1);
       if (previous) {
-        if (previous.createdBy !== actorId || previous.revisionId !== revision.id || previous.title !== title) {
+        if (previous.createdBy !== actorId || (input.revisionId !== undefined && previous.revisionId !== input.revisionId) || (input.title !== undefined && previous.title !== input.title)) {
           throw new StudioRequestError(409, { error: "request_conflict", message: "Cet identifiant de requête est déjà utilisé pour un autre contenu ou auteur." });
         }
         return { ...(await views(tx, access, actorId, [previous], true))[0]!, replayed: true };
@@ -284,6 +293,8 @@ export async function transitionStudioPublication(projectId: string, studyId: st
       .where(and(eq(studioPublications.id, publicationId), eq(studioPublications.studyId, study.id), eq(studioPublications.projectId, projectId))).for("update");
     if (!row) return notFound();
     assertAccess(access, actorId, rule.need);
+    // Toute transition est une écriture : la réservation d'édition d'un autre compte la bloque (423), propriétaire compris.
+    assertAccess(access, actorId, "write");
     const variant = await variantOf(tx, study.id, row.variantId);
     if (!rule.from.includes(row.status)) {
       throw new StudioRequestError(409, { error: "invalid_transition", status: row.status, action, message: `Transition « ${action} » impossible depuis le statut « ${row.status} ».` });
@@ -294,7 +305,7 @@ export async function transitionStudioPublication(projectId: string, studyId: st
     }
     // Empreinte recalculée depuis la révision immuable : jamais crue sur parole.
     const revision = await revisionOf(tx, variant.id, row.revisionId);
-    const actualHash = studioDocumentHash(validateStudioDocument(revision.document));
+    const actualHash = studioDocumentHash(revision.document);
     if (actualHash !== row.documentHash) throw new Error("studio_publication_hash_drift");
     const now = new Date();
     const patch: Partial<typeof studioPublications.$inferInsert> = { status: rule.to, updatedAt: now };
@@ -364,7 +375,7 @@ export async function verifierPaquet(projectId: string, studyId: string, publica
   });
   return {
     publicationId: row.id, packageHash: row.packageHash!, packageHashRecomputed: studioPackageHash(pkg),
-    documentHash: studioDocumentHash(validateStudioDocument(revision.document)), files,
+    documentHash: studioDocumentHash(revision.document), files,
     identical: files.every((f) => f.identical) && studioPackageHash(pkg) === row.packageHash,
   };
 }

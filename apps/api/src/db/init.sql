@@ -721,3 +721,27 @@ ALTER TABLE studio_tool_preferences DROP CONSTRAINT IF EXISTS studio_tool_prefer
 ALTER TABLE studio_tool_preferences DROP CONSTRAINT IF EXISTS studio_tool_preferences_lists_check,
   ADD CONSTRAINT studio_tool_preferences_lists_check
   CHECK (jsonb_typeof(favorites) = 'array' AND jsonb_typeof(personal) = 'array') NOT VALID;
+-- Publications Studio, jamais de suppression (E.4-06) : une DELETE directe d'un évènement du journal est refusée tant
+-- que sa publication existe ; une DELETE directe d'une publication diffusée ou retirée est refusée tant que son projet
+-- existe. Seule la cascade (parent déjà supprimé dans la même instruction, donc invisible) passe ; la route
+-- DELETE /projects/:id refuse elle-même (409 publications_diffusees) un projet portant une publication diffusée ou retirée.
+CREATE OR REPLACE FUNCTION studio_publication_event_no_delete() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM studio_publications WHERE id = OLD.publication_id) THEN
+    RAISE EXCEPTION 'studio_publication_event_undeletable';
+  END IF;
+  RETURN OLD;
+END;
+$$;
+CREATE OR REPLACE TRIGGER studio_publication_events_no_delete BEFORE DELETE ON studio_publication_events
+  FOR EACH ROW EXECUTE FUNCTION studio_publication_event_no_delete();
+CREATE OR REPLACE FUNCTION studio_publication_no_delete() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF OLD.status IN ('diffuse', 'retire') AND EXISTS (SELECT 1 FROM projects WHERE id = OLD.project_id) THEN
+    RAISE EXCEPTION 'studio_publication_undeletable';
+  END IF;
+  RETURN OLD;
+END;
+$$;
+CREATE OR REPLACE TRIGGER studio_publications_no_delete BEFORE DELETE ON studio_publications
+  FOR EACH ROW EXECUTE FUNCTION studio_publication_no_delete();

@@ -153,5 +153,14 @@ const all = await reader('GET', pubs);
 check('lecteur : liste de l\'étude (4 publications, sans transition permise)', all.status === 200 && all.body.publications.length === 4 && all.body.publications.every((p) => p.allowed.length === 0), short(all.body));
 check('action inconnue : 404', (await owner('POST', `${pubs}/${id4}/effacer`, {})).status === 404);
 
+// --- Jamais de suppression : le projet portant des publications diffusées ou retirées est conservé ----------------
+const del = await owner('DELETE', `/projects/${projectId}`);
+check('suppression du projet refusée après diffusion (409 publications_diffusees)', del.status === 409 && del.body?.error === 'publications_diffusees' && typeof del.body?.message === 'string', short(del.body));
+check('projet, publications et journal intacts après le refus', (await owner('GET', `/projects/${projectId}`)).status === 200 && (await owner('GET', `${pubs}/${id3}`)).body?.events?.length === 5);
+const spare = await owner('POST', '/projects', { code: `PUBX_${randomUUID().slice(0, 8)}`, name: 'Projet sans publication diffusée' });
+const spareStudy = await owner('POST', `/projects/${spare.body?.id}/studio/studies`, { name: 'Brouillon' });
+await owner('POST', `/projects/${spare.body?.id}/studio/studies/${spareStudy.body?.study?.id}/variants/${spareStudy.body?.variant?.id}/publications`, { title: 'En travail seulement' });
+check('projet sans publication diffusée : suppression permise (204)', (await owner('DELETE', `/projects/${spare.body?.id}`)).status === 204);
+
 console.log(failures ? `\n${failures} échec(s).` : '\nRecette des publications Studio : tout est conforme.');
 process.exit(failures ? 1 : 0);
