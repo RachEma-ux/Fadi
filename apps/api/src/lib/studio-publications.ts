@@ -43,9 +43,9 @@ import { loadProjectAccess, projectAccessRefusal, type AccessibleProject } from 
 import type { Querier } from "./step-rows.js";
 import { assertAccess, lockedAccess, notFound, StudioRequestError, studioArchivedRefusal, studioFileSegment, studioIdentifierSchema, studyOf } from "./studio-commands.js";
 import {
-  actualiteDe, besoinTransition, canonicalJson, construireManifeste, controlerApprobation, controlerEnsembleExamine, controlerTransition,
-  dimensionsDe, ecartsManifeste, empreinteManifeste, sha256, statutCombine, STUDIO_PUBLICATION_ACTIONS,
-  type Actualite, type Dimensions, type EcartManifeste, type ManifesteMeta, type ManifesteSource, type StudioPublicationTransition,
+  actualiteDe, actualiteParEmpreinte, besoinTransition, canonicalJson, construireManifeste, controlerApprobation, controlerEnsembleExamine, controlerTransition,
+  diffusionPlusRecente, dimensionsDe, ecartsManifeste, empreinteManifeste, sha256, statutCombine, STUDIO_PUBLICATION_ACTIONS,
+  type Actualite, type Dimensions, type EcartManifeste, type ManifesteDocument, type ManifesteMeta, type ManifesteSource, type StudioPublicationTransition,
 } from "./studio-publication-statuts.js";
 
 export { canonicalJson, STUDIO_PUBLICATION_ACTIONS, type StudioPublicationTransition };
@@ -147,8 +147,11 @@ async function variantStates(q: Querier, ids: string[]): Promise<Map<string, Var
 
 const sourceIds = (row: PublicationRow): string[] => [row.variantId, ...(row.manifest?.sources.map((s) => s.variantId) ?? [])];
 
-/** Écarts et actualité d'un dossier d'après l'état courant de ses sources (dossier antérieur : tête de la variante seule). */
-function driftOf(access: AccessibleProject, row: PublicationRow, states: Map<string, VariantState>): EcartManifeste[] {
+/**
+ * Écarts et actualité d'un dossier d'après l'état courant de ses sources (dossier antérieur : tête de la variante seule) ;
+ * `documents` : documents régénérés maintenant à partir des mêmes entrées, comparés empreinte par empreinte.
+ */
+function driftOf(access: AccessibleProject, row: PublicationRow, states: Map<string, VariantState>, documents?: ManifesteDocument[] | null): EcartManifeste[] {
   const primary = states.get(row.variantId);
   if (!row.manifest) {
     const head = primary?.headRevisionId ?? null;
@@ -157,7 +160,29 @@ function driftOf(access: AccessibleProject, row: PublicationRow, states: Map<str
   const courantes = row.manifest.sources.map((s) => ({ variantId: s.variantId, headRevisionId: states.get(s.variantId)?.headRevisionId ?? null }));
   return ecartsManifeste(row.manifest, courantes, {
     projectCode: access.code, projectName: access.name, studyName: primary?.studyName ?? "", variantName: primary?.name ?? "",
-  });
+  }, documents);
+}
+
+/**
+ * Documents régénérés des dossiers dont les sources et les noms n'ont pas bougé (les autres sont déjà périmés) : mêmes
+ * révision et métadonnées figées, exporteurs d'aujourd'hui. Un même jeu d'entrées n'est exporté qu'une fois.
+ */
+async function regeneratedDocuments(q: Querier, access: AccessibleProject, rows: PublicationRow[], states: Map<string, VariantState>): Promise<Map<string, ManifesteDocument[]>> {
+  const out = new Map<string, ManifesteDocument[]>();
+  const memo = new Map<string, ManifesteDocument[]>();
+  for (const row of rows) {
+    if (!row.manifest || driftOf(access, row, states).length) continue;
+    const key = canonicalJson([row.revisionId, row.studyId, row.variantId, row.manifest.meta]);
+    let docs = memo.get(key);
+    if (!docs) {
+      const revision = await revisionOf(q, row.variantId, row.revisionId);
+      docs = studioPackageFiles(validateStudioDocument(revision.document), row.revisionId, row.manifest.meta, `${row.studyId}|${row.variantId}`)
+        .map((f) => ({ format: f.format, fileName: f.fileName, mime: f.mime, size: f.body.byteLength, sha256: sha256(f.body) }));
+      memo.set(key, docs);
+    }
+    out.set(row.id, docs);
+  }
+  return out;
 }
 
 function allowedFor(access: AccessibleProject, actorId: string, dims: Dimensions, row: PublicationRow, freshness: Actualite, archived: boolean): StudioPublicationTransition[] {
@@ -184,16 +209,16 @@ async function views(q: Querier, access: AccessibleProject, actorId: string, row
     .orderBy(asc(studioPublicationEvents.createdAt), asc(studioPublicationEvents.id));
   const mails = await emails(q, [...rows.flatMap((r) => [r.createdBy, r.approvedBy, r.diffusedBy, r.replacedBy]), ...eventsRows.map((e) => e.authorId)]);
   const who = (id: string | null) => (id ? { id, email: mails.get(id) ?? "" } : null);
+  const regenerated = await regeneratedDocuments(q, access, rows, states);
   return rows.map((row) => {
     const variant = states.get(row.variantId);
-    const dims = dimensionsDe(row);
-    const drift = driftOf(access, row, states);
+    const drift = driftOf(access, row, states, regenerated.get(row.id) ?? null);
     const freshness = actualiteDe(drift);
-    const later = row.replacedByPublicationId === null && row.diffusionStatus === null && row.diffusedAt
-      ? diffused.filter((d) => d.variantId === row.variantId && d.id !== row.id && d.diffusedAt && d.status === "diffuse" && d.diffusedAt.getTime() > row.diffusedAt!.getTime())
-        .sort((a, b) => a.diffusedAt!.getTime() - b.diffusedAt!.getTime())[0]
-      : undefined;
-    const replacedBy = row.replacedByPublicationId ?? later?.id ?? null;
+    // Dossier antérieur au lot E.4 : remplacement déduit de la diffusion plus récente (statut combiné inchangé).
+    const later = row.replacedByPublicationId === null && row.diffusionStatus === null ? diffusionPlusRecente(row, diffused) : null;
+    const derived = dimensionsDe(row);
+    const dims: Dimensions = later && derived.diffusion === "diffuse" ? { ...derived, diffusion: "remplace" } : derived;
+    const replacedBy = row.replacedByPublicationId ?? later;
     const own = eventsRows.filter((e) => e.publicationId === row.id);
     const retrait = dims.diffusion === "retire" ? own.filter((e) => e.action === "retirer").at(-1) : undefined;
     const view: StudioPublicationView = {
@@ -374,7 +399,12 @@ export async function transitionStudioPublication(projectId: string, studyId: st
     assertAccess(access, actorId, "write");
     const variant = await variantOf(tx, study.id, row.variantId);
     const dims = dimensionsDe(row);
-    const freshness = actualiteDe(driftOf(access, row, await variantStates(tx, sourceIds(row))));
+    // Manifeste recalculé maintenant (têtes, noms et exporteurs actuels) : son empreinte fait foi pour l'actualité, de
+    // sorte qu'un dossier dont seuls les octets d'export ont changé peut toujours être actualisé (jamais bloqué).
+    const current = row.manifest
+      ? await construireDossier(tx, access, study, variant, await revisionOf(tx, variant.id, variant.headRevisionId), coordinatedOf(row.manifest))
+      : null;
+    const freshness = current ? actualiteParEmpreinte(row.manifestHash, current.manifestHash) : actualiteDe(driftOf(access, row, await variantStates(tx, sourceIds(row))));
     const verdict = controlerTransition(action, { ...dims, manifeste: row.manifest !== null, actualite: freshness }, input.comment);
     if (!verdict.ok) throw new StudioRequestError(verdict.refus.status, verdict.refus.body);
     if (action !== "retirer" && (study.archivedAt !== null || variant.archivedAt !== null)) return studioArchivedRefusal();
@@ -394,7 +424,7 @@ export async function transitionStudioPublication(projectId: string, studyId: st
     if (action === "actualiser") {
       // Nouveau manifeste depuis les têtes courantes ; l'approbation précédente ne vaut plus (elle reste au journal).
       const head = await revisionOf(tx, variant.id, variant.headRevisionId);
-      const dossier = await construireDossier(tx, access, study, variant, head, coordinatedOf(row.manifest));
+      const dossier = current ?? await construireDossier(tx, access, study, variant, head, []);
       Object.assign(patch, {
         revisionId: head.id, documentHash: dossier.documentHash, manifest: dossier.manifest, manifestHash: dossier.manifestHash, manifestBuiltAt: now,
         approvedRevisionId: null, approvedDocumentHash: null, approvedManifestHash: null, approvedBy: null, approvedAt: null,
@@ -403,13 +433,12 @@ export async function transitionStudioPublication(projectId: string, studyId: st
     }
     if (action === "diffuser") {
       // Manifeste courant recalculé depuis les têtes et les noms actuels, comparé au manifeste approuvé (E.4-05).
-      const head = await revisionOf(tx, variant.id, variant.headRevisionId);
-      const current = await construireDossier(tx, access, study, variant, head, coordinatedOf(row.manifest));
-      const refus = controlerApprobation(row.approvedManifestHash, row.manifestHash, current.manifestHash);
-      if (refus) {
-        throw new StudioRequestError(refus.status, {
-          ...refus.body, approvedRevisionId: row.approvedRevisionId, headRevisionId: variant.headRevisionId,
-          drift: row.manifest ? ecartsManifeste(row.manifest, current.manifest.sources.map((s) => ({ variantId: s.variantId, headRevisionId: s.revisionId })), current.meta) : [],
+      const refus = current ? controlerApprobation(row.approvedManifestHash, row.manifestHash, current.manifestHash) : controlerApprobation(null, null, "");
+      if (refus || !current) {
+        throw new StudioRequestError(refus!.status, {
+          ...refus!.body, approvedRevisionId: row.approvedRevisionId, headRevisionId: variant.headRevisionId,
+          drift: row.manifest && current
+            ? ecartsManifeste(row.manifest, current.manifest.sources.map((s) => ({ variantId: s.variantId, headRevisionId: s.revisionId })), current.meta, current.manifest.documents) : [],
         });
       }
       const files: StudioPackageFile[] = [];
@@ -426,6 +455,8 @@ export async function transitionStudioPublication(projectId: string, studyId: st
         or(eq(studioPublications.diffusionStatus, "diffuse"), and(isNull(studioPublications.diffusionStatus), eq(studioPublications.status, "diffuse"), isNull(studioPublications.replacedAt))),
       )).for("update");
       for (const old of previous) {
+        // Dossier antérieur au lot E.4 déjà remplacé par une diffusion plus récente : son remplacement (déduit) est conservé.
+        if (old.diffusionStatus === null && diffusionPlusRecente(old, previous) !== null) continue;
         const oldDims = dimensionsDe(old);
         const replaced: Dimensions = { travail: oldDims.travail, diffusion: "remplace" };
         await tx.update(studioPublications).set({

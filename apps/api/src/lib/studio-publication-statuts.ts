@@ -187,13 +187,16 @@ export const empreinteManifeste = (m: ManifestePublication): string => sha256(ca
 export interface SourceCourante { variantId: string; headRevisionId: string | null }
 export type EcartManifeste =
   | { type: "source"; role: RoleSource; variantId: string; revisionFigee: string; revisionCourante: string | null }
-  | { type: "meta"; champ: keyof ManifesteMeta; figee: string; courante: string };
+  | { type: "meta"; champ: keyof ManifesteMeta; figee: string; courante: string }
+  /** Documents régénérés : mêmes sources et mêmes noms, mais octets d'export différents (exporteur modifié, par exemple). */
+  | { type: "documents"; formats: string[] };
 
 /**
- * Écarts entre le manifeste figé et les sources courantes. Les révisions sont immuables : une tête inchangée garde son
- * document et son empreinte ; les métadonnées gelées entrent dans les exports, donc un renommage périme aussi le dossier.
+ * Écarts entre le manifeste figé et l'état courant. Les révisions sont immuables : une tête inchangée garde son document
+ * et son empreinte ; les métadonnées gelées entrent dans les exports, donc un renommage périme aussi le dossier ; enfin,
+ * les documents régénérés (`documents`, quand l'appelant les a recalculés) sont comparés empreinte par empreinte.
  */
-export function ecartsManifeste(m: ManifestePublication, courantes: readonly SourceCourante[], meta: Omit<ManifesteMeta, "revisionCreatedAt">): EcartManifeste[] {
+export function ecartsManifeste(m: ManifestePublication, courantes: readonly SourceCourante[], meta: Omit<ManifesteMeta, "revisionCreatedAt">, documents?: readonly ManifesteDocument[] | null): EcartManifeste[] {
   const tetes = new Map(courantes.map((c) => [c.variantId, c.headRevisionId]));
   const ecarts: EcartManifeste[] = [];
   for (const s of m.sources) {
@@ -203,9 +206,40 @@ export function ecartsManifeste(m: ManifestePublication, courantes: readonly Sou
   for (const champ of ["projectCode", "projectName", "studyName", "variantName"] as const) {
     if (m.meta[champ] !== meta[champ]) ecarts.push({ type: "meta", champ, figee: m.meta[champ], courante: meta[champ] });
   }
+  if (documents) {
+    const formats = documentsRegeneres(m.documents, documents);
+    if (formats.length) ecarts.push({ type: "documents", formats });
+  }
   return ecarts;
 }
+/** Formats dont le document recalculé diffère du document figé (empreinte, taille, nom ou type), ou qui manquent d'un côté. */
+export function documentsRegeneres(figes: readonly ManifesteDocument[], courants: readonly ManifesteDocument[]): string[] {
+  const cle = (d: ManifesteDocument) => canonicalJson({ fileName: d.fileName, mime: d.mime, size: d.size, sha256: d.sha256 });
+  const a = new Map(figes.map((d) => [d.format, cle(d)]));
+  const b = new Map(courants.map((d) => [d.format, cle(d)]));
+  return [...new Set([...a.keys(), ...b.keys()])].filter((f) => a.get(f) !== b.get(f)).sort();
+}
 export const actualiteDe = (ecarts: readonly EcartManifeste[]): Actualite => (ecarts.length ? "perimee" : "a-jour");
+/**
+ * Actualité de référence d'un dossier : son manifeste figé a-t-il exactement l'empreinte du manifeste recalculé maintenant ?
+ * Elle fait foi pour les transitions (actualiser est admis dès que les deux empreintes diffèrent, quelle qu'en soit la cause).
+ */
+export const actualiteParEmpreinte = (figee: string | null, courante: string): Actualite => (figee !== null && figee === courante ? "a-jour" : "perimee");
+
+/**
+ * Diffusion plus récente de la même variante qui remplace un dossier antérieur au lot E.4 (sans colonne de remplacement) :
+ * la première diffusion en vigueur postérieure à la sienne, sinon null.
+ */
+export function diffusionPlusRecente(
+  row: { id: string; variantId: string; diffusedAt: Date | null },
+  autres: readonly { id: string; variantId: string; diffusedAt: Date | null; status: StatutCombine }[],
+): string | null {
+  if (!row.diffusedAt) return null;
+  const t = row.diffusedAt.getTime();
+  const later = autres.filter((d) => d.variantId === row.variantId && d.id !== row.id && d.diffusedAt && d.status === "diffuse" && d.diffusedAt.getTime() > t)
+    .sort((x, y) => x.diffusedAt!.getTime() - y.diffusedAt!.getTime())[0];
+  return later?.id ?? null;
+}
 
 /**
  * Concordance de l'approbation (E.4-05) : la diffusion n'est admise que si le manifeste courant a exactement

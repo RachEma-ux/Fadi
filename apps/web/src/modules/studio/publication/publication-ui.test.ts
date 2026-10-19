@@ -35,6 +35,7 @@ describe("Publications Studio — règles d'affichage pures", () => {
     expect(libelleEcart({ type: "source", role: "principale", variantId: "v", revisionFigee: "r_aaaaaaaa11111111", revisionCourante: "r_bbbbbbbb22222222" })).toContain("22222222");
     expect(libelleEcart({ type: "source", role: "coordonnee", variantId: "v", revisionFigee: "r_aaaaaaaa11111111", revisionCourante: null })).toContain("introuvable");
     expect(libelleEcart({ type: "meta", champ: "studyName", figee: "A", courante: "B" })).toContain("étude");
+    expect(libelleEcart({ type: "documents", formats: ["pdf", "svg"] })).toBe("Documents régénérés : PDF, SVG.");
   });
 
   it("chaque libellé français a sa traduction anglaise", () => {
@@ -49,6 +50,7 @@ describe("Publications Studio — règles d'affichage pures", () => {
       libelleEcart({ type: "source", role: "coordonnee", variantId: "v", revisionFigee: "r_aaaaaaaa11111111", revisionCourante: "r_bbbbbbbb22222222" }),
       libelleEcart({ type: "source", role: "principale", variantId: "v", revisionFigee: "r_aaaaaaaa11111111", revisionCourante: null }),
       libelleEcart({ type: "meta", champ: "variantName", figee: "A", courante: "B" }),
+      libelleEcart({ type: "documents", formats: ["pdf"] }),
       "Manifeste", "Remplacée", "Retirée par", "Travail", "Diffusion", "Actualité", "Variantes coordonnées (facultatif)",
       "La révision courante de la variante, celle des variantes coordonnées et les empreintes des documents sont figées dans le manifeste.",
       "Le manifeste est reconstruit depuis les révisions courantes ; l’approbation précédente ne vaut plus et le dossier repasse en brouillon.",

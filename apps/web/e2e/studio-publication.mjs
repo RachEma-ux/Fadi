@@ -184,6 +184,7 @@ check('liste du projet : paquet retiré conservé et marqué', listedAfter.body?
 const docsAfter = (await reader('GET', `/projects/${projectId}/documents`)).body?.studioPackages ?? [];
 const docRetire = docsAfter.find((p) => p.publicationId === id3);
 check('Documents : paquet retiré toujours listé, marqué retiré (date du retrait), jamais masqué', docRetire?.status === 'retire' && !Number.isNaN(Date.parse(docRetire.withdrawnAt)) && docRetire.replacedBy === id4 && docsAfter.some((p) => p.publicationId === id4 && p.status === 'diffuse'), short(docsAfter));
+check('Documents : un seul paquet en vigueur par variante (les précédents remplacés ou retirés)', docsAfter.filter((p) => p.variantId === variantId && p.diffusionStatus === 'diffuse').map((p) => p.publicationId).join() === id4 && docRetire?.diffusionStatus === 'retire', short(docsAfter.map((p) => [p.publicationId, p.diffusionStatus])));
 const retireFile = docRetire ? await reader('GET', docRetire.files[3].href, undefined, true) : null;
 check('Documents : lien du paquet retiré toujours téléchargeable', retireFile?.status === 200 && sha(retireFile.bytes) === docRetire.files[3].sha256);
 // Interface : le module Documents rend le groupe Studio (si l'API sert l'application web et que Playwright est là).
@@ -267,6 +268,8 @@ check('E.4 : nouvelle approbation du nouveau manifeste', ra6.body?.workStatus ==
 const rd6 = await owner('POST', `${pubs2}/${p6.id}/diffuser`, { comment: 'Remplace le dossier E' });
 check('E.4 : diffusion après nouvelle approbation', rd6.status === 200 && rd6.body.diffusionStatus === 'diffuse' && rd6.body.diffusion?.manifestHash === u6.body.manifestHash, short(rd6.body));
 const g5 = (await reader('GET', `${pubs2}/${p5.id}`)).body;
+const docsE4 = (await reader('GET', `/projects/${projectId}/documents`)).body?.studioPackages ?? [];
+check('E.4 : Documents : dossier E listé remplacé, dossier F seul en vigueur', docsE4.find((p) => p.publicationId === p5.id)?.diffusionStatus === 'remplace' && docsE4.filter((p) => p.variantId === vA && p.diffusionStatus === 'diffuse').map((p) => p.publicationId).join() === p6.id, short(docsE4.map((p) => [p.publicationId, p.diffusionStatus])));
 check('E.4 : dossier E remplacé, journalisé, paquet toujours lisible', g5?.diffusionStatus === 'remplace' && g5.replacement?.publicationId === p6.id && g5.events?.at(-1)?.action === 'remplacer' && (await reader('GET', `${pubs2}/${p5.id}/files/pdf`, undefined, true)).status === 200, short(g5));
 const j6 = (await owner('GET', `${pubs2}/${p6.id}`)).body?.events ?? [];
 check('E.4 : journal du dossier F (deux approbations, actualisation entre les deux)', JSON.stringify(j6.map((e) => e.action)) === JSON.stringify(['creer', 'soumettre', 'approuver', 'actualiser', 'soumettre', 'approuver', 'diffuser']) && j6[2].manifestHash === p6.manifestHash && j6[5].manifestHash === u6.body.manifestHash, short(j6));

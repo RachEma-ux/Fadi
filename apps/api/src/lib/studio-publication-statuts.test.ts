@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  actualiteDe, besoinTransition, canonicalJson, construireManifeste, controlerApprobation, controlerEnsembleExamine, controlerTransition,
+  actualiteDe, actualiteParEmpreinte, besoinTransition, canonicalJson, construireManifeste, controlerApprobation, controlerEnsembleExamine, controlerTransition, diffusionPlusRecente, documentsRegeneres,
   dimensionsDe, ecartsManifeste, empreinteManifeste, REGLES_TRANSITION, ROLES_CAPACITE, sha256, statutCombine, STUDIO_PUBLICATION_ACTIONS,
   type EtatPublication, type ManifesteMeta, type ManifesteSource,
 } from "./studio-publication-statuts.js";
@@ -121,6 +121,48 @@ describe("Publications Studio — manifeste figé multi-sources (E.4-03 à E.4-0
     expect(ecartsManifeste(m, [{ variantId: "v_a", headRevisionId: "r_a1" }], noms)[0]).toMatchObject({ variantId: "v_b", revisionCourante: null });
     expect(ecartsManifeste(m, [{ variantId: "v_a", headRevisionId: "r_a1" }, { variantId: "v_b", headRevisionId: "r_b1" }], { ...noms, studyName: "Autre" }))
       .toEqual([{ type: "meta", champ: "studyName", figee: "Étude", courante: "Autre" }]);
+  });
+
+  it("documents régénérés (exporteur modifié, sources et noms identiques) : périmé, actualisable, jamais bloqué", () => {
+    const m = construireManifeste([principale, coord], meta, docs);
+    const noms = { projectCode: "P1", projectName: "Projet", studyName: "Étude", variantName: "A" };
+    const tetes = [{ variantId: "v_a", headRevisionId: "r_a1" }, { variantId: "v_b", headRevisionId: "r_b1" }];
+    const regeneres = [docs[0]!, { ...docs[1]!, sha256: H("9"), size: 12 }];
+    expect(documentsRegeneres(m.documents, m.documents)).toEqual([]);
+    expect(actualiteDe(ecartsManifeste(m, tetes, noms, docs))).toBe("a-jour");
+    const e = ecartsManifeste(m, tetes, noms, regeneres);
+    expect(e).toEqual([{ type: "documents", formats: ["dxf"] }]);
+    expect(documentsRegeneres(m.documents, [docs[0]!])).toEqual(["dxf"]);
+    // Le manifeste recalculé a une autre empreinte : la diffusion est refusée, l'actualisation admise.
+    const figee = empreinteManifeste(m);
+    const courante = empreinteManifeste(construireManifeste([principale, coord], meta, regeneres));
+    expect(controlerApprobation(figee, figee, courante)?.body["error"]).toBe("manifest_mismatch");
+    const actualite = actualiteParEmpreinte(figee, courante);
+    expect(actualite).toBe("perimee");
+    expect(actualiteParEmpreinte(figee, figee)).toBe("a-jour");
+    expect(actualiteParEmpreinte(null, figee)).toBe("perimee");
+    const v = controlerTransition("actualiser", etat({ travail: "approuve", actualite }));
+    expect(v.ok && v.vers).toEqual({ travail: "brouillon", diffusion: "non-diffuse" });
+    expect(controlerTransition("actualiser", etat({ travail: "approuve", actualite: actualiteParEmpreinte(figee, figee) })).ok).toBe(false);
+  });
+
+  it("paquet antérieur au lot E.4 remplacé par une diffusion plus récente de la même variante : « remplacé », un seul en vigueur", () => {
+    const t = (n: number) => new Date(Date.UTC(2026, 9, 1, n));
+    const pubs = [
+      { id: "p1", variantId: "v", diffusedAt: t(1), status: "diffuse" as const },
+      { id: "p2", variantId: "v", diffusedAt: t(2), status: "diffuse" as const },
+      { id: "p3", variantId: "v", diffusedAt: t(3), status: "retire" as const },
+      { id: "p4", variantId: "w", diffusedAt: t(4), status: "diffuse" as const },
+    ];
+    expect(diffusionPlusRecente(pubs[0]!, pubs)).toBe("p2");
+    expect(diffusionPlusRecente(pubs[1]!, pubs)).toBeNull();
+    expect(diffusionPlusRecente({ id: "p0", variantId: "v", diffusedAt: null }, pubs)).toBeNull();
+    const enVigueur = pubs.filter((p) => p.status === "diffuse" && p.variantId === "v" && diffusionPlusRecente(p, pubs) === null);
+    expect(enVigueur.map((p) => p.id)).toEqual(["p2"]);
+    // Le statut combiné reste « diffuse » (refus de suppression) ; la diffusion déduite devient « remplace ».
+    const row = { status: "diffuse" as const, workStatus: null, diffusionStatus: null, approvedRevisionId: "r" };
+    expect(dimensionsDe({ ...row, replacedAt: t(2) }).diffusion).toBe("remplace");
+    expect(statutCombine(dimensionsDe({ ...row, replacedAt: t(2) }))).toBe("diffuse");
   });
 
   it("l'approbation porte l'empreinte du manifeste examiné ; un autre ensemble est refusé (409 revision_mismatch)", () => {

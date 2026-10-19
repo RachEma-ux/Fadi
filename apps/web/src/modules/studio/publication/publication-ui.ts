@@ -57,6 +57,7 @@ export function libelleEcart(e: StudioManifestDrift): string {
       ? `${quoi} modifiée : révision ${court(e.revisionFigee)} figée, ${court(e.revisionCourante)} courante.`
       : `${quoi} introuvable (révision ${court(e.revisionFigee)} figée).`;
   }
+  if (e.type === "documents") return `Documents régénérés : ${e.formats.map((f) => f.toUpperCase()).join(", ")}.`;
   return `Métadonnée modifiée : ${LIBELLE_CHAMP[e.champ] ?? e.champ}.`;
 }
 
