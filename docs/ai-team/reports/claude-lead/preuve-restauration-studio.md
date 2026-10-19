@@ -3,7 +3,8 @@
 - **Date :** 19 octobre 2026
 - **Équipe :** R12 (QA / DevOps), sous le développeur principal
 - **Branche :** `teamr12-restauration` (depuis `lead-vague4`, `b7305a5`), commits locaux, non poussés
-- **Commit éprouvé :** `cf6986cc78a6a383776989aa5a1c6b342dbcc28b`
+- **Commits éprouvés :** `cf6986cc78a6a383776989aa5a1c6b342dbcc28b` (sections 1 à 3) puis
+  `10ebc8d8b61db84e4da22fdc965e5d42c9a41ca5` (signature des archives, section 5)
 - **État :** Implémenté et vérifié localement. Non accepté : la CI n'a pas tourné (rien n'a été poussé) et aucune
   décision d'acceptation n'a été prise.
 
@@ -101,9 +102,8 @@ membre éditeur, préférences d'outils du propriétaire. Contrôles :
 
 - **Contrôle non exécuté :** la CI (tranche `parcours` avec la nouvelle étape) n'a pas tourné : rien n'a été poussé.
 - **Attribution par adresse :** une archive est un fichier que son détenteur peut réécrire en recalculant le
-  manifeste ; la restauration attribue alors les lignes aux comptes de la base cible qui portent les adresses citées.
-  Le manifeste détecte une altération accidentelle, pas une falsification. Une signature des archives (secret du
-  serveur) serait nécessaire pour l'exclure : décision à prendre, non tranchée ici.
+  manifeste. Ce risque est traité en section 5 (décision du développeur principal : archives signées, restauration
+  sans confiance d'une archive non vérifiée).
 - Les champs historiques figés gardent l'identifiant du projet d'origine (`envelope`, `response` des révisions,
   métadonnées gelées du paquet : code et nom du projet d'origine) : ils sont restaurés tels quels, par principe.
 - La restauration par l'archive conserve les identifiants Studio : elle ne peut pas créer un second exemplaire dans la
@@ -111,3 +111,86 @@ membre éditeur, préférences d'outils du propriétaire. Contrôles :
   disparu (ou passer par `pg_restore`).
 - Correction de libellé après `cf6986c` dans la recette (« l'éditeur ouvre la variante dérivée du projet restauré »,
   texte du contrôle seulement), livrée avec ce rapport.
+
+## 5. Signature des archives (commit `10ebc8d`, 19 octobre 2026)
+
+Décision du développeur principal sur le risque d'archive falsifiée : option prudente, aucun usage existant cassé.
+
+**Signature.** Chaque export porte `studio.signature = { algorithm: "HMAC-SHA256", keyId, value }`, HMAC de
+l'empreinte globale du manifeste (`apps/api/src/lib/archive-signature.ts`, pur). Cette empreinte globale couvre
+désormais, en plus des empreintes par table, le projet et le propriétaire d'origine et les comptes cités (identifiant →
+adresse) : une adresse réécrite change l'empreinte. Clé : `ARCHIVE_SIGNING_KEY` si elle est fournie (identifiant
+`env-…`), sinon une clé aléatoire de 32 octets propre à la base, créée à la première signature dans
+`archive_signing_keys` (identifiant `db-…`, `apps/api/src/lib/archive-signing-key.ts`). Dans `init.sql`, une seule
+instruction, ajoutée : `CREATE TABLE IF NOT EXISTS archive_signing_keys`. L'identifiant de clé est une empreinte
+tronquée, séparée de la signature ; la clé n'est ni dans l'archive ni dans les journaux (vérifié par la recette).
+
+**Restauration** (`importStudioArchive`) :
+
+- **Contrôles d'intégrité inchangés :** une anomalie du manifeste ou d'une empreinte renvoie toujours 422
+  `archive_studio`, et rien n'est créé.
+- **Signature vérifiée par une clé de ce serveur** (celle de l'environnement ou celle de la base) : restauration comme
+  avant. Les comptes sont retrouvés par adresse ; auteurs, approbations, droits et préférences sont repris.
+- **Signature absente, inconnue ou invalide :** l'import est permis, mais rien n'en est cru.
+  - Chaque auteur, approbateur, acteur de publication, responsable et acteur d'observation devient le compte qui
+    restaure.
+  - Les adresses d'origine ne restent qu'en réserve : « Auteurs d'origine déclarés (non vérifiés) : … ».
+  - Les publications approuvées ou diffusées reviennent « à relire » : statut `soumis`, approbation effacée, paquet et
+    empreintes conservés et lisibles. Un passage `soumettre`, daté de la restauration, est ajouté au journal ; les
+    évènements d'origine ne sont pas réécrits. Une nouvelle approbation est exigée avant toute diffusion.
+  - Droits (membres) et préférences d'outils ne sont pas repris.
+  - Réserves en français (traduites dans `en.json`), affichées dans le message d'import.
+- La réponse de `POST /projects/import` indique, pour chaque projet, `studio: { trust, restored, downgraded }`.
+- **CI :** une clé aléatoire est tirée à chaque exécution, masquée dans les journaux et partagée par les deux API de la
+  recette. Aucune clé n'est dans le dépôt.
+
+### Commandes exécutées et résultats (commit `10ebc8d`)
+
+Les bases jetables neuves `fadi_teamr12a` et `fadi_teamr12b` ont été migrées **deux fois chacune** (4 × `Schema applied
+(init.sql).`, table des clés vide après migration). L'API A tournait sur le port 3085 avec une clé `ARCHIVE_SIGNING_KEY`
+tirée pour l'occasion et jamais écrite dans le dépôt. L'API B a été lancée et arrêtée par la recette sur le port 3086,
+avec puis sans la clé. À la fin, les API ont été arrêtées par PID et les bases supprimées.
+
+| Commande | Résultat |
+|---|---|
+| `npm run typecheck` | succès |
+| Tests des paquets et du web (comme la CI) | 47 + 95 + 869 + 744 (1 ignoré) + 22 + 569 réussis |
+| API hors base + `check-api-tests-db3.mjs` (et ses 6 tests) | 176 tests réussis (dont 3 de `archive-signature.test.ts`, 11 de `studio-archive-manifest.test.ts`) ; 12 suites DB-3 refusées par la garde seule ; contrôle vert |
+| `npm run test:db-guard` | 138 réussis |
+| `node --test` : outil de comparaison, gardes d'architecture, dépendances, continuité | 75/75 |
+| `npm run build` | succès |
+| `studio-restauration.mjs` | **66 contrôles réussis, 0 échec** ; comparaison A / B : 28 lignes, **0 anomalie** |
+| `studio-persistance.mjs` | 293 réussis, 0 échec |
+| `verify-restore.sh` (pg_dump / pg_restore) | effectifs et empreintes identiques, déclencheurs présents, comparaison `--all` : 4 projets, 0 anomalie |
+
+Contrôles ajoutés à la recette :
+
+- **Export :** archive signée, identifiant `env-…`, clé absente du fichier.
+- **Archive intacte restaurée dans B** (même clé) :
+  - confiance `verifiee` ;
+  - auteurs conservés : révision 1 au propriétaire, révision 2 à l'éditeur ;
+  - approbation par le propriétaire et diffusion par l'éditeur conservées.
+- **Archive d'un second projet falsifiée, manifeste recalculé selon la règle publique** (texte d'un commentaire
+  réécrit, révisions « attribuées » au propriétaire). L'éditeur l'importe depuis la page Projets du navigateur.
+  - L'import réussit et le message affiche la réserve : signature invalide, « rien n'en est cru », « à relire »,
+    adresses déclarées.
+  - Révisions, commentaire, observation et journal sont attribués au compte qui restaure.
+  - La publication diffusée revient `soumis`, sans approbation, avec 5 évènements dont le passage de restauration.
+  - Les 4 fichiers du paquet sont identiques et lisibles.
+  - Aucun membre n'est repris : le propriétaire d'origine n'a pas accès.
+  - La diffusion est refusée (409) jusqu'à une nouvelle approbation ; après approbation, la diffusion réussit.
+- **API B relancée sans `ARCHIVE_SIGNING_KEY` :**
+  - clé propre à la base créée une seule fois (64 caractères), identifiant `db-…`, ni dans l'archive ni dans le
+    journal de l'API ;
+  - l'archive de B y est vérifiée ;
+  - l'archive signée par la clé de A y est « clé inconnue », avec la réserve correspondante.
+- **Réimport dans A :** son propre export y est vérifié.
+
+**Limites de la section 5 :**
+
+- Sans `ARCHIVE_SIGNING_KEY`, deux serveurs (ou deux bases) ne se font pas confiance. Une restauration entre bases
+  conserve les auteurs seulement si la même clé est configurée des deux côtés.
+- Une base restaurée par `pg_restore` reprend sa clé propre, ce qui est voulu : c'est la même identité de serveur.
+- La clé propre à la base est lisible par qui lit la base. En production, fournir `ARCHIVE_SIGNING_KEY` par le
+  gestionnaire de secrets ; cette documentation de déploiement n'est pas faite ici.
+- La CI n'a pas tourné : rien n'a été poussé.
