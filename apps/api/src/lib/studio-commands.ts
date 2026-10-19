@@ -390,7 +390,11 @@ async function staleRevisionBody(tx: Tx, variantId: string, envelope: StudioEnve
   const [base] = await tx.select({ document: studioRevisions.document }).from(studioRevisions)
     .where(and(eq(studioRevisions.id, envelope.baseRevisionId), eq(studioRevisions.variantId, variantId))).limit(1);
   if (!base) return { ...body, baseKnown: false };
-  const baseDocument = validateStudioDocument(base.document);
+  // Une base qui ne passe plus la validation ne change pas la nature du refus : 409 sans détail (« non évalué »), jamais
+  // un 500 que le client prendrait pour une issue inconnue et rejouerait.
+  let baseDocument: StudioDocument;
+  try { baseDocument = validateStudioDocument(base.document); }
+  catch { return { ...body, baseKnown: true, detail: "non évalué", appliesOnHead: null }; }
   const changed = studioElementsModifies(baseDocument, head);
   const tryApply = (doc: StudioDocument): StudioDocument | null => { try { return applyStudioCommands(doc, envelope.commands); } catch { return null; } };
   const local = tryApply(baseDocument);

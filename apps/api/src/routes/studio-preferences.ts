@@ -8,6 +8,8 @@
  *                 STUDIO_TOOLS → 400 unknown_tool (outils nommés) ;
  *   GET /catalogue → { manifeste, role, droits, entrees: [{ toolId, droit, autorise }] } — catalogue autorisé :
  *                 droit réel d'exécution de chaque outil pour ce compte dans ce projet (B.2-06), lecture seule.
+ *                 Droit au niveau du PROJET : l'archivage d'une étude ou d'une variante n'y figure pas ; il reste
+ *                 refusé à l'écriture (409 archived) et affiché par l'espace de travail de la variante.
  *
  * Personnelles au compte (les mêmes dans tous ses projets) ; le projet de l'adresse doit lui être lisible (sinon
  * même refus que les autres routes Studio). Visibilité dans les barres seulement : ni la disponibilité ni le droit

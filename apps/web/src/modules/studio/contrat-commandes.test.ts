@@ -145,7 +145,7 @@ describe("A.5-10 / A.5-11 — révision courante et invalidations dérivées", (
   });
   it("aucune invalidation sans lot confirmé ; historique et étude relus après engagement", () => {
     expect(invalidationsApresEngagement(0, "p", "s", "v")).toEqual([]);
-    expect(invalidationsApresEngagement(2, "p", "s", "v")).toEqual([["studio-revisions", "p", "s", "v"], ["studio-study", "p", "s"]]);
+    expect(invalidationsApresEngagement(2, "p", "s", "v")).toEqual([["studio-revisions", "p", "s", "v"], ["studio-study", "p", "s"], ["studio-ajustements-quantites", "p", "s", "v"]]);
   });
   it("l'enregistrement ne relit les listes qu'à travers cette règle", () => {
     const enr = STUDIO.find((f) => f.chemin === "variante/useEnregistrement.ts")!.texte;

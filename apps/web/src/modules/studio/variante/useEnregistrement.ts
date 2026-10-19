@@ -34,7 +34,7 @@ import { appliquerBrouillon, avecPlancher, commandesEnAttente, creerBrouillon, t
 import { navigateurEnLigne, useConnexion, useRetourEnLigne } from "../hors-ligne/connexion";
 import { cleVariante, identifiantsCites, reporterSurTete, restaurerBrouillon, versHorsLigne, type ConflitHorsLigne } from "../hors-ligne/persistance";
 import { invalidationsApresEngagement, lectureApplicable } from "./revision-courante";
-import { ecrireBrouillonHorsLigne, memoriserContexte, retirerBrouillonHorsLigne, supprimerBrouillonHorsLigne } from "../hors-ligne/stockage";
+import { ecrireBrouillonHorsLigne, memoriserContexte, retirerBrouillonHorsLigne } from "../hors-ligne/stockage";
 import type { RepriseHorsLigne } from "../hors-ligne/useChargementVariante";
 import { warning } from "./etat-variante";
 
@@ -284,7 +284,10 @@ export function useEnregistrement(o: OptionsEnregistrement) {
    */
   async function rechargerServeur() {
     if (!window.confirm(warning())) return;
-    if (!horsJeu.current && (local.current || conflit) && cle) { try { await supprimerBrouillonHorsLigne(cle); } catch { /* rechargement quand même : rien n'est envoyé */ } }
+    // Seul le brouillon que CET onglet a conservé est retiré, et seulement s'il n'a pas changé depuis (comparer-puis-
+    // retirer) : un conflit signalé en ligne (A.5-06) n'a rien écrit sur l'appareil, la ligne éventuellement présente
+    // appartient à un autre onglet et reste intacte.
+    if (!horsJeu.current && local.current && cle) { try { await retirerBrouillonHorsLigne(cle, stamp.current); } catch { /* rechargement quand même : rien n'est envoyé */ } }
     window.location.reload();
   }
 
@@ -298,14 +301,14 @@ export function useEnregistrement(o: OptionsEnregistrement) {
     const depart = context.revision.id;
     let tete: StudioContext;
     try { tete = await api.studioContext(projectId, studyId, variantId); }
-    catch { if (alive.current) setError("Nouvelle version courante indisponible : le brouillon hors ligne reste conservé. Réessayez une fois en ligne."); return; }
+    catch { if (alive.current) setError(local.current ? "Nouvelle version courante indisponible : le brouillon hors ligne reste conservé. Réessayez une fois en ligne." : "Nouvelle version courante indisponible : le brouillon reste dans cette page. Réessayez."); return; }
     if (!alive.current) return;
     // A.5-10 : une lecture partie avant un changement du brouillon affiché (rechargement, autre report) est ignorée.
     if (!lectureApplicable(depart, contexteAffiche.current, brouillonAffiche.current, brouillon)) return;
     if (cle && userId) void memoriserContexte(cle, userId, tete);
     // Revalidation par le modèle sur la nouvelle tête ; les éléments changés des deux côtés sont nommés avant tout report.
     const r = reporterSurTete(tete.revision.document, brouillon.pas, context.revision.document);
-    if (!r.ok) { setError("Les commandes en attente ne s’appliquent pas à la nouvelle version courante : le brouillon hors ligne reste conservé pour une résolution manuelle."); return; }
+    if (!r.ok) { setError(local.current ? "Les commandes en attente ne s’appliquent pas à la nouvelle version courante : le brouillon hors ligne reste conservé pour une résolution manuelle." : "Les commandes en attente ne s’appliquent pas à la nouvelle version courante : le brouillon reste dans cette page pour une résolution manuelle."); return; }
     if (r.chevauchements.length && !window.confirm(`Élément(s) modifié(s) aussi dans la nouvelle version courante : ${identifiantsCites(r.chevauchements)}. Reporter vos commandes remplacerait ces changements. Reporter quand même ?`)) {
       setError("Report abandonné : rien n’a été modifié. Votre brouillon reste conservé ; rechargez la version serveur ou reportez après vérification.");
       return;

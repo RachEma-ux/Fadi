@@ -13,9 +13,10 @@ export function lectureApplicable(revisionDepart: string, contexteAffiche: Studi
 
 /**
  * Lectures dérivées à relire après un enregistrement (A.5-11) : seulement quand le serveur a confirmé au moins un lot
- * (révision engagée), jamais sur un refus ni sur une simple tentative. Clés TanStack Query de l'historique et de l'étude.
+ * (révision engagée), jamais sur un refus ni sur une simple tentative. Clés TanStack Query de l'historique, de l'étude
+ * et du journal des ajustements du métré (il porte la tête dont dépend la saisie, E.3-05).
  */
 export function invalidationsApresEngagement(lotsConfirmes: number, projectId: string, studyId: string, variantId: string): (readonly string[])[] {
   if (lotsConfirmes <= 0) return [];
-  return [["studio-revisions", projectId, studyId, variantId], ["studio-study", projectId, studyId]];
+  return [["studio-revisions", projectId, studyId, variantId], ["studio-study", projectId, studyId], ["studio-ajustements-quantites", projectId, studyId, variantId]];
 }
