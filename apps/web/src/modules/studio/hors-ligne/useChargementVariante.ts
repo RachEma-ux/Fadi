@@ -1,27 +1,34 @@
 /**
  * Ouverture d'une variante avec reprise hors ligne. La version serveur est lue d'abord ; elle est mémorisée sur
- * l'appareil pour une prochaine ouverture sans réseau. Un brouillon hors ligne conservé (IndexedDB) est restauré :
+ * l'appareil, pour l'utilisateur connecté seulement, en vue d'une prochaine ouverture sans réseau. Un brouillon hors
+ * ligne conservé (IndexedDB) de CET utilisateur est restauré :
  * - sur la tête serveur quand il en part encore ;
  * - sur sa propre base quand des enveloppes non confirmées attendent (elles sont rejouées, mêmes `requestId`) ;
  * - sur sa propre base, en conflit, quand la tête a avancé ailleurs : rien n'est envoyé ni écrasé.
  * Sans réseau, la dernière version lue (ou la base du brouillon) est ouverte ; si cette variante n'a jamais été lue
- * sur l'appareil, rien n'est affiché ni modifiable. Une révision historique (`?revision=`) se lit comme avant.
+ * sur l'appareil par cet utilisateur, rien n'est affiché ni modifiable. Une révision historique (`?revision=`) se lit
+ * comme avant. Sans utilisateur connu, rien n'est lu ni écrit sur l'appareil.
  */
 import { useEffect, useRef, type MutableRefObject } from "react";
 import { api, type StudioContext } from "../../../lib/api";
+import { useAuth } from "../../../lib/auth-context";
 import { isNetworkError } from "../../../lib/reachability";
 import { creerBrouillon, type Brouillon } from "../planche2d/brouillon";
 import { refused } from "../variante/etat-variante";
 import { navigateurEnLigne } from "./connexion";
 import { cleVariante, restaurerBrouillon, type BrouillonHorsLigne, type ConflitHorsLigne } from "./persistance";
-import { contexteMemorise, lireBrouillonHorsLigne, memoriserContexte } from "./stockage";
+import { contexteMemorise, lireBrouillonHorsLigne, memoriserContexte, type BrouillonLu } from "./stockage";
 import type { PlanEnvoi } from "../import/envoi";
 
 export interface RepriseHorsLigne {
   plan: PlanEnvoi | null;
+  /** Pas du brouillon déjà mis dans `plan`. */
+  pasCouverts: number;
   conflit: ConflitHorsLigne | null;
   /** Un brouillon est conservé sur l'appareil pour cette variante. */
   conserve: boolean;
+  /** Jeton de la ligne lue (comparer-puis-écrire entre onglets), null si aucune. */
+  stamp: string | null;
   /** Ouverte depuis l'appareil faute de réseau (date de lecture), sinon null. */
   depuisCache: string | null;
 }
@@ -40,11 +47,12 @@ export interface OptionsChargement {
   reprendre: (r: RepriseHorsLigne) => void;
 }
 
-const restaurer = (base: StudioContext, h: BrouillonHorsLigne) => restaurerBrouillon(base.revision.document, h.pas, h.refaire);
+const restaurer = (base: StudioContext, h: BrouillonHorsLigne) => restaurerBrouillon(base.revision.document, h.pas, h.refaire, h.pasCouverts);
 
 export function useChargementVariante(o: OptionsChargement): void {
   const ref = useRef(o);
   ref.current = o;
+  const userId = useAuth().user?.id ?? null;
   const { projectId, studyId, variantId, revisionId } = o;
   useEffect(() => {
     const { alive } = ref.current;
@@ -58,13 +66,15 @@ export function useChargementVariante(o: OptionsChargement): void {
         finally { if (active) f().setLoading(false); }
         return;
       }
-      const cle = cleVariante(projectId, studyId, variantId);
-      let h: BrouillonHorsLigne | null = null, illisible = false;
-      try { h = await lireBrouillonHorsLigne(cle); } catch { illisible = true; }
+      const cle = userId ? cleVariante(userId, projectId, studyId, variantId) : null;
+      let lu: BrouillonLu | null = null, illisible = false;
+      if (cle && userId) { try { lu = await lireBrouillonHorsLigne(cle, userId); } catch { illisible = true; } }
+      const h = lu?.brouillon ?? null;
+      const reprise = (r: Omit<RepriseHorsLigne, "plan" | "pasCouverts" | "stamp">) => f().reprendre({ plan: h?.plan ?? null, pasCouverts: h?.pasCouverts ?? 0, stamp: lu?.stamp ?? null, ...r });
       try {
         const c = await api.studioContext(projectId, studyId, variantId);
         if (!active) return;
-        void memoriserContexte(cle, c);
+        if (cle && userId) void memoriserContexte(cle, userId, c);
         if (illisible) {
           // Rien n'est réinterprété ni écrasé : la version serveur s'ouvre en lecture seule.
           f().setContext({ ...c, canWrite: false }); f().setBrouillon(creerBrouillon(c.revision.document));
@@ -84,23 +94,23 @@ export function useChargementVariante(o: OptionsChargement): void {
         }
         const conflit = h.conflit ?? (!surTete && !h.plan ? { headRevisionId: c.revision.id, at: new Date().toISOString() } : null);
         f().setContext(base); f().setBrouillon(b);
-        f().reprendre({ plan: h.plan, conflit, conserve: true, depuisCache: null });
+        reprise({ conflit, conserve: true, depuisCache: null });
       } catch (e) {
         if (!active) return;
         if (!isNetworkError(e) && navigateurEnLigne()) { f().setLoadError(e); f().setError(refused(e) ? "" : "Étude indisponible ou accès refusé."); return; }
-        // Sans réseau : la base du brouillon conservé, sinon la dernière version lue sur l'appareil.
-        const lu = h ? { contexte: h.base, luA: "" } : illisible ? null : await contexteMemorise(cle);
+        // Sans réseau : la base du brouillon conservé, sinon la dernière version lue sur l'appareil (même utilisateur).
+        const memoire = h ? { contexte: h.base, luA: "" } : illisible || !cle || !userId ? null : await contexteMemorise(cle, userId);
         if (!active) return;
-        if (!lu) {
+        if (!memoire) {
           f().setLoadError(e);
           f().setError(illisible ? "Hors ligne : le brouillon conservé sur cet appareil est illisible ; rien n’est affiché ni modifiable." : "Hors ligne : cette variante n’a pas encore été lue sur cet appareil. Rien n’est affiché ni modifiable tant que le réseau manque.");
           return;
         }
-        try { f().setContext(lu.contexte); f().setBrouillon(h ? restaurer(lu.contexte, h) : creerBrouillon(lu.contexte.revision.document)); }
+        try { f().setContext(memoire.contexte); f().setBrouillon(h ? restaurer(memoire.contexte, h) : creerBrouillon(memoire.contexte.revision.document)); }
         catch { f().setLoadError(e); f().setError("Hors ligne : le brouillon conservé sur cet appareil ne s’applique plus ; rien n’est affiché ni modifiable."); return; }
-        f().reprendre({ plan: h?.plan ?? null, conflit: h?.conflit ?? null, conserve: !!h, depuisCache: lu.luA || new Date().toISOString() });
+        reprise({ conflit: h?.conflit ?? null, conserve: !!h, depuisCache: memoire.luA || new Date().toISOString() });
       } finally { if (active) f().setLoading(false); }
     })();
     return () => { active = false; alive.current = false; };
-  }, [projectId, studyId, variantId, revisionId]);
+  }, [projectId, studyId, variantId, revisionId, userId]);
 }

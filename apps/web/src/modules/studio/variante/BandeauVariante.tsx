@@ -33,6 +33,9 @@ export function EtatConnexionStudio({ etat }: { etat: EntreeEtatHorsLigne }) {
 }
 
 export function ChoixConflitStudio({ etat, surRecharger, surReporter }: { etat: EntreeEtatHorsLigne; surRecharger: () => void; surReporter: () => void }) {
+  if (etat.autreOnglet) return <div className="studio-connexion studio-connexion-choix" data-studio-conflit-onglet>
+    <button type="button" onClick={surRecharger} data-studio-reprendre-onglet>Reprendre le brouillon de l’autre onglet</button>
+  </div>;
   return etat.conflit ? <div className="studio-connexion studio-connexion-choix" data-studio-conflit-hors-ligne>
     <button type="button" onClick={surReporter} disabled={!etat.enLigne} data-studio-reporter>Reporter les commandes sur la nouvelle version</button>
     <button type="button" onClick={surRecharger} data-studio-recharger>Recharger la version serveur</button>

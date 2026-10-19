@@ -15,6 +15,11 @@ export interface Brouillon {
   readonly pas: readonly (readonly StudioCommand[])[];
   /** Lots annulés, prêts à être rétablis (le plus proche en tête). */
   readonly refaire: readonly (readonly StudioCommand[])[];
+  /**
+   * Pas déjà partis dans une enveloppe non confirmée (hors ligne) : on peut dessiner par-dessus, pas les annuler.
+   * Absent = 0.
+   */
+  readonly plancher?: number;
 }
 
 export function creerBrouillon(document: StudioDocument): Brouillon {
@@ -25,21 +30,27 @@ export const documentBrouillon = (b: Brouillon): StudioDocument => b.history.pre
 
 /** Applique un lot tout ou rien ; un lot refusé lève `StudioValidationError` et laisse le brouillon intact. */
 export function appliquerBrouillon(b: Brouillon, commandes: readonly StudioCommand[]): Brouillon {
-  return { history: applyToStudioHistory(b.history, commandes), pas: [...b.pas, [...commandes]], refaire: [] };
+  return { history: applyToStudioHistory(b.history, commandes), pas: [...b.pas, [...commandes]], refaire: [], ...(b.plancher ? { plancher: b.plancher } : {}) };
+}
+
+/** Fixe le plancher d'annulation (pas couverts par une enveloppe en attente) ; 0 le retire. */
+export function avecPlancher(b: Brouillon, plancher: number): Brouillon {
+  const { plancher: _ancien, ...reste } = b;
+  return plancher > 0 ? { ...reste, plancher: Math.min(plancher, b.pas.length) } : reste;
 }
 
 /** L'historique local est borné (STUDIO_HISTORY_LIMIT) ; les commandes en attente, elles, ne le sont jamais. */
-export const peutAnnuler = (b: Brouillon): boolean => canUndoStudio(b.history) && b.pas.length > 0;
+export const peutAnnuler = (b: Brouillon): boolean => canUndoStudio(b.history) && b.pas.length > (b.plancher ?? 0);
 export const peutRetablir = (b: Brouillon): boolean => canRedoStudio(b.history) && b.refaire.length > 0;
 
 export function annulerBrouillon(b: Brouillon): Brouillon {
   if (!peutAnnuler(b)) return b;
-  return { history: undoStudioHistory(b.history), pas: b.pas.slice(0, -1), refaire: [b.pas[b.pas.length - 1]!, ...b.refaire] };
+  return { ...b, history: undoStudioHistory(b.history), pas: b.pas.slice(0, -1), refaire: [b.pas[b.pas.length - 1]!, ...b.refaire] };
 }
 
 export function retablirBrouillon(b: Brouillon): Brouillon {
   if (!peutRetablir(b)) return b;
-  return { history: redoStudioHistory(b.history), pas: [...b.pas, b.refaire[0]!], refaire: b.refaire.slice(1) };
+  return { ...b, history: redoStudioHistory(b.history), pas: [...b.pas, b.refaire[0]!], refaire: b.refaire.slice(1) };
 }
 
 export const commandesEnAttente = (b: Brouillon): StudioCommand[] => b.pas.flat();

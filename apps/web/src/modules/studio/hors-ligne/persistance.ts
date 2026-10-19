@@ -4,12 +4,15 @@
  * enregistrés, et les enveloppes non confirmées (`PlanEnvoi` : lots, `requestId` fixés à la création, base de chaque
  * lot). Au retour du réseau, ces enveloppes repartent telles quelles, mêmes `requestId` : le serveur reconnaît un
  * rejeu et n'écrit jamais deux fois. Un refus `stale_revision` est conservé (`conflit`) : rien n'est écrasé.
+ * Chaque brouillon appartient à un utilisateur (`userId`, aussi dans la clé) : un autre compte du même appareil ne le
+ * relit ni ne le rejoue jamais. Les pas dessinés hors ligne APRÈS une enveloppe en attente restent derrière elle
+ * (`pasCouverts`) : ils repartent ensuite, sur la révision que l'enveloppe aura produite.
  * Pur : ni React, ni DOM, ni IndexedDB (l'écriture est dans `lib/local-store.ts`).
  */
 import type { StudioCommand } from "@parcours/atelier-model";
 import type { StudioContext } from "../../../lib/api";
 import type { PlanEnvoi } from "../import/envoi";
-import { annulerBrouillon, appliquerBrouillon, creerBrouillon, peutAnnuler, type Brouillon } from "../planche2d/brouillon";
+import { annulerBrouillon, appliquerBrouillon, avecPlancher, creerBrouillon, peutAnnuler, type Brouillon } from "../planche2d/brouillon";
 
 export const VERSION_BROUILLON_HORS_LIGNE = 1;
 
@@ -22,19 +25,24 @@ export interface ConflitHorsLigne {
 
 export interface BrouillonHorsLigne {
   version: typeof VERSION_BROUILLON_HORS_LIGNE;
+  /** Propriétaire : un autre utilisateur de l'appareil ne le relit ni ne le rejoue jamais. */
+  userId: string;
   /** Révision sur laquelle reposent les pas (contexte serveur tel qu'il a été lu). */
   base: StudioContext;
   pas: StudioCommand[][];
   refaire: StudioCommand[][];
   /** Enveloppes non confirmées (requestId et baseRevisionId compris), ou null. */
   plan: PlanEnvoi | null;
+  /** Nombre de pas (en tête de `pas`) mis dans `plan` ; 0 sans plan. */
+  pasCouverts: number;
   conflit: ConflitHorsLigne | null;
 }
 
-export const cleVariante = (projectId: string, studyId: string, variantId: string): string => `${projectId}|${studyId}|${variantId}`;
+/** Clé d'une variante POUR un utilisateur : deux comptes du même appareil n'ont jamais la même ligne. */
+export const cleVariante = (userId: string, projectId: string, studyId: string, variantId: string): string => [userId, projectId, studyId, variantId].join("|");
 
-export function versHorsLigne(base: StudioContext, b: Brouillon, plan: PlanEnvoi | null, conflit: ConflitHorsLigne | null): BrouillonHorsLigne {
-  return { version: VERSION_BROUILLON_HORS_LIGNE, base, pas: b.pas.map(p => [...p]), refaire: b.refaire.map(p => [...p]), plan, conflit };
+export function versHorsLigne(userId: string, base: StudioContext, b: Brouillon, plan: PlanEnvoi | null, pasCouverts: number, conflit: ConflitHorsLigne | null): BrouillonHorsLigne {
+  return { version: VERSION_BROUILLON_HORS_LIGNE, userId, base, pas: b.pas.map(p => [...p]), refaire: b.refaire.map(p => [...p]), plan, pasCouverts: plan ? pasCouverts : 0, conflit };
 }
 
 /** Rien à conserver : ni commande en attente, ni enveloppe non confirmée, ni conflit. */
@@ -52,24 +60,33 @@ function lirePlan(v: unknown): PlanEnvoi | null {
   return { lots: v.lots, requestIds: requestIds as string[], envoyes: v.envoyes, base: v.base };
 }
 
-/** Relit un brouillon sérialisé ; lève une erreur pour un contenu illisible (jamais réinterprété en silence). */
-export function lireHorsLigne(json: string): BrouillonHorsLigne {
+/**
+ * Relit un brouillon sérialisé ; lève une erreur pour un contenu illisible (jamais réinterprété en silence) ou qui
+ * appartient à un autre utilisateur que `userId`.
+ */
+export function lireHorsLigne(json: string, userId: string): BrouillonHorsLigne {
   const v: unknown = JSON.parse(json);
   if (!estObjet(v) || v.version !== VERSION_BROUILLON_HORS_LIGNE) throw new Error("version inconnue");
+  if (typeof v.userId !== "string" || v.userId !== userId) throw new Error("brouillon d'un autre utilisateur");
   const base = v.base;
   if (!estObjet(base) || !estObjet(base.revision) || typeof base.revision.id !== "string" || !estObjet(base.revision.document) || !estObjet(base.variant)) throw new Error("base illisible");
   if (!estLots(v.pas) || !estLots(v.refaire)) throw new Error("commandes illisibles");
   const c = v.conflit;
   if (c !== null && !(estObjet(c) && (c.headRevisionId === null || typeof c.headRevisionId === "string") && typeof c.at === "string")) throw new Error("conflit illisible");
-  return { version: VERSION_BROUILLON_HORS_LIGNE, base: base as unknown as StudioContext, pas: v.pas, refaire: v.refaire, plan: lirePlan(v.plan ?? null), conflit: (c as ConflitHorsLigne | null) ?? null };
+  const plan = lirePlan(v.plan ?? null);
+  const n = v.pasCouverts;
+  if (typeof n !== "number" || !Number.isInteger(n) || n < 0 || n > v.pas.length || (!plan && n !== 0)) throw new Error("pas couverts illisibles");
+  // Les enveloppes portent exactement les pas couverts, dans l'ordre : sinon un rejeu enverrait autre chose.
+  if (plan && JSON.stringify(v.pas.slice(0, n).flat()) !== JSON.stringify(plan.lots.flat())) throw new Error("enveloppes et pas incohérents");
+  return { version: VERSION_BROUILLON_HORS_LIGNE, userId: v.userId, base: base as unknown as StudioContext, pas: v.pas, refaire: v.refaire, plan, pasCouverts: n, conflit: (c as ConflitHorsLigne | null) ?? null };
 }
 
 /**
  * Reconstruit le brouillon sur un document : chaque pas est rejoué par le modèle (tout ou rien), puis les pas
- * annulés sont rejoués et annulés à nouveau pour rester « rétablissables ». Lève `StudioValidationError` si un pas
- * ne s'applique plus.
+ * annulés sont rejoués et annulés à nouveau pour rester « rétablissables ». `plancher` : pas couverts par une
+ * enveloppe en attente (non annulables). Lève `StudioValidationError` si un pas ne s'applique plus.
  */
-export function restaurerBrouillon(document: StudioContext["revision"]["document"], pas: readonly (readonly StudioCommand[])[], refaire: readonly (readonly StudioCommand[])[] = []): Brouillon {
+export function restaurerBrouillon(document: StudioContext["revision"]["document"], pas: readonly (readonly StudioCommand[])[], refaire: readonly (readonly StudioCommand[])[] = [], plancher = 0): Brouillon {
   let b = creerBrouillon(document);
   for (const p of pas) b = appliquerBrouillon(b, p);
   const nbPas = b.pas.length;
@@ -79,11 +96,11 @@ export function restaurerBrouillon(document: StudioContext["revision"]["document
     for (const p of refaire) r = appliquerBrouillon(r, p);
     for (let i = 0; i < refaire.length; i++) { if (!peutAnnuler(r)) throw new Error("historique borné"); r = annulerBrouillon(r); }
     if (r.pas.length !== nbPas) throw new Error("historique incohérent");
-    return r;
   } catch {
     // Les pas annulés ne sont qu'une commodité : seuls les pas en attente comptent.
-    return b;
+    r = b;
   }
+  return avecPlancher(r, plancher);
 }
 
 export type ResultatReport = { ok: true; brouillon: Brouillon } | { ok: false };
