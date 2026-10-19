@@ -825,6 +825,12 @@ const studioPublicationPath = (p: string, s: string, id: string) => `${studioStu
 /** Fichier figé d'un paquet diffusé (téléchargement direct). */
 export function studioPackageFileUrl(p: string, s: string, id: string, format: StudioPackageFile["format"]): string {
   return `${studioPublicationPath(p, s, id)}/files/${format}`;
+/** Préférences d'outils Studio du compte : visibilité dans les barres seulement, jamais un droit (B.2-06). */
+export interface StudioToolPreferencesInput { profil: string; favoris: string[]; personnel: string[] }
+export interface StudioToolPreferences extends StudioToolPreferencesInput {
+  /** Outils enregistrés puis retirés du registre (écartés à la lecture). */
+  retires: string[];
+  updatedAt: string | null;
 }
 export const api = {
   /** Études du projet ; `archives` : archivées comprises. */
@@ -867,6 +873,10 @@ export const api = {
   transitionStudioPublication: (p: string, s: string, id: string, action: StudioPublicationTransition, input: StudioPublicationTransitionInput) => request<StudioPublication>(`${studioPublicationPath(p, s, id)}/${action}`, { method: "POST", body: JSON.stringify(input) }),
   /** Paquets diffusés du projet (pour le module Documents). */
   studioPackages: (p: string) => request<{ packages: (StudioPublication & { studyName: string })[] }>(`/projects/${encodeURIComponent(p)}/studio/publications`),
+  /** Préférences d'outils Studio du compte (profil des barres, favoris, liste personnelle) ; le projet doit être lisible. */
+  studioToolPreferences: (p: string) => request<StudioToolPreferences>(`/projects/${encodeURIComponent(p)}/studio/preferences/outils`),
+  /** Remplace les préférences d'outils du compte ; un outil hors registre → 400 `unknown_tool`. */
+  setStudioToolPreferences: (p: string, prefs: StudioToolPreferencesInput) => request<StudioToolPreferences>(`/projects/${encodeURIComponent(p)}/studio/preferences/outils`, { method: "PUT", body: JSON.stringify(prefs) }),
   register: (email: string, password: string) =>
     request<CurrentUser>("/auth/register", { method: "POST", body: JSON.stringify({ email, password }) }),
   login: (email: string, password: string) =>
