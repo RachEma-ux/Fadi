@@ -17,6 +17,7 @@ import { StudioRefus } from "./studio-ecrans";
 import { VariantWorkspace } from "./VariantWorkspace";
 import { PageComparaison } from "./comparaison/PageComparaison";
 import { EtapesParcoursEtude } from "./liens/EtapesLiees";
+import { PanneauPublications } from "./publication/PanneauPublications";
 import "./studio.css";
 
 /** Une création non confirmée (réseau, 5xx) se rejoue avec le même requestId : le serveur rend la même étude ou variante, sans doublon. */
@@ -361,6 +362,7 @@ function StudioEtude({ projectId, studyId, archives }: { projectId: string; stud
       )}
       <p><Link to={cheminComparaisonStudio(projectId, study.id)} data-studio-lien-comparer>Comparer les variantes et révisions →</Link></p>
       <EtapesParcoursEtude projectId={projectId} studyId={study.id} />
+      <PanneauPublications projectId={projectId} studyId={study.id} variants={variants} canWrite={canWrite} />
       {canWrite
         ? <CreerVariante projectId={projectId} studyId={study.id} />
         : <p data-studio-lecture-seule>{study.archived ? "Lecture seule : désarchivez l’étude pour y créer des variantes." : "Lecture seule : la création de variantes est réservée aux membres autorisés à modifier ce projet."}</p>}

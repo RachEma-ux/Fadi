@@ -7,6 +7,7 @@ import { compareStudioRevisions, createStudioStudy, createStudioVariant, exportS
 import { createStudioComment, deleteStudioComment, listStudioComments, studioCommentSchema } from "../lib/studio-commentaires.js";
 import { listStudiesOfStep, listStudioStudySteps, setStudioStudySteps, studioStudyStepsSchema } from "../lib/studio-liens.js";
 import { renameStudioStudy, renameStudioVariant, setStudioStudyArchived, setStudioVariantArchived, studioRenameSchema } from "../lib/studio-variantes.js";
+import { studioPublicationsRouter } from "./studio-publications.js";
 
 export const studioRouter = Router({ mergeParams: true });
 studioRouter.use(requireAuth);
@@ -181,3 +182,4 @@ studioRouter.get("/steps/:stepNumber/studies", endpoint(async (req, res) => {
   res.setHeader("Cache-Control", "private, no-store");
   res.json(await listStudiesOfStep(scope(req).projectId, Number(raw), req.user!.id));
 }));
+studioRouter.use(studioPublicationsRouter);

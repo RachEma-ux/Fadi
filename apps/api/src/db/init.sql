@@ -589,3 +589,66 @@ ALTER TABLE studio_variants DROP CONSTRAINT IF EXISTS studio_variants_derived_fr
 ALTER TABLE studio_variants DROP CONSTRAINT IF EXISTS studio_variants_derived_from_revision,
   ADD CONSTRAINT studio_variants_derived_from_revision FOREIGN KEY(derived_from_variant_id, derived_from_revision_id)
   REFERENCES studio_revisions(variant_id, id) DEFERRABLE INITIALLY DEFERRED NOT VALID;
+-- Publications Studio (E.4-01 à E.4-06, E.3-06) : une publication porte sur UNE révision d'une variante, identifiée par
+-- son identifiant et l'empreinte SHA-256 de son document ; statuts travail → soumis → approuve | refuse → diffuse, et
+-- retire (jamais de suppression). L'approbation est liée à la révision et à l'empreinte examinées ; la diffusion fige
+-- un paquet d'exports (SVG, DXF, IFC, feuille PDF) rangés dans les volumes immuables (SHA-256). Chaque transition est
+-- journalisée (auteur, date, commentaire) dans studio_publication_events, dont les lignes ne sont jamais modifiées.
+-- Additif et idempotent : tables nouvelles, aucune ligne existante réécrite.
+CREATE TABLE IF NOT EXISTS studio_publications (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  study_id text NOT NULL,
+  variant_id text NOT NULL,
+  revision_id text NOT NULL,
+  document_hash text NOT NULL CONSTRAINT studio_publications_document_hash_check CHECK (document_hash ~ '^[0-9a-f]{64}$'),
+  title text NOT NULL CONSTRAINT studio_publications_title_length CHECK (length(title) BETWEEN 1 AND 200),
+  status text NOT NULL DEFAULT 'travail' CONSTRAINT studio_publications_status_check
+    CHECK (status IN ('travail', 'soumis', 'approuve', 'refuse', 'diffuse', 'retire')),
+  approved_revision_id text,
+  approved_document_hash text,
+  approved_by text REFERENCES users(id) ON DELETE RESTRICT,
+  approved_at timestamptz,
+  package jsonb,
+  package_hash text CONSTRAINT studio_publications_package_hash_check CHECK (package_hash IS NULL OR package_hash ~ '^[0-9a-f]{64}$'),
+  diffused_by text REFERENCES users(id) ON DELETE RESTRICT,
+  diffused_at timestamptz,
+  request_id text,
+  created_by text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT studio_publications_variant_of_study FOREIGN KEY(study_id, variant_id)
+    REFERENCES studio_variants(study_id, id) ON DELETE CASCADE,
+  CONSTRAINT studio_publications_revision_of_variant FOREIGN KEY(variant_id, revision_id)
+    REFERENCES studio_revisions(variant_id, id) ON DELETE CASCADE,
+  CONSTRAINT studio_publications_approval_same_revision CHECK (approved_revision_id IS NULL OR approved_revision_id = revision_id),
+  CONSTRAINT studio_publications_approval_complete CHECK ((approved_revision_id IS NULL) = (approved_document_hash IS NULL)),
+  CONSTRAINT studio_publications_package_complete CHECK ((package IS NULL) = (package_hash IS NULL))
+);
+CREATE INDEX IF NOT EXISTS studio_publications_project_idx ON studio_publications(project_id, created_at);
+CREATE INDEX IF NOT EXISTS studio_publications_study_idx ON studio_publications(study_id, created_at);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_publications_request_unique ON studio_publications(variant_id, request_id)
+  WHERE request_id IS NOT NULL;
+CREATE TABLE IF NOT EXISTS studio_publication_events (
+  id text PRIMARY KEY,
+  publication_id text NOT NULL REFERENCES studio_publications(id) ON DELETE CASCADE,
+  action text NOT NULL CONSTRAINT studio_publication_events_action_check
+    CHECK (action IN ('creer', 'soumettre', 'approuver', 'refuser', 'diffuser', 'retirer')),
+  from_status text,
+  to_status text NOT NULL,
+  author_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  comment text CONSTRAINT studio_publication_events_comment_length CHECK (comment IS NULL OR length(comment) BETWEEN 1 AND 2000),
+  revision_id text NOT NULL,
+  document_hash text NOT NULL,
+  head_revision_id text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS studio_publication_events_publication_idx ON studio_publication_events(publication_id, created_at);
+-- Journal append-only : toute UPDATE d'un évènement de publication est refusée (les suppressions suivent la cascade du projet).
+CREATE OR REPLACE FUNCTION studio_publication_event_immutable() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'studio_publication_event_immutable';
+END;
+$$;
+CREATE OR REPLACE TRIGGER studio_publication_events_no_update BEFORE UPDATE ON studio_publication_events
+  FOR EACH ROW EXECUTE FUNCTION studio_publication_event_immutable();
