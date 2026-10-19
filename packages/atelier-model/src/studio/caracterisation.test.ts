@@ -328,6 +328,8 @@ const AJOUTS = {
     "SCHEMA_APPARENCE", "SCHEMA_ELEMENT_VISUALISATION", "SCHEMA_SCENE", "STUDIO_FINITIONS_AFFICHAGE", "STUDIO_FRAME_SCENES", "STUDIO_LIMITES_SCENES",
     "STUDIO_MODES_AFFICHAGE", "STUDIO_PROJECTIONS_SCENE", "validerElementVisualisation", "studioApparenceResolue", "studioApparences", "studioDocumentToutVisible", "studioFiltrerMaillageScene", "studioMeshScene",
     "studioRappelerScene", "studioScenes", "STUDIO_NATURE_RENDU", "STUDIO_RENDU_SCHEMA", "studioNomFichierRendu", "studioProvenanceRendu",
+    // Concurrence des écritures (A.5-06, A.5-08, `concurrence.ts`).
+    "studioChevauchements", "studioElementsModifies",
   ]),
 };
 function sansAjouts(value: unknown): unknown {

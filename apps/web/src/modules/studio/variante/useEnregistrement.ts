@@ -16,6 +16,13 @@
  * (`applyStudioCommands`) — sinon il reste conservé pour une résolution manuelle. Deux onglets : chaque écriture est
  * comparée au jeton lu (`stamp`) ; si un autre onglet a écrit entre-temps, rien n'est écrasé et le conflit
  * « brouillon modifié dans un autre onglet » s'affiche. Un brouillon ouvert en ligne et jamais coupé n'est pas conservé.
+ *
+ * Contrat de commandes (A.5) : en ligne aussi, un refus `stale_revision` est un conflit signalé (rien n'est écrasé) ; le
+ * report revalide les commandes par le modèle sur la nouvelle tête et nomme d'abord les éléments que l'autre écriture a
+ * changés autrement (`studioChevauchements`) — les remplacer demande une confirmation explicite. Une lecture arrivée
+ * après un changement du brouillon affiché est ignorée (`revision-courante.ts`) ; les lectures dérivées ne sont relues
+ * qu'après la confirmation d'au moins un lot par le serveur. Annuler ne porte que sur le brouillon : les changements
+ * d'autrui, présents sous les pas reportés, ne s'annulent jamais d'ici.
  */
 import { useEffect, useRef, useState, type MutableRefObject } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -25,7 +32,8 @@ import { isNetworkError } from "../../../lib/reachability";
 import { accuserLot, commandesNonEnvoyees, enveloppeSuivante, envoiPartiel, planEnvoi, type PlanEnvoi } from "../import/envoi";
 import { appliquerBrouillon, avecPlancher, commandesEnAttente, creerBrouillon, type Brouillon } from "../planche2d/brouillon";
 import { navigateurEnLigne, useConnexion, useRetourEnLigne } from "../hors-ligne/connexion";
-import { cleVariante, reporterSurTete, restaurerBrouillon, versHorsLigne, type ConflitHorsLigne } from "../hors-ligne/persistance";
+import { cleVariante, identifiantsCites, reporterSurTete, restaurerBrouillon, versHorsLigne, type ConflitHorsLigne } from "../hors-ligne/persistance";
+import { invalidationsApresEngagement, lectureApplicable } from "./revision-courante";
 import { ecrireBrouillonHorsLigne, memoriserContexte, retirerBrouillonHorsLigne, supprimerBrouillonHorsLigne } from "../hors-ligne/stockage";
 import type { RepriseHorsLigne } from "../hors-ligne/useChargementVariante";
 import { warning } from "./etat-variante";
@@ -76,6 +84,9 @@ export function useEnregistrement(o: OptionsEnregistrement) {
   /** Reprise à l'ouverture : la ligne vient d'être lue telle quelle, la réécrire changerait son jeton pour rien. */
   const sauterEcriture = useRef(false);
   const cle = userId ? cleVariante(userId, o.projectId, o.studyId, o.variantId) : null;
+  /** Contexte et brouillon affichés au dernier rendu : une lecture asynchrone se compare à eux avant de s'appliquer. */
+  const contexteAffiche = useRef(o.context), brouillonAffiche = useRef(o.brouillon);
+  contexteAffiche.current = o.context; brouillonAffiche.current = o.brouillon;
 
   function poserPlan(plan: PlanEnvoi | null, couverts = pasCouverts.current) {
     envelope.current = plan; pasCouverts.current = plan ? couverts : 0;
@@ -183,9 +194,8 @@ export function useEnregistrement(o: OptionsEnregistrement) {
         if (local.current) await conserver(context, brouillon, envelope.current, null);
         if (!alive.current) return;
       }
-      // L'historique et la tête ont changé côté serveur : les listes affichées sont relues.
-      void client.invalidateQueries({ queryKey: ["studio-revisions", projectId, studyId, variantId] });
-      void client.invalidateQueries({ queryKey: ["studio-study", projectId, studyId] });
+      // L'historique et la tête ont changé côté serveur (lots confirmés, donc engagés) : les listes affichées sont relues.
+      for (const queryKey of invalidationsApresEngagement(envelope.current?.envoyes ?? 0, projectId, studyId, variantId)) void client.invalidateQueries({ queryKey });
       const accuse = dernierAccuse.current;
       if (suite.length && accuse) {
         // Les pas suivants repartent de la révision produite par l'enveloppe (mêmes commandes, même modèle).
@@ -227,8 +237,10 @@ export function useEnregistrement(o: OptionsEnregistrement) {
           o.surRebase(accuse, rebase);
           if (conserver409) { const c = { headRevisionId: headDe(e), at: new Date().toISOString() }; setConflit(c); await conserver(accuse, rebase, null, c); }
           else if (local.current) await conserver(accuse, rebase, null, null);
-          void client.invalidateQueries({ queryKey: ["studio-revisions", projectId, studyId, variantId] });
-          void client.invalidateQueries({ queryKey: ["studio-study", projectId, studyId] });
+          // En ligne aussi (A.5-06) : le conflit est signalé et le report revalidé reste offert, rien n'est écrasé.
+          else if (estConflitRevision(e)) setConflit({ headRevisionId: headDe(e), at: new Date().toISOString() });
+          // Seuls les lots confirmés sont engagés : leurs lectures dérivées sont relues, rien pour la suite refusée.
+          for (const queryKey of invalidationsApresEngagement(plan.envoyes, projectId, studyId, variantId)) void client.invalidateQueries({ queryKey });
           const conflitServeur = e.status === 409;
           setBlocked(conflitServeur || e.status === 403 || e.status === 401);
           setError(conflitServeur
@@ -244,6 +256,8 @@ export function useEnregistrement(o: OptionsEnregistrement) {
           const c = { headRevisionId: headDe(e), at: new Date().toISOString() };
           setConflit(c); await conserver(context, libre, null, c);
         } else if (local.current) await conserver(context, libre, null, null);
+        // En ligne (A.5-06) : même conflit signalé, brouillon gardé dans la page, report revalidé ou rechargement au choix.
+        else if (estConflitRevision(e)) setConflit({ headRevisionId: headDe(e), at: new Date().toISOString() });
         setBlocked(e.status === 409 || e.status === 403 || e.status === 401);
         setError(e.status === 409
           ? (e.code === "stale_revision" ? (conserver409 ? "Conflit de révision : une autre révision est devenue la version courante. Votre brouillon hors ligne est conservé et n’a rien écrasé." : "Conflit de révision : une autre révision est devenue la version courante. Votre brouillon est conservé et n’a rien écrasé.") : "Conflit de révision. Le brouillon est conservé.")
@@ -279,16 +293,24 @@ export function useEnregistrement(o: OptionsEnregistrement) {
    * envoyé : le brouillon reporté s'enregistre ensuite par « Enregistrer » (nouvelles enveloppes, nouveaux requestId).
    */
   async function reporter() {
-    const { projectId, studyId, variantId, brouillon, alive, setError, setInfo } = o;
-    if (!brouillon || !conflit || saving.current || horsJeu.current) return;
+    const { projectId, studyId, variantId, brouillon, context, alive, setError, setInfo } = o;
+    if (!brouillon || !context || !conflit || saving.current || horsJeu.current) return;
+    const depart = context.revision.id;
     let tete: StudioContext;
     try { tete = await api.studioContext(projectId, studyId, variantId); }
     catch { if (alive.current) setError("Nouvelle version courante indisponible : le brouillon hors ligne reste conservé. Réessayez une fois en ligne."); return; }
     if (!alive.current) return;
+    // A.5-10 : une lecture partie avant un changement du brouillon affiché (rechargement, autre report) est ignorée.
+    if (!lectureApplicable(depart, contexteAffiche.current, brouillonAffiche.current, brouillon)) return;
     if (cle && userId) void memoriserContexte(cle, userId, tete);
-    const r = reporterSurTete(tete.revision.document, brouillon.pas);
+    // Revalidation par le modèle sur la nouvelle tête ; les éléments changés des deux côtés sont nommés avant tout report.
+    const r = reporterSurTete(tete.revision.document, brouillon.pas, context.revision.document);
     if (!r.ok) { setError("Les commandes en attente ne s’appliquent pas à la nouvelle version courante : le brouillon hors ligne reste conservé pour une résolution manuelle."); return; }
-    if (!(await conserver(tete, r.brouillon, null, null)) && horsJeu.current) return;
+    if (r.chevauchements.length && !window.confirm(`Élément(s) modifié(s) aussi dans la nouvelle version courante : ${identifiantsCites(r.chevauchements)}. Reporter vos commandes remplacerait ces changements. Reporter quand même ?`)) {
+      setError("Report abandonné : rien n’a été modifié. Votre brouillon reste conservé ; rechargez la version serveur ou reportez après vérification.");
+      return;
+    }
+    if (local.current && !(await conserver(tete, r.brouillon, null, null)) && horsJeu.current) return;
     o.surRebase(tete, r.brouillon);
     setConflit(null); setBlocked(false); setError("");
     void client.invalidateQueries({ queryKey: ["studio-revisions", projectId, studyId, variantId] });
@@ -302,6 +324,8 @@ export function useEnregistrement(o: OptionsEnregistrement) {
     horsLigne: { enLigne: connecte, enAttente, conflit: !!conflit || autreOnglet, autreOnglet, conserve, depuisCache: !!depuisCache },
   };
 }
+
+const estConflitRevision = (e: ApiError): boolean => e.status === 409 && e.code === "stale_revision";
 
 const headDe = (e: ApiError): string | null => {
   const b = e.body as { headRevisionId?: unknown } | null;

@@ -9896,5 +9896,8 @@
 "Rendu du modèle exporté (PNG), provenance incluse : scène rappelée.": "Model render exported (PNG), provenance included: recalled scene.",
 "Rendu du modèle exporté (PNG), provenance incluse : vue courante, sans scène.": "Model render exported (PNG), provenance included: current view, no scene.",
 "Export du rendu impossible : le canevas n’a pas pu être lu.": "Render export impossible: the canvas could not be read.",
-"Maillage en cours de calcul : le rendu attend la géométrie du document affiché.": "Mesh being computed: the render waits for the geometry of the displayed document."
+"Maillage en cours de calcul : le rendu attend la géométrie du document affiché.": "Mesh being computed: the render waits for the geometry of the displayed document.",
+"Brouillon conservé dans cette page : une autre révision est devenue la version courante. Rien n’a été écrasé.": "Draft kept in this page: another revision became the current version. Nothing was overwritten.",
+"Élément(s) modifié(s) aussi dans la nouvelle version courante : {0}. Reporter vos commandes remplacerait ces changements. Reporter quand même ?": "Element(s) also changed in the new current version: {0}. Carrying over your commands would replace these changes. Carry over anyway?",
+"Report abandonné : rien n’a été modifié. Votre brouillon reste conservé ; rechargez la version serveur ou reportez après vérification.": "Carry-over cancelled: nothing was changed. Your draft is still kept; reload the server version or carry over after checking."
 }
