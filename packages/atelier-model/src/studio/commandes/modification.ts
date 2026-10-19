@@ -1,4 +1,5 @@
-import { studioOffset } from "../courbes.js";
+import { studioOffset, studioPolylineSegmentCount } from "../courbes.js";
+import { STUDIO_INDEXED_ANCHOR } from "../noyau/ancres.js";
 import { validerCote, type StudioDimensionLink } from "../objets/cote.js";
 import { validerElement } from "../objets/element.js";
 import { studioAnchorPoint, translaterForme, validerForme } from "../objets/index.js";
@@ -56,36 +57,66 @@ export const modifier: Gestionnaire = (state, params, path) => {
     state.dimensions[dIndex] = enteredDimension(state, o, path);
   } else {
     state.objects[index] = o;
-    if (previous.type === "polyline" && o.type === "polyline" && (previous.points.length !== o.points.length || previous.closed !== o.closed)) {
-      verifierLiensIndexes(state, previous, o, path);
-    }
+    if (previous.type === "polyline" && o.type === "polyline") verifierLiensIndexes(state, previous, o, path);
     followLinks(state, o.id, path);
     suivreAnnotations(state, o.id, path);
   }
 };
 
+type Polyligne = Extract<StudioShape, { type: "polyline" }>;
+
 /**
- * INV-013 (REF-02 §2.4) — polyligne dont la topologie change (sommet inséré ou retiré, ouverture / fermeture) : ses
- * sommets et segments sont renumérotés, un lien `vertex-i` / `mid-i` (cote) ou `segment` (cote angulaire) ne désigne
- * plus forcément le même élément. Un lien n'est gardé que si sa correspondance est vérifiée — même point (sommet,
- * milieu) ou même segment, exactement, avant et après ; sinon il est rompu et l'annotation passe « à résoudre », avec
- * sa dernière géométrie (jamais rattachée en silence à un autre sommet). Un rang qui n'existe plus n'est pas rompu ici :
- * la modification reste refusée par le suivi des liens, comme avant (la cote ne se rattache pas ailleurs). Sans
- * changement de topologie, un lien suit le sommet de même rang (déplacement du sommet), comme avant.
+ * INV-013 (REF-02 §2.4) — correspondance des éléments indexés d'une polyligne modifiée (`vertex-i`, `mid-i` d'une cote,
+ * segment `i` d'une cote angulaire), vérifiée à CHAQUE modification, que le nombre de sommets change ou non :
+ * - « sommet suivi » : le sommet de rang i est au même point avant et après ; ou bien la topologie est inchangée (même
+ *   nombre de sommets, même état ouvert / fermé) et ce sommet est le SEUL sommet déplacé par la modification (ses
+ *   voisins, comme tous les autres sommets, sont donc inchangés) — c'est le déplacement d'un sommet, que la cote suit ;
+ * - « segment suivi » : le segment de rang i a les mêmes extrémités avant et après (dans un sens ou dans l'autre) ; ou
+ *   bien la topologie est inchangée et ses deux extrémités sont des sommets suivis (l'une au
+ *   plus a bougé : un seul sommet déplacé).
+ * Tout autre cas (sommet retiré et un autre ajouté à nombre constant, polyligne inversée, plusieurs sommets déplacés à la
+ * fois, sommet inséré) rompt le lien : l'annotation passe « à résoudre » avec sa dernière géométrie, jamais rattachée
+ * en silence à un autre élément. Le milieu `mid-i` d'un segment suivi suit le segment (renflement changé compris). Un
+ * rang qui n'existe plus (ou un segment devenu courbe pour une cote angulaire) refuse la modification, comme avant.
  */
-function verifierLiensIndexes(state: Etat, avant: Extract<StudioShape, { type: "polyline" }>, apres: Extract<StudioShape, { type: "polyline" }>, path: string): void {
-  const rompu = (l: StudioDimensionLink | null) => {
+function correspondancePolyligne(avant: Polyligne, apres: Polyligne) {
+  const memeTopologie = avant.points.length === apres.points.length && avant.closed === apres.closed;
+  const bouges = memeTopologie ? apres.points.flatMap((p, i) => (same(p, avant.points[i]!) ? [] : [i])) : [];
+  const seul = bouges.length === 1 ? bouges[0] : -1;
+  const sommet = (i: number) => {
+    const a = avant.points[i], b = apres.points[i];
+    return !!a && !!b && (same(a, b) || i === seul);
+  };
+  const extremites = (o: Polyligne, i: number) => (i < studioPolylineSegmentCount(o) ? [i, (i + 1) % o.points.length] as const : null);
+  const segment = (i: number) => {
+    const ea = extremites(avant, i), eb = extremites(apres, i);
+    if (!ea || !eb) return false;
+    const [a0, a1] = [avant.points[ea[0]]!, avant.points[ea[1]]!], [b0, b1] = [apres.points[eb[0]]!, apres.points[eb[1]]!];
+    if ((same(a0, b0) && same(a1, b1)) || (same(a0, b1) && same(a1, b0))) return true;
+    return memeTopologie && sommet(ea[0]) && sommet(ea[1]);
+  };
+  return { sommet, segment };
+}
+
+function verifierLiensIndexes(state: Etat, avant: Polyligne, apres: Polyligne, path: string): void {
+  const c = correspondancePolyligne(avant, apres);
+  const rompu = (l: StudioDimensionLink | null, cote: string) => {
     if (!l || l.objectId !== apres.id) return false;
-    const a = studioAnchorPoint(avant, l.anchor), b = studioAnchorPoint(apres, l.anchor);
-    return !!a && !!b && !same(a, b);
+    if (!studioAnchorPoint(apres, l.anchor)) fail(path, `sommet de cote liée introuvable (${cote})`);
+    const m = STUDIO_INDEXED_ANCHOR.exec(l.anchor);
+    if (!m) return false;
+    const i = Number(m[2]);
+    return m[1] === "vertex" ? !c.sommet(i) : !c.segment(i);
   };
   state.dimensions = state.dimensions.map((d) => {
-    const rs = rompu(d.links.start), re = rompu(d.links.end);
+    // Une cote « à résoudre » garde le lien qui lui reste et le suit (le document l'exige : extrémité = sommet lié) ;
+    // ce lien est donc vérifié lui aussi.
+    const rs = rompu(d.links.start, d.id), re = rompu(d.links.end, d.id);
     if (!rs && !re) return d;
     editable(state, d, `${path} (cote liée ${d.id})`);
     return { ...d, links: { start: rs ? null : d.links.start, end: re ? null : d.links.end }, toResolve: true };
   });
-  rompreSegmentsRenumerotes(state, avant, apres, path);
+  rompreSegmentsRenumerotes(state, apres, c.segment, path);
 }
 
 export const decaler: Gestionnaire = (state, params, path) => {

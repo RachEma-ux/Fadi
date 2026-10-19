@@ -264,6 +264,40 @@ describe("INV-013 / BLOC-01 — une annotation référencée à une face modifi�
     // Sommet coté retiré : la commande reste refusée en entier, la cote n'est jamais rattachée ailleurs.
     expect(refus(() => modifier(base(), [{ x: 0, y: 0 }, { x: 4, y: 3 }]))).toMatch(/introuvable/);
   });
+  it("INV-013 BLOC-01 [+] sommet NON lié déplacé : liens gardés, mesures inchangées ; sommet lié seul déplacé : la cote et la cote angulaire le suivent", () => {
+    const d = modifier(base(), [{ x: -2, y: 1 }, { x: 4, y: 0 }, { x: 4, y: 3 }]);
+    expect(d.dimensions![0]).toMatchObject({ start: cote.start, end: cote.end, toResolve: false, links: cote.links });
+    expect(d.annotations![0]).toMatchObject({ toResolve: false, links: angle.links });
+    expect(measureStudioDimension(d, "k")?.value).toBeCloseTo(3, 12);
+    const e = modifier(base(), [{ x: 0, y: 0 }, { x: 4, y: 0 }, { x: 4, y: 7 }]);
+    expect(e.dimensions![0]).toMatchObject({ end: { x: 4, y: 7 }, toResolve: false, links: cote.links });
+    expect(e.annotations![0]).toMatchObject({ first: { x: 4, y: 7 }, toResolve: false, links: angle.links });
+  });
+  it("INV-013 BLOC-01 [−] nombre de sommets constant : sommet retiré + sommet ajouté, polyligne inversée, deux sommets déplacés — jamais rattachés en silence", () => {
+    // Avant correctif : (4, 0)–(4, 3) devenait (4, 3)–(8, 3), 4 m au lieu de 3 m, sans aucun signal.
+    const d = modifier(base(), [{ x: 0, y: 0 }, { x: 4, y: 3 }, { x: 8, y: 3 }]);
+    expect(d.dimensions![0]).toMatchObject({ start: cote.start, end: cote.end, links: { start: null, end: null }, toResolve: true });
+    expect(measureStudioDimension(d, "k")?.value ?? null).toBeNull();
+    expect(d.annotations![0]).toMatchObject({ vertex: angle.vertex, first: angle.first, links: { first: null, second: angle.links.second }, toResolve: true });
+    // Inversion : le sommet 1 reste au même point (lien gardé), le sommet 2 devient (0, 0) → rompu ; le segment 1 change.
+    const inv = modifier(base(), [{ x: 4, y: 3 }, { x: 4, y: 0 }, { x: 0, y: 0 }]);
+    expect(inv.dimensions![0]).toMatchObject({ start: cote.start, end: cote.end, links: { start: cote.links.start, end: null }, toResolve: true });
+    expect(measureStudioDimension(inv, "k")?.value ?? null).toBeNull();
+    expect(inv.annotations![0]).toMatchObject({ links: { first: null, second: angle.links.second }, toResolve: true });
+    // Deux sommets déplacés à la fois, dont le sommet lié : correspondance non vérifiée.
+    const deux = modifier(base(), [{ x: 1, y: 0 }, { x: 4, y: 0 }, { x: 4, y: 6 }]);
+    expect(deux.dimensions![0]).toMatchObject({ end: cote.end, links: { start: cote.links.start, end: null }, toResolve: true });
+    for (const x of [d, inv, deux]) expect(validateStudioDocument(x)).toEqual(x);
+  });
+  it("INV-013 [−] le lien qui reste à une cote « à résoudre » est vérifié lui aussi : renuméroté, il est rompu", () => {
+    const inv = modifier(base(), [{ x: 4, y: 3 }, { x: 4, y: 0 }, { x: 0, y: 0 }]);
+    const e = modifier(inv, [{ x: 4, y: 3 }, { x: 0, y: 0 }, { x: 4, y: 0 }]);
+    expect(e.dimensions![0]).toMatchObject({ start: cote.start, end: cote.end, links: { start: null, end: null }, toResolve: true });
+    // Déclaré : le lien restant d'une cote linéaire « à résoudre » suit encore son sommet (seul sommet déplacé), car le
+    // document exige qu'une extrémité liée soit au sommet lié (objets/cote.ts) ; la cote angulaire, elle, est figée.
+    const f = modifier(inv, [{ x: 4, y: 3 }, { x: 5, y: 0 }, { x: 0, y: 0 }]);
+    expect(f.dimensions![0]).toMatchObject({ start: { x: 5, y: 0 }, links: { start: cote.links.start, end: null }, toResolve: true });
+  });
 });
 
 describe("X.2-03 — les validations centrales s'exécutent à l'exécution, même pour des entrées que les types interdisent", () => {

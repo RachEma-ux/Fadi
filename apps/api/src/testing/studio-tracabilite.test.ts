@@ -108,13 +108,59 @@ export const REGLES_BLOC: { bloc: string; traitement: string }[] = [
 
 export interface TestTrace { fichier: string; titre: string; ids: string[]; sens: "+" | "−" }
 const TITRE = /^((?:(?:INV-\d{3}|BLOC-\d{2}|X\.2-0\d)\s+)+)\[([+−])\]\s+(.+)$/;
+/**
+ * Source sans commentaires (`//` et `/* … *\/`), chaînes et gabarits conservés tels quels : un test commenté n'est pas
+ * compté comme une preuve.
+ */
+export function sansCommentaires(source: string): string {
+  let out = "", i = 0;
+  while (i < source.length) {
+    const c = source[i]!, d = source[i + 1];
+    if (c === "/" && d === "/") { while (i < source.length && source[i] !== "\n") i++; continue; }
+    if (c === "/" && d === "*") { const f = source.indexOf("*/", i + 2); i = f < 0 ? source.length : f + 2; continue; }
+    if (c === "\"" || c === "'" || c === "`") {
+      let j = i + 1;
+      while (j < source.length && source[j] !== c) j += source[j] === "\\" ? 2 : 1;
+      out += source.slice(i, j + 1); i = j + 1; continue;
+    }
+    out += c; i++;
+  }
+  return out;
+}
+/** Indice juste après la parenthèse fermante qui répond à celle de `debut` (chaînes ignorées). */
+function apresParentheses(source: string, debut: number): number {
+  let p = 0;
+  for (let i = debut; i < source.length; i++) {
+    const c = source[i]!;
+    if (c === "\"" || c === "'" || c === "`") { let j = i + 1; while (j < source.length && source[j] !== c) j += source[j] === "\\" ? 2 : 1; i = j; continue; }
+    if (c === "(") p++;
+    else if (c === ")" && --p === 0) return i + 1;
+  }
+  throw new Error("parenthèse non fermée");
+}
+/** Tests désactivés ou exclusifs : interdits dans les suites tracées (une preuve sautée n'est pas une preuve). */
+export const DESACTIVES = /\b(?:it|test|describe)\s*\.\s*(?:skip|only|todo|skipIf|runIf|fails)\b|\b[xf](?:it|describe|test)\s*\(/;
+/** Titres des tests d'une source (`it("…")`, `it.each(…)("…")`, `test(…)`), commentaires retirés. */
+export function titresDeTests(source: string): string[] {
+  const s = sansCommentaires(source);
+  const out: string[] = [];
+  for (const m of s.matchAll(/\b(?:it|test)\s*(\.\s*each\s*)?\(/g)) {
+    let i = m.index! + m[0].length;
+    if (m[1]) { i = apresParentheses(s, i - 1); if (s[i] !== "(") continue; i++; }
+    const t = /^\s*"((?:[^"\\]|\\.)*)"/.exec(s.slice(i));
+    if (t) out.push(t[1]!);
+  }
+  return out;
+}
 export function testsTraces(): TestTrace[] {
   const out: TestTrace[] = [];
   for (const fichier of SUITES) {
     const source = lire(fichier).toString("utf8");
-    for (const m of source.matchAll(/\bit(?:\.each\([\s\S]*?\]\)\))?\(\s*"((?:[^"\\]|\\.)*)"/g)) {
-      const t = TITRE.exec(m[1]!);
-      if (t) out.push({ fichier, titre: m[1]!, ids: t[1]!.trim().split(/\s+/), sens: t[2] as "+" | "−" });
+    const desactive = DESACTIVES.exec(sansCommentaires(source));
+    if (desactive) throw new Error(`${fichier} : test désactivé ou exclusif (« ${desactive[0]} ») interdit dans la suite tracée`);
+    for (const titre of titresDeTests(source)) {
+      const t = TITRE.exec(titre);
+      if (t) out.push({ fichier, titre, ids: t[1]!.trim().split(/\s+/), sens: t[2] as "+" | "−" });
     }
   }
   return out;
@@ -229,6 +275,21 @@ describe("Traçabilité INV → tests (X.2-01, X.2-04), vérifiée contre les so
     // Aucun identifiant cité par un test hors des listes de référence (pas d'identifiant inventé).
     const connus = new Set<string>([...INVARIANTS.map(([id]) => id), ...ELIMINATOIRES.map((e) => e.bloc), "X.2-03"]);
     expect(tests.flatMap((t) => t.ids).filter((id) => !connus.has(id))).toEqual([]);
+  });
+
+  it("lecture des titres : commentaires retirés, it.each reconnu, tests désactivés ou exclusifs refusés", () => {
+    const source = [
+      `// it("INV-001 [+] commenté")`,
+      `/* it("INV-001 [−] commenté aussi") */`,
+      `it("INV-002 [+] vrai, // pas un commentaire", () => {});`,
+      `it.each([["a", (x: string) => x.replace(")", "(")]])("INV-003 [−] paramétré %s", () => {});`,
+      `test("INV-004 [+] alias", () => {});`,
+    ].join("\n");
+    expect(titresDeTests(source)).toEqual(["INV-002 [+] vrai, // pas un commentaire", "INV-003 [−] paramétré %s", "INV-004 [+] alias"]);
+    for (const d of [`it.skip("x", f)`, `it.only("x", f)`, `describe.skip("x", f)`, `xit("x", f)`, `it.todo("x")`, `it.skipIf(true)("x", f)`]) expect(DESACTIVES.test(d), d).toBe(true);
+    expect(DESACTIVES.test(sansCommentaires(`// it.skip("x")\nit("y", f)`))).toBe(false);
+    // Les suites tracées n'en contiennent aucun (testsTraces échouerait).
+    expect(testsTraces().length).toBeGreaterThan(0);
   });
 
   it("la table publiée est exactement celle recalculée", () => {

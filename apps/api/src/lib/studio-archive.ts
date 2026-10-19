@@ -19,6 +19,7 @@
  * préférences ne sont pas repris. Les contrôles d'intégrité (manifeste, empreintes) refusent toujours (422).
  */
 import { sql } from "drizzle-orm";
+import { validateStudioDocument } from "@parcours/atelier-model";
 import { newId } from "./ids.js";
 import type { Querier, Tx } from "./step-rows.js";
 import { signManifestHash, verifyArchiveSignature, type ArchiveTrust } from "./archive-signature.js";
@@ -126,6 +127,14 @@ export async function importStudioArchive(tx: Tx, projectId: string, importerId:
   const checked = checkStudioArchive(raw);
   if (!checked.ok) throw new StudioArchiveError(checked.errors);
   const { section } = checked;
+  // INV-010 : l'import réinsère les révisions en SQL brut, sans appliquer de commande ; chaque document de révision passe
+  // donc ici la validation centrale du noyau (`validateStudioDocument`), comme tout document Studio relu. Un seul
+  // document invalide refuse la section entière (422), avant toute écriture ; rien n'est corrigé.
+  const invalides = section.tables.studio_revisions.flatMap((r) => {
+    try { validateStudioDocument(r["document"]); return []; }
+    catch (e) { return [`studio_revisions ${String(r["id"])} : document invalide (${e instanceof Error ? e.message : String(e)})`]; }
+  });
+  if (invalides.length) throw new StudioArchiveError(invalides);
   const warnings: string[] = [];
   const trust = verifyArchiveSignature(section.signature, section.manifest.hash, await verificationKeys(tx));
   const trusted = trust === "verifiee";

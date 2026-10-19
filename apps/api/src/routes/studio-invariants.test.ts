@@ -11,7 +11,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  * `docs/ai-team/reports/claude-v9-x2/INVARIANTS.md` : `INV-xxx [+]` (scénario positif) ou `INV-xxx [−]` (scénario
  * d'échec : la violation est tentée et refusée, ou ne se produit pas), plusieurs identifiants possibles (`BLOC-0x`).
  * Rangée sous `routes/` : supertest ouvre une socket de boucle locale, refusée par les sentinelles réseau de
- * `vitest.guard.config.ts` ; aucune base n'est touchée (client simulé).
+ * `vitest.guard.config.ts` ; aucune base n'est touchée (client simulé). Un volet « Base simulée » vérifie la fidélité de
+ * l'outil d'essai lui-même (tx distinct, écriture par `db` refusée pendant une transaction, unicités et déclencheurs relus
+ * dans `db/init.sql`, chemin `23505` en concurrence) ; ses limites restantes sont déclarées dans son en-tête. Les rôles
+ * sont relus dans la base simulée : rétrograder un membre (`project_members`) suffit à changer son accès.
  */
 vi.mock("../db/client.js", async () => ({ db: (await import("../testing/studio-base-simulee.js")).baseSimulee() }));
 vi.mock("../middleware/require-auth.js", async () => (await import("../testing/studio-base-simulee.js")).authSimulee());
@@ -27,12 +30,17 @@ import { fileURLToPath } from "node:url";
 import express from "express";
 import request from "supertest";
 import { STUDIO_CONTRACT, STUDIO_TOOLS, type StudioCommand, type StudioEnvelope } from "@parcours/atelier-model";
-import { studioPublicationEvents, studioPublications, studioRevisions, studioToolPreferences, studioVariants } from "../db/schema.js";
+import { eq } from "drizzle-orm";
+import { db } from "../db/client.js";
+import { projectMembers, studioComments, studioObservationLinks, studioPublicationEvents, studioPublications, studioRevisions, studioToolPreferences, studioVariants } from "../db/schema.js";
 import { StudioRequestError, submitStudioCommands } from "../lib/studio-commands.js";
+import { createStudioComment } from "../lib/studio-commentaires.js";
+import { importStudioArchive, StudioArchiveError } from "../lib/studio-archive.js";
+import { buildStudioManifest, checkStudioArchive, emptyStudioTables, STUDIO_ARCHIVE_SCHEMA, STUDIO_ARCHIVE_SCHEMA_VERSION } from "../lib/studio-archive-manifest.js";
 import { controlerApprobation, controlerEnsembleExamine, empreinteManifeste, construireManifeste } from "../lib/studio-publication-statuts.js";
 import { catalogueAutorise, lireCorpsPreferences, lireLignePreferences, motifRefusEcriture } from "../lib/studio-preferences.js";
 import { studioRouter } from "./studio.js";
-import { banc, initialiserProjet, instantane, type Acteur } from "../testing/studio-base-simulee.js";
+import { banc, initialiserProjet, instantane, SCHEMA, type Acteur } from "../testing/studio-base-simulee.js";
 
 const app = express();
 app.use("/projects/:projectId/studio", studioRouter);
@@ -305,11 +313,37 @@ describe("INV-010 — une requête IA ou extension passe par les mêmes validati
       expect((err as StudioRequestError).status).toBe(400);
     }
     expect(await submitStudioCommands(scope, "lecteur", e).then(() => null, (x: StudioRequestError) => x.status)).toBe(403);
-    // Inventaire : seul `lib/studio-commands.ts` insère une révision ou applique des commandes Studio.
+    // Inventaire de tout `src/` (hors tests et outils d'essai) : seul `lib/studio-commands.ts` insère une révision ou
+    // applique des commandes Studio — par drizzle ou en SQL brut (`INSERT INTO studio_revisions`, `UPDATE …`, ou
+    // insertion dans une table nommée dynamiquement). Exception déclarée : `lib/studio-archive.ts`, qui réinsère les
+    // révisions d'une archive en SQL brut sans appliquer de commande — chaque document y passe `validateStudioDocument`
+    // (test suivant).
     const racine = fileURLToPath(new URL("../", import.meta.url));
-    const sources = ["routes", "lib"].flatMap((d) => readdirSync(`${racine}${d}`).filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts")).map((f) => `${d}/${f}`));
-    const ecrivains = sources.filter((f) => /insert\(studioRevisions\)|applyStudioCommands\(/.test(readFileSync(`${racine}${f}`, "utf8")));
-    expect(ecrivains).toEqual(["lib/studio-commands.ts"]);
+    const sources = (readdirSync(racine, { recursive: true }) as string[]).filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts") && !f.startsWith("testing/"));
+    const motif = /insert\(studioRevisions\)|applyStudioCommands\(|INSERT\s+INTO\s+"?studio_revisions\b|UPDATE\s+"?studio_revisions\b|INSERT\s+INTO\s+\$\{/i;
+    const ecrivains = sources.filter((f) => motif.test(readFileSync(`${racine}${f}`, "utf8"))).sort();
+    expect(ecrivains).toEqual(["lib/studio-archive.ts", "lib/studio-commands.ts"]);
+  });
+  it("INV-010 [−] import d'archive : un document de révision invalide refuse la section entière (validation centrale), avant toute écriture", async () => {
+    const tables = emptyStudioTables();
+    const valide = { id: "doc", schemaVersion: "studio-document/1", units: "m", frame: "local-2d", objects: [{ id: "l", type: "line", start: { x: 0, y: 0 }, end: { x: 1, y: 0 } }] };
+    tables.studio_studies = [{ id: "s9", project_id: "pA", name: "Étude", initial_variant_id: "v9" }];
+    tables.studio_variants = [{ id: "v9", study_id: "s9", name: "Initiale", head_revision_id: "r9" }];
+    const section = (document: unknown) => {
+      const t = { ...tables, studio_revisions: [{ id: "r9", variant_id: "v9", parent_revision_id: null, document, payload_hash: "a".repeat(64), author_id: "uOwner" }] };
+      const ident = { sourceProjectId: "pA", ownerId: "uOwner", accounts: [{ id: "uOwner", email: "owner@exemple.test" }] };
+      return { schema: STUDIO_ARCHIVE_SCHEMA, schemaVersion: STUDIO_ARCHIVE_SCHEMA_VERSION, ...ident, tables: t, manifest: buildStudioManifest(t, ident) };
+    };
+    // Base de transaction factice : la validation précède tout accès (le premier accès lève « atteinte »).
+    const atteinte = new Proxy({}, { get: () => () => { throw new Error("transaction atteinte"); } }) as never;
+    for (const mauvais of [{ ...valide, units: "mm" }, { ...valide, frame: "geographic" }, { ...valide, objects: [{ ...valide.objects[0], end: { x: 0, y: 0 }, type: "cercle" }] }, { ...valide, objects: [valide.objects[0], valide.objects[0]] }]) {
+      expect(checkStudioArchive(section(mauvais)).ok).toBe(true);
+      const err = await importStudioArchive(atteinte, "pB", "importeur", section(mauvais)).then(() => null, (e: unknown) => e);
+      expect(err).toBeInstanceOf(StudioArchiveError);
+      expect((err as StudioArchiveError).erreurs[0]).toMatch(/^studio_revisions r9 : document invalide/);
+    }
+    // Document valide : la validation passe, l'import continue jusqu'à la base.
+    expect(await importStudioArchive(atteinte, "pB", "importeur", section(valide)).then(() => null, (e: Error) => e.message)).toBe("transaction atteinte");
   });
 });
 
@@ -329,7 +363,39 @@ describe("INV-014 — le mode hors connexion différencie travail local, confirm
     expect((await commander("editeur-verrou", e)).status).toBe(423);
     expect(instantane()).toBe(avant);
   });
+  it("INV-014 [−] l'éditeur rétrogradé entre la préparation hors ligne et l'envoi est refusé (rôle relu dans la base) ; retiré, 404", async () => {
+    const e = enveloppe("hors-ligne-2", "r1", [ligne("b", 1)]);
+    // Préparée hors ligne par un éditeur, jamais envoyée ; le propriétaire le rétrograde pendant la coupure.
+    roleDe("editeur", "lecteur");
+    const avant = instantane();
+    const r = await commander("editeur", e);
+    expect(r.status).toBe(403);
+    expect(r.body).toMatchObject({ error: "forbidden", role: "lecteur" });
+    expect(instantane()).toBe(avant);
+    banc.lignes.set(projectMembers, banc.lignes.get(projectMembers)!.filter((m) => m["userId"] !== "editeur"));
+    expect((await commander("editeur", e)).status).toBe(404);
+  });
+  it("INV-014 BLOC-03 [−] rejeu du même requestId après rétrogradation : refus 403 AVANT tout rejeu (la confirmation d'origine n'est pas rendue)", async () => {
+    const e = enveloppe("hors-ligne-3", "r1", [ligne("b", 1)]);
+    const r = await commander("editeur", e);
+    expect(r.body.replayed).toBe(false);
+    // L'accusé s'est perdu ; le compte est rétrogradé avant que le client ne renvoie la même enveloppe.
+    roleDe("editeur", "lecteur");
+    const n = nbRevisions();
+    const rejeu = await commander("editeur", e);
+    expect(rejeu.status).toBe(403);
+    expect(rejeu.body.replayed).toBeUndefined();
+    expect(rejeu.body.revision).toBeUndefined();
+    expect(nbRevisions()).toBe(n);
+  });
 });
+
+/** Rôle d'un membre du projet `p`, modifié dans la base simulée (que relit l'accès simulé). */
+function roleDe(userId: string, role: "lecteur" | "editeur") {
+  const m = banc.lignes.get(projectMembers)!.find((x) => x["projectId"] === "p" && x["userId"] === userId);
+  if (!m) throw new Error(`membre ${userId} absent`);
+  m["role"] = role;
+}
 
 describe("BLOC-02 — aucun accès inter-projets non autorisé", () => {
   it("BLOC-02 [+] un membre lit son projet, son étude, sa variante et ses exports", async () => {
@@ -344,6 +410,101 @@ describe("BLOC-02 — aucun accès inter-projets non autorisé", () => {
     const avant = instantane();
     expect((await request(app).post("/projects/q/studio/studies/s/variants/v/commands").set("x-acteur", "proprietaire").send(enveloppe("x", "r1", [ligne("b", 1)]))).status).toBe(404);
     expect(instantane()).toBe(avant);
+  });
+  it("BLOC-02 [−] étude et variante RÉELLES du projet q (autre propriétaire) adressées par /projects/p/… : 404 sans fuite, rien n'est écrit", async () => {
+    // Elles existent bien : leur propriétaire les lit par leur projet.
+    expect((await get("autre" as Acteur, "/projects/q/studio/studies/sq/variants/vq")).status).toBe(200);
+    const Q = `${S}/studies/sq`, VQ = `${Q}/variants/vq`;
+    for (const url of [Q, `${Q}/variants`, VQ, `${VQ}/revisions`, `${VQ}/revisions/rq1`, `${VQ}/export?format=svg`, `${VQ}/comments`, `${S}/studies/s/variants/vq`, `${S}/studies/s/variants/vq/export?format=svg`, `${V}/revisions/rq1`, `${S}/studies/sq/compare?from=vq&to=vq`]) {
+      const r = await get("proprietaire", url);
+      expect(r.status, url).toBe(404);
+      expect(r.body, url).toEqual({ error: "not_found" });
+      expect(JSON.stringify(r.body)).not.toMatch(/sq|vq|rq1|doc-q/);
+    }
+    const avant = instantane();
+    for (const [url, corps] of [[`${VQ}/commands`, enveloppe("x-q", "rq1", [ligne("b", 1)])], [`${S}/studies/s/variants/vq/commands`, enveloppe("x-q2", "rq1", [ligne("b", 1)])], [`${VQ}/comments`, { body: "Fuite ?" }], [`${Q}/variants`, { name: "Intruse" }]] as const) {
+      const r = await post("proprietaire", url, corps);
+      expect(r.status, url).toBe(404);
+    }
+    expect(instantane()).toBe(avant);
+  });
+});
+
+describe("Base simulée — transactions, unicités et déclencheurs de db/init.sql (fidélité de l'outil d'essai)", () => {
+  it("la transaction reçoit un tx distinct de db ; écrire par db pendant qu'elle est ouverte échoue, et elle est annulée", async () => {
+    const avant = instantane();
+    let distinct = false;
+    const err = await db.transaction(async (tx) => {
+      distinct = (tx as unknown) !== db;
+      await tx.insert(studioComments).values({ id: "c-tx", variantId: "v", authorId: "editeur", body: "dans tx", objectIds: [], payloadHash: "h" });
+      await db.insert(studioComments).values({ id: "c-hors", variantId: "v", authorId: "editeur", body: "hors tx", objectIds: [], payloadHash: "h" });
+    }).then(() => null, (e: Error) => e.message);
+    expect(distinct).toBe(true);
+    expect(err).toMatch(/écriture par db pendant une transaction ouverte/);
+    expect(instantane()).toBe(avant);
+    // db.transaction imbriqué : refusé aussi (autre connexion) ; tx employé après sa transaction : refusé.
+    let fuite: unknown;
+    expect(await db.transaction(async (tx) => { fuite = tx; await db.transaction(async () => undefined); }).then(() => null, (e: Error) => e.message)).toMatch(/pendant une transaction ouverte/);
+    expect(await (fuite as typeof db).insert(studioComments).values({ id: "c-x", variantId: "v", authorId: "editeur", body: "x", objectIds: [], payloadHash: "h" }).then(() => null, (e: Error) => e.message)).toMatch(/hors de sa transaction/);
+    // Point de sauvegarde annulé seul ; la transaction englobante valide le reste.
+    await db.transaction(async (tx) => {
+      await tx.insert(studioComments).values({ id: "c-a", variantId: "v", authorId: "editeur", body: "a", objectIds: [], payloadHash: "h" });
+      await tx.transaction(async (sp) => { await sp.insert(studioComments).values({ id: "c-b", variantId: "v", authorId: "editeur", body: "b", objectIds: [], payloadHash: "h" }); throw new Error("annule"); }).catch(() => undefined);
+    });
+    expect(banc.lignes.get(studioComments)!.map((c) => c["id"])).toEqual(["c1", "c-a"]);
+  });
+  it("unicités lues dans init.sql : requestId de révision, de commentaire (partiel : NULL ne se heurte pas), liens d'observation, ajustements du métré ; 23505 sans rien écrire", async () => {
+    const noms = (t: string) => SCHEMA.unicites.get(t)!.map((u) => u.nom);
+    expect(noms("studio_revisions")).toEqual(expect.arrayContaining(["studio_revisions_pkey", "studio_revisions_request_unique"]));
+    expect(noms("studio_comments")).toContain("studio_comments_request_unique");
+    expect(noms("studio_observation_links")).toEqual(expect.arrayContaining(["studio_observation_links_ref_unique", "studio_observation_links_request_unique"]));
+    expect(noms("studio_quantity_adjustments")).toEqual(expect.arrayContaining(["studio_quantity_adjustments_request_unique", "studio_quantity_adjustments_seq_unique"]));
+    const avant = instantane();
+    const code = (p: PromiseLike<unknown>) => Promise.resolve(p).then(() => null, (e: { code?: string; constraint?: string }) => `${e.code} ${e.constraint}`);
+    expect(await code(db.insert(studioRevisions).values({ id: "r-dup", variantId: "v", parentRevisionId: "r1", document: {} as never, envelope: null, requestId: "init-0", payloadHash: "h", source: "authenticated-session", authorId: "editeur", response: null as never }))).toBe("23505 studio_revisions_request_unique");
+    expect(await code(db.insert(studioComments).values([{ id: "c-n1", variantId: "v", authorId: "editeur", body: "x", objectIds: [], payloadHash: "h" }, { id: "c-n2", variantId: "v", authorId: "editeur", body: "y", objectIds: [], payloadHash: "h", requestId: "c-1" }]))).toBe("23505 studio_comments_request_unique");
+    expect(instantane()).toBe(avant);
+    // Requêtes sans identifiant : NULL ne se heurte pas.
+    await db.insert(studioComments).values([{ id: "c-n1", variantId: "v", authorId: "editeur", body: "x", objectIds: [], payloadHash: "h" }, { id: "c-n2", variantId: "v", authorId: "editeur", body: "y", objectIds: [], payloadHash: "h" }]);
+    // onConflictDoNothing respecte l'unicité : la ligne en conflit est ignorée, l'autre insérée.
+    await db.insert(studioComments).values([{ id: "c-n1", variantId: "v", authorId: "editeur", body: "doublon", objectIds: [], payloadHash: "h" }, { id: "c-n3", variantId: "v", authorId: "editeur", body: "z", objectIds: [], payloadHash: "h" }]).onConflictDoNothing();
+    expect(banc.lignes.get(studioComments)!.map((c) => [c["id"], c["body"]])).toEqual([["c1", "Remarque"], ["c-n1", "x"], ["c-n2", "y"], ["c-n3", "z"]]);
+    await db.insert(studioObservationLinks).values({ id: "l1", observationId: "c1", variantId: "v", domaine: "objet", ref: "a", createdBy: "editeur", requestId: "l-1" });
+    expect(await code(db.insert(studioObservationLinks).values({ id: "l2", observationId: "c9", variantId: "v", domaine: "objet", ref: "a", createdBy: "editeur" }))).toBe("23505 studio_observation_links_ref_unique");
+    expect(await code(db.update(studioComments).set({ requestId: "c-1" }).where(eq(studioComments.id, "c-n1")))).toBe("23505 studio_comments_request_unique");
+  });
+  it("déclencheurs de init.sql : UPDATE d'une révision ou d'un journal refusé, DELETE d'un évènement de publication existante refusé", async () => {
+    expect([...SCHEMA.declencheurs.keys()]).toEqual(expect.arrayContaining(["studio_revisions", "studio_publication_events", "studio_observation_events", "studio_requirement_sets", "studio_quantity_adjustments"]));
+    const avant = instantane();
+    const message = (p: PromiseLike<unknown>) => Promise.resolve(p).then(() => null, (e: Error) => e.message);
+    expect(await message(db.update(studioRevisions).set({ payloadHash: "autre" }).where(eq(studioRevisions.id, "r1")))).toBe("studio_revision_immutable");
+    // Aucune ligne visée : le déclencheur FOR EACH ROW ne se déclenche pas.
+    expect(await message(db.update(studioRevisions).set({ payloadHash: "autre" }).where(eq(studioRevisions.id, "inconnue")))).toBeNull();
+    expect(instantane()).toBe(avant);
+    const d = await diffusee();
+    expect(await message(db.delete(studioPublicationEvents).where(eq(studioPublicationEvents.publicationId, d.id)))).toBe("studio_publication_event_undeletable");
+    expect(await message(db.delete(studioPublications).where(eq(studioPublications.id, d.id)))).toBe("studio_publication_undeletable");
+  });
+  it("BLOC-03 [−] concurrence simulée : deux envois simultanés du même commentaire (même requestId) — le second heurte l'index unique (23505) et relit le premier ; une seule ligne", async () => {
+    const entree = { body: "Envoyé deux fois", requestId: "c-concurrent" };
+    const [a, b] = await Promise.all([createStudioComment(scope, "editeur", entree), createStudioComment(scope, "editeur", entree)]);
+    expect(banc.violations).toEqual(["studio_comments_request_unique"]);
+    expect([a.replayed, b.replayed].sort()).toEqual([false, true]);
+    expect(a.id).toBe(b.id);
+    expect(banc.lignes.get(studioComments)!.filter((c) => c["requestId"] === "c-concurrent")).toHaveLength(1);
+    // Même requestId, autre contenu, en concurrence : 409 request_conflict, jamais un second commentaire.
+    initialiserProjet();
+    const r = await Promise.allSettled([createStudioComment(scope, "editeur", entree), createStudioComment(scope, "editeur", { ...entree, body: "Autre" })]);
+    expect(r.map((x) => x.status).sort()).toEqual(["fulfilled", "rejected"]);
+    expect(((r.find((x) => x.status === "rejected") as PromiseRejectedResult).reason as StudioRequestError).body).toMatchObject({ error: "request_conflict" });
+    expect(banc.lignes.get(studioComments)!.filter((c) => c["requestId"] === "c-concurrent")).toHaveLength(1);
+  });
+  it("BLOC-03 [−] lots concurrents sur la même base : sérialisés, un seul avance la tête, l'autre reçoit 409 stale_revision", async () => {
+    const n = nbRevisions();
+    const [x, y] = await Promise.all([commander("editeur", enveloppe("cc-1", "r1", [ligne("b", 1)])), commander("proprietaire", enveloppe("cc-2", "r1", [ligne("c", 2)]))]);
+    expect([x.status, y.status].sort()).toEqual([200, 409]);
+    expect(nbRevisions()).toBe(n + 1);
+    expect([x, y].find((r) => r.status === 409)!.body).toMatchObject({ error: "stale_revision", headRevisionId: tete() });
   });
 });
 
