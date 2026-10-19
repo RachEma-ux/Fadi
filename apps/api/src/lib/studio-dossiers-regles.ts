@@ -49,6 +49,11 @@ export const studioDossierUpdateSchema = z.object({
   title: ligne(STUDIO_LIMITES_DOSSIER.titre).optional(),
   sheetIds: z.array(identifier).min(1).max(STUDIO_LIMITES_DOSSIER.feuilles).optional(),
   quantities: metre,
+  /**
+   * Réépinglage explicite du métré (même variante et même révision comprises) : la borne du journal des ajustements est
+   * reprise à la séquence maximale courante. Absent ou faux : un métré identique garde sa borne (simple renvoi).
+   */
+  repinQuantities: z.boolean().optional(),
   includeFidelity: z.boolean().optional(),
 }).strict().refine((v) => Object.keys(v).length > 0, { message: "Au moins un champ attendu." });
 export type StudioSheetCreateInput = z.infer<typeof studioSheetCreateSchema>;
@@ -98,7 +103,8 @@ export const empreinteSaisie = (input: Record<string, unknown>): string => {
  * un ajustement ajouté ensuite n'entre pas dans le dossier tant que le métré n'est pas réépinglé.
  *
  * - métré retiré : null ;
- * - même variante et même révision qu'avant (modification du titre, de l'ordre…, ou renvoi du même métré) : borne conservée ;
+ * - même variante et même révision qu'avant (modification du titre, de l'ordre…, ou renvoi du même métré) : borne conservée,
+ *   sauf réépinglage explicite (`repinQuantities`, l'appelant passe alors `ancien` = null) ;
  * - nouvel épinglage (création, autre variante ou autre révision, métré ajouté) : séquence maximale courante (null si le
  *   journal est vide).
  * Une borne nulle signifie « aucun ajustement pris en compte ».

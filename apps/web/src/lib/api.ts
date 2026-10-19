@@ -957,6 +957,8 @@ export interface StudioSheet {
 }
 export interface StudioDossierInput {
   title: string; sheetIds: string[]; quantities?: { variantId: string; revisionId?: string } | null; includeFidelity?: boolean;
+  /** Modification seulement : réépingle le métré sur la révision envoyée et reprend les ajustements enregistrés depuis. */
+  repinQuantities?: boolean;
 }
 export interface StudioDossier {
   id: string; studyId: string; title: string; sheetIds: string[];

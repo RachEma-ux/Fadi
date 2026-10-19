@@ -1,4 +1,7 @@
 {
+"Joindre le métré (brut, déductions, net) épinglé": "Attach the pinned quantity take-off (gross, deductions, net)",
+"Réépingler le métré sur la révision affichée": "Re-pin the quantity take-off to the displayed revision",
+"(ajustements enregistrés depuis compris)": "(including adjustments recorded since)",
 "Feuilles et dossier": "Sheets and dossier",
 "Les feuilles composées sont rangées à part de la planche de travail : chacune lit une révision enregistrée et ne la modifie jamais. Toute valeur absente du cartouche est imprimée « non évalué ».": "Composed sheets are stored apart from the working board: each reads a saved revision and never modifies it. Any value missing from the title block is printed “not evaluated”.",
 "Les modifications non enregistrées ne figurent sur aucune feuille : enregistrez d’abord pour les composer.": "Unsaved changes appear on no sheet: save first to compose them.",

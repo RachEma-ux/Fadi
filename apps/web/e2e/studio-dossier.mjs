@@ -290,10 +290,10 @@ try {
       && JSON.stringify(luAj.assembly.metre.ajustements) === JSON.stringify({ enVigueur: 0, aRevoir: 0 }), `${ajout.status} ${court(ajout.body)} ${luAj.quantitiesAdjustmentSeq}`);
   const renomme = await api("patch", `${racine}/studies/${studyId}/dossiers/${dos.id}`, { quantities: { variantId, revisionId: revB } });
   check("I-2 : même métré renvoyé (même variante, même révision) — borne conservée", renomme.status === 200 && renomme.body.quantitiesAdjustmentSeq === null, court(renomme.body));
-  await api("patch", `${racine}/studies/${studyId}/dossiers/${dos.id}`, { quantities: null });
-  const repin = await api("patch", `${racine}/studies/${studyId}/dossiers/${dos.id}`, { quantities: { variantId, revisionId: revB } });
+  // Réépinglage explicite en une seule requête, même variante et même révision (revue Codex #201).
+  const repin = await api("patch", `${racine}/studies/${studyId}/dossiers/${dos.id}`, { quantities: { variantId, revisionId: revB }, repinQuantities: true });
   const luRepin = (await api("get", `${racine}/studies/${studyId}/dossiers/${dos.id}`)).body;
-  check("I-2 : métré réépinglé — borne = séquence max (1), ajustement pris en compte, empreinte changée",
+  check("I-2 : métré réépinglé explicitement (repinQuantities, même révision) — borne = séquence max (1), ajustement pris en compte, empreinte changée",
     repin.status === 200 && repin.body.quantitiesAdjustmentSeq === 1 && luRepin.assembly.metre.borneAjustements === 1 && luRepin.assembly.metre.ajustements.enVigueur === 1
       && luRepin.assembly.empreinte !== lu.assembly.empreinte, court(luRepin.assembly?.metre?.ajustements));
 

@@ -244,6 +244,9 @@ function EditerDossier({ projectId, studyId, variantId, revisionId, feuilles, do
   const [ordre, setOrdre] = useState<string[]>(() => (dossier ? dossier.sheetIds.filter((id) => feuilles.some((f) => f.id === id)) : feuilles.map((f) => f.id)));
   const [metre, setMetre] = useState(dossier ? dossier.quantities !== null : true);
   const [fidelite, setFidelite] = useState(dossier?.includeFidelity ?? true);
+  // Réépinglage explicite du métré déjà joint sur la révision affichée (ajustements enregistrés depuis compris).
+  const [reepingler, setReepingler] = useState(false);
+  const metreJoint = dossier?.quantities ?? null;
   const [erreur, setErreur] = useState("");
   const [enCours, setEnCours] = useState(false);
   const demande = useRef<{ cle: string; id: string } | null>(null);
@@ -254,12 +257,14 @@ function EditerDossier({ projectId, studyId, variantId, revisionId, feuilles, do
     if (enCours) return;
     if (!titre.trim()) { setErreur("Saisissez le titre du dossier."); return; }
     if (!ordre.length) { setErreur("Ajoutez au moins une feuille au dossier."); return; }
-    // Métré : la variante affichée, à la révision affichée (épinglée) ; inchangé s'il est déjà joint.
-    const quantities = metre ? (dossier?.quantities && !nouveau ? dossier.quantities : { variantId, revisionId }) : null;
+    // Métré : la variante affichée, à la révision affichée (épinglée). Déjà joint : inchangé (même borne), sauf
+    // réépinglage demandé, qui le porte sur la révision affichée et reprend les ajustements enregistrés depuis.
+    const repin = !!metreJoint && !nouveau && metre && reepingler;
+    const quantities = metre ? (metreJoint && !nouveau && !repin ? metreJoint : { variantId, revisionId }) : null;
     const corps = { title: titre.trim(), sheetIds: ordre, quantities, includeFidelity: fidelite };
     setEnCours(true); setErreur("");
     try {
-      if (dossier && !nouveau) await surEnregistre((await api.updateStudioDossier(projectId, studyId, dossier.id, corps)).id);
+      if (dossier && !nouveau) await surEnregistre((await api.updateStudioDossier(projectId, studyId, dossier.id, repin ? { ...corps, repinQuantities: true } : corps)).id);
       else {
         const cle = JSON.stringify(corps);
         if (demande.current?.cle !== cle) demande.current = { cle, id: crypto.randomUUID() };
@@ -287,7 +292,8 @@ function EditerDossier({ projectId, studyId, variantId, revisionId, feuilles, do
         </ol>
         {absentes.map((f) => <button key={f.id} type="button" onClick={() => setOrdre([...ordre, f.id])} data-studio-dossier-ajouter={f.id}>{`Ajouter ${f.definition.numero}`}</button>)}
       </fieldset>
-      <label className="studio-dossier-case"><input type="checkbox" checked={metre} onChange={(e) => setMetre(e.target.checked)} data-studio-dossier-metre-case /> Joindre le métré (brut, déductions, net) de la révision affichée</label>
+      <label className="studio-dossier-case"><input type="checkbox" checked={metre} onChange={(e) => setMetre(e.target.checked)} data-studio-dossier-metre-case /> {metreJoint ? "Joindre le métré (brut, déductions, net) épinglé" : "Joindre le métré (brut, déductions, net) de la révision affichée"}</label>
+      {metreJoint && metre && <label className="studio-dossier-case"><input type="checkbox" checked={reepingler} onChange={(e) => setReepingler(e.target.checked)} data-studio-dossier-reepingler-case /> Réépingler le métré sur la révision affichée <span translate="no">{revisionCourte(revisionId)}</span> (ajustements enregistrés depuis compris)</label>}
       <label className="studio-dossier-case"><input type="checkbox" checked={fidelite} onChange={(e) => setFidelite(e.target.checked)} data-studio-dossier-fidelite-case /> Joindre le rapport de fidélité des feuilles</label>
       {erreur && <p role="alert" data-studio-dossier-erreur>{erreur}</p>}
       <button disabled={enCours} data-studio-dossier-enregistrer>{dossier ? "Enregistrer le dossier" : "Créer le dossier"}</button>

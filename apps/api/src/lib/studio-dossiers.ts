@@ -339,7 +339,8 @@ export async function updateStudioDossier(projectId: string, studyId: string, do
     const patch: Partial<typeof studioDossiers.$inferInsert> = { updatedAt: new Date() };
     if (input.title !== undefined) patch.title = input.title;
     if (input.sheetIds !== undefined) { await controlerFeuilles(tx, study.id, input.sheetIds); patch.sheetIds = input.sheetIds; }
-    if (input.quantities !== undefined) Object.assign(patch, await metreEpingle(tx, study.id, input.quantities, row));
+    // Réépinglage explicite : la borne est reprise comme pour un nouvel épinglage (ajustements ajoutés depuis compris).
+    if (input.quantities !== undefined) Object.assign(patch, await metreEpingle(tx, study.id, input.quantities, input.repinQuantities ? null : row));
     if (input.includeFidelity !== undefined) patch.includeFidelity = input.includeFidelity;
     const [stored] = await tx.update(studioDossiers).set(patch).where(eq(studioDossiers.id, row.id)).returning();
     return dossierView(projectId, stored!, await emails(tx, [stored!.createdBy]));
