@@ -40,6 +40,11 @@ export interface IfcArchitecture {
   construits: IfcConstruit[];
   /** Portes et fenêtres déclarées, contenues dans le niveau (sans corps propre). */
   remplissages: number[];
+  /**
+   * Entité IFC porteuse de chaque objet architectural, par identifiant Studio : `IfcWall` du mur ; `IfcDoor` /
+   * `IfcWindow` de l'ouverture dont le type est déclaré, sinon son `IfcOpeningElement` (propriétés déclarées, E.1-01).
+   */
+  entites: Map<string, number>;
   murs: number;
   ouvertures: number;
   portes: number;
@@ -49,7 +54,7 @@ export interface IfcArchitecture {
 export function studioIfcArchitecture(items: readonly StudioArchitectureItem[], c: IfcContexte, p: IfcOutilsProprietes): IfcArchitecture {
   const { s } = c;
   const lue = lireArchitecture(items);
-  const res: IfcArchitecture = { construits: [], remplissages: [], murs: 0, ouvertures: 0, portes: 0, fenetres: 0 };
+  const res: IfcArchitecture = { construits: [], remplissages: [], entites: new Map(), murs: 0, ouvertures: 0, portes: 0, fenetres: 0 };
   for (const { mur, geometrie, ouvertures } of lue.murs.values()) {
     const placement = c.placed(0, 0, mur.base);
     const item = c.arbitrarySolid(geometrie.anneau, mur.height);
@@ -64,6 +69,7 @@ export function studioIfcArchitecture(items: readonly StudioArchitectureItem[], 
       p.prop("Base", p.length(mur.base)), p.prop("Justification", p.label(mur.justification)), p.prop("AxisLength", p.length(geometrie.longueur)),
     ]);
     res.construits.push({ element: wall, item, layerId: mur.layerId ?? STUDIO_DEFAULT_LAYER_ID });
+    res.entites.set(mur.id, wall);
     res.murs++;
     const { droite, gauche } = lateraux(mur);
     /** Placement relatif au mur (placé en (0, 0, base), axes du repère local-3d). */
@@ -84,12 +90,14 @@ export function studioIfcArchitecture(items: readonly StudioArchitectureItem[], 
         p.prop("Width", p.length(x.width)), p.prop("Height", p.length(x.height)), p.prop("Sill", p.length(x.sill)),
         ...(x.kind ? [p.prop("DeclaredKind", p.label(x.kind))] : []),
       ]);
+      res.entites.set(x.id, opening);
       res.ouvertures++;
       if (x.kind === "porte" || x.kind === "fenetre") {
         const entite = x.kind === "porte" ? "IFCDOOR" : "IFCWINDOW";
         const remplissage = s.add(`${entite}(${c.gid(`${x.kind}|${x.id}`)},$,${studioStepString(x.id)},$,$,${ref(relatif(ox, oy, oz, g.d.x, g.d.y))},$,${studioStepString(x.id)},${studioStepReal(x.height)},${studioStepReal(x.width)},.NOTDEFINED.,$,$)`);
         s.add(`IFCRELFILLSELEMENT(${c.gid(`rel-fills|${x.id}`)},$,$,$,${ref(opening)},${ref(remplissage)})`);
         res.remplissages.push(remplissage);
+        res.entites.set(x.id, remplissage);
         if (x.kind === "porte") res.portes++;
         else res.fenetres++;
       }

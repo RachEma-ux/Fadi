@@ -38,8 +38,9 @@ export const STUDIO_RAISONS_FIDELITE = Object.freeze([
   "ouverture-en-lacune",
   // Non couvert
   "non-extrude", "cote-hors-ifc", "annotation-hors-ifc", "solide-hors-2d", "visualisation-hors-export", "type-sans-capacite",
-  // Propriétés BIM déclarées (E.1-01) : aucun écrivain ne les porte encore.
-  "propriete-non-exportee",
+  // Propriétés BIM déclarées (E.1-01) : jeu de projet `Fadi_ProprietesDeclarees` en IFC ; ni SVG ni DXF ; une propriété
+  // sans valeur (« non évaluée ») n'est écrite nulle part.
+  "propriete-non-exportee", "propriete-en-pset", "propriete-non-evaluee",
 ] as const);
 export type StudioRaisonFidelite = (typeof STUDIO_RAISONS_FIDELITE)[number];
 
@@ -91,6 +92,9 @@ function texteDxf(content: string): StudioJugementFidelite {
  *   (approché, comme une extrusion déclarée), extrusion exacte en IFC
  *   (`IfcWall`) ; ouverture en SVG / DXF : simple lacune du mur quelle que soit son allège (approchée), en IFC :
  *   `IfcOpeningElement` + `IfcRelVoidsElement` exacts (`IfcDoor` / `IfcWindow` seulement si le type est déclaré) ;
+ * - propriétés déclarées (E.1-01) : `IfcPropertySingleValue` d'un jeu de projet `Fadi_ProprietesDeclarees` en IFC,
+ *   exactes (valeur, unité et source déclarées, `exigences/ifc.ts`) quand elles ont une valeur ; sans valeur : non
+ *   couvertes (`propriete-non-evaluee`) ; SVG et DXF ne les portent pas ;
  * - visualisation (lot E.5) : scènes et apparences d'affichage ne sont écrites dans aucun format (réglages de vue, pas
  *   des données du modèle) : non couvertes.
  */
@@ -130,9 +134,12 @@ export const STUDIO_CAPACITES_EXPORT: {
     wall: { svg: () => approche("extrusion-non-portee"), dxf: () => approche("extrusion-non-portee"), ifc: () => exact("extrusion-exacte") },
     opening: { svg: () => approche("ouverture-en-lacune"), dxf: () => approche("ouverture-en-lacune"), ifc: () => exact("ouverture-evidee") },
   },
-  // Propriétés déclarées : ni le SVG, ni le DXF, ni l'IFC (aucun jeu de propriétés écrit) ne les portent.
+  // Propriétés déclarées : ni le SVG ni le DXF ne les portent ; l'IFC écrit celles qui ont une valeur.
   proprietes: {
-    propriete: { svg: () => nonCouvert("propriete-non-exportee"), dxf: () => nonCouvert("propriete-non-exportee"), ifc: () => nonCouvert("propriete-non-exportee") },
+    propriete: {
+      svg: () => nonCouvert("propriete-non-exportee"), dxf: () => nonCouvert("propriete-non-exportee"),
+      ifc: (p) => (p.valeur === undefined ? nonCouvert("propriete-non-evaluee") : exact("propriete-en-pset")),
+    },
   },
   scenes: {
     scene: { svg: () => nonCouvert("visualisation-hors-export"), dxf: () => nonCouvert("visualisation-hors-export"), ifc: () => nonCouvert("visualisation-hors-export") },

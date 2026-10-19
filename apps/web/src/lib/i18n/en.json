@@ -9727,6 +9727,8 @@
 "Propriétés": "Properties",
 "Exigences": "Requirements",
 "Propriété déclarée non écrite dans le fichier": "Declared property not written to the file",
+"Propriété déclarée écrite dans le jeu de propriétés du projet": "Declared property written to the project property set",
+"Propriété déclarée sans valeur (non évaluée), non écrite": "Declared property without a value (not evaluated), not written",
 "Propriété": "Property",
 "Exécuté": "Run",
 "Non exécuté": "Not run",
