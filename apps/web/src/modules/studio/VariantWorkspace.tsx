@@ -47,6 +47,7 @@ import { zoomerAuCentre } from "./planche2d/vue";
 import { aidePlanche, apercuPlanche, outilPlanche } from "./planche2d/outils";
 import { formulaireInactif, SOMMETS_INITIAUX, soumettre, VALEURS_INITIALES, valeursObjet, type Valeurs } from "./planche2d/outils/formulaire";
 import { useGestesPlanche } from "./planche2d/outils/gestes";
+import { ChampMesures } from "./planche2d/accrochage/ChampMesures";
 import { commandePolyligne } from "./planche2d/outils/courbes";
 import type { ContexteCreation, ModeArc } from "./planche2d/outils/type";
 import { commandesAplatir, commandesExtrusion, formesSelectionnees, valeursDe, VALEURS_VIDES, type ValeursExtrusion } from "./vue3d/extrusion";
@@ -145,6 +146,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const gestes = useGestesPlanche({
     drawing, outil: tool, writable, selectionIds, selectionSet, accrocheSommets, accrocheGrille, pointsActifs,
     exclureAuSurvol: outil?.horsSelection && trace ? selectionSet : undefined, select, moveSelection,
+    base: suite[suite.length - 1] ?? trace?.point ?? null,
   });
   const { cadre, pas, survol, poserCadre, cadreRef } = gestes;
   // Aperçu du glisser : le document tel que le relâchement le donnerait (les cotes liées suivent).
@@ -221,6 +223,11 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     if (!pointsActifs) { if (tool === "studio.dessin.selection" && !e.shiftKey) select([]); return; }
     if (!writable || !outil) return;
     const p = gestes.pose(e, outil.horsSelection && trace ? selectionSet : undefined); if (!p) return;
+    poser(p);
+  }
+  /** Point posé (clic ou saisie directe du champ « Mesures ») : premier point, ou point interprété par l'outil actif. */
+  function poser(p: PointPose) {
+    if (!writable || !outil) return;
     if (!trace) { setTrace(p); setSuite([]); return; }
     const action = outil.clic({ outil: tool, trace, suite, modeArc }, p, { ...creation(), tolerance: gestes.tolerance() });
     switch (action.type) {
@@ -325,6 +332,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       case "feuille": return setDialogue("feuille");
       case "outils": return setDialogue("outils");
       case "palette": return setDialogue("palette");
+      // Modes d'accrochage et repérage (orthogonal, polaire, pas) : état de la planche (`planche2d/accrochage/`).
+      default: gestes.commandeAccrochage(id); return;
     }
   }
   function surLien(id: IdCommandeEditeur) {
@@ -364,7 +373,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     {loading && <p role="status">Chargement de la planche…</p>}
     {context && drawing && <><BandeauVariante projectId={projectId} studyId={studyId} variantId={variantId} context={context} historical={historical} etat={etat} commentaires={commentaires} surCommentaires={() => setCommentaires(v => !v)} />
     <BarreOutils outil={tool} outilDisponible={toolAvailable} commandeDisponible={commandAvailable} libelleCommande={uncertain ? { enregistrer: "Réessayer la sauvegarde" } : undefined}
-      basculeActive={{ "accrochage-sommets": accrocheSommets, "accrochage-grille": accrocheGrille, "vue-3d": vue3d }} lienCommande={liens} surOutil={runTool} surCommande={runCommand} surLien={surLien} />
+      basculeActive={{ ...gestes.basculesActives, "accrochage-sommets": accrocheSommets, "accrochage-grille": accrocheGrille, "vue-3d": vue3d }} lienCommande={liens} surOutil={runTool} surCommande={runCommand} surLien={surLien} />
     <p className="studio-undo-scope" data-studio-annuler-portee>{`Annuler et Rétablir ne portent que sur les modifications non enregistrées (${commands.length} commande(s) en attente) ; une révision enregistrée ne s’annule pas ici.`}</p>
     <div className="studio-editor"><div className="studio-sheet"><div className="studio-sheet-caption"><span>Dessin et modélisation</span><span data-studio-pas-grille={pas}>{`Grille ${pasAffiche} m`}</span><span>1 unité = 1 m</span></div>
       {vue3d && <Vue3D doc={drawing} />}
@@ -372,6 +381,9 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
         apercuForme={apercuForme} sommetsPoses={suite}
         clicsVersPlanche={o => OUTILS_TRACE.has(tool) || (tool === "studio.dessin.deplacer" && (!!trace || selectionSet.has(o.id)))}
         surPlanche={board} surSurvol={gestes.pointerMove} surPointeurBas={gestes.pointerDown} surPointeurHaut={gestes.pointerUp} surClicCapture={gestes.clickCapture} surSelection={(id, plus) => select(plus ? basculer(selectionIds, id) : [id])} />}
+      {!vue3d && trace && pointsActifs && <ChampMesures base={suite[suite.length - 1] ?? trace.point} survol={survol?.point ?? null} direction={gestes.directionCourante()} verrou={gestes.verrouAngle}
+        pasPolaire={gestes.bascules.pasPolaire} surPasPolaire={gestes.poserPasPolaire} desactive={!writable}
+        surSaisie={(texte) => { const r = gestes.saisir(texte); if (r.type === "erreur") return r.message; if (r.type === "point") poser({ point: r.point, accroche: null }); return null; }} />}
       <p className="studio-hint">{hint}</p>
       <p className="studio-hint" data-studio-aide-vue>Molette : zoom sur le pointeur ; bouton du milieu, Espace + glisser ou deux doigts : déplacer la vue.</p>
       {toResolve > 0 && <p className="studio-alert" role="status" data-studio-cotes-a-resoudre={toResolve}>{`${toResolve} cote(s) à résoudre : un objet coté a été supprimé.`}</p>}

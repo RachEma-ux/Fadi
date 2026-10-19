@@ -52,6 +52,8 @@ export function cadrer(e: Emprise | null, marge = 0.1): Cadre {
 }
 
 // ——— Accrochage ———
+// Sommets nommés seuls (cotes liées, saisie numérique). L'accrochage au pointeur passe par le moteur `accrochage/`
+// (intersections, perpendiculaire, tangente, repérage, priorités), qui lit ces mêmes sommets dans le registre du modèle.
 
 export interface PointAccroche { point: StudioPoint; objectId: string; anchor: StudioAnchor }
 

@@ -1,0 +1,13 @@
+/* Repères d'accrochage (aperçu, jamais une donnée) et champ « Mesures » de la planche 2D de Studio. */
+.studio-apercu .studio-repere :is(rect,circle,path,line){fill:none;stroke:#1a6b70;stroke-width:2px;stroke-dasharray:none;vector-effect:non-scaling-stroke}
+.studio-apercu .studio-repere.intersection :is(path),.studio-apercu .studio-repere.perpendiculaire path,.studio-apercu .studio-repere.tangente :is(path,circle){stroke:#8a3fa0}
+.studio-apercu .studio-repere.proche path{stroke:#6b7a1a}
+.studio-apercu .studio-repere .studio-guide{stroke:#2f7d3a;stroke-width:1px;stroke-dasharray:4 4}
+.studio-apercu .studio-repere text{fill:#123f43;paint-order:stroke;stroke:#ffffffd9;stroke-width:3px;font-family:system-ui,sans-serif;user-select:none;vector-effect:non-scaling-stroke}
+.studio-mesures{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:8px 0;padding:6px 10px;border:1px solid #c9d8db;border-radius:8px;background:#f7fbfb;font-size:13px}
+.studio-mesures label{display:inline-flex;align-items:center;gap:6px;font-weight:600}
+.studio-mesures input{width:9em;min-height:32px;font-variant-numeric:tabular-nums}
+.studio-mesures output{font-variant-numeric:tabular-nums;color:#123f43}
+.studio-mesures .studio-mesures-valeur{display:inline-flex;gap:4px;align-items:baseline}
+.studio-mesures .studio-mesures-aide{flex:1 1 100%;font-size:11px;color:#587079}
+.studio-mesures [role=alert]{flex:1 1 100%;color:#a33d18;font-size:12px}
