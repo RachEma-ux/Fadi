@@ -7,6 +7,7 @@
 import type { StudioCommand, StudioDocument, StudioPoint, StudioShape, StudioTextJustification } from "@parcours/atelier-model";
 import type { PointPose } from "../Dessin2D";
 import type { StudioToolId } from "../raccourcis";
+import type { ParametresArchitecture } from "../architecture/architecture-ui";
 
 /** Mode de construction de l'arc : trois points (début, passage, fin) ou centre, début et fin (sens trigonométrique). */
 export type ModeArc = "trois-points" | "centre";
@@ -40,6 +41,8 @@ export interface ContexteCreation {
   rayonAngulaire?: number;
   /** Texte saisi (outil Texte). */
   texte?: SaisieTexte;
+  /** Paramètres saisis des outils Mur et Ouverture (A.4) ; absents : rien n'est proposé. */
+  architecture?: ParametresArchitecture;
 }
 
 /**

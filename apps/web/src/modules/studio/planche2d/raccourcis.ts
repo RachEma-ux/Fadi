@@ -107,6 +107,7 @@ export const BARRES_STUDIO: readonly { id: BarreStudio; libelleFR: string }[] = 
   { id: "calques", libelleFR: "Calques" },
   { id: "volume", libelleFR: "Volume" },
   { id: "volume-libre", libelleFR: "Volume libre" },
+  { id: "architecture", libelleFR: "Architecture" },
   { id: "edition", libelleFR: "Édition" },
   { id: "vue", libelleFR: "Vue" },
   { id: "accrochage", libelleFR: "Accrochage" },
@@ -124,7 +125,9 @@ export const BARRES_STUDIO: readonly { id: BarreStudio; libelleFR: string }[] = 
 export const RACCOURCIS_RESERVES: readonly string[] = Object.freeze([
   "Ctrl+N", "Ctrl+T", "Ctrl+W", "Ctrl+Shift+N", "Ctrl+Shift+T", "Ctrl+Shift+W", "Ctrl+Q", "Ctrl+Tab", "Ctrl+Shift+Tab",
   "Ctrl+L", "Ctrl+R", "Ctrl+Shift+R", "Ctrl+P", "Ctrl+F", "Ctrl+G", "Ctrl+H", "Ctrl+J", "Ctrl+D", "Ctrl+U", "Ctrl+O",
-  "Ctrl+Shift+I", "Ctrl+Shift+J", "Ctrl+Shift+C", "Ctrl+Shift+Delete", "Ctrl+=", "Ctrl+-", "Ctrl+0",
+  "Ctrl+Shift+I", "Ctrl+Shift+J", "Ctrl+Shift+C", "Ctrl+Shift+Delete",
+  // Outils de développement de Firefox : réseau (Ctrl+Maj+E) et console (Ctrl+Maj+K).
+  "Ctrl+Shift+E", "Ctrl+Shift+K", "Ctrl+=", "Ctrl+-", "Ctrl+0",
   "F1", "F3", "F5", "F6", "F7", "F11", "F12",
 ]);
 
@@ -136,11 +139,13 @@ export const OUTILS_MODES: ReadonlySet<StudioToolId> = new Set<StudioToolId>([
   "studio.solide.boite", "studio.solide.prisme", "studio.solide.deplacer",
   "studio.dessin.copier", "studio.dessin.rotation", "studio.dessin.symetrie", "studio.dessin.echelle",
   "studio.dessin.cote-angulaire", "studio.dessin.texte",
+  // Architecture (A.4) : poser l'axe d'un mur, désigner le mur d'une ouverture.
+  "studio.architecture.mur", "studio.architecture.ouverture",
 ]);
 /** Outils du volume libre : ils agissent dans la vue 3D, qu'ils ouvrent. */
 export const OUTILS_VOLUME_LIBRE: ReadonlySet<StudioToolId> = new Set<StudioToolId>(["studio.solide.boite", "studio.solide.prisme", "studio.solide.deplacer", "studio.solide.supprimer"]);
 /** Outils qui posent des points sur la planche. */
-export const OUTILS_TRACE: ReadonlySet<StudioToolId> = new Set<StudioToolId>(["studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle", "studio.dessin.arc", "studio.dessin.polyligne", "studio.dessin.cote", "studio.dessin.cote-angulaire", "studio.dessin.texte"]);
+export const OUTILS_TRACE: ReadonlySet<StudioToolId> = new Set<StudioToolId>(["studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle", "studio.dessin.arc", "studio.dessin.polyligne", "studio.dessin.cote", "studio.dessin.cote-angulaire", "studio.dessin.texte", "studio.architecture.mur", "studio.architecture.ouverture"]);
 
 export const outilsDeBarre = (barre: BarreStudio): StudioToolEntry[] => STUDIO_TOOLS.filter((t) => t.groupe === barre);
 export const commandesDeBarre = (barre: BarreStudio): CommandeEditeur[] => COMMANDES_EDITEUR.filter((c) => c.groupe === barre);

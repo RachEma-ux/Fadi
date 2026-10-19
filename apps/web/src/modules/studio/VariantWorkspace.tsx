@@ -28,7 +28,7 @@
  */
 import { useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { applyStudioCommands, STUDIO_DEFAULT_LAYER_ID, STUDIO_TOOLS, type StudioCommand, type StudioLayer, type StudioPoint } from "@parcours/atelier-model";
+import { applyStudioCommands, STUDIO_DEFAULT_LAYER_ID, STUDIO_TOOLS, type StudioCommand, type StudioLayer, type StudioPoint, type StudioWall } from "@parcours/atelier-model";
 import { api, studioExportUrl, type StudioContext } from "../../lib/api";
 import { useAuth } from "../../lib/auth-context";
 import { LOCALE } from "../../lib/i18n";
@@ -58,6 +58,8 @@ import { commandesAplatir, commandesExtrusion, formesSelectionnees, valeursDe, V
 import { cartoucheInitial } from "./feuille/feuille-ui";
 import { PanneauCommentaires } from "./commentaires/PanneauCommentaires";
 import { PanneauQuantites } from "./quantites/PanneauQuantites";
+import { PanneauArchitecture } from "./planche2d/architecture/PanneauArchitecture";
+import { elementArchitectural, PARAMETRES_ARCHITECTURE_VIDES, type ParametresArchitecture } from "./planche2d/architecture/architecture-ui";
 import { AlerteStudio, BandeauVariante, EnTeteStudio } from "./variante/BandeauVariante";
 import { DialoguesStudio, type DialogueStudio } from "./variante/DialoguesStudio";
 import { refused } from "./variante/etat-variante";
@@ -69,6 +71,8 @@ import { useEnregistrement } from "./variante/useEnregistrement";
 import { useChargementVariante } from "./hors-ligne/useChargementVariante";
 import { useGardeNavigation } from "./variante/useGardeNavigation";
 import { Vue3D } from "./variante/Vue3D";
+import { RapportExport } from "./variante/RapportExport";
+import { FORMATS_RAPPORT } from "./variante/rapport-export";
 import "./studio.css";
 import "./planche2d/planche2d.css";
 
@@ -91,6 +95,10 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const [accrocheSommets, setAccrocheSommets] = useState(true);
   const [accrocheGrille, setAccrocheGrille] = useState(false);
   const [dialogue, setDialogue] = useState<DialogueStudio>(null);
+  // Rapport de fidélité du dernier export lancé (E.6-03) : boîte non modale, fermée à la demande.
+  const [rapportExport, setRapportExport] = useState<"exporter-svg" | "exporter-dxf" | "exporter-ifc" | null>(null);
+  // Compteur des lancements d'export : chaque export a son propre rapport (jamais celui d'une révision précédente).
+  const [exportsLances, setExportsLances] = useState(0);
   const { user } = useAuth();
   const [calqueActif, setCalqueActif] = useState<string>(STUDIO_DEFAULT_LAYER_ID);
   const [nomCalque, setNomCalque] = useState("");
@@ -106,6 +114,9 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const [coupe3d, setCoupe3d] = useState(false);
   const [solide3d, setSolide3d] = useState<string | null>(null);
   const [commentaires, setCommentaires] = useState(commentairesOuverts);
+  // Architecture (A.4) : paramètres saisis des outils Mur / Ouverture et objet architectural sélectionné (2D ou 3D).
+  const [parametresArchi, setParametresArchi] = useState<ParametresArchitecture>(PARAMETRES_ARCHITECTURE_VIDES);
+  const [selectionArchi, setSelectionArchi] = useState<string | null>(null);
   const alive = useRef(true), dirty = useRef(false);
   const shell = useRef<HTMLElement>(null), nomRef = useRef<HTMLInputElement>(null);
   const historical = revisionId !== null;
@@ -141,7 +152,12 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const selectionIds = drawing ? selectionValide(drawing, selection) : [];
   const selectionSet = new Set(selectionIds);
   const itemDe = (id: string | undefined) => (id && drawing ? elements(drawing).find(e => e.id === id) ?? null : null);
+  // Calque d'un élément choisi, murs (A.4) compris : `elements` ne parcourt pas `architecture`.
+  const calqueDe = (id: string): string => itemDe(id)?.layerId ?? drawing?.architecture?.find((a): a is StudioWall => a.id === id && a.type === "wall")?.layerId ?? STUDIO_DEFAULT_LAYER_ID;
   const selected = selectionIds.length === 1 ? itemDe(selectionIds[0]) : null;
+  // Objet du panneau Architecture : l'ouverture ou le mur désigné, ou le seul mur de la sélection.
+  const panneauArchi = elementArchitectural(drawing, selectionArchi) ? selectionArchi
+    : selectionIds.length === 1 && elementArchitectural(drawing, selectionIds[0]!)?.type === "wall" ? selectionIds[0]! : null;
   const calques = drawing ? listeCalques(drawing) : [];
   const { calque: actif, repli: calqueReplie } = calqueActifOuPremier(calques, calqueActif);
   // Le calque actif a disparu : le premier calque devient réellement actif (il ne reviendra pas seul après un rétablir).
@@ -178,6 +194,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   }
   function select(ids: string[]) {
     setSelection(ids);
+    setSelectionArchi(null);
     const o = ids.length === 1 ? itemDe(ids[0]) : null;
     if (o) properties(o);
     else if (ids.length > 1) {
@@ -185,6 +202,18 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       const valeurs = ids.map((id) => { const x = itemDe(id); return x && estForme(x) ? JSON.stringify(valeursDe(x)) : "null"; });
       setExtrusion(new Set(valeurs).size === 1 && valeurs[0] !== "null" ? JSON.parse(valeurs[0]!) as ValeursExtrusion : VALEURS_VIDES);
     }
+  }
+
+  /**
+   * Désignation d'un mur ou d'une ouverture (planche, vue 3D, panneau) : un mur entre dans la sélection de la planche
+   * (transformations, suppression, calque) ; une ouverture, qui suit son mur, n'est désignée que pour être modifiée.
+   */
+  function choisirArchitecture(id: string, ajouter: boolean) {
+    const it = elementArchitectural(drawing, id);
+    if (!it) return;
+    if (it.type === "wall") select(ajouter ? basculer(selectionIds, id) : [id]);
+    else select([]);
+    if (!ajouter) setSelectionArchi(id);
   }
 
   /** Applique un lot localement (un pas d'historique) ; rien n'est envoyé avant « Enregistrer ». */
@@ -205,6 +234,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const creation = (): ContexteCreation => ({
     nouvelId: () => crypto.randomUUID(), layerId: layerId(), decalageCote: values.offset, rayonAngulaire: values.ra,
     texte: { contenu: texteSaisi.contenu, hauteur: values.h, rotation: values.rot, justification: texteSaisi.justification },
+    architecture: parametresArchi,
   });
   const contexteClic = () => ({ ...creation(), tolerance: gestes.tolerance(), selection: selectionIds, options: optionsDeSaisie(values), document: drawing });
   /** Termine la polyligne en cours (ouverte, ou fermée sur son premier sommet). */
@@ -235,7 +265,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   }
   /** Clic sur la planche : le premier pose le point de départ, les suivants sont interprétés par l'outil actif. */
   function board(e: MouseEvent<SVGSVGElement>) {
-    if (!pointsActifs) { if (tool === "studio.dessin.selection" && !e.shiftKey) select([]); return; }
+    if (!pointsActifs) { if (tool === "studio.dessin.selection" && !e.shiftKey) { select([]); setSelectionArchi(null); } return; }
     if (!writable || !outil) return;
     const p = gestes.pose(e, outil.horsSelection && trace ? selectionSet : undefined); if (!p) return;
     poser(p);
@@ -277,6 +307,21 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       if (apply([{ toolId: "studio.solide.supprimer", params: { ids: [solide3d] } }])) setSolide3d(null);
       return;
     }
+    if (toolId === "studio.architecture.modifier") {
+      if (!panneauArchi) { setInfo("Sélectionnez d’abord, sur la planche ou dans la vue 3D, le mur ou l’ouverture à modifier."); return; }
+      shell.current?.querySelector<HTMLButtonElement>("[data-studio-modifier-architecture]")?.click();
+      return;
+    }
+    if (toolId === "studio.architecture.supprimer") {
+      const ids = [...new Set([...selectionIds, ...(panneauArchi ? [panneauArchi] : [])])].filter((id) => elementArchitectural(drawing, id)?.type === "wall");
+      if (!ids.length) { setInfo("Sélectionnez d’abord le mur à supprimer avec ses ouvertures."); return; }
+      if (apply([{ toolId: "studio.architecture.supprimer", params: { ids, cascade: true } }])) select([]);
+      return;
+    }
+    if (toolId === "studio.dessin.supprimer" && !selectionIds.length && elementArchitectural(drawing, selectionArchi)) {
+      if (apply([{ toolId: "studio.dessin.supprimer", params: { ids: [selectionArchi!] } }])) setSelectionArchi(null);
+      return;
+    }
     if (toolId === "studio.dessin.supprimer") {
       if (!selectionIds.length) { setInfo("Sélectionnez d’abord l’objet à supprimer."); return; }
       if (apply([{ toolId: "studio.dessin.supprimer", params: { ids: selectionIds } }])) setSelection([]);
@@ -297,7 +342,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     }
     if (toolId === "studio.objet.calque") {
       if (!selectionIds.length || !actif) { setInfo("Sélectionnez d’abord l’objet à placer sur le calque actif."); return; }
-      const ids = selectionIds.filter(id => (itemDe(id)?.layerId ?? STUDIO_DEFAULT_LAYER_ID) !== actif.id);
+      const ids = selectionIds.filter(id => calqueDe(id) !== actif.id);
       if (!ids.length) { setInfo("L’objet est déjà sur le calque actif."); return; }
       apply([{ toolId: "studio.objet.calque", params: { ids, layerId: actif.id } }]);
     }
@@ -363,7 +408,10 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     }
   }
   function surLien(id: IdCommandeEditeur) {
-    if ((id === "exporter-svg" || id === "exporter-dxf" || id === "exporter-ifc") && commands.length) setInfo("L’export porte sur la révision enregistrée affichée, pas sur les modifications non enregistrées.");
+    if (id !== "exporter-svg" && id !== "exporter-dxf" && id !== "exporter-ifc") return;
+    if (commands.length) setInfo("L’export porte sur la révision enregistrée affichée, pas sur les modifications non enregistrées.");
+    setExportsLances((n) => n + 1);
+    setRapportExport(id);
   }
   const formesChoisies = drawing ? formesSelectionnees(drawing, selectionIds) : [];
   const toolAvailable = (t: StudioToolEntry) => outilDisponible(t, { writable, selectionIds, formesChoisies });
@@ -413,11 +461,12 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     <p className="studio-undo-scope" data-studio-annuler-portee>{`Annuler et Rétablir ne portent que sur les modifications non enregistrées (${commands.length} commande(s) en attente) ; une révision enregistrée ne s’annule pas ici.`}</p>
     <div className="studio-editor"><div className="studio-sheet"><div className="studio-sheet-caption"><span>Dessin et modélisation</span><span data-studio-pas-grille={pas}>{`Grille ${pasAffiche} m`}</span><span>1 unité = 1 m</span></div>
       {vue3d && <Vue3D doc={drawing} outil={tool} modifiable={writable} navigation={navigation3d} coupe={coupe3d} selection={solide3d} layerId={actif?.id ?? STUDIO_DEFAULT_LAYER_ID}
-        surSelection={setSolide3d} surCommandes={apply} />}
+        surSelection={setSolide3d} surCommandes={apply} selectionArchitecture={panneauArchi} surSelectionArchitecture={(id) => (id ? choisirArchitecture(id, false) : setSelectionArchi(null))} />}
       {!vue3d && <Dessin2D svgRef={gestes.refPlanche} doc={apercuDoc ?? apercuTransformation ?? drawing} cadre={cadre} pas={pas} outil={tool} selection={selectionSet} trace={trace} survol={survol} rectangle={gestes.rectangle} glissement={!!gestes.apercu}
         apercuForme={apercuForme} sommetsPoses={suite}
         clicsVersPlanche={o => OUTILS_TRACE.has(tool) || (moveWithPointer && (!!trace || selectionSet.has(o.id)))}
-        surPlanche={board} surSurvol={gestes.pointerMove} surPointeurBas={gestes.pointerDown} surPointeurHaut={gestes.pointerUp} surClicCapture={gestes.clickCapture} surSelection={(id, plus) => select(plus ? basculer(selectionIds, id) : [id])} />}
+        surPlanche={board} surSurvol={gestes.pointerMove} surPointeurBas={gestes.pointerDown} surPointeurHaut={gestes.pointerUp} surClicCapture={gestes.clickCapture} surSelection={(id, plus) => select(plus ? basculer(selectionIds, id) : [id])}
+        architecture={{ selection: new Set([...selectionIds, ...(selectionArchi ? [selectionArchi] : [])]), surSelection: choisirArchitecture, versPlanche: OUTILS_TRACE.has(tool) }} />}
       {!vue3d && trace && pointsActifs && <ChampMesures base={suite[suite.length - 1] ?? trace.point} survol={survol?.point ?? null} direction={gestes.directionCourante()} verrou={gestes.verrouAngle}
         pasPolaire={gestes.bascules.pasPolaire} surPasPolaire={gestes.poserPasPolaire} desactive={!writable}
         surSaisie={(texte) => { const r = gestes.saisir(texte); if (r.type === "erreur") return r.message; if (r.type === "point") poser({ point: r.point, accroche: null }); return null; }} />}
@@ -430,7 +479,9 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     </div>
     <PanneauProprietes titre={toolEntry?.libelleFR} drawing={drawing} selectionIds={selectionIds} selected={selected} writable={writable} formesChoisies={formesChoisies} extrusion={extrusion}
       surExtrusion={setExtrusion} surExtruder={extrude} surAplatir={() => runTool("studio.objet.aplatir")} surSupprimer={() => runTool("studio.dessin.supprimer")}
-      formulaire={tool !== "studio.dessin.selection" && !OUTILS_VOLUME_LIBRE.has(tool) && <FormulaireValeurs tool={tool} selected={selected} desactive={!writable || formulaireInactif(tool, selectionIds, selected) || (tool === "studio.dessin.modifier" && (selected?.type === "dimension" || selected?.type === "angular-dimension") && selected.toResolve)}
+      architecture={<PanneauArchitecture doc={drawing} outil={tool} selection={panneauArchi} modifiable={writable} parametres={parametresArchi} surParametres={setParametresArchi}
+        contexte={() => ({ nouvelId: () => crypto.randomUUID(), layerId: layerId() })} surCommandes={apply} surErreur={setError} surSelection={(id) => (id ? choisirArchitecture(id, false) : select([]))} />}
+      formulaire={tool !== "studio.dessin.selection" && !OUTILS_VOLUME_LIBRE.has(tool) && !tool.startsWith("studio.architecture.") && <FormulaireValeurs tool={tool} selected={selected} desactive={!writable || formulaireInactif(tool, selectionIds, selected) || (tool === "studio.dessin.modifier" && (selected?.type === "dimension" || selected?.type === "angular-dimension") && selected.toResolve)}
         values={values} surValeur={(k, v) => setValues(x => ({ ...x, [k]: v }))} modeArc={modeArc} surModeArc={m => { setModeArc(m); cancelTrace(); }}
         sommetsTexte={sommetsTexte} surSommets={setSommetsTexte} fermee={fermee} surFermee={setFermee} surSoumettre={numeric} texte={texteSaisi} surTexte={setTexteSaisi} />}
       calques={<PanneauCalques doc={drawing} actif={actif?.id ?? STUDIO_DEFAULT_LAYER_ID} modifiable={writable} nom={nomCalque} nomRef={nomRef} surActif={id => setCalqueActif(id)} surNom={setNomCalque} surReglage={setLayer} surRenommer={renameLayer} />} /></div>
@@ -442,6 +493,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     <DialoguesStudio dialogue={dialogue} surFermer={() => setDialogue(null)} disponible={entreeDisponible} surExecuter={executerEntree} drawing={drawing} modifiable={writable}
       surImporter={(cs, r) => { if (!apply(cs)) return false; setDialogue(null); setInfo(`Import DXF ajouté au brouillon : ${r.rapport.entites.total} objet(s). Enregistrez pour l’envoyer au serveur.`); return true; }}
       revision={context.revision.document} brouillonNonEnregistre={commands.length > 0}
-      cartouche={() => cartoucheInitial({ projet: projet.data, etude: context.study, variante: context.variant, revision: { id: context.revision.id, ...revisionAffichee }, utilisateur: user })} /></>}
+      cartouche={() => cartoucheInitial({ projet: projet.data, etude: context.study, variante: context.variant, revision: { id: context.revision.id, ...revisionAffichee }, utilisateur: user })} />
+    {rapportExport && liens[rapportExport] && <RapportExport format={FORMATS_RAPPORT[rapportExport]!} urlExport={liens[rapportExport]!} exportId={`${context?.revision.id ?? ""}#${exportsLances}`} surFermer={() => setRapportExport(null)} />}</>}
   </section>;
 }

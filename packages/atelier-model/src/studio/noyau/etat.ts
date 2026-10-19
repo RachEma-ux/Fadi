@@ -5,6 +5,7 @@ import { sortie } from "./document.js";
 import type { StudioSolid } from "../objets-3d/solides.js";
 import type { StudioAnnotation, StudioLayer, StudioShape } from "./types.js";
 import { fail, same } from "./validation.js";
+import type { StudioArchitectureItem } from "../architecture/types.js";
 
 /** État privé d'un lot de commandes (clone du document, tout ou rien) et contrôles partagés par les familles de commandes. */
 
@@ -17,6 +18,8 @@ export interface Etat {
   solides: StudioSolid[];
   /** Cotes angulaires et textes (`StudioDocument.annotations`). */
   annotations: StudioAnnotation[];
+  /** Murs et ouvertures (`StudioDocument.architecture`, A.4). */
+  architecture: StudioArchitectureItem[];
   /** Identifiants d'objets et de cotes présents : contrôle d'unicité en temps constant (un import peut compter 20 000 créations). */
   ids: Set<string>;
 }

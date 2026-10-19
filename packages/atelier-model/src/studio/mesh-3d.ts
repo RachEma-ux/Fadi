@@ -3,6 +3,7 @@ import { studioLayerState, validateStudioDocument, type StudioDocument, type Stu
 import { STUDIO_FRAME_3D, studioLocal2dVers3d, type StudioPoint3, type StudioSolid3d } from "./exporteurs/maillage.js";
 import { typeObjet } from "./objets/index.js";
 import { studioMaillageSolide, type StudioFreeSolid3d } from "./objets-3d/maillage.js";
+import { studioMaillageArchitecture, type StudioArchitecture3d } from "./architecture/maillage.js";
 
 export { STUDIO_FRAME_3D, studioLocal2dVers3d, type StudioPoint3, type StudioSolid3d } from "./exporteurs/maillage.js";
 
@@ -40,6 +41,11 @@ export interface StudioMesh3d {
    * dans l'espace et ne sont jamais des objets 2D extrudés.
    */
   freeSolids?: StudioFreeSolid3d[];
+  /**
+   * Murs (vides des ouvertures compris) et ouvertures des calques visibles (A.4), présent seulement si le document en a ;
+   * mêmes identifiants qu'en 2D.
+   */
+  architecture?: StudioArchitecture3d[];
   /** Emprise de tout ce qui est rendu ; null si rien n'est rendu. */
   bounds: { min: StudioPoint3; max: StudioPoint3 } | null;
 }
@@ -68,12 +74,14 @@ export function studioMesh3d(document: StudioDocument): StudioMesh3d {
     if (!studioLayerState(doc, s.layerId)?.visible) { hidden++; continue; }
     freeSolids.push(studioMaillageSolide(s));
   }
+  const architecture = doc.architecture?.length ? studioMaillageArchitecture(doc.architecture, (l) => !!studioLayerState(doc, l)?.visible) : [];
+  if (doc.architecture?.length) hidden += doc.architecture.length - architecture.length;
   let bounds: StudioMesh3d["bounds"] = null;
   // Boucle plutôt qu'un étalement : 20 000 objets donnent trop de sommets pour Math.min(...).
-  for (const p of [...solids.flatMap((s) => s.vertices), ...outlines.flatMap((l) => l.points), ...freeSolids.flatMap((s) => s.vertices)]) {
+  for (const p of [...solids.flatMap((s) => s.vertices), ...outlines.flatMap((l) => l.points), ...freeSolids.flatMap((s) => s.vertices), ...architecture.flatMap((s) => s.vertices)]) {
     if (!bounds) { bounds = { min: { ...p }, max: { ...p } }; continue; }
     bounds.min = { x: Math.min(bounds.min.x, p.x), y: Math.min(bounds.min.y, p.y), z: Math.min(bounds.min.z, p.z) };
     bounds.max = { x: Math.max(bounds.max.x, p.x), y: Math.max(bounds.max.y, p.y), z: Math.max(bounds.max.z, p.z) };
   }
-  return { frame: STUDIO_FRAME_3D, units: "m", source: { frame: "local-2d", conversion: "(x, y) → (x, y, z)" }, solids, outlines, nonExtruded: outlines.length, hidden, ...(doc.solides?.length ? { freeSolids } : {}), bounds };
+  return { frame: STUDIO_FRAME_3D, units: "m", source: { frame: "local-2d", conversion: "(x, y) → (x, y, z)" }, solids, outlines, nonExtruded: outlines.length, hidden, ...(doc.solides?.length ? { freeSolids } : {}), ...(doc.architecture?.length ? { architecture } : {}), bounds };
 }

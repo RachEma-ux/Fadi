@@ -5,6 +5,7 @@ import { dxfText, nb, xml } from "./exporteurs/texte.js";
 import { coteDxf, coteSvg, dessinerCote } from "./objets/cote.js";
 import { typeObjet } from "./objets/index.js";
 import { annotationDxf, annotationPoints, annotationSvg, dessinerAnnotation } from "./objets/annotation.js";
+import { architectureDxf, architecturePoints, architectureSvg, studioPlanArchitecture } from "./architecture/plan.js";
 
 export { formatStudioLength, STUDIO_EXPORT_TO_RESOLVE } from "./objets/cote.js";
 
@@ -116,6 +117,8 @@ export function exportStudioSvg(input: StudioDocument, exportOptions?: StudioExp
   const visible = new Set(layers.filter((l) => l.visible).map((l) => l.id));
   const dims = (doc.dimensions ?? []).map((d) => dessinerCote(d, opts.locale, opts.textHeight));
   const notes = (doc.annotations ?? []).map((a) => dessinerAnnotation(a, opts.locale, opts.textHeight));
+  // Objets architecturaux (A.4) : parties pleines des murs et montants des ouvertures, sur le calque du mur.
+  const plan = doc.architecture?.length ? studioPlanArchitecture(doc.architecture) : null;
 
   const all: StudioPoint[] = [], shown: StudioPoint[] = [];
   const add = (layer: string, pts: StudioPoint[]) => {
@@ -125,6 +128,7 @@ export function exportStudioSvg(input: StudioDocument, exportOptions?: StudioExp
   for (const o of doc.objects) add(layerKey(o), itemPoints(o));
   for (const g of dims) add(layerKey(g.dimension), [g.a, g.b, g.text, ...g.extensions.flat()]);
   for (const n of notes) add(layerKey(n.annotation), annotationPoints(n));
+  if (plan) for (const m of architecturePoints(plan)) add(layerKey(m), m.points);
   const pts = shown.length ? shown : all;
   // Document vide : bornes nulles autour de l'origine (la marge seule donne la vue).
   let minX = pts.length ? Infinity : 0, minY = pts.length ? Infinity : 0, maxX = pts.length ? -Infinity : 0, maxY = pts.length ? -Infinity : 0;
@@ -156,6 +160,7 @@ export function exportStudioSvg(input: StudioDocument, exportOptions?: StudioExp
       if (layerKey(n.annotation) !== layer.id) continue;
       lines.push(...annotationSvg(n, opts.textHeight));
     }
+    if (plan) lines.push(...architectureSvg(plan, layer.id, layerKey));
     lines.push("</g>");
   }
   lines.push("</svg>");
@@ -217,6 +222,8 @@ export function exportStudioDxf(input: StudioDocument, exportOptions?: Omit<Stud
   for (const d of doc.dimensions ?? []) coteDxf(dessinerCote(d, opts.locale, opts.textHeight), nameOf.get(layerKey(d))!, opts.textHeight, w);
   // Annotations : cote angulaire → ARC + LINE + TEXT (valeur en degrés ou « à résoudre ») ; texte → TEXT (justification 72).
   for (const a of doc.annotations ?? []) annotationDxf(dessinerAnnotation(a, opts.locale, opts.textHeight), nameOf.get(layerKey(a))!, opts.textHeight, w);
+  // Murs (POLYLINE fermée par partie pleine, interrompue aux ouvertures) et montants des ouvertures (LINE).
+  if (doc.architecture?.length) architectureDxf(studioPlanArchitecture(doc.architecture), (o) => nameOf.get(layerKey(o))!, w);
   w.pair(0, "ENDSEC");
   w.pair(0, "EOF");
   return w.out.join("\r\n") + "\r\n";

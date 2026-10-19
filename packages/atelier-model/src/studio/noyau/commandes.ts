@@ -1,3 +1,4 @@
+import { avecArchitecture, creerMur, creerOuverture, deplacerAvecArchitecture, modifierArchitecture, supprimerArchitecture } from "../commandes/architecture.js";
 import { creerCalque, modifierCalque, placerSurCalque } from "../commandes/calques.js";
 import { CREATION_FORMES, creerCote, creerCoteAngulaire, creerTexte } from "../commandes/dessin.js";
 import { decaler, deplacer, modifier, supprimer } from "../commandes/modification.js";
@@ -24,18 +25,18 @@ const HANDLERS: Record<StudioCommandToolId, Gestionnaire> = {
   "studio.dessin.cercle": creation("studio.dessin.cercle"),
   "studio.dessin.arc": creation("studio.dessin.arc"),
   "studio.dessin.polyligne": creation("studio.dessin.polyligne"),
-  "studio.dessin.deplacer": deplacer,
+  "studio.dessin.deplacer": deplacerAvecArchitecture(deplacer),
   "studio.dessin.modifier": modifier,
   "studio.dessin.decaler": decaler,
   "studio.dessin.cote": creerCote,
-  "studio.dessin.supprimer": supprimer,
-  "studio.dessin.copier": copier,
-  "studio.dessin.rotation": rotation,
-  "studio.dessin.symetrie": symetrie,
-  "studio.dessin.echelle": echelle,
+  "studio.dessin.supprimer": avecArchitecture(supprimer, "supprimer"),
+  "studio.dessin.copier": avecArchitecture(copier, "copier"),
+  "studio.dessin.rotation": avecArchitecture(rotation, "rotation"),
+  "studio.dessin.symetrie": avecArchitecture(symetrie, "symetrie"),
+  "studio.dessin.echelle": avecArchitecture(echelle, "echelle"),
   "studio.calque.creer": creerCalque,
   "studio.calque.modifier": modifierCalque,
-  "studio.objet.calque": placerSurCalque,
+  "studio.objet.calque": avecArchitecture(placerSurCalque, "calque"),
   "studio.objet.extruder": extruder,
   "studio.objet.aplatir": aplatir,
   "studio.solide.boite": creerBoite,
@@ -44,6 +45,11 @@ const HANDLERS: Record<StudioCommandToolId, Gestionnaire> = {
   "studio.solide.supprimer": supprimerSolides,
   "studio.dessin.cote-angulaire": creerCoteAngulaire,
   "studio.dessin.texte": creerTexte,
+  // Architecture (A.4) : murs et ouvertures ; la part architecturale des commandes générales est branchée ci-dessus.
+  "studio.architecture.mur": creerMur,
+  "studio.architecture.ouverture": creerOuverture,
+  "studio.architecture.modifier": modifierArchitecture,
+  "studio.architecture.supprimer": supprimerArchitecture,
 };
 
 /** Identifiants réellement acceptés par `applyStudioCommands` (contrôlés contre le registre par test). */
@@ -55,8 +61,8 @@ export function applyStudioCommands(document: StudioDocument, commands: readonly
   // Charge avant le lot, relevée avant toute mutation (l'état partage les tableaux de `current`).
   const avant = studioExtrudedRingVertices(current.objects);
   const state: Etat = {
-    id: current.id, objects: current.objects, layers: current.layers ?? [], dimensions: current.dimensions ?? [], solides: current.solides ?? [], annotations: current.annotations ?? [],
-    ids: new Set([...current.objects.map((o) => o.id), ...(current.dimensions ?? []).map((d) => d.id), ...(current.solides ?? []).map((s) => s.id), ...(current.annotations ?? []).map((a) => a.id)]),
+    id: current.id, objects: current.objects, layers: current.layers ?? [], dimensions: current.dimensions ?? [], solides: current.solides ?? [], annotations: current.annotations ?? [], architecture: current.architecture ?? [],
+    ids: new Set([...current.objects.map((o) => o.id), ...(current.dimensions ?? []).map((d) => d.id), ...(current.solides ?? []).map((s) => s.id), ...(current.annotations ?? []).map((a) => a.id), ...(current.architecture ?? []).map((a) => a.id)]),
   };
   const batch = array(commands, "commands");
   if (batch.length === 0) fail("commands", "au moins une commande attendue");
@@ -68,7 +74,7 @@ export function applyStudioCommands(document: StudioDocument, commands: readonly
     HANDLERS[toolId as StudioCommandToolId](state, c.params, path);
   }
   // Contrôle final : limites, unicité et liens sur le document entier, avant de rendre la copie.
-  const result = validateStudioDocument(sortie(state.id, state.objects, state.layers, state.dimensions, state.solides, state.annotations));
+  const result = validateStudioDocument(sortie(state.id, state.objects, state.layers, state.dimensions, state.solides, state.annotations, state.architecture));
   // Budget d'écriture des extrusions de polylignes fermées : un lot ne peut pas le dépasser ni l'aggraver une fois
   // dépassé ; une révision enregistrée reste toujours lisible (le budget ne s'applique qu'aux écritures).
   const apres = studioExtrudedRingVertices(result.objects);

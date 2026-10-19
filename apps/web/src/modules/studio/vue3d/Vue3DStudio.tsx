@@ -16,6 +16,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { couperStudio, studioMesh3d, studioVolumeSolide, type StudioCommand, type StudioCoupe, type StudioDocument, type StudioMesh3d } from "@parcours/atelier-model";
 import { Icon } from "../../../components/Icon";
+import { estSelectionnable } from "../planche2d/calques";
 import { LOCALE } from "../../../lib/i18n";
 import {
   auCentimetre, BOITE_VIDE, commandeBoite, commandeDeplacementSolide, commandePrisme, DEPLACEMENT_VIDE, descriptionSolide, PRISME_VIDE, profilsFermes,
@@ -40,6 +41,9 @@ export interface Vue3DStudioProps {
   surSelection?: (id: string | null) => void;
   /** Applique un lot au brouillon ; faux si le modèle le refuse (l'éditeur affiche le refus). */
   surCommandes?: (cs: StudioCommand[]) => boolean;
+  /** Mur ou ouverture sélectionné(e) (A.4) : même identifiant que sur la planche 2D. */
+  selectionArchitecture?: string | null;
+  surSelectionArchitecture?: (id: string | null) => void;
 }
 
 interface Moteur {
@@ -51,6 +55,8 @@ interface Moteur {
   controls: OrbitControls | null;
   contenu: THREE.Group;
   libres: THREE.Group;
+  /** Murs (vides compris) et ouvertures (A.4), désignables. */
+  architecture: THREE.Group;
   surimpression: THREE.Group;
   rendre: () => void;
 }
@@ -79,6 +85,25 @@ function solide(groupe: THREE.Group, s: { id: string; vertices: { x: number; y: 
   const a = new THREE.BufferGeometry();
   a.setAttribute("position", new THREE.BufferAttribute(new Float32Array(s.edges.flatMap(([i, j]) => [i, j].flatMap((k) => [s.vertices[k]!.x, s.vertices[k]!.y, s.vertices[k]!.z]))), 3));
   groupe.add(new THREE.LineSegments(a, new THREE.LineBasicMaterial({ color: 0x234f5b })));
+}
+
+/** Murs opaques et ouvertures (boîte du vide, translucide) ; chaque maillage porte l'identifiant de son objet. */
+function construireArchitecture(m: Moteur, mesh: StudioMesh3d, selection: string | null) {
+  vider(m.architecture);
+  for (const a of mesh.architecture ?? []) {
+    const choisi = a.id === selection;
+    const avant = m.architecture.children.length;
+    if (a.type === "wall") solide(m.architecture, a, choisi ? 0xf0b44c : 0xd8d2c4, false, false);
+    else {
+      const g = new THREE.BufferGeometry();
+      g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(a.vertices.flatMap((v) => [v.x, v.y, v.z])), 3));
+      g.setIndex(a.triangles.flat());
+      const vide = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: choisi ? 0xf0b44c : 0x7fb2d6, transparent: true, opacity: choisi ? 0.45 : 0.2, depthWrite: false }));
+      vide.name = a.id;
+      m.architecture.add(vide);
+    }
+    for (const enfant of m.architecture.children.slice(avant)) enfant.userData.architecture = a.id;
+  }
 }
 
 function construire(m: Moteur, mesh: StudioMesh3d, selection: string | null) {
@@ -155,7 +180,7 @@ function Champ({ nom, libelle, valeur, surValeur, requis = true }: { nom: string
   </label>;
 }
 
-export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbite", coupe = false, selection = null, layerId, surSelection, surCommandes }: Vue3DStudioProps) {
+export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbite", coupe = false, selection = null, layerId, surSelection, surCommandes, selectionArchitecture = null, surSelectionArchitecture }: Vue3DStudioProps) {
   const hote = useRef<HTMLDivElement>(null);
   const moteur = useRef<Moteur | null>(null);
   const cadre = useRef(false);
@@ -184,6 +209,12 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       return;
     }
     const touche = rayon.intersectObjects(m.libres.children, false).find((h) => typeof h.object.userData.solide === "string");
+    // Mur ou ouverture (A.4) : l'ouverture, boîte du vide, l'emporte sur le mur qu'elle traverse.
+    // Seuls les murs et ouvertures d'un calque affiché et déverrouillé se désignent (comme sur la planche 2D).
+    const designables = new Set((mesh.architecture ?? []).filter((a) => estSelectionnable(doc, a.layerId)).map((a) => a.id));
+    const touches = rayon.intersectObjects(m.architecture.children, false).filter((h) => h.object instanceof THREE.Mesh && designables.has(h.object.userData.architecture as string));
+    const archi = touches.find((h) => mesh.architecture?.some((a) => a.id === h.object.userData.architecture && a.type === "opening")) ?? touches[0];
+    if (archi && (!touche || archi.distance <= touche.distance)) { surSelectionArchitecture?.(archi.object.userData.architecture as string); return; }
     surSelection?.((touche?.object.userData.solide as string | undefined) ?? null);
   };
 
@@ -209,9 +240,9 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     const grille = new THREE.GridHelper(40, 40, 0xbfcfd3, 0xdde6e8);
     grille.rotation.x = Math.PI / 2; // plan XY du repère local-3d
     scene.add(grille);
-    const contenu = new THREE.Group(), libres = new THREE.Group(), surimpression = new THREE.Group();
-    scene.add(contenu, libres, surimpression);
-    const m: Moteur = { renderer, scene, perspective, plan, camera: perspective, controls: null, contenu, libres, surimpression, rendre: () => renderer.render(scene, m.camera) };
+    const contenu = new THREE.Group(), libres = new THREE.Group(), architecture = new THREE.Group(), surimpression = new THREE.Group();
+    scene.add(contenu, libres, architecture, surimpression);
+    const m: Moteur = { renderer, scene, perspective, plan, camera: perspective, controls: null, contenu, libres, architecture, surimpression, rendre: () => renderer.render(scene, m.camera) };
     moteur.current = m;
     poserControles(m, navigation);
     const taille = () => {
@@ -240,7 +271,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       renderer.domElement.removeEventListener("pointerup", pointeurHaut);
       m.controls?.removeEventListener("change", m.rendre);
       m.controls?.dispose();
-      vider(contenu); vider(libres); vider(surimpression);
+      vider(contenu); vider(libres); vider(architecture); vider(surimpression);
       grille.geometry.dispose();
       (grille.material as THREE.Material).dispose();
       renderer.forceContextLoss();
@@ -264,9 +295,10 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   useEffect(() => {
     const m = moteur.current; if (!m) return;
     construire(m, mesh, selection);
+    construireArchitecture(m, mesh, selectionArchitecture);
     if (!cadre.current) { cadrer(m, mesh); cadre.current = true; }
     else m.rendre();
-  }, [mesh, selection, indisponible]);
+  }, [mesh, selection, selectionArchitecture, indisponible]);
 
   useEffect(() => {
     const m = moteur.current; if (!m) return;
@@ -299,8 +331,9 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   }
 
   const libres = mesh.freeSolids?.length ?? 0;
+  const architecture = mesh.architecture ?? [];
   return (
-    <section className="studio-vue3d" aria-label="Vue 3D" data-studio-vue3d data-studio-volumes={mesh.solids.length} data-studio-non-extrudes={mesh.nonExtruded} data-studio-solides-libres={libres} data-studio-navigation={navigation}>
+    <section className="studio-vue3d" aria-label="Vue 3D" data-studio-vue3d data-studio-volumes={mesh.solids.length} data-studio-non-extrudes={mesh.nonExtruded} data-studio-solides-libres={libres} data-studio-architecture-3d={architecture.length} data-studio-navigation={navigation}>
       <div className="studio-vue3d-bandeau">
         <span role="status" data-studio-vue3d-decompte><span>{`${mesh.solids.length} volume(s)`}</span>{" · "}<span>{`${mesh.nonExtruded} objet(s) non extrudé(s), dessinés à plat`}</span>{libres > 0 && <>{" · "}<span>{`${libres} solide(s) libre(s)`}</span></>}</span>
         <button type="button" onClick={() => { const m = moteur.current; if (m) cadrer(m, mesh); }} disabled={indisponible}>Recadrer la vue 3D</button>
@@ -369,6 +402,20 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
             <button type="button" onClick={supprimer} data-studio-supprimer-solide><Icon name="studio-solid-delete" size={18} /> Supprimer le solide</button>
           </fieldset>
         </form>}
+      </div>}
+
+      {architecture.length > 0 && <div className="studio-vue3d-solides" data-studio-architecture-vue3d="">
+        <h3><Icon name="studio-wall" size={18} /> Murs et ouvertures</h3>
+        <p className="studio-hint">Cliquez un mur ou une ouverture (ou choisissez-le ici) : il se modifie dans le panneau Architecture, comme depuis la planche 2D.</p>
+        <ul>
+          {architecture.map((a) => (
+            <li key={a.id}>
+              <button type="button" aria-pressed={a.id === selectionArchitecture} disabled={!estSelectionnable(doc, a.layerId)} onClick={() => surSelectionArchitecture?.(a.id === selectionArchitecture ? null : a.id)} data-studio-architecture-3d-objet={a.id} data-studio-type={a.type}>
+                <Icon name={a.type === "wall" ? "studio-wall" : "studio-opening"} size={16} /> {a.type === "wall" ? "Mur" : "Ouverture"} <span translate="no">{a.id.slice(0, 8)}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
       </div>}
 
       {coupe && <div className="studio-vue3d-coupe" data-studio-coupe data-studio-coupe-z={Number.isFinite(coteCoupe) ? coteCoupe : ""} data-studio-coupe-segments={resultatCoupe?.segments.length ?? 0}

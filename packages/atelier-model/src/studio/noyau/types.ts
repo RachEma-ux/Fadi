@@ -9,6 +9,7 @@ import type { StudioRectangle } from "../objets/rectangle.js";
 import type { StudioBox, StudioProfilePrism, StudioSolid } from "../objets-3d/solides.js";
 import type { StudioText } from "../objets/texte.js";
 import type { STUDIO_CONTRACT } from "./limites.js";
+import type { StudioArchitectureItem, StudioOpening, StudioWall } from "../architecture/types.js";
 
 /**
  * Types communs du document 2D natif de Studio (`studio-document/1`). Chaque type d'objet déclare son interface dans son
@@ -60,6 +61,11 @@ export interface StudioDocument {
    * qu'un lecteur antérieur ne les interprète jamais à tort ; absent ou vide : aucune annotation (forme canonique).
    */
   annotations?: StudioAnnotation[];
+  /**
+   * Objets architecturaux (extension additive, facultative, A.4) : murs et ouvertures créés explicitement par
+   * l’utilisateur (`architecture/`) ; absent ou vide : aucun (forme canonique).
+   */
+  architecture?: StudioArchitectureItem[];
 }
 export type StudioCommand =
   | { toolId: "studio.dessin.ligne"; params: StudioLine }
@@ -86,7 +92,11 @@ export type StudioCommand =
   | { toolId: "studio.solide.boite"; params: StudioBox }
   | { toolId: "studio.solide.prisme"; params: StudioProfilePrism }
   | { toolId: "studio.solide.deplacer"; params: { id: string; dx: number; dy: number; dz: number } }
-  | { toolId: "studio.solide.supprimer"; params: { ids: string[] } };
+  | { toolId: "studio.solide.supprimer"; params: { ids: string[] } }
+  | { toolId: "studio.architecture.mur"; params: StudioWall }
+  | { toolId: "studio.architecture.ouverture"; params: StudioOpening }
+  | { toolId: "studio.architecture.modifier"; params: StudioArchitectureItem }
+  | { toolId: "studio.architecture.supprimer"; params: { ids: string[]; cascade: boolean } };
 export type StudioCommandToolId = StudioCommand["toolId"];
 export interface StudioEnvelope {
   contractVersion: typeof STUDIO_CONTRACT;
