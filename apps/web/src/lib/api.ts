@@ -800,7 +800,7 @@ export interface StudioComment {
 export interface StudioCommentInput { body: string; revisionId?: string; objectIds?: string[]; parentId?: string; requestId?: string }
 /** Observation Studio (E.2) : statut, responsable, échéance et journal, relus du serveur qui fait autorité. */
 export type StudioObservationStatut = "ouverte" | "corrigee" | "recontrolee" | "cloturee" | "rouverte";
-export type StudioObservationTransition = "corriger" | "recontroler" | "cloturer" | "rouvrir";
+export type StudioObservationTransition = "corriger" | "recontroler" | "cloturer" | "rouvrir" | "reattribuer";
 export interface StudioObservationEvent {
   seq: number;
   action: "ouvrir" | StudioObservationTransition;
@@ -809,6 +809,8 @@ export interface StudioObservationEvent {
   actorId: string;
   actorEmail: string;
   revisionId: string | null;
+  /** Responsable désigné par ce passage (ouverture, réattribution), null sinon. */
+  responsableId?: string | null;
   note: string | null;
   at: string;
 }
@@ -834,7 +836,7 @@ export interface StudioObservation {
 export interface StudioParticipant { id: string; email: string; role: ProjectRole; assignable: boolean }
 export interface StudioCommentsView { comments: StudioComment[]; participants?: StudioParticipant[]; archived?: boolean; me?: { id: string; role: ProjectRole } }
 export interface StudioObservationInput { responsableId: string; echeance?: string | null; note?: string; requestId?: string }
-export interface StudioObservationTransitionInput { action: StudioObservationTransition; revisionId?: string; note?: string; requestId?: string }
+export interface StudioObservationTransitionInput { action: StudioObservationTransition; revisionId?: string; responsableId?: string; note?: string; requestId?: string }
 /** Étapes du Parcours rattachées à une étude Studio (`available` : étapes du projet, libellés des définitions). */
 export interface StudioStudySteps {
   steps: { number: number; createdAt: string }[];

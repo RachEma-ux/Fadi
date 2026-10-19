@@ -21,7 +21,8 @@ import { db } from "../db/client.js";
 import { projectMembers, studioComments, studioObservationEvents, studioObservations, studioRevisions, studioStudies, studioVariants, users, type StudioObservationAction, type StudioObservationStatut } from "../db/schema.js";
 import { newId } from "./ids.js";
 import { loadProjectAccess, projectAccessRefusal, roleAllows, type AccessibleProject, type ProjectNeed, type ProjectRole } from "./owned-project.js";
-import { StudioRequestError, studioArchivedRefusal, studioIdentifierSchema, type StudioScope } from "./studio-commands.js";
+import { lockedAccess, StudioRequestError, studioArchivedRefusal, studioIdentifierSchema, type StudioScope } from "./studio-commands.js";
+import type { Tx } from "./atelier-validation.js";
 import { acteurAutorise, echeanceValide, estAncetreOuEgale, OBSERVATION_TRANSITIONS, REFUS_ACTEUR, REVISION_EXIGEE, statutApres, type ActeurObservation, type ObservationTransition } from "./studio-observations.js";
 
 export const STUDIO_COMMENT_MAX_OBJECTS = 200;
@@ -62,6 +63,8 @@ export interface StudioObservationEventView {
   actorId: string;
   actorEmail: string;
   revisionId: string | null;
+  /** Responsable désigné par ce passage (ouverture et réattribution ; null pour une ouverture antérieure à ce champ). */
+  responsableId: string | null;
   note: string | null;
   at: string;
 }
@@ -138,9 +141,9 @@ export async function listStudioComments(scope: StudioScope, actorId: string): P
 // Observations
 
 /** Propriétaire puis membres (ordre d'invitation) ; un membre `editeur` ou le propriétaire peut être responsable. */
-async function participants(project: AccessibleProject): Promise<StudioParticipant[]> {
-  const [owner] = await db.select({ id: users.id, email: users.email }).from(users).where(eq(users.id, project.ownerId)).limit(1);
-  const members = await db.select({ id: users.id, email: users.email, role: projectMembers.role }).from(projectMembers)
+async function participants(project: AccessibleProject, executor: Pick<typeof db, "select"> = db): Promise<StudioParticipant[]> {
+  const [owner] = await executor.select({ id: users.id, email: users.email }).from(users).where(eq(users.id, project.ownerId)).limit(1);
+  const members = await executor.select({ id: users.id, email: users.email, role: projectMembers.role }).from(projectMembers)
     .innerJoin(users, eq(users.id, projectMembers.userId)).where(eq(projectMembers.projectId, project.id))
     .orderBy(asc(projectMembers.createdAt), asc(users.id));
   const all: StudioParticipant[] = owner ? [{ ...owner, role: "proprietaire", assignable: true }] : [];
@@ -149,6 +152,32 @@ async function participants(project: AccessibleProject): Promise<StudioParticipa
 }
 
 interface Lecteur { actorId: string; role: ProjectRole; archived: boolean }
+
+/**
+ * Comme `scopedVariant`, mais dans la transaction d'écriture et sous les verrous des autres écritures Studio : projet
+ * (et membre de l'acteur) verrouillés par `lockedAccess`, ligne de variante partagée — un archivage, une révocation ou
+ * un changement de rôle concurrent ne traverse pas la transaction ; droit et archive relus sous ces verrous.
+ */
+async function lockedVariant(tx: Tx, scope: StudioScope, actorId: string, need: ProjectNeed) {
+  const access = await lockedAccess(tx, scope.projectId, actorId);
+  const refusal = projectAccessRefusal(access, actorId, need);
+  if (refusal) throw new StudioRequestError(refusal.status, refusal.body);
+  const [variant] = await tx.select({ id: studioVariants.id, archived: studioVariants.archivedAt, studyArchived: studioStudies.archivedAt })
+    .from(studioVariants).innerJoin(studioStudies, eq(studioStudies.id, studioVariants.studyId))
+    .where(and(eq(studioVariants.id, scope.variantId), eq(studioStudies.id, scope.studyId), eq(studioStudies.projectId, scope.projectId)))
+    .limit(1).for("share", { of: studioVariants });
+  if (!variant) return notFound();
+  const lecteur: Lecteur = { actorId, role: access.role, archived: variant.archived !== null || variant.studyArchived !== null };
+  return { id: variant.id, access, lecteur };
+}
+
+/** Rôle de l'acteur vis-à-vis d'une observation, droit actuel compris (un responsable rétrogradé lecteur ne corrige plus). */
+function acteurDe(lecteur: Lecteur, responsableId: string, authorId: string): ActeurObservation {
+  return {
+    estResponsable: responsableId === lecteur.actorId, estAuteur: authorId === lecteur.actorId,
+    estProprietaire: roleAllows(lecteur.role, "owner"), peutEcrire: roleAllows(lecteur.role, "write"),
+  };
+}
 
 /** Observations de la variante (ou d'un seul commentaire), journal compris, avec les passages possibles du lecteur. */
 async function observationViews(variantId: string, commentId: string | null, lecteur: Lecteur, executor: Pick<typeof db, "select"> = db): Promise<Map<string, StudioObservationView>> {
@@ -166,11 +195,11 @@ async function observationViews(variantId: string, commentId: string | null, lec
   for (const { e, actorEmail } of events) {
     journal.set(e.observationId, [...(journal.get(e.observationId) ?? []), {
       seq: e.seq, action: e.action, fromStatut: e.fromStatut, toStatut: e.toStatut, actorId: e.actorId, actorEmail: actorEmail ?? "",
-      revisionId: e.revisionId, note: e.note, at: e.at.toISOString(),
+      revisionId: e.revisionId, responsableId: e.responsableId, note: e.note, at: e.at.toISOString(),
     }]);
   }
   for (const { o, responsableEmail, authorId } of obs) {
-    const acteur: ActeurObservation = { estResponsable: o.responsableId === lecteur.actorId, estAuteur: authorId === lecteur.actorId, estProprietaire: roleAllows(lecteur.role, "owner") };
+    const acteur = acteurDe(lecteur, o.responsableId, authorId);
     result.set(o.commentId, {
       id: o.commentId, authorId, responsableId: o.responsableId, responsableEmail: responsableEmail ?? "", echeance: o.echeance, statut: o.statut,
       correctionRevisionId: o.correctionRevisionId, recontroleRevisionId: o.recontroleRevisionId, createdBy: o.createdBy,
@@ -194,9 +223,13 @@ export type StudioObservationInput = z.infer<typeof studioObservationSchema>;
 export const studioObservationTransitionSchema = z.object({
   action: z.enum(OBSERVATION_TRANSITIONS as [ObservationTransition, ...ObservationTransition[]]),
   revisionId: studioIdentifierSchema.optional(),
+  /** Nouveau responsable : exigé par `reattribuer`, refusé par les autres passages. */
+  responsableId: z.string().min(1).max(256).optional(),
   note: noteSchema,
   requestId: studioIdentifierSchema.optional(),
-}).strict();
+}).strict().refine((v) => (v.action === "reattribuer") === (v.responsableId !== undefined), {
+  message: "responsableId est exigé par reattribuer et refusé par les autres passages.", path: ["responsableId"],
+});
 export type StudioObservationTransitionInput = z.infer<typeof studioObservationTransitionSchema>;
 
 const hashOf = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
@@ -223,14 +256,15 @@ async function observationResult(variantId: string, commentId: string, lecteur: 
  * déjà promu → 409 already_observation (sauf rejeu du même requestId).
  */
 export async function createStudioObservation(scope: StudioScope, actorId: string, commentId: string, input: StudioObservationInput): Promise<StudioObservationView & { replayed: boolean }> {
-  const variant = await scopedVariant(scope, actorId, "comment");
-  const lecteur: Lecteur = { actorId, role: variant.access.role, archived: variant.archived !== null || variant.studyArchived !== null };
   const hash = hashOf({ action: "ouvrir", responsableId: input.responsableId, echeance: input.echeance ?? null, note: input.note ?? null });
-  const replayed = await db.transaction(async (tx) => {
+  const { variantId, lecteur, replayed } = await db.transaction(async (tx) => {
+    const variant = await lockedVariant(tx, scope, actorId, "comment");
+    const lecteur = variant.lecteur;
+    const done = (replayed: boolean) => ({ variantId: variant.id, lecteur, replayed });
     const [comment] = await tx.select({ id: studioComments.id, parentId: studioComments.parentId, authorId: studioComments.authorId, deletedAt: studioComments.deletedAt })
       .from(studioComments).where(and(eq(studioComments.variantId, variant.id), eq(studioComments.id, commentId))).limit(1).for("update");
     if (!comment) return notFound();
-    if (await replayedEvent(tx, comment.id, input.requestId, actorId, hash)) return true;
+    if (await replayedEvent(tx, comment.id, input.requestId, actorId, hash)) return done(true);
     if (lecteur.archived) studioArchivedRefusal();
     if (comment.authorId !== actorId && !roleAllows(variant.access.role, "owner")) {
       throw new StudioRequestError(403, { error: "forbidden", message: "Seul l'auteur du commentaire ou le propriétaire du projet en fait une observation." });
@@ -239,20 +273,26 @@ export async function createStudioObservation(scope: StudioScope, actorId: strin
     if (comment.parentId) throw new StudioRequestError(400, { error: "invalid_input", code: "reponse", message: "Seul un commentaire d'origine devient une observation, pas une réponse." });
     const [existing] = await tx.select({ id: studioObservations.commentId }).from(studioObservations).where(eq(studioObservations.commentId, comment.id)).limit(1);
     if (existing) conflict("already_observation", "Ce commentaire est déjà une observation.");
-    const responsable = (await participants(variant.access)).find((p) => p.id === input.responsableId);
-    if (!responsable?.assignable) {
-      throw new StudioRequestError(400, { error: "invalid_input", code: "responsable_invalide", message: "Le responsable doit être le propriétaire ou un éditeur du projet." });
-    }
+    const responsable = await assignable(tx, variant.access, input.responsableId);
     await tx.insert(studioObservations).values({
-      commentId: comment.id, variantId: variant.id, responsableId: responsable.id, echeance: input.echeance ?? null, statut: "ouverte", createdBy: actorId,
+      commentId: comment.id, variantId: variant.id, responsableId: responsable, echeance: input.echeance ?? null, statut: "ouverte", createdBy: actorId,
     });
     await tx.insert(studioObservationEvents).values({
       id: newId("studio_observation_event"), observationId: comment.id, seq: 1, action: "ouvrir", fromStatut: null, toStatut: "ouverte", actorId,
-      revisionId: null, note: input.note ?? null, requestId: input.requestId ?? null, payloadHash: hash,
+      revisionId: null, responsableId: responsable, note: input.note ?? null, requestId: input.requestId ?? null, payloadHash: hash,
     });
-    return false;
+    return done(false);
   });
-  return observationResult(variant.id, commentId, lecteur, replayed);
+  return observationResult(variantId, commentId, lecteur, replayed);
+}
+
+/** Responsable désignable maintenant (propriétaire ou éditeur, relu sous le verrou du projet), sinon 400. */
+async function assignable(tx: Tx, project: AccessibleProject, userId: string): Promise<string> {
+  const p = (await participants(project, tx)).find((x) => x.id === userId);
+  if (!p?.assignable) {
+    throw new StudioRequestError(400, { error: "invalid_input", code: "responsable_invalide", message: "Le responsable doit être le propriétaire ou un éditeur du projet." });
+  }
+  return p.id;
 }
 
 /** Révisions de la variante : identifiant → parent (chaîne immuable). */
@@ -266,25 +306,30 @@ async function revisionParents(tx: Pick<typeof db, "select">, variantId: string)
  * 409 invalid_transition → révision (exigée 400, inconnue 404, antérieure 409 revision_anterieure).
  */
 export async function transitionStudioObservation(scope: StudioScope, actorId: string, commentId: string, input: StudioObservationTransitionInput): Promise<StudioObservationView & { replayed: boolean }> {
-  const variant = await scopedVariant(scope, actorId, "comment");
-  const lecteur: Lecteur = { actorId, role: variant.access.role, archived: variant.archived !== null || variant.studyArchived !== null };
   const action = input.action;
-  const hash = hashOf({ action, revisionId: input.revisionId ?? null, note: input.note ?? null });
-  const replayed = await db.transaction(async (tx) => {
+  const hash = hashOf({ action, revisionId: input.revisionId ?? null, note: input.note ?? null, ...(input.responsableId !== undefined ? { responsableId: input.responsableId } : {}) });
+  const { variantId, lecteur, replayed } = await db.transaction(async (tx) => {
+    const variant = await lockedVariant(tx, scope, actorId, "comment");
+    const lecteur = variant.lecteur;
+    const done = (replayed: boolean) => ({ variantId: variant.id, lecteur, replayed });
     const [row] = await tx.select({ o: studioObservations, authorId: studioComments.authorId }).from(studioObservations)
       .innerJoin(studioComments, eq(studioComments.id, studioObservations.commentId))
       .where(and(eq(studioObservations.variantId, variant.id), eq(studioObservations.commentId, commentId))).limit(1).for("update", { of: studioObservations });
     if (!row) return notFound("Ce commentaire n'est pas une observation.");
     const { o } = row;
-    if (await replayedEvent(tx, o.commentId, input.requestId, actorId, hash)) return true;
+    if (await replayedEvent(tx, o.commentId, input.requestId, actorId, hash)) return done(true);
     if (lecteur.archived) studioArchivedRefusal();
-    const acteur: ActeurObservation = { estResponsable: o.responsableId === actorId, estAuteur: row.authorId === actorId, estProprietaire: roleAllows(variant.access.role, "owner") };
+    // Rôle relu sous le verrou du projet : un responsable rétrogradé lecteur ne déclare plus la correction.
+    const acteur = acteurDe(lecteur, o.responsableId, row.authorId);
     if (!acteurAutorise(action, acteur)) throw new StudioRequestError(403, { error: "forbidden", message: REFUS_ACTEUR[action] });
     const vers = statutApres(o.statut, action);
     if (vers === null) conflict("invalid_transition", "Ce passage n'est pas permis depuis le statut actuel.", { statut: o.statut, action });
     if (REVISION_EXIGEE[action] && input.revisionId === undefined) {
       throw new StudioRequestError(400, { error: "invalid_input", code: "revision_exigee", message: "Citez la révision de la variante concernée." });
     }
+    // Réattribution : nouveau responsable propriétaire ou éditeur au moment du passage, différent de l'actuel.
+    const responsableId = action === "reattribuer" ? await assignable(tx, variant.access, input.responsableId!) : null;
+    if (responsableId !== null && responsableId === o.responsableId) conflict("same_responsable", "Cette personne est déjà responsable de l'observation.");
     const revisionId = input.revisionId ?? null;
     if (revisionId !== null) {
       const parents = await revisionParents(tx, variant.id);
@@ -305,14 +350,15 @@ export async function transitionStudioObservation(scope: StudioScope, actorId: s
       statut: vers!, updatedAt: now,
       ...(action === "corriger" ? { correctionRevisionId: revisionId, recontroleRevisionId: null } : {}),
       ...(action === "recontroler" ? { recontroleRevisionId: revisionId } : {}),
+      ...(responsableId !== null ? { responsableId } : {}),
     }).where(eq(studioObservations.commentId, o.commentId));
     await tx.insert(studioObservationEvents).values({
       id: newId("studio_observation_event"), observationId: o.commentId, seq, action, fromStatut: o.statut, toStatut: vers!, actorId,
-      revisionId, note: input.note ?? null, requestId: input.requestId ?? null, payloadHash: hash, at: now,
+      revisionId, responsableId, note: input.note ?? null, requestId: input.requestId ?? null, payloadHash: hash, at: now,
     });
-    return false;
+    return done(false);
   });
-  return observationResult(variant.id, commentId, lecteur, replayed);
+  return observationResult(variantId, commentId, lecteur, replayed);
 }
 
 // ---------------------------------------------------------------------------
@@ -387,15 +433,19 @@ export async function createStudioComment(scope: StudioScope, actorId: string, i
 
 /** Suppression douce par l'auteur seul ; un commentaire déjà supprimé par son auteur reste supprimé (204). */
 export async function deleteStudioComment(scope: StudioScope, actorId: string, commentId: string): Promise<void> {
-  const variant = await scopedVariant(scope, actorId, "comment");
-  const [existing] = await db.select({ authorId: studioComments.authorId, deletedAt: studioComments.deletedAt }).from(studioComments)
-    .where(and(eq(studioComments.variantId, variant.id), eq(studioComments.id, commentId))).limit(1);
-  if (!existing) return notFound();
-  if (existing.authorId !== actorId) throw new StudioRequestError(403, { error: "forbidden", message: "Seul l'auteur peut supprimer son commentaire." });
-  if (existing.deletedAt) return;
-  // Une observation et son journal restent lisibles : le commentaire qui la porte ne se supprime plus.
-  const [observation] = await db.select({ id: studioObservations.commentId }).from(studioObservations).where(eq(studioObservations.commentId, commentId)).limit(1);
-  if (observation) conflict("observation", "Ce commentaire est une observation : il ne peut plus être supprimé.");
-  await db.update(studioComments).set({ deletedAt: new Date() })
-    .where(and(eq(studioComments.id, commentId), eq(studioComments.authorId, actorId)));
+  // Même transaction et mêmes verrous que la promotion (projet, variante, ligne du commentaire) : une promotion
+  // concurrente attend la suppression, ou la suppression voit l'observation créée.
+  await db.transaction(async (tx) => {
+    const variant = await lockedVariant(tx, scope, actorId, "comment");
+    const [existing] = await tx.select({ authorId: studioComments.authorId, deletedAt: studioComments.deletedAt }).from(studioComments)
+      .where(and(eq(studioComments.variantId, variant.id), eq(studioComments.id, commentId))).limit(1).for("update");
+    if (!existing) return notFound();
+    if (existing.authorId !== actorId) throw new StudioRequestError(403, { error: "forbidden", message: "Seul l'auteur peut supprimer son commentaire." });
+    if (existing.deletedAt) return;
+    // Une observation et son journal restent lisibles : le commentaire qui la porte ne se supprime plus.
+    const [observation] = await tx.select({ id: studioObservations.commentId }).from(studioObservations).where(eq(studioObservations.commentId, commentId)).limit(1);
+    if (observation) conflict("observation", "Ce commentaire est une observation : il ne peut plus être supprimé.");
+    await tx.update(studioComments).set({ deletedAt: new Date() })
+      .where(and(eq(studioComments.id, commentId), eq(studioComments.authorId, actorId)));
+  });
 }

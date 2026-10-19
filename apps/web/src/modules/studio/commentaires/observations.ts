@@ -19,6 +19,7 @@ export const PASSAGE_LIBELLE: Record<StudioObservationTransition, string> = {
   recontroler: "Recontrôler",
   cloturer: "Clôturer",
   rouvrir: "Rouvrir",
+  reattribuer: "Réattribuer",
 };
 
 export const JOURNAL_LIBELLE: Record<StudioObservationEvent["action"], string> = {
@@ -27,10 +28,11 @@ export const JOURNAL_LIBELLE: Record<StudioObservationEvent["action"], string> =
   recontroler: "Recontrôlée",
   cloturer: "Clôturée",
   rouvrir: "Rouverte",
+  reattribuer: "Réattribuée",
 };
 
 /** Passages qui citent une révision (exigée par le serveur). */
-export const PASSAGE_AVEC_REVISION: Readonly<Record<StudioObservationTransition, boolean>> = { corriger: true, recontroler: true, cloturer: false, rouvrir: false };
+export const PASSAGE_AVEC_REVISION: Readonly<Record<StudioObservationTransition, boolean>> = { corriger: true, recontroler: true, cloturer: false, rouvrir: false, reattribuer: false };
 
 export type FiltreObservations = "tous" | "mes" | "ouvertes" | "a-recontroler";
 export const FILTRES: readonly FiltreObservations[] = ["tous", "mes", "ouvertes", "a-recontroler"];

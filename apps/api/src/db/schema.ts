@@ -692,7 +692,7 @@ export const studioComments = pgTable("studio_comments", {
 
 /** Statuts d'une observation Studio (E.2) ; `rouverte` se corrige comme `ouverte`. */
 export type StudioObservationStatut = "ouverte" | "corrigee" | "recontrolee" | "cloturee" | "rouverte";
-export type StudioObservationAction = "ouvrir" | "corriger" | "recontroler" | "cloturer" | "rouvrir";
+export type StudioObservationAction = "ouvrir" | "corriger" | "recontroler" | "cloturer" | "rouvrir" | "reattribuer";
 
 /**
  * Observation Studio : un commentaire d'origine promu (même identifiant, une seule identité), responsable membre du
@@ -722,6 +722,8 @@ export const studioObservationEvents = pgTable("studio_observation_events", {
   toStatut: text("to_statut").$type<StudioObservationStatut>().notNull(),
   actorId: text("actor_id").notNull().references(() => users.id, { onDelete: "restrict" }),
   revisionId: text("revision_id"),
+  // Responsable désigné par ce passage (ouverture, réattribution) ; null pour les autres passages.
+  responsableId: text("responsable_id"),
   note: text("note"),
   // Passage idempotent : unique par observation quand renseigné (index partiel, init.sql).
   requestId: text("request_id"),

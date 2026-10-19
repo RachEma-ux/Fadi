@@ -594,7 +594,7 @@ CREATE TABLE IF NOT EXISTS studio_observation_events (
   observation_id text NOT NULL REFERENCES studio_observations(comment_id) ON DELETE CASCADE,
   seq integer NOT NULL CHECK (seq >= 1),
   action text NOT NULL CONSTRAINT studio_observation_events_action_check
-    CHECK (action IN ('ouvrir', 'corriger', 'recontroler', 'cloturer', 'rouvrir')),
+    CHECK (action IN ('ouvrir', 'corriger', 'recontroler', 'cloturer', 'rouvrir', 'reattribuer')),
   from_statut text,
   to_statut text NOT NULL,
   actor_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
@@ -608,6 +608,12 @@ CREATE TABLE IF NOT EXISTS studio_observation_events (
 CREATE UNIQUE INDEX IF NOT EXISTS studio_observation_events_request_unique ON studio_observation_events(observation_id, request_id)
   WHERE request_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS studio_observation_events_at_idx ON studio_observation_events(at);
+-- Réattribution (propriétaire seul, journalisée) : action admise et responsable désigné par le passage. Colonne
+-- nullable ajoutée sans réécrire le journal ; contrainte recréée à chaque application, NOT VALID.
+ALTER TABLE studio_observation_events ADD COLUMN IF NOT EXISTS responsable_id text REFERENCES users(id) ON DELETE RESTRICT;
+ALTER TABLE studio_observation_events DROP CONSTRAINT IF EXISTS studio_observation_events_action_check,
+  ADD CONSTRAINT studio_observation_events_action_check
+  CHECK (action IN ('ouvrir', 'corriger', 'recontroler', 'cloturer', 'rouvrir', 'reattribuer')) NOT VALID;
 -- Le journal ne se réécrit pas : toute UPDATE d'un passage est refusée (les suppressions suivent la cascade).
 CREATE OR REPLACE FUNCTION studio_observation_event_immutable() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN

@@ -177,7 +177,7 @@ export async function notificationsFor(userId: string, email: string): Promise<{
       ))
       .orderBy(desc(studioObservationEvents.at))
       .limit(LIMIT);
-    const VERBE: Record<string, string> = { ouvrir: "a ouvert l’observation", corriger: "a déclaré corrigée l’observation", recontroler: "a recontrôlé l’observation", cloturer: "a clôturé l’observation", rouvrir: "a rouvert l’observation" };
+    const VERBE: Record<string, string> = { ouvrir: "a ouvert l’observation", corriger: "a déclaré corrigée l’observation", recontroler: "a recontrôlé l’observation", cloturer: "a clôturé l’observation", rouvrir: "a rouvert l’observation", reattribuer: "a réattribué l’observation" };
     for (const p of passages) {
       const excerpt = p.body.length > 80 ? `${p.body.slice(0, 80)}…` : p.body;
       items.push({
