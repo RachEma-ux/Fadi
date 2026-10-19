@@ -5,6 +5,7 @@ import type { StudioAnnotation, StudioDocument, StudioShape } from "../noyau/typ
 import type { StudioDimension } from "../objets/cote.js";
 import type { StudioSolid } from "../objets-3d/solides.js";
 import type { StudioArchitectureItem } from "../architecture/types.js";
+import type { StudioElementVisualisation } from "../scenes/scenes.js";
 
 /**
  * Rapport de fidélité d'un export Studio (E.6-03) : pour un document et un format (SVG, DXF, IFC), ce qui est exporté
@@ -34,14 +35,14 @@ export const STUDIO_RAISONS_FIDELITE = Object.freeze([
   "extrusion-non-portee", "arcs-discretises", "cote-eclatee", "texte-police-generique", "texte-ascii-echappe", "texte-remplace", "texte-tronque",
   "ouverture-en-lacune",
   // Non couvert
-  "non-extrude", "cote-hors-ifc", "annotation-hors-ifc", "solide-hors-2d", "type-sans-capacite",
+  "non-extrude", "cote-hors-ifc", "annotation-hors-ifc", "solide-hors-2d", "visualisation-hors-export", "type-sans-capacite",
 ] as const);
 export type StudioRaisonFidelite = (typeof STUDIO_RAISONS_FIDELITE)[number];
 
 /** Catégorie = liste du document qui porte l'élément. */
-export type StudioCategorieEchange = "objets" | "cotes" | "annotations" | "solides" | "architecture" | "inconnue";
+export type StudioCategorieEchange = "objets" | "cotes" | "annotations" | "solides" | "architecture" | "scenes" | "inconnue";
 /** Liste du document de chaque catégorie connue (clé de `StudioDocument`). */
-export const STUDIO_LISTES_ECHANGE = Object.freeze({ objets: "objects", cotes: "dimensions", annotations: "annotations", solides: "solides", architecture: "architecture" } as const);
+export const STUDIO_LISTES_ECHANGE = Object.freeze({ objets: "objects", cotes: "dimensions", annotations: "annotations", solides: "solides", architecture: "architecture", scenes: "scenes" } as const);
 
 export interface StudioJugementFidelite { statut: StudioStatutFidelite; raison: StudioRaisonFidelite }
 type Juge<T> = (item: T) => StudioJugementFidelite;
@@ -85,7 +86,9 @@ function texteDxf(content: string): StudioJugementFidelite {
  * - architecture (A.4) : mur en SVG / DXF tracé en plan (contour, lacunes aux ouvertures) sans sa hauteur ni sa base
  *   (approché, comme une extrusion déclarée), extrusion exacte en IFC
  *   (`IfcWall`) ; ouverture en SVG / DXF : simple lacune du mur quelle que soit son allège (approchée), en IFC :
- *   `IfcOpeningElement` + `IfcRelVoidsElement` exacts (`IfcDoor` / `IfcWindow` seulement si le type est déclaré).
+ *   `IfcOpeningElement` + `IfcRelVoidsElement` exacts (`IfcDoor` / `IfcWindow` seulement si le type est déclaré) ;
+ * - visualisation (lot E.5) : scènes et apparences d'affichage ne sont écrites dans aucun format (réglages de vue, pas
+ *   des données du modèle) : non couvertes.
  */
 export const STUDIO_CAPACITES_EXPORT: {
   readonly objets: { readonly [K in StudioShape["type"]]: ParFormat<Extract<StudioShape, { type: K }>> };
@@ -93,6 +96,7 @@ export const STUDIO_CAPACITES_EXPORT: {
   readonly annotations: { readonly [K in StudioAnnotation["type"]]: ParFormat<Extract<StudioAnnotation, { type: K }>> };
   readonly solides: { readonly [K in StudioSolid["type"]]: ParFormat<Extract<StudioSolid, { type: K }>> };
   readonly architecture: { readonly [K in StudioArchitectureItem["type"]]: ParFormat<Extract<StudioArchitectureItem, { type: K }>> };
+  readonly scenes: { readonly [K in StudioElementVisualisation["type"]]: ParFormat<Extract<StudioElementVisualisation, { type: K }>> };
 } = Object.freeze({
   objets: {
     line: { svg: trace2d("trace-exact"), dxf: trace2d("trace-exact"), ifc: ifc3d(() => exact("extrusion-exacte")) },
@@ -119,6 +123,10 @@ export const STUDIO_CAPACITES_EXPORT: {
   architecture: {
     wall: { svg: () => approche("extrusion-non-portee"), dxf: () => approche("extrusion-non-portee"), ifc: () => exact("extrusion-exacte") },
     opening: { svg: () => approche("ouverture-en-lacune"), dxf: () => approche("ouverture-en-lacune"), ifc: () => exact("ouverture-evidee") },
+  },
+  scenes: {
+    scene: { svg: () => nonCouvert("visualisation-hors-export"), dxf: () => nonCouvert("visualisation-hors-export"), ifc: () => nonCouvert("visualisation-hors-export") },
+    appearance: { svg: () => nonCouvert("visualisation-hors-export"), dxf: () => nonCouvert("visualisation-hors-export"), ifc: () => nonCouvert("visualisation-hors-export") },
   },
 });
 
@@ -194,6 +202,8 @@ export function studioRapportFidelite(input: StudioDocument, format: StudioForma
   const avecCalque = (layerId: string | undefined): { layerId?: string } => (layerId === undefined ? {} : { layerId });
   const calqueMur = new Map((doc.architecture ?? []).filter((e) => e.type === "wall").map((m) => [m.id, (m as { layerId?: string }).layerId]));
   parcourir("architecture", (doc.architecture ?? []).map((e) => (e.type === "opening" ? { ...e, ...avecCalque(calqueMur.get(e.hostId)) } : e)));
+  // Scènes et apparences : sans calque propre (une apparence de calque ne pose rien sur ce calque).
+  for (const s of doc.scenes ?? []) poser("scenes", s.type, STUDIO_CAPACITES_EXPORT.scenes[s.type][format](s as never), s.id);
   // Liste du document qu'aucune catégorie ne connaît : comptée non couverte, jamais omise.
   for (const [cle, valeur] of Object.entries(doc as unknown as Record<string, unknown>)) {
     if (CLES_CONNUES.has(cle) || !Array.isArray(valeur)) continue;

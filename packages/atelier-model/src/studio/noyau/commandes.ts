@@ -6,6 +6,7 @@ import { copier, echelle, rotation, symetrie } from "../commandes/modification.j
 import { aplatir, extruder } from "../commandes/volume.js";
 import { creerBoite, creerPrisme, deplacerSolide, supprimerSolides } from "../commandes/volume-libre.js";
 import { studioExtrudedRingVertices } from "../objets/polyligne.js";
+import { creerScene, definirApparence, modifierScene, retirerApparences, retirerApparencesOrphelines, supprimerScenes } from "../scenes/commandes.js";
 import { sortie, validateStudioDocument } from "./document.js";
 import { STUDIO_LIMITS } from "./limites.js";
 import type { Etat, Gestionnaire } from "./etat.js";
@@ -50,6 +51,12 @@ const HANDLERS: Record<StudioCommandToolId, Gestionnaire> = {
   "studio.architecture.ouverture": creerOuverture,
   "studio.architecture.modifier": modifierArchitecture,
   "studio.architecture.supprimer": supprimerArchitecture,
+  // Visualisation (lot E.5) : scènes et apparences d'affichage, dans la seule liste `scenes`.
+  "studio.scene.creer": creerScene,
+  "studio.scene.modifier": modifierScene,
+  "studio.scene.supprimer": supprimerScenes,
+  "studio.apparence.definir": definirApparence,
+  "studio.apparence.retirer": retirerApparences,
 };
 
 /** Identifiants réellement acceptés par `applyStudioCommands` (contrôlés contre le registre par test). */
@@ -61,7 +68,7 @@ export function applyStudioCommands(document: StudioDocument, commands: readonly
   // Charge avant le lot, relevée avant toute mutation (l'état partage les tableaux de `current`).
   const avant = studioExtrudedRingVertices(current.objects);
   const state: Etat = {
-    id: current.id, objects: current.objects, layers: current.layers ?? [], dimensions: current.dimensions ?? [], solides: current.solides ?? [], annotations: current.annotations ?? [], architecture: current.architecture ?? [],
+    id: current.id, objects: current.objects, layers: current.layers ?? [], dimensions: current.dimensions ?? [], solides: current.solides ?? [], annotations: current.annotations ?? [], architecture: current.architecture ?? [], scenes: current.scenes ?? [],
     ids: new Set([...current.objects.map((o) => o.id), ...(current.dimensions ?? []).map((d) => d.id), ...(current.solides ?? []).map((s) => s.id), ...(current.annotations ?? []).map((a) => a.id), ...(current.architecture ?? []).map((a) => a.id)]),
   };
   const batch = array(commands, "commands");
@@ -73,8 +80,10 @@ export function applyStudioCommands(document: StudioDocument, commands: readonly
     if (typeof toolId !== "string" || !Object.hasOwn(HANDLERS, toolId)) fail(`${path}.toolId`, "outil de mutation non pris en charge");
     HANDLERS[toolId as StudioCommandToolId](state, c.params, path);
   }
+  // L'apparence d'un objet supprimé disparaît avec lui (lot E.5).
+  retirerApparencesOrphelines(state);
   // Contrôle final : limites, unicité et liens sur le document entier, avant de rendre la copie.
-  const result = validateStudioDocument(sortie(state.id, state.objects, state.layers, state.dimensions, state.solides, state.annotations, state.architecture));
+  const result = validateStudioDocument(sortie(state.id, state.objects, state.layers, state.dimensions, state.solides, state.annotations, state.architecture, state.scenes));
   // Budget d'écriture des extrusions de polylignes fermées : un lot ne peut pas le dépasser ni l'aggraver une fois
   // dépassé ; une révision enregistrée reste toujours lisible (le budget ne s'applique qu'aux écritures).
   const apres = studioExtrudedRingVertices(result.objects);

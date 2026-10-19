@@ -9,6 +9,7 @@ import { SCHEMA_POLYLIGNE } from "../objets/polyligne.js";
 import { SCHEMA_RECTANGLE } from "../objets/rectangle.js";
 import { SCHEMA_SOLIDE } from "../objets-3d/solides.js";
 import { SCHEMA_ARCHITECTURE } from "../architecture/schemas.js";
+import { SCHEMA_ELEMENT_VISUALISATION, STUDIO_LIMITES_SCENES } from "../scenes/scenes.js";
 import { id } from "./schemas-base.js";
 
 /** Schémas JSON du document entier et des listes, composés des schémas déclarés par chaque type d'objet (`objets/`). */
@@ -29,5 +30,6 @@ export const STUDIO_DOCUMENT_SCHEMA = {
     solides: { type: "array", maxItems: STUDIO_LIMITS.objects, items: SCHEMA_SOLIDE },
     annotations: { type: "array", maxItems: STUDIO_LIMITS.objects, items: { oneOf: [SCHEMA_COTE_ANGULAIRE, SCHEMA_TEXTE] } },
     architecture: { type: "array", maxItems: STUDIO_LIMITS.objects, items: SCHEMA_ARCHITECTURE },
+    scenes: { type: "array", maxItems: STUDIO_LIMITES_SCENES.scenes + STUDIO_LIMITES_SCENES.apparences, items: SCHEMA_ELEMENT_VISUALISATION },
   },
 } as const;

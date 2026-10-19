@@ -95,7 +95,14 @@ export type IconName =
   | "studio-wall"
   | "studio-opening"
   | "studio-architecture-edit"
-  | "studio-architecture-delete";
+  | "studio-architecture-delete"
+  | "studio-scene-add"
+  | "studio-scene-update"
+  | "studio-scene-recall"
+  | "studio-scene-delete"
+  | "studio-appearance"
+  | "studio-appearance-remove"
+  | "studio-export-png";
 
 const PATHS: Record<IconName, string> = {
   search: "M10.5 3.5a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm5 12 5 5",
@@ -206,6 +213,16 @@ const PATHS: Record<IconName, string> = {
   "studio-opening": "M2 8h7v8H2ZM15 8h7v8h-7ZM9 6v12M15 6v12M10.5 12h3",
   "studio-architecture-edit": "M2 13h11v6H2ZM6 13l-4 4M10 13l-6 6M14 14l7-7 2 2-7 7h-2Z",
   "studio-architecture-delete": "M2 9h6v6H2ZM12 9h6v6h-6ZM8 7v10M12 7v10M15 3l6 6M21 3l-6 6",
+  // Visualisation (lot E.5) : caméra et plus (nouvelle scène) ; caméra et flèche circulaire (mettre à jour) ; caméra et
+  // flèche de retour (rappeler) ; caméra barrée (supprimer) ; pot de peinture qui coule (apparence) ; nuancier barré
+  // (retirer l'apparence) ; image et flèche de téléchargement (rendu PNG).
+  "studio-scene-add": "M3 9h10v8H3ZM13 12l5-3v8l-5-3M19 2v5M16.5 4.5h5",
+  "studio-scene-update": "M3 10h10v8H3ZM13 13l5-3v8l-5-3M15 6a3 3 0 1 1 3 3M15 3v3h3",
+  "studio-scene-recall": "M8 9h10v8H8ZM18 12l4-3v8l-4-3M2 13h4M4 11l-2 2 2 2",
+  "studio-scene-delete": "M3 9h10v8H3ZM13 12l5-3v8l-5-3M16 2l5 5M21 2l-5 5",
+  "studio-appearance": "M5 11l6-6 7 7-6 6ZM5 11h13M20 15c0 2 1 3 1 4a1 1 0 0 1-2 0c0-1 1-2 1-4",
+  "studio-appearance-remove": "M4 4h10v10H4ZM9 9h11v11H9ZM3 21 21 3",
+  "studio-export-png": "M3 5h12v10H3ZM3 13l4-4 3 3 2-2 3 3M19 9v10M16 16l3 3 3-3",
 };
 
 export function Icon({ name, size = 20, className }: { name: IconName; size?: number; className?: string }) {

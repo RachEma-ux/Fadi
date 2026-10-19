@@ -7,13 +7,14 @@ import { validerCalque } from "./calques.js";
 import type { StudioArchitectureItem } from "../architecture/types.js";
 import { controlerArchitecture, validerElementArchitectural } from "../architecture/validation.js";
 import { STUDIO_LIMITS } from "./limites.js";
+import { controlerVisualisation, validerElementVisualisation, type StudioElementVisualisation } from "../scenes/scenes.js";
 import type { StudioAnnotation, StudioDocument, StudioLayer, StudioShape } from "./types.js";
 import { array, fail, identifier, record } from "./validation.js";
 
 /** Document Studio : forme canonique, validation complète, création, lectures (sélection, mesure d'une cote). */
 
 /** Forme canonique : `layers`, `dimensions`, `solides` et `annotations` vides sont omis. */
-export function sortie(id: string, objects: StudioShape[], layers: StudioLayer[], dimensions: StudioDimension[], solides: StudioSolid[] = [], annotations: StudioAnnotation[] = [], architecture: StudioArchitectureItem[] = []): StudioDocument {
+export function sortie(id: string, objects: StudioShape[], layers: StudioLayer[], dimensions: StudioDimension[], solides: StudioSolid[] = [], annotations: StudioAnnotation[] = [], architecture: StudioArchitectureItem[] = [], scenes: StudioElementVisualisation[] = []): StudioDocument {
   return {
     id, schemaVersion: "studio-document/1", units: "m", frame: "local-2d", objects,
     ...(layers.length ? { layers } : {}),
@@ -21,12 +22,13 @@ export function sortie(id: string, objects: StudioShape[], layers: StudioLayer[]
     ...(solides.length ? { solides } : {}),
     ...(annotations.length ? { annotations } : {}),
     ...(architecture.length ? { architecture } : {}),
+    ...(scenes.length ? { scenes } : {}),
   };
 }
 
 /** Returns a private, canonical copy (empty `layers` / `dimensions` / `annotations` omitted) or throws `StudioValidationError`. */
 export function validateStudioDocument(value: unknown): StudioDocument {
-  const d = record(value, ["id", "schemaVersion", "units", "frame", "objects"], "document", ["layers", "dimensions", "solides", "annotations", "architecture"]);
+  const d = record(value, ["id", "schemaVersion", "units", "frame", "objects"], "document", ["layers", "dimensions", "solides", "annotations", "architecture", "scenes"]);
   if (d.schemaVersion !== "studio-document/1") fail("studioDocument.schemaVersion", "version non prise en charge");
   if (d.units !== "m") fail("studioDocument.units", "unité m attendue");
   if (d.frame !== "local-2d") fail("studioDocument.frame", "repère local-2d attendu");
@@ -84,7 +86,11 @@ export function validateStudioDocument(value: unknown): StudioDocument {
     if (o.type === "wall" && o.layerId !== undefined && !layerIds.has(o.layerId)) fail("studioDocument.architecture", "calque inconnu");
   }
   controlerArchitecture(architecture, "studioDocument.architecture");
-  return sortie(identifier(d.id, "studioDocument.id"), objects, layers, dimensions, solides, annotations, architecture);
+  // Visualisation (lot E.5) : scènes et apparences, identifiants propres à la liste, calques et objets 3D connus.
+  const rawScenes = Object.hasOwn(d, "scenes") ? array(d.scenes, "studioDocument.scenes") : [];
+  const scenes = rawScenes.map((o, i) => validerElementVisualisation(o, `studioDocument.scenes[${i}]`));
+  if (scenes.length) controlerVisualisation(scenes, { calques: layerIds, objets: new Set([...shapes.keys(), ...solides.map((s) => s.id), ...architecture.map((a) => a.id)]) }, "studioDocument.scenes");
+  return sortie(identifier(d.id, "studioDocument.id"), objects, layers, dimensions, solides, annotations, architecture, scenes);
 }
 
 /** Valeur mesurée d'une cote angulaire (degrés), dérivée ; « non évaluée » (null) tant qu'elle est à résoudre. */
