@@ -14,7 +14,7 @@ import { studioAngularFromSegments, studioStraightSegment, validerCoteAngulaire,
 import { validerTexte } from "../objets/texte.js";
 import { validerSolide } from "../objets-3d/solides.js";
 import { STUDIO_LIMITS } from "../noyau/limites.js";
-import { deplacerAnnotation, modifierAnnotation, suivreAnnotations, supprimerAnnotations } from "./annotations.js";
+import { deplacerAnnotation, modifierAnnotation, rompreSegmentsRenumerotes, suivreAnnotations, supprimerAnnotations } from "./annotations.js";
 
 /** Commandes de modification : Déplacer, Modifier, Décaler, Supprimer ; Copier, Rotation, Symétrie, Échelle. */
 
@@ -56,10 +56,37 @@ export const modifier: Gestionnaire = (state, params, path) => {
     state.dimensions[dIndex] = enteredDimension(state, o, path);
   } else {
     state.objects[index] = o;
+    if (previous.type === "polyline" && o.type === "polyline" && (previous.points.length !== o.points.length || previous.closed !== o.closed)) {
+      verifierLiensIndexes(state, previous, o, path);
+    }
     followLinks(state, o.id, path);
     suivreAnnotations(state, o.id, path);
   }
 };
+
+/**
+ * INV-013 (REF-02 §2.4) — polyligne dont la topologie change (sommet inséré ou retiré, ouverture / fermeture) : ses
+ * sommets et segments sont renumérotés, un lien `vertex-i` / `mid-i` (cote) ou `segment` (cote angulaire) ne désigne
+ * plus forcément le même élément. Un lien n'est gardé que si sa correspondance est vérifiée — même point (sommet,
+ * milieu) ou même segment, exactement, avant et après ; sinon il est rompu et l'annotation passe « à résoudre », avec
+ * sa dernière géométrie (jamais rattachée en silence à un autre sommet). Un rang qui n'existe plus n'est pas rompu ici :
+ * la modification reste refusée par le suivi des liens, comme avant (la cote ne se rattache pas ailleurs). Sans
+ * changement de topologie, un lien suit le sommet de même rang (déplacement du sommet), comme avant.
+ */
+function verifierLiensIndexes(state: Etat, avant: Extract<StudioShape, { type: "polyline" }>, apres: Extract<StudioShape, { type: "polyline" }>, path: string): void {
+  const rompu = (l: StudioDimensionLink | null) => {
+    if (!l || l.objectId !== apres.id) return false;
+    const a = studioAnchorPoint(avant, l.anchor), b = studioAnchorPoint(apres, l.anchor);
+    return !!a && !!b && !same(a, b);
+  };
+  state.dimensions = state.dimensions.map((d) => {
+    const rs = rompu(d.links.start), re = rompu(d.links.end);
+    if (!rs && !re) return d;
+    editable(state, d, `${path} (cote liée ${d.id})`);
+    return { ...d, links: { start: rs ? null : d.links.start, end: re ? null : d.links.end }, toResolve: true };
+  });
+  rompreSegmentsRenumerotes(state, avant, apres, path);
+}
 
 export const decaler: Gestionnaire = (state, params, path) => {
   const p = record(params, ["id", "newId", "distance"], `${path}.params`);
