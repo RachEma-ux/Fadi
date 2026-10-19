@@ -11,8 +11,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError, studioPackageFileUrl, type StudioPublication, type StudioPublicationTransition, type StudioVariantSummary } from "../../../lib/api";
 import { LOCALE } from "../../../lib/i18n";
 import {
-  COMMENTAIRE_REQUIS, corpsTransition, court, empreinteCourte, LIBELLE_ACTION, LIBELLE_ACTUALITE, LIBELLE_DIFFUSION, LIBELLE_EVENEMENT, LIBELLE_TRAVAIL,
-  libelleEcart, messageRefus, ORDRE_ACTIONS,
+  COMMENTAIRE_REQUIS, corpsTransition, court, empreinteCourte, LIBELLE_ACTION, LIBELLE_DIFFUSION, LIBELLE_EVENEMENT, LIBELLE_TRAVAIL,
+  libelleActualite, libelleEcart, messageRefus, ORDRE_ACTIONS,
 } from "./publication-ui";
 import "./publication.css";
 
@@ -123,12 +123,12 @@ function CartePublication({ projectId, studyId, publication: p, surChange }: { p
     } finally { setEnCours(false); }
   }
   return (
-    <li className="studio-publication" data-studio-publication={p.id} data-statut={p.status} data-travail={p.workStatus} data-diffusion={p.diffusionStatus} data-actualite={p.freshness}>
+    <li className="studio-publication" data-studio-publication={p.id} data-statut={p.status} data-travail={p.workStatus} data-diffusion={p.diffusionStatus} data-actualite={p.freshness} data-documents={p.documentsCheck ?? "non-verifiee"}>
       <div className="studio-publication-tete">
         <strong translate="no">{p.title}</strong>
         <span className={`studio-publication-statut statut-${p.workStatus}`} data-studio-publication-statut title="Travail">{LIBELLE_TRAVAIL[p.workStatus]}</span>
         <span className={`studio-publication-statut statut-${p.diffusionStatus}`} data-studio-publication-diffusion title="Diffusion">{LIBELLE_DIFFUSION[p.diffusionStatus]}</span>
-        <span className={`studio-publication-statut ${p.freshness === "perimee" ? "studio-publication-perimee" : ""}`} data-studio-publication-actualite title="Actualité">{LIBELLE_ACTUALITE[p.freshness]}</span>
+        <span className={`studio-publication-statut ${p.freshness === "perimee" ? "studio-publication-perimee" : ""}`} data-studio-publication-actualite title="Actualité">{libelleActualite(p)}</span>
         {p.freshness === "perimee" && <span className="studio-publication-perimee" data-studio-publication-perimee>Variante modifiée depuis</span>}
         {p.replacedBy && <span className="studio-publication-perimee" data-studio-publication-remplacee>Remplacée par une diffusion plus récente</span>}
       </div>
