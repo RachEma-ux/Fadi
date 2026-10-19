@@ -104,6 +104,7 @@ export const RACCOURCIS_RESERVES: readonly string[] = Object.freeze([
 export const OUTILS_MODES: ReadonlySet<StudioToolId> = new Set<StudioToolId>([
   "studio.dessin.selection", "studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle", "studio.dessin.arc", "studio.dessin.polyligne",
   "studio.dessin.cote", "studio.dessin.deplacer", "studio.dessin.modifier", "studio.dessin.decaler",
+  "studio.dessin.copier", "studio.dessin.rotation", "studio.dessin.symetrie", "studio.dessin.echelle",
 ]);
 /** Outils qui posent des points sur la planche. */
 export const OUTILS_TRACE: ReadonlySet<StudioToolId> = new Set<StudioToolId>(["studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle", "studio.dessin.arc", "studio.dessin.polyligne", "studio.dessin.cote"]);

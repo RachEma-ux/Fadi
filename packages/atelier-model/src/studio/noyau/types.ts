@@ -60,6 +60,10 @@ export type StudioCommand =
   | { toolId: "studio.dessin.modifier"; params: StudioItem }
   | { toolId: "studio.dessin.cote"; params: StudioDimension }
   | { toolId: "studio.dessin.supprimer"; params: { ids: string[] } }
+  | { toolId: "studio.dessin.copier"; params: { ids: string[]; dx: number; dy: number; copies: number; prefix: string } }
+  | { toolId: "studio.dessin.rotation"; params: { ids: string[]; center: StudioPoint; angle: number } }
+  | { toolId: "studio.dessin.symetrie"; params: { ids: string[]; axisStart: StudioPoint; axisEnd: StudioPoint; keepSource: boolean; prefix?: string } }
+  | { toolId: "studio.dessin.echelle"; params: { ids: string[]; center: StudioPoint; factor: number; includeVolumes: boolean } }
   | { toolId: "studio.calque.creer"; params: StudioLayer }
   | { toolId: "studio.calque.modifier"; params: StudioLayer }
   | { toolId: "studio.objet.calque"; params: { ids: string[]; layerId: string } }

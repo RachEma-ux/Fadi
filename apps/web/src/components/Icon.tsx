@@ -69,7 +69,11 @@ export type IconName =
   | "studio-polyline"
   | "studio-offset"
   | "studio-polyline-finish"
-  | "studio-polyline-close";
+  | "studio-polyline-close"
+  | "studio-copy"
+  | "studio-rotate"
+  | "studio-mirror"
+  | "studio-scale";
 
 const PATHS: Record<IconName, string> = {
   search: "M10.5 3.5a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm5 12 5 5",
@@ -144,6 +148,12 @@ const PATHS: Record<IconName, string> = {
   // Fin de polyligne : tracé ouvert et marque de validation ; fermeture : tracé refermé sur son premier sommet.
   "studio-polyline-finish": "M3 17 8 9l5 6M14 15l3 3 5-6",
   "studio-polyline-close": "M4 18 8 6l8 3 4 9ZM2 16h4v4H2Z",
+  // Transformations : deux carrés décalés (copier), flèche circulaire (rotation), axe et deux triangles opposés
+  // (symétrie), petit carré et flèche diagonale vers un coin agrandi (échelle).
+  "studio-copy": "M9 9h11v11H9ZM5 15H4V4h11v1",
+  "studio-rotate": "M20 12a8 8 0 1 1-2.34-5.66M20 3v4h-4",
+  "studio-mirror": "M12 2v3M12 9v6M12 19v3M9 6 3 18h6ZM15 6l6 12h-6Z",
+  "studio-scale": "M3 21h7v-7H3ZM10 14l10-10M14 4h6v6",
 };
 
 export function Icon({ name, size = 20, className }: { name: IconName; size?: number; className?: string }) {

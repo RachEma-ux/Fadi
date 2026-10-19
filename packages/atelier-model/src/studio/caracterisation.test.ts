@@ -292,14 +292,21 @@ function commandOutputs(): Record<string, unknown> {
   return out;
 }
 
+/**
+ * Outils livrés après le découpage S0, absents de la base caractérisée : le registre de base est comparé sans eux
+ * (ordre et descripteurs inchangés) ; leurs propres tests les contrôlent (`transformations.test.ts`).
+ */
+const OUTILS_APRES_S0: ReadonlySet<string> = new Set(["studio.dessin.copier", "studio.dessin.rotation", "studio.dessin.symetrie", "studio.dessin.echelle"]);
+const deBase = (id: string) => !OUTILS_APRES_S0.has(id);
+
 function registryOutputs(): Record<string, unknown> {
   const deepFrozen = (v: unknown): boolean => !v || typeof v !== "object" || (Object.isFrozen(v) && Object.values(v).every(deepFrozen));
   return {
-    "registre/outils": JSON.stringify(STUDIO_TOOLS),
+    "registre/outils": JSON.stringify(STUDIO_TOOLS.filter((t) => deBase(t.toolId))),
     "registre/schema": JSON.stringify(STUDIO_DOCUMENT_SCHEMA),
-    "registre/ids": [...STUDIO_TOOL_IDS],
-    "registre/mutations": [...STUDIO_COMMAND_TOOL_IDS],
-    "registre/appliques": [...STUDIO_APPLIED_TOOL_IDS],
+    "registre/ids": [...STUDIO_TOOL_IDS].filter(deBase),
+    "registre/mutations": [...STUDIO_COMMAND_TOOL_IDS].filter(deBase),
+    "registre/appliques": [...STUDIO_APPLIED_TOOL_IDS].filter(deBase),
     "registre/gele": [deepFrozen(STUDIO_TOOLS), deepFrozen(STUDIO_DOCUMENT_SCHEMA), Object.isFrozen(STUDIO_TOOL_IDS), Object.isFrozen(STUDIO_COMMAND_TOOL_IDS), Object.isFrozen(STUDIO_APPLIED_TOOL_IDS)],
     "paquet/exports": Object.keys(paquet).sort().map((k) => `${k}:${typeof (paquet as Record<string, unknown>)[k]}`),
   };

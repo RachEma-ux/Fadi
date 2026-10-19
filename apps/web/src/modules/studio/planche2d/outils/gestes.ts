@@ -139,6 +139,8 @@ export function useGestesPlanche(o: OptionsGestes) {
     if (e.pointerType !== "touch" && e.buttons === 0) {
       pointeurs.current.delete(e.pointerId);
       if (geste.current && "id" in geste.current && geste.current.id === e.pointerId && !("actif" in geste.current && geste.current.actif)) geste.current = null;
+      // Survol sans bouton : le point survolé (aperçu du tracé ou de la transformation) suit toujours le pointeur.
+      hover(e);
       return;
     }
     if (pointeurs.current.has(e.pointerId)) pointeurs.current.set(e.pointerId, { x: e.clientX, y: e.clientY });

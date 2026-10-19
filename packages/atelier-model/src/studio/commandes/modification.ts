@@ -1,12 +1,15 @@
 import { studioOffset } from "../courbes.js";
-import { validerCote } from "../objets/cote.js";
+import { validerCote, type StudioDimensionLink } from "../objets/cote.js";
 import { validerElement } from "../objets/element.js";
-import { translaterForme, validerForme } from "../objets/index.js";
-import { editable, enteredDimension, followLinks, freeId, type Gestionnaire } from "../noyau/etat.js";
-import type { StudioItem, StudioPoint } from "../noyau/types.js";
-import { fail, finite, identifier, idList, record } from "../noyau/validation.js";
+import { studioAnchorPoint, translaterForme, validerForme } from "../objets/index.js";
+import { editable, enteredDimension, followLinks, freeId, type Etat, type Gestionnaire } from "../noyau/etat.js";
+import type { StudioItem, StudioPoint, StudioShape } from "../noyau/types.js";
+import { boolean, fail, finite, identifier, idList, point, record, same } from "../noyau/validation.js";
+import {
+  studioAncreImage, studioDecalageImage, studioEchelle, studioRotation, studioSymetrie, studioTransformerForme, studioTranslation, type StudioTransformation,
+} from "../transformations.js";
 
-/** Commandes de modification : Déplacer, Modifier, Décaler, Supprimer. */
+/** Commandes de modification : Déplacer, Modifier, Décaler, Supprimer ; Copier, Rotation, Symétrie, Échelle. */
 
 export const deplacer: Gestionnaire = (state, params, path) => {
   const p = record(params, ["id", "dx", "dy"], `${path}.params`);
@@ -81,4 +84,165 @@ export const supprimer: Gestionnaire = (state, params, path) => {
     editable(state, d, `${path} (cote liée ${d.id})`);
     return { ...d, links: { start: breakStart ? null : d.links.start, end: breakEnd ? null : d.links.end }, toResolve: true };
   });
+};
+
+// ——— Transformations de la sélection (Copier, Rotation, Symétrie, Échelle) ———
+
+/** Nombre de copies d'une même commande Copier (borne technique ; le total d'objets reste borné par le document). */
+export const STUDIO_COPIES_MAX = 1000;
+
+/** Sélection d'une transformation : objets et cotes existants, sans répétition, tous sur un calque déverrouillé. */
+function lireSelection(state: Etat, value: unknown, path: string): string[] {
+  const ids = idList(value, `${path}.params.ids`);
+  const items = new Map<string, StudioItem>([...state.objects, ...state.dimensions].map((o) => [o.id, o]));
+  for (const id of ids) {
+    const target = items.get(id);
+    if (!target) fail(path, `objet introuvable : ${id}`);
+    editable(state, target, path);
+  }
+  return ids;
+}
+
+const memeLien = (a: StudioDimensionLink | null, b: StudioDimensionLink | null) => a === b || (!!a && !!b && a.objectId === b.objectId && a.anchor === b.anchor);
+type Bout = { p: StudioPoint; l: StudioDimensionLink | null };
+
+/** Extrémité liée à `cible` (image de la forme liée) : sommet de l'image correspondant au point transformé `q`. */
+function boutLie(cible: StudioShape, l: StudioDimensionLink, q: StudioPoint, cote: string, path: string): Bout {
+  const anchor = studioAncreImage(cible, l.anchor, q);
+  const p = anchor && studioAnchorPoint(cible, anchor);
+  if (!anchor || !p) fail(path, `sommet de cote liée introuvable (${cote})`);
+  return { p, l: { objectId: cible.id, anchor } };
+}
+
+/**
+ * Transformation sur place (mêmes identifiants) : chaque forme choisie est remplacée par son image ; chaque cote dont une
+ * extrémité est liée à une forme transformée la suit (sommet correspondant de l'image) ; une extrémité libre d'une cote
+ * choisie est transformée, son décalage aussi (signe inversé par une symétrie, multiplié par le facteur). Une cote
+ * modifiée sur un calque verrouillé refuse le lot, comme pour Modifier.
+ */
+function transformerSurPlace(state: Etat, ids: readonly string[], t: StudioTransformation, path: string): void {
+  const choisis = new Set(ids);
+  const transformes = new Map<string, StudioShape>();
+  state.objects = state.objects.map((o) => {
+    if (!choisis.has(o.id)) return o;
+    const image = validerForme(studioTransformerForme(o, t), path);
+    transformes.set(o.id, image);
+    return image;
+  });
+  state.dimensions = state.dimensions.map((d) => {
+    const choisie = choisis.has(d.id);
+    const bout = (end: "start" | "end"): Bout => {
+      const l = d.links[end];
+      const cible = l ? transformes.get(l.objectId) : undefined;
+      if (l && cible) return boutLie(cible, l, t.point(d[end]), d.id, path);
+      return { p: !l && choisie ? t.point(d[end]) : d[end], l };
+    };
+    const s = bout("start"), e = bout("end");
+    const offset = choisie ? studioDecalageImage(d, t) : d.offset;
+    if (same(s.p, d.start) && same(e.p, d.end) && offset === d.offset && memeLien(s.l, d.links.start) && memeLien(e.l, d.links.end)) return d;
+    editable(state, d, `${path} (cote liée ${d.id})`);
+    if (same(s.p, e.p)) fail(path, `la cote ${d.id} deviendrait de longueur nulle`);
+    return validerCote({ ...d, start: s.p, end: e.p, offset, links: { start: s.l, end: e.l } }, path);
+  });
+}
+
+/** Identifiant déterministe de la copie de rang `rang` (1…n) de l'élément d'indice `indice` dans la sélection. */
+export const studioIdCopie = (prefixe: string, rang: number, indice: number): string => `${prefixe}-${rang}-${indice}`;
+
+/**
+ * Copies de la sélection, une par transformation (`ts[k - 1]` donne la copie de rang k), identifiants
+ * `studioIdCopie(prefixe, k, i)`, même calque que la source. Une cote copiée garde ses liens vers les formes copiées
+ * avec elle (sommet correspondant de la copie) ; une extrémité liée à une forme non copiée devient libre (lien `null`),
+ * à l'image du point. La source n'est pas modifiée.
+ */
+function copierSelection(state: Etat, ids: readonly string[], ts: readonly StudioTransformation[], prefixe: string, path: string): void {
+  const formes = new Map(state.objects.map((o) => [o.id, o]));
+  const cotes = new Map(state.dimensions.map((d) => [d.id, d]));
+  ts.forEach((t, k) => {
+    const rang = k + 1;
+    const copies = new Map<string, StudioShape>();
+    const nouvelId = (i: number) => {
+      const id = identifier(studioIdCopie(prefixe, rang, i), `${path}.params.prefix`);
+      freeId(state, id, path);
+      state.ids.add(id);
+      return id;
+    };
+    ids.forEach((id, i) => {
+      const o = formes.get(id);
+      if (!o) return;
+      const copie = validerForme(studioTransformerForme(o, t, nouvelId(i)), path);
+      copies.set(id, copie);
+      state.objects.push(copie);
+    });
+    ids.forEach((id, i) => {
+      const d = cotes.get(id);
+      if (!d) return;
+      const bout = (end: "start" | "end"): Bout => {
+        const l = d.links[end];
+        const cible = l ? copies.get(l.objectId) : undefined;
+        const q = t.point(d[end]);
+        return l && cible ? boutLie(cible, l, q, d.id, path) : { p: q, l: null };
+      };
+      const s = bout("start"), e = bout("end");
+      if (same(s.p, e.p)) fail(path, `la copie de la cote ${d.id} serait de longueur nulle`);
+      state.dimensions.push(validerCote({ ...d, id: nouvelId(i), start: s.p, end: e.p, offset: studioDecalageImage(d, t), links: { start: s.l, end: e.l } }, path));
+    });
+  });
+}
+
+/** Copier : `copies` copies en série de la sélection, la k-ième déplacée de k × (dx, dy). */
+export const copier: Gestionnaire = (state, params, path) => {
+  const p = record(params, ["ids", "dx", "dy", "copies", "prefix"], `${path}.params`);
+  const ids = lireSelection(state, p.ids, path);
+  const dx = finite(p.dx, `${path}.params.dx`);
+  const dy = finite(p.dy, `${path}.params.dy`);
+  if (dx === 0 && dy === 0) fail(`${path}.params`, "déplacement non nul attendu");
+  const n = finite(p.copies, `${path}.params.copies`);
+  if (!Number.isInteger(n) || n < 1 || n > STUDIO_COPIES_MAX) fail(`${path}.params.copies`, `nombre entier de copies de 1 à ${STUDIO_COPIES_MAX} attendu`);
+  const prefixe = identifier(p.prefix, `${path}.params.prefix`);
+  copierSelection(state, ids, Array.from({ length: n }, (_, k) => studioTranslation((k + 1) * dx, (k + 1) * dy)), prefixe, path);
+};
+
+/** Rotation de la sélection autour de `center`, d'un angle non nul en radians (sens trigonométrique). */
+export const rotation: Gestionnaire = (state, params, path) => {
+  const p = record(params, ["ids", "center", "angle"], `${path}.params`);
+  const ids = lireSelection(state, p.ids, path);
+  const centre = point(p.center, `${path}.params.center`);
+  const angle = finite(p.angle, `${path}.params.angle`);
+  if (angle === 0) fail(`${path}.params.angle`, "angle non nul attendu");
+  transformerSurPlace(state, ids, studioRotation(centre, angle), path);
+};
+
+/**
+ * Symétrie de la sélection par rapport à la droite (axisStart, axisEnd). `keepSource` : l'image est une copie
+ * (identifiants `studioIdCopie(prefix, 1, i)`, `prefix` exigé) et la source reste ; sinon la source est transformée.
+ */
+export const symetrie: Gestionnaire = (state, params, path) => {
+  const p = record(params, ["ids", "axisStart", "axisEnd", "keepSource"], `${path}.params`, ["prefix"]);
+  const ids = lireSelection(state, p.ids, path);
+  const a = point(p.axisStart, `${path}.params.axisStart`);
+  const b = point(p.axisEnd, `${path}.params.axisEnd`);
+  if (same(a, b)) fail(`${path}.params`, "axe de symétrie de deux points distincts attendu");
+  const garder = boolean(p.keepSource, `${path}.params.keepSource`);
+  const t = studioSymetrie(a, b);
+  if (!garder) {
+    if (Object.hasOwn(p, "prefix")) fail(`${path}.params.prefix`, "préfixe de copie sans objet quand la source n’est pas conservée");
+    transformerSurPlace(state, ids, t, path);
+    return;
+  }
+  if (!Object.hasOwn(p, "prefix")) fail(`${path}.params.prefix`, "préfixe de copie attendu quand la source est conservée");
+  copierSelection(state, ids, [t], identifier(p.prefix, `${path}.params.prefix`), path);
+};
+
+/**
+ * Échelle uniforme de la sélection, centre `center`, facteur strictement positif. Les extrusions (base, hauteur,
+ * épaisseur) ne changent pas, sauf avec `includeVolumes` (« volumes aussi ») qui les multiplie par le facteur.
+ */
+export const echelle: Gestionnaire = (state, params, path) => {
+  const p = record(params, ["ids", "center", "factor", "includeVolumes"], `${path}.params`);
+  const ids = lireSelection(state, p.ids, path);
+  const centre = point(p.center, `${path}.params.center`);
+  const k = finite(p.factor, `${path}.params.factor`);
+  if (k <= 0) fail(`${path}.params.factor`, "facteur strictement positif attendu");
+  transformerSurPlace(state, ids, studioEchelle(centre, k, boolean(p.includeVolumes, `${path}.params.includeVolumes`)), path);
 };

@@ -762,6 +762,96 @@ try {
     && grandRelu.revision.parentRevisionId === apresPremier.revision.id && grandRelu.revision.document.objects.length === teteInitiale.document.objects.length + 600,
     lotsGrand.map((e) => `${e.commands.length}@${e.baseRevisionId}`).join(" "));
 
+  // Transformations (barre Modification) sur une sélection mixte (rectangle, cercle, ligne, arc) : Copier ×3 (D),
+  // aperçu au pointeur, Rotation 90° (Maj+R), Symétrie en gardant l'original (I), Échelle 2 (S) ; enregistrement en
+  // une enveloppe, géométrie relue du serveur, actualisation identique.
+  await page.goto(base);
+  await outils.waitFor();
+  await page.locator("svg [data-studio-objet]").first().waitFor({ state: "attached" });
+  check("transformations : Copier (D), Rotation (Maj+R), Symétrie (I), Échelle (S) dans la barre Modification, icônes propres",
+    (await outils.locator('[data-studio-barre="modification"] [data-studio-outil="studio.dessin.copier"][aria-keyshortcuts="D"] svg path').count()) === 1
+    && (await outils.locator('[data-studio-barre="modification"] [data-studio-outil="studio.dessin.rotation"][aria-keyshortcuts="Shift+R"] svg path').count()) === 1
+    && (await outils.locator('[data-studio-barre="modification"] [data-studio-outil="studio.dessin.symetrie"][aria-keyshortcuts="I"] svg path').count()) === 1
+    && (await outils.locator('[data-studio-barre="modification"] [data-studio-outil="studio.dessin.echelle"][aria-keyshortcuts="S"] svg path').count()) === 1);
+  const tousIds = () => page.locator("svg [data-studio-objet]").evaluateAll((els) => els.map((e) => e.getAttribute("data-studio-objet")));
+  const idsAvantT = await tousIds();
+  const saisir = async (outil, champs, bouton) => {
+    await outils.getByRole("button", { name: outil, exact: true }).click();
+    for (const [nom, v] of champs) await proprietes.getByLabel(nom, { exact: true }).fill(String(v));
+    await proprietes.getByRole("button", { name: bouton, exact: true }).click();
+  };
+  await saisir("Rectangle", [["X", 40], ["Y", 0], ["Largeur", 2], ["Hauteur", 1]], "Ajouter au dessin");
+  await saisir("Cercle", [["Centre X", 45], ["Centre Y", 0.5], ["Rayon", 0.5]], "Ajouter au dessin");
+  await saisir("Ligne", [["X", 40], ["Y", -2], ["X final", 44], ["Y final", -2]], "Ajouter au dessin");
+  await saisir("Arc", [["Centre X", 48], ["Centre Y", 0], ["Rayon", 1], ["Angle de début (°)", 0], ["Angle de fin (°)", 90]], "Ajouter au dessin");
+  const formesT = (await tousIds()).filter((id) => !idsAvantT.includes(id));
+  check("transformations : rectangle, cercle, ligne et arc posés", formesT.length === 4, formesT.join(" "));
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Shift+Z");
+  await outils.getByRole("button", { name: "Sélection", exact: true }).click();
+  for (const [i, id] of formesT.entries()) {
+    await page.locator(`[data-studio-objet="${id}"]`).focus();
+    await page.keyboard.press(i === 0 ? "Enter" : "Shift+Enter");
+  }
+  check("transformations : sélection mixte de quatre objets", (await page.locator("[data-studio-selection-compte]").getAttribute("data-studio-selection-compte")) === "4");
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("d");
+  check("transformations : D choisit l'outil Copier", (await outils.getByRole("button", { name: "Copier", exact: true }).getAttribute("aria-pressed")) === "true");
+  // Aperçu au pointeur : point de base, survol de la destination → les copies apparaissent sans rien appliquer.
+  const nObjets = (await tousIds()).length;
+  await cliquer(40, 0);
+  const survolEcran = await planche.evaluate((svg) => { const p = new DOMPoint(40, 6).matrixTransform(svg.getScreenCTM()); return { x: p.x, y: p.y }; });
+  await page.mouse.move(survolEcran.x, survolEcran.y);
+  await page.waitForFunction((n) => document.querySelectorAll("svg [data-studio-objet]").length === n, nObjets + 4);
+  await page.keyboard.press("Escape");
+  await page.waitForFunction((n) => document.querySelectorAll("svg [data-studio-objet]").length === n, nObjets);
+  check("transformations : aperçu de la copie au survol, Échap l'annule sans rien appliquer", (await tousIds()).length === nObjets);
+  for (const [nom, v] of [["Déplacement X", 0], ["Déplacement Y", 3], ["Copies", 3]]) await proprietes.getByLabel(nom, { exact: true }).fill(String(v));
+  await proprietes.getByRole("button", { name: "Copier la sélection", exact: true }).click();
+  check("transformations : Copier ×3 ajoute douze objets", (await tousIds()).length === nObjets + 12);
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Shift+R");
+  check("transformations : Maj+R choisit Rotation", (await outils.getByRole("button", { name: "Rotation", exact: true }).getAttribute("aria-pressed")) === "true");
+  for (const [nom, v] of [["Centre X", 40], ["Centre Y", 0], ["Angle (°)", 90]]) await proprietes.getByLabel(nom, { exact: true }).fill(String(v));
+  await proprietes.getByRole("button", { name: "Tourner la sélection", exact: true }).click();
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("i");
+  check("transformations : I choisit Symétrie, « Conserver l’original » coché", (await outils.getByRole("button", { name: "Symétrie", exact: true }).getAttribute("aria-pressed")) === "true" && (await proprietes.getByLabel("Conserver l’original", { exact: true }).isChecked()));
+  for (const [nom, v] of [["Axe : X du premier point", 40], ["Axe : Y du premier point", -5], ["Axe : X du second point", 41], ["Axe : Y du second point", -5]]) await proprietes.getByLabel(nom, { exact: true }).fill(String(v));
+  await proprietes.getByRole("button", { name: "Symétrie de la sélection", exact: true }).click();
+  check("transformations : la symétrie garde l'original et ajoute quatre objets", (await tousIds()).length === nObjets + 16);
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("s");
+  check("transformations : S choisit Échelle", (await outils.getByRole("button", { name: "Échelle", exact: true }).getAttribute("aria-pressed")) === "true");
+  for (const [nom, v] of [["Centre X", 40], ["Centre Y", 0], ["Facteur", 2]]) await proprietes.getByLabel(nom, { exact: true }).fill(String(v));
+  await proprietes.getByRole("button", { name: "Mettre la sélection à l’échelle", exact: true }).click();
+  const avantEnvoiT = envois.length;
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Control+s");
+  await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
+  const envoiT = envois[envois.length - 1];
+  check("transformations : une enveloppe (4 créations, copier, rotation, symétrie, échelle)", envois.length === avantEnvoiT + 1
+    && JSON.stringify(envoiT.commands.map((c) => c.toolId).slice(4)) === JSON.stringify(["studio.dessin.copier", "studio.dessin.rotation", "studio.dessin.symetrie", "studio.dessin.echelle"])
+    && envoiT.commands[5].params.angle === Math.PI / 2, JSON.stringify(envoiT?.commands.map((c) => c.toolId)));
+  const transfo = await a.api("get", variantePath);
+  const objT = (id) => transfo.revision.document.objects.find((o) => o.id === id);
+  const [rectT, cercleT, ligneT, arcT] = formesT.map(objT);
+  const prefixeCopie = envoiT.commands[4].params.prefix, prefixeMiroir = envoiT.commands[6].params.prefix;
+  const copie3 = objT(`${prefixeCopie}-3-0`), miroir = objT(`${prefixeMiroir}-1-0`), miroirArc = objT(`${prefixeMiroir}-1-3`);
+  check("transformations : géométrie relue (rotation 90° puis échelle 2 autour de (40, 0) ; copies et symétrique intacts)",
+    JSON.stringify([rectT.type, rectT.origin, rectT.width, rectT.height]) === JSON.stringify(["rectangle", { x: 38, y: 0 }, 2, 4])
+    && JSON.stringify([cercleT.center, cercleT.radius]) === JSON.stringify([{ x: 39, y: 10 }, 1])
+    && JSON.stringify([ligneT.start, ligneT.end]) === JSON.stringify([{ x: 44, y: 0 }, { x: 44, y: 8 }])
+    && arcT.type === "arc" && arcT.radius === 2 && Math.abs(arcT.startAngle - Math.PI / 2) < 1e-12 && Math.abs(arcT.endAngle - Math.PI) < 1e-12
+    && JSON.stringify([copie3.origin, copie3.width, copie3.height]) === JSON.stringify([{ x: 40, y: 9 }, 2, 1])
+    && JSON.stringify([miroir.type, miroir.origin, miroir.width, miroir.height]) === JSON.stringify(["rectangle", { x: 39, y: -12 }, 1, 2])
+    && miroirArc.type === "arc" && miroirArc.radius === 1,
+    JSON.stringify({ rectT, cercleT, ligneT, arcT, copie3, miroir, miroirArc }));
+  const empreinteT = await empreinte();
+  await page.reload();
+  await page.locator(`[data-studio-objet="${formesT[0]}"]`).waitFor({ state: "attached" });
+  check("transformations : l'actualisation restitue le même dessin", (await empreinte()) === empreinteT && JSON.stringify((await a.api("get", variantePath)).revision) === JSON.stringify(transfo.revision));
+
   // Accessibilité de l'accueil Studio.
   await page.goto(`${BASE}/studio`);
   await page.locator("[data-studio-projets]").waitFor();
