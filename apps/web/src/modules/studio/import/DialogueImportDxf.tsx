@@ -14,7 +14,7 @@ import { Icon } from "../../../components/Icon";
 import { LOCALE } from "../../../lib/i18n";
 import { Dialogue } from "../planche2d/CatalogueOutils";
 import { estEcartee, type Progression } from "../workers/hote-worker";
-import { lireDxfHorsFil, messageHote } from "../workers/client-studio";
+import { calculSurFilPrincipal, lireDxfHorsFil, MESSAGE_REPLI, messageHote } from "../workers/client-studio";
 import { CIBLES_CALQUE, MESSAGE_TROP_GROS, metres, TAILLE_MAX_OCTETS, typeNonPris, UNITES_PROPOSEES, type LectureDxf } from "./import-dxf-ui";
 import "./import-dxf.css";
 
@@ -96,6 +96,7 @@ export function DialogueImportDxf({ doc, modifiable, surAjouter, surFermer }: Di
           <span>{ETAPES_LECTURE[etape] ?? ETAPES_LECTURE["attente"]}</span>
           <button type="button" onClick={annuler} data-studio-import-annuler><Icon name="studio-cancel" size={16} /> Annuler la lecture</button>
         </div>}
+        {fichier && calculSurFilPrincipal() && <p className="studio-dialogue-aide" role="status" data-studio-calcul-repli>{MESSAGE_REPLI}</p>}
         {annulee && <p role="status" data-studio-import-annulee>Lecture annulée : rien n’est ajouté. Choisissez de nouveau un fichier.</p>}
         {erreurCalcul && <p role="alert" data-studio-import-erreur>{erreurCalcul}</p>}
         {affichee && "erreur" in affichee && <p role="alert" data-studio-import-erreur>{affichee.erreur}</p>}

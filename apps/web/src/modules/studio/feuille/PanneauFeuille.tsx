@@ -14,7 +14,7 @@ import {
 } from "@parcours/atelier-model";
 import { Icon } from "../../../components/Icon";
 import { Dialogue } from "../planche2d/CatalogueOutils";
-import { composerFeuilleHorsFil, messageHote } from "../workers/client-studio";
+import { calculSurFilPrincipal, composerFeuilleHorsFil, MESSAGE_REPLI, messageHote } from "../workers/client-studio";
 import { estEcartee } from "../workers/hote-worker";
 import { composerFeuille, MESSAGE_FEUILLE_IMPOSSIBLE, type ResultatFeuille } from "../workers/traitements";
 import {
@@ -118,6 +118,7 @@ export function PanneauFeuille({ doc, cartouche, brouillonNonEnregistre, surFerm
         </form>
         <div className="studio-feuille-apercu-zone" aria-busy={enCours || undefined} data-studio-feuille-en-cours={enCours ? "oui" : "non"}>
           {enCours && !f && <p className="studio-dialogue-aide" role="status">Composition de la feuille…</p>}
+          {calculSurFilPrincipal() && <p className="studio-dialogue-aide" role="status" data-studio-calcul-repli>{MESSAGE_REPLI}</p>}
           {brouillonNonEnregistre && <p className="studio-info" role="status">La feuille porte sur la révision enregistrée affichée : les modifications non enregistrées n’y figurent pas.</p>}
           {resultat.erreur && <p role="alert">{resultat.erreur}</p>}
           {f && <p className="studio-dialogue-aide studio-feuille-resume" data-studio-feuille-resume>
