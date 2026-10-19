@@ -75,17 +75,24 @@ jobs:
       - name: Apply database schema
         run: npm run db:migrate
 
+      # Mêmes contrôles que la CI (ci.yml, job validate). Garde DB fermée (registre d'autorités vide, DB-3 non
+      # autorisé, #157) : les suites API qui exigent une base attestée sont refusées au chargement. Elles ne sont ni
+      # contournées ni déclarées réussies : le contrôle exige que seule la liste fermée soit refusée, par la garde seule,
+      # et que tout le reste passe. Un `npm test` brut échouerait donc toujours sur ces suites.
       - name: Typecheck, test, build
         run: |
+          set -euo pipefail
           npm run typecheck
-          npm test
+          npm run test --workspace=@parcours/core-geometry --workspace=@parcours/domain-model --workspace=@parcours/atelier-model --workspace=@parcours/planche-model --workspace=@parcours/geometry-exact --workspace=@fadi/web
+          npm run test:db-guard
+          npx --workspace=@fadi/api vitest run --reporter=default --reporter=json --outputFile=../../api-vitest.json || true
+          node scripts/check-api-tests-db3.mjs api-vitest.json
           npm run build
 
       - name: Reset the database before the live demo
-        # "npm test" truncates and repopulates tables with test fixtures
-        # (alice@example.com and friends). Clear that out so the person
-        # opening the tunnel URL in a moment starts from an empty app, not
-        # leftover test data.
+        # Precaution: start the live demo from an empty app. With the DB guard
+        # closed (DB-3), the API tests do not write to this database; this
+        # truncate stays as a safety net against any leftover data.
         env:
           PGPASSWORD: fadi_deploy_password
         run: |
