@@ -16,7 +16,15 @@ import { dimensionsDe, statutCombine, type Dimensions, type StatutCombine, type 
 
 export const STUDIO_ARCHIVE_SCHEMA = "fadi-studio-archive/1";
 /** Version du schéma Studio couvert (document des révisions et jeu de tables de `init.sql`). */
-export const STUDIO_ARCHIVE_SCHEMA_VERSION = { document: "studio-document/1", tables: "studio-v1/2026-10-19" } as const;
+export const STUDIO_ARCHIVE_SCHEMA_VERSION = { document: "studio-document/1", tables: "studio-v1/2026-10-19.2" } as const;
+/**
+ * Versions antérieures des tables encore relues, avec les tables qu'elles ne portaient pas encore (lues vides, hors
+ * manifeste : l'empreinte d'une archive antérieure reste celle de ses propres tables). Toute autre version est refusée.
+ * `studio-v1/2026-10-19` : avant les ajustements du métré (E.3-05, `studio_quantity_adjustments`).
+ */
+export const STUDIO_ARCHIVE_PREVIOUS_TABLE_VERSIONS: Readonly<Record<string, readonly string[]>> = Object.freeze({
+  "studio-v1/2026-10-19": ["studio_quantity_adjustments"],
+});
 
 /** Tables archivées, dans l'ordre d'insertion (parents d'abord). `project_members` porte les droits du projet. */
 export const STUDIO_ARCHIVE_TABLES = [
@@ -29,6 +37,7 @@ export const STUDIO_ARCHIVE_TABLES = [
   "studio_study_steps",
   "studio_requirement_sets",
   "studio_requirement_checks",
+  "studio_quantity_adjustments",
   "volumes",
   "studio_publications",
   "studio_publication_events",
@@ -50,6 +59,7 @@ export const STUDIO_TABLE_KEYS: Readonly<Record<StudioArchiveTable, readonly str
   studio_study_steps: ["study_id", "step_number"],
   studio_requirement_sets: ["id"],
   studio_requirement_checks: ["id"],
+  studio_quantity_adjustments: ["id"],
   volumes: ["id"],
   studio_publications: ["id"],
   studio_publication_events: ["id"],
@@ -68,6 +78,7 @@ export const STUDIO_USER_COLUMNS: Readonly<Record<StudioArchiveTable, readonly s
   studio_study_steps: ["created_by"],
   studio_requirement_sets: ["author_id"],
   studio_requirement_checks: ["author_id"],
+  studio_quantity_adjustments: ["author_id"],
   volumes: [],
   studio_publications: ["approved_by", "diffused_by", "created_by", "replaced_by"],
   studio_publication_events: ["author_id"],
@@ -95,6 +106,8 @@ export const STUDIO_JSON_FIELDS_WITHOUT_ACCOUNTS: Readonly<Partial<Record<Studio
   studio_revisions: ["document", "envelope", "response"],
   studio_comments: ["object_ids"],
   studio_requirement_checks: ["result"],
+  // État de la cible d'un ajustement du métré (objet du document, quantités brutes) : aucun compte.
+  studio_quantity_adjustments: ["target_state"],
   studio_publications: ["package", "manifest"],
   studio_tool_preferences: ["favorites", "personal"],
 });
@@ -109,7 +122,7 @@ export const STUDIO_PROJECT_COLUMNS: Readonly<Partial<Record<StudioArchiveTable,
 /** Tables dont les identifiants sont globaux : une collision dans la base cible empêche la restauration Studio. */
 export const STUDIO_IDENTITY_TABLES: readonly StudioArchiveTable[] = [
   "studio_studies", "studio_variants", "studio_revisions", "studio_comments", "studio_observations",
-  "studio_observation_events", "studio_requirement_sets", "studio_requirement_checks", "studio_publications", "studio_publication_events",
+  "studio_observation_events", "studio_requirement_sets", "studio_requirement_checks", "studio_quantity_adjustments", "studio_publications", "studio_publication_events",
 ];
 
 export interface StudioArchiveAccount { id: string; email: string }
@@ -166,8 +179,8 @@ export interface StudioArchiveIdentity { sourceProjectId: string; ownerId: strin
  * Manifeste : effectif et empreinte par table ; l'empreinte globale couvre aussi le projet, le propriétaire et les
  * comptes cités (identifiant → adresse) — une adresse réécrite change l'empreinte, donc invalide la signature.
  */
-export function buildStudioManifest(tables: StudioArchiveTables, identity: StudioArchiveIdentity): StudioArchiveManifest {
-  const perTable = Object.fromEntries(STUDIO_ARCHIVE_TABLES.map((t) => [t, { count: tables[t].length, hash: studioTableHash(t, tables[t]) }])) as Record<StudioArchiveTable, StudioTableManifest>;
+export function buildStudioManifest(tables: StudioArchiveTables, identity: StudioArchiveIdentity, covered: readonly StudioArchiveTable[] = STUDIO_ARCHIVE_TABLES): StudioArchiveManifest {
+  const perTable = Object.fromEntries(covered.map((t) => [t, { count: tables[t].length, hash: studioTableHash(t, tables[t]) }])) as Record<StudioArchiveTable, StudioTableManifest>;
   const accounts = [...identity.accounts].map((a) => ({ id: a.id, email: a.email })).sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   const hash = sha256(canonicalJson({ tables: perTable, sourceProjectId: identity.sourceProjectId, ownerId: identity.ownerId, accounts }));
   return { schema: STUDIO_ARCHIVE_SCHEMA, schemaVersion: STUDIO_ARCHIVE_SCHEMA_VERSION, tables: perTable, hash };
@@ -266,8 +279,12 @@ export function checkStudioArchive(raw: unknown): { ok: true; section: StudioArc
   if (raw["schema"] !== STUDIO_ARCHIVE_SCHEMA) return { ok: false, errors: [`schéma de section Studio non pris en charge : ${String(raw["schema"])}`] };
   const sv = raw["schemaVersion"];
   if (!isRecord(sv) || sv["document"] !== STUDIO_ARCHIVE_SCHEMA_VERSION.document) errors.push("version du document Studio non prise en charge");
-  // Disposition des lignes lue par `jsonb_populate_recordset` : une autre version des tables est refusée, jamais devinée.
-  if (!isRecord(sv) || sv["tables"] !== STUDIO_ARCHIVE_SCHEMA_VERSION.tables) errors.push("version des tables Studio non prise en charge");
+  // Disposition des lignes lue par `jsonb_populate_recordset` : une autre version des tables est refusée, jamais devinée ;
+  // une version antérieure déclarée (`STUDIO_ARCHIVE_PREVIOUS_TABLE_VERSIONS`) est relue sans les tables qu'elle n'avait pas.
+  const tableVersion = isRecord(sv) ? sv["tables"] : undefined;
+  const absentes = typeof tableVersion === "string" && Object.hasOwn(STUDIO_ARCHIVE_PREVIOUS_TABLE_VERSIONS, tableVersion) ? STUDIO_ARCHIVE_PREVIOUS_TABLE_VERSIONS[tableVersion]! : null;
+  if (tableVersion !== STUDIO_ARCHIVE_SCHEMA_VERSION.tables && !absentes) errors.push("version des tables Studio non prise en charge");
+  const covered = STUDIO_ARCHIVE_TABLES.filter((t) => !(absentes ?? []).includes(t));
   if (!isId(raw["sourceProjectId"]) || !isId(raw["ownerId"])) errors.push("projet ou propriétaire d'origine absent");
   const accounts = Array.isArray(raw["accounts"]) ? raw["accounts"] : null;
   if (!accounts || accounts.some((a) => !isRecord(a) || !isId(a["id"]) || typeof a["email"] !== "string")) errors.push("comptes cités illisibles");
@@ -276,6 +293,10 @@ export function checkStudioArchive(raw: unknown): { ok: true; section: StudioArc
   const tables = emptyStudioTables();
   for (const t of STUDIO_ARCHIVE_TABLES) {
     const rows = rawTables[t];
+    if (!covered.includes(t)) {
+      if (rows !== undefined) errors.push(`table ${t} inattendue dans cette version`);
+      continue;
+    }
     if (!Array.isArray(rows) || rows.some((r) => !isRecord(r))) { errors.push(`table ${t} illisible`); continue; }
     tables[t] = rows as StudioArchiveRow[];
     const keys = new Set<string>();
@@ -290,10 +311,10 @@ export function checkStudioArchive(raw: unknown): { ok: true; section: StudioArc
 
   // Manifeste : effectifs et empreintes recalculés depuis les lignes reçues.
   const manifest = raw["manifest"];
-  const expected = buildStudioManifest(tables, { sourceProjectId: raw["sourceProjectId"] as string, ownerId: raw["ownerId"] as string, accounts: accounts as StudioArchiveAccount[] });
+  const expected = buildStudioManifest(tables, { sourceProjectId: raw["sourceProjectId"] as string, ownerId: raw["ownerId"] as string, accounts: accounts as StudioArchiveAccount[] }, covered);
   if (!isRecord(manifest) || !isRecord(manifest["tables"])) errors.push("manifeste Studio absent");
   else {
-    for (const t of STUDIO_ARCHIVE_TABLES) {
+    for (const t of covered) {
       const m = (manifest["tables"] as Record<string, unknown>)[t];
       if (!isRecord(m) || m["count"] !== expected.tables[t].count) errors.push(`${t} : effectif différent du manifeste`);
       else if (m["hash"] !== expected.tables[t].hash) errors.push(`${t} : empreinte différente du manifeste`);
@@ -350,6 +371,17 @@ export function checkStudioArchive(raw: unknown): { ok: true; section: StudioArc
     if (revisionVariant.get(r["revision_id"] as string) !== r["variant_id"]) errors.push(`contrôle ${String(r["id"])} : révision absente`);
     else if (studioArchiveDocumentHash(revisionDocuments.get(r["revision_id"] as string)) !== r["document_hash"]) errors.push(`contrôle ${String(r["id"])} : empreinte du document différente de la révision`);
     if (r["set_version"] !== null && r["set_version"] !== undefined && !setVersions.has(`${String(r["study_id"])}|${String(r["set_version"])}`)) errors.push(`contrôle ${String(r["id"])} : version du jeu absente`);
+  }
+  // Ajustements du métré (E.3-05) : journal d'une variante de l'étude, lié à une révision de cette variante, séquence unique.
+  const sequences = new Set<string>();
+  for (const r of tables.studio_quantity_adjustments) {
+    if (variantStudy.get(r["variant_id"] as string) !== r["study_id"]) errors.push(`ajustement ${String(r["id"])} : variante absente`);
+    if (revisionVariant.get(r["revision_id"] as string) !== r["variant_id"]) errors.push(`ajustement ${String(r["id"])} : révision absente`);
+    const k = `${String(r["variant_id"])}|${String(r["seq"])}`;
+    if (sequences.has(k)) errors.push(`ajustement ${String(r["id"])} : séquence en double`);
+    sequences.add(k);
+    if (!isRecord(r["target_state"])) errors.push(`ajustement ${String(r["id"])} : état de la cible illisible`);
+    if (typeof r["motif"] !== "string" || !r["motif"].trim()) errors.push(`ajustement ${String(r["id"])} : motif absent`);
   }
   for (const r of tables.volumes) {
     const bytes = volumeBytes(r["content"]);

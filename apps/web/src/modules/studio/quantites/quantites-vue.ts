@@ -3,7 +3,8 @@
  * et à l'export ; le modèle (`quantitesStudio`) garde la pleine précision.
  */
 import {
-  totaliserQuantites, type GrandeurQuantite, type MotifNonEvalue, type NatureQuantite, type QuantitesStudio, type RefusAjustement, type UniteQuantite,
+  totaliserQuantites, type GrandeurQuantite, type MotifNonEvalue, type MotifRevueAjustement, type NatureQuantite, type QuantitesStudio, type RefusAjustement,
+  type RefusAjustementEnregistre, type StatutAjustementEnregistre, type UniteQuantite,
 } from "@parcours/atelier-model";
 
 export const LIBELLE_GRANDEUR: Readonly<Record<GrandeurQuantite, string>> = {
@@ -30,6 +31,19 @@ export const LIBELLE_REFUS: Readonly<Record<RefusAjustement, string>> = {
   "objet-inconnu": "objet absent du métré", "grandeur-non-applicable": "grandeur sans objet pour cet objet",
   "valeur-invalide": "valeur positive ou nulle attendue", "motif-obligatoire": "le motif est obligatoire",
   "auteur-obligatoire": "l’auteur est obligatoire", "date-invalide": "date illisible",
+};
+/** Refus d'un ajustement à enregistrer (E.3-05) : ceux du métré, plus la cible calque et l'unité. */
+export const LIBELLE_REFUS_ENREGISTRE: Readonly<Record<RefusAjustementEnregistre, string>> = {
+  ...LIBELLE_REFUS,
+  "calque-inconnu": "calque absent du métré", "grandeur-non-cumulable": "cette grandeur ne s’additionne pas : le total d’un calque ne s’ajuste pas",
+  "unite-incoherente": "unité sans rapport avec la grandeur", "motif-trop-long": "motif de 2000 caractères au plus",
+};
+export const LIBELLE_STATUT_AJUSTEMENT: Readonly<Record<StatutAjustementEnregistre, string>> = {
+  "en-vigueur": "en vigueur", "a-revoir": "à revoir", remplace: "remplacé",
+};
+export const LIBELLE_REVUE: Readonly<Record<MotifRevueAjustement, string>> = {
+  "cible-modifiee": "la cible a changé depuis la révision de l’ajustement : il n’est pas appliqué",
+  "cible-absente": "la cible n’existe plus dans cette révision : l’ajustement n’est pas appliqué",
 };
 export const NON_EVALUE = "non évalué";
 

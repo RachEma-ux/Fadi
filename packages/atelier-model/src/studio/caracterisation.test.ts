@@ -328,6 +328,8 @@ const AJOUTS = {
     "SCHEMA_APPARENCE", "SCHEMA_ELEMENT_VISUALISATION", "SCHEMA_SCENE", "STUDIO_FINITIONS_AFFICHAGE", "STUDIO_FRAME_SCENES", "STUDIO_LIMITES_SCENES",
     "STUDIO_MODES_AFFICHAGE", "STUDIO_PROJECTIONS_SCENE", "validerElementVisualisation", "studioApparenceResolue", "studioApparences", "studioDocumentToutVisible", "studioFiltrerMaillageScene", "studioMeshScene",
     "studioRappelerScene", "studioScenes", "STUDIO_NATURE_RENDU", "STUDIO_RENDU_SCHEMA", "studioNomFichierRendu", "studioProvenanceRendu",
+    // Ajustements de quantités enregistrés (E.3-05, `quantites-ajustements.ts`, extension additive).
+    "STUDIO_LIMITES_AJUSTEMENTS", "appliquerAjustementsEnregistres", "controlerSaisieAjustement", "etatCibleQuantite", "evaluerAjustementsQuantites", "jsonCanoniqueQuantites",
   ]),
 };
 function sansAjouts(value: unknown): unknown {

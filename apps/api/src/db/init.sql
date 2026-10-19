@@ -877,3 +877,66 @@ END;
 $$;
 CREATE OR REPLACE TRIGGER studio_requirement_checks_no_update BEFORE UPDATE ON studio_requirement_checks
   FOR EACH ROW EXECUTE FUNCTION studio_requirement_check_immutable();
+-- Ajustements manuels du métré Studio (E.3-05) : journal en ajout seul, versionné par variante (`seq` = 1, 2, … ; la
+-- version du journal est sa dernière séquence). Un ajustement vise un objet (une grandeur de l'objet) ou un calque (le
+-- total d'une grandeur), porte la valeur ajustée et son unité (NULL = retour à la valeur brute), un motif obligatoire,
+-- l'auteur, la date et la révision sur laquelle il a été saisi ; la quantité brute de la cible à cette révision
+-- (`derived_value`, NULL = non évaluée) et l'état de la cible (`target_state`, calculé par le serveur) permettent de
+-- montrer « à revoir » un ajustement dont la cible a changé depuis — il n'est jamais appliqué en silence. La quantité
+-- brute n'est jamais réécrite : elle reste dérivée du document. UPDATE refusée par déclencheur. Additif et idempotent :
+-- table nouvelle, contraintes recréées à chaque application (DROP … IF EXISTS puis ADD, NOT VALID).
+CREATE TABLE IF NOT EXISTS studio_quantity_adjustments (
+  id text PRIMARY KEY,
+  study_id text NOT NULL REFERENCES studio_studies(id) ON DELETE CASCADE,
+  variant_id text NOT NULL,
+  revision_id text NOT NULL,
+  seq integer NOT NULL,
+  target_kind text NOT NULL,
+  target_id text NOT NULL,
+  quantity text NOT NULL,
+  value double precision,
+  unit text NOT NULL,
+  derived_value double precision,
+  target_state jsonb NOT NULL,
+  motif text NOT NULL,
+  author_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  request_id text,
+  payload_hash text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_quantity_adjustments_seq_unique ON studio_quantity_adjustments(variant_id, seq);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_quantity_adjustments_request_unique ON studio_quantity_adjustments(variant_id, request_id)
+  WHERE request_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS studio_quantity_adjustments_study_idx ON studio_quantity_adjustments(study_id);
+ALTER TABLE studio_quantity_adjustments DROP CONSTRAINT IF EXISTS studio_quantity_adjustments_variant_of_study,
+  ADD CONSTRAINT studio_quantity_adjustments_variant_of_study FOREIGN KEY(study_id, variant_id)
+  REFERENCES studio_variants(study_id, id) ON DELETE CASCADE NOT VALID;
+ALTER TABLE studio_quantity_adjustments DROP CONSTRAINT IF EXISTS studio_quantity_adjustments_revision_of_variant,
+  ADD CONSTRAINT studio_quantity_adjustments_revision_of_variant FOREIGN KEY(variant_id, revision_id)
+  REFERENCES studio_revisions(variant_id, id) ON DELETE CASCADE NOT VALID;
+ALTER TABLE studio_quantity_adjustments DROP CONSTRAINT IF EXISTS studio_quantity_adjustments_seq_check,
+  ADD CONSTRAINT studio_quantity_adjustments_seq_check CHECK (seq >= 1) NOT VALID;
+ALTER TABLE studio_quantity_adjustments DROP CONSTRAINT IF EXISTS studio_quantity_adjustments_target_check,
+  ADD CONSTRAINT studio_quantity_adjustments_target_check
+  CHECK (target_kind IN ('objet', 'calque') AND length(target_id) BETWEEN 1 AND 128) NOT VALID;
+ALTER TABLE studio_quantity_adjustments DROP CONSTRAINT IF EXISTS studio_quantity_adjustments_quantity_check,
+  ADD CONSTRAINT studio_quantity_adjustments_quantity_check
+  CHECK (quantity ~ '^[a-z]+(-[a-z]+)*$' AND length(quantity) <= 40) NOT VALID;
+ALTER TABLE studio_quantity_adjustments DROP CONSTRAINT IF EXISTS studio_quantity_adjustments_unit_check,
+  ADD CONSTRAINT studio_quantity_adjustments_unit_check CHECK (unit IN ('m', 'm2', 'm3')) NOT VALID;
+ALTER TABLE studio_quantity_adjustments DROP CONSTRAINT IF EXISTS studio_quantity_adjustments_value_check,
+  ADD CONSTRAINT studio_quantity_adjustments_value_check
+  CHECK ((value IS NULL OR (value >= 0 AND value < 'Infinity'::double precision)) AND (derived_value IS NULL OR (derived_value > '-Infinity'::double precision AND derived_value < 'Infinity'::double precision))) NOT VALID;
+ALTER TABLE studio_quantity_adjustments DROP CONSTRAINT IF EXISTS studio_quantity_adjustments_motif_length,
+  ADD CONSTRAINT studio_quantity_adjustments_motif_length CHECK (length(btrim(motif)) BETWEEN 1 AND 2000) NOT VALID;
+ALTER TABLE studio_quantity_adjustments DROP CONSTRAINT IF EXISTS studio_quantity_adjustments_target_state_object,
+  ADD CONSTRAINT studio_quantity_adjustments_target_state_object CHECK (jsonb_typeof(target_state) = 'object') NOT VALID;
+ALTER TABLE studio_quantity_adjustments DROP CONSTRAINT IF EXISTS studio_quantity_adjustments_payload_hash_check,
+  ADD CONSTRAINT studio_quantity_adjustments_payload_hash_check CHECK (payload_hash IS NULL OR payload_hash ~ '^[0-9a-f]{64}$') NOT VALID;
+CREATE OR REPLACE FUNCTION studio_quantity_adjustment_immutable() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'studio_quantity_adjustment_immutable';
+END;
+$$;
+CREATE OR REPLACE TRIGGER studio_quantity_adjustments_no_update BEFORE UPDATE ON studio_quantity_adjustments
+  FOR EACH ROW EXECUTE FUNCTION studio_quantity_adjustment_immutable();

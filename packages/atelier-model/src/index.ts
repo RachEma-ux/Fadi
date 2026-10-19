@@ -10,6 +10,7 @@ export * from "./studio/feuille.js";
 export * from "./studio/comparaison.js";
 export * from "./studio/import-dxf.js";
 export * from "./studio/quantites.js";
+export * from "./studio/quantites-ajustements.js";
 export * from "./studio/echanges/rapport-fidelite.js";
 export * from "./studio/solides-libres.js";
 export * from "./studio/architecture/index.js";

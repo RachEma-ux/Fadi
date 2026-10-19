@@ -1,7 +1,8 @@
 /**
  * Section Studio de l'archive de projet (R.1-02) : lecture des tables Studio d'un projet (études, variantes, révisions
  * immuables et leurs documents, commentaires, observations et leur journal, liens d'étapes du Parcours, publications,
- * leur journal et les fichiers figés de leurs paquets, droits du projet, préférences d'outils des comptes du projet) et
+ * leur journal et les fichiers figés de leurs paquets, exigences et contrôles, journal des ajustements du métré, droits
+ * du projet, préférences d'outils des comptes du projet) et
  * réinsertion TELLE QUELLE dans un nouveau projet. La logique pure (manifeste, contrôle, réattribution, signature) est
  * dans `studio-archive-manifest.ts` et `archive-signature.ts`.
  *
@@ -55,6 +56,7 @@ export async function loadStudioTables(q: Querier, projectId: string, ownerId: s
   tables.studio_study_steps = await rows(q, sql`SELECT to_jsonb(t) AS row FROM studio_study_steps t WHERE study_id IN ${inStudies} ORDER BY study_id, step_number`);
   tables.studio_requirement_sets = await rows(q, sql`SELECT to_jsonb(t) AS row FROM studio_requirement_sets t WHERE study_id IN ${inStudies} ORDER BY id`);
   tables.studio_requirement_checks = await rows(q, sql`SELECT to_jsonb(t) AS row FROM studio_requirement_checks t WHERE study_id IN ${inStudies} ORDER BY id`);
+  tables.studio_quantity_adjustments = await rows(q, sql`SELECT to_jsonb(t) AS row FROM studio_quantity_adjustments t WHERE study_id IN ${inStudies} ORDER BY id`);
   tables.studio_publications = await rows(q, sql`SELECT to_jsonb(t) AS row FROM studio_publications t WHERE project_id = ${projectId} ORDER BY id`);
   tables.studio_publication_events = await rows(q, sql`SELECT to_jsonb(t) AS row FROM studio_publication_events t WHERE publication_id IN (SELECT id FROM studio_publications WHERE project_id = ${projectId}) ORDER BY id`);
   const volumeIds = packageVolumeIds(tables.studio_publications);
@@ -185,6 +187,10 @@ export async function importStudioArchive(tx: Tx, projectId: string, importerId:
     // Exigences (lot E.1) : versions insérées (append-only, déclencheur UPDATE intact), puis contrôles qui les citent.
     await insertRows(tx, "studio_requirement_sets", requirementSets);
     await insertRows(tx, "studio_requirement_checks", tables.studio_requirement_checks);
+    // Ajustements du métré (E.3-05) : journal append-only inséré tel quel (déclencheur UPDATE intact) ; archive non
+    // vérifiée : auteurs = compte qui restaure (colonne author_id, comme tout acteur), contenu inchangé.
+    await insertRows(tx, "studio_quantity_adjustments", tables.studio_quantity_adjustments);
+    if (!trusted && tables.studio_quantity_adjustments.length) warnings.push(`${tables.studio_quantity_adjustments.length} ajustement(s) du métré repris, attribué(s) au compte qui restaure : valeurs, motifs, dates et révisions d'origine conservés.`);
     if (clearedAcceptances) warnings.push(`${clearedAcceptances} acceptation(s) de référence partenaire non reprise(s) : les références redeviennent « non acceptées » et doivent être acceptées à nouveau.`);
     // Volumes adressés par leur contenu : un volume déjà présent est le même fichier (même SHA-256).
     await insertRows(tx, "volumes", tables.volumes, "ignore");

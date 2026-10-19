@@ -11,6 +11,7 @@ import { renameStudioStudy, renameStudioVariant, setStudioStudyArchived, setStud
 import { studioExigencesRouter } from "./studio-exigences.js";
 import { studioPublicationsRouter } from "./studio-publications.js";
 import { studioPreferencesRouter } from "./studio-preferences.js";
+import { studioQuantitesRouter } from "./studio-quantites.js";
 
 export const studioRouter = Router({ mergeParams: true });
 studioRouter.use(requireAuth);
@@ -219,3 +220,5 @@ studioRouter.get("/steps/:stepNumber/studies", endpoint(async (req, res) => {
 studioRouter.use(studioPublicationsRouter);
 // Exigences versionnées et contrôles (E.1-02 à E.1-06) : `routes/studio-exigences.ts`.
 studioRouter.use(studioExigencesRouter);
+// Ajustements manuels du métré, journal versionné par variante (E.3-05) : `routes/studio-quantites.ts`.
+studioRouter.use(studioQuantitesRouter);
