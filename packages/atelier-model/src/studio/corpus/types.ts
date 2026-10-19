@@ -24,8 +24,8 @@ export type TailleIllustrative = (typeof TAILLES_ILLUSTRATIVES)[number];
 /** Graines fixes, une par scène (reproductibilité). */
 export const GRAINES_CORPUS: Readonly<Record<SceneCorpus, number>> = Object.freeze({ S1: 101, S2: 202, S3: 303, S4: 404, S5: 505, S6: 606, S7: 707 });
 
-/** Licence d'utilisation (REF-02 §18.2) : corpus généré dans le dépôt, sans source tierce. */
-export const LICENCE_CORPUS = "Corpus synthétique généré par le dépôt Fadi (géométrie seule, aucune source tierce) : libre usage pour les essais Studio.";
+/** Licence d'utilisation (REF-02 §18.2) : non tranchée ici — le corpus est généré dans le dépôt, sans source tierce. */
+export const LICENCE_CORPUS = "Licence à valider par le maître d'ouvrage (corpus synthétique, généré par le dépôt Fadi : géométrie seule, aucune source tierce).";
 export const AVERTISSEMENT_CORPUS = "Géométrie synthétique de test : aucune donnée de projet réelle ni inventée ; tailles illustratives (X.1-10), non des engagements de capacité.";
 
 /** Ce que la scène de REF-02 §18.2 demande et que le document `studio-document/1` ne peut pas représenter. */

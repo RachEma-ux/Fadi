@@ -1,7 +1,7 @@
 import type { StudioCommand, StudioDocument } from "../document-2d.js";
 import { commandesDuDocument } from "./commandes.js";
 import { PARAMETRES_S2, planDeNiveau } from "./s2-niveau.js";
-import { AVERTISSEMENT_CORPUS, GRAINES_CORPUS, LICENCE_CORPUS } from "./types.js";
+import { AVERTISSEMENT_CORPUS, GRAINES_CORPUS, LICENCE_CORPUS, type CouvertureCorpus } from "./types.js";
 
 /**
  * S6 — étude à variantes et révisions (X.1-06). REF-02 §18.2 : « étude avec plusieurs variantes, révisions, dossiers et
@@ -43,6 +43,8 @@ export interface PlanS6 {
   synthetique: true;
   licence: string;
   avertissement: string;
+  /** Ce que l'étude représente de la définition REF-02 §18.2 et ce qu'elle déclare absent. */
+  couverture: CouvertureCorpus;
   etude: string;
   base: StudioDocument;
   variantes: VarianteS6[];
@@ -72,6 +74,19 @@ export function planS6(taille = 100): PlanS6 {
   const ligne = (id: string, y: number): StudioCommand => ({ toolId: "studio.dessin.ligne", params: { id, type: "line", layerId: "axes", start: { x: -3, y }, end: { x: -1, y } } });
   return {
     scene: "S6", definition: DEFINITION_S6, taille, graine: GRAINES_CORPUS.S6, synthetique: true, licence: LICENCE_CORPUS, avertissement: AVERTISSEMENT_CORPUS,
+    couverture: {
+      representes: [
+        "plusieurs variantes : A initiale, B dérivée d'une révision antérieure de A, C dérivée de la tête de A",
+        "révisions : une enveloppe de commandes par étape (six étapes), rejeu d'une enveloppe sans révision en double (recette)",
+        "dossier : une feuille et un dossier de conception sur la tête de A",
+        "contrôles : trois exigences de recette contrôlées sur chaque tête, statuts et conclusions attendus",
+        "comparaison de révisions entre variantes (A ↔ B)",
+      ],
+      absents: [
+        { element: "exigences réglementaires", raison: "aucune valeur réglementaire n'est inventée : exigences de recette synthétiques, source déclarée" },
+        { element: "fusion de variantes", raison: "le plan dérive et compare des variantes ; il n'en fusionne aucune" },
+      ],
+    },
     etude: "Étude synthétique S6 (corpus de qualification)", base: doc,
     variantes: [
       { cle: "A", nom: "Variante A (synthétique)", depuis: null },

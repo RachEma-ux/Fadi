@@ -1,4 +1,4 @@
-import { controlerLiens, validerCote, type StudioDimension } from "../objets/cote.js";
+import { controlerLiens, studioDimensionValue, validerCote, type StudioDimension } from "../objets/cote.js";
 import { validerForme } from "../objets/index.js";
 import { validerSolide, type StudioSolid } from "../objets-3d/solides.js";
 import { controlerLiensAnnotation, validerAnnotation } from "../objets/annotation.js";
@@ -145,7 +145,6 @@ export function measureStudioDimension(document: StudioDocument, id: string): St
   identifier(id, "measure.id");
   const found = d.dimensions?.find((o) => o.id === id);
   if (!found) return null;
-  return found.toResolve
-    ? { id, status: "to-resolve", value: null, unit: "m", frame: "local-2d" }
-    : { id, status: "resolved", value: Math.hypot(found.end.x - found.start.x, found.end.y - found.start.y), unit: "m", frame: "local-2d" };
+  const value = studioDimensionValue(found);
+  return { id, status: value === null ? "to-resolve" : "resolved", value, unit: "m", frame: "local-2d" };
 }

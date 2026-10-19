@@ -2,18 +2,31 @@
  * Mesure des recherches spatiales (C.1-01) : contrôle léger du script (toujours joué : petites tailles, résultats
  * identiques entre index et parcours linéaire) et **mesure complète derrière `STUDIO_MESURE_SPATIALE=1`**
  * (`npm run mesure:recherches-spatiales --workspace=@fadi/web`) : corpus S1–S5 et S7 à 100 / 10 000 / 100 000
- * primitives, rapport `mesures.json` et `rapport.md` dans `OUT` (par défaut `atelier-captures/mesure-recherches-spatiales`
- * à la racine du dépôt, jamais versionné). Mesure seulement : aucune assertion de durée, aucun seuil.
+ * primitives, rapport `mesures.json` et `rapport.md` dans `STUDIO_MESURE_OUT` (par défaut
+ * `atelier-captures/mesure-recherches-spatiales`). Le dossier de sortie est **toujours** sous `<racine>/atelier-captures/`
+ * (jamais versionné) : tout autre chemin est refusé. Mesure seulement : aucune assertion de durée, aucun seuil.
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { cpus, platform, release, totalmem } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { SCENES_DOCUMENTS, TAILLES_ILLUSTRATIVES } from "@parcours/atelier-model/studio-corpus";
 import { mesurerCorpus, rapportMarkdown, statistiques, type MesureCorpus } from "./mesure-spatiale";
 
 const horloge = () => performance.now();
+const RACINE = resolve(dirname(fileURLToPath(import.meta.url)), "../../../../../..");
+
+/** Dossier de sortie de la mesure : résolu depuis la racine du dépôt, refusé hors de `<racine>/atelier-captures/`. */
+function dossierSortieMesure(racine: string, demande: string | undefined): string {
+  const captures = resolve(racine, "atelier-captures");
+  const out = resolve(racine, demande ?? "atelier-captures/mesure-recherches-spatiales");
+  const rel = relative(captures, out);
+  if (rel === "" || rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel)) {
+    throw new Error(`STUDIO_MESURE_OUT doit désigner un sous-dossier de ${captures}${sep} (reçu : ${demande ?? "(défaut)"}) : la mesure n'écrit jamais ailleurs.`);
+  }
+  return out;
+}
 
 describe("Mesure des recherches spatiales : contrôle du script", () => {
   it("statistiques au rang le plus proche (valeurs effectivement mesurées)", () => {
@@ -32,6 +45,15 @@ describe("Mesure des recherches spatiales : contrôle du script", () => {
       }
     }
   });
+  it("sortie forcée sous <racine>/atelier-captures/ : STUDIO_MESURE_OUT hors de ce dossier refusé", () => {
+    const r = resolve("/depot");
+    expect(dossierSortieMesure(r, undefined)).toBe(resolve(r, "atelier-captures/mesure-recherches-spatiales"));
+    expect(dossierSortieMesure(r, "atelier-captures/essai")).toBe(resolve(r, "atelier-captures/essai"));
+    expect(dossierSortieMesure(r, resolve(r, "atelier-captures/a/b"))).toBe(resolve(r, "atelier-captures/a/b"));
+    for (const refuse of ["atelier-captures", "atelier-captures/../docs", "docs/atelier/captures", "/tmp/mesure", "../hors-depot", "atelier-captures-bis/x"]) {
+      expect(() => dossierSortieMesure(r, refuse), refuse).toThrow(/STUDIO_MESURE_OUT/);
+    }
+  });
   it("rapport sans seuil ni verdict", () => {
     const m = mesurerCorpus("S3", 100, { requetes: 5, echauffement: 0, graine: 1, maintenant: horloge });
     const md = rapportMarkdown([m], { date: "essai" });
@@ -41,9 +63,8 @@ describe("Mesure des recherches spatiales : contrôle du script", () => {
 });
 
 describe.skipIf(process.env.STUDIO_MESURE_SPATIALE !== "1")("Mesure complète (STUDIO_MESURE_SPATIALE=1)", () => {
-  it("S1–S5, S7 × 100 / 10 000 / 100 000 primitives : rapport écrit dans OUT", () => {
-    const racine = resolve(dirname(fileURLToPath(import.meta.url)), "../../../../../..");
-    const out = resolve(racine, process.env.OUT ?? "atelier-captures/mesure-recherches-spatiales");
+  it("S1–S5, S7 × 100 / 10 000 / 100 000 primitives : rapport écrit dans STUDIO_MESURE_OUT (sous atelier-captures/)", () => {
+    const out = dossierSortieMesure(RACINE, process.env.STUDIO_MESURE_OUT);
     mkdirSync(out, { recursive: true });
     const requetes = Number(process.env.REQUETES ?? "100");
     const tailles = (process.env.TAILLES ?? TAILLES_ILLUSTRATIVES.join(",")).split(",").map(Number);

@@ -14,6 +14,7 @@ import { corpusS3 } from "./s3-dense.js";
 import { corpusS4 } from "./s4-immeuble.js";
 import { corpusS5 } from "./s5-libre.js";
 import { corpusS7 } from "./s7-hors-reseau.js";
+import type { PlanS6 } from "./s6-variantes.js";
 import type { CorpusStudio, SceneCorpus } from "./types.js";
 
 export * from "./types.js";
@@ -21,12 +22,12 @@ export { primitivesDu, primitivesParFeuillet } from "./commun.js";
 export { commandesDuDocument } from "./commandes.js";
 export { aleaMotif, alea, type Alea } from "./alea.js";
 export { corpusS1, DEFINITION_S1, MOTIF_S1 } from "./s1-detail.js";
-export { corpusS2, DEFINITION_S2, MOTIF_S2, PARAMETRES_S2 } from "./s2-niveau.js";
+export { corpusS2, COUVERTURE_S2, DEFINITION_S2, MOTIF_S2, PARAMETRES_S2 } from "./s2-niveau.js";
 export { corpusS3, DEFINITION_S3, MOTIF_S3 } from "./s3-dense.js";
 export { corpusS4, DEFINITION_S4, MOTIF_S4 } from "./s4-immeuble.js";
 export { corpusS5, DEFINITION_S5, MOTIF_S5 } from "./s5-libre.js";
 export { DEFINITION_S6, planS6, type CleVarianteS6, type EtapeS6, type ExigenceS6, type PlanS6, type VarianteS6 } from "./s6-variantes.js";
-export { corpusS7, DEFINITION_S7, SESSION_HORS_RESEAU_S7 } from "./s7-hors-reseau.js";
+export { corpusS7, COUVERTURE_S7, DEFINITION_S7, SESSION_HORS_RESEAU_S7 } from "./s7-hors-reseau.js";
 export * from "./oracles.js";
 
 /** Scènes générées comme corpus de documents (S6 est un plan d'étude : `planS6`). */
@@ -44,6 +45,9 @@ export const empreinteDocument = (doc: StudioDocument): string => studioSha256(J
 
 /** Empreinte du corpus (REF-02 §18.2) : SHA-256 de la suite des empreintes de ses feuillets. */
 export const empreinteCorpus = (corpus: CorpusStudio): string => studioSha256(corpus.documents.map(empreinteDocument).join("\n"));
+
+/** Empreinte du plan S6 entier (base, variantes, étapes, feuille, dossier, exigences, couverture) : SHA-256 de son JSON. */
+export const empreintePlanS6 = (plan: PlanS6): string => studioSha256(JSON.stringify(plan));
 
 export interface ReferenceVisuelle {
   /** SVG de référence de chaque feuillet (`exportStudioSvg`, options par défaut). */
