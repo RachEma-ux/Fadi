@@ -358,6 +358,11 @@ jobs:
         run: |
           set -o pipefail
           node apps/web/e2e/studio-profils.mjs 2>&1 | tee -a e2e.log
+      - name: Recette Studio hors ligne — brouillon conservé au rechargement, rejeu des enveloppes (mêmes requestId, aucune révision en double), conflit sans écrasement (apps/web/e2e/studio-hors-ligne.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-hors-ligne node apps/web/e2e/studio-hors-ligne.mjs 2>&1 | tee -a e2e.log
       - name: Recette des préférences de notification — type masqué, projet en sourdine, état lu relu (apps/web/e2e/notifications-preferences.mjs)
         if: ${{ matrix.shard == 'parcours' }}
         run: |
