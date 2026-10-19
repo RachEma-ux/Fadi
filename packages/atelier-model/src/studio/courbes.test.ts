@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   studioArcFromCenter, studioArcFromThreePoints, studioArcSweep, studioBulgeArc, studioCirclePoints, studioOffset, studioPolylinePath,
-  studioRingSimple, studioShapeAnchors, studioShapeBoundPoints, studioSignedArea, studioSvgPath, studioTriangulate,
+  studioPathSimple, studioRingSimple, studioShapeAnchors, studioShapeBoundPoints, studioSignedArea, studioSvgPath, studioTriangulate, STUDIO_ONGLET_MAX,
 } from "./courbes.js";
 import { comparerDocumentsStudio } from "./comparaison.js";
 import {
-  applyStudioCommands, newStudioDocument, studioAnchorPoint, StudioValidationError, validateStudioDocument,
+  applyStudioCommands, newStudioDocument, studioAnchorPoint, studioExtrudedRingVertices, STUDIO_LIMITS, StudioValidationError, validateStudioDocument,
   type StudioArc, type StudioCircle, type StudioCommand, type StudioDocument, type StudioPolyline, type StudioShape,
 } from "./document-2d.js";
 import { exportStudioDxf, exportStudioSvg } from "./export.js";
@@ -354,5 +354,55 @@ describe("Studio — courbes dans les échanges et vues dérivées", () => {
     const motif = new RegExp(lien.properties.anchor.anyOf[1].pattern);
     expect(["vertex-0", "mid-12"].every((a) => motif.test(a))).toBe(true);
     expect(["vertex-01", "vertex-", "corner"].some((a) => motif.test(a))).toBe(false);
+  });
+});
+
+describe("Studio — courbes : corrections de revue (#195)", () => {
+  const dxfDe = (entites: string) => ["0|SECTION|2|HEADER|9|$INSUNITS|70|6|0|ENDSEC|0|SECTION|2|ENTITIES", entites, "0|ENDSEC|0|EOF"].join("|").split("|").join("\r\n") + "\r\n";
+
+  it("import : polyligne fermée dont le dernier sommet répète le premier — le renflement de fermeture est gardé", () => {
+    const r = lireDxfStudio(dxfDe("0|LWPOLYLINE|8|0|90|4|70|1|10|0|20|0|10|1|20|0|10|1|20|1|42|0.5|10|0|20|0"));
+    expect(r.rapport.nonPris).toEqual([{ type: "LWPOLYLINE (segment de longueur nulle)", nombre: 1 }]);
+    const [p] = applyStudioCommands(newStudioDocument("r"), r.commandes).objects;
+    expect(p).toMatchObject({ type: "polyline", closed: true, points: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }], bulges: [0, 0, 0.5] });
+  });
+
+  it("import : ARC de 0° à 360° (angles confondus) = cercle", () => {
+    const r = lireDxfStudio(dxfDe("0|ARC|8|0|10|1|20|2|40|3|50|0|51|360"));
+    expect(r.rapport.nonPris).toEqual([]);
+    expect(r.rapport.entites).toMatchObject({ cercles: 1, arcs: 0 });
+    expect(applyStudioCommands(newStudioDocument("r"), r.commandes).objects[0]).toMatchObject({ type: "circle", center: { x: 1, y: 2 }, radius: 3 });
+  });
+
+  it("décalage : un résultat qui se recoupe est refusé (C vers l'intérieur, polyligne ouverte rabattue sur elle-même)", () => {
+    const c: StudioPolyline = { id: "c", type: "polyline", closed: true, points: [{ x: 0, y: 0 }, { x: 6, y: 0 }, { x: 6, y: 2 }, { x: 2, y: 2 }, { x: 2, y: 4 }, { x: 6, y: 4 }, { x: 6, y: 6 }, { x: 0, y: 6 }] };
+    expect(studioOffset(c, -1.5, "n")).toMatchObject({ ok: false });
+    expect(studioOffset(c, -0.5, "n")).toMatchObject({ ok: true });
+    const crochet: StudioPolyline = { id: "o", type: "polyline", closed: false, points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 1, y: 10 }, { x: 1, y: 0.5 }] };
+    expect(studioOffset(crochet, 1, "n")).toMatchObject({ ok: false, raison: expect.stringContaining("recouperait") });
+    expect(studioOffset(crochet, -0.2, "n")).toMatchObject({ ok: true });
+    expect(studioPathSimple(crochet.points, false)).toBe(true);
+    expect(studioPathSimple([{ x: 0, y: 0 }, { x: 2, y: 0 }, { x: 1, y: 1 }, { x: 1, y: -1 }], false)).toBe(false);
+  });
+
+  it("décalage : angle très aigu — onglet au-delà de 10 × la distance refusé, aucun chanfrein inventé", () => {
+    const pointe: StudioPolyline = { id: "o", type: "polyline", closed: false, points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 0, y: 0.5 }] };
+    expect(studioOffset(pointe, -0.1, "n")).toMatchObject({ ok: false, raison: expect.stringContaining("onglet") });
+    expect(STUDIO_ONGLET_MAX).toBe(10);
+  });
+
+  it("budget d'écriture des extrusions de polylignes fermées : refus au-delà, révision existante lisible", () => {
+    const n = 1024;
+    const anneau = Array.from({ length: n }, (_, i) => ({ x: Math.round(Math.cos((2 * Math.PI * i) / n) * 1e6) / 1e3, y: Math.round(Math.sin((2 * Math.PI * i) / n) * 1e6) / 1e3 }));
+    const poly = (i: number, extrude: boolean): StudioPolyline => ({ id: `p${i}`, type: "polyline", points: anneau, closed: true, ...(extrude ? { extrusion: { base: 0, height: 1 } } : {}) });
+    const max = Math.floor(STUDIO_LIMITS.extrudedRingsTotal / n);
+    const plein = doc(...Array.from({ length: max }, (_, i) => poly(i, true)), poly(max, false));
+    expect(studioExtrudedRingVertices(plein.objects)).toBe(max * n);
+    refuse(plein, { toolId: "studio.objet.extruder", params: { ids: [`p${max}`], base: 0, height: 1 } });
+    // Au-delà du budget (révision ancienne) : lisible, et un lot qui n'aggrave pas la charge passe.
+    const ancien = doc(...Array.from({ length: max + 1 }, (_, i) => poly(i, true)));
+    expect(validateStudioDocument(ancien).objects).toHaveLength(max + 1);
+    expect(appliquer(ancien, { toolId: "studio.dessin.ligne", params: { id: "l", type: "line", start: { x: 0, y: 0 }, end: { x: 1, y: 0 } } }).objects).toHaveLength(max + 2);
+    refuse(ancien, { toolId: "studio.dessin.polyligne", params: { ...poly(999, true), id: "x" } });
   });
 });

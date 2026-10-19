@@ -12,7 +12,7 @@ import { STUDIO_BULGE_MAX, STUDIO_DEFAULT_LAYER_ID, STUDIO_LIMITS, StudioValidat
  * `options.unite` (jamais devinée, ni par `$MEASUREMENT` ni par l'étendue du dessin). Repère : les coordonnées X, Y du
  * fichier deviennent celles du repère `local-2d` du document, sans translation ni rotation ; Z est ignoré (compté).
  *
- * Entités prises : LINE → ligne ; CIRCLE → cercle ; ARC → arc (angles du fichier en degrés, sens trigonométrique, ramenés
+ * Entités prises : LINE → ligne ; CIRCLE → cercle ; ARC → arc (cercle si ses angles se confondent, 0° → 360°) (angles du fichier en degrés, sens trigonométrique, ramenés
  * en radians dans [0 ; 2π[) ; LWPOLYLINE / POLYLINE 2D à segments courbes (renflement 42 non nul) → polyligne avec ses
  * renflements ; LWPOLYLINE / POLYLINE 2D droite fermée de 4 sommets parallèle aux axes → rectangle, sinon chaque segment
  * droit → ligne (comme avant les courbes : un import déjà fait se rejoue à l'identique). Tout le reste (TEXT, INSERT,
@@ -348,6 +348,7 @@ function lire(ents: Entite[]): Lecture {
           return;
         }
         const sommets: StudioPoint[] = [], bulges: number[] = [];
+        let fermeture = renflements[n - 1] ?? 0;
         for (let i = 0; i < n; i++) {
           const p = pts[i]!, precedent = sommets[sommets.length - 1];
           if (precedent && precedent.x === p.x && precedent.y === p.y) {
@@ -359,10 +360,11 @@ function lire(ents: Entite[]): Lecture {
         }
         if (ferme && sommets.length > 1 && sommets[0]!.x === sommets[sommets.length - 1]!.x && sommets[0]!.y === sommets[sommets.length - 1]!.y) {
           compter(`${e.type} (segment de longueur nulle)`);
+          // Dernier sommet répétant le premier : le segment qui y menait devient le segment de fermeture, renflement compris.
           sommets.pop();
-          bulges.pop();
+          fermeture = bulges.pop() ?? 0;
         }
-        if (ferme) bulges.push(renflements[n - 1] ?? 0);
+        if (ferme) bulges.push(fermeture);
         if (sommets.length < 2 || (ferme && sommets.length < 3 && bulges.every((b) => b === 0))) {
           compter(`${e.type} (moins de deux sommets distincts)`);
           return;
@@ -410,7 +412,8 @@ function lire(ents: Entite[]): Lecture {
           continue;
         }
         const a0 = studioAngleNormal((d0 * Math.PI) / 180), a1 = studioAngleNormal((d1 * Math.PI) / 180);
-        if (a0 === a1) compter("ARC (angle nul)");
+        // Angles égaux une fois ramenés dans [0 ; 360°[ (0° → 360°) : en DXF, un arc d'un tour complet, soit un cercle.
+        if (a0 === a1) formes.push({ type: "cercle", source: e.type, calque, c: { x, y }, r });
         else formes.push({ type: "arc", source: e.type, calque, c: { x, y }, r, a0, a1 });
       }
     } else if (e.type === "LINE") {
