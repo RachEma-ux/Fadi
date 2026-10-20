@@ -1,6 +1,6 @@
 # Recommandation d'architecture — Sandbox
 
-20 octobre 2026 · Roch · **Statut : orientation décidée ; trois points restent à valider avant tout code** (aucune implémentation engagée)
+20 octobre 2026 · Roch · **Statut : toutes les décisions sont prises ; le lot 1 peut démarrer** (aucune implémentation engagée)
 
 Le Sandbox devient un module autonome, avec son propre registre d'outils, une interface par défaut proche de SketchUp et des pictogrammes Tabler.
 
@@ -9,13 +9,13 @@ Le Sandbox devient un module autonome, avec son propre registre d'outils, une in
 | Date | Décision | Statut | Section |
 | --- | --- | --- | --- |
 | 20 octobre 2026 | Le Sandbox est un outil **autonome** ; il ne rejoindra pas le domaine « 01 Dessin et modélisation » | Décidé | 1 |
-| 20 octobre 2026 | Le Sandbox devient un **module à part** (`apps/web/src/modules/sandbox/`, adresse `/sandbox`) | Décidé (8ᵉ module à inscrire dans `docs/architecture.md`) | 1 |
+| 20 octobre 2026 | Le Sandbox devient un **module à part** (`apps/web/src/modules/sandbox/`, adresse `/sandbox`) | Décidé ; **8ᵉ module validé**, à inscrire dans `docs/architecture.md` au lot 1 | 1 |
 | 20 octobre 2026 | Un **catalogue d'outils qui fonctionne comme celui du 01**, sans jamais réutiliser son code | Décidé | 2 |
 | 20 octobre 2026 | L'interface par défaut **ressemble à celle de SketchUp** | Décidé | 3 |
 | 20 octobre 2026 | Les icônes sont des **pictogrammes**, jamais des caractères Unicode ni du texte | Décidé | 4 |
 | 20 octobre 2026 | Bibliothèque de pictogrammes : **Tabler Icons** (MIT), après comparaison avec Lucide et IconPark | Décidé | 4 |
-| — | Enregistrement des préférences dans le navigateur | À confirmer | 2 |
-| — | Catalogue de référence comme contenu initial du registre | À valider | 2 |
+| 20 octobre 2026 | Préférences d'outils **enregistrées sur le serveur, par compte** (pas dans le navigateur) | Décidé ; lève la règle « aucun serveur » pour les seules préférences | 2 |
+| 20 octobre 2026 | Le **catalogue des 86 entrées** est le contenu initial du registre | Décidé | 2 |
 | 20 octobre 2026 | **12 pictogrammes sur mesure** dessinés dans le style Tabler et **couleurs par famille**, validés sur la planche de comparaison | Décidé | 4 |
 
 Référence : [Catalogue Sandbox — 86 entrées](Catalogue_Sandbox_86_entrees.md).
@@ -37,7 +37,12 @@ Référence : [Catalogue Sandbox — 86 entrées](Catalogue_Sandbox_86_entrees.m
   - favoris et regroupements nommés ;
   - choix des outils de la barre gauche ;
   - bouton « Réinitialiser ».
-- **Enregistrement des préférences — à confirmer (voir « Points restant à valider »)** : la proposition est de les garder dans le navigateur, conformément à la règle « aucun serveur » du Sandbox. Aucun lot ne fige ce choix avant sa validation.
+- **Enregistrement des préférences : sur le serveur, par compte** (décision du 20 octobre 2026). Conséquences :
+  - une table propre au Sandbox (par exemple `sandbox_tool_preferences`), jamais `studio_tool_preferences` du 01, et des routes API dédiées sous `/sandbox/preferences`, réservées au compte connecté ;
+  - le Sandbox reçoit un client minimal pour ces seules routes ; le test d'indépendance l'autorise explicitement et continue d'interdire tout autre appel serveur, l'import du client API général et tout code du Studio ou de l'Atelier ;
+  - **seules les préférences d'outils** passent par le serveur : le brouillon de dessin du Sandbox reste local, comme aujourd'hui ;
+  - hors connexion ou en cas d'erreur, la dernière version reçue sert de copie locale, et le profil Standard s'applique si rien n'a jamais été reçu ;
+  - la migration de la nouvelle table et les tests de l'API suivent les règles du dépôt (garde des bases de test, DB-3 encore fermé).
 
 ## 3. Une interface par défaut proche de SketchUp — décidé
 
@@ -101,11 +106,9 @@ Un lot à la fois, chacun sur sa branche, avec sa PR et une CI verte :
 5. Personnalisation : profils, favoris, regroupements.
 6. Harmonisation des raccourcis.
 
-## Points restant à valider avant le premier lot
+## Prochaine étape
 
-1. Inscrire le 8ᵉ module dans `docs/architecture.md`, qui en fixe 7 (le principe est décidé).
-2. Confirmer l'enregistrement des préférences dans le navigateur.
-3. Valider le catalogue de référence comme contenu initial du registre.
+Toutes les décisions sont prises (20 octobre 2026). Le **lot 1 — déplacement du module** peut démarrer : il inscrit aussi le 8ᵉ module dans `docs/architecture.md`. Les préférences sur le serveur arrivent au lot 5, avec la personnalisation.
 
 ## Sources
 
