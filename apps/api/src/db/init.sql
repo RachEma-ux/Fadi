@@ -857,6 +857,27 @@ ALTER TABLE studio_tool_preferences DROP CONSTRAINT IF EXISTS studio_tool_prefer
 ALTER TABLE studio_tool_preferences DROP CONSTRAINT IF EXISTS studio_tool_preferences_manifest_check,
   ADD CONSTRAINT studio_tool_preferences_manifest_check
   CHECK (manifest_version IS NULL OR manifest_version ~ '^studio-tool-manifest/[1-9][0-9]*$') NOT VALID;
+-- Préférences d'outils du Sandbox d'un compte (lot 5, décision du maître d'ouvrage du 20 octobre 2026) : profil des
+-- barres (standard, personnel, metier:<id>), barre gauche personnelle, favoris et regroupements nommés, identifiants du
+-- registre REGISTRE_SANDBOX vérifiés par le serveur. Table PROPRE au Sandbox (jamais studio_tool_preferences du 01) ;
+-- visibilité des outils seulement, aucun dessin (le brouillon du Sandbox reste dans le navigateur). Additive ;
+-- disparaît avec le compte (cascade).
+CREATE TABLE IF NOT EXISTS sandbox_tool_preferences (
+  user_id text PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  profile text NOT NULL DEFAULT 'standard',
+  left_bar jsonb NOT NULL DEFAULT '[]'::jsonb,
+  favorites jsonb NOT NULL DEFAULT '[]'::jsonb,
+  groups jsonb NOT NULL DEFAULT '[]'::jsonb,
+  format text NOT NULL DEFAULT 'sandbox-preferences/1',
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE sandbox_tool_preferences DROP CONSTRAINT IF EXISTS sandbox_tool_preferences_profile_check,
+  ADD CONSTRAINT sandbox_tool_preferences_profile_check
+  CHECK (profile ~ '^(standard|personnel|metier:[a-z0-9-]{1,40})$') NOT VALID;
+ALTER TABLE sandbox_tool_preferences DROP CONSTRAINT IF EXISTS sandbox_tool_preferences_lists_check,
+  ADD CONSTRAINT sandbox_tool_preferences_lists_check
+  CHECK (jsonb_typeof(left_bar) = 'array' AND jsonb_typeof(favorites) = 'array' AND jsonb_typeof(groups) = 'array'
+    AND jsonb_array_length(groups) <= 20) NOT VALID;
 -- Publications Studio, jamais de suppression (E.4-06) : une DELETE directe d'un évènement du journal est refusée tant
 -- que sa publication existe ; une DELETE directe d'une publication diffusée ou retirée est refusée tant que son projet
 -- existe. Seule la cascade (parent déjà supprimé dans la même instruction, donc invisible) passe ; la route

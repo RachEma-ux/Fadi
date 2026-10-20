@@ -4,6 +4,7 @@ import { annuler, enregistrer, historiqueInitial, operationAAnnuler, operationAR
 import { FORMAT_BROUILLON, CLE_BROUILLON, lireBrouillon, serialiserBrouillon } from "./brouillon";
 import { commenceSaisie, disponibilite, estRecherche, lotPrevu, outilDuClavier, outilsBarre, raccourciClavier, sectionsGrille, titreOutil, toucheEtat } from "./outils-planche";
 import { trianglesFace } from "./vue-planche";
+import { entreesSandbox } from "@parcours/sandbox-planche-model";
 
 const outil = (id: string): Outil => {
   const o = outilParId(id);
@@ -64,16 +65,18 @@ describe("Planche — brouillon local", () => {
 });
 
 describe("Planche — barre, grille et disponibilité (R20)", () => {
-  it("la barre suit l'ordre relevé et ne contient que les outils « barre » du catalogue", () => {
+  it("la barre suit l'ordre de SketchUp du registre (lot 4) et ne contient que les outils « barre » du registre", () => {
     const ids = outilsBarre().map((o) => o.id);
-    expect(ids.slice(0, 4)).toEqual(["selection", "gomme", "ligne", "rectangle"]);
-    expect(new Set(ids)).toEqual(new Set(OUTILS.filter((o) => o.emplacement === "barre").map((o) => o.id)));
+    expect(ids.slice(0, 5)).toEqual(["selection", "gomme", "ligne", "arc", "rectangle"]);
+    expect(new Set(ids)).toEqual(new Set(entreesSandbox("outil").filter((e) => e.emplacement === "barre").map((e) => e.id)));
   });
 
   it("la grille regroupe tous les outils « grille » par section, sans doublon", () => {
     const sans = () => false;
     const ids = sectionsGrille(OUTILS, sans).flatMap((s) => s.outils.map((o) => o.id));
-    expect(ids.sort()).toEqual(OUTILS.filter((o) => o.emplacement === "grille").map((o) => o.id).sort());
+    expect(ids.sort()).toEqual(entreesSandbox("outil").filter((e) => e.emplacement === "grille").map((e) => e.id).sort());
+    // Lot 4 : une section par famille du registre, dans l'ordre de SketchUp.
+    expect(sectionsGrille().map((s) => s.famille)).toEqual(["selection", "dessin", "modification", "solide", "materiau", "mesure", "annotation", "camera"]);
     expect(sectionsGrille().map((s) => s.libelle)).toContain("Dessin");
   });
 
