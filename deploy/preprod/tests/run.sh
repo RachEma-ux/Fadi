@@ -93,6 +93,8 @@ echo "== Propagation des échecs"
 B=$(dispo codes)
 attendu 0  "build réussi" -- fp build
 attendu nz "build en échec → code non nul" "échec simulé (build)" -- fpe MOCK_FAIL=build build
+attendu 0  "build-app réussi" -- fp build-app
+attendu nz "build-app en échec → code non nul" "échec simulé (build)" -- fpe MOCK_FAIL=build build-app
 attendu 0  "check réussi" -- fp check
 attendu nz "check en échec → code non nul, journal nommé" "journal : check.log" -- fpe MOCK_FAIL=run-check check
 attendu 0  "backup réussi" -- fp backup
