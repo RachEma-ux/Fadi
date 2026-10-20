@@ -8,7 +8,6 @@ The consolidation commit includes every branch tip below as a parent (or ancesto
 
 | Original branch | Tip before consolidation |
 | --- | --- |
-| `origin` | `e3a3d14867ff09a08e3c643797a8b286eeb0497b` |
 | `ccr-119809c5-an2z9a` | `116ded5bb782568f9dff1048ff41b5aba24eab95` |
 | `ccr-2f8810e5-239xsq` | `91403ad8d0b0b37cd5ba9fa1d5fa706ccede6167` |
 | `chore/149-production-pr148-controlee` | `9ae63edba6621dcced5d7f54727463a898bd1007` |

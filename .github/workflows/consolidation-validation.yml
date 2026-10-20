@@ -26,5 +26,7 @@ jobs:
         run: ../../node_modules/.bin/vite build --config vite.front.config.ts
       - name: Validate PHP entry point
         run: php -l deploy/fadifront/index.php
+      - name: Validate branch cleanup without network or mutations
+        run: python3 scripts/test-consolidate-branches-cleanup.py -v
       - name: Test preproduction commands with disposable fixtures and Docker doubles
         run: bash deploy/preprod/tests/run.sh
