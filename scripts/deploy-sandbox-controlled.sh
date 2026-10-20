@@ -12,7 +12,8 @@
 #  - ce bloc (CREATE TABLE IF NOT EXISTS + contraintes NOT VALID, idempotent) est applique seul, apres le point de
 #    sauvegarde et avant la bascule ; l'application demarre ensuite avec MIGRATE_ON_START=0. L'ancienne image ignore la
 #    table : le retour a l'image precedente reste compatible, sans restaurer la base ;
-#  - controles apres bascule : /sandbox repond 200 et /sandbox/preferences 401 (route livree, reservee au compte).
+#  - controles apres bascule : /sandbox repond 200, /sandbox/preferences 401 (route livree, reservee au compte) et
+#    /version sert le SHA et la date de cette construction (build-args FADI_COMMIT / FADI_BUILD_DATE, comme la CI).
 set -Eeuo pipefail
 umask 077
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
@@ -150,7 +151,9 @@ docker tag "$OLD_IMAGE" "$OLD_TAG"
 FREE_KB=$(df -Pk "$BASE" | awk 'END {print $4}')
 (( FREE_KB >= 6291456 )) || stop 'Moins de 6 Gio libres dans /mnt/data.'
 docker image save -o "$RUN/image-retour.tar" "$OLD_TAG" > "$RUN/image-retour.log" 2>&1
-timeout 1800 docker build --label "org.opencontainers.image.revision=$TARGET" -t "$NEW_TAG" "$RUN/source" > "$RUN/construction.log" 2>&1
+# Version servie par GET /version, comme la CI (Dockerfile : FADI_COMMIT, FADI_BUILD_DATE).
+BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+timeout 1800 docker build --build-arg "FADI_COMMIT=$TARGET" --build-arg "FADI_BUILD_DATE=$BUILD_DATE" --label "org.opencontainers.image.revision=$TARGET" -t "$NEW_TAG" "$RUN/source" > "$RUN/construction.log" 2>&1
 NEW_IMAGE=$(docker image inspect -f '{{.Id}}' "$NEW_TAG")
 python3 - "$RUN" "$OLD_IMAGE" "$NEW_IMAGE" <<'PY'
 import copy, json, pathlib, sys
@@ -198,6 +201,12 @@ for path in / /accueil /sandbox; do
   CODE=$(curl -sS --connect-timeout 5 --max-time 20 -o /dev/null -w '%{http_code}' "$URL$path")
   [[ $CODE == 200 ]] || stop "Reponse HTTP inattendue sur $path : $CODE"
 done
+curl -fsS --connect-timeout 5 --max-time 20 "$URL/version" > "$RUN/version.json" || stop 'GET /version en echec.'
+python3 - "$RUN/version.json" "$TARGET" "$BUILD_DATE" <<'PY' || stop 'GET /version ne sert pas le SHA et la date de cette construction.'
+import json, sys
+v=json.load(open(sys.argv[1]))
+sys.exit(0 if v.get('commit')==sys.argv[2] and v.get('buildDate')==sys.argv[3] else 1)
+PY
 for path in /projects /sandbox/preferences; do
   CODE=$(curl -sS --connect-timeout 5 --max-time 20 -H 'Accept: application/json' -o /dev/null -w '%{http_code}' "$URL$path")
   [[ $CODE == 401 ]] || stop "La verification du controle d acces $path a echoue : $CODE"

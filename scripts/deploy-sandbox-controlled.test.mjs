@@ -45,6 +45,9 @@ test('cible et usage : SHA complet, --depuis exige, aucune migration au demarrag
   assert.match(script, /--deploy --depuis/);
   assert.match(script, /\['MIGRATE_ON_START'\]='0'/);
   assert.doesNotMatch(script, /MIGRATE_ON_START'\]='1'/);
+  // Version servie par /version : construite avec le SHA cible et verifiee apres bascule.
+  assert.match(script, /--build-arg "FADI_COMMIT=\$TARGET" --build-arg "FADI_BUILD_DATE=\$BUILD_DATE"/);
+  assert.match(script, /"\$URL\/version"/);
 });
 
 test('la seule migration autorisee est copiee mot pour mot de init.sql', () => {
