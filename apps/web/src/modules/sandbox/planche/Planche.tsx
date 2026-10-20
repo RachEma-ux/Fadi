@@ -32,7 +32,6 @@ import {
   copier,
   cross,
   differencePlanche,
-  diviser,
   diviserCourbes,
   eclater,
   effacerEntites,
@@ -117,7 +116,7 @@ import { CATALOGUE, type CleMessage, t } from "../messages";
 import { ChoixLangue } from "../../../components/ChoixLangue";
 import { annuler, enregistrer, historiqueInitial, operationAAnnuler, operationARetablir, retablir, type Historique } from "./historique";
 import { chargerBrouillon, enregistrerBrouillon, stockageDisponible } from "./brouillon";
-import { OUTILS_BOOLEENS, OUTILS_CAMERA_TEMPORAIRES, afficherRaccourci, commenceSaisie, disponibilite, estOutilCamera, estRecherche, libelleOutil, lotPrevu, outilDuClavier, outilsDeBarre, pictoOutil, raccourciOutil, sectionsGrille, titreOutil, toucheEtat, type OutilCamera } from "./outils-planche";
+import { OUTILS_BOOLEENS, OUTILS_CAMERA_TEMPORAIRES, afficherRaccourci, commenceSaisie, disponibilite, estOutilCamera, estRecherche, libelleOutil, lotPrevu, nomOutil, outilDuClavier, outilsDeBarre, pictoOutil, raccourciOutil, sectionsGrille, titreOutil, toucheEtat, type OutilCamera } from "./outils-planche";
 import { HAUTEUR_OEIL_DEFAUT, OPTIONS_AFFICHAGE_DEFAUT, VuePlanche, type OptionsAffichage, type VueStandard } from "./vue-planche";
 import { DialogueComposant, DialogueDeplacer, MenuContextuel, NavigateurPlanche, PanneauAdoucir, PanneauAffichage, PanneauComposants, PanneauInfoEntite, PanneauInfoModele, PanneauOmbres, PanneauScenes, PanneauStyles, type EntreeMenu, type ParametresComposant } from "./panneaux-objets";
 import { BarreActions } from "../panneaux/BarreActions";
@@ -942,17 +941,6 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       }),
     [operer, o],
   );
-  const diviserSelection = useCallback(
-    () =>
-      operer(t("planche.menu.diviser"), (m) => {
-        const aretes = selectionDe("aretes", m);
-        if (aretes.length === 0) return null;
-        let courant = m;
-        for (const id of aretes) courant = diviser(courant, id, 2, o()).modele;
-        return { modele: courant, selection: [] };
-      }),
-    [operer, o, selectionDe],
-  );
   /** Objets O-3 : Diviser en segments (Explode Curve) — les courbes touchées par la sélection redeviennent des segments. */
   const diviserCourbeSelection = useCallback(
     () =>
@@ -1208,7 +1196,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         }
         if (aretes.length > 0) {
           entrees.push({ id: adoucies ? "durcir" : "adoucir", libelle: t(adoucies ? "planche.menu.durcir" : "planche.menu.adoucir"), separateurAvant: true, grise: readOnly, action: () => adoucirSelection(!adoucies) });
-          entrees.push({ id: "diviser", libelle: t("planche.menu.diviser"), grise: readOnly, action: diviserSelection });
+          // Lot 6 : « Diviser » lance l'outil Diviser sur l'arête choisie (nombre de segments), comme SketchUp.
+          entrees.push({ id: "diviser", libelle: t("planche.menu.diviser"), grise: readOnly, action: () => choisirOutil("diviser") });
           if (aretes.some((id) => c.aretes[id]?.courbe)) entrees.push({ id: "diviser-courbe", libelle: t("planche.menu.diviser-courbe"), grise: readOnly, action: diviserCourbeSelection });
         }
         if (occs.length > 0) {
@@ -1237,7 +1226,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       alignerVue,
       collerSelection,
       coqueSelection,
-      diviserSelection,
+      choisirOutil,
       diviserCourbeSelection,
       creerGroupeVide,
       ouvrirRenommage,
@@ -2143,7 +2132,6 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     else if (id === "composant") ouvrirDialogueComposant();
     else if (id === "eclater") eclaterSelection();
     else if (id === "rendre-unique") rendreUniqueSelection();
-    else if (id === "diviser") diviserSelection();
     else diviserCourbeSelection();
   };
   const executerNavigateur = (id: IdCommandeNavigateur) => (id === "groupe-vide" ? creerGroupeVide() : id === "deplacer-vers" ? ouvrirDeplacer() : ouvrirRenommage());
@@ -2233,6 +2221,14 @@ export function Planche({ readOnly = false }: PropsPlanche) {
               .map((id) => COMMANDES_VUE.find((c) => c.id === id)!)
               .map((c) => ({ id: c.id, picto: c.picto, libelle: t(c.libelle), titre: `${t(c.libelle)} (${afficherRaccourci(c.raccourci)})`, onClick: () => executerVue(c.id), attributs: { "data-planche-zoom": c.id === "zoom-plus" ? "plus" : "moins" } }))
           : []),
+        // Lot 6 : arête sélectionnée → l'outil Diviser (Maj+D), qui remplace la commande en double du même nom.
+        ...(((o) => {
+          if (!o || (etatSelectionObjets().aretes ?? 0) === 0) return [];
+          const raison = raisonDe(o);
+          const nom = nomOutil(o);
+          const titre = raison ? `${nom} — ${raison}` : `${nom} (${afficherRaccourci(raccourciOutil(o)!)})`;
+          return [{ id: "diviser", picto: pictoOutil(o.id), libelle: nom, texte: t("planche.objets.court.diviser"), titre, onClick: () => choisirOutil(o.id), disabled: raison !== null, attributs: { "data-planche-action-outil": o.id } }];
+        })(outilParId("diviser"))),
         ...COMMANDES_OBJETS.flatMap((c) => {
           const d = disponibiliteObjet(c.id, etatSelectionObjets());
           // Commandes d'arête (O-3) : présentes dans la barre seulement quand elles s'appliquent.
@@ -3021,7 +3017,7 @@ function InstructeurPlanche({ outil, raison }: { outil: Outil | null; raison: st
   );
 }
 
-/** Recherche d'outil (Maj + -, §4.35) : libellé français ou nom de référence, insensible aux accents. */
+/** Recherche d'outil (Maj + S depuis le lot 6, §4.35) : libellé français ou nom de référence, insensible aux accents. */
 function RechercheOutil({ lecture, onFermer, onChoisir }: { lecture: boolean; onFermer: () => void; onChoisir: (id: string) => void }) {
   const [q, setQ] = useState("");
   const [rang, setRang] = useState(0);

@@ -5,7 +5,7 @@
  * champ Mesures). Pictogrammes, raccourcis et emplacements viennent du registre unique du Sandbox
  * (`REGISTRE_SANDBOX`, lot 2) : rien n'en est recopié ici. Pur : ni DOM, ni React, ni three.js.
  */
-import { BARRE_GAUCHE_SANDBOX, OUTILS, RACCOURCIS_FADI_OUTILS, entreeSandbox, machineParId, normaliserRaccourci, outilParId, outilParRaccourci, type EntreeSandbox, type Outil, type Pictogramme, type Touche } from "@parcours/sandbox-planche-model";
+import { BARRE_GAUCHE_SANDBOX, OUTILS, RACCOURCI_RECHERCHE, RACCOURCIS_FADI_OUTILS, entreeSandbox, entreesSandbox, machineParId, normaliserRaccourci, outilParId, type EntreeSandbox, type Outil, type Pictogramme, type Touche } from "@parcours/sandbox-planche-model";
 import { LANGUE_INTERFACE, t, type CleMessage, type Langue } from "../messages";
 
 /** Outils de caméra pris en charge par l'interface (navigation D-157) ; ils n'ont pas de machine d'états. */
@@ -117,14 +117,6 @@ export function raccourciOutil(o: Pick<Outil, "id" | "raccourci">): string | nul
   return e ? e.raccourci : o.raccourci ?? RACCOURCIS_FADI[o.id] ?? null;
 }
 
-/** Outil désigné par un raccourci de la couche Fadi (forme canonique), ou `null`. */
-export function outilParRaccourciFadi(raccourci: string, catalogue: readonly Outil[] = OUTILS): Outil | null {
-  const cible = normaliserRaccourci(raccourci);
-  if (cible === "") return null;
-  const id = Object.keys(RACCOURCIS_FADI).find((k) => normaliserRaccourci(RACCOURCIS_FADI[k]!) === cible);
-  return id ? (catalogue.find((o) => o.id === id && o.raccourci === null) ?? null) : null;
-}
-
 /**
  * Nom d'un outil dans la langue de l'interface (D-163) : le libellé français du catalogue, ou en anglais son nom de
  * référence (`libelleSketchUp`). Écrit par le code et non par le traducteur du DOM, qui n'observe que la page : la
@@ -201,15 +193,25 @@ export function raccourciClavier(c: Cle): string {
   return normaliserRaccourci(parts.join("+"));
 }
 
-/** Outil désigné par un raccourci clavier (catalogue relevé d'abord, puis couche Fadi), ou `null`. */
+/** Outils du registre par raccourci canonique (lot 6 : le clavier lit le registre, raccourcis harmonisés compris). */
+const OUTILS_PAR_RACCOURCI: ReadonlyMap<string, Outil> = new Map(
+  entreesSandbox("outil").flatMap((e) => {
+    const o = outilParId(e.id);
+    return e.raccourci && o ? [[normaliserRaccourci(e.raccourci), o] as const] : [];
+  }),
+);
+
+/** Outil désigné par un raccourci clavier, d'après le registre du Sandbox, ou `null`. */
 export function outilDuClavier(c: Cle): Outil | null {
   const r = raccourciClavier(c);
-  return r ? (outilParRaccourci(r) ?? outilParRaccourciFadi(r)) : null;
+  return r ? (OUTILS_PAR_RACCOURCI.get(r) ?? null) : null;
 }
 
-/** Recherche d'outil : Maj + - (relevé `Shift+-`), quelle que soit la disposition du clavier. */
+/** Recherche d'outil (lot 6) : Maj+S, comme SketchUp (le relevé notait Maj+-), lue sur la lettre ou la touche physique. */
 export function estRecherche(c: Cle): boolean {
-  return c.shiftKey && !c.ctrlKey && !c.metaKey && !c.altKey && (c.code === "Minus" || c.key === "_");
+  if (!c.shiftKey || c.ctrlKey || c.metaKey || c.altKey) return false;
+  const attendu = normaliserRaccourci(RACCOURCI_RECHERCHE);
+  return raccourciClavier(c) === attendu || (!/^[a-z]$/i.test(c.key) && c.code === "KeyS");
 }
 
 /**

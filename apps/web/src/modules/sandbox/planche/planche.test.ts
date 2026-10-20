@@ -141,14 +141,21 @@ describe("Planche — clavier", () => {
     expect(outilDuClavier(cle("a"))?.id).toBe("arc-2-points");
     expect(outilDuClavier(cle("e"))?.id).toBe("gomme");
     expect(outilDuClavier(cle("o"))?.id).toBe("orbite");
-    expect(outilDuClavier(cle("E", { ctrlKey: true, shiftKey: true }))?.id).toBe("zoom-etendu");
+    // Lot 6 : Maj+Z = Zoom étendu (SketchUp) ; Texte 3D passe à Alt+Maj+Z ; Maj+S n'est plus un outil (recherche).
+    expect(outilDuClavier(cle("Z", { shiftKey: true }))?.id).toBe("zoom-etendu");
+    expect(outilDuClavier(cle("Z", { altKey: true, shiftKey: true, code: "KeyZ" }))?.id).toBe("texte-3d");
+    expect(outilDuClavier(cle("E", { ctrlKey: true, shiftKey: true }))).toBeNull();
+    expect(outilDuClavier(cle("D", { altKey: true, shiftKey: true, code: "KeyD" }))?.id).toBe("soustraction");
+    expect(outilDuClavier(cle("S", { shiftKey: true }))).toBeNull();
+    expect(outilDuClavier(cle("D", { shiftKey: true }))?.id).toBe("diviser");
     expect(outilDuClavier(cle("Enter"))).toBeNull();
   });
 
-  it("Maj + - ouvre la recherche (AZERTY par le code de touche)", () => {
-    expect(estRecherche(cle("_", { shiftKey: true, code: "Minus" }))).toBe(true);
-    expect(estRecherche(cle("6", { shiftKey: true, code: "Digit6" }))).toBe(false);
-    expect(estRecherche(cle("-", { code: "Minus" }))).toBe(false);
+  it("Maj + S ouvre la recherche, comme SketchUp (lot 6) ; Maj + - ne l'ouvre plus", () => {
+    expect(estRecherche(cle("S", { shiftKey: true, code: "KeyS" }))).toBe(true);
+    expect(estRecherche(cle("s", { code: "KeyS" }))).toBe(false);
+    expect(estRecherche(cle("S", { shiftKey: true, ctrlKey: true, code: "KeyS" }))).toBe(false);
+    expect(estRecherche(cle("_", { shiftKey: true, code: "Minus" }))).toBe(false);
   });
 
   it("touches d'état et début de saisie au champ Mesures", () => {

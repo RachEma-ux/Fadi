@@ -70,7 +70,7 @@ export interface EntreeSandbox {
   readonly raccourci: string | null;
   readonly emplacement: EmplacementEntree;
   readonly disponibilite: DisponibiliteEntree;
-  /** Hors des 86 entrées du catalogue (doublon à harmoniser au lot 6, ou commande ajoutée après le relevé). */
+  /** Hors des 86 entrées du catalogue : commande ajoutée après le relevé (zoom + / −). */
   readonly horsCatalogue?: true;
 }
 
@@ -160,12 +160,14 @@ export const RACCOURCIS_FADI_OUTILS: Readonly<Record<string, string>> = {
   rapporteur: "Maj+O",
   polygone: "Maj+P",
   "rectangle-pivote": "Maj+R",
-  soustraction: "Maj+S",
+  // Lot 6 : Maj+S passe à la recherche (comme SketchUp) ; D comme « différence », libéré par la commande Diviser.
+  soustraction: "Alt+Maj+D",
   texte: "Maj+T",
   union: "Maj+U",
   retourner: "Maj+V",
   axes: "Maj+Y",
-  "texte-3d": "Maj+Z",
+  // Lot 6 : Maj+Z passe au Zoom étendu (comme SketchUp) ; Texte 3D garde sa lettre, avec Alt.
+  "texte-3d": "Alt+Maj+Z",
   "positionner-camera": "Alt+Maj+P",
   "regarder-autour": "Alt+Maj+L",
   marcher: "Alt+Maj+M",
@@ -179,6 +181,17 @@ export const RACCOURCIS_FADI_OUTILS: Readonly<Record<string, string>> = {
   // Lot L21 (D-202) : outil propre à Fadi.
   epaissir: "Alt+Maj+J",
 };
+
+/**
+ * Lot 6 (harmonisation, recommandation §5) : raccourcis alignés sur SketchUp, prioritaires sur le relevé. Le relevé
+ * garde ce qu'il a observé ; seul le registre, que lisent l'interface et le clavier, en change.
+ */
+export const RACCOURCIS_HARMONISES: Readonly<Record<string, string>> = {
+  "zoom-etendu": "Maj+Z",
+};
+
+/** Recherche d'outil (lot 6) : Maj+S, comme SketchUp (relevé : Maj+-). Ce n'est pas une entrée du registre. */
+export const RACCOURCI_RECHERCHE = "Maj+S";
 
 /** Pictogramme d'une entrée : « fadi:<fichier> » désigne un dessin sur mesure, tout autre nom une icône Tabler. */
 function pictogramme(nom: string, famille: FamilleEntree): Pictogramme {
@@ -206,7 +219,7 @@ const outils: EntreeSandbox[] = OUTILS.map((o) => ({
   id: o.id,
   famille: o.famille,
   pictogramme: pictogramme(PICTOS_OUTILS[o.id] ?? "", o.famille),
-  raccourci: o.raccourci ?? RACCOURCIS_FADI_OUTILS[o.id] ?? null,
+  raccourci: RACCOURCIS_HARMONISES[o.id] ?? o.raccourci ?? RACCOURCIS_FADI_OUTILS[o.id] ?? null,
   emplacement: emplacementOutil(o.id, o.emplacement),
   disponibilite: "livree",
 }));
@@ -229,8 +242,8 @@ const commandes: EntreeSandbox[] = [
   c("composant", "objet", "components", "G", "actions"),
   c("eclater", "objet", "fadi:eclater", "Ctrl+Maj+G", "actions"),
   c("rendre-unique", "objet", "fingerprint", "Alt+Maj+U", "actions"),
-  // Doublon de l'outil Diviser (même nom) : hors des 86 entrées, à harmoniser au lot 6.
-  c("diviser", "objet", "separator-vertical", "Alt+Maj+D", "actions", true),
+  // Lot 6 : la commande Diviser, doublon de l'outil Diviser, a disparu ; la barre d'actions et le clic droit lancent
+  // l'outil (Maj+D), qui prend l'arête sélectionnée et demande le nombre de segments, comme SketchUp.
   c("diviser-courbe", "objet", "line-dashed", "Alt+Maj+C", "actions"),
   // Contexte d'édition (O-2) : fil d'Ariane.
   c("fermer", "contexte", "arrow-back-up", "Maj+Échap", "fil-ariane"),
@@ -245,14 +258,15 @@ const commandes: EntreeSandbox[] = [
   c("isoler", "vue", "focus-2", "Alt+Maj+I", "actions"),
   c("masquer-reste", "vue", "eye-off", "Alt+Maj+R", "outils"),
   // Zoom avant / arrière par pas (lot 4) : barre d'actions flottante au toucher, clavier partout ; hors des 86 entrées.
-  c("zoom-plus", "vue", "plus", "Alt+Maj+Z", "actions", true),
+  c("zoom-plus", "vue", "plus", "Alt+Maj+X", "actions", true),
   c("zoom-moins", "vue", "minus", "Alt+Maj+Y", "actions", true),
   // Liste de débit (L14) : barre du panneau Débit.
   c("liste-debit", "debit", "fadi:debit", "Alt+Maj+T", "panneau-debit"),
   c("renumeroter", "debit", "list-numbers", "Alt+Maj+N", "panneau-debit"),
   c("etiquettes", "debit", "tags", "Alt+Maj+E", "panneau-debit"),
   c("effacer-etiquettes", "debit", "tag-off", "Alt+Maj+W", "panneau-debit"),
-  c("exporter-debit", "debit", "file-export", "Alt+Maj+X", "panneau-debit"),
+  // Lot 6 : Ctrl+Maj+E, raccourci d'export courant, laissé par le Zoom étendu (Maj+Z) ; Alt+Maj+X va au zoom avant.
+  c("exporter-debit", "debit", "file-export", "Ctrl+Maj+E", "panneau-debit"),
   // Édition d'une pièce (L17) : bloc de la pièce dans l'Info entité.
   c("piece-section", "piece", "arrows-left-right", "Alt+Maj+S", "barre-piece"),
   c("piece-rotation", "piece", "rotate", "Alt+Maj+H", "barre-piece"),

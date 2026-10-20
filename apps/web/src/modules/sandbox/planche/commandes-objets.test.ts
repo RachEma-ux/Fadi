@@ -13,15 +13,14 @@ describe("Commandes d'objet (Objets O-1, D-203)", () => {
     expect(disponibiliteObjet("eclater", { ...base, entites: 1, objets: 1, verrouilles: true }).motif).toBe("planche.objets.motif.verrouille");
     for (const c of COMMANDES_OBJETS) expect(disponibiliteObjet(c.id, { ...base, lecture: true, entites: 1, objets: 1 }).motif).toBe("planche.objets.motif.lecture");
   });
-  it("Objets O-3 : Rendre unique demande un objet partagé ; Diviser une arête ; Diviser en segments une courbe", () => {
+  it("Objets O-3 : Rendre unique demande un objet partagé ; Diviser en segments une courbe (Diviser est l'outil, lot 6)", () => {
     expect(disponibiliteObjet("rendre-unique", { ...base, entites: 1, objets: 1, partages: 0 }).motif).toBe("planche.objets.motif.unique");
     expect(disponibiliteObjet("rendre-unique", { ...base, entites: 1, objets: 1, partages: 1 }).disponible).toBe(true);
-    expect(disponibiliteObjet("diviser", { ...base, entites: 1 }).motif).toBe("planche.objets.motif.arete");
-    expect(disponibiliteObjet("diviser", { ...base, entites: 1, aretes: 1 }).disponible).toBe(true);
     expect(disponibiliteObjet("diviser-courbe", { ...base, entites: 1, aretes: 1 }).motif).toBe("planche.objets.motif.courbe");
     expect(disponibiliteObjet("diviser-courbe", { ...base, entites: 1, aretes: 1, courbes: 1 }).disponible).toBe(true);
     // Les commandes d'arête sont contextuelles (barre d'actions), les commandes d'objet toujours présentes.
-    expect(COMMANDES_OBJETS.filter((c) => c.contextuelle).map((c) => c.id)).toEqual(["diviser", "diviser-courbe"]);
+    expect(COMMANDES_OBJETS.filter((c) => c.contextuelle).map((c) => c.id)).toEqual(["diviser-courbe"]);
+    expect(COMMANDES_OBJETS.map((c) => c.id)).not.toContain("diviser");
   });
 
   it("grouper une surface liée à son arête rompt le lien, et le nombre de liens rompus est compté", () => {
@@ -104,6 +103,6 @@ describe("Liste de débit (lot L14) : commandes et disponibilités", () => {
     expect(disponibiliteDebit("renumeroter", { ...s, lecture: true }).motif).toBe("planche.debit.motif.lecture");
     expect(disponibiliteDebit("effacer-etiquettes", s).motif).toBe("planche.debit.motif.sans-etiquette");
     expect(disponibiliteDebit("effacer-etiquettes", { ...s, etiquettes: 3 }).disponible).toBe(true);
-    expect(COMMANDES_DEBIT.map((c) => c.raccourci)).toEqual(["Alt+Maj+T", "Alt+Maj+N", "Alt+Maj+E", "Alt+Maj+W", "Alt+Maj+X"]);
+    expect(COMMANDES_DEBIT.map((c) => c.raccourci)).toEqual(["Alt+Maj+T", "Alt+Maj+N", "Alt+Maj+E", "Alt+Maj+W", "Ctrl+Maj+E"]);
   });
 });
