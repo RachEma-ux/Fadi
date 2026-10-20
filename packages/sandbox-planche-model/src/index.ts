@@ -15,3 +15,5 @@ export * from "./delta.js";
 export * from "./diagnostics.js";
 export * from "./representation.js";
 export * from "./echanges.js";
+export * from "./registre-sandbox.js";
+export * from "./personnalisation-sandbox.js";

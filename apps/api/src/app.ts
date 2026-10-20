@@ -12,9 +12,11 @@ import { examplesRouter } from "./routes/examples.js";
 import { libraryRouter } from "./routes/library.js";
 import { notificationsRouter } from "./routes/notifications.js";
 import { preferencesRouter } from "./routes/preferences.js";
+import { sandboxPreferencesRouter } from "./routes/sandbox-preferences.js";
+import { versionRouter } from "./routes/version.js";
 
 /** Préfixes servis par l'API ; tout le reste est l'application (fichiers du build, ou `index.html` pour une route du client). */
-const API_PREFIX = /^\/(auth|projects|examples|library|notifications|preferences|health)(\/|$)/;
+const API_PREFIX = /^\/(auth|projects|examples|library|notifications|preferences|health|sandbox\/preferences|version)(\/|$)/;
 
 export function createApp() {
   const app = express();
@@ -38,6 +40,9 @@ export function createApp() {
   // jointes des étapes, les exports de l'Atelier, l'import IFC et l'import d'archive ont leur propre lecture de corps (limite dédiée).
   const jsonBody = express.json({ limit: "256kb" });
   app.use((req, res, next) => (/\/atelier\/commands(\/|$)|\/atelier\/import-ifc$|\/atelier\/model(\/|$)|\/steps\/\d+\/files(\/|$)|\/documents\/dessins(\/|$)|^\/projects\/import$/.test(req.path) ? next() : jsonBody(req, res, next)));
+  // Ce qui tourne : commit et date de construction de l'image (« inconnu » en développement). Monté avant attachUser :
+  // aucune lecture de session, donc aucune requête à la base, même avec un cookie.
+  app.use("/version", versionRouter());
   app.use(attachUser);
 
   // Les routes d'authentification sont la cible privilégiée du
@@ -59,6 +64,8 @@ export function createApp() {
   app.use("/library", apiLimiter, libraryRouter);
   app.use("/notifications", apiLimiter, notificationsRouter);
   app.use("/preferences", apiLimiter, preferencesRouter);
+  // Sandbox (lot 5) : seules ses préférences d'outils passent par le serveur ; la page `/sandbox` reste celle du client.
+  app.use("/sandbox/preferences", apiLimiter, sandboxPreferencesRouter);
 
   // Sonde de vie (hébergement, sonde de joignabilité du client) : l'API et sa base répondent-elles ? 503 sinon.
   app.get("/health", async (_req, res) => {

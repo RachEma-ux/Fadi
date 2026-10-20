@@ -5,6 +5,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { t } from "../messages";
+import { IconeSandbox } from "../pictogrammes/Pictogramme";
 
 export interface ActionsMenuPlanche {
   /** OBJ / STL (P-6, D-173) : maillages du brouillon, écrits dans la page. */
@@ -49,7 +50,7 @@ export function MenuPlanche({ actions }: { actions: ActionsMenuPlanche }) {
   return (
     <div className="planche-menu-principal" ref={ref} data-planche-menu-principal>
       <button type="button" className="planche-menu-bouton" aria-haspopup="menu" aria-expanded={ouvert} onClick={() => (ouvert ? fermer() : setOuvert(true))} title={t("planche.menu-principal")} data-planche-menu-ouvrir data-planche-nom="">
-        <span aria-hidden="true" className="outil-picto">☰</span>
+        <IconeSandbox nom="fichier" className="outil-picto" />
         <span className="planche-menu-titre">{t("planche.brouillon")}</span>
       </button>
       {ouvert && (

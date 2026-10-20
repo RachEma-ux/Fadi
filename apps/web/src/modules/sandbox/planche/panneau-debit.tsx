@@ -7,6 +7,7 @@
 import { type ColonneDebit, type LigneDebit, type MotifMasse, type SourceSection } from "@parcours/sandbox-planche-model";
 import { LOCALE } from "../../../lib/i18n";
 import { type CleMessage, t } from "../messages";
+import { Pictogramme } from "../pictogrammes/Pictogramme";
 import { COMMANDES_DEBIT, type Disponibilite, type IdCommandeDebit } from "./commandes-objets";
 import { afficherRaccourci } from "./outils-planche";
 
@@ -90,7 +91,7 @@ export function PanneauDebit({
           const d = disponibilite(c.id);
           return (
             <button key={c.id} type="button" disabled={!d.disponible} title={`${t(c.libelle)} (${afficherRaccourci(c.raccourci)})${d.motif ? ` — ${t(d.motif)}` : ""}`} aria-label={t(c.libelle)} onClick={() => executer(c.id)} data-planche-commande={c.id}>
-              <span aria-hidden="true">{c.picto}</span> {t(c.court)}
+              <Pictogramme picto={c.picto} /> {t(c.court)}
             </button>
           );
         })}

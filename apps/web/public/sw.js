@@ -44,7 +44,7 @@ const SHELL = "/index.html";
 const CARTE = "/chargement.json";
 const STATIC = /^\/(assets|parcelle)\//;
 const HASHED = /^\/assets\//;
-const API = /^\/(auth|projects|examples|library|notifications|preferences|health)(\/|$)/;
+const API = /^\/(auth|projects|examples|library|notifications|preferences|health|version)(\/|$)/;
 const MARQUE = `<meta name="fadi-build" content="${BUILD}">`;
 /** Classes du précache dans l'ordre d'installation (coquille et profil, puis facultatif) ; une liste simple reste acceptée. */
 const CLASSES = Array.isArray(PRECACHE)

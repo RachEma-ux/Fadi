@@ -57,6 +57,13 @@ import {
   opererSolides,
   orienterFaces,
   outilParId,
+  OUTILS,
+  barreGaucheSandbox,
+  entreeDeCle,
+  entreeOutil,
+  entreePanneau,
+  entreesSandbox,
+  type Pictogramme as DescriptionPictogramme,
   peindreFacesCote,
   peindreOccurrences,
   rechercherOutil,
@@ -101,6 +108,7 @@ import {
   separerDiagnostic,
   changerSectionPiece,
   tournerPieceAxe,
+  CLES_PERSONNALISABLES,
 } from "@parcours/sandbox-planche-model";
 import { etatUi, useEtatUi } from "../etat-ui";
 import { MenuPlanche } from "./menu-planche";
@@ -109,13 +117,17 @@ import { CATALOGUE, type CleMessage, t } from "../messages";
 import { ChoixLangue } from "../../../components/ChoixLangue";
 import { annuler, enregistrer, historiqueInitial, operationAAnnuler, operationARetablir, retablir, type Historique } from "./historique";
 import { chargerBrouillon, enregistrerBrouillon, stockageDisponible } from "./brouillon";
-import { OUTILS_BOOLEENS, OUTILS_CAMERA_TEMPORAIRES, afficherRaccourci, commenceSaisie, disponibilite, estOutilCamera, estRecherche, libelleOutil, lotPrevu, outilDuClavier, outilsBarre, pictoOutil, raccourciOutil, sectionsGrille, titreOutil, toucheEtat, type OutilCamera } from "./outils-planche";
+import { OUTILS_BOOLEENS, OUTILS_CAMERA_TEMPORAIRES, afficherRaccourci, commenceSaisie, disponibilite, estOutilCamera, estRecherche, libelleOutil, lotPrevu, outilDuClavier, outilsDeBarre, pictoOutil, raccourciOutil, sectionsGrille, titreOutil, toucheEtat, type OutilCamera } from "./outils-planche";
 import { HAUTEUR_OEIL_DEFAUT, OPTIONS_AFFICHAGE_DEFAUT, VuePlanche, type OptionsAffichage, type VueStandard } from "./vue-planche";
 import { DialogueComposant, DialogueDeplacer, MenuContextuel, NavigateurPlanche, PanneauAdoucir, PanneauAffichage, PanneauComposants, PanneauInfoEntite, PanneauInfoModele, PanneauOmbres, PanneauScenes, PanneauStyles, type EntreeMenu, type ParametresComposant } from "./panneaux-objets";
 import { BarreActions } from "../panneaux/BarreActions";
 import { commandeDuClavier, routeeParLeRegistre, type EntreeRegistre } from "./registre-commandes";
 import { useNavigationBarre } from "../navigation-barre";
-import { disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
+import { curseurOutil } from "../pictogrammes/curseur";
+import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
+import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
+import { disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante } from "./BarreOutilsFlottante";
 import { PanneauProfiles, type ChoixSection } from "./panneau-profiles";
 import { PanneauDebit, REGLAGES_DEBIT_DEFAUT, type ReglagesDebit } from "./panneau-debit";
@@ -172,22 +184,20 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "instructeur" | "materiaux" | "balises" | "objets" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit";
-type PanneauObjets = "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit";
-/** Panneaux du lot 5 (§6), derrière une seule icône « Objets » : la colonne reste courte (téléphone, Zoom étendu). */
-const LISTE_PANNEAUX_OBJETS: readonly (readonly [PanneauObjets, string])[] = [
-  ["info-entite", "ⓘ"],
-  ["composants", "❖"],
-  ["styles", "◐"],
-  ["ombres", "☀"],
-  ["scenes", "🎞"],
-  ["affichage", "👁"],
-  ["adoucir", "◠"],
-  ["info-modele", "⚙"],
-  ["navigateur", "☰"],
-  ["debit", "☷"],
-];
-const PANNEAUX_OBJETS: ReadonlySet<string> = new Set(LISTE_PANNEAUX_OBJETS.map(([id]) => id));
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit";
+/**
+ * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
+ * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
+ */
+const COLONNE: readonly { readonly id: Panneau; readonly picto: DescriptionPictogramme; readonly bas: boolean }[] = entreesSandbox("panneau").map((e) => ({
+  id: e.id as Panneau,
+  picto: e.pictogramme,
+  bas: e.emplacement === "colonne-bas",
+}));
+/** Pictogramme d'un panneau, lu au registre. */
+const pictoPanneau = (id: Panneau): DescriptionPictogramme => entreePanneau(id).pictogramme;
+/** Panneaux au cadre commun (titre, fermer) ; Instructeur, Matériaux et Balises ont le leur. */
+const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set(COLONNE.map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"));
 /** Précision d'affichage (Info modèle) : préférence de l'appareil (R10), jamais une donnée de la Planche. */
 const CLE_PRECISION = "fadi.sandbox.planche.precision";
 function lirePrecision(): number {
@@ -307,6 +317,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const [tactile, setTactile] = useState(false);
   // Téléphone (≤ 760 px) : annuler / rétablir vivent dans le volet bas, l'aide dans la barre du haut.
   const [etroit, setEtroit] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches);
+  // Écran tactile dès l'ouverture (un pointeur grossier, même secondaire, ou des points de contact) : les boutons zoom + / −
+  // sont visibles sans attendre un premier toucher, y compris sur un portable à écran tactile piloté à la souris.
+  const [pointeurGrossier] = useState(() => typeof window !== "undefined" && (window.matchMedia("(any-pointer: coarse)").matches || (navigator.maxTouchPoints ?? 0) > 0));
   const [majVerrouillee, setMajVerrouillee] = useState(false);
   // Barres d'opérations flottantes (D-198) : haut de la barre rangée en bas au téléphone (la barre d'actions s'en écarte).
   const [hautDocquee, setHautDocquee] = useState<number | null>(null);
@@ -318,6 +331,12 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const [outilsReplies, setOutilsReplies] = useState(true);
   // Téléphone : icônes seules au départ (les étiquettes recouvraient le dessin) ; « « » les affiche.
   const [colonneRepliee, setColonneRepliee] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches);
+  const colonneRef = useRef<HTMLElement | null>(null);
+  // Lot 5 : préférences d'outils du compte (profil, barre gauche, favoris, regroupements), copie locale hors connexion.
+  const prefsSandbox = usePreferencesSandbox();
+  // Barre gauche affichée (profil) : un outil choisi hors d'elle devient l'« outil récent » sous la barre.
+  const idsBarreRef = useRef<readonly string[]>(barreGaucheSandbox(prefsSandbox.preferences));
+  idsBarreRef.current = barreGaucheSandbox(prefsSandbox.preferences);
   // Plan détaché : fenêtre séparée (Document Picture-in-Picture, bureau) ou plein écran (repli, téléphone).
   const [detache, setDetache] = useState<"non" | "fenetre" | "plein-ecran">("non");
   const fenetreRef = useRef<Window | null>(null);
@@ -562,7 +581,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         const boite = v?.emprise();
         if (v && boite) v.cadrer(boite, margesVue(racineRef.current));
         setMessage(boite ? null : t("planche.zoom-etendu.vide"));
-        if (o.emplacement === "grille") setRecent(id);
+        if (!idsBarreRef.current.includes(id)) setRecent(id);
         rafraichir();
         return;
       }
@@ -593,7 +612,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       setOutilId(id);
       setTexte(null);
       setMessage(null);
-      if (o.emplacement === "grille") setRecent(id);
+      if (!idsBarreRef.current.includes(id)) setRecent(id);
       rafraichir();
     },
     [readOnly, rafraichir, setTexte],
@@ -2000,8 +2019,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     const id = sel.find((x) => genreAnnotation(x) === "plan");
     return id ? hist.present.modele.annotations?.plansDeCoupe[id] ?? null : null;
   }, [vue.selection, hist.present.modele]);
-  const barre = useMemo(() => outilsBarre(), []);
-  const sections = useMemo(() => sectionsGrille(), []);
+  const idsBarre = useMemo(() => barreGaucheSandbox(prefsSandbox.preferences), [prefsSandbox.preferences]);
+  const barre = useMemo(() => outilsDeBarre(idsBarre), [idsBarre]);
+  const sections = useMemo(() => sectionsGrille(OUTILS, undefined, idsBarre), [idsBarre]);
   const raisonDe = (o: Outil) => disponibilite(o, { lecture: readOnly });
   const etatBarre = OUTILS_BOOLEENS.has(outilId) && booleens === "chargement" ? t("planche.solides.chargement") : vue.erreur ?? message;
   const valeurMesures = texte?.texte ?? vue.mesures?.valeur ?? "";
@@ -2022,14 +2042,15 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         data-raccourci={o.raccourci ?? undefined}
         onClick={() => choisirOutil(o.id)}
       >
-        <span aria-hidden="true" className="outil-picto">{pictoOutil(o.id)}</span>
+        <Pictogramme picto={pictoOutil(o.id)} actif={actif} className="outil-picto" />
         <span className="outil-libelle" aria-hidden="true">{o.libelle}</span>
         {raison && dansGrille && <span className="outil-lot" aria-hidden="true">{t("planche.prevu.court", { lot: lotPrevu(o) })}</span>}
       </button>
     );
   };
 
-  const recentOutil = recent ? outilParId(recent) : null;
+  // Un outil récent que le profil a mis dans la barre gauche n'est pas répété sous le séparateur.
+  const recentOutil = recent && !idsBarre.includes(recent) ? outilParId(recent) : null;
 
   /** Touches d'état à l'écran (tactile) : un appui = enfoncée puis relâchée. */
   const boutonsTouches = (touches: [Touche, string, string][]) =>
@@ -2052,7 +2073,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     ));
 
   /** Aide « ? » : barre d'état (ordinateur) ou rangée de saisie du volet (téléphone). */
-  const aideBouton = <button type="button" className="lien" onClick={() => setPanneau(panneau === "instructeur" ? null : "instructeur")} title={t("bas.aide")} aria-label={t("bas.aide")}>?</button>;
+  const aideBouton = <button type="button" className="lien" onClick={() => setPanneau(panneau === "instructeur" ? null : "instructeur")} title={t("bas.aide")} aria-label={t("bas.aide")}><Pictogramme picto={pictoPanneau("instructeur")} /></button>;
   /** Langue et périphérique : barre d'état (ordinateur) ou barre du haut (téléphone). */
   const choix = (
     <>
@@ -2060,12 +2081,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       <ChoixPeripherique ui={ui} />
     </>
   );
-  const canevasBas = (
-    <span className="canevas-bas">
-      {aideBouton}
-      {choix}
-    </span>
-  );
+  const canevasBas = <span className="canevas-bas">{choix}</span>;
   /** Flèches de direction : touches modificatrices (ordinateur tactile) ou panneau Instructeur (téléphone). */
   // Tirage d'arête (D-197) : au téléphone, les flèches (verrou d'axe, ↓ = allonger) entrent dans la barre de modificateurs
   // au lieu du seul panneau Instructeur, pour que le geste se fasse au doigt sans détour.
@@ -2139,7 +2155,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     });
   executerNavigateurRef.current = executerNavigateur;
   const etatVue = () => ({ entites: etatSelectionObjets().entites, isole: isolement !== null, dansObjet: dans !== undefined });
-  const executerVue = (id: IdCommandeVue) => (id === "isoler" ? basculerIsolement() : basculerMasquerReste());
+  const executerVue = (id: IdCommandeVue) => (id === "zoom-plus" || id === "zoom-moins" ? vueRef.current?.zoomer(PAS_ZOOM[id]) : id === "isoler" ? basculerIsolement() : basculerMasquerReste());
   const commandesVue = () =>
     COMMANDES_VUE.map((c) => {
       const d = disponibiliteVue(c.id, etatVue());
@@ -2168,9 +2184,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   etatSelectionObjetsRef.current = etatSelectionObjets;
   executerObjetRef.current = executerObjet;
 
-  const boutonOutils = (
-    <BoutonOutils
-      commandes={[
+  /** Commandes livrées (« Outils ▾ », favoris et regroupements de la grille) : disponibilité et exécution de leur famille. */
+  const commandesListe = [
         ...COMMANDES_OBJETS.map((c) => {
           const d = disponibiliteObjet(c.id, etatSelectionObjets());
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.objets.motif.vide"), executer: () => executerObjet(c.id) };
@@ -2193,7 +2208,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           const d = disponibiliteCommandeDebit(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.debit.motif.vide"), executer: () => executerDebit(c.id) };
         }),
-      ]}
+  ];
+  const boutonOutils = (
+    <BoutonOutils
+      commandes={commandesListe}
       outilId={outilId}
       raison={raisonDe}
       onChoisir={choisirOutil}
@@ -2207,9 +2225,14 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const libelleDetacher = detache === "non" ? t("planche.detacher") : detache === "fenetre" ? t("planche.rattacher") : t("planche.plein-ecran.quitter");
   const barreActions = (
     <BarreActions
-      annuler={{ id: "annuler", picto: "↶", libelle: t("planche.annuler"), titre: t("planche.annuler.titre", { operation: operationAAnnuler(hist) ?? "" }), onClick: annulerPas, disabled: hist.passe.length === 0, attributs: { "data-planche-annuler": "" } }}
-      retablir={{ id: "retablir", picto: "↷", libelle: t("planche.retablir"), titre: t("planche.retablir.titre", { operation: operationARetablir(hist) ?? "" }), onClick: retablirPas, disabled: hist.futur.length === 0, attributs: { "data-planche-retablir": "" } }}
       autres={[
+        // Lot 4 : Cadrer (Zoom étendu) toujours ; zoom + / − visibles sur écran tactile (comme les zones de SketchUp au doigt).
+        { id: "cadrer", picto: entreeOutil("zoom-etendu").pictogramme, libelle: t("actions.cadrer"), texte: t("actions.cadrer"), titre: `${t("actions.cadrer")} (${afficherRaccourci(raccourciOutil(outilParId("zoom-etendu")!)!)})`, onClick: () => choisirOutil("zoom-etendu"), attributs: { "data-planche-cadrer": "" } },
+        ...(tactile || etroit || pointeurGrossier
+          ? (["zoom-moins", "zoom-plus"] as const)
+              .map((id) => COMMANDES_VUE.find((c) => c.id === id)!)
+              .map((c) => ({ id: c.id, picto: c.picto, libelle: t(c.libelle), titre: `${t(c.libelle)} (${afficherRaccourci(c.raccourci)})`, onClick: () => executerVue(c.id), attributs: { "data-planche-zoom": c.id === "zoom-plus" ? "plus" : "moins" } }))
+          : []),
         ...COMMANDES_OBJETS.flatMap((c) => {
           const d = disponibiliteObjet(c.id, etatSelectionObjets());
           // Commandes d'arête (O-3) : présentes dans la barre seulement quand elles s'appliquent.
@@ -2242,7 +2265,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           })),
         {
           id: "detacher",
-          picto: detache === "non" ? "⧉" : "⤡",
+          picto: detache === "non" ? "detacher" : "rattacher",
           libelle: libelleDetacher,
           titre: detache === "non" ? t("planche.detacher.aide") : libelleDetacher,
           texte: detache === "non" ? t("planche.detacher.court") : detache === "fenetre" ? t("planche.rattacher.court") : t("planche.plein-ecran.quitter.court"),
@@ -2251,7 +2274,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         },
       ]}
       reference={racineRef}
-      reserve={{ bas: ".planche-volet, [data-planche-pied], [data-barre-outils-docquee]", droite: ".planche-colonne" }}
+      reserve={{ bas: ".planche-volet, [data-planche-pied], [data-barre-outils-docquee]", droite: ".planche-colonne", gauche: ".planche-outils" }}
       fenetreCle={`${detache}|${hautDocquee ?? ""}`}
     />
   );
@@ -2275,6 +2298,25 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       </div>
     ) : null;
 
+  // Chevron de la colonne : centré sur sa hauteur et collé à son bord gauche, recalculé quand elle change de taille.
+  useLayoutEffect(() => {
+    const n = colonneRef.current;
+    const r = racineRef.current;
+    if (!n || !r) return;
+    const placer = () => {
+      const a = n.getBoundingClientRect();
+      const b = r.getBoundingClientRect();
+      r.style.setProperty("--colonne-bascule-droite", `${Math.round(b.right - a.left)}px`);
+      r.style.setProperty("--colonne-bascule-haut", `${Math.round(a.top - b.top + a.height / 2)}px`);
+    };
+    placer();
+    const Observateur = (n.ownerDocument.defaultView as (Window & typeof globalThis) | null)?.ResizeObserver ?? globalThis.ResizeObserver;
+    const obs = Observateur ? new Observateur(placer) : null;
+    obs?.observe(n);
+    obs?.observe(r);
+    return () => obs?.disconnect();
+  }, [colonneRepliee, detache]);
+
   // La Planche est rendue dans sa porte (portail) : dans la page, la porte est posée dans `emplacement` ; détachée,
   // elle vit dans la fenêtre séparée et la carte d'état prend sa place ici.
   const planche = (
@@ -2287,7 +2329,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           role="application"
           aria-label={t("planche.vue")}
           aria-roledescription="zone de dessin"
+          // Lot 4 : curseur propre à l'outil actif (pictogramme et croix au point actif).
+          style={{ cursor: curseurOutil(outilId, pictoOutil(outilId)) }}
           data-planche-vue
+          data-planche-curseur={outilId}
         >
           {webgl === "indisponible" && <p className="planche-webgl" role="alert">{t("planche.webgl")}</p>}
         </div>
@@ -2295,6 +2340,15 @@ export function Planche({ readOnly = false }: PropsPlanche) {
 
       <div className="planche-haut">
         <MenuPlanche actions={actionsMenu} />
+        {/* Lot 4 : Annuler / Rétablir dans la barre du haut, après le nom du brouillon (disposition de SketchUp). */}
+        <span className="planche-haut-historique" role="group" aria-label={`${t("planche.annuler")} / ${t("planche.retablir")}`}>
+          <button type="button" className="planche-haut-bouton" onClick={annulerPas} disabled={hist.passe.length === 0} title={t("planche.annuler.titre", { operation: operationAAnnuler(hist) ?? "" })} aria-label={t("planche.annuler")} data-planche-annuler>
+            <IconeSandbox nom="annuler" />
+          </button>
+          <button type="button" className="planche-haut-bouton" onClick={retablirPas} disabled={hist.futur.length === 0} title={t("planche.retablir.titre", { operation: operationARetablir(hist) ?? "" })} aria-label={t("planche.retablir")} data-planche-retablir>
+            <IconeSandbox nom="retablir" />
+          </button>
+        </span>
         <p className="planche-brouillon" role="note" title={`${t("planche.brouillon")} — ${stockageDisponible() ? t("planche.brouillon.aide") : t("planche.brouillon.indisponible")}`} data-planche-brouillon>
           <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M7 3h7l5 5v13H7z" />
@@ -2317,13 +2371,13 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       </div>
       <div className="planche-recherche-carte">
         <button type="button" className="outil" onClick={() => setRecherche(true)} title={t("planche.recherche.titre")} aria-label={t("planche.recherche.titre")} data-planche-recherche>
-          <span aria-hidden="true" className="outil-picto">⌕</span>
+          <IconeSandbox nom="rechercher" className="outil-picto" />
           <span className="outil-libelle" aria-hidden="true">{t("planche.rechercher")}</span>
         </button>
       </div>
       <div ref={railRef} onKeyDown={naviguerRail} className="planche-outils" role="toolbar" aria-label={t("planche.outils")} aria-orientation="vertical" data-planche-outils-replies={outilsReplies}>
         <button type="button" className="outil outil-fixe-haut planche-outils-bascule" aria-expanded={!outilsReplies} onClick={() => setOutilsReplies(!outilsReplies)} title={outilsReplies ? t("planche.outils.deplier") : t("planche.outils.replier")} aria-label={outilsReplies ? t("planche.outils.deplier") : t("planche.outils.replier")} data-planche-outils-bascule>
-          <span aria-hidden="true" className="outil-picto">{outilsReplies ? "»" : "«"}</span>
+          <IconeSandbox nom={outilsReplies ? "deplier" : "replier"} className="outil-picto" />
           <span className="outil-libelle" aria-hidden="true">{t("planche.outils.replier")}</span>
         </button>
         {barre.map((o) => boutonOutil(o))}
@@ -2334,13 +2388,46 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           </>
         )}
         <button type="button" className="outil outil-fixe-bas" aria-expanded={grille} aria-controls={grille ? "planche-grille" : undefined} onClick={() => setGrille(!grille)} title={t("planche.plus")} aria-label={t("planche.plus")} data-planche-plus>
-          <span aria-hidden="true" className="outil-picto">⋯</span>
+          <IconeSandbox nom="plusOutils" className="outil-picto" />
           <span className="outil-libelle" aria-hidden="true">{t("planche.plus")}</span>
         </button>
       </div>
 
       {grille && (
         <div className="planche-grille" id="planche-grille" role="dialog" aria-label={t("planche.grille")} ref={grilleDom} data-planche-grille>
+          {/* Lot 5 : « Modifier » ouvre la personnalisation ; favoris et regroupements avant les familles. */}
+          <div className="planche-grille-tete">
+            <button type="button" className="planche-grille-modifier" onClick={() => { setGrille(false); setPanneau("personnaliser"); }} title={t("planche.grille.modifier.aide")} data-planche-grille-modifier>
+              <IconeSandbox nom="reglages" /> {t("planche.grille.modifier")}
+            </button>
+          </div>
+          {[
+            { cle: "favoris", libelle: t("planche.grille.favoris"), entrees: prefsSandbox.preferences.favoris },
+            ...prefsSandbox.preferences.regroupements.map((g) => ({ cle: `groupe-${g.id}`, libelle: g.nom, entrees: g.entrees })),
+          ]
+            .filter((x) => x.entrees.length > 0)
+            .map((x) => (
+              <section key={x.cle} aria-label={x.libelle} data-planche-grille-section={x.cle}>
+                <h4>{x.libelle}</h4>
+                <div className="canevas-grille">
+                  {x.entrees.map((cle) => {
+                    const e = entreeDeCle(cle);
+                    if (e?.nature === "outil") {
+                      const o = outilParId(e.id);
+                      return o ? <span key={cle} style={{ display: "contents" }}>{boutonOutil(o, true)}</span> : null;
+                    }
+                    const c = e?.nature === "commande" ? commandesListe.find((x) => x.id === e.id) : undefined;
+                    if (!c) return null;
+                    return (
+                      <button key={cle} type="button" className={`outil${c.motif ? " est-indisponible" : ""}`} aria-disabled={c.motif ? true : undefined} title={c.motif ? `${c.nom} — ${c.motif}` : `${c.nom} (${afficherRaccourci(c.raccourci)})`} aria-label={c.nom} onClick={() => { if (!c.motif) { setGrille(false); c.executer(); } }} data-planche-commande={c.id}>
+                        <Pictogramme picto={c.picto} className="outil-picto" />
+                        <span className="outil-libelle" aria-hidden="true">{c.nom}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
           {sections.map((s) => (
             <section key={s.libelle} aria-label={s.libelle}>
               <h4>{s.libelle}</h4>
@@ -2350,32 +2437,42 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         </div>
       )}
 
-      <nav className="planche-colonne" aria-label={t("canevas.panneaux")}>
-        <button type="button" className="canevas-icone planche-colonne-bascule" aria-expanded={!colonneRepliee} onClick={() => setColonneRepliee(!colonneRepliee)} title={colonneRepliee ? t("planche.colonne.deplier") : t("planche.colonne.replier")} aria-label={colonneRepliee ? t("planche.colonne.deplier") : t("planche.colonne.replier")} data-planche-colonne-bascule>
-          <span aria-hidden="true" className="canevas-picto">{colonneRepliee ? "«" : "»"}</span>
-        </button>
-        <button type="button" className="canevas-icone" aria-pressed={panneau === "instructeur"} onClick={() => setPanneau(panneau === "instructeur" ? null : "instructeur")} title={t("panneau.instructeur")} data-planche-panneau-icone="instructeur">
-          <span aria-hidden="true" className="canevas-picto">?</span>
-          <span className="canevas-etiquette">{t("panneau.instructeur")}</span>
-        </button>
-        <button type="button" className="canevas-icone" aria-pressed={panneau === "materiaux"} onClick={() => setPanneau(panneau === "materiaux" ? null : "materiaux")} title={t("panneau.materiaux")} data-planche-panneau-icone="materiaux">
-          <span aria-hidden="true" className="canevas-picto">▨</span>
-          <span className="canevas-etiquette">{t("panneau.materiaux")}</span>
-        </button>
-        <button type="button" className="canevas-icone" aria-pressed={panneau === "balises"} onClick={() => setPanneau(panneau === "balises" ? null : "balises")} title={t("panneau.balises")} data-planche-panneau-icone="balises">
-          <span aria-hidden="true" className="canevas-picto">⌖</span>
-          <span className="canevas-etiquette">{t("panneau.balises")}</span>
-        </button>
-        <button type="button" className="canevas-icone" aria-pressed={panneau === "objets" || (panneau !== null && PANNEAUX_OBJETS.has(panneau))} onClick={() => setPanneau(panneau === "objets" || (panneau !== null && PANNEAUX_OBJETS.has(panneau)) ? null : "objets")} title={t("panneau.objets")} data-planche-panneau-icone="objets">
-          <span aria-hidden="true" className="canevas-picto">▤</span>
-          <span className="canevas-etiquette">{t("panneau.objets")}</span>
-        </button>
+      <nav ref={colonneRef} className="planche-colonne" aria-label={t("canevas.panneaux")}>
+        {COLONNE.map(({ id, picto, bas }) => (
+          <button key={id} type="button" className={`canevas-icone${bas ? " planche-colonne-bas" : ""}`} aria-pressed={panneau === id} onClick={() => setPanneau(panneau === id ? null : id)} title={t(`panneau.${id}` as "panneau.info-entite")} data-planche-panneau-icone={id}>
+            <Pictogramme className="canevas-picto" picto={picto} />
+            <span className="canevas-etiquette">{t(`panneau.${id}` as "panneau.info-entite")}</span>
+          </button>
+        ))}
       </nav>
+      {/* Chevron plier / déplier (comme SketchUp) : à mi-hauteur, au bord gauche de la colonne ; il apparaît au survol de la
+          colonne ou du chevron, et reste visible sur écran tactile (pas de survol) et au clavier (focus). */}
+      <button type="button" className="planche-colonne-bascule" aria-expanded={!colonneRepliee} onClick={() => setColonneRepliee(!colonneRepliee)} title={colonneRepliee ? t("planche.colonne.deplier") : t("planche.colonne.replier")} aria-label={colonneRepliee ? t("planche.colonne.deplier") : t("planche.colonne.replier")} data-planche-colonne-bascule>
+        <IconeSandbox nom={colonneRepliee ? "replier" : "deplier"} />
+      </button>
+      {panneau === "personnaliser" && (
+        <section className="planche-panneau" aria-label={t("panneau.personnaliser")} data-planche-panneau="personnaliser">
+          <header className="canevas-panneau-tete">
+            <h3>{t("panneau.personnaliser")}</h3>
+            <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t("panneau.personnaliser") })}><IconeSandbox nom="fermer" /></button>
+          </header>
+          <div className="canevas-panneau-corps">
+            <PanneauPersonnaliser
+              preferences={prefsSandbox.preferences}
+              etat={prefsSandbox.etat}
+              outils={OUTILS}
+              commandes={commandesListe.filter((c) => CLES_PERSONNALISABLES.includes(`commande:${c.id}`)).map((c) => ({ id: c.id, picto: c.picto, nom: c.nom }))}
+              modifier={prefsSandbox.modifier}
+              reinitialiser={prefsSandbox.reinitialiser}
+            />
+          </div>
+        </section>
+      )}
       {panneau === "materiaux" && (
         <section className="planche-panneau" aria-label={t("panneau.materiaux")} data-planche-panneau="materiaux">
           <header className="canevas-panneau-tete">
             <h3>{t("panneau.materiaux")}</h3>
-            <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t("panneau.materiaux") })}>×</button>
+            <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t("panneau.materiaux") })}><IconeSandbox nom="fermer" /></button>
           </header>
           <div className="canevas-panneau-corps">
             <PanneauMateriaux
@@ -2403,7 +2500,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         <section className="planche-panneau" aria-label={t("panneau.balises")} data-planche-panneau="balises">
           <header className="canevas-panneau-tete">
             <h3>{t("panneau.balises")}</h3>
-            <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t("panneau.balises") })}>×</button>
+            <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t("panneau.balises") })}><IconeSandbox nom="fermer" /></button>
           </header>
           <div className="canevas-panneau-corps">
             <PanneauBalises
@@ -2436,28 +2533,11 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         </section>
       )}
 
-      {panneau === "objets" && (
-        <section className="planche-panneau" aria-label={t("panneau.objets")} data-planche-panneau="objets">
-          <header className="canevas-panneau-tete">
-            <h3>{t("panneau.objets")}</h3>
-            <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t("panneau.objets") })}>×</button>
-          </header>
-          <div className="canevas-panneau-corps planche-choix-panneaux">
-            {LISTE_PANNEAUX_OBJETS.map(([id, picto]) => (
-              <button key={id} type="button" className="canevas-icone" onClick={() => setPanneau(id)} title={t(`panneau.${id}` as "panneau.info-entite")} data-planche-panneau-icone={id}>
-                <span aria-hidden="true" className="canevas-picto">{picto}</span>
-                <span className="canevas-etiquette">{t(`panneau.${id}` as "panneau.info-entite")}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-      {panneau && PANNEAUX_OBJETS.has(panneau) && (
+      {panneau && PANNEAUX_COMMUNS.has(panneau) && (
         <section className="planche-panneau" aria-label={t(`panneau.${panneau}` as "panneau.info-entite")} data-planche-panneau={panneau}>
           <header className="canevas-panneau-tete">
-            <button type="button" className="lien planche-retour-panneaux" onClick={() => setPanneau("objets")} title={t("panneau.objets")} aria-label={t("panneau.objets")} data-planche-panneaux-retour>◂</button>
             <h3>{t(`panneau.${panneau}` as "panneau.info-entite")}</h3>
-            <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t(`panneau.${panneau}` as "panneau.info-entite") })}>×</button>
+            <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t(`panneau.${panneau}` as "panneau.info-entite") })}><IconeSandbox nom="fermer" /></button>
           </header>
           <div className="canevas-panneau-corps">
             {panneau === "debit" && (
@@ -2606,7 +2686,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         <section className="planche-panneau" aria-label={t("panneau.instructeur")} data-planche-panneau="instructeur">
           <header className="canevas-panneau-tete">
             <h3>{t("panneau.instructeur")}</h3>
-            <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t("panneau.instructeur") })}>×</button>
+            <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t("panneau.instructeur") })}><IconeSandbox nom="fermer" /></button>
           </header>
           <div className="canevas-panneau-corps">
             {etroit && (
@@ -2640,12 +2720,12 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           </ol>
           {COMMANDES_CONTEXTE.map((c) => (
             <button key={c.id} type="button" className="planche-fil-commande" title={`${t(c.libelle)} (${afficherRaccourci(c.raccourci)})`} aria-label={t(c.libelle)} onClick={() => fermerContexte(c.id)} data-planche-commande={c.id}>
-              <span aria-hidden="true">{c.picto}</span>
+              <Pictogramme picto={c.picto} />
             </button>
           ))}
           {COMMANDES_VUE.filter((c) => c.id === "masquer-reste").map((c) => (
             <button key={c.id} type="button" className="planche-fil-commande" aria-pressed={options.masquerReste} title={`${t(c.libelle)} (${afficherRaccourci(c.raccourci)})`} aria-label={t(c.libelle)} onClick={basculerMasquerReste} data-planche-commande={c.id}>
-              <span aria-hidden="true">{c.picto}</span>
+              <Pictogramme picto={c.picto} />
             </button>
           ))}
         </nav>
@@ -2654,11 +2734,13 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         <div className="planche-fil planche-isolement" role="status" data-planche-isolement>
           <span>{t("planche.isolement.etat", { nombre: String(isolement.ids.length) })}</span>
           <button type="button" className="planche-fil-commande" title={`${t("planche.menu.quitter-isolement")} (${afficherRaccourci(COMMANDES_VUE[0]!.raccourci)})`} aria-label={t("planche.menu.quitter-isolement")} onClick={basculerIsolement} data-planche-isolement-quitter>
-            <span aria-hidden="true">⦿</span>
+            <Pictogramme picto={COMMANDES_VUE[0]!.picto} />
           </button>
         </div>
       )}
       <footer className="planche-bas">
+        {/* Lot 4 : barre du bas comme SketchUp — aide, consigne de l'outil actif, champ Mesures à droite. */}
+        {!etroit && <span className="planche-bas-aide">{aideBouton}</span>}
         <p className="planche-etat" aria-live="polite" aria-label={t("planche.etat")} data-planche-etat>
           {dans && <span className="planche-contexte" data-planche-contexte>{t("planche.edition", { nom: nomOccurrence(hist.present.modele, dans) })} | </span>}
           <span className="planche-consigne">{vue.consigne}</span>
@@ -2677,7 +2759,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         </p>
         {lienSelectionne() && (
           <button type="button" className="planche-lien-detacher" title={`${t(COMMANDE_DETACHER_LIEN.libelle)} (${afficherRaccourci(COMMANDE_DETACHER_LIEN.raccourci)})`} aria-label={t(COMMANDE_DETACHER_LIEN.libelle)} onClick={detacherLienSelection} data-planche-commande={COMMANDE_DETACHER_LIEN.id}>
-            <span aria-hidden="true">{COMMANDE_DETACHER_LIEN.picto}</span> {t(COMMANDE_DETACHER_LIEN.court)}
+            <Pictogramme picto={COMMANDE_DETACHER_LIEN.picto} /> {t(COMMANDE_DETACHER_LIEN.court)}
           </button>
         )}
         <button type="button" className="planche-volet-bascule" aria-expanded={volet} onClick={() => setVolet(!volet)} title={volet ? t("planche.volet.moins.aide") : t("planche.volet.plus.aide")} data-planche-volet-bascule>
@@ -2709,7 +2791,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
               const nom = t(c.libelle);
               return (
                 <button key={c.id} type="button" disabled={!d.disponible} title={d.disponible ? `${nom} (${afficherRaccourci(c.raccourci)})` : `${nom} — ${t(d.motif ?? "planche.piece.motif.piece")}`} aria-label={nom} onClick={() => executerPiece(c.id)} data-planche-commande={c.id}>
-                  <span aria-hidden="true">{c.picto}</span> {t(c.court)}
+                  <Pictogramme picto={c.picto} /> {t(c.court)}
                 </button>
               );
             })}
@@ -2896,7 +2978,7 @@ function InstructeurPlanche({ outil, raison }: { outil: Outil | null; raison: st
   return (
     <div className="instructeur" data-instructeur={outil.id}>
       <p className="instructeur-outil">
-        <span aria-hidden="true" className="canevas-picto">{pictoOutil(outil.id)}</span> <strong>{outil.libelle}</strong>
+        <Pictogramme picto={pictoOutil(outil.id)} className="canevas-picto" /> <strong>{outil.libelle}</strong>
         {outil.raccourci && <kbd>{outil.raccourci}</kbd>}
       </p>
       {raison && <p className="planche-instructeur-lot" role="note">{raison}</p>}
@@ -2991,7 +3073,7 @@ function RechercheOutil({ lecture, onFermer, onChoisir }: { lecture: boolean; on
             const raison = disponibilite(o, { lecture });
             return (
               <li key={o.id} id={`planche-recherche-${o.id}`} role="option" aria-selected={i === rang} aria-disabled={raison ? true : undefined} className={i === rang ? "est-actif" : undefined} onPointerDown={(e) => e.preventDefault()} onClick={() => choisir(o)} title={titreOutil(o, raison)}>
-                <span aria-hidden="true" className="outil-picto">{pictoOutil(o.id)}</span> {o.libelle}
+                <Pictogramme picto={pictoOutil(o.id)} className="outil-picto" /> {o.libelle}
                 {raccourciOutil(o) && <kbd>{afficherRaccourci(raccourciOutil(o)!)}</kbd>}
                 {raison && <span className="outil-lot">{t("planche.prevu.court", { lot: lotPrevu(o) })}</span>}
               </li>

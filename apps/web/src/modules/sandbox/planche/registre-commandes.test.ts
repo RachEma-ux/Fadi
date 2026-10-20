@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import { OUTILS, normaliserRaccourci } from "@parcours/sandbox-planche-model";
 import { REGISTRE_COMMANDES, commandeDuClavier, routeeParLeRegistre } from "./registre-commandes";
 import { pictoOutil, raccourciOutil, type Cle } from "./outils-planche";
+import { clePictogramme, type Pictogramme as DescriptionPictogramme } from "@parcours/sandbox-planche-model";
+
+/** Clé comparable d'un pictogramme (lot 3 : objets, plus des caractères). */
+const k = (p: DescriptionPictogramme): string => clePictogramme(p);
 
 /** Événement clavier d'un raccourci canonique ; `mac` : Option change le caractère (seule la touche physique dit la lettre). */
 function evenement(r: string, mac = false): Cle {
@@ -20,7 +24,7 @@ describe("Registre unique des commandes (lot 9, EX-CMD-01)", () => {
   it("identifiants, icônes et raccourcis uniques ; aucun raccourci d'outil repris", () => {
     const ids = REGISTRE_COMMANDES.map((c) => c.id);
     expect(new Set(ids).size).toBe(ids.length);
-    expect(new Set(REGISTRE_COMMANDES.map((c) => c.picto)).size).toBe(ids.length);
+    expect(new Set(REGISTRE_COMMANDES.map((c) => k(c.picto))).size).toBe(ids.length);
     const r = REGISTRE_COMMANDES.map((c) => normaliserRaccourci(c.raccourci));
     expect(new Set(r).size).toBe(r.length);
     const outils = new Set(OUTILS.map((o) => raccourciOutil(o)).filter((x): x is string => x !== null).map(normaliserRaccourci));
@@ -28,8 +32,8 @@ describe("Registre unique des commandes (lot 9, EX-CMD-01)", () => {
   });
 
   it("règle d'or (revue de #128) : aucune icône de commande ne reprend celle d'un outil", () => {
-    const pictos = new Map(OUTILS.map((o) => [pictoOutil(o.id), o.id] as const));
-    for (const c of REGISTRE_COMMANDES) expect(pictos.get(c.picto), `icône ${c.picto} de « ${c.id} » prise par un outil`).toBeUndefined();
+    const pictos = new Map(OUTILS.map((o) => [k(pictoOutil(o.id)), o.id] as const));
+    for (const c of REGISTRE_COMMANDES) expect(pictos.get(k(c.picto)), `icône ${k(c.picto)} de « ${c.id} » prise par un outil`).toBeUndefined();
   });
 
   it("chaque commande routée par le registre se retrouve depuis son événement clavier, y compris sous macOS (Option)", () => {

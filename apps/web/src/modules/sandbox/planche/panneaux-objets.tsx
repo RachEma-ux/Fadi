@@ -6,8 +6,9 @@
  */
 import { texteSource } from "./sections-planche";
 import { type DragEvent as EvenementGlisse, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { REGLAGES_DEFAUT, aire, contexte, dist, estSolide, genreAnnotation, motifNonSolide, nombreOccurrences, volume, type Id, type MetadonneesDefinition, type Modele, type OrigineObjet, type ReglagesPlanche, type Scene } from "@parcours/sandbox-planche-model";
+import { type Pictogramme as DescriptionPictogramme, REGLAGES_DEFAUT, aire, contexte, dist, estSolide, genreAnnotation, motifNonSolide, nombreOccurrences, volume, type Id, type MetadonneesDefinition, type Modele, type OrigineObjet, type ReglagesPlanche, type Scene } from "@parcours/sandbox-planche-model";
 import { t } from "../messages";
+import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import type { OptionsAffichage, VueStandard } from "./vue-planche";
 import { afficherRaccourci } from "./outils-planche";
 
@@ -77,7 +78,7 @@ export function MenuContextuel({ x, y, entrees, onFermer }: { x: number; y: numb
         onPointerEnter={() => e.sous && setOuvert(e.id)}
       >
         {e.libelle}
-        {e.sous && <span aria-hidden="true"> ▸</span>}
+        {e.sous && <> <IconeSandbox nom="sousMenu" /></>}
       </button>
       {e.sous && ouvert === e.id && (
         <ul role="menu" className="planche-menu-sous">
@@ -140,12 +141,12 @@ export function DialogueComposant({ nomDefaut, onCreer, onAnnuler }: { nomDefaut
           {t("planche.composant.nom")}
           <span className="planche-champ-effacable">
             <input ref={champ} value={nom} onChange={(e) => setNom(e.target.value)} autoComplete="off" data-planche-composant-nom />
-            <button type="button" aria-label={t("planche.composant.effacer-nom")} onClick={() => setNom("")}>×</button>
+            <button type="button" aria-label={t("planche.composant.effacer-nom")} onClick={() => setNom("")}><IconeSandbox nom="fermer" /></button>
           </span>
         </label>
         {/* Le chevron n'a qu'un effet : déplier les options (le défaut de SketchUp qui créait le composant n'est pas reproduit). */}
         <button type="button" className="lien planche-chevron" aria-expanded={options} onClick={() => setOptions(!options)} data-planche-composant-options>
-          {options ? "▾" : "▸"} {t("planche.composant.options")}
+          {options ? <IconeSandbox nom="menu" /> : <IconeSandbox nom="sousMenu" />} {t("planche.composant.options")}
         </button>
         {options && (
           <div className="planche-dialogue-options">
@@ -415,7 +416,7 @@ export function PanneauComposants({ modele, lecture, onModifier, onSelectionner 
               </button>
               {!lecture && (
                 <button type="button" className="canevas-icone" aria-label={t("planche.composants.modifier")} title={t("planche.composants.modifier")} onClick={() => setEdition({ id: d.id, nom: d.nom, description: d.description ?? "" })}>
-                  ⋮
+                  <IconeSandbox nom="actions" />
                 </button>
               )}
             </>
@@ -564,7 +565,7 @@ export function PanneauScenes({ modele, lecture, projection, champDeVision, onAj
               {s.nom} <span className="inspecteur-aide">{s.projection === "parallele" ? t("planche.scenes.parallele") : `${virgule(s.champDeVision, 0)}°`}</span>
             </button>
             {!lecture && (
-              <button type="button" className="canevas-icone" aria-label={t("planche.scenes.supprimer")} title={t("planche.scenes.supprimer")} onClick={() => onSupprimer(s.id)}>×</button>
+              <button type="button" className="canevas-icone" aria-label={t("planche.scenes.supprimer")} title={t("planche.scenes.supprimer")} onClick={() => onSupprimer(s.id)}><IconeSandbox nom="fermer" /></button>
             )}
           </li>
         ))}
@@ -697,7 +698,7 @@ export function NavigateurPlanche({
   dans: Id | undefined;
   lecture: boolean;
   /** Commandes du Navigateur (O-4, règle d'or) : barre en tête de l'arbre. */
-  commandes?: readonly { id: string; picto: string; nom: string; raccourci: string; motif: string | null; executer: () => void }[];
+  commandes?: readonly { id: string; picto: DescriptionPictogramme; nom: string; raccourci: string; motif: string | null; executer: () => void }[];
   /** Objet dont le nom est en cours d'édition (F2, menu, barre). */
   /** Revue O-4 : chemin complet de la ligne à renommer (un objet imbriqué d'un composant figure sous chaque occurrence). */
   renommage?: readonly Id[] | null;
@@ -770,7 +771,7 @@ export function NavigateurPlanche({
               onClick={c.executer}
               data-planche-commande={c.id}
             >
-              {c.picto}
+              <Pictogramme picto={c.picto} />
             </button>
           ))}
         </div>
@@ -839,7 +840,7 @@ export function NavigateurPlanche({
               }}
             >
               <button type="button" className="canevas-icone planche-deplier" aria-label={deplies.has(n.id) ? t("planche.navigateur.replier") : t("planche.navigateur.deplier")} disabled={n.enfants === 0} onClick={() => setDeplies((s) => { const d = new Set(s); if (d.has(n.id)) d.delete(n.id); else d.add(n.id); return d; })}>
-                {n.enfants === 0 ? "·" : deplies.has(n.id) ? "▾" : "▸"}
+                {n.enfants === 0 ? "·" : deplies.has(n.id) ? <IconeSandbox nom="menu" /> : <IconeSandbox nom="sousMenu" />}
               </button>
               {cleRenommage === n.chemin.join("/") ? (
                 <ChampRenommer
@@ -852,16 +853,16 @@ export function NavigateurPlanche({
                 />
               ) : (
                 <button type="button" className="planche-ligne-choix" onClick={() => onSelectionner(n.id, n.parent, n.chemin.slice(0, -1))} onDoubleClick={() => !n.verrouille && onEntrer(n.id, n.chemin)} title={n.verrouille ? t("planche.navigateur.verrouille") : `${t("planche.navigateur.entrer")} — ${t("planche.navigateur.glisser")}`}>
-                  <span aria-hidden="true">{n.genre === "composant" ? "◈" : "▣"}</span> {n.nom}
-                  {n.verrouille && <span aria-label={t("planche.info.verrouille")}> 🔒</span>}
+                  <IconeSandbox nom={n.genre === "composant" ? "typeComposant" : "typeGroupe"} /> {n.nom}
+                  {n.verrouille && <span role="img" aria-label={t("planche.info.verrouille")}> <IconeSandbox nom="verrou" /></span>}
                   {n.masquee && <span className="inspecteur-aide"> ({t("planche.info.masque")})</span>}
                 </button>
               )}
-              <button type="button" className="canevas-icone" aria-label={t("planche.navigateur.cibler")} title={t("planche.navigateur.cibler")} onClick={() => onCibler(n.id)}>⌖</button>
+              <button type="button" className="canevas-icone" aria-label={t("planche.navigateur.cibler")} title={t("planche.navigateur.cibler")} onClick={() => onCibler(n.id)}><IconeSandbox nom="cibler" /></button>
               {!lecture && (
                 <>
-                  <button type="button" className="canevas-icone" aria-label={t("planche.navigateur.masquer")} title={t("planche.navigateur.masquer")} onClick={() => onMasquer(n.id, n.parent, !n.masquee)} data-planche-navigateur-masquer>{n.masquee ? "◌" : "◉"}</button>
-                  <button type="button" className="canevas-icone" aria-label={t("planche.navigateur.supprimer")} title={t("planche.navigateur.supprimer")} onClick={() => onSupprimer(n.id, n.parent)}>×</button>
+                  <button type="button" className="canevas-icone" aria-label={t("planche.navigateur.masquer")} title={t("planche.navigateur.masquer")} onClick={() => onMasquer(n.id, n.parent, !n.masquee)} data-planche-navigateur-masquer>{n.masquee ? <IconeSandbox nom="masque" /> : <IconeSandbox nom="visible" />}</button>
+                  <button type="button" className="canevas-icone" aria-label={t("planche.navigateur.supprimer")} title={t("planche.navigateur.supprimer")} onClick={() => onSupprimer(n.id, n.parent)}><IconeSandbox nom="fermer" /></button>
                 </>
               )}
             </li>
