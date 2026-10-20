@@ -43,6 +43,8 @@ export interface OptionsEnregistrement {
   studyId: string;
   variantId: string;
   historical: boolean;
+  /** Mode autonome de la Console (aucun projet) : rien n'est enregistré, ni envoyé, ni conservé sur l'appareil. */
+  autonome?: boolean;
   context: StudioContext | null;
   brouillon: Brouillon | null;
   /** Faux après démontage : aucune mise à jour d'état. */
@@ -83,7 +85,7 @@ export function useEnregistrement(o: OptionsEnregistrement) {
   const horsJeu = useRef(false);
   /** Reprise à l'ouverture : la ligne vient d'être lue telle quelle, la réécrire changerait son jeton pour rien. */
   const sauterEcriture = useRef(false);
-  const cle = userId ? cleVariante(userId, o.projectId, o.studyId, o.variantId) : null;
+  const cle = userId && !o.autonome ? cleVariante(userId, o.projectId, o.studyId, o.variantId) : null;
   /** Contexte et brouillon affichés au dernier rendu : une lecture asynchrone se compare à eux avant de s'appliquer. */
   const contexteAffiche = useRef(o.context), brouillonAffiche = useRef(o.brouillon);
   contexteAffiche.current = o.context; brouillonAffiche.current = o.brouillon;
@@ -140,7 +142,7 @@ export function useEnregistrement(o: OptionsEnregistrement) {
   // Brouillon hors ligne : toute modification faite sans réseau, ou d'un brouillon déjà conservé, est écrite sur
   // l'appareil. Un brouillon ouvert en ligne et jamais coupé n'est pas conservé (comportement d'origine).
   useEffect(() => {
-    if (o.historical || !o.context || !o.brouillon || saving.current || horsJeu.current) return;
+    if (o.autonome || o.historical || !o.context || !o.brouillon || saving.current || horsJeu.current) return;
     if (sauterEcriture.current) { sauterEcriture.current = false; return; }
     if (!local.current && (connecte || commandesEnAttente(o.brouillon).length === 0)) return;
     void conserver(o.context, o.brouillon, envelope.current, conflit).then((ok) => {
@@ -169,7 +171,7 @@ export function useEnregistrement(o: OptionsEnregistrement) {
 
   async function save() {
     const { projectId, studyId, variantId, context, brouillon, alive, setError, setInfo } = o;
-    if (!context || !brouillon || o.historical || saving.current || horsJeu.current) return;
+    if (!context || !brouillon || o.autonome || o.historical || saving.current || horsJeu.current) return;
     if (envelope.current && !proprietaire()) {
       // Un autre compte s'est connecté entre-temps : rien n'est envoyé sous son nom.
       setBlocked(true); setError("La session de cet appareil a changé : le brouillon hors ligne n’est pas envoyé sous un autre compte.");

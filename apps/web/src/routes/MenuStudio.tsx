@@ -3,8 +3,10 @@
  * « 01 · Dessin et modélisation », « 02 · BIM et coordination », « 03 · Visualisation, rendu et immersion »,
  * « 04 · Documentation, métrés et collaboration » — ni ajout, ni renommage, ni abréviation ; `DOMAINES_STUDIO`).
  *
- * - Accès permanents : « Accueil Studio » (`/studio` : reprise suggérée, choix explicite, nouvelle étude) et « Choisir
+ * - Accès permanents : « Accueil Studio » (`/studio` : reprise suggérée, choix explicite, nouvelle étude), « Choisir
  *   une étude » (études du projet affiché, sinon l'accueil), en plus des quatre domaines.
+ * - « Console » (`/studio/console` : cinq cartes — « 00 Sandbox » bientôt disponible et les outils des quatre domaines, ouverts SANS
+ *   charger de projet) est un article principal de Studio, sous l'en-tête et hors du sous-menu ; surligné sur toutes ses pages.
  * - « Studio » reste un lien vers `/studio` (accueil, jamais de redirection automatique), actif sur toutes les routes
  *   Studio ; son chevron (bouton `aria-expanded`, flèches droite / gauche) déplie ou replie les quatre entrées, comme
  *   « Projets › ». Barre repliée : chaque entrée montre son numéro, nom exact en infobulle et en nom accessible.
@@ -21,7 +23,7 @@ import { useState, type KeyboardEvent } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { Icon } from "../components/Icon";
 import { DOMAINES_STUDIO, domaineDeLAdresse, libelleNumeroteDomaine, type DomaineStudio } from "../modules/studio/domaines/definitions";
-import { cheminAccueilStudio, cheminProjetStudio, cheminVarianteStudio, estRouteStudio, lireRouteStudio } from "../modules/studio/routes-studio";
+import { cheminAccueilStudio, cheminConsoleStudio, cheminProjetStudio, cheminVarianteStudio, estRouteConsoleStudio, estRouteStudio, lireRouteStudio } from "../modules/studio/routes-studio";
 
 /** Adresse d'une entrée de domaine et domaine affiché, d'après l'adresse courante. */
 export function cibleDomaineStudio(pathname: string, search: string, d: DomaineStudio): { href: string; memeVariante: boolean } {
@@ -63,6 +65,10 @@ export function MenuStudio({ surNavigation }: { surNavigation?: () => void }) {
         <Icon name="chevron-right" size={14} />
       </button>
     </div>
+    {/* « Console » : article principal de Studio, hors du sous-menu (visible replié ou non). « Console » est aussi le nom anglais : le
+        dictionnaire traduit ailleurs ce mot en « Bracket » (support des réseaux), d'où translate="no". */}
+    <NavLink to={cheminConsoleStudio()} className={estRouteConsoleStudio(pathname) ? "active" : undefined} aria-current={estRouteConsoleStudio(pathname) ? "page" : undefined}
+      title="Console" aria-label="Console" translate="no" data-studio-menu-console onClick={surNavigation}><Icon name="console" /><span className="sidebar-label">Console</span></NavLink>
     <div id="studio-menu-domaines" className="sidebar-studio-sous-menu" hidden={!ouvert}>
     <ul className="sidebar-studio-acces" aria-label="Accès Studio">
       <li><Link to={cheminAccueilStudio()} aria-current={pathname === "/studio" ? "page" : undefined} title="Accueil Studio" aria-label="Accueil Studio" data-studio-menu-accueil onClick={surNavigation}>
