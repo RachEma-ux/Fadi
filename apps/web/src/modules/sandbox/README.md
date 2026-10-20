@@ -12,6 +12,9 @@ comportement ni d'apparence.
 - `PageSandbox.tsx` — page de `/sandbox` (fil d'Ariane, titre accessible) ; charge la Planche à la demande.
 - `SandboxPlanche.tsx`, `planche/`, `panneaux/` — la Planche copiée (outils, vue three.js, booléens Manifold, brouillon
   local), sur le modèle `@parcours/sandbox-planche-model`.
+- Registre unique `REGISTRE_SANDBOX` (`packages/sandbox-planche-model/src/registre-sandbox.ts`, lot 2) : 86 entrées
+  (52 outils, 20 commandes, 14 panneaux) avec pictogramme, famille, raccourci, emplacement et disponibilité ; barres,
+  grille « ⋯ », « Outils ▾ », recherche, colonne de droite, barre d'actions et clavier le lisent (`registre-interface.test.ts`).
 - `routes-sandbox.ts` — adresses : `/sandbox` et l'ancienne `/studio/console/sandbox`, qui y redirige.
 - `sandbox.css` (sous `.sandbox-planche`) et `page-sandbox.css` (sous `.sandbox-page`) — feuilles de style isolées.
 
@@ -22,7 +25,7 @@ comportement ni d'apparence.
 - Contrôles : `independance.test.ts` (bidirectionnel) et `scripts/frontieres.json` (`npm run typecheck`).
 - Recette de bout en bout : `apps/web/e2e/sandbox-module.mjs` (CI, tranche `planche`).
 
-## Hors du lot 1
+## Lots suivants
 
-Registre unique, pictogrammes Tabler, interface proche de SketchUp, préférences sur le serveur, harmonisation des
+Pictogrammes Tabler, interface proche de SketchUp, préférences sur le serveur, harmonisation des
 raccourcis : lots suivants de la recommandation.

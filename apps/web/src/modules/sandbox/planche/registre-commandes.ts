@@ -1,15 +1,17 @@
 /**
- * Registre unique des commandes de la Planche (lot 9, EX-CMD-01) : toutes les commandes livrées (objets, contexte, lien,
- * Navigateur, vue) dans une seule liste — identifiant stable, icône, libellé, raccourci, famille — et une seule
- * résolution du clavier. Les barres, « Outils ▾ », le menu et le clavier lisent ces mêmes entrées ; l'exécution et la
- * disponibilité restent celles de chaque famille (aucune logique d'opération dupliquée ici). Sans React ni DOM.
+ * Registre des commandes de la Planche (lot 9, EX-CMD-01) : toutes les commandes livrées (objets, contexte, lien,
+ * Navigateur, vue, débit, pièce) dans une seule liste — identifiant stable, icône, libellé, raccourci, famille — et une
+ * seule résolution du clavier. Identifiant, famille, icône, raccourci et ordre viennent du registre unique du Sandbox
+ * (`REGISTRE_SANDBOX`, lot 2) ; seul le libellé (clé du catalogue de messages) vient des listes de chaque famille. Les
+ * barres, « Outils ▾ », le menu et le clavier lisent ces mêmes entrées ; l'exécution et la disponibilité restent celles
+ * de chaque famille (aucune logique d'opération dupliquée ici). Sans React ni DOM.
  */
-import { normaliserRaccourci } from "@parcours/sandbox-planche-model";
+import { entreesSandbox, normaliserRaccourci, type FamilleCommandeSandbox } from "@parcours/sandbox-planche-model";
 import type { CleMessage } from "../messages";
 import { COMMANDE_DETACHER_LIEN, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_PIECE, COMMANDES_OBJETS, COMMANDES_VUE } from "./commandes-objets";
 import { type Cle, raccourciClavier } from "./outils-planche";
 
-export type FamilleCommande = "objet" | "contexte" | "lien" | "navigateur" | "vue" | "debit" | "piece";
+export type FamilleCommande = FamilleCommandeSandbox;
 
 export interface EntreeRegistre {
   readonly id: string;
@@ -20,15 +22,16 @@ export interface EntreeRegistre {
   readonly raccourci: string;
 }
 
-export const REGISTRE_COMMANDES: readonly EntreeRegistre[] = [
-  ...COMMANDES_OBJETS.map((c) => ({ id: c.id, famille: "objet" as const, picto: c.picto, libelle: c.libelle, raccourci: c.raccourci })),
-  ...COMMANDES_CONTEXTE.map((c) => ({ id: c.id, famille: "contexte" as const, picto: c.picto, libelle: c.libelle, raccourci: c.raccourci })),
-  { id: COMMANDE_DETACHER_LIEN.id, famille: "lien", picto: COMMANDE_DETACHER_LIEN.picto, libelle: COMMANDE_DETACHER_LIEN.libelle, raccourci: COMMANDE_DETACHER_LIEN.raccourci },
-  ...COMMANDES_NAVIGATEUR.map((c) => ({ id: c.id, famille: "navigateur" as const, picto: c.picto, libelle: c.libelle, raccourci: c.raccourci })),
-  ...COMMANDES_VUE.map((c) => ({ id: c.id, famille: "vue" as const, picto: c.picto, libelle: c.libelle, raccourci: c.raccourci })),
-  ...COMMANDES_DEBIT.map((c) => ({ id: c.id, famille: "debit" as const, picto: c.picto, libelle: c.libelle, raccourci: c.raccourci })),
-  ...COMMANDES_PIECE.map((c) => ({ id: c.id, famille: "piece" as const, picto: c.picto, libelle: c.libelle, raccourci: c.raccourci })),
-];
+/** Libellé de chaque commande livrée, par identifiant. */
+const LIBELLES: ReadonlyMap<string, CleMessage> = new Map(
+  [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, COMMANDE_DETACHER_LIEN, ...COMMANDES_NAVIGATEUR, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE].map((c) => [c.id, c.libelle] as const),
+);
+
+export const REGISTRE_COMMANDES: readonly EntreeRegistre[] = entreesSandbox("commande").map((e) => {
+  const libelle = LIBELLES.get(e.id);
+  if (!libelle || e.raccourci === null) throw new Error(`Registre du Sandbox : commande « ${e.id} » sans libellé ni raccourci`);
+  return { id: e.id, famille: e.famille as FamilleCommande, picto: e.picto, libelle, raccourci: e.raccourci };
+});
 
 /** Commande dont le raccourci correspond à l'événement clavier (touche physique relue sous Alt, macOS), sinon `null`. */
 export function commandeDuClavier(c: Cle): EntreeRegistre | null {

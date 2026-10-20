@@ -57,6 +57,8 @@ import {
   opererSolides,
   orienterFaces,
   outilParId,
+  entreePanneau,
+  entreesSandbox,
   peindreFacesCote,
   peindreOccurrences,
   rechercherOutil,
@@ -174,19 +176,15 @@ function telechargerFichier(blob: Blob, nom: string): void {
 }
 type Panneau = "instructeur" | "materiaux" | "balises" | "objets" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit";
 type PanneauObjets = "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit";
-/** Panneaux du lot 5 (§6), derrière une seule icône « Objets » : la colonne reste courte (téléphone, Zoom étendu). */
-const LISTE_PANNEAUX_OBJETS: readonly (readonly [PanneauObjets, string])[] = [
-  ["info-entite", "ⓘ"],
-  ["composants", "❖"],
-  ["styles", "◐"],
-  ["ombres", "☀"],
-  ["scenes", "🎞"],
-  ["affichage", "👁"],
-  ["adoucir", "◠"],
-  ["info-modele", "⚙"],
-  ["navigateur", "☰"],
-  ["debit", "☷"],
-];
+/**
+ * Panneaux du lot 5 (§6), derrière une seule icône « Objets » : la colonne reste courte (téléphone, Zoom étendu). Liste,
+ * ordre et pictogrammes viennent du registre unique du Sandbox (emplacement « objets-et-vue », lot 2).
+ */
+const LISTE_PANNEAUX_OBJETS: readonly (readonly [PanneauObjets, string])[] = entreesSandbox("panneau")
+  .filter((e) => e.emplacement === "objets-et-vue")
+  .map((e) => [e.id as PanneauObjets, e.picto] as const);
+/** Pictogramme d'un panneau de la colonne de droite, lu au registre. */
+const pictoPanneau = (id: Panneau): string => entreePanneau(id).picto;
 const PANNEAUX_OBJETS: ReadonlySet<string> = new Set(LISTE_PANNEAUX_OBJETS.map(([id]) => id));
 /** Précision d'affichage (Info modèle) : préférence de l'appareil (R10), jamais une donnée de la Planche. */
 const CLE_PRECISION = "fadi.sandbox.planche.precision";
@@ -2355,19 +2353,19 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           <span aria-hidden="true" className="canevas-picto">{colonneRepliee ? "«" : "»"}</span>
         </button>
         <button type="button" className="canevas-icone" aria-pressed={panneau === "instructeur"} onClick={() => setPanneau(panneau === "instructeur" ? null : "instructeur")} title={t("panneau.instructeur")} data-planche-panneau-icone="instructeur">
-          <span aria-hidden="true" className="canevas-picto">?</span>
+          <span aria-hidden="true" className="canevas-picto">{pictoPanneau("instructeur")}</span>
           <span className="canevas-etiquette">{t("panneau.instructeur")}</span>
         </button>
         <button type="button" className="canevas-icone" aria-pressed={panneau === "materiaux"} onClick={() => setPanneau(panneau === "materiaux" ? null : "materiaux")} title={t("panneau.materiaux")} data-planche-panneau-icone="materiaux">
-          <span aria-hidden="true" className="canevas-picto">▨</span>
+          <span aria-hidden="true" className="canevas-picto">{pictoPanneau("materiaux")}</span>
           <span className="canevas-etiquette">{t("panneau.materiaux")}</span>
         </button>
         <button type="button" className="canevas-icone" aria-pressed={panneau === "balises"} onClick={() => setPanneau(panneau === "balises" ? null : "balises")} title={t("panneau.balises")} data-planche-panneau-icone="balises">
-          <span aria-hidden="true" className="canevas-picto">⌖</span>
+          <span aria-hidden="true" className="canevas-picto">{pictoPanneau("balises")}</span>
           <span className="canevas-etiquette">{t("panneau.balises")}</span>
         </button>
         <button type="button" className="canevas-icone" aria-pressed={panneau === "objets" || (panneau !== null && PANNEAUX_OBJETS.has(panneau))} onClick={() => setPanneau(panneau === "objets" || (panneau !== null && PANNEAUX_OBJETS.has(panneau)) ? null : "objets")} title={t("panneau.objets")} data-planche-panneau-icone="objets">
-          <span aria-hidden="true" className="canevas-picto">▤</span>
+          <span aria-hidden="true" className="canevas-picto">{pictoPanneau("objets")}</span>
           <span className="canevas-etiquette">{t("panneau.objets")}</span>
         </button>
       </nav>
@@ -2654,7 +2652,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         <div className="planche-fil planche-isolement" role="status" data-planche-isolement>
           <span>{t("planche.isolement.etat", { nombre: String(isolement.ids.length) })}</span>
           <button type="button" className="planche-fil-commande" title={`${t("planche.menu.quitter-isolement")} (${afficherRaccourci(COMMANDES_VUE[0]!.raccourci)})`} aria-label={t("planche.menu.quitter-isolement")} onClick={basculerIsolement} data-planche-isolement-quitter>
-            <span aria-hidden="true">⦿</span>
+            <span aria-hidden="true">{COMMANDES_VUE[0]!.picto}</span>
           </button>
         </div>
       )}
