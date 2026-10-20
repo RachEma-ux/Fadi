@@ -240,8 +240,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: auto;
+  max-width: min(36ch, 38vw);
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  line-height: 1.2;
+  min-height: 44px;
   margin: 0;
   color: #7a4a00;
 }

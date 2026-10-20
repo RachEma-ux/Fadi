@@ -7,6 +7,7 @@ Commit history remains reachable through the consolidation merge.
 import json
 import os
 import re
+import time
 import subprocess
 import urllib.error
 import urllib.parse
@@ -14,8 +15,9 @@ import urllib.request
 from pathlib import Path
 
 REPO = "RachEma-ux/Fadi"
-CHECKPOINT = "docs/continuity/BRANCH-CONSOLIDATION-2026-10-20.md"
-HELPER = "chore/consolidate-fadi-branches"
+CHECKPOINT = os.environ.get("CLEANUP_CHECKPOINT", "docs/continuity/BRANCH-CONSOLIDATION-2026-10-20.md")
+EXPECTED_COUNT = int(os.environ.get("CLEANUP_EXPECTED_BRANCHES", "18"))
+HELPER = os.environ.get("CLEANUP_HELPER_BRANCH", "chore/consolidate-fadi-branches")
 
 
 def git(*args):
@@ -33,7 +35,7 @@ def api(path, method="GET"):
             data = response.read()
             return json.loads(data) if data else None
     except urllib.error.HTTPError as error:
-        if method == "GET" and error.code == 404:
+        if method in ("GET", "DELETE") and error.code == 404:
             return None
         raise
 
@@ -46,8 +48,8 @@ def main():
         raise SystemExit("Unexpected checkout; cleanup refused")
     rows = re.findall(r"^\| `([^`]+)` \| `([0-9a-f]{40})` \|$",
                       Path(CHECKPOINT).read_text(), re.MULTILINE)
-    if len(rows) != 18 or len({name for name, _ in rows}) != 18:
-        raise SystemExit("Original 18-branch checkpoint invalid; cleanup refused")
+    if len(rows) != EXPECTED_COUNT or len({name for name, _ in rows}) != EXPECTED_COUNT:
+        raise SystemExit("Original branch checkpoint invalid; cleanup refused")
     # The helper tip must be the PR's second merge parent. This also refuses
     # cleanup after squash/rebase, which would lose the original ancestry.
     parents = git("show", "-s", "--format=%P", commit).split()
@@ -78,12 +80,20 @@ def main():
         if ref["object"]["sha"] != expected:
             raise SystemExit(f"Branch moved during cleanup: {name}; stopped")
         api(path, method="DELETE")
-        if api(path) is not None:
-            raise SystemExit(f"Deletion not confirmed: {name}")
+        for attempt in range(8):
+            if api(path) is None:
+                break
+            time.sleep(1)
+        else:
+            raise SystemExit(f"Deletion not confirmed after retries: {name}")
         print(f"Deleted merged branch: {name} ({expected})")
         deleted.append(name)
-    remaining = api("branches?per_page=100")
-    names = [branch["name"] for branch in remaining]
+    for attempt in range(8):
+        remaining = api("branches?per_page=100")
+        names = [branch["name"] for branch in remaining]
+        if names == ["main"]:
+            break
+        time.sleep(1)
     print("Remaining branches:", json.dumps(names))
     summary = "## Authorized branch cleanup\n\n" + "\n".join(f"- Deleted `{n}`" for n in deleted)
     summary += "\n\nRemaining: " + ", ".join(f"`{n}`" for n in names) + "\n"

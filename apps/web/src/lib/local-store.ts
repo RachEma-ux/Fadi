@@ -232,6 +232,7 @@ async function retryLots(projectId: string): Promise<LotEntry[]> {
 export const localStore = {
   /** Clé / valeur (cache des requêtes) : `null` quand absent ou indisponible. */
   getValue: (key: string) => safe((d) => d.keyValue.get(key).then((v) => v?.value ?? null), null as string | null),
+  getValueChecked: (key: string) => checked((d) => d.keyValue.get(key).then((v) => v?.value ?? null)),
   setValue: (key: string, value: string) => safe((d) => d.keyValue.put({ key, value, updatedAt: new Date().toISOString() }).then(() => undefined), undefined),
   /** Pour les écritures rejouables : l'appelant doit exposer un échec. */
   setValueChecked: (key: string, value: string) => checked((d) => d.keyValue.put({ key, value, updatedAt: new Date().toISOString() }).then(() => undefined)),

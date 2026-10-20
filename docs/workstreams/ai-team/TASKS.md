@@ -1,5 +1,7 @@
 # Tâches — équipe Codex Fadi, programme156
 
+> Mise à jour du 21 octobre 2026 : pour l’état courant, lire STATUS.md et HANDOFF.md. Les références et instructions datées de Mission 004 ci-dessous sont historiques ; la consolidation #209 et les lots ultérieurs sont déjà dans main. Aucun changement des 630 obligations ou de leur acceptation n’est inféré.
+
 ## En cours
 
 - STUDIO-V1 — [PR #181](https://github.com/RachEma-ux/Fadi/pull/181) : parcours 2D persistant vérifié (52 contrôles réels), fusion autorisée par le propriétaire ; conserver les registres #172 et raccorder les apports concurrents #178–#180 à un seul socle. Recette personnelle et MVP complet non déduits de la fusion.

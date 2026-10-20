@@ -1,5 +1,7 @@
 # Contexte — Studio
 
+> Mise à jour du 21 octobre 2026 : pour l’état courant, lire STATUS.md et HANDOFF.md. Les références et instructions datées de Mission 004 ci-dessous sont historiques ; la consolidation #209 et les lots ultérieurs sont déjà dans main. Aucun changement des 630 obligations ou de leur acceptation n’est inféré.
+
 ## Objectif
 
 Préparer et livrer Studio natif autonome dans Fadi selon les sources officielles, avec deux planches et un dossier de conception durable et publiable, sans modifier implicitement les 21 étapes.

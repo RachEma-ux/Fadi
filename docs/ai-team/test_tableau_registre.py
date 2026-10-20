@@ -39,6 +39,14 @@ class RegistreTests(unittest.TestCase):
     def test_controle_coherent(self):
         self.assertEqual(tr.controler(self.racine, self.registre), [])
 
+    def test_a_faire_est_un_statut_de_continuite_sans_promouvoir_la_tache(self):
+        self.registre['tasks'][3]['statut'] = 'À faire'
+        phrase = '626 À définir / 1 À faire / 0 En cours / 1 Bloqué / 1 Vérifié / 1 Accepté, P630=2/630\n'
+        for nom in tr.CHECKPOINTS:
+            (self.racine / nom).write_text(phrase, encoding='utf-8')
+        self.assertEqual(tr.controler(self.racine, self.registre), [])
+        self.assertEqual(tr.ids_p630(self.registre), ['T-000', 'T-001'])
+
     def test_checkpoint_divergent(self):
         (self.racine / tr.CHECKPOINTS[1]).write_text('628 À définir / 0 En cours / 0 Bloqué / 1 Vérifié / 1 Accepté, P630=3/630', encoding='utf-8')
         ecarts = tr.controler(self.racine, self.registre)

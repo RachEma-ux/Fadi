@@ -1,5 +1,7 @@
 # Contexte — programme de missions Codex
 
+> Mise à jour du 21 octobre 2026 : pour l’état courant, lire STATUS.md et HANDOFF.md. Les références et instructions datées de Mission 004 ci-dessous sont historiques ; la consolidation #209 et les lots ultérieurs sont déjà dans main. Aucun changement des 630 obligations ou de leur acceptation n’est inféré.
+
 ## Objectif
 
 Préparer et suivre toutes les missions Fadi/Studio demandées, sans tâche omise ni abandon silencieux, avec preuves et reprise entre sessions.
