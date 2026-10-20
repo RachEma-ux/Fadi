@@ -5,6 +5,7 @@
  *   fil d'Ariane « Studio / Console / Sandbox » et l'entrée « Console » marquée (apparence inchangée) ;
  * - l'ancienne adresse `/studio/console/sandbox` redirige vers `/sandbox` (remplacement dans l'historique) ;
  * - la carte « 00 Sandbox » de la Console est un simple lien vers `/sandbox` ;
+ * - un échec du chargement de la Planche affiche la limite d'erreur du Sandbox et « Réessayer » la recharge ;
  * - aucun appel à l'API d'un projet (Atelier, Studio, Parcours) pendant que le Sandbox est ouvert, aucune erreur JavaScript.
  *
  *   BASE_URL=http://localhost:3001 OUT=atelier-captures/sandbox node apps/web/e2e/sandbox-module.mjs
@@ -98,7 +99,27 @@ try {
   surSandbox = false;
   await context.close();
 
-  // 4. Téléphone : la Planche se charge et sa barre d'outils reste visible.
+  // 4. Échec du chargement de la Planche : limite d'erreur du Sandbox, navigation de Fadi gardée, « Réessayer » recharge.
+  {
+    const { context: c2, page: p2 } = await nouvellePage({ width: 1440, height: 900 });
+    await inscrire(p2);
+    const morceau = /\/assets\/SandboxPlanche-[^/]+\.js$/;
+    await p2.route(morceau, (r) => r.abort());
+    const avant = erreurs.length;
+    await p2.goto(`${BASE}/sandbox`);
+    const alerte = p2.locator("[data-sandbox-erreur]");
+    await alerte.waitFor({ state: "visible" });
+    check("échec du chargement : message d'erreur du Sandbox", (await alerte.getAttribute("role")) === "alert");
+    check("échec du chargement : barre latérale et fil d'Ariane toujours là", (await p2.locator("[data-studio-menu-console]").isVisible()) && (await p2.locator("[data-sandbox-page] nav").isVisible()));
+    await p2.unroute(morceau);
+    await p2.locator("[data-sandbox-reessayer]").click();
+    await plancheChargee(p2, "après « Réessayer »");
+    // Les erreurs levées par l'échec simulé ne comptent pas comme des erreurs de la page.
+    erreurs.splice(avant);
+    await c2.close();
+  }
+
+  // 5. Téléphone : la Planche se charge et sa barre d'outils reste visible.
   const tel = await nouvellePage({ width: 390, height: 844 });
   await inscrire(tel.page);
   surSandbox = true;

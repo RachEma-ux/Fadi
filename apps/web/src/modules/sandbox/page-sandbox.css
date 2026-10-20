@@ -4,6 +4,8 @@
 .sandbox-page .sandbox-page-fil{display:flex;flex-wrap:wrap;gap:4px;font-size:13px;color:#577079;margin:0 0 18px;overflow-wrap:anywhere}
 .sandbox-page .sandbox-page-fil a{color:var(--sandbox-accent)}
 .sandbox-page .sandbox-page-contenu{margin-top:4px}
+.sandbox-page .sandbox-page-erreur{padding:28px;background:#fff;border:1px solid #dde6e8;border-radius:18px;overflow-wrap:anywhere}
+.sandbox-page .sandbox-page-erreur h2{font-size:clamp(24px,3vw,34px);font-weight:600;margin:8px 0 12px}
 .sandbox-page label{display:flex;flex-direction:column;gap:7px;font-size:13px;margin-bottom:14px}
 .sandbox-page input{border:1px solid #b9cbd0;border-radius:7px;padding:10px;font:inherit;min-width:0;width:100%;box-sizing:border-box}
 .sandbox-page button{min-height:44px;border:1px solid #b9cdd0;border-radius:8px;padding:9px 13px;background:white;color:var(--sandbox-ink);cursor:pointer;font:inherit}
@@ -11,3 +13,4 @@
 .sandbox-page button:disabled{opacity:.48;cursor:not-allowed}
 .sandbox-page :focus-visible{outline:3px solid #c77b35;outline-offset:3px}
 @media(max-width:900px){.sandbox-page{padding:20px 14px}}
+@media(max-width:540px){.sandbox-page .sandbox-page-erreur{padding:18px}}
