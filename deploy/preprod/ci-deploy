@@ -36,6 +36,24 @@ flock -n 9 || die "another CI deployment is running"
 # Only the latest protected main commit, never a PR SHA or arbitrary historical SHA.
 REMOTE_MAIN=$(git ls-remote "$REPO" refs/heads/main | awk '{print $1}')
 [ -n "$REMOTE_MAIN" ] && [ "$REMOTE_MAIN" = "$TARGET" ] || die "commit is no longer the tip of main"
+
+# Defense in depth: the VPS itself verifies the GitHub CI workflow result.
+# A stolen deploy SSH key alone cannot bypass a failed or pending main CI run.
+CI_JSON=$(curl -fsS --retry 2 --max-time 25 \
+  -H "User-Agent: Fadi-Preprod-CI" \
+  -H "Accept: application/vnd.github+json" \
+  "https://api.github.com/repos/RachEma-ux/Fadi/actions/workflows/ci.yml/runs?head_sha=$TARGET&branch=main&event=push&per_page=10") ||
+  die "cannot verify CI result from GitHub API"
+printf '%s' "$CI_JSON" | python3 -c '
+import json, sys
+runs = json.load(sys.stdin).get("workflow_runs", [])
+valid = [r for r in runs if r.get("head_sha") == sys.argv[1]
+         and r.get("head_branch") == "main" and r.get("event") == "push"]
+if not valid or valid[0].get("conclusion") != "success" or valid[0].get("status") != "completed":
+    sys.exit("preprod-ci : no successful completed CI run for main HEAD")
+' "$TARGET" || die "CI approval failed"
+unset CI_JSON
+
 OLD=$(tr -d '[:space:]' < "$APPROVED")
 [[ "$OLD" =~ ^[0-9a-f]{40}$ ]] || die "invalid approved-commit"
 "$FP" garde
@@ -61,6 +79,10 @@ DISK_FREE=$(df -Pm "$DOCKER_ROOT" | awk 'END {print $4}')
 [[ "$DISK_FREE" =~ ^[0-9]+$ ]] && [ "$DISK_FREE" -ge 3500 ] ||
   die "less than 3500 MiB disk free on Docker filesystem"
 
+# Rollback requires the previously built image to remain available.
+docker image inspect "fadi-preprod-app:${OLD:0:12}" >/dev/null 2>&1 ||
+  die "previous staging image not present: rollback would be impossible"
+
 # Preserves current staging data; no automatic database migration or data restore.
 "$FP" backup
 CHANGED=0
@@ -77,8 +99,8 @@ rollback() {
 }
 trap rollback ERR
 
-"$FP" sync "$TARGET"
 CHANGED=1
+"$FP" sync "$TARGET"
 # Build ONLY the application; Playwright image is not rebuilt on each commit.
 # Timeout bounds CPU/memory/disk contention on the VPS.
 timeout --kill-after=30s 30m "$FP" build-app
