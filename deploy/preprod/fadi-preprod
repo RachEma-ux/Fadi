@@ -81,6 +81,7 @@ Administrateur :
 Opérateur (code approuvé seulement) :
   garde               rend la configuration et vérifie l'isolation (aucune action Docker)
   build               construit les images fadi-preprod-app et fadi-preprod-recette
+  build-app           construit seulement l'image applicative (CI, sans Playwright)
   up-db | up          démarre la base seule | base + application (MIGRATE_ON_START=0)
   migrate             applique init.sql une fois sur la base de la préproduction, puis revient à MIGRATE_ON_START=0
   smoke               contrôles HTTP sur 127.0.0.1:3101 (codes, contenus, en-têtes) ; échoue au premier écart
@@ -317,7 +318,7 @@ cmd=${1:-}; [ $# -gt 0 ] && shift
 case "$cmd" in
   ""|-h|--help|help) usage; exit 0 ;;
   sync|init-env|edge) admin_seulement "$cmd" ;;
-  garde|build|up-db|migrate|up|smoke|check|e2e|backup|restore-check|show|ps|status|logs|down) ;;
+  garde|build|build-app|up-db|migrate|up|smoke|check|e2e|backup|restore-check|show|ps|status|logs|down) ;;
   *) usage; die "commande inconnue : $cmd" ;;
 esac
 
@@ -373,6 +374,9 @@ case "$cmd" in
   build)
     verifier_disposition; nouveau_run build; garde 0
     journal build.log dc --profile recette build app recette ;;
+  build-app)
+    verifier_disposition; nouveau_run build-app; garde 0
+    journal build-app.log dc build app ;;
   up-db)
     verifier_disposition; garde 0; dc up -d db; attendre_sante db 120 ;;
   migrate)
