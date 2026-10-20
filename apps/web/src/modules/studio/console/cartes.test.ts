@@ -14,14 +14,13 @@ const lire = (chemin: string) => {
 };
 
 describe("cartes de la Console", () => {
-  it("cinq cartes : 00 Sandbox (bientôt disponible), puis les quatre domaines sous leur libellé exact", () => {
+  it("cinq cartes : 00 Sandbox, puis les quatre domaines sous leur libellé exact", () => {
     expect(CARTES_CONSOLE.map((c) => `${c.numero} ${c.libelleFR}`)).toEqual([
       "00 Sandbox", "01 Dessin et modélisation", "02 BIM et coordination", "03 Visualisation, rendu et immersion", "04 Documentation, métrés et collaboration",
     ]);
-    expect(CARTES_CONSOLE.filter((c) => c.bientot).map((c) => c.id)).toEqual(["sandbox"]);
   });
 
-  it("la carte 00 ouvre la page « bientôt disponible », jamais un outil", () => {
+  it("la carte 00 ouvre la Planche de Sandbox, jamais un outil de domaine", () => {
     expect(lire(CARTES_CONSOLE[0]!.chemin)).toEqual({ vue: "console-sandbox" });
   });
 

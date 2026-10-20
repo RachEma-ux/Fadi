@@ -1,0 +1,7 @@
+{
+  "name": "@parcours/sandbox-planche-model",
+  "version": "0.1.0",
+  "description": "Copie indépendante du modèle de la Planche (Sandbox de la Console de Studio) : aucune relation avec @parcours/planche-model ni avec l'étape 10 — géométrie libre 3D, grammaire du champ Mesures, inférences, catalogue des outils.",
+  "contracts": {},
+  "allowedDependencies": []
+}

@@ -1,14 +1,14 @@
 /**
  * Console de Studio (`/studio/console`) : cinq cartes.
  *
- * - « 00 Sandbox » : page « bientôt disponible » (`/studio/console/sandbox`).
+ * - « 00 Sandbox » : la Planche de Sandbox, copie indépendante de celle de l'étape 10 (`/studio/console/sandbox`).
  * - « 01 » à « 04 » : l'outil du domaine, ouvert SANS CHARGER DE PROJET (`/studio/console/:domaine`) — aucune lecture
  *   de projet, d'étude ni de variante, aucune création côté serveur, aucun projet fictif. Ce qui est dessiné reste dans
  *   la page : rien n'est enregistré (`ConsoleOutil`).
  */
+import { lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
-import { cheminConsoleStudio } from "../routes-studio";
-import { CARTES_CONSOLE, LIBELLE_SANDBOX, TEXTE_BIENTOT } from "./cartes";
+import { CARTES_CONSOLE, LIBELLE_SANDBOX } from "./cartes";
 import "./console.css";
 
 export function ConsoleStudio() {
@@ -22,7 +22,7 @@ export function ConsoleStudio() {
       <ul className="studio-console-cartes" aria-label="Outils de la Console">
         {CARTES_CONSOLE.map((c) => (
           <li key={c.id}>
-            <Link to={c.chemin} className="studio-console-carte" data-studio-console-carte={c.id} data-studio-console-bientot={c.bientot ? "" : undefined}>
+            <Link to={c.chemin} className="studio-console-carte" data-studio-console-carte={c.id}>
               <span className="studio-console-numero">{c.numero}</span>
               <strong>{c.libelleFR}</strong>
               <small>{c.descriptionFR}</small>
@@ -34,16 +34,19 @@ export function ConsoleStudio() {
   );
 }
 
-/** Carte « 00 Sandbox » : page « bientôt disponible » (aucune donnée, aucun appel serveur). */
+/**
+ * Carte « 00 Sandbox » : la Planche de Sandbox, chargée à la demande (three.js, Manifold : jamais dans la coquille de
+ * Studio). Aucune donnée de projet, aucun appel serveur ; voir `sandbox/SandboxPlanche.tsx`.
+ */
+const SandboxPlanche = lazy(() => import("./sandbox/SandboxPlanche"));
+
 export function ConsoleSandbox() {
   return (
-    <section className="studio-welcome studio-page studio-console" data-studio-console-sandbox>
-      <header className="studio-page-entete">
-        <h1><span className="studio-console-numero">00</span> {LIBELLE_SANDBOX}</h1>
-      </header>
-      <p role="status" className="studio-console-bientot" data-studio-bientot>{TEXTE_BIENTOT}</p>
-      <p>Cet espace n’est pas encore disponible : aucun outil n’est ouvert et rien n’est créé.</p>
-      <p><Link to={cheminConsoleStudio()} data-studio-console-retour>Revenir à la Console</Link></p>
+    <section className="studio-page studio-console studio-console-sandbox" data-studio-console-sandbox>
+      <h1 className="sr-only"><span translate="no">00 {LIBELLE_SANDBOX}</span></h1>
+      <Suspense fallback={<p role="status" data-studio-sandbox-chargement>Chargement de la Planche de Sandbox…</p>}>
+        <SandboxPlanche />
+      </Suspense>
     </section>
   );
 }

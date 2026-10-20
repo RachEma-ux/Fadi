@@ -16,7 +16,8 @@ function sources(dossier: string): { chemin: string; texte: string }[] {
   const out: { chemin: string; texte: string }[] = [];
   for (const nom of readdirSync(dossier)) {
     const p = join(dossier, nom);
-    if (statSync(p).isDirectory()) out.push(...sources(p));
+    // La Planche de Sandbox est une copie indépendante, sans document Studio ni commande : hors de ce contrat.
+    if (statSync(p).isDirectory()) { if (relative(ICI, p).replaceAll("\\", "/") !== "console/sandbox") out.push(...sources(p)); }
     else if (/\.(ts|tsx)$/.test(nom) && !/\.test\.ts$/.test(nom)) out.push({ chemin: relative(ICI, p).replaceAll("\\", "/"), texte: readFileSync(p, "utf8") });
   }
   return out;

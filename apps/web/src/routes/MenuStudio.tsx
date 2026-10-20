@@ -5,7 +5,7 @@
  *
  * - Accès permanents : « Accueil Studio » (`/studio` : reprise suggérée, choix explicite, nouvelle étude), « Choisir
  *   une étude » (études du projet affiché, sinon l'accueil), en plus des quatre domaines.
- * - « Console » (`/studio/console` : cinq cartes — « 00 Sandbox » bientôt disponible et les outils des quatre domaines, ouverts SANS
+ * - « Console » (`/studio/console` : cinq cartes — « 00 Sandbox » (sa propre Planche) et les outils des quatre domaines, ouverts SANS
  *   charger de projet) est un article principal de Studio, sous l'en-tête et hors du sous-menu ; surligné sur toutes ses pages.
  * - « Studio » reste un lien vers `/studio` (accueil, jamais de redirection automatique), actif sur toutes les routes
  *   Studio ; son chevron (bouton `aria-expanded`, flèches droite / gauche) déplie ou replie les quatre entrées, comme
