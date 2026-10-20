@@ -6,7 +6,7 @@
  * barres, « Outils ▾ », le menu et le clavier lisent ces mêmes entrées ; l'exécution et la disponibilité restent celles
  * de chaque famille (aucune logique d'opération dupliquée ici). Sans React ni DOM.
  */
-import { entreesSandbox, normaliserRaccourci, type FamilleCommandeSandbox } from "@parcours/sandbox-planche-model";
+import { entreesSandbox, normaliserRaccourci, type FamilleCommandeSandbox, type Pictogramme } from "@parcours/sandbox-planche-model";
 import type { CleMessage } from "../messages";
 import { COMMANDE_DETACHER_LIEN, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_PIECE, COMMANDES_OBJETS, COMMANDES_VUE } from "./commandes-objets";
 import { type Cle, raccourciClavier } from "./outils-planche";
@@ -16,7 +16,7 @@ export type FamilleCommande = FamilleCommandeSandbox;
 export interface EntreeRegistre {
   readonly id: string;
   readonly famille: FamilleCommande;
-  readonly picto: string;
+  readonly picto: Pictogramme;
   readonly libelle: CleMessage;
   /** Raccourci canonique (forme du catalogue : « Alt+Maj+U »). */
   readonly raccourci: string;
@@ -30,7 +30,7 @@ const LIBELLES: ReadonlyMap<string, CleMessage> = new Map(
 export const REGISTRE_COMMANDES: readonly EntreeRegistre[] = entreesSandbox("commande").map((e) => {
   const libelle = LIBELLES.get(e.id);
   if (!libelle || e.raccourci === null) throw new Error(`Registre du Sandbox : commande « ${e.id} » sans libellé ni raccourci`);
-  return { id: e.id, famille: e.famille as FamilleCommande, picto: e.picto, libelle, raccourci: e.raccourci };
+  return { id: e.id, famille: e.famille as FamilleCommande, picto: e.pictogramme, libelle, raccourci: e.raccourci };
 });
 
 /** Commande dont le raccourci correspond à l'événement clavier (touche physique relue sous Alt, macOS), sinon `null`. */

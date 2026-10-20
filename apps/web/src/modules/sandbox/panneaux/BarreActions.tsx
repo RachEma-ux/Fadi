@@ -11,14 +11,17 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { etatUi, useEtatUi } from "../etat-ui";
+import type { Pictogramme as DescriptionPictogramme } from "@parcours/sandbox-planche-model";
 import { t } from "../messages";
+import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
+import type { IconeInterface } from "../pictogrammes/interface";
 import { useNavigationBarre } from "../navigation-barre";
-import { borner, pasClavier, positionParDefaut, type Position, type Taille, type Zone } from "./barre-actions-position";
+import { borner, largeurMaximale, pasClavier, positionParDefaut, retirerGauche, type Position, type Taille, type Zone } from "./barre-actions-position";
 
 export interface ActionBarre {
   id: string;
-  /** Pictogramme affiché (texte court). */
-  picto: string;
+  /** Pictogramme : entrée du registre, ou icône de l'interface (Annuler, Rétablir, Détacher). */
+  picto: DescriptionPictogramme | IconeInterface;
   /** Nom lu (lecteur d'écran) ; infobulle à défaut de `titre`. */
   libelle: string;
   titre?: string;
@@ -37,8 +40,11 @@ export interface PropsBarreActions {
   autres?: readonly ActionBarre[];
   /** Zone de dessin : la position par défaut est son coin bas droit. Sans référence, celui de la fenêtre. */
   reference?: React.RefObject<HTMLElement | null>;
-  /** Éléments de la zone à ne pas recouvrir par défaut (sélecteurs dans la référence) : en bas (barre d'état), à droite (colonne). */
-  reserve?: { bas?: string; droite?: string };
+  /**
+   * Éléments de la zone à ne pas recouvrir par défaut (sélecteurs dans la référence) : en bas (barre d'état), à droite
+   * (colonne), à gauche (barre d'outils verticale : au téléphone, la barre passe à la ligne plutôt que de la recouvrir).
+   */
+  reserve?: { bas?: string; droite?: string; gauche?: string };
   /** Change quand la barre change de fenêtre (Planche détachée) : les écouteurs de redimensionnement sont reposés. */
   fenetreCle?: string;
 }
@@ -67,6 +73,7 @@ export function BarreActions({ annuler, retablir, autres = [], reference, reserv
   const depart = useRef<{ px: number; py: number; x: number; y: number } | null>(null);
   const reserveBas = reserve?.bas;
   const reserveDroite = reserve?.droite;
+  const reserveGauche = reserve?.gauche;
 
   const memoriser = useCallback((pos: Position) => {
     const courante = etatUi.get().barreActions;
@@ -85,7 +92,8 @@ export function BarreActions({ annuler, retablir, autres = [], reference, reserv
   const calculerDefaut = useCallback((): Position | null => {
     const el = racine.current;
     if (!el) return null;
-    const taille = tailleDe(el);
+    // La largeur maximale posée par `replacer` (téléphone) est gardée ; la réserve gauche peut seulement la réduire.
+    let taille = tailleDe(el);
     const fenetre = zoneDe(el);
     const ref = reference?.current;
     const r = ref?.getBoundingClientRect();
@@ -98,9 +106,21 @@ export function BarreActions({ annuler, retablir, autres = [], reference, reserv
       for (const q of rects(reserveBas)) bas = Math.max(bas, r.bottom - q.top);
       // La colonne ne compte que si elle descend jusqu'à la hauteur de la barre.
       for (const rd of rects(reserveDroite)) if (rd.bottom > r.bottom - bas - taille.hauteur - 16) zone = { ...zone, largeur: Math.max(taille.largeur, Math.min(zone.largeur, rd.left - r.left)) };
+      // La barre d'outils de gauche ne compte que si elle descend jusqu'à la hauteur de la barre ; trop étroite à côté,
+      // la barre passe à la ligne (largeur bornée) au lieu de la recouvrir.
+      const gauches = rects(reserveGauche).filter((q) => q.bottom > r.bottom - bas - taille.hauteur - 16).map((q) => q.right);
+      const sansGauche = retirerGauche(zone, gauches);
+      if (sansGauche !== zone) {
+        zone = sansGauche;
+        const max = largeurMaximale(zone);
+        if (taille.largeur > max) {
+          el.style.maxWidth = `${max}px`;
+          taille = tailleDe(el);
+        }
+      }
     }
     return borner(positionParDefaut(taille, zone, bas), taille, fenetre);
-  }, [reference, reserveBas, reserveDroite]);
+  }, [reference, reserveBas, reserveDroite, reserveGauche]);
 
   /** Replace la barre : la position mémorisée est ramenée dans l'écran, la position par défaut est recalculée. */
   const replacer = useCallback(() => {
@@ -147,7 +167,7 @@ export function BarreActions({ annuler, retablir, autres = [], reference, reserv
       observateur?.observe(el);
       observateur?.observe(ref);
       // Les réserves (pied, colonne) changent de taille avec l'outil actif : la position par défaut les suit.
-      for (const sel of [reserveBas, reserveDroite]) for (const el of sel ? Array.from(ref.querySelectorAll(sel)) : []) observateur?.observe(el);
+      for (const sel of [reserveBas, reserveDroite, reserveGauche]) for (const el of sel ? Array.from(ref.querySelectorAll(sel)) : []) observateur?.observe(el);
     }
     return () => {
       w.removeEventListener("resize", replacer);
@@ -157,7 +177,7 @@ export function BarreActions({ annuler, retablir, autres = [], reference, reserv
       vv?.removeEventListener("scroll", replacer);
       observateur?.disconnect();
     };
-  }, [replacer, reference, reserveBas, reserveDroite, fenetreCle, ui.barreActionsVisible]);
+  }, [replacer, reference, reserveBas, reserveDroite, reserveGauche, fenetreCle, ui.barreActionsVisible]);
 
   const surPointeur = (e: React.PointerEvent<HTMLButtonElement>) => {
     if (e.button !== 0 && e.pointerType === "mouse") return;
@@ -209,7 +229,7 @@ export function BarreActions({ annuler, retablir, autres = [], reference, reserv
   const style = pos ? { left: `${pos.x}px`, top: `${pos.y}px`, right: "auto", bottom: "auto" } : undefined;
   const bouton = (a: ActionBarre) => (
     <button key={a.id} type="button" onClick={a.onClick} disabled={a.disabled} aria-pressed={a.pressed} title={a.titre ?? a.libelle} aria-label={a.texte ? a.libelle : undefined} data-action={a.id} {...a.attributs}>
-      <span aria-hidden="true" className="barre-actions-picto">{a.picto}</span>
+      {typeof a.picto === "string" ? <IconeSandbox nom={a.picto} className="barre-actions-picto" /> : <Pictogramme picto={a.picto} className="barre-actions-picto" />}
       {a.texte ? <span className="barre-actions-texte" aria-hidden="true">{a.texte}</span> : <span className="sr-only">{a.libelle}</span>}
     </button>
   );
@@ -227,7 +247,7 @@ export function BarreActions({ annuler, retablir, autres = [], reference, reserv
         onPointerCancel={surRelachement}
         onKeyDown={surClavier}
       >
-        <span aria-hidden="true">⠿</span>
+        <IconeSandbox nom="poignee" />
       </button>
       <div className="barre-groupe" role="group" aria-label="Annuler et rétablir">
         {bouton(annuler)}

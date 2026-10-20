@@ -10,11 +10,12 @@
  * flèches haut / bas (Début, Fin) d'un élément à l'autre, flèche droite / gauche pour déplier / replier, Entrée, Échap.
  */
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { outilParId, type FamilleOutil, type Outil } from "@parcours/sandbox-planche-model";
+import { outilParId, type FamilleOutil, type Outil, type Pictogramme as DescriptionPictogramme } from "@parcours/sandbox-planche-model";
 import { barreDe, groupesOutils, libelleOperation, premierOutil, type SectionBarre } from "./barres-outils";
 import type { EtatBarresOutils } from "./barres-outils-disposition";
 import { t } from "../messages";
 import { afficherRaccourci, nomOutil, pictoOutil, raccourciOutil } from "./outils-planche";
+import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 
 export interface PropsBoutonOutils {
   /** Outil actif (surligné dans la liste). */
@@ -35,7 +36,7 @@ export interface PropsBoutonOutils {
 
 export interface CommandeListe {
   readonly id: string;
-  readonly picto: string;
+  readonly picto: DescriptionPictogramme;
   readonly nom: string;
   readonly raccourci: string;
   /** Motif d'indisponibilité (`null` = disponible). */
@@ -220,7 +221,7 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
                   data-raccourci={raccourciOutil(x) ?? undefined}
                   onClick={() => choisir(x.id)}
                 >
-                  <span aria-hidden="true">{pictoOutil(x.id)}</span>
+                  <Pictogramme picto={pictoOutil(x.id)} />
                 </button>
               );
             })}
@@ -246,12 +247,12 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
         onClick={(e) => (ouvert ? fermer() : ouvrir(e.detail === 0))}
       >
         {t("outils.bouton")}
-        <span aria-hidden="true" className="planche-outils-chevron">▾</span>
+        <IconeSandbox nom="menu" className="planche-outils-chevron" />
       </button>
       {ouvert && (
         <div className="planche-outils-liste" style={{ ...(hautTelephone !== null ? { top: `${hautTelephone}px` } : {}), ...(hauteurListe !== null ? { maxHeight: `${hauteurListe}px` } : {}) }} data-planche-outils-liste>
           <div className="planche-outils-recherche">
-            <span aria-hidden="true">⌕</span>
+            <IconeSandbox nom="rechercher" />
             <input
               ref={champ}
               type="search"
@@ -279,7 +280,7 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
               return (
                 <div key={g.famille} className="planche-outils-groupe" role="group" aria-label={g.libelle} data-outils-groupe={g.famille}>
                   <button type="button" role="menuitem" className="planche-outils-famille" aria-expanded={deplie} data-outils-nav data-outils-famille={g.famille} onClick={() => !filtre && basculerFamille(g.famille)}>
-                    <span aria-hidden="true" className="planche-outils-fleche">{deplie ? "▾" : "▸"}</span>
+                    <IconeSandbox nom={deplie ? "menu" : "sousMenu"} className="planche-outils-fleche" />
                     {g.libelle}
                   </button>
                   {deplie &&
@@ -293,7 +294,7 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
                         <div key={o.id} className={`planche-outils-ligne${actif ? " est-actif" : ""}`} role="none" data-outils-ligne={o.id}>
                           <div className="planche-outils-tete" role="none">
                             <button type="button" role="menuitem" className="planche-outils-nom" aria-expanded={ouverte} aria-current={actif ? "true" : undefined} title={t("outils.deplier", { operation: libelleOperation(o) })} data-outils-nav data-outils-outil={o.id} onClick={() => basculerOutil(o.id)}>
-                              <span aria-hidden="true" className="planche-outils-picto">{pictoOutil(o.id)}</span>
+                              <Pictogramme picto={pictoOutil(o.id)} className="planche-outils-picto" />
                               <span className="planche-outils-libelle">{nomOutil(o)}</span>
                               {r && (
                                 <>
@@ -301,10 +302,10 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
                                   <kbd>{afficherRaccourci(r)}</kbd>
                                 </>
                               )}
-                              <span aria-hidden="true" className="planche-outils-fleche">{ouverte ? "▾" : "▸"}</span>
+                              <IconeSandbox nom={ouverte ? "menu" : "sousMenu"} className="planche-outils-fleche" />
                             </button>
                             <button type="button" role="menuitemcheckbox" className="planche-outils-afficher" aria-checked={affichee} aria-label={t("outils.afficher.aide", { outil: nomOutil(o) })} title={t("outils.afficher.aide", { outil: nomOutil(o) })} data-outils-nav data-outils-afficher={o.id} onClick={() => onAfficherBarre(o.id, !affichee)}>
-                              <span aria-hidden="true" className="planche-outils-case">{affichee ? "☑" : "☐"}</span>
+                              <IconeSandbox nom={affichee ? "coche" : "caseVide"} className="planche-outils-case" />
                               <span aria-hidden="true">{t("outils.afficher")}</span>
                             </button>
                           </div>
@@ -318,7 +319,7 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
             {commandesRetenues.length > 0 && (
               <div className="planche-outils-groupe" role="group" aria-label={t("outils.famille.objets")} data-outils-groupe="objets">
                 <button type="button" role="menuitem" className="planche-outils-famille" aria-expanded={filtre || objetsDeplies} data-outils-nav data-outils-famille="objets" onClick={() => !filtre && setObjetsDeplies(!objetsDeplies)}>
-                  <span aria-hidden="true" className="planche-outils-fleche">{filtre || objetsDeplies ? "▾" : "▸"}</span>
+                  <IconeSandbox nom={filtre || objetsDeplies ? "menu" : "sousMenu"} className="planche-outils-fleche" />
                   {t("outils.famille.objets")}
                 </button>
                 {(filtre || objetsDeplies) &&
@@ -339,7 +340,7 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
                             c.executer();
                           }}
                         >
-                          <span aria-hidden="true" className="planche-outils-picto">{c.picto}</span>
+                          <Pictogramme picto={c.picto} className="planche-outils-picto" />
                           <span className="planche-outils-libelle">{c.nom}</span>
                           <span aria-hidden="true"> · </span>
                           <kbd>{afficherRaccourci(c.raccourci)}</kbd>
@@ -351,7 +352,7 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
             )}
             <div className="planche-outils-pied" role="group" aria-label="Barres d'outils" data-outils-reglages>
               <span className="planche-outils-pied-titre" aria-hidden="true">
-                ⚙ {t("outils.pied")}
+                <IconeSandbox nom="reglages" /> {t("outils.pied")}
               </span>
               {affichees.length === 0 && (
                 <span className="inspecteur-aide" role="none">
@@ -360,8 +361,8 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
               )}
               {affichees.map((o) => (
                 <button key={o.id} type="button" role="menuitemcheckbox" aria-checked="true" className="planche-outils-afficher" aria-label={t("outils.afficher.aide", { outil: nomOutil(o) })} data-outils-nav data-outils-barre-visible={o.id} onClick={() => onAfficherBarre(o.id, false)}>
-                  <span aria-hidden="true" className="planche-outils-case">☑</span>
-                  <span aria-hidden="true" className="planche-outils-picto">{pictoOutil(o.id)}</span>
+                  <IconeSandbox nom="coche" className="planche-outils-case" />
+                  <Pictogramme picto={pictoOutil(o.id)} className="planche-outils-picto" />
                   <span aria-hidden="true">{nomOutil(o)}</span>
                 </button>
               ))}

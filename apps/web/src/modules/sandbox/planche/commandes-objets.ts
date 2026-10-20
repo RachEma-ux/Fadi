@@ -3,22 +3,22 @@
  * propre icône, sa place dans la barre d'actions flottante et un raccourci clavier (règle d'or, `AGENTS.md`) ; leur
  * disponibilité se calcule ici, sans React ni DOM, pour que le menu, la barre et le clavier disent la même chose.
  */
-import { type Modele, contexte, definitionsAtteintes, entreeCommande, normaliserRaccourci } from "@parcours/sandbox-planche-model";
+import { type Modele, type Pictogramme, contexte, definitionsAtteintes, entreeCommande, normaliserRaccourci } from "@parcours/sandbox-planche-model";
 import type { CleMessage } from "../messages";
 
 /** Pictogramme et raccourci d'une commande : lus au registre unique du Sandbox (`REGISTRE_SANDBOX`, lot 2), jamais recopiés. */
-function depuisRegistre(id: string): { readonly picto: string; readonly raccourci: string } {
+function depuisRegistre(id: string): { readonly picto: Pictogramme; readonly raccourci: string } {
   const e = entreeCommande(id);
   if (e.raccourci === null) throw new Error(`Registre du Sandbox : commande « ${id} » sans raccourci`);
-  return { picto: e.picto, raccourci: e.raccourci };
+  return { picto: e.pictogramme, raccourci: e.raccourci };
 }
 
 export type IdCommandeObjet = "groupe" | "composant" | "eclater" | "rendre-unique" | "diviser" | "diviser-courbe";
 
 export interface CommandeObjet {
   readonly id: IdCommandeObjet;
-  /** Icône propre (texte court, comme les outils), jamais partagée avec un outil ni avec le type d'objet du Navigateur. */
-  readonly picto: string;
+  /** Pictogramme propre (registre), jamais partagé avec un outil ni avec le type d'objet du Navigateur. */
+  readonly picto: Pictogramme;
   /** Libellé au catalogue de messages. */
   readonly libelle: CleMessage;
   /** Nom court, visible sous l'icône dans la barre d'actions. */
@@ -93,7 +93,7 @@ export function disponibiliteObjet(id: IdCommandeObjet, s: EtatSelectionObjets):
 export type IdCommandeContexte = "fermer" | "fermer-tout";
 export interface CommandeContexte {
   readonly id: IdCommandeContexte;
-  readonly picto: string;
+  readonly picto: Pictogramme;
   readonly libelle: CleMessage;
   readonly raccourci: string;
 }
@@ -108,7 +108,7 @@ export const COMMANDES_CONTEXTE: readonly CommandeContexte[] = [
  */
 export interface CommandeLien {
   readonly id: "detacher-lien";
-  readonly picto: string;
+  readonly picto: Pictogramme;
   readonly libelle: CleMessage;
   readonly court: CleMessage;
   readonly raccourci: string;
@@ -123,7 +123,7 @@ export const COMMANDE_DETACHER_LIEN: CommandeLien = { id: "detacher-lien", ...de
 export type IdCommandeNavigateur = "groupe-vide" | "deplacer-vers" | "renommer";
 export interface CommandeNavigateur {
   readonly id: IdCommandeNavigateur;
-  readonly picto: string;
+  readonly picto: Pictogramme;
   readonly libelle: CleMessage;
   readonly raccourci: string;
 }
@@ -215,7 +215,7 @@ export function liensRompus(avant: Modele, apres: Modele): number {
 export type IdCommandeVue = "isoler" | "masquer-reste";
 export interface CommandeVue {
   readonly id: IdCommandeVue;
-  readonly picto: string;
+  readonly picto: Pictogramme;
   readonly libelle: CleMessage;
   readonly court: CleMessage;
   readonly raccourci: string;
@@ -232,7 +232,7 @@ export const COMMANDES_VUE: readonly CommandeVue[] = [
 export type IdCommandeDebit = "liste-debit" | "renumeroter" | "etiquettes" | "effacer-etiquettes" | "exporter-debit";
 export interface CommandeDebit {
   readonly id: IdCommandeDebit;
-  readonly picto: string;
+  readonly picto: Pictogramme;
   readonly libelle: CleMessage;
   readonly court: CleMessage;
   readonly raccourci: string;
@@ -249,7 +249,7 @@ export const COMMANDES_DEBIT: readonly CommandeDebit[] = [
 export type IdCommandePiece = "piece-section" | "piece-rotation";
 export interface CommandePiece {
   readonly id: IdCommandePiece;
-  readonly picto: string;
+  readonly picto: Pictogramme;
   readonly libelle: CleMessage;
   readonly court: CleMessage;
   readonly raccourci: string;

@@ -5,8 +5,10 @@
  * défaut et sa disponibilité. Toute l'interface du Sandbox lit ce registre (barres, grille « ⋯ », « Outils ▾ »,
  * recherche, colonne de droite, barre d'actions, clavier) sans en garder de copie. Pur : ni React, ni DOM.
  *
- * Lot 2 = aucun changement visible : pictogrammes (caractères Unicode, remplacés au lot 3), raccourcis (harmonisés au
- * lot 6) et emplacements (disposition proche de SketchUp au lot 4) sont ceux de l'interface actuelle.
+ * Lot 2 : registre sans changement visible. Lot 3 : chaque entrée porte un **pictogramme** — icône Tabler (MIT, paquet
+ * `@tabler/icons` à version figée) ou dessin sur mesure de Fadi dans le style Tabler (12 dessins validés le 20 octobre
+ * 2026) —, jamais un caractère ni du texte, avec la **teinte de sa famille**. Raccourcis (harmonisés au lot 6) et
+ * emplacements (disposition proche de SketchUp au lot 4) restent ceux de l'interface actuelle.
  *
  * Les outils sont dérivés du catalogue relevé (`OUTILS` : famille, emplacement, raccourci SketchUp) : le registre n'en
  * recopie rien et ne leur ajoute que ce que le relevé n'a pas — pictogramme et raccourci de la couche Fadi.
@@ -27,12 +29,40 @@ export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "o
 /** `livree` : l'entrée existe dans l'interface ; `prevue` : déclarée, pas encore offerte (aucune à ce jour). */
 export type DisponibiliteEntree = "livree" | "prevue";
 
+/**
+ * Teinte d'un pictogramme, d'après la famille (validée le 20 octobre 2026) : Dessin bleu, Modification rouge (solides
+ * compris), Mesure ocre (annotation comprise, comme la section « Construction » de la grille), Matériau orange, Caméra
+ * vert, Sélection et Objets gris-bleu (toutes les commandes), Info gris (les panneaux).
+ */
+export type TeintePictogramme = "dessin" | "modification" | "mesure" | "materiau" | "camera" | "objets" | "info";
+/** Pictogramme : icône Tabler (`nom` = nom Tabler) ou dessin sur mesure de Fadi (`nom` = fichier sans `.svg`). */
+export interface Pictogramme {
+  readonly source: "tabler" | "fadi";
+  readonly nom: string;
+  readonly teinte: TeintePictogramme;
+}
+/** Clé lisible et comparable d'un pictogramme (« tabler:pointer », « fadi:pousser »), sans la teinte. */
+export const clePictogramme = (p: Pick<Pictogramme, "source" | "nom">): string => `${p.source}:${p.nom}`;
+
+const TEINTES: Readonly<Record<string, TeintePictogramme>> = {
+  dessin: "dessin",
+  modification: "modification",
+  solide: "modification",
+  mesure: "mesure",
+  annotation: "mesure",
+  materiau: "materiau",
+  camera: "camera",
+  selection: "objets",
+  panneau: "info",
+};
+export const teinteDeFamille = (famille: FamilleEntree): TeintePictogramme => TEINTES[famille] ?? "objets";
+
 export interface EntreeSandbox {
   readonly nature: NatureEntree;
   readonly id: string;
   readonly famille: FamilleEntree;
-  /** Pictogramme affiché (lot 2 : caractère Unicode actuel). */
-  readonly picto: string;
+  /** Pictogramme affiché (lot 3) : Tabler ou sur mesure, teinté par famille. */
+  readonly pictogramme: Pictogramme;
   /** Raccourci canonique (« Alt+Maj+U ») ; `null` pour un panneau (aucun raccourci à ce stade). */
   readonly raccourci: string | null;
   readonly emplacement: EmplacementEntree;
@@ -41,60 +71,64 @@ export interface EntreeSandbox {
   readonly horsCatalogue?: true;
 }
 
-/** Pictogrammes des outils (dessins propres à Fadi, cahier-planche §3.6 : choix Fadi). */
+/**
+ * Pictogrammes des outils : nom Tabler, ou `fadi:<fichier>` pour un dessin sur mesure (sans équivalent Tabler :
+ * Pousser/Tirer, Décalage, Suivez-moi, Rapporteur ; outils propres à Fadi : Profilé, Onglet, Coupe par profil,
+ * Allonger une pièce, Aligner une face, Épaissir). Barre gauche reprise de la planche de comparaison validée.
+ */
 const PICTOS_OUTILS: Readonly<Record<string, string>> = {
-  selection: "↖",
-  lasso: "➰",
-  gomme: "⌫",
-  ligne: "╱",
-  "main-levee": "〰",
-  rectangle: "▭",
-  "rectangle-pivote": "◇",
-  cercle: "◯",
-  polygone: "⬡",
-  arc: "◠",
-  "arc-2-points": "⌒",
-  "arc-3-points": "◡",
-  secteur: "◔",
-  "texte-3d": "A",
-  "pousser-tirer": "⇕",
-  deplacer: "✥",
-  "faire-pivoter": "⟳",
-  echelle: "⤢",
-  decalage: "⧈",
-  "suivez-moi": "↬",
-  profile: "▰",
-  "profiles-aretes": "⫴",
-  onglet: "◸",
-  "coupe-profil": "⧄",
-  "allonger-piece": "⇿",
-  "aligner-face": "⫠",
-  epaissir: "▥",
-  retourner: "⇋",
-  diviser: "÷",
-  "enveloppe-exterieure": "⬚",
-  union: "∪",
-  soustraction: "⊖",
-  ajuster: "⊘",
-  intersection: "∩",
-  scinder: "⫛",
-  peinture: "▨",
-  "echantillon-matiere": "◉",
-  metre: "↔",
-  rapporteur: "∡",
-  axes: "⊹",
-  cotation: "⟷",
-  texte: "T",
-  "plan-de-coupe": "⊟",
-  balise: "⌖",
-  orbite: "⟲",
-  panoramique: "✣",
-  zoom: "⊕",
-  "zoom-etendu": "⤧",
-  "zoom-fenetre": "⧉",
-  "positionner-camera": "◎",
-  "regarder-autour": "◐",
-  marcher: "⇡",
+  selection: "pointer",
+  lasso: "lasso",
+  gomme: "eraser",
+  ligne: "pencil",
+  "main-levee": "scribble",
+  rectangle: "rectangle",
+  "rectangle-pivote": "square-rotated",
+  cercle: "circle",
+  polygone: "hexagon",
+  arc: "vector-bezier-arc",
+  "arc-2-points": "vector-bezier-2",
+  "arc-3-points": "vector-bezier-circle",
+  secteur: "chart-pie",
+  "texte-3d": "badge-3d",
+  profile: "fadi:profile",
+  "profiles-aretes": "frame",
+  onglet: "fadi:onglet",
+  "coupe-profil": "fadi:coupe-profil",
+  "allonger-piece": "fadi:allonger",
+  "aligner-face": "fadi:aligner",
+  epaissir: "fadi:epaissir",
+  "pousser-tirer": "fadi:pousser",
+  deplacer: "arrows-move",
+  "faire-pivoter": "rotate-3d",
+  echelle: "resize",
+  decalage: "fadi:decalage",
+  "suivez-moi": "fadi:suivez",
+  retourner: "flip-vertical",
+  diviser: "divide",
+  "enveloppe-exterieure": "box",
+  intersection: "layers-intersect",
+  union: "layers-union",
+  soustraction: "layers-subtract",
+  ajuster: "layers-difference",
+  scinder: "slice",
+  peinture: "bucket-droplet",
+  "echantillon-matiere": "color-picker",
+  metre: "ruler-measure",
+  rapporteur: "fadi:rapporteur",
+  axes: "axis-x",
+  cotation: "dimensions",
+  texte: "typography",
+  "plan-de-coupe": "square-half",
+  balise: "tag",
+  orbite: "orbit",
+  panoramique: "hand-move",
+  zoom: "zoom-in",
+  "zoom-etendu": "maximize",
+  "zoom-fenetre": "zoom-in-area",
+  "positionner-camera": "camera",
+  "regarder-autour": "eye",
+  marcher: "walk",
 };
 
 /**
@@ -143,11 +177,17 @@ export const RACCOURCIS_FADI_OUTILS: Readonly<Record<string, string>> = {
   epaissir: "Alt+Maj+J",
 };
 
+/** Pictogramme d'une entrée : « fadi:<fichier> » désigne un dessin sur mesure, tout autre nom une icône Tabler. */
+function pictogramme(nom: string, famille: FamilleEntree): Pictogramme {
+  const fadi = nom.startsWith("fadi:");
+  return { source: fadi ? "fadi" : "tabler", nom: fadi ? nom.slice(5) : nom, teinte: teinteDeFamille(famille) };
+}
+
 const outils: EntreeSandbox[] = OUTILS.map((o) => ({
   nature: "outil",
   id: o.id,
   famille: o.famille,
-  picto: PICTOS_OUTILS[o.id] ?? "",
+  pictogramme: pictogramme(PICTOS_OUTILS[o.id] ?? "", o.famille),
   raccourci: o.raccourci ?? RACCOURCIS_FADI_OUTILS[o.id] ?? null,
   emplacement: o.emplacement,
   disponibilite: "livree",
@@ -157,7 +197,7 @@ const c = (id: string, famille: FamilleCommandeSandbox, picto: string, raccourci
   nature: "commande",
   id,
   famille,
-  picto,
+  pictogramme: pictogramme(picto, famille),
   raccourci,
   emplacement,
   disponibilite: "livree",
@@ -167,41 +207,41 @@ const c = (id: string, famille: FamilleCommandeSandbox, picto: string, raccourci
 /** Commandes : elles agissent sur la sélection sans changer d'outil (groupe « Objets » d'« Outils ▾ »). */
 const commandes: EntreeSandbox[] = [
   // Objets (O-1, O-3) : barre d'actions flottante, dans cet ordre.
-  c("groupe", "objet", "⊞", "Ctrl+G", "actions"),
-  c("composant", "objet", "❖", "G", "actions"),
-  c("eclater", "objet", "⊠", "Ctrl+Maj+G", "actions"),
-  c("rendre-unique", "objet", "⎘", "Alt+Maj+U", "actions"),
+  c("groupe", "objet", "brackets-contain", "Ctrl+G", "actions"),
+  c("composant", "objet", "components", "G", "actions"),
+  c("eclater", "objet", "fadi:eclater", "Ctrl+Maj+G", "actions"),
+  c("rendre-unique", "objet", "fingerprint", "Alt+Maj+U", "actions"),
   // Doublon de l'outil Diviser (même nom) : hors des 86 entrées, à harmoniser au lot 6.
-  c("diviser", "objet", "⦙", "Alt+Maj+D", "actions", true),
-  c("diviser-courbe", "objet", "⌇", "Alt+Maj+C", "actions"),
+  c("diviser", "objet", "separator-vertical", "Alt+Maj+D", "actions", true),
+  c("diviser-courbe", "objet", "line-dashed", "Alt+Maj+C", "actions"),
   // Contexte d'édition (O-2) : fil d'Ariane.
-  c("fermer", "contexte", "⤴", "Maj+Échap", "fil-ariane"),
-  c("fermer-tout", "contexte", "⤒", "Maj+Origine", "fil-ariane"),
+  c("fermer", "contexte", "arrow-back-up", "Maj+Échap", "fil-ariane"),
+  c("fermer-tout", "contexte", "arrow-bar-to-up", "Maj+Origine", "fil-ariane"),
   // Liens d'extrusion (O-2).
-  c("detacher-lien", "lien", "⛓", "Alt+Maj+K", "outils"),
+  c("detacher-lien", "lien", "unlink", "Alt+Maj+K", "outils"),
   // Navigateur (O-4).
-  c("groupe-vide", "navigateur", "⊡", "Alt+Maj+G", "panneau-navigateur"),
-  c("deplacer-vers", "navigateur", "⇲", "Alt+Maj+V", "panneau-navigateur"),
-  c("renommer", "navigateur", "✎", "F2", "panneau-navigateur"),
+  c("groupe-vide", "navigateur", "folder-plus", "Alt+Maj+G", "panneau-navigateur"),
+  c("deplacer-vers", "navigateur", "folder-symlink", "Alt+Maj+V", "panneau-navigateur"),
+  c("renommer", "navigateur", "cursor-text", "F2", "panneau-navigateur"),
   // Vue (O-5).
-  c("isoler", "vue", "⦿", "Alt+Maj+I", "actions"),
-  c("masquer-reste", "vue", "⬒", "Alt+Maj+R", "outils"),
+  c("isoler", "vue", "focus-2", "Alt+Maj+I", "actions"),
+  c("masquer-reste", "vue", "eye-off", "Alt+Maj+R", "outils"),
   // Liste de débit (L14) : barre du panneau Débit.
-  c("liste-debit", "debit", "☷", "Alt+Maj+T", "panneau-debit"),
-  c("renumeroter", "debit", "№", "Alt+Maj+N", "panneau-debit"),
-  c("etiquettes", "debit", "🏷", "Alt+Maj+E", "panneau-debit"),
-  c("effacer-etiquettes", "debit", "⌧", "Alt+Maj+W", "panneau-debit"),
-  c("exporter-debit", "debit", "⇩", "Alt+Maj+X", "panneau-debit"),
+  c("liste-debit", "debit", "fadi:debit", "Alt+Maj+T", "panneau-debit"),
+  c("renumeroter", "debit", "list-numbers", "Alt+Maj+N", "panneau-debit"),
+  c("etiquettes", "debit", "tags", "Alt+Maj+E", "panneau-debit"),
+  c("effacer-etiquettes", "debit", "tag-off", "Alt+Maj+W", "panneau-debit"),
+  c("exporter-debit", "debit", "file-export", "Alt+Maj+X", "panneau-debit"),
   // Édition d'une pièce (L17) : bloc de la pièce dans l'Info entité.
-  c("piece-section", "piece", "⇆", "Alt+Maj+S", "barre-piece"),
-  c("piece-rotation", "piece", "⥁", "Alt+Maj+H", "barre-piece"),
+  c("piece-section", "piece", "arrows-left-right", "Alt+Maj+S", "barre-piece"),
+  c("piece-rotation", "piece", "rotate", "Alt+Maj+H", "barre-piece"),
 ];
 
 const p = (id: string, picto: string, emplacement: "colonne" | "objets-et-vue"): EntreeSandbox => ({
   nature: "panneau",
   id,
   famille: "panneau",
-  picto,
+  pictogramme: pictogramme(picto, "panneau"),
   raccourci: null,
   emplacement,
   disponibilite: "livree",
@@ -209,21 +249,31 @@ const p = (id: string, picto: string, emplacement: "colonne" | "objets-et-vue"):
 
 /** Panneaux, dans l'ordre d'affichage : colonne de droite, puis sous-liste « Objets et vue ». */
 const panneaux: EntreeSandbox[] = [
-  p("instructeur", "?", "colonne"),
-  p("materiaux", "▨", "colonne"),
-  p("balises", "⌖", "colonne"),
-  p("objets", "▤", "colonne"),
-  p("info-entite", "ⓘ", "objets-et-vue"),
-  p("composants", "❖", "objets-et-vue"),
-  p("styles", "◐", "objets-et-vue"),
-  p("ombres", "☀", "objets-et-vue"),
-  p("scenes", "🎞", "objets-et-vue"),
-  p("affichage", "👁", "objets-et-vue"),
-  p("adoucir", "◠", "objets-et-vue"),
-  p("info-modele", "⚙", "objets-et-vue"),
-  p("navigateur", "☰", "objets-et-vue"),
-  p("debit", "☷", "objets-et-vue"),
+  p("instructeur", "help", "colonne"),
+  p("materiaux", "bucket-droplet", "colonne"),
+  p("balises", "tag", "colonne"),
+  p("objets", "layout-list", "colonne"),
+  p("info-entite", "list-details", "objets-et-vue"),
+  p("composants", "packages", "objets-et-vue"),
+  p("styles", "palette", "objets-et-vue"),
+  p("ombres", "sun", "objets-et-vue"),
+  p("scenes", "movie", "objets-et-vue"),
+  p("affichage", "adjustments", "objets-et-vue"),
+  p("adoucir", "blur", "objets-et-vue"),
+  p("info-modele", "info-circle", "objets-et-vue"),
+  p("navigateur", "list-tree", "objets-et-vue"),
+  p("debit", "fadi:debit", "objets-et-vue"),
 ];
+
+/**
+ * Pictogrammes partagés, seules exceptions admises à l'unicité : un outil ou une commande et le panneau qu'il ouvre,
+ * quand ils portent le même objet (recommandation §5, liste de départ reprise du catalogue).
+ */
+export const PICTOGRAMMES_PARTAGES: readonly (readonly [string, string])[] = Object.freeze([
+  ["outil:peinture", "panneau:materiaux"],
+  ["outil:balise", "panneau:balises"],
+  ["commande:liste-debit", "panneau:debit"],
+] as const);
 
 /** Le registre : outils (ordre du catalogue relevé), commandes, panneaux. */
 export const REGISTRE_SANDBOX: readonly EntreeSandbox[] = Object.freeze([...outils, ...commandes, ...panneaux]);

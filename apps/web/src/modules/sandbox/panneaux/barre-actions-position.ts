@@ -44,6 +44,20 @@ export function positionParDefaut(taille: Taille, zone: Zone, reserveBas: number
   return borner({ x: g + zone.largeur - taille.largeur - marge, y: h + zone.hauteur - reserveBas - taille.hauteur - marge }, taille, zone);
 }
 
+/**
+ * Zone de dessin moins une réserve à gauche (barre d'outils verticale) : son bord gauche passe au bord droit le plus à
+ * droite des éléments réservés. Sans réserve qui avance dans la zone, la zone est rendue telle quelle.
+ */
+export function retirerGauche(zone: Zone, bordsDroits: readonly number[]): Zone {
+  const g = zone.gauche ?? 0;
+  const bord = Math.max(g, ...bordsDroits);
+  if (bord <= g) return zone;
+  return { ...zone, gauche: bord, largeur: Math.max(0, g + zone.largeur - bord) };
+}
+
+/** Largeur maximale de la barre pour tenir dans `zone` à sa marge par défaut (16 px à droite, `MARGE` à gauche). */
+export const largeurMaximale = (zone: Zone, marge = 16): number => Math.max(0, zone.largeur - marge - MARGE);
+
 /** Position mémorisée relue des préférences : seulement deux nombres finis, sinon null (position par défaut). */
 export function lirePosition(v: unknown): Position | null {
   if (!v || typeof v !== "object") return null;
