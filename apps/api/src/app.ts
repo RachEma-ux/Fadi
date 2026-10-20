@@ -39,6 +39,9 @@ export function createApp() {
   // jointes des étapes, les exports de l'Atelier, l'import IFC et l'import d'archive ont leur propre lecture de corps (limite dédiée).
   const jsonBody = express.json({ limit: "256kb" });
   app.use((req, res, next) => (/\/atelier\/commands(\/|$)|\/atelier\/import-ifc$|\/atelier\/model(\/|$)|\/steps\/\d+\/files(\/|$)|\/documents\/dessins(\/|$)|^\/projects\/import$/.test(req.path) ? next() : jsonBody(req, res, next)));
+  // Ce qui tourne : commit et date de construction de l'image (« inconnu » en développement). Monté avant attachUser :
+  // aucune lecture de session, donc aucune requête à la base, même avec un cookie.
+  app.use("/version", versionRouter());
   app.use(attachUser);
 
   // Les routes d'authentification sont la cible privilégiée du
@@ -70,9 +73,6 @@ export function createApp() {
       res.status(503).json({ status: "degraded", db: "unavailable" });
     }
   });
-
-  // Ce qui tourne : commit et date de construction de l'image (« inconnu » en développement).
-  app.use("/version", versionRouter());
 
   // Hébergement durable : l'API sert aussi l'application construite (`WEB_DIST` = apps/web/dist) — un seul processus, un
   // seul port, même origine (plus de `vite preview`, réservé au développement). Les fichiers empreints du build sont

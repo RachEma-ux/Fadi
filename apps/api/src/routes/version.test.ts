@@ -15,7 +15,7 @@ describe("version construite", () => {
     expect(lireVersion({})).toEqual({ commit: "inconnu", buildDate: "inconnu" });
     expect(lireVersion({ FADI_COMMIT: "inconnu", FADI_BUILD_DATE: "inconnu" })).toEqual({ commit: "inconnu", buildDate: "inconnu" });
     for (const commit of ["", "abc", "main", "g".repeat(40), "a".repeat(41), "$(id)"]) expect(lireVersion({ FADI_COMMIT: commit }).commit).toBe("inconnu");
-    for (const date of ["2026-10-20", "hier", "2026-13-45T99:99:99Z", "2026-10-20T21:30:00+02:00"]) expect(lireVersion({ FADI_BUILD_DATE: date }).buildDate).toBe("inconnu");
+    for (const date of ["2026-10-20", "hier", "2026-13-45T99:99:99Z", "2026-10-20T21:30:00+02:00", "2026-02-31T21:30:00Z", "2026-01-01T24:00:00Z", "2026-10-20T21:30:60Z"]) expect(lireVersion({ FADI_BUILD_DATE: date }).buildDate).toBe("inconnu");
   });
 
   it("GET /version renvoie la version en JSON, sans cache", async () => {
