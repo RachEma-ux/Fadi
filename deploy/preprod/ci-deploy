@@ -1,0 +1,88 @@
+#!/bin/bash
+# Root-owned, reviewed, immutable entrypoint for CI-gated preproduction delivery.
+# This MUST NOT be writable by fadi-deploy, claude-fadi or the repository checkout.
+# Production Compose, proxy and production database are never referenced.
+set -Eeuo pipefail
+umask 077
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+PROJECT=/opt/fadi-preprod
+SRC=$PROJECT/src
+APPROVED=$PROJECT/approved-commit
+FP=/usr/local/sbin/fadi-preprod
+REPO=https://github.com/RachEma-ux/Fadi.git
+DEPLOYER=fadi-deploy
+readonly PROJECT SRC APPROVED FP REPO DEPLOYER
+
+die() { echo "preprod-ci : $*" >&2; exit 1; }
+[ "$(id -u)" -eq 0 ] || die "root required"
+[ "${SUDO_USER:-}" = "$DEPLOYER" ] || die "sudo caller must be $DEPLOYER"
+[ "$#" -eq 1 ] && [[ "$1" =~ ^[0-9a-f]{40}$ ]] || die "one full lowercase commit SHA required"
+TARGET=$1
+
+# Authenticate root-controlled scripts and staging state before doing anything.
+for path in "$FP" "$SRC/.git" "$APPROVED"; do
+  [ -e "$path" ] && [ ! -L "$path" ] || die "missing or symlink: $path"
+  [ "$(stat -c %u "$path")" -eq 0 ] || die "not owned by root: $path"
+  [ $(( 8#$(stat -c %a "$path") & 8#022 )) -eq 0 ] || die "writable by others: $path"
+done
+[ -x "$FP" ] || die "$FP not executable"
+[ -d "$SRC/.git" ] || die "source repository missing"
+
+# CI may retry, but two server deployments must never overlap.
+exec 9>"$PROJECT/.ci-deploy.lock"
+flock -n 9 || die "another CI deployment is running"
+
+# Only the latest protected main commit, never a PR SHA or arbitrary historical SHA.
+REMOTE_MAIN=$(git ls-remote "$REPO" refs/heads/main | awk '{print $1}')
+[ -n "$REMOTE_MAIN" ] && [ "$REMOTE_MAIN" = "$TARGET" ] || die "commit is no longer the tip of main"
+OLD=$(tr -d '[:space:]' < "$APPROVED")
+[[ "$OLD" =~ ^[0-9a-f]{40}$ ]] || die "invalid approved-commit"
+"$FP" garde
+"$FP" smoke
+[ "$OLD" != "$TARGET" ] || { echo "preprod-ci : already deployed and healthy: $TARGET"; exit 0; }
+
+git -c safe.directory="$SRC" -C "$SRC" fetch --quiet origin main
+git -c safe.directory="$SRC" -C "$SRC" cat-file -e "$TARGET^{commit}" || die "commit not fetched"
+git -c safe.directory="$SRC" -C "$SRC" merge-base --is-ancestor "$OLD" "$TARGET" ||
+  die "non-fast-forward from current staging SHA: administrator must review and bootstrap"
+
+# No unattended schema changes, staging infrastructure changes, or migrations.
+SENSITIVE=$(git -c safe.directory="$SRC" -C "$SRC" diff --name-only "$OLD" "$TARGET" -- apps/api/src/db deploy/preprod)
+[ -z "$SENSITIVE" ] || die "manual approval required (DB/preprod changes): $SENSITIVE"
+
+# Never put production at risk by building while the VPS is under resource pressure.
+AVAILABLE_RAM=$(free -m | awk '/^Mem:/ {print $7}')
+[[ "$AVAILABLE_RAM" =~ ^[0-9]+$ ]] && [ "$AVAILABLE_RAM" -ge 2800 ] ||
+  die "less than 2800 MiB RAM available"
+DOCKER_ROOT=$(docker info --format '{{.DockerRootDir}}')
+[ -n "$DOCKER_ROOT" ] && [ -d "$DOCKER_ROOT" ] || die "Docker data directory missing"
+DISK_FREE=$(df -Pm "$DOCKER_ROOT" | awk 'END {print $4}')
+[[ "$DISK_FREE" =~ ^[0-9]+$ ]] && [ "$DISK_FREE" -ge 3500 ] ||
+  die "less than 3500 MiB disk free on Docker filesystem"
+
+# Preserves current staging data; no automatic database migration or data restore.
+"$FP" backup
+CHANGED=0
+rollback() {
+  local rc=$?
+  trap - ERR
+  if [ "$CHANGED" -eq 1 ]; then
+    echo "preprod-ci : delivery failed (exit $rc), restoring previous staging release" >&2
+    "$FP" sync "$OLD" >&2 || true
+    "$FP" up >&2 || true
+    "$FP" smoke >&2 || true
+  fi
+  exit "$rc"
+}
+trap rollback ERR
+
+"$FP" sync "$TARGET"
+CHANGED=1
+# Build ONLY the application; Playwright image is not rebuilt on each commit.
+# Timeout bounds CPU/memory/disk contention on the VPS.
+timeout --kill-after=30s 30m "$FP" build-app
+"$FP" up
+"$FP" smoke
+trap - ERR
+echo "preprod-ci : deployed $TARGET; old=$OLD; production untouched"
