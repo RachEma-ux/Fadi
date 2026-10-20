@@ -158,18 +158,20 @@ describe("adresses de Studio", () => {
     expect(lireRouteStudio("/studio-x").vue).toBe("inconnue");
   });
 
-  it("Console : page des cartes, page Sandbox et outil d'un domaine sans projet, aller-retour exact", () => {
+  it("Console : page des cartes, ancienne adresse de la Sandbox et outil d'un domaine sans projet, aller-retour exact", () => {
     expect(cheminConsoleStudio()).toBe("/studio/console");
-    expect(cheminSandboxStudio()).toBe("/studio/console/sandbox");
+    // Lot 1 : la Sandbox est un module à part, à sa propre adresse ; l'ancienne adresse est lue pour y rediriger.
+    expect(cheminSandboxStudio()).toBe("/sandbox");
+    expect(estRouteStudio(cheminSandboxStudio())).toBe(false);
     expect(lire(cheminConsoleStudio())).toEqual({ vue: "console" });
     expect(lireRouteStudio("/studio/console/")).toEqual({ vue: "console" });
-    expect(lire(cheminSandboxStudio())).toEqual({ vue: "console-sandbox" });
+    expect(lire("/studio/console/sandbox")).toEqual({ vue: "console-sandbox" });
     for (const d of ["dessin", "bim", "visualisation", "documentation"] as const) {
       expect(cheminOutilConsoleStudio(d)).toBe(`/studio/console/outil?domaine=${d}`);
       expect(lire(cheminOutilConsoleStudio(d))).toEqual({ vue: "console-outil", domaine: d, planche: null });
     }
     // Aucune route de la Console ne porte de projet, d'étude ni de variante.
-    for (const c of [cheminConsoleStudio(), cheminSandboxStudio(), cheminOutilConsoleStudio("bim")]) {
+    for (const c of [cheminConsoleStudio(), "/studio/console/sandbox", cheminOutilConsoleStudio("bim")]) {
       expect("projectId" in lire(c), c).toBe(false);
       expect(estRouteConsole(lire(c)), c).toBe(true);
       expect(estRouteConsoleStudio(c.split("?")[0]!), c).toBe(true);

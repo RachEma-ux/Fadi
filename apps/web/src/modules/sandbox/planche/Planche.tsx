@@ -106,7 +106,7 @@ import { etatUi, useEtatUi } from "../etat-ui";
 import { MenuPlanche } from "./menu-planche";
 import { ChoixPeripherique } from "../panneaux/Navigation";
 import { CATALOGUE, type CleMessage, t } from "../messages";
-import { ChoixLangue } from "../../../../../components/ChoixLangue";
+import { ChoixLangue } from "../../../components/ChoixLangue";
 import { annuler, enregistrer, historiqueInitial, operationAAnnuler, operationARetablir, retablir, type Historique } from "./historique";
 import { chargerBrouillon, enregistrerBrouillon, stockageDisponible } from "./brouillon";
 import { OUTILS_BOOLEENS, OUTILS_CAMERA_TEMPORAIRES, afficherRaccourci, commenceSaisie, disponibilite, estOutilCamera, estRecherche, libelleOutil, lotPrevu, outilDuClavier, outilsBarre, pictoOutil, raccourciOutil, sectionsGrille, titreOutil, toucheEtat, type OutilCamera } from "./outils-planche";

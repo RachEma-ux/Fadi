@@ -14,6 +14,7 @@ import { CollaborationPage } from "./routes/CollaborationPage";
 
 // Les pages lourdes (projet ouvert avec ses sept modules, bibliothèque des bâtiments) sont chargées à leur première ouverture ;
 // l'enveloppe (connexion, accueil, liste des projets) reste légère. Le moteur de l'Atelier est lui-même un morceau séparé.
+const PageSandbox = lazy(() => import("./modules/sandbox/PageSandbox").then((m) => ({ default: m.PageSandbox })));
 const StudioShell = lazy(() => import("./modules/studio/StudioShell").then((m) => ({ default: m.StudioShell })));
 const ProjectShell = lazy(() => import("./routes/ProjectShell").then((m) => ({ default: m.ProjectShell })));
 const ProjectCockpitPage = lazy(() => import("./modules/pilotage/ProjectCockpitPage").then((m) => ({ default: m.ProjectCockpitPage })));
@@ -60,6 +61,15 @@ export function App() {
             element={
               <Suspense fallback={<Loading />}>
                 <StudioShell />
+              </Suspense>
+            }
+          />
+          {/* Sandbox : 8ᵉ module, autonome (lot 1) ; l'ancienne adresse de la Console du Studio y redirige. */}
+          <Route
+            path="/sandbox"
+            element={
+              <Suspense fallback={<Loading />}>
+                <PageSandbox />
               </Suspense>
             }
           />

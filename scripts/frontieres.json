@@ -6,13 +6,18 @@
     "regles": [
       {
         "de": "modules/studio",
-        "interdits": ["modules/atelier", "modules/parcours", "routes/ProjectShell", "lib/use-immersive"],
-        "motif": "Studio n'importe ni l'Atelier (Planche comprise), ni le Parcours, ni ProjectShell, ni le mode immersif (ADR-STUDIO-NAV-01)"
+        "interdits": ["modules/atelier", "modules/parcours", "routes/ProjectShell", "lib/use-immersive", "modules/sandbox"],
+        "motif": "Studio n'importe ni l'Atelier (Planche comprise), ni le Parcours, ni ProjectShell, ni le mode immersif (ADR-STUDIO-NAV-01), ni le module Sandbox (lot 1 : la carte « 00 Sandbox » n'est qu'un lien d'adresse)"
       },
       {
         "de": "modules/atelier",
-        "interdits": ["modules/studio"],
-        "motif": "l'Atelier (Planche comprise) ne dépend pas de Studio (ADR-STUDIO-NAV-01)"
+        "interdits": ["modules/studio", "modules/sandbox"],
+        "motif": "l'Atelier (Planche comprise) ne dépend ni de Studio (ADR-STUDIO-NAV-01) ni du module Sandbox (lot 1)"
+      },
+      {
+        "de": "modules/sandbox",
+        "interdits": ["modules/studio", "modules/atelier", "modules/parcours", "routes/ProjectShell", "lib/api"],
+        "motif": "le Sandbox (8ᵉ module, autonome, lot 1) n'importe ni le Studio, ni l'Atelier (Planche de l'étape 10 comprise), ni le Parcours, ni ProjectShell, ni le client d'API"
       }
     ],
     "interfacesPubliques": {

@@ -5,7 +5,7 @@
  * ignoré (jamais une erreur bloquante).
  */
 import { lireModelePlanche, type Modele } from "@parcours/sandbox-planche-model";
-import { localStore } from "../../../../../lib/local-store";
+import { localStore } from "../../../lib/local-store";
 
 export const FORMAT_BROUILLON = "sandbox-planche-brouillon/1";
 

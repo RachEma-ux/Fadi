@@ -10,7 +10,7 @@
 - Treat the supplied geometry package as a traceable extraction, not proof of correctness.
 - Do not invent regulatory, structural or source-project data. Distinguish hypotheses, requirements and recommendations (`packages/domain-model`) — they are never the same thing.
 - Never mix the cadastral, geographic and local coordinate frames; convert explicitly and keep each value tagged with its frame (see `Coordinate` in `packages/domain-model`).
-- `docs/architecture.md` follows the objective brief (modular monolith, 7 modules, versioned domain model, reversible commands). Where a code change would contradict it, fix the plan or ask, don't silently diverge.
+- `docs/architecture.md` follows the objective brief (modular monolith, 7 modules plus the autonomous Sandbox module added on 2026-10-20, versioned domain model, reversible commands). Where a code change would contradict it, fix the plan or ask, don't silently diverge.
 - Planche golden rule (owner decision of 2026-10-10, D-202), mandatory: every Planche tool has (1) its own icon, never
   shared with another tool, (2) a place in an appropriate toolbar (its family in « Outils ▾ » and its operations bar),
   and (3) a keyboard shortcut (surveyed SketchUp shortcut, otherwise the declared Fadi layer). The rule extends to every

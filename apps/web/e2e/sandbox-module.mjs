@@ -1,0 +1,124 @@
+#!/usr/bin/env node
+/**
+ * Recette du module Sandbox (lot 1, décision du maître d'ouvrage du 20 octobre 2026 : 8ᵉ module, autonome) :
+ * - `/sandbox` charge la Planche de Sandbox (vue 3D, barre d'outils visible et garnie), sous l'enveloppe de Fadi, avec le
+ *   fil d'Ariane « Studio / Console / Sandbox » et l'entrée « Console » marquée (apparence inchangée) ;
+ * - l'ancienne adresse `/studio/console/sandbox` redirige vers `/sandbox` (remplacement dans l'historique) ;
+ * - la carte « 00 Sandbox » de la Console est un simple lien vers `/sandbox` ;
+ * - aucun appel à l'API d'un projet (Atelier, Studio, Parcours) pendant que le Sandbox est ouvert, aucune erreur JavaScript.
+ *
+ *   BASE_URL=http://localhost:3001 OUT=atelier-captures/sandbox node apps/web/e2e/sandbox-module.mjs
+ */
+import { mkdirSync } from "node:fs";
+import { join } from "node:path";
+import { chromium } from "playwright";
+
+const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
+const OUT = process.env.OUT ?? "atelier-captures/sandbox";
+mkdirSync(OUT, { recursive: true });
+let echecs = 0;
+const check = (nom, ok, detail = "") => {
+  console.log(`${ok ? "✓" : "✗"} ${nom}${detail ? ` — ${detail}` : ""}`);
+  if (!ok) echecs++;
+};
+
+const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ?? undefined });
+const erreurs = [];
+// Appels à l'API d'un projet (Atelier, Studio, Parcours…) pendant que le Sandbox est ouvert : le Sandbox n'en fait aucun.
+// La liste des projets (`GET /projects`) est lue par l'enveloppe de Fadi (barre latérale), sur toute page : hors du contrôle.
+let surSandbox = false;
+const appels = [];
+
+async function nouvellePage(viewport) {
+  const context = await browser.newContext({ viewport });
+  const page = await context.newPage();
+  page.setDefaultTimeout(30000);
+  page.on("pageerror", (e) => erreurs.push(e.message));
+  page.on("request", (r) => {
+    const chemin = new URL(r.url()).pathname;
+    if (surSandbox && r.resourceType() !== "document" && (/^\/projects\/./.test(chemin) || /^\/(atelier|studio)(\/|$)/.test(chemin) || (chemin === "/projects" && r.method() !== "GET"))) appels.push(`${r.method()} ${r.url()}`);
+  });
+  return { context, page };
+}
+
+async function inscrire(page) {
+  await page.goto(`${BASE}/inscription`);
+  await page.fill('input[name="email"]', `sandbox-${Date.now()}@example.com`);
+  await page.fill('input[name="password"]', "sandbox-module-ci-123");
+  await page.click('button[type="submit"]');
+  await page.waitForURL(/\/(accueil|projets)$/);
+}
+
+/** La Planche de Sandbox est chargée : vue 3D (canvas) et barre d'outils garnie, visibles. */
+async function plancheChargee(page, contexte) {
+  const racine = page.locator("[data-sandbox-page] [data-sandbox-planche]");
+  await racine.waitFor({ state: "visible" });
+  const vue = racine.locator("[data-planche-vue] canvas").first();
+  await vue.waitFor({ state: "visible" });
+  check(`${contexte} : vue 3D affichée`, await vue.isVisible());
+  const barre = racine.locator('.planche-outils[role="toolbar"]').first();
+  await barre.waitFor({ state: "visible" });
+  const outils = await barre.locator("button").count();
+  check(`${contexte} : barre d'outils visible et garnie`, outils >= 6, `${outils} boutons`);
+}
+
+try {
+  // 1. Ordinateur : /sandbox directement.
+  const { context, page } = await nouvellePage({ width: 1440, height: 900 });
+  await inscrire(page);
+  surSandbox = true;
+  await page.goto(`${BASE}/sandbox`);
+  check("/sandbox : l'adresse reste /sandbox", new URL(page.url()).pathname === "/sandbox", page.url());
+  await plancheChargee(page, "/sandbox");
+  const fil = page.locator('[data-sandbox-page] nav[aria-label="Fil d’Ariane Studio"]');
+  check("/sandbox : fil d'Ariane « Studio / Console / Sandbox »", (await fil.innerText()).replace(/\s+/g, " ").trim() === "Studio / Console / Sandbox", await fil.innerText());
+  check("/sandbox : « Console » marquée dans la barre latérale", (await page.locator("[data-studio-menu-console]").getAttribute("aria-current")) === "page");
+  check("/sandbox : hors de l'enveloppe du Studio", (await page.locator(".studio-shell").count()) === 0);
+  await page.screenshot({ path: join(OUT, "sandbox-ordinateur.png") });
+  surSandbox = false;
+
+  // 2. Ancienne adresse : redirection vers /sandbox, sans entrée d'historique supplémentaire.
+  await page.goto(`${BASE}/accueil`);
+  await page.goto(`${BASE}/studio/console/sandbox`);
+  await page.waitForURL(`${BASE}/sandbox`);
+  check("/studio/console/sandbox redirige vers /sandbox", new URL(page.url()).pathname === "/sandbox", page.url());
+  await plancheChargee(page, "ancienne adresse");
+  await page.goBack();
+  await page.waitForURL(/\/accueil$/);
+  check("la redirection remplace l'ancienne adresse dans l'historique", new URL(page.url()).pathname === "/accueil", page.url());
+
+  // 3. Carte « 00 Sandbox » de la Console : un simple lien vers /sandbox.
+  await page.goto(`${BASE}/studio/console`);
+  const carte = page.locator('[data-studio-console-carte="sandbox"]');
+  check("carte « 00 Sandbox » : lien vers /sandbox", (await carte.getAttribute("href")) === "/sandbox", await carte.getAttribute("href"));
+  surSandbox = true;
+  await carte.click();
+  await page.waitForURL(`${BASE}/sandbox`);
+  await plancheChargee(page, "depuis la carte 00");
+  surSandbox = false;
+  await context.close();
+
+  // 4. Téléphone : la Planche se charge et sa barre d'outils reste visible.
+  const tel = await nouvellePage({ width: 390, height: 844 });
+  await inscrire(tel.page);
+  surSandbox = true;
+  await tel.page.goto(`${BASE}/sandbox`);
+  await plancheChargee(tel.page, "téléphone");
+  await tel.page.screenshot({ path: join(OUT, "sandbox-telephone.png") });
+  surSandbox = false;
+  await tel.context.close();
+
+  check("aucun appel à l'API d'un projet pendant le Sandbox", appels.length === 0, appels.slice(0, 5).join(" ; "));
+  check("aucune erreur JavaScript", erreurs.length === 0, erreurs.slice(0, 5).join(" ; "));
+} catch (e) {
+  console.log(`✗ recette interrompue — ${e instanceof Error ? e.message : e}`);
+  echecs++;
+} finally {
+  await browser.close();
+}
+
+if (echecs > 0) {
+  console.log(`\n${echecs} contrôle(s) en échec.`);
+  process.exit(1);
+}
+console.log("\nModule Sandbox : recette réussie.");

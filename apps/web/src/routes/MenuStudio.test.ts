@@ -59,11 +59,13 @@ describe("menu « Studio » de la barre latérale", () => {
     const h0 = rendre("/studio");
     expect(h0.indexOf("data-studio-menu-console")).toBeLessThan(h0.indexOf('id="studio-menu-domaines"'));
     expect(h0.indexOf("data-studio-menu-console")).toBeGreaterThan(h0.indexOf("data-studio-menu-lateral-bascule"));
-    for (const adresse of ["/studio/console", "/studio/console/sandbox", "/studio/console/outil?domaine=bim"]) {
+    // `/sandbox` (module Sandbox, lot 1) garde « Console » marqué et le menu déplié, comme l'ancienne adresse.
+    for (const adresse of ["/studio/console", "/studio/console/sandbox", "/studio/console/outil?domaine=bim", "/sandbox"]) {
       const h = rendre(adresse);
       expect(entree(h), adresse).toContain('aria-current="page"');
       // Les quatre domaines restent, inchangés.
       expect(h.match(/data-studio-menu-domaine=/g)).toHaveLength(4);
+      expect(h, adresse).toMatch(/aria-expanded="true"[^>]*data-studio-menu-lateral-bascule/);
     }
   });
 });
