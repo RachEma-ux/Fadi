@@ -35,6 +35,7 @@ jobs:
         run: |
           python3 -m unittest discover -s docs/ai-team -p test_tableau_registre.py -v
           python3 docs/ai-team/tableau_registre.py --controle
+          python3 scripts/test-apply-main-ruleset.py -v
       - name: Vérifier les checkpoints des chantiers modifiés (PR seulement)
         if: github.event_name == 'pull_request'
         env:

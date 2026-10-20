@@ -23,7 +23,7 @@ def main():
     token = os.environ.get("GH_TOKEN")
     if not token:
         raise SystemExit("Administrator GH_TOKEN required; no request sent")
-    headers = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json",
+    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json",
                "X-GitHub-Api-Version": "2022-11-28"}
     def request(method, body=None):
         data = json.dumps(body).encode() if body is not None else None
