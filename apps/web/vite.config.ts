@@ -124,6 +124,7 @@ export default defineConfig({
       "/preferences": "http://localhost:3001",
       "/sandbox/preferences": "http://localhost:3001",
       "/health": "http://localhost:3001",
+      "/version": "http://localhost:3001",
     },
   },
   preview: {
@@ -145,6 +146,7 @@ export default defineConfig({
       "/preferences": "http://localhost:3001",
       "/sandbox/preferences": "http://localhost:3001",
       "/health": "http://localhost:3001",
+      "/version": "http://localhost:3001",
     },
   },
 });
