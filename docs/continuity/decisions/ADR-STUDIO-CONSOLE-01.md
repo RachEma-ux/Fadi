@@ -23,6 +23,10 @@ Ajouter au menu « Studio » un article **« Console »** qui ouvre une page de 
 - Quitter l'outil (lien, retour, fermeture de l'onglet) avec un tracé non vide demande confirmation : le dessin n'existe que dans la page.
 - « Console » est traduit « Bracket » par le dictionnaire anglais pour le support des réseaux (Atelier) : l'entrée de menu, le titre et le fil portent `translate="no"` pour rester « Console ».
 
+## Place dans le menu
+
+« Console » est un **article principal de Studio** : sous l'en-tête « Studio », hors du sous-menu dépliable (donc visible aussi quand il est replié), avec son icône propre, surligné sur toutes les pages de la Console. « Choisir une étude » reste seul dans « Accès Studio » ; les quatre domaines sont inchangés.
+
 ## Enregistrer dans un projet
 
 Le bouton Enregistrer devient « Enregistrer dans un projet » dès qu'il y a des commandes. Le dialogue (`console/DialogueEnregistrerConsole.tsx`) demande un projet (rôle « lecteur » exclu) et un nom d'étude, puis `console/transfert.ts` **crée une étude neuve** et lui envoie les commandes de la Console par enveloppes de 500, chacune sur la révision de la précédente, puis ouvre la variante créée. Jamais dans une étude existante. Le plan d'envoi garde ses `requestId` : après un échec la reprise rejoue les mêmes demandes, sans recréer l'étude ni dupliquer un lot. La Console reste non liée : elle n'est pas rattachée au projet après l'enregistrement.

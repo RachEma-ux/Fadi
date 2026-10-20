@@ -4,8 +4,9 @@
  * « 04 · Documentation, métrés et collaboration » — ni ajout, ni renommage, ni abréviation ; `DOMAINES_STUDIO`).
  *
  * - Accès permanents : « Accueil Studio » (`/studio` : reprise suggérée, choix explicite, nouvelle étude), « Choisir
- *   une étude » (études du projet affiché, sinon l'accueil) et « Console » (`/studio/console` : cinq cartes — « 00 Sandbox »
- *   bientôt disponible et les outils des quatre domaines, ouverts SANS charger de projet), en plus des quatre domaines.
+ *   une étude » (études du projet affiché, sinon l'accueil), en plus des quatre domaines.
+ * - « Console » (`/studio/console` : cinq cartes — « 00 Sandbox » bientôt disponible et les outils des quatre domaines, ouverts SANS
+ *   charger de projet) est un article principal de Studio, sous l'en-tête et hors du sous-menu ; surligné sur toutes ses pages.
  * - « Studio » reste un lien vers `/studio` (accueil, jamais de redirection automatique), actif sur toutes les routes
  *   Studio ; son chevron (bouton `aria-expanded`, flèches droite / gauche) déplie ou replie les quatre entrées, comme
  *   « Projets › ». Barre repliée : chaque entrée montre son numéro, nom exact en infobulle et en nom accessible.
@@ -64,15 +65,16 @@ export function MenuStudio({ surNavigation }: { surNavigation?: () => void }) {
         <Icon name="chevron-right" size={14} />
       </button>
     </div>
+    {/* « Console » : article principal de Studio, hors du sous-menu (visible replié ou non). « Console » est aussi le nom anglais : le
+        dictionnaire traduit ailleurs ce mot en « Bracket » (support des réseaux), d'où translate="no". */}
+    <NavLink to={cheminConsoleStudio()} className={estRouteConsoleStudio(pathname) ? "active" : undefined} aria-current={estRouteConsoleStudio(pathname) ? "page" : undefined}
+      title="Console" aria-label="Console" translate="no" data-studio-menu-console onClick={surNavigation}><Icon name="console" /><span className="sidebar-label">Console</span></NavLink>
     <div id="studio-menu-domaines" className="sidebar-studio-sous-menu" hidden={!ouvert}>
     <ul className="sidebar-studio-acces" aria-label="Accès Studio">
       <li><Link to={cheminAccueilStudio()} aria-current={pathname === "/studio" ? "page" : undefined} title="Accueil Studio" aria-label="Accueil Studio" data-studio-menu-accueil onClick={surNavigation}>
         <Icon name="home" size={16} /><span className="sidebar-label">Accueil Studio</span></Link></li>
       <li><Link to={etudes.href} aria-current={etudes.courant ? "page" : undefined} title="Choisir une étude" aria-label="Choisir une étude" data-studio-menu-etudes onClick={surNavigation}>
         <Icon name="folder" size={16} /><span className="sidebar-label">Choisir une étude</span></Link></li>
-      {/* « Console » est aussi le nom anglais : le dictionnaire traduit ailleurs ce mot en « Bracket » (support des réseaux), d'où translate="no". */}
-      <li><Link to={cheminConsoleStudio()} aria-current={estRouteConsoleStudio(pathname) ? "page" : undefined} title="Console" aria-label="Console" translate="no" data-studio-menu-console onClick={surNavigation}>
-        <Icon name="console" size={16} /><span className="sidebar-label">Console</span></Link></li>
     </ul>
     <ul className="sidebar-studio-domaines" aria-label="Domaines du Studio">
       {DOMAINES_STUDIO.map((d) => {

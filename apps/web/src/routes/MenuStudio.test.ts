@@ -55,6 +55,10 @@ describe("menu « Studio » de la barre latérale", () => {
     // Nom exact et non traduit (« Console » est traduit ailleurs en « Bracket » par le dictionnaire).
     expect(entree(html)).toContain('aria-label="Console"');
     expect(entree(html)).toContain('translate="no"');
+    // Article principal de Studio : hors du sous-menu (donc hors de « Accès Studio », où reste « Choisir une étude »).
+    const h0 = rendre("/studio");
+    expect(h0.indexOf("data-studio-menu-console")).toBeLessThan(h0.indexOf('id="studio-menu-domaines"'));
+    expect(h0.indexOf("data-studio-menu-console")).toBeGreaterThan(h0.indexOf("data-studio-menu-lateral-bascule"));
     for (const adresse of ["/studio/console", "/studio/console/sandbox", "/studio/console/outil?domaine=bim"]) {
       const h = rendre(adresse);
       expect(entree(h), adresse).toContain('aria-current="page"');
