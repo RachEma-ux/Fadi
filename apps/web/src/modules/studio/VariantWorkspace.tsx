@@ -21,6 +21,12 @@
  * Les constructions par points sont pures (`studioArcFromThreePoints`, `studioArcFromCenter`) ; l'aperçu n'est jamais
  * une donnée du document.
  *
+ * Mode autonome (`autonome`, Console de Studio, `console/`) : l'outil d'un domaine ouvert INDÉPENDAMMENT DE TOUT PROJET.
+ * Le contexte est local (document vide, `console/contexte-console.ts`) ; aucune lecture ni aucun enregistrement
+ * (`useChargementVariante` inactif, `useEnregistrement` autonome), aucun brouillon conservé sur l'appareil, aucune requête
+ * de projet, d'étude ou de variante. Les commandes et panneaux qui lisent ou écrivent dans une étude (enregistrer,
+ * exports du serveur, feuilles et dossier, exigences, commentaires, historique, quantités) sont indisponibles et le disent.
+ *
  * Mise en page (logiciel de conception, outils au premier plan) : un domaine affiché à la fois. Barre du haut
  * persistante (domaines, mode des planches 2D / 3D / Double vue, phase déclarée du workflow, Annuler / Rétablir /
  * Enregistrer / Outils / palette, commentaires), palette d'outils du domaine (verticale à gauche ; barre inférieure
@@ -92,7 +98,8 @@ import { useCycleOutils } from "./chargement/useRessources";
 import { AvisFileLocale } from "./hors-ligne/AvisFileLocale";
 import { cleVariante } from "./hors-ligne/persistance";
 import { mesurerCommandes } from "./chargement/mesures-studio";
-import { cheminEtudeStudio, cheminVarianteStudio, type OptionsDomaineVariante } from "./routes-studio";
+import { cheminEtudeStudio, cheminOutilConsoleStudio, cheminVarianteStudio, type OptionsDomaineVariante } from "./routes-studio";
+import { contexteConsole } from "./console/contexte-console";
 import {
   dansPaletteDuDomaine, definitionDomaine, DOMAINES_STUDIO, domaineDeLAdresse, domaineExecution, montre2d, montre3d, panneauxDuDomaine, PLANCHE_PAR_DEFAUT,
   type DomaineStudio, type FonctionStudio, type ModePlanche,
@@ -119,6 +126,8 @@ function versionPlan(doc: StudioDocument): string {
 export interface VariantWorkspaceProps {
   projectId: string; studyId: string; variantId: string; revisionId: string | null; commentairesOuverts?: boolean;
   domaine?: DomaineStudio | null; planche?: ModePlanche | null;
+  /** Console : outil ouvert sans projet (les identifiants ci-dessus sont alors vides et jamais lus). */
+  autonome?: boolean;
   surAdresse?: (a: { domaine: DomaineStudio; planche: ModePlanche | null; commentaires: boolean }, options: { remplacer: boolean }) => void;
 }
 
@@ -154,9 +163,14 @@ function useHauteurDisponible(ref: { current: HTMLElement | null }, minimum: num
   return actif ? h : undefined;
 }
 
-export function VariantWorkspace({ projectId, studyId, variantId, revisionId, commentairesOuverts = false, domaine = null, planche = null, surAdresse }: VariantWorkspaceProps) {
-  const [context, setContext] = useState<StudioContext | null>(null);
-  const [brouillon, setBrouillon] = useState<Brouillon | null>(null);
+/** Panneaux latéraux qui lisent ou écrivent dans une étude : indisponibles dans la Console (aucun projet). */
+const PANNEAUX_D_ETUDE: ReadonlySet<FonctionStudio> = new Set<FonctionStudio>(["exigences", "publications", "commentaires-observations", "revisions", "metre"]);
+/** Commandes qui passent par le serveur (exports de la révision enregistrée, feuilles du dossier) : indisponibles dans la Console. */
+const COMMANDES_D_ETUDE: ReadonlySet<IdCommandeEditeur> = new Set<IdCommandeEditeur>(["exporter-svg", "exporter-dxf", "exporter-ifc", "dossier"]);
+
+export function VariantWorkspace({ projectId, studyId, variantId, revisionId, commentairesOuverts = false, domaine = null, planche = null, autonome = false, surAdresse }: VariantWorkspaceProps) {
+  const [context, setContext] = useState<StudioContext | null>(() => (autonome ? contexteConsole() : null));
+  const [brouillon, setBrouillon] = useState<Brouillon | null>(() => (autonome ? creerBrouillon(contexteConsole().revision.document) : null));
   const [tool, setTool] = useState<StudioToolId>("studio.dessin.selection");
   const [selection, setSelection] = useState<string[]>([]);
   const [trace, setTrace] = useState<PointPose | null>(null);
@@ -180,7 +194,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [loadError, setLoadError] = useState<unknown>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!autonome);
   const [values, setValues] = useState<Valeurs>(VALEURS_INITIALES);
   const [extrusion, setExtrusion] = useState<ValeursExtrusion>(VALEURS_VIDES);
   // Mode des planches de Dessin et modélisation (I.4-02) : Planche 2D, Planche 3D (vue 3D du modèle) ou Double vue ;
@@ -222,7 +236,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const drawing = brouillon ? documentBrouillon(brouillon) : null;
   const commands = brouillon ? commandesEnAttente(brouillon) : [];
   const enr = useEnregistrement({
-    projectId, studyId, variantId, historical, context, brouillon, alive, setError, setInfo,
+    projectId, studyId, variantId, historical, autonome, context, brouillon, alive, setError, setInfo,
     surVersionServeur: (current) => {
       setContext(current); setBrouillon(creerBrouillon(current.revision.document)); cancelTrace();
       const doc = current.revision.document;
@@ -239,15 +253,16 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   // Hors ligne, derrière une enveloppe en attente, le dessin reste permis (`enr.dessinHorsLigne`).
   const writable = !historical && !!context?.canWrite && !pending && (!uncertain || enr.dessinHorsLigne) && !blocked;
   // Données réelles du cartouche de la feuille (mêmes clés que le fil d'Ariane et l'historique : cache partagé).
-  const projet = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId), staleTime: 30_000, retry: (n, e) => !refused(e) && n < 1, enabled: !!context });
+  const projet = useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId), staleTime: 30_000, retry: (n, e) => !refused(e) && n < 1, enabled: !!context && !autonome });
   // Catalogue autorisé (B.2-06) : motif réel d'un refus d'écriture (rôle, référence protégée, verrou), lecture seule.
-  const catalogueAutorise = useQuery({ queryKey: ["studio-catalogue-outils", projectId], queryFn: () => api.studioCatalogueOutils(projectId), staleTime: 30_000, retry: (n, e) => !refused(e) && n < 1, enabled: !!context });
-  const revisionsFeuille = useQuery({ queryKey: ["studio-revisions", projectId, studyId, variantId], queryFn: () => api.studioRevisions(projectId, studyId, variantId), retry: (n, e) => !refused(e) && n < 1, enabled: dialogue === "feuille" });
+  const catalogueAutorise = useQuery({ queryKey: ["studio-catalogue-outils", projectId], queryFn: () => api.studioCatalogueOutils(projectId), staleTime: 30_000, retry: (n, e) => !refused(e) && n < 1, enabled: !!context && !autonome });
+  const revisionsFeuille = useQuery({ queryKey: ["studio-revisions", projectId, studyId, variantId], queryFn: () => api.studioRevisions(projectId, studyId, variantId), retry: (n, e) => !refused(e) && n < 1, enabled: dialogue === "feuille" && !autonome });
   const revisionAffichee = revisionsFeuille.data?.revisions.find(r => r.id === context?.revision.id);
 
   // Lecture de la variante, avec reprise du brouillon hors ligne conservé sur l'appareil (`hors-ligne/`).
-  useChargementVariante({ projectId, studyId, variantId, revisionId, alive, setContext, setBrouillon, setLoadError, setError, setLoading, reprendre: enr.reprendre });
-  useGardeNavigation(dirty, { chemin: cheminVarianteStudio(projectId, studyId, variantId), revision: revisionId });
+  useChargementVariante({ projectId, studyId, variantId, revisionId, alive, setContext, setBrouillon, setLoadError, setError, setLoading, reprendre: enr.reprendre, inactif: autonome });
+  // Console : ce qui est dessiné n'existe que dans la page ; la quitter (lien, retour, fermeture) demande confirmation.
+  useGardeNavigation(dirty, { chemin: autonome ? cheminOutilConsoleStudio("dessin").split("?")[0]! : cheminVarianteStudio(projectId, studyId, variantId), revision: revisionId });
 
   // ——— Domaines et planche (I.4) : l'adresse fait foi ———
   // Historique (ADR-STUDIO-NAV-01) : changer de domaine AJOUTE une entrée (le retour arrière revient au domaine
@@ -292,14 +307,16 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     ecrireAdresse({ domaine: "documentation", planche: null, commentaires: true }, domaineActif === "documentation");
   }
   /** Adresse d'un lien de domaine : celle de la variante (révision et commentaires compris) avec ce domaine. */
-  const adresseDuDomaine = (id: DomaineStudio) => cheminVarianteStudio(projectId, studyId, variantId, revisionId, { commentaires, domaine: id, planche: id === "dessin" ? plancheActive : null });
+  const adresseDuDomaine = (id: DomaineStudio) => autonome
+    ? cheminOutilConsoleStudio(id, { planche: id === "dessin" ? plancheActive : null })
+    : cheminVarianteStudio(projectId, studyId, variantId, revisionId, { commentaires, domaine: id, planche: id === "dessin" ? plancheActive : null });
   // Fil d'Ariane (NAV-006) : la révision nommée suit la révision affichée — l'étude est relue à chaque nouvelle tête.
   const client = useQueryClient();
-  useEffect(() => { if (context) void client.invalidateQueries({ queryKey: ["studio-study", projectId, studyId] }); }, [context?.revision.id]);
+  useEffect(() => { if (context && !autonome) void client.invalidateQueries({ queryKey: ["studio-study", projectId, studyId] }); }, [context?.revision.id]);
   // Dernier contexte personnel (suggestion de reprise de l'accueil, vérifiée par le serveur à la reprise).
   const { user: compte } = useAuth();
   useEffect(() => {
-    if (!context || historical) return;
+    if (!context || historical || autonome) return;
     memoriserContexte(compte?.id, { projectId, studyId, variantId, domaine: domaineActif, planche: domaineActif === "dessin" ? modePlanche : null, noms: { etude: context.study.name, variante: context.variant.name, ...(projet.data ? { projet: projet.data.code } : {}) } });
   }, [context?.variant.id, context?.study.name, context?.variant.name, domaineActif, modePlanche, historical, compte?.id, projet.data?.code]);
 
@@ -531,8 +548,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   function undo() { if (brouillon && peutAnnuler(brouillon) && writable) { cancelTrace(); setBrouillon(annulerBrouillon(brouillon)); setError(""); } }
   function redo() { if (brouillon && peutRetablir(brouillon) && writable) { cancelTrace(); setBrouillon(retablirBrouillon(brouillon)); setError(""); } }
   function fullscreen() { if (!document.fullscreenElement) void shell.current?.requestFullscreen().catch(() => setError("Plein écran indisponible. La planche reste accessible.")); else void document.exitFullscreen(); }
-  const canSave = !historical && !!context?.canWrite && !pending && (uncertain || (commands.length > 0 && !blocked));
-  const liens: Partial<Record<IdCommandeEditeur, string>> = {
+  const canSave = !autonome && !historical && !!context?.canWrite && !pending && (uncertain || (commands.length > 0 && !blocked));
+  const liens: Partial<Record<IdCommandeEditeur, string>> = autonome ? {} : {
     "exporter-svg": studioExportUrl(projectId, studyId, variantId, "svg", revisionId),
     "exporter-dxf": studioExportUrl(projectId, studyId, variantId, "dxf", revisionId),
     "exporter-ifc": studioExportUrl(projectId, studyId, variantId, "ifc", revisionId),
@@ -591,7 +608,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   }
   const formesChoisies = drawing ? formesSelectionnees(drawing, selectionIds) : [];
   const toolAvailable = (t: StudioToolEntry) => outilDisponible(t, { writable, selectionIds, formesChoisies });
-  const commandAvailable = (c: CommandeEditeur) => commandeDisponible(c, { writable, brouillon, drawing, trace, suite, selectionIds, tool, canSave, largeurVue: cadre.w });
+  const commandAvailable = (c: CommandeEditeur) => !(autonome && COMMANDES_D_ETUDE.has(c.id)) && commandeDisponible(c, { writable, brouillon, drawing, trace, suite, selectionIds, tool, canSave, largeurVue: cadre.w });
   /** Lance un outil ou une commande (raccourci, palette, gestionnaire) ; `verifier` : refuse une commande indisponible. */
   function executer(cible: CibleRaccourci, verifier: boolean) {
     // Un outil ou une commande d'un autre domaine (raccourci, palette, Tool Manager) ouvre son domaine.
@@ -644,7 +661,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   })();
   const hint = aidePlanche({ ...etatTrace, moveWithPointer, lectureSeule: !writable && !historical && context?.canWrite === false });
   const pasAffiche = pas.toLocaleString(LOCALE, { maximumFractionDigits: 3 });
-  const etat = historical ? "Révision historique" : pending ? "Sauvegarde en cours…" : uncertain ? "Sauvegarde non confirmée" : commands.length ? "Brouillon non enregistré" : enr.saved ? "Enregistré sur le serveur" : "Version serveur chargée";
+  const etat = autonome ? (commands.length ? "Hors projet : rien n’est enregistré" : "Hors projet : aucun projet chargé") : historical ? "Révision historique" : pending ? "Sauvegarde en cours…" : uncertain ? "Sauvegarde non confirmée" : commands.length ? "Brouillon non enregistré" : enr.saved ? "Enregistré sur le serveur" : "Version serveur chargée";
   const basculeActive = { ...gestes.basculesActives, "accrochage-sommets": accrocheSommets, "accrochage-grille": accrocheGrille, "vue-3d": vue3d, "navigation-3d": vue3d && navigation3d === "plan", "coupe-3d": vue3d && coupe3d };
   // Accrochages et repérages actifs (barre d'état) : les bascules de ces barres, nommées par leur commande.
   const accrochagesActifs = COMMANDES_EDITEUR.filter(c => (c.groupe === "accrochage" || c.groupe === "reperage") && c.bascule && (basculeActive as Partial<Record<IdCommandeEditeur, boolean>>)[c.id]).map(c => c.libelleFR);
@@ -659,6 +676,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   /** Bloc d'une fonction de l'espace (`FONCTIONS_STUDIO`), rendu dans un panneau latéral de son domaine. */
   function bloc(f: FonctionStudio): ReactNode {
     if (!context || !drawing) return null;
+    if (autonome && PANNEAUX_D_ETUDE.has(f)) return <p className="studio-info" data-studio-console-indisponible={f}>Ce panneau lit et écrit dans une étude de projet : il n’est pas disponible dans la Console.</p>;
     switch (f) {
       case "outils": case "planches": case "portee-annuler": return null;
       case "elements": return <ListeElements doc={drawing} selection={selectionIds} modifiable={writable} surSelection={select} surSupprimer={() => runTool("studio.dessin.supprimer")} />;
@@ -725,8 +743,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   </aside> : null;
   const barreEtat = context && drawing ? <BarreEtat aide={hint} coordonnees={plan2d ? survol?.point ?? null : null} accrochages={accrochagesActifs} pas={pas} pasAffiche={pasAffiche}
     planche={libelleModePlanche(affichage)} sousTitre={SOUS_TITRE_PLANCHE[affichage]} enAttente={commands.length} etat={etat} lectureSeule={!context.canWrite} revision={context.revision.id}
-    connexion={!historical ? <EtatConnexionStudio etat={enr.horsLigne} /> : undefined} /> : null;
-  return <section className="studio-workspace" ref={shell} aria-label="Studio" data-studio-variante={variantId} data-studio-revision-vue={historical ? revisionId : undefined}
+    connexion={!historical && !autonome ? <EtatConnexionStudio etat={enr.horsLigne} /> : undefined} /> : null;
+  return <section className="studio-workspace" ref={shell} aria-label="Studio" data-studio-variante={autonome ? undefined : variantId} data-studio-console-outil={autonome ? "" : undefined} data-studio-revision-vue={historical ? revisionId : undefined}
     data-studio-domaine-affiche={domaineActif} data-studio-affichage={affichage} data-studio-telephone={telephone ? "" : undefined}>
     <TitreEspace context={context} />
     <div className="studio-ecran" ref={ecran} style={hauteur ? { height: hauteur } : undefined}>
@@ -737,12 +755,12 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
         {domaineActif === "dessin" && <SelecteurPlanche active={plancheActive} surChoix={choisirPlanche} />}
         <span className="studio-barre-espace-vide" />
         {context && drawing && <ActionsEspace disponible={commandAvailable} raison={(id) => raisonCible({ type: "commande", id })} libelle={libelleSave} surCommande={(id) => executer({ type: "commande", id }, true)} />}
-        {context && drawing && <button type="button" className="studio-bouton-commentaires" aria-pressed={commentaires} aria-label="Commentaires" title="Commentaires" onClick={basculerCommentaires} data-studio-basculer-commentaires><Icon name="studio-comments" size={18} /></button>}
+        {context && drawing && !autonome && <button type="button" className="studio-bouton-commentaires" aria-pressed={commentaires} aria-label="Commentaires" title="Commentaires" onClick={basculerCommentaires} data-studio-basculer-commentaires><Icon name="studio-comments" size={18} /></button>}
       </div>
       <AlerteStudio error={error} blocked={blocked && !enr.horsLigne.conflit} surRecharger={() => void enr.rechargerServeur()} />
-      <AvisFileLocale cle={user && !historical ? cleVariante(user.id, projectId, studyId, variantId) : null} />
+      <AvisFileLocale cle={user && !historical && !autonome ? cleVariante(user.id, projectId, studyId, variantId) : null} />
       {loading && <p role="status">Chargement de la planche…</p>}
-      {context && drawing && !historical && <AvisRevision projectId={projectId} studyId={studyId} variantId={variantId} teteAffichee={context.variant.headRevisionId} actif={!pending && !blocked && !uncertain && !enr.horsLigne.conflit} nonEnregistre={commands.length > 0}
+      {context && drawing && !historical && !autonome && <AvisRevision projectId={projectId} studyId={studyId} variantId={variantId} teteAffichee={context.variant.headRevisionId} actif={!pending && !blocked && !uncertain && !enr.horsLigne.conflit} nonEnregistre={commands.length > 0}
         surRecharger={async () => {
           const depart = context.revision.id, brouillonDepart = brouillon;
           const c = await api.studioContext(projectId, studyId, variantId);
@@ -752,8 +770,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
           setContext(c); setBrouillon(creerBrouillon(c.revision.document)); cancelTrace(); enr.setSaved(false); setError(""); }} />}
       {historical && <BandeauHistorique projectId={projectId} studyId={studyId} variantId={variantId} adresse={adresseDomaine} />}
       {/* Exemple protégé : par le mode du projet (un lecteur reçoit le motif « role », mais peut copier — revue #208). */}
-      {!historical && context && (projet.data?.exampleMode === "reference" || catalogueAutorise.data?.droits.motif === "reference-protegee") && <CopieDeTravail projectId={projectId} nomVariante={context.variant.name} adresse={adresseDomaine} />}
-      {!historical && <ChoixConflitStudio etat={enr.horsLigne} surRecharger={() => void enr.rechargerServeur()} surReporter={() => void enr.reporter()} />}
+      {!historical && !autonome && context && (projet.data?.exampleMode === "reference" || catalogueAutorise.data?.droits.motif === "reference-protegee") && <CopieDeTravail projectId={projectId} nomVariante={context.variant.name} adresse={adresseDomaine} />}
+      {!historical && !autonome && <ChoixConflitStudio etat={enr.horsLigne} surRecharger={() => void enr.rechargerServeur()} surReporter={() => void enr.reporter()} />}
       {context && drawing && <div className="studio-corps" data-studio-corps>
         {!telephone && palette}
         {canevas}

@@ -5,6 +5,7 @@ Ce répertoire hébergera les **ADR transversales futures** quand une décision 
 - [Modèle d'ADR](../templates/ADR.md).
 - Décisions Atelier existantes : [`docs/atelier/decisions.md`](../../atelier/decisions.md) — **ne pas les réécrire, renuméroter ou dupliquer**.
 - Décisions Planche et cahiers : [`docs/planche/`](../../planche/README.md), avec le suivi de lots déjà présent.
+- [ADR-STUDIO-NAV-01](ADR-STUDIO-NAV-01.md) — navigation de Studio ; [ADR-STUDIO-CONSOLE-01](ADR-STUDIO-CONSOLE-01.md) — Console : outils des quatre domaines sans projet.
 - Architecture actuelle documentée : [`docs/architecture.md`](../../architecture.md).
 
 Une ADR comporte un numéro local non réutilisé, un état `Proposé` / `Accepté` / `Remplacé`, la date, les options et preuves, la justification, les conséquences et l'accord décisionnaire. Une nouvelle décision qui contredit une ancienne doit expliciter ce qu'elle remplace.

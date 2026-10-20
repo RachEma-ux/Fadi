@@ -97,6 +97,7 @@ export type IconName =
   | "studio-architecture-edit"
   | "studio-architecture-delete"
   | "studio-property-set"
+  | "console"
   | "studio-property-remove"
   | "studio-requirements"
   | "studio-scene-add"
@@ -137,6 +138,8 @@ const PATHS: Record<IconName, string> = {
   stairs: "M4 20h4v-4h4v-4h4V8h4M4 20V8",
   drop: "M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z",
   studio: "M3 6h11v11H3V6Zm7 4h11v11H10V10Z",
+  // Console de Studio : fenêtre de terminal (invite de commande et curseur).
+  console: "M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm4 4 3 3-3 3m5 0h4",
   // Planche 2D de Studio : une icône propre par outil et par commande (règle d'or, D-202).
   "studio-pointer": "M5 3 19 12 12 13 9 20Z",
   "studio-line": "M5 19 19 5M3 17h4v4H3ZM17 3h4v4h-4Z",

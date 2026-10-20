@@ -46,4 +46,20 @@ describe("menu « Studio » de la barre latérale", () => {
     expect(html).not.toContain('aria-current="page"');
     expect(html).toMatch(/aria-expanded="false"[^>]*data-studio-menu-lateral-bascule/);
   });
+
+  it("« Console » : un accès permanent vers /studio/console, marqué sur toute adresse de la Console, sans projet", () => {
+    const entree = (html: string) => /<a [^>]*data-studio-menu-console[^>]*>/.exec(html)?.[0] ?? "";
+    const html = rendre("/studio");
+    expect(entree(html)).toContain('href="/studio/console"');
+    expect(entree(html)).not.toContain("aria-current");
+    // Nom exact et non traduit (« Console » est traduit ailleurs en « Bracket » par le dictionnaire).
+    expect(entree(html)).toContain('aria-label="Console"');
+    expect(entree(html)).toContain('translate="no"');
+    for (const adresse of ["/studio/console", "/studio/console/sadbox", "/studio/console/outil?domaine=bim"]) {
+      const h = rendre(adresse);
+      expect(entree(h), adresse).toContain('aria-current="page"');
+      // Les quatre domaines restent, inchangés.
+      expect(h.match(/data-studio-menu-domaine=/g)).toHaveLength(4);
+    }
+  });
 });

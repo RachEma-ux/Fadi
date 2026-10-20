@@ -19,7 +19,10 @@ import type { StudioPhaseWorkflow } from "@parcours/atelier-model";
 import { api, ApiError, ROLE_LABEL, type StudioVariantSummary } from "../../lib/api";
 import type { DomaineStudio } from "./domaines/definitions";
 import { LOCALE } from "../../lib/i18n";
-import { cheminAccueilStudio, cheminComparaisonStudio, cheminEtudeStudio, cheminProjetStudio, cheminVarianteStudio, lireRouteStudio } from "./routes-studio";
+import { cheminAccueilStudio, cheminComparaisonStudio, cheminConsoleStudio, cheminEtudeStudio, cheminOutilConsoleStudio, cheminProjetStudio, cheminVarianteStudio, estRouteConsole, lireRouteStudio, type RouteConsoleStudio } from "./routes-studio";
+import { definitionDomaine, libelleNumeroteDomaine } from "./domaines/definitions";
+import { ConsoleSadbox, ConsoleStudio } from "./console/ConsoleStudio";
+import { LIBELLE_SADBOX } from "./console/cartes";
 import { StudioRefus } from "./studio-ecrans";
 import { DemarrageStudio, PlancheDifferee } from "./chargement/DemarrageStudio";
 import { PageComparaison } from "./comparaison/PageComparaison";
@@ -70,12 +73,13 @@ export function StudioShell() {
         {route.vue !== "accueil" && (
           <nav className="studio-fil" aria-label="Fil d’Ariane Studio">
             <Link to={cheminAccueilStudio()} data-studio-fil-accueil>Studio</Link>
-            {route.vue !== "inconnue" && <FilProjet projectId={route.projectId} lien={route.vue !== "projet"} />}
+            {estRouteConsole(route) && <FilConsole route={route} />}
+            {route.vue !== "inconnue" && !estRouteConsole(route) && <FilProjet projectId={route.projectId} lien={route.vue !== "projet"} />}
             {(route.vue === "etude" || route.vue === "variante" || route.vue === "comparer") && <FilEtude projectId={route.projectId} studyId={route.studyId} lien={route.vue !== "etude"} />}
             {route.vue === "comparer" && <span aria-current="page"> / {"Comparer"}</span>}
             {route.vue === "variante" && <FilVariante projectId={route.projectId} studyId={route.studyId} variantId={route.variantId} revisionId={route.revisionId} />}
             {(route.vue === "etude" || route.vue === "variante") && <PastilleEtude projectId={route.projectId} studyId={route.studyId} variantId={route.vue === "variante" ? route.variantId : null} revisionId={route.vue === "variante" ? route.revisionId : null} />}
-            {route.vue !== "inconnue" && <BadgeRole projectId={route.projectId} />}
+            {route.vue !== "inconnue" && !estRouteConsole(route) && <BadgeRole projectId={route.projectId} />}
           </nav>
         )}
         {route.vue === "accueil" && <StudioAccueil key={search} domaine={route.domaine} />}
@@ -85,6 +89,12 @@ export function StudioShell() {
         {route.vue === "variante" && <PlancheDifferee key={`${route.projectId}/${route.studyId}/${route.variantId}/${route.revisionId ?? ""}`} projectId={route.projectId} studyId={route.studyId} variantId={route.variantId} revisionId={route.revisionId} commentairesOuverts={route.commentaires}
           domaine={route.domaine} planche={route.planche}
           surAdresse={({ domaine, planche, commentaires }, { remplacer }) => navigate(cheminVarianteStudio(route.projectId, route.studyId, route.variantId, route.revisionId, { commentaires, domaine, planche }), { replace: remplacer })} />}
+        {route.vue === "console" && <ConsoleStudio />}
+        {route.vue === "console-sadbox" && <ConsoleSadbox />}
+        {/* Console : l'outil du domaine SANS charger de projet (contexte local, rien lu ni enregistré). Clé fixe : changer de domaine ou de planche ne décharge pas ce qui est dessiné. */}
+        {route.vue === "console-outil" && <PlancheDifferee key="console" autonome projectId="" studyId="" variantId="" revisionId={null}
+          domaine={route.domaine} planche={route.planche}
+          surAdresse={({ domaine, planche }, { remplacer }) => navigate(cheminOutilConsoleStudio(domaine, { planche }), { replace: remplacer })} />}
         {route.vue === "comparer" && <PageComparaison projectId={route.projectId} studyId={route.studyId} de={route.de} a={route.a} />}
         {route.vue === "inconnue" && (
           <section className="studio-welcome" role="alert" data-studio-inconnue>
@@ -96,6 +106,12 @@ export function StudioShell() {
       </StudioErrorBoundary>
     </div>
   );
+}
+
+/** Fil d'Ariane de la Console : « Studio / Console », puis « Sadbox » ou le domaine ouvert (jamais de projet ni d'étude). */
+function FilConsole({ route }: { route: RouteConsoleStudio }) {
+  const suite = route.vue === "console-sadbox" ? LIBELLE_SADBOX : route.vue === "console-outil" ? libelleNumeroteDomaine(definitionDomaine(route.domaine)) : null;
+  return <span data-studio-fil-console> / {suite === null ? <span aria-current="page" translate="no">Console</span> : <><Link to={cheminConsoleStudio()} translate="no">Console</Link> / <span aria-current="page">{suite}</span></>}</span>;
 }
 
 const useProjet = (projectId: string) => useQuery({ queryKey: ["project", projectId], queryFn: () => api.getProject(projectId), staleTime: 30_000, retry });

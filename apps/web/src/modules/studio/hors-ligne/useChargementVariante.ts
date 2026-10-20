@@ -47,6 +47,8 @@ export interface OptionsChargement {
   setError: (m: string) => void;
   setLoading: (v: boolean) => void;
   reprendre: (r: RepriseHorsLigne) => void;
+  /** Mode autonome de la Console (aucun projet) : rien n'est lu ni restauré, le contexte local est déjà en place. */
+  inactif?: boolean;
 }
 
 const restaurer = (base: StudioContext, h: BrouillonHorsLigne) => restaurerBrouillon(base.revision.document, h.pas, h.refaire, h.pasCouverts);
@@ -59,6 +61,7 @@ export function useChargementVariante(o: OptionsChargement): void {
   useEffect(() => {
     const { alive } = ref.current;
     alive.current = true;
+    if (ref.current.inactif) return;
     let active = true;
     const f = () => ref.current;
     const t0 = perfStudio.maintenant();
