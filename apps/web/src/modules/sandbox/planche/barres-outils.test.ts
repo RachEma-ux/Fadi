@@ -241,7 +241,9 @@ describe("Règle d'or — commandes d'objet livrées (Objets O-1, D-203)", () =>
     expect(source).toContain("...COMMANDES_OBJETS.map((c) =>");
     expect(source).toContain('"data-planche-commande": c.id');
     // « Outils ▾ » : groupe « Objets » alimenté par la même liste ; nom visible sous l'icône dans la barre d'actions.
-    expect(source).toMatch(/commandes=\{\[\s*\.\.\.COMMANDES_OBJETS\.map\(\(c\) =>/);
+    // Lot 5 : la liste est nommée (`commandesListe`, reprise par les favoris et regroupements de la grille).
+    expect(source).toMatch(/const commandesListe = \[\s*\.\.\.COMMANDES_OBJETS\.map\(\(c\) =>/);
+    expect(source).toContain("commandes={commandesListe}");
     expect(source).toContain("texte: t(c.court)");
     // Lot 9 : les raccourcis passent par le registre unique (touche physique sous Alt, disponibilité de la famille).
     expect(source).toContain("const commande = commandeDuClavier(e);");

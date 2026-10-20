@@ -57,6 +57,9 @@ import {
   opererSolides,
   orienterFaces,
   outilParId,
+  OUTILS,
+  barreGaucheSandbox,
+  entreeDeCle,
   entreeOutil,
   entreePanneau,
   entreesSandbox,
@@ -105,6 +108,7 @@ import {
   separerDiagnostic,
   changerSectionPiece,
   tournerPieceAxe,
+  CLES_PERSONNALISABLES,
 } from "@parcours/sandbox-planche-model";
 import { etatUi, useEtatUi } from "../etat-ui";
 import { MenuPlanche } from "./menu-planche";
@@ -113,7 +117,7 @@ import { CATALOGUE, type CleMessage, t } from "../messages";
 import { ChoixLangue } from "../../../components/ChoixLangue";
 import { annuler, enregistrer, historiqueInitial, operationAAnnuler, operationARetablir, retablir, type Historique } from "./historique";
 import { chargerBrouillon, enregistrerBrouillon, stockageDisponible } from "./brouillon";
-import { OUTILS_BOOLEENS, OUTILS_CAMERA_TEMPORAIRES, afficherRaccourci, commenceSaisie, disponibilite, estOutilCamera, estRecherche, libelleOutil, lotPrevu, outilDuClavier, outilsBarre, pictoOutil, raccourciOutil, sectionsGrille, titreOutil, toucheEtat, type OutilCamera } from "./outils-planche";
+import { OUTILS_BOOLEENS, OUTILS_CAMERA_TEMPORAIRES, afficherRaccourci, commenceSaisie, disponibilite, estOutilCamera, estRecherche, libelleOutil, lotPrevu, outilDuClavier, outilsDeBarre, pictoOutil, raccourciOutil, sectionsGrille, titreOutil, toucheEtat, type OutilCamera } from "./outils-planche";
 import { HAUTEUR_OEIL_DEFAUT, OPTIONS_AFFICHAGE_DEFAUT, VuePlanche, type OptionsAffichage, type VueStandard } from "./vue-planche";
 import { DialogueComposant, DialogueDeplacer, MenuContextuel, NavigateurPlanche, PanneauAdoucir, PanneauAffichage, PanneauComposants, PanneauInfoEntite, PanneauInfoModele, PanneauOmbres, PanneauScenes, PanneauStyles, type EntreeMenu, type ParametresComposant } from "./panneaux-objets";
 import { BarreActions } from "../panneaux/BarreActions";
@@ -121,6 +125,8 @@ import { commandeDuClavier, routeeParLeRegistre, type EntreeRegistre } from "./r
 import { useNavigationBarre } from "../navigation-barre";
 import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
+import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
+import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
 import { disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante } from "./BarreOutilsFlottante";
 import { PanneauProfiles, type ChoixSection } from "./panneau-profiles";
@@ -178,7 +184,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -326,6 +332,11 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   // Téléphone : icônes seules au départ (les étiquettes recouvraient le dessin) ; « « » les affiche.
   const [colonneRepliee, setColonneRepliee] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches);
   const colonneRef = useRef<HTMLElement | null>(null);
+  // Lot 5 : préférences d'outils du compte (profil, barre gauche, favoris, regroupements), copie locale hors connexion.
+  const prefsSandbox = usePreferencesSandbox();
+  // Barre gauche affichée (profil) : un outil choisi hors d'elle devient l'« outil récent » sous la barre.
+  const idsBarreRef = useRef<readonly string[]>(barreGaucheSandbox(prefsSandbox.preferences));
+  idsBarreRef.current = barreGaucheSandbox(prefsSandbox.preferences);
   // Plan détaché : fenêtre séparée (Document Picture-in-Picture, bureau) ou plein écran (repli, téléphone).
   const [detache, setDetache] = useState<"non" | "fenetre" | "plein-ecran">("non");
   const fenetreRef = useRef<Window | null>(null);
@@ -570,7 +581,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         const boite = v?.emprise();
         if (v && boite) v.cadrer(boite, margesVue(racineRef.current));
         setMessage(boite ? null : t("planche.zoom-etendu.vide"));
-        if (o.emplacement === "grille") setRecent(id);
+        if (!idsBarreRef.current.includes(id)) setRecent(id);
         rafraichir();
         return;
       }
@@ -601,7 +612,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       setOutilId(id);
       setTexte(null);
       setMessage(null);
-      if (o.emplacement === "grille") setRecent(id);
+      if (!idsBarreRef.current.includes(id)) setRecent(id);
       rafraichir();
     },
     [readOnly, rafraichir, setTexte],
@@ -2008,8 +2019,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     const id = sel.find((x) => genreAnnotation(x) === "plan");
     return id ? hist.present.modele.annotations?.plansDeCoupe[id] ?? null : null;
   }, [vue.selection, hist.present.modele]);
-  const barre = useMemo(() => outilsBarre(), []);
-  const sections = useMemo(() => sectionsGrille(), []);
+  const idsBarre = useMemo(() => barreGaucheSandbox(prefsSandbox.preferences), [prefsSandbox.preferences]);
+  const barre = useMemo(() => outilsDeBarre(idsBarre), [idsBarre]);
+  const sections = useMemo(() => sectionsGrille(OUTILS, undefined, idsBarre), [idsBarre]);
   const raisonDe = (o: Outil) => disponibilite(o, { lecture: readOnly });
   const etatBarre = OUTILS_BOOLEENS.has(outilId) && booleens === "chargement" ? t("planche.solides.chargement") : vue.erreur ?? message;
   const valeurMesures = texte?.texte ?? vue.mesures?.valeur ?? "";
@@ -2037,7 +2049,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     );
   };
 
-  const recentOutil = recent ? outilParId(recent) : null;
+  // Un outil récent que le profil a mis dans la barre gauche n'est pas répété sous le séparateur.
+  const recentOutil = recent && !idsBarre.includes(recent) ? outilParId(recent) : null;
 
   /** Touches d'état à l'écran (tactile) : un appui = enfoncée puis relâchée. */
   const boutonsTouches = (touches: [Touche, string, string][]) =>
@@ -2171,9 +2184,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   etatSelectionObjetsRef.current = etatSelectionObjets;
   executerObjetRef.current = executerObjet;
 
-  const boutonOutils = (
-    <BoutonOutils
-      commandes={[
+  /** Commandes livrées (« Outils ▾ », favoris et regroupements de la grille) : disponibilité et exécution de leur famille. */
+  const commandesListe = [
         ...COMMANDES_OBJETS.map((c) => {
           const d = disponibiliteObjet(c.id, etatSelectionObjets());
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.objets.motif.vide"), executer: () => executerObjet(c.id) };
@@ -2196,7 +2208,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           const d = disponibiliteCommandeDebit(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.debit.motif.vide"), executer: () => executerDebit(c.id) };
         }),
-      ]}
+  ];
+  const boutonOutils = (
+    <BoutonOutils
+      commandes={commandesListe}
       outilId={outilId}
       raison={raisonDe}
       onChoisir={choisirOutil}
@@ -2380,6 +2395,39 @@ export function Planche({ readOnly = false }: PropsPlanche) {
 
       {grille && (
         <div className="planche-grille" id="planche-grille" role="dialog" aria-label={t("planche.grille")} ref={grilleDom} data-planche-grille>
+          {/* Lot 5 : « Modifier » ouvre la personnalisation ; favoris et regroupements avant les familles. */}
+          <div className="planche-grille-tete">
+            <button type="button" className="planche-grille-modifier" onClick={() => { setGrille(false); setPanneau("personnaliser"); }} title={t("planche.grille.modifier.aide")} data-planche-grille-modifier>
+              <IconeSandbox nom="reglages" /> {t("planche.grille.modifier")}
+            </button>
+          </div>
+          {[
+            { cle: "favoris", libelle: t("planche.grille.favoris"), entrees: prefsSandbox.preferences.favoris },
+            ...prefsSandbox.preferences.regroupements.map((g) => ({ cle: `groupe-${g.id}`, libelle: g.nom, entrees: g.entrees })),
+          ]
+            .filter((x) => x.entrees.length > 0)
+            .map((x) => (
+              <section key={x.cle} aria-label={x.libelle} data-planche-grille-section={x.cle}>
+                <h4>{x.libelle}</h4>
+                <div className="canevas-grille">
+                  {x.entrees.map((cle) => {
+                    const e = entreeDeCle(cle);
+                    if (e?.nature === "outil") {
+                      const o = outilParId(e.id);
+                      return o ? <span key={cle} style={{ display: "contents" }}>{boutonOutil(o, true)}</span> : null;
+                    }
+                    const c = e?.nature === "commande" ? commandesListe.find((x) => x.id === e.id) : undefined;
+                    if (!c) return null;
+                    return (
+                      <button key={cle} type="button" className={`outil${c.motif ? " est-indisponible" : ""}`} aria-disabled={c.motif ? true : undefined} title={c.motif ? `${c.nom} — ${c.motif}` : `${c.nom} (${afficherRaccourci(c.raccourci)})`} aria-label={c.nom} onClick={() => { if (!c.motif) { setGrille(false); c.executer(); } }} data-planche-commande={c.id}>
+                        <Pictogramme picto={c.picto} className="outil-picto" />
+                        <span className="outil-libelle" aria-hidden="true">{c.nom}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
           {sections.map((s) => (
             <section key={s.libelle} aria-label={s.libelle}>
               <h4>{s.libelle}</h4>
@@ -2402,6 +2450,24 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       <button type="button" className="planche-colonne-bascule" aria-expanded={!colonneRepliee} onClick={() => setColonneRepliee(!colonneRepliee)} title={colonneRepliee ? t("planche.colonne.deplier") : t("planche.colonne.replier")} aria-label={colonneRepliee ? t("planche.colonne.deplier") : t("planche.colonne.replier")} data-planche-colonne-bascule>
         <IconeSandbox nom={colonneRepliee ? "replier" : "deplier"} />
       </button>
+      {panneau === "personnaliser" && (
+        <section className="planche-panneau" aria-label={t("panneau.personnaliser")} data-planche-panneau="personnaliser">
+          <header className="canevas-panneau-tete">
+            <h3>{t("panneau.personnaliser")}</h3>
+            <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t("panneau.personnaliser") })}><IconeSandbox nom="fermer" /></button>
+          </header>
+          <div className="canevas-panneau-corps">
+            <PanneauPersonnaliser
+              preferences={prefsSandbox.preferences}
+              etat={prefsSandbox.etat}
+              outils={OUTILS}
+              commandes={commandesListe.filter((c) => CLES_PERSONNALISABLES.includes(`commande:${c.id}`)).map((c) => ({ id: c.id, picto: c.picto, nom: c.nom }))}
+              modifier={prefsSandbox.modifier}
+              reinitialiser={prefsSandbox.reinitialiser}
+            />
+          </div>
+        </section>
+      )}
       {panneau === "materiaux" && (
         <section className="planche-panneau" aria-label={t("panneau.materiaux")} data-planche-panneau="materiaux">
           <header className="canevas-panneau-tete">

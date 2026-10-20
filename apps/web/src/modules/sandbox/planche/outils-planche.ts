@@ -37,6 +37,11 @@ export function outilsBarre(catalogue: readonly Outil[] = OUTILS): Outil[] {
   return [...barre].sort((a, b) => rang(a) - rang(b));
 }
 
+/** Outils d'une barre gauche donnée par leurs identifiants (profil du lot 5), dans cet ordre ; un identifiant inconnu est ignoré. */
+export function outilsDeBarre(ids: readonly string[], catalogue: readonly Outil[] = OUTILS): Outil[] {
+  return ids.map((id) => catalogue.find((o) => o.id === id)).filter((o): o is Outil => o !== undefined);
+}
+
 /**
  * Sections de la grille « ⋯ » (lot 4) : une par famille du registre, dans l'ordre de SketchUp — Sélection, Dessin,
  * Modification, Solides, Matière, Mesure, Annotation, Caméra —, libellé sous chaque icône.
@@ -50,8 +55,12 @@ const FAMILLES_GRILLE: readonly Outil["famille"][] = ["selection", "dessin", "mo
 export function sectionsGrille(
   catalogue: readonly Outil[] = OUTILS,
   aMachine: (id: string) => boolean = (id) => machineParId(id) !== undefined,
+  /** Barre gauche affichée (lot 5 : profil choisi) ; sans elle, la barre par défaut du registre. */
+  barre?: readonly string[],
 ): { famille: Outil["famille"]; libelle: string; outils: Outil[] }[] {
-  const grille = catalogue.filter((o) => emplacement(o) === "grille" || (emplacement(o) === "menu-contextuel" && aMachine(o.id)));
+  // Grille = les outils hors de la barre affichée ; un outil du clic droit n'y entre que si sa machine existe.
+  const dansGrille = (o: Outil) => (barre ? !barre.includes(o.id) && emplacement(o) !== "menu-contextuel" : emplacement(o) === "grille");
+  const grille = catalogue.filter((o) => dansGrille(o) || (emplacement(o) === "menu-contextuel" && aMachine(o.id)));
   return FAMILLES_GRILLE.map((f) => ({ famille: f, libelle: t(`outils.famille.${f}` as CleMessage), outils: grille.filter((o) => o.famille === f) })).filter((s) => s.outils.length > 0);
 }
 
