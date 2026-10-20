@@ -1,0 +1,451 @@
+#!/bin/bash
+# fadi-preprod — seule commande d'exploitation de la préproduction Fadi (projet Docker Compose « fadi-preprod »).
+#
+# Installée par l'administrateur, propriété de root (0755), en /usr/local/sbin/fadi-preprod. Elle ne pilote QUE le
+# projet fadi-preprod : avant toute action Docker, `garde` rend la configuration et refuse tout ce qui sortirait de la
+# préproduction (conteneur privilégié, réseau ou espace de l'hôte, montage de l'hôte, port public, volume / réseau / image
+# hors préfixe fadi-preprod, migration au démarrage…). Aucune commande ne touche la production.
+#
+# Deux rôles :
+#   administrateur (root, ou sudo depuis un autre compte que l'opérateur) : sync <sha> (approuve ET fige le code à
+#     construire), init-env, edge on|off ;
+#   opérateur (sudo depuis le compte « claude-fadi ») : exploitation courante du code approuvé, sans pouvoir choisir le
+#     code, les secrets ni l'exposition.
+# Règle sudoers proposée (NON installée ; seulement après revue indépendante), qui borne aussi les sous-commandes :
+#   Cmnd_Alias FADI_PREPROD_OP = /usr/local/sbin/fadi-preprod garde, /usr/local/sbin/fadi-preprod build, \
+#     /usr/local/sbin/fadi-preprod up-db, /usr/local/sbin/fadi-preprod up, /usr/local/sbin/fadi-preprod migrate, \
+#     /usr/local/sbin/fadi-preprod smoke, /usr/local/sbin/fadi-preprod check, /usr/local/sbin/fadi-preprod e2e, \
+#     /usr/local/sbin/fadi-preprod e2e *, /usr/local/sbin/fadi-preprod backup, /usr/local/sbin/fadi-preprod restore-check, \
+#     /usr/local/sbin/fadi-preprod show, /usr/local/sbin/fadi-preprod show *, /usr/local/sbin/fadi-preprod status, \
+#     /usr/local/sbin/fadi-preprod logs, /usr/local/sbin/fadi-preprod logs *, /usr/local/sbin/fadi-preprod down
+#   claude-fadi ALL=(root) NOPASSWD: FADI_PREPROD_OP
+#
+# Disposition (root, aucun accès groupe / autres) :
+#   /opt/fadi-preprod/src                copie de travail du dépôt figée sur le commit approuvé (depuis GitHub)
+#   /opt/fadi-preprod/approved-commit    SHA approuvé par l'administrateur ; tout écart bloque l'exploitation
+#   /opt/fadi-preprod/env/.env.preprod   secrets propres à la préproduction (0600, jamais affichés)
+#   /opt/fadi-preprod/out/<run>/         journaux et rapports (0700) ; lecture par `show`
+# Les conteneurs n'écrivent jamais sur l'hôte : la recette écrit dans le volume fadi-preprod-out ; seuls les fichiers
+# ordinaires en sont extraits, par un lecteur d'archive qui refuse liens, chemins absolus, « .. » et écrasements.
+#
+# Hors root (tests, deploy/preprod/tests/) : FADI_PREPROD_BASE désigne une disposition de test, FADI_PREPROD_TEST_BIN
+# des doubles de docker / curl ; SUDO_USER simule le rôle. Ces variables sont ignorées sous root.
+set -euo pipefail
+umask 077
+unset DOCKER_HOST DOCKER_CONTEXT DOCKER_CONFIG DOCKER_TLS_VERIFY DOCKER_CERT_PATH BUILDKIT_HOST BUILDX_CONFIG \
+  COMPOSE_FILE COMPOSE_PROJECT_NAME COMPOSE_PROFILES COMPOSE_ENV_FILES COMPOSE_PATH_SEPARATOR COMPOSE_REMOVE_ORPHANS || true
+
+PROJECT=fadi-preprod
+OPERATOR=claude-fadi
+REPO_URL=https://github.com/RachEma-ux/Fadi.git
+APP_URL=http://127.0.0.1:3101
+if [ "$(id -u)" -eq 0 ]; then
+  BASE=/opt/fadi-preprod
+  PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+else
+  BASE=${FADI_PREPROD_BASE:-/opt/fadi-preprod}
+  REPO_URL=${FADI_PREPROD_REPO:-$REPO_URL}
+  PATH=${FADI_PREPROD_TEST_BIN:+$FADI_PREPROD_TEST_BIN:}/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+fi
+export PATH
+SRC=$BASE/src
+ENVF=$BASE/env/.env.preprod
+OUTROOT=$BASE/out
+APPROVED=$BASE/approved-commit
+COMPOSE_DIR=$SRC/deploy/preprod
+OWNER_UID=$(id -u)
+
+# Scénarios de bout en bout, dans l'ordre de la CI (.github/workflows/ci.yml, jobs e2e) — tests/ vérifie l'égalité.
+E2E_DEFAUT="accueils-design parcours-scenario studio-persistance studio-navigation studio-exemple-p118 studio-domaines studio-espace studio-publication
+studio-observations studio-profils studio-catalogue studio-hors-ligne studio-corpus-s6 studio-corpus-s7 studio-conflits
+studio-chargement studio-mesures-chargement studio-accessibilite studio-quantites studio-dossier studio-echanges
+notifications-preferences atelier-nouveau atelier-documents atelier-echanges atelier-versions atelier-automatisation
+atelier-complements atelier-canevas planche planche-modification planche-outils planche-pousser-aretes
+planche-pousser-modes planche-objets planche-clavier planche-pousser-l10a planche-liens planche-suivez-moi
+planche-revolution planche-profiles planche-assemblages planche-debit planche-texte-3d planche-pieces-edition
+planche-modification-l18 planche-diagnostics-l19 planche-etirement-plis planche-epaissir planche-effilement-loft
+planche-lots-4-6 planche-lot-5 planche-lot-7 porte-p1-reduite p2-noyau-exact porte-p1-p2 p2-structure p2-bois-tolerie
+p2-reseaux p2-coordination p2-documentation p2-automatisation interface-anglais planche-boutons
+planche-detachee-documents atelier-barre planche-barre-outils studio-restauration"
+
+die() { echo "fadi-preprod : $*" >&2; exit 1; }
+log() { echo "── $*"; }
+
+usage() {
+  cat <<'EOF'
+Usage : fadi-preprod <commande>
+Administrateur :
+  sync <sha40>        approuve ce commit et y fige /opt/fadi-preprod/src (depuis GitHub)
+  init-env            crée les secrets propres à la préproduction (refuse s'ils existent)
+  edge on|off         rattache (ou non) l'application au réseau fadi-preprod-edge (phase 4, proxy partagé)
+Opérateur (code approuvé seulement) :
+  garde               rend la configuration et vérifie l'isolation (aucune action Docker)
+  build               construit les images fadi-preprod-app et fadi-preprod-recette
+  up-db | up          démarre la base seule | base + application (MIGRATE_ON_START=0)
+  migrate             applique init.sql une fois sur la base de la préproduction, puis revient à MIGRATE_ON_START=0
+  smoke               contrôles HTTP sur 127.0.0.1:3101 (codes, contenus, en-têtes) ; échoue au premier écart
+  check               typecheck, tests unitaires, garde DB, tests des scripts (application démarrée)
+  e2e [scénario…]     scénarios Playwright (défaut : liste de la CI)
+  backup | restore-check   sauvegarde de la base | restauration vérifiée vers une base de contrôle
+  show [<run> [fichier]]   liste les exécutions, les fichiers d'une exécution, ou affiche un fichier
+  status | logs [db|app] | down
+EOF
+}
+
+# ── rôles ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+role() { if [ "${SUDO_USER:-}" = "$OPERATOR" ]; then echo operateur; else echo administrateur; fi; }
+admin_seulement() { [ "$(role)" = administrateur ] || die "« $1 » est réservée à l'administrateur"; }
+
+# ── intégrité de la disposition ──────────────────────────────────────────────────────────────────────────────────────
+# Chaque élément : présent, pas un lien, propriété du compte d'exécution (root en exploitation), sans écriture groupe /
+# autres. Les secrets : fichier ordinaire 0600.
+sur() {  # $1 = chemin, $2 = d|f
+  local p=$1 t=$2 u m
+  [ -L "$p" ] && die "$p est un lien symbolique"
+  [ "$t" = d ] && { [ -d "$p" ] || die "$p absent"; }
+  [ "$t" = f ] && { [ -f "$p" ] || die "$p absent"; }
+  read -r u m < <(stat -c '%u %a' "$p")
+  [ "$u" = "$OWNER_UID" ] || die "$p n'appartient pas au compte d'exécution ($u)"
+  (( (8#$m & 8#022) == 0 )) || die "$p est modifiable par le groupe ou les autres ($m)"
+}
+commit() { git -c safe.directory="$SRC" -C "$SRC" rev-parse HEAD; }
+verifier_disposition() {
+  sur "$BASE" d; sur "$SRC" d; sur "$SRC/.git" d; sur "$COMPOSE_DIR" d; sur "$COMPOSE_DIR/compose.yml" f
+  sur "$BASE/env" d; sur "$ENVF" f
+  [ "$(stat -c '%a' "$ENVF")" = 600 ] || die "$ENVF doit être 0600"
+  sur "$APPROVED" f
+  local ok head
+  ok=$(tr -d '[:space:]' < "$APPROVED"); head=$(commit)
+  [[ $ok =~ ^[0-9a-f]{40}$ ]] || die "commit approuvé illisible"
+  [ "$head" = "$ok" ] || die "src ($head) n'est pas le commit approuvé ($ok) : l'administrateur doit lancer sync"
+  [ -z "$(git -c safe.directory="$SRC" -C "$SRC" status --porcelain --ignored)" ] || die "src modifiée depuis l'approbation"
+  # Le Dockerfile copie le code tel quel et l'exécute en utilisateur « node » : un fichier sans lecture pour les autres
+  # (ou un dossier sans traversée) donne EACCES au démarrage. BASE (0700) protège déjà le code des autres comptes.
+  local illisible
+  illisible=$(find "$SRC" -path "$SRC/.git" -prune -o \( -type f ! -perm -o=r -o -type d ! -perm -o=rx \) -print -quit)
+  [ -z "$illisible" ] || die "code illisible par l'image (EACCES) : ${illisible#"$SRC"/} — l'administrateur doit relancer sync"
+}
+
+EDGE_ARGS=()
+[ -f "$BASE/edge.on" ] && [ ! -L "$BASE/edge.on" ] && EDGE_ARGS=(-f "$COMPOSE_DIR/compose.edge.yml")
+
+# docker compose sur le seul projet fadi-preprod, sur le code approuvé.
+# MIGRATE_ON_START est toujours fixé ici (0 sauf demande explicite de `migrate`) : le fichier d'environnement ne peut
+# pas l'activer, et la configuration contrôlée par `garde` est exactement celle qu'utilise Docker.
+dc() {
+  MIGRATE_ON_START=${MIGRATE_ON_START:-0} FADI_SRC=$SRC FADI_COMMIT=$(commit | cut -c1-12) \
+    docker compose -p "$PROJECT" --project-directory "$COMPOSE_DIR" -f "$COMPOSE_DIR/compose.yml" "${EDGE_ARGS[@]}" \
+    --env-file "$ENVF" "$@"
+}
+
+# ── exécutions et journaux ───────────────────────────────────────────────────────────────────────────────────────────
+nouveau_run() {
+  RUNID=$(date -u +%Y%m%dT%H%M%SZ)-$$-$1   # horodatage + processus : unique, même à la même seconde
+  [ -e "$OUTROOT" ] || mkdir -m 0700 "$OUTROOT"
+  sur "$OUTROOT" d
+  RUN=$OUTROOT/$RUNID
+  mkdir -m 0700 "$RUN"   # échoue si l'exécution existe déjà : jamais de réemploi
+}
+# Exécute une commande en journalisant sa sortie ; le code de sortie est celui de la commande (ou de tee), jamais masqué.
+journal() {  # $1 = fichier du journal, puis la commande
+  local nom=$1 f=$RUN/$1; shift
+  local rc=0
+  set +e; "$@" 2>&1 | tee -a "$f"; local st=("${PIPESTATUS[@]}"); set -e
+  rc=${st[0]}; [ "$rc" -eq 0 ] && rc=${st[1]}
+  [ "$rc" -eq 0 ] || echo "❌ échec (code $rc) — journal : $nom (fadi-preprod show $RUNID $nom)" | tee -a "$f" >&2
+  return "$rc"
+}
+
+# Extraction des rapports de la recette : seuls les fichiers ordinaires du volume fadi-preprod-out/<run> sont copiés
+# sous $RUN/out, en 0600 / 0700, sans suivre ni créer de lien ; tout membre douteux arrête l'extraction.
+read -r -d '' PY_EXTRAIRE <<'PY' || true
+import os, sys, tarfile
+dest = sys.argv[1]
+os.mkdir(dest, 0o700)
+root_fd = os.open(dest, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+MAX_TOTAL, MAX_FILES, total, n = 2 << 30, 20000, 0, 0
+def ouvrir_dossier(parts):
+    fd = os.dup(root_fd)
+    for p in parts:
+        try: os.mkdir(p, 0o700, dir_fd=fd)
+        except FileExistsError: pass
+        nfd = os.open(p, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=fd); os.close(fd); fd = nfd
+    return fd
+with tarfile.open(fileobj=sys.stdin.buffer, mode="r|") as tf:
+    for m in tf:
+        name = m.name[2:] if m.name.startswith("./") else m.name
+        parts = name.split("/")
+        if m.isdir() and name in ("", "."): continue
+        if not m.isfile(): sys.exit(f"membre refusé (pas un fichier ordinaire) : {m.name!r}")
+        if name.startswith("/") or any(p in ("", ".", "..") for p in parts): sys.exit(f"chemin refusé : {m.name!r}")
+        if any(not all(c.isalnum() or c in "._-" for c in p) for p in parts): sys.exit(f"nom refusé : {m.name!r}")
+        n += 1; total += m.size
+        if n > MAX_FILES or total > MAX_TOTAL: sys.exit("rapports trop volumineux")
+        dfd = ouvrir_dossier(parts[:-1])
+        fd = os.open(parts[-1], os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600, dir_fd=dfd)
+        with os.fdopen(fd, "wb") as out, tf.extractfile(m) as src:
+            while chunk := src.read(1 << 20): out.write(chunk)
+        os.close(dfd)
+print(f"rapports extraits : {n} fichier(s), {total} octets")
+PY
+extraire() { python3 -I -c "$PY_EXTRAIRE" "$RUN/out"; }  # lit l'archive tar sur l'entrée standard
+exporter_rapports() {
+  local st rc
+  set +e
+  dc --profile recette run --rm --no-deps -T -e FADI_RUN="$RUNID" recette bash -c \
+    'if cd "/out/$FADI_RUN" 2>/dev/null; then find . -type f -print0 | tar --null --no-recursion -T - -cf -; else tar -cf - -T /dev/null; fi' \
+    | extraire
+  st=("${PIPESTATUS[@]}"); set -e
+  rc=${st[0]}; [ "$rc" -eq 0 ] && rc=${st[1]}
+  [ "$rc" -eq 0 ] || echo "❌ extraction des rapports refusée ou en échec (code $rc)" >&2
+  return "$rc"
+}
+
+# ── garde d'isolation ────────────────────────────────────────────────────────────────────────────────────────────────
+garde() {  # $1 = valeur attendue de MIGRATE_ON_START
+  local cfg rc=0
+  cfg=$(mktemp)
+  MIGRATE_ON_START=$1 dc --profile recette config --format json > "$cfg" || { rm -f "$cfg"; die "configuration invalide"; }
+  python3 -I - "$cfg" "$SRC" "$1" <<'PY' || rc=$?
+import json, sys
+cfg_path, src, migrate = sys.argv[1:4]
+c = json.load(open(cfg_path))
+errs = []
+def err(m): errs.append(m)
+if c.get("name") != "fadi-preprod": err(f"nom de projet {c.get('name')!r}")
+allowed_images = ("postgis/postgis:16-3.4", "fadi-preprod-app:", "fadi-preprod-recette:")
+for name, s in c.get("services", {}).items():
+    p = f"service {name}"
+    if s.get("privileged"): err(f"{p} : privileged")
+    for k in ("cap_add", "devices", "security_opt", "sysctls", "device_cgroup_rules", "volumes_from", "extra_hosts", "env_file"):
+        if s.get(k): err(f"{p} : {k} interdit")
+    for k in ("pid", "ipc", "userns_mode", "uts", "cgroup"):
+        v = s.get(k) or ""
+        if v == "host" or v.startswith(("container:", "service:")): err(f"{p} : {k}={v}")
+    nm = s.get("network_mode")
+    if nm and not (name == "recette" and nm == "service:app"): err(f"{p} : network_mode={nm}")
+    img = s.get("image", "")
+    if not (img == allowed_images[0] or img.startswith(allowed_images[1:])): err(f"{p} : image {img!r}")
+    b = s.get("build")
+    if b and b.get("context") != src: err(f"{p} : contexte de build {b.get('context')!r}")
+    for v in s.get("volumes", []):
+        if v.get("type") != "volume": err(f"{p} : montage {v.get('type')!r} ({v.get('source')!r}) — seuls les volumes nommés sont admis")
+        elif not str(v.get("source", "")).startswith("fadi-preprod"): err(f"{p} : volume {v.get('source')!r}")
+    for po in s.get("ports", []):
+        if po.get("host_ip") != "127.0.0.1": err(f"{p} : port publié hors 127.0.0.1 ({po})")
+    for n in (s.get("networks") or {}):
+        if n not in c.get("networks", {}): err(f"{p} : réseau {n!r} inconnu")
+    env = s.get("environment") or {}
+    if "DATABASE_URL" in env and "@db:5432/" not in (env["DATABASE_URL"] or ""): err(f"{p} : DATABASE_URL hors base de la préproduction")
+    if name == "app" and str(env.get("MIGRATE_ON_START")) != migrate: err(f"{p} : MIGRATE_ON_START={env.get('MIGRATE_ON_START')} (attendu {migrate})")
+for k, n in c.get("networks", {}).items():
+    if not str(n.get("name", "")).startswith("fadi-preprod-"): err(f"réseau {k} : nom {n.get('name')!r}")
+    if n.get("external"): err(f"réseau {k} : externe")
+for k, v in c.get("volumes", {}).items():
+    if not str(v.get("name", "")).startswith("fadi-preprod-"): err(f"volume {k} : nom {v.get('name')!r}")
+    if v.get("external"): err(f"volume {k} : externe")
+if errs:
+    print("❌ garde : la configuration sort de la préproduction"); [print("   - " + e) for e in errs]; sys.exit(1)
+print(f"✓ garde : projet fadi-preprod isolé ({len(c['services'])} services, réseaux {sorted(n['name'] for n in c['networks'].values())}, "
+      f"volumes {sorted(v['name'] for v in c['volumes'].values())}, MIGRATE_ON_START={migrate})")
+PY
+  rm -f "$cfg"
+  [ "$rc" -eq 0 ] || exit 1
+}
+
+# Migration : tant que l'application tourne avec MIGRATE_ON_START=1, tout échec (y compris die) la recrée avec
+# MIGRATE_ON_START=0 sans la démarrer, pour qu'aucun redémarrage automatique ne relance la migration.
+MIGRATION_ACTIVE=0
+retablir_migration() {
+  [ "$MIGRATION_ACTIVE" = 1 ] || return 0
+  MIGRATION_ACTIVE=0
+  echo "⚠ échec pendant la migration : application recréée avec MIGRATE_ON_START=0 et laissée arrêtée" >&2
+  MIGRATE_ON_START=0 dc up --no-start --no-deps --force-recreate app >&2 || dc stop app >&2 || true
+}
+trap retablir_migration EXIT
+
+attendre_sante() {  # $1 = service, $2 = délai (s)
+  local i=0 id st=absent
+  while [ $i -lt "$2" ]; do
+    id=$(dc ps -q "$1")
+    st=absent
+    [ -n "$id" ] && st=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$id")
+    [ "$st" = healthy ] && { log "$1 : healthy"; return 0; }
+    { [ "$st" = exited ] || [ "$st" = dead ]; } && break
+    i=$((i + 2)); sleep 2
+  done
+  dc logs --no-color --tail 80 "$1" || true
+  die "$1 n'est pas sain ($st)"
+}
+
+app_demarree() { [ -n "$(dc ps -q --status running app)" ] || die "l'application doit être démarrée (fadi-preprod up)"; }
+recette() {  # commande dans le conteneur de recette ; FADI_RUN = dossier de l'exécution dans le volume fadi-preprod-out
+  dc --profile recette run --rm --no-deps -T -e FADI_RUN="$RUNID" recette bash -c \
+    "set -euo pipefail; mkdir -p -m 0700 \"/out/\$FADI_RUN\"; $RECETTE_CMD"
+}
+
+# ── contrôles HTTP ───────────────────────────────────────────────────────────────────────────────────────────────────
+ECARTS=0
+ecart() { echo "   ❌ $*"; ECARTS=$((ECARTS + 1)); }
+http() {  # $1 = chemin, $2 = Accept, $3 = code attendu, puis des textes attendus dans le corps
+  local chemin=$1 accept=$2 attendu=$3 code; shift 3
+  code=$(curl -sS -m 10 -o "$RUN/corps" -D "$RUN/entetes" -H "Accept: $accept" -w '%{http_code}' "$APP_URL$chemin") || code=000
+  echo "GET $chemin → $code (attendu $attendu)"
+  [ "$code" = "$attendu" ] || ecart "$chemin : code $code au lieu de $attendu"
+  local t; for t in "$@"; do grep -qF -- "$t" "$RUN/corps" 2>/dev/null || ecart "$chemin : « $t » absent de la réponse"; done
+}
+entete() {  # $1 = nom (insensible à la casse), $2 = valeur attendue (sous-chaîne) ou « absent »
+  local ligne; ligne=$(grep -i "^$1:" "$RUN/entetes" | tr -d '\r' || true)
+  if [ "$2" = absent ]; then [ -z "$ligne" ] || ecart "en-tête $1 présent : $ligne"
+  else echo "$ligne" | grep -qiF -- "$2" || ecart "en-tête $1 : « $2 » attendu (reçu : ${ligne:-rien})"; fi
+}
+smoke() {
+  http /health application/json 200 '"status":"ok"' '"db":"ok"'
+  http /projects application/json 401 'authentication_required'
+  http /fichier-absent-preprod.js '*/*' 404
+  http /accueil text/html 200 '<div id="root"'
+  entete x-content-type-options nosniff
+  entete x-frame-options SAMEORIGIN
+  entete x-powered-by absent
+  rm -f "$RUN/corps" "$RUN/entetes"
+  if [ "$ECARTS" -gt 0 ]; then echo "smoke : $ECARTS écart(s)"; return 1; fi
+  echo "✓ smoke : tous les contrôles HTTP sont conformes"
+}
+
+# ── commandes ────────────────────────────────────────────────────────────────────────────────────────────────────────
+cmd=${1:-}; [ $# -gt 0 ] && shift
+case "$cmd" in
+  ""|-h|--help|help) usage; exit 0 ;;
+  sync|init-env|edge) admin_seulement "$cmd" ;;
+  garde|build|up-db|migrate|up|smoke|check|e2e|backup|restore-check|show|ps|status|logs|down) ;;
+  *) usage; die "commande inconnue : $cmd" ;;
+esac
+
+[ -e "$BASE" ] || { admin_seulement "création de $BASE"; mkdir -m 0700 "$BASE"; }
+sur "$BASE" d
+exec 9>"$BASE/.verrou"
+flock -n 9 || die "une autre exécution de fadi-preprod est en cours"
+
+case "$cmd" in
+  sync)
+    sha=${1:-}; [[ $sha =~ ^[0-9a-f]{40}$ ]] || die "sha complet (40 caractères hexadécimaux) attendu"
+    [ -d "$SRC/.git" ] || git clone --quiet --no-checkout "$REPO_URL" "$SRC"
+    sur "$SRC" d
+    git -c safe.directory="$SRC" -C "$SRC" fetch --quiet origin
+    git -c safe.directory="$SRC" -C "$SRC" cat-file -e "$sha^{commit}" || die "commit $sha introuvable sur $REPO_URL"
+    git -c safe.directory="$SRC" -C "$SRC" -c advice.detachedHead=false checkout --quiet --force --detach "$sha"
+    git -c safe.directory="$SRC" -C "$SRC" clean -fdxq
+    # Ce script tourne en umask 077 : sans cette normalisation, le code serait en 0600 / 0700 et l'image construite
+    # échouerait en EACCES (utilisateur « node »). Lecture pour tous dans src seulement ; BASE reste en 0700.
+    chmod -R u=rwX,go=rX "$SRC"
+    echo "$sha" > "$APPROVED.tmp" && mv -f "$APPROVED.tmp" "$APPROVED"
+    log "commit approuvé et figé : $(git -c safe.directory="$SRC" -C "$SRC" log -1 --format='%H %ci %s')" ;;
+  init-env)
+    [ -e "$ENVF" ] && die "secrets déjà présents ($ENVF) : rien n'est écrasé"
+    [ -e "$BASE/env" ] || mkdir -m 0700 "$BASE/env"
+    sur "$BASE/env" d
+    { echo "PREPROD_POSTGRES_PASSWORD=$(openssl rand -hex 32)"
+      echo "PREPROD_ARCHIVE_SIGNING_KEY=$(openssl rand -hex 32)"
+      echo "PREPROD_WEB_ORIGIN=http://localhost:3001"
+      echo "PREPROD_AUTH_RATE_LIMIT=500"
+      echo "PREPROD_API_RATE_LIMIT=5000"; } > "$ENVF.tmp"
+    chmod 0600 "$ENVF.tmp"; mv -n "$ENVF.tmp" "$ENVF"
+    log "secrets de la préproduction créés ($ENVF, 0600, non affichés)" ;;
+  edge)
+    case "${1:-}" in
+      on) : > "$BASE/edge.on"; log "réseau fadi-preprod-edge activé (prendra effet au prochain up)" ;;
+      off) rm -f "$BASE/edge.on"; log "réseau fadi-preprod-edge désactivé (prendra effet au prochain up)" ;;
+      *) die "edge on|off" ;;
+    esac ;;
+  show)
+    sur "$OUTROOT" d
+    if [ $# -eq 0 ]; then ls -1 "$OUTROOT"; exit 0; fi
+    [[ $1 =~ ^[0-9]{8}T[0-9]{6}Z-[0-9]+-[a-z0-9-]+$ ]] || die "exécution invalide : $1"
+    d=$OUTROOT/$1; sur "$d" d
+    if [ $# -eq 1 ]; then (cd "$d" && find . -type f -printf '%P\t%s octets\n' | sort); exit 0; fi
+    f=$2
+    [[ $f =~ ^[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*$ ]] && [[ ! /$f/ =~ /\.\.?/ ]] || die "fichier invalide : $f"
+    r=$(realpath -e -- "$d/$f") || die "fichier absent : $f"
+    [ "$r" = "$(realpath -e -- "$d")/$f" ] || die "chemin refusé : $f"
+    [ -f "$r" ] && [ ! -L "$d/$f" ] || die "pas un fichier ordinaire : $f"
+    cat -- "$r" ;;
+  garde) verifier_disposition; garde 0 ;;
+  build)
+    verifier_disposition; nouveau_run build; garde 0
+    journal build.log dc --profile recette build app recette ;;
+  up-db)
+    verifier_disposition; garde 0; dc up -d db; attendre_sante db 120 ;;
+  migrate)
+    verifier_disposition; nouveau_run migrate; garde 1
+    dc up -d db; attendre_sante db 120
+    log "application démarrée une fois avec MIGRATE_ON_START=1 (base de la préproduction)"
+    MIGRATION_ACTIVE=1
+    MIGRATE_ON_START=1 dc up -d --no-deps --force-recreate app
+    attendre_sante app 300
+    journal migrate.log dc logs --no-color app
+    grep -qF "Schema applied (init.sql)." "$RUN/migrate.log" || die "« Schema applied » absent du journal (show $RUNID migrate.log)"
+    log "schéma appliqué ; retour à MIGRATE_ON_START=0"
+    garde 0; dc up -d --no-deps --force-recreate app
+    MIGRATION_ACTIVE=0
+    attendre_sante app 120
+    journal migrate.log dc exec -T db psql -U fadi -d fadi -v ON_ERROR_STOP=1 -tAc \
+      "SELECT 'tables publiques : ' || count(*) FROM information_schema.tables WHERE table_schema='public'" ;;
+  up)
+    verifier_disposition; garde 0; dc up -d db app; attendre_sante db 120; attendre_sante app 180 ;;
+  smoke)
+    verifier_disposition; nouveau_run smoke
+    journal smoke.log smoke ;;
+  check)
+    verifier_disposition; nouveau_run check; garde 0; app_demarree
+    # Même découpage que la CI (job validate) : les suites API qui exigent une base attestée (DB-3, #157) sont
+    # refusées par la garde ; check-api-tests-db3 exige que seules celles de la liste fermée le soient et que tout le
+    # reste passe. Elles ne sont ni contournées ni déclarées réussies.
+    RECETTE_CMD='node -v; npm run typecheck
+npm run test --workspace=@parcours/core-geometry --workspace=@parcours/domain-model --workspace=@parcours/atelier-model --workspace=@parcours/planche-model --workspace=@parcours/geometry-exact --workspace=@fadi/web
+npm run test:db-guard
+npx --workspace=@fadi/api vitest run --reporter=default --reporter=json --outputFile=/tmp/api-vitest.json || true
+node --test scripts/check-api-tests-db3.test.mjs
+node scripts/check-api-tests-db3.mjs /tmp/api-vitest.json
+npm run test:scripts'
+    journal check.log recette ;;
+  e2e)
+    verifier_disposition; nouveau_run e2e; garde 0; app_demarree
+    liste=${*:-$E2E_DEFAUT}; ok=0; ko=""
+    for s in $liste; do
+      [[ $s =~ ^[a-z0-9-]+$ ]] || die "scénario invalide : $s"
+      [ -f "$SRC/apps/web/e2e/$s.mjs" ] || die "scénario inconnu : $s"
+    done
+    for s in $liste; do
+      log "e2e $s"
+      if [ "$s" = studio-restauration ]; then
+        RECETTE_CMD='psql -d postgres -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS fadi_studio_restore;" -c "CREATE DATABASE fadi_studio_restore;"
+psql -d fadi_studio_restore -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS postgis;"
+B="postgresql://fadi:$PGPASSWORD@db:5432/fadi_studio_restore"
+DATABASE_URL="$B" npm run db:migrate
+DATABASE_URL_A="$DATABASE_URL" DATABASE_URL_B="$B" RESTORE_PORT=3002 OUT="/out/$FADI_RUN/studio-restauration" node apps/web/e2e/studio-restauration.mjs'
+      else
+        RECETTE_CMD="OUT=\"/out/\$FADI_RUN/$s\" node apps/web/e2e/$s.mjs"
+      fi
+      if recette > "$RUN/$s.log" 2>&1; then ok=$((ok + 1)); echo "   ✓ $s"; else ko="$ko $s"; echo "   ❌ $s (show $RUNID $s.log)"; tail -20 "$RUN/$s.log"; fi
+    done
+    exporter_rapports || ko="$ko (extraction)"
+    echo "e2e : $ok réussi(s), échecs :${ko:- aucun}" | tee "$RUN/resume.txt"
+    [ -z "$ko" ] ;;
+  backup)
+    verifier_disposition; nouveau_run backup; garde 0; app_demarree
+    RECETTE_CMD='sh scripts/backup.sh db fadi fadi /backups; ls -la /backups'
+    journal backup.log recette ;;
+  restore-check)
+    verifier_disposition; nouveau_run restore-check; garde 0; app_demarree
+    RECETTE_CMD='sh scripts/verify-restore.sh db fadi fadi fadi_restore_check'
+    journal restore-check.log recette ;;
+  ps|status)
+    verifier_disposition; dc ps
+    log "production (lecture seule, inchangée)"
+    docker ps --filter label=com.docker.compose.project=app --format '{{.ID}}  {{.Names}}  {{.Status}}' ;;
+  logs)
+    verifier_disposition
+    case "${1:-app}" in db|app) dc logs --no-color --tail 200 "${1:-app}" ;; *) die "logs db|app" ;; esac ;;
+  down)
+    verifier_disposition; dc --profile recette down --remove-orphans ;;
+esac

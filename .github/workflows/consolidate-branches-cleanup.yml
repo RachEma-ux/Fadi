@@ -1,0 +1,30 @@
+name: Complete authorized branch consolidation
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/consolidate-branches-cleanup.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: fadi-branch-consolidation-cleanup
+  cancel-in-progress: false
+jobs:
+  cleanup:
+    if: github.repository == 'RachEma-ux/Fadi' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify cleanup preflight with no-network tests
+        run: python3 scripts/test-consolidate-branches-cleanup.py -v
+      - name: Verify every original tip is unchanged and merged, then delete branch names
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          CLEANUP_COMMIT: ${{ github.sha }}
+        run: python3 scripts/consolidate-branches-cleanup.py

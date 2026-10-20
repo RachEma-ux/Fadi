@@ -1,0 +1,115 @@
+name: Layout 142 pointer check
+on:
+  push:
+    branches: [ci/layout-142-diagnostic]
+    paths: [.github/workflows/layout-142-pointer-check.yml]
+permissions:
+  contents: read
+jobs:
+  recipe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      matrix:
+        recipe: [atelier-nouveau, atelier-complements, planche, planche-outils, planche-liens, planche-suivez-moi, planche-lot-5, planche-lot-7, planche-detachee-documents, porte-p1-reduite]
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: fadi
+          POSTGRES_PASSWORD: fadi_ci_password
+          POSTGRES_DB: fadi_e2e
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U fadi"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      DATABASE_URL: postgresql://fadi:fadi_ci_password@localhost:5432/fadi_e2e
+      WEB_ORIGIN: http://localhost:3001
+      WEB_DIST: apps/web/dist
+      PORT: "3001"
+      AUTH_RATE_LIMIT: "500"
+      API_RATE_LIMIT: "5000"
+      BASE_URL: http://localhost:3001
+      OUT: diagnostic
+      RECIPE: ${{ matrix.recipe }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 74e93c4770d5f29c34463f5d161b9f8cb9a41c53
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: npm run db:migrate && npm run build
+      - name: Record hit targets without altering tested business assertions
+        run: |
+          mkdir -p diagnostic
+          cat > apps/web/e2e/lib-layout-diagnostic.mjs <<'JS'
+          import {writeFileSync} from 'node:fs';
+          export async function instrumenter(browser) {
+            const pages = [];
+            const create = browser.newContext.bind(browser);
+            browser.newContext = async (...args) => {
+              const context = await create(...args);
+              context.on('page', page => {
+                pages.push(page);
+                page.addInitScript(() => {
+                  window.__layoutHits = [];
+                  const rect = e => e ? {x:e.getBoundingClientRect().x,y:e.getBoundingClientRect().y,w:e.getBoundingClientRect().width,h:e.getBoundingClientRect().height} : null;
+                  const record = (event) => {
+                    const p = window.fadiPlanche;
+                    const hit = document.elementFromPoint(event.clientX,event.clientY);
+                    const entry = {event:event.type,x:event.clientX,y:event.clientY,scrollY,hit:hit?.outerHTML?.slice(0,450),canvas:rect(document.querySelector('[data-planche-vue] canvas, .plan2d')),bar:rect(document.querySelector('.barre-actions')),tool:p?.outil(),camera:p?.camera(),selection:p?.selection(),state:p ? JSON.stringify(p.etatOutil()).slice(0,2000) : null,help:document.querySelector('[data-planche-etat], .atelier-n-etat')?.textContent?.slice(0,350)};
+                    window.__layoutHits.push(entry);
+                    if(window.__layoutHits.length>100) window.__layoutHits.shift();
+                  };
+                  window.addEventListener('pointerdown', record, true);
+                  window.addEventListener('pointerup', e => setTimeout(()=>record(e),0), true);
+                });
+              });
+              return context;
+            };
+            let dumping = false;
+            const dump = async () => {
+              if(dumping) return;
+              dumping = true;
+              for(let i=0;i<pages.length;i++) {
+                const page=pages[i];
+                if(page.isClosed()) continue;
+                await page.screenshot({path:`diagnostic/last-${i}.png`,fullPage:true}).catch(()=>{});
+                const hits=await page.evaluate(()=>window.__layoutHits??[]).catch(()=>[]);
+                writeFileSync(`diagnostic/hits-${i}.json`,JSON.stringify(hits,null,2));
+              }
+            };
+            const close=browser.close.bind(browser);
+            browser.close=async (...args)=>{await dump();return close(...args);};
+            const exit=process.exit.bind(process);
+            process.once('uncaughtException',async error=>{console.error(error);await dump();await close().catch(()=>{});exit(1);});
+          }
+          JS
+          python3 - <<'PY'
+          import os,re
+          from pathlib import Path
+          p=Path('apps/web/e2e/'+os.environ['RECIPE']+'.mjs')
+          s=p.read_text()
+          s='import {instrumenter} from "./lib-layout-diagnostic.mjs";\n'+s
+          s,n=re.subn(r'(const browser = await chromium\.launch\([^\n]+\);)',r'\1\nawait instrumenter(browser);',s,count=1)
+          assert n==1
+          p.write_text(s)
+          PY
+      - name: Execute original recipe against production application
+        run: |
+          nohup node apps/api/dist/server.js > diagnostic/api.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://localhost:3001/health && break; sleep 1; done
+          curl -fsS http://localhost:3001/health
+          set -o pipefail
+          node "apps/web/e2e/$RECIPE.mjs" 2>&1 | tee diagnostic/recipe.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pointer-${{ matrix.recipe }}-${{ github.run_id }}
+          path: diagnostic/
+          retention-days: 7

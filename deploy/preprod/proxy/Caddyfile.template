@@ -1,0 +1,21 @@
+# Proxy partagé (conteneur « proxy » de la production) — phase 4, NON appliqué sans accord explicite.
+# Copie de travail root : /opt/fadi-preprod/proxy/Caddyfile (0644), où HASH_BCRYPT est remplacé par la sortie de
+# `docker run --rm -it caddy:2 caddy hash-password` (mot de passe saisi au clavier, jamais écrit dans le dépôt).
+
+# Production : strictement l'équivalent de la commande actuelle `caddy reverse-proxy --from www.fadimmo.com --to app:3001`
+# (HTTPS automatique, redirection HTTP → HTTPS, certificats déjà présents dans le volume /data).
+www.fadimmo.com {
+	reverse_proxy app:3001
+}
+
+# Préproduction : accès protégé, non indexé, vers l'application fadi-preprod seulement (réseau fadi-preprod-edge).
+preprod.fadimmo.com {
+	basic_auth {
+		preprod HASH_BCRYPT
+	}
+	header {
+		X-Robots-Tag "noindex, nofollow"
+		-Server
+	}
+	reverse_proxy fadi-preprod-app:3001
+}

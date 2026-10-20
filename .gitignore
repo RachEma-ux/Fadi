@@ -14,3 +14,5 @@ __pycache__/
 work/studio-v1-proof/
 atelier-captures/
 rapport-migration/
+
+apps/web/dist-front/
