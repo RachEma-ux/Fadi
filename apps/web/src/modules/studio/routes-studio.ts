@@ -20,7 +20,7 @@
  * `commentaires` ; le contexte projet → étude → variante reste dans le chemin. Ils ne transmettent aucun droit.
  *
  * Console (`/studio/console…`, demande du maître d'ouvrage du 20 octobre 2026) : `/studio/console` est la page des cartes ;
- * `/studio/console/sadbox` la page « bientôt disponible » ; `/studio/console/outil?domaine=…` (`dessin|bim|visualisation|
+ * `/studio/console/sandbox` la page « bientôt disponible » ; `/studio/console/outil?domaine=…` (`dessin|bim|visualisation|
  * documentation`, obligatoire, une seule fois) ouvre l'outil de ce domaine INDÉPENDAMMENT DE TOUT PROJET : aucun projet,
  * aucune étude, aucune variante n'est lu, créé ni nommé dans l'adresse (pas de projet fictif). Comme sur une variante,
  * changer de domaine ne change que la requête (l'outil n'est ni quitté ni déchargé). `planche=2d|3d|double` y est admis
@@ -44,13 +44,13 @@ export type RouteStudio =
   | { vue: "comparer"; projectId: string; studyId: string; de: CoteComparaisonStudio | null; a: CoteComparaisonStudio | null }
   | { vue: "variante"; projectId: string; studyId: string; variantId: string; revisionId: string | null; commentaires: boolean; domaine: DomaineStudio | null; planche: ModePlanche | null }
   | { vue: "console" }
-  | { vue: "console-sadbox" }
+  | { vue: "console-sandbox" }
   | { vue: "console-outil"; domaine: DomaineStudio; planche: ModePlanche | null }
   | { vue: "inconnue"; chemin: string };
 
-/** Les trois adresses de la Console (page, Sadbox, outil sans projet) : aucune ne porte de projet, d'étude ni de variante. */
-export type RouteConsoleStudio = Extract<RouteStudio, { vue: "console" | "console-sadbox" | "console-outil" }>;
-export const estRouteConsole = (r: RouteStudio): r is RouteConsoleStudio => r.vue === "console" || r.vue === "console-sadbox" || r.vue === "console-outil";
+/** Les trois adresses de la Console (page, Sandbox, outil sans projet) : aucune ne porte de projet, d'étude ni de variante. */
+export type RouteConsoleStudio = Extract<RouteStudio, { vue: "console" | "console-sandbox" | "console-outil" }>;
+export const estRouteConsole = (r: RouteStudio): r is RouteConsoleStudio => r.vue === "console" || r.vue === "console-sandbox" || r.vue === "console-outil";
 
 /** Identifiant opaque admis dans un segment ou un paramètre : jamais interprété comme un nom de fichier. */
 const ID = /^[A-Za-z0-9_-]{1,128}$/;
@@ -124,8 +124,8 @@ export function lireRouteStudio(pathname: string, search = ""): RouteStudio {
   return { vue: "variante", projectId, studyId, variantId, revisionId, commentaires: commentaires.length === 1, domaine, planche };
 }
 
-/** Segment de la Console réservé à la page « bientôt disponible » (« 00 Sadbox »). */
-export const SEGMENT_SADBOX = "sadbox";
+/** Segment de la Console réservé à la page « bientôt disponible » (« 00 Sandbox »). */
+export const SEGMENT_SANDBOX = "sandbox";
 /** Segment de la Console qui ouvre l'outil d'un domaine, sans projet. */
 export const SEGMENT_OUTIL_CONSOLE = "outil";
 
@@ -136,7 +136,7 @@ function lireConsole(reste: string, params: URLSearchParams): RouteStudio | null
   if (segments.length === 1) return cles.length === 0 ? { vue: "console" } : null;
   if (segments.length !== 2) return null;
   const cible = segments[1];
-  if (cible === SEGMENT_SADBOX) return cles.length === 0 ? { vue: "console-sadbox" } : null;
+  if (cible === SEGMENT_SANDBOX) return cles.length === 0 ? { vue: "console-sandbox" } : null;
   if (cible !== SEGMENT_OUTIL_CONSOLE) return null;
   if (cles.some((k) => k !== "domaine" && k !== "planche")) return null;
   const domaines = params.getAll("domaine"), planches = params.getAll("planche");
@@ -170,15 +170,15 @@ export function cheminComparaisonStudio(projectId: string, studyId: string, de: 
 
 /** Page de la Console : les cartes 00 à 04. */
 export const cheminConsoleStudio = (): string => `${RACINE_STUDIO}/console`;
-/** Carte « 00 Sadbox » : page « bientôt disponible ». */
-export const cheminSadboxStudio = (): string => `${cheminConsoleStudio()}/${SEGMENT_SADBOX}`;
+/** Carte « 00 Sandbox » : page « bientôt disponible ». */
+export const cheminSandboxStudio = (): string => `${cheminConsoleStudio()}/${SEGMENT_SANDBOX}`;
 /** Outil d'un domaine, sans projet. `planche` n'est écrite qu'avec `dessin` (sinon ignorée). */
 export function cheminOutilConsoleStudio(domaine: DomaineStudio, options: { planche?: ModePlanche | null } = {}): string {
   const q = new URLSearchParams({ domaine });
   if (domaine === "dessin" && options.planche) q.set("planche", options.planche);
   return `${cheminConsoleStudio()}/${SEGMENT_OUTIL_CONSOLE}?${q.toString()}`;
 }
-/** Vrai pour toute adresse de la Console (page, Sadbox, outils). */
+/** Vrai pour toute adresse de la Console (page, Sandbox, outils). */
 export const estRouteConsoleStudio = (pathname: string): boolean => pathname === `${RACINE_STUDIO}/console` || pathname.startsWith(`${RACINE_STUDIO}/console/`);
 
 const avecArchives = (base: string, archives: boolean) => (archives ? `${base}?archives=${ARCHIVES_AFFICHEES}` : base);

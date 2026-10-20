@@ -55,7 +55,7 @@ describe("menu « Studio » de la barre latérale", () => {
     // Nom exact et non traduit (« Console » est traduit ailleurs en « Bracket » par le dictionnaire).
     expect(entree(html)).toContain('aria-label="Console"');
     expect(entree(html)).toContain('translate="no"');
-    for (const adresse of ["/studio/console", "/studio/console/sadbox", "/studio/console/outil?domaine=bim"]) {
+    for (const adresse of ["/studio/console", "/studio/console/sandbox", "/studio/console/outil?domaine=bim"]) {
       const h = rendre(adresse);
       expect(entree(h), adresse).toContain('aria-current="page"');
       // Les quatre domaines restent, inchangés.

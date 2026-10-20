@@ -4,7 +4,7 @@
  * « 04 · Documentation, métrés et collaboration » — ni ajout, ni renommage, ni abréviation ; `DOMAINES_STUDIO`).
  *
  * - Accès permanents : « Accueil Studio » (`/studio` : reprise suggérée, choix explicite, nouvelle étude), « Choisir
- *   une étude » (études du projet affiché, sinon l'accueil) et « Console » (`/studio/console` : cinq cartes — « 00 Sadbox »
+ *   une étude » (études du projet affiché, sinon l'accueil) et « Console » (`/studio/console` : cinq cartes — « 00 Sandbox »
  *   bientôt disponible et les outils des quatre domaines, ouverts SANS charger de projet), en plus des quatre domaines.
  * - « Studio » reste un lien vers `/studio` (accueil, jamais de redirection automatique), actif sur toutes les routes
  *   Studio ; son chevron (bouton `aria-expanded`, flèches droite / gauche) déplie ou replie les quatre entrées, comme

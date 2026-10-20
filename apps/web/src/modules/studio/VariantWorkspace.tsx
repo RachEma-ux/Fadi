@@ -24,8 +24,10 @@
  * Mode autonome (`autonome`, Console de Studio, `console/`) : l'outil d'un domaine ouvert INDÉPENDAMMENT DE TOUT PROJET.
  * Le contexte est local (document vide, `console/contexte-console.ts`) ; aucune lecture ni aucun enregistrement
  * (`useChargementVariante` inactif, `useEnregistrement` autonome), aucun brouillon conservé sur l'appareil, aucune requête
- * de projet, d'étude ou de variante. Les commandes et panneaux qui lisent ou écrivent dans une étude (enregistrer,
- * exports du serveur, feuilles et dossier, exigences, commentaires, historique, quantités) sont indisponibles et le disent.
+ * de projet, d'étude ou de variante. « Enregistrer » y devient « Enregistrer dans un projet » (`console/
+ * DialogueEnregistrerConsole.tsx`) : il crée une NOUVELLE étude avec le dessin, jamais dans une étude existante. Les autres
+ * commandes et panneaux qui lisent ou écrivent dans une étude (exports du serveur, feuilles et dossier, exigences,
+ * commentaires, historique, quantités) sont indisponibles et le disent.
  *
  * Mise en page (logiciel de conception, outils au premier plan) : un domaine affiché à la fois. Barre du haut
  * persistante (domaines, mode des planches 2D / 3D / Double vue, phase déclarée du workflow, Annuler / Rétablir /
@@ -128,6 +130,8 @@ export interface VariantWorkspaceProps {
   domaine?: DomaineStudio | null; planche?: ModePlanche | null;
   /** Console : outil ouvert sans projet (les identifiants ci-dessus sont alors vides et jamais lus). */
   autonome?: boolean;
+  /** Console : l'étude créée par « Enregistrer dans un projet » est prête ; ouvre sa variante dans le même domaine. */
+  surEnregistreVersProjet?: (c: { projectId: string; studyId: string; variantId: string }, o: { domaine: DomaineStudio; planche: ModePlanche | null }) => void;
   surAdresse?: (a: { domaine: DomaineStudio; planche: ModePlanche | null; commentaires: boolean }, options: { remplacer: boolean }) => void;
 }
 
@@ -168,7 +172,7 @@ const PANNEAUX_D_ETUDE: ReadonlySet<FonctionStudio> = new Set<FonctionStudio>(["
 /** Commandes qui passent par le serveur (exports de la révision enregistrée, feuilles du dossier) : indisponibles dans la Console. */
 const COMMANDES_D_ETUDE: ReadonlySet<IdCommandeEditeur> = new Set<IdCommandeEditeur>(["exporter-svg", "exporter-dxf", "exporter-ifc", "dossier"]);
 
-export function VariantWorkspace({ projectId, studyId, variantId, revisionId, commentairesOuverts = false, domaine = null, planche = null, autonome = false, surAdresse }: VariantWorkspaceProps) {
+export function VariantWorkspace({ projectId, studyId, variantId, revisionId, commentairesOuverts = false, domaine = null, planche = null, autonome = false, surEnregistreVersProjet, surAdresse }: VariantWorkspaceProps) {
   const [context, setContext] = useState<StudioContext | null>(() => (autonome ? contexteConsole() : null));
   const [brouillon, setBrouillon] = useState<Brouillon | null>(() => (autonome ? creerBrouillon(contexteConsole().revision.document) : null));
   const [tool, setTool] = useState<StudioToolId>("studio.dessin.selection");
@@ -548,7 +552,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   function undo() { if (brouillon && peutAnnuler(brouillon) && writable) { cancelTrace(); setBrouillon(annulerBrouillon(brouillon)); setError(""); } }
   function redo() { if (brouillon && peutRetablir(brouillon) && writable) { cancelTrace(); setBrouillon(retablirBrouillon(brouillon)); setError(""); } }
   function fullscreen() { if (!document.fullscreenElement) void shell.current?.requestFullscreen().catch(() => setError("Plein écran indisponible. La planche reste accessible.")); else void document.exitFullscreen(); }
-  const canSave = !autonome && !historical && !!context?.canWrite && !pending && (uncertain || (commands.length > 0 && !blocked));
+  // Console : « Enregistrer » crée, dans un projet choisi, une étude avec ce qui a été dessiné (boîte `console/`).
+  const canSave = autonome ? commands.length > 0 : !historical && !!context?.canWrite && !pending && (uncertain || (commands.length > 0 && !blocked));
   const liens: Partial<Record<IdCommandeEditeur, string>> = autonome ? {} : {
     "exporter-svg": studioExportUrl(projectId, studyId, variantId, "svg", revisionId),
     "exporter-dxf": studioExportUrl(projectId, studyId, variantId, "dxf", revisionId),
@@ -564,7 +569,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
         else if (selectionIds.length) select([]);
         else setTool("studio.dessin.selection");
         return;
-      case "enregistrer": if (canSave) void enr.save(); return;
+      case "enregistrer": if (canSave) { if (autonome) setDialogue("enregistrer-console"); else void enr.save(); } return;
       case "tout-selectionner": if (drawing) select(toutSelectionnable(drawing)); return;
       case "terminer-polyligne": return finishPolyline(false);
       case "fermer-polyligne": return finishPolyline(true);
@@ -661,12 +666,12 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   })();
   const hint = aidePlanche({ ...etatTrace, moveWithPointer, lectureSeule: !writable && !historical && context?.canWrite === false });
   const pasAffiche = pas.toLocaleString(LOCALE, { maximumFractionDigits: 3 });
-  const etat = autonome ? (commands.length ? "Hors projet : rien n’est enregistré" : "Hors projet : aucun projet chargé") : historical ? "Révision historique" : pending ? "Sauvegarde en cours…" : uncertain ? "Sauvegarde non confirmée" : commands.length ? "Brouillon non enregistré" : enr.saved ? "Enregistré sur le serveur" : "Version serveur chargée";
+  const etat = autonome ? (commands.length ? "Hors projet : modifications non enregistrées" : "Hors projet : aucun projet chargé") : historical ? "Révision historique" : pending ? "Sauvegarde en cours…" : uncertain ? "Sauvegarde non confirmée" : commands.length ? "Brouillon non enregistré" : enr.saved ? "Enregistré sur le serveur" : "Version serveur chargée";
   const basculeActive = { ...gestes.basculesActives, "accrochage-sommets": accrocheSommets, "accrochage-grille": accrocheGrille, "vue-3d": vue3d, "navigation-3d": vue3d && navigation3d === "plan", "coupe-3d": vue3d && coupe3d };
   // Accrochages et repérages actifs (barre d'état) : les bascules de ces barres, nommées par leur commande.
   const accrochagesActifs = COMMANDES_EDITEUR.filter(c => (c.groupe === "accrochage" || c.groupe === "reperage") && c.bascule && (basculeActive as Partial<Record<IdCommandeEditeur, boolean>>)[c.id]).map(c => c.libelleFR);
   const domaine01 = definitionDomaine(domaineActif);
-  const libelleSave = uncertain ? { enregistrer: "Réessayer la sauvegarde" } : undefined;
+  const libelleSave = uncertain ? { enregistrer: "Réessayer la sauvegarde" } : autonome ? { enregistrer: "Enregistrer dans un projet" } : undefined;
   /** Palette d'outils du domaine affiché : verticale à gauche du canevas ; au téléphone, barre inférieure défilante. */
   const palette = context && drawing ? <div className="studio-palette" data-studio-palette-outils={domaineActif}>
     <BarreOutils outil={tool} outilDisponible={toolAvailable} commandeDisponible={commandAvailable} raison={raisonCible} libelleCommande={libelleSave}
@@ -786,7 +791,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       surImporter={(cs, r) => { if (!apply(cs)) return false; setDialogue(null); setInfo(`Import DXF ajouté au brouillon : ${r.rapport.entites.total} objet(s). Enregistrez pour l’envoyer au serveur.`); return true; }}
       revision={context.revision.document} brouillonNonEnregistre={commands.length > 0}
       cartouche={() => cartoucheInitial({ projet: projet.data, etude: context.study, variante: context.variant, revision: { id: context.revision.id, ...revisionAffichee }, utilisateur: user })}
-      portee={{ projectId, studyId, variantId, revisionId: context.revision.id }} />
+      portee={{ projectId, studyId, variantId, revisionId: context.revision.id }}
+      enregistrementConsole={autonome ? { commandes: commands, surEnregistre: (c) => { dirty.current = false; surEnregistreVersProjet?.(c, { domaine: domaineActif, planche: domaineActif === "dessin" ? modePlanche : null }); } } : undefined} />
     {rapportExport && liens[rapportExport] && <RapportExport format={FORMATS_RAPPORT[rapportExport]!} urlExport={liens[rapportExport]!} exportId={`${context?.revision.id ?? ""}#${exportsLances}`} surFermer={() => setRapportExport(null)} />}</>}
   </section>;
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cheminAccueilStudio, cheminComparaisonStudio, cheminConsoleStudio, cheminEtudeStudio, cheminOutilConsoleStudio, cheminProjetStudio, cheminSadboxStudio, cheminVarianteStudio, estRouteConsole, estRouteConsoleStudio, estRouteStudio, lireRouteStudio, valeurCoteStudio } from "./routes-studio";
+import { cheminAccueilStudio, cheminComparaisonStudio, cheminConsoleStudio, cheminEtudeStudio, cheminOutilConsoleStudio, cheminProjetStudio, cheminSandboxStudio, cheminVarianteStudio, estRouteConsole, estRouteConsoleStudio, estRouteStudio, lireRouteStudio, valeurCoteStudio } from "./routes-studio";
 
 const lire = (chemin: string) => {
   const [p, q = ""] = chemin.split("?");
@@ -158,18 +158,18 @@ describe("adresses de Studio", () => {
     expect(lireRouteStudio("/studio-x").vue).toBe("inconnue");
   });
 
-  it("Console : page des cartes, page Sadbox et outil d'un domaine sans projet, aller-retour exact", () => {
+  it("Console : page des cartes, page Sandbox et outil d'un domaine sans projet, aller-retour exact", () => {
     expect(cheminConsoleStudio()).toBe("/studio/console");
-    expect(cheminSadboxStudio()).toBe("/studio/console/sadbox");
+    expect(cheminSandboxStudio()).toBe("/studio/console/sandbox");
     expect(lire(cheminConsoleStudio())).toEqual({ vue: "console" });
     expect(lireRouteStudio("/studio/console/")).toEqual({ vue: "console" });
-    expect(lire(cheminSadboxStudio())).toEqual({ vue: "console-sadbox" });
+    expect(lire(cheminSandboxStudio())).toEqual({ vue: "console-sandbox" });
     for (const d of ["dessin", "bim", "visualisation", "documentation"] as const) {
       expect(cheminOutilConsoleStudio(d)).toBe(`/studio/console/outil?domaine=${d}`);
       expect(lire(cheminOutilConsoleStudio(d))).toEqual({ vue: "console-outil", domaine: d, planche: null });
     }
     // Aucune route de la Console ne porte de projet, d'étude ni de variante.
-    for (const c of [cheminConsoleStudio(), cheminSadboxStudio(), cheminOutilConsoleStudio("bim")]) {
+    for (const c of [cheminConsoleStudio(), cheminSandboxStudio(), cheminOutilConsoleStudio("bim")]) {
       expect("projectId" in lire(c), c).toBe(false);
       expect(estRouteConsole(lire(c)), c).toBe(true);
       expect(estRouteConsoleStudio(c.split("?")[0]!), c).toBe(true);
@@ -187,7 +187,7 @@ describe("adresses de Studio", () => {
     for (const c of [
       "/studio/console/outil", "/studio/console/outil?domaine=x", "/studio/console/outil?domaine=bim&domaine=bim", "/studio/console/outil?domaine=bim&planche=2d",
       "/studio/console/outil?domaine=dessin&planche=x", "/studio/console/outil?domaine=dessin&planche=2d&planche=3d", "/studio/console/outil?domaine=bim&revision=r",
-      "/studio/console?domaine=bim", "/studio/console/sadbox?x=1", "/studio/console/bim", "/studio/console/outil/bim", "/studio/console/inconnu", "/studio/console/sadbox/x",
+      "/studio/console?domaine=bim", "/studio/console/sandbox?x=1", "/studio/console/bim", "/studio/console/outil/bim", "/studio/console/inconnu", "/studio/console/sandbox/x",
     ]) expect(lire(c).vue, c).toBe("inconnue");
   });
 });

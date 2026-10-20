@@ -21,8 +21,8 @@ import type { DomaineStudio } from "./domaines/definitions";
 import { LOCALE } from "../../lib/i18n";
 import { cheminAccueilStudio, cheminComparaisonStudio, cheminConsoleStudio, cheminEtudeStudio, cheminOutilConsoleStudio, cheminProjetStudio, cheminVarianteStudio, estRouteConsole, lireRouteStudio, type RouteConsoleStudio } from "./routes-studio";
 import { definitionDomaine, libelleNumeroteDomaine } from "./domaines/definitions";
-import { ConsoleSadbox, ConsoleStudio } from "./console/ConsoleStudio";
-import { LIBELLE_SADBOX } from "./console/cartes";
+import { ConsoleSandbox, ConsoleStudio } from "./console/ConsoleStudio";
+import { LIBELLE_SANDBOX } from "./console/cartes";
 import { StudioRefus } from "./studio-ecrans";
 import { DemarrageStudio, PlancheDifferee } from "./chargement/DemarrageStudio";
 import { PageComparaison } from "./comparaison/PageComparaison";
@@ -90,10 +90,11 @@ export function StudioShell() {
           domaine={route.domaine} planche={route.planche}
           surAdresse={({ domaine, planche, commentaires }, { remplacer }) => navigate(cheminVarianteStudio(route.projectId, route.studyId, route.variantId, route.revisionId, { commentaires, domaine, planche }), { replace: remplacer })} />}
         {route.vue === "console" && <ConsoleStudio />}
-        {route.vue === "console-sadbox" && <ConsoleSadbox />}
+        {route.vue === "console-sandbox" && <ConsoleSandbox />}
         {/* Console : l'outil du domaine SANS charger de projet (contexte local, rien lu ni enregistré). Clé fixe : changer de domaine ou de planche ne décharge pas ce qui est dessiné. */}
         {route.vue === "console-outil" && <PlancheDifferee key="console" autonome projectId="" studyId="" variantId="" revisionId={null}
           domaine={route.domaine} planche={route.planche}
+          surEnregistreVersProjet={(c, { domaine, planche }) => navigate(cheminVarianteStudio(c.projectId, c.studyId, c.variantId, null, { domaine, planche }))}
           surAdresse={({ domaine, planche }, { remplacer }) => navigate(cheminOutilConsoleStudio(domaine, { planche }), { replace: remplacer })} />}
         {route.vue === "comparer" && <PageComparaison projectId={route.projectId} studyId={route.studyId} de={route.de} a={route.a} />}
         {route.vue === "inconnue" && (
@@ -108,9 +109,9 @@ export function StudioShell() {
   );
 }
 
-/** Fil d'Ariane de la Console : « Studio / Console », puis « Sadbox » ou le domaine ouvert (jamais de projet ni d'étude). */
+/** Fil d'Ariane de la Console : « Studio / Console », puis « Sandbox » ou le domaine ouvert (jamais de projet ni d'étude). */
 function FilConsole({ route }: { route: RouteConsoleStudio }) {
-  const suite = route.vue === "console-sadbox" ? LIBELLE_SADBOX : route.vue === "console-outil" ? libelleNumeroteDomaine(definitionDomaine(route.domaine)) : null;
+  const suite = route.vue === "console-sandbox" ? LIBELLE_SANDBOX : route.vue === "console-outil" ? libelleNumeroteDomaine(definitionDomaine(route.domaine)) : null;
   return <span data-studio-fil-console> / {suite === null ? <span aria-current="page" translate="no">Console</span> : <><Link to={cheminConsoleStudio()} translate="no">Console</Link> / <span aria-current="page">{suite}</span></>}</span>;
 }
 

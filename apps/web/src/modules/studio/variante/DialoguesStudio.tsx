@@ -11,10 +11,12 @@ import { PanneauFeuille } from "../feuille/PanneauFeuille";
 import { DialogueImportDxf } from "../import/DialogueImportDxf";
 import { PanneauDossier } from "../dossier/PanneauDossier";
 import { PanneauEchanges } from "../echanges/PanneauEchanges";
+import { DialogueEnregistrerConsole } from "../console/DialogueEnregistrerConsole";
+import type { Cible } from "../console/transfert";
 import { appartientAuDialogue, focalisables, suivantDansLePiege } from "./piege-focus";
 import type { RaisonIndisponible } from "./droits";
 
-export type DialogueStudio = "outils" | "palette" | "feuille" | "import-dxf" | "dossier" | "echanges" | null;
+export type DialogueStudio = "outils" | "palette" | "feuille" | "import-dxf" | "dossier" | "echanges" | "enregistrer-console" | null;
 
 export interface PropsDialoguesStudio {
   dialogue: DialogueStudio;
@@ -34,6 +36,8 @@ export interface PropsDialoguesStudio {
   cartouche: () => StudioSheetTitleBlock;
   /** Feuilles composées et dossier (E.3) : étude, variante et révision affichée. */
   portee: { projectId: string; studyId: string; variantId: string; revisionId: string };
+  /** Console (aucun projet) : « Enregistrer dans un projet » crée une étude avec ces commandes, puis `surEnregistre`. */
+  enregistrementConsole?: { commandes: readonly StudioCommand[]; surEnregistre: (c: Cible) => void };
 }
 
 /** Piège du focus de la boîte ouverte ; rend le focus à l'élément d'origine à la fermeture. */
@@ -103,7 +107,7 @@ function usePiegeFocus(dialogue: DialogueStudio, surFermer: () => void) {
   return { zone, tabulation };
 }
 
-export function DialoguesStudio({ dialogue, surFermer, disponible, raison, surExecuter, drawing, modifiable, surImporter, revision, brouillonNonEnregistre, cartouche, portee }: PropsDialoguesStudio) {
+export function DialoguesStudio({ dialogue, surFermer, disponible, raison, surExecuter, drawing, modifiable, surImporter, revision, brouillonNonEnregistre, cartouche, portee, enregistrementConsole }: PropsDialoguesStudio) {
   const { zone, tabulation } = usePiegeFocus(dialogue, surFermer);
   return <div ref={zone} onKeyDown={tabulation} data-studio-dialogues={dialogue ?? undefined}>
     {dialogue === "outils" && <GestionnaireOutils disponible={disponible} raison={raison} surExecuter={surExecuter} surFermer={surFermer} />}
@@ -112,5 +116,6 @@ export function DialoguesStudio({ dialogue, surFermer, disponible, raison, surEx
     {dialogue === "feuille" && <PanneauFeuille doc={revision} brouillonNonEnregistre={brouillonNonEnregistre} surFermer={surFermer} cartouche={cartouche()} />}
     {dialogue === "dossier" && <PanneauDossier {...portee} revision={revision} brouillonNonEnregistre={brouillonNonEnregistre} surFermer={surFermer} />}
     {dialogue === "echanges" && <PanneauEchanges surFermer={surFermer} />}
+    {dialogue === "enregistrer-console" && enregistrementConsole && <DialogueEnregistrerConsole commandes={enregistrementConsole.commandes} surFermer={surFermer} surEnregistre={enregistrementConsole.surEnregistre} />}
   </div>;
 }
