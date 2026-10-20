@@ -1,0 +1,42 @@
+{
+  "schema": "FADI-STUDIO-DAILY-1.0",
+  "generated_at_utc": "2026-10-18T10:46:18.738Z",
+  "sources": {
+    "questions": "https://github.com/RachEma-ux/Fadi/issues/166",
+    "programme": "https://github.com/RachEma-ux/Fadi/issues/156",
+    "checklist": "https://github.com/RachEma-ux/Fadi/blob/main/Studio/Fadi_Studio_Checklist_Execution_V1_0.md"
+  },
+  "main_sha": "a4caaab0e6665480f09febe3914c960b424b6b47",
+  "pr165_head_sha": "09c43849198f6d0c2037562e8a4891a126eef25b",
+  "api": "consultation GitHub",
+  "progress": {
+    "pdev_verified": null,
+    "p630_verified": null,
+    "p630_reported_by_codex": 6,
+    "mapping": 630,
+    "total": 630,
+    "note": "630 affectations ne prouvent pas 630 réalisations. Les nombres signalés sont des déclarations."
+  },
+  "codex": {
+    "ack_count": 2,
+    "progress_count": 3,
+    "last_progress_at": "2026-10-18T10:19:30Z",
+    "last_progress_url": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6248682431",
+    "execution_confirmed": true
+  },
+  "questions": {
+    "total": 7,
+    "unanswered": [
+      "Q-M003-D01",
+      "Q-M003-D02",
+      "Q-M003-D03",
+      "Q-M003-D04",
+      "Q-M003-D05",
+      "Q-M003-D06",
+      "Q-M003-D07"
+    ],
+    "unanswered_count": 7
+  },
+  "task_signals": [],
+  "task_signal_warning": "Les trois cases existantes ne sont jamais modifiées automatiquement."
+}

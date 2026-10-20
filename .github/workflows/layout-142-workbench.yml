@@ -1,0 +1,28 @@
+name: Layout 142 isolated workbench
+on:
+  push:
+    branches: [ci/layout-142-diagnostic]
+    paths: [.github/workflows/layout-142-workbench.yml]
+permissions:
+  contents: read
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: e3031ab896f262191fee9b70020a77faae04a3bc
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --no-audit --no-fund
+      - name: Package workspace-local dependencies omitted from the root bundle
+        run: |
+          find apps packages -type d -name node_modules -prune -print0 | tar --null -czf workspace-deps.tar.gz -T -
+      - uses: actions/upload-artifact@v4
+        with:
+          name: layout-workspace-deps-${{ github.run_id }}
+          path: workspace-deps.tar.gz
+          compression-level: 0
+          retention-days: 1

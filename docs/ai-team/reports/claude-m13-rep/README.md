@@ -16,7 +16,7 @@ L'équipe Codex était à P630 = 34/630. Ses agents étaient occupés par les re
 | [`REP-07-ESSAIS.json`](REP-07-ESSAIS.json) | Essais E0 à E7 de `check-module-deps.mjs`. Un faux négatif est démontré (import relatif vers `apps/api` non détecté), avec 0 occurrence actuelle ; il est déjà corrigé par la PR #152, non fusionnée (E6). |
 | [`REP-09-REQUALIFICATION.md`](REP-09-REQUALIFICATION.md) et [`.json`](REP-09-REQUALIFICATION.json) | Les 14 observations de l'annexe A de REF-02, requalifiées. La lecture statique et les tests exécutés sont séparés. |
 | [`DELTA-REGISTRE-PROPOSE.json`](DELTA-REGISTRE-PROPOSE.json) | Delta proposé pour le registre 630. Il est **non appliqué** ; A0 l'intègre ou le rejette après revue. |
-| [`../../tableau_registre.py`](https://github.com/RachEma-ux/Fadi/blob/32267bf0536ad6b8f4fde546b4b96932b90254b1/docs/ai-team/tableau_registre.py) et [`test_tableau_registre.py`](https://github.com/RachEma-ux/Fadi/blob/32267bf0536ad6b8f4fde546b4b96932b90254b1/docs/ai-team/test_tableau_registre.py) | Outil de compteurs, de contrôle de cohérence et d'intégration de delta, avec 11 tests unitaires. |
+| [`../../tableau_registre.py`](../../tableau_registre.py) et [`test_tableau_registre.py`](../../test_tableau_registre.py) | Outil de compteurs, de contrôle de cohérence et d'intégration de delta, avec 11 tests unitaires. |
 
 ## Verdicts proposés (aucun n'est « Accepté »)
 
@@ -49,6 +49,8 @@ python3 docs/ai-team/tableau_registre.py --delta docs/ai-team/reports/claude-m13
 python3 docs/ai-team/tableau_registre.py --delta docs/ai-team/reports/claude-m13-rep/DELTA-REGISTRE-PROPOSE.json --ecrire  # après revue A2/A5
 python3 docs/ai-team/tableau_registre.py --controle   # signale les phrases de compteurs STATUS/HANDOFF à actualiser
 ```
+
+**Mise à jour du 18/10 :** une seconde remise ([`claude-m13-coex`](../claude-m13-coex/README.md)) est préparée sur le même registre. Les deux s'intègrent en une seule commande, `--delta <rep> --delta <coex>`, car `--delta` est répétable.
 
 L'intégration refuse le delta si :
 

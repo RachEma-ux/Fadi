@@ -1,0 +1,37 @@
+name: FadiFront static Infomaniak build
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Check React/TypeScript
+        run: npm run typecheck --workspace=@fadi/web
+      - name: Build authentic Fadi React static edition
+        run: cd apps/web && ../../node_modules/.bin/vite build --config vite.front.config.ts
+      - name: Validate PHP login
+        run: php -l deploy/fadifront/index.php
+      - name: Create deployable directory
+        run: |
+          mkdir -p fadifront-deploy
+          cp -a apps/web/dist-front/. fadifront-deploy/
+          cp deploy/fadifront/index.php fadifront-deploy/index.php
+          cp deploy/fadifront/.htaccess fadifront-deploy/.htaccess
+          test -f fadifront-deploy/front.html
+          test -f fadifront-deploy/index.php
+          test -f fadifront-deploy/.htaccess
+      - name: Upload Infomaniak deployment files
+        uses: actions/upload-artifact@v4
+        with:
+          name: FadiFront-Infomaniak
+          path: fadifront-deploy/
+          include-hidden-files: true
+          retention-days: 14

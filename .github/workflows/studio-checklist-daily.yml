@@ -1,0 +1,73 @@
+name: Studio — snapshot quotidien de la checklist
+
+on:
+  pull_request:
+    paths:
+      - "scripts/update-studio-daily.py"
+      - "scripts/test-update-studio-daily.py"
+      - "scripts/test-fadi-dashboard.py"
+      - "Studio/Fadi_Dashboard_Horaire.html"
+      - "Studio/Fadi_Studio_Checklist_Interactive_V1_1.html"
+      - "Studio/Fadi_Studio_Daily_Status.json"
+      - ".github/workflows/studio-checklist-daily.yml"
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: studio-checklist-daily-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Tests sans réseau
+        run: |
+          python3 scripts/test-update-studio-daily.py -v
+          python3 scripts/test-fadi-dashboard.py -v
+      - name: Vérifier les 630 tâches et les trois validations
+        run: python3 scripts/update-studio-daily.py --offline --dry-run
+
+  daily_snapshot:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Préparer le snapshot depuis l'Issue #166
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 scripts/update-studio-daily.py
+      - name: Créer ou mettre à jour une PR quotidienne
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          add-paths: |
+            Studio/Fadi_Studio_Checklist_Interactive_V1_1.html
+            Studio/Fadi_Studio_Daily_Status.json
+          branch: automation/studio-checklist-daily
+          delete-branch: false
+          commit-message: "docs(studio): actualiser le suivi GitHub quotidien"
+          title: "docs(studio): actualisation quotidienne des contrôles horaires"
+          body: |
+            Actualisation issue de l'Issue #166 et du référentiel Studio (#167).
+            Bandeau daté, SHA, questions ouvertes, dernier contrôle et indicateurs non homologués.
+            Aucune case Code / Review ChatGPT / Review Admin cochée automatiquement.
+            La fusion et l'approbation métier restent manuelles.

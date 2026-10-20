@@ -1,0 +1,30 @@
+name: Consolidated deployment tooling
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/consolidation-validation.yml'
+      - 'deploy/preprod/**'
+      - 'deploy/fadifront/**'
+      - 'apps/web/src/FrontApp*'
+      - 'apps/web/src/front-*'
+      - 'apps/web/vite.front.config.ts'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  deployment-sources:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --no-audit --no-fund
+      - name: Build static edition from canonical reference data
+        working-directory: apps/web
+        run: ../../node_modules/.bin/vite build --config vite.front.config.ts
+      - name: Validate PHP entry point
+        run: php -l deploy/fadifront/index.php
+      - name: Test preproduction commands with disposable fixtures and Docker doubles
+        run: bash deploy/preprod/tests/run.sh

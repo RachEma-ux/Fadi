@@ -1,0 +1,26 @@
+name: Layout 142 matching test browser
+on:
+  push:
+    branches: [ci/layout-142-diagnostic]
+    paths: [.github/workflows/layout-142-test-browser.yml]
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 169c23f12d3c121965e5de90180723f3077fe8cd
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install chromium
+      - run: tar -czf /tmp/fadi-test-browser.tar.gz -C "$HOME/.cache" ms-playwright
+      - uses: actions/upload-artifact@v4
+        with:
+          name: layout-142-test-browser
+          path: /tmp/fadi-test-browser.tar.gz
+          compression-level: 0
+          retention-days: 1
