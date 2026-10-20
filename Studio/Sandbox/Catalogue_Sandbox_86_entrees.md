@@ -96,7 +96,7 @@ Les 20 commandes agissent sur la sélection sans changer d'outil ; elles sont re
 | 69 | Renuméroter | — | Débit | № | Alt+Maj+N | panneau Débit | Fadi |  |
 | 70 | Étiquettes | — | Débit | 🏷 | Alt+Maj+E | panneau Débit | Fadi |  |
 | 71 | Effacer les étiquettes | — | Débit | ⌧ | Alt+Maj+W | panneau Débit | Fadi |  |
-| 72 | Exporter le débit | — | Débit | ⇩ | Ctrl+Maj+E | panneau Débit | Fadi | Raccourci d'export courant (lot 6) |
+| 72 | Exporter le débit | — | Débit | ⇩ | Alt+Maj+X | panneau Débit | Fadi |  |
 
 ## Panneaux (14)
 
@@ -141,7 +141,7 @@ Dix éléments de SketchUp n'ont aucune entrée dans le Sandbox ; six points du 
 | Diviser | Fait (lot 6) | Une seule entrée : l'outil Diviser (Maj+D), lancé aussi par le clic droit et la barre d'actions |
 | Icône ⓘ | À harmoniser | Sert à Info entité, alors que (i) désigne Model Info dans SketchUp |
 | Maj+Z | Fait (lot 6) | Zoom étendu, comme SketchUp ; Texte 3D passe à Alt+Maj+Z |
-| Zoom étendu | Fait (lot 6) | Maj+Z ; Ctrl+Maj+E passe à Exporter le débit |
+| Zoom étendu | Fait (lot 6) | Maj+Z ; Ctrl+Maj+E, réservé par Firefox (outil réseau), n'est plus pris |
 | Recherche d'outil | Fait (lot 6) | Maj+S, comme SketchUp ; Soustraction passe à Alt+Maj+D |
 | Icônes Unicode | Décidé | Remplacées par des pictogrammes **Tabler Icons** (MIT), 12 dessinés sur mesure et validés (dossier [`pictogrammes/`](pictogrammes/)) : voir [la recommandation](Recommandation_Sandbox_Architecture.md) |
 

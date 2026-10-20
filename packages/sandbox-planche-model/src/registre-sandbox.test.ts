@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { OUTILS, normaliserRaccourci } from "./catalogue-outils.js";
-import { BARRE_GAUCHE_SANDBOX, PICTOGRAMMES_PARTAGES, RACCOURCI_RECHERCHE, RACCOURCIS_HARMONISES, REGISTRE_SANDBOX, RACCOURCIS_FADI_OUTILS, clePictogramme, entreeCommande, entreeOutil, entreePanneau, entreeSandbox, entreesSandbox } from "./registre-sandbox.js";
+import { BARRE_GAUCHE_SANDBOX, PICTOGRAMMES_PARTAGES, RACCOURCI_RECHERCHE, RACCOURCIS_HARMONISES, RACCOURCIS_NAVIGATEUR, REGISTRE_SANDBOX, RACCOURCIS_FADI_OUTILS, clePictogramme, entreeCommande, entreeOutil, entreePanneau, entreeSandbox, entreesSandbox } from "./registre-sandbox.js";
 
 const catalogue = REGISTRE_SANDBOX.filter((e) => !e.horsCatalogue);
 
@@ -28,8 +28,12 @@ describe("registre du Sandbox — contenu", () => {
   it("lot 6 : raccourcis harmonisés avec SketchUp (Zoom étendu Maj+Z, recherche Maj+S), sans doublon", () => {
     expect(entreeOutil("zoom-etendu").raccourci).toBe("Maj+Z");
     expect(entreeOutil("texte-3d").raccourci).toBe("Alt+Maj+Z");
-    expect(entreeCommande("exporter-debit").raccourci).toBe("Ctrl+Maj+E");
-    expect(entreeCommande("zoom-plus").raccourci).toBe("Alt+Maj+X");
+    expect(entreeCommande("exporter-debit").raccourci).toBe("Alt+Maj+X");
+    expect(entreeCommande("zoom-plus").raccourci).toBe("F8");
+    // Aucune entrée ne prend une combinaison que le navigateur se réserve (revue Codex : Ctrl+Maj+E est à Firefox).
+    const reserves = new Set(RACCOURCIS_NAVIGATEUR.map(normaliserRaccourci));
+    for (const e of REGISTRE_SANDBOX.filter((x) => x.raccourci !== null)) expect(reserves.has(normaliserRaccourci(e.raccourci!)), `${e.nature}:${e.id} : ${e.raccourci}`).toBe(false);
+    expect(reserves.has(normaliserRaccourci(RACCOURCI_RECHERCHE))).toBe(false);
     expect(entreeOutil("soustraction").raccourci).toBe("Alt+Maj+D");
     expect(RACCOURCI_RECHERCHE).toBe("Maj+S");
     // La recherche n'est pas une entrée : aucun outil ni aucune commande ne prend son raccourci.

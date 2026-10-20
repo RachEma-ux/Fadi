@@ -103,6 +103,6 @@ describe("Liste de débit (lot L14) : commandes et disponibilités", () => {
     expect(disponibiliteDebit("renumeroter", { ...s, lecture: true }).motif).toBe("planche.debit.motif.lecture");
     expect(disponibiliteDebit("effacer-etiquettes", s).motif).toBe("planche.debit.motif.sans-etiquette");
     expect(disponibiliteDebit("effacer-etiquettes", { ...s, etiquettes: 3 }).disponible).toBe(true);
-    expect(COMMANDES_DEBIT.map((c) => c.raccourci)).toEqual(["Alt+Maj+T", "Alt+Maj+N", "Alt+Maj+E", "Alt+Maj+W", "Ctrl+Maj+E"]);
+    expect(COMMANDES_DEBIT.map((c) => c.raccourci)).toEqual(["Alt+Maj+T", "Alt+Maj+N", "Alt+Maj+E", "Alt+Maj+W", "Alt+Maj+X"]);
   });
 });

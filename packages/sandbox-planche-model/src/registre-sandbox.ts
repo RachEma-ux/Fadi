@@ -193,6 +193,16 @@ export const RACCOURCIS_HARMONISES: Readonly<Record<string, string>> = {
 /** Recherche d'outil (lot 6) : Maj+S, comme SketchUp (relevé : Maj+-). Ce n'est pas une entrée du registre. */
 export const RACCOURCI_RECHERCHE = "Maj+S";
 
+/**
+ * Combinaisons que le navigateur se réserve (fenêtre, onglet, outils de développement, lecture, plein écran) : aucune
+ * entrée du registre ne les prend (lot 6). Ctrl+Maj+E est l'outil réseau de Firefox, F9 son mode lecture.
+ */
+export const RACCOURCIS_NAVIGATEUR: readonly string[] = Object.freeze([
+  "Ctrl+N", "Ctrl+T", "Ctrl+W", "Ctrl+Q", "Ctrl+L", "Ctrl+R", "Ctrl+P", "Ctrl+F", "Ctrl+U", "Ctrl+O",
+  "Ctrl+Maj+N", "Ctrl+Maj+T", "Ctrl+Maj+W", "Ctrl+Maj+R", "Ctrl+Maj+I", "Ctrl+Maj+J", "Ctrl+Maj+C", "Ctrl+Maj+E", "Ctrl+Maj+K", "Ctrl+Maj+S", "Ctrl+Maj+Y",
+  "F1", "F3", "F5", "F6", "F7", "F9", "F10", "F11", "F12",
+]);
+
 /** Pictogramme d'une entrée : « fadi:<fichier> » désigne un dessin sur mesure, tout autre nom une icône Tabler. */
 function pictogramme(nom: string, famille: FamilleEntree): Pictogramme {
   const fadi = nom.startsWith("fadi:");
@@ -258,15 +268,15 @@ const commandes: EntreeSandbox[] = [
   c("isoler", "vue", "focus-2", "Alt+Maj+I", "actions"),
   c("masquer-reste", "vue", "eye-off", "Alt+Maj+R", "outils"),
   // Zoom avant / arrière par pas (lot 4) : barre d'actions flottante au toucher, clavier partout ; hors des 86 entrées.
-  c("zoom-plus", "vue", "plus", "Alt+Maj+X", "actions", true),
+  // Lot 6 : F8, touche libre que ni Chrome ni Firefox ne se réservent (Alt+Maj+Z passe au Texte 3D).
+  c("zoom-plus", "vue", "plus", "F8", "actions", true),
   c("zoom-moins", "vue", "minus", "Alt+Maj+Y", "actions", true),
   // Liste de débit (L14) : barre du panneau Débit.
   c("liste-debit", "debit", "fadi:debit", "Alt+Maj+T", "panneau-debit"),
   c("renumeroter", "debit", "list-numbers", "Alt+Maj+N", "panneau-debit"),
   c("etiquettes", "debit", "tags", "Alt+Maj+E", "panneau-debit"),
   c("effacer-etiquettes", "debit", "tag-off", "Alt+Maj+W", "panneau-debit"),
-  // Lot 6 : Ctrl+Maj+E, raccourci d'export courant, laissé par le Zoom étendu (Maj+Z) ; Alt+Maj+X va au zoom avant.
-  c("exporter-debit", "debit", "file-export", "Ctrl+Maj+E", "panneau-debit"),
+  c("exporter-debit", "debit", "file-export", "Alt+Maj+X", "panneau-debit"),
   // Édition d'une pièce (L17) : bloc de la pièce dans l'Info entité.
   c("piece-section", "piece", "arrows-left-right", "Alt+Maj+S", "barre-piece"),
   c("piece-rotation", "piece", "rotate", "Alt+Maj+H", "barre-piece"),
