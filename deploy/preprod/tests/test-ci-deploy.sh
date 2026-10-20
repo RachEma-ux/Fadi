@@ -8,7 +8,7 @@ GATE="$ROOT/ci-ssh"
 DEPLOY="$ROOT/ci-deploy"
 FP="$ROOT/fadi-preprod"
 
-bash -n "$GATE" "$DEPLOY" "$FP"
+for script in "$GATE" "$DEPLOY" "$FP"; do bash -n "$script"; done
 echo "✓ scripts Bash syntaxiques"
 
 reject() {
