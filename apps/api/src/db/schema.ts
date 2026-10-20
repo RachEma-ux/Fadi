@@ -953,6 +953,20 @@ export const studioToolPreferences = pgTable("studio_tool_preferences", {
 });
 
 /**
+ * Préférences d'outils du Sandbox d'un compte (lot 5) : profil, barre gauche personnelle, favoris, regroupements nommés
+ * (identifiants du registre REGISTRE_SANDBOX, `lib/sandbox-preferences.ts`). Propre au Sandbox ; visibilité seulement.
+ */
+export const sandboxToolPreferences = pgTable("sandbox_tool_preferences", {
+  userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  profile: text("profile").notNull().default("standard"),
+  leftBar: jsonb("left_bar").$type<string[]>().notNull().default([]),
+  favorites: jsonb("favorites").$type<string[]>().notNull().default([]),
+  groups: jsonb("groups").$type<{ id: string; nom: string; entrees: string[] }[]>().notNull().default([]),
+  format: text("format").notNull().default("sandbox-preferences/1"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+/**
  * Exigences Studio (E.1-02 à E.1-06, lib/studio-exigences.ts) : versions append-only d'un jeu d'exigences par étude
  * (UPDATE refusée par déclencheur, init.sql) et résultats de contrôle liés à la révision et à la version examinées
  * (FK composites et contrôles dans init.sql). Aucune exigence n'est fournie par Fadi.

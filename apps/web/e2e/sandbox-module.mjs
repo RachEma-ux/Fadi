@@ -9,6 +9,8 @@
  * - chaque bouton de la barre d'outils porte un pictogramme SVG (lot 3) ;
  * - disposition par défaut proche de SketchUp (lot 4) : barre gauche, colonne à un clic, barre du haut, Cadrer, zoom ± au
  *   téléphone, curseur de l'outil ;
+ * - personnalisation (lot 5) : préférences du compte (401 sans session, entrée inconnue refusée), profil, favori,
+ *   regroupement, rechargement, copie locale si le serveur manque, « Réinitialiser » ;
  * - au téléphone, la barre d'actions ne recouvre pas la barre d'outils de gauche ;
  * - aucun appel à l'API d'un projet (Atelier, Studio, Parcours) pendant que le Sandbox est ouvert, aucune erreur JavaScript.
  *
@@ -168,7 +170,66 @@ try {
     await c2.close();
   }
 
-  // 5. Téléphone : la Planche se charge et sa barre d'outils reste visible.
+  // 5. Personnalisation (lot 5) : préférences d'outils sur le serveur, par compte ; copie locale si le serveur manque.
+  {
+    const { context: c3, page: p3 } = await nouvellePage({ width: 1440, height: 900 });
+    p3.on("dialog", (d) => void d.accept());
+    await inscrire(p3);
+    const api = async (method, data) => {
+      const r = await p3.request[method](`${BASE}/sandbox/preferences`, data === undefined ? undefined : { data });
+      return { statut: r.status(), corps: await r.json() };
+    };
+    const lu = await api("get");
+    check("préférences : sans enregistrement, profil Standard et rien de choisi", lu.statut === 200 && lu.corps.profil === "standard" && lu.corps.updatedAt === null, JSON.stringify(lu.corps));
+    const inconnue = await api("put", { profil: "standard", barrePersonnelle: ["fantome"], favoris: [], regroupements: [] });
+    check("préférences : entrée absente du registre refusée et nommée (400 unknown_entry)", inconnue.statut === 400 && inconnue.corps.error === "unknown_entry" && inconnue.corps.inconnues?.[0] === "outil:fantome", JSON.stringify(inconnue.corps));
+    const anonyme = await (await browser.newContext()).request.get(`${BASE}/sandbox/preferences`);
+    check("préférences : réservées au compte connecté (401 sans session)", anonyme.status() === 401, String(anonyme.status()));
+
+    await p3.goto(`${BASE}/sandbox`);
+    await plancheChargee(p3, "personnalisation");
+    const racine = p3.locator("[data-sandbox-page] [data-sandbox-planche]");
+    const ordreBarre = () => racine.locator('.planche-outils[role="toolbar"] [data-planche-outil]').evaluateAll((l) => l.map((b) => b.getAttribute("data-planche-outil")));
+    await racine.locator("[data-planche-plus]").click();
+    await racine.locator("[data-planche-grille-modifier]").click();
+    const panneau = racine.locator('[data-planche-panneau="personnaliser"]');
+    await panneau.waitFor({ state: "visible" });
+    check("« Modifier » de la grille ouvre « Personnaliser les outils »", await panneau.isVisible());
+    // Profil métier : la barre gauche change tout de suite et l'enregistrement part sur le compte.
+    await panneau.locator('[data-personnaliser-profil="metier:bois"]').check();
+    await p3.waitForTimeout(300);
+    check("profil Métier « Bois » : barre gauche du profil", (await ordreBarre()).includes("onglet") && !(await ordreBarre()).includes("arc"), (await ordreBarre()).join(", "));
+    await panneau.locator('[data-personnaliser-favori="outil:secteur"]').check();
+    await panneau.locator("[data-personnaliser-nouveau-nom]").fill("Mes outils");
+    await panneau.locator("[data-personnaliser-creer]").click();
+    await panneau.locator('[data-personnaliser-groupe="outil:cercle"]').check();
+    await panneau.locator('[data-personnaliser-etat="serveur"]').waitFor();
+    const enregistre = await api("get");
+    check("préférences enregistrées sur le compte (profil, favori, regroupement)", enregistre.corps.profil === "metier:bois" && enregistre.corps.favoris.includes("outil:secteur") && enregistre.corps.regroupements[0]?.nom === "Mes outils" && enregistre.corps.regroupements[0]?.entrees.includes("outil:cercle"), JSON.stringify(enregistre.corps));
+    // Rechargement : relues du compte ; la grille montre les favoris et le regroupement.
+    await p3.reload();
+    await plancheChargee(p3, "personnalisation rechargée");
+    check("rechargement : la barre du profil revient", (await ordreBarre()).includes("onglet"));
+    await racine.locator("[data-planche-plus]").click();
+    check("grille : section Favoris avec l'outil choisi", (await racine.locator('[data-planche-grille-section="favoris"] [data-planche-outil="secteur"]').count()) === 1);
+    check("grille : section du regroupement nommé", (await racine.locator('[data-planche-grille-section="groupe-mes-outils"] [data-planche-outil="cercle"]').count()) === 1);
+    // Serveur injoignable : la copie locale (dernière version reçue) s'applique.
+    await p3.route("**/sandbox/preferences", (r) => r.abort());
+    await p3.reload();
+    await plancheChargee(p3, "serveur injoignable");
+    check("serveur injoignable : la copie locale garde le profil", (await ordreBarre()).includes("onglet"));
+    await p3.unroute("**/sandbox/preferences");
+    // Réinitialiser : retour au profil Standard, sans favori ni regroupement.
+    await racine.locator("[data-planche-plus]").click();
+    await racine.locator("[data-planche-grille-modifier]").click();
+    await panneau.locator("[data-personnaliser-reinitialiser]").click();
+    await panneau.locator('[data-personnaliser-etat="serveur"]').waitFor();
+    const remis = await api("get");
+    check("« Réinitialiser » : profil Standard, rien de choisi, barre par défaut", remis.corps.profil === "standard" && remis.corps.favoris.length === 0 && remis.corps.regroupements.length === 0 && (await ordreBarre())[3] === "arc", JSON.stringify(remis.corps));
+    await c3.close();
+  }
+
+  // 6. Téléphone : la Planche se charge et sa barre d'outils reste visible.
   const tel = await nouvellePage({ width: 390, height: 844 }, { hasTouch: true, isMobile: true });
   await inscrire(tel.page);
   surSandbox = true;

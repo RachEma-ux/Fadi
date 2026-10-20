@@ -44,6 +44,16 @@ describe("Sandbox — Planche indépendante de l'étape 10", () => {
     }
   });
 
+  it("serveur : seul le client des préférences (lot 5) l'appelle, et seulement à /sandbox/preferences", () => {
+    const appels = /\bfetch\s*\(|XMLHttpRequest|sendBeacon|new\s+WebSocket|EventSource/;
+    const appelants = sources.filter((f) => /\.tsx?$/.test(f) && !/\.test\.ts$/.test(f) && appels.test(code(f))).map((f) => relative(RACINE, f).split(sep).join("/"));
+    expect(appelants).toEqual(["preferences/client.ts"]);
+    const client = code(join(RACINE, "preferences/client.ts"));
+    expect(client).toContain('export const ADRESSE_PREFERENCES = "/sandbox/preferences";');
+    expect([...client.matchAll(/fetch\(([^,)]+)/g)].map((m) => m[1]!.trim())).toEqual(["ADRESSE_PREFERENCES"]);
+    expect(client).not.toMatch(/https?:\/\//);
+  });
+
   it("le modèle de la Planche vient du paquet copié, jamais de l'original", () => {
     const uses = sources.filter((f) => /\.tsx?$/.test(f)).flatMap((f) => imports(f)).filter((i) => i.startsWith("@parcours/"));
     expect(new Set(uses)).toEqual(new Set(["@parcours/sandbox-planche-model"]));

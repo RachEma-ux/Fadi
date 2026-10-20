@@ -2362,3 +2362,65 @@
     height: 44px;
   }
 }
+/* Lot 5 — personnalisation : « Modifier » en tête de la grille, panneau « Personnaliser les outils ». */
+.sandbox-planche .planche-grille-tete {
+  display: flex;
+  justify-content: flex-end;
+}
+.sandbox-planche .planche-grille-modifier {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 36px;
+  padding: 0 0.6rem;
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 6px;
+  background: #fff;
+  color: inherit;
+  cursor: pointer;
+}
+.sandbox-planche .planche-personnaliser {
+  display: grid;
+  gap: 0.6rem;
+}
+.sandbox-planche .planche-personnaliser fieldset {
+  margin: 0;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 6px;
+}
+.sandbox-planche .planche-personnaliser-choix {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 32px;
+}
+.sandbox-planche .planche-personnaliser-groupe {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  justify-content: space-between;
+}
+.sandbox-planche .planche-personnaliser-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.sandbox-planche .planche-personnaliser-table th,
+.sandbox-planche .planche-personnaliser-table td {
+  padding: 2px 4px;
+  border-bottom: 1px solid var(--atelier-ligne, #dce5df);
+  text-align: left;
+}
+.sandbox-planche .planche-personnaliser-table td {
+  text-align: center;
+}
+.sandbox-planche .planche-personnaliser-table input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+}
+.sandbox-planche .planche-personnaliser-reinitialiser {
+  justify-self: start;
+  min-height: 40px;
+  padding: 0 0.8rem;
+}
