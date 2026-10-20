@@ -366,7 +366,8 @@ describe("Matrice et code réel : relecture du dépôt", () => {
     expect(TELECHARGEMENT.test('<a download={nom}>')).toBe(true);
     expect(TELECHARGEMENT.test('link.hasAttribute("download")')).toBe(false);
     expect(TELECHARGEMENT.test('<a data-download-x>')).toBe(false);
-    const pages = fichiers("apps/web/src/modules/studio", sourcesNonTest).filter((f) => TELECHARGEMENT.test(lire(f)));
+    // La Planche de Sandbox (console/sandbox) est une copie indépendante, sans document ni échange Studio : hors matrice.
+    const pages = fichiers("apps/web/src/modules/studio", (f) => sourcesNonTest(f) && !f.includes("/console/sandbox/")).filter((f) => TELECHARGEMENT.test(lire(f)));
     expect(pages).toContain("apps/web/src/modules/studio/dossier/PanneauDossier.tsx");
     expect(pages.length).toBeGreaterThanOrEqual(7);
     const citees = new Set(cites("interfaces").map((x) => x.fichier));
