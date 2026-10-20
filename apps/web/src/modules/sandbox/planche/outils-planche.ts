@@ -2,9 +2,10 @@
  * Outils du mode Planche (cahier-planche §3.2, §3.3, §5.10, lot 2) : composition de la barre et de la grille à partir
  * du catalogue déclaratif (`@parcours/sandbox-planche-model`), disponibilité (R20 : un outil sans machine d'états n'est jamais
  * actif, il est grisé avec le lot qui le livre), lecture du clavier (raccourcis, touches modificatrices, frappe au
- * champ Mesures). Pur : ni DOM, ni React, ni three.js.
+ * champ Mesures). Pictogrammes, raccourcis et emplacements viennent du registre unique du Sandbox
+ * (`REGISTRE_SANDBOX`, lot 2) : rien n'en est recopié ici. Pur : ni DOM, ni React, ni three.js.
  */
-import { OUTILS, machineParId, normaliserRaccourci, outilParId, outilParRaccourci, type Outil, type Touche } from "@parcours/sandbox-planche-model";
+import { BARRE_GAUCHE_SANDBOX, OUTILS, RACCOURCIS_FADI_OUTILS, entreeSandbox, machineParId, normaliserRaccourci, outilParId, outilParRaccourci, type EntreeSandbox, type Outil, type Touche } from "@parcours/sandbox-planche-model";
 import { LANGUE_INTERFACE, t, type Langue } from "../messages";
 
 /** Outils de caméra pris en charge par l'interface (navigation D-157) ; ils n'ont pas de machine d'états. */
@@ -21,14 +22,17 @@ export const OUTILS_BOOLEENS: ReadonlySet<string> = new Set([...OUTILS_SOLIDES, 
 /** Outils permis à un lecteur (C25) : navigation et sélection seulement. */
 const OUTILS_LECTURE: ReadonlySet<string> = new Set(["selection", "lasso", "metre", "orbite", "panoramique", "zoom", "zoom-etendu", "zoom-fenetre", "positionner-camera", "regarder-autour", "marcher"]);
 
-/** Ordre relevé de la barre de gauche (cahier-planche §3.2) ; un outil « barre » absent de la liste est ajouté à la fin. */
-const ORDRE_BARRE = ["selection", "gomme", "ligne", "rectangle", "pousser-tirer", "deplacer", "faire-pivoter", "echelle", "peinture", "orbite", "panoramique", "metre"];
+/** Entrée d'un outil au registre du Sandbox (absente pour un outil hors catalogue, dans les tests). */
+const entree = (o: Pick<Outil, "id">): EntreeSandbox | undefined => entreeSandbox("outil", o.id);
+/** Emplacement par défaut d'un outil : celui du registre (repli : le catalogue fourni). */
+const emplacement = (o: Outil): EntreeSandbox["emplacement"] => entree(o)?.emplacement ?? o.emplacement;
 
+/** Barre de gauche, dans l'ordre du registre (`BARRE_GAUCHE_SANDBOX`) ; un outil « barre » absent de l'ordre est ajouté à la fin. */
 export function outilsBarre(catalogue: readonly Outil[] = OUTILS): Outil[] {
-  const barre = catalogue.filter((o) => o.emplacement === "barre");
+  const barre = catalogue.filter((o) => emplacement(o) === "barre");
   const rang = (o: Outil) => {
-    const i = ORDRE_BARRE.indexOf(o.id);
-    return i < 0 ? ORDRE_BARRE.length + barre.indexOf(o) : i;
+    const i = BARRE_GAUCHE_SANDBOX.indexOf(o.id);
+    return i < 0 ? BARRE_GAUCHE_SANDBOX.length + barre.indexOf(o) : i;
   };
   return [...barre].sort((a, b) => rang(a) - rang(b));
 }
@@ -50,7 +54,7 @@ export function sectionsGrille(
   catalogue: readonly Outil[] = OUTILS,
   aMachine: (id: string) => boolean = (id) => machineParId(id) !== undefined,
 ): { libelle: string; outils: Outil[] }[] {
-  const grille = catalogue.filter((o) => o.emplacement === "grille" || (o.emplacement === "menu-contextuel" && aMachine(o.id)));
+  const grille = catalogue.filter((o) => emplacement(o) === "grille" || (emplacement(o) === "menu-contextuel" && aMachine(o.id)));
   return SECTIONS.map((s) => ({ libelle: s.libelle, outils: grille.filter((o) => s.familles.includes(o.famille)) })).filter((s) => s.outils.length > 0);
 }
 
@@ -96,54 +100,15 @@ export function disponibilite(o: Outil, { lecture, aMachine = (id) => machinePar
 }
 
 /**
- * Couche de raccourcis Fadi (écart Fadi déclaré, D-198, demande du maître d'ouvrage du 10 octobre 2026 : « chaque
- * élément doit avoir un raccourci »). Les raccourcis du catalogue sont le relevé SketchUp et restent intouchés ; un
- * outil dont le `raccourci` relevé vaut `null` reçoit ici une combinaison qui ne recouvre aucun raccourci relevé, ni
- * une touche de la Planche (G, K, Ctrl…, Maj + -), ni la frappe au champ Mesures (`commenceSaisie` : X et x en sont,
- * donc Maj + X est exclu) : **Maj + lettre** pour le dessin, la modification, les solides, la matière, la mesure et
- * l'annotation ; **Alt + Maj + lettre** pour les trois outils de caméra restants. Liste : `docs/planche/lots/barre-outils.md`.
+ * Couche de raccourcis Fadi (D-198 : « chaque élément doit avoir un raccourci ») : les outils dont le raccourci relevé
+ * vaut `null`. La table vit au registre du Sandbox (`RACCOURCIS_FADI_OUTILS`) ; elle est réexportée ici sous son nom.
  */
-export const RACCOURCIS_FADI: Readonly<Record<string, string>> = {
-  arc: "Maj+A",
-  balise: "Maj+B",
-  cotation: "Maj+C",
-  diviser: "Maj+D",
-  "enveloppe-exterieure": "Maj+E",
-  "suivez-moi": "Maj+F",
-  scinder: "Maj+G",
-  "arc-3-points": "Maj+H",
-  intersection: "Maj+I",
-  ajuster: "Maj+J",
-  "plan-de-coupe": "Maj+K",
-  "main-levee": "Maj+L",
-  "echantillon-matiere": "Maj+M",
-  secteur: "Maj+N",
-  rapporteur: "Maj+O",
-  polygone: "Maj+P",
-  "rectangle-pivote": "Maj+R",
-  soustraction: "Maj+S",
-  texte: "Maj+T",
-  union: "Maj+U",
-  retourner: "Maj+V",
-  axes: "Maj+Y",
-  "texte-3d": "Maj+Z",
-  "positionner-camera": "Alt+Maj+P",
-  "regarder-autour": "Alt+Maj+L",
-  marcher: "Alt+Maj+M",
-  // Chaîne des profilés (lots L12 et L13, D-215, D-216) : outils propres à Fadi.
-  profile: "Maj+Q",
-  "profiles-aretes": "Alt+Maj+Q",
-  onglet: "Alt+Maj+O",
-  "coupe-profil": "Alt+Maj+B",
-  "allonger-piece": "Alt+Maj+A",
-  "aligner-face": "Alt+Maj+F",
-  // Lot L21 (D-202) : outil propre à Fadi.
-  epaissir: "Alt+Maj+J",
-};
+export const RACCOURCIS_FADI: Readonly<Record<string, string>> = RACCOURCIS_FADI_OUTILS;
 
-/** Raccourci effectif d'un outil : celui du catalogue (relevé), sinon celui de la couche Fadi, sinon `null`. */
+/** Raccourci effectif d'un outil : celui du registre (relevé, sinon couche Fadi) ; hors registre, le relevé fourni. */
 export function raccourciOutil(o: Pick<Outil, "id" | "raccourci">): string | null {
-  return o.raccourci ?? RACCOURCIS_FADI[o.id] ?? null;
+  const e = entree(o);
+  return e ? e.raccourci : o.raccourci ?? RACCOURCIS_FADI[o.id] ?? null;
 }
 
 /** Outil désigné par un raccourci de la couche Fadi (forme canonique), ou `null`. */
@@ -178,62 +143,8 @@ export function titreOutil(o: Outil, raison: string | null): string {
   return `${o.libelle}${r ? ` (${r})` : ""}${raison ? ` — ${raison}` : ""}`;
 }
 
-/** Pictogrammes (dessins propres à Fadi, §3.6 : choix Fadi). */
-const PICTOS: Readonly<Record<string, string>> = {
-  selection: "↖",
-  lasso: "➰",
-  gomme: "⌫",
-  ligne: "╱",
-  "main-levee": "〰",
-  rectangle: "▭",
-  "rectangle-pivote": "◇",
-  cercle: "◯",
-  polygone: "⬡",
-  arc: "◠",
-  "arc-2-points": "⌒",
-  "arc-3-points": "◡",
-  secteur: "◔",
-  "texte-3d": "A",
-  "pousser-tirer": "⇕",
-  deplacer: "✥",
-  "faire-pivoter": "⟳",
-  echelle: "⤢",
-  decalage: "⧈",
-  "suivez-moi": "↬",
-  profile: "▰",
-  "profiles-aretes": "⫴",
-  onglet: "◸",
-  "coupe-profil": "⧄",
-  "allonger-piece": "⇿",
-  "aligner-face": "⫠",
-  epaissir: "▥",
-  retourner: "⇋",
-  diviser: "÷",
-  "enveloppe-exterieure": "⬚",
-  union: "∪",
-  soustraction: "⊖",
-  ajuster: "⊘",
-  intersection: "∩",
-  scinder: "⫛",
-  peinture: "▨",
-  "echantillon-matiere": "◉",
-  metre: "↔",
-  rapporteur: "∡",
-  axes: "⊹",
-  cotation: "⟷",
-  texte: "T",
-  "plan-de-coupe": "⊟",
-  balise: "⌖",
-  orbite: "⟲",
-  panoramique: "✣",
-  zoom: "⊕",
-  "zoom-etendu": "⤧",
-  "zoom-fenetre": "⧉",
-  "positionner-camera": "◎",
-  "regarder-autour": "◐",
-  marcher: "⇡",
-};
-export const pictoOutil = (id: string): string => PICTOS[id] ?? "•";
+/** Pictogramme d'un outil, lu au registre du Sandbox (repli « • » pour un identifiant inconnu). */
+export const pictoOutil = (id: string): string => entreeSandbox("outil", id)?.picto || "•";
 
 // -----------------------------------------------------------------------------------------------------------------
 // Clavier

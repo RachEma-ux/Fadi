@@ -3,8 +3,15 @@
  * propre icône, sa place dans la barre d'actions flottante et un raccourci clavier (règle d'or, `AGENTS.md`) ; leur
  * disponibilité se calcule ici, sans React ni DOM, pour que le menu, la barre et le clavier disent la même chose.
  */
-import { type Modele, contexte, definitionsAtteintes, normaliserRaccourci } from "@parcours/sandbox-planche-model";
+import { type Modele, contexte, definitionsAtteintes, entreeCommande, normaliserRaccourci } from "@parcours/sandbox-planche-model";
 import type { CleMessage } from "../messages";
+
+/** Pictogramme et raccourci d'une commande : lus au registre unique du Sandbox (`REGISTRE_SANDBOX`, lot 2), jamais recopiés. */
+function depuisRegistre(id: string): { readonly picto: string; readonly raccourci: string } {
+  const e = entreeCommande(id);
+  if (e.raccourci === null) throw new Error(`Registre du Sandbox : commande « ${id} » sans raccourci`);
+  return { picto: e.picto, raccourci: e.raccourci };
+}
 
 export type IdCommandeObjet = "groupe" | "composant" | "eclater" | "rendre-unique" | "diviser" | "diviser-courbe";
 
@@ -27,12 +34,12 @@ export interface CommandeObjet {
  * d'arête d'O-3 (Diviser, Diviser en segments), présentes seulement quand la sélection en contient.
  */
 export const COMMANDES_OBJETS: readonly CommandeObjet[] = [
-  { id: "groupe", picto: "⊞", libelle: "planche.menu.groupe", court: "planche.objets.court.groupe", raccourci: "Ctrl+G" },
-  { id: "composant", picto: "❖", libelle: "planche.menu.composant", court: "planche.objets.court.composant", raccourci: "G" },
-  { id: "eclater", picto: "⊠", libelle: "planche.menu.eclater", court: "planche.objets.court.eclater", raccourci: "Ctrl+Maj+G" },
-  { id: "rendre-unique", picto: "⎘", libelle: "planche.menu.rendre-unique", court: "planche.objets.court.rendre-unique", raccourci: "Alt+Maj+U" },
-  { id: "diviser", picto: "⦙", libelle: "planche.menu.diviser", court: "planche.objets.court.diviser", raccourci: "Alt+Maj+D", contextuelle: true },
-  { id: "diviser-courbe", picto: "⌇", libelle: "planche.menu.diviser-courbe", court: "planche.objets.court.diviser-courbe", raccourci: "Alt+Maj+C", contextuelle: true },
+  { id: "groupe", ...depuisRegistre("groupe"), libelle: "planche.menu.groupe", court: "planche.objets.court.groupe" },
+  { id: "composant", ...depuisRegistre("composant"), libelle: "planche.menu.composant", court: "planche.objets.court.composant" },
+  { id: "eclater", ...depuisRegistre("eclater"), libelle: "planche.menu.eclater", court: "planche.objets.court.eclater" },
+  { id: "rendre-unique", ...depuisRegistre("rendre-unique"), libelle: "planche.menu.rendre-unique", court: "planche.objets.court.rendre-unique" },
+  { id: "diviser", ...depuisRegistre("diviser"), libelle: "planche.menu.diviser", court: "planche.objets.court.diviser", contextuelle: true },
+  { id: "diviser-courbe", ...depuisRegistre("diviser-courbe"), libelle: "planche.menu.diviser-courbe", court: "planche.objets.court.diviser-courbe", contextuelle: true },
 ];
 
 export const commandeObjet = (id: IdCommandeObjet): CommandeObjet => COMMANDES_OBJETS.find((c) => c.id === id) as CommandeObjet;
@@ -91,8 +98,8 @@ export interface CommandeContexte {
   readonly raccourci: string;
 }
 export const COMMANDES_CONTEXTE: readonly CommandeContexte[] = [
-  { id: "fermer", picto: "⤴", libelle: "planche.contexte.fermer", raccourci: "Maj+Échap" },
-  { id: "fermer-tout", picto: "⤒", libelle: "planche.contexte.fermer-tout", raccourci: "Maj+Origine" },
+  { id: "fermer", ...depuisRegistre("fermer"), libelle: "planche.contexte.fermer" },
+  { id: "fermer-tout", ...depuisRegistre("fermer-tout"), libelle: "planche.contexte.fermer-tout" },
 ];
 
 /**
@@ -106,7 +113,7 @@ export interface CommandeLien {
   readonly court: CleMessage;
   readonly raccourci: string;
 }
-export const COMMANDE_DETACHER_LIEN: CommandeLien = { id: "detacher-lien", picto: "⛓", libelle: "planche.lien.detacher", court: "planche.lien.detacher.court", raccourci: "Alt+Maj+K" };
+export const COMMANDE_DETACHER_LIEN: CommandeLien = { id: "detacher-lien", ...depuisRegistre("detacher-lien"), libelle: "planche.lien.detacher", court: "planche.lien.detacher.court" };
 
 
 /**
@@ -121,9 +128,9 @@ export interface CommandeNavigateur {
   readonly raccourci: string;
 }
 export const COMMANDES_NAVIGATEUR: readonly CommandeNavigateur[] = [
-  { id: "groupe-vide", picto: "⊡", libelle: "planche.menu.groupe-vide", raccourci: "Alt+Maj+G" },
-  { id: "deplacer-vers", picto: "⇲", libelle: "planche.menu.deplacer-vers", raccourci: "Alt+Maj+V" },
-  { id: "renommer", picto: "✎", libelle: "planche.menu.renommer", raccourci: "F2" },
+  { id: "groupe-vide", ...depuisRegistre("groupe-vide"), libelle: "planche.menu.groupe-vide" },
+  { id: "deplacer-vers", ...depuisRegistre("deplacer-vers"), libelle: "planche.menu.deplacer-vers" },
+  { id: "renommer", ...depuisRegistre("renommer"), libelle: "planche.menu.renommer" },
 ];
 
 export function disponibiliteNavigateur(id: IdCommandeNavigateur, s: EtatSelectionObjets): Disponibilite {
@@ -214,8 +221,8 @@ export interface CommandeVue {
   readonly raccourci: string;
 }
 export const COMMANDES_VUE: readonly CommandeVue[] = [
-  { id: "isoler", picto: "⦿", libelle: "planche.menu.isoler", court: "planche.objets.court.isoler", raccourci: "Alt+Maj+I" },
-  { id: "masquer-reste", picto: "⬒", libelle: "planche.affichage.masquer-reste", court: "planche.objets.court.masquer-reste", raccourci: "Alt+Maj+R" },
+  { id: "isoler", ...depuisRegistre("isoler"), libelle: "planche.menu.isoler", court: "planche.objets.court.isoler" },
+  { id: "masquer-reste", ...depuisRegistre("masquer-reste"), libelle: "planche.affichage.masquer-reste", court: "planche.objets.court.masquer-reste" },
 ];
 
 /**
@@ -231,11 +238,11 @@ export interface CommandeDebit {
   readonly raccourci: string;
 }
 export const COMMANDES_DEBIT: readonly CommandeDebit[] = [
-  { id: "liste-debit", picto: "☷", libelle: "planche.debit.ouvrir", court: "planche.debit.court.ouvrir", raccourci: "Alt+Maj+T" },
-  { id: "renumeroter", picto: "№", libelle: "planche.debit.renumeroter", court: "planche.debit.court.renumeroter", raccourci: "Alt+Maj+N" },
-  { id: "etiquettes", picto: "🏷", libelle: "planche.debit.etiquettes", court: "planche.debit.court.etiquettes", raccourci: "Alt+Maj+E" },
-  { id: "effacer-etiquettes", picto: "⌧", libelle: "planche.debit.effacer-etiquettes", court: "planche.debit.court.effacer-etiquettes", raccourci: "Alt+Maj+W" },
-  { id: "exporter-debit", picto: "⇩", libelle: "planche.debit.exporter", court: "planche.debit.court.exporter", raccourci: "Alt+Maj+X" },
+  { id: "liste-debit", ...depuisRegistre("liste-debit"), libelle: "planche.debit.ouvrir", court: "planche.debit.court.ouvrir" },
+  { id: "renumeroter", ...depuisRegistre("renumeroter"), libelle: "planche.debit.renumeroter", court: "planche.debit.court.renumeroter" },
+  { id: "etiquettes", ...depuisRegistre("etiquettes"), libelle: "planche.debit.etiquettes", court: "planche.debit.court.etiquettes" },
+  { id: "effacer-etiquettes", ...depuisRegistre("effacer-etiquettes"), libelle: "planche.debit.effacer-etiquettes", court: "planche.debit.court.effacer-etiquettes" },
+  { id: "exporter-debit", ...depuisRegistre("exporter-debit"), libelle: "planche.debit.exporter", court: "planche.debit.court.exporter" },
 ];
 
 /** Lot L17 : commandes d'édition d'une pièce (bloc de l'Info entité ; règle d'or : icône, barre, raccourci). */
@@ -248,8 +255,8 @@ export interface CommandePiece {
   readonly raccourci: string;
 }
 export const COMMANDES_PIECE: readonly CommandePiece[] = [
-  { id: "piece-section", picto: "⇆", libelle: "planche.piece.section", court: "planche.piece.court.section", raccourci: "Alt+Maj+S" },
-  { id: "piece-rotation", picto: "⥁", libelle: "planche.piece.rotation", court: "planche.piece.court.rotation", raccourci: "Alt+Maj+H" },
+  { id: "piece-section", ...depuisRegistre("piece-section"), libelle: "planche.piece.section", court: "planche.piece.court.section" },
+  { id: "piece-rotation", ...depuisRegistre("piece-rotation"), libelle: "planche.piece.rotation", court: "planche.piece.court.rotation" },
 ];
 
 /** Disponibilité des commandes de pièce : une seule pièce sélectionnée, hors lecture, une section choisie (section). */
