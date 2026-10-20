@@ -1,10 +1,10 @@
 #!/bin/bash
 # Tests de fadi-preprod-auto sans root, sans réseau ni démon : dispositions jetables, doubles de curl (API GitHub,
 # /version, Healthchecks) et de fadi-preprod (doubles-auto/). Couvre le déploiement nominal, l'absence de nouveauté,
-# les refus (CI rouge, en cours, absente ou imitée par une autre application, commit hors de main), l'API injoignable
+# les refus (CI rouge, en cours, absente, contrôles d'une PR ou d'un autre workflow, commit hors de main), l'API injoignable
 # ou limitée, le budget d'appels, les échecs de construction et de démarrage avec retour à l'image précédente, l'échec
 # du retour, le verrou, l'état JSON, la notification (adresse lue dans un fichier 0600, jamais en argument) et les
-# unités systemd.
+# unités systemd, la reprise d'un passage interrompu.
 # Usage : deploy/preprod/tests/run-auto.sh   (requiert bash, python3, flock)
 set -uo pipefail
 umask 077
@@ -24,15 +24,15 @@ reussi() { ok=$((ok + 1)); echo "✓ $1"; }
 rate() { ko=$((ko + 1)); echo "✗ $1"; [ -n "${2:-}" ] && sed 's/^/    /' <<< "$2"; }
 verifie() { local lib=$1; shift; if "$@"; then reussi "$lib"; else rate "$lib" "$(tail -15 "$C/sortie" 2>/dev/null)"; fi; }
 
-# Contrôles GitHub : « nom:statut:conclusion[:application] » …
+# Jobs de l'exécution CI du push sur main : « nom:statut:conclusion » …
 controles() {
   python3 -I - "$@" <<'PY'
 import json, sys
 runs = []
 for i, a in enumerate(sys.argv[1:]):
     p = a.split(":") + [""] * 4
-    runs.append({"id": 100 + i, "name": p[0], "status": p[1], "conclusion": p[2] or None, "app": {"slug": p[3] or "github-actions"}})
-print(json.dumps({"total_count": len(runs), "check_runs": runs}))
+    runs.append({"id": 100 + i, "name": p[0], "status": p[1], "conclusion": p[2] or None})
+print(json.dumps({"total_count": len(runs), "jobs": runs}))
 PY
 }
 VERTS=(validate:completed:success e2e:completed:success image:completed:success "e2e (parcours):completed:success")
@@ -70,7 +70,7 @@ verifie "fadi-preprod appelé en administrateur (sans SUDO_USER)" bash -c "! gre
 verifie "état : succès, commit en ligne et dernier essai = $S" \
   test "$(etat resultat):$(etat en_ligne):$(etat dernier_essai):$(etat etape)" = "succes:$S:$S:fin"
 verifie "état JSON en 0600" test "$(stat -c %a "$C/base/etat.json")" = 600
-verifie "3 appels à l'API GitHub (main, contrôles, comparaison)" test "$(appels_api)" = 3
+verifie "4 appels à l'API GitHub (main, exécution CI du push, jobs, comparaison)" test "$(appels_api)" = 4
 verifie "/version contrôlé après le démarrage" grep -q "GET /version → commit $S (attendu $S)" "$C/sortie"
 verifie "notification de succès (ping, pas /fail) avec le commit" grep -qx "$HC | fadi-preprod-auto : $S déployé.*" "$C/mock/notifications"
 J=$(ls -d "$C"/base/out/*-auto 2>/dev/null | head -1)
@@ -100,7 +100,7 @@ cas rouge; en_ligne "$P"
 controles validate:completed:success e2e:completed:success image:completed:failure > "$C/checks.json"; auto
 verifie "CI rouge (image) : refus (code 0), rien déployé" bash -c "[ $RC = 0 ] && [ ! -s '$C/mock/fp.trace' ]"
 verifie "CI rouge : état refus nommant le contrôle" bash -c "[ '$(etat resultat)' = refus ] && grep -q 'image=failure' '$C/base/etat.json'"
-verifie "CI rouge : aucune comparaison demandée (2 appels)" test "$(appels_api)" = 2
+verifie "CI rouge : aucune comparaison demandée (3 appels)" test "$(appels_api)" = 3
 
 cas annule; en_ligne "$P"
 controles validate:completed:success e2e:completed:cancelled image:completed:success > "$C/checks.json"; auto
@@ -110,19 +110,33 @@ cas absent; en_ligne "$P"
 controles validate:completed:success e2e:completed:success > "$C/checks.json"; auto
 verifie "contrôle image absent : attente, rien déployé" bash -c "[ '$(etat resultat)' = attente ] && [ ! -s '$C/mock/fp.trace' ]"
 
-cas imite; en_ligne "$P"
-controles validate:completed:success e2e:completed:success image:completed:failure image:completed:success:autre-application > "$C/checks.json"; auto
-verifie "contrôle imité par une autre application ignoré : refus" bash -c "[ '$(etat resultat)' = refus ] && [ ! -s '$C/mock/fp.trace' ]"
-controles validate:completed:success:intrus e2e:completed:success:intrus image:completed:success:intrus > "$C/checks.json"; auto
-verifie "contrôles d'une autre application seulement : rien déployé" bash -c "[ '$(etat resultat)' = attente ] && [ ! -s '$C/mock/fp.trace' ]"
+# Exécutions : « id:workflow:événement:branche:commit » …
+executions() {
+  python3 -I - "$@" <<'PY'
+import json, sys
+print(json.dumps({"workflow_runs": [dict(zip(("id", "path", "event", "head_branch", "head_sha"), a.split(":")), id=int(a.split(":")[0])) for a in sys.argv[1:]]}))
+PY
+}
+cas pr; en_ligne "$P"; executions "9:.github/workflows/ci.yml:pull_request:feat/x:$S" > "$C/runs.json"; auto MOCK_RUNS="$C/runs.json"
+verifie "contrôles verts d'une PR seulement (aucune exécution du push sur main) : attente, rien déployé" \
+  bash -c "[ $RC = 0 ] && [ '$(etat resultat)' = attente ] && [ ! -s '$C/mock/fp.trace' ] && [ $(appels_api) = 2 ]"
+executions "9:.github/workflows/autre.yml:push:main:$S" "10:.github/workflows/ci.yml:push:main:$P" > "$C/runs.json"; auto MOCK_RUNS="$C/runs.json"
+verifie "autre workflow, ou CI d'un autre commit : ignorés, rien déployé" bash -c "[ '$(etat resultat)' = attente ] && [ ! -s '$C/mock/fp.trace' ]"
+executions "9:.github/workflows/ci.yml:pull_request:feat/x:$S" "8:.github/workflows/ci.yml:push:main:$S" > "$C/runs.json"; : > "$C/mock/curl.trace"; auto MOCK_RUNS="$C/runs.json"
+verifie "exécution du push sur main retenue malgré une exécution de PR plus récente" \
+  bash -c "grep -q 'actions/runs/8/jobs' '$C/mock/curl.trace' && grep -q '^sync $S' '$C/mock/fp.trace'"
+cas recree; en_ligne "$P"; executions "8:.github/workflows/ci.yml:push:main:$S" "12:.github/workflows/ci.yml:push:main:$S" > "$C/runs.json"; auto MOCK_RUNS="$C/runs.json"
+verifie "exécution recréée : la plus récente fait foi" grep -q 'actions/runs/12/jobs' "$C/mock/curl.trace"
+cas runs-illisible; en_ligne "$P"; echo '<html>' > "$C/runs.json"; auto MOCK_RUNS="$C/runs.json"
+verifie "liste des exécutions illisible : refus, rien déployé" bash -c "[ '$(etat resultat)' = refus ] && [ ! -s '$C/mock/fp.trace' ]"
 
 cas relance; en_ligne "$P"
 controles validate:completed:success e2e:completed:failure image:completed:success e2e:completed:success > "$C/checks.json"; auto
-verifie "contrôle relancé : la dernière exécution fait foi (verte) → déployé" grep -q "^sync $S" "$C/mock/fp.trace"
+verifie "job relancé : la dernière tentative fait foi (verte) → déployé" grep -q "^sync $S" "$C/mock/fp.trace"
 
 cas tronque; en_ligne "$P"
 python3 -I -c 'import json, sys; d = json.load(open(sys.argv[1])); d["total_count"] = 250; json.dump(d, open(sys.argv[1], "w"))' "$C/checks.json"; auto
-verifie "liste de contrôles tronquée : refus" bash -c "[ '$(etat resultat)' = refus ] && [ ! -s '$C/mock/fp.trace' ]"
+verifie "liste de jobs tronquée : refus" bash -c "[ '$(etat resultat)' = refus ] && [ ! -s '$C/mock/fp.trace' ]"
 
 for st in behind diverged ""; do
   cas "hors-main-${st:-vide}"; en_ligne "$P"; auto MOCK_COMPARE="$st"
@@ -183,6 +197,22 @@ verifie "premier déploiement (aucun état) : déployé" bash -c "[ $RC = 0 ] &&
 cas approuve; echo "$P" > "$C/base/approved-commit"; echo "$P" > "$C/mock/src"; echo "$P" > "$C/mock/en-ligne"
 auto MOCK_FP_FAIL='smoke#1'
 verifie "sans état, le commit approuvé sert de version précédente" bash -c "[ $RC = 1 ] && grep -q '^sync $P' '$C/mock/fp.trace' && [ '$(etat en_ligne)' = $P ]"
+
+echo "== Passage interrompu"
+interrompu() {  # $1 = étape
+  python3 -I -c 'import json, sys; json.dump({"en_ligne": sys.argv[2], "dernier_essai": sys.argv[3], "resultat": "en-cours", "etape": sys.argv[4]}, open(sys.argv[1], "w"))' \
+    "$C/base/etat.json" "$P" "$S" "$1"
+  chmod 0600 "$C/base/etat.json"; echo "$S" > "$C/mock/src"; echo "$S" > "$C/mock/en-ligne"
+}
+for e in build migrate retour; do
+  cas "interrompu-$e"; interrompu "$e"; auto
+  verifie "passage interrompu à l'étape $e : retour à $P (sync, up, smoke, /version), code 1, sans nouvel appel CI" \
+    bash -c "[ $RC = 1 ] && [ '$(trace)' = 'sync $P;up;smoke' ] && [ \"\$(cat '$C/mock/en-ligne')\" = $P ] && [ $(appels_api) = 1 ]"
+  verifie "passage interrompu à l'étape $e : état échec, en ligne = $P, notification /fail" \
+    bash -c "[ '$(etat resultat):$(etat etape):$(etat en_ligne)' = 'echec:interrompu-$e:$P' ] && grep -q '^$HC/fail | ' '$C/mock/notifications'"
+  : > "$C/mock/fp.trace"; auto
+  verifie "après reprise ($e) : commit non rejoué" bash -c "[ $RC = 0 ] && [ ! -s '$C/mock/fp.trace' ]"
+done
 
 echo "== Verrou, disposition et notification"
 cas verrou; en_ligne "$P"

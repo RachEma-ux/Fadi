@@ -6,9 +6,10 @@
 # lue (aucun jeton, aucun secret dans GitHub, aucune connexion entrante).
 #
 # Un passage :
-#   1. lit le dernier commit de `main` (1 appel) ; déjà essayé (succès ou échec) → rien à faire ;
-#   2. exige les contrôles validate, e2e et image verts sur ce commit (exécutions GitHub Actions seulement ; en cours →
-#      on attend le passage suivant ; rouge ou absent → refus consigné) ;
+#   1. lit le dernier commit de `main` (1 appel) ; déjà essayé (succès ou échec) → rien à faire ; essai interrompu
+#      (« en-cours » sans passage actif) → retour à la version en ligne, comme un échec ;
+#   2. exige les jobs validate, e2e et image verts dans l'exécution de ci.yml déclenchée par le push de ce commit sur
+#      main (les contrôles d'une PR ne comptent pas ; en cours → on attend le passage suivant ; rouge → refus consigné) ;
 #   3. exige que le commit appartienne à l'historique de `main` (comparaison) ;
 #   4. fadi-preprod sync <sha>, build, migrate, up, smoke, /version = <sha>, puis un jeu court de scénarios (la CI a
 #      déjà joué tous les scénarios).
@@ -19,7 +20,7 @@
 # État : /opt/fadi-preprod/etat.json (commit, heure, étape, résultat, message, commit en ligne, dernier essai), lu par
 # `fadi-preprod status` et `fadi-preprod show`. Journal d'un déploiement : /opt/fadi-preprod/out/<run>-auto/journal.log.
 # Verrou : un seul passage à la fois (flock). Budget de l'API publique (60 appels / heure) : 1 appel par passage sans
-# nouveauté, 3 au plus sinon ; aucun appel si la réserve annoncée par GitHub tombe sous BUDGET_MIN.
+# nouveauté, 4 au plus sinon ; aucun appel si la réserve annoncée par GitHub tombe sous BUDGET_MIN.
 # Notification : Healthchecks (succès → ping, échec → /fail, avec un résumé) ; l'adresse est lue dans
 # /etc/fadi-preprod-auto/healthchecks-url (root, 0600, jamais dans le dépôt), passée à curl par l'entrée standard pour
 # ne jamais paraître dans la liste des processus. Absente : déploiement inchangé, notification non envoyée (journalisé).
@@ -114,27 +115,39 @@ api() {
   fi
 }
 
-# Verdict des contrôles requis sur un commit : vert | en-cours | rouge:<détail>. Seules les exécutions de l'application
-# GitHub Actions comptent (une autre application ne peut pas imiter un contrôle) ; pour chaque nom, la plus récente.
+# Exécution du workflow CI déclenchée par le push du commit sur main : run:<id> | en-cours:<détail>. Les contrôles d'une
+# PR portés par le même commit ne comptent pas : seule l'exécution `push` de ci.yml sur main fait foi, la plus récente si
+# elle a été recréée.
+execution_ci_main() {  # $1 = réponse de actions/runs, $2 = commit
+  python3 -I - "$1" "$2" <<'PY'
+import json, sys
+try: runs = json.load(open(sys.argv[1]))["workflow_runs"]
+except Exception: print("rouge:réponse illisible"); sys.exit()
+ok = [r for r in runs if r.get("path") == ".github/workflows/ci.yml" and r.get("event") == "push"
+      and r.get("head_branch") == "main" and r.get("head_sha") == sys.argv[2] and isinstance(r.get("id"), int)]
+print(f"run:{max(r['id'] for r in ok)}" if ok else "en-cours:aucune exécution CI du push sur main")
+PY
+}
+
+# Verdict des jobs requis de cette exécution (dernière tentative) : vert | en-cours:<détail> | rouge:<détail>.
 verdict_controles() {
   python3 -I - "$1" "$CONTROLES_REQUIS" <<'PY'
 import json, sys
 try:
-    d = json.load(open(sys.argv[1])); runs = d["check_runs"]; total = d["total_count"]
+    d = json.load(open(sys.argv[1])); jobs = d["jobs"]; total = d["total_count"]
 except Exception:
     print("rouge:réponse illisible"); sys.exit()
-if total > len(runs): print(f"rouge:{total} contrôles, liste tronquée"); sys.exit()
+if total > len(jobs): print(f"rouge:{total} jobs, liste tronquée"); sys.exit()
 dernier = {}
-for r in runs:
-    if (r.get("app") or {}).get("slug") != "github-actions": continue
-    n = r.get("name")
-    if n not in dernier or r.get("id", 0) > dernier[n].get("id", 0): dernier[n] = r
+for j in jobs:
+    n = j.get("name")
+    if n not in dernier or j.get("id", 0) > dernier[n].get("id", 0): dernier[n] = j
 manquants, encours, rouges = [], [], []
 for n in sys.argv[2].split():
-    r = dernier.get(n)
-    if r is None: manquants.append(n)
-    elif r.get("status") != "completed": encours.append(n)
-    elif r.get("conclusion") != "success": rouges.append(f"{n}={r.get('conclusion')}")
+    j = dernier.get(n)
+    if j is None: manquants.append(n)
+    elif j.get("status") != "completed": encours.append(n)
+    elif j.get("conclusion") != "success": rouges.append(f"{n}={j.get('conclusion')}")
 if rouges: print("rouge:" + ", ".join(rouges))
 elif encours: print("en-cours:" + ", ".join(encours))
 elif manquants: print("en-cours:absents " + ", ".join(manquants))
@@ -210,17 +223,31 @@ echec_construction() {  # $1 = étape, $2 = commit visé, $3 = commit précéden
   exit 1
 }
 
+# Journal d'un passage qui agit : out/<run>-auto/journal.log, lisible par `fadi-preprod show`.
+nouveau_journal() {
+  RUNID=$(date -u +%Y%m%dT%H%M%SZ)-$$-auto
+  [ -e "$OUTROOT" ] || mkdir -m 0700 "$OUTROOT"
+  sur "$OUTROOT" d
+  mkdir -m 0700 "$OUTROOT/$RUNID"
+  JOURNAL=$OUTROOT/$RUNID/journal.log
+}
+
+reprendre_interrompu() {  # $1 = commit dont le déploiement a été interrompu
+  local prec etape
+  prec=$(etat_lire en_ligne); [[ $prec =~ ^[0-9a-f]{40}$ ]] && [ "$prec" != "$1" ] || prec=
+  etape=$(etat_lire etape)
+  nouveau_journal
+  log "passage précédent interrompu ($1, étape ${etape:-inconnue}) — journal : fadi-preprod show $RUNID journal.log" | tee -a "$JOURNAL"
+  retour_arriere "interrompu-${etape:-inconnue}" "$1" "$prec"
+}
+
 deployer() {  # $1 = commit
   local sha=$1 prec etape
   prec=$(etat_lire en_ligne)
   [ -z "$prec" ] && [ -f "$BASE/approved-commit" ] && [ ! -L "$BASE/approved-commit" ] && prec=$(tr -dc '0-9a-f' < "$BASE/approved-commit")
   [[ $prec =~ ^[0-9a-f]{40}$ ]] || prec=
   [ "$prec" = "$sha" ] && prec=
-  RUNID=$(date -u +%Y%m%dT%H%M%SZ)-$$-auto
-  [ -e "$OUTROOT" ] || mkdir -m 0700 "$OUTROOT"
-  sur "$OUTROOT" d
-  mkdir -m 0700 "$OUTROOT/$RUNID"
-  JOURNAL=$OUTROOT/$RUNID/journal.log
+  nouveau_journal
   log "déploiement de $sha (précédent : ${prec:-aucun}) — journal : fadi-preprod show $RUNID journal.log" | tee -a "$JOURNAL"
   etat_ecrire "commit=$sha" etape=sync resultat=en-cours message= "dernier_essai=$sha" "journal=$RUNID"
 
@@ -258,11 +285,19 @@ api "commits/main" application/vnd.github.sha "$TMP/main"
 sha=$(tr -d '[:space:]' < "$TMP/main")
 [[ $sha =~ ^[0-9a-f]{40}$ ]] || { etat_ecrire etape=api resultat=erreur "message=commit de main illisible"; die "commit de main illisible" 3; }
 if [ "$sha" = "$(etat_lire dernier_essai)" ]; then
+  # Un passage interrompu (délai systemd, redémarrage, arrêt) laisse « en-cours » sans verrou tenu : la version en ligne
+  # est rétablie, comme pour un échec ; un état terminal (succès, échec) n'est pas rejoué.
+  [ "$(etat_lire resultat)" = en-cours ] && reprendre_interrompu "$sha"
   log "main = $sha, déjà essayé ($(etat_lire resultat)) : rien à faire"; exit 0
 fi
 
-api "commits/$sha/check-runs?per_page=100" application/vnd.github+json "$TMP/controles"
-verdict=$(verdict_controles "$TMP/controles")
+api "actions/runs?head_sha=$sha&event=push&branch=main&per_page=20" application/vnd.github+json "$TMP/executions"
+execution=$(execution_ci_main "$TMP/executions" "$sha")
+case "$execution" in
+  run:*) api "actions/runs/${execution#run:}/jobs?filter=latest&per_page=100" application/vnd.github+json "$TMP/controles"
+    verdict=$(verdict_controles "$TMP/controles") ;;
+  *) verdict=$execution ;;
+esac
 case "$verdict" in
   vert) log "contrôles $CONTROLES_REQUIS verts sur $sha" ;;
   en-cours*) etat_ecrire "commit=$sha" etape=controles resultat=attente "message=CI en cours (${verdict#en-cours:})"

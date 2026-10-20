@@ -25,7 +25,9 @@ case "$url" in
     chemin=${url#https://api.github.com/repos/RachEma-ux/Fadi/}
     case "$chemin" in
       commits/main) reponse 200 "${MOCK_MAIN_SHA}" ;;
-      commits/*/check-runs*) reponse 200 "$(cat "${MOCK_CHECKS:?}")" ;;
+      actions/runs/*/jobs*) reponse 200 "$(cat "${MOCK_CHECKS:?}")" ;;
+      actions/runs\?*) if [ -n "${MOCK_RUNS:-}" ]; then reponse 200 "$(cat "$MOCK_RUNS")"; fi
+        reponse 200 "{\"workflow_runs\":[{\"id\":7,\"path\":\".github/workflows/ci.yml\",\"event\":\"push\",\"head_branch\":\"main\",\"head_sha\":\"${MOCK_MAIN_SHA}\"}]}" ;;
       compare/*) reponse 200 "{\"status\":\"${MOCK_COMPARE-ahead}\"}" ;;
     esac
     reponse 404 '{"message":"Not Found"}' ;;
