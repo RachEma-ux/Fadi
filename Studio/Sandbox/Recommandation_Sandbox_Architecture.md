@@ -1,6 +1,6 @@
 # Recommandation d'architecture — Sandbox
 
-20 octobre 2026 · Roch · **Statut : orientation décidée ; quatre points restent à valider avant tout code** (aucune implémentation engagée)
+20 octobre 2026 · Roch · **Statut : orientation décidée ; trois points restent à valider avant tout code** (aucune implémentation engagée)
 
 Le Sandbox devient un module autonome, avec son propre registre d'outils, une interface par défaut proche de SketchUp et des pictogrammes Tabler.
 
@@ -16,7 +16,7 @@ Le Sandbox devient un module autonome, avec son propre registre d'outils, une in
 | 20 octobre 2026 | Bibliothèque de pictogrammes : **Tabler Icons** (MIT), après comparaison avec Lucide et IconPark | Décidé | 4 |
 | — | Enregistrement des préférences dans le navigateur | À confirmer | 2 |
 | — | Catalogue de référence comme contenu initial du registre | À valider | 2 |
-| — | Dessinateur des 13 pictogrammes sur mesure et couleurs par famille | À désigner | 4 |
+| 20 octobre 2026 | **12 pictogrammes sur mesure** dessinés dans le style Tabler et **couleurs par famille**, validés sur la planche de comparaison | Décidé | 4 |
 
 Référence : [Catalogue Sandbox — 86 entrées](Catalogue_Sandbox_86_entrees.md).
 
@@ -62,12 +62,24 @@ La sous-liste « Objets et vue » (deux clics) disparaît, ainsi que la confusio
 - **Installation** : paquet npm `@tabler/icons`, version figée ; seules les icônes utilisées sont embarquées ; l'avis de licence MIT est conservé dans le dépôt.
 - **Style Fadi, inspiré de SketchUp** :
   - trait de 2 px sur la grille de 24 px de Tabler ;
-  - couleur selon la famille : Dessin en bleu, Modification en rouge, Mesure en ocre, Matériau en orange, Caméra en vert, Sélection et Info en gris-bleu ;
+  - couleur selon la famille (validée le 20 octobre 2026) :
+
+    | Famille | Couleur | Thème clair | Thème sombre |
+    | --- | --- | --- | --- |
+    | Dessin | bleu | `#1f6fd1` | `#5aa0ff` |
+    | Modification | rouge | `#d23b2c` | `#ff6b5c` |
+    | Mesure | ocre | `#b5730a` | `#e3a23a` |
+    | Matériau | orange | `#c2410c` | `#f2774a` |
+    | Caméra | vert | `#1e8a5a` | `#4cc58d` |
+    | Sélection, Objets | gris-bleu | `#3f5c7a` | `#8fb0d4` |
+    | Info | gris | `#5b6672` | `#9aa5b1` |
+
   - la variante pleine de Tabler signale l'outil actif.
-- **Pictogrammes à dessiner sur mesure**, dans la grille et l'épaisseur de trait de Tabler :
-  - sans équivalent chez Tabler : Pousser/Tirer, Décalage, Suivez-moi, Rapporteur ;
-  - manques relevés dans le catalogue : Pipette, Éclater ;
-  - outils propres à Fadi : Profilé, Onglet, Coupe par profil, Allonger une pièce, Aligner une face, Épaissir, Débit.
+- **12 pictogrammes sur mesure, dessinés et validés** (20 octobre 2026), dans la grille de 24 px et le trait de 2 px de Tabler ; sources SVG dans [`pictogrammes/`](pictogrammes/) :
+  - sans équivalent chez Tabler : Pousser/Tirer (`pousser.svg`), Décalage (`decalage.svg`), Suivez-moi (`suivez.svg`), Rapporteur (`rapporteur.svg`) ;
+  - commande sans équivalent : Éclater (`eclater.svg`) ;
+  - outils propres à Fadi : Profilé (`profile.svg`), Onglet (`onglet.svg`), Coupe par profil (`coupe-profil.svg`), Allonger une pièce (`allonger.svg`), Aligner une face (`aligner.svg`), Épaissir (`epaissir.svg`), Débit (`debit.svg`).
+- **La Pipette n'a pas besoin de dessin** : Tabler a l'icône `color-picker`.
 - **On ne copie rien de SketchUp** : on reprend la disposition et les gestes, jamais les dessins, le logo ou la marque.
 
 ## 5. Les règles contrôlées par test
@@ -94,7 +106,6 @@ Un lot à la fois, chacun sur sa branche, avec sa PR et une CI verte :
 1. Inscrire le 8ᵉ module dans `docs/architecture.md`, qui en fixe 7 (le principe est décidé).
 2. Confirmer l'enregistrement des préférences dans le navigateur.
 3. Valider le catalogue de référence comme contenu initial du registre.
-4. Désigner qui dessine les 13 pictogrammes sur mesure et valider les couleurs par famille.
 
 ## Sources
 

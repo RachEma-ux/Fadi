@@ -143,7 +143,7 @@ Dix éléments de SketchUp n'ont aucune entrée dans le Sandbox ; six points du 
 | Maj+Z | À harmoniser | Texte 3D dans le Sandbox, Zoom étendu dans SketchUp |
 | Zoom étendu | À harmoniser | Ctrl+Maj+E au lieu de Maj+Z |
 | Recherche d'outil | À harmoniser | Maj+- au lieu de Maj+S (Maj+S = Soustraction) |
-| Icônes Unicode | Décidé | Remplacées par des pictogrammes **Tabler Icons** (MIT), 13 dessinés sur mesure : voir [la recommandation](Recommandation_Sandbox_Architecture.md) |
+| Icônes Unicode | Décidé | Remplacées par des pictogrammes **Tabler Icons** (MIT), 12 dessinés sur mesure et validés (dossier [`pictogrammes/`](pictogrammes/)) : voir [la recommandation](Recommandation_Sandbox_Architecture.md) |
 
 Les icônes partagées entre un outil et le panneau qu'il ouvre (Pot de peinture et Matériaux, Balise et Balises, Liste de débit et Débit) peuvent rester communes ; les trois premières paires de la ligne « Icônes en double » non.
 
