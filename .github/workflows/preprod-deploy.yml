@@ -1,0 +1,105 @@
+name: Deploy Fadi Preproduction
+
+# Never deploy PR code. Only a successful CI run from a push to protected main
+# can release the exact tested commit to the isolated VPS preproduction.
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/preprod-deploy.yml"
+      - "deploy/preprod/ci-*"
+      - "deploy/preprod/tests/test-ci-deploy.sh"
+      - "deploy/preprod/fadi-preprod"
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fadi-preproduction-deploy
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate deployment scripts (no VPS access)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify Bash syntax and gateway rules
+        run: |
+          bash -n deploy/preprod/ci-ssh deploy/preprod/ci-deploy deploy/preprod/fadi-preprod
+          bash deploy/preprod/tests/test-ci-deploy.sh
+
+  deploy:
+    name: Deploy tested main to isolated preproduction
+    if: >-
+      ${{ github.event_name == 'workflow_run' &&
+          github.event.workflow_run.event == 'push' &&
+          github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.head_branch == 'main' &&
+          github.event.workflow_run.head_repository.full_name == github.repository &&
+          vars.FADI_PREPROD_CI_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: preproduction
+    steps:
+      - name: Refuse superseded or malformed revisions
+        id: revision
+        env:
+          TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
+          GH_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          [[ "$TESTED_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          latest=$(git ls-remote "https://github.com/$GH_REPOSITORY.git" refs/heads/main | cut -f1)
+          if [ "$latest" != "$TESTED_SHA" ]; then
+            echo "A newer commit is on main; skip superseded CI run."
+            exit 0
+          fi
+          echo "current=true" >> "$GITHUB_OUTPUT"
+          echo "sha=$TESTED_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare pinned SSH transport
+        if: steps.revision.outputs.current == 'true'
+        env:
+          DEPLOY_KEY: ${{ secrets.FADI_PREPROD_SSH_KEY }}
+          KNOWN_HOSTS: ${{ vars.FADI_PREPROD_SSH_KNOWN_HOSTS }}
+          DEPLOY_HOST: ${{ vars.FADI_PREPROD_SSH_HOST }}
+        run: |
+          set -euo pipefail
+          : "${DEPLOY_KEY:?Missing FADI_PREPROD_SSH_KEY secret}"
+          : "${KNOWN_HOSTS:?Missing FADI_PREPROD_SSH_KNOWN_HOSTS variable}"
+          : "${DEPLOY_HOST:?Missing FADI_PREPROD_SSH_HOST variable}"
+          [[ "$DEPLOY_HOST" =~ ^[a-zA-Z0-9.-]+$ ]] || exit 1
+          install -m 0700 -d "$RUNNER_TEMP/preprod-ssh"
+          printf '%s\n' "$DEPLOY_KEY" > "$RUNNER_TEMP/preprod-ssh/key"
+          printf '%s\n' "$KNOWN_HOSTS" > "$RUNNER_TEMP/preprod-ssh/known_hosts"
+          chmod 0600 "$RUNNER_TEMP/preprod-ssh/"{key,known_hosts}
+          ssh-keygen -y -f "$RUNNER_TEMP/preprod-ssh/key" > /dev/null
+          grep -qF "$DEPLOY_HOST" "$RUNNER_TEMP/preprod-ssh/known_hosts" || {
+            echo "The pinned host key does not name the configured host"; exit 1;
+          }
+
+      - name: Deploy through an SSH forced-command gateway
+        if: steps.revision.outputs.current == 'true'
+        env:
+          DEPLOY_HOST: ${{ vars.FADI_PREPROD_SSH_HOST }}
+          SHA: ${{ steps.revision.outputs.sha }}
+        run: |
+          set -euo pipefail
+          ssh -T -o BatchMode=yes -o ConnectTimeout=15 -o ServerAliveInterval=30 \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$RUNNER_TEMP/preprod-ssh/known_hosts" \
+            -i "$RUNNER_TEMP/preprod-ssh/key" \
+            -l fadi-deploy "$DEPLOY_HOST" "deploy $SHA"
+          echo "### Preproduction deployed" >> "$GITHUB_STEP_SUMMARY"
+          echo "Validated CI commit: \`$SHA\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Health checks: executed on VPS via fadi-preprod smoke." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Clear temporary SSH files
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/preprod-ssh"
