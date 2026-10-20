@@ -94,10 +94,36 @@ async function disposition(page, contexte) {
     });
     check("téléphone : « Outils ▾ » visible sans défiler la barre du haut", haut === true);
     check("téléphone : boutons zoom + / − visibles", (await racine.locator('[data-barre-actions] [data-planche-zoom="plus"]').isVisible()) && (await racine.locator('[data-barre-actions] [data-planche-zoom="moins"]').isVisible()));
-    // Commandes du registre : leur raccourci est affiché dans l'info-bulle (Alt+Maj+Z, Alt+Maj+Y).
+    // Commandes du registre : leur raccourci est affiché dans l'info-bulle (F8, Alt+Maj+Y).
     const titres = await racine.locator("[data-barre-actions] [data-planche-zoom]").evaluateAll((l) => l.map((b) => b.getAttribute("title") ?? ""));
-    check("téléphone : zoom + / − portent leur raccourci", titres.length === 2 && titres.every((x) => /Alt/.test(x) && /Maj|Shift/.test(x)), JSON.stringify(titres));
+    check("téléphone : zoom + / − portent leur raccourci", titres.length === 2 && /\(Alt\+Maj\+Y\)/.test(titres[0]) && /\(F8\)/.test(titres[1]), JSON.stringify(titres));
   }
+}
+
+/** Lot 6 : raccourcis harmonisés avec SketchUp — recherche Maj+S, Zoom étendu Maj+Z, Texte 3D Alt+Maj+Z, Diviser Maj+D. */
+async function raccourcisHarmonises(page) {
+  const racine = page.locator("[data-sandbox-page] [data-sandbox-planche]");
+  const outil = () => page.evaluate(() => window.fadiPlanche?.outil());
+  await page.mouse.move(700, 450);
+  await page.keyboard.press("Escape");
+  check("lot 6 : le bouton de recherche annonce Maj + S", /Maj \+ S/.test((await racine.locator("[data-planche-recherche]").getAttribute("title")) ?? ""));
+  await page.keyboard.press("Shift+S");
+  const dialogue = racine.locator("[data-planche-recherche-dialogue]");
+  await dialogue.waitFor({ state: "visible", timeout: 5000 }).catch(() => undefined);
+  check("lot 6 : Maj + S ouvre la recherche d'outil (comme SketchUp)", await dialogue.isVisible());
+  await page.keyboard.press("Escape");
+  await dialogue.waitFor({ state: "hidden", timeout: 5000 }).catch(() => undefined);
+  await page.keyboard.press("Alt+Shift+Z");
+  check("lot 6 : Alt + Maj + Z choisit Texte 3D", (await outil()) === "texte-3d", String(await outil()));
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Space");
+  await page.keyboard.press("Shift+D");
+  check("lot 6 : Maj + D choisit l'outil Diviser", (await outil()) === "diviser", String(await outil()));
+  await page.keyboard.press("Space");
+  await page.keyboard.press("Shift+Z");
+  check("lot 6 : Maj + Z lance le Zoom étendu, plus Texte 3D", (await outil()) !== "texte-3d", String(await outil()));
+  check("lot 6 : Cadrer annonce Maj + Z", /Maj\+Z/.test((await racine.locator("[data-planche-cadrer]").getAttribute("title")) ?? ""), (await racine.locator("[data-planche-cadrer]").getAttribute("title")) ?? "");
+  await page.keyboard.press("Space");
 }
 
 /** La Planche de Sandbox est chargée : vue 3D (canvas) et barre d'outils garnie, visibles. */
@@ -129,6 +155,7 @@ try {
   check("/sandbox : « Console » marquée dans la barre latérale", (await page.locator("[data-studio-menu-console]").getAttribute("aria-current")) === "page");
   check("/sandbox : hors de l'enveloppe du Studio", (await page.locator(".studio-shell").count()) === 0);
   await disposition(page, "ordinateur");
+  await raccourcisHarmonises(page);
   await page.screenshot({ path: join(OUT, "sandbox-ordinateur.png") });
   surSandbox = false;
 

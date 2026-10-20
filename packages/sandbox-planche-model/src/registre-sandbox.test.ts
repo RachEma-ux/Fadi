@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { OUTILS, normaliserRaccourci } from "./catalogue-outils.js";
-import { BARRE_GAUCHE_SANDBOX, PICTOGRAMMES_PARTAGES, REGISTRE_SANDBOX, RACCOURCIS_FADI_OUTILS, clePictogramme, entreeCommande, entreeOutil, entreePanneau, entreeSandbox, entreesSandbox } from "./registre-sandbox.js";
+import { BARRE_GAUCHE_SANDBOX, PICTOGRAMMES_PARTAGES, RACCOURCI_RECHERCHE, RACCOURCIS_HARMONISES, RACCOURCIS_NAVIGATEUR, REGISTRE_SANDBOX, RACCOURCIS_FADI_OUTILS, clePictogramme, entreeCommande, entreeOutil, entreePanneau, entreeSandbox, entreesSandbox } from "./registre-sandbox.js";
 
 const catalogue = REGISTRE_SANDBOX.filter((e) => !e.horsCatalogue);
 
@@ -18,9 +18,29 @@ describe("registre du Sandbox — contenu", () => {
     expect(entreeSandbox("panneau", "objets")).toBeUndefined();
   });
 
-  it("une seule entrée hors catalogue : la commande Diviser, doublon de l'outil (à harmoniser au lot 6)", () => {
-    expect(REGISTRE_SANDBOX.filter((e) => e.horsCatalogue).map((e) => `${e.nature}:${e.id}`)).toEqual(["commande:diviser", "commande:zoom-plus", "commande:zoom-moins"]);
+  it("hors catalogue : seulement zoom + / − ; la commande Diviser, doublon de l'outil, a disparu (lot 6)", () => {
+    expect(REGISTRE_SANDBOX.filter((e) => e.horsCatalogue).map((e) => `${e.nature}:${e.id}`)).toEqual(["commande:zoom-plus", "commande:zoom-moins"]);
+    expect(entreeSandbox("commande", "diviser")).toBeUndefined();
     expect(entreeOutil("diviser").horsCatalogue).toBeUndefined();
+    expect(entreeOutil("diviser").raccourci).toBe("Maj+D");
+  });
+
+  it("lot 6 : raccourcis harmonisés avec SketchUp (Zoom étendu Maj+Z, recherche Maj+S), sans doublon", () => {
+    expect(entreeOutil("zoom-etendu").raccourci).toBe("Maj+Z");
+    expect(entreeOutil("texte-3d").raccourci).toBe("Alt+Maj+Z");
+    expect(entreeCommande("exporter-debit").raccourci).toBe("Alt+Maj+X");
+    expect(entreeCommande("zoom-plus").raccourci).toBe("F8");
+    // Aucune entrée ne prend une combinaison que le navigateur se réserve (revue Codex : Ctrl+Maj+E est à Firefox).
+    const reserves = new Set(RACCOURCIS_NAVIGATEUR.map(normaliserRaccourci));
+    for (const e of REGISTRE_SANDBOX.filter((x) => x.raccourci !== null)) expect(reserves.has(normaliserRaccourci(e.raccourci!)), `${e.nature}:${e.id} : ${e.raccourci}`).toBe(false);
+    expect(reserves.has(normaliserRaccourci(RACCOURCI_RECHERCHE))).toBe(false);
+    expect(entreeOutil("soustraction").raccourci).toBe("Alt+Maj+D");
+    expect(RACCOURCI_RECHERCHE).toBe("Maj+S");
+    // La recherche n'est pas une entrée : aucun outil ni aucune commande ne prend son raccourci.
+    const pris = REGISTRE_SANDBOX.filter((e) => e.raccourci !== null).map((e) => normaliserRaccourci(e.raccourci!));
+    expect(pris).not.toContain(normaliserRaccourci(RACCOURCI_RECHERCHE));
+    // Une harmonisation ne vise qu'un outil du catalogue, et change bien son raccourci relevé.
+    for (const [id, r] of Object.entries(RACCOURCIS_HARMONISES)) expect(OUTILS.find((o) => o.id === id)?.raccourci, id).not.toBe(r);
   });
 
   it("identifiant unique par nature ; chaque entrée a un pictogramme, une famille, un emplacement et une disponibilité", () => {
@@ -34,7 +54,7 @@ describe("registre du Sandbox — contenu", () => {
     }
   });
 
-  it("outils : dérivés du catalogue relevé (ordre, famille), raccourci relevé sinon couche Fadi ; emplacement Sandbox", () => {
+  it("outils : dérivés du catalogue relevé (ordre, famille), raccourci harmonisé, sinon relevé, sinon couche Fadi ; emplacement Sandbox", () => {
     expect(entreesSandbox("outil").map((e) => e.id)).toEqual(OUTILS.map((o) => o.id));
     for (const o of OUTILS) {
       const e = entreeOutil(o.id);
@@ -42,7 +62,7 @@ describe("registre du Sandbox — contenu", () => {
       // Lot 4 : la barre gauche est celle du Sandbox ; hors d'elle, un outil va à la grille (le clic droit reste).
       const attendu = BARRE_GAUCHE_SANDBOX.includes(o.id) ? "barre" : o.emplacement === "barre" ? "grille" : o.emplacement;
       expect(e.emplacement, o.id).toBe(attendu);
-      expect(e.raccourci, o.id).toBe(o.raccourci ?? RACCOURCIS_FADI_OUTILS[o.id]);
+      expect(e.raccourci, o.id).toBe(RACCOURCIS_HARMONISES[o.id] ?? o.raccourci ?? RACCOURCIS_FADI_OUTILS[o.id]);
     }
     // La couche Fadi ne couvre que des outils sans raccourci relevé, et tous ceux-là.
     for (const id of Object.keys(RACCOURCIS_FADI_OUTILS)) expect(OUTILS.find((o) => o.id === id)?.raccourci, id).toBeNull();

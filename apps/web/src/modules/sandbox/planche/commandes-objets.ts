@@ -13,7 +13,7 @@ function depuisRegistre(id: string): { readonly picto: Pictogramme; readonly rac
   return { picto: e.pictogramme, raccourci: e.raccourci };
 }
 
-export type IdCommandeObjet = "groupe" | "composant" | "eclater" | "rendre-unique" | "diviser" | "diviser-courbe";
+export type IdCommandeObjet = "groupe" | "composant" | "eclater" | "rendre-unique" | "diviser-courbe";
 
 export interface CommandeObjet {
   readonly id: IdCommandeObjet;
@@ -38,7 +38,6 @@ export const COMMANDES_OBJETS: readonly CommandeObjet[] = [
   { id: "composant", ...depuisRegistre("composant"), libelle: "planche.menu.composant", court: "planche.objets.court.composant" },
   { id: "eclater", ...depuisRegistre("eclater"), libelle: "planche.menu.eclater", court: "planche.objets.court.eclater" },
   { id: "rendre-unique", ...depuisRegistre("rendre-unique"), libelle: "planche.menu.rendre-unique", court: "planche.objets.court.rendre-unique" },
-  { id: "diviser", ...depuisRegistre("diviser"), libelle: "planche.menu.diviser", court: "planche.objets.court.diviser", contextuelle: true },
   { id: "diviser-courbe", ...depuisRegistre("diviser-courbe"), libelle: "planche.menu.diviser-courbe", court: "planche.objets.court.diviser-courbe", contextuelle: true },
 ];
 
@@ -74,7 +73,6 @@ export function disponibiliteObjet(id: IdCommandeObjet, s: EtatSelectionObjets):
     if ((s.partages ?? 0) === 0) return { disponible: false, motif: "planche.objets.motif.unique" };
     return { disponible: true, motif: null };
   }
-  if (id === "diviser") return (s.aretes ?? 0) > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.objets.motif.arete" };
   if (id === "diviser-courbe") return (s.courbes ?? 0) > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.objets.motif.courbe" };
   if (id === "eclater") {
     if (s.objets === 0) return { disponible: false, motif: "planche.objets.motif.eclater" };

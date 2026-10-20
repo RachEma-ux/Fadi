@@ -33,7 +33,7 @@ function evenement(r: string, options: { mac?: boolean } = {}): Cle {
 }
 
 /** Raccourcis propres à la Planche (Planche.tsx), hors catalogue : ils ne doivent jamais être repris. */
-const RESERVES_PLANCHE = ["G", "K", "Ctrl+Z", "Ctrl+Maj+Z", "Ctrl+Y", "Ctrl+G", "Ctrl+A", "Ctrl+Maj+I", "Ctrl+C", "Ctrl+X", "Ctrl+V", "Ctrl+S", "Ctrl+K", "Maj+-", "Maj+_"].map(normaliserRaccourci);
+const RESERVES_PLANCHE = ["G", "K", "Ctrl+Z", "Ctrl+Maj+Z", "Ctrl+Y", "Ctrl+G", "Ctrl+A", "Ctrl+Maj+I", "Ctrl+C", "Ctrl+X", "Ctrl+V", "Ctrl+S", "Ctrl+K", "Maj+S"].map(normaliserRaccourci);
 
 describe("Barres d'opérations (D-198) — correspondance outil → ① Créer · ② Modifier · ③ Mesurer / annoter", () => {
   it("couvre chaque outil de la Planche, et seulement des identifiants du catalogue", () => {
@@ -209,14 +209,17 @@ describe("Règle d'or — commandes du menu de la Planche (D-202)", () => {
     const ids = new Set([...source.matchAll(/entrees\.push\(\{ id: "([a-z-]+)"/g)].map((m) => m[1]!).filter((id) => id !== "rien"));
     expect(ids.size).toBeGreaterThan(0);
     const livrees = new Set<string>([...COMMANDES_OBJETS, ...COMMANDES_NAVIGATEUR, COMMANDE_DETACHER_LIEN].map((c) => c.id));
-    for (const id of ids) expect(COMMANDES_EN_ATTENTE[id] ?? (livrees.has(id) ? "livrée" : undefined), `commande « ${id} » au menu sans icône, barre ni raccourci, et absente de la liste`).toBeDefined();
+    // Lot 6 : « Diviser » du menu lance l'outil Diviser, qui a son icône, sa barre et son raccourci (règle d'or des outils).
+    const outils = new Set<string>(["diviser"].filter((id) => OUTILS.some((o) => o.id === id)));
+    expect(source).toContain('entrees.push({ id: "diviser", libelle: t("planche.menu.diviser"), grise: readOnly, action: () => choisirOutil("diviser") });');
+    for (const id of ids) expect(COMMANDES_EN_ATTENTE[id] ?? (livrees.has(id) ? "livrée" : outils.has(id) ? "outil" : undefined), `commande « ${id} » au menu sans icône, barre ni raccourci, et absente de la liste`).toBeDefined();
     for (const id of livrees) expect(COMMANDES_EN_ATTENTE[id], `« ${id} » est livrée : la retirer de la liste d'attente`).toBeUndefined();
     for (const id of Object.keys(COMMANDES_EN_ATTENTE)) expect(ids.has(id), `« ${id} » n'est plus au menu : la retirer de la liste`).toBe(true);
   });
 });
 
 describe("Règle d'or — commandes d'objet livrées (Objets O-1, D-203)", () => {
-  it("Grouper, Créer un composant, Éclater, Rendre unique, Diviser, Diviser en segments : icône propre, place dans la barre d'actions, raccourci sans collision", () => {
+  it("Grouper, Créer un composant, Éclater, Rendre unique, Diviser en segments : icône propre, place dans la barre d'actions, raccourci sans collision", () => {
     const pictosOutils = new Set(OUTILS.map((o) => k(pictoOutil(o.id))));
     const typesNavigateur = [ki("typeComposant"), ki("typeGroupe")];
     const pictos = new Set<string>();

@@ -14,7 +14,7 @@ Source : code de `main` `f88806f4`, installé en préproduction le 20 octobre 20
 
 ## Outils (52)
 
-38 outils sur 52 sont conformes ou propres à Fadi ; 12 sont à améliorer et 2 ont un manque. 12 outils sont dans la barre gauche, 39 dans la grille « ⋯ » et 1 au clic droit.
+41 outils sur 52 sont conformes ou propres à Fadi ; 9 sont à améliorer et 2 ont un manque (après le lot 6). 12 outils sont dans la barre gauche, 39 dans la grille « ⋯ » et 1 au clic droit.
 
 | # | Outil | SketchUp | Famille | Icône | Raccourci | Emplacement | État | Remarque |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -30,7 +30,7 @@ Source : code de `main` `f88806f4`, installé en préproduction le 20 octobre 20
 | 10 | Arc 2 points | 2 Point Arc | Dessin | ⌒ | A | grille | Conforme |  |
 | 11 | Arc 3 points | 3 Point Arc | Dessin | ◡ | Maj+H | grille | Conforme | Raccourci Fadi |
 | 12 | Secteur | Pie | Dessin | ◔ | Maj+N | grille | Conforme | Raccourci Fadi |
-| 13 | Texte 3D | 3D Text | Dessin | A | Maj+Z | grille | À améliorer | Maj+Z est le Zoom étendu de SketchUp |
+| 13 | Texte 3D | 3D Text | Dessin | A | Alt+Maj+Z | grille | Conforme | Raccourci Fadi ; Maj+Z rendu au Zoom étendu (lot 6) |
 | 14 | Profilé | — | Dessin | ▰ | Maj+Q | grille | Fadi |  |
 | 15 | Profilés depuis arêtes | — | Dessin | ⫴ | Alt+Maj+Q | grille | Fadi |  |
 | 16 | Gomme | Eraser | Modification | ⌫ | E | barre | Conforme |  |
@@ -41,7 +41,7 @@ Source : code de `main` `f88806f4`, installé en préproduction le 20 octobre 20
 | 21 | Décalage | Offset | Modification | ⧈ | F | grille | À améliorer | Absent de la barre ; aperçu réduit ; chevauchement refusé |
 | 22 | Suivez-moi | Follow Me | Modification | ↬ | Maj+F | grille | Conforme | Raccourci Fadi |
 | 23 | Retourner | Flip | Modification | ⇋ | Maj+V | grille | Conforme | Raccourci Fadi |
-| 24 | Diviser | Divide | Modification | ÷ | Maj+D | menu | À améliorer | Doublon avec la commande Diviser (⦙, Alt+Maj+D) |
+| 24 | Diviser | Divide | Modification | ÷ | Maj+D | menu | Conforme | Commande en double supprimée : le clic droit et la barre d'actions lancent l'outil (lot 6) |
 | 25 | Onglet | — | Modification | ◸ | Alt+Maj+O | grille | Fadi |  |
 | 26 | Coupe par profil | — | Modification | ⧄ | Alt+Maj+B | grille | Fadi |  |
 | 27 | Allonger une pièce | — | Modification | ⇿ | Alt+Maj+A | grille | Fadi |  |
@@ -49,7 +49,7 @@ Source : code de `main` `f88806f4`, installé en préproduction le 20 octobre 20
 | 29 | Épaissir | — | Modification | ▥ | Alt+Maj+J | grille | Fadi |  |
 | 30 | Enveloppe extérieure | Outer Shell | Solide | ⬚ | Maj+E | grille | Conforme | Raccourci Fadi |
 | 31 | Union | Union | Solide | ∪ | Maj+U | grille | Conforme | Raccourci Fadi |
-| 32 | Soustraction | Subtract | Solide | ⊖ | Maj+S | grille | Conforme | Raccourci Fadi |
+| 32 | Soustraction | Subtract | Solide | ⊖ | Alt+Maj+D | grille | Conforme | Raccourci Fadi ; Maj+S rendu à la recherche (lot 6) |
 | 33 | Ajuster | Trim | Solide | ⊘ | Maj+J | grille | Conforme | Raccourci Fadi |
 | 34 | Intersection | Intersect | Solide | ∩ | Maj+I | grille | Conforme | Raccourci Fadi |
 | 35 | Scinder | Split | Solide | ⫛ | Maj+G | grille | Conforme | Raccourci Fadi |
@@ -65,7 +65,7 @@ Source : code de `main` `f88806f4`, installé en préproduction le 20 octobre 20
 | 45 | Orbite | Orbit | Caméra | ⟲ | O | barre | Conforme |  |
 | 46 | Panoramique | Pan | Caméra | ✣ | H | barre | Manque | Maj+molette zoome au lieu de déplacer la vue en 3D |
 | 47 | Zoom | Zoom | Caméra | ⊕ | Z | grille | Conforme |  |
-| 48 | Zoom étendu | Zoom Extents | Caméra | ⤧ | Ctrl+Maj+E | grille | À améliorer | Maj+Z dans SketchUp ; pas de bouton Cadrer à l'écran |
+| 48 | Zoom étendu | Zoom Extents | Caméra | ⤧ | Maj+Z | grille | Conforme | Comme SketchUp (lot 6) ; bouton Cadrer dans la barre d'actions (lot 4) |
 | 49 | Zoom fenêtre | Zoom Window | Caméra | ⧉ | Maj+W | grille | À améliorer | Icône partagée avec Détacher |
 | 50 | Positionner la caméra | Position Camera | Caméra | ◎ | Alt+Maj+P | grille | Conforme | Raccourci Fadi |
 | 51 | Regarder autour | Look Around | Caméra | ◐ | Alt+Maj+L | grille | À améliorer | Icône partagée avec le panneau Styles |
@@ -73,7 +73,7 @@ Source : code de `main` `f88806f4`, installé en préproduction le 20 octobre 20
 
 ## Commandes (20)
 
-Les 20 commandes agissent sur la sélection sans changer d'outil ; elles sont regroupées sous « Objets » dans « Outils ▾ ». La commande Diviser (⦙, Alt+Maj+D) n'est pas comptée : elle double l'outil 24.
+Les 20 commandes agissent sur la sélection sans changer d'outil ; elles sont regroupées sous « Objets » dans « Outils ▾ ». La commande Diviser (⦙, Alt+Maj+D), qui doublait l'outil 24, a été supprimée au lot 6.
 
 | # | Commande | SketchUp | Groupe | Icône | Raccourci | Emplacement | État | Remarque |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -138,11 +138,11 @@ Dix éléments de SketchUp n'ont aucune entrée dans le Sandbox ; six points du 
 | Inférence de prolongement d'arête | Absent |  |
 | Inférence par pause (From Point) et guides comme points d'accroche | Absent | Le moteur sait faire la pause, aucun outil ne l'utilise |
 | Icônes en double | À harmoniser | ◠ Arc / Adoucir ; ◐ Regarder autour / Styles ; ⧉ Zoom fenêtre / Détacher ; ❖ Composant / Composants ; ▨ Pot de peinture / Matériaux ; ⌖ Balise / Balises |
-| Diviser | À harmoniser | Outil ÷ (Maj+D, clic droit) et commande ⦙ (Alt+Maj+D) sous le même nom |
+| Diviser | Fait (lot 6) | Une seule entrée : l'outil Diviser (Maj+D), lancé aussi par le clic droit et la barre d'actions |
 | Icône ⓘ | À harmoniser | Sert à Info entité, alors que (i) désigne Model Info dans SketchUp |
-| Maj+Z | À harmoniser | Texte 3D dans le Sandbox, Zoom étendu dans SketchUp |
-| Zoom étendu | À harmoniser | Ctrl+Maj+E au lieu de Maj+Z |
-| Recherche d'outil | À harmoniser | Maj+- au lieu de Maj+S (Maj+S = Soustraction) |
+| Maj+Z | Fait (lot 6) | Zoom étendu, comme SketchUp ; Texte 3D passe à Alt+Maj+Z |
+| Zoom étendu | Fait (lot 6) | Maj+Z ; Ctrl+Maj+E, réservé par Firefox (outil réseau), n'est plus pris |
+| Recherche d'outil | Fait (lot 6) | Maj+S, comme SketchUp ; Soustraction passe à Alt+Maj+D |
 | Icônes Unicode | Décidé | Remplacées par des pictogrammes **Tabler Icons** (MIT), 12 dessinés sur mesure et validés (dossier [`pictogrammes/`](pictogrammes/)) : voir [la recommandation](Recommandation_Sandbox_Architecture.md) |
 
 Les icônes partagées entre un outil et le panneau qu'il ouvre (Pot de peinture et Matériaux, Balise et Balises, Liste de débit et Débit) peuvent rester communes ; les trois premières paires de la ligne « Icônes en double » non.

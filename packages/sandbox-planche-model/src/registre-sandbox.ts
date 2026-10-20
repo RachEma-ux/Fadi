@@ -70,7 +70,7 @@ export interface EntreeSandbox {
   readonly raccourci: string | null;
   readonly emplacement: EmplacementEntree;
   readonly disponibilite: DisponibiliteEntree;
-  /** Hors des 86 entrées du catalogue (doublon à harmoniser au lot 6, ou commande ajoutée après le relevé). */
+  /** Hors des 86 entrées du catalogue : commande ajoutée après le relevé (zoom + / −). */
   readonly horsCatalogue?: true;
 }
 
@@ -160,12 +160,14 @@ export const RACCOURCIS_FADI_OUTILS: Readonly<Record<string, string>> = {
   rapporteur: "Maj+O",
   polygone: "Maj+P",
   "rectangle-pivote": "Maj+R",
-  soustraction: "Maj+S",
+  // Lot 6 : Maj+S passe à la recherche (comme SketchUp) ; D comme « différence », libéré par la commande Diviser.
+  soustraction: "Alt+Maj+D",
   texte: "Maj+T",
   union: "Maj+U",
   retourner: "Maj+V",
   axes: "Maj+Y",
-  "texte-3d": "Maj+Z",
+  // Lot 6 : Maj+Z passe au Zoom étendu (comme SketchUp) ; Texte 3D garde sa lettre, avec Alt.
+  "texte-3d": "Alt+Maj+Z",
   "positionner-camera": "Alt+Maj+P",
   "regarder-autour": "Alt+Maj+L",
   marcher: "Alt+Maj+M",
@@ -179,6 +181,27 @@ export const RACCOURCIS_FADI_OUTILS: Readonly<Record<string, string>> = {
   // Lot L21 (D-202) : outil propre à Fadi.
   epaissir: "Alt+Maj+J",
 };
+
+/**
+ * Lot 6 (harmonisation, recommandation §5) : raccourcis alignés sur SketchUp, prioritaires sur le relevé. Le relevé
+ * garde ce qu'il a observé ; seul le registre, que lisent l'interface et le clavier, en change.
+ */
+export const RACCOURCIS_HARMONISES: Readonly<Record<string, string>> = {
+  "zoom-etendu": "Maj+Z",
+};
+
+/** Recherche d'outil (lot 6) : Maj+S, comme SketchUp (relevé : Maj+-). Ce n'est pas une entrée du registre. */
+export const RACCOURCI_RECHERCHE = "Maj+S";
+
+/**
+ * Combinaisons que le navigateur se réserve (fenêtre, onglet, outils de développement, lecture, plein écran) : aucune
+ * entrée du registre ne les prend (lot 6). Ctrl+Maj+E est l'outil réseau de Firefox, F9 son mode lecture.
+ */
+export const RACCOURCIS_NAVIGATEUR: readonly string[] = Object.freeze([
+  "Ctrl+N", "Ctrl+T", "Ctrl+W", "Ctrl+Q", "Ctrl+L", "Ctrl+R", "Ctrl+P", "Ctrl+F", "Ctrl+U", "Ctrl+O",
+  "Ctrl+Maj+N", "Ctrl+Maj+T", "Ctrl+Maj+W", "Ctrl+Maj+R", "Ctrl+Maj+I", "Ctrl+Maj+J", "Ctrl+Maj+C", "Ctrl+Maj+E", "Ctrl+Maj+K", "Ctrl+Maj+S", "Ctrl+Maj+Y",
+  "F1", "F3", "F5", "F6", "F7", "F9", "F10", "F11", "F12",
+]);
 
 /** Pictogramme d'une entrée : « fadi:<fichier> » désigne un dessin sur mesure, tout autre nom une icône Tabler. */
 function pictogramme(nom: string, famille: FamilleEntree): Pictogramme {
@@ -206,7 +229,7 @@ const outils: EntreeSandbox[] = OUTILS.map((o) => ({
   id: o.id,
   famille: o.famille,
   pictogramme: pictogramme(PICTOS_OUTILS[o.id] ?? "", o.famille),
-  raccourci: o.raccourci ?? RACCOURCIS_FADI_OUTILS[o.id] ?? null,
+  raccourci: RACCOURCIS_HARMONISES[o.id] ?? o.raccourci ?? RACCOURCIS_FADI_OUTILS[o.id] ?? null,
   emplacement: emplacementOutil(o.id, o.emplacement),
   disponibilite: "livree",
 }));
@@ -229,8 +252,8 @@ const commandes: EntreeSandbox[] = [
   c("composant", "objet", "components", "G", "actions"),
   c("eclater", "objet", "fadi:eclater", "Ctrl+Maj+G", "actions"),
   c("rendre-unique", "objet", "fingerprint", "Alt+Maj+U", "actions"),
-  // Doublon de l'outil Diviser (même nom) : hors des 86 entrées, à harmoniser au lot 6.
-  c("diviser", "objet", "separator-vertical", "Alt+Maj+D", "actions", true),
+  // Lot 6 : la commande Diviser, doublon de l'outil Diviser, a disparu ; la barre d'actions et le clic droit lancent
+  // l'outil (Maj+D), qui prend l'arête sélectionnée et demande le nombre de segments, comme SketchUp.
   c("diviser-courbe", "objet", "line-dashed", "Alt+Maj+C", "actions"),
   // Contexte d'édition (O-2) : fil d'Ariane.
   c("fermer", "contexte", "arrow-back-up", "Maj+Échap", "fil-ariane"),
@@ -245,7 +268,8 @@ const commandes: EntreeSandbox[] = [
   c("isoler", "vue", "focus-2", "Alt+Maj+I", "actions"),
   c("masquer-reste", "vue", "eye-off", "Alt+Maj+R", "outils"),
   // Zoom avant / arrière par pas (lot 4) : barre d'actions flottante au toucher, clavier partout ; hors des 86 entrées.
-  c("zoom-plus", "vue", "plus", "Alt+Maj+Z", "actions", true),
+  // Lot 6 : F8, touche libre que ni Chrome ni Firefox ne se réservent (Alt+Maj+Z passe au Texte 3D).
+  c("zoom-plus", "vue", "plus", "F8", "actions", true),
   c("zoom-moins", "vue", "minus", "Alt+Maj+Y", "actions", true),
   // Liste de débit (L14) : barre du panneau Débit.
   c("liste-debit", "debit", "fadi:debit", "Alt+Maj+T", "panneau-debit"),
