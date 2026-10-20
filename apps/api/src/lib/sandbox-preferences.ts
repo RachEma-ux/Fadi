@@ -16,15 +16,17 @@ export interface LignePreferencesSandbox {
 
 export interface ReponsePreferencesSandbox extends PreferencesSandbox {
   readonly format: string;
+  /** Compte connecté : le navigateur range sa copie locale sous ce compte (aucun envoi d'une copie d'un autre compte). */
+  readonly compte: string;
   /** Date serveur du dernier enregistrement ; `null` tant que rien n'est enregistré (profil Standard). */
   readonly updatedAt: string | null;
 }
 
 /** Réponse d'une lecture : la ligne relue (tolérante : une ligne ancienne invalide vaut les défauts), sinon les défauts. */
-export function reponsePreferences(ligne: LignePreferencesSandbox | undefined): ReponsePreferencesSandbox {
-  if (!ligne) return { ...PREFERENCES_SANDBOX_DEFAUT, format: FORMAT_PREFERENCES_SANDBOX, updatedAt: null };
+export function reponsePreferences(compte: string, ligne: LignePreferencesSandbox | undefined): ReponsePreferencesSandbox {
+  if (!ligne) return { ...PREFERENCES_SANDBOX_DEFAUT, format: FORMAT_PREFERENCES_SANDBOX, compte, updatedAt: null };
   const p = lirePreferencesSandbox({ profil: ligne.profile, barrePersonnelle: ligne.leftBar, favoris: ligne.favorites, regroupements: ligne.groups });
-  return { ...p, format: FORMAT_PREFERENCES_SANDBOX, updatedAt: ligne.updatedAt.toISOString() };
+  return { ...p, format: FORMAT_PREFERENCES_SANDBOX, compte, updatedAt: ligne.updatedAt.toISOString() };
 }
 
 export type CorpsLu =

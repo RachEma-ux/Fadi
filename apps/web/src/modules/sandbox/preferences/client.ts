@@ -9,6 +9,8 @@ export const ADRESSE_PREFERENCES = "/sandbox/preferences";
 
 export interface PreferencesRecues {
   readonly preferences: PreferencesSandbox;
+  /** Compte connecté (identifiant du serveur). */
+  readonly compte: string;
   /** Date serveur du dernier enregistrement ; `null` si rien n'est enregistré. */
   readonly updatedAt: string | null;
 }
@@ -29,8 +31,9 @@ async function appeler(init?: RequestInit): Promise<PreferencesRecues> {
   }
   if (!r.ok) throw new ErreurPreferences(r.status);
   const corps = (await r.json()) as Record<string, unknown>;
-  const { updatedAt, ...reste } = corps;
-  return { preferences: lirePreferencesSandbox({ profil: reste["profil"], barrePersonnelle: reste["barrePersonnelle"], favoris: reste["favoris"], regroupements: reste["regroupements"] }), updatedAt: typeof updatedAt === "string" ? updatedAt : null };
+  const { updatedAt, compte, ...reste } = corps;
+  if (typeof compte !== "string" || compte.length === 0) throw new ErreurPreferences(r.status);
+  return { preferences: lirePreferencesSandbox({ profil: reste["profil"], barrePersonnelle: reste["barrePersonnelle"], favoris: reste["favoris"], regroupements: reste["regroupements"] }), compte, updatedAt: typeof updatedAt === "string" ? updatedAt : null };
 }
 
 export const lirePreferencesServeur = (): Promise<PreferencesRecues> => appeler();

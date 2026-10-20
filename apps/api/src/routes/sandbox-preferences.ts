@@ -2,7 +2,7 @@
  * Préférences d'outils du Sandbox du compte connecté (lot 5, décision du maître d'ouvrage du 20 octobre 2026), montées
  * sous `/sandbox/preferences` :
  *
- *   GET /  → { profil, barrePersonnelle, favoris, regroupements, format, updatedAt } — préférences du compte (défaut :
+ *   GET /  → { profil, barrePersonnelle, favoris, regroupements, format, compte, updatedAt } — préférences du compte (défaut :
  *            profil Standard, rien de choisi, `updatedAt` null tant que rien n'est enregistré) ;
  *   PUT /  { profil, barrePersonnelle, favoris, regroupements } → remplace l'ensemble (idempotent) ; forme invalide →
  *            400 invalid_input ; entrée absente du registre du Sandbox → 400 unknown_entry (entrées nommées).
@@ -26,7 +26,7 @@ sandboxPreferencesRouter.use((_req, res, next) => {
 
 sandboxPreferencesRouter.get("/", async (req, res) => {
   const [ligne] = await db.select().from(sandboxToolPreferences).where(eq(sandboxToolPreferences.userId, req.user!.id)).limit(1);
-  res.json(reponsePreferences(ligne));
+  res.json(reponsePreferences(req.user!.id, ligne));
 });
 
 sandboxPreferencesRouter.put("/", async (req, res) => {
@@ -39,5 +39,5 @@ sandboxPreferencesRouter.put("/", async (req, res) => {
   const [ligne] = await db.insert(sandboxToolPreferences).values({ userId: req.user!.id, ...valeurs })
     .onConflictDoUpdate({ target: sandboxToolPreferences.userId, set: valeurs })
     .returning();
-  res.json(reponsePreferences(ligne));
+  res.json(reponsePreferences(req.user!.id, ligne));
 });

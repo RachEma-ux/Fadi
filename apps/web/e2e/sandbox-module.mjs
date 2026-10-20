@@ -229,6 +229,15 @@ try {
     await panneau.locator('[data-personnaliser-etat="serveur"]').waitFor();
     const remis = await api("get");
     check("« Réinitialiser » : profil Standard, rien de choisi, barre par défaut", remis.corps.profil === "standard" && remis.corps.favoris.length === 0 && remis.corps.regroupements.length === 0 && (await ordreBarre())[3] === "arc", JSON.stringify(remis.corps));
+    // Navigateur partagé : un changement en attente laissé par un autre compte n'est jamais envoyé à celui-ci.
+    check("préférences : la réponse nomme le compte connecté", typeof remis.corps.compte === "string" && remis.corps.compte.length > 0);
+    await p3.evaluate(() => localStorage.setItem("fadi.sandbox.preferences", JSON.stringify({ preferences: { profil: "metier:volumes", barrePersonnelle: [], favoris: [], regroupements: [] }, enAttente: true, recue: true, compte: "autre-compte" })));
+    await p3.reload();
+    await plancheChargee(p3, "copie d'un autre compte");
+    await racine.locator('[data-planche-outil="arc"]').first().waitFor();
+    await p3.waitForTimeout(500);
+    const apres = await api("get");
+    check("copie en attente d'un autre compte : remplacée par la version du compte, rien envoyé", apres.corps.profil === "standard" && apres.corps.updatedAt === remis.corps.updatedAt && (await ordreBarre())[3] === "arc", JSON.stringify(apres.corps));
     await c3.close();
   }
 

@@ -4,14 +4,14 @@ import { lireCorpsPreferencesSandbox, reponsePreferences } from "./sandbox-prefe
 
 describe("préférences d'outils du Sandbox — serveur", () => {
   it("sans ligne : profil Standard, rien de choisi, updatedAt null", () => {
-    expect(reponsePreferences(undefined)).toEqual({ profil: "standard", barrePersonnelle: [], favoris: [], regroupements: [], format: "sandbox-preferences/1", updatedAt: null });
+    expect(reponsePreferences("u1", undefined)).toEqual({ profil: "standard", barrePersonnelle: [], favoris: [], regroupements: [], format: "sandbox-preferences/1", compte: "u1", updatedAt: null });
   });
 
   it("une ligne est relue telle qu'enregistrée ; une ligne ancienne invalide vaut les défauts", () => {
     const at = new Date("2026-10-20T20:00:00Z");
-    const r = reponsePreferences({ profile: "personnel", leftBar: ["ligne", "selection"], favorites: ["commande:groupe"], groups: [{ id: "bois", nom: "Bois", entrees: ["outil:onglet"] }], updatedAt: at });
-    expect(r).toMatchObject({ profil: "personnel", barrePersonnelle: ["ligne", "selection"], favoris: ["commande:groupe"], updatedAt: at.toISOString() });
-    expect(reponsePreferences({ profile: "personnel", leftBar: ["fantome"], favorites: [], groups: [], updatedAt: at })).toMatchObject({ profil: "standard", barrePersonnelle: [] });
+    const r = reponsePreferences("u1", { profile: "personnel", leftBar: ["ligne", "selection"], favorites: ["commande:groupe"], groups: [{ id: "bois", nom: "Bois", entrees: ["outil:onglet"] }], updatedAt: at });
+    expect(r).toMatchObject({ profil: "personnel", barrePersonnelle: ["ligne", "selection"], favoris: ["commande:groupe"], compte: "u1", updatedAt: at.toISOString() });
+    expect(reponsePreferences("u1", { profile: "personnel", leftBar: ["fantome"], favorites: [], groups: [], updatedAt: at })).toMatchObject({ profil: "standard", barrePersonnelle: [] });
   });
 
   it("corps PUT : valeurs de ligne ; forme invalide → invalid_input ; entrée inconnue → unknown_entry nommée", () => {

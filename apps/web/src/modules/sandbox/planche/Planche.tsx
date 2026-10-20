@@ -2049,7 +2049,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     );
   };
 
-  const recentOutil = recent ? outilParId(recent) : null;
+  // Un outil récent que le profil a mis dans la barre gauche n'est pas répété sous le séparateur.
+  const recentOutil = recent && !idsBarre.includes(recent) ? outilParId(recent) : null;
 
   /** Touches d'état à l'écran (tactile) : un appui = enfoncée puis relâchée. */
   const boutonsTouches = (touches: [Touche, string, string][]) =>
