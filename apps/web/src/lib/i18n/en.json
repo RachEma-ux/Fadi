@@ -8926,6 +8926,7 @@
 "Ce panneau lit et écrit dans une étude de projet : il n’est pas disponible dans la Console.": "This panel reads and writes in a project study: it is not available in the Console.",
 "Hors projet : aucun projet chargé": "No project: no project loaded",
 "Studio n’a pas pu afficher cet écran.": "Studio could not display this screen.",
+"Le Sandbox n’a pas pu s’afficher.": "The Sandbox could not be displayed.",
 "La navigation de Fadi reste disponible ; aucune donnée n’a été modifiée.": "Fadi navigation remains available; no data has been changed.",
 "Fil d’Ariane Studio": "Studio breadcrumb",
 "Adresse Studio non reconnue": "Unrecognised Studio address",

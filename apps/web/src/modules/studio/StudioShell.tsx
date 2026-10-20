@@ -14,15 +14,14 @@
  */
 import { Component, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import type { StudioPhaseWorkflow } from "@parcours/atelier-model";
 import { api, ApiError, ROLE_LABEL, type StudioVariantSummary } from "../../lib/api";
 import type { DomaineStudio } from "./domaines/definitions";
 import { LOCALE } from "../../lib/i18n";
-import { cheminAccueilStudio, cheminComparaisonStudio, cheminConsoleStudio, cheminEtudeStudio, cheminOutilConsoleStudio, cheminProjetStudio, cheminVarianteStudio, estRouteConsole, lireRouteStudio, type RouteConsoleStudio } from "./routes-studio";
+import { cheminAccueilStudio, cheminComparaisonStudio, cheminConsoleStudio, cheminEtudeStudio, cheminOutilConsoleStudio, cheminProjetStudio, cheminSandboxStudio, cheminVarianteStudio, estRouteConsole, lireRouteStudio, type RouteConsoleStudio } from "./routes-studio";
 import { definitionDomaine, libelleNumeroteDomaine } from "./domaines/definitions";
-import { ConsoleSandbox, ConsoleStudio } from "./console/ConsoleStudio";
-import { LIBELLE_SANDBOX } from "./console/cartes";
+import { ConsoleStudio } from "./console/ConsoleStudio";
 import { StudioRefus } from "./studio-ecrans";
 import { DemarrageStudio, PlancheDifferee } from "./chargement/DemarrageStudio";
 import { PageComparaison } from "./comparaison/PageComparaison";
@@ -66,6 +65,8 @@ export function StudioShell() {
   const { pathname, search } = useLocation();
   const navigate = useNavigate();
   const route = lireRouteStudio(pathname, search);
+  // Ancienne adresse de la Sandbox : le Sandbox est un module à part (`/sandbox`, lot 1), l'adresse y redirige.
+  if (route.vue === "console-sandbox") return <Navigate to={cheminSandboxStudio()} replace />;
   return (
     <div className="studio-shell" data-studio={route.vue}>
       <DemarrageStudio projectId={"projectId" in route ? route.projectId : null} />
@@ -90,7 +91,6 @@ export function StudioShell() {
           domaine={route.domaine} planche={route.planche}
           surAdresse={({ domaine, planche, commentaires }, { remplacer }) => navigate(cheminVarianteStudio(route.projectId, route.studyId, route.variantId, route.revisionId, { commentaires, domaine, planche }), { replace: remplacer })} />}
         {route.vue === "console" && <ConsoleStudio />}
-        {route.vue === "console-sandbox" && <ConsoleSandbox />}
         {/* Console : l'outil du domaine SANS charger de projet (contexte local, rien lu ni enregistré). Clé fixe : changer de domaine ou de planche ne décharge pas ce qui est dessiné. */}
         {route.vue === "console-outil" && <PlancheDifferee key="console" autonome projectId="" studyId="" variantId="" revisionId={null}
           domaine={route.domaine} planche={route.planche}
@@ -109,9 +109,9 @@ export function StudioShell() {
   );
 }
 
-/** Fil d'Ariane de la Console : « Studio / Console », puis « Sandbox » ou le domaine ouvert (jamais de projet ni d'étude). */
+/** Fil d'Ariane de la Console : « Studio / Console », puis le domaine ouvert (jamais de projet ni d'étude). */
 function FilConsole({ route }: { route: RouteConsoleStudio }) {
-  const suite = route.vue === "console-sandbox" ? LIBELLE_SANDBOX : route.vue === "console-outil" ? libelleNumeroteDomaine(definitionDomaine(route.domaine)) : null;
+  const suite = route.vue === "console-outil" ? libelleNumeroteDomaine(definitionDomaine(route.domaine)) : null;
   return <span data-studio-fil-console> / {suite === null ? <span aria-current="page" translate="no">Console</span> : <><Link to={cheminConsoleStudio()} translate="no">Console</Link> / <span aria-current="page">{suite}</span></>}</span>;
 }
 

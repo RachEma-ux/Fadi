@@ -1,6 +1,6 @@
 /**
  * Cartes de la Console de Studio (menu « Studio › Console », demande du maître d'ouvrage du 20 octobre 2026) :
- * « 00 Sandbox » (la Planche de Sandbox) puis les quatre domaines « 01 » à « 04 », sous leur libellé exact (REF-01 §02,
+ * « 00 Sandbox » (simple lien vers le module Sandbox, `/sandbox`) puis les quatre domaines « 01 » à « 04 », sous leur libellé exact (REF-01 §02,
  * `domaines/definitions.ts`). Chaque domaine s'ouvre INDÉPENDAMMENT DE TOUT PROJET : aucun projet, aucune étude ni aucune
  * variante n'est lu, créé ou nommé (pas de projet fictif). Pur : ni React ni DOM.
  */

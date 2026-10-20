@@ -34,6 +34,14 @@ type).
 | Analyses métier | Quantities, constraints, checks and scenario comparison |
 | Documents | Plans, tables, schedules and reports |
 | Collaboration | Access, comments, revisions and synchronisation |
+| Sandbox | Free 3D board on its own (`/sandbox`): no project, no server, no link with the step 10 Planche |
+
+The Sandbox is the eighth module (owner decision of 2026-10-20; lot 1 moved it out of the Studio Console,
+`Studio/Sandbox/Recommandation_Sandbox_Architecture.md`). It is independent in both directions: it imports neither
+Studio, the Atelier, `@parcours/atelier-model`, `@parcours/planche-model` nor the API client — its board model is the
+copied `@parcours/sandbox-planche-model` — and no Studio file imports it; the Console card « 00 Sandbox » is a plain
+link, and the former address `/studio/console/sandbox` redirects to `/sandbox`. Enforced by
+`apps/web/src/modules/sandbox/independance.test.ts` and `scripts/frontieres.json`.
 
 Scaffolded as `apps/web/src/modules/<module>/README.md` (one file per module stating its responsibility and
 current status) so the boundary exists in the repository before it exists in the UI, instead of emerging by

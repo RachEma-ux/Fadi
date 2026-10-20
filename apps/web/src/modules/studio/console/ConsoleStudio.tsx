@@ -1,14 +1,13 @@
 /**
  * Console de Studio (`/studio/console`) : cinq cartes.
  *
- * - « 00 Sandbox » : la Planche de Sandbox, copie indépendante de celle de l'étape 10 (`/studio/console/sandbox`).
+ * - « 00 Sandbox » : un simple lien vers le module Sandbox (`/sandbox`, lot 1), qui n'est plus chargé par le Studio.
  * - « 01 » à « 04 » : l'outil du domaine, ouvert SANS CHARGER DE PROJET (`/studio/console/:domaine`) — aucune lecture
  *   de projet, d'étude ni de variante, aucune création côté serveur, aucun projet fictif. Ce qui est dessiné reste dans
  *   la page : rien n'est enregistré (`ConsoleOutil`).
  */
-import { lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
-import { CARTES_CONSOLE, LIBELLE_SANDBOX } from "./cartes";
+import { CARTES_CONSOLE } from "./cartes";
 import "./console.css";
 
 export function ConsoleStudio() {
@@ -34,19 +33,3 @@ export function ConsoleStudio() {
   );
 }
 
-/**
- * Carte « 00 Sandbox » : la Planche de Sandbox, chargée à la demande (three.js, Manifold : jamais dans la coquille de
- * Studio). Aucune donnée de projet, aucun appel serveur ; voir `sandbox/SandboxPlanche.tsx`.
- */
-const SandboxPlanche = lazy(() => import("./sandbox/SandboxPlanche"));
-
-export function ConsoleSandbox() {
-  return (
-    <section className="studio-page studio-console studio-console-sandbox" data-studio-console-sandbox>
-      <h1 className="sr-only"><span translate="no">00 {LIBELLE_SANDBOX}</span></h1>
-      <Suspense fallback={<p role="status" data-studio-sandbox-chargement>Chargement de la Planche de Sandbox…</p>}>
-        <SandboxPlanche />
-      </Suspense>
-    </section>
-  );
-}

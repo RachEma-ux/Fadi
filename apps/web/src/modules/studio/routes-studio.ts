@@ -20,7 +20,7 @@
  * `commentaires` ; le contexte projet → étude → variante reste dans le chemin. Ils ne transmettent aucun droit.
  *
  * Console (`/studio/console…`, demande du maître d'ouvrage du 20 octobre 2026) : `/studio/console` est la page des cartes ;
- * `/studio/console/sandbox` la Planche de Sandbox (copie indépendante de celle de l'étape 10) ; `/studio/console/outil?domaine=…` (`dessin|bim|visualisation|
+ * `/studio/console/sandbox` l'ancienne adresse de la Sandbox, qui redirige vers le module Sandbox (`/sandbox`, lot 1) ; `/studio/console/outil?domaine=…` (`dessin|bim|visualisation|
  * documentation`, obligatoire, une seule fois) ouvre l'outil de ce domaine INDÉPENDAMMENT DE TOUT PROJET : aucun projet,
  * aucune étude, aucune variante n'est lu, créé ni nommé dans l'adresse (pas de projet fictif). Comme sur une variante,
  * changer de domaine ne change que la requête (l'outil n'est ni quitté ni déchargé). `planche=2d|3d|double` y est admis
@@ -48,7 +48,7 @@ export type RouteStudio =
   | { vue: "console-outil"; domaine: DomaineStudio; planche: ModePlanche | null }
   | { vue: "inconnue"; chemin: string };
 
-/** Les trois adresses de la Console (page, Sandbox, outil sans projet) : aucune ne porte de projet, d'étude ni de variante. */
+/** Les trois adresses de la Console (page, ancienne adresse de la Sandbox, outil sans projet) : aucune ne porte de projet, d'étude ni de variante. */
 export type RouteConsoleStudio = Extract<RouteStudio, { vue: "console" | "console-sandbox" | "console-outil" }>;
 export const estRouteConsole = (r: RouteStudio): r is RouteConsoleStudio => r.vue === "console" || r.vue === "console-sandbox" || r.vue === "console-outil";
 
@@ -124,7 +124,7 @@ export function lireRouteStudio(pathname: string, search = ""): RouteStudio {
   return { vue: "variante", projectId, studyId, variantId, revisionId, commentaires: commentaires.length === 1, domaine, planche };
 }
 
-/** Segment de la Console réservé à la Planche de Sandbox (« 00 Sandbox »). */
+/** Ancien segment de la Console de la Planche de Sandbox : l'adresse redirige vers `/sandbox` (lot 1). */
 export const SEGMENT_SANDBOX = "sandbox";
 /** Segment de la Console qui ouvre l'outil d'un domaine, sans projet. */
 export const SEGMENT_OUTIL_CONSOLE = "outil";
@@ -170,8 +170,12 @@ export function cheminComparaisonStudio(projectId: string, studyId: string, de: 
 
 /** Page de la Console : les cartes 00 à 04. */
 export const cheminConsoleStudio = (): string => `${RACINE_STUDIO}/console`;
-/** Carte « 00 Sandbox » : la Planche de Sandbox. */
-export const cheminSandboxStudio = (): string => `${cheminConsoleStudio()}/${SEGMENT_SANDBOX}`;
+/**
+ * Carte « 00 Sandbox » : le module Sandbox, à sa propre adresse (lot 1). Écrite en toutes lettres : le Studio n'importe
+ * pas le module Sandbox (test d'indépendance). L'ancienne adresse `/studio/console/sandbox` est lue (`console-sandbox`)
+ * pour y rediriger.
+ */
+export const cheminSandboxStudio = (): string => "/sandbox";
 /** Outil d'un domaine, sans projet. `planche` n'est écrite qu'avec `dessin` (sinon ignorée). */
 export function cheminOutilConsoleStudio(domaine: DomaineStudio, options: { planche?: ModePlanche | null } = {}): string {
   const q = new URLSearchParams({ domaine });

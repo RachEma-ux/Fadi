@@ -3,7 +3,7 @@
  * et du menu principal, en français (langue source) et en anglais. Le reste de l'interface est traduit à
  * l'affichage par le dictionnaire `lib/i18n/en.json`. Pur.
  */
-import { LANGUE, type Langue } from "../../../../lib/i18n";
+import { LANGUE, type Langue } from "../../lib/i18n";
 
 export type { Langue };
 export const LANGUE_INTERFACE: Langue = LANGUE;

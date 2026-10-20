@@ -5,8 +5,9 @@
  *
  * - Accès permanents : « Accueil Studio » (`/studio` : reprise suggérée, choix explicite, nouvelle étude), « Choisir
  *   une étude » (études du projet affiché, sinon l'accueil), en plus des quatre domaines.
- * - « Console » (`/studio/console` : cinq cartes — « 00 Sandbox » (sa propre Planche) et les outils des quatre domaines, ouverts SANS
- *   charger de projet) est un article principal de Studio, sous l'en-tête et hors du sous-menu ; surligné sur toutes ses pages.
+ * - « Console » (`/studio/console` : cinq cartes — « 00 Sandbox » (lien vers le module Sandbox, `/sandbox`) et les outils des quatre
+ *   domaines, ouverts SANS charger de projet) est un article principal de Studio, sous l'en-tête et hors du sous-menu ; surligné sur
+ *   toutes ses pages et sur `/sandbox`, comme avant le lot 1 (apparence inchangée).
  * - « Studio » reste un lien vers `/studio` (accueil, jamais de redirection automatique), actif sur toutes les routes
  *   Studio ; son chevron (bouton `aria-expanded`, flèches droite / gauche) déplie ou replie les quatre entrées, comme
  *   « Projets › ». Barre repliée : chaque entrée montre son numéro, nom exact en infobulle et en nom accessible.
@@ -22,6 +23,7 @@
 import { useState, type KeyboardEvent } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { Icon } from "../components/Icon";
+import { CHEMIN_SANDBOX } from "../modules/sandbox/routes-sandbox";
 import { DOMAINES_STUDIO, domaineDeLAdresse, libelleNumeroteDomaine, type DomaineStudio } from "../modules/studio/domaines/definitions";
 import { cheminAccueilStudio, cheminConsoleStudio, cheminProjetStudio, cheminVarianteStudio, estRouteConsoleStudio, estRouteStudio, lireRouteStudio } from "../modules/studio/routes-studio";
 
@@ -49,7 +51,10 @@ export function choixEtudesStudio(pathname: string, search: string): { href: str
 
 export function MenuStudio({ surNavigation }: { surNavigation?: () => void }) {
   const { pathname, search } = useLocation();
-  const dansStudio = estRouteStudio(pathname);
+  // Le Sandbox (`/sandbox`) s'ouvre depuis la carte « 00 » de la Console : menu déplié et « Console » marqué, comme avant le lot 1.
+  const surSandbox = pathname === CHEMIN_SANDBOX;
+  const dansStudio = estRouteStudio(pathname) || surSandbox;
+  const surConsole = estRouteConsoleStudio(pathname) || surSandbox;
   const [ouvert, setOuvert] = useState(dansStudio);
   const affiche = domaineAfficheStudio(pathname, search);
   const etudes = choixEtudesStudio(pathname, search);
@@ -59,7 +64,7 @@ export function MenuStudio({ surNavigation }: { surNavigation?: () => void }) {
   };
   return <div className="sidebar-studio" data-studio-menu-lateral data-ouvert={ouvert ? "" : undefined}>
     <div className="sidebar-studio-tete">
-      <NavLink to="/studio" className={({ isActive }) => isActive ? "active" : undefined} title="Studio" aria-label="Studio" data-nav-studio onClick={surNavigation}><Icon name="studio" /><span className="sidebar-label">Studio</span></NavLink>
+      <NavLink to="/studio" className={({ isActive }) => isActive || surSandbox ? "active" : undefined} title="Studio" aria-label="Studio" data-nav-studio onClick={surNavigation}><Icon name="studio" /><span className="sidebar-label">Studio</span></NavLink>
       <button type="button" className="sidebar-studio-bascule" aria-expanded={ouvert} aria-controls="studio-menu-domaines" onClick={() => setOuvert((o) => !o)} onKeyDown={touches}
         aria-label={ouvert ? "Replier les domaines du Studio" : "Déplier les domaines du Studio"} title={ouvert ? "Replier les domaines du Studio" : "Déplier les domaines du Studio"} data-studio-menu-lateral-bascule>
         <Icon name="chevron-right" size={14} />
@@ -67,8 +72,9 @@ export function MenuStudio({ surNavigation }: { surNavigation?: () => void }) {
     </div>
     {/* « Console » : article principal de Studio, hors du sous-menu (visible replié ou non). « Console » est aussi le nom anglais : le
         dictionnaire traduit ailleurs ce mot en « Bracket » (support des réseaux), d'où translate="no". */}
-    <NavLink to={cheminConsoleStudio()} className={estRouteConsoleStudio(pathname) ? "active" : undefined} aria-current={estRouteConsoleStudio(pathname) ? "page" : undefined}
-      title="Console" aria-label="Console" translate="no" data-studio-menu-console onClick={surNavigation}><Icon name="console" /><span className="sidebar-label">Console</span></NavLink>
+    {/* Lien simple (pas NavLink) : son état actif suit `surConsole`, qui couvre aussi `/sandbox`, hors des adresses de la Console. */}
+    <Link to={cheminConsoleStudio()} className={surConsole ? "active" : undefined} aria-current={surConsole ? "page" : undefined}
+      title="Console" aria-label="Console" translate="no" data-studio-menu-console onClick={surNavigation}><Icon name="console" /><span className="sidebar-label">Console</span></Link>
     <div id="studio-menu-domaines" className="sidebar-studio-sous-menu" hidden={!ouvert}>
     <ul className="sidebar-studio-acces" aria-label="Accès Studio">
       <li><Link to={cheminAccueilStudio()} aria-current={pathname === "/studio" ? "page" : undefined} title="Accueil Studio" aria-label="Accueil Studio" data-studio-menu-accueil onClick={surNavigation}>

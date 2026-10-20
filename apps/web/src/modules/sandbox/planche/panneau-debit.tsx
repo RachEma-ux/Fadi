@@ -5,7 +5,7 @@
  * source ; sinon « non évaluée ». Barre du panneau : Renuméroter, Étiquettes, Effacer les étiquettes, Exporter le CSV.
  */
 import { type ColonneDebit, type LigneDebit, type MotifMasse, type SourceSection } from "@parcours/sandbox-planche-model";
-import { LOCALE } from "../../../../../lib/i18n";
+import { LOCALE } from "../../../lib/i18n";
 import { type CleMessage, t } from "../messages";
 import { COMMANDES_DEBIT, type Disponibilite, type IdCommandeDebit } from "./commandes-objets";
 import { afficherRaccourci } from "./outils-planche";

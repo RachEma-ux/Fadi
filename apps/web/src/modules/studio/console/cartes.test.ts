@@ -1,5 +1,5 @@
 /**
- * Cartes de la Console : cinq cartes, dans l'ordre demandé, aux libellés exacts ; « 00 » ne s'ouvre jamais comme un outil ;
+ * Cartes de la Console : cinq cartes, dans l'ordre demandé, aux libellés exacts ; « 00 » mène au module Sandbox (`/sandbox`) ;
  * « 01 » à « 04 » ouvrent l'outil de leur domaine sans projet (aucun identifiant de projet, d'étude ni de variante).
  */
 import { describe, expect, it } from "vitest";
@@ -20,8 +20,9 @@ describe("cartes de la Console", () => {
     ]);
   });
 
-  it("la carte 00 ouvre la Planche de Sandbox, jamais un outil de domaine", () => {
-    expect(lire(CARTES_CONSOLE[0]!.chemin)).toEqual({ vue: "console-sandbox" });
+  it("la carte 00 est un simple lien vers le module Sandbox (/sandbox), jamais un outil de domaine ni une page du Studio", () => {
+    expect(CARTES_CONSOLE[0]!.chemin).toBe("/sandbox");
+    expect(lire(CARTES_CONSOLE[0]!.chemin).vue).toBe("inconnue");
   });
 
   it("chaque carte de domaine ouvre l'outil de son domaine, sans charger de projet", () => {
