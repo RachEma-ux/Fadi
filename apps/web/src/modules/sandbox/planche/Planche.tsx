@@ -108,6 +108,7 @@ import {
   separerDiagnostic,
   changerSectionPiece,
   tournerPieceAxe,
+  CLES_PERSONNALISABLES,
 } from "@parcours/sandbox-planche-model";
 import { etatUi, useEtatUi } from "../etat-ui";
 import { MenuPlanche } from "./menu-planche";
@@ -126,7 +127,7 @@ import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { curseurOutil } from "../pictogrammes/curseur";
 import { usePreferencesSandbox } from "../preferences/usePreferencesSandbox";
 import { PanneauPersonnaliser } from "../preferences/PanneauPersonnaliser";
-import { disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante } from "./BarreOutilsFlottante";
 import { PanneauProfiles, type ChoixSection } from "./panneau-profiles";
 import { PanneauDebit, REGLAGES_DEBIT_DEFAUT, type ReglagesDebit } from "./panneau-debit";
@@ -316,8 +317,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const [tactile, setTactile] = useState(false);
   // Téléphone (≤ 760 px) : annuler / rétablir vivent dans le volet bas, l'aide dans la barre du haut.
   const [etroit, setEtroit] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches);
-  // Écran tactile dès l'ouverture (pointeur grossier) : les boutons zoom + / − sont visibles sans attendre un premier toucher.
-  const [pointeurGrossier] = useState(() => typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches);
+  // Écran tactile dès l'ouverture (un pointeur grossier, même secondaire, ou des points de contact) : les boutons zoom + / −
+  // sont visibles sans attendre un premier toucher, y compris sur un portable à écran tactile piloté à la souris.
+  const [pointeurGrossier] = useState(() => typeof window !== "undefined" && (window.matchMedia("(any-pointer: coarse)").matches || (navigator.maxTouchPoints ?? 0) > 0));
   const [majVerrouillee, setMajVerrouillee] = useState(false);
   // Barres d'opérations flottantes (D-198) : haut de la barre rangée en bas au téléphone (la barre d'actions s'en écarte).
   const [hautDocquee, setHautDocquee] = useState<number | null>(null);
@@ -2152,7 +2154,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     });
   executerNavigateurRef.current = executerNavigateur;
   const etatVue = () => ({ entites: etatSelectionObjets().entites, isole: isolement !== null, dansObjet: dans !== undefined });
-  const executerVue = (id: IdCommandeVue) => (id === "isoler" ? basculerIsolement() : basculerMasquerReste());
+  const executerVue = (id: IdCommandeVue) => (id === "zoom-plus" || id === "zoom-moins" ? vueRef.current?.zoomer(PAS_ZOOM[id]) : id === "isoler" ? basculerIsolement() : basculerMasquerReste());
   const commandesVue = () =>
     COMMANDES_VUE.map((c) => {
       const d = disponibiliteVue(c.id, etatVue());
@@ -2226,10 +2228,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         // Lot 4 : Cadrer (Zoom étendu) toujours ; zoom + / − visibles sur écran tactile (comme les zones de SketchUp au doigt).
         { id: "cadrer", picto: entreeOutil("zoom-etendu").pictogramme, libelle: t("actions.cadrer"), texte: t("actions.cadrer"), titre: `${t("actions.cadrer")} (${afficherRaccourci(raccourciOutil(outilParId("zoom-etendu")!)!)})`, onClick: () => choisirOutil("zoom-etendu"), attributs: { "data-planche-cadrer": "" } },
         ...(tactile || etroit || pointeurGrossier
-          ? [
-              { id: "zoom-moins", picto: "zoomMoins" as const, libelle: t("actions.zoom.moins"), onClick: () => vueRef.current?.zoomer(0.8), attributs: { "data-planche-zoom": "moins" } },
-              { id: "zoom-plus", picto: "zoomPlus" as const, libelle: t("actions.zoom.plus"), onClick: () => vueRef.current?.zoomer(1.25), attributs: { "data-planche-zoom": "plus" } },
-            ]
+          ? (["zoom-moins", "zoom-plus"] as const)
+              .map((id) => COMMANDES_VUE.find((c) => c.id === id)!)
+              .map((c) => ({ id: c.id, picto: c.picto, libelle: t(c.libelle), titre: `${t(c.libelle)} (${afficherRaccourci(c.raccourci)})`, onClick: () => executerVue(c.id), attributs: { "data-planche-zoom": c.id === "zoom-plus" ? "plus" : "moins" } }))
           : []),
         ...COMMANDES_OBJETS.flatMap((c) => {
           const d = disponibiliteObjet(c.id, etatSelectionObjets());
@@ -2459,7 +2460,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
               preferences={prefsSandbox.preferences}
               etat={prefsSandbox.etat}
               outils={OUTILS}
-              commandes={commandesListe.map((c) => ({ id: c.id, picto: c.picto, nom: c.nom }))}
+              commandes={commandesListe.filter((c) => CLES_PERSONNALISABLES.includes(`commande:${c.id}`)).map((c) => ({ id: c.id, picto: c.picto, nom: c.nom }))}
               modifier={prefsSandbox.modifier}
               reinitialiser={prefsSandbox.reinitialiser}
             />

@@ -94,6 +94,9 @@ async function disposition(page, contexte) {
     });
     check("téléphone : « Outils ▾ » visible sans défiler la barre du haut", haut === true);
     check("téléphone : boutons zoom + / − visibles", (await racine.locator('[data-barre-actions] [data-planche-zoom="plus"]').isVisible()) && (await racine.locator('[data-barre-actions] [data-planche-zoom="moins"]').isVisible()));
+    // Commandes du registre : leur raccourci est affiché dans l'info-bulle (Alt+Maj+Z, Alt+Maj+Y).
+    const titres = await racine.locator("[data-barre-actions] [data-planche-zoom]").evaluateAll((l) => l.map((b) => b.getAttribute("title") ?? ""));
+    check("téléphone : zoom + / − portent leur raccourci", titres.length === 2 && titres.every((x) => /Alt/.test(x) && /Maj|Shift/.test(x)), JSON.stringify(titres));
   }
 }
 

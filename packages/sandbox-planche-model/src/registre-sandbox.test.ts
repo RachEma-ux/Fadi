@@ -19,7 +19,7 @@ describe("registre du Sandbox — contenu", () => {
   });
 
   it("une seule entrée hors catalogue : la commande Diviser, doublon de l'outil (à harmoniser au lot 6)", () => {
-    expect(REGISTRE_SANDBOX.filter((e) => e.horsCatalogue).map((e) => `${e.nature}:${e.id}`)).toEqual(["commande:diviser"]);
+    expect(REGISTRE_SANDBOX.filter((e) => e.horsCatalogue).map((e) => `${e.nature}:${e.id}`)).toEqual(["commande:diviser", "commande:zoom-plus", "commande:zoom-moins"]);
     expect(entreeOutil("diviser").horsCatalogue).toBeUndefined();
   });
 
