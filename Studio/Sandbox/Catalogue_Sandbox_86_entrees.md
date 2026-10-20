@@ -6,7 +6,7 @@
 
 Le Sandbox du Studio offre 86 entrées avec une icône : 52 outils, 20 commandes et 14 panneaux. Ce catalogue est la référence de travail ; aucune implémentation n'en découle pour l'instant.
 
-Source : code de `main` `f88806f4`, installé en préproduction le 20 octobre 2026 (`packages/sandbox-planche-model/src/catalogue-outils.ts`, `apps/web/src/modules/studio/console/sandbox/planche/`). Toutes les icônes sont des caractères Unicode, pas des pictogrammes dessinés.
+Source : code de `main` `f88806f4`, installé en préproduction le 20 octobre 2026 (`packages/sandbox-planche-model/src/catalogue-outils.ts`, `apps/web/src/modules/studio/console/sandbox/planche/`). Toutes les icônes sont aujourd'hui des caractères Unicode ; décision du 20 octobre 2026 : elles seront remplacées par des pictogrammes Tabler Icons (voir [Recommandation d'architecture](Recommandation_Sandbox_Architecture.md)).
 
 - **Emplacement** : barre = barre verticale gauche ; grille = « ⋯ Plus d'outils » ; actions = barre d'actions flottante ; colonne = colonne de droite ; Objets et vue = sous-liste de la colonne de droite ; menu = clic droit. Tous les outils et commandes figurent aussi dans « Outils ▾ ».
 - **Raccourci** : celui de SketchUp quand il existe ; sinon un raccourci propre à Fadi.
@@ -123,7 +123,7 @@ Trois panneaux s'ouvrent en un clic depuis la colonne de droite ; les dix autres
 
 ## Absences et points à harmoniser
 
-Dix éléments de SketchUp n'ont aucune entrée dans le Sandbox, et sept points du catalogue sont à harmoniser avant toute implémentation.
+Dix éléments de SketchUp n'ont aucune entrée dans le Sandbox ; six points du catalogue sont à harmoniser avant toute implémentation, et le remplacement des icônes Unicode est décidé.
 
 | Élément | Nature | Détail |
 | --- | --- | --- |
@@ -143,7 +143,7 @@ Dix éléments de SketchUp n'ont aucune entrée dans le Sandbox, et sept points 
 | Maj+Z | À harmoniser | Texte 3D dans le Sandbox, Zoom étendu dans SketchUp |
 | Zoom étendu | À harmoniser | Ctrl+Maj+E au lieu de Maj+Z |
 | Recherche d'outil | À harmoniser | Maj+- au lieu de Maj+S (Maj+S = Soustraction) |
-| Icônes Unicode | À harmoniser | Monochromes, à remplacer par des pictogrammes dessinés |
+| Icônes Unicode | Décidé | Remplacées par des pictogrammes **Tabler Icons** (MIT), 13 dessinés sur mesure : voir [la recommandation](Recommandation_Sandbox_Architecture.md) |
 
 Les icônes partagées entre un outil et le panneau qu'il ouvre (Pot de peinture et Matériaux, Balise et Balises, Liste de débit et Débit) peuvent rester communes ; les trois premières paires de la ligne « Icônes en double » non.
 

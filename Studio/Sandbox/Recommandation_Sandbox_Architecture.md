@@ -1,27 +1,33 @@
 # Recommandation d'architecture — Sandbox
 
-20 octobre 2026 · Roch · **Statut : proposée, en attente de décision** (aucune implémentation engagée)
+20 octobre 2026 · Roch · **Statut : orientation décidée ; quatre points restent à valider avant tout code** (aucune implémentation engagée)
 
 Le Sandbox devient un module autonome, avec son propre registre d'outils, une interface par défaut proche de SketchUp et des pictogrammes Tabler.
 
-Décisions déjà prises par le maître d'ouvrage (20 octobre 2026) :
+## Journal des décisions
 
-- le Sandbox est un outil **autonome** et ne rejoindra pas le domaine « 01 Dessin et modélisation » ;
-- il ne réutilise **jamais** le système d'outils du 01 : il en reprend le fonctionnement, pas le code ;
-- son interface par défaut ressemble à celle de SketchUp ;
-- ses icônes sont des **pictogrammes**, jamais des caractères Unicode ni du texte ;
-- la bibliothèque de pictogrammes retenue est **Tabler Icons**.
+| Date | Décision | Statut | Section |
+| --- | --- | --- | --- |
+| 20 octobre 2026 | Le Sandbox est un outil **autonome** ; il ne rejoindra pas le domaine « 01 Dessin et modélisation » | Décidé | 1 |
+| 20 octobre 2026 | Le Sandbox devient un **module à part** (`apps/web/src/modules/sandbox/`, adresse `/sandbox`) | Décidé (8ᵉ module à inscrire dans `docs/architecture.md`) | 1 |
+| 20 octobre 2026 | Un **catalogue d'outils qui fonctionne comme celui du 01**, sans jamais réutiliser son code | Décidé | 2 |
+| 20 octobre 2026 | L'interface par défaut **ressemble à celle de SketchUp** | Décidé | 3 |
+| 20 octobre 2026 | Les icônes sont des **pictogrammes**, jamais des caractères Unicode ni du texte | Décidé | 4 |
+| 20 octobre 2026 | Bibliothèque de pictogrammes : **Tabler Icons** (MIT), après comparaison avec Lucide et IconPark | Décidé | 4 |
+| — | Enregistrement des préférences dans le navigateur | À confirmer | 2 |
+| — | Catalogue de référence comme contenu initial du registre | À valider | 2 |
+| — | Dessinateur des 13 pictogrammes sur mesure et couleurs par famille | À désigner | 4 |
 
 Référence : [Catalogue Sandbox — 86 entrées](Catalogue_Sandbox_86_entrees.md).
 
-## 1. Le module
+## 1. Le module — décidé
 
 - **Le code est déplacé sans être réécrit** : il passe de `apps/web/src/modules/studio/console/sandbox/` à `apps/web/src/modules/sandbox/`, et le Sandbox prend sa propre adresse, `/sandbox`.
 - **La carte « 00 Sandbox » reste dans la Console du Studio**, comme simple lien vers cette adresse.
 - **Un test garantit la séparation, dans les deux sens** : le Sandbox n'importe rien du Studio, de l'Atelier, du registre du 01 (`@parcours/atelier-model`) ni de l'API ; le Studio n'importe rien du Sandbox, hormis ce lien.
 - **Pourquoi maintenant** : le déplacement ne touche aujourd'hui que 4 fichiers du Studio (`StudioShell.tsx`, `routes-studio.ts`, `console/ConsoleStudio.tsx`, `console/cartes.ts`) ; plus on attend, plus il coûtera.
 
-## 2. Le registre du Sandbox
+## 2. Le catalogue du Sandbox, sur le modèle du 01 — décidé
 
 - **Une source unique**, `REGISTRE_SANDBOX`, dans `packages/sandbox-planche-model`. Son contenu de départ est le catalogue de référence : 86 entrées, soit 52 outils, 20 commandes et 14 panneaux. Chaque entrée porte son identifiant, son pictogramme, sa famille, son raccourci, son emplacement par défaut et sa disponibilité.
 - **Toute l'interface lit ce registre**, sans en garder de copie : barres, grille « ⋯ », menu « Outils ▾ », recherche, colonne de droite, barre d'actions et clavier.
@@ -33,7 +39,7 @@ Référence : [Catalogue Sandbox — 86 entrées](Catalogue_Sandbox_86_entrees.m
   - bouton « Réinitialiser ».
 - **Les préférences sont enregistrées dans le navigateur**, conformément à la règle « aucun serveur » du Sandbox.
 
-## 3. Une interface par défaut proche de SketchUp
+## 3. Une interface par défaut proche de SketchUp — décidé
 
 Cette disposition par défaut est celle du profil « Standard » ; « Réinitialiser » y ramène.
 
@@ -49,7 +55,7 @@ Cette disposition par défaut est celle du profil « Standard » ; « Réinitial
 
 La sous-liste « Objets et vue » (deux clics) disparaît, ainsi que la confusion entre ⓘ (Info entité) et (i) (Info modèle).
 
-## 4. Les pictogrammes : Tabler Icons
+## 4. Les pictogrammes : Tabler Icons — décidé
 
 - **Bibliothèque retenue : [Tabler Icons](https://github.com/tabler/tabler-icons)**, licence MIT, 6 238 icônes au trait et pleines. Elle couvre directement **16 des 20 outils principaux** de la planche de comparaison (contre 15 pour Lucide et 12 pour IconPark).
 - **Ces pictogrammes remplacent tous les caractères Unicode** actuels.
@@ -81,9 +87,9 @@ Un lot à la fois, chacun sur sa branche, avec sa PR et une CI verte :
 5. Personnalisation : profils, favoris, regroupements.
 6. Harmonisation des raccourcis.
 
-## Décisions restantes
+## Points restant à valider avant le premier lot
 
-1. Valider un 8ᵉ module, avec la mise à jour de `docs/architecture.md`, qui en fixe 7.
+1. Inscrire le 8ᵉ module dans `docs/architecture.md`, qui en fixe 7 (le principe est décidé).
 2. Confirmer l'enregistrement des préférences dans le navigateur.
 3. Valider le catalogue de référence comme contenu initial du registre.
 4. Désigner qui dessine les 13 pictogrammes sur mesure et valider les couleurs par famille.
