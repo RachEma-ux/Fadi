@@ -1,0 +1,12 @@
+#!/bin/bash
+# Installed root-owned as /usr/local/libexec/fadi-preprod-ci-ssh.
+# This is the ONLY command offered by the dedicated SSH key of fadi-deploy.
+set -euo pipefail
+umask 077
+
+[[ "${SSH_ORIGINAL_COMMAND:-}" =~ ^deploy\ ([0-9a-f]{40})$ ]] || {
+  echo "preprod: SSH command refused (expected: deploy <40-hex-sha>)" >&2
+  exit 2
+}
+sha="${BASH_REMATCH[1]}"
+exec /usr/bin/sudo -n /usr/local/sbin/fadi-preprod-ci-deploy "$sha"
