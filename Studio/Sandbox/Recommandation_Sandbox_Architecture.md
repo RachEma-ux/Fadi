@@ -37,7 +37,7 @@ Référence : [Catalogue Sandbox — 86 entrées](Catalogue_Sandbox_86_entrees.m
   - favoris et regroupements nommés ;
   - choix des outils de la barre gauche ;
   - bouton « Réinitialiser ».
-- **Les préférences sont enregistrées dans le navigateur**, conformément à la règle « aucun serveur » du Sandbox.
+- **Enregistrement des préférences — à confirmer (voir « Points restant à valider »)** : la proposition est de les garder dans le navigateur, conformément à la règle « aucun serveur » du Sandbox. Aucun lot ne fige ce choix avant sa validation.
 
 ## 3. Une interface par défaut proche de SketchUp — décidé
 
@@ -72,7 +72,9 @@ La sous-liste « Objets et vue » (deux clics) disparaît, ainsi que la confusio
 
 ## 5. Les règles contrôlées par test
 
-- **La « règle d'or » s'étend aux 86 entrées** : chacune a son pictogramme (Tabler ou sur mesure), jamais partagé, et un raccourci unique ; aucune icône n'est un caractère ou du texte.
+- **La « règle d'or » s'étend aux 86 entrées** : chacune a son pictogramme (Tabler ou sur mesure) ; aucune icône n'est un caractère ou du texte.
+- **Pictogrammes uniques, sauf exceptions déclarées** : deux entrées ne partagent jamais un pictogramme, sauf un outil ou une commande et le panneau qu'il ouvre, quand ils portent le même objet. Ces exceptions sont listées une à une dans le registre et le test n'admet qu'elles. Liste de départ, reprise du catalogue : Pot de peinture et Matériaux, Balise et Balises, Liste de débit et Débit. Les autres paires du catalogue (◠, ◐, ⧉, ❖) reçoivent des pictogrammes distincts.
+- **Raccourcis uniques là où ils existent** : chaque raccourci déclaré n'appartient qu'à une entrée. Les 52 outils et les 20 commandes en ont un ; les 14 panneaux n'en ont pas à ce stade et s'ouvrent depuis la barre de droite. Leur en attribuer serait une décision à part, jamais un champ obligatoire du registre.
 - **Les points à harmoniser du catalogue sont corrigés dans le registre** : doublon « Diviser », Maj+Z (Texte 3D / Zoom étendu), raccourci de la recherche.
 - **Un test de bout en bout de `/sandbox`** vérifie la disposition par défaut, sur ordinateur et sur téléphone.
 
