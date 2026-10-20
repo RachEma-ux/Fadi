@@ -1,0 +1,36 @@
+#!/bin/bash
+# Double de curl pour fadi-preprod-auto : API publique de GitHub, GET /version de la préproduction, Healthchecks.
+# MOCK_DIR reçoit la trace (appels, notifications) ; réponses réglées par MOCK_* (voir run-auto.sh).
+o=/dev/null; d=/dev/null; w=; url=; data=; conf=0
+args="$*"
+while [ $# -gt 0 ]; do case "$1" in
+  -o) o=$2; shift 2 ;; -D) d=$2; shift 2 ;; -w) w=$2; shift 2 ;; --data-binary) data=$2; shift 2 ;;
+  -K) [ "$2" = - ] && conf=1; shift 2 ;; -H|-m|--retry) shift 2 ;; -*) shift ;; *) url=$1; shift ;; esac; done
+if [ "$conf" = 1 ]; then url=$(sed -n 's/^url = "\(.*\)"$/\1/p'); fi
+echo "$url" >> "$MOCK_DIR/curl.trace"
+echo "$args" >> "$MOCK_DIR/curl.args"
+reponse() {  # $1 = code, $2 = corps
+  { printf 'HTTP/1.1 %s X\r\n' "$1"; printf 'x-ratelimit-remaining: %s\r\n' "${MOCK_RESERVE:-55}"; printf '\r\n'; } > "$d"
+  printf '%s' "$2" > "$o"
+  [ -n "$w" ] && printf '%s' "$1"
+  exit 0
+}
+case "$url" in
+  https://hc.example.invalid/*)
+    [ -n "${MOCK_HC_DOWN:-}" ] && { echo "curl: (22) 503" >&2; exit 22; }
+    printf '%s | %s\n' "$url" "$data" >> "$MOCK_DIR/notifications"; exit 0 ;;
+  https://api.github.com/repos/RachEma-ux/Fadi/*)
+    [ -n "${MOCK_API_DOWN:-}" ] && { echo "curl: (6) Could not resolve host" >&2; printf '000'; exit 6; }
+    [ -n "${MOCK_API_CODE:-}" ] && reponse "$MOCK_API_CODE" '{"message":"API rate limit exceeded"}'
+    chemin=${url#https://api.github.com/repos/RachEma-ux/Fadi/}
+    case "$chemin" in
+      commits/main) reponse 200 "${MOCK_MAIN_SHA}" ;;
+      commits/*/check-runs*) reponse 200 "$(cat "${MOCK_CHECKS:?}")" ;;
+      compare/*) reponse 200 "{\"status\":\"${MOCK_COMPARE-ahead}\"}" ;;
+    esac
+    reponse 404 '{"message":"Not Found"}' ;;
+  http://127.0.0.1:3101/version)
+    v=${MOCK_VERSION:-$(cat "$MOCK_DIR/en-ligne" 2>/dev/null)}
+    printf '{"commit":"%s","buildDate":"2026-10-20T21:30:00Z"}' "$v"; exit 0 ;;
+esac
+echo "double curl : adresse inattendue $url" >&2; exit 9

@@ -1,0 +1,21 @@
+# Fadi — déploiement automatique de `main` en préproduction (deploy/preprod/fadi-preprod-auto).
+# Installé par l'administrateur en /etc/systemd/system/, avec /usr/local/sbin/fadi-preprod-auto (root, 0755) depuis un
+# commit relu, empreinte vérifiée. Déclenché par fadi-preprod-auto.timer ; jamais par GitHub.
+[Unit]
+Description=Fadi — préproduction automatique (main vérifiée par la CI)
+Documentation=https://github.com/RachEma-ux/Fadi/blob/main/docs/deploiement-automatique.md
+Wants=network-online.target
+After=network-online.target docker.service
+ConditionPathIsDirectory=/opt/fadi-preprod
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/fadi-preprod-auto
+# Construction et scénarios courts compris ; au-delà, le passage est arrêté (le suivant reprend l'état).
+TimeoutStartSec=90min
+UMask=0077
+Nice=10
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+ProtectHome=read-only

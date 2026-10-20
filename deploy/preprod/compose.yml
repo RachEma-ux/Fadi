@@ -40,6 +40,10 @@ services:
     build:
       context: ${FADI_SRC:?FADI_SRC manquant}
       dockerfile: Dockerfile
+      # GET /version : commit et date de construction (fournis par `fadi-preprod build`).
+      args:
+        FADI_COMMIT: ${FADI_BUILD_COMMIT:-inconnu}
+        FADI_BUILD_DATE: ${FADI_BUILD_DATE:-inconnu}
     restart: unless-stopped
     depends_on:
       db:

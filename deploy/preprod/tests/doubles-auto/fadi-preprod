@@ -1,0 +1,16 @@
+#!/bin/bash
+# Double de fadi-preprod pour fadi-preprod-auto : trace chaque appel (MOCK_DIR/fp.trace) ; `sync <sha>` fige le code,
+# `migrate` / `up` mettent en ligne le code figé (MOCK_DIR/en-ligne, lu par le double de curl pour /version).
+# MOCK_FP_FAIL : mots « verbe » (toujours en échec) ou « verbe#n » (n-ième appel de ce verbe en échec).
+# MOCK_FP_NOVERSION=1 : `up` / `migrate` ne changent pas la version servie.
+verbe=${1:-}
+echo "$* (SUDO_USER=${SUDO_USER-absent})" >> "$MOCK_DIR/fp.trace"
+n=$(( $(cat "$MOCK_DIR/n-$verbe" 2>/dev/null || echo 0) + 1 )); echo "$n" > "$MOCK_DIR/n-$verbe"
+for m in ${MOCK_FP_FAIL:-}; do
+  if [ "$m" = "$verbe" ] || [ "$m" = "$verbe#$n" ]; then echo "double fadi-preprod : échec simulé ($verbe, appel $n)" >&2; exit 3; fi
+done
+case "$verbe" in
+  sync) echo "$2" > "$MOCK_DIR/src" ;;
+  migrate|up) [ -z "${MOCK_FP_NOVERSION:-}" ] && cp "$MOCK_DIR/src" "$MOCK_DIR/en-ligne" ;;
+esac
+echo "fadi-preprod $* : ok"

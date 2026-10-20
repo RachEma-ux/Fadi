@@ -2,7 +2,8 @@
 # Tests de fadi-preprod sans root ni démon Docker : dispositions jetables, doubles de docker / curl (doubles/), rôles
 # simulés par SUDO_USER. Couvre la garde d'isolation (cas normaux + 10 configurations dangereuses), la propagation des
 # échecs (build, check, smoke, backup, restore-check, migrate, e2e), l'extraction des rapports (liens, chemins),
-# les droits des résultats, la séparation administrateur / opérateur et l'intégrité du code approuvé.
+# les droits des résultats, la séparation administrateur / opérateur et l'intégrité du code approuvé ; puis lance
+# run-auto.sh (déploiement automatique, fadi-preprod-auto).
 # Usage : deploy/preprod/tests/run.sh   (requiert bash, git, python3, le client docker compose)
 set -uo pipefail
 umask 077
@@ -92,6 +93,16 @@ done
 echo "== Propagation des échecs"
 B=$(dispo codes)
 attendu 0  "build réussi" -- fp build
+SHA_CODES=$(git -C "$B/src" rev-parse HEAD); : > "$T/trace-build"
+attendu 0  "build avec version de l'image" -- fpe MOCK_TRACE="$T/trace-build" build
+grep ' build app recette$' "$T/trace-build" | grep -Eq "FADI_BUILD_COMMIT=$SHA_CODES FADI_BUILD_DATE=[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z " \
+  && { ok=$((ok + 1)); echo "✓ build : commit complet et date UTC fournis à l'image (GET /version)"; } \
+  || { ko=$((ko + 1)); echo "✗ arguments de version absents : $(grep ' build ' "$T/trace-build")"; }
+FADI_SRC=$B/src FADI_COMMIT=x FADI_BUILD_COMMIT=$SHA_CODES FADI_BUILD_DATE=2026-10-20T00:00:00Z PREPROD_POSTGRES_PASSWORD=x PREPROD_ARCHIVE_SIGNING_KEY=x \
+  docker compose -f "$B/src/deploy/preprod/compose.yml" config --format json 2>/dev/null \
+  | python3 -I -c 'import json, sys; a = json.load(sys.stdin)["services"]["app"]["build"]["args"]; sys.exit(0 if a == {"FADI_COMMIT": sys.argv[1], "FADI_BUILD_DATE": "2026-10-20T00:00:00Z"} else 1)' "$SHA_CODES" \
+  && { ok=$((ok + 1)); echo "✓ compose : arguments FADI_COMMIT / FADI_BUILD_DATE transmis au Dockerfile"; } \
+  || { ko=$((ko + 1)); echo "✗ compose : arguments de build de l'image absents ou faux"; }
 attendu nz "build en échec → code non nul" "échec simulé (build)" -- fpe MOCK_FAIL=build build
 attendu 0  "check réussi" -- fp check
 attendu nz "check en échec → code non nul, journal nommé" "journal : check.log" -- fpe MOCK_FAIL=run-check check
@@ -169,6 +180,9 @@ attendu nz "show : remontée de dossier refusée" "fichier invalide" -- fp show 
 attendu nz "show : exécution invalide refusée" "exécution invalide" -- fp show ../env
 ln -s "$B/env/.env.preprod" "$B/out/$RUNID/lien"
 attendu nz "show : lien symbolique refusé" "chemin refusé" -- fp show "$RUNID" lien
+printf '{"commit":"%s","resultat":"succes"}\n' "$(git -C "$B/src" rev-parse HEAD)" > "$B/etat.json"
+attendu 0  "status : état du déploiement automatique affiché" '"resultat":"succes"' -- fp status
+attendu 0  "show : état du déploiement automatique affiché" '"resultat":"succes"' -- fp show
 
 echo "== Rôles et intégrité du code approuvé"
 B=$(dispo roles)
@@ -236,4 +250,7 @@ PY
 
 echo
 echo "Résultat : $ok réussi(s), $ko échec(s)"
-[ "$ko" -eq 0 ]
+echo
+echo "== fadi-preprod-auto (tests/run-auto.sh)"
+bash "$ICI/run-auto.sh"; auto=$?
+[ "$ko" -eq 0 ] && [ "$auto" -eq 0 ]

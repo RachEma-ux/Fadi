@@ -64,7 +64,7 @@ atelier-complements atelier-canevas planche planche-modification planche-outils 
 planche-pousser-modes planche-objets planche-clavier planche-pousser-l10a planche-liens planche-suivez-moi
 planche-revolution planche-profiles planche-assemblages planche-debit planche-texte-3d planche-pieces-edition
 planche-modification-l18 planche-diagnostics-l19 planche-etirement-plis planche-epaissir planche-effilement-loft
-planche-lots-4-6 planche-lot-5 planche-lot-7 porte-p1-reduite p2-noyau-exact porte-p1-p2 p2-structure p2-bois-tolerie
+planche-lots-4-6 planche-lot-5 sandbox-module planche-lot-7 porte-p1-reduite p2-noyau-exact porte-p1-p2 p2-structure p2-bois-tolerie
 p2-reseaux p2-coordination p2-documentation p2-automatisation interface-anglais planche-boutons
 planche-detachee-documents atelier-barre planche-barre-outils studio-restauration"
 
@@ -87,8 +87,9 @@ Opérateur (code approuvé seulement) :
   check               typecheck, tests unitaires, garde DB, tests des scripts (application démarrée)
   e2e [scénario…]     scénarios Playwright (défaut : liste de la CI)
   backup | restore-check   sauvegarde de la base | restauration vérifiée vers une base de contrôle
-  show [<run> [fichier]]   liste les exécutions, les fichiers d'une exécution, ou affiche un fichier
-  status | logs [db|app] | down
+  show [<run> [fichier]]   liste les exécutions (et l'état du déploiement automatique), les fichiers d'une exécution,
+                      ou affiche un fichier
+  status | logs [db|app] | down   (status affiche aussi l'état du déploiement automatique)
 EOF
 }
 
@@ -133,8 +134,9 @@ EDGE_ARGS=()
 # MIGRATE_ON_START est toujours fixé ici (0 sauf demande explicite de `migrate`) : le fichier d'environnement ne peut
 # pas l'activer, et la configuration contrôlée par `garde` est exactement celle qu'utilise Docker.
 dc() {
-  MIGRATE_ON_START=${MIGRATE_ON_START:-0} FADI_SRC=$SRC FADI_COMMIT=$(commit | cut -c1-12) \
-    docker compose -p "$PROJECT" --project-directory "$COMPOSE_DIR" -f "$COMPOSE_DIR/compose.yml" "${EDGE_ARGS[@]}" \
+  local c; c=$(commit) || c=
+  MIGRATE_ON_START=${MIGRATE_ON_START:-0} FADI_SRC=$SRC FADI_COMMIT=${c:0:12} FADI_BUILD_COMMIT=$c \
+    FADI_BUILD_DATE=${FADI_BUILD_DATE:-inconnu} docker compose -p "$PROJECT" --project-directory "$COMPOSE_DIR" -f "$COMPOSE_DIR/compose.yml" "${EDGE_ARGS[@]}" \
     --env-file "$ENVF" "$@"
 }
 
@@ -278,6 +280,12 @@ attendre_sante() {  # $1 = service, $2 = délai (s)
   die "$1 n'est pas sain ($st)"
 }
 
+# État du déploiement automatique (fadi-preprod-auto), s'il existe.
+etat_auto() {
+  [ -f "$BASE/etat.json" ] && [ ! -L "$BASE/etat.json" ] || return 0
+  log "déploiement automatique (etat.json)"; cat "$BASE/etat.json"
+}
+
 app_demarree() { [ -n "$(dc ps -q --status running app)" ] || die "l'application doit être démarrée (fadi-preprod up)"; }
 recette() {  # commande dans le conteneur de recette ; FADI_RUN = dossier de l'exécution dans le volume fadi-preprod-out
   dc --profile recette run --rm --no-deps -T -e FADI_RUN="$RUNID" recette bash -c \
@@ -359,7 +367,7 @@ case "$cmd" in
     esac ;;
   show)
     sur "$OUTROOT" d
-    if [ $# -eq 0 ]; then ls -1 "$OUTROOT"; exit 0; fi
+    if [ $# -eq 0 ]; then ls -1 "$OUTROOT"; etat_auto; exit 0; fi
     [[ $1 =~ ^[0-9]{8}T[0-9]{6}Z-[0-9]+-[a-z0-9-]+$ ]] || die "exécution invalide : $1"
     d=$OUTROOT/$1; sur "$d" d
     if [ $# -eq 1 ]; then (cd "$d" && find . -type f -printf '%P\t%s octets\n' | sort); exit 0; fi
@@ -372,7 +380,7 @@ case "$cmd" in
   garde) verifier_disposition; garde 0 ;;
   build)
     verifier_disposition; nouveau_run build; garde 0
-    journal build.log dc --profile recette build app recette ;;
+    FADI_BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ) journal build.log dc --profile recette build app recette ;;
   up-db)
     verifier_disposition; garde 0; dc up -d db; attendre_sante db 120 ;;
   migrate)
@@ -441,6 +449,7 @@ DATABASE_URL_A="$DATABASE_URL" DATABASE_URL_B="$B" RESTORE_PORT=3002 OUT="/out/$
     journal restore-check.log recette ;;
   ps|status)
     verifier_disposition; dc ps
+    etat_auto
     log "production (lecture seule, inchangée)"
     docker ps --filter label=com.docker.compose.project=app --format '{{.ID}}  {{.Names}}  {{.Status}}' ;;
   logs)

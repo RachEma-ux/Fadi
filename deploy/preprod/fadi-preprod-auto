@@ -1,0 +1,284 @@
+#!/bin/bash
+# fadi-preprod-auto — déploiement automatique de `main` en préproduction (docs/deploiement-automatique.md, phase A).
+#
+# Installé par l'administrateur, propriété de root (0755), en /usr/local/sbin/fadi-preprod-auto, lancé toutes les
+# 5 minutes par fadi-preprod-auto.timer (deploy/preprod/systemd/). Le VPS tire : seule l'API publique de GitHub est
+# lue (aucun jeton, aucun secret dans GitHub, aucune connexion entrante).
+#
+# Un passage :
+#   1. lit le dernier commit de `main` (1 appel) ; déjà essayé (succès ou échec) → rien à faire ;
+#   2. exige les contrôles validate, e2e et image verts sur ce commit (exécutions GitHub Actions seulement ; en cours →
+#      on attend le passage suivant ; rouge ou absent → refus consigné) ;
+#   3. exige que le commit appartienne à l'historique de `main` (comparaison) ;
+#   4. fadi-preprod sync <sha>, build, migrate, up, smoke, /version = <sha>, puis un jeu court de scénarios (la CI a
+#      déjà joué tous les scénarios).
+# Échec : une construction ratée ne remplace rien (le code approuvé revient au commit en ligne) ; un échec après la
+# construction revient à l'image du commit précédent (images étiquetées par commit, conservées) : sync, up, smoke.
+# La base de préproduction ne contient que des données synthétiques ; elle n'est jamais restaurée ici.
+#
+# État : /opt/fadi-preprod/etat.json (commit, heure, étape, résultat, message, commit en ligne, dernier essai), lu par
+# `fadi-preprod status` et `fadi-preprod show`. Journal d'un déploiement : /opt/fadi-preprod/out/<run>-auto/journal.log.
+# Verrou : un seul passage à la fois (flock). Budget de l'API publique (60 appels / heure) : 1 appel par passage sans
+# nouveauté, 3 au plus sinon ; aucun appel si la réserve annoncée par GitHub tombe sous BUDGET_MIN.
+# Notification : Healthchecks (succès → ping, échec → /fail, avec un résumé) ; l'adresse est lue dans
+# /etc/fadi-preprod-auto/healthchecks-url (root, 0600, jamais dans le dépôt), passée à curl par l'entrée standard pour
+# ne jamais paraître dans la liste des processus. Absente : déploiement inchangé, notification non envoyée (journalisé).
+#
+# `fadi-preprod-auto relancer` (administrateur) : le commit de main déjà essayé sera de nouveau essayé au passage suivant.
+# Codes de sortie : 0 rien à faire / attente de la CI / refus des contrôles / déployé ; 1 déploiement en échec ;
+# 3 API GitHub injoignable ou réponse illisible ; 4 commit hors de l'historique de main.
+#
+# Hors root (deploy/preprod/tests/run-auto.sh) : FADI_PREPROD_BASE, FADI_PREPROD_AUTO_CONF et FADI_PREPROD_TEST_BIN
+# (doubles de curl et de fadi-preprod) désignent une disposition de test. Ces variables sont ignorées sous root.
+set -euo pipefail
+umask 077
+
+REPO_API=https://api.github.com/repos/RachEma-ux/Fadi
+CONTROLES_REQUIS="validate e2e image"
+E2E_COURT="sandbox-module parcours-scenario"
+APP_URL=http://127.0.0.1:3101
+BUDGET_MIN=10
+if [ "$(id -u)" -eq 0 ]; then
+  BASE=/opt/fadi-preprod
+  CONF=/etc/fadi-preprod-auto
+  PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+else
+  BASE=${FADI_PREPROD_BASE:-/opt/fadi-preprod}
+  CONF=${FADI_PREPROD_AUTO_CONF:-/etc/fadi-preprod-auto}
+  PATH=${FADI_PREPROD_TEST_BIN:+$FADI_PREPROD_TEST_BIN:}/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+fi
+export PATH
+ETAT=$BASE/etat.json
+OUTROOT=$BASE/out
+HC_FICHIER=$CONF/healthchecks-url
+OWNER_UID=$(id -u)
+TMP=$(mktemp -d)
+trap 'rm -rf "$TMP"' EXIT
+
+die() { echo "fadi-preprod-auto : $*" >&2; exit "${2:-1}"; }
+log() { echo "── $*"; }
+maintenant() { date -u +%Y-%m-%dT%H:%M:%SZ; }
+
+# Élément de la disposition : présent, pas un lien, propriété du compte d'exécution, sans écriture groupe / autres.
+sur() {  # $1 = chemin, $2 = d|f
+  local u m
+  [ -L "$1" ] && die "$1 est un lien symbolique"
+  [ "$2" = d ] && { [ -d "$1" ] || die "$1 absent"; }
+  [ "$2" = f ] && { [ -f "$1" ] || die "$1 absent"; }
+  read -r u m < <(stat -c '%u %a' "$1")
+  [ "$u" = "$OWNER_UID" ] || die "$1 n'appartient pas au compte d'exécution ($u)"
+  (( (8#$m & 8#022) == 0 )) || die "$1 est modifiable par le groupe ou les autres ($m)"
+}
+
+# ── état ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
+# Lecture : champ $1 de etat.json (vide si absent ou illisible). Écriture : fusion des champs clé=valeur, atomique.
+etat_lire() {
+  [ -f "$ETAT" ] && [ ! -L "$ETAT" ] || return 0
+  python3 -I -c 'import json, sys
+try: v = json.load(open(sys.argv[1])).get(sys.argv[2], "")
+except Exception: v = ""
+print(v if isinstance(v, str) else "")' "$ETAT" "$1"
+}
+etat_ecrire() {
+  [ -L "$ETAT" ] && die "$ETAT est un lien symbolique"
+  python3 -I - "$ETAT" "heure=$(maintenant)" "$@" <<'PY'
+import json, os, sys
+p = sys.argv[1]
+try: e = json.load(open(p))
+except Exception: e = {}
+if not isinstance(e, dict): e = {}
+for kv in sys.argv[2:]:
+    k, v = kv.split("=", 1); e[k] = v
+t = p + ".tmp"
+fd = os.open(t, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600)
+with os.fdopen(fd, "w") as f: json.dump(e, f, ensure_ascii=False, indent=2); f.write("\n")
+os.replace(t, p)
+PY
+}
+
+# ── API publique de GitHub ───────────────────────────────────────────────────────────────────────────────────────────
+# api <chemin> <accept> <fichier> : 200 exigé ; la réserve d'appels annoncée (x-ratelimit-remaining) est retenue.
+RESERVE=
+api() {
+  local chemin=$1 accept=$2 sortie=$3 code
+  if [ -n "$RESERVE" ] && [ "$RESERVE" -lt "$BUDGET_MIN" ]; then
+    etat_ecrire etape=api resultat=attente "message=budget de l'API GitHub presque épuisé (reste $RESERVE)"
+    log "budget de l'API GitHub presque épuisé (reste $RESERVE) : passage suivant"; exit 0
+  fi
+  code=$(curl -sS -m 20 -o "$sortie" -D "$TMP/entetes" -H "Accept: $accept" -H "X-GitHub-Api-Version: 2022-11-28" \
+    -H "User-Agent: fadi-preprod-auto" -w '%{http_code}' "$REPO_API/$chemin") || code=000
+  RESERVE=$(grep -i '^x-ratelimit-remaining:' "$TMP/entetes" 2>/dev/null | tr -dc '0-9' || true)
+  if [ "$code" != 200 ]; then
+    etat_ecrire etape=api resultat=erreur "message=API GitHub : $chemin → code $code"
+    die "API GitHub : $chemin → code $code" 3
+  fi
+}
+
+# Verdict des contrôles requis sur un commit : vert | en-cours | rouge:<détail>. Seules les exécutions de l'application
+# GitHub Actions comptent (une autre application ne peut pas imiter un contrôle) ; pour chaque nom, la plus récente.
+verdict_controles() {
+  python3 -I - "$1" "$CONTROLES_REQUIS" <<'PY'
+import json, sys
+try:
+    d = json.load(open(sys.argv[1])); runs = d["check_runs"]; total = d["total_count"]
+except Exception:
+    print("rouge:réponse illisible"); sys.exit()
+if total > len(runs): print(f"rouge:{total} contrôles, liste tronquée"); sys.exit()
+dernier = {}
+for r in runs:
+    if (r.get("app") or {}).get("slug") != "github-actions": continue
+    n = r.get("name")
+    if n not in dernier or r.get("id", 0) > dernier[n].get("id", 0): dernier[n] = r
+manquants, encours, rouges = [], [], []
+for n in sys.argv[2].split():
+    r = dernier.get(n)
+    if r is None: manquants.append(n)
+    elif r.get("status") != "completed": encours.append(n)
+    elif r.get("conclusion") != "success": rouges.append(f"{n}={r.get('conclusion')}")
+if rouges: print("rouge:" + ", ".join(rouges))
+elif encours: print("en-cours:" + ", ".join(encours))
+elif manquants: print("en-cours:absents " + ", ".join(manquants))
+else: print("vert")
+PY
+}
+
+# ── notification (Healthchecks) ──────────────────────────────────────────────────────────────────────────────────────
+notifier() {  # $1 = succes|echec, $2 = résumé
+  local url
+  if [ ! -e "$HC_FICHIER" ]; then log "notification non configurée ($HC_FICHIER absent)"; return 0; fi
+  if [ -L "$HC_FICHIER" ] || [ ! -f "$HC_FICHIER" ] || [ "$(stat -c '%u %a' "$HC_FICHIER")" != "$OWNER_UID 600" ]; then
+    log "⚠ notification refusée : $HC_FICHIER doit être un fichier ordinaire du compte d'exécution, en 0600"; return 0
+  fi
+  url=$(tr -d '[:space:]' < "$HC_FICHIER")
+  [[ $url =~ ^https://[A-Za-z0-9.-]+(:[0-9]+)?/[A-Za-z0-9._~/-]+$ ]] || { log "⚠ adresse de notification invalide (non affichée)"; return 0; }
+  [ "$1" = succes ] || url=$url/fail
+  if printf 'url = "%s"\n' "$url" | curl -fsS -m 10 --retry 3 -o /dev/null -K - --data-binary "$2"; then
+    log "notification envoyée ($1)"
+  else
+    log "⚠ notification non envoyée ($1)"
+  fi
+}
+
+# ── déploiement ──────────────────────────────────────────────────────────────────────────────────────────────────────
+JOURNAL=/dev/null
+fp() {  # fadi-preprod en administrateur, sortie journalisée ; code de sortie de fadi-preprod
+  local st
+  set +e; env -u SUDO_USER fadi-preprod "$@" 2>&1 | tee -a "$JOURNAL"; st=("${PIPESTATUS[@]}"); set -e
+  return "${st[0]}"
+}
+version_en_ligne() {  # commit annoncé par GET /version de la préproduction
+  curl -sS -m 10 -H 'Accept: application/json' "$APP_URL/version" 2>/dev/null \
+    | python3 -I -c 'import json, sys
+try: print(json.load(sys.stdin).get("commit", ""))
+except Exception: print("")' || true
+}
+verifier_version() {  # $1 = commit attendu
+  local v; v=$(version_en_ligne)
+  echo "GET /version → commit ${v:-illisible} (attendu $1)" | tee -a "$JOURNAL"
+  [ "$v" = "$1" ]
+}
+
+# Échec après la construction : retour à l'image du commit précédent. Code 1 dans tous les cas.
+retour_arriere() {  # $1 = étape en échec, $2 = commit visé, $3 = commit précédent
+  local etape=$1 sha=$2 prec=$3 msg
+  if [ -z "$prec" ]; then
+    msg="échec à l'étape $etape pour $sha ; aucune version précédente connue, rien à rétablir"
+    etat_ecrire "commit=$sha" "etape=$etape" resultat=echec "message=$msg" en_ligne=
+  else
+    log "retour à l'image du commit précédent $prec" | tee -a "$JOURNAL"
+    etat_ecrire "commit=$sha" etape=retour resultat=en-cours "message=échec à l'étape $etape, retour à $prec"
+    if fp sync "$prec" && fp up && fp smoke && verifier_version "$prec"; then
+      msg="échec à l'étape $etape pour $sha ; version précédente $prec rétablie et contrôlée"
+      etat_ecrire "commit=$sha" "etape=$etape" resultat=echec "message=$msg" "en_ligne=$prec"
+    else
+      msg="échec à l'étape $etape pour $sha ; ÉCHEC DU RETOUR à $prec : intervention requise"
+      etat_ecrire "commit=$sha" "etape=$etape" resultat=echec-retour "message=$msg" en_ligne=
+    fi
+  fi
+  echo "❌ $msg" | tee -a "$JOURNAL" >&2
+  notifier echec "fadi-preprod-auto : $msg (journal : fadi-preprod show $RUNID journal.log)"
+  exit 1
+}
+
+# Échec de la copie du code ou de la construction : rien n'a été redémarré ; le code approuvé revient au précédent.
+echec_construction() {  # $1 = étape, $2 = commit visé, $3 = commit précédent
+  local msg="échec à l'étape $1 pour $2 ; rien n'a été remplacé"
+  if [ -n "$3" ]; then fp sync "$3" || msg="$msg ; ⚠ code approuvé non rétabli à $3"; fi
+  etat_ecrire "etape=$1" resultat=echec "message=$msg"
+  echo "❌ $msg" | tee -a "$JOURNAL" >&2
+  notifier echec "fadi-preprod-auto : $msg (journal : fadi-preprod show $RUNID journal.log)"
+  exit 1
+}
+
+deployer() {  # $1 = commit
+  local sha=$1 prec etape
+  prec=$(etat_lire en_ligne)
+  [ -z "$prec" ] && [ -f "$BASE/approved-commit" ] && [ ! -L "$BASE/approved-commit" ] && prec=$(tr -dc '0-9a-f' < "$BASE/approved-commit")
+  [[ $prec =~ ^[0-9a-f]{40}$ ]] || prec=
+  [ "$prec" = "$sha" ] && prec=
+  RUNID=$(date -u +%Y%m%dT%H%M%SZ)-$$-auto
+  [ -e "$OUTROOT" ] || mkdir -m 0700 "$OUTROOT"
+  sur "$OUTROOT" d
+  mkdir -m 0700 "$OUTROOT/$RUNID"
+  JOURNAL=$OUTROOT/$RUNID/journal.log
+  log "déploiement de $sha (précédent : ${prec:-aucun}) — journal : fadi-preprod show $RUNID journal.log" | tee -a "$JOURNAL"
+  etat_ecrire "commit=$sha" etape=sync resultat=en-cours message= "dernier_essai=$sha" "journal=$RUNID"
+
+  etat_ecrire etape=sync; fp sync "$sha" || echec_construction sync "$sha" "$prec"
+  etat_ecrire etape=build; fp build || echec_construction build "$sha" "$prec"
+  for etape in migrate up smoke version e2e; do
+    etat_ecrire "etape=$etape"
+    case "$etape" in
+      version) verifier_version "$sha" ;;
+      e2e) fp e2e $E2E_COURT ;;
+      *) fp "$etape" ;;
+    esac || retour_arriere "$etape" "$sha" "$prec"
+  done
+  local msg="$sha déployé en préproduction (build, migrate, up, smoke, /version, e2e : $E2E_COURT)"
+  etat_ecrire etape=fin resultat=succes "message=$msg" "en_ligne=$sha"
+  echo "✓ $msg" | tee -a "$JOURNAL"
+  notifier succes "fadi-preprod-auto : $msg"
+}
+
+# ── passage ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+[ -e "$BASE" ] || die "$BASE absent : l'administrateur doit d'abord installer la préproduction"
+sur "$BASE" d
+[ -L "$ETAT" ] && die "$ETAT est un lien symbolique"
+exec 8>"$BASE/.auto.verrou"
+flock -n 8 || { log "un autre passage est en cours"; exit 0; }
+
+case "${1:-}" in
+  "") ;;
+  relancer) etat_ecrire dernier_essai= "message=nouvel essai demandé par l'administrateur"
+    log "le commit de main sera de nouveau essayé au prochain passage"; exit 0 ;;
+  *) die "usage : fadi-preprod-auto [relancer]" ;;
+esac
+
+api "commits/main" application/vnd.github.sha "$TMP/main"
+sha=$(tr -d '[:space:]' < "$TMP/main")
+[[ $sha =~ ^[0-9a-f]{40}$ ]] || { etat_ecrire etape=api resultat=erreur "message=commit de main illisible"; die "commit de main illisible" 3; }
+if [ "$sha" = "$(etat_lire dernier_essai)" ]; then
+  log "main = $sha, déjà essayé ($(etat_lire resultat)) : rien à faire"; exit 0
+fi
+
+api "commits/$sha/check-runs?per_page=100" application/vnd.github+json "$TMP/controles"
+verdict=$(verdict_controles "$TMP/controles")
+case "$verdict" in
+  vert) log "contrôles $CONTROLES_REQUIS verts sur $sha" ;;
+  en-cours*) etat_ecrire "commit=$sha" etape=controles resultat=attente "message=CI en cours (${verdict#en-cours:})"
+    log "CI en cours sur $sha (${verdict#en-cours:}) : passage suivant"; exit 0 ;;
+  *) etat_ecrire "commit=$sha" etape=controles resultat=refus "message=CI non verte (${verdict#rouge:})"
+    log "CI non verte sur $sha (${verdict#rouge:}) : rien n'est déployé"; exit 0 ;;
+esac
+
+api "compare/$sha...main" application/vnd.github+json "$TMP/comparaison"
+statut=$(python3 -I -c 'import json, sys
+try: print(json.load(open(sys.argv[1])).get("status", ""))
+except Exception: print("")' "$TMP/comparaison")
+case "$statut" in
+  identical|ahead) log "$sha appartient à l'historique de main ($statut)" ;;
+  *) etat_ecrire "commit=$sha" etape=historique resultat=refus "message=commit hors de l'historique de main (${statut:-illisible})"
+    die "$sha n'appartient pas à l'historique de main (${statut:-illisible}) : rien n'est déployé" 4 ;;
+esac
+
+deployer "$sha"
