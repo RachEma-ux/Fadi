@@ -1,5 +1,5 @@
 /**
- * Registre unique du Sandbox (lot 2) : 86 entrées du catalogue de référence (52 outils, 20 commandes, 14 panneaux),
+ * Registre unique du Sandbox (lots 2 à 4) : entrées du catalogue de référence (52 outils, 20 commandes, 13 panneaux),
  * chacune avec identifiant, pictogramme, famille, raccourci, emplacement et disponibilité ; outils dérivés du catalogue
  * relevé sans copie ; raccourcis uniques là où ils existent ; aucun raccourci de panneau.
  */
@@ -10,11 +10,12 @@ import { BARRE_GAUCHE_SANDBOX, PICTOGRAMMES_PARTAGES, REGISTRE_SANDBOX, RACCOURC
 const catalogue = REGISTRE_SANDBOX.filter((e) => !e.horsCatalogue);
 
 describe("registre du Sandbox — contenu", () => {
-  it("86 entrées du catalogue : 52 outils, 20 commandes, 14 panneaux", () => {
-    expect(catalogue).toHaveLength(86);
+  it("85 entrées du catalogue : 52 outils, 20 commandes, 13 panneaux (la sous-liste « Objets et vue » a disparu, lot 4)", () => {
+    expect(catalogue).toHaveLength(85);
     expect(catalogue.filter((e) => e.nature === "outil")).toHaveLength(52);
     expect(catalogue.filter((e) => e.nature === "commande")).toHaveLength(20);
-    expect(catalogue.filter((e) => e.nature === "panneau")).toHaveLength(14);
+    expect(catalogue.filter((e) => e.nature === "panneau")).toHaveLength(13);
+    expect(entreeSandbox("panneau", "objets")).toBeUndefined();
   });
 
   it("une seule entrée hors catalogue : la commande Diviser, doublon de l'outil (à harmoniser au lot 6)", () => {
@@ -33,12 +34,14 @@ describe("registre du Sandbox — contenu", () => {
     }
   });
 
-  it("outils : dérivés du catalogue relevé (ordre, famille, emplacement), raccourci relevé sinon couche Fadi", () => {
+  it("outils : dérivés du catalogue relevé (ordre, famille), raccourci relevé sinon couche Fadi ; emplacement Sandbox", () => {
     expect(entreesSandbox("outil").map((e) => e.id)).toEqual(OUTILS.map((o) => o.id));
     for (const o of OUTILS) {
       const e = entreeOutil(o.id);
       expect(e.famille, o.id).toBe(o.famille);
-      expect(e.emplacement, o.id).toBe(o.emplacement);
+      // Lot 4 : la barre gauche est celle du Sandbox ; hors d'elle, un outil va à la grille (le clic droit reste).
+      const attendu = BARRE_GAUCHE_SANDBOX.includes(o.id) ? "barre" : o.emplacement === "barre" ? "grille" : o.emplacement;
+      expect(e.emplacement, o.id).toBe(attendu);
       expect(e.raccourci, o.id).toBe(o.raccourci ?? RACCOURCIS_FADI_OUTILS[o.id]);
     }
     // La couche Fadi ne couvre que des outils sans raccourci relevé, et tous ceux-là.
@@ -46,7 +49,7 @@ describe("registre du Sandbox — contenu", () => {
     for (const o of OUTILS.filter((x) => x.raccourci === null)) expect(RACCOURCIS_FADI_OUTILS[o.id], o.id).toBeDefined();
   });
 
-  it("raccourcis : les 52 outils et les 20 commandes en ont un, unique ; les 14 panneaux n'en ont pas", () => {
+  it("raccourcis : les 52 outils et les 20 commandes en ont un, unique ; les 13 panneaux n'en ont pas", () => {
     const avec = REGISTRE_SANDBOX.filter((e) => e.nature !== "panneau");
     for (const e of avec) expect(e.raccourci, `${e.nature}:${e.id}`).not.toBeNull();
     const vus = new Map<string, string>();
@@ -58,15 +61,18 @@ describe("registre du Sandbox — contenu", () => {
     for (const e of entreesSandbox("panneau")) expect(e.raccourci, e.id).toBeNull();
   });
 
-  it("panneaux : quatre dans la colonne de droite, dix dans « Objets et vue », dans l'ordre affiché", () => {
-    expect(entreesSandbox("panneau").filter((e) => e.emplacement === "colonne").map((e) => e.id)).toEqual(["instructeur", "materiaux", "balises", "objets"]);
-    expect(entreesSandbox("panneau").filter((e) => e.emplacement === "objets-et-vue").map((e) => e.id)).toEqual([
-      "info-entite", "composants", "styles", "ombres", "scenes", "affichage", "adoucir", "info-modele", "navigateur", "debit",
+  it("panneaux : chacun à un clic dans la colonne de droite, Info modèle en bas (lot 4)", () => {
+    expect(entreesSandbox("panneau").filter((e) => e.emplacement === "colonne").map((e) => e.id)).toEqual([
+      "instructeur", "info-entite", "materiaux", "composants", "styles", "balises", "scenes", "ombres", "affichage", "adoucir", "navigateur", "debit",
     ]);
+    expect(entreesSandbox("panneau").filter((e) => e.emplacement === "colonne-bas").map((e) => e.id)).toEqual(["info-modele"]);
   });
 
-  it("barre gauche par défaut : douze outils du registre placés dans la barre", () => {
-    expect(BARRE_GAUCHE_SANDBOX).toHaveLength(12);
+  it("barre gauche par défaut : les seize outils essentiels, dans l'ordre de SketchUp (lot 4)", () => {
+    expect([...BARRE_GAUCHE_SANDBOX]).toEqual([
+      "selection", "gomme", "ligne", "arc", "rectangle", "pousser-tirer", "decalage", "deplacer", "faire-pivoter", "echelle",
+      "metre", "peinture", "orbite", "panoramique", "zoom", "zoom-etendu",
+    ]);
     for (const id of BARRE_GAUCHE_SANDBOX) expect(entreeOutil(id).emplacement, id).toBe("barre");
     expect(new Set(BARRE_GAUCHE_SANDBOX)).toEqual(new Set(entreesSandbox("outil").filter((e) => e.emplacement === "barre").map((e) => e.id)));
   });

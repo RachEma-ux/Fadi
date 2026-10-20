@@ -379,9 +379,6 @@
 .sandbox-planche .planche.colonne-repliee .planche-colonne .canevas-etiquette {
   display: none;
 }
-.sandbox-planche .planche-colonne-bascule .canevas-picto {
-  font-weight: 700;
-}
 .sandbox-planche .planche-panneau {
   justify-self: end;
   align-self: start;
@@ -2243,5 +2240,125 @@
   /* Téléphone : la colonne montre l'icône seule dans une case de 44 px ; le dessin y reste à 24 px. */
   .sandbox-planche .planche-colonne .sandbox-picto.canevas-picto {
     padding: 10px;
+  }
+}
+
+/* Lot 4 — colonne de droite à un clic par panneau (comme le plateau de SketchUp) : au bureau, case compacte (icône,
+   libellé dessous), la colonne défile si l'écran est court ; Info modèle reste en bas. */
+@media (min-width: 761px) {
+  .sandbox-planche .planche-colonne {
+    max-height: calc(100% - var(--pied-h, 5.5rem) - 1.5rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  .sandbox-planche .planche-colonne .canevas-icone {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    min-height: 46px;
+    padding: 3px 2px;
+    font-size: 0.72rem;
+    line-height: 1.15;
+    text-align: center;
+  }
+  .sandbox-planche .planche-colonne .canevas-icone[aria-pressed="true"] {
+    background: color-mix(in srgb, #1a5fd6 10%, transparent);
+    box-shadow: inset -3px 0 0 #1a5fd6;
+  }
+}
+.sandbox-planche .planche-colonne .planche-colonne-bas {
+  margin-top: auto;
+}
+/* Lot 4 — Annuler / Rétablir dans la barre du haut. */
+.sandbox-planche .planche-haut-historique {
+  display: inline-flex;
+  gap: 2px;
+}
+.sandbox-planche .planche-haut-bouton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.sandbox-planche .planche-haut-bouton:hover:not(:disabled) {
+  border-color: var(--atelier-ligne, #dce5df);
+  background: #fff;
+}
+.sandbox-planche .planche-haut-bouton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+/* Lot 4 — barre du bas : l'aide d'abord, à gauche de la consigne (comme SketchUp). */
+.sandbox-planche .planche-bas .planche-bas-aide {
+  order: -1;
+  flex: none;
+  display: inline-flex;
+}
+@media (max-width: 760px) {
+  /* Lot 4 — téléphone : la barre du haut garde Fichier (nom du brouillon), Annuler / Rétablir, l'état et « Outils ▾ »
+     visibles sans défiler ; la langue et le périphérique restent à droite, par défilement. */
+  .sandbox-planche .planche-haut {
+    padding: 2px 0.25rem;
+    gap: 2px;
+  }
+  .sandbox-planche .planche-haut .planche-menu-bouton {
+    max-width: 4.5rem;
+  }
+  .sandbox-planche .planche-haut-bouton {
+    min-width: 36px;
+    min-height: 44px;
+  }
+  .sandbox-planche .planche-haut .planche-brouillon svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+/* Chevron plier / déplier de la colonne (comme SketchUp) : à mi-hauteur, collé au bord gauche de la colonne
+   (position calculée, variables sur la racine). Il apparaît au survol de la colonne ou de lui-même ; sur écran tactile
+   (pas de survol) et au clavier, il reste visible. */
+.sandbox-planche .planche-colonne-bascule {
+  position: absolute;
+  z-index: 7;
+  top: var(--colonne-bascule-haut, 50%);
+  right: calc(var(--colonne-bascule-droite, 7rem) + 6px);
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 8px;
+  background: var(--flottant-fond, #fff);
+  box-shadow: var(--flottant-ombre);
+  color: var(--atelier-encre, #183d32);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease 0.4s;
+}
+.sandbox-planche .planche-colonne:hover + .planche-colonne-bascule,
+.sandbox-planche .planche-colonne-bascule:hover,
+.sandbox-planche .planche-colonne-bascule:focus-visible,
+.sandbox-planche .planche.planche-tactile .planche-colonne-bascule {
+  opacity: 1;
+  transition-delay: 0s;
+}
+@media (hover: none) {
+  .sandbox-planche .planche-colonne-bascule {
+    opacity: 1;
+    width: 44px;
+    height: 44px;
   }
 }

@@ -11,6 +11,7 @@ import { BARRE_GAUCHE_SANDBOX, OUTILS, REGISTRE_SANDBOX, entreeCommande, entreeO
 import { COMMANDE_DETACHER_LIEN, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_PIECE, COMMANDES_VUE } from "./planche/commandes-objets";
 import { outilsBarre, pictoOutil, raccourciOutil, sectionsGrille } from "./planche/outils-planche";
 import { REGISTRE_COMMANDES } from "./planche/registre-commandes";
+import { ICONES_INTERFACE } from "./pictogrammes/interface";
 
 const RACINE = dirname(fileURLToPath(import.meta.url));
 function fichiers(dir: string): string[] {
@@ -45,8 +46,8 @@ describe("Sandbox — l'interface lit le registre unique (lot 2)", () => {
   });
 
   it("aucun pictogramme ni raccourci d'entrée écrit en dur dans l'interface", () => {
-    // Annuler / Rétablir (barre d'actions) ne sont pas des entrées du catalogue : icônes de l'interface, seule exception.
-    const HORS_REGISTRE = /id: "(annuler|retablir)", picto: "(annuler|retablir)",/;
+    // Icônes de l'interface hors registre (zoom + / − de la barre d'actions, lot 4) : nom d'icône de l'interface, seule exception.
+    const HORS_REGISTRE = new RegExp(`picto: "(${Object.keys(ICONES_INTERFACE).join("|")})" as const`);
     for (const f of sources) {
       for (const ligne of readFileSync(f, "utf8").split("\n")) {
         if (HORS_REGISTRE.test(ligne)) continue;
@@ -59,12 +60,11 @@ describe("Sandbox — l'interface lit le registre unique (lot 2)", () => {
     expect(tout).not.toMatch(/RACCOURCIS_FADI[^_\n]*=\s*\{/);
   });
 
-  it("colonne de droite et « Objets et vue » : pictogrammes des panneaux lus au registre", () => {
+  it("colonne de droite : chaque panneau du registre à un clic, dans l'ordre du registre, pictogramme lu au registre (lot 4)", () => {
     const planche = readFileSync(join(RACINE, "planche/Planche.tsx"), "utf8");
-    for (const e of entreesSandbox("panneau").filter((x) => x.emplacement === "colonne")) {
-      expect(planche, e.id).toContain(`data-planche-panneau-icone="${e.id}">\n          <Pictogramme className="canevas-picto" picto={pictoPanneau("${e.id}")} />`);
-    }
-    expect(planche).toMatch(/LISTE_PANNEAUX_OBJETS[^=]*= entreesSandbox\("panneau"\)\s*\.filter\(\(e\) => e\.emplacement === "objets-et-vue"\)/);
+    expect(planche).toMatch(/const COLONNE[^=]*= entreesSandbox\("panneau"\)\.map\(\(e\) => \(\{\s*id: e\.id as Panneau,\s*picto: e\.pictogramme,\s*bas: e\.emplacement === "colonne-bas",/);
+    expect(planche).toContain("{COLONNE.map(({ id, picto, bas }) => (");
+    expect(planche).not.toMatch(/"objets-et-vue"|setPanneau\("objets"\)/);
     expect(REGISTRE_SANDBOX.length).toBeGreaterThanOrEqual(86);
   });
 });

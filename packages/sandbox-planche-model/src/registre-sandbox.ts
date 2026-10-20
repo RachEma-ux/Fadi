@@ -7,8 +7,10 @@
  *
  * Lot 2 : registre sans changement visible. Lot 3 : chaque entrée porte un **pictogramme** — icône Tabler (MIT, paquet
  * `@tabler/icons` à version figée) ou dessin sur mesure de Fadi dans le style Tabler (12 dessins validés le 20 octobre
- * 2026) —, jamais un caractère ni du texte, avec la **teinte de sa famille**. Raccourcis (harmonisés au lot 6) et
- * emplacements (disposition proche de SketchUp au lot 4) restent ceux de l'interface actuelle.
+ * 2026) —, jamais un caractère ni du texte, avec la **teinte de sa famille**. Lot 4 : **disposition par défaut proche
+ * de SketchUp** (profil « Standard ») — seize outils essentiels dans la barre gauche, dans l'ordre de SketchUp, et chaque
+ * panneau à un clic dans la colonne de droite, Info modèle en bas ; la sous-liste « Objets et vue » disparaît. Les
+ * raccourcis restent ceux de l'interface actuelle (harmonisés au lot 6).
  *
  * Les outils sont dérivés du catalogue relevé (`OUTILS` : famille, emplacement, raccourci SketchUp) : le registre n'en
  * recopie rien et ne leur ajoute que ce que le relevé n'a pas — pictogramme et raccourci de la couche Fadi.
@@ -22,10 +24,11 @@ export type FamilleEntree = FamilleOutil | FamilleCommandeSandbox | "panneau";
 /**
  * Emplacement par défaut : `barre` barre verticale gauche ; `grille` « ⋯ Plus d'outils » ; `menu-contextuel` clic droit ;
  * `actions` barre d'actions flottante ; `fil-ariane` fil d'Ariane d'un groupe ; `outils` « Outils ▾ » seulement ;
- * `panneau-navigateur`, `panneau-debit` barre du panneau ; `barre-piece` bloc de la pièce ; `colonne` colonne de droite ;
- * `objets-et-vue` sous-liste « Objets et vue » de la colonne. Tous les outils et commandes figurent aussi dans « Outils ▾ ».
+ * `panneau-navigateur`, `panneau-debit` barre du panneau ; `barre-piece` bloc de la pièce ; `colonne` colonne de droite,
+ * un clic par panneau ; `colonne-bas` bas de la colonne (Info modèle, comme le (i) de SketchUp). Tous les outils et
+ * commandes figurent aussi dans « Outils ▾ ».
  */
-export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "barre-piece" | "colonne" | "objets-et-vue";
+export type EmplacementEntree = EmplacementOutil | "actions" | "fil-ariane" | "outils" | "panneau-navigateur" | "panneau-debit" | "barre-piece" | "colonne" | "colonne-bas";
 /** `livree` : l'entrée existe dans l'interface ; `prevue` : déclarée, pas encore offerte (aucune à ce jour). */
 export type DisponibiliteEntree = "livree" | "prevue";
 
@@ -183,13 +186,28 @@ function pictogramme(nom: string, famille: FamilleEntree): Pictogramme {
   return { source: fadi ? "fadi" : "tabler", nom: fadi ? nom.slice(5) : nom, teinte: teinteDeFamille(famille) };
 }
 
+/**
+ * Barre verticale gauche par défaut (lot 4, profil « Standard ») : les outils essentiels dans l'ordre de SketchUp, puis
+ * « ⋯ » ; tout autre outil est dans la grille (ou au clic droit, comme Diviser).
+ */
+export const BARRE_GAUCHE_SANDBOX: readonly string[] = Object.freeze([
+  "selection", "gomme", "ligne", "arc", "rectangle", "pousser-tirer", "decalage", "deplacer", "faire-pivoter", "echelle",
+  "metre", "peinture", "orbite", "panoramique", "zoom", "zoom-etendu",
+]);
+
+/** Emplacement par défaut d'un outil : la barre gauche s'il y figure, sinon la grille (le clic droit reste le clic droit). */
+function emplacementOutil(id: string, releve: EmplacementOutil): EmplacementOutil {
+  if (BARRE_GAUCHE_SANDBOX.includes(id)) return "barre";
+  return releve === "barre" ? "grille" : releve;
+}
+
 const outils: EntreeSandbox[] = OUTILS.map((o) => ({
   nature: "outil",
   id: o.id,
   famille: o.famille,
   pictogramme: pictogramme(PICTOS_OUTILS[o.id] ?? "", o.famille),
   raccourci: o.raccourci ?? RACCOURCIS_FADI_OUTILS[o.id] ?? null,
-  emplacement: o.emplacement,
+  emplacement: emplacementOutil(o.id, o.emplacement),
   disponibilite: "livree",
 }));
 
@@ -237,7 +255,7 @@ const commandes: EntreeSandbox[] = [
   c("piece-rotation", "piece", "rotate", "Alt+Maj+H", "barre-piece"),
 ];
 
-const p = (id: string, picto: string, emplacement: "colonne" | "objets-et-vue"): EntreeSandbox => ({
+const p = (id: string, picto: string, emplacement: "colonne" | "colonne-bas"): EntreeSandbox => ({
   nature: "panneau",
   id,
   famille: "panneau",
@@ -247,22 +265,24 @@ const p = (id: string, picto: string, emplacement: "colonne" | "objets-et-vue"):
   disponibilite: "livree",
 });
 
-/** Panneaux, dans l'ordre d'affichage : colonne de droite, puis sous-liste « Objets et vue ». */
+/**
+ * Panneaux, dans l'ordre de la colonne de droite : chacun à un clic (lot 4, comme le plateau de SketchUp), Info modèle
+ * en bas. La sous-liste « Objets et vue », qui demandait deux clics, a disparu.
+ */
 const panneaux: EntreeSandbox[] = [
   p("instructeur", "help", "colonne"),
+  p("info-entite", "list-details", "colonne"),
   p("materiaux", "bucket-droplet", "colonne"),
+  p("composants", "packages", "colonne"),
+  p("styles", "palette", "colonne"),
   p("balises", "tag", "colonne"),
-  p("objets", "layout-list", "colonne"),
-  p("info-entite", "list-details", "objets-et-vue"),
-  p("composants", "packages", "objets-et-vue"),
-  p("styles", "palette", "objets-et-vue"),
-  p("ombres", "sun", "objets-et-vue"),
-  p("scenes", "movie", "objets-et-vue"),
-  p("affichage", "adjustments", "objets-et-vue"),
-  p("adoucir", "blur", "objets-et-vue"),
-  p("info-modele", "info-circle", "objets-et-vue"),
-  p("navigateur", "list-tree", "objets-et-vue"),
-  p("debit", "fadi:debit", "objets-et-vue"),
+  p("scenes", "movie", "colonne"),
+  p("ombres", "sun", "colonne"),
+  p("affichage", "adjustments", "colonne"),
+  p("adoucir", "blur", "colonne"),
+  p("navigateur", "list-tree", "colonne"),
+  p("debit", "fadi:debit", "colonne"),
+  p("info-modele", "info-circle", "colonne-bas"),
 ];
 
 /**
@@ -278,8 +298,6 @@ export const PICTOGRAMMES_PARTAGES: readonly (readonly [string, string])[] = Obj
 /** Le registre : outils (ordre du catalogue relevé), commandes, panneaux. */
 export const REGISTRE_SANDBOX: readonly EntreeSandbox[] = Object.freeze([...outils, ...commandes, ...panneaux]);
 
-/** Ordre de la barre verticale gauche par défaut (cahier-planche §3.2) ; un outil « barre » absent est ajouté à la fin. */
-export const BARRE_GAUCHE_SANDBOX: readonly string[] = Object.freeze(["selection", "gomme", "ligne", "rectangle", "pousser-tirer", "deplacer", "faire-pivoter", "echelle", "peinture", "orbite", "panoramique", "metre"]);
 
 /** Entrée du registre par nature et identifiant (`undefined` si absente). */
 export function entreeSandbox(nature: NatureEntree, id: string): EntreeSandbox | undefined {

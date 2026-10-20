@@ -18,6 +18,10 @@ comportement ni d'apparence.
 - `pictogrammes/` (lot 3) — pictogrammes SVG : icônes Tabler (`@tabler/icons` 3.49.0, MIT, `LICENCE-TABLER-ICONS.txt`) et
   12 dessins sur mesure (`sur-mesure/`), teintés par famille ; `donnees.ts` est généré
   (`npx tsx apps/web/scripts/generer-pictogrammes-sandbox.ts`) et ne contient que les icônes utilisées.
+- Disposition par défaut (lot 4, profil « Standard », proche de SketchUp) : barre gauche de seize outils dans l'ordre de
+  SketchUp, grille « ⋯ » par famille, colonne de droite à un clic par panneau (Info modèle en bas, chevron à mi-hauteur
+  au survol), Annuler / Rétablir dans la barre du haut, aide à gauche de la barre du bas, Cadrer et zoom + / − (tactile)
+  dans la barre d'actions, curseur propre à chaque outil (`pictogrammes/curseur.ts`).
 - `routes-sandbox.ts` — adresses : `/sandbox` et l'ancienne `/studio/console/sandbox`, qui y redirige.
 - `sandbox.css` (sous `.sandbox-planche`) et `page-sandbox.css` (sous `.sandbox-page`) — feuilles de style isolées.
 
@@ -30,5 +34,5 @@ comportement ni d'apparence.
 
 ## Lots suivants
 
-Interface proche de SketchUp, préférences sur le serveur, harmonisation des
+Personnalisation et préférences sur le serveur, harmonisation des
 raccourcis : lots suivants de la recommandation.

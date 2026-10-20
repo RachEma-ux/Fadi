@@ -7,6 +7,8 @@
  * - la carte « 00 Sandbox » de la Console est un simple lien vers `/sandbox` ;
  * - un échec du chargement de la Planche affiche la limite d'erreur du Sandbox et « Réessayer » la recharge ;
  * - chaque bouton de la barre d'outils porte un pictogramme SVG (lot 3) ;
+ * - disposition par défaut proche de SketchUp (lot 4) : barre gauche, colonne à un clic, barre du haut, Cadrer, zoom ± au
+ *   téléphone, curseur de l'outil ;
  * - au téléphone, la barre d'actions ne recouvre pas la barre d'outils de gauche ;
  * - aucun appel à l'API d'un projet (Atelier, Studio, Parcours) pendant que le Sandbox est ouvert, aucune erreur JavaScript.
  *
@@ -32,8 +34,8 @@ const erreurs = [];
 let surSandbox = false;
 const appels = [];
 
-async function nouvellePage(viewport) {
-  const context = await browser.newContext({ viewport });
+async function nouvellePage(viewport, options = {}) {
+  const context = await browser.newContext({ viewport, ...options });
   const page = await context.newPage();
   page.setDefaultTimeout(30000);
   page.on("pageerror", (e) => erreurs.push(e.message));
@@ -50,6 +52,47 @@ async function inscrire(page) {
   await page.fill('input[name="password"]', "sandbox-module-ci-123");
   await page.click('button[type="submit"]');
   await page.waitForURL(/\/(accueil|projets)$/);
+}
+
+/** Disposition par défaut proche de SketchUp (lot 4), sur ordinateur et sur téléphone. */
+async function disposition(page, contexte) {
+  const racine = page.locator("[data-sandbox-page] [data-sandbox-planche]");
+  const barre = await racine.locator('.planche-outils[role="toolbar"] [data-planche-outil]').evaluateAll((l) => l.map((b) => b.getAttribute("data-planche-outil")));
+  const attendue = ["selection", "gomme", "ligne", "arc", "rectangle", "pousser-tirer", "decalage", "deplacer", "faire-pivoter", "echelle", "metre", "peinture", "orbite", "panoramique", "zoom", "zoom-etendu"];
+  check(`${contexte} : barre gauche — seize outils dans l'ordre de SketchUp, puis « ⋯ »`, JSON.stringify(barre) === JSON.stringify(attendue), barre.join(", "));
+  check(`${contexte} : « ⋯ » en bas de la barre`, await racine.locator("[data-planche-plus]").count() === 1);
+  const colonne = await racine.locator("[data-planche-panneau-icone]").evaluateAll((l) => l.map((b) => b.getAttribute("data-planche-panneau-icone")));
+  check(`${contexte} : colonne — chaque panneau à un clic, Info modèle en bas`, colonne.length === 13 && colonne.at(-1) === "info-modele" && !colonne.includes("objets"), colonne.join(", "));
+  check(`${contexte} : barre du haut — Fichier, Annuler, Rétablir`, (await racine.locator(".planche-haut [data-planche-menu-ouvrir]").count()) === 1 && (await racine.locator(".planche-haut [data-planche-annuler]").count()) === 1 && (await racine.locator(".planche-haut [data-planche-retablir]").count()) === 1);
+  check(`${contexte} : Cadrer dans la barre d'actions`, (await racine.locator("[data-barre-actions] [data-planche-cadrer]").count()) === 1);
+  const curseur = await racine.locator("[data-planche-vue]").evaluate((v) => v.style.cursor);
+  check(`${contexte} : curseur propre à l'outil (Sélection : flèche)`, curseur === "default", curseur);
+  // Chevron plier / déplier (comme SketchUp) : à mi-hauteur de la colonne, collé à son bord gauche ; au survol au bureau.
+  const chevron = async () => racine.evaluate((r) => {
+    const c = r.querySelector(".planche-colonne").getBoundingClientRect();
+    const k = r.querySelector("[data-planche-colonne-bascule]");
+    const b = k.getBoundingClientRect();
+    return { opacite: Number(getComputedStyle(k).opacity), milieu: Math.abs(b.top + b.height / 2 - (c.top + c.height / 2)) <= 2, gauche: b.right <= c.left && c.left - b.right <= 12 };
+  });
+  const repos = await chevron();
+  check(`${contexte} : chevron de la colonne à mi-hauteur, au bord gauche`, repos.milieu && repos.gauche, JSON.stringify(repos));
+  if (contexte === "téléphone") check("téléphone : chevron visible sans survol", repos.opacite === 1);
+  else {
+    check("ordinateur : chevron caché au repos", repos.opacite === 0);
+    await racine.locator("[data-planche-panneau-icone='styles']").hover();
+    await page.waitForTimeout(300);
+    check("ordinateur : chevron visible au survol de la colonne", (await chevron()).opacite === 1);
+    await page.mouse.move(400, 400);
+  }
+  if (contexte === "téléphone") {
+    const haut = await racine.locator(".planche-haut").evaluate((h) => {
+      const b = h.getBoundingClientRect();
+      const o = h.querySelector("[data-planche-outils-bouton]")?.getBoundingClientRect();
+      return o ? o.right <= b.right && o.left >= b.left : false;
+    });
+    check("téléphone : « Outils ▾ » visible sans défiler la barre du haut", haut === true);
+    check("téléphone : boutons zoom + / − visibles", (await racine.locator('[data-barre-actions] [data-planche-zoom="plus"]').isVisible()) && (await racine.locator('[data-barre-actions] [data-planche-zoom="moins"]').isVisible()));
+  }
 }
 
 /** La Planche de Sandbox est chargée : vue 3D (canvas) et barre d'outils garnie, visibles. */
@@ -80,6 +123,7 @@ try {
   check("/sandbox : fil d'Ariane « Studio / Console / Sandbox »", (await fil.innerText()).replace(/\s+/g, " ").trim() === "Studio / Console / Sandbox", await fil.innerText());
   check("/sandbox : « Console » marquée dans la barre latérale", (await page.locator("[data-studio-menu-console]").getAttribute("aria-current")) === "page");
   check("/sandbox : hors de l'enveloppe du Studio", (await page.locator(".studio-shell").count()) === 0);
+  await disposition(page, "ordinateur");
   await page.screenshot({ path: join(OUT, "sandbox-ordinateur.png") });
   surSandbox = false;
 
@@ -125,11 +169,12 @@ try {
   }
 
   // 5. Téléphone : la Planche se charge et sa barre d'outils reste visible.
-  const tel = await nouvellePage({ width: 390, height: 844 });
+  const tel = await nouvellePage({ width: 390, height: 844 }, { hasTouch: true, isMobile: true });
   await inscrire(tel.page);
   surSandbox = true;
   await tel.page.goto(`${BASE}/sandbox`);
   await plancheChargee(tel.page, "téléphone");
+  await disposition(tel.page, "téléphone");
   // La barre d'actions flottante ne recouvre pas la barre d'outils de gauche (position par défaut).
   const recouvrement = await tel.page.evaluate(() => {
     const a = document.querySelector(".sandbox-planche [data-barre-actions]")?.getBoundingClientRect();
