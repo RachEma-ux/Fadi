@@ -70,7 +70,7 @@ export interface EntreeSandbox {
   readonly raccourci: string | null;
   readonly emplacement: EmplacementEntree;
   readonly disponibilite: DisponibiliteEntree;
-  /** Hors des 86 entrées du catalogue (doublon à harmoniser au lot 6). */
+  /** Hors des 86 entrées du catalogue (doublon à harmoniser au lot 6, ou commande ajoutée après le relevé). */
   readonly horsCatalogue?: true;
 }
 
@@ -244,6 +244,9 @@ const commandes: EntreeSandbox[] = [
   // Vue (O-5).
   c("isoler", "vue", "focus-2", "Alt+Maj+I", "actions"),
   c("masquer-reste", "vue", "eye-off", "Alt+Maj+R", "outils"),
+  // Zoom avant / arrière par pas (lot 4) : barre d'actions flottante au toucher, clavier partout ; hors des 86 entrées.
+  c("zoom-plus", "vue", "plus", "Alt+Maj+Z", "actions", true),
+  c("zoom-moins", "vue", "minus", "Alt+Maj+Y", "actions", true),
   // Liste de débit (L14) : barre du panneau Débit.
   c("liste-debit", "debit", "fadi:debit", "Alt+Maj+T", "panneau-debit"),
   c("renumeroter", "debit", "list-numbers", "Alt+Maj+N", "panneau-debit"),

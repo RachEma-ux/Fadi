@@ -14,8 +14,6 @@ export const ICONES_INTERFACE = {
   poignee: "grip-vertical",
   reglages: "settings",
   annuler: "arrow-back",
-  zoomPlus: "plus",
-  zoomMoins: "minus",
   retablir: "arrow-forward",
   detacher: "picture-in-picture-on",
   rattacher: "picture-in-picture-off",

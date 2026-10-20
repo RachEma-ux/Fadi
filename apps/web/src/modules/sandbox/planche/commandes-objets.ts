@@ -212,7 +212,7 @@ export function liensRompus(avant: Modele, apres: Modele): number {
  * barre d'actions (avec une sélection, ou pendant l'isolement) ; Masquer le reste dans le fil d'Ariane ; toutes deux dans
  * « Outils ▾ ».
  */
-export type IdCommandeVue = "isoler" | "masquer-reste";
+export type IdCommandeVue = "isoler" | "masquer-reste" | "zoom-plus" | "zoom-moins";
 export interface CommandeVue {
   readonly id: IdCommandeVue;
   readonly picto: Pictogramme;
@@ -223,7 +223,12 @@ export interface CommandeVue {
 export const COMMANDES_VUE: readonly CommandeVue[] = [
   { id: "isoler", ...depuisRegistre("isoler"), libelle: "planche.menu.isoler", court: "planche.objets.court.isoler" },
   { id: "masquer-reste", ...depuisRegistre("masquer-reste"), libelle: "planche.affichage.masquer-reste", court: "planche.objets.court.masquer-reste" },
+  // Lot 4 : zoom par pas, toujours disponible (barre d'actions au toucher, raccourci partout).
+  { id: "zoom-plus", ...depuisRegistre("zoom-plus"), libelle: "actions.zoom.plus", court: "actions.zoom.plus" },
+  { id: "zoom-moins", ...depuisRegistre("zoom-moins"), libelle: "actions.zoom.moins", court: "actions.zoom.moins" },
 ];
+/** Facteur de chaque pas de zoom (avant, arrière). */
+export const PAS_ZOOM: Readonly<Record<"zoom-plus" | "zoom-moins", number>> = { "zoom-plus": 1.25, "zoom-moins": 0.8 };
 
 /**
  * Lot L14 : commandes de la liste de débit de la Planche (règle d'or : icône, barre du panneau, raccourci). Ouvrir la
@@ -277,6 +282,7 @@ export function disponibiliteDebit(id: IdCommandeDebit, s: { readonly lignes: nu
 }
 
 export function disponibiliteVue(id: IdCommandeVue, s: { readonly entites: number; readonly isole: boolean; readonly dansObjet: boolean }): Disponibilite {
+  if (id === "zoom-plus" || id === "zoom-moins") return { disponible: true, motif: null };
   if (id === "isoler") return s.isole || s.entites > 0 ? { disponible: true, motif: null } : { disponible: false, motif: "planche.objets.motif.isoler" };
   return s.dansObjet ? { disponible: true, motif: null } : { disponible: false, motif: "planche.contexte.motif" };
 }
