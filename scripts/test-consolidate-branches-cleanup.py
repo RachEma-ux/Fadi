@@ -34,7 +34,7 @@ class CleanupTest(unittest.TestCase):
         def git(*args):
             return commit if args[0] == "rev-parse" else "d" * 40 + " " + helper
 
-        with patch.dict(os.environ, {"GH_REPO": cleanup.REPO, "CLEANUP_COMMIT": commit}), \
+        with patch.dict(os.environ, {"GH_REPO": cleanup.REPO, "CLEANUP_COMMIT": commit, "GITHUB_STEP_SUMMARY": ""}), \
              patch.object(cleanup, "api", side_effect=api), \
              patch.object(cleanup, "git", side_effect=git), \
              patch.object(cleanup.subprocess, "run", return_value=subprocess.CompletedProcess([], int(unmerged))), \
