@@ -2200,3 +2200,48 @@
     min-width: 44px !important;
   }
 }
+/* Lot 3 — pictogrammes Tabler et sur mesure (SVG, trait de 2 px sur 24 px) : taille et teinte par famille (validées le
+   20 octobre 2026). Le jeu sombre est prêt pour un thème sombre du Sandbox (`data-theme="sombre"` sur la racine). */
+.sandbox-planche {
+  --picto-dessin: #1f6fd1;
+  --picto-modification: #d23b2c;
+  --picto-mesure: #b5730a;
+  --picto-materiau: #c2410c;
+  --picto-camera: #1e8a5a;
+  --picto-objets: #3f5c7a;
+  --picto-info: #5b6672;
+}
+.sandbox-planche[data-theme="sombre"] {
+  --picto-dessin: #5aa0ff;
+  --picto-modification: #ff6b5c;
+  --picto-mesure: #e3a23a;
+  --picto-materiau: #f2774a;
+  --picto-camera: #4cc58d;
+  --picto-objets: #8fb0d4;
+  --picto-info: #9aa5b1;
+}
+.sandbox-planche .sandbox-picto {
+  display: inline-block;
+  flex: none;
+  width: 1.25em;
+  height: 1.25em;
+  vertical-align: -0.2em;
+}
+.sandbox-planche .sandbox-picto[data-teinte="dessin"] { color: var(--picto-dessin); }
+.sandbox-planche .sandbox-picto[data-teinte="modification"] { color: var(--picto-modification); }
+.sandbox-planche .sandbox-picto[data-teinte="mesure"] { color: var(--picto-mesure); }
+.sandbox-planche .sandbox-picto[data-teinte="materiau"] { color: var(--picto-materiau); }
+.sandbox-planche .sandbox-picto[data-teinte="camera"] { color: var(--picto-camera); }
+.sandbox-planche .sandbox-picto[data-teinte="objets"] { color: var(--picto-objets); }
+.sandbox-planche .sandbox-picto[data-teinte="info"] { color: var(--picto-info); }
+.sandbox-planche .planche .sandbox-picto.outil-picto,
+.sandbox-planche .sandbox-picto.planche-outils-picto {
+  width: 1.4rem;
+  height: 1.4rem;
+}
+@media (max-width: 760px) {
+  /* Téléphone : la colonne montre l'icône seule dans une case de 44 px ; le dessin y reste à 24 px. */
+  .sandbox-planche .planche-colonne .sandbox-picto.canevas-picto {
+    padding: 10px;
+  }
+}

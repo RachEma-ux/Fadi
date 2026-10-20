@@ -15,6 +15,9 @@ comportement ni d'apparence.
 - Registre unique `REGISTRE_SANDBOX` (`packages/sandbox-planche-model/src/registre-sandbox.ts`, lot 2) : 86 entrées
   (52 outils, 20 commandes, 14 panneaux) avec pictogramme, famille, raccourci, emplacement et disponibilité ; barres,
   grille « ⋯ », « Outils ▾ », recherche, colonne de droite, barre d'actions et clavier le lisent (`registre-interface.test.ts`).
+- `pictogrammes/` (lot 3) — pictogrammes SVG : icônes Tabler (`@tabler/icons` 3.49.0, MIT, `LICENCE-TABLER-ICONS.txt`) et
+  12 dessins sur mesure (`sur-mesure/`), teintés par famille ; `donnees.ts` est généré
+  (`npx tsx apps/web/scripts/generer-pictogrammes-sandbox.ts`) et ne contient que les icônes utilisées.
 - `routes-sandbox.ts` — adresses : `/sandbox` et l'ancienne `/studio/console/sandbox`, qui y redirige.
 - `sandbox.css` (sous `.sandbox-planche`) et `page-sandbox.css` (sous `.sandbox-page`) — feuilles de style isolées.
 
@@ -27,5 +30,5 @@ comportement ni d'apparence.
 
 ## Lots suivants
 
-Pictogrammes Tabler, interface proche de SketchUp, préférences sur le serveur, harmonisation des
+Interface proche de SketchUp, préférences sur le serveur, harmonisation des
 raccourcis : lots suivants de la recommandation.

@@ -5,6 +5,12 @@ import { BARRES, FAMILLES, OBJET_DE, SECTIONS, barreDe, groupesOutils, libelleOp
 import { CATALOGUE } from "../messages";
 import { COMMANDES_CONTEXTE, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, commandeObjet, raccourcisObjets } from "./commandes-objets";
 import { RACCOURCIS_FADI, afficherRaccourci, commenceSaisie, nomOutil, outilDuClavier, outilsBarre, pictoOutil, raccourciClavier, raccourciOutil, sectionsGrille, titreOutil, type Cle } from "./outils-planche";
+import { clePictogramme, type Pictogramme as DescriptionPictogramme } from "@parcours/sandbox-planche-model";
+import { ICONES_INTERFACE, type IconeInterface } from "../pictogrammes/interface";
+
+/** Clé comparable d'un pictogramme (lot 3 : objets, plus des caractères). */
+const k = (p: DescriptionPictogramme): string => clePictogramme(p);
+const ki = (nom: IconeInterface): string => clePictogramme({ source: "tabler", nom: ICONES_INTERFACE[nom] });
 
 /** Outils présents dans la Planche : rail de gauche, grille « … » (y compris le menu contextuel offert dans la grille). */
 const outilsPlanche = () => {
@@ -62,8 +68,8 @@ describe("Barres d'opérations (D-198) — correspondance outil → ① Créer �
   it("chaque élément a son propre pictogramme et un raccourci ; libellé « Nom — raccourci »", () => {
     const pictos = new Map<string, string>();
     for (const o of OUTILS) {
-      const p = pictoOutil(o.id);
-      expect(p, o.id).not.toBe("•");
+      const p = k(pictoOutil(o.id));
+      expect(p, o.id).toMatch(/^(tabler|fadi):[a-z0-9-]+$/);
       expect(pictos.has(p), `${o.id} partage le pictogramme ${p} avec ${pictos.get(p)}`).toBe(false);
       pictos.set(p, o.id);
       expect(raccourciOutil(o), o.id).not.toBeNull();
@@ -153,8 +159,8 @@ describe("Règle d'or de la Planche (D-202, AGENTS.md) — icône propre, barre 
     const raccourcis = new Map<string, string>();
     for (const o of OUTILS) {
       // 1. Icône propre, jamais partagée.
-      const icone = pictoOutil(o.id);
-      expect(icone, `${o.id} : icône manquante`).not.toBe("•");
+      const icone = k(pictoOutil(o.id));
+      expect(icone, `${o.id} : icône manquante`).toMatch(/^(tabler|fadi):[a-z0-9-]+$/);
       expect(icones.get(icone), `${o.id} partage son icône ${icone}`).toBeUndefined();
       icones.set(icone, o.id);
       // 2. Barre appropriée : sa famille dans « Outils ▾ » et sa barre d'opérations, où il figure lui-même.
@@ -211,14 +217,14 @@ describe("Règle d'or — commandes du menu de la Planche (D-202)", () => {
 
 describe("Règle d'or — commandes d'objet livrées (Objets O-1, D-203)", () => {
   it("Grouper, Créer un composant, Éclater, Rendre unique, Diviser, Diviser en segments : icône propre, place dans la barre d'actions, raccourci sans collision", () => {
-    const pictosOutils = new Set(OUTILS.map((o) => pictoOutil(o.id)));
-    const typesNavigateur = ["◈", "▣"];
+    const pictosOutils = new Set(OUTILS.map((o) => k(pictoOutil(o.id))));
+    const typesNavigateur = [ki("typeComposant"), ki("typeGroupe")];
     const pictos = new Set<string>();
     for (const c of COMMANDES_OBJETS) {
-      expect(pictosOutils.has(c.picto), `${c.id} partage son icône avec un outil`).toBe(false);
-      expect(typesNavigateur, `${c.id} reprend l'icône d'un type d'objet du Navigateur`).not.toContain(c.picto);
-      expect(pictos.has(c.picto), `${c.id} partage son icône`).toBe(false);
-      pictos.add(c.picto);
+      expect(pictosOutils.has(k(c.picto)), `${c.id} partage son icône avec un outil`).toBe(false);
+      expect(typesNavigateur, `${c.id} reprend l'icône d'un type d'objet du Navigateur`).not.toContain(k(c.picto));
+      expect(pictos.has(k(c.picto)), `${c.id} partage son icône`).toBe(false);
+      pictos.add(k(c.picto));
     }
     // Raccourcis : uniques entre eux, jamais celui d'un outil ; Ctrl+Maj+G n'est pris par aucune touche de la Planche.
     const outils = new Set(OUTILS.map((o) => raccourciOutil(o)).filter((r): r is string => r !== null).map(normaliserRaccourci));
@@ -245,10 +251,10 @@ describe("Règle d'or — commandes d'objet livrées (Objets O-1, D-203)", () =>
 
 describe("Règle d'or — commandes du contexte d'édition (Objets O-2, D-203)", () => {
   it("Fermer et Fermer tout : icône propre, place dans le fil d'Ariane, raccourci sans collision", () => {
-    const pictos = new Set([...OUTILS.map((o) => pictoOutil(o.id)), ...COMMANDES_OBJETS.map((c) => c.picto), "◈", "▣"]);
+    const pictos = new Set([...OUTILS.map((o) => k(pictoOutil(o.id))), ...COMMANDES_OBJETS.map((c) => k(c.picto)), ki("typeComposant"), ki("typeGroupe")]);
     for (const c of COMMANDES_CONTEXTE) {
-      expect(pictos.has(c.picto), `${c.id} partage son icône`).toBe(false);
-      pictos.add(c.picto);
+      expect(pictos.has(k(c.picto)), `${c.id} partage son icône`).toBe(false);
+      pictos.add(k(c.picto));
     }
     const outils = new Set(OUTILS.map((o) => raccourciOutil(o)).filter((r): r is string => r !== null).map(normaliserRaccourci));
     const tous = raccourcisObjets();
@@ -266,8 +272,8 @@ describe("Règle d'or — commandes du contexte d'édition (Objets O-2, D-203)",
 
 describe("Règle d'or — Détacher le lien (Objets O-2, revue)", () => {
   it("icône propre, bouton nommé dans la barre d'état (toucher), « Outils ▾ », raccourci sans collision", () => {
-    const pictos = new Set([...OUTILS.map((o) => pictoOutil(o.id)), ...COMMANDES_OBJETS.map((c) => c.picto), ...COMMANDES_CONTEXTE.map((c) => c.picto), "◈", "▣"]);
-    expect(pictos.has(COMMANDE_DETACHER_LIEN.picto)).toBe(false);
+    const pictos = new Set([...OUTILS.map((o) => k(pictoOutil(o.id))), ...COMMANDES_OBJETS.map((c) => k(c.picto)), ...COMMANDES_CONTEXTE.map((c) => k(c.picto)), ki("typeComposant"), ki("typeGroupe")]);
+    expect(pictos.has(k(COMMANDE_DETACHER_LIEN.picto))).toBe(false);
     const outils = new Set(OUTILS.map((o) => raccourciOutil(o)).filter((r): r is string => r !== null).map(normaliserRaccourci));
     const r = normaliserRaccourci(COMMANDE_DETACHER_LIEN.raccourci);
     expect(outils.has(r)).toBe(false);
@@ -282,10 +288,10 @@ describe("Règle d'or — Détacher le lien (Objets O-2, revue)", () => {
 
 describe("Règle d'or — commandes du Navigateur (Objets O-4, D-206)", () => {
   it("Nouveau groupe vide, Déplacer vers un groupe…, Renommer : icône propre, barre du Navigateur et « Outils ▾ », raccourci sans collision", () => {
-    const pictos = new Set([...OUTILS.map((o) => pictoOutil(o.id)), ...COMMANDES_OBJETS.map((c) => c.picto), ...COMMANDES_CONTEXTE.map((c) => c.picto), "◈", "▣", "⌖", "◉", "◌", "×"]);
+    const pictos = new Set([...OUTILS.map((o) => k(pictoOutil(o.id))), ...COMMANDES_OBJETS.map((c) => k(c.picto)), ...COMMANDES_CONTEXTE.map((c) => k(c.picto)), ki("typeComposant"), ki("typeGroupe"), ki("cibler"), ki("visible"), ki("masque"), ki("fermer")]);
     for (const c of COMMANDES_NAVIGATEUR) {
-      expect(pictos.has(c.picto), `${c.id} partage son icône`).toBe(false);
-      pictos.add(c.picto);
+      expect(pictos.has(k(c.picto)), `${c.id} partage son icône`).toBe(false);
+      pictos.add(k(c.picto));
     }
     const outils = new Set(OUTILS.map((o) => raccourciOutil(o)).filter((r): r is string => r !== null).map(normaliserRaccourci));
     const tous = raccourcisObjets();
@@ -305,10 +311,10 @@ describe("Règle d'or — commandes du Navigateur (Objets O-4, D-206)", () => {
 
 describe("Règle d'or — commandes de vue (Objets O-5, D-207)", () => {
   it("Isoler et Masquer le reste du modèle : icône propre, barre d'actions / fil d'Ariane et « Outils ▾ », raccourci sans collision", () => {
-    const pictos = new Set([...OUTILS.map((o) => pictoOutil(o.id)), ...[...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR].map((c) => c.picto), "◈", "▣", "⌖", "◉", "◌", "×"]);
+    const pictos = new Set([...OUTILS.map((o) => k(pictoOutil(o.id))), ...[...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, ...COMMANDES_NAVIGATEUR].map((c) => k(c.picto)), ki("typeComposant"), ki("typeGroupe"), ki("cibler"), ki("visible"), ki("masque"), ki("fermer")]);
     for (const c of COMMANDES_VUE) {
-      expect(pictos.has(c.picto), `${c.id} partage son icône`).toBe(false);
-      pictos.add(c.picto);
+      expect(pictos.has(k(c.picto)), `${c.id} partage son icône`).toBe(false);
+      pictos.add(k(c.picto));
     }
     const outils = new Set(OUTILS.map((o) => raccourciOutil(o)).filter((r): r is string => r !== null).map(normaliserRaccourci));
     const tous = raccourcisObjets();

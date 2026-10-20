@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { OUTILS, normaliserRaccourci } from "./catalogue-outils.js";
-import { BARRE_GAUCHE_SANDBOX, REGISTRE_SANDBOX, RACCOURCIS_FADI_OUTILS, entreeCommande, entreeOutil, entreePanneau, entreeSandbox, entreesSandbox } from "./registre-sandbox.js";
+import { BARRE_GAUCHE_SANDBOX, PICTOGRAMMES_PARTAGES, REGISTRE_SANDBOX, RACCOURCIS_FADI_OUTILS, clePictogramme, entreeCommande, entreeOutil, entreePanneau, entreeSandbox, entreesSandbox } from "./registre-sandbox.js";
 
 const catalogue = REGISTRE_SANDBOX.filter((e) => !e.horsCatalogue);
 
@@ -26,7 +26,7 @@ describe("registre du Sandbox — contenu", () => {
     const cles = REGISTRE_SANDBOX.map((e) => `${e.nature}:${e.id}`);
     expect(new Set(cles).size).toBe(cles.length);
     for (const e of REGISTRE_SANDBOX) {
-      expect(e.picto, e.id).not.toBe("");
+      expect(e.pictogramme.nom, e.id).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
       expect(e.famille, e.id).toBeTruthy();
       expect(e.emplacement, e.id).toBeTruthy();
       expect(e.disponibilite, e.id).toBe("livree");
@@ -74,11 +74,56 @@ describe("registre du Sandbox — contenu", () => {
   it("recherche par nature : une entrée absente vaut undefined, et l'accès exigé lève une erreur", () => {
     expect(entreeSandbox("panneau", "inexistant")).toBeUndefined();
     expect(() => entreeCommande("inexistante")).toThrow(/absent/);
-    expect(entreePanneau("debit").picto).toBe(entreeCommande("liste-debit").picto);
+    expect(clePictogramme(entreePanneau("debit").pictogramme)).toBe(clePictogramme(entreeCommande("liste-debit").pictogramme));
+  });
+
+  it("règle d'or : chaque entrée a un pictogramme Tabler ou sur mesure, jamais un caractère ni du texte", () => {
+    for (const e of REGISTRE_SANDBOX) {
+      expect(["tabler", "fadi"], e.id).toContain(e.pictogramme.source);
+      expect(e.pictogramme.nom, e.id).not.toMatch(/[^\x20-\x7e]/);
+    }
+  });
+
+  it("pictogrammes uniques, sauf les trois partages déclarés (outil ou commande et le panneau qu'il ouvre)", () => {
+    const cle = (e: (typeof REGISTRE_SANDBOX)[number]) => `${e.nature}:${e.id}`;
+    const parPicto = new Map<string, string[]>();
+    for (const e of REGISTRE_SANDBOX) parPicto.set(clePictogramme(e.pictogramme), [...(parPicto.get(clePictogramme(e.pictogramme)) ?? []), cle(e)]);
+    const partages = [...parPicto.values()].filter((l) => l.length > 1).map((l) => [...l].sort().join(" + ")).sort();
+    expect(partages).toEqual(PICTOGRAMMES_PARTAGES.map(([a, b]) => [a, b].sort().join(" + ")).sort());
+    // Chaque partage déclaré relie un outil ou une commande à un panneau.
+    for (const [a, b] of PICTOGRAMMES_PARTAGES) {
+      expect(a, a).toMatch(/^(outil|commande):/);
+      expect(b, b).toMatch(/^panneau:/);
+    }
+  });
+
+  it("les paires du catalogue qui ne sont pas des partages reçoivent des pictogrammes distincts", () => {
+    const differents = (a: string, b: string) => expect(clePictogramme(entreeSandbox(a.split(":")[0] as "outil", a.split(":")[1]!)!.pictogramme), `${a} / ${b}`).not.toBe(clePictogramme(entreeSandbox(b.split(":")[0] as "outil", b.split(":")[1]!)!.pictogramme));
+    differents("outil:arc", "panneau:adoucir");
+    differents("outil:regarder-autour", "panneau:styles");
+    differents("commande:composant", "panneau:composants");
+    differents("panneau:info-entite", "panneau:info-modele");
+  });
+
+  it("teinte par famille : dessin, modification (solides compris), mesure (annotation comprise), matériau, caméra, objets, info", () => {
+    expect(entreeOutil("ligne").pictogramme.teinte).toBe("dessin");
+    expect(entreeOutil("union").pictogramme.teinte).toBe("modification");
+    expect(entreeOutil("cotation").pictogramme.teinte).toBe("mesure");
+    expect(entreeOutil("peinture").pictogramme.teinte).toBe("materiau");
+    expect(entreeOutil("orbite").pictogramme.teinte).toBe("camera");
+    expect(entreeOutil("selection").pictogramme.teinte).toBe("objets");
+    for (const e of entreesSandbox("commande")) expect(e.pictogramme.teinte, e.id).toBe("objets");
+    for (const e of entreesSandbox("panneau")) expect(e.pictogramme.teinte, e.id).toBe("info");
+  });
+
+  it("douze dessins sur mesure, ceux validés le 20 octobre 2026", () => {
+    const fadi = new Set(REGISTRE_SANDBOX.filter((e) => e.pictogramme.source === "fadi").map((e) => e.pictogramme.nom));
+    expect([...fadi].sort()).toEqual(["aligner", "allonger", "coupe-profil", "debit", "decalage", "eclater", "epaissir", "onglet", "pousser", "profile", "rapporteur", "suivez"]);
   });
 
   it("le registre est figé", () => {
     expect(Object.isFrozen(REGISTRE_SANDBOX)).toBe(true);
     expect(Object.isFrozen(BARRE_GAUCHE_SANDBOX)).toBe(true);
+    expect(Object.isFrozen(PICTOGRAMMES_PARTAGES)).toBe(true);
   });
 });

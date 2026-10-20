@@ -59,6 +59,7 @@ import {
   outilParId,
   entreePanneau,
   entreesSandbox,
+  type Pictogramme as DescriptionPictogramme,
   peindreFacesCote,
   peindreOccurrences,
   rechercherOutil,
@@ -117,6 +118,7 @@ import { DialogueComposant, DialogueDeplacer, MenuContextuel, NavigateurPlanche,
 import { BarreActions } from "../panneaux/BarreActions";
 import { commandeDuClavier, routeeParLeRegistre, type EntreeRegistre } from "./registre-commandes";
 import { useNavigationBarre } from "../navigation-barre";
+import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante } from "./BarreOutilsFlottante";
 import { PanneauProfiles, type ChoixSection } from "./panneau-profiles";
@@ -180,11 +182,11 @@ type PanneauObjets = "info-entite" | "composants" | "styles" | "ombres" | "scene
  * Panneaux du lot 5 (§6), derrière une seule icône « Objets » : la colonne reste courte (téléphone, Zoom étendu). Liste,
  * ordre et pictogrammes viennent du registre unique du Sandbox (emplacement « objets-et-vue », lot 2).
  */
-const LISTE_PANNEAUX_OBJETS: readonly (readonly [PanneauObjets, string])[] = entreesSandbox("panneau")
+const LISTE_PANNEAUX_OBJETS: readonly (readonly [PanneauObjets, DescriptionPictogramme])[] = entreesSandbox("panneau")
   .filter((e) => e.emplacement === "objets-et-vue")
-  .map((e) => [e.id as PanneauObjets, e.picto] as const);
+  .map((e) => [e.id as PanneauObjets, e.pictogramme] as const);
 /** Pictogramme d'un panneau de la colonne de droite, lu au registre. */
-const pictoPanneau = (id: Panneau): string => entreePanneau(id).picto;
+const pictoPanneau = (id: Panneau): DescriptionPictogramme => entreePanneau(id).pictogramme;
 const PANNEAUX_OBJETS: ReadonlySet<string> = new Set(LISTE_PANNEAUX_OBJETS.map(([id]) => id));
 /** Précision d'affichage (Info modèle) : préférence de l'appareil (R10), jamais une donnée de la Planche. */
 const CLE_PRECISION = "fadi.sandbox.planche.precision";
@@ -2020,7 +2022,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         data-raccourci={o.raccourci ?? undefined}
         onClick={() => choisirOutil(o.id)}
       >
-        <span aria-hidden="true" className="outil-picto">{pictoOutil(o.id)}</span>
+        <Pictogramme picto={pictoOutil(o.id)} actif={actif} className="outil-picto" />
         <span className="outil-libelle" aria-hidden="true">{o.libelle}</span>
         {raison && dansGrille && <span className="outil-lot" aria-hidden="true">{t("planche.prevu.court", { lot: lotPrevu(o) })}</span>}
       </button>
@@ -2050,7 +2052,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     ));
 
   /** Aide « ? » : barre d'état (ordinateur) ou rangée de saisie du volet (téléphone). */
-  const aideBouton = <button type="button" className="lien" onClick={() => setPanneau(panneau === "instructeur" ? null : "instructeur")} title={t("bas.aide")} aria-label={t("bas.aide")}>?</button>;
+  const aideBouton = <button type="button" className="lien" onClick={() => setPanneau(panneau === "instructeur" ? null : "instructeur")} title={t("bas.aide")} aria-label={t("bas.aide")}><Pictogramme picto={pictoPanneau("instructeur")} /></button>;
   /** Langue et périphérique : barre d'état (ordinateur) ou barre du haut (téléphone). */
   const choix = (
     <>
@@ -2205,8 +2207,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const libelleDetacher = detache === "non" ? t("planche.detacher") : detache === "fenetre" ? t("planche.rattacher") : t("planche.plein-ecran.quitter");
   const barreActions = (
     <BarreActions
-      annuler={{ id: "annuler", picto: "↶", libelle: t("planche.annuler"), titre: t("planche.annuler.titre", { operation: operationAAnnuler(hist) ?? "" }), onClick: annulerPas, disabled: hist.passe.length === 0, attributs: { "data-planche-annuler": "" } }}
-      retablir={{ id: "retablir", picto: "↷", libelle: t("planche.retablir"), titre: t("planche.retablir.titre", { operation: operationARetablir(hist) ?? "" }), onClick: retablirPas, disabled: hist.futur.length === 0, attributs: { "data-planche-retablir": "" } }}
+      annuler={{ id: "annuler", picto: "annuler", libelle: t("planche.annuler"), titre: t("planche.annuler.titre", { operation: operationAAnnuler(hist) ?? "" }), onClick: annulerPas, disabled: hist.passe.length === 0, attributs: { "data-planche-annuler": "" } }}
+      retablir={{ id: "retablir", picto: "retablir", libelle: t("planche.retablir"), titre: t("planche.retablir.titre", { operation: operationARetablir(hist) ?? "" }), onClick: retablirPas, disabled: hist.futur.length === 0, attributs: { "data-planche-retablir": "" } }}
       autres={[
         ...COMMANDES_OBJETS.flatMap((c) => {
           const d = disponibiliteObjet(c.id, etatSelectionObjets());
@@ -2240,7 +2242,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           })),
         {
           id: "detacher",
-          picto: detache === "non" ? "⧉" : "⤡",
+          picto: detache === "non" ? "detacher" : "rattacher",
           libelle: libelleDetacher,
           titre: detache === "non" ? t("planche.detacher.aide") : libelleDetacher,
           texte: detache === "non" ? t("planche.detacher.court") : detache === "fenetre" ? t("planche.rattacher.court") : t("planche.plein-ecran.quitter.court"),
@@ -2249,7 +2251,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         },
       ]}
       reference={racineRef}
-      reserve={{ bas: ".planche-volet, [data-planche-pied], [data-barre-outils-docquee]", droite: ".planche-colonne" }}
+      reserve={{ bas: ".planche-volet, [data-planche-pied], [data-barre-outils-docquee]", droite: ".planche-colonne", gauche: ".planche-outils" }}
       fenetreCle={`${detache}|${hautDocquee ?? ""}`}
     />
   );
@@ -2315,13 +2317,13 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       </div>
       <div className="planche-recherche-carte">
         <button type="button" className="outil" onClick={() => setRecherche(true)} title={t("planche.recherche.titre")} aria-label={t("planche.recherche.titre")} data-planche-recherche>
-          <span aria-hidden="true" className="outil-picto">⌕</span>
+          <IconeSandbox nom="rechercher" className="outil-picto" />
           <span className="outil-libelle" aria-hidden="true">{t("planche.rechercher")}</span>
         </button>
       </div>
       <div ref={railRef} onKeyDown={naviguerRail} className="planche-outils" role="toolbar" aria-label={t("planche.outils")} aria-orientation="vertical" data-planche-outils-replies={outilsReplies}>
         <button type="button" className="outil outil-fixe-haut planche-outils-bascule" aria-expanded={!outilsReplies} onClick={() => setOutilsReplies(!outilsReplies)} title={outilsReplies ? t("planche.outils.deplier") : t("planche.outils.replier")} aria-label={outilsReplies ? t("planche.outils.deplier") : t("planche.outils.replier")} data-planche-outils-bascule>
-          <span aria-hidden="true" className="outil-picto">{outilsReplies ? "»" : "«"}</span>
+          <IconeSandbox nom={outilsReplies ? "deplier" : "replier"} className="outil-picto" />
           <span className="outil-libelle" aria-hidden="true">{t("planche.outils.replier")}</span>
         </button>
         {barre.map((o) => boutonOutil(o))}
@@ -2332,7 +2334,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           </>
         )}
         <button type="button" className="outil outil-fixe-bas" aria-expanded={grille} aria-controls={grille ? "planche-grille" : undefined} onClick={() => setGrille(!grille)} title={t("planche.plus")} aria-label={t("planche.plus")} data-planche-plus>
-          <span aria-hidden="true" className="outil-picto">⋯</span>
+          <IconeSandbox nom="plusOutils" className="outil-picto" />
           <span className="outil-libelle" aria-hidden="true">{t("planche.plus")}</span>
         </button>
       </div>
@@ -2350,22 +2352,22 @@ export function Planche({ readOnly = false }: PropsPlanche) {
 
       <nav className="planche-colonne" aria-label={t("canevas.panneaux")}>
         <button type="button" className="canevas-icone planche-colonne-bascule" aria-expanded={!colonneRepliee} onClick={() => setColonneRepliee(!colonneRepliee)} title={colonneRepliee ? t("planche.colonne.deplier") : t("planche.colonne.replier")} aria-label={colonneRepliee ? t("planche.colonne.deplier") : t("planche.colonne.replier")} data-planche-colonne-bascule>
-          <span aria-hidden="true" className="canevas-picto">{colonneRepliee ? "«" : "»"}</span>
+          <IconeSandbox nom={colonneRepliee ? "replier" : "deplier"} className="canevas-picto" />
         </button>
         <button type="button" className="canevas-icone" aria-pressed={panneau === "instructeur"} onClick={() => setPanneau(panneau === "instructeur" ? null : "instructeur")} title={t("panneau.instructeur")} data-planche-panneau-icone="instructeur">
-          <span aria-hidden="true" className="canevas-picto">{pictoPanneau("instructeur")}</span>
+          <Pictogramme className="canevas-picto" picto={pictoPanneau("instructeur")} />
           <span className="canevas-etiquette">{t("panneau.instructeur")}</span>
         </button>
         <button type="button" className="canevas-icone" aria-pressed={panneau === "materiaux"} onClick={() => setPanneau(panneau === "materiaux" ? null : "materiaux")} title={t("panneau.materiaux")} data-planche-panneau-icone="materiaux">
-          <span aria-hidden="true" className="canevas-picto">{pictoPanneau("materiaux")}</span>
+          <Pictogramme className="canevas-picto" picto={pictoPanneau("materiaux")} />
           <span className="canevas-etiquette">{t("panneau.materiaux")}</span>
         </button>
         <button type="button" className="canevas-icone" aria-pressed={panneau === "balises"} onClick={() => setPanneau(panneau === "balises" ? null : "balises")} title={t("panneau.balises")} data-planche-panneau-icone="balises">
-          <span aria-hidden="true" className="canevas-picto">{pictoPanneau("balises")}</span>
+          <Pictogramme className="canevas-picto" picto={pictoPanneau("balises")} />
           <span className="canevas-etiquette">{t("panneau.balises")}</span>
         </button>
         <button type="button" className="canevas-icone" aria-pressed={panneau === "objets" || (panneau !== null && PANNEAUX_OBJETS.has(panneau))} onClick={() => setPanneau(panneau === "objets" || (panneau !== null && PANNEAUX_OBJETS.has(panneau)) ? null : "objets")} title={t("panneau.objets")} data-planche-panneau-icone="objets">
-          <span aria-hidden="true" className="canevas-picto">{pictoPanneau("objets")}</span>
+          <Pictogramme className="canevas-picto" picto={pictoPanneau("objets")} />
           <span className="canevas-etiquette">{t("panneau.objets")}</span>
         </button>
       </nav>
@@ -2373,7 +2375,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         <section className="planche-panneau" aria-label={t("panneau.materiaux")} data-planche-panneau="materiaux">
           <header className="canevas-panneau-tete">
             <h3>{t("panneau.materiaux")}</h3>
-            <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t("panneau.materiaux") })}>×</button>
+            <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t("panneau.materiaux") })}><IconeSandbox nom="fermer" /></button>
           </header>
           <div className="canevas-panneau-corps">
             <PanneauMateriaux
@@ -2401,7 +2403,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         <section className="planche-panneau" aria-label={t("panneau.balises")} data-planche-panneau="balises">
           <header className="canevas-panneau-tete">
             <h3>{t("panneau.balises")}</h3>
-            <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t("panneau.balises") })}>×</button>
+            <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t("panneau.balises") })}><IconeSandbox nom="fermer" /></button>
           </header>
           <div className="canevas-panneau-corps">
             <PanneauBalises
@@ -2438,12 +2440,12 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         <section className="planche-panneau" aria-label={t("panneau.objets")} data-planche-panneau="objets">
           <header className="canevas-panneau-tete">
             <h3>{t("panneau.objets")}</h3>
-            <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t("panneau.objets") })}>×</button>
+            <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t("panneau.objets") })}><IconeSandbox nom="fermer" /></button>
           </header>
           <div className="canevas-panneau-corps planche-choix-panneaux">
             {LISTE_PANNEAUX_OBJETS.map(([id, picto]) => (
               <button key={id} type="button" className="canevas-icone" onClick={() => setPanneau(id)} title={t(`panneau.${id}` as "panneau.info-entite")} data-planche-panneau-icone={id}>
-                <span aria-hidden="true" className="canevas-picto">{picto}</span>
+                <Pictogramme picto={picto} className="canevas-picto" />
                 <span className="canevas-etiquette">{t(`panneau.${id}` as "panneau.info-entite")}</span>
               </button>
             ))}
@@ -2453,9 +2455,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       {panneau && PANNEAUX_OBJETS.has(panneau) && (
         <section className="planche-panneau" aria-label={t(`panneau.${panneau}` as "panneau.info-entite")} data-planche-panneau={panneau}>
           <header className="canevas-panneau-tete">
-            <button type="button" className="lien planche-retour-panneaux" onClick={() => setPanneau("objets")} title={t("panneau.objets")} aria-label={t("panneau.objets")} data-planche-panneaux-retour>◂</button>
+            <button type="button" className="lien planche-retour-panneaux" onClick={() => setPanneau("objets")} title={t("panneau.objets")} aria-label={t("panneau.objets")} data-planche-panneaux-retour><IconeSandbox nom="retour" /></button>
             <h3>{t(`panneau.${panneau}` as "panneau.info-entite")}</h3>
-            <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t(`panneau.${panneau}` as "panneau.info-entite") })}>×</button>
+            <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t(`panneau.${panneau}` as "panneau.info-entite") })}><IconeSandbox nom="fermer" /></button>
           </header>
           <div className="canevas-panneau-corps">
             {panneau === "debit" && (
@@ -2604,7 +2606,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         <section className="planche-panneau" aria-label={t("panneau.instructeur")} data-planche-panneau="instructeur">
           <header className="canevas-panneau-tete">
             <h3>{t("panneau.instructeur")}</h3>
-            <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t("panneau.instructeur") })}>×</button>
+            <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t("panneau.instructeur") })}><IconeSandbox nom="fermer" /></button>
           </header>
           <div className="canevas-panneau-corps">
             {etroit && (
@@ -2638,12 +2640,12 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           </ol>
           {COMMANDES_CONTEXTE.map((c) => (
             <button key={c.id} type="button" className="planche-fil-commande" title={`${t(c.libelle)} (${afficherRaccourci(c.raccourci)})`} aria-label={t(c.libelle)} onClick={() => fermerContexte(c.id)} data-planche-commande={c.id}>
-              <span aria-hidden="true">{c.picto}</span>
+              <Pictogramme picto={c.picto} />
             </button>
           ))}
           {COMMANDES_VUE.filter((c) => c.id === "masquer-reste").map((c) => (
             <button key={c.id} type="button" className="planche-fil-commande" aria-pressed={options.masquerReste} title={`${t(c.libelle)} (${afficherRaccourci(c.raccourci)})`} aria-label={t(c.libelle)} onClick={basculerMasquerReste} data-planche-commande={c.id}>
-              <span aria-hidden="true">{c.picto}</span>
+              <Pictogramme picto={c.picto} />
             </button>
           ))}
         </nav>
@@ -2652,7 +2654,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         <div className="planche-fil planche-isolement" role="status" data-planche-isolement>
           <span>{t("planche.isolement.etat", { nombre: String(isolement.ids.length) })}</span>
           <button type="button" className="planche-fil-commande" title={`${t("planche.menu.quitter-isolement")} (${afficherRaccourci(COMMANDES_VUE[0]!.raccourci)})`} aria-label={t("planche.menu.quitter-isolement")} onClick={basculerIsolement} data-planche-isolement-quitter>
-            <span aria-hidden="true">{COMMANDES_VUE[0]!.picto}</span>
+            <Pictogramme picto={COMMANDES_VUE[0]!.picto} />
           </button>
         </div>
       )}
@@ -2675,7 +2677,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         </p>
         {lienSelectionne() && (
           <button type="button" className="planche-lien-detacher" title={`${t(COMMANDE_DETACHER_LIEN.libelle)} (${afficherRaccourci(COMMANDE_DETACHER_LIEN.raccourci)})`} aria-label={t(COMMANDE_DETACHER_LIEN.libelle)} onClick={detacherLienSelection} data-planche-commande={COMMANDE_DETACHER_LIEN.id}>
-            <span aria-hidden="true">{COMMANDE_DETACHER_LIEN.picto}</span> {t(COMMANDE_DETACHER_LIEN.court)}
+            <Pictogramme picto={COMMANDE_DETACHER_LIEN.picto} /> {t(COMMANDE_DETACHER_LIEN.court)}
           </button>
         )}
         <button type="button" className="planche-volet-bascule" aria-expanded={volet} onClick={() => setVolet(!volet)} title={volet ? t("planche.volet.moins.aide") : t("planche.volet.plus.aide")} data-planche-volet-bascule>
@@ -2707,7 +2709,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
               const nom = t(c.libelle);
               return (
                 <button key={c.id} type="button" disabled={!d.disponible} title={d.disponible ? `${nom} (${afficherRaccourci(c.raccourci)})` : `${nom} — ${t(d.motif ?? "planche.piece.motif.piece")}`} aria-label={nom} onClick={() => executerPiece(c.id)} data-planche-commande={c.id}>
-                  <span aria-hidden="true">{c.picto}</span> {t(c.court)}
+                  <Pictogramme picto={c.picto} /> {t(c.court)}
                 </button>
               );
             })}
@@ -2894,7 +2896,7 @@ function InstructeurPlanche({ outil, raison }: { outil: Outil | null; raison: st
   return (
     <div className="instructeur" data-instructeur={outil.id}>
       <p className="instructeur-outil">
-        <span aria-hidden="true" className="canevas-picto">{pictoOutil(outil.id)}</span> <strong>{outil.libelle}</strong>
+        <Pictogramme picto={pictoOutil(outil.id)} className="canevas-picto" /> <strong>{outil.libelle}</strong>
         {outil.raccourci && <kbd>{outil.raccourci}</kbd>}
       </p>
       {raison && <p className="planche-instructeur-lot" role="note">{raison}</p>}
@@ -2989,7 +2991,7 @@ function RechercheOutil({ lecture, onFermer, onChoisir }: { lecture: boolean; on
             const raison = disponibilite(o, { lecture });
             return (
               <li key={o.id} id={`planche-recherche-${o.id}`} role="option" aria-selected={i === rang} aria-disabled={raison ? true : undefined} className={i === rang ? "est-actif" : undefined} onPointerDown={(e) => e.preventDefault()} onClick={() => choisir(o)} title={titreOutil(o, raison)}>
-                <span aria-hidden="true" className="outil-picto">{pictoOutil(o.id)}</span> {o.libelle}
+                <Pictogramme picto={pictoOutil(o.id)} className="outil-picto" /> {o.libelle}
                 {raccourciOutil(o) && <kbd>{afficherRaccourci(raccourciOutil(o)!)}</kbd>}
                 {raison && <span className="outil-lot">{t("planche.prevu.court", { lot: lotPrevu(o) })}</span>}
               </li>

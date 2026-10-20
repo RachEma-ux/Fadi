@@ -17,6 +17,7 @@ import { borner, placerBarre, positionDefautBarre, positionDocquee, type Positio
 import { titreOperation } from "./BoutonOutils";
 import { t } from "../messages";
 import { nomOutil, pictoOutil } from "./outils-planche";
+import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 
 export interface PropsBarreOutilsFlottante {
   outil: Outil;
@@ -214,10 +215,10 @@ export function BarreOutilsFlottante({ outil, rang, outilId, telephone, raison, 
         onPointerCancel={surRelachement}
         onKeyDown={surClavier}
       >
-        <span aria-hidden="true">⠿</span>
+        <IconeSandbox nom="poignee" />
       </button>
       <span className="planche-barre-outils-titre" aria-hidden="true">
-        {pictoOutil(id)} {nomOutil(outil)}
+        <Pictogramme picto={pictoOutil(id)} /> {nomOutil(outil)}
       </span>
       <div className="planche-barre-outils-corps">
         {sections.map((s, i) => (
@@ -241,7 +242,7 @@ export function BarreOutilsFlottante({ outil, rang, outilId, telephone, raison, 
                   data-barre-outils-operation={o.id}
                   onClick={() => onChoisir(o.id)}
                 >
-                  <span aria-hidden="true">{pictoOutil(o.id)}</span>
+                  <Pictogramme picto={pictoOutil(o.id)} />
                 </button>
               );
             })}
@@ -249,7 +250,7 @@ export function BarreOutilsFlottante({ outil, rang, outilId, telephone, raison, 
         ))}
       </div>
       <button type="button" className="planche-barre-outils-fermer" aria-label={t("outils.barre.masquer", { outil: nomOutil(outil) })} title={t("outils.barre.masquer", { outil: nomOutil(outil) })} data-barre-outils-fermer onClick={onFermer}>
-        <span aria-hidden="true">✕</span>
+        <IconeSandbox nom="fermer" />
       </button>
     </div>
   );

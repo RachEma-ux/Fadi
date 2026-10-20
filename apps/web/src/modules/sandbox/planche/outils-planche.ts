@@ -5,7 +5,7 @@
  * champ Mesures). Pictogrammes, raccourcis et emplacements viennent du registre unique du Sandbox
  * (`REGISTRE_SANDBOX`, lot 2) : rien n'en est recopié ici. Pur : ni DOM, ni React, ni three.js.
  */
-import { BARRE_GAUCHE_SANDBOX, OUTILS, RACCOURCIS_FADI_OUTILS, entreeSandbox, machineParId, normaliserRaccourci, outilParId, outilParRaccourci, type EntreeSandbox, type Outil, type Touche } from "@parcours/sandbox-planche-model";
+import { BARRE_GAUCHE_SANDBOX, OUTILS, RACCOURCIS_FADI_OUTILS, entreeSandbox, machineParId, normaliserRaccourci, outilParId, outilParRaccourci, type EntreeSandbox, type Outil, type Pictogramme, type Touche } from "@parcours/sandbox-planche-model";
 import { LANGUE_INTERFACE, t, type Langue } from "../messages";
 
 /** Outils de caméra pris en charge par l'interface (navigation D-157) ; ils n'ont pas de machine d'états. */
@@ -143,8 +143,12 @@ export function titreOutil(o: Outil, raison: string | null): string {
   return `${o.libelle}${r ? ` (${r})` : ""}${raison ? ` — ${raison}` : ""}`;
 }
 
-/** Pictogramme d'un outil, lu au registre du Sandbox (repli « • » pour un identifiant inconnu). */
-export const pictoOutil = (id: string): string => entreeSandbox("outil", id)?.picto || "•";
+/** Pictogramme d'un outil (Tabler ou sur mesure), lu au registre du Sandbox ; un identifiant inconnu est une erreur. */
+export function pictoOutil(id: string): Pictogramme {
+  const e = entreeSandbox("outil", id);
+  if (!e) throw new Error(`Registre du Sandbox : outil « ${id} » absent`);
+  return e.pictogramme;
+}
 
 // -----------------------------------------------------------------------------------------------------------------
 // Clavier

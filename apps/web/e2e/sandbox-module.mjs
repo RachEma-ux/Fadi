@@ -6,6 +6,8 @@
  * - l'ancienne adresse `/studio/console/sandbox` redirige vers `/sandbox` (remplacement dans l'historique) ;
  * - la carte « 00 Sandbox » de la Console est un simple lien vers `/sandbox` ;
  * - un échec du chargement de la Planche affiche la limite d'erreur du Sandbox et « Réessayer » la recharge ;
+ * - chaque bouton de la barre d'outils porte un pictogramme SVG (lot 3) ;
+ * - au téléphone, la barre d'actions ne recouvre pas la barre d'outils de gauche ;
  * - aucun appel à l'API d'un projet (Atelier, Studio, Parcours) pendant que le Sandbox est ouvert, aucune erreur JavaScript.
  *
  *   BASE_URL=http://localhost:3001 OUT=atelier-captures/sandbox node apps/web/e2e/sandbox-module.mjs
@@ -61,6 +63,9 @@ async function plancheChargee(page, contexte) {
   await barre.waitFor({ state: "visible" });
   const outils = await barre.locator("button").count();
   check(`${contexte} : barre d'outils visible et garnie`, outils >= 6, `${outils} boutons`);
+  // Lot 3 : chaque bouton de la barre montre un pictogramme SVG (Tabler ou sur mesure), jamais un caractère.
+  const pictos = await barre.locator("button svg.sandbox-picto").count();
+  check(`${contexte} : un pictogramme SVG par bouton de la barre`, pictos === outils, `${pictos} / ${outils}`);
 }
 
 try {
@@ -125,6 +130,14 @@ try {
   surSandbox = true;
   await tel.page.goto(`${BASE}/sandbox`);
   await plancheChargee(tel.page, "téléphone");
+  // La barre d'actions flottante ne recouvre pas la barre d'outils de gauche (position par défaut).
+  const recouvrement = await tel.page.evaluate(() => {
+    const a = document.querySelector(".sandbox-planche [data-barre-actions]")?.getBoundingClientRect();
+    const o = document.querySelector(".sandbox-planche .planche-outils")?.getBoundingClientRect();
+    if (!a || !o) return null;
+    return a.left < o.right && o.left < a.right && a.top < o.bottom && o.top < a.bottom;
+  });
+  check("téléphone : la barre d'actions ne recouvre pas la barre d'outils", recouvrement === false, String(recouvrement));
   await tel.page.screenshot({ path: join(OUT, "sandbox-telephone.png") });
   surSandbox = false;
   await tel.context.close();
