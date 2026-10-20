@@ -31,7 +31,7 @@ jobs:
           persist-credentials: false
       - name: Verify Bash syntax and gateway rules
         run: |
-          bash -n deploy/preprod/ci-ssh deploy/preprod/ci-deploy deploy/preprod/fadi-preprod
+          for script in deploy/preprod/ci-ssh deploy/preprod/ci-deploy deploy/preprod/fadi-preprod; do bash -n "$script"; done
           bash deploy/preprod/tests/test-ci-deploy.sh
 
   deploy:
