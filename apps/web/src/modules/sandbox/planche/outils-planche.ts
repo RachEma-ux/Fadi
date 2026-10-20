@@ -6,7 +6,7 @@
  * (`REGISTRE_SANDBOX`, lot 2) : rien n'en est recopié ici. Pur : ni DOM, ni React, ni three.js.
  */
 import { BARRE_GAUCHE_SANDBOX, OUTILS, RACCOURCIS_FADI_OUTILS, entreeSandbox, machineParId, normaliserRaccourci, outilParId, outilParRaccourci, type EntreeSandbox, type Outil, type Pictogramme, type Touche } from "@parcours/sandbox-planche-model";
-import { LANGUE_INTERFACE, t, type Langue } from "../messages";
+import { LANGUE_INTERFACE, t, type CleMessage, type Langue } from "../messages";
 
 /** Outils de caméra pris en charge par l'interface (navigation D-157) ; ils n'ont pas de machine d'états. */
 export type OutilCamera = "orbite" | "panoramique" | "zoom" | "zoom-etendu" | "zoom-fenetre" | "positionner-camera" | "regarder-autour" | "marcher";
@@ -37,14 +37,11 @@ export function outilsBarre(catalogue: readonly Outil[] = OUTILS): Outil[] {
   return [...barre].sort((a, b) => rang(a) - rang(b));
 }
 
-/** Sections de la grille « … » (cahier-planche §3.3) : regroupement par famille du catalogue. */
-const SECTIONS: { libelle: string; familles: readonly Outil["famille"][] }[] = [
-  { libelle: "Sélection", familles: ["selection", "materiau"] },
-  { libelle: "Dessin", familles: ["dessin"] },
-  { libelle: "Modification", familles: ["modification", "solide"] },
-  { libelle: "Construction", familles: ["mesure", "annotation"] },
-  { libelle: "Caméra", familles: ["camera"] },
-];
+/**
+ * Sections de la grille « ⋯ » (lot 4) : une par famille du registre, dans l'ordre de SketchUp — Sélection, Dessin,
+ * Modification, Solides, Matière, Mesure, Annotation, Caméra —, libellé sous chaque icône.
+ */
+const FAMILLES_GRILLE: readonly Outil["famille"][] = ["selection", "dessin", "modification", "solide", "materiau", "mesure", "annotation", "camera"];
 
 /**
  * Un outil du menu contextuel (Diviser) n'est atteignable que par ce menu, livré au lot 5 (§5.8) : tant qu'il n'existe
@@ -53,9 +50,9 @@ const SECTIONS: { libelle: string; familles: readonly Outil["famille"][] }[] = [
 export function sectionsGrille(
   catalogue: readonly Outil[] = OUTILS,
   aMachine: (id: string) => boolean = (id) => machineParId(id) !== undefined,
-): { libelle: string; outils: Outil[] }[] {
+): { famille: Outil["famille"]; libelle: string; outils: Outil[] }[] {
   const grille = catalogue.filter((o) => emplacement(o) === "grille" || (emplacement(o) === "menu-contextuel" && aMachine(o.id)));
-  return SECTIONS.map((s) => ({ libelle: s.libelle, outils: grille.filter((o) => s.familles.includes(o.famille)) })).filter((s) => s.outils.length > 0);
+  return FAMILLES_GRILLE.map((f) => ({ famille: f, libelle: t(`outils.famille.${f}` as CleMessage), outils: grille.filter((o) => o.famille === f) })).filter((s) => s.outils.length > 0);
 }
 
 /** Lot qui livre chaque outil (cahier-planche §4 et §8). */

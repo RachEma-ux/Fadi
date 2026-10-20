@@ -35,8 +35,9 @@ export interface ActionBarre {
 }
 
 export interface PropsBarreActions {
-  annuler: ActionBarre;
-  retablir: ActionBarre;
+  /** Annuler / Rétablir : facultatifs (lot 4 du Sandbox : ils sont dans la barre du haut, comme dans SketchUp). */
+  annuler?: ActionBarre;
+  retablir?: ActionBarre;
   autres?: readonly ActionBarre[];
   /** Zone de dessin : la position par défaut est son coin bas droit. Sans référence, celui de la fenêtre. */
   reference?: React.RefObject<HTMLElement | null>;
@@ -249,10 +250,12 @@ export function BarreActions({ annuler, retablir, autres = [], reference, reserv
       >
         <IconeSandbox nom="poignee" />
       </button>
-      <div className="barre-groupe" role="group" aria-label="Annuler et rétablir">
-        {bouton(annuler)}
-        {bouton(retablir)}
-      </div>
+      {annuler && retablir && (
+        <div className="barre-groupe" role="group" aria-label="Annuler et rétablir">
+          {bouton(annuler)}
+          {bouton(retablir)}
+        </div>
+      )}
       {autres.map(bouton)}
     </div>
   );

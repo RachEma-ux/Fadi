@@ -48,6 +48,8 @@ const FR = {
   "actions.deplacer": "Déplacer la barre d'actions",
   "actions.deplacer.aide": "Glissez pour déplacer la barre ; flèches au clavier (Maj : plus vite). Elle reste dans l'écran.",
   "actions.cadrer": "Cadrer",
+  "actions.zoom.plus": "Zoom avant",
+  "actions.zoom.moins": "Zoom arrière",
   "actions.cadrer.niveau": "Cadrer le niveau (0)",
   "actions.cadrer.vue": "Cadrer la vue 3D",
   // Mode Planche (cahier-planche, lot 2).
@@ -720,6 +722,8 @@ const EN: Record<CleMessage, string> = {
   "actions.deplacer": "Move the action bar",
   "actions.deplacer.aide": "Drag to move the bar; arrow keys on the keyboard (Shift: faster). It stays on screen.",
   "actions.cadrer": "Fit",
+  "actions.zoom.plus": "Zoom in",
+  "actions.zoom.moins": "Zoom out",
   "actions.cadrer.niveau": "Fit the level (0)",
   "actions.cadrer.vue": "Fit the 3D view",
   "mode.groupe": "Plan, 3D, documents or Board",

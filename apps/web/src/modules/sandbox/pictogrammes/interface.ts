@@ -8,7 +8,6 @@ export const ICONES_INTERFACE = {
   fichier: "menu-2",
   deplier: "chevrons-right",
   replier: "chevrons-left",
-  retour: "chevron-left",
   sousMenu: "chevron-right",
   menu: "chevron-down",
   fermer: "x",

@@ -57,6 +57,7 @@ import {
   opererSolides,
   orienterFaces,
   outilParId,
+  entreeOutil,
   entreePanneau,
   entreesSandbox,
   type Pictogramme as DescriptionPictogramme,
@@ -119,7 +120,8 @@ import { BarreActions } from "../panneaux/BarreActions";
 import { commandeDuClavier, routeeParLeRegistre, type EntreeRegistre } from "./registre-commandes";
 import { useNavigationBarre } from "../navigation-barre";
 import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
-import { disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
+import { curseurOutil } from "../pictogrammes/curseur";
+import { disponibiliteDebit, type IdCommandeDebit, COMMANDES_PIECE, disponibilitePiece, type IdCommandePiece, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_VUE, COMMANDE_DETACHER_LIEN, PAS_ZOOM, ciblesDeplacement, disponibiliteNavigateur, disponibiliteObjet, disponibiliteVue, type IdCommandeVue, filAriane, liensRompus, type EtatSelectionObjets, type IdCommandeContexte, type IdCommandeNavigateur, type IdCommandeObjet } from "./commandes-objets";
 import { BarreOutilsFlottante } from "./BarreOutilsFlottante";
 import { PanneauProfiles, type ChoixSection } from "./panneau-profiles";
 import { PanneauDebit, REGLAGES_DEBIT_DEFAUT, type ReglagesDebit } from "./panneau-debit";
@@ -176,18 +178,20 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "instructeur" | "materiaux" | "balises" | "objets" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit";
-type PanneauObjets = "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit";
+type Panneau = "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit";
 /**
- * Panneaux du lot 5 (§6), derrière une seule icône « Objets » : la colonne reste courte (téléphone, Zoom étendu). Liste,
- * ordre et pictogrammes viennent du registre unique du Sandbox (emplacement « objets-et-vue », lot 2).
+ * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
+ * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
  */
-const LISTE_PANNEAUX_OBJETS: readonly (readonly [PanneauObjets, DescriptionPictogramme])[] = entreesSandbox("panneau")
-  .filter((e) => e.emplacement === "objets-et-vue")
-  .map((e) => [e.id as PanneauObjets, e.pictogramme] as const);
-/** Pictogramme d'un panneau de la colonne de droite, lu au registre. */
+const COLONNE: readonly { readonly id: Panneau; readonly picto: DescriptionPictogramme; readonly bas: boolean }[] = entreesSandbox("panneau").map((e) => ({
+  id: e.id as Panneau,
+  picto: e.pictogramme,
+  bas: e.emplacement === "colonne-bas",
+}));
+/** Pictogramme d'un panneau, lu au registre. */
 const pictoPanneau = (id: Panneau): DescriptionPictogramme => entreePanneau(id).pictogramme;
-const PANNEAUX_OBJETS: ReadonlySet<string> = new Set(LISTE_PANNEAUX_OBJETS.map(([id]) => id));
+/** Panneaux au cadre commun (titre, fermer) ; Instructeur, Matériaux et Balises ont le leur. */
+const PANNEAUX_COMMUNS: ReadonlySet<string> = new Set(COLONNE.map((p) => p.id).filter((id) => id !== "instructeur" && id !== "materiaux" && id !== "balises"));
 /** Précision d'affichage (Info modèle) : préférence de l'appareil (R10), jamais une donnée de la Planche. */
 const CLE_PRECISION = "fadi.sandbox.planche.precision";
 function lirePrecision(): number {
@@ -307,6 +311,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const [tactile, setTactile] = useState(false);
   // Téléphone (≤ 760 px) : annuler / rétablir vivent dans le volet bas, l'aide dans la barre du haut.
   const [etroit, setEtroit] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches);
+  // Écran tactile dès l'ouverture (un pointeur grossier, même secondaire, ou des points de contact) : les boutons zoom + / −
+  // sont visibles sans attendre un premier toucher, y compris sur un portable à écran tactile piloté à la souris.
+  const [pointeurGrossier] = useState(() => typeof window !== "undefined" && (window.matchMedia("(any-pointer: coarse)").matches || (navigator.maxTouchPoints ?? 0) > 0));
   const [majVerrouillee, setMajVerrouillee] = useState(false);
   // Barres d'opérations flottantes (D-198) : haut de la barre rangée en bas au téléphone (la barre d'actions s'en écarte).
   const [hautDocquee, setHautDocquee] = useState<number | null>(null);
@@ -318,6 +325,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const [outilsReplies, setOutilsReplies] = useState(true);
   // Téléphone : icônes seules au départ (les étiquettes recouvraient le dessin) ; « « » les affiche.
   const [colonneRepliee, setColonneRepliee] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches);
+  const colonneRef = useRef<HTMLElement | null>(null);
   // Plan détaché : fenêtre séparée (Document Picture-in-Picture, bureau) ou plein écran (repli, téléphone).
   const [detache, setDetache] = useState<"non" | "fenetre" | "plein-ecran">("non");
   const fenetreRef = useRef<Window | null>(null);
@@ -2060,12 +2068,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       <ChoixPeripherique ui={ui} />
     </>
   );
-  const canevasBas = (
-    <span className="canevas-bas">
-      {aideBouton}
-      {choix}
-    </span>
-  );
+  const canevasBas = <span className="canevas-bas">{choix}</span>;
   /** Flèches de direction : touches modificatrices (ordinateur tactile) ou panneau Instructeur (téléphone). */
   // Tirage d'arête (D-197) : au téléphone, les flèches (verrou d'axe, ↓ = allonger) entrent dans la barre de modificateurs
   // au lieu du seul panneau Instructeur, pour que le geste se fasse au doigt sans détour.
@@ -2139,7 +2142,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     });
   executerNavigateurRef.current = executerNavigateur;
   const etatVue = () => ({ entites: etatSelectionObjets().entites, isole: isolement !== null, dansObjet: dans !== undefined });
-  const executerVue = (id: IdCommandeVue) => (id === "isoler" ? basculerIsolement() : basculerMasquerReste());
+  const executerVue = (id: IdCommandeVue) => (id === "zoom-plus" || id === "zoom-moins" ? vueRef.current?.zoomer(PAS_ZOOM[id]) : id === "isoler" ? basculerIsolement() : basculerMasquerReste());
   const commandesVue = () =>
     COMMANDES_VUE.map((c) => {
       const d = disponibiliteVue(c.id, etatVue());
@@ -2207,9 +2210,14 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const libelleDetacher = detache === "non" ? t("planche.detacher") : detache === "fenetre" ? t("planche.rattacher") : t("planche.plein-ecran.quitter");
   const barreActions = (
     <BarreActions
-      annuler={{ id: "annuler", picto: "annuler", libelle: t("planche.annuler"), titre: t("planche.annuler.titre", { operation: operationAAnnuler(hist) ?? "" }), onClick: annulerPas, disabled: hist.passe.length === 0, attributs: { "data-planche-annuler": "" } }}
-      retablir={{ id: "retablir", picto: "retablir", libelle: t("planche.retablir"), titre: t("planche.retablir.titre", { operation: operationARetablir(hist) ?? "" }), onClick: retablirPas, disabled: hist.futur.length === 0, attributs: { "data-planche-retablir": "" } }}
       autres={[
+        // Lot 4 : Cadrer (Zoom étendu) toujours ; zoom + / − visibles sur écran tactile (comme les zones de SketchUp au doigt).
+        { id: "cadrer", picto: entreeOutil("zoom-etendu").pictogramme, libelle: t("actions.cadrer"), texte: t("actions.cadrer"), titre: `${t("actions.cadrer")} (${afficherRaccourci(raccourciOutil(outilParId("zoom-etendu")!)!)})`, onClick: () => choisirOutil("zoom-etendu"), attributs: { "data-planche-cadrer": "" } },
+        ...(tactile || etroit || pointeurGrossier
+          ? (["zoom-moins", "zoom-plus"] as const)
+              .map((id) => COMMANDES_VUE.find((c) => c.id === id)!)
+              .map((c) => ({ id: c.id, picto: c.picto, libelle: t(c.libelle), titre: `${t(c.libelle)} (${afficherRaccourci(c.raccourci)})`, onClick: () => executerVue(c.id), attributs: { "data-planche-zoom": c.id === "zoom-plus" ? "plus" : "moins" } }))
+          : []),
         ...COMMANDES_OBJETS.flatMap((c) => {
           const d = disponibiliteObjet(c.id, etatSelectionObjets());
           // Commandes d'arête (O-3) : présentes dans la barre seulement quand elles s'appliquent.
@@ -2275,6 +2283,25 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       </div>
     ) : null;
 
+  // Chevron de la colonne : centré sur sa hauteur et collé à son bord gauche, recalculé quand elle change de taille.
+  useLayoutEffect(() => {
+    const n = colonneRef.current;
+    const r = racineRef.current;
+    if (!n || !r) return;
+    const placer = () => {
+      const a = n.getBoundingClientRect();
+      const b = r.getBoundingClientRect();
+      r.style.setProperty("--colonne-bascule-droite", `${Math.round(b.right - a.left)}px`);
+      r.style.setProperty("--colonne-bascule-haut", `${Math.round(a.top - b.top + a.height / 2)}px`);
+    };
+    placer();
+    const Observateur = (n.ownerDocument.defaultView as (Window & typeof globalThis) | null)?.ResizeObserver ?? globalThis.ResizeObserver;
+    const obs = Observateur ? new Observateur(placer) : null;
+    obs?.observe(n);
+    obs?.observe(r);
+    return () => obs?.disconnect();
+  }, [colonneRepliee, detache]);
+
   // La Planche est rendue dans sa porte (portail) : dans la page, la porte est posée dans `emplacement` ; détachée,
   // elle vit dans la fenêtre séparée et la carte d'état prend sa place ici.
   const planche = (
@@ -2287,7 +2314,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           role="application"
           aria-label={t("planche.vue")}
           aria-roledescription="zone de dessin"
+          // Lot 4 : curseur propre à l'outil actif (pictogramme et croix au point actif).
+          style={{ cursor: curseurOutil(outilId, pictoOutil(outilId)) }}
           data-planche-vue
+          data-planche-curseur={outilId}
         >
           {webgl === "indisponible" && <p className="planche-webgl" role="alert">{t("planche.webgl")}</p>}
         </div>
@@ -2295,6 +2325,15 @@ export function Planche({ readOnly = false }: PropsPlanche) {
 
       <div className="planche-haut">
         <MenuPlanche actions={actionsMenu} />
+        {/* Lot 4 : Annuler / Rétablir dans la barre du haut, après le nom du brouillon (disposition de SketchUp). */}
+        <span className="planche-haut-historique" role="group" aria-label={`${t("planche.annuler")} / ${t("planche.retablir")}`}>
+          <button type="button" className="planche-haut-bouton" onClick={annulerPas} disabled={hist.passe.length === 0} title={t("planche.annuler.titre", { operation: operationAAnnuler(hist) ?? "" })} aria-label={t("planche.annuler")} data-planche-annuler>
+            <IconeSandbox nom="annuler" />
+          </button>
+          <button type="button" className="planche-haut-bouton" onClick={retablirPas} disabled={hist.futur.length === 0} title={t("planche.retablir.titre", { operation: operationARetablir(hist) ?? "" })} aria-label={t("planche.retablir")} data-planche-retablir>
+            <IconeSandbox nom="retablir" />
+          </button>
+        </span>
         <p className="planche-brouillon" role="note" title={`${t("planche.brouillon")} — ${stockageDisponible() ? t("planche.brouillon.aide") : t("planche.brouillon.indisponible")}`} data-planche-brouillon>
           <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M7 3h7l5 5v13H7z" />
@@ -2350,27 +2389,19 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         </div>
       )}
 
-      <nav className="planche-colonne" aria-label={t("canevas.panneaux")}>
-        <button type="button" className="canevas-icone planche-colonne-bascule" aria-expanded={!colonneRepliee} onClick={() => setColonneRepliee(!colonneRepliee)} title={colonneRepliee ? t("planche.colonne.deplier") : t("planche.colonne.replier")} aria-label={colonneRepliee ? t("planche.colonne.deplier") : t("planche.colonne.replier")} data-planche-colonne-bascule>
-          <IconeSandbox nom={colonneRepliee ? "replier" : "deplier"} className="canevas-picto" />
-        </button>
-        <button type="button" className="canevas-icone" aria-pressed={panneau === "instructeur"} onClick={() => setPanneau(panneau === "instructeur" ? null : "instructeur")} title={t("panneau.instructeur")} data-planche-panneau-icone="instructeur">
-          <Pictogramme className="canevas-picto" picto={pictoPanneau("instructeur")} />
-          <span className="canevas-etiquette">{t("panneau.instructeur")}</span>
-        </button>
-        <button type="button" className="canevas-icone" aria-pressed={panneau === "materiaux"} onClick={() => setPanneau(panneau === "materiaux" ? null : "materiaux")} title={t("panneau.materiaux")} data-planche-panneau-icone="materiaux">
-          <Pictogramme className="canevas-picto" picto={pictoPanneau("materiaux")} />
-          <span className="canevas-etiquette">{t("panneau.materiaux")}</span>
-        </button>
-        <button type="button" className="canevas-icone" aria-pressed={panneau === "balises"} onClick={() => setPanneau(panneau === "balises" ? null : "balises")} title={t("panneau.balises")} data-planche-panneau-icone="balises">
-          <Pictogramme className="canevas-picto" picto={pictoPanneau("balises")} />
-          <span className="canevas-etiquette">{t("panneau.balises")}</span>
-        </button>
-        <button type="button" className="canevas-icone" aria-pressed={panneau === "objets" || (panneau !== null && PANNEAUX_OBJETS.has(panneau))} onClick={() => setPanneau(panneau === "objets" || (panneau !== null && PANNEAUX_OBJETS.has(panneau)) ? null : "objets")} title={t("panneau.objets")} data-planche-panneau-icone="objets">
-          <Pictogramme className="canevas-picto" picto={pictoPanneau("objets")} />
-          <span className="canevas-etiquette">{t("panneau.objets")}</span>
-        </button>
+      <nav ref={colonneRef} className="planche-colonne" aria-label={t("canevas.panneaux")}>
+        {COLONNE.map(({ id, picto, bas }) => (
+          <button key={id} type="button" className={`canevas-icone${bas ? " planche-colonne-bas" : ""}`} aria-pressed={panneau === id} onClick={() => setPanneau(panneau === id ? null : id)} title={t(`panneau.${id}` as "panneau.info-entite")} data-planche-panneau-icone={id}>
+            <Pictogramme className="canevas-picto" picto={picto} />
+            <span className="canevas-etiquette">{t(`panneau.${id}` as "panneau.info-entite")}</span>
+          </button>
+        ))}
       </nav>
+      {/* Chevron plier / déplier (comme SketchUp) : à mi-hauteur, au bord gauche de la colonne ; il apparaît au survol de la
+          colonne ou du chevron, et reste visible sur écran tactile (pas de survol) et au clavier (focus). */}
+      <button type="button" className="planche-colonne-bascule" aria-expanded={!colonneRepliee} onClick={() => setColonneRepliee(!colonneRepliee)} title={colonneRepliee ? t("planche.colonne.deplier") : t("planche.colonne.replier")} aria-label={colonneRepliee ? t("planche.colonne.deplier") : t("planche.colonne.replier")} data-planche-colonne-bascule>
+        <IconeSandbox nom={colonneRepliee ? "replier" : "deplier"} />
+      </button>
       {panneau === "materiaux" && (
         <section className="planche-panneau" aria-label={t("panneau.materiaux")} data-planche-panneau="materiaux">
           <header className="canevas-panneau-tete">
@@ -2436,26 +2467,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         </section>
       )}
 
-      {panneau === "objets" && (
-        <section className="planche-panneau" aria-label={t("panneau.objets")} data-planche-panneau="objets">
-          <header className="canevas-panneau-tete">
-            <h3>{t("panneau.objets")}</h3>
-            <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t("panneau.objets") })}><IconeSandbox nom="fermer" /></button>
-          </header>
-          <div className="canevas-panneau-corps planche-choix-panneaux">
-            {LISTE_PANNEAUX_OBJETS.map(([id, picto]) => (
-              <button key={id} type="button" className="canevas-icone" onClick={() => setPanneau(id)} title={t(`panneau.${id}` as "panneau.info-entite")} data-planche-panneau-icone={id}>
-                <Pictogramme picto={picto} className="canevas-picto" />
-                <span className="canevas-etiquette">{t(`panneau.${id}` as "panneau.info-entite")}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-      {panneau && PANNEAUX_OBJETS.has(panneau) && (
+      {panneau && PANNEAUX_COMMUNS.has(panneau) && (
         <section className="planche-panneau" aria-label={t(`panneau.${panneau}` as "panneau.info-entite")} data-planche-panneau={panneau}>
           <header className="canevas-panneau-tete">
-            <button type="button" className="lien planche-retour-panneaux" onClick={() => setPanneau("objets")} title={t("panneau.objets")} aria-label={t("panneau.objets")} data-planche-panneaux-retour><IconeSandbox nom="retour" /></button>
             <h3>{t(`panneau.${panneau}` as "panneau.info-entite")}</h3>
             <button type="button" className="canevas-fermer" onClick={() => setPanneau(null)} aria-label={t("panneau.fermer", { titre: t(`panneau.${panneau}` as "panneau.info-entite") })}><IconeSandbox nom="fermer" /></button>
           </header>
@@ -2659,6 +2673,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         </div>
       )}
       <footer className="planche-bas">
+        {/* Lot 4 : barre du bas comme SketchUp — aide, consigne de l'outil actif, champ Mesures à droite. */}
+        {!etroit && <span className="planche-bas-aide">{aideBouton}</span>}
         <p className="planche-etat" aria-live="polite" aria-label={t("planche.etat")} data-planche-etat>
           {dans && <span className="planche-contexte" data-planche-contexte>{t("planche.edition", { nom: nomOccurrence(hist.present.modele, dans) })} | </span>}
           <span className="planche-consigne">{vue.consigne}</span>
