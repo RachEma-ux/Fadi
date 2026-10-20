@@ -123,6 +123,7 @@ export default defineConfig({
       "/notifications": "http://localhost:3001",
       "/preferences": "http://localhost:3001",
       "/health": "http://localhost:3001",
+      "/version": "http://localhost:3001",
     },
   },
   preview: {
@@ -143,6 +144,7 @@ export default defineConfig({
       "/notifications": "http://localhost:3001",
       "/preferences": "http://localhost:3001",
       "/health": "http://localhost:3001",
+      "/version": "http://localhost:3001",
     },
   },
 });

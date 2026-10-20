@@ -12,9 +12,10 @@ import { examplesRouter } from "./routes/examples.js";
 import { libraryRouter } from "./routes/library.js";
 import { notificationsRouter } from "./routes/notifications.js";
 import { preferencesRouter } from "./routes/preferences.js";
+import { versionRouter } from "./routes/version.js";
 
 /** Préfixes servis par l'API ; tout le reste est l'application (fichiers du build, ou `index.html` pour une route du client). */
-const API_PREFIX = /^\/(auth|projects|examples|library|notifications|preferences|health)(\/|$)/;
+const API_PREFIX = /^\/(auth|projects|examples|library|notifications|preferences|health|version)(\/|$)/;
 
 export function createApp() {
   const app = express();
@@ -69,6 +70,9 @@ export function createApp() {
       res.status(503).json({ status: "degraded", db: "unavailable" });
     }
   });
+
+  // Ce qui tourne : commit et date de construction de l'image (« inconnu » en développement).
+  app.use("/version", versionRouter());
 
   // Hébergement durable : l'API sert aussi l'application construite (`WEB_DIST` = apps/web/dist) — un seul processus, un
   // seul port, même origine (plus de `vite preview`, réservé au développement). Les fichiers empreints du build sont

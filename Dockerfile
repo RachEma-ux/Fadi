@@ -30,7 +30,12 @@ COPY packages/geometry-exact/package.json packages/geometry-exact/
 RUN npm ci --omit=dev --no-audit --no-fund --ignore-scripts
 
 FROM node:22-bookworm-slim
+# Version servie par GET /version : `docker build --build-arg FADI_COMMIT=<sha> --build-arg FADI_BUILD_DATE=<ISO UTC>`.
+ARG FADI_COMMIT=inconnu
+ARG FADI_BUILD_DATE=inconnu
 ENV NODE_ENV=production \
+    FADI_COMMIT=${FADI_COMMIT} \
+    FADI_BUILD_DATE=${FADI_BUILD_DATE} \
     PORT=3001 \
     WEB_DIST=/app/apps/web/dist \
     MIGRATE_ON_START=1 \
