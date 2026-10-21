@@ -201,15 +201,17 @@ try {
   await page.waitForURL(`${base}?domaine=dessin&planche=double`);
   await page.waitForSelector('[data-studio-domaine-affiche="dessin"]');
   await page.locator("[data-studio-vue3d]").waitFor();
-  const double = await page.evaluate(() => {
+  // La vue 3D est déjà là (Planche 3D) : on attend que la Planche 2D soit montée à côté avant de mesurer.
+  const mesureDouble = () => page.evaluate(() => {
     const p = document.querySelector('[aria-label="Planche de dessin 2D"]')?.getBoundingClientRect(), v = document.querySelector("[data-studio-vue3d]")?.getBoundingClientRect();
     return p && v ? { coteACote: p.right <= v.left + 1 && Math.abs(p.top - v.top) < 40, largeurs: [Math.round(p.width), Math.round(v.width)] } : null;
   });
+  const double = await attendreVrai(async () => { const m = await mesureDouble(); return m?.coteACote && m.largeurs.every((w) => w > 250) ? m : null; }) ?? await mesureDouble();
   check("P0 : Double vue — Planche 2D et Planche 3D côte à côte sur grand écran, adresse `planche=double`", !!double?.coteACote && double.largeurs.every((w) => w > 250)
     && (await page.locator("[data-studio-planche-active]").textContent()) === "Double vue", JSON.stringify(double));
   await page.reload();
   await page.locator("[data-studio-vue3d]").waitFor();
-  check("I.4-03 : l'actualisation restitue la Double vue", (await page.locator('[data-studio-planche="double"]').getAttribute("aria-pressed")) === "true" && (await page.getByRole("group", { name: "Planche de dessin 2D", exact: true }).count()) === 1);
+  check("I.4-03 : l'actualisation restitue la Double vue", (await page.locator('[data-studio-planche="double"]').getAttribute("aria-pressed")) === "true" && await attendreVrai(async () => (await page.getByRole("group", { name: "Planche de dessin 2D", exact: true }).count()) === 1));
   await page.locator('[data-studio-planche="3d"]').click();
   await page.waitForURL(`${base}?domaine=dessin&planche=3d`);
   await page.waitForSelector('[data-studio-domaine-affiche="dessin"]');
