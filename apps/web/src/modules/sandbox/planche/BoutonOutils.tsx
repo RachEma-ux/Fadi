@@ -32,8 +32,11 @@ export interface PropsBoutonOutils {
    * garde son icône, son nom et son raccourci ; grisée, elle dit pourquoi.
    */
   commandes?: readonly CommandeListe[];
-  /** Compteur incrémenté par la loupe : à chaque incrément la liste s'ouvre, le champ de recherche prêt à la frappe. */
-  ouvrirSignal?: number;
+  /**
+   * « outils » : bouton « Outils ▾ » de la barre du haut ; « loupe » : la même liste, ouverte par la loupe de la barre
+   * verticale. Chaque instance a son propre état : aucun lien entre les deux.
+   */
+  variante?: "outils" | "loupe";
 }
 
 export interface CommandeListe {
@@ -60,7 +63,7 @@ export function placementListeOutils(basBouton: number, basZone: number | null, 
   return { haut: telephone ? Math.round(basBouton + 4) : null, hauteurMax: Math.max(88, Math.floor(bas - basBouton - 12)) };
 }
 
-export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBarre, onReinitialiser, commandes = [], ouvrirSignal = 0 }: PropsBoutonOutils) {
+export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBarre, onReinitialiser, commandes = [], variante = "outils" }: PropsBoutonOutils) {
   const [ouvert, setOuvert] = useState(false);
   const [requete, setRequete] = useState("");
   const [familles, setFamilles] = useState<ReadonlySet<FamilleOutil>>(() => new Set());
@@ -117,7 +120,7 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
     const b = bouton.current?.getBoundingClientRect();
     if (!b) return;
     const zone = racine.current?.closest(".planche")?.getBoundingClientRect();
-    const p = placementListeOutils(b.bottom, zone?.bottom ?? null, w.innerHeight, w.matchMedia("(max-width: 760px)").matches);
+    const p = placementListeOutils(variante === "loupe" ? b.top : b.bottom, zone?.bottom ?? null, w.innerHeight, w.matchMedia("(max-width: 760px)").matches);
     setHautTelephone(p.haut);
     setHauteurListe(p.hauteurMax);
   };
@@ -142,15 +145,6 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
   }, [ouvert]);
 
   const focusAuRendu = useRef(false);
-  const signalVu = useRef(ouvrirSignal);
-  useEffect(() => {
-    if (ouvrirSignal === signalVu.current) return;
-    signalVu.current = ouvrirSignal;
-    // Ouverture demandée de l'extérieur (loupe) : la liste s'ouvre sous le bouton « Outils », le champ prêt à la frappe.
-    ouvrir(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ouvrirSignal]);
-
   const ouvrir = (clavier: boolean) => {
     // Famille de l'outil actif dépliée à l'ouverture (les autres repliées, chacune avec sa flèche).
     const f = outilParId(outilId)?.famille;
@@ -251,23 +245,42 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
   const affichees = barres.visibles.map((id) => outilParId(id)).filter((o): o is Outil => o !== null);
 
   return (
-    <div className="planche-outils-menu" ref={racine} onKeyDown={ouvert ? surClavier : undefined} data-planche-outils-menu>
-      <button
-        type="button"
-        ref={bouton}
-        className="planche-outils-bouton"
-        aria-haspopup="menu"
-        aria-expanded={ouvert}
-        aria-controls={ouvert ? idListe : undefined}
-        title={t("outils.bouton.aide")}
-        data-planche-outils-bouton
-        onClick={(e) => (ouvert ? fermer() : ouvrir(e.detail === 0))}
-      >
-        {t("outils.bouton")}
-        <IconeSandbox nom="menu" className="planche-outils-chevron" />
-      </button>
+    <div className={`planche-outils-menu${variante === "loupe" ? " planche-outils-menu-loupe" : ""}`} ref={racine} onKeyDown={ouvert ? surClavier : undefined} data-planche-outils-menu>
+      {variante === "loupe" ? (
+        <button
+          type="button"
+          ref={bouton}
+          className="outil planche-loupe-bouton"
+          aria-haspopup="menu"
+          aria-expanded={ouvert}
+          aria-controls={ouvert ? idListe : undefined}
+          title={t("planche.recherche.titre")}
+          aria-label={t("planche.recherche.titre")}
+          data-planche-recherche
+          data-planche-loupe-bouton
+          onClick={() => (ouvert ? fermer() : ouvrir(true))}
+        >
+          <IconeSandbox nom="rechercher" className="outil-picto" />
+          <span className="outil-libelle" aria-hidden="true">{t("planche.rechercher")}</span>
+        </button>
+      ) : (
+        <button
+          type="button"
+          ref={bouton}
+          className="planche-outils-bouton"
+          aria-haspopup="menu"
+          aria-expanded={ouvert}
+          aria-controls={ouvert ? idListe : undefined}
+          title={t("outils.bouton.aide")}
+          data-planche-outils-bouton
+          onClick={(e) => (ouvert ? fermer() : ouvrir(e.detail === 0))}
+        >
+          {t("outils.bouton")}
+          <IconeSandbox nom="menu" className="planche-outils-chevron" />
+        </button>
+      )}
       {ouvert && (
-        <div className="planche-outils-liste" style={{ ...(hautTelephone !== null ? { top: `${hautTelephone}px` } : {}), ...(hauteurListe !== null ? { maxHeight: `${hauteurListe}px` } : {}) }} data-planche-outils-liste>
+        <div className="planche-outils-liste" data-variante={variante} style={{ ...(hautTelephone !== null ? { top: `${hautTelephone}px` } : {}), ...(hauteurListe !== null ? { maxHeight: `${hauteurListe}px` } : {}) }} data-planche-outils-liste>
           <div className="planche-outils-recherche">
             <IconeSandbox nom="rechercher" />
             <input

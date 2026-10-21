@@ -262,7 +262,6 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const grilleRef = useRef(false);
   grilleRef.current = grille;
   const [recherche, setRecherche] = useState(false);
-  const [ouvrirOutils, setOuvrirOutils] = useState(0);
   const rechercheRef = useRef(false);
   rechercheRef.current = recherche;
   // Panneaux exclusifs, fermés à l'ouverture (comme le Canevas, D-156) : le dessin reste dégagé.
@@ -2411,9 +2410,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.debit.motif.vide"), executer: () => executerDebit(c.id) };
         }),
   ];
-  const boutonOutils = (
+  /** Même liste « Outils », deux déclencheurs indépendants : le bouton de la barre du haut et la loupe de la barre verticale. */
+  const listeOutils = (variante: "outils" | "loupe") => (
     <BoutonOutils
-      ouvrirSignal={ouvrirOutils}
+      variante={variante}
       commandes={commandesListe}
       outilId={outilId}
       raison={raisonDe}
@@ -2423,6 +2423,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       onReinitialiser={() => etatUi.set((u) => ({ barresOutils: reinitialiserDisposition(u.barresOutils) }))}
     />
   );
+  const boutonOutils = listeOutils("outils");
 
   /** Barre d'actions flottante (D-195) : annuler / rétablir du brouillon local et Détacher ; elle suit la Planche détachée. */
   const libelleDetacher = detache === "non" ? t("planche.detacher") : detache === "fenetre" ? t("planche.rattacher") : t("planche.plein-ecran.quitter");
@@ -2583,10 +2584,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         <span />
       </div>
       <div className="planche-recherche-carte">
-        <button type="button" className="outil" onClick={() => setOuvrirOutils((n) => n + 1)} title={t("planche.recherche.titre")} aria-label={t("planche.recherche.titre")} data-planche-recherche>
-          <IconeSandbox nom="rechercher" className="outil-picto" />
-          <span className="outil-libelle" aria-hidden="true">{t("planche.rechercher")}</span>
-        </button>
+        {listeOutils("loupe")}
       </div>
       <div ref={railRef} onKeyDown={naviguerRail} className="planche-outils" role="toolbar" aria-label={t("planche.outils")} aria-orientation="vertical" data-planche-outils-replies={outilsReplies}>
         <button type="button" className="outil outil-fixe-haut planche-outils-bascule" aria-expanded={!outilsReplies} onClick={() => setOutilsReplies(!outilsReplies)} title={outilsReplies ? t("planche.outils.deplier") : t("planche.outils.replier")} aria-label={outilsReplies ? t("planche.outils.deplier") : t("planche.outils.replier")} data-planche-outils-bascule>
