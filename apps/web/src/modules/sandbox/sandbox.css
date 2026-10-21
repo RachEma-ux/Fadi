@@ -2580,3 +2580,67 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+/* Colonne de droite façon SketchUp, au bureau comme au téléphone : des boutons carrés isolés (aucune barre autour) ; le
+   chevron déplie les libellés en pastilles À GAUCHE des boutons, qui restent entièrement visibles. */
+@media (min-width: 761px) {
+  .sandbox-planche .planche { --colonne-l: 3.6rem; }
+  .sandbox-planche .planche:not(.colonne-repliee) { --colonne-l: 11.5rem; }
+  .sandbox-planche .planche-colonne {
+    width: auto;
+    gap: 0.5rem;
+    padding: 0;
+    margin: 0.5rem;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    align-items: flex-end;
+    scrollbar-width: none;
+  }
+  .sandbox-planche .planche-colonne::-webkit-scrollbar {
+    display: none;
+  }
+  .sandbox-planche .planche-colonne .canevas-icone,
+  .sandbox-planche .planche-colonne .canevas-icone[aria-pressed="true"] {
+    flex: 0 0 auto;
+    flex-direction: row-reverse;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    font-size: 0.85rem;
+  }
+  .sandbox-planche .planche-colonne .canevas-picto {
+    display: flex;
+    flex: 0 0 44px;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 44px;
+    height: 44px;
+    padding: 10px;
+    background: var(--flottant-fond);
+    border: 1px solid var(--atelier-ligne, #dce5df);
+    border-radius: 6px;
+    box-shadow: var(--flottant-ombre);
+  }
+  .sandbox-planche .planche-colonne .canevas-icone[aria-pressed="true"] .canevas-picto {
+    border-right: 3px solid #1a5fd6;
+    background: color-mix(in srgb, #1a5fd6 10%, #fff);
+  }
+  .sandbox-planche .planche-colonne .canevas-etiquette {
+    display: inline-block;
+    padding: 0.35rem 0.7rem;
+    background: var(--flottant-fond);
+    border-radius: 999px;
+    box-shadow: var(--flottant-ombre);
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+}
