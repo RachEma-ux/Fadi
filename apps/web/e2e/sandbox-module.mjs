@@ -65,7 +65,7 @@ async function disposition(page, contexte) {
   check(`${contexte} : « ⋯ » en bas de la barre`, await racine.locator("[data-planche-plus]").count() === 1);
   const colonne = await racine.locator("[data-planche-panneau-icone]").evaluateAll((l) => l.map((b) => b.getAttribute("data-planche-panneau-icone")));
   check(`${contexte} : colonne — chaque panneau à un clic, Info modèle en bas`, colonne.length === 13 && colonne.at(-1) === "info-modele" && !colonne.includes("objets"), colonne.join(", "));
-  check(`${contexte} : barre du haut — Fichier, Annuler, Rétablir`, (await racine.locator(".planche-haut [data-planche-menu-ouvrir]").count()) === 1 && (await racine.locator(".planche-haut [data-planche-annuler]").count()) === 1 && (await racine.locator(".planche-haut [data-planche-retablir]").count()) === 1);
+  check(`${contexte} : menu Planche (pictogramme seul) ; barre du haut — Annuler, Rétablir`, (await racine.locator(".planche > [data-planche-menu-principal] [data-planche-menu-ouvrir]").count()) === 1 && (await racine.locator(".planche-haut [data-planche-annuler]").count()) === 1 && (await racine.locator(".planche-haut [data-planche-retablir]").count()) === 1);
   check(`${contexte} : Cadrer dans la barre d'actions`, (await racine.locator("[data-barre-actions] [data-planche-cadrer]").count()) === 1);
   const curseur = await racine.locator("[data-planche-vue]").evaluate((v) => v.style.cursor);
   check(`${contexte} : curseur propre à l'outil (Sélection : flèche)`, curseur === "default", curseur);

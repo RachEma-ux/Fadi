@@ -281,11 +281,11 @@
   justify-self: start;
   align-self: start;
   z-index: 6;
-  margin: calc(0.5rem + 44px + 0.75rem) 0.5rem 0.5rem;
+  margin: calc(0.5rem + 2 * 54px + 0.85rem) 0.5rem 0.5rem;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  max-height: calc(100% - var(--pied-h, 5.5rem) - 44px - 2.5rem);
+  max-height: calc(100% - var(--pied-h, 5.5rem) - 2 * 54px - 2.5rem);
   overflow-y: auto;
   padding: 0.25rem;
   background: var(--flottant-fond);
@@ -617,7 +617,7 @@
   .sandbox-planche .planche-outils {
     position: absolute;
     left: 0.5rem;
-    top: calc(48px + 0.5rem + 52px + 0.5rem);
+    top: calc(48px + 0.5rem + 2 * 54px + 0.85rem);
     bottom: calc(var(--volet-h, 10rem) + 0.5rem);
     justify-self: auto;
     align-self: auto;
@@ -831,13 +831,10 @@
   .sandbox-planche .planche-haut > * {
     flex: none;
   }
-  .sandbox-planche .planche-haut .planche-menu-bouton {
-    max-width: 7.5rem;
-  }
   .sandbox-planche .planche-recherche-carte {
     position: absolute;
     left: 0.5rem;
-    top: calc(48px + 0.5rem);
+    top: calc(48px + 0.5rem + 54px + 0.35rem);
     margin: 0;
     z-index: 6;
   }
@@ -1293,26 +1290,46 @@
   min-width: 32px;
   min-height: 32px;
 }
+/* Menu de la Planche : carte de la taille de la loupe, pictogramme seul, en haut à gauche ; la loupe et les outils
+   descendent d'une carte. Un appui de 2 s la rend déplaçable (position mémorisée dans ce navigateur). */
 .sandbox-planche .planche-menu-principal {
-  position: relative;
+  position: absolute;
+  left: 0.5rem;
+  top: 0.5rem;
+  z-index: 7;
+  padding: 0.25rem;
+  background: var(--flottant-fond);
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 8px;
+  box-shadow: var(--flottant-ombre);
+}
+.sandbox-planche .planche-menu-principal:has(.planche-menu-liste) {
+  z-index: 40;
+}
+.sandbox-planche .planche-menu-principal.en-deplacement {
+  z-index: 41;
+  outline: 2px solid var(--atelier-accent, #1f7a57);
+  box-shadow: 0 10px 26px rgba(24, 61, 50, 0.28);
+  cursor: grabbing;
 }
 .sandbox-planche .planche-menu-bouton {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  max-width: 14rem;
+  justify-content: center;
+  min-width: 36px;
   min-height: 36px;
-  padding: 0 0.6rem;
-  font: inherit;
-  color: inherit;
-  background: transparent;
-  border: 1px solid var(--atelier-ligne, #dce5df);
-  border-radius: 6px;
+  padding: 0;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  user-select: none;
 }
-.sandbox-planche .planche-menu-titre {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.sandbox-planche .planche-menu-bouton .outil-libelle {
+  display: none;
+}
+@media (min-width: 761px) {
+  .sandbox-planche .planche-recherche-carte {
+    margin-top: calc(0.5rem + 54px + 0.35rem);
+  }
 }
 .sandbox-planche .planche-menu-liste {
   position: absolute;
@@ -1322,6 +1339,14 @@
   min-width: 17rem;
   max-height: calc(100vh - 5rem);
   overflow-y: auto;
+}
+.sandbox-planche .planche-menu-principal[data-cote-h="droite"] .planche-menu-liste {
+  left: auto;
+  right: 0;
+}
+.sandbox-planche .planche-menu-principal[data-cote-v="haut"] .planche-menu-liste {
+  top: auto;
+  bottom: calc(100% + 4px);
 }
 .sandbox-planche .planche-menu-liste .planche-menu-entete {
   padding: 0.3rem 0.6rem;
@@ -1364,19 +1389,17 @@
   gap: 0.2rem;
 }
 @media (max-width: 760px) {
-  .sandbox-planche .planche-menu-bouton {
-    max-width: 9rem;
+  .sandbox-planche .planche-menu-principal:not(.est-deplace) {
+    top: calc(48px + 0.5rem);
   }
   .sandbox-planche .planche-menu-liste {
     position: fixed;
     left: 0.5rem;
     right: 0.5rem;
-    top: 56px;
+    top: calc(48px + 0.5rem + 54px + 0.5rem);
+    bottom: auto;
     min-width: 0;
   }
-}
-.sandbox-planche .planche-haut:has(.planche-menu-liste) {
-  z-index: 40;
 }
 .sandbox-planche .planche-outils-menu {
   position: relative;
@@ -2316,9 +2339,6 @@
   .sandbox-planche .planche-haut {
     padding: 2px 0.25rem;
     gap: 2px;
-  }
-  .sandbox-planche .planche-haut .planche-menu-bouton {
-    max-width: 44px;
   }
   .sandbox-planche .planche-haut .planche-haut-bouton {
     min-width: 36px;

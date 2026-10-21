@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState } from "react";
 import { LANGUE_INTERFACE, t } from "../messages";
 import { IconeSandbox } from "../pictogrammes/Pictogramme";
+import { DELAI_APPUI_MS, SEUIL_MOUVEMENT_PX, bornerPosition, coteOuverture, ecrirePositionMenu, lirePositionMenu, stockageLocal, type PositionMenu } from "./deplacement-menu";
 import { InformationsPlancheVue, type InformationsPlanche } from "./informations-planche";
 import { altitudeSaisie, nomValide, type InfoPlanche } from "./registre-planches";
 import type { EtatSauvegarde } from "./sauvegarde-brouillon";
@@ -51,6 +52,103 @@ export function MenuPlanche({ planches, courante, etat, actions }: { planches: r
   const fichierRef = useRef<HTMLInputElement | null>(null);
   const formatImportRef = useRef<FormatEchange>("ifc");
   const infosOuvertes = infos !== null;
+
+  // Pictogramme seul, flottant : un clic déroule le menu ; un appui maintenu 2 s le rend déplaçable.
+  const [pos, setPos] = useState<PositionMenu | null>(() => lirePositionMenu(stockageLocal()));
+  const [enDeplacement, setEnDeplacement] = useState(false);
+  const [cote, setCote] = useState<{ horizontal: "gauche" | "droite"; vertical: "bas" | "haut" }>({ horizontal: "gauche", vertical: "bas" });
+  const appui = useRef<{ px: number; py: number; x: number; y: number; minuteur: number | null; actif: boolean } | null>(null);
+  const clicIgnore = useRef(false);
+  const mesures = () => {
+    const el = ref.current;
+    const parent = el?.offsetParent as HTMLElement | null;
+    if (!el || !parent) return null;
+    return { el, taille: { largeur: el.offsetWidth, hauteur: el.offsetHeight }, zone: { largeur: parent.clientWidth, hauteur: parent.clientHeight }, x: el.offsetLeft, y: el.offsetTop };
+  };
+  const finAppui = (valider: boolean) => {
+    const a = appui.current;
+    appui.current = null;
+    if (!a) return;
+    if (a.minuteur !== null) window.clearTimeout(a.minuteur);
+    if (!a.actif) return;
+    setEnDeplacement(false);
+    clicIgnore.current = true;
+    window.setTimeout(() => (clicIgnore.current = false), 400);
+    if (valider) {
+      const m = mesures();
+      if (m) ecrirePositionMenu(stockageLocal(), { x: m.x, y: m.y });
+    }
+  };
+  const surAppui = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (e.button !== 0 && e.pointerType === "mouse") return;
+    const m = mesures();
+    if (!m) return;
+    finAppui(false);
+    const a = { px: e.clientX, py: e.clientY, x: m.x, y: m.y, minuteur: null as number | null, actif: false };
+    a.minuteur = window.setTimeout(() => {
+      a.minuteur = null;
+      a.actif = true;
+      setEnDeplacement(true);
+      setOuvert(false);
+      setSection(null);
+      setVolet(null);
+      setInfos(null);
+      setPos({ x: a.x, y: a.y });
+      if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") navigator.vibrate(30);
+    }, DELAI_APPUI_MS);
+    appui.current = a;
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      /* pointeur déjà relâché */
+    }
+  };
+  const surMouvement = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const a = appui.current;
+    if (!a) return;
+    const dx = e.clientX - a.px;
+    const dy = e.clientY - a.py;
+    if (!a.actif) {
+      // Le doigt ou la souris bouge avant les 2 s : ce n'est pas une demande de déplacement.
+      if (Math.hypot(dx, dy) > SEUIL_MOUVEMENT_PX) {
+        if (a.minuteur !== null) window.clearTimeout(a.minuteur);
+        appui.current = null;
+      }
+      return;
+    }
+    const m = mesures();
+    if (m) setPos(bornerPosition({ x: a.x + dx, y: a.y + dy }, m.taille, m.zone));
+  };
+  const surClavier = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (!e.altKey) return;
+    const pas = e.shiftKey ? 32 : 8;
+    const d = e.key === "ArrowLeft" ? [-pas, 0] : e.key === "ArrowRight" ? [pas, 0] : e.key === "ArrowUp" ? [0, -pas] : e.key === "ArrowDown" ? [0, pas] : null;
+    const m = mesures();
+    if (!d || !m) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const n = bornerPosition({ x: m.x + d[0]!, y: m.y + d[1]! }, m.taille, m.zone);
+    setPos(n);
+    ecrirePositionMenu(stockageLocal(), n);
+  };
+  const basculerMenu = () => {
+    if (clicIgnore.current) return;
+    if (ouvert) return fermer();
+    const m = mesures();
+    if (m) setCote(coteOuverture({ x: m.x, y: m.y }, m.taille, m.zone));
+    setOuvert(true);
+  };
+  useEffect(() => {
+    if (pos === null) return;
+    const w = ref.current?.ownerDocument.defaultView ?? window;
+    const replacer = () => {
+      const m = mesures();
+      if (m) setPos((p) => (p ? bornerPosition(p, m.taille, m.zone) : p));
+    };
+    w.addEventListener("resize", replacer);
+    return () => w.removeEventListener("resize", replacer);
+  }, [pos === null]);
+  useEffect(() => () => finAppui(false), []);
 
   const fermer = () => {
     setOuvert(false);
@@ -141,10 +239,32 @@ export function MenuPlanche({ planches, courante, etat, actions }: { planches: r
   );
   const titre = nomAffiche(courante);
   return (
-    <div className="planche-menu-principal" ref={ref} data-planche-menu-principal>
-      <button type="button" className="planche-menu-bouton" aria-haspopup="menu" aria-expanded={ouvert} onClick={() => (ouvert ? fermer() : setOuvert(true))} title={`${t("planche.menu-principal")} — ${titre}`} data-planche-menu-ouvrir data-planche-nom={courante.nom}>
+    <div
+      className={`planche-menu-principal${pos ? " est-deplace" : ""}${enDeplacement ? " en-deplacement" : ""}`}
+      ref={ref}
+      style={pos ? { left: `${pos.x}px`, top: `${pos.y}px` } : undefined}
+      data-planche-menu-principal
+      data-cote-h={cote.horizontal}
+      data-cote-v={cote.vertical}
+    >
+      <button
+        type="button"
+        className="outil planche-menu-bouton"
+        aria-haspopup="menu"
+        aria-expanded={ouvert}
+        aria-label={`${t("planche.menu-principal")} — ${titre}`}
+        title={`${t("planche.menu-principal")} — ${titre}\n${t("planche.sb.menu-deplacer")}`}
+        onClick={basculerMenu}
+        onPointerDown={surAppui}
+        onPointerMove={surMouvement}
+        onPointerUp={() => finAppui(true)}
+        onPointerCancel={() => finAppui(true)}
+        onContextMenu={(e) => e.preventDefault()}
+        onKeyDown={surClavier}
+        data-planche-menu-ouvrir
+        data-planche-nom={courante.nom}
+      >
         <IconeSandbox nom="fichier" className="outil-picto" />
-        <span className="planche-menu-titre">{titre}</span>
       </button>
       <input
         ref={fichierRef}
