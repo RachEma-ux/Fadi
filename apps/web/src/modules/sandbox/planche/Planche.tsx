@@ -2485,7 +2485,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         },
       ]}
       reference={racineRef}
-      reserve={{ bas: ".planche-volet, [data-planche-pied], [data-barre-outils-docquee]", droite: ".planche-colonne", gauche: ".planche-outils" }}
+      reserve={{ bas: ".planche-volet, [data-planche-pied], [data-barre-outils-docquee]", droite: ".planche-colonne", gauche: ".planche-outils, .planche-recherche-carte, [data-planche-menu-principal]" }}
       fenetreCle={`${detache}|${hautDocquee ?? ""}`}
     />
   );

@@ -3,8 +3,8 @@
  * local et Détacher. Elle flotte au-dessus du dessin sans jamais le redimensionner (position fixe), se déplace
  * librement par sa poignée (souris, doigt — capture du pointeur —, flèches au clavier, Maj : plus vite) et reste
  * toujours entière dans la zone visible : ramenée au relâchement, au redimensionnement, à la rotation et sous le
- * clavier virtuel (zone visuelle). Position par défaut : le coin bas droit de la zone de dessin (au-dessus de la barre
- * d'état, hors colonne de panneaux), recalculée tant que l'utilisateur ne l'a pas déplacée. Sa position et son
+ * clavier virtuel (zone visuelle). Position par défaut : en haut au centre de la zone de dessin (entre les cartes de gauche et la
+ * colonne de panneaux), recalculée tant que l'utilisateur ne l'a pas déplacée. Sa position et son
  * affichage sont mémorisés sur l'appareil (préférences de l'état d'interface) ; ⚙ la remet en place. Rendue par
  * l'Atelier (Plan, 3D, Documents) ou par la Planche, dans sa porte : elle suit le détachement dans l'autre fenêtre.
  * Les raccourcis (Ctrl Z, Ctrl Maj Z, 0) restent le chemin principal.
@@ -16,7 +16,7 @@ import { t } from "../messages";
 import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import type { IconeInterface } from "../pictogrammes/interface";
 import { useNavigationBarre } from "../navigation-barre";
-import { borner, largeurMaximale, pasClavier, positionParDefaut, retirerGauche, type Position, type Taille, type Zone } from "./barre-actions-position";
+import { borner, largeurMaximale, pasClavier, positionParDefautHaut, retirerGauche, type Position, type Taille, type Zone } from "./barre-actions-position";
 
 export interface ActionBarre {
   id: string;
@@ -39,7 +39,7 @@ export interface PropsBarreActions {
   annuler?: ActionBarre;
   retablir?: ActionBarre;
   autres?: readonly ActionBarre[];
-  /** Zone de dessin : la position par défaut est son coin bas droit. Sans référence, celui de la fenêtre. */
+  /** Zone de dessin : la position par défaut est son haut, au centre. Sans référence, celui de la fenêtre. */
   reference?: React.RefObject<HTMLElement | null>;
   /**
    * Éléments de la zone à ne pas recouvrir par défaut (sélecteurs dans la référence) : en bas (barre d'état), à droite
@@ -89,39 +89,38 @@ export function BarreActions({ annuler, retablir, autres = [], reference, reserv
     return { x: r?.left ?? 0, y: r?.top ?? 0 };
   }, []);
 
-  /** Coin bas droit de la zone de dessin, hors réserves, ramené dans la fenêtre. */
+  /** Haut et centre de la zone de dessin, hors cartes de gauche et colonne de droite, ramené dans la fenêtre. */
   const calculerDefaut = useCallback((): Position | null => {
     const el = racine.current;
     if (!el) return null;
-    // La largeur maximale posée par `replacer` (téléphone) est gardée ; la réserve gauche peut seulement la réduire.
+    // La largeur maximale posée par `replacer` (téléphone) est gardée ; les réserves peuvent seulement la réduire.
     let taille = tailleDe(el);
     const fenetre = zoneDe(el);
     const ref = reference?.current;
     const r = ref?.getBoundingClientRect();
     let zone: Zone = fenetre;
-    let bas = 0;
+    let reduite: Zone = fenetre;
     if (ref && r && r.width > 0 && r.height > 0) {
       zone = { gauche: r.left, haut: r.top, largeur: r.width, hauteur: r.height };
-      // Réserves : tous les éléments visibles (rectangle non vide) désignés par le sélecteur.
+      reduite = zone;
       const rects = (sel?: string) => (sel ? Array.from(ref.querySelectorAll(sel)).map((e) => e.getBoundingClientRect()).filter((q) => q.width > 0 && q.height > 0) : []);
-      for (const q of rects(reserveBas)) bas = Math.max(bas, r.bottom - q.top);
-      // La colonne ne compte que si elle descend jusqu'à la hauteur de la barre.
-      for (const rd of rects(reserveDroite)) if (rd.bottom > r.bottom - bas - taille.hauteur - 16) zone = { ...zone, largeur: Math.max(taille.largeur, Math.min(zone.largeur, rd.left - r.left)) };
-      // La barre d'outils de gauche ne compte que si elle descend jusqu'à la hauteur de la barre ; trop étroite à côté,
-      // la barre passe à la ligne (largeur bornée) au lieu de la recouvrir.
-      const gauches = rects(reserveGauche).filter((q) => q.bottom > r.bottom - bas - taille.hauteur - 16).map((q) => q.right);
-      const sansGauche = retirerGauche(zone, gauches);
-      if (sansGauche !== zone) {
-        zone = sansGauche;
-        const max = largeurMaximale(zone);
-        if (taille.largeur > max) {
-          el.style.maxWidth = `${max}px`;
-          taille = tailleDe(el);
-        }
+      // Cartes de gauche (menu, loupe, barre d'outils) : seulement celles du tiers gauche ; colonne : celles du tiers droit.
+      const bordsGauche = rects(reserveGauche).filter((q) => q.left < r.left + r.width / 3).map((q) => q.right);
+      reduite = retirerGauche(reduite, bordsGauche);
+      const bordsDroite = rects(reserveDroite).filter((q) => q.left > r.left + (2 * r.width) / 3).map((q) => q.left);
+      if (bordsDroite.length > 0) {
+        const bord = Math.min(...bordsDroite);
+        reduite = { ...reduite, largeur: Math.max(0, bord - (reduite.gauche ?? 0)) };
+      }
+      // Trop étroite entre les réserves (téléphone), la barre passe à la ligne au lieu de les recouvrir.
+      const max = largeurMaximale(reduite);
+      if (taille.largeur > max && max > 0) {
+        el.style.maxWidth = `${max}px`;
+        taille = tailleDe(el);
       }
     }
-    return borner(positionParDefaut(taille, zone, bas), taille, fenetre);
-  }, [reference, reserveBas, reserveDroite, reserveGauche]);
+    return borner(positionParDefautHaut(taille, zone, reduite), taille, fenetre);
+  }, [reference, reserveDroite, reserveGauche]);
 
   /** Replace la barre : la position mémorisée est ramenée dans l'écran, la position par défaut est recalculée. */
   const replacer = useCallback(() => {
