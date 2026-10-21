@@ -78,13 +78,14 @@ async function disposition(page, contexte) {
   });
   const repos = await chevron();
   check(`${contexte} : chevron de la colonne à mi-hauteur, au bord gauche`, repos.milieu && repos.gauche, JSON.stringify(repos));
-  if (contexte === "téléphone") check("téléphone : chevron visible sans survol", repos.opacite === 1);
-  else {
-    check("ordinateur : chevron caché au repos", repos.opacite === 0);
+  check(`${contexte} : chevron caché au repos`, repos.opacite === 0);
+  if (contexte !== "téléphone") {
     await racine.locator("[data-planche-panneau-icone='styles']").hover();
     await page.waitForTimeout(300);
     check("ordinateur : chevron visible au survol de la colonne", (await chevron()).opacite === 1);
     await page.mouse.move(400, 400);
+    await page.waitForTimeout(900);
+    check("ordinateur : chevron de nouveau caché hors survol", (await chevron()).opacite === 0);
   }
   if (contexte === "téléphone") {
     const choix = await racine.locator(".canevas-bas select").first().isVisible().catch(() => false);

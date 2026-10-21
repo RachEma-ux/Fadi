@@ -2297,8 +2297,8 @@
 @media (max-width: 760px) {
 }
 /* Chevron plier / déplier de la colonne (comme SketchUp) : à mi-hauteur, collé au bord gauche de la colonne
-   (position calculée, variables sur la racine). Il apparaît au survol de la colonne ou de lui-même ; sur écran tactile
-   (pas de survol) et au clavier, il reste visible. */
+   (position calculée, variables sur la racine). Il n'apparaît qu'au survol de la colonne ou de lui-même (sur écran
+   tactile : au toucher de la colonne) et au clavier ; au repos il est caché et inerte. */
 .sandbox-planche .planche-colonne-bascule {
   position: absolute;
   z-index: 7;
@@ -2318,18 +2318,19 @@
   color: var(--atelier-encre, #183d32);
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.15s ease 0.4s;
+  visibility: hidden;
+  transition: opacity 0.15s ease 0.4s, visibility 0s linear 0.55s;
 }
 .sandbox-planche .planche-colonne:hover + .planche-colonne-bascule,
+.sandbox-planche .planche-colonne:focus-within + .planche-colonne-bascule,
 .sandbox-planche .planche-colonne-bascule:hover,
-.sandbox-planche .planche-colonne-bascule:focus-visible,
-.sandbox-planche .planche.planche-tactile .planche-colonne-bascule {
+.sandbox-planche .planche-colonne-bascule:focus-visible {
   opacity: 1;
+  visibility: visible;
   transition-delay: 0s;
 }
 @media (hover: none) {
   .sandbox-planche .planche-colonne-bascule {
-    opacity: 1;
     width: 44px;
     height: 44px;
   }
