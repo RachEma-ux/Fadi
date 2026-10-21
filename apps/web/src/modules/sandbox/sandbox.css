@@ -2297,8 +2297,8 @@
 @media (max-width: 760px) {
 }
 /* Chevron plier / déplier de la colonne (comme SketchUp) : à mi-hauteur, collé au bord gauche de la colonne
-   (position calculée, variables sur la racine). Il apparaît au survol de la colonne ou de lui-même ; sur écran tactile
-   (pas de survol) et au clavier, il reste visible. */
+   (position calculée, variables sur la racine). Il n'apparaît qu'au survol de la colonne ou de lui-même (sur écran
+   tactile : au toucher de la colonne) et au clavier ; au repos il est caché et inerte. */
 .sandbox-planche .planche-colonne-bascule {
   position: absolute;
   z-index: 7;
@@ -2318,18 +2318,19 @@
   color: var(--atelier-encre, #183d32);
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.15s ease 0.4s;
+  visibility: hidden;
+  transition: opacity 0.15s ease 0.4s, visibility 0s linear 0.55s;
 }
 .sandbox-planche .planche-colonne:hover + .planche-colonne-bascule,
+.sandbox-planche .planche-colonne:focus-within + .planche-colonne-bascule,
 .sandbox-planche .planche-colonne-bascule:hover,
-.sandbox-planche .planche-colonne-bascule:focus-visible,
-.sandbox-planche .planche.planche-tactile .planche-colonne-bascule {
+.sandbox-planche .planche-colonne-bascule:focus-visible {
   opacity: 1;
+  visibility: visible;
   transition-delay: 0s;
 }
 @media (hover: none) {
   .sandbox-planche .planche-colonne-bascule {
-    opacity: 1;
     width: 44px;
     height: 44px;
   }
@@ -2577,5 +2578,70 @@
 @media (max-width: 359px) {
   .sandbox-planche .planche-grille .planche-grille-tuiles {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Colonne de droite façon SketchUp, au bureau comme au téléphone : des boutons carrés isolés (aucune barre autour) ; le
+   chevron déplie les libellés en pastilles À GAUCHE des boutons, qui restent entièrement visibles. */
+@media (min-width: 761px) {
+  .sandbox-planche .planche { --colonne-l: 3.6rem; }
+  .sandbox-planche .planche:not(.colonne-repliee) { --colonne-l: 11.5rem; }
+  .sandbox-planche .planche-colonne {
+    width: auto;
+    gap: 0.5rem;
+    padding: 0;
+    margin: 0.5rem;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    align-items: flex-end;
+    scrollbar-width: none;
+  }
+  .sandbox-planche .planche-colonne::-webkit-scrollbar {
+    display: none;
+  }
+  .sandbox-planche .planche-colonne .canevas-icone,
+  .sandbox-planche .planche-colonne .canevas-icone:hover,
+  .sandbox-planche .planche-colonne .canevas-icone[aria-pressed="true"] {
+    flex: 0 0 auto;
+    flex-direction: row-reverse;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    font-size: 0.85rem;
+  }
+  .sandbox-planche .planche-colonne .canevas-picto {
+    display: flex;
+    flex: 0 0 44px;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 44px;
+    height: 44px;
+    padding: 10px;
+    background: var(--flottant-fond);
+    border: 1px solid var(--atelier-ligne, #dce5df);
+    border-radius: 6px;
+    box-shadow: var(--flottant-ombre);
+  }
+  .sandbox-planche .planche-colonne .canevas-icone[aria-pressed="true"] .canevas-picto {
+    border-right: 3px solid #1a5fd6;
+    background: color-mix(in srgb, #1a5fd6 10%, #fff);
+  }
+  .sandbox-planche .planche-colonne .canevas-etiquette {
+    display: inline-block;
+    padding: 0.35rem 0.7rem;
+    background: var(--flottant-fond);
+    border-radius: 999px;
+    box-shadow: var(--flottant-ombre);
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
   }
 }
