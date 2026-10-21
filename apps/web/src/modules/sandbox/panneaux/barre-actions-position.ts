@@ -45,6 +45,21 @@ export function positionParDefaut(taille: Taille, zone: Zone, reserveBas: number
 }
 
 /**
+ * Position par défaut en haut au centre de la zone de dessin (la barre reste flottante : cette position n'est qu'un
+ * point de départ, une position déplacée et mémorisée la remplace). Si le centre recouvrirait les cartes de gauche ou
+ * la colonne de droite (`reduite` = zone moins ces réserves), la barre se centre dans la zone réduite.
+ */
+export function positionParDefautHaut(taille: Taille, zone: Zone, reduite: Zone = zone, marge = 8): Position {
+  const g = zone.gauche ?? 0;
+  const h = zone.haut ?? 0;
+  const rg = reduite.gauche ?? g;
+  const centre = g + (zone.largeur - taille.largeur) / 2;
+  const libre = centre >= rg + marge && centre + taille.largeur <= rg + reduite.largeur - marge;
+  const x = libre ? centre : rg + (reduite.largeur - taille.largeur) / 2;
+  return borner({ x, y: h + marge }, taille, zone);
+}
+
+/**
  * Zone de dessin moins une réserve à gauche (barre d'outils verticale) : son bord gauche passe au bord droit le plus à
  * droite des éléments réservés. Sans réserve qui avance dans la zone, la zone est rendue telle quelle.
  */
