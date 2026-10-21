@@ -29,5 +29,6 @@ jobs:
           CLEANUP_COMMIT: ${{ github.sha }}
           CLEANUP_CHECKPOINT: docs/continuity/AUDIT-REMEDIATION-2026-10-21.md
           CLEANUP_EXPECTED_BRANCHES: '1'
+          CLEANUP_REQUIRE_MAIN_ONLY: 'false'
           CLEANUP_HELPER_BRANCH: fix/audit-reliability-cleanup
         run: python3 scripts/consolidate-branches-cleanup.py

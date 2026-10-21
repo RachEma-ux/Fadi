@@ -17,7 +17,7 @@ Baseline: `main@78e9f4a89e9634189c3bd4fb9ed82576eafe2a64` (#222). Owner instruct
 
 Its ten unmerged commits propose GitHub-to-VPS SSH delivery, privileged CI entry points and GitHub-held SSH credentials. The later owner-approved plan (`docs/deploiement-automatique.md`, #219; implementation #221) explicitly chooses VPS pull with no server credential in GitHub and rejects that delivery path. Preserve the old branch tip as a merge parent, retain current main's deployment implementation, and do not introduce the competing workflow or privileged SSH entry points. Original files remain accessible in Git history. This resolves the branch without activating obsolete infrastructure.
 
-Cleanup must verify the recorded tip is unchanged and an ancestor of the final main before deleting its name. The corrective helper branch is deleted only at its exact PR-merge second-parent SHA. Never delete main or unrecorded branches. GitHub ref deletion is eventually consistent; confirm with bounded retries and allow reruns.
+Cleanup must verify the recorded tip is unchanged and an ancestor of the final main before deleting its name. The corrective helper branch is deleted only at its exact PR-merge second-parent SHA. Never delete main or unrecorded branches. Active concurrent PR #223 (`chore/deploiement-lot-sandbox`, observed at `4aa2a7a0e7d8db466bd4619629e5dc2a69d7b837`) is outside this cleanup and must be preserved; cleanup success means the recorded obsolete branch and helper are absent, not that every other active PR is deleted. GitHub ref deletion is eventually consistent; confirm with bounded retries and allow reruns.
 
 ## Validation and remaining acceptance work
 

@@ -17,6 +17,7 @@ from pathlib import Path
 REPO = "RachEma-ux/Fadi"
 CHECKPOINT = os.environ.get("CLEANUP_CHECKPOINT", "docs/continuity/BRANCH-CONSOLIDATION-2026-10-20.md")
 EXPECTED_COUNT = int(os.environ.get("CLEANUP_EXPECTED_BRANCHES", "18"))
+REQUIRE_MAIN_ONLY = os.environ.get("CLEANUP_REQUIRE_MAIN_ONLY", "true") == "true"
 HELPER = os.environ.get("CLEANUP_HELPER_BRANCH", "chore/consolidate-fadi-branches")
 
 
@@ -91,7 +92,7 @@ def main():
     for attempt in range(8):
         remaining = api("branches?per_page=100")
         names = [branch["name"] for branch in remaining]
-        if names == ["main"]:
+        if names == ["main"] or (not REQUIRE_MAIN_ONLY and not {name for name, _ in rows}.intersection(names)):
             break
         time.sleep(1)
     print("Remaining branches:", json.dumps(names))
@@ -100,7 +101,9 @@ def main():
     if os.environ.get("GITHUB_STEP_SUMMARY"):
         with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as output:
             output.write(summary)
-    if names != ["main"]:
+    if {name for name, _ in rows}.intersection(names):
+        raise SystemExit("A recorded branch remains; cleanup not complete")
+    if REQUIRE_MAIN_ONLY and names != ["main"]:
         raise SystemExit("Additional branches remain; no unrecorded branch was deleted")
 
 
