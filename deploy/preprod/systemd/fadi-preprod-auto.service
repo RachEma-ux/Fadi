@@ -19,3 +19,6 @@ NoNewPrivileges=yes
 PrivateTmp=yes
 ProtectSystem=full
 ProtectHome=read-only
+# Seule exception sous /root : l'état du client Docker (buildx y note l'activité du constructeur ; en lecture seule, la
+# construction s'arrête sur « failed to update builder last activity time »). Le « - » tolère un dossier absent.
+ReadWritePaths=-/root/.docker

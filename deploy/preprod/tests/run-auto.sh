@@ -248,6 +248,8 @@ verifie "API GitHub publique seulement (aucun jeton, aucune écriture)" \
 U=$PREPROD/systemd
 verifie "service : oneshot, script installé, délai borné" \
   bash -c "grep -qx 'Type=oneshot' '$U/fadi-preprod-auto.service' && grep -qx 'ExecStart=/usr/local/sbin/fadi-preprod-auto' '$U/fadi-preprod-auto.service' && grep -q '^TimeoutStartSec=' '$U/fadi-preprod-auto.service'"
+verifie "service : /root en lecture seule sauf l'état du client Docker (buildx)" \
+  bash -c "grep -qx 'ProtectHome=read-only' '$U/fadi-preprod-auto.service' && grep -qx 'ReadWritePaths=-/root/.docker' '$U/fadi-preprod-auto.service'"
 verifie "minuteur : toutes les 5 minutes, sur ce service" \
   bash -c "grep -qx 'OnCalendar=\*:0/5' '$U/fadi-preprod-auto.timer' && grep -qx 'Unit=fadi-preprod-auto.service' '$U/fadi-preprod-auto.timer' && grep -qx 'WantedBy=timers.target' '$U/fadi-preprod-auto.timer'"
 if command -v systemd-analyze > /dev/null; then
