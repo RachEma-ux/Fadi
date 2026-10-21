@@ -1438,8 +1438,14 @@
   box-shadow: var(--flottant-ombre);
   text-align: left;
 }
-.sandbox-planche .planche-haut:has(.planche-outils-liste) {
+.sandbox-planche .planche-haut:has(.planche-outils-liste),
+.sandbox-planche .planche-recherche-carte:has(.planche-outils-liste) {
   z-index: 40;
+}
+/* Loupe de la barre verticale : la liste s'ouvre à droite de la loupe, sur le dessin. */
+.sandbox-planche .planche-outils-menu-loupe .planche-outils-liste {
+  left: calc(100% + 0.6rem);
+  top: -0.25rem;
 }
 .sandbox-planche .planche-outils-recherche {
   display: flex;
@@ -1701,6 +1707,10 @@
     top: 56px;
     width: auto;
     max-height: calc(100vh - 7rem);
+  }
+  .sandbox-planche .planche-outils-menu-loupe .planche-outils-liste {
+    left: 0.5rem;
+    top: 56px;
   }
   .sandbox-planche .planche-outils-bouton,
   .sandbox-planche .planche-outils-liste button,
