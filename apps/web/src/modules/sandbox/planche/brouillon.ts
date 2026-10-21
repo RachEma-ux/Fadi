@@ -32,13 +32,17 @@ export function lireBrouillon(texte: string | null): Modele | null {
 /** Stockage local disponible dans ce navigateur (sinon le brouillon ne vit que dans la page). */
 export const stockageDisponible = (): boolean => typeof indexedDB !== "undefined";
 
-export async function chargerBrouillon(): Promise<Modele | null> {
-  const texte = await localStore.getValueChecked(CLE_BROUILLON);
+/** Clé du document d'une Planche : la Planche historique garde `CLE_BROUILLON`, les autres `CLE_BROUILLON/<id>`. */
+export const cleDe = (id: string | null): string => (id === null || id === "brouillon" ? CLE_BROUILLON : `${CLE_BROUILLON}/${id}`);
+
+/** `id` absent = brouillon d'origine (comportement antérieur). */
+export async function chargerBrouillon(id: string | null = null): Promise<Modele | null> {
+  const texte = await localStore.getValueChecked(cleDe(id));
   const modele = lireBrouillon(texte);
   if (texte !== null && modele === null) throw new Error("Brouillon local illisible : conservation non confirmée.");
   return modele;
 }
 
-export async function enregistrerBrouillon(modele: Modele): Promise<void> {
-  await localStore.setValueChecked(CLE_BROUILLON, serialiserBrouillon(modele));
+export async function enregistrerBrouillon(modele: Modele, id: string | null = null): Promise<void> {
+  await localStore.setValueChecked(cleDe(id), serialiserBrouillon(modele));
 }

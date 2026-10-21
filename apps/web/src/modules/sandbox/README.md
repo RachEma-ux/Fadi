@@ -30,6 +30,25 @@ comportement ni d'apparence.
 - `routes-sandbox.ts` — adresses : `/sandbox` et l'ancienne `/studio/console/sandbox`, qui y redirige.
 - `sandbox.css` (sous `.sandbox-planche`) et `page-sandbox.css` (sous `.sandbox-page`) — feuilles de style isolées.
 
+## Menu de la Planche
+
+Bouton ☰ (Tabler `menu-2`, MIT) en haut de la Planche ; onze entrées, dans cet ordre et ces groupes : Ouvrir une Planche,
+Nouvelle Planche… | Enregistrer, Enregistrer sous…, Renommer / niveau de référence… | Supprimer la Planche | Partager,
+Exporter en IFC / OBJ / STL, Importer en IFC / OBJ / STL | Informations, Télécharger la vue (PNG).
+
+- **Planches nommées, locales** (`planche/registre-planches.ts`) : un index et un document par Planche dans ce navigateur
+  (IndexedDB) ; la première, « Brouillon Sandbox », garde la clé historique (aucune migration). Aucun projet, aucun
+  serveur. Au plus 50 Planches. Enregistrer sous copie la Planche et garde le dessin et l'historique à l'écran.
+- **Niveau de référence** : altitude déclarée (m), mémorisée avec la Planche, **non appliquée à la géométrie**.
+- **Partager** : fichier IFC via le partage du navigateur (Web Share), sinon téléchargé.
+- **Export IFC** (`echanges-ifc.ts`) : IFC4, un `IfcBuildingElementProxy` par maillage en `IfcTriangulatedFaceSet`, mètres ;
+  aucune classe, propriété ni quantité inventée. OBJ et STL : inchangés.
+- **Import** (`echanges-import.ts`) : OBJ, STL (ASCII et binaire), IFC (`IfcTriangulatedFaceSet`, unité lue). Un groupe par
+  maillage ; les triangles coplanaires voisins sont fusionnés (un cube = 6 faces). OBJ et STL : unité choisie dans le
+  menu (mètre par défaut). **Plafond : 1 500 triangles** (insertion quadratique, mesurée : 528 → 0,5 s, 2 200 → 7,5 s).
+- **Informations** (`planche/informations-planche.tsx`) : page dans le style d'Excel (cartes à gauche, propriétés à
+  droite) ; chaque chiffre est mesuré (contenu, taille du document, objets non étanches, éléments non exportés).
+
 ## Frontières
 
 - Le Sandbox n'importe ni le Studio, ni l'Atelier, ni `@parcours/atelier-model`, ni `@parcours/planche-model`, ni le

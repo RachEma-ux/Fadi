@@ -110,12 +110,14 @@ import {
   CLES_PERSONNALISABLES,
 } from "@parcours/sandbox-planche-model";
 import { etatUi, useEtatUi } from "../etat-ui";
-import { MenuPlanche } from "./menu-planche";
+import { MenuPlanche, ECHELLE_UNITE, nomAffiche, type ActionsMenuPlanche, type FormatEchange, type UniteFichier } from "./menu-planche";
+import { ErreurImport, compter as compterContexte, exporterIfc, importerMaillages, lireMaillages, maillagesPlanche, nonEtanchesDe, omisExport } from "@parcours/sandbox-planche-model";
+import { avecCourante, avecInfo, avecNouvelle, chargerIndex, enregistrerIndex, indexInitial, nouvelId, planche as plancheDe, sansPlanche, supprimerDocument, type IndexPlanches } from "./registre-planches";
 import { ChoixPeripherique } from "../panneaux/Navigation";
 import { CATALOGUE, type CleMessage, t } from "../messages";
 import { ChoixLangue } from "../../../components/ChoixLangue";
 import { annuler, enregistrer, historiqueInitial, operationAAnnuler, operationARetablir, retablir, type Historique } from "./historique";
-import { chargerBrouillon } from "./brouillon";
+import { chargerBrouillon, enregistrerBrouillon, serialiserBrouillon } from "./brouillon";
 import { creerSauvegardeBrouillon, type EtatSauvegarde } from "./sauvegarde-brouillon";
 import { OUTILS_BOOLEENS, OUTILS_CAMERA_TEMPORAIRES, afficherRaccourci, commenceSaisie, disponibilite, estOutilCamera, estRecherche, libelleOutil, lotPrevu, nomOutil, outilDuClavier, outilsDeBarre, pictoOutil, raccourciOutil, sectionsGrille, titreOutil, toucheEtat, type OutilCamera } from "./outils-planche";
 import { HAUTEUR_OEIL_DEFAUT, OPTIONS_AFFICHAGE_DEFAUT, VuePlanche, type OptionsAffichage, type VueStandard } from "./vue-planche";
@@ -354,7 +356,24 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const clavierRef = useRef<{ touche: (e: KeyboardEvent) => void; relache: (e: KeyboardEvent) => void; perte: () => void; pointeur: () => void } | null>(null);
   const [brouillonCharge, setBrouillonCharge] = useState(false);
   const [etatSauvegarde, setEtatSauvegarde] = useState<EtatSauvegarde>("chargement");
-  const [sauvegarde] = useState(() => creerSauvegardeBrouillon(setEtatSauvegarde));
+  // Planches nommées de ce navigateur (menu de la Planche) : l'index dit laquelle est ouverte ; l'enregistrement
+  // automatique écrit toujours dans la Planche courante et met sa date à jour.
+  const [indexPlanches, setIndexPlanches] = useState<IndexPlanches>(() => indexInitial());
+  const indexRef = useRef<IndexPlanches>(indexPlanches);
+  /** Le prochain chargement remplace le dessin et l'historique (changement de Planche), au lieu de reprendre le brouillon. */
+  const remplacerRef = useRef(false);
+  const [chargeId, setChargeId] = useState(0);
+  const [sauvegarde] = useState(() =>
+    creerSauvegardeBrouillon(setEtatSauvegarde, async (modele) => {
+      const id = indexRef.current.courante;
+      await enregistrerBrouillon(modele, id);
+      const idx = avecInfo(indexRef.current, id, { modifieA: new Date().toISOString() });
+      indexRef.current = idx;
+      setIndexPlanches(idx);
+      // Date de modification : informative ; son échec n'invalide pas l'enregistrement du dessin.
+      void enregistrerIndex(idx).catch(() => undefined);
+    }),
+  );
   const [essaiSauvegarde, setEssaiSauvegarde] = useState(0);
   const [essaiLecture, setEssaiLecture] = useState(0);
 
@@ -1549,16 +1568,31 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   useEffect(() => {
     let annule = false;
     setBrouillonCharge(false);
-    void chargerBrouillon().then((m) => {
-      if (annule) return;
-      if (m && histRef.current.passe.length === 0 && histRef.current.futur.length === 0) poserHistorique(historiqueInitial(m), { envoyer: false });
-      setBrouillonCharge(true);
-      rafraichir();
-    }).catch(() => { if (!annule) setEtatSauvegarde("erreur"); });
+    void (async () => {
+      try {
+        const idx = await chargerIndex();
+        if (annule) return;
+        indexRef.current = idx;
+        setIndexPlanches(idx);
+        const m = await chargerBrouillon(idx.courante);
+        if (annule) return;
+        if (remplacerRef.current) {
+          // Changement de Planche : le dessin, l'historique, la sélection et l'objet ouvert sont ceux de la nouvelle Planche.
+          remplacerRef.current = false;
+          poserDans(undefined);
+          setSelection([]);
+          poserHistorique(historiqueInitial(m ?? modeleVide()), { envoyer: false });
+        } else if (m && histRef.current.passe.length === 0 && histRef.current.futur.length === 0) poserHistorique(historiqueInitial(m), { envoyer: false });
+        setBrouillonCharge(true);
+        rafraichir();
+      } catch {
+        if (!annule) setEtatSauvegarde("erreur");
+      }
+    })();
     return () => {
       annule = true;
     };
-  }, [poserHistorique, rafraichir, essaiLecture]);
+  }, [poserHistorique, rafraichir, essaiLecture, chargeId, poserDans, setSelection]);
   useEffect(() => {
     if (!brouillonCharge || readOnly) return;
     const ticket = sauvegarde.modifier();
@@ -1571,24 +1605,167 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     window.addEventListener("beforeunload", prevenir);
     return () => window.removeEventListener("beforeunload", prevenir);
   }, [etatSauvegarde, readOnly]);
-  const actionsMenu = useMemo(
-    () => ({
-      exporterMaillage: (format: "obj" | "stl") => {
-        const nom = "planche";
-        const r = format === "obj" ? exporterObj(histRef.current.present.modele, nom) : exporterStl(histRef.current.present.modele, nom);
-        telechargerFichier(new Blob([r.contenu], { type: "text/plain;charset=utf-8" }), `${nom}.${format}`.replace(/[^\w.-]+/g, "_"));
-        const omis = r.omis.aretesLibres + r.omis.annotations > 0 ? ` ${t("planche.export.omis", { aretes: String(r.omis.aretesLibres), annotations: String(r.omis.annotations) })}` : "";
-        // Lot L19 (EX-SAVE-04) : une surface ouverte n'est jamais annoncée comme un solide étanche.
-        const ouverts = r.nonEtanches > 0 ? ` ${t("planche.export.non-etanches", { nombre: String(r.nonEtanches) })}` : "";
-        setMessage(t("planche.export.maillage", { format: format.toUpperCase(), objets: String(r.objets), triangles: String(r.triangles) }) + omis + ouverts);
+  const actionsMenu = useMemo<ActionsMenuPlanche>(() => {
+    const courante = () => plancheDe(indexRef.current);
+    const poserIndex = async (idx: IndexPlanches) => {
+      indexRef.current = idx;
+      setIndexPlanches(idx);
+      await enregistrerIndex(idx);
+    };
+    const motif = (e: unknown) => (e instanceof Error ? e.message : String(e));
+    const echec = (e: unknown) => setMessage(t("planche.sb.echec", { motif: motif(e) }));
+    const nomFichier = () => (nomAffiche(courante()).replace(/[^\p{L}\p{N}_.-]+/gu, "_").replace(/^_+|_+$/g, "") || "planche");
+    /** Écrit la Planche courante sans attendre l'enregistrement automatique. */
+    const ecrireCourante = async () => {
+      sauvegarde.invalider();
+      const id = indexRef.current.courante;
+      await enregistrerBrouillon(histRef.current.present.modele, id);
+      await poserIndex(avecInfo(indexRef.current, id, { modifieA: new Date().toISOString() }));
+    };
+    /** Ouvre la Planche `idx.courante` : l'ancienne a déjà été écrite, le dessin est relu. */
+    const basculerVers = async (idx: IndexPlanches) => {
+      sauvegarde.invalider();
+      remplacerRef.current = true;
+      await poserIndex(idx);
+      setChargeId((n) => n + 1);
+    };
+    const exporter = (format: FormatEchange) => {
+      const modele = histRef.current.present.modele;
+      const nom = nomFichier();
+      const r = format === "ifc" ? exporterIfc(modele, nomAffiche(courante())) : format === "obj" ? exporterObj(modele, nom) : exporterStl(modele, nom);
+      telechargerFichier(new Blob([r.contenu], { type: "text/plain;charset=utf-8" }), `${nom}.${format}`);
+      const omis = r.omis.aretesLibres + r.omis.annotations > 0 ? ` ${t("planche.export.omis", { aretes: String(r.omis.aretesLibres), annotations: String(r.omis.annotations) })}` : "";
+      // Lot L19 (EX-SAVE-04) : une surface ouverte n'est jamais annoncée comme un solide étanche.
+      const ouverts = r.nonEtanches > 0 ? ` ${t("planche.export.non-etanches", { nombre: String(r.nonEtanches) })}` : "";
+      setMessage(t("planche.export.maillage", { format: format.toUpperCase(), objets: String(r.objets), triangles: String(r.triangles) }) + omis + ouverts);
+    };
+    return {
+      ouvrir: async (id) => {
+        try {
+          if (id === indexRef.current.courante) return;
+          await ecrireCourante();
+          const idx = avecCourante(indexRef.current, id);
+          await basculerVers(idx);
+          setMessage(t("planche.sb.ouverte", { nom: nomAffiche(plancheDe(idx)) }));
+        } catch (e) {
+          echec(e);
+        }
+      },
+      creer: async (nom, altitude) => {
+        try {
+          await ecrireCourante();
+          const maintenant = new Date().toISOString();
+          const idx = avecNouvelle(indexRef.current, { id: nouvelId(indexRef.current), nom, altitudeRef: altitude, creeA: maintenant, modifieA: maintenant });
+          await enregistrerBrouillon(modeleVide(), idx.courante);
+          await basculerVers(idx);
+          setMessage(t("planche.sb.creee", { nom }));
+        } catch (e) {
+          if (e instanceof RangeError) setMessage(t("planche.sb.max", { n: "50" }));
+          else echec(e);
+        }
+      },
+      enregistrer: async () => {
+        try {
+          await ecrireCourante();
+          setEtatSauvegarde("enregistre");
+          setMessage(t("planche.sb.enregistree", { nom: nomAffiche(courante()) }));
+        } catch (e) {
+          setEtatSauvegarde("erreur");
+          echec(e);
+        }
+      },
+      enregistrerSous: async (nom) => {
+        try {
+          await ecrireCourante();
+          const maintenant = new Date().toISOString();
+          const idx = avecNouvelle(indexRef.current, { id: nouvelId(indexRef.current), nom, altitudeRef: courante().altitudeRef, creeA: maintenant, modifieA: maintenant });
+          await enregistrerBrouillon(histRef.current.present.modele, idx.courante);
+          // Copie : le dessin et son historique restent à l'écran, l'enregistrement suit désormais la nouvelle Planche.
+          await poserIndex(idx);
+          setMessage(t("planche.sb.copiee", { nom }));
+        } catch (e) {
+          if (e instanceof RangeError) setMessage(t("planche.sb.max", { n: "50" }));
+          else echec(e);
+        }
+      },
+      renommer: async (nom, altitude) => {
+        try {
+          await poserIndex(avecInfo(indexRef.current, indexRef.current.courante, { nom, altitudeRef: altitude, modifieA: new Date().toISOString() }));
+          setMessage(t("planche.sb.renommee", { nom }));
+        } catch (e) {
+          echec(e);
+        }
+      },
+      supprimer: async () => {
+        try {
+          const id = indexRef.current.courante;
+          const nom = nomAffiche(courante());
+          sauvegarde.invalider();
+          await supprimerDocument(id);
+          await basculerVers(sansPlanche(indexRef.current, id));
+          setMessage(t("planche.sb.supprimee", { nom }));
+        } catch (e) {
+          echec(e);
+        }
+      },
+      partager: async () => {
+        try {
+          const nom = nomFichier();
+          const r = exporterIfc(histRef.current.present.modele, nomAffiche(courante()));
+          const fichier = new File([r.contenu], `${nom}.ifc`, { type: "application/x-step" });
+          if (typeof navigator.canShare === "function" && navigator.canShare({ files: [fichier] })) {
+            try {
+              await navigator.share({ files: [fichier], title: nomAffiche(courante()) });
+              setMessage(t("planche.sb.partage.ok"));
+            } catch (e) {
+              if (!(e instanceof DOMException && e.name === "AbortError")) throw e;
+            }
+          } else {
+            telechargerFichier(fichier, fichier.name);
+            setMessage(t("planche.sb.partage.fichier"));
+          }
+        } catch (e) {
+          echec(e);
+        }
+      },
+      exporter: async (format) => exporter(format),
+      importer: async (format: FormatEchange, fichier: File, unite: UniteFichier) => {
+        try {
+          const donnees = format === "stl" ? new Uint8Array(await fichier.arrayBuffer()) : await fichier.text();
+          const lu = lireMaillages(format, donnees);
+          const echelle = lu.echelleFichier ?? ECHELLE_UNITE[unite];
+          const r = importerMaillages(histRef.current.present.modele, lu.maillages, echelle, fichier.name.replace(/\.[^.]+$/, ""));
+          poserHistorique(enregistrer(histRef.current, r.modele, t("planche.sb.import.operation", { format: format.toUpperCase() }), false));
+          rafraichir();
+          const u = echelle === 1 ? "m" : echelle === 0.01 ? "cm" : echelle === 0.001 ? "mm" : `×${echelle}`;
+          setMessage(`${t("planche.sb.import.ok", { format: format.toUpperCase(), objets: String(r.objets), triangles: String(r.triangles), unite: u })}${r.ignores > 0 ? ` ${t("planche.sb.import.ignores", { n: String(r.ignores) })}` : ""}`);
+        } catch (e) {
+          setMessage(t("planche.sb.import.erreur", { motif: e instanceof ErreurImport || e instanceof Error ? e.message : String(e) }));
+        }
       },
       telechargerPng: async () => {
         const blob = await vueRef.current?.capture();
-        if (blob) telechargerFichier(blob, "planche.png");
+        if (blob) telechargerFichier(blob, `${nomFichier()}.png`);
       },
-    }),
-    [],
-  );
+      informations: () => {
+        const m = histRef.current.present.modele;
+        const racine = compterContexte(m.racine);
+        const faces = Object.values(m.definitions).reduce((n, d) => n + compterContexte(d.contenu).faces, racine.faces);
+        const aretes = Object.values(m.definitions).reduce((n, d) => n + compterContexte(d.contenu).aretes, racine.aretes);
+        const omis = omisExport(m);
+        return {
+          octets: new TextEncoder().encode(serialiserBrouillon(m)).length,
+          objets: racine.occurrences,
+          faces,
+          aretes,
+          annotations: omis.annotations,
+          aretesLibres: omis.aretesLibres,
+          nonEtanches: nonEtanchesDe(maillagesPlanche(m)),
+          pasAnnulables: histRef.current.passe.length,
+        };
+      },
+    };
+  }, [poserHistorique, rafraichir, sauvegarde]);
 
   // --- Clavier (fenêtre) : touches d'état, annuler / rétablir, Échap, Entrée, frappe au champ Mesures, raccourcis.
   useEffect(() => {
@@ -2347,7 +2524,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       </div>
 
       <div className="planche-haut">
-        <MenuPlanche actions={actionsMenu} />
+        <MenuPlanche planches={indexPlanches.planches} courante={plancheDe(indexPlanches)} etat={etatSauvegarde} actions={actionsMenu} />
         {/* Lot 4 : Annuler / Rétablir dans la barre du haut, après le nom du brouillon (disposition de SketchUp). */}
         <span className="planche-haut-historique" role="group" aria-label={`${t("planche.annuler")} / ${t("planche.retablir")}`}>
           <button type="button" className="planche-haut-bouton" onClick={annulerPas} disabled={hist.passe.length === 0} title={t("planche.annuler.titre", { operation: operationAAnnuler(hist) ?? "" })} aria-label={t("planche.annuler")} data-planche-annuler>

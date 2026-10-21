@@ -26,6 +26,19 @@ export const ICONES_INTERFACE = {
   visible: "circle-dot",
   masque: "circle-dashed",
   verrou: "lock",
+  // Menu de la Planche (Ouvrir, Enregistrer, Partager, Exporter, Informations…).
+  menuOuvrir: "folder-open",
+  menuNouvelle: "file-plus",
+  menuEnregistrer: "device-floppy",
+  menuEnregistrerSous: "copy",
+  menuRenommer: "pencil",
+  menuSupprimer: "trash",
+  menuPartager: "share",
+  menuExporter: "file-export",
+  menuImporter: "file-import",
+  menuInformations: "info-circle",
+  menuImage: "photo-down",
+  menuRetour: "arrow-left",
 } as const;
 
 export type IconeInterface = keyof typeof ICONES_INTERFACE;
