@@ -2594,12 +2594,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
 
       {grille && (
         <div className="planche-grille" id="planche-grille" role="dialog" aria-label={t("planche.grille")} ref={grilleDom} data-planche-grille>
-          {/* Lot 5 : « Modifier » ouvre la personnalisation ; favoris et regroupements avant les familles. */}
-          <div className="planche-grille-tete">
-            <button type="button" className="planche-grille-modifier" onClick={() => { setGrille(false); setPanneau("personnaliser"); }} title={t("planche.grille.modifier.aide")} data-planche-grille-modifier>
-              <IconeSandbox nom="reglages" /> {t("planche.grille.modifier")}
-            </button>
-          </div>
+          {/* Favoris et regroupements avant les familles ; une ligne de séparation entre sections (comme SketchUp). */}
           {[
             { cle: "favoris", libelle: t("planche.grille.favoris"), entrees: prefsSandbox.preferences.favoris },
             ...prefsSandbox.preferences.regroupements.map((g) => ({ cle: `groupe-${g.id}`, libelle: g.nom, entrees: g.entrees })),
@@ -2607,8 +2602,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
             .filter((x) => x.entrees.length > 0)
             .map((x) => (
               <section key={x.cle} aria-label={x.libelle} data-planche-grille-section={x.cle}>
-                <h4>{x.libelle}</h4>
-                <div className="canevas-grille">
+                <h4 className="sr-only">{x.libelle}</h4>
+                <div className="planche-grille-tuiles">
                   {x.entrees.map((cle) => {
                     const e = entreeDeCle(cle);
                     if (e?.nature === "outil") {
@@ -2629,10 +2624,15 @@ export function Planche({ readOnly = false }: PropsPlanche) {
             ))}
           {sections.map((s) => (
             <section key={s.libelle} aria-label={s.libelle}>
-              <h4>{s.libelle}</h4>
-              <div className="canevas-grille">{s.outils.map((o) => boutonOutil(o, true))}</div>
+              <h4 className="sr-only">{s.libelle}</h4>
+              <div className="planche-grille-tuiles">{s.outils.map((o) => boutonOutil(o, true))}</div>
             </section>
           ))}
+          <div className="planche-grille-pied">
+            <button type="button" className="planche-grille-modifier" onClick={() => { setGrille(false); setPanneau("personnaliser"); }} title={t("planche.grille.modifier.aide")} data-planche-grille-modifier>
+              {t("planche.grille.modifier")}
+            </button>
+          </div>
         </div>
       )}
 

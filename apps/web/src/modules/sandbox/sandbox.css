@@ -326,32 +326,54 @@
   margin: 0.2rem 0.3rem;
   background: var(--atelier-ligne, #dce5df);
 }
+/* Grille « ⋯ » (comme SketchUp) : panneau à droite de la barre verticale, 5 colonnes de tuiles icône + libellé, une
+   ligne de séparation entre familles, « Modifier » en pastille au pied. */
 .sandbox-planche .planche-grille {
-  justify-self: start;
-  align-self: start;
+  position: absolute;
+  left: calc(0.5rem + 54px + 0.5rem);
+  top: 0.5rem;
   z-index: 8;
-  margin: 0.5rem 0 0 calc(0.5rem + 11rem);
-  max-width: min(36rem, calc(100% - 12rem));
+  width: max-content;
+  max-width: calc(100% - 54px - 1.5rem - var(--colonne-l) - 1rem);
   max-height: calc(100% - var(--pied-h, 5.5rem) - 1.5rem);
   overflow-y: auto;
-  padding: 0.6rem;
+  padding: 0.5rem 0.6rem 0;
   background: var(--flottant-fond);
   border: 1px solid var(--atelier-ligne, #dce5df);
   border-radius: 8px;
   box-shadow: var(--flottant-ombre);
 }
-.sandbox-planche .planche-grille h4 {
-  margin: 0.4rem 0 0.2rem;
-  font-size: 0.78rem;
-  color: var(--atelier-doux, #5b7468);
+.sandbox-planche .planche-grille section + section {
+  margin-top: 0.3rem;
+  padding-top: 0.3rem;
+  border-top: 1px solid var(--atelier-ligne, #dce5df);
+}
+.sandbox-planche .planche-grille-tuiles {
+  display: grid;
+  grid-template-columns: repeat(5, 4.6rem);
+  gap: 2px;
 }
 .sandbox-planche .planche-grille .outil {
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.1rem;
-  font-size: 0.78rem;
+  min-height: 56px;
+  padding: 0.25rem 0.15rem;
+  font-size: 0.72rem;
+  line-height: 1.15;
   text-align: center;
   white-space: normal;
+  overflow-wrap: anywhere;
+}
+.sandbox-planche .planche-grille-pied {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  margin-top: 0.4rem;
+  padding: 0.4rem 0 0.6rem;
+  background: var(--flottant-fond);
+  border-top: 1px solid var(--atelier-ligne, #dce5df);
 }
 .sandbox-planche .planche-colonne {
   justify-self: end;
@@ -860,17 +882,17 @@
     display: none;
   }
   .sandbox-planche .planche-grille {
-    position: absolute;
-    left: 4.25rem;
+    left: calc(0.5rem + 54px + 0.4rem);
     right: 0.5rem;
+    top: auto;
     bottom: calc(var(--volet-h, 15rem) + 0.5rem);
     margin: 0;
     width: auto;
     max-width: none;
     max-height: calc(100% - var(--volet-h, 15rem) - 1rem);
   }
-  .sandbox-planche .planche-grille .canevas-grille {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .sandbox-planche .planche-grille .planche-grille-tuiles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
   .sandbox-planche .planche-panneau {
     position: absolute;
@@ -2312,19 +2334,15 @@
     height: 44px;
   }
 }
-/* Lot 5 — personnalisation : « Modifier » en tête de la grille, panneau « Personnaliser les outils ». */
-.sandbox-planche .planche-grille-tete {
-  display: flex;
-  justify-content: flex-end;
-}
+/* Lot 5 — personnalisation : « Modifier » au pied de la grille, panneau « Personnaliser les outils ». */
 .sandbox-planche .planche-grille-modifier {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
   min-height: 36px;
-  padding: 0 0.6rem;
+  padding: 0 1.1rem;
   border: 1px solid var(--atelier-ligne, #dce5df);
-  border-radius: 6px;
+  border-radius: 999px;
   background: #fff;
   color: inherit;
   cursor: pointer;
@@ -2554,4 +2572,10 @@
 }
 .sandbox-planche .planche-info-chronologie li + li {
   margin-top: 0.15rem;
+}
+
+@media (max-width: 359px) {
+  .sandbox-planche .planche-grille .planche-grille-tuiles {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
