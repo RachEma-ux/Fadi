@@ -120,7 +120,15 @@ try {
   const ctxTravail = (await api("get", `${studio(pidTravail)}/studies/${sidTravail}/variants/${vidTravail}`)).body;
   check("copie de travail ouverte : variante « RDC », modifiable, même domaine et même planche", ctxTravail?.variant?.name === rdc.name && ctxTravail?.canWrite === true && new URL(page.url()).search === "?domaine=dessin&planche=3d", `${ctxTravail?.variant?.name} ${ctxTravail?.canWrite} ${new URL(page.url()).search}`);
   await page.locator('[data-studio-planche="2d"]').click();
-  await ligne(page).waitFor();
+  await page.locator('[data-studio-planche="2d"][aria-pressed="true"]').waitFor();
+  // La barre compacte range Ligne dans la rangée ou dans le menu « ▾ » de la famille Dessin, selon la place mesurée :
+  // on contrôle l'état du bouton (actif ou non), pas sa visibilité, comme sur la référence protégée ci-dessus.
+  await ligne(page).waitFor({ state: "attached" });
+  await page.waitForFunction(() => {
+    const b = document.querySelector('[role="toolbar"][aria-label="Outils de dessin"] [data-studio-outil="studio.dessin.ligne"]');
+    return b && !b.disabled && b.getAttribute("aria-disabled") !== "true";
+  }, undefined, { timeout: 30_000 }).catch(() => undefined);
+  check("copie de travail : Planche 2D, barre « Outils de dessin » visible", await page.locator('[role="toolbar"][aria-label="Outils de dessin"]').first().isVisible());
   check("copie de travail : outil Ligne actif, plus de bandeau « Exemple protégé »", await outilActif(page) && (await page.locator("[data-studio-reference-protegee]").count()) === 0);
 
   // 3. Projet déjà importé sans étude : une copie de travail (provenance conservée, Studio non copié).
