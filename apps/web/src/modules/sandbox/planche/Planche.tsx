@@ -2547,8 +2547,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         </div>
       </div>
 
+      {/* Menu de la Planche : pictogramme seul, flottant, déplaçable (appui de 2 s) — hors de la barre du haut. */}
+      <MenuPlanche planches={indexPlanches.planches} courante={plancheDe(indexPlanches)} etat={etatSauvegarde} actions={actionsMenu} />
       <div className="planche-haut">
-        <MenuPlanche planches={indexPlanches.planches} courante={plancheDe(indexPlanches)} etat={etatSauvegarde} actions={actionsMenu} />
         {/* Lot 4 : Annuler / Rétablir dans la barre du haut, après le nom du brouillon (disposition de SketchUp). */}
         <span className="planche-haut-historique" role="group" aria-label={`${t("planche.annuler")} / ${t("planche.retablir")}`}>
           <button type="button" className="planche-haut-bouton" onClick={annulerPas} disabled={hist.passe.length === 0} title={t("planche.annuler.titre", { operation: operationAAnnuler(hist) ?? "" })} aria-label={t("planche.annuler")} data-planche-annuler>

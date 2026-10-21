@@ -32,7 +32,9 @@ comportement ni d'apparence.
 
 ## Menu de la Planche
 
-Bouton ☰ (Tabler `menu-2`, MIT) en haut de la Planche ; onze entrées, dans cet ordre et ces groupes : Ouvrir une Planche,
+Pictogramme ☰ seul (Tabler `menu-2`, MIT), carte flottante en haut à gauche de la Planche, hors de la barre du haut : un clic
+déroule le menu ; un appui maintenu 2 s le rend déplaçable (`planche/deplacement-menu.ts`, position mémorisée dans ce
+navigateur ; Alt + flèches au clavier) ; onze entrées, dans cet ordre et ces groupes : Ouvrir une Planche,
 Nouvelle Planche… | Enregistrer, Enregistrer sous…, Renommer / niveau de référence… | Supprimer la Planche | Partager,
 Exporter en IFC / OBJ / STL, Importer en IFC / OBJ / STL | Informations, Télécharger la vue (PNG).
 
