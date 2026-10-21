@@ -78,7 +78,7 @@ export function maillageFerme(positions: readonly number[], triangles: readonly 
 }
 
 /** Non étanches : les maillages qui ne sont ni des solides reconnus, ni fermés par leur topologie (géométrie libre de la racine comprise). */
-const nonEtanchesDe = (maillages: readonly MaillagePlanche[]): number => maillages.filter((x) => x.triangles.length > 0 && !x.solide && !maillageFerme(x.positions, x.triangles)).length;
+export const nonEtanchesDe = (maillages: readonly MaillagePlanche[]): number => maillages.filter((x) => x.triangles.length > 0 && !x.solide && !maillageFerme(x.positions, x.triangles)).length;
 
 /** Wavefront OBJ : sommets `v` (m), faces triangulaires `f` indexées à partir de 1, un `o` par maillage. */
 export function exporterObj(m: Modele, nom = "Planche"): ExportMaillage {

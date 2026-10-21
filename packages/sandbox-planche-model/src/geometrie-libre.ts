@@ -1409,6 +1409,26 @@ export function ajouterRectangle(m: Modele, coin: Vec3, cote1: Vec3, cote2: Vec3
   });
 }
 
+/**
+ * Import de maillages (menu de la Planche, Importer OBJ / STL / IFC) : chaque triangle est une face explicite (jamais une
+ * face « automatique » : les diagonales d'un cube formeraient des rectangles fantômes), puis les arêtes qui séparent deux
+ * triangles coplanaires de même sens sont effacées, ce qui fusionne le maillage en faces planes (un cube = 6 faces).
+ * Une seule transaction ; les triangles d'aire nulle sont ignorés (compté par l'appelant).
+ */
+export function ajouterTriangles(m: Modele, triangles: readonly (readonly [Vec3, Vec3, Vec3])[], o: OptionsContexte = {}): Resultat {
+  return operer(m, o.dans, (t, c) => {
+    for (const [p, q, r] of triangles) {
+      const n = normalize(cross(sub(q, p), sub(r, p)));
+      insererGeometrie(t, c, [{ a: p, b: q }, { a: q, b: r }, { a: r, b: p }], [{ exterieur: [p, q, r], trous: [], normale: n, role: "face" }], false);
+    }
+    const internes = [...c.aretes.values()].filter((a) => {
+      const fs = facesDeArete(c, a);
+      return fs.length === 2 && dot((fs[0] as Face).normale, (fs[1] as Face).normale) > 1 - 1e-9;
+    });
+    if (internes.length > 0) effacerAretesInterne(t, c, internes.map((a) => a.id));
+  });
+}
+
 export interface OptionsPolygone extends OptionsContexte {
   /** 'cercle' (outil Cercle) ou 'polygone' (outil Polygone) ; dans les deux cas une seule courbe. */
   readonly genre?: "cercle" | "polygone";
