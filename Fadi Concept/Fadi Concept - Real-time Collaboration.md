@@ -27,3 +27,38 @@ Deliver shared viewing, markups and fixed external review first. Add verified na
 - Package received is not automatically adopted.
 - Revocation mid-session stops protected actions.
 - Conflicting edit or offline retry cannot silently overwrite or duplicate accepted work.
+
+## Detailed working contracts
+
+### Shared viewing and native editing
+A live session identifies project, study, variant, displayed revision, audience and participant roles. Participants can follow a presenter or navigate independently. Temporary pointers are not saved annotations. Saved markups retain author, exact drawing/model reference, viewpoint, source revision and audience. A session cannot change a user's active editing context silently. Studio remains responsible for accepting edits, checking object dependencies and saving a named revision. Two Designers working on a wall and its hosted opening must receive explicit conflict handling if their changes are incompatible. Undo checks later dependent operations and does not erase colleagues' accepted work.
+
+### Coordination package exchange
+A coordination package contains source organization, responsible author, exact document/model manifest, purpose, units, coordinate system, known limitations, audience and supersession relationship. A receiving team may inspect and compare changes before adopting a new reference. An incoming update does not silently replace the reference used by an earlier approved dossier. A finding linked to an older model retains the original evidence even if its object changes or disappears. The receiving party can request clarification or correction without automatically approving the package.
+
+### Session authorization
+A session host can organize a meeting but cannot grant editing, approval or publication beyond delegated authority. A presenter must not broadcast restricted object properties, thumbnails or model references to unauthorized participants. Access is revalidated when joining, opening protected resources, sending edits and reconnecting. Expiry or suspension stops further protected delivery and actions; previously downloaded offline copies are handled by the stated device policy. The system distinguishes an account invitation, project invitation, fixed-package review invitation and session notice.
+
+### External review
+The reviewer sees package identity, purpose, revision manifest, deadline, allowed actions and coordinator. Review can continue asynchronously after a live session. Internal team discussion remains private. When R03 is under client review and R04 is in progress, the client remains on R03 until a new identified review package is deliberately shared. Review completion is not approval; a read receipt is not acknowledgment; approval is not publication. Studio/Documents record formal outcomes, while Real-time Collaboration displays those outcomes without duplicating them.
+
+### Concurrency and recovery
+Distinguish local preview, unsynchronized draft, server-accepted operation, conflict and dependent calculation pending. On disconnect, keep recoverable input and show whether the server accepted it. On reconnect, fetch the current authorized state, reconcile operation identities and avoid duplicate commits. An editing reservation must have a visible owner, scope, expiry and recovery path. A participant leaving with a reservation must not block the project indefinitely; release and reassignment are authorized and attributable.
+
+### Organization continuity
+An internal organization team may coordinate across several authorized projects, while an external partner remains a separate represented party. Group membership alone does not create project rights. Team templates are versioned starting configurations, not silent bulk permission updates. Departure identifies affected tasks, reviews, reservations and session hosts, withdraws dependent access promptly and preserves original contributions. Independent valid grants remain effective only within their own scopes and restrictions.
+
+### Extension policy
+Begin with shared viewing, markups, issue/task linking and fixed review packages. Add simultaneous 2D/3D operations only after transaction, geometry, undo, conflict and recovery tests. Federated references require source versions, units and positioning. BCF exchanges preserve topic, viewpoint and model element provenance. CAD connectors, email/meeting services and AI assistance are optional later increments. AI outputs are source-, revision- and audience-bound drafts and cannot approve, publish, change grants or silently resolve conflicts.
+
+### Extended acceptance tests
+1. Two Designers modify dependent geometry; one incompatible operation is blocked with recoverable draft.
+2. Undo of an earlier operation preserves a colleague's later accepted dependent change.
+3. Engineer shares revised model; architectural team receives but does not adopt it, retaining old reference.
+4. Client reviews R03 while R04 develops; no silent revision switch or approval transfer.
+5. Restricted presenter cannot expose hidden model data through a shared view.
+6. A revoked attendee cannot receive further protected updates or submit edits after revocation.
+7. A reconnecting participant sees whether queued work was accepted, blocked or conflicted, without duplicates.
+8. Departing session host's responsibilities and reservations are reassigned without changing historical authorship.
+9. A delayed calculation for an old revision cannot appear as the latest result.
+10. Host lacking Approver authority cannot approve or publish.
