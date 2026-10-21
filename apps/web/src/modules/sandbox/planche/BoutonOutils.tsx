@@ -32,6 +32,8 @@ export interface PropsBoutonOutils {
    * garde son icône, son nom et son raccourci ; grisée, elle dit pourquoi.
    */
   commandes?: readonly CommandeListe[];
+  /** Compteur incrémenté par la loupe : à chaque incrément la liste s'ouvre, le champ de recherche prêt à la frappe. */
+  ouvrirSignal?: number;
 }
 
 export interface CommandeListe {
@@ -58,7 +60,7 @@ export function placementListeOutils(basBouton: number, basZone: number | null, 
   return { haut: telephone ? Math.round(basBouton + 4) : null, hauteurMax: Math.max(88, Math.floor(bas - basBouton - 12)) };
 }
 
-export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBarre, onReinitialiser, commandes = [] }: PropsBoutonOutils) {
+export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBarre, onReinitialiser, commandes = [], ouvrirSignal = 0 }: PropsBoutonOutils) {
   const [ouvert, setOuvert] = useState(false);
   const [requete, setRequete] = useState("");
   const [familles, setFamilles] = useState<ReadonlySet<FamilleOutil>>(() => new Set());
@@ -139,6 +141,16 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ouvert]);
 
+  const focusAuRendu = useRef(false);
+  const signalVu = useRef(ouvrirSignal);
+  useEffect(() => {
+    if (ouvrirSignal === signalVu.current) return;
+    signalVu.current = ouvrirSignal;
+    // Ouverture demandée de l'extérieur (loupe) : la liste s'ouvre sous le bouton « Outils », le champ prêt à la frappe.
+    ouvrir(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ouvrirSignal]);
+
   const ouvrir = (clavier: boolean) => {
     // Famille de l'outil actif dépliée à l'ouverture (les autres repliées, chacune avec sa flèche).
     const f = outilParId(outilId)?.famille;
@@ -147,8 +159,13 @@ export function BoutonOutils({ outilId, raison, onChoisir, barres, onAfficherBar
     // de repli de la feuille de style (100vh − 7rem au téléphone), qui ignore où se trouve le bouton.
     positionner();
     setOuvert(true);
-    if (clavier) requestAnimationFrame(() => champ.current?.focus());
+    focusAuRendu.current = clavier;
   };
+  // Le champ n'existe qu'une fois la liste rendue : le focus se pose après ce rendu, jamais avant.
+  useEffect(() => {
+    if (ouvert && focusAuRendu.current) champ.current?.focus();
+    focusAuRendu.current = false;
+  }, [ouvert]);
 
   const choisir = (id: string) => {
     onChoisir(id);
