@@ -2645,3 +2645,28 @@
     white-space: nowrap;
   }
 }
+
+/* Colonne de droite : même hauteur de départ que la barre d'outils de gauche (sous le menu et la loupe), boutons plus
+   aérés, pastilles plus lisibles. */
+@media (min-width: 761px) {
+  .sandbox-planche .planche:not(.colonne-repliee) { --colonne-l: 12.5rem; }
+  .sandbox-planche .planche-colonne {
+    margin-top: calc(0.5rem + 2 * 54px + 0.85rem);
+    max-height: calc(100% - var(--pied-h, 5.5rem) - 2 * 54px - 2.5rem);
+  }
+}
+@media (max-width: 760px) {
+  .sandbox-planche .planche-colonne {
+    top: calc(0.5rem + 2 * 54px + 0.85rem);
+    max-height: calc(100% - var(--volet-h, 10rem) - 2 * 54px - 1.5rem);
+  }
+}
+.sandbox-planche .planche-colonne {
+  gap: 12px;
+}
+.sandbox-planche .planche-colonne .canevas-etiquette {
+  padding: 0.5rem 0.95rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
