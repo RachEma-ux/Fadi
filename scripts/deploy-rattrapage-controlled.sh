@@ -1,19 +1,21 @@
 #!/usr/bin/env bash
-# Fadi — deploiement borne au SHA de main qui livre le Sandbox (lots 1 a 6, PR #213 a #222), avec une seule
-# migration autorisee : la table additive sandbox_tool_preferences (lot 5). Variante de deploy-pr148-controlled.sh.
-# Usage : sudo bash deploy-sandbox-controlled.sh --deploy --depuis <SHA actuellement en production>
+# Fadi — deploiement borne au SHA 78e9f4a de main : rattrapage de la production (dernier deploiement consigne : 5cf61d1,
+# #149) jusqu'au Studio et au Sandbox (lots 1 a 6, PR #213 a #222). Variante de deploy-pr148-controlled.sh.
+# Usage : sudo bash deploy-rattrapage-controlled.sh --deploy --depuis <SHA actuellement en production>
 # Secrets/journaux/configurations restent sur le serveur dans un dossier root 0700.
 #
 # Difference avec deploy-pr148-controlled.sh :
 #  - la version de depart n'est pas figee : elle est donnee par --depuis, doit etre le HEAD du depot local et un
 #    ancetre de la cible ;
-#  - le schema de la cible doit etre celui de l'image active plus le bloc MIGRATION_SANDBOX ci-dessous, mot pour mot,
-#    et rien d'autre ; toute autre difference arrete le script avant la bascule ;
-#  - ce bloc (CREATE TABLE IF NOT EXISTS + contraintes NOT VALID, idempotent) est applique seul, apres le point de
-#    sauvegarde et avant la bascule ; l'application demarre ensuite avec MIGRATE_ON_START=0. L'ancienne image ignore la
-#    table : le retour a l'image precedente reste compatible, sans restaurer la base ;
-#  - controles apres bascule : /sandbox repond 200, /sandbox/preferences 401 (route livree, reservee au compte) et
-#    /version sert le SHA et la date de cette construction (build-args FADI_COMMIT / FADI_BUILD_DATE, comme la CI).
+#  - migration ADDITIVE SEULEMENT, controlee avant toute bascule (CONTROLE_SCHEMA ci-dessous) : aucune ligne du schema
+#    actif n'est retiree ni modifiee ; les lignes ajoutees ne contiennent aucune suppression, reecriture ou insertion
+#    de donnees, aucun changement de type ni NOT NULL ; sur une table deja presente, seul ADD COLUMN IF NOT EXISTS d'une
+#    colonne facultative est admis, et aucun index ni declencheur n'y est pose. Sinon : arret avant la bascule ;
+#  - le schema cible (init.sql de la cible, idempotent) est applique dans une seule transaction, apres le point de
+#    sauvegarde et avant la bascule ; l'application demarre ensuite avec MIGRATE_ON_START=0. Schema seulement additif :
+#    l'ancienne image reste compatible, le retour a l'image precedente se fait sans restaurer la base ;
+#  - Dockerfile et apps/api/src/server.ts ne peuvent changer que selon les paires de versions relues (OPS_ADMIS) ;
+#  - controles apres bascule : /sandbox 200, /sandbox/preferences 401, /version sert le SHA et la date construits.
 set -Eeuo pipefail
 umask 077
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
@@ -24,26 +26,13 @@ BASE=/mnt/data/fadi/deployments
 URL=https://www.fadimmo.com
 SWITCHED=0
 RUN=''
-# Seule migration autorisee : copie exacte de apps/api/src/db/init.sql (lot 5). Le test
-# scripts/deploy-sandbox-controlled.test.mjs verifie qu'elle y figure mot pour mot.
-read -r -d '' MIGRATION_SANDBOX <<'SQL' || true
-CREATE TABLE IF NOT EXISTS sandbox_tool_preferences (
-  user_id text PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-  profile text NOT NULL DEFAULT 'standard',
-  left_bar jsonb NOT NULL DEFAULT '[]'::jsonb,
-  favorites jsonb NOT NULL DEFAULT '[]'::jsonb,
-  groups jsonb NOT NULL DEFAULT '[]'::jsonb,
-  format text NOT NULL DEFAULT 'sandbox-preferences/1',
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
-ALTER TABLE sandbox_tool_preferences DROP CONSTRAINT IF EXISTS sandbox_tool_preferences_profile_check,
-  ADD CONSTRAINT sandbox_tool_preferences_profile_check
-  CHECK (profile ~ '^(standard|personnel|metier:[a-z0-9-]{1,40})$') NOT VALID;
-ALTER TABLE sandbox_tool_preferences DROP CONSTRAINT IF EXISTS sandbox_tool_preferences_lists_check,
-  ADD CONSTRAINT sandbox_tool_preferences_lists_check
-  CHECK (jsonb_typeof(left_bar) = 'array' AND jsonb_typeof(favorites) = 'array' AND jsonb_typeof(groups) = 'array'
-    AND jsonb_array_length(groups) <= 20) NOT VALID;
-SQL
+# Evolutions d'exploitation relues pour 5cf61d1 -> 78e9f4a : <fichier> <blob avant> <blob apres>. Un fichier absent de
+# cette liste ne doit pas changer ; un fichier liste ne peut passer que de l'une a l'autre version (ou rester egal).
+#  - Dockerfile : arguments FADI_COMMIT / FADI_BUILD_DATE (route /version) ;
+#  - apps/api/src/server.ts : ecoute sur HOST si la variable est definie (absente ici : comportement inchange).
+OPS_ADMIS='Dockerfile 6d6349ef74d2d909d169770614f069f116a377bf 3148e7af33facf895dc5fcd611c71192247c351e
+apps/api/src/server.ts eea1f55430ac8d8d4954d61b8f4ac6def3b29802 70cd524012c649ddcc86fe05a64de9bdbe0380df'
+OPS_FIGES='docker-compose.yml scripts/backup.sh scripts/restore.sh apps/api/src/db/bascule.ts'
 [[ ${1:-} == --deploy && ${2:-} == --depuis && ${3:-} =~ ^[0-9a-f]{40}$ && $EUID == 0 ]] || { echo 'Utilisation : sudo bash ce-script.sh --deploy --depuis <SHA complet en production>'; exit 2; }
 EXPECTED=$3
 [[ -d /run/systemd/system && -d "$APP/.git" ]] || { echo 'ARRET : executer sur Fadi-Serv, pas dans Termux local.'; exit 2; }
@@ -55,9 +44,8 @@ flock -n 9 || { echo 'ARRET : un deploiement est deja en cours.'; exit 2; }
 STAMP=$(date -u +%Y%m%dT%H%M%SZ)-$$
 RUN="$BASE/$STAMP"
 mkdir -m 700 "$RUN" "$RUN/source"
-REPORT="$BASE/sandbox-resultat.txt"
+REPORT="$BASE/rattrapage-resultat.txt"
 printf 'EN_COURS\nCible=%s\nDossier=%s\n' "$TARGET" "$RUN" > "$REPORT"
-printf '%s\n' "$MIGRATION_SANDBOX" > "$RUN/migration-sandbox.sql"
 log() { printf '%s %s\n' "$(date -u +%FT%TZ)" "$*" | tee -a "$RUN/etapes.log"; }
 stop() { log "ARRET : $*"; exit 1; }
 g() { runuser -u ubuntu -- git -c core.hooksPath=/dev/null -C "$APP" "$@"; }
@@ -75,7 +63,7 @@ finish() {
   if (( rc != 0 )); then
     set +e
     if (( SWITCHED )); then
-      log 'Controle en echec : tentative de retour a l image precedente, sans restaurer la base (table sandbox additive conservee).'
+      log 'Controle en echec : tentative de retour a l image precedente, sans restaurer la base (schema additif conserve).'
       if dc "$RUN/retour.json" up -d --no-deps --no-build --pull never --wait --wait-timeout 180 app > "$RUN/retour.log" 2>&1 && healthy "$OLD_IMAGE"; then
         printf 'FADI_DEPLOIEMENT_ECHOUE_RETOUR_ARRIERE_OK\n' > "$REPORT"
       else
@@ -120,33 +108,51 @@ assert runs and j['total_count']==len(runs), 'Liste CI incomplete'
 assert need <= {r['name'] for r in runs}, 'Workflow attendu absent'
 assert all(r['head_sha']==sys.argv[2] and r['status']=='completed' and r['conclusion']=='success' for r in runs), 'CI non verte'
 PY
-log '2/8 Extraction du SHA approuve et controle du schema : seule la table sandbox_tool_preferences est admise.'
+log '2/8 Extraction du SHA approuve et controle du schema : evolution additive seulement.'
 g fetch --no-tags https://github.com/RachEma-ux/Fadi.git main > "$RUN/git.log" 2>&1
 g cat-file -e "$TARGET^{commit}"
 g merge-base --is-ancestor "$TARGET" FETCH_HEAD || stop 'La cible ne fait plus partie de main.'
 g merge-base --is-ancestor "$OLD_GIT" "$TARGET" || stop 'La version en production n est pas un ancetre de la cible.'
 g archive "$TARGET" | tar -xf - -C "$RUN/source"
 docker cp app-app-1:/app/apps/api/dist/db/init.sql "$RUN/schema-actif.sql" > /dev/null 2>&1
-python3 - "$RUN/schema-actif.sql" "$RUN/source/apps/api/src/db/init.sql" "$RUN/migration-sandbox.sql" > "$RUN/schema-controle.txt" <<'PY'
-import pathlib, sys
+# CONTROLE_SCHEMA (exerce par scripts/deploy-rattrapage-controlled.test.mjs).
+python3 - "$RUN/schema-actif.sql" "$RUN/source/apps/api/src/db/init.sql" > "$RUN/schema-controle.txt" <<'PY'
+import difflib, pathlib, re, sys
 def normalized(p):
     return [s.rstrip() for s in pathlib.Path(p).read_text().splitlines() if s.strip() and not s.lstrip().startswith('--')]
-actif, cible, bloc = (normalized(p) for p in sys.argv[1:4])
-assert bloc, 'Bloc de migration vide'
-debuts = [i for i in range(len(cible) - len(bloc) + 1) if cible[i:i + len(bloc)] == bloc]
-assert len(debuts) == 1, 'Bloc sandbox_tool_preferences absent ou en double dans le schema cible'
-reste = cible[:debuts[0]] + cible[debuts[0] + len(bloc):]
+actif, cible = (normalized(p) for p in sys.argv[1:3])
 if actif == cible:
-    print('SCHEMA_DEJA_A_JOUR')
-else:
-    assert reste == actif, 'Schema different au-dela de la table sandbox_tool_preferences : migration non autorisee par ce script'
-    print('SCHEMA_PLUS_TABLE_SANDBOX')
+    print('SCHEMA_DEJA_A_JOUR'); sys.exit(0)
+ajoutees = []
+for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(a=actif, b=cible, autojunk=False).get_opcodes():
+    assert tag in ('equal', 'insert'), f'Schema actif modifie ou retire ({tag}) : {actif[i1] if i1 < len(actif) else ""!r}'
+    if tag == 'insert':
+        ajoutees += cible[j1:j2]
+existantes = set(re.findall(r'CREATE TABLE IF NOT EXISTS (\w+)', '\n'.join(actif)))
+interdit = re.compile(r'\bDROP\s+(TABLE|COLUMN|INDEX|TRIGGER|FUNCTION|VIEW|SCHEMA|EXTENSION|TYPE|SEQUENCE)\b|\bTRUNCATE\b|\bDELETE\s+FROM\b'
+                      r'|\bUPDATE\s+\w+\s+SET\b|\bINSERT\s+INTO\b|\bALTER\s+COLUMN\b|\bRENAME\b|\bSET\s+NOT\s+NULL\b|\bSET\s+DATA\s+TYPE\b', re.I)
+for ligne in ajoutees:
+    m = interdit.search(ligne)
+    assert not m, f'Instruction non additive dans le schema cible : {ligne.strip()!r}'
+    alter = re.match(r'\s*ALTER\s+TABLE\s+(?:IF\s+EXISTS\s+)?(\w+)', ligne, re.I)
+    if alter and alter.group(1) in existantes:
+        assert re.fullmatch(r'\s*ALTER\s+TABLE\s+\w+\s+ADD\s+COLUMN\s+IF\s+NOT\s+EXISTS\s+\w+\s+[^;]*;', ligne, re.I) and not re.search(r'NOT\s+NULL|PRIMARY\s+KEY|UNIQUE', ligne, re.I), \
+            f'Table existante modifiee au-dela d une colonne facultative : {ligne.strip()!r}'
+    cible_on = re.search(r'\b(?:INDEX|TRIGGER)\b.*\bON\s+(\w+)', ligne, re.I)
+    assert not (cible_on and cible_on.group(1) in existantes), f'Index ou declencheur pose sur une table existante : {ligne.strip()!r}'
+nouvelles = set(re.findall(r'CREATE TABLE IF NOT EXISTS (\w+)', '\n'.join(ajoutees))) - existantes
+print(f'SCHEMA_ADDITIF lignes_ajoutees={len(ajoutees)} tables_nouvelles={len(nouvelles)}')
 PY
 # La procedure ne met a jour aucun script monte dans backup, ni la configuration du proxy.
-g diff --quiet "$OLD_GIT" "$TARGET" -- Dockerfile docker-compose.yml scripts/backup.sh scripts/restore.sh apps/api/src/server.ts apps/api/src/db/bascule.ts || stop 'Evolution d exploitation non prevue.'
+# shellcheck disable=SC2086
+g diff --quiet "$OLD_GIT" "$TARGET" -- $OPS_FIGES || stop 'Evolution d exploitation non prevue.'
+while read -r fichier avant apres; do
+  a=$(g rev-parse "$OLD_GIT:$fichier"); b=$(g rev-parse "$TARGET:$fichier")
+  [[ $b == "$apres" && ( $a == "$avant" || $a == "$apres" ) ]] || stop "Evolution d exploitation non relue : $fichier."
+done <<< "$OPS_ADMIS"
 log '3/8 Conservation de l image de retour et construction sans arret de Fadi.'
 OLD_TAG="fadi-app:retour-$STAMP"
-NEW_TAG="fadi-app:sandbox-$STAMP"
+NEW_TAG="fadi-app:rattrapage-$STAMP"
 docker tag "$OLD_IMAGE" "$OLD_TAG"
 FREE_KB=$(df -Pk "$BASE" | awk 'END {print $4}')
 (( FREE_KB >= 6291456 )) || stop 'Moins de 6 Gio libres dans /mnt/data.'
@@ -182,14 +188,14 @@ log '4/8 Point de sauvegarde local complementaire, sans rotation ni suppression.
 docker exec app-db-1 pg_dump -U fadi -d fadi --format=custom --lock-wait-timeout=10000 > "$RUN/avant-deploiement.dump.part" 2> "$RUN/dump.log"
 mv "$RUN/avant-deploiement.dump.part" "$RUN/avant-deploiement.dump"
 docker exec -i app-backup-1 pg_restore --list < "$RUN/avant-deploiement.dump" > "$RUN/dump-catalogue.txt"
-sha256sum "$RUN/avant-deploiement.dump" "$RUN/image-retour.tar" "$RUN/migration-sandbox.sql" > "$RUN/empreintes.sha256"
+sha256sum "$RUN/avant-deploiement.dump" "$RUN/image-retour.tar" "$RUN/source/apps/api/src/db/init.sql" > "$RUN/empreintes.sha256"
 printf 'AncienGit=%s\nAncienneImage=%s\nCibleGit=%s\nNouvelleImage=%s\n' "$OLD_GIT" "$OLD_IMAGE" "$TARGET" "$NEW_IMAGE" > "$RUN/versions.txt"
 [[ $(docker inspect -f '{{.Image}}' app-app-1) == "$OLD_IMAGE" ]] || stop 'Le conteneur a change pendant la preparation.'
 [[ -z $(g status --porcelain) && $(g rev-parse HEAD) == "$OLD_GIT" ]] || stop 'Le depot local a change pendant la preparation.'
-log '5/8 Migration autorisee seule : table sandbox_tool_preferences (additive, idempotente), dans une transaction.'
-docker exec -i app-db-1 psql -U fadi -d fadi -v ON_ERROR_STOP=1 --single-transaction < "$RUN/migration-sandbox.sql" > "$RUN/migration.log" 2>&1 || stop 'Migration sandbox_tool_preferences en echec (transaction annulee, application inchangee).'
-docker exec app-db-1 psql -U fadi -d fadi -tA -c "SELECT count(*) FROM information_schema.tables WHERE table_name = 'sandbox_tool_preferences'" > "$RUN/migration-controle.txt"
-[[ $(tr -d '[:space:]' < "$RUN/migration-controle.txt") == 1 ]] || stop 'Table sandbox_tool_preferences introuvable apres la migration.'
+log '5/8 Schema cible (additif, controle a l etape 2) applique dans une seule transaction.'
+docker exec -i app-db-1 psql -U fadi -d fadi -v ON_ERROR_STOP=1 --single-transaction < "$RUN/source/apps/api/src/db/init.sql" > "$RUN/migration.log" 2>&1 || stop 'Migration en echec (transaction annulee, application inchangee).'
+docker exec app-db-1 psql -U fadi -d fadi -tA -c "SELECT count(*) FROM information_schema.tables WHERE table_name IN ('sandbox_tool_preferences', 'studio_studies')" > "$RUN/migration-controle.txt"
+[[ $(tr -d '[:space:]' < "$RUN/migration-controle.txt") == 2 ]] || stop 'Tables sandbox_tool_preferences / studio_studies introuvables apres la migration.'
 healthy "$OLD_IMAGE" || stop 'La production de depart ne passe plus les controles de sante apres la migration.'
 log '6/8 Bascule de app uniquement ; migrations au demarrage desactivees.'
 SWITCHED=1
