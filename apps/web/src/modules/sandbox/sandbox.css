@@ -221,42 +221,29 @@
 .sandbox-planche .planche-contour rect {
   fill: #e00000;
 }
-.sandbox-planche .planche-haut {
-  justify-self: center;
-  align-self: start;
-  z-index: 6;
-  margin: 0.5rem;
+.sandbox-planche .planche-sauvegarde-erreur {
+  position: absolute;
+  top: 0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 8;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   max-width: calc(100% - 2 * var(--colonne-l) - 3rem);
-  padding: 0.2rem 0.5rem;
+  margin: 0;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  color: #7a4a00;
   background: var(--flottant-fond);
-  border: 1px solid var(--atelier-ligne, #dce5df);
+  border: 1px solid #c98a2b;
   border-radius: 8px;
   box-shadow: var(--flottant-ombre);
 }
-.sandbox-planche .planche-brouillon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: auto;
-  max-width: min(36ch, 38vw);
-  gap: 6px;
-  flex-wrap: wrap;
-  font-size: 11px;
-  line-height: 1.2;
-  min-height: 44px;
-  margin: 0;
-  color: #7a4a00;
-}
-.sandbox-planche .planche-haut button {
-  min-width: 44px;
-  min-height: 44px;
-}
-.sandbox-planche .planche-haut .planche-aide {
-  display: none;
-  font-weight: 600;
+.sandbox-planche .planche-sauvegarde-erreur button {
+  min-height: 36px;
+  padding: 0 0.6rem;
+  font: inherit;
 }
 .sandbox-planche .planche-recherche-carte {
   justify-self: start;
@@ -617,7 +604,7 @@
   .sandbox-planche .planche-outils {
     position: absolute;
     left: 0.5rem;
-    top: calc(48px + 0.5rem + 2 * 54px + 0.85rem);
+    top: calc(0.5rem + 2 * 54px + 0.85rem);
     bottom: calc(var(--volet-h, 10rem) + 0.5rem);
     justify-self: auto;
     align-self: auto;
@@ -682,16 +669,6 @@
   }
   .sandbox-planche .planche-poignee {
     display: none;
-  }
-  .sandbox-planche .planche-haut-choix {
-    display: flex;
-    gap: 2px;
-    margin-left: auto;
-  }
-  .sandbox-planche .planche-haut-choix select {
-    min-height: 44px;
-    max-width: 5.5rem;
-    font-size: 0.85rem;
   }
   .sandbox-planche .planche-panneau-consigne {
     margin: 0 0 0.6rem;
@@ -810,42 +787,21 @@
   .sandbox-planche .planche-modificateurs {
     gap: 3px;
   }
-  .sandbox-planche .planche-haut {
-    justify-self: stretch;
-    margin: 0;
-    max-width: none;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
-    gap: 4px;
-    padding: 2px 0.5rem;
-    border: 0;
-    border-bottom: 1px solid var(--atelier-ligne, #dce5df);
-    border-radius: 0;
-    box-shadow: none;
-  }
-  .sandbox-planche .planche-haut button {
-    border: 0;
-    background: transparent;
-  }
-  .sandbox-planche .planche-haut > * {
-    flex: none;
-  }
   .sandbox-planche .planche-recherche-carte {
     position: absolute;
     left: 0.5rem;
-    top: calc(48px + 0.5rem + 54px + 0.35rem);
+    top: calc(0.5rem + 54px + 0.35rem);
     margin: 0;
     z-index: 6;
   }
   .sandbox-planche .planche-colonne {
     position: absolute;
     right: 0.5rem;
-    top: calc(48px + 0.5rem);
+    top: 0.5rem;
     width: auto;
     /* Keep the last panel control out of the mobile bottom drawer. If the
        viewport is short, this column scrolls instead of covering the drawer. */
-    max-height: calc(100% - var(--volet-h, 10rem) - 48px - 1.5rem);
+    max-height: calc(100% - var(--volet-h, 10rem) - 1rem);
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-width: none;
@@ -918,7 +874,7 @@
   }
   .sandbox-planche .planche-panneau {
     position: absolute;
-    top: calc(48px + 0.5rem);
+    top: 0.5rem;
     right: calc(44px + 1rem);
     margin: 0;
     width: calc(100% - 44px - 4.75rem);
@@ -1390,13 +1346,13 @@
 }
 @media (max-width: 760px) {
   .sandbox-planche .planche-menu-principal:not(.est-deplace) {
-    top: calc(48px + 0.5rem);
+    top: 0.5rem;
   }
   .sandbox-planche .planche-menu-liste {
     position: fixed;
     left: 0.5rem;
     right: 0.5rem;
-    top: calc(48px + 0.5rem + 54px + 0.5rem);
+    top: calc(0.5rem + 54px + 0.5rem);
     bottom: auto;
     min-width: 0;
   }
@@ -1438,7 +1394,6 @@
   box-shadow: var(--flottant-ombre);
   text-align: left;
 }
-.sandbox-planche .planche-haut:has(.planche-outils-liste),
 .sandbox-planche .planche-recherche-carte:has(.planche-outils-liste) {
   z-index: 40;
 }
@@ -2311,32 +2266,6 @@
 .sandbox-planche .planche-colonne .planche-colonne-bas {
   margin-top: auto;
 }
-/* Lot 4 — Annuler / Rétablir dans la barre du haut. */
-.sandbox-planche .planche-haut-historique {
-  display: inline-flex;
-  gap: 2px;
-}
-.sandbox-planche .planche-haut-bouton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 40px;
-  min-height: 40px;
-  padding: 0;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-}
-.sandbox-planche .planche-haut-bouton:hover:not(:disabled) {
-  border-color: var(--atelier-ligne, #dce5df);
-  background: #fff;
-}
-.sandbox-planche .planche-haut-bouton:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
 /* Lot 4 — barre du bas : l'aide d'abord, à gauche de la consigne (comme SketchUp). */
 .sandbox-planche .planche-bas .planche-bas-aide {
   order: -1;
@@ -2344,32 +2273,6 @@
   display: inline-flex;
 }
 @media (max-width: 760px) {
-  /* Lot 4 — téléphone : la barre du haut garde Fichier (nom du brouillon), Annuler / Rétablir, l'état et « Outils ▾ »
-     visibles sans défiler ; la langue et le périphérique restent à droite, par défilement. */
-  .sandbox-planche .planche-haut {
-    padding: 2px 0.25rem;
-    gap: 2px;
-  }
-  .sandbox-planche .planche-haut .planche-haut-bouton {
-    min-width: 36px;
-    min-height: 44px;
-  }
-  .sandbox-planche .planche-haut .planche-brouillon svg {
-    display: none;
-  }
-  .sandbox-planche .planche-haut .planche-brouillon {
-    position: absolute;
-    top: calc(48px + 0.5rem);
-    left: 4.25rem;
-    right: 4.25rem;
-    width: auto;
-    max-width: none;
-    min-height: 0;
-    padding: 4px;
-    background: var(--flottant-fond);
-    border-radius: 4px;
-    overflow-wrap: anywhere;
-  }
 }
 /* Chevron plier / déplier de la colonne (comme SketchUp) : à mi-hauteur, collé au bord gauche de la colonne
    (position calculée, variables sur la racine). Il apparaît au survol de la colonne ou de lui-même ; sur écran tactile

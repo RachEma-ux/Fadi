@@ -14,13 +14,13 @@ comportement ni d'apparence.
   local), sur le modèle `@parcours/sandbox-planche-model`.
 - Registre unique `REGISTRE_SANDBOX` (`packages/sandbox-planche-model/src/registre-sandbox.ts`, lot 2) : 86 entrées
   (52 outils, 20 commandes, 14 panneaux) avec pictogramme, famille, raccourci, emplacement et disponibilité ; barres,
-  grille « ⋯ », « Outils ▾ », recherche, colonne de droite, barre d'actions et clavier le lisent (`registre-interface.test.ts`).
+  grille « ⋯ », liste « Outils » (ouverte par la loupe), recherche, colonne de droite, barre d'actions et clavier le lisent (`registre-interface.test.ts`).
 - `pictogrammes/` (lot 3) — pictogrammes SVG : icônes Tabler (`@tabler/icons` 3.49.0, MIT, `LICENCE-TABLER-ICONS.txt`) et
   12 dessins sur mesure (`sur-mesure/`), teintés par famille ; `donnees.ts` est généré
   (`npx tsx apps/web/scripts/generer-pictogrammes-sandbox.ts`) et ne contient que les icônes utilisées.
 - Disposition par défaut (lot 4, profil « Standard », proche de SketchUp) : barre gauche de seize outils dans l'ordre de
   SketchUp, grille « ⋯ » par famille, colonne de droite à un clic par panneau (Info modèle en bas, chevron à mi-hauteur
-  au survol), Annuler / Rétablir dans la barre du haut, aide à gauche de la barre du bas, Cadrer et zoom + / − (tactile)
+  au survol), aucune barre du haut (Annuler / Rétablir au clavier : Ctrl + Z / Ctrl + Y), aide à gauche de la barre du bas, Cadrer et zoom + / − (tactile)
   dans la barre d'actions, curseur propre à chaque outil (`pictogrammes/curseur.ts`).
 - `preferences/` (lot 5) — personnalisation : profils Standard, Métier (Bois et menuiserie, Volumes et solides) et
   Personnel, favoris, regroupements nommés, « Réinitialiser » (panneau ouvert par « Modifier » dans la grille).
@@ -32,7 +32,7 @@ comportement ni d'apparence.
 
 ## Menu de la Planche
 
-Pictogramme ☰ seul (Tabler `menu-2`, MIT), carte flottante en haut à gauche de la Planche, hors de la barre du haut : un clic
+Pictogramme ☰ seul (Tabler `menu-2`, MIT), carte flottante en haut à gauche de la Planche, sans barre du haut : un clic
 déroule le menu ; un appui maintenu 2 s le rend déplaçable (`planche/deplacement-menu.ts`, position mémorisée dans ce
 navigateur ; Alt + flèches au clavier) ; onze entrées, dans cet ordre et ces groupes : Ouvrir une Planche,
 Nouvelle Planche… | Enregistrer, Enregistrer sous…, Renommer / niveau de référence… | Supprimer la Planche | Partager,

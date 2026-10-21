@@ -2423,7 +2423,6 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       onReinitialiser={() => etatUi.set((u) => ({ barresOutils: reinitialiserDisposition(u.barresOutils) }))}
     />
   );
-  const boutonOutils = listeOutils("outils");
 
   /** Barre d'actions flottante (D-195) : annuler / rétablir du brouillon local et Détacher ; elle suit la Planche détachée. */
   const libelleDetacher = detache === "non" ? t("planche.detacher") : detache === "fenetre" ? t("planche.rattacher") : t("planche.plein-ecran.quitter");
@@ -2552,28 +2551,17 @@ export function Planche({ readOnly = false }: PropsPlanche) {
 
       {/* Menu de la Planche : pictogramme seul, flottant, déplaçable (appui de 2 s) — hors de la barre du haut. */}
       <MenuPlanche planches={indexPlanches.planches} courante={plancheDe(indexPlanches)} etat={etatSauvegarde} actions={actionsMenu} />
-      <div className="planche-haut">
-        {/* Lot 4 : Annuler / Rétablir dans la barre du haut, après le nom du brouillon (disposition de SketchUp). */}
-        <span className="planche-haut-historique" role="group" aria-label={`${t("planche.annuler")} / ${t("planche.retablir")}`}>
-          <button type="button" className="planche-haut-bouton" onClick={annulerPas} disabled={hist.passe.length === 0} title={t("planche.annuler.titre", { operation: operationAAnnuler(hist) ?? "" })} aria-label={t("planche.annuler")} data-planche-annuler>
-            <IconeSandbox nom="annuler" />
-          </button>
-          <button type="button" className="planche-haut-bouton" onClick={retablirPas} disabled={hist.futur.length === 0} title={t("planche.retablir.titre", { operation: operationARetablir(hist) ?? "" })} aria-label={t("planche.retablir")} data-planche-retablir>
-            <IconeSandbox nom="retablir" />
-          </button>
-        </span>
-        <p className="planche-brouillon" role="status" aria-live="polite" title={t(`planche.sauvegarde.${etatSauvegarde}`)} data-planche-brouillon data-sauvegarde={etatSauvegarde}>
-          <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M7 3h7l5 5v13H7z" />
-            <path d="M14 3v5h5" />
-            <path d="M10 13h6M10 17h6" />
-          </svg>
-          <span>{t(`planche.sauvegarde.${etatSauvegarde}`)}</span>
-          {etatSauvegarde === "erreur" && <button type="button" onClick={() => brouillonCharge ? setEssaiSauvegarde((n) => n + 1) : setEssaiLecture((n) => n + 1)}>{t("planche.sauvegarde.reessayer")}</button>}
+      {/* Pas de barre du haut (demande du maître d'ouvrage) : le menu et la loupe sont des cartes flottantes. L'état
+          d'enregistrement reste annoncé aux lecteurs d'écran ; seule une erreur d'enregistrement s'affiche. */}
+      <p className="sr-only" role="status" aria-live="polite" data-planche-brouillon data-sauvegarde={etatSauvegarde}>
+        {t(`planche.sauvegarde.${etatSauvegarde}`)}
+      </p>
+      {etatSauvegarde === "erreur" && (
+        <p className="planche-sauvegarde-erreur" role="alert" data-planche-sauvegarde-erreur>
+          <span>{t("planche.sauvegarde.erreur")}</span>
+          <button type="button" onClick={() => (brouillonCharge ? setEssaiSauvegarde((n) => n + 1) : setEssaiLecture((n) => n + 1))}>{t("planche.sauvegarde.reessayer")}</button>
         </p>
-        {boutonOutils}
-        {etroit && <span className="planche-haut-choix">{choix}</span>}
-      </div>
+      )}
       {barresOutils}
       {barreActions}
 
@@ -3052,7 +3040,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         </div>
       )}
       <div className="planche-saisie">
-      {etroit && <span className="canevas-bas">{aideBouton}</span>}
+      {etroit && <span className="canevas-bas">{aideBouton}{choix}</span>}
       <div ref={modificateursRef} onKeyDown={naviguerModificateurs} className="planche-modificateurs" role="toolbar" aria-label={t("planche.modificateurs")} data-planche-modificateurs>
         <button
           type="button"

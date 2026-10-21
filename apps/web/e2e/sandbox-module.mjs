@@ -65,7 +65,7 @@ async function disposition(page, contexte) {
   check(`${contexte} : « ⋯ » en bas de la barre`, await racine.locator("[data-planche-plus]").count() === 1);
   const colonne = await racine.locator("[data-planche-panneau-icone]").evaluateAll((l) => l.map((b) => b.getAttribute("data-planche-panneau-icone")));
   check(`${contexte} : colonne — chaque panneau à un clic, Info modèle en bas`, colonne.length === 13 && colonne.at(-1) === "info-modele" && !colonne.includes("objets"), colonne.join(", "));
-  check(`${contexte} : menu Planche (pictogramme seul) ; barre du haut — Annuler, Rétablir`, (await racine.locator(".planche > [data-planche-menu-principal] [data-planche-menu-ouvrir]").count()) === 1 && (await racine.locator(".planche-haut [data-planche-annuler]").count()) === 1 && (await racine.locator(".planche-haut [data-planche-retablir]").count()) === 1);
+  check(`${contexte} : menu Planche (pictogramme seul) et loupe ; plus de barre du haut`, (await racine.locator(".planche > [data-planche-menu-principal] [data-planche-menu-ouvrir]").count()) === 1 && (await racine.locator("[data-planche-recherche]").count() === 1) && (await racine.locator(".planche-haut").count()) === 0 && (await racine.locator("[data-planche-outils-bouton]").count()) === 0);
   check(`${contexte} : Cadrer dans la barre d'actions`, (await racine.locator("[data-barre-actions] [data-planche-cadrer]").count()) === 1);
   const curseur = await racine.locator("[data-planche-vue]").evaluate((v) => v.style.cursor);
   check(`${contexte} : curseur propre à l'outil (Sélection : flèche)`, curseur === "default", curseur);
@@ -87,18 +87,8 @@ async function disposition(page, contexte) {
     await page.mouse.move(400, 400);
   }
   if (contexte === "téléphone") {
-    const haut = await racine.locator(".planche-haut").evaluate((h) => {
-      const b = h.getBoundingClientRect();
-      const o = h.querySelector("[data-planche-outils-bouton]")?.getBoundingClientRect();
-      return o ? o.right <= b.right && o.left >= b.left : false;
-    });
-    check("téléphone : « Outils ▾ » visible sans défiler la barre du haut", haut === true);
-    const sauvegarde = await racine.locator("[data-planche-brouillon]").evaluate((s) => {
-      const b = s.getBoundingClientRect();
-      const h = s.closest(".planche-haut").getBoundingClientRect();
-      return b.left >= h.left && b.right <= h.right && s.scrollWidth <= s.clientWidth;
-    });
-    check("téléphone : état de sauvegarde lisible sans débordement", sauvegarde === true);
+    const choix = await racine.locator(".canevas-bas select").first().isVisible().catch(() => false);
+    check("téléphone : langue et périphérique restent accessibles (barre du bas)", choix === true);
     check("téléphone : boutons zoom + / − visibles", (await racine.locator('[data-barre-actions] [data-planche-zoom="plus"]').isVisible()) && (await racine.locator('[data-barre-actions] [data-planche-zoom="moins"]').isVisible()));
     // Commandes du registre : leur raccourci est affiché dans l'info-bulle (F8, Alt+Maj+Y).
     const titres = await racine.locator("[data-barre-actions] [data-planche-zoom]").evaluateAll((l) => l.map((b) => b.getAttribute("title") ?? ""));
