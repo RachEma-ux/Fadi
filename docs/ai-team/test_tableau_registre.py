@@ -47,6 +47,17 @@ class RegistreTests(unittest.TestCase):
         self.assertEqual(tr.controler(self.racine, self.registre), [])
         self.assertEqual(tr.ids_p630(self.registre), ['T-000', 'T-001'])
 
+    def test_candidats_inclut_les_taches_a_faire(self):
+        self.registre['tasks'][3]['statut'] = 'À faire'
+        self.assertIn('T-003', [t['id'] for t in tr.candidats(self.registre)])
+
+    def test_delta_peut_assigner_a_faire_sans_cloture(self):
+        delta = self.delta(statut='À faire', cloture={'condition_verifiee': False})
+        self.assertEqual(tr.valider_delta(self.registre, delta, b''), [])
+        tr.appliquer_delta(self.registre, delta)
+        self.assertEqual(self.registre['tasks'][3]['statut'], 'À faire')
+        self.assertEqual(self.registre['progress']['P630']['V630'], 2)
+
     def test_checkpoint_divergent(self):
         (self.racine / tr.CHECKPOINTS[1]).write_text('628 À définir / 0 En cours / 0 Bloqué / 1 Vérifié / 1 Accepté, P630=3/630', encoding='utf-8')
         ecarts = tr.controler(self.racine, self.registre)

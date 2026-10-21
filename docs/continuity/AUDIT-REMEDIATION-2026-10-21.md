@@ -6,7 +6,7 @@ Baseline: `main@78e9f4a89e9634189c3bd4fb9ed82576eafe2a64` (#222). Owner instruct
 
 - Sandbox uses checked draft reads/writes. Failed writes are surfaced with a visible FR/EN state, retry action and navigation warning; no save is announced before completion. Writes are ordered and stale completions cannot confirm a newer draft. A failed read does not trigger an overwrite of an unread draft.
 - Regression: without IndexedDB, the original save resolved successfully; `brouillon-stockage.test.ts` reproduced it before repair. Cases cover write failure, retry and concurrent-save order.
-- The register checker recognizes `À faire`, already a documented continuity state. It still rejects unknown states and does not promote tasks to verified/accepted. Current counters are restored in all four checkpoints, with the previous milestone retained as an explicitly historical archive. The checker and its unit tests now run in every continuity CI.
+- The register checker, candidate selection and proposed status updates recognize `À faire`, already a documented continuity state. It still rejects unknown states and does not promote tasks to verified/accepted. Current counters are restored in all four checkpoints, with the previous milestone retained as an explicitly historical archive. The checker and its unit tests now run in every continuity CI.
 - Existing main protection proposal updated with the current unconditional check names. `python3 scripts/apply-main-ruleset.py` is a dry run; `--apply` requires an administrator token and updates existing ruleset 25417703, then re-reads it. No new ruleset is created. Zero additional GitHub approvals preserves the documented solo-maintainer policy. Runtime activation is not claimed without an authenticated administrative write and verification.
 
 ## Operations branch decision
@@ -24,7 +24,7 @@ Cleanup must verify the recorded tip is unchanged and an ancestor of the final m
 | Audit item | Evidence / next action | Limit |
 | --- | --- | --- |
 | Sandbox persistence | `brouillon-stockage.test.ts`; typecheck, web tests and Sandbox E2E in CI | Local browser draft only; no new server persistence promised |
-| Register | `python3 docs/ai-team/tableau_registre.py --controle`; 13 unit tests | 630 assignments are not 630 delivered features; P630=49/630 is documentary/cadrage |
+| Register | `python3 docs/ai-team/tableau_registre.py --controle`; 15 unit tests | 630 assignments are not 630 delivered features; P630=49/630 is documentary/cadrage |
 | Required CI before merge | Existing ruleset JSON and dry-run/apply script | Blocked on an authenticated administrator connection; not activated by source code |
 | Independent 2D | `studio-v1.mjs` on the attested fresh profile; `studio-persistance.mjs`, `studio-dossier.mjs` | Inspect reports at the exact PR SHA; CI is not owner acceptance |
 | Independent 3D | `studio-espace.mjs`, `studio-visualisation.mjs`; `packages/atelier-model/src/studio/objets-3d/objets-3d.test.ts` | Does not establish every 3D tool or photorealistic rendering |
