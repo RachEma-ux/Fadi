@@ -2651,14 +2651,15 @@
 @media (min-width: 761px) {
   .sandbox-planche .planche:not(.colonne-repliee) { --colonne-l: 12.5rem; }
   .sandbox-planche .planche-colonne {
-    margin-top: calc(0.5rem + 2 * 54px + 0.85rem);
-    max-height: calc(100% - var(--pied-h, 5.5rem) - 2 * 54px - 2.5rem);
+    /* Instructeur (44 px) centré sur Sélection, sous le premier bouton (36 px) de la barre de gauche. */
+    margin-top: calc(0.5rem + 2 * 54px + 0.85rem + 0.25rem + 36px - 1px);
+    max-height: calc(100% - var(--pied-h, 5.5rem) - 2 * 54px - 2.5rem - 39px);
   }
 }
 @media (max-width: 760px) {
   .sandbox-planche .planche-colonne {
-    top: calc(0.5rem + 2 * 54px + 0.85rem);
-    max-height: calc(100% - var(--volet-h, 10rem) - 2 * 54px - 1.5rem);
+    top: calc(0.5rem + 2 * 54px + 0.85rem + 0.25rem + 36px - 1px);
+    max-height: calc(100% - var(--volet-h, 10rem) - 2 * 54px - 1.5rem - 39px);
   }
 }
 .sandbox-planche .planche-colonne {
