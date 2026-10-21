@@ -33,9 +33,12 @@ export function lireBrouillon(texte: string | null): Modele | null {
 export const stockageDisponible = (): boolean => typeof indexedDB !== "undefined";
 
 export async function chargerBrouillon(): Promise<Modele | null> {
-  return lireBrouillon(await localStore.getValue(CLE_BROUILLON));
+  const texte = await localStore.getValueChecked(CLE_BROUILLON);
+  const modele = lireBrouillon(texte);
+  if (texte !== null && modele === null) throw new Error("Brouillon local illisible : conservation non confirmée.");
+  return modele;
 }
 
 export async function enregistrerBrouillon(modele: Modele): Promise<void> {
-  await localStore.setValue(CLE_BROUILLON, serialiserBrouillon(modele));
+  await localStore.setValueChecked(CLE_BROUILLON, serialiserBrouillon(modele));
 }

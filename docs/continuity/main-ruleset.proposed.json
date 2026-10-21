@@ -3,27 +3,70 @@
   "target": "branch",
   "enforcement": "disabled",
   "bypass_actors": [],
-  "conditions": {"ref_name": {"include": ["refs/heads/main"], "exclude": []}},
+  "conditions": {
+    "ref_name": {
+      "include": [
+        "refs/heads/main"
+      ],
+      "exclude": []
+    }
+  },
   "rules": [
-    {"type": "deletion"},
-    {"type": "non_fast_forward"},
-    {"type": "pull_request", "parameters": {
-      "required_approving_review_count": 0,
-      "dismiss_stale_reviews_on_push": true,
-      "require_code_owner_review": false,
-      "require_last_push_approval": false,
-      "required_review_thread_resolution": true
-    }},
-    {"type": "required_status_checks", "parameters": {
-      "strict_required_status_checks_policy": true,
-      "required_status_checks": [
-        {"context": "validate", "integration_id": 15368},
-        {"context": "e2e", "integration_id": 15368},
-        {"context": "image", "integration_id": 15368},
-        {"context": "Continuité — docs, checkpoints et tests", "integration_id": 15368},
-        {"context": "no-foreign-app-reference", "integration_id": 15368},
-        {"context": "Architecture — frontières et isolation", "integration_id": 15368}
-      ]
-    }}
+    {
+      "type": "deletion"
+    },
+    {
+      "type": "non_fast_forward"
+    },
+    {
+      "type": "pull_request",
+      "parameters": {
+        "required_approving_review_count": 0,
+        "dismiss_stale_reviews_on_push": true,
+        "require_code_owner_review": false,
+        "require_last_push_approval": false,
+        "required_review_thread_resolution": true
+      }
+    },
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "strict_required_status_checks_policy": true,
+        "required_status_checks": [
+          {
+            "context": "validate",
+            "integration_id": 15368
+          },
+          {
+            "context": "e2e",
+            "integration_id": 15368
+          },
+          {
+            "context": "image",
+            "integration_id": 15368
+          },
+          {
+            "context": "Continuité — docs, checkpoints et tests",
+            "integration_id": 15368
+          },
+          {
+            "context": "no-foreign-app-reference",
+            "integration_id": 15368
+          },
+          {
+            "context": "Architecture — frontières et isolation",
+            "integration_id": 15368
+          },
+          {
+            "context": "Studio V1 — API, navigateur et réouverture sur PostGIS neuf",
+            "integration_id": 15368
+          },
+          {
+            "context": "Codex — 31 missions et 630 tâches",
+            "integration_id": 15368
+          }
+        ]
+      }
+    }
   ]
 }

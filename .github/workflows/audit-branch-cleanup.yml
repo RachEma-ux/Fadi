@@ -1,0 +1,34 @@
+name: Clean reconciled audit branches
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/audit-branch-cleanup.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: fadi-branch-consolidation-cleanup
+  cancel-in-progress: false
+jobs:
+  cleanup:
+    if: github.repository == 'RachEma-ux/Fadi' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify cleanup without network or mutations
+        run: python3 scripts/test-consolidate-branches-cleanup.py -v
+      - name: Remove only the recorded merged operations branch and this PR branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          CLEANUP_COMMIT: ${{ github.sha }}
+          CLEANUP_CHECKPOINT: docs/continuity/AUDIT-REMEDIATION-2026-10-21.md
+          CLEANUP_EXPECTED_BRANCHES: '1'
+          CLEANUP_REQUIRE_MAIN_ONLY: 'false'
+          CLEANUP_HELPER_BRANCH: fix/audit-reliability-cleanup
+        run: python3 scripts/consolidate-branches-cleanup.py

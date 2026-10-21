@@ -9,6 +9,13 @@ export type { Langue };
 export const LANGUE_INTERFACE: Langue = LANGUE;
 
 const FR = {
+  "planche.sauvegarde.chargement": "Lecture du brouillon local…",
+  "planche.sauvegarde.attente": "Modifications non enregistrées",
+  "planche.sauvegarde.enregistrement": "Enregistrement local…",
+  "planche.sauvegarde.enregistre": "Enregistré dans ce navigateur",
+  "planche.sauvegarde.erreur": "Échec de sauvegarde — gardez cette page ouverte et exportez votre dessin.",
+  "planche.sauvegarde.reessayer": "Réessayer la sauvegarde",
+
   "canevas.panneaux": "Panneaux",
   "panneau.instructeur": "Instructeur",
   "panneau.entite": "Info entité",
@@ -710,6 +717,13 @@ const FR = {
 export type CleMessage = keyof typeof FR;
 
 const EN: Record<CleMessage, string> = {
+  "planche.sauvegarde.chargement": "Loading local draft…",
+  "planche.sauvegarde.attente": "Unsaved changes",
+  "planche.sauvegarde.enregistrement": "Saving locally…",
+  "planche.sauvegarde.enregistre": "Saved in this browser",
+  "planche.sauvegarde.erreur": "Save failed — keep this page open and export your drawing.",
+  "planche.sauvegarde.reessayer": "Retry saving",
+
   "canevas.panneaux": "Panels",
   "panneau.instructeur": "Instructor",
   "panneau.entite": "Entity info",

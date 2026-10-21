@@ -115,7 +115,8 @@ import { ChoixPeripherique } from "../panneaux/Navigation";
 import { CATALOGUE, type CleMessage, t } from "../messages";
 import { ChoixLangue } from "../../../components/ChoixLangue";
 import { annuler, enregistrer, historiqueInitial, operationAAnnuler, operationARetablir, retablir, type Historique } from "./historique";
-import { chargerBrouillon, enregistrerBrouillon, stockageDisponible } from "./brouillon";
+import { chargerBrouillon } from "./brouillon";
+import { creerSauvegardeBrouillon, type EtatSauvegarde } from "./sauvegarde-brouillon";
 import { OUTILS_BOOLEENS, OUTILS_CAMERA_TEMPORAIRES, afficherRaccourci, commenceSaisie, disponibilite, estOutilCamera, estRecherche, libelleOutil, lotPrevu, nomOutil, outilDuClavier, outilsDeBarre, pictoOutil, raccourciOutil, sectionsGrille, titreOutil, toucheEtat, type OutilCamera } from "./outils-planche";
 import { HAUTEUR_OEIL_DEFAUT, OPTIONS_AFFICHAGE_DEFAUT, VuePlanche, type OptionsAffichage, type VueStandard } from "./vue-planche";
 import { DialogueComposant, DialogueDeplacer, MenuContextuel, NavigateurPlanche, PanneauAdoucir, PanneauAffichage, PanneauComposants, PanneauInfoEntite, PanneauInfoModele, PanneauOmbres, PanneauScenes, PanneauStyles, type EntreeMenu, type ParametresComposant } from "./panneaux-objets";
@@ -351,7 +352,11 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   });
   const stylesObserveur = useRef<MutationObserver | null>(null);
   const clavierRef = useRef<{ touche: (e: KeyboardEvent) => void; relache: (e: KeyboardEvent) => void; perte: () => void; pointeur: () => void } | null>(null);
-  const brouillonCharge = useRef(false);
+  const [brouillonCharge, setBrouillonCharge] = useState(false);
+  const [etatSauvegarde, setEtatSauvegarde] = useState<EtatSauvegarde>("chargement");
+  const [sauvegarde] = useState(() => creerSauvegardeBrouillon(setEtatSauvegarde));
+  const [essaiSauvegarde, setEssaiSauvegarde] = useState(0);
+  const [essaiLecture, setEssaiLecture] = useState(0);
 
   const hoteRef = useRef<HTMLDivElement | null>(null);
   const racineRef = useRef<HTMLDivElement | null>(null);
@@ -1543,22 +1548,29 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   // --- Brouillon propre à Sandbox : lu à l'ouverture (s'il n'y a encore rien de dessiné), enregistré après chaque pas.
   useEffect(() => {
     let annule = false;
-    brouillonCharge.current = false;
+    setBrouillonCharge(false);
     void chargerBrouillon().then((m) => {
       if (annule) return;
       if (m && histRef.current.passe.length === 0 && histRef.current.futur.length === 0) poserHistorique(historiqueInitial(m), { envoyer: false });
-      brouillonCharge.current = true;
+      setBrouillonCharge(true);
       rafraichir();
-    });
+    }).catch(() => { if (!annule) setEtatSauvegarde("erreur"); });
     return () => {
       annule = true;
     };
-  }, [poserHistorique, rafraichir]);
+  }, [poserHistorique, rafraichir, essaiLecture]);
   useEffect(() => {
-    if (!brouillonCharge.current || readOnly) return;
-    const minuterie = window.setTimeout(() => void enregistrerBrouillon(hist.present.modele), 300);
-    return () => window.clearTimeout(minuterie);
-  }, [hist.present.modele, readOnly]);
+    if (!brouillonCharge || readOnly) return;
+    const ticket = sauvegarde.modifier();
+    const minuterie = window.setTimeout(() => void sauvegarde.sauver(hist.present.modele, ticket), 300);
+    return () => { window.clearTimeout(minuterie); sauvegarde.invalider(); };
+  }, [hist.present.modele, readOnly, brouillonCharge, sauvegarde, essaiSauvegarde]);
+  useEffect(() => {
+    if (readOnly || etatSauvegarde === "enregistre" || etatSauvegarde === "chargement") return;
+    const prevenir = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", prevenir);
+    return () => window.removeEventListener("beforeunload", prevenir);
+  }, [etatSauvegarde, readOnly]);
   const actionsMenu = useMemo(
     () => ({
       exporterMaillage: (format: "obj" | "stl") => {
@@ -2345,13 +2357,14 @@ export function Planche({ readOnly = false }: PropsPlanche) {
             <IconeSandbox nom="retablir" />
           </button>
         </span>
-        <p className="planche-brouillon" role="note" title={`${t("planche.brouillon")} — ${stockageDisponible() ? t("planche.brouillon.aide") : t("planche.brouillon.indisponible")}`} data-planche-brouillon>
+        <p className="planche-brouillon" role="status" aria-live="polite" title={t(`planche.sauvegarde.${etatSauvegarde}`)} data-planche-brouillon data-sauvegarde={etatSauvegarde}>
           <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M7 3h7l5 5v13H7z" />
             <path d="M14 3v5h5" />
             <path d="M10 13h6M10 17h6" />
           </svg>
-          <span className="sr-only">{t("planche.brouillon")}</span>
+          <span>{t(`planche.sauvegarde.${etatSauvegarde}`)}</span>
+          {etatSauvegarde === "erreur" && <button type="button" onClick={() => brouillonCharge ? setEssaiSauvegarde((n) => n + 1) : setEssaiLecture((n) => n + 1)}>{t("planche.sauvegarde.reessayer")}</button>}
         </p>
         {boutonOutils}
         {etroit && <span className="planche-haut-choix">{choix}</span>}

@@ -52,3 +52,9 @@ Une proposition d’exception documentaire pour #165 est en attente de décision
 3. Préparer une PR documentaire de contrôle explicitement autorisée ; vérifier passage par PR, résolution des discussions et blocage tant qu’un check réellement requis manque/échoue. Ne pas déclencher pour ce test les services DB interdits par le lot courant.
 4. Contrôler dans l’interface les interdictions de suppression/force-push sans tenter de force-push ni suppression sur main. Documenter les refus et la règle effective, avec SHA/runs et limites.
 5. Fermer #146 uniquement avec activation attestée et recette des règles ; ni AGENTS, ni JSON, ni CI verte ne remplace cette preuve. Fusion et activation sont deux accords distincts.
+
+## Correctif du 21 octobre 2026 — configuration prête, activation non attestée
+
+Le ruleset 25417703 est actif pour les PR et l'interdiction de suppression/force-push, mais ne requiert pas encore les checks. La proposition existante a été actualisée avec les noms des checks réellement présents sur main. Garder le profil solo à zéro approbation GitHub supplémentaire ; le défaut constaté est l'absence de checks requis.
+
+Prévisualisation sans réseau : `python3 scripts/apply-main-ruleset.py`. Application, uniquement dans une session administrateur déjà authentifiée : `python3 scripts/apply-main-ruleset.py --apply` (jeton administrateur dans `GH_TOKEN`, jamais dans le dépôt, une commande ou le chat). Le script modifie le ruleset existant et le relit. La connexion GitHub de cette session ne propose aucune action d'écriture administrative : ne pas déclarer la protection renforcée active avant cette étape.

@@ -31,6 +31,11 @@ jobs:
         run: node --test scripts/check-continuity.test.mjs
       - name: Vérifier tous les dossiers de chantier
         run: node scripts/check-continuity.mjs
+      - name: Vérifier la cohérence du registre et de ses compteurs
+        run: |
+          python3 -m unittest discover -s docs/ai-team -p test_tableau_registre.py -v
+          python3 docs/ai-team/tableau_registre.py --controle
+          python3 scripts/test-apply-main-ruleset.py -v
       - name: Vérifier les checkpoints des chantiers modifiés (PR seulement)
         if: github.event_name == 'pull_request'
         env:

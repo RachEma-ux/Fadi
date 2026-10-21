@@ -240,8 +240,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: auto;
+  max-width: min(36ch, 38vw);
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  line-height: 1.2;
+  min-height: 44px;
   margin: 0;
   color: #7a4a00;
 }
@@ -2313,15 +2318,27 @@
     gap: 2px;
   }
   .sandbox-planche .planche-haut .planche-menu-bouton {
-    max-width: 4.5rem;
+    max-width: 44px;
   }
-  .sandbox-planche .planche-haut-bouton {
+  .sandbox-planche .planche-haut .planche-haut-bouton {
     min-width: 36px;
     min-height: 44px;
   }
   .sandbox-planche .planche-haut .planche-brouillon svg {
-    width: 20px;
-    height: 20px;
+    display: none;
+  }
+  .sandbox-planche .planche-haut .planche-brouillon {
+    position: absolute;
+    top: calc(48px + 0.5rem);
+    left: 4.25rem;
+    right: 4.25rem;
+    width: auto;
+    max-width: none;
+    min-height: 0;
+    padding: 4px;
+    background: var(--flottant-fond);
+    border-radius: 4px;
+    overflow-wrap: anywhere;
   }
 }
 /* Chevron plier / déplier de la colonne (comme SketchUp) : à mi-hauteur, collé au bord gauche de la colonne

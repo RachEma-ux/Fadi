@@ -27,10 +27,11 @@ REGISTRE = 'docs/workstreams/studio/task-register.json'
 INDEX_M08 = 'docs/ai-team/reports/reprise-496dcfc/M08-INDEX-A0.json'
 CHECKPOINTS = ('docs/workstreams/ai-team/STATUS.md', 'docs/workstreams/ai-team/HANDOFF.md',
                'docs/workstreams/studio/STATUS.md', 'docs/workstreams/studio/HANDOFF.md')
-STATUTS = ('À définir', 'En cours', 'Bloqué', 'Vérifié', 'Accepté')
+STATUTS_OUVERTS = ('À définir', 'À faire', 'En cours')
+STATUTS = (*STATUTS_OUVERTS, 'Bloqué', 'Vérifié', 'Accepté')
 # Un delta ne peut ni accepter (décision humaine) ni cocher une case source.
-STATUTS_DELTA = ('À définir', 'En cours', 'Bloqué', 'Vérifié')
-COMPTEURS = re.compile(r'(\d+) À définir / (\d+) En cours / (\d+) Bloqué / (\d+) Vérifié[^/]*/ (\d+) Accepté')
+STATUTS_DELTA = STATUTS[:-1]
+COMPTEURS = re.compile(r'(\d+) À définir / (?:(\d+) À faire / )?(\d+) En cours / (\d+) Bloqué / (\d+) Vérifié[^/]*/ (\d+) Accepté')
 P630_TEXTE = re.compile(r'P630=(\d+)/630')
 REVUES_M08 = re.compile(r'(\d+)/125 avec revue')
 VERBES_LECTURE = ('Examiner', 'Relever', 'Conserver', 'Requalifier', 'Consigner', 'Documenter', 'Identifier',
@@ -115,7 +116,7 @@ def controler(racine: Path, registre: dict) -> list[str]:
             ecarts.append(f'{nom} absent')
             continue
         texte = chemin.read_text(encoding='utf-8')
-        trouves = {tuple(int(x) for x in m) for m in COMPTEURS.findall(texte)}
+        trouves = {tuple(int(x or 0) for x in m) for m in COMPTEURS.findall(texte)}
         if not trouves:
             ecarts.append(f'{nom} : phrase de compteurs « N À définir / … / N Accepté » introuvable')
         for t in sorted(trouves - {attendu}):
@@ -130,7 +131,7 @@ def controler(racine: Path, registre: dict) -> list[str]:
 
 def candidats(registre: dict) -> list[dict]:
     return [t for t in registre['tasks']
-            if t['statut'] in ('À définir', 'En cours') and t['description'].startswith(VERBES_LECTURE)]
+            if t['statut'] in STATUTS_OUVERTS and t['description'].startswith(VERBES_LECTURE)]
 
 
 def valider_delta(registre: dict, delta: dict, contenu_registre: bytes) -> list[str]:
