@@ -175,20 +175,18 @@ async function auditer(nom, vp, tactile) {
   }
   check(`${nom} : ${uniques.length} boutons de la barre d'outils (${uniques.filter((o) => !o.indispo).length} actifs, ${uniques.filter((o) => o.indispo).length} grisés « prévu au lot »)`, echecsOutils.length === 0, echecsOutils.join(" ; "));
 
-  // 3. Recherche d'outil : la loupe ouvre la liste « Outils » (champ de recherche prêt) ; Maj + S garde la boîte.
+  // 3. Recherche d'outil.
   await cliquer(T("[data-planche-recherche]"));
-  check(`${nom} : la loupe ouvre la liste Outils, champ de recherche actif`, (await p.locator(".planche-outils-liste").count()) === 1 && (await p.locator("[data-outils-recherche]").evaluate((e) => e === e.ownerDocument.activeElement)));
+  check(`${nom} : bouton Rechercher ouvre la boîte de recherche`, (await p.locator("[data-planche-recherche-dialogue]").count()) === 1);
   await p.keyboard.press("Escape");
-  check(`${nom} : Échap ferme la liste Outils`, (await p.locator(".planche-outils-liste").count()) === 0);
+  check(`${nom} : Échap ferme la recherche`, (await p.locator("[data-planche-recherche-dialogue]").count()) === 0);
   await cliquer(T("[data-planche-recherche]"));
-  await p.locator("[data-outils-recherche]").fill("rectangle");
-  await p.keyboard.press("Enter");
-  check(`${nom} : chercher puis Entrée dans la liste Outils active l'outil`, (await outilActif(p)) === "rectangle", await outilActif(p));
-  await p.keyboard.press("Escape");
-  await p.keyboard.press("Shift+S");
-  check(`${nom} : Maj + S ouvre toujours la boîte de recherche`, (await p.locator("[data-planche-recherche-dialogue]").count()) === 1);
+  await p.locator("#planche-recherche-champ").fill("rectangle");
+  await cliquer(p.locator("#planche-recherche-liste [role=option]").first());
+  check(`${nom} : choisir un résultat de recherche active l'outil et ferme la boîte`, (await outilActif(p)) === "rectangle" && (await p.locator("[data-planche-recherche-dialogue]").count()) === 0, await outilActif(p));
+  await cliquer(T("[data-planche-recherche]"));
   await cliquer(p.locator("[data-planche-recherche-dialogue] button", { hasText: /Fermer|Close/ }).first());
-  check(`${nom} : bouton Fermer de la boîte de recherche`, (await p.locator("[data-planche-recherche-dialogue]").count()) === 0);
+  check(`${nom} : bouton Fermer de la recherche`, (await p.locator("[data-planche-recherche-dialogue]").count()) === 0);
 
   // 4. Grille « … » : chaque outil de la grille.
   await cliquer(T("[data-planche-plus]"));
