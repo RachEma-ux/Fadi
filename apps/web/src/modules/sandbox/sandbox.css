@@ -2325,8 +2325,12 @@
     min-height: 44px;
   }
   .sandbox-planche .planche-haut .planche-brouillon svg {
-    width: 20px;
-    height: 20px;
+    display: none;
+  }
+  .sandbox-planche .planche-haut .planche-brouillon {
+    width: clamp(44px, 16vw, 64px);
+    max-width: none;
+    overflow-wrap: anywhere;
   }
 }
 /* Chevron plier / déplier de la colonne (comme SketchUp) : à mi-hauteur, collé au bord gauche de la colonne

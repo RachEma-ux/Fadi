@@ -93,6 +93,12 @@ async function disposition(page, contexte) {
       return o ? o.right <= b.right && o.left >= b.left : false;
     });
     check("téléphone : « Outils ▾ » visible sans défiler la barre du haut", haut === true);
+    const sauvegarde = await racine.locator("[data-planche-brouillon]").evaluate((s) => {
+      const b = s.getBoundingClientRect();
+      const h = s.closest(".planche-haut").getBoundingClientRect();
+      return b.left >= h.left && b.right <= h.right && s.scrollWidth <= s.clientWidth;
+    });
+    check("téléphone : état de sauvegarde lisible sans débordement", sauvegarde === true);
     check("téléphone : boutons zoom + / − visibles", (await racine.locator('[data-barre-actions] [data-planche-zoom="plus"]').isVisible()) && (await racine.locator('[data-barre-actions] [data-planche-zoom="moins"]').isVisible()));
     // Commandes du registre : leur raccourci est affiché dans l'info-bulle (F8, Alt+Maj+Y).
     const titres = await racine.locator("[data-barre-actions] [data-planche-zoom]").evaluateAll((l) => l.map((b) => b.getAttribute("title") ?? ""));
