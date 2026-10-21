@@ -48,6 +48,9 @@ Exporter en IFC / OBJ / STL, Importer en IFC / OBJ / STL | Informations, Téléc
   menu (mètre par défaut). **Plafond : 1 500 triangles** (insertion quadratique, mesurée : 528 → 0,5 s, 2 200 → 7,5 s).
 - **Informations** (`planche/informations-planche.tsx`) : page dans le style d'Excel (cartes à gauche, propriétés à
   droite) ; chaque chiffre est mesuré (contenu, taille du document, objets non étanches, éléments non exportés).
+- **Historique** (`planche/journal-planche.ts`) : journal des modifications par Planche, dans ce navigateur (200 entrées
+  au plus, les 5 dernières affichées : `jj.mm.aaaa hh.mm, auteur, description`). L'auteur est « Vous » : le Sandbox ne peut
+  pas lire le compte (frontières). Deux entrées identiques à moins d'une minute sont fusionnées.
 
 ## Frontières
 

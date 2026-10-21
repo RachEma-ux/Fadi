@@ -112,6 +112,7 @@ import {
 import { etatUi, useEtatUi } from "../etat-ui";
 import { MenuPlanche, ECHELLE_UNITE, nomAffiche, type ActionsMenuPlanche, type FormatEchange, type UniteFichier } from "./menu-planche";
 import { ErreurImport, compter as compterContexte, exporterIfc, importerMaillages, lireMaillages, maillagesPlanche, nonEtanchesDe, omisExport } from "@parcours/sandbox-planche-model";
+import { ajouterEntree, chargerJournal, dernieresEntrees, enregistrerJournal, supprimerJournal, type EntreeJournal } from "./journal-planche";
 import { avecCourante, avecInfo, avecNouvelle, chargerIndex, enregistrerIndex, indexInitial, nouvelId, planche as plancheDe, sansPlanche, supprimerDocument, type IndexPlanches } from "./registre-planches";
 import { ChoixPeripherique } from "../panneaux/Navigation";
 import { CATALOGUE, type CleMessage, t } from "../messages";
@@ -362,11 +363,14 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const indexRef = useRef<IndexPlanches>(indexPlanches);
   /** Le prochain chargement remplace le dessin et l'historique (changement de Planche), au lieu de reprendre le brouillon. */
   const remplacerRef = useRef(false);
+  /** Journal des modifications de la Planche courante (page Informations) ; écrit avec le dessin. */
+  const journalRef = useRef<EntreeJournal[]>([]);
   const [chargeId, setChargeId] = useState(0);
   const [sauvegarde] = useState(() =>
     creerSauvegardeBrouillon(setEtatSauvegarde, async (modele) => {
       const id = indexRef.current.courante;
       await enregistrerBrouillon(modele, id);
+      void enregistrerJournal(id, journalRef.current).catch(() => undefined);
       const idx = avecInfo(indexRef.current, id, { modifieA: new Date().toISOString() });
       indexRef.current = idx;
       setIndexPlanches(idx);
@@ -468,7 +472,12 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     const changeModele = h.present.modele !== histRef.current.present.modele;
     histRef.current = h;
     setHist(h);
-    if (changeModele) vueRef.current?.majModele(h.present.modele);
+    if (changeModele) {
+      vueRef.current?.majModele(h.present.modele);
+      // Journal : opération faite, annulée ou rétablie (jamais le chargement du dessin, qui n'a pas d'opération).
+      const description = _options.libelle ?? h.present.operation;
+      if (description) journalRef.current = ajouterEntree(journalRef.current, { a: new Date().toISOString(), auteur: t("planche.sb.auteur"), description });
+    }
   }, []);
 
   /** Envoie un événement à la machine de l'outil actif ; renvoie `true` si l'état, le modèle ou la sélection a changé. */
@@ -1575,7 +1584,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         indexRef.current = idx;
         setIndexPlanches(idx);
         const m = await chargerBrouillon(idx.courante);
+        const journal = await chargerJournal(idx.courante);
         if (annule) return;
+        journalRef.current = journal;
         if (remplacerRef.current) {
           // Changement de Planche : le dessin, l'historique, la sélection et l'objet ouvert sont ceux de la nouvelle Planche.
           remplacerRef.current = false;
@@ -1620,7 +1631,11 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       sauvegarde.invalider();
       const id = indexRef.current.courante;
       await enregistrerBrouillon(histRef.current.present.modele, id);
+      await enregistrerJournal(id, journalRef.current).catch(() => undefined);
       await poserIndex(avecInfo(indexRef.current, id, { modifieA: new Date().toISOString() }));
+    };
+    const noter = (description: string) => {
+      journalRef.current = ajouterEntree(journalRef.current, { a: new Date().toISOString(), auteur: t("planche.sb.auteur"), description });
     };
     /** Ouvre la Planche `idx.courante` : l'ancienne a déjà été écrite, le dessin est relu. */
     const basculerVers = async (idx: IndexPlanches) => {
@@ -1657,6 +1672,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           const maintenant = new Date().toISOString();
           const idx = avecNouvelle(indexRef.current, { id: nouvelId(indexRef.current), nom, altitudeRef: altitude, creeA: maintenant, modifieA: maintenant });
           await enregistrerBrouillon(modeleVide(), idx.courante);
+          await enregistrerJournal(idx.courante, ajouterEntree([], { a: maintenant, auteur: t("planche.sb.auteur"), description: t("planche.sb.journal.creee") })).catch(() => undefined);
           await basculerVers(idx);
           setMessage(t("planche.sb.creee", { nom }));
         } catch (e) {
@@ -1666,6 +1682,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       },
       enregistrer: async () => {
         try {
+          noter(t("planche.sb.journal.enregistree"));
           await ecrireCourante();
           setEtatSauvegarde("enregistre");
           setMessage(t("planche.sb.enregistree", { nom: nomAffiche(courante()) }));
@@ -1680,6 +1697,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           const maintenant = new Date().toISOString();
           const idx = avecNouvelle(indexRef.current, { id: nouvelId(indexRef.current), nom, altitudeRef: courante().altitudeRef, creeA: maintenant, modifieA: maintenant });
           await enregistrerBrouillon(histRef.current.present.modele, idx.courante);
+          // Le journal de la copie reprend celui de l'original, puis note la copie.
+          journalRef.current = ajouterEntree(journalRef.current, { a: maintenant, auteur: t("planche.sb.auteur"), description: t("planche.sb.journal.copiee", { nom }) });
+          await enregistrerJournal(idx.courante, journalRef.current).catch(() => undefined);
           // Copie : le dessin et son historique restent à l'écran, l'enregistrement suit désormais la nouvelle Planche.
           await poserIndex(idx);
           setMessage(t("planche.sb.copiee", { nom }));
@@ -1690,6 +1710,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       },
       renommer: async (nom, altitude) => {
         try {
+          noter(t("planche.sb.journal.renommee", { nom }));
+          await enregistrerJournal(indexRef.current.courante, journalRef.current).catch(() => undefined);
           await poserIndex(avecInfo(indexRef.current, indexRef.current.courante, { nom, altitudeRef: altitude, modifieA: new Date().toISOString() }));
           setMessage(t("planche.sb.renommee", { nom }));
         } catch (e) {
@@ -1702,6 +1724,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           const nom = nomAffiche(courante());
           sauvegarde.invalider();
           await supprimerDocument(id);
+          await supprimerJournal(id).catch(() => undefined);
           await basculerVers(sansPlanche(indexRef.current, id));
           setMessage(t("planche.sb.supprimee", { nom }));
         } catch (e) {
@@ -1762,6 +1785,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           aretesLibres: omis.aretesLibres,
           nonEtanches: nonEtanchesDe(maillagesPlanche(m)),
           pasAnnulables: histRef.current.passe.length,
+          chronologie: dernieresEntrees(journalRef.current),
         };
       },
     };

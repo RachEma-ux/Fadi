@@ -6,6 +6,7 @@
  */
 import { LANGUE_INTERFACE, t } from "../messages";
 import { IconeSandbox } from "../pictogrammes/Pictogramme";
+import { formaterDateJournal, type EntreeJournal } from "./journal-planche";
 import type { InfoPlanche } from "./registre-planches";
 import type { EtatSauvegarde } from "./sauvegarde-brouillon";
 
@@ -19,6 +20,8 @@ export interface InformationsPlanche {
   readonly aretesLibres: number;
   readonly nonEtanches: number;
   readonly pasAnnulables: number;
+  /** Les 5 modifications les plus récentes, la plus récente d'abord. */
+  readonly chronologie: readonly EntreeJournal[];
 }
 
 export function formaterTaille(octets: number, langue = LANGUE_INTERFACE): string {
@@ -53,7 +56,7 @@ interface Carte {
   readonly danger?: boolean;
 }
 
-export function InformationsPlancheVue({ info, total, stats, etat, nomAffiche, onFermer, onRenommer, onInspecter, onEnregistrer, onPartager, onSupprimer }: {
+export function InformationsPlancheVue({ info, total, stats, etat, nomAffiche, onFermer, onRenommer, onInspecter, onHistorique, onEnregistrer, onPartager, onSupprimer }: {
   info: InfoPlanche;
   total: number;
   stats: InformationsPlanche;
@@ -62,6 +65,7 @@ export function InformationsPlancheVue({ info, total, stats, etat, nomAffiche, o
   onFermer(): void;
   onRenommer(): void;
   onInspecter(): void;
+  onHistorique(): void;
   onEnregistrer(): void;
   onPartager(): void;
   onSupprimer(): void;
@@ -80,6 +84,28 @@ export function InformationsPlancheVue({ info, total, stats, etat, nomAffiche, o
         </>
       ),
       action: onInspecter,
+    },
+    {
+      cle: "historique",
+      icone: "menuHistorique",
+      bouton: t("planche.sb.info.historique.bouton"),
+      titre: t("planche.sb.info.historique.titre"),
+      corps:
+        stats.chronologie.length === 0 ? (
+          <p>{t("planche.sb.info.historique.vide")}</p>
+        ) : (
+          <>
+            <p>{t("planche.sb.info.historique.texte")}</p>
+            <ol className="planche-info-chronologie">
+              {stats.chronologie.slice(0, 5).map((e, i) => (
+                <li key={`${e.a}-${i}`}>
+                  <time dateTime={e.a}>{formaterDateJournal(e.a)}</time>, {e.auteur}, {e.description}
+                </li>
+              ))}
+            </ol>
+          </>
+        ),
+      action: onHistorique,
     },
     { cle: "gerer", icone: "menuEnregistrer", bouton: t("planche.sb.info.gerer.bouton"), titre: t("planche.sb.info.gerer.titre"), corps: <p>{t(`planche.sauvegarde.${etat}`)}</p>, action: onEnregistrer },
     { cle: "partager", icone: "menuPartager", bouton: t("planche.sb.info.partager.bouton"), titre: t("planche.sb.info.partager.titre"), corps: <p>{t("planche.sb.info.partager.texte")}</p>, action: onPartager },

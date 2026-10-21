@@ -39,6 +39,7 @@ export const ICONES_INTERFACE = {
   menuInformations: "info-circle",
   menuImage: "photo-down",
   menuRetour: "arrow-left",
+  menuHistorique: "history",
 } as const;
 
 export type IconeInterface = keyof typeof ICONES_INTERFACE;

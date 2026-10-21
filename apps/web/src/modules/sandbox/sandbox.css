@@ -2614,3 +2614,11 @@
     grid-template-columns: 6.5rem minmax(0, 1fr);
   }
 }
+.sandbox-planche .planche-info-chronologie {
+  margin: 0.2rem 0 0;
+  padding-left: 1.4rem;
+  color: var(--atelier-texte-faible, #556);
+}
+.sandbox-planche .planche-info-chronologie li + li {
+  margin-top: 0.15rem;
+}

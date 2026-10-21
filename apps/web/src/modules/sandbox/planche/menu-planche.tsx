@@ -257,6 +257,7 @@ export function MenuPlanche({ planches, courante, etat, actions }: { planches: r
           onFermer={() => setInfos(null)}
           onRenommer={() => { setInfos(null); ouvrirVolet("renommer"); }}
           onInspecter={() => setInfos(actions.informations())}
+          onHistorique={() => setInfos(actions.informations())}
           onEnregistrer={() => void executer(() => actions.enregistrer(), false).then(() => setInfos(actions.informations()))}
           onPartager={() => void executer(() => actions.partager(), false)}
           onSupprimer={() => { setInfos(null); ouvrirVolet("supprimer"); }}
