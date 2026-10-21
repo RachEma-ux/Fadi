@@ -2318,9 +2318,9 @@
     gap: 2px;
   }
   .sandbox-planche .planche-haut .planche-menu-bouton {
-    max-width: 4.5rem;
+    max-width: 44px;
   }
-  .sandbox-planche .planche-haut-bouton {
+  .sandbox-planche .planche-haut .planche-haut-bouton {
     min-width: 36px;
     min-height: 44px;
   }
@@ -2328,8 +2328,16 @@
     display: none;
   }
   .sandbox-planche .planche-haut .planche-brouillon {
-    width: clamp(44px, 16vw, 64px);
+    position: absolute;
+    top: calc(48px + 0.5rem);
+    left: 4.25rem;
+    right: 4.25rem;
+    width: auto;
     max-width: none;
+    min-height: 0;
+    padding: 4px;
+    background: var(--flottant-fond);
+    border-radius: 4px;
     overflow-wrap: anywhere;
   }
 }
