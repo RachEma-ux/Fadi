@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Fadi — deploiement borne au SHA 78e9f4a de main : rattrapage de la production (dernier deploiement consigne : 5cf61d1,
-# #149) jusqu'au Studio et au Sandbox (lots 1 a 6, PR #213 a #222). Variante de deploy-pr148-controlled.sh.
+# Fadi — deploiement borne au SHA 300dd6c de main : rattrapage de la production (dernier deploiement consigne : 5cf61d1,
+# #149) jusqu'au Studio et au Sandbox (lots 1 a 6, PR #213 a #222), avec #224 (confirmation d'enregistrement du
+# Sandbox), #225 (recettes Studio) et #223 (ce script). Variante de deploy-pr148-controlled.sh.
 # Usage : sudo bash deploy-rattrapage-controlled.sh --deploy --depuis <SHA actuellement en production>
 # Secrets/journaux/configurations restent sur le serveur dans un dossier root 0700.
 #
@@ -20,13 +21,13 @@ set -Eeuo pipefail
 umask 077
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 export GIT_TERMINAL_PROMPT=0
-TARGET=78e9f4a89e9634189c3bd4fb9ed82576eafe2a64
+TARGET=300dd6cb23c0288f69146730acdde9933faffe16
 APP=/mnt/data/fadi/app
 BASE=/mnt/data/fadi/deployments
 URL=https://www.fadimmo.com
 SWITCHED=0
 RUN=''
-# Evolutions d'exploitation relues pour 5cf61d1 -> 78e9f4a : <fichier> <blob avant> <blob apres>. Un fichier absent de
+# Evolutions d'exploitation relues pour 5cf61d1 -> 300dd6c (identiques a 5cf61d1 -> 78e9f4a) : <fichier> <blob avant> <blob apres>. Un fichier absent de
 # cette liste ne doit pas changer ; un fichier liste ne peut passer que de l'une a l'autre version (ou rester egal).
 #  - Dockerfile : arguments FADI_COMMIT / FADI_BUILD_DATE (route /version) ;
 #  - apps/api/src/server.ts : ecoute sur HOST si la variable est definie (absente ici : comportement inchange).
