@@ -262,6 +262,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const grilleRef = useRef(false);
   grilleRef.current = grille;
   const [recherche, setRecherche] = useState(false);
+  const [ouvrirOutils, setOuvrirOutils] = useState(0);
   const rechercheRef = useRef(false);
   rechercheRef.current = recherche;
   // Panneaux exclusifs, fermés à l'ouverture (comme le Canevas, D-156) : le dessin reste dégagé.
@@ -2412,6 +2413,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   ];
   const boutonOutils = (
     <BoutonOutils
+      ouvrirSignal={ouvrirOutils}
       commandes={commandesListe}
       outilId={outilId}
       raison={raisonDe}
@@ -2581,7 +2583,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         <span />
       </div>
       <div className="planche-recherche-carte">
-        <button type="button" className="outil" onClick={() => setRecherche(true)} title={t("planche.recherche.titre")} aria-label={t("planche.recherche.titre")} data-planche-recherche>
+        <button type="button" className="outil" onClick={() => setOuvrirOutils((n) => n + 1)} title={t("planche.recherche.titre")} aria-label={t("planche.recherche.titre")} data-planche-recherche>
           <IconeSandbox nom="rechercher" className="outil-picto" />
           <span className="outil-libelle" aria-hidden="true">{t("planche.rechercher")}</span>
         </button>
