@@ -2601,6 +2601,7 @@
     display: none;
   }
   .sandbox-planche .planche-colonne .canevas-icone,
+  .sandbox-planche .planche-colonne .canevas-icone:hover,
   .sandbox-planche .planche-colonne .canevas-icone[aria-pressed="true"] {
     flex: 0 0 auto;
     flex-direction: row-reverse;
