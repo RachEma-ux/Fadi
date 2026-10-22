@@ -231,6 +231,7 @@ jobs:
       # single shared Express app (one in-memory rate limiter for the whole
       # file) — see apps/api/.env.test.example for the full explanation.
       AUTH_RATE_LIMIT: "500"
+      AUTH_IDENTIFIER_RATE_LIMIT: "500"
       API_RATE_LIMIT: "5000"
     steps:
       - uses: actions/checkout@v4
@@ -248,14 +249,47 @@ jobs:
         run: npm run test --workspace=@parcours/core-geometry --workspace=@parcours/domain-model --workspace=@parcours/atelier-model --workspace=@parcours/planche-model --workspace=@parcours/sandbox-planche-model --workspace=@parcours/geometry-exact --workspace=@fadi/web
       - name: Garde DB-1/2 — tests simulés sans base
         run: npm run test:db-guard
-      # Garde DB fermée (registre d'autorités vide, DB-3 non autorisé, #157) : les suites API qui exigent une base
-      # attestée sont refusées au chargement. Elles ne sont ni contournées ni déclarées réussies : le contrôle exige
-      # que seule la liste fermée soit refusée, par la garde seule, et que tout le reste passe.
-      - name: Tests API hors base — suites DB-3 déclarées non exécutées
+      # Sans base attestée, les suites API qui l'exigent sont refusées au chargement par la garde : le contrôle exige que
+      # seule la liste fermée soit refusée, par la garde seule, et que tout le reste passe (ni contournement, ni réussite
+      # déclarée).
+      - name: Tests API hors base — suites DB-3 refusées par la garde sans attestation
         run: |
           npx --workspace=@fadi/api vitest run --reporter=default --reporter=json --outputFile=../../api-vitest.json || true
           node --test scripts/check-api-tests-db3.test.mjs
           node scripts/check-api-tests-db3.mjs api-vitest.json
+      # DB-3 (autorisation du propriétaire, Issue #166 ; clé publique `owner-db3-2026-10` enregistrée par le propriétaire) :
+      # base PostGIS jetable de ce job, migrée par le compte d'administration du conteneur ; marqueur protégé, rôle de test
+      # `fadi_app` (D-7, aucun DDL) ; attestation liée au run et au commit, ≤ 1 h, signée avec le secret
+      # FADI_TEST_DB_SIGNING_KEY (jamais affiché). Les 12 suites historiques passent par la garde existante et doivent
+      # réussir. Secret absent (PR externe, secret non créé) : blocage déclaré dans le résumé, suites non exécutées.
+      - name: DB-3 — base jetable attestée, 12 suites historiques par la garde
+        env:
+          FADI_TEST_DB_SIGNING_KEY: ${{ secrets.FADI_TEST_DB_SIGNING_KEY }}
+        run: |
+          if [ -z "$FADI_TEST_DB_SIGNING_KEY" ]; then
+            echo "::warning title=DB-3 non exécuté::secret FADI_TEST_DB_SIGNING_KEY absent — les 12 suites historiques restent refusées par la garde"
+            printf '## DB-3 — non exécuté\nSecret `FADI_TEST_DB_SIGNING_KEY` absent pour ce run : aucune base attestée, les 12 suites historiques ne sont **pas** exécutées.\n' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          set -eo pipefail
+          ADMIN=postgresql://fadi:fadi_ci_password@127.0.0.1:5432
+          DB=fadi_db3_run
+          APP_PW="$(openssl rand -hex 24)"; echo "::add-mask::$APP_PW"
+          psql "$ADMIN/postgres" -v ON_ERROR_STOP=1 -q -c "CREATE DATABASE $DB"
+          psql "$ADMIN/$DB" -v ON_ERROR_STOP=1 -q -c "CREATE EXTENSION IF NOT EXISTS postgis"
+          DATABASE_MIGRATION_URL="$ADMIN/$DB" FADI_APP_DB_PASSWORD="$APP_PW" npm run db:migrate
+          ATT="$RUNNER_TEMP/db3-attestation.json"
+          DB3_ADMIN_URL="$ADMIN/postgres" DB3_DATABASE=$DB DB3_TEST_ROLE=fadi_app DB3_TEST_PASSWORD="$APP_PW" \
+            DB3_ATTESTATION_FILE="$ATT" node scripts/validation/db3-attest.mjs
+          unset FADI_TEST_DB_SIGNING_KEY
+          (cd apps/api && env -u DATABASE_URL \
+            TEST_DATABASE_URL="postgresql://fadi_app:$APP_PW@127.0.0.1:5432/$DB" \
+            TEST_DATABASE_RUN_ID="gh-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" TEST_DATABASE_COMMIT_SHA="$GITHUB_SHA" \
+            TEST_DATABASE_ATTESTATION_FILE="$ATT" \
+            npx vitest run --reporter=default --reporter=json --outputFile=../../api-vitest-db3.json) || true
+          rm -f "$ATT"
+          node scripts/check-api-tests-db3.mjs api-vitest-db3.json --db3 | tee db3.log
+          { echo '## DB-3 — base jetable attestée'; echo '```'; cat db3.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - run: npm run build
       # Le build échoue déjà sur un découpage non conforme (vite.config.ts) ; cette étape en affiche le verdict.
       - name: Découpage des bundles (B.3-06) — carte des morceaux du build

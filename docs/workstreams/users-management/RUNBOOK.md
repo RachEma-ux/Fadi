@@ -143,17 +143,31 @@ si le fournisseur sépare identifiant et expéditeur — le contrôle de démarr
 - `FADI_ENCRYPTION_KEY` : pas de rotation automatique (les secrets TOTP seraient illisibles) ; une rotation exige que
   chaque utilisateur réactive sa double authentification — à planifier comme un chantier.
 
-## 14. Garde DB-3 (D-4) — bloqué, procédure proposée
+## 14. Garde DB-3 (D-4) — base de test jetable attestée en CI
 
-Les 12 suites API historiques exigent une base attestée par une autorité du registre fermé
-`apps/api/src/testing/approved-test-authorities.ts` (vide). Les brancher sur le PostGIS éphémère de la CI exige :
+Autorisation du propriétaire : Issue #166 (« J'autorise DB-3 : base de test jetable en CI »). Mise en place :
 
-1. une paire de clés Ed25519 générée **par l'administration du dépôt**, hors de toute session IA ;
-2. la clé privée déposée en secret GitHub (`TEST_DB_ATTESTATION_KEY`), la clé publique ajoutée au registre par une PR
-   revue (le registre n'accepte aucune clé par variable d'environnement, par conception) ;
-3. une étape de CI qui provisionne la base jetable (rôle de test non super-utilisateur, schéma `fadi_test_meta`
-   inaltérable par ce rôle, marqueur du run), signe l'attestation du run et lance les suites avec `fadi_app` (D-7) ;
-4. la revue humaine exigée par le plan (🛑).
+1. **Clé** : paire Ed25519 générée **par le propriétaire**, hors de toute session IA. Clé publique enregistrée par le
+   propriétaire dans `apps/api/src/testing/approved-test-authorities.ts` (entrée `owner-db3-2026-10`, commit `bdeeb73`) ;
+   le registre n'accepte aucune clé par variable d'environnement, par conception.
+2. **Secret** : clé privée (PEM PKCS#8, ou ce PEM encodé en base64) dans le secret GitHub Actions
+   `FADI_TEST_DB_SIGNING_KEY`. Jamais affichée ; `scripts/validation/db3-attest.mjs` vérifie que la clé publique dérivée
+   du secret est **exactement** celle du registre.
+3. **CI** (job `validate`, étape « DB-3 — base jetable attestée ») :
+   - base `fadi_db3_run` créée dans le service PostGIS éphémère du job, migrée par le compte d'administration du
+     conteneur (rôles D-7 créés, mot de passe aléatoire masqué pour `fadi_app`) ;
+   - marqueur `fadi_test_meta.provisioning` créé par l'administrateur, lisible mais non modifiable par le rôle de test
+     (vérifié) ; rôle de test `fadi_app` sans privilège d'administration (vérifié) — il reçoit, dans cette base jetable
+     seulement, TRUNCATE pour la remise à zéro des suites ;
+   - attestation canonique liée au run (`gh-<run>-<tentative>`) et au commit, valable 55 min, signée puis supprimée du
+     runner après les tests ;
+   - les 12 suites historiques passent par la garde existante (aucune vérification retirée) ; `check-api-tests-db3.mjs
+     --db3` exige qu'elles **s'exécutent et réussissent**.
+4. **Secret absent** (PR externe, secret non créé) : l'étape le déclare (avertissement et résumé « DB-3 — non exécuté »)
+   et les suites restent refusées par la garde ; rien n'est simulé.
+5. **Rotation** : nouvelle paire générée par le propriétaire → PR qui remplace l'entrée du registre (revue humaine) →
+   mise à jour du secret ; l'ancienne clé ne doit plus figurer au registre.
 
-Tant que ce n'est pas fait, les vérifications sur base réelle du chantier passent par `scripts/validation/users-migration-check.mjs`
-(job `validate`) et `apps/web/e2e/comptes-api.mjs` (job `e2e`, tranche `complements`), hors de la garde Vitest.
+Correctif de la garde nécessaire au premier essai réel : `IDENTITY_SQL` lisait `inet_server_addr()::text`, qui ajoute le
+masque (`172.18.0.2/32`), alors que l'adresse attestée est une IP nue — `host(inet_server_addr())` ; la comparaison reste
+stricte (tests de la garde : 173 verts).

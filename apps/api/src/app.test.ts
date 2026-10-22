@@ -97,7 +97,7 @@ describe("hébergement : l'API sert l'application construite (WEB_DIST)", () => 
 });
 
 describe("auth", () => {
-  it("rejects a password shorter than 8 characters", async () => {
+  it("rejects a password shorter than 12 characters (D-6, gestion des comptes)", async () => {
     const res = await agent().post("/auth/register").send({ email: "a@example.com", password: "short" });
     expect(res.status).toBe(400);
   });
@@ -126,7 +126,8 @@ describe("auth", () => {
 
   it("rejects a duplicate registration with a generic error", async () => {
     await registerAndLogin("bob@example.com");
-    const res = await agent().post("/auth/register").send({ email: "bob@example.com", password: "whatever123" });
+    // Mot de passe conforme (12 caractères au moins, D-6) : le refus vient bien du doublon, pas de la politique.
+    const res = await agent().post("/auth/register").send({ email: "bob@example.com", password: "whatever-12345" });
     expect(res.status).toBe(409);
   });
 
@@ -1874,7 +1875,11 @@ describe("Partage du projet — membres, rôles vérifiés côté serveur", () =
     const pid = (await owner.post("/examples/p118-exemple-complet/import")).body.id as string;
 
     // Invitation : compte inexistant, propriétaire lui-même, adresse normalisée, rôle inconnu.
-    expect((await owner.post(`/projects/${pid}/members`).send({ email: "nobody@example.com", role: "lecteur" })).status).toBe(404);
+    // Adresse sans compte (gestion des comptes, UM-3) : invitation nominative en attente, aucun compte ni membre créé.
+    const pending = await owner.post(`/projects/${pid}/members`).send({ email: "nobody@example.com", role: "lecteur" });
+    expect(pending.status).toBe(202);
+    expect(pending.body.invitation).toMatchObject({ email: "nobody@example.com", status: "pending", projectRole: "lecteur" });
+    expect((await agent().post("/auth/login").send({ email: "nobody@example.com", password: "correct-horse-battery" })).status).toBe(401);
     expect((await owner.post(`/projects/${pid}/members`).send({ email: "share-owner@example.com", role: "lecteur" })).body).toMatchObject({ error: "sharing_rule" });
     expect((await owner.post(`/projects/${pid}/members`).send({ email: "share-reader@example.com", role: "chef" })).status).toBe(400);
     const invited = await owner.post(`/projects/${pid}/members`).send({ email: "  Share-Reader@Example.com ", role: "lecteur" });

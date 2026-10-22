@@ -2,7 +2,7 @@
 
 ## À faire
 
-- [ ] UM-P6-DB3 — Enrôler une autorité d'attestation et brancher les 12 suites historiques sur PostGIS éphémère (Issue : #253) — bloqué, voir ci-dessous.
+- [ ] UM-P6-DB3 — 12 suites historiques sur PostGIS éphémère attesté : clé enregistrée par le propriétaire, étape CI en place, résultat à constater (Issue : #253).
 - [ ] UM-ACC — Acceptation du maître d'ouvrage et fusion de la PR (Issue : #253).
 
 ## En cours
@@ -22,8 +22,7 @@
 
 ## Bloqué
 
-- UM-P6-DB3 : la clé privée de l'autorité d'attestation doit vivre hors dépôt (secret GitHub) ; seule l'administration
-  du dépôt peut la créer et décider de l'enrôlement (UM-11). Déblocage : procédure dans RUNBOOK.md, § Garde DB-3.
+- Aucun blocage déclaré ; DB-3 débloqué par le propriétaire (UM-17), en vérification.
 
 ## Critères de sortie
 

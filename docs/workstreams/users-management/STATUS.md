@@ -6,7 +6,7 @@ Mis à jour : 2026-10-22 (UTC).
 
 **Implémenté et vérifié localement — en attente de CI et de revue humaine.** Phases 0 à 6 et amendement D-7 livrés
 sur la branche `ccr-266c1e83-7780ml` (une seule PR, non fusionnée, UM-12). **Rien n'est accepté ni déployé.**
-Bloqué : DB-3 (UM-11). Points d'arrêt 🛑 2, D7-final et final : revue du maître d'ouvrage sur la PR.
+DB-3 : en cours de vérification en CI (UM-17). Points d'arrêt 🛑 2, D7-final et final : revue du maître d'ouvrage sur la PR.
 
 ## Faits vérifiés
 
@@ -97,7 +97,7 @@ Bloqué : DB-3 (UM-11). Points d'arrêt 🛑 2, D7-final et final : revue du ma�
 ## Points ouverts
 
 - UM-1 : chantier organisations / participation / revue externe, à ouvrir par le maître d'ouvrage.
-- UM-11 : DB-3 bloqué, procédure dans RUNBOOK §14.
+- UM-17 : DB-3 mis en place (clé du propriétaire, secret `FADI_TEST_DB_SIGNING_KEY`) ; résultat réel des 12 suites à constater en CI — l'existence du secret n'est vérifiable que par ce passage.
 - UM-15 : le prochain déploiement exige `FADI_APP_DB_PASSWORD` dans `.env.deploy` (RUNBOOK §2–4).
 - Annexe C (Infomaniak, DNS, clé de chiffrement, premier admin) : hors code.
 - CI de la PR #255 : **verte** sur `81af007` (run CI 39840078841 et 5 autres workflows, 2026-10-22 19:42 UTC). Le premier passage (`cf3d56f`) échouait sur la tranche `parcours` : le scénario attendait l'ancien refus du partage vers une adresse sans compte, puis des compteurs de cache invalidés par la purge sur 401. Corrigé dans `81af007`.

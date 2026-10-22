@@ -1,9 +1,12 @@
 import type { Pool, PoolClient } from "pg";
 import { capturedTestTarget, refuse, TestDatabaseRefusal, type AuthorizedTestTarget, type TestConnectionOptions } from "./test-target.js";
 
-/** Only SELECTs. Provisioning owns this pre-existing marker; this code never creates it. */
+/**
+ * Only SELECTs. Provisioning owns this pre-existing marker; this code never creates it.
+ * `host()` (not `::text`, which appends the netmask, e.g. `172.18.0.2/32`): the attested `serverAddress` is a bare IP.
+ */
 export const IDENTITY_SQL = `SELECT pg_catalog.current_database() AS database, current_user AS role, session_user AS session_role,
-  pg_catalog.inet_server_addr()::text AS server_address, pg_catalog.inet_server_port() AS server_port, pg_catalog.pg_backend_pid() AS backend_pid,
+  pg_catalog.host(pg_catalog.inet_server_addr()) AS server_address, pg_catalog.inet_server_port() AS server_port, pg_catalog.pg_backend_pid() AS backend_pid,
   pg_catalog.current_setting('server_version_num') AS server_version, public.postgis_lib_version() AS postgis_version,
   r.rolsuper AS superuser, r.rolcreatedb AS create_db, r.rolcreaterole AS create_role,
   r.rolreplication AS replication, r.rolbypassrls AS bypass_rls,

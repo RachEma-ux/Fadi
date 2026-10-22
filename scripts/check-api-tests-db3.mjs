@@ -11,6 +11,10 @@
  * Exemple :
  *   npx --workspace=@fadi/api vitest run --reporter=json --outputFile=../../api-vitest.json
  *   node scripts/check-api-tests-db3.mjs api-vitest.json
+ *
+ * Mode `--db3` (base jetable attestée par la clé du propriétaire, `scripts/validation/db3-attest.mjs`) : chaque suite
+ * de la liste doit alors **s'exécuter et réussir** (au moins un test, aucun échec) et aucune suite n'est refusée.
+ *   node scripts/check-api-tests-db3.mjs api-vitest-db3.json --db3
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -67,6 +71,45 @@ export function checkReport(report, pending = DB3_PENDING_SUITES) {
   for (const name of refused) if (!expected.has(name)) errors.push(`${name} : refusée par la garde mais absente de la liste DB-3 — à examiner`);
   for (const name of pending) if (!refused.includes(name)) errors.push(`${name} : attendue refusée (DB-3 fermé) mais ne l'est pas — réviser la liste`);
   return { errors, refused, passedTests };
+}
+
+/** DB-3 ouvert : toutes les suites tournent et réussissent, celles de la liste comprises ; aucun refus de la garde. */
+export function checkExecutedReport(report, pending = DB3_PENDING_SUITES) {
+  const errors = [];
+  const executed = [];
+  let passedTests = 0;
+  if (!report || !Array.isArray(report.testResults) || report.testResults.length === 0) {
+    return { errors: ['rapport Vitest vide ou illisible'], executed, passedTests };
+  }
+  for (const suite of report.testResults) {
+    const name = relative(suite.name);
+    const assertions = Array.isArray(suite.assertionResults) ? suite.assertionResults : [];
+    const failed = assertions.filter((a) => a.status === 'failed').map((a) => a.fullName ?? a.title);
+    const ok = assertions.filter((a) => a.status === 'passed').length;
+    passedTests += ok;
+    if (suite.status !== 'passed' || failed.length) {
+      const message = String(suite.message ?? '');
+      const why = message.includes('Test database refused') ? `refusée par la garde (${message.split('\n')[0]})` : `échec : ${failed.join(' ; ') || message.split('\n')[0] || suite.status}`;
+      errors.push(`${name} : ${why}`);
+    } else if (ok === 0) {
+      errors.push(`${name} : aucune vérification exécutée`);
+    }
+    if (pending.includes(name) && suite.status === 'passed' && !failed.length && ok > 0) executed.push(name);
+  }
+  for (const name of pending) if (!executed.includes(name)) errors.push(`${name} : suite DB-3 non exécutée ou en échec`);
+  return { errors, executed, passedTests };
+}
+
+if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href && process.argv.includes('--db3')) {
+  let report;
+  try { report = JSON.parse(fs.readFileSync(path.resolve(process.argv[2]), 'utf8')); } catch (error) { console.error(`rapport illisible : ${error.message}`); process.exit(2); }
+  const { errors, executed, passedTests } = checkExecutedReport(report);
+  console.log(`API (DB-3, base jetable attestée) : ${passedTests} test(s) réussis.`);
+  console.log(`Suites historiques exécutées et réussies : ${executed.length} / ${DB3_PENDING_SUITES.length}`);
+  for (const name of executed) console.log(`  ✓ ${name}`);
+  if (errors.length) { for (const e of errors) console.error(`✗ ${e}`); process.exit(1); }
+  console.log('✓ les 12 suites historiques tournent sur la base jetable attestée et réussissent.');
+  process.exit(0);
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {

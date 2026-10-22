@@ -73,7 +73,7 @@ ils ne réécrivent aucune décision D-x et restent révisables par lui.
 - **UM-10 — Liste de mots de passe compromis.** Liste NCSC 100k (SecLists, MIT) filtrée aux entrées de 12 à 128
   caractères (les plus courtes sont déjà refusées par la longueur) : 1 259 entrées, source et empreinte en tête du
   fichier `apps/api/src/data/security/common-passwords.txt`.
-- **UM-11 — Garde DB-1/2 (Phase 6, tâche 2).** L'enrôlement d'une autorité d'attestation dans
+- **UM-11 — Garde DB-1/2 (Phase 6, tâche 2)** — *remplacé par UM-17*. L'enrôlement d'une autorité d'attestation dans
   `approved-test-authorities.ts` exige une clé privée hors dépôt (secret GitHub) que seule l'administration du dépôt peut
   créer : **bloqué**, en attente du maître d'ouvrage (procédure dans [RUNBOOK.md](RUNBOOK.md)). Les contrôles de ce
   chantier sur base réelle passent par des scénarios HTTP (API construite + PostGIS de la CI), hors garde Vitest.
@@ -102,3 +102,9 @@ ils ne réécrivent aucune décision D-x et restent révisables par lui.
 - **UM-16 — Journal d'audit et rétention.** Le déclencheur append-only laisse le seul rôle `fadi_retention` modifier
   `actor_id`, `ip`, `metadata` (droit de colonne + contrôle du déclencheur : action, cible et date inchangées) ; la
   suppression reste refusée à tous. La tâche de rétention elle-même appartient au plan console (non engagé).
+- **UM-17 — DB-3 débloqué par le propriétaire (2026-10-22).** Autorisation : Issue #166 (commentaire du compte
+  propriétaire). Clé publique Ed25519 générée et enregistrée **par le propriétaire** (commit `bdeeb73`), confirmée par lui
+  en conversation ; secret `FADI_TEST_DB_SIGNING_KEY` (nom choisi par le propriétaire). Mise en œuvre : RUNBOOK §14.
+  Remplace le blocage UM-11. Les gardes et les assertions sont conservées ; trois données ou attentes de `app.test.ts`
+  sont alignées sur les règles déjà décidées (mot de passe de 12 caractères, D-6 ; invitation d'une adresse sans compte,
+  UM-3).

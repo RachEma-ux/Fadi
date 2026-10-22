@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { checkReport, DB3_PENDING_SUITES, GUARD_REFUSAL } from './check-api-tests-db3.mjs';
+import { checkExecutedReport, checkReport, DB3_PENDING_SUITES, GUARD_REFUSAL } from './check-api-tests-db3.mjs';
 
 const root = '/w/Fadi/apps/api/';
 const refusedSuite = (name) => ({ name: root + name, status: 'failed', message: `${GUARD_REFUSAL}\n at refuse`, assertionResults: [] });
@@ -38,4 +38,26 @@ test('une suite de la liste qui se met à tourner oblige à réviser la liste', 
 
 test('rapport vide refusé', () => {
   assert.deepEqual(checkReport({ testResults: [] }).errors, ['rapport Vitest vide ou illisible']);
+});
+
+test('DB-3 ouvert : les 12 suites exécutées et réussies passent', () => {
+  const r = checkExecutedReport({ testResults: [...DB3_PENDING_SUITES.map((n) => passedSuite(n)), passedSuite('src/lib/history.test.ts', 3)] });
+  assert.deepEqual(r.errors, []);
+  assert.equal(r.executed.length, DB3_PENDING_SUITES.length);
+});
+
+test('DB-3 ouvert : une suite encore refusée par la garde est une erreur', () => {
+  const rows = [...DB3_PENDING_SUITES.slice(1).map((n) => passedSuite(n)), refusedSuite(DB3_PENDING_SUITES[0])];
+  const errors = checkExecutedReport({ testResults: rows }).errors.join('\n');
+  assert.match(errors, /refusée par la garde/);
+  assert.match(errors, /non exécutée ou en échec/);
+});
+
+test('DB-3 ouvert : un test en échec ou une suite vide est une erreur', () => {
+  const broken = { ...passedSuite(DB3_PENDING_SUITES[0]), status: 'failed', assertionResults: [{ status: 'failed', fullName: 'casse' }] };
+  const empty = { ...passedSuite(DB3_PENDING_SUITES[1]), assertionResults: [] };
+  const rows = [broken, empty, ...DB3_PENDING_SUITES.slice(2).map((n) => passedSuite(n))];
+  const errors = checkExecutedReport({ testResults: rows }).errors.join('\n');
+  assert.match(errors, /casse/);
+  assert.match(errors, /aucune vérification/);
 });
