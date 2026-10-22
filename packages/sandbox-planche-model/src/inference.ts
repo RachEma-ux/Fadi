@@ -212,6 +212,8 @@ export interface Inference {
   readonly direction?: Vec3;
   /** Origine de la ligne pointillée (départ ou point de référence). */
   readonly origineLigne?: Vec3;
+  /** Ligne : le segment en cours a la même longueur que l'arête de référence (point ajusté à cette longueur). */
+  readonly memeLongueur?: boolean;
 }
 
 // ————————————————————————————————————————————————————————————— Outils
@@ -404,6 +406,8 @@ interface Ligne {
   readonly libelle?: Libelle;
   /** Demi-droite : seul le côté de `direction` à partir de `origine` compte (prolongement d'une arête). */
   readonly demi?: boolean;
+  /** Ligne issue d'un point de référence (« depuis le point ») : moins prioritaire que les lignes du point de départ. */
+  readonly depuisPoint?: boolean;
 }
 
 function directionPerpendiculaire(ref: NonNullable<EntreeInference["areteReference"]>, axes: AxesModele): Vec3 {
@@ -434,14 +438,14 @@ function lignes(e: EntreeInference, axes: AxesModele, mode: ModeAlt): Ligne[] {
   if (mode === "tout") {
     for (const p of e.pointsReference ?? []) {
       r.push(
-        { type: "axe-x", origine: p, direction: axes.x, libelle: LIBELLE_DEPUIS_POINT },
-        { type: "axe-y", origine: p, direction: axes.y, libelle: LIBELLE_DEPUIS_POINT },
-        { type: "axe-z", origine: p, direction: axes.z, libelle: LIBELLE_DEPUIS_POINT },
+        { type: "axe-x", origine: p, direction: axes.x, libelle: LIBELLE_DEPUIS_POINT, depuisPoint: true },
+        { type: "axe-y", origine: p, direction: axes.y, libelle: LIBELLE_DEPUIS_POINT, depuisPoint: true },
+        { type: "axe-z", origine: p, direction: axes.z, libelle: LIBELLE_DEPUIS_POINT, depuisPoint: true },
       );
       // Prolonger une arête : demi-droite qui prolonge, au-delà de l'extrémité marquée, chaque arête qui y aboutit.
       for (const a of e.geometrie.aretes) {
         const autre = dist(a.a, p) <= TOL ? a.b : dist(a.b, p) <= TOL ? a.a : undefined;
-        if (autre && dist(autre, p) > TOL) r.push({ type: "prolonger", origine: p, direction: normalize(sub(p, autre)), demi: true });
+        if (autre && dist(autre, p) > TOL) r.push({ type: "prolonger", origine: p, direction: normalize(sub(p, autre)), demi: true, depuisPoint: true });
       }
     }
   }
@@ -483,7 +487,9 @@ export function inferer(e: EntreeInference): Inference {
     if (dist(p, l.origine) < TOL) continue;
     if (l.demi && dot(sub(p, l.origine), l.direction) <= 0) continue;
     const d = c.ecart(p);
-    if (d <= e.tolerance && (!lin || d < lin.d - 1e-12)) lin = { l, p, d };
+    // Les lignes du point de départ (axes, parallèle, perpendiculaire…) l'emportent sur celles d'un point de référence.
+    const meilleur = !lin || (lin.l.depuisPoint === true && l.depuisPoint !== true) || (!!lin.l.depuisPoint === !!l.depuisPoint && d < lin.d - 1e-12);
+    if (d <= e.tolerance && meilleur) lin = { l, p, d };
   }
   if (lin) {
     return construire(lin.l.type, lin.p, {

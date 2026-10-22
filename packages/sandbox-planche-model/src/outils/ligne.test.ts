@@ -333,3 +333,21 @@ describe("Ligne — anneaux de référence (SketchUp)", () => {
     expect(a(4, 0)).toBe(true);
   });
 });
+
+describe("Ligne — même longueur que l'arête de référence", () => {
+  it("le point est ajusté à la longueur de l'arête survolée et signalé", () => {
+    // Arête de longueur 4 : (0,2) → (4,2). Départ en (0,-3) ; le curseur atteint ≈ 4 m vers la droite.
+    const m = ajouterSegment(modeleVide(), v3(0, 2, 0), v3(4, 2, 0)).modele;
+    const p = new Pilote(machineLigne, m).envoyer(survol(2, 2), clic(0, -3), survol(2, 2), survol(3.97, -3.02));
+    const i = (p.etat as EtatLigne).inference;
+    expect(i?.memeLongueur).toBe(true);
+    expect(Math.hypot((i?.point.x ?? 0) - 0, (i?.point.y ?? 0) + 3)).toBeCloseTo(4, 6);
+    expect(machineLigne.vue(p.etat as EtatLigne, p.ctx).egaliteLongueur).toBeDefined();
+  });
+
+  it("loin de la longueur de l'arête : aucune indication", () => {
+    const m = ajouterSegment(modeleVide(), v3(0, 2, 0), v3(4, 2, 0)).modele;
+    const p = new Pilote(machineLigne, m).envoyer(survol(2, 2), clic(0, -3), survol(2, 2), survol(2.5, -3.02));
+    expect((p.etat as EtatLigne).inference?.memeLongueur).toBeUndefined();
+  });
+});

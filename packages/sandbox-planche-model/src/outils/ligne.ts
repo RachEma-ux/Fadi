@@ -15,6 +15,7 @@
 import { type Modele, ajouterSegment } from "../geometrie-libre.js";
 import {
   type Inference,
+  type Libelle,
   type ModeAlt,
   type Verrou,
   COULEURS,
@@ -70,7 +71,30 @@ function verrouCourant(e: EtatLigne): Verrou | undefined {
   return e.verrouMaj ?? e.fleche?.verrou ?? undefined;
 }
 
+const LIBELLE_MEME_LONGUEUR: Libelle = { fr: "Même longueur que l'arête", en: "Same length as edge" };
+const TYPES_POINT = new Set(["extremite", "milieu", "intersection", "centre", "origine"]);
+
+/**
+ * Même longueur : quand le segment en cours atteint la longueur de l'arête de référence (la dernière survolée), le point
+ * est ajusté à cette longueur exacte, dans la direction courante, et signalé. Jamais sur un point accroché ni sur une
+ * ligne qui ne passe pas par le départ (guide « depuis le point »), pour ne pas défaire l'inférence.
+ */
+function avecMemeLongueur(e: EtatLigne, i: Inference, tolerance: number): Inference {
+  const ref = e.areteReference;
+  if (!ref || e.etape !== 2 || !e.depart || i.verrouillee || TYPES_POINT.has(i.type)) return i;
+  if (i.origineLigne && dist(i.origineLigne, e.depart) > TOL) return i;
+  const L = dist(ref.a, ref.b);
+  const v = sub(i.point, e.depart);
+  const d = len(v);
+  if (L < TOL || d < TOL || Math.abs(d - L) > tolerance * 0.8) return i;
+  return { ...i, point: add(e.depart, scale(normalize(v), L)), libelle: { fr: `${i.libelle.fr ? `${i.libelle.fr} · ` : ""}${LIBELLE_MEME_LONGUEUR.fr}`, en: `${i.libelle.en ? `${i.libelle.en} · ` : ""}${LIBELLE_MEME_LONGUEUR.en}` }, memeLongueur: true };
+}
+
 function inferenceLigne(e: EtatLigne, ctx: ContexteOutil, r: Rayon, tolerance: number): Inference {
+  return avecMemeLongueur(e, inferenceLigneBrute(e, ctx, r, tolerance), tolerance);
+}
+
+function inferenceLigneBrute(e: EtatLigne, ctx: ContexteOutil, r: Rayon, tolerance: number): Inference {
   if (e.etape === 2 && e.depart && e.fleche && e.fleche.verrou === null && !e.verrouMaj) {
     // ↓ sans arête de référence : longueur bloquée à 0,00 m (obs).
     return { point: e.depart, type: "parallele", couleur: COULEURS.parallele, libelle: LIBELLE_LIGNE_CONTRAINTE, verrouillee: true };
@@ -298,6 +322,9 @@ export const machineLigne: MachineOutil<EtatLigne> = {
       },
       inference: i,
       ...(angle ? { angleDroit: angle } : {}),
+      ...(i?.memeLongueur && etat.areteReference && etat.depart
+        ? { egaliteLongueur: { a: [etat.areteReference.a, etat.areteReference.b] as const, b: [etat.depart, i.point] as const } }
+        : {}),
       ...(etat.etape === 2 && etat.acquis.length > 0 ? { references: etat.acquis } : {}),
       apercu: { lignes: etat.etape === 2 && etat.depart && i ? [[etat.depart, i.point]] : [], faces: [] },
       selection: ctx.selection,

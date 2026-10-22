@@ -199,6 +199,13 @@ describe("inférences linéaires depuis le départ", () => {
     expect(r.origineLigne).toEqual(v3(1, 3, 0));
   });
 
+  it("les lignes du départ (perpendiculaire…) l'emportent sur un guide « depuis le point » plus proche", () => {
+    const ref = { a: v3(0, 0, 0), b: v3(1, 1, 0) };
+    // Le curseur est pile sur l'axe vertical d'un point de référence, mais aussi (un peu moins exactement) perpendiculaire.
+    const r = inferer(depuis(v3(8, 12.04, 0), { areteReference: ref, pointsReference: [v3(8, 40, 0)] }));
+    expect(r.type).toBe("perpendiculaire");
+  });
+
   it("priorité : point > arête > axe > face", () => {
     // Le curseur est sur l'axe rouge depuis le départ ET sur une extrémité : l'extrémité gagne.
     expect(inferer(pt(v3(4.02, 0, 0), { depart: v3(-2, 0, 0) })).type).toBe("extremite");

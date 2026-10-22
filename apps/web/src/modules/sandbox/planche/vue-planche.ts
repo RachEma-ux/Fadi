@@ -706,13 +706,33 @@ export class VuePlanche {
       // Ligne d'inférence pointillée (depuis le point de départ ou un point de référence).
       const inf = this.inference;
       if (inf?.origineLigne) {
-        // Pointillé : couleur de l'axe (rouge / vert / bleu) ou magenta pour parallèle / perpendiculaire ; noir sinon.
+        // Pointillé persistant : prolongé de 60 px au-delà du curseur et en deçà de son origine, pour rester visible même quand
+        // le segment en cours prend la couleur de l'axe et le recouvre. Couleur de l'axe (ou magenta) ; noir sinon.
         const couleurPointille = INFERENCES_LINEAIRES.has(inf.type) ? inf.couleur : "#000000";
         const mpp = this.metresParPixel(inf.point);
-        const ligne = new THREE.Line(new THREE.BufferGeometry().setFromPoints([v3(inf.origineLigne), v3(inf.point)]), new THREE.LineDashedMaterial({ color: couleurPointille, dashSize: mpp * 2, gapSize: mpp * 4, depthTest: false }));
+        const dir = inf.direction ? v3(inf.direction).normalize() : v3(inf.point).sub(v3(inf.origineLigne)).normalize();
+        const marge = dir.clone().multiplyScalar(mpp * 60);
+        const debut = v3(inf.origineLigne).sub(marge);
+        const fin = v3(inf.point).add(marge);
+        const ligne = new THREE.Line(new THREE.BufferGeometry().setFromPoints([debut, fin]), new THREE.LineDashedMaterial({ color: couleurPointille, dashSize: mpp * 2, gapSize: mpp * 4, depthTest: false }));
         ligne.computeLineDistances();
+        ligne.renderOrder = 9;
         this.groupeApercu.add(ligne);
         this.ajouterPastille(inf.origineLigne);
+      }
+      // Même longueur : un trait de repère au milieu de l'arête de référence et du segment en cours.
+      if (vue.egaliteLongueur) {
+        for (const [a, b] of [vue.egaliteLongueur.a, vue.egaliteLongueur.b]) {
+          const A = v3(a);
+          const B = v3(b);
+          const M = A.clone().add(B).multiplyScalar(0.5);
+          const u = B.clone().sub(A).normalize();
+          const vers = this.camera.position.clone().sub(M).normalize();
+          const n = new THREE.Vector3().crossVectors(u, vers).normalize().multiplyScalar(this.metresParPixel(M) * 13);
+          const tic = new THREE.Line(new THREE.BufferGeometry().setFromPoints([M.clone().sub(n), M.clone().add(n)]), new THREE.LineBasicMaterial({ color: "#ff8c00", depthTest: false }));
+          tic.renderOrder = 11;
+          this.groupeApercu.add(tic);
+        }
       }
       const trace = vue.apercu.lignes.find((l) => l.length === 2);
       if (trace && vue.inference) this.ajouterPastille(trace[0] as Vec3);
