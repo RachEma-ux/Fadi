@@ -36,7 +36,7 @@ const COULEUR_SURVOL = "#5b8fe8";
 const COULEUR_FOND = "#f4f6f8";
 const COULEUR_SOL = "#e4e3de";
 /** Aperçu noir hors inférence ; couleur de l'axe ou de la direction quand une inférence linéaire est active (§5.1). */
-const INFERENCES_LINEAIRES = new Set(["axe-x", "axe-y", "axe-z", "parallele", "perpendiculaire", "tangente"]);
+const INFERENCES_LINEAIRES = new Set(["axe-x", "axe-y", "axe-z", "parallele", "perpendiculaire", "perpendiculaire-face", "prolonger", "tangente"]);
 
 export interface RappelsVuePlanche {
   /** Événement pointeur destiné à l'outil actif. */

@@ -161,6 +161,31 @@ describe("inférences linéaires depuis le départ", () => {
     expect(q.libelle.en).toBe("Perpendicular to Edge");
   });
 
+  it("Prolonger l'arête : demi-droite magenta au-delà de l'extrémité marquée, jamais en deçà", () => {
+    const g: GeometrieVisible = { aretes: [{ id: "d", a: v3(0, 0, 0), b: v3(1, 1, 0) }], faces: [], centres: [] };
+    const sur = inferer({ point: v3(3, 3.04, 0), tolerance: 0.1, geometrie: g, pointsReference: [v3(1, 1, 0)] });
+    expect(sur.type).toBe("prolonger");
+    expect(sur.couleur).toBe("#ff00ff");
+    expect(sur.libelle.en).toBe("Extend Edge");
+    const en_deca = inferer({ point: v3(-2, -1.96, 0), tolerance: 0.1, geometrie: g, pointsReference: [v3(1, 1, 0)] });
+    expect(en_deca.type).not.toBe("prolonger");
+  });
+
+  it("Perpendiculaire à la face : depuis le départ, suivant la normale de la face visée", () => {
+    const n = v3(0, -0.6, 0.8);
+    const g: GeometrieVisible = {
+      aretes: [],
+      faces: [{ id: "f", exterieur: [v3(0, 0, 0), v3(4, 0, 0), v3(4, 4, 3), v3(0, 4, 3)], trous: [], normale: n }],
+      centres: [],
+    };
+    const r = inferer({ point: v3(2.5, 0.8, 0.6), tolerance: 0.1, geometrie: g, depart: v3(2.5, 0.5, 1) });
+    expect(r.type).toBe("perpendiculaire-face");
+    expect(r.couleur).toBe("#ff00ff");
+    expect(r.libelle.en).toBe("Perpendicular to Face");
+    const sans = inferer({ point: v3(2.5, 0.8, 0.6), tolerance: 0.1, geometrie: vide, depart: v3(2.5, 0.5, 1) });
+    expect(sans.type).not.toBe("perpendiculaire-face");
+  });
+
   it("tangente au sommet : cyan", () => {
     const r = inferer(depuis(v3(12, 12.03, 0), { tangenteDepart: v3(1, 1, 0) }));
     expect(r.type).toBe("tangente");

@@ -90,4 +90,12 @@ describe("Arc par le centre (§4.10)", () => {
     expect(p.vue().consigne).toBe(etape("arc", 0).consigne);
     expect(p.vue().apercu.lignes).toHaveLength(0);
   });
+
+  it("inférence « Demi-cercle » : balayage de 90°, 180° ou 270° accroché, infobulle « Half Circle »", () => {
+    const p = partie(MACHINE_ARC).jouer(clic(0, 0), clic(1, 0), survol(Math.cos(Math.PI * 0.997), Math.sin(Math.PI * 0.997)));
+    expect(p.vue().inference?.libelle.en).toBe("Half Circle");
+    expect(p.vue().mesures?.valeur).toBe("180.0");
+    const q = partie(MACHINE_ARC).jouer(clic(0, 0), clic(1, 0), survol(Math.cos(1), Math.sin(1)));
+    expect(q.vue().inference?.libelle.en ?? "").not.toBe("Half Circle");
+  });
 });

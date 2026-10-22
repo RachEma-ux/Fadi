@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ajouterRectangle, modeleVide } from "../geometrie-libre.js";
+import { ajouterRectangle, ajouterSegment, modeleVide } from "../geometrie-libre.js";
 import { v3 } from "../vecteur.js";
 import { etape } from "./commun-formes.js";
 import { machineEchelle, poignees } from "./echelle.js";
@@ -137,5 +137,40 @@ describe("Échelle — sélection plate", () => {
     expect(p.vue().options?.[0]?.valeur).toBe("piece");
     p.configurer("repere", "monde");
     expect(p.vue().options?.[0]?.valeur).toBe("monde");
+  });
+});
+
+describe("Échelle — inférences", () => {
+  const avecCible = () => {
+    let m = ajouterRectangle(modeleVide(), v3(0, 0, 0), v3(4, 0, 0), v3(0, 3, 0)).modele;
+    m = ajouterSegment(m, v3(10, 0, 0), v3(10, 1, 0)).modele;
+    return { m, ids: Object.keys(m.racine.faces) };
+  };
+
+  it("la poignée tirée s'accroche à une extrémité de la géométrie existante : facteur exact, marqueur « Endpoint »", () => {
+    const { m, ids } = avecCible();
+    const p = partie(machineEchelle, m, ids).jouer(clicVers(v3(4, 1.5, 0)), survolVers(v3(10 + 0.004, 0.004, 0)));
+    expect(p.etat.facteurs.x).toBeCloseTo(2.5, 9);
+    expect(p.vue().inference?.type).toBe("extremite");
+    expect(p.vue().inference?.libelle.en).toBe("Endpoint");
+  });
+
+  it("le clic applique le facteur accroché", () => {
+    const { m, ids } = avecCible();
+    const p = partie(machineEchelle, m, ids).jouer(clicVers(v3(4, 1.5, 0)), clicVers(v3(10 + 0.004, 0.004, 0)));
+    expect(emprise(p.modele).max.x).toBeCloseTo(10, 9);
+  });
+
+  it("hors accrochage : pas d'inférence, le facteur suit le curseur", () => {
+    const { m, ids } = avecCible();
+    const p = partie(machineEchelle, m, ids).jouer(clicVers(v3(4, 1.5, 0)), survolVers(v3(6, 1.5, 0)));
+    expect(p.vue().inference).toBeNull();
+    expect(p.etat.facteurs.x).toBeCloseTo(1.5, 9);
+  });
+
+  it("la géométrie mise à l'échelle n'est pas accrochable (ses propres sommets bougent)", () => {
+    const { m, ids } = avecCible();
+    const p = partie(machineEchelle, m, ids).jouer(clicVers(v3(4, 1.5, 0)), survolVers(v3(4 + 0.004, 3 + 0.004, 0)));
+    expect(p.vue().inference).toBeNull();
   });
 });
