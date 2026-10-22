@@ -18,7 +18,7 @@ export function createRuntimeTestPool(): Pool {
   } catch { return refuse("ATTESTATION_REJECTED"); }
   const target = authorizeTestTarget(env, envelope, { authorities: APPROVED_TEST_AUTHORITIES, now: Date.now });
   return createGuardedTestPool(target, (options) => {
-    const transport = new Pool({ ...options, max: 1, connectionTimeoutMillis: 3000, query_timeout: 3000, statement_timeout: 3000 });
+    const transport = new Pool({ ...options, max: 10, connectionTimeoutMillis: 3000, query_timeout: 3000, statement_timeout: 3000 });
     // Avoid emitting raw driver error objects (which can include SQL/connection details).
     transport.on("error", () => undefined);
     return {

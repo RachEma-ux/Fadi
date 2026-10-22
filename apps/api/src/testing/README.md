@@ -29,7 +29,34 @@ connexion, et une substitution ou expiration entraîne un refus expurgé.
 Le marqueur ne doit pas être modifiable par le rôle de test ; la preuve des
 permissions et de l'isolement appartient au provisionnement DB-3.
 
-**Le registre d'autorités livré est volontairement vide.** Aucun fichier ou
+## DB-3 — base jetable attestée (accord du maître d'ouvrage du 22 octobre 2026)
+
+En CI (job `validate`), `scripts/db3/preparer-base-test.mjs` prépare la base PostGIS jetable du job puis signe son
+attestation ; toutes les suites API tournent alors derrière cette garde, et `check-api-tests-db3.mjs --db3-actif`
+exige qu'aucune ne soit refusée et que chacune des douze suites ait exécuté ses tests.
+
+- **Rôle de test** `fadi_test` : ni superuser, ni createdb, createrole, replication, bypassrls ; lit et écrit les
+  tables de `public` et peut y créer une table (une suite reconstitue une base d'avant le lot 4). Mot de passe tiré au
+  hasard à chaque préparation, jamais affiché (masqué dans les journaux de la CI).
+- **Marqueur** `fadi_test_meta.provisioning` : créé par l'administrateur de la base jetable, lisible et non modifiable
+  par le rôle de test (vérifié à chaque préparation).
+- **Attestation** : Ed25519, 55 minutes, liée au run (`run_id-run_attempt`), au commit, au serveur, aux versions et
+  au marqueur. Clé privée dans le secret GitHub `FADI_TEST_DB_SIGNING_KEY`, générée et détenue par le maître
+  d'ouvrage ; clé publique enrôlée par une PR relue sous l'identifiant `fadi-ci-db3`. Le script refuse de signer si
+  la clé du secret n'est pas celle du registre.
+- **Sans le secret** (PR d'un fork, clé non installée) : comportement DB-1/2 inchangé, les douze suites sont refusées
+  et le contrôle historique s'applique.
+
+Premiers essais réels (22 octobre 2026, base jetable locale, clé d'essai jamais commitée) : 437 tests sur 437. Ils ont
+corrigé quatre défauts que la simulation ne pouvait pas voir :
+- `inet_server_addr()::text` rend `127.0.0.1/32` : l'identité lit désormais `host(inet_server_addr())` ;
+- la configuration de requête copiée était gelée, alors que `pg` y range les paramètres passés à part ;
+- deux opérations simultanées sur une même session étaient refusées : elles sont désormais exécutées l'une après
+  l'autre, chacune attestée juste avant de s'exécuter ;
+- le transport plafonné à une connexion bloquait une requête lancée pendant une transaction : 10 connexions, comme le
+  pool de production, chacune attestée.
+
+**Avant DB-3, le registre d'autorités livré était volontairement vide.** Aucun fichier ou
 variable d'environnement ne peut auto-enrôler une clé. Les essais réels sont
 donc fermés par défaut, même si une URL et une signature de fixture existent.
 L'enrôlement d'une autorité indépendante, le schéma `fadi_test_meta.provisioning`
