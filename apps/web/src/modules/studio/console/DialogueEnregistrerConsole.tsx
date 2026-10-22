@@ -19,7 +19,7 @@ export function DialogueEnregistrerConsole({ commandes, surFermer, surEnregistre
   const projets = useQuery({ queryKey: ["projects"], queryFn: api.listProjects, staleTime: 30_000 });
   const client = useQueryClient();
   // Un lecteur ne peut pas créer d'étude : le serveur le refuserait, la liste ne le propose pas.
-  const liste = (projets.data ?? []).filter((p) => p.role !== "lecteur");
+  const liste = (projets.data ?? []).filter((p) => p.role !== "lecteur" && p.role !== "support");
   const [choix, setChoix] = useState<string | null>(null);
   const [nom, setNom] = useState(nomPropose);
   const [enCours, setEnCours] = useState(false);

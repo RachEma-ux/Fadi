@@ -10,7 +10,10 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
-import { api, ApiError, ROLE_LABEL, type MemberRole, type ProjectComment } from "../../lib/api";
+import { accountApi, api, ApiError, canComment, ROLE_LABEL, type MemberRole, type ProjectComment } from "../../lib/api";
+import { useProjectAccess } from "../../lib/access";
+import { useOnline } from "../../components/SyncIndicator";
+import { apiMessage, ConfirmDialog, CopyLink } from "../../components/comptes/ComptesUI";
 import { MUTATION_KEYS, adoptComment, type CommentVars } from "../../lib/mutations";
 import { LOCALE } from "../../lib/i18n";
 
@@ -34,6 +37,8 @@ export function CommentThread({ projectId, stepNumber, comments, compact = false
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [replyDraft, setReplyDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
+  // Accès support (D-2) : lecture seule, sans commentaire — ni formulaire, ni bouton « Répondre ».
+  const mayComment = canComment(useProjectAccess(projectId).role);
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ["collaboration", projectId] });
     void queryClient.invalidateQueries({ queryKey: ["comments", projectId] });
@@ -122,18 +127,18 @@ export function CommentThread({ projectId, stepNumber, comments, compact = false
                     </button>
                   </div>
                 </form>
-              ) : (
+              ) : mayComment ? (
                 <button type="button" className="comment-reply-button" onClick={() => setReplyTo(c.id)}>
                   Répondre
                 </button>
-              )}
+              ) : null}
             </li>
           ))}
         </ul>
       ) : (
         <p className="h7-muted">Aucun commentaire{stepNumber !== null ? " sur cette étape" : ""}.</p>
       )}
-      <form
+      {mayComment ? <form
         className="comment-form"
         onSubmit={(e: FormEvent) => {
           e.preventDefault();
@@ -150,7 +155,7 @@ export function CommentThread({ projectId, stepNumber, comments, compact = false
           </button>
           {add.isPaused && <span className="h7-muted">Commentaire en attente du réseau : il sera publié au retour de la connexion.</span>}
         </div>
-      </form>
+      </form> : <p className="h7-muted">Accès support en lecture seule : les commentaires ne sont pas ouverts.</p>}
       {error && (
         <p className="h7-error" role="alert">
           {error}
@@ -191,6 +196,7 @@ export function MembersPanel({ projectId }: { projectId: string }) {
   const [role, setRole] = useState<MemberRole>("lecteur");
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ["members", projectId] });
     void queryClient.invalidateQueries({ queryKey: ["collaboration", projectId] });
@@ -200,7 +206,16 @@ export function MembersPanel({ projectId }: { projectId: string }) {
     onSuccess: (m) => {
       setEmail("");
       setError(null);
-      setNotice(`${m.email} a maintenant accès au projet comme ${ROLE_LABEL[m.role]}.`);
+      if ("invitation" in m) {
+        // Adresse sans compte : invitation nominative (UM-3) ; lien à transmettre si le courriel n'a pas pu partir (D-1).
+        setInviteLink(m.mail.link ?? null);
+        setNotice(m.mail.queued
+          ? `Invitation ${m.resent ? "renvoyée" : "envoyée"} à ${m.invitation.email} : elle pourra rejoindre le projet comme ${m.invitation.projectRole ? ROLE_LABEL[m.invitation.projectRole] : "lecteur"} après avoir créé son compte.`
+          : `Invitation ${m.resent ? "renouvelée" : "créée"} pour ${m.invitation.email}.`);
+      } else {
+        setInviteLink(null);
+        setNotice(`${m.email} a maintenant accès au projet comme ${ROLE_LABEL[m.role]}.`);
+      }
       refresh();
     },
     onError: (err) => setError(errorText(err, "L’invitation n’a pas pu être enregistrée.")),
@@ -239,6 +254,11 @@ export function MembersPanel({ projectId }: { projectId: string }) {
       refresh();
     },
     onError: (err) => setError(errorText(err, "Le retrait n’a pas pu être enregistré.")),
+  });
+  const cancelInvitation = useMutation({
+    mutationFn: (id: string) => accountApi.cancelProjectInvitation(projectId, id),
+    onSuccess: () => { setNotice("Invitation annulée : le lien ne donne plus accès."); refresh(); },
+    onError: (err) => setError(errorText(err, "L’annulation n’a pas pu être enregistrée.")),
   });
   if (query.isLoading) return <p role="status">Lecture des membres…</p>;
   if (!query.data) return <p role="alert">Impossible de lire les membres du projet.</p>;
@@ -341,8 +361,22 @@ export function MembersPanel({ projectId }: { projectId: string }) {
           <button type="submit" className="button-primary" disabled={busy || !email.trim()}>
             Inviter
           </button>
-          <p className="h7-muted">La personne doit déjà avoir un compte Fadi avec cette adresse ; aucun courriel n’est envoyé.</p>
+          <p className="h7-muted">Un compte existant reçoit l’accès aussitôt. Une adresse sans compte reçoit une invitation par courriel, valable 7 jours : aucun compte n’est créé tant qu’elle n’est pas acceptée.</p>
         </form>
+      )}
+      {inviteLink && <CopyLink link={inviteLink} />}
+      {isOwner && (v.invitations?.length ?? 0) > 0 && (
+        <div className="members-invitations" data-project-invitations>
+          <h3>Invitations en attente</h3>
+          <ul className="sessions-list">
+            {v.invitations!.map((i) => (
+              <li key={i.id} data-invitation={i.email}>
+                <span><span className="collab-email">{i.email}</span> <small>· {i.projectRole ? ROLE_LABEL[i.projectRole] : ""} · jusqu’au {new Date(i.expiresAt).toLocaleDateString(LOCALE)}</small></span>
+                <button type="button" className="button-secondary" disabled={busy || cancelInvitation.isPending} onClick={() => cancelInvitation.mutate(i.id)}>Annuler l’invitation</button>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
       {notice && (
         <p className="h7-muted members-notice" role="status">
@@ -355,6 +389,83 @@ export function MembersPanel({ projectId }: { projectId: string }) {
         </p>
       )}
     </div>
+  );
+}
+
+/**
+ * Accès support (D-2) : le propriétaire accorde à un administrateur nommé un accès en lecture seule (sans commentaire
+ * ni export), pour une durée de 72 h au plus, avec un motif ; révocable à tout moment, chaque lecture journalisée.
+ */
+export function SupportAccessPanel({ projectId }: { projectId: string }) {
+  const online = useOnline();
+  const queryClient = useQueryClient();
+  const q = useQuery({ queryKey: ["support-grants", projectId], queryFn: () => accountApi.supportGrants(projectId), retry: false });
+  const [adminId, setAdminId] = useState("");
+  const [hours, setHours] = useState(24);
+  const [purpose, setPurpose] = useState("");
+  const [confirm, setConfirm] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const refresh = () => void queryClient.invalidateQueries({ queryKey: ["support-grants", projectId] });
+  const grant = useMutation({
+    mutationFn: () => accountApi.grantSupport(projectId, { adminId, hours, purpose: purpose.trim() }),
+    onSuccess: () => { setConfirm(false); setPurpose(""); setMsg({ ok: true, text: "Accès support accordé." }); refresh(); },
+    onError: (err) => { setConfirm(false); setMsg({ ok: false, text: apiMessage(err, "L’accès n’a pas pu être accordé.") }); },
+  });
+  const revoke = useMutation({
+    mutationFn: (id: string) => accountApi.revokeSupport(projectId, id),
+    onSuccess: () => { setMsg({ ok: true, text: "Accès support révoqué." }); refresh(); },
+    onError: (err) => setMsg({ ok: false, text: apiMessage(err, "La révocation a échoué.") }),
+  });
+  if (!q.data || q.data.you !== "owner") return null;
+  const v = q.data;
+  const admin = v.admins.find((a) => a.id === adminId);
+  return (
+    <section className="biz-card" aria-labelledby="collab-support" data-support-panel>
+      <h2 id="collab-support">Accès support</h2>
+      <p className="biz-sub">Un administrateur de la plateforme n’a jamais accès à votre projet par défaut. Vous pouvez lui accorder un accès en lecture seule (ni commentaire, ni modification, ni export), au plus {v.maxHours} heures, révocable à tout moment ; chaque consultation est journalisée.</p>
+      {v.admins.length === 0 ? <p className="h7-muted">Aucun administrateur actif sur la plateforme.</p> : (
+        <form className="account-form" onSubmit={(e: FormEvent) => { e.preventDefault(); if (adminId && purpose.trim().length >= 3) setConfirm(true); }}>
+          <label>Administrateur
+            <select value={adminId} onChange={(e) => setAdminId(e.target.value)} required>
+              <option value="">— choisir —</option>
+              {v.admins.map((a) => <option key={a.id} value={a.id}>{a.displayName ? `${a.displayName} (${a.email})` : a.email}</option>)}
+            </select>
+          </label>
+          <label>Durée (heures, {v.maxHours} au plus)
+            <input type="number" min={1} max={v.maxHours} value={hours} onChange={(e) => setHours(Math.max(1, Math.min(v.maxHours, Number(e.target.value) || 1)))} />
+          </label>
+          <label>Motif
+            <textarea rows={2} maxLength={500} required value={purpose} onChange={(e) => setPurpose(e.target.value)} placeholder="Diagnostic demandé, numéro de ticket…" />
+          </label>
+          <button type="submit" className="button-primary" disabled={!online || !adminId || purpose.trim().length < 3}>Accorder l’accès support</button>
+        </form>
+      )}
+      {msg && <p role={msg.ok ? "status" : "alert"} className={msg.ok ? "h7-muted" : "form-error"}>{msg.text}</p>}
+      {v.grants.length > 0 && (
+        <div className="table-scroll" tabIndex={0} role="region" aria-label="Historique des accès support">
+          <table className="programme-table">
+            <thead><tr><th>Administrateur</th><th>Motif</th><th>Accordé</th><th>Jusqu’au</th><th>Dernier accès</th><th>État</th></tr></thead>
+            <tbody>
+              {v.grants.map((g) => (
+                <tr key={g.id} data-support-grant={g.active ? "active" : "inactive"}>
+                  <td className="collab-email">{g.adminEmail}</td>
+                  <td translate="no">{g.purpose}</td>
+                  <td>{new Date(g.grantedAt).toLocaleString(LOCALE)}</td>
+                  <td>{new Date(g.expiresAt).toLocaleString(LOCALE)}</td>
+                  <td>{g.lastAccessAt ? new Date(g.lastAccessAt).toLocaleString(LOCALE) : "—"}</td>
+                  <td>{g.active ? <button type="button" className="button-secondary" disabled={!online || revoke.isPending} onClick={() => revoke.mutate(g.id)}>Révoquer</button> : g.revokedAt ? "révoqué" : "expiré"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {confirm && admin && (
+        <ConfirmDialog title="Accorder un accès support" confirmLabel="Accorder" busy={grant.isPending} onClose={() => setConfirm(false)} onConfirm={() => grant.mutate()}>
+          <p>{admin.email} pourra consulter ce projet en lecture seule pendant {hours} heure(s). Vous serez prévenu de sa première consultation et pourrez révoquer l’accès à tout moment.</p>
+        </ConfirmDialog>
+      )}
+    </section>
   );
 }
 
@@ -381,7 +492,7 @@ export function CollaborationModule({ projectId }: { projectId: string }) {
             <b className="collab-role" data-role={v.access.role}>
               {ROLE_LABEL[v.access.role]}
             </b>
-            <small>{v.access.role === "proprietaire" ? "partage, édition, suppression" : v.access.role === "editeur" ? "lecture, commentaires, édition" : "lecture et commentaires"}</small>
+            <small>{v.access.role === "proprietaire" ? "partage, édition, suppression" : v.access.role === "editeur" ? "lecture, commentaires, édition" : v.access.role === "support" ? "lecture seule, sans commentaire ni export" : "lecture et commentaires"}</small>
           </div>
           <div className="biz-kpi">
             <span>Édition</span>
@@ -420,6 +531,8 @@ export function CollaborationModule({ projectId }: { projectId: string }) {
         <h2 id="collab-members">Membres du projet</h2>
         <MembersPanel projectId={projectId} />
       </section>
+
+      <SupportAccessPanel projectId={projectId} />
 
       <section className="biz-card" aria-labelledby="collab-comments">
         <h2 id="collab-comments">Commentaires ({v.comments.length})</h2>

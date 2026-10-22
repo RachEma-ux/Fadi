@@ -2,6 +2,8 @@ import { useState, type FormEvent } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { describeAuthError, useAuth } from "../lib/auth-context";
 import { ChoixLangue } from "../components/ChoixLangue";
+import { PasswordField } from "../components/comptes/ComptesUI";
+import { PASSWORD_MIN } from "../lib/password-strength";
 
 export function RegisterPage() {
   const { user, register } = useAuth();
@@ -18,8 +20,8 @@ export function RegisterPage() {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    if (password.length < 8) {
-      setError("Le mot de passe doit contenir au moins 8 caractères.");
+    if ([...password].length < PASSWORD_MIN) {
+      setError("Le mot de passe doit contenir au moins 12 caractères.");
       return;
     }
     setSubmitting(true);
@@ -49,17 +51,7 @@ export function RegisterPage() {
           onChange={(e) => setEmail(e.target.value)}
         />
 
-        <label htmlFor="register-password">Mot de passe (8 caractères minimum)</label>
-        <input
-          id="register-password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          minLength={8}
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        <PasswordField id="register-password" label="Mot de passe (12 caractères minimum)" value={password} onChange={setPassword} />
 
         {error && (
           <p role="alert" className="form-error">

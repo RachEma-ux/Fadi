@@ -1,0 +1,47 @@
+/* Gestion des comptes : champs de mot de passe, confirmations, liens à copier, administration. */
+.pw-meter { display: block; height: 6px; border-radius: 3px; background: #e2ebe6; margin: 4px 0 2px; overflow: hidden; }
+.pw-meter > span { display: block; height: 100%; border-radius: 3px; }
+.pw-meter[data-strength="trop-court"] > span { width: 15%; background: #9b2c2c; }
+.pw-meter[data-strength="faible"] > span { width: 40%; background: #a5560c; }
+.pw-meter[data-strength="correct"] > span { width: 70%; background: #2f6f5a; }
+.pw-meter[data-strength="fort"] > span { width: 100%; background: #1d5c3f; }
+.pw-hint { font-size: 0.85rem; color: #3c4a44; }
+.copy-link { display: grid; gap: 6px; padding: 10px 12px; border: 1px solid #c9a227; background: #fffbea; border-radius: 8px; margin: 8px 0; }
+.copy-link code { word-break: break-all; font-size: 0.85rem; }
+.copy-link-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.recovery-codes { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; padding: 10px; margin: 8px 0; list-style: none; border: 1px dashed #6b7f76; border-radius: 8px; font-family: ui-monospace, monospace; }
+.mfa-qr { width: 200px; height: 200px; background: #fff; border: 1px solid #c3d3cb; border-radius: 8px; }
+.account-subsection { border-top: 1px solid #dfe8e3; padding-top: 12px; margin-top: 14px; }
+.account-subsection h3 { margin: 0 0 6px; font-size: 1.05rem; }
+.account-form { display: grid; gap: 8px; max-width: 420px; }
+.account-form label { display: grid; gap: 4px; }
+.account-form input, .account-form select, .account-form textarea { padding: 0.5rem; border: 1px solid #b7c9c0; border-radius: 6px; min-height: 36px; }
+.danger-button { background: #9b2c2c; color: #fff; border: 1px solid #7e2020; border-radius: 6px; padding: 0.45rem 0.9rem; cursor: pointer; min-height: 36px; }
+.danger-button:disabled { opacity: 0.6; cursor: default; }
+.confirm-dialog { width: min(520px, calc(100vw - 32px)); }
+.confirm-dialog .h7-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
+.sessions-list { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 8px; }
+.sessions-list li { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: center; border: 1px solid #dfe8e3; border-radius: 8px; padding: 8px 10px; }
+.support-banner { background: #eef4ff; border: 1px solid #8aa6d6; color: #1c3563; border-radius: 8px; padding: 8px 12px; margin: 8px 0; }
+.admin-page { padding: 16px; max-width: 1200px; }
+.admin-page h1 { margin-top: 0; }
+.admin-filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin: 12px 0; }
+.admin-filters label { display: grid; gap: 4px; }
+.admin-filters input, .admin-filters select { padding: 0.45rem; border: 1px solid #b7c9c0; border-radius: 6px; min-height: 36px; }
+.admin-table { width: 100%; border-collapse: collapse; }
+.admin-table th, .admin-table td { text-align: left; padding: 8px; border-bottom: 1px solid #dfe8e3; vertical-align: top; }
+.admin-table button.link-button { min-height: 24px; }
+.admin-status { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 0.85rem; background: #e6efe9; color: #1d4a35; }
+.admin-status[data-status="suspended"], .admin-status[data-status="closed"] { background: #f6e1e1; color: #7e2020; }
+.admin-status[data-status="locked"], .admin-status[data-status="deletion_pending"] { background: #fdf0d8; color: #6b4206; }
+.admin-pager { display: flex; gap: 8px; align-items: center; margin: 10px 0; flex-wrap: wrap; }
+.admin-detail { display: grid; gap: 14px; margin-top: 16px; }
+.admin-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.public-account-page dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; }
+.public-account-page dt { font-weight: 600; }
+@media (max-width: 700px) {
+  .admin-table thead { display: none; }
+  .admin-table tr { display: grid; border-bottom: 1px solid #c3d3cb; padding: 6px 0; }
+  .admin-table td { border: 0; padding: 3px 8px; }
+  .admin-table td[data-label]::before { content: attr(data-label) " : "; font-weight: 600; }
+}

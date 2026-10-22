@@ -31,7 +31,7 @@ export function resolveProjectAccess(role: ProjectRole | undefined, lock: Editin
   if (readError instanceof ApiError && [401, 403, 404].includes(readError.status)) role = undefined;
   const active = lock && new Date(lock.expiresAt).getTime() > now ? lock : null;
   const holdsLock = !!active && !!userId && active.userId === userId;
-  const known = role === "proprietaire" || role === "editeur" || role === "lecteur";
+  const known = role === "proprietaire" || role === "editeur" || role === "lecteur" || role === "support";
   const mayEdit = known && canWrite(role);
   return { role: role ?? "lecteur", canWrite: mayEdit && (!active || holdsLock), mayEdit, isOwner: role === "proprietaire", lock: active, holdsLock, known };
 }

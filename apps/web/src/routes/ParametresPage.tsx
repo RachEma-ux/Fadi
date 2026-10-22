@@ -20,6 +20,7 @@ import { ChoixLangue } from "../components/ChoixLangue";
 import { api, type NotificationKind, type NotificationPreferencesView } from "../lib/api";
 import { NOTIFICATION_KIND_DESCRIPTION, NOTIFICATION_KIND_LABEL, NOTIFICATION_KINDS } from "../components/notification-kinds";
 import { NOTIFICATION_PREFERENCES_KEY } from "../components/NotificationBell";
+import { MonCompte } from "./MonCompte";
 
 type KeyState = "absente" | "session" | "locale";
 
@@ -385,6 +386,7 @@ export function ParametresPage() {
           </Link>
         </div>
       </section>
+      <MonCompte />
       <section className="panel settings-section" aria-labelledby="settings-langue" data-settings-langue>
         <h2 id="settings-langue">Langue de l'interface</h2>
         <p className="panel-sub">Français ou anglais, pour cet appareil. Les données du projet, les exemples et les documents produits restent dans leur langue.</p>

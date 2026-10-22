@@ -90,7 +90,7 @@ export function StudioAccueil({ domaine }: { domaine: DomaineStudio | null }) {
         </div>}
       </section>
       {projet && <EtudesDuProjet key={projet.id} projet={projet} domaine={domaine} />}
-      {projet && (projet.role === "lecteur"
+      {projet && ((projet.role === "lecteur" || projet.role === "support")
         ? <p data-studio-lecture-seule>Lecture seule : la création d’études est réservée au propriétaire et aux éditeurs.</p>
         : <NouvelleEtude key={`n-${projet.id}`} projectId={projet.id} domaine={domaine} />)}
     </section>

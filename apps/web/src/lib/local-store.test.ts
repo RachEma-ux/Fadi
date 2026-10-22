@@ -235,3 +235,25 @@ describe("persistance des saisies en pause", () => {
     expect(queryPersistenceStore.get().failedProjects).toEqual([]);
   });
 });
+
+describe("cloisonnement des lots par compte (gestion des comptes, phase 2)", () => {
+  afterEach(() => localStore.setOwner(null));
+  it("un lot posé sous A porte A ; il n'est ni relu ni compté sous B", async () => {
+    const id = project();
+    localStore.setOwner("user-a");
+    await localStore.putLot(lot(id));
+    expect([...disk.lots.values()][0]?.userId).toBe("user-a");
+    expect(await localStore.lotsCount(id)).toBe(1);
+    localStore.setOwner("user-b");
+    expect(await localStore.lots(id)).toEqual([]);
+    expect((await localStore.summary()).pendingWrites).toBe(0);
+  });
+  it("oublierTout vide les files en mémoire (aucun lot de A n'est rejoué sous B)", async () => {
+    const id = project();
+    localStore.setOwner("user-a");
+    await localStore.putLot(lot(id, "r-a"));
+    expect(localStore.memoryLots(id)).toHaveLength(1);
+    await localStore.oublierTout();
+    expect(localStore.memoryLots(id)).toEqual([]);
+  });
+});

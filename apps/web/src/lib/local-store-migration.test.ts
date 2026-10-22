@@ -4,6 +4,9 @@
  * l'Atelier (`lots`) ni les brouillons Studio (`studioBrouillons`). Les seuls vidages admis sont ceux déjà livrés et
  * documentés (v4 : cache de modèle de l'ancien moteur ; v6 : lignes Studio v5 sans propriétaire, inattribuables) ; tout
  * nouveau vidage ou retrait de magasin fait échouer ce test, qui se lit dans le source (aucune base ouverte).
+ * v7 (gestion des comptes, phase 2, décision du plan « interdire de rejouer la file hors ligne d'un utilisateur sous
+ * la session d'un autre ») : chaque lot porte son propriétaire ; les lots antérieurs, sans propriétaire, sont
+ * inattribuables et supprimés — même règle que Studio v6. C'est le seul vidage de `lots` admis.
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
@@ -33,7 +36,7 @@ describe("files locales et changement de build (OPS-05)", () => {
   it("la file Atelier (lots) existe dès la v3 et n'est jamais retirée ni vidée par une montée de version", () => {
     for (const v of versions().filter((x) => x.version >= 3)) {
       expect(v.stores["lots"], `v${v.version}`).toMatch(/^id\b/);
-      expect(v.vides, `v${v.version}`).not.toContain("lots");
+      if (v.version !== 7) expect(v.vides, `v${v.version}`).not.toContain("lots");
     }
   });
 
@@ -42,7 +45,7 @@ describe("files locales et changement de build (OPS-05)", () => {
       expect(typeof v.stores["studioBrouillons"], `v${v.version}`).toBe("string");
       if (v.version !== 6) expect(v.vides, `v${v.version}`).not.toContain("studioBrouillons");
     }
-    expect(Object.fromEntries(versions().filter((v) => v.vides.length).map((v) => [v.version, v.vides]))).toEqual({ 4: ["modelCache"], 6: ["studioBrouillons", "studioContextes"] });
+    expect(Object.fromEntries(versions().filter((v) => v.vides.length).map((v) => [v.version, v.vides]))).toEqual({ 4: ["modelCache"], 6: ["studioBrouillons", "studioContextes"], 7: ["lots"] });
   });
 
   it("ni l'application ni le service worker ne suppriment la base locale", () => {

@@ -77,6 +77,13 @@ export interface CurrentUser {
   email: string;
   /** Nom affiché choisi dans Paramètres (« Bonjour … », initiales) ; null tant que rien n'est saisi. */
   displayName: string | null;
+  /** Rôle plateforme (gestion des comptes) : `admin` voit l'entrée « Administration » ; le serveur reste seul juge. */
+  platformRole?: "user" | "admin";
+  status?: "active" | "suspended" | "closed";
+  mfaEnabled?: boolean;
+  emailVerified?: boolean;
+  /** Administrateur ET administration activée sur ce serveur (`FADI_ADMIN_ENABLED`) : montre les écrans d'administration. */
+  adminEnabled?: boolean;
 }
 
 /** Aperçu conceptuel (`GET …/design-review/apercu`) : axonométrie éclatée dessinée depuis les polygones réels ; `svg` null sans modèle. */
@@ -109,6 +116,8 @@ export interface Project {
   ownerEmail?: string;
   /** Réservation d'édition en cours (verrou optionnel « un seul éditeur actif »), null si libre ou expirée. */
   editingLock?: EditingLock | null;
+  /** Accès support (rôle `support`) : échéance de l'accès accordé par le propriétaire. */
+  supportExpiresAt?: string;
   /** « Documents de base intégrés » d'un projet issu de l'exemple : les fichiers du prototype retrouvés parmi les sources des étapes. */
   baseDocuments?: { caption: string; files: { id: string; stepNumber: number; name: string; type: string; size: number; note: string }[] } | null;
   createdAt: string;
@@ -181,11 +190,20 @@ export interface EditingLock {
   expiresAt: string;
 }
 
-/** Rôles du partage (`lib/owned-project.ts` de l'API) : lecteur lit et commente, éditeur modifie, propriétaire partage et supprime. */
-export type ProjectRole = "proprietaire" | "editeur" | "lecteur";
-export type MemberRole = Exclude<ProjectRole, "proprietaire">;
+/**
+ * Rôles du partage (`lib/owned-project.ts` de l'API) : lecteur lit et commente, éditeur modifie, propriétaire partage et
+ * supprime ; `support` = administrateur de la plateforme muni d'un accès support accordé par le propriétaire (D-2) :
+ * lecture seule, ni commentaire, ni export.
+ */
+export type ProjectRole = "proprietaire" | "editeur" | "lecteur" | "support";
+export type MemberRole = "editeur" | "lecteur";
 
-export const ROLE_LABEL: Record<ProjectRole, string> = { proprietaire: "propriétaire", editeur: "éditeur", lecteur: "lecteur" };
+export const ROLE_LABEL: Record<ProjectRole, string> = { proprietaire: "propriétaire", editeur: "éditeur", lecteur: "lecteur", support: "accès support (lecture seule)" };
+
+/** Le rôle permet-il de commenter ? (l'accès support est en lecture seule, sans commentaire.) */
+export function canComment(role: ProjectRole | undefined): boolean {
+  return role !== "support";
+}
 
 /** Le rôle permet-il de modifier le projet ? (`undefined` = projet lu avant le partage : propriétaire.) */
 export function canWrite(role: ProjectRole | undefined): boolean {
@@ -204,7 +222,109 @@ export interface MembersView {
   owner: { userId: string; email: string };
   you: { userId: string; role: ProjectRole };
   members: ProjectMember[];
+  /** Invitations en attente (adresses sans compte) — propriétaire seulement. */
+  invitations?: InvitationView[];
 }
+
+// --- Gestion des comptes (docs/workstreams/users-management) -------------------------------------------------------
+
+export type InvitationStatus = "pending" | "accepted" | "declined" | "expired" | "cancelled";
+export interface InvitationView {
+  id: string;
+  purpose: "platform_account" | "project_participation";
+  email: string;
+  status: InvitationStatus;
+  expiresAt: string;
+  accessExpiresAt: string | null;
+  createdAt: string;
+  projectId: string | null;
+  projectName: string | null;
+  projectRole: MemberRole | null;
+  invitedBy: string;
+}
+/** Réponse d'un envoi : `link` présent seulement quand le courriel n'a pas pu partir (lien à transmettre soi-même, D-1). */
+export interface MailOutcome { queued: boolean; reason: string | null; link?: string }
+export interface InvitationCreated { invitation: InvitationView; resent: boolean; mail: MailOutcome }
+export type InvitationRefusal = "not_found" | "expired" | "already_accepted" | "declined" | "cancelled" | "wrong_account" | "inviter_not_authorized" | "account_inactive";
+export interface InvitationLookup { invitation: InvitationView; accountExists: boolean; signedInAs: string | null; refusal: InvitationRefusal | null; message: string | null }
+export type LoginResult = { mfaRequired: true; expiresAt: string } | (CurrentUser & { mfaRequired?: undefined });
+export interface AccountSession { id: string; current: boolean; createdAt: string; lastSeenAt: string; expiresAt: string; absoluteExpiresAt: string | null; userAgent: string | null; ip: string | null }
+export interface MfaStatus { enabled: boolean; recoveryCodesRemaining: number; required: boolean }
+export interface MfaSetup { otpauthUri: string; secret: string; qrSvg: string }
+export type AdminStatus = "active" | "suspended" | "closed" | "locked" | "deletion_pending";
+export interface AdminUser {
+  id: string; email: string; displayName: string | null; platformRole: "user" | "admin"; status: AdminStatus; createdAt: string; lastLoginAt: string | null;
+  emailVerified: boolean; mfaEnabled: boolean; deletionRequestedAt: string | null; projectsCount: number;
+}
+export interface AdminUsersPage { users: AdminUser[]; total: number; page: number; pageSize: number }
+export interface AdminUsersFilters { q?: string; status?: AdminStatus | ""; role?: "user" | "admin" | ""; page?: number; pageSize?: number }
+export interface AdminAuditEntry { id: number; action: string; actorId: string | null; targetType: string | null; targetId: string | null; metadata: Record<string, unknown>; ip: string | null; createdAt: string }
+export interface AdminUserDetail {
+  user: AdminUser;
+  projects: { id: string; code: string; name: string; role: ProjectRole }[];
+  sessions: { id: string; createdAt: string; lastSeenAt: string; userAgent: string | null; ip: string | null }[];
+  supportGrants: { id: string; projectId: string; code: string; expiresAt: string; revokedAt: string | null; purpose: string }[];
+  audit: AdminAuditEntry[];
+}
+export interface SupportGrant { id: string; adminId: string; adminEmail: string | null; adminName: string | null; purpose: string; grantedAt: string; expiresAt: string; revokedAt: string | null; active: boolean; lastAccessAt: string | null }
+export type SupportGrantsView =
+  | { you: "owner"; grants: SupportGrant[]; admins: { id: string; email: string; displayName: string | null }[]; maxHours: number }
+  | { you: "support"; grant: SupportGrant };
+
+const json = (body: unknown): RequestInit => ({ method: "POST", body: JSON.stringify(body) });
+function query(params: Record<string, string | number | undefined>): string {
+  const q = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== "") q.set(k, String(v));
+  const s = q.toString();
+  return s ? `?${s}` : "";
+}
+
+/**
+ * Comptes, double authentification, invitations, administration, accès support. Les jetons (liens reçus) ne
+ * voyagent que dans le corps POST, jamais dans une adresse. Les mutations d'administration ne sont jamais mises en
+ * file hors ligne (aucune clé de mutation persistante).
+ */
+export const accountApi = {
+  login: (email: string, password: string) => request<LoginResult>("/auth/login", json({ email, password })),
+  loginMfa: (input: { code: string } | { recoveryCode: string }) => request<CurrentUser>("/auth/login/mfa", json(input)),
+  forgotPassword: (email: string, locale?: "fr" | "en") => request<{ accepted: boolean; message: string }>("/auth/forgot-password", json({ email, locale })),
+  resetPassword: (token: string, password: string) => request<{ reset: boolean }>("/auth/reset-password", json({ token, password })),
+  confirmEmail: (token: string) => request<{ verified: boolean }>("/auth/verify-email/confirm", json({ token })),
+  requestEmailVerification: () => request<{ verified: boolean; mail?: MailOutcome }>("/auth/verify-email/request", { method: "POST" }),
+  cancelDeletion: (token: string) => request<{ cancelled: boolean }>("/auth/cancel-deletion", json({ token })),
+  lookupInvitation: (token: string) => request<InvitationLookup>("/auth/invitations/lookup", json({ token })),
+  acceptInvitation: (token: string) => request<{ accepted: boolean; projectId: string | null }>("/auth/invitations/accept", json({ token })),
+  declineInvitation: (token: string) => request<{ declined: boolean }>("/auth/invitations/decline", json({ token })),
+  activate: (input: { token: string; password: string; displayName?: string }) =>
+    request<{ user: CurrentUser; projectId: string | null }>("/auth/activate", json({ ...input, acceptTerms: true })),
+  changePassword: (currentPassword: string, newPassword: string) => request<{ changed: boolean; revokedSessions: number }>("/auth/me/password", json({ currentPassword, newPassword })),
+  sessions: () => request<{ sessions: AccountSession[] }>("/auth/me/sessions"),
+  revokeSession: (id: string) => request<void>(`/auth/me/sessions/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  revokeOtherSessions: () => request<{ revoked: number }>("/auth/me/sessions", { method: "DELETE" }),
+  mfaStatus: () => request<MfaStatus>("/auth/me/mfa"),
+  mfaSetup: () => request<MfaSetup>("/auth/me/mfa/setup", { method: "POST" }),
+  mfaEnable: (code: string) => request<{ enabled: true; recoveryCodes: string[] }>("/auth/me/mfa/enable", json({ code })),
+  mfaDisable: (password: string, code: string) => request<{ enabled: false }>("/auth/me/mfa/disable", json({ password, code })),
+  mfaRecoveryCodes: (password: string, code: string) => request<{ recoveryCodes: string[] }>("/auth/me/mfa/recovery-codes", json({ password, code })),
+  exportUrl: "/auth/me/export",
+  deleteAccount: (password: string) => request<{ deletionAt: string; mail: { queued: boolean } }>("/auth/me", { method: "DELETE", body: JSON.stringify({ password, confirm: "SUPPRIMER" }) }),
+  // --- Administration (404 pour un non-administrateur, 403 `mfa_required` sans double authentification) ---
+  adminUsers: (f: AdminUsersFilters) => request<AdminUsersPage>(`/admin/users${query({ q: f.q, status: f.status, role: f.role, page: f.page, pageSize: f.pageSize })}`),
+  adminUser: (id: string) => request<AdminUserDetail>(`/admin/users/${encodeURIComponent(id)}`),
+  adminSetRole: (id: string, role: "user" | "admin") => request<{ user: AdminUser }>(`/admin/users/${encodeURIComponent(id)}/role`, { method: "PATCH", body: JSON.stringify({ role }) }),
+  adminSuspend: (id: string) => request<{ user: AdminUser }>(`/admin/users/${encodeURIComponent(id)}/suspend`, { method: "POST" }),
+  adminReactivate: (id: string) => request<{ user: AdminUser }>(`/admin/users/${encodeURIComponent(id)}/reactivate`, { method: "POST" }),
+  adminRevokeSessions: (id: string) => request<{ revoked: number }>(`/admin/users/${encodeURIComponent(id)}/revoke-sessions`, { method: "POST" }),
+  adminDelete: (id: string) => request<{ deletionAt: string }>(`/admin/users/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  adminInvite: (email: string) => request<InvitationCreated>("/admin/users/invitations", json({ email })),
+  adminInvitations: (status?: InvitationStatus) => request<{ invitations: InvitationView[] }>(`/admin/invitations${query({ status })}`),
+  adminCancelInvitation: (id: string) => request<void>(`/admin/invitations/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  // --- Projet : invitations et accès support (propriétaire) ---
+  cancelProjectInvitation: (projectId: string, id: string) => request<void>(`/projects/${projectId}/members/invitations/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  supportGrants: (projectId: string) => request<SupportGrantsView>(`/projects/${projectId}/support-grants`),
+  grantSupport: (projectId: string, input: { adminId: string; hours: number; purpose: string }) => request<{ grant: SupportGrant }>(`/projects/${projectId}/support-grants`, json(input)),
+  revokeSupport: (projectId: string, grantId: string) => request<void>(`/projects/${projectId}/support-grants/${encodeURIComponent(grantId)}`, { method: "DELETE" }),
+};
 
 /** Une proposition Harmonie pour une étape — jamais présentée comme acquise. */
 export interface HarmonieOption {
@@ -1065,7 +1185,7 @@ export const api = {
   register: (email: string, password: string) =>
     request<CurrentUser>("/auth/register", { method: "POST", body: JSON.stringify({ email, password }) }),
   login: (email: string, password: string) =>
-    request<CurrentUser>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
+    request<LoginResult>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
   logout: () => request<void>("/auth/logout", { method: "POST" }),
   me: () => request<CurrentUser>("/auth/me"),
   updateProfile: (displayName: string | null) => request<CurrentUser>("/auth/me", { method: "PATCH", body: JSON.stringify({ displayName }) }),
@@ -1237,7 +1357,8 @@ export const api = {
   deleteComment: (projectId: string, commentId: string) => request<void>(`/projects/${projectId}/collaboration/comments/${encodeURIComponent(commentId)}`, { method: "DELETE" }),
   /** Partage : membres et rôles (propriétaire seulement pour inviter, changer, retirer ; un membre peut se retirer lui-même). */
   listMembers: (projectId: string) => request<MembersView>(`/projects/${projectId}/members`),
-  inviteMember: (projectId: string, email: string, role: MemberRole) => request<ProjectMember>(`/projects/${projectId}/members`, { method: "POST", body: JSON.stringify({ email, role }) }),
+  /** Compte existant : 201 `ProjectMember` ; adresse sans compte : 202 `InvitationCreated` (UM-3). */
+  inviteMember: (projectId: string, email: string, role: MemberRole) => request<ProjectMember | InvitationCreated>(`/projects/${projectId}/members`, { method: "POST", body: JSON.stringify({ email, role }) }),
   setMemberRole: (projectId: string, userId: string, role: MemberRole) => request<ProjectMember>(`/projects/${projectId}/members/${encodeURIComponent(userId)}`, { method: "PATCH", body: JSON.stringify({ role }) }),
   removeMember: (projectId: string, userId: string) => request<void>(`/projects/${projectId}/members/${encodeURIComponent(userId)}`, { method: "DELETE" }),
   /** Transfert de propriété à un membre (propriétaire seulement) : vous restez éditeur. */
