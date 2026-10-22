@@ -249,46 +249,30 @@ jobs:
         run: npm run test --workspace=@parcours/core-geometry --workspace=@parcours/domain-model --workspace=@parcours/atelier-model --workspace=@parcours/planche-model --workspace=@parcours/sandbox-planche-model --workspace=@parcours/geometry-exact --workspace=@fadi/web
       - name: Garde DB-1/2 — tests simulés sans base
         run: npm run test:db-guard
-      # Sans base attestée, les suites API qui l'exigent sont refusées au chargement par la garde : le contrôle exige que
-      # seule la liste fermée soit refusée, par la garde seule, et que tout le reste passe (ni contournement, ni réussite
-      # déclarée).
-      - name: Tests API hors base — suites DB-3 refusées par la garde sans attestation
-        run: |
-          npx --workspace=@fadi/api vitest run --reporter=default --reporter=json --outputFile=../../api-vitest.json || true
-          node --test scripts/check-api-tests-db3.test.mjs
-          node scripts/check-api-tests-db3.mjs api-vitest.json
-      # DB-3 (autorisation du propriétaire, Issue #166 ; clé publique `owner-db3-2026-10` enregistrée par le propriétaire) :
-      # base PostGIS jetable de ce job, migrée par le compte d'administration du conteneur ; marqueur protégé, rôle de test
-      # `fadi_app` (D-7, aucun DDL) ; attestation liée au run et au commit, ≤ 1 h, signée avec le secret
-      # FADI_TEST_DB_SIGNING_KEY (jamais affiché). Les 12 suites historiques passent par la garde existante et doivent
-      # réussir. Secret absent (PR externe, secret non créé) : blocage déclaré dans le résumé, suites non exécutées.
-      - name: DB-3 — base jetable attestée, 12 suites historiques par la garde
+      # DB-3 (#157, accord du maître d'ouvrage du 22 octobre 2026) : avec la clé de signature (secret
+      # FADI_TEST_DB_SIGNING_KEY, dont la clé publique est enrôlée dans le registre relu approved-test-authorities.ts),
+      # la base PostGIS jetable de ce job est préparée et attestée (scripts/db3/preparer-base-test.mjs), et TOUTES les
+      # suites API y tournent derrière la garde. Sans le secret (PR d'un fork, clé non installée), la garde reste
+      # fermée : le contrôle historique exige que seule la liste fermée soit refusée, par la garde seule.
+      - name: Tests API — sur base jetable attestée (DB-3), sinon suites DB-3 déclarées non exécutées
         env:
           FADI_TEST_DB_SIGNING_KEY: ${{ secrets.FADI_TEST_DB_SIGNING_KEY }}
         run: |
-          if [ -z "$FADI_TEST_DB_SIGNING_KEY" ]; then
-            echo "::warning title=DB-3 non exécuté::secret FADI_TEST_DB_SIGNING_KEY absent — les 12 suites historiques restent refusées par la garde"
-            printf '## DB-3 — non exécuté\nSecret `FADI_TEST_DB_SIGNING_KEY` absent pour ce run : aucune base attestée, les 12 suites historiques ne sont **pas** exécutées.\n' >> "$GITHUB_STEP_SUMMARY"
-            exit 0
+          node --test scripts/check-api-tests-db3.test.mjs
+          if [ -n "$FADI_TEST_DB_SIGNING_KEY" ]; then
+            DB3_ADMIN_URL=postgresql://fadi:fadi_ci_password@127.0.0.1:5432/fadi_test DB3_KEY_ID=fadi-ci-db3 \
+              DB3_RUN_ID="${{ github.run_id }}-${{ github.run_attempt }}" DB3_COMMIT_SHA="${{ github.sha }}" \
+              DB3_SORTIE="$RUNNER_TEMP/db3" node scripts/db3/preparer-base-test.mjs
+            echo "::add-mask::$(sed -n 's|^TEST_DATABASE_URL=postgresql://[^:]*:\([^@]*\)@.*|\1|p' "$RUNNER_TEMP/db3/env")"
+            set -a; . "$RUNNER_TEMP/db3/env"; set +a
+            unset FADI_TEST_DB_SIGNING_KEY
+            npx --workspace=@fadi/api vitest run --reporter=default --reporter=json --outputFile=../../api-vitest.json || true
+            node scripts/check-api-tests-db3.mjs --db3-actif api-vitest.json
+          else
+            echo "DB-3 non exécuté : secret FADI_TEST_DB_SIGNING_KEY absent (PR d'un fork, ou clé non installée)."
+            npx --workspace=@fadi/api vitest run --reporter=default --reporter=json --outputFile=../../api-vitest.json || true
+            node scripts/check-api-tests-db3.mjs api-vitest.json
           fi
-          set -eo pipefail
-          # Compte d'administration du service PostGIS du job (même identifiants que DATABASE_URL), en IP de boucle locale.
-          ADMIN="$(printf '%s' "${DATABASE_URL%/*}" | sed 's#@localhost:#@127.0.0.1:#')"
-          DB=fadi_db3_run
-          psql "$ADMIN/postgres" -v ON_ERROR_STOP=1 -q -c "CREATE DATABASE $DB"
-          psql "$ADMIN/$DB" -v ON_ERROR_STOP=1 -q -c "CREATE EXTENSION IF NOT EXISTS postgis"
-          DATABASE_MIGRATION_URL="$ADMIN/$DB" npm run db:migrate
-          ATT="$RUNNER_TEMP/db3-attestation.json"
-          # Le script fixe lui-même un mot de passe aléatoire pour le rôle de test (jamais affiché ni écrit dans ce fichier).
-          DB3_ADMIN_URL="$ADMIN/postgres" DB3_DATABASE=$DB DB3_TEST_ROLE=fadi_app \
-            DB3_ATTESTATION_FILE="$ATT" DB3_ENV_FILE="$RUNNER_TEMP/db3.env" node scripts/validation/db3-attest.mjs
-          unset FADI_TEST_DB_SIGNING_KEY
-          # TEST_DATABASE_URL, TEST_DATABASE_RUN_ID, TEST_DATABASE_COMMIT_SHA, TEST_DATABASE_ATTESTATION_FILE (fichier 0600).
-          (set -a; . "$RUNNER_TEMP/db3.env"; set +a; cd apps/api && env -u DATABASE_URL \
-            npx vitest run --reporter=default --reporter=json --outputFile=../../api-vitest-db3.json) || true
-          rm -f "$ATT" "$RUNNER_TEMP/db3.env"
-          node scripts/check-api-tests-db3.mjs api-vitest-db3.json --db3 | tee db3.log
-          { echo '## DB-3 — base jetable attestée'; echo '```'; cat db3.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - run: npm run build
       # Le build échoue déjà sur un découpage non conforme (vite.config.ts) ; cette étape en affiche le verdict.
       - name: Découpage des bundles (B.3-06) — carte des morceaux du build

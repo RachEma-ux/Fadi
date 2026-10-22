@@ -1133,7 +1133,10 @@ describe("Archive de projet — « Sauvegarder projet JSON » / « Importer proj
     expect(res.status).toBe(201);
     expect(res.body.projects).toHaveLength(1);
     const copy = res.body.projects[0];
-    expect(copy).toMatchObject({ origin: "fadi", name: "Escalier B et mezzanine · import", code: "P.118", warnings: [] });
+    // L'étude Studio de l'exemple (installée à l'import) reste dans le projet d'origine, toujours présent : ses
+    // identifiants ne sont pas dupliqués (lib/studio-archive.ts), et l'import le dit.
+    expect(copy).toMatchObject({ origin: "fadi", name: "Escalier B et mezzanine · import", code: "P.118", studio: { restored: false } });
+    expect(copy.warnings).toEqual(["Données Studio non restaurées : leurs identifiants existent déjà dans cette base (projet d'origine présent) ; 1 étude(s) restent dans le projet d'origine."]);
     expect(copy.id).not.toBe(pid);
     const list = (await client.get("/projects")).body as { id: string }[];
     expect(list.map((p) => p.id)).toEqual(expect.arrayContaining([pid, copy.id]));

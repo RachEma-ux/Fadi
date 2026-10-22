@@ -17,7 +17,7 @@ Mis à jour : 2026-10-22 (UTC).
 
 ## Prochaine action
 
-- Vérifier la CI sur le HEAD, en particulier l'étape « DB-3 — base jetable attestée » du job `validate`.
+- Vérifier la CI sur le HEAD, en particulier l'étape « Tests API — sur base jetable attestée (DB-3) » du job `validate`.
 - Revue humaine (🛑 phases 2, 3, 4, D7-final) puis décision de fusion par le maître d'ouvrage ; aucun déploiement sans
   accord explicite (RUNBOOK.md pour la suite).
 
@@ -30,7 +30,7 @@ Mis à jour : 2026-10-22 (UTC).
 
 ## Risques et blocages
 
-- DB-3 (UM-17) : étape CI en place ; constater le résultat des 12 suites (ou le blocage « secret absent ») sur le HEAD.
+- DB-3 (UM-17) : implémentation de `main` (PR #256) raccordée à D-7 ; constater le résultat des suites sur le HEAD.
 - Déploiement suivant la fusion : `FADI_APP_DB_PASSWORD` obligatoire, l'API refuse de démarrer en production avec un
   rôle privilégié (UM-15) — procédure et retour arrière dans RUNBOOK.md.
 - Organisations hors périmètre (UM-1), à confirmer par le maître d'ouvrage.

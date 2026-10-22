@@ -102,9 +102,10 @@ ils ne réécrivent aucune décision D-x et restent révisables par lui.
 - **UM-16 — Journal d'audit et rétention.** Le déclencheur append-only laisse le seul rôle `fadi_retention` modifier
   `actor_id`, `ip`, `metadata` (droit de colonne + contrôle du déclencheur : action, cible et date inchangées) ; la
   suppression reste refusée à tous. La tâche de rétention elle-même appartient au plan console (non engagé).
-- **UM-17 — DB-3 débloqué par le propriétaire (2026-10-22).** Autorisation : Issue #166 (commentaire du compte
-  propriétaire). Clé publique Ed25519 générée et enregistrée **par le propriétaire** (commit `bdeeb73`), confirmée par lui
-  en conversation ; secret `FADI_TEST_DB_SIGNING_KEY` (nom choisi par le propriétaire). Mise en œuvre : RUNBOOK §14.
-  Remplace le blocage UM-11. Les gardes et les assertions sont conservées ; trois données ou attentes de `app.test.ts`
-  sont alignées sur les règles déjà décidées (mot de passe de 12 caractères, D-6 ; invitation d'une adresse sans compte,
-  UM-3).
+- **UM-17 — DB-3 (2026-10-22).** Autorisation du propriétaire (Issue #166). La PR #256, fusionnée dans `main`, livre la
+  garde ouverte (clé `fadi-ci-db3` enregistrée, préparation `scripts/db3/preparer-base-test.mjs`, contrôle
+  `--db3-actif`). La tentative parallèle de ce chantier (`db3-attest.mjs`, clé `owner-db3-2026-10`) est retirée à la
+  fusion de `main` pour ne garder qu'une implémentation ; seul le raccord D-7 (droits du rôle de test sur `auth` /
+  `admin`, journal d'audit append-only) est ajouté au script de `main`. Remplace le blocage UM-11. Trois données ou
+  attentes de `app.test.ts` sont alignées sur les règles déjà décidées (12 caractères, D-6 ; invitation d'une adresse
+  sans compte, UM-3), sans retirer de vérification.

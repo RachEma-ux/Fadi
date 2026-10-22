@@ -21,8 +21,10 @@ describe("application DB seam, completely mocked driver", () => {
     await expect(import("../db/client.js")).rejects.toThrow("TARGET_REQUIRED");
     expect(driver.construct).not.toHaveBeenCalled(); expect(driver.connect).not.toHaveBeenCalled(); expect(driver.query).not.toHaveBeenCalled();
   });
-  it("the delivered runtime rejects unknown authorities before constructing even a mock pool", async () => {
+  it("the delivered runtime rejects a target without a signed attestation before constructing even a mock pool", async () => {
     vi.stubEnv("TEST_DATABASE_URL", "postgresql://synthetic:sentinel@127.0.0.1:55432/unit_test");
+    // Independent of the registry content (DB-3 enrols one reviewed authority) and of an attestation of the real run.
+    vi.stubEnv("TEST_DATABASE_ATTESTATION_FILE", "");
     const { createRuntimeTestPool } = await import("./test-database.js");
     expect(() => createRuntimeTestPool()).toThrow("ATTESTATION_REJECTED");
     expect(driver.construct).not.toHaveBeenCalled(); expect(driver.connect).not.toHaveBeenCalled(); expect(driver.query).not.toHaveBeenCalled();

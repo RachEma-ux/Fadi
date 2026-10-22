@@ -82,6 +82,6 @@ Légende des preuves : `api:` = `apps/api/src/…`, `web:` = `apps/web/src/…`,
 | P-08 | Journal d'audit append-only dans la transaction | en place |
 | P-09 | Courriel : `Mailer`, console / SMTP, outbox, quota, repli lien, gabarits FR/EN, Mailpit | en place |
 | P-10 | Suppression : export, 30 j de grâce, anonymisation | en place |
-| P-11 | Tests DB-3 sur PostGIS éphémère attesté | en cours de vérification — clé du propriétaire (`owner-db3-2026-10`), étape CI `validate` « DB-3 », `scripts/validation/db3-attest.mjs` (UM-17) |
+| P-11 | Tests DB-3 sur PostGIS éphémère attesté | en cours de vérification — clé du propriétaire (`fadi-ci-db3`), implémentation de `main` (PR #256, `scripts/db3/preparer-base-test.mjs`) raccordée à D-7 (UM-17) |
 | P-13 | D-7 : schémas `auth` / `admin`, rôles au moindre privilège, `fadi_app` sans DDL, audit non modifiable | en place — `scripts/validation/users-migration-check.mjs` (SET ROLE par rôle), `verify-restore.sh` (droits identiques) |
 | P-12 | Drapeau `FADI_ADMIN_ENABLED` | en place |

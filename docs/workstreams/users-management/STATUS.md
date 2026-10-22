@@ -97,7 +97,7 @@ DB-3 : en cours de vérification en CI (UM-17). Points d'arrêt 🛑 2, D7-final
 ## Points ouverts
 
 - UM-1 : chantier organisations / participation / revue externe, à ouvrir par le maître d'ouvrage.
-- UM-17 : DB-3 mis en place (clé du propriétaire, secret `FADI_TEST_DB_SIGNING_KEY`) ; résultat réel des 12 suites à constater en CI — l'existence du secret n'est vérifiable que par ce passage.
+- UM-17 : DB-3 livré par la PR #256 (fusionnée dans `main`, clé `fadi-ci-db3`, secret `FADI_TEST_DB_SIGNING_KEY`) ; `main` fusionné dans cette branche, préparation raccordée à D-7 (`auth` / `admin`) ; résultat réel des suites à constater en CI sur le HEAD de la PR.
 - UM-15 : le prochain déploiement exige `FADI_APP_DB_PASSWORD` dans `.env.deploy` (RUNBOOK §2–4).
 - Annexe C (Infomaniak, DNS, clé de chiffrement, premier admin) : hors code.
 - CI de la PR #255 : **verte** sur `81af007` (run CI 39840078841 et 5 autres workflows, 2026-10-22 19:42 UTC). Le premier passage (`cf3d56f`) échouait sur la tranche `parcours` : le scénario attendait l'ancien refus du partage vers une adresse sans compte, puis des compteurs de cache invalidés par la purge sur 401. Corrigé dans `81af007`.
