@@ -23,6 +23,19 @@ describe("Décalage (§4.19)", () => {
     expect(p.vue().consigne).toBe(etape("decalage", 2).consigne);
   });
 
+  it("aperçu vivant : le contour décalé réel est tracé pendant le choix de la distance (face et arêtes)", () => {
+    const p = partie(machineDecalage, sol()).jouer(clicVers(v3(1, 1, 0)), survolVers(v3(0.5, 1.5, 0)));
+    const boucle = p.vue().apercu.lignes.find((l) => l.length === 5);
+    expect(boucle).toBeDefined();
+    const xs = (boucle ?? []).map((q) => q.x);
+    expect(Math.min(...xs)).toBeCloseTo(0.5, 6);
+    expect(Math.max(...xs)).toBeCloseTo(3.5, 6);
+    let m = ajouterSegment(modeleVide(), v3(0, 0, 0), v3(4, 0, 0)).modele;
+    m = ajouterSegment(m, v3(4, 0, 0), v3(4, 3, 0)).modele;
+    const q = partie(machineDecalage, m, Object.keys(contexte(m).aretes)).jouer(clicVers(v3(2, 1, 0)), survolVers(v3(2, 0.5, 0)));
+    expect(q.vue().apercu.lignes.length).toBeGreaterThanOrEqual(3);
+  });
+
   it("CA-DEC-1 : face 4 × 3, 0,3 vers l'intérieur → 2 faces : 3,4 × 2,4 et l'anneau (12 − 8,16)", () => {
     const p = partie(machineDecalage, sol()).jouer(clicVers(v3(1, 1, 0)), survolVers(v3(1, 1, 0)), saisie("0.3"));
     expect(faces(p.modele)).toHaveLength(2);
