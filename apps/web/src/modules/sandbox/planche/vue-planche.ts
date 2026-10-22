@@ -293,7 +293,7 @@ export class VuePlanche {
     this.moteur.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
 
     this.scene.background = new THREE.Color(COULEUR_FOND);
-    this.scene.add(new THREE.HemisphereLight("#ffffff", "#9aa0a8", 2.2));
+    this.scene.add(new THREE.HemisphereLight("#ffffff", "#9aa0a8", 3.4));
     this.soleil = new THREE.DirectionalLight("#ffffff", 1.2);
     this.soleil.position.set(-30, -50, 80);
     this.soleil.castShadow = false;

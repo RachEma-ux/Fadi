@@ -3,7 +3,7 @@ import { COULEUR_RECTO, TRAME_SELECTION, intensiteLumiere, pointDeTrame } from "
 
 /** Luminance affichée (sRGB) d'une face blanche éclairée comme dans three.js : Lambert = couleur / π. */
 function luminanceAffichee(cosLumiere: number, ombres: boolean): number {
-  const hemisphere = 2.2;
+  const hemisphere = 3.4;
   const solLineaire = Math.pow((0x9a + 0xa0 + 0xa8) / 3 / 255, 2.2);
   const indirect = (hemisphere * (1 + solLineaire)) / 2 / Math.PI; // face verticale : mélange ciel / sol à 50 %
   const direct = (intensiteLumiere(ombres) * Math.max(0, cosLumiere)) / Math.PI;
@@ -18,7 +18,7 @@ describe("apparence des faces (Sandbox)", () => {
   it("sans ombres, une face vue de face ou à 40° est blanche ; une face rasante reste grisée", () => {
     expect(luminanceAffichee(1, false)).toBe(1);
     expect(luminanceAffichee(Math.cos((40 * Math.PI) / 180), false)).toBe(1);
-    expect(luminanceAffichee(0, false)).toBeLessThan(0.8);
+    expect(luminanceAffichee(0, false)).toBeLessThan(0.92);
   });
 
   it("avec ombres, l'intensité du soleil est inchangée", () => {
