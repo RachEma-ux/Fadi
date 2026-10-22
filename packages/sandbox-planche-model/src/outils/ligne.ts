@@ -259,7 +259,7 @@ export const machineLigne: MachineOutil<EtatLigne> = {
         const e0: EtatLigne = { ...etat, rayon: { rayon: ev.rayon, tolerance: ev.tolerance }, texte: null, erreur: null };
         const i = inferenceLigne(e0, ctx, ev.rayon, ev.tolerance);
         if (e0.etape === 1) {
-          return { etat: { ...acquerir(e0, i), etape: 2, depart: i.point, debutChaine: i.point, inference: i, dernier: null } };
+          return { etat: { ...avecAcquis(e0, i.point), etape: 2, depart: i.point, debutChaine: i.point, inference: i, dernier: null } };
         }
         return poser({ ...acquerir(e0, i), inference: i }, ctx, i.point, null);
       }
@@ -298,6 +298,7 @@ export const machineLigne: MachineOutil<EtatLigne> = {
       },
       inference: i,
       ...(angle ? { angleDroit: angle } : {}),
+      ...(etat.etape === 2 && etat.acquis.length > 0 ? { references: etat.acquis } : {}),
       apercu: { lignes: etat.etape === 2 && etat.depart && i ? [[etat.depart, i.point]] : [], faces: [] },
       selection: ctx.selection,
       survol: [],

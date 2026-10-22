@@ -323,3 +323,13 @@ describe("Ligne — angle droit d'une perpendiculaire à une arête", () => {
     expect(machineLigne.vue(p.etat as EtatLigne, p.ctx).angleDroit).toBeUndefined();
   });
 });
+
+describe("Ligne — anneaux de référence (SketchUp)", () => {
+  it("la vue expose le départ et les sommets déjà posés comme références à marquer", () => {
+    const p = new Pilote(machineLigne).envoyer(clic(0, 0), clic(4, 0), clic(4, 3), survol(2, 3.02));
+    const refs = machineLigne.vue(p.etat as EtatLigne, p.ctx).references ?? [];
+    const a = (x: number, y: number) => refs.some((q) => Math.abs(q.x - x) < 1e-6 && Math.abs(q.y - y) < 1e-6);
+    expect(a(0, 0)).toBe(true);
+    expect(a(4, 0)).toBe(true);
+  });
+});

@@ -15,6 +15,8 @@ import type { OutilCamera } from "./outils-planche";
 
 /** Rayon d'accrochage à l'écran (px), converti en mètres à la profondeur visée (choix Fadi, cahier-planche §5.1). */
 export const TOLERANCE_PX = 10;
+/** Au doigt, le point touché est masqué par le doigt et moins précis : rayon d'accrochage plus large (SketchUp web mobile). */
+export const TOLERANCE_TACTILE_PX = 22;
 /** Déplacement minimal (px) pour qu'un appui devienne un glisser. */
 const SEUIL_GLISSER_PX = 4;
 /** Double-clic : délai et écart maximaux entre deux clics. */
@@ -237,6 +239,8 @@ export class VuePlanche {
   private etiquettesApercu: Etiquette[] = [];
   /** Pastilles annelées (SketchUp web) : point de départ du tracé et sommet de référence de l'inférence. */
   private pastilles: { el: HTMLDivElement; point: Vec3 }[] = [];
+  /** Dernier type de pointeur : au doigt, l'accrochage est plus large. */
+  private tactile = false;
   private modele: Modele | null = null;
   private cleSelection = "";
   private readonly sol: THREE.Mesh;
@@ -725,6 +729,8 @@ export class VuePlanche {
         // Point d'intersection en gras : se repère d'un coup d'œil sur la ligne rose.
         this.ajouterPastille(sommet, "gras", vue.inference.couleur);
       }
+      // Sommets de référence (déjà posés ou survolés) : anneaux noirs, comme SketchUp.
+      for (const q of vue.references ?? []) this.ajouterPastille(q);
       for (const e of vue.apercu.etiquettes ?? []) {
         const el = document.createElement("div");
         el.className = "planche-etiquette planche-etiquette-apercu";
@@ -870,7 +876,7 @@ export class VuePlanche {
 
   /** Tolérance d'accrochage : TOLERANCE_PX convertis en mètres à la profondeur visée sous le curseur. */
   tolerance(ecran: Point2): number {
-    return TOLERANCE_PX * this.metresParPixel(this.pointVise(ecran));
+    return (this.tactile ? TOLERANCE_TACTILE_PX : TOLERANCE_PX) * this.metresParPixel(this.pointVise(ecran));
   }
 
   /** Entités dont la projection écran est dans le cadre (fenêtre) ou le touche (croisée). */
@@ -1211,6 +1217,7 @@ export class VuePlanche {
 
   private surAppui = (e: PointerEvent): void => {
     const p = this.ecran(e);
+    this.tactile = e.pointerType === "touch";
     if (e.pointerType === "touch") this.rappels.tactile?.();
     this.hote.focus({ preventScroll: true });
     this.canvas.setPointerCapture?.(e.pointerId);
