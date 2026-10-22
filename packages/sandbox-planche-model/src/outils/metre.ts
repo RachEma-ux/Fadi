@@ -280,7 +280,7 @@ export const machineMetre: MachineOutil<EtatMetre> = {
       lignes.push([etat.mesure.a, etat.mesure.b]);
       etiquettes.push({ point: etat.mesure.b, texte: formaterLongueur(dist(etat.mesure.a, etat.mesure.b), sep) });
     }
-    return vueModif({ consigne, mesures: m, inference: etat.etape === 2 ? etat.inference : null, apercu: { lignes, faces: [], etiquettes } as VueOutil["apercu"], ctx, erreur: etat.erreur });
+    return vueModif({ consigne, mesures: m, inference: etat.inference, apercu: { lignes, faces: [], etiquettes } as VueOutil["apercu"], ctx, erreur: etat.erreur });
   },
 };
 

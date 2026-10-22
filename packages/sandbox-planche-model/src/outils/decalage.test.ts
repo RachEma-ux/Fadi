@@ -3,7 +3,7 @@ import { aire, ajouterRectangle, ajouterSegment, contexte, modeleVide } from "..
 import { v3 } from "../vecteur.js";
 import { etape } from "./commun-formes.js";
 import { distanceAuContour, machineDecalage } from "./decalage.js";
-import { TOLERANCE, aireTotale, aretes, clicVers, faces, partie, saisie, survolVers } from "./essais-modification.js";
+import { TOLERANCE, aireTotale, aretes, clicVers, contientPoint, faces, partie, saisie, sommets, survolVers } from "./essais-modification.js";
 
 const sol = () => ajouterRectangle(modeleVide(), v3(0, 0, 0), v3(4, 0, 0), v3(0, 3, 0)).modele;
 const aires = (m: ReturnType<typeof sol>) => faces(m).map((f) => aire(m, f.id)).sort((a, b) => a - b);
@@ -138,6 +138,36 @@ describe("Décalage — arête seule : le côté du curseur est respecté", () =
       const p = partie(machineDecalage, avecRepere()).jouer(clicVers(v3(1, 2, 0)), clicVers(v3(1.5, 0.7 + TOLERANCE / 2, 0)));
       expect(p.operations).toEqual(["Décalage"]);
       expect(aires(p.modele).length).toBeGreaterThan(1);
+    });
+  });
+
+  describe("décaler une droite par rapport à une autre ligne (plan libre)", () => {
+    const monde = () => {
+      let m = ajouterSegment(modeleVide(), v3(0, 0, 0), v3(4, 0, 0)).modele;
+      m = ajouterSegment(m, v3(2, 3, 4), v3(3, 3, 4)).modele;
+      return { m, depart: Object.keys(contexte(m).aretes)[0] as string };
+    };
+
+    it("le curseur s'accroche à l'extrémité d'une ligne hors du plan de visée : distance = écart à la droite", () => {
+      const { m, depart } = monde();
+      const p = partie(machineDecalage, m, [depart]).jouer(clicVers(v3(2, 1, 0)), survolVers(v3(2, 3 + 0.004, 4)));
+      expect(p.vue().inference?.type).toBe("extremite");
+      expect(p.etat.distance).toBeCloseTo(5, 9);
+    });
+
+    it("le clic crée la droite décalée de cette distance, dans le plan arête + point accroché", () => {
+      const { m, depart } = monde();
+      const p = partie(machineDecalage, m, [depart]).jouer(clicVers(v3(2, 1, 0)), clicVers(v3(2, 3 + 0.004, 4)));
+      expect(p.operations).toEqual(["Décalage"]);
+      const s = sommets(p.modele);
+      expect(contientPoint(s, v3(0, 3, 4))).toBe(true);
+      expect(contientPoint(s, v3(4, 3, 4))).toBe(true);
+    });
+
+    it("avant le choix de l'arête, le curseur montre déjà les inférences de la géométrie visée", () => {
+      const { m } = monde();
+      const p = partie(machineDecalage, m).jouer(survolVers(v3(4 + 0.004, 0.004, 0)));
+      expect(p.vue().inference?.type).toBe("extremite");
     });
   });
 });
