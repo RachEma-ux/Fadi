@@ -275,12 +275,12 @@ jobs:
           # Compte d'administration du service PostGIS du job (même identifiants que DATABASE_URL), en IP de boucle locale.
           ADMIN="$(printf '%s' "${DATABASE_URL%/*}" | sed 's#@localhost:#@127.0.0.1:#')"
           DB=fadi_db3_run
-          APP_PW="$(openssl rand -hex 24)"; echo "::add-mask::$APP_PW"
           psql "$ADMIN/postgres" -v ON_ERROR_STOP=1 -q -c "CREATE DATABASE $DB"
           psql "$ADMIN/$DB" -v ON_ERROR_STOP=1 -q -c "CREATE EXTENSION IF NOT EXISTS postgis"
-          DATABASE_MIGRATION_URL="$ADMIN/$DB" FADI_APP_DB_PASSWORD="$APP_PW" npm run db:migrate
+          DATABASE_MIGRATION_URL="$ADMIN/$DB" npm run db:migrate
           ATT="$RUNNER_TEMP/db3-attestation.json"
-          DB3_ADMIN_URL="$ADMIN/postgres" DB3_DATABASE=$DB DB3_TEST_ROLE=fadi_app DB3_TEST_PASSWORD="$APP_PW" \
+          # Le script fixe lui-même un mot de passe aléatoire pour le rôle de test (jamais affiché ni écrit dans ce fichier).
+          DB3_ADMIN_URL="$ADMIN/postgres" DB3_DATABASE=$DB DB3_TEST_ROLE=fadi_app \
             DB3_ATTESTATION_FILE="$ATT" DB3_ENV_FILE="$RUNNER_TEMP/db3.env" node scripts/validation/db3-attest.mjs
           unset FADI_TEST_DB_SIGNING_KEY
           # TEST_DATABASE_URL, TEST_DATABASE_RUN_ID, TEST_DATABASE_COMMIT_SHA, TEST_DATABASE_ATTESTATION_FILE (fichier 0600).

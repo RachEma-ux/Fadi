@@ -15,12 +15,12 @@
  * N'affiche jamais la clé, le mot de passe ni la signature ; seulement des empreintes.
  *
  * Variables : FADI_TEST_DB_SIGNING_KEY (PEM PKCS#8, ou ce PEM encodé en base64), DB3_ADMIN_URL (compte d'administration,
- * base de travail), DB3_DATABASE (`fadi_db3_*`), DB3_TEST_ROLE, DB3_TEST_PASSWORD, DB3_ATTESTATION_FILE, DB3_ENV_FILE
+ * base de travail), DB3_DATABASE (`fadi_db3_*`), DB3_TEST_ROLE, DB3_ATTESTATION_FILE, DB3_ENV_FILE
  * (variables TEST_DATABASE_* écrites en 0600 pour l'étape des suites),
  * GITHUB_RUN_ID, GITHUB_RUN_ATTEMPT, GITHUB_SHA.
  * Code de sortie 78 : secret absent (blocage déclaré, rien n'est provisionné).
  */
-import { createHash, createPrivateKey, createPublicKey, sign } from 'node:crypto';
+import { createHash, createPrivateKey, createPublicKey, randomBytes, sign } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import pg from 'pg';
 
@@ -34,7 +34,8 @@ if (!rawKey) fail(78, 'secret FADI_TEST_DB_SIGNING_KEY absent — base attestée
 
 const database = env.DB3_DATABASE ?? '';
 const role = env.DB3_TEST_ROLE ?? '';
-const password = env.DB3_TEST_PASSWORD ?? '';
+// Mot de passe du rôle de test : aléatoire, propre au run, fixé par le compte d'administration ci-dessous ; jamais affiché.
+const password = randomBytes(24).toString('hex');
 if (!/^fadi_db3_[a-z0-9_]{1,40}$/.test(database)) fail(2, 'DB3_DATABASE doit être une base jetable fadi_db3_*');
 if (!/^[a-z][a-z0-9_]{0,62}$/.test(role) || !/^[A-Za-z0-9]{16,128}$/.test(password)) fail(2, 'rôle ou mot de passe de test invalide');
 const admin = new URL(env.DB3_ADMIN_URL ?? 'postgresql://invalid');
@@ -69,6 +70,8 @@ try {
   const attrs = (await a.query('SELECT rolsuper, rolcreatedb, rolcreaterole, rolreplication, rolbypassrls FROM pg_roles WHERE rolname = $1', [role])).rows[0];
   if (!attrs) fail(4, `rôle ${role} absent (la migration doit le créer)`);
   if (Object.values(attrs).some((v) => v !== false)) fail(4, `rôle ${role} trop privilégié pour une base de test`);
+  const { rows: [stmt] } = await a.query("SELECT format('ALTER ROLE %I LOGIN PASSWORD %L', $1::text, $2::text) AS sql", [role, password]);
+  await a.query(stmt.sql);
   await a.query('CREATE SCHEMA fadi_test_meta');
   await a.query('CREATE TABLE fadi_test_meta.provisioning (singleton boolean PRIMARY KEY CHECK (singleton), run_id text NOT NULL, marker_id text NOT NULL, schema_version integer NOT NULL, expires_at_ms bigint NOT NULL)');
   await a.query('INSERT INTO fadi_test_meta.provisioning VALUES (true, $1, $2, 1, $3)', [runId, markerId, expiresAt]);
