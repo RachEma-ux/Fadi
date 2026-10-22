@@ -6,7 +6,7 @@ Mis à jour : 2026-10-22 (UTC).
 
 **Implémenté et vérifié localement — en attente de CI et de revue humaine.** Phases 0 à 6 et amendement D-7 livrés
 sur la branche `ccr-266c1e83-7780ml` (une seule PR, non fusionnée, UM-12). **Rien n'est accepté ni déployé.**
-DB-3 : en cours de vérification en CI (UM-17). Points d'arrêt 🛑 2, D7-final et final : revue du maître d'ouvrage sur la PR.
+DB-3 : **vérifié en CI** sur `570d248` (UM-17) — les 12 suites passent sur base jetable attestée. Points d'arrêt 🛑 2, D7-final et final : revue du maître d'ouvrage sur la PR.
 
 ## Faits vérifiés
 
@@ -62,7 +62,7 @@ DB-3 : en cours de vérification en CI (UM-17). Points d'arrêt 🛑 2, D7-final
   passe, les vecteurs RFC 6238, le coffre AES-GCM, les sessions et le verrouillage, la machine d'états, les règles
   d'invitation, D-5, le mailer, le quota, les gabarits FR/EN, l'accès plateforme et le dernier administrateur.
 - Matrice Studio régénérée : `routes/auth.ts` est déclarée hors matrice, l'export lisant les commentaires Studio du
-  compte. Contrôle DB-3 de la CI : les 12 suites historiques restent refusées par la garde, inchangées.
+  compte. Contrôle DB-3 : voir la section DB-3 ci-dessous.
 
 ### Phase 5 — écrans (équipe Interface, sous-agent)
 
@@ -83,6 +83,30 @@ DB-3 : en cours de vérification en CI (UM-17). Points d'arrêt 🛑 2, D7-final
     pages publiques et de Mon compte ;
   - non relevés en anglais : `/admin/utilisateurs` et le panneau d'accès support.
 
+### DB-3 — suites API sur base jetable attestée (CI)
+
+Run CI 39855284507, job `validate` (120091788375), commit `570d248`, 2026-10-22 21:15–21:21 UTC :
+
+- Préparation : base `fadi_test`, rôle `fadi_test` sans privilège d'administration, marqueur
+  `fadi_test_meta.provisioning`, attestation signée par la clé du propriétaire `fadi-ci-db3`, valable 55 min.
+- `vitest` API : **41 fichiers, 515 tests verts**, dont **105 dans les 12 suites DB-3** ; aucun refus de la garde.
+- `check-api-tests-db3.mjs --db3-actif` : « toutes les suites API tournent sur la base attestée, aucune n'est refusée ».
+
+| Suite | Tests | Résultat |
+|---|---|---|
+| `src/app.test.ts` | 60 | réussie |
+| `src/routes/atelier-commands.test.ts` | 31 | réussie |
+| `src/routes/history.test.ts` | 3 | réussie |
+| `src/routes/atelier-automatisation-p2.test.ts` | 2 | réussie |
+| `src/routes/atelier-planches.test.ts` | 2 | réussie |
+| `src/routes/atelier-bois-tolerie.test.ts` | 1 | réussie |
+| `src/routes/atelier-coordination.test.ts` | 1 | réussie |
+| `src/routes/atelier-documentation.test.ts` | 1 | réussie |
+| `src/routes/atelier-exact.test.ts` | 1 | réussie |
+| `src/routes/atelier-mecanique.test.ts` | 1 | réussie |
+| `src/routes/atelier-reseaux.test.ts` | 1 | réussie |
+| `src/routes/atelier-structure.test.ts` | 1 | réussie |
+
 ## Écarts au plan (le concept et D-7 priment)
 
 - UM-2 et UM-3 : pas d'état `invited` ni de compte fantôme ; les invitations ont leur propre table (`auth.invitations`).
@@ -97,10 +121,11 @@ DB-3 : en cours de vérification en CI (UM-17). Points d'arrêt 🛑 2, D7-final
 ## Points ouverts
 
 - UM-1 : chantier organisations / participation / revue externe, à ouvrir par le maître d'ouvrage.
-- UM-17 : DB-3 livré par la PR #256 (fusionnée dans `main`, clé `fadi-ci-db3`, secret `FADI_TEST_DB_SIGNING_KEY`) ; `main` fusionné dans cette branche, préparation raccordée à D-7 (`auth` / `admin`) ; résultat réel des suites à constater en CI sur le HEAD de la PR.
+- UM-17 : DB-3 livré par la PR #256 et raccordé à D-7 ; **12 suites vertes en CI** sur `570d248` (section DB-3).
 - UM-15 : le prochain déploiement exige `FADI_APP_DB_PASSWORD` dans `.env.deploy` (RUNBOOK §2–4).
 - Annexe C (Infomaniak, DNS, clé de chiffrement, premier admin) : hors code.
 - CI de la PR #255 : **verte** sur `81af007` (run CI 39840078841 et 5 autres workflows, 2026-10-22 19:42 UTC). Le premier passage (`cf3d56f`) échouait sur la tranche `parcours` : le scénario attendait l'ancien refus du partage vers une adresse sans compte, puis des compteurs de cache invalidés par la purge sur 401. Corrigé dans `81af007`.
+- CI de la PR #255 **verte** sur `570d248` (fusion de `main` + DB-3) : run CI 39855284507 entier (validate, image, Studio V1, e2e p2 / planche / parcours / atelier / complements) et les 5 autres workflows, 2026-10-22 21:12–21:3x UTC.
 
 ## Liens de suivi
 
