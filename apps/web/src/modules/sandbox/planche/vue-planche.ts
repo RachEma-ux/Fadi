@@ -303,6 +303,10 @@ export class VuePlanche {
     this.soleil.shadow.camera.left = this.soleil.shadow.camera.bottom = -60;
     this.soleil.shadow.camera.right = this.soleil.shadow.camera.top = 60;
     this.scene.add(this.soleil, this.soleil.target);
+    // Lumière verticale : seules les faces tournées vers le haut la reçoivent, elles sortent blanches ; les faces latérales gardent leur ombrage.
+    const lumiereDessus = new THREE.DirectionalLight("#ffffff", 1.2);
+    lumiereDessus.position.set(0, 0, 1);
+    this.scene.add(lumiereDessus);
     this.moteur.shadowMap.enabled = false;
     this.moteur.shadowMap.type = THREE.PCFSoftShadowMap;
     // Sol neutre : sous les faces posées à z = 0 (dessiné d'abord, sans écrire la profondeur).
