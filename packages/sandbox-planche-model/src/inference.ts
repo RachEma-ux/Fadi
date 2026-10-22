@@ -49,6 +49,8 @@ export type TypeInference =
   | "axe-z"
   | "parallele"
   | "perpendiculaire"
+  | "perpendiculaire-face"
+  | "prolonger"
   | "tangente"
   | "aucune";
 
@@ -72,6 +74,8 @@ export const COULEURS: Readonly<Record<TypeInference, string>> = {
   "axe-z": "#0000e0",
   parallele: "#ff00ff", // magenta
   perpendiculaire: "#ff00ff",
+  "perpendiculaire-face": "#ff00ff", // magenta (doc officielle : « Perpendicular to Face »)
+  prolonger: "#ff00ff", // magenta (« Extend Edge »)
   tangente: "#00c0c0", // « Tangent at Vertex » cyan
   aucune: "#000000", // segment élastique noir hors inférence
 };
@@ -92,6 +96,8 @@ export const LIBELLES: Readonly<Record<TypeInference, Libelle>> = {
   "axe-z": { en: "On Blue Axis", fr: "Sur l'axe bleu" },
   parallele: { en: "Parallel to Edge", fr: "Parallèle à l'arête" },
   perpendiculaire: { en: "Perpendicular to Edge", fr: "Perpendiculaire à l'arête" },
+  "perpendiculaire-face": { en: "Perpendicular to Face", fr: "Perpendiculaire à la face" },
+  prolonger: { en: "Extend Edge", fr: "Prolonger l'arête" },
   tangente: { en: "Tangent at Vertex", fr: "Tangente au sommet" },
   aucune: { en: "", fr: "" },
 };
@@ -396,6 +402,8 @@ interface Ligne {
   readonly origine: Vec3;
   readonly direction: Vec3;
   readonly libelle?: Libelle;
+  /** Demi-droite : seul le côté de `direction` à partir de `origine` compte (prolongement d'une arête). */
+  readonly demi?: boolean;
 }
 
 function directionPerpendiculaire(ref: NonNullable<EntreeInference["areteReference"]>, axes: AxesModele): Vec3 {
@@ -417,6 +425,11 @@ function lignes(e: EntreeInference, axes: AxesModele, mode: ModeAlt): Ligne[] {
     r.push({ type: "parallele", origine: D, direction: normalize(sub(ref.b, ref.a)) });
     r.push({ type: "perpendiculaire", origine: D, direction: directionPerpendiculaire(ref, axes) });
   }
+  // Perpendiculaire à la face visée : depuis le point de départ, suivant la normale de la face sous le curseur.
+  if (D) {
+    const f = faceTouchee(e);
+    if (f && len(f.face.normale) > EPS) r.push({ type: "perpendiculaire-face", origine: D, direction: normalize(f.face.normale) });
+  }
   if (D && mode === "tout" && e.tangenteDepart) r.push({ type: "tangente", origine: D, direction: normalize(e.tangenteDepart) });
   if (mode === "tout") {
     for (const p of e.pointsReference ?? []) {
@@ -425,6 +438,11 @@ function lignes(e: EntreeInference, axes: AxesModele, mode: ModeAlt): Ligne[] {
         { type: "axe-y", origine: p, direction: axes.y, libelle: LIBELLE_DEPUIS_POINT },
         { type: "axe-z", origine: p, direction: axes.z, libelle: LIBELLE_DEPUIS_POINT },
       );
+      // Prolonger une arête : demi-droite qui prolonge, au-delà de l'extrémité marquée, chaque arête qui y aboutit.
+      for (const a of e.geometrie.aretes) {
+        const autre = dist(a.a, p) <= TOL ? a.b : dist(a.b, p) <= TOL ? a.a : undefined;
+        if (autre && dist(autre, p) > TOL) r.push({ type: "prolonger", origine: p, direction: normalize(sub(p, autre)), demi: true });
+      }
     }
   }
   return r;
@@ -463,6 +481,7 @@ export function inferer(e: EntreeInference): Inference {
   for (const l of lignes(e, axes, e.modeAlt ?? "tout")) {
     const p = c.surDroite(l.origine, l.direction);
     if (dist(p, l.origine) < TOL) continue;
+    if (l.demi && dot(sub(p, l.origine), l.direction) <= 0) continue;
     const d = c.ecart(p);
     if (d <= e.tolerance && (!lin || d < lin.d - 1e-12)) lin = { l, p, d };
   }
