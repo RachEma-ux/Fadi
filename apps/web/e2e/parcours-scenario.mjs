@@ -1327,7 +1327,27 @@ await page.route(/\/auth\/me(\?|$)/, (route) => route.fulfill({ status: 401, con
 await page.reload();
 await page.waitForURL(/\/connexion/, { timeout: 20000 });
 check("démarrage avec /auth/me en 401 : renvoi à la connexion (session réellement absente)", page.url().includes("/connexion"));
+// Gestion des comptes (#253, phase 2, tâche 7) : un 401 réel purge l'appareil — cache des requêtes, modèles et files
+// de l'Atelier, utilisateur mémorisé — pour qu'un autre compte ne relise rien du précédent.
+{
+  const purge = await page.evaluate(() => new Promise((resolve) => {
+    const req = indexedDB.open("fadi-local");
+    req.onsuccess = () => {
+      const db = req.result;
+      const tx = db.transaction(["lots", "modelCache"], "readonly");
+      const out = { lots: -1, modelCache: -1, lastUser: localStorage.getItem("fadi.lastUser") };
+      tx.objectStore("lots").count().onsuccess = (e) => (out.lots = e.target.result);
+      tx.objectStore("modelCache").count().onsuccess = (e) => (out.modelCache = e.target.result);
+      tx.oncomplete = () => { db.close(); resolve(out); };
+    };
+    req.onerror = () => resolve(null);
+  }));
+  check("démarrage avec /auth/me en 401 : appareil purgé (modèles et files de l'Atelier, utilisateur mémorisé)", purge?.lots === 0 && purge?.modelCache === 0 && purge?.lastUser === null, JSON.stringify(purge));
+}
 await page.unroute(/\/auth\/me(\?|$)/);
+// La session serveur est intacte (seule la réponse était simulée) : l'Atelier rouvert remet le modèle en cache local.
+await page.goto(`${atelierUrl}?module=atelier`);
+await atelierPret();
 await page.goto(`${projectUrl}?module=parcours&etape=3`);
 await page.waitForSelector("#biz-f1", { timeout: 20000 });
 
@@ -1377,8 +1397,10 @@ await page.waitForSelector(".members-panel");
 check("collaboration : « Votre rôle · propriétaire », aucun membre invité", (await page.locator(".collab-role").textContent()) === "propriétaire" && /Aucun membre invité/.test(await page.locator(".members-table").textContent()));
 await page.fill('.members-invite input[type="email"]', "personne@example.com");
 await page.locator('.members-invite button:has-text("Inviter")').click();
-await page.waitForSelector(".members-panel .h7-error", { timeout: 10000 });
-check("collaboration : inviter une adresse sans compte → refus expliqué (« Aucun compte Fadi n'a cette adresse »)", /Aucun compte Fadi n’a cette adresse/.test(await page.locator(".members-panel .h7-error").textContent()));
+// Gestion des comptes (#253, UM-3) : une adresse sans compte reçoit une invitation nominative en attente — aucun compte
+// n'est créé et la personne n'est pas membre tant qu'elle n'a pas accepté.
+await page.waitForSelector('[data-project-invitations] li', { timeout: 10000 });
+check("collaboration : inviter une adresse sans compte → invitation en attente, aucun membre ajouté", /personne@example\.com/.test(await page.locator("[data-project-invitations]").textContent()) && /Aucun membre invité/.test(await page.locator(".members-table").textContent()));
 await page.fill('.members-invite input[type="email"]', readerEmail);
 await page.selectOption(".members-invite select", "lecteur");
 await page.locator('.members-invite button:has-text("Inviter")').click();
