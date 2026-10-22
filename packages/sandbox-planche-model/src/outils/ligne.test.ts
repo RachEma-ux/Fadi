@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { outilParId } from "../catalogue-outils.js";
-import { type Modele, aire, ajouterRectangle, compter, deplacer, grouper, modeleVide } from "../geometrie-libre.js";
+import { type Modele, aire, ajouterRectangle, ajouterSegment, compter, deplacer, grouper, modeleVide } from "../geometrie-libre.js";
 import { type Vec3, v3 } from "../vecteur.js";
 import type { ContexteOutil, EvenementOutil, MachineOutil, Transition } from "./machine.js";
 import { type EtatLigne, formaterLongueur, machineLigne } from "./ligne.js";
@@ -302,5 +302,24 @@ describe("Ligne — guides depuis les points déjà posés (From Point)", () => 
   it("la chaîne terminée oublie les points acquis", () => {
     const p = new Pilote(machineLigne).envoyer(clic(0, 0), clic(4, 0), { genre: "echap" });
     expect((p.etat as EtatLigne).acquis).toHaveLength(0);
+  });
+});
+
+describe("Ligne — angle droit d'une perpendiculaire à une arête", () => {
+  it("le symbole se place à l'intersection du segment avec l'arête de référence", () => {
+    const m = ajouterSegment(modeleVide(), v3(0, 2, 0), v3(4, 4, 0)).modele;
+    const p = new Pilote(machineLigne, m).envoyer(clic(6, 0), survol(2, 3), survol(3, 6));
+    const e = p.etat as EtatLigne;
+    expect(e.inference?.type).toBe("perpendiculaire");
+    const a = machineLigne.vue(e, p.ctx).angleDroit;
+    expect(a).toBeDefined();
+    expect(a?.sommet.x).toBeCloseTo(4, 6);
+    expect(a?.sommet.y).toBeCloseTo(4, 6);
+    expect(a ? Math.abs(a.u.x * a.v.x + a.u.y * a.v.y + a.u.z * a.v.z) : 1).toBeLessThan(1e-9);
+  });
+
+  it("pas de symbole pour un autre type d'inférence", () => {
+    const p = new Pilote(machineLigne).envoyer(clic(0, 0), survol(3, 0.02));
+    expect(machineLigne.vue(p.etat as EtatLigne, p.ctx).angleDroit).toBeUndefined();
   });
 });

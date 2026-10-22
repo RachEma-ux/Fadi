@@ -111,6 +111,32 @@ function acquerir(e: EtatLigne, i: Inference): EtatLigne {
   return TYPES_ACQUIS.has(i.type) ? avecAcquis(e, i.point) : e;
 }
 
+/**
+ * Symbole d'angle droit d'une ligne perpendiculaire à l'arête de référence : à l'endroit où le segment en cours coupe
+ * cette arête (prolongée), seulement s'il le croise entre son départ et le curseur.
+ */
+export function angleDroitPerpendiculaire(e: EtatLigne): { sommet: Vec3; u: Vec3; v: Vec3 } | null {
+  const i = e.inference;
+  const ref = e.areteReference;
+  if (e.etape !== 2 || !e.depart || !i || i.type !== "perpendiculaire" || !ref) return null;
+  const d1 = sub(i.point, e.depart);
+  const d2 = sub(ref.b, ref.a);
+  if (len(d1) < TOL || len(d2) < TOL) return null;
+  const w = sub(e.depart, ref.a);
+  const a = dot(d1, d1);
+  const b = dot(d1, d2);
+  const c = dot(d2, d2);
+  const den = a * c - b * b;
+  if (Math.abs(den) < 1e-12) return null;
+  const s = (b * dot(d2, w) - c * dot(d1, w)) / den;
+  const t = (a * dot(d2, w) - b * dot(d1, w)) / den;
+  const q1 = add(e.depart, scale(d1, s));
+  const q2 = add(ref.a, scale(d2, t));
+  if (dist(q1, q2) > 1e-4 || s <= 1e-6 || s >= 1 - 1e-6) return null;
+  const versExtremiteLointaine = dist(q1, ref.a) > dist(q1, ref.b) ? sub(ref.a, q1) : sub(ref.b, q1);
+  return { sommet: q1, u: normalize(versExtremiteLointaine), v: normalize(scale(d1, -1)) };
+}
+
 function recalculer(e: EtatLigne, ctx: ContexteOutil): EtatLigne {
   return e.rayon ? { ...e, inference: inferenceLigne(e, ctx, e.rayon.rayon, e.rayon.tolerance) } : e;
 }
@@ -259,6 +285,7 @@ export const machineLigne: MachineOutil<EtatLigne> = {
       if (etat.verrouMaj) consigne = consigne.split(" | ").filter((s) => !s.startsWith("Alt =")).join(" | ");
     }
     const i = etat.inference;
+    const angle = angleDroitPerpendiculaire(etat);
     const valeur =
       etat.texte ??
       (etat.etape === 2 && etat.depart && i ? formaterLongueur(dist(etat.depart, i.point), ctx.separateurDecimal, i.verrouillee) : "");
@@ -270,6 +297,7 @@ export const machineLigne: MachineOutil<EtatLigne> = {
         saisie: { attendu: ATTENDU, separateurDecimal: ctx.separateurDecimal },
       },
       inference: i,
+      ...(angle ? { angleDroit: angle } : {}),
       apercu: { lignes: etat.etape === 2 && etat.depart && i ? [[etat.depart, i.point]] : [], faces: [] },
       selection: ctx.selection,
       survol: [],
