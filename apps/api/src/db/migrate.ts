@@ -3,10 +3,13 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { Pool } from "pg";
 import { basculerAncienMoteur } from "./bascule.js";
+import { applyRolePasswords } from "./role-passwords.js";
 
-const connectionString = process.env["DATABASE_URL"];
+// D-7 : la migration (DDL) se fait avec le rôle `fadi_migrator` (`DATABASE_MIGRATION_URL`) ; l'API n'a aucun droit DDL.
+// Sans `DATABASE_MIGRATION_URL` (développement local, base d'un seul rôle), `DATABASE_URL` est utilisé.
+const connectionString = process.env["DATABASE_MIGRATION_URL"] || process.env["DATABASE_URL"];
 if (!connectionString) {
-  throw new Error("DATABASE_URL is not set.");
+  throw new Error("DATABASE_MIGRATION_URL (ou DATABASE_URL) is not set.");
 }
 
 async function main() {
@@ -17,6 +20,9 @@ async function main() {
     await pool.query(sql);
     // eslint-disable-next-line no-console
     console.log("Schema applied (init.sql).");
+    const roles = await applyRolePasswords(pool);
+    // eslint-disable-next-line no-console
+    if (roles.length) console.log(`D-7 : mot de passe appliqué pour ${roles.join(", ")}.`);
     const b = await basculerAncienMoteur(pool);
     // eslint-disable-next-line no-console
     if (b.supprimees) console.log(`Bascule de l'Atelier : ${b.convertis} projet(s) repris dans le modèle typé, tables de l'ancien moteur supprimées.`);

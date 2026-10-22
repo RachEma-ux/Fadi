@@ -1,0 +1,28 @@
+# Fadi — services de développement local (jamais en production) : PostGIS et Mailpit, le serveur SMTP de test qui
+# capture tous les courriels (aucun n'est remis). Interface Mailpit : http://localhost:8025.
+#
+#   docker compose -f docker-compose.dev.yml up -d
+#   # apps/api/.env : DATABASE_URL=postgresql://fadi:fadi_dev_password@localhost:5432/fadi
+#   #                 MAIL_TRANSPORT=smtp SMTP_HOST=localhost SMTP_PORT=1025 SMTP_SECURE=false
+#   #                 SMTP_USER=noreply@fadi.test MAIL_FROM="Fadi <noreply@fadi.test>" APP_PUBLIC_URL=http://localhost:5173
+
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_USER: fadi
+      POSTGRES_PASSWORD: fadi_dev_password
+      POSTGRES_DB: fadi
+    ports:
+      - "5432:5432"
+    volumes:
+      - fadi-dev-db:/var/lib/postgresql/data
+
+  mailpit:
+    image: axllent/mailpit:v1.20.4
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  fadi-dev-db:

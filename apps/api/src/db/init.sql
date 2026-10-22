@@ -8,6 +8,42 @@
 
 CREATE EXTENSION IF NOT EXISTS postgis;
 
+-- D-7 (docs/workstreams/users-management/AMENDEMENT-D7.md) : rôles au moindre privilège et schémas `auth` / `admin`.
+-- Les rôles sont créés sans mot de passe (définis hors dépôt par l'administrateur du serveur, RUNBOOK.md) et seulement
+-- par un rôle qui en a le droit ; ailleurs, rien n'est créé. `fadi_migrator`, membre de `fadi_owner`, agit en
+-- propriétaire pendant la migration (les objets créés appartiennent à `fadi_owner`).
+DO $$
+BEGIN
+  IF (SELECT rolsuper OR rolcreaterole FROM pg_roles WHERE rolname = current_user) THEN
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'fadi_owner') THEN CREATE ROLE fadi_owner NOLOGIN; END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'fadi_migrator') THEN CREATE ROLE fadi_migrator LOGIN; END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'fadi_app') THEN CREATE ROLE fadi_app LOGIN; END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'fadi_retention') THEN CREATE ROLE fadi_retention LOGIN; END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'fadi_backup') THEN CREATE ROLE fadi_backup LOGIN; END IF;
+    IF NOT pg_has_role('fadi_migrator', 'fadi_owner', 'MEMBER') THEN GRANT fadi_owner TO fadi_migrator; END IF;
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'fadi_owner')
+     AND NOT (SELECT rolsuper FROM pg_roles WHERE rolname = current_user)
+     AND pg_has_role(current_user, 'fadi_owner', 'MEMBER') THEN
+    SET ROLE fadi_owner;
+  END IF;
+  -- `CREATE SCHEMA IF NOT EXISTS` exige le droit CREATE sur la base même quand le schéma existe : vérifié d'abord.
+  IF NOT EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = 'auth') THEN
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'fadi_owner') AND pg_has_role(current_user, 'fadi_owner', 'MEMBER') THEN
+      CREATE SCHEMA auth AUTHORIZATION fadi_owner;
+    ELSE
+      CREATE SCHEMA auth;
+    END IF;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = 'admin') THEN
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'fadi_owner') AND pg_has_role(current_user, 'fadi_owner', 'MEMBER') THEN
+      CREATE SCHEMA admin AUTHORIZATION fadi_owner;
+    ELSE
+      CREATE SCHEMA admin;
+    END IF;
+  END IF;
+END $$;
+
 CREATE TABLE IF NOT EXISTS users (
   id text PRIMARY KEY,
   email text NOT NULL,
@@ -1209,67 +1245,80 @@ ALTER TABLE sessions ADD COLUMN IF NOT EXISTS user_agent text;
 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS ip text;
 -- Connexion en deux étapes (D-6) : mot de passe vérifié, code TOTP attendu (5 min au plus) ; ne vaut pas authentification.
 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS mfa_pending boolean NOT NULL DEFAULT false;
-UPDATE sessions
-   SET token_hash = encode(sha256(convert_to(id, 'UTF8')), 'hex'),
-       id = 'ses_' || md5(id || clock_timestamp()::text || random()::text),
-       last_seen_at = coalesce(last_seen_at, created_at),
-       absolute_expires_at = coalesce(absolute_expires_at, expires_at)
- WHERE token_hash IS NULL;
+DO $$
+BEGIN
+  UPDATE sessions
+     SET token_hash = encode(sha256(convert_to(id, 'UTF8')), 'hex'),
+         id = 'ses_' || md5(id || clock_timestamp()::text || random()::text),
+         last_seen_at = coalesce(last_seen_at, created_at),
+         absolute_expires_at = coalesce(absolute_expires_at, expires_at)
+   WHERE token_hash IS NULL;
+END $$;
 CREATE UNIQUE INDEX IF NOT EXISTS sessions_token_hash_unique ON sessions (token_hash);
 
+-- D-7 (docs/workstreams/users-management/AMENDEMENT-D7.md) : les nouvelles tables des comptes vivent dans le schéma
+-- `auth`, celles d'audit et d'exploitation dans `admin` ; `users`, `sessions` et les autres tables existantes restent
+-- dans `public`. Noms toujours qualifiés : aucune dépendance au search_path.
+
 -- D-6 : 10 codes de secours par activation de la double authentification, hachés, à usage unique.
-CREATE TABLE IF NOT EXISTS user_recovery_codes (
+CREATE TABLE IF NOT EXISTS auth.user_recovery_codes (
   id text PRIMARY KEY,
-  user_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  user_id text NOT NULL REFERENCES public.users (id) ON DELETE CASCADE,
   code_hash text NOT NULL,
   used_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS user_recovery_codes_user_idx ON user_recovery_codes (user_id);
+CREATE INDEX IF NOT EXISTS user_recovery_codes_user_idx ON auth.user_recovery_codes (user_id);
 
 -- D-2 / UM-4 : accès support en lecture seule, accordé par le propriétaire à un administrateur nommé, ≤ 72 h, révocable.
-CREATE TABLE IF NOT EXISTS project_support_grants (
+-- Lié aux projets : schéma `public` (D-7).
+CREATE TABLE IF NOT EXISTS public.project_support_grants (
   id text PRIMARY KEY,
-  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
-  admin_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-  granted_by text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  project_id text NOT NULL REFERENCES public.projects (id) ON DELETE CASCADE,
+  admin_id text NOT NULL REFERENCES public.users (id) ON DELETE CASCADE,
+  granted_by text NOT NULL REFERENCES public.users (id) ON DELETE CASCADE,
   purpose text NOT NULL,
   granted_at timestamptz NOT NULL DEFAULT now(),
   expires_at timestamptz NOT NULL,
   revoked_at timestamptz,
-  revoked_by text REFERENCES users (id) ON DELETE SET NULL,
+  revoked_by text REFERENCES public.users (id) ON DELETE SET NULL,
   CONSTRAINT project_support_grants_duration CHECK (expires_at > granted_at AND expires_at <= granted_at + interval '72 hours'),
   CONSTRAINT project_support_grants_purpose CHECK (length(btrim(purpose)) BETWEEN 3 AND 500)
 );
-CREATE INDEX IF NOT EXISTS project_support_grants_project_idx ON project_support_grants (project_id, admin_id);
+CREATE INDEX IF NOT EXISTS project_support_grants_project_idx ON public.project_support_grants (project_id, admin_id);
 
 -- UM-3 : une invitation est une proposition, jamais un compte ni un accès. Une seule invitation en attente par
--- (adresse, finalité, projet) : un renvoi remplace son jeton au lieu de multiplier les invitations.
-CREATE TABLE IF NOT EXISTS invitations (
+-- (adresse, finalité, projet) : un renvoi remplace son jeton au lieu de multiplier les invitations. `invited_by` est
+-- nul seulement pour l'invitation d'amorçage du premier administrateur (apps/api/scripts/create-admin.mjs), autorité de
+-- l'exploitant, qui donne le rôle administrateur à l'activation.
+CREATE TABLE IF NOT EXISTS auth.invitations (
   id text PRIMARY KEY,
   purpose text NOT NULL,
   email text NOT NULL,
   token_hash text NOT NULL,
-  project_id text REFERENCES projects (id) ON DELETE CASCADE,
+  project_id text REFERENCES public.projects (id) ON DELETE CASCADE,
   project_role text,
-  invited_by text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  invited_by text REFERENCES public.users (id) ON DELETE CASCADE,
+  grant_platform_role text,
   status text NOT NULL DEFAULT 'pending',
   expires_at timestamptz NOT NULL,
   access_expires_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
   responded_at timestamptz,
-  accepted_user_id text REFERENCES users (id) ON DELETE SET NULL,
+  accepted_user_id text REFERENCES public.users (id) ON DELETE SET NULL,
   CONSTRAINT invitations_purpose_check CHECK (purpose IN ('platform_account', 'project_participation')),
   CONSTRAINT invitations_status_check CHECK (status IN ('pending', 'accepted', 'declined', 'expired', 'cancelled')),
-  CONSTRAINT invitations_project_check CHECK ((purpose = 'project_participation') = (project_id IS NOT NULL AND project_role IN ('lecteur', 'editeur')))
+  CONSTRAINT invitations_project_check CHECK ((purpose = 'project_participation') = (project_id IS NOT NULL AND project_role IN ('lecteur', 'editeur'))),
+  CONSTRAINT invitations_grant_role_check CHECK (grant_platform_role IS NULL OR (grant_platform_role = 'admin' AND purpose = 'platform_account')),
+  CONSTRAINT invitations_inviter_check CHECK (invited_by IS NOT NULL OR grant_platform_role = 'admin')
 );
-CREATE UNIQUE INDEX IF NOT EXISTS invitations_token_hash_unique ON invitations (token_hash);
-CREATE UNIQUE INDEX IF NOT EXISTS invitations_pending_unique ON invitations (email, purpose, coalesce(project_id, '')) WHERE status = 'pending';
+CREATE UNIQUE INDEX IF NOT EXISTS invitations_token_hash_unique ON auth.invitations (token_hash);
+CREATE UNIQUE INDEX IF NOT EXISTS invitations_pending_unique ON auth.invitations (email, purpose, coalesce(project_id, '')) WHERE status = 'pending';
 
 -- Jetons de compte à usage unique (vérification d'e-mail 24 h, réinitialisation 1 h, annulation de suppression 30 j).
-CREATE TABLE IF NOT EXISTS account_tokens (
+CREATE TABLE IF NOT EXISTS auth.account_tokens (
   id text PRIMARY KEY,
-  user_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  user_id text NOT NULL REFERENCES public.users (id) ON DELETE CASCADE,
   purpose text NOT NULL,
   token_hash text NOT NULL,
   expires_at timestamptz NOT NULL,
@@ -1277,12 +1326,14 @@ CREATE TABLE IF NOT EXISTS account_tokens (
   created_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT account_tokens_purpose_check CHECK (purpose IN ('verify_email', 'reset_password', 'cancel_deletion'))
 );
-CREATE UNIQUE INDEX IF NOT EXISTS account_tokens_token_hash_unique ON account_tokens (token_hash);
-CREATE INDEX IF NOT EXISTS account_tokens_user_idx ON account_tokens (user_id, purpose);
+CREATE UNIQUE INDEX IF NOT EXISTS account_tokens_token_hash_unique ON auth.account_tokens (token_hash);
+CREATE INDEX IF NOT EXISTS account_tokens_user_idx ON auth.account_tokens (user_id, purpose);
 
 -- Journal d'audit append-only (même modèle que l'immuabilité de studio_revisions) : ni UPDATE ni DELETE. Aucune clé
 -- étrangère : l'identifiant de l'acteur survit à l'anonymisation ; aucune adresse e-mail n'y est jamais écrite (D-5).
-CREATE TABLE IF NOT EXISTS audit_log (
+-- Seule exception (D-7) : le rôle `fadi_retention` peut anonymiser `actor_id`, `ip` et `metadata` d'une entrée, sans en
+-- changer l'action, la cible ni la date ; la suppression reste refusée à tous.
+CREATE TABLE IF NOT EXISTS admin.audit_log (
   id bigserial PRIMARY KEY,
   actor_id text,
   action text NOT NULL,
@@ -1292,19 +1343,24 @@ CREATE TABLE IF NOT EXISTS audit_log (
   ip text,
   created_at timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS audit_log_actor_idx ON audit_log (actor_id, created_at);
-CREATE INDEX IF NOT EXISTS audit_log_target_idx ON audit_log (target_type, target_id, created_at);
-CREATE OR REPLACE FUNCTION audit_log_append_only() RETURNS trigger LANGUAGE plpgsql AS $$
+CREATE INDEX IF NOT EXISTS audit_log_actor_idx ON admin.audit_log (actor_id, created_at);
+CREATE INDEX IF NOT EXISTS audit_log_target_idx ON admin.audit_log (target_type, target_id, created_at);
+CREATE OR REPLACE FUNCTION admin.audit_log_append_only() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
+  IF TG_OP = 'UPDATE' AND current_user = 'fadi_retention'
+     AND NEW.id = OLD.id AND NEW.action = OLD.action AND NEW.target_type IS NOT DISTINCT FROM OLD.target_type
+     AND NEW.target_id IS NOT DISTINCT FROM OLD.target_id AND NEW.created_at = OLD.created_at THEN
+    RETURN NEW;
+  END IF;
   RAISE EXCEPTION 'audit_log_append_only';
 END;
 $$;
-CREATE OR REPLACE TRIGGER audit_log_no_update BEFORE UPDATE ON audit_log FOR EACH ROW EXECUTE FUNCTION audit_log_append_only();
-CREATE OR REPLACE TRIGGER audit_log_no_delete BEFORE DELETE ON audit_log FOR EACH ROW EXECUTE FUNCTION audit_log_append_only();
+CREATE OR REPLACE TRIGGER audit_log_no_update BEFORE UPDATE ON admin.audit_log FOR EACH ROW EXECUTE FUNCTION admin.audit_log_append_only();
+CREATE OR REPLACE TRIGGER audit_log_no_delete BEFORE DELETE ON admin.audit_log FOR EACH ROW EXECUTE FUNCTION admin.audit_log_append_only();
 
 -- D-1 : file d'envoi des courriels (les routes ne dépendent jamais du SMTP). Le lien porteur d'un jeton n'y reste que
 -- jusqu'à l'envoi ou l'abandon : la charge est alors effacée (`payload = '{}'`).
-CREATE TABLE IF NOT EXISTS mail_outbox (
+CREATE TABLE IF NOT EXISTS admin.mail_outbox (
   id text PRIMARY KEY,
   to_address text NOT NULL,
   template text NOT NULL,
@@ -1319,6 +1375,63 @@ CREATE TABLE IF NOT EXISTS mail_outbox (
   CONSTRAINT mail_outbox_status_check CHECK (status IN ('pending', 'sent', 'failed', 'skipped')),
   CONSTRAINT mail_outbox_locale_check CHECK (locale IN ('fr', 'en'))
 );
-CREATE INDEX IF NOT EXISTS mail_outbox_pending_idx ON mail_outbox (next_attempt_at) WHERE status = 'pending';
-CREATE INDEX IF NOT EXISTS mail_outbox_created_idx ON mail_outbox (created_at);
-CREATE INDEX IF NOT EXISTS mail_outbox_to_idx ON mail_outbox (to_address, created_at);
+CREATE INDEX IF NOT EXISTS mail_outbox_pending_idx ON admin.mail_outbox (next_attempt_at) WHERE status = 'pending';
+CREATE INDEX IF NOT EXISTS mail_outbox_created_idx ON admin.mail_outbox (created_at);
+CREATE INDEX IF NOT EXISTS mail_outbox_to_idx ON admin.mail_outbox (to_address, created_at);
+
+-- ---------------------------------------------------------------------------
+-- D-7 : droits au moindre privilège. Exécuté par un super-utilisateur (amorçage, CI) : propriété de tout transférée à
+-- `fadi_owner` ; exécuté par `fadi_migrator` (membre de `fadi_owner`) : droits rejoués ; sinon, simple avis (rôles non
+-- provisionnés : rien n'est changé). `fadi_app` : lecture / écriture des tables, aucun DDL, journal d'audit en lecture et
+-- ajout seulement ; `fadi_retention` : anonymisation de colonnes du journal ; `fadi_backup` : lecture seule.
+-- ---------------------------------------------------------------------------
+DO $$
+DECLARE
+  r record;
+  su boolean := (SELECT rolsuper FROM pg_roles WHERE rolname = current_user);
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'fadi_owner') THEN
+    RAISE NOTICE 'D-7 : rôles fadi_* absents, droits inchangés (voir RUNBOOK.md)';
+    RETURN;
+  END IF;
+  IF su THEN
+    FOR r IN
+      SELECT n.nspname, c.relname, c.relkind FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+       WHERE n.nspname IN ('public', 'auth', 'admin') AND c.relkind IN ('r', 'p', 'v', 'm', 'S')
+         AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.classid = 'pg_class'::regclass AND d.objid = c.oid AND d.deptype IN ('e', 'a', 'i'))
+         AND pg_get_userbyid(c.relowner) <> 'fadi_owner'
+    LOOP
+      EXECUTE format('ALTER %s %I.%I OWNER TO fadi_owner',
+        CASE r.relkind WHEN 'S' THEN 'SEQUENCE' WHEN 'v' THEN 'VIEW' WHEN 'm' THEN 'MATERIALIZED VIEW' ELSE 'TABLE' END, r.nspname, r.relname);
+    END LOOP;
+    FOR r IN
+      SELECT p.oid::regprocedure AS f FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+       WHERE n.nspname IN ('public', 'admin', 'auth') AND pg_get_userbyid(p.proowner) <> 'fadi_owner'
+         AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.classid = 'pg_proc'::regclass AND d.objid = p.oid AND d.deptype = 'e')
+    LOOP
+      EXECUTE format('ALTER FUNCTION %s OWNER TO fadi_owner', r.f);
+    END LOOP;
+    ALTER SCHEMA auth OWNER TO fadi_owner;
+    ALTER SCHEMA admin OWNER TO fadi_owner;
+    REVOKE ALL ON SCHEMA public FROM PUBLIC;
+    GRANT USAGE, CREATE ON SCHEMA public TO fadi_owner;
+    ALTER ROLE fadi_app SET search_path = public, auth, admin;
+    ALTER ROLE fadi_migrator SET search_path = public, auth, admin;
+  ELSIF NOT pg_has_role(current_user, 'fadi_owner', 'MEMBER') THEN
+    RAISE NOTICE 'D-7 : % n''est ni super-utilisateur ni membre de fadi_owner, droits inchangés', current_user;
+    RETURN;
+  END IF;
+  GRANT USAGE ON SCHEMA public, auth, admin TO fadi_app, fadi_retention, fadi_backup;
+  GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public, auth, admin TO fadi_app;
+  GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public, auth, admin TO fadi_app;
+  REVOKE UPDATE, DELETE, TRUNCATE ON admin.audit_log FROM fadi_app;
+  REVOKE TRUNCATE ON ALL TABLES IN SCHEMA public, auth, admin FROM fadi_app;
+  REVOKE ALL ON ALL TABLES IN SCHEMA public, auth, admin FROM fadi_retention;
+  GRANT SELECT ON admin.audit_log TO fadi_retention;
+  GRANT UPDATE (actor_id, ip, metadata) ON admin.audit_log TO fadi_retention;
+  GRANT SELECT ON ALL TABLES IN SCHEMA public, auth, admin TO fadi_backup;
+  GRANT SELECT ON ALL SEQUENCES IN SCHEMA public, auth, admin TO fadi_backup;
+  ALTER DEFAULT PRIVILEGES FOR ROLE fadi_owner IN SCHEMA public, auth, admin GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO fadi_app;
+  ALTER DEFAULT PRIVILEGES FOR ROLE fadi_owner IN SCHEMA public, auth, admin GRANT USAGE, SELECT ON SEQUENCES TO fadi_app;
+  ALTER DEFAULT PRIVILEGES FOR ROLE fadi_owner IN SCHEMA public, auth, admin GRANT SELECT ON TABLES TO fadi_backup;
+END $$;

@@ -235,6 +235,7 @@ Statut : **validées le 2026-10-22** par le maître d'ouvrage. Seule exception p
 | **D-3** Organisations / équipes | **Pas maintenant**, sauf exigence du concept. Colonne `organization_id` nullable réservée sur `users` et `projects`, sans logique. | Phase 1 |
 | **D-4** Tests DB-3 | **Oui** : PostGIS **éphémère** en service conteneur GitHub Actions, attesté jetable, jamais relié à la production. | Phase 6 |
 | **D-5** Suppression | **Anonymisation** après **30 jours de grâce** (annulable par lien) ; **export JSON** préalable ; transfert obligatoire des projets partagés possédés ; commentaires et révisions conservés sous « Compte supprimé ». Conforme RGPD et nLPD. | Phases 1, 4, 5 |
+| **D-7** Schémas et rôles | Amendement du 2026-10-22 : schémas `public` / `auth` / `admin`, rôles `fadi_owner`, `fadi_migrator`, `fadi_app`, `fadi_retention`, `fadi_backup` au moindre privilège — voir [AMENDEMENT-D7.md](AMENDEMENT-D7.md), qui prime pour l'emplacement des tables et les droits. | Phases 1, 6 |
 | **D-6** Mots de passe et MFA | **12 caractères min.**, 128 max., sans règles de composition, liste de mots de passe compromis, pas d'expiration. **TOTP facultatif** pour les utilisateurs, **obligatoire pour les admins** + 10 codes de secours. Session admin ≤ 24 h et 1 h d'inactivité ; utilisateur ≤ 30 j. | Phases 1, 2, 3, 5 |
 
 ## Annexe B — Prérequis de gouvernance

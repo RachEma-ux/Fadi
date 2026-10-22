@@ -2,7 +2,9 @@
  * Module Collaboration — partage du projet. Monté sous `/projects/:projectId/members`.
  *
  *   GET    /          → { owner, you, members } : le propriétaire, votre rôle, les personnes invitées (tout lecteur)
- *   POST   /          { email, role } → 201 : invitation (ou changement de rôle) d'un compte existant — propriétaire seulement
+ *   POST   /          { email, role } → 201 : partage (ou changement de rôle) d'un compte existant ; 202 : invitation
+ *                      nominative d'une adresse sans compte (UM-3, lien à copier si le courriel n'a pas pu partir) — propriétaire seulement
+ *   DELETE /invitations/:invitationId → 204 : annulation d'une invitation en attente — propriétaire seulement
  *   PATCH  /:userId   { role } → le rôle d'un membre — propriétaire seulement
  *   DELETE /:userId   → 204 : retrait d'un membre par le propriétaire, ou départ du membre lui-même
  *   POST   /:userId/propriete → transfert de la propriété à ce membre (propriétaire seulement) : l'ancien propriétaire
@@ -16,14 +18,17 @@
  * et le contrôle de concurrence (409) s'applique entre eux comme entre deux
  * appareils d'un même compte.
  *
- * L'invitation vise un compte existant, par son adresse : l'application
- * n'envoie pas de courriel et n'invente pas de compte.
+ * Un compte existant est ajouté directement (comportement accepté, écart UM-8) ; une adresse sans compte reçoit
+ * une invitation par courriel (D-1) : aucun compte n'est créé tant que la personne n'a pas accepté.
  */
 import { Router } from "express";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, gt } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client.js";
-import { projectMembers, projects, users } from "../db/schema.js";
+import { invitations, projectMembers, projects, users } from "../db/schema.js";
+import { audit, clientIp } from "../lib/audit.js";
+import { formatDate, mailLocale, PUBLIC_PATHS, publicLink, sendAccountMail } from "../lib/account.js";
+import { createOrRenewInvitation, invitationView } from "../lib/invitations.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { projectOr404, type ProjectRole } from "../lib/owned-project.js";
 import { lockProject } from "../lib/step-rows.js";
@@ -43,6 +48,7 @@ export const ROLE_LABEL: Record<ProjectRole, string> = {
   proprietaire: "propriétaire",
   editeur: "éditeur",
   lecteur: "lecteur",
+  support: "accès support (lecture seule)",
 };
 
 const roleSchema = z.enum(["lecteur", "editeur"]);
@@ -65,10 +71,39 @@ export async function ownerEmailOf(ownerId: string): Promise<string> {
   return owner?.email ?? "";
 }
 
+/** Invitations du projet en attente (propriétaire seulement) : adresse, rôle, échéance — jamais le jeton. */
+async function pendingInvitations(projectId: string) {
+  const rows = await db.select().from(invitations)
+    .where(and(eq(invitations.projectId, projectId), eq(invitations.status, "pending"), gt(invitations.expiresAt, new Date())))
+    .orderBy(asc(invitations.createdAt));
+  return rows.map((r) => invitationView(r));
+}
+
 membersRouter.get("/", async (req, res) => {
   const project = await projectOr404(req, res, "read");
   if (!project) return;
-  res.json({ owner: { userId: project.ownerId, email: await ownerEmailOf(project.ownerId) }, you: { userId: req.user!.id, role: project.role }, members: await listMembers(project.id) });
+  res.json({
+    owner: { userId: project.ownerId, email: await ownerEmailOf(project.ownerId) }, you: { userId: req.user!.id, role: project.role }, members: await listMembers(project.id),
+    ...(project.role === "proprietaire" ? { invitations: await pendingInvitations(project.id) } : {}),
+  });
+});
+
+/** Annulation d'une invitation en attente par le propriétaire : le lien ne donne plus rien. */
+membersRouter.delete("/invitations/:invitationId", async (req, res) => {
+  const project = await projectOr404(req, res, "owner");
+  if (!project) return;
+  const id = req.params["invitationId"] as string;
+  const done = await db.transaction(async (tx) => {
+    const rows = await tx.update(invitations).set({ status: "cancelled", respondedAt: new Date() })
+      .where(and(eq(invitations.id, id), eq(invitations.projectId, project.id), eq(invitations.status, "pending"))).returning({ id: invitations.id });
+    if (rows.length) await audit(tx, { actorId: req.user!.id, action: "invitation.cancelled", target: { type: "invitation", id }, metadata: { projectId: project.id }, ip: clientIp(req) });
+    return rows.length > 0;
+  });
+  if (!done) {
+    res.status(404).json({ error: "not_found" });
+    return;
+  }
+  res.status(204).end();
 });
 
 membersRouter.post("/", async (req, res) => {
@@ -79,9 +114,27 @@ membersRouter.post("/", async (req, res) => {
     res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
     return;
   }
-  const [account] = await db.select({ id: users.id, email: users.email }).from(users).where(eq(users.email, parsed.data.email)).limit(1);
+  const [account] = await db.select({ id: users.id, email: users.email, status: users.status }).from(users).where(eq(users.email, parsed.data.email)).limit(1);
   if (!account) {
-    res.status(404).json({ error: "user_not_found", message: "Aucun compte Fadi n’a cette adresse : la personne doit d’abord créer son compte, puis vous l’invitez." });
+    // Adresse sans compte (UM-3) : une invitation nominative (projet + rôle), jamais un compte créé d'office. Sans envoi
+    // possible (quota, transport absent), le lien est rendu au propriétaire pour qu'il le transmette (D-1).
+    const locale = mailLocale(req, (req.body as { locale?: unknown }).locale);
+    const result = await db.transaction(async (tx) => {
+      const created = await createOrRenewInvitation(tx, { purpose: "project_participation", email: parsed.data.email, projectId: project.id, projectRole: parsed.data.role, invitedBy: req.user!.id, ip: clientIp(req) });
+      const link = publicLink(PUBLIC_PATHS.invitation, created.token);
+      const mail = await sendAccountMail(parsed.data.email, "invitation", {
+        link, projectName: `${project.code} — ${project.name}`, role: ROLE_LABEL[parsed.data.role], expiresAt: formatDate(created.invitation.expiresAt, locale),
+      }, locale, tx);
+      return { ...created, link, mail };
+    });
+    res.status(202).json({
+      invitation: invitationView(result.invitation, { projectName: `${project.code} — ${project.name}` }), resent: result.resent,
+      mail: { queued: result.mail.queued, reason: result.mail.reason, ...(result.mail.queued ? {} : { link: result.link }) },
+    });
+    return;
+  }
+  if (account.status === "closed") {
+    res.status(404).json({ error: "user_not_found", message: "Aucun compte actif n’a cette adresse." });
     return;
   }
   if (account.id === project.ownerId) {

@@ -45,11 +45,13 @@ def main():
  # Dollar-quoted bodies (Studio immutability trigger) are one CREATE FUNCTION statement, not separate statements.
  sqltext=re.sub(r'\$\$.*?\$\$','$$$$',sqltext,flags=re.S)
  starts=[z.strip().split(None,1)[0].upper() for z in sqltext.split(';') if z.strip()]
- assert set(starts)<= {'CREATE','ALTER'},set(starts)
+ # DO : blocs relus d'init.sql (rôles et droits D-7, contraintes idempotentes de la gestion des comptes).
+ assert set(starts)<= {'CREATE','ALTER','DO'},set(starts)
  sql("CREATE SCHEMA studio_validation AUTHORIZATION studio_owner; CREATE TABLE studio_validation.identity(run_id text PRIMARY KEY); INSERT INTO studio_validation.identity VALUES ('"+run+"');")
  assert sql('SELECT run_id FROM studio_validation.identity;')==run
- sql('CREATE EXTENSION IF NOT EXISTS postgis; GRANT USAGE,CREATE ON SCHEMA public TO studio_owner; SET ROLE studio_owner; '+init+' RESET ROLE;')
- sql('GRANT USAGE ON SCHEMA public TO studio_app; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO studio_app; GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO studio_app; ALTER DEFAULT PRIVILEGES FOR ROLE studio_owner IN SCHEMA public GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO studio_app;')
+ # D-7 : schémas `auth` et `admin` (gestion des comptes) créés pour le propriétaire du profil avant init.sql.
+ sql('CREATE EXTENSION IF NOT EXISTS postgis; GRANT USAGE,CREATE ON SCHEMA public TO studio_owner; CREATE SCHEMA IF NOT EXISTS auth AUTHORIZATION studio_owner; CREATE SCHEMA IF NOT EXISTS admin AUTHORIZATION studio_owner; SET ROLE studio_owner; '+init+' RESET ROLE;')
+ sql('GRANT USAGE ON SCHEMA public, auth, admin TO studio_app; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public, auth, admin TO studio_app; GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public, auth, admin TO studio_app; REVOKE UPDATE,DELETE ON admin.audit_log FROM studio_app; ALTER DEFAULT PRIVILEGES FOR ROLE studio_owner IN SCHEMA public GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO studio_app;')
  # Studio schema now lives in init.sql (owner decision D-A, #166): require its three tables after bootstrap.
  assert sql("SELECT count(*) FROM pg_tables WHERE schemaname='public' AND tablename IN ('studio_studies','studio_variants','studio_revisions');")=='3'
  identity=sql("SELECT current_database(),current_setting('server_version_num'),postgis_lib_version(),(SELECT rolsuper FROM pg_roles WHERE rolname='studio_app');");assert identity.split('|')[-1]=='f'

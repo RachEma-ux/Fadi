@@ -1,10 +1,12 @@
 import type { NextFunction, Request, Response } from "express";
 import { parse } from "cookie";
-import { resolveSession, SESSION_COOKIE, type SessionUser } from "../lib/auth.js";
+import { resolveSession, sessionTokenFrom, setSessionCookie, type SessionUser } from "../lib/auth.js";
 
 declare module "express-serve-static-core" {
   interface Request {
     user?: SessionUser | undefined;
+    /** Jeton du cookie de session présenté (jamais journalisé ni stocké). */
+    sessionToken?: string | undefined;
   }
 }
 
@@ -13,12 +15,18 @@ declare module "express-serve-static-core" {
  * requête : certaines routes (ex. lecture publique future) pourraient vouloir
  * savoir "qui" sans exiger une connexion. Les routes qui DOIVENT être
  * protégées utilisent `requireAuth` ci-dessous, pas celui-ci seul.
+ * Une session encore portée par l'ancien cookie `fadi_session` est reposée sous le nom courant (UM-6).
  */
-export async function attachUser(req: Request, _res: Response, next: NextFunction): Promise<void> {
+export async function attachUser(req: Request, res: Response, next: NextFunction): Promise<void> {
   const header = req.headers.cookie;
   const cookies = header ? parse(header) : {};
-  const sessionId = cookies[SESSION_COOKIE];
-  req.user = (await resolveSession(sessionId)) ?? undefined;
+  const presented = sessionTokenFrom(cookies);
+  req.sessionToken = presented?.token;
+  req.user = (await resolveSession(presented?.token)) ?? undefined;
+  if (req.user && presented?.legacy) {
+    // Plafond inconnu ici sans relecture : le cookie dure 30 jours au plus, la session serveur fait foi à chaque requête.
+    setSessionCookie(res, presented.token, new Date(Date.now() + 30 * 24 * 3_600_000));
+  }
   next();
 }
 

@@ -11,7 +11,7 @@
  * typé par `@parcours/domain-model`. Mélanger les deux serait exactement
  * l'erreur de repères que `docs/architecture.md` interdit.
  */
-import { bigint, bigserial, boolean, customType, date, doublePrecision, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { bigint, bigserial, boolean, customType, pgSchema, date, doublePrecision, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import type { ConclusionControle, EtatExecution, ExigenceStudio, GrandeurQuantite, ResultatControle, StudioDocument, StudioEnvelope, StudioFeuilleComposeeDefinition, StudioPhaseWorkflow, UniteQuantite } from "@parcours/atelier-model";
 
 /** Colonne PostGIS brute : on ne fait pas transiter la géométrie par du JS côté serveur, on la laisse en WKT/EWKT et on laisse Postgres faire le travail spatial. */
@@ -58,6 +58,13 @@ export const users = pgTable("users", {
 }, (t) => [uniqueIndex("users_email_unique").on(t.email)]);
 
 export type AccountStatus = "active" | "suspended" | "closed";
+
+/**
+ * D-7 (docs/workstreams/users-management/AMENDEMENT-D7.md) : nouvelles tables des comptes dans le schéma `auth`,
+ * d'audit et d'exploitation dans `admin` ; les requêtes générées sont qualifiées (`"auth"."account_tokens"`).
+ */
+export const authSchema = pgSchema("auth");
+export const adminSchema = pgSchema("admin");
 export type PlatformRole = "user" | "admin";
 
 /** Session serveur : seule l'empreinte SHA-256 du jeton du cookie est stockée (UM-5). */
@@ -78,7 +85,7 @@ export const sessions = pgTable("sessions", {
   mfaPending: boolean("mfa_pending").notNull().default(false),
 }, (t) => [index("sessions_user_id_idx").on(t.userId), uniqueIndex("sessions_token_hash_unique").on(t.tokenHash)]);
 
-export const userRecoveryCodes = pgTable("user_recovery_codes", {
+export const userRecoveryCodes = authSchema.table("user_recovery_codes", {
   id: text("id").primaryKey(),
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   codeHash: text("code_hash").notNull(),
@@ -90,25 +97,27 @@ export type InvitationPurpose = "platform_account" | "project_participation";
 export type InvitationStatus = "pending" | "accepted" | "declined" | "expired" | "cancelled";
 
 /** UM-3 : une invitation est une proposition ; elle ne crée ni compte ni accès avant acceptation par l'adresse visée. */
-export const invitations = pgTable("invitations", {
+export const invitations = authSchema.table("invitations", {
   id: text("id").primaryKey(),
   purpose: text("purpose").$type<InvitationPurpose>().notNull(),
   email: text("email").notNull(),
   tokenHash: text("token_hash").notNull(),
-  projectId: text("project_id"),
+  projectId: text("project_id").references(() => projects.id, { onDelete: "cascade" }),
   projectRole: text("project_role").$type<"lecteur" | "editeur" | null>(),
-  invitedBy: text("invited_by").notNull().references(() => users.id, { onDelete: "cascade" }),
+  /** Null seulement pour l'invitation d'amorçage du premier administrateur (`grantPlatformRole = "admin"`). */
+  invitedBy: text("invited_by").references(() => users.id, { onDelete: "cascade" }),
+  grantPlatformRole: text("grant_platform_role").$type<"admin" | null>(),
   status: text("status").$type<InvitationStatus>().notNull().default("pending"),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   accessExpiresAt: timestamp("access_expires_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   respondedAt: timestamp("responded_at", { withTimezone: true }),
-  acceptedUserId: text("accepted_user_id"),
+  acceptedUserId: text("accepted_user_id").references(() => users.id, { onDelete: "set null" }),
 }, (t) => [uniqueIndex("invitations_token_hash_unique").on(t.tokenHash)]);
 
 export type AccountTokenPurpose = "verify_email" | "reset_password" | "cancel_deletion";
 
-export const accountTokens = pgTable("account_tokens", {
+export const accountTokens = authSchema.table("account_tokens", {
   id: text("id").primaryKey(),
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   purpose: text("purpose").$type<AccountTokenPurpose>().notNull(),
@@ -119,7 +128,7 @@ export const accountTokens = pgTable("account_tokens", {
 }, (t) => [uniqueIndex("account_tokens_token_hash_unique").on(t.tokenHash), index("account_tokens_user_idx").on(t.userId, t.purpose)]);
 
 /** Journal d'audit append-only (déclencheurs `audit_log_no_update` / `_no_delete`) ; jamais d'adresse e-mail. */
-export const auditLog = pgTable("audit_log", {
+export const auditLog = adminSchema.table("audit_log", {
   id: bigserial("id", { mode: "number" }).primaryKey(),
   actorId: text("actor_id"),
   action: text("action").notNull(),
@@ -133,7 +142,7 @@ export const auditLog = pgTable("audit_log", {
 export type MailStatus = "pending" | "sent" | "failed" | "skipped";
 
 /** D-1 : file d'envoi ; la charge (liens porteurs de jeton) est effacée dès l'envoi ou l'abandon. */
-export const mailOutbox = pgTable("mail_outbox", {
+export const mailOutbox = adminSchema.table("mail_outbox", {
   id: text("id").primaryKey(),
   toAddress: text("to_address").notNull(),
   template: text("template").notNull(),

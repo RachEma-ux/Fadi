@@ -1,9 +1,10 @@
 import express, { Router, type ErrorRequestHandler, type Request, type Response } from "express";
-import { asc, eq } from "drizzle-orm";
+import { supportGrantsRouter, supportReadOnlyGuard } from "./support-grants.js";
+import { and, asc, eq, gt, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { ARCHIVE_IMPORT_LIMIT, ArchiveError, archiveFileName, normalizeImportedProjects } from "@parcours/domain-model";
 import { db, pool } from "../db/client.js";
-import { projectMembers, projects, projectSteps, stepFiles, users } from "../db/schema.js";
+import { projectMembers, projects, projectSteps, projectSupportGrants, stepFiles, users } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { newId } from "../lib/ids.js";
 import { EMPTY_STEP_CONTENT, PARCOURS_STEPS, exampleBaseDocuments } from "../data/parcours.js";
@@ -34,6 +35,8 @@ import { nettoyerVolumes } from "../lib/volumes-gc.js";
 
 export const projectsRouter = Router();
 projectsRouter.use(requireAuth);
+// Accès support (D-2) : lecture seule, sans export, chaque lecture journalisée — avant tout sous-routeur.
+projectsRouter.use(supportReadOnlyGuard);
 // L'historique de la plateforme doit précéder la route dynamique /:projectId.
 projectsRouter.use(historyRouter);
 
@@ -76,9 +79,20 @@ projectsRouter.get("/", async (req, res) => {
     .innerJoin(users, eq(users.id, projects.ownerId))
     .where(eq(projectMembers.userId, req.user!.id))
     .orderBy(asc(projects.createdAt));
+  // Accès support actifs (D-2) : seulement pour un administrateur, en lecture, avec leur échéance.
+  const support = req.user!.platformRole === "admin"
+    ? await db
+      .select({ project: projects, ownerEmail: users.email, supportExpiresAt: projectSupportGrants.expiresAt })
+      .from(projectSupportGrants)
+      .innerJoin(projects, eq(projects.id, projectSupportGrants.projectId))
+      .innerJoin(users, eq(users.id, projects.ownerId))
+      .where(and(eq(projectSupportGrants.adminId, req.user!.id), isNull(projectSupportGrants.revokedAt), gt(projectSupportGrants.expiresAt, new Date())))
+    : [];
+  const seen = new Set([...owned.map((p) => p.id), ...shared.map((r) => r.project.id)]);
   res.json([
     ...owned.map((p) => ({ ...p, editingLock: activeLock(p), role: "proprietaire" as const, ownerEmail: req.user!.email })),
     ...shared.map((r) => ({ ...r.project, editingLock: activeLock(r.project), role: r.role, ownerEmail: r.ownerEmail })),
+    ...support.filter((r) => !seen.has(r.project.id)).map((r) => ({ ...r.project, editingLock: activeLock(r.project), role: "support" as const, ownerEmail: r.ownerEmail, supportExpiresAt: r.supportExpiresAt.toISOString() })),
   ]);
 });
 
@@ -221,6 +235,7 @@ projectsRouter.use("/:projectId/documents", documentsRouter);
 projectsRouter.use("/:projectId/collaboration", collaborationRouter);
 projectsRouter.use("/:projectId/members", membersRouter);
 projectsRouter.use("/:projectId/lock", lockRouter);
+projectsRouter.use("/:projectId/support-grants", supportGrantsRouter);
 
 projectsRouter.get("/:projectId", async (req, res) => {
   const project = await projectOr404(req, res, "read");

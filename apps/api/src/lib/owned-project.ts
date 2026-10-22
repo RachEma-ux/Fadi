@@ -1,7 +1,7 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, gt, isNull } from "drizzle-orm";
 import type { Request, Response } from "express";
 import { db } from "../db/client.js";
-import { projectMembers, projects, type EditingLock } from "../db/schema.js";
+import { projectMembers, projectSupportGrants, projects, users, type EditingLock } from "../db/schema.js";
 
 /**
  * Accès à un projet, vérifié côté serveur à chaque route — jamais seulement
@@ -13,7 +13,7 @@ import { projectMembers, projects, type EditingLock } from "../db/schema.js";
  * reste introuvable (404), un rôle insuffisant est refusé (403) avec le
  * motif.
  */
-export type ProjectRole = "proprietaire" | "editeur" | "lecteur";
+export type ProjectRole = "proprietaire" | "editeur" | "lecteur" | "support";
 /**
  * `modify` = `write` **et** le modèle du projet peut être modifié : la référence protégée de l'exemple
  * (`example_mode = 'reference'`, D-016 / D-194) n'est jamais écrite par l'Atelier, même par un appel direct à
@@ -24,8 +24,13 @@ export type ProjectRole = "proprietaire" | "editeur" | "lecteur";
  */
 export type ProjectNeed = "read" | "comment" | "write" | "modify" | "owner";
 
+/**
+ * `support` (D-2, UM-4) : administrateur de la plateforme muni d'un accès support **actif** accordé par le propriétaire
+ * (`project_support_grants`, ≤ 72 h) — lecture seule : ni commentaire, ni écriture, ni export ou téléchargement
+ * (`supportReadOnlyGuard`). Le rôle plateforme seul ne donne jamais accès à un projet.
+ */
 const ALLOWED: Record<ProjectNeed, readonly ProjectRole[]> = {
-  read: ["proprietaire", "editeur", "lecteur"],
+  read: ["proprietaire", "editeur", "lecteur", "support"],
   comment: ["proprietaire", "editeur", "lecteur"],
   write: ["proprietaire", "editeur"],
   modify: ["proprietaire", "editeur"],
@@ -84,7 +89,29 @@ export async function loadProjectAccess(projectId: string, userId: string, execu
   if (!row) return null;
   if (row.project.ownerId === userId) return { ...row.project, role: "proprietaire" };
   if (row.memberRole) return { ...row.project, role: row.memberRole };
+  if (await activeSupportGrant(projectId, userId, executor)) return { ...row.project, role: "support" };
   return null;
+}
+
+/**
+ * L'accès support actif d'un administrateur sur ce projet, ou null. Revérifié à chaque requête : compte toujours
+ * administrateur et actif, accès ni révoqué ni expiré (un accès expiré redevient un 404).
+ */
+export async function activeSupportGrant(projectId: string, userId: string, executor: Pick<typeof db, "select"> = db): Promise<{ id: string; expiresAt: Date } | null> {
+  const rows = await executor
+    .select({ id: projectSupportGrants.id, expiresAt: projectSupportGrants.expiresAt })
+    .from(projectSupportGrants)
+    .innerJoin(users, eq(users.id, projectSupportGrants.adminId))
+    .where(and(
+      eq(projectSupportGrants.projectId, projectId),
+      eq(projectSupportGrants.adminId, userId),
+      isNull(projectSupportGrants.revokedAt),
+      gt(projectSupportGrants.expiresAt, new Date()),
+      eq(users.platformRole, "admin"),
+      eq(users.status, "active"),
+    ))
+    .limit(1);
+  return rows[0] ?? null;
 }
 
 /**

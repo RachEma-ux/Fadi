@@ -15,6 +15,7 @@ ils ne réécrivent aucune décision D-x et restent révisables par lui.
 | **D-3** Organisations / équipes | **Pas maintenant**, sauf exigence du concept. Colonne `organization_id` nullable réservée sur `users` et `projects`, sans logique. | Phase 1 |
 | **D-4** Tests DB-3 | **Oui** : PostGIS **éphémère** en service conteneur GitHub Actions, attesté jetable, jamais relié à la production. | Phase 6 |
 | **D-5** Suppression | **Anonymisation** après **30 jours de grâce** (annulable par lien) ; **export JSON** préalable ; transfert obligatoire des projets partagés possédés ; commentaires et révisions conservés sous « Compte supprimé ». Conforme RGPD et nLPD. | Phases 1, 4, 5 |
+| **D-7** Schémas et rôles (amendement du 2026-10-22, [AMENDEMENT-D7.md](AMENDEMENT-D7.md)) | **Une seule base**, schémas `public` (tables existantes, inchangées), `auth` (tables des comptes), `admin` (audit, exploitation). **Rôles au moindre privilège** : `fadi_owner` (NOLOGIN, propriétaire), `fadi_migrator` (DDL, migrations seulement), `fadi_app` (API : DML, aucun DDL, `admin.audit_log` en SELECT / INSERT seulement), `fadi_retention` (anonymisation de colonnes du journal), `fadi_backup` (lecture seule). Mots de passe hors dépôt. Prime sur le plan pour l'emplacement des tables et les droits. | Phases 1, 6 ; amendement |
 | **D-6** Mots de passe et MFA | **12 caractères min.**, 128 max., sans règles de composition, liste de mots de passe compromis, pas d'expiration. **TOTP facultatif** pour les utilisateurs, **obligatoire pour les admins** + 10 codes de secours. Session admin ≤ 24 h et 1 h d'inactivité ; utilisateur ≤ 30 j. | Phases 1, 2, 3, 5 |
 
 ## Lecture du concept (v2.2) contre chaque décision
@@ -26,6 +27,7 @@ ils ne réécrivent aucune décision D-x et restent révisables par lui.
 | D-3 | **Contredit** | Le concept fait de l'organisation un enregistrement partagé de base (Partie 1 « Shared records », Partie 2 « owning party », Partie 5 entière). D-3 réservait cette exception : voir UM-1. |
 | D-4 | **Muet** | Aucune exigence de test d'infrastructure dans le concept. |
 | D-5 | **Conforme** | « Authorship, previous approvals … retain their original attribution » (Partie 2) ; l'anonymisation conserve l'identifiant et l'attribution « Compte supprimé ». |
+| D-7 | **Muet** | Le concept ne traite pas du stockage ; D-7 renforce l'exigence « autorisation à chaque opération » côté base. |
 | D-6 | **Muet / conforme** | Le concept exige un compte « active and authenticated for the operation » (Partie 2, règle 1) et des états de compte distincts ; il ne fixe pas de politique de mot de passe. |
 
 ## Arbitrages d'implémentation (délégation du 2026-10-22)
@@ -79,3 +81,24 @@ ils ne réécrivent aucune décision D-x et restent révisables par lui.
   phases y sont des commits distincts (un par phase) et une seule PR est ouverte, **non fusionnée** ; la revue humaine des
   phases 2, 3, 4 et de la garde DB a lieu sur cette PR. Les points d'arrêt 🛑 0 et 2 ont été franchis sous la délégation
   ci-dessus, sans fusion ni déploiement ; le point d'arrêt final reste au maître d'ouvrage.
+- **UM-13 — Amendement D-7, point d'arrêt D7-0 (cas B).** Constat du 2026-10-22 : la Phase 1 avait créé ses tables dans
+  `public` sur la branche `ccr-266c1e83-7780ml`, non fusionnée (commit `807eebe`) → **cas B** : la migration est corrigée
+  sur la branche, chaque table créée directement dans son schéma cible — `auth.account_tokens`,
+  `auth.user_recovery_codes`, `auth.invitations` (table des comptes ajoutée par UM-3), `admin.audit_log`,
+  `admin.mail_outbox` ; `public.project_support_grants`. Le tableau de l'amendement cite `user_sessions` dans `auth` :
+  cette table n'existe pas (UM-5, la table historique `public.sessions` est étendue) et l'amendement interdit de déplacer
+  une table existante — `sessions` **reste dans `public`** (seule son empreinte de jeton y est stockée). `app_settings`,
+  `worker_heartbeats` et `projects.archived_at` relèvent du plan console (non engagé ici) : non créés. Point d'arrêt
+  franchi sous la délégation du 2026-10-22 ; le point d'arrêt D7-final (revue humaine avant fusion) reste au maître d'ouvrage.
+- **UM-14 — Création des rôles et des mots de passe.** `init.sql` crée les rôles **sans mot de passe** seulement si le
+  rôle qui migre en a le droit (super-utilisateur ou CREATEROLE), transfère la propriété à `fadi_owner` quand il est
+  super-utilisateur, et rejoue les droits quand il est membre de `fadi_owner`. Les mots de passe viennent de
+  l'environnement du serveur (`FADI_APP_DB_PASSWORD`, `FADI_MIGRATOR_DB_PASSWORD`, `FADI_RETENTION_DB_PASSWORD`,
+  `FADI_BACKUP_DB_PASSWORD`) et sont appliqués après la migration (`db/role-passwords.ts`), jamais écrits ni journalisés.
+- **UM-15 — Démarrage en production.** L'API refuse de démarrer en production si son rôle peut créer des objets dans
+  `public` ; `ALLOW_PRIVILEGED_DB_ROLE=1` n'existe que pour le retour arrière documenté (ancienne `DATABASE_URL`).
+  `docker-compose.yml` passe en `fadi_app` (nouvelle variable obligatoire `FADI_APP_DB_PASSWORD` dans `.env.deploy`) :
+  **changement à appliquer au déploiement suivant la fusion**, procédure dans RUNBOOK.md — aucun déploiement fait ici.
+- **UM-16 — Journal d'audit et rétention.** Le déclencheur append-only laisse le seul rôle `fadi_retention` modifier
+  `actor_id`, `ip`, `metadata` (droit de colonne + contrôle du déclencheur : action, cible et date inchangées) ; la
+  suppression reste refusée à tous. La tâche de rétention elle-même appartient au plan console (non engagé).
