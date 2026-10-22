@@ -10,7 +10,7 @@
  * l'option Chevauchement) : Refusé (défaut, choix Fadi : un chevauchement est refusé en nommant la boucle) / Autorisé
  * (boucles insérées telles quelles). Une correction par le champ Mesures garde le réglage de l'opération corrigée.
  */
-import { type Id, contexte, decaler, decalerAretes } from "../geometrie-libre.js";
+import { type Id, contexte, decaler, decalerAretes, positionsFace } from "../geometrie-libre.js";
 import { type Inference, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import { type Vec3, AXE_Z, EPS, TOL, cross, dist, dot, len, normalize, scale, sub } from "../vecteur.js";
@@ -191,6 +191,36 @@ function saisir(e: EtatDecalage, ctx: ContexteOutil, texte: string): Transition<
   return { etat: { ...e, texte, erreur: "Choisissez d'abord la face ou les arêtes à décaler." } };
 }
 
+/**
+ * Aperçu vivant : le résultat réel du décalage à la distance courante (anneau et boucles d'une face, polyligne parallèle
+ * d'arêtes), calculé par la même fonction que l'application. Aucun aperçu si le décalage serait refusé.
+ */
+function apercuDecalage(e: EtatDecalage, ctx: ContexteOutil): Vec3[][] {
+  if (e.etape !== 2 || Math.abs(e.distance) < EPS) return [];
+  try {
+    if (e.face) {
+      const r = decaler(ctx.modele, e.face, e.distance, { ...optionsDans(ctx), chevauchement: e.alt });
+      const c = contexte(r.modele, ctx.dans);
+      const f = r.face ? c.faces[r.face] : undefined;
+      if (!f) return [];
+      const { exterieur, trous } = positionsFace(c, f);
+      return [exterieur, ...trous].filter((b) => b.length >= 2).map((b) => [...b, b[0] as Vec3]);
+    }
+    if (!e.cote) return [];
+    const r = decalerAretes(ctx.modele, e.aretes, Math.abs(e.distance), e.cote, optionsDans(ctx));
+    const c = contexte(r.modele, ctx.dans);
+    const lignes: Vec3[][] = [];
+    for (const id of r.rapport.crees) {
+      const a = c.aretes[id];
+      if (!a) continue;
+      lignes.push([(c.sommets[a.a] as { position: Vec3 }).position, (c.sommets[a.b] as { position: Vec3 }).position]);
+    }
+    return lignes;
+  } catch {
+    return [];
+  }
+}
+
 export const machineDecalage: MachineOutil<EtatDecalage> = {
   id: ID_DECALAGE,
   initial,
@@ -282,7 +312,7 @@ export const machineDecalage: MachineOutil<EtatDecalage> = {
     const v = vueModif({
       consigne: consigneDe(ID_DECALAGE, indice),
       mesures: mesures(libelleMesuresDe(ID_DECALAGE, indice), valeur, contexteSaisie("longueur", ctx)),
-      apercu: etat.etape === 2 && etat.cote && etat.origine && dist(etat.cote, etat.origine) > TOL ? { lignes: [[etat.origine, etat.cote]], faces: [] } : { lignes: [], faces: [] },
+      apercu: etat.etape === 2 && etat.cote && etat.origine && dist(etat.cote, etat.origine) > TOL ? { lignes: [[etat.origine, etat.cote], ...apercuDecalage(etat, ctx)], faces: [] } : { lignes: [], faces: [] },
       ctx,
       erreur: etat.erreur,
       inference: etat.inference,

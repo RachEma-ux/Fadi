@@ -576,7 +576,7 @@ export class VuePlanche {
   private ajouterPastille(point: Vec3): void {
     if (this.pastilles.some((q) => Math.hypot(q.point.x - point.x, q.point.y - point.y, q.point.z - point.z) < 1e-9)) return;
     const el = document.createElement("div");
-    el.className = "planche-pastille";
+    el.className = "planche-point-reference";
     this.surcouche.append(el);
     this.pastilles.push({ el, point });
   }
