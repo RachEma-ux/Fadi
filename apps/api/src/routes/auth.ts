@@ -42,6 +42,7 @@ import {
   activateInvitation, findInvitationByToken, INVITATION_REFUSAL_MESSAGE, invitationRefusal, invitationView, inviterStillAuthorized,
 } from "../lib/invitations.js";
 import { newId } from "../lib/ids.js";
+import { adminEnabled } from "../lib/platform-access.js";
 import { checkPassword, PASSWORD_MAX, PASSWORD_REFUSAL_MESSAGE } from "../lib/security/password-policy.js";
 import { lockDurationMs, loginBlock } from "../lib/security/auth-policy.js";
 import { EncryptionUnavailable, openSecret, sealSecret } from "../lib/security/secret-box.js";
@@ -62,7 +63,13 @@ const perIdentifier = (limit: number) => rateLimit({
   limit: Number(process.env["AUTH_IDENTIFIER_RATE_LIMIT"] ?? limit),
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => `id:${String((req.body as { email?: unknown } | undefined)?.email ?? "").trim().toLowerCase().slice(0, 254)}`,
+  // Clé = l'adresse visée ; sans adresse dans le corps (activation d'invitation), l'empreinte du jeton présenté.
+  keyGenerator: (req) => {
+    const body = req.body as { email?: unknown; token?: unknown } | undefined;
+    const email = typeof body?.email === "string" ? body.email.trim().toLowerCase().slice(0, 254) : "";
+    if (email) return `id:${email}`;
+    return `tok:${sha256Hex(typeof body?.token === "string" ? body.token : String(req.ip ?? ""))}`;
+  },
   message: { error: "too_many_attempts", message: "Trop de tentatives pour cette adresse : réessayez dans quelques minutes." },
 });
 /** Saisie du code de double authentification : 10 essais par 15 min et par étape de connexion. */
@@ -264,7 +271,8 @@ authRouter.post("/logout", async (req, res) => {
 
 authRouter.get("/me", (req, res) => {
   if (!requireUser(req, res)) return;
-  res.status(200).json(publicUser(req.user));
+  // `adminEnabled` : drapeau FADI_ADMIN_ENABLED, pour masquer l'entrée « Administration » (la protection reste serveur).
+  res.status(200).json({ ...publicUser(req.user), adminEnabled: req.user.platformRole === "admin" && adminEnabled() });
 });
 
 /** Nom affiché (Paramètres → Compte) : 1 à 60 caractères, ou vide pour l'effacer ; jamais déduit de l'adresse côté serveur. */

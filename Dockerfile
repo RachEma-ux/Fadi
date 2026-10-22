@@ -46,6 +46,8 @@ COPY --from=deps /src/node_modules ./node_modules
 COPY --from=deps /src/apps/api/node_modules ./apps/api/node_modules
 COPY --from=build /src/apps/api/package.json ./apps/api/package.json
 COPY --from=build /src/apps/api/dist ./apps/api/dist
+# Amorçage du premier administrateur (docs/workstreams/users-management/RUNBOOK.md, étape 6).
+COPY --from=build /src/apps/api/scripts/create-admin.mjs ./apps/api/scripts/create-admin.mjs
 COPY --from=build /src/apps/web/dist ./apps/web/dist
 USER node
 EXPOSE 3001

@@ -211,6 +211,8 @@ try {
   check('aucun compte créé par l\'invitation', (await sql.query('SELECT count(*)::int AS c FROM users WHERE email = $1', [cEmail])).rows[0].c === 0);
   const resend = await B.call('POST', '/admin/users/invitations', { email: cEmail });
   check('renvoi : la même invitation, aucun doublon', resend.status === 200 && resend.body.resent === true && resend.body.invitation.id === inv.body.invitation.id, resend);
+  // Le renvoi remplace le jeton : attendre le second courriel avant de lire le lien (le premier lien ne vaut plus rien).
+  await mailCount(cEmail, 2);
   const cToken = await lastLink(cEmail, '/compte/invitation');
   const C = agent();
   const lookup = await C.call('POST', '/auth/invitations/lookup', { token: cToken });
@@ -338,7 +340,8 @@ try {
   check('ancienne adresse : connexion impossible', (await F.call('POST', '/auth/login', { email: fe, password: fp })).status === 401);
 
   // ===== D-1 — garde-fou de quota : bascule vers le lien à copier =====
-  const filler = 200;
+  // Remplit la file jusqu'au quota de l'API (même valeur que MAIL_DAILY_LIMIT côté serveur, 150 par défaut).
+  const filler = Number(process.env.MAIL_DAILY_LIMIT ?? 150) + 5;
   await sql.query("INSERT INTO admin.mail_outbox (id, to_address, template, status, payload) SELECT 'mail_quota_' || g || '_' || $1, 'quota@example.test', 'verify_email', 'sent', '{}' FROM generate_series(1, $2) g", [uid(), filler]);
   const qEmail = mail('quota');
   const qinv = await B.call('POST', '/admin/users/invitations', { email: qEmail });

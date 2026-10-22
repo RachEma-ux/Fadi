@@ -313,13 +313,38 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      # Gestion des comptes (D-1) : serveur SMTP de test, aucun courriel n'est remis ; liens lus par son API HTTP.
+      mailpit:
+        image: axllent/mailpit:v1.20.4
+        ports:
+          - 1025:1025
+          - 8025:8025
     env:
-      DATABASE_URL: postgresql://fadi:fadi_ci_password@localhost:5432/fadi_e2e
+      # D-7 : l'API et les recettes se connectent en fadi_app (aucun DDL) ; `npm run db:migrate` utilise le compte
+      # d'administration du conteneur jetable, crée les rôles et applique le mot de passe de fadi_app (propre à la CI).
+      DATABASE_URL: postgresql://fadi_app:fadi_app_ci_password@localhost:5432/fadi_e2e
+      DATABASE_MIGRATION_URL: postgresql://fadi:fadi_ci_password@localhost:5432/fadi_e2e
+      FADI_APP_DB_PASSWORD: fadi_app_ci_password
+      # Gestion des comptes : administration activée pour la recette, courriels vers Mailpit, quota large (les recettes
+      # inscrivent beaucoup de comptes) ; la recette du garde-fou de quota remplit la file jusqu'à cette valeur.
+      FADI_ADMIN_ENABLED: "true"
+      MAIL_TRANSPORT: smtp
+      SMTP_HOST: localhost
+      SMTP_PORT: "1025"
+      SMTP_SECURE: "false"
+      SMTP_USER: noreply@fadi.test
+      MAIL_FROM: "Fadi <noreply@fadi.test>"
+      MAIL_DAILY_LIMIT: "3000"
+      MAIL_RECIPIENT_HOURLY_LIMIT: "50"
+      MAILPIT_URL: http://localhost:8025
+      APP_PUBLIC_URL: http://localhost:3001
       # Mode de production : l'API sert le build de l'application (WEB_DIST) — un seul port, même origine, pas de vite preview.
       WEB_ORIGIN: http://localhost:3001
       WEB_DIST: apps/web/dist
       PORT: "3001"
       AUTH_RATE_LIMIT: "500"
+      # Limite par adresse (10 / 15 min par défaut) : les recettes reconnectent souvent le même compte.
+      AUTH_IDENTIFIER_RATE_LIMIT: "500"
       API_RATE_LIMIT: "5000"
       BASE_URL: http://localhost:3001
     steps:
@@ -339,6 +364,10 @@ jobs:
           k="$(openssl rand -hex 32)"
           echo "::add-mask::$k"
           echo "ARCHIVE_SIGNING_KEY=$k" >> "$GITHUB_ENV"
+          # Gestion des comptes (D-6) : clé de chiffrement des secrets TOTP, propre à l'exécution.
+          e="$(openssl rand -base64 32)"
+          echo "::add-mask::$e"
+          echo "FADI_ENCRYPTION_KEY=$e" >> "$GITHUB_ENV"
       - name: Démarrer l'API qui sert aussi l'application (WEB_DIST)
         run: |
           nohup node apps/api/dist/server.js > api.log 2>&1 &
@@ -494,6 +523,19 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/atelier-complements.mjs 2>&1 | tee -a e2e.log
+      # Gestion des comptes (#253, phases 1 à 4, D-7) : API réelle en fadi_app, courriels par Mailpit, horloge simulée par
+      # la base jetable ; politique de mot de passe, sessions, TOTP, admin, accès support, invitations, suspension,
+      # mot de passe oublié, export et suppression (anonymisation à 30 jours), garde-fou de quota.
+      - name: Recette Gestion des comptes par l'API (apps/web/e2e/comptes-api.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/comptes-api.mjs 2>&1 | tee -a e2e.log
+      - name: Recette Gestion des comptes dans le navigateur — écrans, axe-core bureau et téléphone (apps/web/e2e/comptes-admin.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/comptes node apps/web/e2e/comptes-admin.mjs 2>&1 | tee -a e2e.log
       # MIG-01 à MIG-10, MIG-COEX-03/04/06 : simulation de migration vers Studio en lecture seule, sur une base NEUVE
       # (fadi_mig) peuplée du jeu synthétique déclaré — jamais sur une base existante. La recette crée un rôle SELECT
       # seul, compare l'empreinte de chaque table avant / après et exige le refus de toute écriture (25006, 42501).
@@ -507,7 +549,7 @@ jobs:
           npx tsx --test scripts/migration/simulation-studio.test.mjs
           psql -h localhost -U fadi -d postgres -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS fadi_mig;" -c "CREATE DATABASE fadi_mig;"
           psql -h localhost -U fadi -d fadi_mig -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS postgis;"
-          DATABASE_URL=postgresql://fadi:fadi_ci_password@localhost:5432/fadi_mig npm run db:migrate
+          DATABASE_MIGRATION_URL=postgresql://fadi:fadi_ci_password@localhost:5432/fadi_mig DATABASE_URL=postgresql://fadi:fadi_ci_password@localhost:5432/fadi_mig npm run db:migrate
           mkdir -p rapport-migration
           FADI_JEU_SYNTHETIQUE=fadi_mig DATABASE_URL=postgresql://fadi:fadi_ci_password@localhost:5432/fadi_mig node scripts/migration/jeu-synthetique.mjs --file-locale rapport-migration/file-locale.json
           MIG_ADMIN_URL=postgresql://fadi:fadi_ci_password@localhost:5432/fadi_mig MIG_BASE=fadi_mig MIG_SORTIE=rapport-migration npx tsx scripts/migration/recette-simulation.mjs 2>&1 | tee -a e2e.log
@@ -735,7 +777,7 @@ jobs:
           node --test scripts/validation/studio-compare-lib.test.mjs
           psql -h localhost -U fadi -d postgres -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS fadi_studio_restore;" -c "CREATE DATABASE fadi_studio_restore;"
           psql -h localhost -U fadi -d fadi_studio_restore -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS postgis;"
-          DATABASE_URL=postgresql://fadi:fadi_ci_password@localhost:5432/fadi_studio_restore npm run db:migrate
+          DATABASE_MIGRATION_URL=postgresql://fadi:fadi_ci_password@localhost:5432/fadi_studio_restore DATABASE_URL=postgresql://fadi:fadi_ci_password@localhost:5432/fadi_studio_restore npm run db:migrate
           DATABASE_URL_A="$DATABASE_URL" DATABASE_URL_B=postgresql://fadi:fadi_ci_password@localhost:5432/fadi_studio_restore RESTORE_PORT=3002 OUT=atelier-captures/studio-restauration node apps/web/e2e/studio-restauration.mjs 2>&1 | tee -a e2e.log
       - name: Résumé de l'échec (annotations lisibles depuis l'API)
         if: failure()
@@ -797,8 +839,11 @@ jobs:
         run: docker build --build-arg FADI_COMMIT=${{ github.sha }} --build-arg FADI_BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ) -t fadi:ci .
       - name: Démarrer le conteneur (schéma appliqué au démarrage) et sonder /health, /accueil, /projects, /version
         run: |
+          # D-7 : comme en production — l'API en fadi_app, la migration au démarrage avec le compte d'administration de la base.
           docker run -d --name fadi --network host \
-            -e DATABASE_URL=postgresql://fadi:fadi_ci_password@localhost:5432/fadi_image \
+            -e DATABASE_URL=postgresql://fadi_app:fadi_app_ci_password@localhost:5432/fadi_image \
+            -e DATABASE_MIGRATION_URL=postgresql://fadi:fadi_ci_password@localhost:5432/fadi_image \
+            -e FADI_APP_DB_PASSWORD=fadi_app_ci_password \
             -e WEB_ORIGIN=http://localhost:3001 -e TRUST_PROXY=0 fadi:ci
           for i in $(seq 1 60); do
             if curl -sf http://localhost:3001/health | grep -q '"db":"ok"'; then echo "conteneur prêt"; break; fi
