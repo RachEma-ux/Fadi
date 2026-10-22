@@ -1,6 +1,6 @@
 /**
  * Vue three.js (WebGL2, R14) du mode Planche (cahier-planche §3.6, lot 2). Pur DOM / three.js, sans React : elle
- * dessine le maillage libre (faces recto gris clair / verso bleu-gris, arêtes noires), la sélection en bleu, l'aperçu
+ * dessine le maillage libre (faces recto blanches / verso bleu-gris, arêtes noires), la sélection en trame de points bleus, l'aperçu
  * de l'outil, le marqueur d'inférence et son infobulle, les axes (pleins côté positif, pointillés côté négatif) et un
  * sol neutre ; elle traduit le pointeur en `EvenementOutil` (rayon caméra → curseur, tolérance d'accrochage de 10 px
  * convertie en mètres à la profondeur visée). La navigation suit les réglages D-157 (`navigation.ts`) : molette ou
@@ -11,6 +11,7 @@ import * as THREE from "three";
 import { COULEURS, COULEUR_MATERIAU_DEFAUT, aretesMasquees, baseDuPlan, boiteOccurrence, cheminOccurrence, contexte, geometrieVisible, newell, type EvenementOutil, type FaceVisible, type GeometrieVisible, type Inference, type Modele, type Rayon, type Scene, type Vec3, type VueOutil } from "@parcours/sandbox-planche-model";
 import type { ReglagesNavigation } from "../etat-ui";
 import { borneSensibilite, facteurPan, interpreterMolette } from "../navigation";
+import { COULEUR_RECTO, COULEUR_TRAME_SELECTION, SHADER_TRAME_FRAGMENT, SHADER_TRAME_VERTEX, TRAME_SELECTION, intensiteLumiere } from "./apparence-faces";
 import type { OutilCamera } from "./outils-planche";
 
 /** Rayon d'accrochage à l'écran (px), converti en mètres à la profondeur visée (choix Fadi, cahier-planche §5.1). */
@@ -25,8 +26,7 @@ const DOUBLE_PX = 6;
 /** Champ de vision initial : valeur relevée du champ Mesures de l'outil Zoom (« 35.00 deg. »). */
 export const CHAMP_DE_VISION_INITIAL = 35;
 
-/** Couleurs d'affichage (choix Fadi d'après SketchUp : recto gris clair, verso bleu-gris). */
-const COULEUR_RECTO = "#f0f0ee";
+/** Couleurs d'affichage (choix Fadi d'après SketchUp : recto blanc — `apparence-faces.ts` —, verso bleu-gris). */
 const COULEUR_VERSO = "#a7b4c6";
 const COULEUR_ARETE = "#000000";
 /** Objets O-2 : géométrie hors du contexte ouvert (délavée) et boîte pointillée de l'objet ouvert. */
@@ -644,7 +644,9 @@ export class VuePlanche {
       if (ids.size === 0) continue;
       const faces = this.geometrie.faces.filter((f) => ids.has(f.id));
       const aretes = this.geometrie.aretes.filter((a) => ids.has(a.id));
-      if (faces.length) this.groupeSelection.add(new THREE.Mesh(geometrieFaces(faces), new THREE.MeshBasicMaterial({ color: couleur, transparent: true, opacity: opacite, side: THREE.DoubleSide, depthWrite: false })));
+      // Face sélectionnée (SketchUp) : sa couleur reste visible sous une trame de points bleus fixée à l'écran ;
+      // une face survolée garde le voile bleu léger.
+      if (faces.length) this.groupeSelection.add(new THREE.Mesh(geometrieFaces(faces), ids === choisis ? this.materiauTrame() : new THREE.MeshBasicMaterial({ color: couleur, transparent: true, opacity: opacite, side: THREE.DoubleSide, depthWrite: false })));
       if (aretes.length) this.groupeSelection.add(new THREE.LineSegments(geometrieSegments(aretes.map((a) => [a.a, a.b] as const)), new THREE.LineBasicMaterial({ color: couleur, depthTest: false })));
     }
     // Objets sélectionnés : boîte englobante (bleue ; rouge si l'objet est verrouillé, §5.6).
@@ -844,6 +846,7 @@ export class VuePlanche {
       this.demande = 0;
       this.camera.updateMatrixWorld();
       this.ajusterAxes();
+      this.eclairerDepuisCamera();
       this.moteur.render(this.scene, this.camera);
       this.placerMarqueur();
       this.placerEtiquettes();
@@ -1132,7 +1135,30 @@ export class VuePlanche {
     const z = Math.max(0.05, Math.sin(alt));
     this.soleil.position.set(Math.sin(az) * Math.cos(alt) * d, Math.cos(az) * Math.cos(alt) * d, z * d);
     this.soleil.target.position.set(0, 0, 0);
-    this.soleil.intensity = this.options.ombres ? 1.6 : 1.2;
+    this.soleil.intensity = intensiteLumiere(this.options.ombres);
+  }
+
+  /**
+   * Sans ombres, la lumière part de la caméra vers la cible (SketchUp sans « soleil pour l'ombrage ») : la face tournée
+   * vers soi est blanche, quel que soit le point de vue. Avec ombres, le soleil calculé (`majSoleil`) reste en place.
+   */
+  private eclairerDepuisCamera(): void {
+    if (this.options.ombres) return;
+    this.soleil.position.copy(this.camera.position);
+    this.soleil.target.position.copy(this.cible);
+    this.soleil.target.updateMatrixWorld();
+  }
+
+  /** Matériau de la trame de sélection (`apparence-faces.ts`), dimensionné au ratio de pixels du moteur. */
+  private materiauTrame(): THREE.ShaderMaterial {
+    const ratio = this.moteur.getPixelRatio();
+    return new THREE.ShaderMaterial({
+      uniforms: { couleur: { value: new THREE.Color(COULEUR_TRAME_SELECTION) }, pas: { value: TRAME_SELECTION.pas * ratio }, rayon: { value: TRAME_SELECTION.rayon * ratio } },
+      vertexShader: SHADER_TRAME_VERTEX,
+      fragmentShader: SHADER_TRAME_FRAGMENT,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
   }
 
   /** Projection : la projection parallèle est rendue par une perspective très fermée (1°) depuis loin — approximation déclarée. */
