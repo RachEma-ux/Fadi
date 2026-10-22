@@ -6,8 +6,7 @@
 
 ## En cours
 
-- UM-SEC — Trois blocages de la revue de `c7dbc92` (UM-18 assurance de session, UM-19 dernier administrateur atomique,
-  UM-20 capacité « export ») : implémentés et vérifiés localement ; CI à constater sur le HEAD (Issue : #253).
+- Aucune ; la PR #255 attend la revue du maître d'ouvrage.
 
 ## Terminé
 
@@ -21,6 +20,8 @@
 - [x] UM-P6-DB3 — 12 suites historiques (105 tests) vertes sur PostGIS éphémère attesté, run CI 39855284507 (Issue : #253).
 - [x] UM-CI — CI de la PR #255 verte sur `570d248` et `1d787c4` (Issue : #253).
 - [x] UM-EN — Écrans d'administration et accès support relevés en anglais, passe anglaise dans `comptes-admin.mjs` (Issue : #253).
+- [x] UM-SEC — Trois blocages de la revue de `c7dbc92` (UM-18 assurance de session, UM-19 dernier administrateur
+  atomique, UM-20 capacité « export ») : reproduits, corrigés, vérifiés en CI sur `873f740` (Issue : #253).
 - [x] UM-D7 — Amendement D-7 : schémas `auth` / `admin`, rôles au moindre privilège, CI et restauration (Issue : #253).
 
 ## Bloqué

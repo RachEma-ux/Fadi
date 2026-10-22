@@ -4,8 +4,8 @@ Mis à jour : 2026-10-22 (UTC).
 
 ## État
 
-**Implémenté et vérifié localement ; trois correctifs de sécurité de la revue de `c7dbc92` livrés (UM-18 à UM-20) —
-en attente de CI sur le HEAD et de revue humaine.** Phases 0 à 6 et amendement D-7 livrés
+**Implémenté et vérifié (local et CI) ; trois correctifs de sécurité de la revue de `c7dbc92` livrés et vérifiés en CI
+sur `873f740` (UM-18 à UM-20) — en attente de revue humaine.** Phases 0 à 6 et amendement D-7 livrés
 sur la branche `ccr-266c1e83-7780ml` (une seule PR, non fusionnée, UM-12). **Rien n'est accepté ni déployé.**
 DB-3 : **vérifié en CI** sur `570d248` (UM-17) — les 12 suites passent sur base jetable attestée. Points d'arrêt 🛑 2, D7-final et final : revue du maître d'ouvrage sur la PR.
 
@@ -141,8 +141,12 @@ Preuves locales après correction :
   178 ✓ ; `npm run typecheck` ✓ ; `npm run build` ✓.
 - `app.test.ts` (suite DB-3) : nouveau bloc « gestion des comptes — correctifs de sécurité » (9 tests : navigateurs A/B,
   TOTP et code de secours, session partielle et héritée, promotion, désactivation / réactivation, quatre courses
-  concurrentes, accès support). **Non exécuté en local** (la garde refuse la base locale, `TARGET_REQUIRED`) : résultat à
-  constater en CI sur base jetable attestée.
+  concurrentes, accès support). Non exécutable en local (la garde refuse la base locale, `TARGET_REQUIRED`).
+- **CI sur `873f740`** (run CI 39871011012 et 5 autres workflows, tous verts) : job `validate`, DB-3 actif —
+  `app.test.ts` **69 tests verts dont les 9 nouveaux**, API **561 tests, dont 114 dans les 12 suites DB-3**, aucune
+  suite refusée ; tranche `complements` — `comptes-securite.mjs` **43 vérifications vertes** (sections 1 et 3 ; la
+  section 2 déclarée NON EXÉCUTÉE sur la base partagée, couverte par `app.test.ts`), `comptes-api.mjs` et
+  `comptes-admin.mjs` verts.
 - En CI (tranche `complements`), `comptes-securite.mjs` tourne sur la base partagée : les courses du dernier
   administrateur y sont déclarées NON EXÉCUTÉES (elles exigent une base vierge) et couvertes par `app.test.ts`.
 
