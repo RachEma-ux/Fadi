@@ -43,6 +43,11 @@ export interface EtatLigne {
   readonly verrouMaj: Verrou | null;
   readonly modeAlt: ModeAlt;
   readonly areteReference: { readonly a: Vec3; readonly b: Vec3 } | null;
+  /**
+   * Points de référence (« depuis le point », SketchUp) : sommets déjà posés de la chaîne et derniers points survolés. Le
+   * curseur s'aligne avec eux sur les axes (guides pointillés rouge / vert / bleu) comme avec le point de départ.
+   */
+  readonly acquis: readonly Vec3[];
   /** Texte tapé, affiché dans Mesures après validation (jusqu'au prochain mouvement). */
   readonly texte: string | null;
   readonly erreur: string | null;
@@ -79,6 +84,7 @@ function inferenceLigne(e: EtatLigne, ctx: ContexteOutil, r: Rayon, tolerance: n
     ...(e.etape === 2 && e.depart ? { depart: e.depart } : {}),
     ...(v ? { verrou: v } : {}),
     ...(e.areteReference ? { areteReference: e.areteReference } : {}),
+    ...(e.etape === 2 && e.depart && e.acquis.length > 0 ? { pointsReference: e.acquis.filter((p) => dist(p, e.depart as Vec3) > TOL) } : {}),
       ...(ctx.repere ? { axes: ctx.repere } : {}),
   });
 }
@@ -88,6 +94,21 @@ function reference(e: EtatLigne, i: Inference, ctx: ContexteOutil): EtatLigne["a
   if (i.entite === undefined || !["extremite", "milieu", "sur-arete"].includes(i.type)) return e.areteReference;
   const a = geometrieVisible(ctx.modele).aretes.find((x) => x.id === i.entite);
   return a ? { a: a.a, b: a.b } : e.areteReference;
+}
+
+const TYPES_ACQUIS = new Set(["extremite", "milieu", "intersection", "centre"]);
+const MAX_ACQUIS = 4;
+
+/** Ajoute un point aux références (dédoublonné, les plus récentes d'abord conservées). */
+function avecAcquis(e: EtatLigne, ...pts: Vec3[]): EtatLigne {
+  let l = [...e.acquis];
+  for (const p of pts) l = [...l.filter((q) => dist(q, p) > TOL), p];
+  return { ...e, acquis: l.slice(-MAX_ACQUIS) };
+}
+
+/** Un point inféré (extrémité, milieu…) est acquis dès qu'il est visé : le curseur pourra s'aligner dessus ensuite. */
+function acquerir(e: EtatLigne, i: Inference): EtatLigne {
+  return TYPES_ACQUIS.has(i.type) ? avecAcquis(e, i.point) : e;
 }
 
 function recalculer(e: EtatLigne, ctx: ContexteOutil): EtatLigne {
@@ -101,6 +122,7 @@ const finChaine = (e: EtatLigne): EtatLigne => ({
   debutChaine: null,
   fleche: null,
   verrouMaj: null,
+  acquis: [],
 });
 
 /** Crée le segment depart → q ; continue la chaîne ou la termine (retour au départ, face créée). */
@@ -114,7 +136,7 @@ function poser(e: EtatLigne, ctx: ContexteOutil, q: Vec3, texte: string | null):
   const dernier = { modeleAvant: ctx.modele, depart, direction: normalize(sub(q, depart)) };
   const suite: EtatLigne = ferme
     ? { ...finChaine(e), dernier, texte, erreur: null, inference: null }
-    : { ...e, depart: q, dernier, texte, erreur: null, verrouMaj: null };
+    : { ...avecAcquis(e, depart), depart: q, dernier, texte, erreur: null, verrouMaj: null };
   return { etat: suite, modele: r.modele, operation: "Ligne" };
 }
 
@@ -193,6 +215,7 @@ export const machineLigne: MachineOutil<EtatLigne> = {
     verrouMaj: null,
     modeAlt: "tout",
     areteReference: null,
+    acquis: [],
     texte: null,
     erreur: null,
     dernier: null,
@@ -204,15 +227,15 @@ export const machineLigne: MachineOutil<EtatLigne> = {
       case "survol": {
         const e0: EtatLigne = { ...etat, rayon: { rayon: ev.rayon, tolerance: ev.tolerance } };
         const i = inferenceLigne(e0, ctx, ev.rayon, ev.tolerance);
-        return { etat: { ...e0, inference: i, areteReference: reference(e0, i, ctx), texte: null, erreur: null } };
+        return { etat: { ...acquerir(e0, i), inference: i, areteReference: reference(e0, i, ctx), texte: null, erreur: null } };
       }
       case "clic": {
         const e0: EtatLigne = { ...etat, rayon: { rayon: ev.rayon, tolerance: ev.tolerance }, texte: null, erreur: null };
         const i = inferenceLigne(e0, ctx, ev.rayon, ev.tolerance);
         if (e0.etape === 1) {
-          return { etat: { ...e0, etape: 2, depart: i.point, debutChaine: i.point, inference: i, dernier: null } };
+          return { etat: { ...acquerir(e0, i), etape: 2, depart: i.point, debutChaine: i.point, inference: i, dernier: null } };
         }
-        return poser({ ...e0, inference: i }, ctx, i.point, null);
+        return poser({ ...acquerir(e0, i), inference: i }, ctx, i.point, null);
       }
       case "saisie":
         return saisir(etat, ctx, ev.texte);
