@@ -280,3 +280,27 @@ describe("Ligne — modificateurs et saisies", () => {
     expect(Object.keys(modele.racine.aretes)).toHaveLength(0);
   });
 });
+
+describe("Ligne — guides depuis les points déjà posés (From Point)", () => {
+  it("le curseur s'aligne sur un sommet antérieur de la chaîne : guide pointillé depuis ce sommet", () => {
+    const p = new Pilote(machineLigne).envoyer(clic(0, 0), clic(4, 0), survol(0.02, 2));
+    const i = (p.etat as EtatLigne).inference;
+    expect(i?.type).toBe("axe-y");
+    expect(i?.origineLigne?.x).toBeCloseTo(0, 9);
+    expect(i?.origineLigne?.y).toBeCloseTo(0, 9);
+  });
+
+  it("un point survolé (extrémité) est acquis : le curseur s'aligne ensuite dessus", () => {
+    let m = modeleVide();
+    m = ajouterRectangle(m, v3(10, 10, 0), v3(1, 0, 0), v3(0, 1, 0)).modele;
+    const p = new Pilote(machineLigne, m).envoyer(clic(0, 0), survol(11, 10.01), survol(11.02, 3));
+    const i = (p.etat as EtatLigne).inference;
+    expect(i?.type).toBe("axe-y");
+    expect(i?.origineLigne?.x).toBeCloseTo(11, 9);
+  });
+
+  it("la chaîne terminée oublie les points acquis", () => {
+    const p = new Pilote(machineLigne).envoyer(clic(0, 0), clic(4, 0), { genre: "echap" });
+    expect((p.etat as EtatLigne).acquis).toHaveLength(0);
+  });
+});
