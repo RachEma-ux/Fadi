@@ -59,7 +59,9 @@ const corps = publique.replace(/-----[A-Z ]+-----|\s/g, "");
 const registre = readFileSync(REGISTRE, "utf8");
 const entree = registre.match(new RegExp(`["']${keyId}["']\\s*:\\s*["'\`]([^"'\`]+)["'\`]`));
 if (!entree || entree[1].replace(/-----[A-Z ]+-----|\\n|\s/g, "") !== corps) {
-  echec(`la clé publique de FADI_TEST_DB_SIGNING_KEY n'est pas enrôlée sous « ${keyId} » dans approved-test-authorities.ts`);
+  // La clé PUBLIQUE n'est pas un secret : elle est affichée pour être enrôlée par une PR relue (jamais automatiquement).
+  echec(`la clé publique de FADI_TEST_DB_SIGNING_KEY n'est pas enrôlée sous « ${keyId} » dans approved-test-authorities.ts.\n` +
+    `Clé publique correspondant au secret (à enrôler par une PR relue) :\n${publique.trim()}`);
 }
 
 const admin = new URL(adminUrl);
