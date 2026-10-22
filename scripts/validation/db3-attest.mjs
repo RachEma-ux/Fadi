@@ -15,7 +15,8 @@
  * N'affiche jamais la clé, le mot de passe ni la signature ; seulement des empreintes.
  *
  * Variables : FADI_TEST_DB_SIGNING_KEY (PEM PKCS#8, ou ce PEM encodé en base64), DB3_ADMIN_URL (compte d'administration,
- * base de travail), DB3_DATABASE (`fadi_db3_*`), DB3_TEST_ROLE, DB3_TEST_PASSWORD, DB3_ATTESTATION_FILE,
+ * base de travail), DB3_DATABASE (`fadi_db3_*`), DB3_TEST_ROLE, DB3_TEST_PASSWORD, DB3_ATTESTATION_FILE, DB3_ENV_FILE
+ * (variables TEST_DATABASE_* écrites en 0600 pour l'étape des suites),
  * GITHUB_RUN_ID, GITHUB_RUN_ATTEMPT, GITHUB_SHA.
  * Code de sortie 78 : secret absent (blocage déclaré, rien n'est provisionné).
  */
@@ -99,6 +100,14 @@ const payload = JSON.stringify({
 });
 const signature = sign(null, Buffer.from(DOMAIN + payload), privateKey).toString('base64');
 writeFileSync(env.DB3_ATTESTATION_FILE, JSON.stringify({ keyId: KEY_ID, payload, signature }), { mode: 0o600 });
+if (env.DB3_ENV_FILE) {
+  writeFileSync(env.DB3_ENV_FILE, [
+    `TEST_DATABASE_URL='${testUrl}'`,
+    `TEST_DATABASE_RUN_ID='${runId}'`,
+    `TEST_DATABASE_COMMIT_SHA='${commitSha}'`,
+    `TEST_DATABASE_ATTESTATION_FILE='${env.DB3_ATTESTATION_FILE}'`,
+  ].join('\n') + '\n', { mode: 0o600 });
+}
 console.log(`✓ DB-3 : base ${database}, rôle ${role} (aucun privilège d'administration), marqueur protégé ${markerId}`);
 console.log(`✓ DB-3 : attestation signée par ${KEY_ID} (empreinte ${fingerprint}), run ${runId}, commit ${commitSha.slice(0, 12)}, valable 55 min`);
 console.log(`  serveur vu : ${identity.serverAddress}:${identity.serverPort}, PostgreSQL ${identity.serverVersion}, PostGIS ${identity.postgisVersion}`);

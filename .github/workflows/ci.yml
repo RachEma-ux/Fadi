@@ -272,7 +272,8 @@ jobs:
             exit 0
           fi
           set -eo pipefail
-          ADMIN=postgresql://fadi:fadi_ci_password@127.0.0.1:5432
+          # Compte d'administration du service PostGIS du job (même identifiants que DATABASE_URL), en IP de boucle locale.
+          ADMIN="$(printf '%s' "${DATABASE_URL%/*}" | sed 's#@localhost:#@127.0.0.1:#')"
           DB=fadi_db3_run
           APP_PW="$(openssl rand -hex 24)"; echo "::add-mask::$APP_PW"
           psql "$ADMIN/postgres" -v ON_ERROR_STOP=1 -q -c "CREATE DATABASE $DB"
@@ -280,14 +281,12 @@ jobs:
           DATABASE_MIGRATION_URL="$ADMIN/$DB" FADI_APP_DB_PASSWORD="$APP_PW" npm run db:migrate
           ATT="$RUNNER_TEMP/db3-attestation.json"
           DB3_ADMIN_URL="$ADMIN/postgres" DB3_DATABASE=$DB DB3_TEST_ROLE=fadi_app DB3_TEST_PASSWORD="$APP_PW" \
-            DB3_ATTESTATION_FILE="$ATT" node scripts/validation/db3-attest.mjs
+            DB3_ATTESTATION_FILE="$ATT" DB3_ENV_FILE="$RUNNER_TEMP/db3.env" node scripts/validation/db3-attest.mjs
           unset FADI_TEST_DB_SIGNING_KEY
-          (cd apps/api && env -u DATABASE_URL \
-            TEST_DATABASE_URL="postgresql://fadi_app:$APP_PW@127.0.0.1:5432/$DB" \
-            TEST_DATABASE_RUN_ID="gh-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" TEST_DATABASE_COMMIT_SHA="$GITHUB_SHA" \
-            TEST_DATABASE_ATTESTATION_FILE="$ATT" \
+          # TEST_DATABASE_URL, TEST_DATABASE_RUN_ID, TEST_DATABASE_COMMIT_SHA, TEST_DATABASE_ATTESTATION_FILE (fichier 0600).
+          (set -a; . "$RUNNER_TEMP/db3.env"; set +a; cd apps/api && env -u DATABASE_URL \
             npx vitest run --reporter=default --reporter=json --outputFile=../../api-vitest-db3.json) || true
-          rm -f "$ATT"
+          rm -f "$ATT" "$RUNNER_TEMP/db3.env"
           node scripts/check-api-tests-db3.mjs api-vitest-db3.json --db3 | tee db3.log
           { echo '## DB-3 — base jetable attestée'; echo '```'; cat db3.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - run: npm run build
