@@ -4,62 +4,109 @@ Mis à jour : 2026-10-22 (UTC).
 
 ## État
 
-**En cours** — Phase 0 terminée (cadrage) ; phases suivantes en cours d'implémentation sur la branche
-`ccr-266c1e83-7780ml`. Rien n'est accepté ni déployé.
+**Implémenté et vérifié localement — en attente de CI et de revue humaine.** Phases 0 à 6 et amendement D-7 livrés
+sur la branche `ccr-266c1e83-7780ml` (une seule PR, non fusionnée, UM-12). **Rien n'est accepté ni déployé.**
+Bloqué : DB-3 (UM-11). Points d'arrêt 🛑 2, D7-final et final : revue du maître d'ouvrage sur la PR.
 
 ## Faits vérifiés
 
-### Phase 0 — concept
+### Phase 0 — concept et audit
 
-- `concept.md` = copie exacte de `Fadi Concept/Fadi Concept - Users Management.md` v2.2. L'extraction pandoc du `.docx`
-  (`pandoc … -t gfm`) aplatit les tableaux (le `.docx` les encode en paragraphes) : le pair Markdown officiel est donc
-  recopié, et la **parité** a été vérifiée le 2026-10-22 : le multiensemble des mots de `pandoc -t plain` du `.docx` est
-  identique à celui du `.md` (diff vide).
-- Anti-dérive : `concept.md.sha256` (empreintes du `.docx`, du `.md` et de `concept.md`),
-  `apps/api/src/lib/users-concept-drift.test.ts` (5 tests, verts) et `node scripts/users-concept.mjs` (contrôle / `--write`).
+- `concept.md` = copie exacte du `.md` officiel v2.2 ; la parité avec le `.docx` est vérifiée par pandoc
+  (`pandoc -t plain` : même multiensemble de mots, diff vide), car pandoc aplatit les tableaux du `.docx`.
+- Anti-dérive : `concept.md.sha256`, `apps/api/src/lib/users-concept-drift.test.ts` (5 tests verts) et
+  `node scripts/users-concept.mjs`.
+- Réponses d'audit (commit `9d466f8`) :
+  1. **Hachage.** Argon2id 19 MiB / t=2 / p=1, déjà conforme (`apps/api/src/lib/auth.ts:11-15`). La longueur minimale
+     était de 8 caractères (`routes/auth.ts:16`).
+  2. **Sessions.** Cookie opaque `fadi_session`, dont le jeton `randomUUID` était stocké **en clair** comme clé de
+     `sessions` (`auth.ts:39`, `init.sql:24-30`). Expiration fixe de 30 jours, révocable par suppression de la ligne.
+  3. **Table `users`.** Colonnes : `id`, `email`, `password_hash`, `created_at`, préférences. Aucun statut, aucun rôle,
+     aucun compteur d'échecs (`schema.ts:24-39`).
+  4. **`AUTH_RATE_LIMIT`.** 20 requêtes par 15 min et par IP, sur tout `/auth` (`app.ts:55-57`). Aucune limite par
+     identifiant, aucun verrouillage.
+  5. **Défaut de la PR #1 confirmé.** Un 401 sur `/auth/me` n'efface que `fadi.lastUser` (`auth-context.tsx:90-91`).
+     Les lots de l'Atelier et `modelCache` n'avaient pas de propriétaire et n'étaient jamais purgés.
 
-### Phase 0 — réponses d'audit (commit `9d466f8`)
+### Phases 1 à 4 et D-7 — sur base réelle (PostGIS 16 local, hors garde Vitest)
 
-1. **Hachage** — Argon2id via `@node-rs/argon2` (`apps/api/package.json`, `~2.0.2`), paramètres `memoryCost: 19456`
-   (19 MiB), `timeCost: 2`, `parallelism: 1` (`apps/api/src/lib/auth.ts:11-15`), algorithme par défaut de la
-   bibliothèque = Argon2id. **Déjà conforme** à la cible de la tâche 2.1 ; aucun réhachage massif n'est nécessaire, une
-   détection `needsRehash` est ajoutée pour l'avenir. Longueur minimale actuelle **8** (`apps/api/src/routes/auth.ts:16`).
-2. **Session** — cookie opaque `fadi_session` (`auth.ts:8`), valeur = `randomUUID()` (`auth.ts:39`) **stockée en clair**
-   comme clé primaire de la table `sessions` (`init.sql:24-30`), expiration fixe 30 j (`auth.ts:7`, `:40`), sans
-   glissement, sans plafond par rôle ; `HttpOnly`, `SameSite=Lax`, `Secure` en production seulement
-   (`routes/auth.ts:19-30`). **Révocable** : suppression de la ligne (`auth.ts:46`), relue à chaque requête
-   (`middleware/require-auth.ts`). Pas de révocation des autres sessions au changement de mot de passe (aucune route de
-   changement n'existe).
-3. **Table `users`** — `id`, `email` (unique), `password_hash`, `created_at`, `notifications_seen_at`, `display_name`,
-   `atelier_ensembles`, `atelier_ensembles_at`, `notification_preferences` (`schema.ts:24-39`, `init.sql:11-22`). Aucun
-   statut, rôle plateforme, vérification d'e-mail ni compteur d'échecs.
-4. **`AUTH_RATE_LIMIT`** — `express-rate-limit`, fenêtre **15 min**, **20** requêtes par défaut, clé = **adresse IP**
-   seule (générateur par défaut), appliqué à tout `/auth` y compris `/auth/me` (`app.ts:55-57`) ; actif en production
-   (valeur par défaut). Aucune limite par identifiant, aucun verrouillage de compte.
-5. **Défaut PR #1 (expiration de session)** — **confirmé** : sur 401 de `/auth/me` au chargement,
-   `apps/web/src/lib/auth-context.tsx:90-91` efface seulement `fadi.lastUser` ; le cache TanStack persisté et IndexedDB
-   **ne sont pas purgés** (`forgetDevice`, `:50`, n'est appelé qu'au changement d'utilisateur `:65`, `:78` et à la
-   déconnexion `:122`). Même à la déconnexion, la file des lots de l'Atelier (`lots`) et `modelCache`
-   (`local-store.ts:84-97`) **ne portent aucun `userId`** et ne sont pas vidés : un lot laissé par A pourrait être rejoué
-   sous la session de B.
+- `scripts/validation/users-migration-check.mjs` : **31 contrôles verts**.
+  - `init.sql` rejoué deux fois sans erreur ; un compte historique reste `active` / `user` ; une session historique
+    est convertie en empreinte.
+  - Les contraintes CHECK refusent les valeurs invalides ; le journal d'audit refuse UPDATE et DELETE.
+  - D-7 : chaque table est dans son schéma et appartient à `fadi_owner`.
+  - `fadi_app` : CREATE, ALTER, DROP et TRUNCATE refusés ; UPDATE et DELETE sur le journal d'audit refusés ;
+    lecture et écriture des tables applicatives permises.
+  - `fadi_retention` ne peut qu'anonymiser des colonnes du journal ; `fadi_backup` est en lecture seule.
+- Migration jouée deux fois en `fadi_migrator`, non super-utilisateur : réussie.
+- `scripts/verify-restore.sh` : restauration vérifiée, journal d'audit identique, déclencheurs append-only présents,
+  propriétaires et droits D-7 identiques après restauration.
+- `apps/web/e2e/comptes-api.mjs` : **109 contrôles verts** avec l'API connectée en `fadi_app`. Deux exécutions :
+  courriel en console, puis SMTP réel vers Mailpit v1.20.4, avec la même configuration que la CI. La recette couvre :
+  - la politique de mot de passe et le hachage ;
+  - le jeton de session jamais stocké en clair ;
+  - une réponse identique pour un compte inconnu et un mauvais mot de passe ;
+  - le verrouillage après 5 échecs et la protection CSRF ;
+  - la révocation des sessions au changement et à la réinitialisation du mot de passe ;
+  - TOTP chiffré : enrôlement, codes de secours hachés à usage unique, rejeu refusé ;
+  - la session administrateur plafonnée à 24 h ;
+  - `/admin` : 404 pour un non-administrateur et pour un anonyme, 403 `mfa_required` sans TOTP ;
+  - les invitations : renvoi sans doublon, lien transféré refusé, invitation expirée, annulée ou déclinée sans effet ;
+  - l'accès support : lecture permise ; écriture, commentaire et export refusés ; lectures journalisées ; propriétaire
+    prévenu ; accès expiré ou révoqué → 404 ;
+  - la suspension (sessions révoquées, réservations d'édition libérées) et la réactivation ;
+  - le mot de passe oublié (réponse identique) ;
+  - l'export et la suppression : refusée avec un projet partagé, annulable, anonymisation à 30 jours sur horloge simulée ;
+  - le garde-fou de quota (lien à copier) et un journal d'audit sans aucune adresse e-mail.
+- Tests purs API (`npx vitest run src/lib …`) : 19 fichiers, **229 tests verts**. Ils couvrent la politique de mot de
+  passe, les vecteurs RFC 6238, le coffre AES-GCM, les sessions et le verrouillage, la machine d'états, les règles
+  d'invitation, D-5, le mailer, le quota, les gabarits FR/EN, l'accès plateforme et le dernier administrateur.
+- Matrice Studio régénérée : `routes/auth.ts` est déclarée hors matrice, l'export lisant les commentaires Studio du
+  compte. Contrôle DB-3 de la CI : les 12 suites historiques restent refusées par la garde, inchangées.
 
-### Phase 0 — ajustements imposés par le concept
+### Phase 5 — écrans (équipe Interface, sous-agent)
 
-Consignés dans [DECISIONS.md](DECISIONS.md) : UM-1 (organisations hors de ce plan — **D-3 contredit, signalé**), UM-2
-(états de compte), UM-3 (invitations sans compte fantôme, table dédiée), UM-4 (motif de l'accès support, rôle `support`),
-UM-8 (partage direct d'un compte existant conservé, écart déclaré). Point d'arrêt 0 franchi sous délégation (UM-12).
+- `apps/web/e2e/comptes-admin.mjs` : **48 vérifications vertes** sur l'API :3005 (SMTP vers Mailpit), après
+  correction de deux points de recette : la limite par destinataire lue dans l'environnement et l'attente du bandeau.
+  Elle couvre :
+  - le renvoi vers l'enrôlement quand l'administrateur n'a pas de double authentification ;
+  - l'enrôlement TOTP par l'interface et la connexion en deux étapes ;
+  - le tableau d'administration, la recherche, la fiche, l'invitation avec lien à copier et l'activation ;
+  - le mot de passe oublié ;
+  - côté projet : invitation en attente, accès support et bandeau ;
+  - A révoqué puis B sur le même navigateur : rien de A n'est visible, IndexedDB et `fadi.lastUser` sont purgés ;
+  - axe-core sans violation critique ni sérieuse sur 16 écrans, en bureau et en téléphone (390×844).
+- Rapport du sous-agent :
+  - `npm run test --workspace=@fadi/web` : 940 tests verts ;
+  - build vert ;
+  - `interface-anglais.mjs` vert (0,34 % de textes restés en français), complété d'un relevé ponctuel des nouvelles
+    pages publiques et de Mon compte ;
+  - non relevés en anglais : `/admin/utilisateurs` et le panneau d'accès support.
+
+## Écarts au plan (le concept et D-7 priment)
+
+- UM-2 et UM-3 : pas d'état `invited` ni de compte fantôme ; les invitations ont leur propre table (`auth.invitations`).
+- UM-5 et UM-13 : `public.sessions` est étendue au lieu de `user_sessions`, et reste dans `public`.
+- La tâche 2.E2E visait `e2e/scenarios/00-compte.mjs`, et la tâche 6.1 `scenarios/NN-…` avec `run.mjs`. Ces fichiers
+  n'existent pas dans le dépôt : les recettes `comptes-api.mjs` et `comptes-admin.mjs` sont des étapes de CI, comme
+  les autres recettes (tranche `complements`).
+- Le générateur `PERMISSIONS.md` couvre Studio seulement. La matrice des routes `/admin/*` est portée par
+  `platform-access.test.ts` (décision pure par acteur : admin, utilisateur, suspendu, anonyme) et par la recette HTTP.
+  Les « 7 acteurs » de la matrice Studio sont le non-membre plus six situations de membre.
 
 ## Points ouverts
 
-- UM-1 : chantier organisations / participation / revue externe à ouvrir par le maître d'ouvrage.
-- UM-11 : DB-3 bloqué (autorité d'attestation hors dépôt).
-- Annexe C (Infomaniak, SPF/DKIM/DMARC, `FADI_ENCRYPTION_KEY`, premier admin) : hors code.
+- UM-1 : chantier organisations / participation / revue externe, à ouvrir par le maître d'ouvrage.
+- UM-11 : DB-3 bloqué, procédure dans RUNBOOK §14.
+- UM-15 : le prochain déploiement exige `FADI_APP_DB_PASSWORD` dans `.env.deploy` (RUNBOOK §2–4).
+- Annexe C (Infomaniak, DNS, clé de chiffrement, premier admin) : hors code.
+- CI de la PR : à constater.
 
 ## Liens de suivi
 
 - Issue : [#253](https://github.com/RachEma-ux/Fadi/issues/253)
 - Branche de tâche : `ccr-266c1e83-7780ml` (imposée par la session, UM-12).
-- Pull Request : à ouvrir à la fin de l'implémentation, non fusionnée.
+- Pull Request : ouverte en fin de chantier, non fusionnée (lien dans HANDOFF.md).
 
 ## Préconditions de clôture
 

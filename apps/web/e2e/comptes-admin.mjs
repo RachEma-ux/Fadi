@@ -49,7 +49,7 @@ function totp(secret, step = Math.floor(Date.now() / 30_000)) {
 
 // --- Courriels : Mailpit (CI) ou journal du transport console (local) ----------------------------------------------
 async function mailLink(to, path) {
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < 120; i++) {
     if (process.env.MAILPIT_URL) {
       const base = process.env.MAILPIT_URL.replace(/\/$/, "");
       const list = await fetch(`${base}/api/v1/search?query=${encodeURIComponent(`to:"${to}"`)}`).then((r) => r.json()).catch(() => null);
@@ -179,9 +179,11 @@ try {
   check("fiche : historique d'audit présent", (await admin.locator("[data-admin-detail] .admin-table tbody tr").count()) > 0);
   await axe(admin, "administration — fiche utilisateur (bureau)");
 
-  // 5. Invitation : 5 courriels à la même adresse en une heure, le 6ᵉ bascule vers le lien à copier (garde-fou D-1).
+  // 5. Invitation : la limite de courriels par heure et par destinataire atteinte (MAIL_RECIPIENT_HOURLY_LIMIT, 5 par
+  // défaut, même valeur que l'API), l'envoi suivant bascule vers le lien à copier (garde-fou D-1).
   const invitee = email("invite");
-  for (let i = 0; i < 5; i++) await apiOf(admin, "post", "/admin/users/invitations", { email: invitee });
+  const perRecipient = Number(process.env.MAIL_RECIPIENT_HOURLY_LIMIT ?? 5);
+  for (let i = 0; i < perRecipient; i++) await apiOf(admin, "post", "/admin/users/invitations", { email: invitee });
   await admin.fill('input[name="inviteEmail"]', invitee);
   await admin.getByRole("button", { name: "Envoyer l’invitation" }).click();
   await admin.locator("[data-copy-link]").waitFor();
@@ -291,7 +293,8 @@ try {
   check("accès support accordé et listé", true);
   await axe(owner, "projet — membres et accès support (bureau)");
   await admin.goto(`${BASE}/projets/${proj.id}?module=collaboration`);
-  await admin.locator("[data-support-banner]").waitFor();
+  // L'échéance arrive avec la lecture de l'accès (GET …/support-grants) : attendre le texte complet du bandeau.
+  await admin.locator("[data-support-banner]", { hasText: "jusqu’au" }).waitFor({ timeout: 15_000 }).catch(() => undefined);
   check("administrateur : bandeau « Accès support jusqu'au … »", /jusqu’au/.test(await admin.locator("[data-support-banner]").textContent()));
   check("accès support : aucun formulaire de commentaire", (await admin.locator("form.comment-form").count()) === 0);
   await ownerCtx.close();

@@ -11,10 +11,10 @@ Légende des preuves : `api:` = `apps/api/src/…`, `web:` = `apps/web/src/…`,
 
 | ID | Exigence | Module | Code existant (initial) | Test | Initial | Statut |
 |---|---|---|---|---|---|---|
-| C1-01 | Un compte identifie et attribue les actions ; l'authentification seule ne donne aucun accès projet | Compte | api:lib/owned-project.ts (`loadProjectAccess`) | api:app.test.ts (DB-3) ; e2e:comptes-admin.mjs (admin sans accès → 404) | en place | en place |
-| C1-02 | Trois contextes (plateforme, organisation, projet) sans catégories exclusives ; rôles plateforme distincts | Plateforme | aucun rôle plateforme | api:lib/platform-access.test.ts ; e2e:comptes-admin.mjs | manquant | partiel — rôle plateforme `admin` livré ; contexte organisation hors périmètre |
+| C1-01 | Un compte identifie et attribue les actions ; l'authentification seule ne donne aucun accès projet | Compte | api:lib/owned-project.ts (`loadProjectAccess`) | e2e:comptes-api.mjs (admin sans accès support → 404) | en place | en place |
+| C1-02 | Trois contextes (plateforme, organisation, projet) sans catégories exclusives ; rôles plateforme distincts | Plateforme | aucun rôle plateforme | api:lib/platform-access.test.ts ; e2e:comptes-api.mjs | manquant | partiel — rôle plateforme `admin` livré ; contexte organisation hors périmètre |
 | C1-03 | Enregistrements personne/contact, organisation, appartenance, participation, affectation de travail, affectation d'accès | Organisation / Projet | `project_members` (accès seul) | — | partiel | hors périmètre (UM-1) |
-| C1-04 | Identité unique ; pas de fusion automatique sur nom ou contact non vérifié | Compte | e-mail unique (`users_email_unique`) | api:routes/auth (activation exige l'adresse invitée) ; e2e:comptes-admin.mjs | partiel | en place — vérification d'e-mail livrée, aucune fusion automatique |
+| C1-04 | Identité unique ; pas de fusion automatique sur nom ou contact non vérifié | Compte | e-mail unique (`users_email_unique`) | e2e:comptes-api.mjs (lien transféré refusé, adresse vérifiée) | partiel | en place — vérification d'e-mail livrée, aucune fusion automatique |
 | C1-05 | Participants (annuaire, contacts sans accès) et équipe = vues des mêmes enregistrements | Projet | — | — | manquant | hors périmètre (UM-1) |
 | C1-06 | Responsabilité métier, travail affecté et permission inspectables séparément | Projet | rôles Studio (permissions) | — | partiel | hors périmètre (UM-1) |
 | C1-07 | Administration plateforme : personnel Fadi, responsabilités plateforme, contrôles opérationnels autorisés | Plateforme | — | e2e:comptes-admin.mjs | manquant | en place — `/admin/utilisateurs` |
@@ -25,25 +25,25 @@ Légende des preuves : `api:` = `apps/api/src/…`, `web:` = `apps/web/src/…`,
 |---|---|---|---|---|---|---|
 | C2-01 | Propriétaire / gardien du projet, distinct de la direction, de l'auteur et de l'approbation | Projet | `projects.owner_id`, transfert `…/propriete` | api:app.test.ts (DB-3) | partiel | partiel — gardien unique ; adjoints et partie propriétaire (organisation) hors périmètre |
 | C2-02 | Le droit d'agir et le droit d'accorder sont séparés ; un admin n'accorde que dans sa délégation | Plateforme | — | api:lib/platform-access.test.ts | manquant | en place pour la plateforme (admin ≠ contenu, D-2) ; délégation fine hors périmètre |
-| C2-03 | Évaluation à chaque action : compte actif et authentifié, participation active, grant valide, restriction prioritaire, délais | Accès | `projectOr404` (participation) | api:lib/auth-policy.test.ts ; e2e:comptes-admin.mjs (suspendu → 401) | partiel | en place — statut du compte et session revérifiés à chaque requête ; restrictions explicites hors périmètre |
-| C2-04 | Révocation appliquée à la prochaine action, même depuis un écran déjà ouvert | Accès | session relue à chaque requête | e2e:comptes-admin.mjs (session révoquée → 401) | partiel | en place |
+| C2-03 | Évaluation à chaque action : compte actif et authentifié, participation active, grant valide, restriction prioritaire, délais | Accès | `projectOr404` (participation) | api:lib/security/security.test.ts ; e2e:comptes-api.mjs (suspendu → 401) | partiel | en place — statut du compte et session revérifiés à chaque requête ; restrictions explicites hors périmètre |
+| C2-04 | Révocation appliquée à la prochaine action, même depuis un écran déjà ouvert | Accès | session relue à chaque requête | e2e:comptes-api.mjs (session révoquée → 401) | partiel | en place |
 | C2-05 | Vue d'accès effectif (qui peut quoi, où, jusqu'à quand, par quelle affectation) | Accès | — | — | manquant | partiel — fiche utilisateur admin (projets, rôles, accès support, sessions) ; vue complète hors périmètre |
 | C2-06 | Transfert accepté par le successeur ; attribution historique conservée | Projet | transfert immédiat sans acceptation | — | partiel | partiel — transfert existant conservé, acceptation hors périmètre (UM-1) |
-| C2-07 | Suspension urgente possible ; perte du dernier gardien → voie de reprise autorisée | Plateforme | — | e2e:comptes-admin.mjs (suspension) ; api:lib/platform-access.test.ts (dernier admin) | manquant | en place — suspension, garde du dernier admin, libération des verrous ; reprise d'un projet orphelin = transfert par le propriétaire avant suppression (D-5) |
-| C2-08 | Accès support : opérateur, autorisant, motif, ressources, durée ; expire ; traçable ; aucune usurpation | Support | — | api:lib/support-grants.test.ts ; e2e:comptes-admin.mjs | manquant | en place (D-2, UM-4) |
-| C2-09 | Droits de téléchargement / export explicites | Accès | rôles `lecteur` | api:lib/owned-project.test.ts (`support` sans export) | partiel | partiel — explicites pour l'accès support ; grille fine hors périmètre |
+| C2-07 | Suspension urgente possible ; perte du dernier gardien → voie de reprise autorisée | Plateforme | — | e2e:comptes-api.mjs (suspension, verrous) ; api:lib/platform-access.test.ts (dernier admin) | manquant | en place — suspension, garde du dernier admin, libération des verrous ; reprise d'un projet orphelin = transfert par le propriétaire avant suppression (D-5) |
+| C2-08 | Accès support : opérateur, autorisant, motif, ressources, durée ; expire ; traçable ; aucune usurpation | Support | — | e2e:comptes-api.mjs ; e2e:comptes-admin.mjs | manquant | en place (D-2, UM-4) |
+| C2-09 | Droits de téléchargement / export explicites | Accès | rôles `lecteur` | e2e:comptes-api.mjs (`support` : écriture, commentaire, export 403) | partiel | partiel — explicites pour l'accès support ; grille fine hors périmètre |
 
 ## Partie 3 — Parcours
 
 | ID | Exigence | Module | Code existant (initial) | Test | Initial | Statut |
 |---|---|---|---|---|---|---|
 | C3-01 | Invitation : destinataire, contexte, rôle, portée, expiration ; aperçu avant envoi | Invitations | partage d'un compte existant seulement | e2e:comptes-admin.mjs | manquant | partiel — destinataire, projet, rôle, expirations, statut ; aperçu = récapitulatif avant confirmation |
-| C3-02 | Une invitation ne crée pas de compte en silence | Invitations | — | api:lib/invitations.test.ts | en place (pas d'invitation) | en place (UM-3) |
-| C3-03 | Renvoi sans multiplier les participants (règle visible) | Invitations | — | api:lib/invitations.test.ts | manquant | en place — une invitation en attente par (adresse, projet) : le renvoi remplace le jeton |
-| C3-04 | Acceptation liée à l'identité vérifiée ; mauvais compte, lien transféré, expiré, annulé, décliné → aucune activation | Invitations | — | api:lib/invitations.test.ts ; e2e:comptes-admin.mjs | manquant | en place |
-| C3-05 | Revalidation de l'autorité de l'invitant et de la portée à l'activation | Invitations | — | api:lib/invitations.test.ts | manquant | en place |
-| C3-06 | États séparés : compte (actif, verrouillé, suspendu, fermé), invitation (en attente, acceptée, déclinée, expirée, annulée) | Compte | — | api:lib/account-state.test.ts | manquant | en place (UM-2) ; appartenance / participation / affectation hors périmètre |
-| C3-07 | Session expirée ou interrompue : l'utilisateur voit si l'opération a été enregistrée ; reprise sans doublon | Client | files hors ligne avec `requestId` | e2e:00 compte (A puis B) | partiel | partiel — purge et cloisonnement par utilisateur livrés ; mutations d'administration jamais mises en file |
+| C3-02 | Une invitation ne crée pas de compte en silence | Invitations | — | api:lib/security/security.test.ts ; e2e:comptes-api.mjs | en place (pas d'invitation) | en place (UM-3) |
+| C3-03 | Renvoi sans multiplier les participants (règle visible) | Invitations | — | api:lib/security/security.test.ts ; e2e:comptes-api.mjs | manquant | en place — une invitation en attente par (adresse, projet) : le renvoi remplace le jeton |
+| C3-04 | Acceptation liée à l'identité vérifiée ; mauvais compte, lien transféré, expiré, annulé, décliné → aucune activation | Invitations | — | api:lib/security/security.test.ts ; e2e:comptes-api.mjs | manquant | en place |
+| C3-05 | Revalidation de l'autorité de l'invitant et de la portée à l'activation | Invitations | — | api:lib/security/security.test.ts ; e2e:comptes-api.mjs | manquant | en place |
+| C3-06 | États séparés : compte (actif, verrouillé, suspendu, fermé), invitation (en attente, acceptée, déclinée, expirée, annulée) | Compte | — | api:lib/security/security.test.ts | manquant | en place (UM-2) ; appartenance / participation / affectation hors périmètre |
+| C3-07 | Session expirée ou interrompue : l'utilisateur voit si l'opération a été enregistrée ; reprise sans doublon | Client | files hors ligne avec `requestId` | e2e:comptes-admin.mjs (A révoqué puis B, même navigateur) ; web:lib/auth-purge.test.ts | partiel | partiel — purge et cloisonnement par utilisateur livrés ; mutations d'administration jamais mises en file |
 | C3-08 | Affectations de travail, délégation, fin de participation | Projet | — | — | manquant | hors périmètre (UM-1) |
 | C3-09 | Interface : libellés clairs, clavier, erreurs lisibles, confirmations qui nomment la conséquence | Interface | — | e2e:comptes-admin.mjs (axe-core) | — | en place — boîtes de confirmation, axe-core |
 
@@ -82,5 +82,6 @@ Légende des preuves : `api:` = `apps/api/src/…`, `web:` = `apps/web/src/…`,
 | P-08 | Journal d'audit append-only dans la transaction | en place |
 | P-09 | Courriel : `Mailer`, console / SMTP, outbox, quota, repli lien, gabarits FR/EN, Mailpit | en place |
 | P-10 | Suppression : export, 30 j de grâce, anonymisation | en place |
-| P-11 | Tests DB-3 sur PostGIS éphémère attesté | **bloqué** (UM-11) |
+| P-11 | Tests DB-3 sur PostGIS éphémère attesté | **bloqué** (UM-11, RUNBOOK §14) — base réelle couverte hors garde par `users-migration-check.mjs` et `comptes-api.mjs` |
+| P-13 | D-7 : schémas `auth` / `admin`, rôles au moindre privilège, `fadi_app` sans DDL, audit non modifiable | en place — `scripts/validation/users-migration-check.mjs` (SET ROLE par rôle), `verify-restore.sh` (droits identiques) |
 | P-12 | Drapeau `FADI_ADMIN_ENABLED` | en place |

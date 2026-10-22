@@ -7,7 +7,7 @@
 
 ## En cours
 
-- Aucune tâche engagée hors de la PR du chantier.
+- UM-CI — Constater la CI de la PR et corriger tout échec (Issue : #253).
 
 ## Terminé
 
@@ -18,6 +18,7 @@
 - [x] UM-P4 — Cycle de vie des comptes et courriel (Issue : #253).
 - [x] UM-P5 — Écrans (Issue : #253).
 - [x] UM-P6 — Scénario e2e, Mailpit en CI, drapeau, runbook (Issue : #253) — sauf DB-3.
+- [x] UM-D7 — Amendement D-7 : schémas `auth` / `admin`, rôles au moindre privilège, CI et restauration (Issue : #253).
 
 ## Bloqué
 

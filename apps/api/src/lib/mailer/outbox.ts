@@ -44,7 +44,7 @@ export async function enqueueMail(
 }
 
 /** Traite les messages échus ; renvoie le nombre traité. Verrou `SKIP LOCKED` : deux processus ne s'en disputent pas un. */
-export async function processMailOutbox(limit = 10): Promise<number> {
+export async function processMailOutbox(limit = 100): Promise<number> {
   const { mailer } = mailRuntime();
   let handled = 0;
   for (let i = 0; i < limit; i++) {
