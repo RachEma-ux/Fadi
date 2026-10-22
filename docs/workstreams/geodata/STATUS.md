@@ -4,7 +4,7 @@ Mis à jour : 2026-10-22 (UTC).
 
 ## État
 
-**En cours** — livraison documentaire de la version 1.0. Le périmètre autonome est demandé ; le concept détaillé attend sa revue. Le module n’est pas implémenté par ce lot.
+**Vérifié** pour la livraison documentaire de la version 1.0, déposée dans la PR #245 ; revue détaillée en attente. Le module n’est pas implémenté par ce lot.
 
 ## Faits vérifiés
 
@@ -12,6 +12,8 @@ Mis à jour : 2026-10-22 (UTC).
 - Aucun concept GeoData ni chantier GeoData préexistant dans l’arbre inspecté ; aucun prédécesseur à archiver.
 - La paire française porte le même titre et la version 1.0 ; parité et rendu documentés dans `VERIFICATION.md`.
 - Seuls des documents et leurs index sont destinés au commit.
+- Paire et documents déposés au commit `022db53547c73ac3b0c6a446c539d8dfcc68d565` ; les 11 empreintes Git de l’arbre distant correspondent aux fichiers préparés.
+- Le contrôle distant « Continuité — docs, checkpoints et tests » a réussi sur ce commit ; voir `VERIFICATION.md`. Vérifier à nouveau la CI du HEAD courant.
 
 ## Points ouverts
 
@@ -21,8 +23,8 @@ Revue du contenu détaillé, décision de fusion et autorisation d’un éventue
 
 - Issue : https://github.com/RachEma-ux/Fadi/issues/243.
 - Branche : https://github.com/RachEma-ux/Fadi/tree/docs/243-geodata-concept.
-- PR : à ouvrir après le premier commit complet de la paire.
+- PR : https://github.com/RachEma-ux/Fadi/pull/245 (ouverte pour revue, non fusionnée au checkpoint).
 
 ## Préconditions de clôture
 
-Vérifier le diff et la présence des deux formats sur GitHub, consigner le résultat des contrôles puis obtenir la revue documentaire. Une CI verte ne vaut pas acceptation du concept ni autorisation de développer.
+Obtenir la revue documentaire et la décision de fusion selon la procédure, après vérification de la CI du HEAD courant. Une CI verte ne vaut pas acceptation du concept ni autorisation de développer.

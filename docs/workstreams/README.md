@@ -14,7 +14,7 @@ Chaque **chantier** dispose d'un dossier de contexte et d'un point de reprise ; 
 | Atelier et Planche | Cahiers, lots et décisions préexistants ; ne pas recréer leur suivi | [Atelier](../atelier/README.md) · [Planche](../planche/README.md) | Les nouveaux chantiers ne sont ouverts qu'en cas de changement cadré |
 | Équipe Codex Fadi | Programme documentaire M00–M30 ; aucune correction réalisée par sa création | [ai-team/](ai-team/CONTEXT.md) | [Issue #156](https://github.com/RachEma-ux/Fadi/issues/156) |
 | Studio | Cadrage et missions définis ; cases et conformité à qualifier | [studio/](studio/CONTEXT.md) | [Programme #156](https://github.com/RachEma-ux/Fadi/issues/156), Issues #159–#164 |
-| GeoData | Concept 1.0 préparé pour revue ; aucune implémentation | [geodata/](geodata/CONTEXT.md) | [Issue #243](https://github.com/RachEma-ux/Fadi/issues/243) |
+| GeoData | Concept 1.0 déposé pour revue ; aucune implémentation | [geodata/](geodata/CONTEXT.md) | [Issue #243](https://github.com/RachEma-ux/Fadi/issues/243) · [PR #245](https://github.com/RachEma-ux/Fadi/pull/245) |
 
 ## Ouvrir un chantier
 

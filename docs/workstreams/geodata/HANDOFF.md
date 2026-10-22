@@ -6,16 +6,16 @@ Mis à jour : 2026-10-22 (UTC).
 
 - Chantier : geodata.
 - Issue : https://github.com/RachEma-ux/Fadi/issues/243.
-- Branche : `docs/243-geodata-concept` ; PR à ouvrir après le premier commit.
-- Dernière base vérifiée : `7717f9f15d315aaa568bc1fc2336d22a01dbc9b4`. Relever le HEAD courant avant reprise.
+- Branche : `docs/243-geodata-concept` ; PR https://github.com/RachEma-ux/Fadi/pull/245.
+- Commit documentaire vérifié : `022db53547c73ac3b0c6a446c539d8dfcc68d565`, issu de la base `7717f9f15d315aaa568bc1fc2336d22a01dbc9b4`. Le présent checkpoint lui succède ; relever le HEAD courant avant reprise.
 
 ## Dernier état vérifié
 
-Concept français GeoData version 1.0 préparé en MD et DOCX. Périmètre indépendant des projets, page d’entrée cartographique et fonctions propres décrits. Vérifications documentaires dans `VERIFICATION.md` ; aucune fonction applicative créée.
+Concept français GeoData version 1.0 déposé en MD et DOCX dans la PR #245. Les 11 fichiers du premier commit ont été vérifiés par leurs empreintes dans l’arbre GitHub. Le contrôle distant de continuité a réussi sur ce commit. Vérifications documentaires dans `VERIFICATION.md` ; aucune fonction applicative créée.
 
 ## Prochaine action
 
-Vérifier la présence du commit et de la PR documentaire, terminer la revue du concept et consigner la décision du responsable. Ne pas commencer l’implémentation sans nouveau mandat.
+Relire la PR #245 et ses contrôles actuels, terminer la revue du concept et consigner la décision du responsable. Ne pas commencer l’implémentation sans nouveau mandat. Ne pas confondre l’ouverture de la PR avec une fusion dans main.
 
 ## Tests et preuves
 

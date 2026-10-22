@@ -7,12 +7,13 @@
 
 ## En cours
 
-- GEO-DOC-03 — Dépôt de la paire et des preuves dans la branche `docs/243-geodata-concept`, puis PR de revue.
+- Aucune rédaction en cours au checkpoint ; revue documentaire en attente.
 
 ## Terminé
 
 - [x] GEO-DOC-01 — Formaliser le périmètre demandé et la décision ADR-GEODATA-01 (Issue #243).
 - [x] GEO-DOC-02 — Rédiger le concept version 1.0 et produire les deux formats de contenu identique. Preuves : `VERIFICATION.md`.
+- [x] GEO-DOC-03 — Déposer la paire et les preuves dans `docs/243-geodata-concept` et ouvrir la [PR #245](https://github.com/RachEma-ux/Fadi/pull/245). Commit vérifié : `022db53547c73ac3b0c6a446c539d8dfcc68d565`.
 
 ## Bloqué
 
