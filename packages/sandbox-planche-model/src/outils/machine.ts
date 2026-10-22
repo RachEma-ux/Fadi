@@ -86,6 +86,8 @@ export interface VueOutil {
   readonly inference: Inference | null;
   /** (Ajout, optionnel) Symbole d'angle droit : sommet et deux directions unitaires (Ligne perpendiculaire à une arête). */
   readonly angleDroit?: { readonly sommet: Vec3; readonly u: Vec3; readonly v: Vec3 };
+  /** (Ajout, optionnel) Sommets de référence marqués d'un anneau noir (chaîne en cours, points survolés). */
+  readonly references?: readonly Vec3[];
   /** Aperçu provisoire : segments (polylignes) et faces à dessiner en surimpression. */
   readonly apercu: {
     readonly lignes: readonly (readonly Vec3[])[];
