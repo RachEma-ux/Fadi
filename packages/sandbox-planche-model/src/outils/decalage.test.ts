@@ -3,7 +3,7 @@ import { aire, ajouterRectangle, ajouterSegment, contexte, modeleVide } from "..
 import { v3 } from "../vecteur.js";
 import { etape } from "./commun-formes.js";
 import { distanceAuContour, machineDecalage } from "./decalage.js";
-import { aireTotale, aretes, clicVers, faces, partie, saisie, survolVers } from "./essais-modification.js";
+import { TOLERANCE, aireTotale, aretes, clicVers, faces, partie, saisie, survolVers } from "./essais-modification.js";
 
 const sol = () => ajouterRectangle(modeleVide(), v3(0, 0, 0), v3(4, 0, 0), v3(0, 3, 0)).modele;
 const aires = (m: ReturnType<typeof sol>) => faces(m).map((f) => aire(m, f.id)).sort((a, b) => a - b);
@@ -104,5 +104,40 @@ describe("Décalage — arête seule : le côté du curseur est respecté", () =
     p.jouer(clicVers(v3(2, -0.7, 0)));
     expect(ys(p.modele)).toContain(-0.7);
     expect(faces(p.modele)).toHaveLength(1);
+  });
+
+  describe("inférences : la distance s'accroche à la géométrie existante", () => {
+    const avecRepere = () => ajouterSegment(sol(), v3(1, 0.7, 0), v3(3, 0.7, 0)).modele;
+
+    it("curseur près d'une arête du plan : distance exacte jusqu'à elle, inférence « sur l'arête »", () => {
+      const p = partie(machineDecalage, avecRepere()).jouer(clicVers(v3(1, 2, 0)), survolVers(v3(1.5, 0.7 + TOLERANCE / 2, 0)));
+      expect(p.etat.distance).toBeCloseTo(0.7, 9);
+      const inf = p.vue().inference;
+      expect(inf?.type).toBe("sur-arete");
+      expect(inf?.libelle.en).toBe("On Edge");
+    });
+
+    it("sur une extrémité : « Endpoint », distance jusqu'à l'extrémité", () => {
+      const p = partie(machineDecalage, avecRepere()).jouer(clicVers(v3(1, 2, 0)), survolVers(v3(1, 0.7, 0)));
+      expect(p.vue().inference?.type).toBe("extremite");
+      expect(p.etat.distance).toBeCloseTo(0.7, 9);
+    });
+
+    it("loin de toute géométrie : pas d'inférence, la distance suit le curseur", () => {
+      const p = partie(machineDecalage, avecRepere()).jouer(clicVers(v3(1, 2, 0)), survolVers(v3(2, 1.2, 0)));
+      expect(p.vue().inference).toBeNull();
+      expect(p.etat.distance).toBeCloseTo(1.2, 9);
+    });
+
+    it("les arêtes décalées elles-mêmes ne sont jamais accrochées (distance nulle)", () => {
+      const p = partie(machineDecalage, avecRepere()).jouer(clicVers(v3(1, 2, 0)), survolVers(v3(2, TOLERANCE / 2, 0)));
+      expect(p.vue().inference).toBeNull();
+    });
+
+    it("le clic applique la distance accrochée", () => {
+      const p = partie(machineDecalage, avecRepere()).jouer(clicVers(v3(1, 2, 0)), clicVers(v3(1.5, 0.7 + TOLERANCE / 2, 0)));
+      expect(p.operations).toEqual(["Décalage"]);
+      expect(aires(p.modele).length).toBeGreaterThan(1);
+    });
   });
 });
