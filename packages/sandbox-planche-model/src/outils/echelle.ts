@@ -10,8 +10,9 @@
  * (un seul pas). Échap au repos avec sélection : vide la sélection.
  */
 import { type Id, mettreAEchelle } from "../geometrie-libre.js";
+import { type Inference, RANG_POINTS, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
-import { type Vec3, EPS, add, dot, len, normalize, scale, sub, v3 } from "../vecteur.js";
+import { type Vec3, EPS, TOL, add, dist, dot, len, normalize, scale, sub, v3 } from "../vecteur.js";
 import {
   type Derniere,
   contexteSaisie,
@@ -89,6 +90,8 @@ export interface EtatEchelle {
   readonly etape: 1 | 2;
   readonly entites: readonly Id[];
   readonly survol: string | null;
+  /** Inférence qui accroche la poignée tirée (extrémité, milieu, intersection, centre, origine du modèle). */
+  readonly inference: Inference | null;
   readonly poignee: Poignee | null;
   readonly boite: Boite | null;
   /** Ctrl : ancrage au centre (bascule). */
@@ -104,10 +107,10 @@ export interface EtatEchelle {
 }
 
 function initial(): EtatEchelle {
-  return { etape: 1, entites: [], survol: null, poignee: null, boite: null, depuisCentre: false, inverse: false, facteurs: v3(1, 1, 1), texte: null, erreur: null, derniere: null, repere: "monde" };
+  return { etape: 1, entites: [], survol: null, inference: null, poignee: null, boite: null, depuisCentre: false, inverse: false, facteurs: v3(1, 1, 1), texte: null, erreur: null, derniere: null, repere: "monde" };
 }
 
-const retour = (e: EtatEchelle): EtatEchelle => ({ ...e, etape: 1, poignee: null, boite: null, facteurs: v3(1, 1, 1) });
+const retour = (e: EtatEchelle): EtatEchelle => ({ ...e, etape: 1, inference: null, poignee: null, boite: null, facteurs: v3(1, 1, 1) });
 
 const uniforme = (e: EtatEchelle): boolean => (e.poignee ? uniformeParDefaut(e.poignee) !== e.inverse : false);
 const ancreDe = (e: EtatEchelle): Vec3 => (e.depuisCentre ? (e.boite as Boite).centre : (e.poignee as Poignee).ancre);
@@ -136,13 +139,36 @@ function poigneeVisee(b: Boite, r: Rayon, tolerance: number): Poignee | null {
   return meilleur ? meilleur.p : null;
 }
 
-/** Facteurs déduits de la position du curseur (point du plan de l'écran passant par la poignée). */
-function facteursAuCurseur(e: EtatEchelle, r: Rayon): Vec3 {
+/** Point visé : point du plan de l'écran passant par la poignée. */
+function pointDuCurseur(e: EtatEchelle, r: Rayon): Vec3 {
   const p = e.poignee as Poignee;
   const V = normalize(r.direction);
-  const den = dot(V, V);
-  const t = dot(sub(p.position, r.origine), V) / den;
-  const P = add(r.origine, scale(V, t));
+  const t = dot(sub(p.position, r.origine), V) / dot(V, V);
+  return add(r.origine, scale(V, t));
+}
+
+/**
+ * Accrochage de la poignée tirée : comme les autres outils, le point visé s'accroche aux points de la géométrie
+ * existante (extrémité, milieu, intersection, centre, origine) ; le facteur est celui qui amène la poignée à
+ * l'aplomb de ce point, axe par axe. La géométrie mise à l'échelle (arêtes dans la boîte de la sélection) est écartée.
+ */
+function pointAccroche(e: EtatEchelle, ctx: ContexteOutil, r: Rayon, tolerance: number): { point: Vec3; inference: Inference | null } {
+  const libre = pointDuCurseur(e, r);
+  const b = e.boite;
+  if (!b) return { point: libre, inference: null };
+  const dedans = (q: Vec3) => (["x", "y", "z"] as const).every((a) => q[a] >= b.min[a] - TOL && q[a] <= b.max[a] + TOL);
+  const g = geometrieVisible(ctx.modele);
+  const aretes = g.aretes.filter((a) => !(dedans(a.a) && dedans(a.b)));
+  if (aretes.length === 0) return { point: libre, inference: null };
+  const inf = inferer({ rayon: r, tolerance, geometrie: { ...g, aretes, faces: [], centres: g.centres }, ...(ctx.repere ? { axes: ctx.repere } : {}) });
+  const ponctuelle = (RANG_POINTS as readonly string[]).includes(inf.type);
+  if (!ponctuelle || dist(inf.point, libre) < TOL) return { point: libre, inference: ponctuelle ? inf : null };
+  return { point: inf.point, inference: inf };
+}
+
+/** Facteurs déduits de la position du curseur (point visé, éventuellement accroché). */
+function facteursAuCurseur(e: EtatEchelle, P: Vec3): Vec3 {
+  const p = e.poignee as Poignee;
   const A = ancreDe(e);
   if (uniforme(e)) {
     const u = sub(p.position, A);
@@ -229,12 +255,15 @@ export const machineEchelle: MachineOutil<EtatEchelle> = {
   traiter(etat, ev, ctx): Transition<EtatEchelle> {
     switch (ev.genre) {
       case "survol": {
-        if (etat.etape === 2 && etat.poignee) return { etat: { ...etat, facteurs: facteursAuCurseur(etat, ev.rayon), texte: null, erreur: null } };
+        if (etat.etape === 2 && etat.poignee) {
+          const { point, inference } = pointAccroche(etat, ctx, ev.rayon, ev.tolerance);
+          return { etat: { ...etat, facteurs: facteursAuCurseur(etat, point), inference, texte: null, erreur: null } };
+        }
         const b = boiteCourante(etat, ctx);
         return { etat: { ...etat, survol: b ? (poigneeVisee(b, ev.rayon, ev.tolerance)?.id ?? null) : null, texte: null, erreur: null } };
       }
       case "clic": {
-        if (etat.etape === 2 && etat.poignee) return appliquer(etat, ctx, { entites: cibles(etat, ctx), ancre: ancreDe(etat), facteurs: facteursAuCurseur(etat, ev.rayon) }, null, null);
+        if (etat.etape === 2 && etat.poignee) return appliquer(etat, ctx, { entites: cibles(etat, ctx), ancre: ancreDe(etat), facteurs: facteursAuCurseur(etat, pointAccroche(etat, ctx, ev.rayon, ev.tolerance).point) }, null, null);
         const b = boiteCourante(etat, ctx);
         const p = b ? poigneeVisee(b, ev.rayon, ev.tolerance) : null;
         if (b && p) {
@@ -318,7 +347,7 @@ export const machineEchelle: MachineOutil<EtatEchelle> = {
       valeur = uniforme(etat) ? f.x.toFixed(2).replace(".", ctx.separateurDecimal) : AXES.filter((a) => (etat.poignee as Poignee).axes.includes(a)).map((a) => f[a].toFixed(2).replace(".", ctx.separateurDecimal)).join(ctx.separateurDecimal === "," ? " ; " : ", ");
     }
     const m = etat.etape === 2 ? mesures(libelleMesuresDe(ID_ECHELLE, indice), valeur, contexteSaisie("echelle", ctx)) : null;
-    const v = vueModif({ consigne: consigneDe(ID_ECHELLE, indice), mesures: m, apercu: { lignes, faces: [] }, ctx, erreur: etat.erreur });
+    const v = vueModif({ consigne: consigneDe(ID_ECHELLE, indice), mesures: m, apercu: { lignes, faces: [] }, ctx, erreur: etat.erreur, inference: etat.etape === 2 ? etat.inference : null });
     return { ...v, options: [{ id: "repere", valeur: etat.repere, valeurs: [{ id: "monde", disponible: true }, { id: "piece", disponible: true }] }] };
   },
   configurer(etat, option, valeur): Transition<EtatEchelle> {
