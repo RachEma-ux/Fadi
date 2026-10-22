@@ -163,6 +163,21 @@ export function inferenceCarre(point: Vec3): Inference {
   return { ...inferenceBrute(point), libelle: { en: l.libelleSketchUp ?? "", fr: l.libelle } };
 }
 
+/** Rapport de la section dorée (nombre d'or). */
+export const NOMBRE_D_OR = (1 + Math.sqrt(5)) / 2;
+
+/** Inférence « Section dorée » (rectangle dont les côtés sont dans le rapport du nombre d'or) : libellé du catalogue. */
+export function inferenceSectionDoree(point: Vec3): Inference {
+  const l = INFERENCES["section-doree"];
+  return { ...inferenceBrute(point), libelle: { en: l.libelleSketchUp ?? "", fr: l.libelle } };
+}
+
+/** Inférence « Demi-cercle » (arc de 90°, 180° ou 270° exactement) : libellé du catalogue. */
+export function inferenceDemiCercle(point: Vec3): Inference {
+  const l = INFERENCES["demi-cercle"];
+  return { ...inferenceBrute(point), libelle: { en: l.libelleSketchUp ?? "", fr: l.libelle } };
+}
+
 export function inferenceTangente(point: Vec3, direction: Vec3, origine: Vec3): Inference {
   return {
     point,

@@ -32,6 +32,7 @@ import {
   etape,
   finArc,
   formaterLongueur,
+  inferenceDemiCercle,
   inferenceTangente,
   intersectionRayonPlan,
   mesures,
@@ -221,9 +222,14 @@ function traiter(etat0: EtatArc2Points, ev: EvenementOutil, ctx: ContexteOutil):
       }
       const { perp, plan } = geometrieFleche(debut, fin, etat.normale);
       const q = intersectionRayonPlan(ev.rayon, plan) ?? projeterSurPlan(viserLibre(ctx, ev).inference.point, plan);
-      const h = dot(sub(q, plan.origine), perp);
+      let h = dot(sub(q, plan.origine), perp);
+      // Inférence « Demi-cercle » : flèche égale à la demi-corde (arc de 180°), à la tolérance d'accrochage près.
+      const demiCorde = dist(debut, fin) / 2;
+      const demiCercle = demiCorde > TOL && Math.abs(Math.abs(h) - demiCorde) <= ev.tolerance;
+      if (demiCercle) h = Math.sign(h || 1) * demiCorde;
       const apercu = arcParFleche(debut, fin, perp, h);
-      const inf = { ...viserLibre(ctx, ev, debut).inference, point: add(plan.origine, scale(perp, h)) };
+      const pointFleche = add(plan.origine, scale(perp, h));
+      const inf = demiCercle ? inferenceDemiCercle(pointFleche) : { ...viserLibre(ctx, ev, debut).inference, point: pointFleche };
       const suivant: EtatArc2Points = { ...etat, perp, fleche: h, apercu, inference: inf, texte: null };
       if (ev.genre === "survol" || !apercu) return { etat: suivant };
       return creer(suivant, ctx, apercu, null, { enchainer: false });
