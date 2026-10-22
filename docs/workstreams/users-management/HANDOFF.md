@@ -6,7 +6,7 @@ Mis à jour : 2026-10-22 (UTC).
 
 - Chantier : users-management
 - Issue : [#253](https://github.com/RachEma-ux/Fadi/issues/253)
-- Branche / PR actives : `ccr-266c1e83-7780ml` ; [PR #255](https://github.com/RachEma-ux/Fadi/pull/255) vers `main` (brouillon, non fusionnée).
+- Branche / PR actives : `ccr-266c1e83-7780ml` ; [PR #255](https://github.com/RachEma-ux/Fadi/pull/255) vers `main` (prête pour revue depuis le 2026-10-22, non fusionnée).
 - Dernier commit vérifié : à relever en début de session ; ne pas réutiliser un SHA périmé.
 
 ## Dernier état vérifié

@@ -174,7 +174,7 @@ Preuves locales après correction :
 
 - Issue : [#253](https://github.com/RachEma-ux/Fadi/issues/253)
 - Branche de tâche : `ccr-266c1e83-7780ml` (imposée par la session, UM-12).
-- Pull Request : [#255](https://github.com/RachEma-ux/Fadi/pull/255) (brouillon, non fusionnée).
+- Pull Request : [#255](https://github.com/RachEma-ux/Fadi/pull/255) (prête pour revue depuis le 2026-10-22, non fusionnée).
 
 ## Préconditions de clôture
 
