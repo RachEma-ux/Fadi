@@ -183,7 +183,7 @@ export function InvitationPage() {
         : blocking ? <p role="alert" className="form-error">{blocking}</p>
         : wrongAccount ? (
           <>
-            <p role="alert" className="form-error">Cette invitation est destinée à une autre adresse que celle du compte connecté ({user.email}). Connectez-vous avec le compte invité.</p>
+            <p role="alert" className="form-error">Cette invitation est destinée à une autre adresse que celle du compte connecté (<span translate="no">{user.email}</span>). Connectez-vous avec le compte invité.</p>
             <button type="button" className="button-secondary" onClick={() => void logout()}>Se déconnecter</button>
           </>
         ) : user ? (

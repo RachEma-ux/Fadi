@@ -10834,5 +10834,13 @@
 "Adresse invalide.": "Invalid address.",
 "Trop de tentatives pour cette adresse : réessayez dans quelques minutes.": "Too many attempts for this address: try again in a few minutes.",
 "Trop de codes essayés : recommencez la connexion dans quelques minutes.": "Too many codes tried: start signing in again in a few minutes.",
-"Requête refusée : origine non autorisée.": "Request refused: origin not allowed."
+"Requête refusée : origine non autorisée.": "Request refused: origin not allowed.",
+"valable jusqu’au {0}": "valid until {0}",
+"accès révoqué le {0}": "access revoked on {0}",
+"adresse confirmée": "address confirmed",
+"adresse non confirmée": "address not confirmed",
+"pourra consulter ce projet en lecture seule pendant {0} heure(s). Vous serez prévenu de sa première consultation et pourrez révoquer l’accès à tout moment.": "will be able to view this project read-only for {0} hour(s). You will be notified of their first view and can revoke access at any time.",
+"Cette invitation est destinée à une autre adresse que celle du compte connecté (": "This invitation is meant for a different address than the signed-in account (",
+"). Connectez-vous avec le compte invité.": "). Sign in with the invited account.",
+"lecture et commentaires": "reading and comments"
 }

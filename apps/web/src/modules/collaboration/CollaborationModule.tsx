@@ -371,7 +371,7 @@ export function MembersPanel({ projectId }: { projectId: string }) {
           <ul className="sessions-list">
             {v.invitations!.map((i) => (
               <li key={i.id} data-invitation={i.email}>
-                <span><span className="collab-email">{i.email}</span> <small>· {i.projectRole ? ROLE_LABEL[i.projectRole] : ""} · jusqu’au {new Date(i.expiresAt).toLocaleDateString(LOCALE)}</small></span>
+                <span><span className="collab-email">{i.email}</span> <small>· {i.projectRole ? ROLE_LABEL[i.projectRole] : ""}{` · valable jusqu’au ${new Date(i.expiresAt).toLocaleDateString(LOCALE)}`}</small></span>
                 <button type="button" className="button-secondary" disabled={busy || cancelInvitation.isPending} onClick={() => cancelInvitation.mutate(i.id)}>Annuler l’invitation</button>
               </li>
             ))}
@@ -422,7 +422,7 @@ export function SupportAccessPanel({ projectId }: { projectId: string }) {
   return (
     <section className="biz-card" aria-labelledby="collab-support" data-support-panel>
       <h2 id="collab-support">Accès support</h2>
-      <p className="biz-sub">Un administrateur de la plateforme n’a jamais accès à votre projet par défaut. Vous pouvez lui accorder un accès en lecture seule (ni commentaire, ni modification, ni export), au plus {v.maxHours} heures, révocable à tout moment ; chaque consultation est journalisée.</p>
+      <p className="biz-sub">{`Un administrateur de la plateforme n’a jamais accès à votre projet par défaut. Vous pouvez lui accorder un accès en lecture seule (ni commentaire, ni modification, ni export), au plus ${v.maxHours} heures, révocable à tout moment ; chaque consultation est journalisée.`}</p>
       {v.admins.length === 0 ? <p className="h7-muted">Aucun administrateur actif sur la plateforme.</p> : (
         <form className="account-form" onSubmit={(e: FormEvent) => { e.preventDefault(); if (adminId && purpose.trim().length >= 3) setConfirm(true); }}>
           <label>Administrateur
@@ -431,7 +431,7 @@ export function SupportAccessPanel({ projectId }: { projectId: string }) {
               {v.admins.map((a) => <option key={a.id} value={a.id}>{a.displayName ? `${a.displayName} (${a.email})` : a.email}</option>)}
             </select>
           </label>
-          <label>Durée (heures, {v.maxHours} au plus)
+          <label>{`Durée (heures, ${v.maxHours} au plus)`}
             <input type="number" min={1} max={v.maxHours} value={hours} onChange={(e) => setHours(Math.max(1, Math.min(v.maxHours, Number(e.target.value) || 1)))} />
           </label>
           <label>Motif
@@ -462,7 +462,7 @@ export function SupportAccessPanel({ projectId }: { projectId: string }) {
       )}
       {confirm && admin && (
         <ConfirmDialog title="Accorder un accès support" confirmLabel="Accorder" busy={grant.isPending} onClose={() => setConfirm(false)} onConfirm={() => grant.mutate()}>
-          <p>{admin.email} pourra consulter ce projet en lecture seule pendant {hours} heure(s). Vous serez prévenu de sa première consultation et pourrez révoquer l’accès à tout moment.</p>
+          <p><span translate="no">{admin.email}</span>{` pourra consulter ce projet en lecture seule pendant ${hours} heure(s). Vous serez prévenu de sa première consultation et pourrez révoquer l’accès à tout moment.`}</p>
         </ConfirmDialog>
       )}
     </section>

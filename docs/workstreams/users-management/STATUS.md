@@ -81,7 +81,13 @@ DB-3 : **vérifié en CI** sur `570d248` (UM-17) — les 12 suites passent sur b
   - build vert ;
   - `interface-anglais.mjs` vert (0,34 % de textes restés en français), complété d'un relevé ponctuel des nouvelles
     pages publiques et de Mon compte ;
-  - non relevés en anglais : `/admin/utilisateurs` et le panneau d'accès support.
+  - `/admin/utilisateurs` et le panneau d'accès support, d'abord non relevés en anglais, sont couverts depuis le
+    2026-10-22 : relevé statique (textes JSX et littéraux passés au `Traducteur` avec `en.json`) puis passe anglaise
+    ajoutée à `comptes-admin.mjs` (2 contrôles). Les textes à valeurs étaient rendus en plusieurs nœuds (« Projets ( »,
+    « · jusqu’au … ») que la traduction DOM ne reconnaissait pas : ils sont rendus d'un seul tenant, avec leurs motifs
+    `{0}` au dictionnaire ; « Réactiver » (traduit « Unmute » ailleurs) devient « Réactiver le compte ».
+    `comptes-admin.mjs` : **50 vérifications vertes** en local (PostGIS 16, transport console), tests web 945 verts,
+    typecheck et build verts.
 
 ### DB-3 — suites API sur base jetable attestée (CI)
 

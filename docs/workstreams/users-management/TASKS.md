@@ -2,12 +2,11 @@
 
 ## À faire
 
-- [ ] UM-P6-DB3 — 12 suites historiques sur PostGIS éphémère attesté : clé enregistrée par le propriétaire, étape CI en place, résultat à constater (Issue : #253).
 - [ ] UM-ACC — Acceptation du maître d'ouvrage et fusion de la PR (Issue : #253).
 
 ## En cours
 
-- UM-CI — Constater la CI de la PR et corriger tout échec (Issue : #253).
+- Aucune ; la PR #255 attend la revue du maître d'ouvrage.
 
 ## Terminé
 
@@ -18,11 +17,14 @@
 - [x] UM-P4 — Cycle de vie des comptes et courriel (Issue : #253).
 - [x] UM-P5 — Écrans (Issue : #253).
 - [x] UM-P6 — Scénario e2e, Mailpit en CI, drapeau, runbook (Issue : #253) — sauf DB-3.
+- [x] UM-P6-DB3 — 12 suites historiques (105 tests) vertes sur PostGIS éphémère attesté, run CI 39855284507 (Issue : #253).
+- [x] UM-CI — CI de la PR #255 verte sur `570d248` et `1d787c4` (Issue : #253).
+- [x] UM-EN — Écrans d'administration et accès support relevés en anglais, passe anglaise dans `comptes-admin.mjs` (Issue : #253).
 - [x] UM-D7 — Amendement D-7 : schémas `auth` / `admin`, rôles au moindre privilège, CI et restauration (Issue : #253).
 
 ## Bloqué
 
-- Aucun blocage déclaré ; DB-3 débloqué par le propriétaire (UM-17), en vérification.
+- Aucun blocage déclaré.
 
 ## Critères de sortie
 

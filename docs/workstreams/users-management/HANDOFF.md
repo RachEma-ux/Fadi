@@ -25,7 +25,7 @@ Mis à jour : 2026-10-22 (UTC).
 
 - `DATABASE_URL=… node scripts/validation/users-migration-check.mjs` (base locale jetable, super-utilisateur).
 - `BASE_URL=… DATABASE_URL=<fadi_app> MAILPIT_URL=… MAIL_DAILY_LIMIT=… node apps/web/e2e/comptes-api.mjs`.
-- `BASE_URL=… MAILPIT_URL=… MAIL_RECIPIENT_HOURLY_LIMIT=… node apps/web/e2e/comptes-admin.mjs` (API servant `WEB_DIST`).
+- `BASE_URL=… MAILPIT_URL=… MAIL_RECIPIENT_HOURLY_LIMIT=… node apps/web/e2e/comptes-admin.mjs` (API servant `WEB_DIST` ; 50 contrôles, passe anglaise comprise).
 - `npx --workspace=@fadi/api vitest run src/lib` ; `npm run typecheck` ; `npm run build`.
 
 ## Risques et blocages

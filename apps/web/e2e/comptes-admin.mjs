@@ -297,6 +297,28 @@ try {
   await admin.locator("[data-support-banner]", { hasText: "jusqu’au" }).waitFor({ timeout: 15_000 }).catch(() => undefined);
   check("administrateur : bandeau « Accès support jusqu'au … »", /jusqu’au/.test(await admin.locator("[data-support-banner]").textContent()));
   check("accès support : aucun formulaire de commentaire", (await admin.locator("form.comment-form").count()) === 0);
+
+  // 7 bis. Interface anglaise (D-163) : panneau membres / accès support et administration, sans fragment français.
+  // Les textes à valeurs sont rendus d'un seul tenant (un nœud texte) pour que le dictionnaire les reconnaisse.
+  const RESIDUS_FR = /jusqu’au|Projets \(|Sessions ouvertes|double authentification|adresse (non )?confirmée|pourra consulter|Durée \(heures|Un administrateur de la plateforme|révoqué le|Ouverte le/;
+  const anglais = async (page, url) => {
+    await page.evaluate(() => localStorage.setItem("fadi.langue", "en"));
+    await page.goto(url);
+    await page.waitForFunction(() => document.documentElement.lang === "en");
+  };
+  await anglais(owner, `${BASE}/projets/${proj.id}?module=collaboration`);
+  await owner.locator("[data-support-grant=active]").waitFor();
+  await owner.locator("[data-project-invitations]", { hasText: "valid until" }).waitFor({ timeout: 10_000 }).catch(() => undefined);
+  const membresEn = `${await owner.locator("[data-project-invitations]").textContent()} ${await owner.locator("[data-support-panel]").textContent()}`;
+  check("anglais : invitations en attente et accès support traduits", /valid until/.test(membresEn) && /A platform administrator never has access/.test(membresEn) && !RESIDUS_FR.test(membresEn), membresEn.match(RESIDUS_FR)?.[0] ?? membresEn.slice(0, 200));
+  await anglais(admin, `${BASE}/admin/utilisateurs`);
+  await admin.locator("[data-admin-users] table").waitFor();
+  await admin.locator(`[data-admin-user="${adminMail}"] button`).click();
+  await admin.locator(`[data-admin-detail="${adminMail}"]`).waitFor();
+  await admin.locator("[data-admin-detail]", { hasText: "Open sessions" }).waitFor({ timeout: 10_000 }).catch(() => undefined);
+  const ficheEn = await admin.locator("[data-admin-users]").textContent();
+  check("anglais : fiche d'administration traduite", /Projects \(\d+\)/.test(ficheEn) && /Open sessions \(\d+\)/.test(ficheEn) && /two-factor authentication/.test(ficheEn) && !RESIDUS_FR.test(ficheEn), ficheEn.match(RESIDUS_FR)?.[0] ?? ficheEn.slice(0, 200));
+  for (const p of [owner, admin]) await p.evaluate(() => localStorage.setItem("fadi.langue", "fr"));
   await ownerCtx.close();
 
   // 9. Téléphone (390 × 844) : écrans publics, Mon compte, administration.

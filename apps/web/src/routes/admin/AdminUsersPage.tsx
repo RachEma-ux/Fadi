@@ -22,7 +22,7 @@ const OFFLINE = "Hors connexion : les actions d’administration exigent le rés
 type Action = { kind: "suspend" | "reactivate" | "revoke" | "delete" | "role"; user: AdminUser };
 const ACTION_TEXT: Record<Action["kind"], { title: string; confirm: string; danger: boolean; consequence: (u: AdminUser) => string }> = {
   suspend: { title: "Suspendre le compte", confirm: "Suspendre", danger: true, consequence: (u) => `${u.email} sera déconnecté de toutes ses sessions et ne pourra plus se connecter ; ses réservations d’édition seront libérées. Un courriel le prévient.` },
-  reactivate: { title: "Réactiver le compte", confirm: "Réactiver", danger: false, consequence: (u) => `${u.email} pourra de nouveau se connecter (un verrouillage éventuel est levé).` },
+  reactivate: { title: "Réactiver le compte", confirm: "Réactiver le compte", danger: false, consequence: (u) => `${u.email} pourra de nouveau se connecter (un verrouillage éventuel est levé).` },
   revoke: { title: "Révoquer les sessions", confirm: "Révoquer", danger: false, consequence: (u) => `Toutes les sessions ouvertes de ${u.email} seront fermées ; il devra se reconnecter.` },
   delete: { title: "Supprimer le compte", confirm: "Programmer la suppression", danger: true, consequence: (u) => `La connexion de ${u.email} est bloquée aussitôt ; ses données personnelles seront anonymisées dans 30 jours, sauf annulation par le lien envoyé. Refusé s’il possède des projets partagés.` },
   role: { title: "Changer le rôle", confirm: "Changer le rôle", danger: false, consequence: (u) => u.platformRole === "admin" ? `${u.email} perdra le rôle administrateur ; ses sessions seront fermées.` : `${u.email} deviendra administrateur de la plateforme (gestion des comptes, jamais le contenu des projets) ; ses sessions seront fermées et la double authentification lui sera exigée.` },
@@ -80,7 +80,7 @@ function Invitations() {
       <ul className="sessions-list">
         {q.data.invitations.map((i) => (
           <li key={i.id} data-invitation={i.email}>
-            <span><span translate="no">{i.email}</span> <small>· {i.projectName ? <span translate="no">{i.projectName}</span> : "compte"} · jusqu’au {date(i.expiresAt)} · {INVITATION_STATUS[i.status]}</small></span>
+            <span><span translate="no">{i.email}</span> <small>· {i.projectName ? <span translate="no">{i.projectName}</span> : "compte"}{` · valable jusqu’au ${date(i.expiresAt)} · `}{INVITATION_STATUS[i.status]}</small></span>
             <button type="button" className="button-secondary" disabled={!online || cancel.isPending} onClick={() => cancel.mutate(i.id)}>Annuler l’invitation</button>
           </li>
         ))}
@@ -100,7 +100,7 @@ function UserDetail({ id, onAction, onClose }: { id: string; onAction: (a: Actio
   return (
     <section className="panel admin-detail" aria-labelledby="admin-detail-title" data-admin-detail={u.email}>
       <h2 id="admin-detail-title"><span translate="no">{u.email}</span></h2>
-      <p>{u.displayName ? <span translate="no">{u.displayName} · </span> : null}{ROLE_PLATFORM[u.platformRole]} · <span className="admin-status" data-status={u.status}>{STATUS_LABEL[u.status]}</span> · double authentification {u.mfaEnabled ? "active" : "inactive"} · adresse {u.emailVerified ? "confirmée" : "non confirmée"}</p>
+      <p>{u.displayName ? <span translate="no">{u.displayName} · </span> : null}{ROLE_PLATFORM[u.platformRole]} · <span className="admin-status" data-status={u.status}>{STATUS_LABEL[u.status]}</span> {` · double authentification ${u.mfaEnabled ? "active" : "inactive"} · adresse ${u.emailVerified ? "confirmée" : "non confirmée"}`}</p>
       {self ? <p className="h7-muted">Votre propre compte : rôle, suspension et suppression se gèrent dans Mon compte.</p> : (
         <div className="admin-actions">
           {u.status === "active" || u.status === "locked" || u.status === "deletion_pending" ? <button type="button" className="button-secondary" disabled={!online} onClick={() => onAction({ kind: "suspend", user: u })}>Suspendre</button> : null}
@@ -111,18 +111,18 @@ function UserDetail({ id, onAction, onClose }: { id: string; onAction: (a: Actio
         </div>
       )}
       <div>
-        <h3>Projets ({projects.length})</h3>
+        <h3>{`Projets (${projects.length})`}</h3>
         {projects.length ? <ul>{projects.map((p) => <li key={p.id}><span translate="no">{p.code} — {p.name}</span> · {ROLE_LABEL[p.role]}</li>)}</ul> : <p className="h7-muted">Aucun projet.</p>}
         <small>Identité et rôle seulement : le contenu des projets n’est pas accessible depuis l’administration.</small>
       </div>
       <div>
-        <h3>Sessions ouvertes ({sessions.length})</h3>
+        <h3>{`Sessions ouvertes (${sessions.length})`}</h3>
         {sessions.length ? <ul>{sessions.map((s) => <li key={s.id}>{date(s.createdAt)} → {date(s.lastSeenAt)} {s.ip ? `· ${s.ip}` : ""} <small>{s.userAgent?.slice(0, 80)}</small></li>)}</ul> : <p className="h7-muted">Aucune.</p>}
       </div>
       {supportGrants.length > 0 && (
         <div>
           <h3>Accès support reçus</h3>
-          <ul>{supportGrants.map((g) => <li key={g.id}><span translate="no">{g.code}</span> · jusqu’au {date(g.expiresAt)}{g.revokedAt ? ` · révoqué le ${date(g.revokedAt)}` : ""} · <span translate="no">{g.purpose}</span></li>)}</ul>
+          <ul>{supportGrants.map((g) => <li key={g.id}><span translate="no">{g.code}</span>{` · valable jusqu’au ${date(g.expiresAt)}${g.revokedAt ? ` · accès révoqué le ${date(g.revokedAt)}` : ""} · `}<span translate="no">{g.purpose}</span></li>)}</ul>
         </div>
       )}
       <div>
@@ -217,7 +217,7 @@ export function AdminUsersPage() {
             </div>
             <nav className="admin-pager" aria-label="Pagination">
               <button type="button" className="button-secondary" disabled={filters.page <= 1} onClick={() => setFilters({ ...filters, page: filters.page - 1 })}>Précédent</button>
-              <span>Page {filters.page} / {pages} · {data.total} compte(s)</span>
+              <span>{`Page ${filters.page} / ${pages} · ${data.total} compte(s)`}</span>
               <button type="button" className="button-secondary" disabled={filters.page >= pages} onClick={() => setFilters({ ...filters, page: filters.page + 1 })}>Suivant</button>
             </nav>
           </>

@@ -160,7 +160,7 @@ function SessionsSection() {
             <li key={s.id} data-session={s.current ? "current" : "other"}>
               <span>
                 <strong>{s.current ? "Cette session" : (s.userAgent?.slice(0, 60) || "Autre appareil")}</strong>
-                <br /><small>Ouverte le {when(s.createdAt)} · dernière activité {when(s.lastSeenAt)}{s.ip ? ` · ${s.ip}` : ""}</small>
+                <br /><small>{`Ouverte le ${when(s.createdAt)} · dernière activité ${when(s.lastSeenAt)}`}{s.ip ? <span translate="no">{` · ${s.ip}`}</span> : null}</small>
               </span>
               {!s.current && <button type="button" className="button-secondary" disabled={!online || one.isPending} onClick={() => one.mutate(s.id)}>Déconnecter</button>}
             </li>
