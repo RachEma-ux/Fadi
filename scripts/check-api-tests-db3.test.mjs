@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { checkReport, DB3_PENDING_SUITES, GUARD_REFUSAL } from './check-api-tests-db3.mjs';
+import { checkReport, checkReportDb3Active, DB3_PENDING_SUITES, GUARD_REFUSAL } from './check-api-tests-db3.mjs';
 
 const root = '/w/Fadi/apps/api/';
 const refusedSuite = (name) => ({ name: root + name, status: 'failed', message: `${GUARD_REFUSAL}\n at refuse`, assertionResults: [] });
@@ -38,4 +38,35 @@ test('une suite de la liste qui se met à tourner oblige à réviser la liste', 
 
 test('rapport vide refusé', () => {
   assert.deepEqual(checkReport({ testResults: [] }).errors, ['rapport Vitest vide ou illisible']);
+});
+
+const active = (extra = []) => ({ testResults: [...DB3_PENDING_SUITES.map((n) => passedSuite(n, 3)), passedSuite('src/lib/history.test.ts', 2), ...extra] });
+
+test('DB-3 actif : toutes les suites passent, celles de la liste comprises', () => {
+  const r = checkReportDb3Active(active());
+  assert.deepEqual(r.errors, []);
+  assert.equal(r.db3Tests, DB3_PENDING_SUITES.length * 3);
+  assert.equal(r.passedTests, DB3_PENDING_SUITES.length * 3 + 2);
+});
+
+test('DB-3 actif : une suite encore refusée par la garde est une erreur', () => {
+  const rows = active().testResults.map((s) => s.name.endsWith('src/app.test.ts') ? { ...refusedSuite('src/app.test.ts'), message: 'Test database refused: ATTESTATION_REJECTED' } : s);
+  const errors = checkReportDb3Active({ testResults: rows }).errors.join('\n');
+  assert.match(errors, /refusée par la garde alors que DB-3 est actif/);
+  assert.match(errors, /src\/app.test.ts : aucune vérification exécutée/);
+});
+
+test('DB-3 actif : un test en échec est signalé', () => {
+  const broken = { ...passedSuite('src/routes/history.test.ts'), status: 'failed', assertionResults: [{ status: 'failed', fullName: 'historique casse' }] };
+  const rows = active().testResults.map((s) => s.name.endsWith('routes/history.test.ts') ? broken : s);
+  assert.match(checkReportDb3Active({ testResults: rows }).errors.join('\n'), /historique casse/);
+});
+
+test('DB-3 actif : une suite de la liste absente ou vide est signalée', () => {
+  const rows = active().testResults.filter((s) => !s.name.endsWith('atelier-exact.test.ts'));
+  assert.match(checkReportDb3Active({ testResults: rows }).errors.join('\n'), /atelier-exact.test.ts : aucune vérification exécutée/);
+});
+
+test('DB-3 actif : rapport vide refusé', () => {
+  assert.deepEqual(checkReportDb3Active({ testResults: [] }).errors, ['rapport Vitest vide ou illisible']);
 });

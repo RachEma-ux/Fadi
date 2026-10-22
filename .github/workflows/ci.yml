@@ -244,14 +244,30 @@ jobs:
         run: npm run test --workspace=@parcours/core-geometry --workspace=@parcours/domain-model --workspace=@parcours/atelier-model --workspace=@parcours/planche-model --workspace=@parcours/sandbox-planche-model --workspace=@parcours/geometry-exact --workspace=@fadi/web
       - name: Garde DB-1/2 — tests simulés sans base
         run: npm run test:db-guard
-      # Garde DB fermée (registre d'autorités vide, DB-3 non autorisé, #157) : les suites API qui exigent une base
-      # attestée sont refusées au chargement. Elles ne sont ni contournées ni déclarées réussies : le contrôle exige
-      # que seule la liste fermée soit refusée, par la garde seule, et que tout le reste passe.
-      - name: Tests API hors base — suites DB-3 déclarées non exécutées
+      # DB-3 (#157, accord du maître d'ouvrage du 22 octobre 2026) : avec la clé de signature (secret
+      # FADI_TEST_DB_SIGNING_KEY, dont la clé publique est enrôlée dans le registre relu approved-test-authorities.ts),
+      # la base PostGIS jetable de ce job est préparée et attestée (scripts/db3/preparer-base-test.mjs), et TOUTES les
+      # suites API y tournent derrière la garde. Sans le secret (PR d'un fork, clé non installée), la garde reste
+      # fermée : le contrôle historique exige que seule la liste fermée soit refusée, par la garde seule.
+      - name: Tests API — sur base jetable attestée (DB-3), sinon suites DB-3 déclarées non exécutées
+        env:
+          FADI_TEST_DB_SIGNING_KEY: ${{ secrets.FADI_TEST_DB_SIGNING_KEY }}
         run: |
-          npx --workspace=@fadi/api vitest run --reporter=default --reporter=json --outputFile=../../api-vitest.json || true
           node --test scripts/check-api-tests-db3.test.mjs
-          node scripts/check-api-tests-db3.mjs api-vitest.json
+          if [ -n "$FADI_TEST_DB_SIGNING_KEY" ]; then
+            DB3_ADMIN_URL=postgresql://fadi:fadi_ci_password@127.0.0.1:5432/fadi_test DB3_KEY_ID=fadi-ci-db3 \
+              DB3_RUN_ID="${{ github.run_id }}-${{ github.run_attempt }}" DB3_COMMIT_SHA="${{ github.sha }}" \
+              DB3_SORTIE="$RUNNER_TEMP/db3" node scripts/db3/preparer-base-test.mjs
+            echo "::add-mask::$(sed -n 's|^TEST_DATABASE_URL=postgresql://[^:]*:\([^@]*\)@.*|\1|p' "$RUNNER_TEMP/db3/env")"
+            set -a; . "$RUNNER_TEMP/db3/env"; set +a
+            unset FADI_TEST_DB_SIGNING_KEY
+            npx --workspace=@fadi/api vitest run --reporter=default --reporter=json --outputFile=../../api-vitest.json || true
+            node scripts/check-api-tests-db3.mjs --db3-actif api-vitest.json
+          else
+            echo "DB-3 non exécuté : secret FADI_TEST_DB_SIGNING_KEY absent (PR d'un fork, ou clé non installée)."
+            npx --workspace=@fadi/api vitest run --reporter=default --reporter=json --outputFile=../../api-vitest.json || true
+            node scripts/check-api-tests-db3.mjs api-vitest.json
+          fi
       - run: npm run build
       # Le build échoue déjà sur un découpage non conforme (vite.config.ts) ; cette étape en affiche le verdict.
       - name: Découpage des bundles (B.3-06) — carte des morceaux du build

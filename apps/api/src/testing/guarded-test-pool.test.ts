@@ -1,7 +1,7 @@
 import { generateKeyPairSync, sign } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
 import { authorizeTestTarget, SIGNATURE_DOMAIN, type TestTargetDescriptor } from "./test-target.js";
-import { createGuardedTestPool, IDENTITY_SQL, resetTestDatabase, type SimulatedClient } from "./guarded-test-pool.js";
+import { countTestOperations, createGuardedTestPool, IDENTITY_SQL, resetTestDatabase, type SimulatedClient } from "./guarded-test-pool.js";
 
 const keys = generateKeyPairSync("ed25519");
 const pem = keys.publicKey.export({ type: "spki", format: "pem" }).toString();
@@ -104,6 +104,42 @@ describe("verified test pool (all SQL is a simulated function call)", () => {
     expect(Object.keys(f.pool)).toEqual([]); expect(Object.keys(client).sort()).toEqual(["query", "release"]);
     expect(client).not.toHaveProperty("connectionParameters"); expect(f.pool).not.toHaveProperty("options"); client.release();
     await expect(client.query("DELETE FROM users")).rejects.toThrow("SESSION_NOT_VERIFIED"); expect(f.mutations).not.toHaveBeenCalled();
+  });
+  // DB-3 (first real trials): behaviours real drivers and application code rely on.
+  it("DB-3 serializes concurrent operations on one session, each attested immediately before it runs", async () => {
+    const f = fixture(); const client = await f.pool.connect();
+    const order: string[] = [];
+    f.read.mockImplementation(async () => { order.push("attest"); return { rows: [f.identity] }; });
+    f.mutations.mockImplementation((sql: unknown) => { order.push(String(sql)); });
+    await Promise.all([client.query("SELECT 1"), client.query("SELECT 2"), client.query("SELECT 3")]);
+    expect(order).toEqual(["attest", "SELECT 1", "attest", "SELECT 2", "attest", "SELECT 3"]);
+    client.release();
+  });
+  it("DB-3 a refused operation stops the operations queued behind it on the same session", async () => {
+    const f = fixture(); const client = await f.pool.connect();
+    const first = client.query("SELECT 1");
+    const truncate = client.query("TRUNCATE public.users");
+    const second = client.query("SELECT 2");
+    await expect(truncate).rejects.toThrow("RUN_OR_SCOPE_REJECTED");
+    await first;
+    (f.identity["marker"] as Record<string, unknown>)["runId"] = "other-run";
+    await expect(second).rejects.toThrow("DISPOSABLE_ATTESTATION_FAILED");
+    await expect(client.query("SELECT 3")).rejects.toThrow("SESSION_NOT_VERIFIED");
+    expect(f.mutations.mock.calls.map((call) => call[0])).toEqual(["SELECT 1"]);
+  });
+  it("DB-3 hands the driver a private, writable copy of a query config (pg stores separately passed values on it)", async () => {
+    const f = fixture(); const config = Object.freeze({ text: "SELECT $1", rowMode: "array" });
+    f.mutations.mockImplementation((query: Record<string, unknown>, values: unknown) => { query["values"] = values; });
+    await f.pool.query(config, [1]);
+    const sent = f.mutations.mock.calls[0]![0] as Record<string, unknown>;
+    expect(sent).not.toBe(config); expect(sent).toMatchObject({ text: "SELECT $1", values: [1] }); expect(config).not.toHaveProperty("values");
+  });
+  it("DB-3 counts operations read-only, without patching the frozen pool", async () => {
+    const f = fixture(); expect(countTestOperations(f.pool)).toBe(0);
+    await f.pool.query("SELECT 1"); await resetTestDatabase(f.pool, ["users"]);
+    expect(countTestOperations(f.pool)).toBe(1);
+    expect(() => countTestOperations({} as never)).toThrow("SESSION_NOT_VERIFIED");
+    expect(Reflect.set(f.pool, "query", () => undefined)).toBe(false);
   });
   it("retains normal simulated query results and invalidates a closed pool", async () => {
     const f = fixture(); expect(await f.pool.query("SELECT 1")).toMatchObject({ rowCount: 1 });
