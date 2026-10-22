@@ -235,6 +235,8 @@ export class VuePlanche {
   private readonly etiquettesDom: HTMLDivElement;
   private etiquettesFixes: Etiquette[] = [];
   private etiquettesApercu: Etiquette[] = [];
+  /** Pastilles annelées (SketchUp web) : point de départ du tracé et sommet de référence de l'inférence. */
+  private pastilles: { el: HTMLDivElement; point: Vec3 }[] = [];
   private modele: Modele | null = null;
   private cleSelection = "";
   private readonly sol: THREE.Mesh;
@@ -571,8 +573,21 @@ export class VuePlanche {
     }
   }
 
+  private ajouterPastille(point: Vec3): void {
+    if (this.pastilles.some((q) => Math.hypot(q.point.x - point.x, q.point.y - point.y, q.point.z - point.z) < 1e-9)) return;
+    const el = document.createElement("div");
+    el.className = "planche-pastille";
+    this.surcouche.append(el);
+    this.pastilles.push({ el, point });
+  }
+
   /** Projection des étiquettes (appelée à chaque rendu). */
   private placerEtiquettes(): void {
+    for (const q of this.pastilles) {
+      const p = this.versEcran(q.point);
+      if (!p) q.el.style.display = "none";
+      else Object.assign(q.el.style, { display: "block", left: `${p.x}px`, top: `${p.y}px` });
+    }
     for (const e of [...this.etiquettesFixes, ...this.etiquettesApercu]) {
       const p = e.point ? this.versEcran(e.point) : e.ecran ?? null;
       if (!p || p.x < -200 || p.y < -200 || p.x > this.largeur + 200 || p.y > this.hauteur + 200) {
@@ -608,6 +623,8 @@ export class VuePlanche {
     vider(this.groupeApercu);
     for (const e of this.etiquettesApercu) e.el.remove();
     this.etiquettesApercu = [];
+    for (const q of this.pastilles) q.el.remove();
+    this.pastilles = [];
     const cle = [...(vue?.selection ?? selection)].join("|");
     if (cle !== this.cleSelection && this.modele) {
       this.cleSelection = cle;
@@ -684,10 +701,16 @@ export class VuePlanche {
       // Ligne d'inférence pointillée (depuis le point de départ ou un point de référence).
       const inf = this.inference;
       if (inf?.origineLigne) {
-        const ligne = new THREE.Line(new THREE.BufferGeometry().setFromPoints([v3(inf.origineLigne), v3(inf.point)]), new THREE.LineDashedMaterial({ color: inf.couleur, dashSize: this.metresParPixel(inf.point) * 6, gapSize: this.metresParPixel(inf.point) * 4, depthTest: false }));
+        // Pointillé : couleur de l'axe (rouge / vert / bleu) ou magenta pour parallèle / perpendiculaire ; noir sinon.
+        const couleurPointille = INFERENCES_LINEAIRES.has(inf.type) ? inf.couleur : "#000000";
+        const mpp = this.metresParPixel(inf.point);
+        const ligne = new THREE.Line(new THREE.BufferGeometry().setFromPoints([v3(inf.origineLigne), v3(inf.point)]), new THREE.LineDashedMaterial({ color: couleurPointille, dashSize: mpp * 2, gapSize: mpp * 4, depthTest: false }));
         ligne.computeLineDistances();
         this.groupeApercu.add(ligne);
+        this.ajouterPastille(inf.origineLigne);
       }
+      const trace = vue.apercu.lignes.find((l) => l.length === 2);
+      if (trace && vue.inference) this.ajouterPastille(trace[0] as Vec3);
       for (const e of vue.apercu.etiquettes ?? []) {
         const el = document.createElement("div");
         el.className = "planche-etiquette planche-etiquette-apercu";
