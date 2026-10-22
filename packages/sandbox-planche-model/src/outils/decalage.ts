@@ -45,6 +45,8 @@ export interface EtatDecalage {
   /** Point visé (côté du décalage des arêtes). */
   readonly cote: Vec3 | null;
   readonly alt: boolean;
+  /** Plan libre : une droite seule sans face (le plan contient l'arête et le point choisi, accroché ou non). */
+  readonly planLibre: boolean;
   /** Inférence qui accroche la distance (extrémité, milieu, arête… de la géométrie existante, dans le plan du décalage). */
   readonly inference: Inference | null;
   readonly texte: string | null;
@@ -53,10 +55,10 @@ export interface EtatDecalage {
 }
 
 function initial(): EtatDecalage {
-  return { etape: 1, face: null, aretes: [], normale: null, origine: null, contour: [], distance: 0, cote: null, alt: false, inference: null, texte: null, erreur: null, derniere: null };
+  return { etape: 1, face: null, aretes: [], normale: null, origine: null, contour: [], distance: 0, cote: null, alt: false, planLibre: false, inference: null, texte: null, erreur: null, derniere: null };
 }
 
-const retour = (e: EtatDecalage): EtatDecalage => ({ ...e, etape: 1, face: null, aretes: [], normale: null, origine: null, contour: [], distance: 0, cote: null, inference: null });
+const retour = (e: EtatDecalage): EtatDecalage => ({ ...e, etape: 1, face: null, aretes: [], normale: null, origine: null, contour: [], distance: 0, cote: null, planLibre: false, inference: null });
 
 /** Distance signée d'un point au contour dans son plan : intérieur > 0, extérieur < 0. */
 export function distanceAuContour(contour: readonly Vec3[], n: Vec3, p: Vec3): number {
@@ -84,20 +86,21 @@ export function distanceAuContour(contour: readonly Vec3[], n: Vec3, p: Vec3): n
  * bordant la première arête, sinon le plan qui contient l'arête et fait face au rayon de visée (jamais un plan qui
  * contiendrait le rayon : le point visé retomberait sur l'arête et le côté du curseur serait perdu).
  */
-function normaleChaine(ctx: ContexteOutil, c: ReturnType<typeof contexte>, aretes: readonly Id[], A: Vec3, B: Vec3, r: Rayon): Vec3 {
+function normaleChaine(ctx: ContexteOutil, c: ReturnType<typeof contexte>, aretes: readonly Id[], A: Vec3, B: Vec3, r: Rayon): { n: Vec3; libre: boolean } {
   const d = sub(B, A);
   for (const id of aretes) {
     const a = c.aretes[id];
     if (!a) continue;
     const w = cross(d, sub((c.sommets[a.b] as { position: Vec3 }).position, (c.sommets[a.a] as { position: Vec3 }).position));
-    if (len(w) > 1e-6) return normalize(w);
+    if (len(w) > 1e-6) return { n: normalize(w), libre: false };
   }
   const premiere = aretes[0];
   const face = premiere !== undefined ? facesDeLArete(ctx.modele, premiere, optionsDans(ctx))[0] : undefined;
   const f = face !== undefined ? c.faces[face] : undefined;
-  if (f) return f.normale;
+  if (f) return { n: f.normale, libre: false };
+  // Une seule droite sans face : le plan n'est pas imposé, il contiendra l'arête et le point choisi (« libre »).
   const n = cross(d, cross(r.direction, d));
-  return len(n) > 1e-9 ? normalize(n) : AXE_Z;
+  return { n: len(n) > 1e-9 ? normalize(n) : AXE_Z, libre: true };
 }
 
 /** Point visé dans le plan du décalage : intersection du rayon avec ce plan. */
@@ -106,23 +109,23 @@ function pointDansPlan(e: EtatDecalage, r: Rayon): Vec3 | null {
 }
 
 /**
- * Accrochage de la distance : le point visé s'accroche, comme dans SketchUp, à la géométrie existante située dans le
- * plan du décalage (extrémité, milieu, intersection, sur l'arête). Les arêtes décalées elles-mêmes sont écartées
- * (elles donneraient une distance nulle). Hors accrochage, le point reste l'intersection du rayon avec le plan.
+ * Accrochage de la distance : comme l'outil Ligne, le point visé s'accroche à TOUTE la géométrie existante (extrémité,
+ * milieu, intersection, sur l'arête…), pas seulement à celle du plan du décalage. Plan imposé (face, chaîne d'arêtes) :
+ * le point accroché est projeté dans ce plan. Droite seule (plan libre) : le plan contiendra l'arête et le point
+ * accroché, la distance est celle du point à la droite. Les arêtes décalées elles-mêmes sont écartées (distance nulle).
  */
 function pointAccroche(e: EtatDecalage, ctx: ContexteOutil, rayon: Rayon, tolerance: number): { point: Vec3 | null; inference: Inference | null } {
   const libre = pointDansPlan(e, rayon);
   if (!e.normale || !e.origine) return { point: libre, inference: null };
   const n = e.normale;
   const o = e.origine;
-  const dansLePlan = (q: Vec3) => Math.abs(dot(sub(q, o), n)) <= 1e-6;
   const surContour = (q: Vec3) => e.contour.some((c) => dist(c, q) <= 1e-6);
   const g = geometrieVisible(ctx.modele);
-  const aretes = g.aretes.filter((a) => !e.aretes.includes(a.id) && dansLePlan(a.a) && dansLePlan(a.b) && !(e.face && surContour(a.a) && surContour(a.b)));
-  if (aretes.length === 0) return { point: libre, inference: null };
-  const inf = inferer({ rayon, tolerance, geometrie: { ...g, aretes, faces: [], centres: [] }, ...(ctx.repere ? { axes: ctx.repere } : {}) });
-  if (inf.type === "aucune" || !dansLePlan(inf.point)) return { point: libre, inference: null };
-  return { point: inf.point, inference: inf };
+  const aretes = g.aretes.filter((a) => !e.aretes.includes(a.id) && !(e.face && surContour(a.a) && surContour(a.b)));
+  const inf = inferer({ rayon, tolerance, geometrie: { ...g, aretes, faces: [] }, ...(ctx.repere ? { axes: ctx.repere } : {}) });
+  if (inf.type === "aucune" || inf.type === "sur-face") return { point: libre, inference: null };
+  const q = e.planLibre ? inf.point : sub(inf.point, scale(n, dot(sub(inf.point, o), n)));
+  return { point: q, inference: inf };
 }
 
 function nouvelleDistance(e: EtatDecalage, p: Vec3): number {
@@ -195,7 +198,12 @@ export const machineDecalage: MachineOutil<EtatDecalage> = {
   traiter(etat, ev, ctx): Transition<EtatDecalage> {
     switch (ev.genre) {
       case "survol": {
-        if (etat.etape !== 2) return { etat: { ...etat, texte: null, erreur: null } };
+        if (etat.etape !== 2) {
+          // Avant le choix de la face ou des arêtes : le curseur montre déjà les inférences de la géométrie visée.
+          const g = geometrieVisible(ctx.modele);
+          const inf = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: { ...g, faces: [] }, ...(ctx.repere ? { axes: ctx.repere } : {}) });
+          return { etat: { ...etat, inference: inf.type === "aucune" ? null : inf, texte: null, erreur: null } };
+        }
         const { point: p, inference } = pointAccroche(etat, ctx, ev.rayon, ev.tolerance);
         if (!p) return { etat };
         return { etat: { ...etat, distance: nouvelleDistance(etat, p), cote: p, inference, texte: null, erreur: null } };
@@ -217,9 +225,9 @@ export const machineDecalage: MachineOutil<EtatDecalage> = {
           if (!premiere) return { etat };
           const A = (c.sommets[premiere.a] as { position: Vec3 }).position;
           const B = (c.sommets[premiere.b] as { position: Vec3 }).position;
-          const n = normaleChaine(ctx, c, pre, A, B, ev.rayon);
+          const { n, libre } = normaleChaine(ctx, c, pre, A, B, ev.rayon);
           const p = intersectionRayonPlan(ev.rayon, { origine: A, normale: n }) ?? A;
-          const e2: EtatDecalage = { ...etat, etape: 2, aretes: pre, face: null, normale: n, origine: p, contour: [A, B], distance: 0, cote: p, texte: null, erreur: null };
+          const e2: EtatDecalage = { ...etat, etape: 2, aretes: pre, face: null, planLibre: libre, inference: null, normale: n, origine: p, contour: [A, B], distance: 0, cote: p, texte: null, erreur: null };
           return { etat: { ...e2, distance: nouvelleDistance(e2, p) } };
         }
         if (!el || !cible) return { etat: { ...etat, erreur: null } };
@@ -227,7 +235,7 @@ export const machineDecalage: MachineOutil<EtatDecalage> = {
           if (ev.double && etat.derniere && "face" in etat.derniere.params) return appliquerFace(etat, ctx, cible.id, etat.derniere.params.distance, null, null);
           const P = intersectionRayonPlan(ev.rayon, { origine: el.exterieur[0] as Vec3, normale: el.normale }) ?? (el.exterieur[0] as Vec3);
           return {
-            etat: { ...etat, etape: 2, face: cible.id, aretes: [], normale: el.normale, origine: P, contour: el.exterieur, distance: distanceAuContour(el.exterieur, el.normale, P), cote: P, texte: null, erreur: null },
+            etat: { ...etat, etape: 2, face: cible.id, aretes: [], inference: null, normale: el.normale, origine: P, contour: el.exterieur, distance: distanceAuContour(el.exterieur, el.normale, P), cote: P, texte: null, erreur: null },
             selection: [cible.id],
           };
         }
@@ -238,9 +246,9 @@ export const machineDecalage: MachineOutil<EtatDecalage> = {
           if (!a) return { etat };
           const A = (c.sommets[a.a] as { position: Vec3 }).position;
           const B = (c.sommets[a.b] as { position: Vec3 }).position;
-          const n = normaleChaine(ctx, c, ids, A, B, ev.rayon);
+          const { n, libre } = normaleChaine(ctx, c, ids, A, B, ev.rayon);
           const P = intersectionRayonPlan(ev.rayon, { origine: A, normale: n }) ?? A;
-          const e2: EtatDecalage = { ...etat, etape: 2, aretes: ids, face: null, normale: n, origine: P, contour: [A, B], distance: 0, cote: P, texte: null, erreur: null };
+          const e2: EtatDecalage = { ...etat, etape: 2, aretes: ids, face: null, planLibre: libre, inference: null, normale: n, origine: P, contour: [A, B], distance: 0, cote: P, texte: null, erreur: null };
           return { etat: { ...e2, distance: nouvelleDistance(e2, P) }, selection: ids };
         }
         return { etat };
@@ -277,7 +285,7 @@ export const machineDecalage: MachineOutil<EtatDecalage> = {
       apercu: etat.etape === 2 && etat.cote && etat.origine && dist(etat.cote, etat.origine) > TOL ? { lignes: [[etat.origine, etat.cote]], faces: [] } : { lignes: [], faces: [] },
       ctx,
       erreur: etat.erreur,
-      inference: etat.etape === 2 ? etat.inference : null,
+      inference: etat.inference,
     });
     return { ...v, options: options(etat) };
   },

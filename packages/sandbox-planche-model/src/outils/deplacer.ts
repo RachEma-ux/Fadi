@@ -429,7 +429,7 @@ export const machineDeplacer: MachineOutil<EtatDeplacer> = {
     return vueModif({
       consigne: consigneDe(ID_DEPLACER, indice),
       mesures: mesures(libelleMesuresDe(ID_DEPLACER, indice), valeur, contexteSaisie("distance-reseau", ctx)),
-      inference: etat.etape === 2 ? etat.inference : null,
+      inference: etat.inference,
       apercu: { lignes, faces: [] },
       ctx,
       erreur: etat.erreur,
