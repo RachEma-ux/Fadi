@@ -6,7 +6,8 @@
 
 ## En cours
 
-- Aucune ; la PR #255 attend la revue du maître d'ouvrage.
+- UM-SEC — Trois blocages de la revue de `c7dbc92` (UM-18 assurance de session, UM-19 dernier administrateur atomique,
+  UM-20 capacité « export ») : implémentés et vérifiés localement ; CI à constater sur le HEAD (Issue : #253).
 
 ## Terminé
 

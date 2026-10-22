@@ -138,7 +138,7 @@ atelierCommandsRouter.get("/model", async (req, res) => {
 
 /** IFC d'une seule Planche (cahier-planche lot 7) : le modèle réduit à cette Planche (niveaux et site gardés, objets omis). */
 atelierCommandsRouter.get("/planches/:plancheId/export.ifc", async (req, res) => {
-  const project = await projectOr404(req, res, "read");
+  const project = await projectOr404(req, res, "export");
   if (!project) return;
   const charge = await chargerModele(db, project.id);
   const plancheId = req.params["plancheId"] as string;
@@ -192,7 +192,7 @@ atelierCommandsRouter.get("/journal", async (req, res) => {
  * nature, libellé, auteur, nombre d'objets créés, modifiés, supprimés. Droit de lecture.
  */
 atelierCommandsRouter.get("/journal.csv", async (req, res) => {
-  const project = await projectOr404(req, res, "read");
+  const project = await projectOr404(req, res, "export");
   if (!project) return;
   const rows = await db
     .select({ kind: atelierCommands.kind, label: atelierCommands.label, resultRevision: atelierCommands.resultRevision, effets: atelierCommands.effets, createdAt: atelierCommands.createdAt, email: users.email })
@@ -399,7 +399,7 @@ atelierCommandsRouter.post("/import-ifc", raw({ type: () => true, limit: LIMITE_
 
 /** STEP d'un solide exact, posé (position, angle) comme dans le modèle. */
 atelierCommandsRouter.get("/solides-exacts/:objetId/export.step", async (req, res) => {
-  const project = await projectOr404(req, res, "read");
+  const project = await projectOr404(req, res, "export");
   if (!project) return;
   const charge = await chargerModele(db, project.id);
   const objetId = req.params["objetId"] as string;

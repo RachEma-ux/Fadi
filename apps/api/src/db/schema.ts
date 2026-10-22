@@ -83,6 +83,12 @@ export const sessions = pgTable("sessions", {
   ip: text("ip"),
   /** Mot de passe vérifié, code de double authentification attendu : ne vaut pas authentification. */
   mfaPending: boolean("mfa_pending").notNull().default(false),
+  /**
+   * Instant où cette session a prouvé la double authentification (code TOTP ou de secours à la connexion, ou activation du
+   * TOTP depuis elle). NULL = mot de passe seul : jamais d'administration. Une preuve antérieure à l'activation courante
+   * du TOTP du compte ne compte pas.
+   */
+  mfaVerifiedAt: timestamp("mfa_verified_at", { withTimezone: true }),
 }, (t) => [index("sessions_user_id_idx").on(t.userId), uniqueIndex("sessions_token_hash_unique").on(t.tokenHash)]);
 
 export const userRecoveryCodes = authSchema.table("user_recovery_codes", {

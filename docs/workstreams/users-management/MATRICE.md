@@ -31,7 +31,7 @@ Légende des preuves : `api:` = `apps/api/src/…`, `web:` = `apps/web/src/…`,
 | C2-06 | Transfert accepté par le successeur ; attribution historique conservée | Projet | transfert immédiat sans acceptation | — | partiel | partiel — transfert existant conservé, acceptation hors périmètre (UM-1) |
 | C2-07 | Suspension urgente possible ; perte du dernier gardien → voie de reprise autorisée | Plateforme | — | e2e:comptes-api.mjs (suspension, verrous) ; api:lib/platform-access.test.ts (dernier admin) | manquant | en place — suspension, garde du dernier admin, libération des verrous ; reprise d'un projet orphelin = transfert par le propriétaire avant suppression (D-5) |
 | C2-08 | Accès support : opérateur, autorisant, motif, ressources, durée ; expire ; traçable ; aucune usurpation | Support | — | e2e:comptes-api.mjs ; e2e:comptes-admin.mjs | manquant | en place (D-2, UM-4) |
-| C2-09 | Droits de téléchargement / export explicites | Accès | rôles `lecteur` | e2e:comptes-api.mjs (`support` : écriture, commentaire, export 403) | partiel | partiel — explicites pour l'accès support ; grille fine hors périmètre |
+| C2-09 | Droits de téléchargement / export explicites | Accès | rôles `lecteur` | e2e:comptes-securite.mjs ; api:app.test.ts (DB-3) ; api:lib/support-path.test.ts | partiel | partiel — capacité `export` déclarée par chaque route (UM-20), jamais à l'accès support ; grille fine hors périmètre |
 
 ## Partie 3 — Parcours
 

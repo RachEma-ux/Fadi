@@ -4,7 +4,8 @@ Mis à jour : 2026-10-22 (UTC).
 
 ## État
 
-**Implémenté et vérifié localement — en attente de CI et de revue humaine.** Phases 0 à 6 et amendement D-7 livrés
+**Implémenté et vérifié localement ; trois correctifs de sécurité de la revue de `c7dbc92` livrés (UM-18 à UM-20) —
+en attente de CI sur le HEAD et de revue humaine.** Phases 0 à 6 et amendement D-7 livrés
 sur la branche `ccr-266c1e83-7780ml` (une seule PR, non fusionnée, UM-12). **Rien n'est accepté ni déployé.**
 DB-3 : **vérifié en CI** sur `570d248` (UM-17) — les 12 suites passent sur base jetable attestée. Points d'arrêt 🛑 2, D7-final et final : revue du maître d'ouvrage sur la PR.
 
@@ -112,6 +113,38 @@ Run CI 39855284507, job `validate` (120091788375), commit `570d248`, 2026-10-22 
 | `src/routes/atelier-mecanique.test.ts` | 1 | réussie |
 | `src/routes/atelier-reseaux.test.ts` | 1 | réussie |
 | `src/routes/atelier-structure.test.ts` | 1 | réussie |
+
+### Revue de sécurité de `c7dbc92` — trois blocages corrigés (2026-10-22)
+
+Chaque blocage a d'abord été **reproduit** sur le code non corrigé par `apps/web/e2e/comptes-securite.mjs` (API réelle
+:3011, base locale vierge `fadi_secu`, PostGIS 16, transport console), puis corrigé :
+
+1. **Double authentification et sessions (UM-18).** Avant : navigateur B (mot de passe seul, ouvert avant l'activation
+   dans A) → `GET /admin/users` **200** ; B non révoqué. Après : B révoqué (401), `/admin` refusé ; une session sans
+   preuve (héritée) → 403 `mfa_session_required`.
+2. **Dernier administrateur (UM-19).** Avant : deux auto-suppressions simultanées → **202 / 202, 0 administrateur
+   actif**. Après : une seule passe, l'autre 409 `last_admin`, aucun état partiel (statut, rôle, demande de suppression
+   et journal inchangés) — quatre courses : deux auto-suppressions, suppressions croisées, auto-suppression contre
+   suspension, suppression contre rétrogradation.
+3. **Accès support et export (UM-20).** Avant : tous les documents produits servis à l'accès support (GET, HEAD,
+   identifiant encodé, barre finale, casse), **10 traces de production** écrites, **copie créée** par
+   `POST /projects/%70…/copies` (201), lecture par identifiant encodé **non journalisée**. Après : 403
+   `support_no_export` partout, aucune trace ni copie, lectures permises et journalisées ; propriétaire et lecteur
+   gardent l'export.
+
+Preuves locales après correction :
+
+- `comptes-securite.mjs` : **64 vérifications vertes**, trois exécutions successives sur base vierge
+  (`COMPTES_SECURITE_BASE_VIERGE=1`) ; avant correction : 12 échecs (sections 1 et 3) et 0 administrateur actif (section 2).
+- `comptes-api.mjs` 109 ✓ ; `comptes-admin.mjs` 50 ✓ (navigateur, axe-core) ; `users-migration-check.mjs` ✓ sur base
+  neuve ; tests purs API 226 ✓ (dont `support-path.test.ts` 31 et `platform-access.test.ts` 15) ; `test:db-guard`
+  178 ✓ ; `npm run typecheck` ✓ ; `npm run build` ✓.
+- `app.test.ts` (suite DB-3) : nouveau bloc « gestion des comptes — correctifs de sécurité » (9 tests : navigateurs A/B,
+  TOTP et code de secours, session partielle et héritée, promotion, désactivation / réactivation, quatre courses
+  concurrentes, accès support). **Non exécuté en local** (la garde refuse la base locale, `TARGET_REQUIRED`) : résultat à
+  constater en CI sur base jetable attestée.
+- En CI (tranche `complements`), `comptes-securite.mjs` tourne sur la base partagée : les courses du dernier
+  administrateur y sont déclarées NON EXÉCUTÉES (elles exigent une base vierge) et couvertes par `app.test.ts`.
 
 ## Écarts au plan (le concept et D-7 priment)
 

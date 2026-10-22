@@ -7,7 +7,7 @@
  *   DELETE /:grantId     propriétaire : révocation immédiate
  *
  * L'accès donne le rôle `support` (lib/owned-project.ts) : lecture seule, ni commentaire, ni écriture, ni export ou
- * téléchargement (`supportReadOnlyGuard`). Chaque accord, révocation et ouverture du projet est journalisé.
+ * téléchargement — refusés par le besoin déclaré de chaque route (`export`, `write`…) et, en plus, par `supportReadOnlyGuard`. Chaque accord, révocation et ouverture du projet est journalisé.
  */
 import { Router, type NextFunction, type Request, type Response } from "express";
 import { and, desc, eq, gt, isNull, sql } from "drizzle-orm";
@@ -15,9 +15,10 @@ import { z } from "zod";
 import { db } from "../db/client.js";
 import { auditLog, projectSupportGrants, users } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
-import { activeSupportGrant, projectOr404 } from "../lib/owned-project.js";
+import { activeSupportGrant, projectOr404, SUPPORT_NO_EXPORT, SUPPORT_READ_ONLY } from "../lib/owned-project.js";
 import { audit, clientIp } from "../lib/audit.js";
 import { newId } from "../lib/ids.js";
+import { EXPORT_PATH, supportTarget } from "../lib/support-path.js";
 
 export const supportGrantsRouter = Router({ mergeParams: true });
 supportGrantsRouter.use(requireAuth);
@@ -101,34 +102,31 @@ supportGrantsRouter.delete("/:grantId", async (req, res) => {
   res.status(204).end();
 });
 
-/** Chemins d'export ou de téléchargement : refusés à l'accès support (UM-4), même en lecture. */
-const EXPORT_PATH = /(\/archive$|\/export(\/|$|\.)|\.(ifc|step|dxf|pdf|zip|svg|json)$|^\/[^/]+\/files\/[^/]+|^\/[^/]+\/documents\/(dessins|atelier)\/)/i;
-
 /**
  * Garde de l'accès support, montée sur `/projects` avant les sous-routeurs : un administrateur qui n'est ni propriétaire
- * ni membre mais dispose d'un accès actif ne peut que lire (GET), jamais exporter ; chaque lecture est journalisée.
- * Les autres personnes ne sont pas concernées (une seule requête, et seulement pour un administrateur).
+ * ni membre mais dispose d'un accès actif ne peut que lire (GET, HEAD), jamais exporter ; chaque lecture est journalisée.
+ * Le projet est résolu comme le fait le routeur (identifiant décodé) ; les routes déclarent en plus leur besoin (`read`,
+ * `export`, `write`…), qui refuse l'accès support même si cette garde laissait passer un chemin.
  */
 export async function supportReadOnlyGuard(req: Request, res: Response, next: NextFunction): Promise<void> {
   const user = req.user;
-  const match = /^\/([^/]+)(\/.*)?$/.exec(req.path);
-  const projectId = match?.[1];
-  if (!user || user.platformRole !== "admin" || !projectId || projectId === "import") { next(); return; }
+  const target = user && user.platformRole === "admin" ? supportTarget(req.path) : null;
+  if (!user || !target) { next(); return; }
+  const { projectId, sub } = target;
   const rows = await db.execute(sql`SELECT (owner_id = ${user.id}) AS owner, EXISTS (SELECT 1 FROM project_members m WHERE m.project_id = ${projectId} AND m.user_id = ${user.id}) AS member FROM projects WHERE id = ${projectId}`);
   const row = rows.rows[0] as { owner?: boolean; member?: boolean } | undefined;
   if (!row || row.owner || row.member) { next(); return; }
   const grant = await activeSupportGrant(projectId, user.id);
   if (!grant) { next(); return; }
-  const sub = match?.[2] ?? "";
-  if (req.method !== "GET" && req.method !== "HEAD" && !/^\/support-grants\/?$/.test(sub)) {
-    res.status(403).json({ error: "support_read_only", message: "Accès support en lecture seule : aucune modification ni commentaire." });
+  if (req.method !== "GET" && req.method !== "HEAD" && sub !== "/support-grants") {
+    res.status(403).json(SUPPORT_READ_ONLY);
     return;
   }
-  if (EXPORT_PATH.test(req.path)) {
-    res.status(403).json({ error: "support_no_export", message: "Accès support en lecture seule : export et téléchargement exclus." });
+  if (EXPORT_PATH.test(sub)) {
+    res.status(403).json(SUPPORT_NO_EXPORT);
     return;
   }
   // Chaque lecture est journalisée (D-2) : le propriétaire voit qui a consulté quoi, et quand.
-  await audit(db, { actorId: user.id, action: "support.accessed", target: { type: "project", id: projectId }, metadata: { grantId: grant.id, path: req.path.slice(0, 200) }, ip: clientIp(req) });
+  await audit(db, { actorId: user.id, action: "support.accessed", target: { type: "project", id: projectId }, metadata: { grantId: grant.id, path: `/${projectId}${sub}`.slice(0, 200) }, ip: clientIp(req) });
   next();
 }

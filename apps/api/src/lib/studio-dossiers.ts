@@ -237,7 +237,7 @@ export async function deleteStudioSheet(projectId: string, studyId: string, shee
 /** Rendu d'une feuille (SVG avec ses métadonnées de provenance, ou PDF) ; droit `read`. */
 export async function readStudioSheetFile(projectId: string, studyId: string, sheetId: string, actorId: string, format: string) {
   if (format !== "svg" && format !== "pdf") return notFound();
-  const access = await readAccess(projectId, actorId);
+  const access = assertAccess(await readAccess(projectId, actorId), actorId, "export");
   const study = await studyOf(db, projectId, studyId);
   const row = await sheetRow(db, study.id, sheetId);
   const [c] = await sheetContexts(db, study, [row]);
@@ -398,7 +398,7 @@ export async function readStudioDossier(projectId: string, studyId: string, doss
 /** Fichier du dossier : PDF (sommaire, feuilles, métré, fidélité) ou JSON du dossier assemblé. */
 export async function readStudioDossierFile(projectId: string, studyId: string, dossierId: string, actorId: string, format: string) {
   if (format !== "pdf" && format !== "json") return notFound();
-  const access = await readAccess(projectId, actorId);
+  const access = assertAccess(await readAccess(projectId, actorId), actorId, "export");
   const study = await studyOf(db, projectId, studyId);
   const row = await dossierRow(db, study.id, dossierId);
   const { dossier, pdf } = await assembler(db, access, study, row);

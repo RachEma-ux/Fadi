@@ -112,7 +112,7 @@ designReviewRouter.post("/review", async (req, res) => {
 });
 
 designReviewRouter.get("/rapport", async (req, res) => {
-  const project = await projectOr404(req, res, "read");
+  const project = await projectOr404(req, res, "export");
   if (!project) return;
   const now = new Date();
   const dctx = await loadDesignContext(db, project, now.toISOString());

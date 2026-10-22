@@ -1245,6 +1245,10 @@ ALTER TABLE sessions ADD COLUMN IF NOT EXISTS user_agent text;
 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS ip text;
 -- Connexion en deux étapes (D-6) : mot de passe vérifié, code TOTP attendu (5 min au plus) ; ne vaut pas authentification.
 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS mfa_pending boolean NOT NULL DEFAULT false;
+-- Assurance de la session (revue de sécurité de la PR #255) : instant où CETTE session a prouvé la double
+-- authentification (connexion par code TOTP ou de secours, ou activation du TOTP depuis elle). NULL = mot de passe seul,
+-- y compris pour toute session antérieure à cette colonne : l'administration la refuse (échec fermé).
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS mfa_verified_at timestamptz;
 DO $$
 BEGIN
   UPDATE sessions

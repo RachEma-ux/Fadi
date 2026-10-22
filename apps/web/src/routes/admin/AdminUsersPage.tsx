@@ -38,6 +38,18 @@ function MfaRequired() {
   );
 }
 
+/** TOTP actif mais session ouverte sans le code (avant l'activation, ou session antérieure) : se reconnecter avec le code. */
+function MfaSessionRequired() {
+  const { logout } = useAuth();
+  return (
+    <main className="admin-page">
+      <h1>Administration</h1>
+      <p role="alert" data-admin-mfa-session-required>Cette session n’a pas été ouverte avec votre code de double authentification : reconnectez-vous avec votre code pour accéder à l’administration.</p>
+      <button type="button" className="button-primary" onClick={() => void logout()}>Se déconnecter puis se reconnecter</button>
+    </main>
+  );
+}
+
 function InviteForm() {
   const online = useOnline();
   const queryClient = useQueryClient();
@@ -162,6 +174,7 @@ export function AdminUsersPage() {
     onError: (err) => { setAction(null); setMsg({ ok: false, text: apiMessage(err, "Action refusée.") }); },
   });
   if (list.error instanceof ApiError && list.error.code === "mfa_required") return <MfaRequired />;
+  if (list.error instanceof ApiError && list.error.code === "mfa_session_required") return <MfaSessionRequired />;
   if (list.error instanceof ApiError && list.error.status === 404) {
     return <main className="admin-page"><h1>Administration</h1><p role="alert">Page introuvable : l’administration est réservée aux administrateurs de la plateforme, ou n’est pas activée sur ce serveur.</p></main>;
   }

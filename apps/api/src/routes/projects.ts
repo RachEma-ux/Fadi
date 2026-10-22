@@ -179,7 +179,7 @@ projectsRouter.post("/import", archiveBody, archiveBodyError, async (req: Reques
 
 /** `backup()` : tout le projet en un JSON téléchargeable (`Parcours_V7_<nom>.json`). */
 projectsRouter.get("/:projectId/archive", async (req, res) => {
-  const project = await projectOr404(req, res, "read");
+  const project = await projectOr404(req, res, "export");
   if (!project) return;
   const now = new Date();
   const archive = await exportProjectArchive(db, project, now.toISOString());
@@ -200,8 +200,9 @@ const copySchema = z.object({ name: z.string().trim().min(1).max(200).optional()
  * référence reste intacte ; la provenance (`sourceExampleId`) est conservée.
  */
 projectsRouter.post("/:projectId/copies", async (req, res) => {
-  // Lire suffit : la copie devient un nouveau projet de l'utilisateur (comme exporter puis importer l'archive), l'original n'est pas touché.
-  const project = await projectOr404(req, res, "read");
+  // Capacité « export » : la copie sort le contenu vers un nouveau projet de l'utilisateur (comme exporter puis importer l'archive) ;
+  // l'original n'est pas touché. Propriétaire, éditeur et lecteur la gardent ; l'accès support ne l'a pas.
+  const project = await projectOr404(req, res, "export");
   if (!project) return;
   const parsed = copySchema.safeParse(req.body ?? {});
   if (!parsed.success) {

@@ -81,6 +81,8 @@ export interface CurrentUser {
   platformRole?: "user" | "admin";
   status?: "active" | "suspended" | "closed";
   mfaEnabled?: boolean;
+  /** Cette session a prouvé la double authentification (connexion avec le code, ou activation depuis elle). */
+  mfaVerified?: boolean;
   emailVerified?: boolean;
   /** Administrateur ET administration activée sur ce serveur (`FADI_ADMIN_ENABLED`) : montre les écrans d'administration. */
   adminEnabled?: boolean;

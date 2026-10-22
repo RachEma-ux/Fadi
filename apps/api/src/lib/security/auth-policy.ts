@@ -71,3 +71,14 @@ export function displayStatus(u: { status: AccountStatus; lockedUntil: Date | nu
   if (u.deletionRequestedAt) return "deletion_pending";
   return isLocked(u.lockedUntil, now) ? "locked" : "active";
 }
+
+/**
+ * Assurance de la session (revue de sécurité de la PR #255) : preuve de double authentification portée par la session
+ * elle-même, postérieure (ou égale) à l'activation courante du TOTP du compte. Sans TOTP actif, ou sans preuve (session
+ * au mot de passe seul, session antérieure à la colonne `mfa_verified_at`), faux — échec fermé.
+ */
+export function sessionMfaVerified(user: { totpEnabledAt: Date | null }, session: { mfaVerifiedAt: Date | null } | null): boolean {
+  const enabledAt = user.totpEnabledAt;
+  const verifiedAt = session?.mfaVerifiedAt ?? null;
+  return !!enabledAt && !!verifiedAt && verifiedAt.getTime() >= enabledAt.getTime();
+}

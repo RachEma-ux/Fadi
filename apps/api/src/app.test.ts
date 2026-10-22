@@ -7,11 +7,13 @@
  */
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
+import { randomBytes } from "node:crypto";
 import request from "supertest";
 import { createApp } from "./app.js";
 import { resetTestDatabase } from "./testing/guarded-test-pool.js";
 import { pool } from "./db/client.js";
 import { georeferenceFromParcel } from "./lib/site-context.js";
+import { base32Decode, hotp, stepAt } from "./lib/security/totp.js";
 
 const app = createApp();
 
@@ -2187,5 +2189,253 @@ describe("R2 · planning métier, versions et accès au dossier", () => {
 
     const invalidArchive = { ...archive.body, planning: { ...archive.body.planning, steps: { "23": step(0) } } };
     expect((await alice.post("/projects/import").send(invalidArchive)).status).toBe(422);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Gestion des comptes — correctifs de sécurité (revue de la PR #255, commit c7dbc92) : chaque test échoue sur
+// l'implémentation antérieure (reproduit par apps/web/e2e/comptes-securite.mjs) et passe après correction.
+// ---------------------------------------------------------------------------------------------------------------------
+describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () => {
+  const saved = { admin: process.env["FADI_ADMIN_ENABLED"], key: process.env["FADI_ENCRYPTION_KEY"] };
+  beforeAll(() => {
+    process.env["FADI_ADMIN_ENABLED"] = "true";
+    process.env["FADI_ENCRYPTION_KEY"] = randomBytes(32).toString("base64");
+  });
+  afterAll(() => {
+    if (saved.admin === undefined) delete process.env["FADI_ADMIN_ENABLED"]; else process.env["FADI_ADMIN_ENABLED"] = saved.admin;
+    if (saved.key === undefined) delete process.env["FADI_ENCRYPTION_KEY"]; else process.env["FADI_ENCRYPTION_KEY"] = saved.key;
+  });
+
+  const PASSWORD = "correct-horse-battery";
+  type Account = { email: string; id: string; a: ReturnType<typeof agent>; secret: string; lastStep?: number | undefined; recovery: string[] };
+  let n = 0;
+  async function account(tag: string): Promise<Account> {
+    n += 1;
+    const email = `secu-${tag}-${n}@example.com`;
+    const a = await registerAndLogin(email);
+    const me = await a.get("/auth/me");
+    return { email, id: me.body.id as string, a, secret: "", recovery: [] };
+  }
+  /** Promotion directe en base (opération d'exploitation) : les sessions déjà ouvertes ne sont pas fermées ici. */
+  const promoteInDb = (id: string) => pool.query("UPDATE users SET platform_role = 'admin' WHERE id = $1", [id]);
+  /** Code TOTP d'un pas jamais utilisé par ce compte, dans la fenêtre acceptée (±1 pas). */
+  async function nextCode(acct: Account): Promise<string> {
+    let s = acct.lastStep === undefined ? stepAt(Date.now()) - 1 : acct.lastStep + 1;
+    while (s > stepAt(Date.now()) + 1) await new Promise((r) => setTimeout(r, 1000));
+    if (s < stepAt(Date.now()) - 1) s = stepAt(Date.now()) - 1;
+    acct.lastStep = s;
+    return hotp(base32Decode(acct.secret), s);
+  }
+  async function enableMfa(acct: Account, client: ReturnType<typeof agent>) {
+    const setup = await client.post("/auth/me/mfa/setup");
+    expect(setup.status).toBe(200);
+    acct.secret = setup.body.secret;
+    acct.lastStep = undefined;
+    const enabled = await client.post("/auth/me/mfa/enable").send({ code: await nextCode(acct) });
+    expect(enabled.status).toBe(200);
+    acct.recovery = enabled.body.recoveryCodes;
+    return enabled;
+  }
+  async function passwordLogin(acct: Account) {
+    const c = agent();
+    const r = await c.post("/auth/login").send({ email: acct.email, password: PASSWORD });
+    return { c, r };
+  }
+  async function mfaLogin(acct: Account) {
+    const { c, r } = await passwordLogin(acct);
+    expect(r.status).toBe(202);
+    expect((await c.post("/auth/login/mfa").send({ code: await nextCode(acct) })).status).toBe(200);
+    return c;
+  }
+  const activeAdmins = async () => Number((await pool.query("SELECT count(*)::int AS n FROM users WHERE platform_role = 'admin' AND status = 'active' AND deletion_requested_at IS NULL")).rows[0].n);
+  const userState = async (id: string) => (await pool.query("SELECT status, platform_role, deletion_requested_at FROM users WHERE id = $1", [id])).rows[0];
+  const auditCount = async (action: string, id: string) => Number((await pool.query("SELECT count(*)::int AS n FROM admin.audit_log WHERE action = $1 AND target_id = $2", [action, id])).rows[0].n);
+
+  describe("1. double authentification liée à la session", () => {
+    it("navigateurs A et B : activer le TOTP dans A ne donne jamais /admin à B (mot de passe seul), B est révoqué", async () => {
+      const boss = await account("ab");
+      const B = (await passwordLogin(boss)).c;
+      await promoteInDb(boss.id);
+      expect((await boss.a.get("/admin/users")).body.error).toBe("mfa_required");
+      const enabled = await enableMfa(boss, boss.a);
+      expect(enabled.body.revokedSessions).toBeGreaterThanOrEqual(1);
+      expect((await B.get("/admin/users")).status).not.toBe(200);
+      expect((await B.get("/auth/me")).status).toBe(401);
+      expect((await boss.a.get("/admin/users")).status).toBe(200);
+    });
+
+    it("connexion par code TOTP ou de secours : /admin ; session partielle refusée ; session sans preuve (héritée) refusée", async () => {
+      const boss = await account("login");
+      await enableMfa(boss, boss.a);
+      await promoteInDb(boss.id);
+      const { c: partial, r } = await passwordLogin(boss);
+      expect(r.status).toBe(202);
+      expect((await partial.get("/admin/users")).status).toBe(404);
+      expect((await partial.get("/auth/me")).status).toBe(401);
+      expect((await partial.post("/auth/me/mfa/setup")).status).toBe(401);
+      expect((await partial.post("/auth/login/mfa").send({ code: await nextCode(boss) })).status).toBe(200);
+      expect((await partial.get("/admin/users")).status).toBe(200);
+      const { c: viaRecovery } = await passwordLogin(boss);
+      expect((await viaRecovery.post("/auth/login/mfa").send({ recoveryCode: boss.recovery[0] })).status).toBe(200);
+      expect((await viaRecovery.get("/admin/users")).status).toBe(200);
+      // Session héritée (antérieure à l'assurance de session) : aucune preuve → échec fermé, compte utilisable ailleurs.
+      await pool.query("UPDATE sessions SET mfa_verified_at = NULL WHERE user_id = $1", [boss.id]);
+      const legacy = await viaRecovery.get("/admin/users");
+      expect(legacy.status).toBe(403);
+      expect(legacy.body.error).toBe("mfa_session_required");
+      expect((await viaRecovery.get("/auth/me")).status).toBe(200);
+    });
+
+    it("compte devenu administrateur : ses sessions antérieures ne deviennent jamais des sessions d'administration", async () => {
+      const plain = await account("promu");
+      await promoteInDb(plain.id);
+      expect((await plain.a.get("/admin/users")).body.error).toBe("mfa_required");
+      const withTotp = await account("promu-totp");
+      const early = (await passwordLogin(withTotp)).c;
+      await enableMfa(withTotp, withTotp.a);
+      expect((await early.get("/auth/me")).status).toBe(401);
+      const verified = await mfaLogin(withTotp);
+      const boss = await account("promoteur");
+      await enableMfa(boss, boss.a);
+      await promoteInDb(boss.id);
+      expect((await boss.a.patch(`/admin/users/${withTotp.id}/role`).send({ role: "admin" })).status).toBe(200);
+      expect((await verified.get("/auth/me")).status).toBe(401);
+      expect((await withTotp.a.get("/auth/me")).status).toBe(401);
+      expect((await (await mfaLogin(withTotp)).get("/admin/users")).status).toBe(200);
+    });
+
+    it("désactiver puis réactiver le TOTP : autres sessions révoquées, aucune ancienne preuve ne revient", async () => {
+      const acct = await account("reactive");
+      await enableMfa(acct, acct.a);
+      const other = await mfaLogin(acct);
+      const off = await acct.a.post("/auth/me/mfa/disable").send({ password: PASSWORD, code: await nextCode(acct) });
+      expect(off.status).toBe(200);
+      expect((await other.get("/auth/me")).status).toBe(401);
+      expect((await pool.query("SELECT count(*)::int AS n FROM sessions WHERE user_id = $1 AND mfa_verified_at IS NOT NULL", [acct.id])).rows[0].n).toBe(0);
+      await promoteInDb(acct.id);
+      expect((await acct.a.get("/admin/users")).body.error).toBe("mfa_required");
+      await enableMfa(acct, acct.a);
+      expect((await acct.a.get("/admin/users")).status).toBe(200);
+    });
+  });
+
+  describe("2. garde du dernier administrateur, sous concurrence", () => {
+    /** Deux administrateurs actifs (les seuls de la base), chacun avec une session prouvée. */
+    async function twoAdmins() {
+      const p = await account("p");
+      const q = await account("q");
+      for (const x of [p, q]) { await enableMfa(x, x.a); await promoteInDb(x.id); }
+      expect(await activeAdmins()).toBe(2);
+      return { p, q };
+    }
+    /** Exactement une des deux demandes passe ; l'autre est refusée `last_admin` sans aucun état partiel. */
+    async function race(
+      requests: [() => Promise<request.Response>, () => Promise<request.Response>],
+      targets: [{ id: string; action: string }, { id: string; action: string }],
+    ) {
+      const before = await Promise.all(targets.map(async (t) => ({ row: await userState(t.id), audit: await auditCount(t.action, t.id) })));
+      const results = await Promise.all(requests.map((f) => f()));
+      const ok = results.map((r, i) => (r.status >= 200 && r.status < 300 ? i : -1)).filter((i) => i >= 0);
+      const refused = results.map((r, i) => (r.status === 409 && r.body.error === "last_admin" ? i : -1)).filter((i) => i >= 0);
+      expect({ ok: ok.length, refused: refused.length, statuses: results.map((r) => r.status) }).toMatchObject({ ok: 1, refused: 1 });
+      expect(await activeAdmins()).toBe(1);
+      const loser = refused[0]!;
+      expect(await userState(targets[loser]!.id)).toEqual(before[loser]!.row);
+      expect(await auditCount(targets[loser]!.action, targets[loser]!.id)).toBe(before[loser]!.audit);
+    }
+
+    it("deux auto-suppressions simultanées", async () => {
+      const { p, q } = await twoAdmins();
+      await race(
+        [() => p.a.delete("/auth/me").send({ password: PASSWORD, confirm: "SUPPRIMER" }), () => q.a.delete("/auth/me").send({ password: PASSWORD, confirm: "SUPPRIMER" })],
+        [{ id: p.id, action: "account.deletion.requested" }, { id: q.id, action: "account.deletion.requested" }],
+      );
+    });
+
+    it("suppressions croisées par l'administration", async () => {
+      const { p, q } = await twoAdmins();
+      await race(
+        [() => p.a.delete(`/admin/users/${q.id}`), () => q.a.delete(`/admin/users/${p.id}`)],
+        [{ id: q.id, action: "admin.user.deletion_requested" }, { id: p.id, action: "admin.user.deletion_requested" }],
+      );
+    });
+
+    it("auto-suppression contre suspension", async () => {
+      const { p, q } = await twoAdmins();
+      await race(
+        [() => p.a.delete("/auth/me").send({ password: PASSWORD, confirm: "SUPPRIMER" }), () => p.a.post(`/admin/users/${q.id}/suspend`)],
+        [{ id: p.id, action: "account.deletion.requested" }, { id: q.id, action: "admin.user.suspended" }],
+      );
+    });
+
+    it("suppression contre rétrogradation", async () => {
+      const { p, q } = await twoAdmins();
+      await race(
+        [() => p.a.delete(`/admin/users/${q.id}`), () => q.a.patch(`/admin/users/${p.id}/role`).send({ role: "user" })],
+        [{ id: q.id, action: "admin.user.deletion_requested" }, { id: p.id, action: "admin.user.role_changed" }],
+      );
+    });
+  });
+
+  describe("3. accès support : lecture seule, aucun export", () => {
+    it("refuse documents, archive, téléchargements et copie (GET, HEAD, barre finale, casse, identifiant encodé) avant toute production ou copie ; lectures permises et journalisées", async () => {
+      const owner = await account("proprio");
+      const imported = await owner.a.post("/examples/p118-exemple-complet/import");
+      expect(imported.status).toBe(201);
+      const pid = imported.body.id as string;
+      const upload = await owner.a.post(`/projects/${pid}/steps/1/files`).set("Content-Type", "text/plain").set("X-File-Name", "note.txt").send("contenu confidentiel");
+      expect(upload.status).toBe(201);
+      const levels = ((await owner.a.get(`/projects/${pid}/documents`)).body.documents as { kind: string }[])
+        .filter((d) => d.kind.startsWith("plan-lecture-")).map((d) => d.kind.slice("plan-lecture-".length));
+      expect(levels.length).toBeGreaterThan(0);
+      const reader = await account("lecteur");
+      expect((await owner.a.post(`/projects/${pid}/members`).send({ email: reader.email, role: "lecteur" })).status).toBeLessThan(300);
+      const admin = await account("support");
+      await enableMfa(admin, admin.a);
+      await promoteInDb(admin.id);
+      expect((await owner.a.post(`/projects/${pid}/support-grants`).send({ adminId: admin.id, hours: 2, purpose: "Recette de sécurité" })).status).toBe(201);
+
+      const S = admin.a;
+      const encoded = `%${pid.charCodeAt(0).toString(16)}${pid.slice(1)}`;
+      const produced = async () => Number((await pool.query("SELECT count(*)::int AS n FROM produced_documents WHERE project_id = $1", [pid])).rows[0].n);
+      const owned = async () => Number((await pool.query("SELECT count(*)::int AS n FROM projects WHERE owner_id = $1", [admin.id])).rows[0].n);
+      const accessed = async () => Number((await pool.query("SELECT count(*)::int AS n FROM admin.audit_log WHERE action = 'support.accessed' AND target_id = $1", [pid])).rows[0].n);
+      const paths = [
+        "documents/surfaces", "documents/programme", "documents/fiches", "documents/dossier-exemple", `documents/plan/${levels[0]}`,
+        "documents/atelier/modele.ifc", "archive", `steps/1/files/${upload.body.file.id}`, "design-review/rapport", "steps/harmonie/rapport",
+        "steps/1/harmonie/rapport", "atelier/journal.csv",
+      ];
+      const producedBefore = await produced();
+      const leaks: string[] = [];
+      for (const path of paths) {
+        for (const url of [`/projects/${pid}/${path}`, `/projects/${encoded}/${path}`, `/projects/${pid}/${path}/`, `/projects/${pid}/${path.replace(/^[a-z]+/, (s) => s.toUpperCase())}`]) {
+          const r = await S.get(url);
+          if (r.status !== 403 || r.headers["content-disposition"]) leaks.push(`GET ${url} → ${r.status}`);
+        }
+        const h = await S.head(`/projects/${encoded}/${path}`);
+        if (h.status !== 403) leaks.push(`HEAD ${path} → ${h.status}`);
+      }
+      expect(leaks).toEqual([]);
+      expect(await produced()).toBe(producedBefore);
+      const refusal = await S.get(`/projects/${encoded}/documents/surfaces`);
+      expect(refusal.body.error).toBe("support_no_export");
+      const ownedBefore = await owned();
+      for (const url of [`/projects/${pid}/copies`, `/projects/${encoded}/copies`, `/projects/${pid}/copies/`]) {
+        expect((await S.post(url).send({ name: "copie support" })).status).toBe(403);
+      }
+      expect(await owned()).toBe(ownedBefore);
+      const readsBefore = await accessed();
+      const read = await S.get(`/projects/${encoded}`);
+      expect(read.status).toBe(200);
+      expect(read.body.id).toBe(pid);
+      expect(await accessed()).toBeGreaterThan(readsBefore);
+      expect((await S.get(`/projects/${pid}/steps`)).status).toBe(200);
+      expect((await S.patch(`/projects/${encoded}/steps/1`).send({ fields: {} })).status).toBe(403);
+      // Propriétaire et lecteur gardent l'export.
+      expect((await owner.a.get(`/projects/${pid}/documents/surfaces`)).status).toBe(200);
+      expect((await reader.a.get(`/projects/${pid}/documents/surfaces`)).status).toBe(200);
+      expect((await reader.a.get(`/projects/${pid}/steps/1/files/${upload.body.file.id}`)).status).toBe(200);
+    });
   });
 });

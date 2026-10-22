@@ -42,7 +42,8 @@ import {
   activateInvitation, findInvitationByToken, INVITATION_REFUSAL_MESSAGE, invitationRefusal, invitationView, inviterStillAuthorized,
 } from "../lib/invitations.js";
 import { newId } from "../lib/ids.js";
-import { adminEnabled } from "../lib/platform-access.js";
+import { adminEnabled, removesLastAdmin } from "../lib/platform-access.js";
+import { lockAdminEligibility } from "../lib/admin-eligibility.js";
 import { checkPassword, PASSWORD_MAX, PASSWORD_REFUSAL_MESSAGE } from "../lib/security/password-policy.js";
 import { lockDurationMs, loginBlock } from "../lib/security/auth-policy.js";
 import { EncryptionUnavailable, openSecret, sealSecret } from "../lib/security/secret-box.js";
@@ -95,11 +96,15 @@ function requireUser(req: Request, res: Response): req is Request & { user: NonN
   return false;
 }
 
-async function openFullSession(req: Request, res: Response, user: typeof users.$inferSelect) {
-  const session = await createSession(user.id, user.platformRole, requestContext(req));
+/**
+ * Ouvre une session complète. `mfaVerifiedAt` : seulement quand CETTE connexion a prouvé un code de double
+ * authentification (TOTP ou de secours) ; sinon la session reste « mot de passe seul » et n'ouvre jamais l'administration.
+ */
+async function openFullSession(req: Request, res: Response, user: typeof users.$inferSelect, mfaVerifiedAt: Date | null = null) {
+  const session = await createSession(user.id, user.platformRole, { ...requestContext(req), mfaVerifiedAt });
   setSessionCookie(res, session.token, session.absoluteExpiresAt);
   await db.update(users).set({ lastLoginAt: new Date(), failedLoginCount: 0, lockedUntil: null }).where(eq(users.id, user.id));
-  return toSessionUser(user, session.id);
+  return toSessionUser(user, session.id, { mfaVerifiedAt });
 }
 
 const publicUser = (u: ReturnType<typeof toSessionUser>) => {
@@ -223,7 +228,8 @@ authRouter.post("/login/mfa", mfaLimiter, async (req, res) => {
     return;
   }
   await revokeSessionById(session.id);
-  const sessionUser = await openFullSession(req, res, user);
+  // La preuve est liée à la session qui vient de la fournir, et à elle seule.
+  const sessionUser = await openFullSession(req, res, user, new Date());
   await audit(db, { actorId: user.id, action: "auth.login.succeeded", target: { type: "user", id: user.id }, metadata: { mfa: parsed.data.code ? "totp" : "recovery_code" }, ip: clientIp(req) });
   res.status(200).json(publicUser(sessionUser));
 });
@@ -404,14 +410,36 @@ authRouter.post("/me/mfa/enable", mfaLimiter, async (req, res) => {
     return;
   }
   const locale = mailLocale(req);
-  const codes = await db.transaction(async (tx) => {
-    await tx.update(users).set({ totpEnabledAt: new Date() }).where(eq(users.id, user.id));
+  const sessionId = req.user.sessionId;
+  /*
+   * Une seule transaction, compte verrouillé : l'activation vaut preuve pour CETTE session seulement (mfa_verified_at),
+   * toutes les autres sessions du compte (ouvertes au mot de passe seul, ou « code attendu ») sont révoquées. Le secret
+   * vérifié doit être celui qui est encore enregistré (une nouvelle préparation entre-temps fait échouer l'activation).
+   */
+  const outcome = await db.transaction(async (tx) => {
+    const [locked] = await tx.select().from(users).where(eq(users.id, user.id)).limit(1).for("update");
+    if (!locked || locked.totpEnabledAt || locked.totpSecretEnc !== user.totpSecretEnc) return "conflict" as const;
+    const now = new Date();
+    const current = await tx.update(sessions).set({ mfaVerifiedAt: now })
+      .where(and(eq(sessions.id, sessionId), eq(sessions.userId, user.id), isNull(sessions.revokedAt), eq(sessions.mfaPending, false)))
+      .returning({ id: sessions.id });
+    if (current.length !== 1) return "session" as const;
+    await tx.update(users).set({ totpEnabledAt: now }).where(eq(users.id, user.id));
+    const revokedSessions = await revokeUserSessions(user.id, sessionId, tx);
     const c = await newRecoveryCodes(tx, user.id);
-    await audit(tx, { actorId: user.id, action: "auth.mfa.enabled", target: { type: "user", id: user.id }, ip: clientIp(req) });
+    await audit(tx, { actorId: user.id, action: "auth.mfa.enabled", target: { type: "user", id: user.id }, metadata: { revokedSessions }, ip: clientIp(req) });
     await sendAccountMail(user.email, "mfa_enabled", {}, locale, tx);
-    return c;
+    return { codes: c, revokedSessions };
   });
-  res.json({ enabled: true, recoveryCodes: codes });
+  if (outcome === "conflict") {
+    res.status(409).json({ error: "mfa_setup_required", message: "La préparation de la double authentification a changé : recommencez." });
+    return;
+  }
+  if (outcome === "session") {
+    res.status(401).json({ error: "authentication_required" });
+    return;
+  }
+  res.json({ enabled: true, recoveryCodes: outcome.codes, revokedSessions: outcome.revokedSessions });
 });
 
 const confirmWithCodeSchema = z.object({ password: passwordInput, code: z.string().trim().max(32) });
@@ -446,13 +474,18 @@ authRouter.post("/me/mfa/disable", mfaLimiter, async (req, res) => {
   const user = await confirmPasswordAndCode(req, res);
   if (!user) return;
   const locale = mailLocale(req);
-  await db.transaction(async (tx) => {
+  const sessionId = req.user.sessionId;
+  const revokedSessions = await db.transaction(async (tx) => {
     await tx.update(users).set({ totpEnabledAt: null, totpSecretEnc: null, totpLastStep: null }).where(eq(users.id, user.id));
     await tx.delete(userRecoveryCodes).where(eq(userRecoveryCodes.userId, user.id));
-    await audit(tx, { actorId: user.id, action: "auth.mfa.disabled", target: { type: "user", id: user.id }, ip: clientIp(req) });
+    // Aucune preuve ne survit à la désactivation : une réactivation ultérieure exige une nouvelle preuve, session par session.
+    await tx.update(sessions).set({ mfaVerifiedAt: null }).where(eq(sessions.userId, user.id));
+    const n = await revokeUserSessions(user.id, sessionId, tx);
+    await audit(tx, { actorId: user.id, action: "auth.mfa.disabled", target: { type: "user", id: user.id }, metadata: { revokedSessions: n }, ip: clientIp(req) });
     await sendAccountMail(user.email, "mfa_disabled", {}, locale, tx);
+    return n;
   });
-  res.json({ enabled: false });
+  res.json({ enabled: false, revokedSessions });
 });
 
 authRouter.post("/me/mfa/recovery-codes", mfaLimiter, async (req, res) => {
@@ -693,19 +726,35 @@ authRouter.get("/me/export", async (req, res) => {
 });
 
 /** Projets possédés et partagés (au moins un membre) : à transférer avant toute suppression (D-5). */
-export async function sharedOwnedProjects(userId: string): Promise<{ id: string; code: string; name: string }[]> {
-  return db.selectDistinct({ id: projects.id, code: projects.code, name: projects.name }).from(projects)
+export async function sharedOwnedProjects(userId: string, executor: Pick<typeof db, "selectDistinct"> = db): Promise<{ id: string; code: string; name: string }[]> {
+  return executor.selectDistinct({ id: projects.id, code: projects.code, name: projects.name }).from(projects)
     .innerJoin(projectMembers, eq(projectMembers.projectId, projects.id))
     .where(eq(projects.ownerId, userId));
 }
 
-/** Programme la suppression : sessions révoquées, connexion bloquée, courriel avec lien d'annulation (30 jours). */
-export async function scheduleDeletion(userId: string, actorId: string, req: Request, action: "account.deletion.requested" | "admin.user.deletion_requested") {
-  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-  if (!user) return null;
-  const now = new Date();
+export type DeletionRefusal =
+  | { refusal: "not_found" }
+  | { refusal: "deletion_already_requested" }
+  | { refusal: "owns_shared_projects"; projects: { id: string; code: string; name: string }[] }
+  | { refusal: "last_admin" };
+
+/**
+ * Programme la suppression : sessions révoquées, connexion bloquée, courriel avec lien d'annulation (30 jours). Une seule
+ * transaction, sous le verrou d'éligibilité des administrateurs (`lockAdminEligibility`) : état du compte relu et
+ * verrouillé, projets partagés et garde du dernier administrateur vérifiés, puis mutation, révocation et journal. Une
+ * demande refusée n'écrit rien.
+ */
+export async function scheduleDeletion(userId: string, actorId: string, req: Request, action: "account.deletion.requested" | "admin.user.deletion_requested"): Promise<DeletionRefusal | { deletionAt: Date; mail: { queued: boolean } }> {
   const locale = mailLocale(req);
   return db.transaction(async (tx) => {
+    const admins = await lockAdminEligibility(tx);
+    const [user] = await tx.select().from(users).where(eq(users.id, userId)).limit(1).for("update");
+    if (!user || user.status === "closed") return { refusal: "not_found" as const };
+    if (user.deletionRequestedAt) return { refusal: "deletion_already_requested" as const };
+    const shared = await sharedOwnedProjects(userId, tx);
+    if (shared.length) return { refusal: "owns_shared_projects" as const, projects: shared };
+    if (removesLastAdmin(admins, userId)) return { refusal: "last_admin" as const };
+    const now = new Date();
     await tx.update(users).set({ deletionRequestedAt: now }).where(eq(users.id, userId));
     const n = await revokeUserSessions(userId, null, tx);
     await audit(tx, { actorId, action, target: { type: "user", id: userId }, metadata: { revokedSessions: n }, ip: clientIp(req) });
@@ -728,21 +777,19 @@ authRouter.delete("/me", async (req, res) => {
     res.status(403).json({ error: "invalid_password", message: "Mot de passe incorrect." });
     return;
   }
-  const shared = await sharedOwnedProjects(user.id);
-  if (shared.length) {
-    res.status(409).json({ error: "owns_shared_projects", message: "Transférez d'abord la propriété de vos projets partagés à un de leurs membres.", projects: shared });
+  const scheduled = await scheduleDeletion(user.id, user.id, req, "account.deletion.requested");
+  if ("refusal" in scheduled) {
+    if (scheduled.refusal === "owns_shared_projects") {
+      res.status(409).json({ error: "owns_shared_projects", message: "Transférez d'abord la propriété de vos projets partagés à un de leurs membres.", projects: scheduled.projects });
+    } else if (scheduled.refusal === "last_admin") {
+      res.status(409).json({ error: "last_admin", message: "Vous êtes le dernier administrateur actif : désignez-en un autre avant de supprimer votre compte." });
+    } else {
+      res.status(409).json({ error: scheduled.refusal });
+    }
     return;
   }
-  if (user.platformRole === "admin") {
-    const [others] = await db.select({ n: sql<number>`count(*)::int` }).from(users).where(and(eq(users.platformRole, "admin"), eq(users.status, "active"), isNull(users.deletionRequestedAt), sql`${users.id} <> ${user.id}`));
-    if (!others?.n) {
-      res.status(409).json({ error: "last_admin", message: "Vous êtes le dernier administrateur actif : désignez-en un autre avant de supprimer votre compte." });
-      return;
-    }
-  }
-  const scheduled = await scheduleDeletion(user.id, user.id, req, "account.deletion.requested");
   clearSessionCookies(res);
-  res.status(202).json({ deletionAt: scheduled!.deletionAt.toISOString(), mail: { queued: scheduled!.mail.queued } });
+  res.status(202).json({ deletionAt: scheduled.deletionAt.toISOString(), mail: { queued: scheduled.mail.queued } });
 });
 
 authRouter.post("/cancel-deletion", async (req, res) => {

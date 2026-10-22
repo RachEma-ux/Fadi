@@ -10842,5 +10842,8 @@
 "pourra consulter ce projet en lecture seule pendant {0} heure(s). Vous serez prévenu de sa première consultation et pourrez révoquer l’accès à tout moment.": "will be able to view this project read-only for {0} hour(s). You will be notified of their first view and can revoke access at any time.",
 "Cette invitation est destinée à une autre adresse que celle du compte connecté (": "This invitation is meant for a different address than the signed-in account (",
 "). Connectez-vous avec le compte invité.": "). Sign in with the invited account.",
-"lecture et commentaires": "reading and comments"
+"lecture et commentaires": "reading and comments",
+"Cette session n’a pas été ouverte avec votre code de double authentification : reconnectez-vous avec votre code pour accéder à l’administration.": "This session was not opened with your two-factor code: sign in again with your code to access administration.",
+"Se déconnecter puis se reconnecter": "Sign out, then sign in again",
+"Cette session n'a pas été ouverte avec votre code de double authentification : déconnectez-vous, puis reconnectez-vous avec votre code.": "This session was not opened with your two-factor code: sign out, then sign in again with your code."
 }

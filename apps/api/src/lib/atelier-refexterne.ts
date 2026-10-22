@@ -22,7 +22,7 @@ import {
 } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
 import { atelierPublications, atelierVersions } from "../db/schema.js";
-import { loadProjectAccess } from "./owned-project.js";
+import { loadProjectAccess, roleAllows } from "./owned-project.js";
 
 type Lecteur = Pick<typeof db, "select">;
 
@@ -71,6 +71,15 @@ async function chaineRevientA(lecteur: Lecteur, projetId: string, depart: Modele
   return false;
 }
 
+/**
+ * Projet source d'une référence externe : son contenu entre dans un autre projet, il faut donc la capacité d'export
+ * (revue de sécurité de la PR #255) — un accès support n'en fait jamais une source.
+ */
+async function sourceExportable(projectId: string, userId: string) {
+  const source = await loadProjectAccess(projectId, userId);
+  return source && roleAllows(source.role, "export") ? source : null;
+}
+
 export async function controlerRattachements(lecteur: Lecteur, projetId: string, auteurId: string, commandes: readonly Commande[]): Promise<RefusReference | null> {
   for (const c of commandes) {
     if (c.type !== "refexterne.rattacher") continue;
@@ -78,7 +87,7 @@ export async function controlerRattachements(lecteur: Lecteur, projetId: string,
     // Une mise à jour partielle (sans source) reprend la source déjà épinglée : le modèle refuse tout changement de source.
     if (typeof p.projetSourceId !== "string" || typeof p.publicationId !== "string") return { status: 400, reponse: { erreur: "invalide", details: [{ chemin: "params", message: "projetSourceId et publicationId requis" }] } };
     if (p.projetSourceId === projetId) return conflit("reference-circulaire", "Un projet ne peut pas se référencer lui-même.", "projetSourceId");
-    const source = await loadProjectAccess(p.projetSourceId, auteurId);
+    const source = await sourceExportable(p.projetSourceId, auteurId);
     if (!source) return { status: 404, reponse: { erreur: "source-inconnue", message: "Projet source inconnu." } };
     const s = await publicationAvecModele(lecteur, source.id, p.publicationId);
     if (!s) return { status: 404, reponse: { erreur: "publication-inconnue", message: "Publication source inconnue." } };
@@ -104,7 +113,7 @@ export async function etatReferences(auteurId: string, etat: ModeleAtelier, avec
   const refs = refsDe(etat);
   const sortie: EtatReference[] = [];
   for (const r of refs) {
-    const source = await loadProjectAccess(r.params.projetSourceId, auteurId);
+    const source = await sourceExportable(r.params.projetSourceId, auteurId);
     const epinglee = source ? await publicationAvecModele(db, source.id, r.params.publicationId) : null;
     if (!source || !epinglee) {
       sortie.push({ id: r.id, nom: r.nom, params: r.params, etat: "inaccessible", source: null, derniere: null, representation: null });
@@ -130,7 +139,7 @@ export async function etatReferences(auteurId: string, etat: ModeleAtelier, avec
 }
 
 export async function modelesPourMiseAJour(auteurId: string, p: ParamsReferenceExterne) {
-  const source = await loadProjectAccess(p.projetSourceId, auteurId);
+  const source = await sourceExportable(p.projetSourceId, auteurId);
   if (!source) return null;
   const epinglee = await publicationAvecModele(db, source.id, p.publicationId);
   const derniere = (await db.select({ id: atelierPublications.id }).from(atelierPublications).where(eq(atelierPublications.projectId, source.id)).orderBy(desc(atelierPublications.revision), desc(atelierPublications.createdAt)).limit(1))[0];

@@ -5,7 +5,8 @@ import { and, eq, isNull, ne } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { sessions, users, type AccountStatus, type PlatformRole } from "../db/schema.js";
 import { newId } from "./ids.js";
-import { MFA_PENDING_MS, newSessionTimes, SESSION_TOUCH_MS, sessionValid, slideExpiry } from "./security/auth-policy.js";
+import { MFA_PENDING_MS, newSessionTimes, SESSION_TOUCH_MS, sessionMfaVerified, sessionValid, slideExpiry } from "./security/auth-policy.js";
+export { sessionMfaVerified };
 import { randomToken, sha256Hex } from "./security/tokens.js";
 
 /**
@@ -66,6 +67,11 @@ export interface SessionUser {
   platformRole: PlatformRole;
   status: AccountStatus;
   mfaEnabled: boolean;
+  /**
+   * Cette session a prouvé la double authentification de l'activation courante (connexion par code TOTP ou de secours,
+   * ou activation depuis elle). L'activation au niveau du compte ne rehausse jamais une session existante.
+   */
+  mfaVerified: boolean;
   emailVerified: boolean;
   /** Identifiant interne de la session courante (jamais le jeton). */
   sessionId: string;
@@ -77,7 +83,7 @@ export interface CreatedSession { id: string; token: string; expiresAt: Date; ab
 export async function createSession(
   userId: string,
   role: PlatformRole,
-  context: { userAgent?: string | null; ip?: string | null; mfaPending?: boolean } = {},
+  context: { userAgent?: string | null; ip?: string | null; mfaPending?: boolean; mfaVerifiedAt?: Date | null } = {},
   executor: Pick<typeof db, "insert"> = db,
 ): Promise<CreatedSession> {
   const now = new Date();
@@ -97,6 +103,7 @@ export async function createSession(
     userAgent: context.userAgent?.slice(0, 300) ?? null,
     ip: context.ip ?? null,
     mfaPending: !!context.mfaPending,
+    mfaVerifiedAt: context.mfaPending ? null : (context.mfaVerifiedAt ?? null),
   });
   return { id, token, ...times };
 }
@@ -135,7 +142,7 @@ async function loadSession(token: string): Promise<{ session: SessionRow; user: 
   return rows[0] ?? null;
 }
 
-export function toSessionUser(user: UserRow, sessionId: string): SessionUser {
+export function toSessionUser(user: UserRow, sessionId: string, session: { mfaVerifiedAt: Date | null } | null = null): SessionUser {
   return {
     id: user.id,
     email: user.email,
@@ -143,6 +150,7 @@ export function toSessionUser(user: UserRow, sessionId: string): SessionUser {
     platformRole: user.platformRole,
     status: user.status,
     mfaEnabled: !!user.totpEnabledAt,
+    mfaVerified: sessionMfaVerified(user, session),
     emailVerified: !!user.emailVerifiedAt,
     sessionId,
   };
@@ -164,7 +172,7 @@ export async function resolveSession(token: string | undefined): Promise<Session
   if (!session.lastSeenAt || now.getTime() - session.lastSeenAt.getTime() > SESSION_TOUCH_MS) {
     await db.update(sessions).set({ lastSeenAt: now, expiresAt: slideExpiry(session, user.platformRole, now) }).where(eq(sessions.id, session.id));
   }
-  return toSessionUser(user, session.id);
+  return toSessionUser(user, session.id, session);
 }
 
 /** Session « mot de passe vérifié, code attendu » (5 min) : renvoie le compte si elle est encore valable. */

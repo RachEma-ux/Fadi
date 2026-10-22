@@ -14,7 +14,7 @@
  *   GET    /admin/invitations · DELETE /admin/invitations/:id
  *
  * Garde-fous : jamais sur soi-même (rôle, suspension, suppression) ; jamais le dernier administrateur actif (vérifié
- * sous verrou dans la transaction) ; chaque action journalisée dans `audit_log`. Les mutations ne sont jamais mises en
+ * sous le verrou d'éligibilité `lockAdminEligibility`, dans la transaction même de la mutation) ; chaque action journalisée dans `audit_log`. Les mutations ne sont jamais mises en
  * file hors ligne par le client.
  */
 import { Router, type Request, type Response } from "express";
@@ -29,13 +29,13 @@ import { displayStatus } from "../../lib/security/auth-policy.js";
 import { assertTransition, AccountTransitionRefused } from "../../lib/security/account-state.js";
 import { formatDate, mailLocale, PUBLIC_PATHS, publicLink, sendAccountMail } from "../../lib/account.js";
 import { createOrRenewInvitation, invitationView } from "../../lib/invitations.js";
-import { scheduleDeletion, sharedOwnedProjects } from "../auth.js";
+import { scheduleDeletion } from "../auth.js";
+import { lockAdminEligibility } from "../../lib/admin-eligibility.js";
 
 export const adminRouter = Router();
 // Pas de `requireAuth` (401) : une personne anonyme reçoit le même 404 que tout non-administrateur.
 adminRouter.use(requirePlatformRole("admin"));
 
-type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 const notFound = (res: Response) => res.status(404).json({ error: "not_found" });
 
 const listSchema = z.object({
@@ -106,13 +106,6 @@ adminRouter.get("/users/:userId", async (req, res) => {
   });
 });
 
-/** Administrateurs actifs, verrouillés pour la durée de la transaction (garde du dernier administrateur). */
-async function lockActiveAdmins(tx: Tx): Promise<string[]> {
-  const rows = await tx.select({ id: users.id }).from(users)
-    .where(and(eq(users.platformRole, "admin"), eq(users.status, "active"), isNull(users.deletionRequestedAt))).for("update");
-  return rows.map((r) => r.id);
-}
-
 function refuseSelf(req: Request, res: Response, id: string): boolean {
   if (id !== req.user!.id) return false;
   res.status(422).json({ error: "self_action", message: "Action impossible sur votre propre compte depuis l'administration." });
@@ -126,7 +119,7 @@ adminRouter.patch("/users/:userId/role", async (req, res) => {
   if (!parsed.success) return void res.status(400).json({ error: "invalid_input" });
   if (refuseSelf(req, res, id)) return;
   const outcome = await db.transaction(async (tx) => {
-    const admins = await lockActiveAdmins(tx);
+    const admins = await lockAdminEligibility(tx);
     const [u] = await tx.select().from(users).where(eq(users.id, id)).limit(1).for("update");
     if (!u || u.status === "closed") return "not_found" as const;
     if (u.platformRole === parsed.data.role) return u;
@@ -147,7 +140,7 @@ adminRouter.post("/users/:userId/suspend", async (req, res) => {
   if (refuseSelf(req, res, id)) return;
   const locale = mailLocale(req);
   const outcome = await db.transaction(async (tx) => {
-    const admins = await lockActiveAdmins(tx);
+    const admins = await lockAdminEligibility(tx);
     const [u] = await tx.select().from(users).where(eq(users.id, id)).limit(1).for("update");
     if (!u) return "not_found" as const;
     try { assertTransition(u.status, "suspended"); } catch (e) { if (e instanceof AccountTransitionRefused) return "transition" as const; throw e; }
@@ -203,20 +196,18 @@ adminRouter.post("/users/:userId/revoke-sessions", async (req, res) => {
 adminRouter.delete("/users/:userId", async (req, res) => {
   const id = req.params["userId"] as string;
   if (refuseSelf(req, res, id)) return;
-  const [u] = await db.select().from(users).where(eq(users.id, id)).limit(1);
-  if (!u || u.status === "closed") return void notFound(res);
-  if (u.deletionRequestedAt) return void res.status(409).json({ error: "deletion_already_requested" });
-  const shared = await sharedOwnedProjects(id);
-  if (shared.length) {
-    res.status(409).json({ error: "owns_shared_projects", message: "Ce compte possède des projets partagés : leur propriété doit d'abord être transférée à un de leurs membres.", projects: shared });
-    return;
-  }
-  if (u.platformRole === "admin") {
-    const last = await db.transaction(async (tx) => removesLastAdmin(await lockActiveAdmins(tx), id));
-    if (last) return void lastAdmin(res);
-  }
+  // Contrôles et mutation dans la même transaction, sous le verrou d'éligibilité des administrateurs (scheduleDeletion).
   const scheduled = await scheduleDeletion(id, req.user!.id, req, "admin.user.deletion_requested");
-  res.status(202).json({ deletionAt: scheduled!.deletionAt.toISOString(), mail: { queued: scheduled!.mail.queued } });
+  if ("refusal" in scheduled) {
+    if (scheduled.refusal === "not_found") return void notFound(res);
+    if (scheduled.refusal === "last_admin") return void lastAdmin(res);
+    if (scheduled.refusal === "owns_shared_projects") {
+      res.status(409).json({ error: "owns_shared_projects", message: "Ce compte possède des projets partagés : leur propriété doit d'abord être transférée à un de leurs membres.", projects: scheduled.projects });
+      return;
+    }
+    return void res.status(409).json({ error: "deletion_already_requested" });
+  }
+  res.status(202).json({ deletionAt: scheduled.deletionAt.toISOString(), mail: { queued: scheduled.mail.queued } });
 });
 
 const inviteSchema = z.object({ email: z.string().trim().toLowerCase().email().max(254), locale: z.enum(["fr", "en"]).optional() });

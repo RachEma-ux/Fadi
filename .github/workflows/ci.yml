@@ -548,6 +548,14 @@ jobs:
         run: |
           set -o pipefail
           node apps/web/e2e/comptes-api.mjs 2>&1 | tee -a e2e.log
+      # Correctifs de sécurité de la revue de la PR #255 : double authentification liée à la session, accès support sans
+      # export. Les courses du dernier administrateur exigent une base vierge : ici déclarées NON EXÉCUTÉES, elles
+      # tournent dans app.test.ts (base jetable attestée, DB-3) et en local avec COMPTES_SECURITE_BASE_VIERGE=1.
+      - name: Recette sécurité des comptes par l'API — session et double authentification, accès support sans export (apps/web/e2e/comptes-securite.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/comptes-securite.mjs 2>&1 | tee -a e2e.log
       - name: Recette Gestion des comptes dans le navigateur — écrans, axe-core bureau et téléphone (apps/web/e2e/comptes-admin.mjs)
         if: ${{ matrix.shard == 'complements' }}
         run: |

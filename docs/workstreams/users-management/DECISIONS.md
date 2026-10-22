@@ -109,3 +109,29 @@ ils ne réécrivent aucune décision D-x et restent révisables par lui.
   `admin`, journal d'audit append-only) est ajouté au script de `main`. Remplace le blocage UM-11. Trois données ou
   attentes de `app.test.ts` sont alignées sur les règles déjà décidées (12 caractères, D-6 ; invitation d'une adresse
   sans compte, UM-3), sans retirer de vérification.
+- **UM-18 — Assurance de session (revue de sécurité de la PR #255, 2026-10-22).** Constat : `/admin/*` vérifiait
+  l'enrôlement TOTP **du compte** (`totp_enabled_at`) ; une session ouverte au mot de passe seul avant l'activation
+  (navigateur B) devenait une session d'administration sans jamais fournir de code. Décision d'implémentation : colonne
+  additive `sessions.mfa_verified_at` (NULL = mot de passe seul, y compris toute session antérieure : échec fermé),
+  posée seulement par la connexion avec un code TOTP ou de secours, ou par l'activation du TOTP **depuis cette session** ;
+  `requirePlatformRole("admin")` exige TOTP actif (`mfa_required`, enrôlement inchangé) **et** une preuve de session
+  postérieure à l'activation courante (`mfa_session_required`). L'activation révoque, dans la même transaction (compte
+  verrouillé), toutes les autres sessions ; la désactivation efface les preuves et révoque les autres sessions. La
+  promotion (administration, `create-admin.mjs`) ferme déjà les sessions du compte.
+- **UM-19 — Verrou d'éligibilité des administrateurs (revue de sécurité de la PR #255).** Constat : l'auto-suppression
+  et la suppression par l'administration vérifiaient « un autre administrateur actif existe » dans une transaction puis
+  programmaient la suppression dans une autre ; deux demandes simultanées pouvaient laisser zéro administrateur.
+  Décision : `lib/admin-eligibility.ts` — un verrou consultatif transactionnel unique (`pg_advisory_xact_lock(253, 1)`),
+  toujours pris en premier par toute opération qui peut retirer un administrateur actif (auto-suppression, suppression,
+  suspension, rétrogradation), relecture des administrateurs actifs sous ce verrou, contrôle et mutation (journal, révocation
+  des sessions, jeton d'annulation, courriel en file) dans la même transaction. Un seul verrou pris en premier : aucun
+  ordre concurrent, aucun interblocage. Refus métier inchangé : 409 `last_admin`.
+- **UM-20 — Capacité « export » (revue de sécurité de la PR #255).** Constat : la liste noire de chemins de
+  `supportReadOnlyGuard` oubliait les routes de production de documents (`/documents/surfaces`, `/programme`,
+  `/fiches`, `/dossier-exemple`, `/plan/:levelId`…), qui acceptaient le rôle `support`, écrivaient une trace de production
+  et servaient le fichier ; l'identifiant lu dans `req.path` brut ignorait l'encodage en pourcent, alors qu'Express le
+  décode pour `:projectId`. Décision : besoin `export` dans `lib/owned-project.ts` (propriétaire, éditeur, lecteur —
+  inchangés ; jamais `support`), déclaré par chaque route qui sort du contenu : documents produits (catalogue, Atelier,
+  dessins), archive, copie, pièces jointes, rapports Harmonie et bilan, exports IFC / STEP / CSV de l'Atelier, fichiers de
+  publication, exports et fichiers Studio, et source d'une référence externe. La garde de chemin résout le projet comme
+  le routeur (décodage) et reste une défense supplémentaire ; elle journalise toujours chaque lecture (`support.accessed`).

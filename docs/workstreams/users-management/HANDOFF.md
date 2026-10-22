@@ -17,7 +17,8 @@ Mis à jour : 2026-10-22 (UTC).
 
 ## Prochaine action
 
-- Vérifier la CI sur le HEAD (l'étape DB-3 doit rester verte).
+- Vérifier la CI sur le HEAD : étape DB-3 (dont le bloc « correctifs de sécurité » de `app.test.ts`) et la recette
+  `comptes-securite.mjs` (tranche `complements`).
 - Revue humaine (🛑 phases 2, 3, 4, D7-final) puis décision de fusion par le maître d'ouvrage ; aucun déploiement sans
   accord explicite (RUNBOOK.md pour la suite).
 
@@ -26,9 +27,14 @@ Mis à jour : 2026-10-22 (UTC).
 - `DATABASE_URL=… node scripts/validation/users-migration-check.mjs` (base locale jetable, super-utilisateur).
 - `BASE_URL=… DATABASE_URL=<fadi_app> MAILPIT_URL=… MAIL_DAILY_LIMIT=… node apps/web/e2e/comptes-api.mjs`.
 - `BASE_URL=… MAILPIT_URL=… MAIL_RECIPIENT_HOURLY_LIMIT=… node apps/web/e2e/comptes-admin.mjs` (API servant `WEB_DIST` ; 50 contrôles, passe anglaise comprise).
+- `BASE_URL=… DATABASE_URL=<base vierge> COMPTES_SECURITE_BASE_VIERGE=1 node apps/web/e2e/comptes-securite.mjs`
+  (correctifs de sécurité ; sans la variable, les courses du dernier administrateur sont déclarées non exécutées).
 - `npx --workspace=@fadi/api vitest run src/lib` ; `npm run typecheck` ; `npm run build`.
 
 ## Risques et blocages
+
+- Déploiement après fusion : la colonne `sessions.mfa_verified_at` est ajoutée ; les administrateurs déjà connectés
+  doivent se reconnecter avec leur code (403 `mfa_session_required`), voir RUNBOOK §4 bis.
 
 - DB-3 (UM-17) : vert sur `570d248` ; une PR de fork n'a pas le secret, les suites y sont déclarées non exécutées.
 - Déploiement suivant la fusion : `FADI_APP_DB_PASSWORD` obligatoire, l'API refuse de démarrer en production avec un

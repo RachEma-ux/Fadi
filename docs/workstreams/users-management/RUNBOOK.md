@@ -80,6 +80,16 @@ docker compose --env-file .env.deploy exec db psql -U fadi -d fadi -c "SELECT ha
 # attendu : f | f
 ```
 
+### 4 bis. Effets du correctif de sécurité de la PR #255 (assurance de session)
+
+- La migration ajoute `sessions.mfa_verified_at` (colonne nullable, additive). Toute session ouverte avant le déploiement
+  n'a **aucune** preuve de double authentification : un administrateur connecté reçoit 403 `mfa_session_required` sur
+  `/admin/*` et doit **se déconnecter puis se reconnecter avec son code** (l'écran le dit). Les comptes non
+  administrateurs ne sont pas touchés.
+- Retour arrière : l'ancienne version ignore la colonne ; aucune donnée à restaurer.
+- L'accès support ne peut plus produire, exporter, télécharger ni copier (403 `support_no_export`) ; la lecture reste
+  permise et journalisée.
+
 ## 5. Courriel de test
 
 Depuis l'application (compte existant) : Paramètres → Mon compte → « Vérifier mon adresse », ou « Mot de passe oublié »
