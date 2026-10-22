@@ -1160,3 +1160,165 @@ ALTER TABLE studio_dossiers ADD COLUMN IF NOT EXISTS quantities_adjustment_seq i
 ALTER TABLE studio_dossiers DROP CONSTRAINT IF EXISTS studio_dossiers_quantities_adjustment_seq_check,
   ADD CONSTRAINT studio_dossiers_quantities_adjustment_seq_check
   CHECK (quantities_adjustment_seq IS NULL OR (quantities_adjustment_seq >= 1 AND quantities_variant_id IS NOT NULL)) NOT VALID;
+
+-- ---------------------------------------------------------------------------
+-- Gestion des comptes (docs/workstreams/users-management, Issue #253) — Phase 1.
+-- Additif et idempotent : colonnes avec défaut ou nullables, contraintes posées une seule fois, aucune suppression.
+-- Un compte existant reste `active` / `user`, sans changement de comportement.
+-- ---------------------------------------------------------------------------
+-- États stockés (UM-2) : active | suspended | closed (anonymisé, D-5). « Verrouillé » est dérivé de `locked_until`.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'active';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS platform_role text NOT NULL DEFAULT 'user';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at timestamptz;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at timestamptz;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password_changed_at timestamptz;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_login_count integer NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS locked_until timestamptz;
+-- D-5 : demande de suppression ; anonymisation 30 jours plus tard sauf annulation.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS deletion_requested_at timestamptz;
+-- D-6 : secret TOTP chiffré (AES-256-GCM, clé FADI_ENCRYPTION_KEY hors base) ; dernier pas accepté (anti-rejeu).
+ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret_enc text;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_enabled_at timestamptz;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_last_step bigint;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS terms_accepted_at timestamptz;
+-- D-3 : réservée, aucune logique ne la lit (organisations hors périmètre, UM-1).
+ALTER TABLE users ADD COLUMN IF NOT EXISTS organization_id text;
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS organization_id text;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'users_status_check') THEN
+    ALTER TABLE users ADD CONSTRAINT users_status_check CHECK (status IN ('active', 'suspended', 'closed'));
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'users_platform_role_check') THEN
+    ALTER TABLE users ADD CONSTRAINT users_platform_role_check CHECK (platform_role IN ('user', 'admin'));
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'users_failed_login_count_check') THEN
+    ALTER TABLE users ADD CONSTRAINT users_failed_login_count_check CHECK (failed_login_count >= 0);
+  END IF;
+END $$;
+CREATE INDEX IF NOT EXISTS users_platform_role_idx ON users (platform_role) WHERE platform_role <> 'user';
+CREATE INDEX IF NOT EXISTS users_deletion_requested_idx ON users (deletion_requested_at) WHERE deletion_requested_at IS NOT NULL;
+
+-- Sessions serveur (UM-5) : le jeton du cookie n'est jamais stocké, seulement son empreinte SHA-256. Les sessions déjà
+-- ouvertes sont converties une fois (empreinte du jeton, nouvel identifiant interne) : personne n'est déconnecté.
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS token_hash text;
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS last_seen_at timestamptz;
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS absolute_expires_at timestamptz;
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS revoked_at timestamptz;
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS user_agent text;
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS ip text;
+-- Connexion en deux étapes (D-6) : mot de passe vérifié, code TOTP attendu (5 min au plus) ; ne vaut pas authentification.
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS mfa_pending boolean NOT NULL DEFAULT false;
+UPDATE sessions
+   SET token_hash = encode(sha256(convert_to(id, 'UTF8')), 'hex'),
+       id = 'ses_' || md5(id || clock_timestamp()::text || random()::text),
+       last_seen_at = coalesce(last_seen_at, created_at),
+       absolute_expires_at = coalesce(absolute_expires_at, expires_at)
+ WHERE token_hash IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS sessions_token_hash_unique ON sessions (token_hash);
+
+-- D-6 : 10 codes de secours par activation de la double authentification, hachés, à usage unique.
+CREATE TABLE IF NOT EXISTS user_recovery_codes (
+  id text PRIMARY KEY,
+  user_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  code_hash text NOT NULL,
+  used_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS user_recovery_codes_user_idx ON user_recovery_codes (user_id);
+
+-- D-2 / UM-4 : accès support en lecture seule, accordé par le propriétaire à un administrateur nommé, ≤ 72 h, révocable.
+CREATE TABLE IF NOT EXISTS project_support_grants (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  admin_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  granted_by text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  purpose text NOT NULL,
+  granted_at timestamptz NOT NULL DEFAULT now(),
+  expires_at timestamptz NOT NULL,
+  revoked_at timestamptz,
+  revoked_by text REFERENCES users (id) ON DELETE SET NULL,
+  CONSTRAINT project_support_grants_duration CHECK (expires_at > granted_at AND expires_at <= granted_at + interval '72 hours'),
+  CONSTRAINT project_support_grants_purpose CHECK (length(btrim(purpose)) BETWEEN 3 AND 500)
+);
+CREATE INDEX IF NOT EXISTS project_support_grants_project_idx ON project_support_grants (project_id, admin_id);
+
+-- UM-3 : une invitation est une proposition, jamais un compte ni un accès. Une seule invitation en attente par
+-- (adresse, finalité, projet) : un renvoi remplace son jeton au lieu de multiplier les invitations.
+CREATE TABLE IF NOT EXISTS invitations (
+  id text PRIMARY KEY,
+  purpose text NOT NULL,
+  email text NOT NULL,
+  token_hash text NOT NULL,
+  project_id text REFERENCES projects (id) ON DELETE CASCADE,
+  project_role text,
+  invited_by text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  status text NOT NULL DEFAULT 'pending',
+  expires_at timestamptz NOT NULL,
+  access_expires_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  responded_at timestamptz,
+  accepted_user_id text REFERENCES users (id) ON DELETE SET NULL,
+  CONSTRAINT invitations_purpose_check CHECK (purpose IN ('platform_account', 'project_participation')),
+  CONSTRAINT invitations_status_check CHECK (status IN ('pending', 'accepted', 'declined', 'expired', 'cancelled')),
+  CONSTRAINT invitations_project_check CHECK ((purpose = 'project_participation') = (project_id IS NOT NULL AND project_role IN ('lecteur', 'editeur')))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS invitations_token_hash_unique ON invitations (token_hash);
+CREATE UNIQUE INDEX IF NOT EXISTS invitations_pending_unique ON invitations (email, purpose, coalesce(project_id, '')) WHERE status = 'pending';
+
+-- Jetons de compte à usage unique (vérification d'e-mail 24 h, réinitialisation 1 h, annulation de suppression 30 j).
+CREATE TABLE IF NOT EXISTS account_tokens (
+  id text PRIMARY KEY,
+  user_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  purpose text NOT NULL,
+  token_hash text NOT NULL,
+  expires_at timestamptz NOT NULL,
+  used_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT account_tokens_purpose_check CHECK (purpose IN ('verify_email', 'reset_password', 'cancel_deletion'))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS account_tokens_token_hash_unique ON account_tokens (token_hash);
+CREATE INDEX IF NOT EXISTS account_tokens_user_idx ON account_tokens (user_id, purpose);
+
+-- Journal d'audit append-only (même modèle que l'immuabilité de studio_revisions) : ni UPDATE ni DELETE. Aucune clé
+-- étrangère : l'identifiant de l'acteur survit à l'anonymisation ; aucune adresse e-mail n'y est jamais écrite (D-5).
+CREATE TABLE IF NOT EXISTS audit_log (
+  id bigserial PRIMARY KEY,
+  actor_id text,
+  action text NOT NULL,
+  target_type text,
+  target_id text,
+  metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+  ip text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS audit_log_actor_idx ON audit_log (actor_id, created_at);
+CREATE INDEX IF NOT EXISTS audit_log_target_idx ON audit_log (target_type, target_id, created_at);
+CREATE OR REPLACE FUNCTION audit_log_append_only() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'audit_log_append_only';
+END;
+$$;
+CREATE OR REPLACE TRIGGER audit_log_no_update BEFORE UPDATE ON audit_log FOR EACH ROW EXECUTE FUNCTION audit_log_append_only();
+CREATE OR REPLACE TRIGGER audit_log_no_delete BEFORE DELETE ON audit_log FOR EACH ROW EXECUTE FUNCTION audit_log_append_only();
+
+-- D-1 : file d'envoi des courriels (les routes ne dépendent jamais du SMTP). Le lien porteur d'un jeton n'y reste que
+-- jusqu'à l'envoi ou l'abandon : la charge est alors effacée (`payload = '{}'`).
+CREATE TABLE IF NOT EXISTS mail_outbox (
+  id text PRIMARY KEY,
+  to_address text NOT NULL,
+  template text NOT NULL,
+  locale text NOT NULL DEFAULT 'fr',
+  payload jsonb NOT NULL DEFAULT '{}'::jsonb,
+  status text NOT NULL DEFAULT 'pending',
+  attempts integer NOT NULL DEFAULT 0,
+  last_error text,
+  next_attempt_at timestamptz NOT NULL DEFAULT now(),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  sent_at timestamptz,
+  CONSTRAINT mail_outbox_status_check CHECK (status IN ('pending', 'sent', 'failed', 'skipped')),
+  CONSTRAINT mail_outbox_locale_check CHECK (locale IN ('fr', 'en'))
+);
+CREATE INDEX IF NOT EXISTS mail_outbox_pending_idx ON mail_outbox (next_attempt_at) WHERE status = 'pending';
+CREATE INDEX IF NOT EXISTS mail_outbox_created_idx ON mail_outbox (created_at);
+CREATE INDEX IF NOT EXISTS mail_outbox_to_idx ON mail_outbox (to_address, created_at);

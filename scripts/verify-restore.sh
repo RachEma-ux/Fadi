@@ -10,7 +10,7 @@ sh "$(dirname "$0")/backup.sh" "$HOST" "$USER" "$SRC" "$DIR"
 FILE="$(ls "$DIR"/fadi-*.dump | head -1)"
 psql -h "$HOST" -U "$USER" -d postgres -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS \"$DST\";" -c "CREATE DATABASE \"$DST\";"
 sh "$(dirname "$0")/restore.sh" "$HOST" "$USER" "$DST" "$FILE"
-TABLES="users projects project_steps atelier_niveaux atelier_objets atelier_relations atelier_definitions atelier_calques atelier_groupes atelier_references atelier_problemes atelier_site atelier_commands atelier_outbox atelier_versions atelier_variants atelier_publications atelier_locks volumes parcels programme_cases programme_repartitions project_members project_comments produced_documents step_files drawing_exports studio_studies studio_variants studio_revisions studio_comments studio_observations studio_observation_events studio_study_steps studio_publications studio_publication_events studio_tool_preferences studio_requirement_sets studio_requirement_checks studio_quantity_adjustments"
+TABLES="users projects project_steps atelier_niveaux atelier_objets atelier_relations atelier_definitions atelier_calques atelier_groupes atelier_references atelier_problemes atelier_site atelier_commands atelier_outbox atelier_versions atelier_variants atelier_publications atelier_locks volumes parcels programme_cases programme_repartitions project_members project_comments produced_documents step_files drawing_exports studio_studies studio_variants studio_revisions studio_comments studio_observations studio_observation_events studio_study_steps studio_publications studio_publication_events studio_tool_preferences studio_requirement_sets studio_requirement_checks studio_quantity_adjustments user_recovery_codes project_support_grants invitations account_tokens audit_log mail_outbox"
 for t in $TABLES; do
   a="$(psql -h "$HOST" -U "$USER" -d "$SRC" -tAc "SELECT count(*) FROM $t")"
   b="$(psql -h "$HOST" -U "$USER" -d "$DST" -tAc "SELECT count(*) FROM $t")"
@@ -33,6 +33,13 @@ done
 t="$(psql -h "$HOST" -U "$USER" -d "$DST" -tAc "SELECT count(*) FROM pg_trigger WHERE tgname IN ('studio_revisions_no_update', 'studio_observation_events_no_update', 'studio_publication_events_no_update', 'studio_publication_events_no_delete', 'studio_publications_no_delete', 'studio_requirement_sets_no_update', 'studio_requirement_checks_no_update', 'studio_quantity_adjustments_no_update') AND tgenabled <> 'D'")"
 if [ "$t" != "8" ]; then echo "❌ déclencheurs d'immuabilité Studio absents après restauration ($t / 8)"; exit 1; fi
 echo "✓ Studio : révisions, variantes, commentaires, observations, publications identiques ; déclencheurs d'immuabilité présents"
+# Gestion des comptes (#253) : journal d'audit identique et toujours append-only après restauration.
+a="$(psql -h "$HOST" -U "$USER" -d "$SRC" -tAc "SELECT coalesce(md5(string_agg(id || ':' || action || ':' || coalesce(actor_id, '-') || ':' || md5(metadata::text) || ':' || created_at, ',' ORDER BY id)), 'vide') FROM audit_log")"
+b="$(psql -h "$HOST" -U "$USER" -d "$DST" -tAc "SELECT coalesce(md5(string_agg(id || ':' || action || ':' || coalesce(actor_id, '-') || ':' || md5(metadata::text) || ':' || created_at, ',' ORDER BY id)), 'vide') FROM audit_log")"
+if [ "$a" != "$b" ]; then echo "❌ journal d'audit différent après restauration"; exit 1; fi
+t="$(psql -h "$HOST" -U "$USER" -d "$DST" -tAc "SELECT count(*) FROM pg_trigger WHERE tgname IN ('audit_log_no_update', 'audit_log_no_delete') AND tgenabled <> 'D'")"
+if [ "$t" != "2" ]; then echo "❌ déclencheurs append-only du journal d'audit absents après restauration ($t / 2)"; exit 1; fi
+echo "✓ comptes : journal d'audit identique, déclencheurs append-only présents"
 # Comparaison ligne à ligne de chaque projet Studio (outil R.1-03) quand Node est disponible.
 if command -v node > /dev/null 2>&1 && [ -f "$(dirname "$0")/validation/studio-compare-restore.mjs" ]; then
   PORT_PG="${PGPORT:-5432}"
