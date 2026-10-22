@@ -100,13 +100,13 @@ Bloqué : DB-3 (UM-11). Points d'arrêt 🛑 2, D7-final et final : revue du ma�
 - UM-11 : DB-3 bloqué, procédure dans RUNBOOK §14.
 - UM-15 : le prochain déploiement exige `FADI_APP_DB_PASSWORD` dans `.env.deploy` (RUNBOOK §2–4).
 - Annexe C (Infomaniak, DNS, clé de chiffrement, premier admin) : hors code.
-- CI de la PR : à constater.
+- CI de la PR #255 : **verte** sur `81af007` (run CI 39840078841 et 5 autres workflows, 2026-10-22 19:42 UTC). Le premier passage (`cf3d56f`) échouait sur la tranche `parcours` : le scénario attendait l'ancien refus du partage vers une adresse sans compte, puis des compteurs de cache invalidés par la purge sur 401. Corrigé dans `81af007`.
 
 ## Liens de suivi
 
 - Issue : [#253](https://github.com/RachEma-ux/Fadi/issues/253)
 - Branche de tâche : `ccr-266c1e83-7780ml` (imposée par la session, UM-12).
-- Pull Request : ouverte en fin de chantier, non fusionnée (lien dans HANDOFF.md).
+- Pull Request : [#255](https://github.com/RachEma-ux/Fadi/pull/255) (brouillon, non fusionnée).
 
 ## Préconditions de clôture
 

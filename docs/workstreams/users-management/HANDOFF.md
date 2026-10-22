@@ -6,20 +6,18 @@ Mis à jour : 2026-10-22 (UTC).
 
 - Chantier : users-management
 - Issue : [#253](https://github.com/RachEma-ux/Fadi/issues/253)
-- Branche / PR actives : `ccr-266c1e83-7780ml` ; PR vers `main` ouverte en fin de session (non fusionnée).
+- Branche / PR actives : `ccr-266c1e83-7780ml` ; [PR #255](https://github.com/RachEma-ux/Fadi/pull/255) vers `main` (brouillon, non fusionnée).
 - Dernier commit vérifié : à relever en début de session ; ne pas réutiliser un SHA périmé.
 
 ## Dernier état vérifié
 
 - Phases 0 à 6 et amendement D-7 implémentés ; vérifiés localement sur PostGIS 16 réel et Mailpit (voir STATUS.md :
   31 + 109 + 48 contrôles, 229 tests purs API, tests web, typecheck, build).
-- CI de la PR : **à constater** au début de la reprise.
+- CI de la PR #255 verte sur `81af007` (2026-10-22 19:42 UTC, 6 workflows) ; revérifier le HEAD courant à la reprise.
 
 ## Prochaine action
 
-- Lire la CI de la PR (jobs `validate`, `e2e (complements)` pour les recettes Comptes, `e2e (parcours)` pour la
-  restauration, `image` pour le démarrage en `fadi_app`, `Studio V1` pour le profil jetable adapté à D-7) ; corriger
-  tout échec.
+- Vérifier que la CI reste verte sur le HEAD courant.
 - Revue humaine (🛑 phases 2, 3, 4, D7-final) puis décision de fusion par le maître d'ouvrage ; aucun déploiement sans
   accord explicite (RUNBOOK.md pour la suite).
 
