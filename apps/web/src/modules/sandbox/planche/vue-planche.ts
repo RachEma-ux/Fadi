@@ -573,10 +573,11 @@ export class VuePlanche {
     }
   }
 
-  private ajouterPastille(point: Vec3): void {
+  private ajouterPastille(point: Vec3, variante?: "gras", couleur?: string): void {
     if (this.pastilles.some((q) => Math.hypot(q.point.x - point.x, q.point.y - point.y, q.point.z - point.z) < 1e-9)) return;
     const el = document.createElement("div");
-    el.className = "planche-point-reference";
+    el.className = variante ? `planche-point-reference planche-point-reference-${variante}` : "planche-point-reference";
+    if (couleur) el.style.color = couleur;
     this.surcouche.append(el);
     this.pastilles.push({ el, point });
   }
@@ -711,6 +712,19 @@ export class VuePlanche {
       }
       const trace = vue.apercu.lignes.find((l) => l.length === 2);
       if (trace && vue.inference) this.ajouterPastille(trace[0] as Vec3);
+      // Angle droit (Ligne perpendiculaire à une arête) : petit carré à l'intersection, taille écran constante.
+      if (vue.angleDroit && vue.inference) {
+        const { sommet, u, v } = vue.angleDroit;
+        const k = this.metresParPixel(sommet) * 12;
+        const S = v3(sommet);
+        const U = v3(u).multiplyScalar(k);
+        const V = v3(v).multiplyScalar(k);
+        const carre = new THREE.Line(new THREE.BufferGeometry().setFromPoints([S.clone().add(U), S.clone().add(U).add(V), S.clone().add(V)]), new THREE.LineBasicMaterial({ color: vue.inference.couleur, depthTest: false }));
+        carre.renderOrder = 10;
+        this.groupeApercu.add(carre);
+        // Point d'intersection en gras : se repère d'un coup d'œil sur la ligne rose.
+        this.ajouterPastille(sommet, "gras", vue.inference.couleur);
+      }
       for (const e of vue.apercu.etiquettes ?? []) {
         const el = document.createElement("div");
         el.className = "planche-etiquette planche-etiquette-apercu";
