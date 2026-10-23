@@ -353,7 +353,9 @@ try {
   await openHome(unknown.id);
   await overview(unknown.id).waitFor();
   check("rôle inconnu : pas de commande de progression dans la carte", await overview(unknown.id).locator(".dossier-primary-action").count() === 0);
-  await page.unroute(projectUrl);
+  // Attendre la fin du gestionnaire en cours (route.fetch) avant de le retirer : sans cela, sa réponse peut arriver sur
+  // une requête déjà rendue au réseau (« Route is already handled! », vu en CI sur la PR #255).
+  await page.unroute(projectUrl, { behavior: "wait" });
 
   // L'identité du dossier elle-même peut manquer : l'action doit reprendre
   // cette lecture, respecter le refus d'accès ou renouveler la session.

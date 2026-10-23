@@ -166,8 +166,11 @@ Preuves locales après correction :
   dont les 2 nouveaux (« 4. revue Codex »), API **563 tests, dont 116 dans les 12 suites DB-3** ; job `image` vert
   (migration à usage unique, refus de l'identifiant de migration dans l'API, démarrage en `fadi_app`) ; `e2e (parcours)`
   vert sur cette tête.
-- `e2e (parcours)` en échec sur `6a9d1e7` (commit de documentation) : course de `apps/web/e2e/accueils-design.mjs:351`
-  (`route.fulfill: Route is already handled!`), hors de cette PR ; commentaire sur la PR et une relance demandée.
+- `e2e (parcours)` en échec sur `6a9d1e7` puis `a5aa183` (commits de documentation) : course de
+  `apps/web/e2e/accueils-design.mjs:351` (`route.fulfill: Route is already handled!`) — `page.unroute` retire le
+  gestionnaire pendant son `route.fetch()`. Verte sur `873f740`, `fcb0dd1` et `24ed965`. En local, 5 exécutions sur `main`
+  et 5 sur la branche, bases neuves : toutes vertes (78 ✓). Correctif de robustesse sans retrait de contrôle :
+  `page.unroute(projectUrl, { behavior: "wait" })`.
 
 ## Écarts au plan (le concept et D-7 priment)
 
