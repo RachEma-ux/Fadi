@@ -1,7 +1,7 @@
 #!/bin/bash
 # Tests de fadi-preprod sans root ni démon Docker : dispositions jetables, doubles de docker / curl (doubles/), rôles
 # simulés par SUDO_USER. Couvre la garde d'isolation (cas normaux + 10 configurations dangereuses), la propagation des
-# échecs (build, check, smoke, backup, restore-check, migrate, e2e), l'extraction des rapports (liens, chemins),
+# échecs (build, check, smoke, backup, restore-check, migrate, e2e), la séparation D-7 (service migrate, app en fadi_app), l'extraction des rapports (liens, chemins),
 # les droits des résultats, la séparation administrateur / opérateur et l'intégrité du code approuvé ; puis lance
 # run-auto.sh (déploiement automatique, fadi-preprod-auto).
 # Usage : deploy/preprod/tests/run.sh   (requiert bash, git, python3, le client docker compose)
@@ -29,7 +29,7 @@ dispo() {
   git -C "$B/src" -c user.name=test -c user.email=test@invalid commit -qm dispo
   git -C "$B/src" rev-parse HEAD > "$B/approved-commit"
   chmod -R u=rwX,go=rX "$B/src"   # comme `sync` : code lisible par l'image, BASE reste en 0700
-  printf 'PREPROD_POSTGRES_PASSWORD=test-a\nPREPROD_ARCHIVE_SIGNING_KEY=test-b\n' > "$B/env/.env.preprod"
+  printf 'PREPROD_POSTGRES_PASSWORD=test-a\nPREPROD_ARCHIVE_SIGNING_KEY=test-b\nPREPROD_FADI_APP_DB_PASSWORD=test-c\n' > "$B/env/.env.preprod"
   chmod 0600 "$B/env/.env.preprod"
   echo "$B"
 }
@@ -77,16 +77,37 @@ MUT=(
   "volume de production|fadi-preprod-db:/var/lib|fadi-db:/var/lib"
   "montage de l'hôte|      - fadi-preprod-out:/out|      - /:/host${NL}      - fadi-preprod-out:/out"
   "réseau de l'hôte|    network_mode: \"service:app\"|    network_mode: host"
-  "migration au démarrage|MIGRATE_ON_START: \${MIGRATE_ON_START:-0}|MIGRATE_ON_START: \"1\""
+  "migration au démarrage|MIGRATE_ON_START: \"0\"|MIGRATE_ON_START: \"1\""
+  "app en superutilisateur (D-7)|postgresql://fadi_app:|postgresql://fadi:"
+  "identifiant de migration donné à app|      APP_PUBLIC_URL:|      DATABASE_MIGRATION_URL: postgresql://fadi:x@db:5432/fadi${NL}      APP_PUBLIC_URL:"
+  "mode migration dans app|      APP_PUBLIC_URL:|      MIGRATE_ONLY: \"1\"${NL}      APP_PUBLIC_URL:"
+  "app sans attendre la migration|condition: service_completed_successfully|condition: service_started"
+  "migrate relancé en boucle|    restart: \"no\"|    restart: unless-stopped"
+  "migrate avec un port|    restart: \"no\"|    restart: \"no\"${NL}    ports:${NL}      - \"127.0.0.1:3102:3001\""
+  "migrate sur le réseau front|      - internal${NL}    mem_limit: 1g|      - internal${NL}      - front${NL}    mem_limit: 1g"
+  "migrate sans MIGRATE_ONLY|      MIGRATE_ONLY: \"1\"${NL}      NODE_ENV|      NODE_ENV"
   "base de production|@db:5432/fadi${NL}      WEB_ORIGIN: \${PREPROD|@172.18.0.2:5432/fadi${NL}      WEB_ORIGIN: \${PREPROD"
   "réseau de production externe|    name: fadi-preprod-front|    name: app_default${NL}    external: true"
   "image non autorisée|image: postgis/postgis:16-3.4${NL}    restart|image: postgres:16${NL}    restart"
   "volume de production externe|  fadi-preprod-db:${NL}    name: fadi-preprod-db|  fadi-preprod-db:${NL}    name: app_fadi-db${NL}    external: true"
 )
+# D-7 : refus attendus de la garde elle-même (motif exact), pas d'une configuration invalide.
+declare -A MOTIF=(
+  ["migration au démarrage"]="MIGRATE_ON_START=1 (attendu 0)"
+  ["app en superutilisateur (D-7)"]="DATABASE_URL doit utiliser le rôle fadi_app"
+  ["identifiant de migration donné à app"]="DATABASE_MIGRATION_URL réservé au service migrate"
+  ["mode migration dans app"]="MIGRATE_ONLY réservé au service migrate"
+  ["app sans attendre la migration"]="doit dépendre de migrate"
+  ["migrate relancé en boucle"]="service migrate : restart"
+  ["migrate avec un port"]="service migrate : aucun port publié"
+  ["migrate sur le réseau front"]="attendu internal seul"
+  ["migrate sans MIGRATE_ONLY"]="MIGRATE_ONLY=1 exigé"
+)
 for m in "${MUT[@]}"; do
-  IFS='|' read -r lib a b <<< "$m"
+  # Découpage sans `read` : les motifs contiennent des sauts de ligne (${NL}), que `read` tronquerait.
+  lib=${m%%|*}; reste=${m#*|}; a=${reste%%|*}; b=${reste#*|}
   B=$(dispo "mut-$RANDOM$RANDOM")
-  if muter "$a" "$b"; then attendu nz "garde refuse : $lib" -- fp garde
+  if muter "$a" "$b"; then attendu nz "garde refuse : $lib" "${MOTIF[$lib]:-}" -- fp garde
   else ko=$((ko + 1)); echo "✗ mutation non appliquée : $lib"; fi
 done
 
@@ -98,7 +119,7 @@ attendu 0  "build avec version de l'image" -- fpe MOCK_TRACE="$T/trace-build" bu
 grep ' build app recette$' "$T/trace-build" | grep -Eq "FADI_BUILD_COMMIT=$SHA_CODES FADI_BUILD_DATE=[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z " \
   && { ok=$((ok + 1)); echo "✓ build : commit complet et date UTC fournis à l'image (GET /version)"; } \
   || { ko=$((ko + 1)); echo "✗ arguments de version absents : $(grep ' build ' "$T/trace-build")"; }
-FADI_SRC=$B/src FADI_COMMIT=x FADI_BUILD_COMMIT=$SHA_CODES FADI_BUILD_DATE=2026-10-20T00:00:00Z PREPROD_POSTGRES_PASSWORD=x PREPROD_ARCHIVE_SIGNING_KEY=x \
+FADI_SRC=$B/src FADI_COMMIT=x FADI_BUILD_COMMIT=$SHA_CODES FADI_BUILD_DATE=2026-10-20T00:00:00Z PREPROD_POSTGRES_PASSWORD=x PREPROD_ARCHIVE_SIGNING_KEY=x PREPROD_FADI_APP_DB_PASSWORD=x \
   docker compose -f "$B/src/deploy/preprod/compose.yml" config --format json 2>/dev/null \
   | python3 -I -c 'import json, sys; a = json.load(sys.stdin)["services"]["app"]["build"]["args"]; sys.exit(0 if a == {"FADI_COMMIT": sys.argv[1], "FADI_BUILD_DATE": "2026-10-20T00:00:00Z"} else 1)' "$SHA_CODES" \
   && { ok=$((ok + 1)); echo "✓ compose : arguments FADI_COMMIT / FADI_BUILD_DATE transmis au Dockerfile"; } \
@@ -110,19 +131,24 @@ attendu 0  "backup réussi" -- fp backup
 attendu nz "backup en échec → code non nul" "échec simulé (backup)" -- fpe MOCK_FAIL=run-backup backup
 attendu 0  "restore-check réussi" -- fp restore-check
 attendu nz "restore-check en échec → code non nul" "échec simulé (restore)" -- fpe MOCK_FAIL=run-restore restore-check
-attendu 0  "migrate réussi" "tables publiques" -- fp migrate
-attendu nz "migrate sans « Schema applied » → code non nul" "Schema applied" -- fpe MOCK_LOGS= migrate
+attendu 0  "migrate réussi (service migrate, puis app en fadi_app)" "fadi_app peut créer : false" -- fp migrate
+attendu nz "migrate sans « Migration terminée » → code non nul" "Migration terminée" -- fpe 'MOCK_MIGRATE_LOG=Schema applied (init.sql).' migrate
+attendu nz "migrate sans « Schema applied » → code non nul" "Schema applied" -- fpe 'MOCK_MIGRATE_LOG=Migration terminée (MIGRATE_ONLY) : arrêt sans écouter.' migrate
+attendu nz "migration réussie mais fadi_app peut créer dans public → code non nul" "fadi_app peut créer dans public" -- fpe MOCK_FADI_APP_CREATE=true migrate
 : > "$T/trace-ko"
-attendu nz "migrate en échec : application rétablie en MIGRATE_ON_START=0" "laissée arrêtée" -- fpe MOCK_LOGS= MOCK_TRACE="$T/trace-ko" migrate
-tail -1 "$T/trace-ko" | grep -q '^MIGRATE_ON_START=0 .* up --no-start --no-deps --force-recreate app$' \
-  && { ok=$((ok + 1)); echo "✓ dernier appel Docker : recréation de app en MIGRATE_ON_START=0, sans démarrage"; } \
+attendu nz "service migrate en échec : supprimé, application non redémarrée" "application non redémarrée" -- fpe MOCK_FAIL=run-migrate MOCK_TRACE="$T/trace-ko" migrate
+tail -1 "$T/trace-ko" | grep -q ' rm -f -s migrate$' && ! grep -q 'force-recreate app' "$T/trace-ko" \
+  && { ok=$((ok + 1)); echo "✓ échec de la migration : dernier appel Docker = suppression du service migrate, app jamais recréée"; } \
   || { ko=$((ko + 1)); echo "✗ rétablissement absent :"; tail -3 "$T/trace-ko" | sed 's/^/    /'; }
 : > "$T/trace-ok"
-attendu 0 "migrate réussi : retour à MIGRATE_ON_START=0" -- fpe MOCK_TRACE="$T/trace-ok" migrate
-grep -q -- '--no-start' "$T/trace-ok" && { ko=$((ko + 1)); echo "✗ rétablissement déclenché sur un succès"; } \
-  || { grep 'force-recreate app' "$T/trace-ok" | tail -1 | grep -q '^MIGRATE_ON_START=0 ' \
-       && { ok=$((ok + 1)); echo "✓ migration réussie : application finale en MIGRATE_ON_START=0, aucun rétablissement"; } \
-       || { ko=$((ko + 1)); echo "✗ application finale pas en MIGRATE_ON_START=0"; }; }
+attendu 0 "migrate réussi : ordre migrate puis app" -- fpe MOCK_TRACE="$T/trace-ok" migrate
+python3 -I - "$T/trace-ok" <<'PY' && { ok=$((ok + 1)); echo "✓ migration réussie : run migrate avant app, app sans dépendances, aucun rétablissement"; } || { ko=$((ko + 1)); echo "✗ ordre migrate / app"; cat "$T/trace-ok" | sed 's/^/    /'; }
+import sys
+l = open(sys.argv[1]).read().splitlines()
+i = next(i for i, x in enumerate(l) if x.endswith("run --rm --no-deps -T migrate"))
+j = next(j for j, x in enumerate(l) if x.endswith("up -d --no-deps --force-recreate app"))
+sys.exit(0 if i < j and not any(x.endswith("rm -f -s migrate") for x in l) else 1)
+PY
 attendu nz "up en échec → code non nul" -- fpe MOCK_FAIL=up up
 attendu 0  "e2e réussi (2 scénarios)" "2 réussi(s)" -- fp e2e accueils-design parcours-scenario
 attendu nz "e2e avec un scénario en échec → code non nul" "échecs : parcours-scenario" -- fpe MOCK_FAIL=e2e-parcours-scenario e2e accueils-design parcours-scenario
@@ -193,8 +219,38 @@ attendu nz "commande inconnue refusée" "commande inconnue" -- fp rm -rf
 rm "$B/env/.env.preprod"
 attendu 0 "administrateur : init-env crée les secrets" "0600" -- fpa init-env
 [ "$(stat -c %a "$B/env/.env.preprod")" = 600 ] && ! grep -q 'test-a' "$B/env/.env.preprod" \
-  && { ok=$((ok + 1)); echo "✓ secrets générés en 0600"; } || { ko=$((ko + 1)); echo "✗ secrets générés"; }
-attendu nz "init-env n'écrase pas des secrets existants" "rien n'est écrasé" -- fpa init-env
+  && grep -Eq '^PREPROD_FADI_APP_DB_PASSWORD=[0-9a-f]{64}$' "$B/env/.env.preprod" \
+  && grep -Eq '^PREPROD_FADI_ENCRYPTION_KEY=[A-Za-z0-9+/]{43}=$' "$B/env/.env.preprod" \
+  && { ok=$((ok + 1)); echo "✓ secrets générés en 0600, dont fadi_app et la clé de chiffrement"; } || { ko=$((ko + 1)); echo "✗ secrets générés"; }
+empreinte=$(sha256sum "$B/env/.env.preprod")
+attendu 0 "init-env sur des secrets complets : rien n'est écrasé" "rien n'est écrasé" -- fpa init-env
+[ "$(sha256sum "$B/env/.env.preprod")" = "$empreinte" ] \
+  && { ok=$((ok + 1)); echo "✓ secrets complets inchangés octet pour octet"; } || { ko=$((ko + 1)); echo "✗ secrets modifiés"; }
+B=$(dispo ancien)
+printf 'PREPROD_POSTGRES_PASSWORD=ancien-a\nPREPROD_ARCHIVE_SIGNING_KEY=ancien-b\nPREPROD_WEB_ORIGIN=https://preprod.example.invalid' > "$B/env/.env.preprod"
+cp "$B/env/.env.preprod" "$T/ancien.env"
+sortie=$(fpa init-env 2>&1); rc=$?
+python3 -I - "$B/env/.env.preprod" "$T/ancien.env" "$rc" "$sortie" <<'PY' && { ok=$((ok + 1)); echo "✓ init-env sur d'anciens secrets : clés manquantes ajoutées, existantes intactes, valeurs jamais affichées"; } || { ko=$((ko + 1)); echo "✗ init-env sur d'anciens secrets :"; echo "$sortie" | sed 's/^/    /'; }
+import os, re, stat, sys
+nouveau, ancien, rc, sortie = open(sys.argv[1]).read(), open(sys.argv[2]).read(), sys.argv[3], sys.argv[4]
+lignes = nouveau.splitlines()
+ajout = dict(l.split("=", 1) for l in lignes[3:])
+ok = (rc == "0" and lignes[:3] == ancien.splitlines() and len(lignes) == 5
+      and re.fullmatch(r"[0-9a-f]{64}", ajout.get("PREPROD_FADI_APP_DB_PASSWORD", ""))
+      and re.fullmatch(r"[A-Za-z0-9+/]{43}=", ajout.get("PREPROD_FADI_ENCRYPTION_KEY", ""))
+      and stat.S_IMODE(os.stat(sys.argv[1]).st_mode) == 0o600
+      and not any(v in sortie for v in list(ajout.values()) + ["ancien-a", "ancien-b"])
+      and "PREPROD_FADI_APP_DB_PASSWORD" in sortie)
+sys.exit(0 if ok else 1)
+PY
+B=$(dispo initenv644)
+chmod 0644 "$B/env/.env.preprod"; cp "$B/env/.env.preprod" "$T/644.env"
+attendu nz "init-env refuse des secrets lisibles par d'autres, sans rien modifier" "0600" -- fpa init-env
+cmp -s "$B/env/.env.preprod" "$T/644.env" && [ ! -e "$B/env/.env.preprod.tmp" ] \
+  && { ok=$((ok + 1)); echo "✓ secrets 0644 non modifiés, aucun fichier temporaire laissé"; } || { ko=$((ko + 1)); echo "✗ secrets 0644 modifiés"; }
+B=$(dispo sansfadiapp)
+sed -i '/^PREPROD_FADI_APP_DB_PASSWORD=/d' "$B/env/.env.preprod"
+attendu nz "secrets sans PREPROD_FADI_APP_DB_PASSWORD : refus, init-env indiqué" "fadi-preprod init-env" -- fp up
 B=$(dispo approuve)
 echo 0123456789abcdef0123456789abcdef01234567 > "$B/approved-commit"
 attendu nz "code différent du commit approuvé refusé" "n'est pas le commit approuvé" -- fp build
@@ -212,10 +268,10 @@ chmod g+w "$B/src"
 attendu nz "src modifiable par le groupe refusée" "modifiable par le groupe" -- fp build
 B=$(dispo envmigrate)
 echo 'MIGRATE_ON_START=1' >> "$B/env/.env.preprod"; : > "$T/trace-env"
-attendu 0 "MIGRATE_ON_START=1 dans les secrets : sans effet" -- fpe MOCK_TRACE="$T/trace-env" up
-grep 'up -d db app' "$T/trace-env" | grep -q '^MIGRATE_ON_START=0 ' \
-  && { ok=$((ok + 1)); echo "✓ up impose MIGRATE_ON_START=0 malgré le fichier d'environnement"; } \
-  || { ko=$((ko + 1)); echo "✗ MIGRATE_ON_START non imposé : $(grep 'up -d' "$T/trace-env")"; }
+attendu 0 "MIGRATE_ON_START=1 dans les secrets : sans effet (valeur fixe de compose.yml, contrôlée par la garde)" -- fpe MOCK_TRACE="$T/trace-env" up
+grep -q 'up -d --no-deps app$' "$T/trace-env" && ! grep -q ' migrate$' "$T/trace-env" \
+  && { ok=$((ok + 1)); echo "✓ up démarre l'application sans dépendances et ne lance jamais la migration"; } \
+  || { ko=$((ko + 1)); echo "✗ up : $(grep -E 'up -d|migrate' "$T/trace-env")"; }
 B=$(dispo illisible)
 chmod 0600 "$B/src/deploy/preprod/compose.edge.yml"
 attendu nz "code illisible par l'image (EACCES) refusé" "code illisible par l'image" -- fp build
@@ -228,7 +284,7 @@ B=$(dispo source)
 git clone -q --bare "$B/src" "$T/depot.git"
 SHA=$(git -C "$B/src" rev-parse HEAD)
 B=$T/sync; mkdir -m 0700 "$B" "$B/env"
-printf 'PREPROD_POSTGRES_PASSWORD=test-a\nPREPROD_ARCHIVE_SIGNING_KEY=test-b\n' > "$B/env/.env.preprod"; chmod 0600 "$B/env/.env.preprod"
+printf 'PREPROD_POSTGRES_PASSWORD=test-a\nPREPROD_ARCHIVE_SIGNING_KEY=test-b\nPREPROD_FADI_APP_DB_PASSWORD=test-c\n' > "$B/env/.env.preprod"; chmod 0600 "$B/env/.env.preprod"
 attendu 0 "sync d'un commit (dépôt local de test)" "commit approuvé et figé" -- env FADI_PREPROD_REPO="$T/depot.git" FADI_PREPROD_BASE="$B" FADI_PREPROD_TEST_BIN="$ICI/doubles" SUDO_USER= "$SCRIPT" sync "$SHA"
 [ "$(stat -c %a "$B/src/deploy/preprod/compose.yml")" = 644 ] && [ "$(stat -c %a "$B/src/deploy/preprod/fadi-preprod")" = 755 ] \
   && [ "$(stat -c %a "$B")" = 700 ] && [ "$(cat "$B/approved-commit")" = "$SHA" ] \

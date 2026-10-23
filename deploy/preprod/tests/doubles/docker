@@ -1,10 +1,11 @@
 #!/bin/bash
 # Double de docker pour les tests de fadi-preprod : `compose config` est rendu par le vrai docker (sans démon) ; les
 # autres verbes réussissent ou échouent selon MOCK_FAIL (liste de mots : build up run-check run-backup run-restore
-# e2e-<scénario>). MOCK_LOGS remplace le journal de l'application, MOCK_TAR l'archive des rapports ; MOCK_TRACE reçoit
-# chaque appel (avec MIGRATE_ON_START et les arguments de version de l'image).
+# run-migrate e2e-<scénario>). MOCK_MIGRATE_LOG remplace la sortie du service migrate, MOCK_FADI_APP_CREATE le droit
+# CREATE de fadi_app relu après migration, MOCK_TAR l'archive des rapports ; MOCK_TRACE reçoit chaque appel (avec les
+# arguments de version de l'image).
 orig=("$@")
-[ -n "${MOCK_TRACE:-}" ] && echo "MIGRATE_ON_START=${MIGRATE_ON_START:-} FADI_BUILD_COMMIT=${FADI_BUILD_COMMIT:-} FADI_BUILD_DATE=${FADI_BUILD_DATE:-} $*" >> "$MOCK_TRACE"
+[ -n "${MOCK_TRACE:-}" ] && echo "FADI_BUILD_COMMIT=${FADI_BUILD_COMMIT:-} FADI_BUILD_DATE=${FADI_BUILD_DATE:-} $*" >> "$MOCK_TRACE"
 has() { [[ " ${MOCK_FAIL:-} " == *" $1 "* ]]; }
 fail() { echo "double docker : échec simulé ($1)" >&2; exit 3; }
 if [ "${1:-}" != compose ]; then
@@ -18,13 +19,19 @@ cmdline="${orig[*]}"
 case "$verb" in
   config) exec /usr/bin/docker "${orig[@]}" ;;
   build) has build && fail build; echo "build ok" ;;
-  up|down) has "$verb" && fail "$verb"; echo "$verb ok" ;;
+  up|down|rm|stop) has "$verb" && fail "$verb"; echo "$verb ok" ;;
   ps) echo "cid0001" ;;
-  logs) printf '%s\n' "${MOCK_LOGS-Schema applied (init.sql).}" ;;
-  exec) echo "tables publiques : 42" ;;
+  logs) echo "journal" ;;
+  exec) echo "tables publiques : 42 ; fadi_app peut créer : ${MOCK_FADI_APP_CREATE:-false}" ;;
   run)
     if [[ $cmdline == *"tar --null"* ]]; then
       if [ -n "${MOCK_TAR:-}" ]; then cat "$MOCK_TAR"; else tar -cf - -T /dev/null; fi; exit 0
+    fi
+    if [[ $cmdline =~ \ migrate$ ]]; then
+      has run-migrate && { echo "Schema applied (init.sql)."; fail migrate; }
+      printf '%s\n' "${MOCK_MIGRATE_LOG-Schema applied (init.sql).
+D-7 : mot de passe appliqué pour fadi_app.
+Migration terminée (MIGRATE_ONLY) : arrêt sans écouter.}"; exit 0
     fi
     [[ $cmdline == *"npm run typecheck"* ]] && has run-check && fail check
     [[ $cmdline == *"backup.sh"* ]] && has run-backup && fail backup
