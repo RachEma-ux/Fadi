@@ -63,7 +63,7 @@ parcoursStepsRouter.get("/", async (req, res) => {
  * téléchargeable — `Harmonie_Choix_Parcours_V7.html`.
  */
 parcoursStepsRouter.get("/harmonie/rapport", async (req, res) => {
-  const project = await projectOr404(req, res, "read");
+  const project = await projectOr404(req, res, "export");
   if (!project) return;
   const now = new Date();
   const ctx = await loadStepContext(db, project);
@@ -81,7 +81,7 @@ parcoursStepsRouter.get("/:stepNumber", async (req, res) => {
 
 /** « Rapport de cette étape » (`stage-report`) : `Harmonie_Etape_NN_V7.html`. */
 parcoursStepsRouter.get("/:stepNumber/harmonie/rapport", async (req, res) => {
-  const project = await projectOr404(req, res, "read");
+  const project = await projectOr404(req, res, "export");
   if (!project) return;
   const def = stepOr404(req.params["stepNumber"] as string, res);
   if (!def) return;

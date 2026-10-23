@@ -5,7 +5,8 @@
  *
  * Ce script ne contourne pas la garde : il produit exactement ce qu'elle vérifie (apps/api/src/testing/) —
  *  - un rôle de test sans privilège d'administration (ni superuser, createdb, createrole, replication, bypassrls),
- *    qui lit et écrit les tables de `public` (et peut y créer les tables qu'une suite de migration reconstitue) ;
+ *    qui lit et écrit les tables de `public` (et peut y créer les tables qu'une suite de migration reconstitue), et
+ *    celles des schémas `auth` / `admin` de la gestion des comptes (D-7), journal d'audit en lecture et ajout seulement ;
  *  - le marqueur `fadi_test_meta.provisioning`, propriété de l'administrateur, lisible et non modifiable par le
  *    rôle de test ;
  *  - un descripteur signé Ed25519 (domaine `FADI-TEST-DATABASE/v1\0`, au plus 55 minutes), lié au run, au commit,
@@ -85,6 +86,18 @@ try {
   await sql.query(`GRANT USAGE, CREATE ON SCHEMA public TO ${ROLE}`);
   await sql.query(`GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES ON ALL TABLES IN SCHEMA public TO ${ROLE}`);
   await sql.query(`GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA public TO ${ROLE}`);
+  // Gestion des comptes (D-7, #253) : tables des comptes (`auth`) et d'audit / d'exploitation (`admin`), mêmes droits
+  // que `public` ; le journal d'audit reste append-only pour le rôle de test (SELECT, INSERT seulement).
+  for (const schema of ["auth", "admin"]) {
+    const { rowCount } = await sql.query("SELECT 1 FROM pg_catalog.pg_namespace WHERE nspname = $1", [schema]);
+    if (!rowCount) continue;
+    await sql.query(`GRANT USAGE ON SCHEMA ${schema} TO ${ROLE}`);
+    await sql.query(`GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES ON ALL TABLES IN SCHEMA ${schema} TO ${ROLE}`);
+    await sql.query(`GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA ${schema} TO ${ROLE}`);
+  }
+  if ((await sql.query("SELECT to_regclass('admin.audit_log') IS NOT NULL AS ok")).rows[0].ok) {
+    await sql.query(`REVOKE UPDATE, DELETE, TRUNCATE ON admin.audit_log FROM ${ROLE}`);
+  }
   // Marqueur : propriété de l'administrateur, lecture seule pour le rôle de test.
   await sql.query("CREATE SCHEMA IF NOT EXISTS fadi_test_meta");
   await sql.query(`CREATE TABLE IF NOT EXISTS fadi_test_meta.provisioning (

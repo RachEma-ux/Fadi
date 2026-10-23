@@ -33,9 +33,9 @@
  */
 import { Router } from "express";
 import { db } from "../db/client.js";
-import { and, desc, eq, gt, inArray, isNull, ne, or } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import {
-  atelierCommands, atelierLockEvents, atelierLocks, drawingExports, projectComments, projectMembers, projects, studioComments, studioObservationDecisions, studioObservationEvents,
+  atelierCommands, atelierLockEvents, auditLog, atelierLocks, drawingExports, projectComments, projectMembers, projects, studioComments, studioObservationDecisions, studioObservationEvents,
   studioObservations, studioObservationTaskEvents, studioObservationTasks, studioStudies, studioVariants, users,
 } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
@@ -93,6 +93,29 @@ export async function notificationsFor(userId: string, email: string): Promise<{
 
   // Commentaires des autres sur vos projets et sur ceux qui vous sont partagés, 30 derniers jours.
   const owned = await db.select({ id: projects.id }).from(projects).where(eq(projects.ownerId, userId));
+  // Accès support (D-2) : le propriétaire est prévenu de la première ouverture de son projet par l'administrateur.
+  if (owned.length) {
+    const opened = await db
+      .select({ grantId: sql<string>`${auditLog.metadata}->>'grantId'`, at: sql<string>`min(${auditLog.createdAt})::text`, projectId: auditLog.targetId, adminEmail: users.email, code: projects.code, name: projects.name })
+      .from(auditLog)
+      .innerJoin(projects, eq(projects.id, auditLog.targetId))
+      .innerJoin(users, eq(users.id, auditLog.actorId))
+      .where(and(eq(auditLog.action, "support.accessed"), eq(auditLog.targetType, "project"), eq(projects.ownerId, userId), gt(auditLog.createdAt, since)))
+      .groupBy(sql`${auditLog.metadata}->>'grantId'`, auditLog.targetId, users.email, projects.code, projects.name);
+    for (const o of opened) {
+      items.push({
+        id: `support:${o.grantId}`,
+        at: new Date(o.at).toISOString(),
+        kind: "acces",
+        projectId: o.projectId ?? "",
+        projectCode: o.code,
+        projectName: o.name,
+        stepNumber: null,
+        text: `${o.adminEmail} (administrateur) a ouvert ${o.code} — ${o.name} avec l'accès support que vous avez accordé (lecture seule).`,
+        unread: false,
+      });
+    }
+  }
   const projectIds = [...new Set([...owned.map((p) => p.id), ...memberships.map((m) => m.project.id)])];
   if (projectIds.length) {
     const comments = await db

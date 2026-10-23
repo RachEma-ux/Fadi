@@ -483,7 +483,7 @@ atelierVersionsRouter.get("/publications/:publicationId", async (req, res) => {
 });
 
 atelierVersionsRouter.get("/publications/:publicationId/fichiers/:volumeId", async (req, res) => {
-  const project = await projectOr404(req, res, "read");
+  const project = await projectOr404(req, res, "export");
   if (!project) return;
   const pub = await publicationDe(project.id, req.params["publicationId"] as string);
   const doc = pub?.documents.find((d) => d.volumeId === req.params["volumeId"]);

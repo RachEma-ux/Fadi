@@ -11,7 +11,7 @@
  * typé par `@parcours/domain-model`. Mélanger les deux serait exactement
  * l'erreur de repères que `docs/architecture.md` interdit.
  */
-import { boolean, customType, date, doublePrecision, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { bigint, bigserial, boolean, customType, pgSchema, date, doublePrecision, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import type { ConclusionControle, EtatExecution, ExigenceStudio, GrandeurQuantite, ResultatControle, StudioDocument, StudioEnvelope, StudioFeuilleComposeeDefinition, StudioPhaseWorkflow, UniteQuantite } from "@parcours/atelier-model";
 
 /** Colonne PostGIS brute : on ne fait pas transiter la géométrie par du JS côté serveur, on la laisse en WKT/EWKT et on laisse Postgres faire le travail spatial. */
@@ -36,14 +36,131 @@ export const users = pgTable("users", {
   atelierEnsemblesAt: timestamp("atelier_ensembles_at", { withTimezone: true }),
   /** Préférences de notification du compte : `{ typesMasques, projetsMuets }` (lib/notification-preferences.ts) ; null tant que rien n'est réglé (tout est affiché). */
   notificationPreferences: jsonb("notification_preferences"),
+  // Gestion des comptes (docs/workstreams/users-management) — états stockés UM-2 ; « verrouillé » = `lockedUntil` futur.
+  status: text("status").$type<AccountStatus>().notNull().default("active"),
+  platformRole: text("platform_role").$type<PlatformRole>().notNull().default("user"),
+  emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
+  lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
+  passwordChangedAt: timestamp("password_changed_at", { withTimezone: true }),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  failedLoginCount: integer("failed_login_count").notNull().default(0),
+  lockedUntil: timestamp("locked_until", { withTimezone: true }),
+  /** D-5 : anonymisation 30 jours après cette date, sauf annulation. */
+  deletionRequestedAt: timestamp("deletion_requested_at", { withTimezone: true }),
+  /** D-6 : secret TOTP chiffré (lib/secret-box.ts) ; jamais en clair. */
+  totpSecretEnc: text("totp_secret_enc"),
+  totpEnabledAt: timestamp("totp_enabled_at", { withTimezone: true }),
+  /** Dernier pas TOTP accepté : un code déjà utilisé est refusé. */
+  totpLastStep: bigint("totp_last_step", { mode: "number" }),
+  termsAcceptedAt: timestamp("terms_accepted_at", { withTimezone: true }),
+  /** D-3 : réservée, aucune logique ne la lit. */
+  organizationId: text("organization_id"),
 }, (t) => [uniqueIndex("users_email_unique").on(t.email)]);
 
+export type AccountStatus = "active" | "suspended" | "closed";
+
+/**
+ * D-7 (docs/workstreams/users-management/AMENDEMENT-D7.md) : nouvelles tables des comptes dans le schéma `auth`,
+ * d'audit et d'exploitation dans `admin` ; les requêtes générées sont qualifiées (`"auth"."account_tokens"`).
+ */
+export const authSchema = pgSchema("auth");
+export const adminSchema = pgSchema("admin");
+export type PlatformRole = "user" | "admin";
+
+/** Session serveur : seule l'empreinte SHA-256 du jeton du cookie est stockée (UM-5). */
 export const sessions = pgTable("sessions", {
   id: text("id").primaryKey(),
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  /** Échéance glissante (inactivité). */
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-}, (t) => [index("sessions_user_id_idx").on(t.userId)]);
+  tokenHash: text("token_hash"),
+  lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
+  /** Plafond absolu (30 j utilisateur, 24 h administrateur). */
+  absoluteExpiresAt: timestamp("absolute_expires_at", { withTimezone: true }),
+  revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  userAgent: text("user_agent"),
+  ip: text("ip"),
+  /** Mot de passe vérifié, code de double authentification attendu : ne vaut pas authentification. */
+  mfaPending: boolean("mfa_pending").notNull().default(false),
+  /**
+   * Instant où cette session a prouvé la double authentification (code TOTP ou de secours à la connexion, ou activation du
+   * TOTP depuis elle). NULL = mot de passe seul : jamais d'administration. Une preuve antérieure à l'activation courante
+   * du TOTP du compte ne compte pas.
+   */
+  mfaVerifiedAt: timestamp("mfa_verified_at", { withTimezone: true }),
+}, (t) => [index("sessions_user_id_idx").on(t.userId), uniqueIndex("sessions_token_hash_unique").on(t.tokenHash)]);
+
+export const userRecoveryCodes = authSchema.table("user_recovery_codes", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  codeHash: text("code_hash").notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("user_recovery_codes_user_idx").on(t.userId)]);
+
+export type InvitationPurpose = "platform_account" | "project_participation";
+export type InvitationStatus = "pending" | "accepted" | "declined" | "expired" | "cancelled";
+
+/** UM-3 : une invitation est une proposition ; elle ne crée ni compte ni accès avant acceptation par l'adresse visée. */
+export const invitations = authSchema.table("invitations", {
+  id: text("id").primaryKey(),
+  purpose: text("purpose").$type<InvitationPurpose>().notNull(),
+  email: text("email").notNull(),
+  tokenHash: text("token_hash").notNull(),
+  projectId: text("project_id").references(() => projects.id, { onDelete: "cascade" }),
+  projectRole: text("project_role").$type<"lecteur" | "editeur" | null>(),
+  /** Null seulement pour l'invitation d'amorçage du premier administrateur (`grantPlatformRole = "admin"`). */
+  invitedBy: text("invited_by").references(() => users.id, { onDelete: "cascade" }),
+  grantPlatformRole: text("grant_platform_role").$type<"admin" | null>(),
+  status: text("status").$type<InvitationStatus>().notNull().default("pending"),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  accessExpiresAt: timestamp("access_expires_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  respondedAt: timestamp("responded_at", { withTimezone: true }),
+  acceptedUserId: text("accepted_user_id").references(() => users.id, { onDelete: "set null" }),
+}, (t) => [uniqueIndex("invitations_token_hash_unique").on(t.tokenHash)]);
+
+export type AccountTokenPurpose = "verify_email" | "reset_password" | "cancel_deletion";
+
+export const accountTokens = authSchema.table("account_tokens", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  purpose: text("purpose").$type<AccountTokenPurpose>().notNull(),
+  tokenHash: text("token_hash").notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [uniqueIndex("account_tokens_token_hash_unique").on(t.tokenHash), index("account_tokens_user_idx").on(t.userId, t.purpose)]);
+
+/** Journal d'audit append-only (déclencheurs `audit_log_no_update` / `_no_delete`) ; jamais d'adresse e-mail. */
+export const auditLog = adminSchema.table("audit_log", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  actorId: text("actor_id"),
+  action: text("action").notNull(),
+  targetType: text("target_type"),
+  targetId: text("target_id"),
+  metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull().default({}),
+  ip: text("ip"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("audit_log_actor_idx").on(t.actorId, t.createdAt), index("audit_log_target_idx").on(t.targetType, t.targetId, t.createdAt)]);
+
+export type MailStatus = "pending" | "sent" | "failed" | "skipped";
+
+/** D-1 : file d'envoi ; la charge (liens porteurs de jeton) est effacée dès l'envoi ou l'abandon. */
+export const mailOutbox = adminSchema.table("mail_outbox", {
+  id: text("id").primaryKey(),
+  toAddress: text("to_address").notNull(),
+  template: text("template").notNull(),
+  locale: text("locale").$type<"fr" | "en">().notNull().default("fr"),
+  payload: jsonb("payload").$type<Record<string, unknown>>().notNull().default({}),
+  status: text("status").$type<MailStatus>().notNull().default("pending"),
+  attempts: integer("attempts").notNull().default(0),
+  lastError: text("last_error"),
+  nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  sentAt: timestamp("sent_at", { withTimezone: true }),
+});
 
 import type { SiteContextDeclaration } from "@parcours/domain-model";
 
@@ -83,6 +200,8 @@ export const projects = pgTable("projects", {
   programmeState: jsonb("programme_state").$type<Record<string, unknown> | null>(),
   /** Dossier Harmony du projet (`p.data.harmony` du prototype, schéma `Parcours.Harmony` 1) : observations par règle, références directionnelles, carte temporelle, fiches de locaux, ambiances, actions, revues, revue de conception archivée. Conservé tel quel ; lu par `@parcours/domain-model` (`harmony-engine.ts`, `design-review.ts`). */
   harmony: jsonb("harmony").$type<Record<string, unknown> | null>(),
+  /** D-3 : réservée, aucune logique ne la lit. */
+  organizationId: text("organization_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("projects_owner_id_idx").on(t.ownerId)]);
@@ -299,6 +418,19 @@ export const projectMembers = pgTable("project_members", {
   invitedBy: text("invited_by").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [primaryKey({ columns: [t.projectId, t.userId] }), index("project_members_user_idx").on(t.userId)]);
+
+/** D-2 / UM-4 : accès support en lecture seule accordé par le propriétaire à un administrateur, ≤ 72 h, révocable. */
+export const projectSupportGrants = pgTable("project_support_grants", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  adminId: text("admin_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  grantedBy: text("granted_by").notNull().references(() => users.id, { onDelete: "cascade" }),
+  purpose: text("purpose").notNull(),
+  grantedAt: timestamp("granted_at", { withTimezone: true }).defaultNow().notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  revokedBy: text("revoked_by"),
+}, (t) => [index("project_support_grants_project_idx").on(t.projectId, t.adminId)]);
 
 // ---------------------------------------------------------------------------
 // Modèle typé de l'Atelier Fadi (cahier des charges §5.5) —

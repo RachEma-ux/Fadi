@@ -20,18 +20,51 @@ services:
       timeout: 5s
       retries: 10
 
+  # D-7 : migration à usage unique avec le compte d'administration de la base (crée les rôles, applique le schéma et les
+  # mots de passe des rôles, hors dépôt : .env.deploy), puis s'arrête. Cet identifiant n'est jamais donné à l'API.
+  migrate:
+    build: .
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      MIGRATE_ONLY: "1"
+      DATABASE_URL: postgresql://fadi:${POSTGRES_PASSWORD}@db:5432/fadi
+      DATABASE_MIGRATION_URL: postgresql://fadi:${POSTGRES_PASSWORD}@db:5432/fadi
+      FADI_APP_DB_PASSWORD: ${FADI_APP_DB_PASSWORD:?FADI_APP_DB_PASSWORD manquant (.env.deploy, D-7)}
+      FADI_RETENTION_DB_PASSWORD: ${FADI_RETENTION_DB_PASSWORD:-}
+      NODE_ENV: production
+
   app:
     build: .
     restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     environment:
-      DATABASE_URL: postgresql://fadi:${POSTGRES_PASSWORD}@db:5432/fadi
+      # D-7 : l'API se connecte en fadi_app (aucun DDL) et ne reçoit ni l'identifiant de migration ni les mots de passe
+      # des autres rôles (revue de la PR #255) ; elle refuse de démarrer en production si DATABASE_MIGRATION_URL lui est donné.
+      DATABASE_URL: postgresql://fadi_app:${FADI_APP_DB_PASSWORD:?FADI_APP_DB_PASSWORD manquant (.env.deploy, D-7)}@db:5432/fadi
       WEB_ORIGIN: https://${FADI_DOMAIN:?FADI_DOMAIN manquant (.env.deploy)}
+      APP_PUBLIC_URL: https://${FADI_DOMAIN}
       NODE_ENV: production
       TRUST_PROXY: "1"
-      MIGRATE_ON_START: "1"
+      MIGRATE_ON_START: "0"
+      # Gestion des comptes (docs/workstreams/users-management/RUNBOOK.md) : administration désactivée par défaut ;
+      # courriel absent = aucun envoi (liens à copier affichés) ; clé de chiffrement des secrets TOTP.
+      FADI_ADMIN_ENABLED: ${FADI_ADMIN_ENABLED:-false}
+      FADI_ENCRYPTION_KEY: ${FADI_ENCRYPTION_KEY:-}
+      MAIL_TRANSPORT: ${MAIL_TRANSPORT:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-}
+      SMTP_SECURE: ${SMTP_SECURE:-true}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      MAIL_DAILY_LIMIT: ${MAIL_DAILY_LIMIT:-150}
     expose:
       - "3001"
 

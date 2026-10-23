@@ -100,6 +100,7 @@ réelle ; la liste des fichiers est vérifiée par ce test (tout nouveau fichier
 
 | Fichier | Routes | Données Studio |
 |---|---|---|
+| `routes/auth.ts` | GET /auth/me/export | commentaires Studio rédigés par le compte, dans l'export de ses données personnelles (D-5, gestion des comptes) — lecture de ses propres lignes seulement |
 | `routes/examples.ts` | POST /examples/:exampleId/import | étude exemple Studio du P.118 installée après l'import validé (`lib/studio-exemple.ts`, contrat de commandes ; un échec n'annule pas l'import) |
 | `routes/documents.ts` | GET /projects/:projectId/documents | `studioPackages` (paquets diffusés ou retirés), `studioDossiers` (dossiers de conception) |
 | `routes/notifications.ts` | GET /notifications | commentaires Studio des projets du compte, passages des observations, tâches et décisions |

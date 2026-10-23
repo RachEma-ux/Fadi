@@ -47,6 +47,11 @@ export interface ModelCacheEntry {
 export interface LotEntry {
   /** `${projectId}|${requestId}` */
   id: string;
+  /**
+   * Propriétaire du lot (version 7, gestion des comptes) : posé par `putLot` d'après l'utilisateur connu de l'appareil ;
+   * un lot n'est relu, compté ni rejoué que sous ce compte.
+   */
+  userId?: string;
   projectId: string;
   requestId: string;
   /** Enveloppe sérialisée (`atelier-commands/1`). */
@@ -102,10 +107,19 @@ class FadiLocalDb extends Dexie {
     this.version(6)
       .stores({ modelCache: "projectId", keyValue: "key", lots: "id, projectId, ordre", studioBrouillons: "cle, userId, projectId", studioContextes: "cle, userId, projectId" })
       .upgrade(async (tx) => { await tx.table("studioBrouillons").clear(); await tx.table("studioContextes").clear(); });
+    // Gestion des comptes (phase 2) : propriétaire de chaque lot de l'Atelier ; les lots antérieurs, sans propriétaire,
+    // ne sont attribuables à personne et ne doivent jamais être rejoués sous un autre compte (supprimés, comme Studio v6).
+    this.version(7)
+      .stores({ modelCache: "projectId", keyValue: "key", lots: "id, projectId, ordre, userId", studioBrouillons: "cle, userId, projectId", studioContextes: "cle, userId, projectId" })
+      .upgrade(async (tx) => { await tx.table("lots").clear(); });
   }
 }
 
 let db: FadiLocalDb | null = null;
+
+/** Utilisateur connu de l'appareil (`auth-context`) ; `null` tant qu'aucun n'est connu (aucun filtre : tests unitaires). */
+let owner: string | null = null;
+const ownedBy = (entry: Pick<LotEntry, "userId">) => owner === null || entry.userId === owner;
 function open(): FadiLocalDb | null {
   if (db) return db;
   try {
@@ -173,7 +187,8 @@ export const queuePersistenceStore = {
 
 async function readLots(projectId: string): Promise<LotEntry[]> {
   try {
-    const rows = await checked((d) => d.lots.where("projectId").equals(projectId).sortBy("ordre"));
+    // Les lots d'un autre compte ne sont ni relus, ni affichés, ni rejoués.
+    const rows = (await checked((d) => d.lots.where("projectId").equals(projectId).sortBy("ordre"))).filter(ownedBy);
     for (const row of rows) {
       const envelope = JSON.parse(row.enveloppe) as { requestId?: unknown };
       if (row.projectId !== projectId || envelope.requestId !== row.requestId || !["local", "synchronisation", "synchronise", "conflit", "refuse"].includes(row.etat)) throw new LocalPersistenceError("La file locale de ce dossier ne peut pas être lue. Aucun nombre de modifications n’est confirmé.");
@@ -192,7 +207,8 @@ async function readLots(projectId: string): Promise<LotEntry[]> {
   }
 }
 
-async function putLot(entry: LotEntry): Promise<void> {
+async function putLot(input: LotEntry): Promise<void> {
+  const entry: LotEntry = owner && !input.userId ? { ...input, userId: owner } : input;
   queueMemoryFor(entry.projectId).set(entry.id, entry);
   dirtyLots.set(entry.id, entry);removedLots.delete(entry.id);
   queueChanged(entry.projectId, { saving: queuePersistenceStore.get(entry.projectId).saving + 1 });
@@ -230,6 +246,21 @@ async function retryLots(projectId: string): Promise<LotEntry[]> {
 }
 
 export const localStore = {
+  /** Compte dont les lots sont relus et rejoués (`null` : aucun compte connu). */
+  setOwner: (userId: string | null) => { owner = userId; },
+  getOwner: () => owner,
+  /**
+   * Déconnexion, session expirée (401) ou changement de compte : tout ce que l'appareil garde du compte précédent est
+   * oublié — lots de l'Atelier (y compris non synchronisés), modèles mis en cache, cache des requêtes, Studio. Rien n'est
+   * rejoué ni montré sous un autre compte. Les files en mémoire sont vidées aussi.
+   */
+  oublierTout: async () => {
+    queueMemory.clear(); dirtyLots.clear(); removedLots.clear(); queueStates.clear();
+    for (const listener of queueListeners) listener();
+    await safe((d) => d.transaction("rw", [d.lots, d.modelCache, d.keyValue, d.studioBrouillons, d.studioContextes], async () => {
+      await d.lots.clear(); await d.modelCache.clear(); await d.keyValue.clear(); await d.studioBrouillons.clear(); await d.studioContextes.clear();
+    }), undefined);
+  },
   /** Clé / valeur (cache des requêtes) : `null` quand absent ou indisponible. */
   getValue: (key: string) => safe((d) => d.keyValue.get(key).then((v) => v?.value ?? null), null as string | null),
   getValueChecked: (key: string) => checked((d) => d.keyValue.get(key).then((v) => v?.value ?? null)),
@@ -244,7 +275,7 @@ export const localStore = {
   summary: async () => {
     const stored = await safe(
       async (d) => {
-        const lots = await d.lots.toArray();
+        const lots = (await d.lots.toArray()).filter(ownedBy);
         const pendingByProject: Record<string, number> = {};
         for (const e of lots) pendingByProject[e.projectId] = (pendingByProject[e.projectId] ?? 0) + 1;
         return { available: true, pendingWrites: lots.length, pendingByProject, cachedModels: await d.modelCache.count() };

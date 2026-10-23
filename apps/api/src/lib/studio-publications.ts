@@ -535,6 +535,7 @@ async function packageOf(projectId: string, studyId: string, publicationId: stri
 
 /** Fichier figé d'un paquet (diffusé, remplacé ou retiré : l'historique reste lisible) ; contenu vérifié contre son empreinte. */
 export async function readStudioPackageFile(projectId: string, studyId: string, publicationId: string, actorId: string, format: string) {
+  assertAccess(await loadProjectAccess(projectId, actorId), actorId, "export");
   const { row, pkg } = await packageOf(projectId, studyId, publicationId, actorId);
   const file = pkg.files.find((f) => f.format === format);
   if (!file) return notFound();

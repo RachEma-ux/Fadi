@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { api, ROLE_LABEL } from "../lib/api";
+import { accountApi, api, ROLE_LABEL } from "../lib/api";
 import { lockedHint, READ_ONLY_HINT, useProjectAccess } from "../lib/access";
 import { ConflictPanel } from "../components/ConflictPanel";
 import { EditingLockControl } from "../components/EditingLockControl";
@@ -40,6 +40,9 @@ export function ProjectShell() {
   const previewQuery = useQuery({ queryKey: ["concept-preview", projectId], queryFn: () => api.getConceptPreview(projectId), enabled: !!projectQuery.data && !denied(projectQuery.error), staleTime: 5 * 60_000 });
   const online = useOnline();
   const access = useProjectAccess(projectId);
+  // Accès support (D-2) : bandeau « jusqu'au … » ; l'échéance vient de l'accès lui-même, relu par le serveur.
+  const supportQuery = useQuery({ queryKey: ["support-grants", projectId], queryFn: () => accountApi.supportGrants(projectId), enabled: access.role === "support", retry: false });
+  const supportUntil = supportQuery.data?.you === "support" ? supportQuery.data.grant.expiresAt : null;
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -121,7 +124,13 @@ export function ProjectShell() {
       </header>
 
       {lockMessage && <p className="access-banner" role="alert">{lockMessage}</p>}
-      {!access.canWrite && (
+      {access.role === "support" ? (
+        <p className="access-banner support-banner" role="status" data-support-banner>
+          {supportUntil
+            ? `Accès support jusqu’au ${new Date(supportUntil).toLocaleString(LOCALE, { dateStyle: "medium", timeStyle: "short" })} : lecture seule — ni commentaire, ni modification, ni export. Chaque consultation est journalisée et visible du propriétaire.`
+            : "Accès support : lecture seule — ni commentaire, ni modification, ni export. Chaque consultation est journalisée et visible du propriétaire."}
+        </p>
+      ) : !access.canWrite && (
         <p className="access-banner" role="status">
           {access.lock && !access.holdsLock && access.mayEdit ? lockedHint(access.lock) : READ_ONLY_HINT}{" "}
           <button type="button" className="link-button" onClick={() => selectModule("collaboration")}>Voir le partage</button>

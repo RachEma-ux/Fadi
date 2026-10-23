@@ -361,6 +361,7 @@ export function studioFileSegment(value: string, fallback: string): string {
 
 /** Fichier d'export d'une révision (tête par défaut) : mêmes droits et mêmes 403 / 404 que la lecture. */
 export async function exportStudioVariant(q: Querier, scope: StudioScope, actorId: string, format: StudioExportFormat, revisionId?: string): Promise<StudioExportFile> {
+  assertAccess(await loadProjectAccess(scope.projectId, actorId, q), actorId, "export");
   const context = await readStudioContext(q, scope, actorId, revisionId);
   const doc = context.revision.document;
   let body: string;

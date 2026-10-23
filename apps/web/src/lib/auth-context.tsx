@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ApiError, api, type CurrentUser } from "./api";
+import { ApiError, accountApi, api, type CurrentUser } from "./api";
 import { localStore } from "./local-store";
 import { QUERY_CACHE_VERSION } from "./query-persister";
 import { conflictsStore } from "./mutations";
@@ -9,7 +9,11 @@ interface AuthState {
   user: CurrentUser | null;
   /** Encore en train de vérifier la session au chargement de la page. */
   loading: boolean;
-  login(email: string, password: string): Promise<void>;
+  /** `"mfa"` : mot de passe accepté, code de double authentification attendu (`loginMfa`). */
+  login(email: string, password: string): Promise<"ok" | "mfa">;
+  loginMfa(input: { code: string } | { recoveryCode: string }): Promise<void>;
+  /** Session ouverte par une autre voie (activation d'une invitation) : adoptée comme une connexion. */
+  adoptSession(u: CurrentUser): Promise<void>;
   register(email: string, password: string): Promise<void>;
   logout(): Promise<void>;
   /** Nom affiché (Paramètres → Compte) ; null pour l'effacer. */
@@ -44,14 +48,19 @@ export function forgetsSession(err: unknown): boolean {
 }
 
 /**
- * Oubli de ce que l'utilisateur précédent a laissé sur l'appareil : cache des requêtes, conflits affichés, brouillons
- * et versions lues de Studio (jamais rejoués ni montrés sous un autre compte).
+ * Oubli de ce que l'utilisateur précédent a laissé sur l'appareil (gestion des comptes, phase 2) : cache des requêtes
+ * (mémoire et persistance IndexedDB), conflits affichés, lots de l'Atelier, modèles mis en cache, brouillons et versions
+ * lues de Studio, utilisateur mémorisé. Appelé à la déconnexion, quand le serveur répond 401 (session expirée ou
+ * révoquée) et quand un autre compte se connecte : rien n'est rejoué ni montré sous un autre compte.
  */
-async function forgetDevice(queryClient: ReturnType<typeof useQueryClient>) {
+export async function forgetDevice(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.clear();
   conflictsStore.clearAll();
+  writeLastUser(null);
+  localStore.setOwner(null);
   await localStore.removeValue(QUERY_CACHE_VERSION);
   await localStore.studioOublierTout().catch(() => undefined);
+  await localStore.oublierTout();
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -60,9 +69,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   /** Un autre utilisateur sur le même appareil ne doit pas relire le cache du précédent : cache vidé (mémoire et IndexedDB). */
-  async function adopt(u: CurrentUser) {
+  async function adopt(fromLogin: CurrentUser) {
+    // La réponse de connexion ne porte pas tout l'état du compte (`adminEnabled`) : relu une fois, sinon gardée telle quelle.
+    const u = await api.me().catch(() => fromLogin);
     const previous = readLastUser();
     if (previous && previous.id !== u.id) await forgetDevice(queryClient);
+    localStore.setOwner(u.id);
     setUser(u);
     writeLastUser(u);
   }
@@ -77,10 +89,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const previous = readLastUser();
         if (previous && previous.id !== u.id) await forgetDevice(queryClient);
         if (cancelled) return;
+        localStore.setOwner(u.id);
         setUser(u);
         writeLastUser(u);
       })
-      .catch((err: unknown) => {
+      .catch(async (err: unknown) => {
         if (cancelled) return;
         // Seule une réponse 401 dit « pas de session » (expirée, déconnectée) : état normal pour un visiteur,
         // l'utilisateur mémorisé est oublié. Tout le reste — pas de réponse (réseau), serveur en erreur (5xx),
@@ -88,10 +101,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // connu pour relire ce qui a déjà été lu et conserver le travail en attente ; chaque requête au
         // serveur re-vérifiera la session, et un 401 réel ramènera à la connexion.
         if (forgetsSession(err)) {
-          writeLastUser(null);
+          // Session expirée ou révoquée : ce que le compte précédent a laissé sur l'appareil est oublié (défaut PR #1).
+          await forgetDevice(queryClient);
           return;
         }
-        setUser(readLastUser());
+        const last = readLastUser();
+        localStore.setOwner(last?.id ?? null);
+        setUser(last);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -105,8 +121,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     loading,
     async login(email, password) {
-      await adopt(await api.login(email, password));
+      const result = await api.login(email, password);
+      if (result.mfaRequired) return "mfa";
+      await adopt(result);
+      return "ok";
     },
+    async loginMfa(input) {
+      await adopt(await accountApi.loginMfa(input));
+    },
+    adoptSession: adopt,
     async register(email, password) {
       await adopt(await api.register(email, password));
     },
@@ -116,9 +139,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       writeLastUser(u);
     },
     async logout() {
-      await api.logout();
+      // La purge locale a lieu même si le serveur est injoignable : l'appareil ne garde rien du compte.
+      await api.logout().catch(() => undefined);
       setUser(null);
-      writeLastUser(null);
       await forgetDevice(queryClient);
     },
   };
@@ -140,8 +163,21 @@ export function describeAuthError(err: unknown): string {
       case "registration_failed":
         return "Impossible de créer ce compte.";
       case "invalid_input":
-        return "Vérifiez le format de l'e-mail et la longueur du mot de passe (8 caractères minimum).";
+        return "Vérifiez le format de l'e-mail et la longueur du mot de passe (12 caractères minimum).";
+      case "weak_password":
+        return err.serverMessage ?? "Ce mot de passe est refusé : choisissez-en un autre (12 caractères minimum).";
+      case "account_suspended":
+        return "Ce compte est suspendu : contactez l'administrateur de la plateforme.";
+      case "deletion_pending":
+        return "La suppression de ce compte est programmée : utilisez le lien d'annulation reçu par courriel pour la révoquer.";
+      case "too_many_attempts":
+        return err.serverMessage ?? "Trop de tentatives : réessayez dans quelques minutes.";
+      case "invalid_code":
+        return "Code incorrect ou déjà utilisé.";
+      case "mfa_session_expired":
+        return "L'étape de connexion a expiré : saisissez de nouveau votre mot de passe.";
       default:
+        if (err.status === 429) return "Trop de tentatives : réessayez dans quelques minutes.";
         return "Une erreur est survenue. Réessayez.";
     }
   }

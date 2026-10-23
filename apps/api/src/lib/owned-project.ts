@@ -1,7 +1,7 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, gt, isNull } from "drizzle-orm";
 import type { Request, Response } from "express";
 import { db } from "../db/client.js";
-import { projectMembers, projects, type EditingLock } from "../db/schema.js";
+import { projectMembers, projectSupportGrants, projects, users, type EditingLock } from "../db/schema.js";
 
 /**
  * Accès à un projet, vérifié côté serveur à chaque route — jamais seulement
@@ -13,7 +13,7 @@ import { projectMembers, projects, type EditingLock } from "../db/schema.js";
  * reste introuvable (404), un rôle insuffisant est refusé (403) avec le
  * motif.
  */
-export type ProjectRole = "proprietaire" | "editeur" | "lecteur";
+export type ProjectRole = "proprietaire" | "editeur" | "lecteur" | "support";
 /**
  * `modify` = `write` **et** le modèle du projet peut être modifié : la référence protégée de l'exemple
  * (`example_mode = 'reference'`, D-016 / D-194) n'est jamais écrite par l'Atelier, même par un appel direct à
@@ -22,14 +22,25 @@ export type ProjectRole = "proprietaire" | "editeur" | "lecteur";
  * publications, verrous, copies) restent en `write` ; la transmission de la parcelle (étape 01), qui écrit le modèle par
  * des commandes internes, est en `modify` comme les routes de l'Atelier.
  */
-export type ProjectNeed = "read" | "comment" | "write" | "modify" | "owner";
+export type ProjectNeed = "read" | "comment" | "write" | "modify" | "owner" | "export";
 
+/**
+ * `support` (D-2, UM-4) : administrateur de la plateforme muni d'un accès support **actif** accordé par le propriétaire
+ * (`project_support_grants`, ≤ 72 h) — lecture seule : ni commentaire, ni écriture, ni export ou téléchargement. Le rôle
+ * plateforme seul ne donne jamais accès à un projet.
+ *
+ * `export` (revue de sécurité de la PR #255) : sortir du contenu du projet — fichier téléchargé, document produit (et sa
+ * trace de production), archive, copie vers un autre projet, publication servie comme source d'un autre projet. Déclaré
+ * par chaque route concernée : la garde de chemin `supportReadOnlyGuard` n'est qu'une défense supplémentaire, jamais la
+ * frontière. Propriétaire, éditeur et lecteur gardent l'export ; l'accès support ne l'a jamais.
+ */
 const ALLOWED: Record<ProjectNeed, readonly ProjectRole[]> = {
-  read: ["proprietaire", "editeur", "lecteur"],
+  read: ["proprietaire", "editeur", "lecteur", "support"],
   comment: ["proprietaire", "editeur", "lecteur"],
   write: ["proprietaire", "editeur"],
   modify: ["proprietaire", "editeur"],
   owner: ["proprietaire"],
+  export: ["proprietaire", "editeur", "lecteur"],
 };
 
 export function roleAllows(role: ProjectRole, need: ProjectNeed): boolean {
@@ -42,7 +53,12 @@ export const FORBIDDEN_MESSAGE: Record<ProjectNeed, string> = {
   write: "Ce projet vous est partagé en lecture : les modifications sont réservées à son propriétaire et à ses éditeurs.",
   modify: "Ce projet vous est partagé en lecture : les modifications sont réservées à son propriétaire et à ses éditeurs.",
   owner: "Action réservée au propriétaire du projet.",
+  export: "Export et téléchargement réservés aux membres du projet.",
 };
+
+/** Refus d'un accès support (lecture seule) : export ou modification. */
+export const SUPPORT_NO_EXPORT = { error: "support_no_export", message: "Accès support en lecture seule : export et téléchargement exclus." } as const;
+export const SUPPORT_READ_ONLY = { error: "support_read_only", message: "Accès support en lecture seule : aucune modification ni commentaire." } as const;
 
 type ProjectRow = typeof projects.$inferSelect;
 
@@ -84,7 +100,29 @@ export async function loadProjectAccess(projectId: string, userId: string, execu
   if (!row) return null;
   if (row.project.ownerId === userId) return { ...row.project, role: "proprietaire" };
   if (row.memberRole) return { ...row.project, role: row.memberRole };
+  if (await activeSupportGrant(projectId, userId, executor)) return { ...row.project, role: "support" };
   return null;
+}
+
+/**
+ * L'accès support actif d'un administrateur sur ce projet, ou null. Revérifié à chaque requête : compte toujours
+ * administrateur et actif, accès ni révoqué ni expiré (un accès expiré redevient un 404).
+ */
+export async function activeSupportGrant(projectId: string, userId: string, executor: Pick<typeof db, "select"> = db): Promise<{ id: string; expiresAt: Date } | null> {
+  const rows = await executor
+    .select({ id: projectSupportGrants.id, expiresAt: projectSupportGrants.expiresAt })
+    .from(projectSupportGrants)
+    .innerJoin(users, eq(users.id, projectSupportGrants.adminId))
+    .where(and(
+      eq(projectSupportGrants.projectId, projectId),
+      eq(projectSupportGrants.adminId, userId),
+      isNull(projectSupportGrants.revokedAt),
+      gt(projectSupportGrants.expiresAt, new Date()),
+      eq(users.platformRole, "admin"),
+      eq(users.status, "active"),
+    ))
+    .limit(1);
+  return rows[0] ?? null;
 }
 
 /**
@@ -121,6 +159,7 @@ export async function projectOr404(req: Request, res: Response, need: ProjectNee
 /** Même verdict pour les routes historiques et les écritures relues sous transaction. */
 export function projectAccessRefusal(access: AccessibleProject | null, userId: string, need: ProjectNeed): { status: number; body: Record<string, unknown> } | null {
   if (!access) return { status: 404, body: { error: "not_found" } };
+  if (access.role === "support" && !roleAllows("support", need)) return { status: 403, body: { ...(need === "export" ? SUPPORT_NO_EXPORT : SUPPORT_READ_ONLY), role: "support" } };
   if (!roleAllows(access.role, need)) return { status: 403, body: { error: "forbidden", message: FORBIDDEN_MESSAGE[need], role: access.role } };
   if (need === "modify" && estReferenceProtegee(access)) {
     return { status: 403, body: { error: "forbidden", motif: "reference-protegee", message: REFERENCE_PROTEGEE_MESSAGE, role: access.role } };

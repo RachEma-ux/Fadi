@@ -96,7 +96,7 @@ stepFilesRouter.post("/", raw({ type: () => true, limit: STEP_FILE_LIMIT }), asy
 });
 
 stepFilesRouter.get("/:fileId", async (req, res) => {
-  const scope = await ownedStep(req, res, "read");
+  const scope = await ownedStep(req, res, "export");
   if (!scope) return;
   const id = params(req)["fileId"] ?? "";
   if (!FILE_ID.test(id)) {

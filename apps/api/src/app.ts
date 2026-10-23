@@ -14,9 +14,11 @@ import { notificationsRouter } from "./routes/notifications.js";
 import { preferencesRouter } from "./routes/preferences.js";
 import { sandboxPreferencesRouter } from "./routes/sandbox-preferences.js";
 import { versionRouter } from "./routes/version.js";
+import { adminRouter } from "./routes/admin/index.js";
+import { csrfGuard } from "./middleware/csrf.js";
 
 /** Préfixes servis par l'API ; tout le reste est l'application (fichiers du build, ou `index.html` pour une route du client). */
-const API_PREFIX = /^\/(auth|projects|examples|library|notifications|preferences|health|sandbox\/preferences|version)(\/|$)/;
+const API_PREFIX = /^\/(auth|admin\/(?:users|invitations)|projects|examples|library|notifications|preferences|health|sandbox\/preferences|version)(\/|$)/;
 
 export function createApp() {
   const app = express();
@@ -43,6 +45,8 @@ export function createApp() {
   // Ce qui tourne : commit et date de construction de l'image (« inconnu » en développement). Monté avant attachUser :
   // aucune lecture de session, donc aucune requête à la base, même avec un cookie.
   app.use("/version", versionRouter());
+  // CSRF (gestion des comptes, phase 2) : toute requête qui modifie avec un cookie doit venir de l'application.
+  app.use(csrfGuard(webOrigin.split(",")));
   app.use(attachUser);
 
   // Les routes d'authentification sont la cible privilégiée du
@@ -55,6 +59,9 @@ export function createApp() {
   const authLimit = Number(process.env["AUTH_RATE_LIMIT"] ?? 20);
   const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: authLimit, standardHeaders: true, legacyHeaders: false });
   app.use("/auth", authLimiter, authRouter);
+  // Administration de la plateforme (comptes seulement, D-2) : 404 tant que FADI_ADMIN_ENABLED n'est pas `true`.
+  // Seuls `/admin/users*` et `/admin/invitations*` sont l'API ; `/admin/utilisateurs` est la page du client (repli SPA).
+  app.use("/admin", (req, res, next) => (/^\/(users|invitations)(\/|$)/.test(req.path) ? authLimiter(req, res, () => adminRouter(req, res, next)) : next()));
 
   // `API_RATE_LIMIT` ne sert, comme `AUTH_RATE_LIMIT`, qu'à desserrer la limite pour la suite de tests (une seule instance, des dizaines de scénarios) ; production : 300 requêtes / minute.
   const apiLimit = Number(process.env["API_RATE_LIMIT"] ?? 300);

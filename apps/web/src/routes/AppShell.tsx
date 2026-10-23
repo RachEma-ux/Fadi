@@ -10,11 +10,13 @@ import { initialsFrom, shownName } from "../lib/user-display";
 import { HomeTopbar } from "../modules/accueil/HomeTopbar";
 import { denied } from "../modules/accueil/dossier-data";
 import { MenuStudio } from "./MenuStudio";
+import { useAdminEnabled } from "../lib/use-platform-role";
 
 export { initialsFrom, shownName } from "../lib/user-display";
 
 export function AppShell() {
   const { user, logout } = useAuth();
+  const adminEnabled = useAdminEnabled();
   const navigate = useNavigate();
   const location = useLocation();
   const projectMatch = useMatch("/projets/:projectId");
@@ -99,6 +101,8 @@ export function AppShell() {
         <div className="app-nav-secondary">
           <NavLink to="/bibliotheque/batiments" title="Bibliothèque" aria-label="Bibliothèque" className={({ isActive }) => isActive ? "active" : undefined}><Icon name="book" /><span className="sidebar-label">Bibliothèque</span></NavLink>
           <NavLink to="/parametres" title="Paramètres" aria-label="Paramètres" className={({ isActive }) => isActive ? "active" : undefined}><Icon name="gear" /><span className="sidebar-label">Paramètres</span></NavLink>
+          {/* Entrée visible seulement pour un administrateur, administration activée (FADI_ADMIN_ENABLED) ; la protection reste au serveur (404 sinon). */}
+          {adminEnabled && <NavLink to="/admin/utilisateurs" title="Administration" aria-label="Administration" className={({ isActive }) => isActive ? "active" : undefined} data-nav-admin><Icon name="people" /><span className="sidebar-label">Administration</span></NavLink>}
         </div>
         <div className="app-user" ref={account} onKeyDown={(e) => { if (e.key === "Escape") { setAccountOpen(false); account.current?.querySelector("button")?.focus(); } }}>
           <button type="button" title={user ? shownName(user) : "Compte"} aria-label="Compte" aria-expanded={accountOpen} onClick={() => { if (window.matchMedia("(max-width: 700px)").matches) setExpanded(false); setAccountOpen(!accountOpen); setProjectsOpen(false); }}><span className="avatar" aria-hidden="true">{user ? initialsFrom(user) : ""}</span><span className="sidebar-label app-user-name" translate="no">{user ? shownName(user) : ""}</span></button>
