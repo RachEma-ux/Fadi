@@ -6,8 +6,7 @@
 
 ## En cours
 
-- UM-CODEX — Trois constats de la revue Codex de `fcb0dd1` (UM-21 annulation sans courriel, UM-22 migration hors de
-  l'API, UM-23 compteur d'échecs atomique) : corrigés et vérifiés en local ; CI à constater (Issue : #253).
+- Aucune ; la PR #255 attend la revue du maître d'ouvrage.
 
 ## Terminé
 
@@ -23,6 +22,8 @@
 - [x] UM-EN — Écrans d'administration et accès support relevés en anglais, passe anglaise dans `comptes-admin.mjs` (Issue : #253).
 - [x] UM-SEC — Trois blocages de la revue de `c7dbc92` (UM-18 assurance de session, UM-19 dernier administrateur
   atomique, UM-20 capacité « export ») : reproduits, corrigés, vérifiés en CI sur `873f740` (Issue : #253).
+- [x] UM-CODEX — Trois constats de la revue Codex de `fcb0dd1` (UM-21 à UM-23) : corrigés, vérifiés en CI sur `24ed965`
+  (Issue : #253).
 - [x] UM-D7 — Amendement D-7 : schémas `auth` / `admin`, rôles au moindre privilège, CI et restauration (Issue : #253).
 
 ## Bloqué

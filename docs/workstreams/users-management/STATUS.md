@@ -5,7 +5,7 @@ Mis à jour : 2026-10-22 (UTC).
 ## État
 
 **Implémenté et vérifié ; correctifs de la revue de `c7dbc92` (UM-18 à UM-20, CI verte sur `873f740`) et de la revue
-Codex de `fcb0dd1` (UM-21 à UM-23, vérifiés en local, CI à constater) — PR prête pour revue, en attente de revue humaine.** Phases 0 à 6 et amendement D-7 livrés
+Codex de `fcb0dd1` (UM-21 à UM-23, CI verte sur `24ed965`) — PR prête pour revue, en attente de revue humaine.** Phases 0 à 6 et amendement D-7 livrés
 sur la branche `ccr-266c1e83-7780ml` (une seule PR, non fusionnée, UM-12). **Rien n'est accepté ni déployé.**
 DB-3 : **vérifié en CI** sur `570d248` (UM-17) — les 12 suites passent sur base jetable attestée. Points d'arrêt 🛑 2, D7-final et final : revue du maître d'ouvrage sur la PR.
 
@@ -161,8 +161,11 @@ Preuves locales après correction :
 - **Compteur d'échecs atomique (UM-23).** Avant (reproduit par `comptes-securite.mjs`, section 4) : cinq échecs
   simultanés → `failed_login_count = 1`, pas de verrouillage. Après : 5 et verrouillé.
 - Recettes locales : `comptes-securite.mjs` **66 ✓** (base vierge), `comptes-api.mjs` 109 ✓, `comptes-admin.mjs` 50 ✓,
-  `users-migration-check.mjs` ✓ ; typecheck, build et `test:db-guard` 178 ✓. Deux tests DB-3 ajoutés à `app.test.ts`
-  (bloc « 4. revue Codex ») : à constater en CI.
+  `users-migration-check.mjs` ✓ ; typecheck, build et `test:db-guard` 178 ✓.
+- **CI sur `24ed965`** (run CI 39877219454 et 5 autres workflows, tous verts) : DB-3 actif — `app.test.ts` 71 tests verts
+  dont les 2 nouveaux (« 4. revue Codex »), API **563 tests, dont 116 dans les 12 suites DB-3** ; job `image` vert
+  (migration à usage unique, refus de l'identifiant de migration dans l'API, démarrage en `fadi_app`) ; `e2e (parcours)`
+  vert sur cette tête.
 - `e2e (parcours)` en échec sur `6a9d1e7` (commit de documentation) : course de `apps/web/e2e/accueils-design.mjs:351`
   (`route.fulfill: Route is already handled!`), hors de cette PR ; commentaire sur la PR et une relance demandée.
 

@@ -13,6 +13,7 @@ Mis à jour : 2026-10-22 (UTC).
 
 - Phases 0 à 6 et amendement D-7 implémentés ; vérifiés localement sur PostGIS 16 réel et Mailpit (voir STATUS.md :
   31 + 109 + 48 contrôles, 229 tests purs API, tests web, typecheck, build).
+- Constats de la revue Codex (UM-21 à UM-23) vérifiés en CI sur `24ed965` (563 tests API, dont 116 dans les 12 suites).
 - Correctifs de sécurité de la revue de `c7dbc92` vérifiés en CI sur `873f740` (DB-3 : 561 tests API, dont 114 dans
   les 12 suites ; `comptes-securite.mjs` vert).
 - CI de la PR #255 verte sur `81af007` ; sur `570d248`, DB-3 actif : 12 suites (105 tests) vertes sur base jetable attestée, 515 tests API (STATUS.md) ; revérifier le HEAD courant à la reprise.
