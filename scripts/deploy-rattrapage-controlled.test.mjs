@@ -81,3 +81,50 @@ test('schema : toute suppression, reecriture ou modification d une table existan
   refuse(controler(t, initSql, `${initSql}\nALTER TABLE users ADD COLUMN IF NOT EXISTS obligatoire text NOT NULL DEFAULT 'x';\n`), /Table existante modifiee/);
   refuse(controler(t, initSql, `${initSql}\nCREATE UNIQUE INDEX IF NOT EXISTS users_essai ON users (email);\n`), /Index ou declencheur pose sur une table existante/);
 });
+
+// Filtre des fichiers Compose : le bloc du script est rejoue tel quel, le prefixe des deploiements et l'uid root etant
+// remplaces par un dossier temporaire et l'uid courant (la CI ne tourne pas en root).
+test('fichiers Compose : depot de production ou configuration resolue d un deploiement controle precedent, rien d autre', (t) => {
+  const bloc = entre('C=(docker compose --ansi never -p app --project-directory "$APP" --env-file "$APP/.env.deploy")\n', '\n"${C[@]}" config');
+  assert.match(bloc, /\^\/mnt\/data\/fadi\/deployments\//);
+  assert.match(bloc, /=~ \^0\\ \[67\]00\$/);
+  const d = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'fadi-compose-')));
+  t.after(() => fs.rmSync(d, { recursive: true, force: true }));
+  const app = path.join(d, 'app');
+  const deps = path.join(d, 'deployments');
+  const uid = process.getuid();
+  const filtre = bloc
+    .replace('^/mnt/data/fadi/deployments/', `^${deps}/`)
+    .replace('=~ ^0\\ [67]00$', `=~ ^${uid}\\ [67]00$`);
+  assert.notEqual(filtre, bloc);
+  const fichier = (p, mode = 0o600) => {
+    fs.mkdirSync(path.dirname(p), { recursive: true });
+    fs.writeFileSync(p, '{}');
+    fs.chmodSync(p, mode);
+    return p;
+  };
+  const rejouer = (...fichiers) =>
+    spawnSync('bash', ['-c', `set -Eeuo pipefail\nstop() { echo "ARRET : $1" >&2; exit 3; }\nAPP=${app}\nC=()\nFILE_ARRAY=("$@")\n${filtre}\nprintf '%s\\n' "\${C[@]}"`, 'filtre', ...fichiers], { encoding: 'utf8' });
+
+  const compose = fichier(path.join(app, 'docker-compose.yml'), 0o644);
+  const prod = fichier(path.join(deps, '20261017T231314Z-612876', 'production.json'));
+  const retour = fichier(path.join(deps, '20261017T231314Z-612876', 'retour.json'), 0o700);
+  const admis = rejouer(prod);
+  assert.equal(admis.status, 0, admis.stderr);
+  assert.equal(admis.stdout, `-f\n${prod}\n`);
+  assert.equal(rejouer(compose, retour).status, 0);
+
+  refuse(rejouer('/opt/fadi-preprod/app/docker-compose.yml'), /Fichier Compose inattendu : \/opt\/fadi-preprod/);
+  refuse(rejouer(`${deps}/20261017T231314Z-612876/../20261017T231314Z-612876/production.json`), /inattendu/);
+  refuse(rejouer(fichier(path.join(deps, '20261017T231314Z-612876', 'autre.json'))), /inattendu/);
+  refuse(rejouer(fichier(path.join(deps, 'pas-un-horodatage', 'production.json'))), /inattendu/);
+  refuse(rejouer(fichier(path.join(deps, '20261018T000000Z-1', 'production.json'), 0o644)), /inattendu/);
+  const lien = path.join(deps, '20261019T000000Z-2', 'production.json');
+  fs.mkdirSync(path.dirname(lien), { recursive: true });
+  fs.symlinkSync(prod, lien);
+  refuse(rejouer(lien), /inattendu/);
+  refuse(rejouer(path.join(deps, '20261020T000000Z-3', 'production.json')), /inattendu/);
+  refuse(rejouer(path.join(app, 'absent.yml')), /Fichier Compose absent/);
+  // Non root : le script reel exige l'uid 0 ; un fichier appartenant a l'utilisateur courant (non root en CI) est refuse.
+  if (uid !== 0) refuse(spawnSync('bash', ['-c', `set -Eeuo pipefail\nstop() { echo "ARRET : $1" >&2; exit 3; }\nAPP=${app}\nC=()\nFILE_ARRAY=("$@")\n${bloc.replace('^/mnt/data/fadi/deployments/', `^${deps}/`)}`, 'filtre', prod], { encoding: 'utf8' }), /inattendu/);
+});
