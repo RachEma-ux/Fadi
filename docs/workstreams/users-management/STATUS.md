@@ -11,7 +11,8 @@ PR). **Aucun déploiement n'est fait** : il suit RUNBOOK.md (§1 à §11, dont �
 maître d'ouvrage.
 DB-3 : **vérifié en CI** sur `570d248` (UM-17) — les 12 suites passent sur base jetable attestée. Points d'arrêt 🛑 2,
 D7-final et final : **clos** par la décision de fusion du maître d'ouvrage (2026-10-23, UM-24) ; plus aucune revue de la
-PR #255 n'est attendue. Restent au maître d'ouvrage : le déploiement et UM-1.
+PR #255 n'est attendue. Reste au maître d'ouvrage : le déploiement. UM-1 est levé (UM-25) : le chantier
+« Organisations, participation et revue externe » est ouvert ([Issue #262](https://github.com/RachEma-ux/Fadi/issues/262)).
 
 ## Faits vérifiés
 
@@ -203,7 +204,7 @@ Preuves locales après correction :
 
 ## Points ouverts
 
-- UM-1 : chantier organisations / participation / revue externe, à ouvrir par le maître d'ouvrage.
+- UM-1 : levé le 2026-10-23 (UM-25), chantier ouvert ([Issue #262](https://github.com/RachEma-ux/Fadi/issues/262), `../organisations-participation/`).
 - UM-17 : DB-3 livré par la PR #256 et raccordé à D-7 ; **12 suites vertes en CI** sur `570d248` (section DB-3).
 - UM-15 : le prochain déploiement exige `FADI_APP_DB_PASSWORD` dans `.env.deploy` (RUNBOOK §2–4).
 - Annexe C (Infomaniak, DNS, clé de chiffrement, premier admin) : hors code.

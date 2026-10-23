@@ -155,3 +155,7 @@ ils ne réécrivent aucune décision D-x et restent révisables par lui.
   🛑 2, D7-final et final, qui attendaient sa revue sur la PR (UM-12, UM-13) : les mentions « non fusionnée » et
   « revue à venir » de ces entrées décrivent l'état d'alors. Restent ouverts : le déploiement (RUNBOOK.md, accord explicite
   du maître d'ouvrage) et UM-1 (organisations, non approuvé).
+- **UM-25 — UM-1 levé (2026-10-23).** Le maître d'ouvrage ouvre le chantier « Organisations, participation et revue
+  externe ». Priorité : participants, invitations acceptées, revue externe. Le suivi passe à
+  [`../organisations-participation/`](../organisations-participation/CONTEXT.md) ([Issue #262](https://github.com/RachEma-ux/Fadi/issues/262)).
+  Ce chantier-ci ne garde que le déploiement.
