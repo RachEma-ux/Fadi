@@ -1,12 +1,14 @@
 # Gestion des comptes (Users Management) — Reprise de session
 
-Mis à jour : 2026-10-22 (UTC).
+Mis à jour : 2026-10-23 (UTC).
 
 ## Point de reprise
 
 - Chantier : users-management
 - Issue : [#253](https://github.com/RachEma-ux/Fadi/issues/253)
-- Branche / PR actives : `ccr-266c1e83-7780ml` ; [PR #255](https://github.com/RachEma-ux/Fadi/pull/255) vers `main` (prête pour revue depuis le 2026-10-22, non fusionnée).
+- Branche / PR : [PR #255](https://github.com/RachEma-ux/Fadi/pull/255) **fusionnée** dans `main` le 2026-10-23 (commit `516e2f7`,
+  par le maître d'ouvrage) ; branche de tâche `ccr-266c1e83-7780ml` supprimée après fusion, recréée depuis `main` pour ce
+  seul consignement.
 - Dernier commit vérifié : à relever en début de session ; ne pas réutiliser un SHA périmé.
 
 ## Dernier état vérifié
@@ -23,10 +25,10 @@ Mis à jour : 2026-10-22 (UTC).
 
 ## Prochaine action
 
-- Vérifier la CI sur le HEAD : étape DB-3 (dont le bloc « correctifs de sécurité » de `app.test.ts`) et la recette
-  `comptes-securite.mjs` (tranche `complements`).
-- Revue humaine (🛑 phases 2, 3, 4, D7-final) puis décision de fusion par le maître d'ouvrage ; aucun déploiement sans
-  accord explicite (RUNBOOK.md pour la suite).
+- CI de `main` verte après la fusion (`516e2f7`, run CI 39911221480).
+- Déploiement : **seulement sur accord explicite du maître d'ouvrage**, en suivant RUNBOOK.md — `FADI_APP_DB_PASSWORD`
+  dans `.env.deploy`, service à usage unique `migrate` (§4), reconnexion des administrateurs avec leur code (§4 bis).
+- Organisations / participation / revue externe (UM-1) : décision du maître d'ouvrage attendue, non approuvée.
 
 ## Tests et preuves
 

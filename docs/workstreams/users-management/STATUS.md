@@ -1,12 +1,14 @@
 # Gestion des comptes (Users Management) — Statut
 
-Mis à jour : 2026-10-22 (UTC).
+Mis à jour : 2026-10-23 (UTC).
 
 ## État
 
-**Implémenté et vérifié ; correctifs de la revue de `c7dbc92` (UM-18 à UM-20, CI verte sur `873f740`) et de la revue
-Codex de `fcb0dd1` (UM-21 à UM-23, CI verte sur `24ed965`) — PR prête pour revue, en attente de revue humaine.** Phases 0 à 6 et amendement D-7 livrés
-sur la branche `ccr-266c1e83-7780ml` (une seule PR, non fusionnée, UM-12). **Rien n'est accepté ni déployé.**
+**Fusionné dans `main` — non déployé.** La PR #255 (phases 0 à 6, amendement D-7, DB-3 raccordé, correctifs UM-18 à
+UM-23) a été fusionnée par le maître d'ouvrage le 2026-10-23 à 06:23 UTC (commit de fusion `516e2f7`, tête `dd784bc`).
+CI de `main` verte sur `516e2f7` : run CI 39911221480 et 5 autres workflows (14 contrôles réussis, 3 sautés comme sur la
+PR). **Aucun déploiement n'est fait** : il suit RUNBOOK.md (§1 à §11, dont §4 et §4 bis) et attend l'accord explicite du
+maître d'ouvrage.
 DB-3 : **vérifié en CI** sur `570d248` (UM-17) — les 12 suites passent sur base jetable attestée. Points d'arrêt 🛑 2, D7-final et final : revue du maître d'ouvrage sur la PR.
 
 ## Faits vérifiés
@@ -210,7 +212,7 @@ Preuves locales après correction :
 
 - Issue : [#253](https://github.com/RachEma-ux/Fadi/issues/253)
 - Branche de tâche : `ccr-266c1e83-7780ml` (imposée par la session, UM-12).
-- Pull Request : [#255](https://github.com/RachEma-ux/Fadi/pull/255) (prête pour revue depuis le 2026-10-22, non fusionnée).
+- Pull Request : [#255](https://github.com/RachEma-ux/Fadi/pull/255) (fusionnée le 2026-10-23, commit `516e2f7`).
 
 ## Préconditions de clôture
 
