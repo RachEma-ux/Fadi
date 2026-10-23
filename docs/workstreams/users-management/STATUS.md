@@ -167,10 +167,21 @@ Preuves locales après correction :
   (migration à usage unique, refus de l'identifiant de migration dans l'API, démarrage en `fadi_app`) ; `e2e (parcours)`
   vert sur cette tête.
 - `e2e (parcours)` en échec sur `6a9d1e7` puis `a5aa183` (commits de documentation) : course de
-  `apps/web/e2e/accueils-design.mjs:351` (`route.fulfill: Route is already handled!`) — `page.unroute` retire le
-  gestionnaire pendant son `route.fetch()`. Verte sur `873f740`, `fcb0dd1` et `24ed965`. En local, 5 exécutions sur `main`
-  et 5 sur la branche, bases neuves : toutes vertes (78 ✓). Correctif de robustesse sans retrait de contrôle :
-  `page.unroute(projectUrl, { behavior: "wait" })`.
+  `apps/web/e2e/accueils-design.mjs:351` (`route.fulfill: Route is already handled!`), le gestionnaire d'interception étant
+  retiré pendant son `route.fetch()`.
+  - **Correctif de `361c7bd` inopérant (constat de revue) :** `page.unroute(url, handler?)` n'accepte pas d'options ; l'objet
+    `{ behavior: "wait" }` y était pris pour un gestionnaire, aucun n'était retiré et rien n'était attendu. Vérifié : avec
+    cet appel, le nouveau contrôle « interception retirée » échoue (rôle reçu `null`).
+  - **Correctif (2026-10-23) :** seule interception de page active à cet endroit, elle est retirée par
+    `page.unrouteAll({ behavior: "wait" })` (Playwright 1.56), qui attend les gestionnaires en cours. Deux contrôles
+    ajoutés : aucun gestionnaire encore en cours après le retrait, et le serveur redonne le rôle (mock réellement retiré).
+    Les interceptions des scénarios suivants (`recoveryUrl`) sont posées après et restent actives.
+  - **Seconde cause d'intermittence diagnostiquée** (1 échec sur 10 en local, base neuve) : « l’accès aux 21 étapes reste
+    disponible » attendait un lien non rattaché au dossier B, satisfait par celui de A pendant la navigation ; le comptage
+    tombait sur l'état intermédiaire. La recette attend désormais l'URL et l'accueil de B, puis exige exactement un lien,
+    vers B.
+  - **Vérification locale :** 15 exécutions consécutives, chacune sur une base neuve (`fadi_acc`) : 15/15 vertes, 80 ✓
+    chacune, aucune erreur de routage ni rejet non traité ; typecheck ✓, tests web 945 ✓, build ✓.
 
 ## Écarts au plan (le concept et D-7 priment)
 

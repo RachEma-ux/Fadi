@@ -6,7 +6,8 @@
 
 ## En cours
 
-- Aucune ; la PR #255 attend la revue du maître d'ouvrage.
+- UM-E2E — Recette des accueils (`accueils-design.mjs`) : retrait d'interception corrigé et intermittence « 21 étapes »
+  diagnostiquée ; vérifié en local (15/15), CI à constater sur la tête (Issue : #253).
 
 ## Terminé
 

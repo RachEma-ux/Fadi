@@ -133,9 +133,13 @@ try {
 
   await selector.click();
   await menu.getByRole("menuitem").filter({ hasText: b.code }).click();
+  // Attendre l'accueil de B lui-même : le lien « Voir les 21 étapes » de A, encore affiché pendant la navigation, satisfaisait
+  // sinon l'attente, et le comptage tombait sur l'état intermédiaire (0 ou 2 liens) — échec intermittent constaté en local.
+  await page.waitForURL(`${BASE}${dossierPath(b.id)}`);
+  await overview(b.id).waitFor();
   const continueLink = page.locator(".dossier-journey .dossier-all-steps");
-  await continueLink.waitFor();
-  check("l’accès aux 21 étapes reste disponible", await continueLink.count() === 1);
+  await page.locator(`.dossier-journey .dossier-all-steps[href="${dossierPath(b.id)}?module=parcours"]`).waitFor();
+  check("l’accès aux 21 étapes reste disponible", await continueLink.count() === 1 && (await continueLink.getAttribute("href")) === `${dossierPath(b.id)}?module=parcours`);
   const stepsBefore = await api("get", `/projects/${b.id}/steps`);
   await checkComposition(b.id, "projet-desktop");
   check("la cloche expose le nombre d’alertes du dossier", (await bell().getAttribute("data-alert-count")) !== null);
@@ -344,18 +348,29 @@ try {
   // Un serveur qui n'a pas encore donné le rôle ne rend personne propriétaire par défaut.
   const unknown = await api("post", "/projects", { code: "P.ACC.ROLE", name: "Accueil — Rôle à vérifier" });
   const projectUrl = `${BASE}/projects/${unknown.id}`;
+  let roleHandlersInFlight = 0;
   await page.route(projectUrl, async (route) => {
-    const response = await route.fetch();
-    const data = await response.json();
-    delete data.role;
-    await route.fulfill({ response, json: data });
+    roleHandlersInFlight += 1;
+    try {
+      const response = await route.fetch();
+      const data = await response.json();
+      delete data.role;
+      await route.fulfill({ response, json: data });
+    } finally {
+      roleHandlersInFlight -= 1;
+    }
   });
   await openHome(unknown.id);
   await overview(unknown.id).waitFor();
   check("rôle inconnu : pas de commande de progression dans la carte", await overview(unknown.id).locator(".dossier-primary-action").count() === 0);
-  // Attendre la fin du gestionnaire en cours (route.fetch) avant de le retirer : sans cela, sa réponse peut arriver sur
-  // une requête déjà rendue au réseau (« Route is already handled! », vu en CI sur la PR #255).
-  await page.unroute(projectUrl, { behavior: "wait" });
+  // Seule interception de page encore active ici (les précédentes sont retirées, la suivante n'est pas posée) :
+  // `unrouteAll({ behavior: "wait" })` la retire puis attend la fin de tout gestionnaire en cours (route.fetch /
+  // route.fulfill), sans quoi sa réponse pouvait arriver sur une requête déjà rendue au réseau (« Route is already
+  // handled! », vu en CI sur la PR #255). `page.unroute(url, handler)` n'accepte pas d'options d'attente.
+  await page.unrouteAll({ behavior: "wait" });
+  check("rôle inconnu : aucun gestionnaire d'interception encore en cours après le retrait", roleHandlersInFlight === 0, roleHandlersInFlight === 0 ? "" : `${roleHandlersInFlight} en cours`);
+  const roleAfterCleanup = await page.evaluate(async (url) => (await (await fetch(url, { credentials: "include" })).json()).role ?? null, projectUrl);
+  check("rôle inconnu : interception retirée, le serveur redonne le rôle", roleAfterCleanup === "proprietaire", roleAfterCleanup === "proprietaire" ? "" : `rôle reçu : ${roleAfterCleanup}`);
 
   // L'identité du dossier elle-même peut manquer : l'action doit reprendre
   // cette lecture, respecter le refus d'accès ou renouveler la session.

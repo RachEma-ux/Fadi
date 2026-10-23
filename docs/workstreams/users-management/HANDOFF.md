@@ -13,7 +13,8 @@ Mis à jour : 2026-10-22 (UTC).
 
 - Phases 0 à 6 et amendement D-7 implémentés ; vérifiés localement sur PostGIS 16 réel et Mailpit (voir STATUS.md :
   31 + 109 + 48 contrôles, 229 tests purs API, tests web, typecheck, build).
-- `accueils-design.mjs` : course de `unroute` (ligne 351) rendue robuste (`behavior: "wait"`), vue deux fois en CI.
+- `accueils-design.mjs` : retrait de l'interception par `page.unrouteAll({ behavior: "wait" })` (l'appel de `361c7bd` ne retirait
+  rien) et attente de l'accueil de B avant le contrôle « 21 étapes » ; 15/15 exécutions vertes en local sur base neuve.
 - Constats de la revue Codex (UM-21 à UM-23) vérifiés en CI sur `24ed965` (563 tests API, dont 116 dans les 12 suites).
 - Correctifs de sécurité de la revue de `c7dbc92` vérifiés en CI sur `873f740` (DB-3 : 561 tests API, dont 114 dans
   les 12 suites ; `comptes-securite.mjs` vert).
