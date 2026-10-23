@@ -159,3 +159,11 @@ ils ne réécrivent aucune décision D-x et restent révisables par lui.
   externe ». Priorité : participants, invitations acceptées, revue externe. Le suivi passe à
   [`../organisations-participation/`](../organisations-participation/CONTEXT.md) ([Issue #262](https://github.com/RachEma-ux/Fadi/issues/262)).
   Ce chantier-ci ne garde que le déploiement.
+- **UM-26 — Préproduction déployée, Issue #253 close (2026-10-23).** L'outillage de préproduction est rendu compatible
+  avec D-7 par la PR #264 (service `migrate` à usage unique, application en `fadi_app`, `init-env` qui ajoute
+  `PREPROD_FADI_APP_DB_PASSWORD` et `PREPROD_FADI_ENCRYPTION_KEY`). Le déploiement automatique a mis `02329e1` en
+  préproduction (`fadi-preprod status`, relevé par le maître d'ouvrage : étape `fin`, résultat `succes` à 15:28:46 UTC,
+  build, migrate, up, smoke, `/version` et e2e courts ; application saine). `build` et `migrate` refusent de tourner sans
+  `PREPROD_FADI_APP_DB_PASSWORD` : leur succès établit que `init-env` a été lancé. Le maître d'ouvrage clôt l'Issue #253
+  (terminée). Reste ouvert : le déploiement en **production** (RUNBOOK.md), sur son accord explicite ; la production
+  tourne toujours l'ancienne version.

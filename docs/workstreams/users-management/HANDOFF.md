@@ -5,10 +5,10 @@ Mis à jour : 2026-10-23 (UTC).
 ## Point de reprise
 
 - Chantier : users-management
-- Issue : [#253](https://github.com/RachEma-ux/Fadi/issues/253)
+- Issue : [#253](https://github.com/RachEma-ux/Fadi/issues/253) (close le 2026-10-23, UM-26)
 - Branche / PR : [PR #255](https://github.com/RachEma-ux/Fadi/pull/255) **fusionnée** dans `main` le 2026-10-23 (commit `516e2f7`,
   par le maître d'ouvrage) ; branche de tâche `ccr-266c1e83-7780ml` supprimée après fusion, recréée depuis `main` pour ce
-  seul consignement.
+  consignement (PR #259, #263 et la présente mise à jour du suivi).
 - Dernier commit vérifié : à relever en début de session ; ne pas réutiliser un SHA périmé.
 
 ## Dernier état vérifié
@@ -26,7 +26,8 @@ Mis à jour : 2026-10-23 (UTC).
 ## Prochaine action
 
 - CI de `main` verte après la fusion (`516e2f7`, run CI 39911221480).
-- Déploiement : **seulement sur accord explicite du maître d'ouvrage**, en suivant RUNBOOK.md — `FADI_APP_DB_PASSWORD`
+- Préproduction : **faite** — `02329e1` déployé le 2026-10-23 à 15:28 UTC (PR #264, `init-env` lancé ; UM-26, STATUS.md).
+- Déploiement en **production** : **seulement sur accord explicite du maître d'ouvrage**, en suivant RUNBOOK.md — `FADI_APP_DB_PASSWORD`
   dans `.env.deploy`, service à usage unique `migrate` (§4), reconnexion des administrateurs avec leur code (§4 bis).
 - Organisations / participation / revue externe : chantier ouvert le 2026-10-23 (UM-25), suivi dans
   `docs/workstreams/organisations-participation/` ([Issue #262](https://github.com/RachEma-ux/Fadi/issues/262)).
