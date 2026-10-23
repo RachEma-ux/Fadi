@@ -150,3 +150,8 @@ ils ne réécrivent aucune décision D-x et restent révisables par lui.
 - **UM-23 — Compteur d'échecs de connexion atomique (revue Codex de `fcb0dd1`).** Constat : le compteur était lu puis
   réécrit ; cinq échecs simultanés laissaient `failed_login_count = 1`, sans verrouillage. Décision : incrément en base
   (`failed_login_count + 1 … RETURNING`) et durée de verrouillage calculée sur la valeur renvoyée, dans la même transaction.
+- **UM-24 — Fusion de la PR #255 (2026-10-23).** Le maître d'ouvrage a fusionné la PR #255 dans `main` le 2026-10-23 à
+  06:23 UTC (commit de fusion `516e2f7`, tête `dd784bc`) ; CI de `main` verte. Cette décision clôt les points d'arrêt
+  🛑 2, D7-final et final, qui attendaient sa revue sur la PR (UM-12, UM-13) : les mentions « non fusionnée » et
+  « revue à venir » de ces entrées décrivent l'état d'alors. Restent ouverts : le déploiement (RUNBOOK.md, accord explicite
+  du maître d'ouvrage) et UM-1 (organisations, non approuvé).
