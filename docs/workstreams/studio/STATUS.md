@@ -1,5 +1,13 @@
 # État — Studio
 
+## Complément documentaire Axes — 23 octobre 2026
+
+Tâche bornée [#260](https://github.com/RachEma-ux/Fadi/issues/260), branche `docs/260-axes-concept`, base vérifiée `516e2f747c15d84f8c589e5271c015e929dc37e4`. Le concept Axes v1.0 est proposé pour validation dans [la paire MD/DOCX](../../../Fadi%20Concept/README.md). Il formalise la barre d’outils, les repères et plans de travail, les origines de composants, la persistance, les limites de recherche et 20 scénarios de recette futurs.
+
+Vérification documentaire : mêmes 356 blocs de contenu et 25 liens dans les deux formats ; titre et version concordants ; rendu Word de 13 pages contrôlé visuellement ; trois empreintes d’archives sources vérifiées. Ce contrôle ne constitue pas une recette de Fadi. L’accès navigateur au Sandbox a échoué ; les constats applicatifs reposent sur le code épinglé. Aucun test applicatif, changement de code, migration, déploiement ou modification du registre des 630 obligations dans ce lot.
+
+État de ce complément : **Vérifié documentairement sur la branche**, proposition métier non acceptée. La publication est soumise à la PR liée à #260 ; fusion et CI ne sont pas déduites des contrôles locaux. Les checkpoints des autres lots ci-dessous conservent leur portée historique.
+
 ## Checkpoint courant — 21 octobre 2026
 
 Référence examinée : `main@78e9f4a89e9634189c3bd4fb9ed82576eafe2a64` (#222), après consolidation #209. Le code porte les quatre domaines Studio et les lots Sandbox 1–6 ; les anciennes instructions de fusion #181 ci-dessous sont historiques, plus une action à exécuter. La branche corrective de cet audit traite sauvegarde locale, cohérence des compteurs et nettoyage de la branche d'exploitation.
@@ -46,3 +54,4 @@ La validation personnelle et l'accès distant à la démo ne sont pas acquis. L'
 ## Préconditions de clôture
 
 Vérifier la CI au SHA exact, faire constater le parcours au propriétaire et recueillir son acceptation. Fusion de #181 autorisée explicitement par le propriétaire après vérification du candidat réconcilié ; cette autorisation ne vaut pas constat d’une recette personnelle ni clôture du MVP. Le SQL Studio est appliqué uniquement à la base neuve attestée ; aucun migrateur, schéma existant, sauvegarde, réglage GitHub ou déploiement de production n'est autorisé implicitement.
+
