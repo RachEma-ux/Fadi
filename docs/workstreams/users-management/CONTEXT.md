@@ -31,6 +31,7 @@ remplaçable (D-1), écrans d'administration et « Mon compte », recette et run
 
 ## Hypothèses et questions ouvertes
 
-- UM-1 : le chantier organisations / participation / revue externe reste à ouvrir par le maître d'ouvrage.
+- UM-1 : chantier organisations / participation / revue externe ouvert le 2026-10-23 (UM-25), suivi à part
+  (`../organisations-participation/`, Issue #262).
 - UM-11 : enrôlement d'une autorité d'attestation DB-3 (clé hors dépôt) à décider et provisionner par le maître d'ouvrage.
 - Annexe C du plan (adresse Infomaniak, SPF/DKIM/DMARC, `FADI_ENCRYPTION_KEY`, premier admin) : hors code, au maître d'ouvrage.

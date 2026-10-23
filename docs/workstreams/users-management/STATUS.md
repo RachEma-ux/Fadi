@@ -4,14 +4,17 @@ Mis à jour : 2026-10-23 (UTC).
 
 ## État
 
-**Fusionné dans `main` — non déployé.** La PR #255 (phases 0 à 6, amendement D-7, DB-3 raccordé, correctifs UM-18 à
+**Fusionné dans `main`, déployé en préproduction, pas en production ; Issue #253 close (UM-26).** La PR #255 (phases 0 à 6, amendement D-7, DB-3 raccordé, correctifs UM-18 à
 UM-23) a été fusionnée par le maître d'ouvrage le 2026-10-23 à 06:23 UTC (commit de fusion `516e2f7`, tête `dd784bc`).
 CI de `main` verte sur `516e2f7` : run CI 39911221480 et 5 autres workflows (14 contrôles réussis, 3 sautés comme sur la
-PR). **Aucun déploiement n'est fait** : il suit RUNBOOK.md (§1 à §11, dont §4 et §4 bis) et attend l'accord explicite du
-maître d'ouvrage.
+PR). **Préproduction** : `02329e1` déployé le 2026-10-23 à 15:28:46 UTC
+par le déploiement automatique (outillage D-7 de la PR #264, `init-env` lancé) — voir la section Préproduction.
+**Production : non déployée** ; le déploiement suit RUNBOOK.md (§1 à §11, dont §4 et §4 bis) et attend l'accord explicite
+du maître d'ouvrage.
 DB-3 : **vérifié en CI** sur `570d248` (UM-17) — les 12 suites passent sur base jetable attestée. Points d'arrêt 🛑 2,
 D7-final et final : **clos** par la décision de fusion du maître d'ouvrage (2026-10-23, UM-24) ; plus aucune revue de la
-PR #255 n'est attendue. Restent au maître d'ouvrage : le déploiement et UM-1.
+PR #255 n'est attendue. Reste au maître d'ouvrage : le déploiement en production. UM-1 est levé (UM-25) : le chantier
+« Organisations, participation et revue externe » est ouvert ([Issue #262](https://github.com/RachEma-ux/Fadi/issues/262)).
 
 ## Faits vérifiés
 
@@ -190,6 +193,22 @@ Preuves locales après correction :
     tranche `parcours` : « Accueil : 80 contrôles réussis, 0 échec(s) », dont les deux nouveaux contrôles de retrait et
     « l’accès aux 21 étapes reste disponible », aucun « Route is already handled ».
 
+### Préproduction (2026-10-23, UM-26)
+
+Relevé de `sudo fadi-preprod status` transmis par le maître d'ouvrage (VPS, non accessible depuis la session) :
+
+- `etat.json` : commit `02329e1ae4144c7e03a45e21bf5efdc756bb6963`, étape `fin`, résultat `succes`, heure
+  2026-10-23T15:28:46Z, message « déployé en préproduction (build, migrate, up, smoke, /version, e2e : sandbox-module
+  parcours-scenario) », journal `20261023T152026Z-2337465-auto`, `en_ligne` = ce commit.
+- Conteneurs : `fadi-preprod-app-1` (image `fadi-preprod-app:02329e1ae414`, sain, `127.0.0.1:3101`) et
+  `fadi-preprod-db-1` (PostGIS 16-3.4, sain).
+- `PREPROD_FADI_APP_DB_PASSWORD` : présence **déduite** du succès de `build` et `migrate`, qui refusent de tourner sans
+  elle ; `migrate` vérifie aussi que `fadi_app` ne peut pas créer dans `public`. Le `grep -c` de contrôle n'apparaît pas
+  dans le relevé.
+- Production (lecture seule) : `app-proxy`, `app-app`, `app-backup`, `app-db` démarrés depuis 3 jours, inchangés.
+- Non exercés en préproduction : `comptes-api`, `comptes-admin`, `comptes-securite` (base jetable et transport de
+  courriel exigés) ; couverts par la CI. Les tests de l'outillage (PR #264) utilisent des doubles `docker` / `curl`.
+
 ## Écarts au plan (le concept et D-7 priment)
 
 - UM-2 et UM-3 : pas d'état `invited` ni de compte fantôme ; les invitations ont leur propre table (`auth.invitations`).
@@ -203,16 +222,17 @@ Preuves locales après correction :
 
 ## Points ouverts
 
-- UM-1 : chantier organisations / participation / revue externe, à ouvrir par le maître d'ouvrage.
+- UM-1 : levé le 2026-10-23 (UM-25), chantier ouvert ([Issue #262](https://github.com/RachEma-ux/Fadi/issues/262), `../organisations-participation/`).
 - UM-17 : DB-3 livré par la PR #256 et raccordé à D-7 ; **12 suites vertes en CI** sur `570d248` (section DB-3).
-- UM-15 : le prochain déploiement exige `FADI_APP_DB_PASSWORD` dans `.env.deploy` (RUNBOOK §2–4).
+- UM-15 : préproduction faite (UM-26) ; le déploiement en production exige `FADI_APP_DB_PASSWORD` dans `.env.deploy` (RUNBOOK §2–4).
 - Annexe C (Infomaniak, DNS, clé de chiffrement, premier admin) : hors code.
 - CI de la PR #255 : **verte** sur `81af007` (run CI 39840078841 et 5 autres workflows, 2026-10-22 19:42 UTC). Le premier passage (`cf3d56f`) échouait sur la tranche `parcours` : le scénario attendait l'ancien refus du partage vers une adresse sans compte, puis des compteurs de cache invalidés par la purge sur 401. Corrigé dans `81af007`.
 - CI de la PR #255 **verte** sur `570d248` (fusion de `main` + DB-3) : run CI 39855284507 entier (validate, image, Studio V1, e2e p2 / planche / parcours / atelier / complements) et les 5 autres workflows, 2026-10-22 21:12–21:3x UTC.
 
 ## Liens de suivi
 
-- Issue : [#253](https://github.com/RachEma-ux/Fadi/issues/253)
+- Issue : [#253](https://github.com/RachEma-ux/Fadi/issues/253) (close le 2026-10-23, terminée)
+- Préproduction : [PR #264](https://github.com/RachEma-ux/Fadi/pull/264) (outillage D-7)
 - Branche de tâche : `ccr-266c1e83-7780ml` (imposée par la session, UM-12).
 - Pull Request : [#255](https://github.com/RachEma-ux/Fadi/pull/255) (fusionnée le 2026-10-23, commit `516e2f7`).
 

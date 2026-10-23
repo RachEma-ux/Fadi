@@ -2,12 +2,11 @@
 
 ## À faire
 
-- [ ] UM-DEPLOY — Déploiement selon RUNBOOK.md, sur accord explicite du maître d'ouvrage (Issue : #253).
-- [ ] UM-1 — Décision du maître d'ouvrage sur le chantier organisations / participation / revue externe (Issue : #253).
+- [ ] UM-DEPLOY — Déploiement en **production** selon RUNBOOK.md, sur accord explicite du maître d'ouvrage (Issue : #253, close ; UM-26).
 
 ## En cours
 
-- Aucune tâche en cours : le code est fusionné ; déploiement et UM-1 attendent le maître d'ouvrage.
+- Aucune tâche en cours : code fusionné, préproduction déployée ; le déploiement en production attend le maître d'ouvrage.
 
 ## Terminé
 
@@ -25,9 +24,14 @@
   atomique, UM-20 capacité « export ») : reproduits, corrigés, vérifiés en CI sur `873f740` (Issue : #253).
 - [x] UM-CODEX — Trois constats de la revue Codex de `fcb0dd1` (UM-21 à UM-23) : corrigés, vérifiés en CI sur `24ed965`
   (Issue : #253).
+- [x] UM-1 — Chantier « Organisations, participation et revue externe » ouvert par le maître d'ouvrage le 2026-10-23
+  (UM-25) ; suivi dans `docs/workstreams/organisations-participation/` (Issue : #262).
 - [x] UM-ACC — Fusion de la PR #255 par le maître d'ouvrage le 2026-10-23 (`516e2f7`), CI de `main` verte (Issue : #253).
 - [x] UM-E2E — Recette des accueils : retrait d'interception par `unrouteAll({ behavior: "wait" })` et attente de l'accueil
   de B ; 15/15 en local, CI verte sur `18cd1d0` (80 ✓) (Issue : #253).
+- [x] UM-PREPROD — Préproduction compatible D-7 (PR #264), `init-env` lancé, `02329e1` déployé avec succès le 2026-10-23
+  à 15:28 UTC (UM-26) (Issue : #253).
+- [x] UM-CLOSE — Issue #253 close par le maître d'ouvrage le 2026-10-23 (terminée) (UM-26).
 - [x] UM-D7 — Amendement D-7 : schémas `auth` / `admin`, rôles au moindre privilège, CI et restauration (Issue : #253).
 
 ## Bloqué
