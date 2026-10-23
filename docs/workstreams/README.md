@@ -14,7 +14,9 @@ Chaque **chantier** dispose d'un dossier de contexte et d'un point de reprise ; 
 | Atelier et Planche | Cahiers, lots et décisions préexistants ; ne pas recréer leur suivi | [Atelier](../atelier/README.md) · [Planche](../planche/README.md) | Les nouveaux chantiers ne sont ouverts qu'en cas de changement cadré |
 | Équipe Codex Fadi | Programme documentaire M00–M30 ; aucune correction réalisée par sa création | [ai-team/](ai-team/CONTEXT.md) | [Issue #156](https://github.com/RachEma-ux/Fadi/issues/156) |
 | Studio | Cadrage et missions définis ; cases et conformité à qualifier | [studio/](studio/CONTEXT.md) | [Programme #156](https://github.com/RachEma-ux/Fadi/issues/156), Issues #159–#164 |
-| Gestion des comptes (Users Management) | Phases 0–6 implémentées sur branche ; revue et acceptation du maître d'ouvrage à venir ; DB-3 bloqué | [users-management/](users-management/CONTEXT.md) | [Issue #253](https://github.com/RachEma-ux/Fadi/issues/253) |
+| Gestion des comptes (Users Management) | **Fusionnée** dans `main` (PR #255, 2026-10-23), non déployée ; déploiement sur accord explicite | [users-management/](users-management/CONTEXT.md) | [Issue #253](https://github.com/RachEma-ux/Fadi/issues/253) |
+| Organisations, participation et revue externe | **À définir** : plan proposé, validation et décisions OP-D1 à OP-D11 attendues (🛑 0) | [organisations-participation/](organisations-participation/CONTEXT.md) | [Issue #262](https://github.com/RachEma-ux/Fadi/issues/262) |
+| Organisations Participation | À définir | [organisations-participation/](organisations-participation/CONTEXT.md) | [Issue #262](https://github.com/RachEma-ux/Fadi/issues/262) |
 
 ## Ouvrir un chantier
 
