@@ -1,5 +1,13 @@
 # Reprise — Studio
 
+## Complément documentaire Axes — 23 octobre 2026
+
+Tâche bornée [#260](https://github.com/RachEma-ux/Fadi/issues/260), branche `docs/260-axes-concept`, base vérifiée `516e2f747c15d84f8c589e5271c015e929dc37e4`. Le concept Axes v1.0 est proposé pour validation dans [la paire MD/DOCX](../../../Fadi%20Concept/README.md). Il formalise la barre d’outils, les repères et plans de travail, les origines de composants, la persistance, les limites de recherche et 20 scénarios de recette futurs.
+
+Vérification documentaire : mêmes 356 blocs de contenu et 25 liens dans les deux formats ; titre et version concordants ; rendu Word de 13 pages contrôlé visuellement ; trois empreintes d’archives sources vérifiées. Ce contrôle ne constitue pas une recette de Fadi. L’accès navigateur au Sandbox a échoué ; les constats applicatifs reposent sur le code épinglé. Aucun test applicatif, changement de code, migration, déploiement ou modification du registre des 630 obligations dans ce lot.
+
+Prochaine action : retrouver la PR liée à #260, vérifier son HEAD, ses fichiers et ses checks actuels, puis revoir le concept. Ne pas relancer les anciennes instructions de fusion ci-dessous. Toute mise en œuvre devra faire l’objet d’un lot cadré et d’une recette propre ; aucune acceptation des scénarios Axes n’est acquise.
+
 ## Checkpoint courant — 21 octobre 2026
 
 Référence examinée : `main@78e9f4a89e9634189c3bd4fb9ed82576eafe2a64` (#222), après consolidation #209. Le code porte les quatre domaines Studio et les lots Sandbox 1–6 ; les anciennes instructions de fusion #181 ci-dessous sont historiques, plus une action à exécuter. La branche corrective de cet audit traite sauvegarde locale, cohérence des compteurs et nettoyage de la branche d'exploitation.
@@ -47,3 +55,4 @@ Le premier lancement a révélé un oracle SVG de hauteur nulle puis une icône 
 ## Arrêt sûr
 
 Seuls les processus/ressources créés et identifiés par le profil peuvent être arrêtés. La base locale et son volume ont été conservés pour inspection ; credentials en fichiers600 hors Git. Si l'état privé de session n'est plus accessible, le déclarer et recréer un profil neuf ; ne pas inventer une récupération. Conserver #169/#172/#181 et les décisions historiques ; aucun push direct main, administration, migration sur cible existante, suppression de données ou production. La fusion autorisée passe par #181 et les protections GitHub effectives.
+
