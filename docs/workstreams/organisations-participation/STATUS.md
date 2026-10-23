@@ -28,8 +28,8 @@ Mis à jour : 2026-10-23 (UTC).
 ## Liens de suivi
 
 - Issue : [#262](https://github.com/RachEma-ux/Fadi/issues/262).
-- Branche : `ccr-266c1e83-7780ml`, imposée par la session. Le cadrage partage la PR documentaire
-  [#259](https://github.com/RachEma-ux/Fadi/pull/259) avec le consignement de la fusion de la PR #255.
+- Branche : `ccr-266c1e83-7780ml`, imposée par la session. PR de cadrage : [#263](https://github.com/RachEma-ux/Fadi/pull/263).
+  Le commit était d'abord poussé sur la PR #259, fusionnée avec sa tête précédente sans lui : il est rebasé sur `main`.
 
 ## Préconditions de clôture
 

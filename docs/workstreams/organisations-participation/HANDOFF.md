@@ -5,7 +5,7 @@ Mis à jour : 2026-10-23 (UTC).
 ## Point de reprise
 
 - Chantier : organisations-participation. Issue : [#262](https://github.com/RachEma-ux/Fadi/issues/262).
-- Branche / PR : `ccr-266c1e83-7780ml`, PR documentaire [#259](https://github.com/RachEma-ux/Fadi/pull/259), non fusionnée.
+- Branche / PR : `ccr-266c1e83-7780ml`, PR de cadrage [#263](https://github.com/RachEma-ux/Fadi/pull/263), non fusionnée.
 - Dernier commit vérifié : à relever en début de session ; ne pas réutiliser un SHA périmé.
 
 ## Dernier état vérifié
