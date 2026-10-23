@@ -309,7 +309,7 @@ export const accountApi = {
   mfaDisable: (password: string, code: string) => request<{ enabled: false }>("/auth/me/mfa/disable", json({ password, code })),
   mfaRecoveryCodes: (password: string, code: string) => request<{ recoveryCodes: string[] }>("/auth/me/mfa/recovery-codes", json({ password, code })),
   exportUrl: "/auth/me/export",
-  deleteAccount: (password: string) => request<{ deletionAt: string; mail: { queued: boolean } }>("/auth/me", { method: "DELETE", body: JSON.stringify({ password, confirm: "SUPPRIMER" }) }),
+  deleteAccount: (password: string) => request<{ deletionAt: string; mail: { queued: boolean; link?: string } }>("/auth/me", { method: "DELETE", body: JSON.stringify({ password, confirm: "SUPPRIMER" }) }),
   // --- Administration (404 pour un non-administrateur, 403 `mfa_required` sans double authentification) ---
   adminUsers: (f: AdminUsersFilters) => request<AdminUsersPage>(`/admin/users${query({ q: f.q, status: f.status, role: f.role, page: f.page, pageSize: f.pageSize })}`),
   adminUser: (id: string) => request<AdminUserDetail>(`/admin/users/${encodeURIComponent(id)}`),
@@ -317,7 +317,7 @@ export const accountApi = {
   adminSuspend: (id: string) => request<{ user: AdminUser }>(`/admin/users/${encodeURIComponent(id)}/suspend`, { method: "POST" }),
   adminReactivate: (id: string) => request<{ user: AdminUser }>(`/admin/users/${encodeURIComponent(id)}/reactivate`, { method: "POST" }),
   adminRevokeSessions: (id: string) => request<{ revoked: number }>(`/admin/users/${encodeURIComponent(id)}/revoke-sessions`, { method: "POST" }),
-  adminDelete: (id: string) => request<{ deletionAt: string }>(`/admin/users/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  adminDelete: (id: string) => request<{ deletionAt: string; mail?: { queued: boolean; link?: string } }>(`/admin/users/${encodeURIComponent(id)}`, { method: "DELETE" }),
   adminInvite: (email: string) => request<InvitationCreated>("/admin/users/invitations", json({ email })),
   adminInvitations: (status?: InvitationStatus) => request<{ invitations: InvitationView[] }>(`/admin/invitations${query({ status })}`),
   adminCancelInvitation: (id: string) => request<void>(`/admin/invitations/${encodeURIComponent(id)}`, { method: "DELETE" }),

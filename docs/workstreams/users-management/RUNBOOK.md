@@ -62,15 +62,19 @@ Sans `MAIL_TRANSPORT`, l'API démarre mais n'envoie rien : les écrans affichent
 
 ## 4. Migration et bascule vers `fadi_app`
 
-`docker-compose.yml` connecte désormais l'API en `fadi_app` et migre au démarrage avec le compte d'administration
-(`DATABASE_MIGRATION_URL`) :
+`docker-compose.yml` sépare la migration de l'API (revue de la PR #255) : le service à usage unique `migrate`
+(`MIGRATE_ONLY=1`) applique le schéma et les mots de passe des rôles avec le compte d'administration de la base, puis
+s'arrête ; `app` ne démarre qu'après sa réussite et se connecte en `fadi_app` **sans** l'identifiant de migration (l'API
+refuse de démarrer en production si `DATABASE_MIGRATION_URL` lui est donné) :
 
 ```sh
-docker compose --env-file .env.deploy up -d --build app
-docker compose --env-file .env.deploy logs app | grep -E "Schema applied|D-7|Courriel|listening"
+docker compose --env-file .env.deploy up -d --build app      # lance d'abord `migrate`, puis `app`
+docker compose --env-file .env.deploy logs migrate | grep -E "Schema applied|D-7|Migration terminée"
+docker compose --env-file .env.deploy logs app | grep -E "Courriel|listening"
 ```
 
-Attendu : `Schema applied`, `D-7 : mot de passe appliqué pour fadi_app`, `Courriel : transport smtp`, `listening`.
+Attendu : `Schema applied`, `D-7 : mot de passe appliqué pour fadi_app`, `Migration terminée` (migrate), puis
+`Courriel : transport smtp`, `listening` (app).
 L'API **refuse de démarrer en production** si son rôle peut créer des objets dans `public` (D-7).
 
 Vérification des droits (lecture seule) :
@@ -89,6 +93,9 @@ docker compose --env-file .env.deploy exec db psql -U fadi -d fadi -c "SELECT ha
 - Retour arrière : l'ancienne version ignore la colonne ; aucune donnée à restaurer.
 - L'accès support ne peut plus produire, exporter, télécharger ni copier (403 `support_no_export`) ; la lecture reste
   permise et journalisée.
+- Sans transport de courriel, une suppression programmée rend son lien d'annulation à la personne (Mon compte) ou à
+  l'administrateur, à transmettre au titulaire (UM-21).
+- Migration : service à usage unique `migrate` (§4) ; une ancienne `.env.deploy` reste valable, aucune variable nouvelle.
 
 ## 5. Courriel de test
 

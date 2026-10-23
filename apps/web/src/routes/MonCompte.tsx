@@ -10,7 +10,7 @@ import { accountApi, ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
 import { LOCALE } from "../lib/i18n";
 import { useOnline } from "../components/SyncIndicator";
-import { apiMessage, ConfirmDialog, PasswordField } from "../components/comptes/ComptesUI";
+import { apiMessage, ConfirmDialog, CopyLink, PasswordField } from "../components/comptes/ComptesUI";
 import { PASSWORD_MIN } from "../lib/password-strength";
 
 const OFFLINE = "Hors connexion : cette action exige le réseau.";
@@ -206,9 +206,16 @@ function DeleteAccount() {
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [projects, setProjects] = useState<{ id: string; code: string; name: string }[]>([]);
+  /** Lien d'annulation rendu quand aucun courriel n'a pu partir (D-1) : affiché avant la déconnexion. */
+  const [cancelLink, setCancelLink] = useState<string | null>(null);
+  const leave = async () => { await logout(); navigate("/connexion", { replace: true }); };
   const m = useMutation({
     mutationFn: () => accountApi.deleteAccount(password),
-    onSuccess: async () => { setOpen(false); await logout(); navigate("/connexion", { replace: true }); },
+    onSuccess: async (r) => {
+      setOpen(false);
+      if (r.mail.link) { setCancelLink(r.mail.link); return; }
+      await leave();
+    },
     onError: (err) => {
       setOpen(false);
       if (err instanceof ApiError && err.code === "owns_shared_projects") setProjects(((err.body as { projects?: { id: string; code: string; name: string }[] })?.projects) ?? []);
@@ -228,6 +235,13 @@ function DeleteAccount() {
         <ul data-owned-shared>{projects.map((p) => <li key={p.id}><a href={`/projets/${p.id}?module=collaboration`} translate="no">{p.code} — {p.name}</a></li>)}</ul>
       )}
       {msg && <Status ok={msg.ok}>{msg.text}</Status>}
+      {cancelLink && (
+        <div data-deletion-cancel-link>
+          <p role="status">Suppression programmée, mais aucun courriel n’a pu être envoyé : conservez ce lien, il est le seul moyen d’annuler la suppression dans les 30 jours.</p>
+          <CopyLink link={cancelLink} />
+          <button type="button" className="button-primary" onClick={() => void leave()}>J’ai conservé le lien — me déconnecter</button>
+        </div>
+      )}
       {open && (
         <ConfirmDialog title="Supprimer votre compte ?" confirmLabel="Programmer la suppression" danger busy={m.isPending} onClose={() => setOpen(false)} onConfirm={() => m.mutate()}>
           <p>Votre compte sera bloqué dès maintenant et anonymisé dans 30 jours, sauf annulation par le lien reçu par courriel.</p>

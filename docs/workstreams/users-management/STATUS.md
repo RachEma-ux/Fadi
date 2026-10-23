@@ -4,8 +4,8 @@ Mis à jour : 2026-10-22 (UTC).
 
 ## État
 
-**Implémenté et vérifié (local et CI) ; trois correctifs de sécurité de la revue de `c7dbc92` livrés et vérifiés en CI
-sur `873f740` (UM-18 à UM-20) — en attente de revue humaine.** Phases 0 à 6 et amendement D-7 livrés
+**Implémenté et vérifié ; correctifs de la revue de `c7dbc92` (UM-18 à UM-20, CI verte sur `873f740`) et de la revue
+Codex de `fcb0dd1` (UM-21 à UM-23, vérifiés en local, CI à constater) — PR prête pour revue, en attente de revue humaine.** Phases 0 à 6 et amendement D-7 livrés
 sur la branche `ccr-266c1e83-7780ml` (une seule PR, non fusionnée, UM-12). **Rien n'est accepté ni déployé.**
 DB-3 : **vérifié en CI** sur `570d248` (UM-17) — les 12 suites passent sur base jetable attestée. Points d'arrêt 🛑 2, D7-final et final : revue du maître d'ouvrage sur la PR.
 
@@ -149,6 +149,22 @@ Preuves locales après correction :
   `comptes-admin.mjs` verts.
 - En CI (tranche `complements`), `comptes-securite.mjs` tourne sur la base partagée : les courses du dernier
   administrateur y sont déclarées NON EXÉCUTÉES (elles exigent une base vierge) et couvertes par `app.test.ts`.
+
+### Revue Codex de `fcb0dd1` — trois constats corrigés (2026-10-23)
+
+- **Annulation d'une suppression sans courriel (UM-21).** Avant : `queued: false` sans lien, aucune voie d'annulation.
+  Après, vérifié sur l'API locale sans transport : 202 avec le lien ; connexion 403 pendant la suppression ; le lien
+  annule (200) ; connexion de nouveau 200.
+- **Migration hors de l'API (UM-22).** `docker compose config` valide ; en local, `MIGRATE_ONLY=1` applique le schéma et
+  le mot de passe de `fadi_app` puis s'arrête (code 0) ; l'API en production avec `DATABASE_MIGRATION_URL` refuse de
+  démarrer (code 1) ; sans lui, elle démarre en `fadi_app` (`/health` ok). Le job CI `image` vérifie les trois.
+- **Compteur d'échecs atomique (UM-23).** Avant (reproduit par `comptes-securite.mjs`, section 4) : cinq échecs
+  simultanés → `failed_login_count = 1`, pas de verrouillage. Après : 5 et verrouillé.
+- Recettes locales : `comptes-securite.mjs` **66 ✓** (base vierge), `comptes-api.mjs` 109 ✓, `comptes-admin.mjs` 50 ✓,
+  `users-migration-check.mjs` ✓ ; typecheck, build et `test:db-guard` 178 ✓. Deux tests DB-3 ajoutés à `app.test.ts`
+  (bloc « 4. revue Codex ») : à constater en CI.
+- `e2e (parcours)` en échec sur `6a9d1e7` (commit de documentation) : course de `apps/web/e2e/accueils-design.mjs:351`
+  (`route.fulfill: Route is already handled!`), hors de cette PR ; commentaire sur la PR et une relance demandée.
 
 ## Écarts au plan (le concept et D-7 priment)
 

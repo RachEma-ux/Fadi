@@ -10845,5 +10845,8 @@
 "lecture et commentaires": "reading and comments",
 "Cette session n’a pas été ouverte avec votre code de double authentification : reconnectez-vous avec votre code pour accéder à l’administration.": "This session was not opened with your two-factor code: sign in again with your code to access administration.",
 "Se déconnecter puis se reconnecter": "Sign out, then sign in again",
-"Cette session n'a pas été ouverte avec votre code de double authentification : déconnectez-vous, puis reconnectez-vous avec votre code.": "This session was not opened with your two-factor code: sign out, then sign in again with your code."
+"Cette session n'a pas été ouverte avec votre code de double authentification : déconnectez-vous, puis reconnectez-vous avec votre code.": "This session was not opened with your two-factor code: sign out, then sign in again with your code.",
+"Suppression programmée, mais aucun courriel n’a pu être envoyé : conservez ce lien, il est le seul moyen d’annuler la suppression dans les 30 jours.": "Deletion scheduled, but no email could be sent: keep this link, it is the only way to cancel the deletion within 30 days.",
+"J’ai conservé le lien — me déconnecter": "I have kept the link — sign me out",
+"Suppression programmée (30 jours) ; aucun courriel n’a pu partir : transmettez au titulaire le lien d’annulation ci-dessous.": "Deletion scheduled (30 days); no email could be sent: pass the cancellation link below to the account holder."
 }

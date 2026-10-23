@@ -174,10 +174,14 @@ authRouter.post("/login", perIdentifier(10), async (req, res) => {
   }
   const valid = await verifyPassword(user.passwordHash, password);
   if (!valid) {
-    const failures = user.failedLoginCount + 1;
-    const lockMs = lockDurationMs(failures);
+    // Incrément atomique (revue Codex de la PR #255) : des échecs simultanés ne s'écrasent pas ; la durée du verrouillage
+    // se calcule sur la valeur renvoyée par la base, sous le verrou de ligne de cette même transaction.
     await db.transaction(async (tx) => {
-      await tx.update(users).set({ failedLoginCount: failures, lockedUntil: lockMs ? new Date(now.getTime() + lockMs) : user.lockedUntil }).where(eq(users.id, user.id));
+      const [row] = await tx.update(users).set({ failedLoginCount: sql`${users.failedLoginCount} + 1` }).where(eq(users.id, user.id))
+        .returning({ failures: users.failedLoginCount });
+      const failures = row?.failures ?? user.failedLoginCount + 1;
+      const lockMs = lockDurationMs(failures);
+      if (lockMs) await tx.update(users).set({ lockedUntil: new Date(now.getTime() + lockMs) }).where(eq(users.id, user.id));
       await audit(tx, { actorId: user.id, action: lockMs ? "auth.login.locked" : "auth.login.failed", target: { type: "user", id: user.id }, metadata: { reason: "bad_password", failures, lockSeconds: lockMs / 1000 }, ip: clientIp(req) });
     });
     invalid();
@@ -732,6 +736,11 @@ export async function sharedOwnedProjects(userId: string, executor: Pick<typeof 
     .where(eq(projects.ownerId, userId));
 }
 
+/** Réponse « courriel » d'une suppression programmée : le lien d'annulation seulement s'il n'a pas pu être mis en file. */
+export function deletionMail(s: { mail: { queued: boolean; reason?: string | null | undefined }; cancelLink: string }) {
+  return { queued: s.mail.queued, ...(s.mail.reason ? { reason: s.mail.reason } : {}), ...(s.mail.queued ? {} : { link: s.cancelLink }) };
+}
+
 export type DeletionRefusal =
   | { refusal: "not_found" }
   | { refusal: "deletion_already_requested" }
@@ -744,7 +753,7 @@ export type DeletionRefusal =
  * verrouillé, projets partagés et garde du dernier administrateur vérifiés, puis mutation, révocation et journal. Une
  * demande refusée n'écrit rien.
  */
-export async function scheduleDeletion(userId: string, actorId: string, req: Request, action: "account.deletion.requested" | "admin.user.deletion_requested"): Promise<DeletionRefusal | { deletionAt: Date; mail: { queued: boolean } }> {
+export async function scheduleDeletion(userId: string, actorId: string, req: Request, action: "account.deletion.requested" | "admin.user.deletion_requested"): Promise<DeletionRefusal | { deletionAt: Date; mail: { queued: boolean; reason?: string | null | undefined }; cancelLink: string }> {
   const locale = mailLocale(req);
   return db.transaction(async (tx) => {
     const admins = await lockAdminEligibility(tx);
@@ -760,8 +769,9 @@ export async function scheduleDeletion(userId: string, actorId: string, req: Req
     await audit(tx, { actorId, action, target: { type: "user", id: userId }, metadata: { revokedSessions: n }, ip: clientIp(req) });
     const token = await issueAccountToken(userId, "cancel_deletion", tx);
     const deletionAt = new Date(now.getTime() + DELETION_GRACE_MS);
-    const mail = await sendAccountMail(user.email, "deletion_scheduled", { link: publicLink(PUBLIC_PATHS.cancel_deletion, token), deletionAt: formatDate(deletionAt, locale) }, locale, tx);
-    return { deletionAt, mail };
+    const cancelLink = publicLink(PUBLIC_PATHS.cancel_deletion, token);
+    const mail = await sendAccountMail(user.email, "deletion_scheduled", { link: cancelLink, deletionAt: formatDate(deletionAt, locale) }, locale, tx);
+    return { deletionAt, mail, cancelLink };
   });
 }
 
@@ -789,7 +799,9 @@ authRouter.delete("/me", async (req, res) => {
     return;
   }
   clearSessionCookies(res);
-  res.status(202).json({ deletionAt: scheduled.deletionAt.toISOString(), mail: { queued: scheduled.mail.queued } });
+  // Repli déclaré (D-1, revue Codex de la PR #255) : sans courriel en file (transport absent, quota), le lien d'annulation
+  // est rendu à la personne authentifiée qui vient de le demander — jamais de suppression sans voie d'annulation.
+  res.status(202).json({ deletionAt: scheduled.deletionAt.toISOString(), mail: deletionMail(scheduled) });
 });
 
 authRouter.post("/cancel-deletion", async (req, res) => {

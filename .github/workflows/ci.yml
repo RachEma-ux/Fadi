@@ -862,13 +862,23 @@ jobs:
       - uses: actions/checkout@v4
       - name: Construire l'image de production (Dockerfile)
         run: docker build --build-arg FADI_COMMIT=${{ github.sha }} --build-arg FADI_BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ) -t fadi:ci .
-      - name: Démarrer le conteneur (schéma appliqué au démarrage) et sonder /health, /accueil, /projects, /version
+      - name: Migrer (service à usage unique), refuser l'identifiant de migration dans l'API, démarrer le conteneur et sonder /health, /accueil, /projects, /version
         run: |
-          # D-7 : comme en production — l'API en fadi_app, la migration au démarrage avec le compte d'administration de la base.
-          docker run -d --name fadi --network host \
+          # D-7 : comme en production (docker-compose) — migration à usage unique avec le compte d'administration de la base
+          # (MIGRATE_ONLY=1, s'arrête sans écouter), puis l'API en fadi_app sans l'identifiant de migration.
+          docker run --rm --network host -e MIGRATE_ONLY=1 \
+            -e DATABASE_URL=postgresql://fadi:fadi_ci_password@localhost:5432/fadi_image \
+            -e DATABASE_MIGRATION_URL=postgresql://fadi:fadi_ci_password@localhost:5432/fadi_image \
+            -e FADI_APP_DB_PASSWORD=fadi_app_ci_password fadi:ci
+          # Revue de la PR #255 : l'API refuse de démarrer en production si l'identifiant de migration lui est donné.
+          if timeout 60 docker run --rm --network host -e MIGRATE_ON_START=0 \
             -e DATABASE_URL=postgresql://fadi_app:fadi_app_ci_password@localhost:5432/fadi_image \
             -e DATABASE_MIGRATION_URL=postgresql://fadi:fadi_ci_password@localhost:5432/fadi_image \
-            -e FADI_APP_DB_PASSWORD=fadi_app_ci_password \
+            -e WEB_ORIGIN=http://localhost:3001 -e TRUST_PROXY=0 fadi:ci; then
+            echo "::error title=image::l'API a démarré avec DATABASE_MIGRATION_URL en production"; exit 1
+          fi
+          docker run -d --name fadi --network host -e MIGRATE_ON_START=0 \
+            -e DATABASE_URL=postgresql://fadi_app:fadi_app_ci_password@localhost:5432/fadi_image \
             -e WEB_ORIGIN=http://localhost:3001 -e TRUST_PROXY=0 fadi:ci
           for i in $(seq 1 60); do
             if curl -sf http://localhost:3001/health | grep -q '"db":"ok"'; then echo "conteneur prêt"; break; fi

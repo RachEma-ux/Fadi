@@ -343,6 +343,16 @@ const readerExport = await readerClient.call('GET', `/projects/${pid}/documents/
 check('lecteur : export inchangé', readerExport.status === 200, readerExport.status);
 check('lecteur : téléchargement de pièce jointe inchangé', (await readerClient.call('GET', `/projects/${pid}/steps/1/files/${fileId}`)).status === 200);
 
+// =====================================================================================================================
+// 4. Échecs de connexion simultanés (revue Codex) : compteur incrémenté atomiquement
+// =====================================================================================================================
+console.log('— 4. Échecs de connexion simultanés');
+const victim = await register('echecs');
+const attempts = await Promise.all(Array.from({ length: 5 }, () => agent().call('POST', '/auth/login', { email: victim.email, password: 'mauvais-mot-de-passe-1' })));
+check('cinq échecs simultanés : tous refusés (401)', attempts.every((r) => r.status === 401), attempts.map((r) => r.status));
+const counted = (await sql.query('SELECT failed_login_count, locked_until FROM users WHERE id = $1', [victim.id])).rows[0];
+check('cinq échecs simultanés : compteur à 5, compte verrouillé', counted.failed_login_count === 5 && counted.locked_until !== null, counted);
+
 await sql.end();
 if (failures) {
   console.log(`\n${failures} échec(s) — recette sécurité des comptes NON conforme`);

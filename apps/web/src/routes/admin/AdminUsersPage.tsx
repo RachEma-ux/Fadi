@@ -159,6 +159,8 @@ export function AdminUsersPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [action, setAction] = useState<Action | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  /** Lien d'annulation d'une suppression programmée sans courriel en file : à transmettre au titulaire (D-1). */
+  const [cancelLink, setCancelLink] = useState<string | null>(null);
   const list = useQuery({ queryKey: ["admin", "users", filters], queryFn: () => accountApi.adminUsers(filters), placeholderData: keepPreviousData, retry: false });
   const act = useMutation({
     mutationFn: async (a: Action) => {
@@ -166,7 +168,10 @@ export function AdminUsersPage() {
         case "suspend": return accountApi.adminSuspend(a.user.id).then(() => "Compte suspendu.");
         case "reactivate": return accountApi.adminReactivate(a.user.id).then(() => "Compte réactivé.");
         case "revoke": return accountApi.adminRevokeSessions(a.user.id).then((r) => `${r.revoked} session(s) révoquée(s).`);
-        case "delete": return accountApi.adminDelete(a.user.id).then(() => "Suppression programmée (30 jours).");
+        case "delete": return accountApi.adminDelete(a.user.id).then((r) => {
+          setCancelLink(r.mail?.link ?? null);
+          return r.mail?.link ? "Suppression programmée (30 jours) ; aucun courriel n’a pu partir : transmettez au titulaire le lien d’annulation ci-dessous." : "Suppression programmée (30 jours).";
+        });
         case "role": return accountApi.adminSetRole(a.user.id, a.user.platformRole === "admin" ? "user" : "admin").then(() => "Rôle modifié.");
       }
     },
@@ -187,6 +192,7 @@ export function AdminUsersPage() {
       <p className="panel-sub">Gestion des comptes de la plateforme. Le contenu des projets n’est jamais accessible d’ici : seul un accès support accordé par le propriétaire l’ouvre, en lecture.</p>
       {!online && <p role="status" className="access-banner">{OFFLINE}</p>}
       {msg && <p role={msg.ok ? "status" : "alert"} className={msg.ok ? "h7-muted" : "form-error"} data-admin-message>{msg.text}</p>}
+      {msg?.ok && cancelLink && <CopyLink link={cancelLink} />}
       <InviteForm />
       <Invitations />
       <section className="panel" aria-labelledby="admin-list">

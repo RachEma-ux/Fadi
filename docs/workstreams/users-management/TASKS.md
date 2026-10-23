@@ -6,7 +6,8 @@
 
 ## En cours
 
-- Aucune ; la PR #255 attend la revue du maître d'ouvrage.
+- UM-CODEX — Trois constats de la revue Codex de `fcb0dd1` (UM-21 annulation sans courriel, UM-22 migration hors de
+  l'API, UM-23 compteur d'échecs atomique) : corrigés et vérifiés en local ; CI à constater (Issue : #253).
 
 ## Terminé
 

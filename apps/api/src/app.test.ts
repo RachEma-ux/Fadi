@@ -2378,6 +2378,39 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
     });
   });
 
+  describe("4. revue Codex de fcb0dd1", () => {
+    it("échecs de connexion simultanés : compteur incrémenté atomiquement, verrouillage atteint au seuil", async () => {
+      const acct = await account("echecs");
+      const attempts = await Promise.all(Array.from({ length: 5 }, () => agent().post("/auth/login").send({ email: acct.email, password: "mauvais-mot-de-passe-1" })));
+      expect(attempts.every((r) => r.status === 401)).toBe(true);
+      const row = (await pool.query("SELECT failed_login_count, locked_until FROM users WHERE id = $1", [acct.id])).rows[0];
+      expect(row.failed_login_count).toBe(5);
+      expect(row.locked_until).not.toBeNull();
+      expect((await agent().post("/auth/login").send({ email: acct.email, password: PASSWORD })).status).toBe(401);
+    });
+
+    it("suppression sans courriel en file : le lien d'annulation est rendu, il annule vraiment la suppression", async () => {
+      const acct = await account("annulation");
+      const del = await acct.a.delete("/auth/me").send({ password: PASSWORD, confirm: "SUPPRIMER" });
+      expect(del.status).toBe(202);
+      expect(del.body.mail.queued).toBe(false);
+      const link = del.body.mail.link as string;
+      expect(link).toMatch(/#jeton=/);
+      expect((await agent().post("/auth/login").send({ email: acct.email, password: PASSWORD })).status).toBe(403);
+      const token = decodeURIComponent(link.split("#jeton=")[1]!);
+      expect((await agent().post("/auth/cancel-deletion").send({ token })).status).toBe(200);
+      expect((await agent().post("/auth/login").send({ email: acct.email, password: PASSWORD })).status).toBe(200);
+      // Par l'administration : le lien revient à l'administrateur, à transmettre au titulaire.
+      const boss = await account("admin-suppr");
+      await enableMfa(boss, boss.a);
+      await promoteInDb(boss.id);
+      const target = await account("cible");
+      const byAdmin = await boss.a.delete(`/admin/users/${target.id}`);
+      expect(byAdmin.status).toBe(202);
+      expect(byAdmin.body.mail.link).toMatch(/#jeton=/);
+    });
+  });
+
   describe("3. accès support : lecture seule, aucun export", () => {
     it("refuse documents, archive, téléchargements et copie (GET, HEAD, barre finale, casse, identifiant encodé) avant toute production ou copie ; lectures permises et journalisées", async () => {
       const owner = await account("proprio");

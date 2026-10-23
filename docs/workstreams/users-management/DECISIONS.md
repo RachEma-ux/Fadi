@@ -135,3 +135,18 @@ ils ne réécrivent aucune décision D-x et restent révisables par lui.
   dessins), archive, copie, pièces jointes, rapports Harmonie et bilan, exports IFC / STEP / CSV de l'Atelier, fichiers de
   publication, exports et fichiers Studio, et source d'une référence externe. La garde de chemin résout le projet comme
   le routeur (décodage) et reste une défense supplémentaire ; elle journalise toujours chaque lecture (`support.accessed`).
+- **UM-21 — Voie d'annulation d'une suppression sans courriel (revue Codex de `fcb0dd1`, 2026-10-23).** Constat : sans
+  transport de courriel (défaut de `docker-compose.yml`) ou au quota, le courriel portant le lien d'annulation était
+  écarté alors que la suppression était programmée, les sessions révoquées et la connexion bloquée : aucune voie
+  d'annulation avant l'anonymisation à 30 jours. Décision (repli D-1, comme les invitations) : quand le courriel n'est
+  pas mis en file, `DELETE /auth/me` rend le lien d'annulation à la personne qui vient de s'authentifier (affiché avant la
+  déconnexion), et `DELETE /admin/users/:id` à l'administrateur, à transmettre au titulaire.
+- **UM-22 — Migration hors du processus de l'API (revue Codex de `fcb0dd1`).** Constat : `docker-compose.yml` donnait à
+  l'API, processus long, l'identifiant d'administration de la base (`DATABASE_MIGRATION_URL`) ; une compromission du
+  processus le relirait et contournerait `fadi_app`. Décision : service à usage unique `migrate` (`MIGRATE_ONLY=1` : schéma,
+  mots de passe des rôles, arrêt sans écouter) ; `app` en dépend (`service_completed_successfully`), ne reçoit que
+  `DATABASE_URL` en `fadi_app` et refuse de démarrer en production si `DATABASE_MIGRATION_URL` lui est donné
+  (`ALLOW_PRIVILEGED_DB_ROLE=1` reste réservé au retour arrière). La CI de l'image suit le même schéma en deux temps.
+- **UM-23 — Compteur d'échecs de connexion atomique (revue Codex de `fcb0dd1`).** Constat : le compteur était lu puis
+  réécrit ; cinq échecs simultanés laissaient `failed_login_count = 1`, sans verrouillage. Décision : incrément en base
+  (`failed_login_count + 1 … RETURNING`) et durée de verrouillage calculée sur la valeur renvoyée, dans la même transaction.

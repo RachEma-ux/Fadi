@@ -83,7 +83,7 @@ commit sur la base remplie par le scénario (projets, étapes, modèle de l'Atel
 | `DATABASE_URL` | PostgreSQL avec PostGIS. |
 | `WEB_ORIGIN` | Origine(s) autorisée(s) (CORS) — l'URL publique ; sans effet quand l'application est servie par l'API elle-même. |
 | `WEB_DIST` | Dossier du build de l'application à servir (`apps/web/dist`) ; absent = API seule (développement avec `vite`). |
-| `MIGRATE_ON_START` | `1` : applique `init.sql` au démarrage. |
+| `MIGRATE_ON_START` | `1` : applique `init.sql` au démarrage. `docker-compose.yml` le met à `0` pour `app` : la migration passe par le service à usage unique `migrate` (`MIGRATE_ONLY=1`), seul à recevoir `DATABASE_MIGRATION_URL` (D-7). |
 | `TRUST_PROXY` | `1` derrière un relais TLS (adresse du client, cookie `secure`). |
 | `NODE_ENV` | `production` : cookie de session `secure` (HTTPS obligatoire). |
 | `PORT` | 3001 par défaut. |

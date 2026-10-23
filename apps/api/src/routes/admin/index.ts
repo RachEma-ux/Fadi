@@ -29,7 +29,7 @@ import { displayStatus } from "../../lib/security/auth-policy.js";
 import { assertTransition, AccountTransitionRefused } from "../../lib/security/account-state.js";
 import { formatDate, mailLocale, PUBLIC_PATHS, publicLink, sendAccountMail } from "../../lib/account.js";
 import { createOrRenewInvitation, invitationView } from "../../lib/invitations.js";
-import { scheduleDeletion } from "../auth.js";
+import { deletionMail, scheduleDeletion } from "../auth.js";
 import { lockAdminEligibility } from "../../lib/admin-eligibility.js";
 
 export const adminRouter = Router();
@@ -207,7 +207,8 @@ adminRouter.delete("/users/:userId", async (req, res) => {
     }
     return void res.status(409).json({ error: "deletion_already_requested" });
   }
-  res.status(202).json({ deletionAt: scheduled.deletionAt.toISOString(), mail: { queued: scheduled.mail.queued } });
+  // Sans courriel en file, l'administrateur reçoit le lien d'annulation à transmettre lui-même (D-1, comme les invitations).
+  res.status(202).json({ deletionAt: scheduled.deletionAt.toISOString(), mail: deletionMail(scheduled) });
 });
 
 const inviteSchema = z.object({ email: z.string().trim().toLowerCase().email().max(254), locale: z.enum(["fr", "en"]).optional() });

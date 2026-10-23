@@ -35,6 +35,9 @@ Mis à jour : 2026-10-22 (UTC).
 
 ## Risques et blocages
 
+- Déploiement après fusion : nouveau service `migrate` (usage unique) dans `docker-compose.yml` ; l'API ne reçoit plus
+  `DATABASE_MIGRATION_URL` et refuse de démarrer en production s'il lui est donné (RUNBOOK §4).
+
 - Déploiement après fusion : la colonne `sessions.mfa_verified_at` est ajoutée ; les administrateurs déjà connectés
   doivent se reconnecter avec leur code (403 `mfa_session_required`), voir RUNBOOK §4 bis.
 
