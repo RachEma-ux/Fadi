@@ -55,18 +55,21 @@ APPROVED=$BASE/approved-commit
 COMPOSE_DIR=$SRC/deploy/preprod
 OWNER_UID=$(id -u)
 
-# Scénarios de bout en bout, dans l'ordre de la CI (.github/workflows/ci.yml, jobs e2e) — tests/ vérifie l'égalité.
-E2E_DEFAUT="accueils-design parcours-scenario studio-persistance studio-navigation studio-exemple-p118 studio-domaines studio-espace studio-publication
-studio-observations studio-profils studio-catalogue studio-hors-ligne studio-corpus-s6 studio-corpus-s7 studio-conflits
-studio-chargement studio-mesures-chargement studio-accessibilite studio-quantites studio-dossier studio-echanges
-notifications-preferences atelier-nouveau atelier-documents atelier-echanges atelier-versions atelier-automatisation
-atelier-complements atelier-canevas planche planche-modification planche-outils planche-pousser-aretes
-planche-pousser-modes planche-objets planche-clavier planche-pousser-l10a planche-liens planche-suivez-moi
-planche-revolution planche-profiles planche-assemblages planche-debit planche-texte-3d planche-pieces-edition
-planche-modification-l18 planche-diagnostics-l19 planche-etirement-plis planche-epaissir planche-effilement-loft
-planche-lots-4-6 planche-lot-5 sandbox-module planche-lot-7 porte-p1-reduite p2-noyau-exact porte-p1-p2 p2-structure p2-bois-tolerie
-p2-reseaux p2-coordination p2-documentation p2-automatisation interface-anglais planche-boutons
-planche-detachee-documents atelier-barre planche-barre-outils studio-restauration"
+# Scénarios de bout en bout, dans l'ordre de la CI (.github/workflows/ci.yml, jobs e2e) — tests/ vérifie l'égalité —,
+# sauf comptes-api, comptes-securite et comptes-admin : ils exigent une base JETABLE locale (127.0.0.1, écritures
+# directes, anonymisation) et un transport de courriel, jamais la base persistante de la préproduction.
+E2E_DEFAUT="accueils-design parcours-scenario studio-persistance studio-navigation studio-exemple-p118 studio-domaines
+studio-espace studio-publication studio-observations studio-profils studio-catalogue studio-hors-ligne
+studio-corpus-s6 studio-corpus-s7 studio-conflits studio-chargement studio-mesures-chargement studio-accessibilite
+studio-quantites studio-dossier studio-echanges notifications-preferences atelier-nouveau atelier-documents
+atelier-echanges atelier-versions atelier-automatisation atelier-complements
+atelier-canevas planche planche-modification planche-outils planche-pousser-aretes planche-pousser-modes
+planche-objets planche-clavier planche-pousser-l10a planche-liens planche-suivez-moi planche-revolution
+planche-profiles planche-assemblages planche-debit planche-texte-3d planche-pieces-edition planche-modification-l18
+planche-diagnostics-l19 planche-etirement-plis planche-epaissir planche-effilement-loft planche-lots-4-6 planche-lot-5
+sandbox-module planche-lot-7 porte-p1-reduite p2-noyau-exact porte-p1-p2 p2-structure p2-bois-tolerie p2-reseaux
+p2-coordination p2-documentation p2-automatisation interface-anglais planche-boutons planche-detachee-documents
+atelier-barre planche-barre-outils studio-restauration"
 
 die() { echo "fadi-preprod : $*" >&2; exit 1; }
 log() { echo "── $*"; }
@@ -76,13 +79,15 @@ usage() {
 Usage : fadi-preprod <commande>
 Administrateur :
   sync <sha40>        approuve ce commit et y fige /opt/fadi-preprod/src (depuis GitHub)
-  init-env            crée les secrets propres à la préproduction (refuse s'ils existent)
+  init-env            crée les secrets propres à la préproduction ; s'ils existent, n'ajoute que les clés manquantes
+                      (fadi_app, chiffrement) sans jamais modifier ni afficher les clés présentes
   edge on|off         rattache (ou non) l'application au réseau fadi-preprod-edge (phase 4, proxy partagé)
 Opérateur (code approuvé seulement) :
   garde               rend la configuration et vérifie l'isolation (aucune action Docker)
   build               construit les images fadi-preprod-app et fadi-preprod-recette
-  up-db | up          démarre la base seule | base + application (MIGRATE_ON_START=0)
-  migrate             applique init.sql une fois sur la base de la préproduction, puis revient à MIGRATE_ON_START=0
+  up-db | up          démarre la base seule | base + application (fadi_app, MIGRATE_ON_START=0, sans migration)
+  migrate             service à usage unique `migrate` (D-7) : schéma et rôles sur la base de la préproduction, puis
+                      démarrage de l'application en fadi_app
   smoke               contrôles HTTP sur 127.0.0.1:3101 (codes, contenus, en-têtes) ; échoue au premier écart
   check               typecheck, tests unitaires, garde DB, tests des scripts (application démarrée)
   e2e [scénario…]     scénarios Playwright (défaut : liste de la CI)
@@ -114,6 +119,8 @@ verifier_disposition() {
   sur "$BASE" d; sur "$SRC" d; sur "$SRC/.git" d; sur "$COMPOSE_DIR" d; sur "$COMPOSE_DIR/compose.yml" f
   sur "$BASE/env" d; sur "$ENVF" f
   [ "$(stat -c '%a' "$ENVF")" = 600 ] || die "$ENVF doit être 0600"
+  grep -q '^PREPROD_FADI_APP_DB_PASSWORD=..*' "$ENVF" \
+    || die "PREPROD_FADI_APP_DB_PASSWORD absent de $ENVF (D-7) : l'administrateur doit lancer fadi-preprod init-env"
   sur "$APPROVED" f
   local ok head
   ok=$(tr -d '[:space:]' < "$APPROVED"); head=$(commit)
@@ -130,12 +137,12 @@ verifier_disposition() {
 EDGE_ARGS=()
 [ -f "$BASE/edge.on" ] && [ ! -L "$BASE/edge.on" ] && EDGE_ARGS=(-f "$COMPOSE_DIR/compose.edge.yml")
 
-# docker compose sur le seul projet fadi-preprod, sur le code approuvé.
-# MIGRATE_ON_START est toujours fixé ici (0 sauf demande explicite de `migrate`) : le fichier d'environnement ne peut
-# pas l'activer, et la configuration contrôlée par `garde` est exactement celle qu'utilise Docker.
+# docker compose sur le seul projet fadi-preprod, sur le code approuvé ; la configuration contrôlée par `garde` est
+# exactement celle qu'utilise Docker. L'application est toujours en MIGRATE_ON_START=0 (valeur fixe de compose.yml) :
+# la migration est le service à usage unique `migrate` (D-7).
 dc() {
   local c; c=$(commit) || c=
-  MIGRATE_ON_START=${MIGRATE_ON_START:-0} FADI_SRC=$SRC FADI_COMMIT=${c:0:12} FADI_BUILD_COMMIT=$c \
+  FADI_SRC=$SRC FADI_COMMIT=${c:0:12} FADI_BUILD_COMMIT=$c \
     FADI_BUILD_DATE=${FADI_BUILD_DATE:-inconnu} docker compose -p "$PROJECT" --project-directory "$COMPOSE_DIR" -f "$COMPOSE_DIR/compose.yml" "${EDGE_ARGS[@]}" \
     --env-file "$ENVF" "$@"
 }
@@ -204,13 +211,13 @@ exporter_rapports() {
 }
 
 # ── garde d'isolation ────────────────────────────────────────────────────────────────────────────────────────────────
-garde() {  # $1 = valeur attendue de MIGRATE_ON_START
+garde() {
   local cfg rc=0
   cfg=$(mktemp)
-  MIGRATE_ON_START=$1 dc --profile recette config --format json > "$cfg" || { rm -f "$cfg"; die "configuration invalide"; }
-  python3 -I - "$cfg" "$SRC" "$1" <<'PY' || rc=$?
+  dc --profile recette config --format json > "$cfg" || { rm -f "$cfg"; die "configuration invalide"; }
+  python3 -I - "$cfg" "$SRC" <<'PY' || rc=$?
 import json, sys
-cfg_path, src, migrate = sys.argv[1:4]
+cfg_path, src = sys.argv[1:3]
 c = json.load(open(cfg_path))
 errs = []
 def err(m): errs.append(m)
@@ -239,7 +246,28 @@ for name, s in c.get("services", {}).items():
         if n not in c.get("networks", {}): err(f"{p} : réseau {n!r} inconnu")
     env = s.get("environment") or {}
     if "DATABASE_URL" in env and "@db:5432/" not in (env["DATABASE_URL"] or ""): err(f"{p} : DATABASE_URL hors base de la préproduction")
-    if name == "app" and str(env.get("MIGRATE_ON_START")) != migrate: err(f"{p} : MIGRATE_ON_START={env.get('MIGRATE_ON_START')} (attendu {migrate})")
+    if "DATABASE_MIGRATION_URL" in env and "@db:5432/" not in (env["DATABASE_MIGRATION_URL"] or ""): err(f"{p} : DATABASE_MIGRATION_URL hors base de la préproduction")
+    # D-7 : l'identifiant de migration et le mode migration n'existent que dans le service à usage unique `migrate`.
+    if name != "migrate":
+        for k in ("DATABASE_MIGRATION_URL", "MIGRATE_ONLY"):
+            if k in env: err(f"{p} : {k} réservé au service migrate (D-7)")
+svcs = c.get("services", {})
+app, mig = svcs.get("app"), svcs.get("migrate")
+if not app: err("service app absent")
+else:
+    env = app.get("environment") or {}
+    if not str(env.get("DATABASE_URL") or "").startswith("postgresql://fadi_app:"): err("service app : DATABASE_URL doit utiliser le rôle fadi_app (D-7), jamais le superutilisateur")
+    if str(env.get("MIGRATE_ON_START")) != "0": err(f"service app : MIGRATE_ON_START={env.get('MIGRATE_ON_START')} (attendu 0)")
+    if ((app.get("depends_on") or {}).get("migrate") or {}).get("condition") != "service_completed_successfully": err("service app : doit dépendre de migrate (service_completed_successfully)")
+if not mig: err("service migrate absent")
+else:
+    env = mig.get("environment") or {}
+    if str(env.get("MIGRATE_ONLY")) != "1": err("service migrate : MIGRATE_ONLY=1 exigé")
+    if str(mig.get("restart")) != "no": err(f"service migrate : restart {mig.get('restart')!r} (attendu \"no\")")
+    if mig.get("build"): err("service migrate : construit par app, pas de build propre")
+    if not str(mig.get("image", "")).startswith("fadi-preprod-app:"): err(f"service migrate : image {mig.get('image')!r}")
+    if mig.get("ports"): err("service migrate : aucun port publié")
+    if sorted(mig.get("networks") or {}) != ["internal"]: err(f"service migrate : réseaux {sorted(mig.get('networks') or {})} (attendu internal seul)")
 for k, n in c.get("networks", {}).items():
     if not str(n.get("name", "")).startswith("fadi-preprod-"): err(f"réseau {k} : nom {n.get('name')!r}")
     if n.get("external"): err(f"réseau {k} : externe")
@@ -249,20 +277,20 @@ for k, v in c.get("volumes", {}).items():
 if errs:
     print("❌ garde : la configuration sort de la préproduction"); [print("   - " + e) for e in errs]; sys.exit(1)
 print(f"✓ garde : projet fadi-preprod isolé ({len(c['services'])} services, réseaux {sorted(n['name'] for n in c['networks'].values())}, "
-      f"volumes {sorted(v['name'] for v in c['volumes'].values())}, MIGRATE_ON_START={migrate})")
+      f"volumes {sorted(v['name'] for v in c['volumes'].values())}, app en fadi_app avec MIGRATE_ON_START=0, migration isolée)")
 PY
   rm -f "$cfg"
   [ "$rc" -eq 0 ] || exit 1
 }
 
-# Migration : tant que l'application tourne avec MIGRATE_ON_START=1, tout échec (y compris die) la recrée avec
-# MIGRATE_ON_START=0 sans la démarrer, pour qu'aucun redémarrage automatique ne relance la migration.
+# Migration : pendant le service à usage unique `migrate`, tout échec (y compris die) l'arrête et le supprime ;
+# l'application n'est pas redémarrée (la version en ligne reste celle d'avant), et elle ne migre jamais elle-même.
 MIGRATION_ACTIVE=0
 retablir_migration() {
   [ "$MIGRATION_ACTIVE" = 1 ] || return 0
   MIGRATION_ACTIVE=0
-  echo "⚠ échec pendant la migration : application recréée avec MIGRATE_ON_START=0 et laissée arrêtée" >&2
-  MIGRATE_ON_START=0 dc up --no-start --no-deps --force-recreate app >&2 || dc stop app >&2 || true
+  echo "⚠ échec pendant la migration : service migrate arrêté et supprimé, application non redémarrée" >&2
+  dc rm -f -s migrate >&2 || true
 }
 trap retablir_migration EXIT
 
@@ -349,16 +377,40 @@ case "$cmd" in
     echo "$sha" > "$APPROVED.tmp" && mv -f "$APPROVED.tmp" "$APPROVED"
     log "commit approuvé et figé : $(git -c safe.directory="$SRC" -C "$SRC" log -1 --format='%H %ci %s')" ;;
   init-env)
-    [ -e "$ENVF" ] && die "secrets déjà présents ($ENVF) : rien n'est écrasé"
     [ -e "$BASE/env" ] || mkdir -m 0700 "$BASE/env"
     sur "$BASE/env" d
-    { echo "PREPROD_POSTGRES_PASSWORD=$(openssl rand -hex 32)"
-      echo "PREPROD_ARCHIVE_SIGNING_KEY=$(openssl rand -hex 32)"
-      echo "PREPROD_WEB_ORIGIN=http://localhost:3001"
-      echo "PREPROD_AUTH_RATE_LIMIT=500"
-      echo "PREPROD_API_RATE_LIMIT=5000"; } > "$ENVF.tmp"
-    chmod 0600 "$ENVF.tmp"; mv -n "$ENVF.tmp" "$ENVF"
-    log "secrets de la préproduction créés ($ENVF, 0600, non affichés)" ;;
+    if [ -e "$ENVF" ]; then
+      # Secrets existants : rien n'est écrasé ni affiché ; seules les clés manquantes de la Gestion des comptes sont ajoutées.
+      sur "$ENVF" f
+      [ "$(stat -c '%a' "$ENVF")" = 600 ] || die "$ENVF doit être 0600"
+    fi
+    rm -f "$ENVF.tmp"; install -m 0600 /dev/null "$ENVF.tmp"
+    if [ -e "$ENVF" ]; then
+      cat "$ENVF" > "$ENVF.tmp"
+      [ -z "$(tail -c1 "$ENVF")" ] || echo >> "$ENVF.tmp"
+    else
+      { echo "PREPROD_POSTGRES_PASSWORD=$(openssl rand -hex 32)"
+        echo "PREPROD_ARCHIVE_SIGNING_KEY=$(openssl rand -hex 32)"
+        echo "PREPROD_WEB_ORIGIN=http://localhost:3001"
+        echo "PREPROD_AUTH_RATE_LIMIT=500"
+        echo "PREPROD_API_RATE_LIMIT=5000"; } >> "$ENVF.tmp"
+    fi
+    # Une clé absente ou vide (gabarit env.example) est générée ; une valeur non vide n'est jamais touchée.
+    ajoutees=()
+    for cle in PREPROD_FADI_APP_DB_PASSWORD PREPROD_FADI_ENCRYPTION_KEY; do
+      grep -q "^$cle=..*" "$ENVF.tmp" && continue
+      sed -i "/^$cle=\$/d" "$ENVF.tmp"
+      case $cle in
+        PREPROD_FADI_APP_DB_PASSWORD) echo "$cle=$(openssl rand -hex 32)" ;;
+        PREPROD_FADI_ENCRYPTION_KEY) echo "$cle=$(openssl rand -base64 32)" ;;
+      esac >> "$ENVF.tmp"
+      ajoutees+=("$cle")
+    done
+    if [ -e "$ENVF" ] && [ ${#ajoutees[@]} -eq 0 ]; then
+      rm -f "$ENVF.tmp"; log "secrets déjà complets ($ENVF) : rien n'est écrasé, rien n'est ajouté"; exit 0
+    fi
+    mv -f "$ENVF.tmp" "$ENVF"
+    log "secrets de la préproduction ($ENVF, 0600, valeurs non affichées) ; clé(s) ajoutée(s) : ${ajoutees[*]} — rien n'est écrasé" ;;
   edge)
     case "${1:-}" in
       on) : > "$BASE/edge.on"; log "réseau fadi-preprod-edge activé (prendra effet au prochain up)" ;;
@@ -377,34 +429,36 @@ case "$cmd" in
     [ "$r" = "$(realpath -e -- "$d")/$f" ] || die "chemin refusé : $f"
     [ -f "$r" ] && [ ! -L "$d/$f" ] || die "pas un fichier ordinaire : $f"
     cat -- "$r" ;;
-  garde) verifier_disposition; garde 0 ;;
+  garde) verifier_disposition; garde ;;
   build)
-    verifier_disposition; nouveau_run build; garde 0
+    verifier_disposition; nouveau_run build; garde
     FADI_BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ) journal build.log dc --profile recette build app recette ;;
   up-db)
-    verifier_disposition; garde 0; dc up -d db; attendre_sante db 120 ;;
+    verifier_disposition; garde; dc up -d db; attendre_sante db 120 ;;
   migrate)
-    verifier_disposition; nouveau_run migrate; garde 1
+    verifier_disposition; nouveau_run migrate; garde
     dc up -d db; attendre_sante db 120
-    log "application démarrée une fois avec MIGRATE_ON_START=1 (base de la préproduction)"
+    log "migration à usage unique (service migrate, superutilisateur de la base de préproduction, D-7)"
     MIGRATION_ACTIVE=1
-    MIGRATE_ON_START=1 dc up -d --no-deps --force-recreate app
-    attendre_sante app 300
-    journal migrate.log dc logs --no-color app
+    journal migrate.log dc run --rm --no-deps -T migrate
     grep -qF "Schema applied (init.sql)." "$RUN/migrate.log" || die "« Schema applied » absent du journal (show $RUNID migrate.log)"
-    log "schéma appliqué ; retour à MIGRATE_ON_START=0"
-    garde 0; dc up -d --no-deps --force-recreate app
+    grep -qF "Migration terminée" "$RUN/migrate.log" || die "« Migration terminée » absent du journal (show $RUNID migrate.log)"
     MIGRATION_ACTIVE=0
-    attendre_sante app 120
+    log "schéma appliqué ; démarrage de l'application en fadi_app"
+    dc up -d --no-deps --force-recreate app
+    attendre_sante app 180
     journal migrate.log dc exec -T db psql -U fadi -d fadi -v ON_ERROR_STOP=1 -tAc \
-      "SELECT 'tables publiques : ' || count(*) FROM information_schema.tables WHERE table_schema='public'" ;;
+      "SELECT 'tables publiques : ' || count(*) || ' ; fadi_app peut créer : ' || has_schema_privilege('fadi_app', 'public', 'CREATE') FROM information_schema.tables WHERE table_schema='public'"
+    grep -qF "fadi_app peut créer : false" "$RUN/migrate.log" || die "fadi_app peut créer dans public (D-7) : voir show $RUNID migrate.log" ;;
   up)
-    verifier_disposition; garde 0; dc up -d db app; attendre_sante db 120; attendre_sante app 180 ;;
+    # Jamais de migration ici : l'application démarre seule (--no-deps), en fadi_app.
+    verifier_disposition; garde; dc up -d db; attendre_sante db 120
+    dc up -d --no-deps app; attendre_sante app 180 ;;
   smoke)
     verifier_disposition; nouveau_run smoke
     journal smoke.log smoke ;;
   check)
-    verifier_disposition; nouveau_run check; garde 0; app_demarree
+    verifier_disposition; nouveau_run check; garde; app_demarree
     # Même découpage que la CI (job validate) : les suites API qui exigent une base attestée (DB-3, #157) sont
     # refusées par la garde ; check-api-tests-db3 exige que seules celles de la liste fermée le soient et que tout le
     # reste passe. Elles ne sont ni contournées ni déclarées réussies.
@@ -417,7 +471,7 @@ node scripts/check-api-tests-db3.mjs /tmp/api-vitest.json
 npm run test:scripts'
     journal check.log recette ;;
   e2e)
-    verifier_disposition; nouveau_run e2e; garde 0; app_demarree
+    verifier_disposition; nouveau_run e2e; garde; app_demarree
     liste=${*:-$E2E_DEFAUT}; ok=0; ko=""
     for s in $liste; do
       [[ $s =~ ^[a-z0-9-]+$ ]] || die "scénario invalide : $s"
@@ -440,11 +494,11 @@ DATABASE_URL_A="$DATABASE_URL" DATABASE_URL_B="$B" RESTORE_PORT=3002 OUT="/out/$
     echo "e2e : $ok réussi(s), échecs :${ko:- aucun}" | tee "$RUN/resume.txt"
     [ -z "$ko" ] ;;
   backup)
-    verifier_disposition; nouveau_run backup; garde 0; app_demarree
+    verifier_disposition; nouveau_run backup; garde; app_demarree
     RECETTE_CMD='sh scripts/backup.sh db fadi fadi /backups; ls -la /backups'
     journal backup.log recette ;;
   restore-check)
-    verifier_disposition; nouveau_run restore-check; garde 0; app_demarree
+    verifier_disposition; nouveau_run restore-check; garde; app_demarree
     RECETTE_CMD='sh scripts/verify-restore.sh db fadi fadi fadi_restore_check'
     journal restore-check.log recette ;;
   ps|status)
