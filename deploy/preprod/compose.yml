@@ -4,7 +4,8 @@
 # qui fournit FADI_SRC (copie de travail figée sur le commit approuvé), FADI_COMMIT et le fichier d'environnement.
 #
 # Exposition : 127.0.0.1:3101 seulement (hôte). L'accès public preprod.fadimmo.com passe par proxy/ (phase 4, sur accord).
-# Migrations : MIGRATE_ON_START=0 ; `fadi-preprod migrate` applique init.sql une fois, sur cette base seulement.
+# Migrations : service à usage unique `migrate` (D-7), lancé par `fadi-preprod migrate` seulement ; `app` se connecte en
+# fadi_app, toujours avec MIGRATE_ON_START=0, et ne reçoit jamais l'identifiant de migration.
 
 name: fadi-preprod
 
@@ -35,6 +36,27 @@ services:
     cpus: 1.5
     logging: *logging
 
+  # D-7 (Gestion des comptes, PR #255) : migration à usage unique avec le superutilisateur de la base de préproduction
+  # (schéma, rôles, mot de passe de fadi_app), puis arrêt. Même image que `app` ; lancée seulement par
+  # `fadi-preprod migrate`. Cet identifiant n'est jamais donné à l'application.
+  migrate:
+    image: fadi-preprod-app:${FADI_COMMIT:?FADI_COMMIT manquant}
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      MIGRATE_ONLY: "1"
+      NODE_ENV: production
+      DATABASE_URL: postgresql://fadi:${PREPROD_POSTGRES_PASSWORD}@db:5432/fadi
+      DATABASE_MIGRATION_URL: postgresql://fadi:${PREPROD_POSTGRES_PASSWORD}@db:5432/fadi
+      FADI_APP_DB_PASSWORD: ${PREPROD_FADI_APP_DB_PASSWORD:?PREPROD_FADI_APP_DB_PASSWORD manquant (fadi-preprod init-env)}
+    networks:
+      - internal
+    mem_limit: 1g
+    cpus: 1
+    logging: *logging
+
   app:
     image: fadi-preprod-app:${FADI_COMMIT:?FADI_COMMIT manquant}
     build:
@@ -48,12 +70,20 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     environment:
-      DATABASE_URL: postgresql://fadi:${PREPROD_POSTGRES_PASSWORD}@db:5432/fadi
+      # D-7 : l'API se connecte en fadi_app (aucun DDL), sans l'identifiant de migration ; elle refuse de démarrer en
+      # production sinon. Gestion des comptes : administration désactivée par défaut, aucun transport de courriel
+      # (liens à copier affichés), clé de chiffrement des secrets de double authentification.
+      DATABASE_URL: postgresql://fadi_app:${PREPROD_FADI_APP_DB_PASSWORD:?PREPROD_FADI_APP_DB_PASSWORD manquant (fadi-preprod init-env)}@db:5432/fadi
       WEB_ORIGIN: ${PREPROD_WEB_ORIGIN:-http://localhost:3001}
+      APP_PUBLIC_URL: ${PREPROD_WEB_ORIGIN:-http://localhost:3001}
       NODE_ENV: production
       TRUST_PROXY: "1"
-      MIGRATE_ON_START: ${MIGRATE_ON_START:-0}
+      MIGRATE_ON_START: "0"
+      FADI_ADMIN_ENABLED: ${PREPROD_FADI_ADMIN_ENABLED:-false}
+      FADI_ENCRYPTION_KEY: ${PREPROD_FADI_ENCRYPTION_KEY:-}
       ARCHIVE_SIGNING_KEY: ${PREPROD_ARCHIVE_SIGNING_KEY:?PREPROD_ARCHIVE_SIGNING_KEY manquant}
       AUTH_RATE_LIMIT: ${PREPROD_AUTH_RATE_LIMIT:-500}
       API_RATE_LIMIT: ${PREPROD_API_RATE_LIMIT:-5000}

@@ -408,6 +408,7 @@ function routesDeclareesDans(dossier: string): string[] {
  * de leur routeur, contrôlés par leurs propres suites, base réelle) — suites DB-3. La liste des fichiers est vérifiée.
  */
 export const HORS_MATRICE: { fichier: string; routes: string; donnees: string }[] = [
+  { fichier: "routes/auth.ts", routes: "GET /auth/me/export", donnees: "commentaires Studio rédigés par le compte, dans l'export de ses données personnelles (D-5, gestion des comptes) — lecture de ses propres lignes seulement" },
   { fichier: "routes/examples.ts", routes: "POST /examples/:exampleId/import", donnees: "étude exemple Studio du P.118 installée après l'import validé (`lib/studio-exemple.ts`, contrat de commandes ; un échec n'annule pas l'import)" },
   { fichier: "routes/documents.ts", routes: "GET /projects/:projectId/documents", donnees: "`studioPackages` (paquets diffusés ou retirés), `studioDossiers` (dossiers de conception)" },
   { fichier: "routes/notifications.ts", routes: "GET /notifications", donnees: "commentaires Studio des projets du compte, passages des observations, tâches et décisions" },

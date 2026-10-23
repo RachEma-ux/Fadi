@@ -15,6 +15,7 @@
 import { type Modele, ajouterSegment } from "../geometrie-libre.js";
 import {
   type Inference,
+  type Libelle,
   type ModeAlt,
   type Verrou,
   COULEURS,
@@ -43,6 +44,11 @@ export interface EtatLigne {
   readonly verrouMaj: Verrou | null;
   readonly modeAlt: ModeAlt;
   readonly areteReference: { readonly a: Vec3; readonly b: Vec3 } | null;
+  /**
+   * Points de référence (« depuis le point », SketchUp) : sommets déjà posés de la chaîne et derniers points survolés. Le
+   * curseur s'aligne avec eux sur les axes (guides pointillés rouge / vert / bleu) comme avec le point de départ.
+   */
+  readonly acquis: readonly Vec3[];
   /** Texte tapé, affiché dans Mesures après validation (jusqu'au prochain mouvement). */
   readonly texte: string | null;
   readonly erreur: string | null;
@@ -65,7 +71,30 @@ function verrouCourant(e: EtatLigne): Verrou | undefined {
   return e.verrouMaj ?? e.fleche?.verrou ?? undefined;
 }
 
+const LIBELLE_MEME_LONGUEUR: Libelle = { fr: "Même longueur que l'arête", en: "Same length as edge" };
+const TYPES_POINT = new Set(["extremite", "milieu", "intersection", "centre", "origine"]);
+
+/**
+ * Même longueur : quand le segment en cours atteint la longueur de l'arête de référence (la dernière survolée), le point
+ * est ajusté à cette longueur exacte, dans la direction courante, et signalé. Jamais sur un point accroché ni sur une
+ * ligne qui ne passe pas par le départ (guide « depuis le point »), pour ne pas défaire l'inférence.
+ */
+function avecMemeLongueur(e: EtatLigne, i: Inference, tolerance: number): Inference {
+  const ref = e.areteReference;
+  if (!ref || e.etape !== 2 || !e.depart || i.verrouillee || TYPES_POINT.has(i.type)) return i;
+  if (i.origineLigne && dist(i.origineLigne, e.depart) > TOL) return i;
+  const L = dist(ref.a, ref.b);
+  const v = sub(i.point, e.depart);
+  const d = len(v);
+  if (L < TOL || d < TOL || Math.abs(d - L) > tolerance * 0.8) return i;
+  return { ...i, point: add(e.depart, scale(normalize(v), L)), libelle: { fr: `${i.libelle.fr ? `${i.libelle.fr} · ` : ""}${LIBELLE_MEME_LONGUEUR.fr}`, en: `${i.libelle.en ? `${i.libelle.en} · ` : ""}${LIBELLE_MEME_LONGUEUR.en}` }, memeLongueur: true };
+}
+
 function inferenceLigne(e: EtatLigne, ctx: ContexteOutil, r: Rayon, tolerance: number): Inference {
+  return avecMemeLongueur(e, inferenceLigneBrute(e, ctx, r, tolerance), tolerance);
+}
+
+function inferenceLigneBrute(e: EtatLigne, ctx: ContexteOutil, r: Rayon, tolerance: number): Inference {
   if (e.etape === 2 && e.depart && e.fleche && e.fleche.verrou === null && !e.verrouMaj) {
     // ↓ sans arête de référence : longueur bloquée à 0,00 m (obs).
     return { point: e.depart, type: "parallele", couleur: COULEURS.parallele, libelle: LIBELLE_LIGNE_CONTRAINTE, verrouillee: true };
@@ -79,6 +108,7 @@ function inferenceLigne(e: EtatLigne, ctx: ContexteOutil, r: Rayon, tolerance: n
     ...(e.etape === 2 && e.depart ? { depart: e.depart } : {}),
     ...(v ? { verrou: v } : {}),
     ...(e.areteReference ? { areteReference: e.areteReference } : {}),
+    ...(e.etape === 2 && e.depart && e.acquis.length > 0 ? { pointsReference: e.acquis.filter((p) => dist(p, e.depart as Vec3) > TOL) } : {}),
       ...(ctx.repere ? { axes: ctx.repere } : {}),
   });
 }
@@ -88,6 +118,47 @@ function reference(e: EtatLigne, i: Inference, ctx: ContexteOutil): EtatLigne["a
   if (i.entite === undefined || !["extremite", "milieu", "sur-arete"].includes(i.type)) return e.areteReference;
   const a = geometrieVisible(ctx.modele).aretes.find((x) => x.id === i.entite);
   return a ? { a: a.a, b: a.b } : e.areteReference;
+}
+
+const TYPES_ACQUIS = new Set(["extremite", "milieu", "intersection", "centre"]);
+const MAX_ACQUIS = 4;
+
+/** Ajoute un point aux références (dédoublonné, les plus récentes d'abord conservées). */
+function avecAcquis(e: EtatLigne, ...pts: Vec3[]): EtatLigne {
+  let l = [...e.acquis];
+  for (const p of pts) l = [...l.filter((q) => dist(q, p) > TOL), p];
+  return { ...e, acquis: l.slice(-MAX_ACQUIS) };
+}
+
+/** Un point inféré (extrémité, milieu…) est acquis dès qu'il est visé : le curseur pourra s'aligner dessus ensuite. */
+function acquerir(e: EtatLigne, i: Inference): EtatLigne {
+  return TYPES_ACQUIS.has(i.type) ? avecAcquis(e, i.point) : e;
+}
+
+/**
+ * Symbole d'angle droit d'une ligne perpendiculaire à l'arête de référence : à l'endroit où le segment en cours coupe
+ * cette arête (prolongée), seulement s'il le croise entre son départ et le curseur.
+ */
+export function angleDroitPerpendiculaire(e: EtatLigne): { sommet: Vec3; u: Vec3; v: Vec3 } | null {
+  const i = e.inference;
+  const ref = e.areteReference;
+  if (e.etape !== 2 || !e.depart || !i || i.type !== "perpendiculaire" || !ref) return null;
+  const d1 = sub(i.point, e.depart);
+  const d2 = sub(ref.b, ref.a);
+  if (len(d1) < TOL || len(d2) < TOL) return null;
+  const w = sub(e.depart, ref.a);
+  const a = dot(d1, d1);
+  const b = dot(d1, d2);
+  const c = dot(d2, d2);
+  const den = a * c - b * b;
+  if (Math.abs(den) < 1e-12) return null;
+  const s = (b * dot(d2, w) - c * dot(d1, w)) / den;
+  const t = (a * dot(d2, w) - b * dot(d1, w)) / den;
+  const q1 = add(e.depart, scale(d1, s));
+  const q2 = add(ref.a, scale(d2, t));
+  if (dist(q1, q2) > 1e-4 || s <= 1e-6 || s >= 1 - 1e-6) return null;
+  const versExtremiteLointaine = dist(q1, ref.a) > dist(q1, ref.b) ? sub(ref.a, q1) : sub(ref.b, q1);
+  return { sommet: q1, u: normalize(versExtremiteLointaine), v: normalize(scale(d1, -1)) };
 }
 
 function recalculer(e: EtatLigne, ctx: ContexteOutil): EtatLigne {
@@ -101,6 +172,7 @@ const finChaine = (e: EtatLigne): EtatLigne => ({
   debutChaine: null,
   fleche: null,
   verrouMaj: null,
+  acquis: [],
 });
 
 /** Crée le segment depart → q ; continue la chaîne ou la termine (retour au départ, face créée). */
@@ -114,7 +186,7 @@ function poser(e: EtatLigne, ctx: ContexteOutil, q: Vec3, texte: string | null):
   const dernier = { modeleAvant: ctx.modele, depart, direction: normalize(sub(q, depart)) };
   const suite: EtatLigne = ferme
     ? { ...finChaine(e), dernier, texte, erreur: null, inference: null }
-    : { ...e, depart: q, dernier, texte, erreur: null, verrouMaj: null };
+    : { ...avecAcquis(e, depart), depart: q, dernier, texte, erreur: null, verrouMaj: null };
   return { etat: suite, modele: r.modele, operation: "Ligne" };
 }
 
@@ -193,6 +265,7 @@ export const machineLigne: MachineOutil<EtatLigne> = {
     verrouMaj: null,
     modeAlt: "tout",
     areteReference: null,
+    acquis: [],
     texte: null,
     erreur: null,
     dernier: null,
@@ -204,15 +277,15 @@ export const machineLigne: MachineOutil<EtatLigne> = {
       case "survol": {
         const e0: EtatLigne = { ...etat, rayon: { rayon: ev.rayon, tolerance: ev.tolerance } };
         const i = inferenceLigne(e0, ctx, ev.rayon, ev.tolerance);
-        return { etat: { ...e0, inference: i, areteReference: reference(e0, i, ctx), texte: null, erreur: null } };
+        return { etat: { ...acquerir(e0, i), inference: i, areteReference: reference(e0, i, ctx), texte: null, erreur: null } };
       }
       case "clic": {
         const e0: EtatLigne = { ...etat, rayon: { rayon: ev.rayon, tolerance: ev.tolerance }, texte: null, erreur: null };
         const i = inferenceLigne(e0, ctx, ev.rayon, ev.tolerance);
         if (e0.etape === 1) {
-          return { etat: { ...e0, etape: 2, depart: i.point, debutChaine: i.point, inference: i, dernier: null } };
+          return { etat: { ...avecAcquis(e0, i.point), etape: 2, depart: i.point, debutChaine: i.point, inference: i, dernier: null } };
         }
-        return poser({ ...e0, inference: i }, ctx, i.point, null);
+        return poser({ ...acquerir(e0, i), inference: i }, ctx, i.point, null);
       }
       case "saisie":
         return saisir(etat, ctx, ev.texte);
@@ -236,6 +309,7 @@ export const machineLigne: MachineOutil<EtatLigne> = {
       if (etat.verrouMaj) consigne = consigne.split(" | ").filter((s) => !s.startsWith("Alt =")).join(" | ");
     }
     const i = etat.inference;
+    const angle = angleDroitPerpendiculaire(etat);
     const valeur =
       etat.texte ??
       (etat.etape === 2 && etat.depart && i ? formaterLongueur(dist(etat.depart, i.point), ctx.separateurDecimal, i.verrouillee) : "");
@@ -247,6 +321,11 @@ export const machineLigne: MachineOutil<EtatLigne> = {
         saisie: { attendu: ATTENDU, separateurDecimal: ctx.separateurDecimal },
       },
       inference: i,
+      ...(angle ? { angleDroit: angle } : {}),
+      ...(i?.memeLongueur && etat.areteReference && etat.depart
+        ? { egaliteLongueur: { a: [etat.areteReference.a, etat.areteReference.b] as const, b: [etat.depart, i.point] as const } }
+        : {}),
+      ...(etat.etape === 2 && etat.acquis.length > 0 ? { references: etat.acquis } : {}),
       apercu: { lignes: etat.etape === 2 && etat.depart && i ? [[etat.depart, i.point]] : [], faces: [] },
       selection: ctx.selection,
       survol: [],

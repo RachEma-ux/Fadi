@@ -31,6 +31,7 @@ import {
   etape,
   formaterAngle,
   formaterLongueur,
+  inferenceDemiCercle,
   marquerContraint,
   mesures,
   messageErreur,
@@ -62,6 +63,8 @@ export interface EtatArcCentre {
   readonly depart: Vec3 | null;
   /** Angle balayé signé (radians), suivi en continu ; et dernier angle brut du curseur. */
   readonly balayage: number;
+  /** Balayage accroché (demi-cercle, quart, trois quarts) ; le balayage brut reste celui du curseur. */
+  readonly accroche: number | null;
   readonly angleBrut: number;
   readonly inference: Inference | null;
   readonly texte: string | null;
@@ -92,6 +95,7 @@ export function creerMachineArcCentre(o: OptionsArcCentre): MachineOutil<EtatArc
     rayon: null,
     depart: null,
     balayage: 0,
+    accroche: null,
     angleBrut: 0,
     inference: null,
     texte: null,
@@ -106,6 +110,7 @@ export function creerMachineArcCentre(o: OptionsArcCentre): MachineOutil<EtatArc
     rayon: null,
     depart: null,
     balayage: 0,
+    accroche: null,
     angleBrut: 0,
     contraint: false,
   });
@@ -166,7 +171,7 @@ export function creerMachineArcCentre(o: OptionsArcCentre): MachineOutil<EtatArc
           const depart = rayon > TOL ? normalize(v) : etat.depart;
           const suivant: EtatArcCentre = { ...etat, inference: inf, rayon, depart, texte: null };
           if (ev.genre === "survol" || rayon <= TOL) return { etat: suivant };
-          return { etat: { ...suivant, etape: 3, balayage: 0, angleBrut: 0 } };
+          return { etat: { ...suivant, etape: 3, balayage: 0, accroche: null, angleBrut: 0 } };
         }
         // étape 3 : balayage continu
         let { balayage, angleBrut } = etat;
@@ -176,9 +181,23 @@ export function creerMachineArcCentre(o: OptionsArcCentre): MachineOutil<EtatArc
           angleBrut = brut;
           balayage = Math.max(-2 * Math.PI + 1e-9, Math.min(2 * Math.PI - 1e-9, balayage));
         }
-        const suivant: EtatArcCentre = { ...etat, inference: inf, balayage, angleBrut, texte: null };
+        // Inférence « Demi-cercle » : balayage de 90°, 180° ou 270° exactement, à la tolérance d'accrochage près.
+        let accroche: number | null = null;
+        let infFinale = inf;
+        const rayonArc = etat.rayon ?? 0;
+        if (rayonArc > TOL) {
+          const tolAngle = ev.tolerance / rayonArc;
+          for (const cible of [Math.PI / 2, Math.PI, (3 * Math.PI) / 2]) {
+            if (Math.abs(Math.abs(balayage) - cible) <= tolAngle) {
+              accroche = Math.sign(balayage) * cible;
+              const centre = etat.centre as Vec3;
+              infFinale = inferenceDemiCercle(tourner(add(centre, scale(etat.depart as Vec3, rayonArc)), centre, etat.normale, accroche));
+            }
+          }
+        }
+        const suivant: EtatArcCentre = { ...etat, inference: infFinale, balayage, accroche, angleBrut, texte: null };
         if (ev.genre === "survol") return { etat: suivant };
-        const a = arcCourant(suivant, balayage);
+        const a = arcCourant(suivant, accroche ?? balayage);
         if (!a || a.angle < 1e-9) return { etat: suivant };
         return creer(suivant, ctx, { arc: a, cotes: etat.cotes }, null, null);
       }
@@ -223,7 +242,7 @@ export function creerMachineArcCentre(o: OptionsArcCentre): MachineOutil<EtatArc
           if (valeur === null) return { etat: { ...etat, texte, erreur: "Saisie non reconnue." } };
           if (!(valeur > TOL)) return { etat: { ...etat, texte, erreur: "Le rayon doit être strictement positif." } };
           const depart = etat.depart ?? axesDuPlan(etat.normale).u;
-          return { etat: { ...etat, etape: 3, rayon: valeur, depart, balayage: 0, angleBrut: 0, texte } };
+          return { etat: { ...etat, etape: 3, rayon: valeur, depart, balayage: 0, accroche: null, angleBrut: 0, texte } };
         }
         const r = analyserSaisie(texte, contexteSaisie("angle-arc", ctx));
         if (r.genre === "erreur") return { etat: { ...etat, texte, erreur: r.message } };
@@ -248,12 +267,12 @@ export function creerMachineArcCentre(o: OptionsArcCentre): MachineOutil<EtatArc
     let valeur = etat.texte;
     if (etat.etape === 1) valeur ??= String(etat.cotes);
     else if (etat.etape === 2) valeur ??= etat.rayon !== null ? `${prefixe(etat.inference)}${formaterLongueur(etat.rayon, sep)}` : "";
-    else valeur ??= `${prefixe(etat.inference)}${formaterAngle(Math.abs((etat.balayage * 180) / Math.PI), sep)}`;
+    else valeur ??= `${etat.accroche !== null ? "" : prefixe(etat.inference)}${formaterAngle(Math.abs(((etat.accroche ?? etat.balayage) * 180) / Math.PI), sep)}`;
     let apercu = APERCU_VIDE;
     if (etat.centre && etat.depart && etat.rayon !== null && etat.rayon > TOL) {
       const p0 = add(etat.centre, scale(etat.depart, etat.rayon));
       const lignes: Vec3[][] = [[etat.centre, p0]];
-      const a = etat.etape === 3 ? arcCourant(etat, etat.balayage) : null;
+      const a = etat.etape === 3 ? arcCourant(etat, etat.accroche ?? etat.balayage) : null;
       let faces: Vec3[][] = [];
       if (a && a.angle > 1e-9) {
         const pts = pointsArc(a, etat.cotes);

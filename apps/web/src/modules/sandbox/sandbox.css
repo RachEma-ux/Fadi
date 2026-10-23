@@ -183,6 +183,34 @@
   box-shadow: none;
   border-radius: 0;
 }
+.sandbox-planche .planche-marqueur[data-type="extremite"] {
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 1px #00a000;
+}
+.sandbox-planche .planche-point-reference {
+  display: none;
+  position: absolute;
+  box-sizing: content-box;
+  width: 3px;
+  height: 3px;
+  margin: -4px 0 0 -4px;
+  padding: 0;
+  border-radius: 50%;
+  background: #000;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px #000;
+}
+.sandbox-planche .planche-point-reference-gras {
+  width: 8px;
+  height: 8px;
+  margin: -7px 0 0 -7px;
+  background: currentColor;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 2px currentColor;
+}
 .sandbox-planche .planche-infobulle {
   display: none;
   position: absolute;

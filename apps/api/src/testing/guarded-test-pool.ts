@@ -1,9 +1,12 @@
 import type { Pool, PoolClient } from "pg";
 import { capturedTestTarget, refuse, TestDatabaseRefusal, type AuthorizedTestTarget, type TestConnectionOptions } from "./test-target.js";
 
-/** Only SELECTs. Provisioning owns this pre-existing marker; this code never creates it. */
+/**
+ * Only SELECTs. Provisioning owns this pre-existing marker; this code never creates it.
+ * `host()` (not `::text`, which appends the netmask, e.g. `172.18.0.2/32`): the attested `serverAddress` is a bare IP.
+ */
 export const IDENTITY_SQL = `SELECT pg_catalog.current_database() AS database, current_user AS role, session_user AS session_role,
-  pg_catalog.inet_server_addr()::text AS server_address, pg_catalog.inet_server_port() AS server_port, pg_catalog.pg_backend_pid() AS backend_pid,
+  pg_catalog.host(pg_catalog.inet_server_addr()) AS server_address, pg_catalog.inet_server_port() AS server_port, pg_catalog.pg_backend_pid() AS backend_pid,
   pg_catalog.current_setting('server_version_num') AS server_version, public.postgis_lib_version() AS postgis_version,
   r.rolsuper AS superuser, r.rolcreatedb AS create_db, r.rolcreaterole AS create_role,
   r.rolreplication AS replication, r.rolbypassrls AS bypass_rls,
@@ -21,6 +24,8 @@ export interface TestPoolTransport {
 }
 export type TestPoolFactory = (options: Readonly<TestConnectionOptions>) => TestPoolTransport;
 const resetters = new WeakMap<object, (tables: readonly string[]) => Promise<void>>();
+/** Read-only count of SQL operations per guarded pool (tests bound query counts without patching the frozen pool). */
+const operations = new WeakMap<object, { count: number }>();
 
 export const RESET_TABLES = Object.freeze([
   "volumes", "atelier_outbox", "atelier_commands", "atelier_site", "atelier_problemes", "atelier_references",
@@ -69,6 +74,7 @@ class GuardedTestPool {
     this.#target = target;
     try { this.#transport = factory(capturedTestTarget(target).options); }
     catch (error) { safeFailure(error, "IDENTITY_UNAVAILABLE"); }
+    operations.set(this, { count: 0 });
     resetters.set(this, async (tables) => {
       const capturedTables = Object.freeze([...tables]);
       if (!capturedTables.length || new Set(capturedTables).size !== capturedTables.length || capturedTables.some((table) => !allowedTables.has(table))) refuse("RUN_OR_SCOPE_REJECTED");
@@ -98,22 +104,33 @@ class GuardedTestPool {
   async connect(): Promise<PoolClient> {
     const raw = await this.#checkout();
     let released = false;
-    let busy = false;
+    // Operations on one session are serialized (pg queues them too): each one is attested immediately before it
+    // runs, never interleaved with another operation's attestation.
+    let tail: Promise<unknown> | null = null;
     const target = this.#target;
     const client = Object.freeze({
       query: async (...args: unknown[]) => {
-        if (released || busy || this.#ended) refuse("SESSION_NOT_VERIFIED");
-        const capturedArgs = args.map((arg, index) => index === 0 && arg && typeof arg === "object" ? Object.freeze({ ...arg }) : Array.isArray(arg) ? [...arg] : arg);
+        if (released || this.#ended) refuse("SESSION_NOT_VERIFIED");
+        const capturedArgs = args.map((arg, index) => index === 0 && arg && typeof arg === "object" ? { ...arg } : Array.isArray(arg) ? [...arg] : arg);
         if (capturedArgs.some((arg) => typeof arg === "function") || /\bTRUNCATE\b/i.test(sqlText(capturedArgs))) refuse("RUN_OR_SCOPE_REJECTED");
-        busy = true;
-        try {
-          await attest(raw, target); // same connection, rechecked for every operation and expiry.
-          if (released || this.#ended) refuse("SESSION_NOT_VERIFIED");
-          return await raw.query(...capturedArgs);
-        } catch (error) {
-          if (!released) { released = true; destroy(raw); }
-          return safeFailure(error, "QUERY_FAILED");
-        } finally { busy = false; }
+        operations.get(this)!.count += 1;
+        const operation = async () => {
+          try {
+            if (released || this.#ended) refuse("SESSION_NOT_VERIFIED");
+            await attest(raw, target); // same connection, rechecked for every operation and expiry.
+            if (released || this.#ended) refuse("SESSION_NOT_VERIFIED");
+            return await raw.query(...capturedArgs);
+          } catch (error) {
+            if (!released) { released = true; destroy(raw); }
+            return safeFailure(error, "QUERY_FAILED");
+          }
+        };
+        // Idle session: the attestation starts synchronously, as before; otherwise it waits for the previous operation.
+        const result = tail ? tail.then(operation, operation) : operation();
+        const settled = result.catch(() => undefined);
+        tail = settled;
+        void settled.then(() => { if (tail === settled) tail = null; });
+        return await result;
       },
       release: () => { if (!released) { released = true; destroy(raw); } },
     });
@@ -131,6 +148,12 @@ class GuardedTestPool {
 }
 export function createGuardedTestPool(target: AuthorizedTestTarget, factory: TestPoolFactory): Pool {
   return new GuardedTestPool(target, factory) as unknown as Pool;
+}
+/** Number of SQL operations issued through this guarded pool so far (attestations and resets excluded). */
+export function countTestOperations(pool: Pool): number {
+  const counter = operations.get(pool);
+  if (!counter) refuse("SESSION_NOT_VERIFIED");
+  return counter.count;
 }
 /** A raw pg pool, forged object or imported helper cannot provide a reset capability. */
 export async function resetTestDatabase(pool: Pool, tables: readonly string[]): Promise<void> {

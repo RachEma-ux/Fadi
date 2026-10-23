@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { outilParId } from "../catalogue-outils.js";
-import { type Modele, aire, ajouterRectangle, compter, deplacer, grouper, modeleVide } from "../geometrie-libre.js";
+import { type Modele, aire, ajouterRectangle, ajouterSegment, compter, deplacer, grouper, modeleVide } from "../geometrie-libre.js";
 import { type Vec3, v3 } from "../vecteur.js";
 import type { ContexteOutil, EvenementOutil, MachineOutil, Transition } from "./machine.js";
 import { type EtatLigne, formaterLongueur, machineLigne } from "./ligne.js";
@@ -278,5 +278,76 @@ describe("Ligne — modificateurs et saisies", () => {
     const pts = Object.values(def?.contenu.sommets ?? {}).map((s) => s.position);
     expect(pts.some((q) => Math.abs(q.x - 3) < 1e-9 && Math.abs(q.y - 3) < 1e-9)).toBe(true);
     expect(Object.keys(modele.racine.aretes)).toHaveLength(0);
+  });
+});
+
+describe("Ligne — guides depuis les points déjà posés (From Point)", () => {
+  it("le curseur s'aligne sur un sommet antérieur de la chaîne : guide pointillé depuis ce sommet", () => {
+    const p = new Pilote(machineLigne).envoyer(clic(0, 0), clic(4, 0), survol(0.02, 2));
+    const i = (p.etat as EtatLigne).inference;
+    expect(i?.type).toBe("axe-y");
+    expect(i?.origineLigne?.x).toBeCloseTo(0, 9);
+    expect(i?.origineLigne?.y).toBeCloseTo(0, 9);
+  });
+
+  it("un point survolé (extrémité) est acquis : le curseur s'aligne ensuite dessus", () => {
+    let m = modeleVide();
+    m = ajouterRectangle(m, v3(10, 10, 0), v3(1, 0, 0), v3(0, 1, 0)).modele;
+    const p = new Pilote(machineLigne, m).envoyer(clic(0, 0), survol(11, 10.01), survol(11.02, 3));
+    const i = (p.etat as EtatLigne).inference;
+    expect(i?.type).toBe("axe-y");
+    expect(i?.origineLigne?.x).toBeCloseTo(11, 9);
+  });
+
+  it("la chaîne terminée oublie les points acquis", () => {
+    const p = new Pilote(machineLigne).envoyer(clic(0, 0), clic(4, 0), { genre: "echap" });
+    expect((p.etat as EtatLigne).acquis).toHaveLength(0);
+  });
+});
+
+describe("Ligne — angle droit d'une perpendiculaire à une arête", () => {
+  it("le symbole se place à l'intersection du segment avec l'arête de référence", () => {
+    const m = ajouterSegment(modeleVide(), v3(0, 2, 0), v3(4, 4, 0)).modele;
+    const p = new Pilote(machineLigne, m).envoyer(clic(6, 0), survol(2, 3), survol(3, 6));
+    const e = p.etat as EtatLigne;
+    expect(e.inference?.type).toBe("perpendiculaire");
+    const a = machineLigne.vue(e, p.ctx).angleDroit;
+    expect(a).toBeDefined();
+    expect(a?.sommet.x).toBeCloseTo(4, 6);
+    expect(a?.sommet.y).toBeCloseTo(4, 6);
+    expect(a ? Math.abs(a.u.x * a.v.x + a.u.y * a.v.y + a.u.z * a.v.z) : 1).toBeLessThan(1e-9);
+  });
+
+  it("pas de symbole pour un autre type d'inférence", () => {
+    const p = new Pilote(machineLigne).envoyer(clic(0, 0), survol(3, 0.02));
+    expect(machineLigne.vue(p.etat as EtatLigne, p.ctx).angleDroit).toBeUndefined();
+  });
+});
+
+describe("Ligne — anneaux de référence (SketchUp)", () => {
+  it("la vue expose le départ et les sommets déjà posés comme références à marquer", () => {
+    const p = new Pilote(machineLigne).envoyer(clic(0, 0), clic(4, 0), clic(4, 3), survol(2, 3.02));
+    const refs = machineLigne.vue(p.etat as EtatLigne, p.ctx).references ?? [];
+    const a = (x: number, y: number) => refs.some((q) => Math.abs(q.x - x) < 1e-6 && Math.abs(q.y - y) < 1e-6);
+    expect(a(0, 0)).toBe(true);
+    expect(a(4, 0)).toBe(true);
+  });
+});
+
+describe("Ligne — même longueur que l'arête de référence", () => {
+  it("le point est ajusté à la longueur de l'arête survolée et signalé", () => {
+    // Arête de longueur 4 : (0,2) → (4,2). Départ en (0,-3) ; le curseur atteint ≈ 4 m vers la droite.
+    const m = ajouterSegment(modeleVide(), v3(0, 2, 0), v3(4, 2, 0)).modele;
+    const p = new Pilote(machineLigne, m).envoyer(survol(2, 2), clic(0, -3), survol(2, 2), survol(3.97, -3.02));
+    const i = (p.etat as EtatLigne).inference;
+    expect(i?.memeLongueur).toBe(true);
+    expect(Math.hypot((i?.point.x ?? 0) - 0, (i?.point.y ?? 0) + 3)).toBeCloseTo(4, 6);
+    expect(machineLigne.vue(p.etat as EtatLigne, p.ctx).egaliteLongueur).toBeDefined();
+  });
+
+  it("loin de la longueur de l'arête : aucune indication", () => {
+    const m = ajouterSegment(modeleVide(), v3(0, 2, 0), v3(4, 2, 0)).modele;
+    const p = new Pilote(machineLigne, m).envoyer(survol(2, 2), clic(0, -3), survol(2, 2), survol(2.5, -3.02));
+    expect((p.etat as EtatLigne).inference?.memeLongueur).toBeUndefined();
   });
 });

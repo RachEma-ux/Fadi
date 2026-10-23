@@ -8,7 +8,7 @@
  * - Ctrl (bascule persistante) : depuis le centre, dimensions totales.
  * - Flèches avant le 1er clic (bascule) : → plan ⟂ rouge, ← ⟂ vert, ↑ ⟂ bleu, ↓ plan inféré courant ;
  *   Maj maintenue : plan inféré courant verrouillé.
- * - Inférence « Carré » (relevée). « Section dorée » : documentation seule, non relevée → non implémentée.
+ * - Inférence « Carré » (relevée). « Section dorée » : documentée par l'aide en ligne (grand côté = petit côté × nombre d'or).
  */
 import { ajouterRectangle } from "../geometrie-libre.js";
 import type { Inference } from "../inference.js";
@@ -24,7 +24,9 @@ import {
   etape,
   fermer,
   formaterLongueur,
+  NOMBRE_D_OR,
   inferenceCarre,
+  inferenceSectionDoree,
   marquerContraint,
   mesures,
   messageErreur,
@@ -189,6 +191,17 @@ function traiter(etat0: EtatRectangle, ev: Parameters<MachineOutil<EtatRectangle
         b = signe(b) * m;
         const pt = add(premier, add(scale(etat.u, a / k), scale(etat.w, b / k)));
         inf = etat.contraint ? marquerContraint(inferenceCarre(pt)) : inferenceCarre(pt);
+      } else if ((inf.type === "aucune" || inf.type === "sur-face") && Math.min(Math.abs(a), Math.abs(b)) > TOL) {
+        // Inférence « Section dorée » : grand côté = petit côté × nombre d'or (le grand côté reste celui du curseur), à la tolérance d'accrochage près.
+        const grand = Math.max(Math.abs(a), Math.abs(b));
+        const petit = Math.min(Math.abs(a), Math.abs(b));
+        if (Math.abs(grand - NOMBRE_D_OR * petit) <= ev.tolerance * k) {
+          const m = grand / NOMBRE_D_OR;
+          if (Math.abs(a) >= Math.abs(b)) b = signe(b) * m;
+          else a = signe(a) * m;
+          const pt = add(premier, add(scale(etat.u, a / k), scale(etat.w, b / k)));
+          inf = etat.contraint ? marquerContraint(inferenceSectionDoree(pt)) : inferenceSectionDoree(pt);
+        }
       }
       const suivant: EtatRectangle = { ...etat, a, b, inference: inf, texte: null };
       if (ev.genre === "survol") return { etat: suivant };

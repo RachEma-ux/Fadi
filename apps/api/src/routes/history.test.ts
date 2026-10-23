@@ -1,8 +1,8 @@
 /** Intégration contre PostgreSQL, comme les autres tests de routes : jamais une simulation des droits SQL. */
-import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
 import { createApp } from "../app.js";
-import { resetTestDatabase } from "../testing/guarded-test-pool.js";
+import { countTestOperations, resetTestDatabase } from "../testing/guarded-test-pool.js";
 import { pool } from "../db/client.js";
 import type { HistoryEvent } from "../lib/history.js";
 
@@ -67,15 +67,15 @@ describe("historiques accessibles par dossier et par plateforme", () => {
   it("borne l'agrégat à 300 événements avec un nombre constant de requêtes, même pour beaucoup de dossiers", async () => {
     const owner = await account("history-many@example.com");
     await pool.query("INSERT INTO projects (id, owner_id, code, name, created_at) SELECT 'history-' || n, $1, 'P.' || n, 'Dossier ' || n, TIMESTAMPTZ '2026-01-01 00:00:00Z' + n * INTERVAL '1 minute' FROM generate_series(1, 305) n", [owner.id]);
-    const queries = vi.spyOn(pool, "query");
-    try {
+    const avant = countTestOperations(pool);
+    {
       const result = await owner.client.get("/projects/history");
       expect(result.status).toBe(200);
       expect(result.body.events).toHaveLength(300);
       expect(result.body.coverage.truncated).toBe(true);
       expect(result.body.events[0].project.id).toBe("history-305");
       // Session + deux sources ; cette borne protège contre une future boucle par projet.
-      expect(queries.mock.calls.length).toBeLessThanOrEqual(4);
-    } finally { queries.mockRestore(); }
+      expect(countTestOperations(pool) - avant).toBeLessThanOrEqual(4);
+    }
   });
 });

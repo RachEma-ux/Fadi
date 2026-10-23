@@ -64,6 +64,7 @@ Only list **current, verified pairs on the target branch** here. The index below
 | Collaboration Common Rules | [MD](Fadi%20Concept%20-%20Collaboration%20Common%20Rules.md) | [DOCX](Fadi%20Concept%20-%20Collaboration%20Common%20Rules.docx) | 1.0 |
 | Collaboration Concept Map | [MD](Fadi%20Concept%20-%20Collaboration%20Concept%20Map.md) | [DOCX](Fadi%20Concept%20-%20Collaboration%20Concept%20Map.docx) | 1.0 |
 | GeoData | [MD](Fadi%20Concept%20-%20GeoData.md) | [DOCX](Fadi%20Concept%20-%20GeoData.docx) | 1.0 |
+| Axes | [MD](Fadi%20Concept%20-%20Axes.md) | [DOCX](Fadi%20Concept%20-%20Axes.docx) | 1.0 |
 
 After a pair is added, replace the placeholder with relative links to the corresponding `.md` and `.docx` files and their internal version.
 
@@ -80,3 +81,4 @@ After a pair is added, replace the placeholder with relative links to the corres
 ## 7. Initial migration
 
 Inventory existing concept files and open concept PRs; identify the latest valid pair for each concept; archive genuine predecessors; rename the current pairs; verify MD/DOCX parity; and submit the complete migration in a separate, controlled PR. **This README does not itself perform that migration.**
+

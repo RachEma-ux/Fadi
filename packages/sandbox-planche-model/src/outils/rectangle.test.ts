@@ -155,4 +155,19 @@ describe("Rectangle (§4.6)", () => {
     expect(p.vue().apercu.lignes[0]).toHaveLength(5);
     expect(p.vue().apercu.faces).toHaveLength(1);
   });
+
+  it("inférence « Section dorée » : grand côté = petit côté × nombre d'or, accroché à la tolérance près", () => {
+    const petit = 3 / ((1 + Math.sqrt(5)) / 2);
+    const p = partie(MACHINE_RECTANGLE).jouer(clic(0, 0), survol(3, petit + 0.004));
+    expect(p.vue().inference?.libelle.en).toBe("Golden Section");
+    expect(p.vue().inference?.libelle.fr).toBe("Section dorée");
+    p.jouer(clic(3, petit + 0.004));
+    const s = sommets(p.modele);
+    expect(contientPoint(s, v3(3, petit, 0))).toBe(true);
+  });
+
+  it("pas de Section dorée hors du rapport (ni pour un carré, qui garde « Carré »)", () => {
+    expect(partie(MACHINE_RECTANGLE).jouer(clic(0, 0), survol(3, 1)).vue().inference?.libelle.en ?? "").not.toBe("Golden Section");
+    expect(partie(MACHINE_RECTANGLE).jouer(clic(0, 0), survol(2, 2.003)).vue().inference?.libelle.en).toBe("Square");
+  });
 });

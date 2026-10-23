@@ -12,6 +12,9 @@ import { localStore } from "./local-store";
 
 export const QUERY_CACHE_VERSION = "fadi-queries-1";
 
+/** Premières clés des requêtes jamais déshydratées dans IndexedDB. */
+export const NON_PERSISTED_QUERIES: readonly string[] = ["auth", "account", "admin", "support-grants"];
+
 interface QueryPersistenceState { failedProjects: readonly string[]; error: string | null; saving: boolean }
 let queryPersistenceState: QueryPersistenceState = { failedProjects: [], error: null, saving: false };
 let savedProjects: string[] = [];
@@ -76,7 +79,9 @@ export const persistOptions: Omit<PersistQueryClientOptions, "queryClient"> = {
   buster: `${QUERY_CACHE_VERSION}:${lastUserId()}`,
   dehydrateOptions: {
     // Le modèle natif (plusieurs Mo) a son cache dédié ; les sessions et la liste des exemples se relisent.
-    shouldDehydrateQuery: (query) => query.state.status === "success" && !["auth"].includes(String(query.queryKey[0])),
+    // Gestion des comptes (#253) : sessions ouvertes, double authentification, administration et accès support ne sont
+    // jamais conservés hors ligne (données de sécurité, toujours relues du serveur).
+    shouldDehydrateQuery: (query) => query.state.status === "success" && !NON_PERSISTED_QUERIES.includes(String(query.queryKey[0])),
   },
 };
 

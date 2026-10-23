@@ -1,5 +1,15 @@
 # Tâches — Studio, programme156
 
+## Complément documentaire Axes — 23 octobre 2026
+
+Tâche bornée [#260](https://github.com/RachEma-ux/Fadi/issues/260), branche `docs/260-axes-concept`, base vérifiée `516e2f747c15d84f8c589e5271c015e929dc37e4`. Le concept Axes v1.0 est proposé pour validation dans [la paire MD/DOCX](../../../Fadi%20Concept/README.md). Il formalise la barre d’outils, les repères et plans de travail, les origines de composants, la persistance, les limites de recherche et 20 scénarios de recette futurs.
+
+Vérification documentaire : mêmes 356 blocs de contenu et 25 liens dans les deux formats ; titre et version concordants ; rendu Word de 13 pages contrôlé visuellement ; trois empreintes d’archives sources vérifiées. Ce contrôle ne constitue pas une recette de Fadi. L’accès navigateur au Sandbox a échoué ; les constats applicatifs reposent sur le code épinglé. Aucun test applicatif, changement de code, migration, déploiement ou modification du registre des 630 obligations dans ce lot.
+
+- Vérifié documentairement : paire Axes v1.0, parité, rendu Word et index.
+- À faire : revue métier et technique du concept, puis éventuel cadrage de la phase A.
+- Aucun état du programme #156 ou des obligations Studio n’est promu par cette tâche.
+
 > Mise à jour du 21 octobre 2026 : pour l’état courant, lire STATUS.md et HANDOFF.md. Les références et instructions datées de Mission 004 ci-dessous sont historiques ; la consolidation #209 et les lots ultérieurs sont déjà dans main. Aucun changement des 630 obligations ou de leur acceptation n’est inféré.
 
 ## En cours
@@ -38,3 +48,4 @@ Un ID n’est clôturé que selon son obligation source et sa preuve exacte. La 
 ## Terminé
 
 Sous-tâches documentaires et correctifs autorisés vérifiés sur leurs branches seulement. Aucune des31 missions ni fonctionnalitéStudio déclarée terminée.
+

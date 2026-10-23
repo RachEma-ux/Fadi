@@ -1,6 +1,6 @@
 /**
  * Vue three.js (WebGL2, R14) du mode Planche (cahier-planche §3.6, lot 2). Pur DOM / three.js, sans React : elle
- * dessine le maillage libre (faces recto gris clair / verso bleu-gris, arêtes noires), la sélection en bleu, l'aperçu
+ * dessine le maillage libre (faces recto blanches / verso bleu-gris, arêtes noires), la sélection en trame de points bleus, l'aperçu
  * de l'outil, le marqueur d'inférence et son infobulle, les axes (pleins côté positif, pointillés côté négatif) et un
  * sol neutre ; elle traduit le pointeur en `EvenementOutil` (rayon caméra → curseur, tolérance d'accrochage de 10 px
  * convertie en mètres à la profondeur visée). La navigation suit les réglages D-157 (`navigation.ts`) : molette ou
@@ -11,10 +11,13 @@ import * as THREE from "three";
 import { COULEURS, COULEUR_MATERIAU_DEFAUT, aretesMasquees, baseDuPlan, boiteOccurrence, cheminOccurrence, contexte, geometrieVisible, newell, type EvenementOutil, type FaceVisible, type GeometrieVisible, type Inference, type Modele, type Rayon, type Scene, type Vec3, type VueOutil } from "@parcours/sandbox-planche-model";
 import type { ReglagesNavigation } from "../etat-ui";
 import { borneSensibilite, facteurPan, interpreterMolette } from "../navigation";
+import { COULEUR_RECTO, COULEUR_TRAME_SELECTION, SHADER_TRAME_FRAGMENT, SHADER_TRAME_VERTEX, TRAME_SELECTION, intensiteLumiere } from "./apparence-faces";
 import type { OutilCamera } from "./outils-planche";
 
 /** Rayon d'accrochage à l'écran (px), converti en mètres à la profondeur visée (choix Fadi, cahier-planche §5.1). */
 export const TOLERANCE_PX = 10;
+/** Au doigt, le point touché est masqué par le doigt et moins précis : rayon d'accrochage plus large (SketchUp web mobile). */
+export const TOLERANCE_TACTILE_PX = 22;
 /** Déplacement minimal (px) pour qu'un appui devienne un glisser. */
 const SEUIL_GLISSER_PX = 4;
 /** Double-clic : délai et écart maximaux entre deux clics. */
@@ -23,8 +26,7 @@ const DOUBLE_PX = 6;
 /** Champ de vision initial : valeur relevée du champ Mesures de l'outil Zoom (« 35.00 deg. »). */
 export const CHAMP_DE_VISION_INITIAL = 35;
 
-/** Couleurs d'affichage (choix Fadi d'après SketchUp : recto gris clair, verso bleu-gris). */
-const COULEUR_RECTO = "#f0f0ee";
+/** Couleurs d'affichage (choix Fadi d'après SketchUp : recto blanc — `apparence-faces.ts` —, verso bleu-gris). */
 const COULEUR_VERSO = "#a7b4c6";
 const COULEUR_ARETE = "#000000";
 /** Objets O-2 : géométrie hors du contexte ouvert (délavée) et boîte pointillée de l'objet ouvert. */
@@ -36,7 +38,7 @@ const COULEUR_SURVOL = "#5b8fe8";
 const COULEUR_FOND = "#f4f6f8";
 const COULEUR_SOL = "#e4e3de";
 /** Aperçu noir hors inférence ; couleur de l'axe ou de la direction quand une inférence linéaire est active (§5.1). */
-const INFERENCES_LINEAIRES = new Set(["axe-x", "axe-y", "axe-z", "parallele", "perpendiculaire", "tangente"]);
+const INFERENCES_LINEAIRES = new Set(["axe-x", "axe-y", "axe-z", "parallele", "perpendiculaire", "perpendiculaire-face", "prolonger", "tangente"]);
 
 export interface RappelsVuePlanche {
   /** Événement pointeur destiné à l'outil actif. */
@@ -235,6 +237,10 @@ export class VuePlanche {
   private readonly etiquettesDom: HTMLDivElement;
   private etiquettesFixes: Etiquette[] = [];
   private etiquettesApercu: Etiquette[] = [];
+  /** Pastilles annelées (SketchUp web) : point de départ du tracé et sommet de référence de l'inférence. */
+  private pastilles: { el: HTMLDivElement; point: Vec3 }[] = [];
+  /** Dernier type de pointeur : au doigt, l'accrochage est plus large. */
+  private tactile = false;
   private modele: Modele | null = null;
   private cleSelection = "";
   private readonly sol: THREE.Mesh;
@@ -287,7 +293,7 @@ export class VuePlanche {
     this.moteur.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
 
     this.scene.background = new THREE.Color(COULEUR_FOND);
-    this.scene.add(new THREE.HemisphereLight("#ffffff", "#9aa0a8", 2.2));
+    this.scene.add(new THREE.HemisphereLight("#ffffff", "#9aa0a8", 3.4));
     this.soleil = new THREE.DirectionalLight("#ffffff", 1.2);
     this.soleil.position.set(-30, -50, 80);
     this.soleil.castShadow = false;
@@ -297,6 +303,10 @@ export class VuePlanche {
     this.soleil.shadow.camera.left = this.soleil.shadow.camera.bottom = -60;
     this.soleil.shadow.camera.right = this.soleil.shadow.camera.top = 60;
     this.scene.add(this.soleil, this.soleil.target);
+    // Lumière verticale : seules les faces tournées vers le haut la reçoivent, elles sortent blanches ; les faces latérales gardent leur ombrage.
+    const lumiereDessus = new THREE.DirectionalLight("#ffffff", 1.2);
+    lumiereDessus.position.set(0, 0, 1);
+    this.scene.add(lumiereDessus);
     this.moteur.shadowMap.enabled = false;
     this.moteur.shadowMap.type = THREE.PCFSoftShadowMap;
     // Sol neutre : sous les faces posées à z = 0 (dessiné d'abord, sans écrire la profondeur).
@@ -571,8 +581,22 @@ export class VuePlanche {
     }
   }
 
+  private ajouterPastille(point: Vec3, variante?: "gras", couleur?: string): void {
+    if (this.pastilles.some((q) => Math.hypot(q.point.x - point.x, q.point.y - point.y, q.point.z - point.z) < 1e-9)) return;
+    const el = document.createElement("div");
+    el.className = variante ? `planche-point-reference planche-point-reference-${variante}` : "planche-point-reference";
+    if (couleur) el.style.color = couleur;
+    this.surcouche.append(el);
+    this.pastilles.push({ el, point });
+  }
+
   /** Projection des étiquettes (appelée à chaque rendu). */
   private placerEtiquettes(): void {
+    for (const q of this.pastilles) {
+      const p = this.versEcran(q.point);
+      if (!p) q.el.style.display = "none";
+      else Object.assign(q.el.style, { display: "block", left: `${p.x}px`, top: `${p.y}px` });
+    }
     for (const e of [...this.etiquettesFixes, ...this.etiquettesApercu]) {
       const p = e.point ? this.versEcran(e.point) : e.ecran ?? null;
       if (!p || p.x < -200 || p.y < -200 || p.x > this.largeur + 200 || p.y > this.hauteur + 200) {
@@ -608,6 +632,8 @@ export class VuePlanche {
     vider(this.groupeApercu);
     for (const e of this.etiquettesApercu) e.el.remove();
     this.etiquettesApercu = [];
+    for (const q of this.pastilles) q.el.remove();
+    this.pastilles = [];
     const cle = [...(vue?.selection ?? selection)].join("|");
     if (cle !== this.cleSelection && this.modele) {
       this.cleSelection = cle;
@@ -622,7 +648,9 @@ export class VuePlanche {
       if (ids.size === 0) continue;
       const faces = this.geometrie.faces.filter((f) => ids.has(f.id));
       const aretes = this.geometrie.aretes.filter((a) => ids.has(a.id));
-      if (faces.length) this.groupeSelection.add(new THREE.Mesh(geometrieFaces(faces), new THREE.MeshBasicMaterial({ color: couleur, transparent: true, opacity: opacite, side: THREE.DoubleSide, depthWrite: false })));
+      // Face sélectionnée (SketchUp) : sa couleur reste visible sous une trame de points bleus fixée à l'écran ;
+      // une face survolée garde le voile bleu léger.
+      if (faces.length) this.groupeSelection.add(new THREE.Mesh(geometrieFaces(faces), ids === choisis ? this.materiauTrame() : new THREE.MeshBasicMaterial({ color: couleur, transparent: true, opacity: opacite, side: THREE.DoubleSide, depthWrite: false })));
       if (aretes.length) this.groupeSelection.add(new THREE.LineSegments(geometrieSegments(aretes.map((a) => [a.a, a.b] as const)), new THREE.LineBasicMaterial({ color: couleur, depthTest: false })));
     }
     // Objets sélectionnés : boîte englobante (bleue ; rouge si l'objet est verrouillé, §5.6).
@@ -684,10 +712,51 @@ export class VuePlanche {
       // Ligne d'inférence pointillée (depuis le point de départ ou un point de référence).
       const inf = this.inference;
       if (inf?.origineLigne) {
-        const ligne = new THREE.Line(new THREE.BufferGeometry().setFromPoints([v3(inf.origineLigne), v3(inf.point)]), new THREE.LineDashedMaterial({ color: inf.couleur, dashSize: this.metresParPixel(inf.point) * 6, gapSize: this.metresParPixel(inf.point) * 4, depthTest: false }));
+        // Pointillé persistant : prolongé de 60 px au-delà du curseur et en deçà de son origine, pour rester visible même quand
+        // le segment en cours prend la couleur de l'axe et le recouvre. Couleur de l'axe (ou magenta) ; noir sinon.
+        const couleurPointille = INFERENCES_LINEAIRES.has(inf.type) ? inf.couleur : "#000000";
+        const mpp = this.metresParPixel(inf.point);
+        const dir = inf.direction ? v3(inf.direction).normalize() : v3(inf.point).sub(v3(inf.origineLigne)).normalize();
+        const marge = dir.clone().multiplyScalar(mpp * 60);
+        const debut = v3(inf.origineLigne).sub(marge);
+        const fin = v3(inf.point).add(marge);
+        const ligne = new THREE.Line(new THREE.BufferGeometry().setFromPoints([debut, fin]), new THREE.LineDashedMaterial({ color: couleurPointille, dashSize: mpp * 2, gapSize: mpp * 4, depthTest: false }));
         ligne.computeLineDistances();
+        ligne.renderOrder = 9;
         this.groupeApercu.add(ligne);
+        this.ajouterPastille(inf.origineLigne);
       }
+      // Même longueur : un trait de repère au milieu de l'arête de référence et du segment en cours.
+      if (vue.egaliteLongueur) {
+        for (const [a, b] of [vue.egaliteLongueur.a, vue.egaliteLongueur.b]) {
+          const A = v3(a);
+          const B = v3(b);
+          const M = A.clone().add(B).multiplyScalar(0.5);
+          const u = B.clone().sub(A).normalize();
+          const vers = this.camera.position.clone().sub(M).normalize();
+          const n = new THREE.Vector3().crossVectors(u, vers).normalize().multiplyScalar(this.metresParPixel(M) * 13);
+          const tic = new THREE.Line(new THREE.BufferGeometry().setFromPoints([M.clone().sub(n), M.clone().add(n)]), new THREE.LineBasicMaterial({ color: "#ff8c00", depthTest: false }));
+          tic.renderOrder = 11;
+          this.groupeApercu.add(tic);
+        }
+      }
+      const trace = vue.apercu.lignes.find((l) => l.length === 2);
+      if (trace && vue.inference) this.ajouterPastille(trace[0] as Vec3);
+      // Angle droit (Ligne perpendiculaire à une arête) : petit carré à l'intersection, taille écran constante.
+      if (vue.angleDroit && vue.inference) {
+        const { sommet, u, v } = vue.angleDroit;
+        const k = this.metresParPixel(sommet) * 12;
+        const S = v3(sommet);
+        const U = v3(u).multiplyScalar(k);
+        const V = v3(v).multiplyScalar(k);
+        const carre = new THREE.Line(new THREE.BufferGeometry().setFromPoints([S.clone().add(U), S.clone().add(U).add(V), S.clone().add(V)]), new THREE.LineBasicMaterial({ color: vue.inference.couleur, depthTest: false }));
+        carre.renderOrder = 10;
+        this.groupeApercu.add(carre);
+        // Point d'intersection en gras : se repère d'un coup d'œil sur la ligne rose.
+        this.ajouterPastille(sommet, "gras", vue.inference.couleur);
+      }
+      // Sommets de référence (déjà posés ou survolés) : anneaux noirs, comme SketchUp.
+      for (const q of vue.references ?? []) this.ajouterPastille(q);
       for (const e of vue.apercu.etiquettes ?? []) {
         const el = document.createElement("div");
         el.className = "planche-etiquette planche-etiquette-apercu";
@@ -781,6 +850,7 @@ export class VuePlanche {
       this.demande = 0;
       this.camera.updateMatrixWorld();
       this.ajusterAxes();
+      this.eclairerDepuisCamera();
       this.moteur.render(this.scene, this.camera);
       this.placerMarqueur();
       this.placerEtiquettes();
@@ -833,7 +903,7 @@ export class VuePlanche {
 
   /** Tolérance d'accrochage : TOLERANCE_PX convertis en mètres à la profondeur visée sous le curseur. */
   tolerance(ecran: Point2): number {
-    return TOLERANCE_PX * this.metresParPixel(this.pointVise(ecran));
+    return (this.tactile ? TOLERANCE_TACTILE_PX : TOLERANCE_PX) * this.metresParPixel(this.pointVise(ecran));
   }
 
   /** Entités dont la projection écran est dans le cadre (fenêtre) ou le touche (croisée). */
@@ -1069,7 +1139,30 @@ export class VuePlanche {
     const z = Math.max(0.05, Math.sin(alt));
     this.soleil.position.set(Math.sin(az) * Math.cos(alt) * d, Math.cos(az) * Math.cos(alt) * d, z * d);
     this.soleil.target.position.set(0, 0, 0);
-    this.soleil.intensity = this.options.ombres ? 1.6 : 1.2;
+    this.soleil.intensity = intensiteLumiere(this.options.ombres);
+  }
+
+  /**
+   * Sans ombres, la lumière part de la caméra vers la cible (SketchUp sans « soleil pour l'ombrage ») : la face tournée
+   * vers soi est blanche, quel que soit le point de vue. Avec ombres, le soleil calculé (`majSoleil`) reste en place.
+   */
+  private eclairerDepuisCamera(): void {
+    if (this.options.ombres) return;
+    this.soleil.position.copy(this.camera.position);
+    this.soleil.target.position.copy(this.cible);
+    this.soleil.target.updateMatrixWorld();
+  }
+
+  /** Matériau de la trame de sélection (`apparence-faces.ts`), dimensionné au ratio de pixels du moteur. */
+  private materiauTrame(): THREE.ShaderMaterial {
+    const ratio = this.moteur.getPixelRatio();
+    return new THREE.ShaderMaterial({
+      uniforms: { couleur: { value: new THREE.Color(COULEUR_TRAME_SELECTION) }, pas: { value: TRAME_SELECTION.pas * ratio }, rayon: { value: TRAME_SELECTION.rayon * ratio } },
+      vertexShader: SHADER_TRAME_VERTEX,
+      fragmentShader: SHADER_TRAME_FRAGMENT,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
   }
 
   /** Projection : la projection parallèle est rendue par une perspective très fermée (1°) depuis loin — approximation déclarée. */
@@ -1174,6 +1267,7 @@ export class VuePlanche {
 
   private surAppui = (e: PointerEvent): void => {
     const p = this.ecran(e);
+    this.tactile = e.pointerType === "touch";
     if (e.pointerType === "touch") this.rappels.tactile?.();
     this.hote.focus({ preventScroll: true });
     this.canvas.setPointerCapture?.(e.pointerId);

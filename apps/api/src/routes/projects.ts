@@ -1,9 +1,10 @@
 import express, { Router, type ErrorRequestHandler, type Request, type Response } from "express";
-import { asc, eq } from "drizzle-orm";
+import { supportGrantsRouter, supportReadOnlyGuard } from "./support-grants.js";
+import { and, asc, eq, gt, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { ARCHIVE_IMPORT_LIMIT, ArchiveError, archiveFileName, normalizeImportedProjects } from "@parcours/domain-model";
 import { db, pool } from "../db/client.js";
-import { projectMembers, projects, projectSteps, stepFiles, users } from "../db/schema.js";
+import { projectMembers, projects, projectSteps, projectSupportGrants, stepFiles, users } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { newId } from "../lib/ids.js";
 import { EMPTY_STEP_CONTENT, PARCOURS_STEPS, exampleBaseDocuments } from "../data/parcours.js";
@@ -34,6 +35,8 @@ import { nettoyerVolumes } from "../lib/volumes-gc.js";
 
 export const projectsRouter = Router();
 projectsRouter.use(requireAuth);
+// Accès support (D-2) : lecture seule, sans export, chaque lecture journalisée — avant tout sous-routeur.
+projectsRouter.use(supportReadOnlyGuard);
 // L'historique de la plateforme doit précéder la route dynamique /:projectId.
 projectsRouter.use(historyRouter);
 
@@ -76,9 +79,20 @@ projectsRouter.get("/", async (req, res) => {
     .innerJoin(users, eq(users.id, projects.ownerId))
     .where(eq(projectMembers.userId, req.user!.id))
     .orderBy(asc(projects.createdAt));
+  // Accès support actifs (D-2) : seulement pour un administrateur, en lecture, avec leur échéance.
+  const support = req.user!.platformRole === "admin"
+    ? await db
+      .select({ project: projects, ownerEmail: users.email, supportExpiresAt: projectSupportGrants.expiresAt })
+      .from(projectSupportGrants)
+      .innerJoin(projects, eq(projects.id, projectSupportGrants.projectId))
+      .innerJoin(users, eq(users.id, projects.ownerId))
+      .where(and(eq(projectSupportGrants.adminId, req.user!.id), isNull(projectSupportGrants.revokedAt), gt(projectSupportGrants.expiresAt, new Date())))
+    : [];
+  const seen = new Set([...owned.map((p) => p.id), ...shared.map((r) => r.project.id)]);
   res.json([
     ...owned.map((p) => ({ ...p, editingLock: activeLock(p), role: "proprietaire" as const, ownerEmail: req.user!.email })),
     ...shared.map((r) => ({ ...r.project, editingLock: activeLock(r.project), role: r.role, ownerEmail: r.ownerEmail })),
+    ...support.filter((r) => !seen.has(r.project.id)).map((r) => ({ ...r.project, editingLock: activeLock(r.project), role: "support" as const, ownerEmail: r.ownerEmail, supportExpiresAt: r.supportExpiresAt.toISOString() })),
   ]);
 });
 
@@ -165,7 +179,7 @@ projectsRouter.post("/import", archiveBody, archiveBodyError, async (req: Reques
 
 /** `backup()` : tout le projet en un JSON téléchargeable (`Parcours_V7_<nom>.json`). */
 projectsRouter.get("/:projectId/archive", async (req, res) => {
-  const project = await projectOr404(req, res, "read");
+  const project = await projectOr404(req, res, "export");
   if (!project) return;
   const now = new Date();
   const archive = await exportProjectArchive(db, project, now.toISOString());
@@ -186,8 +200,9 @@ const copySchema = z.object({ name: z.string().trim().min(1).max(200).optional()
  * référence reste intacte ; la provenance (`sourceExampleId`) est conservée.
  */
 projectsRouter.post("/:projectId/copies", async (req, res) => {
-  // Lire suffit : la copie devient un nouveau projet de l'utilisateur (comme exporter puis importer l'archive), l'original n'est pas touché.
-  const project = await projectOr404(req, res, "read");
+  // Capacité « export » : la copie sort le contenu vers un nouveau projet de l'utilisateur (comme exporter puis importer l'archive) ;
+  // l'original n'est pas touché. Propriétaire, éditeur et lecteur la gardent ; l'accès support ne l'a pas.
+  const project = await projectOr404(req, res, "export");
   if (!project) return;
   const parsed = copySchema.safeParse(req.body ?? {});
   if (!parsed.success) {
@@ -221,6 +236,7 @@ projectsRouter.use("/:projectId/documents", documentsRouter);
 projectsRouter.use("/:projectId/collaboration", collaborationRouter);
 projectsRouter.use("/:projectId/members", membersRouter);
 projectsRouter.use("/:projectId/lock", lockRouter);
+projectsRouter.use("/:projectId/support-grants", supportGrantsRouter);
 
 projectsRouter.get("/:projectId", async (req, res) => {
   const project = await projectOr404(req, res, "read");

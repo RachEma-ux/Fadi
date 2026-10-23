@@ -257,7 +257,7 @@ function StudioProjet({ projectId, archives }: { projectId: string; archives: bo
   if (projet.isPending) return <p role="status">Chargement du projet…</p>;
   if (!accessible) return projet.isError && !refused(projet.error) ? <p role="alert">Projet indisponible. <button type="button" onClick={() => void projet.refetch()}>Réessayer</button></p> : <StudioRefus quoi="projet" />;
   const p = projet.data!;
-  const lecteur = p.role === "lecteur";
+  const lecteur = p.role === "lecteur" || p.role === "support";
   return (
     <section className="studio-welcome studio-page" data-studio-projet={p.id}>
       <header className="studio-page-entete">

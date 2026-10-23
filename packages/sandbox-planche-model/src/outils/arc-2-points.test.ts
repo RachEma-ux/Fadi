@@ -139,4 +139,11 @@ describe("Arc 2 points (§4.11)", () => {
     expect(p.vue().erreur).toMatch(/segments/);
     expect(aretes(p.modele)).toHaveLength(12);
   });
+
+  it("inférence « Demi-cercle » : flèche égale à la demi-corde, infobulle « Half Circle »", () => {
+    const p = partie(MACHINE_ARC_2_POINTS).jouer(clic(0, 0), survol(1, 0), saisie("2"), survol(1, 1.004));
+    expect(p.vue().inference?.libelle.en).toBe("Half Circle");
+    const q = partie(MACHINE_ARC_2_POINTS).jouer(clic(0, 0), survol(1, 0), saisie("2"), survol(1, 0.6));
+    expect(q.vue().inference?.libelle.en ?? "").not.toBe("Half Circle");
+  });
 });
