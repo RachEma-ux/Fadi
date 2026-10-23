@@ -11,8 +11,10 @@
  *    (nouvelle période), transfert de propriété dans l'ordre de la route (participations continues), rôle
  *    d'attribution jamais touché par le miroir, suppressions en cascade sans erreur ;
  * 3. contraintes CHECK et unicité de la participation courante ;
- * 4. D-7 : `fadi_app` écrit les nouvelles tables et déclenche le miroir, sans aucun DDL.
- * Tout se passe dans des transactions annulées (ROLLBACK). Refuse une base qui n'est pas locale : jamais la production.
+ * 4. D-7 : `fadi_app` écrit les nouvelles tables et déclenche le miroir, sans aucun DDL ;
+ * 5. concurrence : deux accès simultanés d'un même compte créent une seule personne, sans échec (seule section validée,
+ *    nettoyée ensuite par suppression du compte de test).
+ * Sections 1 à 4 dans des transactions annulées (ROLLBACK). Refuse une base qui n'est pas locale : jamais la production.
  */
 import { readFileSync } from 'node:fs';
 import pg from 'pg';
@@ -147,6 +149,7 @@ try {
   await rejects('rôle inconnu', "INSERT INTO project_role_assignments (id, participation_id, role) VALUES ('op_x', 'op_pc', 'editeur')");
   await rejects('portée inconnue', "INSERT INTO project_role_assignments (id, participation_id, role, scope_type, scope_id) VALUES ('op_x', 'op_pc', 'relecteur', 'phase', 'x')");
   await rejects('portée révision sans identifiant', "INSERT INTO project_role_assignments (id, participation_id, role, scope_type) VALUES ('op_x', 'op_pc', 'relecteur', 'revision')");
+  await rejects('portée étude à identifiant vide', "INSERT INTO project_role_assignments (id, participation_id, role, scope_type, scope_id) VALUES ('op_x', 'op_pc', 'relecteur', 'etude', '  ')");
   await rejects('portée projet avec identifiant', "INSERT INTO project_role_assignments (id, participation_id, role, scope_type, scope_id) VALUES ('op_x', 'op_pc', 'relecteur', 'projet', 'x')");
   await client.query("INSERT INTO project_role_assignments (id, participation_id, role) VALUES ('op_r1', 'op_pc', 'approbateur')");
   await rejects('même rôle, même portée, deux fois', "INSERT INTO project_role_assignments (id, participation_id, role) VALUES ('op_r2', 'op_pc', 'approbateur')");
@@ -169,6 +172,31 @@ try {
     await rejects('fadi_app : ALTER TABLE des participations', 'ALTER TABLE project_participations ADD COLUMN intrus int');
     await rejects('fadi_app : DROP du déclencheur', 'DROP TRIGGER project_members_op_mirror ON project_members');
     await client.query('ROLLBACK');
+  }
+
+  // 5. Concurrence : un même compte obtient deux accès en parallèle (deux projets créés en même temps, aucune personne
+  //    encore) — la seconde transaction attend la première puis relit la personne, sans échouer.
+  await client.query(users('op_par'));
+  const second = new pg.Client({ connectionString: url });
+  await second.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query("INSERT INTO projects (id, owner_id, code, name) VALUES ('op_par1', 'op_par', 'PA1', 'Parallèle 1')");
+    await second.query('BEGIN');
+    const pending = second.query("INSERT INTO projects (id, owner_id, code, name) VALUES ('op_par2', 'op_par', 'PA2', 'Parallèle 2')");
+    await new Promise((r) => setTimeout(r, 300));
+    await client.query('COMMIT');
+    await pending;
+    await second.query('COMMIT');
+    const par = await one("SELECT count(DISTINCT pe.id)::int AS personnes, count(pp.id)::int AS participations FROM people pe JOIN project_participations pp ON pp.person_id = pe.id WHERE pe.user_id = 'op_par'");
+    check(par.personnes === 1 && par.participations === 2, 'deux accès simultanés du même compte : une personne, deux participations', par);
+  } catch (e) {
+    ko('deux accès simultanés du même compte : ' + e.message);
+    await second.query('ROLLBACK').catch(() => undefined);
+    await client.query('ROLLBACK').catch(() => undefined);
+  } finally {
+    await second.end();
+    await client.query("DELETE FROM users WHERE id = 'op_par'");  // projets, personne et participations en cascade
   }
 } catch (e) {
   ko('erreur inattendue : ' + e.message);

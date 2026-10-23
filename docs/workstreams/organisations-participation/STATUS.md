@@ -24,7 +24,7 @@ la revue 🛑 1.**
 - Phase 1 (branche `feat/op-phase1-participations`) : tables `people`, `organizations`, `project_participations`,
   `project_role_assignments`, miroir des accès par déclencheurs (`op_sync_access`), reprise idempotente ; transfert de
   propriété réordonné pour garder les participations continues. Vérifié localement le 2026-10-23 sur PostgreSQL 16 +
-  PostGIS réel : `participations-migration-check.mjs` 36/36 (6 exécutions), `users-migration-check.mjs` vert,
+  PostGIS réel : `participations-migration-check.mjs` 38/38 (dont concurrence réelle à deux connexions), `users-migration-check.mjs` vert,
   `participations.test.ts` 6/6, typecheck et build verts. Les 12 suites DB-3 (dont le contrôle ajouté au test de
   transfert dans `app.test.ts`) n'ont pas tourné localement (aucune base attestée) : elles tournent en CI.
 - Écart déclaré au plan : la journalisation des écritures de participation (phase 1, tâche 5) passe en phase 2, avec

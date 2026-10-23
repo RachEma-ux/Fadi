@@ -1467,7 +1467,8 @@ CREATE TABLE IF NOT EXISTS project_role_assignments (
   CONSTRAINT project_role_assignments_role_check
     CHECK (role IN ('lecteur', 'concepteur', 'relecteur', 'coordinateur', 'approbateur', 'diffuseur')),
   CONSTRAINT project_role_assignments_scope_check CHECK (scope_type IN ('projet', 'etude', 'variante', 'revision', 'documents')),
-  CONSTRAINT project_role_assignments_scope_id_check CHECK ((scope_type = 'projet') = (scope_id IS NULL)),
+  CONSTRAINT project_role_assignments_scope_id_check
+    CHECK (CASE WHEN scope_type = 'projet' THEN scope_id IS NULL ELSE length(btrim(coalesce(scope_id, ''))) > 0 END),
   CONSTRAINT project_role_assignments_origin_check CHECK (origin IN ('acces', 'attribution'))
 );
 CREATE UNIQUE INDEX IF NOT EXISTS project_role_assignments_unique
@@ -1499,8 +1500,10 @@ BEGIN
     RETURN;
   END IF;
   IF v_person IS NULL THEN
-    v_person := 'per_' || gen_random_uuid();
-    INSERT INTO people (id, user_id) VALUES (v_person, p_user);
+    -- Deux accès simultanés du même compte (deux projets créés en parallèle) : l'un crée la personne, l'autre la relit.
+    INSERT INTO people (id, user_id) VALUES ('per_' || gen_random_uuid(), p_user)
+      ON CONFLICT (user_id) WHERE user_id IS NOT NULL DO NOTHING;
+    SELECT id INTO v_person FROM people WHERE user_id = p_user;
   END IF;
   SELECT id INTO v_part FROM project_participations
    WHERE project_id = p_project AND person_id = v_person AND status <> 'terminee' FOR UPDATE;

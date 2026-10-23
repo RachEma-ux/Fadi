@@ -53,6 +53,7 @@ describe("participations — règles pures et accord avec init.sql", () => {
     expect(roleAssignmentProblems({ role: "approbateur", scopeType: "projet" })).toEqual([]);
     expect(roleAssignmentProblems({ role: "relecteur", scopeType: "revision", scopeId: "rev_3" })).toEqual([]);
     expect(roleAssignmentProblems({ role: "relecteur", scopeType: "revision" })).toHaveLength(1);
+    expect(roleAssignmentProblems({ role: "relecteur", scopeType: "documents", scopeId: "  " })).toHaveLength(1);
     expect(roleAssignmentProblems({ role: "lecteur", scopeType: "projet", scopeId: "x" })).toHaveLength(1);
     expect(roleAssignmentProblems({ role: "editeur", scopeType: "projet" })).toEqual(["rôle inconnu : editeur"]);
   });

@@ -70,7 +70,7 @@ export function roleAssignmentProblems(a: RoleAssignmentDraft): string[] {
   const problems: string[] = [];
   if (!(BUSINESS_ROLES as readonly string[]).includes(a.role)) problems.push(`rôle inconnu : ${a.role}`);
   if (!(ROLE_SCOPES as readonly string[]).includes(a.scopeType)) problems.push(`portée inconnue : ${a.scopeType}`);
-  if ((a.scopeType === "projet") !== !a.scopeId) problems.push("portée : un identifiant pour une étude, une variante, une révision ou des documents ; aucun pour le projet");
+  if ((a.scopeType === "projet") !== !(a.scopeId ?? "").trim()) problems.push("portée : un identifiant pour une étude, une variante, une révision ou des documents ; aucun pour le projet");
   return problems;
 }
 
