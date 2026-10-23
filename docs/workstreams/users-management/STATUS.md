@@ -182,6 +182,9 @@ Preuves locales après correction :
     vers B.
   - **Vérification locale :** 15 exécutions consécutives, chacune sur une base neuve (`fadi_acc`) : 15/15 vertes, 80 ✓
     chacune, aucune erreur de routage ni rejet non traité ; typecheck ✓, tests web 945 ✓, build ✓.
+  - **CI sur `18cd1d0`** (après fusion de `main` en `9bc5b35`) : run CI 39898711436 et 5 autres workflows, tous verts ;
+    tranche `parcours` : « Accueil : 80 contrôles réussis, 0 échec(s) », dont les deux nouveaux contrôles de retrait et
+    « l’accès aux 21 étapes reste disponible », aucun « Route is already handled ».
 
 ## Écarts au plan (le concept et D-7 priment)
 

@@ -6,8 +6,7 @@
 
 ## En cours
 
-- UM-E2E — Recette des accueils (`accueils-design.mjs`) : retrait d'interception corrigé et intermittence « 21 étapes »
-  diagnostiquée ; vérifié en local (15/15), CI à constater sur la tête (Issue : #253).
+- Aucune ; la PR #255 attend la revue du maître d'ouvrage.
 
 ## Terminé
 
@@ -25,6 +24,8 @@
   atomique, UM-20 capacité « export ») : reproduits, corrigés, vérifiés en CI sur `873f740` (Issue : #253).
 - [x] UM-CODEX — Trois constats de la revue Codex de `fcb0dd1` (UM-21 à UM-23) : corrigés, vérifiés en CI sur `24ed965`
   (Issue : #253).
+- [x] UM-E2E — Recette des accueils : retrait d'interception par `unrouteAll({ behavior: "wait" })` et attente de l'accueil
+  de B ; 15/15 en local, CI verte sur `18cd1d0` (80 ✓) (Issue : #253).
 - [x] UM-D7 — Amendement D-7 : schémas `auth` / `admin`, rôles au moindre privilège, CI et restauration (Issue : #253).
 
 ## Bloqué
