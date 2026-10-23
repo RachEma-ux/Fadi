@@ -14,7 +14,7 @@ Mis à jour : 2026-10-23 (UTC).
 
 ## Prochaine action
 
-- Attendre la validation du plan et les réponses OP-D1 à OP-D11 (🛑 0).
+- Attendre la validation du plan et les réponses OP-D1 à OP-D13 (🛑 0).
 - Ensuite, ouvrir la phase 1 : personnes, organisations, participations et reprise de l'existant, avec ses tests DB-3.
 
 ## Tests et preuves

@@ -8,7 +8,7 @@ Le maître d'ouvrage a ouvert ce chantier le 2026-10-23, à la suite de UM-1 de 
 - revue externe d'un paquet identifié ;
 - organisations, ensuite.
 
-**Priorité :** participants, invitations acceptées, revue externe. Le plan est dans [PLAN.md](PLAN.md).
+**Priorité :** participants, invitations acceptées, revue externe ; journal d'activité et historique ajoutés le même jour. Le plan est dans [PLAN.md](PLAN.md).
 
 ## Périmètre
 
@@ -16,6 +16,7 @@ Le maître d'ouvrage a ouvert ce chantier le 2026-10-23, à la suite de UM-1 de 
   - enregistrements personne / contact, organisation (minimal) et participation au projet ;
   - écran « Collaboration > Équipe et participants » ;
   - invitations proposant une participation, activées après acceptation ;
+  - journal d'activité et historique par audience (administrateur, utilisateur, projet) ;
   - paquet de revue, destinataires externes, accès limité au paquet, constats et boucle de correction ;
   - organisations (partie 5), après la revue externe.
 - **Exclus :**
@@ -43,4 +44,4 @@ Le maître d'ouvrage a ouvert ce chantier le 2026-10-23, à la suite de UM-1 de 
 
 ## Hypothèses et questions ouvertes
 
-- Décisions OP-D1 à OP-D11 ([PLAN.md](PLAN.md), annexe A) : à prendre par le maître d'ouvrage au point d'arrêt 🛑 0.
+- Décisions OP-D1 à OP-D13 ([PLAN.md](PLAN.md), annexe A) : à prendre par le maître d'ouvrage au point d'arrêt 🛑 0.

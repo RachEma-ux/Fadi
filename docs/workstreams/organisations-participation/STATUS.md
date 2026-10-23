@@ -16,12 +16,15 @@ Mis à jour : 2026-10-23 (UTC).
   - les colonnes `organization_id` sont réservées, sans logique ;
   - les publications Studio ont un manifeste figé ;
   - les observations Studio ont une boucle de correction ;
-  - l'approbation et la diffusion Studio sont réservées au propriétaire.
+  - l'approbation et la diffusion Studio sont réservées au propriétaire ;
+  - `admin.audit_log` n'a aucun écran de consultation.
+- Second cadrage de la session d'exploitation (`docs/organisations-participation-cadrage`, `fa98da4`) fondu dans le plan
+  le 2026-10-23 sur décision du maître d'ouvrage : phase 3 bis, OP-D3 (c), OP-D12, OP-D13.
 - Concept de référence : `docs/workstreams/users-management/concept.md` v2.2, protégé par le test anti-dérive existant.
 
 ## Points ouverts
 
-- Validation du plan et décisions OP-D1 à OP-D11 ([PLAN.md](PLAN.md), annexe A).
+- Validation du plan et décisions OP-D1 à OP-D13 ([PLAN.md](PLAN.md), annexe A).
 - OP-D7 (approbation par un participant externe) et OP-D9 (données des contacts, RGPD) : décisions métier sans
   recommandation technique.
 

@@ -1,7 +1,8 @@
 # Plan d'implémentation — Organisations, participation et revue externe
 
 > Chantier ouvert par le maître d'ouvrage le 2026-10-23 (suite de UM-1, [Issue #262](https://github.com/RachEma-ux/Fadi/issues/262)).
-> Priorité demandée : **participants**, **invitations acceptées**, **revue externe**.
+> Priorité demandée : **participants**, **invitations acceptées**, **revue externe** ; ajout du maître d'ouvrage le même
+> jour : **journal d'activité et historique** (phase 3 bis).
 > **Statut du plan : proposé, à valider** (point d'arrêt 🛑 0). Aucune implémentation n'est engagée avant cette validation.
 
 Source normative : [`docs/workstreams/users-management/concept.md`](../users-management/concept.md) (concept Users
@@ -12,7 +13,7 @@ Management v2.2, parties 1 à 6 et section v2.2) — il prime sur ce plan. Déci
 
 ## 0. Règles d'exécution
 
-1. **Ordre** : 0 → 1 → 2 → 3 → 4 → (5) → 6. Une phase ne commence qu'avec les critères de la précédente verts et, aux 🛑, la
+1. **Ordre** : 0 → 1 → 2 → 3 → 3 bis → 4 → (5) → 6. Une phase ne commence qu'avec les critères de la précédente verts et, aux 🛑, la
    validation du maître d'ouvrage.
 2. **Le concept prime.** Une tâche qui le contredit est adaptée et l'écart consigné dans `STATUS.md`.
 3. **Rien n'est inventé.** Les listes métier (rôles de participation, types d'organisation, champs de contact) viennent du
@@ -40,6 +41,13 @@ Management v2.2, parties 1 à 6 et section v2.2) — il prime sur ce plan. Déci
 **Livré** : `CONTEXT.md`, ce plan, la traçabilité des exigences (§ 7), l'audit de l'existant (§ 1), les décisions à prendre
 (annexe A), le journal `DECISIONS.md` du chantier.
 
+**Consolidation du 2026-10-23** : un second cadrage, rédigé par la session d'exploitation (branche
+`docs/organisations-participation-cadrage`, commit `fa98da4`, non ouvert en PR pour éviter un doublon), est fondu dans ce
+plan sur décision du maître d'ouvrage. Il apporte la phase 3 bis (journal d'activité et historique), l'option (c) de
+OP-D3 (six rôles métier), les précisions de OP-D8 et OP-D9, et les décisions OP-D12 (courriels) et OP-D13 (lecteurs du
+journal). Ses décisions D-OP-1 à D-OP-7 correspondent à : D-OP-1 → OP-D3 (c) ; D-OP-2 → phase 1, tâche 2 et OP-D1 ;
+D-OP-3 → OP-D9 ; D-OP-4 → OP-D8 ; D-OP-5 → OP-D6 ; D-OP-6 → OP-D12 ; D-OP-7 → OP-D13.
+
 ### 🛑 Point d'arrêt 0
 Validation (ou amendement) du plan et réponses aux décisions de l'annexe A. Sans elles, les phases 1 à 4 ne commencent pas.
 
@@ -57,6 +65,7 @@ Validation (ou amendement) du plan et réponses aux décisions de l'annexe A. Sa
 | Dossier candidat | Publications Studio avec manifeste figé multi-sources (`studio_publications.manifest`, empreinte), statuts de travail `brouillon` → `en-revue` → `approuve` / `refuse`, diffusion séparée, remplacement tracé | Base possible du « paquet de revue » (concept 4) ; aucun destinataire externe. |
 | Constats et corrections | Observations Studio (`ouverte` → `corrigee` → `recontrolee` → `cloturee` / `rouverte`), tâches, décisions, liens vers objets et révisions | Aucune audience « revue externe » ; pas de rattachement à un paquet. |
 | Accès support | D-2, UM-4, UM-20 : lecture seule bornée, export refusé | Modèle de référence pour un accès limité et journalisé. |
+| Journal | `admin.audit_log` append-only, sans adresse en clair : inscriptions, connexions, sécurité, invitations, administration, accès support | **Aucun écran de consultation** ; aucun historique personnel ni de projet (phase 3 bis). |
 
 ---
 
@@ -137,6 +146,27 @@ acceptation, double soumission, refus. DB-3 + recettes HTTP (`comptes-api`, nouv
 
 ---
 
+## Phase 3 bis — Journal d'activité et historique (ajout du maître d'ouvrage, 2026-10-23)
+
+**But** : rendre consultable, par audience, ce que `admin.audit_log` enregistre déjà, et les événements de participation
+des phases 1 à 3. Dépend de la phase 1 ; peut être livrée avant la phase 4.
+
+### Tâches
+1. **Administrateur de la plateforme** : écran de consultation en lecture seule (filtres personne, action, cible, période),
+   sous l'assurance de session UM-18 ; aucun export sans la capacité `export` (UM-20).
+2. **Utilisateur** : « Mon compte » affiche son propre historique (connexions, changements de sécurité, invitations, accès
+   support accordés ou utilisés).
+3. **Projet** : historique de la participation (arrivées, changements de rôle, invitations, fins de participation),
+   visible des responsables du projet (OP-D13).
+4. Le journal reste append-only et sans adresse en clair ; chaque vue filtre côté serveur selon son audience ; un invité
+   externe (phase 4) n'y voit rien d'autre que ses propres actions.
+
+### Tests
+Purs : filtre d'audience. DB-3 : chaque rôle ne voit que son périmètre ; `fadi_app` n'obtient ni UPDATE ni DELETE sur le
+journal. Recette navigateur avec axe-core (bureau et téléphone), passe anglaise.
+
+---
+
 ## Phase 4 — Revue externe (premier scénario opérationnel complet, concept 4)
 
 **But** : un client, un consultant ou un spécialiste nommé examine un paquet identifié et répond, sans rejoindre
@@ -204,6 +234,7 @@ accord explicite. 🛑 Point d'arrêt final.
 | C4-02 trois échéances indépendantes | 3, 4 |
 | C5-01 espace d'organisation | 5 |
 | C6-01 notifications sans droit implicite | 4 (revue) ; extension partie 6 sur besoin observé |
+| Journal d'activité et historique (ajout du maître d'ouvrage, 2026-10-23) | 3 bis |
 | V22-02 cinq finalités d'invitation | 3 et 4 : `project_participation`, `review_package` ; `organization_membership` en 5 ; `restricted_resource` et `live_session` hors périmètre (OP-D11) |
 
 ---
@@ -216,15 +247,17 @@ Chaque proposition est une recommandation ; aucune n'est appliquée sans répons
 | --- | --- | --- | --- |
 | OP-D1 | La partie propriétaire du projet doit-elle être une organisation dès la phase 1 ? | (a) facultative : à défaut, la personne propriétaire actuelle ; (b) obligatoire | (a) — aucun projet existant à reprendre de force |
 | OP-D2 | Ajout d'un compte existant | (a) invitation acceptée pour tous, fin de l'ajout direct (UM-8) ; (b) ajout direct conservé | (a) — conforme au concept v2.2 |
-| OP-D3 | Modèle d'accès | (a) conserver `lecteur` / `editeur` pour l'accès au projet et ajouter un droit limité au paquet pour la revue ; moteur général actions × portées (partie 2) plus tard ; (b) moteur général dès la phase 1 | (a) — risque maîtrisé, aucun droit existant modifié |
+| OP-D3 | Modèle d'accès | (a) conserver `lecteur` / `editeur` pour l'accès au projet et ajouter un droit limité au paquet pour la revue ; moteur général actions × portées (partie 2) plus tard ; (b) moteur général dès la phase 1 ; (c) six rôles métier du concept (Lecteur, Concepteur, Relecteur, Coordinateur, Approbateur, Diffuseur) attribués par portée, `lecteur` → Lecteur et `editeur` → Concepteur sans perte d'accès | (a) — risque maîtrisé, aucun droit existant modifié |
 | OP-D4 | Listes métier : rôles de participation, types d'organisation | (a) listes fournies par le maître d'ouvrage ; (b) saisie libre en attendant | (a) si disponibles, sinon (b) déclarée |
 | OP-D5 | Socle du paquet de revue (première livraison) | (a) publication Studio candidate (manifeste figé) ; (b) avec documents Parcours / Documents | (a), (b) ensuite |
 | OP-D6 | Constats externes | (a) observations Studio avec une audience « revue externe » ; (b) table distincte | (a) — une seule boucle de correction |
 | OP-D7 | Un participant externe peut-il **approuver** ? | (a) oui, par une affectation d'approbation explicite et nominative ; (b) non, approbation réservée au propriétaire (règle actuelle) | décision métier : pas de recommandation |
-| OP-D8 | Permissions par défaut d'un relecteur externe | (a) consulter et commenter ; télécharger, exporter et joindre seulement si accordé ; (b) autre | (a) — droits explicites (concept 2) |
-| OP-D9 | Contacts sans compte : champs, visibilité, durée de conservation (RGPD) | à définir | décision métier et juridique |
+| OP-D8 | Accès et permissions par défaut d'un relecteur externe | (a) compte identifié obligatoire (double authentification facultative) ; consulter et commenter ; télécharger, exporter et joindre seulement si accordé ; (b) autre | (a) — droits explicites (concept 2) |
+| OP-D9 | Contacts sans compte : champs, visibilité, durée de conservation (RGPD) | proposition : autorisés ; coordonnées visibles des seuls responsables du projet ; aucune invitation implicite ; conservation à définir | décision métier et juridique |
 | OP-D10 | Partie 5 (organisations) après la revue externe | (a) oui (séquence du concept) ; (b) avant | (a) |
 | OP-D11 | 5e finalité « session temps réel » et « ressource restreinte » | (a) hors périmètre de ce chantier ; (b) incluses | (a) — aucun module temps réel |
+| OP-D12 | Courriels | (a) la préproduction n'envoie rien (liens affichés) ; l'ouverture de la revue externe en production exige un envoi de courriels configuré ; (b) autre | (a) |
+| OP-D13 | Lecteurs du journal (phase 3 bis) | (a) administrateur de la plateforme : tout ; responsable de projet : l'activité de son projet ; utilisateur : son propre historique ; (b) autre | (a) |
 
 ## Annexe B — Hors périmètre
 
