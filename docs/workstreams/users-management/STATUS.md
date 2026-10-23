@@ -9,7 +9,9 @@ UM-23) a été fusionnée par le maître d'ouvrage le 2026-10-23 à 06:23 UTC (c
 CI de `main` verte sur `516e2f7` : run CI 39911221480 et 5 autres workflows (14 contrôles réussis, 3 sautés comme sur la
 PR). **Aucun déploiement n'est fait** : il suit RUNBOOK.md (§1 à §11, dont §4 et §4 bis) et attend l'accord explicite du
 maître d'ouvrage.
-DB-3 : **vérifié en CI** sur `570d248` (UM-17) — les 12 suites passent sur base jetable attestée. Points d'arrêt 🛑 2, D7-final et final : revue du maître d'ouvrage sur la PR.
+DB-3 : **vérifié en CI** sur `570d248` (UM-17) — les 12 suites passent sur base jetable attestée. Points d'arrêt 🛑 2,
+D7-final et final : **clos** par la décision de fusion du maître d'ouvrage (2026-10-23, UM-24) ; plus aucune revue de la
+PR #255 n'est attendue. Restent au maître d'ouvrage : le déploiement et UM-1.
 
 ## Faits vérifiés
 
