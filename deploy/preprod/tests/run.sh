@@ -243,6 +243,16 @@ ok = (rc == "0" and lignes[:3] == ancien.splitlines() and len(lignes) == 5
       and "PREPROD_FADI_APP_DB_PASSWORD" in sortie)
 sys.exit(0 if ok else 1)
 PY
+B=$(dispo vides)
+printf 'PREPROD_POSTGRES_PASSWORD=ancien-a\nPREPROD_FADI_APP_DB_PASSWORD=\nPREPROD_FADI_ENCRYPTION_KEY=\n' > "$B/env/.env.preprod"
+attendu 0 "init-env sur des clés vides (gabarit env.example) : régénérées" "PREPROD_FADI_APP_DB_PASSWORD" -- fpa init-env
+python3 -I - "$B/env/.env.preprod" <<'PY' && { ok=$((ok + 1)); echo "✓ clés vides remplacées une seule fois, autres lignes intactes"; } || { ko=$((ko + 1)); echo "✗ clés vides : $(cut -d= -f1 "$B/env/.env.preprod" | tr '\n' ' ')"; }
+import re, sys
+l = open(sys.argv[1]).read().splitlines(); d = dict(x.split("=", 1) for x in l)
+sys.exit(0 if (len(l) == 3 and l[0] == "PREPROD_POSTGRES_PASSWORD=ancien-a"
+               and re.fullmatch(r"[0-9a-f]{64}", d["PREPROD_FADI_APP_DB_PASSWORD"])
+               and re.fullmatch(r"[A-Za-z0-9+/]{43}=", d["PREPROD_FADI_ENCRYPTION_KEY"])) else 1)
+PY
 B=$(dispo initenv644)
 chmod 0644 "$B/env/.env.preprod"; cp "$B/env/.env.preprod" "$T/644.env"
 attendu nz "init-env refuse des secrets lisibles par d'autres, sans rien modifier" "0600" -- fpa init-env
@@ -294,11 +304,14 @@ attendu 0 "build sur le code synchronisé" -- fp build
 attendu nz "sync d'un commit inexistant refusé" "introuvable" -- env FADI_PREPROD_REPO="$T/depot.git" FADI_PREPROD_BASE="$B" FADI_PREPROD_TEST_BIN="$ICI/doubles" SUDO_USER= "$SCRIPT" sync 0123456789abcdef0123456789abcdef01234567
 
 echo "== Liste e2e identique à la CI"
-python3 -I - "$REPO/.github/workflows/ci.yml" "$SCRIPT" <<'PY' && { ok=$((ok + 1)); echo "✓ E2E_DEFAUT = scénarios de la CI, même ordre"; } || { ko=$((ko + 1)); echo "✗ E2E_DEFAUT ≠ CI"; }
+python3 -I - "$REPO/.github/workflows/ci.yml" "$SCRIPT" <<'PY' && { ok=$((ok + 1)); echo "✓ E2E_DEFAUT = scénarios de la CI, même ordre, sans comptes-* (base jetable)"; } || { ko=$((ko + 1)); echo "✗ E2E_DEFAUT ≠ CI"; }
 import re, sys
 ci = open(sys.argv[1]).read(); order = []
 for m in re.finditer(r'^\s+(?:[A-Z_]+=\S+ )*node apps/web/e2e/([a-z0-9-]+)\.mjs', ci, re.M):
     if m.group(1) not in order: order.append(m.group(1))
+hors = {"comptes-api", "comptes-securite", "comptes-admin"}  # base jetable locale exigée : jamais en préproduction
+assert hors <= set(order), "scénarios exclus absents de la CI"
+order = [s for s in order if s not in hors]
 lst = re.search(r'E2E_DEFAUT="([^"]+)"', open(sys.argv[2]).read()).group(1).split()
 print(f"   CI {len(order)}, préproduction {len(lst)}")
 sys.exit(0 if order == lst else 1)

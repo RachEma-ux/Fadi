@@ -55,13 +55,15 @@ APPROVED=$BASE/approved-commit
 COMPOSE_DIR=$SRC/deploy/preprod
 OWNER_UID=$(id -u)
 
-# Scénarios de bout en bout, dans l'ordre de la CI (.github/workflows/ci.yml, jobs e2e) — tests/ vérifie l'égalité.
+# Scénarios de bout en bout, dans l'ordre de la CI (.github/workflows/ci.yml, jobs e2e) — tests/ vérifie l'égalité —,
+# sauf comptes-api, comptes-securite et comptes-admin : ils exigent une base JETABLE locale (127.0.0.1, écritures
+# directes, anonymisation) et un transport de courriel, jamais la base persistante de la préproduction.
 E2E_DEFAUT="accueils-design parcours-scenario studio-persistance studio-navigation studio-exemple-p118 studio-domaines
 studio-espace studio-publication studio-observations studio-profils studio-catalogue studio-hors-ligne
 studio-corpus-s6 studio-corpus-s7 studio-conflits studio-chargement studio-mesures-chargement studio-accessibilite
 studio-quantites studio-dossier studio-echanges notifications-preferences atelier-nouveau atelier-documents
-atelier-echanges atelier-versions atelier-automatisation atelier-complements comptes-api comptes-securite
-comptes-admin atelier-canevas planche planche-modification planche-outils planche-pousser-aretes planche-pousser-modes
+atelier-echanges atelier-versions atelier-automatisation atelier-complements
+atelier-canevas planche planche-modification planche-outils planche-pousser-aretes planche-pousser-modes
 planche-objets planche-clavier planche-pousser-l10a planche-liens planche-suivez-moi planche-revolution
 planche-profiles planche-assemblages planche-debit planche-texte-3d planche-pieces-edition planche-modification-l18
 planche-diagnostics-l19 planche-etirement-plis planche-epaissir planche-effilement-loft planche-lots-4-6 planche-lot-5
@@ -393,11 +395,17 @@ case "$cmd" in
         echo "PREPROD_AUTH_RATE_LIMIT=500"
         echo "PREPROD_API_RATE_LIMIT=5000"; } >> "$ENVF.tmp"
     fi
+    # Une clé absente ou vide (gabarit env.example) est générée ; une valeur non vide n'est jamais touchée.
     ajoutees=()
-    grep -q '^PREPROD_FADI_APP_DB_PASSWORD=' "$ENVF.tmp" \
-      || { echo "PREPROD_FADI_APP_DB_PASSWORD=$(openssl rand -hex 32)" >> "$ENVF.tmp"; ajoutees+=(PREPROD_FADI_APP_DB_PASSWORD); }
-    grep -q '^PREPROD_FADI_ENCRYPTION_KEY=' "$ENVF.tmp" \
-      || { echo "PREPROD_FADI_ENCRYPTION_KEY=$(openssl rand -base64 32)" >> "$ENVF.tmp"; ajoutees+=(PREPROD_FADI_ENCRYPTION_KEY); }
+    for cle in PREPROD_FADI_APP_DB_PASSWORD PREPROD_FADI_ENCRYPTION_KEY; do
+      grep -q "^$cle=..*" "$ENVF.tmp" && continue
+      sed -i "/^$cle=\$/d" "$ENVF.tmp"
+      case $cle in
+        PREPROD_FADI_APP_DB_PASSWORD) echo "$cle=$(openssl rand -hex 32)" ;;
+        PREPROD_FADI_ENCRYPTION_KEY) echo "$cle=$(openssl rand -base64 32)" ;;
+      esac >> "$ENVF.tmp"
+      ajoutees+=("$cle")
+    done
     if [ -e "$ENVF" ] && [ ${#ajoutees[@]} -eq 0 ]; then
       rm -f "$ENVF.tmp"; log "secrets déjà complets ($ENVF) : rien n'est écrasé, rien n'est ajouté"; exit 0
     fi
