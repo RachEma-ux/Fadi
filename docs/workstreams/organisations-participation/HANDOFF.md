@@ -10,16 +10,18 @@ Mis à jour : 2026-10-23 (UTC).
 
 ## Dernier état vérifié
 
-- Cadrage et plan rédigés ([PLAN.md](PLAN.md)) ; aucune ligne de code modifiée par ce chantier.
+- Plan validé (OP-1). Phase 1 implémentée et vérifiée localement (voir STATUS.md) ; CI de la PR à relever.
 
 ## Prochaine action
 
-- Attendre la validation du plan et les réponses OP-D1 à OP-D13 (🛑 0).
-- Ensuite, ouvrir la phase 1 : personnes, organisations, participations et reprise de l'existant, avec ses tests DB-3.
+- Phase 1 sur `feat/op-phase1-participations` (PR à suivre jusqu'au vert) ; attendre la revue 🛑 1 du maître d'ouvrage.
+- Ensuite, phase 2 : API et écran « Équipe et participants », bascule de l'accès vers les six rôles (OP-D3 c), journal des
+  écritures de participation.
 
 ## Tests et preuves
 
-- Documentation seule : `node scripts/check-continuity.mjs` ; aucun test d'application à exécuter.
+- `DATABASE_URL=<base locale jetable> node scripts/validation/participations-migration-check.mjs` ;
+  `npx --workspace=@fadi/api vitest run src/lib/participations.test.ts` ; `npm run typecheck` ; `npm test` ; `npm run build`.
 
 ## Risques et blocages
 

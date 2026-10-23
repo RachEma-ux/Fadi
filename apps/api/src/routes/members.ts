@@ -206,9 +206,11 @@ membersRouter.post("/:userId/propriete", async (req, res) => {
       .where(and(eq(projectMembers.projectId, project.id), eq(projectMembers.userId, userId)))
       .limit(1);
     if (!member) return null;
-    await tx.delete(projectMembers).where(and(eq(projectMembers.projectId, project.id), eq(projectMembers.userId, userId)));
+    // Ordre voulu : chacun garde un accès à chaque écriture, sa participation au projet (miroir tenu par déclencheurs,
+    // init.sql) continue sans interruption.
     await tx.insert(projectMembers).values({ projectId: project.id, userId: project.ownerId, role: "editeur", invitedBy: member.email });
     await tx.update(projects).set({ ownerId: userId, updatedAt: new Date() }).where(eq(projects.id, project.id));
+    await tx.delete(projectMembers).where(and(eq(projectMembers.projectId, project.id), eq(projectMembers.userId, userId)));
     return member;
   });
   if (!result) {
