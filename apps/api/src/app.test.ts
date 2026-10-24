@@ -2219,11 +2219,17 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
   }
   /** Promotion directe en base (opération d'exploitation) : les sessions déjà ouvertes ne sont pas fermées ici. */
   const promoteInDb = (id: string) => pool.query("UPDATE users SET platform_role = 'admin' WHERE id = $1", [id]);
-  /** Code TOTP d'un pas jamais utilisé par ce compte, dans la fenêtre acceptée (±1 pas). */
+  /**
+   * Code TOTP d'un pas jamais utilisé par ce compte, dans la fenêtre acceptée (±1 pas) et qui y reste encore
+   * `MARGE_MS` : un code du pas précédent calculé juste avant un changement de pas sortirait de la fenêtre avant
+   * d'être vérifié par le serveur (400 aléatoire, run 40028880909).
+   */
+  const MARGE_MS = 10_000;
+  const plancher = () => stepAt(Date.now() + MARGE_MS) - 1;
   async function nextCode(acct: Account): Promise<string> {
-    let s = acct.lastStep === undefined ? stepAt(Date.now()) - 1 : acct.lastStep + 1;
+    let s = acct.lastStep === undefined ? plancher() : acct.lastStep + 1;
     while (s > stepAt(Date.now()) + 1) await new Promise((r) => setTimeout(r, 1000));
-    if (s < stepAt(Date.now()) - 1) s = stepAt(Date.now()) - 1;
+    if (s < plancher()) s = plancher();
     acct.lastStep = s;
     return hotp(base32Decode(acct.secret), s);
   }
