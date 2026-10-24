@@ -135,6 +135,10 @@ export const ACTION_LABEL: Readonly<Record<string, string>> = {
   "participation.status_changed": "Statut d’une participation changé",
   "participation.role_assigned": "Rôle par portée attribué",
   "participation.role_removed": "Rôle par portée retiré",
+  // Invitations acceptées (phase 3).
+  "participation.linked": "Fiche liée au compte qui a accepté",
+  "participation.activated": "Participation activée par une invitation acceptée",
+  "participation.access_expiry_changed": "Échéance d’accès modifiée",
   "person.contact_created": "Contact sans compte enregistré",
   "person.contact_erased": "Contact sans compte effacé",
   "project.closed": "Projet clos",
@@ -187,6 +191,8 @@ export const DETAIL_LABEL: Readonly<Record<string, string>> = {
   exceptCurrent: "sauf la session courante", remaining: "codes restants", reason: "motif", from: "ancienne valeur", to: "nouvelle valeur", status: "statut",
   sent: "courriel envoyé", unlocked: "déverrouillé", via: "voie", previousOwnerRoleAfter: "rôle de l’ancien propriétaire",
   replies: "réponses", path: "chemin consulté",
+  accessExpiresAt: "échéance d’accès", invitationExpiresAt: "échéance de l’invitation", statusBefore: "statut avant", statusAfter: "statut après",
+  wasActive: "déjà active", link: "liaison",
 };
 
 export const SUBJECT_LABEL: Readonly<Record<string, string>> = {
@@ -199,6 +205,8 @@ const VALUE_LABEL: Readonly<Record<string, string>> = {
   project_participation: "participation à un projet", platform_account: "compte de la plateforme", totp: "code TOTP",
   recovery_code: "code de secours", user: "utilisateur", admin: "administrateur", collaboration: "Collaboration", studio: "Studio",
   "compte-existant": "compte existant",
+  invitation: "invitation", contact: "contact", active: "active", suspendue: "suspendue", terminee: "terminée", remplacee: "remplacée",
+  fiche: "fiche liée au compte", participation: "participation rattachée au compte",
 };
 
 /** Valeur lisible et indicateur « donnée à ne pas traduire » (code technique, chemin, nombre). */

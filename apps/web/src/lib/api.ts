@@ -164,6 +164,8 @@ export interface NotificationItem {
   stepNumber: number | null;
   /** Variante Studio commentée (`commentaire-studio` seulement). */
   studio?: { studyId: string; variantId: string };
+  /** Invitation de projet en attente pour vous (phase 3) : à accepter ou décliner. */
+  invitation?: { id: string; role: MemberRole; expiresAt: string };
   text: string;
   /** Postérieure à votre dernière consultation. */
   unread: boolean;
@@ -223,14 +225,17 @@ export interface ProjectMember {
   canExport: boolean;
   invitedBy: string;
   createdAt: string;
+  /** Échéance de l'accès (phase 3) ; `accessExpired` : passée, plus aucun accès. */
+  accessExpiresAt?: string | null;
+  accessExpired?: boolean;
 }
 
 export interface MembersView {
   owner: { userId: string; email: string };
   you: { userId: string; role: ProjectRole };
   members: ProjectMember[];
-  /** Invitations en attente (adresses sans compte) — propriétaire seulement. */
-  invitations?: InvitationView[];
+  /** Invitations en attente — propriétaire seulement ; `awaiting` : acceptation par un compte existant, ou création du compte. */
+  invitations?: (InvitationView & { awaiting?: "acceptation" | "creation-compte" })[];
 }
 
 // --- Gestion des comptes (docs/workstreams/users-management) -------------------------------------------------------
@@ -253,11 +258,37 @@ export interface InvitationView {
   organizationName?: string | null;
   organizationRole?: OrganizationRole | null;
   organizationJobTitle?: string | null;
+  /** Finalité `project_participation` (phase 3) : participation visée et rôles proposés par portée. */
+  participationId?: string | null;
+  roles?: ProposedRole[] | null;
+}
+// --- Invitations de projet liées à une participation (Issue #262, phase 3) ----------------------------------------------
+export type RoleScope = "projet" | "etude" | "variante" | "revision" | "documents";
+export interface ProposedRole { role: BusinessRole; scopeType: RoleScope; scopeId: string | null }
+export interface InvitationInput {
+  email: string; roles: { role: BusinessRole; scopeType?: RoleScope; scopeId?: string | null }[]; participationId?: string | null; displayName?: string | null;
+  accessExpiresAt?: string | null; invitationDays?: number;
+}
+export interface InvitationPreview {
+  email: string; accountExists: boolean;
+  target: { kind: "membre"; participationId: string | null } | { kind: "participation"; participationId: string; status: "contact" } | { kind: "nouvelle-fiche" };
+  pendingInvitation: { id: string; expiresAt: string } | null; roles: ProposedRole[]; baseRole: MemberRole;
+  access: { role: "proprietaire" | "editeur" | "lecteur"; canExport: boolean; canApprove: boolean; canPublish: boolean } | null;
+  narrowScopes: ProposedRole[]; invitationExpiresAt: string; accessExpiresAt: string | null; warnings: string[]; blocking: string | null;
+}
+export interface ReceivedInvitation {
+  id: string; projectId: string; projectCode: string; projectName: string; invitedBy: string; baseRole: MemberRole; roles: ProposedRole[];
+  createdAt: string; expiresAt: string; accessExpiresAt: string | null;
+}
+export interface AcceptedInvitation {
+  accepted: boolean; projectId: string | null; organizationId?: string | null; participationId?: string | null;
+  pendingWork?: { openObservations: number; openTasks: number }; replay?: boolean;
 }
 /** Réponse d'un envoi : `link` présent seulement quand le courriel n'a pas pu partir (lien à transmettre soi-même, D-1). */
 export interface MailOutcome { queued: boolean; reason: string | null; link?: string }
-export interface InvitationCreated { invitation: InvitationView; resent: boolean; mail: MailOutcome }
-export type InvitationRefusal = "not_found" | "expired" | "already_accepted" | "declined" | "cancelled" | "wrong_account" | "inviter_not_authorized" | "account_inactive";
+export interface InvitationCreated { invitation: InvitationView; resent: boolean; mail: MailOutcome; accountExists?: boolean; participationId?: string }
+export type InvitationRefusal = "not_found" | "expired" | "already_accepted" | "declined" | "cancelled" | "wrong_account" | "inviter_not_authorized" | "account_inactive"
+  | "wrong_person" | "participation_unavailable" | "access_expired" | "roles_invalid" | "email_unverified";
 export interface InvitationLookup { invitation: InvitationView; accountExists: boolean; signedInAs: string | null; refusal: InvitationRefusal | null; message: string | null }
 export type LoginResult = { mfaRequired: true; expiresAt: string } | (CurrentUser & { mfaRequired?: undefined });
 export interface AccountSession { id: string; current: boolean; createdAt: string; lastSeenAt: string; expiresAt: string; absoluteExpiresAt: string | null; userAgent: string | null; ip: string | null }
@@ -397,7 +428,11 @@ export const accountApi = {
   requestEmailVerification: () => request<{ verified: boolean; mail?: MailOutcome }>("/auth/verify-email/request", json(withLocale({}))),
   cancelDeletion: (token: string) => request<{ cancelled: boolean }>("/auth/cancel-deletion", json({ token })),
   lookupInvitation: (token: string) => request<InvitationLookup>("/auth/invitations/lookup", json({ token })),
-  acceptInvitation: (token: string) => request<{ accepted: boolean; projectId: string | null; organizationId?: string | null }>("/auth/invitations/accept", json({ token })),
+  acceptInvitation: (token: string) => request<AcceptedInvitation>("/auth/invitations/accept", json({ token })),
+  // Invitations de projet reçues, dans l'application (phase 3) : acceptation ou refus depuis la notification.
+  receivedInvitations: () => request<{ invitations: ReceivedInvitation[]; emailVerified: boolean }>("/notifications/invitations"),
+  acceptInvitationById: (id: string) => request<AcceptedInvitation>(`/notifications/invitations/${encodeURIComponent(id)}/accept`, json({})),
+  declineInvitationById: (id: string) => request<{ declined: boolean }>(`/notifications/invitations/${encodeURIComponent(id)}/decline`, json({})),
   declineInvitation: (token: string) => request<{ declined: boolean }>("/auth/invitations/decline", json({ token })),
   activate: (input: { token: string; password: string; displayName?: string }) =>
     request<{ user: CurrentUser; projectId: string | null; organizationId?: string | null }>("/auth/activate", json({ ...input, acceptTerms: true })),
@@ -1477,8 +1512,12 @@ export const api = {
   deleteComment: (projectId: string, commentId: string) => request<void>(`/projects/${projectId}/collaboration/comments/${encodeURIComponent(commentId)}`, { method: "DELETE" }),
   /** Partage : membres et rôles (propriétaire seulement pour inviter, changer, retirer ; un membre peut se retirer lui-même). */
   listMembers: (projectId: string) => request<MembersView>(`/projects/${projectId}/members`),
-  /** Compte existant : 201 `ProjectMember` ; adresse sans compte : 202 `InvitationCreated` (UM-3). */
-  inviteMember: (projectId: string, email: string, role: MemberRole) => request<ProjectMember | InvitationCreated>(`/projects/${projectId}/members`, { method: "POST", body: JSON.stringify(withLocale({ email, role })) }),
+  /** Phase 3 (OP-D2 a) : 202 `InvitationCreated`, à accepter par l'identité visée ; compte déjà membre : 200 `ProjectMember` (rôle changé). */
+  inviteMember: (projectId: string, input: InvitationInput) => request<ProjectMember | InvitationCreated>(`/projects/${projectId}/members`, { method: "POST", body: JSON.stringify(withLocale(input)) }),
+  /** Aperçu de l'accès résultant, sans rien écrire (phase 3). */
+  previewInvitation: (projectId: string, input: InvitationInput) => request<{ preview: InvitationPreview }>(`/projects/${projectId}/members/preview`, { method: "POST", body: JSON.stringify(input) }),
+  /** Échéance de l'accès d'un membre (null : sans échéance). */
+  setMemberAccessExpiry: (projectId: string, userId: string, accessExpiresAt: string | null) => request<ProjectMember>(`/projects/${projectId}/members/${encodeURIComponent(userId)}`, { method: "PATCH", body: JSON.stringify({ accessExpiresAt }) }),
   setMemberRole: (projectId: string, userId: string, role: MemberRole) => request<ProjectMember>(`/projects/${projectId}/members/${encodeURIComponent(userId)}`, { method: "PATCH", body: JSON.stringify({ role }) }),
   /** Export accordé ou retiré à un lecteur (propriétaire seulement, journalisé). */
   setMemberExport: (projectId: string, userId: string, canExport: boolean) => request<ProjectMember>(`/projects/${projectId}/members/${encodeURIComponent(userId)}`, { method: "PATCH", body: JSON.stringify({ canExport }) }),

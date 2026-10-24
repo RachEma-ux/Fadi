@@ -9,12 +9,15 @@
  */
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { invitations, projectMembers, projects, users, type InvitationPurpose, type InvitationStatus } from "../db/schema.js";
+import { invitations, projects, users, type InvitationPurpose, type InvitationStatus, type ProposedRole } from "../db/schema.js";
 import { audit } from "./audit.js";
 import { newId } from "./ids.js";
 import { INVITATION_TTL_MS } from "./account.js";
 import { randomToken, sha256Hex } from "./security/tokens.js";
 import { activateOrganizationMembership, organizationInviterStillAuthorized } from "./organizations.js";
+import { activateProjectParticipation, projectParticipationRefusal, rolesOf } from "./project-invitations-db.js";
+
+export { projectParticipationRefusal };
 
 type InvitationRow = typeof invitations.$inferSelect;
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -78,17 +81,9 @@ export async function createOrRenewInvitation(
 export async function activateInvitation(tx: Tx, inv: InvitationRow, userId: string, ip: string | null): Promise<void> {
   // Finalité `organization_membership` (phase 5) : branche distincte, l'adhésion naît de l'acceptation.
   if (inv.purpose === "organization_membership") await activateOrganizationMembership(tx, inv, userId, ip);
-  if (inv.purpose === "project_participation" && inv.projectId && inv.projectRole) {
-    const [project] = await tx.select({ ownerId: projects.ownerId }).from(projects).where(eq(projects.id, inv.projectId)).limit(1);
-    const [inviter] = inv.invitedBy ? await tx.select({ email: users.email }).from(users).where(eq(users.id, inv.invitedBy)).limit(1) : [];
-    if (project && project.ownerId !== userId) {
-      await tx.insert(projectMembers).values({ projectId: inv.projectId, userId, role: inv.projectRole, invitedBy: inviter?.email ?? "" })
-        .onConflictDoUpdate({
-          target: [projectMembers.projectId, projectMembers.userId],
-          set: { role: sql`CASE WHEN ${projectMembers.role} = 'editeur' THEN 'editeur' ELSE excluded.role END` },
-        });
-    }
-  }
+  // Finalité `project_participation` (Issue #262, phase 3) : liaison du compte à la fiche visée, participation active,
+  // rôles proposés et échéance d'accès (lib/project-invitations-db.ts) ; un membre existant garde le rôle le plus large.
+  if (inv.purpose === "project_participation" && inv.projectId && inv.projectRole) await activateProjectParticipation(tx, inv, userId, ip);
   await tx.update(invitations).set({ status: "accepted", respondedAt: new Date(), acceptedUserId: userId }).where(eq(invitations.id, inv.id));
   await audit(tx, { actorId: userId, action: "invitation.accepted", target: { type: "invitation", id: inv.id }, metadata: { purpose: inv.purpose, projectId: inv.projectId, ...(inv.organizationId ? { organizationId: inv.organizationId } : {}) }, ip });
 }
@@ -99,6 +94,8 @@ export interface InvitationView {
   createdAt: string; projectId: string | null; projectName: string | null; projectRole: "lecteur" | "editeur" | null; invitedBy: string;
   /** Finalité `organization_membership` (phase 5) : organisation, rôle et fonction proposés. */
   organizationId: string | null; organizationName: string | null; organizationRole: "administrateur" | "membre" | null; organizationJobTitle: string | null;
+  /** Finalité `project_participation` (phase 3) : participation visée et rôles proposés par portée. */
+  participationId: string | null; roles: ProposedRole[] | null;
 }
 
 export function invitationView(inv: InvitationRow, extra: { projectName?: string | null; inviterName?: string; organizationName?: string | null } = {}): InvitationView {
@@ -109,5 +106,6 @@ export function invitationView(inv: InvitationRow, extra: { projectName?: string
     projectId: inv.projectId, projectName: extra.projectName ?? null, projectRole: inv.projectRole ?? null, invitedBy: extra.inviterName ?? "",
     organizationId: inv.organizationId ?? null, organizationName: extra.organizationName ?? null, organizationRole: inv.organizationRole ?? null,
     organizationJobTitle: inv.organizationJobTitle ?? null,
+    participationId: inv.participationId ?? null, roles: inv.purpose === "project_participation" ? rolesOf(inv) : null,
   };
 }

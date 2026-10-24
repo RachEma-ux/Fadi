@@ -122,6 +122,8 @@ export const SHARED_DETAIL_KEYS = [
   "purpose", "role", "roleBefore", "roleAfter", "canExport", "canExportBefore", "canExportAfter", "audienceBefore",
   "audienceAfter", "module", "hours", "mfa", "revokedSessions", "count", "exceptCurrent", "remaining", "reason", "from",
   "to", "status", "sent", "unlocked", "via", "previousOwnerRoleAfter", "replies",
+  // Phase 3 (invitations acceptées) : échéances, statut atteint, nature de la liaison.
+  "accessExpiresAt", "invitationExpiresAt", "statusBefore", "statusAfter", "wasActive", "link",
 ] as const;
 
 /** Clés désignant un compte : résolues en identité (`subjects`) selon l'audience, jamais rendues brutes hors administration. */

@@ -47,9 +47,13 @@ import { activeLock, type ProjectRole } from "../lib/owned-project.js";
 import { ROLE_LABEL } from "./members.js";
 import { filtrerNotifications, type NotificationKind } from "../lib/notification-preferences.js";
 import { lirePreferencesNotification } from "./preferences.js";
+import { notificationInvitationsRouter } from "./notification-invitations.js";
+import { pendingProjectInvitationsFor } from "../lib/project-invitations-db.js";
 
 export const notificationsRouter = Router();
 notificationsRouter.use(requireAuth);
+// Invitations de projet reçues (Issue #262, phase 3) : liste, acceptation et refus depuis la notification.
+notificationsRouter.use("/invitations", notificationInvitationsRouter);
 
 export interface NotificationItem {
   id: string;
@@ -62,6 +66,8 @@ export interface NotificationItem {
   stepNumber: number | null;
   /** Variante Studio commentée (`commentaire-studio` seulement). */
   studio?: { studyId: string; variantId: string };
+  /** Invitation de projet en attente pour vous (phase 3, type `acces`) : à accepter ou décliner depuis la notification. */
+  invitation?: { id: string; role: "lecteur" | "editeur"; expiresAt: string };
   text: string;
   unread: boolean;
 }
@@ -95,6 +101,17 @@ export async function notificationsFor(userId: string, email: string): Promise<{
       projectName: m.project.name,
       stepNumber: null,
       text: `${m.invitedBy} vous a donné accès à ${m.project.code} — ${m.project.name} (${ROLE_LABEL[m.role as ProjectRole]}).`,
+      unread: false,
+    });
+  }
+
+  // Invitations de projet en attente pour votre adresse (Issue #262, phase 3, OP-D2 a) : en plus du courriel, une
+  // notification calculée, tant que l'invitation n'est ni acceptée, ni déclinée, ni annulée, ni échue.
+  for (const inv of await pendingProjectInvitationsFor(email)) {
+    items.push({
+      id: `invitation:${inv.id}`, at: inv.createdAt, kind: "acces", projectId: inv.projectId, projectCode: inv.projectCode, projectName: inv.projectName, stepNumber: null,
+      invitation: { id: inv.id, role: inv.baseRole, expiresAt: inv.expiresAt },
+      text: `${inv.invitedBy} vous invite à rejoindre ${inv.projectCode} — ${inv.projectName} (${ROLE_LABEL[inv.baseRole]}) : acceptez ou déclinez l'invitation.`,
       unread: false,
     });
   }

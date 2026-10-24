@@ -1473,6 +1473,9 @@ CREATE INDEX IF NOT EXISTS project_participations_person_idx ON project_particip
 -- Phase 2 (bascule de l'accès, OP-D3 c) : l'export accordé à un lecteur (écart E2) suit la participation, seule source
 -- de la décision d'accès ; tenu par le miroir depuis `project_members.can_export` (NULL d'archive = TRUE).
 ALTER TABLE project_participations ADD COLUMN IF NOT EXISTS can_export boolean NOT NULL DEFAULT false;
+-- Phase 3 (invitations acceptées) : échéance de l'accès, indépendante de celle de l'invitation. Passée, la participation
+-- ne donne plus rien (vue `project_effective_access`) ; placée ici pour être disponible à la définition de la vue.
+ALTER TABLE project_participations ADD COLUMN IF NOT EXISTS access_expires_at timestamptz;
 
 -- Rôles métier par portée (OP-D3 c, concept partie 2) : Lecteur, Concepteur, Relecteur, Coordinateur, Approbateur,
 -- Diffuseur. Origine `acces` : miroir de l'accès actuel (lecteur → lecteur, editeur → concepteur), tenu par les
@@ -1868,6 +1871,7 @@ SELECT pp.project_id, pe.user_id,
   JOIN projects p ON p.id = pp.project_id AND p.owner_id <> pe.user_id
   JOIN project_role_assignments ra ON ra.participation_id = pp.id AND ra.scope_type = 'projet'
  WHERE pp.status = 'active' AND (pp.starts_on IS NULL OR pp.starts_on <= current_date)
+   AND (pp.access_expires_at IS NULL OR pp.access_expires_at > now())
  GROUP BY pp.project_id, pe.user_id;
 
 -- Clôture déclarative (OP-2) : ne change aucun droit ; elle date le départ du délai de conservation des contacts.
@@ -1878,6 +1882,34 @@ ALTER TABLE people ADD COLUMN IF NOT EXISTS erased_at timestamptz;
 CREATE INDEX IF NOT EXISTS people_contacts_retention_idx ON people (id) WHERE user_id IS NULL AND erased_at IS NULL;
 CREATE INDEX IF NOT EXISTS project_participations_org_idx ON project_participations (organization_id);
 CREATE INDEX IF NOT EXISTS project_participations_represented_idx ON project_participations (represented_organization_id);
+
+-- ---------------------------------------------------------------------------
+-- Organisations, participation et revue externe — phase 3 (Issue #262, OP-D2 a) : toute participation active naît d'une
+-- invitation ACCEPTÉE par l'identité visée, compte existant compris (fin de l'ajout direct UM-8). L'invitation de projet
+-- désigne la participation visée (contact de l'annuaire, ou fiche créée à l'envoi) et les rôles proposés par portée ;
+-- rien n'est accordé avant l'acceptation, qui lie le compte vérifié à la fiche, active la participation et pose les rôles
+-- (lib/project-invitations-db.ts). `access_expires_at` (colonne UM-3 existante) est recopiée sur la participation à
+-- l'acceptation et appliquée par la vue `project_effective_access` (ci-dessus). Le miroir `op_sync_access` reste le pont
+-- de l'accès de base (lecteur / concepteur) : voir docs/workstreams/organisations-participation/phase-3.md.
+-- ---------------------------------------------------------------------------
+ALTER TABLE auth.invitations ADD COLUMN IF NOT EXISTS participation_id text
+  REFERENCES public.project_participations (id) ON DELETE SET NULL;
+-- Rôles proposés : [{ "role", "scopeType", "scopeId" }] ; au moins un rôle de portée projet (contrôlé par l'API).
+ALTER TABLE auth.invitations ADD COLUMN IF NOT EXISTS proposed_roles jsonb;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'invitations_participation_check') THEN
+    ALTER TABLE auth.invitations ADD CONSTRAINT invitations_participation_check
+      CHECK ((participation_id IS NULL AND proposed_roles IS NULL) OR purpose = 'project_participation');
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'invitations_proposed_roles_check') THEN
+    ALTER TABLE auth.invitations ADD CONSTRAINT invitations_proposed_roles_check
+      CHECK (proposed_roles IS NULL OR jsonb_typeof(proposed_roles) = 'array');
+  END IF;
+END $$;
+CREATE INDEX IF NOT EXISTS invitations_participation_idx ON auth.invitations (participation_id) WHERE participation_id IS NOT NULL;
+-- Notification « invitation en attente » du compte visé : lecture par adresse des invitations en attente.
+CREATE INDEX IF NOT EXISTS invitations_pending_email_idx ON auth.invitations (lower(email)) WHERE status = 'pending';
 
 -- ---------------------------------------------------------------------------
 -- D-7 : droits au moindre privilège. Exécuté par un super-utilisateur (amorçage, CI) : propriété de tout transférée à

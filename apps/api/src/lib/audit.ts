@@ -64,6 +64,10 @@ export type AuditAction =
   | "participation.status_changed"
   | "participation.role_assigned"
   | "participation.role_removed"
+  // Phase 3 (invitations acceptées) : fiche liée au compte vérifié, participation activée par l'acceptation, échéance d'accès.
+  | "participation.linked"
+  | "participation.activated"
+  | "participation.access_expiry_changed"
   | "person.contact_created"
   | "person.contact_erased"
   | "project.closed"

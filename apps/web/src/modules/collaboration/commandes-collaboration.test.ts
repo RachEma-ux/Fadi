@@ -26,6 +26,10 @@ const ECRANS: Record<CommandeCollaboration, string[]> = {
   "rendre-visible": ["modules/collaboration/CollaborationModule.tsx", "modules/studio/commentaires/PanneauCommentaires.tsx"],
   "reserver-equipe": ["modules/collaboration/CollaborationModule.tsx", "modules/studio/commentaires/PanneauCommentaires.tsx"],
   "export-lecteur": ["modules/collaboration/CollaborationModule.tsx"],
+  // Invitations acceptées (Issue #262, phase 3) : formulaire d'invitation, carte d'une invitation reçue.
+  "apercu-invitation": ["modules/collaboration/InvitationProjet.tsx"],
+  "accepter-invitation": ["modules/collaboration/InvitationsRecues.tsx"],
+  "decliner-invitation": ["modules/collaboration/InvitationsRecues.tsx"],
   // Participants et équipe (Issue #262, phase 2) : en-tête de l'annuaire, ligne du participant, formulaire des rôles.
   ...Object.fromEntries((["nouveau-contact", "modifier-participation", "attribuer-role", "retirer-role", "suspendre-participation", "reactiver-participation",
     "terminer-participation", "retour-participant", "effacer-contact", "clore-projet", "rouvrir-projet"] as const).map((c) => [c, ["modules/collaboration/Participants.tsx"]])),
@@ -88,6 +92,9 @@ describe("Règle d'or — commandes de collaboration (audience, export du lecteu
     expect(declenche(t("Minus"), "effacer-contact")).toBe(true);
     expect(declenche(t("Equal"), "clore-projet") && declenche(t("Equal"), "rouvrir-projet")).toBe(true);
     expect(declenche(t("Digit9"), "terminer-participation")).toBe(false);
+    expect(declenche(t("Digit4"), "apercu-invitation")).toBe(true);
+    expect(declenche(t("Comma"), "accepter-invitation") && declenche(t("Period"), "decliner-invitation")).toBe(true);
+    expect(declenche(t("Comma"), "decliner-invitation")).toBe(false);
   });
 
   it("rendu : icône SVG décorative, raccourci affiché", () => {

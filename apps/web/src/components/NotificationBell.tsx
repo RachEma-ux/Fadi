@@ -23,6 +23,8 @@ import { NOTIFICATION_KIND_LABEL as KIND_LABEL } from "./notification-kinds";
 export const NOTIFICATION_PREFERENCES_KEY = ["preferences", "notifications"] as const;
 
 function targetOf(n: NotificationItem): string {
+  // Invitation de projet en attente (phase 3) : le projet n'est pas encore ouvert ; « Invitations reçues » de Mes projets.
+  if (n.invitation) return "/projets#invitations-recues";
   // Commentaire d'une variante Studio : la variante, panneau des commentaires ouvert.
   if (n.kind === "commentaire-studio" && n.studio) return cheminVarianteStudio(n.projectId, n.studio.studyId, n.studio.variantId, null, { commentaires: true, domaine: "documentation" });
   if (n.kind === "commentaire") return n.stepNumber ? "/projets/" + n.projectId + "?module=parcours&etape=" + n.stepNumber : "/projets/" + n.projectId + "?module=collaboration";

@@ -2,10 +2,15 @@
  * Module Collaboration — partage du projet. Monté sous `/projects/:projectId/members`.
  *
  *   GET    /          → { owner, you, members } : le propriétaire, votre rôle, les personnes invitées (tout lecteur)
- *   POST   /          { email, role } → 201 : partage (ou changement de rôle) d'un compte existant ; 202 : invitation
- *                      nominative d'une adresse sans compte (UM-3, lien à copier si le courriel n'a pas pu partir) — propriétaire seulement
+ *   POST   /preview   { email, role | roles, participationId?, displayName?, accessExpiresAt?, invitationDays? } → aperçu de
+ *                      l'accès résultant, sans rien écrire (phase 3) — propriétaire seulement
+ *   POST   /          (même corps) → 202 : invitation nominative à accepter par l'identité visée, compte existant compris
+ *                      (OP-D2 a, fin de l'ajout direct UM-8 ; lien à copier si le courriel n'a pas pu partir) ; 200 :
+ *                      changement du rôle d'un compte déjà membre ; 409 `invitation_rule` (participation suspendue…) —
+ *                      propriétaire seulement
  *   DELETE /invitations/:invitationId → 204 : annulation d'une invitation en attente — propriétaire seulement
- *   PATCH  /:userId   { role?, canExport? } → le rôle d'un membre, et l'export accordé ou retiré à un lecteur (E2) —
+ *   PATCH  /:userId   { role?, canExport?, accessExpiresAt? } → le rôle d'un membre, l'export accordé ou retiré à un lecteur
+ *                      (E2), l'échéance de son accès (phase 3, null = sans échéance) —
  *                      propriétaire seulement
  *   DELETE /:userId   → 204 : retrait d'un membre par le propriétaire, ou départ du membre lui-même
  *   POST   /:userId/propriete → transfert de la propriété à ce membre (propriétaire seulement) : l'ancien propriétaire
@@ -24,8 +29,10 @@
  * (`op_sync_access`, init.sql) en tire la participation, le rôle `acces` (lecteur → Lecteur, editeur → Concepteur) et
  * l'export accordé. Une participation suspendue depuis « Équipe et participants » le reste quoi qu'écrive ce routeur.
  *
- * Un compte existant est ajouté directement (comportement accepté, écart UM-8) ; une adresse sans compte reçoit
- * une invitation par courriel (D-1) : aucun compte n'est créé tant que la personne n'a pas accepté.
+ * Phase 3 (OP-D2 a) : plus aucun ajout direct. Toute adresse reçoit une invitation liée à une participation (contact de
+ * l'annuaire, ou fiche créée à l'envoi), avec ses rôles par portée et deux échéances indépendantes (invitation, accès) ;
+ * un compte existant la voit aussi dans ses notifications. Rien n'est accordé avant l'acceptation par l'identité visée
+ * (lib/project-invitations-db.ts) ; aucun compte n'est créé tant que la personne n'a pas accepté (D-1).
  *
  * Export (écart E2, tranche CR-D4) : un nouveau lecteur n'exporte pas ; le propriétaire le lui accorde ou le retire
  * (`canExport`). Un lecteur antérieur à cette règle le garde ; un éditeur rétrogradé lecteur redevient un nouveau
@@ -34,14 +41,16 @@
  * rôle et export avant → après ; jamais d'adresse.
  */
 import { Router, type Request } from "express";
-import { and, asc, eq, gt } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, ne, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client.js";
-import { invitations, projectMembers, projects, users } from "../db/schema.js";
+import { invitations, people, projectMembers, projectParticipations, projects, users } from "../db/schema.js";
 import type { Tx } from "../lib/step-rows.js";
 import { audit, clientIp } from "../lib/audit.js";
 import { formatDate, mailLocale, PUBLIC_PATHS, publicLink, sendAccountMail } from "../lib/account.js";
-import { createOrRenewInvitation, invitationView } from "../lib/invitations.js";
+import { invitationView } from "../lib/invitations.js";
+import { accountByEmail, createProjectInvitation, previewProjectInvitation, resolveInvitationTarget } from "../lib/project-invitations-db.js";
+import { invitationExpiry, parseAccessExpiry, projectRoleFor, proposedRolesFrom } from "../lib/project-invitations.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { projectOr404, type ProjectRole } from "../lib/owned-project.js";
 import { lockProject } from "../lib/step-rows.js";
@@ -57,6 +66,9 @@ export interface MemberView {
   canExport: boolean;
   invitedBy: string;
   createdAt: string;
+  /** Échéance d'accès (phase 3) ; `accessExpired` : passée, le membre n'a plus aucun accès. */
+  accessExpiresAt?: string | null;
+  accessExpired?: boolean;
 }
 
 type MemberRole = MemberView["role"];
@@ -72,9 +84,23 @@ export const ROLE_LABEL: Record<ProjectRole, string> = {
 };
 
 const roleSchema = z.enum(["lecteur", "editeur"]);
-const inviteSchema = z.object({ email: z.string().trim().toLowerCase().email("Adresse invalide").max(254), role: roleSchema });
-const memberBody = z.object({ role: roleSchema.optional(), canExport: z.boolean().optional() }).strict()
-  .refine((v) => v.role !== undefined || v.canExport !== undefined, { message: "role ou canExport attendu" });
+const inviteSchema = z.object({
+  email: z.string().trim().toLowerCase().email("Adresse invalide").max(254),
+  /** Forme historique : `lecteur` → Lecteur, `editeur` → Concepteur (portée projet). */
+  role: roleSchema.optional(),
+  /** Rôles proposés par portée (phase 3) ; au moins un de portée projet. */
+  roles: z.array(z.object({ role: z.string().max(40), scopeType: z.string().max(40).nullable().optional(), scopeId: z.string().trim().max(120).nullable().optional() })).max(24).optional(),
+  /** Participation visée choisie dans l'annuaire (contact du projet) ; sinon trouvée par l'adresse ou créée. */
+  participationId: z.string().max(80).nullable().optional(),
+  /** Nom d'une fiche créée pour une adresse sans compte (sinon l'adresse). */
+  displayName: z.string().trim().max(200).nullable().optional(),
+  /** Échéance de l'accès (AAAA-MM-JJ ou date-heure ISO), indépendante de celle de l'invitation. */
+  accessExpiresAt: z.string().max(40).nullable().optional(),
+  /** Validité de l'invitation, en jours (1 à 30, 7 par défaut). */
+  invitationDays: z.number().int().min(1).max(30).optional(),
+}).refine((v) => v.role !== undefined || (v.roles?.length ?? 0) > 0, { message: "role ou roles attendu" });
+const memberBody = z.object({ role: roleSchema.optional(), canExport: z.boolean().optional(), accessExpiresAt: z.string().max(40).nullable().optional() }).strict()
+  .refine((v) => v.role !== undefined || v.canExport !== undefined || v.accessExpiresAt !== undefined, { message: "role, canExport ou accessExpiresAt attendu" });
 
 /** Les membres d'un projet (hors propriétaire), avec leur adresse, par date d'invitation. */
 export async function listMembers(projectId: string): Promise<MemberView[]> {
@@ -84,7 +110,18 @@ export async function listMembers(projectId: string): Promise<MemberView[]> {
     .innerJoin(users, eq(users.id, projectMembers.userId))
     .where(eq(projectMembers.projectId, projectId))
     .orderBy(asc(projectMembers.createdAt), asc(users.email));
-  return rows.map((r) => ({ userId: r.userId, email: r.email, role: r.role, canExport: memberExports(r.role, r.canExport), invitedBy: r.invitedBy, createdAt: r.createdAt.toISOString() }));
+  // Échéance d'accès (phase 3) portée par la participation en cours : passée, le membre reste listé mais n'a plus d'accès.
+  const expiries = rows.length ? await db.select({ userId: people.userId, accessExpiresAt: projectParticipations.accessExpiresAt })
+    .from(projectParticipations).innerJoin(people, eq(people.id, projectParticipations.personId))
+    .where(and(eq(projectParticipations.projectId, projectId), ne(projectParticipations.status, "terminee"), inArray(people.userId, rows.map((r) => r.userId)))) : [];
+  const now = Date.now();
+  return rows.map((r) => {
+    const exp = expiries.find((e) => e.userId === r.userId)?.accessExpiresAt ?? null;
+    return {
+      userId: r.userId, email: r.email, role: r.role, canExport: memberExports(r.role, r.canExport), invitedBy: r.invitedBy, createdAt: r.createdAt.toISOString(),
+      accessExpiresAt: exp?.toISOString() ?? null, accessExpired: !!exp && exp.getTime() <= now,
+    };
+  });
 }
 
 export async function ownerEmailOf(ownerId: string): Promise<string> {
@@ -94,10 +131,13 @@ export async function ownerEmailOf(ownerId: string): Promise<string> {
 
 /** Invitations du projet en attente (propriétaire seulement) : adresse, rôle, échéance — jamais le jeton. */
 async function pendingInvitations(projectId: string) {
-  const rows = await db.select().from(invitations)
+  const rows = await db.select({ inv: invitations, accountId: users.id }).from(invitations)
+    .leftJoin(users, sql`lower(${users.email}) = lower(${invitations.email}) AND ${users.status} <> 'closed'`)
     .where(and(eq(invitations.projectId, projectId), eq(invitations.status, "pending"), gt(invitations.expiresAt, new Date())))
     .orderBy(asc(invitations.createdAt));
-  return rows.map((r) => invitationView(r));
+  // État distinct (phase 3) : un compte existant doit accepter (lien ou notification) ; une adresse sans compte doit
+  // d'abord créer son compte depuis le lien.
+  return rows.map((r) => ({ ...invitationView(r.inv), awaiting: r.accountId ? "acceptation" as const : "creation-compte" as const }));
 }
 
 membersRouter.get("/", async (req, res) => {
@@ -127,51 +167,99 @@ membersRouter.delete("/invitations/:invitationId", async (req, res) => {
   res.status(204).end();
 });
 
+/** Saisie d'une invitation lue et contrôlée (envoi et aperçu) ; `problems` non vide = 400. */
+function readInvitation(body: unknown, now = new Date()) {
+  const parsed = inviteSchema.safeParse(body);
+  if (!parsed.success) return { ok: false as const, problems: ["saisie invalide"], details: parsed.error.flatten() as unknown };
+  const { roles, problems } = proposedRolesFrom({ roles: parsed.data.roles, legacyRole: parsed.data.role });
+  const access = parseAccessExpiry(parsed.data.accessExpiresAt ?? null, now);
+  if (access.problem) problems.push(access.problem);
+  if (problems.length) return { ok: false as const, problems, details: null as unknown };
+  return {
+    ok: true as const, email: parsed.data.email, roles, participationId: parsed.data.participationId ?? null, displayName: parsed.data.displayName ?? null,
+    invitationExpiresAt: invitationExpiry(now, parsed.data.invitationDays), accessExpiresAt: access.value,
+  };
+}
+
+/**
+ * Aperçu de l'accès résultant, avant envoi (phase 3) : participation visée (membre, contact existant de l'annuaire,
+ * fiche à créer), invitation déjà en attente (elle sera renvoyée, sans doublon), droits que donnera l'acceptation,
+ * échéances, remarques et motif bloquant. Rien n'est écrit.
+ */
+membersRouter.post("/preview", async (req, res) => {
+  const project = await projectOr404(req, res, "owner");
+  if (!project) return;
+  const input = readInvitation(req.body);
+  if (!input.ok) {
+    res.status(400).json({ error: "invalid_input", message: input.problems.join(" ; "), problems: input.problems, details: input.details });
+    return;
+  }
+  const preview = await previewProjectInvitation(db, { projectId: project.id, ...input });
+  const account = preview.accountExists ? await accountByEmail(db, input.email) : null;
+  const blocking = account?.id === project.ownerId ? "Le propriétaire du projet a déjà tous les droits." : preview.blocking;
+  res.json({ preview: { ...preview, blocking } });
+});
+
+/**
+ * Invitation (OP-D2 a, fin de l'ajout direct UM-8) : toute adresse — compte existant compris — reçoit une invitation
+ * nominative (202) à accepter par l'identité visée (lien du courriel, ou notification dans l'application pour un compte
+ * existant) ; rien n'est accordé avant. Seul un compte déjà membre voit son rôle changé directement (200). Sans envoi
+ * possible (quota, transport absent), le lien est rendu au propriétaire pour qu'il le transmette (D-1).
+ */
 membersRouter.post("/", async (req, res) => {
   const project = await projectOr404(req, res, "owner");
   if (!project) return;
-  const parsed = inviteSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
+  const input = readInvitation(req.body);
+  if (!input.ok) {
+    res.status(400).json({ error: "invalid_input", message: input.problems.join(" ; "), problems: input.problems, details: input.details });
     return;
   }
-  const [account] = await db.select({ id: users.id, email: users.email, status: users.status }).from(users).where(eq(users.email, parsed.data.email)).limit(1);
-  if (!account) {
-    // Adresse sans compte (UM-3) : une invitation nominative (projet + rôle), jamais un compte créé d'office. Sans envoi
-    // possible (quota, transport absent), le lien est rendu au propriétaire pour qu'il le transmette (D-1).
-    const locale = mailLocale(req);
-    const result = await db.transaction(async (tx) => {
-      const created = await createOrRenewInvitation(tx, { purpose: "project_participation", email: parsed.data.email, projectId: project.id, projectRole: parsed.data.role, invitedBy: req.user!.id, ip: clientIp(req) });
-      const link = publicLink(PUBLIC_PATHS.invitation, created.token);
-      const mail = await sendAccountMail(parsed.data.email, "invitation", {
-        link, projectName: `${project.code} — ${project.name}`, role: ROLE_LABEL[parsed.data.role], expiresAt: formatDate(created.invitation.expiresAt, locale),
-      }, locale, tx);
-      return { ...created, link, mail };
-    });
-    res.status(202).json({
-      invitation: invitationView(result.invitation, { projectName: `${project.code} — ${project.name}` }), resent: result.resent,
-      mail: { queued: result.mail.queued, reason: result.mail.reason, ...(result.mail.queued ? {} : { link: result.link }) },
-    });
-    return;
-  }
-  if (account.status === "closed") {
+  const account = await accountByEmail(db, input.email);
+  if (account?.status === "closed") {
     res.status(404).json({ error: "user_not_found", message: "Aucun compte actif n’a cette adresse." });
     return;
   }
-  if (account.id === project.ownerId) {
+  if (account && account.id === project.ownerId) {
     res.status(422).json({ error: "sharing_rule", message: "Le propriétaire du projet a déjà tous les droits." });
     return;
   }
-  const row = await db.transaction(async (tx) => {
-    const [before] = await lockedMember(tx, project.id, account.id);
-    if (!before) {
-      const [created] = await tx.insert(projectMembers).values({ projectId: project.id, userId: account.id, role: parsed.data.role, invitedBy: req.user!.email, canExport: false }).returning();
-      await audit(tx, { actorId: req.user!.id, action: "project.member.added", target: { type: "project", id: project.id }, metadata: { memberId: account.id, role: created!.role, canExport: memberExports(created!.role, created!.canExport), via: "compte-existant" }, ip: clientIp(req) });
-      return created!;
+  const resolved = await resolveInvitationTarget(db, project.id, input.email, input.participationId);
+  if (resolved.notFound) {
+    res.status(404).json({ error: "participation_not_found", message: resolved.blocking });
+    return;
+  }
+  if (resolved.blocking) {
+    res.status(409).json({ error: "invitation_rule", message: resolved.blocking });
+    return;
+  }
+  if (resolved.target.kind === "membre" && account) {
+    // Déjà membre : changement du rôle de partage, sans invitation (le changement de rôle d'un membre reste direct).
+    const role = projectRoleFor(input.roles);
+    const outcome = await db.transaction(async (tx) => {
+      const [before] = await lockedMember(tx, project.id, account.id);
+      return before ? changeMember(tx, req, project.id, before, { role }) : null;
+    });
+    if (outcome) {
+      const [u] = await db.select({ email: users.email }).from(users).where(eq(users.id, account.id)).limit(1);
+      res.status(200).json({ userId: account.id, email: u?.email ?? input.email, role: outcome.role, canExport: memberExports(outcome.role, outcome.canExport), invitedBy: outcome.invitedBy, createdAt: outcome.createdAt.toISOString() } satisfies MemberView);
+      return;
     }
-    return changeMember(tx, req, project.id, before, { role: parsed.data.role });
+  }
+  const locale = mailLocale(req);
+  const projectName = `${project.code} — ${project.name}`;
+  const result = await db.transaction(async (tx) => {
+    await lockProject(tx, project.id);
+    const created = await createProjectInvitation(tx, { projectId: project.id, ...input, invitedBy: req.user!.id, ip: clientIp(req) });
+    const link = publicLink(PUBLIC_PATHS.invitation, created.token);
+    const mail = await sendAccountMail(input.email, "invitation", {
+      link, projectName, role: ROLE_LABEL[created.invitation.projectRole ?? "lecteur"], expiresAt: formatDate(created.invitation.expiresAt, locale),
+    }, locale, tx);
+    return { ...created, link, mail };
   });
-  res.status(201).json({ userId: account.id, email: account.email, role: row.role, canExport: memberExports(row.role, row.canExport), invitedBy: row.invitedBy, createdAt: row.createdAt.toISOString() } satisfies MemberView);
+  res.status(202).json({
+    invitation: invitationView(result.invitation, { projectName }), resent: result.resent, accountExists: !!account, participationId: result.participationId,
+    mail: { queued: result.mail.queued, reason: result.mail.reason, ...(result.mail.queued ? {} : { link: result.link }) },
+  });
 });
 
 type MemberRow = typeof projectMembers.$inferSelect;
@@ -211,11 +299,26 @@ membersRouter.patch("/:userId", async (req, res) => {
     return;
   }
   const userId = req.params["userId"] as string;
+  const expiry = parsed.data.accessExpiresAt === undefined ? null : parseAccessExpiry(parsed.data.accessExpiresAt, new Date());
+  if (expiry?.problem) {
+    res.status(400).json({ error: "invalid_input", message: expiry.problem });
+    return;
+  }
   const outcome = await db.transaction(async (tx) => {
     const [before] = await lockedMember(tx, project.id, userId);
     if (!before) return { status: 404 as const };
     if (parsed.data.canExport !== undefined && (parsed.data.role ?? before.role) === "editeur") return { status: 422 as const };
-    return { status: 200 as const, row: await changeMember(tx, req, project.id, before, parsed.data) };
+    const row = parsed.data.role !== undefined || parsed.data.canExport !== undefined ? await changeMember(tx, req, project.id, before, parsed.data) : before;
+    if (expiry) {
+      // Échéance d'accès (phase 3) : prolongée, avancée ou retirée par le propriétaire sur la participation en cours.
+      const changed = await tx.update(projectParticipations).set({ accessExpiresAt: expiry.value, updatedAt: new Date() })
+        .where(and(eq(projectParticipations.projectId, project.id), ne(projectParticipations.status, "terminee"),
+          sql`${projectParticipations.personId} IN (SELECT id FROM people WHERE user_id = ${userId})`,
+          sql`${projectParticipations.accessExpiresAt} IS DISTINCT FROM ${expiry.value?.toISOString() ?? null}::timestamptz`))
+        .returning({ id: projectParticipations.id });
+      if (changed.length) await audit(tx, { actorId: req.user!.id, action: "participation.access_expiry_changed", target: { type: "project", id: project.id }, metadata: { participationId: changed[0]!.id, memberId: userId, accessExpiresAt: expiry.value?.toISOString() ?? null }, ip: clientIp(req) });
+    }
+    return { status: 200 as const, row };
   });
   if (outcome.status === 404) {
     res.status(404).json({ error: "not_found" });
@@ -225,9 +328,8 @@ membersRouter.patch("/:userId", async (req, res) => {
     res.status(422).json({ error: "sharing_rule", message: "Un éditeur exporte toujours : le droit d'export ne s'accorde ou ne se retire qu'à un lecteur." });
     return;
   }
-  const row = outcome.row;
-  const [account] = await db.select({ email: users.email }).from(users).where(eq(users.id, userId)).limit(1);
-  res.json({ userId, email: account?.email ?? "", role: row.role, canExport: memberExports(row.role, row.canExport), invitedBy: row.invitedBy, createdAt: row.createdAt.toISOString() } satisfies MemberView);
+  const member = (await listMembers(project.id)).find((m) => m.userId === userId);
+  res.json(member satisfies MemberView | undefined);
 });
 
 membersRouter.delete("/:userId", async (req, res) => {

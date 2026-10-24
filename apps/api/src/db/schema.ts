@@ -124,7 +124,16 @@ export const invitations = authSchema.table("invitations", {
   organizationId: text("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
   organizationRole: text("organization_role").$type<OrganizationRole | null>(),
   organizationJobTitle: text("organization_job_title"),
+  /**
+   * Finalité `project_participation` (phase 3) : participation visée (contact de l'annuaire ou fiche créée à l'envoi) et
+   * rôles proposés par portée. Rien n'est accordé avant l'acceptation.
+   */
+  participationId: text("participation_id"),
+  proposedRoles: jsonb("proposed_roles").$type<ProposedRole[] | null>(),
 }, (t) => [uniqueIndex("invitations_token_hash_unique").on(t.tokenHash)]);
+
+/** Rôle proposé par une invitation de projet (phase 3) : rôle métier et portée exacte. */
+export interface ProposedRole { role: ProjectBusinessRole; scopeType: RoleScopeType; scopeId: string | null }
 
 export type AccountTokenPurpose = "verify_email" | "reset_password" | "cancel_deletion";
 
@@ -502,6 +511,8 @@ export const projectParticipations = pgTable("project_participations", {
   status: text("status").notNull().$type<ParticipationStatus>(),
   /** Export accordé (écart E2), tenu par le miroir depuis `project_members.can_export` ; un Concepteur exporte toujours. */
   canExport: boolean("can_export").notNull().default(false),
+  /** Échéance de l'accès (phase 3), recopiée de l'invitation acceptée : passée, la participation ne donne plus rien. */
+  accessExpiresAt: timestamp("access_expires_at", { withTimezone: true }),
   startsOn: date("starts_on"),
   endsOn: date("ends_on"),
   createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),

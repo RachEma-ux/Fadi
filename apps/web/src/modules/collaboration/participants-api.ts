@@ -13,6 +13,13 @@ export type StatusChange = "suspendre" | "reactiver" | "terminer";
 export const BUSINESS_ROLES: readonly BusinessRole[] = ["lecteur", "concepteur", "relecteur", "coordinateur", "approbateur", "diffuseur"];
 export const ROLE_SCOPES: readonly RoleScope[] = ["projet", "etude", "variante", "revision", "documents"];
 export const RESPONSIBILITIES: readonly Responsibility[] = ["diriger", "produire", "coordonner", "verifier", "approuver", "diffuser"];
+/** Libellés des rôles métier et des portées (phase 3 : formulaire d'invitation, invitations reçues). */
+export const BUSINESS_ROLE_LABEL: Readonly<Record<BusinessRole, string>> = { lecteur: "Lecteur", concepteur: "Concepteur", relecteur: "Relecteur", coordinateur: "Coordinateur", approbateur: "Approbateur", diffuseur: "Diffuseur" };
+export const SCOPE_LABEL: Readonly<Record<RoleScope, string>> = { projet: "Projet", etude: "Étude", variante: "Variante", revision: "Révision", documents: "Documents" };
+/** « Lecteur · Approbateur — Étude : E-1 » : rôles proposés lisibles (séparateurs traduits morceau par morceau). */
+export function rolesLisibles(roles: readonly { role: BusinessRole; scopeType: RoleScope; scopeId: string | null }[]): string {
+  return roles.map((r) => (r.scopeType === "projet" ? BUSINESS_ROLE_LABEL[r.role] : `${BUSINESS_ROLE_LABEL[r.role]} — ${SCOPE_LABEL[r.scopeType]} : ${r.scopeId ?? ""}`)).join(" · ");
+}
 
 export interface DerivedAccess { role: "proprietaire" | "editeur" | "lecteur"; canExport: boolean; canApprove: boolean; canPublish: boolean }
 export interface RoleView { id: string; role: BusinessRole; scopeType: RoleScope; scopeId: string | null; origin: "acces" | "attribution"; createdAt: string }

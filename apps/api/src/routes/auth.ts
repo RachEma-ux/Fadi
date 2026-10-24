@@ -40,8 +40,9 @@ import {
   consumeAccountToken, DELETION_GRACE_MS, formatDate, issueAccountToken, mailLocale, PUBLIC_PATHS, publicLink, sendAccountMail,
 } from "../lib/account.js";
 import {
-  activateInvitation, findInvitationByToken, INVITATION_REFUSAL_MESSAGE, invitationRefusal, invitationView, inviterStillAuthorized,
+  activateInvitation, findInvitationByToken, INVITATION_REFUSAL_MESSAGE, invitationRefusal, invitationView, inviterStillAuthorized, projectParticipationRefusal,
 } from "../lib/invitations.js";
+import { pendingWorkFor } from "../lib/project-invitations-db.js";
 import { organizationNameOf } from "../lib/organizations.js";
 import { newId } from "../lib/ids.js";
 import { userHistory } from "../lib/journal.js";
@@ -633,7 +634,9 @@ authRouter.post("/invitations/lookup", async (req, res) => {
   }
   const [account] = await db.select({ id: users.id }).from(users).where(eq(users.email, inv.email)).limit(1);
   const view = await describeInvitation(inv);
-  const refusal = invitationRefusal(inv, req.user ? { email: req.user.email, status: req.user.status } : null, await inviterStillAuthorized(inv), new Date());
+  const refusal = invitationRefusal(inv, req.user ? { email: req.user.email, status: req.user.status } : null, await inviterStillAuthorized(inv), new Date())
+    // Invitation de projet (phase 3) : fiche, participation, échéance d'accès et rôles revalidés.
+    ?? await projectParticipationRefusal(db, inv, req.user?.id ?? null, { identityKnown: !!req.user });
   res.json({ invitation: view, accountExists: !!account, signedInAs: req.user?.email ?? null, refusal, message: refusal ? INVITATION_REFUSAL_MESSAGE[refusal] : null });
 });
 
@@ -647,7 +650,8 @@ authRouter.post("/invitations/accept", async (req, res) => {
   }
   const result = await db.transaction(async (tx) => {
     const [inv] = await tx.select().from(invitations).where(eq(invitations.tokenHash, sha256Hex(parsed.data.token))).limit(1).for("update");
-    const refusal = invitationRefusal(inv ?? null, { email: req.user!.email, status: req.user!.status }, inv ? await inviterStillAuthorized(inv, tx) : false, new Date());
+    const refusal = invitationRefusal(inv ?? null, { email: req.user!.email, status: req.user!.status }, inv ? await inviterStillAuthorized(inv, tx) : false, new Date())
+      ?? (inv ? await projectParticipationRefusal(tx, inv, req.user!.id) : null);
     if (refusal || !inv) {
       // Idempotence : la même personne qui rejoue une acceptation déjà faite obtient le même résultat.
       if (refusal === "already_accepted" && inv?.acceptedUserId === req.user!.id) return { ok: true as const, inv };
@@ -659,10 +663,12 @@ authRouter.post("/invitations/accept", async (req, res) => {
     return { ok: true as const, inv };
   });
   if (!result.ok) {
-    res.status(result.refusal === "wrong_account" ? 403 : 409).json({ error: result.refusal, message: INVITATION_REFUSAL_MESSAGE[result.refusal] });
+    res.status(result.refusal === "wrong_account" || result.refusal === "wrong_person" ? 403 : 409).json({ error: result.refusal, message: INVITATION_REFUSAL_MESSAGE[result.refusal] });
     return;
   }
-  res.json({ accepted: true, projectId: result.inv.projectId, organizationId: result.inv.organizationId ?? null });
+  // Entrée dans le bon espace (phase 3) : le projet, avec le travail en attente du compte.
+  const pendingWork = result.inv.purpose === "project_participation" && result.inv.projectId ? await pendingWorkFor(db, result.inv.projectId, req.user!.id) : null;
+  res.json({ accepted: true, projectId: result.inv.projectId, organizationId: result.inv.organizationId ?? null, ...(pendingWork ? { pendingWork } : {}) });
 });
 
 authRouter.post("/invitations/decline", async (req, res) => {
@@ -695,7 +701,8 @@ authRouter.post("/activate", perIdentifier(10), async (req, res) => {
   const passwordHash = await hashPassword(parsed.data.password);
   const result = await db.transaction(async (tx) => {
     const [locked] = inv ? await tx.select().from(invitations).where(eq(invitations.id, inv.id)).limit(1).for("update") : [];
-    const refusal = invitationRefusal(locked ?? null, null, locked ? await inviterStillAuthorized(locked, tx) : false, new Date());
+    const refusal = invitationRefusal(locked ?? null, null, locked ? await inviterStillAuthorized(locked, tx) : false, new Date())
+      ?? (locked ? await projectParticipationRefusal(tx, locked, null) : null);
     if (refusal || !locked) return { refusal: refusal ?? ("not_found" as const) };
     const [existing] = await tx.select({ id: users.id }).from(users).where(eq(users.email, locked.email)).limit(1);
     if (existing) return { refusal: "account_exists" as const };

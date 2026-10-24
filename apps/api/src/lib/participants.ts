@@ -24,10 +24,12 @@ export interface AccessInput {
   isOwner: boolean;
   /** La personne de la participation est liée à un compte vérifié (un contact sans compte n'a jamais d'accès). */
   hasAccount: boolean;
-  participation: { status: ParticipationStatus; startsOn: string | null; canExport: boolean } | null;
+  participation: { status: ParticipationStatus; startsOn: string | null; canExport: boolean; accessExpiresAt?: Date | null | undefined } | null;
   roles: readonly { role: ProjectBusinessRole; scopeType: RoleScopeType }[];
   /** Date du jour (AAAA-MM-JJ) : une participation qui n'a pas commencé ne donne rien. */
   today: string;
+  /** Instant de la décision (phase 3) : une échéance d'accès passée ne donne plus rien. Par défaut : maintenant. */
+  now?: Date | undefined;
 }
 
 /**
@@ -43,6 +45,8 @@ export function deriveAccess(input: AccessInput): DerivedAccess | null {
   const p = input.participation;
   if (!input.hasAccount || !p || p.status !== "active") return null;
   if (p.startsOn && p.startsOn > input.today) return null;
+  // Phase 3 : l'échéance d'accès recopiée de l'invitation acceptée (indépendante de celle de l'invitation).
+  if (p.accessExpiresAt && p.accessExpiresAt.getTime() <= (input.now ?? new Date()).getTime()) return null;
   const roles = new Set(input.roles.filter((r) => r.scopeType === "projet").map((r) => r.role));
   if (!roles.size) return null;
   const designer = roles.has("concepteur");
