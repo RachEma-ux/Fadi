@@ -21,6 +21,11 @@ consigne une dérogation demandée.
 | COM-D13 | Notifications : types `message` (participants d'une conversation `participants`, animateur, personnes ayant écrit dans la conversation, mentions lisibles) et `demande` (demandeur et répondant) ; extraits filtrés par l'audience courante. | COM-R5 ; éviter qu'un fil `projet` notifie tout le projet. |
 | COM-D14 | Règle d'or étendue aux commandes COM : Alt+Maj+4 à Alt+Maj+0 pour les commandes principales, Alt+Maj+ponctuation (touche physique) pour les commandes de demande, de participant et de message. Aucune collision (test). | Extension CR-C1 § 6 ; Alt+Maj+lettre est pris par la Planche et l'administration. |
 
+## Réponses du maître d'ouvrage
+
+- **COM-R1 (2026-10-24)** — « Fusionne 285 » : fusion de la PR #285 demandée et réalisée (`173b9f1`). Les décisions
+  COM-D1 à COM-D14 n'ont pas été acceptées une à une : elles restent à confirmer explicitement. Aucun déploiement demandé.
+
 ## Questions ouvertes (non bloquantes)
 
 - Durées de conservation par catégorie, visibilité de l'historique des groupes par défaut, appareils de terrain pris en

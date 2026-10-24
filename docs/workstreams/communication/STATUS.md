@@ -4,8 +4,9 @@ Mis à jour : 2026-10-24 (UTC).
 
 ## État
 
-**Implémenté et vérifié localement** (phases COM-1 à COM-8 du [PLAN](PLAN.md)) — CI de la PR à relever ; **non accepté** :
-les décisions COM-D1 à COM-D14 attendent le maître d'ouvrage. Aucun déploiement.
+**Implémenté, vérifié et fusionné dans `main`** (PR #285, commit de fusion `173b9f1`, 2026-10-24, à la demande du maître
+d'ouvrage) — CI verte sur `a5ef51b`. **Non déployé.** L'acceptation explicite des décisions COM-D1 à COM-D14 n'a pas été
+formulée séparément : à confirmer.
 
 ## Faits vérifiés
 
@@ -34,15 +35,17 @@ Le 2026-10-24, sur la branche `ccr-a50667e3-fng2br`, avec une base PostGIS local
 
 ## Points ouverts
 
-- CI GitHub de la PR (jobs `validate`, `e2e (complements)` qui joue `communication.mjs`, `studio-v1-validation`).
-- Acceptation du maître d'ouvrage, dont la dérogation COM-D1 à l'ordre CR-D9.
+- CI GitHub de `a5ef51b` : verte (validate, e2e parcours / complements / atelier / planche / p2, image, Studio V1, Project layout,
+  Architecture native, Continuité, Isolation). Revue Codex : 4 remarques corrigées (`a5ef51b`), fils résolus.
+- Confirmation explicite des décisions COM-D1 à COM-D14, dont la dérogation COM-D1 à l'ordre CR-D9.
+- Déploiement (préproduction puis production) : sur accord explicite seulement.
 - Reports déclarés : PLAN § 1 et TASKS COM-10 à COM-12.
 
 ## Liens de suivi
 
 - Issue : https://github.com/RachEma-ux/Fadi/issues/280
 - Branche de tâche : `ccr-a50667e3-fng2br`
-- Pull Request : [#285](https://github.com/RachEma-ux/Fadi/pull/285) (non fusionnée).
+- Pull Request : [#285](https://github.com/RachEma-ux/Fadi/pull/285), **fusionnée** (`173b9f1`).
 
 ## Préconditions de clôture
 
