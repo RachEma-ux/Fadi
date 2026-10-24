@@ -27,12 +27,18 @@ Mis à jour : 2026-10-24 (UTC).
 
 ## Prochaine action
 
-- UM-27 : CI de la PR #270 verte sur `4aa7d0b` (DB-3 : 123 tests dans les 12 suites) ; revérifier la CI du HEAD courant,
-  fusion demandée par le maître d'ouvrage le 2026-10-24 (« fusionne #270 ») après CI verte du commit de fusion de `main`. Aucun déploiement sans son accord (aucune migration ajoutée).
-- UM-28 (2026-10-24) : PR « courriel en préproduction, domaines réservés jamais envoyés » (branche
-  `feat/preprod-courriel`) **ouverte, non fusionnée** ; après fusion par le maître d'ouvrage et déploiement, l'administrateur
-  ajoute les variables `PREPROD_MAIL_*` / `PREPROD_SMTP_*` à `/opt/fadi-preprod/env/.env.preprod` puis
-  `sudo fadi-preprod up` (RUNBOOK §3 bis), et contrôle un envoi réel (§5).
+- UM-27 et UM-28 : **fusionnés** (PR #270 `2cc038a`, PR #271 `e03fdfc`) ; CI de `main` verte sur `2cc038a`.
+- UM-SERVICE — mise en service en **préproduction** (RUNBOOK §3 bis, §5 à §9), gestes de l'administrateur sur le VPS :
+  variables `PREPROD_MAIL_*` / `PREPROD_SMTP_*` dans `/opt/fadi-preprod/env/.env.preprod` puis `sudo fadi-preprod up` et
+  envoi de test ; premier administrateur (`sudo docker exec fadi-preprod-app-1 node apps/api/scripts/create-admin.mjs
+  <adresse>` après inscription) ; double authentification ; `PREPROD_FADI_ADMIN_ENABLED=true` puis `sudo fadi-preprod up` ;
+  recette §9. Relever ensuite `fadi-preprod status`, `/version`, `/admin/users` et les comptages d'administrateurs
+  (STATUS.md, points ouverts) pour consigner.
+- PR ouvertes qui touchent ce chantier : #274 (UM-29, écarts E1 à E3 des règles communes) et #275 (UM-30, langue des
+  courriels).
+- **Consigne du maître d'ouvrage (2026-10-23) : on ne touche pas à www.fadimmo.com ; pendant le développement, tout se
+  déploie sur preprod.fadimmo.com.** Aucune session ne prépare ni ne lance de déploiement de production sans nouvelle
+  instruction explicite de sa part.
 
 - CI de `main` verte après la fusion (`516e2f7`, run CI 39911221480).
 - Préproduction : **faite** — `02329e1` déployé le 2026-10-23 à 15:28 UTC (PR #264, `init-env` lancé ; UM-26, STATUS.md).
