@@ -1768,6 +1768,25 @@ export interface ResponsabilitesPersonne {
   accusesAttendus: { messageId: string; conversation: string }[];
 }
 
+export type FamilleActivite = "message" | "demande" | "observation" | "tache" | "decision" | "revue" | "diffusion";
+export type FiltreActivite = "tout" | "a-traiter" | "questions-ouvertes" | "messages" | "demandes" | "observations" | "revues" | "decisions";
+export interface EntreeActivite {
+  id: string;
+  famille: FamilleActivite;
+  libelle: string;
+  at: string;
+  capturedAt: string | null;
+  auteur: { id: string; email: string };
+  titre: string;
+  texte: string;
+  lien: { conversationId?: string; demandeId?: string; studyId?: string; variantId?: string };
+  aTraiter: boolean;
+}
+export interface RevueLiee {
+  id: string; title: string; statut: "travail" | "soumis" | "approuve" | "refuse" | "diffuse" | "retire"; studyId: string; variantId: string; etude: string; variante: string; revisionId: string;
+  preparePar: string; approuvePar: string | null; approuveLe: string | null; diffusePar: string | null; diffuseLe: string | null; majLe: string;
+}
+
 const comBase = (projectId: string) => `/projects/${encodeURIComponent(projectId)}/com`;
 const corpsJson = (body: unknown) => ({ body: JSON.stringify(body) });
 
@@ -1792,6 +1811,11 @@ export const comApi = {
   action: (projectId: string, messageId: string, input: ComActionInput & { empreinte: string }) => request<{ targetType: string; targetId: string; messageId?: string; replayed: boolean }>(`${comBase(projectId)}/messages/${encodeURIComponent(messageId)}/actions`, { method: "POST", ...corpsJson(input) }),
   responsabilites: (projectId: string) => request<ResponsabilitesPersonne[]>(`${comBase(projectId)}/responsabilites`),
   boite: () => request<{ items: ElementBoite[] }>("/com/boite"),
+  activite: (projectId: string, f: { filtre?: FiltreActivite; auteur?: string; depuis?: string; etape?: string } = {}) => {
+    const q = new URLSearchParams(Object.entries(f).filter(([, v]) => !!v) as [string, string][]).toString();
+    return request<{ items: EntreeActivite[]; auteurs: { id: string; email: string }[] }>(`${comBase(projectId)}/activite${q ? `?${q}` : ""}`);
+  },
+  revues: (projectId: string) => request<RevueLiee[]>(`${comBase(projectId)}/revues`),
   demandes: (projectId: string, aRepondre = false) => request<Demande[]>(`/projects/${encodeURIComponent(projectId)}/collaboration/demandes${aRepondre ? "?a-repondre=1" : ""}`),
   demande: (projectId: string, id: string) => request<Demande>(`/projects/${encodeURIComponent(projectId)}/collaboration/demandes/${encodeURIComponent(id)}`),
   creerDemande: (projectId: string, input: { question: string; responderId: string; echeance?: string | null; audience?: CommentAudience; refs?: ComRef[]; clientRequestId?: string }) =>

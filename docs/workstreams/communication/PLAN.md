@@ -6,6 +6,8 @@
 > [`Fadi Concept - Communication.md`](../../../Fadi%20Concept/Fadi%20Concept%20-%20Communication.md) (v1.2), des critères
 > **COM-R1 à COM-R7** inscrits par le cadrage des règles communes
 > ([`collaboration-rules/PLAN.md`](../collaboration-rules/PLAN.md) § 1.2) et des décisions CR-D1, CR-D3, CR-D5, CR-D9.
+> Source relue le 2026-10-24 dans sa forme `.docx` sur `main` (`Fadi Concept - Communication.docx`) : contenu identique au
+> `.md` (seul l'encodage des signes `>` diffère). La relecture a fait ajouter la phase COM-5 bis.
 > **Statut : exécuté dans la même demande** (phases COM-1 à COM-8) ; les choix du chef de projet sont consignés
 > [DECISIONS.md](DECISIONS.md) (COM-D1 à COM-D14) et restent soumis à l'acceptation du maître d'ouvrage.
 
@@ -94,10 +96,23 @@ une réouverture et une nouvelle réponse. Une échéance dépassée laisse la d
 | Global > Ma boîte | page `/boite` et lien de l'en-tête |
 | Projet > Collaboration > Communication | section « Communication » : conversations, fil, rédaction avec « Visible par : … » avant l'envoi |
 | Projet > Collaboration > Demandes et revues | section « Demandes de précision » |
-| Parcours > panneau contextuel | conversations de l'étape ouverte, dans le pli d'étape |
+| Projet > Collaboration > Communication (activité) | section « Activité du projet », filtrable (COM-5 bis) |
+| Projet > Collaboration > Requests and reviews | section « Demandes et revues » : demandes de précision et revues Studio liées |
+| Studio, Parcours, Documents > panneau contextuel | pli d'étape du Parcours, conversations de la variante Studio, conversations sur les documents |
 
 Règle d'or : commandes COM dans `commandes-collaboration.ts` (icône propre, barre, raccourci Alt+Maj+chiffre ou
 ponctuation), test étendu.
+
+### COM-5 bis — Activité du projet, revues liées, panneaux contextuels Studio et Documents
+
+1. `GET /projects/:projectId/com/activite` (concept « Project activity and personal inbox ») : messages, demandes de
+   précision, observations, tâches et décisions Studio, revues et diffusions Studio, filtrés par les droits de chacun ;
+   libellés distincts (commentaire, tâche terminée, approbation) ; filtres « à traiter par moi », « questions non
+   résolues », famille, auteur, date, étape ; heure de capture montrée à côté de la réception.
+2. `GET /projects/:projectId/com/revues` (« Requests and reviews ») : dossiers Studio soumis, approuvés, refusés, diffusés
+   ou retirés, état relu à Studio sans duplication.
+3. Panneaux contextuels : « Conversations sur la variante » (Studio, panneau des commentaires) et « Conversations sur les
+   documents » (module Documents), en plus du pli d'étape du Parcours.
 
 ### COM-6 — Hors ligne
 

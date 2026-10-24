@@ -20,6 +20,7 @@ import { declenche, propsRaccourci, type CommandeCollaboration } from "./command
 import { IconeCollaboration, RaccourciCollaboration } from "./IconeCollaboration";
 import { CommunicationPanel } from "./communication/CommunicationPanel";
 import { DemandesPanel, ResponsabilitesPanel } from "./communication/DemandesPanel";
+import { ActivitePanel, RevuesPanel } from "./communication/ActivitePanel";
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 const KIND_LABEL: Record<string, string> = {
@@ -651,10 +652,17 @@ export function CollaborationModule({ projectId }: { projectId: string }) {
         <CommunicationPanel projectId={projectId} />
       </section>
 
+      <section className="biz-card" aria-labelledby="collab-activite">
+        <h2 id="collab-activite">Activité du projet</h2>
+        <p className="biz-sub">Événements que vous êtes autorisé à voir : messages, demandes, observations, tâches, décisions, revues et diffusions. Chaque entrée mène à son enregistrement d’origine, qui reste la référence.</p>
+        <ActivitePanel projectId={projectId} />
+      </section>
+
       <section className="biz-card" aria-labelledby="collab-demandes">
-        <h2 id="collab-demandes">Demandes de précision</h2>
+        <h2 id="collab-demandes">Demandes et revues</h2>
         <p className="biz-sub">Question, répondant désigné, échéance, réponse et clôture tracées. La demande est l’enregistrement de référence : une conversation n’en affiche que l’état.</p>
         <DemandesPanel projectId={projectId} />
+        <RevuesPanel projectId={projectId} />
       </section>
 
       <ResponsabilitesPanel projectId={projectId} />

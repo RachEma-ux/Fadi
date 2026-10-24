@@ -25,6 +25,10 @@ Le 2026-10-24, sur la branche `ccr-a50667e3-fng2br`, avec une base PostGIS local
   sur toutes les routes, mentions, références, partage avec empreinte et aperçu périmé, changement d'audience, rejeu hors
   ligne, accusés, modification / retrait, demandes et actions liées dont l'observation Studio, historique reçu,
   révocation avant synchronisation, responsabilités, interface et clavier, « Ma boîte »).
+- Relecture du `.docx` de `main` : contenu identique au `.md` ; phase COM-5 bis ajoutée (activité, revues, panneaux
+  Studio et Documents) et couverte par la recette (section 12 de `communication.mjs` : libellés distincts, heure de
+  capture, filtres à traiter / questions ouvertes / auteur / étape, lecteur sans note interne, revues lisibles, fil sur
+  une variante, document inconnu refusé) — recette rejouée : tout conforme.
 - Recette `apps/web/e2e/interface-anglais.mjs` (page `/boite` ajoutée) : verte, aucun résidu français venant de COM.
 - `check-fadi-isolation.mjs` : vert.
 

@@ -17,6 +17,8 @@
  *   9. Historique reçu à l'ajout d'un participant (COM-D4) ; animation transférée.
  *  10. Révocation avant synchronisation : l'envoi en file est refusé (404), rien n'est publié ; responsabilités du
  *      participant retiré listées pour le propriétaire.
+ *  12. Activité du projet filtrable (à traiter, questions ouvertes, auteur, étape), revues liées relues à Studio,
+ *      panneaux contextuels Studio (variante) et Documents.
  *  11. Interface : section Communication (audience affichée avant l'envoi), envoi au clavier (règle d'or), page
  *      « Ma boîte », demandes de précision.
  *
@@ -226,6 +228,30 @@ check("9. animation transférée au lecteur (journalisée)", (await owner("PUT",
 check("9. notification « message » d'un groupe à ses participants", (await reader("GET", "/notifications")).body?.items?.some((i) => i.kind === "message" && i.com?.conversationId === cGroupe));
 
 // ---------------------------------------------------------------------------------------------------------------------
+// 12. Activité du projet, revues liées et panneaux contextuels (concept « Project activity », « Requests and reviews »,
+// « Studio Parcours Documents > Contextual panel »)
+const activite = await owner("GET", `${com}/activite`);
+const libelles = new Set((activite.body?.items ?? []).map((i) => `${i.famille}:${i.libelle}`));
+check("12. activité : messages, demandes et observations, avec des libellés distincts", activite.status === 200 && libelles.has("demande:Question posée") && libelles.has("demande:Réponse") && libelles.has("observation:Observation ouverte") && [...libelles].some((l) => l.startsWith("message:")), JSON.stringify([...libelles]));
+check("12. activité : la saisie hors ligne garde son heure de capture", (activite.body?.items ?? []).some((i) => i.capturedAt && i.texte.includes("saisie hors ligne")));
+const actLecteur = await reader("GET", `${com}/activite`);
+check("12. activité du lecteur : ni note interne, ni demande d'équipe", actLecteur.status === 200 && !contient(actLecteur, NOTE_INTERNE) && !contient(actLecteur, "Le linteau de l'ouverture A-204"));
+const aTraiter = (await owner("GET", `${com}/activite?filtre=a-traiter`)).body?.items ?? [];
+check("12. filtre « à traiter par moi » : la question du lecteur adressée au propriétaire", aTraiter.some((i) => i.famille === "demande" && i.titre.includes("prochaine visite")) && aTraiter.every((i) => i.aTraiter));
+const ouvertesF = (await owner("GET", `${com}/activite?filtre=questions-ouvertes`)).body?.items ?? [];
+check("12. filtre « questions non résolues »", ouvertesF.length >= 1 && ouvertesF.every((i) => i.famille === "demande" && i.libelle === "Question posée"));
+const parAuteur = (await owner("GET", `${com}/activite?auteur=${ids.editor}`)).body?.items ?? [];
+check("12. filtre par auteur", parAuteur.length >= 1 && parAuteur.every((i) => i.auteur.id === ids.editor));
+check("12. filtre par étape (fil de l'étape 04)", ((await owner("GET", `${com}/activite?etape=4`)).body?.items ?? []).some((i) => i.titre === TITRE_INTERNE));
+check("12. filtre inconnu refusé (400)", (await owner("GET", `${com}/activite?filtre=nimporte`)).status === 400);
+const pub = await owner("POST", `/projects/${pid}/studio/studies/${studyId}/variants/${variantId}/publications`, { title: "Dossier de revue (recette communication)", requestId: rid() });
+const revues = await reader("GET", `${com}/revues`);
+check("12. revues liées : état relu à Studio, lisible du lecteur", revues.status === 200 && Array.isArray(revues.body) && (pub.status !== 201 || revues.body.some((r) => r.id === pub.body?.id && r.statut === pub.body?.status)), `${pub.status} ${JSON.stringify(revues.body)}`);
+const filVariante = await editor("POST", `${com}/conversations`, { mode: "contexte", title: "Échange sur la variante (recette)", audience: "projet", context: { type: "studio-variante", ref: variantId } });
+check("12. panneau contextuel Studio : fil sur la variante, listé par son contexte", filVariante.status === 201 && filVariante.body?.context?.label?.includes("Étude communication") && ((await reader("GET", `${com}/conversations?contexte=studio-variante:${variantId}`)).body?.conversations ?? []).some((c) => c.id === filVariante.body?.id), JSON.stringify(filVariante.body));
+check("12. panneau contextuel Documents : un document absent du projet est refusé (422)", (await owner("POST", `${com}/conversations`, { mode: "contexte", title: "x", audience: "equipe", context: { type: "document", ref: "inexistant" } })).body?.error === "reference_invalide");
+
+// ---------------------------------------------------------------------------------------------------------------------
 // 10. Révocation avant synchronisation
 const enFile = rid();
 check("10. le lecteur est retiré du projet", (await owner("DELETE", `/projects/${pid}/members/${ids.reader}`)).status === 204);
@@ -263,6 +289,10 @@ try {
   const kbd = await page.locator('[data-raccourci-collaboration="envoyer-message"]').first().textContent();
   check("11. raccourci affiché à côté de la commande", kbd === "Alt+Maj+5", String(kbd));
   check("11. section Demandes de précision listée", await page.locator("[data-com-demandes]").isVisible());
+  check("11. activité du projet et revues liées affichées", await page.locator("[data-com-activite]").isVisible() && await page.locator("[data-com-revues]").isVisible());
+  await page.locator('[data-com-filtre="a-traiter"]').click();
+  await page.locator("[data-com-activite-item]").first().waitFor({ timeout: 15_000 });
+  check("11. filtre « À traiter par moi » dans l'interface", (await page.locator("[data-com-activite-item]").count()) >= 1);
   if (OUT) { mkdirSync(OUT, { recursive: true }); await page.screenshot({ path: `${OUT}/communication-projet.png`, fullPage: false }); }
   await page.goto(`${BASE}/boite`, { waitUntil: "domcontentloaded" });
   await page.locator("[data-com-boite]").waitFor({ timeout: 30_000 });

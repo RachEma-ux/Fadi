@@ -19,6 +19,7 @@
 - [x] COM-3 — Demandes de précision (`lib/demandes-regles.ts`, `lib/demandes.ts`, `routes/demandes.ts`).
 - [x] COM-4 — Accusés, boîte (`GET /com/boite`), notifications `message` et `demande`.
 - [x] COM-5 — Interface : section Communication, demandes, panneau d'étape, « Ma boîte », règle d'or, traduction anglaise.
+- [x] COM-5 bis — Activité du projet filtrable, revues Studio liées, panneaux contextuels Studio et Documents (relecture du `.docx`).
 - [x] COM-6 — File d'envoi rejouable hors ligne et états montrés.
 - [x] COM-7 — Responsabilités et reprise (animation, réattribution).
 - [x] COM-8 — Recette `apps/web/e2e/communication.mjs` (CI, tranche `complements`) et documentation.

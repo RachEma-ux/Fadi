@@ -21,6 +21,10 @@
  *   POST   /messages/:id/actions/apercu             → action liée : demande | observation-studio (COM-R7)
  *   POST   /messages/:id/actions                    → idem + { empreinte } : 201
  *   GET    /responsabilites                          → propriétaire : responsabilités ouvertes par personne (COM-7)
+ *   GET    /activite[?filtre=&auteur=&depuis=&etape=] → activité du projet autorisée (concept « Project activity ») :
+ *                                                     messages, demandes, observations, tâches, décisions, revues et
+ *                                                     diffusions Studio, chacun avec son libellé et sa source
+ *   GET    /revues                                  → revues Studio liées (« Requests and reviews ») : état relu à la source
  *
  * Toute route relit l'accès courant (`loadProjectAccess`) : une conversation illisible est introuvable (404).
  */
@@ -29,6 +33,8 @@ import { and, asc, desc, eq, gt, inArray, isNull, ne, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client.js";
 import {
+  collabDemandeEvents, studioComments, studioObservationDecisions, studioObservationEvents, studioObservationTaskEvents, studioObservationTasks, studioObservations,
+  studioPublicationEvents, studioPublications, studioStudies, studioVariants,
   collabDemandes, comConversations, comEvents, comLinks, comMessageVersions, comMessages, comParticipants, comReads, comReceipts, users,
   type ComAudience, type ComRef,
 } from "../db/schema.js";
@@ -578,6 +584,147 @@ comRouter.get("/responsabilites", endpoint(async (req, res) => {
   res.json([...personnes.entries()].map(([id, r]) => ({ userId: id, email: mails.get(id) ?? "?", aAcces: comptes.has(id), role: comptes.get(id)?.role ?? null, ...r }))
     .filter((p) => p.demandesARepondre.length + p.demandesOuvertes.length + p.conversationsAnimees.length + p.accusesAttendus.length > 0)
     .sort((a, b) => Number(a.aAcces) - Number(b.aAcces) || a.email.localeCompare(b.email)));
+}));
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Activité du projet (concept « Project activity and personal inbox ») : événements autorisés d'un projet, filtrés par les
+// droits de chacun ; chaque entrée nomme sa source et son sens (un commentaire, une tâche terminée et une approbation ont
+// des libellés distincts). Le fil sert à naviguer : l'enregistrement d'origine reste la référence.
+
+export type FamilleActivite = "message" | "demande" | "observation" | "tache" | "decision" | "revue" | "diffusion";
+export interface EntreeActivite {
+  id: string;
+  famille: FamilleActivite;
+  libelle: string;
+  at: string;
+  /** Heure de capture (hors ligne) quand elle diffère de la réception par le serveur. */
+  capturedAt: string | null;
+  auteur: { id: string; email: string };
+  titre: string;
+  texte: string;
+  lien: { conversationId?: string; demandeId?: string; studyId?: string; variantId?: string };
+  aTraiter: boolean;
+  /** Étape du Parcours concernée (contexte de la conversation ou étape citée) : filtre « lieu », jamais renvoyé. */
+  etape?: string | null;
+}
+
+const LIBELLE_DEMANDE: Record<string, string> = { ouvrir: "Question posée", repondre: "Réponse", cloturer: "Clôture de la demande", rouvrir: "Réouverture de la demande", reattribuer: "Réattribution de la demande" };
+const LIBELLE_OBSERVATION: Record<string, string> = { ouvrir: "Observation ouverte", corriger: "Observation déclarée corrigée", recontroler: "Observation recontrôlée", cloturer: "Observation clôturée", rouvrir: "Observation rouverte", reattribuer: "Observation réattribuée" };
+const LIBELLE_TACHE: Record<string, string> = { creer: "Tâche confiée", terminer: "Tâche terminée", annuler: "Tâche annulée", rouvrir: "Tâche rouverte", reattribuer: "Tâche réattribuée" };
+const LIBELLE_PUBLICATION: Record<string, string> = { creer: "Dossier préparé", soumettre: "Soumis à approbation", approuver: "Approbation enregistrée", refuser: "Refus enregistré", diffuser: "Diffusion", retirer: "Retrait de la diffusion", actualiser: "Dossier actualisé", remplacer: "Dossier remplacé" };
+
+export async function activiteDuProjet(access: AccessibleProject, userId: string): Promise<EntreeActivite[]> {
+  const out: EntreeActivite[] = [];
+  const role = access.role;
+  const studioVisible = seesTeam(role) ? undefined : sql`coalesce(${studioComments.audience}, 'projet') = 'projet'`;
+  // Messages des conversations lisibles (depuis l'historique reçu).
+  const convs = await db.select().from(comConversations).where(eq(comConversations.projectId, access.id));
+  for (const conv of convs) {
+    const parts = await participationsDe(conv.id);
+    const moi = lecteur(userId, role, parts);
+    if (!peutLire(conv.audience, moi)) continue;
+    const debut = debutHistorique(conv.audience, moi);
+    const msgs = await db.select({ m: comMessages, email: users.email }).from(comMessages).innerJoin(users, eq(users.id, comMessages.authorId))
+      .where(and(eq(comMessages.conversationId, conv.id), isNull(comMessages.withdrawnAt), ...(debut ? [gt(comMessages.createdAt, new Date(debut.getTime() - 1))] : []))).orderBy(desc(comMessages.createdAt)).limit(200);
+    const recus = msgs.length ? await db.select().from(comReceipts).where(and(inArray(comReceipts.messageId, msgs.map((x) => x.m.id)), eq(comReceipts.userId, userId))) : [];
+    for (const { m, email } of msgs) {
+      const accuseAttendu = m.ackRequired && m.authorId !== userId && role !== "support" && !recus.some((r) => r.messageId === m.id && r.acknowledgedAt);
+      out.push({
+        id: `message:${m.id}`, famille: "message", libelle: m.nature === "partage" ? "Extrait partagé" : m.nature === "action" ? "Action liée" : m.ackRequired ? "Message — accusé de réception demandé" : "Message",
+        at: m.createdAt.toISOString(), capturedAt: m.capturedAt && Math.abs(m.capturedAt.getTime() - m.createdAt.getTime()) > 60_000 ? m.capturedAt.toISOString() : null,
+        auteur: { id: m.authorId, email }, titre: conv.title, texte: extrait(m.body, 160),
+        lien: { conversationId: conv.id }, aTraiter: accuseAttendu,
+        etape: conv.contextType === "etape" ? conv.contextRef : m.refs.find((r) => r.type === "etape")?.id ?? null,
+      });
+    }
+  }
+  // Demandes de précision (audience E1).
+  const demandes = await db.select({ e: collabDemandeEvents, d: collabDemandes, email: users.email }).from(collabDemandeEvents)
+    .innerJoin(collabDemandes, eq(collabDemandes.id, collabDemandeEvents.demandeId)).innerJoin(users, eq(users.id, collabDemandeEvents.actorId))
+    .where(and(eq(collabDemandes.projectId, access.id), ...(seesTeam(role) ? [] : [eq(collabDemandes.audience, "projet")]))).orderBy(desc(collabDemandeEvents.at)).limit(300);
+  for (const { e, d, email } of demandes) {
+    out.push({
+      id: `demande:${e.id}`, famille: "demande", libelle: LIBELLE_DEMANDE[e.action] ?? e.action, at: e.at.toISOString(), capturedAt: null, auteur: { id: e.actorId, email },
+      titre: extrait(d.question, 80), texte: e.body ? extrait(e.body, 160) : "", lien: { demandeId: d.id },
+      aTraiter: e.action === "ouvrir" && d.statut === "ouverte" && d.responderId === userId,
+    });
+  }
+  // Observations, tâches et décisions Studio (audience du fil d'origine).
+  const obs = await db.select({ e: studioObservationEvents, body: studioComments.body, email: users.email, variantId: studioVariants.id, studyId: studioStudies.id, variant: studioVariants.name })
+    .from(studioObservationEvents).innerJoin(studioObservations, eq(studioObservations.commentId, studioObservationEvents.observationId))
+    .innerJoin(studioComments, eq(studioComments.id, studioObservations.commentId)).innerJoin(studioVariants, eq(studioVariants.id, studioObservations.variantId))
+    .innerJoin(studioStudies, eq(studioStudies.id, studioVariants.studyId)).innerJoin(users, eq(users.id, studioObservationEvents.actorId))
+    .where(and(eq(studioStudies.projectId, access.id), studioVisible)).orderBy(desc(studioObservationEvents.at)).limit(200);
+  for (const o of obs) out.push({ id: `observation:${o.e.id}`, famille: "observation", libelle: LIBELLE_OBSERVATION[o.e.action] ?? o.e.action, at: o.e.at.toISOString(), capturedAt: null, auteur: { id: o.e.actorId, email: o.email }, titre: `Variante « ${o.variant} »`, texte: extrait(o.body, 160), lien: { studyId: o.studyId, variantId: o.variantId }, aTraiter: false });
+  const taches = await db.select({ e: studioObservationTaskEvents, libelle: studioObservationTasks.libelle, assignee: studioObservationTasks.assigneeId, statut: studioObservationTasks.statut, email: users.email, variantId: studioVariants.id, studyId: studioStudies.id, variant: studioVariants.name })
+    .from(studioObservationTaskEvents).innerJoin(studioObservationTasks, eq(studioObservationTasks.id, studioObservationTaskEvents.taskId))
+    .innerJoin(studioObservations, eq(studioObservations.commentId, studioObservationTasks.observationId)).innerJoin(studioComments, eq(studioComments.id, studioObservations.commentId))
+    .innerJoin(studioVariants, eq(studioVariants.id, studioObservations.variantId)).innerJoin(studioStudies, eq(studioStudies.id, studioVariants.studyId)).innerJoin(users, eq(users.id, studioObservationTaskEvents.actorId))
+    .where(and(eq(studioStudies.projectId, access.id), studioVisible)).orderBy(desc(studioObservationTaskEvents.at)).limit(200);
+  for (const t of taches) out.push({ id: `tache:${t.e.id}`, famille: "tache", libelle: LIBELLE_TACHE[t.e.action] ?? t.e.action, at: t.e.at.toISOString(), capturedAt: null, auteur: { id: t.e.actorId, email: t.email }, titre: `Variante « ${t.variant} »`, texte: t.libelle, lien: { studyId: t.studyId, variantId: t.variantId }, aTraiter: t.e.action === "creer" && t.assignee === userId && t.statut === "a-faire" });
+  const decisions = await db.select({ e: studioObservationDecisions, body: studioComments.body, email: users.email, variantId: studioVariants.id, studyId: studioStudies.id, variant: studioVariants.name })
+    .from(studioObservationDecisions).innerJoin(studioObservations, eq(studioObservations.commentId, studioObservationDecisions.observationId))
+    .innerJoin(studioComments, eq(studioComments.id, studioObservations.commentId)).innerJoin(studioVariants, eq(studioVariants.id, studioObservations.variantId))
+    .innerJoin(studioStudies, eq(studioStudies.id, studioVariants.studyId)).innerJoin(users, eq(users.id, studioObservationDecisions.actorId))
+    .where(and(eq(studioStudies.projectId, access.id), studioVisible)).orderBy(desc(studioObservationDecisions.at)).limit(200);
+  for (const d of decisions) out.push({ id: `decision:${d.e.id}`, famille: "decision", libelle: d.e.nature === "decision" ? "Décision consignée" : "Proposition", at: d.e.at.toISOString(), capturedAt: null, auteur: { id: d.e.actorId, email: d.email }, titre: `Variante « ${d.variant} »`, texte: extrait(d.body, 160), lien: { studyId: d.studyId, variantId: d.variantId }, aTraiter: false });
+  // Revues et diffusions Studio : l'état formel reste celui de Studio, COM l'affiche seulement.
+  const pubs = await db.select({ e: studioPublicationEvents, p: studioPublications, email: users.email }).from(studioPublicationEvents)
+    .innerJoin(studioPublications, eq(studioPublications.id, studioPublicationEvents.publicationId)).innerJoin(users, eq(users.id, studioPublicationEvents.authorId))
+    .where(eq(studioPublications.projectId, access.id)).orderBy(desc(studioPublicationEvents.createdAt)).limit(200);
+  for (const { e, p, email } of pubs) out.push({
+    id: `publication:${e.id}`, famille: e.action === "diffuser" || e.action === "retirer" ? "diffusion" : "revue", libelle: LIBELLE_PUBLICATION[e.action] ?? e.action,
+    at: e.createdAt.toISOString(), capturedAt: null, auteur: { id: e.authorId, email }, titre: p.title, texte: e.comment ? extrait(e.comment, 160) : "",
+    lien: { studyId: p.studyId, variantId: p.variantId }, aTraiter: false,
+  });
+  return out.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
+}
+
+const FILTRES_ACTIVITE = ["tout", "a-traiter", "questions-ouvertes", "messages", "demandes", "observations", "revues", "decisions"] as const;
+
+comRouter.get("/activite", endpoint(async (req, res) => {
+  const access = await projectOr404(req, res, "read");
+  if (!access) return;
+  const q = req.query as Record<string, unknown>;
+  const filtre = (FILTRES_ACTIVITE as readonly string[]).includes(String(q["filtre"] ?? "tout")) ? String(q["filtre"] ?? "tout") : null;
+  if (!filtre) throw new ComError(400, { error: "invalid_input", message: `Filtre inconnu : ${FILTRES_ACTIVITE.join(", ")}.` });
+  const depuis = typeof q["depuis"] === "string" && /^\d{4}-\d{2}-\d{2}$/.test(q["depuis"]) ? q["depuis"] : null;
+  const auteur = typeof q["auteur"] === "string" && q["auteur"] ? q["auteur"] : null;
+  const etape = typeof q["etape"] === "string" && q["etape"] ? q["etape"] : null;
+  let items = await activiteDuProjet(access, req.user!.id);
+  const ouvertes = filtre === "questions-ouvertes" ? new Set((await db.select({ id: collabDemandes.id }).from(collabDemandes).where(and(eq(collabDemandes.projectId, access.id), eq(collabDemandes.statut, "ouverte")))).map((r) => r.id)) : null;
+  items = items.filter((i) => {
+    if (filtre === "a-traiter" && !i.aTraiter) return false;
+    if (filtre === "questions-ouvertes" && !(i.famille === "demande" && i.lien.demandeId && ouvertes!.has(i.lien.demandeId) && i.libelle === LIBELLE_DEMANDE["ouvrir"])) return false;
+    if (filtre === "messages" && i.famille !== "message") return false;
+    if (filtre === "demandes" && i.famille !== "demande") return false;
+    if (filtre === "observations" && !(i.famille === "observation" || i.famille === "tache")) return false;
+    if (filtre === "revues" && !(i.famille === "revue" || i.famille === "diffusion")) return false;
+    if (filtre === "decisions" && !(i.famille === "decision" || i.libelle === LIBELLE_PUBLICATION["approuver"])) return false;
+    if (auteur && i.auteur.id !== auteur) return false;
+    if (depuis && i.at.slice(0, 10) < depuis) return false;
+    if (etape && i.etape !== etape) return false;
+    return true;
+  });
+  const comptes = await comptesDuProjet(access.id);
+  res.setHeader("Cache-Control", "private, no-store");
+  res.json({ items: items.slice(0, 300).map(({ etape: _etape, ...i }) => i), auteurs: [...comptes.entries()].map(([id, c]) => ({ id, email: c.email })).sort((a, b) => a.email.localeCompare(b.email)) });
+}));
+
+/** Revues Studio liées (« Requests and reviews ») : dossiers soumis, approuvés, refusés, diffusés ou retirés ; état relu à Studio. */
+comRouter.get("/revues", endpoint(async (req, res) => {
+  const access = await projectOr404(req, res, "read");
+  if (!access) return;
+  const rows = await db.select({ p: studioPublications, study: studioStudies.name, variant: studioVariants.name }).from(studioPublications)
+    .innerJoin(studioStudies, eq(studioStudies.id, studioPublications.studyId)).innerJoin(studioVariants, eq(studioVariants.id, studioPublications.variantId))
+    .where(eq(studioPublications.projectId, access.id)).orderBy(desc(studioPublications.updatedAt)).limit(200);
+  const mails = await emails(rows.flatMap(({ p }) => [p.createdBy, p.approvedBy, p.diffusedBy].filter((x): x is string => !!x)));
+  res.setHeader("Cache-Control", "private, no-store");
+  res.json(rows.map(({ p, study, variant }) => ({
+    id: p.id, title: p.title, statut: p.status, studyId: p.studyId, variantId: p.variantId, etude: study, variante: variant, revisionId: p.revisionId,
+    preparePar: mails.get(p.createdBy) ?? "?", approuvePar: p.approvedBy ? mails.get(p.approvedBy) ?? "?" : null, approuveLe: p.approvedAt?.toISOString() ?? null,
+    diffusePar: p.diffusedBy ? mails.get(p.diffusedBy) ?? "?" : null, diffuseLe: p.diffusedAt?.toISOString() ?? null, majLe: p.updatedAt.toISOString(),
+  })));
 }));
 
 // ---------------------------------------------------------------------------------------------------------------------

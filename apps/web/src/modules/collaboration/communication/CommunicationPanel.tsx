@@ -51,9 +51,15 @@ export function Reference({ projectId, r }: { projectId: string; r: ComRefResolu
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-export function CommunicationPanel({ projectId, contexte }: { projectId: string; contexte?: { type: "etape"; ref: string } }) {
+/**
+ * Contexte d'un panneau contextuel (concept « Studio Parcours Documents > Contextual panel ») : étape, document produit ou
+ * variante Studio. `ref` fixe l'élément ; sans `ref`, `choix` propose les éléments du type à la création.
+ */
+export interface ContexteCom { type: "etape" | "document" | "studio-variante"; ref?: string; choix?: { ref: string; label: string }[] }
+
+export function CommunicationPanel({ projectId, contexte }: { projectId: string; contexte?: ContexteCom }) {
   const queryClient = useQueryClient();
-  const cle = contexte ? `${contexte.type}:${contexte.ref}` : undefined;
+  const cle = contexte ? (contexte.ref ? `${contexte.type}:${contexte.ref}` : contexte.type) : undefined;
   const q = useQuery({ queryKey: ["com", projectId, "conversations", cle ?? "tout"], queryFn: () => comApi.conversations(projectId, cle) });
   const access = useProjectAccess(projectId);
   const [choisie, setChoisie] = useState<string | null>(null);
@@ -75,7 +81,7 @@ export function CommunicationPanel({ projectId, contexte }: { projectId: string;
       </div>
       {creation && <NouvelleConversation projectId={projectId} membres={membres} contexte={contexte} role={access.role} onCreee={(id) => { setCreation(false); setChoisie(id); void queryClient.invalidateQueries({ queryKey: ["com", projectId] }); }} onAnnuler={() => setCreation(false)} />}
       {conversations.length === 0 ? (
-        <p className="h7-muted">Aucune conversation{contexte ? " sur cette étape" : ""} que vous puissiez lire.</p>
+        <p className="h7-muted">Aucune conversation{contexte ? " sur cet élément" : ""} que vous puissiez lire.</p>
       ) : (
         <ul className="com-liste">
           {conversations.map((c) => (
@@ -96,18 +102,19 @@ export function CommunicationPanel({ projectId, contexte }: { projectId: string;
   );
 }
 
-function NouvelleConversation({ projectId, membres, contexte, role, onCreee, onAnnuler }: { projectId: string; membres: ComMembre[]; contexte?: { type: "etape"; ref: string }; role: string; onCreee: (id: string) => void; onAnnuler: () => void }) {
+function NouvelleConversation({ projectId, membres, contexte, role, onCreee, onAnnuler }: { projectId: string; membres: ComMembre[]; contexte?: ContexteCom; role: string; onCreee: (id: string) => void; onAnnuler: () => void }) {
   const lecteur = role === "lecteur";
   const [mode, setMode] = useState<ComMode>("contexte");
   const [title, setTitle] = useState("");
   const [audience, setAudience] = useState<ComAudience>(lecteur ? "projet" : "equipe");
-  const [ctxType, setCtxType] = useState<string>(contexte ? "etape" : "projet");
-  const [etape, setEtape] = useState(contexte?.ref ?? "1");
+  const [ctxType, setCtxType] = useState<string>(contexte ? contexte.type : "projet");
+  const [etape, setEtape] = useState(contexte?.type === "etape" && contexte.ref ? contexte.ref : "1");
+  const [ctxRef, setCtxRef] = useState(contexte && contexte.type !== "etape" ? contexte.ref ?? contexte.choix?.[0]?.ref ?? "" : "");
   const [participants, setParticipants] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const creer = useMutation({
     mutationFn: () => comApi.creer(projectId, mode === "contexte"
-      ? { mode, title: title.trim(), audience, context: ctxType === "etape" ? { type: "etape", ref: etape } : { type: "projet" } }
+      ? { mode, title: title.trim(), audience, context: ctxType === "etape" ? { type: "etape", ref: etape } : ctxType === "projet" ? { type: "projet" } : { type: ctxType, ref: ctxRef } }
       : { mode, ...(title.trim() ? { title: title.trim() } : {}), participantIds: participants }),
     onSuccess: (c) => onCreee(c.id),
     onError: (err) => setError(erreur(err, "La conversation n’a pas pu être créée.")),
@@ -134,8 +141,17 @@ function NouvelleConversation({ projectId, membres, contexte, role, onCreee, onA
             <select value={ctxType} onChange={(e) => setCtxType(e.target.value)} disabled={!!contexte}>
               <option value="projet">Projet</option>
               <option value="etape">Étape du Parcours</option>
+              {contexte?.type === "document" && <option value="document">Document</option>}
+              {contexte?.type === "studio-variante" && <option value="studio-variante">Variante Studio</option>}
             </select>
           </label>
+          {contexte?.type === "document" && (
+            <label>Document
+              <select value={ctxRef} onChange={(e) => setCtxRef(e.target.value)} disabled={!!contexte.ref}>
+                {(contexte.choix ?? []).map((c) => <option key={c.ref} value={c.ref}>{c.label}</option>)}
+              </select>
+            </label>
+          )}
           {ctxType === "etape" && (
             <label>Étape
               <select value={etape} onChange={(e) => setEtape(e.target.value)} disabled={!!contexte}>

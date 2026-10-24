@@ -10,7 +10,8 @@ Mis à jour : 2026-10-24 (UTC).
 
 ## Dernier état vérifié
 
-- Plan, décisions et phases COM-1 à COM-8 implémentés ; vérifications locales consignées dans STATUS.md.
+- Plan, décisions et phases COM-1 à COM-8 et COM-5 bis implémentés (le `.docx` du concept, relu, est identique au
+  `.md`) ; vérifications locales consignées dans STATUS.md.
 
 ## Prochaine action
 
