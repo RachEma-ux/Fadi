@@ -129,6 +129,9 @@ travail et permission inspectables séparément ; aucun droit modifié pour les 
    (Lecteur : lire, commenter ; Concepteur : modifier ; Relecteur : constats ; Approbateur et Diffuseur : approbation et
    diffusion Studio, aujourd'hui réservées au propriétaire), sans perte d'accès pour un membre existant ; le miroir
    `acces` est alors retiré. Journal des écritures de participation (tâche 5 de la phase 1).
+6. **Effacement des contacts sans compte (OP-D9, OP-2)** : effacement sur demande de la personne ; effacement automatique
+   2 ans après la clôture du projet, une fois défini l'état « clos » du projet (absent du modèle actuel) et levée la
+   réserve juridique sur les obligations de conservation.
 
 ### Tests
 DB-3 : contact sans accès invisible des droits ; terminer une participation retire l'accès dérivé à la requête suivante.
@@ -256,8 +259,9 @@ accord explicite. 🛑 Point d'arrêt final.
 
 ## Annexe A — Décisions à prendre par le maître d'ouvrage (🛑 0)
 
-Réponses du maître d'ouvrage du 2026-10-23 : [DECISIONS.md](DECISIONS.md), OP-1 (OP-D3 c, OP-D7 a ; les autres selon la
-recommandation ; durée de conservation d'OP-D9 encore à fixer).
+Réponses du maître d'ouvrage : [DECISIONS.md](DECISIONS.md), OP-1 du 2026-10-23 (OP-D3 c, OP-D7 a ; les autres selon la
+recommandation) et OP-2 du 2026-10-24 (durée de conservation d'OP-D9 ; OP-D12 révisée : la préproduction envoie les
+courriels, sauf vers les domaines réservés aux essais).
 
 | N° | Question | Options | Recommandation |
 | --- | --- | --- | --- |
@@ -269,10 +273,10 @@ recommandation ; durée de conservation d'OP-D9 encore à fixer).
 | OP-D6 | Constats externes | (a) observations Studio avec une audience « revue externe » ; (b) table distincte | (a) — une seule boucle de correction |
 | OP-D7 | Un participant externe peut-il **approuver** ? | (a) oui, par une affectation d'approbation explicite et nominative ; (b) non, approbation réservée au propriétaire (règle actuelle) | décision métier : pas de recommandation |
 | OP-D8 | Accès et permissions par défaut d'un relecteur externe | (a) compte identifié obligatoire (double authentification facultative) ; consulter et commenter ; télécharger, exporter et joindre seulement si accordé ; (b) autre | (a) — droits explicites (concept 2) |
-| OP-D9 | Contacts sans compte : champs, visibilité, durée de conservation (RGPD) | proposition : autorisés ; coordonnées visibles des seuls responsables du projet ; aucune invitation implicite ; conservation à définir | décision métier et juridique |
+| OP-D9 | Contacts sans compte : champs, visibilité, durée de conservation (RGPD) | proposition : autorisés ; coordonnées visibles des seuls responsables du projet ; aucune invitation implicite ; conservation à définir | **décidé (OP-2)** : durée du projet + 2 ans après sa clôture, puis effacement ; plus tôt sur demande ; obligations légales à vérifier |
 | OP-D10 | Partie 5 (organisations) après la revue externe | (a) oui (séquence du concept) ; (b) avant | (a) |
 | OP-D11 | 5e finalité « session temps réel » et « ressource restreinte » | (a) hors périmètre de ce chantier ; (b) incluses | (a) — aucun module temps réel |
-| OP-D12 | Courriels | (a) la préproduction n'envoie rien (liens affichés) ; l'ouverture de la revue externe en production exige un envoi de courriels configuré ; (b) autre | (a) |
+| OP-D12 | Courriels | (a) la préproduction n'envoie rien (liens affichés) ; l'ouverture de la revue externe en production exige un envoi de courriels configuré ; (b) autre | **révisée (OP-2)** : la préproduction envoie (`noreply@fadimmo.com`), jamais vers les domaines réservés aux essais (lien affiché) ; PR distincte UM-28 |
 | OP-D13 | Lecteurs du journal (phase 3 bis) | (a) administrateur de la plateforme : tout ; responsable de projet : l'activité de son projet ; utilisateur : son propre historique ; (b) autre | (a) |
 
 ## Annexe B — Hors périmètre

@@ -15,8 +15,10 @@ Mis à jour : 2026-10-23 (UTC).
 ## Prochaine action
 
 - Phase 1 sur `feat/op-phase1-participations` (PR à suivre jusqu'au vert) ; attendre la revue 🛑 1 du maître d'ouvrage.
+- Décisions OP-2 du 2026-10-24 consignées (OP-D9 conservation, OP-D12 révisée) ; l'envoi des courriels de préproduction
+  relève de la PR distincte UM-28, pas de ce chantier.
 - Ensuite, phase 2 : API et écran « Équipe et participants », bascule de l'accès vers les six rôles (OP-D3 c), journal des
-  écritures de participation.
+  écritures de participation, effacement des contacts sans compte (OP-D9).
 
 ## Tests et preuves
 

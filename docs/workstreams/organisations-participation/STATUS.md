@@ -34,7 +34,9 @@ la revue 🛑 1.**
 ## Points ouverts
 
 - Revue 🛑 1 de la phase 1 (modèle et migration) par le maître d'ouvrage.
-- OP-D9 : durée de conservation des contacts sans compte, à fixer.
+- OP-D9 décidée le 2026-10-24 (OP-2 : projet + 2 ans après clôture, plus tôt sur demande) ; effacement à livrer en phase 2 ;
+  réserve : obligations légales de conservation à vérifier par le conseil juridique du maître d'ouvrage.
+- OP-D12 révisée le 2026-10-24 (OP-2) : envoi réel des courriels en préproduction, réalisé dans une PR distincte (UM-28).
 
 ## Liens de suivi
 

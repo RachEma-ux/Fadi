@@ -24,7 +24,20 @@ Journal du chantier. Les décisions héritées de la gestion des comptes (D-1 à
     coordonnées visibles des seuls responsables du projet ; aucune invitation implicite. **Durée de conservation : à
     fixer par le maître d'ouvrage** (aucune purge automatique n'est livrée avant).
 
+- **OP-2 — Conservation des contacts et courriels de préproduction (2026-10-24).** Réponse du maître d'ouvrage
+  (« OK pour les deux »), transmise par la session d'exploitation :
+  - **OP-D9, durée de conservation** : un contact sans compte est conservé pendant la durée du projet et **2 ans après sa
+    clôture**, puis effacé automatiquement ; il est effacé plus tôt à la demande de la personne. Réserve : d'éventuelles
+    obligations légales de conservation (par exemple la garantie décennale) sont à vérifier par le conseil juridique du
+    maître d'ouvrage. L'effacement n'est pas livré en phase 1 : tâche de la phase 2 (PLAN.md, tâche 6), qui dépend d'un
+    état « clos » du projet, absent du modèle actuel.
+  - **OP-D12, révision de OP-1** : la préproduction **envoie réellement** les courriels (expéditeur
+    `noreply@fadimmo.com`, SMTP Infomaniak), jamais vers les domaines réservés aux essais (`example.com`, `example.net`,
+    `example.org`, `*.test`, `*.invalid`, `*.example`, `localhost`) : pour eux, le lien reste affiché. Réalisé hors de ce
+    chantier, dans une PR distincte (UM-28 : transmission SMTP dans `deploy/preprod` et filtre du mailer) ; l'ouverture de la
+    revue externe en production exige toujours un envoi de courriels configuré.
+
 ## Décisions en attente
 
-- OP-D9 : durée de conservation des contacts sans compte.
+- Avis juridique sur les obligations de conservation des contacts (réserve d'OP-2).
 - 🛑 1 : revue du modèle et de la migration de la phase 1 avant la phase 2.
