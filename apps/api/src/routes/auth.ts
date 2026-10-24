@@ -14,7 +14,7 @@
  *   POST   /auth/verify-email/request|confirm
  *   POST   /auth/forgot-password           réponse identique que le compte existe ou non
  *   POST   /auth/reset-password            { token, password } → révoque toutes les sessions
- *   POST   /auth/cancel-deletion           { token }
+ *   POST   /auth/cancel-deletion           { token } (même voie que « Restaurer » de la corbeille, `cancelScheduledDeletion`)
  *   POST   /auth/invitations/lookup|accept|decline ; POST /auth/activate   (UM-3)
  *
  * Aucun mot de passe, jeton ou code n'est journalisé ni stocké en clair. Les refus de connexion répondent toujours
@@ -43,7 +43,7 @@ import {
 } from "../lib/invitations.js";
 import { newId } from "../lib/ids.js";
 import { adminEnabled, removesLastAdmin } from "../lib/platform-access.js";
-import { lockAdminEligibility } from "../lib/admin-eligibility.js";
+import { lockAdminEligibility, type Tx } from "../lib/admin-eligibility.js";
 import { checkPassword, PASSWORD_MAX, PASSWORD_REFUSAL_MESSAGE } from "../lib/security/password-policy.js";
 import { lockDurationMs, loginBlock } from "../lib/security/auth-policy.js";
 import { EncryptionUnavailable, openSecret, sealSecret } from "../lib/security/secret-box.js";
@@ -804,14 +804,27 @@ authRouter.delete("/me", async (req, res) => {
   res.status(202).json({ deletionAt: scheduled.deletionAt.toISOString(), mail: deletionMail(scheduled) });
 });
 
+/**
+ * Annule une suppression programmée : la voie unique du lien d'annulation (`/auth/cancel-deletion`) et de « Restaurer »
+ * dans la corbeille de l'administration (UM-27). Le statut stocké (actif ou suspendu) n'a pas été touché par la
+ * programmation : il est rétabli tel quel. Les liens d'annulation encore valides sont consommés (sans objet désormais).
+ * Renvoie false si le compte n'est pas (ou plus) en suppression programmée — anonymisé compris.
+ */
+export async function cancelScheduledDeletion(tx: Tx, userId: string): Promise<boolean> {
+  const rows = await tx.update(users).set({ deletionRequestedAt: null })
+    .where(and(eq(users.id, userId), inArray(users.status, ["active", "suspended"]), sql`${users.deletionRequestedAt} IS NOT NULL`)).returning({ id: users.id });
+  if (!rows.length) return false;
+  await tx.update(accountTokens).set({ usedAt: new Date() })
+    .where(and(eq(accountTokens.userId, userId), eq(accountTokens.purpose, "cancel_deletion"), isNull(accountTokens.usedAt)));
+  return true;
+}
+
 authRouter.post("/cancel-deletion", async (req, res) => {
   const parsed = tokenSchema.safeParse(req.body);
   const result = parsed.success ? await db.transaction(async (tx) => {
     const id = await consumeAccountToken(parsed.data.token, "cancel_deletion", tx);
     if (!id) return null;
-    const rows = await tx.update(users).set({ deletionRequestedAt: null })
-      .where(and(eq(users.id, id), inArray(users.status, ["active", "suspended"]), sql`${users.deletionRequestedAt} IS NOT NULL`)).returning({ id: users.id });
-    if (!rows.length) return null;
+    if (!(await cancelScheduledDeletion(tx, id))) return null;
     await audit(tx, { actorId: id, action: "account.deletion.cancelled", target: { type: "user", id }, ip: clientIp(req) });
     return id;
   }) : null;

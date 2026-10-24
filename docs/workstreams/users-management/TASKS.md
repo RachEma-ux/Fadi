@@ -6,7 +6,9 @@
 
 ## En cours
 
-- Aucune tâche en cours : code fusionné, préproduction déployée ; le déploiement en production attend le maître d'ouvrage.
+- [ ] UM-27 — Corbeille des comptes et « Anonymiser maintenant » (amendement de D-5, 2026-10-24) : implémenté et vérifié
+  en local (STATUS.md) ; PR vers `main` ouverte, CI puis acceptation du maître d'ouvrage attendues ; pas de fusion ni de
+  déploiement par la session (Issue : #253).
 
 ## Terminé
 

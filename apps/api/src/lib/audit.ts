@@ -35,6 +35,8 @@ export type AuditAction =
   | "admin.user.reactivated"
   | "admin.user.sessions_revoked"
   | "admin.user.deletion_requested"
+  | "admin.user.deletion_cancelled"
+  | "admin.user.anonymized_now"
   | "admin.user.promoted_by_script"
   | "invitation.created"
   | "invitation.resent"

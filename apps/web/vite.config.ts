@@ -117,7 +117,7 @@ export default defineConfig({
     host: "0.0.0.0",
     proxy: {
       "/auth": "http://localhost:3001",
-      "^/admin/(users|invitations)": "http://localhost:3001",
+      "^/admin/(users|invitations|trash)": "http://localhost:3001",
       "/projects": "http://localhost:3001",
       "/examples": "http://localhost:3001",
       "/library": "http://localhost:3001",
@@ -140,7 +140,7 @@ export default defineConfig({
     allowedHosts: [".trycloudflare.com"],
     proxy: {
       "/auth": "http://localhost:3001",
-      "^/admin/(users|invitations)": "http://localhost:3001",
+      "^/admin/(users|invitations|trash)": "http://localhost:3001",
       "/projects": "http://localhost:3001",
       "/examples": "http://localhost:3001",
       "/library": "http://localhost:3001",

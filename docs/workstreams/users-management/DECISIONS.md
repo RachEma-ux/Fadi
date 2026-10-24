@@ -14,7 +14,7 @@ ils ne réécrivent aucune décision D-x et restent révisables par lui.
 | **D-2** Admin et contenu des projets | **Non par défaut.** L'admin gère les comptes. Accès support **lecture seule**, accordé par le propriétaire, **≤ 72 h**, révocable, visible et journalisé. | Phases 1, 3, 5 |
 | **D-3** Organisations / équipes | **Pas maintenant**, sauf exigence du concept. Colonne `organization_id` nullable réservée sur `users` et `projects`, sans logique. | Phase 1 |
 | **D-4** Tests DB-3 | **Oui** : PostGIS **éphémère** en service conteneur GitHub Actions, attesté jetable, jamais relié à la production. | Phase 6 |
-| **D-5** Suppression | **Anonymisation** après **30 jours de grâce** (annulable par lien) ; **export JSON** préalable ; transfert obligatoire des projets partagés possédés ; commentaires et révisions conservés sous « Compte supprimé ». Conforme RGPD et nLPD. | Phases 1, 4, 5 |
+| **D-5** Suppression | **Anonymisation** après **30 jours de grâce** (annulable par lien) ; **export JSON** préalable ; transfert obligatoire des projets partagés possédés ; commentaires et révisions conservés sous « Compte supprimé ». Conforme RGPD et nLPD. | Phases 1, 4, 5 ; **amendée le 2026-10-24** (UM-27 : corbeille, « Anonymiser maintenant ») |
 | **D-7** Schémas et rôles (amendement du 2026-10-22, [AMENDEMENT-D7.md](AMENDEMENT-D7.md)) | **Une seule base**, schémas `public` (tables existantes, inchangées), `auth` (tables des comptes), `admin` (audit, exploitation). **Rôles au moindre privilège** : `fadi_owner` (NOLOGIN, propriétaire), `fadi_migrator` (DDL, migrations seulement), `fadi_app` (API : DML, aucun DDL, `admin.audit_log` en SELECT / INSERT seulement), `fadi_retention` (anonymisation de colonnes du journal), `fadi_backup` (lecture seule). Mots de passe hors dépôt. Prime sur le plan pour l'emplacement des tables et les droits. | Phases 1, 6 ; amendement |
 | **D-6** Mots de passe et MFA | **12 caractères min.**, 128 max., sans règles de composition, liste de mots de passe compromis, pas d'expiration. **TOTP facultatif** pour les utilisateurs, **obligatoire pour les admins** + 10 codes de secours. Session admin ≤ 24 h et 1 h d'inactivité ; utilisateur ≤ 30 j. | Phases 1, 2, 3, 5 |
 
@@ -167,3 +167,34 @@ ils ne réécrivent aucune décision D-x et restent révisables par lui.
   `PREPROD_FADI_APP_DB_PASSWORD` : leur succès établit que `init-env` a été lancé. Le maître d'ouvrage clôt l'Issue #253
   (terminée). Reste ouvert : le déploiement en **production** (RUNBOOK.md), sur son accord explicite ; la production
   tourne toujours l'ancienne version.
+- **UM-27 — Corbeille et « Anonymiser maintenant » : amendement de D-5 (2026-10-24).** Décision du maître d'ouvrage,
+  relayée par la session d'exploitation « Fadi VPS - Audit » : « Ajoute l'option anonymiser maintenant et ajoute une
+  corbeille pour accueillir les éléments supprimés ». D-5 reste la règle par défaut (anonymisation à 30 jours, annulable
+  par lien) ; l'amendement ajoute, **pour les comptes seulement**, une corbeille d'administration et la possibilité pour un
+  administrateur d'anonymiser avant l'échéance. Concept v2.2 : **muet** (aucune exigence de corbeille ; l'attribution
+  « Compte supprimé » est inchangée, Partie 2). Arbitrages d'implémentation :
+  - *Contenu de la corbeille* : les comptes en suppression programmée (`deletion_requested_at` posé, statut stocké
+    `active` ou `suspended`), avec date d'anonymisation prévue (`anonymisationAt` = demande + 30 jours, la même borne que
+    la tâche), demandeur (titulaire ou administrateur, lu dans l'entrée du journal qui a programmé la suppression) et
+    projets partagés qui bloquent l'anonymisation. **Les comptes anonymisés n'y figurent pas** : l'anonymisation est
+    irréversible, il ne reste rien à restaurer, et une « trace non restaurable » ferait de la corbeille une seconde liste
+    des comptes fermés ; leur trace reste le statut « fermé (anonymisé) » du tableau des comptes et le journal d'audit.
+  - *« Restaurer »* : `cancelScheduledDeletion`, la voie unique du lien d'annulation (`POST /auth/cancel-deletion`) et de
+    la corbeille (`POST /admin/users/:id/restore`). La programmation ne modifie pas le statut stocké : il est rétabli tel
+    quel (un compte suspendu reste suspendu). Les liens d'annulation encore valides sont consommés ; journal
+    `admin.user.deletion_cancelled`. Aucun courriel au titulaire (pas de gabarit ; non demandé).
+  - *« Anonymiser maintenant »* (`POST /admin/users/:id/anonymize { confirmEmail }`) : n'accepte qu'un compte de la
+    corbeille ; exécute `anonymiseAccountIn`, **le code même de la tâche des 30 jours** (`lib/account-jobs.ts`, sans
+    seconde implémentation) ; adresse du compte ressaisie et revérifiée côté serveur ; refus : soi-même (422), hors corbeille
+    ou déjà anonymisé (409), adresse différente (422), projets partagés possédés (409). Transaction sous le verrou
+    d'éligibilité des administrateurs (UM-19) puis verrou de ligne : deux appels simultanés donnent un 200 et un 409. Le
+    journal reçoit **une** entrée `admin.user.anonymized_now` (acteur = administrateur, `deletedProjects`, `scheduledFor`),
+    à la place de l'entrée système `account.anonymized` de la tâche. MFA de session exigée comme pour tout `/admin`.
+  - *Dernier administrateur* : la règle est relue sous le verrou, mais elle ne peut pas se déclencher par cette route :
+    un administrateur en suppression programmée ne compte déjà plus parmi les administrateurs actifs (UM-19) et l'acteur
+    ne peut pas viser son propre compte. Vérifié en test pur (refus `last_admin`) et sur base (DB-3 : anonymiser un
+    administrateur de la corbeille ne change pas le nombre d'administrateurs actifs).
+  - *Hors périmètre, signalé* : aucune corbeille pour les projets ou documents. Le concept ne l'exige pas. Conséquence à
+    connaître : l'anonymisation (à 30 jours ou immédiate) supprime les projets **non partagés** du compte ; « Anonymiser
+    maintenant » supprime donc la fenêtre de 30 jours pendant laquelle le titulaire pouvait encore annuler et exporter.
+    La boîte de confirmation le dit. Étendre la corbeille aux projets serait une nouvelle décision du maître d'ouvrage.
