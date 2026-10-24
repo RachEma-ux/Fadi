@@ -17,6 +17,9 @@
  */
 import { chromium } from "playwright";
 import { randomBytes, randomUUID } from "node:crypto";
+import { createRequire } from "node:module";
+
+const AXE_SCRIPT = createRequire(import.meta.url).resolve("axe-core/axe.min.js");
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 let echecs = 0;
@@ -91,6 +94,14 @@ check("E2 éditeur : exporte toujours", (await editor("GET", `/projects/${pid}/a
 const accesLecteur = (await reader("GET", `/projects/${pid}/collaboration`)).body?.access;
 check("E2 lecteur : droit relu (canExport false)", accesLecteur?.role === "lecteur" && accesLecteur?.canExport === false, JSON.stringify(accesLecteur));
 
+/** axe-core (WCAG 2.2 AA) sans violation critique ni sérieuse — cases de 24 px au moins comprises (target-size). */
+async function axe(page, nom) {
+  await page.addScriptTag({ path: AXE_SCRIPT });
+  const graves = await page.evaluate(async () => (await window.axe.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"] } }))
+    .violations.filter((v) => ["critical", "serious"].includes(v.impact)).map((v) => `${v.id} (${v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join(" | ")})`));
+  check(`axe-core ${nom} : aucune violation critique ou sérieuse`, graves.length === 0, graves.join(", "));
+}
+
 // ---------------------------------------------------------------------------
 // 3. Interface.
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ?? undefined });
@@ -118,6 +129,7 @@ check("interface propriétaire : le fil porte « Visible par les lecteurs »", (
 const filInterne = pOwner.locator(`.comment[data-comment="${interne.body?.id}"]`);
 check("interface propriétaire : la note interne porte « Équipe » et un bouton « Rendre visible aux lecteurs »", (await filInterne.locator(".comment-audience").getAttribute("data-audience")) === "equipe"
   && (await filInterne.locator(`[data-audience-toggle="${interne.body?.id}"]`).count()) === 1);
+await axe(pOwner, "Collaboration du propriétaire (case d'audience, colonne Export)");
 // Export accordé depuis l'écran des membres.
 const ligne = pOwner.locator(`.members-table tr[data-member="${cReader.email}"]`);
 await ligne.waitFor({ timeout: 10000 });
@@ -135,6 +147,7 @@ const texteLecteur = await pReader.locator(".collaboration-module").textContent(
 check("interface lecteur : les fils ouverts sont lus, la note interne n'apparaît nulle part (commentaires, journal)", texteLecteur.includes("Question ouverte de recette") && !texteLecteur.includes(NOTE));
 check("interface lecteur : pas de choix d'audience, avis « lisible par tous les membres »", (await pReader.locator("[data-comment-audience]").count()) === 0 && /lisible par tous les membres du projet/.test(texteLecteur));
 check("interface lecteur : aucun bouton de changement d'audience", (await pReader.locator(".comment-audience-toggle").count()) === 0);
+await axe(pReader, "Collaboration du lecteur");
 
 // Changement d'audience par le propriétaire dans l'interface : le lecteur lit ensuite le fil.
 await filInterne.locator(`[data-audience-toggle="${interne.body?.id}"]`).click();

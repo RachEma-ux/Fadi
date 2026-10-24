@@ -39,6 +39,11 @@ restaurée ; la preuve opposable reste DB-3 en CI) :
   lecteurs ; matrice publiée régénérée), base simulée (`canExport`). Restent rouges en local seulement : « Documents —
   catalogue… » (délai de 30 s dépassé, **identique sur `main` non modifié** sur ce poste) et le registre d'autorités
   (clé locale de l'essai) — à confirmer verts en CI.
+- CI de `b619ebb` rouge (run 40114965948 et `project-layout`) : axe-core `target-size` sur la case « Visible par
+  les lecteurs » (recettes `parcours-scenario.mjs` et `comptes-admin.mjs`) et débordement horizontal à 390 px du tableau
+  des membres (nouvelle colonne « Export »). Corrigé : cases de 24 px (`style.css`), tableau dans une région
+  défilante ; `collaboration-audience.mjs` contrôle désormais axe-core (propriétaire et lecteur) : 40 contrôles verts ;
+  `project-layout.mjs` 593/593 en local. Revue Codex (course réponse / audience) corrigée, voir DECISIONS UM-29 § 5.
 - Recettes e2e (API construite servant `WEB_DIST`, rôle `fadi_app`) : `collaboration-audience.mjs` (nouvelle, **38
   contrôles verts**, journal relu en base), `studio-persistance.mjs` (293), `studio-observations.mjs` (71),
   `comptes-securite.mjs` (73) : vertes.

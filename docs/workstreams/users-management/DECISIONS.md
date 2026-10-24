@@ -234,9 +234,11 @@ ils ne réécrivent aucune décision D-x et restent révisables par lui.
      est refusée. La ligne du membre est verrouillée (`FOR UPDATE`) pour que deux changements concurrents ne journalisent
      pas le même « avant ». L'acceptation d'une invitation reste tracée par `invitation.accepted` (inchangé, phase 2
      d'Organisations).
-  2. **E2 — export du lecteur ; tranche CR-D4** dans le sens « **export explicite pour les nouveaux lecteurs, existants
-     conservés** » (la recommandation (a) de CR-D4 gardait l'export à tout lecteur interne ; le maître d'ouvrage retient
-     cette voie intermédiaire). `project_members.can_export` : migration additive — `ADD COLUMN … DEFAULT true` (chaque
+  2. **E2 — export du lecteur ; décision CR-D4 du maître d'ouvrage** (2026-10-24, réponse « A », relayée par la
+     session d'exploitation du VPS et consignée dans la PR #273) : **aucun nouveau lecteur, interne ou externe,
+     n'exporte sans droit accordé explicitement par le propriétaire ; les lecteurs existants le conservent ;
+     propriétaire et éditeur gardent l'export ; l'accès support jamais** (la recommandation (a) du cadrage gardait
+     l'export à tout lecteur interne ; elle n'est pas retenue). `project_members.can_export` : migration additive — `ADD COLUMN … DEFAULT true` (chaque
      ligne existante reçoit TRUE : aucun lecteur actuel ne perd l'export) puis `SET DEFAULT false` (nouvelles lignes,
      invitations acceptées comprises). Propriétaire et éditeur exportent toujours, l'accès support jamais
      (`accessAllows`, `lib/owned-project.ts`, vérifié par chaque route `export` : documents, archive, téléchargements,
@@ -265,3 +267,7 @@ ils ne réécrivent aucune décision D-x et restent révisables par lui.
      sont des champs de formulaire hors Planche ; aucune icône ni raccourci n'a été ajouté (à arbitrer par le maître
      d'ouvrage s'il veut l'étendre à ces écrans). La PR #265 (Organisations, phase 1) touche les mêmes fichiers : celle
      qui fusionne en second résout le conflit.
+  5. **Revue Codex de `b619ebb` (P1, retenue).** Une réponse lisait l'audience de son fil hors transaction : un
+     changement d'audience concurrent pouvait laisser une réponse « projet » dans un fil devenu « équipe ». La racine
+     du fil est désormais relue sous verrou partagé (`FOR SHARE`) dans la transaction de l'insertion, et le changement
+     d'audience la verrouille en écriture (`FOR UPDATE`) : les deux se sérialisent (Collaboration et Studio).

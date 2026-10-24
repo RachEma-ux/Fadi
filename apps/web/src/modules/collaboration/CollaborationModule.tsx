@@ -324,6 +324,7 @@ export function MembersPanel({ projectId }: { projectId: string }) {
   const busy = invite.isPending || change.isPending || remove.isPending || transfer.isPending || exportRight.isPending;
   return (
     <div className="members-panel">
+      <div className="table-scroll" tabIndex={0} role="region" aria-label="Membres du projet">
       <table className="programme-table members-table">
         <thead>
           <tr>
@@ -412,6 +413,7 @@ export function MembersPanel({ projectId }: { projectId: string }) {
           )}
         </tbody>
       </table>
+      </div>
       {isOwner && (
         <form
           className="members-invite"

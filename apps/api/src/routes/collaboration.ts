@@ -18,7 +18,7 @@
  * commentaires). Le partage (membres et rôles) est dans `members.ts` ; tout
  * membre peut commenter, un lecteur ne peut rien modifier d'autre.
  */
-import { Router, type Response } from "express";
+import { Router } from "express";
 import { and, asc, count, desc, eq, inArray, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { PARCOURS_STEPS } from "../data/parcours.js";
@@ -242,7 +242,6 @@ function commentView(c: typeof projectComments.$inferSelect, userId: string) {
   return { id: c.id, stepNumber: c.stepNumber, parentId: c.parentId ?? null, atelierRevision: c.atelierRevision ?? null, authorEmail: c.authorEmail, body: c.body, audience: c.audience, createdAt: c.createdAt.toISOString(), mine: c.authorId === userId };
 }
 
-const audienceRefusal = (res: Response, e: AudienceError) => void res.status(e.status).json(e.body);
 
 collaborationRouter.get("/", async (req, res) => {
   const project = await projectOr404(req, res, "read");
@@ -330,37 +329,48 @@ collaborationRouter.post("/comments", async (req, res) => {
     }
     stepNumber = null;
   }
-  let parentId: string | null = null;
-  let threadAudience: typeof projectComments.$inferSelect.audience | undefined;
-  if (parsed.data.parentId) {
-    // Un fil réservé à l'équipe n'existe pas pour un lecteur : même 404 qu'un commentaire supprimé.
-    const [parent] = await db
-      .select({ id: projectComments.id, stepNumber: projectComments.stepNumber, parentId: projectComments.parentId, atelierRevision: projectComments.atelierRevision, audience: projectComments.audience })
-      .from(projectComments)
-      .where(visibleComments(project.id, project.role, eq(projectComments.id, parsed.data.parentId)))
-      .limit(1);
-    if (!parent) {
-      res.status(404).json({ error: "not_found", message: "Le commentaire auquel vous répondez n'existe plus." });
-      return;
+  // Réponse et changement d'audience du fil sérialisés (revue Codex de la PR #274) : la racine du fil est relue sous
+  // verrou partagé dans la transaction de l'insertion, le PATCH la verrouille en écriture ; une réponse ne peut donc pas
+  // garder l'ancienne audience d'un fil qui vient d'être réservé à l'équipe.
+  const outcome = await db.transaction(async (tx) => {
+    let parentId: string | null = null;
+    let threadAudience: typeof projectComments.$inferSelect.audience | undefined;
+    if (parsed.data.parentId) {
+      // Un fil réservé à l'équipe n'existe pas pour un lecteur : même 404 qu'un commentaire supprimé.
+      const [parent] = await tx
+        .select({ id: projectComments.id, parentId: projectComments.parentId })
+        .from(projectComments)
+        .where(visibleComments(project.id, project.role, eq(projectComments.id, parsed.data.parentId)))
+        .limit(1);
+      // Un seul niveau de fil (comme un fil de discussion lisible) : répondre à une réponse rattache au commentaire d'origine.
+      const [root] = parent
+        ? await tx
+          .select({ id: projectComments.id, stepNumber: projectComments.stepNumber, atelierRevision: projectComments.atelierRevision, audience: projectComments.audience })
+          .from(projectComments)
+          .where(visibleComments(project.id, project.role, eq(projectComments.id, parent.parentId ?? parent.id)))
+          .limit(1)
+          .for("share")
+        : [];
+      if (!root) return { status: 404 as const, body: { error: "not_found", message: "Le commentaire auquel vous répondez n'existe plus." } };
+      parentId = root.id;
+      stepNumber = root.stepNumber;
+      atelierRevision = root.atelierRevision ?? null;
+      threadAudience = root.audience;
     }
-    // Un seul niveau de fil (comme un fil de discussion lisible) : répondre à une réponse rattache au commentaire d'origine.
-    parentId = parent.parentId ?? parent.id;
-    stepNumber = parent.stepNumber;
-    atelierRevision = parent.atelierRevision ?? null;
-    threadAudience = parent.audience;
-  }
-  let audience;
-  try {
-    audience = audienceOfNew(project.role, parsed.data.audience, threadAudience);
-  } catch (e) {
-    if (e instanceof AudienceError) return audienceRefusal(res, e);
-    throw e;
-  }
-  const [created] = await db
-    .insert(projectComments)
-    .values({ id: newId("com"), projectId: project.id, stepNumber, parentId, atelierRevision, authorId: req.user!.id, authorEmail: req.user!.email, body: parsed.data.body, audience })
-    .returning();
-  res.status(201).json(commentView(created!, req.user!.id));
+    let audience;
+    try {
+      audience = audienceOfNew(project.role, parsed.data.audience, threadAudience);
+    } catch (e) {
+      if (e instanceof AudienceError) return { status: e.status, body: e.body };
+      throw e;
+    }
+    const [created] = await tx
+      .insert(projectComments)
+      .values({ id: newId("com"), projectId: project.id, stepNumber, parentId, atelierRevision, authorId: req.user!.id, authorEmail: req.user!.email, body: parsed.data.body, audience })
+      .returning();
+    return { status: 201 as const, body: commentView(created!, req.user!.id) };
+  });
+  res.status(outcome.status).json(outcome.body);
 });
 
 const audienceBody = z.object({ audience: audienceSchema }).strict();

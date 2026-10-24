@@ -565,16 +565,6 @@ export async function createStudioComment(scope: StudioScope, actorId: string, i
   }
   // Une archive reste lisible (fils compris) mais ne reçoit plus de nouveau commentaire.
   if (variant.archived !== null || variant.studyArchived !== null) studioArchivedRefusal();
-  let parentId: string | null = null;
-  let threadAudience: CommentAudience | null | undefined;
-  if (input.parentId !== undefined) {
-    const [parent] = await db.select({ id: studioComments.id, parentId: studioComments.parentId, deletedAt: studioComments.deletedAt, audience: studioComments.audience }).from(studioComments)
-      .where(and(eq(studioComments.variantId, variant.id), eq(studioComments.id, input.parentId), audienceFilter(variant.access.role))).limit(1);
-    if (!parent || parent.deletedAt) return notFound("Le commentaire auquel vous répondez n'existe plus.");
-    parentId = parent.parentId ?? parent.id;
-    threadAudience = parent.audience;
-  }
-  const audience = audienceOrRefuse(() => audienceOfNew(variant.access.role, input.audience, threadAudience));
   const objectIds = input.objectIds ?? [];
   let revisionId: string | null = input.revisionId ?? null;
   if (revisionId !== null || objectIds.length) {
@@ -590,11 +580,30 @@ export async function createStudioComment(scope: StudioScope, actorId: string, i
     revisionId = revision.id;
   }
   try {
-    const [created] = await db.insert(studioComments).values({
-      id: newId("studio_comment"), variantId: variant.id, revisionId, objectIds, parentId, authorId: actorId, body: input.body,
-      requestId: input.requestId ?? null, payloadHash: hash, audience,
-    }).returning({ id: studioComments.id });
-    const [row] = await selectRow().where(eq(studioComments.id, created!.id)).limit(1);
+    // Réponse et changement d'audience du fil sérialisés (revue Codex de la PR #274) : la racine du fil est relue sous
+    // verrou partagé dans la transaction de l'insertion, `setStudioCommentAudience` la verrouille en écriture.
+    const createdId = await db.transaction(async (tx) => {
+      let parentId: string | null = null;
+      let threadAudience: CommentAudience | null | undefined;
+      if (input.parentId !== undefined) {
+        const [parent] = await tx.select({ id: studioComments.id, parentId: studioComments.parentId, deletedAt: studioComments.deletedAt }).from(studioComments)
+          .where(and(eq(studioComments.variantId, variant.id), eq(studioComments.id, input.parentId), audienceFilter(variant.access.role))).limit(1);
+        if (!parent || parent.deletedAt) return notFound("Le commentaire auquel vous répondez n'existe plus.");
+        // Répondre à une réponse rattache au commentaire d'origine : sa ligne porte l'audience du fil.
+        const [root] = await tx.select({ id: studioComments.id, audience: studioComments.audience }).from(studioComments)
+          .where(and(eq(studioComments.variantId, variant.id), eq(studioComments.id, parent.parentId ?? parent.id), audienceFilter(variant.access.role))).limit(1).for("share");
+        if (!root) return notFound("Le commentaire auquel vous répondez n'existe plus.");
+        parentId = root.id;
+        threadAudience = root.audience;
+      }
+      const audience = audienceOrRefuse(() => audienceOfNew(variant.access.role, input.audience, threadAudience));
+      const [created] = await tx.insert(studioComments).values({
+        id: newId("studio_comment"), variantId: variant.id, revisionId, objectIds, parentId, authorId: actorId, body: input.body,
+        requestId: input.requestId ?? null, payloadHash: hash, audience,
+      }).returning({ id: studioComments.id });
+      return created!.id;
+    });
+    const [row] = await selectRow().where(eq(studioComments.id, createdId)).limit(1);
     return { ...view(row!, actorId), replayed: false };
   } catch (error) {
     // Deux envois concurrents du même requestId : le second relit le premier (ou 409 si le contenu diffère).
