@@ -98,7 +98,14 @@ WD=$(docker inspect -f '{{index .Config.Labels "com.docker.compose.project.worki
 FILES=$(docker inspect -f '{{index .Config.Labels "com.docker.compose.project.config_files"}}' app-app-1)
 IFS=',' read -r -a FILE_ARRAY <<< "$FILES"
 C=(docker compose --ansi never -p app --project-directory "$APP" --env-file "$APP/.env.deploy")
-for f in "${FILE_ARRAY[@]}"; do [[ $f == "$APP/"* && -f $f ]] || stop 'Fichier Compose inattendu.'; C+=(-f "$f"); done
+# Admis : fichiers du depot de production, ou configuration resolue ecrite par un deploiement controle precedent
+# (/mnt/data/fadi/deployments/<horodatage>-<pid>/production.json ou retour.json), fichier ordinaire root, non lien.
+for f in "${FILE_ARRAY[@]}"; do
+  if [[ $f == "$APP/"* ]]; then :
+  elif [[ $f =~ ^/mnt/data/fadi/deployments/[0-9]{8}T[0-9]{6}Z-[0-9]+/(production|retour)\.json$ && ! -L $f && $(stat -c '%u %a' "$f") =~ ^0\ [67]00$ ]]; then :
+  else stop "Fichier Compose inattendu : $f"; fi
+  [[ -f $f ]] || stop "Fichier Compose absent : $f"; C+=(-f "$f")
+done
 "${C[@]}" config --format json > "$RUN/compose-resolu.json" 2> "$RUN/compose-validation.log"
 curl -fsS --connect-timeout 10 --max-time 40 "https://api.github.com/repos/RachEma-ux/Fadi/actions/runs?head_sha=$TARGET&per_page=100" > "$RUN/ci.json"
 python3 - "$RUN/ci.json" "$TARGET" <<'PY'

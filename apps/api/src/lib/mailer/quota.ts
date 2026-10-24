@@ -21,6 +21,13 @@ export function isReservedDomain(address: string): boolean {
 }
 
 /**
+ * La même règle qu'`isReservedDomain`, en expression régulière insensible à la casse sur l'adresse entière, construite
+ * depuis les mêmes listes : le filtre « Masquer les comptes de test » de l'administration (UM-31) l'applique en SQL
+ * (`~*`) pour que la pagination et le total restent exacts. Adresse sans `@` ou sans domaine comprise.
+ */
+export const RESERVED_ADDRESS_PATTERN = `^[^@]*$|@\\.*$|[@.](${[...RESERVED_DOMAINS, ...RESERVED_TLDS].map((d) => d.replace(/\./g, "\\.")).join("|")})\\.*$`;
+
+/**
  * Décision pure du garde-fou de quota. Un destinataire réservé n'est écarté que sur le transport SMTP (le seul qui remet
  * un courriel), sauf `allowReserved` (CI et développement avec Mailpit, refusé en production par `readMailConfig`).
  */

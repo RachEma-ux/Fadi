@@ -4,7 +4,8 @@ Mis à jour : 2026-10-23 (UTC).
 
 ## État
 
-**À définir — plan proposé, en attente de validation (🛑 0).** Aucune implémentation n'est engagée.
+**En cours — plan validé (🛑 0, OP-1) ; phase 1 implémentée sur la branche `feat/op-phase1-participations`, en attente de
+la revue 🛑 1.**
 
 ## Faits vérifiés
 
@@ -20,13 +21,22 @@ Mis à jour : 2026-10-23 (UTC).
   - `admin.audit_log` n'a aucun écran de consultation.
 - Second cadrage de la session d'exploitation (`docs/organisations-participation-cadrage`, `fa98da4`) fondu dans le plan
   le 2026-10-23 sur décision du maître d'ouvrage : phase 3 bis, OP-D3 (c), OP-D12, OP-D13.
+- Phase 1 (branche `feat/op-phase1-participations`) : tables `people`, `organizations`, `project_participations`,
+  `project_role_assignments`, miroir des accès par déclencheurs (`op_sync_access`), reprise idempotente ; transfert de
+  propriété réordonné pour garder les participations continues. Vérifié localement le 2026-10-23 sur PostgreSQL 16 +
+  PostGIS réel : `participations-migration-check.mjs` 38/38 (dont concurrence réelle à deux connexions), `users-migration-check.mjs` vert,
+  `participations.test.ts` 6/6, typecheck et build verts. Les 12 suites DB-3 (dont le contrôle ajouté au test de
+  transfert dans `app.test.ts`) n'ont pas tourné localement (aucune base attestée) : elles tournent en CI.
+- Écart déclaré au plan : la journalisation des écritures de participation (phase 1, tâche 5) passe en phase 2, avec
+  l'API qui les crée.
 - Concept de référence : `docs/workstreams/users-management/concept.md` v2.2, protégé par le test anti-dérive existant.
 
 ## Points ouverts
 
-- Validation du plan et décisions OP-D1 à OP-D13 ([PLAN.md](PLAN.md), annexe A).
-- OP-D7 (approbation par un participant externe) et OP-D9 (données des contacts, RGPD) : décisions métier sans
-  recommandation technique.
+- Revue 🛑 1 de la phase 1 (modèle et migration) par le maître d'ouvrage.
+- OP-D9 décidée le 2026-10-24 (OP-2 : projet + 2 ans après clôture, plus tôt sur demande) ; effacement à livrer en phase 2 ;
+  réserve : obligations légales de conservation à vérifier par le conseil juridique du maître d'ouvrage.
+- OP-D12 révisée le 2026-10-24 (OP-2) : envoi réel des courriels en préproduction, réalisé dans une PR distincte (UM-28).
 
 ## Liens de suivi
 

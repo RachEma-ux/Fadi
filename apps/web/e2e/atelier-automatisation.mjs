@@ -142,6 +142,12 @@ check("éditeur guidé : script valide à mesure, 2 commandes développées", /S
 await axe("éditeur guidé de scripts", ".auto-editeur");
 await page.locator('[data-editeur="enregistrer"]').click();
 await page.waitForFunction(() => /Script « Deux murs parallèles » enregistré \(version 1\)/.test(document.querySelector(".auto-editeur")?.textContent ?? ""), null, { timeout: 15000 }).catch(() => {});
+// La bibliothèque est relue après l'enregistrement : tant que l'option « deux-murs » n'est pas dans la liste, le choix
+// contrôlé affiche la première option. On attend qu'elle y soit et qu'elle soit choisie ; l'assertion reste la même.
+await page.waitForFunction(() => {
+  const choix = document.querySelector('[data-script="choix"]');
+  return !!choix?.querySelector('option[value="deux-murs"]') && choix.value === "deux-murs";
+}, null, { timeout: 15000 }).catch(() => {});
 const scripts = (await api("get", `/projects/${pid}/atelier/scripts`)).body;
 check("éditeur guidé : version 1 enregistrée dans la bibliothèque du projet, choisie pour l'essai", (scripts.projet ?? []).some((x) => x.id === "deux-murs" && x.version === 1) && (await page.locator('[data-script="choix"]').inputValue()) === "deux-murs");
 

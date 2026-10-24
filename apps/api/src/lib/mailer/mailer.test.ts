@@ -4,7 +4,7 @@ import { MAIL_TEMPLATES, renderMail } from "./templates.js";
 
 
 
-import { isReservedDomain, quotaDecision, retryDelayMs } from "./quota.js";
+import { isReservedDomain, quotaDecision, RESERVED_ADDRESS_PATTERN, retryDelayMs } from "./quota.js";
 
 const smtpEnv = { MAIL_TRANSPORT: "smtp", SMTP_HOST: "mail.infomaniak.com", SMTP_PORT: "465", SMTP_SECURE: "true", SMTP_USER: "noreply@exemple.ch", SMTP_PASS: "x", MAIL_FROM: "Fadi <noreply@exemple.ch>", APP_PUBLIC_URL: "https://fadi.exemple.ch" };
 
@@ -67,6 +67,15 @@ describe("domaines réservés (RFC 2606 / 6761, UM-28)", () => {
   ])("%s : réservé", (a) => { expect(isReservedDomain(a)).toBe(true); });
   it.each(["noreply@fadimmo.com", "a@gmail.com", "a@example.co", "a@myexample.com", "a@testing.ch", "a@example.com.au", "a@invalid.ch"])(
     "%s : non réservé", (a) => { expect(isReservedDomain(a)).toBe(false); });
+  it("RESERVED_ADDRESS_PATTERN (filtre SQL des comptes de test, UM-31) : même verdict qu'isReservedDomain", () => {
+    const re = new RegExp(RESERVED_ADDRESS_PATTERN, "i");
+    for (const a of [
+      "a@example.com", "a@example.net", "a@example.org", "a@mail.example.com", "a@foo.example", "a@example.test", "a@fadi.test",
+      "deleted-u1@invalid", "a@x.invalid", "a@localhost", "a@app.localhost", "A@EXAMPLE.COM", "a@example.com.", "sans-arobase", "a@",
+      "noreply@fadimmo.com", "a@gmail.com", "a@example.co", "a@myexample.com", "a@testing.ch", "a@example.com.au", "a@invalid.ch",
+      "x.example.com@gmail.com", "test@fadimmo.com", "a@test", "a@contest", "a@b@example.com", "a@example.com@gmail.com",
+    ]) expect(re.test(a), a).toBe(isReservedDomain(a));
+  });
   it("MAIL_ALLOW_RESERVED_DOMAINS : faux par défaut, true hors production, refusé en production ou mal écrit", () => {
     expect(readMailConfig(smtpEnv).allowReservedDomains).toBe(false);
     expect(readMailConfig({ ...smtpEnv, MAIL_ALLOW_RESERVED_DOMAINS: "true" }).allowReservedDomains).toBe(true);

@@ -22,6 +22,10 @@ fusionné ([PR #271](https://github.com/RachEma-ux/Fadi/pull/271), `e03fdfc`). `
 déploiement automatique de la préproduction ; son passage effectif n'est pas constaté depuis une session cloud.
 **Mise en service en préproduction (RUNBOOK §3 bis, §5 à §9) : non consignée** — tâche UM-SERVICE. Corbeille des comptes et « Anonymiser maintenant » dans `/admin/utilisateurs` — voir la section UM-27.
 
+**UM-31 (2026-10-24) : implémenté, vérifié en local et en CI (`287ed62`), [PR #278](https://github.com/RachEma-ux/Fadi/pull/278) vers `main` non fusionnée, aucun déploiement.** « Renvoyer » et
+« Copier le lien » sur les invitations en attente, filtre « Masquer les comptes de test » appliqué par le serveur — voir
+la section UM-31.
+
 **UM-30 (2026-10-24) : langue des courriels = langue de l'interface, sinon français ; branche `fix/um-29-langue-courriels`,
 [PR #275](https://github.com/RachEma-ux/Fadi/pull/275) fusionnée le 2026-10-24 à 18:08 UTC (`5767835`) ; contrôle en préproduction : UM-SERVICE.** Voir la section UM-30.
 
@@ -29,6 +33,32 @@ déploiement automatique de la préproduction ; son passage effectif n'est pas c
 `main` non fusionnée, aucun déploiement.** Voir la section UM-29.
 
 ## Faits vérifiés
+
+### Invitations renouvelables et comptes de test masqués (UM-31, 2026-10-24)
+
+Branche `fix/admin-invitations-comptes-test`, depuis `main` à `7083285`. Vérifié en local sur PostgreSQL 16 + PostGIS 3
+(API construite en `fadi_app` servant `WEB_DIST`, transport de courriel `console`, journal lu par les recettes) :
+
+- `npm run typecheck` : vert. `npm run build` : vert.
+- `npm test` : paquets et web verts (dont `icones-admin.test.ts`, 6 tests, règle d'or : icônes et raccourcis UM-31) ;
+  API : 480 tests purs verts (dont le test d'équivalence `RESERVED_ADDRESS_PATTERN` / `isReservedDomain`), les 12 suites
+  DB-3 refusées par la garde **seule** (`check-api-tests-db3.mjs` vert).
+- `app.test.ts` sur base jetable locale attestée (`preparer-base-test.mjs`, autorité locale ajoutée au registre dans la
+  copie de travail seulement puis retirée par `git checkout`) : **80 tests verts**, dont les 2 de « 6. invitations
+  renouvelées et comptes de test » (ancien jeton 404, nouveau 200, aucun jeton en clair en base ni dans la liste ;
+  `hideTest` : total exact, invitations filtrées, valeur invalide 400). Preuve opposable : DB-3 en CI.
+- `comptes-admin.mjs` : **vert** (contrôles UM-31 : filtre coché par défaut, Alt+Maj+T → `hideTest=false`, invitation de
+  test masquée, « Renvoyer » par bouton puis Alt+Maj+R, ancien lien 404, « Copier le lien » par Alt+Maj+L lu dans le
+  presse-papiers, icônes, axe-core, passe anglaise). `comptes-api.mjs` (109 ✓) et `comptes-securite.mjs` (71 ✓) :
+  verts, inchangés. `interface-anglais.mjs` : vert (0,29 % de textes restés en français, seuil 2 %).
+- Fusion de `main` (UM-29 / UM-30, PR #274 et #275) dans la branche ; « Renvoyer » utilise la langue d'interface
+  de UM-30 (paramètre `locale` par défaut).
+- Revue Codex (P2) : le lien émis par le formulaire restait affiché après « Renvoyer » (lien mort). Corrigé : un seul
+  état « dernier lien émis » partagé par le formulaire et la liste, retiré aussi quand l'invitation est annulée ;
+  `comptes-admin.mjs` le contrôle (78 ✓ en local ; 82 ✓ après fusion de `main`, section UM-30 comprise).
+- **CI verte** sur `287ed62` (fusion de `main` comprise) : run CI 40120760488 et les 5 autres workflows ; DB-3 actif
+  (attestation `fadi-ci-db3`), « 6. invitations renouvelées et comptes de test (UM-31) » ✓ (2) ; job e2e (complements) :
+  `comptes-api.mjs`, `comptes-securite.mjs` et `comptes-admin.mjs` verts. Premier commit `27af3eb` : vert aussi (run 40118973515).
 
 ### Écarts E1, E2, E3 des règles communes (UM-29, 2026-10-24)
 

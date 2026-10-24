@@ -48,3 +48,7 @@
 .admin-icon { flex: none; vertical-align: -3px; margin-inline-end: 6px; }
 .admin-trash-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .admin-trash-blocked { display: block; color: #8a4b08; }
+.admin-filters .admin-checkbox { display: flex; align-items: center; gap: 6px; }
+.admin-filters .admin-checkbox input { min-height: auto; }
+.admin-invitation-link { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.admin-invitation-link code { overflow-wrap: anywhere; }

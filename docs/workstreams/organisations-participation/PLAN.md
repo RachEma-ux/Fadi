@@ -3,7 +3,8 @@
 > Chantier ouvert par le maître d'ouvrage le 2026-10-23 (suite de UM-1, [Issue #262](https://github.com/RachEma-ux/Fadi/issues/262)).
 > Priorité demandée : **participants**, **invitations acceptées**, **revue externe** ; ajout du maître d'ouvrage le même
 > jour : **journal d'activité et historique** (phase 3 bis).
-> **Statut du plan : proposé, à valider** (point d'arrêt 🛑 0). Aucune implémentation n'est engagée avant cette validation.
+> **Statut du plan : validé le 2026-10-23** (🛑 0 franchi, décisions OP-1 dans [DECISIONS.md](DECISIONS.md)). Phase 1 livrée
+> sur branche, en attente de la revue 🛑 1.
 
 Source normative : [`docs/workstreams/users-management/concept.md`](../users-management/concept.md) (concept Users
 Management v2.2, parties 1 à 6 et section v2.2) — il prime sur ce plan. Décisions héritées : D-1 à D-7 et UM-1 à UM-24
@@ -73,6 +74,14 @@ Validation (ou amendement) du plan et réponses aux décisions de l'annexe A. Sa
 
 **But** : un annuaire du projet qui contient aussi des contacts sans compte, sans changer les droits existants.
 
+**Réalisation (OP-D3 c)** : tables `people`, `organizations`, `project_participations` et `project_role_assignments`
+(rôle métier × portée `projet` / `etude` / `variante` / `revision` / `documents`, origine `acces` ou `attribution`). Tant
+que la phase 2 n'a pas basculé l'accès, `projects.owner_id` et `project_members` restent la source des droits : la
+fonction SQL `op_sync_access` et deux déclencheurs en tiennent le miroir (participation active, rôle `acces` lecteur ou
+concepteur) quel que soit le chemin d'écriture (partage, invitation acceptée, transfert, anonymisation). Règles pures :
+`apps/api/src/lib/participations.ts` ; contrôle sur base réelle : `scripts/validation/participations-migration-check.mjs`
+(CI `validate`).
+
 ### Tâches
 1. **Personnes** (`public.people`) : fiche de personne ou de contact — nom affiché, coordonnées professionnelles selon
    OP-D9, `user_id` facultatif et **unique** (liaison vérifiée seulement, jamais par ressemblance de nom ou d'adresse non
@@ -87,7 +96,9 @@ Validation (ou amendement) du plan et réponses aux décisions de l'annexe A. Sa
 4. **Reprise de l'existant** (additive, idempotente) : le propriétaire et chaque `project_members` reçoivent une personne
    liée à leur compte et une participation `active` ; les droits restent portés par `project_members` (OP-D3).
 5. **Journal** (`admin.audit_log`) : création, modification, changement de statut de participation ; aucune adresse en
-   clair dans les métadonnées (règle existante).
+   clair dans les métadonnées (règle existante). *Reporté en phase 2* : en phase 1, seules les écritures d'accès déjà
+   existantes modifient les participations (miroir) ; les écritures propres aux participations naissent avec l'API de la
+   phase 2, qui les journalise.
 
 ### Tests
 Purs : machine d'états de participation, règle « personne ou organisation », liaison de compte refusée sans vérification.
@@ -114,6 +125,13 @@ travail et permission inspectables séparément ; aucun droit modifié pour les 
 3. Interface : onglets **Participants** (annuaire complet, contacts compris) et **Équipe** (vue des responsabilités),
    états distincts affichés (compte, participation, invitation), aucune fusion automatique, renvoi à la fiche existante.
 4. Retour d'un participant : identité réutilisée, nouvelle période, anciens droits réévalués (jamais restaurés d'office).
+5. **Bascule de l'accès vers les rôles métier (OP-D3 c)** : `loadProjectAccess` dérive les droits des rôles par portée
+   (Lecteur : lire, commenter ; Concepteur : modifier ; Relecteur : constats ; Approbateur et Diffuseur : approbation et
+   diffusion Studio, aujourd'hui réservées au propriétaire), sans perte d'accès pour un membre existant ; le miroir
+   `acces` est alors retiré. Journal des écritures de participation (tâche 5 de la phase 1).
+6. **Effacement des contacts sans compte (OP-D9, OP-2)** : effacement sur demande de la personne ; effacement automatique
+   2 ans après la clôture du projet, une fois défini l'état « clos » du projet (absent du modèle actuel) et levée la
+   réserve juridique sur les obligations de conservation.
 
 ### Tests
 DB-3 : contact sans accès invisible des droits ; terminer une participation retire l'accès dérivé à la requête suivante.
@@ -241,7 +259,9 @@ accord explicite. 🛑 Point d'arrêt final.
 
 ## Annexe A — Décisions à prendre par le maître d'ouvrage (🛑 0)
 
-Chaque proposition est une recommandation ; aucune n'est appliquée sans réponse.
+Réponses du maître d'ouvrage : [DECISIONS.md](DECISIONS.md), OP-1 du 2026-10-23 (OP-D3 c, OP-D7 a ; les autres selon la
+recommandation) et OP-2 du 2026-10-24 (durée de conservation d'OP-D9 ; OP-D12 révisée : la préproduction envoie les
+courriels, sauf vers les domaines réservés aux essais).
 
 | N° | Question | Options | Recommandation |
 | --- | --- | --- | --- |
@@ -253,10 +273,10 @@ Chaque proposition est une recommandation ; aucune n'est appliquée sans répons
 | OP-D6 | Constats externes | (a) observations Studio avec une audience « revue externe » ; (b) table distincte | (a) — une seule boucle de correction |
 | OP-D7 | Un participant externe peut-il **approuver** ? | (a) oui, par une affectation d'approbation explicite et nominative ; (b) non, approbation réservée au propriétaire (règle actuelle) | décision métier : pas de recommandation |
 | OP-D8 | Accès et permissions par défaut d'un relecteur externe | (a) compte identifié obligatoire (double authentification facultative) ; consulter et commenter ; télécharger, exporter et joindre seulement si accordé ; (b) autre | (a) — droits explicites (concept 2) |
-| OP-D9 | Contacts sans compte : champs, visibilité, durée de conservation (RGPD) | proposition : autorisés ; coordonnées visibles des seuls responsables du projet ; aucune invitation implicite ; conservation à définir | décision métier et juridique |
+| OP-D9 | Contacts sans compte : champs, visibilité, durée de conservation (RGPD) | proposition : autorisés ; coordonnées visibles des seuls responsables du projet ; aucune invitation implicite ; conservation à définir | **décidé (OP-2)** : durée du projet + 2 ans après sa clôture, puis effacement ; plus tôt sur demande ; obligations légales à vérifier |
 | OP-D10 | Partie 5 (organisations) après la revue externe | (a) oui (séquence du concept) ; (b) avant | (a) |
 | OP-D11 | 5e finalité « session temps réel » et « ressource restreinte » | (a) hors périmètre de ce chantier ; (b) incluses | (a) — aucun module temps réel |
-| OP-D12 | Courriels | (a) la préproduction n'envoie rien (liens affichés) ; l'ouverture de la revue externe en production exige un envoi de courriels configuré ; (b) autre | (a) |
+| OP-D12 | Courriels | (a) la préproduction n'envoie rien (liens affichés) ; l'ouverture de la revue externe en production exige un envoi de courriels configuré ; (b) autre | **révisée (OP-2)** : la préproduction envoie (`noreply@fadimmo.com`), jamais vers les domaines réservés aux essais (lien affiché) ; PR distincte UM-28 |
 | OP-D13 | Lecteurs du journal (phase 3 bis) | (a) administrateur de la plateforme : tout ; responsable de projet : l'activité de son projet ; utilisateur : son propre historique ; (b) autre | (a) |
 
 ## Annexe B — Hors périmètre

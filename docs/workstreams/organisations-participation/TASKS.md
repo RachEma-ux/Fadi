@@ -2,8 +2,7 @@
 
 ## À faire
 
-- [ ] OP-P1 — Phase 1 : personnes, organisations (minimal), participations, reprise de l'existant (Issue : #262), après 🛑 0.
-- [ ] OP-P2 — Phase 2 : écran « Collaboration > Équipe et participants » (Issue : #262).
+- [ ] OP-P2 — Phase 2 : écran « Collaboration > Équipe et participants », bascule de l'accès vers les rôles métier (OP-D3 c) (Issue : #262).
 - [ ] OP-P3 — Phase 3 : invitations acceptées liées à une participation (Issue : #262).
 - [ ] OP-P3b — Phase 3 bis : journal d'activité et historique (administrateur, utilisateur, projet) (Issue : #262).
 - [ ] OP-P4 — Phase 4 : revue externe, paquet, destinataires, accès limité au paquet, boucle de correction (Issue : #262).
@@ -12,16 +11,17 @@
 
 ## En cours
 
-- OP-P0 — Cadrage et plan : livrés, en attente de validation par le maître d'ouvrage et de réponses à OP-D1 à OP-D13
-  (🛑 0) (Issue : #262).
+- OP-P1 — Phase 1 : personnes, organisations (minimal), participations, rôles par portée, miroir des accès, reprise de
+  l'existant — implémentée sur `feat/op-phase1-participations`, en attente de la revue 🛑 1 (Issue : #262).
 
 ## Terminé
 
+- [x] OP-P0 — Plan validé et décisions OP-D1 à OP-D13 prises (OP-1, 2026-10-23) (Issue : #262).
 - [x] OP-INIT — Dossier de continuité, Issue #262, audit de l'existant et plan proposé (`PLAN.md`) (Issue : #262).
 
 ## Bloqué
 
-- Phases 1 à 6 : bloquées jusqu'au 🛑 0 (validation du plan et décisions OP-D1 à OP-D13, au maître d'ouvrage).
+- Phases 2 à 6 : après la revue 🛑 1 de la phase 1 (maître d'ouvrage).
 
 ## Critères de sortie
 

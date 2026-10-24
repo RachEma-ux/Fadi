@@ -440,6 +440,71 @@ export const projectSupportGrants = pgTable("project_support_grants", {
 }, (t) => [index("project_support_grants_project_idx").on(t.projectId, t.adminId)]);
 
 // ---------------------------------------------------------------------------
+// Organisations, participation et revue externe — phase 1 (Issue #262). Miroir de init.sql ; jusqu'à la phase 2,
+// l'accès reste porté par `projects.owner_id` et `project_members`, dont participations et rôles `acces` sont le
+// miroir tenu par déclencheurs SQL (`op_sync_access`). Règles pures : `lib/participations.ts`.
+// ---------------------------------------------------------------------------
+
+/** Personne : compte vérifié (`userId`) ou contact sans compte (nom requis, OP-D9). */
+export const people = pgTable("people", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+  displayName: text("display_name"),
+  jobTitle: text("job_title"),
+  workEmail: text("work_email"),
+  workPhone: text("work_phone"),
+  createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+/** Organisation minimale (OP-D1, OP-D4) ; l'espace d'organisation vient avec la partie 5 (OP-D10). */
+export const organizations = pgTable("organizations", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  kind: text("kind"),
+  status: text("status").notNull().default("active").$type<"active" | "suspendue" | "close">(),
+  createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export type ParticipationStatus = "contact" | "active" | "suspendue" | "terminee";
+export type TeamResponsibility = "diriger" | "produire" | "coordonner" | "verifier" | "approuver" | "diffuser";
+
+/** Participation d'une personne OU d'une organisation à un projet, pour une période. */
+export const projectParticipations = pgTable("project_participations", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  personId: text("person_id").references(() => people.id, { onDelete: "cascade" }),
+  organizationId: text("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
+  representedOrganizationId: text("represented_organization_id").references(() => organizations.id, { onDelete: "set null" }),
+  businessRole: text("business_role"),
+  responsibilities: text("responsibilities").array().notNull().default([]).$type<TeamResponsibility[]>(),
+  status: text("status").notNull().$type<ParticipationStatus>(),
+  startsOn: date("starts_on"),
+  endsOn: date("ends_on"),
+  createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("project_participations_person_idx").on(t.personId)]);
+
+export type ProjectBusinessRole = "lecteur" | "concepteur" | "relecteur" | "coordinateur" | "approbateur" | "diffuseur";
+export type RoleScopeType = "projet" | "etude" | "variante" | "revision" | "documents";
+
+/** Rôle métier par portée (OP-D3 c) ; `acces` = miroir de l'accès actuel, `attribution` = affectation explicite. */
+export const projectRoleAssignments = pgTable("project_role_assignments", {
+  id: text("id").primaryKey(),
+  participationId: text("participation_id").notNull().references(() => projectParticipations.id, { onDelete: "cascade" }),
+  role: text("role").notNull().$type<ProjectBusinessRole>(),
+  scopeType: text("scope_type").notNull().default("projet").$type<RoleScopeType>(),
+  scopeId: text("scope_id"),
+  origin: text("origin").notNull().default("attribution").$type<"acces" | "attribution">(),
+  grantedBy: text("granted_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+// ---------------------------------------------------------------------------
 // Modèle typé de l'Atelier Fadi (cahier des charges §5.5) —
 // propriété du module Atelier. Une ligne par entité du modèle
 // (`@parcours/atelier-model`, contrat `modele-atelier/1`), toutes scopées par
