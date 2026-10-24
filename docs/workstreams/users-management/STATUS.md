@@ -278,8 +278,11 @@ par la session d'exploitation du VPS.
 
 - UM-27 : fusionné (PR #270, `2cc038a`) ; aucun déploiement en production.
 - UM-SERVICE : mise en service et recette en préproduction (RUNBOOK §3 bis, §5 à §9) non consignées. Contrôles à relever
-  sur le VPS : `fadi-preprod status` (commit en ligne), `/version`, `/admin/users` (401 si l'administration est ouverte,
-  404 sinon), nombre d'administrateurs et d'administrateurs avec TOTP actif (comptages seulement, aucune adresse).
+  sur le VPS : `fadi-preprod status` (commit en ligne), `/version`, `PREPROD_FADI_ADMIN_ENABLED=true` présent dans
+  `/opt/fadi-preprod/env/.env.preprod`, nombre d'administrateurs et d'administrateurs avec TOTP actif (comptages
+  seulement, aucune adresse). La sonde anonyme `/admin/users` répond **404 dans tous les cas** (`platformRefusal`,
+  non-divulgation) : elle ne distingue pas une administration ouverte d'une fermée. L'ouverture se constate avec une
+  session administrateur ouverte avec son code : `/admin/users` **200** et `GET /auth/me` avec `adminEnabled: true`.
 - Indice non vérifié : la PR #275 rapporte une invitation envoyée depuis l'Administration en préproduction, ce qui
   suppose un administrateur, l'administration ouverte et le courriel configurés ; rien n'est déclaré fait sans relevé.
 - UM-27, signalé : pas de corbeille pour les projets ni les documents (hors périmètre de la décision ; le concept ne
