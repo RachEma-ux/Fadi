@@ -1,5 +1,6 @@
 /** Intégration contre PostgreSQL, comme les autres tests de routes : jamais une simulation des droits SQL. */
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { partager } from "../test-helpers/partage.js";
 import request from "supertest";
 import { createApp } from "../app.js";
 import { countTestOperations, resetTestDatabase } from "../testing/guarded-test-pool.js";
@@ -29,7 +30,7 @@ describe("historiques accessibles par dossier et par plateforme", () => {
     const reader = await account("history-reader@example.com");
     const shared = await project(owner.client, "P.SHARED");
     const hidden = await project(owner.client, "P.PRIVATE");
-    expect((await owner.client.post(`/projects/${shared}/members`).send({ email: "history-reader@example.com", role: "lecteur" })).status).toBe(201);
+    expect((await partager(owner.client, shared, "history-reader@example.com", "lecteur")).status).toBe(201);
     const feed = await reader.client.get("/projects/history");
     expect(feed.status).toBe(200);
     expect(new Set((feed.body.events as HistoryEvent[]).map((event) => event.project.id))).toEqual(new Set([shared]));
@@ -45,7 +46,7 @@ describe("historiques accessibles par dossier et par plateforme", () => {
     const owner = await account("history-author-owner@example.com");
     const editor = await account("history-editor@example.com");
     const id = await project(owner.client, "P.AUTHOR");
-    await owner.client.post(`/projects/${id}/members`).send({ email: "history-editor@example.com", role: "editeur" });
+    await partager(owner.client, id, "history-editor@example.com", "editeur");
     const body = { requestId: "history-level", contract: "atelier-commands/3", baseRevision: 0, label: "Niveau du dossier", commands: [{ type: "niveau.creer", params: { id: "rdc", nom: "RDC", elevation: 0, hauteur: 3 } }] };
     expect((await editor.client.post(`/projects/${id}/atelier/commands`).send(body)).status).toBe(200);
     expect((await editor.client.post(`/projects/${id}/atelier/commands`).send(body)).status).toBe(200);
