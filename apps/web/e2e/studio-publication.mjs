@@ -55,7 +55,10 @@ const project = await owner('POST', '/projects', { code: `PUB_${randomUUID().sli
 check('projet créé', project.status === 201, String(project.status));
 const projectId = project.body?.id;
 check('éditeur invité', (await owner('POST', `/projects/${projectId}/members`, { email: accounts.editor.email, role: 'editeur' })).status === 201);
-check('lecteur invité', (await owner('POST', `/projects/${projectId}/members`, { email: accounts.reader.email, role: 'lecteur' })).status === 201);
+const invitedReader = await owner('POST', `/projects/${projectId}/members`, { email: accounts.reader.email, role: 'lecteur' });
+check('lecteur invité', invitedReader.status === 201);
+// CR-D4 (écart E2) : un nouveau lecteur ne télécharge un paquet diffusé qu'avec l'export accordé par le propriétaire.
+check('lecteur : export accordé par le propriétaire', (await owner('PATCH', `/projects/${projectId}/members/${invitedReader.body?.userId}`, { canExport: true })).body?.canExport === true);
 
 const root = `/projects/${projectId}/studio`;
 const study = await owner('POST', `${root}/studies`, { name: 'Étude publiée' });
