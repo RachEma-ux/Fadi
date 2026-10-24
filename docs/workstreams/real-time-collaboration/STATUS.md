@@ -9,7 +9,7 @@ transport réalisé (RTC-0.3). Aucune implémentation ; RTC-1 bloqué par la por
 
 ## Faits vérifiés
 
-- Base observée : `main@2577e25` (CI verte sur ce SHA). PR #284 : CI verte sur `eb2cc7c`.
+- Base observée : `main@2577e25` (CI verte sur ce SHA). PR #284 : CI verte sur `9bd61fc` (13 contrôles verts, 3 ignorés par conception), mergeable sans conflit.
 - Aucun WebSocket / SSE dans `apps` ni `packages` ; relectures périodiques de 60 s.
 - RT-D3 : première version = **Studio seul** ; **canal propre au Temps réel**. RT-D2 : WebSocket ; une instance ; hôte remplacé explicitement ; coédition
   reportée ; COM garde sa remise.

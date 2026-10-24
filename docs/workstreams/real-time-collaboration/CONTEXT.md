@@ -43,4 +43,5 @@ et des conflits.
 
 - Ordre réel des chantiers différent de CR-D9 (a) : COM ouvert par dérogation (COM-D1), Organisations exécuté de bout en
   bout (OP-3). RTC-0 démarre en parallèle (RT-D1) ; RTC-1 attend la porte des prérequis.
-- Questions ouvertes RT-Q1 à RT-Q7 : `DECISIONS.md`.
+- RT-Q1 à RT-Q7 répondues (RT-D2, RT-D3 : Studio seul, canal propre au Temps réel) ; restent ouverts : durées chiffrées
+  de conservation, profil des budgets, entrée ultérieure de l'Atelier et de Documents (`DECISIONS.md`).

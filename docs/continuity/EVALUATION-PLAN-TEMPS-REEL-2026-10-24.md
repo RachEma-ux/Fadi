@@ -11,6 +11,11 @@ de charge n'a été exécuté pour cette évaluation.
 
 ---
 
+> **Suite donnée (2026-10-24)** : chantier ouvert ([`real-time-collaboration/`](../workstreams/real-time-collaboration/CONTEXT.md),
+> Issue #283). Le maître d'ouvrage a tranché les décisions de la § 4 : RTC-0 ouvert en parallèle (RT-D1) ; **Studio seul**
+> et **canal propre au Temps réel** (RT-D3), ce qui écarte la recommandation (b) sur l'Atelier (P2) et le canal partagé
+> avec COM (P5). Les recommandations ci-dessous restent l'état de l'évaluation à sa date.
+
 ## 1. Évaluation de la web app Fadi (au regard du temps réel)
 
 | Domaine | Constat vérifié dans le code | Conséquence pour le temps réel |

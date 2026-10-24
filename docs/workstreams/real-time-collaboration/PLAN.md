@@ -183,7 +183,7 @@ Identifiants `TR-Txx` (distincts des critères `RT-Rx`) `[P3]`.
 | TR-T07 | Révocation, suspension, échéance, rétrécissement d'audience en pleine diffusion | Aucune diffusion protégée après la validation du retrait ; droits indépendants préservés | Concurrence déterministe ; RTC-4/5 |
 | TR-T08 | Validation réussie, réponse perdue, reconnexion et rejeu | Un seul enregistrement / révision ; aucune notification en double | Base + injection réseau ; RTC-5 |
 | TR-T09 | Curseur expiré, événement périmé, redémarrage, consommateur lent | Réinstantané autorisé ; mémoire bornée ; état de reconnexion visible | Intégration / charge ; RTC-5 |
-| TR-T10 | Hôte part avec une réservation (Atelier ou projet) | Reprise autorisée, échéance visible, auteur inchangé | Intégration + navigateur ; RTC-5 |
+| TR-T10 | Hôte part avec une réservation d'édition du projet (`routes/lock.ts`) | Reprise autorisée, échéance visible, auteur inchangé | Intégration + navigateur ; RTC-5 |
 | TR-T11 | Deux concepteurs modifient un mur et sa baie de façon incompatible | Refus atomique / conflit, brouillon récupérable | Base réelle + modèle pur ; RTC-6 |
 | TR-T12 | Annuler une action antérieure après une action dépendante d'un collègue | Refus ou compensation explicite | Domaine + intégration ; RTC-6 |
 | TR-T13 | Calcul tardif pour une ancienne révision | Marqué périmé | Domaine / interface ; RTC-6 |
