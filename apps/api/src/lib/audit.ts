@@ -57,12 +57,24 @@ export type AuditAction =
   | "project.ownership.transferred"
   // Audience d'un fil changée par son auteur ou le propriétaire (écart E1) : cible = le projet.
   | "comment.audience_changed"
+  // Participants et équipe (Issue #262, phase 2) : cible = le projet ; métadonnées = identifiants (participation,
+  // personne, organisation), statuts, rôles et noms de champs modifiés — jamais une adresse ni une coordonnée.
+  | "participation.created"
+  | "participation.updated"
+  | "participation.status_changed"
+  | "participation.role_assigned"
+  | "participation.role_removed"
+  | "person.contact_created"
+  | "person.contact_erased"
+  | "organization.created"
+  | "project.closed"
+  | "project.reopened"
   | "mail.quota_exceeded";
 
 export interface AuditEntry {
   actorId: string | null;
   action: AuditAction;
-  target?: { type: "user" | "project" | "invitation" | "support_grant" | "session" | "mail"; id: string } | undefined;
+  target?: { type: "user" | "project" | "invitation" | "support_grant" | "session" | "mail" | "person"; id: string } | undefined;
   metadata?: Record<string, unknown> | undefined;
   ip?: string | null | undefined;
 }

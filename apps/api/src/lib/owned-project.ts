@@ -1,7 +1,8 @@
 import { and, eq, gt, isNull } from "drizzle-orm";
 import type { Request, Response } from "express";
 import { db } from "../db/client.js";
-import { projectMembers, projectSupportGrants, projects, users, type EditingLock } from "../db/schema.js";
+import { people, projectEffectiveAccess, projectMembers, projectParticipations, projectSupportGrants, projects, users, type EditingLock } from "../db/schema.js";
+import type { Tx } from "./step-rows.js";
 
 /**
  * Accès à un projet, vérifié côté serveur à chaque route — jamais seulement
@@ -22,7 +23,7 @@ export type ProjectRole = "proprietaire" | "editeur" | "lecteur" | "support";
  * publications, verrous, copies) restent en `write` ; la transmission de la parcelle (étape 01), qui écrit le modèle par
  * des commandes internes, est en `modify` comme les routes de l'Atelier.
  */
-export type ProjectNeed = "read" | "comment" | "write" | "modify" | "owner" | "export";
+export type ProjectNeed = "read" | "comment" | "write" | "modify" | "owner" | "export" | "approve" | "publish";
 
 /**
  * `support` (D-2, UM-4) : administrateur de la plateforme muni d'un accès support **actif** accordé par le propriétaire
@@ -43,6 +44,10 @@ const ALLOWED: Record<ProjectNeed, readonly ProjectRole[]> = {
   modify: ["proprietaire", "editeur"],
   owner: ["proprietaire"],
   export: ["proprietaire", "editeur"],
+  // Phase 2 (OP-D3 c) : approbation et diffusion Studio — le propriétaire, ou un rôle Approbateur / Diffuseur de portée
+  // projet porté par une participation active (`canApprove`, `canPublish` de l'accès chargé : `accessAllows`).
+  approve: ["proprietaire"],
+  publish: ["proprietaire"],
 };
 
 /** Droit du rôle seul. Pour `export`, le droit accordé à un lecteur est dans l'accès : `accessAllows`. */
@@ -51,8 +56,10 @@ export function roleAllows(role: ProjectRole, need: ProjectNeed): boolean {
 }
 
 /** Droit de l'accès chargé : le rôle, plus l'export explicitement accordé à un lecteur (E2). */
-export function accessAllows(access: Pick<AccessibleProject, "role" | "canExport">, need: ProjectNeed): boolean {
+export function accessAllows(access: Pick<AccessibleProject, "role" | "canExport"> & Partial<Pick<AccessibleProject, "canApprove" | "canPublish">>, need: ProjectNeed): boolean {
   if (need === "export" && access.role === "lecteur") return access.canExport;
+  if (access.role !== "support" && need === "approve" && access.canApprove) return true;
+  if (access.role !== "support" && need === "publish" && access.canPublish) return true;
   return roleAllows(access.role, need);
 }
 
@@ -63,6 +70,8 @@ export const FORBIDDEN_MESSAGE: Record<ProjectNeed, string> = {
   modify: "Ce projet vous est partagé en lecture : les modifications sont réservées à son propriétaire et à ses éditeurs.",
   owner: "Action réservée au propriétaire du projet.",
   export: "Export et téléchargement réservés au propriétaire, aux éditeurs et aux lecteurs à qui le propriétaire les a accordés.",
+  approve: "Approbation réservée au propriétaire du projet et aux participants qui portent le rôle Approbateur du projet.",
+  publish: "Diffusion réservée au propriétaire du projet et aux participants qui portent le rôle Diffuseur du projet.",
 };
 
 /** Refus d'un accès support (lecture seule) : export ou modification. */
@@ -80,7 +89,7 @@ export function estReferenceProtegee(project: Pick<ProjectRow, "exampleMode">): 
   return project.exampleMode === "reference";
 }
 /** `canExport` : le rôle exporte (propriétaire, éditeur) ou l'export a été accordé à ce lecteur ; jamais l'accès support. */
-export type AccessibleProject = ProjectRow & { role: ProjectRole; canExport: boolean };
+export type AccessibleProject = ProjectRow & { role: ProjectRole; canExport: boolean; canApprove: boolean; canPublish: boolean };
 
 /** Durée d'une réservation d'édition ; renouvelable tant que l'éditeur travaille. */
 export const EDITING_LOCK_MINUTES = 30;
@@ -98,21 +107,39 @@ export function lockedMessage(lock: EditingLock): string {
   return `Édition réservée par ${lock.email} jusqu'à ${hhmm(lock.expiresAt)} : lecture et commentaires seulement ; demandez-lui de rendre la main, ou attendez l'échéance.`;
 }
 
-/** Le projet et le rôle de l'utilisateur, en une requête ; `null` quand il n'y a aucun accès. */
+/**
+ * Le projet et le rôle de l'utilisateur, en une requête ; `null` quand il n'y a aucun accès.
+ *
+ * Phase 2 (Issue #262, OP-D3 c) : la décision vient de la seule vue `project_effective_access` (init.sql) — le
+ * propriétaire, sinon une participation active et commencée portant un rôle métier de portée projet (Concepteur →
+ * `editeur` ; Lecteur, Relecteur, Coordinateur, Approbateur, Diffuseur → `lecteur`). Une participation suspendue,
+ * terminée, sans rôle de projet ou un simple contact ne donne rien. `project_members` n'est plus lu ici : il reste
+ * l'interface d'écriture du partage, dont le miroir par déclencheurs tire participations et rôles `acces`.
+ */
 export async function loadProjectAccess(projectId: string, userId: string, executor: Pick<typeof db, "select"> = db): Promise<AccessibleProject | null> {
   const rows = await executor
-    .select({ project: projects, memberRole: projectMembers.role, memberCanExport: projectMembers.canExport })
+    .select({ project: projects, role: projectEffectiveAccess.role, canExport: projectEffectiveAccess.canExport, canApprove: projectEffectiveAccess.canApprove, canPublish: projectEffectiveAccess.canPublish })
     .from(projects)
-    .leftJoin(projectMembers, and(eq(projectMembers.projectId, projects.id), eq(projectMembers.userId, userId)))
+    .leftJoin(projectEffectiveAccess, and(eq(projectEffectiveAccess.projectId, projects.id), eq(projectEffectiveAccess.userId, userId)))
     .where(eq(projects.id, projectId))
     .limit(1);
   const row = rows[0];
   if (!row) return null;
-  if (row.project.ownerId === userId) return { ...row.project, role: "proprietaire", canExport: true };
-  // NULL (ligne restaurée d'une archive antérieure à la colonne) = droit d'origine conservé.
-  if (row.memberRole) return { ...row.project, role: row.memberRole, canExport: row.memberRole === "editeur" || (row.memberCanExport ?? true) };
-  if (await activeSupportGrant(projectId, userId, executor)) return { ...row.project, role: "support", canExport: false };
+  if (row.role) return { ...row.project, role: row.role, canExport: row.canExport ?? false, canApprove: row.canApprove ?? false, canPublish: row.canPublish ?? false };
+  if (await activeSupportGrant(projectId, userId, executor)) return { ...row.project, role: "support", canExport: false, canApprove: false, canPublish: false };
   return null;
+}
+
+/**
+ * Verrouille (FOR SHARE) ce dont dépend l'accès d'un compte dans une écriture : sa ligne de partage et ses
+ * participations au projet. Une révocation, une suspension ou une fin de participation concurrente attend le commit.
+ */
+export async function lockAccessRows(tx: Tx, projectId: string, userId: string): Promise<void> {
+  await tx.select({ userId: projectMembers.userId }).from(projectMembers)
+    .where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, userId))).for("share");
+  await tx.select({ id: projectParticipations.id }).from(projectParticipations)
+    .innerJoin(people, eq(people.id, projectParticipations.personId))
+    .where(and(eq(projectParticipations.projectId, projectId), eq(people.userId, userId))).for("share", { of: projectParticipations });
 }
 
 /**
@@ -175,7 +202,7 @@ export function projectAccessRefusal(access: AccessibleProject | null, userId: s
   if (need === "modify" && estReferenceProtegee(access)) {
     return { status: 403, body: { error: "forbidden", motif: "reference-protegee", message: REFERENCE_PROTEGEE_MESSAGE, role: access.role } };
   }
-  if (need === "write" || need === "modify") {
+  if (need === "write" || need === "modify" || need === "approve" || need === "publish") {
     const lock = activeLock(access);
     if (lock && lock.userId !== userId) return { status: 423, body: { error: "locked", message: lockedMessage(lock), lock } };
   }

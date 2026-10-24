@@ -4,9 +4,9 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 import { applyStudioCommands, comparerDocumentsStudio, exportStudioDxf, exportStudioIfc, exportStudioSvg, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, studioChevauchements, studioElementsModifies, StudioValidationError, validateStudioDocument, type StudioDifferenceDocuments, type StudioDocument, type StudioEnvelope, type StudioPhaseWorkflow } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
-import { projectMembers, studioRevisions, studioStudies, studioVariants, type StudioContext, type StudioExampleInstall, type StudioProvenance } from "../db/schema.js";
+import { studioRevisions, studioStudies, studioVariants, type StudioContext, type StudioExampleInstall, type StudioProvenance } from "../db/schema.js";
 import { newId } from "./ids.js";
-import { loadProjectAccess, projectAccessRefusal, type AccessibleProject, type ProjectNeed } from "./owned-project.js";
+import { loadProjectAccess, lockAccessRows, projectAccessRefusal, type AccessibleProject, type ProjectNeed } from "./owned-project.js";
 import { orchestrerCommandesDansTransaction, type Tx } from "./atelier-validation.js";
 import { lockProject, type Querier } from "./step-rows.js";
 
@@ -87,8 +87,7 @@ function assertEcriture(access: AccessibleProject, actorId: string, ecriture: St
 /** Verrouille également le membre : une révocation concurrente ne traverse pas le commit. */
 export async function lockedAccess(tx: Tx, projectId: string, actorId: string): Promise<AccessibleProject> {
   await lockProject(tx, projectId);
-  await tx.select({ userId: projectMembers.userId }).from(projectMembers)
-    .where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, actorId))).for("share");
+  await lockAccessRows(tx, projectId, actorId);
   return assertAccess(await loadProjectAccess(projectId, actorId, tx), actorId, "read");
 }
 

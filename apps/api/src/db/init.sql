@@ -1470,6 +1470,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS project_participations_current_person ON proje
 CREATE UNIQUE INDEX IF NOT EXISTS project_participations_current_org ON project_participations (project_id, organization_id)
   WHERE organization_id IS NOT NULL AND status <> 'terminee';
 CREATE INDEX IF NOT EXISTS project_participations_person_idx ON project_participations (person_id);
+-- Phase 2 (bascule de l'accès, OP-D3 c) : l'export accordé à un lecteur (écart E2) suit la participation, seule source
+-- de la décision d'accès ; tenu par le miroir depuis `project_members.can_export` (NULL d'archive = TRUE).
+ALTER TABLE project_participations ADD COLUMN IF NOT EXISTS can_export boolean NOT NULL DEFAULT false;
 
 -- Rôles métier par portée (OP-D3 c, concept partie 2) : Lecteur, Concepteur, Relecteur, Coordinateur, Approbateur,
 -- Diffuseur. Origine `acces` : miroir de l'accès actuel (lecteur → lecteur, editeur → concepteur), tenu par les
@@ -1500,6 +1503,7 @@ RETURNS void LANGUAGE plpgsql AS $$
 DECLARE
   v_owner text;
   v_member text;
+  v_member_export boolean;
   v_access text;
   v_person text;
   v_part text;
@@ -1507,7 +1511,7 @@ DECLARE
 BEGIN
   SELECT owner_id INTO v_owner FROM projects WHERE id = p_project;
   IF NOT FOUND OR NOT EXISTS (SELECT 1 FROM users WHERE id = p_user) THEN RETURN; END IF;  -- suppression en cascade
-  SELECT role INTO v_member FROM project_members WHERE project_id = p_project AND user_id = p_user;
+  SELECT role, can_export INTO v_member, v_member_export FROM project_members WHERE project_id = p_project AND user_id = p_user;
   v_access := CASE WHEN v_owner = p_user THEN 'proprietaire' ELSE v_member END;
   SELECT id INTO v_person FROM people WHERE user_id = p_user;
   IF v_access IS NULL THEN
@@ -1531,8 +1535,11 @@ BEGIN
     INSERT INTO project_participations (id, project_id, person_id, status, starts_on)
     VALUES (v_part, p_project, v_person, 'active', least(p_since, current_date));
   ELSE
+    -- Une participation suspendue le reste (phase 2) : seul un contact devient actif par un accès.
     UPDATE project_participations SET status = 'active', updated_at = now() WHERE id = v_part AND status = 'contact';
   END IF;
+  UPDATE project_participations SET can_export = (v_access = 'lecteur' AND coalesce(v_member_export, true))
+   WHERE id = v_part AND can_export IS DISTINCT FROM (v_access = 'lecteur' AND coalesce(v_member_export, true));
   v_role := CASE v_access WHEN 'lecteur' THEN 'lecteur' WHEN 'editeur' THEN 'concepteur' END;
   DELETE FROM project_role_assignments
    WHERE participation_id = v_part AND origin = 'acces' AND role IS DISTINCT FROM v_role;
@@ -1574,6 +1581,43 @@ BEGIN
     PERFORM op_sync_access(r.project_id, r.user_id, r.since);
   END LOOP;
 END $$;
+
+-- ---------------------------------------------------------------------------
+-- Organisations, participation et revue externe — phase 2 (Issue #262) : bascule de l'accès (OP-D3 c), contacts,
+-- clôture déclarative du projet et effacement des contacts sans compte (OP-D9, OP-2).
+-- La décision d'accès a UNE source : la vue `project_effective_access` — le propriétaire (`projects.owner_id`), sinon
+-- une participation `active`, commencée, d'une personne liée à ce compte, portant au moins un rôle métier à la portée
+-- `projet` (une participation sans rôle de projet, « revue seule » de la phase 4, ne donne aucun accès). Concepteur →
+-- modifier (rôle API `editeur`) ; tout autre rôle de projet → lire et commenter (`lecteur`) ; Approbateur et Diffuseur →
+-- approbation et diffusion Studio ; export : concepteur, ou export accordé (`can_export`). Le miroir `acces` par
+-- déclencheurs est CONSERVÉ comme pont : les écritures historiques (partage, invitations acceptées, transfert,
+-- anonymisation, restauration) écrivent toujours `project_members`, dont il tire les participations et rôles `acces`.
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE VIEW project_effective_access AS
+SELECT p.id AS project_id, p.owner_id AS user_id, 'proprietaire'::text AS role, true AS can_export, true AS can_approve,
+       true AS can_publish
+  FROM projects p
+UNION ALL
+SELECT pp.project_id, pe.user_id,
+       CASE WHEN bool_or(ra.role = 'concepteur') THEN 'editeur' ELSE 'lecteur' END,
+       bool_or(ra.role = 'concepteur') OR bool_or(pp.can_export),
+       bool_or(ra.role = 'approbateur'),
+       bool_or(ra.role = 'diffuseur')
+  FROM project_participations pp
+  JOIN people pe ON pe.id = pp.person_id AND pe.user_id IS NOT NULL
+  JOIN projects p ON p.id = pp.project_id AND p.owner_id <> pe.user_id
+  JOIN project_role_assignments ra ON ra.participation_id = pp.id AND ra.scope_type = 'projet'
+ WHERE pp.status = 'active' AND (pp.starts_on IS NULL OR pp.starts_on <= current_date)
+ GROUP BY pp.project_id, pe.user_id;
+
+-- Clôture déclarative (OP-2) : ne change aucun droit ; elle date le départ du délai de conservation des contacts.
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS closed_at timestamptz;
+-- Effacement d'un contact sans compte (sur demande, ou 2 ans après la clôture de tous ses projets) : nom remplacé,
+-- coordonnées supprimées, fiche et participations gardées comme trace sans donnée personnelle.
+ALTER TABLE people ADD COLUMN IF NOT EXISTS erased_at timestamptz;
+CREATE INDEX IF NOT EXISTS people_contacts_retention_idx ON people (id) WHERE user_id IS NULL AND erased_at IS NULL;
+CREATE INDEX IF NOT EXISTS project_participations_org_idx ON project_participations (organization_id);
+CREATE INDEX IF NOT EXISTS project_participations_represented_idx ON project_participations (represented_organization_id);
 
 -- ---------------------------------------------------------------------------
 -- D-7 : droits au moindre privilège. Exécuté par un super-utilisateur (amorçage, CI) : propriété de tout transférée à
