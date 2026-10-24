@@ -15,6 +15,8 @@ import { Link } from "react-router-dom";
 import { api, ApiError, comApi, type ComActionInput, type ComApercuAction, type ComApercuPartage, type ComAudience, type ComConversation, type ComConversationDetail, type ComMembre, type ComMessage, type ComMode, type ComRefResolue, type CommentAudience } from "../../../lib/api";
 import { MUTATION_KEYS, type ComMessageVars } from "../../../lib/mutations";
 import { useProjectAccess } from "../../../lib/access";
+import { useAuth } from "../../../lib/auth-context";
+import { cleBrouillon, ecrireBrouillon, lireBrouillon } from "../../../lib/com-brouillons";
 import { LOCALE } from "../../../lib/i18n";
 import { ConfirmDialog } from "../../../components/comptes/ComptesUI";
 import { cheminVarianteStudio } from "../../studio/routes-studio";
@@ -272,6 +274,7 @@ function ConversationVue({ projectId, conversationId, membres, conversations }: 
         )}
       </header>
 
+      {c.anterieurs > 0 && <p className="h7-muted" data-com-anterieurs={c.anterieurs}>{`${c.anterieurs} message(s) plus ancien(s) non affiché(s) : seuls les plus récents sont présentés.`}</p>}
       <ol className="com-messages">
         {c.messages.map((m) => (
           <li key={m.id} className={`com-message com-nature-${m.nature}${m.urgent ? " com-urgent" : ""}`} data-com-message={m.id} tabIndex={-1} onKeyDown={(e) => messageCommande(m, e)}>
@@ -345,9 +348,10 @@ function ConversationVue({ projectId, conversationId, membres, conversations }: 
 
 function Redaction({ projectId, conversation: c, membres }: { projectId: string; conversation: ComConversationDetail; membres: ComMembre[] }) {
   const queryClient = useQueryClient();
-  const cleBrouillon = `fadi.com.brouillon.${c.id}`;
-  const lire = () => { try { return localStorage.getItem(cleBrouillon) ?? ""; } catch { return ""; } };
-  const [texte, setTexte] = useState(lire);
+  // Brouillon propre au compte, au projet et à la conversation (`lib/com-brouillons.ts`), oublié à la déconnexion.
+  const { user } = useAuth();
+  const cle = user ? cleBrouillon(user.id, projectId, c.id) : null;
+  const [texte, setTexte] = useState(() => lireBrouillon(cle));
   const [mentions, setMentions] = useState<string[]>([]);
   const [etape, setEtape] = useState("");
   const [ackRequired, setAck] = useState(false);
@@ -361,7 +365,7 @@ function Redaction({ projectId, conversation: c, membres }: { projectId: string;
     window.addEventListener("offline", maj);
     return () => { window.removeEventListener("online", maj); window.removeEventListener("offline", maj); };
   }, []);
-  useEffect(() => { try { if (texte) localStorage.setItem(cleBrouillon, texte); else localStorage.removeItem(cleBrouillon); } catch { /* stockage indisponible */ } }, [texte, cleBrouillon]);
+  useEffect(() => { ecrireBrouillon(cle, texte); }, [texte, cle]);
   const envoi = useMutation<{ id: string; replayed: boolean; mentionsSansAcces: string[] }, unknown, ComMessageVars>({
     mutationKey: MUTATION_KEYS.comMessage,
     onSuccess: (r) => { setSansAcces(r.mentionsSansAcces); setBloque(null); void queryClient.invalidateQueries({ queryKey: ["com", projectId] }); },

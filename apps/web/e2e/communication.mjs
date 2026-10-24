@@ -170,7 +170,7 @@ check("7. version remplacée conservée et visible de l'audience", Array.isArray
 check("7. retrait par l'auteur", (await editor("DELETE", `${com}/messages/${edit.body?.id}`)).status === 204);
 const retire = (await reader("GET", `${com}/conversations/${cOuvert}`)).body?.messages?.find((m) => m.id === edit.body?.id);
 const versions2 = (await reader("GET", `${com}/messages/${edit.body?.id}/versions`)).body;
-check("7. message retiré : indication visible, texte jamais redonné", retire?.withdrawn === true && retire?.body === null && versions2?.some((v) => v.reason === "retrait" && v.body === null) && !contient(await reader("GET", `${com}/conversations/${cOuvert}`), "Version corrigée (recette)"));
+check("7. message retiré : indication visible, texte jamais redonné (aucune version, même modifiée avant le retrait)", retire?.withdrawn === true && retire?.body === null && versions2?.length === 2 && versions2.every((v) => v.body === null) && !contient(await reader("GET", `${com}/conversations/${cOuvert}`), "Version corrigée (recette)"));
 
 // ---------------------------------------------------------------------------------------------------------------------
 // 8. Actions liées et demandes de précision

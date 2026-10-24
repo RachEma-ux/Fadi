@@ -16,10 +16,14 @@
 import type { Query, QueryClient, QueryKey } from "@tanstack/react-query";
 import { ApiError } from "./api";
 import { localStore } from "./local-store";
+import { oublierBrouillons } from "./com-brouillons";
 
 export const TEAM_ROLES: readonly string[] = ["proprietaire", "editeur"];
-/** Requêtes qui portent des éléments à audience (commentaires, fils et observations Studio, journal, historique). */
-export const AUDIENCE_QUERIES: readonly string[] = ["comments", "collaboration", "studio-comments", "studio-observations", "history"];
+/**
+ * Requêtes qui portent des éléments à audience (commentaires, fils et observations Studio, journal, historique ;
+ * Communication : conversations, messages, demandes, activité).
+ */
+export const AUDIENCE_QUERIES: readonly string[] = ["comments", "collaboration", "studio-comments", "studio-observations", "history", "com"];
 
 export const touchesProject = (key: QueryKey, projectId: string): boolean => Array.isArray(key) && key.some((k) => k === projectId);
 const head = (key: QueryKey): string => String(Array.isArray(key) ? key[0] : "");
@@ -29,7 +33,9 @@ export const isAudienceQuery = (key: QueryKey, projectId: string): boolean => AU
 export async function forgetProject(queryClient: QueryClient, projectId: string): Promise<void> {
   queryClient.removeQueries({ predicate: (q) => touchesProject(q.queryKey, projectId) && !(head(q.queryKey) === "project" && q.state.status === "error") });
   await localStore.oublierProjet(projectId).catch(() => undefined);
+  oublierBrouillons(projectId);
   void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+  void queryClient.invalidateQueries({ queryKey: ["com-boite"] });
 }
 
 /** Relit (même hors écran) les éléments à audience d'un projet et les notifications. */

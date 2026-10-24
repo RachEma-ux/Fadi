@@ -11247,5 +11247,6 @@
 "Conversations sur les documents": "Conversations about documents",
 "Conversations sur la variante": "Conversations about the variant",
 "Variante Studio": "Studio variant",
-" sur cet élément": " about this item"
+" sur cet élément": " about this item",
+"{0} message(s) plus ancien(s) non affiché(s) : seuls les plus récents sont présentés.": "{0} older message(s) not displayed: only the most recent are shown."
 }

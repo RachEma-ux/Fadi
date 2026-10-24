@@ -1708,6 +1708,8 @@ export interface ComMessage {
 }
 export interface ComConversationDetail extends ComConversation {
   messages: ComMessage[];
+  /** Messages plus anciens que la fenêtre renvoyée (les plus récents seulement sont lus). */
+  anterieurs: number;
   participants: { id: string; email: string; addedAt: string; historyFrom: string | null; removedAt: string | null; aAcces: boolean }[];
   destinatairesListe: string[];
   journal: { id: number; action: string; acteur: string; at: string; detail: Record<string, unknown> }[];

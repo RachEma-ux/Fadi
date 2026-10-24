@@ -60,6 +60,9 @@ comRouter.use(requireAuth);
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
+/** Nombre de messages renvoyés par la lecture d'un fil : les plus récents (`anterieurs` compte les autres). */
+export const FENETRE_MESSAGES = 500;
+
 const endpoint = (f: (req: Request, res: Response) => Promise<void>) => async (req: Request, res: Response, next: NextFunction) => {
   try { await f(req, res); }
   catch (e) {
@@ -187,7 +190,12 @@ comRouter.get("/conversations/:conversationId", endpoint(async (req, res) => {
   const { access, conv, participations, moi } = c;
   const comptes = await comptesDuProjet(access.id);
   const debut = debutHistorique(conv.audience, moi);
-  const rows = await db.select().from(comMessages).where(and(eq(comMessages.conversationId, conv.id), ...(debut ? [gt(comMessages.createdAt, new Date(debut.getTime() - 1))] : []))).orderBy(asc(comMessages.createdAt)).limit(1000);
+  // Fenêtre des FENETRE_MESSAGES derniers messages (les plus récents, jamais les seuls plus anciens) ; `anterieurs` dit
+  // combien de messages plus anciens ne sont pas renvoyés.
+  const filtreFil = and(eq(comMessages.conversationId, conv.id), ...(debut ? [gt(comMessages.createdAt, new Date(debut.getTime() - 1))] : []));
+  const rows = (await db.select().from(comMessages).where(filtreFil).orderBy(desc(comMessages.createdAt), desc(comMessages.id)).limit(FENETRE_MESSAGES)).reverse();
+  const [{ total } = { total: 0 }] = await db.select({ total: sql<number>`count(*)::int` }).from(comMessages).where(filtreFil);
+  const anterieurs = Math.max(0, total - rows.length);
   const ids = rows.map((m) => m.id);
   const receipts = ids.length ? await db.select().from(comReceipts).where(inArray(comReceipts.messageId, ids)) : [];
   const versions = ids.length ? await db.select({ messageId: comMessageVersions.messageId, n: sql<number>`count(*)::int` }).from(comMessageVersions).where(inArray(comMessageVersions.messageId, ids)).groupBy(comMessageVersions.messageId) : [];
@@ -226,6 +234,7 @@ comRouter.get("/conversations/:conversationId", endpoint(async (req, res) => {
   res.json({
     ...(await vueConversation(c, access.code, comptes, 0)),
     messages,
+    anterieurs,
     participants: [...participations.entries()].map(([id, p]) => ({
       id, email: mails.get(id) ?? "?", addedAt: p.addedAt.toISOString(), historyFrom: p.historyFrom?.toISOString() ?? null, removedAt: p.removedAt?.toISOString() ?? null,
       aAcces: !!comptes.get(id) && comptes.get(id)!.role !== "support",
@@ -245,7 +254,11 @@ comRouter.post("/conversations/:conversationId/lu", endpoint(async (req, res) =>
   const debut = debutHistorique(conv.audience, moi);
   await db.transaction(async (tx) => {
     await tx.insert(comReads).values({ conversationId: conv.id, userId, lastReadAt: now }).onConflictDoUpdate({ target: [comReads.conversationId, comReads.userId], set: { lastReadAt: now } });
-    const autres = await tx.select({ id: comMessages.id }).from(comMessages).where(and(eq(comMessages.conversationId, conv.id), ne(comMessages.authorId, userId), ...(debut ? [gt(comMessages.createdAt, new Date(debut.getTime() - 1))] : [])));
+    // Ouverture enregistrée pour les seuls messages affichés (la même fenêtre que la lecture du fil), jamais au-delà.
+    const fenetre = await tx.select({ id: comMessages.id, authorId: comMessages.authorId }).from(comMessages)
+      .where(and(eq(comMessages.conversationId, conv.id), ...(debut ? [gt(comMessages.createdAt, new Date(debut.getTime() - 1))] : [])))
+      .orderBy(desc(comMessages.createdAt), desc(comMessages.id)).limit(FENETRE_MESSAGES);
+    const autres = fenetre.filter((m) => m.authorId !== userId);
     for (const m of autres) await tx.insert(comReceipts).values({ messageId: m.id, userId, openedAt: now }).onConflictDoUpdate({ target: [comReceipts.messageId, comReceipts.userId], set: { openedAt: sql`coalesce(${comReceipts.openedAt}, ${now.toISOString()}::timestamptz)` } });
   });
   res.json({ lu: now.toISOString() });
@@ -426,8 +439,9 @@ comRouter.delete("/messages/:messageId", endpoint(async (req, res) => {
 comRouter.get("/messages/:messageId/versions", endpoint(async (req, res) => {
   const { m } = await messageDe(db, req, req.user!.id);
   const rows = await db.select().from(comMessageVersions).where(eq(comMessageVersions.messageId, m.id)).orderBy(asc(comMessageVersions.id));
-  // Le texte d'un message retiré n'est jamais redonné : seule la date et la nature du remplacement le sont.
-  res.json(rows.map((v) => ({ replacedAt: v.replacedAt.toISOString(), reason: v.reason, body: v.reason === "retrait" ? null : v.body })));
+  // Le texte d'un message retiré n'est jamais redonné, ni sa dernière version ni aucune version modifiée avant le
+  // retrait : seules la date et la nature de chaque remplacement le sont.
+  res.json(rows.map((v) => ({ replacedAt: v.replacedAt.toISOString(), reason: v.reason, body: m.withdrawnAt || v.reason === "retrait" ? null : v.body })));
 }));
 
 comRouter.post("/messages/:messageId/accuse", endpoint(async (req, res) => {
