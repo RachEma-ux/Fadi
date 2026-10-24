@@ -1,11 +1,11 @@
 # Organisations, participation et revue externe — Statut
 
-Mis à jour : 2026-10-23 (UTC).
+Mis à jour : 2026-10-24 (UTC).
 
 ## État
 
-**En cours — plan validé (🛑 0, OP-1) ; phase 1 implémentée sur la branche `feat/op-phase1-participations`, en attente de
-la revue 🛑 1.**
+**En cours — plan validé (🛑 0, OP-1) ; phase 1 fusionnée dans `main` (PR #265, `f59641c`), en attente de la revue 🛑 1.**
+Critères des règles communes reportés dans le PLAN le 2026-10-24 (CR-1).
 
 ## Faits vérifiés
 

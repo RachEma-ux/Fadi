@@ -99,6 +99,51 @@ Journal du chantier. Les décisions des chantiers propriétaires restent dans le
        fusionné dans la branche, conflit de `members.ts` résolu ainsi, `app.test.ts` et tests `lib` verts (356) sur la
        combinaison.
 
+- **CR-R3 — Accord pour CR-1 et demande de résoudre les écarts restants (2026-10-24).** Demande du maître d'ouvrage,
+  reçue directement dans la session de développement : « Résous les points en suspens » — CR-1 (report de l'annexe A,
+  qui attendait son accord, CR-D10) et écarts restants E5, E6, E9, E10. Elle vaut accord pour CR-1. E4 et E8 restent
+  à la phase 3 d'Organisations (non demandés) ; les invitations `restricted_resource` / `live_session` (OP-D11) et le
+  transfert accepté par le successeur restent hors périmètre par décision.
+
+- **CR-C2 — Écarts E5, E6, E9, E10 et report CR-1 (2026-10-24).** Une PR vers `main`, sans fusion ni déploiement ;
+  migration strictement additive (colonne `studio_publication_events.authority`, contrainte des responsabilités
+  élargie à `garder`). Choix du chef de projet, justifiés :
+  1. **E5 — Approbateur et Diffuseur (CR-D2 a, CR-D6 a, OP-D3 c, OP-D7 a).** Deux affectations **explicites**, portée
+     projet, origine `attribution`, portées par la participation **active** du membre (`project_role_assignments`,
+     phase 1) ; le propriétaire seul les donne ou les retire (écran des membres, `PATCH …/members/:userId
+     { approbateur, diffuseur }`), journal `project.member.assignment_changed` (membre, affectation, avant → après,
+     sans adresse). Approuver / refuser : propriétaire **ou** Approbateur ; diffuser / retirer : propriétaire **ou**
+     Diffuseur ; une même personne peut tenir les deux (CR-D2 a) ; préparer et soumettre restent au propriétaire et aux
+     éditeurs ; l'accès support n'agit jamais. Un lecteur peut être désigné (OP-D7 a : approbation nominative) ; le
+     verrou d'édition d'un autre compte bloque toujours (423). Chaque entrée du journal de publication porte sa **base
+     d'autorité** (`{ base: "role-projet", role }` ou `{ base: "affectation", role, assignmentId }`), affichée « au titre
+     de … » ; les entrées antérieures restent sans base (aucune reprise rétroactive, CR-D6 a). Un départ termine la
+     participation (miroir `op_sync_access`) : l'affectation cesse aussitôt ; un retour ne la restaure pas. Ce n'est pas
+     la bascule complète de l'accès vers les six rôles (tâche 5 de la phase 2 d'Organisations), qui reste à faire après
+     le 🛑 1.
+  2. **E6 — Fin de participation (CR-D7 a).** Le retrait par le propriétaire et le départ du membre libèrent, **dans la
+     transaction du retrait**, la réservation d'édition du projet et les verrous fins de l'Atelier du membre (chaque
+     verrou actif libéré est notifié comme une libération ordinaire, D-143) ; le journal du retrait le note
+     (`releasedEditingLock`, `releasedFineLocks`). Ses observations Studio ouvertes et tâches à faire **restent à lui**
+     (auteur et responsable jamais réécrits) et sont listées au seul propriétaire (`aReattribuer` de `GET …/members`,
+     section « Responsabilités à réattribuer » avec lien vers la variante) pour une réattribution explicite par les
+     passages existants de Studio. Les invitations ne sont pas listées : seul le propriétaire invite, et l'acceptation
+     revalide l'autorité de l'invitant (aucune invitation d'un ancien membre ne peut aboutir).
+  3. **E9 — Vocabulaire (CR-D8 a).** Glossaire [GLOSSAIRE.md](GLOSSAIRE.md) : paquet de coordination, référence adoptée,
+     paquet de revue figé, dossier approuvé, paquet diffusé, et les responsabilités ; identifiants de code inchangés.
+     Les libellés déjà livrés de l'Atelier (« publication », lots acceptés) ne sont pas renommés : un changement de ses
+     écrans relève d'une décision propre à l'Atelier. Le texte d'introduction des publications Studio est corrigé
+     (il disait l'approbation réservée au propriétaire).
+  4. **E10 — Gardien du contenu (A03).** Responsabilité d'équipe `garder` sur la participation, déclarée par le
+     propriétaire (case « Gardien du contenu »), journalisée, **sans aucun droit** (vérifié : ni écriture, ni export, ni
+     approbation). Le gardien du projet reste le propriétaire. Limite déclarée : la responsabilité vaut pour le projet,
+     pas encore pour un contenu nommé (étude, documents) — à affiner avec l'écran « Équipe » de la phase 2.
+  5. **Règle d'or** : Alt+Maj+4 « Approbateur », Alt+Maj+5 « Diffuseur », Alt+Maj+6 « Gardien du contenu » (ligne du
+     membre), icône propre à chacune, raccourci affiché et déclaré ; `commandes-collaboration.test.ts`, exercés au
+     clavier par `collaboration-affectations.mjs`.
+  6. **CR-1** : annexe A reportée dans [`../organisations-participation/PLAN.md`](../organisations-participation/PLAN.md)
+     (phases 2, 3, 3 bis, 4, 6 et § 7), avec l'état de chaque critère (livré par #274, par cette PR, ou à faire).
+
 ## Décisions en attente
 
 - Aucune : CR-D1 à CR-D10 sont répondues (CR-R1, CR-R2).

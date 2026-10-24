@@ -5,6 +5,9 @@
 > jour : **journal d'activité et historique** (phase 3 bis).
 > **Statut du plan : validé le 2026-10-23** (🛑 0 franchi, décisions OP-1 dans [DECISIONS.md](DECISIONS.md)). Phase 1 livrée
 > sur branche, en attente de la revue 🛑 1.
+> **Report des règles communes (CR-1, 2026-10-24)** : critères CR-O2-1 à CR-O4-3 de l'annexe A de
+> [`collaboration-rules/PLAN.md`](../collaboration-rules/PLAN.md) inscrits dans les phases 2, 3, 3 bis, 4 et 6 ci-dessous
+> (accord du maître d'ouvrage, CR-D10 (a)).
 
 Source normative : [`docs/workstreams/users-management/concept.md`](../users-management/concept.md) (concept Users
 Management v2.2, parties 1 à 6 et section v2.2) — il prime sur ce plan. Décisions héritées : D-1 à D-7 et UM-1 à UM-24
@@ -132,10 +135,32 @@ travail et permission inspectables séparément ; aucun droit modifié pour les 
 6. **Effacement des contacts sans compte (OP-D9, OP-2)** : effacement sur demande de la personne ; effacement automatique
    2 ans après la clôture du projet, une fois défini l'état « clos » du projet (absent du modèle actuel) et levée la
    réserve juridique sur les obligations de conservation.
+7. **Journal des changements d'accès (CR-O2-1, E3)** : ajout, changement de rôle, retrait, fin de participation et
+   transfert de propriété écrits dans `admin.audit_log` dans la transaction de l'action : acteur, projet, participation,
+   rôle avant / après, base d'autorité de l'acteur ; aucune adresse en clair. *État : livré pour les accès actuels
+   (`project_members`, transfert) par la PR #274 (CR-C1) ; reste à étendre aux écritures propres aux participations de
+   cette phase.*
+8. **Fin de participation (CR-O2-2, E6)** : libère dans la même transaction la réservation d'édition et les verrous fins
+   du participant ; affiche les observations, tâches et invitations dont il est responsable pour une réattribution
+   explicite ; l'auteur historique n'est jamais réécrit. *État : livré pour le retrait et le départ d'un membre
+   (CR-C2) — réservation et verrous fins libérés, liste « Responsabilités à réattribuer » (observations et tâches
+   Studio) ; à reprendre pour la suspension et la fin d'une participation de cette phase.*
+9. **Approbateur et Diffuseur (CR-O2-3, E5)** : la bascule de `loadProjectAccess` rend l'approbation et la diffusion
+   Studio à des affectations distinctes ; chaque transition de publication enregistre l'affectation qui l'a permise.
+   *État : livré (CR-C2) par des affectations explicites `approbateur` / `diffuseur` (portée projet, origine
+   `attribution`) données par le propriétaire, et la base d'autorité de chaque transition ; la bascule complète de
+   l'accès vers les six rôles reste la tâche 5.*
+10. **Gardien du contenu (E10, A03)** : responsabilité d'équipe `garder`, déclarée, sans droit implicite. *État : livré
+    (CR-C2), case de l'écran des membres.*
 
 ### Tests
 DB-3 : contact sans accès invisible des droits ; terminer une participation retire l'accès dérivé à la requête suivante.
 Recettes navigateur avec axe-core (bureau et téléphone), passe anglaise.
+
+Règles communes (CR-1) : retirer une participation laisse intacts les grants du même compte sur un autre projet (A04) ;
+le journal contient l'entrée de chaque changement d'accès ; un Relecteur n'approuve pas, un Approbateur sans
+affectation de Diffuseur ne diffuse pas (ce dernier point est vérifié depuis CR-C2 : `app.test.ts` « E5 »,
+`collaboration-affectations.mjs`).
 
 ---
 
@@ -155,6 +180,9 @@ Recettes navigateur avec axe-core (bureau et téléphone), passe anglaise.
 4. **Comptes existants** selon OP-D2 (recommandé : invitation acceptée aussi, fin de l'ajout direct UM-8 ; notification dans
    l'application en plus du courriel).
 5. Entrée dans le bon espace après acceptation : le projet (ou le paquet de revue en phase 4), avec le travail en attente.
+
+6. **Échéance d'accès appliquée (CR-O3-1, E4)** : l'expiration d'accès de l'invitation est reportée sur la participation ;
+   `loadProjectAccess` refuse après l'échéance (404 à la requête suivante).
 
 ### Tests
 v2.2 : utilisateur existant et nouveau, mauvais compte, lien transféré ou expiré, invitant révoqué entre envoi et
@@ -178,6 +206,9 @@ des phases 1 à 3. Dépend de la phase 1 ; peut être livrée avant la phase 4.
    visible des responsables du projet (OP-D13).
 4. Le journal reste append-only et sans adresse en clair ; chaque vue filtre côté serveur selon son audience ; un invité
    externe (phase 4) n'y voit rien d'autre que ses propres actions.
+
+5. **Règle 5 des règles communes (CR-1)** : chaque entrée affichée expose acteur, portée, révision source s'il y en a une,
+   base d'autorité et résultat ; l'audience de la vue est filtrée côté serveur.
 
 ### Tests
 Purs : filtre d'audience. DB-3 : chaque rôle ne voit que son périmètre ; `fadi_app` n'obtient ni UPDATE ni DELETE sur le
@@ -211,6 +242,16 @@ l'organisation hôte ni voir le reste du projet.
 7. **Côté équipe interne** : destinataires, réponses reçues, constats ouverts, décisions bloquées, retards ; une échéance
    dépassée n'est jamais un accord.
 
+8. **Audience fermée (CR-O4-1, E1, E2)** : un participant à portée « paquet » ne reçoit aucune notification de
+   commentaire, d'observation, de tâche, de verrou ou de modification du projet, aucune ligne du journal du projet et
+   aucun export hors des droits accordés ; la recette parcourt chaque famille de routes (projet, Parcours, Studio,
+   Documents, Collaboration, notifications). *État : audience `equipe` / `projet` et export explicite du lecteur livrés
+   par la PR #274 (CR-C1) ; la portée « paquet » reste à livrer ici.*
+9. **Distinctions de la revue (CR-O4-2)** : réception, ouverture, accusé de réception, constats, réponse, revue terminée,
+   approbation et diffusion sont des états ou événements distincts ; une revue terminée n'est pas une approbation.
+10. **Révision figée (CR-O4-3)** : un relecteur de R03 reste sur R03 pendant que R04 avance ; un nouveau paquet exige un
+    partage explicite.
+
 ### Tests
 Scénario d'acceptation du concept 4 et v2.2 (« revue R03 restreinte pendant que R04 avance ») : revue sans adhésion à
 l'organisation ; invitation transférée inopérante ; notes internes et éléments sans rapport inaccessibles, liens et exports
@@ -235,6 +276,9 @@ Scénario final du concept (« an organization forms a project team, an external
 pour le périmètre livré ; runbook de déploiement additif (migration, reprise, retour arrière) ; aucun déploiement sans
 accord explicite. 🛑 Point d'arrêt final.
 
+Règles communes (CR-1) : scénarios S1 à S5 et S8 de [`collaboration-rules/PLAN.md`](../collaboration-rules/PLAN.md) § 2
+joués en CI ; S6, S7 et S9 déclarés partiels jusqu'aux chantiers COM et Temps réel.
+
 ---
 
 ## 7. Traçabilité des exigences (MATRICE de la gestion des comptes, lignes « hors périmètre »)
@@ -254,6 +298,7 @@ accord explicite. 🛑 Point d'arrêt final.
 | C6-01 notifications sans droit implicite | 4 (revue) ; extension partie 6 sur besoin observé |
 | Journal d'activité et historique (ajout du maître d'ouvrage, 2026-10-23) | 3 bis |
 | V22-02 cinq finalités d'invitation | 3 et 4 : `project_participation`, `review_package` ; `organization_membership` en 5 ; `restricted_resource` et `live_session` hors périmètre (OP-D11) |
+| Règles communes de collaboration (CR-O2-1 à CR-O4-3, report de l'annexe A de [`collaboration-rules/PLAN.md`](../collaboration-rules/PLAN.md), CR-1) | 2, 3, 3 bis, 4, 6 |
 
 ---
 

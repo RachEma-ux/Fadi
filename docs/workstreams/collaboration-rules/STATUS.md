@@ -5,8 +5,10 @@ Mis à jour : 2026-10-24 (UTC).
 ## État
 
 **Cadrage fusionné dans `main` (PR #273, `7083285`) ; décisions CR-D1 à CR-D10 répondues (CR-R1, CR-R2).**
-**Écarts graves E1, E2, E3 : corrigés et vérifiés en local, [PR #274](https://github.com/RachEma-ux/Fadi/pull/274) vers
-`main` non fusionnée, aucun déploiement** ([DECISIONS.md](DECISIONS.md) CR-C1).
+**Écarts graves E1, E2, E3 (et E7) : corrigés, [PR #274](https://github.com/RachEma-ux/Fadi/pull/274) fusionnée dans `main`
+(`2577e25`)** ([DECISIONS.md](DECISIONS.md) CR-C1).
+**Écarts E5, E6, E9, E10 et report CR-1 : implémentés, vérifiés en local, [PR #282](https://github.com/RachEma-ux/Fadi/pull/282) vers `main` non fusionnée, aucun
+déploiement** ([DECISIONS.md](DECISIONS.md) CR-R3, CR-C2). Restent ouverts : E4 et E8 (phase 3 d'Organisations).
 
 ## Faits vérifiés
 
@@ -35,9 +37,25 @@ Mis à jour : 2026-10-24 (UTC).
   `studio-persistance.mjs` (293), `studio-observations.mjs` (71), `studio-hors-ligne.mjs` (35),
   `comptes-securite.mjs` (73), `parcours-scenario.mjs` (330), `interface-anglais.mjs` : vertes.
 
+- 2026-10-24, CR-C2 (branche `ccr-e2b77568-r17oja`, depuis `main` = `2577e25`), vérifié en local sur PostgreSQL 16 +
+  PostGIS 3 (base jetable, API construite servant `WEB_DIST` en `fadi_app`, transport de courriel `console`) :
+  - `npm run typecheck`, `npm run build` : verts ; tests web des modules touchés (règle d'or
+    `commandes-collaboration.test.ts`, `publication-ui.test.ts`, i18n) : verts ;
+  - API, tests purs : `studio-publication-statuts.test.ts` (base d'autorité : 3 tests ajoutés), `participations.test.ts`
+    (listes = contraintes SQL, `garder` compris), `studio-archive-manifest.test.ts` (colonne `authority` classée),
+    `studio-permissions.test.ts` (matrice inchangée) : verts ; les 11 fichiers de suites DB-3 refusés par la garde
+    seule, comme sur `main` ;
+  - `participations-migration-check.mjs` : vert, dont « garder » admis et contrainte élargie au rejeu sur une base
+    antérieure ; `users-migration-check.mjs` vert ; `db:migrate` rejoué deux fois ;
+  - recette nouvelle `collaboration-affectations.mjs` : **38/38** (E5, E6, E10, règle d'or au clavier, axe-core, passe
+    anglaise, journal relu en base) ; non-régression `collaboration-audience.mjs` 45/45, `studio-publication.mjs` 129 ✓ ;
+  - `app.test.ts` (3 tests ajoutés « E5 », « E10 », « E6 », attendus E3 mis à jour) : **non exécuté en local** — la
+    préparation d'une base attestée exige d'enrôler une clé locale dans `approved-test-authorities.ts`, geste refusé
+    dans cette session ; preuve opposable : DB-3 en CI.
+
 ## Points ouverts
 
-- PR #274 : CI verte à obtenir, fusion et déploiement sur décision du maître d'ouvrage.
+- [PR #282](https://github.com/RachEma-ux/Fadi/pull/282) (CR-C2) : CI verte à obtenir (DB-3 compris) ; fusion et déploiement sur décision du maître d'ouvrage.
 - E7 traité par la PR #274 (CR-C1 § 6) ; reste la limite déclarée par CR-D5 : appareil resté hors ligne, fichiers
   déjà téléchargés.
 - Chantiers COM et Temps réel non ouverts.
@@ -45,7 +63,8 @@ Mis à jour : 2026-10-24 (UTC).
 ## Liens de suivi
 
 - Issue : [#272](https://github.com/RachEma-ux/Fadi/issues/272).
-- Cadrage : PR #273 fusionnée. Correction des écarts graves : PR #274, branche `fix/collaboration-ecarts-e1-e3`.
+- Cadrage : PR #273 fusionnée. Correction des écarts graves : PR #274 fusionnée. Écarts E5, E6, E9, E10 et CR-1 : [PR #282](https://github.com/RachEma-ux/Fadi/pull/282),
+  branche `ccr-e2b77568-r17oja`.
 
 ## Préconditions de clôture
 
