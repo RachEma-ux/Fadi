@@ -27,7 +27,7 @@ et des conflits.
   décisions CR-D1 à CR-D10 (`collaboration-rules/DECISIONS.md`).
 - Évaluation préalable : `docs/continuity/EVALUATION-PLAN-TEMPS-REEL-2026-10-24.md` (écarts P1 à P10).
 - Chantiers dont il dépend : `organisations-participation/` (#262, OP-3, PR #281), PR #282 (E5, E6, E9, E10),
-  `communication/` (#280, branche `ccr-a50667e3-fng2br`, non fusionnée au 2026-10-24).
+  `communication/` (#280, PR #285, non fusionnée au 2026-10-24).
 
 ## Contraintes
 

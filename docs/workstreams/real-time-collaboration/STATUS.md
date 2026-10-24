@@ -18,7 +18,7 @@ transport réalisé (RTC-0.3). Aucune implémentation ; RTC-1 bloqué par la por
   RTC-1).
 - `cibleAnnulation` de l'Atelier prend la dernière commande du projet, quel qu'en soit l'auteur
   (`routes/atelier-commands.ts:470`).
-- Chantiers dont il dépend, non fusionnés au checkpoint : PR #281, PR #282, branche COM `ccr-a50667e3-fng2br` (#280).
+- Chantiers dont il dépend, non fusionnés au checkpoint : PR #281 (Organisations phases 2 à 6), PR #282, PR #285 (COM, #280).
 
 ## Points ouverts
 
