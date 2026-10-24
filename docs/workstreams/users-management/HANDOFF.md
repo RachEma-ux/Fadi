@@ -11,7 +11,7 @@ Mis à jour : 2026-10-24 (UTC).
   consignement (PR #259, #263 et la présente mise à jour du suivi).
 - **UM-27 (2026-10-24)** : branche `feat/253-corbeille-anonymiser` (depuis `main` à `c201d2b`), [PR #270](https://github.com/RachEma-ux/Fadi/pull/270) vers `main`
   **non fusionnée** — corbeille des comptes et « Anonymiser maintenant » (amendement de D-5, DECISIONS.md).
-- **UM-31 (2026-10-24)** : branche `fix/admin-invitations-comptes-test` (depuis `main` à `7083285`), PR vers `main`
+- **UM-31 (2026-10-24)** : branche `fix/admin-invitations-comptes-test` (depuis `main` à `7083285`, `main` fusionné à `5767835`), [PR #278](https://github.com/RachEma-ux/Fadi/pull/278) vers `main`
   **non fusionnée** — « Renvoyer » / « Copier le lien » sur les invitations, filtre « Masquer les comptes de test »
   (DECISIONS.md). Indépendante des PR #274 (UM-29) et #275 (UM-30).
 - **UM-30 (2026-10-24)** : branche `fix/um-29-langue-courriels` (depuis `main` à `7083285`), [PR #275](https://github.com/RachEma-ux/Fadi/pull/275) vers `main` **non
@@ -33,7 +33,7 @@ Mis à jour : 2026-10-24 (UTC).
 
 ## Prochaine action
 
-- UM-31 : relever la CI de la PR sur son HEAD ; fusion et déploiement en préproduction **seulement** sur décision du
+- UM-31 : CI verte sur `287ed62` (run 40120760488, DB-3 actif) ; revérifier le HEAD courant ; fusion et déploiement en préproduction **seulement** sur décision du
   maître d'ouvrage (aucune migration ajoutée).
 
 - UM-30 : vérifier la CI de la PR (DB-3 et recette `comptes-admin.mjs`, section 5 bis) ; fusion et déploiement en

@@ -19,7 +19,7 @@ PR #255 n'est attendue. Reste au maître d'ouvrage : le déploiement en producti
 **Amendement de D-5 (UM-27, 2026-10-24) : implémenté, vérifié en local et en CI (`4aa7d0b`), [PR #270](https://github.com/RachEma-ux/Fadi/pull/270) vers `main` (non fusionnée, aucun
 déploiement).** Corbeille des comptes et « Anonymiser maintenant » dans `/admin/utilisateurs` — voir la section UM-27.
 
-**UM-31 (2026-10-24) : implémenté, vérifié en local, PR vers `main` non fusionnée, aucun déploiement.** « Renvoyer » et
+**UM-31 (2026-10-24) : implémenté, vérifié en local et en CI (`287ed62`), [PR #278](https://github.com/RachEma-ux/Fadi/pull/278) vers `main` non fusionnée, aucun déploiement.** « Renvoyer » et
 « Copier le lien » sur les invitations en attente, filtre « Masquer les comptes de test » appliqué par le serveur — voir
 la section UM-31.
 
@@ -50,7 +50,9 @@ Branche `fix/admin-invitations-comptes-test`, depuis `main` à `7083285`. Vérif
 - Revue Codex (P2) : le lien émis par le formulaire restait affiché après « Renvoyer » (lien mort). Corrigé : un seul
   état « dernier lien émis » partagé par le formulaire et la liste, retiré aussi quand l'invitation est annulée ;
   `comptes-admin.mjs` le contrôle (78 ✓ en local ; 82 ✓ après fusion de `main`, section UM-30 comprise).
-- CI de la PR : à relever sur le HEAD courant.
+- **CI verte** sur `287ed62` (fusion de `main` comprise) : run CI 40120760488 et les 5 autres workflows ; DB-3 actif
+  (attestation `fadi-ci-db3`), « 6. invitations renouvelées et comptes de test (UM-31) » ✓ (2) ; job e2e (complements) :
+  `comptes-api.mjs`, `comptes-securite.mjs` et `comptes-admin.mjs` verts. Premier commit `27af3eb` : vert aussi (run 40118973515).
 
 
 ### Langue des courriels (UM-30, 2026-10-24)
