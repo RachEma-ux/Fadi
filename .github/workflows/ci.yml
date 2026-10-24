@@ -353,6 +353,9 @@ jobs:
       MAIL_FROM: "Fadi <noreply@fadi.test>"
       MAIL_DAILY_LIMIT: "3000"
       MAIL_RECIPIENT_HOURLY_LIMIT: "50"
+      # UM-28 : les recettes écrivent à @example.test et lisent Mailpit ; sans ce drapeau (refusé en production), un
+      # destinataire de domaine réservé n'est jamais envoyé en SMTP.
+      MAIL_ALLOW_RESERVED_DOMAINS: "true"
       MAILPIT_URL: http://localhost:8025
       APP_PUBLIC_URL: http://localhost:3001
       # Mode de production : l'API sert le build de l'application (WEB_DIST) — un seul port, même origine, pas de vite preview.

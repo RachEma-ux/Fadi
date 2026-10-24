@@ -4,7 +4,7 @@ import { MAIL_TEMPLATES, renderMail } from "./templates.js";
 
 
 
-import { quotaDecision, retryDelayMs } from "./quota.js";
+import { isReservedDomain, quotaDecision, retryDelayMs } from "./quota.js";
 
 const smtpEnv = { MAIL_TRANSPORT: "smtp", SMTP_HOST: "mail.infomaniak.com", SMTP_PORT: "465", SMTP_SECURE: "true", SMTP_USER: "noreply@exemple.ch", SMTP_PASS: "x", MAIL_FROM: "Fadi <noreply@exemple.ch>", APP_PUBLIC_URL: "https://fadi.exemple.ch" };
 
@@ -45,7 +45,35 @@ describe("garde-fou de quota", () => {
   it("quota quotidien atteint : bascule vers le lien à copier", () => { expect(quotaDecision({ ...base, last24h: 150 })).toBe("daily_quota"); });
   it("5 courriels par heure et par destinataire", () => { expect(quotaDecision({ ...base, recipientLastHour: 5 })).toBe("recipient_limit"); });
   it("transport absent", () => { expect(quotaDecision({ ...base, transport: "disabled" })).toBe("disabled"); });
+  it("domaine réservé en SMTP : non envoyé, raison explicite (lien à copier)", () => {
+    expect(quotaDecision({ ...base, to: "comptes-a@example.test" })).toBe("reserved_domain");
+    expect(quotaDecision({ ...base, to: "bob@example.com" })).toBe("reserved_domain");
+    expect(quotaDecision({ ...base, to: "vraie@fadimmo.com" })).toBeNull();
+  });
+  it("domaine réservé : autorisé explicitement (Mailpit), sans objet hors SMTP, transport absent prioritaire", () => {
+    expect(quotaDecision({ ...base, to: "a@example.test", allowReserved: true })).toBeNull();
+    expect(quotaDecision({ ...base, transport: "console", to: "a@example.test" })).toBeNull();
+    expect(quotaDecision({ ...base, transport: "disabled", to: "a@example.test" })).toBe("disabled");
+    expect(quotaDecision({ ...base, to: "a@example.test", last24h: 150 })).toBe("reserved_domain");
+  });
   it("attente croissante", () => { expect([1, 2, 3].map(retryDelayMs)).toEqual([30_000, 120_000, 480_000]); });
+});
+
+describe("domaines réservés (RFC 2606 / 6761, UM-28)", () => {
+  it.each([
+    "a@example.com", "a@example.net", "a@example.org", "a@mail.example.com", "a@foo.example", "a@example.test",
+    "a@fadi.test", "deleted-u1@invalid", "a@x.invalid", "a@localhost", "a@app.localhost", "A@EXAMPLE.COM", "a@example.com.",
+    "sans-arobase", "a@",
+  ])("%s : réservé", (a) => { expect(isReservedDomain(a)).toBe(true); });
+  it.each(["noreply@fadimmo.com", "a@gmail.com", "a@example.co", "a@myexample.com", "a@testing.ch", "a@example.com.au", "a@invalid.ch"])(
+    "%s : non réservé", (a) => { expect(isReservedDomain(a)).toBe(false); });
+  it("MAIL_ALLOW_RESERVED_DOMAINS : faux par défaut, true hors production, refusé en production ou mal écrit", () => {
+    expect(readMailConfig(smtpEnv).allowReservedDomains).toBe(false);
+    expect(readMailConfig({ ...smtpEnv, MAIL_ALLOW_RESERVED_DOMAINS: "true" }).allowReservedDomains).toBe(true);
+    expect(readMailConfig({ ...smtpEnv, NODE_ENV: "production", MAIL_ALLOW_RESERVED_DOMAINS: "false" }).allowReservedDomains).toBe(false);
+    expect(() => readMailConfig({ ...smtpEnv, NODE_ENV: "production", MAIL_ALLOW_RESERVED_DOMAINS: "true" })).toThrow(/interdit en production/);
+    expect(() => readMailConfig({ ...smtpEnv, MAIL_ALLOW_RESERVED_DOMAINS: "1" })).toThrow(MailConfigError);
+  });
 });
 
 describe("gabarits FR / EN", () => {

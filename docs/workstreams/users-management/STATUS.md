@@ -1,6 +1,6 @@
 # Gestion des comptes (Users Management) — Statut
 
-Mis à jour : 2026-10-23 (UTC).
+Mis à jour : 2026-10-24 (UTC).
 
 ## État
 
@@ -208,6 +208,22 @@ Relevé de `sudo fadi-preprod status` transmis par le maître d'ouvrage (VPS, no
 - Production (lecture seule) : `app-proxy`, `app-app`, `app-backup`, `app-db` démarrés depuis 3 jours, inchangés.
 - Non exercés en préproduction : `comptes-api`, `comptes-admin`, `comptes-securite` (base jetable et transport de
   courriel exigés) ; couverts par la CI. Les tests de l'outillage (PR #264) utilisent des doubles `docker` / `curl`.
+
+### Courriel en préproduction et domaines réservés (2026-10-24, UM-28) — Implémenté, non déployé
+
+Branche `feat/preprod-courriel`, PR vers `main` (non fusionnée, aucun déploiement). Demande du maître d'ouvrage relayée
+par la session d'exploitation du VPS.
+
+- `deploy/preprod/compose.yml` : variables de courriel transmises au seul service `app` depuis `PREPROD_*`
+  facultatives (sans `PREPROD_MAIL_TRANSPORT` : aucun envoi ; `MAIL_DAILY_LIMIT` 50 par défaut) ; garde
+  `fadi-preprod garde` : `SMTP_PASS` refusé hors `app`. `env.example` et RUNBOOK §3 bis (procédure administrateur).
+- Mailer : `isReservedDomain` et raison `reserved_domain` (`apps/api/src/lib/mailer/quota.ts`, `outbox.ts`) ;
+  `MAIL_ALLOW_RESERVED_DOMAINS=true` en CI (Mailpit), refusé en production (`index.ts`).
+- Preuves locales (2026-10-24) : `mailer.test.ts` (domaines réservés / non réservés, décision de file, drapeau) ;
+  `bash deploy/preprod/tests/run.sh` sous un compte non root : **99 réussis, 0 échec** (dont « garde refuse : SMTP_PASS
+  donné à la recette », compose résolu sans / avec `PREPROD_MAIL_*`) et `run-auto.sh` **80 réussis, 0 échec** ;
+  `npm run typecheck`, `npm test`, `npm run build` : voir la PR. CI : à relever sur la PR.
+- Non vérifié : envoi réel depuis la préproduction (exige les variables sur le VPS, RUNBOOK §3 bis et §5).
 
 ## Écarts au plan (le concept et D-7 priment)
 

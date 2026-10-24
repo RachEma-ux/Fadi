@@ -5,6 +5,7 @@
 #   # apps/api/.env : DATABASE_URL=postgresql://fadi:fadi_dev_password@localhost:5432/fadi
 #   #                 MAIL_TRANSPORT=smtp SMTP_HOST=localhost SMTP_PORT=1025 SMTP_SECURE=false
 #   #                 SMTP_USER=noreply@fadi.test MAIL_FROM="Fadi <noreply@fadi.test>" APP_PUBLIC_URL=http://localhost:5173
+#   #                 MAIL_ALLOW_RESERVED_DOMAINS=true   # comptes @example.test capturés par Mailpit (UM-28)
 
 services:
   db:
