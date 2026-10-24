@@ -12,8 +12,8 @@ Mis à jour : 2026-10-24 (UTC).
 - **UM-27 (2026-10-24)** : branche `feat/253-corbeille-anonymiser` (depuis `main` à `c201d2b`), [PR #270](https://github.com/RachEma-ux/Fadi/pull/270) vers `main`
   **non fusionnée** — corbeille des comptes et « Anonymiser maintenant » (amendement de D-5, DECISIONS.md).
 - **UM-29 (2026-10-24)** : branche `fix/collaboration-ecarts-e1-e3` (depuis `main` à `2cc038a`), PR vers `main` **non
-  fusionnée** — écarts graves E1 (audience), E2 (export du lecteur, tranche CR-D4), E3 (journal des accès) du cadrage des
-  règles communes (DECISIONS.md UM-29 ; PR #273 non fusionnée, non modifiée).
+  fusionnée** — écarts graves E1 (audience), E2 (export du lecteur, décision CR-D4 / CR-R2), E3 (journal des accès) du cadrage des
+  règles communes (UM-29, détail dans `../collaboration-rules/DECISIONS.md` CR-C1, la PR #273 étant fusionnée).
 - Dernier commit vérifié : à relever en début de session ; ne pas réutiliser un SHA périmé.
 
 ## Dernier état vérifié

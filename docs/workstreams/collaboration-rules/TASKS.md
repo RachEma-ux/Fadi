@@ -10,7 +10,10 @@
 
 ## En cours
 
-- CR-0 — Cadrage livré sur PR, en attente de revue ; CR-D1 à CR-D10 toutes répondues (CR-R1, CR-R2) (Issue : #272).
+- [ ] CR-5 — Corriger les écarts graves E1, E2, E3 (CR-C1) : implémenté et vérifié en local ; PR #274 ouverte, non
+  fusionnée ; CI du HEAD à vérifier (Issue : #272).
+
+- CR-0 — Cadrage fusionné (PR #273) ; CR-D1 à CR-D10 toutes répondues (CR-R1, CR-R2) (Issue : #272).
 
 ## Terminé
 
