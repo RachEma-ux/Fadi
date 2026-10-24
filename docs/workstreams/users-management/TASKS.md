@@ -34,6 +34,9 @@
 - [x] UM-PREPROD — Préproduction compatible D-7 (PR #264), `init-env` lancé, `02329e1` déployé avec succès le 2026-10-23
   à 15:28 UTC (UM-26) (Issue : #253).
 - [x] UM-CLOSE — Issue #253 close par le maître d'ouvrage le 2026-10-23 (terminée) (UM-26).
+- [x] UM-31 — Invitations : « Renvoyer » (nouveau lien, l'ancien invalidé) et « Copier le lien » sans courriel ; filtre
+  serveur « Masquer les comptes de test » (domaines réservés) ; icônes et raccourcis (règle d'or). Vérifié en local ; PR
+  vers `main` non fusionnée (DECISIONS.md UM-31).
 - [x] UM-D7 — Amendement D-7 : schémas `auth` / `admin`, rôles au moindre privilège, CI et restauration (Issue : #253).
 
 ## Bloqué

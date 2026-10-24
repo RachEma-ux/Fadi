@@ -1,19 +1,21 @@
 /**
  * Administration de la plateforme — utilisateurs (gestion des comptes, phase 5 ; D-2 : comptes seulement, jamais le
  * contenu des projets). Tableau paginé avec recherche et filtres, fiche (projets, sessions, accès support, historique),
- * actions confirmées, invitations, corbeille (UM-27 : restaurer, anonymiser maintenant). La protection est au serveur :
+ * actions confirmées, invitations (UM-31 : renvoyer, copier le lien émis), corbeille (UM-27 : restaurer, anonymiser
+ * maintenant), filtre « Masquer les comptes de test » appliqué par le serveur (UM-31). La protection est au serveur :
  * 404 pour un non-administrateur, 403 `mfa_required` sans double authentification. Les mutations exigent le réseau et
  * ne sont jamais mises en file hors ligne.
  */
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { accountApi, ApiError, ROLE_LABEL, type AdminStatus, type AdminTrashItem, type AdminUser, type AdminUsersFilters } from "../../lib/api";
+import { accountApi, ApiError, ROLE_LABEL, type AdminStatus, type AdminTrashItem, type AdminUser, type AdminUsersFilters, type InvitationView } from "../../lib/api";
 import { useAuth } from "../../lib/auth-context";
 import { LOCALE } from "../../lib/i18n";
 import { useOnline } from "../../components/SyncIndicator";
 import { apiMessage, ConfirmDialog, CopyLink } from "../../components/comptes/ComptesUI";
 import { IconeAdmin } from "../../components/comptes/IconeAdmin";
+import { commandeAdminDuClavier, RACCOURCIS_ADMIN } from "../../components/comptes/raccourcis-admin";
 
 const STATUS_LABEL: Record<AdminStatus, string> = { active: "actif", suspended: "suspendu", closed: "fermé (anonymisé)", locked: "verrouillé", deletion_pending: "suppression programmée" };
 const ROLE_PLATFORM: Record<"user" | "admin", string> = { user: "utilisateur", admin: "administrateur" };
@@ -82,20 +84,66 @@ function InviteForm() {
   );
 }
 
-function Invitations() {
+/**
+ * Invitations en attente. « Renvoyer » (invitation de compte) passe par la route d'invitation existante : nouveau jeton,
+ * l'ancien lien cesse de fonctionner. Quand aucun courriel n'est parti, le lien qui vient d'être émis est proposé à la
+ * copie ; il n'existe que dans cette page (le serveur n'en garde que l'empreinte) et disparaît au rechargement.
+ */
+function Invitations({ hideTest }: { hideTest: boolean }) {
   const online = useOnline();
   const queryClient = useQueryClient();
-  const q = useQuery({ queryKey: ["admin", "invitations"], queryFn: () => accountApi.adminInvitations("pending") });
+  const [issued, setIssued] = useState<{ id: string; link: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const q = useQuery({ queryKey: ["admin", "invitations", hideTest], queryFn: () => accountApi.adminInvitations("pending", hideTest) });
   const cancel = useMutation({ mutationFn: accountApi.adminCancelInvitation, onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["admin", "invitations"] }) });
+  const resend = useMutation({
+    mutationFn: (i: InvitationView) => accountApi.adminInvite(i.email),
+    onSuccess: (r) => {
+      setCopied(false);
+      setIssued(r.mail.link ? { id: r.invitation.id, link: r.mail.link } : null);
+      setMsg({ ok: true, text: r.mail.queued
+        ? `Invitation renouvelée : l’ancien lien ne fonctionne plus. Un nouveau courriel part vers ${r.invitation.email}.`
+        : `Invitation renouvelée : l’ancien lien ne fonctionne plus. Aucun courriel n’est parti : copiez le nouveau lien pour ${r.invitation.email}.` });
+      void queryClient.invalidateQueries({ queryKey: ["admin", "invitations"] });
+    },
+    onError: (err) => { setIssued(null); setMsg({ ok: false, text: apiMessage(err, "L’invitation n’a pas pu être renouvelée.") }); },
+  });
+  const copy = (link: string) => void navigator.clipboard?.writeText(link).then(() => setCopied(true)).catch(() => setCopied(false));
+  const canResend = (i: InvitationView) => i.purpose === "platform_account";
+  // Raccourcis (règle d'or) : « Renvoyer » agit sur la ligne qui a le focus ; « Copier le lien » sur le dernier lien émis.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const c = commandeAdminDuClavier(e);
+      if (c === "copier-lien" && issued) { e.preventDefault(); copy(issued.link); return; }
+      if (c !== "renvoyer") return;
+      const row = document.activeElement instanceof HTMLElement ? document.activeElement.closest<HTMLElement>("[data-invitation-id]") : null;
+      const inv = q.data?.invitations.find((i) => i.id === row?.dataset["invitationId"]);
+      if (!inv || !canResend(inv) || !online || resend.isPending) return;
+      e.preventDefault();
+      setMsg(null);
+      resend.mutate(inv);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  });
   if (!q.data?.invitations.length) return null;
   return (
-    <section className="panel" aria-labelledby="admin-invitations">
+    <section className="panel" aria-labelledby="admin-invitations" data-admin-invitations>
       <h2 id="admin-invitations">Invitations en attente</h2>
+      {msg && <p role={msg.ok ? "status" : "alert"} className={msg.ok ? "h7-muted" : "form-error"} data-invitations-message>{msg.text}</p>}
       <ul className="sessions-list">
         {q.data.invitations.map((i) => (
-          <li key={i.id} data-invitation={i.email}>
-            <span><span translate="no">{i.email}</span> <small>· {i.projectName ? <span translate="no">{i.projectName}</span> : "compte"}{` · valable jusqu’au ${date(i.expiresAt)} · `}{INVITATION_STATUS[i.status]}</small></span>
-            <button type="button" className="button-secondary" disabled={!online || cancel.isPending} onClick={() => cancel.mutate(i.id)}>Annuler l’invitation</button>
+          <li key={i.id} data-invitation={i.email} data-invitation-id={i.id}>
+            <span><span translate="no">{i.email}</span> <small>· {i.projectName ? <span translate="no">{i.projectName}</span> : i.purpose === "project_participation" ? "projet" : "compte"}{` · valable jusqu’au ${date(i.expiresAt)} · `}{INVITATION_STATUS[i.status]}</small></span>
+            <span className="admin-trash-actions">
+              {canResend(i)
+                ? <button type="button" className="button-secondary" data-invitation-resend aria-keyshortcuts={RACCOURCIS_ADMIN.renvoyer.aria} title={RACCOURCIS_ADMIN.renvoyer.libelle} disabled={!online || resend.isPending} onClick={() => { setMsg(null); resend.mutate(i); }}><IconeAdmin commande="renvoyer" />Renvoyer</button>
+                : <small className="h7-muted">Renvoi par le propriétaire du projet</small>}
+              {issued?.id === i.id && <button type="button" className="button-secondary" data-invitation-copy aria-keyshortcuts={RACCOURCIS_ADMIN["copier-lien"].aria} title={RACCOURCIS_ADMIN["copier-lien"].libelle} onClick={() => copy(issued.link)}><IconeAdmin commande="copier-lien" />Copier le lien</button>}
+              <button type="button" className="button-secondary" disabled={!online || cancel.isPending} onClick={() => cancel.mutate(i.id)}>Annuler l’invitation</button>
+            </span>
+            {issued?.id === i.id && <span className="admin-invitation-link"><code translate="no" data-invitation-link>{issued.link}</code>{copied && <span role="status">Lien copié.</span>}</span>}
           </li>
         ))}
       </ul>
@@ -237,7 +285,8 @@ function UserDetail({ id, onAction, onClose }: { id: string; onAction: (a: Actio
 export function AdminUsersPage() {
   const online = useOnline();
   const queryClient = useQueryClient();
-  const [filters, setFilters] = useState<Required<Pick<AdminUsersFilters, "q" | "status" | "role" | "page" | "pageSize">>>({ q: "", status: "", role: "", page: 1, pageSize: 25 });
+  // « Masquer les comptes de test » actif par défaut (UM-31) : le serveur écarte les adresses de domaine réservé.
+  const [filters, setFilters] = useState<Required<Pick<AdminUsersFilters, "q" | "status" | "role" | "page" | "pageSize" | "hideTest">>>({ q: "", status: "", role: "", page: 1, pageSize: 25, hideTest: true });
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const [action, setAction] = useState<Action | null>(null);
@@ -261,6 +310,15 @@ export function AdminUsersPage() {
     onSuccess: (text) => { setAction(null); setMsg({ ok: true, text }); void queryClient.invalidateQueries({ queryKey: ["admin"] }); },
     onError: (err) => { setAction(null); setMsg({ ok: false, text: apiMessage(err, "Action refusée.") }); },
   });
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (commandeAdminDuClavier(e) !== "comptes-test") return;
+      e.preventDefault();
+      setFilters((f) => ({ ...f, page: 1, hideTest: !f.hideTest }));
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
   if (list.error instanceof ApiError && list.error.code === "mfa_required") return <MfaRequired />;
   if (list.error instanceof ApiError && list.error.code === "mfa_session_required") return <MfaSessionRequired />;
   if (list.error instanceof ApiError && list.error.status === 404) {
@@ -276,8 +334,15 @@ export function AdminUsersPage() {
       {!online && <p role="status" className="access-banner">{OFFLINE}</p>}
       {msg && <p role={msg.ok ? "status" : "alert"} className={msg.ok ? "h7-muted" : "form-error"} data-admin-message>{msg.text}</p>}
       {msg?.ok && cancelLink && <CopyLink link={cancelLink} />}
+      <div className="admin-filters" data-admin-test-filter>
+        <label className="admin-checkbox" title={RACCOURCIS_ADMIN["comptes-test"].libelle}>
+          <input type="checkbox" name="hideTest" data-hide-test aria-keyshortcuts={RACCOURCIS_ADMIN["comptes-test"].aria} checked={filters.hideTest} onChange={(e) => set({ hideTest: e.target.checked })} />
+          <IconeAdmin commande="comptes-test" />Masquer les comptes de test
+        </label>
+        <small>Comptes et invitations des recettes automatiques (domaines réservés : example.com, .test, .invalid…), comptes anonymisés compris. Rien n’est supprimé : décochez pour les afficher.</small>
+      </div>
       <InviteForm />
-      <Invitations />
+      <Invitations hideTest={filters.hideTest} />
       <section className="panel" aria-labelledby="admin-list">
         <h2 id="admin-list">Comptes</h2>
         <form className="admin-filters" role="search" onSubmit={(e: FormEvent) => { e.preventDefault(); set({ q: search.trim() }); }}>

@@ -11,6 +11,9 @@ Mis à jour : 2026-10-24 (UTC).
   consignement (PR #259, #263 et la présente mise à jour du suivi).
 - **UM-27 (2026-10-24)** : branche `feat/253-corbeille-anonymiser` (depuis `main` à `c201d2b`), [PR #270](https://github.com/RachEma-ux/Fadi/pull/270) vers `main`
   **non fusionnée** — corbeille des comptes et « Anonymiser maintenant » (amendement de D-5, DECISIONS.md).
+- **UM-31 (2026-10-24)** : branche `fix/admin-invitations-comptes-test` (depuis `main` à `7083285`), PR vers `main`
+  **non fusionnée** — « Renvoyer » / « Copier le lien » sur les invitations, filtre « Masquer les comptes de test »
+  (DECISIONS.md). Indépendante des PR #274 (UM-29) et #275 (UM-30).
 - Dernier commit vérifié : à relever en début de session ; ne pas réutiliser un SHA périmé.
 
 ## Dernier état vérifié
@@ -26,6 +29,9 @@ Mis à jour : 2026-10-24 (UTC).
 - CI de la PR #255 verte sur `81af007` ; sur `570d248`, DB-3 actif : 12 suites (105 tests) vertes sur base jetable attestée, 515 tests API (STATUS.md) ; revérifier le HEAD courant à la reprise.
 
 ## Prochaine action
+
+- UM-31 : relever la CI de la PR sur son HEAD ; fusion et déploiement en préproduction **seulement** sur décision du
+  maître d'ouvrage (aucune migration ajoutée).
 
 - UM-27 : CI de la PR #270 verte sur `4aa7d0b` (DB-3 : 123 tests dans les 12 suites) ; revérifier la CI du HEAD courant,
   fusion demandée par le maître d'ouvrage le 2026-10-24 (« fusionne #270 ») après CI verte du commit de fusion de `main`. Aucun déploiement sans son accord (aucune migration ajoutée).

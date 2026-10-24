@@ -19,7 +19,30 @@ PR #255 n'est attendue. Reste au maître d'ouvrage : le déploiement en producti
 **Amendement de D-5 (UM-27, 2026-10-24) : implémenté, vérifié en local et en CI (`4aa7d0b`), [PR #270](https://github.com/RachEma-ux/Fadi/pull/270) vers `main` (non fusionnée, aucun
 déploiement).** Corbeille des comptes et « Anonymiser maintenant » dans `/admin/utilisateurs` — voir la section UM-27.
 
+**UM-31 (2026-10-24) : implémenté, vérifié en local, PR vers `main` non fusionnée, aucun déploiement.** « Renvoyer » et
+« Copier le lien » sur les invitations en attente, filtre « Masquer les comptes de test » appliqué par le serveur — voir
+la section UM-31.
+
 ## Faits vérifiés
+
+### Invitations renouvelables et comptes de test masqués (UM-31, 2026-10-24)
+
+Branche `fix/admin-invitations-comptes-test`, depuis `main` à `7083285`. Vérifié en local sur PostgreSQL 16 + PostGIS 3
+(API construite en `fadi_app` servant `WEB_DIST`, transport de courriel `console`, journal lu par les recettes) :
+
+- `npm run typecheck` : vert. `npm run build` : vert.
+- `npm test` : paquets et web verts (dont `icones-admin.test.ts`, 6 tests, règle d'or : icônes et raccourcis UM-31) ;
+  API : 480 tests purs verts (dont le test d'équivalence `RESERVED_ADDRESS_PATTERN` / `isReservedDomain`), les 12 suites
+  DB-3 refusées par la garde **seule** (`check-api-tests-db3.mjs` vert).
+- `app.test.ts` sur base jetable locale attestée (`preparer-base-test.mjs`, autorité locale ajoutée au registre dans la
+  copie de travail seulement puis retirée par `git checkout`) : **80 tests verts**, dont les 2 de « 6. invitations
+  renouvelées et comptes de test » (ancien jeton 404, nouveau 200, aucun jeton en clair en base ni dans la liste ;
+  `hideTest` : total exact, invitations filtrées, valeur invalide 400). Preuve opposable : DB-3 en CI.
+- `comptes-admin.mjs` : **vert** (contrôles UM-31 : filtre coché par défaut, Alt+Maj+T → `hideTest=false`, invitation de
+  test masquée, « Renvoyer » par bouton puis Alt+Maj+R, ancien lien 404, « Copier le lien » par Alt+Maj+L lu dans le
+  presse-papiers, icônes, axe-core, passe anglaise). `comptes-api.mjs` (109 ✓) et `comptes-securite.mjs` (71 ✓) :
+  verts, inchangés. `interface-anglais.mjs` : vert (0,29 % de textes restés en français, seuil 2 %).
+- CI de la PR : à relever sur le HEAD courant.
 
 ### Corbeille et « Anonymiser maintenant » (UM-27, 2026-10-24)
 

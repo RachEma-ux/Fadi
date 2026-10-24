@@ -3,7 +3,8 @@
  * `requirePlatformRole("admin")` : 404 pour toute personne qui n'est pas administrateur actif, 404 partout tant que
  * `FADI_ADMIN_ENABLED` n'est pas `true`, 403 `mfa_required` pour un administrateur sans double authentification.
  *
- *   GET    /admin/users                      tableau paginé : recherche `q`, filtres `status`, `role`
+ *   GET    /admin/users                      tableau paginé : recherche `q`, filtres `status`, `role`, `hideTest`
+ *                                            (`true` : comptes de test des recettes masqués, domaines réservés, UM-31)
  *   GET    /admin/users/:id                  fiche : projets (rôles), sessions, accès support, historique d'audit
  *   PATCH  /admin/users/:id/role             { role: "user" | "admin" }
  *   POST   /admin/users/:id/suspend          sessions révoquées, réservations d'édition libérées
@@ -15,7 +16,9 @@
  *   POST   /admin/users/:id/anonymize        { confirmEmail } « Anonymiser maintenant » : compte de la corbeille seulement,
  *                                            même anonymisation que la tâche des 30 jours (`anonymiseAccountIn`), irréversible
  *   POST   /admin/users/invitations          { email } → invitation à créer un compte (UM-3)
- *   GET    /admin/invitations · DELETE /admin/invitations/:id
+ *   GET    /admin/invitations                filtres `status`, `hideTest` (UM-31) · DELETE /admin/invitations/:id
+ *   « Renvoyer » une invitation de compte = POST /admin/users/invitations sur la même adresse : nouveau jeton (seule
+ *   son empreinte est stockée), l'ancien lien cesse de fonctionner ; le lien en clair n'est rendu qu'une fois.
  *
  * Garde-fous : jamais sur soi-même (rôle, suspension, suppression) ; jamais le dernier administrateur actif (vérifié
  * sous le verrou d'éligibilité `lockAdminEligibility`, dans la transaction même de la mutation) ; chaque action journalisée dans `audit_log`. Les mutations ne sont jamais mises en
@@ -36,6 +39,7 @@ import { createOrRenewInvitation, invitationView } from "../../lib/invitations.j
 import { cancelScheduledDeletion, deletionMail, scheduleDeletion, sharedOwnedProjects } from "../auth.js";
 import { lockAdminEligibility } from "../../lib/admin-eligibility.js";
 import { anonymiseAccountIn } from "../../lib/account-jobs.js";
+import { RESERVED_ADDRESS_PATTERN } from "../../lib/mailer/quota.js";
 import { anonymisationAt, anonymiseNowRefusal, deletionRequester, DELETION_GRACE_DAYS, type AnonymiseNowRefusal } from "../../lib/security/deletion.js";
 
 export const adminRouter = Router();
@@ -44,12 +48,17 @@ adminRouter.use(requirePlatformRole("admin"));
 
 const notFound = (res: Response) => res.status(404).json({ error: "not_found" });
 
+/** `hideTest=true` : adresses de domaine réservé (comptes des recettes automatiques) écartées en SQL ; rien n'est supprimé. */
+const hideTestSchema = z.enum(["true", "false"]).optional().transform((v) => v === "true");
+const notReserved = (column: typeof users.email | typeof invitations.email) => sql`${column} !~* ${RESERVED_ADDRESS_PATTERN}`;
+
 const listSchema = z.object({
   q: z.string().trim().max(254).optional(),
   status: z.enum(["active", "suspended", "closed", "locked", "deletion_pending"]).optional(),
   role: z.enum(["user", "admin"]).optional(),
   page: z.coerce.number().int().min(1).max(10_000).default(1),
   pageSize: z.coerce.number().int().min(5).max(100).default(25),
+  hideTest: hideTestSchema,
 });
 
 function userView(u: typeof users.$inferSelect, projectsCount: number) {
@@ -66,8 +75,9 @@ adminRouter.get("/users", async (req, res) => {
     res.status(400).json({ error: "invalid_input" });
     return;
   }
-  const { q, status, role, page, pageSize } = parsed.data;
+  const { q, status, role, page, pageSize, hideTest } = parsed.data;
   const filters: SQL[] = [];
+  if (hideTest) filters.push(notReserved(users.email));
   if (q) filters.push(or(ilike(users.email, `%${q.replace(/[%_\\]/g, "\\$&")}%`), ilike(users.displayName, `%${q.replace(/[%_\\]/g, "\\$&")}%`))!);
   if (role) filters.push(eq(users.platformRole, role));
   if (status === "locked") filters.push(eq(users.status, "active"), isNull(users.deletionRequestedAt), gt(users.lockedUntil, new Date()));
@@ -337,7 +347,12 @@ adminRouter.post("/users/invitations", async (req, res) => {
 
 adminRouter.get("/invitations", async (req, res) => {
   const status = z.enum(["pending", "accepted", "declined", "expired", "cancelled"]).optional().safeParse(req.query["status"]);
-  const rows = await db.select().from(invitations).where(status.success && status.data ? eq(invitations.status, status.data) : undefined).orderBy(desc(invitations.createdAt)).limit(200);
+  const hideTest = hideTestSchema.safeParse(req.query["hideTest"]);
+  if (!hideTest.success) return void res.status(400).json({ error: "invalid_input" });
+  const filters: SQL[] = [];
+  if (status.success && status.data) filters.push(eq(invitations.status, status.data));
+  if (hideTest.data) filters.push(notReserved(invitations.email));
+  const rows = await db.select().from(invitations).where(filters.length ? and(...filters) : undefined).orderBy(desc(invitations.createdAt)).limit(200);
   res.json({ invitations: rows.map((r) => invitationView(r)) });
 });
 

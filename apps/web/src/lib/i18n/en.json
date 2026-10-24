@@ -10879,5 +10879,16 @@
 "Ce compte est déjà anonymisé.": "This account is already anonymised.",
 "Seul un compte de la corbeille (suppression programmée) peut être anonymisé maintenant.": "Only an account in the recycle bin (scheduled deletion) can be anonymised now.",
 "L’adresse saisie ne correspond pas à celle du compte : rien n’a été anonymisé.": "The address typed does not match the account's: nothing was anonymised.",
-"Saisissez l’adresse du compte pour confirmer.": "Type the account's address to confirm."
+"Saisissez l’adresse du compte pour confirmer.": "Type the account's address to confirm.",
+"Invitation renouvelée : l’ancien lien ne fonctionne plus. Un nouveau courriel part vers {0}.": "Invitation renewed: the old link no longer works. A new email is on its way to {0}.",
+"Invitation renouvelée : l’ancien lien ne fonctionne plus. Aucun courriel n’est parti : copiez le nouveau lien pour {0}.": "Invitation renewed: the old link no longer works. No email was sent: copy the new link for {0}.",
+"L’invitation n’a pas pu être renouvelée.": "The invitation could not be renewed.",
+"Renvoyer": "Resend",
+"Renvoi par le propriétaire du projet": "Resent by the project owner",
+"projet": "project",
+"Masquer les comptes de test": "Hide test accounts",
+"Comptes et invitations des recettes automatiques (domaines réservés : example.com, .test, .invalid…), comptes anonymisés compris. Rien n’est supprimé : décochez pour les afficher.": "Accounts and invitations from automated test runs (reserved domains: example.com, .test, .invalid…), anonymised accounts included. Nothing is deleted: untick to show them.",
+"Raccourci : Alt+Maj+R": "Shortcut: Alt+Shift+R",
+"Raccourci : Alt+Maj+L": "Shortcut: Alt+Shift+L",
+"Raccourci : Alt+Maj+T": "Shortcut: Alt+Shift+T"
 }
