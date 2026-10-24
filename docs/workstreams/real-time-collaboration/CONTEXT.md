@@ -26,7 +26,7 @@ et des conflits.
 - Règles communes : `docs/workstreams/collaboration-rules/PLAN.md` § 1.3 (RT-R1 à RT-R7), § 2 (scénarios S6, S7, S9) ;
   décisions CR-D1 à CR-D10 (`collaboration-rules/DECISIONS.md`).
 - Évaluation préalable : `docs/continuity/EVALUATION-PLAN-TEMPS-REEL-2026-10-24.md` (écarts P1 à P10).
-- Chantiers dont il dépend : `organisations-participation/` (#262, OP-3, PR #281), PR #282 (E5, E6, E9, E10),
+- Chantiers dont il dépend : `organisations-participation/` (#262, OP-3, PR #281 fusionnée : phases 2, 3 bis, 5), PR #282 (E5, E6, E9, E10),
   `communication/` (#280, PR #285, fusionnée dans `main` le 2026-10-24).
 
 ## Contraintes

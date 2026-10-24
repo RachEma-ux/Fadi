@@ -5,6 +5,7 @@
  */
 export type IconName =
   | "home"
+  | "organization"
   | "folder"
   | "route"
   | "atelier"
@@ -118,6 +119,8 @@ const PATHS: Record<IconName, string> = {
   // Administration : silhouette et bouclier (tracé inspiré de Tabler « user-shield », MIT) ; distincte de « people » (Collaboration).
   admin: "M8 7a4 4 0 1 0 8 0 4 4 0 0 0-8 0M6 21v-2a4 4 0 0 1 4-4h2m10 1c0 4-2.5 6-3.5 6S15 20 15 16c1 0 2.5-.5 3.5-1.5 1 1 2.5 1.5 3.5 1.5Z",
   home: "M3 11.5 12 4l9 7.5M5.5 10.5V20h13v-9.5M10 20v-5h4v5",
+  // Organisation (espace d'organisation, phase 5) : deux immeubles côte à côte, fenêtres en rangées.
+  organization: "M3 21h18M5 21V5h8v16M13 9h6v12M8 8h2M8 11h2M8 14h2M16 12h1M16 15h1M8 18h2",
   folder: "M3 7a1.5 1.5 0 0 1 1.5-1.5H9l2 2h8.5A1.5 1.5 0 0 1 21 9v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18V7Z",
   route: "M6 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm12-10a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM8 17h6.5a3.5 3.5 0 0 0 0-7H10a3 3 0 0 1 0-6h5",
   atelier: "M12 3 3 20h18L12 3Zm0 6v7m-3 1h6",

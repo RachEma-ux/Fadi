@@ -44,7 +44,7 @@ import { Router } from "express";
 import { db } from "../db/client.js";
 import { and, desc, eq, gt, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import {
-  collabDemandeEvents, collabDemandes, comConversations, comMessages, comParticipants, atelierCommands, atelierLockEvents, auditLog, atelierLocks, drawingExports, projectComments, projectMembers, projects, studioComments, studioObservationDecisions, studioObservationEvents,
+  collabDemandeEvents, collabDemandes, comConversations, comMessages, comParticipants, atelierCommands, atelierLockEvents, auditLog, atelierLocks, drawingExports, projectComments, projectEffectiveAccess, projectMembers, projects, studioComments, studioObservationDecisions, studioObservationEvents,
   studioObservations, studioObservationTaskEvents, studioObservationTasks, studioStudies, studioVariants, users,
 } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
@@ -85,12 +85,16 @@ export async function notificationsFor(userId: string, email: string): Promise<{
   const items: NotificationItem[] = [];
 
   // Accès reçus : chaque ligne de membre vous concernant, datée de l'invitation (ou du transfert de propriété qui vous a laissé éditeur).
-  const memberships = await db
-    .select({ project: projects, role: projectMembers.role, invitedBy: projectMembers.invitedBy, createdAt: projectMembers.createdAt })
-    .from(projectMembers)
-    .innerJoin(projects, eq(projects.id, projectMembers.projectId))
-    .where(eq(projectMembers.userId, userId));
+  // Phase 2 (Issue #262) : projets accessibles d'après la seule source de l'accès (`project_effective_access`) — une
+  // participation suspendue, terminée ou sans rôle de projet n'apparaît plus ; la ligne de partage date l'invitation.
+  const memberships = (await db
+    .select({ project: projects, role: projectEffectiveAccess.role, invitedBy: projectMembers.invitedBy, createdAt: projectMembers.createdAt })
+    .from(projectEffectiveAccess)
+    .innerJoin(projects, eq(projects.id, projectEffectiveAccess.projectId))
+    .leftJoin(projectMembers, and(eq(projectMembers.projectId, projectEffectiveAccess.projectId), eq(projectMembers.userId, projectEffectiveAccess.userId)))
+    .where(and(eq(projectEffectiveAccess.userId, userId), ne(projectEffectiveAccess.role, "proprietaire"))));
   for (const m of memberships) {
+    if (!m.invitedBy || !m.createdAt) continue;
     items.push({
       id: `acces:${m.project.id}`,
       at: m.createdAt.toISOString(),

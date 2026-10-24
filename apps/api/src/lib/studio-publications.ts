@@ -443,9 +443,10 @@ export async function transitionStudioPublication(projectId: string, studyId: st
     const [row] = await tx.select().from(studioPublications)
       .where(and(eq(studioPublications.id, publicationId), eq(studioPublications.studyId, study.id), eq(studioPublications.projectId, projectId))).for("update");
     if (!row) return notFound();
+    // Le besoin de la transition (`write`, `approve`, `publish`) porte aussi la réservation d'édition : celle d'un autre
+    // compte la bloque (423), propriétaire compris. Approbateur et Diffuseur de portée projet (phase 2, OP-D3 c) approuvent
+    // ou diffusent sans droit de modification.
     assertAccess(access, actorId, besoinTransition(action));
-    // Toute transition est une écriture : la réservation d'édition d'un autre compte la bloque (423), propriétaire compris.
-    assertAccess(access, actorId, "write");
     const variant = await variantOf(tx, study.id, row.variantId);
     const dims = dimensionsDe(row);
     // Manifeste recalculé maintenant (têtes, noms et exporteurs actuels) : son empreinte fait foi pour l'actualité, de

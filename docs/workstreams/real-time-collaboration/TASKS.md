@@ -26,7 +26,8 @@
 
 ## Bloqué
 
-- RTC-1 et suivants : porte des prérequis (`PLAN.md` § 4 : Organisations phases 2–4, PR #282, socle COM fusionnés) et
+- RTC-1 et suivants : porte des prérequis (`PLAN.md` § 4) — restent les phases 3 et 4 d'Organisations et la PR #282 (COM et
+  phase 2 d'Organisations fusionnés) — et
   décision explicite d'engager RTC-1.
 
 ## Critères de sortie

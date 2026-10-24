@@ -18,6 +18,8 @@ import { MUTATION_KEYS, adoptComment, type CommentVars } from "../../lib/mutatio
 import { LOCALE } from "../../lib/i18n";
 import { declenche, propsRaccourci, type CommandeCollaboration } from "./commandes-collaboration";
 import { IconeCollaboration, RaccourciCollaboration } from "./IconeCollaboration";
+import { ParticipantsSection } from "./Participants";
+import { HistoriqueProjet } from "./HistoriqueProjet";
 import { CommunicationPanel } from "./communication/CommunicationPanel";
 import { DemandesPanel, ResponsabilitesPanel } from "./communication/DemandesPanel";
 import { ActivitePanel, RevuesPanel } from "./communication/ActivitePanel";
@@ -672,7 +674,11 @@ export function CollaborationModule({ projectId }: { projectId: string }) {
         <MembersPanel projectId={projectId} />
       </section>
 
+      <ParticipantsSection projectId={projectId} />
+
       <SupportAccessPanel projectId={projectId} />
+
+      <HistoriqueProjet projectId={projectId} />
 
       <section className="biz-card" aria-labelledby="collab-comments">
         <h2 id="collab-comments">Commentaires ({v.comments.length})</h2>

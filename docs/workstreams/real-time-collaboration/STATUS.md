@@ -9,7 +9,7 @@ transport réalisé (RTC-0.3). Aucune implémentation ; RTC-1 bloqué par la por
 
 ## Faits vérifiés
 
-- Base observée : `main@2577e25` (CI verte sur ce SHA). PR #284 : CI verte sur `9bd61fc` ; `main` fusionné dans la branche après la fusion de COM (conflit d'index résolu).
+- Base observée : `main@2577e25` (CI verte sur ce SHA). PR #284 : CI verte sur `99562d9` ; `main` refusionné après #281 et #286 (conflit d'index résolu).
 - Aucun WebSocket / SSE dans `apps` ni `packages` ; relectures périodiques de 60 s.
 - RT-D3 : première version = **Studio seul** ; **canal propre au Temps réel**. RT-D2 : WebSocket ; une instance ; hôte remplacé explicitement ; coédition
   reportée ; COM garde sa remise.
@@ -18,7 +18,11 @@ transport réalisé (RTC-0.3). Aucune implémentation ; RTC-1 bloqué par la por
   RTC-1).
 - `cibleAnnulation` de l'Atelier prend la dernière commande du projet, quel qu'en soit l'auteur
   (`routes/atelier-commands.ts:470`).
-- Chantiers dont il dépend, non fusionnés au checkpoint : PR #281 (Organisations phases 2 à 6), PR #282. COM est **fusionné** dans `main` (PR #285, `173b9f1`) : ce prérequis est rempli.
+- Prérequis (porte de RTC-1) au checkpoint :
+  - COM : **fusionné** (PR #285, `173b9f1`) — rempli ;
+  - Organisations : PR #281 **fusionnée** (`0d5bb9b`) avec les phases 2, 3 bis et 5 (vue `project_effective_access`,
+    six rôles, Approbateur / Diffuseur Studio) ; **phases 3 (invitations) et 4 (revue externe) non livrées** ;
+  - PR #282 (E5, E6, E9, E10) : ouverte. E5 recoupe la phase 2 d'Organisations déjà fusionnée : à réaligner par son chantier.
 
 ## Points ouverts
 
