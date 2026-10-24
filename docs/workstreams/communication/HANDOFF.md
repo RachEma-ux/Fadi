@@ -15,7 +15,7 @@ Mis à jour : 2026-10-24 (UTC).
 
 ## Prochaine action
 
-- Obtenir la confirmation explicite des décisions COM-D1 à COM-D14 (la fusion a été demandée sans les accepter une à une).
+- Décisions COM-D1 à COM-D14 acceptées (DECISIONS.md, COM-R2) : rien à obtenir.
 - Déploiement en préproduction puis production : uniquement sur accord explicite.
 - Suites déclarées : TASKS COM-10 à COM-12 (après Organisations phases 2 et 4, et décisions du concept).
 

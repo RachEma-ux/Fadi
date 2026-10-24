@@ -2,17 +2,17 @@
 
 ## À faire
 
-- [ ] COM-9 — Confirmation explicite des décisions COM-D1 à COM-D14 (la PR #285 est fusionnée sur demande du maître d'ouvrage).
 - [ ] COM-10 — Après Organisations phase 2 : brancher l'audience sur les affectations (`loadProjectAccess`), sans changer le modèle COM.
 - [ ] COM-11 — Après Organisations phase 4 : audience « paquet » et voie de revue externe (concept § 4).
 - [ ] COM-12 — Suites du concept sur décision : photos et épingles, espace d'organisation, BCF, annuaire, courriel, IA.
 
 ## En cours
 
-- Aucune : livraison fusionnée (PR #285, `173b9f1`) ; COM-9 attend la confirmation des décisions.
+- Aucune : livraison fusionnée (PR #285, `173b9f1`), décisions acceptées (COM-R2) ; déploiement sur accord seulement.
 
 ## Terminé
 
+- [x] COM-9 — Décisions COM-D1 à COM-D14 acceptées (COM-R2, 2026-10-24).
 - [x] Livraison — PR #285 fusionnée dans `main` (`173b9f1`, 2026-10-24), CI verte, revue Codex traitée.
 - [x] COM-0 — Plan d'implémentation et décisions COM-D1 à COM-D14 (`PLAN.md`, `DECISIONS.md`).
 - [x] COM-1 — Schéma (`init.sql`, `schema.ts`), règles pures (`lib/com-audience.ts`), conversations, audiences, participants, messages, références et mentions (`routes/com.ts`, `lib/com.ts`).

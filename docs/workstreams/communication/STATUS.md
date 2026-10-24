@@ -5,8 +5,7 @@ Mis à jour : 2026-10-24 (UTC).
 ## État
 
 **Implémenté, vérifié et fusionné dans `main`** (PR #285, commit de fusion `173b9f1`, 2026-10-24, à la demande du maître
-d'ouvrage) — CI verte sur `a5ef51b`. **Non déployé.** L'acceptation explicite des décisions COM-D1 à COM-D14 n'a pas été
-formulée séparément : à confirmer.
+d'ouvrage) — CI verte sur `a5ef51b`. Décisions COM-D1 à COM-D14 **acceptées** (COM-R2). **Non déployé.**
 
 ## Faits vérifiés
 
@@ -37,7 +36,6 @@ Le 2026-10-24, sur la branche `ccr-a50667e3-fng2br`, avec une base PostGIS local
 
 - CI GitHub de `a5ef51b` : verte (validate, e2e parcours / complements / atelier / planche / p2, image, Studio V1, Project layout,
   Architecture native, Continuité, Isolation). Revue Codex : 4 remarques corrigées (`a5ef51b`), fils résolus.
-- Confirmation explicite des décisions COM-D1 à COM-D14, dont la dérogation COM-D1 à l'ordre CR-D9.
 - Déploiement (préproduction puis production) : sur accord explicite seulement.
 - Reports déclarés : PLAN § 1 et TASKS COM-10 à COM-12.
 

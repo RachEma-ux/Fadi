@@ -1,7 +1,7 @@
 # Communication (COM) — décisions
 
 Les décisions ci-dessous sont des **choix du chef de projet** pris pour exécuter la demande du 2026-10-24 (Issue #280) ;
-elles restent soumises à l'acceptation du maître d'ouvrage. Aucune ne modifie une décision existante, sauf COM-D1 qui
+elles sont **acceptées** par le maître d'ouvrage (COM-R2 ci-dessous). Aucune ne modifie une décision existante, sauf COM-D1 qui
 consigne une dérogation demandée.
 
 | N° | Décision | Motif |
@@ -24,7 +24,12 @@ consigne une dérogation demandée.
 ## Réponses du maître d'ouvrage
 
 - **COM-R1 (2026-10-24)** — « Fusionne 285 » : fusion de la PR #285 demandée et réalisée (`173b9f1`). Les décisions
-  COM-D1 à COM-D14 n'ont pas été acceptées une à une : elles restent à confirmer explicitement. Aucun déploiement demandé.
+  COM-D1 à COM-D14 n'ont pas été acceptées une à une à cette date. Aucun déploiement demandé.
+- **COM-R2 (2026-10-24)** — Au point « Décisions COM-D1 à COM-D14 : elles n'ont pas été validées une à une. La plus
+  importante est COM-D1 … », le maître d'ouvrage répond « Fix ». Interprétation consignée : **COM-D1 à COM-D14 sont
+  acceptées telles que proposées**, y compris la dérogation COM-D1 à l'ordre CR-D9 (COM ouvert avant les phases 2 à 4
+  d'Organisations), reportée dans le journal des règles communes (CR-R3). Si cette lecture ne correspond pas à
+  l'intention, une nouvelle réponse la remplace. Aucun déploiement demandé.
 
 ## Questions ouvertes (non bloquantes)
 

@@ -5,8 +5,9 @@ Mis à jour : 2026-10-24 (UTC).
 ## État
 
 **Cadrage fusionné dans `main` (PR #273, `7083285`) ; décisions CR-D1 à CR-D10 répondues (CR-R1, CR-R2).**
-**Écarts graves E1, E2, E3 : corrigés et vérifiés en local, [PR #274](https://github.com/RachEma-ux/Fadi/pull/274) vers
-`main` non fusionnée, aucun déploiement** ([DECISIONS.md](DECISIONS.md) CR-C1).
+**Écarts graves E1, E2, E3 (et E7) : [PR #274](https://github.com/RachEma-ux/Fadi/pull/274) fusionnée dans `main`
+(`2577e25`)** ([DECISIONS.md](DECISIONS.md) CR-C1). **COM ouvert et fusionné (PR #285, `173b9f1`) par dérogation à
+CR-D9 (CR-R3).** Aucun déploiement consigné ici.
 
 ## Faits vérifiés
 
@@ -37,10 +38,10 @@ Mis à jour : 2026-10-24 (UTC).
 
 ## Points ouverts
 
-- PR #274 : CI verte à obtenir, fusion et déploiement sur décision du maître d'ouvrage.
+- Déploiement des PR #274 et #285 : sur décision du maître d'ouvrage.
 - E7 traité par la PR #274 (CR-C1 § 6) ; reste la limite déclarée par CR-D5 : appareil resté hors ligne, fichiers
   déjà téléchargés.
-- Chantiers COM et Temps réel non ouverts.
+- COM : ouvert et fusionné (CR-R3) ; critères COM-R1 à COM-R7 couverts par `communication.mjs`. Temps réel : non ouvert.
 
 ## Liens de suivi
 
