@@ -99,7 +99,7 @@ export function parseAccessExpiry(raw: string | null | undefined, now: Date): { 
 
 export type InvitationTarget =
   | { kind: "membre"; participationId: string | null }
-  | { kind: "participation"; participationId: string; status: "contact" }
+  | { kind: "participation"; participationId: string; status: "contact" | "active" }
   | { kind: "nouvelle-fiche" };
 
 /**

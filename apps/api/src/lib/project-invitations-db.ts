@@ -78,7 +78,7 @@ export async function resolveInvitationTarget(q: Querier, projectId: string, ema
     if (!row) return { target: { kind: "nouvelle-fiche" }, account, blocking: "Participation introuvable dans ce projet.", notFound: true };
     const refusal = targetRefusal({ status: row.status, personUserId: row.userId ?? null, accountId, isOrganization: !row.personId });
     if (refusal) return { target: { kind: "nouvelle-fiche" }, account, blocking: refusal };
-    return { target: { kind: "participation", participationId: row.id, status: "contact" }, account, blocking: null };
+    return { target: { kind: "participation", participationId: row.id, status: row.status === "active" ? "active" : "contact" }, account, blocking: null };
   }
   if (accountId) {
     const [p] = await q.select({ id: projectParticipations.id, status: projectParticipations.status }).from(projectParticipations)
@@ -87,9 +87,9 @@ export async function resolveInvitationTarget(q: Querier, projectId: string, ema
     if (p) {
       const refusal = targetRefusal({ status: p.status, personUserId: accountId, accountId, isOrganization: false });
       if (refusal) return { target: { kind: "nouvelle-fiche" }, account, blocking: refusal };
-      if (p.status === "contact") return { target: { kind: "participation", participationId: p.id, status: "contact" }, account, blocking: null };
-      // Active sans ligne de partage (cas d'archive) : traitée comme un membre, aucune invitation.
-      return { target: { kind: "membre", participationId: p.id }, account, blocking: null };
+      // Contact, ou participation active sans ligne de partage (revue externe de la phase 4 : aucun rôle de projet, donc
+      // aucun accès) : l'invitation vise cette participation ; seule son acceptation donnera un rôle de projet.
+      return { target: { kind: "participation", participationId: p.id, status: p.status === "active" ? "active" : "contact" }, account, blocking: null };
     }
   }
   const [contact] = await q.select({ id: projectParticipations.id }).from(projectParticipations).innerJoin(people, eq(people.id, projectParticipations.personId))
@@ -279,8 +279,11 @@ export async function activateProjectParticipation(tx: Tx, inv: InvitationRow, u
       }
     }
   }
-  const before = await currentParticipationOf(tx, inv.projectId, userId);
-  const wasActive = before?.status === "active";
+  // « Déjà membre » = une ligne de partage existait (accès de projet) ; une participation active SANS rôle de projet (revue
+  // externe, phase 4) n'ouvrait rien : l'acceptation est alors une arrivée (échéance recopiée, ajout journalisé).
+  const [memberBefore] = await tx.select({ userId: projectMembers.userId }).from(projectMembers)
+    .where(and(eq(projectMembers.projectId, inv.projectId), eq(projectMembers.userId, userId))).limit(1);
+  const wasActive = !!memberBefore;
   const [inviter] = inv.invitedBy ? await tx.select({ email: users.email }).from(users).where(eq(users.id, inv.invitedBy)).limit(1) : [];
   await tx.insert(projectMembers).values({ projectId: inv.projectId, userId, role: baseRole, invitedBy: inviter?.email ?? "", canExport: false })
     .onConflictDoUpdate({

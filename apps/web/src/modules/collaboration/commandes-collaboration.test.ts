@@ -107,10 +107,11 @@ describe("Règle d'or — commandes de collaboration (audience, export du lecteu
     expect(declenche(c("Equal"), "clore-projet") && declenche(c("Equal"), "rouvrir-projet")).toBe(true);
     expect(declenche(c("Digit9"), "terminer-participation")).toBe(false);
     expect(propsRaccourci("nouveau-contact")["aria-keyshortcuts"]).toBe("Control+Alt+Shift+6");
-    // Invitations acceptées (phase 3) : Ctrl+Alt+Maj+4 aperçu, +, accepter, +. décliner.
-    expect(declenche(c("Digit4"), "apercu-invitation") && !declenche(t("Digit4"), "apercu-invitation")).toBe(true);
-    expect(declenche(c("Comma"), "accepter-invitation") && declenche(c("Period"), "decliner-invitation")).toBe(true);
-    expect(declenche(c("Comma"), "decliner-invitation") || declenche(c("Comma"), "retirer-participant")).toBe(false);
+    // Invitations acceptées (phase 3) : Ctrl+Alt+Maj+' aperçu, +\ accepter, +` décliner (touches restées libres après la
+    // revue externe, qui prend 1 à 5 et , . / ;) ; jamais confondues avec Alt+Maj+\ (retirer un message).
+    expect(declenche(c("Quote"), "apercu-invitation") && !declenche(t("Quote"), "apercu-invitation")).toBe(true);
+    expect(declenche(c("Backslash"), "accepter-invitation") && declenche(c("Backquote"), "decliner-invitation")).toBe(true);
+    expect(declenche(c("Backslash"), "decliner-invitation") || declenche(c("Backslash"), "retirer-message")).toBe(false);
   });
 
   it("Communication (COM-D14) : seize commandes, Alt+Maj+chiffre ou ponctuation, touche physique", () => {

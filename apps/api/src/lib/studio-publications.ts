@@ -37,14 +37,14 @@ import { z } from "zod";
 import { composerFeuilleStudio, exportStudioDxf, exportStudioIfc, exportStudioSvg, studioSheetPdf, validateStudioDocument, type StudioDocument } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
 import {
-  studioPublicationEvents, studioPublications, studioRevisions, studioStudies, studioVariants, users, volumes,
+  projects, studioPublicationEvents, studioPublications, studioRevisions, studioStudies, studioVariants, users, volumes,
   type StudioPackageFile, type StudioPackageFormat, type StudioPublicationAction, type StudioPublicationDiffusionStatus, type StudioPublicationManifest,
   type StudioPublicationPackage, type StudioPublicationStatus, type StudioPublicationWorkStatus,
 } from "../db/schema.js";
 import type { Tx } from "./atelier-validation.js";
 import { newId } from "./ids.js";
-import { loadProjectAccess, projectAccessRefusal, type AccessibleProject } from "./owned-project.js";
-import type { Querier } from "./step-rows.js";
+import { activeLock, loadProjectAccess, lockedMessage, projectAccessRefusal, type AccessibleProject } from "./owned-project.js";
+import { lockProject, type Querier } from "./step-rows.js";
 import { assertAccess, lockedAccess, notFound, StudioRequestError, studioArchivedRefusal, studioFileSegment, studioIdentifierSchema, studyOf } from "./studio-commands.js";
 import {
   actualiteDe, actualiteParEmpreinte, actualiteVue, besoinTransition, CacheRegeneration, cleRegeneration, type ContenuPublication, contenuDe, formatsDuContenu, type ControleDocuments, canonicalJson, construireManifeste, controlerApprobation, controlerEnsembleExamine, controlerTransition,
@@ -180,7 +180,10 @@ const sourceIds = (row: PublicationRow): string[] => [row.variantId, ...(row.man
  * Écarts et actualité d'un dossier d'après l'état courant de ses sources (dossier antérieur : tête de la variante seule) ;
  * `documents` : documents régénérés maintenant à partir des mêmes entrées, comparés empreinte par empreinte.
  */
-function driftOf(access: AccessibleProject, row: PublicationRow, states: Map<string, VariantState>, documents?: ManifesteDocument[] | null): EcartManifeste[] {
+/** Noms courants du projet (code, nom) : seuls lus par le manifeste et l'actualité. */
+type ProjetNoms = Pick<AccessibleProject, "code" | "name">;
+
+function driftOf(access: ProjetNoms, row: PublicationRow, states: Map<string, VariantState>, documents?: ManifesteDocument[] | null): EcartManifeste[] {
   const primary = states.get(row.variantId);
   if (!row.manifest) {
     const head = primary?.headRevisionId ?? null;
@@ -190,7 +193,7 @@ function driftOf(access: AccessibleProject, row: PublicationRow, states: Map<str
 }
 const currentSources = (m: StudioPublicationManifest, states: Map<string, VariantState>) =>
   m.sources.map((s) => ({ variantId: s.variantId, headRevisionId: states.get(s.variantId)?.headRevisionId ?? null }));
-const currentNames = (access: AccessibleProject, primary: VariantState | undefined) =>
+const currentNames = (access: ProjetNoms, primary: VariantState | undefined) =>
   ({ projectCode: access.code, projectName: access.name, studyName: primary?.studyName ?? "", variantName: primary?.name ?? "" });
 
 /**
@@ -314,7 +317,7 @@ interface Dossier {
  * Dossier calculé depuis l'état présent : révision principale donnée, tête courante de chaque variante coordonnée,
  * noms actuels gelés dans les métadonnées, documents exportés de façon déterministe.
  */
-async function construireDossier(q: Querier, access: AccessibleProject, study: Study, variant: Variant, revision: Revision, coordinated: readonly string[], contenu: ContenuPublication = "complet"): Promise<Dossier> {
+async function construireDossier(q: Querier, access: ProjetNoms, study: Study, variant: Variant, revision: Revision, coordinated: readonly string[], contenu: ContenuPublication = "complet"): Promise<Dossier> {
   const documentHash = studioDocumentHash(revision.document);
   const sources: ManifesteSource[] = [{ role: "principale", variantId: variant.id, revisionId: revision.id, documentHash }];
   for (const id of coordinated) {
@@ -447,6 +450,19 @@ export async function transitionStudioPublication(projectId: string, studyId: st
     // compte la bloque (423), propriétaire compris. Approbateur et Diffuseur de portée projet (phase 2, OP-D3 c) approuvent
     // ou diffusent sans droit de modification.
     assertAccess(access, actorId, besoinTransition(action));
+    await appliquerTransition(tx, access, study, row, actorId, action, input);
+    const [stored] = await tx.select().from(studioPublications).where(eq(studioPublications.id, row.id)).limit(1);
+    return (await views(tx, access, actorId, [stored!], true))[0]!;
+  });
+}
+
+/**
+ * Corps commun d'une transition, droits déjà vérifiés par l'appelant sous la même transaction (route Studio : rôle de
+ * projet ; revue externe : affectation d'approbation nominative, `lib/reviews.ts`) : statuts de départ, manifeste
+ * courant recalculé, empreinte relue de la révision immuable, ensemble examiné, journal append-only.
+ */
+async function appliquerTransition(tx: Tx, access: ProjetNoms, study: Study, row: PublicationRow, actorId: string, action: StudioPublicationTransition, input: StudioPublicationTransitionInput): Promise<void> {
+  {
     const variant = await variantOf(tx, study.id, row.variantId);
     const dims = dimensionsDe(row);
     // Manifeste recalculé maintenant (têtes, noms et exporteurs actuels) : son empreinte fait foi pour l'actualité, de
@@ -519,9 +535,69 @@ export async function transitionStudioPublication(projectId: string, studyId: st
     }
     await tx.update(studioPublications).set(patch).where(eq(studioPublications.id, row.id));
     await journal(tx, after, { action, from: row.status, to: statutCombine(vers), dims: vers, authorId: actorId, comment: input.comment, headRevisionId: variant.headRevisionId, at: now });
-    const [stored] = await tx.select().from(studioPublications).where(eq(studioPublications.id, row.id)).limit(1);
-    return (await views(tx, access, actorId, [stored!], true))[0]!;
-  });
+  }
+}
+
+/** État d'une publication lu par la revue externe : dimensions, empreinte du manifeste courant, actualité. */
+export interface PublicationReviewState {
+  id: string; projectId: string; studyId: string; variantId: string; title: string; revisionId: string; documentHash: string;
+  workStatus: StudioPublicationWorkStatus; diffusionStatus: StudioPublicationDiffusionStatus;
+  manifest: StudioPublicationManifest | null; manifestHash: string | null; approvedManifestHash: string | null;
+  approvedBy: string | null; approvedAt: Date | null; headRevisionId: string; freshness: Actualite;
+}
+export async function publicationReviewState(q: Querier, project: ProjetNoms, publicationId: string, projectId: string): Promise<PublicationReviewState | null> {
+  const [row] = await q.select().from(studioPublications).where(and(eq(studioPublications.id, publicationId), eq(studioPublications.projectId, projectId))).limit(1);
+  if (!row) return null;
+  const states = await variantStates(q, sourceIds(row));
+  const drift = driftOf(project, row, states);
+  const dims = dimensionsDe(row);
+  return {
+    id: row.id, projectId: row.projectId, studyId: row.studyId, variantId: row.variantId, title: row.title, revisionId: row.revisionId, documentHash: row.documentHash,
+    workStatus: dims.travail, diffusionStatus: dims.diffusion, manifest: row.manifest, manifestHash: row.manifestHash, approvedManifestHash: row.approvedManifestHash,
+    approvedBy: row.approvedBy, approvedAt: row.approvedAt, headRevisionId: states.get(row.variantId)?.headRevisionId ?? row.revisionId, freshness: actualiteDe(drift),
+  };
+}
+
+/**
+ * Fichiers figés d'une publication candidate (revue externe, phase 4) : régénérés depuis SA révision immuable et ses
+ * métadonnées gelées, puis comparés empreinte par empreinte au manifeste figé. `mismatch` liste les formats dont
+ * l'empreinte diffère (exporteurs changés depuis) : un paquet de revue n'est alors pas partagé (il serait faux).
+ */
+export async function frozenPublicationFiles(q: Querier, publicationId: string, projectId: string): Promise<{
+  publication: PublicationRow; files: { format: StudioPackageFormat; fileName: string; mime: string; body: Buffer; sha256: string }[]; mismatch: string[];
+} | null> {
+  const [row] = await q.select().from(studioPublications).where(and(eq(studioPublications.id, publicationId), eq(studioPublications.projectId, projectId))).limit(1);
+  if (!row || !row.manifest || !row.manifestHash) return null;
+  const revision = await revisionOf(q, row.variantId, row.revisionId);
+  if (studioDocumentHash(revision.document) !== row.documentHash) throw new Error("studio_publication_hash_drift");
+  const generated = studioPackageFiles(validateStudioDocument(revision.document), row.revisionId, row.manifest.meta, `${row.studyId}|${row.variantId}`, contenuDe(row.manifest));
+  const files = generated.map((f) => ({ ...f, sha256: sha256(f.body) }));
+  const mismatch = row.manifest.documents
+    .filter((d) => !files.some((f) => f.format === d.format && f.sha256 === d.sha256))
+    .map((d) => d.format);
+  if (empreinteManifeste(row.manifest) !== row.manifestHash) mismatch.push("manifest");
+  return { publication: row, files, mismatch };
+}
+
+/**
+ * Approbation ou refus par un approbateur externe nommé (OP-D7 a) : les MÊMES transitions Studio (`approuver` exige
+ * l'empreinte du manifeste examiné, `refuser` un motif), le même journal, aucun statut d'approbation concurrent.
+ * L'autorisation (affectation d'approbation valide sur un paquet partagé identique au manifeste courant) est vérifiée
+ * par l'appelant (`lib/reviews.ts`) sous cette même transaction. La réservation d'édition d'un autre compte bloque
+ * (423) comme pour toute transition ; la diffusion reste une opération distincte, jamais ouverte à la revue.
+ */
+export async function decideStudioPublicationByReview(tx: Tx, project: ProjetNoms & { id: string; editingLock: AccessibleProject["editingLock"] }, publicationId: string, actorId: string, action: "approuver" | "refuser", input: StudioPublicationTransitionInput): Promise<PublicationRow> {
+  // Même sérialisation qu'une transition Studio : verrou du projet, réservation d'édition relue sous ce verrou.
+  await lockProject(tx, project.id);
+  const [current] = await tx.select({ editingLock: projects.editingLock }).from(projects).where(eq(projects.id, project.id)).limit(1);
+  const lock = activeLock({ editingLock: current?.editingLock ?? project.editingLock });
+  if (lock && lock.userId !== actorId) throw new StudioRequestError(423, { error: "locked", message: lockedMessage(lock), lock });
+  const [row] = await tx.select().from(studioPublications).where(and(eq(studioPublications.id, publicationId), eq(studioPublications.projectId, project.id))).for("update");
+  if (!row) return notFound();
+  const study = await studyOf(tx, project.id, row.studyId);
+  await appliquerTransition(tx, project, study, row, actorId, action, input);
+  const [stored] = await tx.select().from(studioPublications).where(eq(studioPublications.id, row.id)).limit(1);
+  return stored!;
 }
 
 async function packageOf(projectId: string, studyId: string, publicationId: string, actorId: string) {

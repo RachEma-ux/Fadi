@@ -4,7 +4,7 @@
  * l'annuaire, ou fiche créée à l'envoi), les rôles à la portée projet, l'échéance de l'invitation et celle de l'accès
  * (indépendantes), puis lit l'**aperçu de l'accès résultant** avant l'envoi : l'envoi n'est possible qu'après un aperçu
  * des valeurs saisies, sans motif bloquant. Le serveur refait tous les contrôles à l'envoi et à l'acceptation.
- * Règle d'or : « Aperçu de l'accès » a son icône, sa barre (le formulaire d'invitation) et son raccourci Alt+Maj+4.
+ * Règle d'or : « Aperçu de l'accès » a son icône, sa barre (le formulaire d'invitation) et son raccourci Ctrl+Alt+Maj+'.
  */
 import { useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -72,7 +72,7 @@ export function InvitationProjet({ projectId, onSent }: { projectId: string; onS
       data-invitation-form
       onSubmit={(e: FormEvent) => { e.preventDefault(); if (canSend) send.mutate(); }}
       onKeyDown={(e) => {
-        // Règle d'or : Alt+Maj+4 calcule l'aperçu de l'accès depuis n'importe quel champ du formulaire.
+        // Règle d'or : Ctrl+Alt+Maj+' calcule l'aperçu de l'accès depuis n'importe quel champ du formulaire.
         if (declenche(e, "apercu-invitation")) { e.preventDefault(); if (canPreview) look.mutate(); }
       }}
     >

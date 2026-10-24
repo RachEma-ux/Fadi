@@ -14,6 +14,7 @@ export const NOTIFICATION_KIND_LABEL: Record<NotificationKind, string> = {
   modification: "Modification",
   verrou: "Verrou",
   peremption: "Document périmé",
+  revue: "Revue externe",
 };
 
 export const NOTIFICATION_KIND_DESCRIPTION: Record<NotificationKind, string> = {
@@ -26,6 +27,7 @@ export const NOTIFICATION_KIND_DESCRIPTION: Record<NotificationKind, string> = {
   modification: "Un autre membre modifie dans l’Atelier des objets que vous avez créés ou modifiés.",
   verrou: "Un verrou d’étage, de zone ou d’objet est pris, libéré ou vous est transmis.",
   peremption: "Un export de dessin que vous avez produit est périmé par une modification d’un autre membre.",
+  revue: "Un paquet de revue vous est partagé, l’équipe répond à vos constats, ou une réponse arrive sur une revue que vous coordonnez.",
 };
 
 /** Ordre d'affichage par défaut (celui du serveur prévaut quand il est connu). */

@@ -10,8 +10,8 @@
  *      entre l'envoi et l'acceptation, fiche liée entre-temps à un autre compte (mauvais compte), participation terminée
  *      depuis l'envoi, nouvel utilisateur (activation), accès expiré puis rétabli, compte déjà membre (rôle changé).
  *   3. Journal : invitation.*, participation.*, sans adresse.
- *   4. Interface : formulaire avec aperçu (Ctrl+Alt+Maj+4), invitations en attente aux états distincts, « Invitations
- *      reçues » (acceptation au clavier Ctrl+Alt+Maj+, et entrée dans le projet) ; axe-core bureau et téléphone ; passe
+ *   4. Interface : formulaire avec aperçu (Ctrl+Alt+Maj+'), invitations en attente aux états distincts, « Invitations
+ *      reçues » (acceptation au clavier Ctrl+Alt+Maj+\ et entrée dans le projet) ; axe-core bureau et téléphone ; passe
  *      anglaise.
  *
  * BASE_URL=http://localhost:3001 DATABASE_URL=postgresql://… (locale, jetable) MAILPIT_URL=… | API_LOG=…
@@ -225,12 +225,12 @@ try {
     check("formulaire : « Envoyer l'invitation » inactif avant l'aperçu", await form.locator('button[type="submit"]').isDisabled());
     await form.locator('input[type="email"]').fill(invite.email);
     await form.locator(".invitation-extra-roles label", { hasText: "Coordinateur" }).locator("input").check();
-    // Règle d'or : Ctrl+Alt+Maj+4 calcule l'aperçu depuis le champ.
-    await form.locator('input[type="email"]').press("Control+Alt+Shift+Digit4");
+    // Règle d'or : Ctrl+Alt+Maj+' calcule l'aperçu depuis le champ.
+    await form.locator('input[type="email"]').press("Control+Alt+Shift+Quote");
     await page.waitForSelector("[data-invitation-apercu]", { timeout: 10000 });
     const apercu = await page.locator("[data-invitation-apercu]").textContent();
     check("formulaire : aperçu au clavier, compte existant, Lecteur · Coordinateur", /compte existant/.test(apercu) && /Coordinateur/.test(apercu) && /lecteur · export non/.test(apercu), apercu);
-    check("formulaire : icône et raccourci de l'aperçu affichés", (await form.locator('[data-icone-collaboration="apercu-invitation"]').count()) === 1 && /Ctrl\+Alt\+Maj\+4/.test(await form.locator('[data-raccourci-collaboration="apercu-invitation"]').textContent()));
+    check("formulaire : icône et raccourci de l'aperçu affichés", (await form.locator('[data-icone-collaboration="apercu-invitation"]').count()) === 1 && /Ctrl\+Alt\+Maj\+'/.test(await form.locator('[data-raccourci-collaboration="apercu-invitation"]').textContent()));
     await axe(page, "Collaboration — invitation et aperçu (bureau)");
     await form.locator('button[type="submit"]').click();
     await page.waitForSelector(`[data-project-invitations] li[data-invitation="${invite.email}"]`, { timeout: 10000 });
@@ -252,9 +252,9 @@ try {
     await axe(recu, "Mes projets — invitations reçues (téléphone)");
     const debR = await debordement(recu, "[data-invitations-recues]");
     check("téléphone : « Invitations reçues » ne déborde pas", debR.length === 0, debR.slice(0, 5).join(","));
-    // Règle d'or : Ctrl+Alt+Maj+, accepte depuis la carte où se trouve le focus.
+    // Règle d'or : Ctrl+Alt+Maj+\ accepte depuis la carte où se trouve le focus.
     await carte.locator('[data-commande-collaboration="accepter-invitation"]').focus();
-    await recu.keyboard.press("Control+Alt+Shift+Comma");
+    await recu.keyboard.press("Control+Alt+Shift+Backslash");
     await recu.waitForURL(new RegExp(`/projets/${pid}`), { timeout: 15000 });
     check("acceptation au clavier : entrée dans le projet", recu.url().includes(`/projets/${pid}`));
     check("après acceptation : accès lecteur", (await invite.call("GET", `/projects/${pid}`)).status === 200);

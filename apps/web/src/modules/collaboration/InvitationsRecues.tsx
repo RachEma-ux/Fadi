@@ -66,7 +66,7 @@ export function InvitationsRecues() {
             key={inv.id}
             data-invitation-recue={inv.projectCode}
             onKeyDown={(e) => {
-              // Règle d'or : Alt+Maj+, accepte, Alt+Maj+. décline l'invitation de la carte où se trouve le focus.
+              // Règle d'or : Ctrl+Alt+Maj+\ accepte, Ctrl+Alt+Maj+` décline l'invitation de la carte où se trouve le focus.
               if (busy || !verified) return;
               if (declenche(e, "accepter-invitation")) { e.preventDefault(); accept.mutate(inv); }
               else if (declenche(e, "decliner-invitation")) { e.preventDefault(); decline.mutate(inv); }

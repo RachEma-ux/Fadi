@@ -5,7 +5,7 @@ Mis à jour : 2026-10-24 (UTC).
 ## Point de reprise
 
 - Chantier : communication. Issue : [#280](https://github.com/RachEma-ux/Fadi/issues/280).
-- Branche : `ccr-a50667e3-fng2br` (issue de `main` = `2577e25`) ; PR de livraison [#285](https://github.com/RachEma-ux/Fadi/pull/285) vers `main`, non fusionnée.
+- Livraison : PR [#285](https://github.com/RachEma-ux/Fadi/pull/285) **fusionnée** dans `main` (`173b9f1`, 2026-10-24). Non déployée.
 - Dernier commit vérifié : à relever en début de session ; ne pas réutiliser un SHA périmé.
 
 ## Dernier état vérifié
@@ -15,9 +15,9 @@ Mis à jour : 2026-10-24 (UTC).
 
 ## Prochaine action
 
-- Relever la CI de la PR (en particulier `e2e (complements)` → `communication.mjs`, et `studio-v1-validation`, déclenché
-  par la modification de `init.sql`) ; corriger toute rougeur.
-- Soumettre COM-D1 à COM-D14 au maître d'ouvrage ; ne rien fusionner ni déployer sans son accord.
+- Décisions COM-D1 à COM-D14 acceptées (DECISIONS.md, COM-R2) : rien à obtenir.
+- Déploiement en préproduction puis production : uniquement sur accord explicite.
+- Suites déclarées : TASKS COM-10 à COM-12 (après Organisations phases 2 et 4, et décisions du concept).
 
 ## Tests et preuves
 

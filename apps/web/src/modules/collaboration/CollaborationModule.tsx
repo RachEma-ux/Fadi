@@ -19,6 +19,7 @@ import { LOCALE } from "../../lib/i18n";
 import { declenche, propsRaccourci, type CommandeCollaboration } from "./commandes-collaboration";
 import { IconeCollaboration, RaccourciCollaboration } from "./IconeCollaboration";
 import { ParticipantsSection } from "./Participants";
+import { RevuesExternes } from "./RevuesExternes";
 import { HistoriqueProjet } from "./HistoriqueProjet";
 import { InvitationProjet } from "./InvitationProjet";
 import { rolesLisibles } from "./participants-api";
@@ -657,6 +658,8 @@ export function CollaborationModule({ projectId }: { projectId: string }) {
       </section>
 
       <ParticipantsSection projectId={projectId} />
+
+      <RevuesExternes projectId={projectId} />
 
       <SupportAccessPanel projectId={projectId} />
 

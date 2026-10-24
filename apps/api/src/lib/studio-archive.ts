@@ -83,7 +83,20 @@ export async function loadStudioTables(q: Querier, projectId: string, ownerId: s
  * journal, décisions. L'archive reste cohérente (manifeste calculé après) : rien n'y renvoie à un fil absent.
  */
 export function withoutTeamThreads(tables: ReturnType<typeof emptyStudioTables>): void {
-  const hidden = new Set(tables.studio_comments.filter((c) => c["audience"] === "equipe").map((c) => c["id"] as string));
+  withoutThreads(tables, (audience) => audience === "equipe");
+}
+
+/**
+ * Revue externe (phase 4) : les constats (audience `revue`) et leur suivi ne sortent jamais dans l'archive d'un projet —
+ * ils appartiennent au paquet de revue, qui n'est pas archivé (son paquet et ses destinataires n'existeraient pas dans le
+ * projet restauré). Retirés pour tout exportateur, équipe comprise.
+ */
+export function withoutReviewThreads(tables: ReturnType<typeof emptyStudioTables>): void {
+  withoutThreads(tables, (audience) => audience === "revue");
+}
+
+function withoutThreads(tables: ReturnType<typeof emptyStudioTables>, hide: (audience: unknown) => boolean): void {
+  const hidden = new Set(tables.studio_comments.filter((c) => hide(c["audience"]) || (c["parent_id"] && tables.studio_comments.some((r) => r["id"] === c["parent_id"] && hide(r["audience"])))).map((c) => c["id"] as string));
   if (!hidden.size) return;
   const kept = (column: string) => (row: StudioArchiveRow) => !hidden.has(row[column] as string);
   tables.studio_comments = tables.studio_comments.filter(kept("id"));
@@ -99,6 +112,7 @@ export function withoutTeamThreads(tables: ReturnType<typeof emptyStudioTables>)
 /** Section Studio de l'archive, signée ; `null` quand le projet n'a ni donnée Studio ni membre (archives inchangées). */
 export async function exportStudioArchive(q: Querier, project: { id: string; ownerId: string }, options: { teamThreads?: boolean } = {}): Promise<StudioArchiveSection | null> {
   const tables = await loadStudioTables(q, project.id, project.ownerId);
+  withoutReviewThreads(tables);
   if (options.teamThreads === false) withoutTeamThreads(tables);
   const meaningful = STUDIO_ARCHIVE_TABLES.some((t) => t !== "studio_tool_preferences" && tables[t].length > 0);
   if (!meaningful) return null;

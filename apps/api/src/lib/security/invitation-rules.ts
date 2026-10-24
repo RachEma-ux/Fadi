@@ -5,6 +5,8 @@ type InvitationRow = { status: InvitationStatus; expiresAt: Date; email: string 
 
 export type InvitationRefusal =
   | "not_found" | "expired" | "already_accepted" | "declined" | "cancelled" | "wrong_account" | "inviter_not_authorized" | "account_inactive"
+  // Revue externe (phase 4) : la personne visée est déjà liée à un autre compte.
+  | "identity_conflict"
   // Invitation de projet liée à une participation (Issue #262, phase 3) : revalidation à l'acceptation.
   | ParticipationRefusal
   // Acceptation depuis la notification (sans le lien du courriel) : l'adresse du compte doit être vérifiée, sinon rien
@@ -64,6 +66,7 @@ export const INVITATION_REFUSAL_MESSAGE: Record<InvitationRefusal, string> = {
   wrong_account: "Cette invitation est destinée à une autre adresse : connectez-vous avec le compte invité.",
   inviter_not_authorized: "La personne qui vous a invité·e n'a plus l'autorité nécessaire : demandez une nouvelle invitation.",
   account_inactive: "Ce compte n'est pas actif.",
+  identity_conflict: "Cette invitation de revue vise une personne déjà liée à un autre compte : demandez une nouvelle invitation.",
   wrong_person: "Cette invitation vise une fiche déjà liée à un autre compte : demandez une nouvelle invitation.",
   participation_unavailable: "La participation visée a été suspendue ou terminée depuis l'envoi : demandez une nouvelle invitation.",
   access_expired: "L'accès proposé par cette invitation a déjà expiré : demandez une nouvelle invitation.",

@@ -173,17 +173,17 @@ export const COMMANDES_COLLABORATION: Readonly<Record<CommandeCollaboration, Def
   // --- Invitations acceptées (Issue #262, phase 3) ---
   // Aperçu de l'accès résultant : loupe sur une fiche.
   "apercu-invitation": {
-    libelle: "Aperçu de l’accès", barre: "membres", raccourci: ctrlAltMaj("Digit4", "4"),
+    libelle: "Aperçu de l’accès", barre: "membres", raccourci: ctrlAltMaj("Quote", "'"),
     icone: ["M4 4h10v6", "M4 4v16h7", "M16 19a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", "M18.5 18.5L21 21"],
   },
   // Accepter l'invitation : enveloppe et coche.
   "accepter-invitation": {
-    libelle: "Accepter l’invitation", barre: "invitation", raccourci: ctrlAltMaj("Comma", ","),
+    libelle: "Accepter l’invitation", barre: "invitation", raccourci: ctrlAltMaj("Backslash", "\\"),
     icone: ["M3 6h18v12H3z", "M3 6l9 7 9-7", "M14 20l2 2 4-4"],
   },
   // Décliner l'invitation : enveloppe et croix.
   "decliner-invitation": {
-    libelle: "Décliner l’invitation", barre: "invitation", raccourci: ctrlAltMaj("Period", "."),
+    libelle: "Décliner l’invitation", barre: "invitation", raccourci: ctrlAltMaj("Backquote", "`"),
     icone: ["M3 6h18v12H3z", "M3 6l9 7 9-7", "M15 19l4 4", "M19 19l-4 4"],
   },
   // Rouvrir le projet : dossier ouvert.

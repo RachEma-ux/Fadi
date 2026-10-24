@@ -94,6 +94,23 @@ export type AuditAction =
   | "organization.mandate.ended"
   | "organization.project.participation_recorded"
   | "organization.project.owner_declared"
+  // Revue externe (phase 4, Issue #262) : cible = le projet ; métadonnées = identifiants (paquet, affectation,
+  // constat, publication), version, responsabilité, permissions, résultat ou décision — jamais d'adresse ni de texte.
+  | "review.package.created"
+  | "review.package.updated"
+  | "review.package.deleted"
+  | "review.package.shared"
+  | "review.package.superseded"
+  | "review.package.version_created"
+  | "review.package.closed"
+  | "review.recipient.recorded"
+  | "review.assignment.created"
+  | "review.assignment.accepted"
+  | "review.assignment.revoked"
+  | "review.finding.created"
+  | "review.finding.rechecked"
+  | "review.response.recorded"
+  | "review.decision.recorded"
   | "mail.quota_exceeded";
 
 export interface AuditEntry {

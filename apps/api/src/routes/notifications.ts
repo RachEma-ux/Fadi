@@ -51,6 +51,7 @@ import { requireAuth } from "../middleware/require-auth.js";
 import { activeLock, type ProjectRole } from "../lib/owned-project.js";
 import { ROLE_LABEL } from "./members.js";
 import { filtrerNotifications, type NotificationKind } from "../lib/notification-preferences.js";
+import { reviewNotifications } from "../lib/reviews-recipient.js";
 import { lirePreferencesNotification } from "./preferences.js";
 import { notificationInvitationsRouter } from "./notification-invitations.js";
 import { pendingProjectInvitationsFor } from "../lib/project-invitations-db.js";
@@ -73,6 +74,8 @@ export interface NotificationItem {
   stepNumber: number | null;
   /** Variante Studio commentée (`commentaire-studio` seulement). */
   studio?: { studyId: string; variantId: string };
+  /** Paquet de revue externe (`revue` seulement, phase 4) : la notification mène à `/revues/:id`. */
+  review?: { packageId: string };
   /** Invitation de projet en attente pour vous (phase 3, type `acces`) : à accepter ou décliner depuis la notification. */
   invitation?: { id: string; role: "lecteur" | "editeur"; expiresAt: string };
   /** Conversation ou demande de précision visée (`message`, `demande`). */
@@ -440,6 +443,9 @@ export async function notificationsFor(userId: string, email: string): Promise<{
     }
   }
 
+  // Revue externe (phase 4) : source distincte, bornée à l'accès de revue (`loadReviewAccess`) ; jamais un fil de
+  // l'équipe ni une note interne. Un destinataire externe n'a aucun projet ci-dessus : il ne reçoit que celle-ci.
+  items.push(...await reviewNotifications(userId, since));
   // Communication (COM-D13) : rôle courant par projet, audience recalculée pour chaque conversation.
   if (projectIds.length) {
     const roleDe = new Map<string, ProjectRole>(memberships.map((m) => [m.project.id, m.role as ProjectRole]));
