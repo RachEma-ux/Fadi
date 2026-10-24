@@ -19,7 +19,7 @@ Mis à jour : 2026-10-24 (UTC).
 - RTC-0.4 : profil de référence des budgets (P.118, appareil Android, réseau déclaré).
 - CR-3 (#272) est satisfaite par `PLAN.md` § 5 : la cocher dans `collaboration-rules/TASKS.md` après fusion de la
   PR #282, qui modifie les mêmes lignes (évite un conflit).
-- Surveiller la fusion de #281, #282 et #285 (COM, #280) : c'est la porte de RTC-1, puis RTC-0.5.
+- COM est fusionné (PR #285). Surveiller la fusion de #281 et #282 : c'est la porte de RTC-1, puis RTC-0.5.
 
 ## Tests et preuves
 

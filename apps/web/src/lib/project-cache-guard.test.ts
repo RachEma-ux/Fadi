@@ -20,6 +20,13 @@ describe("cache hors ligne après retrait ou changement d'audience (E7, CR-D5 (a
     expect(decide({ status: "error", key, error: e404 }, new Map())).toEqual({ kind: "drop", key });
   });
 
+  it("Communication : une conversation devenue illisible (404) retire sa copie ; ses requêtes sont relues au changement de rôle", () => {
+    const key = ["com", "p1", "conversation", "c1"];
+    expect(decide({ status: "error", key, error: e404 }, new Map())).toEqual({ kind: "drop", key });
+    expect(isAudienceQuery(["com", "p1", "conversations", "tout"], "p1")).toBe(true);
+    expect(isAudienceQuery(["com", "p1", "activite", "tout", "", "", ""], "p1")).toBe(true);
+  });
+
   it("rôle hors de l'équipe : relecture à la première lecture de la session, puis à chaque changement de rôle", () => {
     const seen = new Map<string, string>();
     const lu = (role: string) => decide({ status: "success", key: ["project", "p1"], data: { id: "p1", role } }, seen);

@@ -9,7 +9,7 @@ transport réalisé (RTC-0.3). Aucune implémentation ; RTC-1 bloqué par la por
 
 ## Faits vérifiés
 
-- Base observée : `main@2577e25` (CI verte sur ce SHA). PR #284 : CI verte sur `9bd61fc` (13 contrôles verts, 3 ignorés par conception), mergeable sans conflit.
+- Base observée : `main@2577e25` (CI verte sur ce SHA). PR #284 : CI verte sur `9bd61fc` ; `main` fusionné dans la branche après la fusion de COM (conflit d'index résolu).
 - Aucun WebSocket / SSE dans `apps` ni `packages` ; relectures périodiques de 60 s.
 - RT-D3 : première version = **Studio seul** ; **canal propre au Temps réel**. RT-D2 : WebSocket ; une instance ; hôte remplacé explicitement ; coédition
   reportée ; COM garde sa remise.
@@ -18,7 +18,7 @@ transport réalisé (RTC-0.3). Aucune implémentation ; RTC-1 bloqué par la por
   RTC-1).
 - `cibleAnnulation` de l'Atelier prend la dernière commande du projet, quel qu'en soit l'auteur
   (`routes/atelier-commands.ts:470`).
-- Chantiers dont il dépend, non fusionnés au checkpoint : PR #281 (Organisations phases 2 à 6), PR #282, PR #285 (COM, #280).
+- Chantiers dont il dépend, non fusionnés au checkpoint : PR #281 (Organisations phases 2 à 6), PR #282. COM est **fusionné** dans `main` (PR #285, `173b9f1`) : ce prérequis est rempli.
 
 ## Points ouverts
 

@@ -155,13 +155,15 @@ export type ProjectPlanningInput = ProjectPlanningStep & { expectedRevision: num
 export interface NotificationItem {
   id: string;
   at: string;
-  kind: "acces" | "commentaire" | "reservation" | "modification" | "verrou" | "peremption" | "commentaire-studio";
+  kind: "acces" | "commentaire" | "reservation" | "modification" | "verrou" | "peremption" | "commentaire-studio" | "message" | "demande";
   projectId: string;
   projectCode: string;
   projectName: string;
   stepNumber: number | null;
   /** Variante Studio commentée (`commentaire-studio` seulement). */
   studio?: { studyId: string; variantId: string };
+  /** Conversation ou demande de précision visée (Communication : `message`, `demande`). */
+  com?: { conversationId?: string; demandeId?: string };
   text: string;
   /** Postérieure à votre dernière consultation. */
   unread: boolean;
@@ -1658,3 +1660,168 @@ export interface ReferenceExterneEtat {
   derniere: { id: string; nom: string; revision: number; empreinte: string; createdAt: string } | null;
   representation: { traits: { a: { x: number; y: number }; b: { x: number; y: number }; coupe: boolean }[]; empreinte: string; niveauSourceNom: string | null } | null;
 }
+
+
+// --- Communication (COM, Issue #280, docs/workstreams/communication/PLAN.md) ------------------------------------------
+
+export type ComMode = "contexte" | "groupe" | "direct";
+export type ComAudience = "participants" | "equipe" | "projet";
+export type ComRefType = "etape" | "document" | "fichier" | "studio-variante" | "observation-studio" | "message" | "demande" | "revision-atelier";
+export interface ComRef { type: ComRefType; id: string }
+/** Référence résolue pour vous : libellé seulement si l'élément vous est accessible (COM-D8). */
+export interface ComRefResolue extends ComRef { label: string | null; accessible: boolean; statut?: string; lien?: Record<string, string> }
+export interface ComConversation {
+  id: string;
+  mode: ComMode;
+  title: string;
+  audience: ComAudience;
+  /** « Visible par : … », affiché avant l'envoi (COM-R1). */
+  audienceLabel: string;
+  context: { type: string; ref: string | null; revision: string | null; label: string | null; accessible: boolean; lien?: Record<string, string> } | null;
+  steward: { id: string; email: string };
+  destinataires: number;
+  lastMessageAt: string;
+  createdAt: string;
+  nonLus: number;
+  peut: { ecrire: boolean; gerer: boolean };
+}
+export interface ComMembre { id: string; email: string; role: ProjectRole }
+export interface ComMessage {
+  id: string;
+  author: { id: string; email: string; aAcces: boolean };
+  body: string | null;
+  nature: "message" | "partage" | "action";
+  replyToId: string | null;
+  refs: ComRefResolue[];
+  mentions: { id: string; email: string }[];
+  ackRequired: boolean;
+  urgent: boolean;
+  capturedAt: string | null;
+  createdAt: string;
+  editedAt: string | null;
+  withdrawn: boolean;
+  versions: number;
+  mine: boolean;
+  partage: { depuis: string } | null;
+  moi: { openedAt: string | null; acknowledgedAt: string | null };
+  remise: { destinataires: number; ouverts: number; accuses: number; enAttente: string[] } | null;
+}
+export interface ComConversationDetail extends ComConversation {
+  messages: ComMessage[];
+  /** Messages plus anciens que la fenêtre renvoyée (les plus récents seulement sont lus). */
+  anterieurs: number;
+  participants: { id: string; email: string; addedAt: string; historyFrom: string | null; removedAt: string | null; aAcces: boolean }[];
+  destinatairesListe: string[];
+  journal: { id: number; action: string; acteur: string; at: string; detail: Record<string, unknown> }[];
+}
+export interface ComMessageInput {
+  body: string;
+  replyToId?: string | null;
+  refs?: ComRef[];
+  mentions?: string[];
+  ackRequired?: boolean;
+  urgent?: boolean;
+  clientRequestId?: string;
+  capturedAt?: string;
+}
+export interface ComApercuPartage { cible: { id: string; title: string; audienceLabel: string }; destinataires: string[]; contenu: { id: string; auteur: string; at: string; texte: string }[]; empreinte: string }
+export type ComActionInput =
+  | { type: "demande"; responderId: string; audience: CommentAudience; echeance?: string | null; question?: string }
+  | { type: "observation-studio"; studyId: string; variantId: string; responsableId: string; audience: CommentAudience; body?: string };
+export interface ComApercuAction { type: string; audienceLabel: string; destinataires: string[]; contenu: string; empreinte: string }
+export type DemandeStatut = "ouverte" | "repondue" | "close";
+export interface Demande {
+  id: string;
+  question: string;
+  refs: ComRefResolue[];
+  requester: { id: string; email: string };
+  responder: { id: string; email: string; aAcces: boolean };
+  echeance: string | null;
+  enRetard: boolean;
+  statut: DemandeStatut;
+  audience: CommentAudience;
+  sourceMessageId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  peut: { repondre: boolean; cloturer: boolean; rouvrir: boolean; reattribuer: boolean };
+  journal?: { id: number; action: string; acteur: string; body: string | null; de: string | null; vers: string | null; at: string }[];
+}
+export interface ElementBoite {
+  id: string;
+  kind: "message" | "mention" | "accuse" | "demande-a-repondre" | "demande-repondue";
+  at: string;
+  projectId: string;
+  projectCode: string;
+  conversationId: string | null;
+  demandeId: string | null;
+  titre: string;
+  texte: string;
+  urgent: boolean;
+  enRetard: boolean;
+}
+export interface ResponsabilitesPersonne {
+  userId: string;
+  email: string;
+  aAcces: boolean;
+  role: ProjectRole | null;
+  demandesARepondre: { id: string; question: string; enRetard: boolean }[];
+  demandesOuvertes: { id: string; question: string; statut: string }[];
+  conversationsAnimees: { id: string; title: string }[];
+  accusesAttendus: { messageId: string; conversation: string }[];
+}
+
+export type FamilleActivite = "message" | "demande" | "observation" | "tache" | "decision" | "revue" | "diffusion";
+export type FiltreActivite = "tout" | "a-traiter" | "questions-ouvertes" | "messages" | "demandes" | "observations" | "revues" | "decisions";
+export interface EntreeActivite {
+  id: string;
+  famille: FamilleActivite;
+  libelle: string;
+  at: string;
+  capturedAt: string | null;
+  auteur: { id: string; email: string };
+  titre: string;
+  texte: string;
+  lien: { conversationId?: string; demandeId?: string; studyId?: string; variantId?: string };
+  aTraiter: boolean;
+}
+export interface RevueLiee {
+  id: string; title: string; statut: "travail" | "soumis" | "approuve" | "refuse" | "diffuse" | "retire"; studyId: string; variantId: string; etude: string; variante: string; revisionId: string;
+  preparePar: string; approuvePar: string | null; approuveLe: string | null; diffusePar: string | null; diffuseLe: string | null; majLe: string;
+}
+
+const comBase = (projectId: string) => `/projects/${encodeURIComponent(projectId)}/com`;
+const corpsJson = (body: unknown) => ({ body: JSON.stringify(body) });
+
+export const comApi = {
+  conversations: (projectId: string, contexte?: string) => request<{ conversations: ComConversation[]; membres: ComMembre[] }>(`${comBase(projectId)}/conversations${contexte ? `?contexte=${encodeURIComponent(contexte)}` : ""}`),
+  creer: (projectId: string, input: { mode: ComMode; title?: string; audience?: ComAudience; participantIds?: string[]; context?: { type: string; ref?: string | null; revision?: string | null } }) =>
+    request<ComConversation>(`${comBase(projectId)}/conversations`, { method: "POST", ...corpsJson(input) }),
+  conversation: (projectId: string, id: string) => request<ComConversationDetail>(`${comBase(projectId)}/conversations/${encodeURIComponent(id)}`),
+  lu: (projectId: string, id: string) => request<{ lu: string }>(`${comBase(projectId)}/conversations/${encodeURIComponent(id)}/lu`, { method: "POST" }),
+  audience: (projectId: string, id: string, audience: ComAudience) => request<ComConversation>(`${comBase(projectId)}/conversations/${encodeURIComponent(id)}/audience`, { method: "PATCH", ...corpsJson({ audience }) }),
+  ajouterParticipant: (projectId: string, id: string, userId: string, historique: "tout" | "depuis-ajout") => request<{ ok: true }>(`${comBase(projectId)}/conversations/${encodeURIComponent(id)}/participants`, { method: "POST", ...corpsJson({ userId, historique }) }),
+  retirerParticipant: (projectId: string, id: string, userId: string) => request<void>(`${comBase(projectId)}/conversations/${encodeURIComponent(id)}/participants/${encodeURIComponent(userId)}`, { method: "DELETE" }),
+  animateur: (projectId: string, id: string, userId: string) => request<{ ok: true }>(`${comBase(projectId)}/conversations/${encodeURIComponent(id)}/animateur`, { method: "PUT", ...corpsJson({ userId }) }),
+  envoyer: (projectId: string, id: string, input: ComMessageInput) => request<{ id: string; replayed: boolean; mentionsSansAcces: string[] }>(`${comBase(projectId)}/conversations/${encodeURIComponent(id)}/messages`, { method: "POST", ...corpsJson(input) }),
+  modifier: (projectId: string, messageId: string, body: string) => request<{ ok: true }>(`${comBase(projectId)}/messages/${encodeURIComponent(messageId)}`, { method: "PATCH", ...corpsJson({ body }) }),
+  retirer: (projectId: string, messageId: string) => request<void>(`${comBase(projectId)}/messages/${encodeURIComponent(messageId)}`, { method: "DELETE" }),
+  versions: (projectId: string, messageId: string) => request<{ replacedAt: string; reason: "modification" | "retrait"; body: string | null }[]>(`${comBase(projectId)}/messages/${encodeURIComponent(messageId)}/versions`),
+  accuser: (projectId: string, messageId: string) => request<{ acknowledgedAt: string }>(`${comBase(projectId)}/messages/${encodeURIComponent(messageId)}/accuse`, { method: "POST" }),
+  apercuPartage: (projectId: string, id: string, input: { messageIds: string[]; cibleId: string; note?: string }) => request<ComApercuPartage>(`${comBase(projectId)}/conversations/${encodeURIComponent(id)}/partages/apercu`, { method: "POST", ...corpsJson(input) }),
+  partager: (projectId: string, id: string, input: { messageIds: string[]; cibleId: string; note?: string; empreinte: string }) => request<{ id: string; conversationId: string }>(`${comBase(projectId)}/conversations/${encodeURIComponent(id)}/partages`, { method: "POST", ...corpsJson(input) }),
+  apercuAction: (projectId: string, messageId: string, input: ComActionInput) => request<ComApercuAction>(`${comBase(projectId)}/messages/${encodeURIComponent(messageId)}/actions/apercu`, { method: "POST", ...corpsJson(input) }),
+  action: (projectId: string, messageId: string, input: ComActionInput & { empreinte: string }) => request<{ targetType: string; targetId: string; messageId?: string; replayed: boolean }>(`${comBase(projectId)}/messages/${encodeURIComponent(messageId)}/actions`, { method: "POST", ...corpsJson(input) }),
+  responsabilites: (projectId: string) => request<ResponsabilitesPersonne[]>(`${comBase(projectId)}/responsabilites`),
+  boite: () => request<{ items: ElementBoite[] }>("/com/boite"),
+  activite: (projectId: string, f: { filtre?: FiltreActivite; auteur?: string; depuis?: string; etape?: string } = {}) => {
+    const q = new URLSearchParams(Object.entries(f).filter(([, v]) => !!v) as [string, string][]).toString();
+    return request<{ items: EntreeActivite[]; auteurs: { id: string; email: string }[] }>(`${comBase(projectId)}/activite${q ? `?${q}` : ""}`);
+  },
+  revues: (projectId: string) => request<RevueLiee[]>(`${comBase(projectId)}/revues`),
+  demandes: (projectId: string, aRepondre = false) => request<Demande[]>(`/projects/${encodeURIComponent(projectId)}/collaboration/demandes${aRepondre ? "?a-repondre=1" : ""}`),
+  demande: (projectId: string, id: string) => request<Demande>(`/projects/${encodeURIComponent(projectId)}/collaboration/demandes/${encodeURIComponent(id)}`),
+  creerDemande: (projectId: string, input: { question: string; responderId: string; echeance?: string | null; audience?: CommentAudience; refs?: ComRef[]; clientRequestId?: string }) =>
+    request<Demande>(`/projects/${encodeURIComponent(projectId)}/collaboration/demandes`, { method: "POST", ...corpsJson(input) }),
+  transitionDemande: (projectId: string, id: string, input: { action: "repondre" | "cloturer" | "rouvrir" | "reattribuer"; body?: string; responderId?: string }) =>
+    request<Demande>(`/projects/${encodeURIComponent(projectId)}/collaboration/demandes/${encodeURIComponent(id)}/transitions`, { method: "POST", ...corpsJson(input) }),
+};
