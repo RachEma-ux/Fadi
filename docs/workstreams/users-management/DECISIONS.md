@@ -222,3 +222,46 @@ ils ne réécrivent aucune décision D-x et restent révisables par lui.
      n'accepte que `true` / `false`. Solution retenue parce qu'elle est la plus simple et sûre : la préproduction et la
      production tournent en `NODE_ENV=production` et ne peuvent donc jamais l'activer, même par erreur de fichier
      d'environnement ; aucune liste d'hôtes SMTP « de capture » à maintenir ; les recettes ne changent pas d'adresses.
+- **UM-29 — Écarts graves E1, E2, E3 du cadrage des règles communes : corrigés (2026-10-24).** Demande du maître
+  d'ouvrage (« Corrige » les trois écarts graves), relayée par la session d'exploitation du VPS ; écarts relevés par le
+  cadrage `docs/workstreams/collaboration-rules/PLAN.md` § 3 (PR #273, **non fusionnée** : consigné ici, la branche de
+  la #273 n'est pas modifiée). Une PR vers `main`, sans fusion ni déploiement ; migration strictement additive.
+  1. **E3 — journal des changements d'accès.** Ajout d'un compte existant, changement de rôle (partage ou PATCH),
+     export accordé / retiré, retrait par le propriétaire, départ du membre et transfert de propriété écrivent chacun
+     une entrée `admin.audit_log` **dans la transaction de l'action** (`project.member.added`, `.role_changed`,
+     `.export_changed`, `.removed`, `.left`, `project.ownership.transferred`) : acteur, projet (cible), membre visé
+     (`memberId`), rôle et export avant → après ; aucune adresse ; rien n'est écrit quand rien ne change ou que l'action
+     est refusée. La ligne du membre est verrouillée (`FOR UPDATE`) pour que deux changements concurrents ne journalisent
+     pas le même « avant ». L'acceptation d'une invitation reste tracée par `invitation.accepted` (inchangé, phase 2
+     d'Organisations).
+  2. **E2 — export du lecteur ; tranche CR-D4** dans le sens « **export explicite pour les nouveaux lecteurs, existants
+     conservés** » (la recommandation (a) de CR-D4 gardait l'export à tout lecteur interne ; le maître d'ouvrage retient
+     cette voie intermédiaire). `project_members.can_export` : migration additive — `ADD COLUMN … DEFAULT true` (chaque
+     ligne existante reçoit TRUE : aucun lecteur actuel ne perd l'export) puis `SET DEFAULT false` (nouvelles lignes,
+     invitations acceptées comprises). Propriétaire et éditeur exportent toujours, l'accès support jamais
+     (`accessAllows`, `lib/owned-project.ts`, vérifié par chaque route `export` : documents, archive, téléchargements,
+     copies, sources de référence externe, exports Studio). Le propriétaire accorde / retire l'export d'un lecteur dans
+     l'écran des membres (case « Export », journalisée). Choix du chef de projet, justifiés : un éditeur rétrogradé
+     lecteur redevient un nouveau lecteur (sans export) ; un droit d'export ne se règle pas sur un éditeur (422) ; NULL
+     (ligne restaurée d'une archive antérieure à la colonne) vaut TRUE, comme les lignes migrées.
+  3. **E1 — audience à l'intérieur d'un projet** (correction minimale, sans construire COM ; CR-D3 reste ouverte pour
+     les audiences fines). Colonne `audience` (`equipe` | `projet`) sur `project_comments` et `studio_comments` ;
+     migration additive : existants = `projet` (aucun changement silencieux), défaut `equipe` ensuite. `equipe` =
+     propriétaire et éditeurs ; `projet` = tous les membres, lecteurs compris ; l'accès support (lecture seule, hors
+     équipe) ne lit que `projet`. Une observation Studio est un commentaire d'origine (même identifiant) : son audience,
+     celle de ses passages, liens, tâches et décisions est celle du commentaire ; une réponse suit son fil. Filtrage
+     **serveur** sur toutes les lectures : listes et fils (étape, révision de l'Atelier), vue Collaboration, journal des
+     révisions et `GET /projects/:id/history`, recherche d'observation par domaine, détail, notifications et leurs
+     extraits, archive exportée par un lecteur (fils de l'équipe retirés avec tout ce qui les suit) ; toute action par
+     identifiant sur un fil de l'équipe rend 404 au lecteur (réponse, changement d'audience, suppression, passages,
+     liens, tâches, décisions). Les caches hors ligne ne reçoivent que ces réponses filtrées. Rédaction : case
+     « Visible par les lecteurs » (Collaboration, plis d'étape, journal de l'Atelier, commentaires et observations
+     Studio). Un lecteur écrit toujours pour tout le projet (une demande `equipe` de sa part : 422). L'audience d'un fil
+     change par son auteur ou le propriétaire (tous deux de l'équipe), journalisée (`comment.audience_changed`) ;
+     refusée vers `equipe` tant qu'un lecteur actuel a écrit dans le fil (409 : son texte lui serait retiré).
+  4. **Limites déclarées.** Le cache local d'un appareil qui a lu un fil avant un changement d'audience ou de rôle le
+     garde jusqu'à la purge existante (déconnexion, 401) : c'est l'écart E7 / CR-D5, non traité ici. La règle d'or
+     (`AGENTS.md`) vise les outils et commandes de la Planche : les cases « Visible par les lecteurs » et « Export »
+     sont des champs de formulaire hors Planche ; aucune icône ni raccourci n'a été ajouté (à arbitrer par le maître
+     d'ouvrage s'il veut l'étendre à ces écrans). La PR #265 (Organisations, phase 1) touche les mêmes fichiers : celle
+     qui fusionne en second résout le conflit.

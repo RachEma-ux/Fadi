@@ -11,6 +11,9 @@ Mis à jour : 2026-10-24 (UTC).
   consignement (PR #259, #263 et la présente mise à jour du suivi).
 - **UM-27 (2026-10-24)** : branche `feat/253-corbeille-anonymiser` (depuis `main` à `c201d2b`), [PR #270](https://github.com/RachEma-ux/Fadi/pull/270) vers `main`
   **non fusionnée** — corbeille des comptes et « Anonymiser maintenant » (amendement de D-5, DECISIONS.md).
+- **UM-29 (2026-10-24)** : branche `fix/collaboration-ecarts-e1-e3` (depuis `main` à `2cc038a`), PR vers `main` **non
+  fusionnée** — écarts graves E1 (audience), E2 (export du lecteur, tranche CR-D4), E3 (journal des accès) du cadrage des
+  règles communes (DECISIONS.md UM-29 ; PR #273 non fusionnée, non modifiée).
 - Dernier commit vérifié : à relever en début de session ; ne pas réutiliser un SHA périmé.
 
 ## Dernier état vérifié
@@ -26,6 +29,11 @@ Mis à jour : 2026-10-24 (UTC).
 - CI de la PR #255 verte sur `81af007` ; sur `570d248`, DB-3 actif : 12 suites (105 tests) vertes sur base jetable attestée, 515 tests API (STATUS.md) ; revérifier le HEAD courant à la reprise.
 
 ## Prochaine action
+
+- UM-29 : revérifier la CI du HEAD de la PR (DB-3 : `app.test.ts` « règles communes », recette
+  `collaboration-audience.mjs` dans le lot `complements`) ; fusion et déploiement **seulement** sur décision du maître
+  d'ouvrage ; si la PR #265 fusionne d'abord, fusionner `main` dans la branche et résoudre le conflit
+  (`members.ts`, `owned-project.ts`, `schema.ts`, `init.sql`).
 
 - UM-27 : CI de la PR #270 verte sur `4aa7d0b` (DB-3 : 123 tests dans les 12 suites) ; revérifier la CI du HEAD courant,
   fusion demandée par le maître d'ouvrage le 2026-10-24 (« fusionne #270 ») après CI verte du commit de fusion de `main`. Aucun déploiement sans son accord (aucune migration ajoutée).
@@ -53,6 +61,10 @@ Mis à jour : 2026-10-24 (UTC).
   `app.test.ts` « 5. corbeille » (DB-3), `apps/web/src/components/comptes/icones-admin.test.ts` (règle d'or).
 
 ## Risques et blocages
+
+- UM-29 : après déploiement, un **nouveau** lecteur n'exporte plus sans accord du propriétaire (changement visible) ; les
+  lecteurs existants gardent l'export. Les commentaires et observations **nouveaux** sont réservés à l'équipe par défaut.
+  Cache hors ligne d'un fil lu avant un changement d'audience : E7 / CR-D5, non traité.
 
 - UM-27 : « Anonymiser maintenant » est irréversible et supprime aussitôt les projets non partagés du compte ; pas de
   corbeille de projets (hors périmètre, signalé au maître d'ouvrage).

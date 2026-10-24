@@ -559,6 +559,13 @@ jobs:
         run: |
           set -o pipefail
           node apps/web/e2e/comptes-securite.mjs 2>&1 | tee -a e2e.log
+      # Règles communes de collaboration (cadrage PR #273) : écarts graves E1 (audience à l'intérieur d'un projet), E2 (export
+      # explicite du lecteur), E3 (journal des changements d'accès), par l'API et l'interface ; journal relu en base.
+      - name: Recette des règles communes — audience équipe / projet, export du lecteur, journal des accès (apps/web/e2e/collaboration-audience.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/collaboration-audience.mjs 2>&1 | tee -a e2e.log
       - name: Recette Gestion des comptes dans le navigateur — écrans, axe-core bureau et téléphone (apps/web/e2e/comptes-admin.mjs)
         if: ${{ matrix.shard == 'complements' }}
         run: |

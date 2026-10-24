@@ -13,7 +13,7 @@
  * écrasé en silence).
  */
 import type { QueryClient } from "@tanstack/react-query";
-import { ApiError, api, type HarmonieDecisionInput, type ParcoursFieldValue, type ParcoursStep, type ParcoursStepStatus, type ProjectComment } from "./api";
+import { ApiError, api, type CommentAudience, type HarmonieDecisionInput, type ParcoursFieldValue, type ParcoursStep, type ParcoursStepStatus, type ProjectComment } from "./api";
 import { isNetworkError, reachability } from "./reachability";
 
 export const MUTATION_KEYS = {
@@ -58,6 +58,8 @@ export interface CommentVars {
   stepNumber: number | null;
   /** Réponse en fil : le commentaire d'origine. */
   parentId?: string | null;
+  /** Audience choisie à la rédaction (écart E1) ; absente = défaut du serveur (l'équipe ; « projet » pour un lecteur). */
+  audience?: CommentAudience;
 }
 
 /**
@@ -236,7 +238,7 @@ export function registerMutationDefaults(queryClient: QueryClient) {
   });
   queryClient.setMutationDefaults(MUTATION_KEYS.comment, {
     ...RETRY_NETWORK,
-    mutationFn: (v: CommentVars) => api.addComment(v.projectId, v.body, v.stepNumber, v.parentId ?? null),
+    mutationFn: (v: CommentVars) => api.addComment(v.projectId, v.body, v.stepNumber, v.parentId ?? null, null, v.audience),
     onSuccess: (created: ProjectComment, v: CommentVars) => {
       void adoptComment(queryClient, created, v);
     },

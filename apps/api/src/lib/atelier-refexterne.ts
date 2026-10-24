@@ -22,7 +22,7 @@ import {
 } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
 import { atelierPublications, atelierVersions } from "../db/schema.js";
-import { loadProjectAccess, roleAllows } from "./owned-project.js";
+import { accessAllows, loadProjectAccess } from "./owned-project.js";
 
 type Lecteur = Pick<typeof db, "select">;
 
@@ -77,7 +77,7 @@ async function chaineRevientA(lecteur: Lecteur, projetId: string, depart: Modele
  */
 async function sourceExportable(projectId: string, userId: string) {
   const source = await loadProjectAccess(projectId, userId);
-  return source && roleAllows(source.role, "export") ? source : null;
+  return source && accessAllows(source, "export") ? source : null;
 }
 
 export async function controlerRattachements(lecteur: Lecteur, projetId: string, auteurId: string, commandes: readonly Commande[]): Promise<RefusReference | null> {

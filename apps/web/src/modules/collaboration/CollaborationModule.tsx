@@ -10,7 +10,7 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
-import { accountApi, api, ApiError, canComment, ROLE_LABEL, type MemberRole, type ProjectComment } from "../../lib/api";
+import { accountApi, api, ApiError, canComment, ROLE_LABEL, type CommentAudience, type MemberRole, type ProjectComment } from "../../lib/api";
 import { useProjectAccess } from "../../lib/access";
 import { useOnline } from "../../components/SyncIndicator";
 import { apiMessage, ConfirmDialog, CopyLink } from "../../components/comptes/ComptesUI";
@@ -30,33 +30,52 @@ const KIND_LABEL: Record<string, string> = {
   commentaire: "Commentaire",
 };
 
-/** Fil de commentaires (projet entier ou une étape) : liste en fils (réponses rattachées à leur commentaire d'origine), ajout, réponse, suppression par l'auteur. */
+/**
+ * Fil de commentaires (projet entier ou une étape) : liste en fils (réponses rattachées à leur commentaire d'origine), ajout, réponse, suppression par l'auteur.
+ * Audience (écart E1) : un nouveau commentaire est réservé à l'équipe (propriétaire et éditeurs) sauf « Visible par les lecteurs » ;
+ * l'auteur ou le propriétaire change l'audience d'un fil. Le serveur filtre ce que chacun reçoit : un lecteur n'a jamais un fil de l'équipe.
+ */
 export function CommentThread({ projectId, stepNumber, comments, compact = false }: { projectId: string; stepNumber: number | null; comments: ProjectComment[]; compact?: boolean }) {
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState("");
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [replyDraft, setReplyDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [visibleToReaders, setVisibleToReaders] = useState(false);
   // Accès support (D-2) : lecture seule, sans commentaire — ni formulaire, ni bouton « Répondre ».
-  const mayComment = canComment(useProjectAccess(projectId).role);
+  const access = useProjectAccess(projectId);
+  const mayComment = canComment(access.role);
+  // Propriétaire et éditeurs choisissent l'audience ; un lecteur écrit toujours pour tout le projet.
+  const inTeam = access.known && (access.role === "proprietaire" || access.role === "editeur");
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ["collaboration", projectId] });
     void queryClient.invalidateQueries({ queryKey: ["comments", projectId] });
   };
   const add = useMutation({
     mutationKey: MUTATION_KEYS.comment,
-    mutationFn: (v: CommentVars) => api.addComment(v.projectId, v.body, v.stepNumber, v.parentId ?? null),
+    mutationFn: (v: CommentVars) => api.addComment(v.projectId, v.body, v.stepNumber, v.parentId ?? null, null, v.audience),
     onSuccess: (created, v) => {
       // Afficher uniquement le commentaire réellement accepté par l'API, puis relire les fils après l'écriture
       // (une lecture partie avant la publication est annulée, `adoptComment`).
       if (v.parentId) {
         setReplyDraft("");
         setReplyTo(null);
-      } else setDraft("");
+      } else {
+        setDraft("");
+        setVisibleToReaders(false);
+      }
       setError(null);
       void adoptComment(queryClient, created, v);
     },
     onError: (err) => setError(err instanceof ApiError && err.serverMessage ? err.serverMessage : "Le commentaire n’a pas pu être enregistré."),
+  });
+  const audience = useMutation({
+    mutationFn: ({ id, next }: { id: string; next: CommentAudience }) => api.setCommentAudience(projectId, id, next),
+    onSuccess: () => {
+      setError(null);
+      refresh();
+    },
+    onError: (err) => setError(err instanceof ApiError && err.serverMessage ? err.serverMessage : "L’audience n’a pas pu être modifiée."),
   });
   const remove = useMutation({
     mutationFn: (id: string) => api.deleteComment(projectId, id),
@@ -79,6 +98,26 @@ export function CommentThread({ projectId, stepNumber, comments, compact = false
         <>
           {" · "}
           <Link to={`/projets/${projectId}?module=atelier`}>Atelier, révision {c.atelierRevision}</Link>
+        </>
+      )}
+      {!c.parentId && (
+        <>
+          {" · "}
+          <span className="h7-chip comment-audience" data-audience={c.audience}>
+            {c.audience === "projet" ? "Visible par les lecteurs" : "Équipe"}
+          </span>
+          {inTeam && (c.mine || access.isOwner) && (
+            <button
+              type="button"
+              className="comment-audience-toggle"
+              data-audience-toggle={c.id}
+              disabled={audience.isPending}
+              title={c.audience === "projet" ? "Réserver ce fil au propriétaire et aux éditeurs" : "Rendre ce fil lisible par les lecteurs du projet"}
+              onClick={() => audience.mutate({ id: c.id, next: c.audience === "projet" ? "equipe" : "projet" })}
+            >
+              {c.audience === "projet" ? "Réserver à l’équipe" : "Rendre visible aux lecteurs"}
+            </button>
+          )}
         </>
       )}
       {c.mine && (
@@ -142,13 +181,22 @@ export function CommentThread({ projectId, stepNumber, comments, compact = false
         className="comment-form"
         onSubmit={(e: FormEvent) => {
           e.preventDefault();
-          if (draft.trim()) add.mutate({ projectId, body: draft.trim(), stepNumber });
+          if (draft.trim()) add.mutate({ projectId, body: draft.trim(), stepNumber, ...(inTeam ? { audience: visibleToReaders ? "projet" : "equipe" } : {}) });
         }}
       >
         <label>
           {stepNumber !== null ? `Commentaire sur l'étape ${pad2(stepNumber)}` : "Nouveau commentaire"}
           <textarea value={draft} maxLength={4000} rows={compact ? 2 : 3} placeholder="Question, remarque, décision à tracer…" onChange={(e) => setDraft(e.target.value)} />
         </label>
+        {inTeam ? (
+          <label className="comment-audience-choice">
+            <input type="checkbox" checked={visibleToReaders} onChange={(e) => setVisibleToReaders(e.target.checked)} data-comment-audience />
+            Visible par les lecteurs
+            <small className="h7-muted"> — sinon réservé au propriétaire et aux éditeurs</small>
+          </label>
+        ) : (
+          <p className="h7-muted">Votre commentaire sera lisible par tous les membres du projet.</p>
+        )}
         <div className="h7-actions">
           <button type="submit" className="button-primary" disabled={(add.isPending && !add.isPaused) || !draft.trim()}>
             Publier le commentaire
@@ -181,7 +229,7 @@ export function StepComments({ projectId, stepNumber }: { projectId: string; ste
 }
 
 const ROLE_HELP: Record<MemberRole, string> = {
-  lecteur: "lit tout le dossier et commente",
+  lecteur: "lit le dossier et les commentaires ouverts aux lecteurs, commente ; exporte si vous le lui accordez",
   editeur: "lit, commente et modifie (saisies, arbitrages, programme, Atelier, sources)",
 };
 
@@ -229,6 +277,15 @@ export function MembersPanel({ projectId }: { projectId: string }) {
     },
     onError: (err) => setError(errorText(err, "Le rôle n’a pas pu être modifié.")),
   });
+  const exportRight = useMutation({
+    mutationFn: ({ userId, next }: { userId: string; next: boolean }) => api.setMemberExport(projectId, userId, next),
+    onSuccess: (m) => {
+      setError(null);
+      setNotice(m.canExport ? `${m.email} peut maintenant exporter et télécharger le contenu du projet.` : `${m.email} ne peut plus exporter ni télécharger le contenu du projet.`);
+      refresh();
+    },
+    onError: (err) => setError(errorText(err, "Le droit d’export n’a pas pu être modifié.")),
+  });
   const transfer = useMutation({
     mutationFn: (userId: string) => api.transferOwnership(projectId, userId),
     onSuccess: (v) => {
@@ -264,7 +321,7 @@ export function MembersPanel({ projectId }: { projectId: string }) {
   if (!query.data) return <p role="alert">Impossible de lire les membres du projet.</p>;
   const v = query.data;
   const isOwner = v.you.role === "proprietaire";
-  const busy = invite.isPending || change.isPending || remove.isPending || transfer.isPending;
+  const busy = invite.isPending || change.isPending || remove.isPending || transfer.isPending || exportRight.isPending;
   return (
     <div className="members-panel">
       <table className="programme-table members-table">
@@ -272,6 +329,7 @@ export function MembersPanel({ projectId }: { projectId: string }) {
           <tr>
             <th>Compte</th>
             <th>Rôle</th>
+            <th>Export</th>
             <th>Depuis</th>
             <th>{isOwner ? "Action" : ""}</th>
           </tr>
@@ -283,6 +341,7 @@ export function MembersPanel({ projectId }: { projectId: string }) {
               {v.owner.userId === v.you.userId ? " (vous)" : ""}
             </td>
             <td>propriétaire</td>
+            <td>oui</td>
             <td>—</td>
             <td />
           </tr>
@@ -301,6 +360,20 @@ export function MembersPanel({ projectId }: { projectId: string }) {
                   </select>
                 ) : (
                   ROLE_LABEL[m.role]
+                )}
+              </td>
+              <td data-member-export={m.canExport ? "oui" : "non"}>
+                {isOwner && m.role === "lecteur" ? (
+                  <label className="member-export">
+                    <input type="checkbox" checked={m.canExport} disabled={busy} aria-label={`Export accordé à ${m.email}`} onChange={(e) => exportRight.mutate({ userId: m.userId, next: e.target.checked })} />
+                    {m.canExport ? "accordé" : "non accordé"}
+                  </label>
+                ) : m.role === "editeur" ? (
+                  "oui"
+                ) : m.canExport ? (
+                  "accordé"
+                ) : (
+                  "non"
                 )}
               </td>
               <td>{new Date(m.createdAt).toLocaleDateString(LOCALE)}</td>
@@ -332,7 +405,7 @@ export function MembersPanel({ projectId }: { projectId: string }) {
           ))}
           {v.members.length === 0 && (
             <tr>
-              <td colSpan={4} className="h7-muted">
+              <td colSpan={5} className="h7-muted">
                 Aucun membre invité : ce projet n’est visible que par son propriétaire.
               </td>
             </tr>
@@ -492,7 +565,7 @@ export function CollaborationModule({ projectId }: { projectId: string }) {
             <b className="collab-role" data-role={v.access.role}>
               {ROLE_LABEL[v.access.role]}
             </b>
-            <small>{v.access.role === "proprietaire" ? "partage, édition, suppression" : v.access.role === "editeur" ? "lecture, commentaires, édition" : v.access.role === "support" ? "lecture seule, sans commentaire ni export" : "lecture et commentaires"}</small>
+            <small>{v.access.role === "proprietaire" ? "partage, édition, suppression" : v.access.role === "editeur" ? "lecture, commentaires, édition" : v.access.role === "support" ? "lecture seule, sans commentaire ni export" : v.access.canExport ? "lecture et commentaires, export accordé" : "lecture et commentaires, sans export"}</small>
           </div>
           <div className="biz-kpi">
             <span>Édition</span>

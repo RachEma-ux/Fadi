@@ -19,7 +19,29 @@ PR #255 n'est attendue. Reste au maître d'ouvrage : le déploiement en producti
 **Amendement de D-5 (UM-27, 2026-10-24) : implémenté, vérifié en local et en CI (`4aa7d0b`), [PR #270](https://github.com/RachEma-ux/Fadi/pull/270) vers `main` (non fusionnée, aucun
 déploiement).** Corbeille des comptes et « Anonymiser maintenant » dans `/admin/utilisateurs` — voir la section UM-27.
 
+**Écarts graves E1, E2, E3 du cadrage des règles communes (UM-29, 2026-10-24) : implémentés, vérifiés en local ; PR vers
+`main` non fusionnée, aucun déploiement.** Voir la section UM-29.
+
 ## Faits vérifiés
+
+### Écarts E1, E2, E3 des règles communes (UM-29, 2026-10-24)
+
+Branche `fix/collaboration-ecarts-e1-e3`, depuis `main` à `2cc038a`. Vérifié en local sur PostgreSQL 16 + PostGIS 3
+(autorité de signature locale ajoutée au registre **dans la copie de travail seulement** pendant les essais, puis
+restaurée ; la preuve opposable reste DB-3 en CI) :
+
+- `npm run typecheck` : vert. `npm run build` : vert. Web : 951 tests verts (120 fichiers).
+- API sur base jetable attestée : 610 tests, dont les 5 nouveaux « règles communes — E1, E2, E3 » de `app.test.ts`
+  (journal de chaque changement d'accès, export du lecteur, migration additive rejouée, audience des commentaires du
+  projet et des fils Studio sur chaque route) et `lib/audience.test.ts` (3, pur). Tests existants mis à jour pour le
+  nouveau défaut, aucun désactivé : `app.test.ts` (partage, accès support), `atelier-commands.test.ts` (référence
+  externe), `studio-permissions.test.ts` (route `PATCH …/comments/:id` dans la matrice, observation d'essai ouverte aux
+  lecteurs ; matrice publiée régénérée), base simulée (`canExport`). Restent rouges en local seulement : « Documents —
+  catalogue… » (délai de 30 s dépassé, **identique sur `main` non modifié** sur ce poste) et le registre d'autorités
+  (clé locale de l'essai) — à confirmer verts en CI.
+- Recettes e2e (API construite servant `WEB_DIST`, rôle `fadi_app`) : `collaboration-audience.mjs` (nouvelle, **38
+  contrôles verts**, journal relu en base), `studio-persistance.mjs` (293), `studio-observations.mjs` (71),
+  `comptes-securite.mjs` (73) : vertes.
 
 ### Corbeille et « Anonymiser maintenant » (UM-27, 2026-10-24)
 

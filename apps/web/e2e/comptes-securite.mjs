@@ -12,7 +12,7 @@
  *     `COMPTES_SECURITE_BASE_VIERGE=1`, sinon ces scénarios sont déclarés NON EXÉCUTÉS.
  *  3. Accès support sans export : routes de documents, archive, téléchargements, GET / HEAD, barre oblique finale,
  *     identifiant encodé en pourcent, casse ; refus avant toute production, trace de production ou copie ; lectures
- *     permises et journalisées ; propriétaire et lecteur gardent l'export.
+ *     permises et journalisées ; le propriétaire garde l'export, un nouveau lecteur l'obtient quand le propriétaire le lui accorde (E2).
  *  4. Échecs de connexion simultanés : compteur incrémenté atomiquement.
  *  5. Corbeille et « Anonymiser maintenant » (UM-27, amendement de D-5) : liste, demandeur, restauration par la voie
  *     d'annulation (statut antérieur rétabli), refus (hors corbeille, soi-même, adresse non ressaisie, projets partagés,
@@ -295,6 +295,9 @@ const levels = (await owner.a.call('GET', `/projects/${pid}/documents`)).body?.d
 check('propriétaire : modèle et plans de niveau disponibles', model.status === 200 && levels.length > 0, { model: model.status, levels });
 const reader = await register('lecteur');
 check('propriétaire : lecteur invité', (await owner.a.call('POST', `/projects/${pid}/members`, { email: reader.email, role: 'lecteur' })).status < 300);
+// Écart E2 : un nouveau lecteur n'exporte pas ; le propriétaire le lui accorde (le support, lui, ne l'a jamais).
+check('lecteur : sans export par défaut (403)', (await reader.a.call('GET', `/projects/${pid}/documents/surfaces`)).status === 403);
+check('propriétaire : export accordé au lecteur', (await owner.a.call('PATCH', `/projects/${pid}/members/${reader.id}`, { canExport: true })).status === 200);
 const grant = await owner.a.call('POST', `/projects/${pid}/support-grants`, { adminId: support.acct.id, hours: 2, purpose: 'Recette de sécurité' });
 check('propriétaire : accès support accordé', grant.status === 201, grant);
 
@@ -344,8 +347,8 @@ const ownerExport = await owner.a.call('GET', `/projects/${pid}/documents/surfac
 check('propriétaire : export inchangé', ownerExport.status === 200);
 const readerClient = (await passwordLogin(reader)).b;
 const readerExport = await readerClient.call('GET', `/projects/${pid}/documents/surfaces`);
-check('lecteur : export inchangé', readerExport.status === 200, readerExport.status);
-check('lecteur : téléchargement de pièce jointe inchangé', (await readerClient.call('GET', `/projects/${pid}/steps/1/files/${fileId}`)).status === 200);
+check('lecteur : export accordé effectif', readerExport.status === 200, readerExport.status);
+check('lecteur : téléchargement de pièce jointe accordé effectif', (await readerClient.call('GET', `/projects/${pid}/steps/1/files/${fileId}`)).status === 200);
 
 // =====================================================================================================================
 // 4. Échecs de connexion simultanés (revue Codex) : compteur incrémenté atomiquement

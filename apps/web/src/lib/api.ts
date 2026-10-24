@@ -216,6 +216,8 @@ export interface ProjectMember {
   userId: string;
   email: string;
   role: MemberRole;
+  /** Le membre peut exporter : toujours pour un éditeur ; pour un lecteur, si le propriétaire l'a accordé (écart E2). */
+  canExport: boolean;
   invitedBy: string;
   createdAt: string;
 }
@@ -776,9 +778,14 @@ export interface ProjectComment {
   atelierRevision?: number | null;
   authorEmail: string;
   body: string;
+  /** Audience (écart E1) : `equipe` = propriétaire et éditeurs ; `projet` = tous les membres, lecteurs compris. */
+  audience: CommentAudience;
   createdAt: string;
   mine: boolean;
 }
+
+/** Audience d'un commentaire ou d'une observation à l'intérieur du projet, décidée et filtrée par le serveur. */
+export type CommentAudience = "equipe" | "projet";
 
 export interface RevisionEvent {
   at: string;
@@ -818,7 +825,7 @@ export interface HistoryView {
 }
 
 export interface CollaborationView {
-  access: { ownerEmail: string; you: string; role: ProjectRole; members: ProjectMember[]; lock: EditingLock | null; sharing: { available: boolean; reason: string } };
+  access: { ownerEmail: string; you: string; role: ProjectRole; canExport: boolean; members: ProjectMember[]; lock: EditingLock | null; sharing: { available: boolean; reason: string } };
   sync: { modelRevision: number; journalEntries: number; lastModelWrite: string | null; offline: { available: boolean; reason: string } };
   journal: RevisionEvent[];
   comments: ProjectComment[];
@@ -984,10 +991,12 @@ export interface StudioComment {
   createdAt: string;
   deletedAt: string | null;
   mine: boolean;
+  /** Audience du fil (écart E1), absente d'un serveur plus ancien (= tout le projet). */
+  audience?: CommentAudience;
   /** Observation issue de ce commentaire (même identifiant), null sinon (absent d'un serveur plus ancien). */
   observation?: StudioObservation | null;
 }
-export interface StudioCommentInput { body: string; revisionId?: string; objectIds?: string[]; parentId?: string; requestId?: string }
+export interface StudioCommentInput { body: string; revisionId?: string; objectIds?: string[]; parentId?: string; requestId?: string; audience?: CommentAudience }
 /** Observation Studio (E.2) : statut, responsable, échéance et journal, relus du serveur qui fait autorité. */
 export type StudioObservationStatut = "ouverte" | "corrigee" | "recontrolee" | "cloturee" | "rouverte";
 export type StudioObservationTransition = "corriger" | "recontroler" | "cloturer" | "rouvrir" | "reattribuer";
@@ -1157,6 +1166,9 @@ export const api = {
   /** Nouveau commentaire ou réponse ; `requestId` : un renvoi rend le même commentaire, sans doublon. */
   createStudioComment: (p: string, s: string, v: string, input: StudioCommentInput) => request<StudioComment & { replayed: boolean }>(`${studioVariantPath(p, s, v)}/comments`, { method: "POST", body: JSON.stringify(input) }),
   deleteStudioComment: (p: string, s: string, v: string, id: string) => request<void>(`${studioVariantPath(p, s, v)}/comments/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  /** Audience d'un fil Studio (auteur ou propriétaire), journalisée par le serveur. */
+  setStudioCommentAudience: (p: string, s: string, v: string, id: string, audience: CommentAudience) =>
+    request<StudioComment>(`${studioVariantPath(p, s, v)}/comments/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify({ audience }) }),
   studioCommands: (p: string, s: string, v: string, envelope: StudioEnvelope) => request<StudioContext & { replayed: boolean }>(`${studioVariantPath(p, s, v)}/commands`, { method: "POST", body: JSON.stringify(envelope) }),
   /** Étapes du Parcours rattachées à l'étude et étapes du projet proposées (libellés relus du serveur). */
   studioStudySteps: (p: string, s: string) => request<StudioStudySteps>(`${studioStudyPath(p, s)}/steps`),
@@ -1363,14 +1375,19 @@ export const api = {
   getCollaboration: (projectId: string) => request<CollaborationView>(`/projects/${projectId}/collaboration`),
   getHistory: (projectId?: string, signal?: AbortSignal) => request<HistoryView>(projectId ? `/projects/${encodeURIComponent(projectId)}/history` : "/projects/history", { signal }),
   listComments: (projectId: string, stepNumber: number | null) => request<ProjectComment[]>(`/projects/${projectId}/collaboration/comments${stepNumber === null ? "" : `?step=${stepNumber}`}`),
-  addComment: (projectId: string, body: string, stepNumber: number | null, parentId: string | null = null, atelierRevision: number | null = null) =>
-    request<ProjectComment>(`/projects/${projectId}/collaboration/comments`, { method: "POST", body: JSON.stringify({ body, stepNumber, parentId, ...(atelierRevision !== null ? { atelierRevision } : {}) }) }),
+  addComment: (projectId: string, body: string, stepNumber: number | null, parentId: string | null = null, atelierRevision: number | null = null, audience?: CommentAudience) =>
+    request<ProjectComment>(`/projects/${projectId}/collaboration/comments`, { method: "POST", body: JSON.stringify({ body, stepNumber, parentId, ...(atelierRevision !== null ? { atelierRevision } : {}), ...(audience ? { audience } : {}) }) }),
+  /** Audience d'un fil (auteur ou propriétaire), journalisée par le serveur. */
+  setCommentAudience: (projectId: string, commentId: string, audience: CommentAudience) =>
+    request<ProjectComment>(`/projects/${projectId}/collaboration/comments/${encodeURIComponent(commentId)}`, { method: "PATCH", body: JSON.stringify({ audience }) }),
   deleteComment: (projectId: string, commentId: string) => request<void>(`/projects/${projectId}/collaboration/comments/${encodeURIComponent(commentId)}`, { method: "DELETE" }),
   /** Partage : membres et rôles (propriétaire seulement pour inviter, changer, retirer ; un membre peut se retirer lui-même). */
   listMembers: (projectId: string) => request<MembersView>(`/projects/${projectId}/members`),
   /** Compte existant : 201 `ProjectMember` ; adresse sans compte : 202 `InvitationCreated` (UM-3). */
   inviteMember: (projectId: string, email: string, role: MemberRole) => request<ProjectMember | InvitationCreated>(`/projects/${projectId}/members`, { method: "POST", body: JSON.stringify({ email, role }) }),
   setMemberRole: (projectId: string, userId: string, role: MemberRole) => request<ProjectMember>(`/projects/${projectId}/members/${encodeURIComponent(userId)}`, { method: "PATCH", body: JSON.stringify({ role }) }),
+  /** Export accordé ou retiré à un lecteur (propriétaire seulement, journalisé). */
+  setMemberExport: (projectId: string, userId: string, canExport: boolean) => request<ProjectMember>(`/projects/${projectId}/members/${encodeURIComponent(userId)}`, { method: "PATCH", body: JSON.stringify({ canExport }) }),
   removeMember: (projectId: string, userId: string) => request<void>(`/projects/${projectId}/members/${encodeURIComponent(userId)}`, { method: "DELETE" }),
   /** Transfert de propriété à un membre (propriétaire seulement) : vous restez éditeur. */
   transferOwnership: (projectId: string, userId: string) => request<MembersView>(`/projects/${projectId}/members/${encodeURIComponent(userId)}/propriete`, { method: "POST" }),

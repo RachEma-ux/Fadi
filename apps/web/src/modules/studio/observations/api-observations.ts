@@ -3,7 +3,7 @@
  * Même origine, cookie de session ; un refus lève `ApiError` avec le code, le message et le corps du serveur (le corps
  * d'un 409 `deja_suivie` porte l'identifiant de l'observation à réemployer).
  */
-import { ApiError, type StudioObservation, type StudioParticipant } from "../../../lib/api";
+import { ApiError, type CommentAudience, type StudioObservation, type StudioParticipant } from "../../../lib/api";
 
 export type DomaineObservation = "exigence" | "metre" | "revue" | "objet";
 export type VueObservation = "plan" | "3d" | "feuille" | "quantites" | "exigences" | "revue";
@@ -29,6 +29,8 @@ export interface DecisionObservation {
 export interface ObservationSuivie extends StudioObservation {
   body: string;
   authorEmail: string;
+  /** Audience du fil (écart E1), absente d'un serveur plus ancien (= tout le projet). */
+  audience?: CommentAudience;
   contexte: { projectId: string; studyId: string; variantId: string; revisionId: string | null; objectIds: string[] };
   vue: { mode: VueObservation; ref: string | null } | null;
   liens: LienObservation[];
@@ -41,7 +43,7 @@ export interface LectureObservations { observations: ObservationSuivie[]; partic
 export interface LienSaisi { domaine: DomaineObservation; ref: string; revisionId?: string; controleId?: string }
 export interface OuvertureSaisie {
   body: string; revisionId?: string; objectIds?: string[]; responsableId: string; echeance?: string; note?: string;
-  vue?: { mode: VueObservation; ref?: string }; liens?: LienSaisi[]; requestId: string;
+  vue?: { mode: VueObservation; ref?: string }; liens?: LienSaisi[]; requestId: string; audience?: CommentAudience;
 }
 
 async function appel<T>(chemin: string, init?: RequestInit): Promise<T> {

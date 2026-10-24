@@ -39,7 +39,7 @@ export interface PanneauObservationsProps {
   surSelection: (ids: string[]) => void;
 }
 
-interface Ctx extends PanneauObservationsProps { participants: readonly StudioParticipant[]; meId: string | undefined; sources: SourcesLien; liste: readonly ObservationSuivie[]; relire: () => void; montrer: (id: string) => void }
+interface Ctx extends PanneauObservationsProps { participants: readonly StudioParticipant[]; meId: string | undefined; equipe: boolean; sources: SourcesLien; liste: readonly ObservationSuivie[]; relire: () => void; montrer: (id: string) => void }
 
 const refused = (e: unknown) => e instanceof ApiError && [401, 403, 404].includes(e.status);
 const court = (id: string) => id.slice(-8);
@@ -69,6 +69,8 @@ export function PanneauObservations(props: PanneauObservationsProps) {
   const archived = lecture.data?.archived === true;
   const ctx: Ctx = {
     ...props, participants: lecture.data?.participants ?? [], meId: lecture.data?.me.id, liste,
+    // Audience (écart E1) : propriétaire et éditeurs choisissent ; un lecteur ouvre toujours pour tout le projet.
+    equipe: lecture.data?.me.role === "proprietaire" || lecture.data?.me.role === "editeur",
     sources: {
       revision: props.revision, selection: props.selection,
       exigences: (exigences.data?.courante?.exigences ?? []).map((x) => ({ id: x.id, libelle: x.libelle })),
@@ -132,6 +134,7 @@ function Ouverture({ ctx, surFermer }: { ctx: Ctx; surFermer: () => void }) {
   const [responsableId, setResponsable] = useState(assignables[0]?.id ?? "");
   const [echeance, setEcheance] = useState("");
   const [citer, setCiter] = useState(true);
+  const [lecteurs, setLecteurs] = useState(false);
   const [domaine, setDomaine] = useState<DomaineObservation | "">("");
   const [refLien, setRef] = useState("");
   const [envoi, setEnvoi] = useState(false);
@@ -148,6 +151,7 @@ function Ouverture({ ctx, surFermer }: { ctx: Ctx; surFermer: () => void }) {
       body: body.trim(), responsableId, ...(echeance ? { echeance } : {}), vue: { mode: ctx.vue },
       ...(citer && citables.length ? { objectIds: citables, revisionId: ctx.revisionId } : {}),
       ...(domaine && refLien ? { liens: [{ domaine, ref: refLien, ...(domaine === "objet" || domaine === "metre" ? { revisionId: ctx.revisionId } : {}) }] } : {}),
+      ...(ctx.equipe && lecteurs ? { audience: "projet" as const } : {}),
     };
     try {
       await apiObservations.ouvrir(ctx.projectId, ctx.studyId, ctx.variantId, { ...input, requestId: demande.id(JSON.stringify(input)) });
@@ -167,6 +171,7 @@ function Ouverture({ ctx, surFermer }: { ctx: Ctx; surFermer: () => void }) {
     <input id="studio-suivi-echeance" type="date" value={echeance} onChange={(e) => setEcheance(e.target.value)} />
     {citables.length > 0 && <label className="studio-commentaires-ancre"><input type="checkbox" checked={citer} onChange={(e) => setCiter(e.target.checked)} /> {`Citer la sélection (${citables.length} objet(s))`}</label>}
     <p className="studio-info">{`Vue citée : ${LIBELLE_VUE[ctx.vue]}`}</p>
+    {ctx.equipe && <label className="studio-commentaires-ancre"><input type="checkbox" checked={lecteurs} onChange={(e) => setLecteurs(e.target.checked)} data-studio-audience /> Visible par les lecteurs</label>}
     <ChoixLien ctx={ctx} domaine={domaine} refLien={refLien} surDomaine={setDomaine} surRef={setRef} />
     {refus && <p role="alert">{refus.message} {refus.observationId && <button type="button" onClick={() => ctx.montrer(refus.observationId!)}>Voir l’observation</button>}</p>}
     <div className="studio-commentaires-actions">
@@ -181,6 +186,7 @@ function commentaireDe(o: ObservationSuivie, meId: string | undefined): StudioCo
   return {
     id: o.id, variantId: o.contexte.variantId, parentId: null, revisionId: o.contexte.revisionId, objectIds: o.contexte.objectIds, authorId: o.authorId,
     authorEmail: o.authorEmail, body: o.body, createdAt: o.createdAt, deletedAt: null, mine: meId !== undefined && o.authorId === meId, observation: o,
+    ...(o.audience ? { audience: o.audience } : {}),
   };
 }
 
@@ -192,6 +198,7 @@ function Fiche({ o, ctx }: { o: ObservationSuivie; ctx: Ctx }) {
       <strong>{STATUT_LIBELLE[o.statut]}</strong>
       <span>Auteur : <span translate="no">{o.authorEmail}</span></span>
       <span translate="no">{date(o.createdAt)}</span>
+      <span data-studio-audience-etat={o.audience ?? "projet"}>{(o.audience ?? "projet") === "projet" ? "Visible par les lecteurs" : "Équipe"}</span>
     </p>
     <p className="studio-commentaire-texte" translate="no">{o.body}</p>
     <p className="studio-suivi-contexte" data-studio-suivi-contexte>

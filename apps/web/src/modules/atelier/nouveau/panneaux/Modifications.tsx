@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { champsEnConflit, interferences, reprendreChamps, type Commande, type Enveloppe, type Interference, type ModeleAtelier, type TypeProbleme } from "@parcours/atelier-model";
 import { api, type ProjectComment } from "../../../../lib/api";
+import { useProjectAccess } from "../../../../lib/access";
 import type { InstantaneClient } from "../../bus/atelier-client";
 import { LOCALE } from "../../../../lib/i18n";
 
@@ -172,14 +173,19 @@ function FilEntree({ projectId, revision, commentaires }: { projectId: string; r
   const [texte, setTexte] = useState("");
   const [erreur, setErreur] = useState<string | null>(null);
   const [envoi, setEnvoi] = useState(false);
+  // Audience (écart E1) : réservé à l'équipe par défaut ; un lecteur écrit toujours pour tout le projet (serveur).
+  const acces = useProjectAccess(projectId);
+  const equipe = acces.known && (acces.role === "proprietaire" || acces.role === "editeur");
+  const [lecteurs, setLecteurs] = useState(false);
   const envoyer = async () => {
     const corps = texte.trim();
     if (!corps) return;
     setEnvoi(true);
     setErreur(null);
     try {
-      await api.addComment(projectId, corps, null, null, revision);
+      await api.addComment(projectId, corps, null, null, revision, equipe && lecteurs ? "projet" : undefined);
       setTexte("");
+      setLecteurs(false);
       await queryClient.invalidateQueries({ queryKey: ["comments", projectId] });
     } catch (err) {
       setErreur(err instanceof Error ? err.message : "Commentaire non enregistré.");
@@ -206,6 +212,11 @@ function FilEntree({ projectId, revision, commentaires }: { projectId: string; r
           <form onSubmit={(e) => { e.preventDefault(); void envoyer(); }}>
             <label className="sr-only" htmlFor={`fil-${revision}`}>Commentaire sur la révision {revision}</label>
             <textarea id={`fil-${revision}`} rows={2} maxLength={4000} value={texte} onChange={(e) => setTexte(e.target.value)} onKeyDown={(e) => e.stopPropagation()} placeholder={`Commentaire sur la révision ${revision}`} />
+            {equipe && (
+              <label className="journal-audience">
+                <input type="checkbox" checked={lecteurs} onChange={(e) => setLecteurs(e.target.checked)} data-comment-audience /> Visible par les lecteurs
+              </label>
+            )}
             <button type="submit" disabled={envoi || !texte.trim()}>Publier</button>
             {erreur && <p className="ver-erreur" role="alert">{erreur}</p>}
           </form>

@@ -15,8 +15,13 @@
  * se supprime plus (409 observation). La vue d'une observation porte aussi sa vue citée, ses liens de domaines, ses
  * tâches et ses décisions (suivi E.2 : `studio-observations-suivi.ts`) ; la clôture est motivée, attend la fin des
  * tâches et consigne la décision de clôture.
+ *
+ * Audience (écart E1, `audience.ts`) : portée par le commentaire d'origine et recopiée sur ses réponses ; l'observation,
+ * ses passages, tâches et décisions la suivent. Un fil `equipe` (défaut) n'est lu que par le propriétaire et les
+ * éditeurs ; `projet` (« Visible par les lecteurs ») par tous. Chaque lecture et chaque recherche par identifiant passe
+ * par `audienceFilter` : pour un lecteur, un fil de l'équipe est introuvable (404), jamais seulement masqué.
  */
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, or, type SQL } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { db } from "../db/client.js";
@@ -27,6 +32,8 @@ import {
   type StudioObservationTacheAction, type StudioObservationTacheStatut, type StudioObservationVueMode,
 } from "../db/schema.js";
 import { newId } from "./ids.js";
+import { audit } from "./audit.js";
+import { AudienceError, audienceChangeRefusal, audienceOfNew, audienceSchema, seesTeam, type CommentAudience } from "./audience.js";
 import { loadProjectAccess, projectAccessRefusal, roleAllows, type AccessibleProject, type ProjectNeed, type ProjectRole } from "./owned-project.js";
 import { lockedAccess, StudioRequestError, studioArchivedRefusal, studioIdentifierSchema, type StudioScope } from "./studio-commands.js";
 import type { Tx } from "./atelier-validation.js";
@@ -44,8 +51,23 @@ export const studioCommentSchema = z.object({
     .refine((ids) => new Set(ids).size === ids.length, "Objet cité deux fois").optional(),
   parentId: studioIdentifierSchema.optional(),
   requestId: studioIdentifierSchema.optional(),
+  /** Audience du fil (E1) : `equipe` par défaut, `projet` = visible par les lecteurs ; une réponse suit son fil. */
+  audience: audienceSchema.optional(),
 }).strict();
 export type StudioCommentInput = z.infer<typeof studioCommentSchema>;
+
+/** Fils Studio lisibles par ce rôle (E1) : l'équipe lit tout ; les autres l'audience `projet` (NULL = archive antérieure = `projet`). */
+export function audienceFilter(role: ProjectRole): SQL | undefined {
+  return seesTeam(role) ? undefined : or(isNull(studioComments.audience), eq(studioComments.audience, "projet"));
+}
+
+/** Refus d'audience levé comme erreur de requête Studio (même forme que les autres refus). */
+export function audienceOrRefuse<T>(f: () => T): T {
+  try { return f(); } catch (e) {
+    if (e instanceof AudienceError) throw new StudioRequestError(e.status, e.body);
+    throw e;
+  }
+}
 
 export interface StudioCommentView {
   id: string;
@@ -60,6 +82,8 @@ export interface StudioCommentView {
   createdAt: string;
   deletedAt: string | null;
   mine: boolean;
+  /** Audience du fil (E1). */
+  audience: CommentAudience;
   /** Observation issue de ce commentaire (même identifiant), null sinon. */
   observation: StudioObservationView | null;
 }
@@ -161,7 +185,7 @@ function view(c: Row, actorId: string, observation: StudioObservationView | null
     id: c.id, variantId: c.variantId, parentId: c.parentId, revisionId: c.revisionId,
     objectIds: deleted ? [] : c.objectIds, authorId: c.authorId, authorEmail: c.authorEmail ?? "",
     body: deleted ? null : c.body, createdAt: c.createdAt.toISOString(), deletedAt: c.deletedAt?.toISOString() ?? null,
-    mine: c.authorId === actorId, observation,
+    mine: c.authorId === actorId, audience: c.audience ?? "projet", observation,
   };
 }
 
@@ -181,13 +205,13 @@ export async function scopedVariant(scope: StudioScope, actorId: string, need: P
 const selectRow = () => db.select({
   id: studioComments.id, variantId: studioComments.variantId, revisionId: studioComments.revisionId, objectIds: studioComments.objectIds,
   parentId: studioComments.parentId, authorId: studioComments.authorId, body: studioComments.body, requestId: studioComments.requestId,
-  payloadHash: studioComments.payloadHash, createdAt: studioComments.createdAt, deletedAt: studioComments.deletedAt, authorEmail: users.email,
+  payloadHash: studioComments.payloadHash, createdAt: studioComments.createdAt, deletedAt: studioComments.deletedAt, audience: studioComments.audience, authorEmail: users.email,
 }).from(studioComments).leftJoin(users, eq(users.id, studioComments.authorId));
 
 /** Fils de la variante : chaque commentaire d'origine (plus ancien d'abord) suivi de ses réponses (plus ancienne d'abord). */
 export async function listStudioComments(scope: StudioScope, actorId: string): Promise<{ comments: StudioCommentView[]; participants: StudioParticipant[]; archived: boolean; me: { id: string; role: ProjectRole } }> {
   const variant = await scopedVariant(scope, actorId, "read");
-  const rows = await selectRow().where(eq(studioComments.variantId, variant.id)).orderBy(asc(studioComments.createdAt), asc(studioComments.id));
+  const rows = await selectRow().where(and(eq(studioComments.variantId, variant.id), audienceFilter(variant.access.role))).orderBy(asc(studioComments.createdAt), asc(studioComments.id));
   const replies = new Map<string, Row[]>();
   for (const r of rows) if (r.parentId) replies.set(r.parentId, [...(replies.get(r.parentId) ?? []), r]);
   const ordered = rows.filter((r) => !r.parentId).flatMap((root) => [root, ...(replies.get(root.id) ?? [])]);
@@ -240,7 +264,7 @@ export function acteurDe(lecteur: Lecteur, responsableId: string, authorId: stri
 
 /** Observations de la variante (ou d'un seul commentaire), journal compris, avec les passages possibles du lecteur. */
 export async function observationViews(variantId: string, commentId: string | null, lecteur: Lecteur, executor: Pick<typeof db, "select"> = db): Promise<Map<string, StudioObservationView>> {
-  const where = commentId === null ? eq(studioObservations.variantId, variantId) : and(eq(studioObservations.variantId, variantId), eq(studioObservations.commentId, commentId));
+  const where = and(eq(studioObservations.variantId, variantId), commentId === null ? undefined : eq(studioObservations.commentId, commentId), audienceFilter(lecteur.role));
   const obs = await executor.select({ o: studioObservations, responsableEmail: users.email, authorId: studioComments.authorId }).from(studioObservations)
     .innerJoin(studioComments, eq(studioComments.id, studioObservations.commentId))
     .leftJoin(users, eq(users.id, studioObservations.responsableId)).where(where);
@@ -373,7 +397,7 @@ export async function createStudioObservation(scope: StudioScope, actorId: strin
     const lecteur = variant.lecteur;
     const done = (replayed: boolean) => ({ variantId: variant.id, lecteur, replayed });
     const [comment] = await tx.select({ id: studioComments.id, parentId: studioComments.parentId, authorId: studioComments.authorId, deletedAt: studioComments.deletedAt })
-      .from(studioComments).where(and(eq(studioComments.variantId, variant.id), eq(studioComments.id, commentId))).limit(1).for("update");
+      .from(studioComments).where(and(eq(studioComments.variantId, variant.id), eq(studioComments.id, commentId), audienceFilter(lecteur.role))).limit(1).for("update");
     if (!comment) return notFound();
     if (await replayedEvent(tx, comment.id, input.requestId, actorId, hash)) return done(true);
     if (lecteur.archived) studioArchivedRefusal();
@@ -431,7 +455,7 @@ export async function transitionStudioObservation(scope: StudioScope, actorId: s
     const done = (replayed: boolean) => ({ variantId: variant.id, lecteur, replayed });
     const [row] = await tx.select({ o: studioObservations, authorId: studioComments.authorId }).from(studioObservations)
       .innerJoin(studioComments, eq(studioComments.id, studioObservations.commentId))
-      .where(and(eq(studioObservations.variantId, variant.id), eq(studioObservations.commentId, commentId))).limit(1).for("update", { of: studioObservations });
+      .where(and(eq(studioObservations.variantId, variant.id), eq(studioObservations.commentId, commentId), audienceFilter(variant.lecteur.role))).limit(1).for("update", { of: studioObservations });
     if (!row) return notFound("Ce commentaire n'est pas une observation.");
     const { o } = row;
     if (await replayedEvent(tx, o.commentId, input.requestId, actorId, hash)) return done(true);
@@ -511,7 +535,8 @@ export async function insertDecision(tx: Tx, d: {
 // ---------------------------------------------------------------------------
 
 function payloadHash(input: StudioCommentInput): string {
-  const canonical = { body: input.body, revisionId: input.revisionId ?? null, objectIds: input.objectIds ?? [], parentId: input.parentId ?? null };
+  // L'audience n'entre dans l'empreinte que citée : un rejeu d'un envoi antérieur à ce champ garde son empreinte.
+  const canonical = { body: input.body, revisionId: input.revisionId ?? null, objectIds: input.objectIds ?? [], parentId: input.parentId ?? null, ...(input.audience ? { audience: input.audience } : {}) };
   return createHash("sha256").update(JSON.stringify(canonical)).digest("hex");
 }
 
@@ -541,12 +566,15 @@ export async function createStudioComment(scope: StudioScope, actorId: string, i
   // Une archive reste lisible (fils compris) mais ne reçoit plus de nouveau commentaire.
   if (variant.archived !== null || variant.studyArchived !== null) studioArchivedRefusal();
   let parentId: string | null = null;
+  let threadAudience: CommentAudience | null | undefined;
   if (input.parentId !== undefined) {
-    const [parent] = await db.select({ id: studioComments.id, parentId: studioComments.parentId, deletedAt: studioComments.deletedAt }).from(studioComments)
-      .where(and(eq(studioComments.variantId, variant.id), eq(studioComments.id, input.parentId))).limit(1);
+    const [parent] = await db.select({ id: studioComments.id, parentId: studioComments.parentId, deletedAt: studioComments.deletedAt, audience: studioComments.audience }).from(studioComments)
+      .where(and(eq(studioComments.variantId, variant.id), eq(studioComments.id, input.parentId), audienceFilter(variant.access.role))).limit(1);
     if (!parent || parent.deletedAt) return notFound("Le commentaire auquel vous répondez n'existe plus.");
     parentId = parent.parentId ?? parent.id;
+    threadAudience = parent.audience;
   }
+  const audience = audienceOrRefuse(() => audienceOfNew(variant.access.role, input.audience, threadAudience));
   const objectIds = input.objectIds ?? [];
   let revisionId: string | null = input.revisionId ?? null;
   if (revisionId !== null || objectIds.length) {
@@ -564,7 +592,7 @@ export async function createStudioComment(scope: StudioScope, actorId: string, i
   try {
     const [created] = await db.insert(studioComments).values({
       id: newId("studio_comment"), variantId: variant.id, revisionId, objectIds, parentId, authorId: actorId, body: input.body,
-      requestId: input.requestId ?? null, payloadHash: hash,
+      requestId: input.requestId ?? null, payloadHash: hash, audience,
     }).returning({ id: studioComments.id });
     const [row] = await selectRow().where(eq(studioComments.id, created!.id)).limit(1);
     return { ...view(row!, actorId), replayed: false };
@@ -585,7 +613,7 @@ export async function deleteStudioComment(scope: StudioScope, actorId: string, c
   await db.transaction(async (tx) => {
     const variant = await lockedVariant(tx, scope, actorId, "comment");
     const [existing] = await tx.select({ authorId: studioComments.authorId, deletedAt: studioComments.deletedAt }).from(studioComments)
-      .where(and(eq(studioComments.variantId, variant.id), eq(studioComments.id, commentId))).limit(1).for("update");
+      .where(and(eq(studioComments.variantId, variant.id), eq(studioComments.id, commentId), audienceFilter(variant.lecteur.role))).limit(1).for("update");
     if (!existing) return notFound();
     if (existing.authorId !== actorId) throw new StudioRequestError(403, { error: "forbidden", message: "Seul l'auteur peut supprimer son commentaire." });
     if (existing.deletedAt) return;
@@ -595,4 +623,36 @@ export async function deleteStudioComment(scope: StudioScope, actorId: string, c
     await tx.update(studioComments).set({ deletedAt: new Date() })
       .where(and(eq(studioComments.id, commentId), eq(studioComments.authorId, actorId)));
   });
+}
+
+/**
+ * Audience d'un fil Studio (E1) : le commentaire d'origine et ses réponses ensemble (l'observation et son suivi
+ * suivent), par son auteur ou le propriétaire, tous deux de l'équipe ; journalisée dans la même transaction
+ * (`comment.audience_changed`). Refusée sur une réponse (422) et, vers `equipe`, tant qu'un lecteur actuel a écrit
+ * dans le fil (409). Une archive reste lisible mais ne change plus (409 archived).
+ */
+export async function setStudioCommentAudience(scope: StudioScope, actorId: string, commentId: string, next: CommentAudience, ip: string | null): Promise<StudioCommentView> {
+  const lecteur = await db.transaction(async (tx) => {
+    const variant = await lockedVariant(tx, scope, actorId, "comment");
+    const [root] = await tx.select({ id: studioComments.id, parentId: studioComments.parentId, authorId: studioComments.authorId, audience: studioComments.audience })
+      .from(studioComments).where(and(eq(studioComments.variantId, variant.id), eq(studioComments.id, commentId), audienceFilter(variant.lecteur.role))).limit(1).for("update");
+    if (!root) return notFound();
+    if (variant.lecteur.archived) studioArchivedRefusal();
+    if (root.parentId) throw new StudioRequestError(422, { error: "audience_du_fil", message: "Une réponse suit l'audience de son fil : changez celle du commentaire d'origine." });
+    const replies = await tx.select({ authorId: studioComments.authorId }).from(studioComments).where(and(eq(studioComments.variantId, variant.id), eq(studioComments.parentId, root.id)));
+    const authors = [...new Set([root.authorId, ...replies.map((r) => r.authorId)])];
+    const readers = await tx.select({ userId: projectMembers.userId }).from(projectMembers)
+      .where(and(eq(projectMembers.projectId, scope.projectId), eq(projectMembers.role, "lecteur"), inArray(projectMembers.userId, authors)));
+    const refusal = audienceChangeRefusal({ role: variant.lecteur.role, isAuthor: root.authorId === actorId }, next, readers.length > 0);
+    if (refusal) throw new StudioRequestError(refusal.status, refusal.body);
+    const before = root.audience ?? "projet";
+    if (before !== next) {
+      await tx.update(studioComments).set({ audience: next }).where(and(eq(studioComments.variantId, variant.id), or(eq(studioComments.id, root.id), eq(studioComments.parentId, root.id))));
+      await audit(tx, { actorId, action: "comment.audience_changed", target: { type: "project", id: scope.projectId }, metadata: { commentId: root.id, module: "studio", variantId: variant.id, audienceBefore: before, audienceAfter: next, replies: replies.length }, ip });
+    }
+    return variant.lecteur;
+  });
+  const [row] = await selectRow().where(and(eq(studioComments.variantId, scope.variantId), eq(studioComments.id, commentId))).limit(1);
+  const observation = (await observationViews(scope.variantId, commentId, lecteur)).get(commentId) ?? null;
+  return view(row!, actorId, observation);
 }

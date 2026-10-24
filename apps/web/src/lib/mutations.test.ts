@@ -79,7 +79,7 @@ describe("mutations et conflits propres à un dossier", () => {
 });
 
 describe("commentaire publié pendant la première lecture du fil", () => {
-  const comment = (id: string): ProjectComment => ({ id, stepNumber: 8, parentId: null, atelierRevision: null, authorEmail: "a@example.com", body: "texte", createdAt: "2026-10-18T00:00:00.000Z", mine: true });
+  const comment = (id: string): ProjectComment => ({ id, stepNumber: 8, parentId: null, atelierRevision: null, authorEmail: "a@example.com", body: "texte", audience: "equipe", createdAt: "2026-10-18T00:00:00.000Z", mine: true });
   it("annule la lecture partie avant l'écriture et relit le fil : le commentaire accepté s'affiche", async () => {
     const client = queryClient();
     const key = ["comments", "p", 8];

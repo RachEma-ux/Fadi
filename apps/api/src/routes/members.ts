@@ -5,7 +5,8 @@
  *   POST   /          { email, role } → 201 : partage (ou changement de rôle) d'un compte existant ; 202 : invitation
  *                      nominative d'une adresse sans compte (UM-3, lien à copier si le courriel n'a pas pu partir) — propriétaire seulement
  *   DELETE /invitations/:invitationId → 204 : annulation d'une invitation en attente — propriétaire seulement
- *   PATCH  /:userId   { role } → le rôle d'un membre — propriétaire seulement
+ *   PATCH  /:userId   { role?, canExport? } → le rôle d'un membre, et l'export accordé ou retiré à un lecteur (E2) —
+ *                      propriétaire seulement
  *   DELETE /:userId   → 204 : retrait d'un membre par le propriétaire, ou départ du membre lui-même
  *   POST   /:userId/propriete → transfert de la propriété à ce membre (propriétaire seulement) : l'ancien propriétaire
  *                      devient éditeur, le nouveau quitte la liste des membres ; rien d'autre ne change (réservation, données)
@@ -20,12 +21,19 @@
  *
  * Un compte existant est ajouté directement (comportement accepté, écart UM-8) ; une adresse sans compte reçoit
  * une invitation par courriel (D-1) : aucun compte n'est créé tant que la personne n'a pas accepté.
+ *
+ * Export (écart E2, tranche CR-D4) : un nouveau lecteur n'exporte pas ; le propriétaire le lui accorde ou le retire
+ * (`canExport`). Un lecteur antérieur à cette règle le garde ; un éditeur rétrogradé lecteur redevient un nouveau
+ * lecteur (sans export). Journal (écart E3) : chaque ajout, changement de rôle ou d'export, retrait, départ et transfert
+ * de propriété écrit son entrée `admin.audit_log` dans la transaction de l'action — acteur, projet (cible), membre visé,
+ * rôle et export avant → après ; jamais d'adresse.
  */
-import { Router } from "express";
+import { Router, type Request } from "express";
 import { and, asc, eq, gt } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client.js";
 import { invitations, projectMembers, projects, users } from "../db/schema.js";
+import type { Tx } from "../lib/step-rows.js";
 import { audit, clientIp } from "../lib/audit.js";
 import { formatDate, mailLocale, PUBLIC_PATHS, publicLink, sendAccountMail } from "../lib/account.js";
 import { createOrRenewInvitation, invitationView } from "../lib/invitations.js";
@@ -40,9 +48,16 @@ export interface MemberView {
   userId: string;
   email: string;
   role: "lecteur" | "editeur";
+  /** Le membre peut exporter : toujours pour un éditeur ; pour un lecteur, si le propriétaire l'a accordé (E2). */
+  canExport: boolean;
   invitedBy: string;
   createdAt: string;
 }
+
+type MemberRole = MemberView["role"];
+
+/** Export effectif d'un membre : un éditeur exporte toujours ; NULL (archive antérieure à la colonne) = TRUE. */
+export const memberExports = (role: MemberRole, canExport: boolean | null): boolean => role === "editeur" || (canExport ?? true);
 
 export const ROLE_LABEL: Record<ProjectRole, string> = {
   proprietaire: "propriétaire",
@@ -53,17 +68,18 @@ export const ROLE_LABEL: Record<ProjectRole, string> = {
 
 const roleSchema = z.enum(["lecteur", "editeur"]);
 const inviteSchema = z.object({ email: z.string().trim().toLowerCase().email("Adresse invalide").max(254), role: roleSchema });
-const roleBody = z.object({ role: roleSchema });
+const memberBody = z.object({ role: roleSchema.optional(), canExport: z.boolean().optional() }).strict()
+  .refine((v) => v.role !== undefined || v.canExport !== undefined, { message: "role ou canExport attendu" });
 
 /** Les membres d'un projet (hors propriétaire), avec leur adresse, par date d'invitation. */
 export async function listMembers(projectId: string): Promise<MemberView[]> {
   const rows = await db
-    .select({ userId: projectMembers.userId, email: users.email, role: projectMembers.role, invitedBy: projectMembers.invitedBy, createdAt: projectMembers.createdAt })
+    .select({ userId: projectMembers.userId, email: users.email, role: projectMembers.role, canExport: projectMembers.canExport, invitedBy: projectMembers.invitedBy, createdAt: projectMembers.createdAt })
     .from(projectMembers)
     .innerJoin(users, eq(users.id, projectMembers.userId))
     .where(eq(projectMembers.projectId, projectId))
     .orderBy(asc(projectMembers.createdAt), asc(users.email));
-  return rows.map((r) => ({ userId: r.userId, email: r.email, role: r.role, invitedBy: r.invitedBy, createdAt: r.createdAt.toISOString() }));
+  return rows.map((r) => ({ userId: r.userId, email: r.email, role: r.role, canExport: memberExports(r.role, r.canExport), invitedBy: r.invitedBy, createdAt: r.createdAt.toISOString() }));
 }
 
 export async function ownerEmailOf(ownerId: string): Promise<string> {
@@ -141,34 +157,72 @@ membersRouter.post("/", async (req, res) => {
     res.status(422).json({ error: "sharing_rule", message: "Le propriétaire du projet a déjà tous les droits." });
     return;
   }
-  const [row] = await db
-    .insert(projectMembers)
-    .values({ projectId: project.id, userId: account.id, role: parsed.data.role, invitedBy: req.user!.email })
-    .onConflictDoUpdate({ target: [projectMembers.projectId, projectMembers.userId], set: { role: parsed.data.role } })
-    .returning();
-  res.status(201).json({ userId: account.id, email: account.email, role: row!.role, invitedBy: row!.invitedBy, createdAt: row!.createdAt.toISOString() } satisfies MemberView);
+  const row = await db.transaction(async (tx) => {
+    const [before] = await lockedMember(tx, project.id, account.id);
+    if (!before) {
+      const [created] = await tx.insert(projectMembers).values({ projectId: project.id, userId: account.id, role: parsed.data.role, invitedBy: req.user!.email, canExport: false }).returning();
+      await audit(tx, { actorId: req.user!.id, action: "project.member.added", target: { type: "project", id: project.id }, metadata: { memberId: account.id, role: created!.role, canExport: memberExports(created!.role, created!.canExport), via: "compte-existant" }, ip: clientIp(req) });
+      return created!;
+    }
+    return changeMember(tx, req, project.id, before, { role: parsed.data.role });
+  });
+  res.status(201).json({ userId: account.id, email: account.email, role: row.role, canExport: memberExports(row.role, row.canExport), invitedBy: row.invitedBy, createdAt: row.createdAt.toISOString() } satisfies MemberView);
 });
+
+type MemberRow = typeof projectMembers.$inferSelect;
+
+/** Ligne du membre verrouillée (FOR UPDATE) : deux changements concurrents ne journalisent pas le même « avant ». */
+function lockedMember(tx: Tx, projectId: string, userId: string) {
+  return tx.select().from(projectMembers).where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, userId))).limit(1).for("update");
+}
+
+/**
+ * Changement de rôle et / ou d'export d'un membre existant, journalisé dans la même transaction (une entrée par nature
+ * de changement ; aucune quand rien ne change). Un éditeur rétrogradé lecteur n'exporte plus tant que le propriétaire ne
+ * le lui accorde pas.
+ */
+async function changeMember(tx: Tx, req: Request, projectId: string, before: MemberRow, next: { role?: MemberRole | undefined; canExport?: boolean | undefined }): Promise<MemberRow> {
+  const role = next.role ?? before.role;
+  const exportsBefore = memberExports(before.role, before.canExport);
+  const canExport = next.canExport ?? (before.role === "editeur" && role === "lecteur" ? false : exportsBefore);
+  const [row] = await tx.update(projectMembers).set({ role, canExport })
+    .where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, before.userId))).returning();
+  const exportsAfter = memberExports(row!.role, row!.canExport);
+  const target = { type: "project" as const, id: projectId };
+  if (role !== before.role) {
+    await audit(tx, { actorId: req.user!.id, action: "project.member.role_changed", target, metadata: { memberId: before.userId, roleBefore: before.role, roleAfter: role, canExportBefore: exportsBefore, canExportAfter: exportsAfter }, ip: clientIp(req) });
+  } else if (exportsAfter !== exportsBefore) {
+    await audit(tx, { actorId: req.user!.id, action: "project.member.export_changed", target, metadata: { memberId: before.userId, role, canExportBefore: exportsBefore, canExportAfter: exportsAfter }, ip: clientIp(req) });
+  }
+  return row!;
+}
 
 membersRouter.patch("/:userId", async (req, res) => {
   const project = await projectOr404(req, res, "owner");
   if (!project) return;
-  const parsed = roleBody.safeParse(req.body);
+  const parsed = memberBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
     return;
   }
   const userId = req.params["userId"] as string;
-  const [row] = await db
-    .update(projectMembers)
-    .set({ role: parsed.data.role })
-    .where(and(eq(projectMembers.projectId, project.id), eq(projectMembers.userId, userId)))
-    .returning();
-  if (!row) {
+  const outcome = await db.transaction(async (tx) => {
+    const [before] = await lockedMember(tx, project.id, userId);
+    if (!before) return { status: 404 as const };
+    if (parsed.data.canExport !== undefined && (parsed.data.role ?? before.role) === "editeur") return { status: 422 as const };
+    return { status: 200 as const, row: await changeMember(tx, req, project.id, before, parsed.data) };
+  });
+  if (outcome.status === 404) {
     res.status(404).json({ error: "not_found" });
     return;
   }
+  if (outcome.status === 422) {
+    res.status(422).json({ error: "sharing_rule", message: "Un éditeur exporte toujours : le droit d'export ne s'accorde ou ne se retire qu'à un lecteur." });
+    return;
+  }
+  const row = outcome.row;
   const [account] = await db.select({ email: users.email }).from(users).where(eq(users.id, userId)).limit(1);
-  res.json({ userId, email: account?.email ?? "", role: row.role, invitedBy: row.invitedBy, createdAt: row.createdAt.toISOString() } satisfies MemberView);
+  res.json({ userId, email: account?.email ?? "", role: row.role, canExport: memberExports(row.role, row.canExport), invitedBy: row.invitedBy, createdAt: row.createdAt.toISOString() } satisfies MemberView);
 });
 
 membersRouter.delete("/:userId", async (req, res) => {
@@ -176,10 +230,20 @@ membersRouter.delete("/:userId", async (req, res) => {
   // Un membre peut quitter le projet lui-même ; retirer quelqu'un d'autre est réservé au propriétaire.
   const project = await projectOr404(req, res, userId === req.user!.id ? "read" : "owner");
   if (!project) return;
-  const deleted = await db
-    .delete(projectMembers)
-    .where(and(eq(projectMembers.projectId, project.id), eq(projectMembers.userId, userId)))
-    .returning({ userId: projectMembers.userId });
+  const deleted = await db.transaction(async (tx) => {
+    const rows = await tx
+      .delete(projectMembers)
+      .where(and(eq(projectMembers.projectId, project.id), eq(projectMembers.userId, userId)))
+      .returning({ userId: projectMembers.userId, role: projectMembers.role, canExport: projectMembers.canExport });
+    const [gone] = rows;
+    if (gone) {
+      await audit(tx, {
+        actorId: req.user!.id, action: userId === req.user!.id ? "project.member.left" : "project.member.removed", target: { type: "project", id: project.id },
+        metadata: { memberId: userId, roleBefore: gone.role, canExportBefore: memberExports(gone.role, gone.canExport) }, ip: clientIp(req),
+      });
+    }
+    return rows;
+  });
   if (!deleted.length) {
     res.status(404).json({ error: "not_found" });
     return;
@@ -200,7 +264,7 @@ membersRouter.post("/:userId/propriete", async (req, res) => {
   const result = await db.transaction(async (tx) => {
     await lockProject(tx, project.id);
     const [member] = await tx
-      .select({ userId: projectMembers.userId, email: users.email })
+      .select({ userId: projectMembers.userId, email: users.email, role: projectMembers.role })
       .from(projectMembers)
       .innerJoin(users, eq(users.id, projectMembers.userId))
       .where(and(eq(projectMembers.projectId, project.id), eq(projectMembers.userId, userId)))
@@ -209,6 +273,10 @@ membersRouter.post("/:userId/propriete", async (req, res) => {
     await tx.delete(projectMembers).where(and(eq(projectMembers.projectId, project.id), eq(projectMembers.userId, userId)));
     await tx.insert(projectMembers).values({ projectId: project.id, userId: project.ownerId, role: "editeur", invitedBy: member.email });
     await tx.update(projects).set({ ownerId: userId, updatedAt: new Date() }).where(eq(projects.id, project.id));
+    await audit(tx, {
+      actorId: req.user!.id, action: "project.ownership.transferred", target: { type: "project", id: project.id },
+      metadata: { memberId: userId, fromOwnerId: project.ownerId, toOwnerId: userId, roleBefore: member.role, roleAfter: "proprietaire", previousOwnerRoleAfter: "editeur" }, ip: clientIp(req),
+    });
     return member;
   });
   if (!result) {

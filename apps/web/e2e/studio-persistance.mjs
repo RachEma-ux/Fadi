@@ -314,13 +314,14 @@ if (PHASE === 'reopen') {
   const emptyComments = await owner('GET', commentsPath);
   check('commentaires : liste vide au départ', emptyComments.status === 200 && Array.isArray(emptyComments.body?.comments) && emptyComments.body.comments.length === 0, JSON.stringify(emptyComments.body));
   const commentRequestId = `commentaire-${randomUUID()}`;
-  const anchored = await owner('POST', commentsPath, { body: '  Vérifier la ligne et le rectangle  ', objectIds: ['ligne-1', 'rect-1'], revisionId: saved.body.revision.id, requestId: commentRequestId });
+  // Audience « projet » (écart E1) : le lecteur de la recette lit ces fils, y répond et en est notifié.
+  const anchored = await owner('POST', commentsPath, { body: '  Vérifier la ligne et le rectangle  ', objectIds: ['ligne-1', 'rect-1'], revisionId: saved.body.revision.id, requestId: commentRequestId, audience: 'projet' });
   check('commentaire ancré (201) : texte épuré, révision et objets cités', anchored.status === 201 && anchored.body.replayed === false && anchored.body.body === 'Vérifier la ligne et le rectangle' && anchored.body.revisionId === saved.body.revision.id && JSON.stringify(anchored.body.objectIds) === JSON.stringify(['ligne-1', 'rect-1']) && anchored.body.mine === true && anchored.body.parentId === null && anchored.body.deletedAt === null && isIso(anchored.body.createdAt), `${anchored.status} ${JSON.stringify(anchored.body)}`);
-  const anchoredAgain = await owner('POST', commentsPath, { body: '  Vérifier la ligne et le rectangle  ', objectIds: ['ligne-1', 'rect-1'], revisionId: saved.body.revision.id, requestId: commentRequestId });
+  const anchoredAgain = await owner('POST', commentsPath, { body: '  Vérifier la ligne et le rectangle  ', objectIds: ['ligne-1', 'rect-1'], revisionId: saved.body.revision.id, requestId: commentRequestId, audience: 'projet' });
   check('commentaire : rejeu du même requestId (201, même commentaire, replayed=true)', anchoredAgain.status === 201 && anchoredAgain.body.replayed === true && anchoredAgain.headers.get('idempotent-replayed') === 'true' && anchoredAgain.body.id === anchored.body.id, `${anchoredAgain.status} ${JSON.stringify(anchoredAgain.body)}`);
   check('commentaire : requestId réutilisé avec un autre texte → 409', (await owner('POST', commentsPath, { body: 'Autre texte', requestId: commentRequestId })).body?.error === 'request_conflict');
   check('commentaire : requestId réutilisé par un autre auteur → 409', (await editor('POST', commentsPath, { body: 'Vérifier la ligne et le rectangle', objectIds: ['ligne-1', 'rect-1'], revisionId: saved.body.revision.id, requestId: commentRequestId })).status === 409);
-  const headAnchored = await owner('POST', commentsPath, { body: 'Ancré à la tête', objectIds: ['ligne-1'] });
+  const headAnchored = await owner('POST', commentsPath, { body: 'Ancré à la tête', objectIds: ['ligne-1'], audience: 'projet' });
   check('commentaire : objets sans révision ancrés à la tête vérifiée', headAnchored.status === 201 && headAnchored.body.revisionId === moved.body.revision.id, JSON.stringify(headAnchored.body));
   const unknownObjects = await owner('POST', commentsPath, { body: 'Objet inconnu', objectIds: ['ligne-1', 'objet-inconnu'] });
   check('commentaire : objet absent de la tête → 400', unknownObjects.status === 400 && unknownObjects.body?.code === 'unknown_objects' && JSON.stringify(unknownObjects.body.objectIds) === JSON.stringify(['objet-inconnu']), `${unknownObjects.status} ${JSON.stringify(unknownObjects.body)}`);
@@ -338,7 +339,7 @@ if (PHASE === 'reopen') {
   const replyToReply = await reader('POST', commentsPath, { body: 'Réponse à la réponse', parentId: reply.body?.id });
   check('réponse à une réponse : rattachée au commentaire d\'origine (un seul niveau)', replyToReply.status === 201 && replyToReply.body.parentId === anchored.body.id);
   check('réponse à un commentaire inconnu → 404', (await owner('POST', commentsPath, { body: 'Perdue', parentId: 'studio_comment_inconnu' })).status === 404);
-  const otherVariantComment = await owner('POST', `${studyPath}/variants/${bId}/comments`, { body: 'Sur la variante B' });
+  const otherVariantComment = await owner('POST', `${studyPath}/variants/${bId}/comments`, { body: 'Sur la variante B', audience: 'projet' });
   check('réponse à un commentaire d\'une autre variante → 404', otherVariantComment.status === 201 && (await owner('POST', commentsPath, { body: 'Croisée', parentId: otherVariantComment.body.id })).status === 404);
   const thread = await reader('GET', commentsPath);
   const threadIds = thread.body?.comments?.map((x) => x.id);
@@ -357,7 +358,7 @@ if (PHASE === 'reopen') {
   const deletedView = afterDelete.body?.comments?.find((x) => x.id === anchored.body.id);
   check('suppression douce : fil conservé, texte et objets retirés, date de suppression', deletedView && deletedView.body === null && deletedView.objectIds.length === 0 && isIso(deletedView.deletedAt) && afterDelete.body.comments.length === 5 && afterDelete.body.comments[1].id === reply.body.id, JSON.stringify(deletedView));
   check('réponse à un commentaire supprimé → 404', (await editor('POST', commentsPath, { body: 'Trop tard', parentId: anchored.body.id })).status === 404);
-  const deletedReplay = await owner('POST', commentsPath, { body: '  Vérifier la ligne et le rectangle  ', objectIds: ['ligne-1', 'rect-1'], revisionId: saved.body.revision.id, requestId: commentRequestId });
+  const deletedReplay = await owner('POST', commentsPath, { body: '  Vérifier la ligne et le rectangle  ', objectIds: ['ligne-1', 'rect-1'], revisionId: saved.body.revision.id, requestId: commentRequestId, audience: 'projet' });
   check('rejeu après suppression : même commentaire, toujours supprimé, aucun doublon', deletedReplay.status === 201 && deletedReplay.body.replayed === true && deletedReplay.body.id === anchored.body.id && deletedReplay.body.deletedAt !== null && (await owner('GET', commentsPath)).body?.comments?.length === 5);
   check('commentaires : la tête du dessin n\'est pas modifiée', (await owner('GET', variantPath(s))).body?.revision?.id === moved.body.revision.id);
   const commentIds = (await owner('GET', commentsPath)).body?.comments?.map((x) => x.id);

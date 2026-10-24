@@ -28,6 +28,10 @@
  *   POST /notifications/seen  → marque tout comme consulté (date conservée par
  *                               compte).
  *
+ * Audience (écart E1, `lib/audience.ts`) : les commentaires, observations, tâches et décisions d'un fil réservé à
+ * l'équipe ne sont signalés — ni eux, ni leurs extraits — qu'au propriétaire et aux éditeurs ; un lecteur n'en reçoit
+ * jamais de notification.
+ *
  * Rien n'est envoyé hors de l'application : un courriel d'invitation reste un
  * service externe, absent (voir docs/migration/matrix.md).
  */
@@ -117,12 +121,16 @@ export async function notificationsFor(userId: string, email: string): Promise<{
     }
   }
   const projectIds = [...new Set([...owned.map((p) => p.id), ...memberships.map((m) => m.project.id)])];
+  // Projets où vous êtes de l'équipe (propriétaire ou éditeur) : seuls à vous signaler les éléments réservés à l'équipe.
+  const teamIds = [...new Set([...owned.map((p) => p.id), ...memberships.filter((m) => m.role === "editeur").map((m) => m.project.id)])];
+  const inTeam = (column: typeof projectComments.projectId | typeof studioStudies.projectId) => (teamIds.length ? inArray(column, teamIds) : sql`false`);
+  const studioVisible = or(inTeam(studioStudies.projectId), isNull(studioComments.audience), eq(studioComments.audience, "projet"));
   if (projectIds.length) {
     const comments = await db
       .select({ comment: projectComments, code: projects.code, name: projects.name })
       .from(projectComments)
       .innerJoin(projects, eq(projects.id, projectComments.projectId))
-      .where(and(inArray(projectComments.projectId, projectIds), ne(projectComments.authorId, userId), gt(projectComments.createdAt, since)))
+      .where(and(inArray(projectComments.projectId, projectIds), ne(projectComments.authorId, userId), gt(projectComments.createdAt, since), or(inTeam(projectComments.projectId), eq(projectComments.audience, "projet"))))
       .orderBy(desc(projectComments.createdAt))
       .limit(LIMIT);
     for (const { comment: c, code, name } of comments) {
@@ -171,7 +179,7 @@ export async function notificationsFor(userId: string, email: string): Promise<{
       .innerJoin(studioStudies, eq(studioStudies.id, studioVariants.studyId))
       .innerJoin(projects, eq(projects.id, studioStudies.projectId))
       .innerJoin(users, eq(users.id, studioComments.authorId))
-      .where(and(inArray(studioStudies.projectId, projectIds), ne(studioComments.authorId, userId), isNull(studioComments.deletedAt), gt(studioComments.createdAt, since)))
+      .where(and(inArray(studioStudies.projectId, projectIds), ne(studioComments.authorId, userId), isNull(studioComments.deletedAt), gt(studioComments.createdAt, since), studioVisible))
       .orderBy(desc(studioComments.createdAt))
       .limit(LIMIT);
     for (const c of studio) {
@@ -202,7 +210,7 @@ export async function notificationsFor(userId: string, email: string): Promise<{
       .innerJoin(users, eq(users.id, studioObservationEvents.actorId))
       .where(and(
         inArray(studioStudies.projectId, projectIds), ne(studioObservationEvents.actorId, userId), gt(studioObservationEvents.at, since),
-        or(eq(studioObservations.responsableId, userId), eq(studioComments.authorId, userId)),
+        or(eq(studioObservations.responsableId, userId), eq(studioComments.authorId, userId)), studioVisible,
       ))
       .orderBy(desc(studioObservationEvents.at))
       .limit(LIMIT);
@@ -236,7 +244,7 @@ export async function notificationsFor(userId: string, email: string): Promise<{
       .innerJoin(users, eq(users.id, studioObservationTaskEvents.actorId))
       .where(and(
         inArray(studioStudies.projectId, projectIds), ne(studioObservationTaskEvents.actorId, userId), gt(studioObservationTaskEvents.at, since),
-        or(eq(studioObservationTasks.assigneeId, userId), eq(studioObservationTasks.createdBy, userId)),
+        or(eq(studioObservationTasks.assigneeId, userId), eq(studioObservationTasks.createdBy, userId)), studioVisible,
       ))
       .orderBy(desc(studioObservationTaskEvents.at))
       .limit(LIMIT);
@@ -264,7 +272,7 @@ export async function notificationsFor(userId: string, email: string): Promise<{
       .where(and(
         inArray(studioStudies.projectId, projectIds), ne(studioObservationDecisions.actorId, userId), gt(studioObservationDecisions.at, since),
         or(eq(studioObservations.responsableId, userId), eq(studioComments.authorId, userId)),
-        or(ne(studioObservationDecisions.nature, "decision"), ne(studioObservationDecisions.portee, "cloture")),
+        or(ne(studioObservationDecisions.nature, "decision"), ne(studioObservationDecisions.portee, "cloture")), studioVisible,
       ))
       .orderBy(desc(studioObservationDecisions.at))
       .limit(LIMIT);
