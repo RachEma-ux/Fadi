@@ -24,6 +24,8 @@ import { designReviewRouter } from "./design-review.js";
 import { analysesRouter } from "./analyses.js";
 import { documentsRouter } from "./documents.js";
 import { collaborationRouter } from "./collaboration.js";
+import { demandesRouter } from "./demandes.js";
+import { comRouter } from "./com.js";
 import { membersRouter, ownerEmailOf } from "./members.js";
 import { participantsRouter } from "./participants.js";
 import { reviewsTeamRouter } from "./reviews.js";
@@ -239,7 +241,9 @@ projectsRouter.use("/:projectId/files", projectFilesRouter);
 projectsRouter.use("/:projectId/design-review", designReviewRouter);
 projectsRouter.use("/:projectId/analyses", analysesRouter);
 projectsRouter.use("/:projectId/documents", documentsRouter);
+projectsRouter.use("/:projectId/collaboration/demandes", demandesRouter);
 projectsRouter.use("/:projectId/collaboration", collaborationRouter);
+projectsRouter.use("/:projectId/com", comRouter);
 projectsRouter.use("/:projectId/members", membersRouter);
 projectsRouter.use("/:projectId/participants", participantsRouter);
 // Revue externe (phase 4) : préparation, partage et suivi par l'équipe ; le destinataire passe par `/reviews`.

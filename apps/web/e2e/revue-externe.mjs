@@ -377,7 +377,7 @@ try {
       && await ui.locator("[data-revue-document]").count() === 4 && await ui.locator(`[data-constat="${f1id}"]`).count() === 1);
   check("aucune note interne affichée", !(await ui.content()).includes(SECRET_NOTE));
   await axe(ui, "paquet de revue (bureau)");
-  // Règle d'or : commande « Nouveau constat » au clavier (Alt+Maj+F6) sur un paquet ouvert : v2 est terminée pour rex, on vérifie l'état désactivé.
+  // Règle d'or : commande « Nouveau constat » au clavier (Ctrl+Alt+Maj+,) sur un paquet ouvert : v2 est terminée pour rex, on vérifie l'état désactivé.
   check("commande « Nouveau constat » : icône, raccourci affiché et déclaré", await ui.locator('[data-commande-revue="nouveau-constat"][aria-keyshortcuts]').count() >= 1 && await ui.locator('[data-raccourci-revue="nouveau-constat"]').count() >= 1);
 
   // Un paquet ouvert pour l'écriture par l'interface : nouvelle revue d'un nouveau destinataire.
@@ -392,9 +392,9 @@ try {
   const vp = vic.page;
   await vp.goto(`${BASE}/revues/${pkgB.body.package.id}`);
   await vp.waitForSelector("[data-revue-paquet]");
-  await vp.keyboard.press("Alt+Shift+F6");
+  await vp.keyboard.press("Control+Alt+Shift+Comma");
   await vp.waitForSelector("[data-constat-form] textarea");
-  check("raccourci Alt+Maj+F6 : le formulaire de constat s'ouvre et reçoit le focus", await vp.evaluate(() => document.activeElement?.tagName === "TEXTAREA"));
+  check("raccourci Ctrl+Alt+Maj+, : le formulaire de constat s'ouvre et reçoit le focus", await vp.evaluate(() => document.activeElement?.tagName === "TEXTAREA"));
   await vp.fill("[data-constat-form] textarea", "Constat saisi dans l'interface");
   await vp.locator('[data-constat-form] select[name="document"]').selectOption("svg");
   await vp.locator('[data-commande-revue="envoyer-constat"]').click();
@@ -458,7 +458,7 @@ try {
   await releve("liste", vp);
   await vp.goto(`${BASE}/revues/${pkgB.body.package.id}`);
   await vp.waitForSelector("[data-revue-paquet]");
-  await vp.keyboard.press("Alt+Shift+F6");
+  await vp.keyboard.press("Control+Alt+Shift+Comma");
   await releve("paquet", vp);
   await vp.evaluate(() => localStorage.setItem("fadi.langue", "fr"));
   await ap.evaluate(() => localStorage.setItem("fadi.langue", "en"));

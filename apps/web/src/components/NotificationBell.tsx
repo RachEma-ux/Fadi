@@ -26,6 +26,7 @@ function targetOf(n: NotificationItem): string {
   // Commentaire d'une variante Studio : la variante, panneau des commentaires ouvert.
   if (n.kind === "commentaire-studio" && n.studio) return cheminVarianteStudio(n.projectId, n.studio.studyId, n.studio.variantId, null, { commentaires: true, domaine: "documentation" });
   if (n.kind === "commentaire") return n.stepNumber ? "/projets/" + n.projectId + "?module=parcours&etape=" + n.stepNumber : "/projets/" + n.projectId + "?module=collaboration";
+  if (n.kind === "message" || n.kind === "demande") return "/projets/" + n.projectId + "?module=collaboration";
   if (n.kind === "reservation") return "/projets/" + n.projectId + "?module=collaboration";
   if (n.kind === "modification" || n.kind === "verrou") return "/projets/" + n.projectId + "?module=atelier";
   if (n.kind === "peremption") return "/projets/" + n.projectId + "?module=documents";
@@ -196,7 +197,7 @@ function BellView({
       </section>
       {masquees > 0 && <p className="notification-hidden" data-hidden-count={masquees}>{`${masquees} notification(s) masquée(s) par vos préférences.`}</p>}
       <p className="notification-foot">Les alertes restent affichées jusqu’à la résolution de leur cause. Aucun courriel n’est envoyé.</p>
-      <p className="notification-foot"><Link to="/parametres#settings-notifications" onClick={() => setOpen(false)}>Régler les notifications</Link></p>
+      <p className="notification-foot"><Link to="/boite" onClick={() => setOpen(false)} data-lien-boite>Ma boîte</Link>{" · "}<Link to="/parametres#settings-notifications" onClick={() => setOpen(false)}>Régler les notifications</Link></p>
     </div>}
   </div>;
 }

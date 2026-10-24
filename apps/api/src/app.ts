@@ -12,6 +12,7 @@ import { examplesRouter } from "./routes/examples.js";
 import { libraryRouter } from "./routes/library.js";
 import { reviewsRouter } from "./routes/reviews.js";
 import { notificationsRouter } from "./routes/notifications.js";
+import { comGlobalRouter } from "./routes/com.js";
 import { preferencesRouter } from "./routes/preferences.js";
 import { sandboxPreferencesRouter } from "./routes/sandbox-preferences.js";
 import { versionRouter } from "./routes/version.js";
@@ -20,7 +21,7 @@ import { organizationsRouter } from "./routes/organizations.js";
 import { csrfGuard } from "./middleware/csrf.js";
 
 /** Préfixes servis par l'API ; tout le reste est l'application (fichiers du build, ou `index.html` pour une route du client). */
-const API_PREFIX = /^\/(auth|admin\/(?:users|invitations|trash|audit)|projects|organizations|examples|library|notifications|preferences|health|sandbox\/preferences|version|reviews)(\/|$)/;
+const API_PREFIX = /^\/(auth|admin\/(?:users|invitations|trash|audit)|projects|organizations|examples|library|notifications|com|preferences|health|sandbox\/preferences|version|reviews)(\/|$)/;
 
 export function createApp() {
   const app = express();
@@ -78,6 +79,8 @@ export function createApp() {
   // Revue externe (phase 4) : espace du destinataire, hors de `/projects` — garde `loadReviewAccess` seule. La page du
   // client est `/revues` (repli SPA).
   app.use("/reviews", apiLimiter, reviewsRouter);
+  // Communication (COM, Issue #280) : boîte personnelle, tous projets accessibles ; le reste est sous /projects/:id/com.
+  app.use("/com", apiLimiter, comGlobalRouter);
   app.use("/preferences", apiLimiter, preferencesRouter);
   // Sandbox (lot 5) : seules ses préférences d'outils passent par le serveur ; la page `/sandbox` reste celle du client.
   app.use("/sandbox/preferences", apiLimiter, sandboxPreferencesRouter);

@@ -10,12 +10,15 @@ import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { BASCULES, COMMANDES_COLLABORATION, declenche, propsRaccourci, type CommandeCollaboration } from "./commandes-collaboration";
+import { BASCULES, COMMANDES_COLLABORATION, COMMANDES_COM, declenche, propsRaccourci, type CommandeCollaboration } from "./commandes-collaboration";
 import { IconeCollaboration, RaccourciCollaboration } from "./IconeCollaboration";
 
 const SRC = new URL("../../", import.meta.url).pathname;
 const lire = (chemin: string) => readFileSync(join(SRC, chemin), "utf8");
 const COMMANDES = Object.keys(COMMANDES_COLLABORATION) as CommandeCollaboration[];
+
+const PANNEAU_COM = "modules/collaboration/communication/CommunicationPanel.tsx";
+const PANNEAU_DEMANDES = "modules/collaboration/communication/DemandesPanel.tsx";
 
 /** Écrans où chaque commande agit (sa barre) : formulaire de rédaction, en-tête du fil, ligne du membre. */
 const ECRANS: Record<CommandeCollaboration, string[]> = {
@@ -26,6 +29,11 @@ const ECRANS: Record<CommandeCollaboration, string[]> = {
   "rendre-visible": ["modules/collaboration/CollaborationModule.tsx", "modules/studio/commentaires/PanneauCommentaires.tsx"],
   "reserver-equipe": ["modules/collaboration/CollaborationModule.tsx", "modules/studio/commentaires/PanneauCommentaires.tsx"],
   "export-lecteur": ["modules/collaboration/CollaborationModule.tsx"],
+  // Communication (COM-D14) : liste et fil des conversations, messages ; demandes de précision.
+  "nouvelle-conversation": [PANNEAU_COM], "envoyer-message": [PANNEAU_COM], "partager-extrait": [PANNEAU_COM], "action-liee": [PANNEAU_COM],
+  "audience-conversation": [PANNEAU_COM], "accuser-reception": [PANNEAU_COM], "ajouter-participant": [PANNEAU_COM], "retirer-participant": [PANNEAU_COM],
+  "transferer-animation": [PANNEAU_COM], "modifier-message": [PANNEAU_COM], "retirer-message": [PANNEAU_COM],
+  "nouvelle-demande": [PANNEAU_DEMANDES], "repondre-demande": [PANNEAU_DEMANDES], "cloturer-demande": [PANNEAU_DEMANDES], "rouvrir-demande": [PANNEAU_DEMANDES], "reattribuer-demande": [PANNEAU_DEMANDES],
   // Participants et équipe (Issue #262, phase 2) : en-tête de l'annuaire, ligne du participant, formulaire des rôles.
   ...Object.fromEntries((["nouveau-contact", "modifier-participation", "attribuer-role", "retirer-role", "suspendre-participation", "reactiver-participation",
     "terminer-participation", "retour-participant", "effacer-contact", "clore-projet", "rouvrir-projet"] as const).map((c) => [c, ["modules/collaboration/Participants.tsx"]])),
@@ -55,7 +63,7 @@ describe("Règle d'or — commandes de collaboration (audience, export du lecteu
   it("aucun autre raccourci de Fadi n'emploie ces combinaisons", () => {
     const nos = new Set(COMMANDES.map((c) => COMMANDES_COLLABORATION[c].raccourci.libelle));
     const ailleurs = sources(SRC).filter((f) => !f.includes("/modules/collaboration/"))
-      .flatMap((f) => [...readFileSync(f, "utf8").matchAll(/Alt\+Maj\+[A-Z0-9]+/g)].map((m) => ({ f, r: m[0] })))
+      .flatMap((f) => [...readFileSync(f, "utf8").matchAll(/(?:Ctrl\+)?Alt\+Maj\+(?:[A-Z0-9]+|[-=[\];',./\\])/g)].map((m) => ({ f, r: m[0] })))
       .filter(({ r, f }) => nos.has(r) && !(f.endsWith("Modifications.tsx") || f.includes("/studio/commentaires/") || f.includes("/studio/observations/")));
     expect(ailleurs).toEqual([]);
   });
@@ -65,15 +73,17 @@ describe("Règle d'or — commandes de collaboration (audience, export du lecteu
       for (const ecran of ECRANS[c]) {
         const src = lire(ecran);
         expect(src.includes(`"${c}"`), `${ecran} : ${c}`).toBe(true);
-        expect(src.includes("<IconeCollaboration commande="), `${ecran} : icône`).toBe(true);
-        expect(src.includes("<RaccourciCollaboration commande="), `${ecran} : raccourci affiché`).toBe(true);
-        expect(src.includes("propsRaccourci("), `${ecran} : aria-keyshortcuts`).toBe(true);
+        // Le bouton commun des commandes COM (`BoutonCommande`) porte lui-même icône, raccourci affiché et déclaré.
+        const bouton = src.includes(`<BoutonCommande commande="${c}"`);
+        expect(bouton || src.includes("<IconeCollaboration commande="), `${ecran} : icône`).toBe(true);
+        expect(bouton || src.includes("<RaccourciCollaboration commande="), `${ecran} : raccourci affiché`).toBe(true);
+        expect(bouton || src.includes("propsRaccourci("), `${ecran} : aria-keyshortcuts`).toBe(true);
         expect(src.includes("declenche(e, "), `${ecran} : gestionnaire clavier`).toBe(true);
       }
     }
   });
 
-  it("le raccourci ne se déclenche qu'avec Alt et Maj, ni Ctrl ni Méta, touche physique", () => {
+  it("le raccourci ne se déclenche qu'avec Alt et Maj (Ctrl seulement pour les Participants), jamais Méta, touche physique", () => {
     const t = (code: string, m: Partial<{ altKey: boolean; shiftKey: boolean; ctrlKey: boolean; metaKey: boolean }> = {}) =>
       ({ code, altKey: true, shiftKey: true, ctrlKey: false, metaKey: false, ...m });
     expect(declenche(t("Digit1"), "visible-lecteurs")).toBe(true);
@@ -84,10 +94,27 @@ describe("Règle d'or — commandes de collaboration (audience, export du lecteu
     expect(declenche(t("Digit3"), "export-lecteur")).toBe(true);
     expect(declenche(t("Digit3"), "visible-lecteurs")).toBe(false);
     expect(propsRaccourci("export-lecteur")["aria-keyshortcuts"]).toBe("Alt+Shift+3");
-    expect(declenche(t("Digit6"), "nouveau-contact")).toBe(true);
-    expect(declenche(t("Minus"), "effacer-contact")).toBe(true);
-    expect(declenche(t("Equal"), "clore-projet") && declenche(t("Equal"), "rouvrir-projet")).toBe(true);
-    expect(declenche(t("Digit9"), "terminer-participation")).toBe(false);
+    // Participants et équipe : Ctrl+Alt+Maj, jamais confondus avec les Alt+Maj de Communication sur la même touche.
+    const c = (code: string) => t(code, { ctrlKey: true });
+    expect(declenche(c("Digit6"), "nouveau-contact")).toBe(true);
+    expect(declenche(t("Digit6"), "nouveau-contact")).toBe(false);
+    expect(declenche(c("Digit6"), "partager-extrait")).toBe(false);
+    expect(declenche(c("Minus"), "effacer-contact")).toBe(true);
+    expect(declenche(c("Equal"), "clore-projet") && declenche(c("Equal"), "rouvrir-projet")).toBe(true);
+    expect(declenche(c("Digit9"), "terminer-participation")).toBe(false);
+    expect(propsRaccourci("nouveau-contact")["aria-keyshortcuts"]).toBe("Control+Alt+Shift+6");
+  });
+
+  it("Communication (COM-D14) : seize commandes, Alt+Maj+chiffre ou ponctuation, touche physique", () => {
+    expect(COMMANDES_COM).toHaveLength(16);
+    for (const c of COMMANDES_COM) expect(COMMANDES_COLLABORATION[c].raccourci.libelle, c).toMatch(/^Alt\+Maj\+(?:[0-9]|[-=[\];',./\\])$/);
+    const t = (code: string) => ({ code, altKey: true, shiftKey: true, ctrlKey: false, metaKey: false });
+    expect(declenche(t("Digit5"), "envoyer-message")).toBe(true);
+    expect(declenche(t("Minus"), "ajouter-participant")).toBe(true);
+    expect(declenche(t("Backslash"), "retirer-message")).toBe(true);
+    expect(declenche(t("Digit5"), "nouvelle-conversation")).toBe(false);
+    const panneau = lire(PANNEAU_COM);
+    expect(panneau.includes("BoutonCommande") && panneau.includes("<IconeCollaboration commande={commande}") && panneau.includes("<RaccourciCollaboration commande={commande}") && panneau.includes("propsRaccourci(commande)")).toBe(true);
   });
 
   it("rendu : icône SVG décorative, raccourci affiché", () => {
@@ -95,7 +122,7 @@ describe("Règle d'or — commandes de collaboration (audience, export du lecteu
       const svg = renderToStaticMarkup(createElement(IconeCollaboration, { commande: c }));
       expect(svg).toMatch(/^<svg [^>]*aria-hidden="true"/);
       expect(svg.replace(/<[^>]+>/g, "")).toBe("");
-      expect(renderToStaticMarkup(createElement(RaccourciCollaboration, { commande: c }))).toContain(COMMANDES_COLLABORATION[c].raccourci.libelle);
+      expect(renderToStaticMarkup(createElement(RaccourciCollaboration, { commande: c })).replaceAll("&#x27;", "'")).toContain(COMMANDES_COLLABORATION[c].raccourci.libelle);
     }
   });
 });

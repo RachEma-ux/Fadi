@@ -30,7 +30,8 @@ export function seesTeam(role: ProjectRole): boolean {
 }
 
 /** Un élément d'audience `audience` est-il lisible par ce rôle ? NULL (ligne d'archive antérieure) vaut `projet`. */
-export function audienceVisible(role: ProjectRole, audience: CommentAudience | null | undefined): boolean {
+// `revue` (phase 4) : lu par l'équipe seule côté projet (les destinataires passent par `/reviews`).
+export function audienceVisible(role: ProjectRole, audience: StudioCommentAudience | null | undefined): boolean {
   return seesTeam(role) || (audience ?? "projet") === "projet";
 }
 

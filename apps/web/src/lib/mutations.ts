@@ -13,14 +13,23 @@
  * écrasé en silence).
  */
 import type { QueryClient } from "@tanstack/react-query";
-import { ApiError, api, type CommentAudience, type HarmonieDecisionInput, type ParcoursFieldValue, type ParcoursStep, type ParcoursStepStatus, type ProjectComment } from "./api";
+import { ApiError, api, comApi, type ComMessageInput, type CommentAudience, type HarmonieDecisionInput, type ParcoursFieldValue, type ParcoursStep, type ParcoursStepStatus, type ProjectComment } from "./api";
 import { isNetworkError, reachability } from "./reachability";
 
 export const MUTATION_KEYS = {
   stepPatch: ["step-patch"] as const,
   decide: ["harmonie-decide"] as const,
   comment: ["comment-add"] as const,
+  /** Message de la Communication (COM-6) : rejoué avec le même `clientRequestId`, le serveur n'en garde qu'un. */
+  comMessage: ["com-message"] as const,
 };
+
+export interface ComMessageVars {
+  projectId: string;
+  conversationId: string;
+  /** Porte `clientRequestId` et `capturedAt` fixés à la rédaction : un rejeu après rechargement reste le même envoi. */
+  input: ComMessageInput & { clientRequestId: string; capturedAt: string };
+}
 
 const REPLAYABLE_KEYS = new Set<string>(Object.values(MUTATION_KEYS).map((key) => key[0]));
 interface ScopedMutation {
@@ -234,6 +243,14 @@ export function registerMutationDefaults(queryClient: QueryClient) {
     onError: (err: unknown, v: DecideVars) => {
       const { expectedVersion, ...input } = v.input;
       recordConflict(queryClient, v.projectId, err, `Étape ${pad2(v.stepNumber)} · arbitrage ${v.proposalId}`, v.stepNumber, { decision: { proposalId: v.proposalId, input, expectedVersion: expectedVersion ?? null } });
+    },
+  });
+  queryClient.setMutationDefaults(MUTATION_KEYS.comMessage, {
+    ...RETRY_NETWORK,
+    mutationFn: (v: ComMessageVars) => comApi.envoyer(v.projectId, v.conversationId, v.input),
+    onSuccess: (_r: unknown, v: ComMessageVars) => {
+      void queryClient.invalidateQueries({ queryKey: ["com", v.projectId] });
+      void queryClient.invalidateQueries({ queryKey: ["com-boite"] });
     },
   });
   queryClient.setMutationDefaults(MUTATION_KEYS.comment, {

@@ -4,6 +4,7 @@ import { ApiError, accountApi, api, type CurrentUser } from "./api";
 import { localStore } from "./local-store";
 import { QUERY_CACHE_VERSION } from "./query-persister";
 import { conflictsStore } from "./mutations";
+import { oublierBrouillons } from "./com-brouillons";
 
 interface AuthState {
   user: CurrentUser | null;
@@ -56,6 +57,8 @@ export function forgetsSession(err: unknown): boolean {
 export async function forgetDevice(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.clear();
   conflictsStore.clearAll();
+  // Brouillons de la Communication : jamais relus ni envoyés par un autre compte du même appareil.
+  oublierBrouillons();
   writeLastUser(null);
   localStore.setOwner(null);
   await localStore.removeValue(QUERY_CACHE_VERSION);

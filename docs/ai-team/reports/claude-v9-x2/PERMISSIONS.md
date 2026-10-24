@@ -103,6 +103,7 @@ réelle ; la liste des fichiers est vérifiée par ce test (tout nouveau fichier
 |---|---|---|
 | `routes/auth.ts` | GET /auth/me/export | commentaires Studio rédigés par le compte, dans l'export de ses données personnelles (D-5, gestion des comptes) — lecture de ses propres lignes seulement |
 | `routes/examples.ts` | POST /examples/:exampleId/import | étude exemple Studio du P.118 installée après l'import validé (`lib/studio-exemple.ts`, contrat de commandes ; un échec n'annule pas l'import) |
+| `routes/com.ts` | POST /projects/:projectId/com/messages/:messageId/actions (type observation-studio) | observation Studio ouverte depuis un message par `openStudioObservation` (mêmes droits et refus que la route Studio d'ouverture directe) ; la Communication n'en garde que le lien (COM-R7, Issue #280) |
 | `routes/documents.ts` | GET /projects/:projectId/documents | `studioPackages` (paquets diffusés ou retirés), `studioDossiers` (dossiers de conception) |
 | `routes/notifications.ts` | GET /notifications | commentaires Studio des projets du compte, passages des observations, tâches et décisions |
 | `routes/reviews.ts` | /reviews/* (destinataire), /projects/:projectId/reviews/* (équipe) | revue externe (phase 4) : publication Studio candidate figée dans un paquet, constats = observations Studio d'audience `revue`, approbation par un approbateur nommé via les transitions Studio — garde `loadReviewAccess` (destinataire) ou droits de l'équipe, jamais la matrice des rôles Studio |

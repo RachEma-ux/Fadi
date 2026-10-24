@@ -37,14 +37,14 @@ describe("Règle d'or — commandes de la revue externe", () => {
   it("chaque commande a son raccourci, unique", () => {
     const libelles = COMMANDES.map((c) => COMMANDES_REVUE[c].raccourci.libelle);
     expect(new Set(libelles).size).toBe(libelles.length);
-    const codes = COMMANDES.map((c) => COMMANDES_REVUE[c].raccourci.code);
-    for (const c of Object.values(COMMANDES_COLLABORATION)) expect(codes).not.toContain(c.raccourci.code);
+    // Aucune combinaison partagée avec une commande de collaboration (Communication, Participants compris).
+    for (const c of Object.values(COMMANDES_COLLABORATION)) expect(libelles).not.toContain(c.raccourci.libelle);
   });
 
   it("aucun autre écran de Fadi n'emploie ces combinaisons", () => {
     const nos = new Set(COMMANDES.map((c) => COMMANDES_REVUE[c].raccourci.libelle));
     const ailleurs = sources(SRC).filter((f) => !f.endsWith("commandes-revue.ts"))
-      .flatMap((f) => [...readFileSync(f, "utf8").matchAll(/Alt\+Maj\+[A-Z0-9]+/g)].map((m) => ({ f, r: m[0] })))
+      .flatMap((f) => [...readFileSync(f, "utf8").matchAll(/Ctrl\+Alt\+Maj\+[^\s"'`]+/g)].map((m) => ({ f, r: m[0] })))
       .filter(({ r }) => nos.has(r));
     expect(ailleurs).toEqual([]);
   });
@@ -61,12 +61,13 @@ describe("Règle d'or — commandes de la revue externe", () => {
   });
 
   it("le raccourci ne se déclenche qu'avec Alt et Maj, ni Ctrl ni Méta, touche physique", () => {
-    const t = (code: string, m: Partial<{ altKey: boolean; shiftKey: boolean; ctrlKey: boolean; metaKey: boolean }> = {}) => ({ code, altKey: true, shiftKey: true, ctrlKey: false, metaKey: false, ...m });
-    expect(declencheRevue(t("F6"), "nouveau-constat")).toBe(true);
-    expect(declencheRevue(t("F6", { ctrlKey: true }), "nouveau-constat")).toBe(false);
-    expect(declencheRevue(t("F6", { shiftKey: false }), "nouveau-constat")).toBe(false);
-    expect(declencheRevue(t("Backslash"), "revoquer-acces")).toBe(true);
-    expect(propsRaccourciRevue("partager-paquet")["aria-keyshortcuts"]).toBe("Alt+Shift+.");
+    const t = (code: string, m: Partial<{ altKey: boolean; shiftKey: boolean; ctrlKey: boolean; metaKey: boolean }> = {}) => ({ code, altKey: true, shiftKey: true, ctrlKey: true, metaKey: false, ...m });
+    expect(declencheRevue(t("Comma"), "nouveau-constat")).toBe(true);
+    expect(declencheRevue(t("Comma", { ctrlKey: false }), "nouveau-constat")).toBe(false);
+    expect(declencheRevue(t("Comma", { shiftKey: false }), "nouveau-constat")).toBe(false);
+    expect(declencheRevue(t("Comma", { metaKey: true }), "nouveau-constat")).toBe(false);
+    expect(declencheRevue(t("Digit5"), "revoquer-acces")).toBe(true);
+    expect(propsRaccourciRevue("partager-paquet")["aria-keyshortcuts"]).toBe("Control+Alt+Shift+3");
   });
 
   it("rendu : icône SVG décorative, raccourci affiché ; libellés traduits", () => {

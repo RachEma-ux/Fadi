@@ -36,6 +36,12 @@ sur la branche `ccr-3b26a9f6-z073dc` (PR #281).**
   route `/auth/me/history` (au lieu de `/account/history`), aucun export d'administration (UM-20 ne définit l'export que par
   projet) — [phase-3bis.md](phase-3bis.md).
 
+- Phases 2 et 5 livrées sur la branche (2026-10-24) : [phase-2.md](phase-2.md) (vue `project_effective_access` source unique
+  des droits, six rôles par portée, Approbateur / Diffuseur pour Studio, annuaire et équipe, effacement des contacts ; écart :
+  miroir `op_sync_access` conservé comme pont) et [phase-5.md](phase-5.md) (espace d'organisation, adhésions par invitation
+  acceptée, groupes et mandats sans droit, gabarits versionnés). **CI complète verte sur `9abca29`** (run 40137263799), suites
+  DB-3 comprises.
+
 ## Points ouverts
 
 - 🛑 final (phase 6) : acceptation du périmètre livré par le maître d'ouvrage.

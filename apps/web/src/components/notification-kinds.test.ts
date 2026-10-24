@@ -4,8 +4,8 @@ import dico from "../lib/i18n/en.json";
 import { NOTIFICATION_KIND_DESCRIPTION, NOTIFICATION_KIND_LABEL, NOTIFICATION_KINDS } from "./notification-kinds";
 
 describe("types de notification (réglages et cloche)", () => {
-  it("couvre les huit types calculés par l'API (dont la revue externe)", () => {
-    expect([...NOTIFICATION_KINDS].sort()).toEqual(["acces", "commentaire", "commentaire-studio", "modification", "peremption", "reservation", "revue", "verrou"]);
+  it("couvre les dix types calculés par l'API (dont `message`, `demande` et la revue externe)", () => {
+    expect([...NOTIFICATION_KINDS].sort()).toEqual(["acces", "commentaire", "commentaire-studio", "demande", "message", "modification", "peremption", "reservation", "revue", "verrou"]);
     for (const k of NOTIFICATION_KINDS) expect(NOTIFICATION_KIND_DESCRIPTION[k]).toBeTruthy();
   });
 

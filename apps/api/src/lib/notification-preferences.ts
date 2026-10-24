@@ -8,8 +8,11 @@
 import { z } from "zod";
 
 /** Tous les types de notification calculés par `GET /notifications`, dans l'ordre d'affichage des réglages. */
-/** `revue` (phase 4) : revue externe — paquets partagés, réponses dans les fils de constats, réponses reçues par le coordinateur. */
-export const NOTIFICATION_KINDS = ["acces", "commentaire", "commentaire-studio", "reservation", "modification", "verrou", "peremption", "revue"] as const;
+/**
+ * `message` et `demande` : Communication (COM, Issue #280, COM-D13). `revue` (phase 4) : revue externe — paquets
+ * partagés, réponses dans les fils de constats, réponses reçues par le coordinateur.
+ */
+export const NOTIFICATION_KINDS = ["acces", "commentaire", "commentaire-studio", "message", "demande", "reservation", "modification", "verrou", "peremption", "revue"] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
 export interface NotificationPreferences {

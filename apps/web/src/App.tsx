@@ -10,6 +10,7 @@ import { AccueilPage } from "./routes/AccueilPage";
 import { ProjectsPage } from "./routes/ProjectsPage";
 import { HarmoniePage } from "./routes/HarmoniePage";
 import { ParametresPage } from "./routes/ParametresPage";
+import { BoitePage } from "./routes/BoitePage";
 import { CollaborationPage } from "./routes/CollaborationPage";
 import { AnnulerSuppressionPage, InvitationPage, MotDePasseOubliePage, ReinitialiserPage, VerifierEmailPage } from "./routes/ComptePages";
 
@@ -95,6 +96,7 @@ export function App() {
             }
           />
           <Route path="/collaboration" element={<CollaborationPage />} />
+          <Route path="/boite" element={<BoitePage />} />
           <Route
             path="/projets/:projectId"
             element={

@@ -2100,6 +2100,165 @@ CREATE INDEX IF NOT EXISTS project_participations_org_idx ON project_participati
 CREATE INDEX IF NOT EXISTS project_participations_represented_idx ON project_participations (represented_organization_id);
 
 -- ---------------------------------------------------------------------------
+-- Communication (COM, Issue #280, docs/workstreams/communication/PLAN.md) — tables nouvelles, additif.
+-- Une conversation appartient à un projet et porte une audience explicite : `participants` (personnes nommées),
+-- `equipe` (propriétaire et éditeurs) ou `projet` (tous les membres). La lisibilité est recalculée à chaque requête
+-- depuis l'accès courant au projet (lib/com-audience.ts) : rien ici n'accorde d'accès.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS com_conversations (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  mode text NOT NULL CONSTRAINT com_conversations_mode_check CHECK (mode IN ('contexte', 'groupe', 'direct')),
+  title text NOT NULL,
+  audience text NOT NULL CONSTRAINT com_conversations_audience_check CHECK (audience IN ('participants', 'equipe', 'projet')),
+  -- Contexte d'un fil contextuel : type, référence et révision exacte (R03 reste R03), jamais déplacés en silence.
+  context_type text CONSTRAINT com_conversations_context_check
+    CHECK (context_type IS NULL OR context_type IN ('projet', 'etape', 'document', 'fichier', 'studio-variante', 'revision-atelier')),
+  context_ref text,
+  context_revision text,
+  steward_id text NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+  created_by text NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  last_message_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT com_conversations_mode_audience CHECK (mode = 'contexte' OR audience = 'participants')
+);
+CREATE INDEX IF NOT EXISTS com_conversations_project_idx ON com_conversations (project_id, last_message_at DESC);
+CREATE INDEX IF NOT EXISTS com_conversations_context_idx ON com_conversations (project_id, context_type, context_ref);
+
+CREATE TABLE IF NOT EXISTS com_participants (
+  conversation_id text NOT NULL REFERENCES com_conversations (id) ON DELETE CASCADE,
+  user_id text NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+  added_by text NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+  added_at timestamptz NOT NULL DEFAULT now(),
+  -- Historique reçu (COM-D4) : NULL = tout l'historique ; sinon les messages à partir de cette date.
+  history_from timestamptz,
+  removed_at timestamptz,
+  PRIMARY KEY (conversation_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS com_participants_user_idx ON com_participants (user_id);
+
+CREATE TABLE IF NOT EXISTS com_messages (
+  id text PRIMARY KEY,
+  conversation_id text NOT NULL REFERENCES com_conversations (id) ON DELETE CASCADE,
+  author_id text NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+  body text NOT NULL,
+  nature text NOT NULL DEFAULT 'message' CONSTRAINT com_messages_nature_check CHECK (nature IN ('message', 'partage', 'action')),
+  reply_to_id text REFERENCES com_messages (id) ON DELETE SET NULL,
+  -- Références à des éléments du projet : type et identifiant seulement, libellés résolus à la lecture (COM-D8).
+  refs jsonb NOT NULL DEFAULT '[]'::jsonb,
+  mentions text[] NOT NULL DEFAULT '{}',
+  ack_required boolean NOT NULL DEFAULT false,
+  urgent boolean NOT NULL DEFAULT false,
+  -- Heure de capture déclarée par l'appareil (hors ligne), distincte de la réception par le serveur (`created_at`).
+  captured_at timestamptz,
+  client_request_id text,
+  payload_hash text,
+  -- Provenance d'un partage (serveur seul, jamais renvoyée à la cible) : conversation et messages source.
+  shared_from jsonb,
+  edited_at timestamptz,
+  withdrawn_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS com_messages_conversation_idx ON com_messages (conversation_id, created_at);
+CREATE UNIQUE INDEX IF NOT EXISTS com_messages_request_unique ON com_messages (author_id, client_request_id) WHERE client_request_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS com_messages_mentions_idx ON com_messages USING gin (mentions);
+
+-- Textes remplacés par une modification ou un retrait (COM-D6) : ajout seulement.
+CREATE TABLE IF NOT EXISTS com_message_versions (
+  id bigserial PRIMARY KEY,
+  message_id text NOT NULL REFERENCES com_messages (id) ON DELETE CASCADE,
+  body text NOT NULL,
+  replaced_at timestamptz NOT NULL DEFAULT now(),
+  reason text NOT NULL CONSTRAINT com_message_versions_reason_check CHECK (reason IN ('modification', 'retrait'))
+);
+
+-- Ouverture et accusé de réception par personne (COM-R6 : ni revue, ni approbation).
+CREATE TABLE IF NOT EXISTS com_receipts (
+  message_id text NOT NULL REFERENCES com_messages (id) ON DELETE CASCADE,
+  user_id text NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+  opened_at timestamptz,
+  acknowledged_at timestamptz,
+  PRIMARY KEY (message_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS com_reads (
+  conversation_id text NOT NULL REFERENCES com_conversations (id) ON DELETE CASCADE,
+  user_id text NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+  last_read_at timestamptz NOT NULL,
+  PRIMARY KEY (conversation_id, user_id)
+);
+
+-- Journal d'une conversation : ajout seulement (aucune UPDATE ; les suppressions suivent la cascade du projet).
+CREATE TABLE IF NOT EXISTS com_events (
+  id bigserial PRIMARY KEY,
+  conversation_id text NOT NULL REFERENCES com_conversations (id) ON DELETE CASCADE,
+  actor_id text NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+  action text NOT NULL CONSTRAINT com_events_action_check CHECK (action IN (
+    'creer', 'audience', 'participant-ajoute', 'participant-retire', 'animation', 'modification-message', 'retrait-message',
+    'partage-envoye', 'partage-recu', 'action-liee')),
+  detail jsonb NOT NULL DEFAULT '{}'::jsonb,
+  at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS com_events_conversation_idx ON com_events (conversation_id, id);
+CREATE OR REPLACE FUNCTION com_event_immutable() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'com_event_immutable';
+END;
+$$;
+CREATE OR REPLACE TRIGGER com_events_no_update BEFORE UPDATE ON com_events
+  FOR EACH ROW EXECUTE FUNCTION com_event_immutable();
+CREATE OR REPLACE TRIGGER com_message_versions_no_update BEFORE UPDATE ON com_message_versions
+  FOR EACH ROW EXECUTE FUNCTION com_event_immutable();
+
+-- Lien d'un message vers l'enregistrement de référence créé par une action liée (COM-R7) : l'état est relu à la source.
+CREATE TABLE IF NOT EXISTS com_links (
+  id text PRIMARY KEY,
+  message_id text NOT NULL REFERENCES com_messages (id) ON DELETE CASCADE,
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  target_type text NOT NULL CONSTRAINT com_links_target_check CHECK (target_type IN ('demande', 'observation-studio')),
+  target_id text NOT NULL,
+  target_scope jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_by text NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS com_links_message_idx ON com_links (message_id);
+
+-- Demandes de précision (Collaboration partagée, COM-D10) : question, références, demandeur, répondant tenu, échéance,
+-- audience (E1), état et journal de réponse et de clôture. La question et les réponses ne sont jamais réécrites.
+CREATE TABLE IF NOT EXISTS collab_demandes (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  question text NOT NULL,
+  refs jsonb NOT NULL DEFAULT '[]'::jsonb,
+  requester_id text NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+  responder_id text NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+  echeance date,
+  statut text NOT NULL DEFAULT 'ouverte' CONSTRAINT collab_demandes_statut_check CHECK (statut IN ('ouverte', 'repondue', 'close')),
+  audience text NOT NULL DEFAULT 'equipe' CONSTRAINT collab_demandes_audience_check CHECK (audience IN ('equipe', 'projet')),
+  source_message_id text REFERENCES com_messages (id) ON DELETE SET NULL,
+  client_request_id text,
+  payload_hash text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS collab_demandes_project_idx ON collab_demandes (project_id, created_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS collab_demandes_request_unique ON collab_demandes (requester_id, client_request_id) WHERE client_request_id IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS collab_demande_events (
+  id bigserial PRIMARY KEY,
+  demande_id text NOT NULL REFERENCES collab_demandes (id) ON DELETE CASCADE,
+  actor_id text NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+  action text NOT NULL CONSTRAINT collab_demande_events_action_check CHECK (action IN ('ouvrir', 'repondre', 'cloturer', 'rouvrir', 'reattribuer')),
+  body text,
+  from_user text REFERENCES users (id) ON DELETE RESTRICT,
+  to_user text REFERENCES users (id) ON DELETE RESTRICT,
+  at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS collab_demande_events_demande_idx ON collab_demande_events (demande_id, id);
+CREATE OR REPLACE TRIGGER collab_demande_events_no_update BEFORE UPDATE ON collab_demande_events
+  FOR EACH ROW EXECUTE FUNCTION com_event_immutable();
+
+-- ---------------------------------------------------------------------------
 -- D-7 : droits au moindre privilège. Exécuté par un super-utilisateur (amorçage, CI) : propriété de tout transférée à
 -- `fadi_owner` ; exécuté par `fadi_migrator` (membre de `fadi_owner`) : droits rejoués ; sinon, simple avis (rôles non
 -- provisionnés : rien n'est changé). `fadi_app` : lecture / écriture des tables, aucun DDL, journal d'audit en lecture et
