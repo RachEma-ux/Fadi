@@ -19,6 +19,11 @@
  * et le contrôle de concurrence (409) s'applique entre eux comme entre deux
  * appareils d'un même compte.
  *
+ * Phase 2 de l'Issue #262 (OP-D3 c) : ces écritures restent l'interface du partage, mais la DÉCISION d'accès se lit dans
+ * la vue `project_effective_access` (participations actives et rôles par portée) ; le miroir par déclencheurs
+ * (`op_sync_access`, init.sql) en tire la participation, le rôle `acces` (lecteur → Lecteur, editeur → Concepteur) et
+ * l'export accordé. Une participation suspendue depuis « Équipe et participants » le reste quoi qu'écrive ce routeur.
+ *
  * Un compte existant est ajouté directement (comportement accepté, écart UM-8) ; une adresse sans compte reçoit
  * une invitation par courriel (D-1) : aucun compte n'est créé tant que la personne n'a pas accepté.
  *

@@ -34,10 +34,10 @@
  */
 import { AsyncLocalStorage } from "node:async_hooks";
 import { readFileSync } from "node:fs";
-import { Column, getTableColumns, getTableName, is, Param, SQL } from "drizzle-orm";
+import { Column, getTableColumns as colonnesDeTable, getTableName, getViewSelectedFields, is, Param, SQL } from "drizzle-orm";
 import { applyStudioCommands, newStudioDocument, type StudioCommand } from "@parcours/atelier-model";
 import { PARCOURS_STEPS } from "../data/parcours.js";
-import { projectMembers, projects, projectSteps, studioComments, studioRevisions, studioStudies, studioVariants, users } from "../db/schema.js";
+import { projectEffectiveAccess, projectMembers, projects, projectSteps, studioComments, studioRevisions, studioStudies, studioVariants, users } from "../db/schema.js";
 
 export type Ligne = Record<string, unknown>;
 export const banc = {
@@ -138,6 +138,16 @@ function declencher(table: unknown, quand: "UPDATE" | "DELETE", visees: Ligne[])
   }
 }
 
+/** Colonnes d'une table, ou de la vue `project_effective_access` (simulée, phase 2 de l'Issue #262). */
+function getTableColumns(table: unknown): Record<string, unknown> {
+  return table === projectEffectiveAccess ? getViewSelectedFields(projectEffectiveAccess) as Record<string, unknown> : colonnesDeTable(table as never);
+}
+/** Même colonne : identité drizzle ; pour la vue (colonnes servies par un mandataire), même nom SQL. */
+function memeColonne(table: unknown, x: unknown, col: unknown): boolean {
+  if (x === col) return true;
+  return table === projectEffectiveAccess && is(col, Column) && (x as { name?: string }).name === (col as { name: string }).name
+    && getTableName((col as unknown as { table: never }).table) === "project_effective_access";
+}
 /** Clé JS (drizzle) de la colonne SQL `nom` de la table. */
 function cleJs(table: unknown, nom: string): string {
   const c = Object.entries(getTableColumns(table as never)).find(([, x]) => (x as { name: string }).name === nom);
@@ -204,7 +214,7 @@ const nombre = (v: unknown) => (v instanceof Date ? v.getTime() : typeof v === "
 
 function valeurColonne(j: Jointe, col: unknown): unknown {
   for (const [t, l] of j) {
-    const c = Object.entries(getTableColumns(t as never)).find(([, x]) => x === col);
+    const c = Object.entries(getTableColumns(t as never)).find(([, x]) => memeColonne(t, x, col));
     if (c) return l ? l[c[0]] ?? null : null;
   }
   throw new Error(`base simulée : colonne hors des tables de la requête (${String((col as { name?: string }).name)})`);
@@ -260,7 +270,7 @@ export function evaluer(condition: unknown, j: Jointe): boolean {
 function colonne(j: Jointe, col: unknown): unknown {
   for (const [t, l] of j) {
     if (col === t) return l ? structuredClone(l) : null;
-    const c = Object.entries(getTableColumns(t as never)).find(([, x]) => x === col);
+    const c = Object.entries(getTableColumns(t as never)).find(([, x]) => memeColonne(t, x, col));
     if (c) return l ? structuredClone(l[c[0]] ?? null) : null;
   }
   // Expression SQL calculée (agrégat…) : non prise en charge, signalée plutôt qu'inventée.
@@ -285,10 +295,23 @@ function requete(executer: (q: Etat) => unknown[]) {
   };
   return q;
 }
+/**
+ * Vue `project_effective_access` (Issue #262, phase 2) recalculée à chaque lecture depuis le pont qu'emploient ces suites :
+ * le propriétaire (`projects.ownerId`), puis chaque membre (éditeur → `editeur`, lecteur → `lecteur`, export comme la
+ * vue réelle) — aucune participation suspendue ni rôle attribué n'existe dans la base simulée.
+ */
+function lignesTable(table: unknown): Ligne[] {
+  if (table !== projectEffectiveAccess) return banc.lignes.get(table) ?? [];
+  const proprietaires = (banc.lignes.get(projects) ?? []).map((p) => ({ projectId: p["id"], userId: p["ownerId"], role: "proprietaire", canExport: true, canApprove: true, canPublish: true }));
+  const membres = (banc.lignes.get(projectMembers) ?? [])
+    .filter((m) => !proprietaires.some((p) => p.projectId === m["projectId"] && p.userId === m["userId"]))
+    .map((m) => ({ projectId: m["projectId"], userId: m["userId"], role: m["role"], canExport: m["role"] === "editeur" || ((m["canExport"] as boolean | null | undefined) ?? true), canApprove: false, canPublish: false }));
+  return [...proprietaires, ...membres];
+}
 function lire(table: unknown, joins: [unknown, boolean, unknown][]): Jointe[] {
-  let rows: Jointe[] = (banc.lignes.get(table) ?? []).map((l) => new Map<unknown, Ligne | null>([[table, l]]));
+  let rows: Jointe[] = lignesTable(table).map((l) => new Map<unknown, Ligne | null>([[table, l]]));
   for (const [t, gauche, on] of joins) {
-    const autres = banc.lignes.get(t) ?? [];
+    const autres = lignesTable(t);
     rows = rows.flatMap((j) => {
       const ok = autres.map((l) => new Map([...j, [t, l]])).filter((n) => evaluer(on, n));
       return ok.length ? ok : gauche ? [new Map([...j, [t, null]])] : [];
@@ -502,10 +525,10 @@ export function accesSimule<M extends { projectAccessRefusal: (a: never, u: stri
       const projet = (banc.lignes.get(projects) ?? []).find((x) => x["id"] === projectId);
       if (!projet) return null;
       const vu = { ...structuredClone(projet), ...(projectId === "p" ? structuredClone(SITUATIONS[actorId] ?? {}) : {}) };
-      if (vu["ownerId"] === actorId) return { ...vu, role: "proprietaire", canExport: true };
+      if (vu["ownerId"] === actorId) return { ...vu, role: "proprietaire", canExport: true, canApprove: true, canPublish: true };
       const membre = (banc.lignes.get(projectMembers) ?? []).find((m) => m["projectId"] === projectId && m["userId"] === actorId);
       // Export (écart E2), comme le vrai : un éditeur exporte toujours ; un lecteur selon `canExport` (absent = ligne antérieure = TRUE).
-      return membre ? { ...vu, role: membre["role"], canExport: membre["role"] === "editeur" || ((membre["canExport"] as boolean | null | undefined) ?? true) } : null;
+      return membre ? { ...vu, role: membre["role"], canExport: membre["role"] === "editeur" || ((membre["canExport"] as boolean | null | undefined) ?? true), canApprove: false, canPublish: false } : null;
     },
     projectAccessRefusal: (access: never, userId: string, need: never) => {
       const r = reel.projectAccessRefusal(access, userId, need);

@@ -3044,3 +3044,121 @@ describe("règles communes — E1 audience, E2 export du lecteur, E3 journal des
     ]);
   });
 });
+
+describe("Équipe et participants — bascule de l'accès sur les participations (Issue #262, phase 2)", () => {
+  const meId = async (a: ReturnType<typeof agent>) => (await a.get("/auth/me")).body.id as string;
+  /** Accès lu de la seule source (vue SQL) pour ce compte et ce projet. */
+  const effective = async (pid: string, userId: string) =>
+    (await pool.query("SELECT role, can_export, can_approve, can_publish FROM project_effective_access WHERE project_id = $1 AND user_id = $2", [pid, userId])).rows[0] ?? null;
+  const participationOf = async (pid: string, userId: string) =>
+    (await pool.query("SELECT pp.id FROM project_participations pp JOIN people pe ON pe.id = pp.person_id WHERE pp.project_id = $1 AND pe.user_id = $2 AND pp.status <> 'terminee'", [pid, userId])).rows[0]?.id as string;
+
+  it("aucune perte d'accès des membres existants ; un contact sans compte n'a aucun droit", async () => {
+    const owner = await registerAndLogin("op2-owner@example.com");
+    const editor = await registerAndLogin("op2-editor@example.com");
+    const reader = await registerAndLogin("op2-reader@example.com");
+    const legacy = await registerAndLogin("op2-legacy@example.com");
+    const pid = (await owner.post("/projects").send({ code: "P.OP2", name: "Bascule" })).body.id as string;
+    await owner.post(`/projects/${pid}/members`).send({ email: "op2-editor@example.com", role: "editeur" });
+    await owner.post(`/projects/${pid}/members`).send({ email: "op2-reader@example.com", role: "lecteur" });
+    await owner.post(`/projects/${pid}/members`).send({ email: "op2-legacy@example.com", role: "lecteur" });
+    // Lecteur antérieur à l'écart E2 (NULL d'archive) : l'export est conservé à travers la participation.
+    await pool.query("UPDATE project_members SET can_export = NULL WHERE project_id = $1 AND user_id = $2", [pid, await meId(legacy)]);
+    expect(await effective(pid, await meId(owner))).toEqual({ role: "proprietaire", can_export: true, can_approve: true, can_publish: true });
+    expect(await effective(pid, await meId(editor))).toEqual({ role: "editeur", can_export: true, can_approve: false, can_publish: false });
+    expect(await effective(pid, await meId(reader))).toEqual({ role: "lecteur", can_export: false, can_approve: false, can_publish: false });
+    expect(await effective(pid, await meId(legacy))).toEqual({ role: "lecteur", can_export: true, can_approve: false, can_publish: false });
+    expect((await editor.get(`/projects/${pid}`)).body).toMatchObject({ role: "editeur" });
+    expect((await reader.get(`/projects/${pid}`)).body).toMatchObject({ role: "lecteur" });
+    expect((await reader.get(`/projects/${pid}/archive`)).status).toBe(403);
+    expect((await legacy.get(`/projects/${pid}/archive`)).status).toBe(200);
+    // Contact sans compte : statut `contact`, aucune ligne d'accès, aucun rôle attribuable.
+    const contact = await owner.post(`/projects/${pid}/participants/contacts`).send({ kind: "personne", displayName: "Contact sans compte", workEmail: "contact-op2@example.com" });
+    expect(contact.status).toBe(201);
+    expect(contact.body).toMatchObject({ status: "contact" });
+    expect((await pool.query("SELECT count(*)::int AS n FROM project_effective_access WHERE project_id = $1", [pid])).rows[0].n).toBe(4);
+    expect((await owner.post(`/projects/${pid}/participants/${contact.body.id}/roles`).send({ role: "concepteur" })).status).toBe(422);
+    // Même un rôle inscrit directement en base ne donne rien à un contact sans compte.
+    await pool.query("INSERT INTO project_role_assignments (id, participation_id, role, origin) VALUES ('pra_op2_contact', $1, 'concepteur', 'attribution')", [contact.body.id]);
+    expect((await pool.query("SELECT count(*)::int AS n FROM project_effective_access WHERE project_id = $1", [pid])).rows[0].n).toBe(4);
+    // Coordonnées : visibles du propriétaire, masquées pour un lecteur (OP-D9).
+    const seen = (await reader.get(`/projects/${pid}/participants`)).body.participants.find((p: { id: string }) => p.id === contact.body.id);
+    expect(seen.person).toMatchObject({ displayName: "Contact sans compte", workEmail: null, workPhone: null });
+    expect((await owner.get(`/projects/${pid}/participants`)).body.participants.find((p: { id: string }) => p.id === contact.body.id).person.workEmail).toBe("contact-op2@example.com");
+  });
+
+  it("suspendre ou terminer retire l'accès à la requête suivante ; une participation active sans rôle de projet ne donne rien", async () => {
+    const owner = await registerAndLogin("op2b-owner@example.com");
+    const reader = await registerAndLogin("op2b-reader@example.com");
+    const editor = await registerAndLogin("op2b-editor@example.com");
+    const pid = (await owner.post("/projects").send({ code: "P.OP2B", name: "Fin" })).body.id as string;
+    await owner.post(`/projects/${pid}/members`).send({ email: "op2b-reader@example.com", role: "lecteur" });
+    await owner.post(`/projects/${pid}/members`).send({ email: "op2b-editor@example.com", role: "editeur" });
+    const readerId = await meId(reader), editorId = await meId(editor);
+    const rp = await participationOf(pid, readerId);
+    expect((await reader.get(`/projects/${pid}`)).status).toBe(200);
+    expect((await owner.post(`/projects/${pid}/participants/${rp}/status`).send({ change: "suspendre" })).body).toMatchObject({ status: "suspendue" });
+    expect((await reader.get(`/projects/${pid}`)).status).toBe(404);
+    expect((await reader.get("/projects")).body.some((p: { id: string }) => p.id === pid)).toBe(false);
+    // Le pont (`project_members`) garde la ligne : un changement de partage ne réactive pas la participation.
+    await owner.patch(`/projects/${pid}/members/${readerId}`).send({ role: "editeur" });
+    expect((await reader.get(`/projects/${pid}`)).status).toBe(404);
+    expect((await owner.post(`/projects/${pid}/participants/${rp}/status`).send({ change: "reactiver" })).body).toMatchObject({ status: "active" });
+    expect((await reader.get(`/projects/${pid}`)).body).toMatchObject({ role: "editeur" });
+    // Participation active sans aucun rôle de portée projet (« revue seule ») : aucun accès.
+    await pool.query("DELETE FROM project_role_assignments WHERE participation_id = $1", [rp]);
+    expect(await effective(pid, readerId)).toBeNull();
+    expect((await reader.get(`/projects/${pid}`)).status).toBe(404);
+    // Un rôle de portée plus étroite ne donne rien non plus ; Approbateur de portée projet : lecture et approbation.
+    expect((await owner.post(`/projects/${pid}/participants/${rp}/roles`).send({ role: "relecteur", scopeType: "etude", scopeId: "etude-x" })).status).toBe(201);
+    expect(await effective(pid, readerId)).toBeNull();
+    expect((await owner.post(`/projects/${pid}/participants/${rp}/roles`).send({ role: "approbateur", scopeType: "projet" })).status).toBe(201);
+    expect(await effective(pid, readerId)).toEqual({ role: "lecteur", can_export: false, can_approve: true, can_publish: false });
+    // Fin : accès et ligne de partage retirés, participation terminée et datée ; un retour ne restaure rien.
+    const ep = await participationOf(pid, editorId);
+    const impact = (await owner.get(`/projects/${pid}/participants/${ep}/impact?change=terminer`)).body;
+    expect(impact).toMatchObject({ accessWithdrawn: true, access: { role: "editeur" } });
+    expect((await owner.post(`/projects/${pid}/participants/${ep}/status`).send({ change: "terminer" })).body).toMatchObject({ status: "terminee" });
+    expect((await editor.get(`/projects/${pid}`)).status).toBe(404);
+    expect((await pool.query("SELECT count(*)::int AS n FROM project_members WHERE project_id = $1 AND user_id = $2", [pid, editorId])).rows[0].n).toBe(0);
+    expect((await pool.query("SELECT status, ends_on IS NOT NULL AS dated FROM project_participations WHERE id = $1", [ep])).rows[0]).toEqual({ status: "terminee", dated: true });
+    const back = await owner.post(`/projects/${pid}/participants/${ep}/return`);
+    expect(back.body).toMatchObject({ status: "contact" });
+    expect((await editor.get(`/projects/${pid}`)).status).toBe(404);
+    // Le propriétaire ne se suspend pas ; journal sans adresse.
+    expect((await owner.post(`/projects/${pid}/participants/${await participationOf(pid, await meId(owner))}/status`).send({ change: "suspendre" })).status).toBe(409);
+    const journal = (await pool.query("SELECT action, metadata::text AS m FROM admin.audit_log WHERE target_type = 'project' AND target_id = $1", [pid])).rows as { action: string; m: string }[];
+    expect(journal.map((r) => r.action)).toEqual(expect.arrayContaining(["participation.status_changed", "participation.role_assigned", "participation.created"]));
+    expect(journal.every((r) => !r.m.includes("@"))).toBe(true);
+  });
+
+  it("la vue SQL et la règle pure `deriveAccess` rendent le même verdict", async () => {
+    const { deriveAccess } = await import("./lib/participants.js");
+    const owner = await registerAndLogin("op2c-owner@example.com");
+    const member = await registerAndLogin("op2c-member@example.com");
+    const pid = (await owner.post("/projects").send({ code: "P.OP2C", name: "Cohérence" })).body.id as string;
+    await owner.post(`/projects/${pid}/members`).send({ email: "op2c-member@example.com", role: "lecteur" });
+    const memberId = await meId(member);
+    const part = await participationOf(pid, memberId);
+    const today = (await pool.query("SELECT current_date::text AS d")).rows[0].d as string;
+    const cases: [string, string[], string | null][] = [
+      ["active", ["lecteur:projet"], null], ["active", ["concepteur:projet"], null], ["active", ["diffuseur:projet", "relecteur:projet"], null],
+      ["active", ["approbateur:etude"], null], ["active", [], null], ["suspendue", ["concepteur:projet"], null], ["active", ["lecteur:projet"], "2999-01-01"],
+    ];
+    for (const [status, roles, startsOn] of cases) {
+      await pool.query("DELETE FROM project_role_assignments WHERE participation_id = $1", [part]);
+      await pool.query("UPDATE project_participations SET status = $2, starts_on = $3, can_export = false WHERE id = $1", [part, status, startsOn]);
+      for (const [i, r] of roles.entries()) {
+        const [role, scope] = r.split(":");
+        await pool.query("INSERT INTO project_role_assignments (id, participation_id, role, scope_type, scope_id, origin) VALUES ($1, $2, $3, $4, $5, 'attribution')", [`pra_op2c_${i}`, part, role, scope, scope === "projet" ? null : "x"]);
+      }
+      const sqlVerdict = await effective(pid, memberId);
+      const pure = deriveAccess({
+        isOwner: false, hasAccount: true, today,
+        participation: { status: status as "active", startsOn, canExport: false },
+        roles: roles.map((r) => ({ role: r.split(":")[0] as "lecteur", scopeType: r.split(":")[1] as "projet" })),
+      });
+      expect(sqlVerdict ? { role: sqlVerdict.role, canExport: sqlVerdict.can_export, canApprove: sqlVerdict.can_approve, canPublish: sqlVerdict.can_publish } : null, `${status} ${roles.join(",")} ${startsOn}`).toEqual(pure);
+    }
+  });
+});

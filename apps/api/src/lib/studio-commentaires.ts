@@ -21,12 +21,12 @@
  * éditeurs ; `projet` (« Visible par les lecteurs ») par tous. Chaque lecture et chaque recherche par identifiant passe
  * par `audienceFilter` : pour un lecteur, un fil de l'équipe est introuvable (404), jamais seulement masqué.
  */
-import { and, asc, desc, eq, inArray, isNull, or, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, ne, or, type SQL } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { db } from "../db/client.js";
 import {
-  projectMembers, studioComments, studioObservationDecisions, studioObservationEvents, studioObservationLinks, studioObservations, studioObservationTaskEvents,
+  projectEffectiveAccess, projectMembers, studioComments, studioObservationDecisions, studioObservationEvents, studioObservationLinks, studioObservations, studioObservationTaskEvents,
   studioObservationTasks, studioRevisions, studioStudies, studioVariants, users,
   type StudioObservationAction, type StudioObservationDecisionNature, type StudioObservationDecisionPortee, type StudioObservationDomaine, type StudioObservationStatut,
   type StudioObservationTacheAction, type StudioObservationTacheStatut, type StudioObservationVueMode,
@@ -226,14 +226,20 @@ export async function listStudioComments(scope: StudioScope, actorId: string): P
 // ---------------------------------------------------------------------------
 // Observations
 
-/** Propriétaire puis membres (ordre d'invitation) ; un membre `editeur` ou le propriétaire peut être responsable. */
+/**
+ * Propriétaire puis comptes ayant accès (ordre d'invitation) ; un `editeur` ou le propriétaire peut être responsable.
+ * Phase 2 (Issue #262) : lu de la seule source de l'accès (`project_effective_access`) — une participation suspendue
+ * ou terminée n'est plus proposée.
+ */
 export async function participants(project: AccessibleProject, executor: Pick<typeof db, "select"> = db): Promise<StudioParticipant[]> {
   const [owner] = await executor.select({ id: users.id, email: users.email }).from(users).where(eq(users.id, project.ownerId)).limit(1);
-  const members = await executor.select({ id: users.id, email: users.email, role: projectMembers.role }).from(projectMembers)
-    .innerJoin(users, eq(users.id, projectMembers.userId)).where(eq(projectMembers.projectId, project.id))
+  const members = await executor.select({ id: users.id, email: users.email, role: projectEffectiveAccess.role }).from(projectEffectiveAccess)
+    .innerJoin(users, eq(users.id, projectEffectiveAccess.userId))
+    .leftJoin(projectMembers, and(eq(projectMembers.projectId, projectEffectiveAccess.projectId), eq(projectMembers.userId, projectEffectiveAccess.userId)))
+    .where(and(eq(projectEffectiveAccess.projectId, project.id), ne(projectEffectiveAccess.role, "proprietaire")))
     .orderBy(asc(projectMembers.createdAt), asc(users.id));
   const all: StudioParticipant[] = owner ? [{ ...owner, role: "proprietaire", assignable: true }] : [];
-  for (const m of members) if (m.id !== project.ownerId) all.push({ id: m.id, email: m.email, role: m.role, assignable: roleAllows(m.role, "write") });
+  for (const m of members) if (m.id !== project.ownerId && m.role !== "proprietaire") all.push({ id: m.id, email: m.email, role: m.role, assignable: roleAllows(m.role, "write") });
   return all;
 }
 
@@ -659,8 +665,8 @@ export async function setStudioCommentAudience(scope: StudioScope, actorId: stri
     if (root.audience === "revue") throw new StudioRequestError(409, { error: "audience_revue", message: "Ce fil est un constat de revue externe : son audience ne change pas." });
     const replies = await tx.select({ authorId: studioComments.authorId }).from(studioComments).where(and(eq(studioComments.variantId, variant.id), eq(studioComments.parentId, root.id)));
     const authors = [...new Set([root.authorId, ...replies.map((r) => r.authorId)])];
-    const readers = await tx.select({ userId: projectMembers.userId }).from(projectMembers)
-      .where(and(eq(projectMembers.projectId, scope.projectId), eq(projectMembers.role, "lecteur"), inArray(projectMembers.userId, authors)));
+    const readers = await tx.select({ userId: projectEffectiveAccess.userId }).from(projectEffectiveAccess)
+      .where(and(eq(projectEffectiveAccess.projectId, scope.projectId), eq(projectEffectiveAccess.role, "lecteur"), inArray(projectEffectiveAccess.userId, authors)));
     const refusal = audienceChangeRefusal({ role: variant.lecteur.role, isAuthor: root.authorId === actorId }, next, readers.length > 0);
     if (refusal) throw new StudioRequestError(refusal.status, refusal.body);
     const before = root.audience ?? "projet";

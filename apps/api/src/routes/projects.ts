@@ -1,10 +1,10 @@
 import express, { Router, type ErrorRequestHandler, type Request, type Response } from "express";
 import { supportGrantsRouter, supportReadOnlyGuard } from "./support-grants.js";
-import { and, asc, eq, gt, isNull } from "drizzle-orm";
+import { and, asc, eq, gt, isNull, ne } from "drizzle-orm";
 import { z } from "zod";
 import { ARCHIVE_IMPORT_LIMIT, ArchiveError, archiveFileName, normalizeImportedProjects } from "@parcours/domain-model";
 import { db, pool } from "../db/client.js";
-import { projectMembers, projects, projectSteps, projectSupportGrants, stepFiles, users } from "../db/schema.js";
+import { projectEffectiveAccess, projects, projectSteps, projectSupportGrants, stepFiles, users } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { newId } from "../lib/ids.js";
 import { EMPTY_STEP_CONTENT, PARCOURS_STEPS, exampleBaseDocuments } from "../data/parcours.js";
@@ -25,6 +25,7 @@ import { analysesRouter } from "./analyses.js";
 import { documentsRouter } from "./documents.js";
 import { collaborationRouter } from "./collaboration.js";
 import { membersRouter, ownerEmailOf } from "./members.js";
+import { participantsRouter } from "./participants.js";
 import { lockRouter } from "./lock.js";
 import { projectJournalRouter } from "./project-journal.js";
 import { archiveHash, recordProducedDocument } from "../lib/documents.js";
@@ -75,11 +76,12 @@ projectsRouter.get("/", async (req, res) => {
     .where(eq(projects.ownerId, req.user!.id))
     .orderBy(asc(projects.createdAt));
   const shared = await db
-    .select({ project: projects, role: projectMembers.role, ownerEmail: users.email })
-    .from(projectMembers)
-    .innerJoin(projects, eq(projects.id, projectMembers.projectId))
+    // Phase 2 (Issue #262) : la seule source de l'accès (participation active portant un rôle de projet).
+    .select({ project: projects, role: projectEffectiveAccess.role, ownerEmail: users.email })
+    .from(projectEffectiveAccess)
+    .innerJoin(projects, eq(projects.id, projectEffectiveAccess.projectId))
     .innerJoin(users, eq(users.id, projects.ownerId))
-    .where(eq(projectMembers.userId, req.user!.id))
+    .where(and(eq(projectEffectiveAccess.userId, req.user!.id), ne(projectEffectiveAccess.role, "proprietaire")))
     .orderBy(asc(projects.createdAt));
   // Accès support actifs (D-2) : seulement pour un administrateur, en lecture, avec leur échéance.
   const support = req.user!.platformRole === "admin"
@@ -237,6 +239,7 @@ projectsRouter.use("/:projectId/analyses", analysesRouter);
 projectsRouter.use("/:projectId/documents", documentsRouter);
 projectsRouter.use("/:projectId/collaboration", collaborationRouter);
 projectsRouter.use("/:projectId/members", membersRouter);
+projectsRouter.use("/:projectId/participants", participantsRouter);
 projectsRouter.use("/:projectId/lock", lockRouter);
 projectsRouter.use("/:projectId/support-grants", supportGrantsRouter);
 // Historique de la participation (phase 3 bis) : responsables du projet seulement.

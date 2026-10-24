@@ -11,7 +11,7 @@
  * typé par `@parcours/domain-model`. Mélanger les deux serait exactement
  * l'erreur de repères que `docs/architecture.md` interdit.
  */
-import { bigint, bigserial, boolean, customType, pgSchema, date, doublePrecision, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { bigint, bigserial, boolean, customType, pgSchema, date, doublePrecision, index, integer, jsonb, pgTable, pgView, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import type { ConclusionControle, EtatExecution, ExigenceStudio, GrandeurQuantite, ResultatControle, StudioDocument, StudioEnvelope, StudioFeuilleComposeeDefinition, StudioPhaseWorkflow, UniteQuantite } from "@parcours/atelier-model";
 
 /** Colonne PostGIS brute : on ne fait pas transiter la géométrie par du JS côté serveur, on la laisse en WKT/EWKT et on laisse Postgres faire le travail spatial. */
@@ -215,6 +215,8 @@ export const projects = pgTable("projects", {
    * de cette organisation. Elle ne change aucun droit (`lib/owned-project.ts` ne la lit pas).
    */
   organizationId: text("organization_id"),
+  /** Clôture déclarative (Issue #262, OP-2) : ne change aucun droit ; départ du délai de conservation des contacts. */
+  closedAt: timestamp("closed_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("projects_owner_id_idx").on(t.ownerId)]);
@@ -471,6 +473,8 @@ export const people = pgTable("people", {
   jobTitle: text("job_title"),
   workEmail: text("work_email"),
   workPhone: text("work_phone"),
+  /** Contact sans compte effacé (OP-D9) : nom remplacé, coordonnées supprimées, trace conservée. */
+  erasedAt: timestamp("erased_at", { withTimezone: true }),
   createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -504,6 +508,8 @@ export const projectParticipations = pgTable("project_participations", {
   businessRole: text("business_role"),
   responsibilities: text("responsibilities").array().notNull().default([]).$type<TeamResponsibility[]>(),
   status: text("status").notNull().$type<ParticipationStatus>(),
+  /** Export accordé (écart E2), tenu par le miroir depuis `project_members.can_export` ; un Concepteur exporte toujours. */
+  canExport: boolean("can_export").notNull().default(false),
   startsOn: date("starts_on"),
   endsOn: date("ends_on"),
   createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
@@ -525,6 +531,19 @@ export const projectRoleAssignments = pgTable("project_role_assignments", {
   grantedBy: text("granted_by").references(() => users.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+/**
+ * Phase 2 (OP-D3 c) : la seule source de la décision d'accès à un projet (vue SQL, init.sql) — propriétaire, ou
+ * participation active portant un rôle métier à la portée projet. Lue par `lib/owned-project.ts` et les listes.
+ */
+export const projectEffectiveAccess = pgView("project_effective_access", {
+  projectId: text("project_id").notNull(),
+  userId: text("user_id").notNull(),
+  role: text("role").notNull().$type<"proprietaire" | "editeur" | "lecteur">(),
+  canExport: boolean("can_export").notNull(),
+  canApprove: boolean("can_approve").notNull(),
+  canPublish: boolean("can_publish").notNull(),
+}).existing();
 
 // ---------------------------------------------------------------------------
 // Organisations — phase 5 (concept partie 5). Miroir de init.sql : adhésions, groupes, gabarits versionnés, mandats de

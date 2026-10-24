@@ -129,6 +129,16 @@ export const ACTION_LABEL: Readonly<Record<string, string>> = {
   "organization.mandate.ended": "Mandat de représentant terminé",
   "organization.project.participation_recorded": "Organisation enregistrée comme partie d’un projet",
   "organization.project.owner_declared": "Organisation déclarée partie propriétaire d’un projet",
+  // Participants et équipe (phase 2).
+  "participation.created": "Participation enregistrée",
+  "participation.updated": "Participation modifiée",
+  "participation.status_changed": "Statut d’une participation changé",
+  "participation.role_assigned": "Rôle par portée attribué",
+  "participation.role_removed": "Rôle par portée retiré",
+  "person.contact_created": "Contact sans compte enregistré",
+  "person.contact_erased": "Contact sans compte effacé",
+  "project.closed": "Projet clos",
+  "project.reopened": "Projet rouvert",
 };
 
 export const FAMILY_LABEL: Readonly<Record<string, string>> = {

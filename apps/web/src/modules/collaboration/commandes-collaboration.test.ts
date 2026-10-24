@@ -10,7 +10,7 @@ import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { BASCULE_AUDIENCE, COMMANDES_COLLABORATION, declenche, propsRaccourci, type CommandeCollaboration } from "./commandes-collaboration";
+import { BASCULES, COMMANDES_COLLABORATION, declenche, propsRaccourci, type CommandeCollaboration } from "./commandes-collaboration";
 import { IconeCollaboration, RaccourciCollaboration } from "./IconeCollaboration";
 
 const SRC = new URL("../../", import.meta.url).pathname;
@@ -26,7 +26,10 @@ const ECRANS: Record<CommandeCollaboration, string[]> = {
   "rendre-visible": ["modules/collaboration/CollaborationModule.tsx", "modules/studio/commentaires/PanneauCommentaires.tsx"],
   "reserver-equipe": ["modules/collaboration/CollaborationModule.tsx", "modules/studio/commentaires/PanneauCommentaires.tsx"],
   "export-lecteur": ["modules/collaboration/CollaborationModule.tsx"],
-};
+  // Participants et équipe (Issue #262, phase 2) : en-tête de l'annuaire, ligne du participant, formulaire des rôles.
+  ...Object.fromEntries((["nouveau-contact", "modifier-participation", "attribuer-role", "retirer-role", "suspendre-participation", "reactiver-participation",
+    "terminer-participation", "retour-participant", "effacer-contact", "clore-projet", "rouvrir-projet"] as const).map((c) => [c, ["modules/collaboration/Participants.tsx"]])),
+} as Record<CommandeCollaboration, string[]>;
 
 function sources(dir: string): string[] {
   return readdirSync(dir).flatMap((n) => {
@@ -43,10 +46,10 @@ describe("Règle d'or — commandes de collaboration (audience, export du lecteu
     expect(new Set(dessins).size).toBe(dessins.length);
   });
 
-  it("chaque commande a un raccourci ; seuls les deux sens de la bascule d'audience le partagent", () => {
+  it("chaque commande a un raccourci ; seuls les deux sens d'une même bascule le partagent", () => {
     const parRaccourci = new Map<string, CommandeCollaboration[]>();
     for (const c of COMMANDES) parRaccourci.set(COMMANDES_COLLABORATION[c].raccourci.libelle, [...(parRaccourci.get(COMMANDES_COLLABORATION[c].raccourci.libelle) ?? []), c]);
-    for (const [r, cs] of parRaccourci) expect(cs.length === 1 || [...cs].sort().join() === [...BASCULE_AUDIENCE].sort().join(), `${r} : ${cs.join(", ")}`).toBe(true);
+    for (const [r, cs] of parRaccourci) expect(cs.length === 1 || BASCULES.some((b) => [...cs].sort().join() === [...b].sort().join()), `${r} : ${cs.join(", ")}`).toBe(true);
   });
 
   it("aucun autre raccourci de Fadi n'emploie ces combinaisons", () => {
@@ -81,6 +84,10 @@ describe("Règle d'or — commandes de collaboration (audience, export du lecteu
     expect(declenche(t("Digit3"), "export-lecteur")).toBe(true);
     expect(declenche(t("Digit3"), "visible-lecteurs")).toBe(false);
     expect(propsRaccourci("export-lecteur")["aria-keyshortcuts"]).toBe("Alt+Shift+3");
+    expect(declenche(t("Digit6"), "nouveau-contact")).toBe(true);
+    expect(declenche(t("Minus"), "effacer-contact")).toBe(true);
+    expect(declenche(t("Equal"), "clore-projet") && declenche(t("Equal"), "rouvrir-projet")).toBe(true);
+    expect(declenche(t("Digit9"), "terminer-participation")).toBe(false);
   });
 
   it("rendu : icône SVG décorative, raccourci affiché", () => {

@@ -143,15 +143,15 @@ try {
   const acc = await bob.call("post", "/auth/invitations/accept", { token: tokenForBob });
   check("acceptation par l'identité visée : adhésion créée, entrée dans l'organisation", acc.status === 200 && acc.body.organizationId === orgId, JSON.stringify(acc.body));
   const acc2 = await bob.call("post", "/auth/invitations/accept", { token: tokenForBob });
-  check("acceptation rejouée : même résultat, aucune seconde adhésion", acc2.status === 200);
+  check("acceptation rejouée : même résultat, aucune seconde adhésion", acc2.status === 200, `${acc2.status} ${JSON.stringify(acc2.body)}`);
   check("déjà membre : nouvelle invitation refusée (409)", (await alice.call("post", `/organizations/${orgId}/invitations`, { email: bob.email, role: "membre" })).status === 409);
 
   // Nouveau compte créé depuis l'invitation.
   const carol = await account("carol", { register: false });
   const invCarol = await alice.call("post", `/organizations/${orgId}/invitations`, { email: carol.email, role: "membre", jobTitle: "Ingénieure structure" });
   const act = await carol.call("post", "/auth/activate", { token: tokenOf(await invitationLink(invCarol.body, carol.email)), password: PASSWORD, acceptTerms: true, displayName: "Carol" });
-  check("nouveau compte depuis l'invitation : compte et adhésion", act.status === 201 && act.body.organizationId === orgId, JSON.stringify(act.body));
-  carol.id = act.body.user?.id ?? null;
+  check("nouveau compte depuis l'invitation : compte et adhésion", act.status === 201 && act.body?.organizationId === orgId, `${act.status} ${JSON.stringify(act.body)}`);
+  carol.id = act.body?.user?.id ?? null;
 
   // Annuaire interne.
   const dirBob = await bob.call("get", `/organizations/${orgId}/directory`);

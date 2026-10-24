@@ -245,9 +245,10 @@ jobs:
       # CHECK, journal d'audit append-only, conversion des sessions — transactions annulées, base du job seulement.
       - name: Schéma Gestion des comptes — idempotence, contraintes, audit append-only
         run: node scripts/validation/users-migration-check.mjs
-      # Organisations, participation et revue externe (#262, phase 1) : reprise de l'existant, miroir des accès par
-      # déclencheurs, contraintes, droits fadi_app — transactions annulées, base du job seulement.
-      - name: Schéma participations — reprise, miroir des accès, contraintes
+      # Organisations, participation et revue externe (#262, phases 1 et 2) : reprise de l'existant, miroir des accès par
+      # déclencheurs, contraintes, droits fadi_app ; phase 2 : vue `project_effective_access` (seule source de l'accès),
+      # aucune perte d'accès, contact / suspension / fin / sans rôle sans droit — transactions annulées, base du job seulement.
+      - name: Schéma participations — reprise, miroir des accès, contraintes, bascule de l'accès
         run: node scripts/validation/participations-migration-check.mjs
       # Phase 5 (espace d'organisation) : adhésions, groupes, gabarits immuables, mandats, finalité d'invitation
       # `organization_membership`, déclencheurs de départ et de clôture, aucun droit de projet — transactions annulées.
@@ -370,7 +371,10 @@ jobs:
       WEB_ORIGIN: http://localhost:3001
       WEB_DIST: apps/web/dist
       PORT: "3001"
-      AUTH_RATE_LIMIT: "500"
+      # Une seule API pour toute la tranche (même adresse, fenêtre de 15 min) : la tranche complements enchaîne les recettes
+      # des comptes, du journal, des participants et des organisations, qui dépassaient 500 appels /auth (429). Réglage de
+      # test seulement ; la production garde 20.
+      AUTH_RATE_LIMIT: "3000"
       # Limite par adresse (10 / 15 min par défaut) : les recettes reconnectent souvent le même compte.
       AUTH_IDENTIFIER_RATE_LIMIT: "500"
       API_RATE_LIMIT: "5000"
@@ -574,6 +578,14 @@ jobs:
         run: |
           set -o pipefail
           node apps/web/e2e/collaboration-audience.mjs 2>&1 | tee -a e2e.log
+      # Organisations, participation (#262, phase 2) : annuaire, contacts sans droit, bascule de l'accès sur les participations,
+      # suspension / fin / retour, rôles Approbateur et Diffuseur, effacement, clôture et conservation (horloge simulée),
+      # onglets Participants et Équipe, règle d'or, axe-core bureau et téléphone, passe anglaise ; journal relu en base.
+      - name: Recette Équipe et participants — annuaire, bascule de l'accès, effacement, interface (apps/web/e2e/participants.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/participants.mjs 2>&1 | tee -a e2e.log
       - name: Recette Gestion des comptes dans le navigateur — écrans, axe-core bureau et téléphone (apps/web/e2e/comptes-admin.mjs)
         if: ${{ matrix.shard == 'complements' }}
         run: |

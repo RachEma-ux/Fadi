@@ -13,8 +13,13 @@
  * 3. contraintes CHECK et unicité de la participation courante ;
  * 4. D-7 : `fadi_app` écrit les nouvelles tables et déclenche le miroir, sans aucun DDL ;
  * 5. concurrence : deux accès simultanés d'un même compte créent une seule personne, sans échec (seule section validée,
- *    nettoyée ensuite par suppression du compte de test).
- * Sections 1 à 4 dans des transactions annulées (ROLLBACK). Refuse une base qui n'est pas locale : jamais la production.
+ *    nettoyée ensuite par suppression du compte de test) ;
+ * 6. phase 2 (bascule de l'accès, OP-D3 c) : la vue `project_effective_access`, seule source de la décision d'accès, rend
+ *    l'accès de chaque membre repris (lecteur, éditeur, export accordé ou d'archive NULL) sans perte ; aucun droit pour un
+ *    contact, une participation suspendue, terminée, sans rôle de projet ou à portée plus étroite ; le pont (miroir) ne
+ *    réactive pas une participation suspendue ; colonnes additives `projects.closed_at`, `people.erased_at`,
+ *    `project_participations.can_export` ; second rejeu d'init.sql sans effet ; `fadi_app` lit la vue sans DDL.
+ * Sections 1 à 4 et 6 dans des transactions annulées (ROLLBACK). Refuse une base qui n'est pas locale : jamais la production.
  */
 import { readFileSync } from 'node:fs';
 import pg from 'pg';
@@ -174,6 +179,72 @@ try {
     await client.query('ROLLBACK');
   }
 
+  // 6. Phase 2 : bascule de l'accès sur les participations.
+  await client.query('BEGIN');
+  await client.query('ALTER TABLE project_members DISABLE TRIGGER project_members_op_mirror');
+  await client.query('ALTER TABLE projects DISABLE TRIGGER projects_op_owner_mirror');
+  await client.query(users('op6_o', 'op6_l', 'op6_e', 'op6_x', 'op6_n'));
+  await client.query("INSERT INTO projects (id, owner_id, code, name) VALUES ('op_p6', 'op6_o', 'P6', 'Bascule')");
+  await client.query(`INSERT INTO project_members (project_id, user_id, role, invited_by, can_export) VALUES
+    ('op_p6', 'op6_l', 'lecteur', 'x', false), ('op_p6', 'op6_e', 'editeur', 'x', false), ('op_p6', 'op6_x', 'lecteur', 'x', true),
+    ('op_p6', 'op6_n', 'lecteur', 'x', NULL)`);
+  await client.query('ALTER TABLE project_members ENABLE TRIGGER project_members_op_mirror');
+  await client.query('ALTER TABLE projects ENABLE TRIGGER projects_op_owner_mirror');
+  await client.query(initSql);
+  const acces = async () => Object.fromEntries((await all("SELECT user_id, role, can_export, can_approve, can_publish FROM project_effective_access WHERE project_id = 'op_p6'"))
+    .map((r) => [r.user_id, `${r.role}${r.can_export ? '+export' : ''}${r.can_approve ? '+approbation' : ''}${r.can_publish ? '+diffusion' : ''}`]));
+  const attendu = { op6_o: 'proprietaire+export+approbation+diffusion', op6_l: 'lecteur', op6_e: 'editeur+export', op6_x: 'lecteur+export', op6_n: 'lecteur+export' };
+  check(JSON.stringify(Object.entries(await acces()).sort()) === JSON.stringify(Object.entries(attendu).sort()),
+    'reprise : chaque membre garde exactement son accès (export accordé et export d\'archive NULL compris)', await acces());
+  const before6 = await one(`SELECT (SELECT count(*) FROM people)::int AS pe, (SELECT count(*) FROM project_participations)::int AS pp,
+    (SELECT count(*) FROM project_role_assignments)::int AS ra`);
+  await client.query(initSql);
+  const after6 = await one(`SELECT (SELECT count(*) FROM people)::int AS pe, (SELECT count(*) FROM project_participations)::int AS pp,
+    (SELECT count(*) FROM project_role_assignments)::int AS ra`);
+  check(JSON.stringify(before6) === JSON.stringify(after6) && JSON.stringify(await acces()) !== '{}', 'phase 2 rejouée : aucune ligne créée deux fois, vue intacte', { before6, after6 });
+  const cols = (await all(`SELECT table_name || '.' || column_name AS c FROM information_schema.columns
+    WHERE (table_name, column_name) IN (('projects', 'closed_at'), ('people', 'erased_at'), ('project_participations', 'can_export')) ORDER BY 1`)).map((r) => r.c);
+  check(cols.join() === 'people.erased_at,project_participations.can_export,projects.closed_at', 'colonnes additives de la phase 2 présentes', cols);
+  const partOf6 = async (u) => (await one(`SELECT pp.id FROM project_participations pp JOIN people pe ON pe.id = pp.person_id
+    WHERE pp.project_id = 'op_p6' AND pe.user_id = $1 AND pp.status <> 'terminee'`, [u])).id;
+  const pl = await partOf6('op6_l');
+  await client.query("UPDATE project_participations SET status = 'suspendue' WHERE id = $1", [pl]);
+  check(!('op6_l' in await acces()), 'participation suspendue : aucun accès');
+  await client.query("UPDATE project_members SET role = 'editeur' WHERE project_id = 'op_p6' AND user_id = 'op6_l'");
+  check((await one('SELECT status FROM project_participations WHERE id = $1', [pl])).status === 'suspendue' && !('op6_l' in await acces()),
+    'pont : un changement de partage ne réactive pas une participation suspendue');
+  await client.query("UPDATE project_participations SET status = 'active' WHERE id = $1", [pl]);
+  check((await acces()).op6_l === 'editeur+export', 'réactivation : l\'accès des rôles portés revient (rôle de partage tenu à jour)', await acces());
+  const px = await partOf6('op6_x');
+  await client.query("DELETE FROM project_role_assignments WHERE participation_id = $1", [px]);
+  check(!('op6_x' in await acces()), 'participation active sans rôle de projet (revue seule) : aucun accès');
+  await client.query("INSERT INTO project_role_assignments (id, participation_id, role, scope_type, scope_id) VALUES ('op6_r1', $1, 'approbateur', 'etude', 's1')", [px]);
+  check(!('op6_x' in await acces()), 'rôle de portée étude seul : aucun accès au projet');
+  await client.query("INSERT INTO project_role_assignments (id, participation_id, role) VALUES ('op6_r2', $1, 'approbateur')", [px]);
+  check((await acces()).op6_x === 'lecteur+export+approbation', 'Approbateur de portée projet : lecture, approbation (export accordé conservé)', await acces());
+  const pe = await partOf6('op6_e');
+  await client.query("UPDATE project_participations SET status = 'terminee', ends_on = current_date WHERE id = $1", [pe]);
+  check(!('op6_e' in await acces()), 'participation terminée : aucun accès');
+  await client.query("UPDATE project_participations SET starts_on = current_date + 30 WHERE id = $1", [await partOf6('op6_n')]);
+  check(!('op6_n' in await acces()), 'participation qui n\'a pas commencé : aucun accès');
+  await client.query("INSERT INTO people (id, display_name) VALUES ('op6_c', 'Contact')");
+  await client.query("INSERT INTO project_participations (id, project_id, person_id, status) VALUES ('op6_pc', 'op_p6', 'op6_c', 'active')");
+  await client.query("INSERT INTO project_role_assignments (id, participation_id, role) VALUES ('op6_r3', 'op6_pc', 'concepteur')");
+  check((await one("SELECT count(*)::int AS n FROM project_effective_access WHERE project_id = 'op_p6' AND user_id IS NULL")).n === 0, 'contact sans compte, même actif et doté d\'un rôle : aucune ligne d\'accès');
+  if (roles.length >= 2) {
+    await client.query('SAVEPOINT droits');
+    await client.query('SET LOCAL ROLE fadi_app');
+    try {
+      await client.query("SELECT count(*) FROM project_effective_access");
+      await client.query("UPDATE projects SET closed_at = now() WHERE id = 'op_p6'");
+      await client.query("UPDATE people SET erased_at = now(), display_name = 'Contact effacé', work_email = NULL WHERE id = 'op6_c'");
+      ok('fadi_app : lecture de la vue, clôture du projet, effacement d\'un contact');
+    } catch (e) { ko('fadi_app : phase 2 refusée — ' + e.message); }
+    await rejects('fadi_app : remplacement de la vue', 'CREATE OR REPLACE VIEW project_effective_access AS SELECT 1');
+    await client.query('ROLLBACK TO SAVEPOINT droits');
+  }
+  await client.query('ROLLBACK');
+
   // 5. Concurrence : un même compte obtient deux accès en parallèle (deux projets créés en même temps, aucune personne
   //    encore) — la seconde transaction attend la première puis relit la personne, sans échouer.
   await client.query(users('op_par'));
@@ -205,4 +276,4 @@ try {
   await client.end();
 }
 if (failures) { console.log(`❌ ${failures} contrôle(s) en échec`); process.exit(1); }
-console.log('✅ schéma de participation (phase 1) vérifié');
+console.log('✅ schéma de participation (phases 1 et 2) vérifié');

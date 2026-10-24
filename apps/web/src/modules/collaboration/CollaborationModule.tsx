@@ -18,6 +18,7 @@ import { MUTATION_KEYS, adoptComment, type CommentVars } from "../../lib/mutatio
 import { LOCALE } from "../../lib/i18n";
 import { declenche, propsRaccourci, type CommandeCollaboration } from "./commandes-collaboration";
 import { IconeCollaboration, RaccourciCollaboration } from "./IconeCollaboration";
+import { ParticipantsSection } from "./Participants";
 import { HistoriqueProjet } from "./HistoriqueProjet";
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -648,6 +649,8 @@ export function CollaborationModule({ projectId }: { projectId: string }) {
         <h2 id="collab-members">Membres du projet</h2>
         <MembersPanel projectId={projectId} />
       </section>
+
+      <ParticipantsSection projectId={projectId} />
 
       <SupportAccessPanel projectId={projectId} />
 

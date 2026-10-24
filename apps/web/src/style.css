@@ -3870,6 +3870,81 @@ fieldset.access-fieldset:disabled {
   }
 }
 
+/* Équipe et participants (Issue #262, phase 2) */
+.participants-cloture {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 8px 0 12px;
+}
+.participants-cloture small {
+  flex-basis: 100%;
+}
+.participants-fiche {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 2px;
+}
+.participants-roles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.participants-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 220px;
+}
+.participants-commande {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+}
+.participants-form fieldset {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  grid-column: 1 / -1;
+}
+.participants-form .wide {
+  grid-column: 1 / -1;
+}
+.participants-case {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  font-weight: 400 !important;
+}
+.participants-case input {
+  width: 18px;
+  height: 18px;
+}
+.participants-section .danger-button {
+  color: #fff;
+}
+.participants-correspondances {
+  grid-column: 1 / -1;
+  border-left: 3px solid #bd873d;
+  padding: 6px 10px;
+}
+@media (max-width: 720px) {
+  .participants-form {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Résolution assistée des conflits : les deux versions côte à côte */
 .conflict-table {
   border-collapse: collapse;

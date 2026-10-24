@@ -9,7 +9,8 @@ import { and, asc, eq, notInArray } from "drizzle-orm";
 import { z } from "zod";
 import { PARCOURS_STEPS } from "../data/parcours.js";
 import { db } from "../db/client.js";
-import { projectMembers, projectSteps, studioStudies, studioStudySteps } from "../db/schema.js";
+import { projectSteps, studioStudies, studioStudySteps } from "../db/schema.js";
+import { lockAccessRows } from "./access-locks.js";
 import { loadProjectAccess, projectAccessRefusal, type ProjectNeed } from "./owned-project.js";
 import { StudioRequestError, studioArchivedRefusal } from "./studio-commands.js";
 import { lockProject, type Querier } from "./step-rows.js";
@@ -66,8 +67,7 @@ export async function setStudioStudySteps(projectId: string, studyId: string, ac
   return db.transaction(async (tx) => {
     // Même sérialisation que les écritures du projet ; le membre est relu sous verrou (révocation concurrente).
     await lockProject(tx, projectId);
-    await tx.select({ userId: projectMembers.userId }).from(projectMembers)
-      .where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, actorId))).for("share");
+    await lockAccessRows(tx, projectId, actorId);
     await access(tx, projectId, actorId, "modify");
     const study = await studyIn(tx, projectId, studyId);
     if (study.archivedAt !== null) studioArchivedRefusal();
