@@ -21,6 +21,9 @@ const ProjectShell = lazy(() => import("./routes/ProjectShell").then((m) => ({ d
 const ProjectCockpitPage = lazy(() => import("./modules/pilotage/ProjectCockpitPage").then((m) => ({ default: m.ProjectCockpitPage })));
 const BuildingLibraryPage = lazy(() => import("./modules/bibliotheque/BuildingLibraryPage").then((m) => ({ default: m.BuildingLibraryPage })));
 // Administration de la plateforme (comptes) : chargée à la demande, comme le Studio.
+// Espace d'organisation (organisations, phase 5) : chargé à la demande.
+const OrganisationsPage = lazy(() => import("./routes/organisations/OrganisationsPage").then((m) => ({ default: m.OrganisationsPage })));
+const OrganisationPage = lazy(() => import("./routes/organisations/OrganisationsPage").then((m) => ({ default: m.OrganisationPage })));
 const AdminUsersPage = lazy(() => import("./routes/admin/AdminUsersPage").then((m) => ({ default: m.AdminUsersPage })));
 const BuildingCasePage = lazy(() => import("./modules/bibliotheque/BuildingLibraryPage").then((m) => ({ default: m.BuildingCasePage })));
 
@@ -116,6 +119,8 @@ export function App() {
             }
           />
           <Route path="/parametres" element={<ParametresPage />} />
+          <Route path="/organisations" element={<Suspense fallback={<Loading />}><OrganisationsPage /></Suspense>} />
+          <Route path="/organisations/:orgId" element={<Suspense fallback={<Loading />}><OrganisationPage /></Suspense>} />
           <Route path="/admin/utilisateurs" element={<AdminRoute><Suspense fallback={<Loading />}><AdminUsersPage /></Suspense></AdminRoute>} />
         </Route>
 

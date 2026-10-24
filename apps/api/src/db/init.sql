@@ -1672,7 +1672,7 @@ CREATE TABLE IF NOT EXISTS organization_template_versions (
   created_by text REFERENCES users (id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT organization_template_versions_version_check CHECK (version >= 1),
-  CONSTRAINT organization_template_versions_content_check CHECK (jsonb_typeof(content -> 'entries') = 'array'),
+  CONSTRAINT organization_template_versions_content_check CHECK (coalesce(jsonb_typeof(content -> 'entries'), '') = 'array'),
   CONSTRAINT organization_template_versions_unique UNIQUE (template_id, version)
 );
 CREATE OR REPLACE FUNCTION op_org_template_version_immutable() RETURNS trigger LANGUAGE plpgsql AS $$

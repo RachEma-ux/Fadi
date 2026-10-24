@@ -287,7 +287,7 @@ organizationsRouter.post("/:orgId/status", async (req, res) => {
   }
   const outcome = await db.transaction(async (tx) => {
     const [org] = await tx.select().from(organizations).where(eq(organizations.id, access.org.id)).limit(1).for("update");
-    if (!org || !canOrganizationTransition(org.status, to)) return { status: 409, body: { error: "invalid_transition", message: `Passage de « ${org?.status} » à « ${to} » impossible.` } };
+    if (!org || !canOrganizationTransition(org.status, to)) return { status: 409, body: { error: "invalid_transition", message: "Changement de statut impossible depuis l’état actuel de l’organisation." } };
     let cancelledInvitations = 0;
     if (to === "close") {
       const cancelled = await tx.update(invitations).set({ status: "cancelled", respondedAt: new Date() })
@@ -423,7 +423,7 @@ organizationsRouter.post("/:orgId/memberships/:membershipId/end", async (req, re
     const [before] = await tx.select().from(organizationMemberships).where(eq(organizationMemberships.id, found.target.id)).limit(1).for("update");
     if (!before || before.status === "terminee") return { status: 409, body: { error: "membership_ended", message: "Cette adhésion a déjà pris fin." } };
     if (before.role === "administrateur" && removesLastOrganizationAdmin(admins, before.id)) {
-      return { status: 409, body: { error: "last_admin", message: "C’est le dernier administrateur actif : nommez d’abord un autre administrateur, ou closez l’organisation." } };
+      return { status: 409, body: { error: "last_admin", message: "C’est le dernier administrateur actif : nommez d’abord un autre administrateur, ou procédez à la clôture de l’organisation." } };
     }
     const impact = await departureImpact(tx, found.access.org.id, before.id, before.personId, req.user!.id);
     // Le déclencheur `op_org_membership_ended` retire les groupes et termine / annule les mandats.

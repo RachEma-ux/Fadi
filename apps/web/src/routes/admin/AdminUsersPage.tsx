@@ -151,7 +151,7 @@ function Invitations({ hideTest, issued, setIssued }: { hideTest: boolean; issue
       <ul className="sessions-list">
         {q.data.invitations.map((i) => (
           <li key={i.id} data-invitation={i.email} data-invitation-id={i.id}>
-            <span><span translate="no">{i.email}</span> <small>· {i.projectName ? <span translate="no">{i.projectName}</span> : i.purpose === "project_participation" ? "projet" : "compte"}{` · valable jusqu’au ${date(i.expiresAt)} · `}{INVITATION_STATUS[i.status]}</small></span>
+            <span><span translate="no">{i.email}</span> <small>· {i.projectName ? <span translate="no">{i.projectName}</span> : i.purpose === "project_participation" ? "projet" : i.purpose === "organization_membership" ? "organisation" : "compte"}{` · valable jusqu’au ${date(i.expiresAt)} · `}{INVITATION_STATUS[i.status]}</small></span>
             <span className="admin-trash-actions">
               {canResend(i)
                 ? <button type="button" className="button-secondary" data-invitation-resend aria-keyshortcuts={RACCOURCIS_ADMIN.renvoyer.aria} title={RACCOURCIS_ADMIN.renvoyer.libelle} disabled={!online || resend.isPending} onClick={() => { setMsg(null); resend.mutate(i); }}><IconeAdmin commande="renvoyer" />Renvoyer</button>
