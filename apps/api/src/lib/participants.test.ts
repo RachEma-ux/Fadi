@@ -66,7 +66,7 @@ describe("Accès dérivé des participations et des rôles par portée (OP-D3 c)
     expect(view).toContain("bool_or(ra.role = 'diffuseur')");
     // Plus aucune lecture de `project_members` dans la décision d'accès.
     const owned = readFileSync(new URL("./owned-project.ts", import.meta.url), "utf8");
-    const load = owned.slice(owned.indexOf("export async function loadProjectAccess"), owned.indexOf("export async function lockAccessRows"));
+    const load = owned.slice(owned.indexOf("export async function loadProjectAccess"), owned.indexOf("export async function activeSupportGrant"));
     expect(load).not.toContain("projectMembers");
     expect(load).toContain("projectEffectiveAccess");
   });

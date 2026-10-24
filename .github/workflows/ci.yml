@@ -245,9 +245,10 @@ jobs:
       # CHECK, journal d'audit append-only, conversion des sessions — transactions annulées, base du job seulement.
       - name: Schéma Gestion des comptes — idempotence, contraintes, audit append-only
         run: node scripts/validation/users-migration-check.mjs
-      # Organisations, participation et revue externe (#262, phase 1) : reprise de l'existant, miroir des accès par
-      # déclencheurs, contraintes, droits fadi_app — transactions annulées, base du job seulement.
-      - name: Schéma participations — reprise, miroir des accès, contraintes
+      # Organisations, participation et revue externe (#262, phases 1 et 2) : reprise de l'existant, miroir des accès par
+      # déclencheurs, contraintes, droits fadi_app ; phase 2 : vue `project_effective_access` (seule source de l'accès),
+      # aucune perte d'accès, contact / suspension / fin / sans rôle sans droit — transactions annulées, base du job seulement.
+      - name: Schéma participations — reprise, miroir des accès, contraintes, bascule de l'accès
         run: node scripts/validation/participations-migration-check.mjs
       - name: Tests des paquets purs et du web
         run: npm run test --workspace=@parcours/core-geometry --workspace=@parcours/domain-model --workspace=@parcours/atelier-model --workspace=@parcours/planche-model --workspace=@parcours/sandbox-planche-model --workspace=@parcours/geometry-exact --workspace=@fadi/web
@@ -570,6 +571,14 @@ jobs:
         run: |
           set -o pipefail
           node apps/web/e2e/collaboration-audience.mjs 2>&1 | tee -a e2e.log
+      # Organisations, participation (#262, phase 2) : annuaire, contacts sans droit, bascule de l'accès sur les participations,
+      # suspension / fin / retour, rôles Approbateur et Diffuseur, effacement, clôture et conservation (horloge simulée),
+      # onglets Participants et Équipe, règle d'or, axe-core bureau et téléphone, passe anglaise ; journal relu en base.
+      - name: Recette Équipe et participants — annuaire, bascule de l'accès, effacement, interface (apps/web/e2e/participants.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/participants.mjs 2>&1 | tee -a e2e.log
       - name: Recette Gestion des comptes dans le navigateur — écrans, axe-core bureau et téléphone (apps/web/e2e/comptes-admin.mjs)
         if: ${{ matrix.shard == 'complements' }}
         run: |

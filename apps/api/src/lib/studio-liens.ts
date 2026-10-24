@@ -10,7 +10,8 @@ import { z } from "zod";
 import { PARCOURS_STEPS } from "../data/parcours.js";
 import { db } from "../db/client.js";
 import { projectSteps, studioStudies, studioStudySteps } from "../db/schema.js";
-import { loadProjectAccess, lockAccessRows, projectAccessRefusal, type ProjectNeed } from "./owned-project.js";
+import { lockAccessRows } from "./access-locks.js";
+import { loadProjectAccess, projectAccessRefusal, type ProjectNeed } from "./owned-project.js";
 import { StudioRequestError, studioArchivedRefusal } from "./studio-commands.js";
 import { lockProject, type Querier } from "./step-rows.js";
 

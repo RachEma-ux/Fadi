@@ -234,8 +234,10 @@ try {
   // Téléphone : lecteur (sans coordonnées) et propriétaire.
   const phone = await session(cOwner, { width: 390, height: 844 });
   await axe(phone, "Équipe et participants — téléphone (propriétaire)");
-  const scroll = await phone.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
-  check("téléphone : aucune défilement horizontal de la page", scroll);
+  // La section ne déborde pas (ses tableaux défilent dans leur propre région) ; le reste de la page n'est pas l'objet ici.
+  const debord = await phone.evaluate(() => [...document.querySelectorAll("[data-participants] *")]
+    .filter((el) => !el.closest(".table-scroll") && el.getBoundingClientRect().right > window.innerWidth + 1).map((el) => el.tagName));
+  check("téléphone : la section Équipe et participants ne déborde pas horizontalement", debord.length === 0, debord.slice(0, 5).join(","));
   await phone.context().close();
   const lecteur = await session(cReader, { width: 390, height: 844 });
   check("lecteur : aucune coordonnée affichée, aucune commande de gestion", (await lecteur.locator("[data-participants] [data-coordonnee]").count()) === 0 && (await lecteur.locator("[data-participants] [data-commande-collaboration]").count()) === 0);
@@ -300,7 +302,7 @@ if (process.env.DATABASE_URL) {
   check("conservation : contact intact avant l'échéance", avant.rows[0]?.erased_at === null);
   const now = new Date(Date.now() + (2 * 366 + 1) * 24 * 3600 * 1000).toISOString();
   try {
-    const out = execFileSync("npm", ["run", "-s", "db:account-jobs", "--workspace=@fadi/api", "--", `--now=${now}`], { encoding: "utf8", env: process.env });
+    const out = execFileSync("npm", ["run", "-s", "db:account-jobs", "--workspace=@fadi/api", "--", `--now=${now}`, "--contacts-seulement"], { encoding: "utf8", env: process.env });
     check("tâche de conservation exécutée (horloge simulée)", /"contacts":\{"erased":\d+\}/.test(out), out.slice(-200));
   } catch (err) { check("tâche de conservation exécutée (horloge simulée)", false, String(err?.message ?? err).slice(0, 300)); }
   const apres = await sql.query("SELECT erased_at, work_email, display_name FROM people WHERE id = (SELECT person_id FROM project_participations WHERE id = $1)", [contact2.body?.id]);

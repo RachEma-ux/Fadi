@@ -1,8 +1,7 @@
 import { and, eq, gt, isNull } from "drizzle-orm";
 import type { Request, Response } from "express";
 import { db } from "../db/client.js";
-import { people, projectEffectiveAccess, projectMembers, projectParticipations, projectSupportGrants, projects, users, type EditingLock } from "../db/schema.js";
-import type { Tx } from "./step-rows.js";
+import { projectEffectiveAccess, projectSupportGrants, projects, users, type EditingLock } from "../db/schema.js";
 
 /**
  * Accès à un projet, vérifié côté serveur à chaque route — jamais seulement
@@ -128,18 +127,6 @@ export async function loadProjectAccess(projectId: string, userId: string, execu
   if (row.role) return { ...row.project, role: row.role, canExport: row.canExport ?? false, canApprove: row.canApprove ?? false, canPublish: row.canPublish ?? false };
   if (await activeSupportGrant(projectId, userId, executor)) return { ...row.project, role: "support", canExport: false, canApprove: false, canPublish: false };
   return null;
-}
-
-/**
- * Verrouille (FOR SHARE) ce dont dépend l'accès d'un compte dans une écriture : sa ligne de partage et ses
- * participations au projet. Une révocation, une suspension ou une fin de participation concurrente attend le commit.
- */
-export async function lockAccessRows(tx: Tx, projectId: string, userId: string): Promise<void> {
-  await tx.select({ userId: projectMembers.userId }).from(projectMembers)
-    .where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, userId))).for("share");
-  await tx.select({ id: projectParticipations.id }).from(projectParticipations)
-    .innerJoin(people, eq(people.id, projectParticipations.personId))
-    .where(and(eq(projectParticipations.projectId, projectId), eq(people.userId, userId))).for("share", { of: projectParticipations });
 }
 
 /**

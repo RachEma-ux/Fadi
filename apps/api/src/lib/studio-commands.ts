@@ -6,7 +6,8 @@ import { applyStudioCommands, comparerDocumentsStudio, exportStudioDxf, exportSt
 import { db } from "../db/client.js";
 import { studioRevisions, studioStudies, studioVariants, type StudioContext, type StudioExampleInstall, type StudioProvenance } from "../db/schema.js";
 import { newId } from "./ids.js";
-import { loadProjectAccess, lockAccessRows, projectAccessRefusal, type AccessibleProject, type ProjectNeed } from "./owned-project.js";
+import { lockAccessRows } from "./access-locks.js";
+import { loadProjectAccess, projectAccessRefusal, type AccessibleProject, type ProjectNeed } from "./owned-project.js";
 import { orchestrerCommandesDansTransaction, type Tx } from "./atelier-validation.js";
 import { lockProject, type Querier } from "./step-rows.js";
 
