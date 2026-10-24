@@ -238,6 +238,11 @@ Statut : **validées le 2026-10-22** par le maître d'ouvrage. Seule exception p
 | **D-7** Schémas et rôles | Amendement du 2026-10-22 : schémas `public` / `auth` / `admin`, rôles `fadi_owner`, `fadi_migrator`, `fadi_app`, `fadi_retention`, `fadi_backup` au moindre privilège — voir [AMENDEMENT-D7.md](AMENDEMENT-D7.md), qui prime pour l'emplacement des tables et les droits. | Phases 1, 6 |
 | **D-6** Mots de passe et MFA | **12 caractères min.**, 128 max., sans règles de composition, liste de mots de passe compromis, pas d'expiration. **TOTP facultatif** pour les utilisateurs, **obligatoire pour les admins** + 10 codes de secours. Session admin ≤ 24 h et 1 h d'inactivité ; utilisateur ≤ 30 j. | Phases 1, 2, 3, 5 |
 
+**Amendement de D-5 (2026-10-24, maître d'ouvrage, [DECISIONS.md](DECISIONS.md) UM-27)** : corbeille d'administration
+des comptes en suppression programmée (« Restaurer » par la voie du lien d'annulation) et « Anonymiser maintenant »
+(administrateur, compte de la corbeille seulement, même anonymisation que la tâche des 30 jours, double confirmation,
+journalisé). Le délai de 30 jours reste la règle par défaut. Comptes seulement : ni projets ni documents.
+
 ## Annexe B — Prérequis de gouvernance
 
 - Activer la protection de branche sur `main` (Issue #146) **avant** de fusionner les phases 2 à 4.

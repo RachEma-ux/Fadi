@@ -9,6 +9,8 @@ Mis à jour : 2026-10-24 (UTC).
 - Branche / PR : [PR #255](https://github.com/RachEma-ux/Fadi/pull/255) **fusionnée** dans `main` le 2026-10-23 (commit `516e2f7`,
   par le maître d'ouvrage) ; branche de tâche `ccr-266c1e83-7780ml` supprimée après fusion, recréée depuis `main` pour ce
   consignement (PR #259, #263 et la présente mise à jour du suivi).
+- **UM-27 (2026-10-24)** : branche `feat/253-corbeille-anonymiser` (depuis `main` à `c201d2b`), [PR #270](https://github.com/RachEma-ux/Fadi/pull/270) vers `main`
+  **non fusionnée** — corbeille des comptes et « Anonymiser maintenant » (amendement de D-5, DECISIONS.md).
 - Dernier commit vérifié : à relever en début de session ; ne pas réutiliser un SHA périmé.
 
 ## Dernier état vérifié
@@ -25,6 +27,8 @@ Mis à jour : 2026-10-24 (UTC).
 
 ## Prochaine action
 
+- UM-27 : CI de la PR #270 verte sur `4aa7d0b` (DB-3 : 123 tests dans les 12 suites) ; revérifier la CI du HEAD courant,
+  fusion demandée par le maître d'ouvrage le 2026-10-24 (« fusionne #270 ») après CI verte du commit de fusion de `main`. Aucun déploiement sans son accord (aucune migration ajoutée).
 - UM-28 (2026-10-24) : PR « courriel en préproduction, domaines réservés jamais envoyés » (branche
   `feat/preprod-courriel`) **ouverte, non fusionnée** ; après fusion par le maître d'ouvrage et déploiement, l'administrateur
   ajoute les variables `PREPROD_MAIL_*` / `PREPROD_SMTP_*` à `/opt/fadi-preprod/env/.env.preprod` puis
@@ -45,9 +49,13 @@ Mis à jour : 2026-10-24 (UTC).
 - `BASE_URL=… DATABASE_URL=<base vierge> COMPTES_SECURITE_BASE_VIERGE=1 node apps/web/e2e/comptes-securite.mjs`
   (correctifs de sécurité ; sans la variable, les courses du dernier administrateur sont déclarées non exécutées).
 - `npx --workspace=@fadi/api vitest run src/lib` ; `npm run typecheck` ; `npm run build`.
+- UM-27 : `comptes-securite.mjs` section 5 (corbeille), `comptes-admin.mjs` (corbeille et passe anglaise),
+  `app.test.ts` « 5. corbeille » (DB-3), `apps/web/src/components/comptes/icones-admin.test.ts` (règle d'or).
 
 ## Risques et blocages
 
+- UM-27 : « Anonymiser maintenant » est irréversible et supprime aussitôt les projets non partagés du compte ; pas de
+  corbeille de projets (hors périmètre, signalé au maître d'ouvrage).
 - UM-28 : `MAIL_ALLOW_RESERVED_DOMAINS=true` fait refuser le démarrage en production ; ne jamais le poser hors CI / dev.
 
 - Déploiement après fusion : nouveau service `migrate` (usage unique) dans `docker-compose.yml` ; l'API ne reçoit plus

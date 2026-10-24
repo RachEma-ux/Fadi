@@ -16,7 +16,42 @@ D7-final et final : **clos** par la décision de fusion du maître d'ouvrage (20
 PR #255 n'est attendue. Reste au maître d'ouvrage : le déploiement en production. UM-1 est levé (UM-25) : le chantier
 « Organisations, participation et revue externe » est ouvert ([Issue #262](https://github.com/RachEma-ux/Fadi/issues/262)).
 
+**Amendement de D-5 (UM-27, 2026-10-24) : implémenté, vérifié en local et en CI (`4aa7d0b`), [PR #270](https://github.com/RachEma-ux/Fadi/pull/270) vers `main` (non fusionnée, aucun
+déploiement).** Corbeille des comptes et « Anonymiser maintenant » dans `/admin/utilisateurs` — voir la section UM-27.
+
 ## Faits vérifiés
+
+### Corbeille et « Anonymiser maintenant » (UM-27, 2026-10-24)
+
+Branche `feat/253-corbeille-anonymiser`, depuis `main` à `c201d2b`. Vérifié en local sur PostgreSQL 16 + PostGIS 3
+(API construite en `fadi_app`, servant `WEB_DIST`, courriels vers Mailpit v1.20.4, même configuration que la CI) :
+
+- `npm run typecheck` : vert. `npm run build` : vert.
+- `npm test` : tous les paquets et le web verts (dont `icones-admin.test.ts`, 4 tests, règle d'or) ; API : 454 tests purs
+  verts (dont 7 nouveaux dans `lib/security/security.test.ts`) ; les 12 suites DB-3 refusées par la garde **seule**
+  (`TARGET_REQUIRED`), comme attendu sans la clé `fadi-ci-db3`.
+- `app.test.ts` sur une base jetable locale attestée par `scripts/db3/preparer-base-test.mjs` : **77 tests verts** (78 après le correctif ci-dessous), dont
+  les 6 nouveaux de « 5. corbeille et Anonymiser maintenant » (refus, appels simultanés, restaurer contre anonymiser,
+  statut suspendu rétabli, administrateur de la corbeille). L'autorité de signature locale a été ajoutée au registre
+  **dans la copie de travail seulement**, puis retirée (`git checkout`) : elle n'est pas dans le dépôt ; la preuve
+  opposable reste DB-3 en CI.
+- `comptes-api.mjs` : vert (inchangé). `comptes-securite.mjs` : **71 contrôles verts**, section 5 comprise (26 contrôles :
+  corbeille, demandeur, refus, journal, double appel, appels simultanés, restauration d'un compte suspendu, projets
+  partagés). Les courses du dernier administrateur restent NON EXÉCUTÉES hors base vierge (inchangé).
+- `comptes-admin.mjs` : **64 contrôles verts** (corbeille listée, icône propre sur chaque commande, « Restaurer »,
+  « Anonymiser maintenant » avec bouton inactif tant que l'adresse n'est pas ressaisie, axe-core sur la corbeille et la
+  boîte de confirmation, passe anglaise de la corbeille et de la confirmation).
+- Constat corrigé pendant la recette : `/admin/trash` tombait dans le repli SPA (l'API ne recevait que `/admin/users*` et
+  `/admin/invitations*`) ; ajouté à `API_PREFIX`, au montage `/admin` (`app.ts`) et au mandataire de Vite.
+- Revue Codex de `15f1935` (P2) : le lien d'annulation verrouillait le jeton puis le compte, « Restaurer » le compte puis
+  le jeton — interblocage possible entre les deux voies simultanées. Corrigé : `/auth/cancel-deletion` lit le jeton,
+  verrouille la ligne du compte, puis consomme le jeton (même ordre que la restauration et l'anonymisation). Test DB-3
+  ajouté (lien et « Restaurer » simultanés, 5 fois : exactement l'un des deux) ; `app.test.ts` **78 tests verts** sur base
+  jetable locale ; `comptes-api.mjs` et `comptes-securite.mjs` verts sur l'API reconstruite.
+- Aucune migration : aucune colonne ni table ajoutée ; le déploiement de cette PR ne change pas RUNBOOK.md.
+- **CI de la PR #270 verte sur `4aa7d0b`** (run CI 40105186547 et les 5 autres workflows, 2026-10-24 15:02–15:16 UTC) :
+  `validate` avec DB-3 actif (clé `fadi-ci-db3`) — 577 tests API, dont **123 dans les 12 suites DB-3** (116 + 7 nouveaux) ;
+  `image`, Studio V1 et les cinq tranches e2e (`complements` : `comptes-api`, `comptes-securite`, `comptes-admin`) vertes.
 
 ### Phase 0 — concept et audit
 
@@ -237,6 +272,11 @@ par la session d'exploitation du VPS.
   Les « 7 acteurs » de la matrice Studio sont le non-membre plus six situations de membre.
 
 ## Points ouverts
+
+- UM-27 : CI verte sur `4aa7d0b` ; fusion demandée par le maître d'ouvrage le 2026-10-24 (« fusionne #270 »), après fusion de `main` (UM-28) dans la branche et CI verte ; déploiement non demandé ; aucune fusion ni déploiement par la session.
+- UM-27, signalé : pas de corbeille pour les projets ni les documents (hors périmètre de la décision ; le concept ne
+  l'exige pas). L'anonymisation supprime les projets non partagés du compte, et « Anonymiser maintenant » avance cette
+  suppression : à trancher par le maître d'ouvrage s'il veut une corbeille de projets.
 
 - UM-1 : levé le 2026-10-23 (UM-25), chantier ouvert ([Issue #262](https://github.com/RachEma-ux/Fadi/issues/262), `../organisations-participation/`).
 - UM-17 : DB-3 livré par la PR #256 et raccordé à D-7 ; **12 suites vertes en CI** sur `570d248` (section DB-3).

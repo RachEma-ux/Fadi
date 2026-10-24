@@ -6,7 +6,9 @@
 
 ## En cours
 
-- Aucune tâche en cours : code fusionné, préproduction déployée ; le déploiement en production attend le maître d'ouvrage.
+- [ ] UM-27 — Corbeille des comptes et « Anonymiser maintenant » (amendement de D-5, 2026-10-24) : implémenté et vérifié
+  en local (STATUS.md) ; [PR #270](https://github.com/RachEma-ux/Fadi/pull/270) vers `main` ouverte, CI verte sur `4aa7d0b` ; fusion demandée par le maître d'ouvrage le 2026-10-24 ; pas de fusion ni de
+  déploiement par la session (Issue : #253).
 
 ## Terminé
 

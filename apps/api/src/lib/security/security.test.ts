@@ -175,7 +175,7 @@ describe("acceptation d'une invitation (UM-3)", () => {
   it("casse de l'adresse indifférente", () => { expect(invitationRefusal(inv, { ...account, email: "Invitee@Example.test" }, true, now)).toBeNull(); });
 });
 
-import { anonymisationDue, anonymisedEmail } from "./deletion.js";
+import { anonymisationAt, anonymisationDue, anonymisedEmail, anonymiseNowRefusal, deletionRequester } from "./deletion.js";
 describe("suppression (D-5)", () => {
   const req = new Date("2026-10-01T00:00:00Z");
   it("anonymisation due à 30 jours exactement, pas avant (horloge simulée)", () => {
@@ -185,5 +185,39 @@ describe("suppression (D-5)", () => {
   });
   it("adresse de remplacement non routable, sans l'ancienne adresse", () => {
     expect(anonymisedEmail("user_1")).toBe("deleted-user_1@invalid");
+  });
+});
+
+describe("corbeille et « Anonymiser maintenant » (UM-27, amendement de D-5)", () => {
+  const req = new Date("2026-10-01T00:00:00Z");
+  const ok = { status: "active" as const, deletionRequestedAt: req, email: "titulaire@example.test", confirmEmail: "titulaire@example.test", sharedProjects: 0, removesLastAdmin: false };
+  it("date d'anonymisation prévue : fin des 30 jours de grâce, cohérente avec la tâche", () => {
+    expect(anonymisationAt(req).toISOString()).toBe("2026-10-31T00:00:00.000Z");
+    expect(anonymisationDue(req, anonymisationAt(req))).toBe(true);
+  });
+  it("demandeur lu dans le journal : titulaire ou administrateur", () => {
+    expect(deletionRequester("account.deletion.requested")).toBe("user");
+    expect(deletionRequester("admin.user.deletion_requested")).toBe("admin");
+    expect(deletionRequester(undefined)).toBeNull();
+  });
+  it("compte de la corbeille, adresse ressaisie (casse indifférente) : accepté", () => {
+    expect(anonymiseNowRefusal(ok)).toBeNull();
+    expect(anonymiseNowRefusal({ ...ok, confirmEmail: " Titulaire@Example.TEST " })).toBeNull();
+    expect(anonymiseNowRefusal({ ...ok, status: "suspended" })).toBeNull();
+  });
+  it("hors de la corbeille : refus (jamais d'anonymisation sans suppression programmée)", () => {
+    expect(anonymiseNowRefusal({ ...ok, deletionRequestedAt: null })).toBe("not_in_trash");
+  });
+  it("déjà anonymisé ou inconnu : refus (irréversible, double appel sans effet)", () => {
+    expect(anonymiseNowRefusal({ ...ok, status: "closed" })).toBe("already_anonymized");
+    expect(anonymiseNowRefusal({ ...ok, status: null })).toBe("not_found");
+  });
+  it("adresse ressaisie différente : refus", () => {
+    expect(anonymiseNowRefusal({ ...ok, confirmEmail: "autre@example.test" })).toBe("confirmation_mismatch");
+    expect(anonymiseNowRefusal({ ...ok, confirmEmail: "" })).toBe("confirmation_mismatch");
+  });
+  it("mêmes refus que la tâche et la suppression : projets partagés possédés, dernier administrateur", () => {
+    expect(anonymiseNowRefusal({ ...ok, sharedProjects: 1 })).toBe("owns_shared_projects");
+    expect(anonymiseNowRefusal({ ...ok, removesLastAdmin: true })).toBe("last_admin");
   });
 });

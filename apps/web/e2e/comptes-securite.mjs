@@ -13,6 +13,10 @@
  *  3. Accès support sans export : routes de documents, archive, téléchargements, GET / HEAD, barre oblique finale,
  *     identifiant encodé en pourcent, casse ; refus avant toute production, trace de production ou copie ; lectures
  *     permises et journalisées ; propriétaire et lecteur gardent l'export.
+ *  4. Échecs de connexion simultanés : compteur incrémenté atomiquement.
+ *  5. Corbeille et « Anonymiser maintenant » (UM-27, amendement de D-5) : liste, demandeur, restauration par la voie
+ *     d'annulation (statut antérieur rétabli), refus (hors corbeille, soi-même, adresse non ressaisie, projets partagés,
+ *     non-administrateur), même anonymisation que la tâche des 30 jours, journal, double appel et appels simultanés.
  *
  *   BASE_URL=http://localhost:3001 DATABASE_URL=postgresql://…@127.0.0.1/… node apps/web/e2e/comptes-securite.mjs
  *   (API lancée avec FADI_ADMIN_ENABLED=true, FADI_ENCRYPTION_KEY, MAIL_TRANSPORT=console ou smtp)
@@ -352,6 +356,87 @@ const attempts = await Promise.all(Array.from({ length: 5 }, () => agent().call(
 check('cinq échecs simultanés : tous refusés (401)', attempts.every((r) => r.status === 401), attempts.map((r) => r.status));
 const counted = (await sql.query('SELECT failed_login_count, locked_until FROM users WHERE id = $1', [victim.id])).rows[0];
 check('cinq échecs simultanés : compteur à 5, compte verrouillé', counted.failed_login_count === 5 && counted.locked_until !== null, counted);
+
+// =====================================================================================================================
+// 5. Corbeille et « Anonymiser maintenant » (UM-27, amendement de D-5)
+// =====================================================================================================================
+console.log('— 5. Corbeille et anonymisation immédiate');
+const keeper = await register('corbeille-admin');
+promote(keeper.email);
+await enableMfa(keeper, (await passwordLogin(keeper)).b);
+const K = await mfaLogin(keeper);
+const trashOf = async (id) => (await K.call('GET', '/admin/trash')).body?.items?.find((i) => i.id === id);
+
+// Demandée par le titulaire.
+const leaver = await register('corbeille-titulaire');
+const leaverProject = (await leaver.a.call('POST', '/projects', { code: `TR-${uid().slice(0, 4)}`, name: 'Projet non partagé' })).body;
+await leaver.a.call('POST', `/projects/${leaverProject.id}/collaboration/comments`, { body: 'Note conservée' });
+check('titulaire : suppression programmée', (await leaver.a.call('DELETE', '/auth/me', { password: leaver.password, confirm: 'SUPPRIMER' })).status === 202);
+const inTrash = await trashOf(leaver.id);
+const expected = new Date((await userRow(leaver.id)).deletion_requested_at).getTime() + 30 * 864e5;
+check('corbeille : compte listé, demandeur « titulaire », statut antérieur, date d’anonymisation à +30 jours',
+  inTrash?.requestedBy?.kind === 'user' && inTrash.status === 'active' && new Date(inTrash.anonymisationAt).getTime() === expected && inTrash.sharedProjects === 0, inTrash);
+const anyone = await register('corbeille-non-admin');
+check('non-administrateur : corbeille et anonymisation → 404', (await anyone.a.call('GET', '/admin/trash')).status === 404
+  && (await anyone.a.call('POST', `/admin/users/${leaver.id}/anonymize`, { confirmEmail: leaver.email })).status === 404 && (await anyone.a.call('POST', `/admin/users/${leaver.id}/restore`)).status === 404);
+check('anonymisation sans adresse : 400', (await K.call('POST', `/admin/users/${leaver.id}/anonymize`, {})).status === 400);
+const mismatch = await K.call('POST', `/admin/users/${leaver.id}/anonymize`, { confirmEmail: anyone.email });
+check('adresse ressaisie différente : 422, rien n’est anonymisé', mismatch.status === 422 && mismatch.body?.error === 'confirmation_mismatch' && (await userRow(leaver.id)).status === 'active', mismatch);
+const outside = await K.call('POST', `/admin/users/${anyone.id}/anonymize`, { confirmEmail: anyone.email });
+check('compte hors corbeille : 409 not_in_trash, rien n’est anonymisé', outside.status === 409 && outside.body?.error === 'not_in_trash' && (await userRow(anyone.id)).status === 'active', outside);
+check('soi-même : 422 self_action', (await K.call('POST', `/admin/users/${keeper.id}/anonymize`, { confirmEmail: keeper.email })).body?.error === 'self_action');
+const now1 = await K.call('POST', `/admin/users/${leaver.id}/anonymize`, { confirmEmail: leaver.email.toUpperCase() });
+check('« Anonymiser maintenant » : 200 (adresse ressaisie, casse indifférente)', now1.status === 200 && now1.body?.anonymized === true, now1);
+const gone = (await sql.query('SELECT email, display_name, status, password_hash, totp_secret_enc FROM users WHERE id = $1', [leaver.id])).rows[0];
+check('même anonymisation que la tâche des 30 jours : adresse, nom, mot de passe, statut', gone.status === 'closed' && gone.email === `deleted-${leaver.id}@invalid` && gone.display_name === 'Compte supprimé' && gone.password_hash === '!anonymised', gone);
+check('projet non partagé supprimé, sessions supprimées', Number((await sql.query('SELECT count(*)::int AS n FROM projects WHERE id = $1', [leaverProject.id])).rows[0].n) === 0
+  && Number((await sql.query('SELECT count(*)::int AS n FROM sessions WHERE user_id = $1', [leaver.id])).rows[0].n) === 0);
+const entry = (await sql.query("SELECT actor_id, metadata::text AS m FROM admin.audit_log WHERE action = 'admin.user.anonymized_now' AND target_id = $1", [leaver.id])).rows;
+check('journal : une entrée admin.user.anonymized_now, acteur = administrateur, sans adresse', entry.length === 1 && entry[0].actor_id === keeper.id && !entry[0].m.includes('@')
+  && (await auditCount('account.anonymized', leaver.id)) === 0, entry);
+const again = await K.call('POST', `/admin/users/${leaver.id}/anonymize`, { confirmEmail: leaver.email });
+check('second appel : 409 already_anonymized, aucune seconde entrée au journal', again.status === 409 && again.body?.error === 'already_anonymized' && (await auditCount('admin.user.anonymized_now', leaver.id)) === 1, again);
+check('compte anonymisé : absent de la corbeille, restauration refusée', !(await trashOf(leaver.id)) && (await K.call('POST', `/admin/users/${leaver.id}/restore`)).body?.error === 'already_anonymized');
+check('ancienne adresse : connexion impossible', (await agent().call('POST', '/auth/login', { email: leaver.email, password: leaver.password })).status === 401);
+
+// Demandée par l'administration, sur un compte suspendu : « Restaurer » rétablit le statut antérieur.
+const paused = await register('corbeille-suspendu');
+await K.call('POST', `/admin/users/${paused.id}/suspend`);
+const byAdmin = await K.call('DELETE', `/admin/users/${paused.id}`);
+check('administration : suppression programmée d’un compte suspendu', byAdmin.status === 202, byAdmin);
+const pausedItem = await trashOf(paused.id);
+check('corbeille : demandeur « administrateur » nommé, statut antérieur « suspendu »', pausedItem?.requestedBy?.kind === 'admin' && pausedItem.requestedBy.actorId === keeper.id && pausedItem.requestedBy.actorEmail === keeper.email && pausedItem.status === 'suspended', pausedItem);
+const restored = await K.call('POST', `/admin/users/${paused.id}/restore`);
+const pausedRow = await userRow(paused.id);
+check('« Restaurer » : suppression annulée, statut antérieur (suspendu) rétabli', restored.status === 200 && pausedRow.status === 'suspended' && pausedRow.deletion_requested_at === null, { restored, pausedRow });
+check('restauration journalisée (admin.user.deletion_cancelled), liens d’annulation consommés', (await auditCount('admin.user.deletion_cancelled', paused.id)) === 1
+  && Number((await sql.query("SELECT count(*)::int AS n FROM auth.account_tokens WHERE user_id = $1 AND purpose = 'cancel_deletion' AND used_at IS NULL", [paused.id])).rows[0].n) === 0);
+check('restaurer deux fois : 409 not_in_trash', (await K.call('POST', `/admin/users/${paused.id}/restore`)).body?.error === 'not_in_trash');
+check('restauré : absent de la corbeille', !(await trashOf(paused.id)));
+
+// Projets partagés possédés : la tâche des 30 jours et « Anonymiser maintenant » refusent pareillement.
+const sharer = await register('corbeille-partage');
+const sharedProject = (await sharer.a.call('POST', '/projects', { code: `SH-${uid().slice(0, 4)}`, name: 'Projet partagé' })).body;
+await sharer.a.call('DELETE', '/auth/me', { password: sharer.password, confirm: 'SUPPRIMER' });
+// Partage apparu pendant le délai (horloge et données simulées sur la base jetable) : bloque l'anonymisation.
+await sql.query("INSERT INTO project_members (project_id, user_id, role, invited_by) VALUES ($1, $2, 'lecteur', 'recette')", [sharedProject.id, anyone.id]);
+check('corbeille : projets partagés signalés', (await trashOf(sharer.id))?.sharedProjects === 1);
+const blocked = await K.call('POST', `/admin/users/${sharer.id}/anonymize`, { confirmEmail: sharer.email });
+check('projets partagés possédés : 409, rien n’est anonymisé', blocked.status === 409 && blocked.body?.error === 'owns_shared_projects' && blocked.body.projects?.some((p) => p.id === sharedProject.id) && (await userRow(sharer.id)).status === 'active', blocked);
+await sql.query('DELETE FROM project_members WHERE project_id = $1', [sharedProject.id]);
+
+// Appels simultanés : un seul aboutit (verrou d'éligibilité puis verrou de ligne), un seul journal.
+const twice = await Promise.all([1, 2].map(() => K.call('POST', `/admin/users/${sharer.id}/anonymize`, { confirmEmail: sharer.email })));
+check('deux appels simultanés : un 200, un 409 already_anonymized', twice.map((r) => r.status).sort().join() === '200,409' && twice.some((r) => r.body?.error === 'already_anonymized'), twice.map((r) => [r.status, r.body?.error]));
+check('appels simultanés : une seule entrée au journal', (await auditCount('admin.user.anonymized_now', sharer.id)) === 1);
+
+// Administrateur en suppression programmée : déjà hors des administrateurs actifs, son anonymisation ne retire personne.
+const second = await register('corbeille-second-admin');
+promote(second.email);
+check('second administrateur : suppression programmée', (await K.call('DELETE', `/admin/users/${second.id}`)).status === 202);
+const activeBefore = await activeAdminCount();
+check('administrateur de la corbeille : anonymisé, rôle retiré, administrateurs actifs inchangés', (await K.call('POST', `/admin/users/${second.id}/anonymize`, { confirmEmail: second.email })).status === 200
+  && (await userRow(second.id)).platform_role === 'user' && (await activeAdminCount()) === activeBefore);
 
 await sql.end();
 if (failures) {

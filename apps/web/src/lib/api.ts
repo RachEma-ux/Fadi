@@ -260,6 +260,12 @@ export interface AdminUser {
 }
 export interface AdminUsersPage { users: AdminUser[]; total: number; page: number; pageSize: number }
 export interface AdminUsersFilters { q?: string; status?: AdminStatus | ""; role?: "user" | "admin" | ""; page?: number; pageSize?: number }
+/** Corbeille (UM-27) : compte en suppression programmée, restaurable jusqu'à son anonymisation. `status` = statut antérieur. */
+export interface AdminTrashItem {
+  id: string; email: string; displayName: string | null; platformRole: "user" | "admin"; status: "active" | "suspended";
+  deletionRequestedAt: string; anonymisationAt: string; sharedProjects: number;
+  requestedBy: { kind: "user" | "admin"; actorId: string | null; actorEmail: string | null } | null;
+}
 export interface AdminAuditEntry { id: number; action: string; actorId: string | null; targetType: string | null; targetId: string | null; metadata: Record<string, unknown>; ip: string | null; createdAt: string }
 export interface AdminUserDetail {
   user: AdminUser;
@@ -318,6 +324,9 @@ export const accountApi = {
   adminReactivate: (id: string) => request<{ user: AdminUser }>(`/admin/users/${encodeURIComponent(id)}/reactivate`, { method: "POST" }),
   adminRevokeSessions: (id: string) => request<{ revoked: number }>(`/admin/users/${encodeURIComponent(id)}/revoke-sessions`, { method: "POST" }),
   adminDelete: (id: string) => request<{ deletionAt: string; mail?: { queued: boolean; link?: string } }>(`/admin/users/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  adminTrash: () => request<{ graceDays: number; items: AdminTrashItem[] }>("/admin/trash"),
+  adminRestore: (id: string) => request<{ user: AdminUser }>(`/admin/users/${encodeURIComponent(id)}/restore`, { method: "POST" }),
+  adminAnonymize: (id: string, confirmEmail: string) => request<{ anonymized: true; userId: string }>(`/admin/users/${encodeURIComponent(id)}/anonymize`, json({ confirmEmail })),
   adminInvite: (email: string) => request<InvitationCreated>("/admin/users/invitations", json({ email })),
   adminInvitations: (status?: InvitationStatus) => request<{ invitations: InvitationView[] }>(`/admin/invitations${query({ status })}`),
   adminCancelInvitation: (id: string) => request<void>(`/admin/invitations/${encodeURIComponent(id)}`, { method: "DELETE" }),
