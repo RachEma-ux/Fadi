@@ -50,7 +50,8 @@ if (process.env.DATABASE_URL) {
 }
 
 /** Lien d'invitation : rendu par l'API quand aucun courriel n'est parti (D-1), sinon lu dans Mailpit ou le journal. */
-async function invitationLink(response, to) {
+/** `exclude` : lien déjà connu (renvoi) — on attend le courriel suivant, la file d'envoi étant asynchrone. */
+async function invitationLink(response, to, exclude = null) {
   if (response.mail?.link) return response.mail.link;
   for (let i = 0; i < 120; i++) {
     if (process.env.MAILPIT_URL) {
@@ -59,14 +60,14 @@ async function invitationLink(response, to) {
       for (const m of list?.messages ?? []) {
         const full = await fetch(`${base}/api/v1/message/${m.ID}`).then((r) => r.json()).catch(() => null);
         const hit = (full?.Text ?? "").match(/https?:\/\/\S*\/compte\/invitation#jeton=[\w%-]+/);
-        if (hit) return hit[0];
+        if (hit && hit[0] !== exclude) return hit[0];
       }
     }
     for (const file of (process.env.MAIL_LOG ?? "").split(",").filter(Boolean)) {
       if (!existsSync(file)) continue;
       const line = readFileSync(file, "utf8").split("\n").filter((l) => l.includes('"mail (console)"') && l.includes(to)).pop();
       const hit = line && (JSON.parse(line).text ?? "").match(/https?:\/\/\S*\/compte\/invitation#jeton=[\w%-]+/);
-      if (hit) return hit[0];
+      if (hit && hit[0] !== exclude) return hit[0];
     }
     await new Promise((r) => setTimeout(r, 500));
   }
@@ -128,12 +129,13 @@ try {
   const invBob = await alice.call("post", `/organizations/${orgId}/invitations`, { email: bob.email, role: "membre", jobTitle: "Architecte" });
   check("invitation d'un compte existant : 202, aucune adhésion avant acceptation", invBob.status === 202 && invBob.body.invitation.purpose === "organization_membership");
   check("avant acceptation : bob n'a pas accès à l'organisation (404)", (await bob.call("get", `/organizations/${orgId}`)).status === 404);
-  const firstToken = tokenOf(await invitationLink(invBob.body, bob.email));
+  const firstLink = await invitationLink(invBob.body, bob.email);
+  const firstToken = tokenOf(firstLink);
   const invBob2 = await alice.call("post", `/organizations/${orgId}/invitations`, { email: bob.email, role: "membre", jobTitle: "Architecte" });
   check("renvoi : la même invitation, renouvelée", invBob2.body.resent === true && invBob2.body.invitation.id === invBob.body.invitation.id);
   check("renvoi : l'ancien lien est inopérant (404)", (await bob.call("post", "/auth/invitations/lookup", { token: firstToken })).status === 404);
   // Lien du renvoi : rendu par l'API, sinon le DERNIER courriel (Mailpit ou journal).
-  const tokenForBob = tokenOf(await invitationLink(invBob2.body, bob.email));
+  const tokenForBob = tokenOf(await invitationLink(invBob2.body, bob.email, firstLink));
   const look = await bob.call("post", "/auth/invitations/lookup", { token: tokenForBob });
   check("lecture de l'invitation : organisation et rôle proposés", look.body?.invitation?.organizationName === `Atelier Nord ${RUN}` && look.body.invitation.organizationRole === "membre");
   const wrong = await dave.call("post", "/auth/invitations/accept", { token: tokenForBob });
