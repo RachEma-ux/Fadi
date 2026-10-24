@@ -5,7 +5,9 @@ Mis à jour : 2026-10-24 (UTC).
 ## État
 
 **Implémenté, vérifié et fusionné dans `main`** (PR #285, commit de fusion `173b9f1`, 2026-10-24, à la demande du maître
-d'ouvrage) — CI verte sur `a5ef51b`. Décisions COM-D1 à COM-D14 **acceptées** (COM-R2). **Non déployé.**
+d'ouvrage) — CI verte sur `a5ef51b`. Décisions COM-D1 à COM-D14 **acceptées** (COM-A2). **Non déployé.**
+
+**Lot COM-13 (photos et épingles, COM-A3) : implémenté et vérifié en local, PR à suivre ; non fusionné, non déployé.**
 
 ## Faits vérifiés
 
@@ -31,6 +33,13 @@ Le 2026-10-24, sur la branche `ccr-a50667e3-fng2br`, avec une base PostGIS local
   une variante, document inconnu refusé) — recette rejouée : tout conforme.
 - Recette `apps/web/e2e/interface-anglais.mjs` (page `/boite` ajoutée) : verte, aucun résidu français venant de COM.
 - `check-fadi-isolation.mjs` : vert.
+
+- Lot COM-13 (2026-10-24, local, PostGIS jetable) : `npm run typecheck` vert ; tests web 984 verts ; tests API purs
+  verts (`com-images.test.ts` 5, matrice Studio régénérée, garde des volumes) et `check-api-tests-db3.mjs` conforme ;
+  `npm run build` vert ; migration rejouée deux fois ; `communication.mjs` entièrement conforme (§ 13 : métadonnées
+  retirées, 413 / 415 / 422, rejeu, photo non jointe réservée à l'auteur, épingle sur révision exacte, position
+  geographic, photo d'un fil d'équipe refusée au lecteur, recopie au partage, observation reprenant la révision, photo
+  d'un message retiré non servie ; § 11 : photo jointe et épingle posée depuis l'interface) ; `interface-anglais.mjs` vert.
 
 ## Points ouverts
 

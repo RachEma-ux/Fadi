@@ -15,7 +15,8 @@ Mis à jour : 2026-10-24 (UTC).
 
 ## Prochaine action
 
-- Décisions COM-D1 à COM-D14 acceptées (DECISIONS.md, COM-R2) : rien à obtenir.
+- Lot COM-13 (photos et épingles) : suivre la PR jusqu'au vert ; fusion et déploiement sur accord du maître d'ouvrage.
+- Décisions COM-D1 à COM-D14 acceptées (DECISIONS.md, COM-A2) : rien à obtenir.
 - Déploiement en préproduction puis production : uniquement sur accord explicite.
 - Suites déclarées : TASKS COM-10 à COM-12 (après Organisations phases 2 et 4, et décisions du concept).
 

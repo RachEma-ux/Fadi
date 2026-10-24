@@ -12,6 +12,8 @@ export type CommandeCollaboration =
   | "nouvelle-conversation" | "envoyer-message" | "partager-extrait" | "action-liee" | "audience-conversation" | "accuser-reception" | "nouvelle-demande"
   | "ajouter-participant" | "retirer-participant" | "transferer-animation" | "modifier-message" | "retirer-message"
   | "repondre-demande" | "cloturer-demande" | "rouvrir-demande" | "reattribuer-demande"
+  // Photos et épingles (lot COM-13).
+  | "joindre-photo" | "epingler"
   // Participants et équipe (Issue #262, phase 2).
   | CommandeParticipants;
 
@@ -110,6 +112,10 @@ export const COMMANDES_COLLABORATION: Readonly<Record<CommandeCollaboration, Def
   // Flèche circulaire.
   "rouvrir-demande": { libelle: "Rouvrir la demande", barre: "demande", raccourci: altMajSigne("BracketRight", "]"), icone: ["M3 12a9 9 0 1 0 3-6.7", "M3 4v5h5"] },
   // Flèches opposées (changement de personne).
+  // Appareil photo (lot COM-13).
+  "joindre-photo": { libelle: "Joindre une photo", barre: "conversation", raccourci: altMajSigne("Period", "."), icone: ["M3 8h4l2-3h6l2 3h4v12H3z", "M12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"] },
+  // Punaise de plan (lot COM-13).
+  "epingler": { libelle: "Épingler sur un plan", barre: "conversation", raccourci: altMajSigne("Backquote", "`"), icone: ["M12 22v-7", "M8 3h8l-1 6 3 3v3H6v-3l3-3z"] },
   "reattribuer-demande": { libelle: "Réattribuer la demande", barre: "demande", raccourci: altMajSigne("Semicolon", ";"), icone: ["M16 3h5v5", "M21 3l-7 7", "M8 21H3v-5", "M3 21l7-7"] },
   // --- Participants et équipe (Issue #262, phase 2) ---
   // Nouveau contact : fiche et signe plus.
@@ -174,6 +180,7 @@ export const COMMANDES_COM: readonly CommandeCollaboration[] = [
   "nouvelle-conversation", "envoyer-message", "partager-extrait", "action-liee", "audience-conversation", "accuser-reception", "nouvelle-demande",
   "ajouter-participant", "retirer-participant", "transferer-animation", "modifier-message", "retirer-message",
   "repondre-demande", "cloturer-demande", "rouvrir-demande", "reattribuer-demande",
+  "joindre-photo", "epingler",
 ];
 
 /**

@@ -24,19 +24,24 @@
  *   GET    /activite[?filtre=&auteur=&depuis=&etape=] → activité du projet autorisée (concept « Project activity ») :
  *                                                     messages, demandes, observations, tâches, décisions, revues et
  *                                                     diffusions Studio, chacun avec son libellé et sa source
+ *   POST   /conversations/:id/pieces               → photo brute (JPEG ou PNG, 2 Mo et 2 560 px au plus, en-tête facultatif
+ *                                                     X-Client-Request-Id) : métadonnées retirées, 201 ; rejeu 200 (COM-13)
+ *   GET    /pieces/:id                             → la photo, à qui lit son message (l'auteur seul tant qu'elle n'est pas jointe)
+ *   GET    /plan?studyId&variantId[&revisionId]    → plan SVG d'une révision exacte d'une variante Studio (épingles)
  *   GET    /revues                                  → revues Studio liées (« Requests and reviews ») : état relu à la source
  *
  * Toute route relit l'accès courant (`loadProjectAccess`) : une conversation illisible est introuvable (404).
  */
-import { Router, type NextFunction, type Request, type Response } from "express";
+import { Router, raw, type NextFunction, type Request, type Response } from "express";
+import { exportStudioSvg } from "@parcours/atelier-model";
 import { and, asc, desc, eq, gt, inArray, isNull, ne, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client.js";
 import {
   collabDemandeEvents, studioComments, studioObservationDecisions, studioObservationEvents, studioObservationTaskEvents, studioObservationTasks, studioObservations,
   studioPublicationEvents, studioPublications, studioStudies, studioVariants,
-  collabDemandes, comConversations, comEvents, comLinks, comMessageVersions, comMessages, comParticipants, comReads, comReceipts, users,
-  type ComAudience, type ComRef,
+  comPieces, collabDemandes, comConversations, comEvents, comLinks, comMessageVersions, comMessages, comParticipants, comReads, comReceipts, users,
+  type ComAudience, type ComEpingle, type ComLocalisation, type ComRef,
 } from "../db/schema.js";
 import { audienceSchema, audienceVisible, seesTeam } from "../lib/audience.js";
 import {
@@ -51,7 +56,8 @@ import { creerDemande, lireDemandes } from "../lib/demandes.js";
 import { aujourdHui, enRetard } from "../lib/demandes-regles.js";
 import { newId } from "../lib/ids.js";
 import { loadProjectAccess, projectOr404, type AccessibleProject } from "../lib/owned-project.js";
-import { StudioRequestError } from "../lib/studio-commands.js";
+import { readStudioContext, StudioRequestError } from "../lib/studio-commands.js";
+import { nettoyerPhoto, PhotoRefusee, positionValide } from "../lib/com-images.js";
 import { openStudioObservation } from "../lib/studio-observations-suivi.js";
 import { requireAuth } from "../middleware/require-auth.js";
 
@@ -67,6 +73,7 @@ const endpoint = (f: (req: Request, res: Response) => Promise<void>) => async (r
   try { await f(req, res); }
   catch (e) {
     if (e instanceof ComError || e instanceof StudioRequestError) res.status(e.status).json(e.body);
+    else if (e instanceof PhotoRefusee) res.status(e.status).json({ error: e.code, message: e.message });
     else next(e);
   }
 };
@@ -200,6 +207,9 @@ comRouter.get("/conversations/:conversationId", endpoint(async (req, res) => {
   const receipts = ids.length ? await db.select().from(comReceipts).where(inArray(comReceipts.messageId, ids)) : [];
   const versions = ids.length ? await db.select({ messageId: comMessageVersions.messageId, n: sql<number>`count(*)::int` }).from(comMessageVersions).where(inArray(comMessageVersions.messageId, ids)).groupBy(comMessageVersions.messageId) : [];
   const links = ids.length ? await db.select().from(comLinks).where(inArray(comLinks.messageId, ids)) : [];
+  const pieces = ids.length ? await db.select({ id: comPieces.id, messageId: comPieces.messageId, mime: comPieces.mime, width: comPieces.width, height: comPieces.height, size: comPieces.size }).from(comPieces).where(inArray(comPieces.messageId, ids)).orderBy(asc(comPieces.createdAt)) : [];
+  const variantes = new Map<string, string | null>();
+  for (const m of rows) if (m.epingle && !variantes.has(m.epingle.variantId)) variantes.set(m.epingle.variantId, (await resoudreRefs(access.id, [{ type: "studio-variante", id: m.epingle.variantId }], userId, access.role))[0]?.label ?? null);
   const dest = destinataires(conv.audience, comptes, participations);
   const mails = await emails([...rows.flatMap((m) => [m.authorId, ...m.mentions]), ...participations.keys(), conv.stewardId]);
   const gere = peutGerer(conv.audience, moi, conv.stewardId);
@@ -218,6 +228,10 @@ comRouter.get("/conversations/:conversationId", endpoint(async (req, res) => {
       ackRequired: m.ackRequired, urgent: m.urgent, capturedAt: m.capturedAt?.toISOString() ?? null, createdAt: m.createdAt.toISOString(),
       editedAt: m.editedAt?.toISOString() ?? null, withdrawn: !!m.withdrawnAt, versions: versions.find((v) => v.messageId === m.id)?.n ?? 0, mine,
       partage: m.nature === "partage" && m.sharedFrom ? { depuis: "une autre conversation" } : null,
+      // Photos, épingle et position : jamais redonnées pour un message retiré ; l'accès support ne reçoit aucune photo.
+      pieces: m.withdrawnAt || access.role === "support" ? [] : pieces.filter((x) => x.messageId === m.id).map(({ messageId: _m, ...x }) => x),
+      epingle: m.withdrawnAt || !m.epingle ? null : { ...m.epingle, variante: variantes.get(m.epingle.variantId) ?? null },
+      localisation: m.withdrawnAt ? null : m.localisation,
       moi: { openedAt: moiRecu?.openedAt?.toISOString() ?? null, acknowledgedAt: moiRecu?.acknowledgedAt?.toISOString() ?? null },
       // États de remise (COM-R6) : visibles de l'auteur et du gestionnaire seulement.
       remise: mine || gere ? {
@@ -344,6 +358,9 @@ comRouter.put("/conversations/:conversationId/animateur", endpoint(async (req, r
 // ---------------------------------------------------------------------------------------------------------------------
 // Messages
 
+/** Photos jointes à un même message au plus. */
+export const PIECES_PAR_MESSAGE = 6;
+
 const messageSchema = z.object({
   body: z.string().trim().min(1, "Message vide").max(8000),
   replyToId: idSchema.nullable().optional(),
@@ -353,12 +370,47 @@ const messageSchema = z.object({
   urgent: z.boolean().optional(),
   clientRequestId: z.string().min(1).max(128).optional(),
   capturedAt: z.string().datetime({ offset: true }).optional(),
+  /** Photos déjà téléversées dans cette conversation par l'auteur (COM-13). */
+  pieces: z.array(idSchema).max(PIECES_PAR_MESSAGE).optional(),
+  /** Épingle sur le plan d'une révision exacte (COM-D18). */
+  epingle: z.object({
+    studyId: idSchema, variantId: idSchema, revisionId: idSchema,
+    point: z.object({ x: z.number().finite(), y: z.number().finite() }).strict(),
+    objetIds: z.array(z.string().min(1).max(256)).max(20).optional(),
+  }).strict().optional(),
+  /** Position déclarée par l'auteur (COM-D16), repère geographic. */
+  localisation: z.object({ lat: z.number(), lon: z.number(), precisionM: z.number().nullable().optional(), captureeLe: z.string().datetime({ offset: true }).nullable().optional() }).strict().optional(),
 }).strict();
+
+/** Identifiants des éléments d'une révision Studio (objets, cotes, annotations, architecture) : objets cités d'une épingle. */
+function idsDeRevision(doc: { objects: { id: string }[]; dimensions?: { id: string }[]; annotations?: { id: string }[]; architecture?: { id: string }[] }): Set<string> {
+  return new Set([...doc.objects, ...(doc.dimensions ?? []), ...(doc.annotations ?? []), ...(doc.architecture ?? [])].map((o) => o.id));
+}
+
+/** Épingle validée contre la révision exacte qu'elle cite (lecture Studio de l'auteur), sinon 422. */
+async function epingleValidee(projectId: string, userId: string, e: NonNullable<z.infer<typeof messageSchema>["epingle"]>): Promise<ComEpingle> {
+  let doc;
+  try { doc = (await readStudioContext(db, { projectId, studyId: e.studyId, variantId: e.variantId }, userId, e.revisionId)).revision.document; }
+  catch (err) {
+    if (err instanceof StudioRequestError) throw new ComError(422, { error: "epingle_invalide", message: "La révision épinglée est introuvable dans cette variante." });
+    throw err;
+  }
+  const objetIds = [...new Set(e.objetIds ?? [])];
+  const connus = idsDeRevision(doc as never);
+  const inconnus = objetIds.filter((id) => !connus.has(id));
+  if (inconnus.length) throw new ComError(422, { error: "epingle_invalide", message: "Objet(s) absent(s) de la révision épinglée.", objetIds: inconnus });
+  if (Math.abs(e.point.x) > 1e6 || Math.abs(e.point.y) > 1e6) throw new ComError(422, { error: "epingle_invalide", message: "Point d'épingle hors du plan." });
+  return { type: "studio-variante", studyId: e.studyId, variantId: e.variantId, revisionId: e.revisionId, point: e.point, repere: "local", objetIds };
+}
 
 comRouter.post("/conversations/:conversationId/messages", endpoint(async (req, res) => {
   const userId = req.user!.id;
   const input = corps(messageSchema, req);
-  const contenu = { body: input.body, replyToId: input.replyToId ?? null, refs: input.refs ?? [], mentions: [...new Set(input.mentions ?? [])].sort(), ackRequired: !!input.ackRequired, urgent: !!input.urgent };
+  const contenu = {
+    body: input.body, replyToId: input.replyToId ?? null, refs: input.refs ?? [], mentions: [...new Set(input.mentions ?? [])].sort(), ackRequired: !!input.ackRequired, urgent: !!input.urgent,
+    pieces: [...new Set(input.pieces ?? [])].sort(), epingle: input.epingle ?? null, localisation: input.localisation ?? null,
+  };
+  if (contenu.localisation && !positionValide(contenu.localisation)) throw new ComError(422, { error: "position_invalide", message: "Position hors des bornes WGS84 (latitude ±90°, longitude ±180°) ou précision invalide." });
   const hash = empreinteEnvoi({ conversationId: param(req, "conversationId"), ...contenu });
   const r = await db.transaction(async (tx) => {
     if (input.clientRequestId) {
@@ -381,12 +433,25 @@ comRouter.post("/conversations/:conversationId/messages", endpoint(async (req, r
     const lecteurs = new Map([...comptes.entries()].map(([id, cpt]) => [id, lecteur(id, cpt.role, c.participations)]));
     const tri = trierMentions(contenu.mentions, lecteurs, c.conv.audience);
     if (tri.horsProjet.length) throw new ComError(422, { error: "mention_hors_projet", message: "Une mention ne peut viser qu'un membre du projet : elle n'ouvre aucun accès.", mentions: tri.horsProjet });
+    // Photos : téléversées par l'auteur dans CETTE conversation et encore libres ; une photo absente rend le message
+    // incomplet (la preuve doit être arrivée avant que le message n'apparaisse).
+    if (contenu.pieces.length) {
+      const libres = await tx.select({ id: comPieces.id }).from(comPieces)
+        .where(and(inArray(comPieces.id, contenu.pieces), eq(comPieces.authorId, userId), eq(comPieces.conversationId, c.conv.id), isNull(comPieces.messageId))).for("update");
+      if (libres.length !== contenu.pieces.length) throw new ComError(422, { error: "pieces_invalides", message: "Chaque photo doit avoir été téléversée par vous dans cette conversation et ne pas être déjà jointe." });
+    }
+    const epingle = contenu.epingle ? await epingleValidee(c.access.id, userId, contenu.epingle) : null;
+    const localisation: ComLocalisation | null = contenu.localisation
+      ? { repere: "geographic", lat: contenu.localisation.lat, lon: contenu.localisation.lon, precisionM: contenu.localisation.precisionM ?? null, source: "appareil", captureeLe: contenu.localisation.captureeLe ?? null }
+      : null;
     const id = newId("com_message");
     const now = new Date();
     await tx.insert(comMessages).values({
       id, conversationId: c.conv.id, authorId: userId, body: contenu.body, nature: "message", replyToId: contenu.replyToId, refs: contenu.refs, mentions: contenu.mentions,
       ackRequired: contenu.ackRequired, urgent: contenu.urgent, capturedAt: input.capturedAt ? new Date(input.capturedAt) : null, clientRequestId: input.clientRequestId ?? null, payloadHash: hash, createdAt: now,
+      epingle, localisation,
     });
+    if (contenu.pieces.length) await tx.update(comPieces).set({ messageId: id }).where(inArray(comPieces.id, contenu.pieces));
     await tx.update(comConversations).set({ lastMessageAt: now }).where(eq(comConversations.id, c.conv.id));
     await tx.insert(comReads).values({ conversationId: c.conv.id, userId, lastReadAt: now }).onConflictDoUpdate({ target: [comReads.conversationId, comReads.userId], set: { lastReadAt: now } });
     return { id, replayed: false, sansAcces: tri.sansAcces };
@@ -457,6 +522,81 @@ comRouter.post("/messages/:messageId/accuse", endpoint(async (req, res) => {
 }));
 
 // ---------------------------------------------------------------------------------------------------------------------
+// Photos et épingles (lot COM-13, COM-D15 à COM-D19)
+
+/** Corps brut de 2,5 Mo au plus (la photo nettoyée doit tenir en 2 Mo) ; un corps plus lourd rend 413, jamais 500. */
+const corpsPhoto = raw({ type: () => true, limit: "2560kb" });
+function lirePhoto(req: Request, res: Response, next: NextFunction) {
+  corpsPhoto(req, res, (err?: unknown) => {
+    if (err && (err as { type?: string }).type === "entity.too.large") { res.status(413).json({ error: "photo_trop_lourde", message: "La photo dépasse 2 Mo." }); return; }
+    next(err);
+  });
+}
+
+comRouter.post("/conversations/:conversationId/pieces", lirePhoto, endpoint(async (req, res) => {
+  const userId = req.user!.id;
+  const requete = typeof req.headers["x-client-request-id"] === "string" ? req.headers["x-client-request-id"].slice(0, 128) : null;
+  const c = await chargerConversation(pid(req), param(req, "conversationId"), userId);
+  if (!peutEcrire(c.conv.audience, c.moi)) throw new ComError(403, { error: "forbidden", message: "Lecture seule : vous ne pouvez pas joindre de photo à cette conversation." });
+  const photo = nettoyerPhoto(Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0));
+  const vue = (x: { id: string; mime: string; width: number; height: number; size: number }, replayed: boolean) => ({ id: x.id, mime: x.mime, width: x.width, height: x.height, size: x.size, replayed });
+  if (requete) {
+    const [prev] = await db.select().from(comPieces).where(and(eq(comPieces.authorId, userId), eq(comPieces.clientRequestId, requete))).limit(1);
+    if (prev) {
+      if (prev.empreinte !== photo.sha256 || prev.conversationId !== c.conv.id) throw new ComError(409, { error: "request_conflict", message: "Cet identifiant de requête est déjà utilisé pour une autre photo." });
+      res.status(200).json(vue(prev, true));
+      return;
+    }
+  }
+  const id = newId("com_piece");
+  try {
+    await db.insert(comPieces).values({ id, projectId: c.access.id, conversationId: c.conv.id, authorId: userId, mime: photo.mime, size: photo.content.length, width: photo.width, height: photo.height, empreinte: photo.sha256, content: photo.content, clientRequestId: requete });
+  } catch (e) {
+    // Envoi concurrent du même identifiant : la première écriture l'emporte, le rejeu la relit.
+    const [prev] = requete ? await db.select().from(comPieces).where(and(eq(comPieces.authorId, userId), eq(comPieces.clientRequestId, requete))).limit(1) : [];
+    if (prev && prev.empreinte === photo.sha256) { res.status(200).json(vue(prev, true)); return; }
+    throw e;
+  }
+  res.status(201).json(vue({ id, mime: photo.mime, width: photo.width, height: photo.height, size: photo.content.length }, false));
+}));
+
+comRouter.get("/pieces/:pieceId", endpoint(async (req, res) => {
+  const userId = req.user!.id;
+  const [ph] = await db.select().from(comPieces).where(and(eq(comPieces.id, param(req, "pieceId")), eq(comPieces.projectId, pid(req)))).limit(1);
+  if (!ph) return introuvable();
+  const c = await chargerConversation(pid(req), ph.conversationId, userId);
+  if (c.access.role === "support") throw new ComError(403, { error: "support_no_export", message: "Accès support en lecture seule : les photos ne sont pas transmises." });
+  if (!ph.messageId) { if (ph.authorId !== userId) return introuvable(); }
+  else {
+    const [m] = await db.select({ createdAt: comMessages.createdAt, withdrawnAt: comMessages.withdrawnAt }).from(comMessages).where(eq(comMessages.id, ph.messageId)).limit(1);
+    const debut = debutHistorique(c.conv.audience, c.moi);
+    if (!m || m.withdrawnAt || (debut && m.createdAt < debut)) return introuvable();
+  }
+  res.setHeader("Content-Type", ph.mime);
+  res.setHeader("Content-Length", String(ph.content.length));
+  res.setHeader("Content-Disposition", "inline");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Cache-Control", "private, no-store");
+  res.end(ph.content);
+}));
+
+/** Plan d'une révision exacte d'une variante Studio (SVG, mètres, y inversé) : support de pose et d'affichage des épingles. */
+comRouter.get("/plan", endpoint(async (req, res) => {
+  const q = req.query as Record<string, unknown>;
+  const studyId = typeof q["studyId"] === "string" ? q["studyId"] : "";
+  const variantId = typeof q["variantId"] === "string" ? q["variantId"] : "";
+  const revisionId = typeof q["revisionId"] === "string" && q["revisionId"] ? q["revisionId"] : undefined;
+  if (!studyId || !variantId) throw new ComError(400, { error: "invalid_input", message: "studyId et variantId sont requis." });
+  const lu = await readStudioContext(db, { projectId: pid(req), studyId, variantId }, req.user!.id, revisionId);
+  const doc = lu.revision.document;
+  res.setHeader("Cache-Control", "private, no-store");
+  res.json({
+    studyId, variantId, revisionId: lu.revision.id, tete: lu.revision.id === lu.variant.headRevisionId, variante: `${lu.study.name} · ${lu.variant.name}`,
+    svg: exportStudioSvg(doc), objets: [...idsDeRevision(doc as never)],
+  });
+}));
+
+// ---------------------------------------------------------------------------------------------------------------------
 // Partage d'extraits (COM-R4, COM-D9)
 
 const partageSchema = z.object({ messageIds: z.array(idSchema).min(1).max(50), cibleId: idSchema, note: z.string().trim().max(2000).optional(), empreinte: z.string().max(64).optional() }).strict();
@@ -471,7 +611,9 @@ async function preparerPartage(req: Request, userId: string, input: z.infer<type
     .where(and(eq(comMessages.conversationId, source.conv.id), inArray(comMessages.id, input.messageIds), isNull(comMessages.withdrawnAt))).orderBy(asc(comMessages.createdAt));
   const lisibles = rows.filter(({ m }) => !debut || m.createdAt >= debut);
   if (lisibles.length !== new Set(input.messageIds).size) throw new ComError(422, { error: "messages_invalides", message: "Chaque extrait doit être un message lisible (non retiré) de cette conversation." });
-  const contenu = lisibles.map(({ m, email }) => ({ id: m.id, auteur: email, at: m.createdAt.toISOString(), texte: m.body }));
+  const photos = lisibles.length ? await db.select({ id: comPieces.id, messageId: comPieces.messageId }).from(comPieces).where(inArray(comPieces.messageId, lisibles.map(({ m }) => m.id))).orderBy(asc(comPieces.createdAt)) : [];
+  // Les photos des extraits choisis sont recopiées dans la cible (COM-D17) : l'aperçu les compte, l'empreinte les fixe.
+  const contenu = lisibles.map(({ m, email }) => ({ id: m.id, auteur: email, at: m.createdAt.toISOString(), texte: m.body, photos: photos.filter((x) => x.messageId === m.id).map((x) => x.id) }));
   const comptes = await comptesDuProjet(cible.access.id);
   const dest = destinataires(cible.conv.audience, comptes, cible.participations).map((d) => d.email);
   const empreinte = empreinteApercu(dest, { contenu, note: input.note ?? "", cible: cible.conv.id });
@@ -498,6 +640,13 @@ comRouter.post("/conversations/:conversationId/partages", endpoint(async (req, r
   const now = new Date();
   await db.transaction(async (tx) => {
     await tx.insert(comMessages).values({ id, conversationId: p.cible.conv.id, authorId: userId, body: corpsPartage, nature: "partage", sharedFrom: { conversationId: p.source.conv.id, messageIds: p.contenu.map((c) => c.id) }, createdAt: now });
+    const aCopier = p.contenu.flatMap((c) => c.photos);
+    if (aCopier.length) {
+      const sources = await tx.select().from(comPieces).where(inArray(comPieces.id, aCopier)).orderBy(asc(comPieces.createdAt));
+      for (const ph of sources) {
+        await tx.insert(comPieces).values({ id: newId("com_piece"), projectId: ph.projectId, conversationId: p.cible.conv.id, messageId: id, authorId: userId, mime: ph.mime, size: ph.size, width: ph.width, height: ph.height, empreinte: ph.empreinte, content: ph.content, createdAt: now });
+      }
+    }
     await tx.update(comConversations).set({ lastMessageAt: now }).where(eq(comConversations.id, p.cible.conv.id));
     // La source n'est jamais nommée dans la cible ; la cible ne l'est pas dans la source (audiences différentes).
     await tx.insert(comEvents).values({ conversationId: p.cible.conv.id, actorId: userId, action: "partage-recu", detail: { messageId: id, extraits: p.contenu.length } });
@@ -546,8 +695,11 @@ comRouter.post("/messages/:messageId/actions", endpoint(async (req, res) => {
     targetId = r.id;
     libelle = "a créé une demande de précision à partir de ce message";
   } else {
+    // Message épinglé sur cette même variante : l'observation reprend la révision exacte et les objets cités (COM-D18).
+    const pin = p.m.epingle && p.m.epingle.variantId === input.variantId ? p.m.epingle : null;
     const o = await openStudioObservation({ projectId: p.c.access.id, studyId: input.studyId, variantId: input.variantId }, userId, {
       body: p.texte, responsableId: input.responsableId, audience: input.audience, requestId: `com:${p.m.id}:${p.empreinte.slice(0, 16)}`,
+      ...(pin ? { revisionId: pin.revisionId, ...(pin.objetIds.length ? { objectIds: pin.objetIds } : {}) } : {}),
     });
     targetId = o.id;
     scope = { studyId: input.studyId, variantId: input.variantId };

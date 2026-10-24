@@ -1,7 +1,7 @@
 # Communication (COM) — décisions
 
 Les décisions ci-dessous sont des **choix du chef de projet** pris pour exécuter la demande du 2026-10-24 (Issue #280) ;
-elles sont **acceptées** par le maître d'ouvrage (COM-R2 ci-dessous). Aucune ne modifie une décision existante, sauf COM-D1 qui
+elles sont **acceptées** par le maître d'ouvrage (COM-A2 ci-dessous). Aucune ne modifie une décision existante, sauf COM-D1 qui
 consigne une dérogation demandée.
 
 | N° | Décision | Motif |
@@ -21,15 +21,29 @@ consigne une dérogation demandée.
 | COM-D13 | Notifications : types `message` (participants d'une conversation `participants`, animateur, personnes ayant écrit dans la conversation, mentions lisibles) et `demande` (demandeur et répondant) ; extraits filtrés par l'audience courante. | COM-R5 ; éviter qu'un fil `projet` notifie tout le projet. |
 | COM-D14 | Règle d'or étendue aux commandes COM : Alt+Maj+4 à Alt+Maj+0 pour les commandes principales, Alt+Maj+ponctuation (touche physique) pour les commandes de demande, de participant et de message. Aucune collision (test). | Extension CR-C1 § 6 ; Alt+Maj+lettre est pris par la Planche et l'administration. |
 
+| COM-D15 | Photos jointes (lot COM-13) : web mobile seulement (Safari iOS, Chrome Android récents), sans application native ; compression sur l'appareil en JPEG, **2 Mo et 2 560 px au plus** (refus 413 / 422 au-delà) ; JPEG ou PNG seulement, type vérifié par signature. | Validé par le maître d'ouvrage (COM-A3). |
+| COM-D16 | Métadonnées : le serveur retire de toute photo les métadonnées EXIF / XMP / texte (position GPS comprise), même si l'appareil ne l'a pas fait. Une position n'est jointe que si l'auteur coche « Joindre ma position » : elle est alors enregistrée à part, repère `geographic` (WGS84), source et précision déclarées, jamais déduite. | Validé (COM-A3) ; repères jamais mélangés (AGENTS.md). |
+| COM-D17 | Voir une photo jointe = lire le message (affichage dans le fil, `no-store`), pas un export : tout lecteur de la conversation la voit ; l'accès support, lecture seule sans téléchargement, ne la reçoit pas. Une photo partagée par extrait est recopiée dans la conversation cible après aperçu. | Cohérent avec E2 (export = sortir un fichier) et D-2 (support sans téléchargement). |
+| COM-D18 | Épingle : point posé sur le plan d'une **révision exacte** d'une variante Studio (repère `local`, mètres), objets cités facultatifs ; elle ne bouge jamais quand la variante avance (R03 reste R03). Une observation Studio créée depuis un message épinglé reprend sa révision et ses objets. | Concept « Locations… must not move silently » ; réemploi des observations Studio. |
+| COM-D19 | Conservation des photos : celle de la conversation, aucune purge automatique, tant que la politique de conservation n'est pas décidée. Une photo téléversée mais jamais jointe reste visible de son seul auteur. | Décision de conservation ouverte (concept). |
+
 ## Réponses du maître d'ouvrage
 
-- **COM-R1 (2026-10-24)** — « Fusionne 285 » : fusion de la PR #285 demandée et réalisée (`173b9f1`). Les décisions
+Nommées COM-A* (accords) pour ne pas se confondre avec les critères COM-R1 à COM-R7 des règles communes.
+
+- **COM-A1 (2026-10-24)** — « Fusionne 285 » : fusion de la PR #285 demandée et réalisée (`173b9f1`). Les décisions
   COM-D1 à COM-D14 n'ont pas été acceptées une à une à cette date. Aucun déploiement demandé.
-- **COM-R2 (2026-10-24)** — Au point « Décisions COM-D1 à COM-D14 : elles n'ont pas été validées une à une. La plus
+- **COM-A2 (2026-10-24)** — Au point « Décisions COM-D1 à COM-D14 : elles n'ont pas été validées une à une. La plus
   importante est COM-D1 … », le maître d'ouvrage répond « Fix ». Interprétation consignée : **COM-D1 à COM-D14 sont
   acceptées telles que proposées**, y compris la dérogation COM-D1 à l'ordre CR-D9 (COM ouvert avant les phases 2 à 4
   d'Organisations), reportée dans le journal des règles communes (CR-R3). Si cette lecture ne correspond pas à
   l'intention, une nouvelle réponse la remplace. Aucun déploiement demandé.
+
+- **COM-A3 (2026-10-24)** — « Je valide, lance le lot photos et épingles » : recommandations de la catégorie 3 retenues
+  pour le lot COM-13 — web mobile sans application native ; photos de 2 Mo et 2 560 px au plus ; position GPS retirée
+  par défaut (COM-D15 à COM-D19). Les autres recommandations (invitations après UM-28, BCF par fichier en premier
+  connecteur, annuaires après Organisations phase 5, ni courriel entrant, ni réunions, IA limitée au résumé d'un fil
+  si un jour retenue) restent des recommandations, non engagées.
 
 ## Questions ouvertes (non bloquantes)
 

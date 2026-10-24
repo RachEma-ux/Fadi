@@ -34,6 +34,22 @@ export interface KeyValueEntry {
   updatedAt: string;
 }
 
+/**
+ * Photo de la Communication en attente d'envoi (lot COM-13) : déjà compressée sur l'appareil, gardée jusqu'à ce que le
+ * serveur ait accepté le message qui la joint ; propre au compte et au projet, oubliée avec eux.
+ */
+export interface ComPhotoEntry {
+  id: string;
+  userId: string;
+  projectId: string;
+  conversationId: string;
+  blob: Blob;
+  mime: string;
+  width: number;
+  height: number;
+  createdAt: string;
+}
+
 /** Dernier modèle typé lu sur le serveur pour un projet (JSON sérialisé). */
 export interface ModelCacheEntry {
   projectId: string;
@@ -91,6 +107,7 @@ class FadiLocalDb extends Dexie {
   lots!: EntityTable<LotEntry, "id">;
   studioBrouillons!: EntityTable<StudioBrouillonEntry, "cle">;
   studioContextes!: EntityTable<StudioContexteEntry, "cle">;
+  comPhotos!: EntityTable<ComPhotoEntry, "id">;
 
   constructor() {
     super("fadi-local");
@@ -112,6 +129,8 @@ class FadiLocalDb extends Dexie {
     this.version(7)
       .stores({ modelCache: "projectId", keyValue: "key", lots: "id, projectId, ordre, userId", studioBrouillons: "cle, userId, projectId", studioContextes: "cle, userId, projectId" })
       .upgrade(async (tx) => { await tx.table("lots").clear(); });
+    // Communication (lot COM-13) : photos en attente d'envoi, table ajoutée, aucune table existante modifiée.
+    this.version(8).stores({ modelCache: "projectId", keyValue: "key", lots: "id, projectId, ordre, userId", studioBrouillons: "cle, userId, projectId", studioContextes: "cle, userId, projectId", comPhotos: "id, userId, projectId" });
   }
 }
 
@@ -257,8 +276,8 @@ export const localStore = {
   oublierTout: async () => {
     queueMemory.clear(); dirtyLots.clear(); removedLots.clear(); queueStates.clear();
     for (const listener of queueListeners) listener();
-    await safe((d) => d.transaction("rw", [d.lots, d.modelCache, d.keyValue, d.studioBrouillons, d.studioContextes], async () => {
-      await d.lots.clear(); await d.modelCache.clear(); await d.keyValue.clear(); await d.studioBrouillons.clear(); await d.studioContextes.clear();
+    await safe((d) => d.transaction("rw", [d.lots, d.modelCache, d.keyValue, d.studioBrouillons, d.studioContextes, d.comPhotos], async () => {
+      await d.lots.clear(); await d.modelCache.clear(); await d.keyValue.clear(); await d.studioBrouillons.clear(); await d.studioContextes.clear(); await d.comPhotos.clear();
     }), undefined);
   },
   /**
@@ -271,7 +290,8 @@ export const localStore = {
     for (const [id, entry] of [...dirtyLots]) if (entry.projectId === projectId) dirtyLots.delete(id);
     for (const [id, entry] of [...removedLots]) if (entry.projectId === projectId) removedLots.delete(id);
     for (const listener of queueListeners) listener();
-    await safe((d) => d.transaction("rw", [d.lots, d.modelCache, d.studioBrouillons, d.studioContextes], async () => {
+    await safe((d) => d.transaction("rw", [d.lots, d.modelCache, d.studioBrouillons, d.studioContextes, d.comPhotos], async () => {
+      await d.comPhotos.bulkDelete(await d.comPhotos.where("projectId").equals(projectId).primaryKeys());
       // Lignes de CE projet seulement, par leurs clés (la base elle-même n'est jamais supprimée : OPS-05).
       await d.lots.bulkDelete(await d.lots.where("projectId").equals(projectId).primaryKeys());
       await d.modelCache.bulkDelete([projectId]);
@@ -279,6 +299,11 @@ export const localStore = {
       await d.studioContextes.bulkDelete(await d.studioContextes.where("projectId").equals(projectId).primaryKeys());
     }), undefined);
   },
+  /** Photos COM en attente : écriture vérifiée (une photo non conservée ne doit pas paraître enregistrée). */
+  comPhotoEcrire: (entry: ComPhotoEntry) => checked((d) => d.comPhotos.put(entry).then(() => undefined)),
+  /** La photo de CE compte, ou null (jamais celle d'un autre compte du même appareil). */
+  comPhotoLire: (id: string, userId: string) => safe((d) => d.comPhotos.get(id).then((v) => (v && v.userId === userId ? v : null)), null as ComPhotoEntry | null),
+  comPhotoSupprimer: (ids: readonly string[]) => safe((d) => d.comPhotos.bulkDelete([...ids]), undefined),
   /** Clé / valeur (cache des requêtes) : `null` quand absent ou indisponible. */
   getValue: (key: string) => safe((d) => d.keyValue.get(key).then((v) => v?.value ?? null), null as string | null),
   getValueChecked: (key: string) => checked((d) => d.keyValue.get(key).then((v) => v?.value ?? null)),
