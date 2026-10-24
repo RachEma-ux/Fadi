@@ -167,3 +167,25 @@ ils ne réécrivent aucune décision D-x et restent révisables par lui.
   `PREPROD_FADI_APP_DB_PASSWORD` : leur succès établit que `init-env` a été lancé. Le maître d'ouvrage clôt l'Issue #253
   (terminée). Reste ouvert : le déploiement en **production** (RUNBOOK.md), sur son accord explicite ; la production
   tourne toujours l'ancienne version.
+- **UM-28 — Courriel en préproduction, domaines réservés jamais envoyés (2026-10-24).** Demande du maître d'ouvrage,
+  relayée par la session d'exploitation du VPS : en préproduction, les invitations et les autres courriels de compte
+  partent par SMTP (`noreply@fadimmo.com`, Infomaniak, D-1 ; SPF / DKIM / DMARC vérifiés par lui). Constats :
+  `deploy/preprod/compose.yml` ne transmettait aucune variable de courriel au service `app` ; la préproduction rejoue à
+  chaque déploiement des recettes qui inscrivent des comptes `@example.com` / `@example.test`, qui partiraient en vrais
+  courriels voués au rebond (quota Infomaniak, réputation de `fadimmo.com`). Arbitrage :
+  1. `compose.yml` (service `app` seulement) transmet `MAIL_TRANSPORT`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`,
+     `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`, `MAIL_DAILY_LIMIT`, `MAIL_RECIPIENT_HOURLY_LIMIT` depuis des variables
+     `PREPROD_*` toutes facultatives : sans `PREPROD_MAIL_TRANSPORT`, aucun envoi (comportement antérieur) ; quota
+     prudent par défaut `MAIL_DAILY_LIMIT=50`. La garde d'isolation refuse `SMTP_PASS` hors du service `app` (jamais à
+     la recette ni à la migration). Les variables sont ajoutées à la main par l'administrateur (RUNBOOK §3 bis), jamais
+     par `init-env`.
+  2. Mailer : en SMTP, un destinataire de domaine réservé (RFC 2606 / 6761 : `example.com`, `example.net`,
+     `example.org` et leurs sous-domaines, `*.example`, `*.test`, `*.invalid`, `*.localhost`, `localhost` ; adresse sans
+     domaine) n'est jamais mis en file : ligne `skipped`, raison `reserved_domain`, `queued: false`, l'interface garde le
+     lien à copier ; pas d'entrée d'audit (non-envoi déclaré, comme `disabled`, pas un dépassement). Vaut en production
+     (sans effet sur de vraies adresses). Les transports `console` et absent ne remettent rien : non concernés.
+  3. La CI (et le développement local) envoie vers Mailpit des comptes `@example.test` et y lit les liens : elle pose
+     `MAIL_ALLOW_RESERVED_DOMAINS=true`, que `readMailConfig` **refuse en production** (refus de démarrer) et qui
+     n'accepte que `true` / `false`. Solution retenue parce qu'elle est la plus simple et sûre : la préproduction et la
+     production tournent en `NODE_ENV=production` et ne peuvent donc jamais l'activer, même par erreur de fichier
+     d'environnement ; aucune liste d'hôtes SMTP « de capture » à maintenir ; les recettes ne changent pas d'adresses.

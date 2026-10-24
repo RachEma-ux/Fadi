@@ -1,6 +1,6 @@
 # Gestion des comptes (Users Management) — Reprise de session
 
-Mis à jour : 2026-10-23 (UTC).
+Mis à jour : 2026-10-24 (UTC).
 
 ## Point de reprise
 
@@ -25,6 +25,11 @@ Mis à jour : 2026-10-23 (UTC).
 
 ## Prochaine action
 
+- UM-28 (2026-10-24) : PR « courriel en préproduction, domaines réservés jamais envoyés » (branche
+  `feat/preprod-courriel`) **ouverte, non fusionnée** ; après fusion par le maître d'ouvrage et déploiement, l'administrateur
+  ajoute les variables `PREPROD_MAIL_*` / `PREPROD_SMTP_*` à `/opt/fadi-preprod/env/.env.preprod` puis
+  `sudo fadi-preprod up` (RUNBOOK §3 bis), et contrôle un envoi réel (§5).
+
 - CI de `main` verte après la fusion (`516e2f7`, run CI 39911221480).
 - Préproduction : **faite** — `02329e1` déployé le 2026-10-23 à 15:28 UTC (PR #264, `init-env` lancé ; UM-26, STATUS.md).
 - Déploiement en **production** : **seulement sur accord explicite du maître d'ouvrage**, en suivant RUNBOOK.md — `FADI_APP_DB_PASSWORD`
@@ -42,6 +47,8 @@ Mis à jour : 2026-10-23 (UTC).
 - `npx --workspace=@fadi/api vitest run src/lib` ; `npm run typecheck` ; `npm run build`.
 
 ## Risques et blocages
+
+- UM-28 : `MAIL_ALLOW_RESERVED_DOMAINS=true` fait refuser le démarrage en production ; ne jamais le poser hors CI / dev.
 
 - Déploiement après fusion : nouveau service `migrate` (usage unique) dans `docker-compose.yml` ; l'API ne reçoit plus
   `DATABASE_MIGRATION_URL` et refuse de démarrer en production s'il lui est donné (RUNBOOK §4).
