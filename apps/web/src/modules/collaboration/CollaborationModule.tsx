@@ -464,7 +464,11 @@ export function MembersPanel({ projectId }: { projectId: string }) {
                     ))}
                   </span>
                 ) : (
-                  AFFECTATIONS.filter((a) => affectationsDe(m)[a.cle]).map((a) => COMMANDE_LIBELLE(a.commande)).join(", ") || "—"
+                  // Un libellé par élément : chacun se traduit seul (D-163), jamais une liste jointe absente du dictionnaire.
+                  <span className="member-affectations">
+                    {AFFECTATIONS.filter((a) => affectationsDe(m)[a.cle]).map((a) => <span key={a.cle}>{COMMANDE_LIBELLE(a.commande)}</span>)}
+                    {!AFFECTATIONS.some((a) => affectationsDe(m)[a.cle]) && "—"}
+                  </span>
                 )}
               </td>
               <td>{new Date(m.createdAt).toLocaleDateString(LOCALE)}</td>

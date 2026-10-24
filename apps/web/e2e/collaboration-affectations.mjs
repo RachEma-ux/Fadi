@@ -169,6 +169,14 @@ const restes = ["Affectations", "Approbateur", "Diffuseur", "Gardien du contenu"
 check("interface anglaise : affectations et responsabilités traduites", attendus.every((t) => texte.includes(t)) && restes.every((t) => !texte.includes(t)),
   `manquants : ${attendus.filter((t) => !texte.includes(t)).join(", ")} ; restés : ${restes.filter((t) => texte.includes(t)).join(", ")}`);
 await pOwner.evaluate(() => localStorage.removeItem("fadi.langue"));
+// Vue d'un non-propriétaire en anglais : chaque affectation est un libellé séparé, traduit (revue Codex de e24b694).
+const pReader = await session(cReader);
+await pReader.goto(`${BASE}/`);
+await pReader.evaluate(() => localStorage.setItem("fadi.langue", "en"));
+await pReader.goto(`${BASE}/projets/${pid}?module=collaboration`);
+try { await pReader.waitForFunction((e) => document.querySelector(`tr[data-member="${e}"] [data-member-affectations]`)?.textContent?.includes("Approver"), cReader.email, { timeout: 20000 }); } catch { /* constat ci-dessous */ }
+const vueLecteurAnglais = await pReader.evaluate((e) => document.querySelector(`tr[data-member="${e}"] [data-member-affectations]`)?.innerText ?? "", cReader.email);
+check("interface anglaise (lecteur) : affectations cumulées traduites une à une", vueLecteurAnglais.includes("Approver") && vueLecteurAnglais.includes("Content custodian") && !/Approbateur|Gardien/.test(vueLecteurAnglais), vueLecteurAnglais);
 check("interface : aucune erreur de page", erreurs.length === 0, erreurs.join(" | "));
 await browser.close();
 

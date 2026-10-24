@@ -278,6 +278,9 @@ membersRouter.delete("/:userId", async (req, res) => {
   const project = await projectOr404(req, res, userId === req.user!.id ? "read" : "owner");
   if (!project) return;
   const deleted = await db.transaction(async (tx) => {
+    // Ordre des verrous des écritures Studio (`lockedAccess` : projet, puis ligne du membre) : le projet d'abord, sinon
+    // la libération de la réservation (UPDATE projects) pourrait s'interbloquer avec une écriture concurrente du membre.
+    await lockProject(tx, project.id);
     const rows = await tx
       .delete(projectMembers)
       .where(and(eq(projectMembers.projectId, project.id), eq(projectMembers.userId, userId)))

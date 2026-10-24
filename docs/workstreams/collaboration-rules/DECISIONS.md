@@ -143,6 +143,11 @@ Journal du chantier. Les décisions des chantiers propriétaires restent dans le
      clavier par `collaboration-affectations.mjs`.
   6. **CR-1** : annexe A reportée dans [`../organisations-participation/PLAN.md`](../organisations-participation/PLAN.md)
      (phases 2, 3, 3 bis, 4, 6 et § 7), avec l'état de chaque critère (livré par #274, par cette PR, ou à faire).
+  7. **Revue Codex de `e24b694` (deux constats retenus).** P1 : la vue d'un non-propriétaire joignait les libellés
+     d'affectations en une seule chaîne (« Approbateur, Diffuseur ») absente du dictionnaire ; chaque libellé est
+     désormais un élément séparé, traduit seul (contrôle anglais de la vue du lecteur ajouté à la recette). P2 : le
+     retrait verrouillait la ligne du membre avant le projet, ordre inverse de `lockedAccess` (Studio) ; il verrouille
+     désormais le projet d'abord (`lockProject`), ce qui écarte l'interblocage avec une écriture Studio concurrente.
 
 ## Décisions en attente
 
