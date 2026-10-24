@@ -33,8 +33,8 @@ Mis à jour : 2026-10-24 (UTC).
 
 ## Prochaine action
 
-- UM-31 : CI verte sur `287ed62` (run 40120760488, DB-3 actif) ; revérifier le HEAD courant ; fusion et déploiement en préproduction **seulement** sur décision du
-  maître d'ouvrage (aucune migration ajoutée).
+- UM-31 : **fusionnée** (PR #278, commit `bf21c4b`, 2026-10-24, demande du maître d'ouvrage) ; CI verte sur la tête
+  `6bc453b` (run 40123200967). Déploiement en préproduction : sur décision du maître d'ouvrage (aucune migration).
 - UM-27, UM-28 et UM-30 : **fusionnés** (PR #270 `2cc038a`, PR #271 `e03fdfc`, PR #275 `5767835`) ; CI de `main` verte sur `2cc038a`.
 - UM-SERVICE — mise en service en **préproduction** (RUNBOOK §3 bis, §5 à §9), gestes de l'administrateur sur le VPS :
   variables `PREPROD_MAIL_*` / `PREPROD_SMTP_*` dans `/opt/fadi-preprod/env/.env.preprod` puis `sudo fadi-preprod up` et
@@ -43,7 +43,7 @@ Mis à jour : 2026-10-24 (UTC).
   recette §9, plus le contrôle UM-30 (invitation depuis un téléphone réglé en anglais, interface en français → sujet
   « Invitation à rejoindre Fadi »). Relever ensuite `fadi-preprod status`, `/version`, le réglage et les comptages
   d'administrateurs (STATUS.md, points ouverts) pour consigner.
-- PR ouvertes qui touchent ce chantier : #274 (UM-29, écarts E1 à E3 des règles communes), #278 (UM-31).
+- PR ouverte qui touche ce chantier : #274 (UM-29, écarts E1 à E3 des règles communes).
 - **Consigne du maître d'ouvrage (2026-10-23) : on ne touche pas à www.fadimmo.com ; pendant le développement, tout se
   déploie sur preprod.fadimmo.com.** Aucune session ne prépare ni ne lance de déploiement de production sans nouvelle
   instruction explicite de sa part.
