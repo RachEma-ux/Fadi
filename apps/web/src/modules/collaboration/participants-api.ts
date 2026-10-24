@@ -40,10 +40,26 @@ export interface Participant {
   createdAt: string;
 }
 
+export type OrganizationStatus = "active" | "suspendue" | "close";
+export interface OrganizationIdentity { id: string; name: string; kind: string | null; status: OrganizationStatus }
+
+/** Partie propriétaire déclarée et organisations parties (phase 5, OP-D1 a) : lecture seule, aucun droit. */
+export interface ProjectOrganizations {
+  owner: null | (OrganizationIdentity & { youAreMember: boolean; isParty: boolean });
+  ownerPerson: { userId: string | null; name: string | null };
+  ownerGrantsAccess: false;
+  parties: (OrganizationIdentity & {
+    participationId: string; participationStatus: ParticipationStatus; businessRole: string | null; responsibilities: Responsibility[];
+    startsOn: string | null; youAreMember: boolean;
+    representatives: { mandateId: string; name: string | null; responsibilities: Responsibility[]; startsOn: string | null }[];
+  })[];
+}
+
 export interface ParticipantsView {
   project: { id: string; closedAt: string | null };
   you: { userId: string; role: string; responsible: boolean; canManage: boolean; canErase: boolean };
   participants: Participant[];
+  organizations: ProjectOrganizations;
   invitations?: { id: string; email: string; projectRole: string | null; expiresAt: string }[];
 }
 

@@ -140,3 +140,49 @@ describe("organisations : administration déléguée, échec fermé", () => {
     expect((await carol.client.get(`/organizations/${orgId}`)).status).toBe(404);
   });
 });
+
+describe("organisations côté projet : partie propriétaire et parties affichées, aucun droit changé", () => {
+  it("déclarer la partie propriétaire ne change ni l'accès ni les rôles ; un lecteur voit l'identité seule ; une organisation close reste affichée", async () => {
+    const { alice, bob, orgId, projectId, bobMember } = await setup();
+    const carol = await account("org-carol@example.com");
+    expect((await alice.client.post(`/projects/${projectId}/members`).send({ email: carol.email, role: "lecteur" })).status).toBe(201);
+    const snapshot = async () => ({
+      access: (await pool.query("SELECT user_id, role, can_export, can_approve, can_publish FROM project_effective_access WHERE project_id = $1 ORDER BY user_id", [projectId])).rows,
+      roles: (await pool.query("SELECT ra.role, ra.scope_type, ra.origin, pe.user_id FROM project_role_assignments ra JOIN project_participations pp ON pp.id = ra.participation_id LEFT JOIN people pe ON pe.id = pp.person_id WHERE pp.project_id = $1 ORDER BY pe.user_id, ra.role", [projectId])).rows,
+      members: (await pool.query("SELECT user_id, role FROM project_members WHERE project_id = $1 ORDER BY user_id", [projectId])).rows,
+    });
+    const before = await snapshot();
+    const empty = await carol.client.get(`/projects/${projectId}/participants`);
+    expect(empty.status).toBe(200);
+    expect(empty.body.organizations).toMatchObject({ owner: null, parties: [], ownerGrantsAccess: false, ownerPerson: { userId: alice.id } });
+
+    expect((await alice.client.patch(`/organizations/${orgId}`).send({ details: "12 rue des Lilas" })).status).toBe(200);
+    expect((await alice.client.put(`/organizations/${orgId}/projects/${projectId}/participation`).send({ businessRole: "Maîtrise d'œuvre" })).status).toBe(201);
+    const mandate = await alice.client.post(`/organizations/${orgId}/mandates`).send({ projectId, membershipId: bobMember.membershipId, responsibilities: ["produire"] });
+    expect((await bob.client.post(`/organizations/mandates/${mandate.body.mandate.id}/accept`)).body.status).toBe("actif");
+    expect((await alice.client.put(`/organizations/${orgId}/projects/${projectId}/owner`)).body.accessChanged).toBe(false);
+    expect(await snapshot()).toEqual(before);
+    expect((await bob.client.get(`/projects/${projectId}`)).status).toBe(404);
+    expect((await bob.client.get(`/projects/${projectId}/participants`)).status).toBe(404);
+
+    const seen = await carol.client.get(`/projects/${projectId}/participants`);
+    expect(seen.body.organizations.owner).toEqual({ id: orgId, name: "Atelier Nord", kind: null, status: "active", youAreMember: false, isParty: true });
+    expect(seen.body.organizations.parties).toHaveLength(1);
+    expect(seen.body.organizations.parties[0]).toMatchObject({ id: orgId, businessRole: "Maîtrise d'œuvre", youAreMember: false });
+    expect(seen.body.organizations.parties[0].representatives).toHaveLength(1);
+    expect(seen.body.organizations.parties[0].representatives[0]).toMatchObject({ responsibilities: ["produire"] });
+    const text = JSON.stringify(seen.body.organizations);
+    expect(text).not.toContain("rue des Lilas");
+    expect(text).not.toContain(bob.email);
+    const head = await carol.client.get(`/projects/${projectId}`);
+    expect(head.body.owningOrganization).toEqual({ id: orgId, name: "Atelier Nord", kind: null, status: "active", youAreMember: false });
+    expect((await alice.client.get(`/projects/${projectId}/participants`)).body.organizations.owner.youAreMember).toBe(true);
+
+    expect((await alice.client.post(`/organizations/${orgId}/status`).send({ status: "close", confirmName: "Atelier Nord" })).status).toBe(200);
+    const closed = await carol.client.get(`/projects/${projectId}/participants`);
+    expect(closed.body.organizations.owner.status).toBe("close");
+    expect(closed.body.organizations.parties.map((p: { status: string }) => p.status)).toEqual(["close"]);
+    expect(closed.body.organizations.parties[0].representatives).toEqual([]);
+    expect(await snapshot()).toEqual(before);
+  });
+});

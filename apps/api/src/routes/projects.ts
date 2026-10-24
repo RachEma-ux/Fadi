@@ -39,6 +39,7 @@ import { lockProject } from "../lib/step-rows.js";
 import { PUBLICATIONS_DIFFUSEES_MESSAGE, projectHasIssuedStudioPublications } from "../lib/studio-publications.js";
 import { nettoyerVolumes } from "../lib/volumes-gc.js";
 import { projectHasSharedReviewPackages, REVUES_PARTAGEES_MESSAGE } from "../lib/reviews-core.js";
+import { owningOrganizationOf } from "../lib/project-organizations.js";
 
 export const projectsRouter = Router();
 projectsRouter.use(requireAuth);
@@ -262,6 +263,8 @@ projectsRouter.get("/:projectId", async (req, res) => {
     editingLock: activeLock(project),
     ownerEmail: project.ownerId === req.user!.id ? req.user!.email : await ownerEmailOf(project.ownerId),
     baseDocuments: await baseDocumentsOf(project),
+    // Partie propriétaire déclarée (OP-D1 a) : identité seule ({ id, name, kind, status }), aucun droit, jamais masquée.
+    owningOrganization: await owningOrganizationOf(project.organizationId, req.user!.id),
   });
 });
 
