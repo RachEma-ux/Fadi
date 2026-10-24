@@ -18,6 +18,7 @@ Chaque **chantier** dispose d'un dossier de contexte et d'un point de reprise ; 
 | Gestion des comptes (Users Management) | **Fusionnée** dans `main` (PR #255) et déployée en préproduction (2026-10-23) ; Issue #253 close ; production sur accord explicite | [users-management/](users-management/CONTEXT.md) | [Issue #253](https://github.com/RachEma-ux/Fadi/issues/253) |
 | Organisations, participation et revue externe | **En cours** : plan validé (OP-1, OP-2) ; phase 1 sur branche, revue 🛑 1 attendue | [organisations-participation/](organisations-participation/CONTEXT.md) | [Issue #262](https://github.com/RachEma-ux/Fadi/issues/262) |
 | Règles communes de collaboration | **À définir** : cadrage proposé (matrice, plan) ; CR-D1 à CR-D10 répondues ; aucun module, aucun code | [collaboration-rules/](collaboration-rules/CONTEXT.md) | [Issue #272](https://github.com/RachEma-ux/Fadi/issues/272) |
+| Communication | À définir | [communication/](communication/CONTEXT.md) | [Issue #280](https://github.com/RachEma-ux/Fadi/issues/280) |
 
 ## Ouvrir un chantier
 
