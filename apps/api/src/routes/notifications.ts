@@ -32,6 +32,11 @@
  * l'équipe ne sont signalés — ni eux, ni leurs extraits — qu'au propriétaire et aux éditeurs ; un lecteur n'en reçoit
  * jamais de notification.
  *
+ * Communication (COM, Issue #280, COM-D13 / COM-R5) : `message` — messages des autres dans les conversations que vous
+ * lisez AUJOURD'HUI et où vous participez, animez, avez écrit, ou qui vous mentionnent ; `demande` — passages des
+ * demandes de précision dont vous êtes demandeur ou répondant. Chaque extrait est soumis à l'audience courante : un
+ * retrait du projet ou d'une conversation retire ses notifications à la lecture suivante.
+ *
  * Rien n'est envoyé hors de l'application : un courriel d'invitation reste un
  * service externe, absent (voir docs/migration/matrix.md).
  */
@@ -39,7 +44,7 @@ import { Router } from "express";
 import { db } from "../db/client.js";
 import { and, desc, eq, gt, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import {
-  atelierCommands, atelierLockEvents, auditLog, atelierLocks, drawingExports, projectComments, projectEffectiveAccess, projectMembers, projects, studioComments, studioObservationDecisions, studioObservationEvents,
+  collabDemandeEvents, collabDemandes, comConversations, comMessages, comParticipants, atelierCommands, atelierLockEvents, auditLog, atelierLocks, drawingExports, projectComments, projectEffectiveAccess, projectMembers, projects, studioComments, studioObservationDecisions, studioObservationEvents,
   studioObservations, studioObservationTaskEvents, studioObservationTasks, studioStudies, studioVariants, users,
 } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
@@ -49,6 +54,8 @@ import { filtrerNotifications, type NotificationKind } from "../lib/notification
 import { lirePreferencesNotification } from "./preferences.js";
 import { notificationInvitationsRouter } from "./notification-invitations.js";
 import { pendingProjectInvitationsFor } from "../lib/project-invitations-db.js";
+import { audienceVisible } from "../lib/audience.js";
+import { extrait, peutLire } from "../lib/com-audience.js";
 
 export const notificationsRouter = Router();
 notificationsRouter.use(requireAuth);
@@ -68,6 +75,8 @@ export interface NotificationItem {
   studio?: { studyId: string; variantId: string };
   /** Invitation de projet en attente pour vous (phase 3, type `acces`) : à accepter ou décliner depuis la notification. */
   invitation?: { id: string; role: "lecteur" | "editeur"; expiresAt: string };
+  /** Conversation ou demande de précision visée (`message`, `demande`). */
+  com?: { conversationId?: string; demandeId?: string };
   text: string;
   unread: boolean;
 }
@@ -427,6 +436,55 @@ export async function notificationsFor(userId: string, email: string): Promise<{
         stepNumber: null,
         text: e.kind === "prise" ? `${auteur} a réservé ${e.libelle} dans ${code}${e.expiresAt ? ` jusqu'à ${heure(e.expiresAt)}` : ""}.` : `${auteur} a libéré ${e.libelle} dans ${code}.`,
         unread: false,
+      });
+    }
+  }
+
+  // Communication (COM-D13) : rôle courant par projet, audience recalculée pour chaque conversation.
+  if (projectIds.length) {
+    const roleDe = new Map<string, ProjectRole>(memberships.map((m) => [m.project.id, m.role as ProjectRole]));
+    for (const p of owned) roleDe.set(p.id, "proprietaire");
+    const convs = await db.select({ c: comConversations, code: projects.code, name: projects.name }).from(comConversations).innerJoin(projects, eq(projects.id, comConversations.projectId)).where(inArray(comConversations.projectId, projectIds));
+    const parts = convs.length ? await db.select().from(comParticipants).where(and(inArray(comParticipants.conversationId, convs.map((x) => x.c.id)), eq(comParticipants.userId, userId))) : [];
+    const ecrites = new Set((await db.selectDistinct({ id: comMessages.conversationId }).from(comMessages).where(eq(comMessages.authorId, userId))).map((r) => r.id));
+    const lisibles = new Map<string, { c: typeof comConversations.$inferSelect; code: string; name: string; suivie: boolean; debut: Date | null }>();
+    for (const { c, code, name } of convs) {
+      const part = parts.find((x) => x.conversationId === c.id) ?? null;
+      const role = roleDe.get(c.projectId) ?? null;
+      if (!peutLire(c.audience, { userId, role, participation: part ? { historyFrom: part.historyFrom, removedAt: part.removedAt } : null })) continue;
+      lisibles.set(c.id, { c, code, name, suivie: c.audience === "participants" || c.stewardId === userId || ecrites.has(c.id), debut: c.audience === "participants" ? part?.historyFrom ?? null : null });
+    }
+    if (lisibles.size) {
+      const msgs = await db.select({ m: comMessages, email: users.email }).from(comMessages).innerJoin(users, eq(users.id, comMessages.authorId))
+        .where(and(inArray(comMessages.conversationId, [...lisibles.keys()]), ne(comMessages.authorId, userId), isNull(comMessages.withdrawnAt), gt(comMessages.createdAt, since)))
+        .orderBy(desc(comMessages.createdAt)).limit(200);
+      let n = 0;
+      for (const { m, email: auteur } of msgs) {
+        const l = lisibles.get(m.conversationId)!;
+        if (l.debut && m.createdAt < l.debut) continue;
+        const mention = m.mentions.includes(userId);
+        if (!mention && !l.suivie) continue;
+        if (n++ >= LIMIT) break;
+        const verbe = mention ? "vous a mentionné dans" : m.nature === "partage" ? "a partagé un extrait dans" : m.nature === "action" ? "a créé une action liée dans" : "a écrit dans";
+        items.push({
+          id: `message:${m.id}`, at: m.createdAt.toISOString(), kind: "message", projectId: l.c.projectId, projectCode: l.code, projectName: l.name, stepNumber: null,
+          com: { conversationId: m.conversationId },
+          text: `${auteur} ${verbe} « ${l.c.title} » (${l.code})${m.urgent ? " — urgent" : ""}${m.ackRequired ? " — accusé de réception demandé" : ""} : « ${extrait(m.body)} »`,
+          unread: false,
+        });
+      }
+    }
+    const evts = await db.select({ e: collabDemandeEvents, d: collabDemandes, email: users.email, code: projects.code, name: projects.name }).from(collabDemandeEvents)
+      .innerJoin(collabDemandes, eq(collabDemandes.id, collabDemandeEvents.demandeId)).innerJoin(projects, eq(projects.id, collabDemandes.projectId)).innerJoin(users, eq(users.id, collabDemandeEvents.actorId))
+      .where(and(inArray(collabDemandes.projectId, projectIds), ne(collabDemandeEvents.actorId, userId), gt(collabDemandeEvents.at, since), or(eq(collabDemandes.requesterId, userId), eq(collabDemandes.responderId, userId), eq(collabDemandeEvents.toUser, userId))))
+      .orderBy(desc(collabDemandeEvents.at)).limit(LIMIT);
+    const VERBE_DEMANDE: Record<string, string> = { ouvrir: "vous a adressé la demande de précision", repondre: "a répondu à la demande de précision", cloturer: "a clôturé la demande de précision", rouvrir: "a rouvert la demande de précision", reattribuer: "a réattribué la demande de précision" };
+    for (const { e, d, email: auteur, code, name } of evts) {
+      const role = roleDe.get(d.projectId);
+      if (!role || !audienceVisible(role, d.audience)) continue;
+      items.push({
+        id: `demande:${e.id}`, at: e.at.toISOString(), kind: "demande", projectId: d.projectId, projectCode: code, projectName: name, stepNumber: null, com: { demandeId: d.id },
+        text: `${auteur} ${VERBE_DEMANDE[e.action] ?? e.action} « ${extrait(d.question, 80)} » (${code}).`, unread: false,
       });
     }
   }

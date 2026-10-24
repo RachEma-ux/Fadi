@@ -586,6 +586,13 @@ jobs:
         run: |
           set -o pipefail
           node apps/web/e2e/participants.mjs 2>&1 | tee -a e2e.log
+      # Communication (COM, Issue #280) : audiences, mentions et références sans accès, partage d'extraits avec aperçu,
+      # rejeu hors ligne, accusés, demandes de précision, actions liées, révocation avant synchronisation, interface.
+      - name: Recette Communication — audiences, mentions, partages, hors ligne, accusés, demandes, révocation, interface (apps/web/e2e/communication.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/communication node apps/web/e2e/communication.mjs 2>&1 | tee -a e2e.log
       - name: Recette Gestion des comptes dans le navigateur — écrans, axe-core bureau et téléphone (apps/web/e2e/comptes-admin.mjs)
         if: ${{ matrix.shard == 'complements' }}
         run: |

@@ -13,12 +13,12 @@ Mis à jour : 2026-10-24 (UTC).
 - OP-3 (2026-10-24) : le maître d'ouvrage demande l'exécution du plan de bout en bout ; 🛑 1 franchi, phases enchaînées sans
   attente intermédiaire, 🛑 final et tout déploiement restent au maître d'ouvrage.
 - Phase 3 bis (journal d'activité) livrée sur la branche : compte rendu [phase-3bis.md](phase-3bis.md).
-- Phases 2 (participants, bascule de l'accès) et 5 (organisations) en cours ; puis phases 3, 4 et 6.
+- Phases 2 et 5 livrées (comptes rendus [phase-2.md](phase-2.md), [phase-5.md](phase-5.md)) ; CI verte sur `9abca29`.
+- Phases 3 (invitations acceptées) et 4 (revue externe) en cours ; puis phase 6.
 
 ## Prochaine action
 
-- Fusionner les phases 2 et 5 dans la branche, puis lancer les phases 3 (invitations acceptées) et 4 (revue externe,
-  audit 4.0 fait), puis la phase 6 (recette finale, runbook) ; CI verte de la PR #281.
+- Fusionner les phases 3 et 4, puis la phase 6 (recette finale, runbook) ; CI verte de la PR #281.
 
 ## Tests et preuves
 

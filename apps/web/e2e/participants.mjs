@@ -179,17 +179,17 @@ try {
   check("interface : états distincts compte / participation / invitation", (await section.locator("[data-etat-compte]").count()) > 0 && (await section.locator("[data-etat-participation]").count()) > 0 && (await section.locator("[data-etat-invitation]").count()) > 0);
   check("interface : projet affiché clos, commande « Rouvrir le projet »", (await section.locator("[data-cloture]").getAttribute("data-cloture")) === "clos" && (await section.locator('[data-commande-collaboration="rouvrir-projet"]').count()) === 1);
   check("règle d'or : chaque commande visible porte son icône, son raccourci affiché et déclaré",
-    await page.evaluate(() => [...document.querySelectorAll("[data-participants] [data-commande-collaboration]")].every((el) => el.getAttribute("aria-keyshortcuts")?.startsWith("Alt+Shift+") && el.querySelector(".collab-icon") && el.querySelector(".collab-raccourci")))
+    await page.evaluate(() => [...document.querySelectorAll("[data-participants] [data-commande-collaboration]")].every((el) => el.getAttribute("aria-keyshortcuts")?.startsWith("Control+Alt+Shift+") && el.querySelector(".collab-icon") && el.querySelector(".collab-raccourci")))
     && (await section.locator("[data-commande-collaboration]").count()) >= 5);
   await section.locator('[data-commande-collaboration="rouvrir-projet"]').focus();
-  await page.keyboard.press("Alt+Shift+Equal");
+  await page.keyboard.press("Control+Alt+Shift+Equal");
   await page.waitForFunction(() => document.querySelector("[data-cloture]")?.getAttribute("data-cloture") === "ouvert", null, { timeout: 10000 });
-  check("raccourci Alt+Maj+= : projet rouvert", (await owner("GET", P)).body?.project?.closedAt === null);
+  check("raccourci Ctrl+Alt+Maj+= : projet rouvert", (await owner("GET", P)).body?.project?.closedAt === null);
   // Nouveau contact au clavier, puis formulaire.
   await section.locator("[role=tab]").first().focus();
-  await page.keyboard.press("Alt+Shift+Digit6");
+  await page.keyboard.press("Control+Alt+Shift+Digit6");
   await page.waitForSelector("[data-formulaire-contact]", { timeout: 5000 });
-  check("raccourci Alt+Maj+6 : formulaire de contact ouvert", true);
+  check("raccourci Ctrl+Alt+Maj+6 : formulaire de contact ouvert", true);
   await axe(page, "Équipe et participants — formulaire de contact (bureau)");
   const form = page.locator("[data-formulaire-contact]");
   await form.locator('[data-champ="nom"]').fill("Contact interface recette");
@@ -205,9 +205,9 @@ try {
   // Suspension avec aperçu d'impact, au clavier depuis la ligne du lecteur.
   const ligneLecteur = page.locator(`tr[data-participant="${cReader.email}"]`);
   await ligneLecteur.locator('[data-commande-collaboration="suspendre-participation"]').focus();
-  await page.keyboard.press("Alt+Shift+Digit9");
+  await page.keyboard.press("Control+Alt+Shift+Digit9");
   await page.waitForSelector('[data-impact="suspendre"]', { timeout: 10000 });
-  check("raccourci Alt+Maj+9 : aperçu d'impact de la suspension affiché", (await page.locator('[data-impact="suspendre"] li').count()) >= 3);
+  check("raccourci Ctrl+Alt+Maj+9 : aperçu d'impact de la suspension affiché", (await page.locator('[data-impact="suspendre"] li').count()) >= 3);
   await axe(page, "Équipe et participants — aperçu d'impact (bureau)");
   await page.locator("[data-confirm]").click();
   await page.waitForFunction((email) => document.querySelector(`tr[data-participant="${email}"] [data-etat-participation]`)?.getAttribute("data-etat-participation") === "suspendue", cReader.email, { timeout: 10000 });
@@ -218,7 +218,7 @@ try {
   check("interface : réactivation, accès rendu", (await reader("GET", `/projects/${pid}`)).status === 200);
   // Rôles par portée au clavier.
   await ligneLecteur.locator('[data-commande-collaboration="attribuer-role"]').focus();
-  await page.keyboard.press("Alt+Shift+Digit8");
+  await page.keyboard.press("Control+Alt+Shift+Digit8");
   const roles = page.locator("[data-formulaire-roles]");
   await roles.waitFor({ timeout: 5000 });
   await roles.locator('[data-champ="role"]').selectOption("relecteur");

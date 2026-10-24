@@ -1400,3 +1400,133 @@ export const studioDossiers = pgTable("studio_dossiers", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("studio_dossiers_study_idx").on(t.studyId, t.createdAt)]);
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Communication (COM, Issue #280) — `init.sql` porte les contraintes ; la lisibilité est recalculée à chaque requête
+// depuis l'accès courant au projet (`lib/com-audience.ts`).
+
+export type ComMode = "contexte" | "groupe" | "direct";
+export type ComAudience = "participants" | "equipe" | "projet";
+export type ComContextType = "projet" | "etape" | "document" | "fichier" | "studio-variante" | "revision-atelier";
+export type ComNature = "message" | "partage" | "action";
+export type ComRefType = "etape" | "document" | "fichier" | "studio-variante" | "observation-studio" | "message" | "demande" | "revision-atelier";
+/** Référence à un élément du projet : type et identifiant seulement (libellé résolu pour chaque lecteur). */
+export interface ComRef { type: ComRefType; id: string }
+export type ComEventAction = "creer" | "audience" | "participant-ajoute" | "participant-retire" | "animation" | "modification-message" | "retrait-message" | "partage-envoye" | "partage-recu" | "action-liee";
+
+export const comConversations = pgTable("com_conversations", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  mode: text("mode").$type<ComMode>().notNull(),
+  title: text("title").notNull(),
+  audience: text("audience").$type<ComAudience>().notNull(),
+  contextType: text("context_type").$type<ComContextType>(),
+  contextRef: text("context_ref"),
+  contextRevision: text("context_revision"),
+  stewardId: text("steward_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  lastMessageAt: timestamp("last_message_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("com_conversations_project_idx").on(t.projectId, t.lastMessageAt)]);
+
+export const comParticipants = pgTable("com_participants", {
+  conversationId: text("conversation_id").notNull().references(() => comConversations.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  addedBy: text("added_by").notNull().references(() => users.id, { onDelete: "restrict" }),
+  addedAt: timestamp("added_at", { withTimezone: true }).defaultNow().notNull(),
+  historyFrom: timestamp("history_from", { withTimezone: true }),
+  removedAt: timestamp("removed_at", { withTimezone: true }),
+}, (t) => [primaryKey({ columns: [t.conversationId, t.userId] })]);
+
+export const comMessages = pgTable("com_messages", {
+  id: text("id").primaryKey(),
+  conversationId: text("conversation_id").notNull().references(() => comConversations.id, { onDelete: "cascade" }),
+  authorId: text("author_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  body: text("body").notNull(),
+  nature: text("nature").$type<ComNature>().notNull().default("message"),
+  replyToId: text("reply_to_id"),
+  refs: jsonb("refs").$type<ComRef[]>().notNull().default([]),
+  mentions: text("mentions").array().notNull().default([]),
+  ackRequired: boolean("ack_required").notNull().default(false),
+  urgent: boolean("urgent").notNull().default(false),
+  capturedAt: timestamp("captured_at", { withTimezone: true }),
+  clientRequestId: text("client_request_id"),
+  payloadHash: text("payload_hash"),
+  sharedFrom: jsonb("shared_from").$type<{ conversationId: string; messageIds: string[] } | null>(),
+  editedAt: timestamp("edited_at", { withTimezone: true }),
+  withdrawnAt: timestamp("withdrawn_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("com_messages_conversation_idx").on(t.conversationId, t.createdAt)]);
+
+export const comMessageVersions = pgTable("com_message_versions", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  messageId: text("message_id").notNull().references(() => comMessages.id, { onDelete: "cascade" }),
+  body: text("body").notNull(),
+  replacedAt: timestamp("replaced_at", { withTimezone: true }).defaultNow().notNull(),
+  reason: text("reason").$type<"modification" | "retrait">().notNull(),
+});
+
+export const comReceipts = pgTable("com_receipts", {
+  messageId: text("message_id").notNull().references(() => comMessages.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  openedAt: timestamp("opened_at", { withTimezone: true }),
+  acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true }),
+}, (t) => [primaryKey({ columns: [t.messageId, t.userId] })]);
+
+export const comReads = pgTable("com_reads", {
+  conversationId: text("conversation_id").notNull().references(() => comConversations.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  lastReadAt: timestamp("last_read_at", { withTimezone: true }).notNull(),
+}, (t) => [primaryKey({ columns: [t.conversationId, t.userId] })]);
+
+export const comEvents = pgTable("com_events", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  conversationId: text("conversation_id").notNull().references(() => comConversations.id, { onDelete: "cascade" }),
+  actorId: text("actor_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  action: text("action").$type<ComEventAction>().notNull(),
+  detail: jsonb("detail").$type<Record<string, unknown>>().notNull().default({}),
+  at: timestamp("at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const comLinks = pgTable("com_links", {
+  id: text("id").primaryKey(),
+  messageId: text("message_id").notNull().references(() => comMessages.id, { onDelete: "cascade" }),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  targetType: text("target_type").$type<"demande" | "observation-studio">().notNull(),
+  targetId: text("target_id").notNull(),
+  targetScope: jsonb("target_scope").$type<Record<string, string>>().notNull().default({}),
+  createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export type DemandeStatut = "ouverte" | "repondue" | "close";
+export type DemandeAction = "ouvrir" | "repondre" | "cloturer" | "rouvrir" | "reattribuer";
+
+/** Demande de précision (Collaboration partagée, COM-D10) : question et réponses jamais réécrites. */
+export const collabDemandes = pgTable("collab_demandes", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  question: text("question").notNull(),
+  refs: jsonb("refs").$type<ComRef[]>().notNull().default([]),
+  requesterId: text("requester_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  responderId: text("responder_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  echeance: date("echeance", { mode: "string" }),
+  statut: text("statut").$type<DemandeStatut>().notNull().default("ouverte"),
+  audience: text("audience").$type<CommentAudience>().notNull().default("equipe"),
+  sourceMessageId: text("source_message_id"),
+  clientRequestId: text("client_request_id"),
+  payloadHash: text("payload_hash"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("collab_demandes_project_idx").on(t.projectId, t.createdAt)]);
+
+export const collabDemandeEvents = pgTable("collab_demande_events", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  demandeId: text("demande_id").notNull().references(() => collabDemandes.id, { onDelete: "cascade" }),
+  actorId: text("actor_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  action: text("action").$type<DemandeAction>().notNull(),
+  body: text("body"),
+  fromUser: text("from_user"),
+  toUser: text("to_user"),
+  at: timestamp("at", { withTimezone: true }).defaultNow().notNull(),
+});

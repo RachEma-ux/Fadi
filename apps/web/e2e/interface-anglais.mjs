@@ -119,6 +119,7 @@ const ecrans = [
   ["analyses", `/projets/${pid}?module=analyses`],
   ["documents", `/projets/${pid}?module=documents`],
   ["collaboration", `/projets/${pid}?module=collaboration`],
+  ["boite", "/boite"],
   ["studio", "/studio"],
   ["studio-projet", `/studio/projets/${pid}`],
   ["studio-etude", cheminEtudeEn],
