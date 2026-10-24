@@ -1384,6 +1384,179 @@ CREATE INDEX IF NOT EXISTS mail_outbox_created_idx ON admin.mail_outbox (created
 CREATE INDEX IF NOT EXISTS mail_outbox_to_idx ON admin.mail_outbox (to_address, created_at);
 
 -- ---------------------------------------------------------------------------
+-- Organisations, participation et revue externe — phase 1 (Issue #262, docs/workstreams/organisations-participation/).
+-- Personnes (compte vérifié ou contact sans compte), organisations minimales, participations au projet et rôles métier
+-- par portée (OP-D3 c). Jusqu'à la phase 2, l'accès reste porté par `projects.owner_id` et `project_members` : les
+-- participations et les rôles d'origine `acces` en sont le miroir, tenu par déclencheurs (aucun chemin d'écriture
+-- oublié) et repris de l'existant de façon idempotente. Aucun droit n'en dépend encore.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS people (
+  id text PRIMARY KEY,
+  -- Liaison à un compte : vérifiée seulement (activation d'une invitation, accès existant), jamais par ressemblance.
+  user_id text REFERENCES users (id) ON DELETE CASCADE,
+  -- Contact sans compte (OP-D9) : nom requis ; pour un compte, l'identité affichée reste celle du compte.
+  display_name text,
+  job_title text,
+  work_email text,
+  work_phone text,
+  created_by text REFERENCES users (id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT people_identity_check CHECK (user_id IS NOT NULL OR length(btrim(coalesce(display_name, ''))) > 0)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS people_user_unique ON people (user_id) WHERE user_id IS NOT NULL;
+
+-- Organisation minimale (OP-D1, OP-D4) : partie représentée ou partie propriétaire ; l'espace d'organisation
+-- (adhésions, groupes, administration) viendra avec la partie 5 du concept (OP-D10).
+CREATE TABLE IF NOT EXISTS organizations (
+  id text PRIMARY KEY,
+  name text NOT NULL,
+  -- Type déclaré en saisie libre tant que les listes du maître d'ouvrage manquent (OP-D4).
+  kind text,
+  status text NOT NULL DEFAULT 'active',
+  created_by text REFERENCES users (id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT organizations_name_check CHECK (length(btrim(name)) > 0),
+  CONSTRAINT organizations_status_check CHECK (status IN ('active', 'suspendue', 'close'))
+);
+
+-- Participation : une personne OU une organisation dans un projet, pour une période. Annuaire et équipe en sont deux
+-- vues (concept, partie 1) ; une fin de participation garde l'enregistrement, un retour ouvre une nouvelle période.
+CREATE TABLE IF NOT EXISTS project_participations (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  person_id text REFERENCES people (id) ON DELETE CASCADE,
+  organization_id text REFERENCES organizations (id) ON DELETE CASCADE,
+  represented_organization_id text REFERENCES organizations (id) ON DELETE SET NULL,
+  -- Rôle métier déclaré (« ingénieur structure »…), saisie libre tant que les listes manquent (OP-D4).
+  business_role text,
+  -- Responsabilités d'équipe du concept : diriger, produire, coordonner, vérifier, approuver, diffuser.
+  responsibilities text[] NOT NULL DEFAULT '{}',
+  status text NOT NULL,
+  starts_on date,
+  ends_on date,
+  created_by text REFERENCES users (id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT project_participations_party_check CHECK ((person_id IS NULL) <> (organization_id IS NULL)),
+  CONSTRAINT project_participations_status_check CHECK (status IN ('contact', 'active', 'suspendue', 'terminee')),
+  CONSTRAINT project_participations_period_check CHECK (ends_on IS NULL OR starts_on IS NULL OR ends_on >= starts_on),
+  CONSTRAINT project_participations_ended_check CHECK ((status = 'terminee') = (ends_on IS NOT NULL)),
+  CONSTRAINT project_participations_responsibilities_check
+    CHECK (responsibilities <@ ARRAY['diriger', 'produire', 'coordonner', 'verifier', 'approuver', 'diffuser']::text[])
+);
+CREATE UNIQUE INDEX IF NOT EXISTS project_participations_current_person ON project_participations (project_id, person_id)
+  WHERE person_id IS NOT NULL AND status <> 'terminee';
+CREATE UNIQUE INDEX IF NOT EXISTS project_participations_current_org ON project_participations (project_id, organization_id)
+  WHERE organization_id IS NOT NULL AND status <> 'terminee';
+CREATE INDEX IF NOT EXISTS project_participations_person_idx ON project_participations (person_id);
+
+-- Rôles métier par portée (OP-D3 c, concept partie 2) : Lecteur, Concepteur, Relecteur, Coordinateur, Approbateur,
+-- Diffuseur. Origine `acces` : miroir de l'accès actuel (lecteur → lecteur, editeur → concepteur), tenu par les
+-- déclencheurs ; origine `attribution` : affectation explicite (phase 2), jamais touchée par le miroir.
+CREATE TABLE IF NOT EXISTS project_role_assignments (
+  id text PRIMARY KEY,
+  participation_id text NOT NULL REFERENCES project_participations (id) ON DELETE CASCADE,
+  role text NOT NULL,
+  scope_type text NOT NULL DEFAULT 'projet',
+  scope_id text,
+  origin text NOT NULL DEFAULT 'attribution',
+  granted_by text REFERENCES users (id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT project_role_assignments_role_check
+    CHECK (role IN ('lecteur', 'concepteur', 'relecteur', 'coordinateur', 'approbateur', 'diffuseur')),
+  CONSTRAINT project_role_assignments_scope_check CHECK (scope_type IN ('projet', 'etude', 'variante', 'revision', 'documents')),
+  CONSTRAINT project_role_assignments_scope_id_check
+    CHECK (CASE WHEN scope_type = 'projet' THEN scope_id IS NULL ELSE length(btrim(coalesce(scope_id, ''))) > 0 END),
+  CONSTRAINT project_role_assignments_origin_check CHECK (origin IN ('acces', 'attribution'))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS project_role_assignments_unique
+  ON project_role_assignments (participation_id, role, scope_type, coalesce(scope_id, ''), origin);
+
+-- Miroir de l'accès d'un compte à un projet, recalculé depuis l'état courant (propriétaire, sinon `project_members`) :
+-- l'ordre des écritures d'un transfert de propriété ne coupe pas une participation tant que le compte garde un accès.
+CREATE OR REPLACE FUNCTION op_sync_access(p_project text, p_user text, p_since date DEFAULT current_date)
+RETURNS void LANGUAGE plpgsql AS $$
+DECLARE
+  v_owner text;
+  v_member text;
+  v_access text;
+  v_person text;
+  v_part text;
+  v_role text;
+BEGIN
+  SELECT owner_id INTO v_owner FROM projects WHERE id = p_project;
+  IF NOT FOUND OR NOT EXISTS (SELECT 1 FROM users WHERE id = p_user) THEN RETURN; END IF;  -- suppression en cascade
+  SELECT role INTO v_member FROM project_members WHERE project_id = p_project AND user_id = p_user;
+  v_access := CASE WHEN v_owner = p_user THEN 'proprietaire' ELSE v_member END;
+  SELECT id INTO v_person FROM people WHERE user_id = p_user;
+  IF v_access IS NULL THEN
+    IF v_person IS NOT NULL THEN
+      UPDATE project_participations SET status = 'terminee', ends_on = greatest(current_date, coalesce(starts_on, current_date)),
+        updated_at = now()
+       WHERE project_id = p_project AND person_id = v_person AND status <> 'terminee';
+    END IF;
+    RETURN;
+  END IF;
+  IF v_person IS NULL THEN
+    -- Deux accès simultanés du même compte (deux projets créés en parallèle) : l'un crée la personne, l'autre la relit.
+    INSERT INTO people (id, user_id) VALUES ('per_' || gen_random_uuid(), p_user)
+      ON CONFLICT (user_id) WHERE user_id IS NOT NULL DO NOTHING;
+    SELECT id INTO v_person FROM people WHERE user_id = p_user;
+  END IF;
+  SELECT id INTO v_part FROM project_participations
+   WHERE project_id = p_project AND person_id = v_person AND status <> 'terminee' FOR UPDATE;
+  IF v_part IS NULL THEN
+    v_part := 'ppa_' || gen_random_uuid();
+    INSERT INTO project_participations (id, project_id, person_id, status, starts_on)
+    VALUES (v_part, p_project, v_person, 'active', least(p_since, current_date));
+  ELSE
+    UPDATE project_participations SET status = 'active', updated_at = now() WHERE id = v_part AND status = 'contact';
+  END IF;
+  v_role := CASE v_access WHEN 'lecteur' THEN 'lecteur' WHEN 'editeur' THEN 'concepteur' END;
+  DELETE FROM project_role_assignments
+   WHERE participation_id = v_part AND origin = 'acces' AND role IS DISTINCT FROM v_role;
+  IF v_role IS NOT NULL THEN
+    INSERT INTO project_role_assignments (id, participation_id, role, scope_type, origin)
+    VALUES ('pra_' || gen_random_uuid(), v_part, v_role, 'projet', 'acces')
+    ON CONFLICT DO NOTHING;
+  END IF;
+END $$;
+
+CREATE OR REPLACE FUNCTION op_project_members_mirror() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF TG_OP IN ('UPDATE', 'DELETE') THEN PERFORM op_sync_access(OLD.project_id, OLD.user_id); END IF;
+  IF TG_OP IN ('INSERT', 'UPDATE') THEN PERFORM op_sync_access(NEW.project_id, NEW.user_id); END IF;
+  RETURN NULL;
+END $$;
+CREATE OR REPLACE TRIGGER project_members_op_mirror AFTER INSERT OR UPDATE OR DELETE ON project_members
+  FOR EACH ROW EXECUTE FUNCTION op_project_members_mirror();
+
+CREATE OR REPLACE FUNCTION op_projects_owner_mirror() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF TG_OP = 'UPDATE' THEN PERFORM op_sync_access(OLD.id, OLD.owner_id); END IF;
+  PERFORM op_sync_access(NEW.id, NEW.owner_id);
+  RETURN NULL;
+END $$;
+CREATE OR REPLACE TRIGGER projects_op_owner_mirror AFTER INSERT OR UPDATE OF owner_id ON projects
+  FOR EACH ROW EXECUTE FUNCTION op_projects_owner_mirror();
+
+-- Reprise de l'existant : chaque propriétaire et chaque membre reçoit sa personne, une participation active datée de
+-- son accès et, pour un membre, son rôle miroir. Rejouée sans effet (aucune ligne créée deux fois).
+DO $$
+DECLARE r record;
+BEGIN
+  FOR r IN
+    SELECT p.id AS project_id, p.owner_id AS user_id, p.created_at::date AS since FROM projects p
+    UNION ALL
+    SELECT m.project_id, m.user_id, m.created_at::date FROM project_members m
+  LOOP
+    PERFORM op_sync_access(r.project_id, r.user_id, r.since);
+  END LOOP;
+END $$;
+
+-- ---------------------------------------------------------------------------
 -- D-7 : droits au moindre privilège. Exécuté par un super-utilisateur (amorçage, CI) : propriété de tout transférée à
 -- `fadi_owner` ; exécuté par `fadi_migrator` (membre de `fadi_owner`) : droits rejoués ; sinon, simple avis (rôles non
 -- provisionnés : rien n'est changé). `fadi_app` : lecture / écriture des tables, aucun DDL, journal d'audit en lecture et

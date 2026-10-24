@@ -16,7 +16,7 @@ Chaque **chantier** dispose d'un dossier de contexte et d'un point de reprise ; 
 | Studio | Cadrage et missions définis ; cases et conformité à qualifier | [studio/](studio/CONTEXT.md) | [Programme #156](https://github.com/RachEma-ux/Fadi/issues/156), Issues #159–#164 |
 | GeoData | Concept 1.0 déposé pour revue ; aucune implémentation | [geodata/](geodata/CONTEXT.md) | [Issue #243](https://github.com/RachEma-ux/Fadi/issues/243) · [PR #245](https://github.com/RachEma-ux/Fadi/pull/245) |
 | Gestion des comptes (Users Management) | **Fusionnée** dans `main` (PR #255) et déployée en préproduction (2026-10-23) ; Issue #253 close ; production sur accord explicite | [users-management/](users-management/CONTEXT.md) | [Issue #253](https://github.com/RachEma-ux/Fadi/issues/253) |
-| Organisations, participation et revue externe | **À définir** : plan proposé, validation et décisions OP-D1 à OP-D13 attendues (🛑 0) | [organisations-participation/](organisations-participation/CONTEXT.md) | [Issue #262](https://github.com/RachEma-ux/Fadi/issues/262) |
+| Organisations, participation et revue externe | **En cours** : plan validé (OP-1, OP-2) ; phase 1 sur branche, revue 🛑 1 attendue | [organisations-participation/](organisations-participation/CONTEXT.md) | [Issue #262](https://github.com/RachEma-ux/Fadi/issues/262) |
 | Règles communes de collaboration | **À définir** : cadrage proposé (matrice, plan) ; CR-D1 à CR-D10 répondues ; aucun module, aucun code | [collaboration-rules/](collaboration-rules/CONTEXT.md) | [Issue #272](https://github.com/RachEma-ux/Fadi/issues/272) |
 
 ## Ouvrir un chantier

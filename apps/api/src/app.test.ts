@@ -1996,6 +1996,17 @@ describe("Partage du projet — membres, rôles vérifiés côté serveur", () =
     expect((await next.get(`/projects/${pid}`)).body).toMatchObject({ role: "proprietaire", ownerEmail: "transfer-next@example.com" });
     expect((await owner.get(`/projects/${pid}`)).body).toMatchObject({ role: "editeur", ownerEmail: "transfer-next@example.com" });
     expect((await owner.get("/projects")).body[0]).toMatchObject({ id: pid, role: "editeur" });
+    // Organisations / participation (Issue #262, phase 1) : le miroir des accès garde une seule participation continue
+    // par compte pendant le transfert ; l'ancien propriétaire devient concepteur, le nouveau n'a pas de rôle miroir.
+    const participations = (await pool.query(
+      `SELECT u.email, pp.status, coalesce(array_agg(ra.role) FILTER (WHERE ra.id IS NOT NULL), '{}') AS roles
+         FROM project_participations pp JOIN people pe ON pe.id = pp.person_id JOIN users u ON u.id = pe.user_id
+         LEFT JOIN project_role_assignments ra ON ra.participation_id = pp.id
+        WHERE pp.project_id = $1 GROUP BY u.email, pp.id ORDER BY u.email`, [pid])).rows;
+    expect(participations).toEqual([
+      { email: "transfer-next@example.com", status: "active", roles: [] },
+      { email: "transfer-owner@example.com", status: "active", roles: ["concepteur"] },
+    ]);
     // L'ancien propriétaire modifie encore, mais ne partage ni ne supprime plus ; le nouveau fait les deux.
     expect((await owner.patch(`/projects/${pid}/steps/2`).send({ fields: { f1: "Après transfert" } })).status).toBe(200);
     expect((await owner.post(`/projects/${pid}/members`).send({ email: "transfer-stranger@example.com", role: "lecteur" })).status).toBe(403);

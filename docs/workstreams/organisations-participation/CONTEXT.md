@@ -22,7 +22,6 @@ Le maître d'ouvrage a ouvert ce chantier le 2026-10-23, à la suite de UM-1 de 
 - **Exclus :**
   - tout déploiement et toute production ;
   - la session temps réel et la « ressource restreinte » (OP-D11) ;
-  - le moteur général d'accès actions × portées, sauf décision contraire (OP-D3) ;
   - la paie et la gestion d'emploi ;
   - toute modification de la garde DB-3 ou de ses clés.
 
@@ -37,7 +36,7 @@ Le maître d'ouvrage a ouvert ce chantier le 2026-10-23, à la suite de UM-1 de 
 ## Contraintes
 
 - Le concept prime sur le plan. Les listes métier sont fournies par le maître d'ouvrage et ne sont jamais inventées.
-- Migrations additives et idempotentes (schémas D-7). Les droits actuels des membres ne changent pas tant que OP-D3 n'est pas tranchée.
+- Migrations additives et idempotentes (schémas D-7). Les droits actuels des membres ne changent pas en phase 1 ; la bascule vers les six rôles métier (OP-D3 c) vient en phase 2, sans perte d'accès.
 - Un participant externe ne voit que ce qui lui est explicitement partagé, y compris par liens, aperçus, notifications et exports.
 - Autorisation serveur à chaque requête, échec fermé. Assurance de session (UM-18) et capacité `export` (UM-20) conservées.
 - Implémentation, vérification et acceptation restent distinctes.
