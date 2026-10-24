@@ -26,6 +26,9 @@ const ECRANS: Record<CommandeCollaboration, string[]> = {
   "rendre-visible": ["modules/collaboration/CollaborationModule.tsx", "modules/studio/commentaires/PanneauCommentaires.tsx"],
   "reserver-equipe": ["modules/collaboration/CollaborationModule.tsx", "modules/studio/commentaires/PanneauCommentaires.tsx"],
   "export-lecteur": ["modules/collaboration/CollaborationModule.tsx"],
+  approbateur: ["modules/collaboration/CollaborationModule.tsx"],
+  diffuseur: ["modules/collaboration/CollaborationModule.tsx"],
+  "gardien-contenu": ["modules/collaboration/CollaborationModule.tsx"],
 };
 
 function sources(dir: string): string[] {
@@ -81,6 +84,10 @@ describe("Règle d'or — commandes de collaboration (audience, export du lecteu
     expect(declenche(t("Digit3"), "export-lecteur")).toBe(true);
     expect(declenche(t("Digit3"), "visible-lecteurs")).toBe(false);
     expect(propsRaccourci("export-lecteur")["aria-keyshortcuts"]).toBe("Alt+Shift+3");
+    expect(declenche(t("Digit4"), "approbateur")).toBe(true);
+    expect(declenche(t("Digit5"), "diffuseur")).toBe(true);
+    expect(declenche(t("Digit6"), "gardien-contenu")).toBe(true);
+    expect(declenche(t("Digit4"), "diffuseur")).toBe(false);
   });
 
   it("rendu : icône SVG décorative, raccourci affiché", () => {

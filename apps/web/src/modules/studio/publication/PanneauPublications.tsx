@@ -28,6 +28,11 @@ const refused = (e: unknown) => e instanceof ApiError && [401, 403, 404].include
 const date = (iso: string | null) => { if (!iso) return "—"; const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleString(LOCALE, { dateStyle: "medium", timeStyle: "short" }); };
 const ko = (n: number) => `${Math.max(1, Math.round(n / 1024))} Kio`;
 
+/** Base d'autorité d'une transition (écart E5) : au titre de quoi elle a été permise. */
+const LIBELLE_AUTORITE: Record<"proprietaire" | "editeur" | "approbateur" | "diffuseur", string> = {
+  proprietaire: "au titre du propriétaire", editeur: "au titre d’éditeur", approbateur: "au titre d’approbateur désigné", diffuseur: "au titre de diffuseur désigné",
+};
+
 export function PanneauPublications({ projectId, studyId, variants, canWrite }: PanneauPublicationsProps) {
   const cle = ["studio-publications", projectId, studyId];
   const client = useQueryClient();
@@ -36,7 +41,7 @@ export function PanneauPublications({ projectId, studyId, variants, canWrite }: 
   return (
     <section className="studio-publications" aria-labelledby="studio-publications-titre" data-studio-publications>
       <h2 id="studio-publications-titre">Publications</h2>
-      <p className="studio-publications-sub">Une publication porte sur une révision précise d’une variante, figée dans un manifeste. Propriétaire et éditeurs soumettent ; le propriétaire approuve, refuse, diffuse et retire ; un lecteur consulte. Une publication approuvée se diffuse tant que son manifeste n’a pas changé. Rien n’est supprimé : retrait et remplacement sont journalisés.</p>
+      <p className="studio-publications-sub">Une publication porte sur une révision précise d’une variante, figée dans un manifeste. Propriétaire et éditeurs soumettent ; le propriétaire et les approbateurs qu’il désigne approuvent ou refusent ; le propriétaire et les diffuseurs qu’il désigne diffusent et retirent ; un lecteur consulte. Une publication approuvée se diffuse tant que son manifeste n’a pas changé. Rien n’est supprimé : retrait et remplacement sont journalisés.</p>
       {canWrite && variants.length > 0 && <PreparerPublication projectId={projectId} studyId={studyId} variants={variants.filter((v) => !v.archived)} surCree={relire} />}
       {liste.isPending && <p role="status">Chargement des publications…</p>}
       {liste.isError && <p role="alert">Publications indisponibles. <button type="button" onClick={() => void liste.refetch()}>Réessayer</button></p>}
@@ -190,6 +195,7 @@ function CartePublication({ projectId, studyId, publication: p, surChange }: { p
             <li key={ev.id}>
               <strong>{LIBELLE_EVENEMENT[ev.action]}</strong>{" "}
               <span translate="no">{`${ev.author.email} · ${date(ev.createdAt)} · ${court(ev.revisionId)}`}</span>
+              {ev.authority && <small data-studio-publication-autorite={ev.authority.role}>{` · ${LIBELLE_AUTORITE[ev.authority.role]}`}</small>}
               {ev.relatedPublicationId && <span translate="no">{` → ${court(ev.relatedPublicationId)}`}</span>}
               {ev.comment && <q translate="no">{ev.comment}</q>}
             </li>

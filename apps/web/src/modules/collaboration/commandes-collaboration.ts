@@ -1,12 +1,13 @@
 /**
- * Commandes de collaboration livrées avec les écarts E1 et E2 des règles communes (CR-C1) : la règle d'or (AGENTS.md)
+ * Commandes de collaboration livrées avec les écarts E1 et E2 des règles communes (CR-C1), puis E5 et E10 (CR-C2 :
+ * affectations d'Approbateur et de Diffuseur, gardien du contenu déclaré) : la règle d'or (AGENTS.md)
  * leur est appliquée comme aux commandes de la Planche — chacune a sa propre icône (jamais partagée), sa place dans la
  * barre où elle agit (formulaire de rédaction, en-tête du fil, ligne du membre) et un raccourci clavier, affiché à côté
  * de la commande et déclaré par `aria-keyshortcuts`. Sur écran tactile, la case ou le bouton nommé reste visible : le
  * raccourci le complète, il ne le remplace pas. Pur : aucun DOM, testé par `commandes-collaboration.test.ts`.
  */
 
-export type CommandeCollaboration = "visible-lecteurs" | "rendre-visible" | "reserver-equipe" | "export-lecteur";
+export type CommandeCollaboration = "visible-lecteurs" | "rendre-visible" | "reserver-equipe" | "export-lecteur" | "approbateur" | "diffuseur" | "gardien-contenu";
 
 export interface Raccourci {
   /** `KeyboardEvent.code` : indépendant de la disposition et de la touche Alt (macOS). */
@@ -51,6 +52,21 @@ export const COMMANDES_COLLABORATION: Readonly<Record<CommandeCollaboration, Def
   "export-lecteur": {
     libelle: "Export accordé", barre: "membres", raccourci: altMaj("3"),
     icone: ["M12 3v12", "M7 10l5 5 5-5", "M4 21h16"],
+  },
+  // Approbateur (E5) : sceau coché.
+  approbateur: {
+    libelle: "Approbateur", barre: "membres", raccourci: altMaj("4"),
+    icone: ["M12 2l2.4 2.2 3.2-.4.9 3.1 2.9 1.5-1.2 3 1.2 3-2.9 1.5-.9 3.1-3.2-.4L12 22l-2.4-2.2-3.2.4-.9-3.1-2.9-1.5 1.2-3-1.2-3 2.9-1.5.9-3.1 3.2.4z", "M8.5 12l2.5 2.5 4.5-5"],
+  },
+  // Diffuseur (E5) : avion de papier (le paquet part).
+  diffuseur: {
+    libelle: "Diffuseur", barre: "membres", raccourci: altMaj("5"),
+    icone: ["M22 2L11 13", "M22 2l-7 20-4-9-9-4z"],
+  },
+  // Gardien du contenu (E10) : bouclier ; responsabilité déclarée, aucun droit.
+  "gardien-contenu": {
+    libelle: "Gardien du contenu", barre: "membres", raccourci: altMaj("6"),
+    icone: ["M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"],
   },
 });
 

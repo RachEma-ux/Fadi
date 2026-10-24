@@ -61,7 +61,7 @@ describe("Publications Studio — règles d'affichage pures", () => {
       libelleActualite({ freshness: "a-jour" }), "Manifeste", "Remplacée", "Retirée par", "Travail", "Diffusion", "Actualité", "Variantes coordonnées (facultatif)",
       "La révision courante de la variante, celle des variantes coordonnées et les empreintes des documents sont figées dans le manifeste.",
       "Le manifeste est reconstruit depuis les révisions courantes ; l’approbation précédente ne vaut plus et le dossier repasse en brouillon.",
-      "Une publication porte sur une révision précise d’une variante, figée dans un manifeste. Propriétaire et éditeurs soumettent ; le propriétaire approuve, refuse, diffuse et retire ; un lecteur consulte. Une publication approuvée se diffuse tant que son manifeste n’a pas changé. Rien n’est supprimé : retrait et remplacement sont journalisés.",
+      "Une publication porte sur une révision précise d’une variante, figée dans un manifeste. Propriétaire et éditeurs soumettent ; le propriétaire et les approbateurs qu’il désigne approuvent ou refusent ; le propriétaire et les diffuseurs qu’il désigne diffusent et retirent ; un lecteur consulte. Une publication approuvée se diffuse tant que son manifeste n’a pas changé. Rien n’est supprimé : retrait et remplacement sont journalisés.",
       "Vous approuvez le manifeste 0123456789ab : révision 89abcdef (empreinte aaaaaaaaaaaa).",
     ];
     for (const l of libelles) expect(t.traduire(l), l).not.toBe(l);

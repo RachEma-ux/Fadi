@@ -148,6 +148,10 @@ export const STUDIO_JSON_FIELDS_WITHOUT_ACCOUNTS: Readonly<Partial<Record<Studio
   studio_sheets: ["definition"],
   studio_dossiers: ["sheet_ids"],
   studio_publications: ["package", "manifest"],
+  // Base d'autorité d'une transition (écart E5) : rôle de projet, ou affectation (rôle et identifiant d'affectation du
+  // projet source, conservé comme trace historique) ; aucun compte. Colonne nullable additive : une archive antérieure
+  // se restaure en NULL.
+  studio_publication_events: ["authority"],
   studio_tool_preferences: ["favorites", "personal", "groups"],
 });
 

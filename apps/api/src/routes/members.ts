@@ -5,9 +5,11 @@
  *   POST   /          { email, role } → 201 : partage (ou changement de rôle) d'un compte existant ; 202 : invitation
  *                      nominative d'une adresse sans compte (UM-3, lien à copier si le courriel n'a pas pu partir) — propriétaire seulement
  *   DELETE /invitations/:invitationId → 204 : annulation d'une invitation en attente — propriétaire seulement
- *   PATCH  /:userId   { role?, canExport? } → le rôle d'un membre, et l'export accordé ou retiré à un lecteur (E2) —
- *                      propriétaire seulement
- *   DELETE /:userId   → 204 : retrait d'un membre par le propriétaire, ou départ du membre lui-même
+ *   PATCH  /:userId   { role?, canExport?, approbateur?, diffuseur?, gardien? } → le rôle d'un membre, l'export accordé
+ *                      ou retiré à un lecteur (E2), les affectations d'Approbateur et de Diffuseur (E5) et la
+ *                      responsabilité déclarée de gardien du contenu (E10) — propriétaire seulement
+ *   DELETE /:userId   → 204 : retrait d'un membre par le propriétaire, ou départ du membre lui-même ; libère sa réservation
+ *                      d'édition et ses verrous fins (E6)
  *   POST   /:userId/propriete → transfert de la propriété à ce membre (propriétaire seulement) : l'ancien propriétaire
  *                      devient éditeur, le nouveau quitte la liste des membres ; rien d'autre ne change (réservation, données)
  *
@@ -27,6 +29,13 @@
  * lecteur (sans export). Journal (écart E3) : chaque ajout, changement de rôle ou d'export, retrait, départ et transfert
  * de propriété écrit son entrée `admin.audit_log` dans la transaction de l'action — acteur, projet (cible), membre visé,
  * rôle et export avant → après ; jamais d'adresse.
+ *
+ * Affectations (écarts E5 et E10, `lib/affectations.ts`) : Approbateur et Diffuseur sont deux affectations distinctes
+ * qu'une même personne peut tenir ensemble (CR-D2 a) ; elles ouvrent l'approbation et la diffusion Studio, rien d'autre.
+ * Gardien du contenu : responsabilité déclarée, sans droit. Chaque changement est journalisé
+ * (`project.member.assignment_changed`). Fin de participation (E6, CR-D7 a) : le retrait et le départ libèrent la
+ * réservation d'édition et les verrous fins du membre dans la même transaction ; les observations et tâches qu'il portait
+ * restent à lui, listées au propriétaire (`aReattribuer`) pour une réattribution explicite dans Studio.
  */
 import { Router, type Request } from "express";
 import { and, asc, eq, gt } from "drizzle-orm";
@@ -39,6 +48,7 @@ import { formatDate, mailLocale, PUBLIC_PATHS, publicLink, sendAccountMail } fro
 import { createOrRenewInvitation, invitationView } from "../lib/invitations.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { projectOr404, type ProjectRole } from "../lib/owned-project.js";
+import { affectationsDuProjet, aReattribuer, AUCUNE_AFFECTATION, changerAffectation, libererReservations, type AffectationMembre, type AffectationsDuMembre } from "../lib/affectations.js";
 import { lockProject } from "../lib/step-rows.js";
 
 export const membersRouter = Router({ mergeParams: true });
@@ -50,6 +60,8 @@ export interface MemberView {
   role: "lecteur" | "editeur";
   /** Le membre peut exporter : toujours pour un éditeur ; pour un lecteur, si le propriétaire l'a accordé (E2). */
   canExport: boolean;
+  /** Affectations explicites (E5) et responsabilité déclarée de gardien du contenu (E10). */
+  affectations: AffectationsDuMembre;
   invitedBy: string;
   createdAt: string;
 }
@@ -68,8 +80,12 @@ export const ROLE_LABEL: Record<ProjectRole, string> = {
 
 const roleSchema = z.enum(["lecteur", "editeur"]);
 const inviteSchema = z.object({ email: z.string().trim().toLowerCase().email("Adresse invalide").max(254), role: roleSchema });
-const memberBody = z.object({ role: roleSchema.optional(), canExport: z.boolean().optional() }).strict()
-  .refine((v) => v.role !== undefined || v.canExport !== undefined, { message: "role ou canExport attendu" });
+const memberBody = z.object({
+  role: roleSchema.optional(), canExport: z.boolean().optional(),
+  approbateur: z.boolean().optional(), diffuseur: z.boolean().optional(), gardien: z.boolean().optional(),
+}).strict()
+  .refine((v) => Object.values(v).some((x) => x !== undefined), { message: "role, canExport, approbateur, diffuseur ou gardien attendu" });
+const AFFECTATION_KEYS = ["approbateur", "diffuseur", "gardien"] as const satisfies readonly AffectationMembre[];
 
 /** Les membres d'un projet (hors propriétaire), avec leur adresse, par date d'invitation. */
 export async function listMembers(projectId: string): Promise<MemberView[]> {
@@ -79,7 +95,11 @@ export async function listMembers(projectId: string): Promise<MemberView[]> {
     .innerJoin(users, eq(users.id, projectMembers.userId))
     .where(eq(projectMembers.projectId, projectId))
     .orderBy(asc(projectMembers.createdAt), asc(users.email));
-  return rows.map((r) => ({ userId: r.userId, email: r.email, role: r.role, canExport: memberExports(r.role, r.canExport), invitedBy: r.invitedBy, createdAt: r.createdAt.toISOString() }));
+  const affectations = await affectationsDuProjet(db, projectId);
+  return rows.map((r) => ({
+    userId: r.userId, email: r.email, role: r.role, canExport: memberExports(r.role, r.canExport), affectations: affectations.get(r.userId) ?? AUCUNE_AFFECTATION,
+    invitedBy: r.invitedBy, createdAt: r.createdAt.toISOString(),
+  }));
 }
 
 export async function ownerEmailOf(ownerId: string): Promise<string> {
@@ -100,7 +120,7 @@ membersRouter.get("/", async (req, res) => {
   if (!project) return;
   res.json({
     owner: { userId: project.ownerId, email: await ownerEmailOf(project.ownerId) }, you: { userId: req.user!.id, role: project.role }, members: await listMembers(project.id),
-    ...(project.role === "proprietaire" ? { invitations: await pendingInvitations(project.id) } : {}),
+    ...(project.role === "proprietaire" ? { invitations: await pendingInvitations(project.id), aReattribuer: await aReattribuer(db, project.id) } : {}),
   });
 });
 
@@ -166,10 +186,15 @@ membersRouter.post("/", async (req, res) => {
     }
     return changeMember(tx, req, project.id, before, { role: parsed.data.role });
   });
-  res.status(201).json({ userId: account.id, email: account.email, role: row.role, canExport: memberExports(row.role, row.canExport), invitedBy: row.invitedBy, createdAt: row.createdAt.toISOString() } satisfies MemberView);
+  res.status(201).json({
+    userId: account.id, email: account.email, role: row.role, canExport: memberExports(row.role, row.canExport),
+    affectations: (await affectationsDuProjet(db, project.id)).get(account.id) ?? AUCUNE_AFFECTATION, invitedBy: row.invitedBy, createdAt: row.createdAt.toISOString(),
+  } satisfies MemberView);
 });
 
 type MemberRow = typeof projectMembers.$inferSelect;
+
+class MissingParticipation extends Error {}
 
 /** Ligne du membre verrouillée (FOR UPDATE) : deux changements concurrents ne journalisent pas le même « avant ». */
 function lockedMember(tx: Tx, projectId: string, userId: string) {
@@ -210,8 +235,27 @@ membersRouter.patch("/:userId", async (req, res) => {
     const [before] = await lockedMember(tx, project.id, userId);
     if (!before) return { status: 404 as const };
     if (parsed.data.canExport !== undefined && (parsed.data.role ?? before.role) === "editeur") return { status: 422 as const };
-    return { status: 200 as const, row: await changeMember(tx, req, project.id, before, parsed.data) };
+    const { approbateur: _a, diffuseur: _d, gardien: _g, ...access } = parsed.data;
+    const row = access.role !== undefined || access.canExport !== undefined ? await changeMember(tx, req, project.id, before, access) : before;
+    for (const key of AFFECTATION_KEYS) {
+      const valeur = parsed.data[key];
+      if (valeur === undefined) continue;
+      const change = await changerAffectation(tx, project.id, userId, key, valeur, req.user!.id);
+      // Participation active absente (miroir rompu) : refus, la transaction est annulée.
+      if (!change) throw new MissingParticipation();
+      if (change.avant !== change.apres) {
+        await audit(tx, { actorId: req.user!.id, action: "project.member.assignment_changed", target: { type: "project", id: project.id }, metadata: { memberId: userId, assignment: key, before: change.avant, after: change.apres }, ip: clientIp(req) });
+      }
+    }
+    return { status: 200 as const, row };
+  }).catch((e: unknown) => {
+    if (e instanceof MissingParticipation) return { status: 409 as const };
+    throw e;
   });
+  if (outcome.status === 409) {
+    res.status(409).json({ error: "participation_missing", message: "Ce membre n'a pas de participation active au projet : rechargez la liste des membres." });
+    return;
+  }
   if (outcome.status === 404) {
     res.status(404).json({ error: "not_found" });
     return;
@@ -222,7 +266,10 @@ membersRouter.patch("/:userId", async (req, res) => {
   }
   const row = outcome.row;
   const [account] = await db.select({ email: users.email }).from(users).where(eq(users.id, userId)).limit(1);
-  res.json({ userId, email: account?.email ?? "", role: row.role, canExport: memberExports(row.role, row.canExport), invitedBy: row.invitedBy, createdAt: row.createdAt.toISOString() } satisfies MemberView);
+  res.json({
+    userId, email: account?.email ?? "", role: row.role, canExport: memberExports(row.role, row.canExport),
+    affectations: (await affectationsDuProjet(db, project.id)).get(userId) ?? AUCUNE_AFFECTATION, invitedBy: row.invitedBy, createdAt: row.createdAt.toISOString(),
+  } satisfies MemberView);
 });
 
 membersRouter.delete("/:userId", async (req, res) => {
@@ -237,9 +284,11 @@ membersRouter.delete("/:userId", async (req, res) => {
       .returning({ userId: projectMembers.userId, role: projectMembers.role, canExport: projectMembers.canExport });
     const [gone] = rows;
     if (gone) {
+      // Fin de participation (E6) : réservation d'édition et verrous fins libérés dans la même transaction.
+      const released = await libererReservations(tx, project.id, userId, req.user!.id);
       await audit(tx, {
         actorId: req.user!.id, action: userId === req.user!.id ? "project.member.left" : "project.member.removed", target: { type: "project", id: project.id },
-        metadata: { memberId: userId, roleBefore: gone.role, canExportBefore: memberExports(gone.role, gone.canExport) }, ip: clientIp(req),
+        metadata: { memberId: userId, roleBefore: gone.role, canExportBefore: memberExports(gone.role, gone.canExport), releasedEditingLock: released.reservationEdition, releasedFineLocks: released.verrous }, ip: clientIp(req),
       });
     }
     return rows;

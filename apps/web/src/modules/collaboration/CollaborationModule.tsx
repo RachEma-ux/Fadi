@@ -10,13 +10,14 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
-import { accountApi, api, ApiError, canComment, ROLE_LABEL, type CommentAudience, type MemberRole, type ProjectComment } from "../../lib/api";
+import { accountApi, api, ApiError, canComment, ROLE_LABEL, type CommentAudience, type MemberAffectation, type MemberRole, type ProjectComment, type ProjectMember } from "../../lib/api";
 import { useProjectAccess } from "../../lib/access";
 import { useOnline } from "../../components/SyncIndicator";
 import { apiMessage, ConfirmDialog, CopyLink } from "../../components/comptes/ComptesUI";
 import { MUTATION_KEYS, adoptComment, type CommentVars } from "../../lib/mutations";
 import { LOCALE } from "../../lib/i18n";
-import { declenche, propsRaccourci, type CommandeCollaboration } from "./commandes-collaboration";
+import { cheminVarianteStudio } from "../studio/routes-studio";
+import { COMMANDES_COLLABORATION, declenche, propsRaccourci, type CommandeCollaboration } from "./commandes-collaboration";
 import { IconeCollaboration, RaccourciCollaboration } from "./IconeCollaboration";
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -262,6 +263,19 @@ const ROLE_HELP: Record<MemberRole, string> = {
   editeur: "lit, commente et modifie (saisies, arbitrages, programme, Atelier, sources)",
 };
 
+/**
+ * Affectations de la ligne du membre (écarts E5 et E10) : chacune est une commande avec son icône et son raccourci
+ * (règle d'or). Approbateur et Diffuseur ouvrent l'approbation et la diffusion Studio ; le gardien du contenu est une
+ * responsabilité déclarée, sans aucun droit.
+ */
+const AFFECTATIONS: readonly { cle: MemberAffectation; commande: CommandeCollaboration; aide: string; oui: string; non: string }[] = [
+  { cle: "approbateur", commande: "approbateur", aide: "approuve ou refuse les publications Studio", oui: "est maintenant approbateur : il peut approuver ou refuser les publications Studio.", non: "n’est plus approbateur." },
+  { cle: "diffuseur", commande: "diffuseur", aide: "diffuse ou retire les publications Studio approuvées", oui: "est maintenant diffuseur : il peut diffuser ou retirer les publications Studio approuvées.", non: "n’est plus diffuseur." },
+  { cle: "gardien", commande: "gardien-contenu", aide: "responsabilité déclarée, sans droit supplémentaire", oui: "est déclaré gardien du contenu (aucun droit supplémentaire).", non: "n’est plus déclaré gardien du contenu." },
+];
+const COMMANDE_LIBELLE = (c: CommandeCollaboration) => COMMANDES_COLLABORATION[c].libelle;
+const affectationsDe = (m: ProjectMember) => m.affectations ?? { approbateur: false, diffuseur: false, gardien: false };
+
 const errorText = (err: unknown, fallback: string) => (err instanceof ApiError && err.serverMessage ? err.serverMessage : fallback);
 
 /** Partage du projet : membres et rôles. Le propriétaire invite, change, retire ; un membre peut quitter le projet. */
@@ -315,6 +329,16 @@ export function MembersPanel({ projectId }: { projectId: string }) {
     },
     onError: (err) => setError(errorText(err, "Le droit d’export n’a pas pu être modifié.")),
   });
+  const affect = useMutation({
+    mutationFn: ({ userId, cle, next }: { userId: string; cle: MemberAffectation; next: boolean }) => api.setMemberAffectation(projectId, userId, cle, next),
+    onSuccess: (m, { cle, next }) => {
+      setError(null);
+      const a = AFFECTATIONS.find((x) => x.cle === cle)!;
+      setNotice(`${m.email} ${next ? a.oui : a.non}`);
+      refresh();
+    },
+    onError: (err) => setError(errorText(err, "L’affectation n’a pas pu être modifiée.")),
+  });
   const transfer = useMutation({
     mutationFn: (userId: string) => api.transferOwnership(projectId, userId),
     onSuccess: (v) => {
@@ -336,7 +360,7 @@ export function MembersPanel({ projectId }: { projectId: string }) {
         void navigate("/projets", { state: { notice: "Vous avez quitté le projet partagé." } });
         return;
       }
-      setNotice("Accès retiré.");
+      setNotice("Accès retiré. Sa réservation d’édition et ses verrous ont été libérés ; ses observations et tâches ouvertes restent à réattribuer.");
       refresh();
     },
     onError: (err) => setError(errorText(err, "Le retrait n’a pas pu être enregistré.")),
@@ -350,7 +374,7 @@ export function MembersPanel({ projectId }: { projectId: string }) {
   if (!query.data) return <p role="alert">Impossible de lire les membres du projet.</p>;
   const v = query.data;
   const isOwner = v.you.role === "proprietaire";
-  const busy = invite.isPending || change.isPending || remove.isPending || transfer.isPending || exportRight.isPending;
+  const busy = invite.isPending || change.isPending || remove.isPending || transfer.isPending || exportRight.isPending || affect.isPending;
   return (
     <div className="members-panel">
       <div className="table-scroll" tabIndex={0} role="region" aria-label="Membres du projet">
@@ -360,6 +384,7 @@ export function MembersPanel({ projectId }: { projectId: string }) {
             <th>Compte</th>
             <th>Rôle</th>
             <th>Export</th>
+            <th>Affectations</th>
             <th>Depuis</th>
             <th>{isOwner ? "Action" : ""}</th>
           </tr>
@@ -372,6 +397,7 @@ export function MembersPanel({ projectId }: { projectId: string }) {
             </td>
             <td>propriétaire</td>
             <td>oui</td>
+            <td>gardien du projet ; approuve et diffuse</td>
             <td>—</td>
             <td />
           </tr>
@@ -384,6 +410,13 @@ export function MembersPanel({ projectId }: { projectId: string }) {
                 if (isOwner && m.role === "lecteur" && !busy && declenche(e, "export-lecteur")) {
                   e.preventDefault();
                   exportRight.mutate({ userId: m.userId, next: !m.canExport });
+                }
+                // Alt+Maj+4 / 5 / 6 : Approbateur, Diffuseur, Gardien du contenu du membre de la ligne.
+                for (const a of AFFECTATIONS) {
+                  if (isOwner && !busy && declenche(e, a.commande)) {
+                    e.preventDefault();
+                    affect.mutate({ userId: m.userId, cle: a.cle, next: !affectationsDe(m)[a.cle] });
+                  }
                 }
               }}
             >
@@ -418,6 +451,22 @@ export function MembersPanel({ projectId }: { projectId: string }) {
                   "non"
                 )}
               </td>
+              <td data-member-affectations={AFFECTATIONS.filter((a) => affectationsDe(m)[a.cle]).map((a) => a.cle).join(" ")}>
+                {isOwner ? (
+                  <span className="member-affectations">
+                    {AFFECTATIONS.map((a) => (
+                      <label key={a.cle} className="member-export" title={a.aide}>
+                        <input type="checkbox" checked={affectationsDe(m)[a.cle]} disabled={busy} aria-label={`${COMMANDE_LIBELLE(a.commande)} : ${m.email}`} {...propsRaccourci(a.commande)} onChange={(e) => affect.mutate({ userId: m.userId, cle: a.cle, next: e.target.checked })} />
+                        <IconeCollaboration commande={a.commande} />
+                        {COMMANDE_LIBELLE(a.commande)}
+                        <RaccourciCollaboration commande={a.commande} />
+                      </label>
+                    ))}
+                  </span>
+                ) : (
+                  AFFECTATIONS.filter((a) => affectationsDe(m)[a.cle]).map((a) => COMMANDE_LIBELLE(a.commande)).join(", ") || "—"
+                )}
+              </td>
               <td>{new Date(m.createdAt).toLocaleDateString(LOCALE)}</td>
               <td>
                 {isOwner ? (
@@ -447,7 +496,7 @@ export function MembersPanel({ projectId }: { projectId: string }) {
           ))}
           {v.members.length === 0 && (
             <tr>
-              <td colSpan={5} className="h7-muted">
+              <td colSpan={6} className="h7-muted">
                 Aucun membre invité : ce projet n’est visible que par son propriétaire.
               </td>
             </tr>
@@ -489,6 +538,23 @@ export function MembersPanel({ projectId }: { projectId: string }) {
               <li key={i.id} data-invitation={i.email}>
                 <span><span className="collab-email">{i.email}</span> <small>· {i.projectRole ? ROLE_LABEL[i.projectRole] : ""}{` · valable jusqu’au ${new Date(i.expiresAt).toLocaleDateString(LOCALE)}`}</small></span>
                 <button type="button" className="button-secondary" disabled={busy || cancelInvitation.isPending} onClick={() => cancelInvitation.mutate(i.id)}>Annuler l’invitation</button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {isOwner && (v.aReattribuer?.length ?? 0) > 0 && (
+        <div className="members-invitations" data-a-reattribuer>
+          <h3>Responsabilités à réattribuer</h3>
+          <p className="h7-muted">Ces observations et tâches Studio sont encore confiées à une personne qui n’a plus accès au projet. Rien n’est réattribué d’office : ouvrez la variante et réattribuez-les ; leur auteur et leur historique restent inchangés.</p>
+          <ul className="sessions-list">
+            {v.aReattribuer!.map((r) => (
+              <li key={`${r.nature}-${r.id}`} data-responsabilite={r.nature}>
+                <span>
+                  <b>{r.nature === "observation" ? "Observation" : "Tâche"}</b> <span translate="no">« {r.libelle.length > 80 ? `${r.libelle.slice(0, 79)}…` : r.libelle} »</span>{" "}
+                  <small>· <span className="collab-email">{r.responsable.email}</span></small>
+                </span>
+                <Link className="button-secondary" to={cheminVarianteStudio(projectId, r.studyId, r.variantId)}>Ouvrir dans Studio</Link>
               </li>
             ))}
           </ul>

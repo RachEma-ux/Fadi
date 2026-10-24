@@ -142,6 +142,16 @@ try {
   await rejects('participation personne ET organisation', "INSERT INTO project_participations (id, project_id, person_id, organization_id, status) VALUES ('op_x', 'op_p3', 'op_contact', 'op_org', 'contact')");
   await rejects('statut inconnu', "INSERT INTO project_participations (id, project_id, organization_id, status) VALUES ('op_x', 'op_p3', 'op_org', 'invite')");
   await rejects('responsabilité inconnue', "INSERT INTO project_participations (id, project_id, organization_id, status, responsibilities) VALUES ('op_x', 'op_p3', 'op_org', 'contact', '{diriger,chef}')");
+  // Écart E10 : `garder` (gardien du contenu) admis ; une base antérieure (contrainte sans `garder`) est élargie au rejeu.
+  await client.query("UPDATE project_participations SET responsibilities = '{garder,verifier}' WHERE id = 'op_pc'");
+  ok('responsabilité « garder » (gardien du contenu) acceptée');
+  await client.query('SAVEPOINT e10');
+  await client.query("UPDATE project_participations SET responsibilities = '{}' WHERE id = 'op_pc'");
+  await client.query("ALTER TABLE project_participations DROP CONSTRAINT project_participations_responsibilities_check, ADD CONSTRAINT project_participations_responsibilities_check CHECK (responsibilities <@ ARRAY['diriger', 'produire', 'coordonner', 'verifier', 'approuver', 'diffuser']::text[])");
+  await client.query(initSql);
+  const def = await one("SELECT pg_get_constraintdef(oid) AS d FROM pg_constraint WHERE conname = 'project_participations_responsibilities_check'");
+  check(def.d.includes('garder'), 'rejeu sur une base antérieure : contrainte des responsabilités élargie à « garder »', def.d);
+  await client.query('ROLLBACK TO SAVEPOINT e10');
   await rejects('terminée sans date de fin', "INSERT INTO project_participations (id, project_id, organization_id, status) VALUES ('op_x', 'op_p3', 'op_org', 'terminee')");
   await rejects('date de fin d\'une participation en cours', "INSERT INTO project_participations (id, project_id, organization_id, status, ends_on) VALUES ('op_x', 'op_p3', 'op_org', 'active', '2026-10-01')");
   await rejects('fin avant le début', "INSERT INTO project_participations (id, project_id, organization_id, status, starts_on, ends_on) VALUES ('op_x', 'op_p3', 'op_org', 'terminee', '2026-10-02', '2026-10-01')");

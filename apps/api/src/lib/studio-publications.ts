@@ -39,15 +39,16 @@ import { db } from "../db/client.js";
 import {
   studioPublicationEvents, studioPublications, studioRevisions, studioStudies, studioVariants, users, volumes,
   type StudioPackageFile, type StudioPackageFormat, type StudioPublicationAction, type StudioPublicationDiffusionStatus, type StudioPublicationManifest,
-  type StudioPublicationPackage, type StudioPublicationStatus, type StudioPublicationWorkStatus,
+  type StudioPublicationAuthority, type StudioPublicationPackage, type StudioPublicationStatus, type StudioPublicationWorkStatus,
 } from "../db/schema.js";
 import type { Tx } from "./atelier-validation.js";
 import { newId } from "./ids.js";
-import { loadProjectAccess, projectAccessRefusal, type AccessibleProject } from "./owned-project.js";
+import { activeLock, loadProjectAccess, lockedMessage, projectAccessRefusal, type AccessibleProject } from "./owned-project.js";
+import { affectationsPublication } from "./affectations.js";
 import type { Querier } from "./step-rows.js";
 import { assertAccess, lockedAccess, notFound, StudioRequestError, studioArchivedRefusal, studioFileSegment, studioIdentifierSchema, studyOf } from "./studio-commands.js";
 import {
-  actualiteDe, actualiteParEmpreinte, actualiteVue, besoinTransition, CacheRegeneration, cleRegeneration, type ContenuPublication, contenuDe, formatsDuContenu, type ControleDocuments, canonicalJson, construireManifeste, controlerApprobation, controlerEnsembleExamine, controlerTransition,
+  actualiteDe, actualiteParEmpreinte, actualiteVue, baseAutorite, besoinTransition, CacheRegeneration, REFUS_CAPACITE, REGLES_TRANSITION, type AffectationTenue, cleRegeneration, type ContenuPublication, contenuDe, formatsDuContenu, type ControleDocuments, canonicalJson, construireManifeste, controlerApprobation, controlerEnsembleExamine, controlerTransition,
   diffusionPlusRecente, dimensionsDe, ecartsManifeste, memeContenu, empreinteManifeste, sha256, statutCombine, STUDIO_PUBLICATION_ACTIONS,
   type Actualite, type Dimensions, type EcartManifeste, type ManifesteDocument, type ManifesteMeta, type ManifesteSource, type StudioPublicationTransition,
 } from "./studio-publication-statuts.js";
@@ -127,6 +128,8 @@ export interface StudioPublicationEventView {
   workStatus: StudioPublicationWorkStatus | null; diffusionStatus: StudioPublicationDiffusionStatus | null;
   author: Who; comment: string | null; revisionId: string; documentHash: string; manifestHash: string | null; headRevisionId: string;
   relatedPublicationId: string | null; createdAt: string;
+  /** Base d'autorité de la transition (E5, CR-D6) ; null pour une entrée antérieure. */
+  authority: StudioPublicationAuthority | null;
 }
 export interface StudioPublicationView {
   id: string; projectId: string; studyId: string; variantId: string; variantName: string; title: string;
@@ -218,13 +221,27 @@ async function regeneratedDocuments(q: Querier, access: AccessibleProject, rows:
   return out;
 }
 
-function allowedFor(access: AccessibleProject, actorId: string, dims: Dimensions, row: PublicationRow, freshness: Actualite, archived: boolean): StudioPublicationTransition[] {
+function allowedFor(access: AccessibleProject, actorId: string, affectations: readonly AffectationTenue[], dims: Dimensions, row: PublicationRow, freshness: Actualite, archived: boolean): StudioPublicationTransition[] {
   return STUDIO_PUBLICATION_ACTIONS.filter((action) => {
     if (!controlerTransition(action, { ...dims, manifeste: row.manifest !== null, actualite: freshness }, "-").ok) return false;
     if (action === "diffuser" && (freshness === "perimee" || !row.approvedManifestHash)) return false;
     if (archived && action !== "retirer") return false;
-    return projectAccessRefusal(access, actorId, besoinTransition(action)) === null;
+    return autoriteRefus(access, actorId, affectations, action) === null;
   });
+}
+
+/**
+ * Droit d'une transition (E5) : une base d'autorité (rôle de projet ou affectation explicite, `baseAutorite`), puis le
+ * verrou d'édition d'un autre compte (423, toute transition est une écriture, propriétaire compris). Rend la base, ou le
+ * refus.
+ */
+function autoriteRefus(access: AccessibleProject, actorId: string, affectations: readonly AffectationTenue[], action: StudioPublicationTransition): { status: number; body: Record<string, unknown> } | null {
+  if (!baseAutorite(action, access.role, affectations)) {
+    const role = projectAccessRefusal(access, actorId, besoinTransition(action));
+    return role ?? { status: 403, body: { error: "forbidden", message: REFUS_CAPACITE[REGLES_TRANSITION[action].capacite], role: access.role } };
+  }
+  const lock = activeLock(access);
+  return lock && lock.userId !== actorId ? { status: 423, body: { error: "locked", message: lockedMessage(lock), lock } } : null;
 }
 
 /**
@@ -249,6 +266,7 @@ async function views(q: Querier, access: AccessibleProject, actorId: string, row
   const mails = await emails(q, [...rows.flatMap((r) => [r.createdBy, r.approvedBy, r.diffusedBy, r.replacedBy]), ...eventsRows.map((e) => e.authorId)]);
   const who = (id: string | null) => (id ? { id, email: mails.get(id) ?? "" } : null);
   const regenerated = await regeneratedDocuments(q, access, rows, states, withEvents);
+  const affectations = access.role === "proprietaire" || access.role === "support" ? [] : await affectationsPublication(q, access.id, actorId);
   return rows.map((row) => {
     const variant = states.get(row.variantId);
     // Documents : comparés si régénérés (lecture exacte ou cache), sinon « non vérifiée » ; jamais « à jour » par défaut.
@@ -277,13 +295,13 @@ async function views(q: Querier, access: AccessibleProject, actorId: string, row
       replacedBy,
       replacement: replacedBy ? { publicationId: replacedBy, by: who(row.replacedBy), at: row.replacedAt?.toISOString() ?? null } : null,
       withdrawal: retrait ? { by: who(retrait.authorId)!, at: retrait.createdAt.toISOString(), comment: retrait.comment } : null,
-      allowed: allowedFor(access, actorId, dims, row, freshness, variant ? variant.archivedAt !== null || variant.studyArchivedAt !== null : true),
+      allowed: allowedFor(access, actorId, affectations, dims, row, freshness, variant ? variant.archivedAt !== null || variant.studyArchivedAt !== null : true),
     };
     if (withEvents) {
       view.events = own.map((e) => ({
         id: e.id, action: e.action, fromStatus: e.fromStatus, toStatus: e.toStatus, workStatus: e.workStatus, diffusionStatus: e.diffusionStatus,
         author: who(e.authorId)!, comment: e.comment, revisionId: e.revisionId, documentHash: e.documentHash, manifestHash: e.manifestHash,
-        headRevisionId: e.headRevisionId, relatedPublicationId: e.relatedPublicationId, createdAt: e.createdAt.toISOString(),
+        headRevisionId: e.headRevisionId, relatedPublicationId: e.relatedPublicationId, createdAt: e.createdAt.toISOString(), authority: e.authority ?? null,
       }));
     }
     return view;
@@ -334,13 +352,15 @@ const coordinatedOf = (manifest: StudioPublicationManifest | null): string[] => 
 interface JournalEntry {
   action: StudioPublicationAction; from: StudioPublicationStatus | null; to: StudioPublicationStatus; dims: Dimensions;
   authorId: string; comment: string | undefined | null; headRevisionId: string; at: Date; related?: string | null;
+  /** Base d'autorité (E5, CR-D6) : celle de la transition qui écrit l'entrée (création : rôle de projet). */
+  authority: StudioPublicationAuthority;
 }
 async function journal(tx: Tx, row: Pick<PublicationRow, "id" | "revisionId" | "documentHash" | "manifestHash">, e: JournalEntry) {
   await tx.insert(studioPublicationEvents).values({
     id: newId("studio_publication_event"), publicationId: row.id, action: e.action, fromStatus: e.from, toStatus: e.to,
     workStatus: e.dims.travail, diffusionStatus: e.dims.diffusion, authorId: e.authorId, comment: e.comment ?? null,
     revisionId: row.revisionId, documentHash: row.documentHash, manifestHash: row.manifestHash, headRevisionId: e.headRevisionId,
-    relatedPublicationId: e.related ?? null, createdAt: e.at,
+    relatedPublicationId: e.related ?? null, authority: e.authority ?? null, createdAt: e.at,
   });
 }
 
@@ -429,7 +449,7 @@ export async function createStudioPublication(projectId: string, studyId: string
       requestId: input.requestId ?? null, createdBy: actorId, createdAt: now, updatedAt: now,
     };
     await tx.insert(studioPublications).values(row);
-    await journal(tx, row, { action: "creer", from: null, to: row.status, dims, authorId: actorId, comment: input.comment, headRevisionId: variant.headRevisionId, at: now });
+    await journal(tx, row, { action: "creer", from: null, to: row.status, dims, authorId: actorId, comment: input.comment, headRevisionId: variant.headRevisionId, at: now, authority: { base: "role-projet", role: access.role === "proprietaire" ? "proprietaire" : "editeur" } });
     const [stored] = await tx.select().from(studioPublications).where(eq(studioPublications.id, row.id)).limit(1);
     return { ...(await views(tx, access, actorId, [stored!], true))[0]!, replayed: false };
   });
@@ -443,9 +463,12 @@ export async function transitionStudioPublication(projectId: string, studyId: st
     const [row] = await tx.select().from(studioPublications)
       .where(and(eq(studioPublications.id, publicationId), eq(studioPublications.studyId, study.id), eq(studioPublications.projectId, projectId))).for("update");
     if (!row) return notFound();
-    assertAccess(access, actorId, besoinTransition(action));
-    // Toute transition est une écriture : la réservation d'édition d'un autre compte la bloque (423), propriétaire compris.
-    assertAccess(access, actorId, "write");
+    // Base d'autorité (rôle de projet ou affectation d'Approbateur / de Diffuseur, E5), relue sous le verrou du projet ;
+    // toute transition est une écriture : la réservation d'édition d'un autre compte la bloque (423), propriétaire compris.
+    const affectations = await affectationsPublication(tx, projectId, actorId);
+    const refus = autoriteRefus(access, actorId, affectations, action);
+    if (refus) throw new StudioRequestError(refus.status, refus.body);
+    const authority = baseAutorite(action, access.role, affectations)!;
     const variant = await variantOf(tx, study.id, row.variantId);
     const dims = dimensionsDe(row);
     // Manifeste recalculé maintenant (têtes, noms et exporteurs actuels) : son empreinte fait foi pour l'actualité, de
@@ -513,11 +536,11 @@ export async function transitionStudioPublication(projectId: string, studyId: st
           status: statutCombine(replaced), workStatus: replaced.travail, diffusionStatus: replaced.diffusion,
           replacedByPublicationId: row.id, replacedBy: actorId, replacedAt: now, updatedAt: now,
         }).where(eq(studioPublications.id, old.id));
-        await journal(tx, old, { action: "remplacer", from: old.status, to: statutCombine(replaced), dims: replaced, authorId: actorId, comment: input.comment, headRevisionId: variant.headRevisionId, at: now, related: row.id });
+        await journal(tx, old, { action: "remplacer", from: old.status, to: statutCombine(replaced), dims: replaced, authorId: actorId, comment: input.comment, headRevisionId: variant.headRevisionId, at: now, related: row.id, authority });
       }
     }
     await tx.update(studioPublications).set(patch).where(eq(studioPublications.id, row.id));
-    await journal(tx, after, { action, from: row.status, to: statutCombine(vers), dims: vers, authorId: actorId, comment: input.comment, headRevisionId: variant.headRevisionId, at: now });
+    await journal(tx, after, { action, from: row.status, to: statutCombine(vers), dims: vers, authorId: actorId, comment: input.comment, headRevisionId: variant.headRevisionId, at: now, authority });
     const [stored] = await tx.select().from(studioPublications).where(eq(studioPublications.id, row.id)).limit(1);
     return (await views(tx, access, actorId, [stored!], true))[0]!;
   });
