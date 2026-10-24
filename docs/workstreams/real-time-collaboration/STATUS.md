@@ -32,4 +32,4 @@ prérequis. Ne pas assimiler à un travail livré.
 ## Préconditions de clôture
 
 - RTC-0 : critères de sortie de `TASKS.md`.
-- Chantier : lots RTC-1 à RTC-5 acceptés, matrice `PLAN.md` § 6 verte, préproduction validée par le maître d'ouvrage.
+- Chantier : lots RTC-1 à RTC-5 acceptés, tests `PLAN.md` § 6 des lots RTC-1 à RTC-5 verts, préproduction validée par le maître d'ouvrage.
