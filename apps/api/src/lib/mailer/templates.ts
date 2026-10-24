@@ -23,7 +23,8 @@ const COPY: Record<MailLocale, Record<MailTemplate, Copy>> = {
     invitation: {
       subject: "Invitation à rejoindre Fadi",
       lines: (d) => [
-        d["projectName"] ? `Vous êtes invité·e à rejoindre le projet « ${d["projectName"]} » sur Fadi (rôle : ${d["role"] ?? "lecteur"}).` : "Vous êtes invité·e à créer votre compte Fadi.",
+        d["organizationName"] ? `Vous êtes invité·e à rejoindre l'organisation « ${d["organizationName"]} » sur Fadi (rôle : ${d["role"] ?? "membre"}). Une adhésion n'ouvre aucun projet.`
+          : d["projectName"] ? `Vous êtes invité·e à rejoindre le projet « ${d["projectName"]} » sur Fadi (rôle : ${d["role"] ?? "lecteur"}).` : "Vous êtes invité·e à créer votre compte Fadi.",
         `Cette invitation est nominative et expire le ${d["expiresAt"]}. Elle ne peut être acceptée qu'avec l'adresse à laquelle ce courriel a été envoyé.`,
         "Si vous n'attendiez pas cette invitation, ignorez ce message : aucun compte n'est créé sans votre action.",
       ],
@@ -76,7 +77,8 @@ const COPY: Record<MailLocale, Record<MailTemplate, Copy>> = {
     invitation: {
       subject: "Invitation to join Fadi",
       lines: (d) => [
-        d["projectName"] ? `You are invited to join the project “${d["projectName"]}” on Fadi (role: ${d["role"] ?? "reader"}).` : "You are invited to create your Fadi account.",
+        d["organizationName"] ? `You are invited to join the organisation “${d["organizationName"]}” on Fadi (role: ${d["role"] ?? "member"}). A membership opens no project.`
+          : d["projectName"] ? `You are invited to join the project “${d["projectName"]}” on Fadi (role: ${d["role"] ?? "reader"}).` : "You are invited to create your Fadi account.",
         `This invitation is personal and expires on ${d["expiresAt"]}. It can only be accepted with the address this email was sent to.`,
         "If you did not expect this invitation, ignore this message: no account is created without your action.",
       ],
