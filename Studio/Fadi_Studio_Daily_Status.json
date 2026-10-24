@@ -1,42 +1,77 @@
 {
   "schema": "FADI-STUDIO-DAILY-1.0",
-  "generated_at_utc": "2026-10-18T10:46:18.738Z",
+  "generated_at_utc": "2026-10-24T09:36:00+00:00",
   "sources": {
     "questions": "https://github.com/RachEma-ux/Fadi/issues/166",
     "programme": "https://github.com/RachEma-ux/Fadi/issues/156",
     "checklist": "https://github.com/RachEma-ux/Fadi/blob/main/Studio/Fadi_Studio_Checklist_Execution_V1_0.md"
   },
-  "main_sha": "a4caaab0e6665480f09febe3914c960b424b6b47",
-  "pr165_head_sha": "09c43849198f6d0c2037562e8a4891a126eef25b",
-  "api": "consultation GitHub",
+  "main_sha": "c201d2b2afa7a037807bce9e8b4c0150c62204e2",
+  "pr165_head_sha": "fa9f0db232f49007c5a8bebded4ffce530a5bf8f",
+  "api": "consultation API réussie",
   "progress": {
     "pdev_verified": null,
     "p630_verified": null,
-    "p630_reported_by_codex": 6,
+    "p630_reported_by_codex": null,
     "mapping": 630,
     "total": 630,
-    "note": "630 affectations ne prouvent pas 630 réalisations. Les nombres signalés sont des déclarations."
+    "note": "Une affectation 630/630 et un pourcentage rapporté ne prouvent pas une réalisation vérifiée."
   },
   "codex": {
-    "ack_count": 2,
-    "progress_count": 3,
-    "last_progress_at": "2026-10-18T10:19:30Z",
-    "last_progress_url": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6248682431",
+    "ack_count": 17,
+    "progress_count": 23,
+    "last_progress_at": "2026-10-18T16:59:34Z",
+    "last_progress_url": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6252614740",
     "execution_confirmed": true
   },
+  "hourly": {
+    "chatgpt_report_count": 2,
+    "last_at": "2026-10-18T11:26:35Z",
+    "last_url": "https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6249354825"
+  },
   "questions": {
-    "total": 7,
+    "total": 24,
     "unanswered": [
+      "Q-CLAUDE-COEX-01",
+      "Q-CLAUDE-COEX-03",
+      "Q-CLAUDE-COEX-04",
+      "Q-CLAUDE-COEX-05-06",
+      "Q-P156-ADR03-NAV",
+      "Q-P156-G1-EXPERIMENTAL",
+      "Q-P156-G2-HARNESS",
+      "Q-P156-M08-DOC-SCOPE",
+      "Q-STUDIO-SINGLE-SOURCE-01",
+      "Q-STUDIO-V1-AUTH"
+    ],
+    "unanswered_count": 10,
+    "answered_count": 14,
+    "delegated_decision_count": 14,
+    "delegated_decision_ids": [
+      "Q-ID",
       "Q-M003-D01",
       "Q-M003-D02",
       "Q-M003-D03",
       "Q-M003-D04",
       "Q-M003-D05",
       "Q-M003-D06",
+      "Q-M003-D07",
+      "Q-M004-CI-DOC-PURE",
+      "Q-M004-CSP-KML",
+      "Q-M004-DEC01-ORIENTATION",
+      "Q-M004-DEC03-ORIENTATION",
+      "Q-M004-G0-REVIEW",
+      "Q-M004-LOT-CLASSIF-NONDEDUCTION"
+    ],
+    "owner_decision_pending": [
+      "Q-M003-D01",
+      "Q-M003-D02",
+      "Q-M003-D03",
+      "Q-M003-D04",
+      "Q-M003-D05",
       "Q-M003-D07"
     ],
-    "unanswered_count": 7
+    "owner_decision_pending_count": 6
   },
   "task_signals": [],
-  "task_signal_warning": "Les trois cases existantes ne sont jamais modifiées automatiquement."
+  "task_signal_warning": "Statut signalé : ne coche aucune des validations locales Code, Review ChatGPT ou Review Admin."
 }
