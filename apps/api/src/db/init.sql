@@ -2039,6 +2039,57 @@ CREATE OR REPLACE TRIGGER collab_demande_events_no_update BEFORE UPDATE ON colla
   FOR EACH ROW EXECUTE FUNCTION com_event_immutable();
 
 -- ---------------------------------------------------------------------------
+-- Temps réel (RTC-1, Issue #283, décisions RT-D3 à RT-D5) : sessions en direct sur le Studio. Une session n'est ni une
+-- révision ni une approbation (RT-R3) : elle épingle une révision Studio (portée `studio-revision`) ou une publication
+-- figée (portée `paquet-revue`), et son hôte n'en tire aucun droit (RT-R2). Présence, pointeurs et caméra ne sont jamais
+-- enregistrés (RT-D5 § 9) ; seul le journal de session (ouverture, entrées, sorties, transferts, clôture) est gardé, en
+-- ajout seul, avec le projet. Tables nouvelles, additives.
+CREATE TABLE IF NOT EXISTS rt_sessions (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  scope_type text NOT NULL CONSTRAINT rt_sessions_scope_check CHECK (scope_type IN ('studio-revision', 'paquet-revue')),
+  study_id text NOT NULL,
+  variant_id text NOT NULL,
+  revision_id text NOT NULL,
+  publication_id text REFERENCES studio_publications(id) ON DELETE CASCADE,
+  title text NOT NULL CONSTRAINT rt_sessions_title_length CHECK (length(title) BETWEEN 1 AND 120),
+  host_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  presenter_id text REFERENCES users(id) ON DELETE RESTRICT,
+  status text NOT NULL DEFAULT 'ouverte' CONSTRAINT rt_sessions_status_check CHECK (status IN ('ouverte', 'close', 'expiree')),
+  request_id text,
+  created_by text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  expires_at timestamptz NOT NULL,
+  last_activity_at timestamptz NOT NULL DEFAULT now(),
+  closed_at timestamptz,
+  CONSTRAINT rt_sessions_scope_publication CHECK ((scope_type = 'paquet-revue') = (publication_id IS NOT NULL)),
+  CONSTRAINT rt_sessions_closed CHECK ((status = 'ouverte') = (closed_at IS NULL)),
+  CONSTRAINT rt_sessions_variant_fk FOREIGN KEY (study_id, variant_id) REFERENCES studio_variants(study_id, id) ON DELETE CASCADE,
+  CONSTRAINT rt_sessions_revision_fk FOREIGN KEY (variant_id, revision_id) REFERENCES studio_revisions(variant_id, id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS rt_sessions_project_idx ON rt_sessions (project_id, status, created_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS rt_sessions_request_unique ON rt_sessions (project_id, created_by, request_id) WHERE request_id IS NOT NULL;
+CREATE TABLE IF NOT EXISTS rt_session_events (
+  id text PRIMARY KEY,
+  session_id text NOT NULL REFERENCES rt_sessions(id) ON DELETE CASCADE,
+  action text NOT NULL CONSTRAINT rt_session_events_action_check
+    CHECK (action IN ('ouvrir', 'rejoindre', 'quitter', 'presentateur', 'hote', 'reprendre', 'changer-revision', 'clore', 'expirer')),
+  actor_id text REFERENCES users(id) ON DELETE RESTRICT,
+  target_id text REFERENCES users(id) ON DELETE RESTRICT,
+  revision_id text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS rt_session_events_session_idx ON rt_session_events (session_id, created_at);
+-- Journal en ajout seul : toute UPDATE est refusée (les suppressions suivent la cascade du projet).
+CREATE OR REPLACE FUNCTION rt_session_event_immutable() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'rt_session_event_immutable';
+END;
+$$;
+CREATE OR REPLACE TRIGGER rt_session_events_no_update BEFORE UPDATE ON rt_session_events
+  FOR EACH ROW EXECUTE FUNCTION rt_session_event_immutable();
+
+-- ---------------------------------------------------------------------------
 -- D-7 : droits au moindre privilège. Exécuté par un super-utilisateur (amorçage, CI) : propriété de tout transférée à
 -- `fadi_owner` ; exécuté par `fadi_migrator` (membre de `fadi_owner`) : droits rejoués ; sinon, simple avis (rôles non
 -- provisionnés : rien n'est changé). `fadi_app` : lecture / écriture des tables, aucun DDL, journal d'audit en lecture et

@@ -8,6 +8,7 @@ import { basculerAncienMoteur } from "./db/bascule.js";
 import { applyRolePasswords } from "./db/role-passwords.js";
 import { mailRuntime } from "./lib/mailer/index.js";
 import { startAccountWorkers } from "./lib/account-jobs.js";
+import { attacherTempsReel } from "./lib/temps-reel-canal.js";
 
 const port = Number(process.env["PORT"] ?? 3001);
 const host = process.env["HOST"];
@@ -99,6 +100,10 @@ Promise.resolve()
     // réutilise une connexion au moment où le serveur la ferme recevrait sinon un ECONNRESET.
     server.keepAliveTimeout = 65_000;
     server.headersTimeout = 66_000;
+    // Temps réel (Issue #283) : canal WebSocket sur le même serveur, drapeau FADI_TEMPS_REEL ; mêmes origines que la garde CSRF.
+    const arreterTempsReel = attacherTempsReel(server, { origines: (process.env["WEB_ORIGIN"] ?? "http://localhost:5173").split(",") });
+    // Arrêt (déploiement) : les clients sont prévenus (1001) puis le processus s'arrête comme avant, sans attendre les connexions.
+    process.once("SIGTERM", () => { arreterTempsReel(); setTimeout(() => process.exit(0), 200); });
   })
   .catch((err: unknown) => {
     // eslint-disable-next-line no-console

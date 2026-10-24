@@ -1519,3 +1519,42 @@ export const collabDemandeEvents = pgTable("collab_demande_events", {
   toUser: text("to_user"),
   at: timestamp("at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+// ---------------------------------------------------------------------------
+// Temps réel (RTC-1, Issue #283) : sessions en direct sur le Studio et leur journal en ajout seul (init.sql).
+
+export type RtPortee = "studio-revision" | "paquet-revue";
+export type RtStatutSession = "ouverte" | "close" | "expiree";
+export type RtActionSession = "ouvrir" | "rejoindre" | "quitter" | "presentateur" | "hote" | "reprendre" | "changer-revision" | "clore" | "expirer";
+
+/** Session en direct : épingle une révision Studio ou une publication figée ; l'hôte n'en tire aucun droit (RT-R2). */
+export const rtSessions = pgTable("rt_sessions", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  scopeType: text("scope_type").$type<RtPortee>().notNull(),
+  studyId: text("study_id").notNull(),
+  variantId: text("variant_id").notNull(),
+  revisionId: text("revision_id").notNull(),
+  publicationId: text("publication_id").references(() => studioPublications.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  hostId: text("host_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  presenterId: text("presenter_id").references(() => users.id, { onDelete: "restrict" }),
+  status: text("status").$type<RtStatutSession>().notNull().default("ouverte"),
+  requestId: text("request_id"),
+  createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  lastActivityAt: timestamp("last_activity_at", { withTimezone: true }).defaultNow().notNull(),
+  closedAt: timestamp("closed_at", { withTimezone: true }),
+}, (t) => [index("rt_sessions_project_idx").on(t.projectId, t.status, t.createdAt)]);
+
+/** Journal d'une session (ouverture, entrées, sorties, transferts, clôture) : UPDATE refusée par déclencheur. */
+export const rtSessionEvents = pgTable("rt_session_events", {
+  id: text("id").primaryKey(),
+  sessionId: text("session_id").notNull().references(() => rtSessions.id, { onDelete: "cascade" }),
+  action: text("action").$type<RtActionSession>().notNull(),
+  actorId: text("actor_id").references(() => users.id, { onDelete: "restrict" }),
+  targetId: text("target_id").references(() => users.id, { onDelete: "restrict" }),
+  revisionId: text("revision_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("rt_session_events_session_idx").on(t.sessionId, t.createdAt)]);

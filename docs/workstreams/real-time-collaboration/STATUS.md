@@ -4,11 +4,13 @@ Mis à jour : 2026-10-24 (UTC).
 
 ## État
 
-**En cours — cadrage RTC-0 (documentaire)** ouvert par RT-D1 ; questions RT-Q1 à RT-Q7 répondues (RT-D2, RT-D3) ; essai de
-transport réalisé (RTC-0.3). Aucune implémentation ; RTC-1 bloqué par la porte des prérequis.
+**En cours — exécution des lots RTC-1 à RTC-5 (RT-D4, délégation).** RTC-0 fusionné (PR #284). **RTC-1 implémenté et
+vérifié en local** (socle des sessions et canal ; [compte rendu](lots/rtc-1.md)) ; CI et fusion par sa PR. RTC-2 à
+RTC-5 à suivre, un lot par PR.
 
 ## Faits vérifiés
 
+- RTC-1 : 22 tests unitaires et 44 vérifications de bout en bout verts en local (`lots/rtc-1.md`).
 - Base observée : `main@2577e25` (CI verte sur ce SHA). PR #284 : CI verte sur `99562d9` ; `main` refusionné après #281 et #286 (conflit d'index résolu).
 - Aucun WebSocket / SSE dans `apps` ni `packages` ; relectures périodiques de 60 s.
 - RT-D3 : première version = **Studio seul** ; **canal propre au Temps réel**. RT-D2 : WebSocket ; une instance ; hôte remplacé explicitement ; coédition
