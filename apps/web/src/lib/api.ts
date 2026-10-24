@@ -27,6 +27,7 @@ import type {
 } from "@parcours/domain-model";
 
 import { GATEWAY_STATUSES, isNetworkError, reachability } from "./reachability";
+import { LANGUE, type Langue } from "./i18n";
 
 export class ApiError extends Error {
   constructor(
@@ -281,6 +282,8 @@ export type SupportGrantsView =
   | { you: "support"; grant: SupportGrant };
 
 const json = (body: unknown): RequestInit => ({ method: "POST", body: JSON.stringify(body) });
+/** Langue des courriels déclenchés par l'appel (UM-30) : celle de l'interface, jamais celle du navigateur. */
+const withLocale = <T extends object>(body: T, locale: Langue = LANGUE) => ({ ...body, locale });
 function query(params: Record<string, string | number | undefined>): string {
   const q = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== "") q.set(k, String(v));
@@ -296,39 +299,39 @@ function query(params: Record<string, string | number | undefined>): string {
 export const accountApi = {
   login: (email: string, password: string) => request<LoginResult>("/auth/login", json({ email, password })),
   loginMfa: (input: { code: string } | { recoveryCode: string }) => request<CurrentUser>("/auth/login/mfa", json(input)),
-  forgotPassword: (email: string, locale?: "fr" | "en") => request<{ accepted: boolean; message: string }>("/auth/forgot-password", json({ email, locale })),
-  resetPassword: (token: string, password: string) => request<{ reset: boolean }>("/auth/reset-password", json({ token, password })),
+  forgotPassword: (email: string, locale: Langue = LANGUE) => request<{ accepted: boolean; message: string }>("/auth/forgot-password", json({ email, locale })),
+  resetPassword: (token: string, password: string) => request<{ reset: boolean }>("/auth/reset-password", json(withLocale({ token, password }))),
   confirmEmail: (token: string) => request<{ verified: boolean }>("/auth/verify-email/confirm", json({ token })),
-  requestEmailVerification: () => request<{ verified: boolean; mail?: MailOutcome }>("/auth/verify-email/request", { method: "POST" }),
+  requestEmailVerification: () => request<{ verified: boolean; mail?: MailOutcome }>("/auth/verify-email/request", json(withLocale({}))),
   cancelDeletion: (token: string) => request<{ cancelled: boolean }>("/auth/cancel-deletion", json({ token })),
   lookupInvitation: (token: string) => request<InvitationLookup>("/auth/invitations/lookup", json({ token })),
   acceptInvitation: (token: string) => request<{ accepted: boolean; projectId: string | null }>("/auth/invitations/accept", json({ token })),
   declineInvitation: (token: string) => request<{ declined: boolean }>("/auth/invitations/decline", json({ token })),
   activate: (input: { token: string; password: string; displayName?: string }) =>
     request<{ user: CurrentUser; projectId: string | null }>("/auth/activate", json({ ...input, acceptTerms: true })),
-  changePassword: (currentPassword: string, newPassword: string) => request<{ changed: boolean; revokedSessions: number }>("/auth/me/password", json({ currentPassword, newPassword })),
+  changePassword: (currentPassword: string, newPassword: string) => request<{ changed: boolean; revokedSessions: number }>("/auth/me/password", json(withLocale({ currentPassword, newPassword }))),
   sessions: () => request<{ sessions: AccountSession[] }>("/auth/me/sessions"),
   revokeSession: (id: string) => request<void>(`/auth/me/sessions/${encodeURIComponent(id)}`, { method: "DELETE" }),
   revokeOtherSessions: () => request<{ revoked: number }>("/auth/me/sessions", { method: "DELETE" }),
   mfaStatus: () => request<MfaStatus>("/auth/me/mfa"),
   mfaSetup: () => request<MfaSetup>("/auth/me/mfa/setup", { method: "POST" }),
-  mfaEnable: (code: string) => request<{ enabled: true; recoveryCodes: string[] }>("/auth/me/mfa/enable", json({ code })),
-  mfaDisable: (password: string, code: string) => request<{ enabled: false }>("/auth/me/mfa/disable", json({ password, code })),
+  mfaEnable: (code: string) => request<{ enabled: true; recoveryCodes: string[] }>("/auth/me/mfa/enable", json(withLocale({ code }))),
+  mfaDisable: (password: string, code: string) => request<{ enabled: false }>("/auth/me/mfa/disable", json(withLocale({ password, code }))),
   mfaRecoveryCodes: (password: string, code: string) => request<{ recoveryCodes: string[] }>("/auth/me/mfa/recovery-codes", json({ password, code })),
   exportUrl: "/auth/me/export",
-  deleteAccount: (password: string) => request<{ deletionAt: string; mail: { queued: boolean; link?: string } }>("/auth/me", { method: "DELETE", body: JSON.stringify({ password, confirm: "SUPPRIMER" }) }),
+  deleteAccount: (password: string) => request<{ deletionAt: string; mail: { queued: boolean; link?: string } }>("/auth/me", { method: "DELETE", body: JSON.stringify(withLocale({ password, confirm: "SUPPRIMER" })) }),
   // --- Administration (404 pour un non-administrateur, 403 `mfa_required` sans double authentification) ---
   adminUsers: (f: AdminUsersFilters) => request<AdminUsersPage>(`/admin/users${query({ q: f.q, status: f.status, role: f.role, page: f.page, pageSize: f.pageSize, hideTest: f.hideTest ? "true" : "false" })}`),
   adminUser: (id: string) => request<AdminUserDetail>(`/admin/users/${encodeURIComponent(id)}`),
   adminSetRole: (id: string, role: "user" | "admin") => request<{ user: AdminUser }>(`/admin/users/${encodeURIComponent(id)}/role`, { method: "PATCH", body: JSON.stringify({ role }) }),
-  adminSuspend: (id: string) => request<{ user: AdminUser }>(`/admin/users/${encodeURIComponent(id)}/suspend`, { method: "POST" }),
+  adminSuspend: (id: string) => request<{ user: AdminUser }>(`/admin/users/${encodeURIComponent(id)}/suspend`, json(withLocale({}))),
   adminReactivate: (id: string) => request<{ user: AdminUser }>(`/admin/users/${encodeURIComponent(id)}/reactivate`, { method: "POST" }),
   adminRevokeSessions: (id: string) => request<{ revoked: number }>(`/admin/users/${encodeURIComponent(id)}/revoke-sessions`, { method: "POST" }),
-  adminDelete: (id: string) => request<{ deletionAt: string; mail?: { queued: boolean; link?: string } }>(`/admin/users/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  adminDelete: (id: string) => request<{ deletionAt: string; mail?: { queued: boolean; link?: string } }>(`/admin/users/${encodeURIComponent(id)}`, { method: "DELETE", body: JSON.stringify(withLocale({})) }),
   adminTrash: () => request<{ graceDays: number; items: AdminTrashItem[] }>("/admin/trash"),
   adminRestore: (id: string) => request<{ user: AdminUser }>(`/admin/users/${encodeURIComponent(id)}/restore`, { method: "POST" }),
   adminAnonymize: (id: string, confirmEmail: string) => request<{ anonymized: true; userId: string }>(`/admin/users/${encodeURIComponent(id)}/anonymize`, json({ confirmEmail })),
-  adminInvite: (email: string) => request<InvitationCreated>("/admin/users/invitations", json({ email })),
+  adminInvite: (email: string, locale: Langue = LANGUE) => request<InvitationCreated>("/admin/users/invitations", json({ email, locale })),
   adminInvitations: (status?: InvitationStatus, hideTest = false) => request<{ invitations: InvitationView[] }>(`/admin/invitations${query({ status, hideTest: hideTest ? "true" : "false" })}`),
   adminCancelInvitation: (id: string) => request<void>(`/admin/invitations/${encodeURIComponent(id)}`, { method: "DELETE" }),
   // --- Projet : invitations et accès support (propriétaire) ---
@@ -1195,7 +1198,7 @@ export const api = {
   /** Catalogue autorisé : droit réel d'exécution de chaque outil du manifeste pour le compte (lecture seule). */
   studioCatalogueOutils: (p: string) => request<StudioCatalogueAutorise>(`/projects/${encodeURIComponent(p)}/studio/preferences/catalogue`),
   register: (email: string, password: string) =>
-    request<CurrentUser>("/auth/register", { method: "POST", body: JSON.stringify({ email, password }) }),
+    request<CurrentUser>("/auth/register", { method: "POST", body: JSON.stringify(withLocale({ email, password })) }),
   login: (email: string, password: string) =>
     request<LoginResult>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
   logout: () => request<void>("/auth/logout", { method: "POST" }),
@@ -1370,7 +1373,7 @@ export const api = {
   /** Partage : membres et rôles (propriétaire seulement pour inviter, changer, retirer ; un membre peut se retirer lui-même). */
   listMembers: (projectId: string) => request<MembersView>(`/projects/${projectId}/members`),
   /** Compte existant : 201 `ProjectMember` ; adresse sans compte : 202 `InvitationCreated` (UM-3). */
-  inviteMember: (projectId: string, email: string, role: MemberRole) => request<ProjectMember | InvitationCreated>(`/projects/${projectId}/members`, { method: "POST", body: JSON.stringify({ email, role }) }),
+  inviteMember: (projectId: string, email: string, role: MemberRole) => request<ProjectMember | InvitationCreated>(`/projects/${projectId}/members`, { method: "POST", body: JSON.stringify(withLocale({ email, role })) }),
   setMemberRole: (projectId: string, userId: string, role: MemberRole) => request<ProjectMember>(`/projects/${projectId}/members/${encodeURIComponent(userId)}`, { method: "PATCH", body: JSON.stringify({ role }) }),
   removeMember: (projectId: string, userId: string) => request<void>(`/projects/${projectId}/members/${encodeURIComponent(userId)}`, { method: "DELETE" }),
   /** Transfert de propriété à un membre (propriétaire seulement) : vous restez éditeur. */

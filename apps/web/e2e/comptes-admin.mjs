@@ -9,8 +9,10 @@
  *  - corbeille (UM-27) : compte en suppression programmée listé, « Restaurer » puis « Anonymiser maintenant » (adresse à
  *    ressaisir, bouton inactif sinon), icône propre à chaque commande ;
  *  - invitation : garde-fou de courriel atteint → « lien à copier » ; « Renvoyer » (bouton et Alt+Maj+R) émet un nouveau
- *    lien, l'ancien ne fonctionne plus, « Copier le lien » (bouton et Alt+Maj+L) ; activation du compte invité par ce lien ;
+ *    lien, l'ancien ne fonctionne plus, « Copier le lien » (bouton et Alt+Maj+L) ;
  *  - « Masquer les comptes de test » (UM-31) coché par défaut, appliqué par le serveur, décoché par Alt+Maj+T ;
+ *  - activation du compte invité par ce lien ; langue du
+ *    courriel (UM-30) : navigateur en anglais, interface en français → sujet français, choix « English » → sujet anglais ;
  *  - mot de passe oublié / réinitialisation (lien lu dans Mailpit ou dans le journal du transport console) ;
  *  - A se connecte → sa session est révoquée → B se connecte dans le même navigateur → aucune donnée de A visible ;
  *  - axe-core sans violation critique ni sérieuse sur chaque nouvel écran, bureau et téléphone (390 × 844).
@@ -70,6 +72,25 @@ async function mailLink(to, path) {
         const hit = (JSON.parse(l).text ?? "").match(new RegExp(`https?://\\S*${path}#jeton=[\\w%-]+`));
         if (hit) return hit[0];
       }
+    }
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  return null;
+}
+
+/** Sujet du dernier courriel reçu par `to` (Mailpit ou journal du transport console). */
+async function mailSubject(to) {
+  for (let i = 0; i < 120; i++) {
+    if (process.env.MAILPIT_URL) {
+      const base = process.env.MAILPIT_URL.replace(/\/$/, "");
+      const list = await fetch(`${base}/api/v1/search?query=${encodeURIComponent(`to:"${to}"`)}`).then((r) => r.json()).catch(() => null);
+      const subject = list?.messages?.[0]?.Subject;
+      if (subject) return subject;
+    }
+    for (const file of (process.env.MAIL_LOG ?? "").split(",").filter(Boolean)) {
+      if (!existsSync(file)) continue;
+      const line = readFileSync(file, "utf8").split("\n").filter((l) => l.includes('"mail (console)"') && l.includes(to)).pop();
+      if (line) return JSON.parse(line).subject ?? null;
     }
     await new Promise((r) => setTimeout(r, 500));
   }
@@ -264,7 +285,7 @@ try {
   check("garde-fou de courriel atteint : lien à copier affiché", /\/compte\/invitation#jeton=/.test(link), link);
   await axe(admin, "administration — lien à copier (bureau)");
 
-  // 5 bis. « Renvoyer » (UM-31) : nouveau lien par la route d'invitation, l'ancien ne fonctionne plus ; aucun courriel
+  // 5 ter. « Renvoyer » (UM-31) : nouveau lien par la route d'invitation, l'ancien ne fonctionne plus ; aucun courriel
   // ne part (limite atteinte) : « Copier le lien » sur le lien émis. Les invitations @example.test sont masquées par défaut.
   const invRow = admin.locator(`[data-invitation="${invitee}"]`);
   await admin.locator("[data-hide-test]").check();
@@ -299,6 +320,28 @@ try {
   await invRow.getByText("Lien copié.").waitFor({ timeout: 5_000 }).catch(() => undefined);
   const copied = await admin.evaluate(() => navigator.clipboard.readText()).catch(() => null);
   check("Alt+Maj+L : le lien émis est copié", copied === link, String(copied));
+
+  // 5 bis. Langue des courriels (UM-30) : un administrateur dont le navigateur est réglé en anglais, sur l'interface en
+  // français, invite en français (l'en-tête Accept-Language n'est jamais lu) ; le choix « English » invite en anglais.
+  const enCtx = await browser.newContext({ ...desktop, locale: "en-US", extraHTTPHeaders: { "Accept-Language": "en-US,en;q=0.9" }, storageState: await adminCtx.storageState() });
+  const enAdmin = await enCtx.newPage(); track(enAdmin);
+  await enAdmin.goto(`${BASE}/admin/utilisateurs`);
+  await enAdmin.locator('select[name="inviteLocale"]').waitFor();
+  check("invitation : langue du courriel par défaut = langue de l’interface (Français)", (await enAdmin.locator('select[name="inviteLocale"]').inputValue()) === "fr");
+  const frInvitee = email("invite-fr"), enInvitee = email("invite-en");
+  await enAdmin.fill('input[name="inviteEmail"]', frInvitee);
+  await enAdmin.getByRole("button", { name: "Envoyer l’invitation" }).click();
+  await enAdmin.locator("p[role=status]", { hasText: frInvitee }).waitFor();
+  const frSubject = await mailSubject(frInvitee);
+  check("navigateur en anglais, interface en français : sujet de l’invitation en français", frSubject === "Invitation à rejoindre Fadi", String(frSubject));
+  await enAdmin.fill('input[name="inviteEmail"]', enInvitee);
+  await enAdmin.selectOption('select[name="inviteLocale"]', "en");
+  await enAdmin.getByRole("button", { name: "Envoyer l’invitation" }).click();
+  await enAdmin.locator("p[role=status]", { hasText: enInvitee }).waitFor();
+  const enSubject = await mailSubject(enInvitee);
+  check("langue du courriel « English » choisie : sujet de l’invitation en anglais", enSubject === "Invitation to join Fadi", String(enSubject));
+  await axe(enAdmin, "administration — invitation, langue du courriel (bureau)");
+  await enCtx.close();
 
   // 6. Activation du compte invité par ce lien (autre navigateur).
   const invCtx = await browser.newContext(desktop);

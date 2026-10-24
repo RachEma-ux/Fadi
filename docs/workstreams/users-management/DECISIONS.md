@@ -222,6 +222,35 @@ ils ne réécrivent aucune décision D-x et restent révisables par lui.
      n'accepte que `true` / `false`. Solution retenue parce qu'elle est la plus simple et sûre : la préproduction et la
      production tournent en `NODE_ENV=production` et ne peuvent donc jamais l'activer, même par erreur de fichier
      d'environnement ; aucune liste d'hôtes SMTP « de capture » à maintenir ; les recettes ne changent pas d'adresses.
+- **UM-30 — Langue des courriels : celle de l'interface, jamais celle du navigateur (2026-10-24).** Demande du maître
+  d'ouvrage (« Corrige la langue des courriels en français »), relayée par la session d'exploitation du VPS. Constat
+  vérifié en préproduction : une invitation créée depuis l'Administration affichée en français est partie en anglais
+  (« Invitation to join Fadi »). Cause : `mailLocale` retombait sur l'en-tête `Accept-Language` du navigateur de
+  l'administrateur (téléphone réglé en anglais) quand le client ne transmettait pas la langue, ce qui était le cas de la
+  plupart des appels. Arbitrage :
+  1. Serveur (`apps/api/src/lib/mail-locale.ts`, réexporté par `lib/account.ts`) : `mailLocale` ne lit plus jamais
+     `Accept-Language` ; langue = valeur explicite (`locale` du corps, ou valeur déjà validée par le schéma de la route)
+     si elle vaut `fr` ou `en`, sinon **`fr`**, langue source (D-163). Aucun compte n'enregistre de préférence de langue
+     (schéma `users` vérifié) : aucun champ n'est créé ; un courriel adressé à un compte existant suit donc la langue
+     de l'interface de la personne qui déclenche l'envoi, sinon le français.
+  2. Client (`apps/web/src/lib/api.ts`) : chaque appel qui déclenche un courriel envoie `locale` = langue de l'interface
+     (`LANGUE`, sélecteur Français / English) — inscription (`verify_email`), nouvelle demande de vérification,
+     mot de passe oublié (`reset_password`), réinitialisation et changement du mot de passe (`password_changed`),
+     activation et désactivation de la double authentification (`mfa_enabled`, `mfa_disabled`), suppression du compte
+     par le titulaire ou par un administrateur (`deletion_scheduled`), suspension (`account_suspended`), invitation par
+     l'administration et invitation à un projet (`invitation`). Recensement : tous les appels à `sendAccountMail`, seul
+     point d'entrée de la file (`enqueueMail`).
+  3. Formulaire d'invitation de l'Administration : choix « Langue du courriel : Français / English », par défaut la
+     langue de l'interface de l'administrateur (texte français dans le code, traduction dans `en.json` ; liste marquée
+     `translate="no"` comme le sélecteur de langue). Ce n'est pas une commande ni un outil (champ d'un formulaire
+     existant, soumis par le bouton « Envoyer l'invitation » déjà présent) : la règle d'or (icône, barre, raccourci) ne
+     s'applique pas. L'invitation à un projet (Collaboration) suit la langue de l'interface sans choix supplémentaire.
+  4. Vérifié par `mail-locale.test.ts` (en-tête anglais sans valeur explicite → `fr` ; explicite `en` → `en` ; valeur
+     invalide → `fr`) et par `comptes-admin.mjs` (section 5 bis : navigateur en anglais, interface en français → sujet
+     « Invitation à rejoindre Fadi » lu dans Mailpit ; choix « English » → « Invitation to join Fadi »). Aucune
+     migration ; aucun déploiement sans accord du maître d'ouvrage.
+  - *Fusion* : demandée par le maître d'ouvrage dans la session d'exécution le 2026-10-24 (« fusionne #275 »), après CI
+    verte du dernier commit ; méthode de fusion habituelle du dépôt (commit de fusion). Aucun déploiement demandé.
 - **UM-31 — Invitations renouvelables, comptes de test masqués (2026-10-24).** Demande du maître d'ouvrage (« Fix tous
   les problèmes »), relayée par la session d'exploitation « Fadi VPS - Audit » après la recette de la préproduction
   (page `/admin/utilisateurs`). Concept v2.2 : **muet** sur ces deux points (l'invitation reste une proposition, UM-3).

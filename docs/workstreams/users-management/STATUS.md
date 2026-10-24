@@ -23,6 +23,9 @@ déploiement).** Corbeille des comptes et « Anonymiser maintenant » dans `/adm
 « Copier le lien » sur les invitations en attente, filtre « Masquer les comptes de test » appliqué par le serveur — voir
 la section UM-31.
 
+**UM-30 (2026-10-24) : langue des courriels = langue de l'interface, sinon français ; branche `fix/um-29-langue-courriels`,
+[PR #275](https://github.com/RachEma-ux/Fadi/pull/275) vers `main` (non fusionnée, aucun déploiement).** Voir la section UM-30.
+
 ## Faits vérifiés
 
 ### Invitations renouvelables et comptes de test masqués (UM-31, 2026-10-24)
@@ -42,10 +45,24 @@ Branche `fix/admin-invitations-comptes-test`, depuis `main` à `7083285`. Vérif
   test masquée, « Renvoyer » par bouton puis Alt+Maj+R, ancien lien 404, « Copier le lien » par Alt+Maj+L lu dans le
   presse-papiers, icônes, axe-core, passe anglaise). `comptes-api.mjs` (109 ✓) et `comptes-securite.mjs` (71 ✓) :
   verts, inchangés. `interface-anglais.mjs` : vert (0,29 % de textes restés en français, seuil 2 %).
+- Fusion de `main` (UM-29 / UM-30, PR #274 et #275) dans la branche ; « Renvoyer » utilise la langue d'interface
+  de UM-30 (paramètre `locale` par défaut).
 - Revue Codex (P2) : le lien émis par le formulaire restait affiché après « Renvoyer » (lien mort). Corrigé : un seul
   état « dernier lien émis » partagé par le formulaire et la liste, retiré aussi quand l'invitation est annulée ;
-  `comptes-admin.mjs` le contrôle (78 ✓ en local).
+  `comptes-admin.mjs` le contrôle (78 ✓ en local ; 82 ✓ après fusion de `main`, section UM-30 comprise).
 - CI de la PR : à relever sur le HEAD courant.
+
+
+### Langue des courriels (UM-30, 2026-10-24)
+
+Branche `fix/um-29-langue-courriels`, depuis `main` à `7083285`. Vérifié dans la session :
+
+- `npm run typecheck` : vert. `npm run build` : vert.
+- `npm test` : paquets et web verts ; API : tests purs verts, dont `lib/mail-locale.test.ts` (3 tests) ; les 12 suites
+  DB-3 refusées par la garde **seule** (`TARGET_REQUIRED`), comme attendu sans la clé `fadi-ci-db3`.
+- `comptes-admin.mjs` sur `1bdc0be`, PostGIS 16 + Mailpit v1.20.4 en local (même configuration que la CI, base neuve) :
+  **verte**, dont la section 5 bis — choix par défaut « Français », navigateur `en-US` et interface en français → sujet
+  « Invitation à rejoindre Fadi », choix « English » → « Invitation to join Fadi », axe-core sans violation.
 
 ### Corbeille et « Anonymiser maintenant » (UM-27, 2026-10-24)
 
