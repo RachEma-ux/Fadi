@@ -144,6 +144,8 @@ export const auditLog = adminSchema.table("audit_log", {
   ip: text("ip"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("audit_log_actor_idx").on(t.actorId, t.createdAt), index("audit_log_target_idx").on(t.targetType, t.targetId, t.createdAt)]);
+// Phase 3 bis (journal consultable) : index d'expression `audit_log_project_meta_idx` ((metadata->>'projectId'), id) et
+// `audit_log_action_idx` (action text_pattern_ops, id), déclarés dans init.sql seulement (expression, classe d'opérateurs).
 
 export type MailStatus = "pending" | "sent" | "failed" | "skipped";
 
