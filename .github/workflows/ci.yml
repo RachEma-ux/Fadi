@@ -575,6 +575,13 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/comptes node apps/web/e2e/comptes-admin.mjs 2>&1 | tee -a e2e.log
+      # Organisations-participation, phase 3 bis (OP-D13 a) : journal d'activité consultable par audience — administration,
+      # Mon historique, historique du projet réservé aux responsables ; axe-core bureau et téléphone, passe anglaise.
+      - name: Recette du journal d'activité et de l'historique — audiences, axe-core bureau et téléphone, anglais (apps/web/e2e/journal-activite.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/journal-activite.mjs 2>&1 | tee -a e2e.log
       # MIG-01 à MIG-10, MIG-COEX-03/04/06 : simulation de migration vers Studio en lecture seule, sur une base NEUVE
       # (fadi_mig) peuplée du jeu synthétique déclaré — jamais sur une base existante. La recette crée un rôle SELECT
       # seul, compare l'empreinte de chaque table avant / après et exige le refus de toute écriture (25006, 42501).
