@@ -36,6 +36,11 @@
 - [x] UM-CLOSE — Issue #253 close par le maître d'ouvrage le 2026-10-23 (terminée) (UM-26).
 - [x] UM-D7 — Amendement D-7 : schémas `auth` / `admin`, rôles au moindre privilège, CI et restauration (Issue : #253).
 
+- [ ] UM-29 — Écarts graves E1 (audience équipe / projet), E2 (export explicite du lecteur, CR-D4), E3 (journal des
+  changements d'accès) du cadrage des règles communes : implémentés, vérifiés en local (STATUS.md) ; PR vers `main`
+  ouverte, **non fusionnée** ; CI du HEAD à vérifier ; fusion et déploiement sur décision du maître d'ouvrage
+  (Issue : #272).
+
 ## Bloqué
 
 - Aucun blocage déclaré.
