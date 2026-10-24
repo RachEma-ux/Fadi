@@ -54,21 +54,30 @@ function MfaSessionRequired() {
   );
 }
 
-function InviteForm() {
+/**
+ * Dernier lien d'invitation émis sans courriel (repli D-1), partagé par le formulaire et la liste : renouveler une
+ * invitation invalide son lien précédent, donc la page n'en affiche jamais qu'un par invitation, là où il a été émis.
+ * Il n'existe que dans l'état de la page (le serveur n'en garde que l'empreinte).
+ */
+type IssuedLink = { id: string; link: string; from: "form" | "list" };
+/** Nouvel état après le renouvellement de l'invitation `id` : son lien remplacé, ou retiré si aucun lien n'est rendu. */
+const nextIssued = (prev: IssuedLink | null, id: string, link: string | undefined, from: IssuedLink["from"]): IssuedLink | null =>
+  link ? { id, link, from } : prev?.id === id ? null : prev;
+
+function InviteForm({ issued, setIssued }: { issued: IssuedLink | null; setIssued: (f: (prev: IssuedLink | null) => IssuedLink | null) => void }) {
   const online = useOnline();
   const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
-  const [link, setLink] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const m = useMutation({
     mutationFn: () => accountApi.adminInvite(email.trim()),
     onSuccess: (r) => {
-      setLink(r.mail.link ?? null);
+      setIssued((prev) => nextIssued(prev, r.invitation.id, r.mail.link, "form"));
       setMsg({ ok: true, text: r.mail.queued ? `Invitation ${r.resent ? "renvoyée" : "envoyée"} à ${r.invitation.email}.` : `Invitation ${r.resent ? "renouvelée" : "créée"} pour ${r.invitation.email}.` });
       setEmail("");
       void queryClient.invalidateQueries({ queryKey: ["admin", "invitations"] });
     },
-    onError: (err) => { setLink(null); setMsg({ ok: false, text: apiMessage(err, "L’invitation n’a pas pu être créée.") }); },
+    onError: (err) => { setIssued((prev) => (prev?.from === "form" ? null : prev)); setMsg({ ok: false, text: apiMessage(err, "L’invitation n’a pas pu être créée.") }); },
   });
   return (
     <section className="panel" aria-labelledby="admin-invite">
@@ -79,7 +88,7 @@ function InviteForm() {
       </form>
       <small>L’invitation est valable 7 jours ; aucun compte n’est créé tant que la personne ne l’a pas acceptée.</small>
       {msg && <p role={msg.ok ? "status" : "alert"} className={msg.ok ? "h7-muted" : "form-error"}>{msg.text}</p>}
-      {link && <CopyLink link={link} />}
+      {issued?.from === "form" && <CopyLink link={issued.link} />}
     </section>
   );
 }
@@ -89,33 +98,35 @@ function InviteForm() {
  * l'ancien lien cesse de fonctionner. Quand aucun courriel n'est parti, le lien qui vient d'être émis est proposé à la
  * copie ; il n'existe que dans cette page (le serveur n'en garde que l'empreinte) et disparaît au rechargement.
  */
-function Invitations({ hideTest }: { hideTest: boolean }) {
+function Invitations({ hideTest, issued, setIssued }: { hideTest: boolean; issued: IssuedLink | null; setIssued: (f: (prev: IssuedLink | null) => IssuedLink | null) => void }) {
   const online = useOnline();
   const queryClient = useQueryClient();
-  const [issued, setIssued] = useState<{ id: string; link: string } | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const q = useQuery({ queryKey: ["admin", "invitations", hideTest], queryFn: () => accountApi.adminInvitations("pending", hideTest) });
-  const cancel = useMutation({ mutationFn: accountApi.adminCancelInvitation, onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["admin", "invitations"] }) });
+  const cancel = useMutation({
+    mutationFn: accountApi.adminCancelInvitation,
+    // Une invitation annulée n'a plus de lien valable : le lien affiché, s'il était le sien, est retiré.
+    onSuccess: (_r, id) => { setIssued((prev) => (prev?.id === id ? null : prev)); void queryClient.invalidateQueries({ queryKey: ["admin", "invitations"] }); },
+  });
   const resend = useMutation({
     mutationFn: (i: InvitationView) => accountApi.adminInvite(i.email),
     onSuccess: (r) => {
-      setCopied(false);
-      setIssued(r.mail.link ? { id: r.invitation.id, link: r.mail.link } : null);
+      setIssued((prev) => nextIssued(prev, r.invitation.id, r.mail.link, "list"));
       setMsg({ ok: true, text: r.mail.queued
         ? `Invitation renouvelée : l’ancien lien ne fonctionne plus. Un nouveau courriel part vers ${r.invitation.email}.`
         : `Invitation renouvelée : l’ancien lien ne fonctionne plus. Aucun courriel n’est parti : copiez le nouveau lien pour ${r.invitation.email}.` });
       void queryClient.invalidateQueries({ queryKey: ["admin", "invitations"] });
     },
-    onError: (err) => { setIssued(null); setMsg({ ok: false, text: apiMessage(err, "L’invitation n’a pas pu être renouvelée.") }); },
+    onError: (err) => { setMsg({ ok: false, text: apiMessage(err, "L’invitation n’a pas pu être renouvelée.") }); },
   });
-  const copy = (link: string) => void navigator.clipboard?.writeText(link).then(() => setCopied(true)).catch(() => setCopied(false));
+  const copy = (link: string) => void navigator.clipboard?.writeText(link).then(() => setCopied(link)).catch(() => setCopied(null));
   const canResend = (i: InvitationView) => i.purpose === "platform_account";
   // Raccourcis (règle d'or) : « Renvoyer » agit sur la ligne qui a le focus ; « Copier le lien » sur le dernier lien émis.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const c = commandeAdminDuClavier(e);
-      if (c === "copier-lien" && issued) { e.preventDefault(); copy(issued.link); return; }
+      if (c === "copier-lien" && issued?.from === "list") { e.preventDefault(); copy(issued.link); return; }
       if (c !== "renvoyer") return;
       const row = document.activeElement instanceof HTMLElement ? document.activeElement.closest<HTMLElement>("[data-invitation-id]") : null;
       const inv = q.data?.invitations.find((i) => i.id === row?.dataset["invitationId"]);
@@ -140,10 +151,10 @@ function Invitations({ hideTest }: { hideTest: boolean }) {
               {canResend(i)
                 ? <button type="button" className="button-secondary" data-invitation-resend aria-keyshortcuts={RACCOURCIS_ADMIN.renvoyer.aria} title={RACCOURCIS_ADMIN.renvoyer.libelle} disabled={!online || resend.isPending} onClick={() => { setMsg(null); resend.mutate(i); }}><IconeAdmin commande="renvoyer" />Renvoyer</button>
                 : <small className="h7-muted">Renvoi par le propriétaire du projet</small>}
-              {issued?.id === i.id && <button type="button" className="button-secondary" data-invitation-copy aria-keyshortcuts={RACCOURCIS_ADMIN["copier-lien"].aria} title={RACCOURCIS_ADMIN["copier-lien"].libelle} onClick={() => copy(issued.link)}><IconeAdmin commande="copier-lien" />Copier le lien</button>}
+              {issued?.from === "list" && issued.id === i.id && <button type="button" className="button-secondary" data-invitation-copy aria-keyshortcuts={RACCOURCIS_ADMIN["copier-lien"].aria} title={RACCOURCIS_ADMIN["copier-lien"].libelle} onClick={() => copy(issued.link)}><IconeAdmin commande="copier-lien" />Copier le lien</button>}
               <button type="button" className="button-secondary" disabled={!online || cancel.isPending} onClick={() => cancel.mutate(i.id)}>Annuler l’invitation</button>
             </span>
-            {issued?.id === i.id && <span className="admin-invitation-link"><code translate="no" data-invitation-link>{issued.link}</code>{copied && <span role="status">Lien copié.</span>}</span>}
+            {issued?.from === "list" && issued.id === i.id && <span className="admin-invitation-link"><code translate="no" data-invitation-link>{issued.link}</code>{copied === issued.link && <span role="status">Lien copié.</span>}</span>}
           </li>
         ))}
       </ul>
@@ -293,6 +304,7 @@ export function AdminUsersPage() {
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   /** Lien d'annulation d'une suppression programmée sans courriel en file : à transmettre au titulaire (D-1). */
   const [cancelLink, setCancelLink] = useState<string | null>(null);
+  const [issued, setIssued] = useState<IssuedLink | null>(null);
   const list = useQuery({ queryKey: ["admin", "users", filters], queryFn: () => accountApi.adminUsers(filters), placeholderData: keepPreviousData, retry: false });
   const act = useMutation({
     mutationFn: async (a: Action) => {
@@ -341,8 +353,8 @@ export function AdminUsersPage() {
         </label>
         <small>Comptes et invitations des recettes automatiques (domaines réservés : example.com, .test, .invalid…), comptes anonymisés compris. Rien n’est supprimé : décochez pour les afficher.</small>
       </div>
-      <InviteForm />
-      <Invitations hideTest={filters.hideTest} />
+      <InviteForm issued={issued} setIssued={setIssued} />
+      <Invitations hideTest={filters.hideTest} issued={issued} setIssued={setIssued} />
       <section className="panel" aria-labelledby="admin-list">
         <h2 id="admin-list">Comptes</h2>
         <form className="admin-filters" role="search" onSubmit={(e: FormEvent) => { e.preventDefault(); set({ q: search.trim() }); }}>

@@ -42,6 +42,9 @@ Branche `fix/admin-invitations-comptes-test`, depuis `main` à `7083285`. Vérif
   test masquée, « Renvoyer » par bouton puis Alt+Maj+R, ancien lien 404, « Copier le lien » par Alt+Maj+L lu dans le
   presse-papiers, icônes, axe-core, passe anglaise). `comptes-api.mjs` (109 ✓) et `comptes-securite.mjs` (71 ✓) :
   verts, inchangés. `interface-anglais.mjs` : vert (0,29 % de textes restés en français, seuil 2 %).
+- Revue Codex (P2) : le lien émis par le formulaire restait affiché après « Renvoyer » (lien mort). Corrigé : un seul
+  état « dernier lien émis » partagé par le formulaire et la liste, retiré aussi quand l'invitation est annulée ;
+  `comptes-admin.mjs` le contrôle (78 ✓ en local).
 - CI de la PR : à relever sur le HEAD courant.
 
 ### Corbeille et « Anonymiser maintenant » (UM-27, 2026-10-24)

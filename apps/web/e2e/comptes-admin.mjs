@@ -281,6 +281,7 @@ try {
   const renewed = (await invRow.locator("[data-invitation-link]").textContent()).trim();
   check("« Renvoyer » : message explicite, nouveau lien affiché dans la ligne", renewed !== link && /\/compte\/invitation#jeton=/.test(renewed), renewed);
   check("« Renvoyer » : l’ancien lien ne fonctionne plus, le nouveau oui", (await lookup(link)) === 404 && (await lookup(renewed)) === 200);
+  check("« Renvoyer » : l’ancien lien n’est plus proposé par le formulaire d’invitation", (await admin.locator("[data-copy-link]").count()) === 0);
   const copyBtn = invRow.locator("[data-invitation-copy]");
   check("« Copier le lien » : icône propre et raccourci annoncé", (await copyBtn.locator("svg[data-icone-admin=copier-lien]").count()) === 1
     && (await copyBtn.getAttribute("aria-keyshortcuts")) === "Alt+Shift+L");
