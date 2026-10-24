@@ -8,7 +8,10 @@
  *  - connexion en deux étapes (code de secours), page /admin/utilisateurs (tableau, filtres, fiche) ;
  *  - corbeille (UM-27) : compte en suppression programmée listé, « Restaurer » puis « Anonymiser maintenant » (adresse à
  *    ressaisir, bouton inactif sinon), icône propre à chaque commande ;
- *  - invitation : garde-fou de courriel atteint → « lien à copier » ; activation du compte invité par ce lien ; langue du
+ *  - invitation : garde-fou de courriel atteint → « lien à copier » ; « Renvoyer » (bouton et Alt+Maj+R) émet un nouveau
+ *    lien, l'ancien ne fonctionne plus, « Copier le lien » (bouton et Alt+Maj+L) ;
+ *  - « Masquer les comptes de test » (UM-31) coché par défaut, appliqué par le serveur, décoché par Alt+Maj+T ;
+ *  - activation du compte invité par ce lien ; langue du
  *    courriel (UM-30) : navigateur en anglais, interface en français → sujet français, choix « English » → sujet anglais ;
  *  - mot de passe oublié / réinitialisation (lien lu dans Mailpit ou dans le journal du transport console) ;
  *  - A se connecte → sa session est révoquée → B se connecte dans le même navigateur → aucune donnée de A visible ;
@@ -118,6 +121,13 @@ async function pendingDeletion(tag) {
   return { mail, pass };
 }
 
+/** Décoche « Masquer les comptes de test » (les comptes de cette recette sont en @example.test) et attend la liste. */
+async function showTestAccounts(page, mail) {
+  const box = page.locator("[data-hide-test]");
+  if (await box.isChecked()) await box.uncheck();
+  await page.locator(`[data-admin-user="${mail}"]`).waitFor();
+}
+
 async function uiLogin(page, mail, pass) {
   await page.goto(`${BASE}/connexion`);
   await page.fill('input[name="email"]', mail);
@@ -201,6 +211,17 @@ try {
   // 4. Administration : tableau, filtres, fiche.
   await admin.goto(`${BASE}/admin/utilisateurs`);
   await admin.locator("[data-admin-accounts]").waitFor();
+  // 4 a. « Masquer les comptes de test » (UM-31) : coché par défaut, filtre du serveur, raccourci et icône propres.
+  const hideTest = admin.locator("[data-hide-test]");
+  check("comptes de test : filtre coché par défaut, raccourci et icône annoncés", await hideTest.isChecked()
+    && (await hideTest.getAttribute("aria-keyshortcuts")) === "Alt+Shift+T"
+    && (await admin.locator("[data-admin-test-filter] svg[data-icone-admin=comptes-test]").count()) === 1);
+  await admin.locator("[data-admin-accounts] tbody").filter({ hasText: "Aucun compte ne correspond." }).waitFor({ timeout: 10_000 }).catch(() => undefined);
+  check("comptes de test masqués : le compte @example.test de la recette n’est pas listé", (await admin.locator(`[data-admin-user="${adminMail}"]`).count()) === 0);
+  const usersQuery = admin.waitForRequest((r) => r.url().includes("/admin/users?") && r.url().includes("hideTest=false"));
+  await admin.keyboard.press("Alt+Shift+KeyT");
+  check("Alt+Maj+T : filtre décoché, demande au serveur hideTest=false", await usersQuery.then(() => true, () => false) && !(await hideTest.isChecked()));
+  await admin.locator(`[data-admin-user="${adminMail}"]`).waitFor();
   check("administration : tableau des comptes", (await admin.locator("[data-admin-user]").count()) >= 1);
   await axe(admin, "administration — utilisateurs (bureau)");
   await admin.fill('input[name="q"]', adminMail);
@@ -246,6 +267,7 @@ try {
   await admin.locator("[data-trash-message]", { hasText: "Compte anonymisé" }).waitFor();
   await trashRow(toErase).waitFor({ state: "detached" });
   check("« Anonymiser maintenant » : compte anonymisé, sorti de la corbeille", true);
+  await admin.locator("[data-hide-test]").uncheck();
   await admin.fill('input[name="q"]', toErase);
   await admin.getByRole("button", { name: "Rechercher", exact: true }).click();
   await admin.locator("[data-admin-accounts] tbody").filter({ hasText: "Aucun compte ne correspond." }).waitFor();
@@ -259,9 +281,45 @@ try {
   await admin.fill('input[name="inviteEmail"]', invitee);
   await admin.getByRole("button", { name: "Envoyer l’invitation" }).click();
   await admin.locator("[data-copy-link]").waitFor();
-  const link = (await admin.locator("[data-copy-link] code").textContent()).trim();
+  let link = (await admin.locator("[data-copy-link] code").textContent()).trim();
   check("garde-fou de courriel atteint : lien à copier affiché", /\/compte\/invitation#jeton=/.test(link), link);
   await axe(admin, "administration — lien à copier (bureau)");
+
+  // 5 ter. « Renvoyer » (UM-31) : nouveau lien par la route d'invitation, l'ancien ne fonctionne plus ; aucun courriel
+  // ne part (limite atteinte) : « Copier le lien » sur le lien émis. Les invitations @example.test sont masquées par défaut.
+  const invRow = admin.locator(`[data-invitation="${invitee}"]`);
+  await admin.locator("[data-hide-test]").check();
+  await invRow.waitFor({ state: "detached", timeout: 10_000 }).catch(() => undefined);
+  check("filtre coché : invitation @example.test masquée", (await invRow.count()) === 0);
+  await admin.locator("[data-hide-test]").uncheck();
+  await invRow.waitFor();
+  const resendBtn = invRow.locator("[data-invitation-resend]");
+  check("« Renvoyer » : icône propre et raccourci annoncé", (await resendBtn.locator("svg[data-icone-admin=renvoyer]").count()) === 1
+    && (await resendBtn.getAttribute("aria-keyshortcuts")) === "Alt+Shift+R");
+  const lookup = async (l) => (await apiOf(admin, "post", "/auth/invitations/lookup", { token: decodeURIComponent(l.split("#jeton=")[1]) })).status;
+  await resendBtn.click();
+  await admin.locator("[data-invitations-message]", { hasText: "Invitation renouvelée : l’ancien lien ne fonctionne plus" }).waitFor();
+  const renewed = (await invRow.locator("[data-invitation-link]").textContent()).trim();
+  check("« Renvoyer » : message explicite, nouveau lien affiché dans la ligne", renewed !== link && /\/compte\/invitation#jeton=/.test(renewed), renewed);
+  check("« Renvoyer » : l’ancien lien ne fonctionne plus, le nouveau oui", (await lookup(link)) === 404 && (await lookup(renewed)) === 200);
+  check("« Renvoyer » : l’ancien lien n’est plus proposé par le formulaire d’invitation", (await admin.locator("[data-copy-link]").count()) === 0);
+  const copyBtn = invRow.locator("[data-invitation-copy]");
+  check("« Copier le lien » : icône propre et raccourci annoncé", (await copyBtn.locator("svg[data-icone-admin=copier-lien]").count()) === 1
+    && (await copyBtn.getAttribute("aria-keyshortcuts")) === "Alt+Shift+L");
+  await axe(admin, "administration — invitation renouvelée (bureau)");
+  await resendBtn.focus();
+  await admin.keyboard.press("Alt+Shift+KeyR");
+  await admin.waitForFunction((prev) => {
+    const el = document.querySelector("[data-invitation-link]");
+    return !!el && el.textContent.trim() !== prev;
+  }, renewed, { timeout: 10_000 }).catch(() => undefined);
+  link = (await invRow.locator("[data-invitation-link]").textContent()).trim();
+  check("Alt+Maj+R sur la ligne : invitation renouvelée, lien précédent invalidé", link !== renewed && (await lookup(renewed)) === 404 && (await lookup(link)) === 200);
+  await adminCtx.grantPermissions(["clipboard-read", "clipboard-write"], { origin: BASE });
+  await admin.keyboard.press("Alt+Shift+KeyL");
+  await invRow.getByText("Lien copié.").waitFor({ timeout: 5_000 }).catch(() => undefined);
+  const copied = await admin.evaluate(() => navigator.clipboard.readText()).catch(() => null);
+  check("Alt+Maj+L : le lien émis est copié", copied === link, String(copied));
 
   // 5 bis. Langue des courriels (UM-30) : un administrateur dont le navigateur est réglé en anglais, sur l'interface en
   // français, invite en français (l'en-tête Accept-Language n'est jamais lu) ; le choix « English » invite en anglais.
@@ -405,12 +463,16 @@ try {
   await owner.locator("[data-project-invitations]", { hasText: "valid until" }).waitFor({ timeout: 10_000 }).catch(() => undefined);
   const membresEn = `${await owner.locator("[data-project-invitations]").textContent()} ${await owner.locator("[data-support-panel]").textContent()}`;
   check("anglais : invitations en attente et accès support traduits", /valid until/.test(membresEn) && /A platform administrator never has access/.test(membresEn) && !RESIDUS_FR.test(membresEn), membresEn.match(RESIDUS_FR)?.[0] ?? membresEn.slice(0, 200));
+  check("invitation de compte en attente pour la passe anglaise", (await apiOf(admin, "post", "/admin/users/invitations", { email: email("invite-en") })).status === 201);
   await anglais(admin, `${BASE}/admin/utilisateurs`);
   await admin.locator("[data-admin-accounts]").waitFor();
+  await showTestAccounts(admin, adminMail);
   await admin.locator(`[data-admin-user="${adminMail}"] button`).click();
   await admin.locator(`[data-admin-detail="${adminMail}"]`).waitFor();
   await admin.locator("[data-admin-detail]", { hasText: "Open sessions" }).waitFor({ timeout: 10_000 }).catch(() => undefined);
   const ficheEn = await admin.locator("[data-admin-users]").textContent();
+  const RESIDUS_UM31 = /Masquer les comptes de test|Renvoyer|recettes automatiques|propriétaire du projet/;
+  check("anglais : filtre des comptes de test et « Renvoyer » traduits", /Hide test accounts/.test(ficheEn) && /Resend/.test(ficheEn) && !RESIDUS_UM31.test(ficheEn), ficheEn.match(RESIDUS_UM31)?.[0] ?? "");
   check("anglais : fiche d'administration traduite", /Projects \(\d+\)/.test(ficheEn) && /Open sessions \(\d+\)/.test(ficheEn) && /two-factor authentication/.test(ficheEn) && !RESIDUS_FR.test(ficheEn), ficheEn.match(RESIDUS_FR)?.[0] ?? ficheEn.slice(0, 200));
   const { mail: trashEnMail } = await pendingDeletion("corbeille-anglais");
   await admin.reload();

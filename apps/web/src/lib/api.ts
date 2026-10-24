@@ -260,7 +260,8 @@ export interface AdminUser {
   emailVerified: boolean; mfaEnabled: boolean; deletionRequestedAt: string | null; projectsCount: number;
 }
 export interface AdminUsersPage { users: AdminUser[]; total: number; page: number; pageSize: number }
-export interface AdminUsersFilters { q?: string; status?: AdminStatus | ""; role?: "user" | "admin" | ""; page?: number; pageSize?: number }
+/** `hideTest` : comptes de test des recettes (domaines réservés) masqués par le serveur (UM-31). */
+export interface AdminUsersFilters { q?: string; status?: AdminStatus | ""; role?: "user" | "admin" | ""; page?: number; pageSize?: number; hideTest?: boolean }
 /** Corbeille (UM-27) : compte en suppression programmée, restaurable jusqu'à son anonymisation. `status` = statut antérieur. */
 export interface AdminTrashItem {
   id: string; email: string; displayName: string | null; platformRole: "user" | "admin"; status: "active" | "suspended";
@@ -320,7 +321,7 @@ export const accountApi = {
   exportUrl: "/auth/me/export",
   deleteAccount: (password: string) => request<{ deletionAt: string; mail: { queued: boolean; link?: string } }>("/auth/me", { method: "DELETE", body: JSON.stringify(withLocale({ password, confirm: "SUPPRIMER" })) }),
   // --- Administration (404 pour un non-administrateur, 403 `mfa_required` sans double authentification) ---
-  adminUsers: (f: AdminUsersFilters) => request<AdminUsersPage>(`/admin/users${query({ q: f.q, status: f.status, role: f.role, page: f.page, pageSize: f.pageSize })}`),
+  adminUsers: (f: AdminUsersFilters) => request<AdminUsersPage>(`/admin/users${query({ q: f.q, status: f.status, role: f.role, page: f.page, pageSize: f.pageSize, hideTest: f.hideTest ? "true" : "false" })}`),
   adminUser: (id: string) => request<AdminUserDetail>(`/admin/users/${encodeURIComponent(id)}`),
   adminSetRole: (id: string, role: "user" | "admin") => request<{ user: AdminUser }>(`/admin/users/${encodeURIComponent(id)}/role`, { method: "PATCH", body: JSON.stringify({ role }) }),
   adminSuspend: (id: string) => request<{ user: AdminUser }>(`/admin/users/${encodeURIComponent(id)}/suspend`, json(withLocale({}))),
@@ -331,7 +332,7 @@ export const accountApi = {
   adminRestore: (id: string) => request<{ user: AdminUser }>(`/admin/users/${encodeURIComponent(id)}/restore`, { method: "POST" }),
   adminAnonymize: (id: string, confirmEmail: string) => request<{ anonymized: true; userId: string }>(`/admin/users/${encodeURIComponent(id)}/anonymize`, json({ confirmEmail })),
   adminInvite: (email: string, locale: Langue = LANGUE) => request<InvitationCreated>("/admin/users/invitations", json({ email, locale })),
-  adminInvitations: (status?: InvitationStatus) => request<{ invitations: InvitationView[] }>(`/admin/invitations${query({ status })}`),
+  adminInvitations: (status?: InvitationStatus, hideTest = false) => request<{ invitations: InvitationView[] }>(`/admin/invitations${query({ status, hideTest: hideTest ? "true" : "false" })}`),
   adminCancelInvitation: (id: string) => request<void>(`/admin/invitations/${encodeURIComponent(id)}`, { method: "DELETE" }),
   // --- Projet : invitations et accès support (propriétaire) ---
   cancelProjectInvitation: (projectId: string, id: string) => request<void>(`/projects/${projectId}/members/invitations/${encodeURIComponent(id)}`, { method: "DELETE" }),

@@ -2552,6 +2552,68 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
     });
   });
 
+  describe("6. invitations renouvelées et comptes de test (UM-31)", () => {
+    const tokenOf = (link: string) => decodeURIComponent(link.split("#jeton=")[1]!);
+
+    it("« Renvoyer » : nouveau lien, l'ancien ne fonctionne plus ; seule l'empreinte du jeton est stockée", async () => {
+      const boss = await account("um31-admin");
+      await enableMfa(boss, boss.a);
+      await promoteInDb(boss.id);
+      const invitee = `um31-renvoi-${n}@example.test`;
+      const first = await boss.a.post("/admin/users/invitations").send({ email: invitee });
+      expect(first.status).toBe(201);
+      const again = await boss.a.post("/admin/users/invitations").send({ email: invitee });
+      expect(again.status).toBe(200);
+      expect(again.body.resent).toBe(true);
+      expect(again.body.invitation.id).toBe(first.body.invitation.id);
+      const [oldToken, newToken] = [tokenOf(first.body.mail.link), tokenOf(again.body.mail.link)];
+      expect(newToken).not.toBe(oldToken);
+      expect((await agent().post("/auth/invitations/lookup").send({ token: oldToken })).status).toBe(404);
+      const fresh = await agent().post("/auth/invitations/lookup").send({ token: newToken });
+      expect(fresh.status).toBe(200);
+      expect(fresh.body.invitation.email).toBe(invitee);
+      // Le serveur ne garde ni l'un ni l'autre lien en clair : une seule ligne, dont le jeton est une empreinte.
+      const rows = (await pool.query("SELECT row_to_json(i)::text AS r FROM auth.invitations i WHERE email = $1", [invitee])).rows as { r: string }[];
+      expect(rows).toHaveLength(1);
+      expect(rows[0]!.r).not.toContain(oldToken);
+      expect(rows[0]!.r).not.toContain(newToken);
+      // La liste des invitations ne rend jamais de lien ni de jeton.
+      const list = await boss.a.get("/admin/invitations?status=pending");
+      expect(JSON.stringify(list.body)).not.toContain(newToken);
+      expect(await auditCount("invitation.resent", first.body.invitation.id as string)).toBe(1);
+    });
+
+    it("hideTest : comptes et invitations de domaine réservé masqués côté serveur, total exact, rien de supprimé", async () => {
+      const boss = await account("um31-filtre");
+      await enableMfa(boss, boss.a);
+      await promoteInDb(boss.id);
+      const real = await registerAndLogin(`um31-reel-${n}@fadimmo-recette.ch`);
+      const realId = (await real.get("/auth/me")).body.id as string;
+      for (const email of [`um31-inv-${n}@example.org`, `um31-inv-${n}@fadimmo-recette.ch`]) {
+        expect((await boss.a.post("/admin/users/invitations").send({ email })).status).toBe(201);
+      }
+      const all = await boss.a.get("/admin/users?pageSize=100");
+      const hidden = await boss.a.get("/admin/users?pageSize=100&hideTest=true");
+      const shown = await boss.a.get("/admin/users?pageSize=100&hideTest=false");
+      expect(hidden.status).toBe(200);
+      const emails = (r: typeof all) => (r.body.users as { email: string }[]).map((u) => u.email);
+      expect(emails(all)).toContain(boss.email);
+      expect(emails(shown)).toEqual(emails(all));
+      expect(emails(hidden)).toEqual([`um31-reel-${n}@fadimmo-recette.ch`]);
+      expect(hidden.body.total).toBe(1);
+      expect((hidden.body.users as { id: string }[])[0]!.id).toBe(realId);
+      const inv = async (q: string) => ((await boss.a.get(`/admin/invitations${q}`)).body.invitations as { email: string }[]).map((i) => i.email);
+      const visibles = await inv("?status=pending&hideTest=true");
+      expect(visibles).toContain(`um31-inv-${n}@fadimmo-recette.ch`);
+      expect(visibles).not.toContain(`um31-inv-${n}@example.org`);
+      expect(await inv("?status=pending")).toEqual(expect.arrayContaining([`um31-inv-${n}@example.org`, `um31-inv-${n}@fadimmo-recette.ch`]));
+      expect((await boss.a.get("/admin/users?hideTest=oui")).status).toBe(400);
+      expect((await boss.a.get("/admin/invitations?hideTest=1")).status).toBe(400);
+      // Le filtre n'efface rien.
+      expect((await userState(boss.id)).status).toBe("active");
+    });
+  });
+
   describe("3. accès support : lecture seule, aucun export", () => {
     it("refuse documents, archive, téléchargements et copie (GET, HEAD, barre finale, casse, identifiant encodé) avant toute production ou copie ; lectures permises et journalisées", async () => {
       const owner = await account("proprio");

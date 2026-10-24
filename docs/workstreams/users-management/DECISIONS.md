@@ -251,3 +251,33 @@ ils ne réécrivent aucune décision D-x et restent révisables par lui.
      migration ; aucun déploiement sans accord du maître d'ouvrage.
   - *Fusion* : demandée par le maître d'ouvrage dans la session d'exécution le 2026-10-24 (« fusionne #275 »), après CI
     verte du dernier commit ; méthode de fusion habituelle du dépôt (commit de fusion). Aucun déploiement demandé.
+- **UM-31 — Invitations renouvelables, comptes de test masqués (2026-10-24).** Demande du maître d'ouvrage (« Fix tous
+  les problèmes »), relayée par la session d'exploitation « Fadi VPS - Audit » après la recette de la préproduction
+  (page `/admin/utilisateurs`). Concept v2.2 : **muet** sur ces deux points (l'invitation reste une proposition, UM-3).
+  Arbitrages :
+  1. *« Renvoyer »* : sur chaque invitation **de compte** en attente, appelle la route existante
+     `POST /admin/users/invitations { email }` (`createOrRenewInvitation`) : nouveau jeton et nouvelle échéance, l'ancien
+     lien cesse de fonctionner (seule l'empreinte SHA-256 du jeton est en base, remplacée), journal `invitation.resent`.
+     Aucune route nouvelle, aucune colonne nouvelle. Message : « Invitation renouvelée : l’ancien lien ne fonctionne
+     plus », suivi du sort du courriel. Les invitations **à un projet** n'ont pas « Renvoyer » dans l'administration :
+     la route d'administration ne crée que des invitations de compte, et seul le propriétaire du projet peut renouveler
+     une invitation à son projet ; la ligne l'indique (« Renvoi par le propriétaire du projet ») et ne s'affiche plus
+     comme « compte ».
+  2. *« Copier le lien »* : seulement quand aucun courriel n'est parti (`mail.link` rendu, repli D-1), sur le lien qui
+     vient d'être émis ; il n'existe que dans l'état de la page (perdu au rechargement), **jamais stocké en clair** ni
+     relu du serveur, qui ne le rend qu'une fois. Pour le retrouver plus tard : renvoyer de nouveau.
+  3. *« Masquer les comptes de test »* : paramètre `hideTest=true|false` de `GET /admin/users` et
+     `GET /admin/invitations`, appliqué **en SQL** (pagination et total exacts) par l'expression
+     `RESERVED_ADDRESS_PATTERN` de `lib/mailer/quota.ts`, construite depuis les **mêmes listes** que `isReservedDomain`
+     (aucune seconde liste ; un test vérifie le même verdict sur les cas de UM-28 et des cas limites). Sans paramètre,
+     les routes rendent tout, comme avant (recettes API et clients existants inchangés) ; l'écran envoie `hideTest=true`
+     par défaut, case décochable. Rien n'est supprimé. Conséquence assumée : les comptes **anonymisés**
+     (`deleted-…@invalid`, domaine réservé) sont masqués aussi, l'adresse d'origine ayant disparu (un compte de test
+     anonymisé et un compte réel anonymisé sont indiscernables) ; l'aide sous la case le dit.
+  4. *Règle d'or* : « Renvoyer », « Copier le lien » et « Masquer les comptes de test » ont chacune leur icône
+     (`icones-admin.ts`) et un raccourci (`raccourcis-admin.ts`, Alt+Maj+R / L / T, touche physique ; Renvoyer agit sur
+     la ligne qui a le focus), annoncé par `aria-keyshortcuts` et la bulle ; contrôlés par `icones-admin.test.ts`. Les
+     commandes antérieures de la page (Suspendre, Restaurer…) ne reçoivent pas de raccourci dans cette PR (diff minimal ;
+     signalé).
+  5. *Hors périmètre* : PR #274 (écarts E1-E3, UM-29) et #275 (langue des courriels, UM-30) ouvertes à part ; cette PR
+     part de `main` et n'en dépend pas. Aucune migration, aucun déploiement.
