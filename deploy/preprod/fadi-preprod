@@ -251,6 +251,8 @@ for name, s in c.get("services", {}).items():
     if name != "migrate":
         for k in ("DATABASE_MIGRATION_URL", "MIGRATE_ONLY"):
             if k in env: err(f"{p} : {k} réservé au service migrate (D-7)")
+    # UM-28 : le mot de passe SMTP n'est donné qu'à l'application (jamais à la recette ni à la migration).
+    if name != "app" and "SMTP_PASS" in env: err(f"{p} : SMTP_PASS réservé au service app (UM-28)")
 svcs = c.get("services", {})
 app, mig = svcs.get("app"), svcs.get("migrate")
 if not app: err("service app absent")

@@ -244,6 +244,22 @@ Relevé de `sudo fadi-preprod status` transmis par le maître d'ouvrage (VPS, no
 - Non exercés en préproduction : `comptes-api`, `comptes-admin`, `comptes-securite` (base jetable et transport de
   courriel exigés) ; couverts par la CI. Les tests de l'outillage (PR #264) utilisent des doubles `docker` / `curl`.
 
+### Courriel en préproduction et domaines réservés (2026-10-24, UM-28) — Implémenté, non déployé
+
+Branche `feat/preprod-courriel`, PR vers `main` (non fusionnée, aucun déploiement). Demande du maître d'ouvrage relayée
+par la session d'exploitation du VPS.
+
+- `deploy/preprod/compose.yml` : variables de courriel transmises au seul service `app` depuis `PREPROD_*`
+  facultatives (sans `PREPROD_MAIL_TRANSPORT` : aucun envoi ; `MAIL_DAILY_LIMIT` 50 par défaut) ; garde
+  `fadi-preprod garde` : `SMTP_PASS` refusé hors `app`. `env.example` et RUNBOOK §3 bis (procédure administrateur).
+- Mailer : `isReservedDomain` et raison `reserved_domain` (`apps/api/src/lib/mailer/quota.ts`, `outbox.ts`) ;
+  `MAIL_ALLOW_RESERVED_DOMAINS=true` en CI (Mailpit), refusé en production (`index.ts`).
+- Preuves locales (2026-10-24) : `mailer.test.ts` (domaines réservés / non réservés, décision de file, drapeau) ;
+  `bash deploy/preprod/tests/run.sh` sous un compte non root : **99 réussis, 0 échec** (dont « garde refuse : SMTP_PASS
+  donné à la recette », compose résolu sans / avec `PREPROD_MAIL_*`) et `run-auto.sh` **80 réussis, 0 échec** ;
+  `npm run typecheck`, `npm test`, `npm run build` : voir la PR. CI : à relever sur la PR.
+- Non vérifié : envoi réel depuis la préproduction (exige les variables sur le VPS, RUNBOOK §3 bis et §5).
+
 ## Écarts au plan (le concept et D-7 priment)
 
 - UM-2 et UM-3 : pas d'état `invited` ni de compte fantôme ; les invitations ont leur propre table (`auth.invitations`).
@@ -257,7 +273,7 @@ Relevé de `sudo fadi-preprod status` transmis par le maître d'ouvrage (VPS, no
 
 ## Points ouverts
 
-- UM-27 : CI verte sur `4aa7d0b` ; acceptation du maître d'ouvrage attendue ; aucune fusion ni déploiement par la session.
+- UM-27 : CI verte sur `4aa7d0b` ; fusion demandée par le maître d'ouvrage le 2026-10-24 (« fusionne #270 »), après fusion de `main` (UM-28) dans la branche et CI verte ; déploiement non demandé ; aucune fusion ni déploiement par la session.
 - UM-27, signalé : pas de corbeille pour les projets ni les documents (hors périmètre de la décision ; le concept ne
   l'exige pas). L'anonymisation supprime les projets non partagés du compte, et « Anonymiser maintenant » avance cette
   suppression : à trancher par le maître d'ouvrage s'il veut une corbeille de projets.

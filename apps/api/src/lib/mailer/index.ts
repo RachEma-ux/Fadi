@@ -6,6 +6,8 @@
  *   - `console` : écrit le courriel dans le journal du serveur — **interdit en production** (refus de démarrer) ;
  *   - absent    : aucun envoi ; chaque courriel est « non envoyé » et l'interface affiche le lien à copier (limite
  *                 déclarée, jamais simulée).
+ * En SMTP, un destinataire de domaine réservé (RFC 2606 / 6761 : example.com, *.test, *.invalid…) n'est jamais envoyé
+ * (`reserved_domain`, UM-28), sauf `MAIL_ALLOW_RESERVED_DOMAINS=true` (Mailpit en CI / dev), refusé en production.
  * Bascule vers un fournisseur transactionnel UE : changement de variables seulement.
  */
 import nodemailer from "nodemailer";
@@ -26,6 +28,8 @@ export interface MailConfig {
   from: string;
   dailyLimit: number;
   perRecipientHourly: number;
+  /** Domaines réservés envoyés quand même (serveur de capture Mailpit) ; jamais en production. */
+  allowReservedDomains: boolean;
   publicUrl: string;
 }
 
@@ -40,9 +44,13 @@ export function readMailConfig(env: Record<string, string | undefined> = process
   const perRecipientHourly = Number(env["MAIL_RECIPIENT_HOURLY_LIMIT"] ?? 5);
   if (!Number.isInteger(dailyLimit) || dailyLimit < 0) throw new MailConfigError("MAIL_DAILY_LIMIT invalide");
   if (!Number.isInteger(perRecipientHourly) || perRecipientHourly < 1) throw new MailConfigError("MAIL_RECIPIENT_HOURLY_LIMIT invalide");
+  const allowRaw = (env["MAIL_ALLOW_RESERVED_DOMAINS"] ?? "").trim();
+  if (allowRaw !== "" && allowRaw !== "true" && allowRaw !== "false") throw new MailConfigError(`MAIL_ALLOW_RESERVED_DOMAINS invalide : ${allowRaw} (true | false)`);
+  const allowReservedDomains = allowRaw === "true";
+  if (allowReservedDomains && production) throw new MailConfigError("MAIL_ALLOW_RESERVED_DOMAINS=true est interdit en production");
   const publicUrl = (env["APP_PUBLIC_URL"] ?? env["WEB_ORIGIN"]?.split(",")[0] ?? "http://localhost:5173").trim().replace(/\/$/, "");
   const from = (env["MAIL_FROM"] ?? "").trim();
-  if (transport !== "smtp") return { transport, from: from || "Fadi <noreply@localhost>", dailyLimit, perRecipientHourly, publicUrl };
+  if (transport !== "smtp") return { transport, from: from || "Fadi <noreply@localhost>", dailyLimit, perRecipientHourly, allowReservedDomains, publicUrl };
   const missing = ["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "MAIL_FROM", ...(production ? ["SMTP_PASS", "APP_PUBLIC_URL"] : [])].filter((k) => !env[k]);
   if (missing.length) throw new MailConfigError(`MAIL_TRANSPORT=smtp : variable(s) manquante(s) : ${missing.join(", ")}`);
   const user = env["SMTP_USER"]!.trim();
@@ -50,7 +58,7 @@ export function readMailConfig(env: Record<string, string | undefined> = process
   const port = Number(env["SMTP_PORT"]);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new MailConfigError("SMTP_PORT invalide");
   return {
-    transport, from, dailyLimit, perRecipientHourly, publicUrl,
+    transport, from, dailyLimit, perRecipientHourly, allowReservedDomains, publicUrl,
     smtp: { host: env["SMTP_HOST"]!, port, secure: (env["SMTP_SECURE"] ?? "true") === "true", user, pass: env["SMTP_PASS"] || undefined },
   };
 }

@@ -89,6 +89,7 @@ MUT=(
   "base de production|@db:5432/fadi${NL}      WEB_ORIGIN: \${PREPROD|@172.18.0.2:5432/fadi${NL}      WEB_ORIGIN: \${PREPROD"
   "réseau de production externe|    name: fadi-preprod-front|    name: app_default${NL}    external: true"
   "image non autorisée|image: postgis/postgis:16-3.4${NL}    restart|image: postgres:16${NL}    restart"
+  "SMTP_PASS donné à la recette (UM-28)|      ARCHIVE_SIGNING_KEY: \${PREPROD_ARCHIVE_SIGNING_KEY}${NL}|      ARCHIVE_SIGNING_KEY: \${PREPROD_ARCHIVE_SIGNING_KEY}${NL}      SMTP_PASS: \${PREPROD_SMTP_PASS:-}${NL}"
   "volume de production externe|  fadi-preprod-db:${NL}    name: fadi-preprod-db|  fadi-preprod-db:${NL}    name: app_fadi-db${NL}    external: true"
 )
 # D-7 : refus attendus de la garde elle-même (motif exact), pas d'une configuration invalide.
@@ -102,6 +103,7 @@ declare -A MOTIF=(
   ["migrate avec un port"]="service migrate : aucun port publié"
   ["migrate sur le réseau front"]="attendu internal seul"
   ["migrate sans MIGRATE_ONLY"]="MIGRATE_ONLY=1 exigé"
+  ["SMTP_PASS donné à la recette (UM-28)"]="SMTP_PASS réservé au service app"
 )
 for m in "${MUT[@]}"; do
   # Découpage sans `read` : les motifs contiennent des sauts de ligne (${NL}), que `read` tronquerait.
@@ -302,6 +304,22 @@ attendu 0 "sync d'un commit (dépôt local de test)" "commit approuvé et figé"
   || { ko=$((ko + 1)); echo "✗ droits après sync : $(stat -c '%a %n' "$B/src/deploy/preprod/compose.yml" "$B")"; }
 attendu 0 "build sur le code synchronisé" -- fp build
 attendu nz "sync d'un commit inexistant refusé" "introuvable" -- env FADI_PREPROD_REPO="$T/depot.git" FADI_PREPROD_BASE="$B" FADI_PREPROD_TEST_BIN="$ICI/doubles" SUDO_USER= "$SCRIPT" sync 0123456789abcdef0123456789abcdef01234567
+
+echo "== Courriel de la préproduction (UM-28)"
+# compose.yml résolu : sans PREPROD_MAIL_TRANSPORT, aucun envoi et quota prudent ; avec les variables, tout est transmis
+# à app ; SMTP_PASS jamais à la recette ni à la migration.
+courriel() {  # $1 = libellé, $2 = attendu (python), reste = variables PREPROD_* supplémentaires
+  local lib=$1 att=$2; shift 2
+  env FADI_SRC="$REPO" FADI_COMMIT=x PREPROD_POSTGRES_PASSWORD=x PREPROD_ARCHIVE_SIGNING_KEY=x PREPROD_FADI_APP_DB_PASSWORD=x "$@" \
+    docker compose -f "$REPO/deploy/preprod/compose.yml" --profile recette config --format json 2>/dev/null \
+    | python3 -I -c "import json, sys; s = json.load(sys.stdin)['services']; a = s['app']['environment']; r = s['recette']['environment']; m = s['migrate']['environment']; sys.exit(0 if ($att) and 'SMTP_PASS' not in r and 'SMTP_PASS' not in m else 1)" \
+    && { ok=$((ok + 1)); echo "✓ $lib"; } || { ko=$((ko + 1)); echo "✗ $lib"; }
+}
+courriel "sans PREPROD_MAIL_TRANSPORT : aucun envoi, quota 50 / 24 h, 5 / h / destinataire" \
+  "a['MAIL_TRANSPORT'] == '' and a['MAIL_DAILY_LIMIT'] == '50' and a['MAIL_RECIPIENT_HOURLY_LIMIT'] == '5' and a['SMTP_SECURE'] == 'true' and a['SMTP_PASS'] == ''"
+courriel "avec les variables PREPROD_* : SMTP transmis à app seul, SMTP_PASS jamais à la recette" \
+  "a['MAIL_TRANSPORT'] == 'smtp' and a['SMTP_HOST'] == 'mail.infomaniak.com' and a['SMTP_PORT'] == '465' and a['SMTP_USER'] == 'noreply@fadimmo.com' and a['SMTP_PASS'] == 'secret-test' and a['MAIL_FROM'] == 'Fadi <noreply@fadimmo.com>' and a['MAIL_DAILY_LIMIT'] == '20'" \
+  PREPROD_MAIL_TRANSPORT=smtp PREPROD_SMTP_USER=noreply@fadimmo.com PREPROD_SMTP_PASS=secret-test "PREPROD_MAIL_FROM=Fadi <noreply@fadimmo.com>" PREPROD_MAIL_DAILY_LIMIT=20
 
 echo "== Liste e2e identique à la CI"
 python3 -I - "$REPO/.github/workflows/ci.yml" "$SCRIPT" <<'PY' && { ok=$((ok + 1)); echo "✓ E2E_DEFAUT = scénarios de la CI, même ordre, sans comptes-* (base jetable)"; } || { ko=$((ko + 1)); echo "✗ E2E_DEFAUT ≠ CI"; }
