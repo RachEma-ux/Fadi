@@ -50,7 +50,8 @@ Mis à jour : 2026-10-24 (UTC).
   recette §9, plus le contrôle UM-30 (invitation depuis un téléphone réglé en anglais, interface en français → sujet
   « Invitation à rejoindre Fadi »). Relever ensuite `fadi-preprod status`, `/version`, le réglage et les comptages
   d'administrateurs (STATUS.md, points ouverts) pour consigner.
-- PR ouvertes qui touchent ce chantier : #274 (UM-29, écarts E1 à E3 des règles communes), #278 (UM-31).
+- PR ouverte qui touche ce chantier : #274 (UM-29, écarts E1 à E3 des règles communes, E7 et règle d'or des commandes
+  de collaboration). #265 et #278 sont fusionnées.
 - **Consigne du maître d'ouvrage (2026-10-23) : on ne touche pas à www.fadimmo.com ; pendant le développement, tout se
   déploie sur preprod.fadimmo.com.** Aucune session ne prépare ni ne lance de déploiement de production sans nouvelle
   instruction explicite de sa part.
@@ -77,7 +78,8 @@ Mis à jour : 2026-10-24 (UTC).
 
 - UM-29 : après déploiement, un **nouveau** lecteur n'exporte plus sans accord du propriétaire (changement visible) ; les
   lecteurs existants gardent l'export. Les commentaires et observations **nouveaux** sont réservés à l'équipe par défaut.
-  Cache hors ligne d'un fil lu avant un changement d'audience : E7 / CR-D5, non traité.
+  Un appareil oublie la copie locale d'un projet dont il est retiré dès sa prochaine lecture en ligne (E7 / CR-D5 (a)) ;
+  resté hors ligne, il la garde jusque-là (limite déclarée).
 
 - UM-27 : « Anonymiser maintenant » est irréversible et supprime aussitôt les projets non partagés du compte ; pas de
   corbeille de projets (hors périmètre, signalé au maître d'ouvrage).

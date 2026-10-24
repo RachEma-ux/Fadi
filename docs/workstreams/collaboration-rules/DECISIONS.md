@@ -65,16 +65,39 @@ Journal du chantier. Les décisions des chantiers propriétaires restent dans le
      Studio). Un lecteur écrit toujours pour tout le projet (une demande `equipe` de sa part : 422). L'audience d'un fil
      change par son auteur ou le propriétaire (tous deux de l'équipe), journalisée (`comment.audience_changed`) ;
      refusée vers `equipe` tant qu'un lecteur actuel a écrit dans le fil (409 : son texte lui serait retiré).
-  4. **Limites déclarées.** Le cache local d'un appareil qui a lu un fil avant un changement d'audience ou de rôle le
-     garde jusqu'à la purge existante (déconnexion, 401) : c'est l'écart E7 / CR-D5, non traité ici. La règle d'or
-     (`AGENTS.md`) vise les outils et commandes de la Planche : les cases « Visible par les lecteurs » et « Export »
-     sont des champs de formulaire hors Planche ; aucune icône ni raccourci n'a été ajouté (à arbitrer par le maître
-     d'ouvrage s'il veut l'étendre à ces écrans). La PR #265 (Organisations, phase 1) touche les mêmes fichiers : celle
-     qui fusionne en second résout le conflit.
+  4. **Limites déclarées au premier passage, levées au § 6** (demande du maître d'ouvrage : « Règle ces problèmes ») :
+     cache local après changement d'audience ou de rôle (E7 / CR-D5), règle d'or des nouvelles commandes, conflit avec
+     la PR #265.
   5. **Revue Codex de `b619ebb` (P1, retenue).** Une réponse lisait l'audience de son fil hors transaction : un
      changement d'audience concurrent pouvait laisser une réponse « projet » dans un fil devenu « équipe ». La racine
      du fil est désormais relue sous verrou partagé (`FOR SHARE`) dans la transaction de l'insertion, et le changement
      d'audience la verrouille en écriture (`FOR UPDATE`) : les deux se sérialisent (Collaboration et Studio).
+  6. **Limites du § 4 levées (2026-10-24).**
+     - **E7 — copie locale, selon CR-D5 (a).** `lib/project-cache-guard.ts`, branché sur le cache des requêtes
+       (`main.tsx`) : au premier refus **404** du projet en ligne (le serveur répond 404 à qui n'en est plus membre),
+       ou quand la liste relue des projets ne le contient plus, l'appareil **oublie le projet** — ses requêtes du cache
+       persistant (fils, observations, journal, documents…), son modèle de l'Atelier, ses lots, brouillons et contextes
+       Studio (`localStore.oublierProjet`), et relit les notifications ; les autres projets ne sont pas touchés. Un
+       refus 404 d'une lecture à audience (fil devenu « équipe ») retire la copie de cette lecture. Un rôle hors de
+       l'équipe (lecteur, support) relit les éléments à audience à sa première lecture du projet dans la session et à
+       chaque changement de rôle : le fil réservé entre-temps disparaît de la copie. Choix du chef de projet : un 403
+       (rôle insuffisant pour une action, accès conservé) ne purge pas ; une panne réseau non plus (la copie reste
+       lisible hors ligne). Limite qui demeure, déclarée par CR-D5 : un appareil resté **hors ligne** garde sa copie
+       jusqu'à sa prochaine lecture en ligne, et les fichiers déjà téléchargés restent hors de portée.
+     - **Règle d'or étendue aux commandes de collaboration (choix du chef de projet).** `AGENTS.md` la pose pour la
+       Planche ; elle est appliquée ici aussi, sans modifier `AGENTS.md` : `modules/collaboration/commandes-collaboration.ts`
+       donne à chaque commande son icône propre et un raccourci affiché (`<kbd>`) et déclaré (`aria-keyshortcuts`) —
+       Alt+Maj+1 « Visible par les lecteurs » (formulaire de rédaction : Collaboration, journal de l'Atelier,
+       commentaires et observations Studio), Alt+Maj+2 « Rendre visible aux lecteurs » / « Réserver à l'équipe » (fil ;
+       les deux sens d'une même bascule), Alt+Maj+3 « Export accordé » (ligne du membre). Alt+Maj+chiffre : aucun autre
+       raccourci de Fadi ne l'emploie (les Alt+Maj+lettre sont pris par la Planche et l'administration). Contrôlé par
+       `commandes-collaboration.test.ts` (icônes uniques, raccourcis sans collision, chaque écran porte icône,
+       raccourci et gestionnaire) et exercé au clavier par `collaboration-audience.mjs`.
+     - **PR #265.** Le transfert de propriété suit l'ordre d'écriture de #265 (ancien propriétaire ajouté éditeur, puis
+       `owner_id`, puis retrait du nouveau propriétaire des membres : la participation tenue par déclencheurs ne
+       s'interrompt pas), le journal à la suite dans la même transaction. #265 est fusionnée (`f59641c`) ; `main` est
+       fusionné dans la branche, conflit de `members.ts` résolu ainsi, `app.test.ts` et tests `lib` verts (356) sur la
+       combinaison.
 
 ## Décisions en attente
 

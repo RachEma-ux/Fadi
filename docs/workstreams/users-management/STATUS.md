@@ -83,6 +83,12 @@ restaurée ; la preuve opposable reste DB-3 en CI) :
 - Recettes e2e (API construite servant `WEB_DIST`, rôle `fadi_app`) : `collaboration-audience.mjs` (nouvelle, **38
   contrôles verts**, journal relu en base), `studio-persistance.mjs` (293), `studio-observations.mjs` (71),
   `comptes-securite.mjs` (73) : vertes.
+- Suite (demande du maître d'ouvrage, `../collaboration-rules/DECISIONS.md` CR-C1 § 6) : E7 / CR-D5 (a) (copie locale
+  d'un projet retiré oubliée, éléments à audience relus pour un rôle hors équipe), règle d'or des commandes de
+  collaboration (icônes, Alt+Maj+1/2/3), transfert aligné sur #265 puis `main` fusionné après #265 (`f59641c`). En
+  local : typecheck et build verts, web 966 tests, API `app.test.ts` + `lib` 356 ; recettes `collaboration-audience.mjs`
+  (45, raccourcis au clavier et E7), `studio-persistance.mjs`, `studio-observations.mjs`, `studio-hors-ligne.mjs`,
+  `comptes-securite.mjs`, `parcours-scenario.mjs`, `interface-anglais.mjs` : vertes.
 
 ### Langue des courriels (UM-30, 2026-10-24)
 

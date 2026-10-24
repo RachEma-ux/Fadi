@@ -16,6 +16,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { StudioDocument } from "@parcours/atelier-model";
 import { api, ApiError, type StudioComment, type StudioParticipant } from "../../../lib/api";
 import { LOCALE } from "../../../lib/i18n";
+import { declenche, propsRaccourci } from "../../collaboration/commandes-collaboration";
+import { IconeCollaboration, RaccourciCollaboration } from "../../collaboration/IconeCollaboration";
 import { ObservationCommentaire } from "../commentaires/Observation";
 import { STATUT_LIBELLE } from "../commentaires/observations";
 import { apiExigences } from "../exigences/api-exigences";
@@ -159,7 +161,8 @@ function Ouverture({ ctx, surFermer }: { ctx: Ctx; surFermer: () => void }) {
     } catch (err) { setRefus(lireRefus(err, "Observation refusée par le serveur.")); }
     finally { setEnvoi(false); }
   }
-  return <form className="studio-commentaires-form" onSubmit={(e) => void envoyer(e)} data-studio-suivi-ouverture>
+  return <form className="studio-commentaires-form" onSubmit={(e) => void envoyer(e)} data-studio-suivi-ouverture
+    onKeyDown={(e) => { if (ctx.equipe && declenche(e, "visible-lecteurs")) { e.preventDefault(); setLecteurs((v) => !v); } }}>
     <label htmlFor="studio-suivi-texte">Observation</label>
     <textarea id="studio-suivi-texte" required maxLength={4000} rows={3} value={body} onChange={(e) => setBody(e.target.value)} />
     <label htmlFor="studio-suivi-responsable">Responsable</label>
@@ -171,7 +174,7 @@ function Ouverture({ ctx, surFermer }: { ctx: Ctx; surFermer: () => void }) {
     <input id="studio-suivi-echeance" type="date" value={echeance} onChange={(e) => setEcheance(e.target.value)} />
     {citables.length > 0 && <label className="studio-commentaires-ancre"><input type="checkbox" checked={citer} onChange={(e) => setCiter(e.target.checked)} /> {`Citer la sélection (${citables.length} objet(s))`}</label>}
     <p className="studio-info">{`Vue citée : ${LIBELLE_VUE[ctx.vue]}`}</p>
-    {ctx.equipe && <label className="studio-commentaires-ancre"><input type="checkbox" checked={lecteurs} onChange={(e) => setLecteurs(e.target.checked)} data-studio-audience /> Visible par les lecteurs</label>}
+    {ctx.equipe && <label className="studio-commentaires-ancre"><input type="checkbox" checked={lecteurs} onChange={(e) => setLecteurs(e.target.checked)} data-studio-audience {...propsRaccourci("visible-lecteurs")} /><IconeCollaboration commande="visible-lecteurs" /> Visible par les lecteurs <RaccourciCollaboration commande="visible-lecteurs" /></label>}
     <ChoixLien ctx={ctx} domaine={domaine} refLien={refLien} surDomaine={setDomaine} surRef={setRef} />
     {refus && <p role="alert">{refus.message} {refus.observationId && <button type="button" onClick={() => ctx.montrer(refus.observationId!)}>Voir l’observation</button>}</p>}
     <div className="studio-commentaires-actions">

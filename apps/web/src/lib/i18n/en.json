@@ -10925,5 +10925,8 @@
 "Comptes et invitations des recettes automatiques (domaines réservés : example.com, .test, .invalid…), comptes anonymisés compris. Rien n’est supprimé : décochez pour les afficher.": "Accounts and invitations from automated test runs (reserved domains: example.com, .test, .invalid…), anonymised accounts included. Nothing is deleted: untick to show them.",
 "Raccourci : Alt+Maj+R": "Shortcut: Alt+Shift+R",
 "Raccourci : Alt+Maj+L": "Shortcut: Alt+Shift+L",
-"Raccourci : Alt+Maj+T": "Shortcut: Alt+Shift+T"
+"Raccourci : Alt+Maj+T": "Shortcut: Alt+Shift+T",
+"Alt+Maj+1": "Alt+Shift+1",
+"Alt+Maj+2": "Alt+Shift+2",
+"Alt+Maj+3": "Alt+Shift+3"
 }

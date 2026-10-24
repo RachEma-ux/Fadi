@@ -14,12 +14,12 @@ Mis à jour : 2026-10-24 (UTC).
 
 - Matrice, plan et décisions rédigés à partir de `main` = `034dbfb`, branche mise à jour avec `main` = `2cc038a`.
 - Décisions CR-R1 et CR-R2 consignées (relayées par la session VPS) : CR-D1 à CR-D10 toutes répondues.
-- Aucune ligne de code modifiée.
+- Code : PR #274 seule (E1, E2, E3, puis E7, règle d'or des commandes de collaboration, alignement sur #265).
 
 ## Prochaine action
 
 - PR #274 : relever la CI du HEAD (DB-3, lots e2e `parcours` et `complements`, `project-layout`) ; fusion et
-  déploiement sur décision du maître d'ouvrage ; si la PR #265 fusionne d'abord, fusionner `main` et résoudre le conflit.
+  déploiement sur décision du maître d'ouvrage. La PR #265 est fusionnée et `main` fusionné dans la branche (CR-C1 § 6).
 - Après la fusion de la PR #265 et l'accord (CR-D10), ouvrir la PR qui reporte l'annexe A du PLAN dans le PLAN
   d'Organisations.
 

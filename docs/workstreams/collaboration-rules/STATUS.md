@@ -28,11 +28,18 @@ Mis à jour : 2026-10-24 (UTC).
   sur base PostGIS jetable locale, recettes `collaboration-audience.mjs` (40 contrôles, axe-core compris),
   `studio-persistance.mjs`, `studio-observations.mjs`, `comptes-securite.mjs`, `project-layout.mjs` (593/593),
   `interface-anglais.mjs` ; CI du HEAD à relever.
+- Limites levées (CR-C1 § 6) : E7 / CR-D5 (a) par `project-cache-guard.ts` et `localStore.oublierProjet` (tests
+  unitaires, recette `collaboration-audience.mjs` : copie locale du lecteur retiré oubliée au rechargement) ; règle
+  d'or des commandes Alt+Maj+1/2/3 (`commandes-collaboration.test.ts`, recette au clavier) ; `main` fusionné après
+  #265. En local : web 966 tests, API `app.test.ts` + `lib` 356, recettes `collaboration-audience.mjs` (45),
+  `studio-persistance.mjs` (293), `studio-observations.mjs` (71), `studio-hors-ligne.mjs` (35),
+  `comptes-securite.mjs` (73), `parcours-scenario.mjs` (330), `interface-anglais.mjs` : vertes.
 
 ## Points ouverts
 
 - PR #274 : CI verte à obtenir, fusion et déploiement sur décision du maître d'ouvrage.
-- E7 (cache hors ligne après retrait ou changement d'audience, CR-D5) non traité par la PR #274.
+- E7 traité par la PR #274 (CR-C1 § 6) ; reste la limite déclarée par CR-D5 : appareil resté hors ligne, fichiers
+  déjà téléchargés.
 - Chantiers COM et Temps réel non ouverts.
 
 ## Liens de suivi

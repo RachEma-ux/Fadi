@@ -16,6 +16,8 @@ import { useOnline } from "../../components/SyncIndicator";
 import { apiMessage, ConfirmDialog, CopyLink } from "../../components/comptes/ComptesUI";
 import { MUTATION_KEYS, adoptComment, type CommentVars } from "../../lib/mutations";
 import { LOCALE } from "../../lib/i18n";
+import { declenche, propsRaccourci, type CommandeCollaboration } from "./commandes-collaboration";
+import { IconeCollaboration, RaccourciCollaboration } from "./IconeCollaboration";
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 const KIND_LABEL: Record<string, string> = {
@@ -77,6 +79,10 @@ export function CommentThread({ projectId, stepNumber, comments, compact = false
     },
     onError: (err) => setError(err instanceof ApiError && err.serverMessage ? err.serverMessage : "L’audience n’a pas pu être modifiée."),
   });
+  // Audience d'un fil : bouton, icône propre et raccourci (règle d'or, `commandes-collaboration.ts`).
+  const mayToggle = (c: ProjectComment) => !c.parentId && inTeam && (c.mine || access.isOwner);
+  const bascule = (c: ProjectComment): CommandeCollaboration => (c.audience === "projet" ? "reserver-equipe" : "rendre-visible");
+  const toggle = (c: ProjectComment) => { if (!audience.isPending) audience.mutate({ id: c.id, next: c.audience === "projet" ? "equipe" : "projet" }); };
   const remove = useMutation({
     mutationFn: (id: string) => api.deleteComment(projectId, id),
     onSuccess: refresh,
@@ -106,16 +112,19 @@ export function CommentThread({ projectId, stepNumber, comments, compact = false
           <span className="h7-chip comment-audience" data-audience={c.audience}>
             {c.audience === "projet" ? "Visible par les lecteurs" : "Équipe"}
           </span>
-          {inTeam && (c.mine || access.isOwner) && (
+          {mayToggle(c) && (
             <button
               type="button"
               className="comment-audience-toggle"
               data-audience-toggle={c.id}
               disabled={audience.isPending}
               title={c.audience === "projet" ? "Réserver ce fil au propriétaire et aux éditeurs" : "Rendre ce fil lisible par les lecteurs du projet"}
-              onClick={() => audience.mutate({ id: c.id, next: c.audience === "projet" ? "equipe" : "projet" })}
+              {...propsRaccourci(bascule(c))}
+              onClick={() => toggle(c)}
             >
+              <IconeCollaboration commande={c.audience === "projet" ? "reserver-equipe" : "rendre-visible"} />
               {c.audience === "projet" ? "Réserver à l’équipe" : "Rendre visible aux lecteurs"}
+              <RaccourciCollaboration commande={bascule(c)} />
             </button>
           )}
         </>
@@ -132,7 +141,18 @@ export function CommentThread({ projectId, stepNumber, comments, compact = false
       {comments.length ? (
         <ul className="comment-list">
           {roots.map((c) => (
-            <li key={c.id} className="comment" data-comment={c.id}>
+            <li
+              key={c.id}
+              className="comment"
+              data-comment={c.id}
+              onKeyDown={(e) => {
+                // Règle d'or : Alt+Maj+2 bascule l'audience du fil où se trouve le focus (même commande que le bouton).
+                if (mayToggle(c) && declenche(e, bascule(c))) {
+                  e.preventDefault();
+                  toggle(c);
+                }
+              }}
+            >
               {meta(c)}
               <p>{c.body}</p>
               {repliesOf(c.id).length > 0 && (
@@ -179,6 +199,13 @@ export function CommentThread({ projectId, stepNumber, comments, compact = false
       )}
       {mayComment ? <form
         className="comment-form"
+        onKeyDown={(e) => {
+          // Règle d'or : Alt+Maj+1 coche ou décoche « Visible par les lecteurs » depuis le formulaire.
+          if (inTeam && declenche(e, "visible-lecteurs")) {
+            e.preventDefault();
+            setVisibleToReaders((v) => !v);
+          }
+        }}
         onSubmit={(e: FormEvent) => {
           e.preventDefault();
           if (draft.trim()) add.mutate({ projectId, body: draft.trim(), stepNumber, ...(inTeam ? { audience: visibleToReaders ? "projet" : "equipe" } : {}) });
@@ -190,8 +217,10 @@ export function CommentThread({ projectId, stepNumber, comments, compact = false
         </label>
         {inTeam ? (
           <label className="comment-audience-choice">
-            <input type="checkbox" checked={visibleToReaders} onChange={(e) => setVisibleToReaders(e.target.checked)} data-comment-audience />
+            <input type="checkbox" checked={visibleToReaders} onChange={(e) => setVisibleToReaders(e.target.checked)} data-comment-audience {...propsRaccourci("visible-lecteurs")} />
+            <IconeCollaboration commande="visible-lecteurs" />
             Visible par les lecteurs
+            <RaccourciCollaboration commande="visible-lecteurs" />
             <small className="h7-muted"> — sinon réservé au propriétaire et aux éditeurs</small>
           </label>
         ) : (
@@ -347,7 +376,17 @@ export function MembersPanel({ projectId }: { projectId: string }) {
             <td />
           </tr>
           {v.members.map((m) => (
-            <tr key={m.userId} data-member={m.email}>
+            <tr
+              key={m.userId}
+              data-member={m.email}
+              onKeyDown={(e) => {
+                // Règle d'or : Alt+Maj+3 accorde ou retire l'export du lecteur de la ligne où se trouve le focus.
+                if (isOwner && m.role === "lecteur" && !busy && declenche(e, "export-lecteur")) {
+                  e.preventDefault();
+                  exportRight.mutate({ userId: m.userId, next: !m.canExport });
+                }
+              }}
+            >
               <td>
                 <span className="collab-email">{m.email}</span>
                 {m.userId === v.you.userId ? " (vous)" : ""}
@@ -366,8 +405,10 @@ export function MembersPanel({ projectId }: { projectId: string }) {
               <td data-member-export={m.canExport ? "oui" : "non"}>
                 {isOwner && m.role === "lecteur" ? (
                   <label className="member-export">
-                    <input type="checkbox" checked={m.canExport} disabled={busy} aria-label={`Export accordé à ${m.email}`} onChange={(e) => exportRight.mutate({ userId: m.userId, next: e.target.checked })} />
+                    <input type="checkbox" checked={m.canExport} disabled={busy} aria-label={`Export accordé à ${m.email}`} {...propsRaccourci("export-lecteur")} onChange={(e) => exportRight.mutate({ userId: m.userId, next: e.target.checked })} />
+                    <IconeCollaboration commande="export-lecteur" />
                     {m.canExport ? "accordé" : "non accordé"}
+                    <RaccourciCollaboration commande="export-lecteur" />
                   </label>
                 ) : m.role === "editeur" ? (
                   "oui"

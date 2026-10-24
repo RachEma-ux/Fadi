@@ -9,6 +9,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { champsEnConflit, interferences, reprendreChamps, type Commande, type Enveloppe, type Interference, type ModeleAtelier, type TypeProbleme } from "@parcours/atelier-model";
 import { api, type ProjectComment } from "../../../../lib/api";
 import { useProjectAccess } from "../../../../lib/access";
+import { declenche, propsRaccourci } from "../../../collaboration/commandes-collaboration";
+import { IconeCollaboration, RaccourciCollaboration } from "../../../collaboration/IconeCollaboration";
 import type { InstantaneClient } from "../../bus/atelier-client";
 import { LOCALE } from "../../../../lib/i18n";
 
@@ -211,10 +213,15 @@ function FilEntree({ projectId, revision, commentaires }: { projectId: string; r
           )}
           <form onSubmit={(e) => { e.preventDefault(); void envoyer(); }}>
             <label className="sr-only" htmlFor={`fil-${revision}`}>Commentaire sur la révision {revision}</label>
-            <textarea id={`fil-${revision}`} rows={2} maxLength={4000} value={texte} onChange={(e) => setTexte(e.target.value)} onKeyDown={(e) => e.stopPropagation()} placeholder={`Commentaire sur la révision ${revision}`} />
+            <textarea id={`fil-${revision}`} rows={2} maxLength={4000} value={texte} onChange={(e) => setTexte(e.target.value)} onKeyDown={(e) => {
+              e.stopPropagation();
+              // Règle d'or : Alt+Maj+1 coche ou décoche « Visible par les lecteurs » depuis le champ.
+              if (equipe && declenche(e, "visible-lecteurs")) { e.preventDefault(); setLecteurs((v) => !v); }
+            }} placeholder={`Commentaire sur la révision ${revision}`} />
             {equipe && (
               <label className="journal-audience">
-                <input type="checkbox" checked={lecteurs} onChange={(e) => setLecteurs(e.target.checked)} data-comment-audience /> Visible par les lecteurs
+                <input type="checkbox" checked={lecteurs} onChange={(e) => setLecteurs(e.target.checked)} data-comment-audience {...propsRaccourci("visible-lecteurs")} />
+                <IconeCollaboration commande="visible-lecteurs" /> Visible par les lecteurs <RaccourciCollaboration commande="visible-lecteurs" />
               </label>
             )}
             <button type="submit" disabled={envoi || !texte.trim()}>Publier</button>

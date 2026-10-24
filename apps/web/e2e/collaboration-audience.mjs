@@ -11,7 +11,11 @@
  *      depuis l'écran des membres.
  *   3. E3 journal : chaque changement d'accès laisse son entrée (vérifiée par la base quand DATABASE_URL est donnée).
  *   4. Interface : le formulaire porte « Visible par les lecteurs » ; le lecteur ne voit dans Collaboration que le fil
- *      ouvert ; la case « Export » des membres accorde l'export.
+ *      ouvert ; la case « Export » des membres accorde l'export. Règle d'or : chaque commande porte son icône et son
+ *      raccourci (Alt+Maj+1 audience à la rédaction, Alt+Maj+2 bascule d'un fil, Alt+Maj+3 export du lecteur),
+ *      exercés ici au clavier.
+ *   5. E7 (CR-D5 (a)) : le lecteur retiré du projet recharge la page ; la copie locale du projet (cache persistant
+ *      IndexedDB) est oubliée.
  *
  * BASE_URL=http://localhost:3001 [DATABASE_URL=…] node apps/web/e2e/collaboration-audience.mjs
  */
@@ -120,8 +124,16 @@ await pOwner.goto(`${BASE}/projets/${pid}?module=collaboration`);
 await pOwner.waitForSelector("#collab-comments", { timeout: 20000 });
 const formulaire = pOwner.locator("section[aria-labelledby='collab-comments'] form.comment-form").last();
 check("interface propriétaire : « Visible par les lecteurs » au formulaire, décoché", await formulaire.locator("[data-comment-audience]").count() === 1 && !(await formulaire.locator("[data-comment-audience]").isChecked()));
+check("règle d'or : chaque commande du propriétaire porte son icône, son raccourci affiché et déclaré",
+  await pOwner.evaluate(() => ["visible-lecteurs", "rendre-visible", "export-lecteur"].every((c) => {
+    const el = document.querySelector(`[data-commande-collaboration="${c}"]`);
+    const bloc = el?.closest("label, button") ?? el;
+    return el?.getAttribute("aria-keyshortcuts")?.startsWith("Alt+Shift+") && bloc?.querySelector(".collab-icon") && bloc?.querySelector(".collab-raccourci");
+  })));
 await formulaire.locator("textarea").fill("Fil ouvert écrit dans l'interface");
-await formulaire.locator("[data-comment-audience]").check();
+await formulaire.locator("textarea").focus();
+await pOwner.keyboard.press("Alt+Shift+Digit1");
+check("raccourci Alt+Maj+1 : la rédaction devient « Visible par les lecteurs »", await formulaire.locator("[data-comment-audience]").isChecked());
 await formulaire.locator("button[type=submit]").click();
 await pOwner.waitForFunction(() => [...document.querySelectorAll(".comment")].some((li) => li.textContent?.includes("Fil ouvert écrit dans l'interface")), null, { timeout: 15000 });
 const fil = pOwner.locator(".comment", { hasText: "Fil ouvert écrit dans l'interface" }).first();
@@ -134,9 +146,10 @@ await axe(pOwner, "Collaboration du propriétaire (case d'audience, colonne Expo
 const ligne = pOwner.locator(`.members-table tr[data-member="${cReader.email}"]`);
 await ligne.waitFor({ timeout: 10000 });
 check("interface propriétaire : export « non accordé » au lecteur", (await ligne.locator("[data-member-export]").getAttribute("data-member-export")) === "non");
-await ligne.locator("[data-member-export] input[type=checkbox]").click(); // case pilotée par la réponse du serveur
+await ligne.locator("[data-member-export] input[type=checkbox]").focus();
+await pOwner.keyboard.press("Alt+Shift+Digit3"); // raccourci de la ligne ; case pilotée par la réponse du serveur
 await pOwner.waitForFunction((email) => document.querySelector(`.members-table tr[data-member="${email}"] [data-member-export]`)?.getAttribute("data-member-export") === "oui", cReader.email, { timeout: 10000 });
-check("interface propriétaire : export accordé au lecteur (case)", (await ligne.locator("[data-member-export]").getAttribute("data-member-export")) === "oui");
+check("interface propriétaire : export accordé au lecteur (raccourci Alt+Maj+3)", (await ligne.locator("[data-member-export]").getAttribute("data-member-export")) === "oui");
 check("E2 lecteur : l'archive s'exporte après l'accord", (await reader("GET", `/projects/${pid}/archive`)).status === 200);
 
 const pReader = await session(cReader);
@@ -150,9 +163,30 @@ check("interface lecteur : aucun bouton de changement d'audience", (await pReade
 await axe(pReader, "Collaboration du lecteur");
 
 // Changement d'audience par le propriétaire dans l'interface : le lecteur lit ensuite le fil.
-await filInterne.locator(`[data-audience-toggle="${interne.body?.id}"]`).click();
+await filInterne.locator(`[data-audience-toggle="${interne.body?.id}"]`).focus();
+await pOwner.keyboard.press("Alt+Shift+Digit2");
 await pOwner.waitForFunction((id) => document.querySelector(`.comment[data-comment="${id}"] .comment-audience`)?.getAttribute("data-audience") === "projet", interne.body?.id, { timeout: 10000 });
-check("E1 changement d'audience (interface) : le lecteur lit désormais le fil", contient(await reader("GET", com)));
+check("E1 changement d'audience (raccourci Alt+Maj+2) : le lecteur lit désormais le fil", contient(await reader("GET", com)));
+
+// E7 (CR-D5 (a)) : la copie locale d'un projet retiré est oubliée au premier refus du serveur.
+const copieLocale = (page) => page.evaluate(() => new Promise((ok) => {
+  const ouverture = indexedDB.open("fadi-local");
+  ouverture.onerror = () => ok("");
+  ouverture.onsuccess = () => {
+    const lecture = ouverture.result.transaction("keyValue").objectStore("keyValue").getAll();
+    lecture.onsuccess = () => ok(JSON.stringify(lecture.result));
+    lecture.onerror = () => ok("");
+  };
+}));
+await pReader.waitForTimeout(600); // écriture regroupée du cache persistant (200 ms)
+check("E7 avant retrait : la copie locale du lecteur contient le fil ouvert", (await copieLocale(pReader)).includes("Question ouverte de recette"));
+check("E7 : le propriétaire retire le lecteur", (await owner("DELETE", `/projects/${pid}/members/${ids.reader}`)).status === 204);
+await pReader.reload();
+await pReader.waitForFunction(async (texte) => {
+  const v = await new Promise((ok) => { const o = indexedDB.open("fadi-local"); o.onsuccess = () => { const r = o.result.transaction("keyValue").objectStore("keyValue").getAll(); r.onsuccess = () => ok(JSON.stringify(r.result)); }; o.onerror = () => ok(""); });
+  return !v.includes(texte);
+}, "Question ouverte de recette", { timeout: 15000, polling: 500 }).catch(() => undefined);
+check("E7 après retrait : la copie locale du projet est oubliée (aucun fil, aucune note)", !(await copieLocale(pReader)).includes("Question ouverte de recette") && !(await copieLocale(pReader)).includes(NOTE));
 check("interface : aucune erreur de page", erreurs.length === 0, erreurs.join(" | "));
 await browser.close();
 
@@ -165,7 +199,7 @@ if (process.env.DATABASE_URL) {
   const journal = (await sql.query("SELECT action, metadata FROM admin.audit_log WHERE target_type = 'project' AND target_id = $1 ORDER BY id", [pid])).rows;
   await sql.end();
   const actions = journal.map((e) => e.action);
-  check("E3 journal : deux ajouts, l'export accordé et le changement d'audience", JSON.stringify(actions) === JSON.stringify(["project.member.added", "project.member.added", "project.member.export_changed", "comment.audience_changed"]), JSON.stringify(actions));
+  check("E3 journal : deux ajouts, l'export accordé, le changement d'audience et le retrait", JSON.stringify(actions) === JSON.stringify(["project.member.added", "project.member.added", "project.member.export_changed", "comment.audience_changed", "project.member.removed"]), JSON.stringify(actions));
   check("E3 journal : membre visé et avant → après, sans adresse", journal[2]?.metadata?.memberId === ids.reader && journal[2]?.metadata?.canExportBefore === false && journal[2]?.metadata?.canExportAfter === true && !JSON.stringify(journal).includes("@example.test"));
 } else console.log("E3 journal : NON EXÉCUTÉ (DATABASE_URL absente) — couvert par app.test.ts (DB-3).");
 

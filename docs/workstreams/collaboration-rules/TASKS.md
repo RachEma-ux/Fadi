@@ -10,8 +10,8 @@
 
 ## En cours
 
-- [ ] CR-5 — Corriger les écarts graves E1, E2, E3 (CR-C1) : implémenté et vérifié en local ; PR #274 ouverte, non
-  fusionnée ; CI du HEAD à vérifier (Issue : #272).
+- [ ] CR-5 — Corriger les écarts graves E1, E2, E3 (CR-C1), puis E7, la règle d'or des commandes et l'alignement sur
+  #265 (CR-C1 § 6) : implémenté et vérifié en local ; PR #274 ouverte, non fusionnée ; CI du HEAD à vérifier (Issue : #272).
 
 - CR-0 — Cadrage fusionné (PR #273) ; CR-D1 à CR-D10 toutes répondues (CR-R1, CR-R2) (Issue : #272).
 
@@ -21,7 +21,7 @@
 
 ## Bloqué
 
-- CR-1 : attend la fusion de la PR #265 (CR-D10 adoptée).
+- CR-1 : la PR #265 est fusionnée ; attend l'accord du maître d'ouvrage pour être engagée (CR-D10).
 - CR-2 à CR-4 : attendent l'ouverture des chantiers COM et Temps réel (ordre CR-D9) et les lots d'Organisations.
 
 ## Critères de sortie

@@ -9,10 +9,12 @@
  * Audience (écart E1) : un nouveau fil est réservé à l'équipe (propriétaire et éditeurs) sauf « Visible par les lecteurs » ;
  * l'auteur ou le propriétaire change l'audience d'un fil ; un lecteur écrit pour tout le projet et ne reçoit jamais un fil de l'équipe.
  */
-import { useRef, useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { StudioDocument } from "@parcours/atelier-model";
 import { api, ApiError, type StudioComment } from "../../../lib/api";
+import { declenche, propsRaccourci, type CommandeCollaboration } from "../../collaboration/commandes-collaboration";
+import { IconeCollaboration, RaccourciCollaboration } from "../../collaboration/IconeCollaboration";
 
 /** Propriétaire ou éditeur : choisit l'audience d'un fil (le serveur en décide et filtre). */
 const deLEquipe = (role: string | undefined) => role === "proprietaire" || role === "editeur";
@@ -118,12 +120,14 @@ function NouveauCommentaire(props: PanneauCommentairesProps & { parentId?: strin
     } finally { enCours.current = false; setEnvoi(false); }
   }
   const id = `studio-commentaire-${props.parentId ?? "nouveau"}`;
-  return <form className="studio-commentaires-form" onSubmit={(e) => void envoyer(e)} data-studio-commenter={props.parentId ? "reponse" : "nouveau"}>
+  // Règle d'or : Alt+Maj+1 coche ou décoche « Visible par les lecteurs » depuis le formulaire d'un nouveau fil.
+  const raccourci = (e: KeyboardEvent) => { if (!props.parentId && props.equipe && declenche(e, "visible-lecteurs")) { e.preventDefault(); setLecteurs((v) => !v); } };
+  return <form className="studio-commentaires-form" onKeyDown={raccourci} onSubmit={(e) => void envoyer(e)} data-studio-commenter={props.parentId ? "reponse" : "nouveau"}>
     <label htmlFor={id}>{props.parentId ? "Votre réponse" : "Nouveau commentaire"}</label>
     <textarea id={id} required maxLength={4000} rows={3} value={body} onChange={(e) => setBody(e.target.value)} />
     {!props.parentId && citables.length > 0 && <label className="studio-commentaires-ancre"><input type="checkbox" checked={ancrer} onChange={(e) => setAncrer(e.target.checked)} data-studio-ancrer /> {`Citer la sélection (${citables.length} objet(s))`}</label>}
     {!props.parentId && ancrer && nonEnregistres.length > 0 && <p className="studio-info">{`${nonEnregistres.length} objet(s) non enregistré(s) ne peuvent pas être cités.`}</p>}
-    {!props.parentId && props.equipe && <label className="studio-commentaires-ancre"><input type="checkbox" checked={lecteurs} onChange={(e) => setLecteurs(e.target.checked)} data-studio-audience /> Visible par les lecteurs</label>}
+    {!props.parentId && props.equipe && <label className="studio-commentaires-ancre"><input type="checkbox" checked={lecteurs} onChange={(e) => setLecteurs(e.target.checked)} data-studio-audience {...propsRaccourci("visible-lecteurs")} /><IconeCollaboration commande="visible-lecteurs" /> Visible par les lecteurs <RaccourciCollaboration commande="visible-lecteurs" /></label>}
     {error && <p role="alert">{error}</p>}
     <div className="studio-commentaires-actions">
       <button type="submit" disabled={envoi || !body.trim()}>{props.parentId ? "Répondre" : "Commenter"}</button>
@@ -152,7 +156,11 @@ function Commentaire(props: PanneauCommentairesProps & { c: StudioComment; equip
     catch { setError("Suppression refusée ou non confirmée."); }
     finally { setSuppression(false); }
   }
-  return <article className="studio-commentaire" data-studio-commentaire={c.id} data-studio-commentaire-supprime={c.deletedAt ? "" : undefined}>
+  // Audience du fil : bouton, icône propre et raccourci Alt+Maj+2 depuis le fil (règle d'or).
+  const peutBasculer = !c.parentId && props.equipe && (c.mine || props.proprietaire);
+  const sens: CommandeCollaboration = audience === "projet" ? "reserver-equipe" : "rendre-visible";
+  return <article className="studio-commentaire" data-studio-commentaire={c.id} data-studio-commentaire-supprime={c.deletedAt ? "" : undefined}
+    onKeyDown={(e) => { if (peutBasculer && !bascule && declenche(e, sens)) { e.preventDefault(); void basculer(); } }}>
     <p className="studio-commentaire-entete">
       <strong>{c.mine ? "Vous" : <span translate="no">{c.authorEmail}</span>}</strong>
       <span translate="no">{date(c.createdAt)}</span>
@@ -164,7 +172,7 @@ function Commentaire(props: PanneauCommentairesProps & { c: StudioComment; equip
       {c.objectIds.length > 0 && <button type="button" onClick={() => props.surChoisir(c)} data-studio-commentaire-objets={c.objectIds.join(" ")}>{`Sélectionner les objets cités (${c.objectIds.length})`}</button>}
       {!c.parentId && <button type="button" aria-expanded={repondre} onClick={() => setRepondre((v) => !v)}>Répondre</button>}
       {c.mine && !c.deletedAt && !c.observation && <button type="button" disabled={suppression} onClick={() => void supprimer()} data-studio-supprimer-commentaire>Supprimer</button>}
-      {!c.parentId && props.equipe && (c.mine || props.proprietaire) && <button type="button" disabled={bascule} onClick={() => void basculer()} data-studio-audience-basculer={c.id}>{audience === "projet" ? "Réserver à l’équipe" : "Rendre visible aux lecteurs"}</button>}
+      {peutBasculer && <button type="button" disabled={bascule} onClick={() => void basculer()} data-studio-audience-basculer={c.id} {...propsRaccourci(sens)}><IconeCollaboration commande={sens} />{audience === "projet" ? "Réserver à l’équipe" : "Rendre visible aux lecteurs"} <RaccourciCollaboration commande={sens} /></button>}
     </div>
     {error && <p role="alert">{error}</p>}
     {repondre && <NouveauCommentaire {...props} parentId={c.id} surEnvoye={props.surModifie} surFermer={() => setRepondre(false)} />}
