@@ -9,6 +9,7 @@
  *   POST   /auth/me/password               { currentPassword, newPassword } → révoque les autres sessions
  *   GET    /auth/me/sessions               sessions ouvertes ; DELETE /auth/me/sessions/:id ; DELETE /auth/me/sessions (les autres)
  *   POST   /auth/me/mfa/setup|enable|disable|recovery-codes   double authentification TOTP (D-6)
+ *   GET    /auth/me/history                « Mon historique » (journal d'activité filtré, phase 3 bis), curseur `before`
  *   GET    /auth/me/export                 export JSON des données personnelles (D-5)
  *   DELETE /auth/me                        { password, confirm } → suppression programmée à 30 jours (D-5)
  *   POST   /auth/verify-email/request|confirm
@@ -41,7 +42,10 @@ import {
 import {
   activateInvitation, findInvitationByToken, INVITATION_REFUSAL_MESSAGE, invitationRefusal, invitationView, inviterStillAuthorized,
 } from "../lib/invitations.js";
+import { organizationNameOf } from "../lib/organizations.js";
 import { newId } from "../lib/ids.js";
+import { userHistory } from "../lib/journal.js";
+import { JOURNAL_PAGE_DEFAULT, JOURNAL_PAGE_MAX } from "../lib/journal-audience.js";
 import { adminEnabled, removesLastAdmin } from "../lib/platform-access.js";
 import { lockAdminEligibility, type Tx } from "../lib/admin-eligibility.js";
 import { checkPassword, PASSWORD_MAX, PASSWORD_REFUSAL_MESSAGE } from "../lib/security/password-policy.js";
@@ -340,6 +344,25 @@ authRouter.get("/me/sessions", async (req, res) => {
   });
 });
 
+/**
+ * « Mon historique » (phase 3 bis, tâche 2) : connexions, changements de sécurité, invitations envoyées ou acceptées,
+ * accès support accordés ou utilisés sur ses projets — filtré côté serveur (`lib/journal-audience.ts`, audience
+ * `utilisateur`) : ses propres actions, celles qui visent son compte, les accès support sur les projets dont il est
+ * propriétaire. Pagination par curseur `before`, récent d'abord ; jamais d'adresse IP ni d'identité d'un autre compte,
+ * sauf l'administrateur d'un accès support sur son propre projet (déjà nommé dans « Accès support »).
+ */
+const historySchema = z.object({
+  before: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().min(1).max(JOURNAL_PAGE_MAX).default(JOURNAL_PAGE_DEFAULT),
+});
+
+authRouter.get("/me/history", async (req, res) => {
+  if (!requireUser(req, res)) return;
+  const parsed = historySchema.safeParse(req.query);
+  if (!parsed.success) return void res.status(400).json({ error: "invalid_input" });
+  res.json(await userHistory(req.user.id, parsed.data.before, parsed.data.limit));
+});
+
 authRouter.delete("/me/sessions/:sessionId", async (req, res) => {
   if (!requireUser(req, res)) return;
   const rows = await db.update(sessions).set({ revokedAt: new Date() })
@@ -595,7 +618,10 @@ authRouter.post("/reset-password", async (req, res) => {
 async function describeInvitation(inv: typeof invitations.$inferSelect) {
   const [project] = inv.projectId ? await db.select({ name: projects.name, code: projects.code }).from(projects).where(eq(projects.id, inv.projectId)).limit(1) : [];
   const [inviter] = inv.invitedBy ? await db.select({ email: users.email, displayName: users.displayName }).from(users).where(eq(users.id, inv.invitedBy)).limit(1) : [];
-  return invitationView(inv, { projectName: project ? `${project.code} — ${project.name}` : null, inviterName: inviter?.displayName || inviter?.email || (inv.invitedBy ? "" : "Exploitation de la plateforme") });
+  return invitationView(inv, {
+    projectName: project ? `${project.code} — ${project.name}` : null, inviterName: inviter?.displayName || inviter?.email || (inv.invitedBy ? "" : "Exploitation de la plateforme"),
+    organizationName: await organizationNameOf(inv.organizationId),
+  });
 }
 
 authRouter.post("/invitations/lookup", async (req, res) => {
@@ -636,7 +662,7 @@ authRouter.post("/invitations/accept", async (req, res) => {
     res.status(result.refusal === "wrong_account" ? 403 : 409).json({ error: result.refusal, message: INVITATION_REFUSAL_MESSAGE[result.refusal] });
     return;
   }
-  res.json({ accepted: true, projectId: result.inv.projectId });
+  res.json({ accepted: true, projectId: result.inv.projectId, organizationId: result.inv.organizationId ?? null });
 });
 
 authRouter.post("/invitations/decline", async (req, res) => {
@@ -681,7 +707,7 @@ authRouter.post("/activate", perIdentifier(10), async (req, res) => {
     }).returning();
     await audit(tx, { actorId: id, action: "account.activated", target: { type: "user", id }, metadata: { invitationId: locked.id }, ip: clientIp(req) });
     await activateInvitation(tx, locked, id, clientIp(req));
-    return { user: user!, projectId: locked.projectId };
+    return { user: user!, projectId: locked.projectId, organizationId: locked.organizationId ?? null };
   });
   if ("refusal" in result) {
     const message = result.refusal === "account_exists"
@@ -691,7 +717,7 @@ authRouter.post("/activate", perIdentifier(10), async (req, res) => {
     return;
   }
   const sessionUser = await openFullSession(req, res, result.user);
-  res.status(201).json({ user: publicUser(sessionUser), projectId: result.projectId });
+  res.status(201).json({ user: publicUser(sessionUser), projectId: result.projectId, organizationId: result.organizationId });
 });
 
 // ---------------------------------------------------------------------------------------------------------------------

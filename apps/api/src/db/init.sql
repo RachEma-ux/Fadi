@@ -1470,6 +1470,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS project_participations_current_person ON proje
 CREATE UNIQUE INDEX IF NOT EXISTS project_participations_current_org ON project_participations (project_id, organization_id)
   WHERE organization_id IS NOT NULL AND status <> 'terminee';
 CREATE INDEX IF NOT EXISTS project_participations_person_idx ON project_participations (person_id);
+-- Phase 2 (bascule de l'accès, OP-D3 c) : l'export accordé à un lecteur (écart E2) suit la participation, seule source
+-- de la décision d'accès ; tenu par le miroir depuis `project_members.can_export` (NULL d'archive = TRUE).
+ALTER TABLE project_participations ADD COLUMN IF NOT EXISTS can_export boolean NOT NULL DEFAULT false;
 
 -- Rôles métier par portée (OP-D3 c, concept partie 2) : Lecteur, Concepteur, Relecteur, Coordinateur, Approbateur,
 -- Diffuseur. Origine `acces` : miroir de l'accès actuel (lecteur → lecteur, editeur → concepteur), tenu par les
@@ -1500,6 +1503,7 @@ RETURNS void LANGUAGE plpgsql AS $$
 DECLARE
   v_owner text;
   v_member text;
+  v_member_export boolean;
   v_access text;
   v_person text;
   v_part text;
@@ -1507,7 +1511,7 @@ DECLARE
 BEGIN
   SELECT owner_id INTO v_owner FROM projects WHERE id = p_project;
   IF NOT FOUND OR NOT EXISTS (SELECT 1 FROM users WHERE id = p_user) THEN RETURN; END IF;  -- suppression en cascade
-  SELECT role INTO v_member FROM project_members WHERE project_id = p_project AND user_id = p_user;
+  SELECT role, can_export INTO v_member, v_member_export FROM project_members WHERE project_id = p_project AND user_id = p_user;
   v_access := CASE WHEN v_owner = p_user THEN 'proprietaire' ELSE v_member END;
   SELECT id INTO v_person FROM people WHERE user_id = p_user;
   IF v_access IS NULL THEN
@@ -1531,8 +1535,11 @@ BEGIN
     INSERT INTO project_participations (id, project_id, person_id, status, starts_on)
     VALUES (v_part, p_project, v_person, 'active', least(p_since, current_date));
   ELSE
+    -- Une participation suspendue le reste (phase 2) : seul un contact devient actif par un accès.
     UPDATE project_participations SET status = 'active', updated_at = now() WHERE id = v_part AND status = 'contact';
   END IF;
+  UPDATE project_participations SET can_export = (v_access = 'lecteur' AND coalesce(v_member_export, true))
+   WHERE id = v_part AND can_export IS DISTINCT FROM (v_access = 'lecteur' AND coalesce(v_member_export, true));
   v_role := CASE v_access WHEN 'lecteur' THEN 'lecteur' WHEN 'editeur' THEN 'concepteur' END;
   DELETE FROM project_role_assignments
    WHERE participation_id = v_part AND origin = 'acces' AND role IS DISTINCT FROM v_role;
@@ -1574,6 +1581,303 @@ BEGIN
     PERFORM op_sync_access(r.project_id, r.user_id, r.since);
   END LOOP;
 END $$;
+
+-- Organisations-participation, phase 3 bis — journal d'activité consultable par audience (OP-D13 a). Aucune table ni
+-- droit nouveau : `admin.audit_log` reste append-only (déclencheurs ci-dessus, `fadi_app` sans UPDATE ni DELETE, bloc
+-- D-7). Deux index de lecture, additifs : l'historique d'un projet rattache les invitations par `metadata.projectId`, et
+-- le filtre par famille d'actions de l'administration lit un préfixe d'action.
+CREATE INDEX IF NOT EXISTS audit_log_project_meta_idx ON admin.audit_log ((metadata->>'projectId'), id)
+  WHERE metadata ? 'projectId';
+CREATE INDEX IF NOT EXISTS audit_log_action_idx ON admin.audit_log (action text_pattern_ops, id);
+
+-- ---------------------------------------------------------------------------
+-- Organisations, participation et revue externe — phase 5 : espace d'organisation (concept, partie 5 ; OP-D1 a, OP-D4 b,
+-- OP-D10). Adhésions (rôle, fonction déclarée, période, statut), groupes de travail, gabarits d'équipe versionnés,
+-- mandats de représentation dans un projet, organisation propriétaire facultative d'un projet, invitation de finalité
+-- `organization_membership`. Rien ici n'ouvre un projet : une adhésion, un groupe, un gabarit ou un mandat ne donne
+-- aucun droit de projet (concept : une adhésion n'est pas une participation) ; les droits restent ceux de
+-- `projects.owner_id` / `project_members` (lib/owned-project.ts). Règles pures : apps/api/src/lib/organizations-rules.ts.
+-- ---------------------------------------------------------------------------
+-- Fiche : coordonnées professionnelles déclarées (saisie libre) ; clé de création rejouable (double soumission = même
+-- organisation, concept partie 3 « Repeated submission must not create duplicate »).
+ALTER TABLE organizations ADD COLUMN IF NOT EXISTS details text;
+ALTER TABLE organizations ADD COLUMN IF NOT EXISTS creation_key text;
+CREATE UNIQUE INDEX IF NOT EXISTS organizations_creation_key_unique ON organizations (created_by, creation_key)
+  WHERE creation_key IS NOT NULL;
+
+-- Adhésion d'une personne liée à un compte vérifié : rôle dans l'organisation (administrateur / membre), fonction en
+-- saisie libre (OP-D4 b), période et statut (concept partie 3 : active, suspendue, terminée). Une adhésion terminée ne
+-- revit pas : un retour ouvre une nouvelle adhésion (nouvelle période).
+CREATE TABLE IF NOT EXISTS organization_memberships (
+  id text PRIMARY KEY,
+  organization_id text NOT NULL REFERENCES organizations (id) ON DELETE CASCADE,
+  person_id text NOT NULL REFERENCES people (id) ON DELETE CASCADE,
+  role text NOT NULL DEFAULT 'membre',
+  job_title text,
+  status text NOT NULL DEFAULT 'active',
+  starts_on date NOT NULL DEFAULT current_date,
+  ends_on date,
+  end_reason text,
+  invitation_id text REFERENCES auth.invitations (id) ON DELETE SET NULL,
+  created_by text REFERENCES users (id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT organization_memberships_role_check CHECK (role IN ('administrateur', 'membre')),
+  CONSTRAINT organization_memberships_status_check CHECK (status IN ('active', 'suspendue', 'terminee')),
+  CONSTRAINT organization_memberships_ended_check CHECK ((status = 'terminee') = (ends_on IS NOT NULL)),
+  CONSTRAINT organization_memberships_period_check CHECK (ends_on IS NULL OR ends_on >= starts_on),
+  CONSTRAINT organization_memberships_id_org_unique UNIQUE (id, organization_id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS organization_memberships_current ON organization_memberships (organization_id, person_id)
+  WHERE status <> 'terminee';
+CREATE INDEX IF NOT EXISTS organization_memberships_person_idx ON organization_memberships (person_id);
+
+-- Groupe de travail (discipline, service…) : sert à sélectionner des personnes, n'ouvre rien (concept partie 5).
+CREATE TABLE IF NOT EXISTS organization_groups (
+  id text PRIMARY KEY,
+  organization_id text NOT NULL REFERENCES organizations (id) ON DELETE CASCADE,
+  name text NOT NULL,
+  description text,
+  status text NOT NULL DEFAULT 'active',
+  created_by text REFERENCES users (id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT organization_groups_name_check CHECK (length(btrim(name)) > 0),
+  CONSTRAINT organization_groups_status_check CHECK (status IN ('active', 'archive')),
+  CONSTRAINT organization_groups_id_org_unique UNIQUE (id, organization_id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS organization_groups_name_unique ON organization_groups (organization_id, lower(btrim(name)))
+  WHERE status = 'active';
+
+-- Membre d'un groupe : une adhésion de la MÊME organisation (clés étrangères composées).
+CREATE TABLE IF NOT EXISTS organization_group_members (
+  group_id text NOT NULL,
+  membership_id text NOT NULL,
+  organization_id text NOT NULL,
+  added_by text REFERENCES users (id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (group_id, membership_id),
+  CONSTRAINT organization_group_members_group_fk FOREIGN KEY (group_id, organization_id)
+    REFERENCES organization_groups (id, organization_id) ON DELETE CASCADE,
+  CONSTRAINT organization_group_members_membership_fk FOREIGN KEY (membership_id, organization_id)
+    REFERENCES organization_memberships (id, organization_id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS organization_group_members_membership_idx ON organization_group_members (membership_id);
+
+-- Gabarit d'équipe (concept partie 5 « Shared templates ») : propriétaire = l'organisation ; ses versions sont
+-- immuables (déclencheur) ; une modification = une nouvelle version ; aucune application rétroactive.
+CREATE TABLE IF NOT EXISTS organization_templates (
+  id text PRIMARY KEY,
+  organization_id text NOT NULL REFERENCES organizations (id) ON DELETE CASCADE,
+  name text NOT NULL,
+  description text,
+  status text NOT NULL DEFAULT 'active',
+  created_by text REFERENCES users (id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT organization_templates_name_check CHECK (length(btrim(name)) > 0),
+  CONSTRAINT organization_templates_status_check CHECK (status IN ('active', 'archive'))
+);
+CREATE TABLE IF NOT EXISTS organization_template_versions (
+  id text PRIMARY KEY,
+  template_id text NOT NULL REFERENCES organization_templates (id) ON DELETE CASCADE,
+  version integer NOT NULL,
+  content jsonb NOT NULL,
+  note text,
+  created_by text REFERENCES users (id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT organization_template_versions_version_check CHECK (version >= 1),
+  CONSTRAINT organization_template_versions_content_check CHECK (coalesce(jsonb_typeof(content -> 'entries'), '') = 'array'),
+  CONSTRAINT organization_template_versions_unique UNIQUE (template_id, version)
+);
+CREATE OR REPLACE FUNCTION op_org_template_version_immutable() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'organization_template_version_immutable';
+END $$;
+CREATE OR REPLACE TRIGGER organization_template_versions_no_update BEFORE UPDATE ON organization_template_versions
+  FOR EACH ROW EXECUTE FUNCTION op_org_template_version_immutable();
+
+-- Application d'une version à un projet : tracée, une seule fois par (version, projet) — rejouer ne double rien.
+CREATE TABLE IF NOT EXISTS organization_template_applications (
+  id text PRIMARY KEY,
+  template_version_id text NOT NULL REFERENCES organization_template_versions (id) ON DELETE CASCADE,
+  organization_id text NOT NULL REFERENCES organizations (id) ON DELETE CASCADE,
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  applied_by text REFERENCES users (id) ON DELETE SET NULL,
+  applied_at timestamptz NOT NULL DEFAULT now(),
+  plan jsonb NOT NULL DEFAULT '[]'::jsonb,
+  CONSTRAINT organization_template_applications_unique UNIQUE (template_version_id, project_id)
+);
+
+-- Mandat de représentation (concept parties 1, 2 et 5) : un membre représente l'organisation dans un projet où
+-- l'organisation est partie (participation d'organisation). Proposé par un administrateur, accepté par le représentant
+-- lui-même ; un remplacement est un NOUVEAU mandat accepté, jamais une substitution d'office. Le mandat ne donne aucun
+-- droit de projet : l'accès du représentant reste une participation accordée par le projet.
+CREATE TABLE IF NOT EXISTS organization_mandates (
+  id text PRIMARY KEY,
+  organization_id text NOT NULL REFERENCES organizations (id) ON DELETE CASCADE,
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  participation_id text NOT NULL REFERENCES project_participations (id) ON DELETE CASCADE,
+  membership_id text NOT NULL,
+  responsibilities text[] NOT NULL DEFAULT '{}',
+  status text NOT NULL DEFAULT 'propose',
+  starts_on date,
+  ends_on date,
+  end_reason text,
+  replaces_mandate_id text REFERENCES organization_mandates (id) ON DELETE SET NULL,
+  -- Note de l'administrateur au représentant (le nom d'un projet qu'il ne voit pas encore lui reste masqué).
+  note text,
+  proposed_by text REFERENCES users (id) ON DELETE SET NULL,
+  proposed_at timestamptz NOT NULL DEFAULT now(),
+  responded_at timestamptz,
+  ended_at timestamptz,
+  CONSTRAINT organization_mandates_membership_fk FOREIGN KEY (membership_id, organization_id)
+    REFERENCES organization_memberships (id, organization_id) ON DELETE CASCADE,
+  CONSTRAINT organization_mandates_status_check CHECK (status IN ('propose', 'actif', 'refuse', 'annule', 'termine')),
+  CONSTRAINT organization_mandates_ended_check CHECK ((status = 'termine') = (ended_at IS NOT NULL)),
+  CONSTRAINT organization_mandates_period_check CHECK (ends_on IS NULL OR starts_on IS NULL OR ends_on >= starts_on),
+  CONSTRAINT organization_mandates_responsibilities_check
+    CHECK (responsibilities <@ ARRAY['diriger', 'produire', 'coordonner', 'verifier', 'approuver', 'diffuser']::text[])
+);
+CREATE UNIQUE INDEX IF NOT EXISTS organization_mandates_active ON organization_mandates (organization_id, project_id)
+  WHERE status = 'actif';
+CREATE UNIQUE INDEX IF NOT EXISTS organization_mandates_pending ON organization_mandates (organization_id, project_id, membership_id)
+  WHERE status = 'propose';
+CREATE INDEX IF NOT EXISTS organization_mandates_membership_idx ON organization_mandates (membership_id);
+
+-- La participation d'un mandat est celle de l'organisation elle-même, dans ce projet (quel que soit le chemin d'écriture).
+CREATE OR REPLACE FUNCTION op_org_mandate_check() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM project_participations
+                  WHERE id = NEW.participation_id AND project_id = NEW.project_id AND organization_id = NEW.organization_id) THEN
+    RAISE EXCEPTION 'organization_mandate_participation_mismatch';
+  END IF;
+  RETURN NEW;
+END $$;
+CREATE OR REPLACE TRIGGER organization_mandates_check BEFORE INSERT OR UPDATE OF participation_id, project_id, organization_id
+  ON organization_mandates FOR EACH ROW EXECUTE FUNCTION op_org_mandate_check();
+
+-- Départ (adhésion terminée) : les appartenances aux groupes sont retirées, les mandats actifs prennent fin et les
+-- propositions en attente sont annulées — quel que soit le chemin d'écriture (départ, clôture de l'organisation).
+-- Les participations de projet de la personne ne sont PAS modifiées (travail autorisé indépendamment, concept partie 2).
+CREATE OR REPLACE FUNCTION op_org_membership_ended() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF NEW.status = 'terminee' AND OLD.status <> 'terminee' THEN
+    DELETE FROM organization_group_members WHERE membership_id = NEW.id;
+    UPDATE organization_mandates SET status = 'termine', ended_at = now(), ends_on = greatest(current_date, coalesce(starts_on, current_date)),
+           end_reason = CASE WHEN NEW.end_reason = 'cloture' THEN 'cloture' ELSE 'depart' END
+     WHERE membership_id = NEW.id AND status = 'actif';
+    UPDATE organization_mandates SET status = 'annule', responded_at = now(),
+           end_reason = CASE WHEN NEW.end_reason = 'cloture' THEN 'cloture' ELSE 'depart' END
+     WHERE membership_id = NEW.id AND status = 'propose';
+  END IF;
+  RETURN NULL;
+END $$;
+CREATE OR REPLACE TRIGGER organization_memberships_ended AFTER UPDATE OF status ON organization_memberships
+  FOR EACH ROW EXECUTE FUNCTION op_org_membership_ended();
+
+-- Une adhésion terminée n'entre dans aucun groupe.
+CREATE OR REPLACE FUNCTION op_org_group_member_check() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM organization_memberships WHERE id = NEW.membership_id AND status = 'terminee') THEN
+    RAISE EXCEPTION 'organization_group_member_ended';
+  END IF;
+  RETURN NEW;
+END $$;
+CREATE OR REPLACE TRIGGER organization_group_members_check BEFORE INSERT ON organization_group_members
+  FOR EACH ROW EXECUTE FUNCTION op_org_group_member_check();
+
+-- Clôture d'une organisation : définitive ; elle termine ses adhésions (et donc ses mandats, ci-dessus). Les
+-- participations de projet et l'historique restent ; les projets dont elle est la partie propriétaire gardent la
+-- déclaration (décision explicite de continuité attendue, concept partie 5).
+CREATE OR REPLACE FUNCTION op_org_status_change() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF OLD.status = 'close' AND NEW.status <> 'close' THEN
+    RAISE EXCEPTION 'organization_closed_final';
+  END IF;
+  IF NEW.status = 'close' AND OLD.status <> 'close' THEN
+    UPDATE organization_memberships SET status = 'terminee', ends_on = greatest(current_date, starts_on), end_reason = 'cloture',
+           updated_at = now()
+     WHERE organization_id = NEW.id AND status <> 'terminee';
+  END IF;
+  RETURN NEW;
+END $$;
+CREATE OR REPLACE TRIGGER organizations_status_change BEFORE UPDATE OF status ON organizations
+  FOR EACH ROW EXECUTE FUNCTION op_org_status_change();
+
+-- Organisation propriétaire facultative d'un projet (OP-D1 a) : la colonne réservée par D-3 reçoit sa clé étrangère
+-- (NOT VALID : les lignes existantes, toutes nulles faute de logique, ne sont pas relues). Elle ne change aucun droit.
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'projects_organization_fk') THEN
+    ALTER TABLE projects ADD CONSTRAINT projects_organization_fk FOREIGN KEY (organization_id)
+      REFERENCES organizations (id) ON DELETE SET NULL NOT VALID;
+  END IF;
+END $$;
+
+-- Invitation de finalité `organization_membership` (V22-02, PLAN § 7) : organisation, rôle et fonction proposés ; une
+-- adhésion naît de son acceptation par l'identité visée. Ajout additif : les finalités existantes restent valides.
+ALTER TABLE auth.invitations ADD COLUMN IF NOT EXISTS organization_id text REFERENCES public.organizations (id) ON DELETE CASCADE;
+ALTER TABLE auth.invitations ADD COLUMN IF NOT EXISTS organization_role text;
+ALTER TABLE auth.invitations ADD COLUMN IF NOT EXISTS organization_job_title text;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'invitations_purpose_check'
+                    AND pg_get_constraintdef(oid) LIKE '%organization_membership%') THEN
+    ALTER TABLE auth.invitations DROP CONSTRAINT IF EXISTS invitations_purpose_check;
+    ALTER TABLE auth.invitations ADD CONSTRAINT invitations_purpose_check
+      CHECK (purpose IN ('platform_account', 'project_participation', 'organization_membership'));
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'invitations_organization_check') THEN
+    ALTER TABLE auth.invitations ADD CONSTRAINT invitations_organization_check
+      CHECK ((purpose = 'organization_membership') = (organization_id IS NOT NULL AND organization_role IN ('administrateur', 'membre')));
+  END IF;
+  -- Une invitation en attente par (adresse, finalité, projet, organisation) : deux organisations peuvent inviter la même
+  -- adresse. L'ancien index (sans organisation) est remplacé une fois.
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'auth' AND indexname = 'invitations_pending_unique'
+                AND indexdef NOT LIKE '%organization_id%') THEN
+    DROP INDEX auth.invitations_pending_unique;
+  END IF;
+END $$;
+CREATE UNIQUE INDEX IF NOT EXISTS invitations_pending_unique
+  ON auth.invitations (email, purpose, coalesce(project_id, ''), coalesce(organization_id, '')) WHERE status = 'pending';
+
+-- ---------------------------------------------------------------------------
+-- Organisations, participation et revue externe — phase 2 (Issue #262) : bascule de l'accès (OP-D3 c), contacts,
+-- clôture déclarative du projet et effacement des contacts sans compte (OP-D9, OP-2).
+-- La décision d'accès a UNE source : la vue `project_effective_access` — le propriétaire (`projects.owner_id`), sinon
+-- une participation `active`, commencée, d'une personne liée à ce compte, portant au moins un rôle métier à la portée
+-- `projet` (une participation sans rôle de projet, « revue seule » de la phase 4, ne donne aucun accès). Concepteur →
+-- modifier (rôle API `editeur`) ; tout autre rôle de projet → lire et commenter (`lecteur`) ; Approbateur et Diffuseur →
+-- approbation et diffusion Studio ; export : concepteur, ou export accordé (`can_export`). Le miroir `acces` par
+-- déclencheurs est CONSERVÉ comme pont : les écritures historiques (partage, invitations acceptées, transfert,
+-- anonymisation, restauration) écrivent toujours `project_members`, dont il tire les participations et rôles `acces`.
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE VIEW project_effective_access AS
+SELECT p.id AS project_id, p.owner_id AS user_id, 'proprietaire'::text AS role, true AS can_export, true AS can_approve,
+       true AS can_publish
+  FROM projects p
+UNION ALL
+SELECT pp.project_id, pe.user_id,
+       CASE WHEN bool_or(ra.role = 'concepteur') THEN 'editeur' ELSE 'lecteur' END,
+       bool_or(ra.role = 'concepteur') OR bool_or(pp.can_export),
+       bool_or(ra.role = 'approbateur'),
+       bool_or(ra.role = 'diffuseur')
+  FROM project_participations pp
+  JOIN people pe ON pe.id = pp.person_id AND pe.user_id IS NOT NULL
+  JOIN projects p ON p.id = pp.project_id AND p.owner_id <> pe.user_id
+  JOIN project_role_assignments ra ON ra.participation_id = pp.id AND ra.scope_type = 'projet'
+ WHERE pp.status = 'active' AND (pp.starts_on IS NULL OR pp.starts_on <= current_date)
+ GROUP BY pp.project_id, pe.user_id;
+
+-- Clôture déclarative (OP-2) : ne change aucun droit ; elle date le départ du délai de conservation des contacts.
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS closed_at timestamptz;
+-- Effacement d'un contact sans compte (sur demande, ou 2 ans après la clôture de tous ses projets) : nom remplacé,
+-- coordonnées supprimées, fiche et participations gardées comme trace sans donnée personnelle.
+ALTER TABLE people ADD COLUMN IF NOT EXISTS erased_at timestamptz;
+CREATE INDEX IF NOT EXISTS people_contacts_retention_idx ON people (id) WHERE user_id IS NULL AND erased_at IS NULL;
+CREATE INDEX IF NOT EXISTS project_participations_org_idx ON project_participations (organization_id);
+CREATE INDEX IF NOT EXISTS project_participations_represented_idx ON project_participations (represented_organization_id);
 
 -- ---------------------------------------------------------------------------
 -- Communication (COM, Issue #280, docs/workstreams/communication/PLAN.md) — tables nouvelles, additif.

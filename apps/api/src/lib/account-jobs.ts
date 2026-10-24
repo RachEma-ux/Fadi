@@ -7,10 +7,13 @@
  * projets possédés **non partagés** supprimés ; participations retirées ; commentaires et révisions conservés sous
  * « Compte supprimé ». Le journal d'audit garde l'identifiant, jamais l'adresse (il n'en contient pas).
  * « Anonymiser maintenant » de la corbeille d'administration (UM-27) appelle la même `anonymiseAccountIn`.
+ * La même boucle horaire efface les contacts sans compte dus (Issue #262, OP-2 : 2 ans après la clôture de tous leurs
+ * projets, `runContactRetentionJob`).
  */
 import { and, eq, isNotNull, lte, ne, or, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { accountTokens, invitations, mailOutbox, projectComments, projectMembers, projects, sessions, userRecoveryCodes, users } from "../db/schema.js";
+import { accountTokens, invitations, mailOutbox, people, projectComments, projectMembers, projects, sessions, userRecoveryCodes, users } from "../db/schema.js";
+import { runContactRetentionJob } from "./participants-db.js";
 import { audit } from "./audit.js";
 import { processMailOutbox } from "./mailer/outbox.js";
 import { anonymisationAt, anonymisedEmail, DELETED_LABEL, DELETION_GRACE_DAYS } from "./security/deletion.js";
@@ -37,6 +40,8 @@ export async function anonymiseAccountIn(tx: Tx, userId: string, by: AnonymisedB
   const oldEmail = user.email;
   const deletedProjects = await tx.delete(projects).where(eq(projects.ownerId, userId)).returning({ id: projects.id });
   await tx.delete(projectMembers).where(eq(projectMembers.userId, userId));
+  // Fiche de personne liée au compte (Issue #262) : fonction et coordonnées professionnelles effacées avec le compte.
+  await tx.update(people).set({ displayName: null, jobTitle: null, workEmail: null, workPhone: null, updatedAt: new Date() }).where(eq(people.userId, userId));
   await tx.update(projectMembers).set({ invitedBy: DELETED_LABEL }).where(eq(projectMembers.invitedBy, oldEmail));
   await tx.update(projectComments).set({ authorEmail: DELETED_LABEL }).where(eq(projectComments.authorId, userId));
   await tx.execute(sql`UPDATE projects SET editing_lock = NULL WHERE editing_lock->>'userId' = ${userId}`);
@@ -83,6 +88,11 @@ export function startAccountWorkers(log: (line: string) => void = (l) => console
       const r = await runDeletionJob();
       if (r.anonymised || r.blocked) log(JSON.stringify({ level: "info", message: "account_deletion_job", ...r }));
     } catch (err) { log(JSON.stringify({ level: "error", message: "account_deletion_job", detail: (err as Error).message })); }
+    // Contacts sans compte (Issue #262, OP-D9 / OP-2) : effacés 2 ans après la clôture de tous leurs projets.
+    try {
+      const c = await runContactRetentionJob();
+      if (c.erased) log(JSON.stringify({ level: "info", message: "contact_retention_job", ...c }));
+    } catch (err) { log(JSON.stringify({ level: "error", message: "contact_retention_job", detail: (err as Error).message })); }
   };
   const daily = setInterval(deletion, 3_600_000);
   void deletion();

@@ -73,10 +73,10 @@ describe("Publications Studio — droits distincts (E.4-02)", () => {
   it("revue : propriétaire et éditeur ; approbation et publication : propriétaire seul ; lecteur : lecture seule", () => {
     expect(besoinTransition("soumettre")).toBe("write");
     expect(besoinTransition("actualiser")).toBe("write");
-    expect(besoinTransition("approuver")).toBe("owner");
-    expect(besoinTransition("refuser")).toBe("owner");
-    expect(besoinTransition("diffuser")).toBe("owner");
-    expect(besoinTransition("retirer")).toBe("owner");
+    expect(besoinTransition("approuver")).toBe("approve");
+    expect(besoinTransition("refuser")).toBe("approve");
+    expect(besoinTransition("diffuser")).toBe("publish");
+    expect(besoinTransition("retirer")).toBe("publish");
     expect(ROLES_CAPACITE.lecture).toContain("lecteur");
     for (const c of ["revue", "approbation", "publication"] as const) expect(ROLES_CAPACITE[c]).not.toContain("lecteur");
     expect(ROLES_CAPACITE.approbation).toEqual(["proprietaire"]);

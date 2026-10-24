@@ -1,11 +1,11 @@
 # Organisations, participation et revue externe — Statut
 
-Mis à jour : 2026-10-23 (UTC).
+Mis à jour : 2026-10-24 (UTC).
 
 ## État
 
-**En cours — plan validé (🛑 0, OP-1) ; phase 1 implémentée sur la branche `feat/op-phase1-participations`, en attente de
-la revue 🛑 1.**
+**En cours — phase 1 fusionnée (PR #265) ; exécution de bout en bout autorisée (OP-3, 2026-10-24) ; phases 2 à 6 en cours
+sur la branche `ccr-3b26a9f6-z073dc` (PR #281).**
 
 ## Faits vérifiés
 
@@ -31,9 +31,20 @@ la revue 🛑 1.**
   l'API qui les crée.
 - Concept de référence : `docs/workstreams/users-management/concept.md` v2.2, protégé par le test anti-dérive existant.
 
+- Phase 3 bis livrée sur la branche (2026-10-24) : `GET /admin/audit`, `GET /auth/me/history`, `GET /projects/:id/journal`,
+  écrans et recette `journal-activite.mjs` (50 contrôles verts en local, axe-core bureau et téléphone) ; DB-3 en CI. Écarts :
+  route `/auth/me/history` (au lieu de `/account/history`), aucun export d'administration (UM-20 ne définit l'export que par
+  projet) — [phase-3bis.md](phase-3bis.md).
+
+- Phases 2 et 5 livrées sur la branche (2026-10-24) : [phase-2.md](phase-2.md) (vue `project_effective_access` source unique
+  des droits, six rôles par portée, Approbateur / Diffuseur pour Studio, annuaire et équipe, effacement des contacts ; écart :
+  miroir `op_sync_access` conservé comme pont) et [phase-5.md](phase-5.md) (espace d'organisation, adhésions par invitation
+  acceptée, groupes et mandats sans droit, gabarits versionnés). **CI complète verte sur `9abca29`** (run 40137263799), suites
+  DB-3 comprises.
+
 ## Points ouverts
 
-- Revue 🛑 1 de la phase 1 (modèle et migration) par le maître d'ouvrage.
+- 🛑 final (phase 6) : acceptation du périmètre livré par le maître d'ouvrage.
 - OP-D9 décidée le 2026-10-24 (OP-2 : projet + 2 ans après clôture, plus tôt sur demande) ; effacement à livrer en phase 2 ;
   réserve : obligations légales de conservation à vérifier par le conseil juridique du maître d'ouvrage.
 - OP-D12 révisée le 2026-10-24 (OP-2) : envoi réel des courriels en préproduction, réalisé dans une PR distincte (UM-28).
@@ -41,7 +52,7 @@ la revue 🛑 1.**
 ## Liens de suivi
 
 - Issue : [#262](https://github.com/RachEma-ux/Fadi/issues/262).
-- Branche : `ccr-266c1e83-7780ml`, imposée par la session. PR de cadrage : [#263](https://github.com/RachEma-ux/Fadi/pull/263).
+- Branche des phases 2 à 6 : `ccr-3b26a9f6-z073dc`, PR [#281](https://github.com/RachEma-ux/Fadi/pull/281). Cadrage : PR #263 ; phase 1 : PR #265 (fusionnées).
   Le commit était d'abord poussé sur la PR #259, fusionnée avec sa tête précédente sans lui : il est rebasé sur `main`.
 
 ## Préconditions de clôture

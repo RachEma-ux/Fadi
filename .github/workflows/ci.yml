@@ -245,10 +245,15 @@ jobs:
       # CHECK, journal d'audit append-only, conversion des sessions — transactions annulées, base du job seulement.
       - name: Schéma Gestion des comptes — idempotence, contraintes, audit append-only
         run: node scripts/validation/users-migration-check.mjs
-      # Organisations, participation et revue externe (#262, phase 1) : reprise de l'existant, miroir des accès par
-      # déclencheurs, contraintes, droits fadi_app — transactions annulées, base du job seulement.
-      - name: Schéma participations — reprise, miroir des accès, contraintes
+      # Organisations, participation et revue externe (#262, phases 1 et 2) : reprise de l'existant, miroir des accès par
+      # déclencheurs, contraintes, droits fadi_app ; phase 2 : vue `project_effective_access` (seule source de l'accès),
+      # aucune perte d'accès, contact / suspension / fin / sans rôle sans droit — transactions annulées, base du job seulement.
+      - name: Schéma participations — reprise, miroir des accès, contraintes, bascule de l'accès
         run: node scripts/validation/participations-migration-check.mjs
+      # Phase 5 (espace d'organisation) : adhésions, groupes, gabarits immuables, mandats, finalité d'invitation
+      # `organization_membership`, déclencheurs de départ et de clôture, aucun droit de projet — transactions annulées.
+      - name: Schéma organisations — adhésions, groupes, gabarits, mandats, invitations, aucun droit de projet
+        run: node scripts/validation/organisations-migration-check.mjs
       - name: Tests des paquets purs et du web
         run: npm run test --workspace=@parcours/core-geometry --workspace=@parcours/domain-model --workspace=@parcours/atelier-model --workspace=@parcours/planche-model --workspace=@parcours/sandbox-planche-model --workspace=@parcours/geometry-exact --workspace=@fadi/web
       - name: Garde DB-1/2 — tests simulés sans base
@@ -366,7 +371,10 @@ jobs:
       WEB_ORIGIN: http://localhost:3001
       WEB_DIST: apps/web/dist
       PORT: "3001"
-      AUTH_RATE_LIMIT: "500"
+      # Une seule API pour toute la tranche (même adresse, fenêtre de 15 min) : la tranche complements enchaîne les recettes
+      # des comptes, du journal, des participants et des organisations, qui dépassaient 500 appels /auth (429). Réglage de
+      # test seulement ; la production garde 20.
+      AUTH_RATE_LIMIT: "3000"
       # Limite par adresse (10 / 15 min par défaut) : les recettes reconnectent souvent le même compte.
       AUTH_IDENTIFIER_RATE_LIMIT: "500"
       API_RATE_LIMIT: "5000"
@@ -570,6 +578,14 @@ jobs:
         run: |
           set -o pipefail
           node apps/web/e2e/collaboration-audience.mjs 2>&1 | tee -a e2e.log
+      # Organisations, participation (#262, phase 2) : annuaire, contacts sans droit, bascule de l'accès sur les participations,
+      # suspension / fin / retour, rôles Approbateur et Diffuseur, effacement, clôture et conservation (horloge simulée),
+      # onglets Participants et Équipe, règle d'or, axe-core bureau et téléphone, passe anglaise ; journal relu en base.
+      - name: Recette Équipe et participants — annuaire, bascule de l'accès, effacement, interface (apps/web/e2e/participants.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/participants.mjs 2>&1 | tee -a e2e.log
       # Communication (COM, Issue #280) : audiences, mentions et références sans accès, partage d'extraits avec aperçu,
       # rejeu hors ligne, accusés, demandes de précision, actions liées, révocation avant synchronisation, interface.
       - name: Recette Communication — audiences, mentions, partages, hors ligne, accusés, demandes, révocation, interface (apps/web/e2e/communication.mjs)
@@ -582,6 +598,21 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/comptes node apps/web/e2e/comptes-admin.mjs 2>&1 | tee -a e2e.log
+      # Organisations-participation, phase 3 bis (OP-D13 a) : journal d'activité consultable par audience — administration,
+      # Mon historique, historique du projet réservé aux responsables ; axe-core bureau et téléphone, passe anglaise.
+      - name: Recette du journal d'activité et de l'historique — audiences, axe-core bureau et téléphone, anglais (apps/web/e2e/journal-activite.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/journal-activite.mjs 2>&1 | tee -a e2e.log
+      # Organisations (#262, phase 5) : adhésion par invitation acceptée, annuaire interne, groupes et mandats sans droit
+      # de projet, gabarits versionnés, départ, administrateur plateforme sans droit implicite ; axe-core bureau et
+      # téléphone, passe anglaise.
+      - name: Recette de l'espace d'organisation — API, navigateur, axe-core bureau et téléphone, passe anglaise (apps/web/e2e/organisations.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/organisations node apps/web/e2e/organisations.mjs 2>&1 | tee -a e2e.log
       # MIG-01 à MIG-10, MIG-COEX-03/04/06 : simulation de migration vers Studio en lecture seule, sur une base NEUVE
       # (fadi_mig) peuplée du jeu synthétique déclaré — jamais sur une base existante. La recette crée un rôle SELECT
       # seul, compare l'empreinte de chaque table avant / après et exige le refus de toute écriture (25006, 42501).

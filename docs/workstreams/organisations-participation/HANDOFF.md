@@ -1,36 +1,35 @@
 # Organisations, participation et revue externe — Reprise de session
 
-Mis à jour : 2026-10-23 (UTC).
+Mis à jour : 2026-10-24 (UTC).
 
 ## Point de reprise
 
 - Chantier : organisations-participation. Issue : [#262](https://github.com/RachEma-ux/Fadi/issues/262).
-- Branche / PR : `ccr-266c1e83-7780ml`, PR de cadrage [#263](https://github.com/RachEma-ux/Fadi/pull/263), non fusionnée.
-- Dernier commit vérifié : à relever en début de session ; ne pas réutiliser un SHA périmé.
+- Branche / PR : `ccr-3b26a9f6-z073dc`, PR [#281](https://github.com/RachEma-ux/Fadi/pull/281) (phases 2 à 6).
+- Phase 1 fusionnée dans `main` (PR #265). Dernier commit vérifié : à relever en début de session ; ne pas réutiliser un SHA périmé.
 
 ## Dernier état vérifié
 
-- Plan validé (OP-1). Phase 1 implémentée et vérifiée localement (voir STATUS.md) ; CI de la PR à relever.
+- OP-3 (2026-10-24) : le maître d'ouvrage demande l'exécution du plan de bout en bout ; 🛑 1 franchi, phases enchaînées sans
+  attente intermédiaire, 🛑 final et tout déploiement restent au maître d'ouvrage.
+- Phase 3 bis (journal d'activité) livrée sur la branche : compte rendu [phase-3bis.md](phase-3bis.md).
+- Phases 2 et 5 livrées (comptes rendus [phase-2.md](phase-2.md), [phase-5.md](phase-5.md)) ; CI verte sur `9abca29`.
+- Phases 3 (invitations acceptées) et 4 (revue externe) en cours ; puis phase 6.
 
 ## Prochaine action
 
-- Phase 1 sur `feat/op-phase1-participations` (PR à suivre jusqu'au vert) ; attendre la revue 🛑 1 du maître d'ouvrage.
-- Décisions OP-2 du 2026-10-24 consignées (OP-D9 conservation, OP-D12 révisée) ; l'envoi des courriels de préproduction
-  relève de la PR distincte UM-28, pas de ce chantier.
-- Ensuite, phase 2 : API et écran « Équipe et participants », bascule de l'accès vers les six rôles (OP-D3 c), journal des
-  écritures de participation, effacement des contacts sans compte (OP-D9).
+- Fusionner les phases 3 et 4, puis la phase 6 (recette finale, runbook) ; CI verte de la PR #281.
 
 ## Tests et preuves
 
-- `DATABASE_URL=<base locale jetable> node scripts/validation/participations-migration-check.mjs` ;
-  `npx --workspace=@fadi/api vitest run src/lib/participations.test.ts` ; `npm run typecheck` ; `npm test` ; `npm run build`.
+- Locales : `npm run typecheck`, `npm test`, `npm run build`, `scripts/validation/*-migration-check.mjs`, recettes
+  `apps/web/e2e/*.mjs` sur PostgreSQL 16 + PostGIS jetable. Les suites DB-3 ne tournent qu'en CI.
 
 ## Risques et blocages
 
-- Fin de l'ajout direct (OP-D2) : changement visible pour les propriétaires qui partagent un projet. Prévoir l'annonce et la recette.
-- Accès externe : la moindre fuite par une route, un aperçu ou un export est un défaut bloquant. La phase 4 prévoit une
-  recette dédiée, comme UM-20.
-- Une nouvelle suite de tests DB-3 exige la révision relue de `DB3_PENDING_SUITES`.
+- Fin de l'ajout direct (OP-D2) : changement visible pour les propriétaires qui partagent un projet.
+- Accès externe : la moindre fuite par une route, un aperçu ou un export est un défaut bloquant (recette dédiée en phase 4).
+- Réserve juridique d'OP-2 (obligations de conservation) non levée.
 
 ## Arrêt sûr
 

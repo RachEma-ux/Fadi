@@ -11,7 +11,7 @@
  * typé par `@parcours/domain-model`. Mélanger les deux serait exactement
  * l'erreur de repères que `docs/architecture.md` interdit.
  */
-import { bigint, bigserial, boolean, customType, pgSchema, date, doublePrecision, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { bigint, bigserial, boolean, customType, pgSchema, date, doublePrecision, index, integer, jsonb, pgTable, pgView, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import type { ConclusionControle, EtatExecution, ExigenceStudio, GrandeurQuantite, ResultatControle, StudioDocument, StudioEnvelope, StudioFeuilleComposeeDefinition, StudioPhaseWorkflow, UniteQuantite } from "@parcours/atelier-model";
 
 /** Colonne PostGIS brute : on ne fait pas transiter la géométrie par du JS côté serveur, on la laisse en WKT/EWKT et on laisse Postgres faire le travail spatial. */
@@ -99,7 +99,8 @@ export const userRecoveryCodes = authSchema.table("user_recovery_codes", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("user_recovery_codes_user_idx").on(t.userId)]);
 
-export type InvitationPurpose = "platform_account" | "project_participation";
+/** `organization_membership` : phase 5 des organisations (V22-02) — une adhésion naît de son acceptation. */
+export type InvitationPurpose = "platform_account" | "project_participation" | "organization_membership";
 export type InvitationStatus = "pending" | "accepted" | "declined" | "expired" | "cancelled";
 
 /** UM-3 : une invitation est une proposition ; elle ne crée ni compte ni accès avant acceptation par l'adresse visée. */
@@ -119,6 +120,10 @@ export const invitations = authSchema.table("invitations", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   respondedAt: timestamp("responded_at", { withTimezone: true }),
   acceptedUserId: text("accepted_user_id").references(() => users.id, { onDelete: "set null" }),
+  /** Finalité `organization_membership` : organisation, rôle et fonction proposés (phase 5). */
+  organizationId: text("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
+  organizationRole: text("organization_role").$type<OrganizationRole | null>(),
+  organizationJobTitle: text("organization_job_title"),
 }, (t) => [uniqueIndex("invitations_token_hash_unique").on(t.tokenHash)]);
 
 export type AccountTokenPurpose = "verify_email" | "reset_password" | "cancel_deletion";
@@ -144,6 +149,8 @@ export const auditLog = adminSchema.table("audit_log", {
   ip: text("ip"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("audit_log_actor_idx").on(t.actorId, t.createdAt), index("audit_log_target_idx").on(t.targetType, t.targetId, t.createdAt)]);
+// Phase 3 bis (journal consultable) : index d'expression `audit_log_project_meta_idx` ((metadata->>'projectId'), id) et
+// `audit_log_action_idx` (action text_pattern_ops, id), déclarés dans init.sql seulement (expression, classe d'opérateurs).
 
 export type MailStatus = "pending" | "sent" | "failed" | "skipped";
 
@@ -200,8 +207,13 @@ export const projects = pgTable("projects", {
   programmeState: jsonb("programme_state").$type<Record<string, unknown> | null>(),
   /** Dossier Harmony du projet (`p.data.harmony` du prototype, schéma `Parcours.Harmony` 1) : observations par règle, références directionnelles, carte temporelle, fiches de locaux, ambiances, actions, revues, revue de conception archivée. Conservé tel quel ; lu par `@parcours/domain-model` (`harmony-engine.ts`, `design-review.ts`). */
   harmony: jsonb("harmony").$type<Record<string, unknown> | null>(),
-  /** D-3 : réservée, aucune logique ne la lit. */
+  /**
+   * Partie propriétaire facultative (OP-D1 a, phase 5) : organisation déclarée par le propriétaire, administrateur actif
+   * de cette organisation. Elle ne change aucun droit (`lib/owned-project.ts` ne la lit pas).
+   */
   organizationId: text("organization_id"),
+  /** Clôture déclarative (Issue #262, OP-2) : ne change aucun droit ; départ du délai de conservation des contacts. */
+  closedAt: timestamp("closed_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("projects_owner_id_idx").on(t.ownerId)]);
@@ -453,17 +465,23 @@ export const people = pgTable("people", {
   jobTitle: text("job_title"),
   workEmail: text("work_email"),
   workPhone: text("work_phone"),
+  /** Contact sans compte effacé (OP-D9) : nom remplacé, coordonnées supprimées, trace conservée. */
+  erasedAt: timestamp("erased_at", { withTimezone: true }),
   createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
-/** Organisation minimale (OP-D1, OP-D4) ; l'espace d'organisation vient avec la partie 5 (OP-D10). */
+/** Organisation (OP-D1, OP-D4) ; son espace (adhésions, groupes, gabarits, mandats) est la phase 5 (OP-D10). */
 export const organizations = pgTable("organizations", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   kind: text("kind"),
-  status: text("status").notNull().default("active").$type<"active" | "suspendue" | "close">(),
+  status: text("status").notNull().default("active").$type<OrganizationStatus>(),
+  /** Coordonnées professionnelles déclarées (saisie libre, phase 5). */
+  details: text("details"),
+  /** Clé de création rejouable (double soumission = même organisation). */
+  creationKey: text("creation_key"),
   createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -482,6 +500,8 @@ export const projectParticipations = pgTable("project_participations", {
   businessRole: text("business_role"),
   responsibilities: text("responsibilities").array().notNull().default([]).$type<TeamResponsibility[]>(),
   status: text("status").notNull().$type<ParticipationStatus>(),
+  /** Export accordé (écart E2), tenu par le miroir depuis `project_members.can_export` ; un Concepteur exporte toujours. */
+  canExport: boolean("can_export").notNull().default(false),
   startsOn: date("starts_on"),
   endsOn: date("ends_on"),
   createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
@@ -503,6 +523,114 @@ export const projectRoleAssignments = pgTable("project_role_assignments", {
   grantedBy: text("granted_by").references(() => users.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+/**
+ * Phase 2 (OP-D3 c) : la seule source de la décision d'accès à un projet (vue SQL, init.sql) — propriétaire, ou
+ * participation active portant un rôle métier à la portée projet. Lue par `lib/owned-project.ts` et les listes.
+ */
+export const projectEffectiveAccess = pgView("project_effective_access", {
+  projectId: text("project_id").notNull(),
+  userId: text("user_id").notNull(),
+  role: text("role").notNull().$type<"proprietaire" | "editeur" | "lecteur">(),
+  canExport: boolean("can_export").notNull(),
+  canApprove: boolean("can_approve").notNull(),
+  canPublish: boolean("can_publish").notNull(),
+}).existing();
+
+// ---------------------------------------------------------------------------
+// Organisations — phase 5 (concept partie 5). Miroir de init.sql : adhésions, groupes, gabarits versionnés, mandats de
+// représentation. Aucune de ces tables ne donne un droit de projet. Règles pures : `lib/organizations-rules.ts`.
+// ---------------------------------------------------------------------------
+export type OrganizationStatus = "active" | "suspendue" | "close";
+export type OrganizationRole = "administrateur" | "membre";
+export type MembershipStatus = "active" | "suspendue" | "terminee";
+export type MandateStatus = "propose" | "actif" | "refuse" | "annule" | "termine";
+
+export const organizationMemberships = pgTable("organization_memberships", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  personId: text("person_id").notNull().references(() => people.id, { onDelete: "cascade" }),
+  role: text("role").notNull().default("membre").$type<OrganizationRole>(),
+  jobTitle: text("job_title"),
+  status: text("status").notNull().default("active").$type<MembershipStatus>(),
+  startsOn: date("starts_on").notNull().defaultNow(),
+  endsOn: date("ends_on"),
+  endReason: text("end_reason"),
+  invitationId: text("invitation_id"),
+  createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("organization_memberships_person_idx").on(t.personId)]);
+
+export const organizationGroups = pgTable("organization_groups", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  description: text("description"),
+  status: text("status").notNull().default("active").$type<"active" | "archive">(),
+  createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const organizationGroupMembers = pgTable("organization_group_members", {
+  groupId: text("group_id").notNull(),
+  membershipId: text("membership_id").notNull(),
+  organizationId: text("organization_id").notNull(),
+  addedBy: text("added_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [primaryKey({ columns: [t.groupId, t.membershipId] })]);
+
+export const organizationTemplates = pgTable("organization_templates", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  description: text("description"),
+  status: text("status").notNull().default("active").$type<"active" | "archive">(),
+  createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+/** Version immuable d'un gabarit (déclencheur SQL) : `content.entries` = lignes d'équipe proposées. */
+export const organizationTemplateVersions = pgTable("organization_template_versions", {
+  id: text("id").primaryKey(),
+  templateId: text("template_id").notNull().references(() => organizationTemplates.id, { onDelete: "cascade" }),
+  version: integer("version").notNull(),
+  content: jsonb("content").notNull().$type<{ entries: unknown[] }>(),
+  note: text("note"),
+  createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const organizationTemplateApplications = pgTable("organization_template_applications", {
+  id: text("id").primaryKey(),
+  templateVersionId: text("template_version_id").notNull().references(() => organizationTemplateVersions.id, { onDelete: "cascade" }),
+  organizationId: text("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  appliedBy: text("applied_by").references(() => users.id, { onDelete: "set null" }),
+  appliedAt: timestamp("applied_at", { withTimezone: true }).defaultNow().notNull(),
+  plan: jsonb("plan").notNull().$type<unknown[]>(),
+});
+
+export const organizationMandates = pgTable("organization_mandates", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  participationId: text("participation_id").notNull().references(() => projectParticipations.id, { onDelete: "cascade" }),
+  membershipId: text("membership_id").notNull(),
+  responsibilities: text("responsibilities").array().notNull().default([]).$type<TeamResponsibility[]>(),
+  status: text("status").notNull().default("propose").$type<MandateStatus>(),
+  startsOn: date("starts_on"),
+  endsOn: date("ends_on"),
+  endReason: text("end_reason"),
+  replacesMandateId: text("replaces_mandate_id"),
+  note: text("note"),
+  proposedBy: text("proposed_by").references(() => users.id, { onDelete: "set null" }),
+  proposedAt: timestamp("proposed_at", { withTimezone: true }).defaultNow().notNull(),
+  respondedAt: timestamp("responded_at", { withTimezone: true }),
+  endedAt: timestamp("ended_at", { withTimezone: true }),
+}, (t) => [index("organization_mandates_membership_idx").on(t.membershipId)]);
 
 // ---------------------------------------------------------------------------
 // Modèle typé de l'Atelier Fadi (cahier des charges §5.5) —

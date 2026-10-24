@@ -9,7 +9,7 @@
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "../db/client.js";
 import {
-  collabDemandes, comConversations, comMessages, comParticipants, producedDocuments, projectMembers, projects, stepFiles, studioComments, studioObservations,
+  collabDemandes, comConversations, comMessages, comParticipants, producedDocuments, projectEffectiveAccess, stepFiles, studioComments, studioObservations,
   studioStudies, studioVariants, users, type ComAudience, type ComRef, type ComRefType,
 } from "../db/schema.js";
 import { PARCOURS_STEPS } from "../data/parcours.js";
@@ -28,14 +28,16 @@ export const introuvable = (): never => { throw new ComError(404, { error: "not_
 
 export const COM_REF_TYPES = ["etape", "document", "fichier", "studio-variante", "observation-studio", "message", "demande", "revision-atelier"] as const satisfies readonly ComRefType[];
 
-/** Comptes ayant aujourd'hui un rôle de membre sur le projet (propriétaire, éditeurs, lecteurs) — jamais l'accès support. */
+/**
+ * Comptes ayant aujourd'hui un rôle sur le projet (propriétaire, éditeurs, lecteurs) — jamais l'accès support. Lus dans la
+ * vue `project_effective_access` (Issue #262, phase 2), source unique des droits : un participant actif avec un rôle de
+ * portée projet en fait partie, une participation suspendue, terminée ou « revue seule » jamais.
+ */
 export async function comptesDuProjet(projectId: string, q: Querier = db): Promise<Map<string, { email: string; role: ProjectRole }>> {
-  const [p] = await q.select({ ownerId: projects.ownerId, email: users.email }).from(projects).innerJoin(users, eq(users.id, projects.ownerId)).where(eq(projects.id, projectId));
+  const rows = await q.select({ userId: projectEffectiveAccess.userId, role: projectEffectiveAccess.role, email: users.email })
+    .from(projectEffectiveAccess).innerJoin(users, eq(users.id, projectEffectiveAccess.userId)).where(eq(projectEffectiveAccess.projectId, projectId));
   const out = new Map<string, { email: string; role: ProjectRole }>();
-  if (!p) return out;
-  out.set(p.ownerId, { email: p.email, role: "proprietaire" });
-  const membres = await q.select({ userId: projectMembers.userId, role: projectMembers.role, email: users.email }).from(projectMembers).innerJoin(users, eq(users.id, projectMembers.userId)).where(eq(projectMembers.projectId, projectId));
-  for (const m of membres) out.set(m.userId, { email: m.email, role: m.role });
+  for (const r of rows) out.set(r.userId, { email: r.email, role: r.role });
   return out;
 }
 

@@ -761,9 +761,9 @@ export interface ElementBoite {
   enRetard: boolean;
 }
 
-/** Projets accessibles (rôle de membre ; l'accès support n'a pas de boîte). */
+/** Projets accessibles (vue `project_effective_access`, phase 2 de l'Issue #262 ; l'accès support n'a pas de boîte). */
 async function mesProjets(userId: string): Promise<AccessibleProject[]> {
-  const ids = await db.execute<{ id: string }>(sql`SELECT id FROM projects WHERE owner_id = ${userId} UNION SELECT project_id AS id FROM project_members WHERE user_id = ${userId}`);
+  const ids = await db.execute<{ id: string }>(sql`SELECT project_id AS id FROM project_effective_access WHERE user_id = ${userId}`);
   const out: AccessibleProject[] = [];
   for (const r of ids.rows) { const a = await loadProjectAccess(r.id, userId); if (a && a.role !== "support") out.push(a); }
   return out;

@@ -12,8 +12,10 @@
  * Droits (E.4-02) — correspondance prudente avec les rôles de projet existants (`owned-project.ts`) :
  *   - lecture (dossier, manifeste, journal, fichiers, vérification) : besoin `read` → propriétaire, éditeur, lecteur ;
  *   - revue (préparer, soumettre, actualiser le manifeste) : besoin `write` → propriétaire, éditeur ;
- *   - approbation (approuver, refuser) : besoin `owner` → propriétaire seul ;
- *   - publication (diffuser, retirer ; le remplacement suit la diffusion d'un paquet plus récent) : `owner` → propriétaire seul.
+ *   - approbation (approuver, refuser) : besoin `approve` → propriétaire, ou rôle Approbateur de portée projet (phase 2
+ *     de l'Issue #262, OP-D3 c) ;
+ *   - publication (diffuser, retirer ; le remplacement suit la diffusion d'un paquet plus récent) : besoin `publish` →
+ *     propriétaire, ou rôle Diffuseur de portée projet.
  * Un lecteur ne fait que lire. Les refus suivent le style existant (`projectAccessRefusal` : 404 / 403 / 423).
  *
  * Manifeste figé multi-sources (E.4-03) : sources coordonnées (variante principale et variantes coordonnées, chacune
@@ -41,9 +43,12 @@ export const STATUTS_DIFFUSION: readonly StatutDiffusion[] = ["non-diffuse", "di
 /** Capacités distinctes (E.4-02) et besoin de droit de projet de chacune. */
 export type CapacitePublication = "lecture" | "revue" | "approbation" | "publication";
 export const BESOIN_CAPACITE: Readonly<Record<CapacitePublication, ProjectNeed>> = Object.freeze({
-  lecture: "read", revue: "write", approbation: "owner", publication: "owner",
+  lecture: "read", revue: "write", approbation: "approve", publication: "publish",
 });
-/** Rôles de projet admis par capacité (documentation et indications d'interface ; le serveur revérifie). */
+/**
+ * Rôles de projet admis par capacité (documentation et indications d'interface ; le serveur revérifie). Approbation et
+ * publication s'ouvrent aussi aux rôles métier Approbateur et Diffuseur (`canApprove`, `canPublish` de l'accès).
+ */
 export const ROLES_CAPACITE: Readonly<Record<CapacitePublication, readonly ("proprietaire" | "editeur" | "lecteur")[]>> = Object.freeze({
   lecture: ["proprietaire", "editeur", "lecteur"], revue: ["proprietaire", "editeur"], approbation: ["proprietaire"], publication: ["proprietaire"],
 });

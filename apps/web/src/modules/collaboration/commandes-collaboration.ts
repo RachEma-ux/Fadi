@@ -11,7 +11,18 @@ export type CommandeCollaboration =
   // Communication (COM, Issue #280, COM-D14).
   | "nouvelle-conversation" | "envoyer-message" | "partager-extrait" | "action-liee" | "audience-conversation" | "accuser-reception" | "nouvelle-demande"
   | "ajouter-participant" | "retirer-participant" | "transferer-animation" | "modifier-message" | "retirer-message"
-  | "repondre-demande" | "cloturer-demande" | "rouvrir-demande" | "reattribuer-demande";
+  | "repondre-demande" | "cloturer-demande" | "rouvrir-demande" | "reattribuer-demande"
+  // Participants et équipe (Issue #262, phase 2).
+  | CommandeParticipants;
+
+/**
+ * Participants et équipe (Issue #262, phase 2) : chaque commande de l'annuaire a sa propre icône, sa barre (en-tête de
+ * l'annuaire, ligne du participant, formulaire des rôles) et un raccourci. Les raccourcis agissent là où se trouve le
+ * focus (la ligne du participant pour ses commandes), comme ceux des écarts E1 et E2.
+ */
+export type CommandeParticipants =
+  | "nouveau-contact" | "modifier-participation" | "attribuer-role" | "retirer-role" | "suspendre-participation" | "reactiver-participation"
+  | "terminer-participation" | "retour-participant" | "effacer-contact" | "clore-projet" | "rouvrir-projet";
 
 export interface Raccourci {
   /** `KeyboardEvent.code` : indépendant de la disposition et de la touche Alt (macOS). */
@@ -19,12 +30,14 @@ export interface Raccourci {
   /** Libellé affiché (français ; traduit à l'affichage) et valeur de `aria-keyshortcuts`. */
   libelle: string;
   aria: string;
+  /** Ctrl enfoncé en plus d'Alt et Maj (commandes Participants et équipe). */
+  ctrl?: boolean;
 }
 
 export interface DefinitionCommande {
   libelle: string;
   /** Où la commande agit : sa barre. */
-  barre: "rédaction" | "fil" | "membres" | "conversations" | "conversation" | "message" | "demandes" | "demande";
+  barre: "rédaction" | "fil" | "membres" | "conversations" | "conversation" | "message" | "demandes" | "demande" | "annuaire" | "participant" | "rôles";
   raccourci: Raccourci;
   /** Tracés SVG (24 × 24) de son icône propre. */
   icone: readonly string[];
@@ -37,6 +50,12 @@ export interface DefinitionCommande {
 const altMaj = (chiffre: string): Raccourci => ({ code: `Digit${chiffre}`, libelle: `Alt+Maj+${chiffre}`, aria: `Alt+Shift+${chiffre}` });
 /** Alt+Maj+ponctuation (COM-D14) : touche physique (`code`), libellé du signe de la disposition QWERTY de référence. */
 const altMajSigne = (code: string, signe: string): Raccourci => ({ code, libelle: `Alt+Maj+${signe}`, aria: `Alt+Shift+${signe}` });
+/**
+ * Ctrl+Alt+Maj+touche (Participants et équipe, Issue #262, phase 2) : Alt+Maj+chiffre et ponctuation sont pris par les
+ * commandes E1/E2 et Communication (COM-D14), Alt+Maj+lettre par la Planche ; un modificateur de plus garde chaque
+ * raccourci unique dans Fadi. Ces commandes agissent là où se trouve le focus (en-tête de l'annuaire, ligne du participant).
+ */
+const ctrlAltMaj = (code: string, signe: string): Raccourci => ({ code, libelle: `Ctrl+Alt+Maj+${signe}`, aria: `Control+Alt+Shift+${signe}`, ctrl: true });
 
 export const COMMANDES_COLLABORATION: Readonly<Record<CommandeCollaboration, DefinitionCommande>> = Object.freeze({
   // Case de rédaction : œil ouvert (le fil sera lu par les lecteurs).
@@ -92,6 +111,62 @@ export const COMMANDES_COLLABORATION: Readonly<Record<CommandeCollaboration, Def
   "rouvrir-demande": { libelle: "Rouvrir la demande", barre: "demande", raccourci: altMajSigne("BracketRight", "]"), icone: ["M3 12a9 9 0 1 0 3-6.7", "M3 4v5h5"] },
   // Flèches opposées (changement de personne).
   "reattribuer-demande": { libelle: "Réattribuer la demande", barre: "demande", raccourci: altMajSigne("Semicolon", ";"), icone: ["M16 3h5v5", "M21 3l-7 7", "M8 21H3v-5", "M3 21l7-7"] },
+  // --- Participants et équipe (Issue #262, phase 2) ---
+  // Nouveau contact : fiche et signe plus.
+  "nouveau-contact": {
+    libelle: "Nouveau contact", barre: "annuaire", raccourci: ctrlAltMaj("Digit6", "6"),
+    icone: ["M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z", "M2 21v-1a7 7 0 0 1 11-5.7", "M18 14v7", "M14.5 17.5h7"],
+  },
+  // Modifier la participation : crayon.
+  "modifier-participation": {
+    libelle: "Modifier la participation", barre: "participant", raccourci: ctrlAltMaj("Digit7", "7"),
+    icone: ["M4 20h4L19 9l-4-4L4 16v4z", "M13.5 6.5l4 4"],
+  },
+  // Attribuer un rôle par portée : badge et plus.
+  "attribuer-role": {
+    libelle: "Attribuer un rôle", barre: "rôles", raccourci: ctrlAltMaj("Digit8", "8"),
+    icone: ["M12 2l3 6 6 .9-4.5 4.3 1 6.3L12 16.6 6.5 19.5l1-6.3L3 8.9 9 8z", "M12 9v5", "M9.5 11.5h5"],
+  },
+  // Retirer un rôle attribué : badge barré.
+  "retirer-role": {
+    libelle: "Retirer le rôle", barre: "rôles", raccourci: ctrlAltMaj("BracketLeft", "["),
+    icone: ["M12 2l3 6 6 .9-4.5 4.3 1 6.3L12 16.6 6.5 19.5l1-6.3L3 8.9 9 8z", "M9.5 11.5h5"],
+  },
+  // Suspendre : pause.
+  "suspendre-participation": {
+    libelle: "Suspendre la participation", barre: "participant", raccourci: ctrlAltMaj("Digit9", "9"),
+    icone: ["M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z", "M10 8v8", "M14 8v8"],
+  },
+  // Réactiver : lecture.
+  "reactiver-participation": {
+    libelle: "Réactiver la participation", barre: "participant", raccourci: ctrlAltMaj("Digit9", "9"),
+    icone: ["M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z", "M10 8l6 4-6 4z"],
+  },
+  // Terminer la participation : porte de sortie.
+  "terminer-participation": {
+    libelle: "Terminer la participation", barre: "participant", raccourci: ctrlAltMaj("Digit0", "0"),
+    icone: ["M14 3h6v18h-6", "M10 17l-5-5 5-5", "M5 12h11"],
+  },
+  // Retour d'un participant : flèche circulaire.
+  "retour-participant": {
+    libelle: "Nouvelle participation", barre: "participant", raccourci: ctrlAltMaj("BracketRight", "]"),
+    icone: ["M3 12a9 9 0 1 0 3-6.7", "M3 4v5h5", "M12 8v4l3 2"],
+  },
+  // Effacer un contact sans compte : gomme.
+  "effacer-contact": {
+    libelle: "Effacer le contact", barre: "participant", raccourci: ctrlAltMaj("Minus", "-"),
+    icone: ["M7 21h10", "M5.5 14.5l7-7 5 5-7 7H7z", "M12.5 7.5l3-3 5 5-3 3"],
+  },
+  // Clore le projet : dossier fermé.
+  "clore-projet": {
+    libelle: "Clore le projet", barre: "annuaire", raccourci: ctrlAltMaj("Equal", "="),
+    icone: ["M3 7h7l2 2h9v11H3z", "M8 14h8"],
+  },
+  // Rouvrir le projet : dossier ouvert.
+  "rouvrir-projet": {
+    libelle: "Rouvrir le projet", barre: "annuaire", raccourci: ctrlAltMaj("Equal", "="),
+    icone: ["M3 7h7l2 2h9v3", "M3 7v13h15l3-8H6l-3 8"],
+  },
 });
 
 /** Commandes du module Communication (COM-D14). */
@@ -106,11 +181,18 @@ export const COMMANDES_COM: readonly CommandeCollaboration[] = [
  * selon l'audience) : ils partagent donc leur raccourci, et seulement entre eux.
  */
 export const BASCULE_AUDIENCE: readonly CommandeCollaboration[] = ["rendre-visible", "reserver-equipe"];
+/** Bascules : les deux sens d'un même bouton partagent leur raccourci, et seulement entre eux. */
+export const BASCULES: readonly (readonly CommandeCollaboration[])[] = [
+  BASCULE_AUDIENCE, ["suspendre-participation", "reactiver-participation"], ["clore-projet", "rouvrir-projet"],
+];
 
-/** L'évènement clavier déclenche-t-il cette commande ? Alt et Maj enfoncés, ni Ctrl ni Méta, touche par son code. */
+/**
+ * L'évènement clavier déclenche-t-il cette commande ? Alt et Maj enfoncés, Ctrl seulement si le raccourci l'exige (et
+ * jamais sinon), ni Méta, touche par son code.
+ */
 export function declenche(e: { code: string; altKey: boolean; shiftKey: boolean; ctrlKey: boolean; metaKey: boolean }, commande: CommandeCollaboration): boolean {
   const r = COMMANDES_COLLABORATION[commande].raccourci;
-  return e.altKey && e.shiftKey && !e.ctrlKey && !e.metaKey && e.code === r.code;
+  return e.altKey && e.shiftKey && e.ctrlKey === !!r.ctrl && !e.metaKey && e.code === r.code;
 }
 
 /** Attributs du raccourci sur l'élément de la commande (`aria-keyshortcuts`, et la commande pour les recettes). */

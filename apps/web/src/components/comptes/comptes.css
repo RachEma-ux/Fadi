@@ -52,3 +52,10 @@
 .admin-filters .admin-checkbox input { min-height: auto; }
 .admin-invitation-link { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .admin-invitation-link code { overflow-wrap: anywhere; }
+/* Journal d'activité (phase 3 bis) : navigation de l'administration, détails d'une entrée. */
+.admin-nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+.admin-nav a { padding: 6px 12px; border: 1px solid #b7c9c0; border-radius: 6px; text-decoration: none; color: #1d4a35; min-height: 24px; }
+.admin-nav a.active { background: #1d4a35; color: #fff; border-color: #1d4a35; }
+.journal-details { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: 0.9rem; }
+.journal-details code { overflow-wrap: anywhere; }
+.journal-activite-table td { overflow-wrap: anywhere; }

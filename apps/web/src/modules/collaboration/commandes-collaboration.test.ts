@@ -10,7 +10,7 @@ import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { BASCULE_AUDIENCE, COMMANDES_COLLABORATION, COMMANDES_COM, declenche, propsRaccourci, type CommandeCollaboration } from "./commandes-collaboration";
+import { BASCULES, COMMANDES_COLLABORATION, COMMANDES_COM, declenche, propsRaccourci, type CommandeCollaboration } from "./commandes-collaboration";
 import { IconeCollaboration, RaccourciCollaboration } from "./IconeCollaboration";
 
 const SRC = new URL("../../", import.meta.url).pathname;
@@ -34,7 +34,10 @@ const ECRANS: Record<CommandeCollaboration, string[]> = {
   "audience-conversation": [PANNEAU_COM], "accuser-reception": [PANNEAU_COM], "ajouter-participant": [PANNEAU_COM], "retirer-participant": [PANNEAU_COM],
   "transferer-animation": [PANNEAU_COM], "modifier-message": [PANNEAU_COM], "retirer-message": [PANNEAU_COM],
   "nouvelle-demande": [PANNEAU_DEMANDES], "repondre-demande": [PANNEAU_DEMANDES], "cloturer-demande": [PANNEAU_DEMANDES], "rouvrir-demande": [PANNEAU_DEMANDES], "reattribuer-demande": [PANNEAU_DEMANDES],
-};
+  // Participants et équipe (Issue #262, phase 2) : en-tête de l'annuaire, ligne du participant, formulaire des rôles.
+  ...Object.fromEntries((["nouveau-contact", "modifier-participation", "attribuer-role", "retirer-role", "suspendre-participation", "reactiver-participation",
+    "terminer-participation", "retour-participant", "effacer-contact", "clore-projet", "rouvrir-projet"] as const).map((c) => [c, ["modules/collaboration/Participants.tsx"]])),
+} as Record<CommandeCollaboration, string[]>;
 
 function sources(dir: string): string[] {
   return readdirSync(dir).flatMap((n) => {
@@ -51,16 +54,16 @@ describe("Règle d'or — commandes de collaboration (audience, export du lecteu
     expect(new Set(dessins).size).toBe(dessins.length);
   });
 
-  it("chaque commande a un raccourci ; seuls les deux sens de la bascule d'audience le partagent", () => {
+  it("chaque commande a un raccourci ; seuls les deux sens d'une même bascule le partagent", () => {
     const parRaccourci = new Map<string, CommandeCollaboration[]>();
     for (const c of COMMANDES) parRaccourci.set(COMMANDES_COLLABORATION[c].raccourci.libelle, [...(parRaccourci.get(COMMANDES_COLLABORATION[c].raccourci.libelle) ?? []), c]);
-    for (const [r, cs] of parRaccourci) expect(cs.length === 1 || [...cs].sort().join() === [...BASCULE_AUDIENCE].sort().join(), `${r} : ${cs.join(", ")}`).toBe(true);
+    for (const [r, cs] of parRaccourci) expect(cs.length === 1 || BASCULES.some((b) => [...cs].sort().join() === [...b].sort().join()), `${r} : ${cs.join(", ")}`).toBe(true);
   });
 
   it("aucun autre raccourci de Fadi n'emploie ces combinaisons", () => {
     const nos = new Set(COMMANDES.map((c) => COMMANDES_COLLABORATION[c].raccourci.libelle));
     const ailleurs = sources(SRC).filter((f) => !f.includes("/modules/collaboration/"))
-      .flatMap((f) => [...readFileSync(f, "utf8").matchAll(/Alt\+Maj\+(?:[A-Z0-9]+|[-=[\];',./\\])/g)].map((m) => ({ f, r: m[0] })))
+      .flatMap((f) => [...readFileSync(f, "utf8").matchAll(/(?:Ctrl\+)?Alt\+Maj\+(?:[A-Z0-9]+|[-=[\];',./\\])/g)].map((m) => ({ f, r: m[0] })))
       .filter(({ r, f }) => nos.has(r) && !(f.endsWith("Modifications.tsx") || f.includes("/studio/commentaires/") || f.includes("/studio/observations/")));
     expect(ailleurs).toEqual([]);
   });
@@ -80,7 +83,7 @@ describe("Règle d'or — commandes de collaboration (audience, export du lecteu
     }
   });
 
-  it("le raccourci ne se déclenche qu'avec Alt et Maj, ni Ctrl ni Méta, touche physique", () => {
+  it("le raccourci ne se déclenche qu'avec Alt et Maj (Ctrl seulement pour les Participants), jamais Méta, touche physique", () => {
     const t = (code: string, m: Partial<{ altKey: boolean; shiftKey: boolean; ctrlKey: boolean; metaKey: boolean }> = {}) =>
       ({ code, altKey: true, shiftKey: true, ctrlKey: false, metaKey: false, ...m });
     expect(declenche(t("Digit1"), "visible-lecteurs")).toBe(true);
@@ -91,6 +94,15 @@ describe("Règle d'or — commandes de collaboration (audience, export du lecteu
     expect(declenche(t("Digit3"), "export-lecteur")).toBe(true);
     expect(declenche(t("Digit3"), "visible-lecteurs")).toBe(false);
     expect(propsRaccourci("export-lecteur")["aria-keyshortcuts"]).toBe("Alt+Shift+3");
+    // Participants et équipe : Ctrl+Alt+Maj, jamais confondus avec les Alt+Maj de Communication sur la même touche.
+    const c = (code: string) => t(code, { ctrlKey: true });
+    expect(declenche(c("Digit6"), "nouveau-contact")).toBe(true);
+    expect(declenche(t("Digit6"), "nouveau-contact")).toBe(false);
+    expect(declenche(c("Digit6"), "partager-extrait")).toBe(false);
+    expect(declenche(c("Minus"), "effacer-contact")).toBe(true);
+    expect(declenche(c("Equal"), "clore-projet") && declenche(c("Equal"), "rouvrir-projet")).toBe(true);
+    expect(declenche(c("Digit9"), "terminer-participation")).toBe(false);
+    expect(propsRaccourci("nouveau-contact")["aria-keyshortcuts"]).toBe("Control+Alt+Shift+6");
   });
 
   it("Communication (COM-D14) : seize commandes, Alt+Maj+chiffre ou ponctuation, touche physique", () => {
