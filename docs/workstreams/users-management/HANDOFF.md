@@ -27,7 +27,7 @@ Mis à jour : 2026-10-24 (UTC).
 
 ## Prochaine action
 
-- UM-27 : relever la CI de la PR (DB-3 compris : `app.test.ts` doit compter 77 tests) ; corriger si rouge ; puis attendre
+- UM-27 : relever la CI de la PR (DB-3 compris : `app.test.ts` doit compter 78 tests) ; corriger si rouge ; puis attendre
   l'acceptation et la fusion par le maître d'ouvrage. Aucun déploiement sans son accord (aucune migration ajoutée).
 
 - CI de `main` verte après la fusion (`516e2f7`, run CI 39911221480).

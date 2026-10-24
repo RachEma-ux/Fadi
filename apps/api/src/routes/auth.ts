@@ -822,6 +822,12 @@ export async function cancelScheduledDeletion(tx: Tx, userId: string): Promise<b
 authRouter.post("/cancel-deletion", async (req, res) => {
   const parsed = tokenSchema.safeParse(req.body);
   const result = parsed.success ? await db.transaction(async (tx) => {
+    // Ordre des verrous commun à « Restaurer » et à l'anonymisation : la ligne du compte d'abord, puis ses jetons
+    // (sinon le lien et la corbeille, simultanés, s'interbloquent). Le jeton n'est que lu ici avant le verrou.
+    const [owner] = await tx.select({ userId: accountTokens.userId }).from(accountTokens)
+      .where(and(eq(accountTokens.tokenHash, sha256Hex(parsed.data.token)), eq(accountTokens.purpose, "cancel_deletion"))).limit(1);
+    if (!owner) return null;
+    await tx.select({ id: users.id }).from(users).where(eq(users.id, owner.userId)).limit(1).for("update");
     const id = await consumeAccountToken(parsed.data.token, "cancel_deletion", tx);
     if (!id) return null;
     if (!(await cancelScheduledDeletion(tx, id))) return null;

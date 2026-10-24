@@ -30,7 +30,7 @@ Branche `feat/253-corbeille-anonymiser`, depuis `main` à `c201d2b`. Vérifié e
 - `npm test` : tous les paquets et le web verts (dont `icones-admin.test.ts`, 4 tests, règle d'or) ; API : 454 tests purs
   verts (dont 7 nouveaux dans `lib/security/security.test.ts`) ; les 12 suites DB-3 refusées par la garde **seule**
   (`TARGET_REQUIRED`), comme attendu sans la clé `fadi-ci-db3`.
-- `app.test.ts` sur une base jetable locale attestée par `scripts/db3/preparer-base-test.mjs` : **77 tests verts**, dont
+- `app.test.ts` sur une base jetable locale attestée par `scripts/db3/preparer-base-test.mjs` : **77 tests verts** (78 après le correctif ci-dessous), dont
   les 6 nouveaux de « 5. corbeille et Anonymiser maintenant » (refus, appels simultanés, restaurer contre anonymiser,
   statut suspendu rétabli, administrateur de la corbeille). L'autorité de signature locale a été ajoutée au registre
   **dans la copie de travail seulement**, puis retirée (`git checkout`) : elle n'est pas dans le dépôt ; la preuve
@@ -43,6 +43,11 @@ Branche `feat/253-corbeille-anonymiser`, depuis `main` à `c201d2b`. Vérifié e
   boîte de confirmation, passe anglaise de la corbeille et de la confirmation).
 - Constat corrigé pendant la recette : `/admin/trash` tombait dans le repli SPA (l'API ne recevait que `/admin/users*` et
   `/admin/invitations*`) ; ajouté à `API_PREFIX`, au montage `/admin` (`app.ts`) et au mandataire de Vite.
+- Revue Codex de `15f1935` (P2) : le lien d'annulation verrouillait le jeton puis le compte, « Restaurer » le compte puis
+  le jeton — interblocage possible entre les deux voies simultanées. Corrigé : `/auth/cancel-deletion` lit le jeton,
+  verrouille la ligne du compte, puis consomme le jeton (même ordre que la restauration et l'anonymisation). Test DB-3
+  ajouté (lien et « Restaurer » simultanés, 5 fois : exactement l'un des deux) ; `app.test.ts` **78 tests verts** sur base
+  jetable locale ; `comptes-api.mjs` et `comptes-securite.mjs` verts sur l'API reconstruite.
 - Aucune migration : aucune colonne ni table ajoutée ; le déploiement de cette PR ne change pas RUNBOOK.md.
 - CI de la PR : à relever sur la PR (DB-3 inclus).
 

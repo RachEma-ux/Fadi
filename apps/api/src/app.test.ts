@@ -2511,6 +2511,18 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
       expect((await boss.a.post(`/admin/users/${target.id}/restore`)).body.error).toBe("not_in_trash");
     });
 
+    it("lien d'annulation et « Restaurer » simultanés : exactement l'un des deux, jamais d'interblocage", async () => {
+      const boss = await admin();
+      for (let i = 0; i < 5; i += 1) {
+        const target = await account(`lien-restaurer-${i}`);
+        const del = await target.a.delete("/auth/me").send({ password: PASSWORD, confirm: "SUPPRIMER" });
+        const token = decodeURIComponent((del.body.mail.link as string).split("#jeton=")[1]!);
+        const [link, restore] = await Promise.all([agent().post("/auth/cancel-deletion").send({ token }), boss.a.post(`/admin/users/${target.id}/restore`)]);
+        expect([link.status, restore.status].sort()).toEqual(link.status === 200 ? [200, 409] : [200, 400]);
+        expect((await userState(target.id)).deletion_requested_at).toBeNull();
+      }
+    });
+
     it("dernier administrateur : un administrateur de la corbeille n'est plus actif, l'anonymiser ne retire personne (sous le verrou)", async () => {
       const boss = await admin();
       const other = await account("second-admin");
