@@ -5,7 +5,8 @@
  * - Type reconnu par sa signature (jamais par l'en-tête Content-Type ni le nom) : JPEG ou PNG seulement.
  * - Dimensions lues dans l'image (SOFn du JPEG, IHDR du PNG) : 2 560 px au plus par côté.
  * - Métadonnées retirées : JPEG — segments APP1 à APP13 et APP15 (EXIF, XMP, IPTC, position GPS comprise) et
- *   commentaires COM, APP0 (JFIF) et APP14 (Adobe, couleurs) gardés ; PNG — fragments texte, EXIF et date (tEXt, zTXt,
+ *   commentaires COM, où qu'ils soient (entre deux balayages compris), APP0 (JFIF) et APP14 (Adobe, couleurs) gardés,
+ *   tout octet après la fin d'image (EOI) jeté ; PNG — fragments texte, EXIF et date (tEXt, zTXt,
  *   iTXt, eXIf, tIME) retirés, les fragments d'image et de couleur gardés. Les pixels ne sont jamais réencodés.
  * - Taille après nettoyage : 2 Mo au plus.
  */
@@ -62,14 +63,19 @@ function nettoyerJpeg(b: Buffer): { content: Buffer; width: number; height: numb
     }
     const metadonnee = (m >= 0xe1 && m <= 0xed) || m === 0xef || m === 0xfe;
     if (!metadonnee) garde.push(b.subarray(i, fin));
-    if (m === 0xda) {
-      // Début des données compressées : tout le reste (données, marqueurs RST, EOI) est gardé tel quel.
-      garde.push(b.subarray(fin));
-      i = b.length;
-      break;
-    }
     i = fin;
+    if (m === 0xda) {
+      // Données compressées d'un balayage : jusqu'au prochain vrai marqueur (FF 00 = octet bourré, FF D0–D7 = RST font
+      // partie des données). L'analyse reprend ensuite : un JPEG progressif enchaîne plusieurs balayages, et un segment
+      // de métadonnées placé entre deux balayages est retiré comme les autres.
+      let j = i;
+      while (j + 1 < b.length && !(b[j] === 0xff && b[j + 1] !== 0x00 && !(b[j + 1]! >= 0xd0 && b[j + 1]! <= 0xd7) && b[j + 1] !== 0xff)) j++;
+      garde.push(b.subarray(i, j));
+      i = j;
+    }
   }
+  // Rien après EOI n'est gardé (données privées ou position ajoutées en fin de fichier) ; sans EOI, l'image est tronquée.
+  if (garde[garde.length - 1]?.length !== 2 || garde[garde.length - 1]![1] !== 0xd9) throw new PhotoRefusee(422, "photo_illisible", "Photo JPEG tronquée (fin d'image absente).");
   if (!width || !height) throw new PhotoRefusee(422, "photo_illisible", "Dimensions JPEG absentes.");
   return { content: Buffer.concat(garde), width, height };
 }

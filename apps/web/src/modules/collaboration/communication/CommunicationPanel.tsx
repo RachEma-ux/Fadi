@@ -373,12 +373,15 @@ function Redaction({ projectId, conversation: c, membres }: { projectId: string;
   const contexteStudio = c.context?.type === "studio-variante" && c.context.lien?.["studyId"] && c.context.lien?.["variantId"] ? { studyId: c.context.lien["studyId"], variantId: c.context.lien["variantId"] } : null;
   const ajouterPhotos = async (fichiers: FileList | null) => {
     setPhotoErreur(null);
+    // Compte tenu des photos acceptées pendant CETTE sélection (l'état `photos` capturé ne bouge pas dans la boucle).
+    let nombre = photos.length;
     for (const f of Array.from(fichiers ?? [])) {
-      if (photos.length >= 6) { setPhotoErreur("Six photos au plus par message."); break; }
+      if (nombre >= 6) { setPhotoErreur("Six photos au plus par message."); break; }
       try {
         const r = await compresserPhoto(f);
         const id = nouvelIdRequete();
         await localStore.comPhotoEcrire({ id, userId: user?.id ?? "", projectId, conversationId: c.id, blob: r.blob, mime: "image/jpeg", width: r.width, height: r.height, createdAt: new Date().toISOString() });
+        nombre += 1;
         setPhotos((x) => [...x, { id, url: URL.createObjectURL(r.blob), width: r.width, height: r.height }]);
       } catch (e) {
         setPhotoErreur(e instanceof Error && e.message.includes("2 Mo") ? "Photo trop lourde, même compressée : elle ne tient pas dans 2 Mo." : "Cette photo n’a pas pu être préparée ni enregistrée sur cet appareil.");
@@ -387,13 +390,21 @@ function Redaction({ projectId, conversation: c, membres }: { projectId: string;
     if (choisirPhoto.current) choisirPhoto.current.value = "";
   };
   const retirerPhoto = (id: string) => { setPhotos((x) => x.filter((p) => p.id !== id)); void localStore.comPhotoSupprimer([id]); };
+  // Chaque lecture de position porte un numéro : décocher, envoyer ou relancer l'invalide, et sa réponse tardive est
+  // ignorée (aucune position jointe sans le consentement courant de l'auteur).
+  const lecturePosition = useRef(0);
   const basculerPosition = (oui: boolean) => {
+    const n = ++lecturePosition.current;
     if (!oui) { setPosition(null); setPositionEtat("non"); return; }
     if (typeof navigator === "undefined" || !navigator.geolocation) { setPositionEtat("indisponible"); return; }
     setPositionEtat("lecture");
     navigator.geolocation.getCurrentPosition(
-      (g) => { setPosition({ lat: g.coords.latitude, lon: g.coords.longitude, precisionM: Number.isFinite(g.coords.accuracy) ? g.coords.accuracy : null, captureeLe: new Date(g.timestamp).toISOString() }); setPositionEtat("oui"); },
-      () => { setPosition(null); setPositionEtat("indisponible"); },
+      (g) => {
+        if (n !== lecturePosition.current) return;
+        setPosition({ lat: g.coords.latitude, lon: g.coords.longitude, precisionM: Number.isFinite(g.coords.accuracy) ? g.coords.accuracy : null, captureeLe: new Date(g.timestamp).toISOString() });
+        setPositionEtat("oui");
+      },
+      () => { if (n !== lecturePosition.current) return; setPosition(null); setPositionEtat("indisponible"); },
       { enableHighAccuracy: true, timeout: 15_000, maximumAge: 60_000 },
     );
   };
@@ -426,9 +437,10 @@ function Redaction({ projectId, conversation: c, membres }: { projectId: string;
       input: {
         body, mentions, refs: etape ? [{ type: "etape", id: etape }] : [], ackRequired, urgent, clientRequestId: nouvelIdRequete(), capturedAt: new Date().toISOString(),
         ...(epingle ? { epingle: { studyId: epingle.studyId, variantId: epingle.variantId, revisionId: epingle.revisionId, point: epingle.point } } : {}),
-        ...(position ? { localisation: position } : {}),
+        ...(position && positionEtat === "oui" ? { localisation: position } : {}),
       },
     });
+    lecturePosition.current += 1;
     setTexte(""); setMentions([]); setEtape(""); setAck(false); setUrgent(false); setPhotos([]); setEpingle(null); setPosition(null); setPositionEtat("non");
   };
   return (

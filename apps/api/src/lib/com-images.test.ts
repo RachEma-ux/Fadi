@@ -34,6 +34,23 @@ describe("photos COM : type par signature, dimensions, métadonnées retirées (
     expect(r.content.includes(Buffer.from([0x12, 0x34, 0xff, 0x00, 0x56]))).toBe(true);
     expect(r.sha256).toMatch(/^[0-9a-f]{64}$/);
   });
+  it("JPEG : métadonnées entre deux balayages et octets après EOI retirés ; données bourrées et RST gardées", () => {
+    const sos = seg(0xda, Buffer.from([1, 1, 0, 0, 0x3f, 0]));
+    const donnees1 = Buffer.from([0x11, 0xff, 0x00, 0x22, 0xff, 0xd0, 0x33]);
+    const progressif = Buffer.concat([
+      Buffer.from([0xff, 0xd8]), sof(320, 240), sos, donnees1, seg(0xe1, GPS), seg(0xfe, Buffer.from("note", "latin1")), seg(0xc4, Buffer.from([0, 1, 2])),
+      sos, Buffer.from([0x44, 0x55]), Buffer.from([0xff, 0xd9]), Buffer.from("APRES-EOI GPSLatitude 48.85", "latin1"),
+    ]);
+    const r = nettoyerPhoto(progressif);
+    const t = r.content.toString("latin1");
+    expect(t).not.toContain("GPSLatitude");
+    expect(t).not.toContain("APRES-EOI");
+    expect(t).not.toContain("note");
+    expect(r.content.includes(donnees1)).toBe(true);
+    expect(r.content.includes(Buffer.from([0xff, 0xc4]))).toBe(true);
+    expect(r.content.subarray(-2)).toEqual(Buffer.from([0xff, 0xd9]));
+    expect(() => nettoyerPhoto(progressif.subarray(0, progressif.indexOf(Buffer.from([0xff, 0xd9]))))).toThrow(PhotoRefusee);
+  });
   it("PNG : tEXt et eXIf retirés, IHDR, IDAT et IEND gardés", () => {
     const r = nettoyerPhoto(png(640, 480));
     expect(r).toMatchObject({ mime: "image/png", width: 640, height: 480 });
