@@ -42,6 +42,8 @@ import { lockProject, type Tx } from "../lib/step-rows.js";
 import { isProjectResponsible } from "../lib/project-responsables.js";
 import { projectOr404, type AccessibleProject } from "../lib/owned-project.js";
 import { requireAuth } from "../middleware/require-auth.js";
+import { porteeInconnue } from "../lib/portees-db.js";
+import { capacitesDePortee, type RoleMetier, type TypePortee } from "@parcours/domain-model";
 
 export const participantsRouter = Router({ mergeParams: true });
 participantsRouter.use(requireAuth);
@@ -339,12 +341,15 @@ participantsRouter.post("/:participationId/roles", (req, res) => write(res, asyn
     const r = row!;
     const refusal = roleAssignmentRefusal({ isOwner: r.isOwner, hasAccount: Boolean(r.userId), isOrganization: !r.pe, status: r.p.status });
     if (refusal) fail(422, "role_rule", refusal);
+    // Portée étroite : l'élément désigné (étude, variante, révision, documents) doit exister dans CE projet.
+    const scopeProblem = await porteeInconnue(tx, project.id, input.scopeType as TypePortee, input.scopeId);
+    if (scopeProblem) fail(422, "scope_rule", scopeProblem);
     const id = newId("pra");
     const inserted = await tx.insert(projectRoleAssignments).values({ id, participationId: r.p.id, role: input.role as never, scopeType: input.scopeType as never, scopeId: input.scopeId, origin: "attribution", grantedBy: req.user!.id })
       .onConflictDoNothing().returning({ id: projectRoleAssignments.id });
     if (!inserted.length) fail(409, "existing", "Ce rôle est déjà attribué à cette portée.");
     await audit(tx, { actorId: req.user!.id, action: "participation.role_assigned", target: { type: "project", id: project.id }, metadata: { participationId: r.p.id, memberId: r.userId, roleId: id, role: input.role, scopeType: input.scopeType, scopeId: input.scopeId }, ip: clientIp(req) });
-    return { status: 201, body: { id, role: input.role, scopeType: input.scopeType, scopeId: input.scopeId, origin: "attribution" } };
+    return { status: 201, body: { id, role: input.role, scopeType: input.scopeType, scopeId: input.scopeId, origin: "attribution", capacites: capacitesDePortee(input.role as RoleMetier, input.scopeType as TypePortee) } };
   });
 }));
 

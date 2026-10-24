@@ -163,7 +163,7 @@ export async function createStudioSheet(projectId: string, studyId: string, vari
   return db.transaction(async (tx) => {
     const access = await lockedAccess(tx, projectId, actorId);
     const study = await studyOf(tx, projectId, studyId);
-    assertAccess(access, actorId, "modify");
+    assertAccess(access, actorId, "modify", { studyId: study.id }); // Concepteur de l'étude (portée étroite) compris
     const variant = await variantOf(tx, study.id, variantId);
     const hash = empreinteSaisie({ ...input, variantId });
     if (input.requestId !== undefined) {
@@ -198,7 +198,7 @@ export async function updateStudioSheet(projectId: string, studyId: string, shee
   return db.transaction(async (tx) => {
     const access = await lockedAccess(tx, projectId, actorId);
     const study = await studyOf(tx, projectId, studyId);
-    assertAccess(access, actorId, "modify");
+    assertAccess(access, actorId, "modify", { studyId: study.id }); // Concepteur de l'étude (portée étroite) compris
     const row = await sheetRow(tx, study.id, sheetId);
     const variant = await variantOf(tx, study.id, row.variantId);
     if (study.archivedAt !== null || variant.archivedAt !== null) return studioArchivedRefusal();
@@ -221,7 +221,7 @@ export async function deleteStudioSheet(projectId: string, studyId: string, shee
   return db.transaction(async (tx) => {
     const access = await lockedAccess(tx, projectId, actorId);
     const study = await studyOf(tx, projectId, studyId);
-    assertAccess(access, actorId, "modify");
+    assertAccess(access, actorId, "modify", { studyId: study.id }); // Concepteur de l'étude (portée étroite) compris
     const row = await sheetRow(tx, study.id, sheetId);
     // Étude ou variante archivée : lecture seule (M-3), comme la création et la modification d'une feuille.
     const variant = await variantOf(tx, study.id, row.variantId);
@@ -305,7 +305,7 @@ export async function createStudioDossier(projectId: string, studyId: string, ac
   return db.transaction(async (tx) => {
     const access = await lockedAccess(tx, projectId, actorId);
     const study = await studyOf(tx, projectId, studyId);
-    assertAccess(access, actorId, "modify");
+    assertAccess(access, actorId, "modify", { studyId: study.id }); // Concepteur de l'étude (portée étroite) compris
     const hash = empreinteSaisie(input);
     if (input.requestId !== undefined) {
       const [previous] = await tx.select().from(studioDossiers).where(and(eq(studioDossiers.studyId, study.id), eq(studioDossiers.requestId, input.requestId))).limit(1);
@@ -332,7 +332,7 @@ export async function updateStudioDossier(projectId: string, studyId: string, do
   return db.transaction(async (tx) => {
     const access = await lockedAccess(tx, projectId, actorId);
     const study = await studyOf(tx, projectId, studyId);
-    assertAccess(access, actorId, "modify");
+    assertAccess(access, actorId, "modify", { studyId: study.id }); // Concepteur de l'étude (portée étroite) compris
     const [row] = await tx.select().from(studioDossiers).where(and(eq(studioDossiers.id, dossierId), eq(studioDossiers.studyId, study.id))).for("update");
     if (!row) return notFound();
     if (study.archivedAt !== null) return studioArchivedRefusal();
@@ -398,7 +398,8 @@ export async function readStudioDossier(projectId: string, studyId: string, doss
 /** Fichier du dossier : PDF (sommaire, feuilles, métré, fidélité) ou JSON du dossier assemblé. */
 export async function readStudioDossierFile(projectId: string, studyId: string, dossierId: string, actorId: string, format: string) {
   if (format !== "pdf" && format !== "json") return notFound();
-  const access = assertAccess(await readAccess(projectId, actorId), actorId, "export");
+  // Portée `documents` : la famille `studio-dossier` ou ce dossier (`studio-dossier:<id>`, kind du catalogue Documents).
+  const access = assertAccess(await readAccess(projectId, actorId), actorId, "export", { document: { famille: "studio-dossier", kind: `studio-dossier:${dossierId}` } });
   const study = await studyOf(db, projectId, studyId);
   const row = await dossierRow(db, study.id, dossierId);
   const { dossier, pdf } = await assembler(db, access, study, row);

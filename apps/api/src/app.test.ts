@@ -3110,7 +3110,10 @@ describe("Équipe et participants — bascule de l'accès sur les participations
     expect(await effective(pid, readerId)).toBeNull();
     expect((await reader.get(`/projects/${pid}`)).status).toBe(404);
     // Un rôle de portée plus étroite ne donne rien non plus ; Approbateur de portée projet : lecture et approbation.
-    expect((await owner.post(`/projects/${pid}/participants/${rp}/roles`).send({ role: "relecteur", scopeType: "etude", scopeId: "etude-x" })).status).toBe(201);
+    // (portées étroites : l'élément désigné doit exister dans le projet — une étude inconnue est refusée, 422)
+    expect((await owner.post(`/projects/${pid}/participants/${rp}/roles`).send({ role: "relecteur", scopeType: "etude", scopeId: "etude-x" })).status).toBe(422);
+    const etudeX = (await owner.post(`/projects/${pid}/studio/studies`).send({ name: "Étude X" })).body.study.id as string;
+    expect((await owner.post(`/projects/${pid}/participants/${rp}/roles`).send({ role: "relecteur", scopeType: "etude", scopeId: etudeX })).status).toBe(201);
     expect(await effective(pid, readerId)).toBeNull();
     expect((await owner.post(`/projects/${pid}/participants/${rp}/roles`).send({ role: "approbateur", scopeType: "projet" })).status).toBe(201);
     expect(await effective(pid, readerId)).toEqual({ role: "lecteur", can_export: false, can_approve: true, can_publish: false });

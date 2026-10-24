@@ -66,7 +66,7 @@ studioQuantitesRouter.get(chemin, endpoint(async (req, res) => {
   res.setHeader("Cache-Control", "private, no-store");
   res.json({
     studyId: study.id, variantId: variant.id, headRevisionId: variant.headRevisionId, sequence: rows.at(-1)?.seq ?? 0,
-    peutAjuster: study.archivedAt === null && variant.archivedAt === null && projectAccessRefusal(access, actorId, "modify") === null,
+    peutAjuster: study.archivedAt === null && variant.archivedAt === null && projectAccessRefusal(access, actorId, "modify", { studyId: study.id, variantIds: [variant.id] }) === null,
     ajustements, statuts,
   });
 }));
@@ -79,7 +79,9 @@ studioQuantitesRouter.post(chemin, endpoint(async (req, res) => {
   const out = await db.transaction(async (tx) => {
     const access = await lockedAccess(tx, param(req, "projectId"), actorId);
     const study = await studyOf(tx, param(req, "projectId"), param(req, "studyId"));
-    assertAccess(access, actorId, "modify");
+    // Portée étroite : Concepteur de l'étude ou de cette variante (l'identifiant de l'adresse, résolu juste après : une
+    // variante d'une autre étude reste un 404).
+    assertAccess(access, actorId, "modify", { studyId: study.id, variantIds: [param(req, "variantId")] });
     const variant = await varianteDe(tx, study.id, param(req, "variantId"));
     if (study.archivedAt !== null || variant.archivedAt !== null) return studioArchivedRefusal();
     const hash = empreinteAjustement(input);
