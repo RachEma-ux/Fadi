@@ -249,6 +249,10 @@ jobs:
       # déclencheurs, contraintes, droits fadi_app — transactions annulées, base du job seulement.
       - name: Schéma participations — reprise, miroir des accès, contraintes
         run: node scripts/validation/participations-migration-check.mjs
+      # Phase 5 (espace d'organisation) : adhésions, groupes, gabarits immuables, mandats, finalité d'invitation
+      # `organization_membership`, déclencheurs de départ et de clôture, aucun droit de projet — transactions annulées.
+      - name: Schéma organisations — adhésions, groupes, gabarits, mandats, invitations, aucun droit de projet
+        run: node scripts/validation/organisations-migration-check.mjs
       - name: Tests des paquets purs et du web
         run: npm run test --workspace=@parcours/core-geometry --workspace=@parcours/domain-model --workspace=@parcours/atelier-model --workspace=@parcours/planche-model --workspace=@parcours/sandbox-planche-model --workspace=@parcours/geometry-exact --workspace=@fadi/web
       - name: Garde DB-1/2 — tests simulés sans base
@@ -582,6 +586,14 @@ jobs:
         run: |
           set -o pipefail
           node apps/web/e2e/journal-activite.mjs 2>&1 | tee -a e2e.log
+      # Organisations (#262, phase 5) : adhésion par invitation acceptée, annuaire interne, groupes et mandats sans droit
+      # de projet, gabarits versionnés, départ, administrateur plateforme sans droit implicite ; axe-core bureau et
+      # téléphone, passe anglaise.
+      - name: Recette de l'espace d'organisation — API, navigateur, axe-core bureau et téléphone, passe anglaise (apps/web/e2e/organisations.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/organisations node apps/web/e2e/organisations.mjs 2>&1 | tee -a e2e.log
       # MIG-01 à MIG-10, MIG-COEX-03/04/06 : simulation de migration vers Studio en lecture seule, sur une base NEUVE
       # (fadi_mig) peuplée du jeu synthétique déclaré — jamais sur une base existante. La recette crée un rôle SELECT
       # seul, compare l'empreinte de chaque table avant / après et exige le refus de toute écriture (25006, 42501).

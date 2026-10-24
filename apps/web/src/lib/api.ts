@@ -238,7 +238,7 @@ export interface MembersView {
 export type InvitationStatus = "pending" | "accepted" | "declined" | "expired" | "cancelled";
 export interface InvitationView {
   id: string;
-  purpose: "platform_account" | "project_participation";
+  purpose: "platform_account" | "project_participation" | "organization_membership";
   email: string;
   status: InvitationStatus;
   expiresAt: string;
@@ -248,6 +248,11 @@ export interface InvitationView {
   projectName: string | null;
   projectRole: MemberRole | null;
   invitedBy: string;
+  /** Finalité `organization_membership` (organisations, phase 5) : organisation, rôle et fonction proposés. */
+  organizationId?: string | null;
+  organizationName?: string | null;
+  organizationRole?: OrganizationRole | null;
+  organizationJobTitle?: string | null;
 }
 /** Réponse d'un envoi : `link` présent seulement quand le courriel n'a pas pu partir (lien à transmettre soi-même, D-1). */
 export interface MailOutcome { queued: boolean; reason: string | null; link?: string }
@@ -286,6 +291,89 @@ export type SupportGrantsView =
   | { you: "support"; grant: SupportGrant };
 
 const json = (body: unknown): RequestInit => ({ method: "POST", body: JSON.stringify(body) });
+
+// --- Organisations (phase 5, Issue #262) : espace d'organisation, sans aucun droit de projet ---------------------------
+export type OrganizationRole = "administrateur" | "membre";
+export type OrganizationStatus = "active" | "suspendue" | "close";
+export type MembershipStatus = "active" | "suspendue" | "terminee";
+export type MandateStatus = "propose" | "actif" | "refuse" | "annule" | "termine";
+export type TeamResponsibility = "diriger" | "produire" | "coordonner" | "verifier" | "approuver" | "diffuser";
+export type BusinessRole = "lecteur" | "concepteur" | "relecteur" | "coordinateur" | "approbateur" | "diffuseur";
+export interface Organization { id: string; name: string; kind?: string | null; details?: string | null; status: OrganizationStatus; createdAt?: string; updatedAt?: string }
+export interface MembershipSelf { membershipId: string; role: OrganizationRole; jobTitle: string | null; status: MembershipStatus; startsOn: string; endsOn: string | null }
+export interface OrganizationCapabilities { summary: boolean; read: boolean; manage: boolean; changeStatus: boolean; refusal: string | null }
+export interface OrganizationMandate {
+  id: string; organizationId: string; projectId: string; projectName: string | null; membershipId: string; responsibilities: TeamResponsibility[];
+  status: MandateStatus; startsOn: string | null; endsOn: string | null; endReason: string | null; replacesMandateId: string | null; note: string | null;
+  proposedAt: string; respondedAt: string | null; endedAt: string | null; organizationName?: string; representativeName?: string | null;
+}
+export interface OrganizationDetail { organization: Organization; you: MembershipSelf & { can: OrganizationCapabilities }; administrators: { membershipId: string; name: string | null }[] }
+export interface DirectoryMember {
+  membershipId: string; personId: string; name: string | null; email?: string; role: OrganizationRole; jobTitle: string | null; status: MembershipStatus;
+  startsOn: string; endsOn: string | null; endReason: string | null; groups: { id: string; name: string }[]; you: boolean;
+}
+export interface OrganizationGroup { id: string; name: string; description: string | null; status: "active" | "archive"; members: string[] }
+export interface TemplateEntry { label: string; businessRole: string | null; responsibilities: TeamResponsibility[]; proposedRoles: BusinessRole[]; groupId?: string | null }
+export interface TemplateVersion { id: string; version: number; entries: TemplateEntry[]; note: string | null; createdAt: string; applications: { id: string; projectId: string; projectName: string | null; appliedAt: string }[] }
+export interface OrganizationTemplate { id: string; name: string; description: string | null; status: "active" | "archive"; versions: TemplateVersion[] }
+export interface ApplicationLine { index: number; label: string; personId: string | null; outcome: "creer" | "deja-present" | "non-attribue" | "non-eligible"; businessRole: string | null; responsibilities: TeamResponsibility[]; proposedRoles: BusinessRole[]; participationId?: string | null }
+export interface DepartureImpact {
+  groups: { id: string; name: string }[];
+  mandates: { id: string; projectId: string; projectName: string | null; status: MandateStatus; consequence: "termine" | "annule" }[];
+  representations: { participationId: string; projectId: string; projectName: string | null; status: string; consequence: "a-revoir" }[];
+  projectAccessChanged: false;
+}
+export interface OrganizationProjectsView {
+  projects: {
+    projectId: string; name: string | null; owned: boolean; participation: { id: string; status: string; businessRole: string | null } | null;
+    mandates: OrganizationMandate[]; representedBy: { membershipId: string; status: string }[];
+  }[];
+  yourProjects: { projectId: string; name: string; owningOrganizationId: string | null; owningIsThis: boolean }[];
+}
+
+const orgPath = (id: string, rest = "") => `/organizations/${encodeURIComponent(id)}${rest}`;
+const send = (method: string, body?: unknown): RequestInit => ({ method, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+
+/** Espace d'organisation : 404 sans adhésion, 403 avec motif sinon ; jamais mis en file hors ligne. */
+export const organizationsApi = {
+  mine: () => request<{ memberships: { organization: Organization; membership: MembershipSelf }[]; mandates: OrganizationMandate[] }>("/organizations"),
+  create: (input: { name: string; kind?: string | null; details?: string | null; creationKey: string }) => request<{ organization: Organization; replayed: boolean }>("/organizations", json(input)),
+  get: (id: string) => request<OrganizationDetail>(orgPath(id)),
+  update: (id: string, input: { name?: string; kind?: string | null; details?: string | null }) => request<{ organization: Organization }>(orgPath(id), send("PATCH", input)),
+  setStatus: (id: string, status: OrganizationStatus, confirmName?: string) => request<{ organization: Organization }>(orgPath(id, "/status"), json({ status, ...(confirmName ? { confirmName } : {}) })),
+  directory: (id: string) => request<{ members: DirectoryMember[] }>(orgPath(id, "/directory")),
+  updateMembership: (id: string, membershipId: string, input: { role?: OrganizationRole; jobTitle?: string | null; status?: "active" | "suspendue" }) =>
+    request<{ membership: MembershipSelf }>(orgPath(id, `/memberships/${encodeURIComponent(membershipId)}`), send("PATCH", input)),
+  departure: (id: string, membershipId: string) => request<{ membershipId: string; status: MembershipStatus; impact: DepartureImpact }>(orgPath(id, `/memberships/${encodeURIComponent(membershipId)}/departure`)),
+  endMembership: (id: string, membershipId: string) => request<{ ended: boolean; impact: DepartureImpact }>(orgPath(id, `/memberships/${encodeURIComponent(membershipId)}/end`), json({})),
+  invitations: (id: string) => request<{ invitations: InvitationView[] }>(orgPath(id, "/invitations")),
+  invite: (id: string, input: { email: string; role: OrganizationRole; jobTitle?: string | null }, locale: Langue = LANGUE) =>
+    request<InvitationCreated>(orgPath(id, "/invitations"), json({ ...input, locale })),
+  cancelInvitation: (id: string, invitationId: string) => request<void>(orgPath(id, `/invitations/${encodeURIComponent(invitationId)}`), send("DELETE")),
+  groups: (id: string) => request<{ groups: OrganizationGroup[]; projectAccess: "aucun"; message: string }>(orgPath(id, "/groups")),
+  createGroup: (id: string, input: { name: string; description?: string | null }) => request<{ group: OrganizationGroup }>(orgPath(id, "/groups"), json(input)),
+  updateGroup: (id: string, groupId: string, input: { name?: string; description?: string | null; status?: "active" | "archive" }) => request<{ group: OrganizationGroup }>(orgPath(id, `/groups/${encodeURIComponent(groupId)}`), send("PATCH", input)),
+  addToGroup: (id: string, groupId: string, membershipId: string) => request<{ added: boolean; message: string }>(orgPath(id, `/groups/${encodeURIComponent(groupId)}/members/${encodeURIComponent(membershipId)}`), send("PUT")),
+  removeFromGroup: (id: string, groupId: string, membershipId: string) => request<{ removed: boolean; message: string }>(orgPath(id, `/groups/${encodeURIComponent(groupId)}/members/${encodeURIComponent(membershipId)}`), send("DELETE")),
+  templates: (id: string) => request<{ templates: OrganizationTemplate[] }>(orgPath(id, "/templates")),
+  createTemplate: (id: string, input: { name: string; description?: string | null; entries: TemplateEntry[]; note?: string | null }) => request<{ template: OrganizationTemplate }>(orgPath(id, "/templates"), json(input)),
+  createVersion: (id: string, templateId: string, input: { entries: TemplateEntry[]; note?: string | null }) => request<{ version: TemplateVersion; retroactive: false }>(orgPath(id, `/templates/${encodeURIComponent(templateId)}/versions`), json(input)),
+  previewTemplate: (id: string, templateId: string, version: number, input: { projectId: string; assignments: Record<string, string | null> }) =>
+    request<{ version: number; plan: ApplicationLine[]; alreadyApplied: string | null; grantsAccess: false }>(orgPath(id, `/templates/${encodeURIComponent(templateId)}/versions/${version}/preview`), json(input)),
+  applyTemplate: (id: string, templateId: string, version: number, input: { projectId: string; assignments: Record<string, string | null> }) =>
+    request<{ application: { id: string; plan: ApplicationLine[]; appliedAt: string }; replayed: boolean; grantsAccess: false }>(orgPath(id, `/templates/${encodeURIComponent(templateId)}/versions/${version}/apply`), json(input)),
+  projects: (id: string) => request<OrganizationProjectsView>(orgPath(id, "/projects")),
+  recordParticipation: (id: string, projectId: string) => request<{ participationId: string; created: boolean }>(orgPath(id, `/projects/${encodeURIComponent(projectId)}/participation`), send("PUT", {})),
+  declareOwner: (id: string, projectId: string) => request<{ owningOrganizationId: string | null; accessChanged: false }>(orgPath(id, `/projects/${encodeURIComponent(projectId)}/owner`), send("PUT")),
+  clearOwner: (id: string, projectId: string) => request<{ owningOrganizationId: string | null; accessChanged: false }>(orgPath(id, `/projects/${encodeURIComponent(projectId)}/owner`), send("DELETE")),
+  proposeMandate: (id: string, input: { projectId: string; membershipId: string; responsibilities?: TeamResponsibility[]; replacesMandateId?: string; note?: string | null }) =>
+    request<{ mandate: OrganizationMandate; grantsAccess: false }>(orgPath(id, "/mandates"), json(input)),
+  cancelMandate: (id: string, mandateId: string) => request<{ status: MandateStatus }>(orgPath(id, `/mandates/${encodeURIComponent(mandateId)}/cancel`), json({})),
+  endMandate: (id: string, mandateId: string) => request<{ status: MandateStatus }>(orgPath(id, `/mandates/${encodeURIComponent(mandateId)}/end`), json({})),
+  acceptMandate: (mandateId: string) => request<{ status: MandateStatus }>(`/organizations/mandates/${encodeURIComponent(mandateId)}/accept`, json({})),
+  declineMandate: (mandateId: string) => request<{ status: MandateStatus }>(`/organizations/mandates/${encodeURIComponent(mandateId)}/decline`, json({})),
+  resignMandate: (mandateId: string) => request<{ status: MandateStatus }>(`/organizations/mandates/${encodeURIComponent(mandateId)}/resign`, json({})),
+};
 /** Langue des courriels déclenchés par l'appel (UM-30) : celle de l'interface, jamais celle du navigateur. */
 const withLocale = <T extends object>(body: T, locale: Langue = LANGUE) => ({ ...body, locale });
 function query(params: Record<string, string | number | undefined>): string {
@@ -309,10 +397,10 @@ export const accountApi = {
   requestEmailVerification: () => request<{ verified: boolean; mail?: MailOutcome }>("/auth/verify-email/request", json(withLocale({}))),
   cancelDeletion: (token: string) => request<{ cancelled: boolean }>("/auth/cancel-deletion", json({ token })),
   lookupInvitation: (token: string) => request<InvitationLookup>("/auth/invitations/lookup", json({ token })),
-  acceptInvitation: (token: string) => request<{ accepted: boolean; projectId: string | null }>("/auth/invitations/accept", json({ token })),
+  acceptInvitation: (token: string) => request<{ accepted: boolean; projectId: string | null; organizationId?: string | null }>("/auth/invitations/accept", json({ token })),
   declineInvitation: (token: string) => request<{ declined: boolean }>("/auth/invitations/decline", json({ token })),
   activate: (input: { token: string; password: string; displayName?: string }) =>
-    request<{ user: CurrentUser; projectId: string | null }>("/auth/activate", json({ ...input, acceptTerms: true })),
+    request<{ user: CurrentUser; projectId: string | null; organizationId?: string | null }>("/auth/activate", json({ ...input, acceptTerms: true })),
   changePassword: (currentPassword: string, newPassword: string) => request<{ changed: boolean; revokedSessions: number }>("/auth/me/password", json(withLocale({ currentPassword, newPassword }))),
   sessions: () => request<{ sessions: AccountSession[] }>("/auth/me/sessions"),
   revokeSession: (id: string) => request<void>(`/auth/me/sessions/${encodeURIComponent(id)}`, { method: "DELETE" }),

@@ -109,6 +109,26 @@ export const ACTION_LABEL: Readonly<Record<string, string>> = {
   "project.ownership.transferred": "Propriété du projet transférée",
   "comment.audience_changed": "Audience d’un fil changée",
   "mail.quota_exceeded": "Courriel écarté (quota atteint)",
+  "organization.created": "Organisation créée",
+  "organization.updated": "Fiche d’organisation modifiée",
+  "organization.status_changed": "Statut de l’organisation changé",
+  "organization.membership.created": "Adhésion à une organisation créée",
+  "organization.membership.changed": "Adhésion à une organisation modifiée",
+  "organization.membership.ended": "Adhésion à une organisation terminée",
+  "organization.group.created": "Groupe d’organisation créé",
+  "organization.group.updated": "Groupe d’organisation modifié",
+  "organization.group.member_added": "Personne ajoutée à un groupe",
+  "organization.group.member_removed": "Personne retirée d’un groupe",
+  "organization.template.created": "Gabarit d’équipe créé",
+  "organization.template.version_created": "Nouvelle version d’un gabarit d’équipe",
+  "organization.template.applied": "Gabarit d’équipe appliqué à un projet",
+  "organization.mandate.proposed": "Mandat de représentant proposé",
+  "organization.mandate.accepted": "Mandat de représentant accepté",
+  "organization.mandate.declined": "Mandat de représentant décliné",
+  "organization.mandate.cancelled": "Mandat de représentant annulé",
+  "organization.mandate.ended": "Mandat de représentant terminé",
+  "organization.project.participation_recorded": "Organisation enregistrée comme partie d’un projet",
+  "organization.project.owner_declared": "Organisation déclarée partie propriétaire d’un projet",
 };
 
 export const FAMILY_LABEL: Readonly<Record<string, string>> = {
@@ -123,6 +143,7 @@ export const FAMILY_LABEL: Readonly<Record<string, string>> = {
   participation: "Participations",
   person: "Personnes",
   review: "Revue externe",
+  organization: "Organisations",
 };
 
 /** Libellé d'une action ; une action encore inconnue de l'interface (famille future) reste lisible par son code. */

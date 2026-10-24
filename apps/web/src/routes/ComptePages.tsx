@@ -143,7 +143,11 @@ export function InvitationPage() {
   if (!lookup) return <PublicPage title="Invitation"><p role="status">Lecture de l’invitation…</p></PublicPage>;
 
   const inv = lookup.invitation;
-  const finish = (projectId: string | null) => { void queryClient.invalidateQueries(); navigate(projectId ? `/projets/${projectId}` : "/accueil"); };
+  // Entrée dans le bon espace après acceptation : le projet, l'organisation (phase 5), sinon l'accueil.
+  const finish = (projectId: string | null, organizationId?: string | null) => {
+    void queryClient.invalidateQueries();
+    navigate(projectId ? `/projets/${projectId}` : organizationId ? `/organisations/${organizationId}` : "/accueil");
+  };
   const wrongAccount = !!user && user.email.toLowerCase() !== inv.email.toLowerCase();
   const blocking = lookup.refusal && lookup.refusal !== "wrong_account" ? lookup.message : null;
 
@@ -151,7 +155,7 @@ export function InvitationPage() {
     setBusy(true); setError(null);
     try { await fn(); } catch (err) { setError(apiMessage(err, describeAuthError(err))); } finally { setBusy(false); }
   }
-  const accept = () => run(async () => { finish((await accountApi.acceptInvitation(token)).projectId); });
+  const accept = () => run(async () => { const r = await accountApi.acceptInvitation(token); finish(r.projectId, r.organizationId); });
   const activate = (e: FormEvent) => {
     e.preventDefault();
     if ([...password].length < PASSWORD_MIN) { setError("Le mot de passe doit contenir au moins 12 caractères."); return; }
@@ -159,7 +163,7 @@ export function InvitationPage() {
     void run(async () => {
       const r = await accountApi.activate({ token, password, ...(displayName.trim() ? { displayName: displayName.trim() } : {}) });
       await adoptSession(r.user);
-      finish(r.projectId);
+      finish(r.projectId, r.organizationId);
     });
   };
   const signIn = (e: FormEvent) => {
@@ -175,10 +179,17 @@ export function InvitationPage() {
       <dl data-invitation>
         <dt>Pour</dt><dd translate="no">{inv.email}</dd>
         <dt>De la part de</dt><dd translate="no">{inv.invitedBy || "—"}</dd>
-        {inv.projectName ? <><dt>Projet</dt><dd translate="no">{inv.projectName}</dd><dt>Rôle proposé</dt><dd>{inv.projectRole ? ROLE_LABEL[inv.projectRole] : "—"}</dd></> : <><dt>Objet</dt><dd>Création d’un compte Fadi</dd></>}
+        {inv.purpose === "organization_membership" ? (
+          <>
+            <dt>Organisation</dt><dd translate="no">{inv.organizationName ?? "—"}</dd>
+            <dt>Rôle proposé</dt><dd>{inv.organizationRole === "administrateur" ? "Administrateur de l’organisation" : "Membre de l’organisation"}</dd>
+            {inv.organizationJobTitle ? <><dt>Fonction</dt><dd translate="no">{inv.organizationJobTitle}</dd></> : null}
+          </>
+        ) : inv.projectName ? <><dt>Projet</dt><dd translate="no">{inv.projectName}</dd><dt>Rôle proposé</dt><dd>{inv.projectRole ? ROLE_LABEL[inv.projectRole] : "—"}</dd></> : <><dt>Objet</dt><dd>Création d’un compte Fadi</dd></>}
         <dt>Valable jusqu’au</dt><dd>{dateLong(inv.expiresAt)}</dd>
       </dl>
       <p className="h7-muted">Une invitation est une proposition : rien n’est créé ni partagé tant que vous ne l’acceptez pas.</p>
+      {inv.purpose === "organization_membership" && <p className="h7-muted" data-invitation-organization>Une adhésion à une organisation n’ouvre aucun projet : chaque projet vous invite séparément.</p>}
       {declined ? <p role="status">Invitation déclinée. Aucun accès n’a été donné.</p>
         : blocking ? <p role="alert" className="form-error">{blocking}</p>
         : wrongAccount ? (

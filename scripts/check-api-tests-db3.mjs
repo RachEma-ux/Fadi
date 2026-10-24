@@ -36,6 +36,7 @@ export const DB3_PENDING_SUITES = Object.freeze([
   'src/routes/atelier-reseaux.test.ts',
   'src/routes/atelier-structure.test.ts',
   'src/routes/history.test.ts',
+  'src/routes/organizations.test.ts',
 ]);
 
 function relative(name) {

@@ -42,6 +42,7 @@ import {
 import {
   activateInvitation, findInvitationByToken, INVITATION_REFUSAL_MESSAGE, invitationRefusal, invitationView, inviterStillAuthorized,
 } from "../lib/invitations.js";
+import { organizationNameOf } from "../lib/organizations.js";
 import { newId } from "../lib/ids.js";
 import { userHistory } from "../lib/journal.js";
 import { JOURNAL_PAGE_DEFAULT, JOURNAL_PAGE_MAX } from "../lib/journal-audience.js";
@@ -617,7 +618,10 @@ authRouter.post("/reset-password", async (req, res) => {
 async function describeInvitation(inv: typeof invitations.$inferSelect) {
   const [project] = inv.projectId ? await db.select({ name: projects.name, code: projects.code }).from(projects).where(eq(projects.id, inv.projectId)).limit(1) : [];
   const [inviter] = inv.invitedBy ? await db.select({ email: users.email, displayName: users.displayName }).from(users).where(eq(users.id, inv.invitedBy)).limit(1) : [];
-  return invitationView(inv, { projectName: project ? `${project.code} — ${project.name}` : null, inviterName: inviter?.displayName || inviter?.email || (inv.invitedBy ? "" : "Exploitation de la plateforme") });
+  return invitationView(inv, {
+    projectName: project ? `${project.code} — ${project.name}` : null, inviterName: inviter?.displayName || inviter?.email || (inv.invitedBy ? "" : "Exploitation de la plateforme"),
+    organizationName: await organizationNameOf(inv.organizationId),
+  });
 }
 
 authRouter.post("/invitations/lookup", async (req, res) => {
@@ -658,7 +662,7 @@ authRouter.post("/invitations/accept", async (req, res) => {
     res.status(result.refusal === "wrong_account" ? 403 : 409).json({ error: result.refusal, message: INVITATION_REFUSAL_MESSAGE[result.refusal] });
     return;
   }
-  res.json({ accepted: true, projectId: result.inv.projectId });
+  res.json({ accepted: true, projectId: result.inv.projectId, organizationId: result.inv.organizationId ?? null });
 });
 
 authRouter.post("/invitations/decline", async (req, res) => {
@@ -703,7 +707,7 @@ authRouter.post("/activate", perIdentifier(10), async (req, res) => {
     }).returning();
     await audit(tx, { actorId: id, action: "account.activated", target: { type: "user", id }, metadata: { invitationId: locked.id }, ip: clientIp(req) });
     await activateInvitation(tx, locked, id, clientIp(req));
-    return { user: user!, projectId: locked.projectId };
+    return { user: user!, projectId: locked.projectId, organizationId: locked.organizationId ?? null };
   });
   if ("refusal" in result) {
     const message = result.refusal === "account_exists"
@@ -713,7 +717,7 @@ authRouter.post("/activate", perIdentifier(10), async (req, res) => {
     return;
   }
   const sessionUser = await openFullSession(req, res, result.user);
-  res.status(201).json({ user: publicUser(sessionUser), projectId: result.projectId });
+  res.status(201).json({ user: publicUser(sessionUser), projectId: result.projectId, organizationId: result.organizationId });
 });
 
 // ---------------------------------------------------------------------------------------------------------------------

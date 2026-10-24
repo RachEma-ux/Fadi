@@ -15,10 +15,11 @@ import { preferencesRouter } from "./routes/preferences.js";
 import { sandboxPreferencesRouter } from "./routes/sandbox-preferences.js";
 import { versionRouter } from "./routes/version.js";
 import { adminRouter } from "./routes/admin/index.js";
+import { organizationsRouter } from "./routes/organizations.js";
 import { csrfGuard } from "./middleware/csrf.js";
 
 /** Préfixes servis par l'API ; tout le reste est l'application (fichiers du build, ou `index.html` pour une route du client). */
-const API_PREFIX = /^\/(auth|admin\/(?:users|invitations|trash|audit)|projects|examples|library|notifications|preferences|health|sandbox\/preferences|version)(\/|$)/;
+const API_PREFIX = /^\/(auth|admin\/(?:users|invitations|trash|audit)|projects|organizations|examples|library|notifications|preferences|health|sandbox\/preferences|version)(\/|$)/;
 
 export function createApp() {
   const app = express();
@@ -68,6 +69,8 @@ export function createApp() {
   const apiLimit = Number(process.env["API_RATE_LIMIT"] ?? 300);
   const apiLimiter = rateLimit({ windowMs: 60 * 1000, limit: apiLimit, standardHeaders: true, legacyHeaders: false });
   app.use("/projects", apiLimiter, projectsRouter);
+  // Espace d'organisation (phase 5 des organisations, Issue #262) : la page du client est `/organisations` (repli SPA).
+  app.use("/organizations", apiLimiter, organizationsRouter);
   app.use("/examples", apiLimiter, examplesRouter);
   app.use("/library", apiLimiter, libraryRouter);
   app.use("/notifications", apiLimiter, notificationsRouter);
