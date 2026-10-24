@@ -1575,6 +1575,14 @@ BEGIN
   END LOOP;
 END $$;
 
+-- Organisations-participation, phase 3 bis — journal d'activité consultable par audience (OP-D13 a). Aucune table ni
+-- droit nouveau : `admin.audit_log` reste append-only (déclencheurs ci-dessus, `fadi_app` sans UPDATE ni DELETE, bloc
+-- D-7). Deux index de lecture, additifs : l'historique d'un projet rattache les invitations par `metadata.projectId`, et
+-- le filtre par famille d'actions de l'administration lit un préfixe d'action.
+CREATE INDEX IF NOT EXISTS audit_log_project_meta_idx ON admin.audit_log ((metadata->>'projectId'), id)
+  WHERE metadata ? 'projectId';
+CREATE INDEX IF NOT EXISTS audit_log_action_idx ON admin.audit_log (action text_pattern_ops, id);
+
 -- ---------------------------------------------------------------------------
 -- D-7 : droits au moindre privilège. Exécuté par un super-utilisateur (amorçage, CI) : propriété de tout transférée à
 -- `fadi_owner` ; exécuté par `fadi_migrator` (membre de `fadi_owner`) : droits rejoués ; sinon, simple avis (rôles non

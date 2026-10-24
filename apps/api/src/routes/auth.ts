@@ -9,6 +9,7 @@
  *   POST   /auth/me/password               { currentPassword, newPassword } → révoque les autres sessions
  *   GET    /auth/me/sessions               sessions ouvertes ; DELETE /auth/me/sessions/:id ; DELETE /auth/me/sessions (les autres)
  *   POST   /auth/me/mfa/setup|enable|disable|recovery-codes   double authentification TOTP (D-6)
+ *   GET    /auth/me/history                « Mon historique » (journal d'activité filtré, phase 3 bis), curseur `before`
  *   GET    /auth/me/export                 export JSON des données personnelles (D-5)
  *   DELETE /auth/me                        { password, confirm } → suppression programmée à 30 jours (D-5)
  *   POST   /auth/verify-email/request|confirm
@@ -42,6 +43,8 @@ import {
   activateInvitation, findInvitationByToken, INVITATION_REFUSAL_MESSAGE, invitationRefusal, invitationView, inviterStillAuthorized,
 } from "../lib/invitations.js";
 import { newId } from "../lib/ids.js";
+import { userHistory } from "../lib/journal.js";
+import { JOURNAL_PAGE_DEFAULT, JOURNAL_PAGE_MAX } from "../lib/journal-audience.js";
 import { adminEnabled, removesLastAdmin } from "../lib/platform-access.js";
 import { lockAdminEligibility, type Tx } from "../lib/admin-eligibility.js";
 import { checkPassword, PASSWORD_MAX, PASSWORD_REFUSAL_MESSAGE } from "../lib/security/password-policy.js";
@@ -338,6 +341,25 @@ authRouter.get("/me/sessions", async (req, res) => {
       expiresAt: s.expiresAt.toISOString(), absoluteExpiresAt: s.absoluteExpiresAt?.toISOString() ?? null, userAgent: s.userAgent, ip: s.ip,
     })),
   });
+});
+
+/**
+ * « Mon historique » (phase 3 bis, tâche 2) : connexions, changements de sécurité, invitations envoyées ou acceptées,
+ * accès support accordés ou utilisés sur ses projets — filtré côté serveur (`lib/journal-audience.ts`, audience
+ * `utilisateur`) : ses propres actions, celles qui visent son compte, les accès support sur les projets dont il est
+ * propriétaire. Pagination par curseur `before`, récent d'abord ; jamais d'adresse IP ni d'identité d'un autre compte,
+ * sauf l'administrateur d'un accès support sur son propre projet (déjà nommé dans « Accès support »).
+ */
+const historySchema = z.object({
+  before: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().min(1).max(JOURNAL_PAGE_MAX).default(JOURNAL_PAGE_DEFAULT),
+});
+
+authRouter.get("/me/history", async (req, res) => {
+  if (!requireUser(req, res)) return;
+  const parsed = historySchema.safeParse(req.query);
+  if (!parsed.success) return void res.status(400).json({ error: "invalid_input" });
+  res.json(await userHistory(req.user.id, parsed.data.before, parsed.data.limit));
 });
 
 authRouter.delete("/me/sessions/:sessionId", async (req, res) => {

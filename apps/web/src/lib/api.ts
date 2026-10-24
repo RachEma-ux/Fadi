@@ -72,6 +72,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
   return body as T;
 }
+/** Même appel, pour les modules d'API voisins (journal d'activité, `lib/journal-activite.ts`). */
+export { request as apiRequest };
 
 export interface CurrentUser {
   id: string;

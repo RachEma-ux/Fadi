@@ -18,6 +18,7 @@ import { MUTATION_KEYS, adoptComment, type CommentVars } from "../../lib/mutatio
 import { LOCALE } from "../../lib/i18n";
 import { declenche, propsRaccourci, type CommandeCollaboration } from "./commandes-collaboration";
 import { IconeCollaboration, RaccourciCollaboration } from "./IconeCollaboration";
+import { HistoriqueProjet } from "./HistoriqueProjet";
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 const KIND_LABEL: Record<string, string> = {
@@ -649,6 +650,8 @@ export function CollaborationModule({ projectId }: { projectId: string }) {
       </section>
 
       <SupportAccessPanel projectId={projectId} />
+
+      <HistoriqueProjet projectId={projectId} />
 
       <section className="biz-card" aria-labelledby="collab-comments">
         <h2 id="collab-comments">Commentaires ({v.comments.length})</h2>

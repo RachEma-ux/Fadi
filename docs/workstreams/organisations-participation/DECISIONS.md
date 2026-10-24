@@ -37,7 +37,17 @@ Journal du chantier. Les décisions héritées de la gestion des comptes (D-1 à
     chantier, dans une PR distincte (UM-28 : transmission SMTP dans `deploy/preprod` et filtre du mailer) ; l'ouverture de la
     revue externe en production exige toujours un envoi de courriels configuré.
 
+- **OP-3 — Exécution du plan de bout en bout (2026-10-24).** Le maître d'ouvrage demande, dans la session Claude Code
+  du 2026-10-24 : « organisations-participation/PLAN.md — Implémente de A à Z, exécute non stop ». La phase 1 étant fusionnée
+  dans `main` (PR #265), cette demande vaut validation 🛑 1 et autorisation d'enchaîner les phases 2, 3, 3 bis, 4, 5 et 6
+  sans attente d'acceptation intermédiaire (même forme que la délégation D-203 de la Planche). Elle ne vaut **ni**
+  déploiement, **ni** production, **ni** fusion sans CI verte ; les 🛑 3 et 4 deviennent des revues a posteriori consignées
+  (comptes rendus de phase), et le 🛑 final de la phase 6 reste au maître d'ouvrage. La phase 5, dont le cadrage détaillé
+  devait être repris au 🛑 4, est cadrée sur la partie 5 du concept (écarts consignés dans `STATUS.md`). « Responsables
+  du projet » (OP-D9, OP-D13) : le propriétaire, ou une participation active portant le rôle `coordinateur` à la portée
+  projet ou la responsabilité `diriger` (`apps/api/src/lib/project-responsables.ts`).
+
 ## Décisions en attente
 
 - Avis juridique sur les obligations de conservation des contacts (réserve d'OP-2).
-- 🛑 1 : revue du modèle et de la migration de la phase 1 avant la phase 2.
+- 🛑 final (phase 6) : acceptation du périmètre livré et de tout déploiement.
