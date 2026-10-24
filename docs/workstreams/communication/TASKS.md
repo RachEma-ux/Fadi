@@ -9,7 +9,7 @@
 
 ## En cours
 
-- Aucune.
+- COM-9 en attente : PR de livraison ouverte, CI à relever, puis revue et acceptation du maître d'ouvrage.
 
 ## Terminé
 
