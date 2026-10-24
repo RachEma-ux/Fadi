@@ -10,7 +10,7 @@
 
 ## En cours
 
-- OP-P2, OP-P5 — phases 2 et 5 en cours (PR #281) ; OP-P3b implémentée sur la branche, CI à relever (Issue : #262).
+- OP-P3, OP-P4 — phases 3 et 4 en cours (PR #281) ; OP-P2, OP-P3b, OP-P5 implémentées, CI verte sur `9abca29` (Issue : #262).
 
 ## Terminé
 
