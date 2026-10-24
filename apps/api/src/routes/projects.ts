@@ -27,6 +27,7 @@ import { collaborationRouter } from "./collaboration.js";
 import { membersRouter, ownerEmailOf } from "./members.js";
 import { participantsRouter } from "./participants.js";
 import { lockRouter } from "./lock.js";
+import { projectJournalRouter } from "./project-journal.js";
 import { archiveHash, recordProducedDocument } from "../lib/documents.js";
 import { loadStepContext } from "../lib/step-context.js";
 import { historyRouter } from "./history.js";
@@ -241,6 +242,8 @@ projectsRouter.use("/:projectId/members", membersRouter);
 projectsRouter.use("/:projectId/participants", participantsRouter);
 projectsRouter.use("/:projectId/lock", lockRouter);
 projectsRouter.use("/:projectId/support-grants", supportGrantsRouter);
+// Historique de la participation (phase 3 bis) : responsables du projet seulement.
+projectsRouter.use("/:projectId/journal", projectJournalRouter);
 
 projectsRouter.get("/:projectId", async (req, res) => {
   const project = await projectOr404(req, res, "read");

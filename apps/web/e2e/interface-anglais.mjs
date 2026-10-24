@@ -111,6 +111,8 @@ const ecrans = [
   ["parametres", "/parametres"],
   ["harmonie", "/harmonie"],
   ["bibliotheque", "/bibliotheque/batiments"],
+  // Espace d'organisation (organisations, phase 5) : la liste et le formulaire de création.
+  ["organisations", "/organisations"],
   ["parcours", `/projets/${pid}?module=parcours`],
   ["etape-03", `/projets/${pid}?module=parcours&etape=3`],
   ["programmation", `/projets/${pid}?module=programmation`],

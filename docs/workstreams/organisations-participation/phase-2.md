@@ -124,6 +124,15 @@
 | `comptes-admin.mjs` | 75 ✓, 4 ✗ — les quatre sont des courriels lus dans Mailpit (absent de ce poste) : non imputables à la phase |
 | Cohérence vue SQL / `deriveAccess` | 8 cas identiques (script local hors DB-3, transaction annulée) |
 
+### Après fusion de `ccr-3b26a9f6-z073dc` (phases 3 bis et 5)
+
+Conflits résolus (`audit.ts` : actions et cibles des deux phases, `organization.created` commun ; `CollaborationModule.tsx` :
+`ParticipantsSection` et `HistoriqueProjet` ; `en.json` : clés des deux côtés, doublons retirés). Libellés du journal
+ajoutés pour `participation.*`, `person.*`, `project.closed` / `project.reopened` (`journal-activite.ts` + `en.json`).
+Relancés : migration ×2 sur base neuve et sur base existante, `participations-`, `users-`, `organisations-migration-check`
+✅ ; `npm run typecheck` vert ; `npm test` vert hors suites DB-3 (13 refusées par la garde, `check-api-tests-db3` vert) ;
+`npm run build` vert ; `participants.mjs` 92 ✓, `collaboration-audience.mjs` 45 ✓.
+
 ## 5. Ce qui n'a pas tourné localement
 
 - **Tests DB-3** ajoutés à `apps/api/src/app.test.ts` (bloc « Équipe et participants — bascule de l'accès… », 3 cas :

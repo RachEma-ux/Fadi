@@ -66,15 +66,36 @@ export type AuditAction =
   | "participation.role_removed"
   | "person.contact_created"
   | "person.contact_erased"
-  | "organization.created"
   | "project.closed"
   | "project.reopened"
+  // Organisations (phase 5, Issue #262) : cible = l'organisation ; métadonnées = identifiants (adhésion, groupe, gabarit,
+  // mandat, projet), rôles et statuts avant / après — jamais d'adresse ni de nom de personne.
+  | "organization.created"
+  | "organization.updated"
+  | "organization.status_changed"
+  | "organization.membership.created"
+  | "organization.membership.changed"
+  | "organization.membership.ended"
+  | "organization.group.created"
+  | "organization.group.updated"
+  | "organization.group.member_added"
+  | "organization.group.member_removed"
+  | "organization.template.created"
+  | "organization.template.version_created"
+  | "organization.template.applied"
+  | "organization.mandate.proposed"
+  | "organization.mandate.accepted"
+  | "organization.mandate.declined"
+  | "organization.mandate.cancelled"
+  | "organization.mandate.ended"
+  | "organization.project.participation_recorded"
+  | "organization.project.owner_declared"
   | "mail.quota_exceeded";
 
 export interface AuditEntry {
   actorId: string | null;
   action: AuditAction;
-  target?: { type: "user" | "project" | "invitation" | "support_grant" | "session" | "mail" | "person"; id: string } | undefined;
+  target?: { type: "user" | "project" | "invitation" | "support_grant" | "session" | "mail" | "person" | "organization"; id: string } | undefined;
   metadata?: Record<string, unknown> | undefined;
   ip?: string | null | undefined;
 }

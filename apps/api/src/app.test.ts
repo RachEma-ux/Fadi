@@ -2682,6 +2682,158 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
       expect((await reader.a.get(`/projects/${pid}/steps/1/files/${upload.body.file.id}`)).status).toBe(200);
     });
   });
+
+  // Phase 3 bis (Issue #262, OP-D13 a) : journal d'activité consultable — chaque audience ne voit que son périmètre,
+  // filtré par le serveur ; le journal reste append-only.
+  describe("7. journal d'activité : administration, Mon historique, historique du projet", () => {
+    type Entry = { id: number; action: string; actor: { kind: string; email?: string | null }; details: Record<string, unknown>; subjects: Record<string, { kind: string; email?: string | null }>; ip?: string | null; projectId: string | null };
+
+    it("administration : tout le journal filtré (acteur, famille, action, cible, période), curseur, aucun export ; 404 pour un non-administrateur", async () => {
+      const boss = await account("journal-admin");
+      await enableMfa(boss, boss.a);
+      await promoteInDb(boss.id);
+      const someone = await account("journal-sujet");
+      await someone.a.post("/auth/logout");
+      expect((await someone.a.get("/admin/audit")).status).toBe(404);
+      const other = await account("journal-autre");
+      expect((await other.a.get("/admin/audit")).status).toBe(404);
+
+      const all = await boss.a.get("/admin/audit").query({ actor: someone.email });
+      expect(all.status).toBe(200);
+      expect(all.body.export).toEqual({ available: false, reason: expect.stringContaining("UM-20") });
+      const actions = (all.body.entries as Entry[]).map((e) => e.action);
+      expect(actions).toEqual(expect.arrayContaining(["auth.logout", "auth.register"]));
+      for (const e of all.body.entries as Entry[]) expect(e.actor).toMatchObject({ kind: "compte", email: someone.email });
+      expect("ip" in (all.body.entries as Entry[])[0]!).toBe(true);
+      // Récent d'abord, curseur : la deuxième page reprend après la dernière entrée de la première.
+      const ids = (all.body.entries as Entry[]).map((e) => e.id);
+      expect([...ids].sort((a, b) => b - a)).toEqual(ids);
+      const first = await boss.a.get("/admin/audit").query({ actor: someone.id, limit: 1 });
+      expect(first.body.entries).toHaveLength(1);
+      expect(first.body.nextCursor).toBe(first.body.entries[0].id);
+      const second = await boss.a.get("/admin/audit").query({ actor: someone.id, limit: 1, before: first.body.nextCursor });
+      expect(second.body.entries[0].id).toBeLessThan(first.body.entries[0].id);
+      // Famille, action exacte, cible, période.
+      const fam = await boss.a.get("/admin/audit").query({ actor: someone.email, family: "auth" });
+      expect((fam.body.entries as Entry[]).every((e) => e.action.startsWith("auth."))).toBe(true);
+      const exact = await boss.a.get("/admin/audit").query({ action: "auth.register", targetType: "user", targetId: someone.id });
+      expect((exact.body.entries as Entry[]).map((e) => e.action)).toEqual(["auth.register"]);
+      expect((await boss.a.get("/admin/audit").query({ actor: someone.id, to: "2000-01-01" })).body.entries).toEqual([]);
+      expect((await boss.a.get("/admin/audit").query({ actor: someone.id, from: "2000-01-01" })).body.entries.length).toBeGreaterThan(0);
+      expect((await boss.a.get("/admin/audit").query({ from: "pas-une-date" })).status).toBe(400);
+      expect((await boss.a.get("/admin/audit").query({ family: "inconnue" })).status).toBe(400);
+      // Aucune route d'export du journal.
+      expect((await boss.a.get("/admin/audit.csv")).status).toBe(404);
+    });
+
+    it("Mon historique : ses actions, ce qui vise son compte, le support sur ses projets ; jamais l'IP ni un autre compte", async () => {
+      const owner = await account("journal-moi");
+      const stranger = await account("journal-inconnu");
+      const created = await owner.a.post("/projects").send({ code: "JA.1", name: "Journal" });
+      const pid = created.body.id as string;
+      const admin = await account("journal-support");
+      await enableMfa(admin, admin.a);
+      await promoteInDb(admin.id);
+      expect((await owner.a.post(`/projects/${pid}/support-grants`).send({ adminId: admin.id, hours: 1, purpose: "Diagnostic journal" })).status).toBe(201);
+      expect((await admin.a.get(`/projects/${pid}`)).status).toBe(200);
+
+      const mine = await owner.a.get("/auth/me/history");
+      expect(mine.status).toBe(200);
+      const entries = mine.body.entries as Entry[];
+      const actions = entries.map((e) => e.action);
+      expect(actions).toEqual(expect.arrayContaining(["auth.register", "support.granted", "support.accessed"]));
+      for (const e of entries) expect(e.ip).toBeUndefined();
+      expect(entries.find((e) => e.action === "support.granted")!.actor).toEqual({ kind: "vous" });
+      expect(entries.find((e) => e.action === "support.accessed")!.actor).toMatchObject({ kind: "compte", email: admin.email });
+      expect(mine.body.projects[pid]).toEqual({ code: "JA.1", name: "Journal" });
+      // Rien de l'inconnu ; l'inconnu ne voit rien du propriétaire ni de son projet.
+      const theirs = (await stranger.a.get("/auth/me/history")).body.entries as Entry[];
+      expect(theirs.every((e) => e.projectId !== pid)).toBe(true);
+      expect(theirs.map((e) => e.action)).toContain("auth.register");
+      expect(theirs.some((e) => e.action.startsWith("support."))).toBe(false);
+      expect((await agent().get("/auth/me/history")).status).toBe(401);
+      // Une action de l'administration sur son compte : visible, l'administrateur n'est pas nommé.
+      const boss = await account("journal-admin2");
+      await enableMfa(boss, boss.a);
+      await promoteInDb(boss.id);
+      expect((await boss.a.post(`/admin/users/${stranger.id}/revoke-sessions`)).status).toBe(200);
+      const relogged = await passwordLogin(stranger);
+      const after = (await relogged.c.get("/auth/me/history")).body.entries as Entry[];
+      expect(after.find((e) => e.action === "admin.user.sessions_revoked")?.actor).toEqual({ kind: "administrateur" });
+    });
+
+    it("historique du projet : responsables seulement (propriétaire, coordinateur) ; 403 lecteur, éditeur et support ; 404 sans accès", async () => {
+      const owner = await account("journal-proprio");
+      const editor = await account("journal-editeur");
+      const reader = await account("journal-lecteur");
+      const stranger = await account("journal-etranger");
+      const pid = (await owner.a.post("/projects").send({ code: "JP.1", name: "Historique" })).body.id as string;
+      const other = (await owner.a.post("/projects").send({ code: "JP.2", name: "Autre" })).body.id as string;
+      expect((await owner.a.post(`/projects/${pid}/members`).send({ email: editor.email, role: "editeur" })).status).toBeLessThan(300);
+      expect((await owner.a.post(`/projects/${pid}/members`).send({ email: reader.email, role: "lecteur" })).status).toBeLessThan(300);
+      expect((await owner.a.post(`/projects/${other}/members`).send({ email: reader.email, role: "lecteur" })).status).toBeLessThan(300);
+      // Invitation d'une adresse sans compte (rattachée par metadata.projectId), puis annulée.
+      const invited = await owner.a.post(`/projects/${pid}/members`).send({ email: `journal-invite-${n}@example.com`, role: "lecteur" });
+      expect(invited.status).toBeLessThan(300);
+      const invitationId = (await pool.query("SELECT id FROM auth.invitations WHERE project_id = $1", [pid])).rows[0]?.id as string;
+      expect(invitationId).toBeTruthy();
+      expect((await owner.a.delete(`/projects/${pid}/members/invitations/${invitationId}`)).status).toBeLessThan(300);
+
+      const view = await owner.a.get(`/projects/${pid}/journal`);
+      expect(view.status).toBe(200);
+      const entries = view.body.entries as Entry[];
+      expect(entries.map((e) => e.action)).toEqual(expect.arrayContaining(["project.member.added", "invitation.created", "invitation.cancelled"]));
+      for (const e of entries) {
+        expect(e.ip).toBeUndefined();
+        expect(e.projectId).toBe(pid);
+      }
+      const added = entries.filter((e) => e.action === "project.member.added");
+      expect(added).toHaveLength(2);
+      expect(added.map((e) => e.subjects["memberId"]?.email).sort()).toEqual([editor.email, reader.email].sort());
+      expect(added[0]!.actor).toEqual({ kind: "vous" });
+      expect(added.every((e) => !("memberId" in e.details))).toBe(true);
+      // L'autre projet n'apparaît jamais ; le filtre par famille reste côté serveur.
+      expect(entries.length).toBe(4);
+      const inv = await owner.a.get(`/projects/${pid}/journal`).query({ family: "invitation" });
+      expect((inv.body.entries as Entry[]).map((e) => e.action).sort()).toEqual(["invitation.cancelled", "invitation.created"]);
+
+      for (const [who, status] of [[editor, 403], [reader, 403], [stranger, 404]] as const) {
+        const r = await who.a.get(`/projects/${pid}/journal`);
+        expect(r.status).toBe(status);
+        if (status === 403) expect(r.body.motif).toBe("responsable-requis");
+      }
+      // Coordinateur à la portée projet (affectation explicite) : devient responsable.
+      await pool.query(
+        `INSERT INTO project_role_assignments (id, participation_id, role, scope_type, origin)
+         SELECT 'pra_journal_' || $3::text, pp.id, 'coordinateur', 'projet', 'attribution' FROM project_participations pp
+           JOIN people pe ON pe.id = pp.person_id WHERE pp.project_id = $1 AND pe.user_id = $2 AND pp.status = 'active'`,
+        [pid, editor.id, String(n)],
+      );
+      expect((await editor.a.get(`/projects/${pid}/journal`)).status).toBe(200);
+      // Accès support : lecture du projet, pas de l'historique de participation.
+      const admin = await account("journal-support-p");
+      await enableMfa(admin, admin.a);
+      await promoteInDb(admin.id);
+      expect((await owner.a.post(`/projects/${pid}/support-grants`).send({ adminId: admin.id, hours: 1, purpose: "Diagnostic historique" })).status).toBe(201);
+      expect((await admin.a.get(`/projects/${pid}/journal`)).status).toBe(403);
+      expect(((await owner.a.get(`/projects/${pid}/journal`)).body.entries as Entry[]).map((e) => e.action)).toEqual(expect.arrayContaining(["support.granted", "support.accessed"]));
+    });
+
+    it("le journal reste append-only : modification et suppression refusées, fadi_app sans UPDATE ni DELETE", async () => {
+      const { rows } = await pool.query("INSERT INTO admin.audit_log (action) VALUES ('db3.journal.check') RETURNING id");
+      // Refus par le déclencheur append-only, ou plus tôt par l'absence de droit du rôle de test (DB-3 : la garde masque
+      // alors le message en QUERY_FAILED) : dans les deux cas la ligne n'est ni modifiée ni supprimée.
+      await expect(pool.query("UPDATE admin.audit_log SET action = 'x' WHERE id = $1", [rows[0].id])).rejects.toThrow();
+      await expect(pool.query("DELETE FROM admin.audit_log WHERE id = $1", [rows[0].id])).rejects.toThrow();
+      const still = await pool.query("SELECT action FROM admin.audit_log WHERE id = $1", [rows[0].id]);
+      expect(still.rows[0]).toEqual({ action: "db3.journal.check" });
+      const app = await pool.query("SELECT 1 FROM pg_roles WHERE rolname = 'fadi_app'");
+      if (app.rowCount) {
+        const priv = await pool.query("SELECT has_table_privilege('fadi_app', 'admin.audit_log', 'UPDATE') AS u, has_table_privilege('fadi_app', 'admin.audit_log', 'DELETE') AS d, has_table_privilege('fadi_app', 'admin.audit_log', 'SELECT') AS s");
+        expect(priv.rows[0]).toEqual({ u: false, d: false, s: true });
+      }
+    });
+  });
 });
 
 // ---------------------------------------------------------------------------------------------------------------------
