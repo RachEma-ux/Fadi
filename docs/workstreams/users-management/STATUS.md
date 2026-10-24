@@ -16,7 +16,7 @@ D7-final et final : **clos** par la décision de fusion du maître d'ouvrage (20
 PR #255 n'est attendue. Reste au maître d'ouvrage : le déploiement en production. UM-1 est levé (UM-25) : le chantier
 « Organisations, participation et revue externe » est ouvert ([Issue #262](https://github.com/RachEma-ux/Fadi/issues/262)).
 
-**Amendement de D-5 (UM-27, 2026-10-24) : implémenté, vérifié en local, [PR #270](https://github.com/RachEma-ux/Fadi/pull/270) vers `main` (non fusionnée, aucun
+**Amendement de D-5 (UM-27, 2026-10-24) : implémenté, vérifié en local et en CI (`4aa7d0b`), [PR #270](https://github.com/RachEma-ux/Fadi/pull/270) vers `main` (non fusionnée, aucun
 déploiement).** Corbeille des comptes et « Anonymiser maintenant » dans `/admin/utilisateurs` — voir la section UM-27.
 
 ## Faits vérifiés
@@ -49,7 +49,9 @@ Branche `feat/253-corbeille-anonymiser`, depuis `main` à `c201d2b`. Vérifié e
   ajouté (lien et « Restaurer » simultanés, 5 fois : exactement l'un des deux) ; `app.test.ts` **78 tests verts** sur base
   jetable locale ; `comptes-api.mjs` et `comptes-securite.mjs` verts sur l'API reconstruite.
 - Aucune migration : aucune colonne ni table ajoutée ; le déploiement de cette PR ne change pas RUNBOOK.md.
-- CI de la PR : à relever sur la PR (DB-3 inclus).
+- **CI de la PR #270 verte sur `4aa7d0b`** (run CI 40105186547 et les 5 autres workflows, 2026-10-24 15:02–15:16 UTC) :
+  `validate` avec DB-3 actif (clé `fadi-ci-db3`) — 577 tests API, dont **123 dans les 12 suites DB-3** (116 + 7 nouveaux) ;
+  `image`, Studio V1 et les cinq tranches e2e (`complements` : `comptes-api`, `comptes-securite`, `comptes-admin`) vertes.
 
 ### Phase 0 — concept et audit
 
@@ -255,7 +257,7 @@ Relevé de `sudo fadi-preprod status` transmis par le maître d'ouvrage (VPS, no
 
 ## Points ouverts
 
-- UM-27 : CI de la PR et acceptation du maître d'ouvrage attendues ; aucune fusion ni déploiement par la session.
+- UM-27 : CI verte sur `4aa7d0b` ; acceptation du maître d'ouvrage attendue ; aucune fusion ni déploiement par la session.
 - UM-27, signalé : pas de corbeille pour les projets ni les documents (hors périmètre de la décision ; le concept ne
   l'exige pas). L'anonymisation supprime les projets non partagés du compte, et « Anonymiser maintenant » avance cette
   suppression : à trancher par le maître d'ouvrage s'il veut une corbeille de projets.

@@ -27,8 +27,8 @@ Mis à jour : 2026-10-24 (UTC).
 
 ## Prochaine action
 
-- UM-27 : relever la CI de la PR (DB-3 compris : `app.test.ts` doit compter 78 tests) ; corriger si rouge ; puis attendre
-  l'acceptation et la fusion par le maître d'ouvrage. Aucun déploiement sans son accord (aucune migration ajoutée).
+- UM-27 : CI de la PR #270 verte sur `4aa7d0b` (DB-3 : 123 tests dans les 12 suites) ; revérifier la CI du HEAD courant,
+  puis attendre l'acceptation et la fusion par le maître d'ouvrage. Aucun déploiement sans son accord (aucune migration ajoutée).
 
 - CI de `main` verte après la fusion (`516e2f7`, run CI 39911221480).
 - Préproduction : **faite** — `02329e1` déployé le 2026-10-23 à 15:28 UTC (PR #264, `init-env` lancé ; UM-26, STATUS.md).
