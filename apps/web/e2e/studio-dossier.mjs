@@ -83,7 +83,10 @@ try {
   check("lecteur inscrit", (await lecteur("POST", "/auth/register", compteLecteur)).status === 201);
   check("compte étranger inscrit", (await etranger("POST", "/auth/register", { email: `studio-dossier-x-${randomUUID().replaceAll("-", "")}@example.test`, password: randomBytes(24).toString("hex") })).status === 201);
   const projet = (await api("post", "/projects", { code: `P.DOS.${randomUUID().slice(0, 6)}`, name: "Studio — production documentaire (recette)" })).body;
-  check("lecteur invité", (await api("post", `/projects/${projet.id}/members`, { email: compteLecteur.email, role: "lecteur" })).status === 201);
+  const invite = await api("post", `/projects/${projet.id}/members`, { email: compteLecteur.email, role: "lecteur" });
+  check("lecteur invité", invite.status === 201);
+  // CR-D4 (écart E2) : un nouveau lecteur ne télécharge le dossier qu'avec l'export accordé par le propriétaire.
+  check("lecteur : export accordé par le propriétaire", (await api("patch", `/projects/${projet.id}/members/${invite.body?.userId}`, { canExport: true })).body?.canExport === true);
   const racine = `/projects/${projet.id}/studio`;
   const etude = (await api("post", `${racine}/studies`, { name: "Étude TEST-001" })).body;
   const studyId = etude.study.id, variantId = etude.variant.id;
