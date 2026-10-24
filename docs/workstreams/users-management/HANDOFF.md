@@ -11,6 +11,9 @@ Mis à jour : 2026-10-24 (UTC).
   consignement (PR #259, #263 et la présente mise à jour du suivi).
 - **UM-27 (2026-10-24)** : branche `feat/253-corbeille-anonymiser` (depuis `main` à `c201d2b`), [PR #270](https://github.com/RachEma-ux/Fadi/pull/270) vers `main`
   **non fusionnée** — corbeille des comptes et « Anonymiser maintenant » (amendement de D-5, DECISIONS.md).
+- **UM-30 (2026-10-24)** : branche `fix/um-29-langue-courriels` (depuis `main` à `7083285`), [PR #275](https://github.com/RachEma-ux/Fadi/pull/275) vers `main` **non
+  fusionnée** — langue des courriels = langue de l'interface (`locale` envoyé par le client), sinon français ;
+  `Accept-Language` n'est plus lu (DECISIONS.md UM-30).
 - Dernier commit vérifié : à relever en début de session ; ne pas réutiliser un SHA périmé.
 
 ## Dernier état vérifié
@@ -27,15 +30,15 @@ Mis à jour : 2026-10-24 (UTC).
 
 ## Prochaine action
 
-- UM-27 et UM-28 : **fusionnés** (PR #270 `2cc038a`, PR #271 `e03fdfc`) ; CI de `main` verte sur `2cc038a`.
+- UM-27, UM-28 et UM-30 : **fusionnés** (PR #270 `2cc038a`, PR #271 `e03fdfc`, PR #275 `5767835`) ; CI de `main` verte sur `2cc038a`.
 - UM-SERVICE — mise en service en **préproduction** (RUNBOOK §3 bis, §5 à §9), gestes de l'administrateur sur le VPS :
   variables `PREPROD_MAIL_*` / `PREPROD_SMTP_*` dans `/opt/fadi-preprod/env/.env.preprod` puis `sudo fadi-preprod up` et
   envoi de test ; premier administrateur (`sudo docker exec fadi-preprod-app-1 node apps/api/scripts/create-admin.mjs
   <adresse>` après inscription) ; double authentification ; `PREPROD_FADI_ADMIN_ENABLED=true` puis `sudo fadi-preprod up` ;
-  recette §9. Relever ensuite `fadi-preprod status`, `/version`, `/admin/users` et les comptages d'administrateurs
-  (STATUS.md, points ouverts) pour consigner.
-- PR ouvertes qui touchent ce chantier : #274 (UM-29, écarts E1 à E3 des règles communes) et #275 (UM-30, langue des
-  courriels).
+  recette §9, plus le contrôle UM-30 (invitation depuis un téléphone réglé en anglais, interface en français → sujet
+  « Invitation à rejoindre Fadi »). Relever ensuite `fadi-preprod status`, `/version`, le réglage et les comptages
+  d'administrateurs (STATUS.md, points ouverts) pour consigner.
+- PR ouverte qui touche ce chantier : #274 (UM-29, écarts E1 à E3 des règles communes).
 - **Consigne du maître d'ouvrage (2026-10-23) : on ne touche pas à www.fadimmo.com ; pendant le développement, tout se
   déploie sur preprod.fadimmo.com.** Aucune session ne prépare ni ne lance de déploiement de production sans nouvelle
   instruction explicite de sa part.

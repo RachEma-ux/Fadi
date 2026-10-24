@@ -134,7 +134,7 @@ authRouter.post("/register", perIdentifier(10), async (req, res) => {
 
   const passwordHash = await hashPassword(password);
   const id = newId("user");
-  const locale = mailLocale(req, (req.body as { locale?: unknown }).locale);
+  const locale = mailLocale(req);
   const created = await db.transaction(async (tx) => {
     const [row] = await tx.insert(users).values({ id, email, passwordHash, passwordChangedAt: new Date() }).returning();
     await audit(tx, { actorId: id, action: "auth.register", target: { type: "user", id }, ip: clientIp(req) });

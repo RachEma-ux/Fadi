@@ -11,10 +11,13 @@
 
 ## En cours
 
-- Aucune tâche en cours dans ce dossier ; PR ouvertes qui le mettent à jour elles-mêmes : #274 (UM-29) et #275 (UM-30).
+- Aucune tâche en cours dans ce dossier ; PR ouverte qui le met à jour elle-même : #274 (UM-29).
 
 ## Terminé
 
+- [x] UM-30 — Langue des courriels = langue de l'interface, sinon français (`Accept-Language` n'est plus lu) :
+  [PR #275](https://github.com/RachEma-ux/Fadi/pull/275) fusionnée le 2026-10-24 à 18:08 UTC (`5767835`) ; contrôle en
+  préproduction rattaché à UM-SERVICE (Issue : #253).
 - [x] UM-27 — Corbeille des comptes et « Anonymiser maintenant » (amendement de D-5) : [PR #270](https://github.com/RachEma-ux/Fadi/pull/270)
   fusionnée le 2026-10-24 à 16:09 UTC (`2cc038a`), CI de `main` verte (Issue : #253).
 - [x] UM-28 — Courriel en préproduction, domaines réservés jamais envoyés : [PR #271](https://github.com/RachEma-ux/Fadi/pull/271)

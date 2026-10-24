@@ -118,7 +118,7 @@ membersRouter.post("/", async (req, res) => {
   if (!account) {
     // Adresse sans compte (UM-3) : une invitation nominative (projet + rôle), jamais un compte créé d'office. Sans envoi
     // possible (quota, transport absent), le lien est rendu au propriétaire pour qu'il le transmette (D-1).
-    const locale = mailLocale(req, (req.body as { locale?: unknown }).locale);
+    const locale = mailLocale(req);
     const result = await db.transaction(async (tx) => {
       const created = await createOrRenewInvitation(tx, { purpose: "project_participation", email: parsed.data.email, projectId: project.id, projectRole: parsed.data.role, invitedBy: req.user!.id, ip: clientIp(req) });
       const link = publicLink(PUBLIC_PATHS.invitation, created.token);

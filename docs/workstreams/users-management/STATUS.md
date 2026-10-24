@@ -22,7 +22,21 @@ fusionné ([PR #271](https://github.com/RachEma-ux/Fadi/pull/271), `e03fdfc`). `
 déploiement automatique de la préproduction ; son passage effectif n'est pas constaté depuis une session cloud.
 **Mise en service en préproduction (RUNBOOK §3 bis, §5 à §9) : non consignée** — tâche UM-SERVICE. Corbeille des comptes et « Anonymiser maintenant » dans `/admin/utilisateurs` — voir la section UM-27.
 
+**UM-30 (2026-10-24) : langue des courriels = langue de l'interface, sinon français ; branche `fix/um-29-langue-courriels`,
+[PR #275](https://github.com/RachEma-ux/Fadi/pull/275) fusionnée le 2026-10-24 à 18:08 UTC (`5767835`) ; contrôle en préproduction : UM-SERVICE.** Voir la section UM-30.
+
 ## Faits vérifiés
+
+### Langue des courriels (UM-30, 2026-10-24)
+
+Branche `fix/um-29-langue-courriels`, depuis `main` à `7083285`. Vérifié dans la session :
+
+- `npm run typecheck` : vert. `npm run build` : vert.
+- `npm test` : paquets et web verts ; API : tests purs verts, dont `lib/mail-locale.test.ts` (3 tests) ; les 12 suites
+  DB-3 refusées par la garde **seule** (`TARGET_REQUIRED`), comme attendu sans la clé `fadi-ci-db3`.
+- `comptes-admin.mjs` sur `1bdc0be`, PostGIS 16 + Mailpit v1.20.4 en local (même configuration que la CI, base neuve) :
+  **verte**, dont la section 5 bis — choix par défaut « Français », navigateur `en-US` et interface en français → sujet
+  « Invitation à rejoindre Fadi », choix « English » → « Invitation to join Fadi », axe-core sans violation.
 
 ### Corbeille et « Anonymiser maintenant » (UM-27, 2026-10-24)
 
