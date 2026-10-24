@@ -16,7 +16,7 @@ D7-final et final : **clos** par la décision de fusion du maître d'ouvrage (20
 PR #255 n'est attendue. Reste au maître d'ouvrage : le déploiement en production. UM-1 est levé (UM-25) : le chantier
 « Organisations, participation et revue externe » est ouvert ([Issue #262](https://github.com/RachEma-ux/Fadi/issues/262)).
 
-**Amendement de D-5 (UM-27, 2026-10-24) : implémenté, vérifié en local, PR ouverte vers `main` (non fusionnée, aucun
+**Amendement de D-5 (UM-27, 2026-10-24) : implémenté, vérifié en local, [PR #270](https://github.com/RachEma-ux/Fadi/pull/270) vers `main` (non fusionnée, aucun
 déploiement).** Corbeille des comptes et « Anonymiser maintenant » dans `/admin/utilisateurs` — voir la section UM-27.
 
 ## Faits vérifiés
