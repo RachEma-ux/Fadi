@@ -1,22 +1,32 @@
-# Communication — Tâches
+# Communication (COM) — Tâches
 
 ## À faire
 
-- [ ] COMMUNICATION-01 — Cadrer le chantier et vérifier ses contraintes. (Issue : https://github.com/RachEma-ux/Fadi/issues/280).
+- [ ] COM-9 — Acceptation du maître d'ouvrage (décisions COM-D1 à COM-D14) après CI verte de la PR.
+- [ ] COM-10 — Après Organisations phase 2 : brancher l'audience sur les affectations (`loadProjectAccess`), sans changer le modèle COM.
+- [ ] COM-11 — Après Organisations phase 4 : audience « paquet » et voie de revue externe (concept § 4).
+- [ ] COM-12 — Suites du concept sur décision : photos et épingles, espace d'organisation, BCF, annuaire, courriel, IA.
 
 ## En cours
 
-- Aucune tâche engagée à la création.
+- Aucune.
 
 ## Terminé
 
-- Aucune tâche validée.
+- [x] COM-0 — Plan d'implémentation et décisions COM-D1 à COM-D14 (`PLAN.md`, `DECISIONS.md`).
+- [x] COM-1 — Schéma (`init.sql`, `schema.ts`), règles pures (`lib/com-audience.ts`), conversations, audiences, participants, messages, références et mentions (`routes/com.ts`, `lib/com.ts`).
+- [x] COM-2 — Partage d'extraits et actions liées avec aperçu et empreinte.
+- [x] COM-3 — Demandes de précision (`lib/demandes-regles.ts`, `lib/demandes.ts`, `routes/demandes.ts`).
+- [x] COM-4 — Accusés, boîte (`GET /com/boite`), notifications `message` et `demande`.
+- [x] COM-5 — Interface : section Communication, demandes, panneau d'étape, « Ma boîte », règle d'or, traduction anglaise.
+- [x] COM-6 — File d'envoi rejouable hors ligne et états montrés.
+- [x] COM-7 — Responsabilités et reprise (animation, réattribution).
+- [x] COM-8 — Recette `apps/web/e2e/communication.mjs` (CI, tranche `complements`) et documentation.
 
 ## Bloqué
 
-- Aucune tâche bloquée à ce stade.
+- Aucune tâche bloquée.
 
 ## Critères de sortie
 
-- Chaque tâche liée à une preuve, une Issue et une PR si elle modifie le dépôt.
-- Tests pertinents connus et signalés ; décision d'acceptation consignée.
+- CI verte de la PR (dont la recette `communication.mjs` et `interface-anglais.mjs`) ; acceptation du maître d'ouvrage consignée.

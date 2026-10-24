@@ -18,6 +18,8 @@ import { MUTATION_KEYS, adoptComment, type CommentVars } from "../../lib/mutatio
 import { LOCALE } from "../../lib/i18n";
 import { declenche, propsRaccourci, type CommandeCollaboration } from "./commandes-collaboration";
 import { IconeCollaboration, RaccourciCollaboration } from "./IconeCollaboration";
+import { CommunicationPanel } from "./communication/CommunicationPanel";
+import { DemandesPanel, ResponsabilitesPanel } from "./communication/DemandesPanel";
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 const KIND_LABEL: Record<string, string> = {
@@ -642,6 +644,20 @@ export function CollaborationModule({ projectId }: { projectId: string }) {
         <p className="programme-note">{v.access.sharing.reason}</p>
         <p className="programme-note">{v.sync.offline.reason}</p>
       </section>
+
+      <section className="biz-card" aria-labelledby="collab-communication">
+        <h2 id="collab-communication">Communication</h2>
+        <p className="biz-sub">Fils sur un élément du projet, conversations directes et de groupe. Chaque conversation a une audience affichée avant l’envoi ; une mention ou un lien n’ouvre aucun accès.</p>
+        <CommunicationPanel projectId={projectId} />
+      </section>
+
+      <section className="biz-card" aria-labelledby="collab-demandes">
+        <h2 id="collab-demandes">Demandes de précision</h2>
+        <p className="biz-sub">Question, répondant désigné, échéance, réponse et clôture tracées. La demande est l’enregistrement de référence : une conversation n’en affiche que l’état.</p>
+        <DemandesPanel projectId={projectId} />
+      </section>
+
+      <ResponsabilitesPanel projectId={projectId} />
 
       <section className="biz-card" aria-labelledby="collab-members">
         <h2 id="collab-members">Membres du projet</h2>

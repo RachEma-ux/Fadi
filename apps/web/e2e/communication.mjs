@@ -266,7 +266,8 @@ try {
   if (OUT) { mkdirSync(OUT, { recursive: true }); await page.screenshot({ path: `${OUT}/communication-projet.png`, fullPage: false }); }
   await page.goto(`${BASE}/boite`, { waitUntil: "domcontentloaded" });
   await page.locator("[data-com-boite]").waitFor({ timeout: 30_000 });
-  check("11. page « Ma boîte » : la réponse à clore apparaît", await page.locator("[data-com-boite-item]").count() >= 1 && (await page.locator("[data-com-boite]").textContent())?.includes("Réponse de"));
+  await page.locator('[data-com-boite-item="demande-a-repondre"]').first().waitFor({ timeout: 15_000 }).catch(() => undefined);
+  check("11. page « Ma boîte » : la demande du lecteur à répondre apparaît", await page.locator('[data-com-boite-item="demande-a-repondre"]').count() >= 1 && (await page.locator("[data-com-boite]").textContent())?.includes(`Demande de ${cReader.email}`));
   if (OUT) await page.screenshot({ path: `${OUT}/communication-boite.png`, fullPage: false });
 } finally {
   await browser.close();
