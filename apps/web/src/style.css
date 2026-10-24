@@ -3939,9 +3939,18 @@ fieldset.access-fieldset:disabled {
   border-left: 3px solid #bd873d;
   padding: 6px 10px;
 }
+/* Un long libellé d'option (rôle, élément de portée) ne doit jamais élargir le formulaire au-delà de l'écran. */
+.participants-form > *,
+.participants-form label {
+  min-width: 0;
+}
+.participants-form select {
+  max-width: 100%;
+  min-width: 0;
+}
 @media (max-width: 720px) {
   .participants-form {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

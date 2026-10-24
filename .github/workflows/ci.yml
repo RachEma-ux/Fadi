@@ -591,6 +591,15 @@ jobs:
         run: |
           set -o pipefail
           node apps/web/e2e/participants.mjs 2>&1 | tee -a e2e.log
+      # Portées étroites (#262, reliquat de la phase 2) : une portée étude / variante / révision / documents seule n'ouvre
+      # rien (404 partout) ; capacité ajoutée dans son périmètre (écriture Studio, approbation, diffusion, recontrôle,
+      # téléchargement), refusée hors périmètre ; aucune régression des rôles de projet ; sélecteur de l'élément et
+      # capacité résultante dans l'onglet Participants, axe-core bureau et téléphone, passe anglaise.
+      - name: Recette Portées étroites — périmètres Studio et Documents, interface d'attribution (apps/web/e2e/portees-etroites.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/portees-etroites.mjs 2>&1 | tee -a e2e.log
       # Communication (COM, Issue #280) : audiences, mentions et références sans accès, partage d'extraits avec aperçu,
       # rejeu hors ligne, accusés, demandes de précision, actions liées, révocation avant synchronisation, interface.
       - name: Recette Communication — audiences, mentions, partages, hors ligne, accusés, demandes, révocation, interface (apps/web/e2e/communication.mjs)
