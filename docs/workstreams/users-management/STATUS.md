@@ -9,18 +9,21 @@ UM-23) a été fusionnée par le maître d'ouvrage le 2026-10-23 à 06:23 UTC (c
 CI de `main` verte sur `516e2f7` : run CI 39911221480 et 5 autres workflows (14 contrôles réussis, 3 sautés comme sur la
 PR). **Préproduction** : `02329e1` déployé le 2026-10-23 à 15:28:46 UTC
 par le déploiement automatique (outillage D-7 de la PR #264, `init-env` lancé) — voir la section Préproduction.
-**Production : non déployée** ; le déploiement suit RUNBOOK.md (§1 à §11, dont §4 et §4 bis) et attend l'accord explicite
+**Production (www.fadimmo.com) : non déployée, hors de toute action** (consigne du maître d'ouvrage du 2026-10-23 : pendant le développement, tout se déploie sur preprod.fadimmo.com) ; un futur déploiement suivrait RUNBOOK.md (§1 à §11, dont §4 et §4 bis) et attend l'accord explicite
 du maître d'ouvrage.
 DB-3 : **vérifié en CI** sur `570d248` (UM-17) — les 12 suites passent sur base jetable attestée. Points d'arrêt 🛑 2,
 D7-final et final : **clos** par la décision de fusion du maître d'ouvrage (2026-10-23, UM-24) ; plus aucune revue de la
 PR #255 n'est attendue. Reste au maître d'ouvrage : le déploiement en production. UM-1 est levé (UM-25) : le chantier
 « Organisations, participation et revue externe » est ouvert ([Issue #262](https://github.com/RachEma-ux/Fadi/issues/262)).
 
-**Amendement de D-5 (UM-27, 2026-10-24) : implémenté, vérifié en local et en CI (`4aa7d0b`), [PR #270](https://github.com/RachEma-ux/Fadi/pull/270) vers `main` (non fusionnée, aucun
-déploiement).** Corbeille des comptes et « Anonymiser maintenant » dans `/admin/utilisateurs` — voir la section UM-27.
+**Amendement de D-5 (UM-27, 2026-10-24) : fusionné dans `main` ([PR #270](https://github.com/RachEma-ux/Fadi/pull/270), `2cc038a`, 2026-10-24 16:09 UTC),
+CI de `main` verte sur `2cc038a` (validate, e2e, image et les 5 autres workflows).** Courriel en préproduction (UM-28) :
+fusionné ([PR #271](https://github.com/RachEma-ux/Fadi/pull/271), `e03fdfc`). `2cc038a` remplit les conditions du
+déploiement automatique de la préproduction ; son passage effectif n'est pas constaté depuis une session cloud.
+**Mise en service en préproduction (RUNBOOK §3 bis, §5 à §9) : non consignée** — tâche UM-SERVICE. Corbeille des comptes et « Anonymiser maintenant » dans `/admin/utilisateurs` — voir la section UM-27.
 
 **UM-30 (2026-10-24) : langue des courriels = langue de l'interface, sinon français ; branche `fix/um-29-langue-courriels`,
-[PR #275](https://github.com/RachEma-ux/Fadi/pull/275) vers `main` (non fusionnée, aucun déploiement).** Voir la section UM-30.
+[PR #275](https://github.com/RachEma-ux/Fadi/pull/275) fusionnée le 2026-10-24 à 18:08 UTC (`5767835`) ; contrôle en préproduction : UM-SERVICE.** Voir la section UM-30.
 
 ## Faits vérifiés
 
@@ -258,9 +261,9 @@ Relevé de `sudo fadi-preprod status` transmis par le maître d'ouvrage (VPS, no
 - Non exercés en préproduction : `comptes-api`, `comptes-admin`, `comptes-securite` (base jetable et transport de
   courriel exigés) ; couverts par la CI. Les tests de l'outillage (PR #264) utilisent des doubles `docker` / `curl`.
 
-### Courriel en préproduction et domaines réservés (2026-10-24, UM-28) — Implémenté, non déployé
+### Courriel en préproduction et domaines réservés (2026-10-24, UM-28) — Fusionné
 
-Branche `feat/preprod-courriel`, PR vers `main` (non fusionnée, aucun déploiement). Demande du maître d'ouvrage relayée
+Branche `feat/preprod-courriel`, [PR #271](https://github.com/RachEma-ux/Fadi/pull/271) fusionnée le 2026-10-24 à 15:46 UTC (`e03fdfc`) ; variables SMTP à poser sur le VPS (UM-SERVICE). Demande du maître d'ouvrage relayée
 par la session d'exploitation du VPS.
 
 - `deploy/preprod/compose.yml` : variables de courriel transmises au seul service `app` depuis `PREPROD_*`
@@ -287,7 +290,15 @@ par la session d'exploitation du VPS.
 
 ## Points ouverts
 
-- UM-27 : CI verte sur `4aa7d0b` ; fusion demandée par le maître d'ouvrage le 2026-10-24 (« fusionne #270 »), après fusion de `main` (UM-28) dans la branche et CI verte ; déploiement non demandé ; aucune fusion ni déploiement par la session.
+- UM-27 : fusionné (PR #270, `2cc038a`) ; aucun déploiement en production.
+- UM-SERVICE : mise en service et recette en préproduction (RUNBOOK §3 bis, §5 à §9) non consignées. Contrôles à relever
+  sur le VPS : `fadi-preprod status` (commit en ligne), `/version`, `PREPROD_FADI_ADMIN_ENABLED=true` présent dans
+  `/opt/fadi-preprod/env/.env.preprod`, nombre d'administrateurs et d'administrateurs avec TOTP actif (comptages
+  seulement, aucune adresse). La sonde anonyme `/admin/users` répond **404 dans tous les cas** (`platformRefusal`,
+  non-divulgation) : elle ne distingue pas une administration ouverte d'une fermée. L'ouverture se constate avec une
+  session administrateur ouverte avec son code : `/admin/users` **200** et `GET /auth/me` avec `adminEnabled: true`.
+- Indice non vérifié : la PR #275 rapporte une invitation envoyée depuis l'Administration en préproduction, ce qui
+  suppose un administrateur, l'administration ouverte et le courriel configurés ; rien n'est déclaré fait sans relevé.
 - UM-27, signalé : pas de corbeille pour les projets ni les documents (hors périmètre de la décision ; le concept ne
   l'exige pas). L'anonymisation supprime les projets non partagés du compte, et « Anonymiser maintenant » avance cette
   suppression : à trancher par le maître d'ouvrage s'il veut une corbeille de projets.
