@@ -613,6 +613,15 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/organisations node apps/web/e2e/organisations.mjs 2>&1 | tee -a e2e.log
+      # Organisations-participation, phase 3 (OP-D2 a) : invitation acceptée pour tous, fin de l'ajout direct (UM-8) —
+      # aperçu de l'accès, renvoi sans doublon, notification, refus v2.2 (lien transféré, expirée, annulée, déclinée,
+      # invitant révoqué, mauvaise fiche, participation terminée, accès expiré), double soumission, nouvel utilisateur ;
+      # navigateur, axe-core bureau et téléphone, passe anglaise. Courriels lus dans Mailpit, horloge simulée par la base.
+      - name: Recette des invitations acceptées liées à une participation — API, refus v2.2, navigateur, axe-core, anglais (apps/web/e2e/invitations-participation.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/invitations-participation.mjs 2>&1 | tee -a e2e.log
       # MIG-01 à MIG-10, MIG-COEX-03/04/06 : simulation de migration vers Studio en lecture seule, sur une base NEUVE
       # (fadi_mig) peuplée du jeu synthétique déclaré — jamais sur une base existante. La recette crée un rôle SELECT
       # seul, compare l'empreinte de chaque table avant / après et exige le refus de toute écriture (25006, 42501).
