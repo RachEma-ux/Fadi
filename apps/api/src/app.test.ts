@@ -2821,8 +2821,12 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
 
     it("le journal reste append-only : modification et suppression refusées, fadi_app sans UPDATE ni DELETE", async () => {
       const { rows } = await pool.query("INSERT INTO admin.audit_log (action) VALUES ('db3.journal.check') RETURNING id");
-      await expect(pool.query("UPDATE admin.audit_log SET action = 'x' WHERE id = $1", [rows[0].id])).rejects.toThrow(/append_only/);
-      await expect(pool.query("DELETE FROM admin.audit_log WHERE id = $1", [rows[0].id])).rejects.toThrow(/append_only/);
+      // Refus par le déclencheur append-only, ou plus tôt par l'absence de droit du rôle de test (DB-3 : la garde masque
+      // alors le message en QUERY_FAILED) : dans les deux cas la ligne n'est ni modifiée ni supprimée.
+      await expect(pool.query("UPDATE admin.audit_log SET action = 'x' WHERE id = $1", [rows[0].id])).rejects.toThrow();
+      await expect(pool.query("DELETE FROM admin.audit_log WHERE id = $1", [rows[0].id])).rejects.toThrow();
+      const still = await pool.query("SELECT action FROM admin.audit_log WHERE id = $1", [rows[0].id]);
+      expect(still.rows[0]).toEqual({ action: "db3.journal.check" });
       const app = await pool.query("SELECT 1 FROM pg_roles WHERE rolname = 'fadi_app'");
       if (app.rowCount) {
         const priv = await pool.query("SELECT has_table_privilege('fadi_app', 'admin.audit_log', 'UPDATE') AS u, has_table_privilege('fadi_app', 'admin.audit_log', 'DELETE') AS d, has_table_privilege('fadi_app', 'admin.audit_log', 'SELECT') AS s");
