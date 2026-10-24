@@ -249,3 +249,5 @@ ils ne réécrivent aucune décision D-x et restent révisables par lui.
      invalide → `fr`) et par `comptes-admin.mjs` (section 5 bis : navigateur en anglais, interface en français → sujet
      « Invitation à rejoindre Fadi » lu dans Mailpit ; choix « English » → « Invitation to join Fadi »). Aucune
      migration ; aucun déploiement sans accord du maître d'ouvrage.
+  - *Fusion* : demandée par le maître d'ouvrage dans la session d'exécution le 2026-10-24 (« fusionne #275 »), après CI
+    verte du dernier commit ; méthode de fusion habituelle du dépôt (commit de fusion). Aucun déploiement demandé.
