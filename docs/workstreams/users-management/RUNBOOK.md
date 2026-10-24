@@ -58,7 +58,39 @@ MAIL_DAILY_LIMIT=150                # sous le quota Infomaniak (200 à 500 / 24 
 ```
 
 Sans `MAIL_TRANSPORT`, l'API démarre mais n'envoie rien : les écrans affichent le lien à copier (limite déclarée).
-`MAIL_TRANSPORT=console` est refusé en production.
+`MAIL_TRANSPORT=console` est refusé en production. En SMTP, un destinataire de domaine réservé (`example.com`,
+`*.test`, `*.invalid`, `*.localhost`… — RFC 2606 / 6761) n'est jamais envoyé : raison `reserved_domain`, lien à copier
+(UM-28). `MAIL_ALLOW_RESERVED_DOMAINS=true` (Mailpit en CI / dev) est refusé en production.
+
+## 3 bis. Courriel en préproduction (UM-28)
+
+La préproduction (`deploy/preprod/compose.yml`) lit les mêmes variables, préfixées `PREPROD_`, toutes facultatives :
+sans `PREPROD_MAIL_TRANSPORT`, rien n'est envoyé. Les recettes rejouées à chaque déploiement inscrivent des comptes
+`@example.com` / `@example.test` : ils ne partent jamais (domaines réservés). `SMTP_PASS` n'est donné qu'au service
+`app`, jamais à la recette (garde `fadi-preprod garde`).
+
+1. L'administrateur (root) ajoute à `/opt/fadi-preprod/env/.env.preprod` (0600, jamais affiché, jamais commité) :
+
+   ```sh
+   PREPROD_MAIL_TRANSPORT=smtp
+   PREPROD_SMTP_HOST=mail.infomaniak.com     # défaut
+   PREPROD_SMTP_PORT=465                     # défaut
+   PREPROD_SMTP_SECURE=true                  # défaut
+   PREPROD_SMTP_USER=noreply@fadimmo.com
+   PREPROD_SMTP_PASS=<mot de passe de la boîte noreply, coffre>
+   PREPROD_MAIL_FROM="Fadi <noreply@fadimmo.com>"   # même adresse que PREPROD_SMTP_USER
+   PREPROD_MAIL_DAILY_LIMIT=50               # défaut prudent de la préproduction
+   # PREPROD_MAIL_RECIPIENT_HOURLY_LIMIT=5   # défaut
+   ```
+
+   puis vérifie les droits : `stat -c %a /opt/fadi-preprod/env/.env.preprod` → `600`.
+2. `sudo fadi-preprod garde` puis `sudo fadi-preprod up` : l'application est recréée avec les nouvelles variables
+   (une configuration invalide — `MAIL_FROM` ≠ `SMTP_USER`, variable manquante — fait refuser le démarrage : le
+   journal `sudo fadi-preprod logs app` le dit, sans afficher le mot de passe).
+3. Journal de démarrage attendu (`sudo fadi-preprod logs app`) : « Courriel : transport smtp ; domaines réservés jamais envoyés. »
+4. Contrôle : §5 avec une adresse réelle de l'exploitant (invitation ou « Mot de passe oublié »).
+5. Retour arrière : retirer `PREPROD_MAIL_TRANSPORT` (ou le laisser vide) puis `sudo fadi-preprod up` ; les liens à
+   copier reviennent.
 
 ## 4. Migration et bascule vers `fadi_app`
 
@@ -102,6 +134,8 @@ docker compose --env-file .env.deploy exec db psql -U fadi -d fadi -c "SELECT ha
 Depuis l'application (compte existant) : Paramètres → Mon compte → « Vérifier mon adresse », ou « Mot de passe oublié »
 avec une adresse de l'exploitant. Contrôler la réception, l'expéditeur, le lien (`APP_PUBLIC_URL`), et l'absence de
 pixel de suivi. En cas d'échec : `admin.mail_outbox.last_error` (sans contenu de lien), 3 tentatives (30 s, 2 min, 8 min).
+Une adresse de domaine réservé (`@example.com`, `@….test`) n'est jamais envoyée (`last_error = reserved_domain`) : tester
+avec une vraie boîte.
 
 ## 6. Premier administrateur
 

@@ -10,6 +10,10 @@
  *   POST   /admin/users/:id/reactivate
  *   POST   /admin/users/:id/revoke-sessions
  *   DELETE /admin/users/:id                  suppression programmée (D-5), refusée s'il possède des projets partagés
+ *   GET    /admin/trash                      corbeille (UM-27) : comptes en suppression programmée, date d'anonymisation, demandeur
+ *   POST   /admin/users/:id/restore          « Restaurer » : annule la suppression (voie du lien d'annulation), statut antérieur
+ *   POST   /admin/users/:id/anonymize        { confirmEmail } « Anonymiser maintenant » : compte de la corbeille seulement,
+ *                                            même anonymisation que la tâche des 30 jours (`anonymiseAccountIn`), irréversible
  *   POST   /admin/users/invitations          { email } → invitation à créer un compte (UM-3)
  *   GET    /admin/invitations · DELETE /admin/invitations/:id
  *
@@ -18,7 +22,7 @@
  * file hors ligne par le client.
  */
 import { Router, type Request, type Response } from "express";
-import { and, asc, count, desc, eq, gt, ilike, inArray, isNull, or, sql, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, ilike, inArray, isNotNull, isNull, or, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../../db/client.js";
 import { auditLog, invitations, projectMembers, projectSupportGrants, projects, sessions, users } from "../../db/schema.js";
@@ -29,8 +33,10 @@ import { displayStatus } from "../../lib/security/auth-policy.js";
 import { assertTransition, AccountTransitionRefused } from "../../lib/security/account-state.js";
 import { formatDate, mailLocale, PUBLIC_PATHS, publicLink, sendAccountMail } from "../../lib/account.js";
 import { createOrRenewInvitation, invitationView } from "../../lib/invitations.js";
-import { deletionMail, scheduleDeletion } from "../auth.js";
+import { cancelScheduledDeletion, deletionMail, scheduleDeletion, sharedOwnedProjects } from "../auth.js";
 import { lockAdminEligibility } from "../../lib/admin-eligibility.js";
+import { anonymiseAccountIn } from "../../lib/account-jobs.js";
+import { anonymisationAt, anonymiseNowRefusal, deletionRequester, DELETION_GRACE_DAYS, type AnonymiseNowRefusal } from "../../lib/security/deletion.js";
 
 export const adminRouter = Router();
 // Pas de `requireAuth` (401) : une personne anonyme reçoit le même 404 que tout non-administrateur.
@@ -209,6 +215,103 @@ adminRouter.delete("/users/:userId", async (req, res) => {
   }
   // Sans courriel en file, l'administrateur reçoit le lien d'annulation à transmettre lui-même (D-1, comme les invitations).
   res.status(202).json({ deletionAt: scheduled.deletionAt.toISOString(), mail: deletionMail(scheduled) });
+});
+
+// ----- Corbeille (UM-27, amendement de D-5) -----
+// Elle ne contient que les comptes en suppression programmée, donc encore restaurables. Un compte anonymisé n'y figure
+// pas : l'anonymisation est irréversible, il ne reste rien à restaurer ; sa trace est le statut « fermé (anonymisé) » du
+// tableau des comptes et l'entrée du journal d'audit.
+
+adminRouter.get("/trash", async (_req, res) => {
+  const rows = await db.select().from(users)
+    .where(and(isNotNull(users.deletionRequestedAt), inArray(users.status, ["active", "suspended"])))
+    .orderBy(asc(users.deletionRequestedAt)).limit(500);
+  const ids = rows.map((r) => r.id);
+  // Demandeur : la dernière entrée du journal qui a programmé la suppression (titulaire ou administrateur).
+  const requests = ids.length ? await db.selectDistinctOn([auditLog.targetId], { targetId: auditLog.targetId, action: auditLog.action, actorId: auditLog.actorId })
+    .from(auditLog)
+    .where(and(eq(auditLog.targetType, "user"), inArray(auditLog.targetId, ids), inArray(auditLog.action, ["account.deletion.requested", "admin.user.deletion_requested"])))
+    .orderBy(auditLog.targetId, desc(auditLog.id)) : [];
+  const actorIds = [...new Set(requests.map((r) => r.actorId).filter((a): a is string => !!a))];
+  const actors = new Map((actorIds.length ? await db.select({ id: users.id, email: users.email }).from(users).where(inArray(users.id, actorIds)) : []).map((a) => [a.id, a.email]));
+  const byTarget = new Map(requests.map((r) => [r.targetId, r]));
+  // Projets partagés possédés : ils bloquent l'anonymisation (tâche des 30 jours comme « Anonymiser maintenant »).
+  const shared = new Map<string, number>();
+  if (ids.length) {
+    const owned = await db.selectDistinct({ id: projects.id, ownerId: projects.ownerId }).from(projects)
+      .innerJoin(projectMembers, eq(projectMembers.projectId, projects.id)).where(inArray(projects.ownerId, ids));
+    for (const p of owned) shared.set(p.ownerId, (shared.get(p.ownerId) ?? 0) + 1);
+  }
+  res.json({
+    graceDays: DELETION_GRACE_DAYS,
+    items: rows.map((u) => {
+      const r = byTarget.get(u.id);
+      const kind = deletionRequester(r?.action);
+      return {
+        id: u.id, email: u.email, displayName: u.displayName, platformRole: u.platformRole, status: u.status,
+        deletionRequestedAt: u.deletionRequestedAt!.toISOString(), anonymisationAt: anonymisationAt(u.deletionRequestedAt!).toISOString(),
+        requestedBy: kind ? { kind, actorId: r!.actorId, actorEmail: r!.actorId ? actors.get(r!.actorId) ?? null : null } : null,
+        sharedProjects: shared.get(u.id) ?? 0,
+      };
+    }),
+  });
+});
+
+adminRouter.post("/users/:userId/restore", async (req, res) => {
+  const id = req.params["userId"] as string;
+  if (refuseSelf(req, res, id)) return;
+  const outcome = await db.transaction(async (tx) => {
+    const [u] = await tx.select().from(users).where(eq(users.id, id)).limit(1).for("update");
+    if (!u) return "not_found" as const;
+    if (u.status === "closed") return "already_anonymized" as const;
+    // Même voie que le lien d'annulation reçu par courriel ; le statut stocké (actif ou suspendu) est rétabli tel quel.
+    if (!(await cancelScheduledDeletion(tx, id))) return "not_in_trash" as const;
+    await audit(tx, { actorId: req.user!.id, action: "admin.user.deletion_cancelled", target: { type: "user", id }, metadata: { status: u.status }, ip: clientIp(req) });
+    return { ...u, deletionRequestedAt: null };
+  });
+  if (outcome === "not_found") return void notFound(res);
+  if (outcome === "already_anonymized") return void res.status(409).json({ error: "already_anonymized", message: "Ce compte est déjà anonymisé : l’anonymisation est irréversible." });
+  if (outcome === "not_in_trash") return void res.status(409).json({ error: "not_in_trash", message: "Ce compte n’est pas dans la corbeille : aucune suppression n’est programmée." });
+  res.json({ user: userView(outcome, 0) });
+});
+
+const anonymizeSchema = z.object({ confirmEmail: z.string().trim().min(1).max(254) });
+const ANONYMIZE_REFUSAL: Record<Exclude<AnonymiseNowRefusal, "not_found" | "owns_shared_projects">, { status: number; message: string }> = {
+  already_anonymized: { status: 409, message: "Ce compte est déjà anonymisé." },
+  not_in_trash: { status: 409, message: "Seul un compte de la corbeille (suppression programmée) peut être anonymisé maintenant." },
+  confirmation_mismatch: { status: 422, message: "L’adresse saisie ne correspond pas à celle du compte : rien n’a été anonymisé." },
+  last_admin: { status: 409, message: "Impossible : c'est le dernier administrateur actif de la plateforme." },
+};
+
+adminRouter.post("/users/:userId/anonymize", async (req, res) => {
+  const id = req.params["userId"] as string;
+  const parsed = anonymizeSchema.safeParse(req.body);
+  if (!parsed.success) return void res.status(400).json({ error: "invalid_input", message: "Saisissez l’adresse du compte pour confirmer." });
+  if (refuseSelf(req, res, id)) return;
+  // Sous le verrou d'éligibilité des administrateurs, comme toute opération qui peut retirer un administrateur ; puis
+  // la ligne du compte verrouillée : deux demandes simultanées (ou la tâche des 30 jours) se suivent, la seconde voit
+  // un compte déjà anonymisé.
+  const outcome = await db.transaction(async (tx) => {
+    const admins = await lockAdminEligibility(tx);
+    const [u] = await tx.select().from(users).where(eq(users.id, id)).limit(1).for("update");
+    const shared = u && u.status !== "closed" ? await sharedOwnedProjects(id, tx) : [];
+    const refusal = anonymiseNowRefusal({
+      status: u?.status ?? null, deletionRequestedAt: u?.deletionRequestedAt ?? null, email: u?.email ?? null, confirmEmail: parsed.data.confirmEmail,
+      sharedProjects: shared.length, removesLastAdmin: removesLastAdmin(admins, id),
+    });
+    if (refusal) return { refusal, projects: shared };
+    // Exactement l'anonymisation de la tâche des 30 jours ; seule l'entrée du journal nomme l'administrateur.
+    if (!(await anonymiseAccountIn(tx, id, { actorId: req.user!.id, action: "admin.user.anonymized_now", ip: clientIp(req) }))) return { refusal: "not_in_trash" as const, projects: [] };
+    return { anonymized: id };
+  });
+  if ("anonymized" in outcome) return void res.json({ anonymized: true, userId: outcome.anonymized });
+  if (outcome.refusal === "not_found") return void notFound(res);
+  if (outcome.refusal === "owns_shared_projects") {
+    res.status(409).json({ error: "owns_shared_projects", message: "Ce compte possède des projets partagés : leur propriété doit d'abord être transférée à un de leurs membres.", projects: outcome.projects });
+    return;
+  }
+  const r = ANONYMIZE_REFUSAL[outcome.refusal];
+  res.status(r.status).json({ error: outcome.refusal, message: r.message });
 });
 
 const inviteSchema = z.object({ email: z.string().trim().toLowerCase().email().max(254), locale: z.enum(["fr", "en"]).optional() });

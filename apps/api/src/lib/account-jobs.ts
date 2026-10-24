@@ -6,43 +6,58 @@
  * du mot de passe rendu inutilisable, double authentification, codes de secours, sessions et jetons supprimés ;
  * projets possédés **non partagés** supprimés ; participations retirées ; commentaires et révisions conservés sous
  * « Compte supprimé ». Le journal d'audit garde l'identifiant, jamais l'adresse (il n'en contient pas).
+ * « Anonymiser maintenant » de la corbeille d'administration (UM-27) appelle la même `anonymiseAccountIn`.
  */
 import { and, eq, isNotNull, lte, ne, or, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { accountTokens, invitations, mailOutbox, projectComments, projectMembers, projects, sessions, userRecoveryCodes, users } from "../db/schema.js";
 import { audit } from "./audit.js";
 import { processMailOutbox } from "./mailer/outbox.js";
-import { anonymisedEmail, DELETED_LABEL, DELETION_GRACE_DAYS } from "./security/deletion.js";
+import { anonymisationAt, anonymisedEmail, DELETED_LABEL, DELETION_GRACE_DAYS } from "./security/deletion.js";
+import type { Tx } from "./admin-eligibility.js";
+
+/** Auteur de l'anonymisation pour le journal : la tâche des 30 jours (système) ou « Anonymiser maintenant » (UM-27). */
+export type AnonymisedBy = { actorId: null; action: "account.anonymized"; ip?: null } | { actorId: string; action: "admin.user.anonymized_now"; ip: string | null };
 
 /** Anonymise un compte dû ; renvoie false si le compte possède encore un projet partagé (rien n'est alors modifié). */
 export async function anonymiseAccount(userId: string): Promise<boolean> {
-  return db.transaction(async (tx) => {
-    const [user] = await tx.select().from(users).where(eq(users.id, userId)).limit(1).for("update");
-    if (!user || user.status === "closed" || !user.deletionRequestedAt) return false;
-    const shared = await tx.selectDistinct({ id: projects.id }).from(projects).innerJoin(projectMembers, eq(projectMembers.projectId, projects.id)).where(eq(projects.ownerId, userId));
-    if (shared.length) return false;
-    const oldEmail = user.email;
-    const deletedProjects = await tx.delete(projects).where(eq(projects.ownerId, userId)).returning({ id: projects.id });
-    await tx.delete(projectMembers).where(eq(projectMembers.userId, userId));
-    await tx.update(projectMembers).set({ invitedBy: DELETED_LABEL }).where(eq(projectMembers.invitedBy, oldEmail));
-    await tx.update(projectComments).set({ authorEmail: DELETED_LABEL }).where(eq(projectComments.authorId, userId));
-    await tx.execute(sql`UPDATE projects SET editing_lock = NULL WHERE editing_lock->>'userId' = ${userId}`);
-    await tx.delete(userRecoveryCodes).where(eq(userRecoveryCodes.userId, userId));
-    await tx.delete(sessions).where(eq(sessions.userId, userId));
-    await tx.delete(accountTokens).where(eq(accountTokens.userId, userId));
-    await tx.update(invitations).set({ status: "cancelled", respondedAt: new Date() })
-      .where(and(eq(invitations.status, "pending"), or(eq(invitations.invitedBy, userId), eq(invitations.email, oldEmail))));
-    await tx.update(invitations).set({ email: anonymisedEmail(userId) }).where(eq(invitations.email, oldEmail));
-    await tx.update(mailOutbox).set({ toAddress: anonymisedEmail(userId), payload: {}, status: sql`CASE WHEN ${mailOutbox.status} = 'pending' THEN 'skipped' ELSE ${mailOutbox.status} END` })
-      .where(eq(mailOutbox.toAddress, oldEmail));
-    await tx.update(users).set({
-      email: anonymisedEmail(userId), displayName: DELETED_LABEL, passwordHash: "!anonymised", status: "closed", deletedAt: new Date(),
-      totpSecretEnc: null, totpEnabledAt: null, totpLastStep: null, notificationPreferences: null, atelierEnsembles: null, atelierEnsemblesAt: null,
-      platformRole: "user", failedLoginCount: 0, lockedUntil: null,
-    }).where(eq(users.id, userId));
-    await audit(tx, { actorId: null, action: "account.anonymized", target: { type: "user", id: userId }, metadata: { deletedProjects: deletedProjects.length } });
-    return true;
+  return db.transaction((tx) => anonymiseAccountIn(tx, userId));
+}
+
+/**
+ * L'anonymisation elle-même, dans la transaction de l'appelant : la tâche des 30 jours et « Anonymiser maintenant »
+ * (route d'administration, sous le verrou d'éligibilité) exécutent exactement ce code. Renvoie false sans rien modifier
+ * si le compte est inconnu, déjà anonymisé, hors suppression programmée ou possède encore un projet partagé.
+ */
+export async function anonymiseAccountIn(tx: Tx, userId: string, by: AnonymisedBy = { actorId: null, action: "account.anonymized" }): Promise<boolean> {
+  const [user] = await tx.select().from(users).where(eq(users.id, userId)).limit(1).for("update");
+  if (!user || user.status === "closed" || !user.deletionRequestedAt) return false;
+  const shared = await tx.selectDistinct({ id: projects.id }).from(projects).innerJoin(projectMembers, eq(projectMembers.projectId, projects.id)).where(eq(projects.ownerId, userId));
+  if (shared.length) return false;
+  const oldEmail = user.email;
+  const deletedProjects = await tx.delete(projects).where(eq(projects.ownerId, userId)).returning({ id: projects.id });
+  await tx.delete(projectMembers).where(eq(projectMembers.userId, userId));
+  await tx.update(projectMembers).set({ invitedBy: DELETED_LABEL }).where(eq(projectMembers.invitedBy, oldEmail));
+  await tx.update(projectComments).set({ authorEmail: DELETED_LABEL }).where(eq(projectComments.authorId, userId));
+  await tx.execute(sql`UPDATE projects SET editing_lock = NULL WHERE editing_lock->>'userId' = ${userId}`);
+  await tx.delete(userRecoveryCodes).where(eq(userRecoveryCodes.userId, userId));
+  await tx.delete(sessions).where(eq(sessions.userId, userId));
+  await tx.delete(accountTokens).where(eq(accountTokens.userId, userId));
+  await tx.update(invitations).set({ status: "cancelled", respondedAt: new Date() })
+    .where(and(eq(invitations.status, "pending"), or(eq(invitations.invitedBy, userId), eq(invitations.email, oldEmail))));
+  await tx.update(invitations).set({ email: anonymisedEmail(userId) }).where(eq(invitations.email, oldEmail));
+  await tx.update(mailOutbox).set({ toAddress: anonymisedEmail(userId), payload: {}, status: sql`CASE WHEN ${mailOutbox.status} = 'pending' THEN 'skipped' ELSE ${mailOutbox.status} END` })
+    .where(eq(mailOutbox.toAddress, oldEmail));
+  await tx.update(users).set({
+    email: anonymisedEmail(userId), displayName: DELETED_LABEL, passwordHash: "!anonymised", status: "closed", deletedAt: new Date(),
+    totpSecretEnc: null, totpEnabledAt: null, totpLastStep: null, notificationPreferences: null, atelierEnsembles: null, atelierEnsemblesAt: null,
+    platformRole: "user", failedLoginCount: 0, lockedUntil: null,
+  }).where(eq(users.id, userId));
+  await audit(tx, {
+    actorId: by.actorId, action: by.action, target: { type: "user", id: userId }, ip: by.ip ?? null,
+    metadata: { deletedProjects: deletedProjects.length, ...(by.actorId ? { scheduledFor: anonymisationAt(user.deletionRequestedAt).toISOString() } : {}) },
   });
+  return true;
 }
 
 /** Comptes dus : suppression demandée depuis 30 jours ou plus. `now` est injectable (horloge simulée des recettes). */
