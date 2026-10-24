@@ -17,6 +17,7 @@
  * BASE_URL=http://localhost:3001 node apps/web/e2e/studio-espace.mjs
  */
 import { chromium } from "playwright";
+import { appelPlaywright, inviterEtAccepter } from "./lib-invitations.mjs";
 import { createHash } from "node:crypto";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
@@ -151,7 +152,7 @@ try {
   }
   const lecteur = await compte("lecteur");
   const emailLecteur = await lecteur.page.evaluate(async () => (await (await fetch("/auth/me", { credentials: "include" })).json()).email);
-  await api("post", `/projects/${projet.id}/members`, { email: emailLecteur, role: "lecteur" });
+  check("lecteur invité, invitation acceptée (phase 3)", (await inviterEtAccepter((m, p, b) => api(m.toLowerCase(), p, b), (m, p, b) => lecteur.api(m.toLowerCase(), p, b), projet.id, emailLecteur, "lecteur")).ok);
   const refusLecteur = await lecteur.api("patch", `/projects/${projet.id}/studio/studies/${studyId}/workflow`, { phase: "publier" });
   check("API workflow : lecteur refusé (403), phase inchangée", refusLecteur.status === 403 && (await api("get", `/projects/${projet.id}/studio/studies/${studyId}`)).body.study.workflowPhase === "controler", String(refusLecteur.status));
   await lecteur.page.goto(base);

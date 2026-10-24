@@ -19,6 +19,7 @@
  * BASE_URL=http://localhost:3001 node apps/web/e2e/studio-observations.mjs
  */
 import { chromium } from "playwright";
+import { appelPlaywright, inviterEtAccepter } from "./lib-invitations.mjs";
 import { randomBytes, randomUUID } from "node:crypto";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
@@ -54,8 +55,8 @@ for (const [k, c] of [["owner", owner], ["editor", editor], ["reader", reader]])
 const project = await owner("POST", "/projects", { code: `SO_${randomUUID().slice(0, 8)}`, name: "Studio — observations (recette synthétique)" });
 check("projet créé", project.status === 201, String(project.status));
 const projectId = project.body?.id;
-check("éditeur et lecteur ajoutés au projet", (await owner("POST", `/projects/${projectId}/members`, { email: cEditor.email, role: "editeur" })).status === 201
-  && (await owner("POST", `/projects/${projectId}/members`, { email: cReader.email, role: "lecteur" })).status === 201);
+check("éditeur et lecteur invités, invitations acceptées (phase 3)", (await inviterEtAccepter(owner, editor, projectId, cEditor.email, "editeur")).ok
+  && (await inviterEtAccepter(owner, reader, projectId, cReader.email, "lecteur")).ok);
 const root = `/projects/${projectId}/studio/studies`;
 const created = await owner("POST", root, { name: "Étude observations" });
 const studyId = created.body?.study?.id, variantId = created.body?.variant?.id;

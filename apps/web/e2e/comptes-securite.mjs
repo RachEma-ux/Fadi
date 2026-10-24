@@ -22,6 +22,7 @@
  *   (API lancée avec FADI_ADMIN_ENABLED=true, FADI_ENCRYPTION_KEY, MAIL_TRANSPORT=console ou smtp)
  */
 import { createHmac, randomUUID } from 'node:crypto';
+import { appelPlaywright, inviterEtAccepter } from './lib-invitations.mjs';
 import { execFileSync } from 'node:child_process';
 import pg from 'pg';
 
@@ -294,7 +295,7 @@ const model = await owner.a.call('GET', `/projects/${pid}/atelier/model`);
 const levels = (await owner.a.call('GET', `/projects/${pid}/documents`)).body?.documents?.filter((d) => /^plan-lecture-/.test(d.kind)).map((d) => d.kind.replace('plan-lecture-', '')) ?? [];
 check('propriétaire : modèle et plans de niveau disponibles', model.status === 200 && levels.length > 0, { model: model.status, levels });
 const reader = await register('lecteur');
-check('propriétaire : lecteur invité', (await owner.a.call('POST', `/projects/${pid}/members`, { email: reader.email, role: 'lecteur' })).status < 300);
+check('propriétaire : lecteur invité, invitation acceptée (phase 3)', (await inviterEtAccepter((m, p, b) => owner.a.call(m, p, b), (m, p, b) => reader.a.call(m, p, b), pid, reader.email, 'lecteur')).ok);
 // Écart E2 : un nouveau lecteur n'exporte pas ; le propriétaire le lui accorde (le support, lui, ne l'a jamais).
 check('lecteur : sans export par défaut (403)', (await reader.a.call('GET', `/projects/${pid}/documents/surfaces`)).status === 403);
 check('propriétaire : export accordé au lecteur', (await owner.a.call('PATCH', `/projects/${pid}/members/${reader.id}`, { canExport: true })).status === 200);

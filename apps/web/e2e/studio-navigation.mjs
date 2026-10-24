@@ -9,6 +9,7 @@
  * BASE_URL=http://localhost:3001 OUT=atelier-captures/studio node apps/web/e2e/studio-navigation.mjs
  */
 import { chromium } from "playwright";
+import { appelPlaywright, inviterEtAccepter } from "./lib-invitations.mjs";
 import { mkdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
@@ -269,7 +270,7 @@ try {
   await b.page.locator("[data-studio-refus]").waitFor();
   check("étude d'autrui : non divulguée", !(await b.page.locator("#workspace-content").textContent()).includes("Implantation nord"));
   const emailB = await b.page.evaluate(async () => (await (await fetch("/auth/me", { credentials: "include" })).json()).email);
-  await a.api("post", `/projects/${pA.id}/members`, { email: emailB, role: "lecteur" });
+  check("B invité lecteur, invitation acceptée (phase 3)", (await inviterEtAccepter(appelPlaywright(a.page.request, BASE), appelPlaywright(b.page.request, BASE), pA.id, emailB, "lecteur")).ok);
   await b.page.goto(`${BASE}/studio/projets/${pA.id}`);
   await b.page.locator("[data-studio-etudes]").waitFor();
   check("lecteur : voit les études sans formulaire de création", (await b.page.locator("[data-studio-lecture-seule]").isVisible()) && (await b.page.locator("[data-studio-creer-etude]").count()) === 0);

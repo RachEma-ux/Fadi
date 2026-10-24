@@ -9,6 +9,7 @@
  * BASE_URL=http://localhost:3001 node apps/web/e2e/notifications-preferences.mjs
  */
 import { randomBytes, randomUUID } from "node:crypto";
+import { appelPlaywright, inviterEtAccepter } from "./lib-invitations.mjs";
 import { chromium } from "playwright";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
@@ -45,7 +46,7 @@ const p1 = (await owner("POST", "/projects", { code: `NP1_${tag}`, name: "Notifi
 const p2 = (await owner("POST", "/projects", { code: `NP2_${tag}`, name: "Notifications — projet deux" })).body;
 const pS = (await stranger("POST", "/projects", { code: `NPS_${tag}`, name: "Projet d'un autre compte" })).body;
 check("projets créés", !!p1?.id && !!p2?.id && !!pS?.id);
-for (const p of [p1, p2]) check(`membre invité sur ${p.code}`, (await owner("POST", `/projects/${p.id}/members`, { email: memberC.email, role: "editeur" })).status === 201);
+for (const p of [p1, p2]) check(`membre invité sur ${p.code}, invitation acceptée (phase 3)`, (await inviterEtAccepter(owner, member, p.id, memberC.email, "editeur")).ok);
 check("commentaires du propriétaire", (await owner("POST", `/projects/${p1.id}/collaboration/comments`, { body: "Avis sur l'étape 3", stepNumber: 3 })).status === 201 && (await owner("POST", `/projects/${p2.id}/collaboration/comments`, { body: "Avis général" })).status === 201);
 
 // État initial : tout est affiché, rien n'est lu.

@@ -19,6 +19,7 @@
  * BASE_URL=http://localhost:3001 node apps/web/e2e/studio-dossier.mjs
  */
 import { chromium } from "playwright";
+import { appelPlaywright, inviterEtAccepter } from "./lib-invitations.mjs";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
@@ -83,10 +84,12 @@ try {
   check("lecteur inscrit", (await lecteur("POST", "/auth/register", compteLecteur)).status === 201);
   check("compte étranger inscrit", (await etranger("POST", "/auth/register", { email: `studio-dossier-x-${randomUUID().replaceAll("-", "")}@example.test`, password: randomBytes(24).toString("hex") })).status === 201);
   const projet = (await api("post", "/projects", { code: `P.DOS.${randomUUID().slice(0, 6)}`, name: "Studio — production documentaire (recette)" })).body;
-  const invite = await api("post", `/projects/${projet.id}/members`, { email: compteLecteur.email, role: "lecteur" });
-  check("lecteur invité", invite.status === 201);
+  const invite = await inviterEtAccepter((m, p, b) => api(m.toLowerCase(), p, b), lecteur, projet.id, compteLecteur.email, "lecteur");
+  check("lecteur invité, invitation acceptée (phase 3)", invite.ok);
+  const lecteurMoi = (await lecteur("GET", "/auth/me")).body;
+  const lecteurId = lecteurMoi?.user?.id ?? lecteurMoi?.id;
   // CR-D4 (écart E2) : un nouveau lecteur ne télécharge le dossier qu'avec l'export accordé par le propriétaire.
-  check("lecteur : export accordé par le propriétaire", (await api("patch", `/projects/${projet.id}/members/${invite.body?.userId}`, { canExport: true })).body?.canExport === true);
+  check("lecteur : export accordé par le propriétaire", (await api("patch", `/projects/${projet.id}/members/${lecteurId}`, { canExport: true })).body?.canExport === true);
   const racine = `/projects/${projet.id}/studio`;
   const etude = (await api("post", `${racine}/studies`, { name: "Étude TEST-001" })).body;
   const studyId = etude.study.id, variantId = etude.variant.id;

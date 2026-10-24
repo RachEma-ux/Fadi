@@ -291,6 +291,8 @@ export async function activateProjectParticipation(tx: Tx, inv: InvitationRow, u
   if (!part) return { participationId: null };
   if (!wasActive && part.status === "active") {
     await tx.update(projectParticipations).set({ accessExpiresAt: inv.accessExpiresAt ?? null, updatedAt: new Date() }).where(eq(projectParticipations.id, part.id));
+    // Même entrée qu'un ajout de membre (écart E3), désormais au moment de l'acceptation et par la voie de l'invitation.
+    await audit(tx, { actorId: userId, action: "project.member.added", target, metadata: { memberId: userId, role: baseRole, canExport: baseRole === "editeur", via: "invitation" }, ip });
   }
   for (const r of rolesToAttribute(roles, baseRole)) {
     const id = newId("pra");
