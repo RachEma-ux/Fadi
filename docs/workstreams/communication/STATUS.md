@@ -38,7 +38,7 @@ Le 2026-10-24, sur la branche `ccr-a50667e3-fng2br`, avec une base PostGIS local
 
 - Issue : https://github.com/RachEma-ux/Fadi/issues/280
 - Branche de tâche : `ccr-a50667e3-fng2br`
-- Pull Request : voir HANDOFF.md.
+- Pull Request : [#285](https://github.com/RachEma-ux/Fadi/pull/285) (non fusionnée).
 
 ## Préconditions de clôture
 

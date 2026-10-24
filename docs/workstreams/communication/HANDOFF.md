@@ -5,7 +5,7 @@ Mis à jour : 2026-10-24 (UTC).
 ## Point de reprise
 
 - Chantier : communication. Issue : [#280](https://github.com/RachEma-ux/Fadi/issues/280).
-- Branche : `ccr-a50667e3-fng2br` (issue de `main` = `2577e25`). PR de livraison vers `main` ouverte par la même session.
+- Branche : `ccr-a50667e3-fng2br` (issue de `main` = `2577e25`) ; PR de livraison [#285](https://github.com/RachEma-ux/Fadi/pull/285) vers `main`, non fusionnée.
 - Dernier commit vérifié : à relever en début de session ; ne pas réutiliser un SHA périmé.
 
 ## Dernier état vérifié
