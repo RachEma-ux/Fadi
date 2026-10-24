@@ -100,7 +100,8 @@ export const userRecoveryCodes = authSchema.table("user_recovery_codes", {
 }, (t) => [index("user_recovery_codes_user_idx").on(t.userId)]);
 
 /** `organization_membership` : phase 5 des organisations (V22-02) — une adhésion naît de son acceptation. */
-export type InvitationPurpose = "platform_account" | "project_participation" | "organization_membership";
+/** `review_package` : phase 4 (revue externe) — une affectation de revue nominative s'active à son acceptation. */
+export type InvitationPurpose = "platform_account" | "project_participation" | "organization_membership" | "review_package";
 export type InvitationStatus = "pending" | "accepted" | "declined" | "expired" | "cancelled";
 
 /** UM-3 : une invitation est une proposition ; elle ne crée ni compte ni accès avant acceptation par l'adresse visée. */
@@ -124,6 +125,8 @@ export const invitations = authSchema.table("invitations", {
   organizationId: text("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
   organizationRole: text("organization_role").$type<OrganizationRole | null>(),
   organizationJobTitle: text("organization_job_title"),
+  /** Finalité `review_package` : l'affectation de revue visée (phase 4). */
+  reviewAssignmentId: text("review_assignment_id"),
 }, (t) => [uniqueIndex("invitations_token_hash_unique").on(t.tokenHash)]);
 
 export type AccountTokenPurpose = "verify_email" | "reset_password" | "cancel_deletion";
@@ -402,6 +405,11 @@ export const producedDocuments = pgTable("produced_documents", {
  */
 /** Audience d'un commentaire ou d'une observation à l'intérieur du projet (écart E1, `lib/audience.ts`). */
 export type CommentAudience = "equipe" | "projet";
+/**
+ * Audience d'un fil Studio : celle des commentaires du projet, plus `revue` (phase 4, OP-D6 a) — constat d'une revue
+ * externe, lu par l'équipe et par les destinataires du paquet (`reviewPackageId`), jamais par un lecteur du projet.
+ */
+export type StudioCommentAudience = CommentAudience | "revue";
 
 export const projectComments = pgTable("project_comments", {
   id: text("id").primaryKey(),
@@ -1015,7 +1023,9 @@ export const studioComments = pgTable("studio_comments", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   /** Audience du fil (écart E1), portée par le commentaire d'origine ; NULL (archive antérieure) = `projet`. */
-  audience: text("audience").$type<CommentAudience>().default("equipe"),
+  audience: text("audience").$type<StudioCommentAudience>().default("equipe"),
+  /** Paquet de revue d'un fil d'audience `revue` (et de lui seul, contrainte init.sql). */
+  reviewPackageId: text("review_package_id"),
 }, (t) => [
   index("studio_comments_variant_idx").on(t.variantId, t.createdAt),
   uniqueIndex("studio_comments_variant_id_unique").on(t.variantId, t.id),
@@ -1370,3 +1380,99 @@ export const studioDossiers = pgTable("studio_dossiers", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("studio_dossiers_study_idx").on(t.studyId, t.createdAt)]);
+
+// ---------------------------------------------------------------------------
+// Revue externe — phase 4 (concept partie 4). Miroir de init.sql : paquets de revue figés au partage, affectations
+// nominatives (relecture / approbation), constats rattachés, notes internes. Règles pures : `lib/review-rules.ts`.
+// ---------------------------------------------------------------------------
+export type ReviewPackageStatus = "brouillon" | "partage" | "clos" | "remplace";
+export type ReviewAssignmentStatus = "en-attente" | "en-cours" | "terminee" | "annulee" | "remplacee";
+export type ReviewResponsibility = "relecture" | "approbation";
+export type ReviewResult = "constats" | "satisfaisante";
+/** Pièce jointe d'un constat : contenu rangé dans `volumes` (identifiant = SHA-256 du contenu). */
+export interface ReviewAttachment { name: string; mime: string; size: number; sha256: string }
+
+export const reviewPackages = pgTable("review_packages", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  publicationId: text("publication_id").notNull().references(() => studioPublications.id, { onDelete: "cascade" }),
+  studyId: text("study_id").notNull(),
+  variantId: text("variant_id").notNull(),
+  lineageId: text("lineage_id").notNull(),
+  version: integer("version").notNull(),
+  supersedesPackageId: text("supersedes_package_id"),
+  title: text("title").notNull(),
+  purpose: text("purpose").notNull(),
+  expectedResponse: text("expected_response").notNull(),
+  questions: jsonb("questions").$type<string[]>().notNull().default([]),
+  coordinatorId: text("coordinator_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  correctionsOwnerId: text("corrections_owner_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  dueOn: date("due_on"),
+  status: text("status").$type<ReviewPackageStatus>().notNull().default("brouillon"),
+  revisionId: text("revision_id"),
+  documentHash: text("document_hash"),
+  manifest: jsonb("manifest").$type<StudioPublicationManifest | null>(),
+  manifestHash: text("manifest_hash"),
+  /** Fichiers figés au partage (format, nom, type, taille, sha256 = identifiant dans `volumes`). */
+  files: jsonb("files").$type<StudioPackageFile[] | null>(),
+  sharedAt: timestamp("shared_at", { withTimezone: true }),
+  sharedBy: text("shared_by").references(() => users.id, { onDelete: "restrict" }),
+  closedAt: timestamp("closed_at", { withTimezone: true }),
+  closedBy: text("closed_by").references(() => users.id, { onDelete: "restrict" }),
+  closeReason: text("close_reason"),
+  replacedAt: timestamp("replaced_at", { withTimezone: true }),
+  replacedByPackageId: text("replaced_by_package_id"),
+  requestId: text("request_id"),
+  createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("review_packages_project_idx").on(t.projectId, t.createdAt)]);
+
+export const reviewAssignments = pgTable("review_assignments", {
+  id: text("id").primaryKey(),
+  packageId: text("package_id").notNull().references(() => reviewPackages.id, { onDelete: "cascade" }),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  participationId: text("participation_id").notNull().references(() => projectParticipations.id),
+  personId: text("person_id").notNull().references(() => people.id),
+  userId: text("user_id").references(() => users.id, { onDelete: "restrict" }),
+  responsibility: text("responsibility").$type<ReviewResponsibility>().notNull(),
+  canView: boolean("can_view").notNull().default(true),
+  canComment: boolean("can_comment").notNull().default(true),
+  canAttach: boolean("can_attach").notNull().default(false),
+  canDownload: boolean("can_download").notNull().default(false),
+  canExport: boolean("can_export").notNull().default(false),
+  accessExpiresAt: timestamp("access_expires_at", { withTimezone: true }).notNull(),
+  invitationId: text("invitation_id"),
+  status: text("status").$type<ReviewAssignmentStatus>().notNull().default("en-attente"),
+  result: text("result").$type<ReviewResult | null>(),
+  responseNote: text("response_note"),
+  respondedAt: timestamp("responded_at", { withTimezone: true }),
+  acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+  revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  revokedBy: text("revoked_by").references(() => users.id, { onDelete: "restrict" }),
+  revokeReason: text("revoke_reason"),
+  carriedFromAssignmentId: text("carried_from_assignment_id"),
+  createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("review_assignments_package_idx").on(t.packageId)]);
+
+export const reviewFindings = pgTable("review_findings", {
+  observationId: text("observation_id").primaryKey().references(() => studioObservations.commentId, { onDelete: "cascade" }),
+  packageId: text("package_id").notNull().references(() => reviewPackages.id, { onDelete: "cascade" }),
+  assignmentId: text("assignment_id").references(() => reviewAssignments.id, { onDelete: "set null" }),
+  revisionId: text("revision_id").notNull(),
+  documentFormat: text("document_format").$type<StudioPackageFormat | null>(),
+  /** SHA-256 du document du paquet visé (identifiant dans `volumes`). */
+  documentSha256: text("document_digest"),
+  attachments: jsonb("attachments").$type<ReviewAttachment[]>().notNull().default([]),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("review_findings_package_idx").on(t.packageId)]);
+
+export const reviewPackageNotes = pgTable("review_package_notes", {
+  id: text("id").primaryKey(),
+  packageId: text("package_id").notNull().references(() => reviewPackages.id, { onDelete: "cascade" }),
+  authorId: text("author_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  body: text("body").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("review_package_notes_package_idx").on(t.packageId, t.createdAt)]);
