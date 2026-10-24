@@ -10,6 +10,7 @@ import { authRouter } from "./routes/auth.js";
 import { projectsRouter } from "./routes/projects.js";
 import { examplesRouter } from "./routes/examples.js";
 import { libraryRouter } from "./routes/library.js";
+import { reviewsRouter } from "./routes/reviews.js";
 import { notificationsRouter } from "./routes/notifications.js";
 import { preferencesRouter } from "./routes/preferences.js";
 import { sandboxPreferencesRouter } from "./routes/sandbox-preferences.js";
@@ -19,7 +20,7 @@ import { organizationsRouter } from "./routes/organizations.js";
 import { csrfGuard } from "./middleware/csrf.js";
 
 /** Préfixes servis par l'API ; tout le reste est l'application (fichiers du build, ou `index.html` pour une route du client). */
-const API_PREFIX = /^\/(auth|admin\/(?:users|invitations|trash|audit)|projects|organizations|examples|library|notifications|preferences|health|sandbox\/preferences|version)(\/|$)/;
+const API_PREFIX = /^\/(auth|admin\/(?:users|invitations|trash|audit)|projects|organizations|examples|library|notifications|preferences|health|sandbox\/preferences|version|reviews)(\/|$)/;
 
 export function createApp() {
   const app = express();
@@ -42,7 +43,7 @@ export function createApp() {
   // Limite générale de 256 ko ; les lots de commandes de l'Atelier (1 Mo, routes/atelier-commands.ts), les pièces
   // jointes des étapes, les exports de l'Atelier, l'import IFC et l'import d'archive ont leur propre lecture de corps (limite dédiée).
   const jsonBody = express.json({ limit: "256kb" });
-  app.use((req, res, next) => (/\/atelier\/commands(\/|$)|\/atelier\/import-ifc$|\/atelier\/model(\/|$)|\/steps\/\d+\/files(\/|$)|\/documents\/dessins(\/|$)|^\/projects\/import$/.test(req.path) ? next() : jsonBody(req, res, next)));
+  app.use((req, res, next) => (/\/atelier\/commands(\/|$)|\/atelier\/import-ifc$|\/atelier\/model(\/|$)|\/steps\/\d+\/files(\/|$)|\/documents\/dessins(\/|$)|^\/projects\/import$|^\/reviews\/[^/]+\/findings$/.test(req.path) ? next() : jsonBody(req, res, next)));
   // Ce qui tourne : commit et date de construction de l'image (« inconnu » en développement). Monté avant attachUser :
   // aucune lecture de session, donc aucune requête à la base, même avec un cookie.
   app.use("/version", versionRouter());
@@ -74,6 +75,9 @@ export function createApp() {
   app.use("/examples", apiLimiter, examplesRouter);
   app.use("/library", apiLimiter, libraryRouter);
   app.use("/notifications", apiLimiter, notificationsRouter);
+  // Revue externe (phase 4) : espace du destinataire, hors de `/projects` — garde `loadReviewAccess` seule. La page du
+  // client est `/revues` (repli SPA).
+  app.use("/reviews", apiLimiter, reviewsRouter);
   app.use("/preferences", apiLimiter, preferencesRouter);
   // Sandbox (lot 5) : seules ses préférences d'outils passent par le serveur ; la page `/sandbox` reste celle du client.
   app.use("/sandbox/preferences", apiLimiter, sandboxPreferencesRouter);

@@ -26,7 +26,7 @@ describe("préférences de notification", () => {
     expect(basculerProjet(base, "p1", false).projetsMuets).toEqual([]);
   });
 
-  it("couvre les sept types calculés", () => {
-    expect([...NOTIFICATION_KINDS].sort()).toEqual(["acces", "commentaire", "commentaire-studio", "modification", "peremption", "reservation", "verrou"]);
+  it("couvre les huit types calculés (dont `revue`, phase 4)", () => {
+    expect([...NOTIFICATION_KINDS].sort()).toEqual(["acces", "commentaire", "commentaire-studio", "modification", "peremption", "reservation", "revue", "verrou"]);
   });
 });

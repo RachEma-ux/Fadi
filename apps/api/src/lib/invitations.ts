@@ -15,6 +15,7 @@ import { newId } from "./ids.js";
 import { INVITATION_TTL_MS } from "./account.js";
 import { randomToken, sha256Hex } from "./security/tokens.js";
 import { activateOrganizationMembership, organizationInviterStillAuthorized } from "./organizations.js";
+import { activateReviewAssignment, reviewInviterStillAuthorized } from "./reviews-core.js";
 
 type InvitationRow = typeof invitations.$inferSelect;
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -28,11 +29,13 @@ export async function findInvitationByToken(token: string, executor: Pick<typeof
 }
 
 /** L'invitant a-t-il encore l'autorité de cette invitation ? */
-export async function inviterStillAuthorized(inv: Pick<InvitationRow, "purpose" | "invitedBy" | "projectId" | "grantPlatformRole" | "organizationId">, executor: Pick<typeof db, "select"> = db): Promise<boolean> {
+export async function inviterStillAuthorized(inv: Pick<InvitationRow, "purpose" | "invitedBy" | "projectId" | "grantPlatformRole" | "organizationId" | "reviewAssignmentId">, executor: Pick<typeof db, "select"> = db): Promise<boolean> {
   // Invitation d'amorçage (script opérateur `create-admin.mjs`) : l'autorité est celle de l'exploitant du serveur.
   if (!inv.invitedBy) return inv.purpose === "platform_account" && inv.grantPlatformRole === "admin";
   // Adhésion à une organisation (phase 5) : administrateur actif d'une organisation active, jamais le rôle plateforme.
   if (inv.purpose === "organization_membership") return organizationInviterStillAuthorized(inv, executor);
+  // Paquet de revue (phase 4) : invitant toujours expéditeur autorisé du projet, affectation attendue, paquet partagé.
+  if (inv.purpose === "review_package") return reviewInviterStillAuthorized(inv, executor);
   const [inviter] = await executor.select({ status: users.status, role: users.platformRole, deletion: users.deletionRequestedAt }).from(users).where(eq(users.id, inv.invitedBy)).limit(1);
   if (!inviter || inviter.status !== "active" || inviter.deletion) return false;
   if (inv.purpose === "platform_account") return inviter.role === "admin";
@@ -78,6 +81,9 @@ export async function createOrRenewInvitation(
 export async function activateInvitation(tx: Tx, inv: InvitationRow, userId: string, ip: string | null): Promise<void> {
   // Finalité `organization_membership` (phase 5) : branche distincte, l'adhésion naît de l'acceptation.
   if (inv.purpose === "organization_membership") await activateOrganizationMembership(tx, inv, userId, ip);
+  // Finalité `review_package` (phase 4) : branche distincte, l'affectation de revue est liée à l'identité vérifiée (aucun
+  // rôle de projet) ; une fiche liée à un autre compte refuse l'activation (`ReviewActivationRefused`).
+  if (inv.purpose === "review_package") await activateReviewAssignment(tx, inv, userId, ip);
   if (inv.purpose === "project_participation" && inv.projectId && inv.projectRole) {
     const [project] = await tx.select({ ownerId: projects.ownerId }).from(projects).where(eq(projects.id, inv.projectId)).limit(1);
     const [inviter] = inv.invitedBy ? await tx.select({ email: users.email }).from(users).where(eq(users.id, inv.invitedBy)).limit(1) : [];
@@ -90,7 +96,7 @@ export async function activateInvitation(tx: Tx, inv: InvitationRow, userId: str
     }
   }
   await tx.update(invitations).set({ status: "accepted", respondedAt: new Date(), acceptedUserId: userId }).where(eq(invitations.id, inv.id));
-  await audit(tx, { actorId: userId, action: "invitation.accepted", target: { type: "invitation", id: inv.id }, metadata: { purpose: inv.purpose, projectId: inv.projectId, ...(inv.organizationId ? { organizationId: inv.organizationId } : {}) }, ip });
+  await audit(tx, { actorId: userId, action: "invitation.accepted", target: { type: "invitation", id: inv.id }, metadata: { purpose: inv.purpose, projectId: inv.projectId, ...(inv.organizationId ? { organizationId: inv.organizationId } : {}), ...(inv.reviewAssignmentId ? { reviewAssignmentId: inv.reviewAssignmentId } : {}) }, ip });
 }
 
 /** Vue publique d'une invitation (à qui présente le jeton) : jamais le jeton ni l'empreinte. */
@@ -99,15 +105,17 @@ export interface InvitationView {
   createdAt: string; projectId: string | null; projectName: string | null; projectRole: "lecteur" | "editeur" | null; invitedBy: string;
   /** Finalité `organization_membership` (phase 5) : organisation, rôle et fonction proposés. */
   organizationId: string | null; organizationName: string | null; organizationRole: "administrateur" | "membre" | null; organizationJobTitle: string | null;
+  /** Finalité `review_package` (phase 4) : paquet visé, projet, responsabilité et fin d'accès — le paquet seul, aucun accès au projet. */
+  reviewPackage: { id: string; title: string; version: number; projectLabel: string; responsibility: string } | null;
 }
 
-export function invitationView(inv: InvitationRow, extra: { projectName?: string | null; inviterName?: string; organizationName?: string | null } = {}): InvitationView {
+export function invitationView(inv: InvitationRow, extra: { projectName?: string | null; inviterName?: string; organizationName?: string | null; reviewPackage?: InvitationView["reviewPackage"] } = {}): InvitationView {
   const expired = inv.status === "pending" && inv.expiresAt.getTime() <= Date.now();
   return {
     id: inv.id, purpose: inv.purpose, email: inv.email, status: expired ? "expired" : inv.status,
     expiresAt: inv.expiresAt.toISOString(), accessExpiresAt: inv.accessExpiresAt?.toISOString() ?? null, createdAt: inv.createdAt.toISOString(),
     projectId: inv.projectId, projectName: extra.projectName ?? null, projectRole: inv.projectRole ?? null, invitedBy: extra.inviterName ?? "",
     organizationId: inv.organizationId ?? null, organizationName: extra.organizationName ?? null, organizationRole: inv.organizationRole ?? null,
-    organizationJobTitle: inv.organizationJobTitle ?? null,
+    organizationJobTitle: inv.organizationJobTitle ?? null, reviewPackage: extra.reviewPackage ?? null,
   };
 }

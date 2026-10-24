@@ -418,6 +418,7 @@ export const HORS_MATRICE: { fichier: string; routes: string; donnees: string }[
   { fichier: "routes/examples.ts", routes: "POST /examples/:exampleId/import", donnees: "étude exemple Studio du P.118 installée après l'import validé (`lib/studio-exemple.ts`, contrat de commandes ; un échec n'annule pas l'import)" },
   { fichier: "routes/documents.ts", routes: "GET /projects/:projectId/documents", donnees: "`studioPackages` (paquets diffusés ou retirés), `studioDossiers` (dossiers de conception)" },
   { fichier: "routes/notifications.ts", routes: "GET /notifications", donnees: "commentaires Studio des projets du compte, passages des observations, tâches et décisions" },
+  { fichier: "routes/reviews.ts", routes: "/reviews/* (destinataire), /projects/:projectId/reviews/* (équipe)", donnees: "revue externe (phase 4) : publication Studio candidate figée dans un paquet, constats = observations Studio d'audience `revue`, approbation par un approbateur nommé via les transitions Studio — garde `loadReviewAccess` (destinataire) ou droits de l'équipe, jamais la matrice des rôles Studio" },
   { fichier: "routes/projects.ts", routes: "GET /projects/:projectId/archive, POST /projects/import, POST /projects/:projectId/copies, DELETE /projects/:projectId", donnees: "section Studio de l'archive (export, import validé), copie sans Studio, suppression refusée si une publication est diffusée ou retirée" },
 ];
 /** Fichiers `routes/*.ts` hors Studio qui citent une table, une bibliothèque ou un routeur Studio. */

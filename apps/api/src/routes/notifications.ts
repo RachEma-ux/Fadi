@@ -46,6 +46,7 @@ import { requireAuth } from "../middleware/require-auth.js";
 import { activeLock, type ProjectRole } from "../lib/owned-project.js";
 import { ROLE_LABEL } from "./members.js";
 import { filtrerNotifications, type NotificationKind } from "../lib/notification-preferences.js";
+import { reviewNotifications } from "../lib/reviews-recipient.js";
 import { lirePreferencesNotification } from "./preferences.js";
 
 export const notificationsRouter = Router();
@@ -62,6 +63,8 @@ export interface NotificationItem {
   stepNumber: number | null;
   /** Variante Studio commentée (`commentaire-studio` seulement). */
   studio?: { studyId: string; variantId: string };
+  /** Paquet de revue externe (`revue` seulement, phase 4) : la notification mène à `/revues/:id`. */
+  review?: { packageId: string };
   text: string;
   unread: boolean;
 }
@@ -413,6 +416,10 @@ export async function notificationsFor(userId: string, email: string): Promise<{
       });
     }
   }
+
+  // Revue externe (phase 4) : source distincte, bornée à l'accès de revue (`loadReviewAccess`) ; jamais un fil de
+  // l'équipe ni une note interne. Un destinataire externe n'a aucun projet ci-dessus : il ne reçoit que celle-ci.
+  items.push(...await reviewNotifications(userId, since));
 
   const preferences = await lirePreferencesNotification(userId);
   const { items: visibles, masquees } = filtrerNotifications(items, preferences);

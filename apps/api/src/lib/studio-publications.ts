@@ -37,14 +37,14 @@ import { z } from "zod";
 import { composerFeuilleStudio, exportStudioDxf, exportStudioIfc, exportStudioSvg, studioSheetPdf, validateStudioDocument, type StudioDocument } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
 import {
-  studioPublicationEvents, studioPublications, studioRevisions, studioStudies, studioVariants, users, volumes,
+  projects, studioPublicationEvents, studioPublications, studioRevisions, studioStudies, studioVariants, users, volumes,
   type StudioPackageFile, type StudioPackageFormat, type StudioPublicationAction, type StudioPublicationDiffusionStatus, type StudioPublicationManifest,
   type StudioPublicationPackage, type StudioPublicationStatus, type StudioPublicationWorkStatus,
 } from "../db/schema.js";
 import type { Tx } from "./atelier-validation.js";
 import { newId } from "./ids.js";
 import { activeLock, loadProjectAccess, lockedMessage, projectAccessRefusal, type AccessibleProject } from "./owned-project.js";
-import type { Querier } from "./step-rows.js";
+import { lockProject, type Querier } from "./step-rows.js";
 import { assertAccess, lockedAccess, notFound, StudioRequestError, studioArchivedRefusal, studioFileSegment, studioIdentifierSchema, studyOf } from "./studio-commands.js";
 import {
   actualiteDe, actualiteParEmpreinte, actualiteVue, besoinTransition, CacheRegeneration, cleRegeneration, type ContenuPublication, contenuDe, formatsDuContenu, type ControleDocuments, canonicalJson, construireManifeste, controlerApprobation, controlerEnsembleExamine, controlerTransition,
@@ -587,7 +587,10 @@ export async function frozenPublicationFiles(q: Querier, publicationId: string, 
  * (423) comme pour toute transition ; la diffusion reste une opération distincte, jamais ouverte à la revue.
  */
 export async function decideStudioPublicationByReview(tx: Tx, project: ProjetNoms & { id: string; editingLock: AccessibleProject["editingLock"] }, publicationId: string, actorId: string, action: "approuver" | "refuser", input: StudioPublicationTransitionInput): Promise<PublicationRow> {
-  const lock = activeLock(project);
+  // Même sérialisation qu'une transition Studio : verrou du projet, réservation d'édition relue sous ce verrou.
+  await lockProject(tx, project.id);
+  const [current] = await tx.select({ editingLock: projects.editingLock }).from(projects).where(eq(projects.id, project.id)).limit(1);
+  const lock = activeLock({ editingLock: current?.editingLock ?? project.editingLock });
   if (lock && lock.userId !== actorId) throw new StudioRequestError(423, { error: "locked", message: lockedMessage(lock), lock });
   const [row] = await tx.select().from(studioPublications).where(and(eq(studioPublications.id, publicationId), eq(studioPublications.projectId, project.id))).for("update");
   if (!row) return notFound();

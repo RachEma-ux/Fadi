@@ -39,6 +39,7 @@ import { audit, clientIp, emailHash } from "../lib/audit.js";
 import {
   consumeAccountToken, DELETION_GRACE_MS, formatDate, issueAccountToken, mailLocale, PUBLIC_PATHS, publicLink, sendAccountMail,
 } from "../lib/account.js";
+import { ReviewActivationRefused, reviewInvitationContext } from "../lib/reviews-core.js";
 import {
   activateInvitation, findInvitationByToken, INVITATION_REFUSAL_MESSAGE, invitationRefusal, invitationView, inviterStillAuthorized,
 } from "../lib/invitations.js";
@@ -621,6 +622,7 @@ async function describeInvitation(inv: typeof invitations.$inferSelect) {
   return invitationView(inv, {
     projectName: project ? `${project.code} — ${project.name}` : null, inviterName: inviter?.displayName || inviter?.email || (inv.invitedBy ? "" : "Exploitation de la plateforme"),
     organizationName: await organizationNameOf(inv.organizationId),
+    reviewPackage: await reviewInvitationContext(inv.reviewAssignmentId ?? null).then((r) => (r ? { id: r.packageId, title: r.title, version: r.version, projectLabel: r.projectLabel, responsibility: r.responsibility } : null)),
   });
 }
 
@@ -647,6 +649,7 @@ authRouter.post("/invitations/accept", async (req, res) => {
   }
   const result = await db.transaction(async (tx) => {
     const [inv] = await tx.select().from(invitations).where(eq(invitations.tokenHash, sha256Hex(parsed.data.token))).limit(1).for("update");
+    if (!inv) return { ok: false as const, refusal: "not_found" as const };
     const refusal = invitationRefusal(inv ?? null, { email: req.user!.email, status: req.user!.status }, inv ? await inviterStillAuthorized(inv, tx) : false, new Date());
     if (refusal || !inv) {
       // Idempotence : la même personne qui rejoue une acceptation déjà faite obtient le même résultat.
@@ -654,7 +657,13 @@ authRouter.post("/invitations/accept", async (req, res) => {
       if (inv) await audit(tx, { actorId: req.user!.id, action: "invitation.refused", target: { type: "invitation", id: inv.id }, metadata: { reason: refusal }, ip: clientIp(req) });
       return { ok: false as const, refusal: refusal ?? "not_found" };
     }
-    await activateInvitation(tx, inv, req.user!.id, clientIp(req));
+    // Revue externe (phase 4) : une fiche déjà liée à un autre compte refuse l'activation (rien n'est écrit).
+    try { await tx.transaction(async (inner) => { await activateInvitation(inner, inv, req.user!.id, clientIp(req)); }); }
+    catch (error) {
+      if (!(error instanceof ReviewActivationRefused)) throw error;
+      await audit(tx, { actorId: req.user!.id, action: "invitation.refused", target: { type: "invitation", id: inv.id }, metadata: { reason: "identity_conflict" }, ip: clientIp(req) });
+      return { ok: false as const, refusal: "identity_conflict" as const };
+    }
     if (!req.user!.emailVerified) await tx.update(users).set({ emailVerifiedAt: new Date() }).where(eq(users.id, req.user!.id));
     return { ok: true as const, inv };
   });
@@ -662,7 +671,7 @@ authRouter.post("/invitations/accept", async (req, res) => {
     res.status(result.refusal === "wrong_account" ? 403 : 409).json({ error: result.refusal, message: INVITATION_REFUSAL_MESSAGE[result.refusal] });
     return;
   }
-  res.json({ accepted: true, projectId: result.inv.projectId, organizationId: result.inv.organizationId ?? null });
+  res.json({ accepted: true, projectId: result.inv.projectId, organizationId: result.inv.organizationId ?? null, reviewPackageId: (await reviewInvitationContext(result.inv.reviewAssignmentId ?? null))?.packageId ?? null });
 });
 
 authRouter.post("/invitations/decline", async (req, res) => {
@@ -706,8 +715,12 @@ authRouter.post("/activate", perIdentifier(10), async (req, res) => {
       platformRole: locked.grantPlatformRole === "admin" ? "admin" : "user",
     }).returning();
     await audit(tx, { actorId: id, action: "account.activated", target: { type: "user", id }, metadata: { invitationId: locked.id }, ip: clientIp(req) });
+    // Revue externe (phase 4) : un refus d'identité annule toute la transaction (aucun compte créé), rendu ci-dessous.
     await activateInvitation(tx, locked, id, clientIp(req));
-    return { user: user!, projectId: locked.projectId, organizationId: locked.organizationId ?? null };
+    return { user: user!, projectId: locked.projectId, organizationId: locked.organizationId ?? null, reviewPackageId: (await reviewInvitationContext(locked.reviewAssignmentId ?? null, tx))?.packageId ?? null };
+  }).catch((error: unknown) => {
+    if (error instanceof ReviewActivationRefused) return { refusal: "identity_conflict" as const };
+    throw error;
   });
   if ("refusal" in result) {
     const message = result.refusal === "account_exists"
@@ -717,7 +730,7 @@ authRouter.post("/activate", perIdentifier(10), async (req, res) => {
     return;
   }
   const sessionUser = await openFullSession(req, res, result.user);
-  res.status(201).json({ user: publicUser(sessionUser), projectId: result.projectId, organizationId: result.organizationId });
+  res.status(201).json({ user: publicUser(sessionUser), projectId: result.projectId, organizationId: result.organizationId, reviewPackageId: result.reviewPackageId });
 });
 
 // ---------------------------------------------------------------------------------------------------------------------

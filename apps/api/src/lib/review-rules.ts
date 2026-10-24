@@ -55,8 +55,9 @@ export const isOpenAssignment = (status: ReviewAssignmentStatus): boolean => sta
 export interface ReviewPermissions { view: true; comment: boolean; attach: boolean; download: boolean; export: boolean }
 /** Défauts : consulter et commenter ; joindre, télécharger et exporter seulement si accordés explicitement. */
 export const DEFAULT_REVIEW_PERMISSIONS: Readonly<ReviewPermissions> = Object.freeze({ view: true, comment: true, attach: false, download: false, export: false });
-export function permissionsOf(input: Partial<Omit<ReviewPermissions, "view">> | undefined): ReviewPermissions {
-  const p = { ...DEFAULT_REVIEW_PERMISSIONS, ...(input ?? {}) };
+export function permissionsOf(input: { comment?: boolean | undefined; attach?: boolean | undefined; download?: boolean | undefined; export?: boolean | undefined } | undefined): ReviewPermissions {
+  const d = DEFAULT_REVIEW_PERMISSIONS;
+  const p = { comment: input?.comment ?? d.comment, attach: input?.attach ?? d.attach, download: input?.download ?? d.download, export: input?.export ?? d.export };
   // Joindre une pièce suppose de pouvoir écrire un constat.
   return { view: true, comment: p.comment, attach: p.comment && p.attach, download: p.download, export: p.export };
 }
