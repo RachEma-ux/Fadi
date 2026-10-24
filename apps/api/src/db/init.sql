@@ -991,6 +991,10 @@ ALTER TABLE studio_publication_events ADD COLUMN IF NOT EXISTS manifest_hash tex
 ALTER TABLE studio_publication_events ADD COLUMN IF NOT EXISTS work_status text;
 ALTER TABLE studio_publication_events ADD COLUMN IF NOT EXISTS diffusion_status text;
 ALTER TABLE studio_publication_events ADD COLUMN IF NOT EXISTS related_publication_id text;
+-- Base d'autorité de la transition (écart E5, CR-D6 (a)) : `{"base":"role-projet","role":…}` ou
+-- `{"base":"affectation","role":"approbateur"|"diffuseur","assignmentId":…}` ; NULL pour une entrée antérieure (aucune
+-- reprise rétroactive).
+ALTER TABLE studio_publication_events ADD COLUMN IF NOT EXISTS authority jsonb;
 ALTER TABLE studio_publication_events DROP CONSTRAINT IF EXISTS studio_publication_events_action_check,
   ADD CONSTRAINT studio_publication_events_action_check
   CHECK (action IN ('creer', 'soumettre', 'approuver', 'refuser', 'diffuser', 'retirer', 'actualiser', 'remplacer')) NOT VALID;
@@ -1450,7 +1454,7 @@ CREATE TABLE IF NOT EXISTS project_participations (
   represented_organization_id text REFERENCES organizations (id) ON DELETE SET NULL,
   -- Rôle métier déclaré (« ingénieur structure »…), saisie libre tant que les listes manquent (OP-D4).
   business_role text,
-  -- Responsabilités d'équipe du concept : diriger, produire, coordonner, vérifier, approuver, diffuser.
+  -- Responsabilités d'équipe du concept : diriger, produire, coordonner, vérifier, approuver, diffuser, garder le contenu (E10).
   responsibilities text[] NOT NULL DEFAULT '{}',
   status text NOT NULL,
   starts_on date,
@@ -1463,13 +1467,24 @@ CREATE TABLE IF NOT EXISTS project_participations (
   CONSTRAINT project_participations_period_check CHECK (ends_on IS NULL OR starts_on IS NULL OR ends_on >= starts_on),
   CONSTRAINT project_participations_ended_check CHECK ((status = 'terminee') = (ends_on IS NOT NULL)),
   CONSTRAINT project_participations_responsibilities_check
-    CHECK (responsibilities <@ ARRAY['diriger', 'produire', 'coordonner', 'verifier', 'approuver', 'diffuser']::text[])
+    CHECK (responsibilities <@ ARRAY['diriger', 'produire', 'coordonner', 'verifier', 'approuver', 'diffuser', 'garder']::text[])
 );
 CREATE UNIQUE INDEX IF NOT EXISTS project_participations_current_person ON project_participations (project_id, person_id)
   WHERE person_id IS NOT NULL AND status <> 'terminee';
 CREATE UNIQUE INDEX IF NOT EXISTS project_participations_current_org ON project_participations (project_id, organization_id)
   WHERE organization_id IS NOT NULL AND status <> 'terminee';
 CREATE INDEX IF NOT EXISTS project_participations_person_idx ON project_participations (person_id);
+-- Écart E10 (2026-10-24) : `garder` = gardien du contenu, responsabilité déclarée, sans aucun droit implicite. Contrainte
+-- élargie sur une base antérieure (aucune ligne existante n'est touchée), une seule fois.
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'project_participations_responsibilities_check'
+                  AND pg_get_constraintdef(oid) LIKE '%garder%') THEN
+    ALTER TABLE project_participations DROP CONSTRAINT IF EXISTS project_participations_responsibilities_check;
+    ALTER TABLE project_participations ADD CONSTRAINT project_participations_responsibilities_check
+      CHECK (responsibilities <@ ARRAY['diriger', 'produire', 'coordonner', 'verifier', 'approuver', 'diffuser', 'garder']::text[]);
+  END IF;
+END $$;
 
 -- Rôles métier par portée (OP-D3 c, concept partie 2) : Lecteur, Concepteur, Relecteur, Coordinateur, Approbateur,
 -- Diffuseur. Origine `acces` : miroir de l'accès actuel (lecteur → lecteur, editeur → concepteur), tenu par les

@@ -32,7 +32,7 @@ partagent pas un cycle de vie commun. Ce chantier tient la traçabilité (matric
 La [PR #265](https://github.com/RachEma-ux/Fadi/pull/265) (phase 1) est **ouverte** au moment de ce cadrage et modifie
 `organisations-participation/PLAN.md`. Ce plan **ne le modifie pas** : les ajouts exacts sont proposés en
 [annexe A](#annexe-a--ajouts-proposés-au-plan-dorganisations) ; ils seront reportés dans ce PLAN par une PR distincte après
-la fusion de la #265 et l'accord du maître d'ouvrage (CR-D10).
+la fusion de la #265 et l'accord du maître d'ouvrage (CR-D10). **Reportés le 2026-10-24 (CR-1, accord CR-R3).**
 
 Le critère d'export du Lecteur suit CR-D4 (b modifiée, [DECISIONS.md](DECISIONS.md) CR-R2), mis en œuvre par la PR de
 correction des écarts E1 à E3.
@@ -130,14 +130,14 @@ dette déjà décidée.
 | E2 | Haute | Export ouvert au `lecteur` (api:lib/owned-project.ts:43 ; e2e:comptes-securite.mjs:343) : tout participant en lecture sort le contenu du projet. | R3, A02 | Organisations (phases 2 et 4) | Décidé (CR-D4 b modifiée, CR-R2) : aucun nouveau lecteur n'exporte sans un droit accordé par le propriétaire ; les lecteurs existants gardent l'export ; support jamais. Mise en œuvre : PR séparée de correction des écarts E1 à E3. |
 | E3 | Haute | Ajout direct, changement de rôle, retrait d'un membre et transfert de propriété non journalisés (api:routes/members.ts:145, 152, 174, 196). | R5 | Organisations (phase 2) | Journaliser dans `admin.audit_log` dans la même transaction (déjà prévu pour les participations, tâche 5 reportée en phase 2) ; y inclure le transfert de propriété. |
 | E4 | Moyenne | `access_expires_at` présent (api:db/schema.ts:118) mais jamais renseigné ni appliqué (api:lib/invitations.ts:75-85 ; api:lib/owned-project.ts:92-105). | S2, C4-02 | Organisations (phase 3) | Échéance d'accès portée par la participation et vérifiée par `loadProjectAccess`. Aucun écran ne promet aujourd'hui cette échéance (aucune fuite). |
-| E5 | Moyenne | Approbation et diffusion réservées au propriétaire : Approbateur et Diffuseur ne peuvent être distincts ; la base d'autorité n'est pas enregistrée (api:lib/studio-publication-statuts.ts:43-49). | R2, R5, S5 | Studio, avec la bascule d'Organisations phase 2 | Affectations distinctes (OP-D3 c) ; enregistrer l'affectation utilisée dans le journal de publication (CR-D2, CR-D6). |
-| E6 | Moyenne | Le retrait d'un membre ne libère ni sa réservation d'édition ni ses verrous fins (api:routes/members.ts:174-188), contrairement à la suspension (api:routes/admin/index.ts:157) ; ses observations et tâches ne sont pas signalées. | A05 | Organisations (phase 2, fin de participation) ; Studio | Libération dans la même transaction ; liste des responsabilités à réattribuer, sans réattribution automatique (CR-D7). |
+| E5 | Moyenne | Approbation et diffusion réservées au propriétaire : Approbateur et Diffuseur ne peuvent être distincts ; la base d'autorité n'est pas enregistrée (api:lib/studio-publication-statuts.ts:43-49). | R2, R5, S5 | Studio, avec la bascule d'Organisations phase 2 | **Corrigé (CR-C2)** : affectations explicites Approbateur / Diffuseur données par le propriétaire ; base d'autorité de chaque transition au journal de publication (CR-D2, CR-D6). |
+| E6 | Moyenne | Le retrait d'un membre ne libère ni sa réservation d'édition ni ses verrous fins (api:routes/members.ts:174-188), contrairement à la suspension (api:routes/admin/index.ts:157) ; ses observations et tâches ne sont pas signalées. | A05 | Organisations (phase 2, fin de participation) ; Studio | **Corrigé (CR-C2)** : libération dans la transaction du retrait ; liste « Responsabilités à réattribuer », sans réattribution automatique (CR-D7). |
 | E7 | Moyenne | Après retrait d'un projet, son cache local reste sur l'appareil jusqu'à la déconnexion (purge à la déconnexion ou au 401 seulement : web:lib/auth-context.tsx:57, 142). | S6, Map § 5 | Collaboration (client hors ligne), Users Management | Politique hors ligne à décider (CR-D5). |
 | E8 | Basse | Grant hors invitation par l'ajout direct d'un compte existant (api:routes/members.ts:109-149, UM-8). | M01 | Organisations (phase 3) | Déjà décidé : OP-D2 (a). |
-| E9 | Basse | « Publication » désigne un instantané partagé dans l'Atelier (api:db/schema.ts:672) et un dossier soumis à approbation dans Studio. | V07 | Studio / Atelier (documentation) | Glossaire français du vocabulaire commun, identifiants de code inchangés (CR-D8). |
-| E10 | Basse | Gardien du contenu non modélisé ; seule la propriété du projet existe (api:routes/members.ts:196-219). | A03 | Organisations (responsabilités d'équipe) | Responsabilité d'équipe déclarée, sans droit implicite ; à préciser au 🛑 1 d'Organisations. |
+| E9 | Basse | « Publication » désigne un instantané partagé dans l'Atelier (api:db/schema.ts:672) et un dossier soumis à approbation dans Studio. | V07 | Studio / Atelier (documentation) | **Corrigé (CR-C2)** : [GLOSSAIRE.md](GLOSSAIRE.md), identifiants de code inchangés (CR-D8). |
+| E10 | Basse | Gardien du contenu non modélisé ; seule la propriété du projet existe (api:routes/members.ts:196-219). | A03 | Organisations (responsabilités d'équipe) | **Corrigé (CR-C2)** : responsabilité d'équipe `garder` déclarée, sans droit implicite ; contenu nommé à affiner en phase 2 d'Organisations. |
 
-Aucun écart n'a été corrigé par ce lot.
+Aucun écart n'a été corrigé par le lot de cadrage. Depuis : E1, E2, E3 (et E7) par la PR #274 (CR-C1) ; E5, E6, E9, E10 par CR-C2 ; E4 et E8 restent à la phase 3 d'Organisations.
 
 ---
 

@@ -3666,6 +3666,12 @@ button.h7-chip.h7-goto:hover {
   margin: 0;
   flex: 0 0 auto;
 }
+/* Affectations du membre (écarts E5, E10) : une case par affectation, à la ligne sur écran étroit ; libellés séparés. */
+.member-affectations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
 .journal-table td:nth-child(4) {
   min-width: 260px;
   color: var(--muted);

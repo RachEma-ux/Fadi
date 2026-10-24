@@ -12,7 +12,10 @@
 ## En cours
 
 - OP-P1 — Phase 1 : personnes, organisations (minimal), participations, rôles par portée, miroir des accès, reprise de
-  l'existant — implémentée sur `feat/op-phase1-participations`, en attente de la revue 🛑 1 (Issue : #262).
+  l'existant — fusionnée (PR #265, `f59641c`), en attente de la revue 🛑 1 (Issue : #262).
+
+- [x] OP-CR1 — Critères des règles communes (annexe A de `collaboration-rules/PLAN.md`) reportés dans PLAN.md, phases 2,
+  3, 3 bis, 4 et 6 (CR-1, 2026-10-24) (Issue : #272).
 
 ## Terminé
 
