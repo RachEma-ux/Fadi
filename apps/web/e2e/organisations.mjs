@@ -399,6 +399,90 @@ try {
   check("passe anglaise : aucun texte d'interface resté en français", residus.size === 0, [...residus.entries()].slice(0, 15).map(([t, n]) => `[${n}] ${t}`).join(" | "));
   await ui.evaluate(() => localStorage.setItem("fadi.langue", "fr"));
   await tel.close();
+
+  // ------------------------------------------------------------------------------------------------------------------
+  // Côté projet : partie propriétaire et organisations parties (reliquat de la phase 5, OP-D1 a)
+  // ------------------------------------------------------------------------------------------------------------------
+  // Dave lit le projet (partage en lecture), sans être membre d'aucune organisation ; une seconde organisation partie
+  // (Bureau Sud, créée par le formulaire) est close : elle reste affichée avec son statut.
+  check("côté projet : dave reçoit la lecture du projet", (await alice.call("post", `/projects/${pid}/members`, { email: dave.email, role: "lecteur" })).status === 201);
+  await alice.call("patch", `/organizations/${orgId}`, { details: `12 rue des Lilas ${RUN}` });
+  const sudId = (await alice.call("get", "/organizations")).body.memberships.find((m) => m.organization.name === `Bureau Sud ${RUN}`).organization.id;
+  check("côté projet : seconde organisation enregistrée comme partie", (await alice.call("put", `/organizations/${sudId}/projects/${pid}/participation`, { businessRole: "Bureau d'études" })).status === 201);
+  check("côté projet : seconde organisation close", (await alice.call("post", `/organizations/${sudId}/status`, { status: "close", confirmName: `Bureau Sud ${RUN}` })).status === 200);
+  const accessRows = async () => pgClient
+    ? JSON.stringify((await pgClient.query("SELECT user_id, role, can_export, can_approve, can_publish FROM project_effective_access WHERE project_id = $1 ORDER BY user_id", [pid])).rows)
+      + JSON.stringify((await pgClient.query("SELECT ra.role, ra.scope_type, ra.origin, pp.person_id FROM project_role_assignments ra JOIN project_participations pp ON pp.id = ra.participation_id WHERE pp.project_id = $1 ORDER BY pp.person_id, ra.role", [pid])).rows)
+    : null;
+  const beforeAccess = await accessRows();
+  check("côté projet : retrait de la déclaration (propriétaire du projet)", (await alice.call("delete", `/organizations/${orgId}/projects/${pid}/owner`)).body?.accessChanged === false);
+  const without = (await dave.call("get", `/projects/${pid}/participants`)).body.organizations;
+  check("côté projet : sans déclaration, aucune partie propriétaire ; la personne propriétaire est nommée", without.owner === null && without.ownerPerson.userId === alice.id && without.ownerGrantsAccess === false);
+  check("côté projet : redéclaration, aucun droit changé", (await alice.call("put", `/organizations/${orgId}/projects/${pid}/owner`)).body.accessChanged === false);
+  if (pgClient) check("côté projet : accès effectifs et rôles identiques avant et après la déclaration (base)", (await accessRows()) === beforeAccess);
+  else notRun("côté projet : accès effectifs et rôles comparés en base", "DATABASE_URL absente");
+  check("côté projet : dave reste lecteur, bob (membre mandaté) reste sans accès (404)",
+    (await dave.call("get", `/projects/${pid}`)).body.role === "lecteur" && (await bob.call("get", `/projects/${pid}/participants`)).status === 404);
+  const seenByDave = (await dave.call("get", `/projects/${pid}/participants`)).body.organizations;
+  check("côté projet : partie propriétaire déclarée visible d'un lecteur, sans renvoi (non membre)",
+    seenByDave.owner?.id === orgId && seenByDave.owner.name === `Atelier Nord ${RUN}` && seenByDave.owner.youAreMember === false && seenByDave.owner.isParty === true);
+  const nord = seenByDave.parties.find((p) => p.id === orgId), sud = seenByDave.parties.find((p) => p.id === sudId);
+  check("côté projet : représentant mandaté en cours (mandat accepté) seul listé", nord?.representatives.length === 1 && nord.representatives[0].mandateId === propFred.body.mandate.id, JSON.stringify(nord));
+  check("côté projet : organisation close affichée avec son statut, jamais masquée", sud?.status === "close" && sud.representatives.length === 0);
+  const raw = JSON.stringify(seenByDave);
+  check("côté projet : aucune coordonnée ni adresse exposée", !raw.includes("rue des Lilas") && !raw.includes("@") && !("details" in (seenByDave.owner ?? {})));
+  const head = (await dave.call("get", `/projects/${pid}`)).body.owningOrganization;
+  check("côté projet : en-tête du projet — identité de la partie propriétaire seule", head?.id === orgId && head.status === "active" && head.youAreMember === false && !("details" in head));
+  check("côté projet : l'administratrice membre reçoit le renvoi", (await alice.call("get", `/projects/${pid}/participants`)).body.organizations.owner.youAreMember === true);
+
+  const zone = '[data-organisations-projet]';
+  await alice.page.goto(`${BASE}/projets/${pid}?module=collaboration`);
+  await alice.page.waitForSelector(`${zone} [data-partie-proprietaire="${orgId}"]`, { timeout: 20000 });
+  check("interface : renvoi vers l'espace d'organisation pour un membre", (await alice.page.locator(`${zone} [data-partie-proprietaire] a[href="/organisations/${orgId}"]`).count()) === 1);
+  check("interface : en-tête du projet « Partie propriétaire » avec renvoi", (await alice.page.locator(`.project-header [data-partie-proprietaire="${orgId}"] a`).count()) === 1);
+  await dave.page.goto(`${BASE}/projets/${pid}?module=collaboration`);
+  await dave.page.waitForSelector(`${zone} [data-partie-proprietaire="${orgId}"]`, { timeout: 20000 });
+  const card = dave.page.locator(zone);
+  check("interface : nom seul pour un non-membre", (await card.locator("a").count()) === 0 && (await card.locator(`[data-partie-proprietaire] b`).first().textContent())?.trim() === `Atelier Nord ${RUN}`);
+  check("interface : personne propriétaire rappelée, droit au compte propriétaire dit", (await card.locator("[data-personne-proprietaire]").count()) === 1 && /ne donne ni accès ni rôle/.test(await card.textContent() ?? ""));
+  check("interface : organisations parties et représentant mandaté", (await card.locator(`[data-partie="${orgId}"] [data-representant="${propFred.body.mandate.id}"]`).count()) === 1);
+  check("interface : organisation close affichée avec son statut", (await card.locator(`[data-partie="${sudId}"] [data-statut-organisation="close"]`).count()) === 1);
+  check("interface : en-tête du projet sans renvoi pour un non-membre", (await dave.page.locator(`.project-header [data-partie-proprietaire="${orgId}"]`).count()) === 1 && (await dave.page.locator(".project-header [data-partie-proprietaire] a").count()) === 0);
+  await axe(dave.page, "organisations du projet (bureau)");
+  const telProjet = await browser.newContext(phone);
+  const telDave = await telProjet.newPage();
+  await telDave.request.post(`${BASE}/auth/login`, { data: { email: dave.email, password: PASSWORD } });
+  await telDave.goto(`${BASE}/projets/${pid}?module=collaboration`);
+  await telDave.waitForSelector(`${zone} [data-partie-proprietaire="${orgId}"]`, { timeout: 20000 });
+  await axe(telDave, "organisations du projet (téléphone)");
+  const overCard = await telDave.evaluate((sel) => { const el = document.querySelector(sel); return el ? el.scrollWidth - el.clientWidth : -1; }, zone);
+  check("organisations du projet (téléphone) : la carte ne déborde pas", overCard >= 0 && overCard <= 1, `${overCard}px`);
+  await noHorizontalScroll(telDave, "organisations du projet (téléphone)");
+  await telProjet.close();
+  residus.clear();
+  await dave.page.evaluate(() => localStorage.setItem("fadi.langue", "en"));
+  await dave.page.goto(`${BASE}/projets/${pid}?module=collaboration`);
+  await dave.page.waitForSelector(`${zone} [data-partie-proprietaire="${orgId}"]`, { timeout: 20000 });
+  const releveZone = async () => {
+    await dave.page.waitForTimeout(700);
+    return dave.page.evaluate((sels) => {
+      const out = [];
+      for (const root of sels.map((s) => document.querySelector(s)).filter(Boolean)) {
+        const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        for (let n = w.nextNode(); n; n = w.nextNode()) {
+          if (n.parentElement?.closest('[translate="no"]')) continue;
+          const t = (n.nodeValue ?? "").replace(/\s+/g, " ").trim();
+          if (t.length >= 2 && /[A-Za-zÀ-ÿ]/.test(t)) out.push(t);
+        }
+        for (const el of [root, ...root.querySelectorAll("[title]")]) { const v = el.getAttribute("title"); if (v) out.push(v); }
+      }
+      return out;
+    }, [zone, ".project-header [data-partie-proprietaire]"]);
+  };
+  for (const t of await releveZone()) if (FR.test(t)) residus.set(t, "côté projet");
+  check("passe anglaise (côté projet) : titre de la carte traduit", (await card.locator("h3").textContent())?.trim() === "Project organisations");
+  check("passe anglaise (côté projet) : aucun texte d'interface resté en français", residus.size === 0, [...residus.keys()].slice(0, 10).join(" | "));
+  await dave.page.evaluate(() => localStorage.setItem("fadi.langue", "fr"));
 } catch (e) {
   check("déroulé sans erreur inattendue", false, e.stack ?? String(e));
 } finally {
