@@ -19,7 +19,20 @@ PR #255 n'est attendue. Reste au maître d'ouvrage : le déploiement en producti
 **Amendement de D-5 (UM-27, 2026-10-24) : implémenté, vérifié en local et en CI (`4aa7d0b`), [PR #270](https://github.com/RachEma-ux/Fadi/pull/270) vers `main` (non fusionnée, aucun
 déploiement).** Corbeille des comptes et « Anonymiser maintenant » dans `/admin/utilisateurs` — voir la section UM-27.
 
+**UM-29 (2026-10-24) : langue des courriels = langue de l'interface, sinon français ; branche `fix/um-29-langue-courriels`,
+PR vers `main` (non fusionnée, aucun déploiement).** Voir la section UM-29.
+
 ## Faits vérifiés
+
+### Langue des courriels (UM-29, 2026-10-24)
+
+Branche `fix/um-29-langue-courriels`, depuis `main` à `7083285`. Vérifié dans la session (sans base de test) :
+
+- `npm run typecheck` : vert. `npm run build` : vert.
+- `npm test` : paquets et web verts ; API : tests purs verts, dont `lib/mail-locale.test.ts` (3 tests) ; les 12 suites
+  DB-3 refusées par la garde **seule** (`TARGET_REQUIRED`), comme attendu sans la clé `fadi-ci-db3`.
+- `comptes-admin.mjs` (section 5 bis, Mailpit) : **non exécutée dans la session** (ni PostGIS ni Mailpit lancés) ;
+  la preuve est la CI de la PR (étape « Recette Gestion des comptes dans le navigateur »).
 
 ### Corbeille et « Anonymiser maintenant » (UM-27, 2026-10-24)
 

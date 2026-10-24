@@ -3,7 +3,6 @@
  * liens publics (jeton dans le fragment `#jeton=…`, jamais envoyé au serveur ni journalisé par un relais), langue des
  * courriels, envoi par la file.
  */
-import type { Request } from "express";
 import { and, eq, gt, isNull } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { accountTokens, type AccountTokenPurpose } from "../db/schema.js";
@@ -11,6 +10,8 @@ import { newId } from "./ids.js";
 import { enqueueMail, type EnqueueResult } from "./mailer/outbox.js";
 import { mailRuntime, type MailLocale, type MailTemplate } from "./mailer/index.js";
 import { randomToken, sha256Hex } from "./security/tokens.js";
+
+export { mailLocale } from "./mail-locale.js";
 
 const HOUR = 3_600_000;
 export const TOKEN_TTL_MS: Record<AccountTokenPurpose, number> = {
@@ -31,13 +32,6 @@ export const PUBLIC_PATHS = {
 
 export function publicLink(path: string, token: string): string {
   return `${mailRuntime().config.publicUrl}${path}#jeton=${encodeURIComponent(token)}`;
-}
-
-/** Langue des courriels : `fr` sauf préférence explicite pour l'anglais (corps `locale`, sinon `Accept-Language`). */
-export function mailLocale(req: Request, explicit?: unknown): MailLocale {
-  if (explicit === "en" || explicit === "fr") return explicit;
-  const header = req.get("accept-language") ?? "";
-  return /^en\b/i.test(header.trim()) ? "en" : "fr";
 }
 
 type Executor = Pick<typeof db, "insert" | "update" | "select">;
