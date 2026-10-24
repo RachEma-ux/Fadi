@@ -139,6 +139,22 @@ export const ACTION_LABEL: Readonly<Record<string, string>> = {
   "person.contact_erased": "Contact sans compte effacé",
   "project.closed": "Projet clos",
   "project.reopened": "Projet rouvert",
+  // Revue externe (phase 4).
+  "review.package.created": "Paquet de revue préparé",
+  "review.package.updated": "Paquet de revue modifié",
+  "review.package.deleted": "Brouillon de paquet de revue supprimé",
+  "review.package.shared": "Paquet de revue partagé (contenu figé)",
+  "review.package.superseded": "Paquet de revue remplacé par une nouvelle version",
+  "review.package.version_created": "Nouvelle version d’un paquet de revue préparée",
+  "review.package.closed": "Paquet de revue clos",
+  "review.recipient.recorded": "Destinataire de revue enregistré",
+  "review.assignment.created": "Destinataire de revue invité",
+  "review.assignment.accepted": "Invitation de revue acceptée",
+  "review.assignment.revoked": "Accès de revue révoqué",
+  "review.finding.created": "Constat de revue enregistré",
+  "review.finding.rechecked": "Constat de revue recontrôlé",
+  "review.response.recorded": "Réponse de relecture enregistrée",
+  "review.decision.recorded": "Décision d’approbation enregistrée par la revue",
 };
 
 export const FAMILY_LABEL: Readonly<Record<string, string>> = {

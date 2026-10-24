@@ -1,0 +1,31 @@
+/* Revue externe (phase 4) : espace du destinataire et panneau de l'équipe ; lisibles au téléphone (aucun défilement horizontal). */
+.revue-page { display: grid; gap: 14px; }
+.revue-page section.panel { min-width: 0; }
+.revue-list, .revue-constats { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 8px; }
+.revue-list > li, .revue-constat { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: flex-start; border: 1px solid #dfe8e3; border-radius: 8px; padding: 8px 10px; min-width: 0; overflow-wrap: anywhere; }
+.revue-constat { display: grid; justify-content: stretch; }
+.revue-list > li > div { min-width: 0; }
+.revue-block { display: block; margin-top: 2px; }
+.revue-dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; overflow-wrap: anywhere; }
+.revue-dl dt { font-weight: 600; }
+.revue-dl dd { margin: 0; min-width: 0; }
+.revue-questions { margin: 0; padding-left: 1.2rem; }
+.revue-retard { color: #7e2020; }
+.revue-finalite { border-left: 4px solid #a9741b; padding-left: 8px; }
+.revue-status[data-status="remplace"], .revue-status[data-status="clos"], .revue-status[data-status="annulee"], .revue-status[data-status="ouverte"], .revue-status[data-status="rouverte"] { background: #fdf0d8; color: #6b4206; }
+.revue-status[data-status="recontrolee"], .revue-status[data-status="cloturee"], .revue-status[data-status="terminee"] { background: #e2f1e7; color: #1d4b31; }
+.revue-barre { flex-wrap: wrap; }
+.revue-commande { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.revue-form, .revue-reponse, .revue-dialogue { display: grid; gap: 6px; border: 1px solid #c3d3cb; border-radius: 8px; padding: 8px 10px; min-width: 0; }
+.revue-form textarea, .revue-form input, .revue-form select, .revue-reponse textarea, .revue-dialogue textarea { padding: 0.45rem; border: 1px solid #6f8a7d; border-radius: 6px; max-width: 100%; box-sizing: border-box; width: 100%; }
+.revue-fil { margin: 4px 0; padding-left: 1.2rem; display: grid; gap: 4px; }
+.revue-fil p, .revue-constat-texte { margin: 0; white-space: pre-wrap; }
+.revue-pieces { margin: 0; padding-left: 1.2rem; }
+.revue-suivi { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 4px 0; }
+.revue-panel { display: grid; gap: 10px; }
+.revue-panel code, .revue-page code { overflow-wrap: anywhere; }
+@media (max-width: 700px) {
+  .revue-dl { grid-template-columns: 1fr; }
+  .revue-list > li { flex-direction: column; }
+}
+.revue-actions { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0; padding-left: 1.2rem; }

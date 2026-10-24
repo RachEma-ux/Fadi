@@ -157,13 +157,15 @@ export type ProjectPlanningInput = ProjectPlanningStep & { expectedRevision: num
 export interface NotificationItem {
   id: string;
   at: string;
-  kind: "acces" | "commentaire" | "reservation" | "modification" | "verrou" | "peremption" | "commentaire-studio";
+  kind: "acces" | "commentaire" | "reservation" | "modification" | "verrou" | "peremption" | "commentaire-studio" | "revue";
   projectId: string;
   projectCode: string;
   projectName: string;
   stepNumber: number | null;
   /** Variante Studio commentée (`commentaire-studio` seulement). */
   studio?: { studyId: string; variantId: string };
+  /** Paquet de revue externe (`revue` seulement, phase 4). */
+  review?: { packageId: string };
   text: string;
   /** Postérieure à votre dernière consultation. */
   unread: boolean;
@@ -238,7 +240,7 @@ export interface MembersView {
 export type InvitationStatus = "pending" | "accepted" | "declined" | "expired" | "cancelled";
 export interface InvitationView {
   id: string;
-  purpose: "platform_account" | "project_participation" | "organization_membership";
+  purpose: "platform_account" | "project_participation" | "organization_membership" | "review_package";
   email: string;
   status: InvitationStatus;
   expiresAt: string;
@@ -253,11 +255,13 @@ export interface InvitationView {
   organizationName?: string | null;
   organizationRole?: OrganizationRole | null;
   organizationJobTitle?: string | null;
+  /** Finalité `review_package` (phase 4) : paquet visé, projet, responsabilité — le paquet seul, aucun accès au projet. */
+  reviewPackage?: { id: string; title: string; version: number; projectLabel: string; responsibility: string } | null;
 }
 /** Réponse d'un envoi : `link` présent seulement quand le courriel n'a pas pu partir (lien à transmettre soi-même, D-1). */
 export interface MailOutcome { queued: boolean; reason: string | null; link?: string }
 export interface InvitationCreated { invitation: InvitationView; resent: boolean; mail: MailOutcome }
-export type InvitationRefusal = "not_found" | "expired" | "already_accepted" | "declined" | "cancelled" | "wrong_account" | "inviter_not_authorized" | "account_inactive";
+export type InvitationRefusal = "not_found" | "expired" | "already_accepted" | "declined" | "cancelled" | "wrong_account" | "inviter_not_authorized" | "account_inactive" | "identity_conflict";
 export interface InvitationLookup { invitation: InvitationView; accountExists: boolean; signedInAs: string | null; refusal: InvitationRefusal | null; message: string | null }
 export type LoginResult = { mfaRequired: true; expiresAt: string } | (CurrentUser & { mfaRequired?: undefined });
 export interface AccountSession { id: string; current: boolean; createdAt: string; lastSeenAt: string; expiresAt: string; absoluteExpiresAt: string | null; userAgent: string | null; ip: string | null }
@@ -397,10 +401,10 @@ export const accountApi = {
   requestEmailVerification: () => request<{ verified: boolean; mail?: MailOutcome }>("/auth/verify-email/request", json(withLocale({}))),
   cancelDeletion: (token: string) => request<{ cancelled: boolean }>("/auth/cancel-deletion", json({ token })),
   lookupInvitation: (token: string) => request<InvitationLookup>("/auth/invitations/lookup", json({ token })),
-  acceptInvitation: (token: string) => request<{ accepted: boolean; projectId: string | null; organizationId?: string | null }>("/auth/invitations/accept", json({ token })),
+  acceptInvitation: (token: string) => request<{ accepted: boolean; projectId: string | null; organizationId?: string | null; reviewPackageId?: string | null }>("/auth/invitations/accept", json({ token })),
   declineInvitation: (token: string) => request<{ declined: boolean }>("/auth/invitations/decline", json({ token })),
   activate: (input: { token: string; password: string; displayName?: string }) =>
-    request<{ user: CurrentUser; projectId: string | null; organizationId?: string | null }>("/auth/activate", json({ ...input, acceptTerms: true })),
+    request<{ user: CurrentUser; projectId: string | null; organizationId?: string | null; reviewPackageId?: string | null }>("/auth/activate", json({ ...input, acceptTerms: true })),
   changePassword: (currentPassword: string, newPassword: string) => request<{ changed: boolean; revokedSessions: number }>("/auth/me/password", json(withLocale({ currentPassword, newPassword }))),
   sessions: () => request<{ sessions: AccountSession[] }>("/auth/me/sessions"),
   revokeSession: (id: string) => request<void>(`/auth/me/sessions/${encodeURIComponent(id)}`, { method: "DELETE" }),
