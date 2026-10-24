@@ -33,7 +33,7 @@ import {
 } from "../db/schema.js";
 import { newId } from "./ids.js";
 import { audit } from "./audit.js";
-import { AudienceError, audienceChangeRefusal, audienceOfNew, audienceSchema, seesTeam, type CommentAudience } from "./audience.js";
+import { AudienceError, audienceChangeRefusal, audienceOfNew, audienceSchema, seesTeam, type CommentAudience, type StudioCommentAudience } from "./audience.js";
 import { loadProjectAccess, projectAccessRefusal, roleAllows, type AccessibleProject, type ProjectNeed, type ProjectRole } from "./owned-project.js";
 import { lockedAccess, StudioRequestError, studioArchivedRefusal, studioIdentifierSchema, type StudioScope } from "./studio-commands.js";
 import type { Tx } from "./atelier-validation.js";
@@ -82,8 +82,10 @@ export interface StudioCommentView {
   createdAt: string;
   deletedAt: string | null;
   mine: boolean;
-  /** Audience du fil (E1). */
-  audience: CommentAudience;
+  /** Audience du fil (E1) ; `revue` : constat d'une revue externe (phase 4), lu aussi par les destinataires du paquet. */
+  audience: StudioCommentAudience;
+  /** Paquet de revue d'un fil `revue`, sinon null. */
+  reviewPackageId: string | null;
   /** Observation issue de ce commentaire (même identifiant), null sinon. */
   observation: StudioObservationView | null;
 }
@@ -185,7 +187,7 @@ function view(c: Row, actorId: string, observation: StudioObservationView | null
     id: c.id, variantId: c.variantId, parentId: c.parentId, revisionId: c.revisionId,
     objectIds: deleted ? [] : c.objectIds, authorId: c.authorId, authorEmail: c.authorEmail ?? "",
     body: deleted ? null : c.body, createdAt: c.createdAt.toISOString(), deletedAt: c.deletedAt?.toISOString() ?? null,
-    mine: c.authorId === actorId, audience: c.audience ?? "projet", observation,
+    mine: c.authorId === actorId, audience: c.audience ?? "projet", reviewPackageId: c.reviewPackageId ?? null, observation,
   };
 }
 
@@ -205,7 +207,8 @@ export async function scopedVariant(scope: StudioScope, actorId: string, need: P
 const selectRow = () => db.select({
   id: studioComments.id, variantId: studioComments.variantId, revisionId: studioComments.revisionId, objectIds: studioComments.objectIds,
   parentId: studioComments.parentId, authorId: studioComments.authorId, body: studioComments.body, requestId: studioComments.requestId,
-  payloadHash: studioComments.payloadHash, createdAt: studioComments.createdAt, deletedAt: studioComments.deletedAt, audience: studioComments.audience, authorEmail: users.email,
+  payloadHash: studioComments.payloadHash, createdAt: studioComments.createdAt, deletedAt: studioComments.deletedAt, audience: studioComments.audience,
+  reviewPackageId: studioComments.reviewPackageId, authorEmail: users.email,
 }).from(studioComments).leftJoin(users, eq(users.id, studioComments.authorId));
 
 /** Fils de la variante : chaque commentaire d'origine (plus ancien d'abord) suivi de ses réponses (plus ancienne d'abord). */
@@ -590,22 +593,25 @@ export async function createStudioComment(scope: StudioScope, actorId: string, i
     // verrou partagé dans la transaction de l'insertion, `setStudioCommentAudience` la verrouille en écriture.
     const createdId = await db.transaction(async (tx) => {
       let parentId: string | null = null;
-      let threadAudience: CommentAudience | null | undefined;
+      let threadAudience: StudioCommentAudience | null | undefined;
+      let reviewPackageId: string | null = null;
       if (input.parentId !== undefined) {
         const [parent] = await tx.select({ id: studioComments.id, parentId: studioComments.parentId, deletedAt: studioComments.deletedAt }).from(studioComments)
           .where(and(eq(studioComments.variantId, variant.id), eq(studioComments.id, input.parentId), audienceFilter(variant.access.role))).limit(1);
         if (!parent || parent.deletedAt) return notFound("Le commentaire auquel vous répondez n'existe plus.");
         // Répondre à une réponse rattache au commentaire d'origine : sa ligne porte l'audience du fil.
-        const [root] = await tx.select({ id: studioComments.id, audience: studioComments.audience }).from(studioComments)
+        const [root] = await tx.select({ id: studioComments.id, audience: studioComments.audience, reviewPackageId: studioComments.reviewPackageId }).from(studioComments)
           .where(and(eq(studioComments.variantId, variant.id), eq(studioComments.id, parent.parentId ?? parent.id), audienceFilter(variant.access.role))).limit(1).for("share");
         if (!root) return notFound("Le commentaire auquel vous répondez n'existe plus.");
         parentId = root.id;
         threadAudience = root.audience;
+        // Réponse à un constat de revue externe (phase 4) : elle suit le fil et son paquet (lue par ses destinataires).
+        reviewPackageId = root.reviewPackageId;
       }
       const audience = audienceOrRefuse(() => audienceOfNew(variant.access.role, input.audience, threadAudience));
       const [created] = await tx.insert(studioComments).values({
         id: newId("studio_comment"), variantId: variant.id, revisionId, objectIds, parentId, authorId: actorId, body: input.body,
-        requestId: input.requestId ?? null, payloadHash: hash, audience,
+        requestId: input.requestId ?? null, payloadHash: hash, audience, reviewPackageId,
       }).returning({ id: studioComments.id });
       return created!.id;
     });
@@ -654,6 +660,9 @@ export async function setStudioCommentAudience(scope: StudioScope, actorId: stri
     if (!root) return notFound();
     if (variant.lecteur.archived) studioArchivedRefusal();
     if (root.parentId) throw new StudioRequestError(422, { error: "audience_du_fil", message: "Une réponse suit l'audience de son fil : changez celle du commentaire d'origine." });
+    // Un constat de revue externe (phase 4) garde son audience : la changer le retirerait à ses destinataires, ou
+    // ouvrirait le fil aux lecteurs du projet.
+    if (root.audience === "revue") throw new StudioRequestError(409, { error: "audience_revue", message: "Ce fil est un constat de revue externe : son audience ne change pas." });
     const replies = await tx.select({ authorId: studioComments.authorId }).from(studioComments).where(and(eq(studioComments.variantId, variant.id), eq(studioComments.parentId, root.id)));
     const authors = [...new Set([root.authorId, ...replies.map((r) => r.authorId)])];
     const readers = await tx.select({ userId: projectEffectiveAccess.userId }).from(projectEffectiveAccess)

@@ -3,7 +3,7 @@ import type { InvitationStatus } from "../../db/schema.js";
 
 type InvitationRow = { status: InvitationStatus; expiresAt: Date; email: string };
 
-export type InvitationRefusal = "not_found" | "expired" | "already_accepted" | "declined" | "cancelled" | "wrong_account" | "inviter_not_authorized" | "account_inactive";
+export type InvitationRefusal = "not_found" | "expired" | "already_accepted" | "declined" | "cancelled" | "wrong_account" | "inviter_not_authorized" | "account_inactive" | "identity_conflict";
 
 /** Décision pure : l'invitation peut-elle être acceptée par ce compte, maintenant ? */
 export function invitationRefusal(
@@ -31,5 +31,6 @@ export const INVITATION_REFUSAL_MESSAGE: Record<InvitationRefusal, string> = {
   wrong_account: "Cette invitation est destinée à une autre adresse : connectez-vous avec le compte invité.",
   inviter_not_authorized: "La personne qui vous a invité·e n'a plus l'autorité nécessaire : demandez une nouvelle invitation.",
   account_inactive: "Ce compte n'est pas actif.",
+  identity_conflict: "Cette invitation de revue vise une personne déjà liée à un autre compte : demandez une nouvelle invitation.",
 };
 

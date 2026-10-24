@@ -254,6 +254,11 @@ jobs:
       # `organization_membership`, déclencheurs de départ et de clôture, aucun droit de projet — transactions annulées.
       - name: Schéma organisations — adhésions, groupes, gabarits, mandats, invitations, aucun droit de projet
         run: node scripts/validation/organisations-migration-check.mjs
+      # Phase 4 (revue externe) : paquets figés au partage (déclencheurs de gel et d'anti-suppression), affectations,
+      # constats immuables, audience `revue` liée à son paquet, finalité `review_package` dans le bloc unique des
+      # finalités, participation « revue seule » sans accès au projet, droits fadi_app — transactions annulées.
+      - name: Schéma revue externe — paquets figés, affectations, constats, invitations review_package, aucun accès au projet
+        run: node scripts/validation/revues-migration-check.mjs
       - name: Tests des paquets purs et du web
         run: npm run test --workspace=@parcours/core-geometry --workspace=@parcours/domain-model --workspace=@parcours/atelier-model --workspace=@parcours/planche-model --workspace=@parcours/sandbox-planche-model --workspace=@parcours/geometry-exact --workspace=@fadi/web
       - name: Garde DB-1/2 — tests simulés sans base
@@ -613,6 +618,16 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/organisations node apps/web/e2e/organisations.mjs 2>&1 | tee -a e2e.log
+      # Revue externe (#262, phase 4, concept partie 4 et v2.2) : revue R03 restreinte pendant que R04 avance, destinataire
+      # sans adhésion ni rôle de projet, lien transféré inopérant, non-fuite (routeurs /projects, historique, archive,
+      # notifications, rapport), accès expiré ou révoqué, constat lié à la révision exacte, relecteur sans approbation ni
+      # diffusion, approbateur nommé par les transitions Studio, nouvelle version et nouveaux contrôles, dossier diffusé
+      # conforme ; espace de revue et panneau de l'équipe : règle d'or, axe-core bureau et téléphone, passe anglaise.
+      - name: Recette de la revue externe — scénario complet, non-fuite, axe-core bureau et téléphone, anglais (apps/web/e2e/revue-externe.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/revue-externe node apps/web/e2e/revue-externe.mjs 2>&1 | tee -a e2e.log
       # MIG-01 à MIG-10, MIG-COEX-03/04/06 : simulation de migration vers Studio en lecture seule, sur une base NEUVE
       # (fadi_mig) peuplée du jeu synthétique déclaré — jamais sur une base existante. La recette crée un rôle SELECT
       # seul, compare l'empreinte de chaque table avant / après et exige le refus de toute écriture (25006, 42501).

@@ -21,7 +21,7 @@ describe("icônes de la barre latérale", () => {
     expect(debut).toBeGreaterThan(0);
     expect(fin).toBeGreaterThan(debut);
     expect(liste.map((e) => e.libelle).sort()).toEqual(
-      ["Accueil", "Administration", "Bibliothèque", "Collaboration", "Console", "Organisations", "Paramètres", "Projets", "Studio"].sort());
+      ["Accueil", "Administration", "Bibliothèque", "Collaboration", "Console", "Organisations", "Paramètres", "Projets", "Revues externes", "Studio"].sort());
   });
 
   it("donne à chaque entrée une icône qui n'appartient qu'à elle", () => {

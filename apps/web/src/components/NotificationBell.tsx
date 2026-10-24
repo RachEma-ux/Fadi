@@ -30,6 +30,8 @@ function targetOf(n: NotificationItem): string {
   if (n.kind === "reservation") return "/projets/" + n.projectId + "?module=collaboration";
   if (n.kind === "modification" || n.kind === "verrou") return "/projets/" + n.projectId + "?module=atelier";
   if (n.kind === "peremption") return "/projets/" + n.projectId + "?module=documents";
+  // Revue externe (phase 4) : l'espace de revue du paquet, jamais le projet (un destinataire externe n'y a pas accès).
+  if (n.kind === "revue" && n.review) return "/revues/" + n.review.packageId;
   return "/projets/" + n.projectId;
 }
 

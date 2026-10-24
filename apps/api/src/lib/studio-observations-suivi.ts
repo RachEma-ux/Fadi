@@ -30,7 +30,7 @@ import {
 import type { Tx } from "./atelier-validation.js";
 import { newId } from "./ids.js";
 import { roleAllows, type ProjectRole } from "./owned-project.js";
-import { audienceOfNew, audienceSchema, type CommentAudience } from "./audience.js";
+import { audienceOfNew, audienceSchema, type StudioCommentAudience } from "./audience.js";
 import { StudioRequestError, studioArchivedRefusal, studioIdentifierSchema, type StudioScope } from "./studio-commands.js";
 import {
   acteurDe, assignable, audienceFilter, audienceOrRefuse, conflict, hashOf, insertDecision, insertObservationRows, lockedVariant, notFound, observationViews, participants, scopedVariant,
@@ -111,8 +111,8 @@ export const studioObservationDecisionSchema = z.object({
 export interface StudioObservationDetail extends StudioObservationView {
   body: string;
   authorEmail: string;
-  /** Audience du fil (E1). */
-  audience: CommentAudience;
+  /** Audience du fil (E1) ; `revue` : constat d'une revue externe (phase 4). */
+  audience: StudioCommentAudience;
   contexte: { projectId: string; studyId: string; variantId: string; revisionId: string | null; objectIds: string[] };
 }
 export interface StudioObservationsLecture {
