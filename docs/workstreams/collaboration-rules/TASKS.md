@@ -8,8 +8,8 @@
 
 ## En cours
 
-- [ ] CR-6 — Écarts E5, E6, E9, E10 et report CR-1 (CR-R3, CR-C2) : implémentés et vérifiés en local ; [PR #282](https://github.com/RachEma-ux/Fadi/pull/282) ouverte,
-  non fusionnée ; CI à vérifier (Issue : #272).
+- [ ] CR-6 — Écarts E5, E6, E9, E10 et report CR-1 (CR-R3, CR-C2) : implémentés, vérifiés en local et en CI (`e1b7511`) ; [PR #282](https://github.com/RachEma-ux/Fadi/pull/282)
+  ouverte, non fusionnée (Issue : #272).
 
 - CR-0 — Cadrage fusionné (PR #273) ; CR-D1 à CR-D10 toutes répondues (CR-R1, CR-R2) (Issue : #272).
 

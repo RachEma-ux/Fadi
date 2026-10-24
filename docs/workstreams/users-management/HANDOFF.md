@@ -37,8 +37,8 @@ Mis à jour : 2026-10-24 (UTC).
 
 ## Prochaine action
 
-- UM-32 : relever la CI du HEAD de la PR (DB-3 : `app.test.ts` « E5 », « E10 », « E6 » ; recette
-  `collaboration-affectations.mjs` dans le lot `complements`) ; fusion et déploiement **seulement** sur décision du
+- UM-32 : CI verte sur `e1b7511` (run 40133674349, DB-3 actif : 628 tests API dont 133 dans les 12 suites) ;
+  revérifier le HEAD courant ; fusion et déploiement **seulement** sur décision du
   maître d'ouvrage (migration additive : colonne `studio_publication_events.authority`, contrainte des responsabilités).
 - UM-29 (#274), UM-31 (#278) et Organisations phase 1 (#265) : **fusionnés** ; leur passage en préproduction n'est pas
   constaté depuis une session cloud.

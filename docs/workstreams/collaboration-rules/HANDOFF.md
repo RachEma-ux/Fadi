@@ -19,8 +19,8 @@ Mis à jour : 2026-10-24 (UTC).
 
 ## Prochaine action
 
-- [PR #282](https://github.com/RachEma-ux/Fadi/pull/282) : relever la CI du HEAD (DB-3 : `app.test.ts` « E5 », « E10 », « E6 » ; lot e2e `complements` :
-  `collaboration-affectations.mjs`) ; fusion et déploiement sur décision du maître d'ouvrage.
+- [PR #282](https://github.com/RachEma-ux/Fadi/pull/282) : CI verte sur `e1b7511` (run 40133674349 : 628 tests API dont 133 DB-3, tous les lots e2e) ; revérifier le HEAD
+  courant ; fusion et déploiement sur décision du maître d'ouvrage.
 - Restent : E4 et E8 (phase 3 d'Organisations) ; CR-2 à CR-4 à l'ouverture de COM et du Temps réel.
 
 ## Tests et preuves

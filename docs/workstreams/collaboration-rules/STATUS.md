@@ -52,13 +52,17 @@ déploiement** ([DECISIONS.md](DECISIONS.md) CR-R3, CR-C2). Restent ouverts : E4
   - CI de `2530144` (run 40132896654, DB-3 actif) : 627 tests API verts dont 132 dans les 12 suites DB-3 (« E5 » et « E10 »
     compris) ; « E6 » rouge sur une erreur du test (identifiant de la tâche lu dans la réponse, qui rend l'observation),
     corrigée ensuite (identifiant relu en base ; parcours de réattribution vérifié sur l'API locale) ;
+  - **CI verte sur `e1b7511`** (run 40133674349, DB-3 actif, attestation `fadi-ci-db3`) : `validate` — **628 tests API, dont 133
+    dans les 12 suites DB-3**, les 3 tests « E5 », « E6 », « E10 » compris ; e2e `parcours`, `complements`
+    (`collaboration-affectations.mjs`), `atelier`, `planche`, `p2`, Studio V1, `image`, `project-layout`, Continuité,
+    Architecture : verts ;
   - `app.test.ts` (3 tests ajoutés « E5 », « E10 », « E6 », attendus E3 mis à jour) : **non exécuté en local** — la
     préparation d'une base attestée exige d'enrôler une clé locale dans `approved-test-authorities.ts`, geste refusé
     dans cette session ; preuve opposable : DB-3 en CI.
 
 ## Points ouverts
 
-- [PR #282](https://github.com/RachEma-ux/Fadi/pull/282) (CR-C2) : CI verte à obtenir (DB-3 compris) ; fusion et déploiement sur décision du maître d'ouvrage.
+- [PR #282](https://github.com/RachEma-ux/Fadi/pull/282) (CR-C2) : CI verte sur `e1b7511` ; fusion et déploiement sur décision du maître d'ouvrage.
 - E7 traité par la PR #274 (CR-C1 § 6) ; reste la limite déclarée par CR-D5 : appareil resté hors ligne, fichiers
   déjà téléchargés.
 - Chantiers COM et Temps réel non ouverts.
