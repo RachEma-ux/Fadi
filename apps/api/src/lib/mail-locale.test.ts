@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { mailLocale } from "./mail-locale.js";
 
-/** Requête minimale : un en-tête `Accept-Language` anglais que `mailLocale` ne doit jamais lire (UM-29). */
+/** Requête minimale : un en-tête `Accept-Language` anglais que `mailLocale` ne doit jamais lire (UM-30). */
 const req = (body?: unknown) => ({ body, get: (h: string) => (h.toLowerCase() === "accept-language" ? "en-US,en;q=0.9" : undefined) });
 
-describe("mailLocale (UM-29)", () => {
+describe("mailLocale (UM-30)", () => {
   it("navigateur en anglais sans langue explicite → français", () => {
     expect(mailLocale(req())).toBe("fr");
     expect(mailLocale(req({}))).toBe("fr");

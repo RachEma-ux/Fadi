@@ -11,9 +11,9 @@ Mis à jour : 2026-10-24 (UTC).
   consignement (PR #259, #263 et la présente mise à jour du suivi).
 - **UM-27 (2026-10-24)** : branche `feat/253-corbeille-anonymiser` (depuis `main` à `c201d2b`), [PR #270](https://github.com/RachEma-ux/Fadi/pull/270) vers `main`
   **non fusionnée** — corbeille des comptes et « Anonymiser maintenant » (amendement de D-5, DECISIONS.md).
-- **UM-29 (2026-10-24)** : branche `fix/um-29-langue-courriels` (depuis `main` à `7083285`), PR vers `main` **non
+- **UM-30 (2026-10-24)** : branche `fix/um-29-langue-courriels` (depuis `main` à `7083285`), [PR #275](https://github.com/RachEma-ux/Fadi/pull/275) vers `main` **non
   fusionnée** — langue des courriels = langue de l'interface (`locale` envoyé par le client), sinon français ;
-  `Accept-Language` n'est plus lu (DECISIONS.md UM-29).
+  `Accept-Language` n'est plus lu (DECISIONS.md UM-30).
 - Dernier commit vérifié : à relever en début de session ; ne pas réutiliser un SHA périmé.
 
 ## Dernier état vérifié
@@ -30,7 +30,7 @@ Mis à jour : 2026-10-24 (UTC).
 
 ## Prochaine action
 
-- UM-29 : vérifier la CI de la PR (DB-3 et recette `comptes-admin.mjs`, section 5 bis) ; fusion et déploiement en
+- UM-30 : vérifier la CI de la PR (DB-3 et recette `comptes-admin.mjs`, section 5 bis) ; fusion et déploiement en
   préproduction sur décision du maître d'ouvrage ; contrôle en préproduction : invitation depuis un téléphone réglé en
   anglais, interface en français → sujet « Invitation à rejoindre Fadi ».
 - UM-27 : CI de la PR #270 verte sur `4aa7d0b` (DB-3 : 123 tests dans les 12 suites) ; revérifier la CI du HEAD courant,

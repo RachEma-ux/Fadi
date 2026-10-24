@@ -56,7 +56,7 @@ function InviteForm() {
   const online = useOnline();
   const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
-  // UM-29 : par défaut la langue de l'interface de l'administrateur, jamais celle de son navigateur.
+  // UM-30 : par défaut la langue de l'interface de l'administrateur, jamais celle de son navigateur.
   const [locale, setLocale] = useState<Langue>(LANGUE);
   const [link, setLink] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);

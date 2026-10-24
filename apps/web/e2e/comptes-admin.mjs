@@ -9,7 +9,7 @@
  *  - corbeille (UM-27) : compte en suppression programmée listé, « Restaurer » puis « Anonymiser maintenant » (adresse à
  *    ressaisir, bouton inactif sinon), icône propre à chaque commande ;
  *  - invitation : garde-fou de courriel atteint → « lien à copier » ; activation du compte invité par ce lien ; langue du
- *    courriel (UM-29) : navigateur en anglais, interface en français → sujet français, choix « English » → sujet anglais ;
+ *    courriel (UM-30) : navigateur en anglais, interface en français → sujet français, choix « English » → sujet anglais ;
  *  - mot de passe oublié / réinitialisation (lien lu dans Mailpit ou dans le journal du transport console) ;
  *  - A se connecte → sa session est révoquée → B se connecte dans le même navigateur → aucune donnée de A visible ;
  *  - axe-core sans violation critique ni sérieuse sur chaque nouvel écran, bureau et téléphone (390 × 844).
@@ -263,7 +263,7 @@ try {
   check("garde-fou de courriel atteint : lien à copier affiché", /\/compte\/invitation#jeton=/.test(link), link);
   await axe(admin, "administration — lien à copier (bureau)");
 
-  // 5 bis. Langue des courriels (UM-29) : un administrateur dont le navigateur est réglé en anglais, sur l'interface en
+  // 5 bis. Langue des courriels (UM-30) : un administrateur dont le navigateur est réglé en anglais, sur l'interface en
   // français, invite en français (l'en-tête Accept-Language n'est jamais lu) ; le choix « English » invite en anglais.
   const enCtx = await browser.newContext({ ...desktop, locale: "en-US", extraHTTPHeaders: { "Accept-Language": "en-US,en;q=0.9" }, storageState: await adminCtx.storageState() });
   const enAdmin = await enCtx.newPage(); track(enAdmin);

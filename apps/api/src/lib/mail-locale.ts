@@ -2,7 +2,7 @@ import type { Request } from "express";
 import type { MailLocale } from "./mailer/index.js";
 
 /**
- * Langue des courriels (UM-29) : la langue choisie dans l'interface de Fadi, transmise explicitement par le client
+ * Langue des courriels (UM-30) : la langue choisie dans l'interface de Fadi, transmise explicitement par le client
  * (`locale` du corps, ou valeur déjà validée passée en `explicit`) ; à défaut ou si elle est invalide, le français,
  * langue source (D-163). L'en-tête `Accept-Language` du navigateur n'est jamais lu : il reflète le réglage de
  * l'appareil, pas la langue d'interface (un administrateur au téléphone réglé en anglais invitait en anglais). Aucun

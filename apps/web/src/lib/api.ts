@@ -281,7 +281,7 @@ export type SupportGrantsView =
   | { you: "support"; grant: SupportGrant };
 
 const json = (body: unknown): RequestInit => ({ method: "POST", body: JSON.stringify(body) });
-/** Langue des courriels déclenchés par l'appel (UM-29) : celle de l'interface, jamais celle du navigateur. */
+/** Langue des courriels déclenchés par l'appel (UM-30) : celle de l'interface, jamais celle du navigateur. */
 const withLocale = <T extends object>(body: T, locale: Langue = LANGUE) => ({ ...body, locale });
 function query(params: Record<string, string | number | undefined>): string {
   const q = new URLSearchParams();
