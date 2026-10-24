@@ -1,20 +1,74 @@
 # Gestion des comptes (Users Management) — Statut
 
-Mis à jour : 2026-10-23 (UTC).
+Mis à jour : 2026-10-24 (UTC).
 
 ## État
 
-**Fusionné dans `main` — non déployé.** La PR #255 (phases 0 à 6, amendement D-7, DB-3 raccordé, correctifs UM-18 à
+**Fusionné dans `main`, déployé en préproduction, pas en production ; Issue #253 close (UM-26).** La PR #255 (phases 0 à 6, amendement D-7, DB-3 raccordé, correctifs UM-18 à
 UM-23) a été fusionnée par le maître d'ouvrage le 2026-10-23 à 06:23 UTC (commit de fusion `516e2f7`, tête `dd784bc`).
 CI de `main` verte sur `516e2f7` : run CI 39911221480 et 5 autres workflows (14 contrôles réussis, 3 sautés comme sur la
-PR). **Aucun déploiement n'est fait** : il suit RUNBOOK.md (§1 à §11, dont §4 et §4 bis) et attend l'accord explicite du
-maître d'ouvrage.
+PR). **Préproduction** : `02329e1` déployé le 2026-10-23 à 15:28:46 UTC
+par le déploiement automatique (outillage D-7 de la PR #264, `init-env` lancé) — voir la section Préproduction.
+**Production (www.fadimmo.com) : non déployée, hors de toute action** (consigne du maître d'ouvrage du 2026-10-23 : pendant le développement, tout se déploie sur preprod.fadimmo.com) ; un futur déploiement suivrait RUNBOOK.md (§1 à §11, dont §4 et §4 bis) et attend l'accord explicite
+du maître d'ouvrage.
 DB-3 : **vérifié en CI** sur `570d248` (UM-17) — les 12 suites passent sur base jetable attestée. Points d'arrêt 🛑 2,
 D7-final et final : **clos** par la décision de fusion du maître d'ouvrage (2026-10-23, UM-24) ; plus aucune revue de la
-PR #255 n'est attendue. Reste au maître d'ouvrage : le déploiement. UM-1 est levé (UM-25) : le chantier
+PR #255 n'est attendue. Reste au maître d'ouvrage : le déploiement en production. UM-1 est levé (UM-25) : le chantier
 « Organisations, participation et revue externe » est ouvert ([Issue #262](https://github.com/RachEma-ux/Fadi/issues/262)).
 
+**Amendement de D-5 (UM-27, 2026-10-24) : fusionné dans `main` ([PR #270](https://github.com/RachEma-ux/Fadi/pull/270), `2cc038a`, 2026-10-24 16:09 UTC),
+CI de `main` verte sur `2cc038a` (validate, e2e, image et les 5 autres workflows).** Courriel en préproduction (UM-28) :
+fusionné ([PR #271](https://github.com/RachEma-ux/Fadi/pull/271), `e03fdfc`). `2cc038a` remplit les conditions du
+déploiement automatique de la préproduction ; son passage effectif n'est pas constaté depuis une session cloud.
+**Mise en service en préproduction (RUNBOOK §3 bis, §5 à §9) : non consignée** — tâche UM-SERVICE. Corbeille des comptes et « Anonymiser maintenant » dans `/admin/utilisateurs` — voir la section UM-27.
+
+**UM-30 (2026-10-24) : langue des courriels = langue de l'interface, sinon français ; branche `fix/um-29-langue-courriels`,
+[PR #275](https://github.com/RachEma-ux/Fadi/pull/275) fusionnée le 2026-10-24 à 18:08 UTC (`5767835`) ; contrôle en préproduction : UM-SERVICE.** Voir la section UM-30.
+
 ## Faits vérifiés
+
+### Langue des courriels (UM-30, 2026-10-24)
+
+Branche `fix/um-29-langue-courriels`, depuis `main` à `7083285`. Vérifié dans la session :
+
+- `npm run typecheck` : vert. `npm run build` : vert.
+- `npm test` : paquets et web verts ; API : tests purs verts, dont `lib/mail-locale.test.ts` (3 tests) ; les 12 suites
+  DB-3 refusées par la garde **seule** (`TARGET_REQUIRED`), comme attendu sans la clé `fadi-ci-db3`.
+- `comptes-admin.mjs` sur `1bdc0be`, PostGIS 16 + Mailpit v1.20.4 en local (même configuration que la CI, base neuve) :
+  **verte**, dont la section 5 bis — choix par défaut « Français », navigateur `en-US` et interface en français → sujet
+  « Invitation à rejoindre Fadi », choix « English » → « Invitation to join Fadi », axe-core sans violation.
+
+### Corbeille et « Anonymiser maintenant » (UM-27, 2026-10-24)
+
+Branche `feat/253-corbeille-anonymiser`, depuis `main` à `c201d2b`. Vérifié en local sur PostgreSQL 16 + PostGIS 3
+(API construite en `fadi_app`, servant `WEB_DIST`, courriels vers Mailpit v1.20.4, même configuration que la CI) :
+
+- `npm run typecheck` : vert. `npm run build` : vert.
+- `npm test` : tous les paquets et le web verts (dont `icones-admin.test.ts`, 4 tests, règle d'or) ; API : 454 tests purs
+  verts (dont 7 nouveaux dans `lib/security/security.test.ts`) ; les 12 suites DB-3 refusées par la garde **seule**
+  (`TARGET_REQUIRED`), comme attendu sans la clé `fadi-ci-db3`.
+- `app.test.ts` sur une base jetable locale attestée par `scripts/db3/preparer-base-test.mjs` : **77 tests verts** (78 après le correctif ci-dessous), dont
+  les 6 nouveaux de « 5. corbeille et Anonymiser maintenant » (refus, appels simultanés, restaurer contre anonymiser,
+  statut suspendu rétabli, administrateur de la corbeille). L'autorité de signature locale a été ajoutée au registre
+  **dans la copie de travail seulement**, puis retirée (`git checkout`) : elle n'est pas dans le dépôt ; la preuve
+  opposable reste DB-3 en CI.
+- `comptes-api.mjs` : vert (inchangé). `comptes-securite.mjs` : **71 contrôles verts**, section 5 comprise (26 contrôles :
+  corbeille, demandeur, refus, journal, double appel, appels simultanés, restauration d'un compte suspendu, projets
+  partagés). Les courses du dernier administrateur restent NON EXÉCUTÉES hors base vierge (inchangé).
+- `comptes-admin.mjs` : **64 contrôles verts** (corbeille listée, icône propre sur chaque commande, « Restaurer »,
+  « Anonymiser maintenant » avec bouton inactif tant que l'adresse n'est pas ressaisie, axe-core sur la corbeille et la
+  boîte de confirmation, passe anglaise de la corbeille et de la confirmation).
+- Constat corrigé pendant la recette : `/admin/trash` tombait dans le repli SPA (l'API ne recevait que `/admin/users*` et
+  `/admin/invitations*`) ; ajouté à `API_PREFIX`, au montage `/admin` (`app.ts`) et au mandataire de Vite.
+- Revue Codex de `15f1935` (P2) : le lien d'annulation verrouillait le jeton puis le compte, « Restaurer » le compte puis
+  le jeton — interblocage possible entre les deux voies simultanées. Corrigé : `/auth/cancel-deletion` lit le jeton,
+  verrouille la ligne du compte, puis consomme le jeton (même ordre que la restauration et l'anonymisation). Test DB-3
+  ajouté (lien et « Restaurer » simultanés, 5 fois : exactement l'un des deux) ; `app.test.ts` **78 tests verts** sur base
+  jetable locale ; `comptes-api.mjs` et `comptes-securite.mjs` verts sur l'API reconstruite.
+- Aucune migration : aucune colonne ni table ajoutée ; le déploiement de cette PR ne change pas RUNBOOK.md.
+- **CI de la PR #270 verte sur `4aa7d0b`** (run CI 40105186547 et les 5 autres workflows, 2026-10-24 15:02–15:16 UTC) :
+  `validate` avec DB-3 actif (clé `fadi-ci-db3`) — 577 tests API, dont **123 dans les 12 suites DB-3** (116 + 7 nouveaux) ;
+  `image`, Studio V1 et les cinq tranches e2e (`complements` : `comptes-api`, `comptes-securite`, `comptes-admin`) vertes.
 
 ### Phase 0 — concept et audit
 
@@ -191,6 +245,38 @@ Preuves locales après correction :
     tranche `parcours` : « Accueil : 80 contrôles réussis, 0 échec(s) », dont les deux nouveaux contrôles de retrait et
     « l’accès aux 21 étapes reste disponible », aucun « Route is already handled ».
 
+### Préproduction (2026-10-23, UM-26)
+
+Relevé de `sudo fadi-preprod status` transmis par le maître d'ouvrage (VPS, non accessible depuis la session) :
+
+- `etat.json` : commit `02329e1ae4144c7e03a45e21bf5efdc756bb6963`, étape `fin`, résultat `succes`, heure
+  2026-10-23T15:28:46Z, message « déployé en préproduction (build, migrate, up, smoke, /version, e2e : sandbox-module
+  parcours-scenario) », journal `20261023T152026Z-2337465-auto`, `en_ligne` = ce commit.
+- Conteneurs : `fadi-preprod-app-1` (image `fadi-preprod-app:02329e1ae414`, sain, `127.0.0.1:3101`) et
+  `fadi-preprod-db-1` (PostGIS 16-3.4, sain).
+- `PREPROD_FADI_APP_DB_PASSWORD` : présence **déduite** du succès de `build` et `migrate`, qui refusent de tourner sans
+  elle ; `migrate` vérifie aussi que `fadi_app` ne peut pas créer dans `public`. Le `grep -c` de contrôle n'apparaît pas
+  dans le relevé.
+- Production (lecture seule) : `app-proxy`, `app-app`, `app-backup`, `app-db` démarrés depuis 3 jours, inchangés.
+- Non exercés en préproduction : `comptes-api`, `comptes-admin`, `comptes-securite` (base jetable et transport de
+  courriel exigés) ; couverts par la CI. Les tests de l'outillage (PR #264) utilisent des doubles `docker` / `curl`.
+
+### Courriel en préproduction et domaines réservés (2026-10-24, UM-28) — Fusionné
+
+Branche `feat/preprod-courriel`, [PR #271](https://github.com/RachEma-ux/Fadi/pull/271) fusionnée le 2026-10-24 à 15:46 UTC (`e03fdfc`) ; variables SMTP à poser sur le VPS (UM-SERVICE). Demande du maître d'ouvrage relayée
+par la session d'exploitation du VPS.
+
+- `deploy/preprod/compose.yml` : variables de courriel transmises au seul service `app` depuis `PREPROD_*`
+  facultatives (sans `PREPROD_MAIL_TRANSPORT` : aucun envoi ; `MAIL_DAILY_LIMIT` 50 par défaut) ; garde
+  `fadi-preprod garde` : `SMTP_PASS` refusé hors `app`. `env.example` et RUNBOOK §3 bis (procédure administrateur).
+- Mailer : `isReservedDomain` et raison `reserved_domain` (`apps/api/src/lib/mailer/quota.ts`, `outbox.ts`) ;
+  `MAIL_ALLOW_RESERVED_DOMAINS=true` en CI (Mailpit), refusé en production (`index.ts`).
+- Preuves locales (2026-10-24) : `mailer.test.ts` (domaines réservés / non réservés, décision de file, drapeau) ;
+  `bash deploy/preprod/tests/run.sh` sous un compte non root : **99 réussis, 0 échec** (dont « garde refuse : SMTP_PASS
+  donné à la recette », compose résolu sans / avec `PREPROD_MAIL_*`) et `run-auto.sh` **80 réussis, 0 échec** ;
+  `npm run typecheck`, `npm test`, `npm run build` : voir la PR. CI : à relever sur la PR.
+- Non vérifié : envoi réel depuis la préproduction (exige les variables sur le VPS, RUNBOOK §3 bis et §5).
+
 ## Écarts au plan (le concept et D-7 priment)
 
 - UM-2 et UM-3 : pas d'état `invited` ni de compte fantôme ; les invitations ont leur propre table (`auth.invitations`).
@@ -204,16 +290,30 @@ Preuves locales après correction :
 
 ## Points ouverts
 
+- UM-27 : fusionné (PR #270, `2cc038a`) ; aucun déploiement en production.
+- UM-SERVICE : mise en service et recette en préproduction (RUNBOOK §3 bis, §5 à §9) non consignées. Contrôles à relever
+  sur le VPS : `fadi-preprod status` (commit en ligne), `/version`, `PREPROD_FADI_ADMIN_ENABLED=true` présent dans
+  `/opt/fadi-preprod/env/.env.preprod`, nombre d'administrateurs et d'administrateurs avec TOTP actif (comptages
+  seulement, aucune adresse). La sonde anonyme `/admin/users` répond **404 dans tous les cas** (`platformRefusal`,
+  non-divulgation) : elle ne distingue pas une administration ouverte d'une fermée. L'ouverture se constate avec une
+  session administrateur ouverte avec son code : `/admin/users` **200** et `GET /auth/me` avec `adminEnabled: true`.
+- Indice non vérifié : la PR #275 rapporte une invitation envoyée depuis l'Administration en préproduction, ce qui
+  suppose un administrateur, l'administration ouverte et le courriel configurés ; rien n'est déclaré fait sans relevé.
+- UM-27, signalé : pas de corbeille pour les projets ni les documents (hors périmètre de la décision ; le concept ne
+  l'exige pas). L'anonymisation supprime les projets non partagés du compte, et « Anonymiser maintenant » avance cette
+  suppression : à trancher par le maître d'ouvrage s'il veut une corbeille de projets.
+
 - UM-1 : levé le 2026-10-23 (UM-25), chantier ouvert ([Issue #262](https://github.com/RachEma-ux/Fadi/issues/262), `../organisations-participation/`).
 - UM-17 : DB-3 livré par la PR #256 et raccordé à D-7 ; **12 suites vertes en CI** sur `570d248` (section DB-3).
-- UM-15 : le prochain déploiement exige `FADI_APP_DB_PASSWORD` dans `.env.deploy` (RUNBOOK §2–4).
+- UM-15 : préproduction faite (UM-26) ; le déploiement en production exige `FADI_APP_DB_PASSWORD` dans `.env.deploy` (RUNBOOK §2–4).
 - Annexe C (Infomaniak, DNS, clé de chiffrement, premier admin) : hors code.
 - CI de la PR #255 : **verte** sur `81af007` (run CI 39840078841 et 5 autres workflows, 2026-10-22 19:42 UTC). Le premier passage (`cf3d56f`) échouait sur la tranche `parcours` : le scénario attendait l'ancien refus du partage vers une adresse sans compte, puis des compteurs de cache invalidés par la purge sur 401. Corrigé dans `81af007`.
 - CI de la PR #255 **verte** sur `570d248` (fusion de `main` + DB-3) : run CI 39855284507 entier (validate, image, Studio V1, e2e p2 / planche / parcours / atelier / complements) et les 5 autres workflows, 2026-10-22 21:12–21:3x UTC.
 
 ## Liens de suivi
 
-- Issue : [#253](https://github.com/RachEma-ux/Fadi/issues/253)
+- Issue : [#253](https://github.com/RachEma-ux/Fadi/issues/253) (close le 2026-10-23, terminée)
+- Préproduction : [PR #264](https://github.com/RachEma-ux/Fadi/pull/264) (outillage D-7)
 - Branche de tâche : `ccr-266c1e83-7780ml` (imposée par la session, UM-12).
 - Pull Request : [#255](https://github.com/RachEma-ux/Fadi/pull/255) (fusionnée le 2026-10-23, commit `516e2f7`).
 

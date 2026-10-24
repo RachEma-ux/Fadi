@@ -45,3 +45,6 @@
   .admin-table td { border: 0; padding: 3px 8px; }
   .admin-table td[data-label]::before { content: attr(data-label) " : "; font-weight: 600; }
 }
+.admin-icon { flex: none; vertical-align: -3px; margin-inline-end: 6px; }
+.admin-trash-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.admin-trash-blocked { display: block; color: #8a4b08; }

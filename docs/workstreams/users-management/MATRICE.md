@@ -82,6 +82,7 @@ Légende des preuves : `api:` = `apps/api/src/…`, `web:` = `apps/web/src/…`,
 | P-08 | Journal d'audit append-only dans la transaction | en place |
 | P-09 | Courriel : `Mailer`, console / SMTP, outbox, quota, repli lien, gabarits FR/EN, Mailpit | en place |
 | P-10 | Suppression : export, 30 j de grâce, anonymisation | en place |
+| P-14 | Amendement de D-5 (UM-27) : corbeille des comptes en suppression programmée (date d'anonymisation, demandeur), « Restaurer » par la voie d'annulation, « Anonymiser maintenant » (admin, corbeille seulement, même anonymisation, adresse ressaisie, journal `admin.user.anonymized_now`) | implémenté — api:lib/security/security.test.ts ; api:app.test.ts (DB-3, 6 tests) ; e2e:comptes-securite.mjs (section 5) ; e2e:comptes-admin.mjs (corbeille, passe anglaise) ; web:components/comptes/icones-admin.test.ts (règle d'or) ; corbeille des projets / documents : hors périmètre (UM-27) |
 | P-11 | Tests DB-3 sur PostGIS éphémère attesté | en place — 12 suites (105 tests) vertes en CI sur `570d248`, clé `fadi-ci-db3` (UM-17, STATUS.md) |
 | P-13 | D-7 : schémas `auth` / `admin`, rôles au moindre privilège, `fadi_app` sans DDL, audit non modifiable | en place — `scripts/validation/users-migration-check.mjs` (SET ROLE par rôle), `verify-restore.sh` (droits identiques) |
 | P-12 | Drapeau `FADI_ADMIN_ENABLED` | en place |

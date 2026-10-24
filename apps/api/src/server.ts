@@ -87,7 +87,7 @@ Promise.resolve()
     // Courriel (D-1) : configuration invalide = refus de démarrer (MAIL_FROM ≠ SMTP_USER, console en production…).
     const { config } = mailRuntime();
     // eslint-disable-next-line no-console
-    console.log(`Courriel : transport ${config.transport}${config.transport === "disabled" ? " (aucun envoi : liens à copier affichés)" : ""}.`);
+    console.log(`Courriel : transport ${config.transport}${config.transport === "disabled" ? " (aucun envoi : liens à copier affichés)" : ""}${config.transport === "smtp" ? (config.allowReservedDomains ? " ; domaines réservés envoyés (MAIL_ALLOW_RESERVED_DOMAINS, serveur de capture)" : " ; domaines réservés jamais envoyés") : ""}.`);
     // File de courriels et anonymisation différée (D-5) ; `ACCOUNT_WORKERS=0` les coupe (deuxième processus, outils).
     if (process.env["ACCOUNT_WORKERS"] !== "0") startAccountWorkers();
     const app = createApp();

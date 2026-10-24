@@ -6,7 +6,10 @@
  *  - administrateur amorcé par `apps/api/scripts/create-admin.mjs`, refusé sur /admin/utilisateurs sans double
  *    authentification, enrôlement TOTP dans Mon compte (code calculé ici, RFC 6238), codes de secours ;
  *  - connexion en deux étapes (code de secours), page /admin/utilisateurs (tableau, filtres, fiche) ;
- *  - invitation : garde-fou de courriel atteint → « lien à copier » ; activation du compte invité par ce lien ;
+ *  - corbeille (UM-27) : compte en suppression programmée listé, « Restaurer » puis « Anonymiser maintenant » (adresse à
+ *    ressaisir, bouton inactif sinon), icône propre à chaque commande ;
+ *  - invitation : garde-fou de courriel atteint → « lien à copier » ; activation du compte invité par ce lien ; langue du
+ *    courriel (UM-30) : navigateur en anglais, interface en français → sujet français, choix « English » → sujet anglais ;
  *  - mot de passe oublié / réinitialisation (lien lu dans Mailpit ou dans le journal du transport console) ;
  *  - A se connecte → sa session est révoquée → B se connecte dans le même navigateur → aucune donnée de A visible ;
  *  - axe-core sans violation critique ni sérieuse sur chaque nouvel écran, bureau et téléphone (390 × 844).
@@ -72,6 +75,25 @@ async function mailLink(to, path) {
   return null;
 }
 
+/** Sujet du dernier courriel reçu par `to` (Mailpit ou journal du transport console). */
+async function mailSubject(to) {
+  for (let i = 0; i < 120; i++) {
+    if (process.env.MAILPIT_URL) {
+      const base = process.env.MAILPIT_URL.replace(/\/$/, "");
+      const list = await fetch(`${base}/api/v1/search?query=${encodeURIComponent(`to:"${to}"`)}`).then((r) => r.json()).catch(() => null);
+      const subject = list?.messages?.[0]?.Subject;
+      if (subject) return subject;
+    }
+    for (const file of (process.env.MAIL_LOG ?? "").split(",").filter(Boolean)) {
+      if (!existsSync(file)) continue;
+      const line = readFileSync(file, "utf8").split("\n").filter((l) => l.includes('"mail (console)"') && l.includes(to)).pop();
+      if (line) return JSON.parse(line).subject ?? null;
+    }
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  return null;
+}
+
 async function axe(page, nom) {
   await page.addScriptTag({ path: AXE_SCRIPT });
   const graves = await page.evaluate(async () => (await window.axe.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"] } }))
@@ -82,6 +104,18 @@ async function axe(page, nom) {
 async function apiOf(page, method, path, data) {
   const r = await page.request[method](`${BASE}${path}`, data === undefined ? undefined : { data });
   return { status: r.status(), body: await r.json().catch(() => null) };
+}
+
+/** Compte neuf dont le titulaire programme lui-même la suppression (il entre dans la corbeille). */
+async function pendingDeletion(tag) {
+  const ctx = await browser.newContext(desktop);
+  const page = await ctx.newPage();
+  const mail = email(tag), pass = password();
+  await apiOf(page, "post", "/auth/register", { email: mail, password: pass });
+  const r = await apiOf(page, "delete", "/auth/me", { password: pass, confirm: "SUPPRIMER" });
+  await ctx.close();
+  if (r.status !== 202) throw new Error(`suppression programmée ${tag} : ${r.status}`);
+  return { mail, pass };
 }
 
 async function uiLogin(page, mail, pass) {
@@ -166,7 +200,7 @@ try {
 
   // 4. Administration : tableau, filtres, fiche.
   await admin.goto(`${BASE}/admin/utilisateurs`);
-  await admin.locator("[data-admin-users] table").waitFor();
+  await admin.locator("[data-admin-accounts]").waitFor();
   check("administration : tableau des comptes", (await admin.locator("[data-admin-user]").count()) >= 1);
   await axe(admin, "administration — utilisateurs (bureau)");
   await admin.fill('input[name="q"]', adminMail);
@@ -179,6 +213,44 @@ try {
   check("fiche : historique d'audit présent", (await admin.locator("[data-admin-detail] .admin-table tbody tr").count()) > 0);
   await axe(admin, "administration — fiche utilisateur (bureau)");
 
+  // 4 bis. Corbeille (UM-27) : « Restaurer » puis « Anonymiser maintenant », chacune avec son icône.
+  const { mail: toRestore, pass: toRestorePass } = await pendingDeletion("corbeille-restaurer");
+  const { mail: toErase } = await pendingDeletion("corbeille-anonymiser");
+  await admin.goto(`${BASE}/admin/utilisateurs`);
+  const trashRow = (m) => admin.locator(`[data-trash-user="${m}"]`);
+  await trashRow(toRestore).waitFor();
+  check("corbeille : comptes en suppression programmée listés, demandeur « le titulaire »", (await trashRow(toErase).count()) === 1 && /le titulaire/.test(await trashRow(toRestore).textContent()));
+  check("corbeille : icône propre sur « Restaurer » et « Anonymiser maintenant »", (await trashRow(toRestore).locator("[data-trash-restore] svg[data-icone-admin=restaurer]").count()) === 1
+    && (await trashRow(toRestore).locator("[data-trash-anonymize] svg[data-icone-admin=anonymiser]").count()) === 1);
+  await axe(admin, "administration — corbeille (bureau)");
+  await trashRow(toRestore).locator("[data-trash-restore]").click();
+  await admin.locator("[data-confirm]").click();
+  await admin.locator("[data-trash-message]", { hasText: "Compte restauré" }).waitFor();
+  await trashRow(toRestore).waitFor({ state: "detached" });
+  check("« Restaurer » : compte sorti de la corbeille", true);
+  const restoredCtx = await browser.newContext(desktop);
+  const restoredLogin = await apiOf(await restoredCtx.newPage(), "post", "/auth/login", { email: toRestore, password: toRestorePass });
+  await restoredCtx.close();
+  check("compte restauré : connexion de nouveau possible", restoredLogin.status === 200, String(restoredLogin.status));
+  await trashRow(toErase).locator("[data-trash-anonymize]").click();
+  const confirmBtn = admin.locator("[data-confirm]");
+  await admin.locator("[data-anonymize-consequence]").waitFor();
+  check("« Anonymiser maintenant » : conséquence irréversible expliquée", /irréversible/.test(await admin.locator(".confirm-dialog").textContent()));
+  check("confirmation inactive tant que l’adresse n’est pas ressaisie", await confirmBtn.isDisabled());
+  await axe(admin, "administration — anonymiser maintenant (bureau)");
+  await admin.fill('input[name="confirmEmail"]', "autre@example.test");
+  check("adresse différente : confirmation toujours inactive", await confirmBtn.isDisabled());
+  await admin.fill('input[name="confirmEmail"]', toErase.toUpperCase());
+  check("adresse ressaisie : confirmation active", await confirmBtn.isEnabled());
+  await confirmBtn.click();
+  await admin.locator("[data-trash-message]", { hasText: "Compte anonymisé" }).waitFor();
+  await trashRow(toErase).waitFor({ state: "detached" });
+  check("« Anonymiser maintenant » : compte anonymisé, sorti de la corbeille", true);
+  await admin.fill('input[name="q"]', toErase);
+  await admin.getByRole("button", { name: "Rechercher", exact: true }).click();
+  await admin.locator("[data-admin-accounts] tbody").filter({ hasText: "Aucun compte ne correspond." }).waitFor();
+  check("ancienne adresse introuvable dans les comptes (anonymisée)", true);
+
   // 5. Invitation : la limite de courriels par heure et par destinataire atteinte (MAIL_RECIPIENT_HOURLY_LIMIT, 5 par
   // défaut, même valeur que l'API), l'envoi suivant bascule vers le lien à copier (garde-fou D-1).
   const invitee = email("invite");
@@ -190,6 +262,28 @@ try {
   const link = (await admin.locator("[data-copy-link] code").textContent()).trim();
   check("garde-fou de courriel atteint : lien à copier affiché", /\/compte\/invitation#jeton=/.test(link), link);
   await axe(admin, "administration — lien à copier (bureau)");
+
+  // 5 bis. Langue des courriels (UM-30) : un administrateur dont le navigateur est réglé en anglais, sur l'interface en
+  // français, invite en français (l'en-tête Accept-Language n'est jamais lu) ; le choix « English » invite en anglais.
+  const enCtx = await browser.newContext({ ...desktop, locale: "en-US", extraHTTPHeaders: { "Accept-Language": "en-US,en;q=0.9" }, storageState: await adminCtx.storageState() });
+  const enAdmin = await enCtx.newPage(); track(enAdmin);
+  await enAdmin.goto(`${BASE}/admin/utilisateurs`);
+  await enAdmin.locator('select[name="inviteLocale"]').waitFor();
+  check("invitation : langue du courriel par défaut = langue de l’interface (Français)", (await enAdmin.locator('select[name="inviteLocale"]').inputValue()) === "fr");
+  const frInvitee = email("invite-fr"), enInvitee = email("invite-en");
+  await enAdmin.fill('input[name="inviteEmail"]', frInvitee);
+  await enAdmin.getByRole("button", { name: "Envoyer l’invitation" }).click();
+  await enAdmin.locator("p[role=status]", { hasText: frInvitee }).waitFor();
+  const frSubject = await mailSubject(frInvitee);
+  check("navigateur en anglais, interface en français : sujet de l’invitation en français", frSubject === "Invitation à rejoindre Fadi", String(frSubject));
+  await enAdmin.fill('input[name="inviteEmail"]', enInvitee);
+  await enAdmin.selectOption('select[name="inviteLocale"]', "en");
+  await enAdmin.getByRole("button", { name: "Envoyer l’invitation" }).click();
+  await enAdmin.locator("p[role=status]", { hasText: enInvitee }).waitFor();
+  const enSubject = await mailSubject(enInvitee);
+  check("langue du courriel « English » choisie : sujet de l’invitation en anglais", enSubject === "Invitation to join Fadi", String(enSubject));
+  await axe(enAdmin, "administration — invitation, langue du courriel (bureau)");
+  await enCtx.close();
 
   // 6. Activation du compte invité par ce lien (autre navigateur).
   const invCtx = await browser.newContext(desktop);
@@ -312,12 +406,24 @@ try {
   const membresEn = `${await owner.locator("[data-project-invitations]").textContent()} ${await owner.locator("[data-support-panel]").textContent()}`;
   check("anglais : invitations en attente et accès support traduits", /valid until/.test(membresEn) && /A platform administrator never has access/.test(membresEn) && !RESIDUS_FR.test(membresEn), membresEn.match(RESIDUS_FR)?.[0] ?? membresEn.slice(0, 200));
   await anglais(admin, `${BASE}/admin/utilisateurs`);
-  await admin.locator("[data-admin-users] table").waitFor();
+  await admin.locator("[data-admin-accounts]").waitFor();
   await admin.locator(`[data-admin-user="${adminMail}"] button`).click();
   await admin.locator(`[data-admin-detail="${adminMail}"]`).waitFor();
   await admin.locator("[data-admin-detail]", { hasText: "Open sessions" }).waitFor({ timeout: 10_000 }).catch(() => undefined);
   const ficheEn = await admin.locator("[data-admin-users]").textContent();
   check("anglais : fiche d'administration traduite", /Projects \(\d+\)/.test(ficheEn) && /Open sessions \(\d+\)/.test(ficheEn) && /two-factor authentication/.test(ficheEn) && !RESIDUS_FR.test(ficheEn), ficheEn.match(RESIDUS_FR)?.[0] ?? ficheEn.slice(0, 200));
+  const { mail: trashEnMail } = await pendingDeletion("corbeille-anglais");
+  await admin.reload();
+  await admin.waitForFunction(() => document.documentElement.lang === "en");
+  await admin.locator(`[data-trash-user="${trashEnMail}"]`).waitFor();
+  await admin.locator("[data-admin-trash]", { hasText: "the account holder" }).waitFor({ timeout: 10_000 }).catch(() => undefined);
+  const corbeilleEn = await admin.locator("[data-admin-trash]").textContent();
+  const RESIDUS_CORBEILLE = /Corbeille|Restaurer|Anonymiser|titulaire|Statut antérieur|Anonymisation prévue|Demandeur|actif/;
+  check("anglais : corbeille traduite", /Recycle bin/.test(corbeilleEn) && /Restore/.test(corbeilleEn) && /Anonymise now/.test(corbeilleEn) && /the account holder/.test(corbeilleEn) && !RESIDUS_CORBEILLE.test(corbeilleEn), corbeilleEn.match(RESIDUS_CORBEILLE)?.[0] ?? corbeilleEn.slice(0, 200));
+  await admin.locator(`[data-trash-user="${trashEnMail}"] [data-trash-anonymize]`).click();
+  const dialogEn = await admin.locator(".confirm-dialog").textContent();
+  check("anglais : confirmation d’anonymisation traduite", /irreversible/.test(dialogEn) && /To confirm, type the account's address/.test(dialogEn) && !/irréversible|saisissez|données personnelles/.test(dialogEn), dialogEn.slice(0, 200));
+  await admin.locator(".confirm-dialog .h7-actions .button-secondary").click();
   for (const p of [owner, admin]) await p.evaluate(() => localStorage.setItem("fadi.langue", "fr"));
   await ownerCtx.close();
 
@@ -348,7 +454,7 @@ try {
   await mobile.locator("[data-mon-compte]").waitFor();
   await axe(mobile, "Paramètres — Mon compte (téléphone)");
   await mobile.goto(`${BASE}/admin/utilisateurs`);
-  await mobile.locator("[data-admin-users] table").waitFor();
+  await mobile.locator("[data-admin-accounts]").waitFor();
   await axe(mobile, "administration — utilisateurs (téléphone)");
   await mobileCtx.close();
   await adminCtx.close();

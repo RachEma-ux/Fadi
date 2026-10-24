@@ -1,17 +1,19 @@
 /**
  * Administration de la plateforme — utilisateurs (gestion des comptes, phase 5 ; D-2 : comptes seulement, jamais le
  * contenu des projets). Tableau paginé avec recherche et filtres, fiche (projets, sessions, accès support, historique),
- * actions confirmées, invitations. La protection est au serveur : 404 pour un non-administrateur, 403 `mfa_required`
- * sans double authentification. Les mutations exigent le réseau et ne sont jamais mises en file hors ligne.
+ * actions confirmées, invitations, corbeille (UM-27 : restaurer, anonymiser maintenant). La protection est au serveur :
+ * 404 pour un non-administrateur, 403 `mfa_required` sans double authentification. Les mutations exigent le réseau et
+ * ne sont jamais mises en file hors ligne.
  */
 import { useState, type FormEvent } from "react";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { accountApi, ApiError, ROLE_LABEL, type AdminStatus, type AdminUser, type AdminUsersFilters } from "../../lib/api";
+import { accountApi, ApiError, ROLE_LABEL, type AdminStatus, type AdminTrashItem, type AdminUser, type AdminUsersFilters } from "../../lib/api";
 import { useAuth } from "../../lib/auth-context";
-import { LOCALE } from "../../lib/i18n";
+import { LANGUE, LANGUES, LOCALE, type Langue } from "../../lib/i18n";
 import { useOnline } from "../../components/SyncIndicator";
 import { apiMessage, ConfirmDialog, CopyLink } from "../../components/comptes/ComptesUI";
+import { IconeAdmin } from "../../components/comptes/IconeAdmin";
 
 const STATUS_LABEL: Record<AdminStatus, string> = { active: "actif", suspended: "suspendu", closed: "fermé (anonymisé)", locked: "verrouillé", deletion_pending: "suppression programmée" };
 const ROLE_PLATFORM: Record<"user" | "admin", string> = { user: "utilisateur", admin: "administrateur" };
@@ -54,10 +56,12 @@ function InviteForm() {
   const online = useOnline();
   const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
+  // UM-30 : par défaut la langue de l'interface de l'administrateur, jamais celle de son navigateur.
+  const [locale, setLocale] = useState<Langue>(LANGUE);
   const [link, setLink] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const m = useMutation({
-    mutationFn: () => accountApi.adminInvite(email.trim()),
+    mutationFn: () => accountApi.adminInvite(email.trim(), locale),
     onSuccess: (r) => {
       setLink(r.mail.link ?? null);
       setMsg({ ok: true, text: r.mail.queued ? `Invitation ${r.resent ? "renvoyée" : "envoyée"} à ${r.invitation.email}.` : `Invitation ${r.resent ? "renouvelée" : "créée"} pour ${r.invitation.email}.` });
@@ -71,6 +75,9 @@ function InviteForm() {
       <h2 id="admin-invite">Inviter une personne</h2>
       <form className="admin-filters" onSubmit={(e: FormEvent) => { e.preventDefault(); if (email.trim()) m.mutate(); }}>
         <label>Adresse e-mail<input type="email" name="inviteEmail" required maxLength={254} value={email} onChange={(e) => setEmail(e.target.value)} /></label>
+        <label>Langue du courriel<select name="inviteLocale" translate="no" value={locale} onChange={(e) => setLocale(e.target.value === "en" ? "en" : "fr")}>
+          {LANGUES.map((l) => <option key={l.code} value={l.code} lang={l.code}>{l.nom}</option>)}
+        </select></label>
         <button type="submit" className="button-primary" disabled={!online || m.isPending || !email.trim()}>Envoyer l’invitation</button>
       </form>
       <small>L’invitation est valable 7 jours ; aucun compte n’est créé tant que la personne ne l’a pas acceptée.</small>
@@ -97,6 +104,87 @@ function Invitations() {
           </li>
         ))}
       </ul>
+    </section>
+  );
+}
+
+type TrashAction = { kind: "restore" | "anonymize"; item: AdminTrashItem };
+
+/**
+ * Corbeille (UM-27, amendement de D-5) : comptes en suppression programmée, restaurables jusqu'à leur anonymisation.
+ * Un compte anonymisé n'y figure pas (irréversible : rien à restaurer) ; il reste visible comme « fermé (anonymisé) »
+ * dans le tableau des comptes et dans le journal d'audit.
+ */
+function Corbeille() {
+  const online = useOnline();
+  const { user: me } = useAuth();
+  const queryClient = useQueryClient();
+  const [action, setAction] = useState<TrashAction | null>(null);
+  const [confirmEmail, setConfirmEmail] = useState("");
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const q = useQuery({ queryKey: ["admin", "trash"], queryFn: accountApi.adminTrash, retry: false });
+  const act = useMutation({
+    mutationFn: (a: TrashAction) => a.kind === "restore"
+      ? accountApi.adminRestore(a.item.id).then(() => "Compte restauré : la suppression programmée est annulée.")
+      : accountApi.adminAnonymize(a.item.id, confirmEmail.trim()).then(() => "Compte anonymisé définitivement."),
+    onSuccess: (text) => { setAction(null); setMsg({ ok: true, text }); void queryClient.invalidateQueries({ queryKey: ["admin"] }); },
+    onError: (err) => { setAction(null); setMsg({ ok: false, text: apiMessage(err, "Action refusée.") }); },
+  });
+  const open = (a: TrashAction) => { setMsg(null); setConfirmEmail(""); setAction(a); };
+  const items = q.data?.items ?? [];
+  const emailOk = !!action && confirmEmail.trim().toLowerCase() === action.item.email.toLowerCase();
+  return (
+    <section className="panel" aria-labelledby="admin-trash" data-admin-trash>
+      <h2 id="admin-trash"><IconeAdmin commande="corbeille" />Corbeille</h2>
+      <p className="panel-sub">Comptes en suppression programmée : restaurables jusqu’à leur anonymisation. Un compte anonymisé n’y figure plus, l’anonymisation étant irréversible.</p>
+      {msg && <p role={msg.ok ? "status" : "alert"} className={msg.ok ? "h7-muted" : "form-error"} data-trash-message>{msg.text}</p>}
+      {q.isLoading && <p role="status">Chargement…</p>}
+      {q.isError && <p role="alert">{apiMessage(q.error, "Corbeille indisponible.")}</p>}
+      {q.data && (items.length === 0 ? <p className="h7-muted" data-trash-empty>La corbeille est vide.</p> : (
+        <div className="table-scroll" tabIndex={0} role="region" aria-label="Comptes de la corbeille">
+          <table className="admin-table">
+            <thead><tr><th>E-mail</th><th>Statut antérieur</th><th>Suppression demandée</th><th>Anonymisation prévue</th><th>Demandeur</th><th>Actions</th></tr></thead>
+            <tbody>
+              {items.map((i) => (
+                <tr key={i.id} data-trash-user={i.email}>
+                  <td data-label="E-mail" translate="no">{i.email}</td>
+                  <td data-label="Statut antérieur">{STATUS_LABEL[i.status]}</td>
+                  <td data-label="Suppression demandée">{date(i.deletionRequestedAt)}</td>
+                  <td data-label="Anonymisation prévue">{date(i.anonymisationAt)}</td>
+                  <td data-label="Demandeur" data-trash-requester={i.requestedBy?.kind ?? "inconnu"}>
+                    {i.requestedBy?.kind === "user" ? "le titulaire" : i.requestedBy?.kind === "admin" ? <>un administrateur{i.requestedBy.actorEmail ? <small translate="no">{` (${i.requestedBy.actorEmail})`}</small> : null}</> : "inconnu"}
+                  </td>
+                  <td data-label="Actions">
+                    {i.id === me?.id ? <small className="h7-muted">Votre propre compte</small> : (
+                      <div className="admin-trash-actions">
+                        <button type="button" className="button-secondary" data-trash-restore disabled={!online} onClick={() => open({ kind: "restore", item: i })}><IconeAdmin commande="restaurer" />Restaurer</button>
+                        <button type="button" className="danger-button" data-trash-anonymize disabled={!online || i.sharedProjects > 0} onClick={() => open({ kind: "anonymize", item: i })}><IconeAdmin commande="anonymiser" />Anonymiser maintenant…</button>
+                      </div>
+                    )}
+                    {i.sharedProjects > 0 && <small className="admin-trash-blocked">{`Anonymisation bloquée : ${i.sharedProjects} projet(s) partagé(s) à transférer.`}</small>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ))}
+      {action?.kind === "restore" && (
+        <ConfirmDialog title="Restaurer le compte" confirmLabel="Restaurer" busy={act.isPending}
+          onClose={() => setAction(null)} onConfirm={() => { if (online) act.mutate(action); else setMsg({ ok: false, text: OFFLINE }); }}>
+          <p>{`La suppression programmée de ${action.item.email} est annulée : le compte retrouve son statut antérieur (${STATUS_LABEL[action.item.status]}).`}</p>
+        </ConfirmDialog>
+      )}
+      {action?.kind === "anonymize" && (
+        <ConfirmDialog title="Anonymiser maintenant ce compte ?" confirmLabel="Anonymiser définitivement" danger busy={act.isPending} confirmDisabled={!emailOk}
+          onClose={() => setAction(null)} onConfirm={() => { if (!emailOk) return; if (online) act.mutate(action); else setMsg({ ok: false, text: OFFLINE }); }}>
+          <p data-anonymize-consequence>{`Les données personnelles de ${action.item.email} seront anonymisées tout de suite, sans attendre l’échéance prévue : adresse et nom remplacés, mot de passe, double authentification, sessions et liens supprimés, projets non partagés supprimés. Les commentaires et révisions restent attribués à « Compte supprimé ».`}</p>
+          <p><strong>Cette action est irréversible : aucune restauration ne sera possible.</strong></p>
+          <label className="account-form">Pour confirmer, saisissez l’adresse du compte
+            <input type="email" name="confirmEmail" autoComplete="off" spellCheck={false} value={confirmEmail} onChange={(e) => setConfirmEmail(e.target.value)} />
+          </label>
+        </ConfirmDialog>
+      )}
     </section>
   );
 }
@@ -217,7 +305,7 @@ export function AdminUsersPage() {
         {data && (
           <>
             <div className="table-scroll" tabIndex={0} role="region" aria-label="Liste des comptes">
-              <table className="admin-table">
+              <table className="admin-table" data-admin-accounts>
                 <thead><tr><th>E-mail</th><th>Nom</th><th>Rôle</th><th>Statut</th><th>Dernière connexion</th><th>Projets</th></tr></thead>
                 <tbody>
                   {data.users.map((u) => (
@@ -242,6 +330,7 @@ export function AdminUsersPage() {
           </>
         )}
       </section>
+      <Corbeille />
       {selected && <UserDetail id={selected} onClose={() => setSelected(null)} onAction={(a) => { setMsg(null); setAction(a); }} />}
       {action && (
         <ConfirmDialog title={ACTION_TEXT[action.kind].title} confirmLabel={ACTION_TEXT[action.kind].confirm} danger={ACTION_TEXT[action.kind].danger} busy={act.isPending}

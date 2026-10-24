@@ -14,7 +14,7 @@ ils ne réécrivent aucune décision D-x et restent révisables par lui.
 | **D-2** Admin et contenu des projets | **Non par défaut.** L'admin gère les comptes. Accès support **lecture seule**, accordé par le propriétaire, **≤ 72 h**, révocable, visible et journalisé. | Phases 1, 3, 5 |
 | **D-3** Organisations / équipes | **Pas maintenant**, sauf exigence du concept. Colonne `organization_id` nullable réservée sur `users` et `projects`, sans logique. | Phase 1 |
 | **D-4** Tests DB-3 | **Oui** : PostGIS **éphémère** en service conteneur GitHub Actions, attesté jetable, jamais relié à la production. | Phase 6 |
-| **D-5** Suppression | **Anonymisation** après **30 jours de grâce** (annulable par lien) ; **export JSON** préalable ; transfert obligatoire des projets partagés possédés ; commentaires et révisions conservés sous « Compte supprimé ». Conforme RGPD et nLPD. | Phases 1, 4, 5 |
+| **D-5** Suppression | **Anonymisation** après **30 jours de grâce** (annulable par lien) ; **export JSON** préalable ; transfert obligatoire des projets partagés possédés ; commentaires et révisions conservés sous « Compte supprimé ». Conforme RGPD et nLPD. | Phases 1, 4, 5 ; **amendée le 2026-10-24** (UM-27 : corbeille, « Anonymiser maintenant ») |
 | **D-7** Schémas et rôles (amendement du 2026-10-22, [AMENDEMENT-D7.md](AMENDEMENT-D7.md)) | **Une seule base**, schémas `public` (tables existantes, inchangées), `auth` (tables des comptes), `admin` (audit, exploitation). **Rôles au moindre privilège** : `fadi_owner` (NOLOGIN, propriétaire), `fadi_migrator` (DDL, migrations seulement), `fadi_app` (API : DML, aucun DDL, `admin.audit_log` en SELECT / INSERT seulement), `fadi_retention` (anonymisation de colonnes du journal), `fadi_backup` (lecture seule). Mots de passe hors dépôt. Prime sur le plan pour l'emplacement des tables et les droits. | Phases 1, 6 ; amendement |
 | **D-6** Mots de passe et MFA | **12 caractères min.**, 128 max., sans règles de composition, liste de mots de passe compromis, pas d'expiration. **TOTP facultatif** pour les utilisateurs, **obligatoire pour les admins** + 10 codes de secours. Session admin ≤ 24 h et 1 h d'inactivité ; utilisateur ≤ 30 j. | Phases 1, 2, 3, 5 |
 
@@ -159,3 +159,95 @@ ils ne réécrivent aucune décision D-x et restent révisables par lui.
   externe ». Priorité : participants, invitations acceptées, revue externe. Le suivi passe à
   [`../organisations-participation/`](../organisations-participation/CONTEXT.md) ([Issue #262](https://github.com/RachEma-ux/Fadi/issues/262)).
   Ce chantier-ci ne garde que le déploiement.
+- **UM-26 — Préproduction déployée, Issue #253 close (2026-10-23).** L'outillage de préproduction est rendu compatible
+  avec D-7 par la PR #264 (service `migrate` à usage unique, application en `fadi_app`, `init-env` qui ajoute
+  `PREPROD_FADI_APP_DB_PASSWORD` et `PREPROD_FADI_ENCRYPTION_KEY`). Le déploiement automatique a mis `02329e1` en
+  préproduction (`fadi-preprod status`, relevé par le maître d'ouvrage : étape `fin`, résultat `succes` à 15:28:46 UTC,
+  build, migrate, up, smoke, `/version` et e2e courts ; application saine). `build` et `migrate` refusent de tourner sans
+  `PREPROD_FADI_APP_DB_PASSWORD` : leur succès établit que `init-env` a été lancé. Le maître d'ouvrage clôt l'Issue #253
+  (terminée). Reste ouvert : le déploiement en **production** (RUNBOOK.md), sur son accord explicite ; la production
+  tourne toujours l'ancienne version.
+- **UM-27 — Corbeille et « Anonymiser maintenant » : amendement de D-5 (2026-10-24).** Décision du maître d'ouvrage,
+  relayée par la session d'exploitation « Fadi VPS - Audit » : « Ajoute l'option anonymiser maintenant et ajoute une
+  corbeille pour accueillir les éléments supprimés ». D-5 reste la règle par défaut (anonymisation à 30 jours, annulable
+  par lien) ; l'amendement ajoute, **pour les comptes seulement**, une corbeille d'administration et la possibilité pour un
+  administrateur d'anonymiser avant l'échéance. Concept v2.2 : **muet** (aucune exigence de corbeille ; l'attribution
+  « Compte supprimé » est inchangée, Partie 2). Arbitrages d'implémentation :
+  - *Contenu de la corbeille* : les comptes en suppression programmée (`deletion_requested_at` posé, statut stocké
+    `active` ou `suspended`), avec date d'anonymisation prévue (`anonymisationAt` = demande + 30 jours, la même borne que
+    la tâche), demandeur (titulaire ou administrateur, lu dans l'entrée du journal qui a programmé la suppression) et
+    projets partagés qui bloquent l'anonymisation. **Les comptes anonymisés n'y figurent pas** : l'anonymisation est
+    irréversible, il ne reste rien à restaurer, et une « trace non restaurable » ferait de la corbeille une seconde liste
+    des comptes fermés ; leur trace reste le statut « fermé (anonymisé) » du tableau des comptes et le journal d'audit.
+  - *« Restaurer »* : `cancelScheduledDeletion`, la voie unique du lien d'annulation (`POST /auth/cancel-deletion`) et de
+    la corbeille (`POST /admin/users/:id/restore`). La programmation ne modifie pas le statut stocké : il est rétabli tel
+    quel (un compte suspendu reste suspendu). Les liens d'annulation encore valides sont consommés ; journal
+    `admin.user.deletion_cancelled`. Aucun courriel au titulaire (pas de gabarit ; non demandé).
+  - *« Anonymiser maintenant »* (`POST /admin/users/:id/anonymize { confirmEmail }`) : n'accepte qu'un compte de la
+    corbeille ; exécute `anonymiseAccountIn`, **le code même de la tâche des 30 jours** (`lib/account-jobs.ts`, sans
+    seconde implémentation) ; adresse du compte ressaisie et revérifiée côté serveur ; refus : soi-même (422), hors corbeille
+    ou déjà anonymisé (409), adresse différente (422), projets partagés possédés (409). Transaction sous le verrou
+    d'éligibilité des administrateurs (UM-19) puis verrou de ligne : deux appels simultanés donnent un 200 et un 409. Le
+    journal reçoit **une** entrée `admin.user.anonymized_now` (acteur = administrateur, `deletedProjects`, `scheduledFor`),
+    à la place de l'entrée système `account.anonymized` de la tâche. MFA de session exigée comme pour tout `/admin`.
+  - *Dernier administrateur* : la règle est relue sous le verrou, mais elle ne peut pas se déclencher par cette route :
+    un administrateur en suppression programmée ne compte déjà plus parmi les administrateurs actifs (UM-19) et l'acteur
+    ne peut pas viser son propre compte. Vérifié en test pur (refus `last_admin`) et sur base (DB-3 : anonymiser un
+    administrateur de la corbeille ne change pas le nombre d'administrateurs actifs).
+  - *Hors périmètre, signalé* : aucune corbeille pour les projets ou documents. Le concept ne l'exige pas. Conséquence à
+    connaître : l'anonymisation (à 30 jours ou immédiate) supprime les projets **non partagés** du compte ; « Anonymiser
+    maintenant » supprime donc la fenêtre de 30 jours pendant laquelle le titulaire pouvait encore annuler et exporter.
+    La boîte de confirmation le dit. Étendre la corbeille aux projets serait une nouvelle décision du maître d'ouvrage.
+  - *Fusion* : demandée par le maître d'ouvrage dans la session d'exécution le 2026-10-24 (« fusionne #270 »), après
+    fusion de `main` (UM-28) dans la branche et CI verte ; méthode de fusion habituelle du dépôt (commit de fusion).
+- **UM-28 — Courriel en préproduction, domaines réservés jamais envoyés (2026-10-24).** Demande du maître d'ouvrage,
+  relayée par la session d'exploitation du VPS : en préproduction, les invitations et les autres courriels de compte
+  partent par SMTP (`noreply@fadimmo.com`, Infomaniak, D-1 ; SPF / DKIM / DMARC vérifiés par lui). Constats :
+  `deploy/preprod/compose.yml` ne transmettait aucune variable de courriel au service `app` ; la préproduction rejoue à
+  chaque déploiement des recettes qui inscrivent des comptes `@example.com` / `@example.test`, qui partiraient en vrais
+  courriels voués au rebond (quota Infomaniak, réputation de `fadimmo.com`). Arbitrage :
+  1. `compose.yml` (service `app` seulement) transmet `MAIL_TRANSPORT`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`,
+     `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`, `MAIL_DAILY_LIMIT`, `MAIL_RECIPIENT_HOURLY_LIMIT` depuis des variables
+     `PREPROD_*` toutes facultatives : sans `PREPROD_MAIL_TRANSPORT`, aucun envoi (comportement antérieur) ; quota
+     prudent par défaut `MAIL_DAILY_LIMIT=50`. La garde d'isolation refuse `SMTP_PASS` hors du service `app` (jamais à
+     la recette ni à la migration). Les variables sont ajoutées à la main par l'administrateur (RUNBOOK §3 bis), jamais
+     par `init-env`.
+  2. Mailer : en SMTP, un destinataire de domaine réservé (RFC 2606 / 6761 : `example.com`, `example.net`,
+     `example.org` et leurs sous-domaines, `*.example`, `*.test`, `*.invalid`, `*.localhost`, `localhost` ; adresse sans
+     domaine) n'est jamais mis en file : ligne `skipped`, raison `reserved_domain`, `queued: false`, l'interface garde le
+     lien à copier ; pas d'entrée d'audit (non-envoi déclaré, comme `disabled`, pas un dépassement). Vaut en production
+     (sans effet sur de vraies adresses). Les transports `console` et absent ne remettent rien : non concernés.
+  3. La CI (et le développement local) envoie vers Mailpit des comptes `@example.test` et y lit les liens : elle pose
+     `MAIL_ALLOW_RESERVED_DOMAINS=true`, que `readMailConfig` **refuse en production** (refus de démarrer) et qui
+     n'accepte que `true` / `false`. Solution retenue parce qu'elle est la plus simple et sûre : la préproduction et la
+     production tournent en `NODE_ENV=production` et ne peuvent donc jamais l'activer, même par erreur de fichier
+     d'environnement ; aucune liste d'hôtes SMTP « de capture » à maintenir ; les recettes ne changent pas d'adresses.
+- **UM-30 — Langue des courriels : celle de l'interface, jamais celle du navigateur (2026-10-24).** Demande du maître
+  d'ouvrage (« Corrige la langue des courriels en français »), relayée par la session d'exploitation du VPS. Constat
+  vérifié en préproduction : une invitation créée depuis l'Administration affichée en français est partie en anglais
+  (« Invitation to join Fadi »). Cause : `mailLocale` retombait sur l'en-tête `Accept-Language` du navigateur de
+  l'administrateur (téléphone réglé en anglais) quand le client ne transmettait pas la langue, ce qui était le cas de la
+  plupart des appels. Arbitrage :
+  1. Serveur (`apps/api/src/lib/mail-locale.ts`, réexporté par `lib/account.ts`) : `mailLocale` ne lit plus jamais
+     `Accept-Language` ; langue = valeur explicite (`locale` du corps, ou valeur déjà validée par le schéma de la route)
+     si elle vaut `fr` ou `en`, sinon **`fr`**, langue source (D-163). Aucun compte n'enregistre de préférence de langue
+     (schéma `users` vérifié) : aucun champ n'est créé ; un courriel adressé à un compte existant suit donc la langue
+     de l'interface de la personne qui déclenche l'envoi, sinon le français.
+  2. Client (`apps/web/src/lib/api.ts`) : chaque appel qui déclenche un courriel envoie `locale` = langue de l'interface
+     (`LANGUE`, sélecteur Français / English) — inscription (`verify_email`), nouvelle demande de vérification,
+     mot de passe oublié (`reset_password`), réinitialisation et changement du mot de passe (`password_changed`),
+     activation et désactivation de la double authentification (`mfa_enabled`, `mfa_disabled`), suppression du compte
+     par le titulaire ou par un administrateur (`deletion_scheduled`), suspension (`account_suspended`), invitation par
+     l'administration et invitation à un projet (`invitation`). Recensement : tous les appels à `sendAccountMail`, seul
+     point d'entrée de la file (`enqueueMail`).
+  3. Formulaire d'invitation de l'Administration : choix « Langue du courriel : Français / English », par défaut la
+     langue de l'interface de l'administrateur (texte français dans le code, traduction dans `en.json` ; liste marquée
+     `translate="no"` comme le sélecteur de langue). Ce n'est pas une commande ni un outil (champ d'un formulaire
+     existant, soumis par le bouton « Envoyer l'invitation » déjà présent) : la règle d'or (icône, barre, raccourci) ne
+     s'applique pas. L'invitation à un projet (Collaboration) suit la langue de l'interface sans choix supplémentaire.
+  4. Vérifié par `mail-locale.test.ts` (en-tête anglais sans valeur explicite → `fr` ; explicite `en` → `en` ; valeur
+     invalide → `fr`) et par `comptes-admin.mjs` (section 5 bis : navigateur en anglais, interface en français → sujet
+     « Invitation à rejoindre Fadi » lu dans Mailpit ; choix « English » → « Invitation to join Fadi »). Aucune
+     migration ; aucun déploiement sans accord du maître d'ouvrage.
+  - *Fusion* : demandée par le maître d'ouvrage dans la session d'exécution le 2026-10-24 (« fusionne #275 »), après CI
+    verte du dernier commit ; méthode de fusion habituelle du dépôt (commit de fusion). Aucun déploiement demandé.

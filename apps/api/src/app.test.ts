@@ -2230,11 +2230,17 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
   }
   /** Promotion directe en base (opération d'exploitation) : les sessions déjà ouvertes ne sont pas fermées ici. */
   const promoteInDb = (id: string) => pool.query("UPDATE users SET platform_role = 'admin' WHERE id = $1", [id]);
-  /** Code TOTP d'un pas jamais utilisé par ce compte, dans la fenêtre acceptée (±1 pas). */
+  /**
+   * Code TOTP d'un pas jamais utilisé par ce compte, dans la fenêtre acceptée (±1 pas) et qui y reste encore
+   * `MARGE_MS` : un code du pas précédent calculé juste avant un changement de pas sortirait de la fenêtre avant
+   * d'être vérifié par le serveur (400 aléatoire, run 40028880909).
+   */
+  const MARGE_MS = 10_000;
+  const plancher = () => stepAt(Date.now() + MARGE_MS) - 1;
   async function nextCode(acct: Account): Promise<string> {
-    let s = acct.lastStep === undefined ? stepAt(Date.now()) - 1 : acct.lastStep + 1;
+    let s = acct.lastStep === undefined ? plancher() : acct.lastStep + 1;
     while (s > stepAt(Date.now()) + 1) await new Promise((r) => setTimeout(r, 1000));
-    if (s < stepAt(Date.now()) - 1) s = stepAt(Date.now()) - 1;
+    if (s < plancher()) s = plancher();
     acct.lastStep = s;
     return hotp(base32Decode(acct.secret), s);
   }
@@ -2419,6 +2425,130 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
       const byAdmin = await boss.a.delete(`/admin/users/${target.id}`);
       expect(byAdmin.status).toBe(202);
       expect(byAdmin.body.mail.link).toMatch(/#jeton=/);
+    });
+  });
+
+  describe("5. corbeille et « Anonymiser maintenant » (UM-27, amendement de D-5)", () => {
+    async function admin() {
+      const boss = await account("corbeille-admin");
+      await enableMfa(boss, boss.a);
+      await promoteInDb(boss.id);
+      return boss;
+    }
+    async function inTrash(tag: string) {
+      const acct = await account(tag);
+      expect((await acct.a.delete("/auth/me").send({ password: PASSWORD, confirm: "SUPPRIMER" })).status).toBe(202);
+      return acct;
+    }
+
+    it("corbeille : comptes en suppression programmée seulement, demandeur, date d'anonymisation ; non-admin 404", async () => {
+      const boss = await admin();
+      const self = await inTrash("titulaire");
+      const other = await account("par-admin");
+      expect((await boss.a.delete(`/admin/users/${other.id}`)).status).toBe(202);
+      const plain = await account("hors-corbeille");
+      const trash = await boss.a.get("/admin/trash");
+      expect(trash.status).toBe(200);
+      type Item = { id: string; anonymisationAt: string; requestedBy: Record<string, unknown> };
+      const byId = new Map((trash.body.items as Item[]).map((i) => [i.id, i]));
+      expect(byId.has(plain.id)).toBe(false);
+      expect(byId.get(self.id)!.requestedBy.kind).toBe("user");
+      expect(byId.get(other.id)!.requestedBy).toMatchObject({ kind: "admin", actorId: boss.id, actorEmail: boss.email });
+      const requested = (await userState(self.id)).deletion_requested_at as Date;
+      expect(new Date(byId.get(self.id)!.anonymisationAt).getTime()).toBe(requested.getTime() + 30 * 864e5);
+      expect((await plain.a.get("/admin/trash")).status).toBe(404);
+      expect((await plain.a.post(`/admin/users/${self.id}/anonymize`).send({ confirmEmail: self.email })).status).toBe(404);
+    });
+
+    it("refus : hors corbeille, soi-même, adresse non ressaisie, projets partagés ; aucun effet ni journal", async () => {
+      const boss = await admin();
+      const plain = await account("actif");
+      expect((await boss.a.post(`/admin/users/${plain.id}/anonymize`).send({ confirmEmail: plain.email })).body.error).toBe("not_in_trash");
+      expect((await boss.a.post(`/admin/users/${boss.id}/anonymize`).send({ confirmEmail: boss.email })).body.error).toBe("self_action");
+      const target = await inTrash("cible");
+      expect((await boss.a.post(`/admin/users/${target.id}/anonymize`).send({})).status).toBe(400);
+      const wrong = await boss.a.post(`/admin/users/${target.id}/anonymize`).send({ confirmEmail: plain.email });
+      expect(wrong.status).toBe(422);
+      expect(wrong.body.error).toBe("confirmation_mismatch");
+      const project = await pool.query("INSERT INTO projects (id, owner_id, code, name) VALUES ($1, $2, 'TR-1', 'Partagé') RETURNING id", [`prj_tr_${target.id}`, target.id]);
+      await pool.query("INSERT INTO project_members (project_id, user_id, role, invited_by) VALUES ($1, $2, 'lecteur', 'test')", [project.rows[0].id, plain.id]);
+      const shared = await boss.a.post(`/admin/users/${target.id}/anonymize`).send({ confirmEmail: target.email });
+      expect(shared.status).toBe(409);
+      expect(shared.body.error).toBe("owns_shared_projects");
+      expect((await userState(target.id)).status).toBe("active");
+      expect((await userState(plain.id)).status).toBe("active");
+      expect(await auditCount("admin.user.anonymized_now", target.id)).toBe(0);
+    });
+
+    it("« Anonymiser maintenant » : même anonymisation que la tâche des 30 jours, journal nommant l'administrateur, double appel sans effet", async () => {
+      const boss = await admin();
+      const target = await inTrash("efface");
+      const done = await boss.a.post(`/admin/users/${target.id}/anonymize`).send({ confirmEmail: target.email.toUpperCase() });
+      expect(done.status).toBe(200);
+      const row = (await pool.query("SELECT email, display_name, status, password_hash, totp_secret_enc FROM users WHERE id = $1", [target.id])).rows[0];
+      expect(row).toMatchObject({ email: `deleted-${target.id}@invalid`, display_name: "Compte supprimé", status: "closed", password_hash: "!anonymised", totp_secret_enc: null });
+      const entries = (await pool.query("SELECT actor_id, metadata FROM admin.audit_log WHERE action = 'admin.user.anonymized_now' AND target_id = $1", [target.id])).rows;
+      expect(entries).toHaveLength(1);
+      expect(entries[0].actor_id).toBe(boss.id);
+      expect(JSON.stringify(entries[0].metadata)).not.toContain("@");
+      expect(await auditCount("account.anonymized", target.id)).toBe(0);
+      const again = await boss.a.post(`/admin/users/${target.id}/anonymize`).send({ confirmEmail: target.email });
+      expect(again.status).toBe(409);
+      expect(again.body.error).toBe("already_anonymized");
+      expect(await auditCount("admin.user.anonymized_now", target.id)).toBe(1);
+      expect((await boss.a.post(`/admin/users/${target.id}/restore`)).body.error).toBe("already_anonymized");
+      expect(((await boss.a.get("/admin/trash")).body.items as { id: string }[]).some((i) => i.id === target.id)).toBe(false);
+    });
+
+    it("appels simultanés : un seul aboutit ; restaurer contre anonymiser : exactement l'un des deux", async () => {
+      const boss = await admin();
+      const target = await inTrash("double");
+      const twice = await Promise.all([1, 2].map(() => boss.a.post(`/admin/users/${target.id}/anonymize`).send({ confirmEmail: target.email })));
+      expect(twice.map((r) => r.status).sort()).toEqual([200, 409]);
+      expect(await auditCount("admin.user.anonymized_now", target.id)).toBe(1);
+      const raced = await inTrash("course");
+      const [restore, erase] = await Promise.all([boss.a.post(`/admin/users/${raced.id}/restore`), boss.a.post(`/admin/users/${raced.id}/anonymize`).send({ confirmEmail: raced.email })]);
+      expect([restore.status, erase.status].filter((s) => s === 200)).toHaveLength(1);
+      const state = await userState(raced.id);
+      if (restore.status === 200) expect(state).toMatchObject({ status: "active", deletion_requested_at: null });
+      else expect(state.status).toBe("closed");
+    });
+
+    it("« Restaurer » : voie du lien d'annulation, statut antérieur (suspendu) rétabli, lien d'annulation consommé", async () => {
+      const boss = await admin();
+      const target = await account("suspendu");
+      expect((await boss.a.post(`/admin/users/${target.id}/suspend`)).status).toBe(200);
+      const del = await boss.a.delete(`/admin/users/${target.id}`);
+      const token = decodeURIComponent((del.body.mail.link as string).split("#jeton=")[1]!);
+      const restored = await boss.a.post(`/admin/users/${target.id}/restore`);
+      expect(restored.status).toBe(200);
+      expect(await userState(target.id)).toMatchObject({ status: "suspended", deletion_requested_at: null });
+      expect(await auditCount("admin.user.deletion_cancelled", target.id)).toBe(1);
+      expect((await agent().post("/auth/cancel-deletion").send({ token })).status).toBe(400);
+      expect((await boss.a.post(`/admin/users/${target.id}/restore`)).body.error).toBe("not_in_trash");
+    });
+
+    it("lien d'annulation et « Restaurer » simultanés : exactement l'un des deux, jamais d'interblocage", async () => {
+      const boss = await admin();
+      for (let i = 0; i < 5; i += 1) {
+        const target = await account(`lien-restaurer-${i}`);
+        const del = await target.a.delete("/auth/me").send({ password: PASSWORD, confirm: "SUPPRIMER" });
+        const token = decodeURIComponent((del.body.mail.link as string).split("#jeton=")[1]!);
+        const [link, restore] = await Promise.all([agent().post("/auth/cancel-deletion").send({ token }), boss.a.post(`/admin/users/${target.id}/restore`)]);
+        expect([link.status, restore.status].sort()).toEqual(link.status === 200 ? [200, 409] : [200, 400]);
+        expect((await userState(target.id)).deletion_requested_at).toBeNull();
+      }
+    });
+
+    it("dernier administrateur : un administrateur de la corbeille n'est plus actif, l'anonymiser ne retire personne (sous le verrou)", async () => {
+      const boss = await admin();
+      const other = await account("second-admin");
+      await promoteInDb(other.id);
+      expect((await boss.a.delete(`/admin/users/${other.id}`)).status).toBe(202);
+      const before = await activeAdmins();
+      expect((await boss.a.post(`/admin/users/${other.id}/anonymize`).send({ confirmEmail: other.email })).status).toBe(200);
+      expect(await activeAdmins()).toBe(before);
+      expect((await userState(other.id)).platform_role).toBe("user");
     });
   });
 

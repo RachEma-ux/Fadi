@@ -1,14 +1,19 @@
 # Gestion des comptes (Users Management) — Reprise de session
 
-Mis à jour : 2026-10-23 (UTC).
+Mis à jour : 2026-10-24 (UTC).
 
 ## Point de reprise
 
 - Chantier : users-management
-- Issue : [#253](https://github.com/RachEma-ux/Fadi/issues/253)
+- Issue : [#253](https://github.com/RachEma-ux/Fadi/issues/253) (close le 2026-10-23, UM-26)
 - Branche / PR : [PR #255](https://github.com/RachEma-ux/Fadi/pull/255) **fusionnée** dans `main` le 2026-10-23 (commit `516e2f7`,
   par le maître d'ouvrage) ; branche de tâche `ccr-266c1e83-7780ml` supprimée après fusion, recréée depuis `main` pour ce
-  seul consignement.
+  consignement (PR #259, #263 et la présente mise à jour du suivi).
+- **UM-27 (2026-10-24)** : branche `feat/253-corbeille-anonymiser` (depuis `main` à `c201d2b`), [PR #270](https://github.com/RachEma-ux/Fadi/pull/270) vers `main`
+  **non fusionnée** — corbeille des comptes et « Anonymiser maintenant » (amendement de D-5, DECISIONS.md).
+- **UM-30 (2026-10-24)** : branche `fix/um-29-langue-courriels` (depuis `main` à `7083285`), [PR #275](https://github.com/RachEma-ux/Fadi/pull/275) vers `main` **non
+  fusionnée** — langue des courriels = langue de l'interface (`locale` envoyé par le client), sinon français ;
+  `Accept-Language` n'est plus lu (DECISIONS.md UM-30).
 - Dernier commit vérifié : à relever en début de session ; ne pas réutiliser un SHA périmé.
 
 ## Dernier état vérifié
@@ -25,8 +30,22 @@ Mis à jour : 2026-10-23 (UTC).
 
 ## Prochaine action
 
+- UM-27, UM-28 et UM-30 : **fusionnés** (PR #270 `2cc038a`, PR #271 `e03fdfc`, PR #275 `5767835`) ; CI de `main` verte sur `2cc038a`.
+- UM-SERVICE — mise en service en **préproduction** (RUNBOOK §3 bis, §5 à §9), gestes de l'administrateur sur le VPS :
+  variables `PREPROD_MAIL_*` / `PREPROD_SMTP_*` dans `/opt/fadi-preprod/env/.env.preprod` puis `sudo fadi-preprod up` et
+  envoi de test ; premier administrateur (`sudo docker exec fadi-preprod-app-1 node apps/api/scripts/create-admin.mjs
+  <adresse>` après inscription) ; double authentification ; `PREPROD_FADI_ADMIN_ENABLED=true` puis `sudo fadi-preprod up` ;
+  recette §9, plus le contrôle UM-30 (invitation depuis un téléphone réglé en anglais, interface en français → sujet
+  « Invitation à rejoindre Fadi »). Relever ensuite `fadi-preprod status`, `/version`, le réglage et les comptages
+  d'administrateurs (STATUS.md, points ouverts) pour consigner.
+- PR ouverte qui touche ce chantier : #274 (UM-29, écarts E1 à E3 des règles communes).
+- **Consigne du maître d'ouvrage (2026-10-23) : on ne touche pas à www.fadimmo.com ; pendant le développement, tout se
+  déploie sur preprod.fadimmo.com.** Aucune session ne prépare ni ne lance de déploiement de production sans nouvelle
+  instruction explicite de sa part.
+
 - CI de `main` verte après la fusion (`516e2f7`, run CI 39911221480).
-- Déploiement : **seulement sur accord explicite du maître d'ouvrage**, en suivant RUNBOOK.md — `FADI_APP_DB_PASSWORD`
+- Préproduction : **faite** — `02329e1` déployé le 2026-10-23 à 15:28 UTC (PR #264, `init-env` lancé ; UM-26, STATUS.md).
+- Déploiement en **production** : **seulement sur accord explicite du maître d'ouvrage**, en suivant RUNBOOK.md — `FADI_APP_DB_PASSWORD`
   dans `.env.deploy`, service à usage unique `migrate` (§4), reconnexion des administrateurs avec leur code (§4 bis).
 - Organisations / participation / revue externe : chantier ouvert le 2026-10-23 (UM-25), suivi dans
   `docs/workstreams/organisations-participation/` ([Issue #262](https://github.com/RachEma-ux/Fadi/issues/262)).
@@ -39,8 +58,14 @@ Mis à jour : 2026-10-23 (UTC).
 - `BASE_URL=… DATABASE_URL=<base vierge> COMPTES_SECURITE_BASE_VIERGE=1 node apps/web/e2e/comptes-securite.mjs`
   (correctifs de sécurité ; sans la variable, les courses du dernier administrateur sont déclarées non exécutées).
 - `npx --workspace=@fadi/api vitest run src/lib` ; `npm run typecheck` ; `npm run build`.
+- UM-27 : `comptes-securite.mjs` section 5 (corbeille), `comptes-admin.mjs` (corbeille et passe anglaise),
+  `app.test.ts` « 5. corbeille » (DB-3), `apps/web/src/components/comptes/icones-admin.test.ts` (règle d'or).
 
 ## Risques et blocages
+
+- UM-27 : « Anonymiser maintenant » est irréversible et supprime aussitôt les projets non partagés du compte ; pas de
+  corbeille de projets (hors périmètre, signalé au maître d'ouvrage).
+- UM-28 : `MAIL_ALLOW_RESERVED_DOMAINS=true` fait refuser le démarrage en production ; ne jamais le poser hors CI / dev.
 
 - Déploiement après fusion : nouveau service `migrate` (usage unique) dans `docker-compose.yml` ; l'API ne reçoit plus
   `DATABASE_MIGRATION_URL` et refuse de démarrer en production s'il lui est donné (RUNBOOK §4).

@@ -74,8 +74,8 @@ services:
         condition: service_completed_successfully
     environment:
       # D-7 : l'API se connecte en fadi_app (aucun DDL), sans l'identifiant de migration ; elle refuse de démarrer en
-      # production sinon. Gestion des comptes : administration désactivée par défaut, aucun transport de courriel
-      # (liens à copier affichés), clé de chiffrement des secrets de double authentification.
+      # production sinon. Gestion des comptes : administration désactivée par défaut, clé de chiffrement des secrets de
+      # double authentification.
       DATABASE_URL: postgresql://fadi_app:${PREPROD_FADI_APP_DB_PASSWORD:?PREPROD_FADI_APP_DB_PASSWORD manquant (fadi-preprod init-env)}@db:5432/fadi
       WEB_ORIGIN: ${PREPROD_WEB_ORIGIN:-http://localhost:3001}
       APP_PUBLIC_URL: ${PREPROD_WEB_ORIGIN:-http://localhost:3001}
@@ -87,6 +87,19 @@ services:
       ARCHIVE_SIGNING_KEY: ${PREPROD_ARCHIVE_SIGNING_KEY:?PREPROD_ARCHIVE_SIGNING_KEY manquant}
       AUTH_RATE_LIMIT: ${PREPROD_AUTH_RATE_LIMIT:-500}
       API_RATE_LIMIT: ${PREPROD_API_RATE_LIMIT:-5000}
+      # Courriel (D-1, UM-28) : tout est facultatif. Sans PREPROD_MAIL_TRANSPORT, aucun envoi (liens à copier affichés).
+      # Avec PREPROD_MAIL_TRANSPORT=smtp (SMTP Infomaniak, MAIL_FROM = SMTP_USER), l'API envoie ; les destinataires de
+      # domaine réservé (comptes @example.com / @example.test des recettes) ne sont jamais envoyés. Quota prudent : 50 / 24 h.
+      # SMTP_PASS n'est transmis qu'à ce service (garde : refusé ailleurs, jamais au service recette).
+      MAIL_TRANSPORT: ${PREPROD_MAIL_TRANSPORT:-}
+      SMTP_HOST: ${PREPROD_SMTP_HOST:-mail.infomaniak.com}
+      SMTP_PORT: ${PREPROD_SMTP_PORT:-465}
+      SMTP_SECURE: ${PREPROD_SMTP_SECURE:-true}
+      SMTP_USER: ${PREPROD_SMTP_USER:-}
+      SMTP_PASS: ${PREPROD_SMTP_PASS:-}
+      MAIL_FROM: ${PREPROD_MAIL_FROM:-}
+      MAIL_DAILY_LIMIT: ${PREPROD_MAIL_DAILY_LIMIT:-50}
+      MAIL_RECIPIENT_HOURLY_LIMIT: ${PREPROD_MAIL_RECIPIENT_HOURLY_LIMIT:-5}
     ports:
       - "127.0.0.1:3101:3001"
     networks:

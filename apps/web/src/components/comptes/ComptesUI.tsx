@@ -28,15 +28,17 @@ export function PasswordField({ id, label, value, onChange, autoComplete = "new-
   );
 }
 
-export function ConfirmDialog({ title, children, confirmLabel, danger = false, busy = false, onConfirm, onClose }: {
-  title: string; children: ReactNode; confirmLabel: string; danger?: boolean; busy?: boolean; onConfirm: () => void; onClose: () => void;
+export function ConfirmDialog({ title, children, confirmLabel, danger = false, busy = false, confirmDisabled = false, onConfirm, onClose }: {
+  title: string; children: ReactNode; confirmLabel: string; danger?: boolean; busy?: boolean;
+  /** Confirmation incomplète (ex. adresse à ressaisir) : le bouton reste inactif. */
+  confirmDisabled?: boolean; onConfirm: () => void; onClose: () => void;
 }) {
   return (
     <Dialog title={title} onClose={onClose} className="confirm-dialog">
       <div>{children}</div>
       <div className="h7-actions">
         <button type="button" className="button-secondary" onClick={onClose}>Annuler</button>
-        <button type="button" className={danger ? "danger-button" : "button-primary"} disabled={busy} onClick={onConfirm} data-confirm>
+        <button type="button" className={danger ? "danger-button" : "button-primary"} disabled={busy || confirmDisabled} onClick={onConfirm} data-confirm>
           {busy ? "En cours…" : confirmLabel}
         </button>
       </div>
