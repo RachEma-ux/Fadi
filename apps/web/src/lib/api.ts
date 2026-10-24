@@ -219,8 +219,25 @@ export interface ProjectMember {
   role: MemberRole;
   /** Le membre peut exporter : toujours pour un éditeur ; pour un lecteur, si le propriétaire l'a accordé (écart E2). */
   canExport: boolean;
+  /** Affectations d'Approbateur et de Diffuseur (écart E5) et gardien du contenu déclaré (E10) ; absentes d'une copie antérieure. */
+  affectations?: MemberAffectations;
   invitedBy: string;
   createdAt: string;
+}
+
+export interface MemberAffectations { approbateur: boolean; diffuseur: boolean; gardien: boolean }
+export type MemberAffectation = keyof MemberAffectations;
+
+/** Observation ou tâche Studio dont le responsable n'a plus accès au projet (écart E6), à réattribuer explicitement. */
+export interface ResponsabiliteOrpheline {
+  nature: "observation" | "tache";
+  id: string;
+  libelle: string;
+  responsable: { id: string; email: string };
+  statut: string;
+  studyId: string;
+  variantId: string;
+  observationId: string;
 }
 
 export interface MembersView {
@@ -229,6 +246,8 @@ export interface MembersView {
   members: ProjectMember[];
   /** Invitations en attente (adresses sans compte) — propriétaire seulement. */
   invitations?: InvitationView[];
+  /** Responsabilités d'anciens membres à réattribuer (E6) — propriétaire seulement. */
+  aReattribuer?: ResponsabiliteOrpheline[];
 }
 
 // --- Gestion des comptes (docs/workstreams/users-management) -------------------------------------------------------
@@ -1068,6 +1087,8 @@ export interface StudioPublicationEvent {
   id: string; action: "creer" | "remplacer" | StudioPublicationTransition; fromStatus: StudioPublicationStatus | null; toStatus: StudioPublicationStatus;
   workStatus?: StudioPublicationWorkStatus | null; diffusionStatus?: StudioPublicationDiffusionStatus | null; manifestHash?: string | null; relatedPublicationId?: string | null;
   author: { id: string; email: string }; comment: string | null; revisionId: string; documentHash: string; headRevisionId: string; createdAt: string;
+  /** Base d'autorité de la transition (écart E5) ; null pour une entrée antérieure. */
+  authority?: { base: "role-projet"; role: "proprietaire" | "editeur" } | { base: "affectation"; role: "approbateur" | "diffuseur"; assignmentId: string } | null;
 }
 export interface StudioPublication {
   id: string; projectId: string; studyId: string; variantId: string; variantName: string; title: string;
@@ -1391,6 +1412,9 @@ export const api = {
   inviteMember: (projectId: string, email: string, role: MemberRole) => request<ProjectMember | InvitationCreated>(`/projects/${projectId}/members`, { method: "POST", body: JSON.stringify(withLocale({ email, role })) }),
   setMemberRole: (projectId: string, userId: string, role: MemberRole) => request<ProjectMember>(`/projects/${projectId}/members/${encodeURIComponent(userId)}`, { method: "PATCH", body: JSON.stringify({ role }) }),
   /** Export accordé ou retiré à un lecteur (propriétaire seulement, journalisé). */
+  /** Affectation d'Approbateur / de Diffuseur, ou gardien du contenu déclaré (propriétaire seulement, journalisé). */
+  setMemberAffectation: (projectId: string, userId: string, affectation: MemberAffectation, value: boolean) =>
+    request<ProjectMember>(`/projects/${projectId}/members/${encodeURIComponent(userId)}`, { method: "PATCH", body: JSON.stringify({ [affectation]: value }) }),
   setMemberExport: (projectId: string, userId: string, canExport: boolean) => request<ProjectMember>(`/projects/${projectId}/members/${encodeURIComponent(userId)}`, { method: "PATCH", body: JSON.stringify({ canExport }) }),
   removeMember: (projectId: string, userId: string) => request<void>(`/projects/${projectId}/members/${encodeURIComponent(userId)}`, { method: "DELETE" }),
   /** Transfert de propriété à un membre (propriétaire seulement) : vous restez éditeur. */

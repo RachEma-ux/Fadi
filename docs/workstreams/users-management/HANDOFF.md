@@ -11,11 +11,12 @@ Mis à jour : 2026-10-24 (UTC).
   consignement (PR #259, #263 et la présente mise à jour du suivi).
 - **UM-27 (2026-10-24)** : branche `feat/253-corbeille-anonymiser` (depuis `main` à `c201d2b`), [PR #270](https://github.com/RachEma-ux/Fadi/pull/270) vers `main`
   **non fusionnée** — corbeille des comptes et « Anonymiser maintenant » (amendement de D-5, DECISIONS.md).
-- **UM-31 (2026-10-24)** : branche `fix/admin-invitations-comptes-test` (depuis `main` à `7083285`, `main` fusionné à `5767835`), [PR #278](https://github.com/RachEma-ux/Fadi/pull/278) vers `main`
-  **non fusionnée** — « Renvoyer » / « Copier le lien » sur les invitations, filtre « Masquer les comptes de test »
-  (DECISIONS.md). Indépendante des PR #274 (UM-29) et #275 (UM-30).
-- **UM-29 (2026-10-24)** : branche `fix/collaboration-ecarts-e1-e3` (depuis `main` à `2cc038a`), PR vers `main` **non
-  fusionnée** — écarts graves E1 (audience), E2 (export du lecteur, décision CR-D4 / CR-R2), E3 (journal des accès) du cadrage des
+- **UM-31 (2026-10-24)** : [PR #278](https://github.com/RachEma-ux/Fadi/pull/278) **fusionnée** (`bf21c4b`) — « Renvoyer » /
+  « Copier le lien » sur les invitations, filtre « Masquer les comptes de test » (DECISIONS.md).
+- **UM-32 (2026-10-24)** : branche `ccr-e2b77568-r17oja` (depuis `main` à `2577e25`), [PR #282](https://github.com/RachEma-ux/Fadi/pull/282) vers `main` **non
+  fusionnée** — écarts E5 (Approbateur / Diffuseur, base d'autorité), E6 (fin de participation), E9 (glossaire), E10
+  (gardien du contenu) et report CR-1 ; détail dans `../collaboration-rules/DECISIONS.md` CR-R3, CR-C2.
+- **UM-29 (2026-10-24)** : [PR #274](https://github.com/RachEma-ux/Fadi/pull/274) **fusionnée** (`2577e25`) — écarts graves E1 (audience), E2 (export du lecteur, décision CR-D4 / CR-R2), E3 (journal des accès) du cadrage des
   règles communes (UM-29, détail dans `../collaboration-rules/DECISIONS.md` CR-C1, la PR #273 étant fusionnée).
 - **UM-30 (2026-10-24)** : branche `fix/um-29-langue-courriels` (depuis `main` à `7083285`), [PR #275](https://github.com/RachEma-ux/Fadi/pull/275) vers `main` **non
   fusionnée** — langue des courriels = langue de l'interface (`locale` envoyé par le client), sinon français ;
@@ -36,12 +37,11 @@ Mis à jour : 2026-10-24 (UTC).
 
 ## Prochaine action
 
-- UM-31 : CI verte sur `287ed62` (run 40120760488, DB-3 actif) ; revérifier le HEAD courant ; fusion et déploiement en préproduction **seulement** sur décision du
-  maître d'ouvrage (aucune migration ajoutée).
-- UM-29 : revérifier la CI du HEAD de la PR (DB-3 : `app.test.ts` « règles communes », recette
-  `collaboration-audience.mjs` dans le lot `complements`) ; fusion et déploiement **seulement** sur décision du maître
-  d'ouvrage. La PR #265 est fusionnée dans `main` (f59641c) et `main` l'est dans la branche : conflit de `members.ts`
-  résolu (ordre d'écriture du transfert de #265, journal à la suite).
+- UM-32 : relever la CI du HEAD de la PR (DB-3 : `app.test.ts` « E5 », « E10 », « E6 » ; recette
+  `collaboration-affectations.mjs` dans le lot `complements`) ; fusion et déploiement **seulement** sur décision du
+  maître d'ouvrage (migration additive : colonne `studio_publication_events.authority`, contrainte des responsabilités).
+- UM-29 (#274), UM-31 (#278) et Organisations phase 1 (#265) : **fusionnés** ; leur passage en préproduction n'est pas
+  constaté depuis une session cloud.
 - UM-27, UM-28 et UM-30 : **fusionnés** (PR #270 `2cc038a`, PR #271 `e03fdfc`, PR #275 `5767835`) ; CI de `main` verte sur `2cc038a`.
 - UM-SERVICE — mise en service en **préproduction** (RUNBOOK §3 bis, §5 à §9), gestes de l'administrateur sur le VPS :
   variables `PREPROD_MAIL_*` / `PREPROD_SMTP_*` dans `/opt/fadi-preprod/env/.env.preprod` puis `sudo fadi-preprod up` et
@@ -50,8 +50,7 @@ Mis à jour : 2026-10-24 (UTC).
   recette §9, plus le contrôle UM-30 (invitation depuis un téléphone réglé en anglais, interface en français → sujet
   « Invitation à rejoindre Fadi »). Relever ensuite `fadi-preprod status`, `/version`, le réglage et les comptages
   d'administrateurs (STATUS.md, points ouverts) pour consigner.
-- PR ouverte qui touche ce chantier : #274 (UM-29, écarts E1 à E3 des règles communes, E7 et règle d'or des commandes
-  de collaboration). #265 et #278 sont fusionnées.
+- PR ouverte qui touche ce chantier : celle d'UM-32. #265, #274 et #278 sont fusionnées.
 - **Consigne du maître d'ouvrage (2026-10-23) : on ne touche pas à www.fadimmo.com ; pendant le développement, tout se
   déploie sur preprod.fadimmo.com.** Aucune session ne prépare ni ne lance de déploiement de production sans nouvelle
   instruction explicite de sa part.
@@ -75,6 +74,9 @@ Mis à jour : 2026-10-24 (UTC).
   `app.test.ts` « 5. corbeille » (DB-3), `apps/web/src/components/comptes/icones-admin.test.ts` (règle d'or).
 
 ## Risques et blocages
+
+- UM-SERVICE : **non exécutable depuis une session de développement** (aucun accès au VPS ; consigne : rien sur la
+  production) ; il reste le seul point ouvert de ce chantier qui ne dépende pas d'une PR.
 
 - UM-29 : après déploiement, un **nouveau** lecteur n'exporte plus sans accord du propriétaire (changement visible) ; les
   lecteurs existants gardent l'export. Les commentaires et observations **nouveaux** sont réservés à l'équipe par défaut.

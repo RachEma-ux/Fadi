@@ -52,6 +52,7 @@ export type AuditAction =
   | "project.member.added"
   | "project.member.role_changed"
   | "project.member.export_changed"
+  | "project.member.assignment_changed"
   | "project.member.removed"
   | "project.member.left"
   | "project.ownership.transferred"

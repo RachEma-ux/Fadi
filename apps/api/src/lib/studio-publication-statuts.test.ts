@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  actualiteDe, actualiteParEmpreinte, actualiteVue, besoinTransition, CacheRegeneration, canonicalJson, cleRegeneration, construireManifeste, controlerApprobation, controlerEnsembleExamine, controlerTransition, diffusionPlusRecente, documentsRegeneres,
+  actualiteDe, actualiteParEmpreinte, actualiteVue, baseAutorite, besoinTransition, CacheRegeneration, canonicalJson, cleRegeneration, construireManifeste, controlerApprobation, controlerEnsembleExamine, controlerTransition, diffusionPlusRecente, documentsRegeneres,
   dimensionsDe, ecartsManifeste, empreinteManifeste, memeContenu, REGLES_TRANSITION, ROLES_CAPACITE, sha256, statutCombine, STUDIO_PUBLICATION_ACTIONS,
   type EtatPublication, type ManifesteMeta, type ManifesteSource,
 } from "./studio-publication-statuts.js";
@@ -81,6 +81,33 @@ describe("Publications Studio — droits distincts (E.4-02)", () => {
     for (const c of ["revue", "approbation", "publication"] as const) expect(ROLES_CAPACITE[c]).not.toContain("lecteur");
     expect(ROLES_CAPACITE.approbation).toEqual(["proprietaire"]);
     expect(Object.keys(REGLES_TRANSITION).sort()).toEqual([...STUDIO_PUBLICATION_ACTIONS].sort());
+  });
+});
+
+describe("Publications Studio — Approbateur et Diffuseur, base d'autorité (écart E5, CR-D2, CR-D6)", () => {
+  const approb = { id: "pra_a", role: "approbateur" as const };
+  const diff = { id: "pra_d", role: "diffuseur" as const };
+  it("le propriétaire agit au titre de son rôle ; l'éditeur au titre du sien pour la revue seulement", () => {
+    for (const a of STUDIO_PUBLICATION_ACTIONS) expect(baseAutorite(a, "proprietaire", [])).toEqual({ base: "role-projet", role: "proprietaire" });
+    expect(baseAutorite("soumettre", "editeur", [])).toEqual({ base: "role-projet", role: "editeur" });
+    expect(baseAutorite("actualiser", "editeur", [])).toEqual({ base: "role-projet", role: "editeur" });
+    for (const a of ["approuver", "refuser", "diffuser", "retirer"] as const) expect(baseAutorite(a, "editeur", []), a).toBeNull();
+  });
+  it("un Relecteur ou un lecteur sans affectation n'approuve ni ne diffuse ; l'affectation explicite ouvre sa seule capacité", () => {
+    for (const a of STUDIO_PUBLICATION_ACTIONS) expect(baseAutorite(a, "lecteur", []), a).toBeNull();
+    expect(baseAutorite("approuver", "lecteur", [approb])).toEqual({ base: "affectation", role: "approbateur", assignmentId: "pra_a" });
+    expect(baseAutorite("refuser", "editeur", [approb])).toEqual({ base: "affectation", role: "approbateur", assignmentId: "pra_a" });
+    // Un Approbateur sans affectation de Diffuseur ne diffuse pas, et réciproquement (affectations distinctes).
+    expect(baseAutorite("diffuser", "lecteur", [approb])).toBeNull();
+    expect(baseAutorite("approuver", "lecteur", [diff])).toBeNull();
+    expect(baseAutorite("retirer", "lecteur", [diff])).toEqual({ base: "affectation", role: "diffuseur", assignmentId: "pra_d" });
+    // Une affectation n'ouvre jamais la revue : un lecteur approbateur ne prépare ni ne soumet.
+    expect(baseAutorite("soumettre", "lecteur", [approb, diff])).toBeNull();
+  });
+  it("une même personne peut tenir les deux affectations (CR-D2 a) ; l'accès support n'a jamais de base", () => {
+    expect(baseAutorite("approuver", "lecteur", [approb, diff])?.base).toBe("affectation");
+    expect(baseAutorite("diffuser", "lecteur", [approb, diff])?.role).toBe("diffuseur");
+    for (const a of STUDIO_PUBLICATION_ACTIONS) expect(baseAutorite(a, "support", [approb, diff]), a).toBeNull();
   });
 });
 

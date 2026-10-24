@@ -1,6 +1,6 @@
 # Organisations, participation et revue externe — Reprise de session
 
-Mis à jour : 2026-10-23 (UTC).
+Mis à jour : 2026-10-24 (UTC).
 
 ## Point de reprise
 
@@ -10,7 +10,12 @@ Mis à jour : 2026-10-23 (UTC).
 
 ## Dernier état vérifié
 
-- Plan validé (OP-1). Phase 1 implémentée et vérifiée localement (voir STATUS.md) ; CI de la PR à relever.
+- Plan validé (OP-1). Phase 1 **fusionnée** dans `main` (PR #265, `f59641c`) ; revue 🛑 1 du maître d'ouvrage attendue avant
+  la phase 2.
+- 2026-10-24 : critères des règles communes reportés dans PLAN.md (CR-1, accord CR-R3) ; une partie des tâches de
+  phase 2 est déjà livrée hors de ce chantier : journal des changements d'accès (PR #274), fin de participation,
+  Approbateur / Diffuseur et gardien du contenu sur les accès actuels ([PR #282](https://github.com/RachEma-ux/Fadi/pull/282), CR-C2) — voir l'état noté sous chaque
+  tâche du PLAN.
 
 ## Prochaine action
 

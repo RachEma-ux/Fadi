@@ -570,6 +570,13 @@ jobs:
         run: |
           set -o pipefail
           node apps/web/e2e/collaboration-audience.mjs 2>&1 | tee -a e2e.log
+      # Règles communes, suite (CR-C2) : écarts E5 (Approbateur et Diffuseur, base d'autorité des publications), E6 (fin de
+      # participation : réservation libérée, responsabilités à réattribuer) et E10 (gardien du contenu sans droit).
+      - name: Recette des règles communes — Approbateur, Diffuseur, gardien du contenu, fin de participation (apps/web/e2e/collaboration-affectations.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/collaboration-affectations.mjs 2>&1 | tee -a e2e.log
       - name: Recette Gestion des comptes dans le navigateur — écrans, axe-core bureau et téléphone (apps/web/e2e/comptes-admin.mjs)
         if: ${{ matrix.shard == 'complements' }}
         run: |

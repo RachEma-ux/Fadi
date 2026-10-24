@@ -12,9 +12,13 @@
  * Droits (E.4-02) — correspondance prudente avec les rôles de projet existants (`owned-project.ts`) :
  *   - lecture (dossier, manifeste, journal, fichiers, vérification) : besoin `read` → propriétaire, éditeur, lecteur ;
  *   - revue (préparer, soumettre, actualiser le manifeste) : besoin `write` → propriétaire, éditeur ;
- *   - approbation (approuver, refuser) : besoin `owner` → propriétaire seul ;
- *   - publication (diffuser, retirer ; le remplacement suit la diffusion d'un paquet plus récent) : `owner` → propriétaire seul.
- * Un lecteur ne fait que lire. Les refus suivent le style existant (`projectAccessRefusal` : 404 / 403 / 423).
+ *   - approbation (approuver, refuser) : besoin `owner` → propriétaire, **ou** membre portant l'affectation explicite
+ *     d'Approbateur (écart E5, OP-D3 c, OP-D7 a) ;
+ *   - publication (diffuser, retirer ; le remplacement suit la diffusion d'un paquet plus récent) : `owner` → propriétaire,
+ *     **ou** membre portant l'affectation explicite de Diffuseur (E5).
+ * Approbateur et Diffuseur sont deux affectations distinctes ; une même personne peut tenir les deux si le propriétaire
+ * les lui donne toutes deux (CR-D2 a). Chaque transition enregistre sa base d'autorité (`baseAutorite`, CR-D6 a). Hors
+ * affectation, un lecteur ne fait que lire. Les refus suivent le style existant (`projectAccessRefusal` : 404 / 403 / 423).
  *
  * Manifeste figé multi-sources (E.4-03) : sources coordonnées (variante principale et variantes coordonnées, chacune
  * avec sa révision et l'empreinte SHA-256 de son document), métadonnées gelées des exports, empreintes des documents du
@@ -25,7 +29,8 @@
  * supprimé.
  */
 import { createHash } from "node:crypto";
-import type { ProjectNeed } from "./owned-project.js";
+import type { StudioPublicationAuthority } from "../db/schema.js";
+import type { ProjectNeed, ProjectRole } from "./owned-project.js";
 
 export type StatutTravail = "brouillon" | "en-revue" | "approuve" | "refuse";
 export type StatutDiffusion = "non-diffuse" | "diffuse" | "retire" | "remplace";
@@ -48,6 +53,13 @@ export const ROLES_CAPACITE: Readonly<Record<CapacitePublication, readonly ("pro
   lecture: ["proprietaire", "editeur", "lecteur"], revue: ["proprietaire", "editeur"], approbation: ["proprietaire"], publication: ["proprietaire"],
 });
 
+/** Affectations explicites qui ouvrent une capacité de publication (rôles par portée « projet », origine `attribution`). */
+export type AffectationPublication = "approbateur" | "diffuseur";
+export const AFFECTATION_CAPACITE: Readonly<Record<"approbation" | "publication", AffectationPublication>> = Object.freeze({
+  approbation: "approbateur", publication: "diffuseur",
+});
+export interface AffectationTenue { id: string; role: AffectationPublication }
+
 interface RegleTransition {
   capacite: Exclude<CapacitePublication, "lecture">;
   travail: readonly StatutTravail[];
@@ -65,6 +77,27 @@ export const REGLES_TRANSITION: Readonly<Record<StudioPublicationTransition, Reg
   retirer: { capacite: "publication", travail: ["brouillon", "en-revue", "approuve", "refuse"], diffusion: ["non-diffuse", "diffuse", "remplace"], commentaire: "requis", manifesteAJour: false },
 });
 export const besoinTransition = (action: StudioPublicationTransition): ProjectNeed => BESOIN_CAPACITE[REGLES_TRANSITION[action].capacite];
+
+/**
+ * Base d'autorité d'une transition (E5, CR-D6), ou null si l'acteur n'en a aucune : le rôle de projet d'abord
+ * (propriétaire ; éditeur pour la revue), sinon l'affectation explicite qui ouvre la capacité. L'accès support n'en a
+ * jamais. Le verrou d'édition d'un autre compte reste vérifié à part (423), quelle que soit la base.
+ */
+export function baseAutorite(action: StudioPublicationTransition, role: ProjectRole, affectations: readonly AffectationTenue[]): StudioPublicationAuthority | null {
+  const capacite = REGLES_TRANSITION[action].capacite;
+  if (role === "support") return null;
+  if (role === "proprietaire") return { base: "role-projet", role: "proprietaire" };
+  if (capacite === "revue") return role === "editeur" ? { base: "role-projet", role: "editeur" } : null;
+  const tenue = affectations.find((a) => a.role === AFFECTATION_CAPACITE[capacite]);
+  return tenue ? { base: "affectation", role: tenue.role, assignmentId: tenue.id } : null;
+}
+
+/** Motif du refus d'une capacité sans base d'autorité (403). */
+export const REFUS_CAPACITE: Readonly<Record<Exclude<CapacitePublication, "lecture">, string>> = Object.freeze({
+  revue: "Préparer et soumettre une publication est réservé au propriétaire et aux éditeurs du projet.",
+  approbation: "Approuver ou refuser est réservé au propriétaire du projet et aux approbateurs qu'il a désignés.",
+  publication: "Diffuser ou retirer est réservé au propriétaire du projet et aux diffuseurs qu'il a désignés.",
+});
 
 export interface Dimensions { travail: StatutTravail; diffusion: StatutDiffusion }
 export interface EtatPublication extends Dimensions {

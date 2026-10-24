@@ -286,3 +286,11 @@ ils ne réécrivent aucune décision D-x et restent révisables par lui.
      signalé).
   5. *Hors périmètre* : PR #274 (écarts E1-E3, UM-29) et #275 (langue des courriels, UM-30) ouvertes à part ; cette PR
      part de `main` et n'en dépend pas. Aucune migration, aucun déploiement.
+- **UM-32 — Points en suspens : écarts E5, E6, E9, E10 et report CR-1 (2026-10-24).** Demande du maître d'ouvrage
+  (« Résous les points en suspens de l'implémentation du module user management »). Consigné dans le journal des
+  règles communes ([CR-R3 et CR-C2](../collaboration-rules/DECISIONS.md)) : affectations explicites d'Approbateur et de
+  Diffuseur et base d'autorité des publications Studio (E5), libération des réservations et liste des responsabilités à
+  réattribuer à la fin de participation (E6), glossaire (E9), gardien du contenu déclaré (E10), critères de l'annexe A
+  reportés dans le plan d'Organisations (CR-1). Migration additive ; aucun déploiement. **UM-SERVICE** (mise en service
+  de la préproduction : SMTP, premier administrateur, recette) reste un geste de l'administrateur sur le VPS, hors de
+  portée d'une session de développement (aucun accès au VPS) ; **production** : non touchée (consigne du 2026-10-23).

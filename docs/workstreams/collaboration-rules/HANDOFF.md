@@ -6,22 +6,22 @@ Mis à jour : 2026-10-24 (UTC).
 
 - Chantier : collaboration-rules. Issue : [#272](https://github.com/RachEma-ux/Fadi/issues/272).
 - Cadrage : PR #273 **fusionnée** (`7083285`).
-- Écarts E1, E2, E3 : branche `fix/collaboration-ecarts-e1-e3`, [PR #274](https://github.com/RachEma-ux/Fadi/pull/274)
-  vers `main` **non fusionnée** (DECISIONS.md CR-C1).
+- Écarts E1, E2, E3 (et E7) : [PR #274](https://github.com/RachEma-ux/Fadi/pull/274) **fusionnée** (`2577e25`, CR-C1).
+- Écarts E5, E6, E9, E10 et report CR-1 : branche `ccr-e2b77568-r17oja` (depuis `main` = `2577e25`), [PR #282](https://github.com/RachEma-ux/Fadi/pull/282) vers
+  `main` **non fusionnée** (DECISIONS.md CR-R3, CR-C2).
 - Dernier commit vérifié : à relever en début de session ; ne pas réutiliser un SHA périmé.
 
 ## Dernier état vérifié
 
 - Matrice, plan et décisions rédigés à partir de `main` = `034dbfb`, branche mise à jour avec `main` = `2cc038a`.
 - Décisions CR-R1 et CR-R2 consignées (relayées par la session VPS) : CR-D1 à CR-D10 toutes répondues.
-- Code : PR #274 seule (E1, E2, E3, puis E7, règle d'or des commandes de collaboration, alignement sur #265).
+- Code : PR #274 fusionnée (E1, E2, E3, E7) ; PR de CR-C2 (E5, E6, E9 glossaire, E10, CR-1) vérifiée en local (STATUS.md).
 
 ## Prochaine action
 
-- PR #274 : relever la CI du HEAD (DB-3, lots e2e `parcours` et `complements`, `project-layout`) ; fusion et
-  déploiement sur décision du maître d'ouvrage. La PR #265 est fusionnée et `main` fusionné dans la branche (CR-C1 § 6).
-- Après la fusion de la PR #265 et l'accord (CR-D10), ouvrir la PR qui reporte l'annexe A du PLAN dans le PLAN
-  d'Organisations.
+- [PR #282](https://github.com/RachEma-ux/Fadi/pull/282) : relever la CI du HEAD (DB-3 : `app.test.ts` « E5 », « E10 », « E6 » ; lot e2e `complements` :
+  `collaboration-affectations.mjs`) ; fusion et déploiement sur décision du maître d'ouvrage.
+- Restent : E4 et E8 (phase 3 d'Organisations) ; CR-2 à CR-4 à l'ouverture de COM et du Temps réel.
 
 ## Tests et preuves
 
@@ -31,8 +31,11 @@ Mis à jour : 2026-10-24 (UTC).
 ## Risques et blocages
 
 - Les numéros de ligne de la matrice dérivent avec `main` : ils valent pour `034dbfb`.
-- E1 et E2 : corrigés par la PR #274 ; tant qu’elle n’est pas fusionnée et déployée, ouvrir un projet à un participant
+- E1 et E2 : corrigés par la PR #274 (fusionnée) ; tant que ce n'est pas déployé, ouvrir un projet à un participant
   externe exposerait les notes internes.
+- CR-C2, après déploiement : un Approbateur ou un Diffuseur désigné peut être un lecteur (OP-D7 a) ; l'approbation et la
+  diffusion ne sont plus réservées au seul propriétaire dès qu'il désigne quelqu'un. Le retrait d'un membre libère sa
+  réservation d'édition et ses verrous (changement visible pour les autres membres, notifié).
 
 ## Arrêt sûr
 
