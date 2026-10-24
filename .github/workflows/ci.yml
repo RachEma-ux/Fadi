@@ -645,6 +645,13 @@ jobs:
           mkdir -p rapport-migration
           FADI_JEU_SYNTHETIQUE=fadi_mig DATABASE_URL=postgresql://fadi:fadi_ci_password@localhost:5432/fadi_mig node scripts/migration/jeu-synthetique.mjs --file-locale rapport-migration/file-locale.json
           MIG_ADMIN_URL=postgresql://fadi:fadi_ci_password@localhost:5432/fadi_mig MIG_BASE=fadi_mig MIG_SORTIE=rapport-migration npx tsx scripts/migration/recette-simulation.mjs 2>&1 | tee -a e2e.log
+      # Reliquat organisations-participation (#262) : le formulaire « Accès support » ne déborde plus sur téléphone quand un
+      # administrateur au nom long existe (crée un administrateur : en fin de tranche, après les recettes qui les comptent).
+      - name: Recette de l'accès support sur téléphone — aucun défilement horizontal (apps/web/e2e/collaboration-support-telephone.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/collaboration-support-telephone.mjs 2>&1 | tee -a e2e.log
       - name: Rapports de simulation de migration
         if: ${{ always() && matrix.shard == 'complements' }}
         uses: actions/upload-artifact@v4
