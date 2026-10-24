@@ -3870,6 +3870,67 @@ fieldset.access-fieldset:disabled {
   }
 }
 
+/* Invitations acceptées (Issue #262, phase 3) : formulaire avec aperçu, invitations reçues. */
+.members-invite[data-invitation-form] {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+}
+.members-invite[data-invitation-form] > .h7-actions,
+.members-invite[data-invitation-form] > .invitation-apercu,
+.members-invite[data-invitation-form] > .invitation-extra-roles,
+.members-invite[data-invitation-form] > [role="alert"] {
+  grid-column: 1 / -1;
+}
+.invitation-extra-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin: 0;
+}
+.invitation-extra-roles legend {
+  font-size: 13px;
+  color: var(--muted);
+}
+.invitation-extra-roles label {
+  flex-direction: row;
+  align-items: center;
+  min-height: 24px;
+}
+.invitation-apercu dl {
+  display: grid;
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+  gap: 4px 12px;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.invitation-apercu dt {
+  color: var(--muted);
+}
+.invitation-apercu dd {
+  margin: 0;
+}
+.received-invitations .project-list li {
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+.received-invitations .project-list li > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.invitation-recue-detail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  flex-basis: 100%;
+}
+@media (max-width: 480px) {
+  .invitation-apercu dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* Équipe et participants (Issue #262, phase 2) */
 .participants-cloture {
   display: flex;

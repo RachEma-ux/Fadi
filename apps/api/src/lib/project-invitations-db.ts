@@ -171,7 +171,7 @@ export async function createProjectInvitation(tx: Tx, d: InvitationDraft & { inv
   return { invitation: row!, token, resent: false, participationId };
 }
 
-const roleLabel = (r: ProposedRole) => (r.scopeType === "projet" ? r.role : `${r.role}@${r.scopeType}:${r.scopeId}`);
+const roleLabel = (r: ProposedRole) => (r.scopeType === "projet" ? r.role : `${r.role}/${r.scopeType}:${r.scopeId}`);
 
 /**
  * Fiche à créer à l'envoi : pour un compte existant, sa propre personne (créée au besoin, comme le fait le miroir) ;
