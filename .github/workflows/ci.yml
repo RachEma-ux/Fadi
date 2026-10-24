@@ -371,7 +371,10 @@ jobs:
       WEB_ORIGIN: http://localhost:3001
       WEB_DIST: apps/web/dist
       PORT: "3001"
-      AUTH_RATE_LIMIT: "500"
+      # Une seule API pour toute la tranche (même adresse, fenêtre de 15 min) : la tranche complements enchaîne les recettes
+      # des comptes, du journal, des participants et des organisations, qui dépassaient 500 appels /auth (429). Réglage de
+      # test seulement ; la production garde 20.
+      AUTH_RATE_LIMIT: "3000"
       # Limite par adresse (10 / 15 min par défaut) : les recettes reconnectent souvent le même compte.
       AUTH_IDENTIFIER_RATE_LIMIT: "500"
       API_RATE_LIMIT: "5000"
