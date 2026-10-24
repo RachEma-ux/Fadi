@@ -10697,6 +10697,7 @@
 "Inviter une personne": "Invite someone",
 "Adresse e-mail": "Email address",
 "Envoyer l’invitation": "Send the invitation",
+"Langue du courriel": "Email language",
 "L’invitation est valable 7 jours ; aucun compte n’est créé tant que la personne ne l’a pas acceptée.": "The invitation is valid for 7 days; no account is created until the person accepts it.",
 "L’invitation n’a pas pu être créée.": "The invitation could not be created.",
 "Invitation {0} à {1}.": "Invitation {0} to {1}.",
