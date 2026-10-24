@@ -1,7 +1,8 @@
 # Temps réel (Real-time Collaboration) — plan d'implémentation
 
 > Statut : **proposé, en cadrage (RTC-0)** ; Issue [#283](https://github.com/RachEma-ux/Fadi/issues/283) ; ouverture
-> RTC-0 décidée (RT-D1) ; questions RT-Q1 à RT-Q7 répondues (RT-D2, `DECISIONS.md`). Ce plan reprend le plan fourni le 2026-10-24 (base `main@2577e25`) **amendé** par l'évaluation
+> RTC-0 décidée (RT-D1) ; questions RT-Q1 à RT-Q7 répondues (RT-D2, précisée par RT-D3 : Studio seul, canal propre
+> au Temps réel ; `DECISIONS.md`). Ce plan reprend le plan fourni le 2026-10-24 (base `main@2577e25`) **amendé** par l'évaluation
 > [`EVALUATION-PLAN-TEMPS-REEL-2026-10-24.md`](../../continuity/EVALUATION-PLAN-TEMPS-REEL-2026-10-24.md) (écarts P1
 > à P10, repérés `[Pn]` ci-dessous). Rien n'est implémenté ; aucune capacité n'est mesurée ; les budgets sont des cibles.
 
@@ -38,8 +39,8 @@
 
 ### Première version
 
-- Créer, rejoindre, quitter, clore une session sur une **portée typée** : variante / révision Studio, version de document,
-  ou paquet de revue figé autorisé (RT-D2 : Studio et Documents ; l'Atelier n'entre pas dans la première version).
+- Créer, rejoindre, quitter, clore une session sur une **portée typée** : variante / révision Studio, ou paquet de revue
+  figé Studio autorisé (RT-D3 : **Studio seul** ; ni Documents ni l'Atelier dans la première version).
 - Participants permis, état de connexion, présentateur ; suivre / cesser de suivre, explicitement.
 - Caméra, mode de vue, niveau, pointeur, sélection — seulement si le destinataire peut voir l'élément référencé.
 - Annotation enregistrée délibérément : point de vue, repère et unités, révision source, références d'objets, auteur,
@@ -56,8 +57,8 @@ diffusion, adoption de référence ou résolution de conflit automatique. Sandbo
 
 ### Placement
 
-Projet > Collaboration > **Sessions en direct** (libellé source français) `[P8]`, entrées contextuelles depuis Studio et
-Documents (RT-D2). Bandeau de session compact et panneau repliable participants / annotations ;
+Projet > Collaboration > **Sessions en direct** (libellé source français) `[P8]`, entrée contextuelle depuis Studio seul
+(RT-D3). Bandeau de session compact et panneau repliable participants / annotations ;
 pas de nouvelle coque pleine largeur. Toujours visibles : portée, révision ou paquet affiché, audience, suivi / navigation
 libre, état de connexion. Présence non signalée par la seule couleur ; annonces d'accessibilité non intrusives.
 
@@ -68,11 +69,12 @@ libre, état de connexion. Présence non signalée par la seule couleur ; annonc
 | Propriétaire | Possède | Intégration |
 | --- | --- | --- |
 | Users Management / Organisations | identité, invitations, affectations, échéance, révocation | adaptateur d'autorisation unique à l'entrée, à la diffusion, à l'opération, à la reconnexion |
-| COM | conversations, audiences de messages, notifications et leur remise | lien session ↔ conversation ; aucune messagerie locale ; le canal du Temps réel ne transporte pas COM (RT-D2) `[P5]` |
+| COM | conversations, audiences de messages, notifications et leur remise | lien session ↔ conversation ; aucune messagerie locale ; **canal propre au Temps réel**, qui ne transporte pas COM (RT-D3) `[P5]` |
 | Temps réel | cycle de vie des sessions, présence, présentateur, vue partagée éphémère, **canal** | orchestration mince |
 | Studio | objets, commandes, révisions, observations, décisions formelles | API existantes, autorité |
-| Atelier | modèle typé, commandes, journal, verrous, versions | **hors première version** (RT-D2) ; son journal à curseur reste l'option d'une version ultérieure, à décider à part `[P2]` |
-| Documents / revue | fichiers versionnés, paquets de revue | versions exactes autorisées seulement |
+| Atelier | modèle typé, commandes, journal, verrous, versions | **hors première version** (RT-D2, RT-D3) ; son journal à curseur reste l'option d'une version ultérieure, à décider à part `[P2]` |
+| Documents | fichiers versionnés | **hors première version** (RT-D3) ; aucune session sur un document |
+| Revue (Organisations phase 4, Studio) | paquets de revue figés | versions Studio exactes autorisées seulement |
 | Parcours | contexte d'étape | liens seulement ; 21 étapes préservées |
 
 ### Transport et livraison
@@ -103,7 +105,7 @@ libre, état de connexion. Présence non signalée par la seule couleur ; annonc
 
 | Enregistrement | Contenu minimal | Durée |
 | --- | --- | --- |
-| Session | id, portée discriminée (`studio-revision` · `document-version` · `paquet-revue`), ressource ou paquet épinglé, hôte, statut, dates, référence de politique d'audience | durable ; conservation RT-Q5 |
+| Session | id, portée discriminée (`studio-revision` · `paquet-revue`), ressource ou paquet épinglé, hôte, statut, dates, référence de politique d'audience | durable ; conservation RT-Q5 |
 | Participant de session | session, compte, rôle hôte / présentateur / participant, entrée / sortie | assiduité si justifiée ; **jamais** un droit |
 | Présence | connexion, vue permise courante, battement, échéance | éphémère |
 | Annotation | identité d'observation / commentaire existante + point de vue, ancre objet / page, repère et unités, révision source, référence de session | celle du propriétaire, indépendante de la session |
@@ -144,7 +146,7 @@ PR #282), auteur historique jamais réécrit. Aucun nouveau système de verrous.
 | **RTC-0 — contrats** | Ce dossier ; traçabilité RT-R1…R7 (§ 5) ; décisions RT-D1, RT-D2 ; essai de transport (Express 5 + Caddy + `basic_auth`) **hors `main`** ; budgets de référence | RT-D1 | Plan revu, chaque critère relié à un lot et un test ; questions répondues |
 | **Porte des prérequis** `[P1]` | Fusion dans `main` : Organisations phases 2–4 (OP-3, #262), PR #282 (E5, E6), socle COM (#280) ; vagues 1–3 de la recette commune jouables | chantiers concernés | S1–S5 et S8 verts ; S3, S4 sur notifications ; invitation → revue figée → correction → approbation autorisée → diffusion séparée démontrée |
 | RTC-1 — socle de session | Tables de session (migration additive), cycle HTTP, garde de l'upgrade, battement, limites, clôture, reprise d'hôte, **drapeau serveur désactivé par défaut** | RTC-0 + porte | Deux comptes autorisés rejoignent ; tiers et support refusés selon le cas ; échéance et redémarrage sans présence fantôme ; un compte retiré est déconnecté sans attendre |
-| RTC-2 — vue partagée | Adaptateurs Studio et Documents (RT-D2) ; présentateur / suivi ; caméra, pointeur, sélection selon les repères ; changement de révision explicite | RTC-1 | Deux clients partagent une vue permise ; aucune révision créée par la navigation ; le suivi n'écrase jamais le contexte d'édition |
+| RTC-2 — vue partagée | Adaptateur Studio seul (RT-D3) ; présentateur / suivi ; caméra, pointeur, sélection selon les repères ; changement de révision explicite | RTC-1 | Deux clients partagent une vue permise ; aucune révision créée par la navigation ; le suivi n'écrase jamais le contexte d'édition |
 | RTC-3 — annotations | Extension des observations et points de vue ; liens tâches ; COM ; pont d'événements Studio après validation | RTC-2, COM fusionné | L'annotation survit à la clôture ; source exacte gardée ; rejeu = un seul enregistrement ; note interne jamais reçue par un invité restreint |
 | RTC-4 — revue externe en direct | Session sur paquet figé, avis d'invitation ciblé, actions permises, continuité de revue, révocation | RTC-3 + Organisations phase 4 | Client reste sur R03 pendant R04 ; aucune métadonnée cachée ; aucune route projet ; aucun export implicite ; hôte sans approbation |
 | RTC-5 — robustesse et mise en service | Rejeu / instantané, bornes de files, proxy et redémarrage, supervision, navigateurs et appareils, retour arrière, recette de préproduction | RTC-1–4 | Tests § 6 des lots RTC-1 à RTC-5 verts (TR-T01 à TR-T10, TR-T15 à TR-T17 ; TR-T11 à TR-T14 restent aux lots RTC-6 et RTC-7) ; budgets mesurés ; retour arrière répété ; préproduction validée par le maître d'ouvrage |
@@ -226,8 +228,8 @@ coordonnées personnelles dans les journaux.
 
 ## 8. Estimation (indicative, après prérequis)
 
-RTC-0 3–5 j·h ; RTC-1 5–8 ; RTC-2 5–8 (adaptateurs Studio et Documents) ; RTC-3 5–8 (+2–5 pour l'intégration COM) ;
-RTC-4 5–8 ; RTC-5 6–10. **Total 31–52 j·h** `[P10]`, hors prérequis et RTC-6/7. À réestimer après
+RTC-0 3–5 j·h ; RTC-1 5–8 ; RTC-2 5–8 (adaptateur Studio) ; RTC-3 5–8 (+2–5 pour l'intégration COM) ;
+RTC-4 5–8 ; RTC-5 6–10. **Total 31–52 j·h (inchangé : l'adaptateur Documents retiré était compris dans la fourchette de RTC-2)** `[P10]`, hors prérequis et RTC-6/7. À réestimer après
 l'essai de transport et l'intégration de la revue figée.
 
 ## 9. Écarts de l'évaluation → traitement

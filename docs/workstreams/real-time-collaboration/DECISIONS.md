@@ -15,19 +15,26 @@
 
   | N° | Question | Réponse retenue | Source (plan remis) | Conséquence |
   | --- | --- | --- | --- | --- |
-  | RT-Q1 | Périmètre de la vue partagée | **Studio et Documents** (adaptateurs) ; l'Atelier n'entre pas dans la première version | § 9 « Packaging », § 5 « Boundaries » | L'écart P2 est clos par décision : l'Atelier reste hors première version, son journal à curseur reste une option pour une version ultérieure, à décider à part. |
-  | RT-Q2 | Canal serveur → client | Le canal du Temps réel sert **les sessions** ; COM garde conversations, audiences, notifications et leur remise ; le Temps réel s'y **relie** sans messagerie locale | § 4 « Placement », § 5 « Boundaries » (« COM … Link session notice/conversation ; no local chat subsystem ») | Aucun transport commun imposé à COM ; la mise en commun du canal n'est pas engagée. |
+  | RT-Q1 | Périmètre de la vue partagée | ~~Studio et Documents~~ → **remplacée par RT-D3 : Studio seul** ; (adaptateurs) ; l'Atelier n'entre pas dans la première version | § 9 « Packaging », § 5 « Boundaries » | L'écart P2 est clos par décision : l'Atelier reste hors première version, son journal à curseur reste une option pour une version ultérieure, à décider à part. |
+  | RT-Q2 | Canal serveur → client | **Précisée par RT-D3 : canal propre au Temps réel.** Le canal du Temps réel sert **les sessions** ; COM garde conversations, audiences, notifications et leur remise ; le Temps réel s'y **relie** sans messagerie locale | § 4 « Placement », § 5 « Boundaries » (« COM … Link session notice/conversation ; no local chat subsystem ») | Aucun transport commun imposé à COM ; la mise en commun du canal n'est pas engagée. |
   | RT-Q3 | Transport | **WebSocket** pour le direct et l'éphémère ; HTTP et commandes existantes pour les écritures durables ; bibliothèque choisie en RTC-0 après un essai de compatibilité | § 9 « Transport », § 5 « Transport and persistence » | Essai RTC-0.3. |
   | RT-Q4 | Capacité | **Une instance** au départ, acceptée seulement après l'essai de charge annoncé ; plusieurs instances = porte distincte ; budgets du plan = cibles de départ | § 9 « Capacity », § 7 « Proposed measurable budgets » | Budgets à mesurer (RTC-0.4, RTC-5). |
   | RT-Q5 | Conservation | Présence et rejeu **de courte durée** ; annotations selon la politique de leur module propriétaire ; besoin et durée de l'assiduité **à définir explicitement** avant la mise en service | § 9 « Retention » | Les durées chiffrées restent « non définies » (rien n'est inventé) ; à fixer avant RTC-5. |
   | RT-Q6 | Reprise de l'hôte | **Expiration visible, remplacement explicite autorisé**, aucune promotion automatique vers une autorité métier | § 9 « Host continuity » | RT-R2, RT-R6. |
   | RT-Q7 | Coédition | **Reportée** ; ni « dernier qui écrit gagne » ni CRDT géométrique sans preuve des dépendances et de l'annulation | § 9 « Co-authoring » | RTC-6, ADR distincte. |
 
+- **RT-D3 — Périmètre et canal précisés (2026-10-24).** Réponse du maître d'ouvrage : « Studio seul » et « un canal
+  propre au temps réel ». Elle **remplace** RT-D2 sur ces deux points :
+  - RT-Q1 : la première version porte sur le **Studio seul** (variante, révision, paquet de revue figé Studio) ; ni
+    Documents ni l'Atelier. Aucune session ne s'ouvre sur un document ; un document peut seulement être cité par lien.
+  - RT-Q2 : le Temps réel a **son propre canal**, dont il est seul propriétaire ; COM n'y passe pas et garde sa propre
+    remise (relecture actuelle ou transport qu'il choisira lui-même). Aucun canal commun n'est à prévoir.
+
 ## Points restant ouverts (non bloquants pour RTC-0)
 
 - Durées chiffrées de conservation (présence, rejeu, assiduité) : à fixer avant RTC-5 (RT-Q5).
 - Profil de référence des budgets (modèle, appareil, réseau) : RTC-0.4.
-- L'Atelier dans une version ultérieure : décision à part, après la première version.
+- L'Atelier et Documents dans une version ultérieure : décision à part, après la première version.
 
 ## Travail antérieur relié
 

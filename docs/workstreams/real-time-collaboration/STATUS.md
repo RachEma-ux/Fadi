@@ -4,14 +4,14 @@ Mis à jour : 2026-10-24 (UTC).
 
 ## État
 
-**En cours — cadrage RTC-0 (documentaire)** ouvert par RT-D1 ; questions RT-Q1 à RT-Q7 répondues (RT-D2) ; essai de
+**En cours — cadrage RTC-0 (documentaire)** ouvert par RT-D1 ; questions RT-Q1 à RT-Q7 répondues (RT-D2, RT-D3) ; essai de
 transport réalisé (RTC-0.3). Aucune implémentation ; RTC-1 bloqué par la porte des prérequis.
 
 ## Faits vérifiés
 
 - Base observée : `main@2577e25` (CI verte sur ce SHA). PR #284 : CI verte sur `eb2cc7c`.
 - Aucun WebSocket / SSE dans `apps` ni `packages` ; relectures périodiques de 60 s.
-- RT-D2 : première version = Studio et Documents ; WebSocket ; une instance ; hôte remplacé explicitement ; coédition
+- RT-D3 : première version = **Studio seul** ; **canal propre au Temps réel**. RT-D2 : WebSocket ; une instance ; hôte remplacé explicitement ; coédition
   reportée ; COM garde sa remise.
 - Essai RTC-0.3 (hors dépôt) : `ws` 8.18.3 sur Express 5.1.0, 13 / 13 en direct, 5 / 5 à travers Caddy 2.10.2 avec
   `basic_auth` ; un message trop gros sans gestionnaire d'erreur arrête le processus (corrigé dans l'essai, exigence

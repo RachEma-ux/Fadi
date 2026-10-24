@@ -20,6 +20,7 @@
 - Évaluation du plan fourni : `docs/continuity/EVALUATION-PLAN-TEMPS-REEL-2026-10-24.md`.
 - RT-D1 : ouverture de RTC-0 en parallèle (2026-10-24).
 - RTC-0.2 — RT-Q1 à RT-Q7 répondues : RT-D2, d'après le § 9 du plan remis par le maître d'ouvrage.
+- RT-D3 — Studio seul ; canal propre au Temps réel (réponse du maître d'ouvrage, 2026-10-24).
 - RTC-0.3 — Essai de transport : `ESSAI-TRANSPORT.md` (13 / 13 en direct, 5 / 5 à travers Caddy ; `ws` proposé).
 - Plan du 22 octobre (`docs/collaboration-temps-reel-plan`) relié et repris (`PLAN.md` § 10).
 

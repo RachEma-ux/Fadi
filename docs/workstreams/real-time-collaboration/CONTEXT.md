@@ -2,8 +2,9 @@
 
 ## Objectif
 
-Donner à Fadi des sessions en direct autorisées (présence, vue partagée, suivi d'un présentateur, annotations enregistrées,
-revue externe en direct d'un paquet figé) **sans** créer un second moteur métier : les écritures restent aux commandes
+Donner à Fadi des sessions en direct autorisées **sur le Studio** (RT-D3 : présence, vue partagée, suivi d'un
+présentateur, annotations enregistrées, revue externe en direct d'un paquet figé Studio), par un **canal propre au Temps
+réel**, **sans** créer un second moteur métier : les écritures restent aux commandes
 existantes (Studio, Atelier), les messages à COM, les droits à Users Management / Organisations, la diffusion à
 Studio / Documents. La coédition simultanée 2D/3D est reportée (RTC-6) jusqu'à preuve des dépendances, de l'annulation
 et des conflits.

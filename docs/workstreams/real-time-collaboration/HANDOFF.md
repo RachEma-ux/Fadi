@@ -11,7 +11,7 @@ Mis à jour : 2026-10-24 (UTC).
 
 ## Dernier état vérifié
 
-- Évaluation, plan amendé, RT-D1, RT-D2 (réponses RT-Q1 à RT-Q7), traçabilité RT-R1 à RT-R7, essai de transport
+- Évaluation, plan amendé, RT-D1, RT-D2 (réponses RT-Q1 à RT-Q7), RT-D3 (Studio seul, canal propre au Temps réel), traçabilité RT-R1 à RT-R7, essai de transport
   (`ESSAI-TRANSPORT.md`), reprise du plan du 22 octobre (`PLAN.md` § 10). Aucun code applicatif.
 
 ## Prochaine action
