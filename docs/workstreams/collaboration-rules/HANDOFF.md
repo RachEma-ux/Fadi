@@ -5,18 +5,21 @@ Mis à jour : 2026-10-24 (UTC).
 ## Point de reprise
 
 - Chantier : collaboration-rules. Issue : [#272](https://github.com/RachEma-ux/Fadi/issues/272).
-- Branche / PR : `docs/272-collaboration-rules`, PR de cadrage vers `main`, non fusionnée.
+- Cadrage : PR #273 **fusionnée** (`7083285`).
+- Écarts E1, E2, E3 : branche `fix/collaboration-ecarts-e1-e3`, [PR #274](https://github.com/RachEma-ux/Fadi/pull/274)
+  vers `main` **non fusionnée** (DECISIONS.md CR-C1).
 - Dernier commit vérifié : à relever en début de session ; ne pas réutiliser un SHA périmé.
 
 ## Dernier état vérifié
 
 - Matrice, plan et décisions rédigés à partir de `main` = `034dbfb`, branche mise à jour avec `main` = `2cc038a`.
 - Décisions CR-R1 et CR-R2 consignées (relayées par la session VPS) : CR-D1 à CR-D10 toutes répondues.
-- Aucune ligne de code modifiée.
+- Code : PR #274 seule (E1, E2, E3, puis E7, règle d'or des commandes de collaboration, alignement sur #265).
 
 ## Prochaine action
 
-- Attendre la revue de la PR ; ne pas fusionner sans l'accord écrit du maître d'ouvrage.
+- PR #274 : relever la CI du HEAD (DB-3, lots e2e `parcours` et `complements`, `project-layout`) ; fusion et
+  déploiement sur décision du maître d'ouvrage. La PR #265 est fusionnée et `main` fusionné dans la branche (CR-C1 § 6).
 - Après la fusion de la PR #265 et l'accord (CR-D10), ouvrir la PR qui reporte l'annexe A du PLAN dans le PLAN
   d'Organisations.
 
@@ -28,7 +31,8 @@ Mis à jour : 2026-10-24 (UTC).
 ## Risques et blocages
 
 - Les numéros de ligne de la matrice dérivent avec `main` : ils valent pour `034dbfb`.
-- E1 et E2 : ouvrir un projet à un participant externe avant la phase 4 d'Organisations exposerait les notes internes.
+- E1 et E2 : corrigés par la PR #274 ; tant qu’elle n’est pas fusionnée et déployée, ouvrir un projet à un participant
+  externe exposerait les notes internes.
 
 ## Arrêt sûr
 

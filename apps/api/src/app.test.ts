@@ -1925,7 +1925,12 @@ describe("Partage du projet — membres, rôles vérifiés côté serveur", () =
     expect((await reader.post(`/projects/${pid}/atelier/commands`).send(lot(1, [{ type: "niveau.creer", params: { nom: "X", elevation: 0 } }]))).status).toBe(403);
     expect((await reader.post(`/projects/${pid}/steps/2/files`).set("X-File-Name", "note.txt").set("Content-Type", "text/plain").send("abc")).status).toBe(403);
     expect((await reader.delete(`/projects/${pid}`)).status).toBe(403);
-    // Copier = exporter puis importer : un lecteur obtient sa propre copie modifiable, l'original reste intact.
+    // Copier = exporter puis importer (E2) : un nouveau lecteur n'exporte pas tant que le propriétaire ne le lui accorde pas ;
+    // ensuite il obtient sa propre copie modifiable, l'original reste intact.
+    const notYet = await reader.post(`/projects/${pid}/copies`).send({ name: "Ma variante" });
+    expect(notYet.status).toBe(403);
+    expect(notYet.body).toMatchObject({ error: "forbidden", role: "lecteur" });
+    expect((await owner.patch(`/projects/${pid}/members/${invited.body.userId}`).send({ canExport: true })).body).toMatchObject({ role: "lecteur", canExport: true });
     const fork = await reader.post(`/projects/${pid}/copies`).send({ name: "Ma variante" });
     expect(fork.status).toBe(201);
     expect((await reader.get(`/projects/${fork.body.id}`)).body).toMatchObject({ role: "proprietaire", name: "Ma variante", sourceExampleId: "p118-exemple-complet" });
@@ -2668,10 +2673,222 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
       expect(await accessed()).toBeGreaterThan(readsBefore);
       expect((await S.get(`/projects/${pid}/steps`)).status).toBe(200);
       expect((await S.patch(`/projects/${encoded}/steps/1`).send({ fields: {} })).status).toBe(403);
-      // Propriétaire et lecteur gardent l'export.
+      // Le propriétaire garde l'export ; un nouveau lecteur l'obtient quand le propriétaire le lui accorde (E2).
       expect((await owner.a.get(`/projects/${pid}/documents/surfaces`)).status).toBe(200);
+      expect((await reader.a.get(`/projects/${pid}/documents/surfaces`)).status).toBe(403);
+      expect((await reader.a.get(`/projects/${pid}/steps/1/files/${upload.body.file.id}`)).status).toBe(403);
+      expect((await owner.a.patch(`/projects/${pid}/members/${reader.id}`).send({ canExport: true })).status).toBe(200);
       expect((await reader.a.get(`/projects/${pid}/documents/surfaces`)).status).toBe(200);
       expect((await reader.a.get(`/projects/${pid}/steps/1/files/${upload.body.file.id}`)).status).toBe(200);
     });
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Règles communes de collaboration — écarts graves E1, E2, E3 (cadrage PR #273, demande du maître d'ouvrage du
+// 2026-10-24) : audience à l'intérieur d'un projet, export explicite du lecteur, journal des changements d'accès.
+// ---------------------------------------------------------------------------------------------------------------------
+describe("règles communes — E1 audience, E2 export du lecteur, E3 journal des accès", () => {
+  type Who = { a: ReturnType<typeof agent>; id: string };
+  async function who(email: string): Promise<Who> {
+    const a = await registerAndLogin(email);
+    return { a, id: (await a.get("/auth/me")).body.id as string };
+  }
+  const auditOf = async (projectId: string) =>
+    (await pool.query("SELECT actor_id, action, metadata FROM admin.audit_log WHERE target_type = 'project' AND target_id = $1 ORDER BY id", [projectId])).rows as { actor_id: string; action: string; metadata: Record<string, unknown> }[];
+  async function team() {
+    const owner = await who("cr-owner@example.com");
+    const editor = await who("cr-editor@example.com");
+    const reader = await who("cr-reader@example.com");
+    const stranger = await who("cr-stranger@example.com");
+    const created = await owner.a.post("/projects").send({ code: "CR.1", name: "Règles communes" });
+    expect(created.status).toBe(201);
+    const pid = created.body.id as string;
+    expect((await owner.a.post(`/projects/${pid}/members`).send({ email: "cr-editor@example.com", role: "editeur" })).status).toBe(201);
+    expect((await owner.a.post(`/projects/${pid}/members`).send({ email: "cr-reader@example.com", role: "lecteur" })).status).toBe(201);
+    return { owner, editor, reader, stranger, pid };
+  }
+
+  it("E3 : ajout, changement de rôle et d'export, retrait, départ et transfert écrivent chacun leur entrée, sans adresse", async () => {
+    const { owner, editor, reader, pid } = await team();
+    let log = await auditOf(pid);
+    expect(log.map((e) => e.action)).toEqual(["project.member.added", "project.member.added"]);
+    expect(log[1]).toMatchObject({ actor_id: owner.id, metadata: { memberId: reader.id, role: "lecteur", canExport: false } });
+    // Même rôle redemandé : rien ne change, rien n'est journalisé.
+    expect((await owner.a.post(`/projects/${pid}/members`).send({ email: "cr-reader@example.com", role: "lecteur" })).status).toBe(201);
+    expect(await auditOf(pid)).toHaveLength(2);
+    // Changement de rôle par le partage (ligne existante), puis par PATCH.
+    expect((await owner.a.post(`/projects/${pid}/members`).send({ email: "cr-reader@example.com", role: "editeur" })).body).toMatchObject({ role: "editeur", canExport: true });
+    expect((await owner.a.patch(`/projects/${pid}/members/${reader.id}`).send({ role: "lecteur" })).body).toMatchObject({ role: "lecteur", canExport: false });
+    log = await auditOf(pid);
+    expect(log.slice(2).map((e) => [e.action, e.metadata])).toEqual([
+      ["project.member.role_changed", { memberId: reader.id, roleBefore: "lecteur", roleAfter: "editeur", canExportBefore: false, canExportAfter: true }],
+      ["project.member.role_changed", { memberId: reader.id, roleBefore: "editeur", roleAfter: "lecteur", canExportBefore: true, canExportAfter: false }],
+    ]);
+    // Export accordé puis retiré : une entrée chacun ; un éditeur n'a pas de droit d'export à régler (422, rien d'écrit).
+    expect((await owner.a.patch(`/projects/${pid}/members/${reader.id}`).send({ canExport: true })).body).toMatchObject({ canExport: true });
+    expect((await owner.a.patch(`/projects/${pid}/members/${reader.id}`).send({ canExport: false })).body).toMatchObject({ canExport: false });
+    expect((await owner.a.patch(`/projects/${pid}/members/${editor.id}`).send({ canExport: false })).status).toBe(422);
+    expect((await owner.a.patch(`/projects/${pid}/members/${editor.id}`).send({})).status).toBe(400);
+    expect((await editor.a.patch(`/projects/${pid}/members/${reader.id}`).send({ canExport: true })).status).toBe(403);
+    log = await auditOf(pid);
+    expect(log.slice(4).map((e) => [e.action, e.metadata])).toEqual([
+      ["project.member.export_changed", { memberId: reader.id, role: "lecteur", canExportBefore: false, canExportAfter: true }],
+      ["project.member.export_changed", { memberId: reader.id, role: "lecteur", canExportBefore: true, canExportAfter: false }],
+    ]);
+    // Départ du lecteur, transfert à l'éditeur, retrait de l'ancien propriétaire (devenu éditeur) par le nouveau.
+    expect((await reader.a.delete(`/projects/${pid}/members/${reader.id}`)).status).toBe(204);
+    expect((await owner.a.post(`/projects/${pid}/members/${editor.id}/propriete`)).status).toBe(200);
+    expect((await editor.a.delete(`/projects/${pid}/members/${owner.id}`)).status).toBe(204);
+    log = await auditOf(pid);
+    expect(log.slice(6).map((e) => [e.action, e.actor_id, e.metadata])).toEqual([
+      ["project.member.left", reader.id, { memberId: reader.id, roleBefore: "lecteur", canExportBefore: false }],
+      ["project.ownership.transferred", owner.id, { memberId: editor.id, fromOwnerId: owner.id, toOwnerId: editor.id, roleBefore: "editeur", roleAfter: "proprietaire", previousOwnerRoleAfter: "editeur" }],
+      ["project.member.removed", editor.id, { memberId: owner.id, roleBefore: "editeur", canExportBefore: true }],
+    ]);
+    // Jamais d'adresse dans le journal.
+    expect(JSON.stringify(log)).not.toContain("@example.com");
+    // Un retrait refusé (inconnu) n'écrit rien.
+    expect((await editor.a.delete(`/projects/${pid}/members/${reader.id}`)).status).toBe(404);
+    expect(await auditOf(pid)).toHaveLength(9);
+  });
+
+  it("E2 : un nouveau lecteur n'exporte pas ; le propriétaire le lui accorde ; un lecteur antérieur (export NULL ou TRUE) le garde", async () => {
+    const { owner, editor, reader, pid } = await team();
+    const upload = await owner.a.post(`/projects/${pid}/steps/2/files`).set("X-File-Name", "note.txt").set("Content-Type", "text/plain").send("abc");
+    expect(upload.status).toBe(201);
+    const exports = [`/projects/${pid}/archive`, `/projects/${pid}/steps/2/files/${upload.body.file.id}`];
+    for (const url of exports) {
+      const r = await reader.a.get(url);
+      expect([url, r.status, r.body.error]).toEqual([url, 403, "forbidden"]);
+      expect((await editor.a.get(url)).status).toBe(200);
+      expect((await owner.a.get(url)).status).toBe(200);
+    }
+    expect((await reader.a.post(`/projects/${pid}/copies`).send({})).status).toBe(403);
+    expect((await reader.a.get(`/projects/${pid}`)).body).toMatchObject({ role: "lecteur", canExport: false });
+    expect((await reader.a.get(`/projects/${pid}/collaboration`)).body.access).toMatchObject({ role: "lecteur", canExport: false });
+    expect((await owner.a.get(`/projects/${pid}/members`)).body.members.find((m: { userId: string }) => m.userId === reader.id)).toMatchObject({ role: "lecteur", canExport: false });
+    expect((await owner.a.patch(`/projects/${pid}/members/${reader.id}`).send({ canExport: true })).status).toBe(200);
+    for (const url of exports) expect((await reader.a.get(url)).status).toBe(200);
+    expect((await reader.a.post(`/projects/${pid}/copies`).send({})).status).toBe(201);
+    // Lignes antérieures à la règle : la migration leur a donné TRUE ; une ligne restaurée d'une archive antérieure (NULL) vaut TRUE.
+    await pool.query("UPDATE project_members SET can_export = NULL WHERE project_id = $1 AND user_id = $2", [pid, reader.id]);
+    expect((await reader.a.get(`/projects/${pid}/archive`)).status).toBe(200);
+    expect((await reader.a.get(`/projects/${pid}`)).body.canExport).toBe(true);
+    await pool.query("UPDATE project_members SET can_export = false WHERE project_id = $1 AND user_id = $2", [pid, reader.id]);
+    expect((await reader.a.get(`/projects/${pid}/archive`)).status).toBe(403);
+  });
+
+  it("E2 : migration additive — les lecteurs existants reçoivent TRUE, une nouvelle ligne FALSE", async () => {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query("CREATE TEMP TABLE pm_migration (user_id text, role text)");
+      await client.query("INSERT INTO pm_migration VALUES ('ancien', 'lecteur')");
+      // Les deux instructions d'init.sql, telles quelles.
+      await client.query("ALTER TABLE pm_migration ADD COLUMN IF NOT EXISTS can_export boolean DEFAULT true");
+      await client.query("ALTER TABLE pm_migration ALTER COLUMN can_export SET DEFAULT false");
+      await client.query("INSERT INTO pm_migration (user_id, role) VALUES ('nouveau', 'lecteur')");
+      // Rejouées (migration idempotente) : rien ne change.
+      await client.query("ALTER TABLE pm_migration ADD COLUMN IF NOT EXISTS can_export boolean DEFAULT true");
+      await client.query("ALTER TABLE pm_migration ALTER COLUMN can_export SET DEFAULT false");
+      const rows = (await client.query("SELECT user_id, can_export FROM pm_migration ORDER BY user_id")).rows;
+      expect(rows).toEqual([{ user_id: "ancien", can_export: true }, { user_id: "nouveau", can_export: false }]);
+      const sqlText = readFileSync(new URL("./db/init.sql", import.meta.url), "utf8");
+      expect(sqlText).toContain("ALTER TABLE project_members ADD COLUMN IF NOT EXISTS can_export boolean DEFAULT true;\nALTER TABLE project_members ALTER COLUMN can_export SET DEFAULT false;");
+      const def = (await client.query("SELECT column_default FROM information_schema.columns WHERE table_name = 'project_members' AND column_name = 'can_export'")).rows[0];
+      expect(def.column_default).toBe("false");
+      const aud = (await client.query("SELECT table_name, column_default FROM information_schema.columns WHERE column_name = 'audience' AND table_name IN ('project_comments', 'studio_comments') ORDER BY table_name")).rows;
+      expect(aud).toEqual([{ table_name: "project_comments", column_default: "'equipe'::text" }, { table_name: "studio_comments", column_default: "'equipe'::text" }]);
+    } finally {
+      await client.query("ROLLBACK");
+      client.release();
+    }
+  });
+
+  it("E1 : commentaires du projet — l'équipe par défaut, invisible au lecteur sur chaque route ; « Visible par les lecteurs » ; changement journalisé", async () => {
+    const { owner, editor, reader, pid } = await team();
+    const base = `/projects/${pid}/collaboration/comments`;
+    const interne = await owner.a.post(base).send({ body: "Note interne : marge à négocier.", stepNumber: 3 });
+    expect(interne.body).toMatchObject({ audience: "equipe" });
+    const ouvert = await owner.a.post(base).send({ body: "Question pour tous : date de visite ?", audience: "projet" });
+    expect(ouvert.body).toMatchObject({ audience: "projet" });
+    // Lecteur : listes, fil d'une étape, vue Collaboration, journal et historique sans la note interne.
+    const lus = (await reader.a.get(base)).body.map((c: { id: string }) => c.id);
+    expect(lus).toEqual([ouvert.body.id]);
+    expect((await reader.a.get(`${base}?step=3`)).body).toEqual([]);
+    const collab = (await reader.a.get(`/projects/${pid}/collaboration`)).body;
+    expect(collab.comments.map((c: { id: string }) => c.id)).toEqual([ouvert.body.id]);
+    expect(JSON.stringify(collab.journal)).not.toContain("marge à négocier");
+    expect(JSON.stringify((await reader.a.get(`/projects/${pid}/history`)).body)).not.toContain("marge à négocier");
+    expect(JSON.stringify((await editor.a.get(`/projects/${pid}/history`)).body)).toContain("marge à négocier");
+    // Ni réponse, ni changement, ni suppression : le fil n'existe pas pour lui (404).
+    expect((await reader.a.post(base).send({ body: "Je réponds", parentId: interne.body.id })).status).toBe(404);
+    expect((await reader.a.patch(`${base}/${interne.body.id}`).send({ audience: "projet" })).status).toBe(404);
+    expect((await reader.a.delete(`${base}/${interne.body.id}`)).status).toBe(404);
+    // Éditeur : lit tout ; notifications — l'éditeur reçoit les deux, le lecteur jamais la note interne ni son extrait.
+    expect((await editor.a.get(base)).body).toHaveLength(2);
+    const notesEditeur = (await editor.a.get("/notifications")).body.items.filter((n: { kind: string }) => n.kind === "commentaire");
+    expect(notesEditeur).toHaveLength(2);
+    const notesLecteur = (await reader.a.get("/notifications")).body.items;
+    expect(notesLecteur.filter((n: { kind: string }) => n.kind === "commentaire").map((n: { id: string }) => n.id)).toEqual([`commentaire:${ouvert.body.id}`]);
+    expect(JSON.stringify(notesLecteur)).not.toContain("marge à négocier");
+    // Un lecteur écrit pour tout le projet ; il ne peut pas viser l'équipe. Une réponse suit son fil.
+    expect((await reader.a.post(base).send({ body: "Vu." })).body).toMatchObject({ audience: "projet" });
+    expect((await reader.a.post(base).send({ body: "Secret", audience: "equipe" })).body).toMatchObject({ error: "audience_interdite" });
+    expect((await editor.a.post(base).send({ body: "Réponse", parentId: interne.body.id })).body).toMatchObject({ audience: "equipe", parentId: interne.body.id });
+    expect((await editor.a.post(base).send({ body: "Réponse publique", parentId: interne.body.id, audience: "projet" })).body).toMatchObject({ error: "audience_du_fil" });
+    // Changement d'audience : ni par un éditeur non auteur (403), ni sur une réponse (422) ; par le propriétaire, journalisé, réponses comprises.
+    expect((await editor.a.patch(`${base}/${interne.body.id}`).send({ audience: "projet" })).status).toBe(403);
+    const reponse = (await editor.a.get(base)).body.find((c: { parentId: string | null }) => c.parentId === interne.body.id);
+    expect((await editor.a.patch(`${base}/${reponse.id}`).send({ audience: "projet" })).status).toBe(422);
+    expect((await owner.a.patch(`${base}/${interne.body.id}`).send({ audience: "projet" })).body).toMatchObject({ id: interne.body.id, audience: "projet" });
+    expect((await reader.a.get(base)).body.map((c: { id: string }) => c.id)).toEqual(expect.arrayContaining([interne.body.id, reponse.id]));
+    const log = (await auditOf(pid)).filter((e) => e.action === "comment.audience_changed");
+    expect(log).toEqual([{ actor_id: owner.id, action: "comment.audience_changed", metadata: { commentId: interne.body.id, module: "collaboration", audienceBefore: "equipe", audienceAfter: "projet", replies: 1 } }]);
+    // Le lecteur répond dans ce fil : le réserver à nouveau à l'équipe lui retirerait son texte (409).
+    expect((await reader.a.post(base).send({ body: "Merci", parentId: interne.body.id })).status).toBe(201);
+    expect((await owner.a.patch(`${base}/${interne.body.id}`).send({ audience: "equipe" })).body).toMatchObject({ error: "audience_lecteur_dans_le_fil" });
+  });
+
+  it("E1 : fils Studio — commentaires, observations, passages, notifications et archive exportée suivent l'audience", async () => {
+    const { owner, editor, reader, pid } = await team();
+    const created = await owner.a.post(`/projects/${pid}/studio/studies`).send({ name: "Étude audience" });
+    expect(created.status).toBe(201);
+    const vp = `/projects/${pid}/studio/studies/${created.body.study.id}/variants/${created.body.variant.id}`;
+    const interne = await owner.a.post(`${vp}/comments`).send({ body: "Interne : reprendre le mur" });
+    expect(interne.body).toMatchObject({ audience: "equipe" });
+    const ouvert = await owner.a.post(`${vp}/comments`).send({ body: "Pour tous : façade validée", audience: "projet" });
+    const obs = await owner.a.post(`${vp}/observations`).send({ body: "Observation interne", responsableId: editor.id });
+    expect(obs.status).toBe(201);
+    const ids = (r: { body: { comments: { id: string }[] } }) => r.body.comments.map((c) => c.id);
+    expect(ids(await reader.a.get(`${vp}/comments`))).toEqual([ouvert.body.id]);
+    expect(ids(await editor.a.get(`${vp}/comments`))).toEqual([interne.body.id, ouvert.body.id, obs.body.id]);
+    expect((await reader.a.get(`${vp}/observations`)).body.observations).toEqual([]);
+    expect((await reader.a.get(`${vp}/observations/${obs.body.id}`)).status).toBe(404);
+    expect((await reader.a.post(`${vp}/comments`).send({ body: "réponse", parentId: interne.body.id })).status).toBe(404);
+    expect((await reader.a.post(`${vp}/comments/${obs.body.id}/observation/transitions`).send({ action: "corriger" })).status).toBe(404);
+    expect((await reader.a.patch(`${vp}/comments/${interne.body.id}`).send({ audience: "projet" })).status).toBe(404);
+    expect((await editor.a.get(`${vp}/observations/${obs.body.id}`)).status).toBe(200);
+    // Notifications : l'éditeur reçoit les commentaires du propriétaire ; le lecteur seulement celui ouvert à tous.
+    const studioNotes = async (w: Who) => (await w.a.get("/notifications")).body.items.filter((n: { kind: string }) => n.kind === "commentaire-studio").map((n: { id: string }) => n.id);
+    expect(await studioNotes(editor)).toEqual(expect.arrayContaining([`commentaire-studio:${interne.body.id}`, `commentaire-studio:${ouvert.body.id}`, `commentaire-studio:${obs.body.id}`]));
+    expect(await studioNotes(reader)).toEqual([`commentaire-studio:${ouvert.body.id}`]);
+    // Archive exportée par le lecteur (export accordé) : sans les fils de l'équipe ; celle du propriétaire complète.
+    await owner.a.patch(`/projects/${pid}/members/${reader.id}`).send({ canExport: true });
+    const tablesOf = async (w: Who) => (await w.a.get(`/projects/${pid}/archive`)).body.studio.tables as Record<string, { id?: string; comment_id?: string }[]>;
+    const lecteurArchive = await tablesOf(reader);
+    expect(lecteurArchive.studio_comments!.map((c) => c.id)).toEqual([ouvert.body.id]);
+    expect(lecteurArchive.studio_observations).toEqual([]);
+    expect((await tablesOf(owner)).studio_comments).toHaveLength(3);
+    // Un lecteur écrit pour tout le projet ; l'audience d'un fil change par son auteur ou le propriétaire, journalisée.
+    expect((await reader.a.post(`${vp}/comments`).send({ body: "Vu" })).body).toMatchObject({ audience: "projet" });
+    expect((await reader.a.post(`${vp}/comments`).send({ body: "x", audience: "equipe" })).body).toMatchObject({ error: "audience_interdite" });
+    expect((await editor.a.patch(`${vp}/comments/${interne.body.id}`).send({ audience: "projet" })).status).toBe(403);
+    expect((await owner.a.patch(`${vp}/comments/${obs.body.id}`).send({ audience: "projet" })).body).toMatchObject({ id: obs.body.id, audience: "projet" });
+    expect((await reader.a.get(`${vp}/observations/${obs.body.id}`)).status).toBe(200);
+    expect((await auditOf(pid)).filter((e) => e.action === "comment.audience_changed").map((e) => e.metadata)).toEqual([
+      { commentId: obs.body.id, module: "studio", variantId: created.body.variant.id, audienceBefore: "equipe", audienceAfter: "projet", replies: 0 },
+    ]);
   });
 });

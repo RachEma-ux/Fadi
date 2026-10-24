@@ -261,6 +261,24 @@ export const localStore = {
       await d.lots.clear(); await d.modelCache.clear(); await d.keyValue.clear(); await d.studioBrouillons.clear(); await d.studioContextes.clear();
     }), undefined);
   },
+  /**
+   * Accès à un projet perdu (écart E7, CR-D5 (a)) : ce que l'appareil garde de CE projet est oublié — lots de l'Atelier
+   * (même non synchronisés : le serveur les refuserait), modèle mis en cache, brouillons et contextes Studio. Les autres
+   * projets ne sont pas touchés ; le cache des requêtes est purgé par `project-cache-guard.ts`.
+   */
+  oublierProjet: async (projectId: string) => {
+    queueMemory.delete(projectId); queueStates.delete(projectId);
+    for (const [id, entry] of [...dirtyLots]) if (entry.projectId === projectId) dirtyLots.delete(id);
+    for (const [id, entry] of [...removedLots]) if (entry.projectId === projectId) removedLots.delete(id);
+    for (const listener of queueListeners) listener();
+    await safe((d) => d.transaction("rw", [d.lots, d.modelCache, d.studioBrouillons, d.studioContextes], async () => {
+      // Lignes de CE projet seulement, par leurs clés (la base elle-même n'est jamais supprimée : OPS-05).
+      await d.lots.bulkDelete(await d.lots.where("projectId").equals(projectId).primaryKeys());
+      await d.modelCache.bulkDelete([projectId]);
+      await d.studioBrouillons.bulkDelete(await d.studioBrouillons.where("projectId").equals(projectId).primaryKeys());
+      await d.studioContextes.bulkDelete(await d.studioContextes.where("projectId").equals(projectId).primaryKeys());
+    }), undefined);
+  },
   /** Clé / valeur (cache des requêtes) : `null` quand absent ou indisponible. */
   getValue: (key: string) => safe((d) => d.keyValue.get(key).then((v) => v?.value ?? null), null as string | null),
   getValueChecked: (key: string) => checked((d) => d.keyValue.get(key).then((v) => v?.value ?? null)),

@@ -838,7 +838,10 @@ describe("compléments : historique d'un objet, réutilisation de modèle", () =
     expect(svg.status).toBe(200);
     expect(String(svg.body)).toContain("<line");
     const etrangerB = await registerAndLogin("refext-membre@example.com");
-    expect((await client.post(`/projects/${a}/members`).send({ email: "refext-membre@example.com", role: "lecteur" })).status).toBe(201);
+    const membre = await client.post(`/projects/${a}/members`).send({ email: "refext-membre@example.com", role: "lecteur" });
+    expect(membre.status).toBe(201);
+    // Écart E2 : un nouveau lecteur n'exporte pas ; le propriétaire lui accorde l'export pour produire la vue.
+    expect((await client.patch(`/projects/${a}/members/${membre.body.userId}`).send({ canExport: true })).status).toBe(200);
     // Un membre de A qui ne lit pas B : la vue se produit, la référence n'est pas dessinée (moins de traits).
     const svgMembre = await brut(etrangerB.get(`/projects/${a}/documents/atelier/vues/va.svg`));
     expect(svgMembre.status).toBe(200);

@@ -11,6 +11,7 @@ import { EMPTY_STEP_CONTENT, PARCOURS_STEPS, exampleBaseDocuments } from "../dat
 import { activeLock, projectOr404 } from "../lib/owned-project.js";
 import { APPLICATION_VERSION, ArchiveModeleError, SOURCE_VERSION, exportProjectArchive, importProjectArchive } from "../lib/project-archive.js";
 import { StudioArchiveError } from "../lib/studio-archive.js";
+import { seesTeam } from "../lib/audience.js";
 import { parcoursStepsRouter } from "./parcours-steps.js";
 import { projectPlanningRouter } from "./project-planning.js";
 import { programmeRouter } from "./programme.js";
@@ -182,7 +183,7 @@ projectsRouter.get("/:projectId/archive", async (req, res) => {
   const project = await projectOr404(req, res, "export");
   if (!project) return;
   const now = new Date();
-  const archive = await exportProjectArchive(db, project, now.toISOString());
+  const archive = await exportProjectArchive(db, project, now.toISOString(), { teamThreads: seesTeam(project.role) });
   await recordProducedDocument(db, project.id, { kind: "archive-projet", label: "Sauvegarde du projet (JSON)", fileName: archiveFileName(project.name), modelRevision: project.modelRevision, inputHash: archiveHash(project, await loadStepContext(db, project)), stepNumber: null }, now);
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Content-Disposition", `attachment; filename="${archiveFileName(project.name)}"`);
@@ -201,7 +202,7 @@ const copySchema = z.object({ name: z.string().trim().min(1).max(200).optional()
  */
 projectsRouter.post("/:projectId/copies", async (req, res) => {
   // Capacité « export » : la copie sort le contenu vers un nouveau projet de l'utilisateur (comme exporter puis importer l'archive) ;
-  // l'original n'est pas touché. Propriétaire, éditeur et lecteur la gardent ; l'accès support ne l'a pas.
+  // l'original n'est pas touché. Propriétaire et éditeur la gardent, un lecteur si l'export lui est accordé (E2) ; l'accès support ne l'a pas.
   const project = await projectOr404(req, res, "export");
   if (!project) return;
   const parsed = copySchema.safeParse(req.body ?? {});

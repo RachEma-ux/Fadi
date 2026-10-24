@@ -5,7 +5,9 @@ import { studioRapportFidelite } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { compareStudioRevisions, createStudioStudy, createStudioVariant, exportStudioVariant, listStudioRevisions, listStudioStudies, listStudioVariants, parseStudioCompareSide, readStudioContext, readStudioRevisionChanges, readStudioStudy, STUDIO_EXPORT_FORMATS, StudioRequestError, studioIdentifierSchema, submitStudioCommands, type StudioCreation, type StudioScope } from "../lib/studio-commands.js";
-import { createStudioComment, createStudioObservation, deleteStudioComment, listStudioComments, studioCommentSchema, studioObservationSchema, studioObservationTransitionSchema, transitionStudioObservation } from "../lib/studio-commentaires.js";
+import { createStudioComment, createStudioObservation, deleteStudioComment, listStudioComments, setStudioCommentAudience, studioCommentSchema, studioObservationSchema, studioObservationTransitionSchema, transitionStudioObservation } from "../lib/studio-commentaires.js";
+import { audienceSchema } from "../lib/audience.js";
+import { clientIp } from "../lib/audit.js";
 import { listStudiesOfStep, listStudioStudySteps, setStudioStudySteps, studioStudyStepsSchema } from "../lib/studio-liens.js";
 import { renameStudioStudy, renameStudioVariant, setStudioStudyArchived, setStudioStudyWorkflowPhase, setStudioVariantArchived, studioRenameSchema, studioWorkflowSchema } from "../lib/studio-variantes.js";
 import { etatExempleStudio, installerExempleStudio } from "../lib/studio-exemple.js";
@@ -190,7 +192,7 @@ studioRouter.post("/studies/:studyId/variants/:variantId/commands", endpoint(asy
 }));
 /**
  * Commentaires d'une variante (règles de la Collaboration) : lecture `read`, écriture `comment` (tout membre),
- * suppression douce par l'auteur seul. POST idempotent par `requestId` : 201, rejeu = `replayed: true`.
+ * suppression douce par l'auteur seul ; audience du fil (E1) filtrée par le serveur, changée par PATCH. POST idempotent par `requestId` : 201, rejeu = `replayed: true`.
  */
 const commentsPath = "/studies/:studyId/variants/:variantId/comments";
 studioRouter.get(commentsPath, endpoint(async (req, res) => {
@@ -203,6 +205,12 @@ studioRouter.post(commentsPath, endpoint(async (req, res) => {
   const comment = await createStudioComment(scope(req), req.user!.id, parsed.data);
   res.setHeader("Idempotent-Replayed", String(comment.replayed));
   res.status(201).json(comment);
+}));
+/** Audience du fil (E1) : `{ audience }`, par l'auteur ou le propriétaire, journalisée ; 200 = le commentaire relu. */
+studioRouter.patch(`${commentsPath}/:commentId`, endpoint(async (req, res) => {
+  const parsed = z.object({ audience: audienceSchema }).strict().safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
+  res.json(await setStudioCommentAudience(scope(req), req.user!.id, req.params["commentId"] as string, parsed.data.audience, clientIp(req)));
 }));
 studioRouter.delete(`${commentsPath}/:commentId`, endpoint(async (req, res) => {
   await deleteStudioComment(scope(req), req.user!.id, req.params["commentId"] as string);

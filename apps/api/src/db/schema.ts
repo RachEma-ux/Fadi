@@ -390,6 +390,9 @@ export const producedDocuments = pgTable("produced_documents", {
  * et courriel au moment de l'écriture) pour la traçabilité ; la suppression
  * n'est permise qu'à l'auteur.
  */
+/** Audience d'un commentaire ou d'une observation à l'intérieur du projet (écart E1, `lib/audience.ts`). */
+export type CommentAudience = "equipe" | "projet";
+
 export const projectComments = pgTable("project_comments", {
   id: text("id").primaryKey(),
   projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
@@ -401,6 +404,8 @@ export const projectComments = pgTable("project_comments", {
   parentId: text("parent_id"),
   /** Entrée du journal de l'Atelier commentée (D-055) : sa révision résultante, null sinon. */
   atelierRevision: integer("atelier_revision"),
+  /** Audience (écart E1) : `equipe` = propriétaire et éditeurs ; `projet` = tous les membres, lecteurs compris. */
+  audience: text("audience").$type<CommentAudience>().notNull().default("equipe"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("project_comments_project_idx").on(t.projectId, t.createdAt)]);
 
@@ -416,6 +421,8 @@ export const projectMembers = pgTable("project_members", {
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   role: text("role").notNull().$type<"lecteur" | "editeur">(),
   invitedBy: text("invited_by").notNull(),
+  /** Export accordé à un lecteur (écart E2) ; NULL (archive antérieure) = TRUE. Ignoré pour un éditeur. */
+  canExport: boolean("can_export").default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [primaryKey({ columns: [t.projectId, t.userId] }), index("project_members_user_idx").on(t.userId)]);
 
@@ -898,6 +905,8 @@ export const studioComments = pgTable("studio_comments", {
   payloadHash: text("payload_hash"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  /** Audience du fil (écart E1), portée par le commentaire d'origine ; NULL (archive antérieure) = `projet`. */
+  audience: text("audience").$type<CommentAudience>().default("equipe"),
 }, (t) => [
   index("studio_comments_variant_idx").on(t.variantId, t.createdAt),
   uniqueIndex("studio_comments_variant_id_unique").on(t.variantId, t.id),

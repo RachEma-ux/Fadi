@@ -85,7 +85,8 @@ async function creer(url: string, body: unknown, lireId: (b: Record<string, any>
 }
 const exigence = { id: "e1", libelle: "Exigence e1", metrique: { type: "nombre" }, comparaison: "<=", valeur: 10, unite: "u", source: "Programme saisi (essai)" };
 const publication = async () => ({ pub: await creer(`${V}/publications`, { title: "Dossier d'essai", contenu: "dessin-2d" }) });
-const observation = async () => ({ obs: await creer(`${V}/observations`, { body: "Observation d'essai", responsableId: "editeur" }) });
+// Audience « projet » (écart E1) : le lecteur voit l'observation, les cellules jugent donc son rôle (403), pas son audience (404).
+const observation = async () => ({ obs: await creer(`${V}/observations`, { body: "Observation d'essai", responsableId: "editeur", audience: "projet" }) });
 const feuille = async () => ({ f: await creer(`${V}/sheets`, { number: "A-01", title: "Plan", format: "A3", orientation: "paysage", scale: "ajuster" }) });
 const dossier = async () => { const { f } = await feuille(); return { f, d: await creer(`${S}/studies/s/dossiers`, { title: "Dossier", sheetIds: [f] }) }; };
 
@@ -132,6 +133,11 @@ export const ROUTES: Route[] = [
   {
     route: `DELETE ${COM}/:commentId`, besoin: "acteur", url: () => `${V}/comments/c1`, note: "auteur seul (c1 : éditeur)",
     acteurs: { etranger: "404", lecteur: "403", editeur: "admis", "editeur-verrou": "403", proprietaire: "403", "proprietaire-verrou": "403", "proprietaire-reference": "403" },
+  },
+  {
+    route: `PATCH ${COM}/:commentId`, besoin: "acteur", url: () => `${V}/comments/c1`, body: { audience: "projet" },
+    note: "audience du fil (écart E1) : son auteur (c1 : éditeur) ou le propriétaire, tous deux de l'équipe ; le verrou d'édition ne s'y applique pas",
+    acteurs: { etranger: "404", lecteur: "403", editeur: "admis", "editeur-verrou": "403", proprietaire: "admis", "proprietaire-verrou": "admis", "proprietaire-reference": "admis" },
   },
   {
     route: `POST ${COM}/:commentId/observation`, besoin: "acteur", url: () => `${V}/comments/c1/observation`, body: { responsableId: "editeur" },

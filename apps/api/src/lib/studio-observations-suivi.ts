@@ -29,10 +29,11 @@ import {
 } from "../db/schema.js";
 import type { Tx } from "./atelier-validation.js";
 import { newId } from "./ids.js";
-import { roleAllows } from "./owned-project.js";
+import { roleAllows, type ProjectRole } from "./owned-project.js";
+import { audienceOfNew, audienceSchema, type CommentAudience } from "./audience.js";
 import { StudioRequestError, studioArchivedRefusal, studioIdentifierSchema, type StudioScope } from "./studio-commands.js";
 import {
-  acteurDe, assignable, conflict, hashOf, insertDecision, insertObservationRows, lockedVariant, notFound, observationViews, participants, scopedVariant,
+  acteurDe, assignable, audienceFilter, audienceOrRefuse, conflict, hashOf, insertDecision, insertObservationRows, lockedVariant, notFound, observationViews, participants, scopedVariant,
   STUDIO_COMMENT_MAX_OBJECTS, studioObservationVueSchema, type Lecteur, type StudioObservationView, type StudioParticipant,
 } from "./studio-commentaires.js";
 import {
@@ -67,6 +68,8 @@ export const studioObservationOuvertureSchema = z.object({
   vue: studioObservationVueSchema.optional(),
   liens: z.array(studioObservationLienSchema).max(20).optional(),
   requestId: studioIdentifierSchema.optional(),
+  /** Audience (E1) : `equipe` par défaut, `projet` = visible par les lecteurs. */
+  audience: audienceSchema.optional(),
 }).strict();
 export type StudioObservationOuverture = z.infer<typeof studioObservationOuvertureSchema>;
 
@@ -108,6 +111,8 @@ export const studioObservationDecisionSchema = z.object({
 export interface StudioObservationDetail extends StudioObservationView {
   body: string;
   authorEmail: string;
+  /** Audience du fil (E1). */
+  audience: CommentAudience;
   contexte: { projectId: string; studyId: string; variantId: string; revisionId: string | null; objectIds: string[] };
 }
 export interface StudioObservationsLecture {
@@ -121,10 +126,10 @@ async function details(scope: StudioScope, variantId: string, lecteur: Lecteur, 
   const views = ids?.length === 1 ? await observationViews(variantId, ids[0]!, lecteur, executor) : await observationViews(variantId, null, lecteur, executor);
   const wanted = ids === null ? [...views.keys()] : ids.filter((id) => views.has(id));
   if (!wanted.length) return [];
-  const rows = await executor.select({ id: studioComments.id, body: studioComments.body, revisionId: studioComments.revisionId, objectIds: studioComments.objectIds, email: users.email, createdAt: studioComments.createdAt })
+  const rows = await executor.select({ id: studioComments.id, body: studioComments.body, revisionId: studioComments.revisionId, objectIds: studioComments.objectIds, email: users.email, createdAt: studioComments.createdAt, audience: studioComments.audience })
     .from(studioComments).leftJoin(users, eq(users.id, studioComments.authorId)).where(inArray(studioComments.id, wanted)).orderBy(asc(studioComments.createdAt), asc(studioComments.id));
   return rows.map((c) => ({
-    ...views.get(c.id)!, body: c.body, authorEmail: c.email ?? "",
+    ...views.get(c.id)!, body: c.body, authorEmail: c.email ?? "", audience: c.audience ?? "projet",
     contexte: { projectId: scope.projectId, studyId: scope.studyId, variantId, revisionId: c.revisionId, objectIds: c.objectIds },
   }));
 }
@@ -237,11 +242,11 @@ async function varianteEcrite(tx: Tx, scope: StudioScope, actorId: string) {
   return { ...variant, studyId: row!.studyId, headRevisionId: row!.headRevisionId };
 }
 
-/** Ligne d'observation verrouillée (FOR UPDATE) et son auteur ; 404 hors de la variante. */
-async function observationVerrouillee(tx: Tx, variantId: string, observationId: string) {
+/** Ligne d'observation verrouillée (FOR UPDATE) et son auteur ; 404 hors de la variante ou hors de l'audience du rôle (E1). */
+async function observationVerrouillee(tx: Tx, variantId: string, observationId: string, role: ProjectRole) {
   const [row] = await tx.select({ o: studioObservations, authorId: studioComments.authorId }).from(studioObservations)
     .innerJoin(studioComments, eq(studioComments.id, studioObservations.commentId))
-    .where(and(eq(studioObservations.variantId, variantId), eq(studioObservations.commentId, observationId))).limit(1).for("update", { of: studioObservations });
+    .where(and(eq(studioObservations.variantId, variantId), eq(studioObservations.commentId, observationId), audienceFilter(role))).limit(1).for("update", { of: studioObservations });
   return row ?? notFound("Observation inconnue pour cette variante.");
 }
 
@@ -276,6 +281,7 @@ export async function openStudioObservation(scope: StudioScope, actorId: string,
       }
     }
     if (v.lecteur.archived) studioArchivedRefusal();
+    const audience = audienceOrRefuse(() => audienceOfNew(v.lecteur.role, input.audience));
     const responsable = await assignable(tx, v.access, input.responsableId);
     const objectIds = input.objectIds ?? [];
     let revisionId: string | null = input.revisionId ?? null;
@@ -300,7 +306,7 @@ export async function openStudioObservation(scope: StudioScope, actorId: string,
       liens.push(ok);
     }
     const id = newId("studio_comment");
-    await tx.insert(studioComments).values({ id, variantId: v.id, revisionId, objectIds, parentId: null, authorId: actorId, body: input.body, requestId: requestId ?? null, payloadHash: hash });
+    await tx.insert(studioComments).values({ id, variantId: v.id, revisionId, objectIds, parentId: null, authorId: actorId, body: input.body, requestId: requestId ?? null, payloadHash: hash, audience });
     await insertObservationRows(tx, { commentId: id, variantId: v.id, responsableId: responsable, input: { echeance: input.echeance, note: input.note, vue: input.vue }, actorId, hash });
     for (const l of liens) await tx.insert(studioObservationLinks).values({ id: newId("studio_observation_link"), observationId: id, variantId: v.id, ...l, createdBy: actorId });
     return done(id, false);
@@ -328,7 +334,7 @@ export async function addStudioObservationLink(scope: StudioScope, actorId: stri
   const hash = hashOf({ action: "lier", ...lien });
   const run = () => db.transaction(async (tx) => {
     const v = await varianteEcrite(tx, scope, actorId);
-    const { o, authorId } = await observationVerrouillee(tx, v.id, observationId);
+    const { o, authorId } = await observationVerrouillee(tx, v.id, observationId, v.lecteur.role);
     const done = (replayed: boolean) => ({ variantId: v.id, lecteur: v.lecteur, replayed });
     if (requestId !== undefined) {
       const [prev] = await tx.select({ actorId: studioObservationLinks.createdBy, payloadHash: studioObservationLinks.payloadHash }).from(studioObservationLinks)
@@ -362,7 +368,7 @@ export async function createStudioObservationTask(scope: StudioScope, actorId: s
   const hash = hashOf({ action: "creer", ...contenu, echeance: contenu.echeance ?? null });
   const r = await db.transaction(async (tx) => {
     const v = await varianteEcrite(tx, scope, actorId);
-    const { o, authorId } = await observationVerrouillee(tx, v.id, observationId);
+    const { o, authorId } = await observationVerrouillee(tx, v.id, observationId, v.lecteur.role);
     const done = (replayed: boolean) => ({ variantId: v.id, lecteur: v.lecteur, replayed });
     if (requestId !== undefined) {
       const [prev] = await tx.select({ actorId: studioObservationTaskEvents.actorId, payloadHash: studioObservationTaskEvents.payloadHash }).from(studioObservationTaskEvents)
@@ -392,7 +398,7 @@ export async function transitionStudioObservationTask(scope: StudioScope, actorI
   const hash = hashOf(contenu);
   const r = await db.transaction(async (tx) => {
     const v = await varianteEcrite(tx, scope, actorId);
-    const { o, authorId } = await observationVerrouillee(tx, v.id, observationId);
+    const { o, authorId } = await observationVerrouillee(tx, v.id, observationId, v.lecteur.role);
     const done = (replayed: boolean) => ({ variantId: v.id, lecteur: v.lecteur, replayed });
     const [t] = await tx.select().from(studioObservationTasks).where(and(eq(studioObservationTasks.id, taskId), eq(studioObservationTasks.observationId, o.commentId))).limit(1).for("update");
     if (!t) return notFound("Tâche inconnue pour cette observation.");
@@ -434,7 +440,7 @@ export async function recordStudioObservationDecision(scope: StudioScope, actorI
   const hash = hashOf({ action: "decider", ...contenu, revisionId: contenu.revisionId ?? null });
   const r = await db.transaction(async (tx) => {
     const v = await varianteEcrite(tx, scope, actorId);
-    const { o, authorId } = await observationVerrouillee(tx, v.id, observationId);
+    const { o, authorId } = await observationVerrouillee(tx, v.id, observationId, v.lecteur.role);
     const done = (replayed: boolean) => ({ variantId: v.id, lecteur: v.lecteur, replayed });
     if (requestId !== undefined) {
       const [prev] = await tx.select({ actorId: studioObservationDecisions.actorId, payloadHash: studioObservationDecisions.payloadHash }).from(studioObservationDecisions)

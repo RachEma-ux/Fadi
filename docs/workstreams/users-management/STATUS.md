@@ -29,6 +29,9 @@ la section UM-31.
 **UM-30 (2026-10-24) : langue des courriels = langue de l'interface, sinon français ; branche `fix/um-29-langue-courriels`,
 [PR #275](https://github.com/RachEma-ux/Fadi/pull/275) fusionnée le 2026-10-24 à 18:08 UTC (`5767835`) ; contrôle en préproduction : UM-SERVICE.** Voir la section UM-30.
 
+**Écarts graves E1, E2, E3 du cadrage des règles communes (UM-29, 2026-10-24) : implémentés, vérifiés en local ; PR vers
+`main` non fusionnée, aucun déploiement.** Voir la section UM-29.
+
 ## Faits vérifiés
 
 ### Invitations renouvelables et comptes de test masqués (UM-31, 2026-10-24)
@@ -57,6 +60,35 @@ Branche `fix/admin-invitations-comptes-test`, depuis `main` à `7083285`. Vérif
   (attestation `fadi-ci-db3`), « 6. invitations renouvelées et comptes de test (UM-31) » ✓ (2) ; job e2e (complements) :
   `comptes-api.mjs`, `comptes-securite.mjs` et `comptes-admin.mjs` verts. Premier commit `27af3eb` : vert aussi (run 40118973515).
 
+### Écarts E1, E2, E3 des règles communes (UM-29, 2026-10-24)
+
+Branche `fix/collaboration-ecarts-e1-e3`, depuis `main` à `2cc038a`. Vérifié en local sur PostgreSQL 16 + PostGIS 3
+(autorité de signature locale ajoutée au registre **dans la copie de travail seulement** pendant les essais, puis
+restaurée ; la preuve opposable reste DB-3 en CI) :
+
+- `npm run typecheck` : vert. `npm run build` : vert. Web : 951 tests verts (120 fichiers).
+- API sur base jetable attestée : 610 tests, dont les 5 nouveaux « règles communes — E1, E2, E3 » de `app.test.ts`
+  (journal de chaque changement d'accès, export du lecteur, migration additive rejouée, audience des commentaires du
+  projet et des fils Studio sur chaque route) et `lib/audience.test.ts` (3, pur). Tests existants mis à jour pour le
+  nouveau défaut, aucun désactivé : `app.test.ts` (partage, accès support), `atelier-commands.test.ts` (référence
+  externe), `studio-permissions.test.ts` (route `PATCH …/comments/:id` dans la matrice, observation d'essai ouverte aux
+  lecteurs ; matrice publiée régénérée), base simulée (`canExport`). Restent rouges en local seulement : « Documents —
+  catalogue… » (délai de 30 s dépassé, **identique sur `main` non modifié** sur ce poste) et le registre d'autorités
+  (clé locale de l'essai) — à confirmer verts en CI.
+- CI de `b619ebb` rouge (run 40114965948 et `project-layout`) : axe-core `target-size` sur la case « Visible par
+  les lecteurs » (recettes `parcours-scenario.mjs` et `comptes-admin.mjs`) et débordement horizontal à 390 px du tableau
+  des membres (nouvelle colonne « Export »). Corrigé : cases de 24 px (`style.css`), tableau dans une région
+  défilante ; `collaboration-audience.mjs` contrôle désormais axe-core (propriétaire et lecteur) : 40 contrôles verts ;
+  `project-layout.mjs` 593/593 en local. Revue Codex (course réponse / audience) corrigée, voir `../collaboration-rules/DECISIONS.md` CR-C1 § 5.
+- Recettes e2e (API construite servant `WEB_DIST`, rôle `fadi_app`) : `collaboration-audience.mjs` (nouvelle, **38
+  contrôles verts**, journal relu en base), `studio-persistance.mjs` (293), `studio-observations.mjs` (71),
+  `comptes-securite.mjs` (73) : vertes.
+- Suite (demande du maître d'ouvrage, `../collaboration-rules/DECISIONS.md` CR-C1 § 6) : E7 / CR-D5 (a) (copie locale
+  d'un projet retiré oubliée, éléments à audience relus pour un rôle hors équipe), règle d'or des commandes de
+  collaboration (icônes, Alt+Maj+1/2/3), transfert aligné sur #265 puis `main` fusionné après #265 (`f59641c`). En
+  local : typecheck et build verts, web 966 tests, API `app.test.ts` + `lib` 356 ; recettes `collaboration-audience.mjs`
+  (45, raccourcis au clavier et E7), `studio-persistance.mjs`, `studio-observations.mjs`, `studio-hors-ligne.mjs`,
+  `comptes-securite.mjs`, `parcours-scenario.mjs`, `interface-anglais.mjs` : vertes.
 
 ### Langue des courriels (UM-30, 2026-10-24)
 

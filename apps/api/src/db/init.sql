@@ -225,6 +225,12 @@ CREATE INDEX IF NOT EXISTS project_comments_project_idx ON project_comments (pro
 ALTER TABLE project_comments ADD COLUMN IF NOT EXISTS parent_id text REFERENCES project_comments (id) ON DELETE CASCADE;
 -- Commentaire attaché à une entrée du journal de l'Atelier (D-055) : sa révision résultante, null sinon.
 ALTER TABLE project_comments ADD COLUMN IF NOT EXISTS atelier_revision integer;
+-- Audience d'un commentaire (écart E1, 2026-10-24) : `equipe` = propriétaire et éditeurs, `projet` = tous les membres,
+-- lecteurs compris. Ajout additif : les commentaires existants reçoivent `projet` (aucun changement silencieux de qui
+-- les lit), puis le défaut passe à `equipe` pour les nouveaux (l'API écrit toujours la valeur choisie).
+ALTER TABLE project_comments ADD COLUMN IF NOT EXISTS audience text NOT NULL DEFAULT 'projet'
+  CONSTRAINT project_comments_audience_check CHECK (audience IN ('equipe', 'projet'));
+ALTER TABLE project_comments ALTER COLUMN audience SET DEFAULT 'equipe';
 
 CREATE TABLE IF NOT EXISTS project_members (
   project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
@@ -235,6 +241,12 @@ CREATE TABLE IF NOT EXISTS project_members (
   PRIMARY KEY (project_id, user_id)
 );
 CREATE INDEX IF NOT EXISTS project_members_user_idx ON project_members (user_id);
+-- Droit d'export explicite d'un lecteur (écart E2, 2026-10-24 ; tranche CR-D4) : ajout additif, les lignes existantes
+-- reçoivent TRUE (aucun lecteur actuel ne perd l'export), puis le défaut passe à FALSE pour les nouvelles lignes. Seul le
+-- rôle `lecteur` le consulte (propriétaire et éditeur exportent toujours, l'accès support jamais). NULL — ligne restaurée
+-- d'une archive antérieure à cette colonne — vaut le droit d'origine : TRUE.
+ALTER TABLE project_members ADD COLUMN IF NOT EXISTS can_export boolean DEFAULT true;
+ALTER TABLE project_members ALTER COLUMN can_export SET DEFAULT false;
 
 -- ---------------------------------------------------------------------------
 -- Modèle typé de l'Atelier Fadi (cahier des charges §5.5).
@@ -599,6 +611,13 @@ CREATE TABLE IF NOT EXISTS studio_comments (
 CREATE INDEX IF NOT EXISTS studio_comments_variant_idx ON studio_comments(variant_id, created_at);
 CREATE UNIQUE INDEX IF NOT EXISTS studio_comments_request_unique ON studio_comments(variant_id, request_id)
   WHERE request_id IS NOT NULL;
+-- Audience d'un fil Studio (écart E1, 2026-10-24) : `equipe` = propriétaire et éditeurs, `projet` = tous les membres,
+-- lecteurs compris ; portée par le commentaire d'origine (ses réponses, son observation, ses tâches et décisions la
+-- suivent). Ajout additif : les commentaires existants reçoivent `projet`, puis le défaut passe à `equipe`. Colonne
+-- nullable (convention des archives Studio) : NULL — ligne restaurée d'une archive antérieure — vaut `projet`.
+ALTER TABLE studio_comments ADD COLUMN IF NOT EXISTS audience text DEFAULT 'projet'
+  CONSTRAINT studio_comments_audience_check CHECK (audience IS NULL OR audience IN ('equipe', 'projet'));
+ALTER TABLE studio_comments ALTER COLUMN audience SET DEFAULT 'equipe';
 -- Observations Studio (E.2) : un commentaire d'origine devient au plus une observation (même identifiant que le
 -- commentaire : une seule identité), avec un responsable (membre du projet), une échéance facultative et un statut
 -- ouverte → corrigée (révision de la correction) → recontrôlée (révision ≥ correction) → clôturée, ou rouverte. Chaque

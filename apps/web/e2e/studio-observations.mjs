@@ -84,7 +84,8 @@ const one = (o) => `${obsPath}/${o}`;
 // ---------------------------------------------------------------------------
 // E.2-01 / E.2-02 — ouverture depuis un domaine, identité réemployée, contexte et responsable.
 const ouvRequest = rid();
-const ouverture = { body: "Écart sur l'exigence des murs", responsableId: ids.editor, vue: { mode: "exigences" }, liens: [{ domaine: "exigence", ref: "exi-1", controleId }], requestId: ouvRequest };
+// Audience « projet » (écart E1) : le lecteur de la recette lit et tente d'agir sur cette observation.
+const ouverture = { body: "Écart sur l'exigence des murs", responsableId: ids.editor, vue: { mode: "exigences" }, liens: [{ domaine: "exigence", ref: "exi-1", controleId }], requestId: ouvRequest, audience: "projet" };
 const opened = await owner("POST", obsPath, ouverture);
 const O = opened.body?.id;
 check("E.2-01 ouverture depuis une exigence et son contrôle (201) : lien lié à la révision du contrôle", opened.status === 201 && opened.body?.liens?.length === 1

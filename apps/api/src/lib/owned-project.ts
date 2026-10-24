@@ -32,7 +32,9 @@ export type ProjectNeed = "read" | "comment" | "write" | "modify" | "owner" | "e
  * `export` (revue de sécurité de la PR #255) : sortir du contenu du projet — fichier téléchargé, document produit (et sa
  * trace de production), archive, copie vers un autre projet, publication servie comme source d'un autre projet. Déclaré
  * par chaque route concernée : la garde de chemin `supportReadOnlyGuard` n'est qu'une défense supplémentaire, jamais la
- * frontière. Propriétaire, éditeur et lecteur gardent l'export ; l'accès support ne l'a jamais.
+ * frontière. Propriétaire et éditeur exportent ; l'accès support jamais. Un `lecteur` n'exporte que si le propriétaire le
+ * lui a accordé (`project_members.can_export`, écart E2 du 2026-10-24, tranche CR-D4) : TRUE pour les lecteurs antérieurs
+ * à cette règle (aucune régression), FALSE par défaut pour un nouveau lecteur — `exportAllowed(access)`.
  */
 const ALLOWED: Record<ProjectNeed, readonly ProjectRole[]> = {
   read: ["proprietaire", "editeur", "lecteur", "support"],
@@ -40,11 +42,18 @@ const ALLOWED: Record<ProjectNeed, readonly ProjectRole[]> = {
   write: ["proprietaire", "editeur"],
   modify: ["proprietaire", "editeur"],
   owner: ["proprietaire"],
-  export: ["proprietaire", "editeur", "lecteur"],
+  export: ["proprietaire", "editeur"],
 };
 
+/** Droit du rôle seul. Pour `export`, le droit accordé à un lecteur est dans l'accès : `accessAllows`. */
 export function roleAllows(role: ProjectRole, need: ProjectNeed): boolean {
   return ALLOWED[need].includes(role);
+}
+
+/** Droit de l'accès chargé : le rôle, plus l'export explicitement accordé à un lecteur (E2). */
+export function accessAllows(access: Pick<AccessibleProject, "role" | "canExport">, need: ProjectNeed): boolean {
+  if (need === "export" && access.role === "lecteur") return access.canExport;
+  return roleAllows(access.role, need);
 }
 
 export const FORBIDDEN_MESSAGE: Record<ProjectNeed, string> = {
@@ -53,7 +62,7 @@ export const FORBIDDEN_MESSAGE: Record<ProjectNeed, string> = {
   write: "Ce projet vous est partagé en lecture : les modifications sont réservées à son propriétaire et à ses éditeurs.",
   modify: "Ce projet vous est partagé en lecture : les modifications sont réservées à son propriétaire et à ses éditeurs.",
   owner: "Action réservée au propriétaire du projet.",
-  export: "Export et téléchargement réservés aux membres du projet.",
+  export: "Export et téléchargement réservés au propriétaire, aux éditeurs et aux lecteurs à qui le propriétaire les a accordés.",
 };
 
 /** Refus d'un accès support (lecture seule) : export ou modification. */
@@ -70,7 +79,8 @@ export const REFERENCE_PROTEGEE_MESSAGE =
 export function estReferenceProtegee(project: Pick<ProjectRow, "exampleMode">): boolean {
   return project.exampleMode === "reference";
 }
-export type AccessibleProject = ProjectRow & { role: ProjectRole };
+/** `canExport` : le rôle exporte (propriétaire, éditeur) ou l'export a été accordé à ce lecteur ; jamais l'accès support. */
+export type AccessibleProject = ProjectRow & { role: ProjectRole; canExport: boolean };
 
 /** Durée d'une réservation d'édition ; renouvelable tant que l'éditeur travaille. */
 export const EDITING_LOCK_MINUTES = 30;
@@ -91,16 +101,17 @@ export function lockedMessage(lock: EditingLock): string {
 /** Le projet et le rôle de l'utilisateur, en une requête ; `null` quand il n'y a aucun accès. */
 export async function loadProjectAccess(projectId: string, userId: string, executor: Pick<typeof db, "select"> = db): Promise<AccessibleProject | null> {
   const rows = await executor
-    .select({ project: projects, memberRole: projectMembers.role })
+    .select({ project: projects, memberRole: projectMembers.role, memberCanExport: projectMembers.canExport })
     .from(projects)
     .leftJoin(projectMembers, and(eq(projectMembers.projectId, projects.id), eq(projectMembers.userId, userId)))
     .where(eq(projects.id, projectId))
     .limit(1);
   const row = rows[0];
   if (!row) return null;
-  if (row.project.ownerId === userId) return { ...row.project, role: "proprietaire" };
-  if (row.memberRole) return { ...row.project, role: row.memberRole };
-  if (await activeSupportGrant(projectId, userId, executor)) return { ...row.project, role: "support" };
+  if (row.project.ownerId === userId) return { ...row.project, role: "proprietaire", canExport: true };
+  // NULL (ligne restaurée d'une archive antérieure à la colonne) = droit d'origine conservé.
+  if (row.memberRole) return { ...row.project, role: row.memberRole, canExport: row.memberRole === "editeur" || (row.memberCanExport ?? true) };
+  if (await activeSupportGrant(projectId, userId, executor)) return { ...row.project, role: "support", canExport: false };
   return null;
 }
 
@@ -133,7 +144,7 @@ export async function activeSupportGrant(projectId: string, userId: string, exec
  */
 export async function loadOwnedProject(projectId: string, userId: string, need: ProjectNeed = "owner"): Promise<AccessibleProject | null> {
   const access = await loadProjectAccess(projectId, userId);
-  return access && roleAllows(access.role, need) ? access : null;
+  return access && accessAllows(access, need) ? access : null;
 }
 
 export type OwnedProject = AccessibleProject;
@@ -160,7 +171,7 @@ export async function projectOr404(req: Request, res: Response, need: ProjectNee
 export function projectAccessRefusal(access: AccessibleProject | null, userId: string, need: ProjectNeed): { status: number; body: Record<string, unknown> } | null {
   if (!access) return { status: 404, body: { error: "not_found" } };
   if (access.role === "support" && !roleAllows("support", need)) return { status: 403, body: { ...(need === "export" ? SUPPORT_NO_EXPORT : SUPPORT_READ_ONLY), role: "support" } };
-  if (!roleAllows(access.role, need)) return { status: 403, body: { error: "forbidden", message: FORBIDDEN_MESSAGE[need], role: access.role } };
+  if (!accessAllows(access, need)) return { status: 403, body: { error: "forbidden", message: FORBIDDEN_MESSAGE[need], role: access.role } };
   if (need === "modify" && estReferenceProtegee(access)) {
     return { status: 403, body: { error: "forbidden", motif: "reference-protegee", message: REFERENCE_PROTEGEE_MESSAGE, role: access.role } };
   }

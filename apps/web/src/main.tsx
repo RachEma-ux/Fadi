@@ -7,6 +7,7 @@ import { App } from "./App";
 import { AuthProvider } from "./lib/auth-context";
 import { registerMutationDefaults } from "./lib/mutations";
 import { persistOptions } from "./lib/query-persister";
+import { installProjectCacheGuard } from "./lib/project-cache-guard";
 import { demarrerLangue } from "./lib/i18n/demarrer";
 import { reachability } from "./lib/reachability";
 import "./style.css";
@@ -26,6 +27,9 @@ const queryClient = new QueryClient({
 
 // Saisies, arbitrages et commentaires rejouables : valeurs par défaut des mutations mises en pause hors-ligne et persistées.
 registerMutationDefaults(queryClient);
+// Politique hors ligne (E7, CR-D5) : accès perdu → le projet est oublié de l'appareil ; rôle hors de l'équipe → les
+// éléments à audience en cache sont relus sous les droits actuels.
+installProjectCacheGuard(queryClient);
 // TanStack Query se croit en ligne au démarrage : après un rechargement hors-ligne, les mutations restaurées
 // repartiraient aussitôt et échoueraient. L'état réel du navigateur fait foi — et le serveur doit répondre
 // (`lib/reachability.ts`) : un serveur injoignable met les écritures en attente comme une coupure réseau.

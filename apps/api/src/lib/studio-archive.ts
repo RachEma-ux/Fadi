@@ -77,9 +77,29 @@ export async function loadStudioTables(q: Querier, projectId: string, ownerId: s
   return tables;
 }
 
+/**
+ * Audience (écart E1) : pour un exportateur hors de l'équipe (lecteur à qui l'export est accordé), les fils réservés à
+ * l'équipe sortent de l'archive avec tout ce qui les suit — réponses, observation, passages, liens, tâches et leur
+ * journal, décisions. L'archive reste cohérente (manifeste calculé après) : rien n'y renvoie à un fil absent.
+ */
+export function withoutTeamThreads(tables: ReturnType<typeof emptyStudioTables>): void {
+  const hidden = new Set(tables.studio_comments.filter((c) => c["audience"] === "equipe").map((c) => c["id"] as string));
+  if (!hidden.size) return;
+  const kept = (column: string) => (row: StudioArchiveRow) => !hidden.has(row[column] as string);
+  tables.studio_comments = tables.studio_comments.filter(kept("id"));
+  tables.studio_observations = tables.studio_observations.filter(kept("comment_id"));
+  tables.studio_observation_events = tables.studio_observation_events.filter(kept("observation_id"));
+  tables.studio_observation_links = tables.studio_observation_links.filter(kept("observation_id"));
+  tables.studio_observation_tasks = tables.studio_observation_tasks.filter(kept("observation_id"));
+  const tasks = new Set(tables.studio_observation_tasks.map((t) => t["id"] as string));
+  tables.studio_observation_task_events = tables.studio_observation_task_events.filter((e) => tasks.has(e["task_id"] as string));
+  tables.studio_observation_decisions = tables.studio_observation_decisions.filter(kept("observation_id"));
+}
+
 /** Section Studio de l'archive, signée ; `null` quand le projet n'a ni donnée Studio ni membre (archives inchangées). */
-export async function exportStudioArchive(q: Querier, project: { id: string; ownerId: string }): Promise<StudioArchiveSection | null> {
+export async function exportStudioArchive(q: Querier, project: { id: string; ownerId: string }, options: { teamThreads?: boolean } = {}): Promise<StudioArchiveSection | null> {
   const tables = await loadStudioTables(q, project.id, project.ownerId);
+  if (options.teamThreads === false) withoutTeamThreads(tables);
   const meaningful = STUDIO_ARCHIVE_TABLES.some((t) => t !== "studio_tool_preferences" && tables[t].length > 0);
   if (!meaningful) return null;
   // Comptes des colonnes et des champs JSON (acceptations de référence partenaire) : chacun part avec son adresse.

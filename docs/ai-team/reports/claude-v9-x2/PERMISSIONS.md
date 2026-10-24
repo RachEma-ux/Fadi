@@ -40,6 +40,7 @@ chargé de tâche — rôle vérifié ensuite par `lib/studio-observations.ts`, 
 | `GET /studies/:studyId/variants/:variantId/comments` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `POST /studies/:studyId/variants/:variantId/comments` | commentaire | 404 | admis | admis | admis | admis | admis | admis | 201 |  |
 | `DELETE /studies/:studyId/variants/:variantId/comments/:commentId` | acteur | 404 | 403 | admis | 403 | 403 | 403 | 403 | 403 forbidden | auteur seul (c1 : éditeur) |
+| `PATCH /studies/:studyId/variants/:variantId/comments/:commentId` | acteur | 404 | 403 | admis | 403 | admis | admis | admis | 200 | audience du fil (écart E1) : son auteur (c1 : éditeur) ou le propriétaire, tous deux de l'équipe ; le verrou d'édition ne s'y applique pas |
 | `POST /studies/:studyId/variants/:variantId/comments/:commentId/observation` | acteur | 404 | 403 | admis | 403 | admis | admis | admis | 201 | auteur du commentaire (c1 : éditeur) ou propriétaire |
 | `POST /studies/:studyId/variants/:variantId/comments/:commentId/observation/transitions` | acteur | 404 | 403 | admis | 403 | 403 | 403 | 403 | 403 forbidden | corriger : le responsable (éditeur) avec le droit d'écrire, seul |
 | `GET /studies/:studyId/steps` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |

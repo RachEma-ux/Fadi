@@ -47,6 +47,16 @@ export type AuditAction =
   | "support.granted"
   | "support.revoked"
   | "support.accessed"
+  // Changements d'accès à un projet (écart E3, 2026-10-24) : cible = le projet ; métadonnées = membre visé, rôle et
+  // export avant / après — jamais d'adresse.
+  | "project.member.added"
+  | "project.member.role_changed"
+  | "project.member.export_changed"
+  | "project.member.removed"
+  | "project.member.left"
+  | "project.ownership.transferred"
+  // Audience d'un fil changée par son auteur ou le propriétaire (écart E1) : cible = le projet.
+  | "comment.audience_changed"
   | "mail.quota_exceeded";
 
 export interface AuditEntry {

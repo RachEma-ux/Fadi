@@ -2,8 +2,14 @@
  * Module Collaboration — monté sous `/projects/:projectId/collaboration` :
  *   GET    /                   → accès (propriétaire, votre rôle, membres), état de synchronisation, journal des révisions, commentaires
  *   GET    /comments[?step=N]  → commentaires du projet (ou d'une étape)
- *   POST   /comments           → { body, stepNumber?, parentId? } : nouveau commentaire (ou réponse en fil) de l'utilisateur connecté
+ *   POST   /comments           → { body, stepNumber?, parentId?, audience? } : nouveau commentaire (ou réponse en fil) de l'utilisateur connecté
+ *   PATCH  /comments/:id       → { audience } : audience du fil, par son auteur ou le propriétaire (journalisé)
  *   DELETE /comments/:id       → suppression par son auteur seulement
+ *
+ * Audience (écart E1, `lib/audience.ts`) : un commentaire `equipe` (défaut d'un nouveau commentaire) n'est lu que par le
+ * propriétaire et les éditeurs ; `projet` (« Visible par les lecteurs ») par tous les membres. Le serveur filtre chaque
+ * lecture — liste, fil d'une étape ou d'une révision, réponse, journal des révisions, notifications : un lecteur ne reçoit
+ * jamais un commentaire réservé à l'équipe, pas même son existence.
  *
  * Le journal des révisions n'invente rien : il relit les dates portées par
  * les données elles-mêmes (arbitrages Harmonie et leurs historiques,
@@ -13,14 +19,16 @@
  * membre peut commenter, un lecteur ne peut rien modifier d'autre.
  */
 import { Router } from "express";
-import { and, asc, count, desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { PARCOURS_STEPS } from "../data/parcours.js";
 import { db } from "../db/client.js";
-import { atelierCommands, parcels, producedDocuments, programmeCases, projectComments, users } from "../db/schema.js";
+import { atelierCommands, parcels, producedDocuments, programmeCases, projectComments, projectMembers, users } from "../db/schema.js";
+import { audit, clientIp } from "../lib/audit.js";
+import { AudienceError, audienceChangeRefusal, audienceOfNew, audienceSchema, seesTeam } from "../lib/audience.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { newId } from "../lib/ids.js";
-import { activeLock, projectOr404, type OwnedProject } from "../lib/owned-project.js";
+import { activeLock, projectOr404, type OwnedProject, type ProjectRole } from "../lib/owned-project.js";
 import { loadStepRows } from "../lib/step-rows.js";
 import { listMembers, ownerEmailOf } from "./members.js";
 import { contentOf } from "../lib/step-context.js";
@@ -41,7 +49,13 @@ const STATUS_LABEL: Record<string, string> = {
   verified: "vérifiée",
 };
 
-/** Le journal des révisions du projet, relu depuis les dates que les données portent. */
+/** Commentaires du projet lisibles par ce rôle (E1) : l'équipe lit tout, les autres l'audience `projet` seulement. */
+export function visibleComments(projectId: string, role: ProjectRole, extra?: SQL): SQL {
+  const audience = seesTeam(role) ? undefined : eq(projectComments.audience, "projet");
+  return and(eq(projectComments.projectId, projectId), audience, extra)!;
+}
+
+/** Le journal des révisions du projet, relu depuis les dates que les données portent (commentaires filtrés par audience). */
 export async function revisionJournalSnapshot(project: OwnedProject) {
   const events: RevisionEvent[] = [];
   const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -192,7 +206,7 @@ export async function revisionJournalSnapshot(project: OwnedProject) {
       revision: null,
     });
 
-  const comments = await db.select().from(projectComments).where(eq(projectComments.projectId, project.id)).orderBy(desc(projectComments.createdAt), asc(projectComments.id)).limit(HISTORY_LIMIT + 1);
+  const comments = await db.select().from(projectComments).where(visibleComments(project.id, project.role)).orderBy(desc(projectComments.createdAt), asc(projectComments.id)).limit(HISTORY_LIMIT + 1);
   for (const c of comments.slice(0, HISTORY_LIMIT))
     events.push({
       at: c.createdAt.toISOString(),
@@ -225,8 +239,9 @@ export async function revisionJournal(project: OwnedProject): Promise<RevisionEv
 }
 
 function commentView(c: typeof projectComments.$inferSelect, userId: string) {
-  return { id: c.id, stepNumber: c.stepNumber, parentId: c.parentId ?? null, atelierRevision: c.atelierRevision ?? null, authorEmail: c.authorEmail, body: c.body, createdAt: c.createdAt.toISOString(), mine: c.authorId === userId };
+  return { id: c.id, stepNumber: c.stepNumber, parentId: c.parentId ?? null, atelierRevision: c.atelierRevision ?? null, authorEmail: c.authorEmail, body: c.body, audience: c.audience, createdAt: c.createdAt.toISOString(), mine: c.authorId === userId };
 }
+
 
 collaborationRouter.get("/", async (req, res) => {
   const project = await projectOr404(req, res, "read");
@@ -234,13 +249,15 @@ collaborationRouter.get("/", async (req, res) => {
   const [dernier] = await db.select({ createdAt: atelierCommands.createdAt }).from(atelierCommands).where(eq(atelierCommands.projectId, project.id)).orderBy(desc(atelierCommands.resultRevision)).limit(1);
   const [{ n: entreesJournal } = { n: 0 }] = await db.select({ n: count() }).from(atelierCommands).where(eq(atelierCommands.projectId, project.id));
   const lastWrite = dernier ? dernier.createdAt.toISOString() : null;
-  const comments = await db.select().from(projectComments).where(eq(projectComments.projectId, project.id)).orderBy(desc(projectComments.createdAt));
+  const comments = await db.select().from(projectComments).where(visibleComments(project.id, project.role)).orderBy(desc(projectComments.createdAt));
   res.json({
     access: {
       ownerEmail: await ownerEmailOf(project.ownerId),
       you: req.user!.email,
       /** Votre rôle sur ce projet, vérifié par le serveur à chaque requête. */
       role: project.role,
+      /** Vous pouvez exporter (propriétaire, éditeur, ou lecteur à qui le propriétaire l'a accordé — E2). */
+      canExport: project.canExport,
       members: await listMembers(project.id),
       /** Réservation d'édition en cours (verrou optionnel), null si libre. */
       lock: activeLock(project),
@@ -248,7 +265,7 @@ collaborationRouter.get("/", async (req, res) => {
       sharing: {
         available: true,
         reason:
-          "Le propriétaire invite des comptes existants par leur adresse : un lecteur lit tout et commente, un éditeur modifie aussi (saisies, arbitrages, programme, Atelier, sources). Les droits sont vérifiés par le serveur à chaque requête. Un éditeur peut réserver l'édition (30 minutes, prolongeables) : les autres lisent et commentent jusqu'à ce qu'il rende la main ; sans réservation, les écritures simultanées sont sérialisées puis départagées par le contrôle de version (409).",
+          "Le propriétaire invite des comptes existants par leur adresse : un lecteur lit le dossier et les commentaires visibles par les lecteurs, et commente ; il n'exporte que si le propriétaire le lui accorde ; un éditeur modifie aussi (saisies, arbitrages, programme, Atelier, sources). Les droits sont vérifiés par le serveur à chaque requête. Un éditeur peut réserver l'édition (30 minutes, prolongeables) : les autres lisent et commentent jusqu'à ce qu'il rende la main ; sans réservation, les écritures simultanées sont sérialisées puis départagées par le contrôle de version (409).",
       },
     },
     sync: {
@@ -275,10 +292,10 @@ collaborationRouter.get("/comments", async (req, res) => {
   const revision = typeof req.query["revision"] === "string" ? Number(req.query["revision"]) : null;
   const where =
     revision !== null && Number.isInteger(revision)
-      ? and(eq(projectComments.projectId, project.id), eq(projectComments.atelierRevision, revision))
+      ? visibleComments(project.id, project.role, eq(projectComments.atelierRevision, revision))
       : step !== null && Number.isInteger(step)
-        ? and(eq(projectComments.projectId, project.id), eq(projectComments.stepNumber, step))
-        : eq(projectComments.projectId, project.id);
+        ? visibleComments(project.id, project.role, eq(projectComments.stepNumber, step))
+        : visibleComments(project.id, project.role);
   const rows = await db.select().from(projectComments).where(where).orderBy(asc(projectComments.createdAt));
   res.json(rows.map((c) => commentView(c, req.user!.id)));
 });
@@ -290,6 +307,8 @@ const commentSchema = z.object({
   parentId: z.string().min(1).max(64).nullable().optional(),
   /** Entrée du journal de l'Atelier commentée (D-055) : sa révision résultante ; elle doit exister. */
   atelierRevision: z.number().int().min(1).nullable().optional(),
+  /** Audience (E1) : `equipe` par défaut, `projet` = « Visible par les lecteurs » ; une réponse suit son fil. */
+  audience: audienceSchema.optional(),
 });
 
 collaborationRouter.post("/comments", async (req, res) => {
@@ -310,27 +329,84 @@ collaborationRouter.post("/comments", async (req, res) => {
     }
     stepNumber = null;
   }
-  let parentId: string | null = null;
-  if (parsed.data.parentId) {
-    const [parent] = await db
-      .select({ id: projectComments.id, stepNumber: projectComments.stepNumber, parentId: projectComments.parentId, atelierRevision: projectComments.atelierRevision })
-      .from(projectComments)
-      .where(and(eq(projectComments.projectId, project.id), eq(projectComments.id, parsed.data.parentId)))
-      .limit(1);
-    if (!parent) {
-      res.status(404).json({ error: "not_found", message: "Le commentaire auquel vous répondez n'existe plus." });
-      return;
+  // Réponse et changement d'audience du fil sérialisés (revue Codex de la PR #274) : la racine du fil est relue sous
+  // verrou partagé dans la transaction de l'insertion, le PATCH la verrouille en écriture ; une réponse ne peut donc pas
+  // garder l'ancienne audience d'un fil qui vient d'être réservé à l'équipe.
+  const outcome = await db.transaction(async (tx) => {
+    let parentId: string | null = null;
+    let threadAudience: typeof projectComments.$inferSelect.audience | undefined;
+    if (parsed.data.parentId) {
+      // Un fil réservé à l'équipe n'existe pas pour un lecteur : même 404 qu'un commentaire supprimé.
+      const [parent] = await tx
+        .select({ id: projectComments.id, parentId: projectComments.parentId })
+        .from(projectComments)
+        .where(visibleComments(project.id, project.role, eq(projectComments.id, parsed.data.parentId)))
+        .limit(1);
+      // Un seul niveau de fil (comme un fil de discussion lisible) : répondre à une réponse rattache au commentaire d'origine.
+      const [root] = parent
+        ? await tx
+          .select({ id: projectComments.id, stepNumber: projectComments.stepNumber, atelierRevision: projectComments.atelierRevision, audience: projectComments.audience })
+          .from(projectComments)
+          .where(visibleComments(project.id, project.role, eq(projectComments.id, parent.parentId ?? parent.id)))
+          .limit(1)
+          .for("share")
+        : [];
+      if (!root) return { status: 404 as const, body: { error: "not_found", message: "Le commentaire auquel vous répondez n'existe plus." } };
+      parentId = root.id;
+      stepNumber = root.stepNumber;
+      atelierRevision = root.atelierRevision ?? null;
+      threadAudience = root.audience;
     }
-    // Un seul niveau de fil (comme un fil de discussion lisible) : répondre à une réponse rattache au commentaire d'origine.
-    parentId = parent.parentId ?? parent.id;
-    stepNumber = parent.stepNumber;
-    atelierRevision = parent.atelierRevision ?? null;
+    let audience;
+    try {
+      audience = audienceOfNew(project.role, parsed.data.audience, threadAudience);
+    } catch (e) {
+      if (e instanceof AudienceError) return { status: e.status, body: e.body };
+      throw e;
+    }
+    const [created] = await tx
+      .insert(projectComments)
+      .values({ id: newId("com"), projectId: project.id, stepNumber, parentId, atelierRevision, authorId: req.user!.id, authorEmail: req.user!.email, body: parsed.data.body, audience })
+      .returning();
+    return { status: 201 as const, body: commentView(created!, req.user!.id) };
+  });
+  res.status(outcome.status).json(outcome.body);
+});
+
+const audienceBody = z.object({ audience: audienceSchema }).strict();
+
+/**
+ * Audience d'un fil (E1) : le commentaire d'origine et ses réponses ensemble, par son auteur ou le propriétaire (tous
+ * deux de l'équipe), journalisée dans la même transaction (`comment.audience_changed`). Une réponse ne change pas seule.
+ */
+collaborationRouter.patch("/comments/:commentId", async (req, res) => {
+  const project = await projectOr404(req, res, "comment");
+  if (!project) return;
+  const parsed = audienceBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() });
+    return;
   }
-  const [created] = await db
-    .insert(projectComments)
-    .values({ id: newId("com"), projectId: project.id, stepNumber, parentId, atelierRevision, authorId: req.user!.id, authorEmail: req.user!.email, body: parsed.data.body })
-    .returning();
-  res.status(201).json(commentView(created!, req.user!.id));
+  const id = req.params["commentId"] as string;
+  const next = parsed.data.audience;
+  const outcome = await db.transaction(async (tx) => {
+    const [root] = await tx.select().from(projectComments).where(visibleComments(project.id, project.role, eq(projectComments.id, id))).limit(1).for("update");
+    if (!root) return { status: 404, body: { error: "not_found" } };
+    if (root.parentId) return { status: 422, body: { error: "audience_du_fil", message: "Une réponse suit l'audience de son fil : changez celle du commentaire d'origine." } };
+    const thread = await tx.select({ authorId: projectComments.authorId }).from(projectComments).where(and(eq(projectComments.projectId, project.id), eq(projectComments.parentId, root.id)));
+    const authors = [...new Set([root.authorId, ...thread.map((t) => t.authorId)])];
+    const readers = await tx.select({ userId: projectMembers.userId }).from(projectMembers)
+      .where(and(eq(projectMembers.projectId, project.id), eq(projectMembers.role, "lecteur"), inArray(projectMembers.userId, authors)));
+    const refusal = audienceChangeRefusal({ role: project.role, isAuthor: root.authorId === req.user!.id }, next, readers.length > 0);
+    if (refusal) return { status: refusal.status, body: refusal.body };
+    if (root.audience !== next) {
+      await tx.update(projectComments).set({ audience: next }).where(and(eq(projectComments.projectId, project.id), eq(projectComments.id, root.id)));
+      await tx.update(projectComments).set({ audience: next }).where(and(eq(projectComments.projectId, project.id), eq(projectComments.parentId, root.id)));
+      await audit(tx, { actorId: req.user!.id, action: "comment.audience_changed", target: { type: "project", id: project.id }, metadata: { commentId: root.id, module: "collaboration", audienceBefore: root.audience, audienceAfter: next, replies: thread.length }, ip: clientIp(req) });
+    }
+    return { status: 200, body: commentView({ ...root, audience: next }, req.user!.id) };
+  });
+  res.status(outcome.status).json(outcome.body);
 });
 
 collaborationRouter.delete("/comments/:commentId", async (req, res) => {
@@ -340,7 +416,7 @@ collaborationRouter.delete("/comments/:commentId", async (req, res) => {
   const [existing] = await db
     .select()
     .from(projectComments)
-    .where(and(eq(projectComments.projectId, project.id), eq(projectComments.id, id)))
+    .where(visibleComments(project.id, project.role, eq(projectComments.id, id)))
     .limit(1);
   if (!existing) {
     res.status(404).json({ error: "not_found" });

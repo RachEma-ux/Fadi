@@ -502,9 +502,10 @@ export function accesSimule<M extends { projectAccessRefusal: (a: never, u: stri
       const projet = (banc.lignes.get(projects) ?? []).find((x) => x["id"] === projectId);
       if (!projet) return null;
       const vu = { ...structuredClone(projet), ...(projectId === "p" ? structuredClone(SITUATIONS[actorId] ?? {}) : {}) };
-      if (vu["ownerId"] === actorId) return { ...vu, role: "proprietaire" };
+      if (vu["ownerId"] === actorId) return { ...vu, role: "proprietaire", canExport: true };
       const membre = (banc.lignes.get(projectMembers) ?? []).find((m) => m["projectId"] === projectId && m["userId"] === actorId);
-      return membre ? { ...vu, role: membre["role"] } : null;
+      // Export (écart E2), comme le vrai : un éditeur exporte toujours ; un lecteur selon `canExport` (absent = ligne antérieure = TRUE).
+      return membre ? { ...vu, role: membre["role"], canExport: membre["role"] === "editeur" || ((membre["canExport"] as boolean | null | undefined) ?? true) } : null;
     },
     projectAccessRefusal: (access: never, userId: string, need: never) => {
       const r = reel.projectAccessRefusal(access, userId, need);
