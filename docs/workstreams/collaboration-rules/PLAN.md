@@ -34,6 +34,9 @@ La [PR #265](https://github.com/RachEma-ux/Fadi/pull/265) (phase 1) est **ouvert
 [annexe A](#annexe-a--ajouts-proposés-au-plan-dorganisations) ; ils seront reportés dans ce PLAN par une PR distincte après
 la fusion de la #265 et l'accord du maître d'ouvrage (CR-D10).
 
+Le critère d'export du Lecteur suit CR-D4 (b modifiée, [DECISIONS.md](DECISIONS.md) CR-R2), mis en œuvre par la PR de
+correction des écarts E1 à E3.
+
 Synthèse des ajouts : journal des changements d'accès (phase 2) ; fin de participation qui libère réservations et verrous
 et signale les responsabilités (phase 2) ; Approbateur et Diffuseur affectations distinctes avec base d'autorité
 enregistrée (phase 2) ; expiration d'accès appliquée (phase 3) ; audience fermée du participant à portée « paquet » pour
@@ -124,7 +127,7 @@ dette déjà décidée.
 | N° | Gravité | Écart (preuve) | Règle | Propriétaire | Traitement proposé |
 | --- | --- | --- | --- | --- | --- |
 | E1 | Haute | Aucune audience à l'intérieur d'un projet : tout membre lit tous les commentaires et observations et en reçoit les extraits en notification (api:routes/collaboration.ts:270 ; api:routes/notifications.ts:121-139). Un client invité en `lecteur` verrait les notes internes. | R3, A02, S4 | Organisations (phase 4), puis COM | Phase 4 : participant à portée « paquet » exclu de toute route projet, y compris notifications et journal ; audiences fines à COM (CR-D3). |
-| E2 | Haute | Export ouvert au `lecteur` (api:lib/owned-project.ts:43 ; e2e:comptes-securite.mjs:343) : tout participant en lecture sort le contenu du projet. | R3, A02 | Organisations (phases 2 et 4) | Export accordé explicitement aux externes (OP-D8 a, déjà décidé) ; défaut du Lecteur interne : CR-D4. |
+| E2 | Haute | Export ouvert au `lecteur` (api:lib/owned-project.ts:43 ; e2e:comptes-securite.mjs:343) : tout participant en lecture sort le contenu du projet. | R3, A02 | Organisations (phases 2 et 4) | Décidé (CR-D4 b modifiée, CR-R2) : aucun nouveau lecteur n'exporte sans un droit accordé par le propriétaire ; les lecteurs existants gardent l'export ; support jamais. Mise en œuvre : PR séparée de correction des écarts E1 à E3. |
 | E3 | Haute | Ajout direct, changement de rôle, retrait d'un membre et transfert de propriété non journalisés (api:routes/members.ts:145, 152, 174, 196). | R5 | Organisations (phase 2) | Journaliser dans `admin.audit_log` dans la même transaction (déjà prévu pour les participations, tâche 5 reportée en phase 2) ; y inclure le transfert de propriété. |
 | E4 | Moyenne | `access_expires_at` présent (api:db/schema.ts:118) mais jamais renseigné ni appliqué (api:lib/invitations.ts:75-85 ; api:lib/owned-project.ts:92-105). | S2, C4-02 | Organisations (phase 3) | Échéance d'accès portée par la participation et vérifiée par `loadProjectAccess`. Aucun écran ne promet aujourd'hui cette échéance (aucune fuite). |
 | E5 | Moyenne | Approbation et diffusion réservées au propriétaire : Approbateur et Diffuseur ne peuvent être distincts ; la base d'autorité n'est pas enregistrée (api:lib/studio-publication-statuts.ts:43-49). | R2, R5, S5 | Studio, avec la bascule d'Organisations phase 2 | Affectations distinctes (OP-D3 c) ; enregistrer l'affectation utilisée dans le journal de publication (CR-D2, CR-D6). |

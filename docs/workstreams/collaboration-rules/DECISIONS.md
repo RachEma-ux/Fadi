@@ -19,13 +19,20 @@ Journal du chantier. Les décisions des chantiers propriétaires restent dans le
     recommandée (« le Lecteur interne garde l'export par défaut »). Rien n'est tranché ici : la réponse à CR-D4 doit dire
     laquelle des deux règles s'applique aux nouveaux lecteurs internes.
 
+- **CR-R2 — Précision sur CR-D4 (2026-10-24).** Réponse « A » du maître d'ouvrage, **relayée par la session
+  d'exploitation** : CR-D4 est tranchée en **(b) modifiée**. Aucun **nouveau** lecteur, interne ou externe, n'exporte
+  sans un droit accordé explicitement par le propriétaire du projet. Les lecteurs existants gardent l'export (aucune
+  régression). Le propriétaire et l'éditeur gardent l'export ; l'accès support ne l'a jamais. Motif : Fadi ne distingue
+  pas encore lecteur interne et lecteur externe. La mise en œuvre relève de la PR séparée de correction des écarts E1,
+  E2 et E3, pas de cette PR. La recommandation (a) n'est pas retenue.
+
 ## Décisions en attente
 
-- **CR-D4** : en attente de précision (conflit avec la correction de E2 demandée, voir CR-R1).
+- Aucune : CR-D1 à CR-D10 sont répondues (CR-R1, CR-R2).
 
 ## Questions soumises (2026-10-24)
 
-Questions et recommandations telles que soumises. Réponses : CR-R1 ci-dessus.
+Questions et recommandations telles que soumises. Réponses : CR-R1 et CR-R2 ci-dessus.
 
 | N° | Question | Options | Recommandation | Justification |
 | --- | --- | --- | --- | --- |
