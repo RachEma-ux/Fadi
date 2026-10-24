@@ -5,8 +5,9 @@ Mis à jour : 2026-10-24 (UTC).
 ## État
 
 **Cadrage fusionné dans `main` (PR #273, `7083285`) ; décisions CR-D1 à CR-D10 répondues (CR-R1, CR-R2).**
-**Écarts graves E1, E2, E3 : corrigés et vérifiés en local, [PR #274](https://github.com/RachEma-ux/Fadi/pull/274) vers
-`main` non fusionnée, aucun déploiement** ([DECISIONS.md](DECISIONS.md) CR-C1).
+**Écarts graves E1, E2, E3, puis E7 et règle d'or des commandes : [PR #274](https://github.com/RachEma-ux/Fadi/pull/274)
+fusionnée le 2026-10-24 par le maître d'ouvrage (`2577e25`, tête `eeb3bc1`, CI verte) ; préproduction : déploiement automatique depuis `main`, passage non constaté depuis une session cloud ;
+production : aucune action** ([DECISIONS.md](DECISIONS.md) CR-C1).
 
 ## Faits vérifiés
 
@@ -37,7 +38,7 @@ Mis à jour : 2026-10-24 (UTC).
 
 ## Points ouverts
 
-- PR #274 : CI verte à obtenir, fusion et déploiement sur décision du maître d'ouvrage.
+- PR #274 fusionnée (`2577e25`) ; contrôle en préproduction (fil réservé, export du lecteur, raccourcis) à consigner.
 - E7 traité par la PR #274 (CR-C1 § 6) ; reste la limite déclarée par CR-D5 : appareil resté hors ligne, fichiers
   déjà téléchargés.
 - Chantiers COM et Temps réel non ouverts.

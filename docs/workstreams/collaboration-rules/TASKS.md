@@ -10,12 +10,13 @@
 
 ## En cours
 
-- [ ] CR-5 — Corriger les écarts graves E1, E2, E3 (CR-C1), puis E7, la règle d'or des commandes et l'alignement sur
-  #265 (CR-C1 § 6) : implémenté et vérifié en local ; PR #274 ouverte, non fusionnée ; CI du HEAD à vérifier (Issue : #272).
 
 - CR-0 — Cadrage fusionné (PR #273) ; CR-D1 à CR-D10 toutes répondues (CR-R1, CR-R2) (Issue : #272).
 
 ## Terminé
+
+- [x] CR-5 — Écarts graves E1, E2, E3 (CR-C1), puis E7, règle d'or des commandes et alignement sur #265 (CR-C1 § 6) :
+  PR #274 fusionnée le 2026-10-24 par le maître d'ouvrage (`2577e25`, tête `eeb3bc1`, CI verte) (Issue : #272).
 
 - [x] CR-INIT — Issue #272, dossier de continuité, matrice (36 énoncés), plan, décisions ouvertes (Issue : #272).
 

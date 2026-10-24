@@ -29,8 +29,8 @@ la section UM-31.
 **UM-30 (2026-10-24) : langue des courriels = langue de l'interface, sinon français ; branche `fix/um-29-langue-courriels`,
 [PR #275](https://github.com/RachEma-ux/Fadi/pull/275) fusionnée le 2026-10-24 à 18:08 UTC (`5767835`) ; contrôle en préproduction : UM-SERVICE.** Voir la section UM-30.
 
-**Écarts graves E1, E2, E3 du cadrage des règles communes (UM-29, 2026-10-24) : implémentés, vérifiés en local ; PR vers
-`main` non fusionnée, aucun déploiement.** Voir la section UM-29.
+**Écarts graves E1, E2, E3 du cadrage des règles communes, puis E7 et règle d'or (UM-29, 2026-10-24) : PR #274 fusionnée le 2026-10-24 par le maître d'ouvrage (`2577e25`, tête `eeb3bc1`, CI verte) ;
+production : aucune action.** Voir la section UM-29.
 
 ## Faits vérifiés
 

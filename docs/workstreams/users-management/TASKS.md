@@ -11,16 +11,12 @@
 
 ## En cours
 
-- Aucune tâche en cours dans ce dossier ; PR ouverte qui le met à jour elle-même : #274 (UM-29).
-
-- [ ] UM-29 — Écarts graves E1 (audience équipe / projet), E2 (export explicite du lecteur, CR-D4), E3 (journal des
-  changements d'accès) du cadrage des règles communes, puis E7 (copie locale, CR-D5) et règle d'or des commandes de
-  collaboration : implémentés, vérifiés en local (STATUS.md) ; PR vers `main`
-  ouverte, **non fusionnée** ; CI du HEAD à vérifier ; fusion et déploiement sur décision du maître d'ouvrage
-  (Issue : #272).
+- Aucune tâche en cours dans ce dossier.
 
 ## Terminé
 
+- [x] UM-29 — Écarts E1, E2, E3 des règles communes, puis E7 et règle d'or des commandes de collaboration : PR #274
+  fusionnée le 2026-10-24 par le maître d'ouvrage (`2577e25`, tête `eeb3bc1`, CI verte) (Issue : #272).
 - [x] UM-30 — Langue des courriels = langue de l'interface, sinon français (`Accept-Language` n'est plus lu) :
   [PR #275](https://github.com/RachEma-ux/Fadi/pull/275) fusionnée le 2026-10-24 à 18:08 UTC (`5767835`) ; contrôle en
   préproduction rattaché à UM-SERVICE (Issue : #253).

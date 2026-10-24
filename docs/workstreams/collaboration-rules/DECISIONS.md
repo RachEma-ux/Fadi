@@ -28,7 +28,7 @@ Journal du chantier. Les décisions des chantiers propriétaires restent dans le
 
 - **CR-C1 — Correction des écarts graves E1, E2, E3 (2026-10-24).** Demande du maître d'ouvrage (« Corrige » les
   trois écarts graves de [PLAN.md](PLAN.md) § 3), relayée par la session d'exploitation du VPS. Une PR vers `main`
-  ([#274](https://github.com/RachEma-ux/Fadi/pull/274)), sans fusion ni déploiement ; migration strictement additive.
+  ([#274](https://github.com/RachEma-ux/Fadi/pull/274), fusionnée par le maître d'ouvrage le 2026-10-24 : `2577e25`) ; migration strictement additive.
   Le code relève de la gestion des comptes (accès projet) et des modules Collaboration et Studio : ce journal consigne
   la correction parce que la PR #273 est fusionnée ; [UM-29](../users-management/DECISIONS.md) y renvoie.
   1. **E3 — journal des changements d'accès.** Ajout d'un compte existant, changement de rôle (partage ou PATCH),
