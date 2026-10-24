@@ -10,11 +10,13 @@ Mis à jour : 2026-10-24 (UTC).
 
 ## Dernier état vérifié
 
-- Matrice, plan et décisions rédigés à partir de `main` = `034dbfb` ; aucune ligne de code modifiée.
+- Matrice, plan et décisions rédigés à partir de `main` = `034dbfb`, branche mise à jour avec `main` = `2cc038a`.
+- Décisions CR-R1 consignées (relayées par la session VPS) ; CR-D4 en attente de précision.
+- Aucune ligne de code modifiée.
 
 ## Prochaine action
 
-- Attendre la revue de la PR et les réponses CR-D1 à CR-D10.
+- Attendre la revue de la PR et la précision sur CR-D4 ; ne pas fusionner sans l'accord écrit du maître d'ouvrage.
 - Après la fusion de la PR #265 et l'accord (CR-D10), ouvrir la PR qui reporte l'annexe A du PLAN dans le PLAN
   d'Organisations.
 

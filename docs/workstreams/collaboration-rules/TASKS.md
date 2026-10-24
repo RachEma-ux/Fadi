@@ -10,7 +10,7 @@
 
 ## En cours
 
-- CR-0 — Cadrage livré sur PR, en attente de revue et des réponses CR-D1 à CR-D10 (Issue : #272).
+- CR-0 — Cadrage livré sur PR, en attente de revue ; CR-D1 à CR-D10 répondues (CR-R1) sauf CR-D4 (Issue : #272).
 
 ## Terminé
 
@@ -18,7 +18,9 @@
 
 ## Bloqué
 
-- CR-1 à CR-4 : attendent les décisions CR-D1 à CR-D10 du maître d'ouvrage et, pour CR-1, la fusion de la PR #265.
+- CR-1 : attend la fusion de la PR #265 (CR-D10 adoptée).
+- CR-2 à CR-4 : attendent l'ouverture des chantiers COM et Temps réel (ordre CR-D9) et les lots d'Organisations.
+- Critère d'export du Lecteur interne (annexe A, phase 2) : attend la précision sur CR-D4.
 
 ## Critères de sortie
 
