@@ -3931,6 +3931,9 @@ fieldset.access-fieldset:disabled {
   width: 18px;
   height: 18px;
 }
+.participants-section .danger-button {
+  color: #fff;
+}
 .participants-correspondances {
   grid-column: 1 / -1;
   border-left: 3px solid #bd873d;

@@ -183,7 +183,7 @@ export function ParticipantsSection({ projectId }: { projectId: string }) {
                           {p.roles.map((r) => (
                             <li key={r.id} data-role={`${r.role}:${r.scopeType}`}>
                               {ROLE_LABEL[r.role]}
-                              <small className="h7-muted">{` · ${SCOPE_LABEL[r.scopeType]}${r.scopeId ? ` ${r.scopeId}` : ""} · ${r.origin === "acces" ? "du partage" : "attribué"}`}</small>
+                              <small className="h7-muted">{` · ${SCOPE_LABEL[r.scopeType]}${r.scopeId ? ` : ${r.scopeId}` : ""} · ${r.origin === "acces" ? "du partage" : "attribué"}`}</small>
                             </li>
                           ))}
                         </ul>
@@ -203,9 +203,9 @@ export function ParticipantsSection({ projectId }: { projectId: string }) {
                     {(manage || v.you.canErase) && (
                       <td className="participants-actions">
                         {manage && p.status !== "terminee" && <Commande commande="modifier-participation" label={`Modifier la participation de ${nomTexte(p)}`} onClick={() => setMode({ kind: "modifier", id: p.id })} />}
-                        {manage && p.status !== "terminee" && <Commande commande="attribuer-role" label={`Rôles de ${nomTexte(p)}`} onClick={() => setMode({ kind: "roles", id: p.id })} />}
-                        {manage && !p.isOwner && p.status === "active" && <Commande commande="suspendre-participation" label={`Suspendre ${nomTexte(p)}`} onClick={() => setDialog({ kind: "statut", p, change: "suspendre" })} />}
-                        {manage && !p.isOwner && p.status === "suspendue" && <Commande commande="reactiver-participation" label={`Réactiver ${nomTexte(p)}`} onClick={() => setDialog({ kind: "statut", p, change: "reactiver" })} />}
+                        {manage && p.status !== "terminee" && <Commande commande="attribuer-role" label={`Rôles du participant ${nomTexte(p)}`} onClick={() => setMode({ kind: "roles", id: p.id })} />}
+                        {manage && !p.isOwner && p.status === "active" && <Commande commande="suspendre-participation" label={`Suspendre la participation de ${nomTexte(p)}`} onClick={() => setDialog({ kind: "statut", p, change: "suspendre" })} />}
+                        {manage && !p.isOwner && p.status === "suspendue" && <Commande commande="reactiver-participation" label={`Réactiver la participation de ${nomTexte(p)}`} onClick={() => setDialog({ kind: "statut", p, change: "reactiver" })} />}
                         {manage && !p.isOwner && p.status !== "terminee" && <Commande commande="terminer-participation" label={`Terminer la participation de ${nomTexte(p)}`} onClick={() => setDialog({ kind: "statut", p, change: "terminer" })} />}
                         {manage && p.status === "terminee" && !p.person?.erased && <Commande commande="retour-participant" disabled={busy} label={`Nouvelle participation pour ${nomTexte(p)}`} onClick={() => returning.mutate(p.id)} />}
                         {v.you.canErase && p.person && !p.person.account && !p.person.erased && <Commande commande="effacer-contact" label={`Effacer le contact ${nomTexte(p)}`} onClick={() => setDialog({ kind: "effacer", p })} />}
@@ -250,7 +250,7 @@ export function ParticipantsSection({ projectId }: { projectId: string }) {
                               </li>
                             ))}
                           </ul>
-                        ) : <span className="h7-muted">Personne</span>}
+                        ) : <span className="h7-muted">Aucun participant</span>}
                       </td>
                     </tr>
                   );
@@ -460,8 +460,8 @@ function RolesForm({ projectId, p, onClose, onDone, onError }: { projectId: stri
     onError: (err) => onError(apiMessage(err, "Le rôle n’a pas pu être retiré.")),
   });
   return (
-    <form className="h7-form participants-form" data-formulaire-roles={p.id} aria-label={`Rôles de ${nomTexte(p)}`} onSubmit={(e) => { e.preventDefault(); assign.mutate(); }}>
-      <h3 className="wide">{`Rôles de ${nomTexte(p)}`}</h3>
+    <form className="h7-form participants-form" data-formulaire-roles={p.id} aria-label={`Rôles du participant ${nomTexte(p)}`} onSubmit={(e) => { e.preventDefault(); assign.mutate(); }}>
+      <h3 className="wide">{`Rôles du participant ${nomTexte(p)}`}</h3>
       <ul className="participants-roles wide">
         {p.roles.length === 0 && <li className="h7-muted">Aucun rôle : aucun accès au projet.</li>}
         {p.roles.map((r) => (
@@ -472,7 +472,7 @@ function RolesForm({ projectId, p, onClose, onDone, onError }: { projectId: stri
               if (r.origin === "attribution" && !remove.isPending && declenche(e, "retirer-role")) { e.preventDefault(); e.stopPropagation(); remove.mutate(r.id); }
             }}
           >
-            {`${ROLE_LABEL[r.role]} · ${SCOPE_LABEL[r.scopeType]}${r.scopeId ? ` ${r.scopeId}` : ""} · ${r.origin === "acces" ? "du partage" : "attribué"}`}{" "}
+            {`${ROLE_LABEL[r.role]} · ${SCOPE_LABEL[r.scopeType]}${r.scopeId ? ` : ${r.scopeId}` : ""} · ${r.origin === "acces" ? "du partage" : "attribué"}`}{" "}
             {r.origin === "attribution"
               ? <Commande commande="retirer-role" disabled={remove.isPending} label={`Retirer le rôle ${ROLE_LABEL[r.role]}`} onClick={() => remove.mutate(r.id)} />
               : <small className="h7-muted">se change dans « Membres du projet »</small>}
@@ -522,11 +522,11 @@ function StatusDialog({ projectId, p, change, onClose, onDone }: { projectId: st
     if (i.accessWithdrawn) lines.push(<li key="a">{`Accès retiré dès la requête suivante (aujourd’hui : ${i.access ? ACCESS_LABEL[i.access.role] : "aucun"}).`}</li>);
     else if (i.accessRestored) lines.push(<li key="a">L’accès des rôles toujours portés revient dès la requête suivante.</li>);
     else lines.push(<li key="a">Aucun accès en cours.</li>);
-    lines.push(<li key="r">{`Rôles par portée : ${i.roles.length ? i.roles.map((r) => `${ROLE_LABEL[r.role]} (${SCOPE_LABEL[r.scopeType]})`).join(", ") : "aucun"}.`}</li>);
+    lines.push(<li key="r">{`Rôles par portée : ${i.roles.length ? i.roles.map((r) => `${ROLE_LABEL[r.role]} — ${SCOPE_LABEL[r.scopeType]}`).join(" · ") : "aucun"}.`}</li>);
     lines.push(<li key="i">{change === "terminer" ? `Invitations en attente annulées : ${i.invitationsCancelled}.` : `Invitations en attente : ${i.pendingInvitations}.`}</li>);
     lines.push(<li key="w">{`Travaux affectés à réaffecter : ${i.openObservations} observation(s) Studio, ${i.openTasks} tâche(s).`}</li>);
     if (i.editingLockReleased) lines.push(<li key="l">La réservation d’édition de cette personne est libérée.</li>);
-    if (i.responsibilities.length) lines.push(<li key="s">{`Responsabilités d’équipe : ${i.responsibilities.map((r) => RESP_LABEL[r]).join(", ")}.`}</li>);
+    if (i.responsibilities.length) lines.push(<li key="s">{`Responsabilités d’équipe : ${i.responsibilities.map((r) => RESP_LABEL[r]).join(" · ")}.`}</li>);
     if (change === "terminer") lines.push(<li key="h">La participation reste dans l’historique ; un retour ouvrira une nouvelle participation, sans restaurer les anciens droits.</li>);
   }
   return (

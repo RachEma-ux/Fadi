@@ -86,12 +86,12 @@ export const COMMANDES_COLLABORATION: Readonly<Record<CommandeCollaboration, Def
   },
   // Suspendre : pause.
   "suspendre-participation": {
-    libelle: "Suspendre", barre: "participant", raccourci: altMaj("9"),
+    libelle: "Suspendre la participation", barre: "participant", raccourci: altMaj("9"),
     icone: ["M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z", "M10 8v8", "M14 8v8"],
   },
   // Réactiver : lecture.
   "reactiver-participation": {
-    libelle: "Réactiver", barre: "participant", raccourci: altMaj("9"),
+    libelle: "Réactiver la participation", barre: "participant", raccourci: altMaj("9"),
     icone: ["M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z", "M10 8l6 4-6 4z"],
   },
   // Terminer la participation : porte de sortie.
