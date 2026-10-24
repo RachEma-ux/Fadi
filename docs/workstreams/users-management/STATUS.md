@@ -26,13 +26,14 @@ déploiement).** Corbeille des comptes et « Anonymiser maintenant » dans `/adm
 
 ### Langue des courriels (UM-30, 2026-10-24)
 
-Branche `fix/um-29-langue-courriels`, depuis `main` à `7083285`. Vérifié dans la session (sans base de test) :
+Branche `fix/um-29-langue-courriels`, depuis `main` à `7083285`. Vérifié dans la session :
 
 - `npm run typecheck` : vert. `npm run build` : vert.
 - `npm test` : paquets et web verts ; API : tests purs verts, dont `lib/mail-locale.test.ts` (3 tests) ; les 12 suites
   DB-3 refusées par la garde **seule** (`TARGET_REQUIRED`), comme attendu sans la clé `fadi-ci-db3`.
-- `comptes-admin.mjs` (section 5 bis, Mailpit) : **non exécutée dans la session** (ni PostGIS ni Mailpit lancés) ;
-  la preuve est la CI de la PR (étape « Recette Gestion des comptes dans le navigateur »).
+- `comptes-admin.mjs` sur `1bdc0be`, PostGIS 16 + Mailpit v1.20.4 en local (même configuration que la CI, base neuve) :
+  **verte**, dont la section 5 bis — choix par défaut « Français », navigateur `en-US` et interface en français → sujet
+  « Invitation à rejoindre Fadi », choix « English » → « Invitation to join Fadi », axe-core sans violation.
 
 ### Corbeille et « Anonymiser maintenant » (UM-27, 2026-10-24)
 
