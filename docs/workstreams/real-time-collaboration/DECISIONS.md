@@ -8,16 +8,34 @@
   de RTC-1, **ni** dérogation à CR-D9 pour l'implémentation : RTC-1 attend la porte des prérequis (`PLAN.md` § 4) et une
   décision explicite.
 
-## Questions ouvertes (au maître d'ouvrage)
+- **RT-D2 — Réponses à RT-Q1 à RT-Q7 (2026-10-24).** Le maître d'ouvrage indique que ces réponses « ont déjà été
+  fournies » : ce sont les positions du tableau « Decisions » (§ 9) du plan d'implémentation qu'il a remis le
+  2026-10-24 (base `main@2577e25`), complétées par ses § 4 et § 5. Elles sont reprises telles quelles ; là où elles
+  diffèrent de la recommandation de l'évaluation, **la position du maître d'ouvrage prévaut**.
 
-Recommandations du chef de projet, **non adoptées** tant qu'elles ne sont pas répondues.
+  | N° | Question | Réponse retenue | Source (plan remis) | Conséquence |
+  | --- | --- | --- | --- | --- |
+  | RT-Q1 | Périmètre de la vue partagée | **Studio et Documents** (adaptateurs) ; l'Atelier n'entre pas dans la première version | § 9 « Packaging », § 5 « Boundaries » | L'écart P2 est clos par décision : l'Atelier reste hors première version, son journal à curseur reste une option pour une version ultérieure, à décider à part. |
+  | RT-Q2 | Canal serveur → client | Le canal du Temps réel sert **les sessions** ; COM garde conversations, audiences, notifications et leur remise ; le Temps réel s'y **relie** sans messagerie locale | § 4 « Placement », § 5 « Boundaries » (« COM … Link session notice/conversation ; no local chat subsystem ») | Aucun transport commun imposé à COM ; la mise en commun du canal n'est pas engagée. |
+  | RT-Q3 | Transport | **WebSocket** pour le direct et l'éphémère ; HTTP et commandes existantes pour les écritures durables ; bibliothèque choisie en RTC-0 après un essai de compatibilité | § 9 « Transport », § 5 « Transport and persistence » | Essai RTC-0.3. |
+  | RT-Q4 | Capacité | **Une instance** au départ, acceptée seulement après l'essai de charge annoncé ; plusieurs instances = porte distincte ; budgets du plan = cibles de départ | § 9 « Capacity », § 7 « Proposed measurable budgets » | Budgets à mesurer (RTC-0.4, RTC-5). |
+  | RT-Q5 | Conservation | Présence et rejeu **de courte durée** ; annotations selon la politique de leur module propriétaire ; besoin et durée de l'assiduité **à définir explicitement** avant la mise en service | § 9 « Retention » | Les durées chiffrées restent « non définies » (rien n'est inventé) ; à fixer avant RTC-5. |
+  | RT-Q6 | Reprise de l'hôte | **Expiration visible, remplacement explicite autorisé**, aucune promotion automatique vers une autorité métier | § 9 « Host continuity » | RT-R2, RT-R6. |
+  | RT-Q7 | Coédition | **Reportée** ; ni « dernier qui écrit gagne » ni CRDT géométrique sans preuve des dépendances et de l'annulation | § 9 « Co-authoring » | RTC-6, ADR distincte. |
 
-| N° | Question | Options | Recommandation | Motif |
-| --- | --- | --- | --- | --- |
-| RT-Q1 | Périmètre du premier lot de vue partagée | (a) Studio seul ; (b) Studio puis Atelier dans RTC-2 ; (c) Studio + Atelier dès RTC-2 | (b) | Le concept nomme Studio propriétaire des révisions ; l'Atelier a ses propres révisions, son journal à curseur (`GET /projects/:id/atelier/journal?apres=n`) et ses verrous fins, et COM le cite comme contexte (`revision-atelier`) : l'ignorer créerait un angle mort (P2). |
-| RT-Q2 | Canal serveur → client | (a) un canal unique, propriété du Temps réel, que COM utilise pour signaler ses nouveautés ; (b) un canal propre à chaque module | (a) | Un seul upgrade à sécuriser, une seule revalidation ; les contenus et audiences restent à COM (P5). |
-| RT-Q3 | Transport | (a) WebSocket ; (b) SSE + HTTP | (a), après essai en RTC-0 | Pointeurs et caméra sont bidirectionnels et fréquents ; SSE resterait possible pour les seules notifications. Bibliothèque choisie après essai (Express 5, Caddy, `basic_auth` de préproduction). |
-| RT-Q4 | Budgets de capacité | cibles § 7 du plan | à mesurer sur P.118 et l'appareil Android de recette | Aucune mesure Fadi n'existe ; ne pas les annoncer comme capacités (P9). |
-| RT-Q5 | Conservation | présence, présence nominative (assiduité), rejeu, audit | présence éphémère ; rejeu court ; annotations selon leur propriétaire ; assiduité seulement si justifiée | Décision du concept laissée ouverte ; ne rien inventer. |
-| RT-Q6 | Reprise de l'hôte | (a) expiration visible + remplacement explicite autorisé ; (b) promotion automatique | (a) | RT-R2, RT-R6 : aucune promotion vers une autorité métier. |
-| RT-Q7 | Coédition (RTC-6) | ADR distincte après première version acceptée | reportée | Concept v1.2 : seulement après les tests de transaction, géométrie, annulation, conflit et reprise. |
+## Points restant ouverts (non bloquants pour RTC-0)
+
+- Durées chiffrées de conservation (présence, rejeu, assiduité) : à fixer avant RTC-5 (RT-Q5).
+- Profil de référence des budgets (modèle, appareil, réseau) : RTC-0.4.
+- L'Atelier dans une version ultérieure : décision à part, après la première version.
+
+## Travail antérieur relié
+
+- Branche `docs/collaboration-temps-reel-plan` (2026-10-22, non fusionnée, sans PR) :
+  `docs/workstreams/collaboration-temps-reel/PLAN-CLAUDE-CODE.md`, premier plan pour Claude Code (base `main@9d466f8`).
+  Ce chantier le **remplace** (un seul chantier Temps réel) ; ses apports encore valables sont repris dans `PLAN.md`
+  § 10 : canal limité aux signaux pour les contenus durables, révocation qui ferme immédiatement la connexion,
+  annulation par auteur avec refus en cas de dépendance, statut de Collaboration dans `module-registry.ts` (REP-06), liste
+  des relectures périodiques à alléger, service worker hors du canal. Ses décisions D1 à D4 y étaient « À définir » ;
+  D1 (transport) et D2 (instance) sont couvertes par RT-D2 ; D3 (seuils) par RT-Q4 ; D4 (annulation par auteur) reste
+  à placer (`PLAN.md` § 10).

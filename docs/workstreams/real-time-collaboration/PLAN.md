@@ -1,7 +1,7 @@
 # Temps réel (Real-time Collaboration) — plan d'implémentation
 
 > Statut : **proposé, en cadrage (RTC-0)** ; Issue [#283](https://github.com/RachEma-ux/Fadi/issues/283) ; ouverture
-> RTC-0 décidée (RT-D1). Ce plan reprend le plan fourni le 2026-10-24 (base `main@2577e25`) **amendé** par l'évaluation
+> RTC-0 décidée (RT-D1) ; questions RT-Q1 à RT-Q7 répondues (RT-D2, `DECISIONS.md`). Ce plan reprend le plan fourni le 2026-10-24 (base `main@2577e25`) **amendé** par l'évaluation
 > [`EVALUATION-PLAN-TEMPS-REEL-2026-10-24.md`](../../continuity/EVALUATION-PLAN-TEMPS-REEL-2026-10-24.md) (écarts P1
 > à P10, repérés `[Pn]` ci-dessous). Rien n'est implémenté ; aucune capacité n'est mesurée ; les budgets sont des cibles.
 
@@ -38,8 +38,8 @@
 
 ### Première version
 
-- Créer, rejoindre, quitter, clore une session sur une **portée typée** : variante / révision Studio, révision Atelier
-  (RT-Q1), ou paquet de revue figé autorisé.
+- Créer, rejoindre, quitter, clore une session sur une **portée typée** : variante / révision Studio, version de document,
+  ou paquet de revue figé autorisé (RT-D2 : Studio et Documents ; l'Atelier n'entre pas dans la première version).
 - Participants permis, état de connexion, présentateur ; suivre / cesser de suivre, explicitement.
 - Caméra, mode de vue, niveau, pointeur, sélection — seulement si le destinataire peut voir l'élément référencé.
 - Annotation enregistrée délibérément : point de vue, repère et unités, révision source, références d'objets, auteur,
@@ -56,8 +56,8 @@ diffusion, adoption de référence ou résolution de conflit automatique. Sandbo
 
 ### Placement
 
-Projet > Collaboration > **Sessions en direct** (libellé source français) `[P8]`, entrées contextuelles depuis Studio,
-l'Atelier (si RT-Q1 (b) ou (c)) et Documents. Bandeau de session compact et panneau repliable participants / annotations ;
+Projet > Collaboration > **Sessions en direct** (libellé source français) `[P8]`, entrées contextuelles depuis Studio et
+Documents (RT-D2). Bandeau de session compact et panneau repliable participants / annotations ;
 pas de nouvelle coque pleine largeur. Toujours visibles : portée, révision ou paquet affiché, audience, suivi / navigation
 libre, état de connexion. Présence non signalée par la seule couleur ; annonces d'accessibilité non intrusives.
 
@@ -68,16 +68,19 @@ libre, état de connexion. Présence non signalée par la seule couleur ; annonc
 | Propriétaire | Possède | Intégration |
 | --- | --- | --- |
 | Users Management / Organisations | identité, invitations, affectations, échéance, révocation | adaptateur d'autorisation unique à l'entrée, à la diffusion, à l'opération, à la reconnexion |
-| COM | conversations, audiences de messages, notifications | lien session ↔ conversation ; aucune messagerie locale ; signalement des nouveautés COM par le canal unique si RT-Q2 (a) `[P5]` |
+| COM | conversations, audiences de messages, notifications et leur remise | lien session ↔ conversation ; aucune messagerie locale ; le canal du Temps réel ne transporte pas COM (RT-D2) `[P5]` |
 | Temps réel | cycle de vie des sessions, présence, présentateur, vue partagée éphémère, **canal** | orchestration mince |
 | Studio | objets, commandes, révisions, observations, décisions formelles | API existantes, autorité |
-| Atelier | modèle typé, commandes, journal, verrous, versions | journal à curseur comme source d'événements durables `[P2]` |
+| Atelier | modèle typé, commandes, journal, verrous, versions | **hors première version** (RT-D2) ; son journal à curseur reste l'option d'une version ultérieure, à décider à part `[P2]` |
 | Documents / revue | fichiers versionnés, paquets de revue | versions exactes autorisées seulement |
 | Parcours | contexte d'étape | liens seulement ; 21 étapes préservées |
 
 ### Transport et livraison
 
-- WebSocket authentifié sur le serveur HTTP Express existant (RT-Q3), bibliothèque choisie après essai RTC-0.
+- WebSocket authentifié sur le serveur HTTP Express existant (RT-D2) ; bibliothèque proposée : `ws` 8.x (essai RTC-0.3,
+  [`ESSAI-TRANSPORT.md`](ESSAI-TRANSPORT.md)). **Gestionnaire d'erreur sur chaque connexion** (sans lui, un message trop
+  gros arrête tout le processus) ; cookie de session lu par la fonction de l'API (`__Host-fadi_sid` / `fadi_sid`), jamais
+  par un nom codé en dur.
 - **Garde de l'upgrade** `[P7]` : origine exacte (`WEB_ORIGIN`), cookie de session valide, compte actif, refus par défaut ;
   revalidation de la session de compte à intervalle borné et à chaque opération protégée ; `connect-src` si une CSP est
   introduite ; la garde CSRF HTTP n'est pas supposée couvrir l'upgrade.
@@ -87,9 +90,9 @@ libre, état de connexion. Présence non signalée par la seule couleur ; annonc
   - **durable** (cycle de vie de session, changements métier acceptés) : enregistrement métier et événement dans la même
     transaction, diffusion après validation, identité stable, consommateurs sans doublon. Un accusé de socket ne prouve
     aucune sauvegarde.
-- Sources d'événements durables : Atelier → journal par révision existant `[P2]` ; Studio → **pont explicite** à
+- Sources d'événements durables : Atelier → hors première version (RT-D2) ; Studio → **pont explicite** à
   construire : la liste des révisions d'une variante et leurs changements (`…/variants/:id/revisions`,
-  `…/revisions/:id/changes`) existent, mais aucun flux d'événements à curseur couvrant le projet n'a été constaté ; COM → ses propres tables, signalées par le canal (RT-Q2).
+  `…/revisions/:id/changes`) existent, mais aucun flux d'événements à curseur couvrant le projet n'a été constaté ; COM → ses propres tables et sa propre remise (RT-D2).
 - Projection **par destinataire** : le serveur valide un message typé, résout la portée faisant autorité, construit ce que
   chaque destinataire peut recevoir ; sinon état « contenu non disponible » sans métadonnée cachée (RT-R7). Réutiliser la
   résolution de référence par lecteur de COM (COM-D8) plutôt qu'une seconde règle `[P5]`.
@@ -100,7 +103,7 @@ libre, état de connexion. Présence non signalée par la seule couleur ; annonc
 
 | Enregistrement | Contenu minimal | Durée |
 | --- | --- | --- |
-| Session | id, portée discriminée (`studio-revision` · `atelier-revision` · `paquet-revue`), ressource ou paquet épinglé, hôte, statut, dates, référence de politique d'audience | durable ; conservation RT-Q5 |
+| Session | id, portée discriminée (`studio-revision` · `document-version` · `paquet-revue`), ressource ou paquet épinglé, hôte, statut, dates, référence de politique d'audience | durable ; conservation RT-Q5 |
 | Participant de session | session, compte, rôle hôte / présentateur / participant, entrée / sortie | assiduité si justifiée ; **jamais** un droit |
 | Présence | connexion, vue permise courante, battement, échéance | éphémère |
 | Annotation | identité d'observation / commentaire existante + point de vue, ancre objet / page, repère et unités, révision source, référence de session | celle du propriétaire, indépendante de la session |
@@ -117,8 +120,8 @@ durable : clé d'idempotence par acteur et ressource, réutilisation avec un con
 
 ### Réservations `[P6]`
 
-RT-R6 part de l'existant : `atelier_locks` (titulaire, clé de portée, motif, échéance) et la réservation projet
-(`routes/lock.ts`). Ajouts seulement : affichage en session, reprise autorisée à l'expiration ou au départ (avec E6,
+RT-R6 part de l'existant : la réservation projet (`routes/lock.ts`) pour la première version, et `atelier_locks`
+(titulaire, clé de portée, motif, échéance) lorsque l'Atelier entrera dans le périmètre. Ajouts seulement : affichage en session, reprise autorisée à l'expiration ou au départ (avec E6,
 PR #282), auteur historique jamais réécrit. Aucun nouveau système de verrous.
 
 ### Révocation et reprise
@@ -138,10 +141,10 @@ PR #282), auteur historique jamais réécrit. Aucun nouveau système de verrous.
 
 | Lot | Travail et livrables | Dépendances | Preuve de sortie |
 | --- | --- | --- | --- |
-| **RTC-0 — contrats** | Ce dossier ; traçabilité RT-R1…R7 (§ 5) ; décisions RT-Q1…Q7 ; essai de transport (Express 5 + Caddy + `basic_auth`) **hors `main`** ; budgets de référence | RT-D1 | Plan revu, chaque critère relié à un lot et un test ; questions répondues |
+| **RTC-0 — contrats** | Ce dossier ; traçabilité RT-R1…R7 (§ 5) ; décisions RT-D1, RT-D2 ; essai de transport (Express 5 + Caddy + `basic_auth`) **hors `main`** ; budgets de référence | RT-D1 | Plan revu, chaque critère relié à un lot et un test ; questions répondues |
 | **Porte des prérequis** `[P1]` | Fusion dans `main` : Organisations phases 2–4 (OP-3, #262), PR #282 (E5, E6), socle COM (#280) ; vagues 1–3 de la recette commune jouables | chantiers concernés | S1–S5 et S8 verts ; S3, S4 sur notifications ; invitation → revue figée → correction → approbation autorisée → diffusion séparée démontrée |
-| RTC-1 — socle de session | Tables de session (migration additive), cycle HTTP, garde de l'upgrade, battement, limites, clôture, reprise d'hôte, **drapeau serveur désactivé par défaut** | RTC-0 + porte | Deux comptes autorisés rejoignent ; tiers et support refusés selon le cas ; échéance et redémarrage sans présence fantôme |
-| RTC-2 — vue partagée | Adaptateur Studio ; adaptateur Atelier selon RT-Q1 ; présentateur / suivi ; caméra, pointeur, sélection selon les repères ; changement de révision explicite | RTC-1 | Deux clients partagent une vue permise ; aucune révision créée par la navigation ; le suivi n'écrase jamais le contexte d'édition |
+| RTC-1 — socle de session | Tables de session (migration additive), cycle HTTP, garde de l'upgrade, battement, limites, clôture, reprise d'hôte, **drapeau serveur désactivé par défaut** | RTC-0 + porte | Deux comptes autorisés rejoignent ; tiers et support refusés selon le cas ; échéance et redémarrage sans présence fantôme ; un compte retiré est déconnecté sans attendre |
+| RTC-2 — vue partagée | Adaptateurs Studio et Documents (RT-D2) ; présentateur / suivi ; caméra, pointeur, sélection selon les repères ; changement de révision explicite | RTC-1 | Deux clients partagent une vue permise ; aucune révision créée par la navigation ; le suivi n'écrase jamais le contexte d'édition |
 | RTC-3 — annotations | Extension des observations et points de vue ; liens tâches ; COM ; pont d'événements Studio après validation | RTC-2, COM fusionné | L'annotation survit à la clôture ; source exacte gardée ; rejeu = un seul enregistrement ; note interne jamais reçue par un invité restreint |
 | RTC-4 — revue externe en direct | Session sur paquet figé, avis d'invitation ciblé, actions permises, continuité de revue, révocation | RTC-3 + Organisations phase 4 | Client reste sur R03 pendant R04 ; aucune métadonnée cachée ; aucune route projet ; aucun export implicite ; hôte sans approbation |
 | RTC-5 — robustesse et mise en service | Rejeu / instantané, bornes de files, proxy et redémarrage, supervision, navigateurs et appareils, retour arrière, recette de préproduction | RTC-1–4 | Tests § 6 des lots RTC-1 à RTC-5 verts (TR-T01 à TR-T10, TR-T15 à TR-T17 ; TR-T11 à TR-T14 restent aux lots RTC-6 et RTC-7) ; budgets mesurés ; retour arrière répété ; préproduction validée par le maître d'ouvrage |
@@ -223,8 +226,8 @@ coordonnées personnelles dans les journaux.
 
 ## 8. Estimation (indicative, après prérequis)
 
-RTC-0 3–5 j·h ; RTC-1 5–8 ; RTC-2 5–8 (+3–5 pour l'adaptateur Atelier si RT-Q1 (b)/(c)) ; RTC-3 5–8 (+2–5 pour
-l'intégration COM) ; RTC-4 5–8 ; RTC-5 6–10. **Total 34–57 j·h** `[P10]`, hors prérequis et RTC-6/7. À réestimer après
+RTC-0 3–5 j·h ; RTC-1 5–8 ; RTC-2 5–8 (adaptateurs Studio et Documents) ; RTC-3 5–8 (+2–5 pour l'intégration COM) ;
+RTC-4 5–8 ; RTC-5 6–10. **Total 31–52 j·h** `[P10]`, hors prérequis et RTC-6/7. À réestimer après
 l'essai de transport et l'intégration de la revue figée.
 
 ## 9. Écarts de l'évaluation → traitement
@@ -232,12 +235,26 @@ l'essai de transport et l'intégration de la revue figée.
 | Écart | Traitement dans ce plan |
 | --- | --- |
 | P1 séquence obsolète | § 4 « Porte des prérequis » ; RT-D1 |
-| P2 Atelier absent | § 1, § 3 (frontières, sources), RT-Q1 |
+| P2 Atelier absent | Tranché par RT-D2 : hors première version, déclaré explicitement (§ 2, § 3) |
 | P3 RT-R1…R7 non repris | § 5 ; tests renommés `TR-Txx` |
 | P4 PR #282 ignorée | § 1, § 3 « Réservations », TR-T06, TR-T10 |
-| P5 frontière COM | § 3, RT-Q2 |
+| P5 frontière COM | § 3, RT-D2 |
 | P6 verrous existants | § 3 « Réservations » |
 | P7 sécurité de l'upgrade | § 3 « Transport », TR-T17 |
 | P8 libellés et raccourcis | § 0, § 2 « Placement » |
-| P9 budgets sans référence | § 6, RT-Q4 |
+| P9 budgets sans référence | § 6, RT-D2, RTC-0.4 |
 | P10 estimation | § 8 |
+
+## 10. Reprise du plan du 22 octobre (`docs/collaboration-temps-reel-plan`)
+
+Ce plan remplace `collaboration-temps-reel/PLAN-CLAUDE-CODE.md` (branche non fusionnée). Ses apports encore valables :
+
+| Apport | Vérification sur `main@2577e25` | Place ici |
+| --- | --- | --- |
+| Révocation : un retrait de droit ou une fin de session ferme **immédiatement** la connexion, sans attendre une boîte d'envoi | — (rien n'existe) | RTC-1, TR-T07 |
+| Contenus durables : le canal annonce « révision disponible » (identifiants, révision) ; le contenu se relit par HTTP avec le droit courant | — | § 3 « Transport », classe durable |
+| Annulation par auteur : `cibleAnnulation` prend aujourd'hui la **dernière commande du projet**, quel qu'en soit l'auteur (`routes/atelier-commands.ts:470`) ; en multi-utilisateur, A peut annuler le travail de B | constaté | Atelier hors première version (RT-D2) : à corriger avant que l'Atelier entre dans une session ; décision D4 de l'ancien plan **encore ouverte** (correctif séparé ou lot RTC-6) |
+| Statut de Collaboration dans `apps/web/src/modules/module-registry.ts` : « partage multi-utilisateur et droits non disponibles (Lot 4) » est périmé (membres, rôles, audiences existent) — REP-06 | constaté | tâche RTC-0.6 (texte d'interface, traduction `en.json`) |
+| Relectures périodiques à alléger quand le canal est connecté (projet, cloche de notifications, avis de révision Studio), gardées en secours | 60 s constatés | RTC-2 |
+| Le service worker n'intercepte pas l'adresse du canal | — | RTC-1 |
+| Test qui inspecte les charges émises : aucun contenu protégé dans un message | — | TR-T02 |
