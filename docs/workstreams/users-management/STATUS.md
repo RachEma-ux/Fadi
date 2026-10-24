@@ -19,7 +19,21 @@ PR #255 n'est attendue. Reste au maître d'ouvrage : le déploiement en producti
 **Amendement de D-5 (UM-27, 2026-10-24) : implémenté, vérifié en local et en CI (`4aa7d0b`), [PR #270](https://github.com/RachEma-ux/Fadi/pull/270) vers `main` (non fusionnée, aucun
 déploiement).** Corbeille des comptes et « Anonymiser maintenant » dans `/admin/utilisateurs` — voir la section UM-27.
 
+**UM-30 (2026-10-24) : langue des courriels = langue de l'interface, sinon français ; branche `fix/um-29-langue-courriels`,
+[PR #275](https://github.com/RachEma-ux/Fadi/pull/275) vers `main` (non fusionnée, aucun déploiement).** Voir la section UM-30.
+
 ## Faits vérifiés
+
+### Langue des courriels (UM-30, 2026-10-24)
+
+Branche `fix/um-29-langue-courriels`, depuis `main` à `7083285`. Vérifié dans la session :
+
+- `npm run typecheck` : vert. `npm run build` : vert.
+- `npm test` : paquets et web verts ; API : tests purs verts, dont `lib/mail-locale.test.ts` (3 tests) ; les 12 suites
+  DB-3 refusées par la garde **seule** (`TARGET_REQUIRED`), comme attendu sans la clé `fadi-ci-db3`.
+- `comptes-admin.mjs` sur `1bdc0be`, PostGIS 16 + Mailpit v1.20.4 en local (même configuration que la CI, base neuve) :
+  **verte**, dont la section 5 bis — choix par défaut « Français », navigateur `en-US` et interface en français → sujet
+  « Invitation à rejoindre Fadi », choix « English » → « Invitation to join Fadi », axe-core sans violation.
 
 ### Corbeille et « Anonymiser maintenant » (UM-27, 2026-10-24)
 

@@ -10,7 +10,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { Link } from "react-router-dom";
 import { accountApi, ApiError, ROLE_LABEL, type AdminStatus, type AdminTrashItem, type AdminUser, type AdminUsersFilters } from "../../lib/api";
 import { useAuth } from "../../lib/auth-context";
-import { LOCALE } from "../../lib/i18n";
+import { LANGUE, LANGUES, LOCALE, type Langue } from "../../lib/i18n";
 import { useOnline } from "../../components/SyncIndicator";
 import { apiMessage, ConfirmDialog, CopyLink } from "../../components/comptes/ComptesUI";
 import { IconeAdmin } from "../../components/comptes/IconeAdmin";
@@ -56,10 +56,12 @@ function InviteForm() {
   const online = useOnline();
   const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
+  // UM-30 : par défaut la langue de l'interface de l'administrateur, jamais celle de son navigateur.
+  const [locale, setLocale] = useState<Langue>(LANGUE);
   const [link, setLink] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const m = useMutation({
-    mutationFn: () => accountApi.adminInvite(email.trim()),
+    mutationFn: () => accountApi.adminInvite(email.trim(), locale),
     onSuccess: (r) => {
       setLink(r.mail.link ?? null);
       setMsg({ ok: true, text: r.mail.queued ? `Invitation ${r.resent ? "renvoyée" : "envoyée"} à ${r.invitation.email}.` : `Invitation ${r.resent ? "renouvelée" : "créée"} pour ${r.invitation.email}.` });
@@ -73,6 +75,9 @@ function InviteForm() {
       <h2 id="admin-invite">Inviter une personne</h2>
       <form className="admin-filters" onSubmit={(e: FormEvent) => { e.preventDefault(); if (email.trim()) m.mutate(); }}>
         <label>Adresse e-mail<input type="email" name="inviteEmail" required maxLength={254} value={email} onChange={(e) => setEmail(e.target.value)} /></label>
+        <label>Langue du courriel<select name="inviteLocale" translate="no" value={locale} onChange={(e) => setLocale(e.target.value === "en" ? "en" : "fr")}>
+          {LANGUES.map((l) => <option key={l.code} value={l.code} lang={l.code}>{l.nom}</option>)}
+        </select></label>
         <button type="submit" className="button-primary" disabled={!online || m.isPending || !email.trim()}>Envoyer l’invitation</button>
       </form>
       <small>L’invitation est valable 7 jours ; aucun compte n’est créé tant que la personne ne l’a pas acceptée.</small>
