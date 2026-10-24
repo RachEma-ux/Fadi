@@ -2993,8 +2993,9 @@ describe("règles communes — E5 Approbateur et Diffuseur, E6 fin de participat
     await pool.query("INSERT INTO atelier_locks (project_id, cle, author_id, expires_at) VALUES ($1, 'objet-1', $2, now() + interval '20 minutes'), ($1, 'niveau:n0', $2, now() - interval '1 minute')", [pid, editor.id]);
     const obs = await owner.a.post(`${vp}/observations`).send({ body: "Reprendre l'acrotère", responsableId: editor.id });
     expect(obs.status).toBe(201);
-    const tache = await owner.a.post(`${vp}/observations/${obs.body.id}/taches`).send({ libelle: "Coter l'acrotère", assigneeId: editor.id });
-    expect(tache.status).toBe(201);
+    expect((await owner.a.post(`${vp}/observations/${obs.body.id}/taches`).send({ libelle: "Coter l'acrotère", assigneeId: editor.id })).status).toBe(201);
+    // La route rend le détail de l'observation : l'identifiant de la tâche est relu en base.
+    const tacheId = (await pool.query("SELECT id FROM studio_observation_tasks WHERE observation_id = $1", [obs.body.id])).rows[0].id as string;
     expect((await owner.a.get(`/projects/${pid}/members`)).body.aReattribuer).toEqual([]);
     // Pendant la réservation, le propriétaire est bloqué (423) ; le retrait de l'éditeur la libère.
     expect((await owner.a.patch(`/projects/${pid}/steps/2`).send({ fields: { f1: "x" } })).status).toBe(423);
@@ -3009,11 +3010,11 @@ describe("règles communes — E5 Approbateur et Diffuseur, E6 fin de participat
     ]);
     // Responsabilités : toujours confiées à l'ancien membre (rien n'est réécrit), listées au seul propriétaire.
     const liste = (await owner.a.get(`/projects/${pid}/members`)).body.aReattribuer as { nature: string; id: string; responsable: { id: string } }[];
-    expect(liste.map((r) => [r.nature, r.id, r.responsable.id])).toEqual([["observation", obs.body.id, editor.id], ["tache", tache.body.id, editor.id]]);
+    expect(liste.map((r) => [r.nature, r.id, r.responsable.id])).toEqual([["observation", obs.body.id, editor.id], ["tache", tacheId, editor.id]]);
     expect((await reader.a.get(`/projects/${pid}/members`)).body.aReattribuer).toBeUndefined();
     expect((await pool.query("SELECT responsable_id FROM studio_observations WHERE comment_id = $1", [obs.body.id])).rows[0].responsable_id).toBe(editor.id);
     // Réattribution explicite de la tâche au propriétaire : elle quitte la liste.
-    const re = await owner.a.post(`${vp}/observations/${obs.body.id}/taches/${tache.body.id}/transitions`).send({ action: "reattribuer", assigneeId: owner.id });
+    const re = await owner.a.post(`${vp}/observations/${obs.body.id}/taches/${tacheId}/transitions`).send({ action: "reattribuer", assigneeId: owner.id });
     expect(re.status).toBe(200);
     expect(((await owner.a.get(`/projects/${pid}/members`)).body.aReattribuer as { nature: string }[]).map((r) => r.nature)).toEqual(["observation"]);
   });

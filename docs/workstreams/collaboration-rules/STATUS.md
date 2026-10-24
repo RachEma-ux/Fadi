@@ -49,6 +49,9 @@ déploiement** ([DECISIONS.md](DECISIONS.md) CR-R3, CR-C2). Restent ouverts : E4
     antérieure ; `users-migration-check.mjs` vert ; `db:migrate` rejoué deux fois ;
   - recette nouvelle `collaboration-affectations.mjs` : **40/40** (E5, E6, E10, règle d'or au clavier, axe-core, passes
     anglaises du propriétaire et du lecteur, journal relu en base ; après la revue Codex de `e24b694`) ; non-régression `collaboration-audience.mjs` 45/45, `studio-publication.mjs` 129 ✓ ;
+  - CI de `2530144` (run 40132896654, DB-3 actif) : 627 tests API verts dont 132 dans les 12 suites DB-3 (« E5 » et « E10 »
+    compris) ; « E6 » rouge sur une erreur du test (identifiant de la tâche lu dans la réponse, qui rend l'observation),
+    corrigée ensuite (identifiant relu en base ; parcours de réattribution vérifié sur l'API locale) ;
   - `app.test.ts` (3 tests ajoutés « E5 », « E10 », « E6 », attendus E3 mis à jour) : **non exécuté en local** — la
     préparation d'une base attestée exige d'enrôler une clé locale dans `approved-test-authorities.ts`, geste refusé
     dans cette session ; preuve opposable : DB-3 en CI.
