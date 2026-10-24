@@ -46,7 +46,7 @@ export function TableJournal({ pages, label, showProject = false, projectLinks =
   const projects = Object.assign({}, ...pages.map((p) => p.projects)) as JournalPage["projects"];
   return (
     <div className="table-scroll" tabIndex={0} role="region" aria-label={label}>
-      <table className="admin-table journal-table" data-journal-table>
+      <table className="admin-table journal-activite-table" data-journal-table>
         <thead>
           <tr>
             <th>Date</th>
