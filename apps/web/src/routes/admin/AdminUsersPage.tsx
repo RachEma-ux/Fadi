@@ -16,6 +16,7 @@ import { useOnline } from "../../components/SyncIndicator";
 import { apiMessage, ConfirmDialog, CopyLink } from "../../components/comptes/ComptesUI";
 import { IconeAdmin } from "../../components/comptes/IconeAdmin";
 import { commandeAdminDuClavier, RACCOURCIS_ADMIN } from "../../components/comptes/raccourcis-admin";
+import { AdminNav } from "./AdminNav";
 
 const STATUS_LABEL: Record<AdminStatus, string> = { active: "actif", suspended: "suspendu", closed: "fermé (anonymisé)", locked: "verrouillé", deletion_pending: "suppression programmée" };
 const ROLE_PLATFORM: Record<"user" | "admin", string> = { user: "utilisateur", admin: "administrateur" };
@@ -32,7 +33,7 @@ const ACTION_TEXT: Record<Action["kind"], { title: string; confirm: string; dang
   role: { title: "Changer le rôle", confirm: "Changer le rôle", danger: false, consequence: (u) => u.platformRole === "admin" ? `${u.email} perdra le rôle administrateur ; ses sessions seront fermées.` : `${u.email} deviendra administrateur de la plateforme (gestion des comptes, jamais le contenu des projets) ; ses sessions seront fermées et la double authentification lui sera exigée.` },
 };
 
-function MfaRequired() {
+export function MfaRequired() {
   return (
     <main className="admin-page">
       <h1>Administration</h1>
@@ -43,7 +44,7 @@ function MfaRequired() {
 }
 
 /** TOTP actif mais session ouverte sans le code (avant l'activation, ou session antérieure) : se reconnecter avec le code. */
-function MfaSessionRequired() {
+export function MfaSessionRequired() {
   const { logout } = useAuth();
   return (
     <main className="admin-page">
@@ -347,6 +348,7 @@ export function AdminUsersPage() {
   return (
     <main className="admin-page" data-admin-users>
       <h1>Administration — utilisateurs</h1>
+      <AdminNav />
       <p className="panel-sub">Gestion des comptes de la plateforme. Le contenu des projets n’est jamais accessible d’ici : seul un accès support accordé par le propriétaire l’ouvre, en lecture.</p>
       {!online && <p role="status" className="access-banner">{OFFLINE}</p>}
       {msg && <p role={msg.ok ? "status" : "alert"} className={msg.ok ? "h7-muted" : "form-error"} data-admin-message>{msg.text}</p>}

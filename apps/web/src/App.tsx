@@ -22,6 +22,7 @@ const ProjectCockpitPage = lazy(() => import("./modules/pilotage/ProjectCockpitP
 const BuildingLibraryPage = lazy(() => import("./modules/bibliotheque/BuildingLibraryPage").then((m) => ({ default: m.BuildingLibraryPage })));
 // Administration de la plateforme (comptes) : chargée à la demande, comme le Studio.
 const AdminUsersPage = lazy(() => import("./routes/admin/AdminUsersPage").then((m) => ({ default: m.AdminUsersPage })));
+const AdminJournalPage = lazy(() => import("./routes/admin/AdminJournalPage").then((m) => ({ default: m.AdminJournalPage })));
 const BuildingCasePage = lazy(() => import("./modules/bibliotheque/BuildingLibraryPage").then((m) => ({ default: m.BuildingCasePage })));
 
 const Loading = () => (
@@ -117,6 +118,7 @@ export function App() {
           />
           <Route path="/parametres" element={<ParametresPage />} />
           <Route path="/admin/utilisateurs" element={<AdminRoute><Suspense fallback={<Loading />}><AdminUsersPage /></Suspense></AdminRoute>} />
+          <Route path="/admin/journal" element={<AdminRoute><Suspense fallback={<Loading />}><AdminJournalPage /></Suspense></AdminRoute>} />
         </Route>
 
         <Route path="/" element={<Navigate to="/accueil" replace />} />
