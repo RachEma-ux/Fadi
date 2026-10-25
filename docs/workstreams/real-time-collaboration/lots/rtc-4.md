@@ -1,8 +1,8 @@
 # RTC-4 — Revue en direct sur une publication figée (compte rendu)
 
 Issue [#283](https://github.com/RachEma-ux/Fadi/issues/283) ; RT-D5 § 8 ; critères RT-R1, RT-R2, RT-R7 ; tests TR-T05
-(dans la limite des rôles de projet actuels) et TR-T06. Statut : **implémenté et vérifié en local** ; CI et fusion : voir
-la PR du lot.
+(dans la limite des rôles de projet actuels) et TR-T06. Statut : **fusionné** (PR #291, `84e2be0`, CI verte) ;
+acceptation : maître d'ouvrage.
 
 ## Choix (délégation RT-D4, RT-D5 § 8)
 

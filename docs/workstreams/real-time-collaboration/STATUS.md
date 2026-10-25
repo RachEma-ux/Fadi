@@ -4,10 +4,10 @@ Mis à jour : 2026-10-25 (UTC).
 
 ## État
 
-**En cours — exécution des lots RTC-1 à RTC-5 (RT-D4, délégation).** RTC-0 fusionné (PR #284). **RTC-1 fusionné**
+**Lots RTC-1 à RTC-5 livrés et fusionnés CI verte (RT-D4, délégation) ; acceptation et mise en service : au maître d’ouvrage.** RTC-0 fusionné (PR #284). **RTC-1 fusionné**
 (PR #288, CI verte ; [compte rendu](lots/rtc-1.md)). **RTC-2 fusionné** (PR #289 ; [compte rendu](lots/rtc-2.md)).
-**RTC-3 à RTC-5 implémentés, relus en équipe (RT-D7) et vérifiés en local** ([RTC-3](lots/rtc-3.md),
-[RTC-4](lots/rtc-4.md), [RTC-5](lots/rtc-5.md), [preuves](PREUVES-SECURITE-ET-CI.md)) ; CI et fusion par une PR unique.
+**RTC-3 à RTC-5 fusionnés** (PR #291, `84e2be0`, CI verte ; relus en équipe, RT-D7) ([RTC-3](lots/rtc-3.md),
+[RTC-4](lots/rtc-4.md), [RTC-5](lots/rtc-5.md), [preuves](PREUVES-SECURITE-ET-CI.md)).
 Préproduction et mise en service : au maître d'ouvrage.
 
 ## Faits vérifiés
@@ -38,7 +38,7 @@ Préproduction et mise en service : au maître d'ouvrage.
 
 - Issue : https://github.com/RachEma-ux/Fadi/issues/283
 - Branche de tâche : `ccr-93a486a1-cbijf8`
-- Pull Requests : #284 (RTC-0), #288 (RTC-1), #289 (RTC-2), PR de RTC-3 à RTC-5
+- Pull Requests : #284 (RTC-0), #288 (RTC-1), #289 (RTC-2), #291 (RTC-3 à RTC-5)
 
 ## Préconditions de clôture
 

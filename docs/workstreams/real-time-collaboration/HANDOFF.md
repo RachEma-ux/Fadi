@@ -6,7 +6,7 @@ Mis à jour : 2026-10-25 (UTC).
 
 - Chantier : real-time-collaboration
 - Issue : https://github.com/RachEma-ux/Fadi/issues/283
-- Branche / PR actives : `ccr-93a486a1-cbijf8`, PR de RTC-3 à RTC-5 (vérifier son état et sa CI sur GitHub). RTC-1 : PR #288 ; RTC-2 : PR #289.
+- Branche / PR actives : `ccr-93a486a1-cbijf8`, aucune PR ouverte du chantier. RTC-1 : PR #288 ; RTC-2 : PR #289 ; RTC-3 à RTC-5 : PR #291 (`84e2be0`).
 - Dernier commit vérifié : relever le HEAD de la branche avant toute reprise ; base `main@2577e25`.
 
 ## Dernier état vérifié
@@ -17,8 +17,10 @@ Mis à jour : 2026-10-25 (UTC).
 
 ## Prochaine action
 
-- PR de RTC-3 à RTC-5 : CI verte puis fusion. Ensuite : préproduction par le maître d'ouvrage (hors délégation), puis
-  décision d'activer `FADI_TEMPS_REEL` en production.
+- Délégation RT-D4 exécutée (RTC-1 à RTC-5 fusionnés). Au maître d'ouvrage : acceptation des lots, préproduction
+  (Caddy `basic_auth`, P.118 sur l'appareil Android, Firefox / WebKit, recettes `temps-reel-redemarrage.mjs`,
+  `temps-reel-retour-arriere.mjs`, `temps-reel-charge.mjs`), puis décision d'activer `FADI_TEMPS_REEL` en production.
+  Aucun lot suivant (RTC-6 coédition, RTC-7 coordination) n'est engagé.
 - CR-3 (#272) est satisfaite par `PLAN.md` § 5 : la cocher dans `collaboration-rules/TASKS.md` après fusion de la
   PR #282, qui modifie les mêmes lignes (évite un conflit).
 
