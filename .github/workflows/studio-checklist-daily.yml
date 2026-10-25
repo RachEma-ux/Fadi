@@ -51,6 +51,19 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      # SUIVI-01 — aucune branche permanente (protocole docs/continuity/README.md) : la branche automatique n'existe que
+      # tant que sa PR est ouverte. Une branche restée sans PR ouverte (création de PR refusée, PR fermée) est retirée
+      # avant et après chaque exécution ; la fusion la supprime (delete_branch_on_merge du dépôt).
+      - name: Retirer la branche automatique si aucune PR ouverte ne la porte (avant)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCHE: automation/studio-checklist-daily
+        run: |
+          ouvertes=$(gh pr list --repo "${{ github.repository }}" --head "$BRANCHE" --state open --json number --jq length)
+          if git ls-remote --exit-code --heads origin "$BRANCHE" >/dev/null && [ "$ouvertes" = "0" ]; then
+            git push origin --delete "$BRANCHE"
+            echo "Branche $BRANCHE sans PR ouverte : retirée."
+          fi
       - name: Préparer le snapshot depuis l'Issue #166
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -63,7 +76,7 @@ jobs:
             Studio/Fadi_Studio_Checklist_Interactive_V1_1.html
             Studio/Fadi_Studio_Daily_Status.json
           branch: automation/studio-checklist-daily
-          delete-branch: false
+          delete-branch: true
           commit-message: "docs(studio): actualiser le suivi GitHub quotidien"
           title: "docs(studio): actualisation quotidienne des contrôles horaires"
           body: |
@@ -71,3 +84,14 @@ jobs:
             Bandeau daté, SHA, questions ouvertes, dernier contrôle et indicateurs non homologués.
             Aucune case Code / Review ChatGPT / Review Admin cochée automatiquement.
             La fusion et l'approbation métier restent manuelles.
+      - name: Retirer la branche automatique si aucune PR ouverte ne la porte (après, même en échec)
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCHE: automation/studio-checklist-daily
+        run: |
+          ouvertes=$(gh pr list --repo "${{ github.repository }}" --head "$BRANCHE" --state open --json number --jq length)
+          if git ls-remote --exit-code --heads origin "$BRANCHE" >/dev/null && [ "$ouvertes" = "0" ]; then
+            git push origin --delete "$BRANCHE"
+            echo "Branche $BRANCHE sans PR ouverte : retirée."
+          fi

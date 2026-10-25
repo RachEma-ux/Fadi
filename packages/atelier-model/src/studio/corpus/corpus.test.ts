@@ -13,7 +13,7 @@
  * Plateforme : les SVG de référence formatent les cotes en `fr-FR` ; une plateforme sans données ICU françaises
  * produirait d'autres octets. Le chargement l'exige et le manifeste consigne Node et ICU.
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
@@ -27,7 +27,7 @@ import { measureStudioDimension } from "../document-2d.js";
 import { controlerExigences } from "../facade-exigences.js";
 import {
   commandesDuDocument, empreinteCorpus, empreintePlanS6, genererCorpus, oracleCorpus, oracleS6, oracleSessionS7, planS6, primitivesDu, referenceVisuelle,
-  SCENES_DOCUMENTS, TAILLES_ILLUSTRATIVES, TOLERANCE_ORACLE, type CorpusStudio, type OracleCorpus, type SceneDocuments,
+  LICENCE_CORPUS, SCENES_DOCUMENTS, TAILLES_ILLUSTRATIVES, TOLERANCE_ORACLE, type CorpusStudio, type OracleCorpus, type SceneDocuments,
 } from "./index.js";
 
 // Plateforme exigée par les références visuelles (cotes formatées en fr-FR) : échec explicite plutôt qu'un écart d'octets.
@@ -140,6 +140,25 @@ function controlerOracle(corpus: CorpusStudio, o: OracleCorpus) {
 const TAILLES: readonly number[] = LOURD ? TAILLES_ILLUSTRATIVES : TAILLES_ILLUSTRATIVES.filter((t) => t <= 10_000);
 const referencesVisuelles = (taille: number) => taille === 100 || LOURD;
 
+describe("Corpus de qualification S1–S7 : licence d'utilisation (REF-02 §18.2, X.1-01 à X.1-08)", () => {
+  const RACINE_DEPOT = join(ICI, "../../../../..");
+  it("licence du corpus établie : celle du dépôt (aucune licence ouverte déclarée, droits réservés), corpus généré sans source tierce", () => {
+    // Faits de la licence du dépôt, relus : un fichier de licence ou un champ « license » ajouté fait échouer ce test.
+    const racine = readdirSync(RACINE_DEPOT);
+    expect(racine.filter((f) => /^(?:LICEN[CS]E|COPYING)(?:\.|$)/i.test(f))).toEqual([]);
+    const manifeste = JSON.parse(readFileSync(join(RACINE_DEPOT, "package.json"), "utf8")) as { private?: boolean; license?: string };
+    expect(manifeste.private).toBe(true);
+    expect(manifeste.license).toBeUndefined();
+    const doc = readFileSync(join(ICI, "LICENCE.md"), "utf8");
+    expect(doc).toMatch(/aucune licence ouverte/);
+    expect(doc).toMatch(/droits réservés du titulaire du dépôt/);
+    expect(LICENCE_CORPUS).toMatch(/corpus\/LICENCE\.md/);
+    // Chaque scène et le plan S6 portent cette licence.
+    for (const scene of SCENES_DOCUMENTS) expect(genererCorpus(scene, 100).licence).toBe(LICENCE_CORPUS);
+    expect(planS6().licence).toBe(LICENCE_CORPUS);
+  });
+});
+
 describe("Corpus de qualification S1–S7 : tailles illustratives (X.1-10)", () => {
   it("tailles 100 / 10 000 / 100 000, jamais des engagements ; 100 000 derrière STUDIO_CORPUS_LOURD", () => {
     expect([...TAILLES_ILLUSTRATIVES]).toEqual([100, 10_000, 100_000]);
@@ -155,8 +174,9 @@ for (const scene of SCENES_DOCUMENTS) {
         const corpus = genererCorpus(scene as SceneDocuments, taille);
         expect(corpus.synthetique).toBe(true);
         expect(corpus.licence).toMatch(/synthétique/);
-        // La licence n'est pas affirmée : elle attend la décision du maître d'ouvrage.
-        expect(corpus.licence).toMatch(/^Licence à valider par le maître d'ouvrage/);
+        // Licence établie (X.1-01 à X.1-07) : celle du dépôt, le corpus étant généré par son code (corpus/LICENCE.md).
+        expect(corpus.licence).toBe(LICENCE_CORPUS);
+        expect(corpus.licence).toMatch(/^Licence du dépôt Fadi \(RachEma-ux\/Fadi\) : corpus synthétique généré par le code du dépôt, aucune source tierce/);
         expect(corpus.taille).toBe(taille);
         for (const d of corpus.documents) {
           const n = d.objects.length + (d.dimensions?.length ?? 0) + (d.annotations?.length ?? 0) + (d.architecture?.length ?? 0) + (d.solides?.length ?? 0);

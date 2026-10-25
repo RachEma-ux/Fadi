@@ -1,0 +1,2157 @@
+# Fiches de traçabilité TR-* (annexe C) — preuve et contre-preuve individuelles
+
+> Document **généré** par `node scripts/registre/etat-studio.mjs --ecrire` depuis le registre et les fiches M004 ; la CI le
+> recalcule à chaque commit. Registre SHA-256 `05e6725cda8085853030e73ef58fdf27a62d121613536152ea66f52fc71b92c7` ; fiches `docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json`.
+
+Règle C (Checklist, annexe C) appliquée à chaque fiche : libellé exact, source, responsable, contrat, composant, tests
+positifs et négatifs, preuves, décisions, état et verdict ; **une preuve absente reste « à produire »**. Preuve = contrôle
+positif exécuté (« scénario exécuté », G2-04) ; contre-preuve = contrôle exécuté qui vérifie le refus, le rejet ou
+l’échec attendu (titre marqué « [−] » ou qui le dit : refus, rejet, échec, interdit, jamais, aucun, conflit, code 4xx…).
+Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction livrée.
+
+**Synthèse** : 141 fiches ; 61 avec preuve exécutée, 62 avec contre-preuve exécutée ;
+80 preuves et 79 contre-preuves « à produire ».
+
+### TR-AC-001
+
+- **Libellé exact (REF-02, § w:p 419)** : AC-001. Le objectId du mur reste stable ; l’ouverture reste reliée au bon hôte ; les deux planches reflètent la même définition ; les métrés sont mis à jour ou marqués périmés ; undo/redo et réouverture retrouvent les valeurs ; un dossier publié conserve la version examinée.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A4 + A5 · **Lot** : A/C
+- **Contrat** : IF-002,IF-004,IF-006 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/plan2d/Plan2D.tsx`, `apps/web/src/modules/atelier/nouveau/plan2d/accrochage.ts`, `packages/planche-model/src`
+- **Décisions** : DEC-01,DEC-02,DEC-09 · **Scénarios** : 003,009,010,011,030
+- **Test positif prescrit** : Mur6×3×0,2 avec ouverture1×2,1 : objectId/hôte stables, net3,180 ; largeur1,2 : net3,096 ; undo/redo/réouverture et publication vérifiés.
+- **Test négatif prescrit** : Modifier depuis autre planche crée copie du mur ou perd hôte/cote/historique : échec critère, aucun succès partiel global.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (partiel) : Ajoutés : annuler / rétablir la modification du mur (identités, hôte, métré, plan, 3D) et dossier publié conservant la version examinée sur le cas du mur. Reste : le négatif « perte de cote » est intestable — aucune cote ne peut être liée à un mur (les cotes se lient aux formes 2D) ; fonction absente : cote associative sur objet architectural.
+
+### TR-AC-002
+
+- **Libellé exact (REF-02, § w:p 526)** : AC-002. Une barre contenant environ vingt outils de dessin usuels peut être ouverte sans initialiser tous les modules spécialisés. Le test compare les requêtes réseau, la taille transférée, les chunks exécutés et l’empreinte mémoire à une référence, en distinguant cache froid et chaud. Aucun taux de réduction n’est présumé avant mesure.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A6 + A5 · **Lot** : B/R
+- **Contrat** : IF-005,IF-006 · **Composants candidats** : `apps/web/vite.config.ts`, `apps/web/src/lib`, `packages/planche-model/src/outils/index.ts`
+- **Décisions** : DEC-07,DEC-14 · **Scénarios** : 016
+- **Test positif prescrit** : Profil environ20 outils : comparer requêtes/octets/chunks exécutés/mémoire à froid et chaud, sans tous noyaux initialisés.
+- **Test négatif prescrit** : Barre réduite mais précache/init de tous moteurs rares : critère non acquis, aucun taux de réduction supposé.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (mesure requise) : La comparaison requêtes / octets / chunks exécutés / mémoire à une référence, cache froid et chaud, n'existe que dans studio-mesures-chargement.mjs (mesure sans verdict, hors CI) ; elle demande un profil de charge et un appareil désignés, sans taux présumé : mesure à conduire hors CI, à verdict humain.
+
+### TR-AC-003
+
+- **Libellé exact (REF-02, § w:p 560)** : AC-003. Deux utilisateurs modifiant un mur de manière incompatible obtiennent un conflit traçable, une révision de référence préservée et aucune application implicite du dernier enregistrement. La restauration fonctionne après coupure simulée sans duplication de la commande.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A5 · **Lot** : A/D/R
+- **Contrat** : IF-004,IF-006,IF-011 · **Composants candidats** : `packages/atelier-model/src/commandes/base.ts`, `apps/web/src/modules/atelier/nouveau/planche/historique.ts`, `packages/planche-model/src/delta.ts`
+- **Décisions** : DEC-12,DEC-11 · **Scénarios** : 012,013
+- **Test positif prescrit** : Deux utilisateurs modifient mur avec résolution de conflit puis coupure/rejeu sans duplication.
+- **Test négatif prescrit** : Seconde sauvegarde écrase première implicitement ou rejoue commande deux fois : échec éliminatoire.
+- **Preuve (contrôles positifs exécutés)** : 1
+  - retour en ligne : enregistré une seule fois, avec le même requestId — `apps/web/e2e/studio-hors-ligne.mjs`, commit f59d66d, 2026-10-19 06:50
+- **Contre-preuve (contrôles négatifs exécutés)** : 3
+  - AC-003 [+] le second reçoit un conflit traçable (tête, base, élément commun), la révision de référence est préservée ; après coupure, le rejeu du même requestId ne duplique rien ; le report explicite… — `apps/api/src/routes/studio-invariants.preuves-d2.test.ts`, commit bf775d9, 2026-10-25 21:58
+  - AC-003 [−] la seconde sauvegarde n'écrase jamais la première en silence, et un rejeu n'applique pas deux fois : même base → 409, même requestId au contenu différent → 409 request_conflict — `apps/api/src/routes/studio-invariants.preuves-d2.test.ts`, commit bf775d9, 2026-10-25 21:58
+  - conflit : la tête de la seconde session n'est pas écrasée — `apps/web/e2e/studio-hors-ligne.mjs`, commit f59d66d, 2026-10-19 06:50
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-AC-004
+
+- **Libellé exact (REF-02, § w:p 613)** : AC-004. Sur un corpus comportant objets superposés, densités variables, intersections et références liées, l’index accéléré doit fournir les mêmes cibles et points d’accrochage (dans la tolérance déclarée) que l’algorithme de référence, avec traces des cas ambigus.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A5 · **Lot** : C
+- **Contrat** : IF-002,IF-003,IF-011 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/vue3d/scene3d.ts`, `apps/web/src/modules/atelier/nouveau/plan2d/accrochage.ts`
+- **Décisions** : DEC-09,DEC-10,DEC-13 · **Scénarios** : 022
+- **Test positif prescrit** : Corpus superposé/densités/intersections/références : mêmes cibles/points que référence dans tolérance avec traces ambiguïtés.
+- **Test négatif prescrit** : Index choisit cible différente après insertion/suppression : critère échoue malgré gain p95.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (partiel) : Depuis F5, l'index réutilisé est éprouvé sur des suites d'insertions et de suppressions contre le parcours linéaire. Fonction absente : aucune trace des cas ambigus (plusieurs cibles à égalité) n'est produite ; le corpus ne comporte pas de références liées (cotes associatives, liens) parmi les objets indexés.
+
+### TR-AC-005
+
+- **Libellé exact (REF-02, § w:p 633)** : AC-005. Les opérations sélection, orbite, zoom, poussé/tiré et changement de matériau passent les tests de fidélité géométrique avant et après toute optimisation. Les profils GPU sont évalués séparément de mesures faites sous SwiftShader.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A5 + A1 · **Lot** : X
+- **Contrat** : IF-002,IF-003 · **Composants candidats** : `docs/atelier/p0-mesures.md`, `docs/atelier/p2-mesures.md`, `apps/web/e2e`, `.github/workflows`
+- **Décisions** : DEC-13 · **Scénarios** : 023,025,026
+- **Test positif prescrit** : Comparer sélection/orbite/zoom/pousser-tirer/matériau avant/après optimisation et séparer GPU réel de SwiftShader.
+- **Test négatif prescrit** : GPU CPU confondus ou géométrie modifiée pour gagner FPS : critère non vérifié/non conforme selon résultat.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (mesure requise) : Orbite, zoom, pousser / tirer et changement de matériau ne sont pas comparés avant / après optimisation (seules la sélection et l'égalité du maillage incrémental le sont) ; la séparation GPU réel / SwiftShader exige un appareil à GPU réel (DEC-13 : « non évalué ») et n'existe que dans studio-mesures-chargement.mjs, hors CI.
+
+### TR-AC-006
+
+- **Libellé exact (REF-02, § w:p 670)** : AC-006. Échec forcé d’OCCT/WASM pendant une opération : aucune mutation partielle, retour d’erreur intelligible, tâches en attente résolues explicitement, possibilité de relance sans doublons et sans perte de la révision courante.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A6 + A5 · **Lot** : D
+- **Contrat** : IF-003,IF-007 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/exact/moteur-exact.ts`, `apps/web/src/modules/atelier/nouveau/exact/exact.worker.ts`
+- **Décisions** : DEC-11,DEC-13 · **Scénarios** : 015
+- **Test positif prescrit** : Forcer échec OCCT pendant opération puis relancer : attente résolue, erreur lisible et révision intacte sans doublon.
+- **Test négatif prescrit** : Crash laisse mutation partielle ou pending infini : échec critère.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente dans Studio : aucune opération Studio n'exécute OCCT/WASM (le lot F2 « noyau exact » est en cours ailleurs) ; l'échec forcé d'OCCT pendant une opération, la résolution des attentes et la relance sans doublon ne sont donc pas testables. Seuls l'échec de Worker (DXF, feuille) et le réessai du moteur de planche le sont.
+
+### TR-AC-007
+
+- **Libellé exact (REF-02, § w:p 722)** : AC-007. Générer une illustration ne change ni les dimensions, ni les propriétés BIM, ni la révision du modèle source. La publication d’une illustration indique son statut de vérification et sa source.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E/F option
+- **Contrat** : IF-003,IF-009 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/vue3d/scene3d.ts`
+- **Décisions** : DEC-15,DEC-17 · **Scénarios** : 032
+- **Test positif prescrit** : Illustration optionnelle : hash/dimensions/propriétés/révision modèle restent identiques ; document indique source et statut vérification.
+- **Test négatif prescrit** : Illustration modifie BIM ou paraît métrique sans contrôle : refus de conformité/publication.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Rapprochement du 25 octobre 2026 (non couvert) : La génération d'illustration n'existe pas (« illustration-ia » déclarée indisponible, sans bouton : apps/web/src/modules/studio/vue3d/scenes/scenes.test.ts:102) ; seule la provenance du « rendu du modèle » est testée, ce qui n'est pas le critère.
+
+### TR-AC-008
+
+- **Libellé exact (REF-02, § w:p 732)** : AC-008. Dans le test de référence du mur, les objets et révisions permettent de retrouver exactement les déductions 0,420 m³ puis 0,504 m³ et les volumes nets 3,180 m³ puis 3,096 m³. Les résultats historiques conservent leur source initiale.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E
+- **Contrat** : IF-008,IF-009 · **Composants candidats** : `packages/atelier-model/src/documents`, `apps/api/src/db/schema.ts`, `apps/web/src/modules/documents`
+- **Décisions** : DEC-16 · **Scénarios** : 009,010
+- **Test positif prescrit** : Retrouver sources/révisions/déductions0,420 puis0,504 et nets3,180 puis3,096 avec historique initial intact.
+- **Test négatif prescrit** : Arrondi/override efface déduction ou historique : échec, pas ajustement silencieux.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : 3
+  - AC-008 [−] un ajustement manuel arrondi du net ne touche ni la déduction ni l'historique : 0,420 / 3,180 sur R1, 0,504 / 3,096 sur R2, ajustement à revoir, journal intact — `packages/atelier-model/src/studio/studio-invariants.preuves-d2.test.ts`, commit bf775d9, 2026-10-25 21:49
+  - brut 3,600 m³, déduction 0,420 m³, net 3,180 m³ ; élargie à 1,20 m : déduction 0,504 m³, net 3,096 m³, mêmes identités — `packages/atelier-model/src/studio/architecture/architecture.test.ts`, commit f59d66d, 2026-10-19 06:45
+  - TEST-010 : révision historique R1 ouverte en lecture seule — volume net toujours 3,180 m³ (déduction 0,420 m³) — `apps/web/e2e/studio-navigation.mjs`, commit 44c6ef4, 2026-10-25 16:14
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-AC-009
+
+- **Libellé exact (REF-02, § w:p 768)** : AC-009. Modifier un document après approbation puis tenter de publier sous l’ancienne décision provoque un blocage ou une demande de nouvel examen, avec comparaison explicite des empreintes concernées.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E
+- **Contrat** : IF-008,IF-009 · **Composants candidats** : `packages/atelier-model/src/documents`, `apps/api/src/db/schema.ts`, `apps/web/src/modules/documents`
+- **Décisions** : DEC-16 · **Scénarios** : 030
+- **Test positif prescrit** : Publier dossier inchangé approuvé avec comparaison des empreintes.
+- **Test négatif prescrit** : Changer document après approbation : blocage/nouvel examen explicite, pas publication sous ancienne décision.
+- **Preuve (contrôles positifs exécutés)** : 3
+  - paquet diffusé = documents du manifeste approuvé — `apps/web/e2e/studio-publication.mjs`, commit 98748a0, 2026-10-19 08:13
+  - paquet recalculé de façon déterministe : empreintes identiques — `apps/web/e2e/studio-publication.mjs`, commit f59d66d, 2026-10-19 06:50
+  - INV-001 BLOC-05 [+] la diffusion est admise sous l'approbation exacte de son contenu ; le paquet porte ce manifeste — `apps/api/src/routes/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+- **Contre-preuve (contrôles négatifs exécutés)** : 3
+  - diffusion sous manifeste changé refusée (409 manifest_mismatch, deux révisions et deux empreintes) — `apps/web/e2e/studio-publication.mjs`, commit 98748a0, 2026-10-19 08:13
+  - INV-001 BLOC-05 [−] la tête change après l'approbation : diffuser → 409 manifest_mismatch, aucun paquet — `apps/api/src/routes/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+  - le refus d'une diffusion sous un manifeste différent cite les deux empreintes renvoyées par le serveur — `apps/web/src/modules/studio/publication/publication-ui.test.ts`, commit 98748a0, 2026-10-19 08:07
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-AC-010
+
+- **Libellé exact (REF-02, § w:p 817)** : AC-010. Un concepteur sans droit d’approbation peut afficher l’outil par recherche mais reçoit un refus d’exécution. La modification de son profil personnel n’influe pas sur le contrôle serveur.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E/X
+- **Contrat** : IF-009,IF-010 · **Composants candidats** : `apps/web/src/modules/collaboration`, `apps/api/src/db/schema.ts`
+- **Décisions** : DEC-16 · **Scénarios** : 018
+- **Test positif prescrit** : Concepteur découvre Approuver par recherche mais serveur refuse sans permission métier.
+- **Test négatif prescrit** : Importer profil ou acquérir rôle admin technique : toujours refus si droit métier absent.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (partiel) : Refus serveur de l'approbation au concepteur et au rôle d'administration technique (accès support) désormais testés. Fonction absente : « Approuver » n'est pas un outil du catalogue (aucune découverte par recherche possible) et aucun import de profil n'existe.
+
+### TR-AC-011
+
+- **Libellé exact (REF-02, § w:p 1122)** : AC-011. Un outil est déclaré prêt pour implémentation seulement lorsque ses entrées, sorties, préconditions, permissions, effets, risques, mesures et jeux d’essai sont explicités. Un outil est déclaré conforme seulement après preuve d’exécution sur version et profil de charge désignés.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 + A0 · **Lot** : X/pilotage
+- **Contrat** : IF-001 à IF-011 selon fonction · **Composants candidats** : `docs/ai-team/missions.json`, `docs/workstreams/studio`, `docs/continuity/README.md`
+- **Décisions** : DEC-01 à DEC-18 selon fonction · **Scénarios** : TEST spécifiques outil §19.3
+- **Test positif prescrit** : Avant développement outil : vérifier entrées/sorties/préconditions/droits/effets/risques/mesures/jeux ; conformité après preuve sur version/profil identifié.
+- **Test négatif prescrit** : Fiche sans tests négatifs ou résultat sans build/profil : ni prêt à développer ni conforme par seule présence.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : le manifeste d'outils (manifeste-outils.ts) vérifie propriétaire, contrat, contexte, droit et chargeur, mais ne porte ni risques, ni mesures, ni jeux d'essai, ni la règle « prêt à développer / conforme seulement après preuve sur build et profil désignés » (la règle [+]/[−] n'est contrôlée que pour les INV). Remplir ces champs par …
+
+### TR-EX-001
+
+- **Libellé exact (REF-02, § w:p 81)** : EX-001 — Autonomie native. Le Studio permet de créer, ouvrir, modifier, contrôler et documenter une étude rattachée à un projet Fadi sans suivre préalablement les 21 étapes du Parcours. Il réutilise les services généraux autorisés de Fadi plutôt que de créer une deuxième gestion d’utilisateurs, une deuxième base métier ou un deuxième annuaire de documents.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A4 · **Lot** : I/A/E
+- **Contrat** : IF-001,IF-006 · **Composants candidats** : `apps/web/src/App.tsx`, `apps/web/src/modules/module-registry.ts`, `apps/api/src/db/schema.ts`
+- **Décisions** : DEC-01,DEC-02,DEC-03 · **Scénarios** : 001,002,003,NAV-002
+- **Test positif prescrit** : Ouvrir /studio avec projet autorisé et créer une étude sans étape Parcours validée ; retrouver mêmes comptes et catalogue documentaire.
+- **Test négatif prescrit** : Projet interdit ou contexte Parcours absent : refus du premier, aucune obligation de valider une étape pour le second.
+- **Preuve (contrôles positifs exécutés)** : 4
+  - EX-001 : le compte Fadi de la session (/auth/me) est l'auteur enregistré des révisions Studio — `apps/web/e2e/studio-persistance.mjs`, commit bf775d9, 2026-10-25 22:03
+  - étude créée avec sa variante initiale et une révision vide — `apps/web/e2e/studio-persistance.mjs`, commit bf775d9, 2026-10-25 22:03
+  - EX-001 [+] chaque colonne Studio qui désigne une personne est une clé étrangère vers users.id — `apps/api/src/testing/studio-comptes.preuves-a.test.ts`, commit bf775d9, 2026-10-25 21:58
+  - E.3-06 : dossier rattaché au catalogue des Documents (empreinte courante, sources, liens PDF et JSON) — `apps/web/e2e/studio-dossier.mjs`, commit 4643cfa, 2026-10-19 12:44
+- **Contre-preuve (contrôles négatifs exécutés)** : 6
+  - EX-001 : la même session lit le projet Fadi et son catalogue des Documents (aucune connexion propre au Studio) — `apps/web/e2e/studio-persistance.mjs`, commit bf775d9, 2026-10-25 22:03
+  - EX-001 : un membre invité dans le projet Fadi (rôle lecteur) lit l'étude sans écrire ; un compte hors projet est refusé — `apps/web/e2e/studio-persistance.mjs`, commit bf775d9, 2026-10-25 22:03
+  - EX-001 [−] aucune table Studio de comptes, de sessions, de membres ou de rôles ; aucune colonne d'identifiant de connexion — `apps/api/src/testing/studio-comptes.preuves-a.test.ts`, commit bf775d9, 2026-10-25 21:58
+  - NAV-002 : aucune lecture du Parcours, du programme ni de l'Atelier — `apps/web/e2e/studio-navigation.mjs`, commit 779e082, 2026-10-18 23:02
+  - étude : aucune lecture du Parcours ni de l'Atelier — `apps/web/e2e/studio-navigation.mjs`, commit 779e082, 2026-10-18 23:02
+  - NAV-004 : projet d'autrui refusé sans divulguer son code ni son nom — `apps/web/e2e/studio-navigation.mjs`, commit 779e082, 2026-10-18 23:02
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-002
+
+- **Libellé exact (REF-02, § w:p 82)** : EX-002 — Périmètre. Les objets traités concernent la conception architecturale : dessin, modèles, BIM, rendu, métrés, coordination, observations, révisions et livrables. La comptabilité, la gestion RH, le commerce, la direction quotidienne des travaux, les réserves de chantier et l’exploitation restent hors responsabilité du Studio.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A4 · **Lot** : I/A/E
+- **Contrat** : IF-001,IF-006 · **Composants candidats** : `apps/web/src/App.tsx`, `apps/web/src/modules/module-registry.ts`, `apps/api/src/db/schema.ts`
+- **Décisions** : DEC-01,DEC-02,DEC-03 · **Scénarios** : 001,002,003
+- **Test positif prescrit** : Suivre une petite étude depuis dessin jusqu'au dossier de conception, avec quatre domaines.
+- **Test négatif prescrit** : Demande de comptabilité ou gestion RH : périmètre explicitement exclu, aucun module métier concurrent créé.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (partiel) : Cas négatif couvert pour « aucun module concurrent » ; aucune fonction n'« exclut explicitement » une demande de comptabilité/RH (pas de message ni de refus nommé : fonction absente). Cas positif : aucun parcours unique ne traverse les quatre domaines du dessin au dossier.
+
+### TR-EX-003
+
+- **Libellé exact (REF-02, § w:p 83)** : EX-003 — Contexte constant. Toute surface de travail ou action persistante porte les identifiants projectId, studyId, variantId et la version de base. Le projet et l’étude peuvent exister avant la première variante, mais aucune géométrie éditée ne doit être dépourvue de variante propriétaire.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A4 · **Lot** : I/A/E
+- **Contrat** : IF-001,IF-006 · **Composants candidats** : `apps/web/src/App.tsx`, `apps/web/src/modules/module-registry.ts`, `apps/api/src/db/schema.ts`
+- **Décisions** : DEC-01,DEC-02,DEC-03 · **Scénarios** : 035,NAV-003
+- **Test positif prescrit** : Créer étude puis variante V1 et enregistrer géométrie avec projectId/studyId/variantId/baseRevisionId cohérents.
+- **Test négatif prescrit** : Soumettre objet sans variante ou variante d'une autre étude : rejet sans objet orphelin.
+- **Preuve (contrôles positifs exécutés)** : 3
+  - témoin : le propriétaire et l'éditeur écrivent ; l'auteur enregistré est l'acteur authentifié — `apps/api/src/testing/studio-contrat-commandes.test.ts`, commit bf775d9, 2026-10-25 21:58
+  - variante créée (201) : nom épuré, document vide, sans parent, tête = révision initiale — `apps/web/e2e/studio-persistance.mjs`, commit 779e082, 2026-10-18 23:01
+  - variante B : commande acceptée, variante initiale inchangée — `apps/web/e2e/studio-persistance.mjs`, commit 779e082, 2026-10-18 23:01
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - EX-003 [−] contexte : un objet soumis sans variante (variantId absent ou vide) est rejeté (404), sans objet orphelin — `apps/api/src/testing/studio-contrat-commandes.test.ts`, commit bf775d9, 2026-10-25 21:58
+  - contexte : une variante d'une autre étude, une étude d'un autre projet → 404 — `apps/api/src/testing/studio-contrat-commandes.test.ts`, commit bf775d9, 2026-10-25 21:58
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-004
+
+- **Libellé exact (REF-02, § w:p 107)** : EX-004 — Planche 2D. Éditeur autonome de géométries planes, côtes, contraintes, calques et annotations. Aucun modèle 3D n’est requis pour produire et publier un dessin indépendant.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A4 · **Lot** : I/A/E
+- **Contrat** : IF-001,IF-006 · **Composants candidats** : `apps/web/src/App.tsx`, `apps/web/src/modules/module-registry.ts`, `apps/api/src/db/schema.ts`
+- **Décisions** : DEC-01,DEC-02,DEC-03 · **Scénarios** : 001
+- **Test positif prescrit** : Dessiner segment/arc, calque, cote et texte dans un document 2D puis publier sans modèle 3D.
+- **Test négatif prescrit** : Fermer/réouvrir sans modèle 3D ; aucun volume de substitution ne doit être requis ou créé.
+- **Preuve (contrôles positifs exécutés)** : 3
+  - EX-004 : segment, arc, calque, cote et texte enregistrés dans un document 2D, sans extrusion, solide ni objet architectural — `apps/web/e2e/studio-dossier.mjs`, commit bf775d9, 2026-10-25 22:08
+  - EX-004 : le dessin publié (SVG) porte le calque, le segment, l'arc, la cote et le texte — `apps/web/e2e/studio-dossier.mjs`, commit bf775d9, 2026-10-25 22:08
+  - EX-004 : le dessin publié (DXF) porte le calque, le segment, l'arc, la cote éclatée et le texte — `apps/web/e2e/studio-dossier.mjs`, commit bf775d9, 2026-10-25 22:08
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - EX-004 : publication « dessin-2d » de cette révision préparée, revue, approuvée et diffusée — SVG, DXF, PDF, aucun IFC — `apps/web/e2e/studio-dossier.mjs`, commit bf775d9, 2026-10-25 22:08
+  - EX-004 : rouverte après publication, la variante n'a ni modèle 3D ni volume de substitution, et la publication n'a créé aucune révision — `apps/web/e2e/studio-dossier.mjs`, commit bf775d9, 2026-10-25 22:08
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-005
+
+- **Libellé exact (REF-02, § w:p 108)** : EX-005 — Planche 3D. Éditeur autonome de géométries spatiales, faces, solides, groupes et objets architecturaux. Sa saisie n’exige pas d’esquisse 2D préalable ; ce n’est pas une simple visionneuse.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A4 · **Lot** : I/A/E
+- **Contrat** : IF-001,IF-006 · **Composants candidats** : `apps/web/src/App.tsx`, `apps/web/src/modules/module-registry.ts`, `apps/api/src/db/schema.ts`
+- **Décisions** : DEC-01,DEC-02,DEC-03 · **Scénarios** : 002
+- **Test positif prescrit** : Créer volume directement dans l'espace, éditer face et groupe, sauver et produire une coupe.
+- **Test négatif prescrit** : Nouvelle étude sans dessin 2D : l'édition 3D reste possible ; une vue sans édition ne suffit pas.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Lot F1 : l'édition de face est livrée et recettée (studio-faces, « TEST-002 / TR-EX-005 »), y compris l'étude neuve sans dessin 2D. L'édition de groupe reste absente.
+
+### TR-EX-006
+
+- **Libellé exact (REF-02, § w:p 109)** : EX-006 — Conception associée. Les deux planches peuvent agir sur une même définition architecturale au moyen de commandes validées. Les trois relations — associé, référence liée, copie indépendante — sont visibles et explicites.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A4 · **Lot** : I/A/E
+- **Contrat** : IF-001,IF-006 · **Composants candidats** : `apps/web/src/App.tsx`, `apps/web/src/modules/module-registry.ts`, `apps/api/src/db/schema.ts`
+- **Décisions** : DEC-01,DEC-02,DEC-03 · **Scénarios** : 003,004,006
+- **Test positif prescrit** : Modifier le même mur associé en 2D puis 3D et afficher clairement associé/référence/copie.
+- **Test négatif prescrit** : Modifier copie indépendante : source inchangée ; une relation non définie ne propage pas.
+- **Preuve (contrôles positifs exécutés)** : 1
+  - TEST-006 : « Détacher » en fait une copie indépendante, volume de nouveau évalué (45 m³) — `apps/web/e2e/studio-faces.mjs`, commit 4377815, 2026-10-25 19:58
+- **Contre-preuve (contrôles négatifs exécutés)** : 1
+  - TEST-006 : relations affichées dans la désignation — « référence liée · à jour » (36 m³), « copie indépendante · aucune propagation » — `apps/web/e2e/studio-faces.mjs`, commit 4377815, 2026-10-25 19:58
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-007
+
+- **Libellé exact (REF-02, § w:p 110)** : EX-007 — Workflow transversal. Le cycle Cadrer → Explorer → Concevoir → Contrôler → Coordonner et corriger → Approuver → Publier traverse les domaines sans devenir un cinquième module et sans remplacer le Parcours de Fadi.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A4 · **Lot** : I/A/E
+- **Contrat** : IF-001,IF-006 · **Composants candidats** : `apps/web/src/App.tsx`, `apps/web/src/modules/module-registry.ts`, `apps/api/src/db/schema.ts`
+- **Décisions** : DEC-01,DEC-02,DEC-03 · **Scénarios** : 029,030,NAV-002
+- **Test positif prescrit** : Parcourir Cadrer→Explorer→Concevoir→Contrôler→Coordonner→Approuver→Publier sur une révision.
+- **Test négatif prescrit** : Créer une publication ne valide aucune des 21 étapes et ne crée pas de cinquième domaine.
+- **Preuve (contrôles positifs exécutés)** : 2
+  - workflow : menu des sept phases dans l'ordre de REF-01 §06 — `apps/web/e2e/studio-espace.mjs`, commit 2d4a7c6, 2026-10-19 20:47
+  - identifiants d'adresse : seuls les quatre domaines et les deux planches sont reconnus — `apps/web/src/modules/studio/domaines/domaines.test.ts`, commit cf09271, 2026-10-19 14:33
+- **Contre-preuve (contrôles négatifs exécutés)** : 3
+  - EX-007 : les sept phases Cadrer → Explorer → Concevoir → Contrôler → Coordonner → Approuver → Publier déclarées dans l'ordre, chacune relue, sur la même révision (aucune révision créée) — `apps/web/e2e/studio-persistance.mjs`, commit bf775d9, 2026-10-25 22:03
+  - EX-007 : publier (préparer, soumettre, approuver, diffuser) ne valide aucune des 21 étapes du Parcours — états des étapes identiques avant et après — `apps/web/e2e/studio-persistance.mjs`, commit bf775d9, 2026-10-25 22:03
+  - EX-007 : la phase déclarée reste une déclaration — l'étude ne porte que sa phase, la publication ne la change pas — `apps/web/e2e/studio-persistance.mjs`, commit bf775d9, 2026-10-25 22:03
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-008
+
+- **Libellé exact (REF-02, § w:p 196)** : EX-008 — Sens de dépendance. Les interfaces invoquent les capacités, les capacités produisent des intentions, les commandes autorisées modifient le modèle canonique, puis les projections dérivées se recalculent. Une modification de scène graphique ne crée pas un changement métier sans commande.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A5 · **Lot** : A/C/X
+- **Contrat** : IF-002,IF-006,IF-011 · **Composants candidats** : `packages/atelier-model/src/commandes/base.ts`, `apps/web/src/modules/atelier/nouveau/vue3d/scene3d.ts`
+- **Décisions** : DEC-02,DEC-10,DEC-18 · **Scénarios** : 003,014
+- **Test positif prescrit** : Geste confirmé produit intention, commande, mutation canonique puis scène invalidée dans cet ordre.
+- **Test négatif prescrit** : Modifier directement une coordonnée GPU : aucune mutation métier/sauvegarde issue de cette seule scène.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (partiel) : Cas négatif (coordonnée GPU) couvert, et l'ordre commande → accusé serveur → relecture dérivée est observé. Manque : l'ordre complet intention → commande → mutation canonique → scène 3D invalidée n'est pas observé dans un seul geste (aucune trace horodatée de l'invalidation de la scène).
+
+### TR-EX-009
+
+- **Libellé exact (REF-02, § w:p 197)** : EX-009 — Propriété des données. Pour chaque classe d’information, un service logique propriétaire est désigné ; les interfaces des autres domaines consomment des références et appels de commande. Un modèle ne doit pas exister en deux exemplaires autoritaires simplement parce que deux planches l’affichent.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A5 · **Lot** : A/C/X
+- **Contrat** : IF-002,IF-006,IF-011 · **Composants candidats** : `packages/atelier-model/src/commandes/base.ts`, `apps/web/src/modules/atelier/nouveau/vue3d/scene3d.ts`
+- **Décisions** : DEC-02,DEC-10,DEC-18 · **Scénarios** : 003
+- **Test positif prescrit** : Mur commun aux deux planches avec un seul propriétaire d'écriture défini ; changements observés des deux côtés.
+- **Test négatif prescrit** : Deux copies autoritaires divergentes du même mur : détecter le défaut, interdire l'engagement ambigu.
+- **Preuve (contrôles positifs exécutés)** : 3
+  - INV-002 BLOC-01 [+] le plan 2D et le maillage 3D se dérivent du seul objet du document : une commande les change ensemble — `packages/atelier-model/src/studio/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+  - architecture : la vue 3D porte les mêmes identifiants que la planche (mur, ouverture) — `apps/web/e2e/studio-navigation.mjs`, commit f59d66d, 2026-10-19 06:50
+  - REC-A-03 : élargie à 1,20 m depuis la vue 3D — déduction 0,504 m³, net 3,096 m³ — `apps/web/e2e/studio-navigation.mjs`, commit f59d66d, 2026-10-19 06:50
+- **Contre-preuve (contrôles négatifs exécutés)** : 1
+  - INV-002 BLOC-01 [−] une seconde copie autoritaire est refusée : identifiant réemployé, projection stockée dans le document — `packages/atelier-model/src/studio/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-010
+
+- **Libellé exact (REF-02, § w:p 202)** : EX-010 — Événements d’effets. Chaque commande acceptée doit identifier autant que possible : objets créés, modifiés ou supprimés ; références/contraintes modifiées ; domaines dérivés invalidés ; révision de sortie et origine de la modification.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A5 · **Lot** : A/C/X
+- **Contrat** : IF-002,IF-006,IF-011 · **Composants candidats** : `packages/atelier-model/src/commandes/base.ts`, `apps/web/src/modules/atelier/nouveau/vue3d/scene3d.ts`
+- **Décisions** : DEC-02,DEC-10,DEC-18 · **Scénarios** : 024
+- **Test positif prescrit** : Créer/modifier/supprimer objets et examiner effets : IDs, relations, dérivés, révision et origine cohérents.
+- **Test négatif prescrit** : Suppression d'hôte avec dépendants non décrits : pas d'acceptation silencieuse laissant des documents frais.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : aucun « événement d'effets » d'une commande acceptée ne liste les références/contraintes modifiées ni les domaines dérivés invalidés (readStudioRevisionChanges rend commandes, éléments changés, révision et auteur ; projectionsAInvalider calcule les dérivés côté client, sans être consigné dans l'effet).
+
+### TR-EX-011
+
+- **Libellé exact (REF-02, § w:p 203)** : EX-011 — Actualisation. Les projections consomment ces effets pour régénérer la portée minimale correcte, avec possibilité de repli vers une reconstruction plus large si l’invalidation exacte n’est pas sûre. Une actualisation partielle erronée n’est jamais acceptée au nom des performances.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A5 · **Lot** : A/C/X
+- **Contrat** : IF-002,IF-006,IF-011 · **Composants candidats** : `packages/atelier-model/src/commandes/base.ts`, `apps/web/src/modules/atelier/nouveau/vue3d/scene3d.ts`
+- **Décisions** : DEC-02,DEC-10,DEC-18 · **Scénarios** : 024
+- **Test positif prescrit** : Déplacer porte et comparer scène incrémentale à reconstruction complète ; repli conservateur correct permis.
+- **Test négatif prescrit** : Omettre invalidation du mur hôte : oracle révèle incohérence et bloque validation de l'optimisation.
+- **Preuve (contrôles positifs exécutés)** : 3
+  - EX-011 [+] porte déplacée : portée minimale (porte et mur hôte seulement), scène incrémentale identique à la reconstruction complète — `packages/atelier-model/src/studio/projections.preuves-a.test.ts`, commit bf775d9, 2026-10-25 21:49
+  - EX-011 [+] repli conservateur : une reconstruction complète (premier calcul) donne le même résultat — `packages/atelier-model/src/studio/projections.preuves-a.test.ts`, commit bf775d9, 2026-10-25 21:49
+  - INV-007 [+] le maillage incrémental (seuls les objets invalidés sont remaillés) est identique au maillage complet à chaque pas — `packages/atelier-model/src/studio/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+- **Contre-preuve (contrôles négatifs exécutés)** : 1
+  - EX-011 [−] invalidation du mur hôte omise : l'oracle révèle l'incohérence (mur m1 périmé) et l'optimisation fautive est rejetée — `packages/atelier-model/src/studio/projections.preuves-a.test.ts`, commit bf775d9, 2026-10-25 21:49
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-012
+
+- **Libellé exact (REF-02, § w:p 298)** : EX-012 — Immuabilité des révisions. Une révision de référence ne change pas rétroactivement lorsque la variante évolue. Une correction de contenu produit un nouvel état ; une annulation collaborative constitue elle-même une nouvelle opération vérifiée.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A1 + A6 · **Lot** : A/R
+- **Contrat** : IF-004,IF-006,IF-011 · **Composants candidats** : `apps/api/src/db/schema.ts`, `packages/atelier-model/src/versions.ts`, `packages/atelier-model/src/commandes/base.ts`
+- **Décisions** : DEC-01,DEC-02,DEC-03,DEC-12 · **Scénarios** : 010,011,030
+- **Test positif prescrit** : Capturer R12, produire R13 puis relire R12 et comparer empreinte/contenu inchangés.
+- **Test négatif prescrit** : Annulation ou nouvelle approbation tente de réécrire R12 : refuser ou créer nouvelle révision.
+- **Preuve (contrôles positifs exécutés)** : 3
+  - EX-012 : R12 capturée, R13 produite puis annulée — deux nouvelles révisions, chaîne R12 → R13 → R14 — `apps/web/e2e/studio-persistance.mjs`, commit bf775d9, 2026-10-25 22:03
+  - EX-012 : R12 relue après R13 et l'annulation — empreinte et contenu complet (document et métadonnées) inchangés, lecture seule — `apps/web/e2e/studio-persistance.mjs`, commit bf775d9, 2026-10-25 22:03
+  - EX-012 : l'annulation est une nouvelle opération — R14 a le contenu de R12 pour la ligne, mais pas son identité ni son rectangle supprimé — `apps/web/e2e/studio-persistance.mjs`, commit bf775d9, 2026-10-25 22:03
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - déclencheurs de init.sql : UPDATE d'une révision ou d'un journal refusé, DELETE d'un évènement de publication existante refusé — `apps/api/src/routes/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+  - INV-012 [−] une publication diffusée ne se réapprouve ni ne s'actualise ; retirée, son contenu reste lisible et journalisé — `apps/api/src/routes/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-013
+
+- **Libellé exact (REF-02, § w:p 299)** : EX-013 — Clonage. Lors du clonage d’une variante, les objets issus de la copie sont identifiés dans la nouvelle variante ; leur provenance peut pointer vers leurs sources, sans établir une propagation automatique. Les composants partagés explicitement versionnés font l’objet d’un contrat de mise à jour séparé.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A1 + A6 · **Lot** : A/R
+- **Contrat** : IF-004,IF-006,IF-011 · **Composants candidats** : `apps/api/src/db/schema.ts`, `packages/atelier-model/src/versions.ts`, `packages/atelier-model/src/commandes/base.ts`
+- **Décisions** : DEC-01,DEC-02,DEC-03,DEC-12 · **Scénarios** : 004
+- **Test positif prescrit** : Cloner variante avec nouvelles identités et provenance, modifier clone puis relire source inchangée.
+- **Test négatif prescrit** : Ancien identifiant réutilisé dans nouveau propriétaire ou propagation implicite : rejeter/détecter.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (décision requise) : Provenance et absence de propagation implicite (dans les deux sens) sont prouvées. Le cas prescrit « nouvelles identités » contredit la conception livrée : la dérivation garde les identifiants d'objets, l'identité étant portée par la paire (variante, objet) — check « dérivation d'une révision passée … mêmes identifiants d'objets ». Décision à prendr…
+
+### TR-EX-014
+
+- **Libellé exact (REF-02, § w:p 300)** : EX-014 — Provenance et unités. Chaque source externe porte auteur/fournisseur lorsqu’il est connu, format, horodatage, version, unités, repère, transformation, restrictions d’utilisation et empreinte du contenu si calculable.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A1 + A6 · **Lot** : A/R
+- **Contrat** : IF-004,IF-006,IF-011 · **Composants candidats** : `apps/api/src/db/schema.ts`, `packages/atelier-model/src/versions.ts`, `packages/atelier-model/src/commandes/base.ts`
+- **Décisions** : DEC-01,DEC-02,DEC-03,DEC-12 · **Scénarios** : 028
+- **Test positif prescrit** : Importer source avec unité m, repère local, transformation et provenance, puis exporter métadonnées.
+- **Test négatif prescrit** : Unité/repère inconnus : signaler inconnue et empêcher calcul silencieux en mètres supposés.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (partiel) : Depuis le lot F3, un modèle externe porte auteur, format, version, unité (déclarée et lue), transformation, horodatage de réception et empreinte SHA-256 ; unité inconnue → « non évaluée », acceptation bloquée ; transformation absente signalée. Absents : « restrictions d'utilisation » (aucun champ), repère source déclaré en propre (seule la transformation ver…
+
+### TR-EX-015
+
+- **Libellé exact (REF-02, § w:p 301)** : EX-015 — Références topologiques. Le système ne reconstitue jamais une relation entre une cote et une face découpée sur la seule proximité spatiale si plusieurs cibles plausibles existent. Il la conserve avec correspondance démontrée ou signale une rupture à résoudre.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A1 + A6 · **Lot** : A/R
+- **Contrat** : IF-004,IF-006,IF-011 · **Composants candidats** : `apps/api/src/db/schema.ts`, `packages/atelier-model/src/versions.ts`, `packages/atelier-model/src/commandes/base.ts`
+- **Décisions** : DEC-01,DEC-02,DEC-03,DEC-12 · **Scénarios** : 007
+- **Test positif prescrit** : Diviser face portant cote : correspondance topologique démontrée ou cote conservée à résoudre.
+- **Test négatif prescrit** : Deux faces voisines plausibles : aucun rattachement automatique par seule proximité.
+- **Preuve (contrôles positifs exécutés)** : 3
+  - prisme en référence liée : l'arête de la source est divisée ; cotes réattachées de façon prouvée, mid du segment divisé réattaché au nouveau sommet qui le recouvre exactement — `packages/atelier-model/src/studio/composition/f1-geometrie.test.ts`, commit 4377815, 2026-10-25 19:50
+  - division hors du milieu : la cote du milieu divisé passe « à résoudre » (valeur non évaluée), les autres restent prouvées — `packages/atelier-model/src/studio/composition/f1-geometrie.test.ts`, commit 4377815, 2026-10-25 19:50
+  - TEST-007 : arête source divisée, cotes réattachées de façon prouvée (sommets 2-3 → 3-4, milieu 1 → nouveau sommet 2), cote angulaire 2-3 → 3-4 — `apps/web/e2e/studio-faces.mjs`, commit 4377815, 2026-10-25 19:58
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - TEST-007 : la cote angulaire du segment divisé passe « à résoudre » (lien rompu, jamais rattachée à une moitié) — `apps/web/e2e/studio-faces.mjs`, commit 4377815, 2026-10-25 19:58
+  - INV-013 BLOC-01 [−] segment coté divisé (sommet inséré) : liens rompus, cotes « à résoudre », géométrie gardée, valeur non évaluée — `packages/atelier-model/src/studio/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-016
+
+- **Libellé exact (REF-02, § w:p 328)** : EX-016 — Fraîcheur. Les contenus dérivés doivent afficher à jour pour révision R, à recalculer, en calcul, échec ou non applicable, selon leur contrat. « Dernière image produite » ne signifie pas nécessairement « état courant ».
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A1 + A6 · **Lot** : A/R
+- **Contrat** : IF-004,IF-006,IF-011 · **Composants candidats** : `apps/api/src/db/schema.ts`, `packages/atelier-model/src/versions.ts`, `packages/atelier-model/src/commandes/base.ts`
+- **Décisions** : DEC-01,DEC-02,DEC-03,DEC-12 · **Scénarios** : 014,030
+- **Test positif prescrit** : Changer source R12→R13 : vue devient à recalculer puis en calcul, à jour R13 ou échec explicite.
+- **Test négatif prescrit** : Ancienne image R12 présentée à jour R13 après échec : oracle doit rejeter ce statut.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : aucun contenu dérivé n'expose la suite d'états « à jour pour révision R / à recalculer / en calcul / échec / non applicable » (seuls « à jour » / « périmée » des publications et feuilles, et « en cours » du rapport DXF). Sans ces états, ni le cas positif R12 → R13 ni l'oracle « ancienne image R12 présentée à jour R13 après échec »…
+
+### TR-EX-017
+
+- **Libellé exact (REF-02, § w:p 331)** : EX-017 — Atomicité. Les modifications canoniques d’une même opération sont engagées ensemble ou pas du tout. Les rafraîchissements de cache peuvent être différés et signalés, mais ne constituent pas des modifications canoniques validées.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A1 + A6 · **Lot** : A/R
+- **Contrat** : IF-004,IF-006,IF-011 · **Composants candidats** : `apps/api/src/db/schema.ts`, `packages/atelier-model/src/versions.ts`, `packages/atelier-model/src/commandes/base.ts`
+- **Décisions** : DEC-01,DEC-02,DEC-03,DEC-12 · **Scénarios** : 008
+- **Test positif prescrit** : Appliquer lot mur/ouverture valide et constater engagement groupé durable.
+- **Test négatif prescrit** : Deuxième opération du lot invalide : aucune partie de la première ne persiste.
+- **Preuve (contrôles positifs exécutés)** : 3
+  - A.4 : mur et ouverture enregistrés (tableau architecture, objets 2D inchangés) — `apps/web/e2e/studio-persistance.mjs`, commit f59d66d, 2026-10-19 06:49
+  - INV-005 [+] un lot valide est appliqué en entier : une révision, tête avancée — `apps/api/src/routes/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+  - INV-005 [+] un lot valide s'applique en entier, comme un seul pas d'historique — `packages/atelier-model/src/studio/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+- **Contre-preuve (contrôles négatifs exécutés)** : 3
+  - A.4 : mur abaissé sous son ouverture → 400, motif clair, lot entier refusé — `apps/web/e2e/studio-persistance.mjs`, commit f59d66d, 2026-10-19 06:49
+  - INV-005 [−] refus au milieu du lot, ou panne après l'insertion de la révision : aucune ligne modifiée — `apps/api/src/routes/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+  - une commande refusée au milieu du lot n'applique pas les précédentes — `apps/api/src/testing/studio-contrat-commandes.test.ts`, commit 4643cfa, 2026-10-19 12:39
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-018
+
+- **Libellé exact (REF-02, § w:p 332)** : EX-018 — Idempotence. Une même commande répétée après une interruption, avec son requestId et le même périmètre, n’est pas appliquée deux fois. Une nouvelle commande distincte exige une nouvelle identité.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A1 + A6 · **Lot** : A/R
+- **Contrat** : IF-004,IF-006,IF-011 · **Composants candidats** : `apps/api/src/db/schema.ts`, `packages/atelier-model/src/versions.ts`, `packages/atelier-model/src/commandes/base.ts`
+- **Décisions** : DEC-01,DEC-02,DEC-03,DEC-12 · **Scénarios** : 013
+- **Test positif prescrit** : Réémettre même requestId/périmètre après coupure : même résultat une seule révision/objet.
+- **Test négatif prescrit** : Même requestId avec paramètres/périmètre incompatibles : refus explicite, pas deuxième application.
+- **Preuve (contrôles positifs exécutés)** : 3
+  - la répétition après coupure rend la réponse d'origine, sans seconde révision — `apps/api/src/testing/studio-contrat-commandes.test.ts`, commit 4643cfa, 2026-10-19 12:39
+  - coupure : même requestId renvoyé, rejeu reconnu, une seule révision — `apps/web/e2e/studio-conflits.mjs`, commit 4643cfa, 2026-10-19 12:43
+  - rejeu du même requestId idempotent — `apps/web/e2e/studio-persistance.mjs`, commit ad8c7e3, 2026-10-18 21:30
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - même requestId avec un autre contenu ou par un autre auteur → 409 request_conflict, rien d'écrit — `apps/api/src/testing/studio-contrat-commandes.test.ts`, commit 4643cfa, 2026-10-19 12:39
+  - requestId réutilisé avec un autre contenu refusé (409) — `apps/web/e2e/studio-persistance.mjs`, commit ad8c7e3, 2026-10-18 21:30
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-019
+
+- **Libellé exact (REF-02, § w:p 335)** : EX-019 — Évolutivité des schémas. Chaque document/commande persistant porte sa version de schéma. Toute migration doit fournir une transformation documentée, des tests aller-retour lorsque réalisables, une conservation des données inconnues ou un rapport des pertes, et un retour arrière ou une récupération explicitement prévue.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A1 + A6 · **Lot** : A/R
+- **Contrat** : IF-004,IF-006,IF-011 · **Composants candidats** : `apps/api/src/db/schema.ts`, `packages/atelier-model/src/versions.ts`, `packages/atelier-model/src/commandes/base.ts`
+- **Décisions** : DEC-01,DEC-02,DEC-03,DEC-12 · **Scénarios** : 034,036
+- **Test positif prescrit** : Lire document schéma ancien, appliquer transformation documentée et comparer identités/propriétés.
+- **Test négatif prescrit** : Champ inconnu ou migration impossible : conservation/rapport des pertes et récupération, jamais disparition muette.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Aucune migration de schéma du document persistant (studio-document/1 seul, MIGRATIONS_BROUILLON vide) : ni transformation documentée, ni aller-retour, ni conservation ou rapport des données inconnues (un champ inconnu est refusé), ni retour arrière. Fonction absente.
+
+### TR-EX-020
+
+- **Libellé exact (REF-02, § w:p 363)** : EX-020 — Indépendance forte. Un dessin 2D doit pouvoir être sérialisé, restauré, édité et exporté sans reconstruction d’un modèle 3D « de substitution ». Les extrusions ou transferts créent un objet 3D nouveau ou une association déclarée.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A4 + A5 · **Lot** : A/C
+- **Contrat** : IF-002,IF-004,IF-006 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/plan2d/Plan2D.tsx`, `apps/web/src/modules/atelier/nouveau/plan2d/accrochage.ts`, `packages/planche-model/src`
+- **Décisions** : DEC-01,DEC-02,DEC-09 · **Scénarios** : 001,005
+- **Test positif prescrit** : Sérialiser dessin 2D, restaurer et exporter sans charger ou reconstruire de modèle 3D.
+- **Test négatif prescrit** : Transfert/extrusion non confirmé : aucune création 3D ni dépendance implicite.
+- **Preuve (contrôles positifs exécutés)** : 2
+  - crée, déplace, édite et rouvre sans niveau, maillage ou modèle 3D — `packages/atelier-model/src/studio/document-2d.test.ts`, commit ad8c7e3, 2026-10-18 21:27
+  - TR-EX-020 : dessin 2D exporté en SVG (rectangle relu) sans charger three.js ni la vue 3D, rendu 3D non initialisé — `apps/web/e2e/studio-preuves-b.mjs`, commit bf775d9, 2026-10-25 21:54
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - TR-EX-020 : extrusion saisie puis abandonnée — aucune commande en attente, rien envoyé, aucune révision, aucun objet extrudé, aucun moteur 3D — `apps/web/e2e/studio-preuves-b.mjs`, commit bf775d9, 2026-10-25 21:54
+  - aucune valeur par défaut : base et hauteur vides bloquent l'extrusion — `apps/web/src/modules/studio/vue3d/extrusion.test.ts`, commit 3205a6e, 2026-10-18 23:43
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-021
+
+- **Libellé exact (REF-02, § w:p 364)** : EX-021 — Correspondance explicite. Une commande sur un objet architectural depuis l’une des planches cible le même objectId et les mêmes relations. Les deux planches ne doivent pas maintenir leurs propres versions autoritaires du mur.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A4 + A5 · **Lot** : A/C
+- **Contrat** : IF-002,IF-004,IF-006 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/plan2d/Plan2D.tsx`, `apps/web/src/modules/atelier/nouveau/plan2d/accrochage.ts`, `packages/planche-model/src`
+- **Décisions** : DEC-01,DEC-02,DEC-09 · **Scénarios** : 003
+- **Test positif prescrit** : Modifier mur en 2D puis en 3D et comparer objectId/relations/révision identiques.
+- **Test négatif prescrit** : Deux identités concurrentes créées selon planche : défaut éliminatoire signalé.
+- **Preuve (contrôles positifs exécutés)** : 3
+  - TR-EX-021 : depuis la vue 3D, le mur choisi est le même objet que sur la planche (même identifiant, hauteur modifiée en 2D déjà lue) — `apps/web/e2e/studio-preuves-b.mjs`, commit bf775d9, 2026-10-25 21:54
+  - TR-EX-021 : relu — un seul mur « mur-b » portant les deux modifications, l'ouverture toujours hébergée par lui (relation conservée) — `apps/web/e2e/studio-preuves-b.mjs`, commit bf775d9, 2026-10-25 21:54
+  - TR-EX-021 : après enregistrement, planche et vue 3D portent toujours les mêmes identifiants — `apps/web/e2e/studio-preuves-b.mjs`, commit bf775d9, 2026-10-25 21:54
+- **Contre-preuve (contrôles négatifs exécutés)** : 3
+  - TR-EX-021 : une seule enveloppe, deux « modifier » sur le même objectId (2D puis 3D), aucune autre identité créée — `apps/web/e2e/studio-preuves-b.mjs`, commit bf775d9, 2026-10-25 21:54
+  - TR-EX-021 : une seule révision pour les deux modifications, fille de la tête précédente (aucune version autoritaire propre à une planche) — `apps/web/e2e/studio-preuves-b.mjs`, commit bf775d9, 2026-10-25 21:54
+  - INV-002 BLOC-01 [−] une seconde copie autoritaire est refusée : identifiant réemployé, projection stockée dans le document — `packages/atelier-model/src/studio/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-022
+
+- **Libellé exact (REF-02, § w:p 383)** : EX-022 — Propagation limitée. Toute propagation est définie par le type d’association et la dépendance. L’extraction d’une coupe ne confère pas à ses segments le pouvoir universel de modifier le volume ; une cote associée ne modifie pas automatiquement sa cible.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A4 + A5 · **Lot** : A/C
+- **Contrat** : IF-002,IF-004,IF-006 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/plan2d/Plan2D.tsx`, `apps/web/src/modules/atelier/nouveau/plan2d/accrochage.ts`, `packages/planche-model/src`
+- **Décisions** : DEC-01,DEC-02,DEC-09 · **Scénarios** : 004,006,007
+- **Test positif prescrit** : Profil lié modifié recalcule extrusion selon relation ; copie indépendante reste inchangée.
+- **Test négatif prescrit** : Éditer segment d'une coupe dérivée ou cote sans commande dédiée : ne modifie pas universellement le volume.
+- **Preuve (contrôles positifs exécutés)** : 1
+  - segments d'une coupe modifiés : document, prisme et volume inchangés ; recouper rend la coupe d'origine — `packages/atelier-model/src/studio/preuves-b.test.ts`, commit bf775d9, 2026-10-25 21:49
+- **Contre-preuve (contrôles négatifs exécutés)** : 3
+  - référence liée : modifier la polyligne recalcule le prisme dans le même lot (volume relu, jamais l'ancien) — `packages/atelier-model/src/studio/composition/f1-geometrie.test.ts`, commit 4377815, 2026-10-25 19:50
+  - copie indépendante : aucune propagation, la source n'est qu'une provenance — `packages/atelier-model/src/studio/composition/f1-geometrie.test.ts`, commit 4377815, 2026-10-25 19:50
+  - cote liée au profil source : décalage modifié sans toucher polyligne ni prisme ; point mesuré déplacé refusé ; volume inchangé — `packages/atelier-model/src/studio/preuves-b.test.ts`, commit bf775d9, 2026-10-25 21:49
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-023
+
+- **Libellé exact (REF-02, § w:p 414)** : EX-023 — Repères et unités. Toute primitive possède un système de coordonnées identifiable : document 2D, local d’objet, système de projet et, le cas échéant, système géographique référencé. Les transformations sont versionnées et vérifiées, avec unités explicites ; la projection graphique en pixels ne constitue jamais l’unité de référence.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A4 + A5 · **Lot** : A/C
+- **Contrat** : IF-002,IF-004,IF-006 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/plan2d/Plan2D.tsx`, `apps/web/src/modules/atelier/nouveau/plan2d/accrochage.ts`, `packages/planche-model/src`
+- **Décisions** : DEC-01,DEC-02,DEC-09 · **Scénarios** : 001,002,028
+- **Test positif prescrit** : Convertir coordonnées document/local/projet avec transformation versionnée et comparer valeurs/unité.
+- **Test négatif prescrit** : Entrée pixels traitée comme mètres ou géographie mélangée au local : refus/erreur explicite.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Le refus des pixels et du repère d'écran est testé ; le système de projet et les transformations versionnées document / local / projet n'existent pas (cas positif impossible à tester).
+
+### TR-EX-024
+
+- **Libellé exact (REF-02, § w:p 415)** : EX-024 — Gestes réversibles. Un geste peut afficher un aperçu approché sans écrire d’objet permanent. La confirmation produit une commande, soumise aux contrôles et à une restitution fidèle aux tolérances contractuelles ; annuler l’aperçu ne laisse aucune mutation canonique.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A4 + A5 · **Lot** : A/C
+- **Contrat** : IF-002,IF-004,IF-006 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/plan2d/Plan2D.tsx`, `apps/web/src/modules/atelier/nouveau/plan2d/accrochage.ts`, `packages/planche-model/src`
+- **Décisions** : DEC-01,DEC-02,DEC-09 · **Scénarios** : 005,008
+- **Test positif prescrit** : Dessiner aperçu, confirmer et contrôler commande/valeur dans tolérance contractuelle.
+- **Test négatif prescrit** : Échap sur aperçu puis relire modèle : aucune mutation canonique résiduelle.
+- **Preuve (contrôles positifs exécutés)** : 3
+  - saisie : polaire 45° et longueur 3 → extrémité exacte — `apps/web/e2e/studio-navigation.mjs`, commit f59d66d, 2026-10-19 06:50
+  - accrochage : trois lignes enregistrées avec les coordonnées exactes — `apps/web/e2e/studio-navigation.mjs`, commit f59d66d, 2026-10-19 06:50
+  - transformations : aperçu de la copie au survol, Échap l'annule sans rien appliquer — `apps/web/e2e/studio-navigation.mjs`, commit f59d66d, 2026-10-19 06:50
+- **Contre-preuve (contrôles négatifs exécutés)** : 3
+  - aperçu du tracé affiché, aucune commande en attente — `apps/web/e2e/studio-conflits.mjs`, commit 4643cfa, 2026-10-19 12:43
+  - Échap : aperçu annulé, aucune commande, rien envoyé — `apps/web/e2e/studio-conflits.mjs`, commit 4643cfa, 2026-10-19 12:43
+  - l'aperçu ne crée aucun pas, aucune commande en attente, et laisse le document intact — `apps/web/src/modules/studio/contrat-commandes.test.ts`, commit 4643cfa, 2026-10-19 12:39
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-025
+
+- **Libellé exact (REF-02, § w:p 416)** : EX-025 — Accrochage stable. Les types d’accrochage, priorités, tolérances et règles de sélection sont définis par contexte. Une accélération spatiale ou une baisse des effets graphiques n’est pas autorisée à substituer silencieusement un point différent à celui du calcul de référence.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A4 + A5 · **Lot** : A/C
+- **Contrat** : IF-002,IF-004,IF-006 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/plan2d/Plan2D.tsx`, `apps/web/src/modules/atelier/nouveau/plan2d/accrochage.ts`, `packages/planche-model/src`
+- **Décisions** : DEC-01,DEC-02,DEC-09 · **Scénarios** : 022
+- **Test positif prescrit** : Exécuter snapping avant/après index sur extrémité/intersection ambiguë et comparer point/cible/priorité.
+- **Test négatif prescrit** : Réduire qualité graphique ou permuter candidats : aucun autre point choisi hors contrat.
+- **Preuve (contrôles positifs exécutés)** : 4
+  - TEST-022 — S1–S3 : même repère résolu (point, genre, objet, priorité) par l'index et le parcours linéaire — `apps/web/src/modules/studio/planche2d/mesure-spatiale.test.ts`, commit 44c6ef4, 2026-10-25 16:08
+  - extrémité et intersection confondues : même point, même cible, même priorité avant et après index (au-dessus du seuil) — `apps/web/src/modules/studio/planche2d/accrochage.preuves-b.test.ts`, commit bf775d9, 2026-10-25 21:49
+  - ordre des objets inversé puis mélangé : même point et même genre ; à égalité exacte, l'un des candidats ex aequo de la référence — `apps/web/src/modules/studio/planche2d/accrochage.preuves-b.test.ts`, commit bf775d9, 2026-10-25 21:49
+  - candidats, point accroché et tolérance rendus identiques avant, pendant et après la charge (paliers 0 à 4) — `apps/web/src/modules/studio/vue3d/qualite-rendu.test.ts`, commit 5edae3e, 2026-10-25 20:16
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-026
+
+- **Libellé exact (REF-02, § w:p 422)** : EX-026 — Registre. Le Tool Registry décrit les capacités activables, leurs contextes, versions, contrats, permissions et dépendances. Il est consultable sans télécharger tous les moteurs ni instancier leurs machines. Son manifeste léger est utilisable pour la recherche hors ligne.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A5 · **Lot** : B/X/F option
+- **Contrat** : IF-005,IF-006 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/outils.ts`, `packages/planche-model/src/outils/index.ts`
+- **Décisions** : DEC-05,DEC-07,DEC-15,DEC-18 · **Scénarios** : 016,017
+- **Test positif prescrit** : Rechercher toolId et dépendances depuis manifeste léger à cache froid puis hors ligne.
+- **Test négatif prescrit** : Consulter registre sans activer outil : aucun chargement/initialisation obligatoire OCCT ou machines lourdes.
+- **Preuve (contrôles positifs exécutés)** : 1
+  - TR-EX-026 : hors connexion — même résultat depuis le manifeste léger (toolId, chargeur, prérequis), sans réseau — `apps/web/e2e/studio-preuves-b.mjs`, commit bf775d9, 2026-10-25 21:54
+- **Contre-preuve (contrôles négatifs exécutés)** : 4
+  - TR-EX-026 : cache froid (aucun service worker ni cache) — « studio.solide.deplacer » trouvé par son toolId, chargeur vue-3d et prérequis boîte / prisme lus dans le manifeste — `apps/web/e2e/studio-preuves-b.mjs`, commit bf775d9, 2026-10-25 21:54
+  - TR-EX-026 / TR-EX-029 : la recherche ne charge ni n'initialise aucun moteur (three.js, vue 3D, noyau exact non demandés ; rendu 3D non initialisé) — `apps/web/e2e/studio-preuves-b.mjs`, commit bf775d9, 2026-10-25 21:54
+  - TR-EX-026 : hors connexion, la recherche ne lance toujours aucun moteur lourd — `apps/web/e2e/studio-preuves-b.mjs`, commit bf775d9, 2026-10-25 21:54
+  - est valide : aucune entrée manquante, en double ou hors registre ; chargeurs et prérequis sans cycle — `packages/atelier-model/src/studio/manifeste-outils.test.ts`, commit 4643cfa, 2026-10-19 12:39
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-027
+
+- **Libellé exact (REF-02, § w:p 423)** : EX-027 — Identifiants uniques. Les capacités portent des identifiants globalement non ambigus (studio.draw.line2d, studio.transform.scale, studio.arch.ladder). Une collision de noms d’affichage n’autorise pas une collision d’identifiants. Les renommages gardent les alias de migration documentés.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A5 · **Lot** : B/X/F option
+- **Contrat** : IF-005,IF-006 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/outils.ts`, `packages/planche-model/src/outils/index.ts`
+- **Décisions** : DEC-05,DEC-07,DEC-15,DEC-18 · **Scénarios** : 017
+- **Test positif prescrit** : Valider manifeste contenant studio.transform.scale et studio.arch.ladder distincts ; alias ancien résolu.
+- **Test négatif prescrit** : Déclarer deux toolId identiques même si labels distincts : validation rejette sans écrasement de dictionnaire.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (partiel) : Cas négatif couvert (doublon à libellés distincts rejeté sans écrasement). Cas positif impossible : aucune capacité d'objet d'accès (studio.arch.ladder) n'existe pour vérifier sa distinction avec la transformation d'échelle.
+
+### TR-EX-028
+
+- **Libellé exact (REF-02, § w:p 424)** : EX-028 — Validation à deux niveaux. Les métadonnées et le schéma peuvent être contrôlés au build ; chaque invocation effective fait l’objet des contrôles d’exécution, notamment permission, contexte, paramètres, quotas et révision.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A5 · **Lot** : B/X/F option
+- **Contrat** : IF-005,IF-006 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/outils.ts`, `packages/planche-model/src/outils/index.ts`
+- **Décisions** : DEC-05,DEC-07,DEC-15,DEC-18 · **Scénarios** : 018,035
+- **Test positif prescrit** : Manifeste valide au build, invocation autorisée avec paramètres/révision/quotas valides réussit.
+- **Test négatif prescrit** : Modifier droits après build ou forger entrée/quota : contrôle runtime refuse malgré schéma statique valide.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Permission, contexte, paramètres et révision sont contrôlés à l'exécution ; aucun quota d'invocation (par compte ou par période) n'existe, seulement des bornes de schéma et de document.
+
+### TR-EX-029
+
+- **Libellé exact (REF-02, § w:p 463)** : EX-029 — Recherche. Requête par nom, synonymes, famille, domaine, contexte et identifiant ; la recherche ne lance pas le moteur. Pour chaque outil, l’interface expose : découvert, non disponible, incompatible, interdit, non installé hors ligne, en chargement, prêt, erreur.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A5 · **Lot** : B/X/F option
+- **Contrat** : IF-005,IF-006 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/outils.ts`, `packages/planche-model/src/outils/index.ts`
+- **Décisions** : DEC-05,DEC-07,DEC-15,DEC-18 · **Scénarios** : 017,020
+- **Test positif prescrit** : Chercher par nom, synonyme, famille, domaine, contexte et toolId et voir état fidèle.
+- **Test négatif prescrit** : Échec loader/interdit/offline : résultat reste découvrable avec état exact, pas faux prêt ni moteur lancé par recherche.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (partiel) : Recherche par nom, identifiant, contexte (filtre) et barre couverte, sans lancement de moteur. Absents : recherche par synonyme et par domaine (pertinence ne lit que nom, raccourci et identifiant) et l'affichage par outil des huit états prescrits (découvert, non disponible, incompatible, interdit, non installé hors ligne, en chargement, prêt, erreur).
+
+### TR-EX-030
+
+- **Libellé exact (REF-02, § w:p 464)** : EX-030 — Versions. Un changement majeur du contrat exige un plan de compatibilité avec profils enregistrés, commandes hors ligne en attente et documents réouvrables. Un module marqué « déprécié » reste résoluble tant que sa présence est nécessaire à la lecture d’un travail existant, ou fournit une migration sûre.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A5 · **Lot** : B/X/F option
+- **Contrat** : IF-005,IF-006 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/outils.ts`, `packages/planche-model/src/outils/index.ts`
+- **Décisions** : DEC-05,DEC-07,DEC-15,DEC-18 · **Scénarios** : 036
+- **Test positif prescrit** : Réouvrir document/profil ancien avec compatibilité/alias ou migration explicitement fournie.
+- **Test négatif prescrit** : Déprécier outil puis ouvrir un travail le nécessitant : pas d'objet perdu ou de commande locale effacée.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Aucun statut « déprécié » d'outil ou de module dans le manifeste, ni plan de compatibilité associé : le cas « déprécier un outil puis rouvrir un document qui l'emploie » n'est pas réalisable. Les alias de renommage et la file locale incompatible existent.
+
+### TR-EX-031
+
+- **Libellé exact (REF-02, § w:p 465)** : EX-031 — Extensibilité sûre. La déclaration d’extension indique provenance, version, signature ou mécanisme de confiance choisi, permissions demandées, dépendances, mises à jour et support. « Trouvé dans le Registry » ne signifie pas « autorisé à charger/écrire ». Les extensions tierces restent une décision ouverte.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A5 · **Lot** : B/X/F option
+- **Contrat** : IF-005,IF-006 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/outils.ts`, `packages/planche-model/src/outils/index.ts`
+- **Décisions** : DEC-05,DEC-07,DEC-15,DEC-18 · **Scénarios** : 033,035
+- **Test positif prescrit** : Extension optionnelle inspectée avec provenance/version/confiance/permissions/mises à jour identifiées.
+- **Test négatif prescrit** : Manifeste propose script arbitraire non fiable : aucun chargement/écriture sur simple découverte.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Rapprochement du 25 octobre 2026 (non couvert) : Aucune déclaration d'extension (provenance, signature/confiance, permissions, mises à jour) n'existe dans le code ni dans les tests ; les extensions tierces restent une décision ouverte (le manifeste ne porte que agentExposure: "none").
+
+### TR-EX-032
+
+- **Libellé exact (REF-02, § w:p 468)** : EX-032 — Manager. Le Tool Manager construit les barres, réconcilie les préférences et le contexte, résout les loaders, active/désactive les machines d’outil et expédie les événements. Il n’effectue pas lui-même de booléens, de tessellation ou de validation canonique.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A4 + A2 + A1 · **Lot** : B/I
+- **Contrat** : IF-005 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/planche`, `apps/web/src/lib/i18n`
+- **Décisions** : DEC-04,DEC-06 · **Scénarios** : 016,017
+- **Test positif prescrit** : Activer outil via Manager, loader et machine puis commande commune ; moteur appelé via frontière dédiée.
+- **Test négatif prescrit** : Espionner Manager lors booléen : ne calcule pas lui-même géométrie ni ne contourne validation serveur.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : 1
+  - activer, désactiver, réactiver 50 fois le Booléen exact puis libérer le moteur : chargeur appelé une fois, aucun booléen, aucune tessellation, aucun Worker créé par le Manager — `apps/web/src/modules/studio/chargement/manager-exact.test.ts`, commit d87a82e, 2026-10-25 21:11
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-033
+
+- **Libellé exact (REF-02, § w:p 487)** : EX-033 — Personnalisation sûre. Retirer un bouton ne désinstalle ni l’outil ni les objets créés avec lui. Importer un profil ne confère pas de permissions. Le passage d’un profil à l’autre ne produit pas de révision du bâtiment.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A4 + A2 + A1 · **Lot** : B/I
+- **Contrat** : IF-005 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/planche`, `apps/web/src/lib/i18n`
+- **Décisions** : DEC-04,DEC-06 · **Scénarios** : 018,019
+- **Test positif prescrit** : Changer standard→métier→personnel et masquer bouton : modèle/révision/droits inchangés et outil retrouvable.
+- **Test négatif prescrit** : Importer profil avec Publier sans droit : exécution refusée ; masquer outil ne supprime pas ses objets.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Cas négatif prescrit impossible : aucun import de profil, aucun outil « Publier » au registre. Retrait d'un bouton et changement de profil sans révision déjà couverts.
+
+### TR-EX-034
+
+- **Libellé exact (REF-02, § w:p 488)** : EX-034 — Persistance des profils. Un profil possède profileId, propriétaire, version, ordre des capacités, raccourcis, visibilité, réglages et contexte. Les conflits de raccourcis sont détectés, explicités et résolus sans effacer la configuration source.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A4 + A2 + A1 · **Lot** : B/I
+- **Contrat** : IF-005 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/planche`, `apps/web/src/lib/i18n`
+- **Décisions** : DEC-04,DEC-06 · **Scénarios** : 019
+- **Test positif prescrit** : Enregistrer profil avec profileId/propriétaire/version/ordre/raccourcis puis rouvrir sur autre session.
+- **Test négatif prescrit** : Importer deux raccourcis en conflit : conflit visible et configuration source préservée.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Le profil n'a ni profileId, ni version, ni raccourcis personnels ; aucun import, donc aucun conflit de raccourcis à détecter (vérifié dans planche2d/profils.ts).
+
+### TR-EX-035
+
+- **Libellé exact (REF-02, § w:p 489)** : EX-035 — Commande de recherche. Le catalogue complet reste accessible indépendamment de la barre active. Un outil interdit ou incompatible peut être recherché à des fins d’information, mais n’est pas offert comme action exécutable.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A4 + A2 + A1 · **Lot** : B/I
+- **Contrat** : IF-005 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/planche`, `apps/web/src/lib/i18n`
+- **Décisions** : DEC-04,DEC-06 · **Scénarios** : 017,018
+- **Test positif prescrit** : Masquer outil favori puis le retrouver dans catalogue autorisé.
+- **Test négatif prescrit** : Chercher outil interdit/incompatible : descriptif consultable selon politique, pas d'action exécutable.
+- **Preuve (contrôles positifs exécutés)** : 2
+  - propriétaire : « studio.dessin.supprimer » trouvé par la recherche de la palette, non exécutable, raison « contexte » — `apps/web/e2e/studio-catalogue.mjs`, commit bf775d9, 2026-10-25 22:06
+  - lecteur : « studio.dessin.ligne » trouvé par la recherche de la palette, non exécutable, raison « droit-role » — `apps/web/e2e/studio-catalogue.mjs`, commit bf775d9, 2026-10-25 22:06
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - propriétaire : Entrée puis clic sur « studio.dessin.supprimer » ne lancent rien (palette ouverte, Sélection toujours active, aucune commande envoyée) — `apps/web/e2e/studio-catalogue.mjs`, commit bf775d9, 2026-10-25 22:06
+  - lecteur : Entrée puis clic sur « studio.dessin.ligne » ne lancent rien (palette ouverte, Sélection toujours active, aucune commande envoyée) — `apps/web/e2e/studio-catalogue.mjs`, commit bf775d9, 2026-10-25 22:06
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-036
+
+- **Libellé exact (REF-02, § w:p 491)** : EX-036 — Accessibilité. Chaque commande affichée possède un nom compréhensible, un état actif/chargement/interdit, un parcours clavier et un retour d’erreur. Les gestes impossibles au seul clavier possèdent un chemin alternatif adapté au contexte, à définir dans les spécifications UX. Le changement de focus entre Planche 2D et 3D est visible.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A4 + A2 + A1 · **Lot** : B/I
+- **Contrat** : IF-005 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/planche`, `apps/web/src/lib/i18n`
+- **Décisions** : DEC-04,DEC-06 · **Scénarios** : NAV-001,NAV-005
+- **Test positif prescrit** : Au clavier activer commande, voir focus 2D/3D et lire nom/état/erreur accessible.
+- **Test négatif prescrit** : Commande sans nom ou geste sans alternative prévue : échec recette, aucun succès déduit de l'icône.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (décision requise) : Le critère renvoie lui-même aux « spécifications UX » pour les chemins alternatifs aux gestes : aucune spécification n'existe, donc aucun contrôle ne peut échouer sur un geste sans alternative. En plus, la bascule Planche 2D ⇄ 3D ne déplace pas le focus (VariantWorkspace, commande vue-3d) : le changement de focus visible n'est pas implémenté.
+
+### TR-EX-037
+
+- **Libellé exact (REF-02, § w:p 492)** : EX-037 — Continuité des gestes. La palette contextuelle ne doit pas perturber les séquences de dessin, la saisie numérique ni les modificateurs de contraintes. Les préférences de présentation sont distinctes des paramètres de géométrie enregistrés.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A4 + A2 + A1 · **Lot** : B/I
+- **Contrat** : IF-005 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/planche`, `apps/web/src/lib/i18n`
+- **Décisions** : DEC-04,DEC-06 · **Scénarios** : 019,NAV-007
+- **Test positif prescrit** : Saisir longueur numérique avec modificateur de contrainte pendant ouverture palette : geste conservé.
+- **Test négatif prescrit** : Changement palette/profil pendant geste : pas de perte silencieuse ni paramètre géométrique remplacé par préférence UI.
+- **Preuve (contrôles positifs exécutés)** : 1
+  - geste : palette ouverte puis fermée pendant la saisie — point posé, champ Mesures et saisie « 2 » conservés, polaire toujours actif — `apps/web/e2e/studio-navigation.mjs`, commit bf775d9, 2026-10-25 22:04
+- **Contre-preuve (contrôles négatifs exécutés)** : 1
+  - geste : après la palette, Entrée trace la ligne polaire 45° de longueur 2 depuis le point posé (aucun paramètre remplacé) — `apps/web/e2e/studio-navigation.mjs`, commit bf775d9, 2026-10-25 22:04
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-038
+
+- **Libellé exact (REF-02, § w:p 497)** : EX-038 — Démarrage léger. À l’ouverture du Studio : interface minimale, identité/profil, contexte d’étude, métadonnées du registre et commandes essentielles. Aucune initialisation systématique de tous les outils spécialisés, d’OCCT, des moteurs 3D non sollicités ou de leurs workers.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A6 + A5 · **Lot** : B/R
+- **Contrat** : IF-005,IF-006 · **Composants candidats** : `apps/web/vite.config.ts`, `apps/web/src/lib`, `packages/planche-model/src/outils/index.ts`
+- **Décisions** : DEC-07,DEC-14 · **Scénarios** : 016
+- **Test positif prescrit** : Ouvrir Studio à froid et relever shell/profil/contexte/catalogue avant première action.
+- **Test négatif prescrit** : Espionner OCCT/renderer3D/worker rare sans planche ouverte : aucune initialisation systématique.
+- **Preuve (contrôles positifs exécutés)** : 3
+  - démarrage : ni planche, ni three.js, ni noyau exact, ni Atelier exécutés (B.3-02, EX-038) — `apps/web/e2e/studio-chargement.mjs`, commit bf775d9, 2026-10-25 22:06
+  - démarrage (avant toute action) : coquille Studio, rôle de l'utilisateur et contexte d'étude (étude, variante, révision de tête) affichés (EX-038) — `apps/web/e2e/studio-chargement.mjs`, commit bf775d9, 2026-10-25 22:06
+  - démarrage (avant toute action) : profil d'outils et catalogue autorisé lus du serveur, barres d'outils et commandes essentielles présentes (EX-038) — `apps/web/e2e/studio-chargement.mjs`, commit bf775d9, 2026-10-25 22:06
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-039
+
+- **Libellé exact (REF-02, § w:p 498)** : EX-039 — Ouverture de planche. La première Planche 2D initialise uniquement les composants nécessaires à sa représentation et à ses commandes usuelles. La Planche 3D initialise son renderer et les machines utiles. Les deux peuvent cohabiter lorsque l’utilisateur les ouvre, sans forcer le téléchargement de tout le catalogue.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A6 + A5 · **Lot** : B/R
+- **Contrat** : IF-005,IF-006 · **Composants candidats** : `apps/web/vite.config.ts`, `apps/web/src/lib`, `packages/planche-model/src/outils/index.ts`
+- **Décisions** : DEC-07,DEC-14 · **Scénarios** : 016
+- **Test positif prescrit** : Ouvrir seulement planche 2D puis 3D et attribuer chaque ressource à l'action nécessaire.
+- **Test négatif prescrit** : 2D seule déclenche tous moteurs 3D spécialisés : tracer et refuser ce comportement non justifié.
+- **Preuve (contrôles positifs exécutés)** : 6
+  - planche : l'éditeur est chargé, three.js / vue 3D / noyau exact toujours pas (B.3-03, EX-039) — `apps/web/e2e/studio-chargement.mjs`, commit 4643cfa, 2026-10-19 12:43
+  - planche : moteurs planche initialisés et actifs (outil Sélection), rendu 3D non initialisé (B.3-01) — `apps/web/e2e/studio-chargement.mjs`, commit 4643cfa, 2026-10-19 12:43
+  - vue 3D : three.js chargé au premier usage, chaque morceau une seule fois (B.3-04) — `apps/web/e2e/studio-chargement.mjs`, commit 4643cfa, 2026-10-19 12:43
+  - vue 3D : moteur initialisé une fois et actif — `apps/web/e2e/studio-chargement.mjs`, commit 4643cfa, 2026-10-19 12:43
+  - planche importée statiquement par la coquille : violation ; noyau exact dans la 3D : violation — `apps/web/src/modules/studio/chargement/carte-morceaux.test.ts`, commit 4643cfa, 2026-10-19 12:39
+  - three.js importé statiquement par l'entrée : violation nommée — `apps/web/src/modules/studio/chargement/carte-morceaux.test.ts`, commit 4643cfa, 2026-10-19 12:39
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-040
+
+- **Libellé exact (REF-02, § w:p 499)** : EX-040 — Activation rare. Une opération particulière déclenche le chargement de son module et de ses dépendances manquantes, puis conserve ou libère les ressources selon une politique documentée. Un moteur déjà initialisé et compatible ne doit pas être réinitialisé sans raison.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A6 + A5 · **Lot** : B/R
+- **Contrat** : IF-005,IF-006 · **Composants candidats** : `apps/web/vite.config.ts`, `apps/web/src/lib`, `packages/planche-model/src/outils/index.ts`
+- **Décisions** : DEC-07,DEC-14 · **Scénarios** : 015,016
+- **Test positif prescrit** : Activer outil exact pour la première fois, puis seconde fois et comparer instance/dépendances mutualisées.
+- **Test négatif prescrit** : Échec d'un module rare : état récupérable ; un autre outil compatible ne crée pas sans raison un second noyau.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Studio n'a aucun outil exact (OCCT interdit par la carte des morceaux) : les cas « outil exact, première puis seconde activation » et « un autre outil ne crée pas un second noyau » ne peuvent pas être exercés. Le mécanisme générique est prouvé sur rendu-3d, planche et calcul.
+
+### TR-EX-041
+
+- **Libellé exact (REF-02, § w:p 500)** : EX-041 — Partage de dépendances. Les modules d’outils mutualisent la géométrie fondamentale, les bibliothèques graphiques et les noyaux exacts. Un découpage en un fichier par bouton est interdit comme obligation universelle : la granularité est choisie à partir des coûts de chargement, des dépendances et du comportement réel de l’utilisateur.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A6 + A5 · **Lot** : B/R
+- **Contrat** : IF-005,IF-006 · **Composants candidats** : `apps/web/vite.config.ts`, `apps/web/src/lib`, `packages/planche-model/src/outils/index.ts`
+- **Décisions** : DEC-07,DEC-14 · **Scénarios** : 016
+- **Test positif prescrit** : Activer deux outils partageant géométrie/noyau, mesurer un exemplaire compatible de dépendance.
+- **Test négatif prescrit** : Un chunk par bouton duplique le même noyau : détecter octets/instances sans imposer découpage arbitraire.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Aucun détecteur de duplication en octets : la carte des morceaux (chargement.json) ne relève que des familles par fichier, pas les modules par morceau, et les bundles séparés des Workers n'y sont pas comparés au bundle principal. Il faudrait relever moduleIds par morceau (vite.config.ts) puis comparer, y compris Worker ↔ principal.
+
+### TR-EX-042
+
+- **Libellé exact (REF-02, § w:p 521)** : EX-042 — Cache différencié. Le service worker gère séparément : (a) shell minimal, (b) ressources essentielles d’un profil, (c) modules facultatifs, (d) données métier et file de commandes. Le préchargement complet du build n’est pas considéré comme équivalent au chargement différé, même si le code n’est pas encore exécuté.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A6 + A5 · **Lot** : B/R
+- **Contrat** : IF-005,IF-006 · **Composants candidats** : `apps/web/vite.config.ts`, `apps/web/src/lib`, `packages/planche-model/src/outils/index.ts`
+- **Décisions** : DEC-07,DEC-14 · **Scénarios** : 016,036
+- **Test positif prescrit** : Observer caches distincts shell/profil/modules/file et téléchargement facultatif au besoin.
+- **Test négatif prescrit** : Service worker précache tout le build : ne déclarer ce fait équivalent au chargement différé.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Un seul cache par build, et tout le build est précaché à l'installation : ni caches distincts (coquille, profil, modules, données/file), ni téléchargement facultatif à la demande.
+
+### TR-EX-043
+
+- **Libellé exact (REF-02, § w:p 522)** : EX-043 — Offline véridique. Une capacité n’est annoncée utilisable hors réseau que si les modules, dépendances et données de référence indispensables sont présents et compatibles. Une action exigeant l’autorité centrale peut être préparée localement selon contrat, mais n’est jamais marquée « publiée/approuvée » avant validation centrale.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A6 + A5 · **Lot** : B/R
+- **Contrat** : IF-005,IF-006 · **Composants candidats** : `apps/web/vite.config.ts`, `apps/web/src/lib`, `packages/planche-model/src/outils/index.ts`
+- **Décisions** : DEC-07,DEC-14 · **Scénarios** : 020,021
+- **Test positif prescrit** : Passer offline avec profil préparé et utiliser outil dont code/dépendances/données sont compatibles.
+- **Test négatif prescrit** : Outil absent du cache : indisponible explicite ; commande centrale préparée ne devient pas publiée/approuvée.
+- **Preuve (contrôles positifs exécutés)** : 2
+  - hors connexion : approbation annoncée non confirmée — `apps/web/e2e/studio-preuves-c.mjs`, commit bf775d9, 2026-10-25 21:54
+  - en ligne : approbation validée par le serveur, puis affichée « approuvée » — `apps/web/e2e/studio-preuves-c.mjs`, commit bf775d9, 2026-10-25 21:54
+- **Contre-preuve (contrôles négatifs exécutés)** : 4
+  - hors connexion : la carte n'est jamais affichée « approuvée » (état lu du serveur conservé) — `apps/web/e2e/studio-preuves-c.mjs`, commit bf775d9, 2026-10-25 21:54
+  - de retour en ligne : le serveur n'a rien enregistré (toujours soumis, aucune approbation) — `apps/web/e2e/studio-preuves-c.mjs`, commit bf775d9, 2026-10-25 21:54
+  - hors connexion : diffusion annoncée non confirmée, jamais affichée « diffusée » — `apps/web/e2e/studio-preuves-c.mjs`, commit bf775d9, 2026-10-25 21:54
+  - de retour en ligne : aucune diffusion enregistrée par le serveur — `apps/web/e2e/studio-preuves-c.mjs`, commit bf775d9, 2026-10-25 21:54
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-044
+
+- **Libellé exact (REF-02, § w:p 523)** : EX-044 — Versions du cache. Le système conserve la correspondance buildId ↔ toolContractVersion ↔ schemaVersion, protège les commandes en attente et évite qu’une mise à jour invalide une opération locale sans explication. Les politiques d’éviction doivent respecter les limites de quota et préserver prioritairement les données non synchronisées.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A6 + A5 · **Lot** : B/R
+- **Contrat** : IF-005,IF-006 · **Composants candidats** : `apps/web/vite.config.ts`, `apps/web/src/lib`, `packages/planche-model/src/outils/index.ts`
+- **Décisions** : DEC-07,DEC-14 · **Scénarios** : 036
+- **Test positif prescrit** : Mettre à jour build avec file pendante et préserver relation build/contrat/schéma et données non synchronisées.
+- **Test négatif prescrit** : Ancien contrat incompatible ou quota atteint : résolution/migration explicite, aucune purge de file silencieuse.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Le buildId n'est pas enregistré dans la file locale (persistance.ts / contrats.ts : brouillon ↔ commandes ↔ schéma seulement), et rien ne gère le quota (aucune éviction, aucune erreur de quota traitée). Le scénario « mise à jour du build avec file pendante » n'est pas écrit.
+
+### TR-EX-045
+
+- **Libellé exact (REF-02, § w:p 552)** : EX-045 — Prévisualisation distincte. Un appel d’essai ne produit pas de mutation permanente. La réponse peut fournir géométrie, contraintes et avertissements, avec portée de validité de révision. Un calcul prévisualisé et non confirmé est révoqué sans effets de référence.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A5 · **Lot** : A/D/R
+- **Contrat** : IF-004,IF-006,IF-011 · **Composants candidats** : `packages/atelier-model/src/commandes/base.ts`, `apps/web/src/modules/atelier/nouveau/planche/historique.ts`, `packages/planche-model/src/delta.ts`
+- **Décisions** : DEC-12,DEC-11 · **Scénarios** : 014
+- **Test positif prescrit** : Exécuter preview de booléen liée à R12 puis confirmer sur base valide.
+- **Test négatif prescrit** : Annuler preview ou recevoir calcul R12 après R13 : aucun engagement permanent non confirmé.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Aucun appel d'essai serveur à portée de révision (supportsDryRun n'est qu'une métadonnée du registre) : les cas « preview R12 puis confirmation » et « résultat R12 reçu après R13 » sont sans objet tant que la fonction manque.
+
+### TR-EX-046
+
+- **Libellé exact (REF-02, § w:p 553)** : EX-046 — Journal d’audit. Les engagements persistants exposent qui a demandé, sur quoi, quand, à partir de quelle révision, avec quel résultat et quelles identités touchées. Les événements sensibles suivent une politique de minimisation et de conservation explicite.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A5 · **Lot** : A/D/R
+- **Contrat** : IF-004,IF-006,IF-011 · **Composants candidats** : `packages/atelier-model/src/commandes/base.ts`, `apps/web/src/modules/atelier/nouveau/planche/historique.ts`, `packages/planche-model/src/delta.ts`
+- **Décisions** : DEC-12,DEC-11 · **Scénarios** : 012,013
+- **Test positif prescrit** : Accepter commande puis relire acteur cible horodatage base résultat et IDs touchés dans journal.
+- **Test négatif prescrit** : Commande refusée ou trace sensible : aucun faux engagement, pas de secret/géométrie client inutile dans logs.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (décision requise) : Aucune politique explicite de conservation des événements sensibles (durées, purge) côté serveur : à décider (maître d'ouvrage, DPO). La minimisation côté client existe et est testée (journal-correlation : controlerJournal refuse secrets, courriels et géométrie).
+
+### TR-EX-047
+
+- **Libellé exact (REF-02, § w:p 555)** : EX-047 — Historique hybride. Le Studio conserve les mécanismes éprouvés de Fadi lorsque l’audit démontre leur adéquation : commandes métier, deltas de Planche, états immuables/instantanés locaux. Les inverses, deltas et snapshots sont choisis selon exactitude, volume mémoire et concurrence ; aucune promesse générale d’annulation en O(1) n’est émise.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A5 · **Lot** : A/D/R
+- **Contrat** : IF-004,IF-006,IF-011 · **Composants candidats** : `packages/atelier-model/src/commandes/base.ts`, `apps/web/src/modules/atelier/nouveau/planche/historique.ts`, `packages/planche-model/src/delta.ts`
+- **Décisions** : DEC-12,DEC-11 · **Scénarios** : 011,012
+- **Test positif prescrit** : Choisir commande/inverse ou delta/snapshot justifié, annuler/rétablir et comparer état exact.
+- **Test négatif prescrit** : Historique volumineux/concurrent incompatible : refus explicite, pas promesse O(1) ni perte masquée.
+- **Preuve (contrôles positifs exécutés)** : 1
+  - au-delà de ${STUDIO_HISTORY_LIMIT} lots : les plus anciens ne s'annulent plus, restent en attente, et la barre d'état le dit — `apps/web/src/modules/studio/planche2d/historique-borne.preuves-c.test.ts`, commit bf775d9, 2026-10-25 21:49
+- **Contre-preuve (contrôles négatifs exécutés)** : 1
+  - annuler / rétablir rend l'état exact ; sous la borne, aucun avertissement — `apps/web/src/modules/studio/planche2d/historique-borne.preuves-c.test.ts`, commit bf775d9, 2026-10-25 21:49
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-048
+
+- **Libellé exact (REF-02, § w:p 556)** : EX-048 — Annulation collaborative. Annuler une commande acceptée peut nécessiter une nouvelle commande inverse sur la révision actuelle. Le serveur revalide les objets modifiés entre-temps ; l’historique ou la publication précédente n’est pas réécrit.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A5 · **Lot** : A/D/R
+- **Contrat** : IF-004,IF-006,IF-011 · **Composants candidats** : `packages/atelier-model/src/commandes/base.ts`, `apps/web/src/modules/atelier/nouveau/planche/historique.ts`, `packages/planche-model/src/delta.ts`
+- **Décisions** : DEC-12,DEC-11 · **Scénarios** : 012
+- **Test positif prescrit** : Annuler commande C1 après C2 compatible via nouvelle inverse validée sur révision actuelle.
+- **Test négatif prescrit** : C2 d'autre utilisateur incompatible : conflit, jamais suppression silencieuse du travail d'autrui.
+- **Preuve (contrôles positifs exécutés)** : 1
+  - INV-011 [+] le brouillon reporté sur la tête d'autrui s'annule sans retirer le changement d'autrui — `apps/web/src/modules/studio/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+- **Contre-preuve (contrôles négatifs exécutés)** : 4
+  - INV-011 [+] A annule son propre ajout (élément distinct) : refus 409 sans chevauchement, reporté sur la tête, le travail de B demeure — `apps/api/src/routes/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+  - INV-011 [−] l'annulation de A retirerait `a` modifié par B : conflit signalé (chevauchement objects:a), tête de B intacte — `apps/api/src/routes/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+  - annulation concurrente : annuler après un report ne retire jamais un changement d'autrui — `apps/web/src/modules/studio/contrat-commandes.test.ts`, commit 4643cfa, 2026-10-19 12:39
+  - déclencheurs de init.sql : UPDATE d'une révision ou d'un journal refusé, DELETE d'un évènement de publication existante refusé — `apps/api/src/routes/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-049
+
+- **Libellé exact (REF-02, § w:p 557)** : EX-049 — Reprise de session. Au retour après interruption, l’interface distingue opérations confirmées, en attente de synchronisation, rejetées/conflictuelles, prévisualisations abandonnées. Les opérations locales possèdent une identité de déduplication et une version de contrat compatibles avec la file de synchronisation.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A5 · **Lot** : A/D/R
+- **Contrat** : IF-004,IF-006,IF-011 · **Composants candidats** : `packages/atelier-model/src/commandes/base.ts`, `apps/web/src/modules/atelier/nouveau/planche/historique.ts`, `packages/planche-model/src/delta.ts`
+- **Décisions** : DEC-12,DEC-11 · **Scénarios** : 013,021,036
+- **Test positif prescrit** : Réouvrir après coupure et distinguer confirmée/pendante/rejetée/conflit/preview abandonnée.
+- **Test négatif prescrit** : Réenvoyer file incompatible ou déjà confirmée : pas de doublon ni disparition sans état explicite.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Les états « rejetée » et « prévisualisation abandonnée » n'existent pas à la reprise (hors-ligne/etat.ts : en-ligne, hors-ligne, en-attente, conflit). Une enveloppe refusée hors stale_revision n'est pas conservée avec un état explicite.
+
+### TR-EX-050
+
+- **Libellé exact (REF-02, § w:p 563)** : EX-050 — Projection reconstructible. La scène de chaque planche contient uniquement des données dérivées : traces visibles, maillages, positions GPU, styles de sélection, poignées, boîtes englobantes et index. Les identités des objets canoniques sont conservées dans une table de correspondance stable, y compris lorsque plusieurs objets partagent un lot de rendu.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A5 · **Lot** : C
+- **Contrat** : IF-002,IF-003,IF-011 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/vue3d/scene3d.ts`, `apps/web/src/modules/atelier/nouveau/plan2d/accrochage.ts`
+- **Décisions** : DEC-09,DEC-10,DEC-13 · **Scénarios** : 023
+- **Test positif prescrit** : Détruire cache scène/index puis reconstruire depuis modèle et vérifier table triangle→objectId.
+- **Test négatif prescrit** : Batch de plusieurs objets ou objet supprimé : aucun triangle sélectionnable avec ID obsolète.
+- **Preuve (contrôles positifs exécutés)** : 1
+  - triangle du lot → identifiant Studio, objets sans triangle ignorés, bornes — `apps/web/src/modules/studio/vue3d/picking.test.ts`, commit 9143ae0, 2026-10-19 10:41
+- **Contre-preuve (contrôles négatifs exécutés)** : 5
+  - INV-008 [+] sans aucun cache, la projection se reconstruit entièrement depuis le document (premier calcul) — `packages/atelier-model/src/studio/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+  - INV-008 [−] des morceaux altérés (clé périmée, objet disparu) ne sont pas crus : ils sont remaillés depuis le document — `packages/atelier-model/src/studio/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+  - C.2-02 / C.2-03 : un clic sur un mur fusionné rend son identifiant ; supprimé, jamais lui — `apps/web/src/modules/studio/vue3d/scene-rendu.test.ts`, commit 9143ae0, 2026-10-19 10:41
+  - objet supprimé : jamais désigné ; l'objet derrière l'est, sinon rien — `apps/web/src/modules/studio/vue3d/picking.test.ts`, commit 9143ae0, 2026-10-19 10:41
+  - désignation 3D : boîte supprimée, un clic à son endroit ne désigne jamais son identifiant (tout de suite et après remaillage) — `apps/web/e2e/studio-navigation.mjs`, commit 9143ae0, 2026-10-19 10:48
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-051
+
+- **Libellé exact (REF-02, § w:p 564)** : EX-051 — Projection en état identifié. La projection affiche son sourceRevisionId et les domaines de données périmées. Une modification de géométrie acceptée invalide les dépendances graphiques correspondantes ; un résultat de worker calculé sur une autre révision ne peut la modifier comme s’il était courant.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A5 · **Lot** : C
+- **Contrat** : IF-002,IF-003,IF-011 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/vue3d/scene3d.ts`, `apps/web/src/modules/atelier/nouveau/plan2d/accrochage.ts`
+- **Décisions** : DEC-09,DEC-10,DEC-13 · **Scénarios** : 014
+- **Test positif prescrit** : Après commande R13, scène affiche sourceRevisionId et données périmées puis se recalcule.
+- **Test négatif prescrit** : Résultat worker R12 arrive : ne remplace pas projection courante comme si source R13.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : La vue 3D n'affiche ni son sourceRevisionId ni les domaines de données périmées : seuls des attributs data-studio-maillage-revision / revision-courante existent, sans texte visible ni liste de domaines. Le refus d'un résultat de Worker R12 sur R13 est déjà prouvé.
+
+### TR-EX-052
+
+- **Libellé exact (REF-02, § w:p 593)** : EX-052 — Broad phase. Les requêtes de sélection, accrochage et intersection filtrent les candidats par emprise spatiale à l’échelle de la vue avant de lancer les tests précis. Pour une petite scène, le balayage simple reste admissible lorsqu’il est plus efficace et correct.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A5 · **Lot** : C
+- **Contrat** : IF-002,IF-003,IF-011 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/vue3d/scene3d.ts`, `apps/web/src/modules/atelier/nouveau/plan2d/accrochage.ts`
+- **Décisions** : DEC-09,DEC-10,DEC-13 · **Scénarios** : 022
+- **Test positif prescrit** : Sur S1 petite scène et S3 dense, mesurer filtrage emprise avant calcul précis et comparer cibles.
+- **Test négatif prescrit** : Objet hors candidats mais intersectant la vue : oracle révèle omission ; balayage correct reste repli autorisé.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (mesure requise) : La mesure S1/S3 complète tourne derrière STUDIO_MESURE_SPATIALE=1 (hors CI) et son rapport est « sans seuil ni verdict ». Comparer aux cibles demande des cibles décidées (DEC-13) et une mesure sur appareil désigné. L'oracle index = linéaire est déjà couvert.
+
+### TR-EX-053
+
+- **Libellé exact (REF-02, § w:p 594)** : EX-053 — Narrow phase. Les primitives retenues sont testées avec les règles géométriques de référence : extrémité, milieu, intersection, centre, tangente, perpendiculaire, point proche, ortho, parallèle, priorités et tolérances. Une accélération ne change pas les règles de classement et de départage.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A5 · **Lot** : C
+- **Contrat** : IF-002,IF-003,IF-011 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/vue3d/scene3d.ts`, `apps/web/src/modules/atelier/nouveau/plan2d/accrochage.ts`
+- **Décisions** : DEC-09,DEC-10,DEC-13 · **Scénarios** : 022
+- **Test positif prescrit** : Tester extrémité/milieu/intersection/centre/tangente/perpendiculaire/ortho/parallèle avec priorités.
+- **Test négatif prescrit** : Permutation index ou égalité de distances : même règle de départage/tolérance qu'oracle.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (partiel) : Départage sous permutation de l'index désormais prouvé : 720 ordres d'insertion, égalités de distance réelles. Mutation tuée : tri par rang de l'index retiré. Reste absent : le mode d'accrochage « parallèle » n'existe pas (MODES_ACCROCHAGE).
+
+### TR-EX-054
+
+- **Libellé exact (REF-02, § w:p 595)** : EX-054 — Maintien. L’index est cohérent avec la révision source et les états de calques, références et sélections autorisées. Insert/remove/update ciblés sont privilégiés si prouvés efficaces ; reconstruction en worker possible pour grands changements. La requête temps réel peut rester sur le fil principal si elle respecte les mesures de latence.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A5 · **Lot** : C
+- **Contrat** : IF-002,IF-003,IF-011 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/vue3d/scene3d.ts`, `apps/web/src/modules/atelier/nouveau/plan2d/accrochage.ts`
+- **Décisions** : DEC-09,DEC-10,DEC-13 · **Scénarios** : 022,023
+- **Test positif prescrit** : Insérer/modifier/supprimer objet et changer calque/référence puis comparer index à reconstruction.
+- **Test négatif prescrit** : Objet caché/interdit/supprimé encore indexé ou résultat d'index ancienne révision : ne pas publier comme courant.
+- **Preuve (contrôles positifs exécutés)** : 3
+  - insertions, suppressions, mises à jour, remplacements et synchronisations (graines 1 à 6, 600 mutations chacune) — `apps/web/src/modules/studio/planche2d/index-incremental.test.ts`, commit 5edae3e, 2026-10-25 20:16
+  - sélection par rectangle (fenêtre et capture) sur 60 révisions : mêmes identifiants, index synchronisé sans reconstruction — `apps/web/src/modules/studio/planche2d/index-incremental.test.ts`, commit 5edae3e, 2026-10-25 20:16
+  - candidats d'accrochage sur 60 révisions : mêmes candidats que l'index linéaire, formes changées seules réindexées — `apps/web/src/modules/studio/planche2d/index-incremental.test.ts`, commit 5edae3e, 2026-10-25 20:16
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - sélection : index de la révision A interrogé sur B = reconstruction de B ; supprimé, masqué, verrouillé, déplacé jamais rendus — `apps/web/src/modules/studio/planche2d/index-maintien.preuves-c.test.ts`, commit bf775d9, 2026-10-25 21:49
+  - accrochage : l'index suivi depuis A rend sur B les candidats de la reconstruction ; aucun point de l'objet supprimé ni de l'ancienne position — `apps/web/src/modules/studio/planche2d/index-maintien.preuves-c.test.ts`, commit bf775d9, 2026-10-25 21:49
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-055
+
+- **Libellé exact (REF-02, § w:p 616)** : EX-055 — Fidélité. Le renderer 2D reproduit lignes, arcs, splines, cercles, contours, hachures, cotations, légendes, textes, symboles, calques, transparences, sélection et aperçu, avec un comportement identique des coordonnées et accrochages.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A4 + A5 · **Lot** : A/C/F option
+- **Contrat** : IF-002,IF-003 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/plan2d/rendu.tsx`, `apps/web/src/modules/atelier/nouveau/planche/vue-planche.ts`
+- **Décisions** : DEC-08,DEC-10,DEC-17 · **Scénarios** : 025
+- **Test positif prescrit** : Rendre scène avec ligne/arc/spline/hachure/cote/texte/calques puis comparer export et coordonnées.
+- **Test négatif prescrit** : Renderer alternatif omet texte/hachure ou modifie accrochage : non-régression échoue même si plus rapide.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Splines, hachures, symboles et transparences n'existent pas dans le modèle 2D de Studio : impossible de comparer leur rendu. Il n'y a qu'un renderer dans l'application (SVG, DEC-08) ; Canvas et GPU ne sont comparés qu'en preuve (comparaison-moteurs). Texte et calques sont couverts.
+
+### TR-EX-056
+
+- **Libellé exact (REF-02, § w:p 620)** : EX-056 — Réutilisation contrôlée. La cible conserve par défaut les capacités fonctionnelles utiles déjà observées (rendu à la demande, batching, WebGL2, WebGPU optionnel, machines de Planche), sous réserve d’audit de conformité. Aucun nouveau moteur 3D n’est présumé nécessaire.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A4 + A5 · **Lot** : A/C/F option
+- **Contrat** : IF-002,IF-003 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/plan2d/rendu.tsx`, `apps/web/src/modules/atelier/nouveau/planche/vue-planche.ts`
+- **Décisions** : DEC-08,DEC-10,DEC-17 · **Scénarios** : 023,025
+- **Test positif prescrit** : Qualifier rendu à la demande/batching/WebGL2/repli WebGPU existants sur corpus.
+- **Test négatif prescrit** : Remplacer moteur sans gain/conformité prouvés : décision bloquée, pas réécriture automatique.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Aucun repli WebGPU dans Studio, et le rendu à la demande n'est pas qualifié sur corpus (seul le batching l'est). Le blocage d'un remplacement de moteur sans preuve n'est pas un mécanisme : il relève de la décision (DEC-08 retient SVG pour la 2D).
+
+### TR-EX-057
+
+- **Libellé exact (REF-02, § w:p 631)** : EX-057 — Dégradation sûre. En cas de surcharge, réduire d’abord ombres, effets, anti-crénelage et résolution de présentation. Ne jamais désactiver silencieusement un accrochage indispensable, modifier l’objet enregistré ou assouplir une tolérance géométrique métier pour augmenter le FPS.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A4 + A5 · **Lot** : A/C/F option
+- **Contrat** : IF-002,IF-003 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/plan2d/rendu.tsx`, `apps/web/src/modules/atelier/nouveau/planche/vue-planche.ts`
+- **Décisions** : DEC-08,DEC-10,DEC-17 · **Scénarios** : 022,025
+- **Test positif prescrit** : Sous charge réduire ombres/résolution et comparer coordonnées/cotes/snapping inchangés.
+- **Test négatif prescrit** : Dégradation désactive accrochage ou assouplit tolérance métier : défaut éliminatoire.
+- **Preuve (contrôles positifs exécutés)** : 4
+  - ombres d'abord, puis résolution (75 %, 50 %), puis anti-crénelage ; un palier par fenêtre — `apps/web/src/modules/studio/vue3d/qualite-rendu.test.ts`, commit 5edae3e, 2026-10-25 20:16
+  - candidats, point accroché et tolérance rendus identiques avant, pendant et après la charge (paliers 0 à 4) — `apps/web/src/modules/studio/vue3d/qualite-rendu.test.ts`, commit 5edae3e, 2026-10-25 20:16
+  - TR-EX-057 : sous charge simulée (40 ms par trame, budget 16,7 ms), résolution 75 %, puis 50 %, puis anti-crénelage coupé — un palier par fenêtre de 8 trames — `apps/web/e2e/studio-rendu.mjs`, commit 5edae3e, 2026-10-25 20:25
+  - TR-EX-057 : charge ôtée, retour palier par palier (2, 1, 0) jusqu'à la qualité complète ; indicateur retiré — `apps/web/e2e/studio-rendu.mjs`, commit 5edae3e, 2026-10-25 20:25
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - chaque palier ne porte que ombres / résolution / anti-crénelage (aucun accrochage, aucune tolérance, aucun objet) — `apps/web/src/modules/studio/vue3d/qualite-rendu.test.ts`, commit 5edae3e, 2026-10-25 20:16
+  - TR-EX-057 : sous charge, même désignation au même point (même solide qu'au repos), mêmes solides et volumes, aucune commande, même révision serveur — `apps/web/e2e/studio-rendu.mjs`, commit 5edae3e, 2026-10-25 20:25
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. Pour TR-EX-100 à 104, les écarts réels relevés sont publiés dans docs/ai-team/reports/claude-f4-tracabilite/TRACABILITE-EX.md.
+
+### TR-EX-058
+
+- **Libellé exact (REF-02, § w:p 632)** : EX-058 — Transparence des previews. Un aperçu approximatif (ex. offset ou booléen simplifié) doit rester identifié comme provisoire. La géométrie exacte est calculée et validée avant engagement ; le décalage entre preview et résultat final, s’il dépasse la tolérance, doit être expliqué ou la commande refusée.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A4 + A5 · **Lot** : A/C/F option
+- **Contrat** : IF-002,IF-003 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/plan2d/rendu.tsx`, `apps/web/src/modules/atelier/nouveau/planche/vue-planche.ts`
+- **Décisions** : DEC-08,DEC-10,DEC-17 · **Scénarios** : 005,008
+- **Test positif prescrit** : Afficher preview approximative explicitement puis résultat exact validé dans tolérance.
+- **Test négatif prescrit** : Écart preview/exact supérieur au contrat : explication/refus, jamais sauvegarde approximative silencieuse.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - TR-EX-058 : aperçu marqué « provisoire, jamais engagé », estimé 12 m³, confirmé par le résultat exact (12 m³) — `apps/web/e2e/studio-exact.mjs`, commit d87a82e, 2026-10-25 21:21
+  - TR-EX-058 : boîte tournée de 45° — aperçu provisoire refusé (écart au-delà de la tolérance, expliqué), résultat exact seul engageable — `apps/web/e2e/studio-exact.mjs`, commit d87a82e, 2026-10-25 21:21
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-059
+
+- **Libellé exact (REF-02, § w:p 636)** : EX-059 — Isolation du calcul lourd. Le fil principal assure événements, retours immédiats et rendu. Les opérations susceptibles de bloquer durablement l’interaction (géométrie exacte, reconstruction d’index volumineux, tessellation massive, export) sont candidates à un worker ou au serveur, à choisir sur mesure.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A6 + A5 · **Lot** : D
+- **Contrat** : IF-003,IF-007 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/exact/moteur-exact.ts`, `apps/web/src/modules/atelier/nouveau/exact/exact.worker.ts`
+- **Décisions** : DEC-11,DEC-13 · **Scénarios** : 015,037
+- **Test positif prescrit** : Soumettre booléen lourd avec mesures et observer interaction disponible via worker/serveur retenu.
+- **Test négatif prescrit** : Calcul coûteux bloque durablement UI : garder échec/performance visible et revoir placement après mesure.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (mesure requise) : Mesurer que le fil principal reste disponible pendant un calcul lourd demande une mesure sur appareil réel (hors CI) ; aucun booléen n'existe dans Studio (cas positif prescrit sans objet).
+
+### TR-EX-060
+
+- **Libellé exact (REF-02, § w:p 637)** : EX-060 — Ordonnanceur commun. Chaque tâche possède jobId, domaine, priorité, révision source, empreinte d’entrée, limite de concurrence, état, stratégie d’annulation, journal d’erreur et pointeur de résultat. L’ordonnanceur ne doit pas supposer qu’un worker par cœur logique est optimal.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A6 + A5 · **Lot** : D
+- **Contrat** : IF-003,IF-007 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/exact/moteur-exact.ts`, `apps/web/src/modules/atelier/nouveau/exact/exact.worker.ts`
+- **Décisions** : DEC-11,DEC-13 · **Scénarios** : 014,015,037
+- **Test positif prescrit** : Soumettre deux jobs avec identités/priorités/empreintes/révisions/quota et suivre états.
+- **Test négatif prescrit** : Saturation/concurrence excessive : quota/attente/erreur explicites, pas un worker par cœur imposé sans mesure.
+- **Preuve (contrôles positifs exécutés)** : 2
+  - l'interactive passe avant le fond en file ; un emplacement reste toujours libre pour l'interactive — `apps/web/src/modules/studio/taches/ordonnanceur.test.ts`, commit 98748a0, 2026-10-19 08:07
+  - révision de session : stable pour un même document, croissante pour un nouveau ; hachage des paramètres stable — `apps/web/src/modules/studio/taches/ordonnanceur.test.ts`, commit 98748a0, 2026-10-19 08:07
+- **Contre-preuve (contrôles négatifs exécutés)** : 3
+  - même clé, même empreinte : la même poignée, aucun calcul en double — `apps/web/src/modules/studio/taches/ordonnanceur.test.ts`, commit 98748a0, 2026-10-19 08:07
+  - concurrence bornée : jamais plus d'exécutions que d'emplacements ; emplacements réutilisés — `apps/web/src/modules/studio/taches/ordonnanceur.test.ts`, commit 98748a0, 2026-10-19 08:07
+  - deux plantages : échec explicite (jamais en suspens), message en français ; les autres tâches continuent — `apps/web/src/modules/studio/taches/ordonnanceur.test.ts`, commit 98748a0, 2026-10-19 08:07
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-061
+
+- **Libellé exact (REF-02, § w:p 665)** : EX-061 — Échec worker. L’échec rejette les tâches affectées, libère le worker défaillant, préserve le modèle et propose la relance sous contrôle. Un mécanisme de recréation du worker spécialisé doit être spécifié et testé ; les requêtes pending ne restent pas bloquées indéfiniment.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A6 + A5 · **Lot** : D
+- **Contrat** : IF-003,IF-007 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/exact/moteur-exact.ts`, `apps/web/src/modules/atelier/nouveau/exact/exact.worker.ts`
+- **Décisions** : DEC-11,DEC-13 · **Scénarios** : 015
+- **Test positif prescrit** : Forcer crash worker puis résoudre pending, recréer et relancer sous contrôle sans doublons.
+- **Test négatif prescrit** : Worker disparaît en calcul : pas de promesse pending indéfinie ni modèle partiellement muté.
+- **Preuve (contrôles positifs exécutés)** : 3
+  - EX-061 [+] relance sous contrôle (nouvelle soumission) : Worker recréé, un seul résultat remis, calculé sur le document intact — `apps/web/src/modules/studio/taches/pool-studio.preuves-e.test.ts`, commit bf775d9, 2026-10-25 21:49
+  - plantage du Worker : Worker relancé, la tâche reprise une fois aboutit ; résultat remis une seule fois — `apps/web/src/modules/studio/taches/pool-studio.test.ts`, commit 98748a0, 2026-10-19 08:07
+  - deux plantages : échec explicite ; la tâche suivante repart sur un Worker neuf — `apps/web/src/modules/studio/taches/pool-studio.test.ts`, commit 98748a0, 2026-10-19 08:07
+- **Contre-preuve (contrôles négatifs exécutés)** : 1
+  - EX-061 [−] deux disparitions en plein calcul : issue « failed / plantage » résolue (jamais en suspens), aucun résultat remis, document canonique identique — `apps/web/src/modules/studio/taches/pool-studio.preuves-e.test.ts`, commit bf775d9, 2026-10-25 21:49
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-062
+
+- **Libellé exact (REF-02, § w:p 666)** : EX-062 — Mémoire WASM. Suivre taille compressée transférée, instance compilée, allocations WASM et mémoire résidente après traitement ; conserver un noyau chargé tant que le coût de maintien est justifié. L’initialisation simultanée de plusieurs OCCT requiert une preuve de gain et de mémoire acceptable.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A6 + A5 · **Lot** : D
+- **Contrat** : IF-003,IF-007 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/exact/moteur-exact.ts`, `apps/web/src/modules/atelier/nouveau/exact/exact.worker.ts`
+- **Décisions** : DEC-11,DEC-13 · **Scénarios** : 037
+- **Test positif prescrit** : Ouvrir/fermer outil exact 50 fois, suivre transfert/allocations/résiduel avec instance justifiée.
+- **Test négatif prescrit** : Second OCCT simultané ou croissance mémoire : pas de conformité sans courbe/limite décidée.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Lot F2 : taille transférée et décodée, instance unique, durée de chargement et 50 ouvertures sans croissance sont recettés (studio-exact, « TR-EX-062 : … »). Reste : allocations internes au WASM, que le noyau n'expose pas.
+
+### TR-EX-063
+
+- **Libellé exact (REF-02, § w:p 667)** : EX-063 — Transfert d’objets. Les grands tableaux typés peuvent être transférés sans copie seulement lorsque le protocole établit la propriété du tampon et sa durée de vie. Les messages applicatifs restent validés même s’ils proviennent d’un worker « interne ».
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A6 + A5 · **Lot** : D
+- **Contrat** : IF-003,IF-007 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/exact/moteur-exact.ts`, `apps/web/src/modules/atelier/nouveau/exact/exact.worker.ts`
+- **Décisions** : DEC-11,DEC-13 · **Scénarios** : 015
+- **Test positif prescrit** : Transférer buffer selon contrat de propriété puis valider message reçu.
+- **Test négatif prescrit** : Réutiliser tampon détaché ou message worker forgé : validation refuse, pas de corruption canonique.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : HoteWorker accepte toute « valeur » rattachée à un identifiant connu ; aucune validation applicative de la forme du message reçu d'un Worker interne (message bien formé mais forgé) n'existe.
+
+### TR-EX-064
+
+- **Libellé exact (REF-02, § w:p 673)** : EX-064 — Identité BIM. Un objet architectural possède type, paramètres, niveau, hôtes, relations, propriétés et provenance. Les paramètres de conception (épaisseur, implantation), les propriétés techniques (composition, performances) et les styles de représentation (couleur, texture) sont trois catégories indépendantes.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E
+- **Contrat** : IF-008,IF-010 · **Composants candidats** : `packages/atelier-model/src/coordination.ts`, `apps/web/src/modules/programmation`, `apps/web/src/modules/analyses`
+- **Décisions** : DEC-02,DEC-16 · **Scénarios** : 026
+- **Test positif prescrit** : Modifier couleur puis épaisseur et comparer catégories style/paramètre/composition séparées.
+- **Test négatif prescrit** : Style matériau apparent tente de changer composition technique : pas d'effet implicite.
+- **Preuve (contrôles positifs exécutés)** : 1
+  - EX-064 [+] changer la couleur puis l'épaisseur : chaque changement ne touche que sa catégorie — `packages/atelier-model/src/studio/identite-bim.preuves-e.test.ts`, commit bf775d9, 2026-10-25 21:49
+- **Contre-preuve (contrôles négatifs exécutés)** : 1
+  - EX-064 [−] une apparence « verre » ne change pas la composition technique déclarée, et retirer le style laisse paramètres et propriétés — `packages/atelier-model/src/studio/identite-bim.preuves-e.test.ts`, commit bf775d9, 2026-10-25 21:49
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-065
+
+- **Libellé exact (REF-02, § w:p 674)** : EX-065 — Exigence vs mesure. Une exigence versionnée (ex. surface programmée de 28 m²) ne change pas lorsque la surface modélisée devient 26 m² ; l’interface présente explicitement l’écart. La modification d’exigence passe par sa propre commande, avec permission et provenance.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E
+- **Contrat** : IF-008,IF-010 · **Composants candidats** : `packages/atelier-model/src/coordination.ts`, `apps/web/src/modules/programmation`, `apps/web/src/modules/analyses`
+- **Décisions** : DEC-02,DEC-16 · **Scénarios** : 027
+- **Test positif prescrit** : Exigence 28m² et dessin 26m² : afficher écart -2m² et conserver exigence versionnée.
+- **Test négatif prescrit** : Modifier surface dessinée : ne réécrit pas cible à 26 ; commande exigence sans droit refusée.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (partiel) : L'affichage explicite de l'écart n'est vérifié que par studio-exigences.mjs, hors CI : à brancher en CI (orchestrateur).
+
+### TR-EX-066
+
+- **Libellé exact (REF-02, § w:p 676)** : EX-066 — Sources partenaires. Chaque modèle externe conserve auteur, discipline, format, version, unité, transformation et état d’acceptation. Le remplacement d’une référence suit réception → vérification → comparaison → acceptation/rejet, et n’efface pas la référence d’une publication passée.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E
+- **Contrat** : IF-008,IF-010 · **Composants candidats** : `packages/atelier-model/src/coordination.ts`, `apps/web/src/modules/programmation`, `apps/web/src/modules/analyses`
+- **Décisions** : DEC-02,DEC-16 · **Scénarios** : 028,030
+- **Test positif prescrit** : Recevoir modèle partenaire version2, comparer/acceptation explicite et conserver publication version1.
+- **Test négatif prescrit** : Rafraîchissement externe non accepté : pas de remplacement silencieux d'une référence publiée.
+- **Preuve (contrôles positifs exécutés)** : 3
+  - accepter : rôle habilité, comparaison faite avec la révision courante, unité lue — `packages/atelier-model/src/studio/echanges/modeles-externes.test.ts`, commit 5edae3e, 2026-10-25 20:16
+  - Modèle externe : reçu, relu et comparé par le serveur — identique à la révision qui l’a importé ; transformation non déclarée signalée — `apps/web/e2e/studio-echanges.mjs`, commit 5edae3e, 2026-10-25 20:26
+  - Modèle externe : accepté par le propriétaire, passage journalisé (recevoir, accepter) — `apps/web/e2e/studio-echanges.mjs`, commit 5edae3e, 2026-10-25 20:26
+- **Contre-preuve (contrôles négatifs exécutés)** : 4
+  - métadonnées déclarées : auteur, discipline, format, version, unité, transformation ; champ inconnu refusé — `packages/atelier-model/src/studio/echanges/modeles-externes.test.ts`, commit 5edae3e, 2026-10-25 20:16
+  - lecture dans un document à part : la variante n'est jamais modifiée ; unité déclarée comparée à l'unité lue — `packages/atelier-model/src/studio/echanges/modeles-externes.test.ts`, commit 5edae3e, 2026-10-25 20:16
+  - Modèle externe : recevoir et accepter ne modifient pas la variante — `apps/web/e2e/studio-echanges.mjs`, commit 5edae3e, 2026-10-25 20:26
+  - Modèle externe : refus explicite avec motif, journalisé — `apps/web/e2e/studio-echanges.mjs`, commit 5edae3e, 2026-10-25 20:26
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. Pour TR-EX-100 à 104, les écarts réels relevés sont publiés dans docs/ai-team/reports/claude-f4-tracabilite/TRACABILITE-EX.md.
+
+### TR-EX-067
+
+- **Libellé exact (REF-02, § w:p 677)** : EX-067 — Éditabilité explicite. Un modèle consulté, fédéré ou utilisé comme référence n’est pas déclaré natif et paramétrique sans conversion validée. Les éléments ignorés, simplifiés ou non convertibles sont signalés.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E
+- **Contrat** : IF-008,IF-010 · **Composants candidats** : `packages/atelier-model/src/coordination.ts`, `apps/web/src/modules/programmation`, `apps/web/src/modules/analyses`
+- **Décisions** : DEC-02,DEC-16 · **Scénarios** : 028
+- **Test positif prescrit** : Importer IFC de consultation et afficher statut représentation/rapport des pertes.
+- **Test négatif prescrit** : Proxy importé présenté paramétrique natif ou entité ignorée masquée : défaut de couverture déclaré.
+- **Preuve (contrôles positifs exécutés)** : 6
+  - état non natif : espace, poteau répété et porte isolée conservés (type, GlobalId, nom, raison, empreinte lue) — `packages/atelier-model/src/studio/import-ifc/import-ifc.test.ts`, commit 5edae3e, 2026-10-25 20:16
+  - non éditables comme un objet natif : déplacer, modifier, supprimer, extruder les refusent — `packages/atelier-model/src/studio/import-ifc/import-ifc.test.ts`, commit 5edae3e, 2026-10-25 20:16
+  - accepter : rôle habilité, comparaison faite avec la révision courante, unité lue — `packages/atelier-model/src/studio/echanges/modeles-externes.test.ts`, commit 5edae3e, 2026-10-25 20:16
+  - Importer IFC : rapport de pertes et éléments non natifs à l’aperçu (unité lue, 5 objets natifs, 3 non natifs, pertes par type) — `apps/web/e2e/studio-echanges.mjs`, commit 5edae3e, 2026-10-25 20:26
+  - Importer IFC : état « non natif » explicite dans « Éléments du dessin » (type, GlobalId, raison) — `apps/web/e2e/studio-echanges.mjs`, commit 5edae3e, 2026-10-25 20:26
+  - élément non natif non éditable : le serveur refuse de le déplacer comme un objet natif — `apps/web/e2e/studio-echanges.mjs`, commit 5edae3e, 2026-10-25 20:26
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - rapport de pertes : jeux de propriétés, matériaux, site et bâtiment comptés par type, jamais écartés en silence — `packages/atelier-model/src/studio/import-ifc/import-ifc.test.ts`, commit 5edae3e, 2026-10-25 20:16
+  - lecture dans un document à part : la variante n'est jamais modifiée ; unité déclarée comparée à l'unité lue — `packages/atelier-model/src/studio/echanges/modeles-externes.test.ts`, commit 5edae3e, 2026-10-25 20:16
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-068
+
+- **Libellé exact (REF-02, § w:p 695)** : EX-068 — Conclusion normative. Les valeurs de contrôle sont conforme, non conforme, non testé, non applicable justifié. Le statut d’exécution (en attente, échec technique) ne doit jamais être interprété comme conforme.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E
+- **Contrat** : IF-008,IF-010 · **Composants candidats** : `packages/atelier-model/src/coordination.ts`, `apps/web/src/modules/programmation`, `apps/web/src/modules/analyses`
+- **Décisions** : DEC-02,DEC-16 · **Scénarios** : 029
+- **Test positif prescrit** : Contrôle exécuté donne conforme/non conforme/non testé/non applicable motivé.
+- **Test négatif prescrit** : Timeout ou exécution en attente : ne devient jamais conforme.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : la valeur « non applicable justifié » n'existe pas dans les conclusions de contrôle ; aucun état « en attente / délai dépassé » d'un contrôle n'existe à tester.
+
+### TR-EX-069
+
+- **Libellé exact (REF-02, § w:p 696)** : EX-069 — Observation unique. Une anomalie issue d’un contrôle possède un issueId réutilisé par le suivi documentaire. Le réexamen d’une même anomalie sur une nouvelle révision rapproche les observations existantes selon une règle explicite, pas par création systématique de doublons.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E
+- **Contrat** : IF-008,IF-010 · **Composants candidats** : `packages/atelier-model/src/coordination.ts`, `apps/web/src/modules/programmation`, `apps/web/src/modules/analyses`
+- **Décisions** : DEC-02,DEC-16 · **Scénarios** : 029
+- **Test positif prescrit** : Relancer contrôle même règle/objet sur nouvelle révision : observation rapprochée par identité.
+- **Test négatif prescrit** : Deux domaines créent systématiquement deux observations pour même constat : détecter doublon.
+- **Preuve (contrôles positifs exécutés)** : 3
+  - EX-086 [+] le contrôle de R(n+1) rapproche chaque observation par identité, source et règle et consigne un statut de suivi — `apps/api/src/routes/studio-observations-rapprochement.test.ts`, commit 5edae3e, 2026-10-25 20:25
+  - E.2-01 une seule identité : l'observation est le commentaire d'origine de même identifiant — `apps/web/e2e/studio-observations.mjs`, commit bf775d9, 2026-10-25 22:05
+  - E.2-01 recherche par domaine (lecteur) : la même identité, une seule — `apps/web/e2e/studio-observations.mjs`, commit bf775d9, 2026-10-25 22:05
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - E.2-01 un élément déjà suivi n'ouvre pas une seconde observation (409 deja_suivie, identifiant réemployé) — `apps/web/e2e/studio-observations.mjs`, commit bf775d9, 2026-10-25 22:05
+  - EX-069 [−] même constat ouvert depuis un second domaine (objet) : doublon détecté (409 deja_suivie, identifiant de l'observation existante), aucune seconde observation — `apps/web/e2e/studio-observations.mjs`, commit bf775d9, 2026-10-25 22:05
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-070
+
+- **Libellé exact (REF-02, § w:p 697)** : EX-070 — Clôture. La déclaration de correction par un concepteur ne clôt pas à elle seule une observation. Un recontrôle par le rôle autorisé produit une conclusion liée à une nouvelle révision. La suppression de l’objet problématique ne prouve pas à elle seule la résolution.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E
+- **Contrat** : IF-008,IF-010 · **Composants candidats** : `packages/atelier-model/src/coordination.ts`, `apps/web/src/modules/programmation`, `apps/web/src/modules/analyses`
+- **Décisions** : DEC-02,DEC-16 · **Scénarios** : 029
+- **Test positif prescrit** : Correction suivie d'un recontrôle autorisé sur R13 permet clôture documentée.
+- **Test négatif prescrit** : Concepteur déclare corrigé ou supprime objet : pas de clôture automatique sans règle/contrôle.
+- **Preuve (contrôles positifs exécutés)** : 3
+  - E.2-04 le responsable déclare la correction contre r2 (≥ révision du contrôle) — `apps/web/e2e/studio-observations.mjs`, commit 4643cfa, 2026-10-19 12:43
+  - E.2-04 l'auteur (propriétaire) recontrôle contre r3 — `apps/web/e2e/studio-observations.mjs`, commit 4643cfa, 2026-10-19 12:43
+  - E.2-04 / E.2-05 le propriétaire clôt : décision de clôture consignée (motif, rôle, révision recontrôlée) — `apps/web/e2e/studio-observations.mjs`, commit 4643cfa, 2026-10-19 12:43
+- **Contre-preuve (contrôles négatifs exécutés)** : 3
+  - EX-086 [−] objet disparu de la nouvelle révision : observation marquée « objet-disparu », jamais close ni modifiée — `apps/api/src/routes/studio-observations-rapprochement.test.ts`, commit 5edae3e, 2026-10-25 20:25
+  - E.2-04 clôturer une observation ouverte → 409 invalid_transition — `apps/web/e2e/studio-observations.mjs`, commit 4643cfa, 2026-10-19 12:43
+  - E.2-04 le recontrôle porte sur la correction ou une révision postérieure (409 revision_anterieure) — `apps/web/e2e/studio-observations.mjs`, commit 4643cfa, 2026-10-19 12:43
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-071
+
+- **Libellé exact (REF-02, § w:p 717)** : EX-071 — Provenance des médias. Les rendus conservent modèle/variante/révision source, caméra, paramètres, auteur, date et empreintes si disponibles. Les traitements IA ajoutent service/fournisseur, version si connue, sources envoyées, restrictions de droits, consentement ou autorisation de transfert lorsque requis, coûts/quotas et résultat.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E/F option
+- **Contrat** : IF-003,IF-009 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/vue3d/scene3d.ts`
+- **Décisions** : DEC-15,DEC-17 · **Scénarios** : 032
+- **Test positif prescrit** : Rendu conserve révision/caméra/auteur/date/provenance et IA optionnelle conserve fournisseur/sources/coûts.
+- **Test négatif prescrit** : Appel IA sans autorisation de transfert ou version fournisseur inconnue : refus ou inconnue déclarée, pas provenance inventée.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonctions absentes : l'auteur n'est pas porté par la provenance du rendu (scenes/provenance.ts) et aucun traitement IA n'existe (fournisseur, sources, autorisation, coûts).
+
+### TR-EX-072
+
+- **Libellé exact (REF-02, § w:p 718)** : EX-072 — Reproductibilité honnête. Conserver les paramètres et une image historique ne garantit pas la reproduction identique d’une génération IA. Les inconnues du fournisseur sont signalées comme telles.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E/F option
+- **Contrat** : IF-003,IF-009 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/vue3d/scene3d.ts`
+- **Décisions** : DEC-15,DEC-17 · **Scénarios** : 032
+- **Test positif prescrit** : Archiver image et paramètres en indiquant limites de reproductibilité fournisseur.
+- **Test négatif prescrit** : Réexécuter IA stochastique : ne promettre identité pixel ni fidélité géométrique non prouvées.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Rapprochement du 25 octobre 2026 (non couvert) : Aucune génération IA n'existe dans Studio (TYPES_RENDU : illustration-ia disponible=false) ; ni archivage des paramètres IA ni déclaration des limites de reproductibilité ne sont testés.
+
+### TR-EX-073
+
+- **Libellé exact (REF-02, § w:p 719)** : EX-073 — Séparation visuel/technique. Les quantités, performances et règles métier se calculent sur les objets et données de référence, jamais sur les pixels d’une illustration. Un matériau apparent ne change pas automatiquement la composition constructive.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E/F option
+- **Contrat** : IF-003,IF-009 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/vue3d/scene3d.ts`
+- **Décisions** : DEC-15,DEC-17 · **Scénarios** : 026,032
+- **Test positif prescrit** : Changer matériau visuel ou générer illustration puis recalculer métrés sur modèle source.
+- **Test négatif prescrit** : Mesure de surface extraite des pixels remplace quantité canonique : interdire ce chemin.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - EX-073 [−] garde construite : un module de rendu ou une lecture de pixels dans le graphe serait détecté — `apps/web/src/modules/studio/frontieres.preuves-e.test.ts`, commit bf775d9, 2026-10-25 21:49
+  - EX-073 [−] dépôt réel : le graphe des quantités, des exigences et de leurs panneaux n'atteint ni rendu, ni scène, ni lecture de pixels — `apps/web/src/modules/studio/frontieres.preuves-e.test.ts`, commit bf775d9, 2026-10-25 21:49
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-074
+
+- **Libellé exact (REF-02, § w:p 725)** : EX-074 — Chaîne documentaire. Vue → Feuille → Dossier → Publication constitue le cycle des livrables. Une Planche est un environnement de travail ; une feuille est un assemblage de représentations et annotations à une échelle et un format déclarés.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E
+- **Contrat** : IF-008,IF-009 · **Composants candidats** : `packages/atelier-model/src/documents`, `apps/api/src/db/schema.ts`, `apps/web/src/modules/documents`
+- **Décisions** : DEC-16 · **Scénarios** : 001,038
+- **Test positif prescrit** : Composer vue→feuille à échelle→dossier→publication en conservant rôles distincts.
+- **Test négatif prescrit** : Planche d'édition seule présentée comme feuille publiée : recette refuse livraison.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : un dossier de conception ne se publie pas (contenu de publication limité à « complet » et « dessin-2d ») ; le refus d'une planche présentée comme feuille publiée n'a pas d'objet à tester.
+
+### TR-EX-075
+
+- **Libellé exact (REF-02, § w:p 726)** : EX-075 — Sources des vues. Chaque vue conserve les révisions sources, niveau/repère, cadrage, échelle de présentation, visibilité, styles et annotations propres. Une vue dérivée du 3D peut devenir périmée après modification du modèle ; ses annotations propres ne deviennent pas des paramètres de l’objet source.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E
+- **Contrat** : IF-008,IF-009 · **Composants candidats** : `packages/atelier-model/src/documents`, `apps/api/src/db/schema.ts`, `apps/web/src/modules/documents`
+- **Décisions** : DEC-16 · **Scénarios** : 030
+- **Test positif prescrit** : Créer coupe R12 avec cadrage/styles/annotations puis changer modèle R13 et marquer vue périmée.
+- **Test négatif prescrit** : Annotation de coupe modifiée : ne devient pas paramètre autoritaire du mur.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : aucune vue de coupe enregistrée avec cadrage, styles et annotations propres.
+
+### TR-EX-076
+
+- **Libellé exact (REF-02, § w:p 727)** : EX-076 — Documents indépendants. Un dessin de détail créé directement en 2D peut être publié conjointement avec des documents dérivés d’une maquette sans être présenté comme un extrait automatiquement synchronisé.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E
+- **Contrat** : IF-008,IF-009 · **Composants candidats** : `packages/atelier-model/src/documents`, `apps/api/src/db/schema.ts`, `apps/web/src/modules/documents`
+- **Décisions** : DEC-16 · **Scénarios** : 001,038
+- **Test positif prescrit** : Publier détail 2D autonome et coupe de modèle ensemble avec sources distinctes.
+- **Test négatif prescrit** : Détail indépendant annoncé synchronisé avec maquette sans association : présentation refusée.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : aucune publication ne réunit un détail 2D autonome et une coupe de modèle ; aucune présentation « synchronisée » à refuser.
+
+### TR-EX-077
+
+- **Libellé exact (REF-02, § w:p 729)** : EX-077 — Traçabilité des calculs. Chaque quantité comprend identifiant du jeu de sources, révision, règle et sa version, unité, objets inclus, exclusions, déductions, précision interne, arrondi de présentation et date. Un override manuel constitue une donnée distincte motivée, jamais le remplacement silencieux d’un calcul.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E
+- **Contrat** : IF-008,IF-009 · **Composants candidats** : `packages/atelier-model/src/documents`, `apps/api/src/db/schema.ts`, `apps/web/src/modules/documents`
+- **Décisions** : DEC-16 · **Scénarios** : 009,010
+- **Test positif prescrit** : Retrouver règle/version/objets/unité/brut/déductions/date et ajustement attribué pour quantité mur.
+- **Test négatif prescrit** : Override manuel écrase rawValue sans auteur/motif : refuser ou conserver comme ajustement distinct.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : la quantité ne porte ni identifiant / version de règle de calcul, ni précision interne, ni liste d'exclusions.
+
+### TR-EX-078
+
+- **Libellé exact (REF-02, § w:p 730)** : EX-078 — Cohérence des totaux. Une somme ne mélange pas sans signalement des quantités de règles incompatibles, d’unités différentes ou de révisions hétérogènes. Les totaux distinguent brut, net, déductions, quantités non testées et corrections manuelles.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E
+- **Contrat** : IF-008,IF-009 · **Composants candidats** : `packages/atelier-model/src/documents`, `apps/api/src/db/schema.ts`, `apps/web/src/modules/documents`
+- **Décisions** : DEC-16 · **Scénarios** : 009,010
+- **Test positif prescrit** : Sommer quantités homogènes en distinguant brut/net/déduction/non testé/ajustement.
+- **Test négatif prescrit** : Mélanger m² et m³ ou règles/révisions incompatibles : signaler et ne produire aucun total trompeur.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (partiel) : Défaut corrigé (totaliserQuantites additionnait une valeur d'une autre unité que sa grandeur). Reste : aucune somme de quantités de révisions ou de règles hétérogènes n'existe à signaler (métré d'un seul document).
+
+### TR-EX-079
+
+- **Libellé exact (REF-02, § w:p 762)** : EX-079 — Capacité par sens d’échange. lecture, consultation, édition, export, aller-retour sont évalués séparément. Aucun simple export IFC ou DXF ne suffit à prouver un round-trip fidèle ; aucune certification n’est affirmée sans audit correspondant.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E
+- **Contrat** : IF-008,IF-009 · **Composants candidats** : `packages/atelier-model/src/documents`, `apps/api/src/db/schema.ts`, `apps/web/src/modules/documents`
+- **Décisions** : DEC-16 · **Scénarios** : 028
+- **Test positif prescrit** : Qualifier export IFC séparément de l'import/édition/round-trip dans matrice par entité/version.
+- **Test négatif prescrit** : Export syntaxiquement valide utilisé pour affirmer round-trip/certification : conclusion rejetée faute preuve.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : la matrice d'échanges ne connaît que les sens import / export (StudioSensEchange) ; lecture, consultation, édition et aller-retour ne sont pas évalués séparément.
+
+### TR-EX-080
+
+- **Libellé exact (REF-02, § w:p 763)** : EX-080 — Rapport de transformation. Import et export signalent unités et repères, primitives non prises en charge, propriétés perdues, simplifications, conflits d’identifiants et éléments ignorés. Une source non prise en charge ne disparaît pas sans information.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E
+- **Contrat** : IF-008,IF-009 · **Composants candidats** : `packages/atelier-model/src/documents`, `apps/api/src/db/schema.ts`, `apps/web/src/modules/documents`
+- **Décisions** : DEC-16 · **Scénarios** : 028
+- **Test positif prescrit** : Importer entité inconnue et exporter sous-ensemble ; produire rapport unités/repères/pertes/IDs.
+- **Test négatif prescrit** : Parser ignore entité sans rapport ou remplace unité inconnue : échec de couverture explicite.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : le repère source / cible n'est pas un champ des rapports d'import DXF et d'export (seule la transformation déclarée de l'import IFC est rapportée).
+
+### TR-EX-081
+
+- **Libellé exact (REF-02, § w:p 766)** : EX-081 — Ensemble coordonné. Plusieurs disciplines peuvent avoir des numéros de révision différents ; l’ensemble doit être explicitement coordonné et figé. Une modification après approbation remet en question l’éligibilité du nouveau dossier, pas l’intégrité de la publication historique.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E
+- **Contrat** : IF-008,IF-009 · **Composants candidats** : `packages/atelier-model/src/documents`, `apps/api/src/db/schema.ts`, `apps/web/src/modules/documents`
+- **Décisions** : DEC-16 · **Scénarios** : 030,038
+- **Test positif prescrit** : Approuver manifeste coordonnant révisions différentes puis conserver contenu figé.
+- **Test négatif prescrit** : Document change après approbation : nouveau dossier recontrôlé, ancienne publication intacte.
+- **Preuve (contrôles positifs exécutés)** : 2
+  - E.4 : manifeste multi-sources (variante principale et coordonnée, révisions et empreintes) — `apps/web/e2e/studio-publication.mjs`, commit bf775d9, 2026-10-25 22:05
+  - E.4 : propriétaire approuve le manifeste examiné (son empreinte) — `apps/web/e2e/studio-publication.mjs`, commit bf775d9, 2026-10-25 22:05
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - E.4 : diffusion refusée sous l'ancienne approbation (409 manifest_mismatch, écart sur la variante) — `apps/web/e2e/studio-publication.mjs`, commit bf775d9, 2026-10-25 22:05
+  - EX-081 [−] dossier E diffusé puis variante modifiée et dossier F diffusé : ses quatre fichiers ont les empreintes de sa diffusion, paquet, manifeste et révision inchangés — `apps/web/e2e/studio-publication.mjs`, commit bf775d9, 2026-10-25 22:05
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-082
+
+- **Libellé exact (REF-02, § w:p 767)** : EX-082 — Publication non réécrite. Retrait, remplacement ou nouvelle diffusion sont de nouveaux événements journalisés ; la publication antérieure demeure identifiable.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E
+- **Contrat** : IF-008,IF-009 · **Composants candidats** : `packages/atelier-model/src/documents`, `apps/api/src/db/schema.ts`, `apps/web/src/modules/documents`
+- **Décisions** : DEC-16 · **Scénarios** : 031
+- **Test positif prescrit** : Retirer/remplacer publication par événement journalisé en gardant ancienne identité/contenu selon politique.
+- **Test négatif prescrit** : Nouvelle diffusion écrase manifestes/fichiers historiques : refus et défaut éliminatoire.
+- **Preuve (contrôles positifs exécutés)** : 2
+  - EX-082 [+] retrait et remplacement restent de nouveaux évènements journalisés ; paquet et manifeste antérieurs identiques — `apps/api/src/routes/studio.preuves-e.test.ts`, commit bf775d9, 2026-10-25 21:58
+  - EX-082 : le retrait reste un nouvel évènement journalisé ; paquet et manifeste identiques — `apps/web/e2e/studio-preuves-e.mjs`, commit bf775d9, 2026-10-25 21:55
+- **Contre-preuve (contrôles négatifs exécutés)** : 5
+  - EX-082 [−] réécrire le paquet, le manifeste, la révision ou la diffusion d'une publication diffusée : refusé par le déclencheur, rien ne change — `apps/api/src/routes/studio.preuves-e.test.ts`, commit bf775d9, 2026-10-25 21:58
+  - EX-082 : UPDATE directe du paquet d'une publication diffusée refusée par la base (studio_publication_package_immutable) — `apps/web/e2e/studio-preuves-e.mjs`, commit bf775d9, 2026-10-25 21:55
+  - EX-082 : UPDATE directe du contenu du paquet d'une publication diffusée refusée par la base (studio_publication_package_immutable) — `apps/web/e2e/studio-preuves-e.mjs`, commit bf775d9, 2026-10-25 21:55
+  - EX-082 : UPDATE directe du manifeste d'une publication diffusée refusée par la base (studio_publication_package_immutable) — `apps/web/e2e/studio-preuves-e.mjs`, commit bf775d9, 2026-10-25 21:55
+  - EX-082 : UPDATE directe du approbation d'une publication diffusée refusée par la base (studio_publication_package_immutable) — `apps/web/e2e/studio-preuves-e.mjs`, commit bf775d9, 2026-10-25 21:55
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-083
+
+- **Libellé exact (REF-02, § w:p 814)** : EX-083 — Séparation des décisions. Approuver et publier sont deux permissions différentes. Un administrateur technique n’obtient pas automatiquement la fonction d’approbateur métier. Un cumul de rôles peut être autorisé selon taille d’équipe, mais un autocontrôle doit rester identifié comme tel.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E/X
+- **Contrat** : IF-009,IF-010 · **Composants candidats** : `apps/web/src/modules/collaboration`, `apps/api/src/db/schema.ts`
+- **Décisions** : DEC-16 · **Scénarios** : 018,030
+- **Test positif prescrit** : Utilisateur approbateur approuve puis publieur autorisé publie ; cumul éventuel identifié.
+- **Test négatif prescrit** : Administrateur technique seul ou profil ajoutant Approuver : refus serveur si permission métier absente.
+- **Preuve (contrôles positifs exécutés)** : 3
+  - Eve : approbation de son dossier enregistrée et marquée auto-contrôle — `apps/web/e2e/auto-controle.mjs`, commit bf775d9, 2026-10-25 21:54
+  - interface : marque « Auto-contrôle » visible sur la publication approuvée — `apps/web/e2e/auto-controle.mjs`, commit bf775d9, 2026-10-25 21:54
+  - diffusion par le propriétaire : non concernée, paquet sous le manifeste approuvé — `apps/web/e2e/auto-controle.mjs`, commit bf775d9, 2026-10-25 21:54
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - EX-083 [−] administrateur technique sans rôle dans le projet : approbation refusée par le serveur (404, rien révélé), dossier toujours en revue — `apps/web/e2e/auto-controle.mjs`, commit bf775d9, 2026-10-25 21:54
+  - EX-083 [−] approuver et publier sont deux permissions : l'approbatrice (éditrice) ne diffuse pas (403), dossier non diffusé — `apps/web/e2e/auto-controle.mjs`, commit bf775d9, 2026-10-25 21:54
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-084
+
+- **Libellé exact (REF-02, § w:p 815)** : EX-084 — Observations/tâches/décisions. Une annotation est une note ; une observation décrit un constat ; une tâche attribue une action à un responsable ; une décision enregistre un arbitrage. Ces objets sont reliables mais ne se substituent pas l’un à l’autre.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E/X
+- **Contrat** : IF-009,IF-010 · **Composants candidats** : `apps/web/src/modules/collaboration`, `apps/api/src/db/schema.ts`
+- **Décisions** : DEC-16 · **Scénarios** : 029
+- **Test positif prescrit** : Créer note/observation/tâche/décision avec identités/rôles distincts et liens.
+- **Test négatif prescrit** : Commentaire présenté comme décision approuvée ou tâche clôturant observation : aucune transition implicite.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (partiel) : L'observation partage par conception l'identité du commentaire promu (E.2-01) : identités distinctes note / observation non réalisées — lecture du critère à trancher.
+
+### TR-EX-085
+
+- **Libellé exact (REF-02, § w:p 816)** : EX-085 — Délégation contrôlée. L’absence d’un approbateur ne vaut pas accord. Une délégation, si permise, possède portée, période, délégant/délégué, justification et événement d’audit.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E/X
+- **Contrat** : IF-009,IF-010 · **Composants candidats** : `apps/web/src/modules/collaboration`, `apps/api/src/db/schema.ts`
+- **Décisions** : DEC-16 · **Scénarios** : 018,030
+- **Test positif prescrit** : Délégation valide portée/période/délégant/délégué/motif permet action et trace.
+- **Test négatif prescrit** : Approbateur absent ou délégation expirée/hors portée : aucune approbation automatique.
+- **Preuve (contrôles positifs exécutés)** : 1
+  - EX-085 [+] une délégation valide (portée, période, délégant, délégué, motif) permet au délégué d'approuver ; l'emploi est audité — `apps/api/src/routes/studio-delegations.test.ts`, commit 5edae3e, 2026-10-25 20:25
+- **Contre-preuve (contrôles négatifs exécutés)** : 3
+  - EX-085 [−] l'absence de l'approbateur ne vaut pas accord : sans décision, la publication reste en revue, même longtemps après — `apps/api/src/routes/studio-delegations.test.ts`, commit 5edae3e, 2026-10-25 20:25
+  - EX-085 [−] hors période (à venir, expirée) ou révoquée : refus nommé, rien n'est approuvé ; l'expiration n'approuve rien — `apps/api/src/routes/studio-delegations.test.ts`, commit 5edae3e, 2026-10-25 20:25
+  - EX-085 [−] hors portée ou employée par un autre compte : refus nommé — `apps/api/src/routes/studio-delegations.test.ts`, commit 5edae3e, 2026-10-25 20:25
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. Pour TR-EX-100 à 104, les écarts réels relevés sont publiés dans docs/ai-team/reports/claude-f4-tracabilite/TRACABILITE-EX.md.
+
+### TR-EX-086
+
+- **Libellé exact (REF-02, § w:p 820)** : EX-086 — Réexamen. Un contrôle de nouvelle révision rapproche les observations antérieures par identité/source/règle et produit un statut de suivi ; la fermeture automatique sur simple disparition d’un objet est interdite.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E/X
+- **Contrat** : IF-009,IF-010 · **Composants candidats** : `apps/web/src/modules/collaboration`, `apps/api/src/db/schema.ts`
+- **Décisions** : DEC-16 · **Scénarios** : 029
+- **Test positif prescrit** : Rapprocher constat de R12 avec contrôle de R13 par identité/source/règle et décider suivi.
+- **Test négatif prescrit** : Objet disparaît de R13 : garder observation ouverte ou résolution explicite, pas fermeture automatique.
+- **Preuve (contrôles positifs exécutés)** : 2
+  - EX-086 [+] le contrôle de R(n+1) rapproche chaque observation par identité, source et règle et consigne un statut de suivi — `apps/api/src/routes/studio-observations-rapprochement.test.ts`, commit 5edae3e, 2026-10-25 20:25
+  - EX-086 contrôle de r4 : l'observation est rapprochée, objet disparu marqué, statut inchangé (ouverte) — `apps/web/e2e/studio-observations.mjs`, commit 5edae3e, 2026-10-25 20:22
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - EX-086 [−] objet disparu de la nouvelle révision : observation marquée « objet-disparu », jamais close ni modifiée — `apps/api/src/routes/studio-observations-rapprochement.test.ts`, commit 5edae3e, 2026-10-25 20:25
+  - EX-086 aucune fermeture automatique : observation toujours ouverte, journal inchangé (ouvrir seul) — `apps/web/e2e/studio-observations.mjs`, commit 5edae3e, 2026-10-25 20:22
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. Pour TR-EX-100 à 104, les écarts réels relevés sont publiés dans docs/ai-team/reports/claude-f4-tracabilite/TRACABILITE-EX.md.
+
+### TR-EX-087
+
+- **Libellé exact (REF-02, § w:p 864)** : EX-087 — Intégration contrôlée. Les modules Fadi existants restent responsables des données transverses qu’ils possèdent. Tout nouvel endpoint nécessite un contrôle de droit tenant/projet, de schéma, de révision, d’idempotence, de taille d’entrée et de journal.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A6 + A5 · **Lot** : A/R/X
+- **Contrat** : IF-001,IF-004,IF-006,IF-011 · **Composants candidats** : `apps/api/src`, `docker-compose.yml`, `docs/deploiement.md`
+- **Décisions** : DEC-03,DEC-18 · **Scénarios** : 035
+- **Test positif prescrit** : Nouvel endpoint valide session/projet/schéma/révision/requestId/taille et journalise engagement.
+- **Test négatif prescrit** : ID d'autre projet, payload trop grand ou mauvaise version : refus atomique sans fuite.
+- **Preuve (contrôles positifs exécutés)** : 1
+  - rejeu du même requestId idempotent — `apps/web/e2e/studio-persistance.mjs`, commit 779e082, 2026-10-18 23:01
+- **Contre-preuve (contrôles négatifs exécutés)** : 6
+  - EX-087 : commandes Studio, corps de 300 ko (> 256 ko) → 413, rien d'écrit — `apps/web/e2e/studio-preuves-e.mjs`, commit bf775d9, 2026-10-25 21:55
+  - EX-087 : modèle externe Studio, corps de plus de 6 Mo → 413 — `apps/web/e2e/studio-preuves-e.mjs`, commit bf775d9, 2026-10-25 21:55
+  - base périmée refusée sans écrasement (409 stale_revision) — `apps/web/e2e/studio-persistance.mjs`, commit 779e082, 2026-10-18 23:01
+  - champ inconnu refusé (400, schéma strict) — `apps/web/e2e/studio-persistance.mjs`, commit 779e082, 2026-10-18 23:01
+  - étude inconnue : 404 — `apps/web/e2e/studio-persistance.mjs`, commit 779e082, 2026-10-18 23:01
+  - INV-005 [−] refus au milieu du lot, ou panne après l'insertion de la révision : aucune ligne modifiée — `apps/api/src/routes/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-088
+
+- **Libellé exact (REF-02, § w:p 865)** : EX-088 — Isolation multi-utilisateurs. Le système interdit l’accès aux documents, profils et variantes d’un autre périmètre sans autorisation. Les URL de blob, résultats de jobs et exports temporairement accessibles sont soumis à l’autorisation de l’objet source.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A6 + A5 · **Lot** : A/R/X
+- **Contrat** : IF-001,IF-004,IF-006,IF-011 · **Composants candidats** : `apps/api/src`, `docker-compose.yml`, `docs/deploiement.md`
+- **Décisions** : DEC-03,DEC-18 · **Scénarios** : 035
+- **Test positif prescrit** : Lire document/profil/job/blob/export avec autorisation ressource cohérente.
+- **Test négatif prescrit** : Copier URL temporaire d'un autre projet/utilisateur : accès refusé sans contenu/métadonnées sensibles.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : aucun résultat de job côté serveur n'existe pour Studio (tâches exécutées dans le navigateur) ; le volet « job » ne peut pas être prouvé.
+
+### TR-EX-089
+
+- **Libellé exact (REF-02, § w:p 866)** : EX-089 — Persistance et reprise. Une confirmation envoyée au navigateur doit correspondre à un engagement durable conforme au contrat de sauvegarde. Les sauvegardes, restaurations et récupérations d’incident sont testées sur un corpus contenant données de conception, associations et publications.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A6 + A5 · **Lot** : A/R/X
+- **Contrat** : IF-001,IF-004,IF-006,IF-011 · **Composants candidats** : `apps/api/src`, `docker-compose.yml`, `docs/deploiement.md`
+- **Décisions** : DEC-03,DEC-18 · **Scénarios** : 034
+- **Test positif prescrit** : Sauvegarder avec confirmation durable, relancer service sur copie jetable et retrouver modèle/associations/publications.
+- **Test négatif prescrit** : Échec DB avant commit : pas d'accusé de sauvegarde confirmé ; reprise n'invente pas opération.
+- **Preuve (contrôles positifs exécutés)** : 3
+  - EX-089 : publication diffusée confirmée (paquet figé) — `apps/web/e2e/studio-preuves-e.mjs`, commit bf775d9, 2026-10-25 21:55
+  - J2 : réouverture — mêmes têtes, mêmes documents (empreintes) et mêmes révisions pour les deux variantes — `apps/web/e2e/studio-preuves-e.mjs`, commit bf775d9, 2026-10-25 21:55
+  - EX-089 : réouverture — publication diffusée relue à l'identique (statut, paquet, manifeste, journal) et ses fichiers aux mêmes empreintes — `apps/web/e2e/studio-preuves-e.mjs`, commit bf775d9, 2026-10-25 21:55
+- **Contre-preuve (contrôles négatifs exécutés)** : 1
+  - EX-089 : après la reprise, le rejeu du dernier requestId renvoie la révision confirmée, sans en créer (aucune opération inventée) — `apps/web/e2e/studio-preuves-e.mjs`, commit bf775d9, 2026-10-25 21:55
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-090
+
+- **Libellé exact (REF-02, § w:p 869)** : EX-090 — Reconstruction. Une restauration doit permettre de retrouver le modèle canonique confirmé, les manifestes et leurs pièces, les références, les droits applicables et les identités des documents. Les caches GPU et index spatiaux sont reconstruits, non sauvegardés comme preuve faisant autorité.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A6 + A5 · **Lot** : A/R/X
+- **Contrat** : IF-001,IF-004,IF-006,IF-011 · **Composants candidats** : `apps/api/src`, `docker-compose.yml`, `docs/deploiement.md`
+- **Décisions** : DEC-03,DEC-18 · **Scénarios** : 034
+- **Test positif prescrit** : Restaurer canonique+pièces+manifestes+droits puis reconstruire index/GPU et comparer identités.
+- **Test négatif prescrit** : Backup n'inclut que caches ou manque pièce publiée : restauration déclarée incomplète, pas réussite globale.
+- **Preuve (contrôles positifs exécutés)** : 1
+  - EX-090 [+] sauvegarde complète (canonique, manifeste, pièce publiée, droits) : acceptée — `apps/api/src/routes/studio.preuves-e.test.ts`, commit bf775d9, 2026-10-25 21:58
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - EX-090 [−] pièce publiée absente de la sauvegarde (manifeste recalculé, donc cohérent) : restauration refusée, pièce nommée — `apps/api/src/routes/studio.preuves-e.test.ts`, commit bf775d9, 2026-10-25 21:58
+  - EX-090 [−] sauvegarde sans le modèle canonique (pièces seules, révisions absentes) : restauration refusée, jamais une réussite globale — `apps/api/src/routes/studio.preuves-e.test.ts`, commit bf775d9, 2026-10-25 21:58
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-091
+
+- **Libellé exact (REF-02, § w:p 872)** : EX-091 — Migration non destructrice. Une étude existante ne doit pas perdre une propriété, une cote, une association, un identifiant documentaire, une révision ou un accès sans rapport explicite, procédure d’accord et solution de restauration. Toute bascule définit des jeux d’essai d’avant/après et un point de retour arrière.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A6 + A5 · **Lot** : A/R/X
+- **Contrat** : IF-001,IF-004,IF-006,IF-011 · **Composants candidats** : `apps/api/src`, `docker-compose.yml`, `docs/deploiement.md`
+- **Décisions** : DEC-03,DEC-18 · **Scénarios** : 034,036
+- **Test positif prescrit** : Simulation migration compare propriétés/cotes/associations/historique et correspondances d'IDs.
+- **Test négatif prescrit** : Objet non convertible : conserver+rapport+accord/récupération ; ne pas le supprimer pour améliorer taux.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : la simulation ne compare pas avant / après propriétés, cotes, associations et historique ; aucune procédure d'accord ni point de retour arrière.
+
+### TR-EX-092
+
+- **Libellé exact (REF-02, § w:p 906)** : EX-092 — Protection par défaut. Chaque mutation et lecture sensible passe par identification de session, autorisation dans le contexte et validation des entrées. La sécurité client sert à guider l’UX, jamais à remplacer le serveur.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A5 + A6 + A2 · **Lot** : X
+- **Contrat** : IF-001,IF-006,IF-007,IF-009 · **Composants candidats** : `apps/api/src/app.ts`, `.github/workflows`, `packages/geometry-exact`, `docs/atelier/decisions.md`
+- **Décisions** : DEC-11,DEC-15,DEC-18 · **Scénarios** : 018,035
+- **Test positif prescrit** : Lecture sensible/mutation passe session+autorisation+schéma côté serveur.
+- **Test négatif prescrit** : Contourner bouton ou modifier payload depuis client : refus serveur, pas confiance UI.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : 6
+  - chaque cellule rend l'attendu ; aucun refus n'écrit quoi que ce soit — `apps/api/src/routes/studio-permissions.test.ts`, commit cf09271, 2026-10-19 14:33
+  - sans session : 401 sur toute route Studio, avant tout accès — `apps/api/src/routes/studio-permissions.test.ts`, commit cf09271, 2026-10-19 14:33
+  - phase déclarée du workflow : une phase inconnue, un champ en plus ou une valeur absente sont refusés (400) avant tout accès — `apps/api/src/routes/studio-permissions.test.ts`, commit 2d4a7c6, 2026-10-19 20:40
+  - INV-009 [−] un profil qui affiche « Publier » ou se déclare des droits ne donne rien : champs refusés, commande du lecteur refusée par le serveur — `apps/api/src/routes/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+  - identité : l'enveloppe ne porte aucun auteur (champ refusé par le schéma strict) — `apps/api/src/testing/studio-contrat-commandes.test.ts`, commit 4643cfa, 2026-10-19 12:39
+  - lecteur : un outil favori ne donne aucun droit (commande 403) — `apps/web/e2e/studio-profils.mjs`, commit f59d66d, 2026-10-19 06:50
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-093
+
+- **Libellé exact (REF-02, § w:p 907)** : EX-093 — Intégrité des modèles. Les commandes et opérations de géométrie vérifient contraintes, types, unités et appartenance. Le serveur refuse les mutations qui violeraient les invariants, même si l’outil client les présente comme valides.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A5 + A6 + A2 · **Lot** : X
+- **Contrat** : IF-001,IF-006,IF-007,IF-009 · **Composants candidats** : `apps/api/src/app.ts`, `.github/workflows`, `packages/geometry-exact`, `docs/atelier/decisions.md`
+- **Décisions** : DEC-11,DEC-15,DEC-18 · **Scénarios** : 008,035
+- **Test positif prescrit** : Commande avec unités/types/hôte valides produit état cohérent vérifié serveur.
+- **Test négatif prescrit** : Coordonnée NaN, type invalide, hôte d'autrui ou épaisseur négative : zéro mutation canonique.
+- **Preuve (contrôles positifs exécutés)** : 1
+  - EX-093 [+] mur et ouverture valides (types, unités, hôte de la même variante) : état cohérent écrit par le serveur — `apps/api/src/routes/studio.preuves-e.test.ts`, commit bf775d9, 2026-10-25 21:58
+- **Contre-preuve (contrôles négatifs exécutés)** : 1
+  - EX-093 [−] hôte d'autrui (mur d'une autre variante), coordonnée non finie, type inconnu, épaisseur négative : 400, zéro mutation canonique — `apps/api/src/routes/studio.preuves-e.test.ts`, commit bf775d9, 2026-10-25 21:58
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-094
+
+- **Libellé exact (REF-02, § w:p 908)** : EX-094 — Confidentialité des sources. Les rendus, fichiers importés, modèles de références et images adressés à un service externe ne le sont qu’au terme d’un contrôle de politique, avec conservation de la provenance et signalement des informations inconnues.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A5 + A6 + A2 · **Lot** : X
+- **Contrat** : IF-001,IF-006,IF-007,IF-009 · **Composants candidats** : `apps/api/src/app.ts`, `.github/workflows`, `packages/geometry-exact`, `docs/atelier/decisions.md`
+- **Décisions** : DEC-11,DEC-15,DEC-18 · **Scénarios** : 032
+- **Test positif prescrit** : Avant transfert externe vérifier politique, droit, source et provenance connue.
+- **Test négatif prescrit** : Source confidentielle envoyée sans contrat/consentement requis : blocage avant transmission.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Rapprochement du 25 octobre 2026 (non couvert) : Aucun transfert vers un service externe ni contrôle de politique/consentement avant transmission n'existe dans le code Studio ; rien à tester en l'état.
+
+### TR-EX-095
+
+- **Libellé exact (REF-02, § w:p 911)** : EX-095 — Observabilité. Des mesures agrégées de latence, de mémoire, d’erreurs et de tâches doivent permettre de détecter une dégradation de service sans enregistrer inutilement les géométries confidentielles ou des secrets d’accès. Les traces sont corrélées par identifiants non sensibles de commande/job.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A5 + A6 + A2 · **Lot** : X
+- **Contrat** : IF-001,IF-006,IF-007,IF-009 · **Composants candidats** : `apps/api/src/app.ts`, `.github/workflows`, `packages/geometry-exact`, `docs/atelier/decisions.md`
+- **Décisions** : DEC-11,DEC-15,DEC-18 · **Scénarios** : 015,037
+- **Test positif prescrit** : Corréler latence/mémoire/erreur par commandId/jobId non sensible.
+- **Test négatif prescrit** : Log contient secret ou géométrie privée sans nécessité : contrôle échoue et empêche publication du log.
+- **Preuve (contrôles positifs exécutés)** : 1
+  - EX-095 [+] latence, mémoire et erreurs corrélées par commandId (lot) et jobId (tâche), sans contenu — `apps/web/src/modules/studio/taches/journal-correlation.test.ts`, commit 5edae3e, 2026-10-25 20:16
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - EX-095 [−] le journal produit ne contient ni secret ni géométrie : contrôle vide, export admis — `apps/web/src/modules/studio/taches/journal-correlation.test.ts`, commit 5edae3e, 2026-10-25 20:16
+  - EX-095 [−] un secret ou une géométrie dans le journal fait échouer le contrôle et empêche l'export — `apps/web/src/modules/studio/taches/journal-correlation.test.ts`, commit 5edae3e, 2026-10-25 20:16
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. Pour TR-EX-100 à 104, les écarts réels relevés sont publiés dans docs/ai-team/reports/claude-f4-tracabilite/TRACABILITE-EX.md.
+
+### TR-EX-096
+
+- **Libellé exact (REF-02, § w:p 912)** : EX-096 — Licence et provenance. L’utilisation de WASM ou moteurs tiers s’accompagne de l’inventaire des versions, licences et obligations de redistribution/remplacement applicables, vérifiées pour l’artefact effectivement distribué.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A5 + A6 + A2 · **Lot** : X
+- **Contrat** : IF-001,IF-006,IF-007,IF-009 · **Composants candidats** : `apps/api/src/app.ts`, `.github/workflows`, `packages/geometry-exact`, `docs/atelier/decisions.md`
+- **Décisions** : DEC-11,DEC-15,DEC-18 · **Scénarios** : 016
+- **Test positif prescrit** : Inventorier version/licence/source et obligation LGPL de l'artefact WASM réellement distribué.
+- **Test négatif prescrit** : Licence package outillage utilisée pour déclarer WASM permissif : revue refuse et garde provenance correcte.
+- **Preuve (contrôles positifs exécutés)** : 2
+  - TR-EX-096 : notice servie (occt-wasm 5.6.1, LGPL-2.1-only, remplacement), texte LGPL 2.1 servi, binaire servi identique à la notice (SHA-256) et seul .wasm demandé — `apps/web/e2e/studio-exact.mjs`, commit d87a82e, 2026-10-25 21:21
+  - TR-EX-096 — licence et provenance du noyau exact distribué — `apps/web/src/modules/studio/exact/licence-occt.test.ts`, commit d87a82e, 2026-10-25 21:11
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-097
+
+- **Libellé exact (REF-02, § w:p 965)** : EX-097 — Mesure reproductible. Fixer matériel, navigateur/version, mémoire, GPU/driver, taille d’écran, statut des caches, réseau, build, commit, répétitions, opérations, outliers et méthode statistique ; conserver traces et scripts. Les mesures JavaScript renderer.render() ne sont pas assimilées automatiquement au coût GPU, et SwiftShader ne remplace pas un GPU physique.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A5 + A1 · **Lot** : X
+- **Contrat** : IF-002,IF-003 · **Composants candidats** : `docs/atelier/p0-mesures.md`, `docs/atelier/p2-mesures.md`, `apps/web/e2e`, `.github/workflows`
+- **Décisions** : DEC-13 · **Scénarios** : 025,037
+- **Test positif prescrit** : Mesure cache froid/chaud sur appareil identifié avec build/GPU/réseau/répétitions/distribution.
+- **Test négatif prescrit** : Résultat SwiftShader ou renderer.render CPU annoncé GPU physique : conclusion refusée.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Rapprochement du 25 octobre 2026 (non couvert) : Seule la recette studio-mesures-chargement.mjs (hors CI, non comptée) traite SwiftShader ; aucun contrôle en CI d'une mesure cache froid/chaud sur appareil identifié ni refus d'un résultat SwiftShader présenté comme GPU.
+
+### TR-EX-098
+
+- **Libellé exact (REF-02, § w:p 966)** : EX-098 — Double vérification. Tout gain de performance est accompagné d’une comparaison géométrique et fonctionnelle : mêmes cibles de snapping, même sélection, mêmes dimensions/quantités, mêmes objets exportés dans les tolérances, même comportement d’annulation et de conflits.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A5 + A1 · **Lot** : X
+- **Contrat** : IF-002,IF-003 · **Composants candidats** : `docs/atelier/p0-mesures.md`, `docs/atelier/p2-mesures.md`, `apps/web/e2e`, `.github/workflows`
+- **Décisions** : DEC-13 · **Scénarios** : 022,023,025
+- **Test positif prescrit** : Comparer performance ET cibles/quantités/historique/export avant/après optimisation.
+- **Test négatif prescrit** : Gain p95 avec snapping ou volume différent hors tolérance : optimisation rejetée.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (mesure requise) : Comparer un gain de performance (p95) couplé à l'équivalence fonctionnelle demande des mesures sur appareil réel ; aucune règle de rejet automatique d'un gain hors tolérance n'existe.
+
+### TR-EX-099
+
+- **Libellé exact (REF-02, § w:p 967)** : EX-099 — Adaptativité conditionnée. La dégradation graphique répond aux mesures et aux préférences ; aucune réduction d’effet ne peut affecter les invariants de conception. Le résultat demeure publiable sur données de référence, indépendamment de la qualité instantanée de la prévisualisation.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A5 + A1 · **Lot** : X
+- **Contrat** : IF-002,IF-003 · **Composants candidats** : `docs/atelier/p0-mesures.md`, `docs/atelier/p2-mesures.md`, `apps/web/e2e`, `.github/workflows`
+- **Décisions** : DEC-13 · **Scénarios** : 025,026
+- **Test positif prescrit** : Adapter effets graphiques sur mesures/préférences et publier mêmes données canoniques.
+- **Test négatif prescrit** : Bas FPS conduit à dériver export simplifié non déclaré : échec invariants, pas concession admise.
+- **Preuve (contrôles positifs exécutés)** : 2
+  - EX-099 [+] trames mesurées au-delà du budget : la qualité d'affichage baisse (annoncée) ; revenues sous le seuil : elle remonte — `apps/web/src/modules/studio/frontieres.preuves-e.test.ts`, commit bf775d9, 2026-10-25 21:49
+  - candidats, point accroché et tolérance rendus identiques avant, pendant et après la charge (paliers 0 à 4) — `apps/web/src/modules/studio/vue3d/qualite-rendu.test.ts`, commit 5edae3e, 2026-10-25 20:16
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - EX-099 [−] dépôt réel : exports, feuilles, dossiers et paquets publiés ne lisent ni la qualité d'affichage, ni la vue 3D, ni les mesures de trame — `apps/web/src/modules/studio/frontieres.preuves-e.test.ts`, commit bf775d9, 2026-10-25 21:49
+  - chaque palier ne porte que ombres / résolution / anti-crénelage (aucun accrochage, aucune tolérance, aucun objet) — `apps/web/src/modules/studio/vue3d/qualite-rendu.test.ts`, commit 5edae3e, 2026-10-25 20:16
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-EX-100
+
+- **Libellé exact (REF-02, § w:p 998)** : EX-100 — Critère de preuve. Une preuve est rattachée à build, commit, version du contrat, jeu de données/empreinte, environnement, auteur/exécutant, horodatage, verdict, logs utiles et référence stable. « La CI est verte » ne prouve pas qu’un scénario non présent dans la CI a été testé.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A5 + A1 · **Lot** : X
+- **Contrat** : IF-002,IF-003 · **Composants candidats** : `docs/atelier/p0-mesures.md`, `docs/atelier/p2-mesures.md`, `apps/web/e2e`, `.github/workflows`
+- **Décisions** : DEC-13 · **Scénarios** : 034
+- **Test positif prescrit** : Archiver résultat avec build/SHA/contrat/corpus empreinte/env/exécutant/date/verdict/log/lien.
+- **Test négatif prescrit** : Lien CI verte sans scénario présent ou preuve sans SHA : ne pas attribuer conformité.
+- **Preuve (contrôles positifs exécutés)** : 1
+  - EX-100 [+] une preuve portant build, SHA, contrat, corpus, environnement, exécutant, date, verdict, log et référence permet d'attribuer la conformité — `apps/api/src/testing/studio-tracabilite-ex.test.ts`, commit 5edae3e, 2026-10-25 20:25
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - EX-100 [−] preuve sans SHA, ou lien de CI « vert » sans scénario : conformité refusée, motif nommé — `apps/api/src/testing/studio-tracabilite-ex.test.ts`, commit 5edae3e, 2026-10-25 20:25
+  - EX-100 [−] registre réel : aucune conformité n'est attribuée sur une preuve refusée, aucun lien de CI sans scénario — `apps/api/src/testing/studio-tracabilite-ex.test.ts`, commit 5edae3e, 2026-10-25 20:25
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. Pour TR-EX-100 à 104, les écarts réels relevés sont publiés dans docs/ai-team/reports/claude-f4-tracabilite/TRACABILITE-EX.md.
+
+### TR-EX-101
+
+- **Libellé exact (REF-02, § w:p 999)** : EX-101 — Gestion des régressions. Un correctif modifiant la géométrie, les projections, les workers ou le Registry déclenche les tests pertinents d’exactitude, d’historique, de permissions, de persistance et de compatibilité des profils.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A5 + A1 · **Lot** : X
+- **Contrat** : IF-002,IF-003 · **Composants candidats** : `docs/atelier/p0-mesures.md`, `docs/atelier/p2-mesures.md`, `apps/web/e2e`, `.github/workflows`
+- **Décisions** : DEC-13 · **Scénarios** : 011,018,036,037
+- **Test positif prescrit** : Changement worker/Registry déclenche tests exactitude/historique/droits/persistance/profils concernés.
+- **Test négatif prescrit** : Skip des tests pertinents ou assertion affaiblie pour verdir CI : preuve insuffisante.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (partiel) : Skip / only / todo refusés dans les suites tracées (registre) ; aucun mécanisme ne relie une modification de Worker / Registry à ses tests pertinents et l'affaiblissement d'une assertion n'est pas détecté.
+
+### TR-EX-102
+
+- **Libellé exact (REF-02, § w:p 1125)** : EX-102 — Lien bidirectionnel. Toute exigence de niveau 2 dispose au minimum d’un identifiant, d’une source de niveau 1, d’un propriétaire métier, d’un contrat, d’un composant candidat, de tests, de preuves, d’un état et d’une décision si un arbitrage est requis. Les composants existants sont des candidats jusqu’à leur audit. Un test identifie l’exigence qu’il vérifie ; un composant identifie les exigences qu’il satisfait.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 + A0 · **Lot** : X/pilotage
+- **Contrat** : IF-001 à IF-011 selon fonction · **Composants candidats** : `docs/ai-team/missions.json`, `docs/workstreams/studio`, `docs/continuity/README.md`
+- **Décisions** : DEC-01 à DEC-18 selon fonction · **Scénarios** : 022
+- **Test positif prescrit** : Depuis EX025 retrouver charte/contrat/composant/tests/preuve/DEC puis revenir depuis test vers exigence.
+- **Test négatif prescrit** : Lien composant sans source ou test sans exigence : fiche incomplète signalée.
+- **Preuve (contrôles positifs exécutés)** : 1
+  - EX-102 [+] depuis une exigence on retrouve charte, contrat, composant, tests, preuve, décision ; depuis le test on revient à l'exigence — `apps/api/src/testing/studio-tracabilite-ex.test.ts`, commit 5edae3e, 2026-10-25 20:25
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - EX-102 [−] composant sans source, test sans exigence ou contrôle introuvable : fiche incomplète signalée — `apps/api/src/testing/studio-tracabilite-ex.test.ts`, commit 5edae3e, 2026-10-25 20:25
+  - EX-102 [−] dépôt réel : aucun test ne cite une exigence inconnue des fiches ; les fiches citées sont celles de REF-02 — `apps/api/src/testing/studio-tracabilite-ex.test.ts`, commit 5edae3e, 2026-10-25 20:25
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. Pour TR-EX-100 à 104, les écarts réels relevés sont publiés dans docs/ai-team/reports/claude-f4-tracabilite/TRACABILITE-EX.md.
+
+### TR-EX-103
+
+- **Libellé exact (REF-02, § w:p 1248)** : EX-103 — Couverture des preuves. Aucune exigence critique n’est marquée conforme si l’un des champs test, résultat, build, preuve ou décision applicable est absent. Les exceptions sont documentées comme non applicables avec justification vérifiable.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 + A0 · **Lot** : X/pilotage
+- **Contrat** : IF-001 à IF-011 selon fonction · **Composants candidats** : `docs/ai-team/missions.json`, `docs/workstreams/studio`, `docs/continuity/README.md`
+- **Décisions** : DEC-01 à DEC-18 selon fonction · **Scénarios** : 030
+- **Test positif prescrit** : Contrôle de fiche critique exige test/résultat/build/preuve/décision ; non-applicabilité motivée.
+- **Test négatif prescrit** : Champ preuve/décision applicable absent : ne jamais marquer conforme.
+- **Preuve (contrôles positifs exécutés)** : 1
+  - EX-103 [+] test, résultat, build, preuve et décision présents (ou non-applicabilité justifiée et vérifiable) : « conforme » admis — `apps/api/src/testing/studio-tracabilite-ex.test.ts`, commit 5edae3e, 2026-10-25 20:25
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - EX-103 [−] un champ preuve ou décision absent, ou une non-applicabilité sans justification vérifiable : jamais « conforme » — `apps/api/src/testing/studio-tracabilite-ex.test.ts`, commit 5edae3e, 2026-10-25 20:25
+  - EX-103 [−] dépôt réel : aucune fiche critique n'est déclarée conforme avec un champ manquant — `apps/api/src/testing/studio-tracabilite-ex.test.ts`, commit 5edae3e, 2026-10-25 20:25
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. Pour TR-EX-100 à 104, les écarts réels relevés sont publiés dans docs/ai-team/reports/claude-f4-tracabilite/TRACABILITE-EX.md.
+
+### TR-EX-104
+
+- **Libellé exact (REF-02, § w:p 1251)** : EX-104 — Auditabilité. La matrice doit permettre de remonter d’un défaut observé au test, au composant, à l’exigence et au principe produit ; inversement, elle doit montrer pour chaque principe les composants candidats et preuves correspondants.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 + A0 · **Lot** : X/pilotage
+- **Contrat** : IF-001 à IF-011 selon fonction · **Composants candidats** : `docs/ai-team/missions.json`, `docs/workstreams/studio`, `docs/continuity/README.md`
+- **Décisions** : DEC-01 à DEC-18 selon fonction · **Scénarios** : 023
+- **Test positif prescrit** : Partir défaut picking et remonter test→composant→EX→principe, puis couverture inverse.
+- **Test négatif prescrit** : Principe sans composant candidat ou défaut sans lien source : auditabilité déclarée incomplète.
+- **Preuve (contrôles positifs exécutés)** : 1
+  - EX-104 [+] d'un défaut on remonte au test, à l'exigence, au composant et au principe ; chaque principe montre ses composants et preuves — `apps/api/src/testing/studio-tracabilite-ex.test.ts`, commit 5edae3e, 2026-10-25 20:25
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - EX-104 [−] défaut sans test, test sans exigence, exigence sans principe, principe sans composant : auditabilité incomplète, rupture nommée — `apps/api/src/testing/studio-tracabilite-ex.test.ts`, commit 5edae3e, 2026-10-25 20:25
+  - EX-104 [−] dépôt réel : chaque défaut éliminatoire a un contrôle bloquant ; les huit principes de REF-01 sont relus ; les ruptures sont nommées — `apps/api/src/testing/studio-tracabilite-ex.test.ts`, commit 5edae3e, 2026-10-25 20:25
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. Pour TR-EX-100 à 104, les écarts réels relevés sont publiés dans docs/ai-team/reports/claude-f4-tracabilite/TRACABILITE-EX.md.
+
+### TR-IF-001
+
+- **Libellé exact (REF-02, § w:p 141)** : IF-001 — Interface de rattachement projet. Entrée : projet autorisé, site/sources/version, acteur ; sortie : contexte d’étude validé et identifiant stable. Échec : projet inaccessible, source non disponible, conflit de version, droits insuffisants. Le contrat physique demeure à choisir.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A4 · **Lot** : I/A/E
+- **Contrat** : IF-001,IF-001,IF-006 · **Composants candidats** : `apps/web/src/App.tsx`, `apps/web/src/modules/module-registry.ts`, `apps/api/src/db/schema.ts`
+- **Décisions** : DEC-01,DEC-02,DEC-03 · **Scénarios** : 035,NAV-003
+- **Test positif prescrit** : Rattacher étude à projet autorisé avec sources/version et obtenir identifiant stable.
+- **Test négatif prescrit** : Projet inaccessible/source indisponible/conflit : erreur explicite sans création partielle.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : le contrat d'étude (POST /projects/:p/studio/studies { name }) ne porte ni site, ni sources, ni version ; « source indisponible » et « conflit de version » n'existent donc pas. Le contrat physique reste « à choisir » selon la fiche (décision de structure).
+
+### TR-IF-002
+
+- **Libellé exact (REF-02, § w:p 199)** : IF-002 — Geste rapide (exemple Ligne). ① réception pointeur/clavier ; ② lecture de la projection/index correspondant à la révision active ; ③ calcul de snapping ; ④ affichage d’aperçu transitoire ; ⑤ confirmation ; ⑥ intention géométrique validée ; ⑦ commande idempotente ; ⑧ réponse acceptation/conflit/refus ; ⑨ invalidation limitée des données dérivées.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A4 + A5 · **Lot** : A/C
+- **Contrat** : IF-002,IF-002,IF-004,IF-006 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/plan2d/Plan2D.tsx`, `apps/web/src/modules/atelier/nouveau/plan2d/accrochage.ts`, `packages/planche-model/src`
+- **Décisions** : DEC-01,DEC-02,DEC-09 · **Scénarios** : 001,022 ; 005,008 secondaires seulement
+- **Test positif prescrit** : Dessiner aperçu, confirmer et contrôler commande/valeur dans tolérance contractuelle.
+- **Test négatif prescrit** : Échap sur aperçu puis relire modèle : aucune mutation canonique résiduelle.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (décision requise) : Négatif couvert (Échap sans mutation). Le positif exige de contrôler la valeur engagée « dans la tolérance contractuelle » : aucune tolérance contractuelle n'est déclarée pour le geste Ligne (ni dans le registre, ni dans le contrat studio-commands/1). Fixer cette tolérance appartient au maître d'ouvrage ; ne pas l'inventer.
+
+### TR-IF-003
+
+- **Libellé exact (REF-02, § w:p 200)** : IF-003 — Calcul lourd (exemple booléen). ① collecte des paramètres ; ② capture immuable de l’identifiant de révision ; ③ soumission au gestionnaire de tâches ; ④ worker/WASM ou service serveur ; ⑤ retour résultat + révision source + métriques ; ⑥ vérification du contexte et des droits ; ⑦ engagement transactionnel explicite ; ⑧ mise à jour des projections. Un résultat ancien peut être conservé à titre historique, pas appliqué à une révision plus récente.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A5 · **Lot** : A/D/R
+- **Contrat** : IF-003,IF-004,IF-006,IF-011,IF-007 · **Composants candidats** : `packages/atelier-model/src/commandes/base.ts`, `apps/web/src/modules/atelier/nouveau/planche/historique.ts`, `packages/planche-model/src/delta.ts`
+- **Décisions** : DEC-12,DEC-11 · **Scénarios** : 014,015
+- **Test positif prescrit** : Capturer R12, calcul booléen en worker, vérifier droits/contexte puis confirmer transaction et invalider scène.
+- **Test négatif prescrit** : Réponse calcul R12 après modification R13 ou droits révoqués : aucun engagement courant.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Rapprochement du 25 octobre 2026 (non couvert) : Aucun calcul booléen dans Studio V1 (déclaré par le test « PERF-07 déclaré non applicable (aucun booléen exact dans Studio V1), jamais simulé », apps/web/src/modules/studio/chargement/perf.test.ts:22) ; capture R12 / vérification droits / engagement d'un résultat de Worker non testés. Infrastructure Worker existante mais sans engagement transaction…
+
+### TR-IF-004
+
+- **Libellé exact (REF-02, § w:p 330)** : IF-004 — Précondition de version. Toute intention qui modifie un objet en environnement collaboratif référence baseRevisionId et, lorsque nécessaire, les versions individuelles des objets et relations touchés. En cas de divergence incompatible : refus et proposition de résolution ou nouveau calcul sur la base courante.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A5 · **Lot** : A/D/R
+- **Contrat** : IF-004,IF-004,IF-006,IF-011 · **Composants candidats** : `packages/atelier-model/src/commandes/base.ts`, `apps/web/src/modules/atelier/nouveau/planche/historique.ts`, `packages/planche-model/src/delta.ts`
+- **Décisions** : DEC-12,DEC-11 · **Scénarios** : 012
+- **Test positif prescrit** : Commande base R12 avec objets/relations à jour est acceptée sur même contexte.
+- **Test négatif prescrit** : Deux sessions divergent : commande seconde rejetée avec courant/conflit, pas last-write-wins.
+- **Preuve (contrôles positifs exécutés)** : 1
+  - INV-005 [+] un lot valide est appliqué en entier : une révision, tête avancée — `apps/api/src/routes/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+- **Contre-preuve (contrôles négatifs exécutés)** : 4
+  - INV-011 [+] A annule son propre ajout (élément distinct) : refus 409 sans chevauchement, reporté sur la tête, le travail de B demeure — `apps/api/src/routes/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+  - BLOC-03 [−] même requestId rejoué : aucune seconde révision ; autre contenu : 409 request_conflict ; base périmée : 409 stale_revision — `apps/api/src/routes/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+  - base périmée : 409 stale_revision avec la tête, les éléments changés et les chevauchements ; la tête est intacte — `apps/api/src/testing/studio-contrat-commandes.test.ts`, commit 4643cfa, 2026-10-19 12:39
+  - B sur l'ancienne tête : conflit signalé, tête de A intacte — `apps/web/e2e/studio-conflits.mjs`, commit 4643cfa, 2026-10-19 12:43
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-IF-005
+
+- **Libellé exact (REF-02, § w:p 469)** : IF-005 — Cycle d’activation. découvert → vérification de contexte/droits → résolution des dépendances → chargement du code → initialisation → prêt → actif → suspendu/désactivé ; erreurs incompatible, permission refusée, hors ligne, échec de chargement, échec du noyau. La transition ne doit pas perdre un geste inachevé sans retour visible.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A6 + A5 · **Lot** : B/R
+- **Contrat** : IF-005,IF-005,IF-006 · **Composants candidats** : `apps/web/vite.config.ts`, `apps/web/src/lib`, `packages/planche-model/src/outils/index.ts`
+- **Décisions** : DEC-07,DEC-14 · **Scénarios** : 017,020,NAV-007
+- **Test positif prescrit** : Tracer découverte→contrôle→dépendances→code→initialisation→prêt→actif→désactivation sans perte de geste.
+- **Test négatif prescrit** : Hors ligne/permission/loader/noyau en erreur : état distinct et geste rendu ou protégé, pas attente infinie.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : le cycle d'activation ne connaît pas les états « vérification de contexte/droits », « résolution des dépendances », « suspendu », ni les erreurs « incompatible », « permission refusée », « échec du noyau » ; aucune préservation d'un geste inachevé pendant une transition n'est implémentée. Seuls téléchargé / initialisé / actif / ho…
+
+### TR-IF-006
+
+- **Libellé exact (REF-02, § w:p 529)** : IF-006 — Commande métier. Le contrat de transport doit exprimer les attributs logiques suivants ; l’objet est une proposition de schéma et non une API actuellement exposée.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A6 + A5 · **Lot** : A/R/X
+- **Contrat** : IF-006,IF-001,IF-004,IF-006,IF-011 · **Composants candidats** : `apps/api/src`, `docker-compose.yml`, `docs/deploiement.md`
+- **Décisions** : DEC-03,DEC-18 · **Scénarios** : 012,013,035
+- **Test positif prescrit** : Enveloppe requestId/toolId/contractVersion/scope/baseRevision/targets/opération/paramètres/mode est validée avec identité de session serveur.
+- **Test négatif prescrit** : actorId forgé, scope interprojet ou répétition incompatible : refus atomique, aucune permission créée.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (partiel) : Négatif désormais complet (actorId forgé refusé 400, portée d'un autre projet 404, même requestId au contenu différent 409, aucune écriture, membres inchangés, lecteur toujours refusé). Positif : fonction absente pour les attributs prescrits targetIds, operation et mode (l'enveloppe implémentée porte contractVersion, requestId, baseRevisionId, commands[toolI…
+
+### TR-IF-007
+
+- **Libellé exact (REF-02, § w:p 664)** : IF-007 — Statuts des jobs. queued → loading → running → completed, avec branches cancel_requested, cancelled, failed, superseded, timed_out. Une demande d’annulation n’équivaut pas immédiatement à un arrêt matériel ; le résultat d’une tâche finalement terminée après annulation ne peut être engagé sans nouvelle vérification.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A6 + A5 · **Lot** : D
+- **Contrat** : IF-007,IF-003,IF-007 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/exact/moteur-exact.ts`, `apps/web/src/modules/atelier/nouveau/exact/exact.worker.ts`
+- **Décisions** : DEC-11,DEC-13 · **Scénarios** : 014,015
+- **Test positif prescrit** : Job parcourt queued/loading/running/completed avec source et suivi puis résultat validé.
+- **Test négatif prescrit** : cancel_requested suivi completion ou timeout/crash : résultat non engagé sans nouvelle vérification et pending résolu.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : l'ordonnanceur connaît queued / running / done / failed / cancelled / timed-out / stale, sans loading, cancel_requested ni superseded nommés, et sans révision source tracée par statut ; l'annulation est immédiate (aucun état « annulation demandée » suivi d'une fin de calcul dont le résultat attendrait une nouvelle vérification).
+
+### TR-IF-008
+
+- **Libellé exact (REF-02, § w:p 731)** : IF-008 — Résultat quantitatif. quantityId + sourceRevisionSet + ruleId + ruleVersion + sourceObjectIds + unit + rawValue + deductions + displayValue + freshnessStatus ; manualAdjustment est facultatif, distinct, motivé et attribué. La décision de structure physique reste ouverte.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E
+- **Contrat** : IF-008,IF-008,IF-009 · **Composants candidats** : `packages/atelier-model/src/documents`, `apps/api/src/db/schema.ts`, `apps/web/src/modules/documents`
+- **Décisions** : DEC-16 · **Scénarios** : 009,010
+- **Test positif prescrit** : Quantité mur retrouve sourceRevisionSet/ruleVersion/sourceObjectIds/unité/raw/deductions/display/freshness.
+- **Test négatif prescrit** : manualAdjustment sans motif/auteur ou unit incompatible : refus/signalement, rawValue conservé.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : le résultat quantitatif ne porte ni quantityId, ni sourceRevisionSet, ni ruleId / ruleVersion, ni freshnessStatus (aucun de ces champs dans quantites.ts ni bilan-quantites.ts). Le négatif (ajustement sans motif ni auteur, unité incohérente, brute conservée) est couvert ; la structure physique reste ouverte selon la fiche (décision…
+
+### TR-IF-009
+
+- **Libellé exact (REF-02, § w:p 765)** : IF-009 — Publication. Le manifeste contient : identifiant, intention/usage, date, auteur, état d’approbation, liste ordonnée de documentId + version + empreinte, références de modèles et de règles, rapports de contrôle et observations bloquantes résolues ou dérogées, ainsi que la décision d’approbation sur cet ensemble exact.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E
+- **Contrat** : IF-009,IF-008,IF-009 · **Composants candidats** : `packages/atelier-model/src/documents`, `apps/api/src/db/schema.ts`, `apps/web/src/modules/documents`
+- **Décisions** : DEC-16 · **Scénarios** : 030,038
+- **Test positif prescrit** : Manifeste ordonné contient documentId/version/empreinte, modèles/règles/contrôles et décision de l’ensemble exact.
+- **Test négatif prescrit** : Pièce changée/manquante ou observation bloquante sans résolution/dérogation : publication refusée.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : le manifeste (studio-publication-statuts.ts) ne porte ni références de règles, ni rapports de contrôle, ni observations bloquantes ; la publication n'est jamais refusée pour une observation bloquante non résolue ou non dérogée. Pièce changée et documents/empreintes ordonnés sont couverts (INV-001, studio-publication).
+
+### TR-IF-010
+
+- **Libellé exact (REF-02, § w:p 819)** : IF-010 — Observation. Champs : issueId, catégorie, source du contrôle, révisions examinées, objets/vues, auteur, gravité selon règles décidées, description et pièces justificatives, responsable éventuel, état, journal de décisions, références des recontrôles et condition de clôture. Les identifiants BCF éventuels sont conservés comme références, non assimilés automatiquement aux identifiants internes.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E
+- **Contrat** : IF-010,IF-008,IF-010 · **Composants candidats** : `packages/atelier-model/src/coordination.ts`, `apps/web/src/modules/programmation`, `apps/web/src/modules/analyses`
+- **Décisions** : DEC-02,DEC-16 · **Scénarios** : 029
+- **Test positif prescrit** : Observation garde issueId/catégorie/règle/révisions/objets/vue/auteur/gravité/pièces/responsable/journal/recontrôles/clôture.
+- **Test négatif prescrit** : Même BCF-ID reçu dans autre contexte : ne pas écraser ID interne ni clore par disparition objet.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : une observation (table studio_observations, lib/studio-observations.ts) ne porte ni catégorie, ni gravité, ni pièces justificatives ; BCF n'est pas livré (matrice des échanges, « jamais livrés »), donc le négatif « même BCF-ID dans un autre contexte » est intestable.
+
+### TR-IF-011
+
+- **Libellé exact (REF-02, § w:p 868)** : IF-011 — Journal de changement. Événement avec eventId, transaction, auteur, étude/variante, révision base/issue, effets, horodatage serveur et relation éventuelle à un job. La diffusion de notifications ne constitue pas une confirmation métier sans engagement préalable.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A5 · **Lot** : A/D/R
+- **Contrat** : IF-011,IF-004,IF-006,IF-011 · **Composants candidats** : `packages/atelier-model/src/commandes/base.ts`, `apps/web/src/modules/atelier/nouveau/planche/historique.ts`, `packages/planche-model/src/delta.ts`
+- **Décisions** : DEC-12,DEC-11 · **Scénarios** : 013
+- **Test positif prescrit** : Après engagement durable, événement garde eventId/transaction/auteur/étude/variante/base/issue/effets/date/job éventuel.
+- **Test négatif prescrit** : Notification reçue avant commit ou transaction échouée : aucune confirmation métier fausse.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : aucun journal de changement des révisions avec eventId, transaction, horodatage serveur et relation à un job ; aucune garantie testable qu'aucune notification n'est émise avant commit (le canal temps réel n'est pas lié à un engagement transactionnel nommé).
+
+### TR-INV-001
+
+- **Libellé exact (REF-02, § w:p 207, 208)** : Une approbation référence exactement les éléments présentés à la décision.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E
+- **Contrat** : IF-008,IF-009 · **Composants candidats** : `packages/atelier-model/src/documents`, `apps/api/src/db/schema.ts`, `apps/web/src/modules/documents`
+- **Décisions** : DEC-16 · **Scénarios** : 030,038
+- **Test positif prescrit** : Approuver ensemble A/R12 et B/R7 puis relire décision avec empreintes exactes.
+- **Test négatif prescrit** : Modifier B après décision : publication sous ancienne approbation bloquée.
+- **Preuve (contrôles positifs exécutés)** : 2
+  - INV-001 [+] A et B approuvées ensemble : la décision relue porte le manifeste dont les sources nomment A et B avec leurs révisions et empreintes exactes — `apps/api/src/routes/studio-invariants.preuves-d2.test.ts`, commit bf775d9, 2026-10-25 21:58
+  - INV-001 [+] l'approbation enregistre le manifeste, la révision et l'empreinte du document présentés — `apps/api/src/routes/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+- **Contre-preuve (contrôles négatifs exécutés)** : 3
+  - INV-001 [−] la variante coordonnée B modifiée entre l'approbation et la diffusion : diffusion refusée (409 manifest_mismatch, écart sur B), aucun paquet — `apps/api/src/routes/studio-invariants.preuves-d2.test.ts`, commit bf775d9, 2026-10-25 21:58
+  - INV-001 [−] un autre ensemble (manifeste, révision ou document) est refusé : 409 revision_mismatch, rien n'est approuvé — `apps/api/src/routes/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+  - INV-001 BLOC-05 [−] la tête change après l'approbation : diffuser → 409 manifest_mismatch, aucun paquet — `apps/api/src/routes/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-INV-002
+
+- **Libellé exact (REF-02, § w:p 209, 210)** : Une définition architecturale associée possède une autorité unique.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A4 + A5 · **Lot** : A/C
+- **Contrat** : IF-002,IF-004,IF-006 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/plan2d/Plan2D.tsx`, `apps/web/src/modules/atelier/nouveau/plan2d/accrochage.ts`, `packages/planche-model/src`
+- **Décisions** : DEC-01,DEC-02,DEC-09 · **Scénarios** : 003
+- **Test positif prescrit** : Modifier mur en 2D puis en 3D et comparer objectId/relations/révision identiques.
+- **Test négatif prescrit** : Deux identités concurrentes créées selon planche : défaut éliminatoire signalé.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (partiel) : Le mur est désormais modifié en 2D puis en 3D (TEST-003 : même objectId, hostId gardé, une seule révision), mais la révision affichée n'est pas comparée entre les deux planches : la vue 3D n'expose que la révision de session de son maillage (data-studio-maillage-revision), pas l'identifiant de révision serveur, donc « révision identique » n'est pas assertée …
+
+### TR-INV-003
+
+- **Libellé exact (REF-02, § w:p 211, 212)** : Une copie indépendante ne propage pas vers son origine.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A1 + A6 · **Lot** : A/R
+- **Contrat** : IF-004,IF-006,IF-011 · **Composants candidats** : `apps/api/src/db/schema.ts`, `packages/atelier-model/src/versions.ts`, `packages/atelier-model/src/commandes/base.ts`
+- **Décisions** : DEC-01,DEC-02,DEC-03,DEC-12 · **Scénarios** : 004
+- **Test positif prescrit** : Cloner variante avec nouvelles identités et provenance, modifier clone puis relire source inchangée.
+- **Test négatif prescrit** : Ancien identifiant réutilisé dans nouveau propriétaire ou propagation implicite : rejeter/détecter.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (décision requise) : Le cas positif prescrit (« cloner une variante avec de nouvelles identités ») contredit le modèle actuel : la dérivation de variante (POST /studies/:s/variants { fromVariantId }) garde volontairement les identifiants d'objets (comparaison entre variantes, provenance derivedFromVariantId/RevisionId) ; seule la copie d'objets dans un document (studio.…
+
+### TR-INV-004
+
+- **Libellé exact (REF-02, § w:p 213, 214)** : Une exigence approuvée reste distincte du résultat de conception.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E
+- **Contrat** : IF-008,IF-010 · **Composants candidats** : `packages/atelier-model/src/coordination.ts`, `apps/web/src/modules/programmation`, `apps/web/src/modules/analyses`
+- **Décisions** : DEC-02,DEC-16 · **Scénarios** : 027
+- **Test positif prescrit** : Exigence 28m² et dessin 26m² : afficher écart -2m² et conserver exigence versionnée.
+- **Test négatif prescrit** : Modifier surface dessinée : ne réécrit pas cible à 26 ; commande exigence sans droit refusée.
+- **Preuve (contrôles positifs exécutés)** : 2
+  - INV-004 [+] exigence 28 m², dessin 26 m² : le panneau affiche l'écart −2 m² et l'exigence versionnée v1 à 28 m² — `apps/web/src/modules/studio/exigences/exigences-ui.preuves-d2.test.ts`, commit bf775d9, 2026-10-25 21:49
+  - INV-004 [+] le contrôle mesure le document et rend un écart ; ni l'exigence ni le document ne sont réécrits — `packages/atelier-model/src/studio/studio-invariants.test.ts`, commit 44c6ef4, 2026-10-25 16:08
+- **Contre-preuve (contrôles négatifs exécutés)** : 4
+  - INV-004 [−] la surface dessinée modifiée (26 → 27 m²) ne réécrit pas la cible : exigence toujours 28 m² en v1, écart −1 m² recalculé — `apps/web/src/modules/studio/exigences/exigences-ui.preuves-d2.test.ts`, commit bf775d9, 2026-10-25 21:49
+  - INV-004 [−] une exigence ne s'écrit pas dans le document, et une acceptation ne vient jamais du client — `packages/atelier-model/src/studio/studio-invariants.test.ts`, commit 44c6ef4, 2026-10-25 16:08
+  - TEST-027 [+] modifier le rectangle dessiné (2 × 1 → 3 × 1) fait passer l'écart signé de 0 à +1 m² ; l'exigence n'est pas réécrite — `packages/atelier-model/src/studio/studio-invariants.test.ts`, commit 44c6ef4, 2026-10-25 16:08
+  - chaque cellule rend l'attendu ; aucun refus n'écrit quoi que ce soit — `apps/api/src/routes/studio-permissions.test.ts`, commit cf09271, 2026-10-19 14:33
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-INV-005
+
+- **Libellé exact (REF-02, § w:p 215, 216)** : Une opération rejetée ne modifie pas partiellement les données canoniques.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A1 + A6 · **Lot** : A/R
+- **Contrat** : IF-004,IF-006,IF-011 · **Composants candidats** : `apps/api/src/db/schema.ts`, `packages/atelier-model/src/versions.ts`, `packages/atelier-model/src/commandes/base.ts`
+- **Décisions** : DEC-01,DEC-02,DEC-03,DEC-12 · **Scénarios** : 008
+- **Test positif prescrit** : Appliquer lot mur/ouverture valide et constater engagement groupé durable.
+- **Test négatif prescrit** : Deuxième opération du lot invalide : aucune partie de la première ne persiste.
+- **Preuve (contrôles positifs exécutés)** : 3
+  - architecture : une enveloppe (mur, ouverture, modifier), même identité de l'ouverture — `apps/web/e2e/studio-navigation.mjs`, commit f59d66d, 2026-10-19 06:50
+  - architecture : l'actualisation restitue le même mur et la même ouverture — `apps/web/e2e/studio-navigation.mjs`, commit f59d66d, 2026-10-19 06:50
+  - INV-005 [+] un lot valide est appliqué en entier : une révision, tête avancée — `apps/api/src/routes/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+- **Contre-preuve (contrôles négatifs exécutés)** : 3
+  - Ouverture incompatible avec son mur : refus atomique, motif clair, rien n'est rogné — `packages/atelier-model/src/studio/architecture/architecture.test.ts`, commit f59d66d, 2026-10-19 06:45
+  - INV-005 [−] refus au milieu du lot, ou panne après l'insertion de la révision : aucune ligne modifiée — `apps/api/src/routes/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+  - A.4 : aucun refus n'a créé de révision (tête = élargissement) — `apps/web/e2e/studio-persistance.mjs`, commit f59d66d, 2026-10-19 06:49
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-INV-006
+
+- **Libellé exact (REF-02, § w:p 217, 218)** : Un résultat dérivé ancien est identifiable et n’écrase pas le résultat courant.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A5 · **Lot** : C
+- **Contrat** : IF-002,IF-003,IF-011 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/vue3d/scene3d.ts`, `apps/web/src/modules/atelier/nouveau/plan2d/accrochage.ts`
+- **Décisions** : DEC-09,DEC-10,DEC-13 · **Scénarios** : 014
+- **Test positif prescrit** : Après commande R13, scène affiche sourceRevisionId et données périmées puis se recalcule.
+- **Test négatif prescrit** : Résultat worker R12 arrive : ne remplace pas projection courante comme si source R13.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (partiel) : La scène 3D ne montre pas l'identifiant de révision serveur (sourceRevisionId) de son résultat : elle porte la révision de session du document (data-studio-maillage-revision / data-studio-revision-courante) et un message « Maillage en cours de calcul » tant qu'ils diffèrent. Fonction absente : affichage de la révision source et d'un état « périmé » nommé dan…
+
+### TR-INV-007
+
+- **Libellé exact (REF-02, § w:p 219, 220)** : Une optimisation préserve les résultats métier dans les tolérances déclarées.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A5 + A1 · **Lot** : X
+- **Contrat** : IF-002,IF-003 · **Composants candidats** : `docs/atelier/p0-mesures.md`, `docs/atelier/p2-mesures.md`, `apps/web/e2e`, `.github/workflows`
+- **Décisions** : DEC-13 · **Scénarios** : 022,023,025
+- **Test positif prescrit** : Comparer performance ET cibles/quantités/historique/export avant/après optimisation.
+- **Test négatif prescrit** : Gain p95 avec snapping ou volume différent hors tolérance : optimisation rejetée.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : aucun mécanisme n'évalue une optimisation conjointement en performance (p95) et en résultats métier (cibles, quantités, historique, export) avant/après, ni ne la rejette quand le résultat sort d'une tolérance déclarée ; aucune tolérance n'est déclarée. Seules des égalités partielles existent (INV-007 [+]/[−] du modèle : maillage i…
+
+### TR-INV-008
+
+- **Libellé exact (REF-02, § w:p 221, 222)** : Un cache/index/projection est reconstruisible depuis la donnée de référence.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A5 · **Lot** : C
+- **Contrat** : IF-002,IF-003,IF-011 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/vue3d/scene3d.ts`, `apps/web/src/modules/atelier/nouveau/plan2d/accrochage.ts`
+- **Décisions** : DEC-09,DEC-10,DEC-13 · **Scénarios** : 023
+- **Test positif prescrit** : Détruire cache scène/index puis reconstruire depuis modèle et vérifier table triangle→objectId.
+- **Test négatif prescrit** : Batch de plusieurs objets ou objet supprimé : aucun triangle sélectionnable avec ID obsolète.
+- **Preuve (contrôles positifs exécutés)** : 1
+  - INV-008 [+] cache de maillage et scène (index de désignation) détruits puis reconstruits depuis le document : même maillage, même table triangle → objectId — `apps/web/src/modules/studio/vue3d/scene-rendu.preuves-d2.test.ts`, commit bf775d9, 2026-10-25 21:49
+- **Contre-preuve (contrôles négatifs exécutés)** : 3
+  - INV-008 [−] lot de plusieurs objets puis objet supprimé : aucun triangle de la scène ne désigne un identifiant obsolète — `apps/web/src/modules/studio/vue3d/scene-rendu.preuves-d2.test.ts`, commit bf775d9, 2026-10-25 21:49
+  - INV-008 [+] sans aucun cache, la projection se reconstruit entièrement depuis le document (premier calcul) — `packages/atelier-model/src/studio/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+  - INV-008 [−] des morceaux altérés (clé périmée, objet disparu) ne sont pas crus : ils sont remaillés depuis le document — `packages/atelier-model/src/studio/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-INV-009
+
+- **Libellé exact (REF-02, § w:p 223, 224)** : Un profil personnalisé ne change ni données, ni droits, ni révision de conception.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A4 + A2 + A1 · **Lot** : B/I
+- **Contrat** : IF-005 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/planche`, `apps/web/src/lib/i18n`
+- **Décisions** : DEC-04,DEC-06 · **Scénarios** : 018,019
+- **Test positif prescrit** : Changer standard→métier→personnel et masquer bouton : modèle/révision/droits inchangés et outil retrouvable.
+- **Test négatif prescrit** : Importer profil avec Publier sans droit : exécution refusée ; masquer outil ne supprime pas ses objets.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : aucun import de profil d'outils (ni route ni interface) et aucun outil « Publier » au catalogue Studio ; le cas négatif prescrit (« importer un profil avec Publier sans droit ») ne peut être exécuté que par substitut (profil personnel écrit par PUT /preferences/outils). Le cas positif est couvert.
+
+### TR-INV-010
+
+- **Libellé exact (REF-02, § w:p 225, 226)** : Une requête IA ou extension passe par les mêmes validations centrales qu’une action humaine.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A5 + A6 + A2 · **Lot** : X
+- **Contrat** : IF-001,IF-006,IF-007,IF-009 · **Composants candidats** : `apps/api/src/app.ts`, `.github/workflows`, `packages/geometry-exact`, `docs/atelier/decisions.md`
+- **Décisions** : DEC-11,DEC-15,DEC-18 · **Scénarios** : 033,035
+- **Test positif prescrit** : Action humaine puis requête IA autorisée passent même schéma/droits/révision.
+- **Test négatif prescrit** : Adaptateur IA forge actorId ou appelle stockage directement : refus ; aucune mutation.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (décision requise) : Aucun chemin de requête IA ou d'extension n'existe (agentExposure: none sur tout le registre) : par décision (F.2-03 « aucun mode IA retenu », acceptée par P-06, RECETTE-PILOTE-2026-10-25.md), il n'y a rien à distinguer d'une action humaine. Le critère ne devient testable qu'avec la livraison d'un adaptateur IA/extension, qui relève d'une décision d…
+
+### TR-INV-011
+
+- **Libellé exact (REF-02, § w:p 227, 228)** : Les annulations concurrentes ne détruisent pas silencieusement le travail d’un autre acteur.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A5 · **Lot** : A/D/R
+- **Contrat** : IF-004,IF-006,IF-011 · **Composants candidats** : `packages/atelier-model/src/commandes/base.ts`, `apps/web/src/modules/atelier/nouveau/planche/historique.ts`, `packages/planche-model/src/delta.ts`
+- **Décisions** : DEC-12,DEC-11 · **Scénarios** : 012
+- **Test positif prescrit** : Annuler commande C1 après C2 compatible via nouvelle inverse validée sur révision actuelle.
+- **Test négatif prescrit** : C2 d'autre utilisateur incompatible : conflit, jamais suppression silencieuse du travail d'autrui.
+- **Preuve (contrôles positifs exécutés)** : 2
+  - INV-011 [+] le brouillon reporté sur la tête d'autrui s'annule sans retirer le changement d'autrui — `apps/web/src/modules/studio/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+  - annuler chez A : rien n'est écrit, les changements de B restent dans la tête — `apps/web/e2e/studio-conflits.mjs`, commit 4643cfa, 2026-10-19 12:43
+- **Contre-preuve (contrôles négatifs exécutés)** : 3
+  - INV-011 [+] A annule son propre ajout (élément distinct) : refus 409 sans chevauchement, reporté sur la tête, le travail de B demeure — `apps/api/src/routes/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+  - INV-011 [−] l'annulation de A retirerait `a` modifié par B : conflit signalé (chevauchement objects:a), tête de B intacte — `apps/api/src/routes/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+  - INV-011 [−] un pas local qui retire l'objet modifié par autrui est signalé au report (chevauchement), jamais appliqué en silence — `apps/web/src/modules/studio/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-INV-012
+
+- **Libellé exact (REF-02, § w:p 229, 230)** : Une publication antérieure n’est pas réécrite par la création d’une nouvelle publication.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A1 + A2 + A5 · **Lot** : E
+- **Contrat** : IF-008,IF-009 · **Composants candidats** : `packages/atelier-model/src/documents`, `apps/api/src/db/schema.ts`, `apps/web/src/modules/documents`
+- **Décisions** : DEC-16 · **Scénarios** : 031
+- **Test positif prescrit** : Retirer/remplacer publication par événement journalisé en gardant ancienne identité/contenu selon politique.
+- **Test négatif prescrit** : Nouvelle diffusion écrase manifestes/fichiers historiques : refus et défaut éliminatoire.
+- **Preuve (contrôles positifs exécutés)** : 3
+  - INV-012 : publication relue identique (paquet, manifeste, révision, approbation) — `apps/web/e2e/studio-preuves-d2.mjs`, commit bf775d9, 2026-10-25 21:55
+  - INV-012 [+] une nouvelle diffusion marque l'ancienne « remplacée » par un évènement journalisé ; son identité, son paquet et son manifeste restent identiques — `apps/api/src/routes/studio-invariants.preuves-d2.test.ts`, commit bf775d9, 2026-10-25 21:58
+  - INV-012 [+] une seconde diffusion remplace la première : statut « remplacé » journalisé, paquet et manifeste d'origine identiques — `apps/api/src/routes/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+- **Contre-preuve (contrôles négatifs exécutés)** : 9
+  - INV-012 [−] : publication diffusée, réécriture directe refusée par la base (paquet, rôle fadi_app) — `apps/web/e2e/studio-preuves-d2.mjs`, commit bf775d9, 2026-10-25 21:55
+  - INV-012 [−] : publication diffusée, réécriture directe refusée par la base (empreinte du paquet, rôle fadi_app) — `apps/web/e2e/studio-preuves-d2.mjs`, commit bf775d9, 2026-10-25 21:55
+  - INV-012 [−] : publication diffusée, réécriture directe refusée par la base (manifeste, rôle fadi_app) — `apps/web/e2e/studio-preuves-d2.mjs`, commit bf775d9, 2026-10-25 21:55
+  - INV-012 [−] : publication diffusée, réécriture directe refusée par la base (empreinte du manifeste, rôle fadi_app) — `apps/web/e2e/studio-preuves-d2.mjs`, commit bf775d9, 2026-10-25 21:55
+  - INV-012 [−] : publication diffusée, réécriture directe refusée par la base (révision examinée, rôle fadi_app) — `apps/web/e2e/studio-preuves-d2.mjs`, commit bf775d9, 2026-10-25 21:55
+  - INV-012 [−] : publication diffusée, réécriture directe refusée par la base (empreinte du document, rôle fadi_app) — `apps/web/e2e/studio-preuves-d2.mjs`, commit bf775d9, 2026-10-25 21:55
+  - … et 3 autre(s) au registre
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-INV-013
+
+- **Libellé exact (REF-02, § w:p 231, 232)** : Une annotation référencée à une face modifiée est conservée avec correspondance vérifiée ou marquée « à résoudre ».
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A1 + A6 · **Lot** : A/R
+- **Contrat** : IF-004,IF-006,IF-011 · **Composants candidats** : `apps/api/src/db/schema.ts`, `packages/atelier-model/src/versions.ts`, `packages/atelier-model/src/commandes/base.ts`
+- **Décisions** : DEC-01,DEC-02,DEC-03,DEC-12 · **Scénarios** : 007
+- **Test positif prescrit** : Diviser face portant cote : correspondance topologique démontrée ou cote conservée à résoudre.
+- **Test négatif prescrit** : Deux faces voisines plausibles : aucun rattachement automatique par seule proximité.
+- **Preuve (contrôles positifs exécutés)** : à produire
+- **Contre-preuve (contrôles négatifs exécutés)** : à produire
+- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Point 2 du 25 octobre 2026 (partiel) : Depuis le lot F1, diviser la face latérale d'un prisme lié divise l'arête de sa polyligne source : les cotes de cette arête sont réattachées quand c'est prouvé, sinon « à résoudre », jamais rattachées à une moitié par proximité. Mais aucune annotation ne référence la face 3D elle-même (« aucune cote ne vise un solide libre », refusé) : le critère « annotatio…
+
+### TR-INV-014
+
+- **Libellé exact (REF-02, § w:p 233, 234)** : Le mode hors connexion différencie travail local, confirmation serveur et droits à reverifier.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A2 + A6 + A5 · **Lot** : B/R
+- **Contrat** : IF-005,IF-006 · **Composants candidats** : `apps/web/vite.config.ts`, `apps/web/src/lib`, `packages/planche-model/src/outils/index.ts`
+- **Décisions** : DEC-07,DEC-14 · **Scénarios** : 020,021
+- **Test positif prescrit** : Passer offline avec profil préparé et utiliser outil dont code/dépendances/données sont compatibles.
+- **Test négatif prescrit** : Outil absent du cache : indisponible explicite ; commande centrale préparée ne devient pas publiée/approuvée.
+- **Preuve (contrôles positifs exécutés)** : 4
+  - INV-014 : au retour du réseau, les cartes relues portent l'état serveur (en revue ; approuvé non diffusé) — `apps/web/e2e/studio-preuves-d2.mjs`, commit bf775d9, 2026-10-25 21:55
+  - rechargement hors ligne : coquille et éditeur servis depuis le cache, brouillon restauré — `apps/web/e2e/studio-hors-ligne.mjs`, commit 44c6ef4, 2026-10-25 16:15
+  - hors ligne, enveloppe en attente : le dessin reste permis — `apps/web/e2e/studio-hors-ligne.mjs`, commit 44c6ef4, 2026-10-25 16:15
+  - INV-014 [+] trois états distincts : travail local conservé, enveloppes en attente de confirmation, confirmé en ligne — `apps/web/src/modules/studio/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+- **Contre-preuve (contrôles négatifs exécutés)** : 8
+  - INV-014 [−] : approbation tentée hors connexion — « Action non confirmée », la carte reste « en revue », non diffusée — `apps/web/e2e/studio-preuves-d2.mjs`, commit bf775d9, 2026-10-25 21:55
+  - INV-014 [−] : le serveur garde le dossier en revue, sans approbation — `apps/web/e2e/studio-preuves-d2.mjs`, commit bf775d9, 2026-10-25 21:55
+  - INV-014 [−] : diffusion tentée hors connexion — « Action non confirmée », la carte reste non diffusée, aucun paquet affiché — `apps/web/e2e/studio-preuves-d2.mjs`, commit bf775d9, 2026-10-25 21:55
+  - INV-014 [−] : le serveur n'a rien diffusé (aucun paquet) — `apps/web/e2e/studio-preuves-d2.mjs`, commit bf775d9, 2026-10-25 21:55
+  - TEST-021 : aucune publication anticipée — aucun POST /publications, liste inchangée — `apps/web/e2e/studio-hors-ligne.mjs`, commit 44c6ef4, 2026-10-25 16:15
+  - INV-014 [−] une enveloppe non accusée n'est jamais montrée confirmée ; un brouillon d'un autre compte n'est ni relu ni rejoué — `apps/web/src/modules/studio/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+  - … et 2 autre(s) au registre
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
+### TR-INV-015
+
+- **Libellé exact (REF-02, § w:p 235, 236)** : Un outil masqué reste retrouvable s’il est autorisé, et n’est pas désinstallé implicitement.
+- **Source** : `Studio/Fadi_Studio_Referentiel_Technique_Detaille_V1_0.docx` (blob ce7cf463e34c) · **Responsable** : A4 + A2 + A1 · **Lot** : B/I
+- **Contrat** : IF-005 · **Composants candidats** : `apps/web/src/modules/atelier/nouveau/planche`, `apps/web/src/lib/i18n`
+- **Décisions** : DEC-04,DEC-06 · **Scénarios** : 017,018
+- **Test positif prescrit** : Masquer outil favori puis le retrouver dans catalogue autorisé.
+- **Test négatif prescrit** : Chercher outil interdit/incompatible : descriptif consultable selon politique, pas d'action exécutable.
+- **Preuve (contrôles positifs exécutés)** : 4
+  - INV-015 [+] chaque outil masqué par un profil métier reste au catalogue et se retrouve par son nom — `apps/web/src/modules/studio/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+  - profil Cotation : Ligne masquée des barres, raccourci actif, toujours au catalogue — `apps/web/e2e/studio-profils.mjs`, commit f59d66d, 2026-10-19 06:50
+  - lecteur : le gestionnaire dit pourquoi — `apps/web/e2e/studio-catalogue.mjs`, commit 4643cfa, 2026-10-19 12:43
+  - lecteur : la palette dit pourquoi — `apps/web/e2e/studio-catalogue.mjs`, commit 4643cfa, 2026-10-19 12:43
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - lecteur : outil favori, dans son profil et son regroupement, toujours refusé (403) — `apps/web/e2e/studio-catalogue.mjs`, commit 4643cfa, 2026-10-19 12:43
+  - INV-015 [−] changer de profil ne retire rien des listes ; hors connexion, un outil sans moteur est indiqué indisponible, jamais retiré — `apps/web/src/modules/studio/studio-invariants.test.ts`, commit cf09271, 2026-10-19 14:33
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
+
