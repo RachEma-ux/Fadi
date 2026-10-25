@@ -69,6 +69,8 @@ const message = (m: Record<string, unknown>) => JSON.stringify({ v: 1, ...m });
 export class HubTempsReel {
   private readonly connexions = new Set<Connexion>();
   private readonly salles = new Map<string, Salle>();
+  /** Supervision (RTC-5) : compteurs cumulés depuis le démarrage, jamais un contenu de message ni un identifiant. */
+  private readonly compteurs = { envois: 0, abandonsEphemeres: 0, fermetures: {} as Record<string, number> };
   private readonly demarrage: number;
 
   constructor(private readonly d: DependancesHub) {
@@ -83,6 +85,7 @@ export class HubTempsReel {
     const duCompte = [...this.connexions].filter((c) => c.userId === compte.userId).length;
     if (duCompte >= BORNES_TEMPS_REEL.connexionsParCompte) {
       prise.fermer(FERMETURE.tropDeConnexions, "trop-de-connexions");
+      this.compteurs.fermetures["trop-de-connexions"] = (this.compteurs.fermetures["trop-de-connexions"] ?? 0) + 1;
       return null;
     }
     const c: Connexion = {
@@ -209,6 +212,12 @@ export class HubTempsReel {
     if (!salle) return { connectes: [], hoteAbsentDepuisMs: maintenant - this.demarrage };
     const connectes = [...new Set([...salle.connexions].map((c) => c.userId))];
     return { connectes, hoteAbsentDepuisMs: connectes.includes(salle.session.hoteId) ? null : maintenant - salle.hoteVuA };
+  }
+
+  /** Mesures agrégées (journal périodique du canal) : connexions, salles, personnes, envois, abandons, fermetures par motif. */
+  mesures(): { connexions: number; salles: number; personnes: number; envois: number; abandonsEphemeres: number; fermetures: Record<string, number> } {
+    const personnes = new Set([...this.salles.values()].flatMap((s) => [...s.connexions].map((c) => `${s.session.id}:${c.userId}`))).size;
+    return { connexions: this.connexions.size, salles: this.salles.size, personnes, envois: this.compteurs.envois, abandonsEphemeres: this.compteurs.abandonsEphemeres, fermetures: { ...this.compteurs.fermetures } };
   }
 
   sansConnexion(sessionId: string): boolean {
@@ -395,9 +404,10 @@ export class HubTempsReel {
   private envoyerBrut(c: Connexion, texte: string, ephemere: boolean): void {
     if (c.fermee) return;
     if (c.prise.enAttente() + texte.length > BORNES_TEMPS_REEL.fileEnvoiOctets) {
-      if (ephemere) return;
+      if (ephemere) { this.compteurs.abandonsEphemeres += 1; return; }
       return this.fermer(c, FERMETURE.fileSaturee, "file-saturee");
     }
+    this.compteurs.envois += 1;
     try { c.prise.envoyer(texte); } catch { this.fermer(c, FERMETURE.fileSaturee, "envoi-impossible"); }
   }
 
@@ -409,6 +419,7 @@ export class HubTempsReel {
     if (c.fermee) return;
     c.fermee = true;
     c.droitRelu = 0;
+    this.compteurs.fermetures[raison] = (this.compteurs.fermetures[raison] ?? 0) + 1;
     try { c.prise.fermer(code, raison); } catch { /* prise déjà fermée */ }
     void this.fermee(c);
   }

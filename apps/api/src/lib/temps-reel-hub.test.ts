@@ -258,4 +258,23 @@ describe("Temps réel — répartiteur", () => {
     await e.envoyer({ type: "quitter" });
     expect(h.prise.de("participants").length).toBeGreaterThan(avant);
   });
+
+  it("supervision : mesures agrégées (connexions, salles, personnes, envois, abandons, fermetures par motif)", async () => {
+    const m = monde();
+    const h = m.connecter("hote"), l = m.connecter("lecteur");
+    await h.envoyer({ type: "rejoindre", sessionId: "rtses_1" });
+    await l.envoyer({ type: "rejoindre", sessionId: "rtses_1" });
+    l.prise.attente = BORNES_TEMPS_REEL.fileEnvoiOctets;
+    await h.envoyer({ type: "pointeur", espace: "3d", x: 1, y: 2, z: 3 });
+    const avant = m.hub.mesures();
+    expect(avant).toMatchObject({ connexions: 2, salles: 1, personnes: 2, abandonsEphemeres: 1 });
+    expect(avant.envois).toBeGreaterThan(0);
+    m.roles.set("lecteur", null);
+    m.hub.signal({ type: "acces", projectId: "p1", userId: "lecteur" });
+    await m.hub.revalider();
+    expect(m.hub.mesures().fermetures).toEqual({ "acces-retire": 1 });
+    expect(JSON.stringify(m.hub.mesures())).not.toMatch(/lecteur|hote|rtses/);
+    for (let i = 0; i <= BORNES_TEMPS_REEL.connexionsParCompte; i++) m.connecter("editeur");
+    expect(m.hub.mesures().fermetures["trop-de-connexions"]).toBe(1);
+  });
 });

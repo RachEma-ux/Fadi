@@ -23,7 +23,13 @@ export type CommandeCollaboration =
  */
 export type CommandeTempsReel =
   | "ouvrir-session" | "rejoindre-session" | "quitter-session" | "suivre-presentateur" | "naviguer-librement" | "presenter"
-  | "designer-presentateur" | "transmettre-hote" | "reprendre-animation" | "afficher-revision-session" | "passer-revision" | "clore-session";
+  | "designer-presentateur" | "transmettre-hote" | "reprendre-animation" | "afficher-revision-session" | "passer-revision" | "clore-session"
+  // Annotations enregistrées (RTC-3).
+  | "annoter" | "enregistrer-annotation" | "voir-point-de-vue" | "citer-selection"
+  // Panneaux du bandeau (participants, annotations).
+  | "afficher-participants" | "afficher-annotations"
+  // Revue en direct sur une publication figée (RTC-4).
+  | "ouvrir-revue";
 
 /**
  * Participants et équipe (Issue #262, phase 2) : chaque commande de l'annuaire a sa propre icône, sa barre (en-tête de
@@ -48,7 +54,7 @@ export interface DefinitionCommande {
   libelle: string;
   /** Où la commande agit : sa barre. */
   barre: "rédaction" | "fil" | "membres" | "conversations" | "conversation" | "message" | "demandes" | "demande" | "annuaire" | "participant" | "rôles"
-    | "session" | "participant-session";
+    | "session" | "participant-session" | "annotation";
   raccourci: Raccourci;
   /** Tracés SVG (24 × 24) de son icône propre. */
   icone: readonly string[];
@@ -205,12 +211,28 @@ export const COMMANDES_COLLABORATION: Readonly<Record<CommandeCollaboration, Def
   "passer-revision": { libelle: "Passer la session à la nouvelle révision", barre: "session", raccourci: ctrlAltMajLettre("N"), icone: ["M6 2h9l5 5v15H6z", "M13 18v-8", "M10 13l3-3 3 3"] },
   // Clore la session : écran barré.
   "clore-session": { libelle: "Clore la session", barre: "session", raccourci: ctrlAltMajLettre("C"), icone: ["M3 5h18v11H3z", "M8 20h8", "M9 8l6 5", "M15 8l-6 5"] },
+  // --- Annotations enregistrées (RTC-3) ---
+  // Annoter : épingle et crayon.
+  "annoter": { libelle: "Annoter", barre: "session", raccourci: ctrlAltMajLettre("A"), icone: ["M12 22s-6-6.5-6-11a6 6 0 0 1 12 0c0 1.2-.4 2.5-1 3.8", "M12 13a2 2 0 1 0 0-4 2 2 0 0 0 0 4z", "M15 21l1-3 5-5 2 2-5 5z"] },
+  // Enregistrer l'annotation : épingle et coche.
+  "enregistrer-annotation": { libelle: "Enregistrer l’annotation", barre: "annotation", raccourci: ctrlAltMajLettre("E"), icone: ["M10 21s-6-6.5-6-11a6 6 0 0 1 12 0", "M10 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z", "M14 18l3 3 5-6"] },
+  // Citer la sélection : épingle et objets encadrés.
+  "citer-selection": { libelle: "Citer la sélection", barre: "annotation", raccourci: ctrlAltMajLettre("S"), icone: ["M3 3h7v7H3z", "M14 14h7v7h-7z", "M14 3l7 7", "M10 14l-7 7"] },
+  // Participants de la session : trois personnes.
+  "afficher-participants": { libelle: "Participants de la session", barre: "session", raccourci: ctrlAltMajLettre("K"), icone: ["M12 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", "M6 21a6 6 0 0 1 12 0", "M5 10a2 2 0 1 0 0-4", "M19 10a2 2 0 1 0 0-4"] },
+  // Annotations de la session : liste et épingle.
+  "afficher-annotations": { libelle: "Annotations de la session", barre: "session", raccourci: ctrlAltMajLettre("L"), icone: ["M4 6h10", "M4 12h10", "M4 18h7", "M19 13s-3-3-3-5a3 3 0 0 1 6 0c0 2-3 5-3 5z"] },
+  // Ouvrir une revue en direct : paquet scellé et onde.
+  "ouvrir-revue": { libelle: "Ouvrir une revue en direct", barre: "session", raccourci: ctrlAltMajLettre("U"), icone: ["M4 7l8-4 8 4v10l-8 4-8-4z", "M4 7l8 4 8-4", "M12 11v10", "M9 15.5a3 3 0 0 1 6 0"] },
+  // Voir le point de vue : épingle et cadre de visée.
+  "voir-point-de-vue": { libelle: "Voir le point de vue", barre: "annotation", raccourci: ctrlAltMajLettre("G"), icone: ["M3 8V3h5", "M16 3h5v5", "M21 16v5h-5", "M8 21H3v-5", "M12 16s-3.5-3.5-3.5-6a3.5 3.5 0 0 1 7 0c0 2.5-3.5 6-3.5 6z"] },
 });
 
 /** Commandes des sessions en direct (Issue #283). */
 export const COMMANDES_TEMPS_REEL: readonly CommandeTempsReel[] = [
   "ouvrir-session", "rejoindre-session", "quitter-session", "suivre-presentateur", "naviguer-librement", "presenter",
   "designer-presentateur", "transmettre-hote", "reprendre-animation", "afficher-revision-session", "passer-revision", "clore-session",
+  "annoter", "enregistrer-annotation", "voir-point-de-vue", "citer-selection", "afficher-participants", "afficher-annotations", "ouvrir-revue",
 ];
 
 /** Commandes du module Communication (COM-D14). */

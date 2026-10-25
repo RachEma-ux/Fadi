@@ -6,13 +6,15 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ApiError } from "../../../lib/api";
-import { apiTempsReel, type SessionListee } from "./api-temps-reel";
+import { api, ApiError, type EditingLock, type StudioPublication } from "../../../lib/api";
+import { apiTempsReel, type AnnotationSession, type SaisieAnnotation, type SessionListee } from "./api-temps-reel";
 import { CanalTempsReel } from "./canal";
 import { ETAT_INITIAL, type EtatSession } from "./etat-session";
 
 export interface ActionsTempsReel {
   ouvrir(revisionId: string): Promise<void>;
+  /** Revue en direct (RTC-4) sur une publication figée de la variante. */
+  ouvrirRevue(publicationId: string): Promise<void>;
   rejoindre(sessionId: string): void;
   quitter(): void;
   suivre(actif: boolean): void;
@@ -21,6 +23,8 @@ export interface ActionsTempsReel {
   reprendre(): Promise<void>;
   passerRevision(revisionId: string): Promise<void>;
   clore(): Promise<void>;
+  /** Annotation délibérée (RTC-3) : vrai si elle est enregistrée. */
+  annoter(saisie: SaisieAnnotation): Promise<boolean>;
 }
 
 export interface SessionTempsReel {
@@ -33,6 +37,12 @@ export interface SessionTempsReel {
   enCours: boolean;
   /** Suit la vue du présentateur (choix explicite, vrai à l'entrée). */
   suit: boolean;
+  /** Annotations de la session rejointe, lisibles par cette personne (audience relue par le serveur). */
+  annotations: AnnotationSession[];
+  /** Publications figées de la variante (manifeste figé, ni retirées ni remplacées) : ouvrables en revue. */
+  publicationsFigees: StudioPublication[];
+  /** Réservation d'édition du projet (RT-R6) : titulaire et échéance, montrés en session ; jamais transmise par elle. */
+  reservation: EditingLock | null;
 }
 
 /**
@@ -78,9 +88,39 @@ export function useSessionTempsReel(projectId: string, studyId: string, variantI
   const liste = useQuery({
     queryKey: cle, enabled: actif, retry: false, staleTime: 5_000,
     queryFn: () => apiTempsReel.sessions(projectId, variantId),
-    refetchInterval: enSession ? false : 15_000,
+    refetchInterval: enSession ? 30_000 : 15_000,
   });
   const sessionId = etat.session?.id ?? null;
+  const publications = useQuery({
+    queryKey: ["temps-reel-publications", projectId, studyId, variantId], enabled: actif && !enSession && Array.isArray(liste.data), retry: false, staleTime: 30_000,
+    queryFn: async () => (await api.studioPublications(projectId, studyId)).publications,
+  });
+  const reservation = useQuery({
+    queryKey: ["temps-reel-reservation", projectId], enabled: actif && enSession, retry: false, refetchInterval: 30_000,
+    queryFn: async () => (await api.getLock(projectId)).lock,
+  });
+  const publicationsFigees = (publications.data ?? []).filter((p) => p.variantId === variantId && !!p.manifestHash && p.status !== "retire"
+    && p.diffusionStatus !== "retire" && p.diffusionStatus !== "remplace" && !p.replacedBy);
+  const cleAnnotations = ["temps-reel-annotations", projectId, variantId, sessionId];
+  const annotations = useQuery({
+    queryKey: cleAnnotations, enabled: actif && !!sessionId, retry: false,
+    queryFn: async () => (await apiTempsReel.annotations(projectId, variantId, sessionId!)).annotations,
+  });
+  // Une annotation annoncée par le canal (déjà projetée selon l'audience) : la liste et les commentaires Studio sont relus.
+  const annoncees = etat.annotations.length;
+  useEffect(() => {
+    if (!annoncees) return;
+    void qc.invalidateQueries({ queryKey: ["temps-reel-annotations", projectId, variantId] });
+    void qc.invalidateQueries({ queryKey: ["studio-comments", projectId, studyId, variantId] });
+  }, [annoncees, qc, projectId, studyId, variantId]);
+  // Resynchronisation complète (journal de reprise expiré, redémarrage du serveur) : les annonces manquées ne sont pas
+  // rejouées, la liste et les commentaires sont donc relus.
+  const resynchronise = etat.resynchronise && etat.connexion === "connecte";
+  useEffect(() => {
+    if (!resynchronise) return;
+    void qc.invalidateQueries({ queryKey: ["temps-reel-annotations", projectId, variantId] });
+    void qc.invalidateQueries({ queryKey: ["studio-comments", projectId, studyId, variantId] });
+  }, [resynchronise, qc, projectId, studyId, variantId]);
   const geste = useCallback(async (f: () => Promise<unknown>) => {
     setErreur(null); setEnCours(true);
     try { await f(); await qc.invalidateQueries({ queryKey: cle }); }
@@ -93,6 +133,10 @@ export function useSessionTempsReel(projectId: string, studyId: string, variantI
       const { session } = await apiTempsReel.ouvrir(projectId, { studyId, variantId, revisionId, requestId: `tr-${crypto.randomUUID()}` });
       setSuit(true); canal.rejoindre(session.id, true);
     }),
+    ouvrirRevue: (publicationId) => geste(async () => {
+      const { session } = await apiTempsReel.ouvrir(projectId, { studyId, variantId, publicationId, requestId: `tr-${crypto.randomUUID()}` });
+      setSuit(true); canal.rejoindre(session.id, true);
+    }),
     rejoindre: (id) => { setErreur(null); setSuit(true); canal.rejoindre(id, true); },
     quitter: () => { canal.quitter(); void qc.invalidateQueries({ queryKey: cle }); },
     suivre: (a) => { setSuit(a); canal.suivrePresentateur(a); },
@@ -101,6 +145,18 @@ export function useSessionTempsReel(projectId: string, studyId: string, variantI
     reprendre: () => geste(() => apiTempsReel.reprendre(projectId, sessionId!)),
     passerRevision: (revisionId) => geste(() => apiTempsReel.revision(projectId, sessionId!, revisionId)),
     clore: () => geste(() => apiTempsReel.clore(projectId, sessionId!)),
+    annoter: async (saisie) => {
+      let ok = false;
+      await geste(async () => {
+        // L'identifiant de requête vient du formulaire (un par annotation) : renvoyer après une réponse perdue retrouve
+        // la même annotation, jamais une seconde.
+        await apiTempsReel.annoter(projectId, sessionId!, saisie);
+        ok = true;
+        await qc.invalidateQueries({ queryKey: ["temps-reel-annotations", projectId, variantId] });
+        await qc.invalidateQueries({ queryKey: ["studio-comments", projectId, studyId, variantId] });
+      });
+      return ok;
+    },
   };
-  return { disponible: actif && Array.isArray(liste.data), sessions: liste.data ?? [], etat, canal, actions, erreur, enCours, suit };
+  return { disponible: actif && Array.isArray(liste.data), sessions: liste.data ?? [], etat, canal, actions, erreur, enCours, suit, annotations: annotations.data ?? [], publicationsFigees, reservation: reservation.data ?? null };
 }

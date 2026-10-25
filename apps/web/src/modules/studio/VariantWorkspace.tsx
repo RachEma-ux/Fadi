@@ -49,6 +49,7 @@ import { BandeauSession } from "./temps-reel/BandeauSession";
 import { Superposition2D } from "./temps-reel/Superposition2D";
 import { estPresentateur, pointeursFrais } from "./temps-reel/etat-session";
 import { useSessionTempsReel } from "./temps-reel/useSessionTempsReel";
+import type { AnnotationSession, PointDeVue } from "./temps-reel/api-temps-reel";
 import { api, studioExportUrl, type StudioContext } from "../../lib/api";
 import { useAuth } from "../../lib/auth-context";
 import { LOCALE } from "../../lib/i18n";
@@ -369,7 +370,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     const v = tr.etat.vue;
     if (!enDirect || presenteEnDirect || !tr.suit || !v) return;
     if (v.plan && plan2d) poserCadre(v.plan);
-    if (v.camera && vue3d) setCameraPartagee({ camera: v.camera as StudioCameraScene, n: tr.etat.vueN });
+    // La caméra posée par le suivi devient la vue courante (point de vue d'une annotation), sans être rediffusée.
+    if (v.camera && vue3d) { derniereCamera.current = v.camera as StudioCameraScene; setCameraPartagee({ camera: v.camera as StudioCameraScene, n: tr.etat.vueN }); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tr.etat.vueN, tr.suit, enDirect, presenteEnDirect]);
   // Présentateur : sa vue part à chaque changement (le canal regroupe : 10 par seconde au plus).
@@ -396,6 +398,26 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enDirect, selectionIds.join("\u0000")]);
   const nomsSession = Object.fromEntries(tr.etat.participants.map((p) => [p.userId, p.nom]));
+  // Pointeurs distants : relus chaque seconde tant qu'il y en a, pour qu'un pointeur périmé (10 s) disparaisse même
+  // sans autre rendu.
+  const [, setHorlogePointeurs] = useState(0);
+  const pointeursEnCours = enDirect && Object.keys(tr.etat.pointeurs).length > 0;
+  useEffect(() => {
+    if (!pointeursEnCours) return;
+    const t = setInterval(() => setHorlogePointeurs((n) => n + 1), 1000);
+    return () => clearInterval(t);
+  }, [pointeursEnCours]);
+  // Annotations (RTC-3) : la vue de cet écran devient le point de vue enregistré ; revoir un point de vue libère du suivi.
+  const vueCourante = (): PointDeVue => ({ affichage, ...(plan2d ? { plan: cadreRef.current } : {}), ...(vue3d && derniereCamera.current ? { camera: derniereCamera.current } : {}) });
+  const [cameraAnnotation, setCameraAnnotation] = useState<{ camera: StudioCameraScene; n: number } | null>(null);
+  // Reprendre le suivi oublie la caméra d'annotation : elle ne doit pas revenir au prochain passage en navigation libre.
+  useEffect(() => { if (tr.suit) setCameraAnnotation(null); }, [tr.suit]);
+  const voirPointDeVue = (a: AnnotationSession) => {
+    if (tr.suit && !presenteEnDirect) tr.actions.suivre(false);
+    const v = a.pointDeVue;
+    if (v.plan && plan2d) poserCadre(v.plan);
+    if (v.camera && vue3d) { derniereCamera.current = v.camera; setCameraAnnotation((c) => ({ camera: v.camera!, n: (c?.n ?? 1_000_000) + 1 })); }
+  };
   // Aperçu du glisser : le document tel que le relâchement le donnerait (les cotes liées suivent).
   const apercuDoc = useMemo(() => {
     if (!drawing || !gestes.apercu) return null;
@@ -757,7 +779,9 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     {vue3d && <div className="studio-canevas-3d"><Vue3D doc={drawing} outil={tool} modifiable={writable} navigation={navigation3d} coupe={coupe3d} selection={solide3d} layerId={actif?.id ?? STUDIO_DEFAULT_LAYER_ID}
       surSelection={setSolide3d} surCommandes={apply} selectionArchitecture={panneauArchi} surSelectionArchitecture={(id) => (id ? choisirArchitecture(id, false) : setSelectionArchi(null))}
       demande={demande3d} surDemandeTraitee={() => setDemande3d(null)} surNavigation={setNavigation3d} remplir
-      cameraPartagee={enDirect && tr.suit && !presenteEnDirect ? cameraPartagee : null} surCameraLocale={partagerCamera}
+      cameraPartagee={enDirect && tr.suit && !presenteEnDirect ? cameraPartagee : cameraAnnotation} surCameraLocale={partagerCamera}
+      surPointeur3d={enDirect ? (p) => tr.canal.pointeur(p ? { espace: "3d", ...p } : null) : undefined}
+      pointeurs3d={enDirect ? pointeursFrais(tr.etat, Date.now()).filter((p) => p.espace === "3d").map((p) => ({ userId: p.userId, nom: p.nom || nomsSession[p.userId] || "", x: p.x, y: p.y, z: p.z ?? 0 })) : undefined}
       hotePanneaux={domaineActif === "visualisation" ? hoteVisualisation : hote3dDessin} visualisation={domaineActif === "visualisation"}
       provenance={{ etude: { id: context.study.id, nom: context.study.name }, variante: { id: context.variant.id, nom: context.variant.name }, revisionId: context.revision.id, nonEnregistre: commands.length > 0 }} /></div>}
     </div>
@@ -833,12 +857,12 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
         <span className="studio-barre-espace-vide" />
         {context && drawing && <ActionsEspace disponible={commandAvailable} raison={(id) => raisonCible({ type: "commande", id })} libelle={libelleSave} surCommande={(id) => executer({ type: "commande", id }, true)} />}
         {context && drawing && !autonome && <BandeauSession emplacement="barre" tr={tr} revisionAffichee={context.revision.id} teteVariante={context.variant.headRevisionId} nomVariante={context.variant.name} affichageLocal={affichage}
-          surAfficherRevision={(r) => void afficherRevisionSession(r)} />}
+          surAfficherRevision={(r) => void afficherRevisionSession(r)} vueCourante={vueCourante} selectionIds={selectionIds} surVoirPointDeVue={voirPointDeVue} />}
         {context && drawing && !autonome && <button type="button" className="studio-bouton-commentaires" aria-pressed={commentaires} aria-label="Commentaires" title="Commentaires" onClick={basculerCommentaires} data-studio-basculer-commentaires><Icon name="studio-comments" size={18} /></button>}
       </div>
       <AlerteStudio error={error} blocked={blocked && !enr.horsLigne.conflit} surRecharger={() => void enr.rechargerServeur()} />
       {context && drawing && !autonome && <BandeauSession emplacement="bandeau" tr={tr} revisionAffichee={context.revision.id} teteVariante={context.variant.headRevisionId} nomVariante={context.variant.name} affichageLocal={affichage}
-        surAfficherRevision={(r) => void afficherRevisionSession(r)} />}
+        surAfficherRevision={(r) => void afficherRevisionSession(r)} vueCourante={vueCourante} selectionIds={selectionIds} surVoirPointDeVue={voirPointDeVue} />}
       <AvisFileLocale cle={user && !historical && !autonome ? cleVariante(user.id, projectId, studyId, variantId) : null} />
       {loading && <p role="status">Chargement de la planche…</p>}
       {context && drawing && !historical && !autonome && <AvisRevision projectId={projectId} studyId={studyId} variantId={variantId} teteAffichee={context.variant.headRevisionId} actif={!pending && !blocked && !uncertain && !enr.horsLigne.conflit} nonEnregistre={commands.length > 0}
