@@ -248,9 +248,19 @@ let partage: Promise<MoteurExact> | null = null;
 export class MoteurExact {
   private constructor(private readonly k: OcctKernel, private readonly tess: { lineaire: number; angulaire: number }) {}
 
+  /**
+   * Instances du noyau compilées et initialisées dans ce contexte (processus ou Worker) depuis son chargement : suivi de
+   * l'instance unique (EX-062, TR-EX-062) — un second noyau n'est initialisé que par `charger(…, false)`, explicitement.
+   */
+  static instancesCreees = 0;
+
   /** Charge le noyau (une seule fois par processus si `partage`). Jamais appelé au chemin d'ouverture. */
   static async charger(options: OptionsMoteur = {}, partager = true): Promise<MoteurExact> {
-    const creer = async () => new MoteurExact(await OcctKernel.init(options.wasm !== undefined ? { wasm: options.wasm } : {}), { lineaire: options.tessellation?.lineaire ?? 0.005, angulaire: options.tessellation?.angulaire ?? 0.3 });
+    const creer = async () => {
+      const k = await OcctKernel.init(options.wasm !== undefined ? { wasm: options.wasm } : {});
+      MoteurExact.instancesCreees += 1;
+      return new MoteurExact(k, { lineaire: options.tessellation?.lineaire ?? 0.005, angulaire: options.tessellation?.angulaire ?? 0.3 });
+    };
     if (!partager) return creer();
     if (!partage) partage = creer().catch((e) => { partage = null; throw e; });
     return partage;

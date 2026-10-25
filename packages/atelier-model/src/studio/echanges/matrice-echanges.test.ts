@@ -7,6 +7,7 @@ import type { StudioDocument } from "../document-2d.js";
 import { exportStudioIfc } from "../ifc.js";
 import { lireDxfStudio, STUDIO_DXF_UNITES } from "../import-dxf.js";
 import { dxf, ligne, lwpolyligne } from "../import-dxf.fixtures.js";
+import { exactSynthetique } from "../exacts.fixtures.js";
 import {
   controlerMatriceEchanges, STUDIO_COUVERTURE_EXPORT, STUDIO_DECISIONS_RENONCEMENT, STUDIO_MATRICE_ECHANGES, STUDIO_STATUT_DE_RAISON, studioCouvertureFormat,
   studioDeclareConformite, studioMatriceEchangesMarkdown, studioTextesEntree,
@@ -91,6 +92,8 @@ describe("Matrice d'échanges : donnée versionnée et cohérente", () => {
     /** Empreinte SHA-256 des entrées et de la couverture de chaque révision (ajouter la ligne de la nouvelle révision). */
     const EMPREINTES: Readonly<Record<number, string>> = {
       2: "2be9a875025eda0b2b9a28f5365c2c466d95f0943a2ce7d878499d380c568c92",
+      // Lot F2 : catégorie « exacts » (solides exacts, non couverts par SVG / DXF / IFC).
+      3: "c93871ab04304c9dbadd28df0b3302d3ddd7b47f57c16a936bf47889ebff5918",
     };
     const empreinte = createHash("sha256").update(JSON.stringify({ entrees: STUDIO_MATRICE_ECHANGES.entrees, couverture: STUDIO_COUVERTURE_EXPORT, statuts: STUDIO_STATUT_DE_RAISON })).digest("hex");
     expect(empreinte, `révision ${STUDIO_MATRICE_ECHANGES.revision} : entrées modifiées sans nouvelle révision ? (empreinte calculée ${empreinte})`).toBe(EMPREINTES[STUDIO_MATRICE_ECHANGES.revision]);
@@ -168,6 +171,11 @@ const complet = (): StudioDocument => ({
     { id: "s1", type: "box", placement: { origin: { x: 50, y: 0, z: 0 }, rotation: 0 }, width: 1, depth: 1, height: 1 },
     { id: "s2", type: "prism", placement: { origin: { x: 60, y: 0, z: 0 }, rotation: 0 }, profile: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 0, y: 1 }], height: 2 },
   ],
+  // Lot F2 : un solide exact (résultat SYNTHÉTIQUE, forme seulement) et ses deux opérandes conservés.
+  exacts: [exactSynthetique("e1", [
+    { id: "e1a", type: "box", placement: { origin: { x: 80, y: 0, z: 0 }, rotation: 0 }, width: 1, depth: 1, height: 1 },
+    { id: "e1b", type: "box", placement: { origin: { x: 80.5, y: 0, z: 0 }, rotation: 0 }, width: 1, depth: 1, height: 1 },
+  ])],
   architecture: [
     { id: "m1", type: "wall", layerId: "murs", axis: [{ x: 0, y: 20 }, { x: 12, y: 20 }], thickness: 0.2, height: 3, base: 0, justification: "center" },
     { id: "o1", type: "opening", hostId: "m1", position: 2.5, width: 1, height: 2.1, sill: 0, kind: "porte" },

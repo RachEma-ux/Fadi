@@ -7,6 +7,7 @@ import {
 } from "../objets-3d/solides.js";
 import { studioEmpriseConforme, studioProfilDepuisPolyligne } from "./liens-solides.js";
 import { diviserSegmentPolyligne } from "./division.js";
+import { studioIdsOperandes } from "../objets-3d/exacts.js";
 
 /**
  * Commandes du volume libre (A.3-02) : créer une boîte ou un prisme sur profil directement dans l'espace, déplacer et
@@ -65,17 +66,20 @@ export const deplacerSolide: Gestionnaire = (state, params, path) => {
   state.solides[index] = validerSolide({ ...s, placement: { ...s.placement, origin: { x: o.x + dx, y: o.y + dy, z: o.z + dz } } }, path);
 };
 
+/** Supprime des solides libres ou des solides exacts (lot F2 : un solide exact part avec ses opérandes conservés). */
 export const supprimerSolides: Gestionnaire = (state, params, path) => {
   const p = record(params, ["ids"], `${path}.params`);
   const ids = new Set(idList(p.ids, `${path}.params.ids`));
-  const index = new Map(state.solides.map((s) => [s.id, s]));
+  const index = new Map<string, { layerId?: string }>([...state.solides, ...state.exacts].map((s) => [s.id, s]));
   for (const id of ids) {
     const s = index.get(id);
     if (!s) introuvable(state, id, path);
     editable(state, s, path);
   }
+  const liberes = state.exacts.filter((s) => ids.has(s.id)).flatMap(studioIdsOperandes);
   state.solides = state.solides.filter((s) => !ids.has(s.id));
-  for (const id of ids) state.ids.delete(id);
+  state.exacts = state.exacts.filter((s) => !ids.has(s.id));
+  for (const id of [...ids, ...liberes]) state.ids.delete(id);
 };
 
 // ——— Faces ———

@@ -174,4 +174,28 @@ describe("validation des entrées et outils", () => {
   });
 });
 
+describe("lot F2 — booléens des solides libres de Studio, instance unique (IF-003, TR-EX-062)", () => {
+  it("union, soustraction, intersection de deux extrusions (boîtes Studio 2 × 2 × 2 décalées de 1 m) : 12, 4, 4 m³ ; empreinte reproductible", () => {
+    const a = { extrusion: { profil: carre(2), z0: 0, hauteur: 2 } }, b = { extrusion: { profil: carre(2, 1, 0), z0: 0, hauteur: 2 } };
+    const u = M.executer({ type: "booleen", op: "union", a, b });
+    expect(u.volume).toBeCloseTo(12, 9);
+    expect(u.solides).toBe(1);
+    expect(M.executer({ type: "booleen", op: "union", a, b }).empreinte).toBe(u.empreinte);
+    expect(M.executer({ type: "booleen", op: "soustraction", a, b }).volume).toBeCloseTo(4, 9);
+    expect(M.executer({ type: "booleen", op: "intersection", a, b }).volume).toBeCloseTo(4, 9);
+    // Chaîne : le résultat exact sert d'opérande (son brep) à un second booléen.
+    expect(M.executer({ type: "booleen", op: "soustraction", a: { brep: u.brep }, b: { extrusion: { profil: carre(1, 0, 0), z0: 0, hauteur: 2 } } }).volume).toBeCloseTo(10, 9);
+  });
+
+  it("intersection vide refusée (aucun solide), jamais un résultat vide engagé", () => {
+    expect(() => M.executer({ type: "booleen", op: "intersection", a: { extrusion: { profil: carre(1), z0: 0, hauteur: 1 } }, b: { extrusion: { profil: carre(1, 5, 5), z0: 0, hauteur: 1 } } })).toThrow(/aucun solide|vide/);
+  });
+
+  it("instance unique : charger deux fois rend le même noyau, une seule instance compilée dans ce processus", async () => {
+    const a = await MoteurExact.charger(), b = await MoteurExact.charger();
+    expect(a).toBe(b);
+    expect(MoteurExact.instancesCreees).toBe(1);
+  });
+});
+
 export type _S = SolideExact;

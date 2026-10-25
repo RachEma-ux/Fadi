@@ -8,6 +8,7 @@ import type { StudioPolyline } from "../objets/polyligne.js";
 import type { StudioRectangle } from "../objets/rectangle.js";
 import type { StudioBox, StudioFaceSolide, StudioProfilePrism, StudioSolid } from "../objets-3d/solides.js";
 import type { StudioText } from "../objets/texte.js";
+import type { StudioOperationBooleenne, StudioResultatExact, StudioSolideExact } from "../objets-3d/exacts.js";
 import type { STUDIO_CONTRACT } from "../noyau/limites.js";
 import type { StudioLayer, StudioPoint } from "../noyau/types.js";
 import type { StudioArchitectureItem, StudioOpening, StudioWall } from "../architecture/types.js";
@@ -32,6 +33,11 @@ export interface StudioDocument {
   dimensions?: StudioDimension[];
   /** Solides libres (`objets-3d/`, repère `local-3d`), séparés de `objects` : un lecteur 2D ne les lit jamais à tort. */
   solides?: StudioSolid[];
+  /**
+   * Solides exacts (extension additive, facultative, lot F2) : résultats d'opérations booléennes calculés par le noyau
+   * exact, opérandes conservés (`objets-3d/exacts.ts`) ; absent ou vide : aucun (forme canonique).
+   */
+  exacts?: StudioSolideExact[];
   /**
    * Annotations (extension additive, facultative) : cotes angulaires et textes, séparés de `objects` et `dimensions` pour
    * qu'un lecteur antérieur ne les interprète jamais à tort ; absent ou vide : aucune annotation (forme canonique).
@@ -83,6 +89,7 @@ export type StudioCommand =
   | { toolId: "studio.solide.face-diviser"; params: { id: string; face: `lateral-${number}`; distance: number } }
   | { toolId: "studio.solide.pivoter"; params: { id: string; angle: number } }
   | { toolId: "studio.solide.resoudre"; params: { id: string; action: "mettre-a-jour" | "detacher" } }
+  | { toolId: "studio.solide.booleen"; params: { id: string; operation: StudioOperationBooleenne; operandes: [string, string]; resultat: StudioResultatExact } }
   | { toolId: "studio.architecture.mur"; params: StudioWall }
   | { toolId: "studio.architecture.ouverture"; params: StudioOpening }
   | { toolId: "studio.architecture.modifier"; params: StudioArchitectureItem }

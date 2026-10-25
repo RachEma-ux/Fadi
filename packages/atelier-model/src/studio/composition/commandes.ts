@@ -5,6 +5,7 @@ import { decaler, deplacer, modifier, supprimer } from "../commandes/modificatio
 import { copier, echelle, rotation, symetrie } from "../commandes/modification.js";
 import { aplatir, extruder } from "../commandes/volume.js";
 import { creerBoite, creerPrisme, decalerFace, deplacerSolide, diviserFace, pivoterSolide, resoudreLien, suivreSourcesSolides, supprimerSolides } from "../commandes/volume-libre.js";
+import { creerBooleen, idsReserves } from "../commandes/booleen.js";
 import { definirPropriete, elaguerProprietes, retirerPropriete, type StudioPropriete } from "../exigences/proprietes.js";
 import { studioExtrudedRingVertices } from "../objets/polyligne.js";
 import { creerScene, definirApparence, modifierScene, retirerApparences, retirerApparencesOrphelines, supprimerScenes } from "../commandes/scenes.js";
@@ -49,6 +50,8 @@ const HANDLERS: Record<StudioCommandToolId, Gestionnaire> = {
   "studio.solide.face-diviser": diviserFace,
   "studio.solide.pivoter": pivoterSolide,
   "studio.solide.resoudre": resoudreLien,
+  // Lot F2 : engagement d'un résultat du noyau exact (booléen), opérandes conservés.
+  "studio.solide.booleen": creerBooleen,
   "studio.dessin.cote-angulaire": creerCoteAngulaire,
   "studio.dessin.texte": creerTexte,
   // Architecture (A.4) : murs et ouvertures ; la part architecturale des commandes générales est branchée ci-dessus.
@@ -77,8 +80,8 @@ export function applyStudioCommands(document: StudioDocument, commands: readonly
   const avant = studioExtrudedRingVertices(current.objects);
   const state: Etat & { proprietes?: StudioPropriete[] } = {
     proprietes: current.proprietes ?? [],
-    id: current.id, objects: current.objects, layers: current.layers ?? [], dimensions: current.dimensions ?? [], solides: current.solides ?? [], annotations: current.annotations ?? [], architecture: current.architecture ?? [], scenes: current.scenes ?? [],
-    ids: new Set([...current.objects.map((o) => o.id), ...(current.dimensions ?? []).map((d) => d.id), ...(current.solides ?? []).map((s) => s.id), ...(current.annotations ?? []).map((a) => a.id), ...(current.architecture ?? []).map((a) => a.id)]),
+    id: current.id, objects: current.objects, layers: current.layers ?? [], dimensions: current.dimensions ?? [], solides: current.solides ?? [], exacts: current.exacts ?? [], annotations: current.annotations ?? [], architecture: current.architecture ?? [], scenes: current.scenes ?? [],
+    ids: new Set([...current.objects.map((o) => o.id), ...(current.dimensions ?? []).map((d) => d.id), ...(current.solides ?? []).map((s) => s.id), ...(current.exacts ?? []).flatMap(idsReserves), ...(current.annotations ?? []).map((a) => a.id), ...(current.architecture ?? []).map((a) => a.id)]),
   };
   // Solides avant le lot (les solides sont remplacés, jamais modifiés en place) : le suivi des sources en dépend.
   const solidesAvant = new Map((current.solides ?? []).map((s) => [s.id, s]));
@@ -99,7 +102,7 @@ export function applyStudioCommands(document: StudioDocument, commands: readonly
   // Les propriétés d'un objet disparu (supprimé, mur supprimé avec ses ouvertures) disparaissent avec lui.
   const presents = new Set([...state.objects.map((o) => o.id), ...state.architecture.map((a) => a.id)]);
   const proprietes = elaguerProprietes(state.proprietes ?? [], (id) => presents.has(id));
-  const result = validateStudioDocument(sortie(state.id, state.objects, state.layers, state.dimensions, state.solides, state.annotations, state.architecture, proprietes, state.scenes));
+  const result = validateStudioDocument(sortie(state.id, state.objects, state.layers, state.dimensions, state.solides, state.annotations, state.architecture, proprietes, state.scenes, state.exacts));
   // Budget d'écriture des extrusions de polylignes fermées : un lot ne peut pas le dépasser ni l'aggraver une fois
   // dépassé ; une révision enregistrée reste toujours lisible (le budget ne s'applique qu'aux écritures).
   const apres = studioExtrudedRingVertices(result.objects);
