@@ -10,7 +10,9 @@
  * - `coquille-studio` (démarrage) : coquille de Studio, catalogue léger (registre textuel) et profil d'outils.
  * - `planche-2d` (ouverture d'une planche) : éditeur, socle 2D, accrochage, outils usuels.
  * - `rendu-3d` (premier usage) : three.js et la vue 3D ; il s'appuie sur `calcul` pour le maillage.
- * - `calcul` (premier usage) : groupe partagé de Workers de Studio (maillage, lecture DXF, composition de feuille).
+ * - `calcul` (premier usage) : groupe partagé de Workers de Studio (maillage, métré, lecture DXF, composition de
+ *   feuille). Son premier usage est souvent le métré du panneau « Quantités », affiché par défaut à l'ouverture d'une
+ *   planche (ADR-STUDIO-PILOTE-01, P-10) : il n'est jamais démarré d'office.
  *
  * Aucun moteur WASM n'est chargé par Studio V1 (noyau exact : Atelier seulement) ; le contrôle de découpage du build
  * le vérifie (`carte-morceaux.ts`). Sans aucune importation : ce fichier est lu par `vite.config.ts` au build.

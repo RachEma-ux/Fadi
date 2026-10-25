@@ -179,6 +179,12 @@ try {
   }, cacheSw.build);
   check("service worker : fichier non empreint manqué à l'installation réparé à sa lecture (cache du build), API jamais mise en cache", reparation.avant && reparation.lu && reparation.apres && !reparation.api, JSON.stringify(reparation));
   const depart = (await revisions()).length;
+  // TEST-021 : une commande préparée hors ligne n'entraîne aucune publication (ni anticipée au retour du réseau, ni
+  // au conflit) : liste des publications de l'étude relevée avant la coupure, POST vers une URL /publications comptés.
+  const publicationsEtude = async () => (await api("get", `/projects/${projet.id}/studio/studies/${studyId}/publications`)).publications;
+  const publicationsAvant = (await publicationsEtude()).length;
+  const postsPublications = [];
+  page.on("request", (r) => { if (r.method() === "POST" && /\/publications(\/|$)/.test(new URL(r.url()).pathname)) postsPublications.push(new URL(r.url()).pathname); });
 
   // 1. Dessin hors ligne, rechargement hors ligne, enveloppe conservée, retour en ligne.
   await context.setOffline(true);
@@ -212,6 +218,8 @@ try {
   check("même enveloppe renvoyée : rejeu reconnu, aucune révision en double", rejeu.replayed === true && (await revisions()).length === depart + 1);
   const tete1 = await api("get", variantePath);
   check("serveur : le rectangle dessiné hors ligne est dans la tête", tete1.revision.document.objects.length === 1);
+  const publicationsApres = await publicationsEtude();
+  check("TEST-021 : aucune publication anticipée — aucun POST /publications, liste inchangée", postsPublications.length === 0 && publicationsApres.length === publicationsAvant, `${postsPublications.length} POST (${postsPublications.join(" ")}), ${publicationsAvant} → ${publicationsApres.length} publication(s)`);
 
   // 2. Conflit : la tête avance dans la seconde session pendant la coupure.
   await context.setOffline(true);
@@ -242,6 +250,8 @@ try {
   check("report enregistré : nouvelle enveloppe sur la nouvelle tête, rien d'écrasé", tete3.revision.parentRevisionId === tete2.revision.id && envois.length === 1 && envois[0].baseRevisionId === tete2.revision.id && envois[0].requestId !== requestId
     && tete3.revision.document.objects.some((o) => o.id === ligneAutre) && tete3.revision.document.objects.filter((o) => o.type === "rectangle").length === 2);
   check("report enregistré : plus rien de conservé", (await brouillonLocal(page, cle)) === null);
+  const publicationsConflit = await publicationsEtude();
+  check("TEST-021 : conflit serveur puis report enregistré — toujours aucun POST /publications, liste inchangée", postsPublications.length === 0 && publicationsConflit.length === publicationsAvant, `${postsPublications.length} POST (${postsPublications.join(" ")}), ${publicationsAvant} → ${publicationsConflit.length} publication(s)`);
 
   // 3. Conflit non reportable : le même rectangle supprimé hors ligne et dans la seconde session.
   const cible = tete3.revision.document.objects.find((o) => o.type === "rectangle");

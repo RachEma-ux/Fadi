@@ -89,3 +89,31 @@ fichier de chaque assertion sont dans la preuve de l'ID, au registre.
   physiques et le GPU réel restent « non évalués » (DEC-13).
 - `studio-visualisation.mjs` et `studio-exigences.mjs` ne sont pas jouées en CI et ne servent de preuve à aucun ID.
 - Aucune case source n'est cochée. G1 à G4 restent soumises à leurs critères.
+
+## Complément — rapprochement complet du 25 octobre 2026
+
+- **Nouvelle recette** `studio-memoire` (TEST-037, jouée en CI). 80 fermetures et réouvertures de la vue 3D sont
+  contrôlées sur trois points :
+  - compteurs GPU identiques à chaque cycle ;
+  - écouteurs du document : 3 avant, 3 après ;
+  - pente du tas après ramasse-miettes : 9,5 Ko par cycle, pour un seuil de 16 Ko.
+
+  Elle a révélé deux fuites, corrigées depuis : la table DFG de three.js, et l'écouteur clavier des contrôles de caméra.
+  Avant correction, la pente était de 37,6 Ko par cycle.
+- **Contrôles ajoutés** aux recettes et tests existants :
+
+  | Scénario | Où |
+  |---|---|
+  | TEST-002 (sans édition de faces), TEST-003, TEST-010, TEST-024 | `studio-navigation` |
+  | TEST-012 | `studio-conflits` |
+  | TEST-016 | `studio-profils` |
+  | TEST-021 | `studio-hors-ligne` |
+  | TEST-011, TEST-027 | tests du modèle |
+  | TEST-022 | `mesure-spatiale.test.ts` |
+  | TEST-018, TEST-035 | tests de l'API |
+
+- **Deuxième série complète** : les 22 recettes passent sur une base jetable, avec 1 479 contrôles réussis au total (navigation comptée sur sa reprise seule). La
+  navigation a échoué une fois sous la charge des tests unitaires joués en parallèle : son comptage des requêtes
+  `/commands` y est sensible. Rejouée seule, elle passe (278 contrôles).
+- **Rapprochement des 523 obligations ouvertes** : 217 verdicts positifs, contre-vérifiés indépendamment. 153 sont
+  confirmés, et seuls ceux-là sont promus ; 64 sont réfutés, et leur raison est notée dans la `suite`.

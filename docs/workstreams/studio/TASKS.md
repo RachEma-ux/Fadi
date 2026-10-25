@@ -1,5 +1,19 @@
 # Tâches — Studio, programme156
 
+## Rapprochement complet et compléments — 25 octobre 2026
+
+- Fait :
+  - les 523 obligations ouvertes rapprochées, puis contre-vérifiées (153 verdicts confirmés, promus) ;
+  - décisions P-08 à P-10 ;
+  - deux fuites de mémoire corrigées, recette `studio-memoire` ajoutée ;
+  - 12 scénarios TEST complétés, dont 8 vérifiés ;
+  - dossier du pilote, dossier G4 et recette déléguée rédigés.
+- À faire, par lots de produit (le manque exact est dans la `suite` de chaque obligation) :
+  - édition de faces, profil lié, direction d'extrusion, division de face ;
+  - noyau exact dans Studio, import IFC ;
+  - opérations booléennes, extensions (DEC-15).
+- À faire, côté exploitation : phase B de production, recette sur appareil réel, recensement sur une copie réelle (accord du maître d'ouvrage), portes G1 à G4.
+
 ## Pilote Studio — décisions déléguées et recette — 25 octobre 2026
 
 Branche `ccr-187fd2e6-08dk6e`, base `main@3e992b6`. Décisions : [ADR-STUDIO-PILOTE-01](../../continuity/decisions/ADR-STUDIO-PILOTE-01.md). Rapport : [RECETTE-PILOTE-2026-10-25.md](recettes/RECETTE-PILOTE-2026-10-25.md).

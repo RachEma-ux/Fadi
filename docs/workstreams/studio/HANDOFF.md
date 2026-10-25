@@ -1,5 +1,29 @@
 # Reprise — Studio
 
+## Rapprochement complet et compléments — 25 octobre 2026
+
+Branche `ccr-187fd2e6-08dk6e`, base `main@4e026ac`. Le maître d'ouvrage délègue aussi ses propres tâches : « Exécute tout ce qui reste à faire ».
+
+Ce qui a été fait :
+- **Rapprochement des 523 obligations ouvertes**, en 10 lots, puis **contre-vérification indépendante** des 217 verdicts positifs : 153 confirmés, 64 réfutés. Seuls les confirmés sont promus. Chaque obligation restante porte dans sa `suite` le manque exact.
+- **Décisions** P-08 (les 16 « À définir »), P-09 (COEX-01, ADR-05, OPS-03, SRC-06, ROUTE-09, COEX-03 à 06) et P-10 (premier usage du groupe de Workers) dans [ADR-STUDIO-PILOTE-01](../../continuity/decisions/ADR-STUDIO-PILOTE-01.md).
+- **Défauts trouvés et corrigés** : deux fuites de mémoire de la vue 3D. three.js abonne chaque moteur de rendu à sa table DFG partagée sans le désabonner ; l'écouteur clavier des contrôles de caméra reste accroché au `document` après la fermeture. Recette `studio-memoire` (TEST-037) ajoutée à la CI.
+- **Tests ajoutés** : TEST-003, 010, 012, 016, 018, 021, 022, 024 (vérifiés) ; TEST-002, 011, 027, 035 (partiels, le manque est noté).
+- **Documents** : [DOSSIER-PILOTE.md](DOSSIER-PILOTE.md) (34 sections), [DOSSIER-G4.md](DOSSIER-G4.md) (G4 instruite, **non franchie**), [recette déléguée](recettes/RECETTE-DELEGUEE-2026-10-25.md) des trois parcours (A conforme ; B et C conformes au guide avec réserves).
+
+Preuves d'exécution :
+- les 22 recettes Studio passent sur une base jetable, dont `studio-memoire`. La navigation a échoué une fois, sous la charge des tests unitaires joués en parallèle, puis passé seule (278 contrôles) ;
+- typecheck, tests des espaces de travail et garde-fou de base : tous réussis.
+
+Compteurs recalculés du registre : **0 À définir / 92 À faire / 210 En cours / 11 Bloqué / 259 Vérifié / 58 Accepté**. **P630=317/630**.
+
+Ce qui reste, et pourquoi :
+- 9 obligations R : G4 non franchie, phase B de production (`fadi-prod-auto`) absente du dépôt, Release réservée au maître d'ouvrage ;
+- TEST-032 et TEST-033 : fonctions IA et MCP absentes ;
+- les autres obligations ouvertes portent sur des fonctions absentes, des mesures sur appareil réel, des données réelles (exclues de la délégation) ou des portes G1 à G4.
+
+Prochaine action : PR de ce lot, puis CI verte et fusion. Ensuite, par lots de produit, construire les fonctions absentes que le dossier G4 recense, prononcer G1, et livrer la phase B de production. Les tâches qui exigent des données réelles ou une Release restent au maître d'ouvrage.
+
 ## Pilote Studio — décisions déléguées et recette — 25 octobre 2026
 
 Branche `ccr-187fd2e6-08dk6e`, base `main@3e992b6`. Le maître d'ouvrage a accordé la délégation totale pour ses décisions sur Studio. Elles sont consignées dans [ADR-STUDIO-PILOTE-01](../../continuity/decisions/ADR-STUDIO-PILOTE-01.md) :
@@ -10,7 +34,7 @@ Branche `ccr-187fd2e6-08dk6e`, base `main@3e992b6`. Le maître d'ouvrage a accor
 
 Recette ([RECETTE-PILOTE-2026-10-25.md](recettes/RECETTE-PILOTE-2026-10-25.md)) : les 21 recettes Studio de la CI, rejouées sur une base PostGIS jetable, donnent 1 435 contrôles réussis et 0 échec. La CI de `main` est verte sur le même commit (exécution 40192137528).
 
-Compteurs recalculés du registre : **16 À définir / 205 À faire / 291 En cours / 11 Bloqué / 74 Vérifié / 33 Accepté**. **P630=107/630**. Détail :
+Compteurs recalculés du registre : compteurs de ce point d'étape (historique) : 16 à définir, 205 à faire, 291 en cours, 11 bloquées, 74 vérifiées, 33 acceptées ; P630 valait alors 107 sur 630. Détail :
 - 27 obligations vérifiées par recette : NAV-001 à 009, 15 scénarios TEST, REC-I-02, REC-A-03, REC-C-03. NAV-008 a été vérifié après correction d'un défaut : « Réessayer » ne relançait aucun téléchargement après une panne du moteur de la planche ;
 - 31 acceptations par décision (P-06 ajoute F.2-03 et F.3-01) ;
 - 189 obligations bloquées par les seules décisions requalifiées « À faire » ;

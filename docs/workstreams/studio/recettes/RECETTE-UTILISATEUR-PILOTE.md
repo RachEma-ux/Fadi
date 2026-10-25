@@ -1,7 +1,10 @@
 # Recette utilisateur du pilote Studio — guide
 
-Ce guide sert à **R.3-01** : la recette des trois parcours par le maître d'ouvrage, depuis l'entrée « Studio » de la barre
-verticale. Elle ne peut pas être automatisée ni faite à sa place ([ADR-STUDIO-PILOTE-01](../../../continuity/decisions/ADR-STUDIO-PILOTE-01.md), P-07).
+Ce guide sert à **R.3-01** : la recette des trois parcours depuis l'entrée « Studio » de la barre verticale. Elle a été
+jouée par le chef de projet le 25 octobre 2026, par délégation du maître d'ouvrage
+([ADR-STUDIO-PILOTE-01](../../../continuity/decisions/ADR-STUDIO-PILOTE-01.md), P-08 et P-09 ; résultat :
+[RECETTE-DELEGUEE-2026-10-25.md](RECETTE-DELEGUEE-2026-10-25.md)). Le maître d'ouvrage peut la rejouer lui-même à tout
+moment avec ce guide.
 Les mêmes gestes passent déjà en recette automatisée ([rapport](RECETTE-PILOTE-2026-10-25.md)) : il s'agit ici de
 constater l'utilité métier sur un vrai poste.
 

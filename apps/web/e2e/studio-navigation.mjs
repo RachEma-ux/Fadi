@@ -1636,6 +1636,223 @@ try {
   await boiteRapport.waitFor({ state: "detached" });
   check("rapport de fidélité : « Fermer » referme la boîte", (await boiteRapport.count()) === 0);
 
+  // Registre de recette, sur des études neuves du projet B (l'étude « Implantation nord » et ses contrôles ci-dessus
+  // restent intacts). Mêmes outils, mêmes sélecteurs, même enregistrement (Ctrl+S) que plus haut.
+  const enregistrer = async () => {
+    await page.evaluate(() => document.activeElement?.blur());
+    await page.keyboard.press("Control+s");
+    await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
+  };
+  const enAttente = (n) => page.waitForFunction((v) => document.querySelector("[data-studio-annuler-portee]")?.getAttribute("data-studio-en-attente-nombre") === v, String(n));
+
+  // TEST-002 : nouvelle étude, Planche 3D seule — volume construit, enregistré, vue plane dérivée (coupe horizontale).
+  // L'édition des faces n'existe pas dans Studio : elle n'est pas éprouvée ici (déclaré dans le libellé).
+  const etude3d = await a.api("post", `/projects/${pA2.id}/studio/studies`, { name: "Étude 3D seule" });
+  const chemin3d = `/projects/${pA2.id}/studio/studies/${etude3d.study.id}/variants/${etude3d.variant.id}`;
+  await page.goto(`${BASE}/studio/projets/${pA2.id}/etudes/${etude3d.study.id}/variantes/${etude3d.variant.id}`);
+  await page.getByRole("toolbar", { name: "Outils de dessin" }).waitFor();
+  const docNeuf = (await a.api("get", chemin3d)).revision.document;
+  check("TEST-002 (sans édition de faces) : étude neuve ouverte, document vide (aucun objet 2D, aucun solide)",
+    docNeuf.objects.length === 0 && (docNeuf.solides ?? []).length === 0 && (await page.locator('svg [role="button"]').count()) === 0, JSON.stringify(docNeuf));
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Shift+D");
+  await panneaux3d.locator("canvas[data-studio-vue3d-canvas]").waitFor({ timeout: 20000 });
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("b");
+  const formBoite3d = panneaux3d.locator("[data-studio-boite]");
+  await formBoite3d.waitFor();
+  check("TEST-002 (sans édition de faces) : Maj+D ouvre la vue 3D sans rien dessiner en 2D (aucune planche 2D), outil Boîte prêt",
+    (await planche.count()) === 0 && (await outils.locator('[data-studio-outil="studio.solide.boite"]').getAttribute("aria-pressed")) === "true");
+  for (const [libelle, valeur] of [["Origine x (m)", "1"], ["Origine y (m)", "1"], ["Origine z (m)", "0"], ["Largeur selon x (m)", "2"], ["Profondeur selon y (m)", "1"], ["Hauteur selon z (m)", "3"]]) await formBoite3d.getByLabel(libelle, { exact: true }).fill(valeur);
+  await formBoite3d.getByRole("button", { name: "Poser la boîte", exact: true }).click();
+  await page.locator('[data-studio-vue3d][data-studio-solides-libres="1"]').waitFor();
+  check("TEST-002 (sans édition de faces) : volume construit dans la vue 3D (un solide libre, une commande en attente)", (await portee()).includes("(1 commande(s)"), await portee());
+  await enregistrer();
+  const doc3d = (await a.api("get", chemin3d)).revision.document;
+  check("TEST-002 (sans édition de faces) : après Ctrl+S, le document relu compte 1 solide libre et 0 objet 2D (ni architecture)",
+    (doc3d.solides ?? []).length === 1 && doc3d.solides[0].type === "box" && doc3d.solides[0].width === 2 && doc3d.solides[0].depth === 1 && doc3d.solides[0].height === 3
+    && doc3d.objects.length === 0 && (doc3d.architecture ?? []).length === 0, JSON.stringify({ solides: doc3d.solides, objets: doc3d.objects.length }));
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Shift+K");
+  const coupe3d = panneaux3d.locator("[data-studio-coupe]");
+  await coupe3d.waitFor();
+  await coupe3d.getByLabel("Cote de coupe z (m)", { exact: true }).fill("1.5");
+  await page.locator('[data-studio-coupe][data-studio-coupe-z="1.5"]').waitFor();
+  check("TEST-002 (sans édition de faces) : vue plane dérivée (coupe horizontale à z = 1,5) — 4 contours de la boîte enregistrée, provenance par solide, non modifiable, brouillon inchangé",
+    (await coupe3d.getAttribute("data-studio-coupe-segments")) === "4" && (await coupe3d.getAttribute("data-studio-coupe-sources")) === doc3d.solides[0].id
+    && (await coupe3d.getByRole("status").textContent()).includes("non modifiable") && (await portee()).includes("(0 commande(s)"),
+    `${await coupe3d.getAttribute("data-studio-coupe-segments")} · ${await coupe3d.getAttribute("data-studio-coupe-sources")}`);
+
+  // TEST-010, TEST-003, TEST-024 : une seconde étude neuve, avec une boîte sans rapport (posée par l'API) pour vérifier
+  // que le déplacement d'une porte ne remaille pas les objets étrangers. Mur 6 × 3 × 0,2 m, ouverture 1 × 2,1 m.
+  const etudeArchi = await a.api("post", `/projects/${pA2.id}/studio/studies`, { name: "Étude mur associé" });
+  const cheminArchi = `/projects/${pA2.id}/studio/studies/${etudeArchi.study.id}/variants/${etudeArchi.variant.id}`;
+  const baseArchi = `${BASE}/studio/projets/${pA2.id}/etudes/${etudeArchi.study.id}/variantes/${etudeArchi.variant.id}`;
+  const idBoiteEtrangere = `boite-etrangere-${Date.now()}`;
+  await a.api("post", `${cheminArchi}/commands`, { contractVersion: "studio-commands/1", requestId: `boite-${Date.now()}`, baseRevisionId: etudeArchi.revision.id,
+    commands: [{ toolId: "studio.solide.boite", params: { id: idBoiteEtrangere, type: "box", placement: { origin: { x: 10, y: -32, z: 0 }, rotation: 0 }, width: 1, depth: 1, height: 1 } }] });
+  await page.goto(baseArchi);
+  await page.getByRole("toolbar", { name: "Outils de dessin" }).waitFor();
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("w");
+  const formMurT = proprietes.locator("[data-studio-architecture-mur-formulaire]");
+  await formMurT.waitFor();
+  await formMurT.getByLabel("Axe (x y ; …)").fill("0 -30; 6 -30");
+  for (const [libelle, v] of [["Épaisseur (m)", "0.2"], ["Hauteur (m)", "3"], ["Cote de base z (m)", "0"]]) await formMurT.getByLabel(libelle, { exact: true }).fill(v);
+  await formMurT.locator('[data-studio-champ-architecture="justification"]').selectOption("center");
+  await formMurT.getByRole("button", { name: "Créer le mur", exact: true }).click();
+  const murT = page.locator('svg [data-studio-architecture][data-studio-type="wall"]');
+  await murT.waitFor({ state: "attached" });
+  const idMurT = await murT.getAttribute("data-studio-architecture");
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Shift+Z");
+  await page.keyboard.press("h");
+  const formOuvT = proprietes.locator("[data-studio-architecture-ouverture-formulaire]");
+  await formOuvT.waitFor();
+  for (const [libelle, v] of [["Largeur (m)", "1"], ["Hauteur (m)", "2.1"], ["Allège (m)", "0"]]) await formOuvT.getByLabel(libelle, { exact: true }).fill(v);
+  await planche.scrollIntoViewIfNeeded();
+  const surMurT = await ecranDe(3, -30);
+  await page.mouse.click(surMurT.x, surMurT.y);
+  const ouvT = page.locator('svg [data-studio-architecture][data-studio-type="opening"]');
+  await ouvT.waitFor({ state: "attached" });
+  const idOuvT = await ouvT.getAttribute("data-studio-architecture");
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Escape");
+  await enregistrer();
+  const r1 = (await a.api("get", cheminArchi)).revision;
+  const ouvR1 = r1.document.architecture?.find((x) => x.id === idOuvT);
+  check("TEST-010 : révision R1 enregistrée — mur et ouverture 1 m posée sur lui (boîte étrangère conservée)",
+    !!ouvR1 && ouvR1.width === 1 && ouvR1.hostId === idMurT && (r1.document.solides ?? []).some((s) => s.id === idBoiteEtrangere), JSON.stringify(r1.document.architecture));
+  const choisirT = (id) => proprietes.locator(`[data-studio-architecture-choisir="${id}"]`);
+  const choisiT = (id) => proprietes.locator(`[data-studio-architecture-choisi="${id}"]`);
+  const metreT = (id) => choisiT(id).locator("[data-studio-architecture-metre]");
+  const netT = async (id) => Number(await metreT(id).getAttribute("data-studio-volume-net"));
+  const ids3dT = () => panneaux3d.locator("[data-studio-architecture-3d-objet]").evaluateAll((els) => els.map((e) => e.getAttribute("data-studio-architecture-3d-objet")));
+  const ids2dT = () => page.locator("svg [data-studio-architecture]").evaluateAll((els) => els.map((e) => e.getAttribute("data-studio-architecture")));
+
+  // TEST-010 : l'ouverture agrandie à 1,20 m depuis l'autre planche (vue 3D) ; R2 : net 3,096 m³ ; R1 inchangée.
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Shift+D");
+  await panneaux3d.locator("[data-studio-architecture-vue3d]").waitFor();
+  await panneaux3d.locator(`[data-studio-architecture-3d-objet="${idOuvT}"]`).click();
+  await choisiT(idOuvT).waitFor();
+  await choisiT(idOuvT).getByLabel("Largeur (m)", { exact: true }).fill("1.2");
+  await choisiT(idOuvT).getByRole("button", { name: "Appliquer", exact: true }).click();
+  await enAttente(1);
+  await panneaux3d.locator(`[data-studio-architecture-3d-objet="${idMurT}"]`).click();
+  await choisiT(idMurT).waitFor();
+  const netR2 = await netT(idMurT);
+  check("TEST-010 : ouverture élargie à 1,20 m depuis la vue 3D — nouveau volume net 3,096 m³ (déduction 0,504 m³)",
+    Math.abs(netR2 - 3.096) < 1e-9 && Math.abs(Number(await metreT(idMurT).getAttribute("data-studio-volume-deduit")) - 0.504) < 1e-9, String(netR2));
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Shift+D");
+  await enregistrer();
+  const r2 = (await a.api("get", cheminArchi)).revision;
+  const r1Relue = (await a.api("get", `${cheminArchi}/revisions/${encodeURIComponent(r1.id)}`)).revision;
+  const histoArchi = (await a.api("get", `${cheminArchi}/revisions`)).revisions.map((r) => r.id);
+  check("TEST-010 : R2 en tête avec l'ouverture à 1,20 m ; R1 relue par l'API inchangée (ouverture 1 m, document identique)",
+    r2.id !== r1.id && r2.parentRevisionId === r1.id && r2.document.architecture.find((x) => x.id === idOuvT)?.width === 1.2
+    && JSON.stringify(r1Relue) === JSON.stringify(r1) && r1Relue.document.architecture.find((x) => x.id === idOuvT)?.width === 1 && histoArchi[0] === r2.id && histoArchi.includes(r1.id),
+    JSON.stringify({ r1: r1.id, r2: r2.id, parent: r2.parentRevisionId, histoArchi }));
+  await page.goto(`${baseArchi}?revision=${encodeURIComponent(r1.id)}`);
+  await page.locator("[data-studio-lecture-seule-revision]").waitFor();
+  await page.locator(`svg [data-studio-architecture="${idOuvT}"]`).waitFor({ state: "attached" });
+  if ((await choisirT(idMurT).getAttribute("aria-pressed")) !== "true") await choisirT(idMurT).click();
+  await choisiT(idMurT).waitFor();
+  const netR1 = await netT(idMurT);
+  check("TEST-010 : révision historique R1 ouverte en lecture seule — volume net toujours 3,180 m³ (déduction 0,420 m³)",
+    Math.abs(netR1 - 3.18) < 1e-9 && Math.abs(Number(await metreT(idMurT).getAttribute("data-studio-volume-deduit")) - 0.42) < 1e-9, String(netR1));
+  await page.goto(baseArchi);
+  await page.locator(`svg [data-studio-architecture="${idOuvT}"]`).waitFor({ state: "attached" });
+  if ((await choisirT(idMurT).getAttribute("aria-pressed")) !== "true") await choisirT(idMurT).click();
+  await choisiT(idMurT).waitFor();
+  check("TEST-010 : la tête (R2) relue montre le volume net 3,096 m³", Math.abs((await netT(idMurT)) - 3.096) < 1e-9, String(await netT(idMurT)));
+
+  // TEST-003 : le même mur modifié depuis la planche 2D (hauteur 3,2 m) puis depuis la vue 3D (épaisseur 0,25 m).
+  await choisiT(idMurT).getByLabel("Hauteur (m)", { exact: true }).fill("3.2");
+  await choisiT(idMurT).getByRole("button", { name: "Appliquer", exact: true }).click();
+  await enAttente(1);
+  check("TEST-003 : hauteur du mur portée à 3,2 m depuis la planche 2D, modification acceptée (une commande en attente, aucune alerte)",
+    (await page.locator(".studio-alert").count()) === 0 && (await portee()).includes("(1 commande(s)"), await portee());
+  const ids2dAvant = await ids2dT();
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Shift+D");
+  await panneaux3d.locator("[data-studio-architecture-vue3d]").waitFor();
+  const ids3dMur = await ids3dT();
+  const bouton3dMur = panneaux3d.locator(`[data-studio-architecture-3d-objet="${idMurT}"]`);
+  if ((await bouton3dMur.getAttribute("aria-pressed")) !== "true") await bouton3dMur.click();
+  await choisiT(idMurT).waitFor();
+  check("TEST-003 : dans la vue 3D, le même mur (même identifiant) porte déjà la hauteur 3,2 m saisie en 2D",
+    JSON.stringify(ids3dMur) === JSON.stringify(ids2dAvant) && ids3dMur.includes(idMurT) && (await choisiT(idMurT).getByLabel("Hauteur (m)", { exact: true }).inputValue()) === "3.2",
+    `${JSON.stringify(ids3dMur)} / ${JSON.stringify(ids2dAvant)}`);
+  await choisiT(idMurT).getByLabel("Épaisseur (m)", { exact: true }).fill("0.25");
+  await choisiT(idMurT).getByRole("button", { name: "Appliquer", exact: true }).click();
+  await enAttente(2);
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Shift+D");
+  const avantT003 = envois.length;
+  await enregistrer();
+  const envoiT003 = envois[envois.length - 1];
+  const r3 = (await a.api("get", cheminArchi)).revision;
+  const murR3 = r3.document.architecture.find((x) => x.type === "wall"), ouvR3 = r3.document.architecture.find((x) => x.type === "opening");
+  check("TEST-003 : enregistré en deux studio.architecture.modifier sur le même objectId",
+    envois.length === avantT003 + 1 && JSON.stringify(envoiT003.commands.map((c) => [c.toolId, c.params.id])) === JSON.stringify([["studio.architecture.modifier", idMurT], ["studio.architecture.modifier", idMurT]]),
+    JSON.stringify(envoiT003?.commands));
+  check("TEST-003 : relu après Ctrl+S — même identifiant du mur, hauteur 3,2 m, épaisseur 0,25 m ; l'ouverture reste hébergée (hostId) par ce mur",
+    r3.document.architecture.length === 2 && murR3.id === idMurT && murR3.height === 3.2 && murR3.thickness === 0.25 && ouvR3.id === idOuvT && ouvR3.hostId === idMurT && ouvR3.width === 1.2,
+    JSON.stringify(r3.document.architecture));
+  await page.reload();
+  await page.locator(`svg [data-studio-architecture="${idOuvT}"]`).waitFor({ state: "attached" });
+  const ids2dR3 = await ids2dT();
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Shift+D");
+  await panneaux3d.locator("[data-studio-architecture-vue3d]").waitFor();
+  const ids3dR3 = await ids3dT();
+  check("TEST-003 : après actualisation, la désignation 3D porte les mêmes identifiants que la planche 2D (mur, ouverture)",
+    JSON.stringify(ids3dR3) === JSON.stringify([idMurT, idOuvT]) && JSON.stringify([...ids2dR3].sort()) === JSON.stringify([idMurT, idOuvT].sort()), `${JSON.stringify(ids3dR3)} / ${JSON.stringify(ids2dR3)}`);
+
+  // TEST-024 : la porte déplacée depuis la vue 3D (position 2,5 → 1,5 m) ; la planche 2D suit ; seul ce qui dépend de la
+  // porte (elle et son mur hôte) est remaillé, la boîte étrangère non ; au plus un maillage remis par révision.
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Shift+D");
+  await page.locator(`svg [data-studio-architecture="${idOuvT}"]`).waitFor({ state: "attached" });
+  const montants = () => page.locator(`svg [data-studio-architecture="${idOuvT}"] line`).evaluateAll((ls) => ls.map((l) => [Number(l.getAttribute("x1")), Number(l.getAttribute("x2"))]));
+  const montantsAvant = await montants();
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Shift+D");
+  await panneaux3d.locator("[data-studio-architecture-vue3d]").waitFor();
+  await maillagePret();
+  const bouton3dOuv = panneaux3d.locator(`[data-studio-architecture-3d-objet="${idOuvT}"]`);
+  if ((await bouton3dOuv.getAttribute("aria-pressed")) !== "true") await bouton3dOuv.click();
+  await choisiT(idOuvT).waitFor();
+  check("TEST-024 : porte choisie dans la vue 3D, position 2,5 m le long de l'axe", (await choisiT(idOuvT).getByLabel("Position le long de l’axe (m)", { exact: true }).inputValue()) === "2.5",
+    await choisiT(idOuvT).getByLabel("Position le long de l’axe (m)", { exact: true }).inputValue());
+  const debutT024 = await page.evaluate(() => globalThis.__fadiTaches?.journal.length ?? 0);
+  await choisiT(idOuvT).getByLabel("Position le long de l’axe (m)", { exact: true }).fill("1.5");
+  await choisiT(idOuvT).getByRole("button", { name: "Appliquer", exact: true }).click();
+  await enAttente(1);
+  await maillagePret();
+  const vueT024 = page.locator("[data-studio-vue3d]");
+  const remaillesT024 = await vueT024.getAttribute("data-studio-remailles"), invalidationT024 = await vueT024.getAttribute("data-studio-invalidation");
+  const journalT024 = (await page.evaluate((d) => globalThis.__fadiTaches.journal.slice(d), debutT024)).filter((e) => e.cle === "studio.maillage-3d");
+  const remisT024 = journalT024.filter((e) => e.etat === "done").map((e) => e.revision);
+  check("TEST-024 : déplacement appliqué depuis la vue 3D — invalidation partielle : seuls la porte et son mur hôte remaillés (2 objets), la boîte étrangère non ; au plus un maillage remis par révision",
+    invalidationT024 === "partiel" && remaillesT024 === "2" && remisT024.length >= 1 && new Set(remisT024).size === remisT024.length,
+    JSON.stringify({ invalidationT024, remaillesT024, journal: journalT024.map((e) => `${e.revision}:${e.etat}`) }));
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Shift+D");
+  await page.locator(`svg [data-studio-architecture="${idOuvT}"]`).waitFor({ state: "attached" });
+  const montantsApres = await montants();
+  check("TEST-024 : de retour sur la planche 2D, les montants de la porte ont reculé de 1 m le long du mur",
+    montantsAvant.length === 2 && montantsApres.length === 2 && montantsApres.every(([x1, x2], i) => Math.abs(x1 - (montantsAvant[i][0] - 1)) < 1e-9 && Math.abs(x2 - (montantsAvant[i][1] - 1)) < 1e-9),
+    `${JSON.stringify(montantsAvant)} → ${JSON.stringify(montantsApres)}`);
+  await enregistrer();
+  const r4 = (await a.api("get", cheminArchi)).revision;
+  const ouvR4 = r4.document.architecture.find((x) => x.id === idOuvT);
+  check("TEST-024 : enregistré — porte à 1,5 m, même identifiant, toujours hébergée par le mur ; boîte étrangère inchangée",
+    ouvR4?.position === 1.5 && ouvR4.hostId === idMurT && ouvR4.width === 1.2
+    && JSON.stringify(r4.document.solides) === JSON.stringify(r3.document.solides), JSON.stringify(r4.document.architecture));
+
   // NAV-009 : les parcours existants restent atteignables.
   await page.goto(`${BASE}/projets/${pA.id}?module=atelier`);
   await page.locator(".module-content").waitFor();

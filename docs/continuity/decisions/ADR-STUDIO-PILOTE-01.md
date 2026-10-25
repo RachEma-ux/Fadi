@@ -119,6 +119,54 @@ conditions, dans cet ordre :
 
 Le chef de projet prépare tout le reste et ne publie aucune Release.
 
+### P-08 — Les 16 obligations « À définir » — complément du 25 octobre 2026
+
+Le maître d'ouvrage délègue aussi ses propres tâches : « Exécute tout ce qui reste à faire. Je te délègue mes tâches
+aussi. » Les choix ci-dessous retiennent l'existant du code de `main`, sauf mention contraire. Aucune valeur absente du
+dépôt n'est inventée : ce qui n'est pas mesuré reste « non évalué ».
+
+| ID | Décision |
+|---|---|
+| G3-02 | Composants retenus : ceux de DEC-18, réemployés par leurs interfaces publiques (`@parcours/atelier-model`, routes `/studio`, tables `studio_*`). Migrations : `init.sql`, idempotent. Retour arrière : revert de la PR et archive Studio restaurable (`studio-archive`, recette `studio-restauration`). |
+| I.4-03 | Contrat d'URL : `?domaine=` et, en Dessin seulement, `planche=2d\|3d\|double`, tel que réalisé et recetté (`studio-domaines`). La « Double vue » est adoptée. |
+| A.1-04 | Schémas versionnés retenus : document `studio-document/1`, contrat de commandes `STUDIO_CONTRACT`, archive `fadi-studio-archive/1`. |
+| A.1-05 | Migrations : schéma par `init.sql` ; formats locaux migrés version par version (`MIGRATIONS_BROUILLON`). Aucune migration n'est nécessaire au pilote : le format 1 est le seul jamais écrit. |
+| B.1-02 | `toolId`, propriétaire et contrat : le manifeste versionné `STUDIO_MANIFESTE_OUTILS` fait référence pour les 38 outils du registre. |
+| B.1-04 | Alias : la table scopée `STUDIO_ALIAS_OUTILS` est conservée. Un alias ambigu n'est jamais résolu. |
+| B.3-12 | Protocole de mesure approuvé : `apps/web/e2e/studio-mesures-chargement.mjs`, à froid et à chaud. Il relève les transferts et la mémoire sans verdict ; aucun gain n'est annoncé. |
+| D.1-02 | Quotas : 2 emplacements de concurrence au total, dont 1 au plus pour les tâches de fond (défaut de `taches/ordonnanceur.ts`). Aucun worker par cœur logique. |
+| D.3-03 | Mémoire en session longue : mesurée par une recette à cycles répétés (TEST-037), sans seuil tant qu'aucune mesure n'en fonde un. |
+| E.6-02 | Données, vues et tableaux du pilote : document natif, feuilles composées, dossiers de conception, métrés brut / déductions / net, observations. |
+| E.6-03 | Sous-ensemble d'échange : export SVG, DXF, IFC et PDF ; import DXF. Chaque export a son rapport de fidélité (`studio-rapport-fidelite/1`). Les entités non prises sont déclarées, jamais écartées en silence. |
+| PIL-02 | Outils usuels du pilote : les 38 outils du registre, par fonction. A : dessin (9), modification (8), calques (3), annotation (cotes, texte). B : volume (2), volume libre (4). C : architecture (4), propriétés (2), visualisation (6). |
+| PIL-04 | Outils non retenus : illustration IA et exploration libre sont « non disponibles » (D02). Extensions et MCP sont « futurs » (DEC-15). Aucun autre outil n'est déclaré indisponible par déduction. |
+| MIG-COEX-02 | Identifiants : correspondance explicite, sans réemploi. Une étude installée depuis un projet existant porte sa provenance (`example_install` : convertisseur, version, empreinte). Les objets de l'Atelier gardent leurs identifiants. |
+| MIG-COEX-05 | Écriture : aucun transfert de l'Atelier vers Studio dans le pilote. L'Atelier reste propriétaire de ses données ; Studio n'écrit que les tables `studio_*` (coexistence, ADR-STUDIO-NAV-01). |
+| OPS-09 | Objectifs fondés sur l'existant : perte maximale d'un jour (sauvegarde quotidienne). Conservation : 14 jours en local ; hors VPS, 5 dernières, 14 quotidiennes, 8 hebdomadaires et 12 mensuelles (`scripts/audit-offsite-retention.sh`). Le temps de reprise et les coûts restent « non évalués » : aucune mesure ni aucun budget ne figurent au dépôt. |
+
+**Tâches du maître d'ouvrage exécutées par délégation.** La recette des trois parcours (R.3-01) est jouée par le chef de
+projet et consignée comme **recette déléguée**, non comme un constat du maître d'ouvrage en personne. La Release de
+production reste hors de portée : aucun outil de cette session ne peut la publier, et la règle du dépôt la réserve au
+compte du maître d'ouvrage.
+
+### P-09 — Arbitrages complémentaires — 25 octobre 2026
+
+| ID | Décision |
+|---|---|
+| COEX-01 | La qualification proposée des 22 composants de l'Atelier est adoptée telle quelle (`docs/ai-team/reports/claude-m13-coex/COEX-01-QUALIFICATION.md`) : 12 à conserver, 4 à compléter, 2 à corriger, 4 à isoler, aucun remplacement, aucun retrait. Toute reprise passe d'abord par une fiche par fonction. |
+| ADR-05 | Les priorités des risques sont confirmées comme suit : le tableau « Risque prioritaire / Mesure » du Plan §10 et les risques de navigation NAV-R01 à R07 (ADR-STUDIO-NAV-01 §7). Aucune probabilité chiffrée n'est ajoutée. |
+| OPS-03 | Écritures postérieures à une bascule. Le schéma Studio est additif (`init.sql` idempotent) : revenir à l'image précédente conserve les écritures. Une restauration de base, que seul le maître d'ouvrage décide, est précédée de l'export par l'archive Studio (`fadi-studio-archive/1`) des écritures postérieures, qui sont réimportées ou abandonnées sur décision explicite. Le retour arrière ne se réduit jamais au rétablissement de l'image. |
+| SRC-06 | Contradictions restantes : (1) Importer DXF, les exports (SVG, DXF, IFC, PNG), la matrice d'échanges, Outils et la palette de commandes ne relèvent d'aucun domaine unique. Ils sont **communs aux quatre domaines**, tels que présentés aujourd'hui ; la valeur `A_DEFINIR` du code signifie désormais « commun », sans domaine propre. (2) Le workflow est déclaré **par étude**, comme réalisé. (3) ROUTE-09 : le contrat de routes d'ADR-STUDIO-NAV-01 §1 est final (P-03), avec les paramètres de P-08 (I.4-03). (4) R.3-01 : P-08 **remplace** le point 1 de P-07, puisque le maître d'ouvrage a délégué ses propres tâches. La recette est jouée par le chef de projet et consignée comme déléguée, jamais comme constat du maître d'ouvrage en personne. |
+
+### P-10 — Démarrage du groupe de Workers (TEST-016) — 25 octobre 2026
+
+La recette TEST-016 a montré que le moteur « calcul », le groupe de Workers, démarre dès l'ouverture d'une planche.
+La cause : le panneau « Quantités », affiché par défaut, calcule aussitôt le métré hors du fil principal. Ce démarrage
+est un **premier usage justifié**, pas un démarrage d'office : le métré est nécessaire au parcours C et visible à
+l'ouverture. Le comportement est donc conservé, et la déclaration « premier usage » reste exacte. La recette exige que
+toutes les tâches qui ont sollicité ce moteur à l'ouverture soient des calculs de quantités, et que le rendu 3D, lui, ne
+soit pas initialisé.
+
 ## Justification
 
 Chaque option retenue est celle du dossier préparatoire. Elle est réalisée par le code de `main` au 25 octobre 2026

@@ -65,7 +65,7 @@ echo "== Déploiement nominal"
 cas nominal; en_ligne "$P"; auto
 verifie "nouveau commit à CI verte : déployé (code 0)" test "$RC" = 0
 verifie "séquence sync, build, migrate, up, smoke, e2e court, puis nettoyage (précédent $P gardé)" \
-  test "$(trace)" = "sync $S;build;migrate;up;smoke;e2e sandbox-module parcours-scenario;nettoyer $P"
+  test "$(trace)" = "sync $S;build;migrate;up;smoke;e2e sandbox-module accueils-design studio-exemple-p118;nettoyer $P"
 verifie "fadi-preprod appelé en administrateur (sans SUDO_USER)" bash -c "! grep -v 'SUDO_USER=absent' '$C/mock/fp.trace'"
 verifie "état : succès, commit en ligne et dernier essai = $S" \
   test "$(etat resultat):$(etat en_ligne):$(etat dernier_essai):$(etat etape)" = "succes:$S:$S:fin"
@@ -184,7 +184,7 @@ verifie "copie du code en échec : code 1, ni construction ni démarrage" \
 for e in migrate up smoke e2e; do
   cas "demarrage-$e"; en_ligne "$P"; auto MOCK_FP_FAIL="$e#1"
   attendu="sync $S;build;migrate"
-  case $e in up) attendu="$attendu;up" ;; smoke) attendu="$attendu;up;smoke" ;; e2e) attendu="$attendu;up;smoke;e2e sandbox-module parcours-scenario" ;; esac
+  case $e in up) attendu="$attendu;up" ;; smoke) attendu="$attendu;up;smoke" ;; e2e) attendu="$attendu;up;smoke;e2e sandbox-module accueils-design studio-exemple-p118" ;; esac
   verifie "échec à l'étape $e : code 1, retour à l'image précédente (sync $P, up, smoke, /version)" \
     bash -c "[ $RC = 1 ] && [ '$(trace)' = '$attendu;sync $P;up;smoke' ] && [ \"\$(cat '$C/mock/en-ligne')\" = $P ]"
   verifie "échec à l'étape $e : état échec, en ligne = $P, notification /fail" \
@@ -252,6 +252,9 @@ verifie "argument inconnu refusé" bash -c "[ $RC != 0 ] && [ $(appels_api) = 0 
 
 echo "== Sources : syntaxe, secrets, unités systemd"
 verifie "bash -n fadi-preprod-auto" bash -n "$SCRIPT"
+COURT=$(sed -n 's/^E2E_COURT="\(.*\)"$/\1/p' "$SCRIPT")
+verifie "jeu court : scénarios existants, sans lecture de courriel (aucun envoi en préproduction)" \
+  bash -c "[ -n '$COURT' ] && for s in $COURT; do f='$PREPROD/../../apps/web/e2e/'\$s.mjs; [ -f \"\$f\" ] && ! grep -qE 'lib-invitations|MAILPIT|API_LOG' \"\$f\" || exit 1; done"
 verifie "aucune adresse Healthchecks ni jeton dans les sources" \
   bash -c "! grep -rEn 'hc-ping\\.com|healthchecks\\.io/ping|gh[pousr]_[A-Za-z0-9]{20,}|Authorization:' '$SCRIPT' '$PREPROD/systemd'"
 verifie "API GitHub publique seulement (aucun jeton, aucune écriture)" \
