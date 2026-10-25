@@ -32,6 +32,12 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   et export PNG ; vérifié localement sur geoBoundaries (ADM1 : 12 couleurs distinctes ; ADM2 : voisins toujours distincts,
   palette entière employée) ; recette `geodata.mjs` conforme (36 vérifications).
 
+- Sources ouvertes (D-GD-12, demande du maître d'ouvrage du 25 octobre 2026) : 29 couches livrées avec leur fiche
+  (`docs/geodata/sources/`, données dans `donnees/`, 15332 objets) — OpenStreetMap, extraits PBF du 23 octobre 2026 lus
+  par `scripts/geodata/extraire_sources.py`, et OurAirports : barrages 606, ports 4, marinas 5, gares 157, centrales-electriques 118, postes-electriques 619, eoliennes 956, musees 148, attractions-touristiques 870, campings 754, hotels 2978, information-touristique 245, plages 378, sites-patrimoniaux 1818, agences-de-voyages 232, etablissements-sante 763, administrations 1575, villes 338, silos-agricoles 96, puits 483, reservoirs-eau 409, stations-pompage 10, pepinieres 38, fournitures-agricoles 15, apiculture 6, vignobles 123, serres-horticoles 565, canaux 956, aerodromes 67. Empreintes et validation contrôlées par
+  `apps/api/src/db/geodata-sources.test.ts` ; `--fiche toutes` les importe et publie en une commande (vérifié sur la base
+  locale). Écartées : couches raster (hors V1), sources aux droits non établis.
+
 ## Points ouverts
 
 Recette sur appareils physiques et validation d'usage ; Release de production ; qualification des droits HCP ; extensions V1.1.

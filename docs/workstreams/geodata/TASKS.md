@@ -23,7 +23,8 @@
 - [x] GEO-I5 — Suite API DB-3, audit GEO 04, recette `apps/web/e2e/geodata.mjs` en CI, traductions, documentation.
 - [x] GEO-MERGE — Revue Codex traitée, CI verte, PR #301 fusionnée (`1d92920`).
 - [x] GEO-EXPL-01 — Outils d'exploitation dans l'image et dossier de Release (PR #307 fusionnée).
-- [x] GEO-STYLE-01 — Style « une couleur par entité » (D-GD-11).
+- [x] GEO-STYLE-01 — Style « une couleur par entité » (D-GD-11, PR #314 fusionnée).
+- [x] GEO-SRC-01 — Couches de sources ouvertes OpenStreetMap et OurAirports livrées avec leur fiche (D-GD-12).
 
 ## Bloqué
 
