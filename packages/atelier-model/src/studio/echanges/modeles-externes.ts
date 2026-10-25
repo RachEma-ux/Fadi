@@ -13,6 +13,8 @@ import { StudioValidationError } from "../noyau/validation.js";
  * - Un modèle reçu est **référencé** avec ce que son émetteur déclare : référence, auteur, discipline, format, version,
  *   unité et, s'il y en a une, transformation (translation et rotation autour de z vers le repère local de la
  *   variante). Rien n'est deviné : sans transformation déclarée, aucune n'est appliquée (et la comparaison le dit).
+ *   EX-014 : l'émetteur peut aussi déclarer le **repère source** du fichier et les **restrictions d'utilisation** ;
+ *   absents, ils valent `null` (« non déclaré »). La provenance complète s'exporte (`studioProvenanceModeleExterne`).
  * - Le fichier est lu par le lecteur pur (`lireIfcStudio`) dans un document **à part** : un modèle reçu, comparé ou
  *   refusé ne modifie jamais la variante. L'unité est celle **lue** dans le fichier ; l'unité déclarée qui la contredit
  *   est un écart signalé, jamais une correction.
@@ -37,7 +39,7 @@ export const STUDIO_ACTIONS_MODELE_EXTERNE = ["comparer", "accepter", "refuser"]
 export type StudioActionModeleExterne = (typeof STUDIO_ACTIONS_MODELE_EXTERNE)[number];
 
 /** Bornes techniques des champs déclarés (pas des valeurs métier). */
-export const STUDIO_LIMITES_MODELE_EXTERNE = Object.freeze({ reference: 200, auteur: 200, discipline: 80, version: 80, nomFichier: 255, motif: 2000 } as const);
+export const STUDIO_LIMITES_MODELE_EXTERNE = Object.freeze({ reference: 200, auteur: 200, discipline: 80, version: 80, nomFichier: 255, motif: 2000, repereSource: 200, restrictions: 2000 } as const);
 
 export interface StudioMetaModeleExterne {
   /** Nom du modèle chez l'émetteur (« Structure — bâtiment A »). */
@@ -50,6 +52,10 @@ export interface StudioMetaModeleExterne {
   /** Transformation déclarée vers le repère local de la variante ; null : aucune déclarée (aucune appliquée). */
   transformation: StudioTransformationDeclaree | null;
   nomFichier: string;
+  /** Repère source déclaré par l'émetteur (EX-014) ; null : non déclaré. */
+  repereSource: string | null;
+  /** Restrictions d'utilisation déclarées (EX-014) ; null : non déclarées. */
+  restrictions: string | null;
 }
 
 const texte = (v: unknown, max: number, path: string): string => {
@@ -61,7 +67,7 @@ const texte = (v: unknown, max: number, path: string): string => {
 export function validerMetaModeleExterne(value: unknown): StudioMetaModeleExterne {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new StudioValidationError("modele", "objet attendu");
   const o = value as Record<string, unknown>;
-  const attendus = ["reference", "auteur", "discipline", "format", "version", "uniteDeclaree", "transformation", "nomFichier"];
+  const attendus = ["reference", "auteur", "discipline", "format", "version", "uniteDeclaree", "transformation", "nomFichier", "repereSource", "restrictions"];
   for (const k of Object.keys(o)) if (!attendus.includes(k)) throw new StudioValidationError(`modele.${k}`, "champ inconnu");
   if (!(STUDIO_FORMATS_MODELE_EXTERNE as readonly unknown[]).includes(o.format)) throw new StudioValidationError("modele.format", "format ifc attendu");
   if (typeof o.uniteDeclaree !== "string" || !Object.hasOwn(STUDIO_UNITES_DECLAREES, o.uniteDeclaree)) throw new StudioValidationError("modele.uniteDeclaree", "unité m, cm, mm, ft ou in attendue");
@@ -74,6 +80,45 @@ export function validerMetaModeleExterne(value: unknown): StudioMetaModeleExtern
     uniteDeclaree: o.uniteDeclaree as StudioUniteDeclaree,
     transformation: o.transformation === null || o.transformation === undefined ? null : validerTransformation(o.transformation),
     nomFichier: texte(o.nomFichier, STUDIO_LIMITES_MODELE_EXTERNE.nomFichier, "modele.nomFichier"),
+    repereSource: o.repereSource === undefined || o.repereSource === null || (typeof o.repereSource === "string" && !o.repereSource.trim()) ? null : texte(o.repereSource, STUDIO_LIMITES_MODELE_EXTERNE.repereSource, "modele.repereSource"),
+    restrictions: o.restrictions === undefined || o.restrictions === null || (typeof o.restrictions === "string" && !o.restrictions.trim()) ? null : texte(o.restrictions, STUDIO_LIMITES_MODELE_EXTERNE.restrictions, "modele.restrictions"),
+  };
+}
+
+/** Provenance exportée d'un modèle reçu (EX-014, `studio-provenance-modele/1`) : ce que l'émetteur déclare, ce que le serveur lit et calcule. */
+export interface StudioProvenanceModeleExterne {
+  schema: "studio-provenance-modele/1";
+  modeleId: string;
+  reference: string;
+  auteur: string;
+  discipline: string;
+  format: StudioFormatModeleExterne;
+  /** Version déclarée par l'émetteur, et schéma lu dans le fichier (`FILE_SCHEMA`). */
+  version: string;
+  schemaFichier: string | null;
+  nomFichier: string;
+  empreinteSha256: string;
+  /** Horodatage de réception (ISO 8601). */
+  recuLe: string;
+  unite: { declaree: StudioUniteDeclaree; lue: string | null; facteurLu: number | null; concorde: boolean | null };
+  repereSource: string | null;
+  /** Transformation déclarée vers le repère local de la variante ; null : aucune déclarée (aucune appliquée). */
+  transformation: StudioTransformationDeclaree | null;
+  repereCible: "local-2d";
+  restrictions: string | null;
+  statut: StudioStatutModeleExterne;
+}
+
+export function studioProvenanceModeleExterne(m: {
+  id: string; meta: StudioMetaModeleExterne; contentSha256: string; recuLe: string; statut: StudioStatutModeleExterne;
+  rapport: Pick<StudioIfcRapport, "schema" | "unite">;
+}): StudioProvenanceModeleExterne {
+  const lu = m.rapport.unite.facteur;
+  return {
+    schema: "studio-provenance-modele/1", modeleId: m.id, reference: m.meta.reference, auteur: m.meta.auteur, discipline: m.meta.discipline, format: m.meta.format,
+    version: m.meta.version, schemaFichier: m.rapport.schema || null, nomFichier: m.meta.nomFichier, empreinteSha256: m.contentSha256, recuLe: m.recuLe,
+    unite: { declaree: m.meta.uniteDeclaree, lue: m.rapport.unite.nom, facteurLu: lu, concorde: lu === null ? null : Math.abs(lu - STUDIO_UNITES_DECLAREES[m.meta.uniteDeclaree]) <= 1e-12 * Math.max(1, lu) },
+    repereSource: m.meta.repereSource, transformation: m.meta.transformation, repereCible: "local-2d", restrictions: m.meta.restrictions, statut: m.statut,
   };
 }
 

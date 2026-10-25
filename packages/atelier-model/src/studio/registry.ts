@@ -10,7 +10,7 @@ import { OUTILS_VOLUME } from "./registre/volume.js";
 import { OUTILS_VOLUME_LIBRE } from "./registre/volume-libre.js";
 import { OUTILS_SCENES } from "./registre/scenes.js";
 import { OUTILS_NON_NATIFS } from "./registre/non-natifs.js";
-import { OUTILS_GRAPHISMES, OUTILS_REPERES } from "./registre/graphismes.js";
+import { OUTILS_GRAPHISMES, OUTILS_REPERES, OUTILS_SOURCES } from "./registre/graphismes.js";
 
 /**
  * Native registry, single source for the toolbar, shortcuts and the API enum. These tools never expose an agent or MCP entry point.
@@ -27,7 +27,7 @@ export type { StudioToolDescriptor, StudioToolGroup } from "./registre/communs.j
 type RegistreStudio = readonly [
   ...typeof OUTILS_DESSIN, ...typeof OUTILS_MODIFICATION, ...typeof OUTILS_CALQUES, ...typeof OUTILS_VOLUME, ...typeof OUTILS_VOLUME_LIBRE,
   ...typeof OUTILS_ARCHITECTURE, ...typeof OUTILS_PROPRIETES, ...typeof OUTILS_SCENES, ...typeof OUTILS_NON_NATIFS,
-  ...typeof OUTILS_GRAPHISMES, ...typeof OUTILS_REPERES,
+  ...typeof OUTILS_GRAPHISMES, ...typeof OUTILS_REPERES, ...typeof OUTILS_SOURCES,
 ];
 
 export const STUDIO_TOOLS: RegistreStudio = freezeTree([
@@ -42,6 +42,7 @@ export const STUDIO_TOOLS: RegistreStudio = freezeTree([
   ...OUTILS_NON_NATIFS,
   ...OUTILS_GRAPHISMES,
   ...OUTILS_REPERES,
+  ...OUTILS_SOURCES,
 ] as const) satisfies readonly StudioToolDescriptor[];
 
 type ToolIdsOf<T extends readonly { readonly toolId: string }[]> = { readonly [K in keyof T]: T[K] extends { readonly toolId: infer I } ? I : never };

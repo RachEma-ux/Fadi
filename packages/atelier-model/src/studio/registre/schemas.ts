@@ -15,6 +15,7 @@ import { SCHEMA_ELEMENT_VISUALISATION, STUDIO_LIMITES_SCENES } from "../scenes/s
 import { SCHEMA_NON_NATIF } from "../non-natifs/non-natifs.js";
 import { SCHEMA_GRAPHISME, STUDIO_LIMITES_GRAPHISMES } from "../graphismes/graphismes.js";
 import { STUDIO_LIMITE_VERSIONS_PROJET } from "../reperes.js";
+import { SCHEMA_SOURCE, STUDIO_LIMITES_SOURCES } from "../sources/sources.js";
 import { id } from "./schemas-base.js";
 
 /** Schémas JSON du document entier et des listes, composés des schémas déclarés par chaque type d'objet (`objets/`). */
@@ -40,6 +41,7 @@ export const STUDIO_DOCUMENT_SCHEMA = {
     scenes: { type: "array", maxItems: STUDIO_LIMITES_SCENES.scenes + STUDIO_LIMITES_SCENES.apparences, items: SCHEMA_ELEMENT_VISUALISATION },
     nonNatifs: { type: "array", maxItems: STUDIO_LIMITS.objects, items: SCHEMA_NON_NATIF },
     graphismes: { type: "array", maxItems: STUDIO_LIMITES_GRAPHISMES.graphismes, items: SCHEMA_GRAPHISME },
+    sources: { type: "array", maxItems: STUDIO_LIMITES_SOURCES.sources, items: SCHEMA_SOURCE },
     systemeProjet: {
       type: "object", additionalProperties: false, required: ["versions"],
       properties: {

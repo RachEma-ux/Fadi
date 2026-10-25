@@ -246,7 +246,7 @@ describe("Registre Studio : règle d’or", () => {
     }
     for (const tool of STUDIO_TOOLS) {
       expect(tool.iconeSymbolique).toMatch(/^studio-[a-z-]+$/);
-      expect(["dessin", "modification", "calques", "volume", "volume-libre", "architecture", "proprietes", "visualisation", "non-natifs", "graphismes", "reperes"]).toContain(tool.groupe);
+      expect(["dessin", "modification", "calques", "volume", "volume-libre", "architecture", "proprietes", "visualisation", "non-natifs", "graphismes", "reperes", "sources"]).toContain(tool.groupe);
       expect(tool.raccourci.trim()).not.toBe("");
       expect(tool.agentExposure).toBe("none");
     }

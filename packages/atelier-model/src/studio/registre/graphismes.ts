@@ -1,4 +1,5 @@
 import { SCHEMA_GRAPHISME } from "../graphismes/graphismes.js";
+import { SCHEMA_SOURCE } from "../sources/sources.js";
 import { mutation } from "./communs.js";
 import { ids } from "./schemas.js";
 
@@ -25,4 +26,12 @@ export const SCHEMA_VERSION_SYSTEME_PROJET = {
 
 export const OUTILS_REPERES = [
   { ...mutation, toolId: "studio.repere.projet", libelleFR: "Définir le système de projet", raccourci: "Ctrl+Shift+F2", iconeSymbolique: "studio-project-frame", groupe: "reperes", inputSchema: SCHEMA_VERSION_SYSTEME_PROJET },
+] as const;
+
+/**
+ * Famille « Sources » (EX-014) : Déclarer une source importée (Ctrl+Maj+F3) — la provenance d'un fichier DXF importé ;
+ * elle accompagne l'import (le raccourci ouvre « Importer DXF »).
+ */
+export const OUTILS_SOURCES = [
+  { ...mutation, toolId: "studio.source.declarer", libelleFR: "Déclarer une source importée", raccourci: "Ctrl+Shift+F3", iconeSymbolique: "studio-source-declare", groupe: "sources", inputSchema: SCHEMA_SOURCE },
 ] as const;

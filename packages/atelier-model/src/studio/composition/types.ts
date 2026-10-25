@@ -17,6 +17,7 @@ import type { StudioApparence, StudioElementVisualisation, StudioScene } from ".
 import type { StudioNonNatif } from "../non-natifs/non-natifs.js";
 import type { StudioGraphisme } from "../graphismes/graphismes.js";
 import type { StudioSystemeProjet, StudioVersionSystemeProjet } from "../reperes.js";
+import type { StudioSourceExterne } from "../sources/sources.js";
 
 /**
  * Types composés du document Studio (`studio-document/1`) : le document entier et le contrat de commandes rassemblent
@@ -77,6 +78,11 @@ export interface StudioDocument {
    * dernière en vigueur ; absent : non déclaré, aucune conversion vers le projet n'est supposée.
    */
   systemeProjet?: StudioSystemeProjet;
+  /**
+   * Sources externes (extension additive, facultative, EX-014) : provenance de chaque fichier importé directement dans
+   * le dessin (`sources/`) ; absent ou vide : aucune (forme canonique).
+   */
+  sources?: StudioSourceExterne[];
 }
 export type StudioCommand =
   | { toolId: "studio.dessin.ligne"; params: StudioLine }
@@ -124,7 +130,8 @@ export type StudioCommand =
   | { toolId: "studio.nonnatif.retirer"; params: { ids: string[] } }
   | { toolId: "studio.graphisme.creer"; params: StudioGraphisme }
   | { toolId: "studio.graphisme.retirer"; params: { ids: string[] } }
-  | { toolId: "studio.repere.projet"; params: StudioVersionSystemeProjet };
+  | { toolId: "studio.repere.projet"; params: StudioVersionSystemeProjet }
+  | { toolId: "studio.source.declarer"; params: StudioSourceExterne };
 export type StudioCommandToolId = StudioCommand["toolId"];
 export interface StudioEnvelope {
   contractVersion: typeof STUDIO_CONTRACT;

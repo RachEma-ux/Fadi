@@ -568,6 +568,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     // Graphismes (EX-055) et système de projet (EX-023) : saisis dans leur boîte ; un graphisme sélectionné se retire aussitôt.
     if (toolId === "studio.graphisme.creer") { setDialogue("graphismes"); return; }
     if (toolId === "studio.repere.projet") { setDialogue("systeme-projet"); return; }
+    // Source importée (EX-014) : elle accompagne un import DXF ; le raccourci ouvre « Importer DXF ».
+    if (toolId === "studio.source.declarer") { setDialogue("import-dxf"); setInfo("Une source se déclare avec son import : choisissez le fichier DXF."); return; }
     if (toolId === "studio.graphisme.retirer") {
       const ids = selectionIds.filter((id) => drawing.graphismes?.some((g) => g.id === id));
       if (ids.length) { if (apply([{ toolId: "studio.graphisme.retirer", params: { ids } }])) select(selectionIds.filter((id) => !ids.includes(id))); }

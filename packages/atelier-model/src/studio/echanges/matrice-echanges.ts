@@ -123,7 +123,7 @@ export const STUDIO_STATUT_DE_RAISON: Readonly<Record<StudioRaisonFidelite, Stud
   "non-extrude": "non-couvert", "cote-hors-ifc": "non-couvert", "annotation-hors-ifc": "non-couvert", "solide-hors-2d": "non-couvert",
   "visualisation-hors-export": "non-couvert", "type-sans-capacite": "non-couvert", "propriete-non-exportee": "non-couvert",
   "propriete-non-evaluee": "non-couvert", "non-natif-hors-export": "non-couvert", "solide-exact-hors-ifc": "non-couvert",
-  "spline-decoupee": "approche", "transparence-non-portee": "approche", "graphisme-hors-ifc": "non-couvert",
+  "spline-decoupee": "approche", "transparence-non-portee": "approche", "graphisme-hors-ifc": "non-couvert", "provenance-hors-dessin": "non-couvert",
 });
 
 type Categorie = keyof typeof STUDIO_CAPACITES_EXPORT;
@@ -148,6 +148,7 @@ export const STUDIO_COUVERTURE_EXPORT: { readonly [F in StudioFormatEchange]: Pa
     scenes: { scene: VISU, appearance: VISU },
     nonNatifs: { "non-native": NN },
     graphismes: { spline: ["trace-exact"], hachure: ["trace-exact"], symbole: ["trace-exact"] },
+    sources: { source: ["provenance-hors-dessin"] },
   },
   dxf: {
     objets: { line: TRACE_2D, rectangle: TRACE_2D, circle: TRACE_2D, arc: ["arcs-exacts", "extrusion-non-portee"], polyline: ["trace-exact", "renflements-exacts", "extrusion-non-portee"] },
@@ -160,6 +161,7 @@ export const STUDIO_COUVERTURE_EXPORT: { readonly [F in StudioFormatEchange]: Pa
     scenes: { scene: VISU, appearance: VISU },
     nonNatifs: { "non-native": NN },
     graphismes: { spline: ["spline-decoupee"], hachure: ["trace-exact", "transparence-non-portee"], symbole: ["trace-exact", "transparence-non-portee"] },
+    sources: { source: ["provenance-hors-dessin"] },
   },
   ifc: {
     objets: {
@@ -175,6 +177,7 @@ export const STUDIO_COUVERTURE_EXPORT: { readonly [F in StudioFormatEchange]: Pa
     scenes: { scene: VISU, appearance: VISU },
     nonNatifs: { "non-native": NN },
     graphismes: { spline: ["graphisme-hors-ifc"], hachure: ["graphisme-hors-ifc"], symbole: ["graphisme-hors-ifc"] },
+    sources: { source: ["provenance-hors-dessin"] },
   },
 });
 

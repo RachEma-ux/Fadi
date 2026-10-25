@@ -18,6 +18,7 @@ export * from "./studio/non-natifs/non-natifs.js";
 export * from "./studio/graphismes/graphismes.js";
 export * from "./studio/reperes.js";
 export * from "./studio/accelerations.js";
+export * from "./studio/sources/sources.js";
 export * from "./studio/quantites.js";
 export * from "./studio/quantites-ajustements.js";
 export * from "./studio/bilan-quantites.js";

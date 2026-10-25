@@ -85,6 +85,8 @@ export const DOMAINES_FAMILLES_OUTILS = Object.freeze({
   "non-natifs": A_DEFINIR,
   // Graphismes (EX-055) et système de projet (EX-023) : dessin 2D et repères du dessin, Dessin et modélisation.
   graphismes: "dessin", reperes: "dessin",
+  // Sources importées (EX-014) : nées d'un import, comme lui à définir.
+  sources: A_DEFINIR,
 } as const satisfies Record<StudioToolGroup, DomaineAttribue>);
 
 /** Domaine d'une entrée du catalogue (outil du registre ou commande de l'éditeur). */

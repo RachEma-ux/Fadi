@@ -2,6 +2,7 @@ import { editable, freeId, type Etat, type Gestionnaire } from "./etat.js";
 import { fail, idList, record } from "../noyau/validation.js";
 import { STUDIO_LIMITES_GRAPHISMES, validerGraphisme } from "../graphismes/graphismes.js";
 import { STUDIO_LIMITE_VERSIONS_PROJET, validerVersionSystemeProjet } from "../reperes.js";
+import { STUDIO_LIMITES_SOURCES, validerSource } from "../sources/sources.js";
 
 /**
  * Commandes des graphismes (EX-055) et du système de projet (EX-023).
@@ -47,4 +48,12 @@ export const definirSystemeProjet: Gestionnaire = (state, params, path) => {
   if (v.version !== attendue) fail(`${path}.params.version`, `version ${attendue} attendue (la suivante) : une version existante n’est jamais réécrite`);
   if (attendue > STUDIO_LIMITE_VERSIONS_PROJET) fail(path, `${STUDIO_LIMITE_VERSIONS_PROJET} versions au plus`);
   state.systemeProjet = { versions: [...versions, v] };
+};
+
+/** `studio.source.declarer` (EX-014) : ajoute la provenance d'un fichier importé ; identifiant libre dans la liste. */
+export const declarerSource: Gestionnaire = (state, params, path) => {
+  const s = validerSource(params, `${path}.params`);
+  if (state.sources.some((x) => x.id === s.id)) fail(`${path}.params.id`, "identifiant de source déjà utilisé");
+  if (state.sources.length + 1 > STUDIO_LIMITES_SOURCES.sources) fail(path, `${STUDIO_LIMITES_SOURCES.sources} sources au plus`);
+  state.sources.push(s);
 };

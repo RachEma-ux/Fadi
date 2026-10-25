@@ -12,7 +12,7 @@ import { LOCALE } from "../../../lib/i18n";
 import { Dialogue } from "../planche2d/CatalogueOutils";
 import { LIBELLES_MOTIF_PERTE, lireIfc } from "../import/import-ifc-ui";
 import { MESSAGE_TROP_GROS, metres, TAILLE_MAX_OCTETS } from "../import/import-dxf-ui";
-import { apiModelesExternes, ErreurModeleExterne, type ListeModeles, type ModeleExterneLu } from "./api-modeles-externes";
+import { apiModelesExternes, ErreurModeleExterne, type ListeModeles, type ModeleExterneLu, cheminProvenance } from "./api-modeles-externes";
 import {
   compteDifferences, FAMILLES_COMPARAISON, LIBELLES_ACTION_MODELE, LIBELLES_ECART_MODELE, LIBELLES_STATUT_MODELE, SAISIE_TRANSFORMATION_VIDE, transformationSaisie,
   UNITES_DECLARABLES, type SaisieTransformation,
@@ -73,7 +73,7 @@ export function PanneauModelesExternes({ projectId, studyId, variantId, brouillo
             ))}</tbody>
           </table>
         </div>}
-        {ouvert && liste && <Detail m={ouvert} liste={liste} ecriture={ecriture} modifiable={modifiable} brouillon={brouillon} brouillonNonEnregistre={brouillonNonEnregistre}
+        {ouvert && liste && <Detail lienProvenance={cheminProvenance(projectId, studyId, variantId, ouvert.id)} m={ouvert} liste={liste} ecriture={ecriture} modifiable={modifiable} brouillon={brouillon} brouillonNonEnregistre={brouillonNonEnregistre}
           passer={async (action, motif) => {
             try { const m = await apiModelesExternes.passer(projectId, studyId, variantId, ouvert.id, action, motif); setOuvert(m); await charger(); setErreur(""); return true; }
             catch (e) { setErreur(message(e)); return false; }
@@ -97,6 +97,8 @@ function Reception({ projectId, studyId, variantId, surRecu, surErreur }: { proj
   const [champs, setChamps] = useState({ reference: "", auteur: "", discipline: "", version: "" });
   const [unite, setUnite] = useState<StudioUniteDeclaree | "">("");
   const [avecTransformation, setAvecTransformation] = useState(false);
+  // EX-014 : repère source et restrictions d'utilisation déclarés (facultatifs ; vides : non déclarés).
+  const [provenance, setProvenance] = useState({ repereSource: "", restrictions: "" });
   const [t, setT] = useState<SaisieTransformation>(SAISIE_TRANSFORMATION_VIDE);
   const [enCours, setEnCours] = useState(false);
   const [refus, setRefus] = useState("");
@@ -117,6 +119,7 @@ function Reception({ projectId, studyId, variantId, surRecu, surErreur }: { proj
       const contenu = await fichier.text();
       const m = await apiModelesExternes.recevoir(projectId, studyId, variantId, {
         ...champs, format: "ifc", uniteDeclaree: unite, transformation, nomFichier: fichier.name, contenu, requestId: crypto.randomUUID(),
+        repereSource: provenance.repereSource.trim() || null, restrictions: provenance.restrictions.trim() || null,
       });
       await surRecu(m);
     } catch (err) { surErreur(message(err)); }
@@ -145,14 +148,16 @@ function Reception({ projectId, studyId, variantId, surRecu, surErreur }: { proj
         <label>Translation Z (m)<input inputMode="decimal" value={t.dz} onChange={(e) => setT({ ...t, dz: e.target.value })} data-studio-modele-dz /></label>
         <label>Rotation autour de Z (°)<input inputMode="decimal" value={t.rotationDegres} onChange={(e) => setT({ ...t, rotationDegres: e.target.value })} data-studio-modele-rotation /></label>
       </fieldset>}
+      <label>Repère source déclaré (facultatif)<input type="text" value={provenance.repereSource} maxLength={200} onChange={(e) => setProvenance({ ...provenance, repereSource: e.target.value })} data-studio-modele-repere-source /></label>
+      <label>Restrictions d’utilisation (facultatif)<input type="text" value={provenance.restrictions} maxLength={2000} onChange={(e) => setProvenance({ ...provenance, restrictions: e.target.value })} data-studio-modele-restrictions /></label>
       {refus && <p role="alert" data-studio-modele-refus>{refus}</p>}
       <button type="submit" disabled={enCours} data-studio-modele-recevoir><Icon name="studio-external-models" size={18} /> Recevoir et comparer</button>
     </form>
   );
 }
 
-function Detail({ m, liste, ecriture, modifiable, brouillonNonEnregistre, passer, ajouter }: {
-  m: ModeleExterneLu; liste: ListeModeles; ecriture: boolean; modifiable: boolean; brouillon: StudioDocument; brouillonNonEnregistre: boolean;
+function Detail({ m, liste, ecriture, modifiable, brouillonNonEnregistre, passer, ajouter, lienProvenance }: {
+  m: ModeleExterneLu; liste: ListeModeles; ecriture: boolean; modifiable: boolean; brouillon: StudioDocument; brouillonNonEnregistre: boolean; lienProvenance: string;
   passer: (action: "comparer" | "accepter" | "refuser", motif?: string) => Promise<boolean>; ajouter: () => Promise<void>;
 }) {
   const [motif, setMotif] = useState("");
@@ -171,7 +176,11 @@ function Detail({ m, liste, ecriture, modifiable, brouillonNonEnregistre, passer
         <dt>Unité lue</dt>{r.unite.origine === "fichier" ? <dd translate="no">{r.unite.nom}</dd> : <dd>non évaluée</dd>}
         <dt>Schéma</dt><dd translate="no">{r.schema}</dd>
         <dt>SHA-256</dt><dd><code translate="no">{m.contentSha256.slice(0, 16)}</code></dd>
+        <dt>Repère source</dt>{m.repereSource ? <dd translate="no" data-studio-modele-repere-declare>{m.repereSource}</dd> : <dd data-studio-modele-repere-declare="">non déclaré</dd>}
+        <dt>Restrictions d’utilisation</dt>{m.restrictions ? <dd translate="no" data-studio-modele-restrictions-declarees>{m.restrictions}</dd> : <dd data-studio-modele-restrictions-declarees="">non déclarées</dd>}
+        <dt>Reçu le</dt><dd translate="no">{date(m.recuLe)}</dd>
       </dl>
+      <p><a href={lienProvenance} download data-studio-modele-provenance>Exporter la provenance</a></p>
       <p data-studio-modele-transformation-declaree>{m.transformation
         ? `Transformation déclarée : translation (${metres(m.transformation.dx, LOCALE)} ; ${metres(m.transformation.dy, LOCALE)} ; ${metres(m.transformation.dz, LOCALE)}) m, rotation ${metres((m.transformation.rotation * 180) / Math.PI, LOCALE)}°.`
         : "Aucune transformation déclarée."}</p>

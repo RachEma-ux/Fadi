@@ -123,7 +123,7 @@ describe("Registry Studio minimal", () => {
     // jour, rappeler, supprimer ; apparence définir, retirer) ; lot F1 : pousser / tirer la face, diviser la face,
     // pivoter le solide, résoudre le lien du solide ; lot F3 : conserver et retirer les éléments non natifs ; lot F2 : booléen exact.
     // Graphismes et repères (EX-055, EX-023) : comptés à part, test suivant.
-    const socle = STUDIO_TOOLS.filter((t) => t.groupe !== "graphismes" && t.groupe !== "reperes");
+    const socle = STUDIO_TOOLS.filter((t) => t.groupe !== "graphismes" && t.groupe !== "reperes" && t.groupe !== "sources");
     expect(socle).toHaveLength(45);
     for (const key of ["toolId", "iconeSymbolique", "raccourci"] as const) {
       expect(new Set(socle.map((tool) => tool[key])).size).toBe(45);
@@ -147,10 +147,10 @@ describe("Registry Studio minimal", () => {
     expect(Object.isFrozen(STUDIO_DOCUMENT_SCHEMA.properties.objects.items.oneOf)).toBe(true);
   });
 
-  it("publie quarante-huit identités, icônes et raccourcis propres : graphismes (créer, retirer) et système de projet compris", () => {
-    expect(STUDIO_TOOLS).toHaveLength(48);
-    for (const key of ["toolId", "iconeSymbolique", "raccourci"] as const) expect(new Set(STUDIO_TOOLS.map((tool) => tool[key])).size).toBe(48);
-    const ajoutes = STUDIO_TOOLS.filter((t) => t.groupe === "graphismes" || t.groupe === "reperes").map((t) => [t.toolId, t.raccourci, t.groupe]);
-    expect(ajoutes).toEqual([["studio.graphisme.creer", "Shift+F6", "graphismes"], ["studio.graphisme.retirer", "Shift+F7", "graphismes"], ["studio.repere.projet", "Ctrl+Shift+F2", "reperes"]]);
+  it("publie quarante-neuf identités, icônes et raccourcis propres : graphismes (créer, retirer), système de projet et sources importées compris", () => {
+    expect(STUDIO_TOOLS).toHaveLength(49);
+    for (const key of ["toolId", "iconeSymbolique", "raccourci"] as const) expect(new Set(STUDIO_TOOLS.map((tool) => tool[key])).size).toBe(49);
+    const ajoutes = STUDIO_TOOLS.filter((t) => t.groupe === "graphismes" || t.groupe === "reperes" || t.groupe === "sources").map((t) => [t.toolId, t.raccourci, t.groupe]);
+    expect(ajoutes).toEqual([["studio.graphisme.creer", "Shift+F6", "graphismes"], ["studio.graphisme.retirer", "Shift+F7", "graphismes"], ["studio.repere.projet", "Ctrl+Shift+F2", "reperes"], ["studio.source.declarer", "Ctrl+Shift+F3", "sources"]]);
   });
 });

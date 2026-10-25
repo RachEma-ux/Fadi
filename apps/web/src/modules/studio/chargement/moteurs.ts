@@ -67,6 +67,7 @@ export const MOTEURS_PAR_BARRE: Readonly<Record<string, readonly IdMoteur[]>> = 
   // Graphismes (EX-055) et système de projet (EX-023) : planche 2D seulement.
   graphismes: ["planche-2d"],
   reperes: ["planche-2d"],
+  sources: ["planche-2d"],
 });
 
 /**

@@ -67,6 +67,8 @@ const DEPUIS_BARRE: Readonly<Record<BarreStudio, IdFamille>> = Object.freeze({
   "non-natifs": "echanges",
   // Graphismes (EX-055) : splines, hachures, symboles avec les annotations ; système de projet (EX-023) avec la vue.
   graphismes: "annotation", reperes: "vue",
+  // Sources importées (EX-014) : nées d'un import, rangées avec Importer / Exporter.
+  sources: "echanges",
   edition: "edition", vue: "vue", accrochage: "vue", reperage: "vue", visualisation: "vue", import: "echanges", export: "echanges", presentation: "presentation", catalogue: "catalogue",
 });
 
