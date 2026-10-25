@@ -49,7 +49,8 @@ export async function accepterInvitation(call, email, invitationId) {
 }
 
 /**
- * Invitation puis acceptation : `ok` vrai si l'invitation est partie (202) et a été acceptée (200), ou si le compte était
+ * Invitation puis acceptation — par le lien rendu quand aucun courriel n'est parti, sinon depuis la notification :
+ * `ok` vrai si l'invitation est partie (202) et a été acceptée (200), ou si le compte était
  * déjà membre (200, rôle changé). `body` : réponse de l'acceptation ({ projectId, participationId, pendingWork }).
  */
 export async function inviterEtAccepter(owner, member, projectId, email, roleOrRoles = "lecteur") {
@@ -57,7 +58,13 @@ export async function inviterEtAccepter(owner, member, projectId, email, roleOrR
   const invite = await owner("POST", `/projects/${projectId}/members`, body);
   if (invite.status === 200) return { ok: true, invite, accept: null };
   if (invite.status !== 202) return { ok: false, invite, accept: null };
-  const accept = await accepterInvitation(member, email, invite.body.invitation.id);
+  // Sans envoi de courriel (transport désactivé, D-1), l'API rend le lien au propriétaire : l'acceptation par ce lien
+  // prouve la détention de la boîte et n'exige donc aucune vérification d'adresse (aucun courriel à lire).
+  const lien = invite.body?.mail?.link;
+  const jeton = typeof lien === "string" ? lien.split("#jeton=")[1] : null;
+  const accept = jeton
+    ? await member("POST", "/auth/invitations/accept", { token: decodeURIComponent(jeton) })
+    : await accepterInvitation(member, email, invite.body.invitation.id);
   return { ok: accept.status === 200 && accept.body?.projectId === projectId, invite, accept };
 }
 
