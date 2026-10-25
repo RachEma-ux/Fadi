@@ -1,5 +1,11 @@
 # Reprise — Studio
 
+## Décisions DEC ouvertes — 25 octobre 2026
+
+Branche `ccr-187fd2e6-08dk6e`, base `main@3e992b6`. [DEC-OUVERTES-PILOTE.md](DEC-OUVERTES-PILOTE.md) prépare l'arbitrage de DEC-01 à DEC-18 : options du dossier, état du code, recommandation et parcours pilote concerné. Ce sont des recommandations, pas des décisions.
+
+Prochaine action : soumettre le document au maître d'ouvrage dans #166. Ordre proposé : (1) nommer RESP-01 à 05 ; (2) arbitrer DEC-03, 01, 16, 12, 08, 09 et le report DEC-15 ; (3) fixer les appareils de DEC-13 ; (4) autoriser POC-CONTEXTE, POC-2D et POC-PUBLICATION, puis jouer NAV-001 à 009 et TEST-001. Ne promouvoir aucune obligation sans preuve.
+
 ## Dépôt du plan Axes — 25 octobre 2026
 
 Tâche documentaire [#294](https://github.com/RachEma-ux/Fadi/issues/294), branche `docs/294-axes-implementation-plan`, base `0ff0638c3f6781bb94fce9b22c82c69c7ed7083e`. Le [plan d’implémentation Axes v1.0](Fadi-Concept-Axes%20Pan.md) est ajouté avec le nom demandé et le contenu du fichier remis à l’utilisateur : 12 lots AXE-00 à AXE-11, quatre phases et 20 scénarios AX01–AX20. Il complète la paire de concepts sans la remplacer.

@@ -1,5 +1,9 @@
 # État — Studio
 
+## Décisions DEC ouvertes — 25 octobre 2026
+
+Préparation documentaire sur `main@3e992b6` : [DEC-OUVERTES-PILOTE.md](DEC-OUVERTES-PILOTE.md). Le recalcul du registre confirme les compteurs du 21 octobre (47 Vérifié, 2 Accepté, 209 Bloqué, 292 En cours, 58 À faire, 22 À définir). Le document compare DEC-01 à DEC-18 à l'état du code et recommande une option par décision. Il rappelle que le pilote est déjà ratifié (CAD-DEC-01, parcours A/B/C). Aucun statut du registre n'est modifié, aucune décision n'est prise et aucun POC n'a été exécuté.
+
 ## Dépôt du plan Axes — 25 octobre 2026
 
 Tâche documentaire [#294](https://github.com/RachEma-ux/Fadi/issues/294), branche `docs/294-axes-implementation-plan`, base `0ff0638c3f6781bb94fce9b22c82c69c7ed7083e`. Le [plan d’implémentation Axes v1.0](Fadi-Concept-Axes%20Pan.md) est ajouté avec le nom demandé et le contenu du fichier remis à l’utilisateur : 12 lots AXE-00 à AXE-11, quatre phases et 20 scénarios AX01–AX20. Il complète la paire de concepts sans la remplacer.
