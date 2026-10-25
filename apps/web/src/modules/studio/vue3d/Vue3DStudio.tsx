@@ -29,7 +29,7 @@
  * `iTXt` : étude, variante, révision affichée, scène, date, « rendu du modèle »). La barre transmet ses outils
  * `studio.scene.*` / `studio.apparence.*` et la commande `exporter-png` par `demande`.
  */
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -43,7 +43,7 @@ import {
 import { empreinteDe } from "../taches/empreinte";
 import { useTache } from "../taches/useTache";
 import { MESSAGES_TACHE } from "../taches/messages";
-import { compteGpu, libererObjet, vider } from "./ressources-gpu";
+import { compteGpu, libererObjet, libererTexturesPartagees, texturesPartagees, vider } from "./ressources-gpu";
 import { cleAspect, objetsVolume, preparer, SceneRendu, type AspectVolume, type DonneesLot, type EntreeRendu, type GeometrieObjet } from "./scene-rendu";
 import { designer, type Impact } from "./picking";
 import { architectureDesignable, estOuverture, solidesDesignables } from "./designation";
@@ -417,6 +417,10 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   }, [maillage.valeur, maillage.revision]);
   dernier.current = assemble;
   useEffect(() => { if (assemble) base.current = assemble; }, [assemble]);
+  // OrbitControls accroche un écouteur au `document` et le retire de la racine de son canevas : à la fermeture, React
+  // détache le DOM avant les nettoyages de `useEffect`, la racine n'est plus le document et l'écouteur resterait,
+  // retenant contrôles et canevas (TEST-037). Le nettoyage d'un effet de mise en page passe avant ce détachement.
+  useLayoutEffect(() => () => { moteur.current?.controls?.disconnect(); }, []);
   const brut = assemble?.mesh ?? MAILLAGE_VIDE;
   const version = useMemo(() => (assemble ? studioVersionProjection(assemble.cache.doc, "maillage-3d", assemble.revision) : null), [assemble]);
   const mesh = useMemo(() => (calquesMontres && brut !== MAILLAGE_VIDE ? studioFiltrerMaillageScene(brut, calquesMontres) : brut), [brut, calquesMontres]);
@@ -559,9 +563,12 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       m.controls?.removeEventListener("change", m.rendre);
       m.controls?.removeEventListener("change", m.surCamera);
       m.controls?.dispose();
+      // Relevées avant la libération des matériaux (TEST-037 : sans quoi chaque fermeture retient ce moteur de rendu).
+      const partagees = texturesPartagees(renderer, [scene]);
       m.rendus.contenu.vider(); m.rendus.libres.vider(); m.rendus.architecture.vider();
       vider(contenu); vider(libres); vider(architecture); vider(surimpression); vider(presence);
       libererObjet(grille);
+      libererTexturesPartagees(partagees);
       renderer.forceContextLoss();
       renderer.dispose();
       renderer.domElement.remove();
