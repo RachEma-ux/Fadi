@@ -12093,5 +12093,20 @@
 "Ctrl+Alt+Maj+,": "Ctrl+Alt+Shift+,",
 "Ctrl+Alt+Maj+.": "Ctrl+Alt+Shift+.",
 "Ctrl+Alt+Maj+/": "Ctrl+Alt+Shift+/",
-"Ctrl+Alt+Maj+;": "Ctrl+Alt+Shift+;"
+"Ctrl+Alt+Maj+;": "Ctrl+Alt+Shift+;",
+"Organisations du projet": "Project organisations",
+"Aucune organisation déclarée": "No organisation declared",
+"Personne propriétaire": "Owner (person)",
+"Nom non renseigné": "Name not provided",
+"Les droits du projet restent au compte de la personne propriétaire : déclarer une partie propriétaire ne donne ni accès ni rôle. La déclaration se fait depuis l’espace de l’organisation.": "Project rights remain with the owner's account: declaring an owning party grants neither access nor a role. The declaration is made from the organisation's space.",
+"Organisations parties": "Party organisations",
+"Aucune organisation n’est enregistrée comme partie au projet.": "No organisation is registered as a party to the project.",
+"partie propriétaire": "owning party",
+"Représentants mandatés :": "Mandated representatives:",
+"aucun mandat en cours": "no current mandate",
+"Un mandat identifie le représentant d’une organisation ; il n’ouvre aucun accès : celui-ci reste accordé par le projet.": "A mandate identifies an organisation's representative; it opens no access: access is still granted by the project.",
+"Partie propriétaire :": "Owning party:",
+"(suspendue)": "(suspended)",
+"(close)": "(closed)",
+"Organisation déclarée propriétaire ; les droits restent au compte de la personne propriétaire": "Organisation declared as owner; rights remain with the owner's account"
 }

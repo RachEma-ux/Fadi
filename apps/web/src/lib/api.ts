@@ -119,6 +119,8 @@ export interface Project {
   role?: ProjectRole;
   /** Adresse du propriétaire (liste des projets : distingue les projets partagés). */
   ownerEmail?: string;
+  /** Partie propriétaire déclarée (OP-D1 a) : identité seule, aucun droit ; `youAreMember` ouvre le renvoi vers son espace. */
+  owningOrganization?: { id: string; name: string; kind: string | null; status: "active" | "suspendue" | "close"; youAreMember?: boolean } | null;
   /** Réservation d'édition en cours (verrou optionnel « un seul éditeur actif »), null si libre ou expirée. */
   editingLock?: EditingLock | null;
   /** Accès support (rôle `support`) : échéance de l'accès accordé par le propriétaire. */
