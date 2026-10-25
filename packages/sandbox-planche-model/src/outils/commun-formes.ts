@@ -168,7 +168,9 @@ export const OUTILS_PLAN_VERROUILLABLE: readonly string[] = Object.freeze(["lign
 
 /** Point contraint au plan verrouillé : l'inférence gardée si elle est sur le plan, sinon le rayon coupé par le plan. */
 export function contraindreAuPlan(inference: Inference, rayon: Rayon | undefined, pl: PlanDeTravail): Inference {
-  const surLePlan = Math.abs(dot(pl.normale, sub(inference.point, pl.origine))) <= 1e-6 * Math.max(1, len(inference.point));
+  // Tolérance bornée, indépendante de l'éloignement de l'origine (revue Codex de #298) : loin de l'origine, un point
+  // hors tolérance est simplement recalculé sur le plan.
+  const surLePlan = Math.abs(dot(pl.normale, sub(inference.point, pl.origine))) <= TOL;
   if (surLePlan && inference.type !== "aucune") return marquerContraint(inference);
   const x = (rayon ? intersectionPlanDeTravail(rayon.origine, rayon.direction, pl) : null) ?? projeterSurPlanDeTravail(inference.point, pl);
   return marquerContraint(inferenceBrute(x));

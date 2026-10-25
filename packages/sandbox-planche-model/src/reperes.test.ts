@@ -7,7 +7,7 @@ import type { Repere } from "./annotations.js";
 import { appliquerDeltaPlanche, differencePlanche, lireModelePlanche } from "./delta.js";
 import { ajouterRectangle, modeleVide, modifierAnnotations, type Modele } from "./geometrie-libre.js";
 import { machineAxes } from "./outils/axes.js";
-import { OUTILS_PLAN_VERROUILLABLE, axesDuPlan } from "./outils/commun-formes.js";
+import { OUTILS_PLAN_VERROUILLABLE, axesDuPlan, contraindreAuPlan } from "./outils/commun-formes.js";
 import { clicVers, echap, partie, saisie, survolVers } from "./outils/essais-modification.js";
 import { machineLigne } from "./outils/ligne.js";
 import { MACHINE_RECTANGLE } from "./outils/rectangle.js";
@@ -262,6 +262,13 @@ describe("AX06 (modèle) — plan de travail et verrou", () => {
     for (const q of nouveaux) expect(Math.abs(q.y)).toBeLessThan(1e-9);
   });
 
+  it("verrou loin de l'origine (revue Codex de #298) : un point à 5 m du plan, à 1e7 m de l'origine, est ramené sur le plan", () => {
+    const pl = planDuRepere(REPERE_DU_MODELE, "xy", true);
+    const loin = contraindreAuPlan({ point: v3(1e7, 0, 5), type: "extremite", couleur: "", libelle: { en: "", fr: "" }, verrouillee: false }, { origine: v3(1e7, 0, 20), direction: v3(0, 0, -1) }, pl);
+    expect(Math.abs(loin.point.z)).toBeLessThan(1e-6);
+    expect(loin.verrouillee).toBe(true);
+  });
+
   it("outils qui respectent le verrou : formes planes, Ligne, Main levée (liste lue par l'interface)", () => {
     expect(OUTILS_PLAN_VERROUILLABLE).toEqual(expect.arrayContaining(["ligne", "rectangle", "cercle", "polygone", "arc"]));
     expect(OUTILS_PLAN_VERROUILLABLE).not.toContain("pousser-tirer");
@@ -343,6 +350,15 @@ describe("Alignement et rotation", () => {
 });
 
 describe("AX09 (modèle) — migration et persistance", () => {
+  it("ancien repère malformé (axe absent ou nul, revue Codex de #298) : refusé sans exception, contexte du modèle", () => {
+    const sansAxe = { origine: v3(0, 0, 0), x: v3(1, 0, 0), y: v3(0, 1, 0) } as unknown as Repere;
+    const axeNul = { ...aile(), z: null } as unknown as Repere;
+    expect(() => contexteDepuisDocument(sansAxe)).not.toThrow();
+    expect(contexteDepuisDocument(sansAxe)).toBe(CONTEXTE_MODELE);
+    expect(contexteDepuisDocument(axeNul)).toBe(CONTEXTE_MODELE);
+    expect(validerRepere(axeNul)).toMatchObject({ ok: false, erreur: "non-fini" });
+  });
+
   it("l'ancien repère unique devient le contexte de travail initial ; absent → modèle ; illisible → modèle (jamais réparé)", () => {
     expect(contexteDepuisDocument(undefined)).toBe(CONTEXTE_MODELE);
     const c = contexteDepuisDocument(aile());

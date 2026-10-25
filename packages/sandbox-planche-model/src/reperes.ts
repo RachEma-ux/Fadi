@@ -42,7 +42,15 @@ export const MESSAGES_REPERE: Readonly<Record<ErreurRepere, string>> = Object.fr
 export type ResultatRepere = { readonly ok: true; readonly repere: Repere } | { readonly ok: false; readonly erreur: ErreurRepere; readonly message: string };
 
 const refus = (erreur: ErreurRepere): ResultatRepere => ({ ok: false, erreur, message: MESSAGES_REPERE[erreur] });
-const fini = (v: Vec3): boolean => Number.isFinite(v.x) && Number.isFinite(v.y) && Number.isFinite(v.z);
+/**
+ * Vecteur fini, contrôlé avant tout accès : un document ancien ou altéré peut porter un axe absent ou nul (revue Codex
+ * de #298) — il est refusé, jamais déréférencé.
+ */
+const fini = (v: unknown): v is Vec3 => {
+  if (!v || typeof v !== "object") return false;
+  const o = v as Record<string, unknown>;
+  return typeof o["x"] === "number" && typeof o["y"] === "number" && typeof o["z"] === "number" && Number.isFinite(o["x"]) && Number.isFinite(o["y"]) && Number.isFinite(o["z"]);
+};
 
 /** Contrôle complet d'un repère (création, lecture d'un document, frontière d'une commande). */
 export function validerRepere(r: Repere): ResultatRepere {

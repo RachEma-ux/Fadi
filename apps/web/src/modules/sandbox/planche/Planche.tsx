@@ -1746,6 +1746,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           const maintenant = new Date().toISOString();
           const idx = avecNouvelle(indexRef.current, { id: nouvelId(indexRef.current), nom, altitudeRef: courante().altitudeRef, creeA: maintenant, modifieA: maintenant });
           await enregistrerBrouillon(histRef.current.present.modele, idx.courante);
+          // Chantier Axes (revue Codex de #298) : la copie garde le contexte de travail affiché — il est personnel et
+          // hors du document, donc mémorisé sous l'identifiant de la nouvelle Planche.
+          memoriserContexte(idx.courante, histContexteRef.current.courant);
           // Le journal de la copie reprend celui de l'original, puis note la copie.
           journalRef.current = ajouterEntree(journalRef.current, { a: maintenant, auteur: t("planche.sb.auteur"), description: t("planche.sb.journal.copiee", { nom }) });
           await enregistrerJournal(idx.courante, journalRef.current).catch(() => undefined);
