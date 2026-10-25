@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 import { applyStudioCommands, comparerDocumentsStudio, exportStudioDxf, exportStudioIfc, exportStudioSvg, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, studioChevauchements, studioElementsModifies, StudioValidationError, validateStudioDocument, type StudioDifferenceDocuments, type StudioDocument, type StudioEnvelope, type StudioPhaseWorkflow } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
-import { studioRevisions, studioStudies, studioVariants, type StudioContext, type StudioExampleInstall, type StudioProvenance } from "../db/schema.js";
+import { studioRevisions, studioStudies, studioStudyContexts, studioVariants, type StudioContext, type StudioExampleInstall, type StudioProvenance } from "../db/schema.js";
 import { newId } from "./ids.js";
 import { lockAccessRows } from "./access-locks.js";
 import { loadProjectAccess, projectAccessRefusal, type AccessibleProject, type ProjectNeed } from "./owned-project.js";
@@ -13,6 +13,9 @@ import type { CiblePortee } from "@parcours/domain-model";
 import { orchestrerCommandesDansTransaction, type Tx } from "./atelier-validation.js";
 import { lockProject, type Querier } from "./step-rows.js";
 import { revaliderBooleensStudio } from "./studio-exact.js";
+import { studioEffetsCommande, studioHorsPerimetre, type StudioEffetsCommande } from "@parcours/atelier-model/studio-cmd";
+import { lireContexteEtude, validerContexteEtude, type StudioContexteDeclare } from "./studio-contexte.js";
+import { consignerEvenementRevision, controlerCheminEcriture, engagerPuisNotifier, lireEvenementRevision, nouvelleTransaction, type EvenementRevision } from "./studio-journal.js";
 
 export interface StudioScope { projectId: string; studyId: string; variantId: string }
 export class StudioRequestError extends Error {
@@ -30,6 +33,15 @@ const envelopeSchema = z.object({
 }).strict();
 
 export function parseStudioEnvelope(value: unknown): StudioEnvelope {
+  // EX-002 : une demande hors du périmètre du Studio (comptabilité, RH, commerce, chantier, exploitation) est refusée
+  // par un motif nommé, avant la validation du contrat (jamais confondue avec un outil inconnu).
+  const commandes = (value as { commands?: unknown } | null)?.commands;
+  if (Array.isArray(commandes)) {
+    for (const [i, c] of commandes.entries()) {
+      const refus = studioHorsPerimetre((c as { toolId?: unknown } | null)?.toolId);
+      if (refus) throw new StudioRequestError(400, { error: "hors_perimetre", code: refus.code, domaine: refus.domaine, path: `commands[${i}].toolId`, message: refus.message });
+    }
+  }
   const parsed = envelopeSchema.safeParse(value);
   if (!parsed.success) throw new StudioRequestError(400, { error: "invalid_input", details: parsed.error.flatten() });
   // Le noyau public valide les paramètres géométriques, sans second schéma concurrent.
@@ -222,6 +234,8 @@ export interface StudioRevisionChanges {
   commands: StudioEnvelope["commands"];
   changedKeys: string[];
   summary: StudioDifferenceDocuments["resume"];
+  /** Événement du journal (IF-011) et effets (EX-010) de la révision ; null pour une révision d'initialisation. */
+  event: EvenementRevision | null;
 }
 export async function readStudioRevisionChanges(q: Querier, scope: StudioScope, actorId: string, revisionId: string): Promise<StudioRevisionChanges> {
   const context = await readStudioContext(q, scope, actorId, revisionId);
@@ -240,6 +254,7 @@ export async function readStudioRevisionChanges(q: Querier, scope: StudioScope, 
     revisionId: context.revision.id, parentRevisionId: context.revision.parentRevisionId, source: row.source, authorId: row.authorId,
     createdAt: row.createdAt.toISOString(), requestId: envelope ? row.requestId : null, commands: envelope?.commands ?? [],
     changedKeys: studioElementsModifies(parent, context.revision.document), summary: comparerDocumentsStudio(parent, context.revision.document).resume,
+    event: await lireEvenementRevision(q, context.variant.id, context.revision.id),
   };
 }
 
@@ -264,7 +279,7 @@ async function replayCreation(tx: Tx, variantId: string, sources: InitialSource[
  * Options internes d'une création (jamais lues du corps d'une requête) : droit d'écriture, nom de la variante initiale,
  * marquage d'étude exemple (`example_install`, écrit dans la même transaction que l'étude).
  */
-export interface StudioCreationOptions { ecriture?: StudioEcriture; nomVarianteInitiale?: string; exampleInstall?: StudioExampleInstall }
+export interface StudioCreationOptions { ecriture?: StudioEcriture; nomVarianteInitiale?: string; exampleInstall?: StudioExampleInstall; contexte?: StudioContexteDeclare }
 
 export async function createStudioStudy(projectId: string, actorId: string, name: string, requestId?: string, options: StudioCreationOptions = {}): Promise<StudioCreation> {
   refuserPrefixeReserve(requestId, options.ecriture ?? "modify");
@@ -274,8 +289,18 @@ export async function createStudioStudy(projectId: string, actorId: string, name
     if (requestId !== undefined) {
       const [previous] = await tx.select({ initialVariantId: studioStudies.initialVariantId }).from(studioStudies)
         .where(and(eq(studioStudies.projectId, projectId), eq(studioStudies.creationRequestId, requestId))).limit(1);
-      if (previous) return replayCreation(tx, previous.initialVariantId, ["study-initialization"], actorId, name, (r) => r.study.name);
+      if (previous) {
+        const rejeu = await replayCreation(tx, previous.initialVariantId, ["study-initialization"], actorId, name, (r) => r.study.name);
+        // IF-001 : un rejeu porte le même contexte déclaré (ou aucun), sinon c'est une autre demande.
+        const stocke = await lireContexteEtude(tx, rejeu.study.id);
+        const declare = (c: { site: { parcelles: { id: string; revision: number }[] }; sources: { id: string }[] } | null | undefined) =>
+          c ? JSON.stringify({ p: c.site.parcelles.map((x) => [x.id, x.revision]), s: c.sources.map((x) => x.id) }) : null;
+        if (declare(stocke) !== declare(options.contexte)) throw new StudioRequestError(409, { error: "request_conflict", message: "Cet identifiant de requête est déjà utilisé pour un autre contexte d’étude." });
+        return rejeu;
+      }
     }
+    // IF-001 : contexte validé sous le verrou du projet, avant toute insertion (aucune création partielle).
+    const contexte = options.contexte ? await validerContexteEtude(tx, projectId, options.contexte) : null;
     const studyId = newId("studio_study"), variantId = newId("studio_variant"), revisionId = newId("studio_revision");
     const response: StudioContext = {
       study: { id: studyId, name, projectId },
@@ -289,6 +314,7 @@ export async function createStudioStudy(projectId: string, actorId: string, name
       requestId: newId("initialization"), payloadHash: createHash("sha256").update(JSON.stringify({ projectId, studyId, variantId, name })).digest("hex"),
       source: "study-initialization", authorId: actorId, response,
     });
+    if (contexte) await tx.insert(studioStudyContexts).values({ studyId, projectId, version: contexte.version, context: contexte as unknown as Record<string, unknown>, validatedBy: actorId });
     return { ...response, replayed: false };
   });
 }
@@ -451,7 +477,20 @@ async function staleRevisionBody(tx: Tx, variantId: string, envelope: StudioEnve
   };
 }
 
-export async function submitStudioCommands(scope: StudioScope, actorId: string, input: unknown, ecriture: StudioEcriture = "modify"): Promise<StudioContext & { replayed: boolean }> {
+/**
+ * Application EN MÉMOIRE d'un lot à un document (essai, EX-045) : même modèle, aucune écriture. Le point d'entrée des
+ * écritures reste `submitStudioCommands` ; ce module reste le seul à appliquer des commandes Studio (INV-010).
+ */
+export function essayerCommandesStudio(document: StudioDocument, commands: readonly StudioEnvelope["commands"][number][]): StudioDocument {
+  return applyStudioCommands(document, [...commands]);
+}
+
+/** Réponse d'un lot accepté : contexte, rejeu, et (lot neuf) l'événement d'effets engagé avec la révision. */
+export type StudioSoumission = StudioContext & { replayed: boolean; effects?: StudioEffetsCommande; eventId?: string };
+/** Options internes (jamais lues du corps) : job d'essai confirmé (relation du journal), contrôle propre à l'appelant. */
+export interface StudioSoumissionOptions { jobId?: string; avantEcriture?: (tx: Tx, tete: StudioRead) => Promise<void> }
+
+export async function submitStudioCommands(scope: StudioScope, actorId: string, input: unknown, ecriture: StudioEcriture = "modify", options: StudioSoumissionOptions = {}): Promise<StudioSoumission> {
   // Capture avant le premier await : aucun changement du payload durant les verrous/rejeu.
   scope = Object.freeze({ projectId: scope.projectId, studyId: scope.studyId, variantId: scope.variantId });
   // EX-003 : aucune géométrie sans variante propriétaire — un contexte incomplet est refusé avant toute lecture ou
@@ -460,9 +499,11 @@ export async function submitStudioCommands(scope: StudioScope, actorId: string, 
   const envelope = parseStudioEnvelope(input);
   refuserPrefixeReserve(envelope.requestId, ecriture);
   const payloadHash = studioPayloadHash(envelope);
-  const resultat = await db.transaction(async (tx) => {
+  // IF-011 : la notification part après l'engagement de la transaction, jamais avant ni après un échec.
+  return engagerPuisNotifier(() => db.transaction(async (tx) => {
     let current: StudioRead | undefined;
-    return orchestrerCommandesDansTransaction<StudioContext & { replayed: boolean }>(tx, { kind: "studio", ...scope }, {
+    const transactionId = nouvelleTransaction();
+    return orchestrerCommandesDansTransaction<StudioSoumission>(tx, { kind: "studio", ...scope }, {
       prepare: async (transaction) => {
         const access = await lockedAccess(transaction, scope.projectId, actorId);
         const [study] = await transaction.select({ id: studioStudies.id }).from(studioStudies)
@@ -483,6 +524,10 @@ export async function submitStudioCommands(scope: StudioScope, actorId: string, 
         }
         return { ...structuredClone(previous.response), replayed: true };
       },
+      cheminEcriture: async (transaction, captured) => {
+        const refus = await controlerCheminEcriture(transaction, captured);
+        if (refus) throw new StudioRequestError(409, refus);
+      },
       execute: async (transaction) => {
         if (!current) throw new Error("studio_scope_not_prepared");
         // Lu sous les verrous du projet et de la variante : un (dés)archivage concurrent est sérialisé avec ce lot.
@@ -491,6 +536,7 @@ export async function submitStudioCommands(scope: StudioScope, actorId: string, 
           throw new StudioRequestError(409, await staleRevisionBody(transaction, scope.variantId, envelope, current.variant.headRevisionId, current.revision.document));
         }
         // Booléens exacts (lot F2) : recalculés par le noyau du serveur, qui remplace le résultat annoncé (R9).
+        await options.avantEcriture?.(transaction, current);
         const refusExact = await revaliderBooleensStudio(current.revision.document, envelope.commands, applyStudioCommands);
         if (refusExact) throw new StudioRequestError(refusExact.status, refusExact.body);
         let document;
@@ -506,12 +552,20 @@ export async function submitStudioCommands(scope: StudioScope, actorId: string, 
         };
         await transaction.insert(studioRevisions).values({ id, variantId: scope.variantId, parentRevisionId: current.variant.headRevisionId, document, envelope, requestId: envelope.requestId, payloadHash, source: "authenticated-session", authorId: actorId, response });
         await transaction.update(studioVariants).set({ headRevisionId: id }).where(eq(studioVariants.id, scope.variantId));
-        return { ...response, replayed: false };
+        // EX-010 / IF-011 : effets calculés par le serveur et consignés dans la même transaction que la révision.
+        const effects = studioEffetsCommande(current.revision.document, document, envelope.commands, {
+          revisionBase: current.variant.headRevisionId, revisionSortie: id, source: ecriture === "modify" ? "authenticated-session" : "installation-exemple", auteurId: actorId, requestId: envelope.requestId,
+        });
+        const eventId = await consignerEvenementRevision(transaction, {
+          transactionId, projectId: scope.projectId, studyId: scope.studyId, variantId: scope.variantId, baseRevisionId: current.variant.headRevisionId,
+          revisionId: id, authorId: actorId, requestId: envelope.requestId, effects, jobId: options.jobId ?? null,
+        });
+        return { ...response, replayed: false, effects, eventId };
       },
     });
+  }), (resultat) => {
+    // Temps réel (Issue #283), après validation : les sessions de cette variante apprennent qu'une révision plus récente
+    // existe ; elle ne leur est jamais appliquée en silence.
+    if (!resultat.replayed) signalerTempsReel({ type: "studio-revision", projectId: scope.projectId, variantId: scope.variantId, revisionId: resultat.revision.id });
   });
-  // Temps réel (Issue #283), après validation : les sessions de cette variante apprennent qu'une révision plus récente
-  // existe ; elle ne leur est jamais appliquée en silence.
-  if (!resultat.replayed) signalerTempsReel({ type: "studio-revision", projectId: scope.projectId, variantId: scope.variantId, revisionId: resultat.revision.id });
-  return resultat;
 }

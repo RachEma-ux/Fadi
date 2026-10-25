@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./studio-corpus": "./src/studio/corpus/index.ts",
-    "./studio-exemples": "./src/studio/exemples/index.ts"
+    "./studio-exemples": "./src/studio/exemples/index.ts",
+    "./studio-cmd": "./src/studio/cmd/index.ts"
   },
   "scripts": {
     "test": "vitest run",

@@ -103,6 +103,23 @@ chargé de tâche — rôle vérifié ensuite par `lib/studio-observations.ts`, 
 | `POST /studies/:studyId/variants/:variantId/modeles-externes/:modelId/:action` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 200 | action comparer |
 | `POST /studies/:studyId/variants/:variantId/modeles-externes/:modelId/:action` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 200 | action accepter |
 | `POST /studies/:studyId/variants/:variantId/modeles-externes/:modelId/:action` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 200 | action refuser |
+| `GET /studies/:studyId/contexte` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `POST /studies/:studyId/variants/:variantId/essais` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 201 | essai à portée de révision : aucune révision écrite |
+| `POST /studies/:studyId/variants/:variantId/essais/:jobId/abandon` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 200 |  |
+| `POST /studies/:studyId/variants/:variantId/essais/:jobId/confirmer` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 200 | l'enveloppe de l'essai passe par le point d'entrée des écritures |
+| `GET /jobs/:jobId` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | résultat de job sous l'autorisation de l'étude source |
+| `GET /studies/:studyId/variants/:variantId/journal` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `POST /studies/:studyId/migrations` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 201 | simulation : rien n'est écrit dans les révisions |
+| `GET /studies/:studyId/migrations` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `GET /studies/:studyId/migrations/:migrationId` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `POST /studies/:studyId/migrations/:migrationId/accorder` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 200 | procédure d’accord : propriétaire seul, la réservation d’édition d’un autre compte s’y oppose |
+| `POST /studies/:studyId/migrations/:migrationId/appliquer` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 409 migration_etat |  |
+| `POST /studies/:studyId/migrations/:migrationId/retour-arriere` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 409 migration_etat |  |
+| `GET /studies/:studyId/migrations/:migrationId/documents/:revisionId` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `GET /bascule` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `POST /bascule/preparer` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 200 | bascule Atelier → Studio : une seule chaîne d'écriture |
+| `POST /bascule/basculer` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 409 bascule_absente |  |
+| `POST /bascule/retour-arriere` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 409 bascule_absente |  |
 
 « (à arbitrer) » : cellule exécutée et épinglée telle que le serveur répond aujourd'hui, sans changement de
 comportement ; la règle attend une décision du maître d'ouvrage.

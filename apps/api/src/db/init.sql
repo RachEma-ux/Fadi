@@ -2999,6 +2999,105 @@ BEGIN
 END;
 $$;
 CREATE OR REPLACE TRIGGER geodata_analyses_immuables BEFORE UPDATE ON geodata_analyses FOR EACH ROW EXECUTE FUNCTION geodata_analyse_immuable();
+-- Lot CMD (achèvement de Studio, 25/10/2026) : contexte d'étude (IF-001), jobs serveur (EX-088, EX-045), journal des
+-- changements de révision (IF-011, EX-010), migrations de schéma simulées / accordées / retirées (EX-019, EX-091) et
+-- chemin d'écriture unique Atelier → Studio (MIG-COEX-06). Tables nouvelles, additives : aucune ligne existante réécrite.
+-- Contexte validé d'une étude : site (parcelles et révisions), sources (pièces d'étape), version du contrat.
+CREATE TABLE IF NOT EXISTS studio_study_contexts (
+  study_id text PRIMARY KEY REFERENCES studio_studies(id) ON DELETE CASCADE,
+  project_id text NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  version text NOT NULL CONSTRAINT studio_study_contexts_version_check CHECK (version = 'studio-contexte-etude/1'),
+  context jsonb NOT NULL CONSTRAINT studio_study_contexts_context_object CHECK (jsonb_typeof(context) = 'object'),
+  validated_by text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  validated_at timestamptz NOT NULL DEFAULT now()
+);
+-- Jobs serveur Studio : essai de commandes (prévisualisation à portée de révision, recalcul exact compris) et
+-- simulation de migration. Le résultat est lu sous l'autorisation de l'étude source (EX-088).
+CREATE TABLE IF NOT EXISTS studio_jobs (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  study_id text NOT NULL REFERENCES studio_studies(id) ON DELETE CASCADE,
+  variant_id text REFERENCES studio_variants(id) ON DELETE CASCADE,
+  kind text NOT NULL CONSTRAINT studio_jobs_kind_check CHECK (kind IN ('essai-commandes', 'simulation-migration')),
+  status text NOT NULL CONSTRAINT studio_jobs_status_check CHECK (status IN ('en-calcul', 'termine', 'echec', 'abandonne', 'confirme')),
+  source_revision_id text,
+  payload jsonb,
+  payload_hash text CONSTRAINT studio_jobs_payload_hash_check CHECK (payload_hash IS NULL OR payload_hash ~ '^[0-9a-f]{64}$'),
+  result jsonb,
+  created_by text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  finished_at timestamptz,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS studio_jobs_study_idx ON studio_jobs(study_id, created_at);
+-- Journal des changements de révision (IF-011) : un événement par révision engagée, écrit dans la MÊME transaction que
+-- la révision (rien n'existe si elle échoue) ; `xact_id` = transaction PostgreSQL, `created_at` = horloge du serveur.
+CREATE TABLE IF NOT EXISTS studio_revision_events (
+  event_id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  study_id text NOT NULL REFERENCES studio_studies(id) ON DELETE CASCADE,
+  variant_id text NOT NULL REFERENCES studio_variants(id) ON DELETE CASCADE,
+  revision_id text NOT NULL,
+  base_revision_id text,
+  transaction_id text NOT NULL,
+  xact_id text NOT NULL DEFAULT (txid_current()::text),
+  author_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  request_id text,
+  effects jsonb NOT NULL,
+  job_id text REFERENCES studio_jobs(id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT studio_revision_events_revision_unique UNIQUE(variant_id, revision_id),
+  CONSTRAINT studio_revision_events_revision_same_variant FOREIGN KEY(variant_id, revision_id)
+    REFERENCES studio_revisions(variant_id, id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS studio_revision_events_variant_idx ON studio_revision_events(variant_id, created_at);
+CREATE OR REPLACE FUNCTION studio_revision_event_immutable() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'studio_revision_event_immutable';
+END;
+$$;
+CREATE OR REPLACE TRIGGER studio_revision_events_no_update BEFORE UPDATE ON studio_revision_events
+  FOR EACH ROW EXECUTE FUNCTION studio_revision_event_immutable();
+-- Migrations de schéma d'une étude (EX-091) : simulée → accordée (propriétaire) → appliquée (copies migrées des
+-- révisions, sources /1 intactes) → retour arrière (copies retirées) ; point de retour = têtes des variantes.
+CREATE TABLE IF NOT EXISTS studio_migrations (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  study_id text NOT NULL REFERENCES studio_studies(id) ON DELETE CASCADE,
+  job_id text NOT NULL REFERENCES studio_jobs(id) ON DELETE CASCADE,
+  target_schema text NOT NULL CONSTRAINT studio_migrations_target_check CHECK (target_schema = 'studio-document/2'),
+  status text NOT NULL CONSTRAINT studio_migrations_status_check CHECK (status IN ('simulee', 'accordee', 'appliquee', 'retour-arriere')),
+  rollback_point jsonb NOT NULL,
+  verdict text NOT NULL,
+  agreed_by text REFERENCES users(id) ON DELETE RESTRICT,
+  agreed_at timestamptz,
+  applied_at timestamptz,
+  rolled_back_at timestamptz,
+  created_by text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS studio_migrations_study_idx ON studio_migrations(study_id, created_at);
+CREATE TABLE IF NOT EXISTS studio_document_migrations (
+  migration_id text NOT NULL REFERENCES studio_migrations(id) ON DELETE CASCADE,
+  revision_id text NOT NULL REFERENCES studio_revisions(id) ON DELETE CASCADE,
+  schema_version text NOT NULL CONSTRAINT studio_document_migrations_schema_check CHECK (schema_version = 'studio-document/2'),
+  document jsonb NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (migration_id, revision_id)
+);
+-- Chemin d'écriture unique d'une bascule Atelier → Studio (MIG-COEX-06) : par projet, l'étude qui reçoit le modèle
+-- Atelier et l'autorité d'écriture courante ('atelier' ou 'studio'). L'orchestrateur commun refuse toute écriture de
+-- l'autre chaîne ; la consultation historique (lectures) reste ouverte aux deux. Historique des passages en ajout seul.
+CREATE TABLE IF NOT EXISTS studio_bascules (
+  project_id text PRIMARY KEY REFERENCES projects(id) ON DELETE CASCADE,
+  study_id text NOT NULL REFERENCES studio_studies(id) ON DELETE CASCADE,
+  authority text NOT NULL CONSTRAINT studio_bascules_authority_check CHECK (authority IN ('atelier', 'studio')),
+  rollback_point jsonb,
+  history jsonb NOT NULL DEFAULT '[]'::jsonb CONSTRAINT studio_bascules_history_array CHECK (jsonb_typeof(history) = 'array'),
+  updated_by text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 -- Lot OP-AUTOCONTROLE (décision OP-6 du 2026-10-25) : séparation des responsabilités. Option « Auto-contrôle » du
 -- compte, changée par l'administration de la plateforme : TRUE (par défaut) = la personne peut approuver un dossier
 -- qu'elle a produit ou soumis, l'approbation est alors marquée ; FALSE = l'API refuse cette approbation (422).

@@ -18,6 +18,8 @@ import { studioPreferencesRouter } from "./studio-preferences.js";
 import { studioQuantitesRouter } from "./studio-quantites.js";
 import { studioDossiersRouter } from "./studio-dossiers.js";
 import { studioModelesExternesRouter } from "./studio-modeles-externes.js";
+import { studioCmdRouter } from "./studio-cmd.js";
+import { lireContexteEtude, studioContexteSchema } from "../lib/studio-contexte.js";
 
 export const studioRouter = Router({ mergeParams: true });
 studioRouter.use(requireAuth);
@@ -26,7 +28,8 @@ studioRouter.use("/studies/:studyId/variants/:variantId/modeles-externes", json(
 studioRouter.use(json({ limit: "1mb" }));
 studioRouter.use("/preferences", studioPreferencesRouter);
 // `requestId` facultatif : même règle d'identifiant que les enveloppes de commandes ; rejeu = réponse 201 d'origine.
-const studySchema = z.object({ name: z.string().trim().min(1).max(200), requestId: studioIdentifierSchema.optional() }).strict();
+// `contexte` facultatif (IF-001) : site / sources / version validés avant toute création (`lib/studio-contexte.ts`).
+const studySchema = z.object({ name: z.string().trim().min(1).max(200), requestId: studioIdentifierSchema.optional(), contexte: studioContexteSchema.optional() }).strict();
 // Dérivation facultative : `fromVariantId` (même étude) et, si donnée, `fromRevisionId` (de cette variante ; tête sinon).
 const variantSchema = z.object({
   name: z.string().trim().min(1).max(200), requestId: studioIdentifierSchema.optional(),
@@ -72,7 +75,9 @@ studioRouter.get("/studies", endpoint(async (req, res) => {
 studioRouter.post("/studies", endpoint(async (req, res) => {
   const parsed = studySchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
-  created(res, await createStudioStudy(scope(req).projectId, req.user!.id, parsed.data.name, parsed.data.requestId));
+  const etude = await createStudioStudy(scope(req).projectId, req.user!.id, parsed.data.name, parsed.data.requestId, parsed.data.contexte ? { contexte: parsed.data.contexte } : {});
+  res.setHeader("Idempotent-Replayed", String(etude.replayed));
+  res.status(201).json({ ...etude, contexte: await lireContexteEtude(db, etude.study.id) });
 }));
 studioRouter.get("/studies/:studyId", endpoint(async (req, res) => {
   const archives = archivesOf(req);
@@ -271,3 +276,5 @@ studioRouter.use(studioObservationsRouter);
 studioRouter.use(studioDossiersRouter);
 // Modèles externes (partenaires) d'une variante (lot F3) : réception, comparaison, acceptation ou refus.
 studioRouter.use(studioModelesExternesRouter);
+// Lot CMD : essais, jobs, journal des révisions, migrations de schéma, bascule Atelier → Studio (`routes/studio-cmd.ts`).
+studioRouter.use(studioCmdRouter);

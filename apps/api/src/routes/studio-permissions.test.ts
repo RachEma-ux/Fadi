@@ -85,6 +85,17 @@ async function creer(url: string, body: unknown, lireId: (b: Record<string, any>
 }
 const exigence = { id: "e1", libelle: "Exigence e1", metrique: { type: "nombre" }, comparaison: "<=", valeur: 10, unite: "u", source: "Programme saisi (essai)" };
 const publication = async () => ({ pub: await creer(`${V}/publications`, { title: "Dossier d'essai", contenu: "dessin-2d" }) });
+const ESSAI = { contractVersion: STUDIO_CONTRACT, requestId: "essai-1", baseRevisionId: "r1", commands: [{ toolId: "studio.dessin.ligne", params: { id: "e", type: "line", start: { x: 0, y: 2 }, end: { x: 1, y: 2 } } }] };
+const essai = async () => ({ job: await creer(`${V}/essais`, ESSAI) });
+const migration = async () => ({ mig: await creer(`${S}/studies/s/migrations`, { cible: "studio-document/2" }) });
+const migrationAppliquee = async () => {
+  const { mig } = await migration();
+  for (const passage of ["accorder", "appliquer"]) {
+    const r = await comme("proprietaire")(request(app).post(`${S}/studies/s/migrations/${mig}/${passage}`)).send({});
+    if (r.status !== 200) throw new Error(`préparation ${passage} : ${r.status}`);
+  }
+  return { mig };
+};
 // Audience « projet » (écart E1) : le lecteur voit l'observation, les cellules jugent donc son rôle (403), pas son audience (404).
 const observation = async () => ({ obs: await creer(`${V}/observations`, { body: "Observation d'essai", responsableId: "editeur", audience: "projet" }) });
 /** Délégation d'approbation (EX-085) du propriétaire à l'éditeur, portée projet, période en cours. */
@@ -269,6 +280,24 @@ export const ROUTES: Route[] = [
   ...(["accepter", "refuser"] as const).map((action): Route => ({
     route: `POST ${MX}/:modelId/:action`, besoin: "proprietaire", preparer: modeleExterne, url: (c) => `${V}/modeles-externes/${c["mx"]}/${action}`, body: { motif: "Motif d'essai" }, note: `action ${action}`,
   })),
+  // Lot CMD : contexte d'étude (IF-001), essais (EX-045), jobs (EX-088), journal (IF-011), migrations (EX-091), bascule (MIG-COEX-06).
+  { route: "GET /studies/:studyId/contexte", besoin: "lecture", url: () => `${S}/studies/s/contexte` },
+  { route: "POST /studies/:studyId/variants/:variantId/essais", besoin: "modification", url: () => `${V}/essais`, body: ESSAI, note: "essai à portée de révision : aucune révision écrite" },
+  { route: "POST /studies/:studyId/variants/:variantId/essais/:jobId/abandon", besoin: "modification", preparer: essai, url: (c) => `${V}/essais/${c["job"]}/abandon` },
+  { route: "POST /studies/:studyId/variants/:variantId/essais/:jobId/confirmer", besoin: "modification", preparer: essai, url: (c) => `${V}/essais/${c["job"]}/confirmer`, note: "l'enveloppe de l'essai passe par le point d'entrée des écritures" },
+  { route: "GET /jobs/:jobId", besoin: "lecture", preparer: essai, url: (c) => `${S}/jobs/${c["job"]}`, note: "résultat de job sous l'autorisation de l'étude source" },
+  { route: "GET /studies/:studyId/variants/:variantId/journal", besoin: "lecture", url: () => `${V}/journal` },
+  { route: "POST /studies/:studyId/migrations", besoin: "modification", url: () => `${S}/studies/s/migrations`, body: { cible: "studio-document/2" }, note: "simulation : rien n'est écrit dans les révisions" },
+  { route: "GET /studies/:studyId/migrations", besoin: "lecture", url: () => `${S}/studies/s/migrations` },
+  { route: "GET /studies/:studyId/migrations/:migrationId", besoin: "lecture", preparer: migration, url: (c) => `${S}/studies/s/migrations/${c["mig"]}` },
+  ...(["accorder", "appliquer", "retour-arriere"] as const).map((passage): Route => ({
+    route: `POST /studies/:studyId/migrations/:migrationId/${passage}`, besoin: "proprietaire", preparer: migration, url: (c) => `${S}/studies/s/migrations/${c["mig"]}/${passage}`,
+    ...(passage === "accorder" ? { note: "procédure d’accord : propriétaire seul, la réservation d’édition d’un autre compte s’y oppose" } : {}),
+  })),
+  { route: "GET /studies/:studyId/migrations/:migrationId/documents/:revisionId", besoin: "lecture", preparer: migrationAppliquee, url: (c) => `${S}/studies/s/migrations/${c["mig"]}/documents/r1` },
+  { route: "GET /bascule", besoin: "lecture", url: () => `${S}/bascule` },
+  { route: "POST /bascule/preparer", besoin: "proprietaire", url: () => `${S}/bascule/preparer`, body: { studyId: "s" }, note: "bascule Atelier → Studio : une seule chaîne d'écriture" },
+  ...(["basculer", "retour-arriere"] as const).map((action): Route => ({ route: `POST /bascule/${action}`, besoin: "proprietaire", url: () => `${S}/bascule/${action}` })),
 ];
 
 /**
@@ -299,6 +328,9 @@ const REPONSES: Readonly<Record<string, string>> = {
   "POST /studies/:studyId/variants/:variantId/observations/:observationId/decisions": "201",
   "POST /studies/:studyId/variants/:variantId/sheets": "201", "POST /studies/:studyId/dossiers": "201",
   "POST /studies/:studyId/variants/:variantId/modeles-externes": "201",
+  "POST /studies/:studyId/variants/:variantId/essais": "201", "POST /studies/:studyId/migrations": "201",
+  "POST /studies/:studyId/migrations/:migrationId/appliquer": "409 migration_etat", "POST /studies/:studyId/migrations/:migrationId/retour-arriere": "409 migration_etat",
+  "POST /bascule/basculer": "409 bascule_absente", "POST /bascule/retour-arriere": "409 bascule_absente",
 };
 const cleReponse = (r: Route) => `${r.route}${r.note?.startsWith("action ") ? ` ${r.note.slice(7)}` : ""}`;
 export const reponseProprietaire = (r: Route): string => REPONSES[cleReponse(r)] ?? "200";

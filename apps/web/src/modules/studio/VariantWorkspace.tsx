@@ -70,6 +70,7 @@ import { COMMANDES_EDITEUR, OUTILS_MODES, OUTILS_VOLUME_LIBRE, OUTILS_TRACE, typ
 import { basculer, commandesDeplacement, elements, estForme, selectionValide, toutSelectionnable, type Element2D } from "./planche2d/selection";
 import { zoomerAuCentre } from "./planche2d/vue";
 import { aidePlanche, apercuPlanche, outilPlanche } from "./planche2d/outils";
+import { traceGeste } from "./taches/trace-geste";
 import { CONTENU_INITIAL, formulaireInactif, SOMMETS_INITIAUX, soumettre, VALEURS_INITIALES, valeursObjet, type Valeurs } from "./planche2d/outils/formulaire";
 import { useGestesPlanche } from "./planche2d/outils/gestes";
 import { ChampMesures } from "./planche2d/accrochage/ChampMesures";
@@ -460,9 +461,12 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   /** Applique un lot localement (un pas d'historique) ; rien n'est envoyé avant « Enregistrer ». */
   function apply(cs: StudioCommand[]): boolean {
     if (!brouillon || !writable) return false;
+    // EX-008 : l'intention (outil du geste) précède la commande appliquée au brouillon par le modèle.
+    traceGeste.noter("intention", { outil: tool ? String(tool) : cs[0]?.toolId });
     try {
       const next = mesurerCommandes(cs, () => appliquerBrouillon(brouillon, cs));
       setBrouillon(next);
+      traceGeste.noter("commande", { outil: cs.map((c) => c.toolId).join(" ") });
       const doc = documentBrouillon(next);
       const seul = selectionIds.length === 1 ? selectionIds[0] : undefined;
       const updated = seul ? elements(doc).find(e => e.id === seul) : undefined;
@@ -737,6 +741,9 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
 
   // L'écran de travail (barre, palette, canevas, panneaux, barre d'état) remplit la hauteur sous l'en-tête de Fadi.
   const hauteur = useHauteurDisponible(ecran, telephone ? 560 : 480, !!context && !!drawing && !document.fullscreenElement);
+  // EX-049 : un tracé commencé est une prévisualisation, notée avec le brouillon conservé (abandonnée si la session s'interrompt).
+  const outilApercu = trace && tool ? String(tool) : null;
+  useEffect(() => { enr.noterApercu(outilApercu); }, [outilApercu]);
   if (!loading && refused(loadError)) return <StudioRefus quoi={historical ? "revision" : "variante"} />;
   const toolEntry = STUDIO_TOOLS.find(t => t.toolId === tool);
   const toResolve = drawing?.dimensions?.filter(d => d.toResolve).length ?? 0;
@@ -896,7 +903,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       {historical && <BandeauHistorique projectId={projectId} studyId={studyId} variantId={variantId} adresse={adresseDomaine} />}
       {/* Exemple protégé : par le mode du projet (un lecteur reçoit le motif « role », mais peut copier — revue #208). */}
       {!historical && !autonome && context && (projet.data?.exampleMode === "reference" || catalogueAutorise.data?.droits.motif === "reference-protegee") && <CopieDeTravail projectId={projectId} nomVariante={context.variant.name} adresse={adresseDomaine} />}
-      {!historical && !autonome && <ChoixConflitStudio etat={enr.horsLigne} surRecharger={() => void enr.rechargerServeur()} surReporter={() => void enr.reporter()} />}
+      {!historical && !autonome && <ChoixConflitStudio etat={enr.horsLigne} surRecharger={() => void enr.rechargerServeur()} surReporter={() => void enr.reporter()} surAcquitter={() => enr.acquitterReprise()} />}
       {context && drawing && <div className="studio-corps" data-studio-corps>
         {!telephone && palette}
         {canevas}

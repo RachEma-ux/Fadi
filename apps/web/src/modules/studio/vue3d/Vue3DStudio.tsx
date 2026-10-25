@@ -59,6 +59,8 @@ import {
 } from "./qualite-rendu";
 import { PresentationSansMsaa } from "./presentation";
 import { CouvertureTypes3d } from "./CouvertureTypes3d";
+import { etatProjection3d, LIBELLES_DOMAINES, type SourceProjection } from "./etat-projection";
+import { traceGeste } from "../taches/trace-geste";
 import { architectureDesignable, estOuverture, solidesDesignables } from "./designation";
 import { Icon } from "../../../components/Icon";
 import { estSelectionnable } from "../planche2d/calques";
@@ -442,9 +444,13 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     const invalidation = projectionsAInvalider(b?.cache.doc ?? null, docMaillage);
     return { doc: docMaillage, base: b?.cache ?? null, invalidation, ids: invalidation.complet ? null : invalidation.ids };
   }, [docMaillage]);
+  // Révision source de chaque plan (EX-051) : révision serveur de la variante au moment de la demande et brouillon.
+  const sourceCourante: SourceProjection = { revisionServeur: provenance?.revisionId ?? "", brouillon: provenance?.nonEnregistre ?? false, revisionSession: empreinte.revision };
+  const sources = useRef(new Map<string, SourceProjection>());
   if (!plans.current.has(empreinte.revision)) {
     plans.current.set(empreinte.revision, plan);
-    for (const k of plans.current.keys()) if (plans.current.size > PLANS_GARDES) plans.current.delete(k);
+    sources.current.set(empreinte.revision, sourceCourante);
+    for (const k of plans.current.keys()) if (plans.current.size > PLANS_GARDES) { plans.current.delete(k); sources.current.delete(k); }
   }
   const maillage = useTache<{ document: StudioDocument; ids: string[] | null }, StudioMorceauMaillage[]>(
     { cle: "studio.maillage-3d", classe: "fond", nature: "maillage.3d.objets", charge: { document: docMaillage, ids: plan.ids }, empreinte },
@@ -468,6 +474,16 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   const mesh = useMemo(() => (calquesMontres && brut !== MAILLAGE_VIDE ? studioFiltrerMaillageScene(brut, calquesMontres) : brut), [brut, calquesMontres]);
   /** Le maillage affiché est celui du document courant (pas un maillage antérieur encore affiché pendant le calcul). */
   const maillageAJour = maillage.valeur !== undefined && maillage.revision === empreinte.revision;
+  // État identifié de la projection (EX-051, INV-006, EX-016) : révision source du résultat affiché, état dérivé, domaines
+  // périmés. Un résultat d'une autre révision reste affiché comme « dernière image », jamais comme « à jour ».
+  const sourceAffichee: SourceProjection | null = !assemble ? null : assemble.revision === empreinte.revision ? sourceCourante : sources.current.get(assemble.revision) ?? null;
+  // EX-008 : la scène est invalidée quand sa révision source canonique change (mutation accusée par le serveur).
+  const revisionCanonique = provenance && !provenance.nonEnregistre ? provenance.revisionId : null;
+  useEffect(() => { if (revisionCanonique) traceGeste.noter("scene", { revision: revisionCanonique }); }, [revisionCanonique]);
+  const etatProjection = etatProjection3d({
+    indisponible, echec: maillage.message, tache: maillage.etat, courante: sourceCourante, affichee: sourceAffichee,
+    docCourant: docMaillage, docAffiche: assemble?.cache.doc ?? null,
+  });
   const scenes = studioScenes(doc);
   const calquesVue = calquesMontres ?? calquesVisualisation(doc).filter((c) => c.visible).map((c) => c.id);
   suiviCamera.current = sceneChoisie !== null && calquesMontres !== null;
@@ -888,7 +904,14 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   return (
     <section className="studio-vue3d" aria-label="Vue 3D" data-studio-vue3d data-studio-maillage={maillage.etat} data-studio-maillage-revision={maillage.revision ?? ""} data-studio-revision-courante={empreinte.revision}
       data-studio-projection-version={version ? `${version.revision}:${version.contenu}` : ""} data-studio-remailles={assemble?.remailles ?? ""} data-studio-invalidation={assemble ? (assemble.invalidation.complet ? `complet:${assemble.invalidation.raison}` : "partiel") : ""} data-studio-volumes={mesh.solids.length} data-studio-non-extrudes={mesh.nonExtruded} data-studio-solides-libres={libres} data-studio-architecture-3d={architecture.length} data-studio-navigation={navigation}
-      data-studio-affichage={mode} data-studio-scene-active={sceneActive ?? ""} data-studio-calques-montres={calquesMontres?.join(" ") ?? ""}>
+      data-studio-affichage={mode} data-studio-scene-active={sceneActive ?? ""} data-studio-calques-montres={calquesMontres?.join(" ") ?? ""}
+      data-studio-source-revision={etatProjection.sourceRevisionId ?? ""} data-studio-revision-serveur-courante={provenance?.revisionId ?? ""} data-studio-etat-derive={etatProjection.etat.etat}
+      data-studio-domaines-perimes={etatProjection.domainesPerimes.join(" ")}>
+      <p className="studio-vue3d-projection" role="status" data-studio-vue3d-projection>
+        <span>Révision source</span>{" : "}{sourceAffichee ? <><span translate="no" data-studio-source-revision-texte>{sourceAffichee.revisionServeur.slice(-8)}</span>{sourceAffichee.brouillon && <>{" "}<span>(brouillon non enregistré)</span></>}</> : <span>aucune</span>}
+        {" · "}<span data-studio-etat-derive-libelle>{etatProjection.libelle}</span>
+        {etatProjection.domainesPerimes.length > 0 && <>{" · "}<span data-studio-perimes><span>Données périmées</span>{" : "}{etatProjection.domainesPerimes.map((d, i) => <span key={d}>{i > 0 ? ", " : ""}<span>{LIBELLES_DOMAINES[d]}</span></span>)}</span></>}
+      </p>
       <div className="studio-vue3d-bandeau">
         <span role="status" data-studio-vue3d-decompte><span>{`${mesh.solids.length} volume(s)`}</span>{" · "}<span>{`${mesh.nonExtruded} objet(s) non extrudé(s), dessinés à plat`}</span>{libres > 0 && <>{" · "}<span>{`${libres} solide(s) libre(s)`}</span></>}</span>
         <button type="button" onClick={() => { const m = moteur.current; if (m) cadrer(m, mesh); }} disabled={indisponible}>Recadrer la vue 3D</button>

@@ -18,6 +18,8 @@ vi.mock("../db/client.js", async () => {
     if (table === schema.studioStudies) return [{ id: "s", name: "Étude", projectId: "p", archivedAt: null }];
     if (table === schema.studioVariants) return verrou ? [{ id: "v" }] : [{ id: "v", name: "Variante", headRevisionId: "r0", archivedAt: null, derivedFromVariantId: null, derivedFromRevisionId: null }];
     if (table === schema.studioRevisions) return requeteRejeu ? [] : [{ id: "r0", parentRevisionId: null, document: etat.document }];
+    // Bascule Atelier → Studio (MIG-COEX-06) : aucune dans ce banc.
+    if (table === schema.studioBascules) return [];
     throw new Error("table inattendue");
   };
   const tx = {
@@ -34,7 +36,8 @@ vi.mock("../db/client.js", async () => {
         }),
       };
     },
-    insert() { espion.insertions++; return { values: async () => undefined }; },
+    // Une révision par lot ; l'événement du journal (IF-011) l'accompagne dans la même transaction, compté à part.
+    insert(table: unknown) { if (table !== schema.studioRevisionEvents) espion.insertions++; return { values: async () => undefined }; },
     update() { espion.misesAJour++; return { set: () => ({ where: async () => undefined }) }; },
   };
   return { db: { transaction: async (fn: (t: unknown) => unknown) => { espion.transaction++; tx.lectures = 0; return fn(tx); } } };

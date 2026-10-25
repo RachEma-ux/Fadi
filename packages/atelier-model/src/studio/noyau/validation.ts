@@ -10,6 +10,11 @@ import { STUDIO_DIRECTIONS_EXTRUSION, type StudioDirectionExtrusion, type Studio
 
 export class StudioValidationError extends Error {
   readonly code = "studio-invalid";
+  /**
+   * Champs inconnus de l'objet refusé (`record`), quand c'est leur présence qui le fait refuser : la migration de schéma
+   * (`cmd/migration-document.ts`) les conserve et les rapporte au lieu de les perdre (EX-019). Le message ne change pas.
+   */
+  inconnus?: readonly string[];
   constructor(readonly path: string, message: string) {
     super(`${path} : ${message}`);
     this.name = "StudioValidationError";
@@ -27,7 +32,10 @@ export function record(value: unknown, keys: readonly string[], path: string, op
   if (proto !== Object.prototype && proto !== null) fail(path, "objet JSON attendu");
   const names = Reflect.ownKeys(value);
   if (names.some((key) => typeof key !== "string" || (!keys.includes(key) && !optional.includes(key))) || keys.some((key) => !names.includes(key))) {
-    fail(path, "champs absents ou inconnus");
+    const erreur = new StudioValidationError(path, "champs absents ou inconnus");
+    const inconnus = names.filter((key): key is string => typeof key === "string" && !keys.includes(key) && !optional.includes(key));
+    if (inconnus.length && keys.every((key) => names.includes(key))) erreur.inconnus = Object.freeze(inconnus);
+    throw erreur;
   }
   for (const key of names as string[]) {
     const descriptor = Object.getOwnPropertyDescriptor(value, key);
