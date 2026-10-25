@@ -304,10 +304,13 @@ def completer_lecture(h: Historique, p: dict) -> tuple[dict | None, str]:
     if not ref and p.get('type') == 'source':
         m = re.search(r'/blob/([0-9a-f]{40})/', p.get('url', ''))
         ref = m.group(1) if m else None
-    if ref and re.fullmatch(r'[0-9a-f]{40}', ref) and date_commit(ref):
-        return {'commit': ref, 'date': date_commit(ref), 'environnement': env,
-                'methode': 'Commit de la référence de code citée par la preuve ; date du commit.'}, ''
     fichier = p.get('fichier')
+    # La référence de code ne date la lecture que si la preuve n'épingle pas une empreinte et que le fichier lu existe
+    # à ce commit (sinon c'est le commit du code examiné, pas la version du document).
+    if (ref and re.fullmatch(r'[0-9a-f]{40}', ref) and date_commit(ref) and not p.get('sha256')
+            and (not fichier or git_octets('show', f'{ref}:{fichier}') is not None)):
+        return {'commit': ref, 'date': date_commit(ref), 'environnement': env,
+                'methode': 'Commit de la référence de code citée par la preuve (le fichier lu y existe) ; date du commit.'}, ''
     if not fichier:
         return None, 'lecture sans fichier ni référence de code'
     versions = [(c, t) for c, t in h.versions(fichier) if t is not None]
