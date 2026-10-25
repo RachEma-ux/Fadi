@@ -15,6 +15,7 @@
  */
 import { ErreurHote, HoteWorker } from "../workers/hote-worker";
 import { executerDirectement } from "../workers/protocole";
+import { validerValeurStudio } from "../workers/validation-messages";
 import { TRAITEMENTS_STUDIO } from "../workers/traitements";
 import { CONCURRENCE_DEFAUT, CONCURRENCE_FOND_DEFAUT, ErreurTache, Ordonnanceur, type CodeEchec, type EvenementTache, type Executeur } from "./ordonnanceur";
 import { enregistrerLiberationCalcul, ressourcesStudio } from "../chargement/ressources-studio";
@@ -30,7 +31,7 @@ const TAILLE_JOURNAL = 200;
 export function versErreurTache(e: unknown): ErreurTache {
   if (e instanceof ErreurTache) return e;
   if (e instanceof ErreurHote) {
-    const code: CodeEchec = e.code === "interrompu" || e.code === "illisible" ? "plantage"
+    const code: CodeEchec = e.code === "interrompu" || e.code === "illisible" || e.code === "invalide" ? "plantage"
       : e.code === "annulee" || e.code === "remplacee" ? "annulee"
         : e.code;
     return new ErreurTache(code, e.message);
@@ -63,6 +64,8 @@ export function hotesStudio(): readonly HoteWorker[] {
     },
     delaiMs: DELAI_TACHE_MS,
     direct: executerDirectement(TRAITEMENTS_STUDIO),
+    // EX-063 : chaque valeur rendue par un Worker est validée selon sa nature avant d'être remise.
+    valider: validerValeurStudio,
   })));
 }
 
@@ -82,6 +85,8 @@ export function ordonnanceurStudio(): Ordonnanceur {
   if (!ordonnanceur) {
     ordonnanceur = new Ordonnanceur({
       executer: executeurHotes(hotesStudio()), delaiMs: DELAI_TACHE_MS,
+      // IF-007 : sans Worker vivant sur cet emplacement, la tâche commence par charger son script (`loading`).
+      aCharger: (_nature, emplacement) => { const h = hotesStudio()[emplacement % CONCURRENCE_DEFAUT]!; return typeof Worker !== "undefined" && !h.vivant && !h.indisponible; },
       concurrence: CONCURRENCE_DEFAUT, concurrenceFond: CONCURRENCE_FOND_DEFAUT, surEvenement: noter,
     });
     (globalThis as { __fadiTaches?: unknown }).__fadiTaches = { journal: journalTaches };

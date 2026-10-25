@@ -89,7 +89,7 @@ describe("TEST-014 — tâche exacte rendue pour une ancienne révision", () => 
     const p1 = ord.soumettre({ ...tacheBooleen(demande(d, "1")), surResultat: (v) => remis.push(["r1", v]) });
     const d2 = applyStudioCommands(d, [boite("C", 5)]);
     const p2 = ord.soumettre({ ...tacheBooleen(demande(d2, "2")), surResultat: (v) => remis.push(["r2", v]) });
-    expect((await p1.issue).etat).toBe("cancelled");
+    expect((await p1.issue).etat).toBe("superseded");
     expect((await p2.issue).etat).toBe("done");
     expect(remis.map((x) => (x as [string])[0])).toEqual(["r2"]);
   });

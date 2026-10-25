@@ -13,7 +13,7 @@ export const MESSAGES_TACHE = Object.freeze({
 });
 
 export function messageTache(i: IssueTache<unknown>): string | null {
-  if (i.etat === "done" || i.etat === "cancelled") return null;
+  if (i.etat === "done" || i.etat === "cancelled" || i.etat === "superseded") return null;
   if (i.etat === "timed-out") return MESSAGES_TACHE.delai;
   return MESSAGES_TACHE[i.code];
 }

@@ -245,6 +245,31 @@ export interface OptionsMoteur {
 
 let partage: Promise<MoteurExact> | null = null;
 
+/** Mémoires linéaires des instances WebAssembly du noyau, relevées à leur instanciation (EX-062). */
+const memoires: WebAssembly.Memory[] = [];
+
+/**
+ * Relève la mémoire linéaire exportée par les instances WebAssembly créées pendant `f` (le module d'occt-wasm ne
+ * l'expose pas) : `WebAssembly.instantiate` / `instantiateStreaming` sont observés le temps du chargement seulement,
+ * puis rendus tels quels. Rien n'est modifié dans l'instance ; sans WebAssembly observable, rien n'est relevé.
+ */
+async function avecReleveMemoire<T>(f: () => Promise<T>): Promise<T> {
+  const W = globalThis.WebAssembly as typeof WebAssembly | undefined;
+  if (!W) return f();
+  const instantiate = W.instantiate, streaming = W.instantiateStreaming;
+  const noter = (r: unknown) => {
+    const instance = r instanceof W.Instance ? r : (r as { instance?: unknown } | null)?.instance;
+    if (instance instanceof W.Instance) for (const v of Object.values(instance.exports)) if (v instanceof W.Memory && !memoires.includes(v)) memoires.push(v);
+    return r;
+  };
+  W.instantiate = ((...a: Parameters<typeof WebAssembly.instantiate>) => (instantiate.apply(W, a) as Promise<unknown>).then(noter)) as typeof WebAssembly.instantiate;
+  if (streaming) W.instantiateStreaming = ((...a: Parameters<typeof WebAssembly.instantiateStreaming>) => streaming.apply(W, a).then(noter)) as typeof WebAssembly.instantiateStreaming;
+  try { return await f(); } finally {
+    W.instantiate = instantiate;
+    if (streaming) W.instantiateStreaming = streaming;
+  }
+}
+
 export class MoteurExact {
   private constructor(private readonly k: OcctKernel, private readonly tess: { lineaire: number; angulaire: number }) {}
 
@@ -254,10 +279,19 @@ export class MoteurExact {
    */
   static instancesCreees = 0;
 
+  /**
+   * Allocations WebAssembly mesurables (EX-062) : taille courante de la mémoire linéaire des instances du noyau
+   * (`WebAssembly.Memory.buffer.byteLength`, octets) — elle croît avec les allocations d'OCCT et ne rétrécit jamais.
+   * null : non évaluée (aucune mémoire relevée dans ce contexte).
+   */
+  static memoireWasmOctets(): number | null {
+    return memoires.length ? memoires.reduce((n, m) => n + m.buffer.byteLength, 0) : null;
+  }
+
   /** Charge le noyau (une seule fois par processus si `partage`). Jamais appelé au chemin d'ouverture. */
   static async charger(options: OptionsMoteur = {}, partager = true): Promise<MoteurExact> {
     const creer = async () => {
-      const k = await OcctKernel.init(options.wasm !== undefined ? { wasm: options.wasm } : {});
+      const k = await avecReleveMemoire(() => OcctKernel.init(options.wasm !== undefined ? { wasm: options.wasm } : {}));
       MoteurExact.instancesCreees += 1;
       return new MoteurExact(k, { lineaire: options.tessellation?.lineaire ?? 0.005, angulaire: options.tessellation?.angulaire ?? 0.3 });
     };
