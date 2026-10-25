@@ -157,6 +157,14 @@ export const MESSAGES_ERREUR: Readonly<Record<CodeErreur, string>> = Object.free
  * Limiteur de débit à fenêtre glissante d'une seconde (éphémères seulement) : au-delà de la borne, le message est
  * abandonné — jamais mis en attente, jamais rejoué.
  */
+/**
+ * Reprise de l'animation (RT-D5 § 5) : seulement quand le répartiteur sait l'hôte absent depuis deux minutes au moins.
+ * Une absence inconnue (`null` : hôte connecté) refuse la reprise.
+ */
+export function repriseAutorisee(hoteAbsentDepuisMs: number | null): boolean {
+  return hoteAbsentDepuisMs !== null && hoteAbsentDepuisMs >= BORNES_TEMPS_REEL.hoteAbsentMs;
+}
+
 export class LimiteurDebit {
   private instants: number[] = [];
   constructor(private readonly parSeconde: number = BORNES_TEMPS_REEL.messagesEphemeresParSeconde) {}

@@ -7,7 +7,7 @@
  */
 import { randomUUID } from "node:crypto";
 import type { ProjectRole } from "./owned-project.js";
-import { projeter, type Destinataire } from "./temps-reel-projection.js";
+import { droitFrais, projeter, type Destinataire } from "./temps-reel-projection.js";
 import {
   BORNES_TEMPS_REEL, estEphemere, FERMETURE, JournalReprise, LimiteurDebit, lireMessage, MESSAGES_ERREUR,
   type CodeErreur, type EvenementDurable, type MessageClient, type MessageServeur, type ParticipantPublic, type RoleSession,
@@ -265,8 +265,15 @@ export class HubTempsReel {
     if (!salle) {
       const objets = await this.d.chargerObjets(session.variantId, session.revisionId);
       if (!objets) return this.erreur(c, "session-indisponible");
-      salle = { session, objets, connexions: new Set(), journal: new JournalReprise(), vue: null, hotePresentDepuis: null, hoteVuA: this.demarrage, videDepuis: null };
-      this.salles.set(sessionId, salle);
+      // Deux arrivées simultanées attendent ensemble le document : la seconde reprend la salle créée par la première
+      // (relue après l'attente) au lieu d'en créer une autre qui écraserait la première.
+      salle = this.salles.get(sessionId);
+      if (!salle) {
+        salle = { session, objets, connexions: new Set(), journal: new JournalReprise(), vue: null, hotePresentDepuis: null, hoteVuA: this.demarrage, videDepuis: null };
+        this.salles.set(sessionId, salle);
+      } else {
+        salle.session = session;
+      }
     } else {
       salle.session = session;
     }
@@ -362,7 +369,9 @@ export class HubTempsReel {
 
   private async diffuserParticipants(salle: Salle, sauf?: Connexion): Promise<void> {
     const participants = await this.participants(salle);
-    for (const c of salle.connexions) if (c !== sauf) this.envoyer(c, { v: 1, type: "participants", participants }, false);
+    const maintenant = this.d.maintenant();
+    // Même porte que les autres messages : un droit qui n'est plus frais ne reçoit rien jusqu'à sa relecture (RT-R1).
+    for (const c of salle.connexions) if (c !== sauf && droitFrais(c, maintenant)) this.envoyer(c, { v: 1, type: "participants", participants }, false);
   }
 
   private diffuserDurable(salle: Salle, e: EvenementDurable): void {

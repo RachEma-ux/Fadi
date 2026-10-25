@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { HubTempsReel, type DependancesHub, type Prise, type SessionConnue } from "./temps-reel-hub.js";
-import { BORNES_TEMPS_REEL, FERMETURE, type MessageServeur } from "./temps-reel-protocole.js";
+import { BORNES_TEMPS_REEL, FERMETURE, repriseAutorisee, type MessageServeur } from "./temps-reel-protocole.js";
 import type { ProjectRole } from "./owned-project.js";
 
 class FaussePrise implements Prise {
@@ -220,5 +220,42 @@ describe("Temps réel — répartiteur", () => {
     await h.envoyer({ type: "quitter" });
     m.avancer(BORNES_TEMPS_REEL.hoteAbsentMs + 5);
     expect(m.hub.etat("rtses_1").hoteAbsentDepuisMs).toBeGreaterThan(BORNES_TEMPS_REEL.hoteAbsentMs);
+  });
+
+  it("reprise refusée tant que l'hôte est connecté (absence inconnue) ou absent depuis moins de deux minutes", () => {
+    expect(repriseAutorisee(null)).toBe(false);
+    expect(repriseAutorisee(BORNES_TEMPS_REEL.hoteAbsentMs - 1)).toBe(false);
+    expect(repriseAutorisee(BORNES_TEMPS_REEL.hoteAbsentMs)).toBe(true);
+  });
+
+  it("deux arrivées simultanées dans une salle encore absente : une seule salle, chacun voit l'autre", async () => {
+    const m = monde();
+    let liberer: () => void = () => {};
+    const attente = new Promise<void>((r) => { liberer = r; });
+    m.d.chargerObjets = async () => { await attente; return new Set(["mur-1"]); };
+    const h = m.connecter("hote"), l = m.connecter("lecteur");
+    const a = h.envoyer({ type: "rejoindre", sessionId: "rtses_1" });
+    const b = l.envoyer({ type: "rejoindre", sessionId: "rtses_1" });
+    liberer();
+    await Promise.all([a, b]);
+    expect(m.hub.sallesActives()).toEqual(["rtses_1"]);
+    expect(m.hub.etat("rtses_1").connectes.sort()).toEqual(["hote", "lecteur"]);
+    await h.envoyer({ type: "pointeur", espace: "plan", x: 1, y: 1 });
+    expect(l.prise.de("pointeur")).toHaveLength(1);
+  });
+
+  it("liste des participants : rien pour une connexion dont le droit n'est plus frais", async () => {
+    const m = monde();
+    const h = m.connecter("hote"), l = m.connecter("lecteur");
+    await h.envoyer({ type: "rejoindre", sessionId: "rtses_1" });
+    await l.envoyer({ type: "rejoindre", sessionId: "rtses_1" });
+    const avant = h.prise.de("participants").length;
+    m.avancer(BORNES_TEMPS_REEL.fraicheurDroitMs + 1);
+    const e = m.connecter("editeur");
+    await e.envoyer({ type: "rejoindre", sessionId: "rtses_1" });
+    expect(h.prise.de("participants")).toHaveLength(avant);
+    await m.hub.revalider();
+    await e.envoyer({ type: "quitter" });
+    expect(h.prise.de("participants").length).toBeGreaterThan(avant);
   });
 });

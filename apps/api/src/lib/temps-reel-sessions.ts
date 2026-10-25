@@ -13,7 +13,7 @@ import { db } from "../db/client.js";
 import { rtSessionEvents, rtSessions, studioPublications, studioRevisions, studioStudies, studioVariants, users, type RtActionSession } from "../db/schema.js";
 import { newId } from "./ids.js";
 import { isProjectResponsible } from "./project-responsables.js";
-import { BORNES_TEMPS_REEL, type SessionPublique } from "./temps-reel-protocole.js";
+import { BORNES_TEMPS_REEL, repriseAutorisee, type SessionPublique } from "./temps-reel-protocole.js";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type Querier = Pick<typeof db, "select">;
@@ -172,7 +172,7 @@ export async function reprendreAnimation(projectId: string, sessionId: string, a
     const s = await verrouiller(tx, projectId, sessionId, maintenant);
     if (s.hostId === actorId) return s;
     if (!(await isProjectResponsible(projectId, actorId, tx))) throw new TempsReelErreur(403, "reserve_responsable", "Reprise réservée au propriétaire et aux responsables du projet.");
-    if (hoteAbsentDepuisMs !== null && hoteAbsentDepuisMs < BORNES_TEMPS_REEL.hoteAbsentMs) throw new TempsReelErreur(409, "hote_present", "L’hôte est présent : demandez-lui de vous transmettre l’animation.");
+    if (!repriseAutorisee(hoteAbsentDepuisMs)) throw new TempsReelErreur(409, "hote_present", "L’hôte est présent : demandez-lui de vous transmettre l’animation.");
     const [maj] = await tx.update(rtSessions).set({ hostId: actorId, presenterId: s.presenterId === s.hostId ? actorId : s.presenterId, lastActivityAt: maintenant }).where(eq(rtSessions.id, s.id)).returning();
     await journaliser(tx, s.id, "reprendre", actorId, { targetId: s.hostId });
     return maj!;
