@@ -8,7 +8,8 @@
  * `--fiche` accepte un chemin, ou le nom d'une fiche qualifiée du dépôt (`docs/geodata/sources/<nom>.json`, copiées à
  * côté du bundle dans `dist/geodata-sources/`). Relancée sur une version déjà préparée (même source, même empreinte),
  * la commande ne crée rien ; avec `--publier-par`, elle publie cette version si elle est encore en préparation, aux
- * mêmes conditions (rôle, contrôles réussis, droits de consultation et de tuiles autorisés).
+ * mêmes conditions (rôle, contrôles réussis, droits de consultation et de tuiles autorisés), lues dans la version
+ * enregistrée et non dans la fiche.
  *
  * Réception (fichier local, ou téléchargement de l'adresse de la fiche) → empreinte SHA-256 comparée à celle de la fiche
  * → lecture (GeoJSON, ou GeoPackage EPSG:4326) → contrôles (validation partagée, codes uniques et présents) →
@@ -96,12 +97,16 @@ async function main() {
     const role = async (email: string, r: string) => (await client.query("SELECT u.id FROM users u JOIN geodata_roles g ON g.user_id = u.id AND g.role = $2 WHERE lower(u.email) = lower($1)", [email, r])).rows[0]?.id as string | undefined;
     const [deja] = (await client.query("SELECT v.id, v.etat FROM geodata_versions v JOIN geodata_sources s ON s.id = v.source_id WHERE s.cle = $1 AND v.empreinte = $2 AND v.espace_id IS NULL", [fiche.cle, empreinte])).rows;
     const publierPar = argument("publier-par");
-    const publier = async (versionId: string, controlesOk: boolean) => {
+    // Publication : droits et contrôles relus dans la version ENREGISTRÉE (jamais ceux de la fiche courante), comme la
+    // route POST /geodata/api/admin/versions/:id/publier ; une version publiée est immuable, rien n'est corrigé après coup.
+    const publier = async (versionId: string) => {
       const publieurId = await role(publierPar!, "responsable-publication");
       if (!publieurId) throw new Error(`${publierPar} n'a pas le rôle GeoData « responsable-publication » : version ${versionId} laissée en préparation.`);
-      const droits = lireDroits(fiche.version.droits);
+      const [v] = (await client.query("SELECT droits, (controles->>'ok')::boolean AS ok FROM geodata_versions WHERE id = $1 AND etat = 'preparation'", [versionId])).rows;
+      if (!v) throw new Error(`Version ${versionId} absente ou déjà hors préparation : rien n'est publié.`);
+      const droits = lireDroits(v.droits);
       const bloque = (["consultation", "tuiles"] as const).map((u) => verifierUsage(droits, u)).filter((d) => !d.ok);
-      if (bloque.length || !controlesOk) throw new Error(`Publication bloquée (droits ou contrôles) : version ${versionId} laissée en préparation.`);
+      if (bloque.length || v.ok !== true) throw new Error(`Publication bloquée (droits enregistrés ou contrôles) : version ${versionId} laissée en préparation.`);
       await client.query("UPDATE geodata_versions SET etat = 'publiee', publiee_par = $2, publiee_le = now() WHERE id = $1 AND etat = 'preparation'", [versionId, publieurId]);
       await client.query("INSERT INTO geodata_journal (acteur_id, action, ressource, resultat) VALUES ($1, 'version.publiee', $2, 'succes')", [publieurId, versionId]);
       console.log(`Version ${versionId} publiée par ${publierPar}.`);
@@ -109,9 +114,8 @@ async function main() {
     if (deja) {
       console.log(`Version déjà présente (même source, empreinte identique) : ${deja.id} (${deja.etat}) ; aucune nouvelle version.`);
       if (publierPar && deja.etat === "preparation") {
-        // Reprise du parcours en deux temps : la version préparée et contrôlée plus tôt est publiée, aux mêmes conditions.
-        const [c] = (await client.query("SELECT (controles->>'ok')::boolean AS ok FROM geodata_versions WHERE id = $1", [deja.id])).rows;
-        await publier(deja.id, c?.ok === true);
+        // Reprise du parcours en deux temps : la version préparée plus tôt est publiée, aux conditions qu'elle porte.
+        await publier(deja.id);
       }
       return;
     }
@@ -133,7 +137,7 @@ async function main() {
     });
     await client.query("COMMIT");
     console.log(`Version préparée : ${ecrite.versionId} (couche ${ecrite.coucheId}, ${ecrite.objets} objets, ${ecrite.reparees} géométrie(s) réparée(s), ${ecrite.indicateurs.length} indicateur(s)).`);
-    if (publierPar) await publier(ecrite.versionId, controles.ok);
+    if (publierPar) await publier(ecrite.versionId);
   } catch (e) {
     await client.query("ROLLBACK").catch(() => undefined);
     throw e;
