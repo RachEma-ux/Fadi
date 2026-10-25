@@ -62,9 +62,12 @@ import { requireAuth } from "../middleware/require-auth.js";
 import { projectOr404, type ProjectRole } from "../lib/owned-project.js";
 import { lockProject } from "../lib/step-rows.js";
 import { mandateInvitationTarget } from "../lib/mandate-invitations-db.js";
+import { signalerAccesApresEcriture } from "../lib/temps-reel-signaux.js";
 
 export const membersRouter = Router({ mergeParams: true });
 membersRouter.use(requireAuth);
+// Temps réel (Issue #283) : une écriture réussie fait relire tout de suite les droits des connexions du projet (RT-R1).
+membersRouter.use(signalerAccesApresEcriture);
 
 export interface MemberView {
   userId: string;

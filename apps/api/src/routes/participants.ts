@@ -45,9 +45,12 @@ import { projectOr404, type AccessibleProject } from "../lib/owned-project.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { porteeInconnue } from "../lib/portees-db.js";
 import { capacitesDePortee, type RoleMetier, type TypePortee } from "@parcours/domain-model";
+import { signalerAccesApresEcriture } from "../lib/temps-reel-signaux.js";
 
 export const participantsRouter = Router({ mergeParams: true });
 participantsRouter.use(requireAuth);
+// Temps réel (Issue #283) : une écriture réussie fait relire tout de suite les droits des connexions du projet (RT-R1).
+participantsRouter.use(signalerAccesApresEcriture);
 
 const trimmed = (max: number) => z.string().trim().max(max);
 const optionalText = (max: number) => trimmed(max).nullable().optional().transform((v) => (v === undefined ? undefined : v ? v : null));

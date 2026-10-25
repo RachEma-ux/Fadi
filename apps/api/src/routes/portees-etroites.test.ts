@@ -10,6 +10,7 @@ import { randomUUID } from "node:crypto";
 import { createApp } from "../app.js";
 import { resetTestDatabase } from "../testing/guarded-test-pool.js";
 import { pool } from "../db/client.js";
+import { partager } from "../test-helpers/partage.js";
 
 const app = createApp();
 beforeEach(async () => { await resetTestDatabase(pool, ["projects", "sessions", "users"]); });
@@ -30,7 +31,8 @@ async function setup() {
   const editor = await account("pe-editor@example.com");
   const pid = (await owner.client.post("/projects").send({ code: "PE.1", name: "Portées étroites" })).body.id as string;
   for (const [a, role] of [[lea, "lecteur"], [nora, "lecteur"], [editor, "editeur"]] as const) {
-    expect((await owner.client.post(`/projects/${pid}/members`).send({ email: a.email, role })).status).toBe(201);
+    // Phase 3 (OP-D2) : plus d'ajout direct — invitation envoyée par la route, acceptée avec la logique du serveur.
+    expect((await partager(owner.client, pid, a.email, role)).status).toBe(201);
   }
   const root = `/projects/${pid}/studio`;
   const sx = (await owner.client.post(`${root}/studies`).send({ name: "Étude X" })).body;

@@ -127,6 +127,8 @@ export default defineConfig({
       "/sandbox/preferences": "http://localhost:3001",
       "/health": "http://localhost:3001",
       "/version": "http://localhost:3001",
+      // Temps réel (Issue #283) : canal WebSocket des sessions en direct.
+      "/temps-reel": { target: "http://localhost:3001", ws: true },
     },
   },
   preview: {
@@ -151,6 +153,8 @@ export default defineConfig({
       "/sandbox/preferences": "http://localhost:3001",
       "/health": "http://localhost:3001",
       "/version": "http://localhost:3001",
+      // Temps réel (Issue #283) : canal WebSocket des sessions en direct.
+      "/temps-reel": { target: "http://localhost:3001", ws: true },
     },
   },
 });

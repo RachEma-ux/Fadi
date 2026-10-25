@@ -8,6 +8,7 @@ import { newId } from "./ids.js";
 import { MFA_PENDING_MS, newSessionTimes, SESSION_TOUCH_MS, sessionMfaVerified, sessionValid, slideExpiry } from "./security/auth-policy.js";
 export { sessionMfaVerified };
 import { randomToken, sha256Hex } from "./security/tokens.js";
+import { signalerTempsReel } from "./temps-reel-signaux.js";
 
 /**
  * Sessions serveur (docs/workstreams/users-management, phase 2).
@@ -110,6 +111,8 @@ export async function createSession(
 
 export async function revokeSessionById(sessionId: string): Promise<void> {
   await db.update(sessions).set({ revokedAt: new Date() }).where(and(eq(sessions.id, sessionId), isNull(sessions.revokedAt)));
+  // Temps réel (Issue #283) : les connexions ouvertes par cette session relisent tout de suite leur droit.
+  signalerTempsReel({ type: "session-compte", sessionId });
 }
 
 /** Révoque toutes les sessions du compte, sauf `exceptSessionId` ; renvoie le nombre de sessions révoquées. */
@@ -118,6 +121,7 @@ export async function revokeUserSessions(userId: string, exceptSessionId: string
     ? and(eq(sessions.userId, userId), isNull(sessions.revokedAt), ne(sessions.id, exceptSessionId))
     : and(eq(sessions.userId, userId), isNull(sessions.revokedAt));
   const rows = await executor.update(sessions).set({ revokedAt: new Date() }).where(where).returning({ id: sessions.id });
+  for (const r of rows) signalerTempsReel({ type: "session-compte", sessionId: r.id });
   return rows.length;
 }
 
