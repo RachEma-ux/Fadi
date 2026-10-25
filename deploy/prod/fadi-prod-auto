@@ -133,6 +133,11 @@ os.replace(t, p)
 PY
 }
 
+# Sondage de GitHub (Release absente, brouillon, erreur ou budget de l'API) : consigné à part, dans « sondage » et
+# « sondage_message ». Il ne touche jamais au résultat du dernier déploiement (release_id, etape, resultat) : une panne
+# passagère de l'API ne doit pas effacer un échec définitif et autoriser un nouvel essai sans « relancer ».
+etat_sondage() { etat_ecrire "sondage=$1" "sondage_message=$2"; }
+
 # Réglage facultatif : seules les clés connues, aux valeurs validées ; rien n'est exécuté.
 UNITE_SAUVEGARDE=fadi-backup-offsite.service
 if [ -e "$CONF/config" ]; then
@@ -156,14 +161,14 @@ CODE_API=
 api() {
   local chemin=$1 accept=$2 sortie=$3 admis=${4:-200}
   if [ -n "$RESERVE" ] && [ "$RESERVE" -lt "$BUDGET_MIN" ]; then
-    etat_ecrire etape=api resultat=attente "message=budget de l'API GitHub presque épuisé (reste $RESERVE)"
+    etat_sondage attente "budget de l'API GitHub presque épuisé (reste $RESERVE)"
     log "budget de l'API GitHub presque épuisé (reste $RESERVE) : passage suivant"; exit 0
   fi
   CODE_API=$(curl -sS -m 20 -o "$sortie" -D "$TMP/entetes" -H "Accept: $accept" -H "X-GitHub-Api-Version: 2022-11-28" \
     -H "User-Agent: fadi-prod-auto" -w '%{http_code}' "$REPO_API/$chemin") || CODE_API=000
   RESERVE=$(grep -i '^x-ratelimit-remaining:' "$TMP/entetes" 2>/dev/null | tr -dc '0-9' || true)
   if [[ " $admis " != *" $CODE_API "* ]]; then
-    etat_ecrire etape=api resultat=erreur "message=API GitHub : $chemin → code $CODE_API"
+    etat_sondage erreur "API GitHub : $chemin → code $CODE_API"
     die "API GitHub : $chemin → code $CODE_API" 3
   fi
 }
@@ -201,7 +206,7 @@ resoudre_etiquette() {  # $1 = étiquette
     n=$((n + 1))
   done
   if [ "${type:-}" != commit ]; then
-    etat_ecrire etape=api resultat=erreur "message=étiquette $1 : commit illisible"
+    etat_sondage erreur "étiquette $1 : commit illisible"
     die "étiquette $1 : commit illisible" 3
   fi
   SHA_RELEASE=$sha
@@ -524,17 +529,19 @@ esac
 
 api releases/latest application/vnd.github+json "$TMP/release" "200 404"
 if [ "$CODE_API" = 404 ]; then
-  etat_ecrire etape=release resultat=aucune "message=aucune Release publiée"
+  etat_sondage aucune "aucune Release publiée"
   log "aucune Release publiée : rien à faire"; exit 0
 fi
 IFS=$'\t' read -r rid tag brouillon prerelease < <(lire_release "$TMP/release") || true
 if [ -z "${rid:-}" ]; then
-  etat_ecrire etape=api resultat=erreur "message=dernière Release illisible"; die "dernière Release illisible" 3
+  etat_sondage erreur "dernière Release illisible"; die "dernière Release illisible" 3
 fi
 if [ "$brouillon" != false ] || [ "$prerelease" != false ]; then
-  etat_ecrire etape=release resultat=refus "message=Release $tag : brouillon ou prérelease, rien n'est déployé"
+  etat_sondage refus "Release $tag : brouillon ou prérelease, rien n'est déployé"
   log "Release $tag : brouillon ou prérelease : rien n'est déployé"; exit 0
 fi
+
+etat_sondage ok "Release $tag lue"
 
 # Release déjà traitée : succès, échec et refus définitifs ne sont pas rejoués (relancer pour réessayer).
 if [ "$rid" = "$(etat_lire release_id)" ]; then

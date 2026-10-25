@@ -144,6 +144,10 @@ exécuté sur le serveur ; aucun lot n'est déclaré accepté.
   `/version` = commit précédent). Résultat `echec` (version précédente rétablie) ou `echec-retour` (intervention
   requise). La base n'est **jamais** restaurée : le message, l'état et la notification nomment le dump de l'étape 1
   (chemin et empreinte) et l'instantané restic, et rappellent que la restauration exige l'accord du maître d'ouvrage.
+- **Sondage et déploiement séparés** : l'état du dernier passage auprès de GitHub (Release absente, brouillon ou
+  prérelease, erreur ou budget de l'API) est consigné dans `sondage` et `sondage_message`. Il ne remplace jamais le
+  résultat du dernier déploiement (`release_id`, `etape`, `resultat`) : une panne passagère de l'API ne peut pas effacer
+  l'échec d'une Release ni autoriser un nouvel essai sans `fadi-prod-auto relancer` (contrôlé par test).
 - **État, verrou, journal** : `/mnt/data/fadi/deployments/etat.json` (0600) ; verrou
   `/mnt/data/fadi/deployments/deploiement.lock`, **le même** que celui des déploiements contrôlés
   (`scripts/deploy-*-controlled.sh`) ; journal et dump dans `/mnt/data/fadi/deployments/<run>-auto/` (0700). Un
@@ -183,7 +187,7 @@ Prérequis : `fadi-preprod-auto` en service, `fadi-backup-offsite.service` insta
    cible « toutes les étiquettes », restreindre création, mise à jour et suppression, liste de contournement réduite
    au compte du maître d'ouvrage. Sans elle, toute personne ayant le droit d'écriture pourrait publier une Release.
 5. Passage manuel à blanc, sans Release nouvelle : `sudo systemctl start fadi-prod-auto.service`, puis
-   `cat /mnt/data/fadi/deployments/etat.json` (attendu : `aucune`, ou la dernière Release « déjà traitée » / « déjà
+   `cat /mnt/data/fadi/deployments/etat.json` (attendu : `sondage` à `aucune`, ou la dernière Release « déjà traitée » / « déjà
    servie »), `journalctl -u fadi-prod-auto.service -n 50`.
 6. Jouer la [recette de la phase B](deploiement-automatique-recette-phase-b.md) (tests à doubles sur le VPS, échec
    simulé et retour arrière en préproduction), puis activer le minuteur : `sudo systemctl enable --now fadi-prod-auto.timer`.

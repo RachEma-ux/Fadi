@@ -83,13 +83,13 @@ NOMINAL="pg_dump;pg_restore --list;systemctl-start fadi-backup-offsite.service;g
 echo "== Pas de Release utilisable : rien"
 cas absente; auto MOCK_RELEASE_ID=absent
 verifie "aucune Release publiée (404) : code 0, rien modifié, 1 appel API, état « aucune »" \
-  bash -c "[ $RC = 0 ] && [ $(appels_api) = 1 ] && [ '$(etat resultat)' = aucune ] && [ ! -s '$C/mock/notifications' ]"
+  bash -c "[ $RC = 0 ] && [ $(appels_api) = 1 ] && [ '$(etat sondage)' = aucune ] && [ ! -s '$C/mock/notifications' ]"
 verifie "aucune Release : rien modifié" rien_modifie
 cas brouillon; auto MOCK_DRAFT=true
-verifie "Release brouillon : code 0, refus, rien modifié" bash -c "[ $RC = 0 ] && [ '$(etat resultat)' = refus ] && [ '$(etat etape)' = release ]"
+verifie "Release brouillon : code 0, refus, rien modifié" bash -c "[ $RC = 0 ] && [ '$(etat sondage)' = refus ] && [ -z '$(etat resultat)' ]"
 verifie "Release brouillon : rien modifié" rien_modifie
 cas prerelease; auto MOCK_PRERELEASE=true
-verifie "Release prérelease : code 0, refus, rien modifié" bash -c "[ $RC = 0 ] && [ '$(etat resultat)' = refus ] && [ $(appels_api) = 1 ]"
+verifie "Release prérelease : code 0, refus, rien modifié" bash -c "[ $RC = 0 ] && [ '$(etat sondage)' = refus ] && [ $(appels_api) = 1 ]"
 verifie "Release prérelease : rien modifié" rien_modifie
 auto
 verifie "la même Release publiée ensuite (même id, ni brouillon ni prérelease) : déployée" bash -c "[ $RC = 0 ] && [ '$(etat resultat)' = succes ]"
@@ -199,6 +199,12 @@ for s in health accueil projects version; do
 done
 : > "$C/mock/ordre"; auto
 verifie "Release en échec non rejouée au passage suivant" bash -c "[ $RC = 0 ] && [ ! -s '$C/mock/ordre' ]"
+auto MOCK_API_DOWN=1
+verifie "panne de l'API après un échec : code 3, l'échec de la Release reste consigné (resultat echec, même release_id)" \
+  bash -c "[ $RC = 3 ] && [ '$(etat resultat):$(etat sondage)' = echec:erreur ] && [ -n '$(etat release_id)' ]"
+auto
+verifie "API revenue après la panne : Release en échec toujours non rejouée sans relancer" \
+  bash -c "[ $RC = 0 ] && [ ! -s '$C/mock/ordre' ] && [ '$(etat resultat):$(etat sondage)' = echec:ok ]"
 auto relancer; auto
 verifie "relancer : la Release est de nouveau essayée (et déployée, sonde réparée)" bash -c "[ $RC = 0 ] && [ '$(etat resultat):$(etat en_ligne)' = succes:$S ]"
 
@@ -270,14 +276,14 @@ flock "$C/base/deploiement.lock" bash -c "$(declare -f auto); C='$C'; T='$T'; IC
 verifie "verrou tenu (autre déploiement de production) : passage abandonné sans appel ni action" \
   bash -c "[ \$(cat '$C/rc') = 0 ] && grep -q 'un autre déploiement de production est en cours' '$C/sortie' && [ $(appels_api) = 0 ] && [ ! -s '$C/mock/ordre' ]"
 cas injoignable; auto MOCK_API_DOWN=1
-verifie "API injoignable : code 3, rien modifié, état erreur" bash -c "[ $RC = 3 ] && [ ! -s '$C/mock/ordre' ] && [ '$(etat resultat)' = erreur ]"
+verifie "API injoignable : code 3, rien modifié, sondage en erreur" bash -c "[ $RC = 3 ] && [ ! -s '$C/mock/ordre' ] && [ '$(etat sondage)' = erreur ]"
 auto
 verifie "après une erreur d'API, la Release est évaluée normalement" bash -c "[ $RC = 0 ] && [ '$(etat resultat)' = succes ]"
 cas limitee; auto MOCK_API_CODE=403
 verifie "API en 403 (limite) : code 3, rien modifié" bash -c "[ $RC = 3 ] && [ ! -s '$C/mock/ordre' ]"
 cas budget; auto MOCK_RESERVE=15
 verifie "réserve d'appels sous 20 (laissés à la préproduction) : arrêt après 1 appel" \
-  bash -c "[ $RC = 0 ] && [ $(appels_api) = 1 ] && [ ! -s '$C/mock/ordre' ] && [ '$(etat resultat)' = attente ]"
+  bash -c "[ $RC = 0 ] && [ $(appels_api) = 1 ] && [ ! -s '$C/mock/ordre' ] && [ '$(etat sondage)' = attente ]"
 cas base-groupe; chmod 0770 "$C/base"; auto
 verifie "dossier des déploiements modifiable par le groupe : refus, rien appelé" bash -c "[ $RC != 0 ] && [ $(appels_api) = 0 ]"
 cas etat-lien; ln -s /etc/passwd "$C/base/etat.json"; auto

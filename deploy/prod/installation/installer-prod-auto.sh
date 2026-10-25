@@ -22,7 +22,7 @@ umask 022
 
 # fichier source | destination | mode | SHA-256 attendue
 FICHIERS=(
-  "deploy/prod/fadi-prod-auto|/usr/local/sbin/fadi-prod-auto|0755|87c75e7ea5cfda4440dd786afcbc1e4e8fd2f480bc507ab75894c9b2787bb8e7"
+  "deploy/prod/fadi-prod-auto|/usr/local/sbin/fadi-prod-auto|0755|7bb0a64457713cc5a48b63f2f4a7f0ca3defe9868fd11e3794216ecbec775120"
   "deploy/prod/systemd/fadi-prod-auto.service|/etc/systemd/system/fadi-prod-auto.service|0644|f815e8e7c9be48d1a8e614df4a6e3913fbe3524657082beac43a39c9d034ad43"
   "deploy/prod/systemd/fadi-prod-auto.timer|/etc/systemd/system/fadi-prod-auto.timer|0644|8159a8cc0e591c3fc3b94cb24a8f33ec372f8e053a9fd5228f16b33cc31faeda"
 )
