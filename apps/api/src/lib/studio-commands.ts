@@ -13,6 +13,7 @@ import type { CiblePortee } from "@parcours/domain-model";
 import { orchestrerCommandesDansTransaction, type Tx } from "./atelier-validation.js";
 import { lockProject, type Querier } from "./step-rows.js";
 import { revaliderBooleensStudio } from "./studio-exact.js";
+import { corpsRefusQuota, quotaCommandesStudio } from "./studio-quotas.js";
 
 export interface StudioScope { projectId: string; studyId: string; variantId: string }
 export class StudioRequestError extends Error {
@@ -487,6 +488,12 @@ export async function submitStudioCommands(scope: StudioScope, actorId: string, 
         if (!current) throw new Error("studio_scope_not_prepared");
         // Lu sous les verrous du projet et de la variante : un (dés)archivage concurrent est sérialisé avec ce lot.
         if (current.archived) return studioArchivedRefusal();
+        // EX-028 : quota d'invocation du compte, contrôlé à chaque invocation effective (jamais pour un rejeu ni pour
+        // l'installation d'un exemple) ; un lot refusé ici n'écrit rien et ne consomme rien.
+        if (ecriture === "modify") {
+          const depasse = quotaCommandesStudio.verifier(actorId);
+          if (depasse) throw new StudioRequestError(429, corpsRefusQuota(depasse));
+        }
         if (envelope.baseRevisionId !== current.variant.headRevisionId) {
           throw new StudioRequestError(409, await staleRevisionBody(transaction, scope.variantId, envelope, current.variant.headRevisionId, current.revision.document));
         }
@@ -512,6 +519,7 @@ export async function submitStudioCommands(scope: StudioScope, actorId: string, 
   });
   // Temps réel (Issue #283), après validation : les sessions de cette variante apprennent qu'une révision plus récente
   // existe ; elle ne leur est jamais appliquée en silence.
+  if (!resultat.replayed && ecriture === "modify") quotaCommandesStudio.consommer(actorId);
   if (!resultat.replayed) signalerTempsReel({ type: "studio-revision", projectId: scope.projectId, variantId: scope.variantId, revisionId: resultat.revision.id });
   return resultat;
 }
