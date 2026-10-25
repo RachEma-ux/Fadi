@@ -34,7 +34,8 @@ export interface EvenementsMoteur {
 
 export interface MoteurCarte {
   appliquer(composition: Composition, fond: Fond, donnees: DonneesAffichage): void;
-  allerA(cible: { emprise: readonly [number, number, number, number] } | { lon: number; lat: number; zoom?: number }): void;
+  /** Centre (et, pour une carte rouverte, zoom et orientation enregistrés) ou emprise. */
+  allerA(cible: { emprise: readonly [number, number, number, number] } | { lon: number; lat: number; zoom?: number; cap?: number }): void;
   definirOutil(outil: OutilCarte): void;
   terminerTrace(): void;
   annulerTrace(): void;

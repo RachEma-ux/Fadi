@@ -14,7 +14,13 @@ export interface LimitesImport {
   readonly longueurTexte: number;
 }
 
-export const LIMITES_IMPORT: LimitesImport = Object.freeze({ octets: 5 * 1024 * 1024, objets: 5000, sommets: 200_000, proprietes: 50, longueurTexte: 500 });
+/**
+ * Nombre maximal d'objets d'une couche (référence ou import) : les valeurs d'un indicateur sont servies d'un bloc au
+ * navigateur pour la classification ; aucune couche plus grande n'est acceptée, aucune réponse n'est tronquée.
+ */
+export const OBJETS_PAR_COUCHE = 5000;
+
+export const LIMITES_IMPORT: LimitesImport = Object.freeze({ octets: 5 * 1024 * 1024, objets: OBJETS_PAR_COUCHE, sommets: 200_000, proprietes: 50, longueurTexte: 500 });
 
 export type TypeGeometrie = "Point" | "MultiPoint" | "LineString" | "MultiLineString" | "Polygon" | "MultiPolygon";
 const TYPES = new Set<TypeGeometrie>(["Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon"]);

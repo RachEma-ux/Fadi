@@ -194,6 +194,8 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     },
     allerA(cible) {
       if ("emprise" in cible) carte.fitBounds([[cible.emprise[0], cible.emprise[1]], [cible.emprise[2], cible.emprise[3]]], { padding: 40, maxZoom: 13, duration: 600 });
+      // Carte rouverte : caméra enregistrée restituée à l'identique (orientation comprise), sans animation.
+      else if (cible.cap !== undefined) carte.jumpTo({ center: [cible.lon, cible.lat], zoom: cible.zoom ?? carte.getZoom(), bearing: cible.cap });
       else carte.flyTo({ center: [cible.lon, cible.lat], zoom: cible.zoom ?? Math.max(carte.getZoom(), 11), duration: 600 });
     },
     definirOutil(o) {

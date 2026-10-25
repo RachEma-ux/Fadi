@@ -133,5 +133,12 @@ export function validerComposition(x: unknown): ValidationComposition {
   return { ok: true, composition: { format: FORMAT_COMPOSITION, camera, fond: x["fond"] as string, couches } };
 }
 
+/** Sérialisation canonique (clés triées) : PostgreSQL `jsonb` réordonne les clés, l'ordre ne doit jamais compter. */
+export function canonique(x: unknown): string {
+  if (Array.isArray(x)) return `[${x.map(canonique).join(",")}]`;
+  if (x && typeof x === "object") return `{${Object.keys(x).sort().map((k) => `${JSON.stringify(k)}:${canonique((x as Record<string, unknown>)[k])}`).join(",")}}`;
+  return JSON.stringify(x) ?? "null";
+}
+
 /** Deux compositions sont-elles identiques (pour signaler « modifications non enregistrées ») ? La caméra compte. */
-export const memeComposition = (a: Composition, b: Composition): boolean => JSON.stringify(a) === JSON.stringify(b);
+export const memeComposition = (a: Composition, b: Composition): boolean => canonique(a) === canonique(b);

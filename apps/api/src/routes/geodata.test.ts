@@ -11,7 +11,8 @@ import { resetTestDatabase } from "../testing/guarded-test-pool.js";
 import { ecrireVersion } from "../lib/geodata/versions.js";
 
 const app = createApp();
-beforeEach(async () => { await resetTestDatabase(pool, ["projects", "sessions", "users", "geodata_sources"]); });
+// `users` en CASCADE vide aussi toutes les tables geodata_* (espaces → sources → versions → couches…), liste fermée de la garde inchangée.
+beforeEach(async () => { await resetTestDatabase(pool, ["projects", "sessions", "users"]); });
 afterAll(async () => { await pool.end(); });
 
 const PASSWORD = "correct-horse-battery";
@@ -42,7 +43,7 @@ async function publierReference(opts: { cle?: string; libelle?: string; droits?:
       couche: { titre: "Unités", description: "", niveau: "TEST", champCode: "code", champNom: "nom", proprietesExposees: ["code", "nom", "effectif"], styleDefaut: { mode: "simple", couleur: "#123456" } },
       objets: v.objets, indicateurs: [{ propriete: "effectif", titre: "Effectif", unite: "u", periode: null, denominateur: null, description: "", motifSiAbsente: "secret-statistique" }], superficie: true, preparePar: null,
     });
-    if (opts.publier !== false) await client.query("UPDATE geodata_versions SET etat = 'publiee', publiee_le = now() + (random() * interval '1 second') WHERE id = $1", [e.versionId]);
+    if (opts.publier !== false) await client.query("UPDATE geodata_versions SET etat = 'publiee', publiee_le = clock_timestamp() WHERE id = $1", [e.versionId]);
     await client.query("COMMIT");
     return e;
   } catch (err) {
@@ -190,13 +191,13 @@ describe("GEO 07 / GEO 08 — import personnel et isolation", () => {
     const carte = await alice.client.post(`${API}/cartes`).send({ nom: "Privée", composition: composition(ref.coucheId, ref.versionId) });
     const zone = await alice.client.post(`${API}/zones`).send({ nature: "zone", nom: "Zone", geometrie: { type: "Polygon", coordinates: carre(-8.9, 30.05, 0.3) } });
     const analyse = await alice.client.post(`${API}/analyses`).send({ zoneId: zone.body.id, coucheId: ref.coucheId });
-    const exp = await alice.client.post(`${API}/exports`).send({ carteId: carte.body.id });
+    const exp = await alice.client.post(`${API}/exports`).send({ carteId: carte.body.id, revisionAttendue: 1 });
     expect(exp.body.etat).toBe("autorise");
     for (const url of [`/cartes/${carte.body.id}`, `/analyses/${analyse.body.id}`, `/exports/${exp.body.id}/fiche`]) expect((await bob.client.get(`${API}${url}`)).status, url).toBe(404);
     expect((await bob.client.put(`${API}/cartes/${carte.body.id}`).send({ revisionAttendue: 1, nom: "x" })).status).toBe(404);
     expect((await bob.client.put(`${API}/zones/${zone.body.id}`).send({ revisionAttendue: 1, nom: "x" })).status).toBe(404);
     expect((await bob.client.post(`${API}/analyses`).send({ zoneId: zone.body.id, coucheId: ref.coucheId })).status).toBe(404);
-    expect((await bob.client.post(`${API}/exports`).send({ carteId: carte.body.id })).status).toBe(404);
+    expect((await bob.client.post(`${API}/exports`).send({ carteId: carte.body.id, revisionAttendue: 1 })).status).toBe(404);
     expect((await bob.client.get(`${API}/zones`)).body.zones).toEqual([]);
   });
 });
@@ -248,12 +249,16 @@ describe("GEO 09 — exports", () => {
     const libre = await publierReference({ cle: "libre" });
     const fermee = await publierReference({ cle: "fermee", droits: { ...TOUT, export: "inconnu" } });
     const c = await alice.client.post(`${API}/cartes`).send({ nom: "Deux couches", composition: { ...composition(libre.coucheId, libre.versionId), couches: [composition(libre.coucheId, libre.versionId).couches[0], composition(fermee.coucheId, fermee.versionId).couches[0]] } });
-    const refus = await alice.client.post(`${API}/exports`).send({ carteId: c.body.id });
+    const refus = await alice.client.post(`${API}/exports`).send({ carteId: c.body.id, revisionAttendue: 1 });
     expect(refus.body.etat).toBe("refuse");
     expect(refus.body.refus).toEqual([{ coucheId: fermee.coucheId, titre: "Unités", motif: "Export de composition : droit non qualifié pour cette source" }]);
     expect(refus.body.fiche).toBeNull();
     const seule = await alice.client.put(`${API}/cartes/${c.body.id}`).send({ revisionAttendue: 1, composition: composition(libre.coucheId, libre.versionId) });
-    const ok = await alice.client.post(`${API}/exports`).send({ carteId: c.body.id });
+    // L'export porte sur la révision affichée : une révision périmée est refusée, sans fiche.
+    const perime = await alice.client.post(`${API}/exports`).send({ carteId: c.body.id, revisionAttendue: 1 });
+    expect(perime.status).toBe(409);
+    expect(perime.body).toMatchObject({ error: "revision_conflict", revisionCourante: seule.body.revision });
+    const ok = await alice.client.post(`${API}/exports`).send({ carteId: c.body.id, revisionAttendue: seule.body.revision });
     expect(ok.body).toMatchObject({ etat: "autorise", carteRevision: seule.body.revision, attributions: ["Attribution de test"] });
     const fiche = await alice.client.get(ok.body.fiche);
     expect(fiche.status).toBe(200);
@@ -293,7 +298,7 @@ describe("Rôles GeoData, publication et immuabilité (INV-07, INV-08)", () => {
     expect(relue.body.disponibilite[ref.coucheId]).toEqual({ etat: "retiree", motif: "Version retirée : Droits retirés par le producteur" });
     expect((await alice.client.get(`${API}/tuiles/${ref.coucheId}/8/121/107`)).status).toBe(404);
     expect((await alice.client.get(`${API}/catalogue`)).body.couches).toEqual([]);
-    const exp = await alice.client.post(`${API}/exports`).send({ carteId: carte.body.id });
+    const exp = await alice.client.post(`${API}/exports`).send({ carteId: carte.body.id, revisionAttendue: 1 });
     expect(exp.body.etat).toBe("refuse");
     expect(DROITS_IMPORT_PERSONNEL.partage).toBe("refuse");
   });

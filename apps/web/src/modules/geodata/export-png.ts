@@ -24,9 +24,22 @@ export async function composerPng(p: { carte: HTMLCanvasElement; titre: string; 
     return ligne ? [...lignes, ligne] : lignes;
   });
   const bas = (64 + 18 * Math.max(1, lignesAttribution.length)) * ratio;
+  // Hauteur de la légende mesurée AVANT d'allouer l'image : aucune entrée ne sort du canevas (20 couches possibles).
+  mesure.font = `600 ${12 * ratio}px system-ui, sans-serif`;
+  const lignesTitre = (titre: string) => {
+    let n = 1;
+    let ligne = "";
+    for (const m of titre.split(" ")) {
+      const essai = ligne ? `${ligne} ${m}` : m;
+      if (mesure.measureText(essai).width > largeurLegende - 24 * ratio && ligne) { n++; ligne = m; } else ligne = essai;
+    }
+    return n;
+  };
+  const hauteurLegende = (66 + p.legendes.reduce((h, l) => h + 15 * (lignesTitre(l.titre) - 1) + 16 + 15 * (l.entrees?.length ?? 1) + 8, 0)) * ratio;
+  const hauteurHaut = Math.max(p.carte.height, 120 * ratio, hauteurLegende);
   const c = document.createElement("canvas");
   c.width = p.carte.width + largeurLegende;
-  c.height = Math.max(p.carte.height, 120 * ratio) + bas;
+  c.height = hauteurHaut + bas;
   const g = c.getContext("2d")!;
   g.fillStyle = "#ffffff";
   g.fillRect(0, 0, c.width, c.height);
@@ -80,7 +93,7 @@ export async function composerPng(p: { carte: HTMLCanvasElement; titre: string; 
   const puissance = 10 ** Math.floor(Math.log10(cible));
   const ronde = [1, 2, 5, 10].map((k) => k * puissance).filter((v) => v <= cible).pop() ?? puissance;
   const px = (ronde / p.metresParPixel) * ratio;
-  const yb = Math.max(p.carte.height, 120 * ratio) + 22 * ratio;
+  const yb = hauteurHaut + 22 * ratio;
   g.fillStyle = "#173b43";
   g.fillRect(14 * ratio, yb, px, 4 * ratio);
   t(11);

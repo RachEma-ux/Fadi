@@ -91,7 +91,7 @@ export const api = {
   deposer: (requestId: string, nomFichier: string, contenu: string) => envoyer<ImportRecu>("/imports", "POST", { requestId, nomFichier, contenu }),
   confirmerImport: (id: string, titre: string) => envoyer<ImportRecu>(`/imports/${encodeURIComponent(id)}/confirmer`, "POST", { titre }),
   annulerImport: (id: string) => envoyer<ImportRecu>(`/imports/${encodeURIComponent(id)}/annuler`, "POST", {}),
-  exporter: (carteId: string, analyseIds: string[]) => envoyer<ExportRecu>("/exports", "POST", { carteId, analyseIds }),
+  exporter: (carteId: string, revisionAttendue: number, analyseIds: string[]) => envoyer<ExportRecu>("/exports", "POST", { carteId, revisionAttendue, analyseIds }),
 };
 
 /** Adresse des tuiles d'une couche, absolue (le moteur cartographique les demande depuis un Worker). */

@@ -44,6 +44,8 @@ export function PageGeoData() {
   const racine = useRef<HTMLDivElement>(null);
   const conteneurCarte = useRef<HTMLDivElement>(null);
   const moteur = useRef<MoteurCarte | null>(null);
+  // Composition courante lue par le moteur à sa création (chargé de façon asynchrone, après une éventuelle réouverture).
+  const compositionCourante = useRef<Composition>(COMPOSITION_INITIALE);
   const [hauteurHaut, setHauteurHaut] = useState(62);
   const [espace, setEspace] = useState<EspaceRecu | null>(null);
   const [erreurEspace, setErreurEspace] = useState<string | null>(null);
@@ -138,8 +140,8 @@ export function PageGeoData() {
     import("./carte/moteur-maplibre").then(({ creerMoteur }) => {
       if (detruit || !conteneurCarte.current) return;
       try {
-        moteur.current = creerMoteur(conteneurCarte.current, composition, {
-          surDeplacement: (camera) => setComposition((c) => ({ ...c, camera })),
+        moteur.current = creerMoteur(conteneurCarte.current, compositionCourante.current, {
+          surDeplacement: (camera) => setComposition((c) => (c.camera.lon === camera.lon && c.camera.lat === camera.lat && c.camera.zoom === camera.zoom && c.camera.cap === camera.cap ? c : { ...c, camera })),
           surClic: (o) => { setSelection(o); if (o) ouvrirFiche(o.coucheId, o.code); },
           surTrace: (o, s) => setTrace({ outil: o, sommets: [...s] }),
           surTraceTermine: (o, s) => { setTrace({ outil: o, sommets: [...s] }); if (o === "zone" || o === "annotation") setTracePret({ outil: o, sommets: [...s] }); },
@@ -162,6 +164,7 @@ export function PageGeoData() {
   }, [compositionAffichee, fond, valeurs, filtres, selection, zonesGeo, attributions, chargementMoteur]);
   useEffect(() => { moteur.current?.definirOutil(outil); setTrace(null); setTracePret(null); }, [outil, chargementMoteur]);
 
+  compositionCourante.current = composition;
   const etat: EtatEnregistrement = etatForce ?? etatDepuis(composition, carte?.composition ?? null);
 
   async function ouvrirFiche(coucheId: string, code: string) {
@@ -177,7 +180,7 @@ export function PageGeoData() {
       const c = await api.carte(id);
       setCarte(c); setComposition(c.composition); setEtatForce(null);
       ecrireLocal(CLE_DERNIERE_CARTE, c.id);
-      moteur.current?.allerA({ lon: c.composition.camera.lon, lat: c.composition.camera.lat, zoom: c.composition.camera.zoom });
+      moteur.current?.allerA({ lon: c.composition.camera.lon, lat: c.composition.camera.lat, zoom: c.composition.camera.zoom, cap: c.composition.camera.cap });
       setAnnonce(`Carte « ${c.nom} » ouverte.`);
     } catch (e) {
       if (silencieux && e instanceof ErreurGeoData && e.statut === 404) ecrireLocal(CLE_DERNIERE_CARTE, null);
@@ -228,7 +231,7 @@ export function PageGeoData() {
   const couchesPolygones = composition.couches.map((k) => couchesConnues.get(k.coucheId)).filter((c): c is CoucheRecue => !!c && c.typeGeometrie === "polygone");
 
   const exporter = async (analyseIds: string[]) => {
-    const r = await api.exporter(carte!.id, analyseIds);
+    const r = await api.exporter(carte!.id, carte!.revision, analyseIds);
     if (r.etat !== "autorise") return r;
     if (!moteur.current) throw new Error("Export autorisé, mais la carte n'est pas affichée (WebGL indisponible) : seule la fiche de sources est produite.");
     const complet = await moteur.current.attendreChargement(10_000);

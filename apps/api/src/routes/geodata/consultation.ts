@@ -4,7 +4,7 @@
  * préparation n'est jamais servie (GEO 08) ; réponses bornées (pagination, plafond d'objets).
  */
 import { Router, type Request } from "express";
-import { lireCoordonnees, lireDroits, verifierUsage } from "@parcours/geodata-model";
+import { lireCoordonnees, lireDroits, OBJETS_PAR_COUCHE, verifierUsage } from "@parcours/geodata-model";
 import { erreur, espacePersonnel, introuvable, requete, VERSION_CONSULTABLE } from "../../lib/geodata/acces.js";
 
 export const consultationRouter = Router();
@@ -228,14 +228,14 @@ consultationRouter.get("/couches/:id/objets/:code", async (req, res) => {
   });
 });
 
-/** Valeurs d'un indicateur d'une couche consultable (bornées par la taille de la couche, 5 000 objets en V1). */
+/** Valeurs d'un indicateur d'une couche consultable : toutes, une couche comptant au plus OBJETS_PAR_COUCHE objets (refus à l'ingestion au-delà). */
 consultationRouter.get("/indicateurs/:id/valeurs", async (req, res) => {
   const espaceId = await espaceDe(req);
   const [i] = await requete(`SELECT i.id, i.couche_id, i.titre, i.unite, i.periode, i.nature, i.methode, i.denominateur FROM geodata_indicateurs i
     JOIN geodata_couches c ON c.id = i.couche_id JOIN geodata_versions v ON v.id = c.version_id WHERE i.id = $2 AND ${VERSION_CONSULTABLE("v", "$1")}`, [espaceId, req.params.id]);
   if (!i) return introuvable(res);
   const vs = await requete(`SELECT o.code, va.valeur, va.motif_absence FROM geodata_objets o LEFT JOIN geodata_valeurs va ON va.indicateur_id = $2 AND va.code = o.code
-    WHERE o.couche_id = $1 ORDER BY o.code LIMIT 5000`, [i["couche_id"], req.params.id]);
+    WHERE o.couche_id = $1 ORDER BY o.code LIMIT $3`, [i["couche_id"], req.params.id, OBJETS_PAR_COUCHE]);
   res.json({
     indicateur: { id: i["id"], coucheId: i["couche_id"], titre: i["titre"], unite: i["unite"], periode: i["periode"], nature: i["nature"], methode: i["methode"], denominateur: i["denominateur"] },
     valeurs: vs.map((v) => ({ code: v["code"], valeur: v["valeur"], motifAbsence: v["valeur"] === null ? (v["motif_absence"] ?? "non-appariee") : null })),

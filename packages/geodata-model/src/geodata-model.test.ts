@@ -85,6 +85,12 @@ describe("composition geodata-composition/1", () => {
     expect(validerComposition({ ...COMPOSITION_INITIALE, couches: [{ ...couche, style: { ...couche.style, couleurs: ["#000000"] } }] }).ok).toBe(false);
     expect(validerComposition({ ...COMPOSITION_INITIALE, couches: [couche, couche] }).ok).toBe(false);
   });
+  it("l'ordre des clés (réordonnées par jsonb) ne rend pas une composition « modifiée »", async () => {
+    const { memeComposition } = await import("./index.js");
+    const relue = { couches: [], fond: "neutre", format: "geodata-composition/1", camera: { cap: 0, lat: 31.79, lon: -7.09, zoom: 4.6 } } as unknown as typeof COMPOSITION_INITIALE;
+    expect(memeComposition(COMPOSITION_INITIALE, relue)).toBe(true);
+    expect(memeComposition(COMPOSITION_INITIALE, { ...relue, camera: { ...relue.camera, zoom: 5 } })).toBe(false);
+  });
   it("aucune notion de projet dans le format", () => {
     expect(JSON.stringify(COMPOSITION_INITIALE)).not.toMatch(/project/i);
   });
@@ -139,5 +145,15 @@ describe("droits par usage et capacités (INV-08)", () => {
     expect(capacitesDe(["administrateur"]).has("preparer-version")).toBe(false);
     expect(capacitesDe(["administrateur"]).has("publier-version")).toBe(false);
     expect(capacitesDe(["responsable-publication"]).has("publier-version")).toBe(true);
+  });
+});
+
+describe("borne d'une couche", () => {
+  it("une couche de plus de OBJETS_PAR_COUCHE objets est refusée, jamais tronquée", async () => {
+    const { OBJETS_PAR_COUCHE } = await import("./index.js");
+    const f = { type: "Feature", properties: {}, geometry: { type: "Point", coordinates: [0, 0] } };
+    const r = validerGeoJSON({ type: "FeatureCollection", features: Array.from({ length: OBJETS_PAR_COUCHE + 1 }, () => f) });
+    expect(r.ok).toBe(false);
+    expect(r.rapport.diagnostics[0]!.code).toBe("limite-objets");
   });
 });

@@ -15,7 +15,7 @@ import { createHash } from "node:crypto";
 import { readFileSync, statSync } from "node:fs";
 import { basename } from "node:path";
 import { Pool } from "pg";
-import { lireDroits, validerGeoJSON, verifierUsage, type StyleCouche } from "@parcours/geodata-model";
+import { lireDroits, OBJETS_PAR_COUCHE, validerGeoJSON, verifierUsage, type StyleCouche } from "@parcours/geodata-model";
 import { lireGeoPackage } from "../lib/geodata/geopackage.js";
 import { codesDesObjets, ecrireVersion, type IndicateurDeclare } from "../lib/geodata/versions.js";
 
@@ -58,7 +58,9 @@ async function main() {
     brut = g.geojson;
     crsSource = `${g.crs} (GeoPackage, table ${g.table})`;
   } else brut = JSON.parse(octets.toString("utf8"));
-  const v = validerGeoJSON(brut, { octets: 200 * 1024 * 1024, objets: 100_000, sommets: 20_000_000, proprietes: 200, longueurTexte: 2000 });
+  // Une couche V1 compte au plus OBJETS_PAR_COUCHE objets : c'est la borne des valeurs d'indicateur servies d'un bloc au
+  // navigateur (classification, légende, carte thématique) ; au-delà, la couche est refusée plutôt que tronquée.
+  const v = validerGeoJSON(brut, { octets: 200 * 1024 * 1024, objets: OBJETS_PAR_COUCHE, sommets: 20_000_000, proprietes: 200, longueurTexte: 2000 });
   const objets = v.ok ? v.objets : [];
   const { doublons, manquants } = codesDesObjets(objets, fiche.couche.champCode);
   const controles = {

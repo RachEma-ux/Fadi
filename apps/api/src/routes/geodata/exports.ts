@@ -52,10 +52,14 @@ ${ana}
 
 exportsRouter.post("/exports", async (req, res) => {
   const espaceId = await espaceDe(req);
-  const { carteId, analyseIds } = (req.body ?? {}) as Record<string, unknown>;
+  const { carteId, analyseIds, revisionAttendue } = (req.body ?? {}) as Record<string, unknown>;
   if (typeof carteId !== "string") return erreur(res, 400, "invalid_input", "Carte obligatoire.", { champs: ["carteId"] });
+  if (!Number.isInteger(revisionAttendue)) return erreur(res, 400, "invalid_input", "Révision attendue obligatoire.", { champs: ["revisionAttendue"] });
   const [carte] = await requete(`SELECT id, nom, revision, composition FROM geodata_cartes WHERE id = $1 AND espace_id = $2 AND etat = 'active'`, [carteId, espaceId]);
   if (!carte) return introuvable(res);
+  // L'export porte sur la révision affichée par le demandeur : une révision plus récente enregistrée ailleurs est refusée
+  // (l'image capturée et les droits vérifiés porteraient sinon sur deux compositions différentes).
+  if (carte["revision"] !== revisionAttendue) return erreur(res, 409, "revision_conflict", "La carte a été modifiée ailleurs : rechargez-la avant d'exporter.", { revisionCourante: carte["revision"] });
   const composition = carte["composition"] as Composition;
   const visibles = composition.couches.filter((c) => c.visible);
   const refus: { coucheId: string | null; titre: string; motif: string }[] = [];
