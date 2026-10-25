@@ -1558,3 +1558,23 @@ export const rtSessionEvents = pgTable("rt_session_events", {
   revisionId: text("revision_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("rt_session_events_session_idx").on(t.sessionId, t.createdAt)]);
+
+/** Point de vue d'une annotation temps réel : cadre plan (`local-2d`, m) et / ou caméra (`local-3d`, m), repères déclarés. */
+export interface RtPointDeVue {
+  affichage: "2d" | "3d" | "double";
+  plan?: { x: number; y: number; w: number; h: number };
+  camera?: unknown;
+  reperes: { plan: "local-2d"; camera: "local-3d" };
+  unites: "m";
+}
+
+/** Annotation enregistrée en session (RTC-3) : point de vue et session d'origine d'un commentaire Studio (même identifiant). */
+export const rtAnnotations = pgTable("rt_annotations", {
+  commentId: text("comment_id").primaryKey().references(() => studioComments.id, { onDelete: "cascade" }),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  variantId: text("variant_id").notNull(),
+  sessionId: text("session_id").references(() => rtSessions.id, { onDelete: "set null" }),
+  sourceRevisionId: text("source_revision_id").notNull(),
+  viewpoint: jsonb("viewpoint").$type<RtPointDeVue>().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("rt_annotations_variant_idx").on(t.variantId, t.createdAt), index("rt_annotations_session_idx").on(t.sessionId)]);

@@ -2089,6 +2089,23 @@ $$;
 CREATE OR REPLACE TRIGGER rt_session_events_no_update BEFORE UPDATE ON rt_session_events
   FOR EACH ROW EXECUTE FUNCTION rt_session_event_immutable();
 
+-- Temps réel RTC-3 : annotation enregistrée délibérément pendant une session. Le texte, l'auteur, l'audience, la
+-- révision source et les objets cités restent ceux du commentaire Studio (même identifiant, promu en observation par
+-- le circuit existant) ; cette ligne ajoute le point de vue (repères et unités déclarés) et la session d'origine. Elle
+-- survit à la clôture de la session (aucune cascade depuis rt_sessions : SET NULL si la session disparaît).
+CREATE TABLE IF NOT EXISTS rt_annotations (
+  comment_id text PRIMARY KEY REFERENCES studio_comments(id) ON DELETE CASCADE,
+  project_id text NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  variant_id text NOT NULL,
+  session_id text REFERENCES rt_sessions(id) ON DELETE SET NULL,
+  source_revision_id text NOT NULL,
+  viewpoint jsonb NOT NULL CONSTRAINT rt_annotations_viewpoint_object CHECK (jsonb_typeof(viewpoint) = 'object'),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT rt_annotations_revision_fk FOREIGN KEY (variant_id, source_revision_id) REFERENCES studio_revisions(variant_id, id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS rt_annotations_variant_idx ON rt_annotations (variant_id, created_at);
+CREATE INDEX IF NOT EXISTS rt_annotations_session_idx ON rt_annotations (session_id);
+
 -- ---------------------------------------------------------------------------
 -- D-7 : droits au moindre privilège. Exécuté par un super-utilisateur (amorçage, CI) : propriété de tout transférée à
 -- `fadi_owner` ; exécuté par `fadi_migrator` (membre de `fadi_owner`) : droits rejoués ; sinon, simple avis (rôles non

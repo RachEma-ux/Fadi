@@ -68,6 +68,41 @@ const camera = z.unknown().transform((v, ctx): StudioCameraScene => {
 });
 const affichage = z.enum(["2d", "3d", "double"]);
 
+/**
+ * Point de vue d'une annotation (RTC-3) : le même contrat que la vue partagée (cadre plan, caméra relue par les scènes
+ * Studio), au moins l'un des deux ; repères et unités sont ajoutés explicitement à l'enregistrement.
+ */
+export const POINT_DE_VUE = z.object({ affichage, camera: camera.optional(), plan: cadrePlan.optional() }).strict()
+  .refine((v) => v.plan !== undefined || v.camera !== undefined, "Cadre plan ou caméra attendu.");
+export type PointDeVueSaisi = z.infer<typeof POINT_DE_VUE>;
+
+/** Point de vue tel qu'il est enregistré (même forme que `RtPointDeVue`, schéma de la base). */
+export interface PointDeVueEnregistre {
+  affichage: "2d" | "3d" | "double";
+  plan?: { x: number; y: number; w: number; h: number };
+  camera?: unknown;
+  reperes: { plan: "local-2d"; camera: "local-3d" };
+  unites: "m";
+}
+
+/** Point de vue enregistré : la saisie relue, repères et unités déclarés explicitement (jamais déduits à la lecture). */
+export function pointDeVue(v: PointDeVueSaisi): PointDeVueEnregistre {
+  return {
+    affichage: v.affichage,
+    ...(v.plan ? { plan: v.plan } : {}),
+    ...(v.camera ? { camera: v.camera } : {}),
+    reperes: { plan: "local-2d", camera: "local-3d" },
+    unites: "m",
+  };
+}
+
+/** Écriture canonique (clés triées) : `jsonb` ne garde pas l'ordre des clés, la comparaison ne doit pas en dépendre. */
+export function canonique(v: unknown): string {
+  if (Array.isArray(v)) return `[${v.map(canonique).join(",")}]`;
+  if (v && typeof v === "object") return `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${canonique((v as Record<string, unknown>)[k])}`).join(",")}}`;
+  return JSON.stringify(v) ?? "null";
+}
+
 export const MESSAGE_CLIENT = z.discriminatedUnion("type", [
   z.object({ v: z.literal(VERSION_PROTOCOLE), type: z.literal("rejoindre"), sessionId: identifiant, depuis: z.number().int().min(0).optional() }).strict(),
   z.object({ v: z.literal(VERSION_PROTOCOLE), type: z.literal("quitter") }).strict(),

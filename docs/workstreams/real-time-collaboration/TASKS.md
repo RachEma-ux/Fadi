@@ -13,11 +13,12 @@
 
 ## En cours
 
-- RTC-2 — Vue partagée Studio : implémentée et vérifiée en local (`lots/rtc-2.md`), PR du lot (Issue #283).
-- RTC-3 à RTC-5 — à enchaîner un par un (RT-D4).
+- RTC-3 — Annotations enregistrées : implémentées et vérifiées en local (`lots/rtc-3.md`), PR du lot (Issue #283).
+- RTC-4, RTC-5 — à enchaîner un par un (RT-D4).
 
 ## Terminé
 
+- RTC-2 — Vue partagée Studio : PR #289 fusionnée CI verte (`lots/rtc-2.md`).
 - RTC-1 — Socle des sessions et canal temps réel : PR #288 fusionnée CI verte (`lots/rtc-1.md`), trois remarques de revue corrigées (`eb3cf3a`).
 - RTC-0.1 — Dossier, plan amendé, traçabilité RT-R1 à RT-R7 : PR #284 fusionnée (`c3f87de`).
 - RT-D4, RT-D5 — exécution déléguée de RTC-1 à RTC-5 et choix techniques consignés.

@@ -10,11 +10,16 @@
 .tr-commande{display:inline-flex;align-items:center;gap:6px}
 .tr-commande .collab-raccourci{font-size:10px;opacity:.7}
 .tr-bandeau>.studio-info,.tr-bandeau>.studio-alert{flex-basis:100%;margin:0}
-.tr-participants{flex-basis:100%;list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
-.tr-participants li{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;padding:6px 8px;background:#fff;border:1px solid #dde8e7;border-radius:8px}
+.tr-participants,.tr-annotations{flex-basis:100%;list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.tr-participants li,.tr-annotations li{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;padding:6px 8px;background:#fff;border:1px solid #dde8e7;border-radius:8px}
 .tr-superposition text{font-family:inherit;font-weight:600}
 @media (max-width:640px){.tr-commandes{margin-left:0}.tr-commande .collab-raccourci{display:none}}
-@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .tr-bandeau{background:#13292c;border-color:#2c4b4f}:root:not([data-theme=light]) .tr-detail{color:#a9c1c5}:root:not([data-theme=light]) .tr-participants li{background:#0f2224;border-color:#2c4b4f}}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .tr-bandeau{background:#13292c;border-color:#2c4b4f}:root:not([data-theme=light]) .tr-detail{color:#a9c1c5}:root:not([data-theme=light]) .tr-participants li,:root:not([data-theme=light]) .tr-annotations li,:root:not([data-theme=light]) .tr-annotation{background:#0f2224;border-color:#2c4b4f}}
+
+.tr-annotation{flex-basis:100%;display:flex;flex-direction:column;gap:6px;padding:8px;background:#fff;border:1px solid #dde8e7;border-radius:8px}
+.tr-annotation-texte{display:flex;flex-direction:column;gap:4px}
+.tr-annotation-texte textarea{width:100%;box-sizing:border-box;font:inherit;resize:vertical}
+.tr-case{display:inline-flex;align-items:center;gap:6px}
 .tr-entree{position:relative;flex:0 0 auto}
 .tr-entree-bouton{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .tr-flottant{position:absolute;right:0;top:calc(100% + 6px);z-index:40;width:min(560px,calc(100vw - 32px));box-sizing:border-box;margin:0;box-shadow:0 10px 30px #153b4326}

@@ -10,6 +10,9 @@
  *   POST /sessions/:sessionId/reprendre      reprendre l'animation, hôte absent (propriétaire, responsables)
  *   POST /sessions/:sessionId/revision       changer la révision affichée (hôte, session de travail)
  *   POST /sessions/:sessionId/clore          clore (hôte, propriétaire, responsables)
+ *   POST /sessions/:sessionId/annotations    annoter (RTC-3) : commentaire Studio ancré à la révision de la session,
+ *                                            point de vue gardé ; idempotent par requestId ; annoncé par audience
+ *   GET  /annotations?variantId=…[&sessionId=…]  annotations lisibles (audience E1), revue après la session
  *
  * Chaque route exige le droit `comment` sur le projet (propriétaire, éditeurs, lecteurs ; jamais l'accès support) et
  * répond 404 tant que le drapeau `FADI_TEMPS_REEL` n'est pas posé (sauf la liste des sessions : 200 `{ actif: false }`). L'hôte n'obtient aucun droit sur le projet (RT-R2).
@@ -18,9 +21,11 @@ import { Router, type Request, type Response } from "express";
 import { z } from "zod";
 import { db } from "../db/client.js";
 import { requireAuth } from "../middleware/require-auth.js";
-import { projectOr404 } from "../lib/owned-project.js";
+import { projectOr404, type ProjectRole } from "../lib/owned-project.js";
 import { dependancesServeur, hubTempsReel } from "../lib/temps-reel-canal.js";
-import type { EvenementDurable } from "../lib/temps-reel-protocole.js";
+import { POINT_DE_VUE, type EvenementDurable } from "../lib/temps-reel-protocole.js";
+import { annoter, listerAnnotations } from "../lib/temps-reel-annotations.js";
+import { audienceSchema } from "../lib/audience.js";
 import {
   changerRevision, clore, designerPresentateur, journalSession, lireSession, listerSessions, nomsDe, ouvrirSession, reprendreAnimation,
   sessionPublique, tempsReelActif, TempsReelErreur, transmettreHote, type SessionRow,
@@ -43,14 +48,22 @@ const personne = z.object({ userId: identifiant }).strict();
 const presentateur = z.object({ userId: identifiant.nullable() }).strict();
 const revision = z.object({ revisionId: identifiant }).strict();
 
-type Gestionnaire = (req: Request, res: Response, projectId: string, userId: string) => Promise<void>;
+const annotation = z.object({
+  body: z.string().trim().min(1).max(4000),
+  objectIds: z.array(identifiant).max(200).optional(),
+  audience: audienceSchema.optional(),
+  requestId: identifiant,
+  vue: POINT_DE_VUE,
+}).strict();
+
+type Gestionnaire = (req: Request, res: Response, projectId: string, userId: string, role: ProjectRole) => Promise<void>;
 /** Droit `comment` relu, drapeau actif, erreurs métier rendues avec leur motif ; jamais de trace interne. */
 function route(g: Gestionnaire) {
   return async (req: Request, res: Response) => {
     const access = await projectOr404(req, res, "comment");
     if (!access) return;
     try {
-      await g(req, res, access.id, req.user!.id);
+      await g(req, res, access.id, req.user!.id, access.role);
     } catch (e) {
       if (e instanceof TempsReelErreur) { res.status(e.status).json({ error: e.code, message: e.message }); return; }
       throw e;
@@ -136,3 +149,23 @@ tempsReelRouter.post("/sessions/:sessionId/clore", route(async (req, res, projec
   res.json({ session: await vueSession(s) });
 }));
 
+tempsReelRouter.post("/sessions/:sessionId/annotations", route(async (req, res, projectId, userId) => {
+  const corps = annotation.safeParse(req.body);
+  if (!corps.success) { res.status(422).json({ error: "invalid_body", message: "Texte, identifiant de requête et point de vue (cadre plan ou caméra) attendus." }); return; }
+  const r = await annoter(projectId, parametre(req, "sessionId"), userId, corps.data);
+  if (!r.rejoue) {
+    // Annonce à toutes les sessions qui montrent la variante ; chaque destinataire la reçoit selon l'audience (E1).
+    const hub = hubTempsReel();
+    for (const id of hub?.sallesDeVariante(projectId, r.session.variantId) ?? []) {
+      hub!.annoncer(id, { nature: "annotation", commentId: r.annotation.id, audience: r.annotation.audience, revisionId: r.annotation.revisionId, auteurId: userId });
+    }
+  }
+  res.status(r.rejoue ? 200 : 201).json({ annotation: { ...r.annotation, sessionId: r.session.id, sourceRevisionId: r.annotation.revisionId, pointDeVue: r.pointDeVue }, rejoue: r.rejoue });
+}));
+
+tempsReelRouter.get("/annotations", route(async (req, res, projectId, _userId, role) => {
+  const variantId = typeof req.query["variantId"] === "string" ? req.query["variantId"] : "";
+  if (!variantId) { res.status(422).json({ error: "invalid_query", message: "Variante attendue." }); return; }
+  const sessionId = typeof req.query["sessionId"] === "string" ? req.query["sessionId"] : undefined;
+  res.json({ annotations: await listerAnnotations(projectId, variantId, role, { sessionId }) });
+}));

@@ -5,8 +5,9 @@ Mis à jour : 2026-10-25 (UTC).
 ## État
 
 **En cours — exécution des lots RTC-1 à RTC-5 (RT-D4, délégation).** RTC-0 fusionné (PR #284). **RTC-1 fusionné**
-(PR #288, CI verte ; [compte rendu](lots/rtc-1.md)). **RTC-2 implémenté et vérifié en local** (vue partagée Studio ;
-[compte rendu](lots/rtc-2.md)) ; CI et fusion par sa PR. RTC-3 à RTC-5 à suivre, un lot par PR.
+(PR #288, CI verte ; [compte rendu](lots/rtc-1.md)). **RTC-2 fusionné** (PR #289 ; [compte rendu](lots/rtc-2.md)).
+**RTC-3 implémenté et vérifié en local** (annotations enregistrées ; [compte rendu](lots/rtc-3.md)) ; CI et fusion par sa
+PR. RTC-4 et RTC-5 à suivre, un lot par PR.
 
 ## Faits vérifiés
 
@@ -36,7 +37,7 @@ Mis à jour : 2026-10-25 (UTC).
 
 - Issue : https://github.com/RachEma-ux/Fadi/issues/283
 - Branche de tâche : `ccr-93a486a1-cbijf8`
-- Pull Requests : #284 (RTC-0), #288 (RTC-1), PR du lot RTC-2
+- Pull Requests : #284 (RTC-0), #288 (RTC-1), #289 (RTC-2), PR du lot RTC-3
 
 ## Préconditions de clôture
 

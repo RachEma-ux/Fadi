@@ -4,6 +4,7 @@
  * (drapeau `FADI_TEMPS_REEL` absent) — l'interface n'affiche alors aucune entrée.
  */
 import { ApiError, request } from "../../../lib/api";
+import type { StudioCameraScene } from "@parcours/atelier-model";
 import type { SessionPublique } from "./etat-session";
 
 export interface Personne { userId: string; nom: string }
@@ -14,6 +15,23 @@ export interface SessionListee extends SessionPublique {
   hoteAbsent: boolean;
 }
 export interface EntreeJournalSession { action: string; actorId: string | null; targetId: string | null; revisionId: string | null; createdAt: string; acteur: string | null; cible: string | null }
+
+/** Point de vue d'une annotation (RTC-3) : cadre plan (`local-2d`, m) et / ou caméra (`local-3d`, m). */
+export interface PointDeVue { affichage: "2d" | "3d" | "double"; plan?: { x: number; y: number; w: number; h: number }; camera?: StudioCameraScene }
+export interface AnnotationSession {
+  commentId: string;
+  sessionId: string | null;
+  sourceRevisionId: string;
+  pointDeVue: PointDeVue & { reperes: { plan: "local-2d"; camera: "local-3d" }; unites: "m" };
+  body: string | null;
+  objectIds: string[];
+  audience: "equipe" | "projet";
+  auteurId: string;
+  auteur: string;
+  observation: boolean;
+  createdAt: string;
+}
+export interface SaisieAnnotation { body: string; objectIds?: string[]; audience?: "equipe" | "projet"; requestId: string; vue: PointDeVue }
 
 const racine = (projectId: string) => `/projects/${encodeURIComponent(projectId)}/temps-reel/sessions`;
 const corps = (body: unknown): RequestInit => ({ method: "POST", body: JSON.stringify(body) });
@@ -44,4 +62,9 @@ export const apiTempsReel = {
     request<{ session: SessionListee }>(`${racine(projectId)}/${encodeURIComponent(sessionId)}/revision`, corps({ revisionId })),
   clore: (projectId: string, sessionId: string) =>
     request<{ session: SessionListee }>(`${racine(projectId)}/${encodeURIComponent(sessionId)}/clore`, corps({})),
+  annoter: (projectId: string, sessionId: string, saisie: SaisieAnnotation) =>
+    request<{ annotation: { id: string }; rejoue: boolean }>(`${racine(projectId)}/${encodeURIComponent(sessionId)}/annotations`, corps(saisie)),
+  /** Annotations lisibles de la variante (audience E1), d'une session si elle est donnée. */
+  annotations: (projectId: string, variantId: string, sessionId?: string) =>
+    request<{ annotations: AnnotationSession[] }>(`/projects/${encodeURIComponent(projectId)}/temps-reel/annotations?variantId=${encodeURIComponent(variantId)}${sessionId ? `&sessionId=${encodeURIComponent(sessionId)}` : ""}`),
 };

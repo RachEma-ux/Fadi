@@ -775,6 +775,11 @@ jobs:
         run: |
           set -o pipefail
           node apps/web/e2e/temps-reel-studio.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des annotations en session (RTC-3) — note d'équipe invisible au lecteur, point de vue tagué, rejeu sans doublon, révision source gardée, point de vue reposé, survie à la clôture, observation (apps/web/e2e/temps-reel-annotations.mjs)
+        if: ${{ matrix.shard == 'p2' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/temps-reel-annotations.mjs 2>&1 | tee -a e2e.log
       - name: Recette du lot 7 de la Planche — persistance par commandes, Planches nommées, IFC, PNG, téléphone, axe-core (apps/web/e2e/planche-lot-7.mjs)
         if: ${{ matrix.shard == 'p2' }}
         run: |

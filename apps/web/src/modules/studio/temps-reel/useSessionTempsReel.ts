@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "../../../lib/api";
-import { apiTempsReel, type SessionListee } from "./api-temps-reel";
+import { apiTempsReel, type AnnotationSession, type SaisieAnnotation, type SessionListee } from "./api-temps-reel";
 import { CanalTempsReel } from "./canal";
 import { ETAT_INITIAL, type EtatSession } from "./etat-session";
 
@@ -21,6 +21,8 @@ export interface ActionsTempsReel {
   reprendre(): Promise<void>;
   passerRevision(revisionId: string): Promise<void>;
   clore(): Promise<void>;
+  /** Annotation délibérée (RTC-3) : vrai si elle est enregistrée. */
+  annoter(saisie: SaisieAnnotation): Promise<boolean>;
 }
 
 export interface SessionTempsReel {
@@ -33,6 +35,8 @@ export interface SessionTempsReel {
   enCours: boolean;
   /** Suit la vue du présentateur (choix explicite, vrai à l'entrée). */
   suit: boolean;
+  /** Annotations de la session rejointe, lisibles par cette personne (audience relue par le serveur). */
+  annotations: AnnotationSession[];
 }
 
 /**
@@ -81,6 +85,18 @@ export function useSessionTempsReel(projectId: string, studyId: string, variantI
     refetchInterval: enSession ? false : 15_000,
   });
   const sessionId = etat.session?.id ?? null;
+  const cleAnnotations = ["temps-reel-annotations", projectId, variantId, sessionId];
+  const annotations = useQuery({
+    queryKey: cleAnnotations, enabled: actif && !!sessionId, retry: false,
+    queryFn: async () => (await apiTempsReel.annotations(projectId, variantId, sessionId!)).annotations,
+  });
+  // Une annotation annoncée par le canal (déjà projetée selon l'audience) : la liste et les commentaires Studio sont relus.
+  const annoncees = etat.annotations.length;
+  useEffect(() => {
+    if (!annoncees) return;
+    void qc.invalidateQueries({ queryKey: ["temps-reel-annotations", projectId, variantId] });
+    void qc.invalidateQueries({ queryKey: ["studio-comments", projectId, studyId, variantId] });
+  }, [annoncees, qc, projectId, studyId, variantId]);
   const geste = useCallback(async (f: () => Promise<unknown>) => {
     setErreur(null); setEnCours(true);
     try { await f(); await qc.invalidateQueries({ queryKey: cle }); }
@@ -101,6 +117,18 @@ export function useSessionTempsReel(projectId: string, studyId: string, variantI
     reprendre: () => geste(() => apiTempsReel.reprendre(projectId, sessionId!)),
     passerRevision: (revisionId) => geste(() => apiTempsReel.revision(projectId, sessionId!, revisionId)),
     clore: () => geste(() => apiTempsReel.clore(projectId, sessionId!)),
+    annoter: async (saisie) => {
+      let ok = false;
+      await geste(async () => {
+        // L'identifiant de requête vient du formulaire (un par annotation) : renvoyer après une réponse perdue retrouve
+        // la même annotation, jamais une seconde.
+        await apiTempsReel.annoter(projectId, sessionId!, saisie);
+        ok = true;
+        await qc.invalidateQueries({ queryKey: ["temps-reel-annotations", projectId, variantId] });
+        await qc.invalidateQueries({ queryKey: ["studio-comments", projectId, studyId, variantId] });
+      });
+      return ok;
+    },
   };
-  return { disponible: actif && Array.isArray(liste.data), sessions: liste.data ?? [], etat, canal, actions, erreur, enCours, suit };
+  return { disponible: actif && Array.isArray(liste.data), sessions: liste.data ?? [], etat, canal, actions, erreur, enCours, suit, annotations: annotations.data ?? [] };
 }

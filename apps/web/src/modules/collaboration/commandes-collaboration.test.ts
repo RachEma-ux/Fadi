@@ -119,11 +119,12 @@ describe("Règle d'or — commandes de collaboration (audience, export du lecteu
     expect(panneau.includes("BoutonCommande") && panneau.includes("<IconeCollaboration commande={commande}") && panneau.includes("<RaccourciCollaboration commande={commande}") && panneau.includes("propsRaccourci(commande)")).toBe(true);
   });
 
-  it("Temps réel (Issue #283) : douze commandes, Ctrl+Alt+Maj+lettre, touche physique ; suivre et naviguer librement sont une bascule", () => {
-    expect(COMMANDES_TEMPS_REEL).toHaveLength(12);
+  it("Temps réel (Issue #283) : quinze commandes, Ctrl+Alt+Maj+lettre, touche physique ; suivre et naviguer librement sont une bascule", () => {
+    expect(COMMANDES_TEMPS_REEL).toHaveLength(15);
     for (const c of COMMANDES_TEMPS_REEL) expect(COMMANDES_COLLABORATION[c].raccourci.libelle, c).toMatch(/^Ctrl\+Alt\+Maj\+[A-Z]$/);
     const t = (code: string, ctrlKey = true) => ({ code, altKey: true, shiftKey: true, ctrlKey, metaKey: false });
     expect(declenche(t("KeyO"), "ouvrir-session")).toBe(true);
+    expect(declenche(t("KeyA"), "annoter") && declenche(t("KeyE"), "enregistrer-annotation") && declenche(t("KeyG"), "voir-point-de-vue")).toBe(true);
     expect(declenche(t("KeyO", false), "ouvrir-session")).toBe(false);
     expect(declenche(t("KeyF"), "suivre-presentateur") && declenche(t("KeyF"), "naviguer-librement")).toBe(true);
     expect(propsRaccourci("clore-session")["aria-keyshortcuts"]).toBe("Control+Alt+Shift+C");
