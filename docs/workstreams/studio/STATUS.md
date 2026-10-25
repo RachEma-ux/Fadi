@@ -8,10 +8,10 @@ Ce qui a été fait :
 - **Mandat d'achèvement consigné** (ADR-STUDIO-PILOTE-01 P-12). Les exclusions antérieures (DEC-15, mode IA de P-06, « hors pilote ») sont levées, et les décisions courantes sont listées avec leur justification.
 - **Réconciliation des chiffres** : 205 obligations restantes, dont 119 issues du point 2 et 86 du rapprochement. Détail : [ACHEVEMENT-STUDIO](recettes/ACHEVEMENT-STUDIO.md).
 - **Requalification par dépendances vérifiées** : J3, RISQ-03, 05, 06, 07, 09, 10, PASS-04, PIL-01 et A.1-08 passent à « Vérifié ».
-- **Décisions inscrites** : REC-I-03 (lot I accepté pleinement) et MIG-COEX-07 (règle COEX-06) passent à « Accepté ».
+- **Décisions inscrites** : REC-I-03 (lot I accepté pleinement) et MIG-COEX-07 (règle COEX-06) passent à « Accepté ». F.2-03 et F.3-01, closes jusque-là par les exclusions désormais levées, sont rouvertes.
 - **Lots d'achèvement en cours** : PUB, CMD, OUT, REND, F, API, REG.
 
-Compteurs recalculés du registre : **0 À définir / 57 À faire / 125 En cours / 11 Bloqué / 376 Vérifié / 61 Accepté**. **P630=437/630**.
+Compteurs recalculés du registre : **0 À définir / 57 À faire / 127 En cours / 11 Bloqué / 376 Vérifié / 59 Accepté**. **P630=435/630**.
 
 Prochaine action : intégrer les lots d'achèvement un par un (PR, CI verte, fusion), puis les décisions de P-12 qui restent à implémenter, puis le build candidat.
 

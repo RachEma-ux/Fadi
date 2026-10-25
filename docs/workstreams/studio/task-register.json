@@ -533,7 +533,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-09",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Contradictions arbitrées (P-09) : fonctions communes aux quatre domaines, workflow par étude, ROUTE-09 final, recette déléguée (P-08 remplace P-07 point 1)."
@@ -1668,7 +1668,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-02",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -1799,7 +1799,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-02",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Une seule personne habilitée réelle (maître d’ouvrage) ; aucun réviseur humain indépendant identifié (profil solo D05)."
@@ -5618,7 +5618,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-09",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Contrat final : ADR-STUDIO-NAV-01 §1 (P-03) et paramètres P-08 I.4-03 ; DOSSIER-PILOTE.md."
@@ -8958,7 +8958,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-09",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -9320,7 +9320,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-09",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -9505,7 +9505,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-09",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -9683,7 +9683,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-09",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -9870,7 +9870,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-09",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -10769,7 +10769,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-11",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "G1 franchie avec réserves : 48 contrats de routes non versionnés ; décisions, fonctions absentes et mesures du point 2 dues avant G4."
@@ -11073,7 +11073,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-05",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -11637,7 +11637,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-05",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -11782,7 +11782,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -12065,7 +12065,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-05",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -14194,7 +14194,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -15049,7 +15049,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-12",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Lot I accepté pleinement : édition et sauvegarde métier livrées et recettées (studio-preuves-d1, parcours A, B, C)."
@@ -15556,7 +15556,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -15693,7 +15693,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -21733,7 +21733,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -21994,7 +21994,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -24816,7 +24816,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Protocole approuvé ; mesures sans verdict ni gain annoncé."
@@ -30549,7 +30549,7 @@
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
           "limite": "DEC-08 : SVG retenu ; aucun renderer alternatif imposé.",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099"
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7"
         }
       ],
       "github": {
@@ -30797,7 +30797,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -32397,7 +32397,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Mesurée par la recette studio-memoire (TEST-037) ; seuil fixé après mesure."
@@ -36778,7 +36778,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -36916,7 +36916,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -37948,7 +37948,7 @@
         ],
         "preparation_initiale": "Autorisation option ; DEC-08/15/17"
       },
-      "statut": "Accepté",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -37976,7 +37976,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-06",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Aucun mode IA retenu au pilote (D02) ; « Illustration IA » annoncée non disponible, sans déclencheur ; retenir un mode rouvre l’obligation."
@@ -37993,13 +37993,13 @@
         "essais_effectues": "Dossier DEC-OUVERTES-PILOTE.md, code de main@3e992b6 et recettes Studio.",
         "deblocage": null
       },
-      "suite": "Aucun mode IA retenu au pilote (D02) ; « Illustration IA » annoncée non disponible, sans déclencheur ; retenir un mode rouvre l’obligation.",
+      "suite": "Rouverte par P-12 : capacité à implémenter et vérifier (lot d’achèvement F).",
       "composants_candidats": "Option non engagée",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": true,
+        "condition_verifiee": false,
         "case_source_modifiee": false,
-        "acceptation_metier": true,
+        "acceptation_metier": false,
         "nature": "decision"
       },
       "historique": [
@@ -38029,6 +38029,12 @@
           "statut": "Accepté",
           "preuve": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
           "limite": "Décision prise sous délégation ; aucune case source cochée ; recette produit non déduite de la décision."
+        },
+        {
+          "origine": "ADR-STUDIO-PILOTE-01 P-12 (exclusions levées, 2026-10-25)",
+          "statut_precedent": "Accepté",
+          "statut": "En cours",
+          "limite": "Rouverte : l’exclusion qui l’avait close (P-06 / DEC-15) est levée ; à implémenter (lot d’achèvement F)."
         }
       ],
       "preparation_documentaire": {
@@ -38147,7 +38153,7 @@
         ],
         "preparation_initiale": "Autorisation option ; DEC-08/15/17"
       },
-      "statut": "Accepté",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -38175,7 +38181,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-06",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Instruit par DEC-15 : extensions et MCP exclus du pilote ; option conservée au backlog."
@@ -38192,13 +38198,13 @@
         "essais_effectues": "Dossier DEC-OUVERTES-PILOTE.md, code de main@3e992b6 et recettes Studio.",
         "deblocage": null
       },
-      "suite": "Instruit par DEC-15 : extensions et MCP exclus du pilote ; option conservée au backlog.",
+      "suite": "Rouverte par P-12 : capacité à implémenter et vérifier (lot d’achèvement F).",
       "composants_candidats": "Option non engagée",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": true,
+        "condition_verifiee": false,
         "case_source_modifiee": false,
-        "acceptation_metier": true,
+        "acceptation_metier": false,
         "nature": "decision"
       },
       "historique": [
@@ -38228,6 +38234,12 @@
           "statut": "Accepté",
           "preuve": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
           "limite": "Décision prise sous délégation ; aucune case source cochée ; recette produit non déduite de la décision."
+        },
+        {
+          "origine": "ADR-STUDIO-PILOTE-01 P-12 (exclusions levées, 2026-10-25)",
+          "statut_precedent": "Accepté",
+          "statut": "En cours",
+          "limite": "Rouverte : l’exclusion qui l’avait close (P-06 / DEC-15) est levée ; à implémenter (lot d’achèvement F)."
         }
       ],
       "preparation_documentaire": {
@@ -42531,7 +42543,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -42804,7 +42816,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -47958,7 +47970,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -48405,7 +48417,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -48681,7 +48693,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-12",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Règle COEX-06 ratifiée : toute suppression d’écran, de route ou de stockage est un lot ultérieur explicitement autorisé."
@@ -49100,7 +49112,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-09",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -49923,7 +49935,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Perte maximale d’un jour et conservation fondées sur l’existant ; temps de reprise et coûts « non évalués » (aucune mesure ni budget au dépôt)."
@@ -52589,7 +52601,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-02",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -52731,7 +52743,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-02",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -52873,7 +52885,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-02",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -53015,7 +53027,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-02",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -53157,7 +53169,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-02",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -53656,7 +53668,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-03",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -53971,7 +53983,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-09",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -61147,7 +61159,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -61244,7 +61256,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -61341,7 +61353,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -61438,7 +61450,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -61535,7 +61547,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -61632,7 +61644,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -61729,7 +61741,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -61826,7 +61838,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -61923,7 +61935,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -62020,7 +62032,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -62117,7 +62129,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -62214,7 +62226,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -62311,7 +62323,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Appareils physiques et GPU réel non évalués ; seuils Core Web Vitals retenus comme cible, non mesurés sur appareil réel."
@@ -62408,7 +62420,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -62505,7 +62517,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Option exclue du pilote, conservée au backlog ; TEST-033 hors pilote."
@@ -62602,7 +62614,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -62699,7 +62711,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -62796,7 +62808,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "sha256": "6c040e6761d3bcc350a90063afd644979473a6c42ad50bc70718a9d5be7719a7",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -80110,9 +80122,9 @@
       "raison": "DEV_SCOPE et baseline du périmètre accepté non établis ; ne pas inventer un dénominateur."
     },
     "P630": {
-      "V630": 437,
+      "V630": 435,
       "denominateur": 630,
-      "pourcentage": 69.4,
+      "pourcentage": 69.0,
       "IDs": [
         "SRC-01",
         "SRC-02",
@@ -80354,8 +80366,6 @@
         "E.6-03",
         "E.6-05",
         "F.2-02",
-        "F.2-03",
-        "F.3-01",
         "SEQ-01",
         "SEQ-02",
         "SEQ-03",
@@ -80555,7 +80565,7 @@
       "limite": "259 obligations vérifiées (documentaires, par recette ou test exécuté, ou par contrôle existant contre-vérifié indépendamment le 25 octobre 2026) et 58 acceptations (2 de cadrage G0, 56 décisions ADR-STUDIO-PILOTE-01 sous délégation du maître d’ouvrage). Pas un taux de développement ; G1–G4 non acceptées.",
       "mapping_barre": {
         "Vérifié documentaire": 376,
-        "Accepté cadrage documentaire G0": 61
+        "Accepté cadrage documentaire G0": 59
       }
     }
   },
