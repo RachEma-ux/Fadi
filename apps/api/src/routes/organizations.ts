@@ -4,7 +4,7 @@
  * Autorisation serveur à chaque requête, échec fermé : 404 pour qui n'a jamais adhéré à l'organisation (administrateur
  * de la plateforme compris : son rôle n'administre aucune organisation, même logique que D-2) ; 403 avec motif pour un
  * membre dont l'adhésion ou le rôle ne suffit pas. Rien ici n'ouvre un projet : adhésion, groupe, gabarit et mandat ne
- * donnent aucun droit de projet ; l'accès reste `projects.owner_id` / `project_members` (lib/owned-project.ts).
+ * donnent aucun droit de projet ; l'accès reste `projects.owner_id` / participations du projet (lib/owned-project.ts).
  *
  *   GET    /                                   mes adhésions (toutes périodes) et mes mandats à accepter
  *   POST   /                                   { name, kind?, details?, creationKey? } → l'organisation, le créateur administrateur

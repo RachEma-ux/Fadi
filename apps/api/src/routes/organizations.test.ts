@@ -4,7 +4,7 @@
  */
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
-import { partager } from "../test-helpers/partage.js";
+import { partager, partagerEnBase } from "../test-helpers/partage.js";
 import { createApp } from "../app.js";
 import { resetTestDatabase } from "../testing/guarded-test-pool.js";
 import { pool } from "../db/client.js";
@@ -85,8 +85,9 @@ describe("organisations : une adhésion n'est pas une participation", () => {
     expect(add.body.projectAccess).toBe("aucun");
     expect((await bob.client.get(`/projects/${projectId}`)).status).toBe(404);
     // Bob invité au projet par son propriétaire (droit indépendant), puis il quitte l'organisation : l'accès au projet reste.
-    // Écriture directe : la voie de partage d'un compte existant change avec la phase 3 (OP-D2), pas la règle testée ici.
-    await pool.query("INSERT INTO project_members (project_id, user_id, role, invited_by) VALUES ($1, $2, 'lecteur', 'test')", [projectId, bob.id]);
+    // Écriture directe : la voie de partage d'un compte existant change avec la phase 3 (OP-D2), pas la règle testée ici
+    // (lot OP-PONT : le partage s'écrit sur la participation, `project_members` n'étant plus qu'une vue).
+    await partagerEnBase(projectId, bob.id, "lecteur");
     const end = await bob.client.post(`/organizations/${orgId}/memberships/${bobMember.membershipId}/end`).send({});
     expect(end.status).toBe(200);
     expect(end.body.impact.projectAccessChanged).toBe(false);

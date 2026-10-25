@@ -29,7 +29,8 @@ export const STUDIO_ARCHIVE_LEGACY_TABLES_VERSION = "studio-v1/2026-10-19.2";
 /** Version antérieure aux ajustements du métré (E.3-05) et au suivi E.2. */
 export const STUDIO_ARCHIVE_PRE_QUANTITES_TABLES_VERSION = "studio-v1/2026-10-19";
 
-/** Tables archivées, dans l'ordre d'insertion (parents d'abord). `project_members` porte les droits du projet. */
+/** Tables archivées, dans l'ordre d'insertion (parents d'abord). `project_members` porte les droits du projet (vue de compatibilité
+ * lue à l'export ; restaurée en participations et rôles de partage, lot OP-PONT). */
 export const STUDIO_ARCHIVE_TABLES = [
   "studio_studies",
   "studio_variants",

@@ -19,14 +19,14 @@
  * `/members/mandates/:mandateId`) ; l'acceptation exige que le mandat soit encore actif (`mandate_ended`) et la
  * participation activée porte alors la partie représentée (l'organisation du mandat).
  *
- * Pont : l'accès de base (Lecteur / Concepteur) passe toujours par la ligne `project_members` que le miroir
- * `op_sync_access` traduit en participation active et rôle `acces` (voir phase-3.md, « Pont conservé ») ; les autres rôles
- * proposés sont posés avec l'origine `attribution`, l'échéance d'accès sur la participation.
+ * Accès de base (Lecteur / Concepteur) : écrit directement sur la participation (rôle `acces`, lot OP-PONT,
+ * `project-access-db.ts` — il passait auparavant par le pont `op_sync_access`) ; les autres rôles proposés sont posés
+ * avec l'origine `attribution`, l'échéance d'accès sur la participation.
  */
 import { and, asc, eq, gt, isNull, ne, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import {
-  invitations, organizationMandates, organizations, people, projectMembers, projectParticipations, projectRoleAssignments, projects, studioObservations, studioObservationTasks,
+  invitations, organizationMandates, organizations, people, projectParticipations, projectRoleAssignments, projects, studioObservations, studioObservationTasks,
   studioStudies, studioVariants, users, type ProposedRole,
 } from "../db/schema.js";
 import { audit } from "./audit.js";
@@ -40,6 +40,7 @@ import {
 } from "./project-invitations.js";
 import type { Tx } from "./step-rows.js";
 import { porteeInconnue } from "./portees-db.js";
+import { grantShare, shareOf } from "./project-access-db.js";
 import { mandateStillValidFor, representedOrganizationOfMandate } from "./mandate-invitations-db.js";
 import type { TypePortee } from "@parcours/domain-model";
 
@@ -70,8 +71,7 @@ export async function resolveInvitationTarget(q: Querier, projectId: string, ema
   const account = await accountByEmail(q, email);
   const accountId = account && account.status !== "closed" ? account.id : null;
   if (accountId) {
-    const [member] = await q.select({ userId: projectMembers.userId }).from(projectMembers)
-      .where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, accountId))).limit(1);
+    const member = await shareOf(q, projectId, accountId);
     if (member) {
       const [p] = await q.select({ id: projectParticipations.id }).from(projectParticipations).innerJoin(people, eq(people.id, projectParticipations.personId))
         .where(and(eq(projectParticipations.projectId, projectId), eq(people.userId, accountId), ne(projectParticipations.status, "terminee"))).limit(1);
@@ -277,8 +277,8 @@ export async function projectParticipationRefusal(tx: Tx | typeof db, inv: Invit
  *  1. la fiche visée est liée au compte vérifié : contact sans compte lié au compte (s'il n'a pas encore de personne),
  *     sinon la participation rejoint la personne du compte (ou, s'il en a déjà une dans le projet, cette dernière est
  *     gardée et la fiche de l'invitation est close comme remplacée) ;
- *  2. l'accès de base passe par le pont (`project_members`, rôle le plus large conservé), que le miroir traduit en
- *     participation `active` et rôle `acces` ;
+ *  2. l'accès de base est écrit sur la participation (rôle `acces`, rôle le plus large conservé ; un contact devient
+ *     `active`, une participation suspendue le reste — `grantShare`, lot OP-PONT) ;
  *  3. les autres rôles proposés sont posés (origine `attribution`, attribués par l'invitant), l'échéance d'accès est
  *     recopiée sur une participation qui vient de devenir active.
  */
@@ -313,15 +313,9 @@ export async function activateProjectParticipation(tx: Tx, inv: InvitationRow, u
   }
   // « Déjà membre » = une ligne de partage existait (accès de projet) ; une participation active SANS rôle de projet (revue
   // externe, phase 4) n'ouvrait rien : l'acceptation est alors une arrivée (échéance recopiée, ajout journalisé).
-  const [memberBefore] = await tx.select({ userId: projectMembers.userId }).from(projectMembers)
-    .where(and(eq(projectMembers.projectId, inv.projectId), eq(projectMembers.userId, userId))).limit(1);
-  const wasActive = !!memberBefore;
   const [inviter] = inv.invitedBy ? await tx.select({ email: users.email }).from(users).where(eq(users.id, inv.invitedBy)).limit(1) : [];
-  await tx.insert(projectMembers).values({ projectId: inv.projectId, userId, role: baseRole, invitedBy: inviter?.email ?? "", canExport: false })
-    .onConflictDoUpdate({
-      target: [projectMembers.projectId, projectMembers.userId],
-      set: { role: sql`CASE WHEN ${projectMembers.role} = 'editeur' THEN 'editeur' ELSE excluded.role END` },
-    });
+  const { before: memberBefore } = await grantShare(tx, { projectId: inv.projectId, userId, role: baseRole, invitedBy: inviter?.email ?? "", grantedBy: inv.invitedBy, mode: "merge" });
+  const wasActive = !!memberBefore;
   const part = await currentParticipationOf(tx, inv.projectId, userId);
   if (!part) return { participationId: null };
   if (!wasActive && part.status === "active") {

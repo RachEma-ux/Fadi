@@ -14,6 +14,7 @@ import { and, eq, isNotNull, lte, ne, or, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { accountTokens, invitations, mailOutbox, people, projectComments, projectMembers, projects, sessions, userRecoveryCodes, users } from "../db/schema.js";
 import { runContactRetentionJob } from "./participants-db.js";
+import { relabelShareInviter, revokeSharesOfUser } from "./project-access-db.js";
 import { audit } from "./audit.js";
 import { processMailOutbox } from "./mailer/outbox.js";
 import { anonymisationAt, anonymisedEmail, DELETED_LABEL, DELETION_GRACE_DAYS } from "./security/deletion.js";
@@ -39,10 +40,11 @@ export async function anonymiseAccountIn(tx: Tx, userId: string, by: AnonymisedB
   if (shared.length) return false;
   const oldEmail = user.email;
   const deletedProjects = await tx.delete(projects).where(eq(projects.ownerId, userId)).returning({ id: projects.id });
-  await tx.delete(projectMembers).where(eq(projectMembers.userId, userId));
+  // Partages du compte retirés (participations terminées) — lot OP-PONT, `project_members` n'est plus qu'une vue.
+  await revokeSharesOfUser(tx, userId);
   // Fiche de personne liée au compte (Issue #262) : fonction et coordonnées professionnelles effacées avec le compte.
   await tx.update(people).set({ displayName: null, jobTitle: null, workEmail: null, workPhone: null, updatedAt: new Date() }).where(eq(people.userId, userId));
-  await tx.update(projectMembers).set({ invitedBy: DELETED_LABEL }).where(eq(projectMembers.invitedBy, oldEmail));
+  await relabelShareInviter(tx, oldEmail, DELETED_LABEL);
   await tx.update(projectComments).set({ authorEmail: DELETED_LABEL }).where(eq(projectComments.authorId, userId));
   await tx.execute(sql`UPDATE projects SET editing_lock = NULL WHERE editing_lock->>'userId' = ${userId}`);
   await tx.delete(userRecoveryCodes).where(eq(userRecoveryCodes.userId, userId));

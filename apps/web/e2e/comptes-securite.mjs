@@ -23,6 +23,7 @@
  */
 import { createHmac, randomUUID } from 'node:crypto';
 import { appelPlaywright, inviterEtAccepter } from './lib-invitations.mjs';
+import { partagerEnBase, retirerPartagesEnBase } from './lib-partage-sql.mjs';
 import { execFileSync } from 'node:child_process';
 import pg from 'pg';
 
@@ -423,11 +424,11 @@ const sharer = await register('corbeille-partage');
 const sharedProject = (await sharer.a.call('POST', '/projects', { code: `SH-${uid().slice(0, 4)}`, name: 'Projet partagé' })).body;
 await sharer.a.call('DELETE', '/auth/me', { password: sharer.password, confirm: 'SUPPRIMER' });
 // Partage apparu pendant le délai (horloge et données simulées sur la base jetable) : bloque l'anonymisation.
-await sql.query("INSERT INTO project_members (project_id, user_id, role, invited_by) VALUES ($1, $2, 'lecteur', 'recette')", [sharedProject.id, anyone.id]);
+await partagerEnBase(sql, sharedProject.id, anyone.id, 'lecteur'); // lot OP-PONT : participation + rôle `acces`
 check('corbeille : projets partagés signalés', (await trashOf(sharer.id))?.sharedProjects === 1);
 const blocked = await K.call('POST', `/admin/users/${sharer.id}/anonymize`, { confirmEmail: sharer.email });
 check('projets partagés possédés : 409, rien n’est anonymisé', blocked.status === 409 && blocked.body?.error === 'owns_shared_projects' && blocked.body.projects?.some((p) => p.id === sharedProject.id) && (await userRow(sharer.id)).status === 'active', blocked);
-await sql.query('DELETE FROM project_members WHERE project_id = $1', [sharedProject.id]);
+await retirerPartagesEnBase(sql, sharedProject.id);
 
 // Appels simultanés : un seul aboutit (verrou d'éligibilité puis verrou de ligne), un seul journal.
 const twice = await Promise.all([1, 2].map(() => K.call('POST', `/admin/users/${sharer.id}/anonymize`, { confirmEmail: sharer.email })));

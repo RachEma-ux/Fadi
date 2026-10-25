@@ -54,6 +54,8 @@ async function seed() {
     ('og_ma', 'og_o', 'og_pa', 'administrateur', 'active'), ('og_mb', 'og_o', 'og_pb', 'administrateur', 'active'),
     ('og_mm', 'og_o', 'og_pm', 'membre', 'active'), ('og_m2', 'og_o2', 'og_pb', 'administrateur', 'active')`);
   await client.query("INSERT INTO projects (id, owner_id, code, name) VALUES ('og_p', 'og_owner', 'OG1', 'Projet partenaire')");
+  // Participation du propriétaire, écrite par l'application à la création (lot OP-PONT : plus de déclencheur).
+  await client.query(person('og_po', 'og_owner') + "INSERT INTO project_participations (id, project_id, person_id, status, starts_on) VALUES ('og_ppo', 'og_p', 'og_po', 'active', current_date)");
   await client.query("INSERT INTO project_participations (id, project_id, organization_id, status, starts_on) VALUES ('og_pp', 'og_p', 'og_o', 'active', current_date)");
   await client.query("INSERT INTO organization_groups (id, organization_id, name) VALUES ('og_g', 'og_o', 'Structure'), ('og_g2', 'og_o2', 'Fluides')");
   await client.query("INSERT INTO organization_group_members (group_id, membership_id, organization_id) VALUES ('og_g', 'og_mm', 'og_o'), ('og_g', 'og_mb', 'og_o')");
@@ -114,6 +116,7 @@ try {
   await rejects('deux versions du même numéro', `INSERT INTO organization_template_versions (id, template_id, version, content) VALUES ('og_x', 'og_t', 1, '{"entries":[]}')`);
   await rejects('version sans lignes', "INSERT INTO organization_template_versions (id, template_id, version, content) VALUES ('og_x', 'og_t', 2, '{}')");
   await client.query("INSERT INTO projects (id, owner_id, code, name) VALUES ('og_p2', 'og_owner', 'OG2', 'Autre')");
+  await client.query("INSERT INTO project_participations (id, project_id, person_id, status, starts_on) VALUES ('og_ppo2', 'og_p2', 'og_po', 'active', current_date)");
   await client.query("INSERT INTO project_participations (id, project_id, organization_id, status) VALUES ('og_pp2', 'og_p2', 'og_o2', 'active')");
   await rejects('mandat sur la participation d\'une autre organisation', "INSERT INTO organization_mandates (id, organization_id, project_id, participation_id, membership_id) VALUES ('og_x', 'og_o', 'og_p2', 'og_pp2', 'og_ma')", 'organization_mandate_participation_mismatch');
   await rejects('deux mandats actifs dans le même projet', "INSERT INTO organization_mandates (id, organization_id, project_id, participation_id, membership_id, status) VALUES ('og_x', 'og_o', 'og_p', 'og_pp', 'og_ma', 'actif')");

@@ -12,7 +12,7 @@
 import { and, eq, inArray, isNull, ne, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import {
-  invitations, organizations, people, projectEffectiveAccess, projectMembers, projectParticipations, projectRoleAssignments, projects,
+  invitations, organizations, people, projectEffectiveAccess, projectParticipations, projectRoleAssignments, projects,
   studioObservations, studioObservationTasks, studioStudies, studioVariants, users,
   type ParticipationStatus, type ProjectBusinessRole, type RoleScopeType, type TeamResponsibility,
 } from "../db/schema.js";
@@ -172,7 +172,7 @@ export async function impactOf(q: Querier, projectId: string, participationId: s
 /**
  * Change le statut d'une participation dans la transaction de l'appelant. Suspendre ou terminer retire l'accès dérivé à
  * la requête suivante (la vue ne retient qu'une participation active) et libère la réservation d'édition du compte ;
- * terminer retire aussi la ligne de partage (aucun pont ne rouvrirait l'accès) et annule les invitations en attente pour
+ * terminer retire aussi le partage (la participation terminée sort de la vue `project_members`) et annule les invitations en attente pour
  * ses adresses. Réactiver rend l'accès des rôles toujours portés. Renvoie le nombre d'invitations annulées.
  */
 export async function applyStatusChange(tx: Tx, input: { projectId: string; participationId: string; userId: string | null; accountEmail: string | null; workEmail: string | null; to: ParticipationStatus; endsOn?: string | null }): Promise<{ invitationsCancelled: number }> {
@@ -187,7 +187,6 @@ export async function applyStatusChange(tx: Tx, input: { projectId: string; part
   }
   let invitationsCancelled = 0;
   if (input.to === "terminee") {
-    if (input.userId) await tx.delete(projectMembers).where(and(eq(projectMembers.projectId, input.projectId), eq(projectMembers.userId, input.userId)));
     const ids = await pendingInvitationIds(tx, input.projectId, [input.accountEmail, input.workEmail]);
     if (ids.length) await tx.update(invitations).set({ status: "cancelled", respondedAt: new Date() }).where(inArray(invitations.id, ids));
     invitationsCancelled = ids.length;
