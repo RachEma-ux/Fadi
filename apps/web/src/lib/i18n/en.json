@@ -12363,5 +12363,7 @@
 "Le repère d'orientation demandé n'est pas valide.": "The requested orientation frame is not valid.",
 "Nom de repère vide : donnez un nom.": "Empty frame name: give a name.",
 "Ce repère enregistré n'existe plus.": "This saved frame no longer exists.",
-"Ce repère est cité par une ou plusieurs scènes : choisissez de les détacher (elles gardent leur instantané) ou annulez.": "This frame is cited by one or more scenes: choose to detach them (they keep their snapshot) or cancel."
+"Ce repère est cité par une ou plusieurs scènes : choisissez de les détacher (elles gardent leur instantané) ou annulez.": "This frame is cited by one or more scenes: choose to detach them (they keep their snapshot) or cancel.",
+"Cet objet est imbriqué dans un composant partagé : « cette occurrence seulement » changerait toutes les copies du parent. Rendez d'abord le parent unique, ou choisissez « toutes les occurrences ».": "This object is nested in a shared component: “this instance only” would change every copy of the parent. Make the parent unique first, or choose “all instances”.",
+"Le chemin de l'objet sélectionné ne correspond plus au document.": "The path of the selected object no longer matches the document."
 }

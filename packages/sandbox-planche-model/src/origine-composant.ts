@@ -13,7 +13,7 @@
  * - Lot : aperçu des éligibles et des écartés avec motifs, définitions touchées, puis un seul pas.
  */
 import type { Repere } from "./annotations.js";
-import { type Contexte, type Id, type Matrice4, type Modele, type Resultat, appliquer, composer, inverserMatrice, matriceMonde, nombreOccurrences, redefinirReperesDefinitions } from "./geometrie-libre.js";
+import { type Contexte, type Id, type Matrice4, type Modele, type Resultat, appliquer, composer, inverserMatrice, matriceChemin, matriceMonde, nombreInstances, nombreOccurrences, redefinirReperesDefinitions } from "./geometrie-libre.js";
 import { validerRepere } from "./reperes.js";
 import { type Vec3, cross, dot, len, normalize, scale, v3 } from "./vecteur.js";
 
@@ -53,6 +53,8 @@ export const MOTIFS_ORIGINE = Object.freeze({
   piece: "Pièce de profilé : sa géométrie se régénère depuis son repère de pièce ; changer son origine romprait ce lien.",
   vide: "La définition ne contient aucune géométrie : pas de boîte pour placer l'origine.",
   repere: "Le repère d'orientation demandé n'est pas valide.",
+  ancetre: "Cet objet est imbriqué dans un composant partagé : « cette occurrence seulement » changerait toutes les copies du parent. Rendez d'abord le parent unique, ou choisissez « toutes les occurrences ».",
+  chemin: "Le chemin de l'objet sélectionné ne correspond plus au document.",
 });
 
 /** Boîte englobante LOCALE d'une définition (sommets et objets imbriqués, dans son repère propre). */
@@ -125,11 +127,32 @@ function occurrencesDe(m: Modele, definition: Id): { id: Id; verrouille: boolean
   return r;
 }
 
-/** Aperçu (aucune modification) : contrôles, portée exacte, nouvelle origine et nouveaux axes. */
-export function apercuOrigine(m: Modele, occurrence: Id, opts: OptionsOrigine): ResultatApercu {
-  const M = matriceMonde(m, occurrence);
+/** Chemin racine → occurrence (première rencontre) quand l'appelant ne le fournit pas. */
+function cheminParDefaut(m: Modele, occurrence: Id): Id[] | null {
+  const chercher = (c: Contexte, ch: Id[]): Id[] | null => {
+    if (ch.length > 32) return null;
+    for (const o of Object.values(c.occurrences)) {
+      if (o.id === occurrence) return [...ch, o.id];
+      const d = m.definitions[o.definition];
+      const r = d ? chercher(d.contenu, [...ch, o.id]) : null;
+      if (r) return r;
+    }
+    return null;
+  };
+  return chercher(m.racine, []);
+}
+
+/**
+ * Aperçu (aucune modification) : contrôles, portée exacte, nouvelle origine et nouveaux axes. `chemin` : occurrences de
+ * la racine jusqu'à l'objet compris — il désigne L'instance éditée quand un parent partagé en montre plusieurs (revue
+ * Codex de #303) ; absent, la première instance rencontrée.
+ */
+export function apercuOrigine(m: Modele, occurrence: Id, opts: OptionsOrigine, chemin?: readonly Id[]): ResultatApercu {
+  const ch = chemin ?? cheminParDefaut(m, occurrence);
+  if (!ch || ch[ch.length - 1] !== occurrence) return { ok: false, motif: chemin ? MOTIFS_ORIGINE.chemin : MOTIFS_ORIGINE.introuvable };
+  const M = matriceChemin(m, ch) ?? (chemin ? null : matriceMonde(m, occurrence));
   const occ = M ? findOccurrence(m, occurrence) : null;
-  if (!M || !occ) return { ok: false, motif: MOTIFS_ORIGINE.introuvable };
+  if (!M || !occ) return { ok: false, motif: chemin ? MOTIFS_ORIGINE.chemin : MOTIFS_ORIGINE.introuvable };
   const def = m.definitions[occ.definition];
   if (!def) return { ok: false, motif: MOTIFS_ORIGINE.introuvable };
   if (def.piece) return { ok: false, motif: MOTIFS_ORIGINE.piece };
@@ -138,8 +161,16 @@ export function apercuOrigine(m: Modele, occurrence: Id, opts: OptionsOrigine): 
   if (nature === "biais") return { ok: false, motif: MOTIFS_ORIGINE.biais };
   const toutes = occurrencesDe(m, def.id);
   const partage = nombreOccurrences(m, def.id) > 1;
+  // Un ancêtre partagé montre l'objet plusieurs fois : « cette occurrence » ne peut pas l'isoler sans rendre le parent
+  // unique — refus explicite (revue Codex de #303). Les instances physiques sont comptées, pas seulement les références.
+  const ancetrePartage = ch.slice(0, -1).some((id) => {
+    const a = findOccurrence(m, id);
+    return a ? nombreInstances(m, a.definition) > 1 : false;
+  });
+  if (opts.portee === "occurrence" && ancetrePartage) return { ok: false, motif: MOTIFS_ORIGINE.ancetre };
   const rendreUnique = opts.portee === "occurrence" && partage;
-  const touchees = rendreUnique ? 1 : toutes.length;
+  const instances = nombreInstances(m, def.id);
+  const touchees = rendreUnique ? 1 : instances;
   if (occ.verrouille || (!rendreUnique && toutes.some((o) => o.verrouille))) return { ok: false, motif: MOTIFS_ORIGINE.verrou };
   const Minv = inverserMatrice(M);
   if (!Minv) return { ok: false, motif: MOTIFS_ORIGINE.biais };
@@ -171,7 +202,7 @@ export function apercuOrigine(m: Modele, occurrence: Id, opts: OptionsOrigine): 
       occurrence,
       definition: def.id,
       nom: def.nom,
-      occurrences: toutes.length,
+      occurrences: instances,
       touchees,
       rendreUnique,
       origineMonde: appliquer(M, o),
@@ -195,8 +226,8 @@ function findOccurrence(m: Modele, id: Id): { definition: Id; verrouille?: boole
 export type ResultatOrigine = { readonly ok: true; readonly modele: Modele; readonly apercus: readonly ApercuOrigine[] } | { readonly ok: false; readonly motif: string };
 
 /** Applique le changement d'origine à une occurrence : un pas, ou un refus sans rien modifier. */
-export function changerOrigine(m: Modele, occurrence: Id, opts: OptionsOrigine): ResultatOrigine {
-  return changerOrigineLot(m, [occurrence], opts).resultat;
+export function changerOrigine(m: Modele, occurrence: Id, opts: OptionsOrigine, chemin?: readonly Id[]): ResultatOrigine {
+  return changerOrigineLot(m, [occurrence], opts, chemin ? { [occurrence]: chemin } : undefined).resultat;
 }
 
 export interface ApercuLot {
@@ -211,12 +242,12 @@ export interface ApercuLot {
  * éligibles sont appliqués en UN pas (un seul Annuler). Une définition partagée n'est traitée qu'une fois en portée
  * « toutes ». Aucun éligible : rien n'est modifié.
  */
-export function changerOrigineLot(m: Modele, occurrences: readonly Id[], opts: OptionsOrigine): { apercu: ApercuLot; resultat: ResultatOrigine } {
+export function changerOrigineLot(m: Modele, occurrences: readonly Id[], opts: OptionsOrigine, chemins?: Readonly<Record<Id, readonly Id[]>>): { apercu: ApercuLot; resultat: ResultatOrigine } {
   const eligibles: ApercuOrigine[] = [];
   const ecartes: { occurrence: Id; motif: string }[] = [];
   const definitions: Id[] = [];
   for (const id of occurrences) {
-    const a = apercuOrigine(m, id, opts);
+    const a = apercuOrigine(m, id, opts, chemins?.[id]);
     if (!a.ok) {
       ecartes.push({ occurrence: id, motif: a.motif });
       continue;

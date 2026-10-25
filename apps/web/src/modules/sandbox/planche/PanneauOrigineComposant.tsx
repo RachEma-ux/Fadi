@@ -27,6 +27,8 @@ export interface PropsPanneauOrigine {
   modele: Modele;
   /** Groupes et composants sélectionnés (un ou plusieurs : lot). */
   occurrences: readonly string[];
+  /** Chemin racine → objet de chaque occurrence sélectionnée (instance réellement éditée). */
+  chemins: Readonly<Record<string, readonly string[]>>;
   contexte: ContexteTravail;
   lecture: boolean;
   separateurDecimal: "." | ",";
@@ -69,7 +71,9 @@ export function PanneauOrigineComposant(p: PropsPanneauOrigine) {
     return { origine, orientation: orientation === "travail" ? { genre: "repere", repere: r } : { genre: "garder" }, portee };
   }, [p.contexte, mode, ancrage, local, orientation, portee]);
 
-  const lot = useMemo(() => (opts ? changerOrigineLot(p.modele, p.occurrences, opts).apercu : null), [p.modele, p.occurrences, opts]);
+  const cleChemins = JSON.stringify(p.chemins);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const lot = useMemo(() => (opts ? changerOrigineLot(p.modele, p.occurrences, opts, p.chemins).apercu : null), [p.modele, p.occurrences, opts, cleChemins]);
   const premier = lot?.eligibles[0] ?? null;
   const onApercu = p.onApercu;
   useEffect(() => {
@@ -104,8 +108,9 @@ export function PanneauOrigineComposant(p: PropsPanneauOrigine) {
           <p data-origine-lot>{t("planche.origine.lot", { eligibles: String(lot.eligibles.length), ecartes: String(lot.ecartes.length), definitions: String(lot.definitions.length) })}</p>
         )}
         {lot?.ecartes.map((e) => (
+          // Revue Codex de #303 : le motif (texte du modèle, en français) est un nœud à part, traduit par le dictionnaire.
           <p key={e.occurrence} className="planche-reperes-erreur" role="alert" data-origine-ecarte={e.occurrence}>
-            {t("planche.origine.ecarte", { nom: nomDe(e.occurrence), motif: e.motif })}
+            <span>{nomDe(e.occurrence)}</span> — <span>{e.motif}</span>
           </p>
         ))}
         <fieldset>

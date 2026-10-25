@@ -149,6 +149,40 @@ describe("AX11 — imbriqués, miroirs, échelles", () => {
   });
 });
 
+describe("Revue Codex de #303 — objet imbriqué dans un parent partagé", () => {
+  /** Parent (composant) contenant le bloc ; deux occurrences du parent, la seconde translatée de 10 et tournée de 90°. */
+  function parentPartage() {
+    const c = composant();
+    const g = grouper(c.m, [c.occ], { genre: "composant", nom: "Parent" });
+    const p1 = Object.keys(g.modele.racine.occurrences)[0]!;
+    const defP = g.modele.racine.occurrences[p1]!.definition;
+    const m = avecOccurrence(g.modele, "p2", defP, rotationZ(Math.PI / 2, v3(10, 0, 0)));
+    return { m, p1, p2: "p2", enfant: c.occ };
+  }
+
+  it("le chemin désigne l'instance éditée : l'origine monde demandée est bien celle de la seconde instance", () => {
+    const { m, p2, enfant } = parentPartage();
+    const opts = { origine: { genre: "monde" as const, point: v3(10, 1, 0) }, orientation: { genre: "garder" as const }, portee: "toutes" as const };
+    const a = apercuOrigine(m, enfant, opts, [p2, enfant]);
+    if (!a.ok) throw new Error(a.motif);
+    expect(len(sub(a.apercu.origineMonde, v3(10, 1, 0)))).toBeLessThan(1e-9);
+    expect(a.apercu.occurrences).toBe(2);
+    const r = changerOrigine(m, enfant, opts, [p2, enfant]);
+    if (!r.ok) throw new Error(r.motif);
+    memeMonde(m, r.modele);
+  });
+
+  it("« cette occurrence » sous un parent partagé : refus explicite (le parent montrerait la modification partout)", () => {
+    const { m, p1, enfant } = parentPartage();
+    expect(changerOrigine(m, enfant, { origine: { genre: "ancrage", ancrage: ANCRAGE_CENTRE_BASE }, orientation: { genre: "garder" }, portee: "occurrence" }, [p1, enfant])).toMatchObject({ ok: false, motif: expect.stringMatching(/composant partagé/) });
+  });
+
+  it("chemin périmé (ne finit pas par l'objet) : refus", () => {
+    const { m, p1, enfant } = parentPartage();
+    expect(apercuOrigine(m, enfant, { origine: { genre: "ancrage", ancrage: ANCRAGE_CENTRE_BASE }, orientation: { genre: "garder" }, portee: "toutes" }, [p1])).toMatchObject({ ok: false });
+  });
+});
+
 describe("AX12 — lot : aperçu, écartés, un seul pas", () => {
   it("éligibles et écartés avec motif ; définition partagée traitée une fois ; aucun éligible → rien de modifié", () => {
     const c = composant();

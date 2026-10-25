@@ -2467,13 +2467,15 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   };
   const etatReperes = () => ({ contexte: histContexte.courant, precedents: histContexte.precedents.length, face: faceMonde() !== null, objet: occurrencesSelectionnees().length > 0, lecture: readOnly });
   const [origineOuverte, setOrigineOuverte] = useState(false);
+  /** Revue Codex de #303 : chemin complet de chaque objet sélectionné (l'instance ouverte, pas la première rencontrée). */
+  const cheminsSelection = (): Record<string, string[]> => Object.fromEntries(occurrencesSelectionnees().map((id) => [id, [...cheminRef.current, id]]));
   ouvrirOrigineRef.current = () => {
     setPanneau(null);
     setOrigineOuverte(true);
   };
   const apercuOrigine = useCallback((r: { origine: Vec3; x: Vec3; y: Vec3; z: Vec3 } | null) => vueRef.current?.poserApercuRepere(r), []);
   const appliquerOrigine = (opts: OptionsOrigine) => {
-    const { resultat } = changerOrigineLot(histRef.current.present.modele, occurrencesSelectionnees(), opts);
+    const { resultat } = changerOrigineLot(histRef.current.present.modele, occurrencesSelectionnees(), opts, cheminsSelection());
     if (!resultat.ok) {
       setMessage(resultat.motif);
       return;
@@ -2787,6 +2789,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         <PanneauOrigineComposant
           modele={hist.present.modele}
           occurrences={occurrencesSelectionnees()}
+          chemins={cheminsSelection()}
           contexte={histContexte.courant}
           lecture={readOnly}
           separateurDecimal={SEPARATEUR_DECIMAL}
