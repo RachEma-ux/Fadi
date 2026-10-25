@@ -10245,6 +10245,8 @@
 "libéré": "released",
 "échec du chargement": "loading failed",
 "Le moteur n’a pas pu être chargé : réessayez.": "The engine could not be loaded: try again.",
+"Brouillon conservé depuis une version précédente de l’application ({0}) : il reste valide et sera envoyé à l’enregistrement.": "Draft kept from a previous version of the application ({0}): it remains valid and will be sent on save.",
+"Espace de stockage de l’appareil plein : les versions lues en cache ont été libérées, mais le brouillon n’a pas pu être conservé. Il reste dans cette page : enregistrez dès que possible, ne fermez pas la page.": "Device storage full: cached read versions were freed, but the draft could not be kept. It stays in this page: save as soon as possible and do not close the page.",
 "Accrocher en parallèle": "Snap parallel",
 "Découvert (non chargé)": "Discovered (not loaded)",
 "Non disponible ici": "Not available here",

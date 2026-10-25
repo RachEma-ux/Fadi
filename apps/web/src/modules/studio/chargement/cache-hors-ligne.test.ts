@@ -124,7 +124,7 @@ describe("TR-EX-042 — caches de classe : coquille, profil, modules facultatifs
     const v = await verifierHorsConnexion(e, carte());
     expect(v.moteurs).toMatchObject({ "coquille-studio": true, "planche-2d": true, "rendu-3d": true, calcul: true, "noyau-exact": false });
     const r = await preparerHorsConnexion(e, carte(), ["noyau-exact"]);
-    expect(r.ranges.sort()).toEqual(["/assets/noyau-exact.worker.js", "/assets/occt-wasm.wasm", "/chargement.json"]);
+    expect([...r.ranges].sort()).toEqual(["/assets/noyau-exact.worker.js", "/assets/occt-wasm.wasm", "/chargement.json"]);
     expect([...parNom.get("fadi-modules-b1")!]).toEqual(expect.arrayContaining(["/assets/noyau-exact.worker.js", "/assets/occt-wasm.wasm"]));
     expect(parNom.get("fadi-profil-b1")!.has("/chargement.json")).toBe(true);
     expect(parNom.get("fadi-shell-b1")!.has("/assets/occt-wasm.wasm")).toBe(false);

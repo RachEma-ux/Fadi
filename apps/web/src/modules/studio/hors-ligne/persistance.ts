@@ -13,6 +13,7 @@ import { studioChevauchements, studioElementsModifies, type StudioCommand } from
 import type { StudioContext } from "../../../lib/api";
 import type { PlanEnvoi } from "../import/envoi";
 import { annulerBrouillon, appliquerBrouillon, avecPlancher, creerBrouillon, documentBrouillon, peutAnnuler, type Brouillon } from "../planche2d/brouillon";
+import { contratsLocaux, lireContrats, type ContratsFileLocale } from "./quota";
 
 export const VERSION_BROUILLON_HORS_LIGNE = 1;
 
@@ -36,13 +37,18 @@ export interface BrouillonHorsLigne {
   /** Nombre de pas (en tête de `pas`) mis dans `plan` ; 0 sans plan. */
   pasCouverts: number;
   conflit: ConflitHorsLigne | null;
+  /**
+   * Correspondance build ↔ contrat des commandes ↔ schéma du document ↔ manifeste des outils au moment de l'écriture
+   * (EX-044) ; absente d'une file écrite avant.
+   */
+  contrats?: ContratsFileLocale;
 }
 
 /** Clé d'une variante POUR un utilisateur : deux comptes du même appareil n'ont jamais la même ligne. */
 export const cleVariante = (userId: string, projectId: string, studyId: string, variantId: string): string => [userId, projectId, studyId, variantId].join("|");
 
 export function versHorsLigne(userId: string, base: StudioContext, b: Brouillon, plan: PlanEnvoi | null, pasCouverts: number, conflit: ConflitHorsLigne | null): BrouillonHorsLigne {
-  return { version: VERSION_BROUILLON_HORS_LIGNE, userId, base, pas: b.pas.map(p => [...p]), refaire: b.refaire.map(p => [...p]), plan, pasCouverts: plan ? pasCouverts : 0, conflit };
+  return { version: VERSION_BROUILLON_HORS_LIGNE, userId, base, pas: b.pas.map(p => [...p]), refaire: b.refaire.map(p => [...p]), plan, pasCouverts: plan ? pasCouverts : 0, conflit, contrats: contratsLocaux() };
 }
 
 /** Rien à conserver : ni commande en attente, ni enveloppe non confirmée, ni conflit. */
@@ -78,7 +84,8 @@ export function lireHorsLigne(json: string, userId: string): BrouillonHorsLigne 
   if (typeof n !== "number" || !Number.isInteger(n) || n < 0 || n > v.pas.length || (!plan && n !== 0)) throw new Error("pas couverts illisibles");
   // Les enveloppes portent exactement les pas couverts, dans l'ordre : sinon un rejeu enverrait autre chose.
   if (plan && JSON.stringify(v.pas.slice(0, n).flat()) !== JSON.stringify(plan.lots.flat())) throw new Error("enveloppes et pas incohérents");
-  return { version: VERSION_BROUILLON_HORS_LIGNE, userId: v.userId, base: base as unknown as StudioContext, pas: v.pas, refaire: v.refaire, plan, pasCouverts: n, conflit: (c as ConflitHorsLigne | null) ?? null };
+  const contrats = lireContrats(v.contrats);
+  return { version: VERSION_BROUILLON_HORS_LIGNE, userId: v.userId, base: base as unknown as StudioContext, pas: v.pas, refaire: v.refaire, plan, pasCouverts: n, conflit: (c as ConflitHorsLigne | null) ?? null, ...(contrats ? { contrats } : {}) };
 }
 
 /**
