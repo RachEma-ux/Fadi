@@ -27,7 +27,15 @@ export type CommandeCollaboration =
   // Temps réel (Issue #283, RT-D5 § 10).
   | CommandeTempsReel
   // Lot F4 : délégation d'approbation (EX-085) et rapprochement des observations (EX-086).
-  | CommandeTracabilite;
+  | CommandeTracabilite
+  // Lot PUB : échange BCF des observations (IF-010).
+  | CommandeEchangeObservations;
+
+/**
+ * Lot PUB (IF-010) : exporter les observations en BCF 2.1 et importer un fichier BCF (panneau Observations).
+ * Ctrl+Alt+Maj+lettre restée libre (Y, I).
+ */
+export type CommandeEchangeObservations = "exporter-bcf" | "importer-bcf";
 
 /**
  * Lot F4 (Studio) : déléguer l'approbation et révoquer une délégation (panneau Publications, EX-085), rapprocher les
@@ -271,7 +279,15 @@ export const COMMANDES_COLLABORATION: Readonly<Record<CommandeCollaboration, Def
   "revoquer-delegation": { libelle: "Révoquer la délégation", barre: "délégation", raccourci: ctrlAltMajLettre("X"), icone: ["M12 2l2.5 5 5.5.8-4 3.9.9 5.5L12 14.6 7.1 17.2 8 11.7 4 7.8 9.5 7z", "M16 18l4 4", "M20 18l-4 4"] },
   // Rapprocher les observations : deux cibles reliées par une flèche.
   "rapprocher-observations": { libelle: "Rapprocher avec la révision courante", barre: "observations", raccourci: ctrlAltMajLettre("M"), icone: ["M6 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", "M18 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", "M8.5 8.5l7 7", "M15.5 11v4.5H11"] },
+  // --- Lot PUB : échange BCF des observations (IF-010) ---
+  // Exporter en BCF : bulle de sujet et flèche sortante.
+  "exporter-bcf": { libelle: "Exporter en BCF", barre: "observations", raccourci: ctrlAltMajLettre("Y"), icone: ["M4 4h11v9H8l-4 3z", "M17 14h5", "M20 11l3 3-3 3"] },
+  // Importer un fichier BCF : bulle de sujet et flèche entrante.
+  "importer-bcf": { libelle: "Importer un fichier BCF", barre: "observations", raccourci: ctrlAltMajLettre("I"), icone: ["M9 4h11v9h-7l-4 3z", "M7 14H2", "M4 11l-3 3 3 3"] },
 });
+
+/** Commandes du lot PUB (IF-010). */
+export const COMMANDES_ECHANGE_OBSERVATIONS: readonly CommandeEchangeObservations[] = ["exporter-bcf", "importer-bcf"];
 
 /** Commandes du lot F4 (EX-085, EX-086). */
 export const COMMANDES_TRACABILITE: readonly CommandeTracabilite[] = ["deleguer-approbation", "revoquer-delegation", "rapprocher-observations"];

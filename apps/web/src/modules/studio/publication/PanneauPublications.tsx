@@ -31,6 +31,9 @@ export interface PanneauPublicationsProps {
 const refused = (e: unknown) => e instanceof ApiError && [401, 403, 404].includes(e.status);
 const date = (iso: string | null) => { if (!iso) return "—"; const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleString(LOCALE, { dateStyle: "medium", timeStyle: "short" }); };
 const ko = (n: number) => `${Math.max(1, Math.round(n / 1024))} Kio`;
+/** Conclusion normative et état d'exécution d'un contrôle (EX-068) : jamais « conforme » hors exécution. */
+const LIBELLE_CONCLUSION: Readonly<Record<string, string>> = { conforme: "conforme", "non-conforme": "non conforme", "non-teste": "non testé", "non-applicable-justifie": "non applicable justifié" };
+const LIBELLE_EXECUTION: Readonly<Record<string, string>> = { "en-attente": "en attente", "delai-depasse": "délai dépassé", "echec-technique": "échec technique", "non-execute": "non exécuté" };
 
 export function PanneauPublications({ projectId, studyId, variants, canWrite }: PanneauPublicationsProps) {
   const cle = ["studio-publications", projectId, studyId];
@@ -59,22 +62,27 @@ function PreparerPublication({ projectId, studyId, variants, surCree }: { projec
   const [variantId, setVariantId] = useState(variants[0]?.id ?? "");
   const [titre, setTitre] = useState("");
   const [coordonnees, setCoordonnees] = useState<string[]>([]);
-  // Dessin 2D indépendant (E.3-07) : SVG, DXF et feuille PDF, sans IFC ni variante coordonnée.
-  const [dessin2d, setDessin2d] = useState(false);
+  // Contenu : complet ; dessin 2D indépendant (E.3-07 : SVG, DXF et feuille PDF, sans IFC ni variante coordonnée) ;
+  // dossier de conception (lot PUB, EX-074 : PDF et JSON du dossier, ses feuilles et vues de coupe).
+  const [contenu, setContenu] = useState<"complet" | "dessin-2d" | "dossier-conception">("complet");
+  const dessin2d = contenu !== "complet";
+  const [dossierId, setDossierId] = useState("");
+  const [usage, setUsage] = useState("");
+  const dossiers = useQuery({ queryKey: ["studio-publication-dossiers", projectId, studyId], queryFn: () => api.studioDossiers(projectId, studyId), enabled: contenu === "dossier-conception", retry: false });
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState("");
   const demande = useRef<{ cle: string; id: string } | null>(null);
   async function envoyer(e: FormEvent) {
     e.preventDefault();
-    if (!variantId || enCours) return;
+    if (!variantId || enCours || (contenu === "dossier-conception" && !dossierId)) return;
     const variante = variants.find((v) => v.id === variantId);
     const autres = dessin2d ? [] : coordonnees.filter((id) => id !== variantId);
-    const cle = `${variantId}\u0000${variante?.headRevisionId ?? ""}\u0000${titre.trim()}\u0000${[...autres].sort().join(",")}\u0000${dessin2d ? "dessin-2d" : "complet"}`;
+    const cle = `${variantId}\u0000${variante?.headRevisionId ?? ""}\u0000${titre.trim()}\u0000${[...autres].sort().join(",")}\u0000${contenu}\u0000${dossierId}\u0000${usage.trim()}`;
     if (demande.current?.cle !== cle) demande.current = { cle, id: crypto.randomUUID() };
     setEnCours(true); setErreur("");
     try {
-      await api.createStudioPublication(projectId, studyId, variantId, { ...(titre.trim() ? { title: titre.trim() } : {}), ...(variante ? { revisionId: variante.headRevisionId } : {}), ...(autres.length ? { coordinatedVariantIds: autres } : {}), ...(dessin2d ? { contenu: "dessin-2d" as const } : {}), requestId: demande.current.id });
-      demande.current = null; setTitre(""); setCoordonnees([]); setDessin2d(false);
+      await api.createStudioPublication(projectId, studyId, variantId, { ...(titre.trim() ? { title: titre.trim() } : {}), ...(variante ? { revisionId: variante.headRevisionId } : {}), ...(autres.length ? { coordinatedVariantIds: autres } : {}), ...(contenu !== "complet" ? { contenu } : {}), ...(contenu === "dossier-conception" ? { dossierId } : {}), ...(usage.trim() ? { usage: usage.trim() } : {}), requestId: demande.current.id });
+      demande.current = null; setTitre(""); setCoordonnees([]); setContenu("complet"); setDossierId(""); setUsage("");
       await surCree();
     } catch (err) {
       setErreur(err instanceof ApiError ? messageRefus(err.status, err.body) : "Préparation non confirmée. Réessayez : la même demande sera rejouée sans doublon.");
@@ -91,9 +99,23 @@ function PreparerPublication({ projectId, studyId, variants, surCree }: { projec
       <label htmlFor="studio-publication-titre">Titre (facultatif)</label>
       <input id="studio-publication-titre" maxLength={200} value={titre} onChange={(e) => setTitre(e.target.value)} />
       <label className="studio-publication-dessin2d">
-        <input type="checkbox" checked={dessin2d} onChange={(e) => setDessin2d(e.target.checked)} data-studio-publication-dessin2d />
+        <input type="checkbox" checked={contenu === "dessin-2d"} onChange={(e) => setContenu(e.target.checked ? "dessin-2d" : "complet")} data-studio-publication-dessin2d />
         <span>Dessin 2D indépendant (SVG, DXF et feuille PDF, sans modèle 3D ni IFC)</span>
       </label>
+      <label className="studio-publication-dessin2d">
+        <input type="checkbox" checked={contenu === "dossier-conception"} onChange={(e) => setContenu(e.target.checked ? "dossier-conception" : "complet")} data-studio-publication-dossier />
+        <span>Dossier de conception (PDF et JSON du dossier : feuilles et vues de coupe, chacune avec sa source)</span>
+      </label>
+      {contenu === "dossier-conception" && <>
+        <label htmlFor="studio-publication-dossier-choix">Dossier</label>
+        <select id="studio-publication-dossier-choix" required value={dossierId} onChange={(e) => setDossierId(e.target.value)} data-studio-publication-dossier-choix>
+          <option value="">Choisir…</option>
+          {(dossiers.data?.dossiers ?? []).map((d) => <option key={d.id} value={d.id} translate="no">{d.title}</option>)}
+        </select>
+        {dossiers.data && dossiers.data.dossiers.length === 0 && <p className="studio-info">Aucun dossier de conception dans cette étude : composez-en un dans le panneau Dossier.</p>}
+      </>}
+      <label htmlFor="studio-publication-usage">Usage (facultatif, porté par le manifeste)</label>
+      <input id="studio-publication-usage" maxLength={200} value={usage} onChange={(e) => setUsage(e.target.value)} data-studio-publication-usage />
       {variants.length > 1 && !dessin2d && (
         <fieldset className="studio-publication-coordonnees" data-studio-publication-coordonnees>
           <legend>Variantes coordonnées (facultatif)</legend>
@@ -107,7 +129,7 @@ function PreparerPublication({ projectId, studyId, variants, surCree }: { projec
       )}
       <p>La révision courante de la variante, celle des variantes coordonnées et les empreintes des documents sont figées dans le manifeste.</p>
       {erreur && <p role="alert">{erreur}</p>}
-      <button disabled={enCours || !variantId}>Préparer la publication</button>
+      <button disabled={enCours || !variantId || (contenu === "dossier-conception" && !dossierId)}>Préparer la publication</button>
     </form>
   );
 }
@@ -149,6 +171,7 @@ function CartePublication({ projectId, studyId, publication: p, surChange }: { p
       <div className="studio-publication-tete">
         <strong translate="no">{p.title}</strong>
         {p.contenu === "dessin-2d" && <span className="studio-publication-statut" data-studio-publication-contenu>Dessin 2D indépendant</span>}
+        {p.contenu === "dossier-conception" && <span className="studio-publication-statut" data-studio-publication-contenu="dossier-conception">Dossier de conception</span>}
         <span className={`studio-publication-statut statut-${p.workStatus}`} data-studio-publication-statut title="Travail">{LIBELLE_TRAVAIL[p.workStatus]}</span>
         <span className={`studio-publication-statut statut-${p.diffusionStatus}`} data-studio-publication-diffusion title="Diffusion">{LIBELLE_DIFFUSION[p.diffusionStatus]}</span>
         <span className={`studio-publication-statut ${p.freshness === "perimee" ? "studio-publication-perimee" : ""}`} data-studio-publication-actualite title="Actualité">{libelleActualite(p)}</span>
@@ -163,12 +186,35 @@ function CartePublication({ projectId, studyId, publication: p, surChange }: { p
         <dt>Préparée par</dt><dd translate="no">{`${p.createdBy.email} · ${date(p.createdAt)}`}</dd>
         <dt>Manifeste</dt><dd translate="no" data-studio-publication-manifeste title={p.manifestHash ?? ""}>{p.manifestHash ? empreinteCourte(p.manifestHash) : "—"}</dd>
         {p.manifest && p.manifest.sources.length > 1 && <><dt>Sources</dt><dd translate="no">{p.manifest.sources.map((s) => court(s.revisionId)).join(" · ")}</dd></>}
+        {p.manifest?.usage && <><dt>Usage</dt><dd translate="no" data-studio-publication-usage-lu>{p.manifest.usage}</dd></>}
         {p.approval && <><dt>Approuvée par</dt><dd translate="no">{`${p.approval.by?.email ?? "—"} · ${date(p.approval.at)}${p.approval.manifestHash ? ` · ${empreinteCourte(p.approval.manifestHash)}` : ""}`}</dd></>}
         {p.approval?.delegationId && <><dt>Délégation</dt><dd data-studio-publication-approbation-delegation><span>Approuvée par délégation</span> <span translate="no">{court(p.approval.delegationId)}</span></dd></>}
         {p.diffusion && <><dt>Diffusée par</dt><dd translate="no">{`${p.diffusion.by?.email ?? "—"} · ${date(p.diffusion.at)}`}</dd></>}
         {p.replacement && <><dt>Remplacée</dt><dd translate="no" data-studio-publication-remplacement>{`${p.replacement.by?.email ?? "—"} · ${date(p.replacement.at)} · ${court(p.replacement.publicationId)}`}</dd></>}
         {p.withdrawal && <><dt>Retirée par</dt><dd translate="no" data-studio-publication-retrait>{`${p.withdrawal.by.email} · ${date(p.withdrawal.at)}${p.withdrawal.comment ? ` · ${p.withdrawal.comment}` : ""}`}</dd></>}
       </dl>
+      {p.manifest?.dossier && (
+        <div className="studio-publication-paquet" data-studio-publication-pieces>
+          <p>{`Dossier « ${p.manifest.dossier.titre} » : ${p.manifest.dossier.pieces.length} pièce(s), chacune avec sa source.`}</p>
+          <ol>{p.manifest.dossier.pieces.map((x) => <li key={x.documentId} data-nature={x.nature} data-origine={x.origine} data-presentation={x.presentation}>
+            {`${x.nature === "feuille" ? "Feuille (dessin 2D)" : "Vue de coupe (dérivée de la maquette)"} · ${x.presentation === "extrait-synchronise" ? "extrait synchronisé" : "document indépendant"} · `}
+            <span translate="no">{x.sources.map((s) => court(s.revisionId)).join(", ")}</span>
+          </li>)}</ol>
+        </div>
+      )}
+      {p.manifest?.controles && (
+        <div className="studio-publication-paquet" data-studio-publication-controles>
+          <p>{`Règles : ${p.manifest.controles.regles.length} · rapports de contrôle : ${p.manifest.controles.rapports.length} · observations bloquantes : ${p.manifest.controles.observations.length}`}</p>
+          <ul>
+            {p.manifest.controles.rapports.map((r) => <li key={r.controleId} data-studio-publication-rapport={r.conclusion ?? r.execution}>
+              {`Contrôle de la révision ${court(r.revisionId)} : ${r.conclusion ? LIBELLE_CONCLUSION[r.conclusion] ?? r.conclusion : LIBELLE_EXECUTION[r.execution] ?? r.execution}`}
+            </li>)}
+            {p.manifest.controles.observations.map((o) => <li key={o.issueId} data-studio-publication-observation={o.resolution}>
+              {`Observation bloquante ${court(o.issueId)} : ${o.resolution === "resolue" ? "résolue" : o.resolution === "derogee" ? "dérogée par décision" : "ni résolue ni dérogée — publication bloquée"}`}
+            </li>)}
+          </ul>
+        </div>
+      )}
       {p.freshness === "perimee" && p.drift.length > 0 && (
         <ul className="studio-publication-ecarts" data-studio-publication-ecarts>
           {p.drift.map((e, i) => <li key={i}>{libelleEcart(e)}</li>)}
@@ -195,7 +241,7 @@ function CartePublication({ projectId, studyId, publication: p, surChange }: { p
           {(action === "approuver" || action === "refuser") && p.delegation && <p data-studio-publication-delegation><span>Vous agissez par délégation de</span> <span translate="no">{`${p.delegation.delegator.email} · ${p.delegation.reason} · ${date(p.delegation.endsAt)}`}</span></p>}
           {action === "approuver" && <p data-studio-publication-examine>{`Vous approuvez le manifeste ${empreinteCourte(p.manifestHash ?? "")} : révision ${court(p.revisionId)} (empreinte ${empreinteCourte(p.documentHash)}).`}</p>}
           {action === "approuver" && controle?.autorise && <AvisAutoControle controle={controle} confirme={confirmeAuto} surConfirme={setConfirmeAuto} id={`studio-publication-auto-case-${p.id}`} />}
-          {action === "diffuser" && <p>{p.contenu === "dessin-2d" ? "La diffusion fige un paquet SVG, DXF et feuille PDF de la révision approuvée (dessin 2D, sans IFC)." : "La diffusion fige un paquet SVG, DXF, IFC et feuille PDF de la révision approuvée."}</p>}
+          {action === "diffuser" && <p>{p.contenu === "dessin-2d" ? "La diffusion fige un paquet SVG, DXF et feuille PDF de la révision approuvée (dessin 2D, sans IFC)." : p.contenu === "dossier-conception" ? "La diffusion fige le PDF et le JSON du dossier de conception approuvé." : "La diffusion fige un paquet SVG, DXF, IFC et feuille PDF de la révision approuvée."}</p>}
           {action === "actualiser" && <p>Le manifeste est reconstruit depuis les révisions courantes ; l’approbation précédente ne vaut plus et le dossier repasse en brouillon.</p>}
           <label htmlFor={`studio-publication-commentaire-${p.id}`}>{COMMENTAIRE_REQUIS.has(action) ? "Commentaire (requis)" : "Commentaire (facultatif)"}</label>
           <textarea id={`studio-publication-commentaire-${p.id}`} maxLength={2000} value={commentaire} onChange={(e) => setCommentaire(e.target.value)} />

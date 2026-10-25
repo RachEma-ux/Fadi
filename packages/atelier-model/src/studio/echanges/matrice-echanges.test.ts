@@ -99,7 +99,7 @@ describe("Matrice d'échanges : donnée versionnée et cohérente", () => {
       // Réserve G1 (P-11) : relevé de performances versionné studio-releve-perf/1 (schéma et contrôle controlerRelevePerf).
       5: "4c5677dd684219719e9f56d31c9ef0f53bb8059f12074f66daedba13ab668ec4",
       // Lot PUB : BCF 2.1 minimal des observations livré (import et export), paquet de publication d'un dossier de conception.
-      6: "870948b176d0306b6ca510f5691de0031bc2940608b78db61721979a8b7737ab",
+      6: "b49eec7ed0b5a3ecfc308c407ce693231dbd42e3588ce5b71e4439dc5876bba7",
     };
     const empreinte = createHash("sha256").update(JSON.stringify({ entrees: STUDIO_MATRICE_ECHANGES.entrees, couverture: STUDIO_COUVERTURE_EXPORT, statuts: STUDIO_STATUT_DE_RAISON })).digest("hex");
     expect(empreinte, `révision ${STUDIO_MATRICE_ECHANGES.revision} : entrées modifiées sans nouvelle révision ? (empreinte calculée ${empreinte})`).toBe(EMPREINTES[STUDIO_MATRICE_ECHANGES.revision]);

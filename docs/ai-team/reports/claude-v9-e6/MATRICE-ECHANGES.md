@@ -376,6 +376,7 @@ Entrées : 40 — livrées : 23, non livrées : 17, renoncées : 0.
 - Code : `packages/atelier-model/src/studio/echanges/bcf-observations.ts` (`` studioExporterBcf ``) ; `apps/api/src/lib/studio-observations-bcf.ts` (`` exporterObservationsBcf ``)
 - Tests : `packages/atelier-model/src/studio/echanges/bcf-observations.test.ts` (`` IF-010 [+] export BCF 2.1 relu à l'identique ``)
 - Routes : `apps/api/src/routes/studio-observations.ts` (`` ${base}/bcf ``)
+- Interface : `apps/web/src/modules/studio/observations/PanneauObservations.tsx` (`` data-studio-bcf-exporter ``)
 - Sources : `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-04` — Liste d’exécution Studio V1.0 ; `docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json` — Contrat IF-010 : identifiants BCF conservés comme références
 
 ### `bcf-import` — BCF (BIM Collaboration Format, .bcfzip) (import)
@@ -390,6 +391,7 @@ Entrées : 40 — livrées : 23, non livrées : 17, renoncées : 0.
 - Code : `packages/atelier-model/src/studio/echanges/bcf-observations.ts` (`` studioPlanImportBcf ``) ; `apps/api/src/lib/studio-observations-bcf.ts` (`` importerObservationsBcf ``)
 - Tests : `packages/atelier-model/src/studio/echanges/bcf-observations.test.ts` (`` IF-010 [−] même BCF-ID reçu dans un autre contexte ``)
 - Routes : `apps/api/src/routes/studio-observations.ts` (`` ${base}/bcf ``)
+- Interface : `apps/web/src/modules/studio/observations/PanneauObservations.tsx` (`` data-studio-bcf-importer ``)
 - Sources : `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-04` — Liste d’exécution Studio V1.0 ; `docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json` — Cas négatif « Même BCF-ID »
 
 ## Sous-ensemble SVG / DXF / IFC retenu (E.6-03) : couverture par type
