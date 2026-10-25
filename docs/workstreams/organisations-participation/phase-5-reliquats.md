@@ -109,6 +109,126 @@ vérifiées par la recette sur l'API réelle. Courriels : transport désactivé 
 
 ### 5. Limites
 
-- Pas d'invitation de projet du représentant mandaté depuis l'annuaire du projet (dépend de la phase 3, autre worktree).
+- ~~Pas d'invitation de projet du représentant mandaté depuis l'annuaire du projet~~ : livré, section suivante.
 - L'accueil du projet (tableau de bord `DossierDashboard`, sans en-tête de projet) n'affiche pas la partie propriétaire :
   elle figure dans l'en-tête des modules du projet et dans Collaboration > Équipe et participants (mission : « et/ou »).
+
+---
+
+## Représentant mandaté → invitation de projet
+
+Statut : **Implémenté**, **vérifié localement** (preuves § 4) ; DB-3 et CI : à relever ; non accepté.
+
+### 1. Livré
+
+Règle conservée : **un mandat ne donne aucun droit**. Il désigne la personne à inviter ; l'accès naît seulement de
+l'acceptation, par l'identité visée, d'une invitation de projet ordinaire (parcours de la phase 3).
+
+**API** (`apps/api/src/routes/members.ts`, propriétaire seulement — 403 avec motif sinon, 404 sans accès)
+
+| Route | Effet |
+| --- | --- |
+| `POST /projects/:pid/members/mandates/:mandateId/preview` `{ role \| roles, accessExpiresAt?, invitationDays? }` | aperçu de la phase 3 (accès résultant, rôles par portée, échéances, invitation déjà en attente) ; `email: null` (adresse jamais montrée), `representative: { mandateId, name, organization }` ; rien n'est écrit |
+| `POST /projects/:pid/members/mandates/:mandateId` (même corps) | 202 : invitation `project_participation` envoyée à l'adresse **du compte** du représentant (jamais saisie), portant `mandate_id` ; courriel et notification calculée habituels |
+
+Refus (règle pure `mandateInvitationRefusal`, motif lisible dans `message`) : 404 `not_found` (mandat hors de ce projet) ;
+409 `mandate_inactive` (proposé, refusé, annulé, terminé), `organization_not_party`, `organization_inactive`,
+`membership_inactive`, `representative_without_account`, `already_participant`, `participation_suspended`,
+`represents_other_organization` ; 422 `representative_is_owner`.
+
+**Acceptation** (`lib/project-invitations-db.ts`) : revalidation — le mandat doit être encore `actif` et son organisation
+partie au projet et active, sinon refus **`mandate_ended`** (409, nouveau `ParticipationRefusal`, par le lien comme par la
+notification). L'activation pose `represented_organization_id` = l'organisation du mandat (sans écraser une autre partie
+déjà enregistrée) et journalise **`participation.representation_recorded`** (nouvelle action ; libellé web + en.json).
+`invitation.created` / `resent` portent `mandateId`, `representedOrganizationId`, `via: "mandat"` (aucune adresse).
+
+**Annuaire du projet** (`GET /projects/:pid/participants`, `organizations.parties[]`) :
+- `representatives[].projectSide` (propriétaire seul, `null` pour les autres lecteurs) : `non_invite` /
+  `invitation_en_attente` / `participation_active` / `terminee` ; `invitable` (propriétaire, pas de participation active
+  avec accès, organisation active, représentant ≠ propriétaire) ;
+- `endedRepresentatives[]` (tout lecteur, nom seul) : participations en cours qui représentent l'organisation, dont la
+  personne a eu un mandat de ce projet maintenant terminé et n'en a plus d'actif — `{ participationId, mandateId, name,
+  endsOn, endReason }`. La participation **n'est jamais terminée d'office**.
+
+**Espace d'organisation** (`GET /organizations/:orgId/projects`) : chaque mandat porte `projectSide` (administrateurs
+seuls, `null` pour un membre), en lecture seule.
+
+**Notification calculée** (`GET /notifications`, type `acces`, champ `mandate: { mandateId, participationId }`) : au
+propriétaire du projet, pour un mandat terminé depuis 30 jours (fin, renonciation, remplacement, départ, clôture) dont
+le représentant garde une participation qui représente l'organisation ; elle disparaît si un nouveau mandat actif le
+reprend ou si la participation est terminée. Lien : Collaboration, carte « Organisations du projet ».
+
+**Interface**
+- Carte « Organisations du projet » (`OrganisationsProjet.tsx`) : état côté projet de chaque représentant (propriétaire),
+  volet de divulgation natif « Inviter au projet » / « Renvoyer l'invitation au projet » contenant **le formulaire de la
+  phase 3** (`InvitationProjet` en mode `representative` : ni adresse, ni fiche, ni nom ; « Partie représentée » dans
+  l'aperçu) ; liste « Mandats terminés, participation conservée » avec date et motif.
+- Annuaire (`Participants.tsx`) : pastille « mandat terminé » sur la ligne du participant.
+- Invitations en attente (`CollaborationModule.tsx`), invitations reçues (`InvitationsRecues.tsx`), page d'invitation
+  (`ComptePages.tsx`) : « représentant de », « En tant que représentant de », « Partie représentée ».
+- Espace d'organisation, onglet Projets : pastille « Côté projet : … ».
+- `en.json` : 45 clés (un bloc, fin du fichier) ; styles `.projet-organisations-inviter`.
+
+**Règle d'or** : aucune commande nouvelle. Toutes les touches Ctrl+Alt+Maj hors lettres sont prises (chiffres et
+`` ` - = [ ] \ ; ' , . / `` dans `commandes-collaboration.ts` et `commandes-revue.ts`) ; l'invitation du représentant
+réutilise donc la commande « Aperçu de l'accès » (icône, barre `membres`, Ctrl+Alt+Maj+') et l'envoi du formulaire
+d'invitation existant. L'ouverture du volet est un `<details>` natif (divulgation, pas une commande).
+
+**Base** (`init.sql`, bloc additif rejouable après le bloc de la phase 3 ; `schema.ts`) : `auth.invitations.mandate_id`
+(FK `organization_mandates`, `ON DELETE SET NULL`), contrainte `invitations_mandate_check` (finalité
+`project_participation` seule), index partiel `invitations_mandate_idx`. Droits `fadi_app` : bloc D-7 existant.
+
+### 2. Fichiers
+
+- Nouveaux : `apps/api/src/lib/mandate-invitations.ts` (pur), `mandate-invitations.test.ts`, `mandate-invitations-db.ts`.
+- API : `db/init.sql`, `db/schema.ts`, `lib/audit.ts`, `lib/invitations.ts`, `lib/project-invitations-db.ts`,
+  `lib/project-organizations.ts`, `lib/project-organizations-view.ts` (+ test), `lib/security/invitation-rules.ts`,
+  `routes/auth.ts`, `routes/members.ts`, `routes/notifications.ts`, `routes/organizations.ts`, `routes/organizations.test.ts`.
+- Web : `lib/api.ts`, `lib/i18n/en.json`, `lib/journal-activite.ts`, `components/NotificationBell.tsx`,
+  `modules/collaboration/{CollaborationModule,InvitationProjet,InvitationsRecues,OrganisationsProjet,Participants}.tsx`,
+  `participants-api.ts`, `routes/ComptePages.tsx`, `routes/organisations/OrganisationsPage.tsx`, `style.css`.
+- Recette : `apps/web/e2e/organisations.mjs` (section « Représentant mandaté », déjà au job e2e — `ci.yml` inchangé) ;
+  validation : `scripts/validation/organisations-migration-check.mjs` (3 contrôles `mandate_id`).
+
+### 3. Décisions d'implémentation et écarts
+
+1. **Adresse jamais montrée** au propriétaire avant l'envoi (l'annuaire de l'organisation la réserve à ses
+   administrateurs) : la route la tire du compte du représentant. Après l'envoi, l'invitation en attente apparaît dans la
+   liste du propriétaire avec son adresse, comme toute invitation (règle existante de la phase 3), et l'adresse d'un
+   membre accepté reste listée comme pour tout membre — déclaré.
+2. **Mandat revalidé à l'acceptation** (`mandate_ended`) : prudent, l'invitation n'a été envoyée qu'en raison du mandat.
+   Une invitation ordinaire (par adresse) du même compte renouvelle l'invitation en attente **sans** mandat (choix
+   explicite du propriétaire).
+3. **« Participation active »** côté projet = participation `active` **avec accès** (vue `project_effective_access`) ; une
+   participation active sans rôle de projet (revue externe) reste « non invité » et peut être invitée.
+4. **Partie représentée** posée à l'acceptation seulement, jamais sur la fiche contact créée à l'envoi ; une fiche qui
+   représente déjà une autre organisation bloque l'envoi (409) au lieu d'être écrasée.
+5. **Marque « mandat terminé »** : aussi pour une fiche **contact** (sans accès) qui représente l'organisation (fiche
+   posée par un gabarit, par exemple) — information seule, aucune action automatique. La notification ne vise que le
+   propriétaire du projet (pas tous les responsables : choix prudent, c'est lui qui gère les participations).
+6. **Type de notification** : `acces` existant (aucun nouveau type : préférences et recettes « dix types » inchangées).
+7. **Organisation suspendue** : envoi refusé (`organization_inactive`) ; l'acceptation exige aussi une organisation active.
+
+### 4. Preuves (2026-10-25, poste local, PostgreSQL 16 + PostGIS, base `fadi_mandat`, API construite sur le port 3081 en `fadi_app`, transport console)
+
+Après fusion de `ccr-3b26a9f6-z073dc` (76e03e2, phase 6) :
+
+| Contrôle | Résultat |
+| --- | --- |
+| `npm run db:migrate` ×2 (`fadi_mandat`, base neuve `fadi_mandat_val`) | « Schema applied » à chaque fois |
+| `organisations-` (44, dont 3 nouveaux), `participations-` (63), `users-` (31), `revues-migration-check.mjs` (39), base neuve | ✅ |
+| `npm run typecheck` | ✅ |
+| `npm test` | vert hors DB-3 : API 599 tests, 15 suites refusées par la garde seule, `check-api-tests-db3.mjs` ✓ ; web 127 fichiers / 988 tests ; paquets verts. Nouveaux : `mandate-invitations.test.ts` (6), `project-organizations-view.test.ts` (+1) |
+| `npm run build` | ✅ |
+| `organisations.mjs` | ✅ 182/182 (139 + 43 nouveaux : 403 / 404 / 409 avec motif, aperçu sans adresse, volet du formulaire au raccourci, envoi, aucun accès avant acceptation, états côté projet (projet et organisation, administrateur seul), page d'invitation « Partie représentée », acceptation, `represented_organization_id`, seconde invitation refusée, remplacement → « mandat terminé » et notification au propriétaire seul, journal sans adresse, axe-core bureau ×3 et téléphone, carte sans débordement, passe anglaise) |
+| `organisations-participation-final.mjs` | ✅ 155/155 |
+| `invitations-participation.mjs` 107 ✓, `participants.mjs` 92 ✓, `notifications-preferences.mjs` 32 ✓, `journal-activite.mjs` 50 ✓, `interface-anglais.mjs` 7 ✓ | ✅ |
+
+**Non exécuté localement** : les deux nouveaux cas DB-3 de `organizations.test.ts` (garde fermée hors CI ; mêmes
+propriétés vérifiées par la recette sur l'API réelle) ; Mailpit (CI). CI GitHub : rien n'est poussé.
+
+### 5. Limites
+
+- Pas d'invitation groupée de plusieurs représentants ; pas de notification aux représentants eux-mêmes à la fin d'un
+  mandat (leur espace d'organisation le montre déjà).
+- La notification couvre 30 jours (fenêtre commune des notifications) ; au-delà, seule la marque de l'annuaire reste.

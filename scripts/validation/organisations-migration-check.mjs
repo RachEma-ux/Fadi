@@ -87,6 +87,14 @@ try {
   check(JSON.stringify(before) === JSON.stringify(after), 'init.sql rejoué deux fois : aucune ligne créée ni perdue', { before, after });
   check(defsBefore.checks === defsAfter.checks && defsBefore.idx === defsAfter.idx, 'contraintes et index des invitations inchangés au rejeu');
   check(/organization_id/.test(defsAfter.idx), 'index des invitations en attente : par organisation aussi', defsAfter.idx);
+  // Reliquat de la phase 5 : invitation de projet d'un représentant mandaté (`mandate_id`), réservée à cette finalité.
+  await client.query("UPDATE auth.invitations SET mandate_id = 'og_md1' WHERE id = 'og_inv_p'");
+  ok('invitation de projet portant un mandat (mandate_id) acceptée');
+  await client.query('SAVEPOINT og_mdt');
+  const mdtRefused = await client.query("UPDATE auth.invitations SET mandate_id = 'og_md1' WHERE id = 'og_inv'").then(() => false, () => true);
+  await client.query('ROLLBACK TO SAVEPOINT og_mdt');
+  check(mdtRefused, 'mandate_id refusé hors de la finalité project_participation (invitations_mandate_check)');
+  check((await one("SELECT count(*)::int AS n FROM project_members WHERE project_id = 'og_p'")).n === 0, 'invitation d\'un représentant : aucun membre de projet avant acceptation');
   await client.query('ROLLBACK');
 
   // 2. Contraintes.
