@@ -102,6 +102,12 @@
   corrections croisées entre lots, **RTC-3, RTC-4 et RTC-5 sont livrés par une seule PR**, un commit et un compte rendu par
   lot, le commit de revue en dernier ; la fusion reste exigée CI verte.
 
+- **RT-D8 — Acceptation des lots RTC-1 à RTC-5 (2026-10-25).** Le maître d'ouvrage : « Les lots sont acceptés. »
+  RTC-1 (PR #288), RTC-2 (PR #289), RTC-3, RTC-4 et RTC-5 (PR #291) sont **acceptés** ; la délégation RT-D4 est
+  **éteinte**. Restent à sa décision, hors de cette acceptation : la préproduction (Caddy `basic_auth`, P.118 sur
+  l'appareil Android, Firefox / WebKit), l'activation de `FADI_TEMPS_REEL` en production, et tout lot suivant (RTC-6
+  coédition, RTC-7 coordination, accès « paquet seul » après la phase 4 d'Organisations). Aucun lot n'est engagé.
+
 ## Points restant ouverts (non bloquants pour RTC-0)
 
 - ~~Durées chiffrées de conservation (RT-Q5)~~ : retenues par RT-D6 § 5.

@@ -1,7 +1,7 @@
 # RTC-1 — Socle des sessions et canal temps réel (compte rendu)
 
 Issue [#283](https://github.com/RachEma-ux/Fadi/issues/283) ; décisions RT-D4 (exécution déléguée) et RT-D5 (choix
-techniques). Statut : **implémenté et vérifié en local** ; CI et fusion : voir la PR du lot.
+techniques). Statut : **fusionné** (PR #288, CI verte) et **accepté** (RT-D8).
 
 ## Livré
 
