@@ -13,11 +13,12 @@
 
 ## En cours
 
-- RTC-1 — Socle des sessions et canal temps réel : implémenté et vérifié en local, PR du lot (Issue #283).
-- RTC-2 à RTC-5 — à enchaîner un par un (RT-D4).
+- RTC-2 — Vue partagée Studio : implémentée et vérifiée en local (`lots/rtc-2.md`), PR du lot (Issue #283).
+- RTC-3 à RTC-5 — à enchaîner un par un (RT-D4).
 
 ## Terminé
 
+- RTC-1 — Socle des sessions et canal temps réel : PR #288 fusionnée CI verte (`lots/rtc-1.md`), trois remarques de revue corrigées (`eb3cf3a`).
 - RTC-0.1 — Dossier, plan amendé, traçabilité RT-R1 à RT-R7 : PR #284 fusionnée (`c3f87de`).
 - RT-D4, RT-D5 — exécution déléguée de RTC-1 à RTC-5 et choix techniques consignés.
 - Évaluation du plan fourni : `docs/continuity/EVALUATION-PLAN-TEMPS-REEL-2026-10-24.md`.
@@ -29,9 +30,7 @@
 
 ## Bloqué
 
-- RTC-1 et suivants : porte des prérequis (`PLAN.md` § 4) — restent les phases 3 et 4 d'Organisations et la PR #282 (COM et
-  phase 2 d'Organisations fusionnés) — et
-  décision explicite d'engager RTC-1.
+- Rien pour RTC-2. RTC-4 dépend de la phase 4 d'Organisations (revue externe) pour l'accès des invités ; à défaut, il se limite aux membres du projet sur un paquet figé.
 
 ## Critères de sortie
 

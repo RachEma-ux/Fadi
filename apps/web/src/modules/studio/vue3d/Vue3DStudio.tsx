@@ -98,6 +98,13 @@ export interface Vue3DStudioProps {
   visualisation?: boolean;
   /** La vue remplit la hauteur de son conteneur (canevas de l'espace de travail) au lieu d'un rapport fixe. */
   remplir?: boolean;
+  /**
+   * Session en direct (Issue #283) : caméra du présentateur à poser (suivi), réappliquée quand `n` change. Une caméra
+   * orthographique demande la navigation « plan », une perspective l'orbite (`surNavigation`).
+   */
+  cameraPartagee?: { camera: StudioCameraScene; n: number } | null;
+  /** Caméra de cette vue déplacée (navigation) : le présentateur la partage. */
+  surCameraLocale?: (c: StudioCameraScene) => void;
 }
 
 interface Moteur {
@@ -336,7 +343,7 @@ function Champ({ nom, libelle, valeur, surValeur, requis = true }: { nom: string
   </label>;
 }
 
-export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbite", coupe = false, selection = null, layerId, surSelection, surCommandes, selectionArchitecture = null, surSelectionArchitecture, demande = null, surDemandeTraitee, surNavigation, provenance, hotePanneaux, visualisation: avecVisualisation = true, remplir = false }: Vue3DStudioProps) {
+export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbite", coupe = false, selection = null, layerId, surSelection, surCommandes, selectionArchitecture = null, surSelectionArchitecture, demande = null, surDemandeTraitee, surNavigation, provenance, hotePanneaux, visualisation: avecVisualisation = true, remplir = false, cameraPartagee = null, surCameraLocale }: Vue3DStudioProps) {
   const hote = useRef<HTMLDivElement>(null);
   const moteur = useRef<Moteur | null>(null);
   const cadre = useRef(false);
@@ -357,6 +364,10 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   const [statut, setStatut] = useState("");
   const [cameraVersion, setCameraVersion] = useState(0);
   const enAttente = useRef<StudioScene | null>(null);
+  // Session en direct : la dernière fonction de partage, et un garde pendant qu'on pose la caméra suivie (aucun écho).
+  const surCameraLocaleRef = useRef(surCameraLocale);
+  surCameraLocaleRef.current = surCameraLocale;
+  const applicationPartagee = useRef(false);
   // La scène active ne se réévalue au fil de la navigation que lorsqu'une scène est choisie et montrée.
   const suiviCamera = useRef(false);
   // Maillage en tâche de fond (D.2) : avec une scène montrée, le Worker maille le document « tous calques affichés »
@@ -464,7 +475,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
         renderer.domElement.dataset.studioGpuGeometries = String(c.geometries);
         renderer.domElement.dataset.studioGpuTextures = String(c.textures);
       },
-      surCamera: () => { if (suiviCamera.current) setCameraVersion((v) => v + 1); },
+      surCamera: () => { if (suiviCamera.current) setCameraVersion((v) => v + 1); if (!applicationPartagee.current) surCameraLocaleRef.current?.(cameraCourante(m)); },
     };
     moteur.current = m;
     poserControles(m, navigation);
@@ -508,6 +519,22 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     // La navigation initiale est posée ici ; ses changements par l'effet suivant.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Suivi du présentateur (session en direct) : sa caméra est posée telle quelle, jamais la sélection ni le brouillon.
+  useEffect(() => {
+    const m = moteur.current;
+    if (!m || !cameraPartagee) return;
+    const voulue: Navigation3d = cameraPartagee.camera.projection === "orthographic" ? "plan" : "orbite";
+    if (voulue !== navigation) {
+      enAttente.current = { camera: cameraPartagee.camera } as StudioScene;
+      surNavigation?.(voulue);
+      return;
+    }
+    applicationPartagee.current = true;
+    try { poserCamera(m, cameraPartagee.camera); } finally { applicationPartagee.current = false; }
+    cadre.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cameraPartagee?.n]);
 
   useEffect(() => {
     const m = moteur.current; if (!m) return;

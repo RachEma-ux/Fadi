@@ -1,31 +1,30 @@
 # Temps réel (Real-time Collaboration) — Reprise de session
 
-Mis à jour : 2026-10-24 (UTC).
+Mis à jour : 2026-10-25 (UTC).
 
 ## Point de reprise
 
 - Chantier : real-time-collaboration
 - Issue : https://github.com/RachEma-ux/Fadi/issues/283
-- Branche / PR actives : `ccr-93a486a1-cbijf8`, PR #284 (vérifier son état et sa CI sur GitHub).
+- Branche / PR actives : `ccr-93a486a1-cbijf8`, PR du lot RTC-2 (vérifier son état et sa CI sur GitHub). RTC-1 : PR #288.
 - Dernier commit vérifié : relever le HEAD de la branche avant toute reprise ; base `main@2577e25`.
 
 ## Dernier état vérifié
 
-- RTC-1 implémenté (socle, canal, routes, signaux ; `lots/rtc-1.md`). Évaluation, plan amendé, RT-D1, RT-D2 (réponses RT-Q1 à RT-Q7), RT-D3 (Studio seul, canal propre au Temps réel), traçabilité RT-R1 à RT-R7, essai de transport
-  (`ESSAI-TRANSPORT.md`), reprise du plan du 22 octobre (`PLAN.md` § 10). Aucun code applicatif.
+- RTC-1 fusionné (PR #288). RTC-2 implémenté (`lots/rtc-2.md`) : bandeau, suivi du présentateur (cadre plan, caméra 3D),
+  pointeurs et sélections distants, révision annoncée, règle d'or, traductions ; recette `temps-reel-studio.mjs` en CI.
 
 ## Prochaine action
 
-- RTC-1 : relever la CI de sa PR, fusionner CI verte, consigner ; puis RTC-2 (vue partagée Studio : bandeau de session,
-  suivi du présentateur, caméra 3D et cadre plan partagés, pointeurs, sélection, révision annoncée, règle d'or et
-  traductions), RTC-3, RTC-4, RTC-5 (RT-D4).
+- RTC-2 : CI verte puis fusion ; RTC-3 (annotations enregistrées : point de vue, session, révision source, idempotence,
+  diffusion `annotation` projetée par audience) ; RTC-4 ; RTC-5 (RT-D4).
 - CR-3 (#272) est satisfaite par `PLAN.md` § 5 : la cocher dans `collaboration-rules/TASKS.md` après fusion de la
   PR #282, qui modifie les mêmes lignes (évite un conflit).
 
 ## Tests et preuves
 
-- `node scripts/check-continuity.mjs` vert en local. Essai RTC-0.3 : 13 / 13 et 5 / 5 (scripts jetables, non commités ;
-  montage décrit dans `ESSAI-TRANSPORT.md`). Aucun test de l'application exécuté (changement documentaire ; CI de la PR).
+- RTC-1 : 25 tests unitaires API, recette `temps-reel-sessions.mjs` 44 / 44. RTC-2 : suite web 991 tests verts,
+  recette `temps-reel-studio.mjs` 25 / 25 (base jetable locale, Chromium local).
 
 ## Risques et blocages
 
@@ -36,5 +35,5 @@ Mis à jour : 2026-10-24 (UTC).
 
 ## Arrêt sûr
 
-- Aucune mutation de production sans autorisation. Vérifier le HEAD Git et les tests avant chaque reprise. Aucun code
-  temps réel avant décision explicite d'engager RTC-1.
+- Aucune mutation de production sans autorisation. Vérifier le HEAD Git et les tests avant chaque reprise. Drapeau
+  `FADI_TEMPS_REEL` absent : routes et canal répondent 404 (aucun effet en production tant qu'il n'est pas posé).
