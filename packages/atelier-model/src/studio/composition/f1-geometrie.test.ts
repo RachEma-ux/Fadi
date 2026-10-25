@@ -225,6 +225,11 @@ describe("TEST-002 / A.3-03 / TR-EX-005 — édition des faces des solides libre
     const m = appliquer(d, { toolId: "studio.solide.face-decaler", params: { id: "p1", face: "lateral-1", distance: 1 } });
     expect((sol(m, "p1") as StudioProfilePrism).profile).toEqual([{ x: 0, y: 0 }, { x: 3, y: 0 }, { x: 3, y: 2 }, { x: 0, y: 2 }]);
     expect(studioQuantitesSolides(m).items[0]!.volume).toBe(12);
+    // Vers l'intérieur au-delà de la face opposée (x = 0) : refusé, même si le profil final serait simple ; à plat aussi.
+    for (const distance of [-3, -2]) {
+      expect(refus(() => appliquer(d, { toolId: "studio.solide.face-decaler", params: { id: "p1", face: "lateral-1", distance } }))).toContain("franchirait la face opposée");
+    }
+    expect((sol(appliquer(d, { toolId: "studio.solide.face-decaler", params: { id: "p1", face: "lateral-1", distance: -1.5 } }), "p1") as StudioProfilePrism).profile[1]).toEqual({ x: 0.5, y: 0 });
     // Trapèze : les sommets décalés glissent sur les arêtes voisines prolongées.
     const t = appliquer(newStudioDocument("f"), { toolId: "studio.solide.prisme", params: prisme({ profile: [{ x: 0, y: 0 }, { x: 4, y: 0 }, { x: 3, y: 2 }, { x: 1, y: 2 }] }) });
     const tt = appliquer(t, { toolId: "studio.solide.face-decaler", params: { id: "p1", face: "lateral-2", distance: 1 } });

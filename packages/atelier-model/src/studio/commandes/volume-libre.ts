@@ -174,9 +174,18 @@ function decalerArete(profile: StudioPoint[], i: number, d: number, path: string
   const a2 = intersection(avant, { x: a.x - avant.x, y: a.y - avant.y }, q, e);
   const b2 = intersection(b, { x: apres.x - b.x, y: apres.y - b.y }, q, e);
   if (!a2 || !b2) fail(`${path}.params.face`, "arête voisine parallèle à la face : décalage indéterminé");
+  // La face ne doit pas franchir la face opposée : chaque arête voisine garde son sens (elle ne se replie pas au-delà
+  // de son autre sommet) et le profil garde son orientation. Un polygone final simple ne suffit pas à le garantir.
+  const garde = (u: StudioPoint, v: StudioPoint, w: StudioPoint) => (w.x - u.x) * (v.x - u.x) + (w.y - u.y) * (v.y - u.y) > 0;
+  if (!garde(avant, a, a2) || !garde(apres, b, b2)) {
+    fail(`${path}.params.distance`, "la face franchirait la face opposée : distance trop grande vers l’intérieur");
+  }
   const out = profile.map((p) => ({ ...p }));
   out[i] = { x: nul(a2.x), y: nul(a2.y) };
   out[(i + 1) % n] = { x: nul(b2.x), y: nul(b2.y) };
+  if (Math.sign(studioSignedArea(out)) !== sens) {
+    fail(`${path}.params.distance`, "la face franchirait la face opposée : distance trop grande vers l’intérieur");
+  }
   return out;
 }
 
