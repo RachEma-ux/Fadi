@@ -95,6 +95,21 @@ export interface Scene {
   readonly projection: "perspective" | "parallele";
   /** Ombres affichées dans la scène (sinon option d'affichage, R10). */
   readonly ombres?: boolean;
+  /**
+   * (Chantier Axes, AX-3) Repère de travail rappelé par la scène, sur option explicite : instantané (jamais modifié
+   * ensuite), identifiant et révision du repère enregistré d'origine s'il y en avait un, plan et verrou. Absent : la
+   * scène ne rappelle que la caméra (scènes antérieures inchangées).
+   */
+  readonly repere?: CaptureRepere;
+}
+
+/** Capture de repère d'une scène (chantier Axes, AX-3). */
+export interface CaptureRepere {
+  readonly instantane: Repere;
+  readonly id?: Id;
+  readonly revision?: number;
+  readonly plan: "xy" | "xz" | "yz";
+  readonly verrou: boolean;
 }
 
 /** Réglages de la Planche (panneau Info modèle §6.11) : données de la Planche ; la précision d'affichage reste une préférence (R10). */

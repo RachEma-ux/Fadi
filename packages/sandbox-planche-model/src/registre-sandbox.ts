@@ -292,9 +292,12 @@ const commandes: EntreeSandbox[] = [
   c("repere-precedent", "repere", "fadi:repere-precedent", "Alt+Maj+7", "barre-reperes", true),
   c("repere-modele", "repere", "fadi:repere-modele", "Alt+Maj+8", "barre-reperes", true),
   c("affichage-axes", "repere", "fadi:axes-affichage", "F4", "barre-reperes", true),
+  // AX-3 : repères enregistrés (le gestionnaire est le panneau « Repères », même pictogramme, partage déclaré).
+  c("enregistrer-repere", "repere", "fadi:repere-enregistrer", "Alt+Maj+9", "barre-reperes", true),
+  c("gerer-reperes", "repere", "fadi:reperes-liste", "Alt+Maj+0", "barre-reperes", true),
 ];
 
-const p = (id: string, picto: string, emplacement: "colonne" | "colonne-bas"): EntreeSandbox => ({
+const p = (id: string, picto: string, emplacement: "colonne" | "colonne-bas", horsCatalogue = false): EntreeSandbox => ({
   nature: "panneau",
   id,
   famille: "panneau",
@@ -302,6 +305,7 @@ const p = (id: string, picto: string, emplacement: "colonne" | "colonne-bas"): E
   raccourci: null,
   emplacement,
   disponibilite: "livree",
+  ...(horsCatalogue ? { horsCatalogue: true as const } : {}),
 });
 
 /**
@@ -321,6 +325,8 @@ const panneaux: EntreeSandbox[] = [
   p("adoucir", "blur", "colonne"),
   p("navigateur", "list-tree", "colonne"),
   p("debit", "fadi:debit", "colonne"),
+  // Chantier Axes (AX-3) : gestionnaire des repères enregistrés, hors des 86 entrées du catalogue.
+  p("reperes", "fadi:reperes-liste", "colonne", true),
   p("info-modele", "info-circle", "colonne-bas"),
 ];
 
@@ -332,6 +338,7 @@ export const PICTOGRAMMES_PARTAGES: readonly (readonly [string, string])[] = Obj
   ["outil:peinture", "panneau:materiaux"],
   ["outil:balise", "panneau:balises"],
   ["commande:liste-debit", "panneau:debit"],
+  ["commande:gerer-reperes", "panneau:reperes"],
 ] as const);
 
 /** Le registre : outils (ordre du catalogue relevé), commandes, panneaux. */

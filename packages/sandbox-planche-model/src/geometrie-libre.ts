@@ -3184,6 +3184,8 @@ export function redimensionner(m: Modele, facteur: number): Resultat {
     if (a.repere) a.repere = { ...a.repere, origine: e(a.repere.origine) };
     // Repères enregistrés : l'origine suit la mise à l'échelle du modèle (les axes unitaires restent unitaires).
     for (const r of Object.values(a.reperes)) a.reperes[r.id] = { ...r, origine: e(r.origine), revision: r.revision + 1 };
+    // Scènes qui rappellent un repère : leur instantané suit aussi (la référence de révision reste celle capturée).
+    for (const s of Object.values(a.scenes)) if (s.repere) a.scenes[s.id] = { ...s, repere: { ...s.repere, instantane: { ...s.repere.instantane, origine: e(s.repere.instantane.origine) } } };
   });
 }
 

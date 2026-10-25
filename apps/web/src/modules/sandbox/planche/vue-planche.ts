@@ -13,6 +13,11 @@ import type { ReglagesNavigation } from "../etat-ui";
 import { borneSensibilite, facteurPan, interpreterMolette } from "../navigation";
 import { COULEUR_RECTO, COULEUR_TRAME_SELECTION, SHADER_TRAME_FRAGMENT, SHADER_TRAME_VERTEX, TRAME_SELECTION, intensiteLumiere } from "./apparence-faces";
 import type { OutilCamera } from "./outils-planche";
+import { type PreferencesTriade, type SegmentTriade, TAILLE_TRIADE, TRIADE_DEFAUT, placerTriade, segmentsTriade } from "./triade";
+
+/** Réserves de la triade (px) : menu ☰ en haut, rail d'outils à gauche, colonne à droite, pied en bas. */
+const RESERVES_TRIADE = { haut: 56, bas: 104, gauche: 72, droite: 72 };
+const COULEURS_TRIADE: Readonly<Record<"x" | "y" | "z", string>> = { x: "#c62828", y: "#2e7d32", z: "#1565c0" };
 
 /** Rayon d'accrochage à l'écran (px), converti en mètres à la profondeur visée (choix Fadi, cahier-planche §5.1). */
 export const TOLERANCE_PX = 10;
@@ -235,6 +240,8 @@ export class VuePlanche {
   private readonly groupeAnnotations = new THREE.Group();
   private groupeAxes: THREE.Group;
   private readonly etiquettesDom: HTMLDivElement;
+  private readonly triadeSvg: SVGSVGElement;
+  private triade: { prefs: PreferencesTriade; libelle: string } = { prefs: TRIADE_DEFAUT, libelle: "" };
   private etiquettesFixes: Etiquette[] = [];
   private etiquettesApercu: Etiquette[] = [];
   /** Pastilles annelées (SketchUp web) : point de départ du tracé et sommet de référence de l'inférence. */
@@ -286,7 +293,15 @@ export class VuePlanche {
     this.contourSvg.append(this.contourLigne, this.contourDepart);
     this.etiquettesDom = document.createElement("div");
     this.etiquettesDom.className = "planche-etiquettes";
-    this.surcouche.append(this.contourSvg, this.marqueur, this.infobulle, this.cadre, this.etiquettesDom);
+    // Chantier Axes (AX-3) : triade d'orientation, étiquetée (X, Y, Z), sans capter le pointeur ; hors de l'image exportée
+    // sauf sur option.
+    this.triadeSvg = document.createElementNS(SVG, "svg");
+    this.triadeSvg.setAttribute("class", "planche-triade");
+    this.triadeSvg.setAttribute("width", String(TAILLE_TRIADE));
+    this.triadeSvg.setAttribute("height", String(TAILLE_TRIADE));
+    this.triadeSvg.setAttribute("viewBox", `${-TAILLE_TRIADE / 2} ${-TAILLE_TRIADE / 2} ${TAILLE_TRIADE} ${TAILLE_TRIADE}`);
+    this.triadeSvg.setAttribute("data-planche-triade", "");
+    this.surcouche.append(this.contourSvg, this.marqueur, this.infobulle, this.cadre, this.etiquettesDom, this.triadeSvg);
     // WebGL2 (three.js ≥ r163 n'a plus de repli WebGL1) : une erreur ici est remontée à l'interface.
     this.moteur = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
     hote.append(this.canvas, this.surcouche);
@@ -332,9 +347,50 @@ export class VuePlanche {
   }
 
   /** Image PNG de la vue (menu principal, lot 7) : rendu puis lecture immédiate du tampon. */
+  /**
+   * Image PNG de la vue. La triade d'orientation est une aide à l'édition : absente de l'image, sauf si la préférence
+   * « inclure dans l'image exportée » est cochée (chantier Axes, AX-3) — elle est alors dessinée au même endroit.
+   */
   capture(): Promise<Blob | null> {
-    this.rendre();
-    return new Promise((resolve) => this.canvas.toBlob((b) => resolve(b), "image/png"));
+    const { prefs } = this.triade;
+    if (!prefs.visible || !prefs.export) {
+      this.rendre();
+      return new Promise((resolve) => this.canvas.toBlob((b) => resolve(b), "image/png"));
+    }
+    this.camera.updateMatrixWorld();
+    this.moteur.render(this.scene, this.camera);
+    const c = document.createElement("canvas");
+    c.width = this.canvas.width;
+    c.height = this.canvas.height;
+    const g = c.getContext("2d");
+    if (!g) return new Promise((resolve) => this.canvas.toBlob((b) => resolve(b), "image/png"));
+    g.drawImage(this.canvas, 0, 0);
+    const k = this.canvas.width / this.largeur;
+    const p = placerTriade(prefs.coin, this.largeur, this.hauteur, RESERVES_TRIADE);
+    g.save();
+    g.scale(k, k);
+    g.translate(p.x + TAILLE_TRIADE / 2, p.y + TAILLE_TRIADE / 2);
+    g.font = "bold 12px sans-serif";
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    for (const s of this.segmentsTriade()) {
+      g.strokeStyle = g.fillStyle = COULEURS_TRIADE[s.axe];
+      g.lineWidth = 1.5;
+      g.setLineDash([2, 3]);
+      g.beginPath();
+      g.moveTo(0, 0);
+      g.lineTo(s.negatif.x, s.negatif.y);
+      g.stroke();
+      g.setLineDash([]);
+      g.lineWidth = 2.5;
+      g.beginPath();
+      g.moveTo(0, 0);
+      g.lineTo(s.fin.x, s.fin.y);
+      g.stroke();
+      g.fillText(s.axe.toUpperCase(), s.etiquette.x, s.etiquette.y);
+    }
+    g.restore();
+    return new Promise((resolve) => c.toBlob((b) => resolve(b), "image/png"));
   }
 
   detruire(): void {
@@ -479,6 +535,7 @@ export class VuePlanche {
   poserRepereTravail(r: Repere | null): void {
     this.repereTravail = r;
     this.majAxes();
+    this.majTriade();
     this.rendre();
   }
 
@@ -864,7 +921,72 @@ export class VuePlanche {
       this.moteur.render(this.scene, this.camera);
       this.placerMarqueur();
       this.placerEtiquettes();
+      this.majTriade();
     });
+  }
+
+  /** Préférences de la triade d'orientation et sa légende (repère représenté), données par la Planche. */
+  poserTriade(prefs: PreferencesTriade, libelle: string): void {
+    this.triade = { prefs, libelle };
+    this.majTriade();
+  }
+
+  /** Segments courants de la triade (repère de travail ou du modèle, vu par la caméra). */
+  private segmentsTriade(): SegmentTriade[] {
+    const r = this.triade.prefs.represente === "modele" ? null : this.repereTravail;
+    const inverse = this.camera.quaternion.clone().invert();
+    const axes = r ?? { x: { x: 1, y: 0, z: 0 }, y: { x: 0, y: 1, z: 0 }, z: { x: 0, y: 0, z: 1 } };
+    return segmentsTriade(axes, (d) => {
+      const v = new THREE.Vector3(d.x, d.y, d.z).applyQuaternion(inverse);
+      return { x: v.x, y: v.y, z: v.z };
+    });
+  }
+
+  private majTriade(): void {
+    const { prefs, libelle } = this.triade;
+    const svg = this.triadeSvg;
+    svg.style.display = prefs.visible ? "" : "none";
+    if (!prefs.visible) return;
+    const p = placerTriade(prefs.coin, this.largeur, this.hauteur, RESERVES_TRIADE);
+    svg.style.left = `${p.x}px`;
+    svg.style.top = `${p.y}px`;
+    svg.setAttribute("data-represente", prefs.represente);
+    const NS = "http://www.w3.org/2000/svg";
+    const enfants: SVGElement[] = [];
+    const titre = document.createElementNS(NS, "title");
+    titre.textContent = libelle;
+    enfants.push(titre);
+    const fond = document.createElementNS(NS, "circle");
+    fond.setAttribute("r", String(TAILLE_TRIADE / 2 - 1));
+    fond.setAttribute("class", "planche-triade-fond");
+    enfants.push(fond);
+    for (const s of this.segmentsTriade()) {
+      const neg = document.createElementNS(NS, "line");
+      neg.setAttribute("x1", "0");
+      neg.setAttribute("y1", "0");
+      neg.setAttribute("x2", s.negatif.x.toFixed(1));
+      neg.setAttribute("y2", s.negatif.y.toFixed(1));
+      neg.setAttribute("stroke", COULEURS_TRIADE[s.axe]);
+      neg.setAttribute("stroke-dasharray", "2 3");
+      neg.setAttribute("stroke-width", "1.5");
+      const pos = document.createElementNS(NS, "line");
+      pos.setAttribute("x1", "0");
+      pos.setAttribute("y1", "0");
+      pos.setAttribute("x2", s.fin.x.toFixed(1));
+      pos.setAttribute("y2", s.fin.y.toFixed(1));
+      pos.setAttribute("stroke", COULEURS_TRIADE[s.axe]);
+      pos.setAttribute("stroke-width", "2.5");
+      pos.setAttribute("stroke-linecap", "round");
+      const lettre = document.createElementNS(NS, "text");
+      lettre.setAttribute("x", s.etiquette.x.toFixed(1));
+      lettre.setAttribute("y", s.etiquette.y.toFixed(1));
+      lettre.setAttribute("class", "planche-triade-lettre");
+      lettre.setAttribute("fill", COULEURS_TRIADE[s.axe]);
+      lettre.setAttribute("data-axe", s.axe);
+      lettre.textContent = s.axe.toUpperCase();
+      enfants.push(neg, pos, lettre);
+    }
+    svg.replaceChildren(...enfants);
   }
 
   private redimensionner(): void {

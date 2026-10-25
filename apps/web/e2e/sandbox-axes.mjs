@@ -222,7 +222,7 @@ try {
 
   // AX17 — barre au clavier : menu « Plus », Échap le ferme et rend le focus.
   await page.click("[data-reperes-plus]");
-  check("menu « Plus » : Pivoter, Verrouiller, Vue normale, Affichage, Inspecteur, avec leurs raccourcis", (await page.locator("[data-reperes-menu-plus] [data-reperes-commande]").count()) === 4 && /Alt/.test(await page.locator("[data-reperes-menu-plus]").innerText()));
+  check("menu « Plus » : Pivoter, Verrouiller, Vue normale, Affichage, Enregistrer, Gérer, Inspecteur, avec leurs raccourcis", (await page.locator("[data-reperes-menu-plus] [data-reperes-commande]").count()) === 6 && /Alt/.test(await page.locator("[data-reperes-menu-plus]").innerText()));
   await page.keyboard.press("Escape");
   check("Échap ferme le menu et rend le focus au bouton « Plus »", (await page.locator("[data-reperes-menu-plus]").count()) === 0 && (await page.evaluate(() => document.activeElement?.hasAttribute("data-reperes-plus"))) === true);
   const sansNom = await page.locator("[data-barre-reperes] button").evaluateAll((bs) => bs.filter((b) => !(b.getAttribute("aria-label") || b.textContent?.trim())).length);
@@ -261,7 +261,7 @@ try {
   check("téléphone : barre rangée en bas", (await barre.getAttribute("data-position")) === "docquee");
   check("téléphone : sélecteur et Placer visibles dans la rangée, le reste dans « Plus »", (await barre.locator(".planche-reperes-rangee [data-reperes-commande]").evaluateAll((bs) => bs.map((b) => b.getAttribute("data-reperes-commande")).join(","))) === "choisir-repere,placer");
   await tel.page.click("[data-reperes-plus]");
-  check("téléphone : « Plus » offre les neuf autres commandes et l'inspecteur", (await tel.page.locator("[data-reperes-menu-plus] [data-reperes-commande]").count()) === 8 && (await tel.page.locator("[data-reperes-inspecteur-bascule]").count()) === 1);
+  check("téléphone : « Plus » offre les dix autres commandes et l'inspecteur", (await tel.page.locator("[data-reperes-menu-plus] [data-reperes-commande]").count()) === 10 && (await tel.page.locator("[data-reperes-inspecteur-bascule]").count()) === 1);
   const debordement = await tel.page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   const b = await barre.boundingBox();
   check("téléphone : aucun débordement horizontal, barre entière dans l'écran", debordement <= 0 && !!b && b.x >= 0 && b.x + b.width <= 390, `${debordement} px ; ${JSON.stringify(b)}`);

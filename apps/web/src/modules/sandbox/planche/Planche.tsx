@@ -130,7 +130,20 @@ import {
 } from "@parcours/sandbox-planche-model";
 import { contexteMemorise, memoriserContexte } from "./contexte-travail";
 import { BarreReperes, libellePlan } from "./BarreReperes";
-import { COMMANDES_REPERES, type IdCommandeRepere, cleNomRepere, disponibiliteRepere, planSuivant, verrouApplicable } from "./commandes-reperes";
+import { PanneauReperes } from "./PanneauReperes";
+import {
+  captureDuContexte,
+  contexteDeScene,
+  contexteEnregistre,
+  dupliquerRepere,
+  enregistrerRepere,
+  etatRepereActif,
+  mettreAJourRepere,
+  renommerRepere,
+  reperesEnregistres,
+  supprimerRepere,
+} from "@parcours/sandbox-planche-model";
+import { COMMANDES_REPERES, type IdCommandeRepere, disponibiliteRepere, nomRepereActif, planSuivant, verrouApplicable } from "./commandes-reperes";
 import { ErreurImport, compter as compterContexte, exporterIfc, importerMaillages, lireMaillages, maillagesPlanche, nonEtanchesDe, omisExport } from "@parcours/sandbox-planche-model";
 import { ajouterEntree, chargerJournal, dernieresEntrees, enregistrerJournal, supprimerJournal, type EntreeJournal } from "./journal-planche";
 import { avecCourante, avecInfo, avecNouvelle, chargerIndex, enregistrerIndex, indexInitial, nouvelId, planche as plancheDe, sansPlanche, supprimerDocument, type IndexPlanches } from "./registre-planches";
@@ -210,7 +223,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -276,6 +289,11 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   }, []);
   const changerContexte = useCallback((c: ContexteTravail) => poserContextes(pousserContexte(histContexteRef.current, c)), [poserContextes]);
   useEffect(() => vueRef.current?.poserRepereTravail(histContexte.courant.repere), [histContexte]);
+  // Chantier Axes (AX-3) : triade d'orientation (préférence de l'appareil) et sa légende.
+  const triadeUi = useEtatUi().triade;
+  useEffect(() => {
+    vueRef.current?.poserTriade(triadeUi, t("planche.reperes.triade", { repere: t(triadeUi.represente === "modele" ? "planche.reperes.affichage.represente.modele" : "planche.reperes.affichage.represente.travail") }));
+  }, [triadeUi, histContexte]);
   const outilRef = useRef(OUTIL_INITIAL());
   const precedentRef = useRef(outilRef.current);
   const [outilId, setOutilId] = useState(outilRef.current);
@@ -1338,6 +1356,12 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const menuRappel = useRef(ouvrirMenuContextuel);
   menuRappel.current = ouvrirMenuContextuel;
 
+  /** Chantier Axes (AX-3) : capture du contexte de travail pour une scène, seulement si l'option est cochée. */
+  const captureScene = (): { repere?: ReturnType<typeof captureDuContexte> } => {
+    if (!etatUi.get().rappelerRepereScene) return {};
+    const c = histContexteRef.current.courant;
+    return { repere: captureDuContexte(c, repereDuContexte(c)) };
+  };
   /** Scènes (§6.8) : caméra enregistrée dans la Planche (annotation « v »), un pas chacune. */
   const ajouterScene = useCallback(
     () =>
@@ -1347,7 +1371,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         const cam = v.etatCamera();
         const r = modifierAnnotations(m, (a, id) => {
           const i = id("v");
-          a.scenes[i] = { id: i, nom: t("planche.scenes.nom", { numero: String(Object.keys(a.scenes).length + 1) }), position: cam.position, cible: cam.cible, champDeVision: cam.champDeVision, projection: cam.projection, ombres: vueRef.current?.lireOptions().ombres ?? false };
+          a.scenes[i] = { id: i, nom: t("planche.scenes.nom", { numero: String(Object.keys(a.scenes).length + 1) }), position: cam.position, cible: cam.cible, champDeVision: cam.champDeVision, projection: cam.projection, ombres: vueRef.current?.lireOptions().ombres ?? false, ...captureScene() };
           return i;
         });
         return { modele: r.modele, selection: [r.extra] };
@@ -1361,7 +1385,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         const s = m.annotations?.scenes?.[id];
         if (!v || !s) return null;
         const cam = v.etatCamera();
-        return { modele: modifierAnnotations(m, (a) => void (a.scenes[id] = { ...s, position: cam.position, cible: cam.cible, champDeVision: cam.champDeVision, projection: cam.projection, ombres: v.lireOptions().ombres })).modele };
+        // Chantier Axes (AX-3) : la capture de repère suit l'option ; décochée, la scène ne rappelle plus que la caméra.
+        const { repere: _ancien, ...sansRepere } = s;
+        return { modele: modifierAnnotations(m, (a) => void (a.scenes[id] = { ...sansRepere, position: cam.position, cible: cam.cible, champDeVision: cam.champDeVision, projection: cam.projection, ombres: v.lireOptions().ombres, ...captureScene() })).modele };
       }),
     [operer],
   );
@@ -1372,11 +1398,20 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       if (!v) return;
       v.appliquerScene(s);
       if (s.ombres !== undefined) majOptions({ ombres: s.ombres });
+      // Chantier Axes (AX-3, AX14) : une scène qui capture un repère le rappelle ; sinon le contexte reste tel quel.
+      if (s.repere) {
+        const r = contexteDeScene(histContexteRef.current.courant, s.repere, histRef.current.present.modele);
+        if (!r) setMessage(t("planche.scenes.repere-invalide"));
+        else {
+          changerContexte(r.contexte);
+          if (r.perime) setMessage(t("planche.scenes.repere-perime"));
+        }
+      }
       setCamera({ projection: s.projection, champDeVision: s.champDeVision });
       setSelection([s.id]);
       rafraichir();
     },
-    [majOptions, rafraichir, setSelection],
+    [majOptions, rafraichir, setSelection, changerContexte],
   );
   const vueStandard = useCallback((nom: VueStandard) => {
     vueRef.current?.vueStandard(nom);
@@ -1590,6 +1625,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     }
     vueRef.current = v;
     v.poserRepereTravail(histContexteRef.current.courant.repere);
+    v.poserTriade(etatUi.get().triade, t("planche.reperes.triade", { repere: t(etatUi.get().triade.represente === "modele" ? "planche.reperes.affichage.represente.modele" : "planche.reperes.affichage.represente.travail") }));
     v.majModele(histRef.current.present.modele);
     rafraichir();
     fenetreRecette().fadiPlanche = {
@@ -2455,8 +2491,41 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       if (h) poserContextes(h);
     } else if (id === "repere-modele") changerContexte(CONTEXTE_MODELE);
     else if (id === "affichage-axes") majOptions({ axes: !(vueRef.current?.lireOptions().axes ?? true) });
+    else if (id === "enregistrer-repere") {
+      setPanneau("reperes");
+      setDemandeEnregistrerRepere((n) => n + 1);
+    } else if (id === "gerer-reperes") setPanneau("reperes");
     rafraichir();
   };
+  // ——— Chantier Axes (AX-3) : repères enregistrés — mutations du document (un pas d'historique chacune).
+  const [demandeEnregistrerRepere, setDemandeEnregistrerRepere] = useState(0);
+  const muterReperes = (r: { ok: true; modele: typeof hist.present.modele; id: string } | { ok: false; erreur: string }, operation: CleMessage): string | null => {
+    if (!r.ok) return r.erreur;
+    if (readOnly) return null;
+    appliquer({ etat: null, modele: r.modele }, t(operation));
+    return null;
+  };
+  const activerRepereEnregistre = (id: string) => {
+    const r = histRef.current.present.modele.annotations?.reperes?.[id];
+    if (r) changerContexte(contexteEnregistre(histContexteRef.current.courant, r));
+  };
+  const enregistrerRepereNouveau = (nom: string): string | null => {
+    const c = histContexteRef.current.courant;
+    const r = enregistrerRepere(histRef.current.present.modele, nom, repereDuContexte(c));
+    const e = muterReperes(r, "planche.reperes.operation.enregistrer");
+    if (!e && r.ok) activerRepereEnregistre(r.id);
+    return e;
+  };
+  const enregistrerModificationsRepere = (): string | null => {
+    const c = histContexteRef.current.courant;
+    if (c.source.genre !== "temporaire" || !c.source.depuis) return null;
+    const r = mettreAJourRepere(histRef.current.present.modele, c.source.depuis.id, repereDuContexte(c));
+    const e = muterReperes(r, "planche.reperes.operation.maj");
+    if (!e && r.ok) activerRepereEnregistre(r.id);
+    return e;
+  };
+  const etatRepere = etatRepereActif(histContexte.courant, hist.present.modele);
+  const nomActifRepere = nomRepereActif(histContexte.courant, hist.present.modele.annotations?.reperes ?? {}, t);
   const origineReperes = (o: Vec3): string | null => {
     const courant = histContexteRef.current.courant;
     const r = deplacerOrigine(repereDuContexte(courant), o);
@@ -2473,7 +2542,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   };
   /** Ligne d'état du contexte de travail (§ 4.1) : décrit l'état réel, mise à jour avant la saisie suivante. */
   const ligneReperes = t("planche.reperes.etat", {
-    repere: t(cleNomRepere(histContexte.courant)),
+    repere: `${nomActifRepere}${etatRepere === "modifie" ? ` (${t("planche.reperes.modifie")})` : ""}`,
     plan: libellePlan(histContexte.courant),
     portee: t(histContexte.courant.source.genre === "modele" ? "planche.reperes.portee.modele" : "planche.reperes.portee.travail"),
     unite: "m",
@@ -2700,6 +2769,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           fenetreCle={detache}
           demandeListe={demandeListeReperes}
           demandeInspecteur={demandeInspecteurReperes}
+          enregistres={reperesEnregistres(hist.present.modele)}
+          nomActif={nomActifRepere}
+          modifie={etatRepere === "modifie"}
+          onActiverEnregistre={activerRepereEnregistre}
           onCommande={executerRepere}
           onPlacer={() => choisirOutil("axes")}
           onOrigine={origineReperes}
@@ -2914,7 +2987,27 @@ export function Planche({ readOnly = false }: PropsPlanche) {
               />
             )}
             {panneau === "scenes" && (
-              <PanneauScenes modele={hist.present.modele} lecture={readOnly} projection={camera.projection} champDeVision={camera.champDeVision} onAjouter={ajouterScene} onMettreAJour={mettreAJourScene} onAppliquer={appliquerScene} onSupprimer={supprimerScene} onVueStandard={vueStandard} onProjection={poserProjection} onChampDeVision={poserChampDeVision} />
+              <PanneauScenes modele={hist.present.modele} lecture={readOnly} projection={camera.projection} champDeVision={camera.champDeVision} onAjouter={ajouterScene} onMettreAJour={mettreAJourScene} onAppliquer={appliquerScene} onSupprimer={supprimerScene} onVueStandard={vueStandard} onProjection={poserProjection} onChampDeVision={poserChampDeVision} rappelerRepere={ui.rappelerRepereScene} onRappelerRepere={(v) => etatUi.set({ rappelerRepereScene: v })} />
+            )}
+            {panneau === "reperes" && (
+              <PanneauReperes
+                modele={hist.present.modele}
+                contexte={histContexte.courant}
+                etat={etatRepere}
+                nomActif={nomActifRepere}
+                lecture={readOnly}
+                demandeEnregistrer={demandeEnregistrerRepere}
+                axesVisibles={options.axes}
+                triade={ui.triade}
+                onActiver={activerRepereEnregistre}
+                onEnregistrerNouveau={enregistrerRepereNouveau}
+                onEnregistrerModifications={enregistrerModificationsRepere}
+                onRenommer={(id, nom) => muterReperes(renommerRepere(histRef.current.present.modele, id, nom), "planche.reperes.operation.renommer")}
+                onDupliquer={(id, nom) => muterReperes(dupliquerRepere(histRef.current.present.modele, id, nom), "planche.reperes.operation.dupliquer")}
+                onSupprimer={(id, detacher) => muterReperes(supprimerRepere(histRef.current.present.modele, id, detacher ? "detacher" : "refuser"), "planche.reperes.operation.supprimer")}
+                onAxes={(v) => majOptions({ axes: v })}
+                onTriade={(triade) => etatUi.set({ triade })}
+              />
             )}
             {panneau === "adoucir" && <PanneauAdoucir selection={vue.selection ?? selectionRef.current} lecture={readOnly} onAppliquer={adoucirLisserSelection} />}
             {panneau === "info-modele" && <PanneauInfoModele modele={hist.present.modele} lecture={readOnly} precision={precision} onPrecision={poserPrecision} onReglages={poserReglages} />}

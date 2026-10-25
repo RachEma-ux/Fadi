@@ -2,18 +2,18 @@
 
 ## À faire
 
-- AX-3 — repères enregistrés, scènes, triade (phase B).
 - AX-4 — origine de composant (phase C).
 - AX-5 — repères liés, échanges, recette finale (phase D).
 
 ## En cours
 
-- AX-0 + AX-1 — PR #298 (CI : relance d'un job d'API sans lien avec la PR).
-- AX-2 — interface « Axes et repères » : prêt sur la branche, poussé après la fusion de #298 (`lots/ax-2.md`).
+- Phase A (AX-0, AX-1, AX-2) — PR #298 : revue Codex corrigée (`e32f6eb`), CI en cours.
+- AX-3 (phase B) — commité sur la branche, recettes locales vertes ; PR après la fusion de #298 (`lots/ax-3.md`).
 
 ## Terminé
 
 - Analyse du concept et évaluation de son plan (`EVALUATION.md`), plan propre (`PLAN.md`), décisions AX-D1 à AX-D10.
+- AX-1 et AX-2 implémentés et recettés (`lots/ax-1.md`, `lots/ax-2.md`).
 
 ## Bloqué
 
