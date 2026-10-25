@@ -569,6 +569,8 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
         const c = compteGpu(renderer), p = m.presentation?.ressources ?? { geometries: 0, textures: 0 };
         renderer.domElement.dataset.studioGpuGeometries = String(c.geometries - p.geometries);
         renderer.domElement.dataset.studioGpuTextures = String(c.textures - p.textures);
+        // Caméra rendue (recette A.3-05) : position, cible et ouverture relevées à chaque trame ; jamais le document.
+        renderer.domElement.dataset.studioCamera = JSON.stringify(cameraCourante(m));
         // Étiquettes des pointeurs distants : leur point 3D projeté sur le canevas à chaque rendu.
         const w = renderer.domElement.clientWidth, h = renderer.domElement.clientHeight;
         for (const p of pointeurs3dRef.current ?? []) {

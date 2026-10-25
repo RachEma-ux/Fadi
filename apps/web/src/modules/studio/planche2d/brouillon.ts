@@ -41,6 +41,11 @@ export function avecPlancher(b: Brouillon, plancher: number): Brouillon {
 
 /** L'historique local est borné (STUDIO_HISTORY_LIMIT) ; les commandes en attente, elles, ne le sont jamais. */
 export const peutAnnuler = (b: Brouillon): boolean => canUndoStudio(b.history) && b.pas.length > (b.plancher ?? 0);
+/**
+ * Lots en attente qui ne s'annulent plus (EX-047) : l'historique local a dépassé sa borne et a écarté leurs instantanés.
+ * Ils restent des commandes en attente, enregistrées avec les autres ; l'interface le dit au lieu de le taire.
+ */
+export const pasHorsHistorique = (b: Brouillon): number => Math.max(0, b.pas.length - b.history.past.length);
 export const peutRetablir = (b: Brouillon): boolean => canRedoStudio(b.history) && b.refaire.length > 0;
 
 export function annulerBrouillon(b: Brouillon): Brouillon {
