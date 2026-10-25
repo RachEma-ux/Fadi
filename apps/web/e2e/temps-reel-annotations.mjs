@@ -59,6 +59,14 @@ async function rejoindre(page) {
   await page.locator('[data-tr-session] button[data-commande-collaboration="rejoindre-session"]').first().click();
   await page.locator('[data-tr-connexion="connecte"]').waitFor();
 }
+/** La session montre une autre révision : l'afficher explicitement (on n'annote que la révision de la session). */
+async function afficherRevisionSession(page) {
+  const b = page.locator("[data-tr-bandeau] button[data-commande-collaboration=afficher-revision-session]");
+  if (!(await b.count())) return;
+  await b.click();
+  await page.locator("[data-tr-revision-differente]").waitFor({ state: "detached" });
+  await page.locator('[data-tr-connexion="connecte"]').waitFor();
+}
 async function attendreQue(f, ms = 8000) {
   const t0 = Date.now();
   while (Date.now() - t0 < ms) { if (await f()) return true; await new Promise((r) => setTimeout(r, 100)); }
@@ -168,6 +176,9 @@ try {
   check("revoir un point de vue laisse la navigation libre", (await B.page.locator('[data-tr-suivi="libre"]').count()) === 1);
 
   // 7. Règle d'or, accessibilité, anglais (avant la clôture).
+  check("révision différente affichée : Annoter indisponible, avis affiché", (await A.page.locator("[data-tr-annoter-revision]").count()) === 1
+    && await A.page.locator("[data-tr-bandeau] button[data-commande-collaboration=annoter]").isDisabled());
+  await afficherRevisionSession(A.page);
   await A.page.getByRole("button", { name: /^Annoter/ }).click();
   await A.page.locator("[data-tr-annotation-form]").waitFor();
   const commandes = A.page.locator("[data-tr-bandeau] button[data-commande-collaboration]");
@@ -187,6 +198,7 @@ try {
   await B.page.reload();
   await rejoindre(B.page);
   await B.page.locator("[data-tr-annotations-bouton]").click();
+  await afficherRevisionSession(B.page);
   await B.page.getByRole("button", { name: /^Annotate/ }).click();
   await B.page.locator("[data-tr-annotation-form]").waitFor();
   const anglais = await bandeau(B.page).innerText();

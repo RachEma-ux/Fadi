@@ -370,7 +370,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     const v = tr.etat.vue;
     if (!enDirect || presenteEnDirect || !tr.suit || !v) return;
     if (v.plan && plan2d) poserCadre(v.plan);
-    if (v.camera && vue3d) setCameraPartagee({ camera: v.camera as StudioCameraScene, n: tr.etat.vueN });
+    // La caméra posée par le suivi devient la vue courante (point de vue d'une annotation), sans être rediffusée.
+    if (v.camera && vue3d) { derniereCamera.current = v.camera as StudioCameraScene; setCameraPartagee({ camera: v.camera as StudioCameraScene, n: tr.etat.vueN }); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tr.etat.vueN, tr.suit, enDirect, presenteEnDirect]);
   // Présentateur : sa vue part à chaque changement (le canal regroupe : 10 par seconde au plus).
@@ -415,7 +416,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     if (tr.suit && !presenteEnDirect) tr.actions.suivre(false);
     const v = a.pointDeVue;
     if (v.plan && plan2d) poserCadre(v.plan);
-    if (v.camera && vue3d) setCameraAnnotation((c) => ({ camera: v.camera!, n: (c?.n ?? 1_000_000) + 1 }));
+    if (v.camera && vue3d) { derniereCamera.current = v.camera; setCameraAnnotation((c) => ({ camera: v.camera!, n: (c?.n ?? 1_000_000) + 1 })); }
   };
   // Aperçu du glisser : le document tel que le relâchement le donnerait (les cotes liées suivent).
   const apercuDoc = useMemo(() => {

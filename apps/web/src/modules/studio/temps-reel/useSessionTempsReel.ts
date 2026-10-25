@@ -113,6 +113,14 @@ export function useSessionTempsReel(projectId: string, studyId: string, variantI
     void qc.invalidateQueries({ queryKey: ["temps-reel-annotations", projectId, variantId] });
     void qc.invalidateQueries({ queryKey: ["studio-comments", projectId, studyId, variantId] });
   }, [annoncees, qc, projectId, studyId, variantId]);
+  // Resynchronisation complète (journal de reprise expiré, redémarrage du serveur) : les annonces manquées ne sont pas
+  // rejouées, la liste et les commentaires sont donc relus.
+  const resynchronise = etat.resynchronise && etat.connexion === "connecte";
+  useEffect(() => {
+    if (!resynchronise) return;
+    void qc.invalidateQueries({ queryKey: ["temps-reel-annotations", projectId, variantId] });
+    void qc.invalidateQueries({ queryKey: ["studio-comments", projectId, studyId, variantId] });
+  }, [resynchronise, qc, projectId, studyId, variantId]);
   const geste = useCallback(async (f: () => Promise<unknown>) => {
     setErreur(null); setEnCours(true);
     try { await f(); await qc.invalidateQueries({ queryKey: cle }); }

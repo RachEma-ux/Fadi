@@ -11934,5 +11934,6 @@
 "Citer la sélection": "Cite the selection",
 "Sans case cochée, l’annotation est réservée à l’équipe ; un lecteur écrit toujours pour tout le projet.": "Unless the box is ticked, the annotation is reserved for the team; a reader always writes for the whole project.",
 "Contenu figé au premier envoi : un nouvel envoi retrouve la même annotation. Échap abandonne la saisie.": "Content frozen at the first send: sending again finds the same annotation. Esc abandons the entry.",
-"La publication a changé depuis l’ouverture (actualisée, retirée ou remplacée) : la revue reste sur la révision examinée ; ouvrez une nouvelle revue pour la version actuelle.": "The publication has changed since the review opened (updated, withdrawn or replaced): the review stays on the revision examined; open a new review for the current version."
+"La publication a changé depuis l’ouverture (actualisée, retirée ou remplacée) : la revue reste sur la révision examinée ; ouvrez une nouvelle revue pour la version actuelle.": "The publication has changed since the review opened (updated, withdrawn or replaced): the review stays on the revision examined; open a new review for the current version.",
+"Pour annoter, affichez la révision de la session.": "To annotate, show the session revision."
 }

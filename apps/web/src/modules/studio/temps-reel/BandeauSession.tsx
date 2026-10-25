@@ -85,7 +85,7 @@ export function BandeauSession({ tr, revisionAffichee, teteVariante, nomVariante
   const nouvelleRevision = etat.revisionDisponible ?? (s && s.portee === "studio-revision" && teteVariante !== s.revisionId ? teteVariante : null);
   const derniere = tr.annotations.at(-1);
   const enregistrer = async () => {
-    if (!saisie || !saisie.texte.trim()) return;
+    if (!saisie || !saisie.texte.trim() || (revisionDifferente && !saisie.figee)) return;
     const contenu: ContenuAnnotation = saisie.figee ?? {
       body: saisie.texte.trim(), vue: vueCourante(),
       ...(saisie.lecteurs ? { audience: "projet" as const } : {}),
@@ -113,8 +113,10 @@ export function BandeauSession({ tr, revisionAffichee, teteVariante, nomVariante
         ...(revisionDifferente && s ? { "afficher-revision-session": () => surAfficherRevision(s.revisionId) } : {}),
         ...(hote && nouvelleRevision ? { "passer-revision": () => void actions.passerRevision(nouvelleRevision) } : {}),
         ...(hote && s?.statut === "ouverte" ? { "clore-session": () => void actions.clore() } : {}),
-        ...(etat.connexion === "connecte" ? { annoter: () => setSaisie((b) => (b ? null : nouvelleSaisie())) } : {}),
-        ...(etat.connexion === "connecte" && saisie?.texte.trim() ? { "enregistrer-annotation": () => void enregistrer() } : {}),
+        // Annoter n'a de sens que sur la révision de la session (l'annotation y est ancrée) : sinon, l'écran doit d'abord
+        // l'afficher. Un envoi déjà figé reste renvoyable (rejeu).
+        ...(etat.connexion === "connecte" && (!revisionDifferente || saisie) ? { annoter: () => setSaisie((b) => (b ? null : nouvelleSaisie())) } : {}),
+        ...(etat.connexion === "connecte" && saisie?.texte.trim() && (!revisionDifferente || saisie.figee) ? { "enregistrer-annotation": () => void enregistrer() } : {}),
         ...(saisie && !saisie.figee && selectionIds.length > 0 ? { "citer-selection": () => setSaisie((b) => b && { ...b, citer: !b.citer }) } : {}),
         ...(etat.connexion !== "hors-session" ? { "afficher-participants": () => setParticipantsOuverts((o) => !o), "afficher-annotations": () => setAnnotationsOuvertes((o) => !o) } : {}),
         ...(derniere ? { "voir-point-de-vue": () => surVoirPointDeVue(derniere) } : {}),
@@ -192,6 +194,7 @@ export function BandeauSession({ tr, revisionAffichee, teteVariante, nomVariante
         {!fin && hote && nouvelleRevision && bouton("passer-revision")}
         {!fin && hote && bouton("clore-session")}
         {!fin && bouton("annoter")}
+        {!fin && revisionDifferente && !saisie && <span className="tr-detail" data-tr-annoter-revision>Pour annoter, affichez la révision de la session.</span>}
         {bouton("quitter-session")}
         {!fin && <BoutonSession commande="afficher-participants" libelle={`Participants (${etat.participants.length})`} onClick={() => setParticipantsOuverts((o) => !o)} expanded={participantsOuverts} data="participants" />}
         {!fin && <BoutonSession commande="afficher-annotations" libelle={`Annotations (${tr.annotations.length})`} onClick={() => setAnnotationsOuvertes((o) => !o)} expanded={annotationsOuvertes} data="annotations" />}
