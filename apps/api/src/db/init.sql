@@ -1473,6 +1473,9 @@ CREATE INDEX IF NOT EXISTS project_participations_person_idx ON project_particip
 -- Phase 2 (bascule de l'accès, OP-D3 c) : l'export accordé à un lecteur (écart E2) suit la participation, seule source
 -- de la décision d'accès ; tenu par le miroir depuis `project_members.can_export` (NULL d'archive = TRUE).
 ALTER TABLE project_participations ADD COLUMN IF NOT EXISTS can_export boolean NOT NULL DEFAULT false;
+-- Phase 3 (invitations acceptées) : échéance de l'accès, indépendante de celle de l'invitation. Passée, la participation
+-- ne donne plus rien (vue `project_effective_access`) ; placée ici pour être disponible à la définition de la vue.
+ALTER TABLE project_participations ADD COLUMN IF NOT EXISTS access_expires_at timestamptz;
 
 -- Rôles métier par portée (OP-D3 c, concept partie 2) : Lecteur, Concepteur, Relecteur, Coordinateur, Approbateur,
 -- Diffuseur. Origine `acces` : miroir de l'accès actuel (lecteur → lecteur, editeur → concepteur), tenu par les
@@ -1820,27 +1823,260 @@ END $$;
 ALTER TABLE auth.invitations ADD COLUMN IF NOT EXISTS organization_id text REFERENCES public.organizations (id) ON DELETE CASCADE;
 ALTER TABLE auth.invitations ADD COLUMN IF NOT EXISTS organization_role text;
 ALTER TABLE auth.invitations ADD COLUMN IF NOT EXISTS organization_job_title text;
+-- Finalité `review_package` (phase 4, revue externe) : l'affectation de revue visée. La colonne est posée ici, sans clé
+-- étrangère (la table `review_assignments` est créée plus bas, bloc de la phase 4, qui ajoute la clé et la règle), pour
+-- que l'index d'unicité ci-dessous la couvre dès la première application.
+ALTER TABLE auth.invitations ADD COLUMN IF NOT EXISTS review_assignment_id text;
 DO $$
 BEGIN
+  -- Bloc unique des finalités : chaque phase y ajoute la sienne (phase 5 : `organization_membership` ; phase 4 :
+  -- `review_package`). Remplacé une seule fois par définition détectée, jamais deux remplacements concurrents.
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'invitations_purpose_check'
-                    AND pg_get_constraintdef(oid) LIKE '%organization_membership%') THEN
+                    AND pg_get_constraintdef(oid) LIKE '%organization_membership%'
+                    AND pg_get_constraintdef(oid) LIKE '%review_package%') THEN
     ALTER TABLE auth.invitations DROP CONSTRAINT IF EXISTS invitations_purpose_check;
     ALTER TABLE auth.invitations ADD CONSTRAINT invitations_purpose_check
-      CHECK (purpose IN ('platform_account', 'project_participation', 'organization_membership'));
+      CHECK (purpose IN ('platform_account', 'project_participation', 'organization_membership', 'review_package'));
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'invitations_organization_check') THEN
     ALTER TABLE auth.invitations ADD CONSTRAINT invitations_organization_check
       CHECK ((purpose = 'organization_membership') = (organization_id IS NOT NULL AND organization_role IN ('administrateur', 'membre')));
   END IF;
-  -- Une invitation en attente par (adresse, finalité, projet, organisation) : deux organisations peuvent inviter la même
-  -- adresse. L'ancien index (sans organisation) est remplacé une fois.
+  -- Une invitation en attente par (adresse, finalité, projet, organisation, affectation de revue) : deux organisations,
+  -- ou deux paquets de revue, peuvent inviter la même adresse. L'ancien index (sans organisation, ou sans affectation de
+  -- revue) est remplacé une fois.
   IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'auth' AND indexname = 'invitations_pending_unique'
-                AND indexdef NOT LIKE '%organization_id%') THEN
+                AND (indexdef NOT LIKE '%organization_id%' OR indexdef NOT LIKE '%review_assignment_id%')) THEN
     DROP INDEX auth.invitations_pending_unique;
   END IF;
 END $$;
 CREATE UNIQUE INDEX IF NOT EXISTS invitations_pending_unique
-  ON auth.invitations (email, purpose, coalesce(project_id, ''), coalesce(organization_id, '')) WHERE status = 'pending';
+  ON auth.invitations (email, purpose, coalesce(project_id, ''), coalesce(organization_id, ''), coalesce(review_assignment_id, ''))
+  WHERE status = 'pending';
+
+-- ---------------------------------------------------------------------------
+-- Organisations, participation et revue externe — phase 4 : revue externe (concept, partie 4 ; OP-D5 a, OP-D6 a,
+-- OP-D7 a, OP-D8 a, OP-D12). Un paquet de revue copie, au partage, le manifeste d'une publication Studio candidate et
+-- range ses fichiers dans `volumes` (empreintes SHA-256 vérifiées) ; il ne se modifie plus ensuite : un changement est
+-- une nouvelle version qui remplace l'ancienne. Une affectation de revue (relecture ou approbation, nominative) donne un
+-- accès borné au seul paquet, évalué par les routes `/reviews` — jamais un rôle de projet : la participation d'un
+-- destinataire externe ne porte aucun rôle (`project_role_assignments`) et n'ouvre donc aucun projet. Les constats sont
+-- des observations Studio d'audience `revue` rattachées au paquet ; les notes internes ne sont jamais servies aux
+-- destinataires. Règles pures : apps/api/src/lib/review-rules.ts. Additif et rejouable.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS review_packages (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  publication_id text NOT NULL REFERENCES studio_publications (id) ON DELETE CASCADE,
+  study_id text NOT NULL,
+  variant_id text NOT NULL,
+  -- Lignée : identifiant de la première version ; une nouvelle version porte le numéro suivant et désigne celle qu'elle
+  -- remplace (une seule remplaçante par version).
+  lineage_id text NOT NULL,
+  version integer NOT NULL CONSTRAINT review_packages_version_check CHECK (version >= 1),
+  supersedes_package_id text REFERENCES review_packages (id),
+  title text NOT NULL CONSTRAINT review_packages_title_check CHECK (length(btrim(title)) BETWEEN 1 AND 200),
+  purpose text NOT NULL CONSTRAINT review_packages_purpose_check CHECK (length(btrim(purpose)) BETWEEN 1 AND 2000),
+  expected_response text NOT NULL CONSTRAINT review_packages_expected_check CHECK (length(btrim(expected_response)) BETWEEN 1 AND 2000),
+  questions jsonb NOT NULL DEFAULT '[]'::jsonb CONSTRAINT review_packages_questions_check CHECK (jsonb_typeof(questions) = 'array'),
+  coordinator_id text NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+  corrections_owner_id text NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+  -- Date de réponse attendue : une échéance dépassée n'est jamais un accord.
+  due_on date,
+  status text NOT NULL DEFAULT 'brouillon'
+    CONSTRAINT review_packages_status_check CHECK (status IN ('brouillon', 'partage', 'clos', 'remplace')),
+  -- Copie figée au partage (jamais avant) : révision, empreinte du document, manifeste et son empreinte, fichiers.
+  revision_id text,
+  document_hash text,
+  manifest jsonb,
+  manifest_hash text,
+  files jsonb,
+  shared_at timestamptz,
+  shared_by text REFERENCES users (id) ON DELETE RESTRICT,
+  closed_at timestamptz,
+  closed_by text REFERENCES users (id) ON DELETE RESTRICT,
+  close_reason text,
+  replaced_at timestamptz,
+  replaced_by_package_id text,
+  request_id text,
+  created_by text NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT review_packages_frozen_check CHECK (status = 'brouillon' OR (
+    shared_at IS NOT NULL AND shared_by IS NOT NULL AND revision_id IS NOT NULL AND document_hash ~ '^[0-9a-f]{64}$'
+    AND manifest IS NOT NULL AND manifest_hash ~ '^[0-9a-f]{64}$' AND jsonb_typeof(files) = 'array')),
+  CONSTRAINT review_packages_closed_check CHECK ((status = 'clos') <= (closed_at IS NOT NULL)),
+  CONSTRAINT review_packages_replaced_check CHECK ((status = 'remplace') = (replaced_by_package_id IS NOT NULL)),
+  CONSTRAINT review_packages_version_unique UNIQUE (lineage_id, version)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS review_packages_supersedes_unique ON review_packages (supersedes_package_id)
+  WHERE supersedes_package_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS review_packages_request_unique ON review_packages (project_id, request_id)
+  WHERE request_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS review_packages_project_idx ON review_packages (project_id, created_at);
+CREATE INDEX IF NOT EXISTS review_packages_publication_idx ON review_packages (publication_id);
+
+-- Un paquet partagé ne se réécrit pas : seuls changent son statut (partage → clos | remplace, clos → remplace), sa
+-- clôture, son remplacement, l'échéance, le coordinateur et le responsable des corrections (réaffectation tracée).
+CREATE OR REPLACE FUNCTION review_package_guard() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF OLD.status <> 'brouillon' AND (
+       NEW.project_id IS DISTINCT FROM OLD.project_id OR NEW.publication_id IS DISTINCT FROM OLD.publication_id
+    OR NEW.lineage_id IS DISTINCT FROM OLD.lineage_id OR NEW.version IS DISTINCT FROM OLD.version
+    OR NEW.supersedes_package_id IS DISTINCT FROM OLD.supersedes_package_id OR NEW.title IS DISTINCT FROM OLD.title
+    OR NEW.purpose IS DISTINCT FROM OLD.purpose OR NEW.expected_response IS DISTINCT FROM OLD.expected_response
+    OR NEW.questions IS DISTINCT FROM OLD.questions OR NEW.revision_id IS DISTINCT FROM OLD.revision_id
+    OR NEW.document_hash IS DISTINCT FROM OLD.document_hash OR NEW.manifest IS DISTINCT FROM OLD.manifest
+    OR NEW.manifest_hash IS DISTINCT FROM OLD.manifest_hash OR NEW.files IS DISTINCT FROM OLD.files
+    OR NEW.shared_at IS DISTINCT FROM OLD.shared_at OR NEW.shared_by IS DISTINCT FROM OLD.shared_by) THEN
+    RAISE EXCEPTION 'review_package_frozen';
+  END IF;
+  IF NEW.status IS DISTINCT FROM OLD.status AND NOT (
+       (OLD.status = 'brouillon' AND NEW.status = 'partage')
+    OR (OLD.status = 'partage' AND NEW.status IN ('clos', 'remplace'))
+    OR (OLD.status = 'clos' AND NEW.status = 'remplace')) THEN
+    RAISE EXCEPTION 'review_package_invalid_transition';
+  END IF;
+  RETURN NEW;
+END $$;
+CREATE OR REPLACE TRIGGER review_packages_guard BEFORE UPDATE ON review_packages
+  FOR EACH ROW EXECUTE FUNCTION review_package_guard();
+-- Anti-suppression : un paquet partagé (clos ou remplacé compris) reste lisible ; seul un brouillon s'efface. La
+-- suppression du projet (cascade, ligne parente déjà effacée) n'est pas bloquée ici : la route la refuse avant.
+CREATE OR REPLACE FUNCTION review_package_no_delete() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF OLD.status <> 'brouillon' AND EXISTS (SELECT 1 FROM projects WHERE id = OLD.project_id) THEN
+    RAISE EXCEPTION 'review_package_undeletable';
+  END IF;
+  RETURN OLD;
+END $$;
+CREATE OR REPLACE TRIGGER review_packages_no_delete BEFORE DELETE ON review_packages
+  FOR EACH ROW EXECUTE FUNCTION review_package_no_delete();
+
+-- Destinataire nommé d'un paquet : participation (personne contact ou compte), responsabilité distincte (relecture ou
+-- approbation, OP-D7 a), permissions explicites (OP-D8 a : consulter et commenter par défaut ; joindre, télécharger et
+-- exporter seulement si accordés), expiration d'accès (distincte de l'échéance de réponse et de celle de l'invitation),
+-- statut et résultat. Le compte n'est connu qu'après acceptation de l'invitation par l'identité visée.
+CREATE TABLE IF NOT EXISTS review_assignments (
+  id text PRIMARY KEY,
+  package_id text NOT NULL REFERENCES review_packages (id) ON DELETE CASCADE,
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  participation_id text NOT NULL REFERENCES project_participations (id),
+  person_id text NOT NULL REFERENCES people (id),
+  user_id text REFERENCES users (id) ON DELETE RESTRICT,
+  responsibility text NOT NULL CONSTRAINT review_assignments_responsibility_check CHECK (responsibility IN ('relecture', 'approbation')),
+  can_view boolean NOT NULL DEFAULT true CONSTRAINT review_assignments_view_check CHECK (can_view),
+  can_comment boolean NOT NULL DEFAULT true,
+  can_attach boolean NOT NULL DEFAULT false,
+  can_download boolean NOT NULL DEFAULT false,
+  can_export boolean NOT NULL DEFAULT false,
+  access_expires_at timestamptz NOT NULL,
+  invitation_id text,
+  status text NOT NULL DEFAULT 'en-attente'
+    CONSTRAINT review_assignments_status_check CHECK (status IN ('en-attente', 'en-cours', 'terminee', 'annulee', 'remplacee')),
+  result text CONSTRAINT review_assignments_result_value CHECK (result IS NULL OR result IN ('constats', 'satisfaisante')),
+  response_note text CONSTRAINT review_assignments_note_check CHECK (response_note IS NULL OR length(response_note) BETWEEN 1 AND 4000),
+  responded_at timestamptz,
+  accepted_at timestamptz,
+  revoked_at timestamptz,
+  revoked_by text REFERENCES users (id) ON DELETE RESTRICT,
+  revoke_reason text,
+  carried_from_assignment_id text REFERENCES review_assignments (id),
+  created_by text NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  -- Le résultat (constats / revue satisfaisante) est celui d'une relecture terminée ; l'approbation s'enregistre par les
+  -- transitions Studio (aucun statut d'approbation concurrent). Une relecture terminée puis révoquée (`annulee`) garde
+  -- son résultat : la révocation coupe l'accès sans effacer la réponse rendue.
+  CONSTRAINT review_assignments_result_check CHECK (result IS NULL OR (responsibility = 'relecture' AND status IN ('terminee', 'remplacee', 'annulee'))),
+  CONSTRAINT review_assignments_revoked_check CHECK ((revoked_at IS NULL) = (revoked_by IS NULL) AND (revoked_at IS NULL OR status = 'annulee'))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS review_assignments_current_unique ON review_assignments (package_id, participation_id, responsibility)
+  WHERE status NOT IN ('annulee', 'remplacee');
+CREATE INDEX IF NOT EXISTS review_assignments_user_idx ON review_assignments (user_id) WHERE user_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS review_assignments_package_idx ON review_assignments (package_id);
+-- Bases créées avant le correctif (revue Codex, PR #290) : la contrainte du résultat n'admettait pas `annulee`, si bien
+-- qu'une relecture terminée ne pouvait plus être révoquée (transaction annulée, accès maintenu). Remplacée une seule fois,
+-- reconnue à sa définition.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'review_assignments_result_check'
+             AND conrelid = 'public.review_assignments'::regclass AND pg_get_constraintdef(oid) NOT LIKE '%annulee%') THEN
+    ALTER TABLE review_assignments DROP CONSTRAINT review_assignments_result_check;
+    ALTER TABLE review_assignments ADD CONSTRAINT review_assignments_result_check
+      CHECK (result IS NULL OR (responsibility = 'relecture' AND status IN ('terminee', 'remplacee', 'annulee')));
+  END IF;
+END $$;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'review_assignments_invitation_fk') THEN
+    ALTER TABLE review_assignments ADD CONSTRAINT review_assignments_invitation_fk FOREIGN KEY (invitation_id)
+      REFERENCES auth.invitations (id) ON DELETE SET NULL;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'invitations_review_assignment_fk') THEN
+    ALTER TABLE auth.invitations ADD CONSTRAINT invitations_review_assignment_fk FOREIGN KEY (review_assignment_id)
+      REFERENCES public.review_assignments (id) ON DELETE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'invitations_review_check') THEN
+    ALTER TABLE auth.invitations ADD CONSTRAINT invitations_review_check
+      CHECK ((purpose = 'review_package') = (review_assignment_id IS NOT NULL));
+  END IF;
+END $$;
+
+-- Constats (OP-D6 a) : observations Studio d'audience `revue`, rattachées au paquet. L'audience admet `revue` (une
+-- seule redéfinition, détectée) ; un fil `revue` porte son paquet, et lui seul.
+ALTER TABLE studio_comments ADD COLUMN IF NOT EXISTS review_package_id text REFERENCES review_packages (id) ON DELETE CASCADE;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'studio_comments_audience_check'
+                    AND pg_get_constraintdef(oid) LIKE '%revue%') THEN
+    ALTER TABLE studio_comments DROP CONSTRAINT IF EXISTS studio_comments_audience_check;
+    ALTER TABLE studio_comments ADD CONSTRAINT studio_comments_audience_check
+      CHECK (audience IS NULL OR audience IN ('equipe', 'projet', 'revue'));
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'studio_comments_review_check') THEN
+    ALTER TABLE studio_comments ADD CONSTRAINT studio_comments_review_check
+      CHECK ((coalesce(audience, 'projet') = 'revue') = (review_package_id IS NOT NULL));
+  END IF;
+END $$;
+CREATE INDEX IF NOT EXISTS studio_comments_review_idx ON studio_comments (review_package_id) WHERE review_package_id IS NOT NULL;
+
+-- Rattachement exact d'un constat : paquet, affectation, révision figée du paquet, document du paquet (format et
+-- empreinte), pièces jointes (contenu rangé dans `volumes`, identifiant = SHA-256). Écrit une fois, jamais réécrit.
+CREATE TABLE IF NOT EXISTS review_findings (
+  observation_id text PRIMARY KEY REFERENCES studio_observations (comment_id) ON DELETE CASCADE,
+  package_id text NOT NULL REFERENCES review_packages (id) ON DELETE CASCADE,
+  assignment_id text REFERENCES review_assignments (id) ON DELETE SET NULL,
+  revision_id text NOT NULL,
+  document_format text CONSTRAINT review_findings_format_check CHECK (document_format IS NULL OR document_format IN ('svg', 'dxf', 'ifc', 'pdf')),
+  document_digest text CONSTRAINT review_findings_digest_check CHECK (document_digest IS NULL OR document_digest ~ '^[0-9a-f]{64}$'),
+  attachments jsonb NOT NULL DEFAULT '[]'::jsonb CONSTRAINT review_findings_attachments_check CHECK (jsonb_typeof(attachments) = 'array'),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT review_findings_document_check CHECK ((document_format IS NULL) = (document_digest IS NULL))
+);
+CREATE INDEX IF NOT EXISTS review_findings_package_idx ON review_findings (package_id);
+CREATE OR REPLACE FUNCTION review_finding_immutable() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF NEW.observation_id IS DISTINCT FROM OLD.observation_id OR NEW.package_id IS DISTINCT FROM OLD.package_id
+     OR NEW.revision_id IS DISTINCT FROM OLD.revision_id OR NEW.document_format IS DISTINCT FROM OLD.document_format
+     OR NEW.document_digest IS DISTINCT FROM OLD.document_digest OR NEW.attachments IS DISTINCT FROM OLD.attachments
+     OR NEW.created_at IS DISTINCT FROM OLD.created_at THEN
+    RAISE EXCEPTION 'review_finding_immutable';
+  END IF;
+  RETURN NEW;
+END $$;
+CREATE OR REPLACE TRIGGER review_findings_immutable BEFORE UPDATE ON review_findings
+  FOR EACH ROW EXECUTE FUNCTION review_finding_immutable();
+
+-- Notes internes de l'équipe sur un paquet : jamais servies par les routes `/reviews`, ni notifiées aux destinataires.
+CREATE TABLE IF NOT EXISTS review_package_notes (
+  id text PRIMARY KEY,
+  package_id text NOT NULL REFERENCES review_packages (id) ON DELETE CASCADE,
+  author_id text NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+  body text NOT NULL CONSTRAINT review_package_notes_body_check CHECK (length(btrim(body)) BETWEEN 1 AND 4000),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS review_package_notes_package_idx ON review_package_notes (package_id, created_at);
 
 -- ---------------------------------------------------------------------------
 -- Organisations, participation et revue externe — phase 2 (Issue #262) : bascule de l'accès (OP-D3 c), contacts,
@@ -1868,6 +2104,7 @@ SELECT pp.project_id, pe.user_id,
   JOIN projects p ON p.id = pp.project_id AND p.owner_id <> pe.user_id
   JOIN project_role_assignments ra ON ra.participation_id = pp.id AND ra.scope_type = 'projet'
  WHERE pp.status = 'active' AND (pp.starts_on IS NULL OR pp.starts_on <= current_date)
+   AND (pp.access_expires_at IS NULL OR pp.access_expires_at > now())
  GROUP BY pp.project_id, pe.user_id;
 
 -- Clôture déclarative (OP-2) : ne change aucun droit ; elle date le départ du délai de conservation des contacts.
@@ -1880,6 +2117,49 @@ CREATE INDEX IF NOT EXISTS project_participations_org_idx ON project_participati
 CREATE INDEX IF NOT EXISTS project_participations_represented_idx ON project_participations (represented_organization_id);
 
 -- ---------------------------------------------------------------------------
+-- Organisations, participation et revue externe — phase 3 (Issue #262, OP-D2 a) : toute participation active naît d'une
+-- invitation ACCEPTÉE par l'identité visée, compte existant compris (fin de l'ajout direct UM-8). L'invitation de projet
+-- désigne la participation visée (contact de l'annuaire, ou fiche créée à l'envoi) et les rôles proposés par portée ;
+-- rien n'est accordé avant l'acceptation, qui lie le compte vérifié à la fiche, active la participation et pose les rôles
+-- (lib/project-invitations-db.ts). `access_expires_at` (colonne UM-3 existante) est recopiée sur la participation à
+-- l'acceptation et appliquée par la vue `project_effective_access` (ci-dessus). Le miroir `op_sync_access` reste le pont
+-- de l'accès de base (lecteur / concepteur) : voir docs/workstreams/organisations-participation/phase-3.md.
+-- ---------------------------------------------------------------------------
+ALTER TABLE auth.invitations ADD COLUMN IF NOT EXISTS participation_id text
+  REFERENCES public.project_participations (id) ON DELETE SET NULL;
+-- Rôles proposés : [{ "role", "scopeType", "scopeId" }] ; au moins un rôle de portée projet (contrôlé par l'API).
+ALTER TABLE auth.invitations ADD COLUMN IF NOT EXISTS proposed_roles jsonb;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'invitations_participation_check') THEN
+    ALTER TABLE auth.invitations ADD CONSTRAINT invitations_participation_check
+      CHECK ((participation_id IS NULL AND proposed_roles IS NULL) OR purpose = 'project_participation');
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'invitations_proposed_roles_check') THEN
+    ALTER TABLE auth.invitations ADD CONSTRAINT invitations_proposed_roles_check
+      CHECK (proposed_roles IS NULL OR jsonb_typeof(proposed_roles) = 'array');
+  END IF;
+END $$;
+CREATE INDEX IF NOT EXISTS invitations_participation_idx ON auth.invitations (participation_id) WHERE participation_id IS NOT NULL;
+-- Notification « invitation en attente » du compte visé : lecture par adresse des invitations en attente.
+CREATE INDEX IF NOT EXISTS invitations_pending_email_idx ON auth.invitations (lower(email)) WHERE status = 'pending';
+-- ---------------------------------------------------------------------------
+-- Organisations, participation — reliquat de la phase 5 (Issue #262) : invitation de projet d'un REPRÉSENTANT MANDATÉ.
+-- Le propriétaire du projet invite, depuis l'annuaire, le représentant d'un mandat actif d'une organisation partie au
+-- projet ; l'invitation garde le mandat (`mandate_id`). Un mandat ne donne toujours aucun droit : seule l'acceptation par
+-- l'identité visée active la participation, qui porte alors la partie représentée (`represented_organization_id` =
+-- l'organisation du mandat). L'acceptation est refusée si le mandat n'est plus actif. Additif et rejouable.
+-- ---------------------------------------------------------------------------
+ALTER TABLE auth.invitations ADD COLUMN IF NOT EXISTS mandate_id text
+  REFERENCES public.organization_mandates (id) ON DELETE SET NULL;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'invitations_mandate_check') THEN
+    ALTER TABLE auth.invitations ADD CONSTRAINT invitations_mandate_check
+      CHECK (mandate_id IS NULL OR purpose = 'project_participation');
+  END IF;
+END $$;
+CREATE INDEX IF NOT EXISTS invitations_mandate_idx ON auth.invitations (mandate_id) WHERE mandate_id IS NOT NULL;
 -- Communication (COM, Issue #280, docs/workstreams/communication/PLAN.md) — tables nouvelles, additif.
 -- Une conversation appartient à un projet et porte une audience explicite : `participants` (personnes nommées),
 -- `equipe` (propriétaire et éditeurs) ou `projet` (tous les membres). La lisibilité est recalculée à chaque requête

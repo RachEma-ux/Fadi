@@ -101,6 +101,8 @@ export function AppShell() {
         <div className="app-nav-secondary">
           <NavLink to="/bibliotheque/batiments" title="Bibliothèque" aria-label="Bibliothèque" className={({ isActive }) => isActive ? "active" : undefined}><Icon name="book" /><span className="sidebar-label">Bibliothèque</span></NavLink>
           {/* Espace d'organisation (concept partie 5) : équipe interne, groupes, gabarits ; n'ouvre aucun projet. */}
+          {/* Revue externe (phase 4) : paquets partagés nominativement ; n'ouvre aucun projet. */}
+          <NavLink to="/revues" title="Revues externes" aria-label="Revues externes" className={({ isActive }) => isActive ? "active" : undefined} data-nav-revues><Icon name="review" /><span className="sidebar-label">Revues externes</span></NavLink>
           <NavLink to="/organisations" title="Organisations" aria-label="Organisations" className={({ isActive }) => isActive ? "active" : undefined} data-nav-organisations><Icon name="organization" /><span className="sidebar-label">Organisations</span></NavLink>
           <NavLink to="/parametres" title="Paramètres" aria-label="Paramètres" className={({ isActive }) => isActive ? "active" : undefined}><Icon name="gear" /><span className="sidebar-label">Paramètres</span></NavLink>
           {/* Entrée visible seulement pour un administrateur, administration activée (FADI_ADMIN_ENABLED) ; la protection reste au serveur (404 sinon). */}

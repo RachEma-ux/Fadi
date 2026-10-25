@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import { ApiError, api, ROLE_LABEL } from "../lib/api";
 import { ImportProjectButton } from "../modules/projets-sources/ImportProjectButton";
+import { InvitationsRecues } from "../modules/collaboration/InvitationsRecues";
 import { IMPORT_PROGRESS_TEXT, useImportExample } from "../lib/use-import-example";
 
 /**
@@ -164,6 +165,9 @@ export function ProjectsPage() {
           </ul>
         )}
       </section>
+
+      {/* Invitations de projet en attente pour ce compte (Issue #262, phase 3) : acceptées ou déclinées ici. */}
+      <InvitationsRecues />
 
       {/* Projets que d'autres comptes vous ont partagés : le rôle (lecteur / éditeur) est décidé par le serveur. */}
       {filtered.some((p) => p.role && p.role !== "proprietaire") && (

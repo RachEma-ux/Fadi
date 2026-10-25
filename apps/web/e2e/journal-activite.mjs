@@ -18,6 +18,7 @@
  * NON EXÉCUTÉS (couverts par app.test.ts, DB-3).
  */
 import { createHmac, randomBytes, randomUUID } from "node:crypto";
+import { appelPlaywright, inviterEtAccepter } from "./lib-invitations.mjs";
 import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -99,8 +100,9 @@ try {
   const project = await api(owner.ctx, "post", "/projects", { code: `JA_${uid().slice(0, 6)}`, name: "Journal d’activité (recette synthétique)" });
   const pid = project.body?.id;
   check("projet créé", project.status === 201, String(project.status));
-  check("éditeur et lecteur ajoutés", (await api(owner.ctx, "post", `/projects/${pid}/members`, { email: editor.email, role: "editeur" })).status < 300
-    && (await api(owner.ctx, "post", `/projects/${pid}/members`, { email: reader.email, role: "lecteur" })).status < 300);
+  const asOwner = (m, p, b) => api(owner.ctx, m.toLowerCase(), p, b);
+  check("éditeur et lecteur invités, invitations acceptées (phase 3)", (await inviterEtAccepter(asOwner, (m, p, b) => api(editor.ctx, m.toLowerCase(), p, b), pid, editor.email, "editeur")).ok
+    && (await inviterEtAccepter(asOwner, (m, p, b) => api(reader.ctx, m.toLowerCase(), p, b), pid, reader.email, "lecteur")).ok);
   const invited = await api(owner.ctx, "post", `/projects/${pid}/members`, { email: email("invite"), role: "lecteur" });
   check("invitation d’une adresse sans compte", invited.status === 202, String(invited.status));
 
@@ -154,7 +156,8 @@ try {
 
   const mine = await api(owner.ctx, "get", "/auth/me/history");
   const mineActions = (mine.body?.entries ?? []).map((e) => e.action);
-  check("Mon historique : ses actions (inscription, ajout de membres, invitation)", mine.status === 200 && ["auth.register", "project.member.added", "invitation.created"].every((a) => mineActions.includes(a)), mineActions.join(","));
+  // Phase 3 : le propriétaire invite (invitation, fiche) ; l'ajout du membre est l'acte du compte qui accepte.
+  check("Mon historique : ses actions (inscription, invitations envoyées, fiches créées)", mine.status === 200 && ["auth.register", "invitation.created", "participation.created"].every((a) => mineActions.includes(a)) && !mineActions.includes("project.member.added"), mineActions.join(","));
   check("Mon historique : jamais d’adresse IP", (mine.body?.entries ?? []).every((e) => !("ip" in e)));
   if (adminReady) check("Mon historique : l’accès support utilisé sur son projet, administrateur nommé", (mine.body?.entries ?? []).some((e) => e.action === "support.accessed" && e.actor?.email === admin.email));
   const theirs = await api(stranger.ctx, "get", "/auth/me/history");
@@ -180,7 +183,7 @@ try {
     const compte = await open(owner.ctx, "/parametres", "fr", viewport);
     await compte.locator("[data-account-history] [data-journal-table]").waitFor();
     check(`Mon compte (${nom}) : « Mon historique » liste ses entrées`, (await compte.locator("[data-account-history] [data-journal-entry]").count()) > 0
-      && (await compte.locator('[data-account-history] [data-journal-entry="project.member.added"]').count()) > 0);
+      && (await compte.locator('[data-account-history] [data-journal-entry="invitation.created"]').count()) > 0);
     await axe(compte, `Mon compte — Mon historique (${nom})`);
     await compte.close();
 
@@ -188,7 +191,7 @@ try {
     await collab.locator("[data-historique-projet] [data-journal-table]").waitFor();
     check(`Collaboration (${nom}) : section « Historique » du propriétaire`, (await collab.locator('[data-historique-projet] [data-journal-entry="project.member.added"]').count()) >= 2);
     await collab.locator('[data-historique-famille="invitation"]').click();
-    await collab.locator('[data-historique-projet] [data-journal-entry="invitation.created"]').waitFor();
+    await collab.locator('[data-historique-projet] [data-journal-entry="invitation.created"]').first().waitFor();
     check(`Collaboration (${nom}) : filtre « Invitations »`, (await collab.locator('[data-historique-projet] [data-journal-entry="project.member.added"]').count()) === 0);
     await axe(collab, `Collaboration — Historique (${nom})`);
     await collab.close();
@@ -220,7 +223,7 @@ try {
   await enCompte.locator("[data-account-history] [data-journal-table]").waitFor();
   check("anglais : html lang=en", (await enCompte.evaluate(() => document.documentElement.lang)) === "en");
   const enHist = await enCompte.locator("[data-account-history]").innerText();
-  check("anglais : « My history » et libellés d’actions traduits", enHist.includes("My history") && enHist.includes("Member added to the project") && !enHist.includes("Mon historique") && !enHist.includes("Membre ajouté"), enHist.slice(0, 200));
+  check("anglais : « My history » et libellés d’actions traduits", enHist.includes("My history") && enHist.includes("Invitation sent") && !enHist.includes("Mon historique") && !enHist.includes("Invitation envoyée"), enHist.slice(0, 200));
   await axe(enCompte, "Mon compte — Mon historique (anglais)");
   await enCompte.close();
   const enCollab = await open(owner.ctx, `/projets/${pid}?module=collaboration`, "en");

@@ -2,7 +2,7 @@
  * Collaboration > Équipe et participants (Issue #262, phase 2 ; concept, parties 1 à 3). Monté sous
  * `/projects/:projectId/participants`.
  *
- *   GET    /                          → { project, you, participants, invitations? } : l'annuaire complet (personnes avec
+ *   GET    /                          → { project, you, participants, organizations, invitations? } : l'annuaire complet (personnes avec
  *                                       ou sans compte, organisations ; participations terminées comprises) — tout lecteur
  *   GET    /team                      → la vue Équipe : participations en cours portant des responsabilités — tout lecteur
  *   GET    /search?q=&email=          → existant avant création : personnes et organisations visibles, compte par adresse
@@ -40,8 +40,11 @@ import {
 } from "../lib/participants-db.js";
 import { lockProject, type Tx } from "../lib/step-rows.js";
 import { isProjectResponsible } from "../lib/project-responsables.js";
+import { projectOrganizations } from "../lib/project-organizations.js";
 import { projectOr404, type AccessibleProject } from "../lib/owned-project.js";
 import { requireAuth } from "../middleware/require-auth.js";
+import { porteeInconnue } from "../lib/portees-db.js";
+import { capacitesDePortee, type RoleMetier, type TypePortee } from "@parcours/domain-model";
 import { signalerAccesApresEcriture } from "../lib/temps-reel-signaux.js";
 
 export const participantsRouter = Router({ mergeParams: true });
@@ -137,6 +140,8 @@ participantsRouter.get("/", async (req, res) => {
     project: { id: ctx.project.id, closedAt: ctx.project.closedAt ? ctx.project.closedAt.toISOString() : null },
     you: { userId: req.user!.id, role: ctx.project.role, responsible: ctx.responsible, canManage: ctx.project.role === "proprietaire", canErase: ctx.responsible },
     participants,
+    // Partie propriétaire déclarée et organisations parties (phase 5, OP-D1 a) : lecture seule, aucun droit.
+    organizations: await projectOrganizations(ctx.project.id, req.user!.id),
     ...(ctx.responsible ? { invitations } : {}),
   });
 });
@@ -342,12 +347,15 @@ participantsRouter.post("/:participationId/roles", (req, res) => write(res, asyn
     const r = row!;
     const refusal = roleAssignmentRefusal({ isOwner: r.isOwner, hasAccount: Boolean(r.userId), isOrganization: !r.pe, status: r.p.status });
     if (refusal) fail(422, "role_rule", refusal);
+    // Portée étroite : l'élément désigné (étude, variante, révision, documents) doit exister dans CE projet.
+    const scopeProblem = await porteeInconnue(tx, project.id, input.scopeType as TypePortee, input.scopeId);
+    if (scopeProblem) fail(422, "scope_rule", scopeProblem);
     const id = newId("pra");
     const inserted = await tx.insert(projectRoleAssignments).values({ id, participationId: r.p.id, role: input.role as never, scopeType: input.scopeType as never, scopeId: input.scopeId, origin: "attribution", grantedBy: req.user!.id })
       .onConflictDoNothing().returning({ id: projectRoleAssignments.id });
     if (!inserted.length) fail(409, "existing", "Ce rôle est déjà attribué à cette portée.");
     await audit(tx, { actorId: req.user!.id, action: "participation.role_assigned", target: { type: "project", id: project.id }, metadata: { participationId: r.p.id, memberId: r.userId, roleId: id, role: input.role, scopeType: input.scopeType, scopeId: input.scopeId }, ip: clientIp(req) });
-    return { status: 201, body: { id, role: input.role, scopeType: input.scopeType, scopeId: input.scopeId, origin: "attribution" } };
+    return { status: 201, body: { id, role: input.role, scopeType: input.scopeType, scopeId: input.scopeId, origin: "attribution", capacites: capacitesDePortee(input.role as RoleMetier, input.scopeType as TypePortee) } };
   });
 }));
 

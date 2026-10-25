@@ -29,6 +29,10 @@ const ECRANS: Record<CommandeCollaboration, string[]> = {
   "rendre-visible": ["modules/collaboration/CollaborationModule.tsx", "modules/studio/commentaires/PanneauCommentaires.tsx"],
   "reserver-equipe": ["modules/collaboration/CollaborationModule.tsx", "modules/studio/commentaires/PanneauCommentaires.tsx"],
   "export-lecteur": ["modules/collaboration/CollaborationModule.tsx"],
+  // Invitations acceptées (Issue #262, phase 3) : formulaire d'invitation, carte d'une invitation reçue.
+  "apercu-invitation": ["modules/collaboration/InvitationProjet.tsx"],
+  "accepter-invitation": ["modules/collaboration/InvitationsRecues.tsx"],
+  "decliner-invitation": ["modules/collaboration/InvitationsRecues.tsx"],
   // Communication (COM-D14) : liste et fil des conversations, messages ; demandes de précision.
   "nouvelle-conversation": [PANNEAU_COM], "envoyer-message": [PANNEAU_COM], "partager-extrait": [PANNEAU_COM], "action-liee": [PANNEAU_COM],
   "audience-conversation": [PANNEAU_COM], "accuser-reception": [PANNEAU_COM], "ajouter-participant": [PANNEAU_COM], "retirer-participant": [PANNEAU_COM],
@@ -106,6 +110,11 @@ describe("Règle d'or — commandes de collaboration (audience, export du lecteu
     expect(declenche(c("Equal"), "clore-projet") && declenche(c("Equal"), "rouvrir-projet")).toBe(true);
     expect(declenche(c("Digit9"), "terminer-participation")).toBe(false);
     expect(propsRaccourci("nouveau-contact")["aria-keyshortcuts"]).toBe("Control+Alt+Shift+6");
+    // Invitations acceptées (phase 3) : Ctrl+Alt+Maj+' aperçu, +\ accepter, +` décliner (touches restées libres après la
+    // revue externe, qui prend 1 à 5 et , . / ;) ; jamais confondues avec Alt+Maj+\ (retirer un message).
+    expect(declenche(c("Quote"), "apercu-invitation") && !declenche(t("Quote"), "apercu-invitation")).toBe(true);
+    expect(declenche(c("Backslash"), "accepter-invitation") && declenche(c("Backquote"), "decliner-invitation")).toBe(true);
+    expect(declenche(c("Backslash"), "decliner-invitation") || declenche(c("Backslash"), "retirer-message")).toBe(false);
   });
 
   it("Communication (COM-D14) : dix-huit commandes, Alt+Maj+chiffre ou ponctuation, touche physique", () => {

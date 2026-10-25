@@ -6,6 +6,7 @@
  * PHASE=initial écrit l'état de réouverture dans STUDIO_STATE s'il est fourni.
  */
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { appelPlaywright, inviterEtAccepter } from './lib-invitations.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const BASE = (process.env.BASE_URL ?? 'http://localhost:3001').replace(/\/$/, '');
@@ -212,7 +213,7 @@ if (PHASE === 'reopen') {
   const editor = client();
   const editorCredentials = credentials();
   check('compte éditeur créé', (await editor('POST', '/auth/register', editorCredentials)).status === 201);
-  check('éditeur ajouté au projet', (await owner('POST', `/projects/${projectId}/members`, { email: editorCredentials.email, role: 'editeur' })).status === 201);
+  check('éditeur invité, invitation acceptée (phase 3)', (await inviterEtAccepter(owner, editor, projectId, editorCredentials.email, 'editeur')).ok);
   const studyRequestId = `creation-${randomUUID()}`;
   const ideal = await owner('POST', root, { name: 'Étude d’export', requestId: studyRequestId });
   check('étude créée avec requestId (201, replayed=false)', ideal.status === 201 && ideal.body.replayed === false && ideal.headers.get('idempotent-replayed') === 'false', JSON.stringify(ideal.body).slice(0, 200));
@@ -310,7 +311,7 @@ if (PHASE === 'reopen') {
   const reader = client();
   const readerCredentials = credentials();
   check('compte lecteur créé', (await reader('POST', '/auth/register', readerCredentials)).status === 201);
-  check('lecteur ajouté au projet', (await owner('POST', `/projects/${projectId}/members`, { email: readerCredentials.email, role: 'lecteur' })).status === 201);
+  check('lecteur invité, invitation acceptée (phase 3)', (await inviterEtAccepter(owner, reader, projectId, readerCredentials.email, 'lecteur')).ok);
   const emptyComments = await owner('GET', commentsPath);
   check('commentaires : liste vide au départ', emptyComments.status === 200 && Array.isArray(emptyComments.body?.comments) && emptyComments.body.comments.length === 0, JSON.stringify(emptyComments.body));
   const commentRequestId = `commentaire-${randomUUID()}`;

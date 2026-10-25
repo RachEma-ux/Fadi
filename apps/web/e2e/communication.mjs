@@ -31,6 +31,7 @@
 import { chromium } from "playwright";
 import { randomBytes, randomUUID } from "node:crypto";
 import { mkdirSync } from "node:fs";
+import { inviterEtAccepter } from "./lib-invitations.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const OUT = process.env.OUT ?? null;
@@ -66,8 +67,8 @@ const code = `COM_${randomUUID().slice(0, 6)}`;
 const project = await owner("POST", "/projects", { code, name: "Communication (recette synthétique)" });
 const pid = project.body?.id;
 check("projet créé", project.status === 201, String(project.status));
-check("éditeur et lecteur ajoutés", (await owner("POST", `/projects/${pid}/members`, { email: cEditor.email, role: "editeur" })).status === 201
-  && (await owner("POST", `/projects/${pid}/members`, { email: cReader.email, role: "lecteur" })).status === 201);
+check("éditeur et lecteur invités, invitations acceptées (Issue #262, phase 3)", (await inviterEtAccepter(owner, editor, pid, cEditor.email, "editeur")).ok
+  && (await inviterEtAccepter(owner, reader, pid, cReader.email, "lecteur")).ok);
 
 const com = `/projects/${pid}/com`;
 const rid = () => `recette-${randomUUID()}`;

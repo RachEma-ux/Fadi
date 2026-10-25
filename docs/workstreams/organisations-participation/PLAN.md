@@ -3,8 +3,10 @@
 > Chantier ouvert par le maître d'ouvrage le 2026-10-23 (suite de UM-1, [Issue #262](https://github.com/RachEma-ux/Fadi/issues/262)).
 > Priorité demandée : **participants**, **invitations acceptées**, **revue externe** ; ajout du maître d'ouvrage le même
 > jour : **journal d'activité et historique** (phase 3 bis).
-> **Statut du plan : validé le 2026-10-23** (🛑 0 franchi, décisions OP-1 dans [DECISIONS.md](DECISIONS.md)). Phase 1 livrée
-> sur branche, en attente de la revue 🛑 1.
+> **Statut du plan : validé le 2026-10-23** (🛑 0, OP-1) ; exécution de bout en bout autorisée le 2026-10-24 (OP-3).
+> **État au 2026-10-25 : toutes les phases implémentées.** Phases 1, 2, 3 bis et 5 fusionnées (PR #265, #281) ; phases 3, 4,
+> 6 et reliquats sur la PR #290. Comptes rendus : `phase-*.md`, `portees-etroites.md`, `recette-finale.md`. Le 🛑 final
+> (acceptation, tout déploiement) reste au maître d'ouvrage.
 
 Source normative : [`docs/workstreams/users-management/concept.md`](../users-management/concept.md) (concept Users
 Management v2.2, parties 1 à 6 et section v2.2) — il prime sur ce plan. Décisions héritées : D-1 à D-7 et UM-1 à UM-24

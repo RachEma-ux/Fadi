@@ -6,6 +6,7 @@
  * un schéma déjà provisionné ; essais DB-3 soumis à autorisation distincte.
  */
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { accepterEnBase, partager } from "./test-helpers/partage.js";
 import { readFileSync } from "node:fs";
 import { randomBytes } from "node:crypto";
 import request from "supertest";
@@ -1881,19 +1882,19 @@ describe("Partage du projet — membres, rôles vérifiés côté serveur", () =
 
     // Invitation : compte inexistant, propriétaire lui-même, adresse normalisée, rôle inconnu.
     // Adresse sans compte (gestion des comptes, UM-3) : invitation nominative en attente, aucun compte ni membre créé.
-    const pending = await owner.post(`/projects/${pid}/members`).send({ email: "nobody@example.com", role: "lecteur" });
+    const pending = await partager(owner, pid, "nobody@example.com", "lecteur");
     expect(pending.status).toBe(202);
     expect(pending.body.invitation).toMatchObject({ email: "nobody@example.com", status: "pending", projectRole: "lecteur" });
     expect((await agent().post("/auth/login").send({ email: "nobody@example.com", password: "correct-horse-battery" })).status).toBe(401);
-    expect((await owner.post(`/projects/${pid}/members`).send({ email: "share-owner@example.com", role: "lecteur" })).body).toMatchObject({ error: "sharing_rule" });
-    expect((await owner.post(`/projects/${pid}/members`).send({ email: "share-reader@example.com", role: "chef" })).status).toBe(400);
-    const invited = await owner.post(`/projects/${pid}/members`).send({ email: "  Share-Reader@Example.com ", role: "lecteur" });
+    expect((await partager(owner, pid, "share-owner@example.com", "lecteur")).body).toMatchObject({ error: "sharing_rule" });
+    expect((await partager(owner, pid, "share-reader@example.com", "chef")).status).toBe(400);
+    const invited = await partager(owner, pid, "  Share-Reader@Example.com ", "lecteur");
     expect(invited.status).toBe(201);
     expect(invited.body).toMatchObject({ email: "share-reader@example.com", role: "lecteur", invitedBy: "share-owner@example.com" });
-    expect((await owner.post(`/projects/${pid}/members`).send({ email: "share-editor@example.com", role: "editeur" })).status).toBe(201);
+    expect((await partager(owner, pid, "share-editor@example.com", "editeur")).status).toBe(201);
     // Seul le propriétaire partage ; un étranger ne voit même pas le projet.
-    expect((await reader.post(`/projects/${pid}/members`).send({ email: "share-stranger@example.com", role: "lecteur" })).status).toBe(403);
-    expect((await editor.post(`/projects/${pid}/members`).send({ email: "share-stranger@example.com", role: "lecteur" })).status).toBe(403);
+    expect((await partager(reader, pid, "share-stranger@example.com", "lecteur")).status).toBe(403);
+    expect((await partager(editor, pid, "share-stranger@example.com", "lecteur")).status).toBe(403);
     expect((await stranger.get(`/projects/${pid}/members`)).status).toBe(404);
     expect((await stranger.get(`/projects/${pid}/steps`)).status).toBe(404);
 
@@ -1991,7 +1992,7 @@ describe("Partage du projet — membres, rôles vérifiés côté serveur", () =
     const pid = (await owner.post("/projects").send({ code: "P.OWN", name: "Transfert" })).body.id as string;
     const nextId = (await next.get("/auth/me")).body.id as string;
     expect((await owner.post(`/projects/${pid}/members/${nextId}/propriete`)).status).toBe(404); // pas encore membre
-    await owner.post(`/projects/${pid}/members`).send({ email: "transfer-next@example.com", role: "lecteur" });
+    await partager(owner, pid, "transfer-next@example.com", "lecteur");
     expect((await next.post(`/projects/${pid}/members/${nextId}/propriete`)).status).toBe(403); // propriétaire seulement
     expect((await stranger.post(`/projects/${pid}/members/${nextId}/propriete`)).status).toBe(404);
     const transferred = await owner.post(`/projects/${pid}/members/${nextId}/propriete`);
@@ -2014,9 +2015,9 @@ describe("Partage du projet — membres, rôles vérifiés côté serveur", () =
     ]);
     // L'ancien propriétaire modifie encore, mais ne partage ni ne supprime plus ; le nouveau fait les deux.
     expect((await owner.patch(`/projects/${pid}/steps/2`).send({ fields: { f1: "Après transfert" } })).status).toBe(200);
-    expect((await owner.post(`/projects/${pid}/members`).send({ email: "transfer-stranger@example.com", role: "lecteur" })).status).toBe(403);
+    expect((await partager(owner, pid, "transfer-stranger@example.com", "lecteur")).status).toBe(403);
     expect((await owner.delete(`/projects/${pid}`)).status).toBe(403);
-    expect((await next.post(`/projects/${pid}/members`).send({ email: "transfer-stranger@example.com", role: "lecteur" })).status).toBe(201);
+    expect((await partager(next, pid, "transfer-stranger@example.com", "lecteur")).status).toBe(201);
     expect((await next.delete(`/projects/${pid}`)).status).toBe(204);
   });
 });
@@ -2027,8 +2028,8 @@ describe("Verrou d'édition optionnel — un seul éditeur actif", () => {
     const editor = await registerAndLogin("lock-editor@example.com");
     const reader = await registerAndLogin("lock-reader@example.com");
     const pid = (await owner.post("/projects").send({ code: "P.LOCK", name: "Verrou" })).body.id as string;
-    const editorId = (await owner.post(`/projects/${pid}/members`).send({ email: "lock-editor@example.com", role: "editeur" })).body.userId as string;
-    await owner.post(`/projects/${pid}/members`).send({ email: "lock-reader@example.com", role: "lecteur" });
+    const editorId = (await partager(owner, pid, "lock-editor@example.com", "editeur")).body.userId as string;
+    await partager(owner, pid, "lock-reader@example.com", "lecteur");
     expect((await owner.get(`/projects/${pid}/lock`)).body).toEqual({ lock: null, yours: false });
     expect((await owner.get(`/projects/${pid}`)).body.editingLock).toBeNull();
     // Sans réservation, les deux éditeurs écrivent.
@@ -2147,7 +2148,7 @@ describe("R2 · planning métier, versions et accès au dossier", () => {
     expect((await alice.put(endpoint + "/steps/1").send({ ...step(0), startDate: "2026-02-30" })).status).toBe(400);
     expect((await alice.put(endpoint + "/steps/23").send(step(0))).status).toBe(404);
     expect((await alice.put(endpoint + "/steps/1").send({ ...step(0), unexpected: "no" })).status).toBe(400);
-    expect((await alice.post(`/projects/${p.id}/members`).send({ email: "plan-b@example.com", role: "lecteur" })).status).toBe(201);
+    expect((await partager(alice, p.id, "plan-b@example.com", "lecteur")).status).toBe(201);
     expect((await bob.get(endpoint)).status).toBe(200);
     expect((await bob.put(endpoint + "/steps/1").send(step(0))).status).toBe(403);
     expect((await bob.post(endpoint + "/baseline").send({ expectedRevision: 0 })).status).toBe(403);
@@ -2631,7 +2632,7 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
         .filter((d) => d.kind.startsWith("plan-lecture-")).map((d) => d.kind.slice("plan-lecture-".length));
       expect(levels.length).toBeGreaterThan(0);
       const reader = await account("lecteur");
-      expect((await owner.a.post(`/projects/${pid}/members`).send({ email: reader.email, role: "lecteur" })).status).toBeLessThan(300);
+      expect((await partager(owner.a, pid, reader.email, "lecteur")).status).toBeLessThan(300);
       const admin = await account("support");
       await enableMfa(admin, admin.a);
       await promoteInDb(admin.id);
@@ -2769,13 +2770,15 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
       const stranger = await account("journal-etranger");
       const pid = (await owner.a.post("/projects").send({ code: "JP.1", name: "Historique" })).body.id as string;
       const other = (await owner.a.post("/projects").send({ code: "JP.2", name: "Autre" })).body.id as string;
-      expect((await owner.a.post(`/projects/${pid}/members`).send({ email: editor.email, role: "editeur" })).status).toBeLessThan(300);
-      expect((await owner.a.post(`/projects/${pid}/members`).send({ email: reader.email, role: "lecteur" })).status).toBeLessThan(300);
-      expect((await owner.a.post(`/projects/${other}/members`).send({ email: reader.email, role: "lecteur" })).status).toBeLessThan(300);
+      expect((await partager(owner.a, pid, editor.email, "editeur")).status).toBeLessThan(300);
+      expect((await partager(owner.a, pid, reader.email, "lecteur")).status).toBeLessThan(300);
+      expect((await partager(owner.a, other, reader.email, "lecteur")).status).toBeLessThan(300);
       // Invitation d'une adresse sans compte (rattachée par metadata.projectId), puis annulée.
-      const invited = await owner.a.post(`/projects/${pid}/members`).send({ email: `journal-invite-${n}@example.com`, role: "lecteur" });
+      const invitedEmail = `journal-invite-${n}@example.com`;
+      const invited = await owner.a.post(`/projects/${pid}/members`).send({ email: invitedEmail, role: "lecteur" });
       expect(invited.status).toBeLessThan(300);
-      const invitationId = (await pool.query("SELECT id FROM auth.invitations WHERE project_id = $1", [pid])).rows[0]?.id as string;
+      // Phase 3 : les partages ci-dessus sont eux aussi des invitations (acceptées) — viser celle de cette adresse, en attente.
+      const invitationId = (await pool.query("SELECT id FROM auth.invitations WHERE project_id = $1 AND email = $2 AND status = 'pending'", [pid, invitedEmail])).rows[0]?.id as string;
       expect(invitationId).toBeTruthy();
       expect((await owner.a.delete(`/projects/${pid}/members/invitations/${invitationId}`)).status).toBeLessThan(300);
 
@@ -2787,15 +2790,22 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
         expect(e.ip).toBeUndefined();
         expect(e.projectId).toBe(pid);
       }
+      // Phase 3 (OP-D2 a) : l'ajout du membre est écrit à l'acceptation, par le compte qui accepte (acteur nommé pour les
+      // responsables) ; l'envoi reste l'acte du propriétaire (invitation.created, participation.created).
       const added = entries.filter((e) => e.action === "project.member.added");
       expect(added).toHaveLength(2);
       expect(added.map((e) => e.subjects["memberId"]?.email).sort()).toEqual([editor.email, reader.email].sort());
-      expect(added[0]!.actor).toEqual({ kind: "vous" });
+      expect(added.map((e) => (e.actor as { email?: string }).email).sort()).toEqual([editor.email, reader.email].sort());
       expect(added.every((e) => !("memberId" in e.details))).toBe(true);
+      expect(entries.filter((e) => e.action === "participation.created").every((e) => e.actor.kind === "vous")).toBe(true);
       // L'autre projet n'apparaît jamais ; le filtre par famille reste côté serveur.
-      expect(entries.length).toBe(4);
+      const counts = entries.reduce<Record<string, number>>((acc, e) => ({ ...acc, [e.action]: (acc[e.action] ?? 0) + 1 }), {});
+      expect(counts).toEqual({
+        "invitation.created": 3, "invitation.accepted": 2, "invitation.cancelled": 1, "participation.created": 3, "person.contact_created": 1,
+        "project.member.added": 2, "participation.activated": 2,
+      });
       const inv = await owner.a.get(`/projects/${pid}/journal`).query({ family: "invitation" });
-      expect((inv.body.entries as Entry[]).map((e) => e.action).sort()).toEqual(["invitation.cancelled", "invitation.created"]);
+      expect((inv.body.entries as Entry[]).map((e) => e.action).sort()).toEqual(["invitation.accepted", "invitation.accepted", "invitation.cancelled", "invitation.created", "invitation.created", "invitation.created"]);
 
       for (const [who, status] of [[editor, 403], [reader, 403], [stranger, 404]] as const) {
         const r = await who.a.get(`/projects/${pid}/journal`);
@@ -2846,8 +2856,11 @@ describe("règles communes — E1 audience, E2 export du lecteur, E3 journal des
     const a = await registerAndLogin(email);
     return { a, id: (await a.get("/auth/me")).body.id as string };
   }
+  // Journal du partage (E3). Les entrées `participation.*` de l'arrivée par invitation acceptée (phase 3 : fiche créée à
+  // l'envoi, activation à l'acceptation) sont contrôlées par le bloc « Invitations acceptées » et laissées de côté ici.
   const auditOf = async (projectId: string) =>
-    (await pool.query("SELECT actor_id, action, metadata FROM admin.audit_log WHERE target_type = 'project' AND target_id = $1 ORDER BY id", [projectId])).rows as { actor_id: string; action: string; metadata: Record<string, unknown> }[];
+    ((await pool.query("SELECT actor_id, action, metadata FROM admin.audit_log WHERE target_type = 'project' AND target_id = $1 ORDER BY id", [projectId])).rows as { actor_id: string; action: string; metadata: Record<string, unknown> }[])
+      .filter((e) => !e.action.startsWith("participation."));
   async function team() {
     const owner = await who("cr-owner@example.com");
     const editor = await who("cr-editor@example.com");
@@ -2856,8 +2869,8 @@ describe("règles communes — E1 audience, E2 export du lecteur, E3 journal des
     const created = await owner.a.post("/projects").send({ code: "CR.1", name: "Règles communes" });
     expect(created.status).toBe(201);
     const pid = created.body.id as string;
-    expect((await owner.a.post(`/projects/${pid}/members`).send({ email: "cr-editor@example.com", role: "editeur" })).status).toBe(201);
-    expect((await owner.a.post(`/projects/${pid}/members`).send({ email: "cr-reader@example.com", role: "lecteur" })).status).toBe(201);
+    expect((await partager(owner.a, pid, "cr-editor@example.com", "editeur")).status).toBe(201);
+    expect((await partager(owner.a, pid, "cr-reader@example.com", "lecteur")).status).toBe(201);
     return { owner, editor, reader, stranger, pid };
   }
 
@@ -2865,12 +2878,13 @@ describe("règles communes — E1 audience, E2 export du lecteur, E3 journal des
     const { owner, editor, reader, pid } = await team();
     let log = await auditOf(pid);
     expect(log.map((e) => e.action)).toEqual(["project.member.added", "project.member.added"]);
-    expect(log[1]).toMatchObject({ actor_id: owner.id, metadata: { memberId: reader.id, role: "lecteur", canExport: false } });
-    // Même rôle redemandé : rien ne change, rien n'est journalisé.
-    expect((await owner.a.post(`/projects/${pid}/members`).send({ email: "cr-reader@example.com", role: "lecteur" })).status).toBe(201);
+    // Phase 3 : l'ajout est écrit à l'acceptation, par le compte qui accepte, voie « invitation ».
+    expect(log[1]).toMatchObject({ actor_id: reader.id, metadata: { memberId: reader.id, role: "lecteur", canExport: false, via: "invitation" } });
+    // Même rôle redemandé à un membre : rôle changé directement (200), sans invitation ; rien ne change, rien n'est journalisé.
+    expect((await partager(owner.a, pid, "cr-reader@example.com", "lecteur")).status).toBe(200);
     expect(await auditOf(pid)).toHaveLength(2);
     // Changement de rôle par le partage (ligne existante), puis par PATCH.
-    expect((await owner.a.post(`/projects/${pid}/members`).send({ email: "cr-reader@example.com", role: "editeur" })).body).toMatchObject({ role: "editeur", canExport: true });
+    expect((await partager(owner.a, pid, "cr-reader@example.com", "editeur")).body).toMatchObject({ role: "editeur", canExport: true });
     expect((await owner.a.patch(`/projects/${pid}/members/${reader.id}`).send({ role: "lecteur" })).body).toMatchObject({ role: "lecteur", canExport: false });
     log = await auditOf(pid);
     expect(log.slice(2).map((e) => [e.action, e.metadata])).toEqual([
@@ -3059,9 +3073,9 @@ describe("Équipe et participants — bascule de l'accès sur les participations
     const reader = await registerAndLogin("op2-reader@example.com");
     const legacy = await registerAndLogin("op2-legacy@example.com");
     const pid = (await owner.post("/projects").send({ code: "P.OP2", name: "Bascule" })).body.id as string;
-    await owner.post(`/projects/${pid}/members`).send({ email: "op2-editor@example.com", role: "editeur" });
-    await owner.post(`/projects/${pid}/members`).send({ email: "op2-reader@example.com", role: "lecteur" });
-    await owner.post(`/projects/${pid}/members`).send({ email: "op2-legacy@example.com", role: "lecteur" });
+    await partager(owner, pid, "op2-editor@example.com", "editeur");
+    await partager(owner, pid, "op2-reader@example.com", "lecteur");
+    await partager(owner, pid, "op2-legacy@example.com", "lecteur");
     // Lecteur antérieur à l'écart E2 (NULL d'archive) : l'export est conservé à travers la participation.
     await pool.query("UPDATE project_members SET can_export = NULL WHERE project_id = $1 AND user_id = $2", [pid, await meId(legacy)]);
     expect(await effective(pid, await meId(owner))).toEqual({ role: "proprietaire", can_export: true, can_approve: true, can_publish: true });
@@ -3092,8 +3106,8 @@ describe("Équipe et participants — bascule de l'accès sur les participations
     const reader = await registerAndLogin("op2b-reader@example.com");
     const editor = await registerAndLogin("op2b-editor@example.com");
     const pid = (await owner.post("/projects").send({ code: "P.OP2B", name: "Fin" })).body.id as string;
-    await owner.post(`/projects/${pid}/members`).send({ email: "op2b-reader@example.com", role: "lecteur" });
-    await owner.post(`/projects/${pid}/members`).send({ email: "op2b-editor@example.com", role: "editeur" });
+    await partager(owner, pid, "op2b-reader@example.com", "lecteur");
+    await partager(owner, pid, "op2b-editor@example.com", "editeur");
     const readerId = await meId(reader), editorId = await meId(editor);
     const rp = await participationOf(pid, readerId);
     expect((await reader.get(`/projects/${pid}`)).status).toBe(200);
@@ -3110,7 +3124,10 @@ describe("Équipe et participants — bascule de l'accès sur les participations
     expect(await effective(pid, readerId)).toBeNull();
     expect((await reader.get(`/projects/${pid}`)).status).toBe(404);
     // Un rôle de portée plus étroite ne donne rien non plus ; Approbateur de portée projet : lecture et approbation.
-    expect((await owner.post(`/projects/${pid}/participants/${rp}/roles`).send({ role: "relecteur", scopeType: "etude", scopeId: "etude-x" })).status).toBe(201);
+    // (portées étroites : l'élément désigné doit exister dans le projet — une étude inconnue est refusée, 422)
+    expect((await owner.post(`/projects/${pid}/participants/${rp}/roles`).send({ role: "relecteur", scopeType: "etude", scopeId: "etude-x" })).status).toBe(422);
+    const etudeX = (await owner.post(`/projects/${pid}/studio/studies`).send({ name: "Étude X" })).body.study.id as string;
+    expect((await owner.post(`/projects/${pid}/participants/${rp}/roles`).send({ role: "relecteur", scopeType: "etude", scopeId: etudeX })).status).toBe(201);
     expect(await effective(pid, readerId)).toBeNull();
     expect((await owner.post(`/projects/${pid}/participants/${rp}/roles`).send({ role: "approbateur", scopeType: "projet" })).status).toBe(201);
     expect(await effective(pid, readerId)).toEqual({ role: "lecteur", can_export: false, can_approve: true, can_publish: false });
@@ -3137,7 +3154,7 @@ describe("Équipe et participants — bascule de l'accès sur les participations
     const owner = await registerAndLogin("op2c-owner@example.com");
     const member = await registerAndLogin("op2c-member@example.com");
     const pid = (await owner.post("/projects").send({ code: "P.OP2C", name: "Cohérence" })).body.id as string;
-    await owner.post(`/projects/${pid}/members`).send({ email: "op2c-member@example.com", role: "lecteur" });
+    await partager(owner, pid, "op2c-member@example.com", "lecteur");
     const memberId = await meId(member);
     const part = await participationOf(pid, memberId);
     const today = (await pool.query("SELECT current_date::text AS d")).rows[0].d as string;
@@ -3160,5 +3177,121 @@ describe("Équipe et participants — bascule de l'accès sur les participations
       });
       expect(sqlVerdict ? { role: sqlVerdict.role, canExport: sqlVerdict.can_export, canApprove: sqlVerdict.can_approve, canPublish: sqlVerdict.can_publish } : null, `${status} ${roles.join(",")} ${startsOn}`).toEqual(pure);
     }
+  });
+});
+
+describe("Invitations acceptées liées à une participation — fin de l'ajout direct (Issue #262, phase 3, OP-D2 a)", () => {
+  const meId = async (a: ReturnType<typeof agent>) => (await a.get("/auth/me")).body.id as string;
+  const verify = (email: string) => pool.query("UPDATE users SET email_verified_at = now() WHERE email = $1", [email]);
+  const accept = (a: ReturnType<typeof agent>, id: string) => a.post(`/notifications/invitations/${id}/accept`).send({});
+  const invite = (owner: ReturnType<typeof agent>, pid: string, body: Record<string, unknown>) => owner.post(`/projects/${pid}/members`).send(body);
+
+  it("compte existant : aperçu, invitation 202 sans accès, notification, adresse vérifiée exigée, acceptation idempotente, rôles et échéance d'accès", async () => {
+    const owner = await registerAndLogin("p3-owner@example.com");
+    const x = await registerAndLogin("p3-x@example.com");
+    const other = await registerAndLogin("p3-other@example.com");
+    const pid = (await owner.post("/projects").send({ code: "P.P3", name: "Invitations" })).body.id as string;
+    const body = { email: "p3-x@example.com", roles: [{ role: "lecteur" }, { role: "approbateur" }], accessExpiresAt: "2999-12-31" };
+    const preview = await owner.post(`/projects/${pid}/members/preview`).send(body);
+    expect(preview.status).toBe(200);
+    expect(preview.body.preview).toMatchObject({ accountExists: true, target: { kind: "nouvelle-fiche" }, pendingInvitation: null, access: { role: "lecteur", canApprove: true, canExport: false } });
+    expect((await pool.query("SELECT count(*)::int AS c FROM auth.invitations WHERE project_id = $1", [pid])).rows[0].c).toBe(0);
+    const sent = await invite(owner, pid, body);
+    expect(sent.status).toBe(202);
+    expect(sent.body).toMatchObject({ accountExists: true, invitation: { projectRole: "lecteur", participationId: sent.body.participationId } });
+    const id = sent.body.invitation.id as string;
+    // Renvoi : même invitation, aucun doublon ; aucun accès avant acceptation.
+    expect((await invite(owner, pid, body)).body).toMatchObject({ resent: true, invitation: { id } });
+    expect((await pool.query("SELECT count(*)::int AS c FROM auth.invitations WHERE project_id = $1 AND status = 'pending'", [pid])).rows[0].c).toBe(1);
+    expect((await x.get(`/projects/${pid}`)).status).toBe(404);
+    expect((await x.get("/notifications")).body.items.some((i: { invitation?: { id: string } }) => i.invitation?.id === id)).toBe(true);
+    // Une autre adresse ne la voit pas ; une adresse non vérifiée ne l'accepte pas depuis la notification.
+    expect((await accept(other, id)).status).toBe(404);
+    expect((await accept(x, id)).body.error).toBe("email_unverified");
+    await verify("p3-x@example.com");
+    // Double soumission simultanée : une seule activation.
+    const [a1, a2] = await Promise.all([accept(x, id), accept(x, id)]);
+    expect([a1.status, a2.status]).toEqual([200, 200]);
+    expect([a1.body.replay, a2.body.replay].sort()).toEqual([false, true]);
+    expect(a1.body.projectId).toBe(pid);
+    expect((await pool.query("SELECT count(*)::int AS c FROM admin.audit_log WHERE action = 'invitation.accepted' AND target_id = $1", [id])).rows[0].c).toBe(1);
+    const xId = await meId(x);
+    const parts = (await pool.query("SELECT pp.id, pp.status, pp.access_expires_at FROM project_participations pp JOIN people pe ON pe.id = pp.person_id WHERE pp.project_id = $1 AND pe.user_id = $2", [pid, xId])).rows;
+    expect(parts).toHaveLength(1);
+    expect(parts[0]).toMatchObject({ id: sent.body.participationId, status: "active" });
+    expect(parts[0].access_expires_at).not.toBeNull();
+    const roles = (await pool.query("SELECT role, origin FROM project_role_assignments WHERE participation_id = $1 ORDER BY role", [parts[0].id])).rows;
+    expect(roles).toEqual([{ role: "approbateur", origin: "attribution" }, { role: "lecteur", origin: "acces" }]);
+    expect((await x.get(`/projects/${pid}`)).body).toMatchObject({ role: "lecteur" });
+    // Accès expiré : plus rien (vue) ; le propriétaire retire l'échéance.
+    await pool.query("UPDATE project_participations SET access_expires_at = now() - interval '1 minute' WHERE id = $1", [parts[0].id]);
+    expect((await x.get(`/projects/${pid}`)).status).toBe(404);
+    expect((await pool.query("SELECT count(*)::int AS c FROM project_effective_access WHERE project_id = $1 AND user_id = $2", [pid, xId])).rows[0].c).toBe(0);
+    expect((await owner.patch(`/projects/${pid}/members/${xId}`).send({ accessExpiresAt: null })).body).toMatchObject({ accessExpired: false });
+    expect((await x.get(`/projects/${pid}`)).status).toBe(200);
+    // Membre existant : seul le changement de rôle reste direct.
+    expect((await invite(owner, pid, { email: "p3-x@example.com", role: "editeur" })).status).toBe(200);
+  });
+
+  it("refus v2.2 : expirée, annulée, déclinée, invitant révoqué, fiche liée à un autre compte, participation terminée, accès déjà expiré", async () => {
+    const owner = await registerAndLogin("p3r-owner@example.com");
+    const pid = (await owner.post("/projects").send({ code: "P.P3R", name: "Refus" })).body.id as string;
+    const make = async (n: string) => { const a = await registerAndLogin(`p3r-${n}@example.com`); await verify(`p3r-${n}@example.com`); return a; };
+    const send = async (n: string, extra: Record<string, unknown> = {}, project = pid) => (await invite(owner, project, { email: `p3r-${n}@example.com`, role: "lecteur", ...extra })).body;
+
+    const e = await make("expire");
+    const eInv = await send("expire");
+    await pool.query("UPDATE auth.invitations SET expires_at = now() - interval '1 minute' WHERE id = $1", [eInv.invitation.id]);
+    expect((await accept(e, eInv.invitation.id)).body.error).toBe("expired");
+
+    const c = await make("annulee");
+    const cInv = await send("annulee");
+    expect((await owner.delete(`/projects/${pid}/members/invitations/${cInv.invitation.id}`)).status).toBe(204);
+    expect((await accept(c, cInv.invitation.id)).body.error).toBe("cancelled");
+
+    const d = await make("declin");
+    const dInv = await send("declin");
+    expect((await d.post(`/notifications/invitations/${dInv.invitation.id}/decline`).send({})).body).toEqual({ declined: true });
+    expect((await accept(d, dInv.invitation.id)).body.error).toBe("declined");
+
+    const t = await make("terminee");
+    const tInv = await send("terminee");
+    await pool.query("UPDATE project_participations SET status = 'terminee', ends_on = current_date WHERE id = $1", [tInv.participationId]);
+    expect((await accept(t, tInv.invitation.id)).body.error).toBe("participation_unavailable");
+
+    const ax = await make("acces");
+    const axInv = await send("acces", { accessExpiresAt: "2999-01-01" });
+    await pool.query("UPDATE auth.invitations SET access_expires_at = now() - interval '1 minute' WHERE id = $1", [axInv.invitation.id]);
+    expect((await accept(ax, axInv.invitation.id)).body.error).toBe("access_expired");
+
+    // Fiche visée liée entre-temps à un autre compte : l'adresse sans compte s'inscrit et accepte sa propre invitation.
+    const fresh = await invite(owner, pid, { email: "p3r-nouveau@example.com", role: "lecteur", displayName: "Nouveau" });
+    expect(fresh.body.accountExists).toBe(false);
+    const q = await make("q");
+    const qInv = await send("q", { participationId: fresh.body.participationId });
+    expect(qInv.participationId).toBe(fresh.body.participationId);
+    await registerAndLogin("p3r-nouveau@example.com");
+    expect(await accepterEnBase(fresh.body.invitation.id)).toBeNull();
+    const wrong = await accept(q, qInv.invitation.id);
+    expect([wrong.status, wrong.body.error]).toEqual([403, "wrong_person"]);
+    expect((await q.get(`/projects/${pid}`)).status).toBe(404);
+
+    // Invitant révoqué entre l'envoi et l'acceptation : la propriété est transférée.
+    const p2 = (await owner.post("/projects").send({ code: "P.P3S", name: "Transfert" })).body.id as string;
+    const y = await make("y");
+    const yInv = await send("y", {}, p2);
+    const nextOwner = await make("next");
+    const nInv = await send("next", {}, p2);
+    expect((await accept(nextOwner, nInv.invitation.id)).status).toBe(200);
+    expect((await owner.post(`/projects/${p2}/members/${await meId(nextOwner)}/propriete`)).status).toBe(200);
+    expect((await accept(y, yInv.invitation.id)).body.error).toBe("inviter_not_authorized");
+    expect((await y.get(`/projects/${p2}`)).status).toBe(404);
+
+    // Journal : refus et acceptations journalisés, aucune adresse.
+    const log = (await pool.query("SELECT action, metadata::text AS m FROM admin.audit_log WHERE action LIKE 'invitation.%' OR action LIKE 'participation.%'")).rows as { action: string; m: string }[];
+    for (const a of ["invitation.created", "invitation.cancelled", "invitation.declined", "invitation.refused", "invitation.accepted", "participation.created", "participation.activated", "participation.linked"]) {
+      expect(log.some((r) => r.action === a), a).toBe(true);
+    }
+    expect(log.every((r) => !r.m.includes("@"))).toBe(true);
   });
 });

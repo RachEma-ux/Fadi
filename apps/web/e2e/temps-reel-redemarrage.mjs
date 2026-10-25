@@ -11,6 +11,7 @@
 import { execSync } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
 import WebSocket from "ws";
+import { inviterEtAccepter } from "./lib-invitations.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const WS = BASE.replace(/^http/, "ws");
@@ -71,7 +72,8 @@ const hote = client(), lecteur = client();
 const cH = credentials("h"), cL = credentials("l");
 check("comptes créés", (await hote("POST", "/auth/register", cH)).status === 201 && (await lecteur("POST", "/auth/register", cL)).status === 201);
 const projet = (await hote("POST", "/projects", { code: `TRD_${randomUUID().slice(0, 6)}`, name: "Redémarrage (recette synthétique)" })).body;
-await hote("POST", `/projects/${projet.id}/members`, { email: cL.email, role: "lecteur" });
+// Invitation acceptée (Issue #262, phase 3) : plus d'ajout direct d'un compte existant.
+check("lecteur ajouté", (await inviterEtAccepter(hote, lecteur, projet.id, cL.email, "lecteur")).ok);
 const etude = (await hote("POST", `/projects/${projet.id}/studio/studies`, { name: "Étude" })).body;
 const tr = `/projects/${projet.id}/temps-reel`;
 const sessionId = (await hote("POST", `${tr}/sessions`, { studyId: etude.study.id, variantId: etude.variant.id, requestId: `trd-${randomUUID()}` })).body.session.id;

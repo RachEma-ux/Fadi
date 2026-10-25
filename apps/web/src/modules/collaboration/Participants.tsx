@@ -19,6 +19,8 @@ import { LOCALE } from "../../lib/i18n";
 import { apiMessage, ConfirmDialog } from "../../components/comptes/ComptesUI";
 import { COMMANDES_COLLABORATION, declenche, propsRaccourci, type CommandeParticipants } from "./commandes-collaboration";
 import { IconeCollaboration, RaccourciCollaboration } from "./IconeCollaboration";
+import { CapaciteResultante, libelleElement, resumeCapacite, SelecteurElement, useElementsPortee } from "./PorteeElement";
+import { OrganisationsProjet } from "./OrganisationsProjet";
 import {
   BUSINESS_ROLES, participantsApi, RESPONSIBILITIES, ROLE_SCOPES,
   type BusinessRole, type ContactInput, type ExistingMatches, type Participant, type ParticipationStatus, type Responsibility, type RoleScope, type StatusChange,
@@ -92,6 +94,8 @@ export function ParticipantsSection({ projectId }: { projectId: string }) {
   const closed = Boolean(v.project.closedAt);
   const busy = closure.isPending || returning.isPending;
   const team = v.participants.filter((p) => p.status !== "terminee" && p.responsibilities.length > 0);
+  // « Mandat terminé » (reliquat de la phase 5) : participation d'un représentant dont le mandat a pris fin, conservée.
+  const endedMandates = new Set((v.organizations?.parties ?? []).flatMap((o) => o.endedRepresentatives.map((e) => e.participationId)));
 
   const rowKeys = (p: Participant) => (e: KeyboardEvent) => {
     if (!manage && !v.you.canErase) return;
@@ -127,6 +131,16 @@ export function ParticipantsSection({ projectId }: { projectId: string }) {
           : <Commande commande="clore-projet" disabled={busy} onClick={() => closure.mutate(true)} />)}
         <small className="h7-muted">La clôture est déclarative : elle ne change aucun droit. Un contact sans compte est effacé 2 ans après la clôture de tous ses projets, plus tôt à sa demande. Réserve : d’éventuelles obligations légales de conservation (garantie décennale…) restent à vérifier par le conseil juridique du maître d’ouvrage.</small>
       </div>
+      {v.organizations ? (
+        <OrganisationsProjet
+          v={v.organizations}
+          ownerFallback={(() => { const o = v.participants.find((p) => p.isOwner); return o ? nomTexte(o) : null; })()}
+          projectId={projectId}
+          onInvited={(r) => done("mail" in r && !r.mail.queued
+            ? "Invitation enregistrée pour le représentant : le courriel n’a pas pu partir, il la verra dans ses notifications. Rien n’est accordé avant son acceptation."
+            : "Invitation envoyée au représentant : il l’accepte depuis le courriel ou sa notification. Rien n’est accordé avant son acceptation.")}
+        />
+      ) : null}
       <div className="h7-tabs" role="tablist" aria-label="Vues de l’annuaire">
         <button type="button" role="tab" id="tab-participants" aria-controls="panel-participants" aria-selected={tab === "participants"} className={tab === "participants" ? "sel" : ""} onClick={() => setTab("participants")}>
           {`Participants (${v.participants.length})`}
@@ -169,6 +183,7 @@ export function ParticipantsSection({ projectId }: { projectId: string }) {
                         {p.businessRole ? <small translate="no">{p.businessRole}</small> : null}
                         {p.person?.jobTitle ? <small translate="no">{p.person.jobTitle}</small> : null}
                         {p.representedOrganization ? <small>{"Représente "}<span translate="no">{p.representedOrganization.name}</span></small> : null}
+                        {endedMandates.has(p.id) ? <span className="h7-chip warn" data-participant-mandat-termine>mandat terminé</span> : null}
                         {p.person?.workEmail ? <small translate="no" data-coordonnee="email">{p.person.workEmail}</small> : null}
                         {p.person?.workPhone ? <small translate="no" data-coordonnee="telephone">{p.person.workPhone}</small> : null}
                         {p.responsibilities.length ? <small>{p.responsibilities.map((r) => RESP_LABEL[r]).join(" · ")}</small> : null}
@@ -183,7 +198,8 @@ export function ParticipantsSection({ projectId }: { projectId: string }) {
                           {p.roles.map((r) => (
                             <li key={r.id} data-role={`${r.role}:${r.scopeType}`}>
                               {ROLE_LABEL[r.role]}
-                              <small className="h7-muted">{` · ${SCOPE_LABEL[r.scopeType]}${r.scopeId ? ` : ${r.scopeId}` : ""} · ${r.origin === "acces" ? "du partage" : "attribué"}`}</small>
+                              <small className="h7-muted">{` · ${SCOPE_LABEL[r.scopeType]}`}{r.scopeId ? <>{" : "}<span translate="no">{r.scopeId}</span></> : null}{` · ${r.origin === "acces" ? "du partage" : "attribué"}`}</small>
+                              {resumeCapacite(r.role, r.scopeType) ? <small className="h7-muted" data-capacite-role={r.id}>{` · ${resumeCapacite(r.role, r.scopeType)}`}</small> : null}
                             </li>
                           ))}
                         </ul>
@@ -449,6 +465,7 @@ function RolesForm({ projectId, p, onClose, onDone, onError }: { projectId: stri
   const [role, setRole] = useState<BusinessRole>("lecteur");
   const [scope, setScope] = useState<RoleScope>("projet");
   const [scopeId, setScopeId] = useState("");
+  const elements = useElementsPortee(projectId, true);
   const assign = useMutation({
     mutationFn: () => participantsApi.assignRole(projectId, p.id, role, scope, scope === "projet" ? null : scopeId.trim()),
     onSuccess: () => onDone(`Rôle ${ROLE_LABEL[role]} attribué.`),
@@ -472,7 +489,10 @@ function RolesForm({ projectId, p, onClose, onDone, onError }: { projectId: stri
               if (r.origin === "attribution" && !remove.isPending && declenche(e, "retirer-role")) { e.preventDefault(); e.stopPropagation(); remove.mutate(r.id); }
             }}
           >
-            {`${ROLE_LABEL[r.role]} · ${SCOPE_LABEL[r.scopeType]}${r.scopeId ? ` : ${r.scopeId}` : ""} · ${r.origin === "acces" ? "du partage" : "attribué"}`}{" "}
+            {`${ROLE_LABEL[r.role]} · ${SCOPE_LABEL[r.scopeType]}`}
+            {r.scopeId ? <>{" : "}<span translate="no" data-element-portee={r.scopeId}>{libelleElement(elements, r.scopeType, r.scopeId)}</span></> : null}
+            {` · ${r.origin === "acces" ? "du partage" : "attribué"}`}
+            {resumeCapacite(r.role, r.scopeType) ? <small className="h7-muted" data-capacite-role={r.id}>{` · ${resumeCapacite(r.role, r.scopeType)}`}</small> : null}{" "}
             {r.origin === "attribution"
               ? <Commande commande="retirer-role" disabled={remove.isPending} label={`Retirer le rôle ${ROLE_LABEL[r.role]}`} onClick={() => remove.mutate(r.id)} />
               : <small className="h7-muted">se change dans « Membres du projet »</small>}
@@ -487,12 +507,13 @@ function RolesForm({ projectId, p, onClose, onDone, onError }: { projectId: stri
       </label>
       <label>
         Portée
-        <select value={scope} onChange={(e) => setScope(e.target.value as RoleScope)} data-champ="portee">
+        <select value={scope} onChange={(e) => { setScope(e.target.value as RoleScope); setScopeId(""); }} data-champ="portee">
           {ROLE_SCOPES.map((s) => <option key={s} value={s}>{SCOPE_LABEL[s]}</option>)}
         </select>
       </label>
-      {scope !== "projet" && <label>Identifiant de la portée<input value={scopeId} required maxLength={120} onChange={(e) => setScopeId(e.target.value)} /></label>}
-      <p className="h7-muted">Seuls les rôles de portée Projet donnent un accès ; une portée plus étroite est enregistrée sans droit tant qu’aucun écran ne l’évalue. Un contact sans compte ne reçoit aucun rôle avant d’avoir accepté une invitation.</p>
+      {scope !== "projet" && <SelecteurElement projectId={projectId} scope={scope} el={elements} value={scopeId} onChange={setScopeId} />}
+      <CapaciteResultante role={role} scope={scope} lit={p.access !== null} />
+      <p className="h7-muted">Seuls les rôles de portée Projet ouvrent le projet. Un contact sans compte ne reçoit aucun rôle avant d’avoir accepté une invitation.</p>
       <div className="h7-actions">
         <button type="submit" className="button-primary participants-commande" disabled={assign.isPending || (scope !== "projet" && !scopeId.trim())} {...propsRaccourci("attribuer-role")}>
           <IconeCollaboration commande="attribuer-role" />

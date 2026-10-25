@@ -18,6 +18,7 @@
  * BASE_URL=http://localhost:3001 [DATABASE_URL=…] node apps/web/e2e/participants.mjs
  */
 import { chromium } from "playwright";
+import { appelPlaywright, inviterEtAccepter } from "./lib-invitations.mjs";
 import { execFileSync } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
 import { createRequire } from "node:module";
@@ -54,8 +55,8 @@ const ids = { owner: await idOf(owner), editor: await idOf(editor), reader: awai
 const project = await owner("POST", "/projects", { code: `PA_${randomUUID().slice(0, 6)}`, name: "Équipe et participants (recette synthétique)" });
 const pid = project.body?.id;
 check("projet créé", project.status === 201, String(project.status));
-check("éditeur et lecteur ajoutés par le partage", (await owner("POST", `/projects/${pid}/members`, { email: cEditor.email, role: "editeur" })).status === 201
-  && (await owner("POST", `/projects/${pid}/members`, { email: cReader.email, role: "lecteur" })).status === 201);
+check("éditeur et lecteur invités, invitations acceptées (phase 3)", (await inviterEtAccepter(owner, editor, pid, cEditor.email, "editeur")).ok
+  && (await inviterEtAccepter(owner, reader, pid, cReader.email, "lecteur")).ok);
 const P = `/projects/${pid}/participants`;
 const list = async (c = owner) => (await c("GET", P)).body;
 const partOf = (v, userId) => v?.participants?.find((p) => p.person?.account?.userId === userId && p.status !== "terminee");
@@ -135,7 +136,7 @@ const back = await owner("POST", `${P}/${ep}/return`);
 check("retour : nouvelle participation « contact », anciens droits non restaurés", back.status === 201 && back.body?.status === "contact" && (await editor("GET", `/projects/${pid}`)).status === 404, short(back.body));
 v = await list();
 check("historique : l'ancienne participation reste terminée et datée", v.participants.some((p) => p.id === ep && p.status === "terminee" && p.endsOn));
-check("réaccès par le partage : la nouvelle participation devient active, sans les anciennes responsabilités", (await owner("POST", `/projects/${pid}/members`, { email: cEditor.email, role: "lecteur" })).status === 201
+check("réaccès par le partage : la nouvelle participation devient active, sans les anciennes responsabilités", (await inviterEtAccepter(owner, editor, pid, cEditor.email, "lecteur")).ok
   && (await editor("GET", `/projects/${pid}`)).status === 200 && (await list()).participants.find((p) => p.id === back.body?.id)?.responsibilities?.length === 0);
 
 // ---------------------------------------------------------------------------

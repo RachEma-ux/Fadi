@@ -18,6 +18,7 @@
 import { chromium } from "playwright";
 import { randomBytes, randomUUID } from "node:crypto";
 import { createRequire } from "node:module";
+import { inviterEtAccepter } from "./lib-invitations.mjs";
 
 const AXE_SCRIPT = createRequire(import.meta.url).resolve("axe-core/axe.min.js");
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
@@ -77,7 +78,8 @@ try {
   const moiB = (await B.api("GET", "/auth/me")).body;
   const idB = moiB?.user?.id ?? moiB?.id;
   const projet = (await A.api("POST", "/projects", { code: `TRV_${randomUUID().slice(0, 6)}`, name: "Revue en direct (recette synthétique)" })).body;
-  check("lecteur ajouté", (await A.api("POST", `/projects/${projet.id}/members`, { email: cB.email, role: "lecteur" })).status === 201);
+  // Invitation acceptée (Issue #262, phase 3) : plus d'ajout direct d'un compte existant.
+  check("lecteur ajouté", (await inviterEtAccepter(A.api, B.api, projet.id, cB.email, "lecteur")).ok);
   const etude = (await A.api("POST", `/projects/${projet.id}/studio/studies`, { name: "Étude revue" })).body;
   const chemin = `/projects/${projet.id}/studio/studies/${etude.study.id}/variants/${etude.variant.id}`;
   const pubs = `/projects/${projet.id}/studio/studies/${etude.study.id}/publications`;

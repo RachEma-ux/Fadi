@@ -28,6 +28,7 @@ import { demandesRouter } from "./demandes.js";
 import { comRouter } from "./com.js";
 import { membersRouter, ownerEmailOf } from "./members.js";
 import { participantsRouter } from "./participants.js";
+import { reviewsTeamRouter } from "./reviews.js";
 import { lockRouter } from "./lock.js";
 import { projectJournalRouter } from "./project-journal.js";
 import { archiveHash, recordProducedDocument } from "../lib/documents.js";
@@ -38,6 +39,8 @@ import { tempsReelRouter } from "./temps-reel.js";
 import { lockProject } from "../lib/step-rows.js";
 import { PUBLICATIONS_DIFFUSEES_MESSAGE, projectHasIssuedStudioPublications } from "../lib/studio-publications.js";
 import { nettoyerVolumes } from "../lib/volumes-gc.js";
+import { projectHasSharedReviewPackages, REVUES_PARTAGEES_MESSAGE } from "../lib/reviews-core.js";
+import { owningOrganizationOf } from "../lib/project-organizations.js";
 
 export const projectsRouter = Router();
 projectsRouter.use(requireAuth);
@@ -247,6 +250,8 @@ projectsRouter.use("/:projectId/collaboration", collaborationRouter);
 projectsRouter.use("/:projectId/com", comRouter);
 projectsRouter.use("/:projectId/members", membersRouter);
 projectsRouter.use("/:projectId/participants", participantsRouter);
+// Revue externe (phase 4) : préparation, partage et suivi par l'équipe ; le destinataire passe par `/reviews`.
+projectsRouter.use("/:projectId/reviews", reviewsTeamRouter);
 projectsRouter.use("/:projectId/lock", lockRouter);
 projectsRouter.use("/:projectId/support-grants", supportGrantsRouter);
 // Historique de la participation (phase 3 bis) : responsables du projet seulement.
@@ -261,6 +266,8 @@ projectsRouter.get("/:projectId", async (req, res) => {
     editingLock: activeLock(project),
     ownerEmail: project.ownerId === req.user!.id ? req.user!.email : await ownerEmailOf(project.ownerId),
     baseDocuments: await baseDocumentsOf(project),
+    // Partie propriétaire déclarée (OP-D1 a) : identité seule ({ id, name, kind, status }), aucun droit, jamais masquée.
+    owningOrganization: await owningOrganizationOf(project.organizationId, req.user!.id),
   });
 });
 
@@ -270,11 +277,14 @@ projectsRouter.delete("/:projectId", async (req, res) => {
   // Publications Studio diffusées ou retirées : jamais supprimées (E.4-06) ; vérifié sous le verrou du projet.
   const refused = await db.transaction(async (tx) => {
     await lockProject(tx, project.id);
-    if (await projectHasIssuedStudioPublications(tx, project.id)) return true;
+    if (await projectHasIssuedStudioPublications(tx, project.id)) return "publications_diffusees" as const;
+    // Revue externe (phase 4) : un paquet partagé (clos ou remplacé compris) est une trace de revue conservée.
+    if (await projectHasSharedReviewPackages(tx, project.id)) return "revues_partagees" as const;
     await tx.delete(projects).where(eq(projects.id, project.id));
-    return false;
+    return null;
   });
-  if (refused) { res.status(409).json({ error: "publications_diffusees", message: PUBLICATIONS_DIFFUSEES_MESSAGE }); return; }
+  if (refused === "publications_diffusees") { res.status(409).json({ error: "publications_diffusees", message: PUBLICATIONS_DIFFUSEES_MESSAGE }); return; }
+  if (refused) { res.status(409).json({ error: "revues_partagees", message: REVUES_PARTAGEES_MESSAGE }); return; }
   // Volumes des publications parties avec le projet : nettoyés après validation, dans leur propre transaction. Un échec
   // (verrou occupé, référence inconnue) ne supprime rien et n'annule pas la suppression ; `npm run db:volumes-gc` reprend.
   try { await nettoyerVolumes(pool); }

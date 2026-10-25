@@ -24,6 +24,8 @@ const BuildingLibraryPage = lazy(() => import("./modules/bibliotheque/BuildingLi
 // Administration de la plateforme (comptes) : chargée à la demande, comme le Studio.
 // Espace d'organisation (organisations, phase 5) : chargé à la demande.
 const OrganisationsPage = lazy(() => import("./routes/organisations/OrganisationsPage").then((m) => ({ default: m.OrganisationsPage })));
+const MesRevuesPage = lazy(() => import("./routes/revues/RevuesPage").then((m) => ({ default: m.MesRevuesPage })));
+const RevuePage = lazy(() => import("./routes/revues/RevuesPage").then((m) => ({ default: m.RevuePage })));
 const OrganisationPage = lazy(() => import("./routes/organisations/OrganisationsPage").then((m) => ({ default: m.OrganisationPage })));
 const AdminUsersPage = lazy(() => import("./routes/admin/AdminUsersPage").then((m) => ({ default: m.AdminUsersPage })));
 const AdminJournalPage = lazy(() => import("./routes/admin/AdminJournalPage").then((m) => ({ default: m.AdminJournalPage })));
@@ -122,6 +124,9 @@ export function App() {
             }
           />
           <Route path="/parametres" element={<ParametresPage />} />
+          {/* Revue externe (phase 4) : espace du destinataire, hors du module projet. */}
+          <Route path="/revues" element={<Suspense fallback={<Loading />}><MesRevuesPage /></Suspense>} />
+          <Route path="/revues/:packageId" element={<Suspense fallback={<Loading />}><RevuePage /></Suspense>} />
           <Route path="/organisations" element={<Suspense fallback={<Loading />}><OrganisationsPage /></Suspense>} />
           <Route path="/organisations/:orgId" element={<Suspense fallback={<Loading />}><OrganisationPage /></Suspense>} />
           <Route path="/admin/utilisateurs" element={<AdminRoute><Suspense fallback={<Loading />}><AdminUsersPage /></Suspense></AdminRoute>} />

@@ -245,6 +245,37 @@ try {
   }
   await client.query('ROLLBACK');
 
+  // 7. Phase 3 (invitations acceptées, OP-D2 a) : colonnes additives, contraintes, échéance d'accès appliquée par la vue,
+  //    pont du partage intact (aucun accès perdu), second rejeu sans effet. Transaction annulée.
+  await client.query('BEGIN');
+  const cols7 = await all(`SELECT table_schema || '.' || table_name || '.' || column_name AS c FROM information_schema.columns
+    WHERE (table_schema = 'auth' AND table_name = 'invitations' AND column_name IN ('participation_id', 'proposed_roles'))
+       OR (table_schema = 'public' AND table_name = 'project_participations' AND column_name = 'access_expires_at')`);
+  check(cols7.length === 3, 'phase 3 : colonnes additives participation_id, proposed_roles, access_expires_at', cols7);
+  await client.query(users('op7_o', 'op7_m'));
+  await client.query("INSERT INTO projects (id, owner_id, code, name) VALUES ('op_p7', 'op7_o', 'P7', 'Invitations')");
+  await client.query("INSERT INTO project_members (project_id, user_id, role, invited_by) VALUES ('op_p7', 'op7_m', 'lecteur', 'x')");
+  const p7 = (await parts('op_p7', 'op7_m'))[0];
+  check(!!(await one("SELECT 1 AS x FROM project_effective_access WHERE project_id = 'op_p7' AND user_id = 'op7_m'")), 'phase 3 : le pont du partage ouvre toujours l\'accès (aucune perte)');
+  await client.query("UPDATE project_participations SET access_expires_at = now() + interval '1 day' WHERE id = $1", [p7.id]);
+  check(!!(await one("SELECT 1 AS x FROM project_effective_access WHERE project_id = 'op_p7' AND user_id = 'op7_m'")), 'phase 3 : échéance d\'accès future — accès conservé');
+  await client.query("UPDATE project_participations SET access_expires_at = now() - interval '1 second' WHERE id = $1", [p7.id]);
+  check(!(await one("SELECT 1 AS x FROM project_effective_access WHERE project_id = 'op_p7' AND user_id = 'op7_m'")), 'phase 3 : échéance d\'accès passée — plus aucun accès (vue)');
+  check(!!(await one("SELECT 1 AS x FROM project_effective_access WHERE project_id = 'op_p7' AND user_id = 'op7_o'")), 'phase 3 : le propriétaire garde tout');
+  await rejects('phase 3 : participation_id sur une invitation de compte', `INSERT INTO auth.invitations (id, purpose, email, token_hash, invited_by, expires_at, grant_platform_role, participation_id)
+    VALUES ('op7_i1', 'platform_account', 'a@invalid', 'h1', 'op7_o', now() + interval '1 day', NULL, '${p7.id}')`);
+  await rejects('phase 3 : rôles proposés hors tableau JSON', `INSERT INTO auth.invitations (id, purpose, email, token_hash, project_id, project_role, invited_by, expires_at, proposed_roles)
+    VALUES ('op7_i2', 'project_participation', 'b@invalid', 'h2', 'op_p7', 'lecteur', 'op7_o', now() + interval '1 day', '{"role":"lecteur"}')`);
+  await client.query(`INSERT INTO auth.invitations (id, purpose, email, token_hash, project_id, project_role, invited_by, expires_at, participation_id, proposed_roles)
+    VALUES ('op7_i3', 'project_participation', 'c@invalid', 'h3', 'op_p7', 'lecteur', 'op7_o', now() + interval '1 day', '${p7.id}', '[{"role":"lecteur","scopeType":"projet","scopeId":null}]')`);
+  ok('phase 3 : invitation de projet liée à une participation, rôles proposés enregistrés');
+  const before7 = await one('SELECT (SELECT count(*) FROM auth.invitations)::int AS i, (SELECT count(*) FROM project_participations)::int AS pp');
+  await client.query(initSql);
+  const after7 = await one('SELECT (SELECT count(*) FROM auth.invitations)::int AS i, (SELECT count(*) FROM project_participations)::int AS pp');
+  check(JSON.stringify(before7) === JSON.stringify(after7), 'phase 3 : rejeu d\'init.sql sans effet', { before7, after7 });
+  check(!(await one("SELECT 1 AS x FROM project_effective_access WHERE project_id = 'op_p7' AND user_id = 'op7_m'")), 'phase 3 : après rejeu, l\'échéance passée s\'applique toujours');
+  await client.query('ROLLBACK');
+
   // 5. Concurrence : un même compte obtient deux accès en parallèle (deux projets créés en même temps, aucune personne
   //    encore) — la seconde transaction attend la première puis relit la personne, sans échouer.
   await client.query(users('op_par'));
@@ -276,4 +307,4 @@ try {
   await client.end();
 }
 if (failures) { console.log(`❌ ${failures} contrôle(s) en échec`); process.exit(1); }
-console.log('✅ schéma de participation (phases 1 et 2) vérifié');
+console.log('✅ schéma de participation (phases 1, 2 et 3) vérifié');

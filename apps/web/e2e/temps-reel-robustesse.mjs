@@ -14,6 +14,7 @@
 import { chromium } from "playwright";
 import { randomBytes, randomUUID } from "node:crypto";
 import { createRequire } from "node:module";
+import { inviterEtAccepter } from "./lib-invitations.mjs";
 
 const AXE_SCRIPT = createRequire(import.meta.url).resolve("axe-core/axe.min.js");
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
@@ -71,7 +72,8 @@ try {
   const cA = credentials("p"), cB = credentials("l");
   check("comptes créés", (await A.api("POST", "/auth/register", cA)).status === 201 && (await B.api("POST", "/auth/register", cB)).status === 201);
   const projet = (await A.api("POST", "/projects", { code: `TRB_${randomUUID().slice(0, 6)}`, name: "Robustesse (recette synthétique)" })).body;
-  check("lecteur ajouté", (await A.api("POST", `/projects/${projet.id}/members`, { email: cB.email, role: "lecteur" })).status === 201);
+  // Invitation acceptée (Issue #262, phase 3) : plus d'ajout direct d'un compte existant.
+  check("lecteur ajouté", (await inviterEtAccepter(A.api, B.api, projet.id, cB.email, "lecteur")).ok);
   const etude = (await A.api("POST", `/projects/${projet.id}/studio/studies`, { name: "Étude" })).body;
   const chemin = `/projects/${projet.id}/studio/studies/${etude.study.id}/variants/${etude.variant.id}`;
   await A.api("POST", `${chemin}/commands`, { contractVersion: "studio-commands/1", requestId: `trb-${randomUUID()}`, baseRevisionId: etude.revision.id, commands: [

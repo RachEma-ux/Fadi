@@ -12,7 +12,7 @@
  * même `requestId` avec un autre point de vue = 409 `request_conflict`. Une ligne de point de vue manquante (réponse
  * perdue entre les deux écritures) est complétée par le rejeu.
  */
-import { and, asc, eq, isNull, or } from "drizzle-orm";
+import { and, asc, eq, isNull, ne, or } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { rtAnnotations, studioComments, studioObservations, users, type RtPointDeVue } from "../db/schema.js";
 import type { CommentAudience } from "./audience.js";
@@ -54,7 +54,7 @@ function refusStudio(e: StudioRequestError): TempsReelErreur {
   return new TempsReelErreur(e.status, code, message);
 }
 
-export async function annoter(projectId: string, sessionId: string, actorId: string, saisie: AnnotationSaisie): Promise<{ annotation: StudioCommentView; session: SessionRow; pointDeVue: RtPointDeVue; rejoue: boolean }> {
+export async function annoter(projectId: string, sessionId: string, actorId: string, saisie: AnnotationSaisie): Promise<{ annotation: StudioCommentView & { audience: CommentAudience }; session: SessionRow; pointDeVue: RtPointDeVue; rejoue: boolean }> {
   const session = await lireSession(db, projectId, sessionId);
   if (!session) throw new TempsReelErreur(404, "not_found", "Session introuvable.");
   // Rejeu d'un envoi déjà enregistré (réponse perdue) : il reste un rejeu même si, entre-temps, la session a changé de
@@ -75,6 +75,10 @@ export async function annoter(projectId: string, sessionId: string, actorId: str
     if (e instanceof StudioRequestError) throw refusStudio(e);
     throw e;
   }
+  // Un fil de revue externe (audience `revue`, Issue #262 phase 4) n'est jamais une annotation de session : un rejeu qui
+  // retrouverait un tel commentaire est refusé plutôt que diffusé aux participants de la session.
+  if (commentaire.audience === "revue") throw new TempsReelErreur(409, "request_conflict", "Cet identifiant de requête est déjà utilisé pour un fil de revue externe.");
+  const annotation = { ...commentaire, audience: commentaire.audience };
   await db.insert(rtAnnotations).values({
     commentId: commentaire.id, projectId, variantId: session.variantId, sessionId: session.id, sourceRevisionId: commentaire.revisionId ?? revisionAncrage, viewpoint: vue,
   }).onConflictDoNothing();
@@ -82,7 +86,7 @@ export async function annoter(projectId: string, sessionId: string, actorId: str
   if (!ligne || ligne.sessionId !== session.id || !memePointDeVue(ligne.viewpoint, vue)) {
     throw new TempsReelErreur(409, "request_conflict", "Cet identifiant de requête est déjà utilisé pour une autre annotation.");
   }
-  return { annotation: commentaire, session, pointDeVue: vue, rejoue: commentaire.replayed };
+  return { annotation, session, pointDeVue: vue, rejoue: commentaire.replayed };
 }
 
 /**
@@ -91,7 +95,8 @@ export async function annoter(projectId: string, sessionId: string, actorId: str
  * plus son texte ni ses objets cités (même règle que les commentaires Studio).
  */
 export async function listerAnnotations(projectId: string, variantId: string, role: ProjectRole, filtre: { sessionId?: string | undefined } = {}): Promise<AnnotationVue[]> {
-  const audience = seesTeam(role) ? undefined : or(isNull(studioComments.audience), eq(studioComments.audience, "projet"));
+  // Les fils de revue externe (audience `revue`) ne sont jamais des annotations de session, quel que soit le rôle.
+  const audience = seesTeam(role) ? or(isNull(studioComments.audience), ne(studioComments.audience, "revue")) : or(isNull(studioComments.audience), eq(studioComments.audience, "projet"));
   const lignes = await db.select({
     a: rtAnnotations, body: studioComments.body, deletedAt: studioComments.deletedAt, objectIds: studioComments.objectIds, audience: studioComments.audience,
     authorId: studioComments.authorId, auteur: users.displayName, email: users.email, observation: studioObservations.commentId,
@@ -103,7 +108,7 @@ export async function listerAnnotations(projectId: string, variantId: string, ro
     .orderBy(asc(rtAnnotations.createdAt));
   return lignes.map((l) => ({
     commentId: l.a.commentId, sessionId: l.a.sessionId, sourceRevisionId: l.a.sourceRevisionId, pointDeVue: l.a.viewpoint,
-    body: l.deletedAt ? null : l.body, objectIds: l.deletedAt ? [] : l.objectIds, audience: l.audience ?? "projet", auteurId: l.authorId, auteur: l.auteur?.trim() || l.email,
+    body: l.deletedAt ? null : l.body, objectIds: l.deletedAt ? [] : l.objectIds, audience: l.audience === "equipe" ? "equipe" : "projet", auteurId: l.authorId, auteur: l.auteur?.trim() || l.email,
     observation: l.observation !== null, createdAt: l.a.createdAt.toISOString(),
   }));
 }

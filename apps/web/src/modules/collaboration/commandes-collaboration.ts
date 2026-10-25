@@ -6,6 +6,12 @@
  * raccourci le complète, il ne le remplace pas. Pur : aucun DOM, testé par `commandes-collaboration.test.ts`.
  */
 
+/**
+ * Invitations acceptées liées à une participation (Issue #262, phase 3) : l'aperçu de l'accès avant l'envoi (formulaire
+ * d'invitation du partage), l'acceptation et le refus d'une invitation reçue (carte de l'invitation, liste « Invitations
+ * reçues »). Chacune a son icône, sa barre et son raccourci.
+ */
+export type CommandeInvitations = "apercu-invitation" | "accepter-invitation" | "decliner-invitation";
 export type CommandeCollaboration =
   | "visible-lecteurs" | "rendre-visible" | "reserver-equipe" | "export-lecteur"
   // Communication (COM, Issue #280, COM-D14).
@@ -16,6 +22,8 @@ export type CommandeCollaboration =
   | "joindre-photo" | "epingler"
   // Participants et équipe (Issue #262, phase 2).
   | CommandeParticipants
+  // Invitations acceptées (Issue #262, phase 3).
+  | CommandeInvitations
   // Temps réel (Issue #283, RT-D5 § 10).
   | CommandeTempsReel;
 
@@ -55,7 +63,7 @@ export interface Raccourci {
 export interface DefinitionCommande {
   libelle: string;
   /** Où la commande agit : sa barre. */
-  barre: "rédaction" | "fil" | "membres" | "conversations" | "conversation" | "message" | "demandes" | "demande" | "annuaire" | "participant" | "rôles"
+  barre: "rédaction" | "fil" | "membres" | "conversations" | "conversation" | "message" | "demandes" | "demande" | "annuaire" | "participant" | "rôles" | "invitation"
     | "session" | "participant-session" | "annotation";
   raccourci: Raccourci;
   /** Tracés SVG (24 × 24) de son icône propre. */
@@ -186,6 +194,22 @@ export const COMMANDES_COLLABORATION: Readonly<Record<CommandeCollaboration, Def
   "clore-projet": {
     libelle: "Clore le projet", barre: "annuaire", raccourci: ctrlAltMaj("Equal", "="),
     icone: ["M3 7h7l2 2h9v11H3z", "M8 14h8"],
+  },
+  // --- Invitations acceptées (Issue #262, phase 3) ---
+  // Aperçu de l'accès résultant : loupe sur une fiche.
+  "apercu-invitation": {
+    libelle: "Aperçu de l’accès", barre: "membres", raccourci: ctrlAltMaj("Quote", "'"),
+    icone: ["M4 4h10v6", "M4 4v16h7", "M16 19a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", "M18.5 18.5L21 21"],
+  },
+  // Accepter l'invitation : enveloppe et coche.
+  "accepter-invitation": {
+    libelle: "Accepter l’invitation", barre: "invitation", raccourci: ctrlAltMaj("Backslash", "\\"),
+    icone: ["M3 6h18v12H3z", "M3 6l9 7 9-7", "M14 20l2 2 4-4"],
+  },
+  // Décliner l'invitation : enveloppe et croix.
+  "decliner-invitation": {
+    libelle: "Décliner l’invitation", barre: "invitation", raccourci: ctrlAltMaj("Backquote", "`"),
+    icone: ["M3 6h18v12H3z", "M3 6l9 7 9-7", "M15 19l4 4", "M19 19l-4 4"],
   },
   // Rouvrir le projet : dossier ouvert.
   "rouvrir-projet": {

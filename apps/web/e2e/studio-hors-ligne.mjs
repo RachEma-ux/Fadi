@@ -21,6 +21,7 @@
  * BASE_URL=http://localhost:3001 OUT=atelier-captures/studio-hors-ligne node apps/web/e2e/studio-hors-ligne.mjs
  */
 import { chromium } from "playwright";
+import { appelPlaywright, inviterEtAccepter } from "./lib-invitations.mjs";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 
@@ -349,8 +350,9 @@ try {
   const emailB = `studio-hors-ligne-b-${Date.now()}@example.com`;
   const inscriptionB = await browser.newContext();
   if (!(await inscriptionB.request.post(`${BASE}/auth/register`, { data: { email: emailB, password: "studio-hors-ligne-ci-123" } })).ok()) throw new Error("inscription de B");
+  // Phase 3 : B accepte l'invitation (aucun ajout direct) avant de quitter sa session d'inscription.
+  if (!(await inviterEtAccepter(appelPlaywright(context.request, BASE), appelPlaywright(inscriptionB.request, BASE), projet.id, emailB, "editeur")).ok) throw new Error("invitation de B");
   await inscriptionB.close();
-  await api("post", `/projects/${projet.id}/members`, { email: emailB, role: "editeur" });
   await context.setOffline(true);
   await attendreEtat("hors-ligne");
   await rectangle(20, 2);

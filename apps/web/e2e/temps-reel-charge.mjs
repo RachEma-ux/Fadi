@@ -17,6 +17,7 @@
  */
 import { randomBytes, randomUUID } from "node:crypto";
 import WebSocket from "ws";
+import { inviterEtAccepter } from "./lib-invitations.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const WS = BASE.replace(/^http/, "ws");
@@ -89,7 +90,10 @@ const hote = comptes[0].c;
 const salles = [];
 for (let s = 0; s < SESSIONS; s++) {
   const projet = (await hote("POST", "/projects", { code: `TRC_${s}_${randomUUID().slice(0, 4)}`, name: `Charge ${s} (recette synthétique)` })).body;
-  for (const m of comptes.slice(1)) await hote("POST", `/projects/${projet.id}/members`, { email: m.email, role: "lecteur" });
+  // Invitation acceptée (Issue #262, phase 3) : plus d'ajout direct d'un compte existant.
+  for (const m of comptes.slice(1)) {
+    if (!(await inviterEtAccepter(hote, m.c, projet.id, m.email, "lecteur")).ok) { check(`invitation acceptée par ${m.email}`, false); process.exit(1); }
+  }
   const etude = (await hote("POST", `/projects/${projet.id}/studio/studies`, { name: `Étude ${s}` })).body;
   const ouverte = await hote("POST", `/projects/${projet.id}/temps-reel/sessions`, { studyId: etude.study.id, variantId: etude.variant.id, requestId: `trc-${randomUUID()}` });
   salles.push({ projet: projet.id, sessionId: ouverte.body?.session?.id });

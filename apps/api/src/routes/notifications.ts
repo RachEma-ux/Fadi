@@ -51,12 +51,18 @@ import { requireAuth } from "../middleware/require-auth.js";
 import { activeLock, type ProjectRole } from "../lib/owned-project.js";
 import { ROLE_LABEL } from "./members.js";
 import { filtrerNotifications, type NotificationKind } from "../lib/notification-preferences.js";
+import { reviewNotifications } from "../lib/reviews-recipient.js";
 import { lirePreferencesNotification } from "./preferences.js";
+import { notificationInvitationsRouter } from "./notification-invitations.js";
+import { pendingProjectInvitationsFor } from "../lib/project-invitations-db.js";
+import { endedMandateNoticesFor } from "../lib/mandate-invitations-db.js";
 import { audienceVisible } from "../lib/audience.js";
 import { extrait, peutLire } from "../lib/com-audience.js";
 
 export const notificationsRouter = Router();
 notificationsRouter.use(requireAuth);
+// Invitations de projet reçues (Issue #262, phase 3) : liste, acceptation et refus depuis la notification.
+notificationsRouter.use("/invitations", notificationInvitationsRouter);
 
 export interface NotificationItem {
   id: string;
@@ -69,6 +75,15 @@ export interface NotificationItem {
   stepNumber: number | null;
   /** Variante Studio commentée (`commentaire-studio` seulement). */
   studio?: { studyId: string; variantId: string };
+  /** Paquet de revue externe (`revue` seulement, phase 4) : la notification mène à `/revues/:id`. */
+  review?: { packageId: string };
+  /** Invitation de projet en attente pour vous (phase 3, type `acces`) : à accepter ou décliner depuis la notification. */
+  invitation?: { id: string; role: "lecteur" | "editeur"; expiresAt: string };
+  /**
+   * Mandat de représentant terminé (reliquat de la phase 5, type `acces`, propriétaire du projet) : la participation du
+   * représentant est conservée, à revoir dans Équipe et participants.
+   */
+  mandate?: { mandateId: string; participationId: string };
   /** Conversation ou demande de précision visée (`message`, `demande`). */
   com?: { conversationId?: string; demandeId?: string };
   text: string;
@@ -104,6 +119,28 @@ export async function notificationsFor(userId: string, email: string): Promise<{
       projectName: m.project.name,
       stepNumber: null,
       text: `${m.invitedBy} vous a donné accès à ${m.project.code} — ${m.project.name} (${ROLE_LABEL[m.role as ProjectRole]}).`,
+      unread: false,
+    });
+  }
+
+  // Invitations de projet en attente pour votre adresse (Issue #262, phase 3, OP-D2 a) : en plus du courriel, une
+  // notification calculée, tant que l'invitation n'est ni acceptée, ni déclinée, ni annulée, ni échue.
+  for (const inv of await pendingProjectInvitationsFor(email)) {
+    items.push({
+      id: `invitation:${inv.id}`, at: inv.createdAt, kind: "acces", projectId: inv.projectId, projectCode: inv.projectCode, projectName: inv.projectName, stepNumber: null,
+      invitation: { id: inv.id, role: inv.baseRole, expiresAt: inv.expiresAt },
+      text: `${inv.invitedBy} vous invite à rejoindre ${inv.projectCode} — ${inv.projectName} (${ROLE_LABEL[inv.baseRole]}) : acceptez ou déclinez l'invitation.`,
+      unread: false,
+    });
+  }
+
+  // Mandats de représentant terminés (fin, renonciation, remplacement, départ, clôture) sur vos projets, 30 derniers
+  // jours : la participation du représentant n'est pas terminée d'office (règle de la phase 5), vous la revoyez.
+  for (const n of await endedMandateNoticesFor(userId, since)) {
+    items.push({
+      id: `mandat:${n.mandateId}:${n.participationId}`, at: n.endedAt, kind: "acces", projectId: n.projectId, projectCode: n.projectCode, projectName: n.projectName, stepNumber: null,
+      mandate: { mandateId: n.mandateId, participationId: n.participationId },
+      text: `Mandat terminé : ${n.representativeName ?? "le représentant"} ne représente plus ${n.organizationName} dans ${n.projectCode} — ${n.projectName} ; sa participation est conservée, à revoir dans Équipe et participants.`,
       unread: false,
     });
   }
@@ -423,6 +460,9 @@ export async function notificationsFor(userId: string, email: string): Promise<{
     }
   }
 
+  // Revue externe (phase 4) : source distincte, bornée à l'accès de revue (`loadReviewAccess`) ; jamais un fil de
+  // l'équipe ni une note interne. Un destinataire externe n'a aucun projet ci-dessus : il ne reçoit que celle-ci.
+  items.push(...await reviewNotifications(userId, since));
   // Communication (COM-D13) : rôle courant par projet, audience recalculée pour chaque conversation.
   if (projectIds.length) {
     const roleDe = new Map<string, ProjectRole>(memberships.map((m) => [m.project.id, m.role as ProjectRole]));

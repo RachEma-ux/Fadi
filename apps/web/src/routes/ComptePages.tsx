@@ -7,6 +7,8 @@ import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { accountApi, ROLE_LABEL, type InvitationLookup } from "../lib/api";
+import { noticeApresAcceptation } from "../modules/collaboration/InvitationsRecues";
+import { rolesLisibles } from "../modules/collaboration/participants-api";
 import { describeAuthError, useAuth } from "../lib/auth-context";
 import { LOCALE, LANGUE } from "../lib/i18n";
 import { ChoixLangue } from "../components/ChoixLangue";
@@ -144,9 +146,13 @@ export function InvitationPage() {
 
   const inv = lookup.invitation;
   // Entrée dans le bon espace après acceptation : le projet, l'organisation (phase 5), sinon l'accueil.
-  const finish = (projectId: string | null, organizationId?: string | null) => {
+  // Revue externe (phase 4) : l'espace de revue du paquet, jamais le projet. Phase 3 : entrée dans le projet avec le
+  // travail en attente du compte (message affiché à l'arrivée).
+  const finish = (projectId: string | null, organizationId?: string | null, reviewPackageId?: string | null, work?: { openObservations: number; openTasks: number }) => {
     void queryClient.invalidateQueries();
-    navigate(projectId ? `/projets/${projectId}` : organizationId ? `/organisations/${organizationId}` : "/accueil");
+    if (reviewPackageId) navigate(`/revues/${reviewPackageId}`);
+    else if (projectId) navigate(`/projets/${projectId}`, { state: { notice: noticeApresAcceptation(inv.projectName ?? "", work) } });
+    else navigate(organizationId ? `/organisations/${organizationId}` : "/accueil");
   };
   const wrongAccount = !!user && user.email.toLowerCase() !== inv.email.toLowerCase();
   const blocking = lookup.refusal && lookup.refusal !== "wrong_account" ? lookup.message : null;
@@ -155,7 +161,7 @@ export function InvitationPage() {
     setBusy(true); setError(null);
     try { await fn(); } catch (err) { setError(apiMessage(err, describeAuthError(err))); } finally { setBusy(false); }
   }
-  const accept = () => run(async () => { const r = await accountApi.acceptInvitation(token); finish(r.projectId, r.organizationId); });
+  const accept = () => run(async () => { const r = await accountApi.acceptInvitation(token); finish(r.projectId, r.organizationId, r.reviewPackageId, r.pendingWork); });
   const activate = (e: FormEvent) => {
     e.preventDefault();
     if ([...password].length < PASSWORD_MIN) { setError("Le mot de passe doit contenir au moins 12 caractères."); return; }
@@ -163,7 +169,8 @@ export function InvitationPage() {
     void run(async () => {
       const r = await accountApi.activate({ token, password, ...(displayName.trim() ? { displayName: displayName.trim() } : {}) });
       await adoptSession(r.user);
-      finish(r.projectId, r.organizationId);
+      // Compte créé à l'instant : aucun travail ne peut encore l'attendre.
+      finish(r.projectId, r.organizationId, r.reviewPackageId);
     });
   };
   const signIn = (e: FormEvent) => {
@@ -185,10 +192,26 @@ export function InvitationPage() {
             <dt>Rôle proposé</dt><dd>{inv.organizationRole === "administrateur" ? "Administrateur de l’organisation" : "Membre de l’organisation"}</dd>
             {inv.organizationJobTitle ? <><dt>Fonction</dt><dd translate="no">{inv.organizationJobTitle}</dd></> : null}
           </>
-        ) : inv.projectName ? <><dt>Projet</dt><dd translate="no">{inv.projectName}</dd><dt>Rôle proposé</dt><dd>{inv.projectRole ? ROLE_LABEL[inv.projectRole] : "—"}</dd></> : <><dt>Objet</dt><dd>Création d’un compte Fadi</dd></>}
+        ) : inv.purpose === "review_package" && inv.reviewPackage ? (
+          <>
+            <dt>Paquet de revue</dt><dd translate="no">{inv.reviewPackage.title} (version {inv.reviewPackage.version})</dd>
+            <dt>Projet</dt><dd translate="no">{inv.reviewPackage.projectLabel}</dd>
+            <dt>Responsabilité</dt><dd>{inv.reviewPackage.responsibility === "approbation" ? "Approbation" : "Relecture"}</dd>
+            {inv.accessExpiresAt ? <><dt>Accès jusqu’au</dt><dd>{dateLong(inv.accessExpiresAt)}</dd></> : null}
+          </>
+        ) : inv.projectName ? (
+          <>
+            <dt>Projet</dt><dd translate="no">{inv.projectName}</dd>
+            <dt>Rôle proposé</dt><dd>{inv.projectRole ? ROLE_LABEL[inv.projectRole] : "—"}</dd>
+            {inv.roles?.length ? <><dt>Rôles par portée</dt><dd data-invitation-roles>{rolesLisibles(inv.roles)}</dd></> : null}
+            {inv.representedOrganizationName ? <><dt>Partie représentée</dt><dd translate="no" data-invitation-partie>{inv.representedOrganizationName}</dd></> : null}
+            <dt>Accès</dt><dd>{inv.accessExpiresAt ? `jusqu’au ${dateLong(inv.accessExpiresAt)}` : "sans échéance"}</dd>
+          </>
+        ) : <><dt>Objet</dt><dd>Création d’un compte Fadi</dd></>}
         <dt>Valable jusqu’au</dt><dd>{dateLong(inv.expiresAt)}</dd>
       </dl>
       <p className="h7-muted">Une invitation est une proposition : rien n’est créé ni partagé tant que vous ne l’acceptez pas.</p>
+      {inv.purpose === "review_package" && <p className="h7-muted" data-invitation-review>Une invitation de revue donne accès à ce paquet seulement : ni au projet, ni à l’organisation qui l’a préparé.</p>}
       {inv.purpose === "organization_membership" && <p className="h7-muted" data-invitation-organization>Une adhésion à une organisation n’ouvre aucun projet : chaque projet vous invite séparément.</p>}
       {declined ? <p role="status">Invitation déclinée. Aucun accès n’a été donné.</p>
         : blocking ? <p role="alert" className="form-error">{blocking}</p>

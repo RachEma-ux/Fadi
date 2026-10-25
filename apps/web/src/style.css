@@ -3870,6 +3870,67 @@ fieldset.access-fieldset:disabled {
   }
 }
 
+/* Invitations acceptées (Issue #262, phase 3) : formulaire avec aperçu, invitations reçues. */
+.members-invite[data-invitation-form] {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+}
+.members-invite[data-invitation-form] > .h7-actions,
+.members-invite[data-invitation-form] > .invitation-apercu,
+.members-invite[data-invitation-form] > .invitation-extra-roles,
+.members-invite[data-invitation-form] > [role="alert"] {
+  grid-column: 1 / -1;
+}
+.invitation-extra-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin: 0;
+}
+.invitation-extra-roles legend {
+  font-size: 13px;
+  color: var(--muted);
+}
+.invitation-extra-roles label {
+  flex-direction: row;
+  align-items: center;
+  min-height: 24px;
+}
+.invitation-apercu dl {
+  display: grid;
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+  gap: 4px 12px;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.invitation-apercu dt {
+  color: var(--muted);
+}
+.invitation-apercu dd {
+  margin: 0;
+}
+.received-invitations .project-list li {
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+.received-invitations .project-list li > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.invitation-recue-detail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  flex-basis: 100%;
+}
+@media (max-width: 480px) {
+  .invitation-apercu dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* Équipe et participants (Issue #262, phase 2) */
 .participants-cloture {
   display: flex;
@@ -3934,14 +3995,105 @@ fieldset.access-fieldset:disabled {
 .participants-section .danger-button {
   color: #fff;
 }
+/* Organisations du projet : partie propriétaire et parties (Issue #262, reliquat de la phase 5) */
+.projet-organisations {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 8px 0 14px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.projet-organisations h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+.projet-organisations h4 {
+  margin: 10px 0 4px;
+  font-size: 0.95rem;
+}
+.projet-organisations-tete {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin: 0;
+}
+.projet-organisations-tete dt {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.projet-organisations-tete dd {
+  margin: 2px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+.projet-organisations-note {
+  margin: 6px 0 0;
+}
+.projet-organisations-parties {
+  list-style: none;
+  margin: 0 0 6px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.projet-organisations-parties > li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.projet-organisations-ligne {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+.projet-organisations-representants ul {
+  margin: 2px 0 0;
+  padding-left: 18px;
+}
+.projet-organisations-representants li small {
+  margin-left: 6px;
+}
+/* Représentant mandaté → invitation de projet (reliquat de la phase 5) : état, volet d'invitation, mandat terminé. */
+.projet-organisations-representants li .h7-chip {
+  margin-left: 6px;
+}
+.projet-organisations-inviter {
+  margin: 4px 0 6px;
+  min-width: 0;
+}
+.projet-organisations-inviter > summary {
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 24px;
+}
+.projet-organisations-inviter .members-invite {
+  margin-top: 6px;
+}
+.project-owner-org {
+  overflow-wrap: anywhere;
+}
 .participants-correspondances {
   grid-column: 1 / -1;
   border-left: 3px solid #bd873d;
   padding: 6px 10px;
 }
+/* Un long libellé d'option (rôle, élément de portée) ne doit jamais élargir le formulaire au-delà de l'écran. */
+.participants-form > *,
+.participants-form label {
+  min-width: 0;
+}
+.participants-form select {
+  max-width: 100%;
+  min-width: 0;
+}
 @media (max-width: 720px) {
   .participants-form {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

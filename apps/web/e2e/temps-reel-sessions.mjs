@@ -20,6 +20,7 @@
  */
 import { randomBytes, randomUUID } from "node:crypto";
 import WebSocket from "ws";
+import { inviterEtAccepter } from "./lib-invitations.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const WS = BASE.replace(/^http/, "ws");
@@ -84,8 +85,9 @@ const ids = { proprio: await idDe(proprio), editeur: await idDe(editeur), lecteu
 const projet = await proprio("POST", "/projects", { code: `TR_${randomUUID().slice(0, 6)}`, name: "Temps réel (recette synthétique)" });
 const pid = projet.body?.id;
 check("projet créé", projet.status === 201, String(projet.status));
-check("éditeur et lecteur ajoutés", (await proprio("POST", `/projects/${pid}/members`, { email: cE.email, role: "editeur" })).status === 201
-  && (await proprio("POST", `/projects/${pid}/members`, { email: cL.email, role: "lecteur" })).status === 201);
+// Invitation acceptée (Issue #262, phase 3) : plus d'ajout direct d'un compte existant.
+check("éditeur et lecteur ajoutés", (await inviterEtAccepter(proprio, editeur, pid, cE.email, "editeur")).ok
+  && (await inviterEtAccepter(proprio, lecteur, pid, cL.email, "lecteur")).ok);
 const etude = await proprio("POST", `/projects/${pid}/studio/studies`, { name: "Étude temps réel" });
 const s = { studyId: etude.body?.study?.id, variantId: etude.body?.variant?.id };
 const variante = `/projects/${pid}/studio/studies/${s.studyId}/variants/${s.variantId}`;

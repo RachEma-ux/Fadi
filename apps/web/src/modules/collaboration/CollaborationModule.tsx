@@ -10,7 +10,7 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
-import { accountApi, api, ApiError, canComment, ROLE_LABEL, type CommentAudience, type MemberRole, type ProjectComment } from "../../lib/api";
+import { accountApi, api, ApiError, canComment, ROLE_LABEL, type CommentAudience, type InvitationCreated, type MemberRole, type ProjectComment, type ProjectMember } from "../../lib/api";
 import { useProjectAccess } from "../../lib/access";
 import { useOnline } from "../../components/SyncIndicator";
 import { apiMessage, ConfirmDialog, CopyLink } from "../../components/comptes/ComptesUI";
@@ -19,7 +19,10 @@ import { LOCALE } from "../../lib/i18n";
 import { declenche, propsRaccourci, type CommandeCollaboration } from "./commandes-collaboration";
 import { IconeCollaboration, RaccourciCollaboration } from "./IconeCollaboration";
 import { ParticipantsSection } from "./Participants";
+import { RevuesExternes } from "./RevuesExternes";
 import { HistoriqueProjet } from "./HistoriqueProjet";
+import { InvitationProjet } from "./InvitationProjet";
+import { rolesLisibles } from "./participants-api";
 import { CommunicationPanel } from "./communication/CommunicationPanel";
 import { DemandesPanel, ResponsabilitesPanel } from "./communication/DemandesPanel";
 import { ActivitePanel, RevuesPanel } from "./communication/ActivitePanel";
@@ -262,10 +265,6 @@ export function StepComments({ projectId, stepNumber }: { projectId: string; ste
   );
 }
 
-const ROLE_HELP: Record<MemberRole, string> = {
-  lecteur: "lit le dossier et les commentaires ouverts aux lecteurs, commente ; exporte si vous le lui accordez",
-  editeur: "lit, commente et modifie (saisies, arbitrages, programme, Atelier, sources)",
-};
 
 const errorText = (err: unknown, fallback: string) => (err instanceof ApiError && err.serverMessage ? err.serverMessage : fallback);
 
@@ -274,34 +273,30 @@ export function MembersPanel({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const query = useQuery({ queryKey: ["members", projectId], queryFn: () => api.listMembers(projectId) });
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState<MemberRole>("lecteur");
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ["members", projectId] });
     void queryClient.invalidateQueries({ queryKey: ["collaboration", projectId] });
+    void queryClient.invalidateQueries({ queryKey: ["participants", projectId] });
   };
-  const invite = useMutation({
-    mutationFn: () => api.inviteMember(projectId, email.trim(), role),
-    onSuccess: (m) => {
-      setEmail("");
-      setError(null);
-      if ("invitation" in m) {
-        // Adresse sans compte : invitation nominative (UM-3) ; lien à transmettre si le courriel n'a pas pu partir (D-1).
-        setInviteLink(m.mail.link ?? null);
-        setNotice(m.mail.queued
-          ? `Invitation ${m.resent ? "renvoyée" : "envoyée"} à ${m.invitation.email} : elle pourra rejoindre le projet comme ${m.invitation.projectRole ? ROLE_LABEL[m.invitation.projectRole] : "lecteur"} après avoir créé son compte.`
-          : `Invitation ${m.resent ? "renouvelée" : "créée"} pour ${m.invitation.email}.`);
-      } else {
-        setInviteLink(null);
-        setNotice(`${m.email} a maintenant accès au projet comme ${ROLE_LABEL[m.role]}.`);
-      }
-      refresh();
-    },
-    onError: (err) => setError(errorText(err, "L’invitation n’a pas pu être enregistrée.")),
-  });
+  // Phase 3 (OP-D2 a) : toute adresse reçoit une invitation à accepter, compte existant compris ; un compte déjà membre
+  // voit seulement son rôle changé. Lien à transmettre si le courriel n'a pas pu partir (D-1).
+  const sent = (m: ProjectMember | InvitationCreated) => {
+    setError(null);
+    if ("invitation" in m) {
+      setInviteLink(m.mail.link ?? null);
+      const verb = m.resent ? "renvoyée" : "envoyée";
+      setNotice(m.accountExists
+        ? `Invitation ${verb} à ${m.invitation.email} : ce compte doit l’accepter (lien du courriel ou notification) ; rien n’est accordé avant.`
+        : `Invitation ${verb} à ${m.invitation.email} : la personne rejoindra le projet après avoir créé son compte et accepté.`);
+    } else {
+      setInviteLink(null);
+      setNotice(`${m.email} est déjà membre : son rôle est maintenant ${ROLE_LABEL[m.role]}.`);
+    }
+    refresh();
+  };
   const change = useMutation({
     mutationFn: ({ userId, next }: { userId: string; next: MemberRole }) => api.setMemberRole(projectId, userId, next),
     onSuccess: (m) => {
@@ -355,7 +350,7 @@ export function MembersPanel({ projectId }: { projectId: string }) {
   if (!query.data) return <p role="alert">Impossible de lire les membres du projet.</p>;
   const v = query.data;
   const isOwner = v.you.role === "proprietaire";
-  const busy = invite.isPending || change.isPending || remove.isPending || transfer.isPending || exportRight.isPending;
+  const busy = change.isPending || remove.isPending || transfer.isPending || exportRight.isPending;
   return (
     <div className="members-panel">
       <div className="table-scroll" tabIndex={0} role="region" aria-label="Membres du projet">
@@ -423,7 +418,14 @@ export function MembersPanel({ projectId }: { projectId: string }) {
                   "non"
                 )}
               </td>
-              <td>{new Date(m.createdAt).toLocaleDateString(LOCALE)}</td>
+              <td data-member-acces={m.accessExpired ? "expire" : m.accessExpiresAt ? "echeance" : "permanent"}>
+                {new Date(m.createdAt).toLocaleDateString(LOCALE)}
+                {m.accessExpiresAt && (
+                  <small className={m.accessExpired ? "h7-error" : "h7-muted"}>
+                    {m.accessExpired ? ` · accès expiré le ${new Date(m.accessExpiresAt).toLocaleDateString(LOCALE)}` : ` · accès jusqu’au ${new Date(m.accessExpiresAt).toLocaleDateString(LOCALE)}`}
+                  </small>
+                )}
+              </td>
               <td>
                 {isOwner ? (
                   <>
@@ -460,45 +462,27 @@ export function MembersPanel({ projectId }: { projectId: string }) {
         </tbody>
       </table>
       </div>
-      {isOwner && (
-        <form
-          className="members-invite"
-          onSubmit={(e: FormEvent) => {
-            e.preventDefault();
-            if (email.trim()) invite.mutate();
-          }}
-        >
-          <label>
-            Adresse du compte à inviter
-            <input type="email" value={email} required maxLength={254} placeholder="prenom.nom@exemple.fr" onChange={(e) => setEmail(e.target.value)} />
-          </label>
-          <label>
-            Rôle
-            <select value={role} onChange={(e) => setRole(e.target.value as MemberRole)}>
-              <option value="lecteur">lecteur — {ROLE_HELP.lecteur}</option>
-              <option value="editeur">éditeur — {ROLE_HELP.editeur}</option>
-            </select>
-          </label>
-          <button type="submit" className="button-primary" disabled={busy || !email.trim()}>
-            Inviter
-          </button>
-          <p className="h7-muted">Un compte existant reçoit l’accès aussitôt. Une adresse sans compte reçoit une invitation par courriel, valable 7 jours : aucun compte n’est créé tant qu’elle n’est pas acceptée.</p>
-        </form>
-      )}
-      {inviteLink && <CopyLink link={inviteLink} />}
       {isOwner && (v.invitations?.length ?? 0) > 0 && (
         <div className="members-invitations" data-project-invitations>
           <h3>Invitations en attente</h3>
+          <p className="h7-muted">Avant d’inviter, vérifiez ici et dans « Équipe et participants » : une adresse déjà invitée reçoit la même invitation, renvoyée, jamais un doublon.</p>
           <ul className="sessions-list">
             {v.invitations!.map((i) => (
-              <li key={i.id} data-invitation={i.email}>
-                <span><span className="collab-email">{i.email}</span> <small>· {i.projectRole ? ROLE_LABEL[i.projectRole] : ""}{` · valable jusqu’au ${new Date(i.expiresAt).toLocaleDateString(LOCALE)}`}</small></span>
+              <li key={i.id} data-invitation={i.email} data-invitation-etat={i.awaiting ?? "acceptation"}>
+                <span>
+                  <span className="collab-email">{i.email}</span>{" "}
+                  <span className="badge">{i.awaiting === "creation-compte" ? "En attente de création du compte" : "En attente d’acceptation"}</span>
+                  {i.representedOrganizationName ? <small data-invitation-partie>{"représentant de "}<span translate="no">{i.representedOrganizationName}</span></small> : null}
+                  <small>{` · ${i.roles?.length ? rolesLisibles(i.roles) : i.projectRole ? ROLE_LABEL[i.projectRole] : ""} · valable jusqu’au ${new Date(i.expiresAt).toLocaleDateString(LOCALE)}`}{i.accessExpiresAt ? ` · accès jusqu’au ${new Date(i.accessExpiresAt).toLocaleDateString(LOCALE)}` : ""}</small>
+                </span>
                 <button type="button" className="button-secondary" disabled={busy || cancelInvitation.isPending} onClick={() => cancelInvitation.mutate(i.id)}>Annuler l’invitation</button>
               </li>
             ))}
           </ul>
         </div>
       )}
+      {isOwner && <InvitationProjet projectId={projectId} onSent={sent} />}
+      {inviteLink && <CopyLink link={inviteLink} />}
       {notice && (
         <p className="h7-muted members-notice" role="status">
           {notice}
@@ -675,6 +659,8 @@ export function CollaborationModule({ projectId }: { projectId: string }) {
       </section>
 
       <ParticipantsSection projectId={projectId} />
+
+      <RevuesExternes projectId={projectId} />
 
       <SupportAccessPanel projectId={projectId} />
 

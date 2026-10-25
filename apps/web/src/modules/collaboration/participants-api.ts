@@ -13,6 +13,13 @@ export type StatusChange = "suspendre" | "reactiver" | "terminer";
 export const BUSINESS_ROLES: readonly BusinessRole[] = ["lecteur", "concepteur", "relecteur", "coordinateur", "approbateur", "diffuseur"];
 export const ROLE_SCOPES: readonly RoleScope[] = ["projet", "etude", "variante", "revision", "documents"];
 export const RESPONSIBILITIES: readonly Responsibility[] = ["diriger", "produire", "coordonner", "verifier", "approuver", "diffuser"];
+/** Libellés des rôles métier et des portées (phase 3 : formulaire d'invitation, invitations reçues). */
+export const BUSINESS_ROLE_LABEL: Readonly<Record<BusinessRole, string>> = { lecteur: "Lecteur", concepteur: "Concepteur", relecteur: "Relecteur", coordinateur: "Coordinateur", approbateur: "Approbateur", diffuseur: "Diffuseur" };
+export const SCOPE_LABEL: Readonly<Record<RoleScope, string>> = { projet: "Projet", etude: "Étude", variante: "Variante", revision: "Révision", documents: "Documents" };
+/** « Lecteur · Approbateur — Étude : E-1 » : rôles proposés lisibles (séparateurs traduits morceau par morceau). */
+export function rolesLisibles(roles: readonly { role: BusinessRole; scopeType: RoleScope; scopeId: string | null }[]): string {
+  return roles.map((r) => (r.scopeType === "projet" ? BUSINESS_ROLE_LABEL[r.role] : `${BUSINESS_ROLE_LABEL[r.role]} — ${SCOPE_LABEL[r.scopeType]} : ${r.scopeId ?? ""}`)).join(" · ");
+}
 
 export interface DerivedAccess { role: "proprietaire" | "editeur" | "lecteur"; canExport: boolean; canApprove: boolean; canPublish: boolean }
 export interface RoleView { id: string; role: BusinessRole; scopeType: RoleScope; scopeId: string | null; origin: "acces" | "attribution"; createdAt: string }
@@ -40,10 +47,36 @@ export interface Participant {
   createdAt: string;
 }
 
+export type OrganizationStatus = "active" | "suspendue" | "close";
+/** État côté projet d'un mandat de représentant (reliquat de la phase 5). */
+export type MandateProjectSide = "non_invite" | "invitation_en_attente" | "participation_active" | "terminee";
+export interface OrganizationIdentity { id: string; name: string; kind: string | null; status: OrganizationStatus }
+
+/** Partie propriétaire déclarée et organisations parties (phase 5, OP-D1 a) : lecture seule, aucun droit. */
+export interface ProjectOrganizations {
+  owner: null | (OrganizationIdentity & { youAreMember: boolean; isParty: boolean });
+  ownerPerson: { userId: string | null; name: string | null };
+  ownerGrantsAccess: false;
+  parties: (OrganizationIdentity & {
+    participationId: string; participationStatus: ParticipationStatus; businessRole: string | null; responsibilities: Responsibility[];
+    startsOn: string | null; youAreMember: boolean;
+    representatives: {
+      mandateId: string; name: string | null; responsibilities: Responsibility[]; startsOn: string | null;
+      /** Reliquat de la phase 5 — propriétaire seul (null sinon) : état côté projet du représentant. */
+      projectSide: MandateProjectSide | null;
+      /** Le propriétaire peut lui envoyer une invitation de projet. */
+      invitable: boolean;
+    }[];
+    /** « Mandat terminé » : participation du représentant conservée, à revoir (jamais terminée d'office). */
+    endedRepresentatives: { participationId: string; mandateId: string; name: string | null; endsOn: string | null; endReason: string | null }[];
+  })[];
+}
+
 export interface ParticipantsView {
   project: { id: string; closedAt: string | null };
   you: { userId: string; role: string; responsible: boolean; canManage: boolean; canErase: boolean };
   participants: Participant[];
+  organizations: ProjectOrganizations;
   invitations?: { id: string; email: string; projectRole: string | null; expiresAt: string }[];
 }
 

@@ -13,6 +13,7 @@
  * BASE_URL=http://localhost:3001 node apps/web/e2e/studio-profils.mjs
  */
 import { chromium } from "playwright";
+import { appelPlaywright, inviterEtAccepter } from "./lib-invitations.mjs";
 import { randomBytes, randomUUID } from "node:crypto";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
@@ -45,7 +46,7 @@ check("comptes créés", (await owner("POST", "/auth/register", ownerCredentials
 const project = await owner("POST", "/projects", { code: "P.STU.PROFILS", name: "Studio — profils d'outils" });
 const otherProject = await other("POST", "/projects", { code: "P.STU.AUTRE", name: "Studio — autre compte" });
 const projectId = project.body.id;
-check("lecteur ajouté au projet", (await owner("POST", `/projects/${projectId}/members`, { email: readerCredentials.email, role: "lecteur" })).status === 201);
+check("lecteur invité, invitation acceptée (phase 3)", (await inviterEtAccepter(owner, reader, projectId, readerCredentials.email, "lecteur")).ok);
 const study = await owner("POST", `/projects/${projectId}/studio/studies`, { name: "Profils" });
 check("étude créée", study.status === 201, String(study.status));
 const variantPath = `/projects/${projectId}/studio/studies/${study.body.study.id}/variants/${study.body.variant.id}`;

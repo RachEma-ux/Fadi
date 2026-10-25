@@ -12,6 +12,7 @@
  *   BASE_URL=http://localhost:3001 node apps/web/e2e/studio-publication.mjs
  */
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { appelPlaywright, inviterEtAccepter } from './lib-invitations.mjs';
 
 const BASE = (process.env.BASE_URL ?? 'http://localhost:3001').replace(/\/$/, '');
 let failures = 0;
@@ -54,11 +55,13 @@ check('compte étranger inscrit', (await foreign('POST', '/auth/register', crede
 const project = await owner('POST', '/projects', { code: `PUB_${randomUUID().slice(0, 8)}`, name: 'Studio — publications (recette synthétique)' });
 check('projet créé', project.status === 201, String(project.status));
 const projectId = project.body?.id;
-check('éditeur invité', (await owner('POST', `/projects/${projectId}/members`, { email: accounts.editor.email, role: 'editeur' })).status === 201);
-const invitedReader = await owner('POST', `/projects/${projectId}/members`, { email: accounts.reader.email, role: 'lecteur' });
-check('lecteur invité', invitedReader.status === 201);
+check('éditeur invité, invitation acceptée (phase 3)', (await inviterEtAccepter(owner, editor, projectId, accounts.editor.email, 'editeur')).ok);
+const invitedReader = await inviterEtAccepter(owner, reader, projectId, accounts.reader.email, 'lecteur');
+check('lecteur invité, invitation acceptée (phase 3)', invitedReader.ok);
+const readerMe = (await reader('GET', '/auth/me')).body;
+const readerId = readerMe?.user?.id ?? readerMe?.id;
 // CR-D4 (écart E2) : un nouveau lecteur ne télécharge un paquet diffusé qu'avec l'export accordé par le propriétaire.
-check('lecteur : export accordé par le propriétaire', (await owner('PATCH', `/projects/${projectId}/members/${invitedReader.body?.userId}`, { canExport: true })).body?.canExport === true);
+check('lecteur : export accordé par le propriétaire', (await owner('PATCH', `/projects/${projectId}/members/${readerId}`, { canExport: true })).body?.canExport === true);
 
 const root = `/projects/${projectId}/studio`;
 const study = await owner('POST', `${root}/studies`, { name: 'Étude publiée' });

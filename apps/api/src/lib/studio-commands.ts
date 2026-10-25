@@ -9,6 +9,7 @@ import { studioRevisions, studioStudies, studioVariants, type StudioContext, typ
 import { newId } from "./ids.js";
 import { lockAccessRows } from "./access-locks.js";
 import { loadProjectAccess, projectAccessRefusal, type AccessibleProject, type ProjectNeed } from "./owned-project.js";
+import type { CiblePortee } from "@parcours/domain-model";
 import { orchestrerCommandesDansTransaction, type Tx } from "./atelier-validation.js";
 import { lockProject, type Querier } from "./step-rows.js";
 
@@ -54,8 +55,12 @@ export function notFound(): never { throw new StudioRequestError(404, { error: "
 export function studioArchivedRefusal(): never {
   throw new StudioRequestError(409, { error: "archived", message: "Cette étude ou cette variante est archivée : elle reste lisible mais ne peut pas être modifiée." });
 }
-export function assertAccess(access: AccessibleProject | null, actorId: string, need: ProjectNeed): AccessibleProject {
-  const refusal = projectAccessRefusal(access, actorId, need);
+/**
+ * `cible` (portées étroites) : la ressource relue en base — étude, variantes du contenu, révision — à laquelle une
+ * attribution de portée étroite peut ajouter la capacité demandée (`owned-project.ts`, `porteeAllows`).
+ */
+export function assertAccess(access: AccessibleProject | null, actorId: string, need: ProjectNeed, cible?: CiblePortee): AccessibleProject {
+  const refusal = projectAccessRefusal(access, actorId, need, cible);
   if (refusal) throw new StudioRequestError(refusal.status, refusal.body);
   return access!;
 }
@@ -80,8 +85,8 @@ function refuserPrefixeReserve(requestId: string | undefined, ecriture: StudioEc
   if (ecriture !== "modify" || requestId === undefined || !requestId.toLowerCase().startsWith(STUDIO_PREFIXE_EXEMPLE)) return;
   throw new StudioRequestError(400, { error: "invalid_input", code: "request_id_reserve", message: `Identifiant de requête réservé à l'installation de l'exemple Studio (préfixe « ${STUDIO_PREFIXE_EXEMPLE} »).` });
 }
-function assertEcriture(access: AccessibleProject, actorId: string, ecriture: StudioEcriture): void {
-  if (ecriture === "modify") { assertAccess(access, actorId, "modify"); return; }
+function assertEcriture(access: AccessibleProject, actorId: string, ecriture: StudioEcriture, cible?: CiblePortee): void {
+  if (ecriture === "modify") { assertAccess(access, actorId, "modify", cible); return; }
   assertAccess(access, actorId, "owner");
   assertAccess(access, actorId, "write");
 }
@@ -114,7 +119,7 @@ export async function readStudioContext(q: Querier, scope: StudioScope, actorId:
     study: { id: study.id, name: study.name, projectId: study.projectId },
     variant: { id: variant.id, name: variant.name, studyId: study.id, headRevisionId: variant.headRevisionId },
     revision: { id: revision.id, parentRevisionId: revision.parentRevisionId, document: validateStudioDocument(revision.document) },
-    canWrite: revisionId === undefined && !archived && projectAccessRefusal(access, actorId, "modify") === null,
+    canWrite: revisionId === undefined && !archived && projectAccessRefusal(access, actorId, "modify", { studyId: study.id, variantIds: [variant.id] }) === null,
     archived, derivedFrom: provenanceOf(variant),
   };
 }
@@ -167,14 +172,16 @@ async function variantsOf(q: Querier, study: { id: string; initialVariantId: str
 export async function readStudioStudy(q: Querier, projectId: string, studyId: string, actorId: string, includeArchived = false): Promise<StudioStudyRead> {
   const access = assertAccess(await loadProjectAccess(projectId, actorId, q), actorId, "read");
   const study = await studyOf(q, projectId, studyId);
+  // `canManage` (archiver, désarchiver) reste au rôle de projet ; `canWrite` admet un Concepteur de l'étude (portée étroite).
   const canManage = projectAccessRefusal(access, actorId, "modify") === null;
+  const canWriteStudy = projectAccessRefusal(access, actorId, "modify", { studyId: study.id }) === null;
   return {
     study: {
       id: study.id, name: study.name, projectId: study.projectId, initialVariantId: study.initialVariantId, createdAt: study.createdAt.toISOString(),
       updatedAt: study.updatedAt?.toISOString() ?? null, archived: study.archivedAt !== null, workflowPhase: study.workflowPhase ?? null,
     },
     variants: await variantsOf(q, study, includeArchived),
-    canWrite: canManage && study.archivedAt === null, canManage,
+    canWrite: canWriteStudy && study.archivedAt === null, canManage,
   };
 }
 
@@ -299,7 +306,8 @@ export async function createStudioVariant(projectId: string, studyId: string, ac
   return db.transaction(async (tx) => {
     const access = await lockedAccess(tx, projectId, actorId);
     const study = await studyOf(tx, projectId, studyId);
-    assertEcriture(access, actorId, ecriture);
+    // Concepteur de l'étude (portée étroite) : crée et dérive des variantes dans CETTE étude.
+    assertEcriture(access, actorId, ecriture, { studyId: study.id });
     if (requestId !== undefined) {
       const [previous] = await tx.select({ id: studioVariants.id }).from(studioVariants)
         .where(and(eq(studioVariants.studyId, study.id), eq(studioVariants.creationRequestId, requestId))).limit(1);
@@ -459,7 +467,7 @@ export async function submitStudioCommands(scope: StudioScope, actorId: string, 
         const [variant] = await transaction.select({ id: studioVariants.id }).from(studioVariants)
           .where(and(eq(studioVariants.id, scope.variantId), eq(studioVariants.studyId, study.id))).for("update");
         if (!variant) return notFound();
-        assertEcriture(access, actorId, ecriture);
+        assertEcriture(access, actorId, ecriture, { studyId: study.id, variantIds: [variant.id] });
         current = await readStudioContext(transaction, scope, actorId);
       },
       replay: async (transaction) => {
