@@ -145,6 +145,9 @@ describe("droits par usage et capacités (INV-08)", () => {
     expect(capacitesDe(["administrateur"]).has("preparer-version")).toBe(false);
     expect(capacitesDe(["administrateur"]).has("publier-version")).toBe(false);
     expect(capacitesDe(["responsable-publication"]).has("publier-version")).toBe(true);
+    expect(capacitesDe([]).has("organiser-catalogue")).toBe(false);
+    expect(capacitesDe(["gestionnaire-donnees"]).has("organiser-catalogue")).toBe(true);
+    expect(capacitesDe(["administrateur"]).has("organiser-catalogue")).toBe(true);
   });
 });
 

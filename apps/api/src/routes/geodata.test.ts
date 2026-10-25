@@ -268,6 +268,17 @@ describe("GEO 09 — exports", () => {
     expect(fiche.text).toContain("Attribution de test");
     expect(fiche.text).toContain("Jeu synthétique de test");
   });
+  it("fond d'un fournisseur réglé dans le navigateur (D-GD-15) : carte enregistrée (identifiant seul), export refusé et motivé", async () => {
+    const alice = await compte("gd-fond@example.com");
+    const libre = await publierReference({ cle: "libre-fond" });
+    const comp = { ...composition(libre.coucheId, libre.versionId), fond: "navigateur:maptiler:satellite" };
+    const c = await alice.client.post(`${API}/cartes`).send({ nom: "Sur fond MapTiler", composition: comp });
+    expect(c.status).toBe(201);
+    expect(c.body.composition.fond).toBe("navigateur:maptiler:satellite");
+    const r = await alice.client.post(`${API}/exports`).send({ carteId: c.body.id, revisionAttendue: 1 });
+    expect(r.body.etat).toBe("refuse");
+    expect(r.body.refus).toEqual([{ coucheId: null, titre: "Fond de fournisseur", motif: expect.stringContaining("conditions d'export ne sont pas établies") }]);
+  });
 });
 
 describe("Rôles GeoData, publication et immuabilité (INV-07, INV-08)", () => {
@@ -375,5 +386,49 @@ describe("Couches raster (D-GD-13)", () => {
     expect((await alice.client.get(`${API}/raster/gdcou_inconnue/0/0/0.png`)).status).toBe(404);
     // Contenu figé : la grille d'une version publiée ne se modifie pas.
     await expect(pool.query("UPDATE geodata_rasters SET nodata = 1 WHERE couche_id = $1", [coucheId])).rejects.toThrow();
+  });
+});
+
+describe("Catégories du catalogue (D-GD-14)", () => {
+  it("lecture pour tous ; créer, renommer, ordonner, ranger, libérer, supprimer réservés au gestionnaire ; journalisé", async () => {
+    const alice = await compte("gd-cat@example.com");
+    const ref = await publierReference();
+    const sourceId = (await pool.query("SELECT source_id FROM geodata_versions WHERE id = $1", [ref.versionId])).rows[0].source_id as string;
+    const lu = await alice.client.get(`${API}/categories`);
+    expect(lu.status).toBe(200);
+    expect(lu.body.modifiable).toBe(false);
+    // Catégories initiales semées une fois (dont « Jeux de test », thème « test »).
+    expect(lu.body.categories.find((c: { id: string }) => c.id === "test")).toMatchObject({ libelle: "Jeux de test", themes: ["test"] });
+    expect((await alice.client.post(`${API}/categories`).send({ libelle: "Forêts" })).status).toBe(403);
+    await pool.query("INSERT INTO geodata_roles (user_id, role) VALUES ($1, 'gestionnaire-donnees')", [alice.id]);
+    expect((await alice.client.get(`${API}/categories`)).body.modifiable).toBe(true);
+    expect((await alice.client.post(`${API}/categories`).send({ libelle: "x" })).status).toBe(400);
+    expect((await alice.client.post(`${API}/categories`).send({ libelle: "jeux DE test" })).status).toBe(400);
+    const cree = await alice.client.post(`${API}/categories`).send({ libelle: "  Forêts   et végétation " });
+    expect(cree.status).toBe(201);
+    expect(cree.body.libelle).toBe("Forêts et végétation");
+    const id = cree.body.id as string;
+    try {
+      expect((await alice.client.patch(`${API}/categories/${id}`).send({ libelle: "Forêts" })).body.libelle).toBe("Forêts");
+      expect((await alice.client.patch(`${API}/categories/gdcat_inconnue`).send({ libelle: "Nouvelle" })).status).toBe(404);
+      const ids = ((await alice.client.get(`${API}/categories`)).body.categories as { id: string }[]).map((c) => c.id);
+      expect((await alice.client.put(`${API}/categories-ordre`).send({ ids: ids.slice(1) })).status).toBe(400);
+      const nouvelOrdre = [id, ...ids.filter((x) => x !== id)];
+      expect((await alice.client.put(`${API}/categories-ordre`).send({ ids: nouvelOrdre })).status).toBe(200);
+      expect(((await alice.client.get(`${API}/categories`)).body.categories as { id: string }[])[0]!.id).toBe(id);
+      expect((await alice.client.put(`${API}/categories/${id}/sources/${sourceId}`)).status).toBe(200);
+      expect((await alice.client.get(`${API}/categories`)).body.affectations).toEqual({ [sourceId]: id });
+      expect((await alice.client.put(`${API}/categories/${id}/sources/gdsrc_inconnue`)).status).toBe(404);
+      expect((await alice.client.delete(`${API}/categories-sources/${sourceId}`)).status).toBe(204);
+      expect((await alice.client.get(`${API}/categories`)).body.affectations).toEqual({});
+      expect((await alice.client.put(`${API}/categories/${id}/sources/${sourceId}`)).status).toBe(200);
+    } finally {
+      // Supprimer la catégorie ne supprime aucune couche ; son rangement disparaît avec elle.
+      expect((await alice.client.delete(`${API}/categories/${id}`)).status).toBe(204);
+    }
+    expect((await alice.client.get(`${API}/categories`)).body.affectations).toEqual({});
+    expect(((await alice.client.get(`${API}/catalogue`)).body.couches as { id: string }[]).map((c) => c.id)).toEqual([ref.coucheId]);
+    const actions = (await pool.query("SELECT action FROM geodata_journal WHERE acteur_id = $1 AND action LIKE 'categorie.%'", [alice.id])).rows.map((l) => l.action);
+    expect(actions).toEqual(expect.arrayContaining(["categorie.refusee", "categorie.creee", "categorie.renommee", "categorie.ordonnee", "categorie.source_rangee", "categorie.source_liberee", "categorie.supprimee"]));
   });
 });

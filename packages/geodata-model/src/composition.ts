@@ -68,6 +68,8 @@ export const COMPOSITION_INITIALE: Composition = Object.freeze({
 export type ValidationComposition = { readonly ok: true; readonly composition: Composition } | { readonly ok: false; readonly erreurs: readonly string[] };
 
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
+/** Fond : identifiant configuré au serveur, ou `navigateur:<fournisseur>:<style>` (D-GD-15) ; jamais une adresse ni une clé. */
+const ID_FOND = /^[A-Za-z0-9_-]{1,64}(:[a-z0-9-]{1,40}){0,2}$/;
 const COULEUR = /^#[0-9a-fA-F]{6}$/;
 const fini = (x: unknown): x is number => typeof x === "number" && Number.isFinite(x);
 const objet = (x: unknown): x is Record<string, unknown> => !!x && typeof x === "object" && !Array.isArray(x);
@@ -113,7 +115,7 @@ export function validerComposition(x: unknown): ValidationComposition {
   if (!objet(c) || !fini(c["lon"]) || !fini(c["lat"]) || !fini(c["zoom"]) || !fini(c["cap"]) || c["lon"] < -180 || c["lon"] > 180 || c["lat"] < -85.06 || c["lat"] > 85.06 || c["zoom"] < 0 || c["zoom"] > 22) {
     erreurs.push("camera : { lon −180..180, lat −85..85, zoom 0..22, cap } attendus");
   } else camera = { lon: c["lon"], lat: c["lat"], zoom: c["zoom"], cap: ((c["cap"] % 360) + 360) % 360 };
-  if (typeof x["fond"] !== "string" || !ID.test(x["fond"])) erreurs.push("fond : identifiant de fond attendu");
+  if (typeof x["fond"] !== "string" || !ID_FOND.test(x["fond"])) erreurs.push("fond : identifiant de fond attendu");
   const couches: CoucheComposee[] = [];
   if (!Array.isArray(x["couches"]) || x["couches"].length > MAX_COUCHES) erreurs.push(`couches : liste de ${MAX_COUCHES} couches au plus`);
   else {

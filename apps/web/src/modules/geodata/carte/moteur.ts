@@ -35,12 +35,20 @@ export interface EvenementsMoteur {
   /** Tracé terminé (double-clic, Entrée ou « Terminer »). */
   surTraceTermine(outil: OutilCarte, sommets: readonly [number, number][]): void;
   surErreur(message: string): void;
+  /** Tuiles du fond refusées (clé absente, invalide, quota) : avis non bloquant, la carte reste utilisable. */
+  surErreurFond?(message: string): void;
 }
 
 export interface MoteurCarte {
   appliquer(composition: Composition, fond: Fond, donnees: DonneesAffichage): void;
   /** Centre (et, pour une carte rouverte, zoom et orientation enregistrés) ou emprise. */
   allerA(cible: { emprise: readonly [number, number, number, number] } | { lon: number; lat: number; zoom?: number; cap?: number }): void;
+  /** Zoom d'un cran (barre d'outils verticale). */
+  zoomer(delta: 1 | -1): void;
+  /** Nord en haut, vue de dessus. */
+  orienterNord(): void;
+  /** Recalcule la taille du canevas (plein écran, panneau replié). */
+  redimensionner(): void;
   definirOutil(outil: OutilCarte): void;
   terminerTrace(): void;
   annulerTrace(): void;

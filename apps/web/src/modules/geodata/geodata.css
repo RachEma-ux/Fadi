@@ -24,13 +24,10 @@
 .geodata-page .gd-bandeau{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--gd-ligne)}
 .geodata-page .gd-bandeau p{margin:0}
 .geodata-page .gd-corps{flex:1;display:flex;min-height:0;position:relative}
-.geodata-page .gd-panneau{flex:0 0 auto;display:flex;flex-direction:column;background:#fff;border-right:1px solid var(--gd-ligne);min-height:0;width:44px}
-.geodata-page .gd-panneau.gd-ouvert{width:340px;max-width:42vw}
+/* Panneau Catalogue / Couches / Légende : en surimpression sur la carte, ouvert par le bouton « Données » (comme Kharita). */
+.geodata-page .gd-panneau{position:absolute;left:10px;top:58px;bottom:10px;width:360px;max-width:calc(100% - 76px);z-index:4;display:flex;flex-direction:column;background:#fff;border:1px solid var(--gd-ligne);border-radius:10px;box-shadow:0 8px 28px rgba(23,59,67,.18);min-height:0}
 .geodata-page .gd-onglets{display:flex;flex-wrap:wrap;gap:4px;padding:6px;border-bottom:1px solid var(--gd-ligne)}
 .geodata-page .gd-liste-onglets{display:flex;flex-wrap:wrap;gap:4px}
-.geodata-page .gd-panneau:not(.gd-ouvert) .gd-liste-onglets{flex-direction:column}
-.geodata-page .gd-panneau:not(.gd-ouvert) .gd-onglets{flex-direction:column}
-.geodata-page .gd-panneau:not(.gd-ouvert) .gd-onglets button[role="tab"]{writing-mode:vertical-rl;padding:8px 4px}
 .geodata-page .gd-replier{margin-left:auto}
 .geodata-page .gd-contenu{overflow:auto;padding:8px;flex:1;min-height:0}
 .geodata-page .gd-carte{flex:1;position:relative;min-width:0;min-height:0}
@@ -82,11 +79,10 @@
 @media(max-width:760px){
   .geodata-page .gd-barre{padding:6px}
   .geodata-page .gd-enregistrement{margin-left:0}
-  .geodata-page .gd-panneau{position:absolute;left:0;top:0;z-index:4;border-right:0;background:transparent;width:auto}
-  .geodata-page .gd-panneau .gd-onglets{background:#fff;border:1px solid var(--gd-ligne);border-radius:0 0 8px 0}
-  .geodata-page .gd-panneau:not(.gd-ouvert) .gd-onglets,.geodata-page .gd-panneau:not(.gd-ouvert) .gd-liste-onglets{flex-direction:row}
-  .geodata-page .gd-panneau:not(.gd-ouvert) .gd-onglets button[role="tab"]{writing-mode:horizontal-tb}
-  .geodata-page .gd-panneau.gd-ouvert{position:absolute;inset:auto 0 0 0;top:auto;width:100%;max-width:none;max-height:62%;background:#fff;border-top:1px solid var(--gd-ligne);box-shadow:0 -6px 20px rgba(23,59,67,.18)}
+  .geodata-page .gd-menu{margin-left:auto}
+  .geodata-page .gd-panneau{left:0;right:0;top:auto;bottom:0;width:100%;max-width:none;height:62%;z-index:6;border-radius:12px 12px 0 0;box-shadow:0 -6px 20px rgba(23,59,67,.18)}
+  .geodata-page .gd-barre-outils .gd-outil{width:40px;height:40px;min-height:40px}
+  .geodata-page .gd-barre-outils .gd-poignee{min-height:28px;height:28px}
   .geodata-page .gd-volet{position:absolute;inset:auto 0 0 0;max-width:none;max-height:62%;z-index:6;box-shadow:0 -6px 20px rgba(23,59,67,.18);border-left:0;border-top:1px solid var(--gd-ligne)}
   .geodata-page .gd-tiroir{max-height:50%}
   .geodata-page button{min-height:44px}
@@ -96,3 +92,34 @@
 .geodata-page .gd-degrade-bloc { margin: 6px 0; }
 .geodata-page .gd-degrade { height: 12px; border-radius: 3px; border: 1px solid rgba(0, 0, 0, 0.2); }
 .geodata-page .gd-degrade-bornes { display: flex; justify-content: space-between; font-size: 0.8rem; }
+
+/* Barre d'outils verticale flottante (à droite par défaut, déplaçable) et bouton « Données » (organisation de Kharita). */
+.geodata-page .gd-bouton-donnees{position:absolute;left:10px;top:10px;z-index:5;display:inline-flex;align-items:center;gap:6px;font-weight:600;border-radius:999px;padding:6px 14px;box-shadow:0 2px 10px rgba(23,59,67,.18)}
+.geodata-page .gd-barre-outils{position:absolute;z-index:5;display:flex;flex-direction:column;align-items:center;gap:8px;max-height:calc(100% - 8px);overflow:auto;touch-action:none}
+.geodata-page .gd-poignee{width:40px;min-height:22px;height:22px;padding:0;display:flex;align-items:center;justify-content:center;cursor:grab;border-radius:6px;box-shadow:0 2px 10px rgba(23,59,67,.14)}
+.geodata-page .gd-poignee:active{cursor:grabbing}
+.geodata-page .gd-groupe-outils{display:flex;flex-direction:column;background:#fff;border:1px solid var(--gd-ligne);border-radius:8px;box-shadow:0 2px 10px rgba(23,59,67,.14);overflow:hidden}
+.geodata-page .gd-outil{width:40px;height:40px;min-height:40px;padding:0;display:flex;align-items:center;justify-content:center;border:0;border-radius:0;border-bottom:1px solid #edf2f2}
+.geodata-page .gd-groupe-outils .gd-outil:last-child{border-bottom:0}
+.geodata-page:fullscreen{height:100vh!important}
+
+/* Menu hamburger (en haut à droite) : Données, Mes cartes, Études, Importer, Exporter. */
+.geodata-page .gd-menu{position:relative}
+.geodata-page .gd-hamburger{display:flex;align-items:center;justify-content:center;width:40px;padding:0}
+.geodata-page .gd-menu-liste{position:absolute;right:0;top:calc(100% + 6px);z-index:30;list-style:none;margin:0;padding:6px;min-width:200px;background:#fff;border:1px solid var(--gd-ligne);border-radius:8px;box-shadow:0 8px 24px rgba(23,59,67,.18);display:flex;flex-direction:column;gap:4px}
+.geodata-page .gd-menu-liste button{width:100%;text-align:left;text-transform:uppercase;letter-spacing:.06em;font-weight:600;border:0}
+
+/* Catalogue rangé par catégorie (D-GD-14). */
+.geodata-page .gd-types{display:flex;gap:6px;margin-bottom:6px}
+.geodata-page .gd-types button{flex:1;text-transform:uppercase;letter-spacing:.05em;font-size:12px;font-weight:600}
+.geodata-page .gd-categories{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.geodata-page .gd-entete-categorie{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border-left:4px solid var(--gd-accent);font-weight:600}
+.geodata-page .gd-categorie .gd-liste{margin:6px 0 4px 8px}
+.geodata-page .gd-nom-categorie{flex:1;overflow-wrap:anywhere}
+.geodata-page .gd-chevron{width:12px}
+.geodata-page .gd-compte{font-size:12px;color:#577079;font-weight:500}
+.geodata-page .gd-compte-actif{color:var(--gd-accent);font-weight:700}
+.geodata-page .gd-carte-couche.gd-active{border-color:var(--gd-accent)}
+.geodata-page .gd-ligne-couche{display:flex;flex-direction:column;gap:2px;padding:6px 0;border-bottom:1px solid #edf2f2}
+.geodata-page .gd-danger{border-color:var(--gd-alerte);color:var(--gd-alerte)}
+.geodata-page .gd-lien-fonds{font-size:13px;color:var(--gd-accent);text-decoration:underline}

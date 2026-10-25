@@ -6,19 +6,26 @@
  * Moteur MapLibre chargé à la demande ; sans WebGL (ou contexte perdu), la recherche, la table, les fiches, les cartes et
  * les études restent utilisables (GEO 11). Enregistrement explicite avec révision attendue ; conflit → recharger ou
  * enregistrer sa version comme copie (GEO 13). Téléphone : un seul panneau ouvert à la fois (GEO 12).
+ *
+ * Disposition (comme Kharita) : la carte occupe tout l'espace ; barre d'outils verticale à gauche ; bouton « Données »
+ * qui ouvre en surimpression le catalogue rangé par catégorie (Catalogue / Couches / Légende) ; menu hamburger en haut à
+ * droite (Données, Mes cartes, Études, Importer, Exporter).
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { COMPOSITION_INITIALE, couleurCategorie, formatNombre, legende, lireValeur, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
-import { api, ErreurGeoData, type ValeurRasterRecue, type CarteRecue, type CoucheRecue, type EspaceRecu, type FicheRecue, type ResultatRecherche, type ZoneRecue } from "./client";
+import { api, ErreurGeoData, type ValeurRasterRecue, type CarteRecue, type RangementRecu, type Fond, type CoucheRecue, type EspaceRecu, type FicheRecue, type ResultatRecherche, type ZoneRecue } from "./client";
 import { ajouterCouche, basculerVisibilite, definirFiltre, definirOpacite, definirStyle, deplacerCouche, etatDepuis, LIBELLES_ENREGISTREMENT, entreesCategories, entreesRaster, retirerCouche, type Categorie, type EtatEnregistrement } from "./composition-ops";
 import { webglDisponible, type MoteurCarte, type OutilCarte } from "./carte/moteur";
 import { FicheObjet, FicheValeur, PanneauCatalogue, PanneauCouches, PanneauLegende, TableAttributs } from "./panneaux/consultation";
 import { Etudes, Export, Import, MesCartes, type TraceEnCours } from "./panneaux/travail";
+import { BarreOutilsCarte } from "./panneaux/BarreOutilsCarte";
+import { GestionDonnees, rangementDepuis } from "./panneaux/donnees";
+import { lireFondsNavigateur } from "./fonds-navigateur";
 import { composerPng, telecharger } from "./export-png";
 import "./geodata.css";
 
 type Onglet = "catalogue" | "couches" | "legende";
-type Volet = "fiche" | "valeur" | "cartes" | "etudes" | "import" | "export";
+type Volet = "fiche" | "valeur" | "donnees" | "cartes" | "etudes" | "import" | "export";
 
 const CLE_DERNIERE_CARTE = "geodata.derniere-carte";
 const lireLocal = (k: string) => { try { return window.localStorage.getItem(k); } catch { return null; } };
@@ -78,6 +85,28 @@ export function PageGeoData() {
   const [resultats, setResultats] = useState<ResultatRecherche[] | null>(null);
   const [avisRecherche, setAvisRecherche] = useState<string | null>(null);
   const [annonce, setAnnonce] = useState("");
+  const [menuOuvert, setMenuOuvert] = useState(false);
+  const [rangement, setRangement] = useState<RangementRecu | null>(null);
+  // Fonds des fournisseurs réglés dans Paramètres (D-GD-15), relus au retour sur la page ou après un réglage d'un autre onglet.
+  const [fondsNav, setFondsNav] = useState(lireFondsNavigateur);
+  const [avisFond, setAvisFond] = useState<string | null>(null);
+  useEffect(() => {
+    const relire = () => setFondsNav(lireFondsNavigateur());
+    window.addEventListener("storage", relire);
+    window.addEventListener("focus", relire);
+    return () => { window.removeEventListener("storage", relire); window.removeEventListener("focus", relire); };
+  }, []);
+  /** Composition d'une nouvelle carte : fond du fournisseur par défaut quand il est utilisable, sinon fond neutre. */
+  const compositionNeuve = (camera = COMPOSITION_INITIALE.camera): Composition => ({ ...COMPOSITION_INITIALE, camera, fond: lireFondsNavigateur().defaut ?? COMPOSITION_INITIALE.fond });
+  const [erreurRangement, setErreurRangement] = useState<string | null>(null);
+  const [pleinEcran, setPleinEcran] = useState(false);
+
+  // Plein écran de toute la page GeoData (carte, barre, panneaux) ; le canevas suit la nouvelle taille.
+  useEffect(() => {
+    const suivre = () => { setPleinEcran(document.fullscreenElement === racine.current); setTimeout(() => moteur.current?.redimensionner(), 50); };
+    document.addEventListener("fullscreenchange", suivre);
+    return () => document.removeEventListener("fullscreenchange", suivre);
+  }, []);
 
   // Hauteur disponible sous le bandeau général de Fadi (pleine largeur, petites marges).
   useLayoutEffect(() => {
@@ -92,14 +121,20 @@ export function PageGeoData() {
     setErreurCatalogue(null);
     api.catalogue().then((r) => { setCatalogue(r.couches); connaitre(r.couches); }).catch((e) => setErreurCatalogue(message(e)));
   }, [connaitre]);
+  const chargerRangement = useCallback(async () => {
+    try { setRangement(await api.rangement()); setErreurRangement(null); } catch (e) { setErreurRangement(message(e)); }
+  }, []);
+  const rangementCatalogue = useMemo(() => rangementDepuis(rangement), [rangement]);
   const chargerZones = useCallback(() => { api.zones().then((r) => setZones(r.zones)).catch(() => undefined); api.analyses().then((r) => setAnalysesIds(r.analyses.map((a) => a.id))).catch(() => undefined); }, []);
 
   useEffect(() => {
     api.espace().then(setEspace).catch((e) => setErreurEspace(message(e)));
     chargerCatalogue();
+    void chargerRangement();
     chargerZones();
     const derniere = lireLocal(CLE_DERNIERE_CARTE);
     if (derniere) void ouvrirCarte(derniere, true);
+    else setComposition((c) => (c === COMPOSITION_INITIALE ? compositionNeuve() : c));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -138,7 +173,10 @@ export function PageGeoData() {
     for (const k of composition.couches) if (!couchesConnues.has(k.coucheId) && carte?.disponibilite[k.coucheId]?.etat === "disponible") api.couche(k.coucheId).then((c) => connaitre([c])).catch(() => undefined);
   }, [composition, couchesConnues, carte, connaitre]);
 
-  const fond = useMemo(() => espace?.fonds.find((f) => f.id === composition.fond) ?? espace?.fonds[0] ?? { id: "neutre", libelle: "Fond neutre", type: "neutre" as const, tuiles: null, attribution: "", export: true, zoomMax: null }, [espace, composition.fond]);
+  const fondsDisponibles = useMemo<Fond[]>(() => [...(espace?.fonds ?? []), ...fondsNav.fonds.map((f) => ({ ...f, tuiles: [...f.tuiles] }))], [espace, fondsNav]);
+  const fondTrouve = fondsDisponibles.find((f) => f.id === composition.fond);
+  const fond = useMemo(() => fondTrouve ?? espace?.fonds[0] ?? { id: "neutre", libelle: "Fond neutre", type: "neutre" as const, tuiles: null, attribution: "", export: true, zoomMax: null }, [fondTrouve, espace]);
+  useEffect(() => setAvisFond(null), [fond.id]);
   const disponibilite = carte?.disponibilite ?? {};
   const compositionAffichee = useMemo(() => ({ ...composition, couches: composition.couches.filter((k) => !disponibilite[k.coucheId] || disponibilite[k.coucheId]!.etat === "disponible") }), [composition, disponibilite]);
   const attributions = useMemo(() => [...new Set(compositionAffichee.couches.filter((k) => k.visible).map((k) => couchesConnues.get(k.coucheId)?.version.attribution).filter((x): x is string => !!x))], [compositionAffichee, couchesConnues]);
@@ -168,6 +206,7 @@ export function PageGeoData() {
           surTrace: (o, s) => setTrace({ outil: o, sommets: [...s] }),
           surTraceTermine: (o, s) => { setTrace({ outil: o, sommets: [...s] }); if (o === "zone" || o === "annotation") setTracePret({ outil: o, sommets: [...s] }); },
           surErreur: (m) => setErreurCarte(m),
+          surErreurFond: (m) => setAvisFond(m),
         });
         setChargementMoteur(false);
       } catch (e) {
@@ -256,6 +295,20 @@ export function PageGeoData() {
   const changerStyle = (id: string, s: StyleCouche) => setComposition((c) => definirStyle(c, id, s));
   const ouvrirVolet = (v: Volet) => { setVolet(volet === v ? null : v); if (estTelephone()) setPanneauOuvert(false); };
   const ouvrirOnglet = (o: Onglet) => { setOnglet(o); setPanneauOuvert(true); if (estTelephone()) setVolet(null); };
+  // Bouton « Données » (sur la carte et dans le menu) : ouvre le catalogue rangé par catégorie, ou referme le panneau.
+  const basculerDonnees = () => { if (panneauOuvert && onglet === "catalogue") setPanneauOuvert(false); else ouvrirOnglet("catalogue"); };
+  const basculerLegende = () => { if (panneauOuvert && onglet === "legende") setPanneauOuvert(false); else ouvrirOnglet("legende"); };
+  const choisirOutil = (o: OutilCarte) => { setOutil(o); if (o !== "navigation") { setVolet("etudes"); if (estTelephone()) setPanneauOuvert(false); } };
+  const localiser = () => {
+    if (!navigator.geolocation) return setAnnonce("Localisation indisponible dans ce navigateur.");
+    navigator.geolocation.getCurrentPosition((pos) => moteur.current?.allerA({ lon: pos.coords.longitude, lat: pos.coords.latitude, zoom: 13 }), () => setAnnonce("Localisation refusée ou indisponible."), { timeout: 10_000 });
+  };
+  const basculerPleinEcran = () => {
+    if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
+    else if (racine.current?.requestFullscreen) racine.current.requestFullscreen().catch(() => setAnnonce("Le plein écran est refusé par ce navigateur."));
+    else setAnnonce("Le plein écran est indisponible dans ce navigateur.");
+  };
+  const LIBELLES_VOLETS: Record<"donnees" | "cartes" | "etudes" | "import" | "export", string> = { donnees: "Données", cartes: "Mes cartes", etudes: "Études", import: "Importer", export: "Exporter" };
   const coucheDeTable = coucheTable ? couchesConnues.get(coucheTable) : undefined;
   const couchesPolygones = composition.couches.map((k) => couchesConnues.get(k.coucheId)).filter((c): c is CoucheRecue => !!c && c.typeGeometrie === "polygone");
 
@@ -282,6 +335,7 @@ export function PageGeoData() {
   const clavier = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Escape") {
       if (outil !== "navigation" && trace) { moteur.current?.annulerTrace(); setTrace(null); e.stopPropagation(); }
+      else if (menuOuvert) setMenuOuvert(false);
       else if (resultats) setResultats(null);
       else if (volet && estTelephone()) setVolet(null);
     }
@@ -306,23 +360,26 @@ export function PageGeoData() {
         </form>
         <label className="gd-champ gd-fond">Fond
           <select value={composition.fond} onChange={(e) => setComposition((c) => ({ ...c, fond: e.target.value }))} data-gd-fond>
-            {(espace?.fonds ?? [fond]).map((f) => <option key={f.id} value={f.id}>{f.libelle}</option>)}
+            {(espace ? fondsDisponibles : [fond]).map((f) => <option key={f.id} value={f.id}>{f.libelle}</option>)}
+            {!fondTrouve && composition.fond !== fond.id && <option value={composition.fond} disabled>Fond enregistré indisponible dans ce navigateur</option>}
+            {fondsNav.sansCle.map((f) => <option key={f.fournisseurId} value="" disabled>{`${f.nom} — clé absente (Paramètres)`}</option>)}
           </select>
         </label>
-        <nav className="gd-volets" aria-label="Espaces de travail GeoData">
-          <button type="button" aria-pressed={volet === "cartes"} onClick={() => ouvrirVolet("cartes")} data-gd-volet="cartes">Mes cartes</button>
-          <button type="button" aria-pressed={volet === "etudes"} onClick={() => ouvrirVolet("etudes")} data-gd-volet="etudes">Études</button>
-          <button type="button" aria-pressed={volet === "import"} onClick={() => ouvrirVolet("import")} data-gd-volet="import">Importer</button>
-          <button type="button" aria-pressed={volet === "export"} onClick={() => ouvrirVolet("export")} data-gd-volet="export">Exporter</button>
-          <button type="button" onClick={() => {
-            if (!navigator.geolocation) return setAnnonce("Localisation indisponible dans ce navigateur.");
-            navigator.geolocation.getCurrentPosition((pos) => moteur.current?.allerA({ lon: pos.coords.longitude, lat: pos.coords.latitude, zoom: 13 }), () => setAnnonce("Localisation refusée ou indisponible."), { timeout: 10_000 });
-          }} title="Votre position n'est ni enregistrée ni envoyée au serveur">Ma position</button>
-        </nav>
+        <a className="gd-lien-fonds" href="/parametres#settings-fournisseurs" title="Saisir ou modifier les fournisseurs de fonds de carte (Paramètres)" data-gd-fournisseurs>Fournisseurs</a>
         <div className="gd-enregistrement" data-gd-etat-enregistrement={etat.etat}>
           <span role="status" translate="no">{carte ? <strong>{carte.nom}</strong> : null}</span>
           <span role="status">{LIBELLES_ENREGISTREMENT[etat.etat]}</span>
           <button type="button" onClick={() => void enregistrer()} disabled={etat.etat === "enregistrement" || etat.etat === "enregistree"} data-gd-enregistrer>Enregistrer</button>
+        </div>
+        <div className="gd-menu">
+          <button type="button" className="gd-hamburger" aria-label="Menu GeoData" title="Menu GeoData" aria-expanded={menuOuvert} aria-controls="gd-menu-liste" onClick={() => setMenuOuvert(!menuOuvert)} data-gd-menu>
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true" focusable="false"><path d={menuOuvert ? "M6 6l12 12M18 6 6 18" : "M4 7h16M4 12h16M4 17h16"} /></svg>
+          </button>
+          {menuOuvert && (
+            <ul id="gd-menu-liste" className="gd-menu-liste" aria-label="Espaces de travail GeoData">
+              {(["donnees", "cartes", "etudes", "import", "export"] as const).map((v) => <li key={v}><button type="button" aria-pressed={volet === v} onClick={() => { setMenuOuvert(false); ouvrirVolet(v); }} data-gd-volet={v}>{LIBELLES_VOLETS[v]}</button></li>)}
+            </ul>
+          )}
         </div>
       </header>
       {etat.etat === "conflit" && (
@@ -335,36 +392,42 @@ export function PageGeoData() {
       {etat.etat === "erreur" && <div role="alert" className="gd-bandeau gd-alerte"><p>{etat.message}</p><button type="button" onClick={() => void enregistrer()}>Réessayer</button></div>}
       {erreurEspace && <div role="alert" className="gd-bandeau gd-alerte"><p>{erreurEspace}</p></div>}
       <div className="gd-corps">
-        <aside className={`gd-panneau${panneauOuvert ? " gd-ouvert" : ""}`} aria-label="Catalogue, couches et légende">
+        {panneauOuvert && <aside className="gd-panneau gd-ouvert" aria-label="Catalogue, couches et légende" data-gd-panneau>
           <div className="gd-onglets">
             <div role="tablist" aria-label="Panneau GeoData" className="gd-liste-onglets">
-              {(["catalogue", "couches", "legende"] as const).map((o) => <button key={o} type="button" role="tab" id={`gd-onglet-${o}`} aria-selected={panneauOuvert && onglet === o} aria-controls={panneauOuvert ? "gd-panneau-contenu" : undefined} onClick={() => ouvrirOnglet(o)} data-gd-onglet={o}>{({ catalogue: "Catalogue", couches: `Couches (${composition.couches.length})`, legende: "Légende" })[o]}</button>)}
+              {(["catalogue", "couches", "legende"] as const).map((o) => <button key={o} type="button" role="tab" id={`gd-onglet-${o}`} aria-selected={onglet === o} aria-controls="gd-panneau-contenu" onClick={() => ouvrirOnglet(o)} data-gd-onglet={o}>{({ catalogue: "Catalogue", couches: `Couches (${composition.couches.length})`, legende: "Légende" })[o]}</button>)}
             </div>
-            <button type="button" className="gd-replier" aria-expanded={panneauOuvert} onClick={() => setPanneauOuvert(!panneauOuvert)}>{panneauOuvert ? "Replier" : "Déplier"}</button>
+            <button type="button" className="gd-replier" onClick={() => setPanneauOuvert(false)} data-gd-fermer-panneau>Fermer</button>
           </div>
-          {panneauOuvert && (
-            <div id="gd-panneau-contenu" role="tabpanel" aria-labelledby={`gd-onglet-${onglet}`} className="gd-contenu">
-              {onglet === "catalogue" && <PanneauCatalogue couches={catalogue} erreur={erreurCatalogue} composition={composition} onRecharger={chargerCatalogue} onAjouter={(c) => { setComposition((x) => ajouterCouche(x, c.id, c.version.id, c.styleDefaut)); setAnnonce(`Couche « ${c.titre} » ajoutée.`); const e = empriseDe(c.emprise?.coordinates); if (e && !composition.couches.length) moteur.current?.allerA({ emprise: e }); }} />}
+          <div id="gd-panneau-contenu" role="tabpanel" aria-labelledby={`gd-onglet-${onglet}`} className="gd-contenu">
+              {onglet === "catalogue" && <PanneauCatalogue rangement={rangementCatalogue} couches={catalogue} erreur={erreurCatalogue} composition={composition} onRecharger={chargerCatalogue} onAjouter={(c) => { setComposition((x) => ajouterCouche(x, c.id, c.version.id, c.styleDefaut)); setAnnonce(`Couche « ${c.titre} » ajoutée.`); const e = empriseDe(c.emprise?.coordinates); if (e && !composition.couches.length) moteur.current?.allerA({ emprise: e }); }} />}
               {onglet === "couches" && <PanneauCouches composition={composition} couches={couchesConnues} disponibilite={disponibilite} valeursDe={valeursDe}
                 onVisibilite={(id) => setComposition((c) => basculerVisibilite(c, id))} onOpacite={(id, o) => setComposition((c) => definirOpacite(c, id, o))}
                 onDeplacer={(id, s) => setComposition((c) => deplacerCouche(c, id, s))} onRetirer={(id) => setComposition((c) => retirerCouche(c, id))} onStyle={changerStyle} onTable={setCoucheTable} />}
               {onglet === "legende" && <PanneauLegende composition={composition} couches={couchesConnues} valeurs={valeurs} categories={categories} onStyle={changerStyle} />}
-            </div>
-          )}
-        </aside>
-        <main className="gd-carte" aria-label="Carte">
+          </div>
+        </aside>}
+        <main className="gd-carte" aria-label="Carte" data-gd-zoom={composition.camera.zoom.toFixed(2)}>
           <div ref={conteneurCarte} className="gd-moteur" data-gd-moteur />
+          <button type="button" className="gd-bouton-donnees" aria-pressed={panneauOuvert && onglet === "catalogue"} onClick={basculerDonnees} data-gd-donnees>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d="M12 3 3 8l9 5 9-5-9-5ZM3 12l9 5 9-5M3 16l9 5 9-5" /></svg>
+            <span>Données</span>
+          </button>
+          <BarreOutilsCarte outil={outil} pleinEcran={pleinEcran} legendeOuverte={panneauOuvert && onglet === "legende"} carteDisponible={!erreurCarte}
+            onZoom={(d) => moteur.current?.zoomer(d)} onNord={() => moteur.current?.orienterNord()} onPosition={localiser} onPleinEcran={basculerPleinEcran} onOutil={choisirOutil} onLegende={basculerLegende} />
           {chargementMoteur && <p role="status" className="gd-sur-carte">Chargement de la carte…</p>}
+          {avisFond && <div role="status" className="gd-sur-carte gd-alerte" data-gd-avis-fond><p>{avisFond}</p><div className="gd-actions"><button type="button" onClick={() => setComposition((c) => ({ ...c, fond: "neutre" }))}>Fond neutre</button><button type="button" onClick={() => setAvisFond(null)}>Fermer</button></div></div>}
           {erreurCarte && <div role="alert" className="gd-sur-carte gd-alerte" data-gd-erreur-carte><p>{erreurCarte}</p></div>}
           {trace && outil !== "navigation" && <p className="gd-sur-carte gd-mesure-carte" role="status">{trace.sommets.length < 2 ? "Cliquez sur la carte pour commencer." : (outil === "distance" || outil === "surface" || outil === "zone") ? "Tracé en cours — détails dans Études." : ""}</p>}
         </main>
         {volet && (
-          <aside className="gd-volet gd-ouvert" aria-label={({ fiche: "Fiche d'information", valeur: "Valeur au point", cartes: "Mes cartes", etudes: "Études", import: "Importer", export: "Exporter" })[volet]} data-gd-volet-ouvert={volet}>
-            <div className="gd-ligne-titre"><h2>{({ fiche: "Fiche d'information", valeur: "Valeur au point", cartes: "Mes cartes", etudes: "Études", import: "Importer des données", export: "Exporter" })[volet]}</h2><button type="button" onClick={() => setVolet(null)}>Fermer</button></div>
+          <aside className="gd-volet gd-ouvert" aria-label={({ fiche: "Fiche d'information", valeur: "Valeur au point", donnees: "Données", cartes: "Mes cartes", etudes: "Études", import: "Importer", export: "Exporter" })[volet]} data-gd-volet-ouvert={volet}>
+            <div className="gd-ligne-titre"><h2>{({ fiche: "Fiche d'information", valeur: "Valeur au point", donnees: "Données : catégories et couches", cartes: "Mes cartes", etudes: "Études", import: "Importer des données", export: "Exporter" })[volet]}</h2><button type="button" onClick={() => setVolet(null)}>Fermer</button></div>
             {volet === "valeur" && valeurPoint && <FicheValeur {...valeurPoint} onFermer={() => { setVolet(null); setValeurPoint(null); }} />}
             {volet === "fiche" && <FicheObjet fiche={fiche} chargement={ficheEtat.chargement} erreur={ficheEtat.erreur} onFermer={() => { setVolet(null); setSelection(null); }} onCentrer={(f) => { const e = empriseDe(f.emprise.coordinates); if (e) moteur.current?.allerA({ emprise: e }); }} />}
+            {volet === "donnees" && <GestionDonnees rangement={rangement} erreur={erreurRangement} couches={catalogue} onChange={chargerRangement} />}
             {volet === "cartes" && <MesCartes carte={carte} nouvelle={!carte} onOuvrir={(id) => void ouvrirCarte(id)} onCarteModifiee={(c) => { setCarte(c); setEtatForce(null); }}
-              onNouvelle={() => { setCarte(null); setComposition({ ...COMPOSITION_INITIALE, camera: composition.camera }); setEtatForce(null); ecrireLocal(CLE_DERNIERE_CARTE, null); }}
+              onNouvelle={() => { setCarte(null); setComposition(compositionNeuve(composition.camera)); setEtatForce(null); ecrireLocal(CLE_DERNIERE_CARTE, null); }}
               onEnregistrerSous={async (nom, collectionId) => { const c = await api.creerCarte(nom, composition, collectionId); setCarte(c); setComposition(c.composition); setEtatForce(null); ecrireLocal(CLE_DERNIERE_CARTE, c.id); setAnnonce(`Carte « ${c.nom} » enregistrée.`); }} />}
             {volet === "etudes" && <Etudes outil={outil} trace={trace} tracePret={tracePret} couchesPolygones={couchesPolygones} zones={zones} onOutil={setOutil}
               onTerminer={() => moteur.current?.terminerTrace()} onAnnulerTrace={() => { moteur.current?.annulerTrace(); setTrace(null); setTracePret(null); }} onZonesChangees={chargerZones}

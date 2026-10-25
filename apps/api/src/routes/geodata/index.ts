@@ -10,6 +10,7 @@ import { requireAuth } from "../../middleware/require-auth.js";
 import { espacePersonnel, fondsConfigures, geodataActive, rolesDe } from "../../lib/geodata/acces.js";
 import { adminRouter } from "./admin.js";
 import { cartesRouter } from "./cartes.js";
+import { categoriesRouter } from "./categories.js";
 import { consultationRouter } from "./consultation.js";
 import { etudesRouter } from "./etudes.js";
 import { exportsRouter } from "./exports.js";
@@ -37,6 +38,7 @@ geodataRouter.get("/espace", async (req, res) => {
 });
 
 geodataRouter.use(consultationRouter);
+geodataRouter.use(categoriesRouter);
 geodataRouter.use(cartesRouter);
 geodataRouter.use(etudesRouter);
 geodataRouter.use(importsRouter);

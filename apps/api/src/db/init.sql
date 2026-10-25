@@ -2949,6 +2949,30 @@ CREATE TABLE IF NOT EXISTS geodata_rasters (
   description jsonb NOT NULL,
   CHECK (largeur::bigint * hauteur <= 4000000 AND est > ouest AND nord > sud)
 );
+-- Catégories du catalogue (D-GD-14) : communes à tous les comptes, gérées par un gestionnaire de données (créer, renommer,
+-- ordonner, supprimer) ; une source y est rangée explicitement, sinon par les thèmes déclarés de la catégorie, sinon
+-- « Autres ». Les catégories initiales (modèle `CATEGORIES_CATALOGUE`) sont semées une seule fois par l'API, à la
+-- première lecture (repère geodata_reglages) : une base neuve reste vide et une catégorie supprimée ne réapparaît pas.
+CREATE TABLE IF NOT EXISTS geodata_categories (
+  id text PRIMARY KEY,
+  libelle text NOT NULL CHECK (char_length(libelle) BETWEEN 2 AND 80),
+  ordre integer NOT NULL DEFAULT 0,
+  themes text[] NOT NULL DEFAULT '{}',
+  cree_le timestamptz NOT NULL DEFAULT now(),
+  modifie_le timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS geodata_categories_libelle_idx ON geodata_categories (lower(libelle));
+CREATE TABLE IF NOT EXISTS geodata_categories_sources (
+  source_id text PRIMARY KEY REFERENCES geodata_sources (id) ON DELETE CASCADE,
+  categorie_id text NOT NULL REFERENCES geodata_categories (id) ON DELETE CASCADE,
+  affectee_le timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS geodata_categories_sources_categorie_idx ON geodata_categories_sources (categorie_id);
+CREATE TABLE IF NOT EXISTS geodata_reglages (
+  cle text PRIMARY KEY,
+  valeur jsonb NOT NULL DEFAULT 'true'::jsonb,
+  le timestamptz NOT NULL DEFAULT now()
+);
 CREATE OR REPLACE FUNCTION geodata_contenu_fige() RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE
   v text;

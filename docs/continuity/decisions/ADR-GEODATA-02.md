@@ -48,6 +48,27 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
      (plus proche voisin, consigné), stockée figée (`geodata_rasters`), tuiles PNG rendues par le serveur, symbologie
      déclarée par la fiche (palette continue et bornes, ou classes), valeur au point ; une cellule sans donnée est
      transparente et « non évaluée », jamais zéro. Dépendance `geotiff` (MIT) côté serveur.
+   - D-GD-14 (25 octobre 2026, demande du maître d'ouvrage : couches rangées par catégorie, barre verticale, bouton
+     « Data », menu hamburger dont l'article « Data » crée, modifie et supprime les catégories et leurs couches) :
+     catégories du catalogue **communes à tous les comptes** (`geodata_categories`), gérées par la nouvelle capacité
+     `organiser-catalogue` (rôles « gestionnaire-donnees » et « administrateur ») ; lecture seule pour les autres. Une
+     source commune est rangée explicitement (`geodata_categories_sources`, par source : le rangement survit aux nouvelles
+     versions), sinon par les thèmes déclarés de la catégorie, sinon « Autres » ; une source privée n'est rangée que par
+     son thème. Supprimer une catégorie ne supprime aucune couche. 15 catégories initiales semées une seule fois
+     par l'API à la première lecture (`geodata_reglages`) ; une base neuve reste vide. Interface : carte pleine surface, barre d'outils verticale **flottante**, à droite par défaut
+     (précision du maître d'ouvrage), déplaçable par sa poignée (souris, doigt, flèches ; double-clic : retour à
+     droite), bornée à la carte, position mémorisée dans le navigateur seulement ; bouton « Données » ouvrant le catalogue en surimpression (sections repliables, compte
+     actives / total, bascule Vecteurs / Imagerie), menu ☰ en haut à droite (Données, Mes cartes, Études, Importer,
+     Exporter).
+   - D-GD-15 (25 octobre 2026, demande du maître d'ouvrage : lier le fond de la carte aux Paramètres, qui permettent
+     la saisie et la modification des fournisseurs de carte, MapTiler par défaut) : section « Fournisseurs de fonds de
+     carte » des Paramètres ; MapTiler intégré et fournisseur par défaut (fonds Satellite, Satellite et noms, Plan,
+     Topographique ; clé de « Connexion MapTiler ») ; fournisseurs XYZ saisis (https, `{z}{x}{y}`, `{cle}` facultatif,
+     attribution obligatoire), modifiables, désactivables, supprimables ; fond neutre choisissable par défaut. Réglages et
+     clés **dans le navigateur seulement** (jamais envoyés à l'API Fadi) ; une carte enregistrée ne garde que
+     l'identifiant `navigateur:<fournisseur>:<style>`. Sans clé, aucun fond n'est inventé (option « clé absente ») ; tuiles
+     refusées → avis non bloquant et retour au fond neutre en un geste. Conditions d'export non établies : un fond de
+     fournisseur n'est jamais exportable (refus motivé du serveur).
 
 ## Conséquences
 

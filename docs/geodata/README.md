@@ -72,6 +72,32 @@ fiche qualifiée à côté (`version.fichier`, empreinte contrôlée à l'import
 de plus de 5 000 objets n'est pas écrite (borne V1) ; les couches raster (relief, climat, sols, imagerie) n'entrent pas
 dans GeoData V1. Ces données sont collaboratives : ni exhaustives ni officielles.
 
+## Catégories du catalogue et disposition (D-GD-14)
+
+La carte occupe tout l'espace. En haut à gauche : bouton « Données » (catalogue en surimpression : sections par
+catégorie repliables, compte « actives / total », bascule Vecteurs / Imagerie ; onglets Couches et Légende). Barre
+d'outils verticale **flottante**, à droite par défaut (zoom, nord, position, plein écran, mesurer une distance ou une
+surface, zone, annotation, légende) : la poignée du haut la déplace (glisser ou flèches du clavier, double-clic pour la
+remettre à droite) ; elle reste dans la carte et sa position est mémorisée dans ce navigateur. En haut à
+droite : menu ☰ — Données, Mes cartes, Études, Importer, Exporter.
+
+Menu ☰ → « Données » : catégories communes à tous les comptes. Avec le rôle « gestionnaire-donnees » (ou
+« administrateur ») : créer, renommer, monter / descendre, supprimer une catégorie ; ranger une couche commune dans une
+catégorie, l'en déplacer ou l'en retirer (elle revient alors à son thème). Supprimer une catégorie ne supprime aucune
+couche. API : `GET/POST /geodata/api/categories`, `PATCH/DELETE /categories/:id`, `PUT /categories-ordre`,
+`PUT /categories/:id/sources/:sourceId`, `DELETE /categories-sources/:sourceId` ; chaque modification est journalisée.
+
+## Fonds de carte et fournisseurs (D-GD-15)
+
+Paramètres → « Fournisseurs de fonds de carte » : MapTiler est intégré et fournisseur par défaut (Satellite, Satellite et
+noms, Plan, Topographique), avec la clé saisie dans « Connexion MapTiler ». « Ajouter un fournisseur » saisit un autre
+service par son adresse de tuiles XYZ en https (`{z}`, `{x}`, `{y}`, et `{cle}` avec sa clé), son attribution et un zoom
+maximal facultatif ; chaque fournisseur se modifie, se désactive ou se supprime (MapTiler se désactive seulement), et le
+fournisseur par défaut se choisit (ou le fond neutre). Ces réglages et les clés restent dans le navigateur : la carte
+enregistrée ne garde que l'identifiant du fond. Une nouvelle carte s'ouvre sur le premier fond du fournisseur par défaut
+quand sa clé est présente. Un fond de fournisseur n'est pas exportable (conditions non établies) : exporter sur le fond
+neutre.
+
 ## Couches raster (D-GD-13)
 
 Fiche avec `couche.raster` (`unite`, `grandeur`, `palette` parmi `viridis`, `relief`, `precipitations`, `temperature`,

@@ -6,7 +6,7 @@
  * contrôlé) et liste des attributions à porter sur l'image PNG composée par le navigateur.
  */
 import { Router, type Request } from "express";
-import { LIBELLES_USAGES, lireDroits, verifierUsage, type Composition } from "@parcours/geodata-model";
+import { LIBELLES_USAGES, lireDroits, PREFIXE_FOND_NAVIGATEUR, verifierUsage, type Composition } from "@parcours/geodata-model";
 import { erreur, espacePersonnel, fondsConfigures, introuvable, journal, requete } from "../../lib/geodata/acces.js";
 import { newId } from "../../lib/ids.js";
 import { COLONNES_VERSION, lireVersion } from "./consultation.js";
@@ -64,7 +64,9 @@ exportsRouter.post("/exports", async (req, res) => {
   const visibles = composition.couches.filter((c) => c.visible);
   const refus: { coucheId: string | null; titre: string; motif: string }[] = [];
   const fond = fondsConfigures().find((f) => f.id === composition.fond);
-  if (!fond) refus.push({ coucheId: null, titre: "Fond cartographique", motif: "Fond non configuré sur ce serveur." });
+  // Fond d'un fournisseur réglé dans le navigateur (D-GD-15) : conditions d'export non établies, jamais exportable.
+  if (!fond && String(composition.fond).startsWith(PREFIXE_FOND_NAVIGATEUR)) refus.push({ coucheId: null, titre: "Fond de fournisseur", motif: "Fond d'un fournisseur réglé dans Paramètres : ses conditions d'export ne sont pas établies ; choisissez le fond neutre pour exporter." });
+  else if (!fond) refus.push({ coucheId: null, titre: "Fond cartographique", motif: "Fond non configuré sur ce serveur." });
   else if (!fond.export) refus.push({ coucheId: null, titre: fond.libelle, motif: "Les conditions de ce fond n'autorisent pas l'export ; choisissez le fond neutre." });
   const lignes = visibles.length ? await requete(
     `SELECT c.id AS couche_id, c.titre AS couche_titre, c.version_id, ${COLONNES_VERSION},

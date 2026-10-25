@@ -21,6 +21,7 @@ import { api, type NotificationKind, type NotificationPreferencesView } from "..
 import { NOTIFICATION_KIND_DESCRIPTION, NOTIFICATION_KIND_LABEL, NOTIFICATION_KINDS } from "../components/notification-kinds";
 import { NOTIFICATION_PREFERENCES_KEY } from "../components/NotificationBell";
 import { MonCompte } from "./MonCompte";
+import { FournisseursCarte } from "./FournisseursCarte";
 
 type KeyState = "absente" | "session" | "locale";
 
@@ -394,6 +395,7 @@ export function ParametresPage() {
       </section>
       <NotificationSettings />
       <MaptilerSettings />
+      <FournisseursCarte />
       <LocalDataSettings />
       <AppSettings />
     </main>
