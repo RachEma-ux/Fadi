@@ -1519,6 +1519,10 @@ export type ComNature = "message" | "partage" | "action";
 export type ComRefType = "etape" | "document" | "fichier" | "studio-variante" | "observation-studio" | "message" | "demande" | "revision-atelier";
 /** Référence à un élément du projet : type et identifiant seulement (libellé résolu pour chaque lecteur). */
 export interface ComRef { type: ComRefType; id: string }
+/** Épingle (COM-D18) : point sur le plan d'une révision exacte d'une variante Studio, repère local (mètres). */
+export interface ComEpingle { type: "studio-variante"; studyId: string; variantId: string; revisionId: string; point: { x: number; y: number }; repere: "local"; objetIds: string[] }
+/** Position déclarée par l'auteur (COM-D16) : repère geographic (WGS84), source et précision déclarées. */
+export interface ComLocalisation { repere: "geographic"; lat: number; lon: number; precisionM: number | null; source: "appareil"; captureeLe: string | null }
 export type ComEventAction = "creer" | "audience" | "participant-ajoute" | "participant-retire" | "animation" | "modification-message" | "retrait-message" | "partage-envoye" | "partage-recu" | "action-liee";
 
 export const comConversations = pgTable("com_conversations", {
@@ -1562,8 +1566,27 @@ export const comMessages = pgTable("com_messages", {
   sharedFrom: jsonb("shared_from").$type<{ conversationId: string; messageIds: string[] } | null>(),
   editedAt: timestamp("edited_at", { withTimezone: true }),
   withdrawnAt: timestamp("withdrawn_at", { withTimezone: true }),
+  epingle: jsonb("epingle").$type<ComEpingle | null>(),
+  localisation: jsonb("localisation").$type<ComLocalisation | null>(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("com_messages_conversation_idx").on(t.conversationId, t.createdAt)]);
+
+/** Photo jointe (COM-D15 à COM-D17) : métadonnées retirées, 2 Mo et 2 560 px au plus. */
+export const comPieces = pgTable("com_pieces", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  conversationId: text("conversation_id").notNull().references(() => comConversations.id, { onDelete: "cascade" }),
+  messageId: text("message_id"),
+  authorId: text("author_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  mime: text("mime").$type<"image/jpeg" | "image/png">().notNull(),
+  size: integer("size").notNull(),
+  width: integer("width").notNull(),
+  height: integer("height").notNull(),
+  empreinte: text("empreinte").notNull(),
+  content: bytea("content").notNull(),
+  clientRequestId: text("client_request_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("com_pieces_message_idx").on(t.messageId)]);
 
 export const comMessageVersions = pgTable("com_message_versions", {
   id: bigserial("id", { mode: "number" }).primaryKey(),

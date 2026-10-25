@@ -17,7 +17,7 @@ Mis à jour : 2026-10-25 (UTC).
 
 ## Prochaine action
 
-- Délégation RT-D4 exécutée (RTC-1 à RTC-5 fusionnés). Au maître d'ouvrage : acceptation des lots, préproduction
+- RTC-1 à RTC-5 **acceptés** (RT-D8) ; délégation RT-D4 éteinte. Au maître d'ouvrage : préproduction
   (Caddy `basic_auth`, P.118 sur l'appareil Android, Firefox / WebKit, recettes `temps-reel-redemarrage.mjs`,
   `temps-reel-retour-arriere.mjs`, `temps-reel-charge.mjs`), puis décision d'activer `FADI_TEMPS_REEL` en production.
   Aucun lot suivant (RTC-6 coédition, RTC-7 coordination) n'est engagé.

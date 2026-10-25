@@ -1,7 +1,7 @@
 # RTC-2 — Vue partagée Studio (compte rendu)
 
 Issue [#283](https://github.com/RachEma-ux/Fadi/issues/283) ; décisions RT-D3 (Studio seul), RT-D4 (exécution déléguée),
-RT-D5 (bornes). Statut : **implémenté et vérifié en local** ; CI et fusion : voir la PR du lot.
+RT-D5 (bornes). Statut : **fusionné** (PR #289, CI verte) et **accepté** (RT-D8).
 
 ## Livré
 

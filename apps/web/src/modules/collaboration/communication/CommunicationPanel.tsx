@@ -9,7 +9,7 @@
  * Fadi », « bloqué ». Règle d'or : chaque commande porte son icône, son raccourci affiché et déclaré, et son
  * gestionnaire clavier (`commandes-collaboration.ts`, COM-D14).
  */
-import { useEffect, useMemo, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { useMutation, useMutationState, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { api, ApiError, comApi, type ComActionInput, type ComApercuAction, type ComApercuPartage, type ComAudience, type ComConversation, type ComConversationDetail, type ComMembre, type ComMessage, type ComMode, type ComRefResolue, type CommentAudience } from "../../../lib/api";
@@ -22,6 +22,9 @@ import { ConfirmDialog } from "../../../components/comptes/ComptesUI";
 import { cheminVarianteStudio } from "../../studio/routes-studio";
 import { declenche, propsRaccourci, type CommandeCollaboration } from "../commandes-collaboration";
 import { IconeCollaboration, RaccourciCollaboration } from "../IconeCollaboration";
+import { DialogueEpingle, EpingleMessage, LocalisationMessage, PhotosMessage, type EpingleChoisie } from "./PhotosEpingles";
+import { compresserPhoto } from "../../../lib/com-photos";
+import { localStore } from "../../../lib/local-store";
 import { etatEnvoi, LIBELLE_ETAT, libelleJournal, mentionsSansAcces, nouvelIdRequete, raisonBlocage, URGENT_HORS_LIGNE } from "./etats";
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -293,6 +296,9 @@ function ConversationVue({ projectId, conversationId, membres, conversations }: 
             {m.withdrawn ? <p className="h7-muted"><i>Message retiré par son auteur.</i></p> : <p className="com-corps" translate="no">{m.body}</p>}
             {m.refs.length > 0 && <p className="com-refs">{m.refs.map((r) => <Reference key={`${r.type}:${r.id}`} projectId={projectId} r={r} />)}</p>}
             {m.mentions.length > 0 && <p className="h7-muted">Mentions : <span translate="no">{m.mentions.map((x) => x.email).join(", ")}</span></p>}
+            <PhotosMessage projectId={projectId} pieces={m.pieces} auteur={m.author.email} />
+            {m.epingle && <EpingleMessage projectId={projectId} epingle={m.epingle} />}
+            {m.localisation && <LocalisationMessage l={m.localisation} />}
             {m.remise && (
               <p className="h7-muted com-remise" data-com-remise={m.id}>
                 {`Accepté par Fadi · ouvert par ${m.remise.ouverts}/${m.remise.destinataires}`}
@@ -356,6 +362,52 @@ function Redaction({ projectId, conversation: c, membres }: { projectId: string;
   const [etape, setEtape] = useState("");
   const [ackRequired, setAck] = useState(false);
   const [urgent, setUrgent] = useState(false);
+  // Photos (lot COM-13) : compressées sur l'appareil puis gardées dans IndexedDB jusqu'à l'acceptation du message.
+  const [photos, setPhotos] = useState<{ id: string; url: string; width: number; height: number }[]>([]);
+  const [photoErreur, setPhotoErreur] = useState<string | null>(null);
+  const [epingle, setEpingle] = useState<EpingleChoisie | null>(null);
+  const [poseEpingle, setPoseEpingle] = useState(false);
+  const [position, setPosition] = useState<{ lat: number; lon: number; precisionM: number | null; captureeLe: string } | null>(null);
+  const [positionEtat, setPositionEtat] = useState<"non" | "lecture" | "oui" | "indisponible">("non");
+  const choisirPhoto = useRef<HTMLInputElement>(null);
+  const contexteStudio = c.context?.type === "studio-variante" && c.context.lien?.["studyId"] && c.context.lien?.["variantId"] ? { studyId: c.context.lien["studyId"], variantId: c.context.lien["variantId"] } : null;
+  const ajouterPhotos = async (fichiers: FileList | null) => {
+    setPhotoErreur(null);
+    // Compte tenu des photos acceptées pendant CETTE sélection (l'état `photos` capturé ne bouge pas dans la boucle).
+    let nombre = photos.length;
+    for (const f of Array.from(fichiers ?? [])) {
+      if (nombre >= 6) { setPhotoErreur("Six photos au plus par message."); break; }
+      try {
+        const r = await compresserPhoto(f);
+        const id = nouvelIdRequete();
+        await localStore.comPhotoEcrire({ id, userId: user?.id ?? "", projectId, conversationId: c.id, blob: r.blob, mime: "image/jpeg", width: r.width, height: r.height, createdAt: new Date().toISOString() });
+        nombre += 1;
+        setPhotos((x) => [...x, { id, url: URL.createObjectURL(r.blob), width: r.width, height: r.height }]);
+      } catch (e) {
+        setPhotoErreur(e instanceof Error && e.message.includes("2 Mo") ? "Photo trop lourde, même compressée : elle ne tient pas dans 2 Mo." : "Cette photo n’a pas pu être préparée ni enregistrée sur cet appareil.");
+      }
+    }
+    if (choisirPhoto.current) choisirPhoto.current.value = "";
+  };
+  const retirerPhoto = (id: string) => { setPhotos((x) => x.filter((p) => p.id !== id)); void localStore.comPhotoSupprimer([id]); };
+  // Chaque lecture de position porte un numéro : décocher, envoyer ou relancer l'invalide, et sa réponse tardive est
+  // ignorée (aucune position jointe sans le consentement courant de l'auteur).
+  const lecturePosition = useRef(0);
+  const basculerPosition = (oui: boolean) => {
+    const n = ++lecturePosition.current;
+    if (!oui) { setPosition(null); setPositionEtat("non"); return; }
+    if (typeof navigator === "undefined" || !navigator.geolocation) { setPositionEtat("indisponible"); return; }
+    setPositionEtat("lecture");
+    navigator.geolocation.getCurrentPosition(
+      (g) => {
+        if (n !== lecturePosition.current) return;
+        setPosition({ lat: g.coords.latitude, lon: g.coords.longitude, precisionM: Number.isFinite(g.coords.accuracy) ? g.coords.accuracy : null, captureeLe: new Date(g.timestamp).toISOString() });
+        setPositionEtat("oui");
+      },
+      () => { if (n !== lecturePosition.current) return; setPosition(null); setPositionEtat("indisponible"); },
+      { enableHighAccuracy: true, timeout: 15_000, maximumAge: 60_000 },
+    );
+  };
   const [bloque, setBloque] = useState<{ texte: string; raison: string } | null>(null);
   const [sansAcces, setSansAcces] = useState<string[]>([]);
   const [horsLigne, setHorsLigne] = useState(typeof navigator !== "undefined" && !navigator.onLine);
@@ -380,14 +432,26 @@ function Redaction({ projectId, conversation: c, membres }: { projectId: string;
   const envoyer = () => {
     const body = texte.trim();
     if (!body) return;
-    envoi.mutate({ projectId, conversationId: c.id, input: { body, mentions, refs: etape ? [{ type: "etape", id: etape }] : [], ackRequired, urgent, clientRequestId: nouvelIdRequete(), capturedAt: new Date().toISOString() } });
-    setTexte(""); setMentions([]); setEtape(""); setAck(false); setUrgent(false);
+    envoi.mutate({
+      projectId, conversationId: c.id, userId: user?.id ?? "", photosLocales: photos.map((p) => p.id),
+      input: {
+        body, mentions, refs: etape ? [{ type: "etape", id: etape }] : [], ackRequired, urgent, clientRequestId: nouvelIdRequete(), capturedAt: new Date().toISOString(),
+        ...(epingle ? { epingle: { studyId: epingle.studyId, variantId: epingle.variantId, revisionId: epingle.revisionId, point: epingle.point } } : {}),
+        ...(position && positionEtat === "oui" ? { localisation: position } : {}),
+      },
+    });
+    lecturePosition.current += 1;
+    setTexte(""); setMentions([]); setEtape(""); setAck(false); setUrgent(false); setPhotos([]); setEpingle(null); setPosition(null); setPositionEtat("non");
   };
   return (
     <form
       className="comment-form com-redaction"
       data-com-composer
-      onKeyDown={(e) => { if (declenche(e, "envoyer-message")) { e.preventDefault(); envoyer(); } }}
+      onKeyDown={(e) => {
+        if (declenche(e, "envoyer-message")) { e.preventDefault(); envoyer(); }
+        else if (declenche(e, "joindre-photo")) { e.preventDefault(); choisirPhoto.current?.click(); }
+        else if (declenche(e, "epingler")) { e.preventDefault(); setPoseEpingle(true); }
+      }}
       onSubmit={(e: FormEvent) => { e.preventDefault(); envoyer(); }}
     >
       <p className="com-audience-envoi" data-com-audience-label><b>{c.audienceLabel}</b></p>
@@ -409,7 +473,35 @@ function Redaction({ projectId, conversation: c, membres }: { projectId: string;
         </label>
         <label><input type="checkbox" checked={ackRequired} onChange={(e) => setAck(e.target.checked)} /> Accusé de réception demandé</label>
         <label><input type="checkbox" checked={urgent} onChange={(e) => setUrgent(e.target.checked)} /> Urgent</label>
+        <label><input type="checkbox" checked={positionEtat === "oui" || positionEtat === "lecture"} onChange={(e) => basculerPosition(e.target.checked)} data-com-position /> Joindre ma position</label>
       </div>
+      <div className="h7-actions com-joints">
+        <input ref={choisirPhoto} type="file" accept="image/jpeg,image/png,image/*" multiple hidden onChange={(e) => void ajouterPhotos(e.target.files)} data-com-fichier-photo />
+        <BoutonCommande commande="joindre-photo" libelle="Joindre une photo" disabled={photos.length >= 6} onClick={() => choisirPhoto.current?.click()} />
+        <BoutonCommande commande="epingler" libelle="Épingler sur un plan" onClick={() => setPoseEpingle(true)} />
+      </div>
+      {photos.length > 0 && (
+        <ul className="com-photos com-photos-brouillon" aria-label="Photos à joindre">
+          {photos.map((p) => (
+            <li key={p.id} data-com-photo-locale={p.id}>
+              <img src={p.url} alt="Photo à joindre" width={p.width} height={p.height} />
+              <button type="button" className="link-button" onClick={() => retirerPhoto(p.id)}>Retirer la photo</button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {photos.length > 0 && <p className="h7-muted">Photos compressées sur l’appareil (2 Mo et 2 560 px au plus) ; leurs métadonnées, position comprise, sont retirées.</p>}
+      {photoErreur && <p className="h7-error" role="alert">{photoErreur}</p>}
+      {epingle && (
+        <p className="h7-muted" data-com-epingle-choisie>
+          {"Épingle : "}<span translate="no">{epingle.variante}</span>{` · révision ${epingle.revisionId.slice(-8)} · point (${epingle.point.x.toFixed(2)} ; ${epingle.point.y.toFixed(2)}) m `}
+          <button type="button" className="link-button" onClick={() => setEpingle(null)}>Retirer l’épingle</button>
+        </p>
+      )}
+      {positionEtat === "lecture" && <p className="h7-muted" role="status">Lecture de la position…</p>}
+      {positionEtat === "oui" && position && <p className="h7-muted" data-com-position-lue>{`Position jointe : ${position.lat.toFixed(5)}, ${position.lon.toFixed(5)} (WGS84${position.precisionM !== null ? `, ± ${Math.round(position.precisionM)} m` : ""})`}</p>}
+      {positionEtat === "indisponible" && <p className="h7-warning" role="status">Position indisponible sur cet appareil : le message partira sans position.</p>}
+      {poseEpingle && <DialogueEpingle projectId={projectId} initial={contexteStudio} onFin={(e) => { setPoseEpingle(false); if (e) setEpingle(e); }} />}
       {avert.length > 0 && <p className="h7-warning" role="status">La mention ne donne aucun accès : <span translate="no">{avert.map((m) => m.email).join(", ")}</span> ne lira pas cette conversation.</p>}
       {urgent && horsLigne && <p className="h7-error" role="alert">{URGENT_HORS_LIGNE}</p>}
       <div className="h7-actions">
@@ -508,7 +600,7 @@ function DialoguePartage({ projectId, c, selection, conversations, onFin }: { pr
         <div className="com-apercu" data-com-apercu>
           <p><b>{apercu.cible.audienceLabel}</b></p>
           <p>Destinataires : <span translate="no">{apercu.destinataires.join(", ")}</span></p>
-          <ul>{apercu.contenu.map((x) => <li key={x.id} translate="no">{`« ${x.texte} » — ${x.auteur}`}</li>)}</ul>
+          <ul>{apercu.contenu.map((x) => <li key={x.id}><span translate="no">{`« ${x.texte} » — ${x.auteur}`}</span>{x.photos.length > 0 ? ` · ${x.photos.length} photo(s) recopiée(s)` : ""}</li>)}</ul>
         </div>
       )}
       {error && <p className="h7-error" role="alert">{error}</p>}

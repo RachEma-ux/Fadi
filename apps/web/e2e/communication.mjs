@@ -19,6 +19,10 @@
  *      participant retiré listées pour le propriétaire.
  *  12. Activité du projet filtrable (à traiter, questions ouvertes, auteur, étape), revues liées relues à Studio,
  *      panneaux contextuels Studio (variante) et Documents.
+ *  13. Photos et épingles (lot COM-13) : métadonnées retirées, bornes 2 Mo / 2 560 px, types refusés, rejeu sans doublon,
+ *      photo lisible de son seul auteur avant d'être jointe, épingle sur une révision exacte, position déclarée en repère
+ *      geographic, photo d'un fil d'équipe refusée au lecteur, recopie au partage, observation reprenant la révision,
+ *      photo d'un message retiré non servie ; interface : photo jointe et épingle posée.
  *  11. Interface : section Communication (audience affichée avant l'envoi), envoi au clavier (règle d'or), page
  *      « Ma boîte », demandes de précision.
  *
@@ -253,6 +257,81 @@ check("12. panneau contextuel Studio : fil sur la variante, listé par son conte
 check("12. panneau contextuel Documents : un document absent du projet est refusé (422)", (await owner("POST", `${com}/conversations`, { mode: "contexte", title: "x", audience: "equipe", context: { type: "document", ref: "inexistant" } })).body?.error === "reference_invalide");
 
 // ---------------------------------------------------------------------------------------------------------------------
+// 13. Photos et épingles (lot COM-13, COM-D15 à COM-D19)
+const brut = async (c, path, buffer, headers = {}) => {
+  const res = await fetch(`${BASE}${path}`, { method: "POST", headers: { "content-type": "image/jpeg", origin: BASE, cookie: c.cookie(), ...headers }, body: buffer });
+  const text = await res.text();
+  let json = null;
+  try { json = text ? JSON.parse(text) : null; } catch { json = text; }
+  return { status: res.status, body: json };
+};
+const lirePiece = async (c, id) => { const r = await fetch(`${BASE}${com}/pieces/${id}`, { headers: { cookie: c.cookie() } }); return { status: r.status, type: r.headers.get("content-type"), octets: Buffer.from(await r.arrayBuffer()) }; };
+// Une vraie photo JPEG produite par un navigateur, puis une section EXIF « GPS » insérée après SOI (comme un appareil).
+const navigateurPhoto = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
+const [jpegReel, jpegAutre] = (await (await navigateurPhoto.newPage()).evaluate(() => ["#2f6f57", "#7a4b00"].map((fond) => {
+  const c = document.createElement("canvas"); c.width = 640; c.height = 480;
+  const g = c.getContext("2d"); g.fillStyle = fond; g.fillRect(0, 0, 640, 480); g.fillStyle = "#fff"; g.fillRect(100, 100, 200, 120);
+  return c.toDataURL("image/jpeg", 0.8).split(",")[1];
+}))).map((b) => Buffer.from(b, "base64"));
+await navigateurPhoto.close();
+const exif = Buffer.from("Exif\0\0GPSLatitude 48.8566 GPSLongitude 2.3522", "latin1");
+const app1 = Buffer.concat([Buffer.from([0xff, 0xe1, 0, exif.length + 2]), exif]);
+const jpegExif = Buffer.concat([jpegReel.subarray(0, 2), app1, jpegReel.subarray(2)]);
+const seg = (m, corps) => Buffer.concat([Buffer.from([0xff, m, (corps.length + 2) >> 8, (corps.length + 2) & 0xff]), corps]);
+const sofCorps = (w, h) => { const b = Buffer.alloc(15); b[0] = 8; b.writeUInt16BE(h, 1); b.writeUInt16BE(w, 3); b[5] = 3; return b; };
+const jpegGeant = Buffer.concat([Buffer.from([0xff, 0xd8]), seg(0xc0, sofCorps(3000, 2000)), seg(0xda, Buffer.from([1, 1, 0, 0, 0x3f, 0])), Buffer.from([0xff, 0xd9])]);
+const pieces = `${com}/conversations/${cOuvert}/pieces`;
+const req1 = rid();
+const p1 = await brut(editor, pieces, jpegExif, { "x-client-request-id": req1 });
+check("13. photo téléversée : JPEG reconnu, dimensions lues", p1.status === 201 && p1.body?.mime === "image/jpeg" && p1.body?.width === 640 && p1.body?.height === 480, JSON.stringify(p1.body));
+const p1bis = await brut(editor, pieces, jpegExif, { "x-client-request-id": req1 });
+check("13. rejeu de la photo : même identifiant, aucun doublon (200)", p1bis.status === 200 && p1bis.body?.id === p1.body?.id && p1bis.body?.replayed === true);
+check("13. même identifiant de requête, autre photo : 409", (await brut(editor, pieces, jpegAutre, { "x-client-request-id": req1 })).body?.error === "request_conflict");
+const lue = await lirePiece(editor, p1.body?.id);
+check("13. métadonnées retirées par le serveur (position GPS comprise)", lue.status === 200 && lue.type === "image/jpeg" && !lue.octets.toString("latin1").includes("GPSLatitude") && lue.octets.subarray(0, 2).equals(Buffer.from([0xff, 0xd8])));
+check("13. photo non jointe : lisible de son seul auteur", (await lirePiece(owner, p1.body?.id)).status === 404 && (await lirePiece(reader, p1.body?.id)).status === 404);
+check("13. au-delà de 2 Mo : 413", (await brut(editor, pieces, Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.alloc(3 * 1024 * 1024)]))).status === 413);
+check("13. type autre que JPEG ou PNG : 415", (await brut(editor, pieces, Buffer.from("GIF89a....."), { "content-type": "image/gif" })).status === 415);
+check("13. au-delà de 2 560 px : 422", (await brut(editor, pieces, jpegGeant)).body?.error === "photo_trop_grande");
+check("13. extérieur : aucune photo téléversable (404)", (await brut(outsider, pieces, jpegReel)).status === 404);
+const plan = await editor("GET", `${com}/plan?studyId=${studyId}&variantId=${variantId}`);
+check("13. plan de la révision de tête : SVG Studio et identifiant de révision", plan.status === 200 && plan.body?.tete === true && String(plan.body?.svg).includes("<svg") && !!plan.body?.revisionId, `${plan.status}`);
+const revTete = plan.body?.revisionId;
+const corpsTerrain = { body: "Fissure au droit de l'ouverture, voir photo (recette)", pieces: [p1.body?.id], epingle: { studyId, variantId, revisionId: revTete, point: { x: 1.5, y: 2 } }, localisation: { lat: 48.8566, lon: 2.3522, precisionM: 12 } };
+const terrain = await editor("POST", `${com}/conversations/${cOuvert}/messages`, corpsTerrain);
+check("13. message de terrain : photo, épingle et position jointes", terrain.status === 201, JSON.stringify(terrain.body));
+check("13. une photo déjà jointe ne se joint pas deux fois (422)", (await editor("POST", `${com}/conversations/${cOuvert}/messages`, { body: "x", pieces: [p1.body?.id] })).body?.error === "pieces_invalides");
+check("13. épingle sur une révision inconnue : 422", (await editor("POST", `${com}/conversations/${cOuvert}/messages`, { body: "x", epingle: { studyId, variantId, revisionId: "inconnue", point: { x: 0, y: 0 } } })).body?.error === "epingle_invalide");
+check("13. épingle citant un objet absent de la révision : 422", (await editor("POST", `${com}/conversations/${cOuvert}/messages`, { body: "x", epingle: { studyId, variantId, revisionId: revTete, point: { x: 0, y: 0 }, objetIds: ["absent"] } })).body?.error === "epingle_invalide");
+check("13. position hors WGS84 : 422", (await editor("POST", `${com}/conversations/${cOuvert}/messages`, { body: "x", localisation: { lat: 95, lon: 0 } })).body?.error === "position_invalide");
+const vueTerrain = (await reader("GET", `${com}/conversations/${cOuvert}`)).body?.messages?.find((m) => m.id === terrain.body?.id);
+check("13. lecteur : photo, épingle sur la révision exacte (repère local), position (repère geographic)", vueTerrain?.pieces?.[0]?.id === p1.body?.id && vueTerrain?.epingle?.revisionId === revTete && vueTerrain?.epingle?.repere === "local" && vueTerrain?.epingle?.point?.x === 1.5 && vueTerrain?.localisation?.repere === "geographic" && vueTerrain?.localisation?.precisionM === 12, JSON.stringify(vueTerrain));
+check("13. lecteur : la photo jointe est lisible ; extérieur : 404", (await lirePiece(reader, p1.body?.id)).status === 200 && (await lirePiece(outsider, p1.body?.id)).status === 404);
+const planFige = await reader("GET", `${com}/plan?studyId=${studyId}&variantId=${variantId}&revisionId=${revTete}`);
+check("13. plan de la révision épinglée relu à l'identique", planFige.status === 200 && planFige.body?.revisionId === revTete);
+// Photo d'un fil d'équipe : le lecteur ne la lit pas ; partagée par extrait, elle est recopiée (nouvel identifiant).
+const pInterne = await brut(owner, `${com}/conversations/${cInterne}/pieces`, jpegReel, { "x-client-request-id": rid() });
+const mInterneP = await owner("POST", `${com}/conversations/${cInterne}/messages`, { body: "Photo interne du relevé (recette)", pieces: [pInterne.body?.id] });
+check("13. photo d'un fil d'équipe : refusée au lecteur (404)", mInterneP.status === 201 && (await lirePiece(reader, pInterne.body?.id)).status === 404);
+const apP = await owner("POST", `${com}/conversations/${cInterne}/partages/apercu`, { messageIds: [mInterneP.body?.id], cibleId: cOuvert });
+check("13. aperçu du partage : la photo est annoncée", apP.body?.contenu?.[0]?.photos?.length === 1);
+const parP = await owner("POST", `${com}/conversations/${cInterne}/partages`, { messageIds: [mInterneP.body?.id], cibleId: cOuvert, empreinte: apP.body?.empreinte });
+const recuP = (await reader("GET", `${com}/conversations/${cOuvert}`)).body?.messages?.find((m) => m.id === parP.body?.id);
+check("13. photo partagée : recopiée dans la cible, lisible du lecteur ; l'originale reste interne", parP.status === 201 && recuP?.pieces?.length === 1 && recuP.pieces[0].id !== pInterne.body?.id
+  && (await lirePiece(reader, recuP.pieces[0].id)).status === 200 && (await lirePiece(reader, pInterne.body?.id)).status === 404);
+// Observation Studio depuis le message épinglé : elle reprend la révision exacte (COM-D18).
+const obsP = { type: "observation-studio", studyId, variantId, responsableId: ids.editor, audience: "projet" };
+const apObs = await editor("POST", `${com}/messages/${terrain.body?.id}/actions/apercu`, obsP);
+const obsPin = await editor("POST", `${com}/messages/${terrain.body?.id}/actions`, { ...obsP, empreinte: apObs.body?.empreinte });
+const obsLue = await editor("GET", `/projects/${pid}/studio/studies/${studyId}/variants/${variantId}/observations/${obsPin.body?.targetId}`);
+check("13. observation Studio créée depuis le message épinglé : révision exacte reprise", obsPin.status === 201 && JSON.stringify(obsLue.body).includes(revTete), `${obsPin.status} ${JSON.stringify(obsLue.body).slice(0, 300)}`);
+// Message retiré : ses photos ne sont plus servies.
+const pRetrait = await brut(editor, pieces, jpegReel, { "x-client-request-id": rid() });
+const mRetrait = await editor("POST", `${com}/conversations/${cOuvert}/messages`, { body: "Photo à retirer (recette)", pieces: [pRetrait.body?.id] });
+await editor("DELETE", `${com}/messages/${mRetrait.body?.id}`);
+check("13. message retiré : sa photo n'est plus servie, même à l'auteur", (await lirePiece(editor, pRetrait.body?.id)).status === 404 && (await lirePiece(reader, pRetrait.body?.id)).status === 404);
+
+// ---------------------------------------------------------------------------------------------------------------------
 // 10. Révocation avant synchronisation
 const enFile = rid();
 check("10. le lecteur est retiré du projet", (await owner("DELETE", `/projects/${pid}/members/${ids.reader}`)).status === 204);
@@ -290,11 +369,37 @@ try {
   const kbd = await page.locator('[data-raccourci-collaboration="envoyer-message"]').first().textContent();
   check("11. raccourci affiché à côté de la commande", kbd === "Alt+Maj+5", String(kbd));
   check("11. section Demandes de précision listée", await page.locator("[data-com-demandes]").isVisible());
+  // Photo jointe depuis l'interface : choisie, compressée et gardée sur l'appareil, puis envoyée avec le message.
+  await page.locator("[data-com-fichier-photo]").setInputFiles({ name: "chantier.jpg", mimeType: "image/jpeg", buffer: jpegExif });
+  await page.locator("[data-com-photo-locale]").first().waitFor({ timeout: 15_000 });
+  check("11. photo choisie : aperçu local avant l'envoi", (await page.locator("[data-com-photo-locale]").count()) === 1);
+  await zone.fill("Relevé photo envoyé depuis l'interface (recette)");
+  await page.locator('[data-commande-collaboration="envoyer-message"]').click();
+  const msgPhoto = page.locator("[data-com-message]", { hasText: "Relevé photo envoyé depuis l'interface (recette)" });
+  await msgPhoto.waitFor({ timeout: 20_000 });
+  await msgPhoto.locator("[data-com-photo]").first().waitFor({ timeout: 20_000 });
+  check("11. photo envoyée : affichée dans le fil (image décodée)", await msgPhoto.locator("[data-com-photo]").first().evaluate((img) => img.complete && img.naturalWidth > 0));
+  check("11. règle d'or : « Joindre une photo » et « Épingler sur un plan » avec leur raccourci", (await page.locator('[data-raccourci-collaboration="joindre-photo"]').first().textContent()) === "Alt+Maj+." && (await page.locator('[data-raccourci-collaboration="epingler"]').first().textContent()) === "Alt+Maj+`");
+  // Épingle posée au clavier puis sur le plan.
+  await zone.press("Alt+Shift+Backquote");
+  await page.locator(".confirm-dialog select").first().selectOption(studyId);
+  await page.locator(".confirm-dialog select").nth(1).selectOption(variantId);
+  await page.locator("[data-com-plan-zone]").waitFor({ timeout: 15_000 });
+  await page.locator("[data-com-plan-zone]").click({ position: { x: 40, y: 40 } });
+  await page.locator("[data-confirm]").click();
+  await page.locator("[data-com-epingle-choisie]").waitFor({ timeout: 10_000 });
+  await zone.fill("Message épinglé depuis l'interface (recette)");
+  await page.locator('[data-commande-collaboration="envoyer-message"]').click();
+  const msgPin = page.locator("[data-com-message]", { hasText: "Message épinglé depuis l'interface (recette)" });
+  await msgPin.locator("[data-com-epingle]").waitFor({ timeout: 20_000 });
+  await msgPin.locator("[data-com-epingle] summary").click();
+  await msgPin.locator("[data-com-epingle-marque]").waitFor({ timeout: 15_000 });
+  check("11. épingle posée sur le plan, affichée avec sa marque", await msgPin.locator("[data-com-epingle-marque]").isVisible());
   check("11. activité du projet et revues liées affichées", await page.locator("[data-com-activite]").isVisible() && await page.locator("[data-com-revues]").isVisible());
   await page.locator('[data-com-filtre="a-traiter"]').click();
   await page.locator("[data-com-activite-item]").first().waitFor({ timeout: 15_000 });
   check("11. filtre « À traiter par moi » dans l'interface", (await page.locator("[data-com-activite-item]").count()) >= 1);
-  if (OUT) { mkdirSync(OUT, { recursive: true }); await page.screenshot({ path: `${OUT}/communication-projet.png`, fullPage: false }); }
+  if (OUT) { mkdirSync(OUT, { recursive: true }); await msgPin.scrollIntoViewIfNeeded(); await page.screenshot({ path: `${OUT}/communication-projet.png`, fullPage: false }); }
   await page.goto(`${BASE}/boite`, { waitUntil: "domcontentloaded" });
   await page.locator("[data-com-boite]").waitFor({ timeout: 30_000 });
   await page.locator('[data-com-boite-item="demande-a-repondre"]').first().waitFor({ timeout: 15_000 }).catch(() => undefined);

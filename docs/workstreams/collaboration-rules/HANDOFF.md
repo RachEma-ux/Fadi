@@ -12,6 +12,8 @@ Mis à jour : 2026-10-24 (UTC).
 
 ## Dernier état vérifié
 
+- CR-R3 cite désormais la réponse COM-A2 du chantier Communication (ancien libellé COM-R2, renommé pour éviter la
+  confusion avec les critères COM-R1 à COM-R7) ; décision inchangée.
 - Matrice, plan et décisions rédigés à partir de `main` = `034dbfb`, branche mise à jour avec `main` = `2cc038a`.
 - Décisions CR-R1 et CR-R2 consignées (relayées par la session VPS) : CR-D1 à CR-D10 toutes répondues.
 - Code : PR #274 seule (E1, E2, E3, puis E7, règle d'or des commandes de collaboration, alignement sur #265).

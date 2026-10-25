@@ -2270,6 +2270,33 @@ CREATE OR REPLACE TRIGGER com_events_no_update BEFORE UPDATE ON com_events
 CREATE OR REPLACE TRIGGER com_message_versions_no_update BEFORE UPDATE ON com_message_versions
   FOR EACH ROW EXECUTE FUNCTION com_event_immutable();
 
+-- Photos et épingles (lot COM-13, COM-D15 à COM-D19) — additif. Une photo est téléversée par son auteur dans une
+-- conversation (JPEG ou PNG, 2 Mo et 2 560 px au plus, métadonnées retirées par le serveur), puis jointe à un message ;
+-- tant qu'elle n'est pas jointe, seul son auteur la lit. Rejeu idempotent par (auteur, client_request_id).
+CREATE TABLE IF NOT EXISTS com_pieces (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  conversation_id text NOT NULL REFERENCES com_conversations (id) ON DELETE CASCADE,
+  message_id text REFERENCES com_messages (id) ON DELETE CASCADE,
+  author_id text NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+  mime text NOT NULL CONSTRAINT com_pieces_mime_check CHECK (mime IN ('image/jpeg', 'image/png')),
+  size integer NOT NULL CONSTRAINT com_pieces_size_check CHECK (size > 0 AND size <= 2097152),
+  width integer NOT NULL CONSTRAINT com_pieces_width_check CHECK (width > 0 AND width <= 2560),
+  height integer NOT NULL CONSTRAINT com_pieces_height_check CHECK (height > 0 AND height <= 2560),
+  -- Empreinte SHA-256 du contenu nettoyé (rejeu idempotent) ; le contenu est dans la ligne, aucun volume cité.
+  empreinte text NOT NULL,
+  content bytea NOT NULL,
+  client_request_id text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS com_pieces_message_idx ON com_pieces (message_id);
+CREATE INDEX IF NOT EXISTS com_pieces_conversation_idx ON com_pieces (conversation_id);
+CREATE UNIQUE INDEX IF NOT EXISTS com_pieces_request_unique ON com_pieces (author_id, client_request_id) WHERE client_request_id IS NOT NULL;
+-- Épingle (point sur le plan d'une révision exacte d'une variante Studio, repère local, mètres) et position déclarée par
+-- l'auteur (repère geographic, WGS84) : deux données distinctes, jamais converties l'une en l'autre (AGENTS.md).
+ALTER TABLE com_messages ADD COLUMN IF NOT EXISTS epingle jsonb;
+ALTER TABLE com_messages ADD COLUMN IF NOT EXISTS localisation jsonb;
+
 -- Lien d'un message vers l'enregistrement de référence créé par une action liée (COM-R7) : l'état est relu à la source.
 CREATE TABLE IF NOT EXISTS com_links (
   id text PRIMARY KEY,

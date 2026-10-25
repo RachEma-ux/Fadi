@@ -1860,6 +1860,12 @@ export interface ComMessage {
   versions: number;
   mine: boolean;
   partage: { depuis: string } | null;
+  /** Photos jointes (lot COM-13) : servies par `comApi.urlPiece`, jamais à l'accès support. */
+  pieces: ComPiece[];
+  /** Épingle sur le plan d'une révision exacte (repère local, mètres). */
+  epingle: (ComEpingle & { variante: string | null }) | null;
+  /** Position déclarée par l'auteur (repère geographic, WGS84). */
+  localisation: ComLocalisation | null;
   moi: { openedAt: string | null; acknowledgedAt: string | null };
   remise: { destinataires: number; ouverts: number; accuses: number; enAttente: string[] } | null;
 }
@@ -1871,6 +1877,10 @@ export interface ComConversationDetail extends ComConversation {
   destinatairesListe: string[];
   journal: { id: number; action: string; acteur: string; at: string; detail: Record<string, unknown> }[];
 }
+export interface ComPiece { id: string; mime: string; width: number; height: number; size: number }
+export interface ComEpingle { type: "studio-variante"; studyId: string; variantId: string; revisionId: string; point: { x: number; y: number }; repere: "local"; objetIds: string[] }
+export interface ComLocalisation { repere: "geographic"; lat: number; lon: number; precisionM: number | null; source: "appareil"; captureeLe: string | null }
+export interface ComPlan { studyId: string; variantId: string; revisionId: string; tete: boolean; variante: string; svg: string; objets: string[] }
 export interface ComMessageInput {
   body: string;
   replyToId?: string | null;
@@ -1880,8 +1890,11 @@ export interface ComMessageInput {
   urgent?: boolean;
   clientRequestId?: string;
   capturedAt?: string;
+  pieces?: string[];
+  epingle?: { studyId: string; variantId: string; revisionId: string; point: { x: number; y: number }; objetIds?: string[] };
+  localisation?: { lat: number; lon: number; precisionM?: number | null; captureeLe?: string | null };
 }
-export interface ComApercuPartage { cible: { id: string; title: string; audienceLabel: string }; destinataires: string[]; contenu: { id: string; auteur: string; at: string; texte: string }[]; empreinte: string }
+export interface ComApercuPartage { cible: { id: string; title: string; audienceLabel: string }; destinataires: string[]; contenu: { id: string; auteur: string; at: string; texte: string; photos: string[] }[]; empreinte: string }
 export type ComActionInput =
   | { type: "demande"; responderId: string; audience: CommentAudience; echeance?: string | null; question?: string }
   | { type: "observation-studio"; studyId: string; variantId: string; responsableId: string; audience: CommentAudience; body?: string };
@@ -1970,6 +1983,30 @@ export const comApi = {
   action: (projectId: string, messageId: string, input: ComActionInput & { empreinte: string }) => request<{ targetType: string; targetId: string; messageId?: string; replayed: boolean }>(`${comBase(projectId)}/messages/${encodeURIComponent(messageId)}/actions`, { method: "POST", ...corpsJson(input) }),
   responsabilites: (projectId: string) => request<ResponsabilitesPersonne[]>(`${comBase(projectId)}/responsabilites`),
   boite: () => request<{ items: ElementBoite[] }>("/com/boite"),
+  /** Adresse d'une photo jointe (lue avec le cookie de session ; le serveur relit l'audience à chaque requête). */
+  urlPiece: (projectId: string, pieceId: string) => `${comBase(projectId)}/pieces/${encodeURIComponent(pieceId)}`,
+  /** Téléverse une photo déjà compressée ; `clientRequestId` rend le rejeu sans doublon. */
+  televerserPiece: async (projectId: string, conversationId: string, blob: Blob, clientRequestId: string): Promise<ComPiece & { replayed: boolean }> => {
+    let res: Response;
+    try {
+      res = await fetch(`${comBase(projectId)}/conversations/${encodeURIComponent(conversationId)}/pieces`, {
+        method: "POST", credentials: "include", body: blob, headers: { "Content-Type": blob.type || "image/jpeg", "X-Client-Request-Id": clientRequestId },
+      });
+    } catch (err) {
+      if (isNetworkError(err)) reachability.markUnreachable();
+      throw err;
+    }
+    if (GATEWAY_STATUSES.has(res.status)) { reachability.markUnreachable(); throw new TypeError(`Serveur injoignable (${res.status})`); }
+    reachability.markReachable();
+    const body: unknown = await res.json().catch(() => null);
+    if (!res.ok) {
+      const o = (body && typeof body === "object" ? body : {}) as { error?: unknown; message?: unknown };
+      throw new ApiError(res.status, typeof o.error === "string" ? o.error : `http_${res.status}`, typeof o.message === "string" ? o.message : null, body);
+    }
+    return body as ComPiece & { replayed: boolean };
+  },
+  plan: (projectId: string, studyId: string, variantId: string, revisionId?: string) =>
+    request<ComPlan>(`${comBase(projectId)}/plan?${new URLSearchParams({ studyId, variantId, ...(revisionId ? { revisionId } : {}) }).toString()}`),
   activite: (projectId: string, f: { filtre?: FiltreActivite; auteur?: string; depuis?: string; etape?: string } = {}) => {
     const q = new URLSearchParams(Object.entries(f).filter(([, v]) => !!v) as [string, string][]).toString();
     return request<{ items: EntreeActivite[]; auteurs: { id: string; email: string }[] }>(`${comBase(projectId)}/activite${q ? `?${q}` : ""}`);

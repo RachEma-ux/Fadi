@@ -19,6 +19,7 @@
 
 ## Terminé
 
+- RT-D8 — RTC-1 à RTC-5 acceptés par le maître d'ouvrage (2026-10-25) ; délégation RT-D4 éteinte.
 - RTC-3, RTC-4, RTC-5 — annotations, revue sur publication figée, robustesse : PR #291 fusionnée CI verte (`84e2be0`),
   relue en équipe (RT-D7) et par Codex / ECC Tools (`lots/rtc-3.md`, `rtc-4.md`, `rtc-5.md`, `PREUVES-SECURITE-ET-CI.md`).
 - RTC-2 — Vue partagée Studio : PR #289 fusionnée CI verte (`lots/rtc-2.md`).

@@ -36,6 +36,9 @@ CR-D9 (CR-R3).** Aucun déploiement consigné ici.
   `studio-persistance.mjs` (293), `studio-observations.mjs` (71), `studio-hors-ligne.mjs` (35),
   `comptes-securite.mjs` (73), `parcours-scenario.mjs` (330), `interface-anglais.mjs` : vertes.
 
+- 2026-10-24 : dans CR-R3, la réponse du maître d'ouvrage côté Communication est citée COM-A2 (renommée depuis COM-R2
+  pour ne pas la confondre avec les critères COM-R1 à COM-R7 de ce chantier) ; aucun contenu de décision modifié.
+
 ## Points ouverts
 
 - Déploiement des PR #274 et #285 : sur décision du maître d'ouvrage.

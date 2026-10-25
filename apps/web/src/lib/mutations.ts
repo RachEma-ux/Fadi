@@ -15,6 +15,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { ApiError, api, comApi, type ComMessageInput, type CommentAudience, type HarmonieDecisionInput, type ParcoursFieldValue, type ParcoursStep, type ParcoursStepStatus, type ProjectComment } from "./api";
 import { isNetworkError, reachability } from "./reachability";
+import { localStore } from "./local-store";
 
 export const MUTATION_KEYS = {
   stepPatch: ["step-patch"] as const,
@@ -29,6 +30,29 @@ export interface ComMessageVars {
   conversationId: string;
   /** Porte `clientRequestId` et `capturedAt` fixés à la rédaction : un rejeu après rechargement reste le même envoi. */
   input: ComMessageInput & { clientRequestId: string; capturedAt: string };
+  /**
+   * Photos gardées sur l'appareil (IndexedDB, `comPhotos`) à téléverser AVANT le message (lot COM-13) : chacune avec son
+   * identifiant de requête ; le message n'est envoyé qu'une fois toutes les photos acceptées par le serveur.
+   */
+  photosLocales?: string[];
+  userId?: string;
+}
+
+/**
+ * Envoi d'un message de la Communication : photos d'abord (rejeu sans doublon par leur identifiant local), puis le
+ * message qui les joint ; les photos locales ne sont oubliées qu'une fois le message accepté. Une photo absente de
+ * l'appareil bloque l'envoi (rien n'est publié sans sa preuve).
+ */
+export async function envoyerMessageCom(v: ComMessageVars) {
+  const pieces: string[] = [...(v.input.pieces ?? [])];
+  for (const idLocal of v.photosLocales ?? []) {
+    const photo = await localStore.comPhotoLire(idLocal, v.userId ?? "");
+    if (!photo) throw new ApiError(422, "photo_absente", "Une photo jointe n’est plus sur cet appareil : retirez-la ou reprenez-la.");
+    pieces.push((await comApi.televerserPiece(v.projectId, v.conversationId, photo.blob, idLocal)).id);
+  }
+  const r = await comApi.envoyer(v.projectId, v.conversationId, { ...v.input, ...(pieces.length ? { pieces } : {}) });
+  if (v.photosLocales?.length) await localStore.comPhotoSupprimer(v.photosLocales);
+  return r;
 }
 
 const REPLAYABLE_KEYS = new Set<string>(Object.values(MUTATION_KEYS).map((key) => key[0]));
@@ -247,7 +271,7 @@ export function registerMutationDefaults(queryClient: QueryClient) {
   });
   queryClient.setMutationDefaults(MUTATION_KEYS.comMessage, {
     ...RETRY_NETWORK,
-    mutationFn: (v: ComMessageVars) => comApi.envoyer(v.projectId, v.conversationId, v.input),
+    mutationFn: envoyerMessageCom,
     onSuccess: (_r: unknown, v: ComMessageVars) => {
       void queryClient.invalidateQueries({ queryKey: ["com", v.projectId] });
       void queryClient.invalidateQueries({ queryKey: ["com-boite"] });

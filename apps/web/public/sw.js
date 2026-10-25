@@ -2,7 +2,7 @@
  * Enveloppe hors-ligne de Fadi (service worker) : sert l'application
  * (document, scripts et styles du build), le moteur de l'Atelier natif et
  * l'outil Parcelle depuis le cache du navigateur quand le réseau manque.
- * Les appels à l'API (/projects, /auth, /examples, /library, /notifications, /preferences, /health) ne sont jamais
+ * Les appels à l'API (/projects, /auth, /examples, /library, /notifications, /preferences, /health, /com) ne sont jamais
  * mis en cache ici, ni interceptés (même ouverts en navigation : téléchargement d'une archive, d'un fichier de
  * paquet) : les données viennent du serveur, ou du cache persistant de l'application (IndexedDB) quand il est
  * hors-ligne.
@@ -44,7 +44,7 @@ const SHELL = "/index.html";
 const CARTE = "/chargement.json";
 const STATIC = /^\/(assets|parcelle)\//;
 const HASHED = /^\/assets\//;
-const API = /^\/(auth|projects|examples|library|notifications|preferences|health|version)(\/|$)/;
+const API = /^\/(auth|projects|examples|library|notifications|preferences|health|version|com)(\/|$)/;
 const MARQUE = `<meta name="fadi-build" content="${BUILD}">`;
 /** Classes du précache dans l'ordre d'installation (coquille et profil, puis facultatif) ; une liste simple reste acceptée. */
 const CLASSES = Array.isArray(PRECACHE)
