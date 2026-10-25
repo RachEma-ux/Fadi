@@ -86,7 +86,7 @@ describe("Cycle d'activation des outils et des moteurs (B.3-01 à B.3-05, B.3-08
     expect(chargerPlanche).toHaveBeenCalledTimes(1);
     expect(chargerRendu).not.toHaveBeenCalled();
     expect(g.lire("rendu-3d").phase).toBe("non-charge");
-    expect(g.instantaneEtats().map((e) => e.initialisations)).toEqual([1, 1, 0, 0]);
+    expect(g.instantaneEtats().map((e) => e.initialisations)).toEqual([1, 1, 0, 0, 0]);
   });
 
   it("moteur passif (Workers) : initialisé par signalement, libéré seulement inactif, réinitialisé à la demande suivante (D.3-02)", async () => {

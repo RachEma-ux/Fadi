@@ -28,6 +28,7 @@ export const LIBELLES_RAISON_FIDELITE: Readonly<Record<StudioRaisonFidelite, str
   "ouverture-en-lacune": "Ouverture tracée en lacune du mur, allège non représentée",
   "non-extrude": "Objet non extrudé, absent de l’IFC",
   "cote-hors-ifc": "Cote non écrite en IFC",
+  "solide-exact-hors-ifc": "Solide exact (brep du noyau) non traduit dans ce format",
   "annotation-hors-ifc": "Annotation non écrite en IFC",
   "solide-hors-2d": "Solide 3D absent du fichier 2D",
   "visualisation-hors-export": "Réglage de visualisation (scène, apparence d’affichage), jamais exporté",
@@ -40,7 +41,7 @@ export const LIBELLES_RAISON_FIDELITE: Readonly<Record<StudioRaisonFidelite, str
 /** Types d'éléments du document ; un type inconnu de cette table s'affiche tel quel (jamais masqué). */
 export const LIBELLES_TYPE_ELEMENT: Readonly<Record<string, string>> = Object.freeze({
   line: "Ligne", rectangle: "Rectangle", circle: "Cercle", arc: "Arc", polyline: "Polyligne",
-  dimension: "Cote", "angular-dimension": "Cote angulaire", text: "Texte", box: "Boîte", prism: "Prisme",
+  dimension: "Cote", "angular-dimension": "Cote angulaire", text: "Texte", box: "Boîte", prism: "Prisme", exact: "Solide exact",
   wall: "Mur", opening: "Ouverture", propriete: "Propriété", scene: "Scène", appearance: "Apparence d’affichage",
 });
 export const libelleType = (type: string): string => (Object.hasOwn(LIBELLES_TYPE_ELEMENT, type) ? LIBELLES_TYPE_ELEMENT[type]! : type);

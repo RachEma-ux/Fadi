@@ -14,11 +14,15 @@
  *   feuille). Son premier usage est souvent le métré du panneau « Quantités », affiché par défaut à l'ouverture d'une
  *   planche (ADR-STUDIO-PILOTE-01, P-10) : il n'est jamais démarré d'office.
  *
- * Aucun moteur WASM n'est chargé par Studio V1 (noyau exact : Atelier seulement) ; le contrôle de découpage du build
- * le vérifie (`carte-morceaux.ts`). Sans aucune importation : ce fichier est lu par `vite.config.ts` au build.
+ * - `noyau-exact` (premier usage, lot F2) : noyau exact OCCT (WebAssembly, composant LGPL chargé séparément, D-177)
+ *   dans un Worker dédié, chargé à l'activation de l'outil « Booléen exact » (`MOTEURS_PAR_OUTIL`), jamais à
+ *   l'ouverture ; une seule instance pour la session, libérable quand plus rien ne l'emploie.
+ *
+ * Aucun autre moteur de Studio n'embarque de WebAssembly ; le contrôle de découpage du build le vérifie
+ * (`carte-morceaux.ts`). Sans aucune importation : ce fichier est lu par `vite.config.ts` au build.
  */
 
-export type IdMoteur = "coquille-studio" | "planche-2d" | "rendu-3d" | "calcul";
+export type IdMoteur = "coquille-studio" | "planche-2d" | "rendu-3d" | "calcul" | "noyau-exact";
 export type MomentChargement = "demarrage" | "planche" | "premier-usage";
 
 export interface DescripteurMoteur {
@@ -31,6 +35,11 @@ export interface DescripteurMoteur {
   readonly nature: "module" | "worker";
   /** Moteurs requis, chargés avant celui-ci (jamais une seconde copie). */
   readonly dependances: readonly IdMoteur[];
+  /**
+   * Fichiers annexes du build chargés par URL à l'exécution (motif sur le nom de fichier émis) : le `.wasm` du noyau
+   * exact, qui n'est importé par aucun morceau mais fait partie du moteur (disponibilité hors connexion véridique).
+   */
+  readonly annexes?: string;
 }
 
 export const MOTEURS: readonly DescripteurMoteur[] = Object.freeze([
@@ -38,6 +47,7 @@ export const MOTEURS: readonly DescripteurMoteur[] = Object.freeze([
   { id: "planche-2d", libelleFR: "Planche 2D (socle, accrochage, outils usuels)", moment: "planche", source: "src/modules/studio/VariantWorkspace.tsx", nature: "module", dependances: ["coquille-studio"] },
   { id: "rendu-3d", libelleFR: "Rendu 3D (three.js)", moment: "premier-usage", source: "src/modules/studio/vue3d/Vue3DStudio.tsx", nature: "module", dependances: ["planche-2d", "calcul"] },
   { id: "calcul", libelleFR: "Calcul hors du fil principal (Workers partagés)", moment: "premier-usage", source: "src/modules/studio/workers/studio.worker.ts", nature: "worker", dependances: [] },
+  { id: "noyau-exact", libelleFR: "Noyau exact (OCCT, WebAssembly)", moment: "premier-usage", source: "src/modules/studio/exact/noyau-exact.worker.ts", nature: "worker", dependances: [], annexes: "(^|/)occt-wasm[^/]*\\.wasm$" },
 ] satisfies DescripteurMoteur[]);
 
 /**
@@ -53,6 +63,14 @@ export const MOTEURS_PAR_BARRE: Readonly<Record<string, readonly IdMoteur[]>> = 
   proprietes: ["planche-2d"],
   "volume-libre": ["planche-2d", "rendu-3d"],
   visualisation: ["planche-2d", "rendu-3d"],
+});
+
+/**
+ * Moteurs propres à un outil, en plus de ceux de sa barre (granularité du moteur, jamais un fichier par bouton) : le
+ * booléen exact charge le noyau exact ; les autres outils de la barre « volume-libre » ne le chargent jamais.
+ */
+export const MOTEURS_PAR_OUTIL: Readonly<Record<string, readonly IdMoteur[]>> = Object.freeze({
+  "studio.solide.booleen": ["noyau-exact"],
 });
 
 /** Carte des morceaux écrite au build à côté de l'application (non empreinte, mise en cache par le service worker). */
@@ -77,4 +95,12 @@ export function fermetureMoteurs(ids: readonly IdMoteur[]): IdMoteur[] {
 export function moteursDeBarre(groupe: string): IdMoteur[] | null {
   const directs = Object.hasOwn(MOTEURS_PAR_BARRE, groupe) ? MOTEURS_PAR_BARRE[groupe] : undefined;
   return directs ? fermetureMoteurs(directs) : null;
+}
+
+/** Moteurs d'un outil : ceux de sa barre, puis ses moteurs propres (`MOTEURS_PAR_OUTIL`) ; null pour une barre inconnue. */
+export function moteursDeOutil(outil: string, groupe: string): IdMoteur[] | null {
+  const barre = Object.hasOwn(MOTEURS_PAR_BARRE, groupe) ? MOTEURS_PAR_BARRE[groupe] : undefined;
+  if (!barre) return null;
+  const propres = Object.hasOwn(MOTEURS_PAR_OUTIL, outil) ? MOTEURS_PAR_OUTIL[outil]! : [];
+  return fermetureMoteurs([...barre, ...propres]);
 }

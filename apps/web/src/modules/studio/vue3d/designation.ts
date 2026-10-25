@@ -6,9 +6,9 @@
 import type { StudioDocument } from "@parcours/atelier-model";
 import { estSelectionnable } from "../planche2d/calques";
 
-/** Solides libres désignables du document courant. */
+/** Solides libres et solides exacts (lot F2) désignables du document courant. */
 export function solidesDesignables(doc: StudioDocument): (id: string) => boolean {
-  const ids = new Set((doc.solides ?? []).filter((s) => estSelectionnable(doc, s.layerId)).map((s) => s.id));
+  const ids = new Set([...(doc.solides ?? []), ...(doc.exacts ?? [])].filter((s) => estSelectionnable(doc, s.layerId)).map((s) => s.id));
   return (id) => ids.has(id);
 }
 

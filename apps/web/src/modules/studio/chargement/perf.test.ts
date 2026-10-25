@@ -19,8 +19,9 @@ describe("Instrumentation PERF-01 à PERF-10 (X.1-09)", () => {
     expect(source).not.toMatch(/seuil\s*[:=]\s*\d|limite\s*[:=]\s*\d|budget\s*[:=]/i);
   });
 
-  it("PERF-07 déclaré non applicable (aucun booléen exact dans Studio V1), jamais simulé", () => {
-    expect(DEFINITIONS_PERF.filter((x) => x.etat === "non-applicable").map((x) => x.code)).toEqual(["PERF-07"]);
+  it("PERF-07 instrumenté depuis le lot F2 (booléen exact : chargement, octets transférés, instances, calcul, issue) ; aucun code non applicable", () => {
+    expect(DEFINITIONS_PERF.filter((x) => x.etat === "non-applicable").map((x) => x.code)).toEqual([]);
+    expect(DEFINITIONS_PERF.find((x) => x.code === "PERF-07")!.instrumentation).toMatch(/octets transférés du \.wasm, instances compilées/);
   });
 
   it("enregistrement : valeur non finie écartée, synthèse sans verdict (n, min, médiane, max)", () => {

@@ -112,6 +112,7 @@ describe("Volume libre : barre, raccourcis et commandes de la vue 3D (règle d'o
     expect(outilsDeBarre("volume-libre").map((t) => [t.toolId, t.raccourci])).toEqual([
       ["studio.solide.boite", "B"], ["studio.solide.prisme", "Shift+B"], ["studio.solide.deplacer", "Shift+W"], ["studio.solide.supprimer", "Shift+Delete"],
       ["studio.solide.face-decaler", "Ctrl+Shift+U"], ["studio.solide.face-diviser", "Ctrl+Shift+V"], ["studio.solide.pivoter", "Ctrl+Shift+H"], ["studio.solide.resoudre", "Ctrl+Shift+G"],
+      ["studio.solide.booleen", "Ctrl+Shift+Y"],
     ]);
     for (const t of STUDIO_TOOLS.filter((x) => x.groupe === "volume-libre")) {
       expect(cibleRaccourci(t.raccourci)).toEqual({ type: "outil", toolId: t.toolId });

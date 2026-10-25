@@ -6,7 +6,8 @@
  *  1. démarrage léger : l'accueil de Studio n'exécute ni la planche, ni three.js, ni un noyau exact, ni un Worker ;
  *  2. ouverture d'une planche : l'éditeur est chargé, three.js toujours pas ; moteurs « planche » initialisés et actifs ;
  *  3. Tool Manager : quatre états distincts par moteur — le rendu 3D est « téléchargé » et « disponible hors connexion »
- *     (précaché) mais ni initialisé ni actif ; relevé PERF-01 à PERF-10 (PERF-07 non applicable) ;
+ *     (précaché) mais ni initialisé ni actif ; relevé PERF-01 à PERF-10 (PERF-07, booléen exact du lot F2, non mesuré tant
+ *     que l'outil n'a pas servi) ; noyau exact ni chargé ni disponible hors connexion (son .wasm n'est jamais préchargé) ;
  *  4. premier usage de la vue 3D : three.js chargé une fois, moteur initialisé une fois, actif tant que la vue est
  *     ouverte, inactif sans réinitialisation à la réouverture ; le groupe de Workers est partagé puis libérable ;
  *  5. hors connexion véridique : un fichier du rendu 3D retiré du cache → outils 3D annoncés indisponibles, outils 2D
@@ -134,9 +135,11 @@ try {
   check("Tool Manager : rendu 3D précaché — téléchargé et disponible hors connexion, mais ni initialisé ni actif (B.3-08)", r3d.t === "oui" && r3d.h === "oui" && r3d.i === "non" && r3d.a === "non", JSON.stringify(r3d));
   const p2d = await attr("planche-2d");
   check("Tool Manager : planche téléchargée, initialisée, active, disponible hors connexion", p2d.t === "oui" && p2d.i === "oui" && p2d.a === "oui" && p2d.h === "oui", JSON.stringify(p2d));
-  check("Tool Manager : relevé PERF-01 à PERF-10 affiché, PERF-07 non applicable (X.1-09)",
+  check("Tool Manager : relevé PERF-01 à PERF-10 affiché, PERF-07 (booléen exact) non mesuré tant que l'outil n'a pas servi (X.1-09)",
     (await g.locator("[data-studio-perf]").count()) === 10 && Number(await g.locator('[data-studio-perf="PERF-01"]').getAttribute("data-n")) >= 1
-    && /non applicable/.test(await g.locator('[data-studio-perf="PERF-07"]').textContent()));
+    && /non mesuré/.test(await g.locator('[data-studio-perf="PERF-07"]').textContent()));
+  const exact = await attr("noyau-exact");
+  check("Tool Manager : noyau exact (lot F2) ni initialisé ni actif à l'ouverture, indisponible hors connexion (.wasm jamais préchargé)", exact.i === "non" && exact.a === "non" && exact.h === "non", JSON.stringify(exact));
   check("Tool Manager : file locale et persistance du stockage annoncées (B.3-10)", /^\d+$/.test(await g.locator("[data-studio-file-locale]").getAttribute("data-studio-file-locale")) && !!(await g.locator("[data-studio-persistance]").getAttribute("data-studio-persistance")));
   const releve = page.waitForEvent("download");
   await g.locator("[data-studio-telecharger-releve]").click();

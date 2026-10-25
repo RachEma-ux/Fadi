@@ -12,6 +12,9 @@
  * (+Z, −Z, vecteur) ; le solide sélectionné se modifie par ses faces (pousser / tirer, diviser), pivote autour de son axe
  * vertical, et son lien au profil (relation, état « à jour » ou « à résoudre ») est affiché et se résout explicitement.
  * Un solide lié à résoudre n'a pas de volume évalué : sa dernière géométrie reste dessinée, marquée comme telle.
+ * Lot F2 : l'outil « Booléen exact » (`PanneauBooleen`) calcule union, différence ou intersection de deux solides par le
+ * noyau exact (Worker OCCT chargé à l'activation de l'outil) ; les solides exacts sont dessinés depuis le maillage du
+ * noyau conservé dans le document (aucun noyau chargé pour les afficher), désignables et supprimables.
  * Coupe horizontale (A.3-07, Maj+K) : `couperStudio` à la cote saisie, dessinée en surimpression dérivée, non
  * modifiable, chaque contour rattaché à son solide. Studio n'importe aucun module de l'Atelier.
  * Maillage en tâche de fond (D.1/D.2, `taches/`) : le maillage tourne dans le groupe de Workers ; le maillage
@@ -60,6 +63,7 @@ import {
   type ValeursBoite, type ValeursDeplacement, type ValeursFace, type ValeursPrisme,
 } from "./volume-libre";
 import { CLE_PROVENANCE_PNG, insererTextePng } from "./scenes/png";
+import { descriptionOperande, PanneauBooleen } from "./PanneauBooleen";
 import { PanneauVisualisation } from "./scenes/PanneauVisualisation";
 import {
   calquesVisualisation, cameraScene, commandeApparence, commandeMiseAJourScene, commandeNouvelleScene, commandeRetraitApparence, commandeSuppressionScene,
@@ -199,13 +203,18 @@ function entreesContenu(l: Lecture): EntreeRendu[] {
   return out;
 }
 
-/** Solides libres, construits seuls et désignables. */
+/** Solides libres et solides exacts (lot F2), construits seuls et désignables. */
 function entreesLibres(l: Lecture): EntreeRendu[] {
-  return (l.mesh.freeSolids ?? []).filter((s) => l.present(s.id)).map((s) => {
+  const libres = (l.mesh.freeSolids ?? []).filter((s) => l.present(s.id)).map((s): EntreeRendu => {
     // Un solide lié « à résoudre » garde sa dernière géométrie, dans une teinte distincte (jamais comme à jour).
     const aspect = aspectDe(l.doc, l.mode, s, s.lien?.etat === "a-resoudre" ? 0xe0a8a0 : 0xc9bde3, s.id === l.selection);
     return { id: s.id, signature: `${l.cle(s.id)}|${cleAspect(aspect)}`, construire: () => volumeSeul(s, aspect, s.id, { solide: s.id }) };
   });
+  const exacts = (l.mesh.exacts ?? []).filter((s) => l.present(s.id)).map((s): EntreeRendu => {
+    const aspect = aspectDe(l.doc, l.mode, s, 0xa9c7e8, s.id === l.selection);
+    return { id: s.id, signature: `${l.cle(s.id)}|${cleAspect(aspect)}`, construire: () => volumeSeul(s, aspect, s.id, { solide: s.id }) };
+  });
+  return [...libres, ...exacts];
 }
 
 /**
@@ -345,7 +354,7 @@ function impact(h: THREE.Intersection): Impact {
 
 /** Centre à l'écran (coordonnées client) de l'objet `id` du maillage affiché ; null s'il n'est pas affiché. */
 function centreEcran(m: Moteur, mesh: StudioMesh3d, id: string): { x: number; y: number } | null {
-  const e = [...mesh.solids, ...(mesh.freeSolids ?? []), ...(mesh.architecture ?? [])].find((x) => x.id === id);
+  const e = [...mesh.solids, ...(mesh.freeSolids ?? []), ...(mesh.exacts ?? []), ...(mesh.architecture ?? [])].find((x) => x.id === id);
   if (!e || !e.vertices.length) return null;
   const b = new THREE.Box3().setFromPoints(e.vertices.map((v) => new THREE.Vector3(v.x, v.y, v.z)));
   const c = b.getCenter(new THREE.Vector3()).project(m.camera);
@@ -439,7 +448,9 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   const calquesVue = calquesMontres ?? calquesVisualisation(doc).filter((c) => c.visible).map((c) => c.id);
   suiviCamera.current = sceneChoisie !== null && calquesMontres !== null;
   const solides = doc.solides ?? [];
+  const exacts = doc.exacts ?? [];
   const choisi = solides.find((s) => s.id === selection) ?? null;
+  const choisiExact = exacts.find((s) => s.id === selection) ?? null;
   // Lien de chaque solide à sa polyligne source, relu du document courant (jamais stocké) ; volume non évalué à résoudre.
   const lienDe = (s: StudioSolid) => studioLienSolide(doc, s);
   const volumeTexte = (s: StudioSolid) => (lienDe(s)?.etat === "a-resoudre" ? "volume non évalué" : `${nombre(studioVolumeSolide(s))} m³`);
@@ -639,7 +650,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   useEffect(() => {
     const m = moteur.current; if (!m) return;
     const morceaux = assemble?.cache.morceaux;
-    const presents = new Set([...doc.objects.map((o) => o.id), ...(doc.solides ?? []).map((o) => o.id), ...(doc.architecture ?? []).map((o) => o.id)]);
+    const presents = new Set([...doc.objects.map((o) => o.id), ...(doc.solides ?? []).map((o) => o.id), ...(doc.exacts ?? []).map((o) => o.id), ...(doc.architecture ?? []).map((o) => o.id)]);
     const l: Lecture = {
       mesh, doc, mode, selection, selectionArchitecture, present: (id) => presents.has(id),
       // Clé de contenu du morceau ; à défaut (jamais pour un maillage assemblé), une clé unique force la reconstruction.
@@ -795,11 +806,12 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     envoyer(commandePivot(choisi?.id ?? null, pivot), () => setPivot(Number.NaN));
   }
   function supprimer() {
-    if (!choisi) return;
-    envoyer({ commandes: [{ toolId: "studio.solide.supprimer", params: { ids: [choisi.id] } }] }, () => surSelection?.(null));
+    const id = choisi?.id ?? choisiExact?.id;
+    if (!id) return;
+    envoyer({ commandes: [{ toolId: "studio.solide.supprimer", params: { ids: [id] } }] }, () => surSelection?.(null));
   }
 
-  const libres = mesh.freeSolids?.length ?? 0;
+  const libres = (mesh.freeSolids?.length ?? 0) + (mesh.exacts?.length ?? 0);
   const architecture = mesh.architecture ?? [];
   return (
     <section className="studio-vue3d" aria-label="Vue 3D" data-studio-vue3d data-studio-maillage={maillage.etat} data-studio-maillage-revision={maillage.revision ?? ""} data-studio-revision-courante={empreinte.revision}
@@ -887,11 +899,21 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
         </fieldset>
       </form>}
 
+      {outil === "studio.solide.booleen" && <PanneauBooleen doc={doc} revision={empreinte.revision} modifiable={modifiable} surCommandes={surCommandes} surSelection={surSelection} />}
+
       {!choisi && outil && ["studio.solide.face-decaler", "studio.solide.face-diviser", "studio.solide.pivoter", "studio.solide.resoudre"].includes(outil) && <p className="studio-hint" data-studio-face-indice>Sélectionnez d’abord, dans la vue 3D ou la liste des solides, le solide à modifier.</p>}
 
-      {solides.length > 0 && <div className="studio-vue3d-solides" data-studio-solides>
+      {(solides.length > 0 || exacts.length > 0) && <div className="studio-vue3d-solides" data-studio-solides>
         <h3>Solides libres</h3>
         <ul>
+          {exacts.map((s) => (
+            <li key={s.id}>
+              <button type="button" aria-pressed={s.id === selection} onClick={() => surSelection?.(s.id === selection ? null : s.id)} data-studio-solide={s.id} data-studio-solide-type="exact" data-studio-solide-operation={s.operation}
+                data-studio-solide-operandes={s.operandes.map((o) => o.id).join(" ")}>
+                <Icon name="studio-solid-boolean" size={16} /> {`${descriptionOperande(s)} (noyau exact)`}
+              </button>
+            </li>
+          ))}
           {solides.map((s) => (
             <li key={s.id}>
               <button type="button" aria-pressed={s.id === selection} onClick={() => surSelection?.(s.id === selection ? null : s.id)} data-studio-solide={s.id} data-studio-solide-type={s.type}
@@ -902,6 +924,14 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
             </li>
           ))}
         </ul>
+        {choisiExact && <div data-studio-exact-choisi={choisiExact.id} aria-label="Solide exact sélectionné">
+          <p>{`Sélection : ${descriptionOperande(choisiExact)}, ${choisiExact.resultat.faces} face(s), opérandes conservés : ${choisiExact.operandes.map((o) => descriptionOperande(o)).join(" ; ")}`}</p>
+          <p className="studio-hint">Solide exact : son brep est celui du noyau exact ; il ne se déplace ni ne se modifie par ses faces. Annulez le booléen pour retrouver ses opérandes.</p>
+          <fieldset disabled={!modifiable}>
+            <legend>Solide exact</legend>
+            <button type="button" onClick={supprimer} data-studio-supprimer-solide><Icon name="studio-solid-delete" size={18} /> Supprimer le solide</button>
+          </fieldset>
+        </div>}
         {choisi && <form onSubmit={deplacer} data-studio-solide-choisi={choisi.id} aria-label="Solide sélectionné">
           <p>{lienChoisi?.etat === "a-resoudre"
             ? `Sélection : ${descriptionSolide(choisi, nombre)}, origine (${nombre(choisi.placement.origin.x)} ; ${nombre(choisi.placement.origin.y)} ; ${nombre(choisi.placement.origin.z)}) m, volume non évalué`

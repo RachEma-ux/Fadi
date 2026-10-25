@@ -301,6 +301,9 @@ jobs:
             node scripts/check-api-tests-db3.mjs api-vitest.json
           fi
       - run: npm run build
+      # Licence et provenance du noyau exact (TR-EX-096, D-177) vérifiées sur l'artefact distribué (apps/web/dist).
+      - name: Licence et provenance du noyau exact distribué (TR-EX-096) — binaire non modifié, version, LGPL-2.1, notice, chargement séparé
+        run: node apps/web/scripts/controle-licence-occt.mjs apps/web/dist
       # Le build échoue déjà sur un découpage non conforme (vite.config.ts) ; cette étape en affiche le verdict.
       - name: Découpage des bundles (B.3-06) — carte des morceaux du build
         run: |
@@ -523,6 +526,11 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/studio-faces node apps/web/e2e/studio-faces.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du noyau exact Studio — booléens exacts chargés à la demande, aperçu provisoire, résultat périmé, panne du Worker OCCT, 50 ouvertures sans croissance, licence servie (lot F2, apps/web/e2e/studio-exact.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-exact node apps/web/e2e/studio-exact.mjs 2>&1 | tee -a e2e.log
       # Mesure seulement (B.3-12, D.3-03) : rapport sans seuil ni verdict, joint aux captures (atelier-captures/). Un
       # incident d'interaction est consigné dans le rapport ; l'étape ne bloque jamais (la recette bloquante est
       # studio-chargement.mjs).
