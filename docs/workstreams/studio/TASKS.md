@@ -7,14 +7,16 @@ Branche `ccr-187fd2e6-08dk6e`, base `main@3e992b6`. Décisions : [ADR-STUDIO-PIL
 - Fait :
   - RESP-01 à 05, CAD-DEC-02/03, ADR-03, DEC-01 à 18, G2-02, G3-01 et G3-04 acceptés sous délégation ;
   - 21 recettes Studio rejouées (1 435 contrôles, 0 échec) ;
-  - 25 obligations vérifiées par recette ;
-  - 189 obligations requalifiées de « Bloqué » à « À faire » ; les 9 obligations R de bascule et de déploiement restent bloquées sur G4.
+  - 27 obligations vérifiées par recette ;
+  - 189 obligations requalifiées de « Bloqué » à « À faire » ;
+  - NAV-008 recetté après correction de « Réessayer » ; F.2-03 et F.3-01 acceptés (P-06).
 - À faire, par ordre :
-  1. compléter les 19 scénarios TEST partiels et NAV-008 (reprise après panne) (le manque est noté dans la `suite` de chaque ID) ;
+  1. compléter les 19 scénarios TEST partiels (le manque est noté dans la `suite` de chaque ID) ;
   2. écrire TEST-025 et TEST-037 ;
   3. instruire G1 à G4 sur leurs critères ;
   4. faire la recette utilisateur sur appareil réel (DEC-13).
-- Hors pilote : TEST-032, TEST-033, F.2-03, F.3-01 (DEC-15).
+- Maître d'ouvrage : jouer la [recette utilisateur](recettes/RECETTE-UTILISATEUR-PILOTE.md), puis publier la Release après G4 (9 obligations R).
+- Bloqués hors pilote : TEST-032 et TEST-033 (fonctions IA et MCP absentes).
 
 ## Dépôt du plan Axes — 25 octobre 2026
 

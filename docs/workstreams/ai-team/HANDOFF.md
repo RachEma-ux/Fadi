@@ -2,7 +2,7 @@
 
 ## Studio — 25 octobre 2026
 
-Registre Studio après les décisions déléguées ADR-STUDIO-PILOTE-01 et la recette du pilote : **16 À définir / 205 À faire / 293 En cours / 13 Bloqué / 72 Vérifié / 31 Accepté** ; **P630=103/630**. Le détail est dans `docs/workstreams/studio/STATUS.md`.
+Registre Studio après les décisions déléguées ADR-STUDIO-PILOTE-01 et la recette du pilote : **16 À définir / 205 À faire / 291 En cours / 11 Bloqué / 74 Vérifié / 33 Accepté** ; **P630=107/630**. Le détail est dans `docs/workstreams/studio/STATUS.md`.
 
 ## Checkpoint courant — 21 octobre 2026
 

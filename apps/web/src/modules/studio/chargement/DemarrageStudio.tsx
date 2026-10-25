@@ -7,8 +7,8 @@
  *   chargé ici.
  * - `PlancheDifferee` : l'éditeur de variante (moteur `planche-2d`) est chargé à l'ouverture d'une planche par le
  *   gestionnaire des ressources ; PERF-01 part de l'entrée sur la route de la variante. Un échec de chargement du
- *   moteur reste local et se réessaie réellement (nouveau composant différé) ; toute autre erreur remonte à la limite
- *   de Studio (rien n'est modifié).
+ *   moteur reste local et se réessaie réellement (nouveau chargement, puis nouveau composant différé ; à défaut,
+ *   nouveau document) ; toute autre erreur remonte à la limite de Studio (rien n'est modifié).
  */
 import { Component, lazy, Suspense, useEffect, useState, type ComponentType, type LazyExoticComponent, type ReactNode } from "react";
 import { useAuth } from "../../../lib/auth-context";
@@ -51,7 +51,21 @@ export function nouvellePlanche(): PlancheLazy {
 }
 export const plancheActuelle = (): PlancheLazy => plancheCourante;
 
-interface PropsLimite { readonly children: ReactNode; readonly onReessayer: () => void }
+/**
+ * « Réessayer » la planche : le moteur est réellement rechargé, puis la planche installée. Si le chargement échoue
+ * encore, la page est rechargée : Chromium garde pour le document l'échec d'un module qui n'a pas pu être téléchargé
+ * et ne refait aucune requête, seul un nouveau document relance le téléchargement. Rien n'est perdu (la planche ne
+ * s'est jamais ouverte ; la file locale est conservée par le navigateur). La promesse ne se résout qu'une fois la
+ * planche installée.
+ */
+export function reessayerPlanche(charger: () => Promise<unknown>, installer: () => void, recharger: () => void): Promise<void> {
+  return charger().then(installer, () => {
+    recharger();
+    return new Promise<void>(() => undefined);
+  });
+}
+
+interface PropsLimite { readonly children: ReactNode; readonly onReessayer: () => void | Promise<void> }
 
 /**
  * Limite locale de la planche : elle ne capture que l'échec de chargement du moteur (`ErreurMoteur`). Toute autre
@@ -60,10 +74,8 @@ interface PropsLimite { readonly children: ReactNode; readonly onReessayer: () =
 export class LimitePlanche extends Component<PropsLimite, { erreur: unknown }> {
   state: { erreur: unknown } = { erreur: null };
   static getDerivedStateFromError(erreur: unknown) { return { erreur }; }
-  reessayer = () => {
-    this.props.onReessayer();
-    this.setState({ erreur: null });
-  };
+  /** L'alerte reste affichée jusqu'à ce que la planche soit installée (aucun nouvel échec affiché entre-temps). */
+  reessayer = (): Promise<void> => Promise.resolve(this.props.onReessayer()).then(() => this.setState({ erreur: null }));
   render() {
     const { erreur } = this.state;
     if (erreur === null) return this.props.children;
@@ -71,7 +83,7 @@ export class LimitePlanche extends Component<PropsLimite, { erreur: unknown }> {
     return (
       <div className="studio-alert" role="alert" data-studio-planche-indisponible={erreur.code}>
         {TEXTES_RESSOURCES.plancheIndisponible}
-        <button type="button" onClick={this.reessayer} data-studio-reessayer-planche>{TEXTES_RESSOURCES.reessayer}</button>
+        <button type="button" onClick={() => void this.reessayer()} data-studio-reessayer-planche>{TEXTES_RESSOURCES.reessayer}</button>
       </div>
     );
   }
@@ -81,7 +93,7 @@ export function PlancheDifferee(props: VariantWorkspaceProps) {
   useOuvertureVariante();
   const [Planche, setPlanche] = useState<PlancheLazy>(plancheActuelle);
   return (
-    <LimitePlanche onReessayer={() => setPlanche(() => nouvellePlanche())}>
+    <LimitePlanche onReessayer={() => reessayerPlanche(() => ressourcesStudio.charger("planche-2d"), () => setPlanche(() => nouvellePlanche()), () => window.location.reload())}>
       <Suspense fallback={<p role="status">{TEXTES_RESSOURCES.chargementPlanche}</p>}><Planche {...props} /></Suspense>
     </LimitePlanche>
   );
