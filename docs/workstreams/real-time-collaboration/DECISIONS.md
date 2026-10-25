@@ -94,6 +94,14 @@
      — p95 de relais 19 ms, 100 reconnexions en 0,3 s ; le profil de référence P.118 sur l'appareil Android de recette et
      la préproduction restent à valider par le maître d'ouvrage (hors délégation : aucun déploiement).
 
+- **RT-D7 — Revue d'équipe et livraison groupée de RTC-3 à RTC-5 (2026-10-25, délégation RT-D4).** À la demande du
+  maître d'ouvrage (« utilise les teams et ECC ») : trois relecteurs indépendants ont relu RTC-3, RTC-4 et RTC-5 en
+  parallèle (correction, sécurité, performance) ; leurs constats retenus sont corrigés dans un commit dédié (« revues
+  d'équipe ») et tracés dans `PREUVES-SECURITE-ET-CI.md` ; les contrôles ECC Tools sont traités dans ce même fichier
+  (audit des dépendances, `ws` porté à 8.22.0, modes d'échec de la CI). Pour éviter trois cycles de CI et des
+  corrections croisées entre lots, **RTC-3, RTC-4 et RTC-5 sont livrés par une seule PR**, un commit et un compte rendu par
+  lot, le commit de revue en dernier ; la fusion reste exigée CI verte.
+
 ## Points restant ouverts (non bloquants pour RTC-0)
 
 - ~~Durées chiffrées de conservation (RT-Q5)~~ : retenues par RT-D6 § 5.

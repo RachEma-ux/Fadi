@@ -519,17 +519,29 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       if (bas && e.button === 0 && Math.hypot(e.clientX - bas.x, e.clientY - bas.y) < 5) clic.current(e);
       bas = null;
     };
-    // Pointeur partagé (session en direct) : objet touché, sinon le sol ; rien n'est calculé hors session.
-    const pointeurBouge = (e: PointerEvent) => {
-      const f = surPointeur3dRef.current; if (!f) return;
+    // Pointeur partagé (session en direct) : objet touché, sinon le sol ; rien n'est calculé hors session. Le lancer de
+    // rayon est borné à une image (requestAnimationFrame) : le canal n'envoie de toute façon qu'un pointeur par 100 ms.
+    const rayonPointeur = new THREE.Raycaster(), sol = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), surSol = new THREE.Vector3(), ndcPointeur = new THREE.Vector2();
+    let dernierEvenement: PointerEvent | null = null, imagePrevue = 0;
+    const calculerPointeur = () => {
+      imagePrevue = 0;
+      const e = dernierEvenement, f = surPointeur3dRef.current;
+      if (!e || !f) return;
       const r = renderer.domElement.getBoundingClientRect();
-      const rayon = new THREE.Raycaster();
-      rayon.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), m.camera);
-      const impact = rayon.intersectObjects([...libres.children, ...architecture.children, ...contenu.children], false).find((x) => x.object instanceof THREE.Mesh);
-      const p = impact?.point ?? rayon.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), new THREE.Vector3());
-      f(p ? { x: p.x, y: p.y, z: p.z } : null);
+      ndcPointeur.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+      rayonPointeur.setFromCamera(ndcPointeur, m.camera);
+      const impact = rayonPointeur.intersectObjects([...libres.children, ...architecture.children, ...contenu.children], false).find((x) => x.object instanceof THREE.Mesh);
+      const p = impact?.point ?? rayonPointeur.ray.intersectPlane(sol, surSol);
+      // Un sol vu en rasant donne des coordonnées démesurées : au-delà d'un kilomètre, le pointeur est masqué.
+      const valide = p && [p.x, p.y, p.z].every((v) => Number.isFinite(v) && Math.abs(v) <= 1e6);
+      f(valide ? { x: p.x, y: p.y, z: p.z } : null);
     };
-    const pointeurSorti = () => surPointeur3dRef.current?.(null);
+    const pointeurBouge = (e: PointerEvent) => {
+      if (!surPointeur3dRef.current) return;
+      dernierEvenement = e;
+      if (!imagePrevue) imagePrevue = requestAnimationFrame(calculerPointeur);
+    };
+    const pointeurSorti = () => { dernierEvenement = null; if (imagePrevue) { cancelAnimationFrame(imagePrevue); imagePrevue = 0; } surPointeur3dRef.current?.(null); };
     renderer.domElement.addEventListener("pointermove", pointeurBouge);
     renderer.domElement.addEventListener("pointerleave", pointeurSorti);
     renderer.domElement.addEventListener("pointerdown", pointeurBas);
@@ -539,6 +551,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     taille();
     return () => {
       obs?.disconnect();
+      if (imagePrevue) cancelAnimationFrame(imagePrevue);
       renderer.domElement.removeEventListener("pointermove", pointeurBouge);
       renderer.domElement.removeEventListener("pointerleave", pointeurSorti);
       renderer.domElement.removeEventListener("pointerdown", pointeurBas);
@@ -771,7 +784,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
           ? "Repère local 3D : z vers le haut, en mètres. Vue en plan : glisser : déplacer ; molette : zoom."
           : "Repère local 3D : z vers le haut, en mètres. Glisser : orbite ; clic droit ou Maj + glisser : déplacer ; molette : zoom."}>
         {(pointeurs3d ?? []).map((p) => <span key={p.userId} className="studio-vue3d-pointeur" data-tr-pointeur-3d={p.userId} aria-hidden="true" translate="no"
-          style={{ color: teintePresence(p.userId) }} ref={(el) => { if (el) etiquettes.current.set(p.userId, el); else etiquettes.current.delete(p.userId); }}>{p.nom}</span>)}
+          style={{ color: teintePresence(p.userId), display: "none" }} ref={(el) => { if (el) etiquettes.current.set(p.userId, el); else etiquettes.current.delete(p.userId); }}>{p.nom}</span>)}
       </div>
       {!remplir && <p className="studio-hint">{navigation === "plan"
         ? "Repère local 3D : z vers le haut, en mètres. Vue en plan : glisser : déplacer ; molette : zoom."

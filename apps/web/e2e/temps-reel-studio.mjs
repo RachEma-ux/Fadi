@@ -100,7 +100,7 @@ try {
   await B.page.reload();
   await rejoindre(B.page);
   check("le lecteur rejoint et suit le présentateur", (await B.page.locator('[data-tr-suivi="suit"]').count()) === 1);
-  await A.page.getByRole("button", { name: "Participants (2)" }).waitFor();
+  await A.page.locator("[data-tr-participants-bouton]", { hasText: "Participants (2)" }).waitFor();
   check("présence : deux participants", true);
 
   // 2. Toujours affichés.
@@ -161,7 +161,7 @@ try {
     if ((await b.locator(`svg[data-icone-collaboration="${c}"]`).count()) === 1 && (await b.locator(`kbd[data-raccourci-collaboration="${c}"]`).count()) === 1 && /^Control\+Alt\+Shift\+[A-Z]$/.test((await b.getAttribute("aria-keyshortcuts")) ?? "")) completes += 1;
   }
   check("règle d'or : chaque commande du bandeau a son icône et son raccourci affiché et déclaré", n > 0 && completes === n, `${completes}/${n}`);
-  await B.page.getByRole("button", { name: "Participants (2)" }).click();
+  await B.page.locator("[data-tr-participants-bouton]", { hasText: "Participants (2)" }).click();
   await axe(B.page, "bandeau et participants");
   await B.page.evaluate(() => { localStorage.setItem("fadi.langue", "en"); });
   await B.page.reload();

@@ -119,8 +119,8 @@ describe("Règle d'or — commandes de collaboration (audience, export du lecteu
     expect(panneau.includes("BoutonCommande") && panneau.includes("<IconeCollaboration commande={commande}") && panneau.includes("<RaccourciCollaboration commande={commande}") && panneau.includes("propsRaccourci(commande)")).toBe(true);
   });
 
-  it("Temps réel (Issue #283) : seize commandes, Ctrl+Alt+Maj+lettre, touche physique ; suivre et naviguer librement sont une bascule", () => {
-    expect(COMMANDES_TEMPS_REEL).toHaveLength(16);
+  it("Temps réel (Issue #283) : dix-neuf commandes, Ctrl+Alt+Maj+lettre, touche physique ; suivre et naviguer librement sont une bascule", () => {
+    expect(COMMANDES_TEMPS_REEL).toHaveLength(19);
     for (const c of COMMANDES_TEMPS_REEL) expect(COMMANDES_COLLABORATION[c].raccourci.libelle, c).toMatch(/^Ctrl\+Alt\+Maj\+[A-Z]$/);
     const t = (code: string, ctrlKey = true) => ({ code, altKey: true, shiftKey: true, ctrlKey, metaKey: false });
     expect(declenche(t("KeyO"), "ouvrir-session")).toBe(true);

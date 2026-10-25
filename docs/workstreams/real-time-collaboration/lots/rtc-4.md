@@ -30,16 +30,21 @@ la PR du lot.
 ## Preuves
 
 - Tests unitaires API temps réel : 28 verts.
-- `apps/web/e2e/temps-reel-revue.mjs`, deux navigateurs, base réelle : **24 vérifications vertes** — publication figée
+- `apps/web/e2e/temps-reel-revue.mjs`, deux navigateurs, base réelle : **26 vérifications vertes** — publication figée
   sur R03 puis R04 enregistrée ; ouverture par Ctrl+Alt+Maj+U (portée, publication, révision épinglée) ; mention revue
   figée ; aucun passage à la tête ; le lecteur affiche R03 pendant que la tête est R04 ; R05 non annoncée ; changement de
   révision refusé (409) ; note d'équipe jamais servie au lecteur ; lecteur hôte refusé à l'approbation (403) ; aucune
   commande d'export ni d'approbation ; refus 404 / 422 à l'ouverture ; axe-core ; passe anglaise ; clôture par le
-  lecteur hôte. Ajoutée à la CI (tranche `p2`).
+  lecteur hôte ; publication actualisée pendant la revue : revue restée sur R03, avis « la publication a changé ». Ajoutée à la CI (tranche `p2`).
 - Les recettes RTC-1 à RTC-3 restent vertes (44, 25, 29).
 
 ## Limites déclarées
 
 - Invité restreint au paquet (sans accès au projet) : phase 4 d'Organisations, non livrée.
-- Publication retirée ou remplacée **pendant** une revue ouverte : la revue continue sur sa révision figée jusqu'à sa
-  clôture ; aucune annonce dédiée (reprise possible en RTC-5).
+- Publication actualisée, retirée ou remplacée **pendant** une revue : la revue continue sur la révision examinée et
+  l'écran le signale (empreinte du manifeste figée à l'ouverture, relue toutes les 30 s) ; aucune annonce poussée par le
+  canal.
+
+## Revue d'équipe (RT-D7)
+
+Constats et correctifs : `../PREUVES-SECURITE-ET-CI.md` (manifeste figé à l'ouverture, verrou partagé à l'ouverture).

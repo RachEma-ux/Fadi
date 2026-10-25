@@ -29,7 +29,7 @@ import { annoter, listerAnnotations } from "../lib/temps-reel-annotations.js";
 import { audienceSchema } from "../lib/audience.js";
 import {
   changerRevision, clore, designerPresentateur, journalSession, lireSession, listerSessions, nomsDe, ouvrirSession, reprendreAnimation,
-  sessionPublique, tempsReelActif, TempsReelErreur, transmettreHote, type SessionRow,
+  publicationChangee, sessionPublique, tempsReelActif, TempsReelErreur, transmettreHote, type SessionRow,
 } from "../lib/temps-reel-sessions.js";
 
 export const tempsReelRouter = Router({ mergeParams: true });
@@ -81,6 +81,7 @@ async function vueSession(s: SessionRow) {
     presentateur: s.presenterId ? { userId: s.presenterId, nom: noms.get(s.presenterId) ?? "" } : null,
     connectes: etat.connectes.map((userId) => ({ userId, nom: noms.get(userId) ?? "" })),
     hoteAbsent: s.status === "ouverte" && etat.hoteAbsentDepuisMs !== null,
+    publicationChangee: await publicationChangee(s),
   };
 }
 

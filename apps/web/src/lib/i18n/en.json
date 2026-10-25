@@ -11927,5 +11927,12 @@
 "Cette publication est remplacée : ouvrez la revue sur la publication qui la remplace.": "This publication has been replaced: open the review on the publication that replaces it.",
 "Publication introuvable pour cette variante.": "Publication not found for this variant.",
 "Une revue montre la révision publiée.": "A review shows the published revision.",
-"Édition du projet réservée par {0} jusqu’à {1} : la session ne la transmet jamais ; son titulaire la rend ou le propriétaire la libère.": "Project editing reserved by {0} until {1}: the session never hands it over; its holder releases it or the owner frees it."
+"Édition du projet réservée par {0} jusqu’à {1} : la session ne la transmet jamais ; son titulaire la rend ou le propriétaire la libère.": "Project editing reserved by {0} until {1}: the session never hands it over; its holder releases it or the owner frees it.",
+"Ctrl+Alt+Maj+K": "Ctrl+Alt+Shift+K",
+"Ctrl+Alt+Maj+L": "Ctrl+Alt+Shift+L",
+"Ctrl+Alt+Maj+S": "Ctrl+Alt+Shift+S",
+"Citer la sélection": "Cite the selection",
+"Sans case cochée, l’annotation est réservée à l’équipe ; un lecteur écrit toujours pour tout le projet.": "Unless the box is ticked, the annotation is reserved for the team; a reader always writes for the whole project.",
+"Contenu figé au premier envoi : un nouvel envoi retrouve la même annotation. Échap abandonne la saisie.": "Content frozen at the first send: sending again finds the same annotation. Esc abandons the entry.",
+"La publication a changé depuis l’ouverture (actualisée, retirée ou remplacée) : la revue reste sur la révision examinée ; ouvrez une nouvelle revue pour la version actuelle.": "The publication has changed since the review opened (updated, withdrawn or replaced): the review stays on the revision examined; open a new review for the current version."
 }

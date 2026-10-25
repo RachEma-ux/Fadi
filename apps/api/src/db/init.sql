@@ -2105,6 +2105,9 @@ CREATE TABLE IF NOT EXISTS rt_annotations (
 );
 CREATE INDEX IF NOT EXISTS rt_annotations_variant_idx ON rt_annotations (variant_id, created_at);
 CREATE INDEX IF NOT EXISTS rt_annotations_session_idx ON rt_annotations (session_id);
+-- Temps réel RTC-4 : empreinte du manifeste de la publication à l'ouverture d'une revue. Une publication actualisée,
+-- retirée ou remplacée ensuite est signalée à la lecture de la revue, qui reste sur la révision examinée.
+ALTER TABLE rt_sessions ADD COLUMN IF NOT EXISTS publication_manifest_hash text;
 
 -- ---------------------------------------------------------------------------
 -- D-7 : droits au moindre privilège. Exécuté par un super-utilisateur (amorçage, CI) : propriété de tout transférée à

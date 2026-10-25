@@ -33,7 +33,7 @@ local** ; CI et fusion : voir la PR du lot. **La préproduction et la mise en se
 - `apps/web/e2e/temps-reel-retour-arriere.mjs` (local, hors CI) : **9 / 9, répétée deux fois** — sans le drapeau :
   liste « inactif », autres routes et montée de protocole 404, annotation lisible comme commentaire Studio ; drapeau
   remis : session et annotation retrouvées telles quelles.
-- Recettes des lots précédents toujours vertes : sessions 44, vue partagée 26, annotations 29, revue 24.
+- Recettes des lots précédents toujours vertes : sessions 44, vue partagée 26, annotations 32, revue 26 ; charge 12.
 
 ## Retour arrière (procédure)
 
@@ -48,3 +48,8 @@ local** ; CI et fusion : voir la PR du lot. **La préproduction et la mise en se
   `temps-reel-redemarrage.mjs`, `temps-reel-retour-arriere.mjs` et `temps-reel-charge.mjs` sont prêts pour cette recette.
 - Plusieurs instances d'API : diffusion partagée non livrée (RT-D2 : une instance).
 - TR-T15 (invité restreint) : attend la phase 4 d'Organisations.
+
+## Revue d'équipe (RT-D7)
+
+Constats et correctifs : `../PREUVES-SECURITE-ET-CI.md` (pointeur fantôme, lancer de rayon borné à une image, coordonnées
+bornées, étiquettes, pointeurs périmés, compteurs, recette de charge).

@@ -113,7 +113,7 @@ try {
     interne?.audience === "equipe" && interne.sourceRevisionId === r1.revision.id && interne.objectIds.join() === "rect-b" && interne.sessionId === sessionId
       && interne.pointDeVue?.reperes?.plan === "local-2d" && interne.pointDeVue?.unites === "m" && !!interne.pointDeVue?.plan, JSON.stringify(interne));
   await new Promise((r) => setTimeout(r, 1200));
-  check("le lecteur ne reçoit pas la note de l'équipe (liste et canal)", (await lues(B)).length === 0 && (await B.page.getByRole("button", { name: "Annotations (0)" }).count()) === 1);
+  check("le lecteur ne reçoit pas la note de l'équipe (liste et canal)", (await lues(B)).length === 0 && (await B.page.locator("[data-tr-annotations-bouton]", { hasText: "Annotations (0)" }).count()) === 1);
   const commentaires = (await A.api("GET", `${chemin}/comments`)).body?.comments ?? [];
   check("l'annotation est un commentaire Studio (même identifiant, ancré à la révision source)", commentaires.some((c) => c.id === interne?.commentId && c.revisionId === r1.revision.id));
 
@@ -124,7 +124,7 @@ try {
   await A.page.locator("[data-tr-annotation-texte]").press("Alt+Shift+Digit1");
   check("Alt+Maj+1 coche « Visible par les lecteurs » dans le formulaire", await A.page.locator("[data-tr-annotation-lecteurs]").isChecked());
   await A.page.keyboard.press("Control+Alt+Shift+KeyE");
-  await B.page.getByRole("button", { name: "Annotations (1)" }).waitFor();
+  await B.page.locator("[data-tr-annotations-bouton]", { hasText: "Annotations (1)" }).waitFor();
   check("Ctrl+Alt+Maj+E enregistre ; le lecteur est prévenu par le canal", true);
   const visibles = await lues(B);
   check("le lecteur lit seulement la note visible", visibles.length === 1 && visibles[0].audience === "projet" && visibles[0].body === "Vérifier l'alignement du rectangle");
@@ -148,6 +148,9 @@ try {
   ] })).body;
   check("la session passe à la nouvelle révision", (await A.api("POST", `${tr}/sessions/${sessionId}/revision`, { revisionId: r2.revision.id })).status === 200);
   const p6 = await A.api("POST", `${tr}/sessions/${sessionId}/annotations`, { body: "Sur la nouvelle révision", requestId: `tra-${randomUUID()}`, audience: "projet", vue: { affichage: "2d", plan: { x: 0, y: 0, w: 8, h: 8 } } });
+  const p1bis = await B.api("POST", `${tr}/sessions/${sessionId}/annotations`, saisie);
+  check("réponse perdue puis session passée à R04 : le rejeu retrouve l'annotation (200, révision source R03)", p1bis.status === 200 && p1bis.body?.rejoue === true
+    && p1bis.body.annotation.id === p1.body?.annotation?.id && p1bis.body.annotation.sourceRevisionId === r1.revision.id, `${p1bis.status} rejoue=${p1bis.body?.rejoue} id=${p1bis.body?.annotation?.id === p1.body?.annotation?.id} src=${p1bis.body?.annotation?.sourceRevisionId} r1=${r1.revision.id}`);
   const apres = await lues(A);
   check("les annotations gardent leur révision source", p6.status === 201 && apres.filter((a) => a.sourceRevisionId === r1.revision.id).length === 3 && apres.filter((a) => a.sourceRevisionId === r2.revision.id).length === 1, JSON.stringify(apres.map((a) => a.sourceRevisionId)));
 
@@ -159,7 +162,7 @@ try {
   await B.page.mouse.wheel(0, 500);
   await new Promise((r) => setTimeout(r, 300));
   const vbAvant = await viewBox(B.page);
-  await B.page.getByRole("button", { name: /^Annotations \(/ }).click();
+  await B.page.locator("[data-tr-annotations-bouton]").click();
   await B.page.locator("[data-tr-annotations] [data-tr-annotation]").first().locator("button[data-commande-collaboration=voir-point-de-vue]").click();
   check("« Voir le point de vue » repose le cadre enregistré", await attendreQue(async () => (await viewBox(B.page)) === vbAnnot), `${vbAvant} → ${await viewBox(B.page)} / ${vbAnnot}`);
   check("revoir un point de vue laisse la navigation libre", (await B.page.locator('[data-tr-suivi="libre"]').count()) === 1);
@@ -195,10 +198,16 @@ try {
   check("clôture par l'hôte", (await A.api("POST", `${tr}/sessions/${sessionId}/clore`, {})).status === 200);
   const closes = await lues(A);
   check("après la clôture, les annotations restent (auteur, audience, point de vue, révision source)", closes.length === 4 && closes.every((a) => a.pointDeVue && a.auteur && a.sourceRevisionId));
+  const p8 = await B.api("POST", `${tr}/sessions/${sessionId}/annotations`, saisie);
+  check("session close : le rejeu d'un envoi déjà enregistré reste un rejeu (200)", p8.status === 200 && p8.body?.rejoue === true, String(p8.status));
   const p7 = await A.api("POST", `${tr}/sessions/${sessionId}/annotations`, { body: "Trop tard", requestId: `tra-${randomUUID()}`, vue: { affichage: "2d", plan: { x: 0, y: 0, w: 8, h: 8 } } });
   check("session close : plus d'annotation en direct (409)", p7.status === 409, String(p7.status));
   const obs = await A.api("POST", `${chemin}/comments/${interne.commentId}/observation`, { responsableId: idA, requestId: `tra-${randomUUID()}` });
   check("une annotation devient une observation par le circuit Studio", obs.status === 201 && (await lues(A)).find((a) => a.commentId === interne.commentId)?.observation === true, `${obs.status} ${JSON.stringify(obs.body).slice(0, 200)}`);
+  const supprime = await A.api("DELETE", `${chemin}/comments/${visibles[0].commentId}`);
+  const apresSuppression = (await lues(A)).find((a) => a.commentId === visibles[0].commentId);
+  check("annotation supprimée par son auteur : ni texte ni objets cités, point de vue gardé", supprime.status === 204 && apresSuppression?.body === null
+    && apresSuppression.objectIds.length === 0 && !!apresSuppression.pointDeVue, JSON.stringify(apresSuppression));
   check("aucune erreur JavaScript", erreurs.length === 0, erreurs.join(" | "));
 } catch (e) {
   check("déroulé sans erreur inattendue", false, e.message);

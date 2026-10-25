@@ -130,11 +130,20 @@ try {
   const chg = await A.api("POST", `${tr}/sessions/${sessionId}/revision`, { revisionId: r3.revision.id });
   check("changer la révision d'une revue : refusé (409 revue_figee)", chg.status === 409 && chg.body?.error === "revue_figee", JSON.stringify(chg.body));
 
+  const act = await A.api("POST", `${pubs}/${pub.body.id}/actualiser`, {});
+  const apresAct = (await A.api("GET", `${tr}/sessions/${sessionId}`)).body?.session;
+  check("publication actualisée pendant la revue : la revue reste sur R03 et le signale", act.status === 200 && apresAct?.revisionId === r1.revision.id && apresAct.publicationChangee === true,
+    `${act.status} ${JSON.stringify(act.body).slice(0, 120)} ${JSON.stringify(apresAct)}`);
+  await A.page.reload();
+  await rejoindre(A.page);
+  await A.page.locator("[data-tr-publication-changee]").waitFor({ timeout: 40_000 });
+  check("l'écran de l'hôte affiche l'avis « la publication a changé »", true);
+
   // 4. Audiences.
   const vue = { affichage: "2d", plan: { x: 0, y: 0, w: 10, h: 6 } };
   const interne = await A.api("POST", `${tr}/sessions/${sessionId}/annotations`, { body: "Note interne de revue", requestId: `trv-${randomUUID()}`, vue });
   const visible = await A.api("POST", `${tr}/sessions/${sessionId}/annotations`, { body: "Remarque pour le lecteur", audience: "projet", requestId: `trv-${randomUUID()}`, vue });
-  await B.page.getByRole("button", { name: "Annotations (1)" }).waitFor();
+  await B.page.locator("[data-tr-annotations-bouton]", { hasText: "Annotations (1)" }).waitFor();
   const luesB = (await B.api("GET", `${tr}/annotations?variantId=${etude.variant.id}`)).body?.annotations ?? [];
   check("revue : note de l'équipe jamais servie au lecteur, note visible reçue, ancrées à la révision publiée", interne.status === 201 && visible.status === 201
     && luesB.length === 1 && luesB[0].body === "Remarque pour le lecteur" && luesB[0].sourceRevisionId === r1.revision.id, JSON.stringify(luesB));

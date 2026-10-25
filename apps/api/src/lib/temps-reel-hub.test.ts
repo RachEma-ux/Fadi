@@ -272,7 +272,9 @@ describe("Temps réel — répartiteur", () => {
     m.roles.set("lecteur", null);
     m.hub.signal({ type: "acces", projectId: "p1", userId: "lecteur" });
     await m.hub.revalider();
-    expect(m.hub.mesures().fermetures["acces-retire"] ?? Object.values(m.hub.mesures().fermetures).reduce((a, b) => a + b, 0)).toBeGreaterThan(0);
+    expect(m.hub.mesures().fermetures).toEqual({ "acces-retire": 1 });
     expect(JSON.stringify(m.hub.mesures())).not.toMatch(/lecteur|hote|rtses/);
+    for (let i = 0; i <= BORNES_TEMPS_REEL.connexionsParCompte; i++) m.connecter("editeur");
+    expect(m.hub.mesures().fermetures["trop-de-connexions"]).toBe(1);
   });
 });

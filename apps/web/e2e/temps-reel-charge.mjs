@@ -134,7 +134,11 @@ const recus = prises.reduce((n, p) => n + p.recusPointeurs, 0);
 const fermes = prises.filter((p) => p.canal.ferme !== null).length;
 const p50 = centile(latences, 50), p95 = centile(latences, 95);
 console.log(`  mesures : ${envoyes} pointeurs proposés, ${recus} reçus, latence p50 ${p50} ms, p95 ${p95} ms`);
-check("rafale : chaque participant reçoit les pointeurs des autres (débit borné à 10 / s par connexion)", recus > 0 && recus <= envoyes * (PARTICIPANTS - 1), `${recus}`);
+// Borne exacte : chaque émetteur relayé au plus 10 fois par seconde (marge d'une seconde de mesure).
+const plafond = prises.length * (PARTICIPANTS - 1) * 10 * (DUREE_S + 1.5);
+const parReceveur = prises.map((p) => p.recusPointeurs);
+check("rafale : chaque participant reçoit les pointeurs des autres", parReceveur.every((n) => n > 0), parReceveur.slice(0, 10).join(","));
+check("rafale : débit borné à 10 éphémères / s par connexion (aucun dépassement relayé)", recus <= plafond, `${recus} > ${plafond}`);
 check("rafale : aucune fermeture inattendue", fermes === 0, String(fermes));
 check("rafale : aucun pointeur d'une autre session", etrangers === 0, String(etrangers));
 check("latence p95 sous 1 s (budget proposé : 250 ms sur le profil de référence)", p95 < 1000, `${p95} ms`);
@@ -142,7 +146,13 @@ check("latence p95 sous 1 s (budget proposé : 250 ms sur le profil de référen
 // 3. Reconnexion en rafale.
 const seqs = new Map(prises.map((p) => [p, Math.max(p.etat.seq, ...p.canal.recus.filter((m) => m.type === "evenement").map((m) => m.seq))]));
 for (const p of prises) p.canal.ws.terminate();
-await pause(300);
+// Attendre que le serveur ait constaté les fermetures (sinon anciennes et nouvelles prises atteindraient ensemble la
+// borne de 20 connexions par compte) : plus personne de connecté dans chaque session.
+for (let i = 0; i < 100; i++) {
+  const restes = await Promise.all(salles.map(async (s) => (await hote("GET", `/projects/${s.projet}/temps-reel/sessions/${s.sessionId}`)).body?.session?.connectes?.length ?? 0));
+  if (restes.every((n) => n === 0)) break;
+  await pause(100);
+}
 const t1 = Date.now();
 await Promise.all(prises.map((p) => ouvrir(p, seqs.get(p))));
 const revenus = prises.filter((p) => p.etat?.type === "etat");

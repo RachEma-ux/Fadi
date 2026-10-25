@@ -88,7 +88,7 @@ export function useSessionTempsReel(projectId: string, studyId: string, variantI
   const liste = useQuery({
     queryKey: cle, enabled: actif, retry: false, staleTime: 5_000,
     queryFn: () => apiTempsReel.sessions(projectId, variantId),
-    refetchInterval: enSession ? false : 15_000,
+    refetchInterval: enSession ? 30_000 : 15_000,
   });
   const sessionId = etat.session?.id ?? null;
   const publications = useQuery({

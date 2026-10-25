@@ -41,3 +41,25 @@ revues Codex. Mis à jour : 2026-10-25 (UTC).
 
 - Tranche `p2` du job e2e : chaque recette temps réel a son étape nommée ; `e2e.log` et `api.log` sont joints.
 - `node scripts/check-api-tests-db3.mjs` : les suites API sur base réelle restent refusées hors CI (règle DB-3).
+
+## Revue d'équipe de RTC-3 à RTC-5 (RT-D7)
+
+Trois relecteurs indépendants, en parallèle, sur les commits de chaque lot. Aucun P1. Constats retenus et corrigés :
+
+| Lot | Constat | Correctif (preuve) |
+| --- | --- | --- |
+| RTC-3 | P2 — réponse perdue puis session passée à une autre révision ou close : faux 409 au rejeu | la révision d'ancrage du premier envoi est relue ; rejeu permis même session close (recette : 200 après R04 et après clôture) |
+| RTC-3 | P3 — formulaire bloqué après un envoi partiel (vue ou sélection relues à chaque envoi) | contenu figé au premier envoi, champs en lecture seule, avis à l'écran |
+| RTC-3 | P3 — caméra d'annotation réappliquée après reprise du suivi | oubliée quand le suivi reprend |
+| RTC-3 | P3 — commentaire supprimé : objets cités encore exposés | `objectIds` vide si supprimé (recette) |
+| RTC-3 | P3 — règle d'or : bascules Participants / Annotations et « Citer la sélection » sans icône ni raccourci | trois commandes enregistrées (Ctrl+Alt+Maj+K, L, S), test à 19 commandes |
+| RTC-4 | P2 — « actualiser » réécrit la publication sous une revue ouverte | empreinte du manifeste figée à l'ouverture (`publication_manifest_hash`) ; revue signalée « publication changée », restée sur la révision examinée (recette) |
+| RTC-4 | P3 — retrait concurrent entre contrôle et insertion | publication relue sous verrou partagé (`FOR SHARE`) |
+| RTC-5 | P2 — pointeur fantôme après sortie (valeur en attente du regroupeur) | `Regroupeur.oublier()` (PR #289, test) |
+| RTC-5 | P2 — lancer de rayon à chaque mouvement | une fois par image, rayon et plan réutilisés ; coordonnées bornées à 1 km |
+| RTC-5 | P3 — étiquette affichée un instant en (0, 0) ; pointeur périmé gardé sans rendu | étiquette masquée jusqu'au premier placement ; relecture chaque seconde tant qu'il y a des pointeurs |
+| RTC-5 | P3 — « trop de connexions » non compté ; test de supervision trop lâche ; recette de charge : borne de débit peu exigeante, reconnexion à 20 + 20 prises | compté ; assertion exacte ; borne de 10 / s par émetteur ; attente des fermetures avant la reconnexion |
+
+Constats écartés, motivés : sphères recréées à chaque mise à jour (correct, coût faible, mémoire libérée par `vider`) ;
+règle « remplacée » héritée des publications antérieures au lot E.4 (lignes sans `diffusion_status`, non concernées par une
+revue au manifeste figé) ; titres de session par défaut non traduits (donnée, comme « Session — … »).

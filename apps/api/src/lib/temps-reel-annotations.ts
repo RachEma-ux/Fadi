@@ -57,21 +57,26 @@ function refusStudio(e: StudioRequestError): TempsReelErreur {
 export async function annoter(projectId: string, sessionId: string, actorId: string, saisie: AnnotationSaisie): Promise<{ annotation: StudioCommentView; session: SessionRow; pointDeVue: RtPointDeVue; rejoue: boolean }> {
   const session = await lireSession(db, projectId, sessionId);
   if (!session) throw new TempsReelErreur(404, "not_found", "Session introuvable.");
-  if (!sessionOuverte(session)) throw new TempsReelErreur(409, "session_close", "La session est close : annotez depuis les commentaires Studio.");
+  // Rejeu d'un envoi déjà enregistré (réponse perdue) : il reste un rejeu même si, entre-temps, la session a changé de
+  // révision ou a été close — la révision d'ancrage est celle du premier envoi, jamais la révision courante.
+  const [deja] = await db.select({ revisionId: studioComments.revisionId }).from(studioComments)
+    .where(and(eq(studioComments.variantId, session.variantId), eq(studioComments.requestId, saisie.requestId), eq(studioComments.authorId, actorId))).limit(1);
+  if (!deja && !sessionOuverte(session)) throw new TempsReelErreur(409, "session_close", "La session est close : annotez depuis les commentaires Studio.");
+  const revisionAncrage = deja?.revisionId ?? session.revisionId;
   const vue = pointDeVue(saisie.vue);
   let commentaire: StudioCommentView & { replayed: boolean };
   try {
     commentaire = await createStudioComment(
       { projectId, studyId: session.studyId, variantId: session.variantId },
       actorId,
-      { body: saisie.body, revisionId: session.revisionId, ...(saisie.objectIds ? { objectIds: saisie.objectIds } : {}), ...(saisie.audience ? { audience: saisie.audience } : {}), requestId: saisie.requestId },
+      { body: saisie.body, revisionId: revisionAncrage, ...(saisie.objectIds ? { objectIds: saisie.objectIds } : {}), ...(saisie.audience ? { audience: saisie.audience } : {}), requestId: saisie.requestId },
     );
   } catch (e) {
     if (e instanceof StudioRequestError) throw refusStudio(e);
     throw e;
   }
   await db.insert(rtAnnotations).values({
-    commentId: commentaire.id, projectId, variantId: session.variantId, sessionId: session.id, sourceRevisionId: commentaire.revisionId ?? session.revisionId, viewpoint: vue,
+    commentId: commentaire.id, projectId, variantId: session.variantId, sessionId: session.id, sourceRevisionId: commentaire.revisionId ?? revisionAncrage, viewpoint: vue,
   }).onConflictDoNothing();
   const [ligne] = await db.select().from(rtAnnotations).where(eq(rtAnnotations.commentId, commentaire.id)).limit(1);
   if (!ligne || ligne.sessionId !== session.id || !memePointDeVue(ligne.viewpoint, vue)) {
@@ -83,7 +88,7 @@ export async function annoter(projectId: string, sessionId: string, actorId: str
 /**
  * Annotations d'une variante (revue asynchrone après la session), filtrées par l'audience du fil (E1) : pour un
  * lecteur, une annotation de l'équipe n'existe pas. Un commentaire supprimé par son auteur garde son point de vue mais
- * plus son texte (même règle que les commentaires Studio).
+ * plus son texte ni ses objets cités (même règle que les commentaires Studio).
  */
 export async function listerAnnotations(projectId: string, variantId: string, role: ProjectRole, filtre: { sessionId?: string | undefined } = {}): Promise<AnnotationVue[]> {
   const audience = seesTeam(role) ? undefined : or(isNull(studioComments.audience), eq(studioComments.audience, "projet"));
@@ -98,7 +103,7 @@ export async function listerAnnotations(projectId: string, variantId: string, ro
     .orderBy(asc(rtAnnotations.createdAt));
   return lignes.map((l) => ({
     commentId: l.a.commentId, sessionId: l.a.sessionId, sourceRevisionId: l.a.sourceRevisionId, pointDeVue: l.a.viewpoint,
-    body: l.deletedAt ? null : l.body, objectIds: l.objectIds, audience: l.audience ?? "projet", auteurId: l.authorId, auteur: l.auteur?.trim() || l.email,
+    body: l.deletedAt ? null : l.body, objectIds: l.deletedAt ? [] : l.objectIds, audience: l.audience ?? "projet", auteurId: l.authorId, auteur: l.auteur?.trim() || l.email,
     observation: l.observation !== null, createdAt: l.a.createdAt.toISOString(),
   }));
 }

@@ -13,6 +13,8 @@ export interface SessionListee extends SessionPublique {
   presentateur: Personne | null;
   connectes: Personne[];
   hoteAbsent: boolean;
+  /** Revue : la publication a été actualisée, retirée ou remplacée depuis l'ouverture (la revue reste sur sa révision). */
+  publicationChangee?: boolean;
 }
 export interface EntreeJournalSession { action: string; actorId: string | null; targetId: string | null; revisionId: string | null; createdAt: string; acteur: string | null; cible: string | null }
 

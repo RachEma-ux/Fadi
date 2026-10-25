@@ -1536,6 +1536,8 @@ export const rtSessions = pgTable("rt_sessions", {
   variantId: text("variant_id").notNull(),
   revisionId: text("revision_id").notNull(),
   publicationId: text("publication_id").references(() => studioPublications.id, { onDelete: "cascade" }),
+  /** Revue (RTC-4) : empreinte du manifeste examiné, figée à l'ouverture ; null pour une session de travail. */
+  publicationManifestHash: text("publication_manifest_hash"),
   title: text("title").notNull(),
   hostId: text("host_id").notNull().references(() => users.id, { onDelete: "restrict" }),
   presenterId: text("presenter_id").references(() => users.id, { onDelete: "restrict" }),

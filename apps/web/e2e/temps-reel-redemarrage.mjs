@@ -94,7 +94,7 @@ b2.envoyer({ type: "rejoindre", sessionId, depuis: seq });
 a2.envoyer({ type: "rejoindre", sessionId });
 const eb = await b2.attendre((m) => m.type === "etat");
 check("retour avec un état resynchronisé (journal de reprise perdu au redémarrage)", eb?.resynchronise === true, JSON.stringify(eb).slice(0, 200));
-await a2.attendre((m) => m.type === "participants" && m.participants.length === 2);
+await a2.attendre((m) => (m.type === "participants" || m.type === "etat") && m.participants.length === 2);
 check("présence retrouvée", true);
 const lues = (await lecteur("GET", `${tr}/annotations?variantId=${etude.variant.id}`)).body?.annotations ?? [];
 check("aucune donnée perdue : l'annotation d'avant l'arrêt est relue", note.status === 201 && lues.some((x) => x.commentId === note.body.annotation.id));

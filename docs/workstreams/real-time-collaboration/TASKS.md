@@ -2,19 +2,22 @@
 
 ## À faire
 
-- [ ] RTC-0.4 — Fixer le profil de référence des budgets (exemple P.118, appareil Android de recette, réseau déclaré)
+- [ ] RTC-0.4 — (mesuré sur l'environnement de recette, RT-D6 § 7 ; reste le profil P.118 sur l'appareil de recette) Fixer le profil de référence des budgets (exemple P.118, appareil Android de recette, réseau déclaré)
       et mesurer ce qui peut l'être avant RTC-1 (RT-D2, RT-Q4). (Issue #283)
 - [ ] RTC-0.5 — Revue du plan après fusion d'Organisations phase 2 (bascule de `loadProjectAccess`) et du socle COM :
       réaligner portées, audiences et raccourcis. (Issue #283)
-- [ ] RTC-0.6 — Statut périmé de Collaboration dans `apps/web/src/modules/module-registry.ts` (REP-06, repris du plan
+- [x] RTC-0.6 — Statut périmé de Collaboration (fait en RTC-5) dans `apps/web/src/modules/module-registry.ts` (REP-06, repris du plan
       du 22 octobre) : texte d'interface et traduction `en.json`, dans une PR de code distincte. (Issue #283)
 - [ ] Hors première version : annulation de l'Atelier par auteur (`cibleAnnulation` prend la dernière commande du
       projet) — décision D4 de l'ancien plan, à trancher avant que l'Atelier entre dans une session.
 
 ## En cours
 
-- RTC-3 — Annotations enregistrées : implémentées et vérifiées en local (`lots/rtc-3.md`), PR du lot (Issue #283).
-- RTC-4, RTC-5 — à enchaîner un par un (RT-D4).
+- RTC-3, RTC-4, RTC-5 — implémentés, relus en équipe (RT-D7) et vérifiés en local ; PR unique, un commit par lot
+  (`lots/rtc-3.md`, `rtc-4.md`, `rtc-5.md`).
+- Préproduction et mise en service : au maître d'ouvrage (recettes `temps-reel-redemarrage.mjs`,
+  `temps-reel-retour-arriere.mjs`, `temps-reel-charge.mjs` prêtes ; Caddy `basic_auth`, P.118 sur l'appareil Android,
+  Firefox / WebKit).
 
 ## Terminé
 

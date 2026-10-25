@@ -85,6 +85,7 @@ export class HubTempsReel {
     const duCompte = [...this.connexions].filter((c) => c.userId === compte.userId).length;
     if (duCompte >= BORNES_TEMPS_REEL.connexionsParCompte) {
       prise.fermer(FERMETURE.tropDeConnexions, "trop-de-connexions");
+      this.compteurs.fermetures["trop-de-connexions"] = (this.compteurs.fermetures["trop-de-connexions"] ?? 0) + 1;
       return null;
     }
     const c: Connexion = {

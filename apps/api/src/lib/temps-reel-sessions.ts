@@ -81,7 +81,9 @@ export async function ouvrirSession(projectId: string, actorId: string, input: C
     let publication: typeof studioPublications.$inferSelect | undefined;
     if (input.publicationId !== undefined) {
       [publication] = await tx.select().from(studioPublications)
-        .where(and(eq(studioPublications.id, input.publicationId), eq(studioPublications.projectId, projectId), eq(studioPublications.variantId, variante.id))).limit(1);
+        .where(and(eq(studioPublications.id, input.publicationId), eq(studioPublications.projectId, projectId), eq(studioPublications.variantId, variante.id))).limit(1)
+        // Verrou partagé jusqu'à l'insertion : un retrait ou un remplacement concurrent attend, le contrôle reste valable.
+        .for("share");
       if (!publication) throw new TempsReelErreur(404, "not_found", "Publication introuvable pour cette variante.");
       const refus = refusRevue(publication);
       if (refus) throw new TempsReelErreur(409, "publication_non_figee", refus);
@@ -93,7 +95,7 @@ export async function ouvrirSession(projectId: string, actorId: string, input: C
     const id = newId("rtses");
     const [session] = await tx.insert(rtSessions).values({
       id, projectId, scopeType: publication ? "paquet-revue" : "studio-revision", studyId: etude.id, variantId: variante.id, revisionId,
-      publicationId: publication?.id ?? null,
+      publicationId: publication?.id ?? null, publicationManifestHash: publication?.manifestHash ?? null,
       title: (input.titre?.trim() || (publication ? `Revue — ${publication.title}` : `Session — ${variante.nom}`)).slice(0, 120), hostId: actorId, presenterId: actorId,
       requestId: input.requestId, createdBy: actorId, expiresAt: new Date(maintenant.getTime() + BORNES_TEMPS_REEL.dureeMaxMs), lastActivityAt: maintenant,
     }).returning();
@@ -252,4 +254,15 @@ export async function sessionsAExpirer(sansConnexion: (sessionId: string) => boo
 export async function publicationDuProjet(projectId: string, publicationId: string) {
   const [p] = await db.select().from(studioPublications).where(and(eq(studioPublications.id, publicationId), eq(studioPublications.projectId, projectId))).limit(1);
   return p ?? null;
+}
+
+/**
+ * Revue (RTC-4) : la publication a-t-elle changé depuis l'ouverture (manifeste actualisé, retrait, remplacement) ?
+ * La revue reste sur la révision examinée ; l'écran le signale. `false` pour une session de travail.
+ */
+export async function publicationChangee(s: SessionRow): Promise<boolean> {
+  if (s.scopeType !== "paquet-revue" || !s.publicationId) return false;
+  const [p] = await db.select().from(studioPublications).where(eq(studioPublications.id, s.publicationId)).limit(1);
+  if (!p) return true;
+  return p.manifestHash !== s.publicationManifestHash || p.revisionId !== s.revisionId || refusRevue(p) !== null;
 }

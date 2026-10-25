@@ -397,9 +397,20 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enDirect, selectionIds.join("\u0000")]);
   const nomsSession = Object.fromEntries(tr.etat.participants.map((p) => [p.userId, p.nom]));
+  // Pointeurs distants : relus chaque seconde tant qu'il y en a, pour qu'un pointeur périmé (10 s) disparaisse même
+  // sans autre rendu.
+  const [, setHorlogePointeurs] = useState(0);
+  const pointeursEnCours = enDirect && Object.keys(tr.etat.pointeurs).length > 0;
+  useEffect(() => {
+    if (!pointeursEnCours) return;
+    const t = setInterval(() => setHorlogePointeurs((n) => n + 1), 1000);
+    return () => clearInterval(t);
+  }, [pointeursEnCours]);
   // Annotations (RTC-3) : la vue de cet écran devient le point de vue enregistré ; revoir un point de vue libère du suivi.
   const vueCourante = (): PointDeVue => ({ affichage, ...(plan2d ? { plan: cadreRef.current } : {}), ...(vue3d && derniereCamera.current ? { camera: derniereCamera.current } : {}) });
   const [cameraAnnotation, setCameraAnnotation] = useState<{ camera: StudioCameraScene; n: number } | null>(null);
+  // Reprendre le suivi oublie la caméra d'annotation : elle ne doit pas revenir au prochain passage en navigation libre.
+  useEffect(() => { if (tr.suit) setCameraAnnotation(null); }, [tr.suit]);
   const voirPointDeVue = (a: AnnotationSession) => {
     if (tr.suit && !presenteEnDirect) tr.actions.suivre(false);
     const v = a.pointDeVue;
