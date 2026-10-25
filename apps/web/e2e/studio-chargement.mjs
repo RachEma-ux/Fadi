@@ -218,8 +218,10 @@ try {
   const retire = await page.evaluate(async (cible) => {
     if (!cible) return null;
     const build = document.querySelector('meta[name="fadi-build"]').content;
-    const cache = await caches.open(`fadi-shell-${build}`);
-    return (await cache.delete(cible)) ? cible : null;
+    // EX-042 : three.js est un module facultatif, rangé dans le cache des modules de ce build.
+    let retire = false;
+    for (const n of [`fadi-shell-${build}`, `fadi-profil-${build}`, `fadi-modules-${build}`]) retire = (await (await caches.open(n)).delete(cible)) || retire;
+    return retire ? cible : null;
   }, cibleThree);
   check("préparation : three.js retiré du cache du build (simulation d'un fichier absent)", !!retire, String(retire));
   g = await ouvrirGestionnaire();

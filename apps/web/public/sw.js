@@ -25,10 +25,13 @@
  * l'activation suivante. Seuls les fichiers empreints (/assets/…, nom = contenu)
  * y sont lus : un fichier non empreint d'un autre build n'est jamais servi.
  *
- * Classes du précache (B.3-07, EX-042 ; `chargement/carte-morceaux.ts`) : (a) coquille minimale (document, bundle
- * initial), (b) ressources du profil Studio (coquille Studio, catalogue, planche 2D, carte des morceaux
- * `/chargement.json`), (c) modules facultatifs (vue 3D, Workers, Atelier, autres écrans) ; (d) les données métier et
- * la file des commandes restent dans IndexedDB, jamais ici. L'installation met en cache (a) et (b) d'abord, puis (c).
+ * Classes du précache (B.3-07, EX-042 ; `chargement/carte-morceaux.ts`), chacune dans son PROPRE cache du build :
+ * (a) coquille minimale (document, bundle initial) → `fadi-shell-<build>` ; (b) ressources du profil Studio (coquille
+ * Studio, catalogue, planche 2D, carte des morceaux `/chargement.json`) → `fadi-profil-<build>` ; (c) modules
+ * facultatifs (vue 3D, Workers, Atelier, autres écrans, Parcelle) → `fadi-modules-<build>` ; (d) les données métier et
+ * la file des commandes restent dans IndexedDB, jamais ici. L'installation remplit (a) et (b) d'abord, puis (c) ; un
+ * fichier lu plus tard rejoint le cache de sa classe. Les modules hors liste anticipée (binaire `.wasm` du noyau exact,
+ * moteur WebGPU) ne sont téléchargés qu'à la demande : premier usage, ou « Préparer le profil hors ligne ».
  * Politique retenue (option conservatrice) : les modules facultatifs restent précachés comme avant (aucune capacité
  * hors ligne déjà livrée n'est retirée), mais « précaché » n'est jamais « chargé » : un module n'est exécuté qu'à son
  * premier usage, et sa disponibilité hors connexion est lue dans ce cache par l'interface (Tool Manager), fichier
@@ -39,7 +42,11 @@
 const BUILD = "__FADI_BUILD__";
 const PRECACHE = "__FADI_ASSETS__";
 const PREFIX = "fadi-shell-";
+/** Préfixes des caches de classe (EX-042) : coquille, profil Studio, modules facultatifs. */
+const PREFIXES = { coquille: PREFIX, profil: "fadi-profil-", facultatif: "fadi-modules-" };
 const CACHE = `${PREFIX}${BUILD}`;
+const CACHES_BUILD = { coquille: CACHE, profil: `${PREFIXES.profil}${BUILD}`, facultatif: `${PREFIXES.facultatif}${BUILD}` };
+const NOMS_BUILD = Object.values(CACHES_BUILD);
 const SHELL = "/index.html";
 const CARTE = "/chargement.json";
 const STATIC = /^\/(assets|parcelle)\//;
@@ -48,11 +55,24 @@ const API = /^\/(auth|projects|examples|library|notifications|preferences|health
 const MARQUE = `<meta name="fadi-build" content="${BUILD}">`;
 /** Classes du précache dans l'ordre d'installation (coquille et profil, puis facultatif) ; une liste simple reste acceptée. */
 const CLASSES = Array.isArray(PRECACHE)
-  ? [PRECACHE]
+  ? [["coquille", PRECACHE]]
   : PRECACHE && typeof PRECACHE === "object"
-    ? [[...(PRECACHE.coquille ?? []), ...(PRECACHE.profil ?? [])], PRECACHE.facultatif ?? []]
+    ? [["coquille", PRECACHE.coquille ?? []], ["profil", PRECACHE.profil ?? []], ["facultatif", PRECACHE.facultatif ?? []]]
     : [];
-const LISTE = CLASSES.flat();
+const LISTE = CLASSES.flatMap(([, l]) => l);
+const CLASSE_DE = new Map(CLASSES.flatMap(([c, l]) => l.map((path) => [path, c])));
+/** Classe d'un chemin servi : celle de la liste anticipée ; un fichier inconnu de la liste est un module facultatif. */
+const classeDe = (path) => (path === SHELL ? "coquille" : path === CARTE ? "profil" : CLASSE_DE.get(path) ?? "facultatif");
+const cacheDe = (path) => caches.open(CACHES_BUILD[classeDe(path)]);
+/** Réponse d'un des caches de CE build (les trois classes). */
+async function dansCeBuild(request) {
+  for (const nom of NOMS_BUILD) {
+    if (!(await caches.has(nom))) continue;
+    const r = await (await caches.open(nom)).match(request);
+    if (r) return r;
+  }
+  return undefined;
+}
 /** Fichiers non empreints de la liste anticipée de CE build (Parcelle) : seuls admis dans le cache après l'installation. */
 const NON_EMPREINTS = new Set(LISTE.filter((path) => path !== SHELL && !HASHED.test(path)));
 /** Fichier admis dans le cache de ce build après l'installation : empreint, ou non empreint de la liste anticipée. */
@@ -89,10 +109,10 @@ self.addEventListener("install", (event) =>
       // empreint manqué est réparé à sa première lecture réussie, voir `admis`). La coquille et les fichiers non
       // empreints contournent le cache HTTP du navigateur (`reload`) : rien d'un build antérieur ne s'y glisse. Les
       // morceaux empreints sont immuables (nom = contenu) : le cache HTTP peut les fournir sans nouveau téléchargement.
-      const cache = await caches.open(CACHE);
-      // Coquille et profil d'abord, puis les modules facultatifs.
-      for (const classe of CLASSES) await Promise.all(
-        classe.map(async (path) => {
+      // Coquille, puis profil, puis modules facultatifs : chaque classe dans son propre cache (EX-042).
+      for (const [nom, liste] of CLASSES) await Promise.all(
+        liste.map(async (path) => {
+          const cache = await caches.open(CACHES_BUILD[nom]);
           try {
             const response = await fetch(HASHED.test(path) ? path : new Request(path, { cache: "reload" }));
             if (!response.ok) return;
@@ -115,10 +135,19 @@ self.addEventListener("activate", (event) =>
       // Purge des caches des builds précédents : rien de périmé ne survit à une mise à jour. Si une page est ouverte,
       // le dernier cache précédent (les clés suivent l'ordre de création) reste le temps de cette page : ses morceaux
       // empreints (Studio compris) restent servis hors ligne, ses commandes non synchronisées restent utilisables.
-      const anciens = (await caches.keys()).filter((name) => name.startsWith(PREFIX) && name !== CACHE);
+      const prefixes = Object.values(PREFIXES);
+      const noms = await caches.keys();
+      const anciens = noms.filter((name) => name.startsWith(PREFIX) && name !== CACHE);
       const ouvertes = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
       const garde = ouvertes.length ? anciens[anciens.length - 1] : undefined;
-      for (const name of anciens) if (name !== garde) await caches.delete(name);
+      // Les trois caches de classe d'un build vont ensemble : le build gardé garde ses trois caches.
+      const buildGarde = garde ? garde.slice(PREFIX.length) : null;
+      for (const name of noms) {
+        const prefixe = prefixes.find((x) => name.startsWith(x));
+        if (!prefixe || NOMS_BUILD.includes(name)) continue;
+        if (buildGarde !== null && name.slice(prefixe.length) === buildGarde) continue;
+        await caches.delete(name);
+      }
       await self.clients.claim();
       // B.3-10 : chaque page ouverte apprend la mise à jour (ancien cache gardé ou non) ; elle ne se recharge pas
       // d'elle-même, ses commandes non synchronisées restent dans IndexedDB, que ce service worker ne touche jamais.
@@ -128,8 +157,7 @@ self.addEventListener("activate", (event) =>
 );
 
 async function cacheFirst(request, url) {
-  const cache = await caches.open(CACHE);
-  const hit = await cache.match(request);
+  const hit = await dansCeBuild(request);
   if (hit) return hit;
   // Morceau empreint d'un build précédent encore ouvert (mise à jour en cours) : son nom fixe son contenu, il ne peut
   // pas être périmé. Un fichier non empreint (Parcelle) n'est jamais lu dans un autre cache.
@@ -140,7 +168,7 @@ async function cacheFirst(request, url) {
   const response = await fetch(request);
   // Après l'installation, n'entrent dans le cache de ce build qu'un fichier empreint ou un fichier non empreint de sa
   // liste anticipée (réparation d'une mise en cache manquée à l'installation, ex. Parcelle) ; aucun autre fichier.
-  if (response.ok && admis(url)) await cache.put(url.search ? request : url.pathname, response.clone());
+  if (response.ok && admis(url)) await (await cacheDe(url.pathname)).put(url.search ? request : url.pathname, response.clone());
   return response;
 }
 
@@ -164,10 +192,10 @@ async function staticPage(request, url) {
   try {
     const response = await fetch(request);
     // Page de la liste anticipée reçue du réseau : elle répare une mise en cache manquée à l'installation.
-    if (response.ok && admis(url)) await (await caches.open(CACHE)).put(url.pathname, response.clone());
+    if (response.ok && admis(url)) await (await cacheDe(url.pathname)).put(url.pathname, response.clone());
     return response;
   } catch (err) {
-    const cached = await (await caches.open(CACHE)).match(request, { ignoreSearch: true });
+    const cached = await (await cacheDe(url.pathname)).match(request, { ignoreSearch: true });
     if (cached) return cached;
     throw err;
   }
@@ -175,7 +203,7 @@ async function staticPage(request, url) {
 
 /** Carte des morceaux : réseau d'abord ; seule la carte de CE build est enregistrée ; hors ligne, sa copie de ce build. */
 async function carte(request) {
-  const cache = await caches.open(CACHE);
+  const cache = await caches.open(CACHES_BUILD.profil);
   try {
     const response = await fetch(request);
     if (await carteDeCeBuild(response)) await cache.put(CARTE, response.clone());
