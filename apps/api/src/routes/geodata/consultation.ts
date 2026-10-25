@@ -206,6 +206,8 @@ consultationRouter.get("/couches/:id/codes", async (req, res) => {
  * couche (au plus 50 couches).
  */
 const cacheCategories = new Map<string, { code: string; nom: string | null; rang: number }[]>();
+/** Borne des paires de voisins lues : au-delà (objets superposés en masse), couleurs attribuées sans voisinage. */
+const PAIRES_MAX = 50_000;
 consultationRouter.get("/couches/:id/categories", async (req, res) => {
   const couche = await coucheConsultable(await espaceDe(req), req.params.id);
   if (!couche) return introuvable(res);
@@ -214,8 +216,9 @@ consultationRouter.get("/couches/:id/categories", async (req, res) => {
     const objets = await requete<{ code: string; nom: string | null }>(`SELECT o.code, o.nom FROM geodata_objets o WHERE o.couche_id = $1 ORDER BY o.code LIMIT $2`, [req.params.id, OBJETS_PAR_COUCHE]);
     const paires = await requete<{ a: string; b: string }>(
       `SELECT a.code AS a, b.code AS b FROM geodata_objets a JOIN geodata_objets b ON b.couche_id = a.couche_id AND a.code < b.code AND a.geom && b.geom AND ST_Intersects(a.geom, b.geom)
-        WHERE a.couche_id = $1`, [req.params.id]);
-    const rangs = attribuerCategories(objets, paires.map((p) => [p.a, p.b] as const));
+        WHERE a.couche_id = $1 LIMIT $2`, [req.params.id, PAIRES_MAX + 1]);
+    // Mémoire bornée : un graphe trop dense n'est pas construit, les couleurs suivent alors l'ordre des noms.
+    const rangs = attribuerCategories(objets, paires.length > PAIRES_MAX ? [] : paires.map((p) => [p.a, p.b] as const));
     categories = objets.map((o) => ({ code: o.code, nom: o.nom, rang: rangs.get(o.code) ?? 0 }));
     if (cacheCategories.size >= 50) cacheCategories.delete(cacheCategories.keys().next().value!);
     cacheCategories.set(req.params.id, categories);

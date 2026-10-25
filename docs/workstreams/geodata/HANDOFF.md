@@ -23,9 +23,9 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 
 ## Prochaine action
 
-Suivre `RELEASE-V1.md` : vérifier le SHA en préproduction, y attribuer les rôles et importer geoBoundaries avec les outils
-de l'image (`apps/api/dist/geodata-role.js`, `geodata-reference.js`), recette d'usage, puis production. **Attention :**
-`fadi-prod-auto` (phase B du déploiement) n'existe pas encore ; une Release seule ne met rien en production.
+Préproduction : rôles et geoBoundaries déjà en place (25 octobre 2026). Restent : fusion de la PR #314, couches des
+sources ouvertes (OpenStreetMap, OurAirports) par `scripts/geodata/extraire-sources.mjs` et leurs fiches, puis la
+production selon `RELEASE-V1.md` (phase B `fadi-prod-auto` absente : une Release seule ne met rien en production).
 
 ## Tests et preuves
 
