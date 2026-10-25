@@ -1,12 +1,14 @@
 /**
  * Chaîne administrative d'import de référence GeoData (D-GD-04, D-GD-07, plan GD-03) :
  *
- *   npm run geodata:import-reference -- --fiche <fiche.json | nom> [--fichier <données.geojson|.gpkg>] [--table <table>]
+ *   npm run geodata:import-reference -- --fiche <fiche.json | nom | toutes> [--fichier <données.geojson|.gpkg>] [--table <table>]
  *        --preparateur <courriel> [--publier-par <courriel>]
  *   (image de production : node apps/api/dist/geodata-reference.js --fiche geoboundaries-mar-adm1 --preparateur …)
  *
  * Les données sont lues de `--fichier`, sinon du fichier livré avec la fiche (`version.fichier`, ex. extractions
  * OpenStreetMap de `docs/geodata/sources/osm/`), sinon téléchargées depuis `version.url`.
+ *
+ * `--fiche toutes` traite une à une toutes les fiches livrées (une déjà importée n'est pas recréée).
  *
  * `--fiche` accepte un chemin, ou le nom d'une fiche qualifiée du dépôt (`docs/geodata/sources/<nom>.json`, copiées à
  * côté du bundle dans `dist/geodata-sources/`). Relancée sur une version déjà préparée (même source, même empreinte),
@@ -22,7 +24,7 @@
  */
 import "dotenv/config";
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { basename, dirname, join } from "node:path";
 import { Pool } from "pg";
@@ -55,11 +57,32 @@ function argument(nom: string): string | undefined {
   return i >= 0 ? process.argv[i + 1] : undefined;
 }
 
+/** Fiches qualifiées livrées (dossier `geodata-sources` du bundle, ou `docs/geodata/sources` en développement). */
+function fichesLivrees(): string[] {
+  for (const base of ["./geodata-sources/", "../../../../docs/geodata/sources/"]) {
+    const dossier = fileURLToPath(new URL(base, import.meta.url));
+    if (existsSync(dossier)) return readdirSync(dossier).filter((f) => f.endsWith(".json")).sort().map((f) => join(dossier, f));
+  }
+  throw new Error("Aucun dossier de fiches qualifiées.");
+}
+
 async function main() {
   const argFiche = argument("fiche");
   const preparateur = argument("preparateur");
-  if (!argFiche || !preparateur) throw new Error("Usage : --fiche <fiche.json> --preparateur <courriel> [--fichier <données>] [--table <table>] [--publier-par <courriel>]");
-  const chemin = cheminFiche(argFiche);
+  if (!argFiche || !preparateur) throw new Error("Usage : --fiche <fiche.json | nom | toutes> --preparateur <courriel> [--fichier <données>] [--table <table>] [--publier-par <courriel>]");
+  if (argFiche !== "toutes") return importer(cheminFiche(argFiche), preparateur);
+  // Toutes les fiches livrées, une à une (une transaction chacune) : un échec n'arrête pas les suivantes ; bilan final.
+  if (argument("fichier")) throw new Error("--fichier ne s'emploie pas avec --fiche toutes.");
+  const echecs: string[] = [];
+  for (const chemin of fichesLivrees()) {
+    console.log(`\n=== ${basename(chemin, ".json")} ===`);
+    try { await importer(chemin, preparateur); } catch (e) { echecs.push(basename(chemin, ".json")); console.error(e instanceof Error ? e.message : e); }
+  }
+  if (echecs.length) throw new Error(`\nÉchec pour ${echecs.length} fiche(s) : ${echecs.join(", ")}.`);
+  console.log("\nToutes les fiches livrées ont été traitées.");
+}
+
+async function importer(chemin: string, preparateur: string) {
   const fiche = JSON.parse(readFileSync(chemin, "utf8")) as FicheSource;
   let octets: Buffer;
   let nomFichier: string;

@@ -33,6 +33,9 @@ docker compose --env-file .env.deploy exec app node apps/api/dist/geodata-role.j
 docker compose --env-file .env.deploy exec app node apps/api/dist/geodata-reference.js --fiche geoboundaries-mar-adm1 --preparateur <gestionnaire>
 docker compose --env-file .env.deploy exec app node apps/api/dist/geodata-reference.js --fiche geoboundaries-mar-adm1 --preparateur <gestionnaire> --publier-par <responsable>
 # (idem avec geoboundaries-mar-adm2)
+
+# Toutes les fiches livrées d'un coup (geoBoundaries, OpenStreetMap, OurAirports) : une déjà importée n'est pas recréée.
+docker compose --env-file .env.deploy exec app node apps/api/dist/geodata-reference.js --fiche toutes --preparateur <gestionnaire> --publier-par <responsable>
 ```
 
 En préproduction, le conteneur s'appelle `fadi-preprod-app-1` (`sudo docker exec fadi-preprod-app-1 node apps/api/dist/…`).
@@ -59,6 +62,15 @@ Développement (dépôt complet) : `npm run geodata:role --workspace=@fadi/api -
 Fiches de source : `docs/geodata/sources/*.json` (producteur, adresse, empreinte, période, licence, attribution, droits par
 usage, précision, conditions). Le jeu `apps/api/test-corpus/geodata/synthetique-unites.*` est **synthétique** (tests et
 recette uniquement), n'est pas embarqué dans l'image et ne doit jamais être publié sur un environnement réel.
+
+## Sources ouvertes livrées avec leurs données (D-GD-12)
+
+Couches vectorielles d'OpenStreetMap (ODbL) et d'OurAirports (domaine public), préparées par
+`scripts/geodata/extraire_sources.py` (pyosmium ; extraits PBF régionaux d'OpenStreetMap, empreinte et date consignées) :
+objets restreints au territoire de geoBoundaries MAR ADM1, GeoJSON déterministe dans `docs/geodata/sources/donnees/`,
+fiche qualifiée à côté (`version.fichier`, empreinte contrôlée à l'import, aucun téléchargement en production). Une couche
+de plus de 5 000 objets n'est pas écrite (borne V1) ; les couches raster (relief, climat, sols, imagerie) n'entrent pas
+dans GeoData V1. Ces données sont collaboratives : ni exhaustives ni officielles.
 
 Sources non publiées faute de droits établis : population HCP RGPH 2024 (conditions de réutilisation non qualifiées).
 Un indicateur « Superficie calculée » est produit par GeoData (ellipsoïde WGS 84) : c'est un résultat calculé, pas une
