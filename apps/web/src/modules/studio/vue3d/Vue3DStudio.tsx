@@ -98,6 +98,17 @@ export interface Vue3DStudioProps {
   visualisation?: boolean;
   /** La vue remplit la hauteur de son conteneur (canevas de l'espace de travail) au lieu d'un rapport fixe. */
   remplir?: boolean;
+  /**
+   * Session en direct (Issue #283) : caméra du présentateur à poser (suivi), réappliquée quand `n` change. Une caméra
+   * orthographique demande la navigation « plan », une perspective l'orbite (`surNavigation`).
+   */
+  cameraPartagee?: { camera: StudioCameraScene; n: number } | null;
+  /** Caméra de cette vue déplacée (navigation) : le présentateur la partage. */
+  surCameraLocale?: (c: StudioCameraScene) => void;
+  /** Pointeur de cette vue dans le repère `local-3d` (premier objet touché, sinon le sol z = 0) ; null quand il sort. */
+  surPointeur3d?: (p: { x: number; y: number; z: number } | null) => void;
+  /** Pointeurs des autres participants (session en direct) : marques nommées, jamais une donnée du document. */
+  pointeurs3d?: readonly { userId: string; nom: string; x: number; y: number; z: number }[];
 }
 
 interface Moteur {
@@ -112,12 +123,18 @@ interface Moteur {
   /** Murs (vides compris) et ouvertures (A.4), désignables. */
   architecture: THREE.Group;
   surimpression: THREE.Group;
+  /** Pointeurs des autres participants (session en direct). */
+  presence: THREE.Group;
   /** Scènes de rendu incrémentales (C.2) des trois groupes. */
   rendus: { contenu: SceneRendu; libres: SceneRendu; architecture: SceneRendu };
   rendre: () => void;
   /** Caméra déplacée (navigation, rappel) : la scène active est réévaluée. */
   surCamera: () => void;
 }
+
+/** Teinte d'une personne (même suite que la surimpression 2D) : complète son nom, ne le remplace jamais. */
+const TEINTES_PRESENCE = ["#b4005a", "#005fb4", "#007a3d", "#8a4b00", "#5a2db4", "#00707a"];
+const teintePresence = (userId: string) => TEINTES_PRESENCE[[...userId].reduce((n, c) => n + c.charCodeAt(0), 0) % TEINTES_PRESENCE.length]!;
 
 const nombre = (v: number) => v.toLocaleString(LOCALE, { maximumFractionDigits: 3 });
 
@@ -336,7 +353,7 @@ function Champ({ nom, libelle, valeur, surValeur, requis = true }: { nom: string
   </label>;
 }
 
-export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbite", coupe = false, selection = null, layerId, surSelection, surCommandes, selectionArchitecture = null, surSelectionArchitecture, demande = null, surDemandeTraitee, surNavigation, provenance, hotePanneaux, visualisation: avecVisualisation = true, remplir = false }: Vue3DStudioProps) {
+export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbite", coupe = false, selection = null, layerId, surSelection, surCommandes, selectionArchitecture = null, surSelectionArchitecture, demande = null, surDemandeTraitee, surNavigation, provenance, hotePanneaux, visualisation: avecVisualisation = true, remplir = false, cameraPartagee = null, surCameraLocale, surPointeur3d, pointeurs3d }: Vue3DStudioProps) {
   const hote = useRef<HTMLDivElement>(null);
   const moteur = useRef<Moteur | null>(null);
   const cadre = useRef(false);
@@ -357,6 +374,15 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   const [statut, setStatut] = useState("");
   const [cameraVersion, setCameraVersion] = useState(0);
   const enAttente = useRef<StudioScene | null>(null);
+  // Session en direct : la dernière fonction de partage, et un garde pendant qu'on pose la caméra suivie (aucun écho).
+  const surCameraLocaleRef = useRef(surCameraLocale);
+  surCameraLocaleRef.current = surCameraLocale;
+  const applicationPartagee = useRef(false);
+  const surPointeur3dRef = useRef(surPointeur3d);
+  surPointeur3dRef.current = surPointeur3d;
+  const pointeurs3dRef = useRef(pointeurs3d);
+  pointeurs3dRef.current = pointeurs3d;
+  const etiquettes = useRef(new Map<string, HTMLElement>());
   // La scène active ne se réévalue au fil de la navigation que lorsqu'une scène est choisie et montrée.
   const suiviCamera = useRef(false);
   // Maillage en tâche de fond (D.2) : avec une scène montrée, le Worker maille le document « tous calques affichés »
@@ -452,10 +478,10 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     const grille = new THREE.GridHelper(40, 40, 0xbfcfd3, 0xdde6e8);
     grille.rotation.x = Math.PI / 2; // plan XY du repère local-3d
     scene.add(grille);
-    const contenu = new THREE.Group(), libres = new THREE.Group(), architecture = new THREE.Group(), surimpression = new THREE.Group();
-    scene.add(contenu, libres, architecture, surimpression);
+    const contenu = new THREE.Group(), libres = new THREE.Group(), architecture = new THREE.Group(), surimpression = new THREE.Group(), presence = new THREE.Group();
+    scene.add(contenu, libres, architecture, surimpression, presence);
     const m: Moteur = {
-      renderer, scene, perspective, plan, camera: perspective, controls: null, contenu, libres, architecture, surimpression,
+      renderer, scene, perspective, plan, camera: perspective, controls: null, contenu, libres, architecture, surimpression, presence,
       rendus: { contenu: new SceneRendu(contenu), libres: new SceneRendu(libres), architecture: new SceneRendu(architecture) },
       rendre: () => {
         mesurerRendu3d(() => renderer.render(scene, m.camera));
@@ -463,8 +489,17 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
         const c = compteGpu(renderer);
         renderer.domElement.dataset.studioGpuGeometries = String(c.geometries);
         renderer.domElement.dataset.studioGpuTextures = String(c.textures);
+        // Étiquettes des pointeurs distants : leur point 3D projeté sur le canevas à chaque rendu.
+        const w = renderer.domElement.clientWidth, h = renderer.domElement.clientHeight;
+        for (const p of pointeurs3dRef.current ?? []) {
+          const el = etiquettes.current.get(p.userId); if (!el) continue;
+          const v = new THREE.Vector3(p.x, p.y, p.z).project(m.camera);
+          const visible = v.z > -1 && v.z < 1 && Math.abs(v.x) <= 1 && Math.abs(v.y) <= 1;
+          el.style.display = visible ? "" : "none";
+          el.style.transform = `translate(${((v.x + 1) / 2) * w}px, ${((1 - v.y) / 2) * h}px)`;
+        }
       },
-      surCamera: () => { if (suiviCamera.current) setCameraVersion((v) => v + 1); },
+      surCamera: () => { if (suiviCamera.current) setCameraVersion((v) => v + 1); if (!applicationPartagee.current) surCameraLocaleRef.current?.(cameraCourante(m)); },
     };
     moteur.current = m;
     poserControles(m, navigation);
@@ -484,6 +519,31 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       if (bas && e.button === 0 && Math.hypot(e.clientX - bas.x, e.clientY - bas.y) < 5) clic.current(e);
       bas = null;
     };
+    // Pointeur partagé (session en direct) : objet touché, sinon le sol ; rien n'est calculé hors session. Le lancer de
+    // rayon est borné à une image (requestAnimationFrame) : le canal n'envoie de toute façon qu'un pointeur par 100 ms.
+    const rayonPointeur = new THREE.Raycaster(), sol = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), surSol = new THREE.Vector3(), ndcPointeur = new THREE.Vector2();
+    let dernierEvenement: PointerEvent | null = null, imagePrevue = 0;
+    const calculerPointeur = () => {
+      imagePrevue = 0;
+      const e = dernierEvenement, f = surPointeur3dRef.current;
+      if (!e || !f) return;
+      const r = renderer.domElement.getBoundingClientRect();
+      ndcPointeur.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+      rayonPointeur.setFromCamera(ndcPointeur, m.camera);
+      const impact = rayonPointeur.intersectObjects([...libres.children, ...architecture.children, ...contenu.children], false).find((x) => x.object instanceof THREE.Mesh);
+      const p = impact?.point ?? rayonPointeur.ray.intersectPlane(sol, surSol);
+      // Un sol vu en rasant donne des coordonnées démesurées : au-delà d'un kilomètre, le pointeur est masqué.
+      const valide = p && [p.x, p.y, p.z].every((v) => Number.isFinite(v) && Math.abs(v) <= 1e6);
+      f(valide ? { x: p.x, y: p.y, z: p.z } : null);
+    };
+    const pointeurBouge = (e: PointerEvent) => {
+      if (!surPointeur3dRef.current) return;
+      dernierEvenement = e;
+      if (!imagePrevue) imagePrevue = requestAnimationFrame(calculerPointeur);
+    };
+    const pointeurSorti = () => { dernierEvenement = null; if (imagePrevue) { cancelAnimationFrame(imagePrevue); imagePrevue = 0; } surPointeur3dRef.current?.(null); };
+    renderer.domElement.addEventListener("pointermove", pointeurBouge);
+    renderer.domElement.addEventListener("pointerleave", pointeurSorti);
     renderer.domElement.addEventListener("pointerdown", pointeurBas);
     renderer.domElement.addEventListener("pointerup", pointeurHaut);
     const obs = typeof ResizeObserver === "function" ? new ResizeObserver(taille) : null;
@@ -491,13 +551,16 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     taille();
     return () => {
       obs?.disconnect();
+      if (imagePrevue) cancelAnimationFrame(imagePrevue);
+      renderer.domElement.removeEventListener("pointermove", pointeurBouge);
+      renderer.domElement.removeEventListener("pointerleave", pointeurSorti);
       renderer.domElement.removeEventListener("pointerdown", pointeurBas);
       renderer.domElement.removeEventListener("pointerup", pointeurHaut);
       m.controls?.removeEventListener("change", m.rendre);
       m.controls?.removeEventListener("change", m.surCamera);
       m.controls?.dispose();
       m.rendus.contenu.vider(); m.rendus.libres.vider(); m.rendus.architecture.vider();
-      vider(contenu); vider(libres); vider(architecture); vider(surimpression);
+      vider(contenu); vider(libres); vider(architecture); vider(surimpression); vider(presence);
       libererObjet(grille);
       renderer.forceContextLoss();
       renderer.dispose();
@@ -508,6 +571,37 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     // La navigation initiale est posée ici ; ses changements par l'effet suivant.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Pointeurs distants (session en direct) : une sphère par personne, nommée par une étiquette HTML (jamais la seule couleur).
+  const clePointeurs = (pointeurs3d ?? []).map((p) => `${p.userId}:${p.x.toFixed(3)}:${p.y.toFixed(3)}:${p.z.toFixed(3)}`).join("|");
+  useEffect(() => {
+    const m = moteur.current; if (!m) return;
+    vider(m.presence);
+    for (const p of pointeurs3d ?? []) {
+      const boule = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 12), new THREE.MeshBasicMaterial({ color: teintePresence(p.userId) }));
+      boule.position.set(p.x, p.y, p.z);
+      boule.userData["pointeurDe"] = p.userId;
+      m.presence.add(boule);
+    }
+    m.rendre();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clePointeurs]);
+
+  // Suivi du présentateur (session en direct) : sa caméra est posée telle quelle, jamais la sélection ni le brouillon.
+  useEffect(() => {
+    const m = moteur.current;
+    if (!m || !cameraPartagee) return;
+    const voulue: Navigation3d = cameraPartagee.camera.projection === "orthographic" ? "plan" : "orbite";
+    if (voulue !== navigation) {
+      enAttente.current = { camera: cameraPartagee.camera } as StudioScene;
+      surNavigation?.(voulue);
+      return;
+    }
+    applicationPartagee.current = true;
+    try { poserCamera(m, cameraPartagee.camera); } finally { applicationPartagee.current = false; }
+    cadre.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cameraPartagee?.n]);
 
   useEffect(() => {
     const m = moteur.current; if (!m) return;
@@ -688,7 +782,10 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       <div ref={hote} className="studio-vue3d-hote" data-studio-vue3d-outil={outil} data-studio-remplir={remplir ? "" : undefined}
         title={navigation === "plan"
           ? "Repère local 3D : z vers le haut, en mètres. Vue en plan : glisser : déplacer ; molette : zoom."
-          : "Repère local 3D : z vers le haut, en mètres. Glisser : orbite ; clic droit ou Maj + glisser : déplacer ; molette : zoom."} />
+          : "Repère local 3D : z vers le haut, en mètres. Glisser : orbite ; clic droit ou Maj + glisser : déplacer ; molette : zoom."}>
+        {(pointeurs3d ?? []).map((p) => <span key={p.userId} className="studio-vue3d-pointeur" data-tr-pointeur-3d={p.userId} aria-hidden="true" translate="no"
+          style={{ color: teintePresence(p.userId), display: "none" }} ref={(el) => { if (el) etiquettes.current.set(p.userId, el); else etiquettes.current.delete(p.userId); }}>{p.nom}</span>)}
+      </div>
       {!remplir && <p className="studio-hint">{navigation === "plan"
         ? "Repère local 3D : z vers le haut, en mètres. Vue en plan : glisser : déplacer ; molette : zoom."
         : "Repère local 3D : z vers le haut, en mètres. Glisser : orbite ; clic droit ou Maj + glisser : déplacer ; molette : zoom."}</p>}

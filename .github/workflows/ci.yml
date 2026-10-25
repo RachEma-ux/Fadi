@@ -379,6 +379,8 @@ jobs:
       AUTH_IDENTIFIER_RATE_LIMIT: "500"
       API_RATE_LIMIT: "5000"
       BASE_URL: http://localhost:3001
+      # Temps réel (Issue #283, RT-D5 § 2) : canal et routes des sessions actifs pour les recettes ; la production garde le drapeau absent.
+      FADI_TEMPS_REEL: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -763,6 +765,36 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/sandbox node apps/web/e2e/sandbox-module.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du socle Temps réel — montée de protocole refusée, session idempotente, présence, vue et sélection projetées, révision annoncée, hôte sans droit, révocations immédiates, clôture et journal (apps/web/e2e/temps-reel-sessions.mjs)
+        if: ${{ matrix.shard == 'p2' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/temps-reel-sessions.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de la vue partagée Studio (RTC-2) — deux navigateurs, bandeau de session, suivi du présentateur, pointeur et sélection distants, révision annoncée, règle d'or, axe-core, anglais, téléphone (apps/web/e2e/temps-reel-studio.mjs)
+        if: ${{ matrix.shard == 'p2' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/temps-reel-studio.mjs 2>&1 | tee -a e2e.log
+      - name: Recette des annotations en session (RTC-3) — note d'équipe invisible au lecteur, point de vue tagué, rejeu sans doublon, révision source gardée, point de vue reposé, survie à la clôture, observation (apps/web/e2e/temps-reel-annotations.mjs)
+        if: ${{ matrix.shard == 'p2' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/temps-reel-annotations.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de la revue en direct (RTC-4) — publication figée, révision publiée épinglée, aucune annonce de tête, audiences, hôte sans droit d'approbation, refus d'ouverture (apps/web/e2e/temps-reel-revue.mjs)
+        if: ${{ matrix.shard == 'p2' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/temps-reel-revue.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de robustesse du temps réel (RTC-5) — pointeur 3D, réservation d'édition visible, tactile, mouvement réduit, clavier, anglais (apps/web/e2e/temps-reel-robustesse.mjs)
+        if: ${{ matrix.shard == 'p2' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/temps-reel-robustesse.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de charge du temps réel (RTC-5) — 10 sessions × 10 participants, rafale de pointeurs bornée, latence, reconnexion en rafale sans resynchronisation (apps/web/e2e/temps-reel-charge.mjs)
+        if: ${{ matrix.shard == 'p2' }}
+        run: |
+          set -o pipefail
+          SESSIONS=10 PARTICIPANTS=10 DUREE_S=8 node apps/web/e2e/temps-reel-charge.mjs 2>&1 | tee -a e2e.log
       - name: Recette du lot 7 de la Planche — persistance par commandes, Planches nommées, IFC, PNG, téléphone, axe-core (apps/web/e2e/planche-lot-7.mjs)
         if: ${{ matrix.shard == 'p2' }}
         run: |

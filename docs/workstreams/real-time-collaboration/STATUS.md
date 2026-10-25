@@ -1,0 +1,46 @@
+# Temps réel (Real-time Collaboration) — Statut
+
+Mis à jour : 2026-10-25 (UTC).
+
+## État
+
+**Lots RTC-1 à RTC-5 livrés et fusionnés CI verte (RT-D4, délégation) ; acceptation et mise en service : au maître d’ouvrage.** RTC-0 fusionné (PR #284). **RTC-1 fusionné**
+(PR #288, CI verte ; [compte rendu](lots/rtc-1.md)). **RTC-2 fusionné** (PR #289 ; [compte rendu](lots/rtc-2.md)).
+**RTC-3 à RTC-5 fusionnés** (PR #291, `84e2be0`, CI verte ; relus en équipe, RT-D7) ([RTC-3](lots/rtc-3.md),
+[RTC-4](lots/rtc-4.md), [RTC-5](lots/rtc-5.md), [preuves](PREUVES-SECURITE-ET-CI.md)).
+Préproduction et mise en service : au maître d'ouvrage.
+
+## Faits vérifiés
+
+- RTC-1 : 22 tests unitaires et 44 vérifications de bout en bout verts en local (`lots/rtc-1.md`).
+- Base observée : `main@2577e25` (CI verte sur ce SHA). PR #284 : CI verte sur `99562d9` ; `main` refusionné après #281 et #286 (conflit d'index résolu).
+- Aucun WebSocket / SSE dans `apps` ni `packages` ; relectures périodiques de 60 s.
+- RT-D3 : première version = **Studio seul** ; **canal propre au Temps réel**. RT-D2 : WebSocket ; une instance ; hôte remplacé explicitement ; coédition
+  reportée ; COM garde sa remise.
+- Essai RTC-0.3 (hors dépôt) : `ws` 8.18.3 sur Express 5.1.0, 13 / 13 en direct, 5 / 5 à travers Caddy 2.10.2 avec
+  `basic_auth` ; un message trop gros sans gestionnaire d'erreur arrête le processus (corrigé dans l'essai, exigence
+  RTC-1).
+- `cibleAnnulation` de l'Atelier prend la dernière commande du projet, quel qu'en soit l'auteur
+  (`routes/atelier-commands.ts:470`).
+- Prérequis (porte de RTC-1) au checkpoint :
+  - COM : **fusionné** (PR #285, `173b9f1`) — rempli ;
+  - Organisations : PR #281 **fusionnée** (`0d5bb9b`) avec les phases 2, 3 bis et 5 (vue `project_effective_access`,
+    six rôles, Approbateur / Diffuseur Studio) ; **phases 3 (invitations) et 4 (revue externe) non livrées** ;
+  - PR #282 (E5, E6, E9, E10) : ouverte. E5 recoupe la phase 2 d'Organisations déjà fusionnée : à réaligner par son chantier.
+
+## Points ouverts
+
+- RTC-0.4 (profil de budgets), RTC-0.5 (réalignement après fusions), RTC-0.6 (statut de `module-registry.ts`).
+- Durées chiffrées de conservation (RT-Q5) avant RTC-5.
+- Fichiers de suivi d'autres chantiers en retard sur `main` : à corriger par leurs chantiers.
+
+## Liens de suivi
+
+- Issue : https://github.com/RachEma-ux/Fadi/issues/283
+- Branche de tâche : `ccr-93a486a1-cbijf8`
+- Pull Requests : #284 (RTC-0), #288 (RTC-1), #289 (RTC-2), #291 (RTC-3 à RTC-5)
+
+## Préconditions de clôture
+
+- RTC-0 : critères de sortie de `TASKS.md`.
+- Chantier : lots RTC-1 à RTC-5 acceptés, tests `PLAN.md` § 6 des lots RTC-1 à RTC-5 verts, préproduction validée par le maître d'ouvrage.

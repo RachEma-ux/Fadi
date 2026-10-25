@@ -34,6 +34,7 @@ import { archiveHash, recordProducedDocument } from "../lib/documents.js";
 import { loadStepContext } from "../lib/step-context.js";
 import { historyRouter } from "./history.js";
 import { studioRouter } from "./studio.js";
+import { tempsReelRouter } from "./temps-reel.js";
 import { lockProject } from "../lib/step-rows.js";
 import { PUBLICATIONS_DIFFUSEES_MESSAGE, projectHasIssuedStudioPublications } from "../lib/studio-publications.js";
 import { nettoyerVolumes } from "../lib/volumes-gc.js";
@@ -231,6 +232,8 @@ projectsRouter.use("/:projectId/steps", parcoursStepsRouter);
 projectsRouter.use("/:projectId/planning", projectPlanningRouter);
 projectsRouter.use("/:projectId/programme", programmeRouter);
 projectsRouter.use("/:projectId/studio", studioRouter);
+// Temps réel (Issue #283) : sessions en direct sur le Studio ; 404 sans le drapeau FADI_TEMPS_REEL.
+projectsRouter.use("/:projectId/temps-reel", tempsReelRouter);
 projectsRouter.use("/:projectId/atelier", atelierCommandsRouter);
 projectsRouter.use("/:projectId/atelier", atelierVersionsRouter);
 projectsRouter.use("/:projectId/atelier", atelierAutomatisationRouter);
