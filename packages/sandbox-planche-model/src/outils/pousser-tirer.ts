@@ -29,7 +29,7 @@ import {
   inferenceBrute,
   mesures,
   messageErreur,
-  prefixe,
+  prefixe, axesDeSaisie
 } from "./commun-formes.js";
 import { axeDeToucheFleche, consigneDe, distanceLocale, distancesLocales, echelleDansPlan, enLocal, idsSelectionnables, libelleMesuresDe, normaleMonde, selectionValide, type VerrouFleche, VECTEUR_AXE, vecteurLocal, viseeElement, vueModif } from "./commun-modif.js";
 import type { ContexteOutil, EvenementOutil, MachineOutil, OptionOutil, Rayon, Transition, VueOutil } from "./machine.js";
@@ -190,7 +190,7 @@ const occurrencesPartagees = (m: Modele, dans: Id | undefined): number => instan
 function viseeDistance(e: EtatPousserTirer, ctx: ContexteOutil, r: Rayon, tolerance: number): { distance: number; inference: Inference } {
   const n = e.normale as Vec3;
   const o = e.origine as Vec3;
-  const i = inferer({ rayon: r, tolerance, geometrie: geometrieVisible(ctx.modele), depart: o, verrou: { genre: "direction", direction: n, type: "parallele" }, ...(ctx.repere ? { axes: ctx.repere } : {}) });
+  const i = inferer({ rayon: r, tolerance, geometrie: geometrieVisible(ctx.modele), depart: o, verrou: { genre: "direction", direction: n, type: "parallele" }, ...axesDeSaisie(ctx) });
   return { distance: dot(n, sub(i.point, o)), inference: i };
 }
 
@@ -269,7 +269,7 @@ function segmentsMonde(ctx: ContexteOutil, ids: readonly Id[]): Segment[] {
 function viseeVecteur(e: EtatPousserTirer, ctx: ContexteOutil, r: Rayon, tolerance: number): { vecteur: Vec3; inference: Inference } {
   const o = e.origine as Vec3;
   const v = e.fleche?.verrou;
-  const i = inferer({ rayon: r, tolerance, geometrie: geometrieVisible(ctx.modele), depart: o, ...(v ? { verrou: v } : {}), ...(ctx.repere ? { axes: ctx.repere } : {}) });
+  const i = inferer({ rayon: r, tolerance, geometrie: geometrieVisible(ctx.modele), depart: o, ...(v ? { verrou: v } : {}), ...axesDeSaisie(ctx) });
   return { vecteur: sub(i.point, o), inference: i };
 }
 
@@ -727,7 +727,7 @@ export const machinePousserTirer: MachineOutil<EtatPousserTirer> = {
           if (ev.double && (der?.genre === "aretes" || der?.genre === "couronne")) {
             return appliquerAretes(etat, ctx, { ...der, aretes: ids }, null, null);
           }
-          const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele), ...(ctx.repere ? { axes: ctx.repere } : {}) });
+          const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele), ...axesDeSaisie(ctx) });
           const segments = segmentsMonde(ctx, ids);
           return {
             etat: {

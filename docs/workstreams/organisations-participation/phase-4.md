@@ -90,7 +90,7 @@ Invitations : `POST /auth/invitations/accept` et `POST /auth/activate` renvoient
 - Délégation / réaffectation d'un destinataire absent : couverte par révocation + nouvelle affectation (les constats
   restent attribués) ; pas d'écran de « délégation » dédié.
 - Exception autorisée (concept « Any authorized exception records its reason… ») : non livrée ; aucune exception possible.
-- Durée d'accès par défaut 30 jours : valeur déclarée (modifiable par invitation), non fixée par le maître d'ouvrage.
+- Durée d'accès par défaut : 30 jours à la livraison, ramenée à **14 jours** par la décision OP-4 du maître d'ouvrage (2026-10-25), modifiable par invitation.
 
 ## 5. Preuves (locales, base `fadi_p4`, API construite sur le port 3041)
 

@@ -245,10 +245,12 @@ jobs:
       # CHECK, journal d'audit append-only, conversion des sessions — transactions annulées, base du job seulement.
       - name: Schéma Gestion des comptes — idempotence, contraintes, audit append-only
         run: node scripts/validation/users-migration-check.mjs
-      # Organisations, participation et revue externe (#262, phases 1 et 2) : reprise de l'existant, miroir des accès par
-      # déclencheurs, contraintes, droits fadi_app ; phase 2 : vue `project_effective_access` (seule source de l'accès),
-      # aucune perte d'accès, contact / suspension / fin / sans rôle sans droit — transactions annulées, base du job seulement.
-      - name: Schéma participations — reprise, miroir des accès, contraintes, bascule de l'accès
+      # Organisations, participation et revue externe (#262, phases 1 à 3 et lot OP-PONT) : retrait du pont op_sync_access
+      # sur une base antérieure simulée (reprise sans perte, accès effectifs identiques, vue de compatibilité
+      # `project_members` identique à l'ancienne table, plus aucun déclencheur), vue en lecture seule, contraintes, droits
+      # fadi_app ; vue `project_effective_access` (seule source de l'accès), contact / suspension / fin / sans rôle sans
+      # droit — transactions annulées, base du job seulement.
+      - name: Schéma participations — retrait du pont, reprise sans perte, vue de compatibilité, contraintes, bascule de l'accès
         run: node scripts/validation/participations-migration-check.mjs
       # Phase 5 (espace d'organisation) : adhésions, groupes, gabarits immuables, mandats, finalité d'invitation
       # `organization_membership`, déclencheurs de départ et de clôture, aucun droit de projet — transactions annulées.
@@ -260,7 +262,8 @@ jobs:
       - name: Schéma revue externe — paquets figés, affectations, constats, invitations review_package, aucun accès au projet
         run: node scripts/validation/revues-migration-check.mjs
       # Phase 6 (runbook de déploiement, § 6) : contrôle après déploiement en LECTURE SEULE (transaction READ ONLY, sonde
-      # d'écriture refusée 25006) — reprise sans perte d'accès, pont op_sync_access, participations, paquets figés,
+      # d'écriture refusée 25006) — reprise sans perte d'accès, pont op_sync_access retiré (lot OP-PONT), accès effectifs
+      # identiques à l'instantané, participations, paquets figés,
       # organisations, journal sans adresse, droits D-7 ; instantané avant / après comparé sur la base du job.
       - name: Contrôle après déploiement organisations-participation — lecture seule, aucune perte d'accès
         run: |
@@ -829,6 +832,11 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/sandbox node apps/web/e2e/sandbox-module.mjs 2>&1 | tee -a e2e.log
+      - name: Recette Axes et repères du Sandbox — repère de travail hors historique, origine saisie, points alignés refusés, aligner sur une face, plan de travail et verrou, vue normale, Précédent ≠ Annuler, inspecteur, clavier et téléphone (apps/web/e2e/sandbox-axes.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/sandbox-axes node apps/web/e2e/sandbox-axes.mjs 2>&1 | tee -a e2e.log
       - name: Recette du socle Temps réel — montée de protocole refusée, session idempotente, présence, vue et sélection projetées, révision annoncée, hôte sans droit, révocations immédiates, clôture et journal (apps/web/e2e/temps-reel-sessions.mjs)
         if: ${{ matrix.shard == 'p2' }}
         run: |

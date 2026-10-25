@@ -10,7 +10,7 @@ import { MACHINES_PROFILES } from "./registre-profiles.js";
 export * from "./machine.js";
 export { poignees, type Poignee } from "./echelle.js";
 export { distanceAuContour } from "./decalage.js";
-export { separerDiagnostic } from "./commun-formes.js";
+export { separerDiagnostic, OUTILS_PLAN_VERROUILLABLE } from "./commun-formes.js";
 export { modifierPlanDeCoupe, couleurPlan } from "./plan-de-coupe.js";
 export { repereDepuis, REPERE_MODELE } from "./axes.js";
 export { formaterAire } from "./metre.js";

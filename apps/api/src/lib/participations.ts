@@ -3,9 +3,9 @@
  *
  * Une participation lie une personne (compte vérifié ou contact sans compte) OU une organisation à un projet, pour une
  * période ; l'annuaire des participants et l'équipe en sont deux vues (concept, partie 1). Les rôles métier par portée
- * (OP-D3 c) reprennent les six rôles du concept (partie 2). Jusqu'à la phase 2, l'accès reste porté par
- * `projects.owner_id` et `project_members` : `ACCESS_ROLE_MIRROR` décrit le miroir tenu par les déclencheurs SQL
- * (`op_sync_access`, init.sql) — les deux doivent rester identiques (test).
+ * (OP-D3 c) reprennent les six rôles du concept (partie 2). `ACCESS_ROLE_MIRROR` décrit le rôle métier du partage
+ * (origine `acces`) : il était tenu par le miroir SQL `op_sync_access` jusqu'au lot OP-PONT, il est désormais écrit par
+ * `project-access-db.ts` ; la reprise et la vue de compatibilité `project_members` (init.sql) gardent la même règle (test).
  */
 import type { ParticipationStatus, ProjectBusinessRole, RoleScopeType, TeamResponsibility } from "../db/schema.js";
 
@@ -15,7 +15,7 @@ export const ROLE_SCOPES: readonly RoleScopeType[] = ["projet", "etude", "varian
 export const TEAM_RESPONSIBILITIES: readonly TeamResponsibility[] = ["diriger", "produire", "coordonner", "verifier", "approuver", "diffuser"];
 export const PARTICIPATION_STATUSES: readonly ParticipationStatus[] = ["contact", "active", "suspendue", "terminee"];
 
-/** Accès actuel → rôle métier miroir (portée projet, origine `acces`) ; le propriétaire n'a pas de rôle miroir. */
+/** Rôle de partage → rôle métier (portée projet, origine `acces`) ; le propriétaire n'a pas de rôle de partage. */
 export const ACCESS_ROLE_MIRROR: Readonly<Record<"proprietaire" | "editeur" | "lecteur", ProjectBusinessRole | null>> = {
   proprietaire: null,
   editeur: "concepteur",

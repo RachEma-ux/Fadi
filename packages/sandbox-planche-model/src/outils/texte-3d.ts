@@ -16,7 +16,7 @@ import { type FacesPolygonales, creerGroupeDepuisFaces } from "../geometrie-libr
 import { type Inference, geometrieVisible, inferer } from "../inference.js";
 import { geometrieDuTexte } from "../police-geometrique.js";
 import { type Vec3, add, cross, len, normalize, scale, v3 } from "../vecteur.js";
-import { contexteSaisie, mesures, messageErreur } from "./commun-formes.js";
+import { contexteSaisie, mesures, messageErreur, axesDeSaisie } from "./commun-formes.js";
 import { consigneDe, vueModif } from "./commun-modif.js";
 import type { ContexteOutil, MachineOutil, OptionOutil, Transition, VueOutil } from "./machine.js";
 
@@ -141,10 +141,10 @@ export const machineTexte3D: MachineOutil<EtatTexte3D> = {
     switch (ev.genre) {
       case "survol":
         if (etat.boite) return { etat };
-        return { etat: { ...etat, inference: inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele), ...(ctx.repere ? { axes: ctx.repere } : {}) }), erreur: null } };
+        return { etat: { ...etat, inference: inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele), ...axesDeSaisie(ctx) }), erreur: null } };
       case "clic": {
         if (etat.boite || etat.texte.trim() === "") return { etat };
-        const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele), ...(ctx.repere ? { axes: ctx.repere } : {}) });
+        const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele), ...axesDeSaisie(ctx) });
         try {
           const { faces, ignores } = facesDuTexte3D(etat, i.point, planDePose(ctx, i), etat.alignement);
           if (faces.length === 0) return { etat: { ...etat, inference: i, erreur: ignores.length ? `Aucun caractère connu dans « ${etat.texte} » (ignorés : ${ignores.join(" ")}).` : "Texte vide." } };

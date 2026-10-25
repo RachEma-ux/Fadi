@@ -129,27 +129,29 @@ describe("Rapporteur — CA-RAP", () => {
 describe("Axes — CA-AXE", () => {
   it("CA-AXE-1 : origine (1;2;0), rouge vers +y → repère de saisie ; « [1;0;0] » lu dans ce repère donne (1;3;0) ; l'outil précédent revient", () => {
     const p = partie(machineAxes, sol()).jouer(clicVers(v3(1, 2, 0)), survolVers(v3(1, 5, 0)), clicVers(v3(1, 5, 0)), survolVers(v3(-2, 2, 0)), clicVers(v3(-2, 2, 0)));
-    const r = p.modele.annotations?.repere;
+    const r = p.repere;
     expect(r).toBeDefined();
+    // AX-D3 : le repère de travail sort de l'historique — le document n'est pas modifié, aucune opération enregistrée.
+    expect(p.modele.annotations?.repere).toBeUndefined();
     expect(r!.x.y).toBeCloseTo(1, 9);
     expect(r!.y.x).toBeCloseTo(-1, 9);
     expect(r!.z.z).toBeCloseTo(1, 9);
-    expect(p.operations).toEqual(["Axes"]);
+    expect(p.operations).toEqual([]);
     const res = analyserSaisie("[1;0;0]", { attendu: "distance-reseau", separateurDecimal: ",", repere: r! });
     expect(res.genre).toBe("point");
     if (res.genre === "point") expect(res.point).toEqual({ x: 1, y: 3, z: 0 });
   });
   it("double-clic : axes tels qu'orientés à l'origine cliquée", () => {
     const p = partie(machineAxes, sol()).jouer(survolVers(v3(2, 1, 0)), double(v3(2, 1, 0)));
-    expect(p.modele.annotations?.repere?.origine).toEqual({ x: 2, y: 1, z: 0 });
-    expect(p.modele.annotations?.repere?.x).toEqual({ x: 1, y: 0, z: 0 });
+    expect(p.repere?.origine).toEqual({ x: 2, y: 1, z: 0 });
+    expect(p.repere?.x).toEqual({ x: 1, y: 0, z: 0 });
   });
 });
 
 describe("Mètre et Sélection — remarques de revue (lots 4 à 6)", () => {
   it("verrou d'axe (→) puis « 2 » : la direction suit le repère de saisie des Axes (rouge vers +y), comme les saisies « [x;y;z] »", () => {
     const axes = partie(machineAxes, sol()).jouer(clicVers(v3(1, 2, 0)), survolVers(v3(1, 5, 0)), clicVers(v3(1, 5, 0)), survolVers(v3(-2, 2, 0)), clicVers(v3(-2, 2, 0)));
-    const repere = axes.modele.annotations!.repere!;
+    const repere = axes.repere!;
     const p = partie(machineMetre, axes.modele);
     p.ctx = () => ({ modele: p.modele, selection: p.selection, separateurDecimal: p.separateurDecimal, repere });
     p.jouer(survolVers(v3(6, 5, 0)), clicVers(v3(6, 5, 0)), touche("FlecheDroite"), survolVers(v3(7, 6, 0)), saisie("2"));

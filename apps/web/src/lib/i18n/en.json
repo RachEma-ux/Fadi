@@ -12662,5 +12662,13 @@
 "Hors de la couverture de la couche": "Outside the layer's coverage",
 "Superficie calculée": "Computed area",
 "Toutes valeurs ({0})": "All values ({0})",
-"{0} – < {1} ({2})": "{0} – < {1} ({2})"
+"{0} – < {1} ({2})": "{0} – < {1} ({2})",
+"Repère refusé : une coordonnée n'est pas un nombre fini.": "Frame refused: a coordinate is not a finite number.",
+"Repère refusé : le point d'axe est confondu avec l'origine. Choisissez un point distinct.": "Frame refused: the axis point coincides with the origin. Choose a distinct point.",
+"Repère refusé : les points sont alignés, ils ne définissent pas de plan. Choisissez un point hors de l'axe rouge.": "Frame refused: the points are aligned and do not define a plane. Choose a point off the red axis.",
+"Repère refusé : un axe n'est pas unitaire.": "Frame refused: an axis is not a unit vector.",
+"Repère refusé : les axes ne sont pas perpendiculaires.": "Frame refused: the axes are not perpendicular.",
+"Repère refusé : les axes ne forment pas un repère direct (main droite).": "Frame refused: the axes do not form a right-handed frame.",
+"Saisie attendue : un point [x;y;z] ou un décalage <dx;dy;dz>.": "Expected entry: a point [x;y;z] or an offset <dx;dy;dz>.",
+"Saisie « {0} » non reconnue : attendu un point [x, y, z] ou un décalage <x, y, z>.": "Entry “{0}” not recognised: expected a point [x, y, z] or an offset <x, y, z>."
 }

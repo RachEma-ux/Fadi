@@ -13,7 +13,7 @@ import { type Inference, type Verrou, geometrieVisible, inferer } from "../infer
 import { type PlacementPiece, type PointPlacement, PLACEMENT_DEFAUT, POINTS_PLACEMENT, prismePiece, repereSegment, sectionPosee } from "../profiles.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import { type Vec3, add, dist, len, normalize, scale, sub } from "../vecteur.js";
-import { messageErreur } from "./commun-formes.js";
+import { messageErreur, axesDeSaisie } from "./commun-formes.js";
 import { enLocal, saisieDe, vueModif } from "./commun-modif.js";
 import type { ContexteOutil, MachineOutil, ModificateurSeul, OptionOutil, Rayon, Touche, Transition, VueOutil } from "./machine.js";
 import { depuisContexteEdition, optionsDans } from "./selection.js";
@@ -46,7 +46,7 @@ function inferenceProfile(e: EtatProfile, ctx: ContexteOutil, r: Rayon, toleranc
     geometrie: geometrieVisible(ctx.modele),
     ...(e.etape === 2 && e.depart ? { depart: e.depart } : {}),
     ...(v ? { verrou: v } : {}),
-    ...(ctx.repere ? { axes: ctx.repere } : {}),
+    ...axesDeSaisie(ctx),
   });
 }
 

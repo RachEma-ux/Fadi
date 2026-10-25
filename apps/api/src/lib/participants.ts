@@ -109,6 +109,17 @@ export function contactDetailsFor<T extends { workEmail: string | null; workPhon
 }
 
 /**
+ * Effacement automatique des contacts sans compte par la tâche horaire (OP-2) : désactivé tant que
+ * `CONTACT_RETENTION_ENABLED=1` n'est pas posé — décision OP-4 du maître d'ouvrage (2026-10-25) : la réserve juridique
+ * d'OP-2 (obligations de conservation, garantie décennale) est à lever avant toute activation. Seule cette tâche est
+ * coupée : la file des courriels et l'anonymisation des comptes (D-5) continuent ; l'effacement sur demande et la
+ * commande manuelle (`db:account-jobs`) restent disponibles.
+ */
+export function contactRetentionEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return env["CONTACT_RETENTION_ENABLED"] === "1";
+}
+
+/**
  * Effacement automatique dû (OP-2) : contact sans compte, pas encore effacé, et soit sans aucune participation (projet
  * supprimé), soit dont TOUS les projets sont clos depuis au moins 2 ans. Un seul projet ouvert le conserve.
  */

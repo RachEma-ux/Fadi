@@ -47,7 +47,34 @@ Journal du chantier. Les décisions héritées de la gestion des comptes (D-1 à
   du projet » (OP-D9, OP-D13) : le propriétaire, ou une participation active portant le rôle `coordinateur` à la portée
   projet ou la responsabilité `diriger` (`apps/api/src/lib/project-responsables.ts`).
 
+- **OP-4 — Recommandations de la recette appliquées et lot du pont lancé (2026-10-25).** Après la fusion des PR #281 et
+  #290, le maître d'ouvrage demande : « Applique tes recommandations et lance le lot du pont ». Sont donc décidés :
+  - **durée d'accès de revue par défaut : 14 jours** (au lieu de 30), prolongeable, au plus 365 (`DEFAULT_ACCESS_DAYS`) ;
+  - **réserve juridique d'OP-2** : l'effacement automatique des contacts sans compte est **désactivé par défaut** ;
+    il ne s'active que par `CONTACT_RETENTION_ENABLED=1`, à ne poser qu'après l'avis du conseil juridique ; l'effacement
+    sur demande reste disponible ;
+  - **portées étroites** : un rôle de portée `documents` télécharge les documents visés (y compris Lecteur) ; un Concepteur
+    limité à une étude n'exporte pas ;
+  - **acceptation dans l'application réservée aux adresses vérifiées** : conservée ;
+  - **« Mon historique » d'un invité externe** : ses actions et celles qui visent son compte, administrateur anonyme ;
+  - **séparation des responsabilités** (auto-contrôle) : lot ultérieur, non bloquant ;
+  - **lot OP-PONT** : retrait du pont `op_sync_access` lancé, vérifié en CI avant fusion.
+  Restent au maître d'ouvrage : 🛑 final (acceptation, tout déploiement), avis juridique, listes métier OP-D4.
+
+- **OP-5 — Acceptation finale, levée de la réserve juridique, listes métier (2026-10-25).** Le maître d'ouvrage déclare :
+  « j'accepte l'acceptation finale, l'avis juridique sur la conservation des contacts, et les listes métier », précisé
+  dans la session :
+  - **🛑 final franchi : périmètre livré accepté** — phases 1 à 6 et reliquats (PR #265, #281, #290), sur la base de
+    [recette-finale.md](recette-finale.md). Cette acceptation **ne vaut pas ordre de déploiement** : préproduction et
+    production restent soumises à un accord explicite, selon [RUNBOOK-deploiement.md](RUNBOOK-deploiement.md) ;
+  - **réserve juridique d'OP-2 levée par le maître d'ouvrage, sous sa responsabilité** (aucun avis de conseil juridique
+    n'est versé au dossier) : la durée « projet + 2 ans après sa clôture » est retenue ; l'effacement automatique sera
+    activé au déploiement (`CONTACT_RETENTION_ENABLED=1`) — la valeur par défaut du code reste désactivée (OP-4), par
+    sécurité ;
+  - **listes métier OP-D4 : la saisie libre devient la règle définitive** (option b confirmée) — aucun référentiel de rôles
+    de participation ni de types d'organisation n'est imposé.
+  Le lot OP-PONT (retrait du pont) suit son cours sous OP-4.
+
 ## Décisions en attente
 
-- Avis juridique sur les obligations de conservation des contacts (réserve d'OP-2).
-- 🛑 final (phase 6) : acceptation du périmètre livré et de tout déploiement.
+- Autorisation explicite d'un déploiement (préproduction, puis production) selon le runbook.

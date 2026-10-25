@@ -10,6 +10,7 @@ import { describe, expect, it } from "vitest";
 import { BARRE_GAUCHE_SANDBOX, OUTILS, REGISTRE_SANDBOX, entreeCommande, entreeOutil, entreesSandbox } from "@parcours/sandbox-planche-model";
 import { COMMANDE_DETACHER_LIEN, COMMANDES_CONTEXTE, COMMANDES_DEBIT, COMMANDES_NAVIGATEUR, COMMANDES_OBJETS, COMMANDES_PIECE, COMMANDES_VUE } from "./planche/commandes-objets";
 import { outilsBarre, pictoOutil, raccourciOutil, sectionsGrille } from "./planche/outils-planche";
+import { COMMANDES_REPERES } from "./planche/commandes-reperes";
 import { REGISTRE_COMMANDES } from "./planche/registre-commandes";
 import { ICONES_INTERFACE } from "./pictogrammes/interface";
 
@@ -36,7 +37,7 @@ describe("Sandbox — l'interface lit le registre unique (lot 2)", () => {
   });
 
   it("commandes : chaque liste de famille et le registre des commandes portent le pictogramme et le raccourci du registre", () => {
-    const listes = [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, COMMANDE_DETACHER_LIEN, ...COMMANDES_NAVIGATEUR, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE];
+    const listes = [...COMMANDES_OBJETS, ...COMMANDES_CONTEXTE, COMMANDE_DETACHER_LIEN, ...COMMANDES_NAVIGATEUR, ...COMMANDES_VUE, ...COMMANDES_DEBIT, ...COMMANDES_PIECE, ...COMMANDES_REPERES];
     expect(listes.map((c) => c.id).sort()).toEqual(entreesSandbox("commande").map((e) => e.id).sort());
     for (const c of listes) {
       expect(c.picto, c.id).toBe(entreeCommande(c.id).pictogramme);

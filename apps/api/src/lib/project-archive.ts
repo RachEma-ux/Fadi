@@ -33,6 +33,7 @@ import { CONTRAT_COMMANDES, SCHEMA_IFC, TYPE_RESTAURER, empreinteDe, importerMod
 import { chargerModele, remplacerModele } from "../lib/atelier-modele.js";
 import { EMPTY_STEP_CONTENT, HARMONIE_PROFILES, PARCOURS_STEPS } from "../data/parcours.js";
 import { newId } from "./ids.js";
+import { ensureOwnerParticipation } from "./project-access-db.js";
 import { computationFor, loadStepContext, type StepContextProject } from "./step-context.js";
 import { loadStepRows, upsertStep, type Querier, type Tx } from "./step-rows.js";
 import type { SiteContextDeclaration } from "@parcours/domain-model";
@@ -199,6 +200,8 @@ export async function importProjectArchive(tx: Tx, ownerId: string, archive: Pro
     })
     .returning();
   if (!project) throw new Error("project insert returned nothing");
+  // Participation du propriétaire (lot OP-PONT : écrite ici, autrefois par le déclencheur du miroir).
+  await ensureOwnerParticipation(tx, id, ownerId);
 
   await tx.insert(projectSteps).values(archive.steps.map((s) => ({ projectId: id, stepNumber: s.stepNumber, status: s.status, content: { ...s.content } as Record<string, unknown> })));
 

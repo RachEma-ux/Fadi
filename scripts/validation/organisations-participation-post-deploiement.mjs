@@ -4,8 +4,10 @@
  * Runbook : docs/workstreams/organisations-participation/RUNBOOK-deploiement.md (§ 6).
  *
  *   DATABASE_URL=postgresql://<rôle en lecture>@<hôte>/<base> node scripts/validation/organisations-participation-post-deploiement.mjs
- *       [--instantane <fichier.json>]   avant le déploiement : relève les accès actuels (projets, propriétaires, partages)
- *       [--reference <fichier.json>]    après : chaque accès relevé avant doit exister encore (aucune perte d'accès)
+ *       [--instantane <fichier.json>]   avant le déploiement : relève les accès actuels (projets, propriétaires, partages et,
+ *                                       si la vue existe déjà, les accès effectifs `project_effective_access`)
+ *       [--reference <fichier.json>]    après : chaque accès relevé avant doit exister encore (aucune perte d'accès) ; avec
+ *                                       les accès effectifs relevés (lot OP-PONT), chacun doit être IDENTIQUE
  *
  * Garanties : une seule transaction `BEGIN TRANSACTION READ ONLY` (et `default_transaction_read_only = on` pour la
  * session) ; une sonde vérifie que PostgreSQL REFUSE une écriture (25006) avant tout contrôle, sinon le script s'arrête
@@ -14,11 +16,11 @@
  *
  * Sortie : ✓ contrôle réussi, ❌ échec (code de sortie 1), ⚠ à examiner (n'échoue pas), ℹ information.
  * Contrôles (critères du runbook) :
- *  1. schéma : tables, colonnes, vue `project_effective_access`, fonction et déclencheurs du pont `op_sync_access`,
- *     index d'unicité ;
+ *  1. schéma : tables, colonnes, vue `project_effective_access`, pont `op_sync_access` RETIRÉ (lot OP-PONT : aucune
+ *     fonction ni déclencheur du miroir, `project_members` vue de compatibilité en lecture seule), index d'unicité ;
  *  2. reprise : chaque propriétaire a sa participation active et l'accès `proprietaire` ; chaque partage
- *     (`project_members`) a sa participation non terminée et son rôle miroir `acces` ; AUCUN membre existant sans accès
- *     effectif hors participation suspendue, non commencée ou échéance d'accès passée (comptés à part) ;
+ *     (`project_members`) a sa participation non terminée et son rôle de partage `acces` ; AUCUN membre existant sans
+ *     accès effectif hors participation suspendue, non commencée ou échéance d'accès passée (comptés à part) ;
  *  3. participations : aucune participation active, commencée, non expirée, portant un rôle de portée projet, sans accès
  *     effectif ; aucune participation sans personne ni organisation ; une participation « revue seule » n'ouvre rien ;
  *  4. revue externe : paquet partagé toujours figé (manifeste, empreinte, fichiers) ; affectation acceptée liée à un compte ;
@@ -66,8 +68,13 @@ try {
   if (snapshotOut) {
     const projects = await all("SELECT id, owner_id FROM projects ORDER BY id");
     const members = await all("SELECT project_id, user_id, role FROM project_members ORDER BY project_id, user_id");
-    writeFileSync(snapshotOut, `${JSON.stringify({ schema: "fadi-op-acces/1", takenAt: meta.at, database: meta.db, projects: projects.map((r) => [r.id, r.owner_id]), members: members.map((r) => [r.project_id, r.user_id, r.role]) })}\n`);
-    ok(`instantané écrit : ${projects.length} projets, ${members.length} partages → ${snapshotOut} (identifiants seulement)`);
+    // Base où la vue d'accès existe déjà (phases 2 et suivantes) : relevé exact des accès effectifs, pour prouver après le
+    // retrait du pont qu'ils sont IDENTIQUES (rôle, export, approbation, diffusion).
+    const access = (await exists("project_effective_access"))
+      ? (await all("SELECT project_id, user_id, role, can_export, can_approve, can_publish FROM project_effective_access ORDER BY 1, 2")).map((r) => [r.project_id, r.user_id, r.role, r.can_export, r.can_approve, r.can_publish])
+      : null;
+    writeFileSync(snapshotOut, `${JSON.stringify({ schema: "fadi-op-acces/2", takenAt: meta.at, database: meta.db, projects: projects.map((r) => [r.id, r.owner_id]), members: members.map((r) => [r.project_id, r.user_id, r.role]), access })}\n`);
+    ok(`instantané écrit : ${projects.length} projets, ${members.length} partages${access ? `, ${access.length} accès effectifs` : ""} → ${snapshotOut} (identifiants seulement)`);
     await client.query("ROLLBACK");
     await client.end();
     process.exit(0);
@@ -82,13 +89,17 @@ try {
   check(missing.length === 0, `schéma : ${relations.length} tables et vue du chantier présentes`, missing.join(", "));
   if (missing.length) throw new Error("schéma incomplet : migration non appliquée, contrôles suivants impossibles");
   const cols = [["public", "project_participations", "can_export"], ["public", "project_participations", "access_expires_at"], ["public", "projects", "closed_at"],
+    ["public", "project_participations", "access_granted_by"], ["public", "project_participations", "access_granted_at"],
     ["public", "projects", "organization_id"], ["public", "people", "erased_at"], ["auth", "invitations", "participation_id"], ["auth", "invitations", "proposed_roles"],
     ["auth", "invitations", "organization_id"], ["auth", "invitations", "review_assignment_id"], ["public", "studio_comments", "review_package_id"]];
   const missingCols = [];
   for (const [s, t, c] of cols) if (!(await one("SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = $1 AND table_name = $2 AND column_name = $3) AS e", [s, t, c])).e) missingCols.push(`${s}.${t}.${c}`);
   check(missingCols.length === 0, `schéma : ${cols.length} colonnes additives présentes`, missingCols.join(", "));
+  // Lot OP-PONT : plus aucun déclencheur ni fonction du miroir ; `project_members` est une vue de compatibilité.
   const triggers = (await all(`SELECT tgname FROM pg_trigger WHERE NOT tgisinternal AND tgname = ANY($1::text[])`, [["project_members_op_mirror", "projects_op_owner_mirror"]])).map((r) => r.tgname);
-  check(triggers.length === 2 && (await one("SELECT to_regprocedure('op_sync_access(text,text,date)') IS NOT NULL AS e")).e, "pont op_sync_access : fonction et deux déclencheurs en place", triggers);
+  const mirrorFns = (await all("SELECT proname FROM pg_proc WHERE proname = ANY($1::text[])", [["op_sync_access", "op_project_members_mirror", "op_projects_owner_mirror"]])).map((r) => r.proname);
+  const pmKind = (await one("SELECT relkind FROM pg_class WHERE oid = to_regclass('public.project_members')"))?.relkind ?? null;
+  check(triggers.length === 0 && mirrorFns.length === 0 && pmKind === "v", "pont op_sync_access retiré : aucun déclencheur ni fonction du miroir, project_members est une vue", { triggers, mirrorFns, pmKind });
   const indexes = (await all("SELECT indexname FROM pg_indexes WHERE indexname = ANY($1::text[])", [["people_user_unique", "project_participations_current_person", "project_participations_current_org", "project_role_assignments_unique"]])).map((r) => r.indexname);
   check(indexes.length === 4, "unicité : une personne par compte, une participation en cours par personne / organisation et projet, rôles sans doublon", indexes);
 
@@ -108,7 +119,7 @@ try {
         JOIN project_role_assignments ra ON ra.participation_id = pp.id AND ra.origin = 'acces' AND ra.scope_type = 'projet'
          AND ra.role = CASE m.role WHEN 'editeur' THEN 'concepteur' ELSE 'lecteur' END
        WHERE pe.user_id = m.user_id)`);
-  check(bridge.n === 0, "pont : chaque partage a sa participation non terminée et son rôle miroir « acces »", bridge);
+  check(bridge.n === 0, "vue de compatibilité : chaque partage a sa participation non terminée et son rôle de partage « acces »", bridge);
   const memberStates = await all(`SELECT CASE WHEN pp.id IS NULL THEN 'sans-participation' WHEN pp.status = 'suspendue' THEN 'suspendue'
         WHEN pp.status = 'contact' THEN 'contact' WHEN pp.starts_on > current_date THEN 'non-commencee'
         WHEN pp.access_expires_at IS NOT NULL AND pp.access_expires_at <= now() THEN 'echeance-passee' ELSE 'perte' END AS etat, count(*)::int AS n
@@ -124,7 +135,7 @@ try {
   check(downgraded.n === 0, "aucun éditeur existant réduit à la lecture", downgraded);
   if (referenceIn) {
     const ref = JSON.parse(readFileSync(referenceIn, "utf8"));
-    if (ref.schema !== "fadi-op-acces/1") throw new Error(`instantané inconnu : ${ref.schema}`);
+    if (!["fadi-op-acces/1", "fadi-op-acces/2"].includes(ref.schema)) throw new Error(`instantané inconnu : ${ref.schema}`);
     const view = new Map((await all("SELECT project_id, user_id, role FROM project_effective_access")).map((r) => [`${r.project_id} ${r.user_id}`, r.role]));
     const states = new Map((await all(`SELECT pp.project_id, pe.user_id, pp.status, (pp.access_expires_at IS NOT NULL AND pp.access_expires_at <= now()) AS expired
       FROM project_participations pp JOIN people pe ON pe.id = pp.person_id WHERE pe.user_id IS NOT NULL AND pp.status <> 'contact'
@@ -132,9 +143,13 @@ try {
     const owners = new Map((await all("SELECT id, owner_id FROM projects")).map((r) => [r.id, r.owner_id]));
     const rank = { lecteur: 1, editeur: 2, proprietaire: 3 };
     const lostRef = [];
-    let decided = 0, gone = 0;
+    let decided = 0, gone = 0, noneBefore = 0;
+    // Instantané avec accès effectifs (fadi-op-acces/2) : un partage listé SANS accès effectif avant (suspension, échéance,
+    // dérive) n'en avait pas à perdre.
+    const hadAccess = ref.access ? new Set(ref.access.map(([p, u]) => `${p} ${u}`)) : null;
     for (const [pid, uid, role] of [...ref.projects.map(([p, o]) => [p, o, "proprietaire"]), ...ref.members]) {
       if (!owners.has(pid)) { gone += 1; continue; }                                    // projet supprimé depuis
+      if (hadAccess && role !== "proprietaire" && !hadAccess.has(`${pid} ${uid}`)) { noneBefore += 1; continue; }
       const now = view.get(`${pid} ${uid}`);
       if (now && rank[now] >= rank[role]) continue;                                     // accès conservé (ou élargi)
       if (role === "proprietaire" && owners.get(pid) !== uid) { decided += 1; continue; } // transfert de propriété tracé
@@ -143,7 +158,16 @@ try {
       lostRef.push([pid, uid, role, now ?? null]);
     }
     check(lostRef.length === 0, `instantané ${ref.takenAt} : chaque accès relevé avant le déploiement existe encore (${ref.projects.length} propriétaires, ${ref.members.length} partages)`, lostRef.slice(0, 5));
-    info(`instantané : ${decided} accès retirés depuis par une décision tracée (suspension, fin, échéance), ${gone} projets supprimés depuis`);
+    info(`instantané : ${decided} accès retirés depuis par une décision tracée (suspension, fin, échéance), ${gone} projets supprimés depuis${hadAccess ? `, ${noneBefore} partage(s) déjà sans accès effectif avant` : ""}`);
+    if (ref.access) {
+      // Accès effectifs relevés avant (lot OP-PONT, application arrêtée pendant la migration) : chacun IDENTIQUE après.
+      const nowAccess = new Map((await all("SELECT project_id, user_id, role, can_export, can_approve, can_publish FROM project_effective_access"))
+        .map((r) => [`${r.project_id} ${r.user_id}`, [r.role, r.can_export, r.can_approve, r.can_publish].join("|")]));
+      const changed = ref.access.filter(([pid, uid, ...rest]) => owners.has(pid) && nowAccess.get(`${pid} ${uid}`) !== rest.join("|"));
+      check(changed.length === 0, `instantané : ${ref.access.length} accès effectifs relevés avant, identiques après (rôle, export, approbation, diffusion)`, changed.slice(0, 5));
+      const before = new Set(ref.access.map(([pid, uid]) => `${pid} ${uid}`));
+      info(`instantané : ${[...nowAccess.keys()].filter((k) => !before.has(k)).length} accès effectif(s) nouveau(x) depuis (partages repris par la migration, ou accordés depuis)`);
+    }
   } else info("aucun instantané de référence (--reference) : comparaison avant / après non faite");
 
   // --- 3. Participations ------------------------------------------------------------------------------------------------

@@ -7,6 +7,7 @@ import { db, pool } from "../db/client.js";
 import { projectEffectiveAccess, projects, projectSteps, projectSupportGrants, stepFiles, users } from "../db/schema.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { newId } from "../lib/ids.js";
+import { ensureOwnerParticipation } from "../lib/project-access-db.js";
 import { EMPTY_STEP_CONTENT, PARCOURS_STEPS, exampleBaseDocuments } from "../data/parcours.js";
 import { activeLock, projectOr404 } from "../lib/owned-project.js";
 import { APPLICATION_VERSION, ArchiveModeleError, SOURCE_VERSION, exportProjectArchive, importProjectArchive } from "../lib/project-archive.js";
@@ -119,6 +120,8 @@ projectsRouter.post("/", async (req, res) => {
       .values({ id, ownerId: req.user!.id, code: parsed.data.code, name: parsed.data.name })
       .returning();
     if (!project) throw new Error("project insert returned nothing");
+    // Participation du propriétaire (lot OP-PONT : écrite ici, autrefois par le déclencheur du miroir).
+    await ensureOwnerParticipation(tx, id, req.user!.id);
     // Chaque projet, même vide, porte les 21 vraies étapes du Parcours dès
     // sa création — jamais un placeholder générique côté frontend
     // (AGENTS.md : « Preserve the authoritative Parcours workflow »).

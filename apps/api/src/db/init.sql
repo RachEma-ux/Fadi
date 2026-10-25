@@ -232,6 +232,14 @@ ALTER TABLE project_comments ADD COLUMN IF NOT EXISTS audience text NOT NULL DEF
   CONSTRAINT project_comments_audience_check CHECK (audience IN ('equipe', 'projet'));
 ALTER TABLE project_comments ALTER COLUMN audience SET DEFAULT 'equipe';
 
+-- Table historique du partage. Lot OP-PONT (Issue #262, retrait du pont `op_sync_access`) : elle est reprise une
+-- dernière fois dans les participations puis REMPLACÉE par la vue de compatibilité `project_members` (bloc « retrait du
+-- pont », fin de la section organisations-participation). Ces instructions ne s'appliquent donc plus qu'à une base qui
+-- porte encore la table (base neuve : créée ici, reprise puis remplacée plus bas, dans la même migration).
+DO $$
+BEGIN
+  IF coalesce((SELECT c.relkind FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+                WHERE n.nspname = 'public' AND c.relname = 'project_members'), 'r') = 'r' THEN
 CREATE TABLE IF NOT EXISTS project_members (
   project_id text NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
   user_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
@@ -247,6 +255,8 @@ CREATE INDEX IF NOT EXISTS project_members_user_idx ON project_members (user_id)
 -- d'une archive antérieure à cette colonne — vaut le droit d'origine : TRUE.
 ALTER TABLE project_members ADD COLUMN IF NOT EXISTS can_export boolean DEFAULT true;
 ALTER TABLE project_members ALTER COLUMN can_export SET DEFAULT false;
+  END IF;
+END $$;
 
 -- ---------------------------------------------------------------------------
 -- Modèle typé de l'Atelier Fadi (cahier des charges §5.5).
@@ -1405,9 +1415,9 @@ CREATE INDEX IF NOT EXISTS mail_outbox_to_idx ON admin.mail_outbox (to_address, 
 -- ---------------------------------------------------------------------------
 -- Organisations, participation et revue externe — phase 1 (Issue #262, docs/workstreams/organisations-participation/).
 -- Personnes (compte vérifié ou contact sans compte), organisations minimales, participations au projet et rôles métier
--- par portée (OP-D3 c). Jusqu'à la phase 2, l'accès reste porté par `projects.owner_id` et `project_members` : les
--- participations et les rôles d'origine `acces` en sont le miroir, tenu par déclencheurs (aucun chemin d'écriture
--- oublié) et repris de l'existant de façon idempotente. Aucun droit n'en dépend encore.
+-- par portée (OP-D3 c). Phase 1 : participations et rôles d'origine `acces` étaient le miroir de `project_members`, tenu
+-- par déclencheurs ; phase 2 : la vue `project_effective_access` en tire seule la décision d'accès ; lot OP-PONT : le
+-- miroir est retiré, l'application écrit directement participations et rôles, `project_members` devient une vue.
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS people (
   id text PRIMARY KEY,
@@ -1471,15 +1481,16 @@ CREATE UNIQUE INDEX IF NOT EXISTS project_participations_current_org ON project_
   WHERE organization_id IS NOT NULL AND status <> 'terminee';
 CREATE INDEX IF NOT EXISTS project_participations_person_idx ON project_participations (person_id);
 -- Phase 2 (bascule de l'accès, OP-D3 c) : l'export accordé à un lecteur (écart E2) suit la participation, seule source
--- de la décision d'accès ; tenu par le miroir depuis `project_members.can_export` (NULL d'archive = TRUE).
+-- de la décision d'accès ; écrit par le partage (lib/project-access-db.ts ; NULL d'archive = TRUE à la restauration).
 ALTER TABLE project_participations ADD COLUMN IF NOT EXISTS can_export boolean NOT NULL DEFAULT false;
 -- Phase 3 (invitations acceptées) : échéance de l'accès, indépendante de celle de l'invitation. Passée, la participation
 -- ne donne plus rien (vue `project_effective_access`) ; placée ici pour être disponible à la définition de la vue.
 ALTER TABLE project_participations ADD COLUMN IF NOT EXISTS access_expires_at timestamptz;
 
 -- Rôles métier par portée (OP-D3 c, concept partie 2) : Lecteur, Concepteur, Relecteur, Coordinateur, Approbateur,
--- Diffuseur. Origine `acces` : miroir de l'accès actuel (lecteur → lecteur, editeur → concepteur), tenu par les
--- déclencheurs ; origine `attribution` : affectation explicite (phase 2), jamais touchée par le miroir.
+-- Diffuseur. Origine `acces` : accès de base du partage (lecteur → lecteur, editeur → concepteur), un seul par
+-- participation, écrit par le partage (lib/project-access-db.ts, lot OP-PONT ; miroir par déclencheurs auparavant) ;
+-- origine `attribution` : affectation explicite (phase 2), jamais touchée par le partage.
 CREATE TABLE IF NOT EXISTS project_role_assignments (
   id text PRIMARY KEY,
   participation_id text NOT NULL REFERENCES project_participations (id) ON DELETE CASCADE,
@@ -1499,91 +1510,11 @@ CREATE TABLE IF NOT EXISTS project_role_assignments (
 CREATE UNIQUE INDEX IF NOT EXISTS project_role_assignments_unique
   ON project_role_assignments (participation_id, role, scope_type, coalesce(scope_id, ''), origin);
 
--- Miroir de l'accès d'un compte à un projet, recalculé depuis l'état courant (propriétaire, sinon `project_members`) :
--- l'ordre des écritures d'un transfert de propriété ne coupe pas une participation tant que le compte garde un accès.
-CREATE OR REPLACE FUNCTION op_sync_access(p_project text, p_user text, p_since date DEFAULT current_date)
-RETURNS void LANGUAGE plpgsql AS $$
-DECLARE
-  v_owner text;
-  v_member text;
-  v_member_export boolean;
-  v_access text;
-  v_person text;
-  v_part text;
-  v_role text;
-BEGIN
-  SELECT owner_id INTO v_owner FROM projects WHERE id = p_project;
-  IF NOT FOUND OR NOT EXISTS (SELECT 1 FROM users WHERE id = p_user) THEN RETURN; END IF;  -- suppression en cascade
-  SELECT role, can_export INTO v_member, v_member_export FROM project_members WHERE project_id = p_project AND user_id = p_user;
-  v_access := CASE WHEN v_owner = p_user THEN 'proprietaire' ELSE v_member END;
-  SELECT id INTO v_person FROM people WHERE user_id = p_user;
-  IF v_access IS NULL THEN
-    IF v_person IS NOT NULL THEN
-      UPDATE project_participations SET status = 'terminee', ends_on = greatest(current_date, coalesce(starts_on, current_date)),
-        updated_at = now()
-       WHERE project_id = p_project AND person_id = v_person AND status <> 'terminee';
-    END IF;
-    RETURN;
-  END IF;
-  IF v_person IS NULL THEN
-    -- Deux accès simultanés du même compte (deux projets créés en parallèle) : l'un crée la personne, l'autre la relit.
-    INSERT INTO people (id, user_id) VALUES ('per_' || gen_random_uuid(), p_user)
-      ON CONFLICT (user_id) WHERE user_id IS NOT NULL DO NOTHING;
-    SELECT id INTO v_person FROM people WHERE user_id = p_user;
-  END IF;
-  SELECT id INTO v_part FROM project_participations
-   WHERE project_id = p_project AND person_id = v_person AND status <> 'terminee' FOR UPDATE;
-  IF v_part IS NULL THEN
-    v_part := 'ppa_' || gen_random_uuid();
-    INSERT INTO project_participations (id, project_id, person_id, status, starts_on)
-    VALUES (v_part, p_project, v_person, 'active', least(p_since, current_date));
-  ELSE
-    -- Une participation suspendue le reste (phase 2) : seul un contact devient actif par un accès.
-    UPDATE project_participations SET status = 'active', updated_at = now() WHERE id = v_part AND status = 'contact';
-  END IF;
-  UPDATE project_participations SET can_export = (v_access = 'lecteur' AND coalesce(v_member_export, true))
-   WHERE id = v_part AND can_export IS DISTINCT FROM (v_access = 'lecteur' AND coalesce(v_member_export, true));
-  v_role := CASE v_access WHEN 'lecteur' THEN 'lecteur' WHEN 'editeur' THEN 'concepteur' END;
-  DELETE FROM project_role_assignments
-   WHERE participation_id = v_part AND origin = 'acces' AND role IS DISTINCT FROM v_role;
-  IF v_role IS NOT NULL THEN
-    INSERT INTO project_role_assignments (id, participation_id, role, scope_type, origin)
-    VALUES ('pra_' || gen_random_uuid(), v_part, v_role, 'projet', 'acces')
-    ON CONFLICT DO NOTHING;
-  END IF;
-END $$;
-
-CREATE OR REPLACE FUNCTION op_project_members_mirror() RETURNS trigger LANGUAGE plpgsql AS $$
-BEGIN
-  IF TG_OP IN ('UPDATE', 'DELETE') THEN PERFORM op_sync_access(OLD.project_id, OLD.user_id); END IF;
-  IF TG_OP IN ('INSERT', 'UPDATE') THEN PERFORM op_sync_access(NEW.project_id, NEW.user_id); END IF;
-  RETURN NULL;
-END $$;
-CREATE OR REPLACE TRIGGER project_members_op_mirror AFTER INSERT OR UPDATE OR DELETE ON project_members
-  FOR EACH ROW EXECUTE FUNCTION op_project_members_mirror();
-
-CREATE OR REPLACE FUNCTION op_projects_owner_mirror() RETURNS trigger LANGUAGE plpgsql AS $$
-BEGIN
-  IF TG_OP = 'UPDATE' THEN PERFORM op_sync_access(OLD.id, OLD.owner_id); END IF;
-  PERFORM op_sync_access(NEW.id, NEW.owner_id);
-  RETURN NULL;
-END $$;
-CREATE OR REPLACE TRIGGER projects_op_owner_mirror AFTER INSERT OR UPDATE OF owner_id ON projects
-  FOR EACH ROW EXECUTE FUNCTION op_projects_owner_mirror();
-
--- Reprise de l'existant : chaque propriétaire et chaque membre reçoit sa personne, une participation active datée de
--- son accès et, pour un membre, son rôle miroir. Rejouée sans effet (aucune ligne créée deux fois).
-DO $$
-DECLARE r record;
-BEGIN
-  FOR r IN
-    SELECT p.id AS project_id, p.owner_id AS user_id, p.created_at::date AS since FROM projects p
-    UNION ALL
-    SELECT m.project_id, m.user_id, m.created_at::date FROM project_members m
-  LOOP
-    PERFORM op_sync_access(r.project_id, r.user_id, r.since);
-  END LOOP;
-END $$;
+-- Le miroir `op_sync_access` (fonction et déclencheurs sur `project_members` et `projects.owner_id`) et la reprise de
+-- l'existant qui l'appelait vivaient ici jusqu'au lot OP-PONT. Ils sont retirés : la reprise d'une base qui porte
+-- encore la table `project_members` (et ses déclencheurs) se fait UNE fois, dans le bloc « retrait du pont » (fin de la
+-- section organisations-participation), avec la même règle ; l'application écrit ensuite directement participations et
+-- rôles (lib/project-access-db.ts).
 
 -- Organisations-participation, phase 3 bis — journal d'activité consultable par audience (OP-D13 a). Aucune table ni
 -- droit nouveau : `admin.audit_log` reste append-only (déclencheurs ci-dessus, `fadi_app` sans UPDATE ni DELETE, bloc
@@ -2086,8 +2017,7 @@ CREATE INDEX IF NOT EXISTS review_package_notes_package_idx ON review_package_no
 -- `projet` (une participation sans rôle de projet, « revue seule » de la phase 4, ne donne aucun accès). Concepteur →
 -- modifier (rôle API `editeur`) ; tout autre rôle de projet → lire et commenter (`lecteur`) ; Approbateur et Diffuseur →
 -- approbation et diffusion Studio ; export : concepteur, ou export accordé (`can_export`). Le miroir `acces` par
--- déclencheurs est CONSERVÉ comme pont : les écritures historiques (partage, invitations acceptées, transfert,
--- anonymisation, restauration) écrivent toujours `project_members`, dont il tire les participations et rôles `acces`.
+-- déclencheurs, conservé comme pont jusqu'au lot OP-PONT, est retiré (bloc « retrait du pont » plus bas).
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE VIEW project_effective_access AS
 SELECT p.id AS project_id, p.owner_id AS user_id, 'proprietaire'::text AS role, true AS can_export, true AS can_approve,
@@ -2122,8 +2052,8 @@ CREATE INDEX IF NOT EXISTS project_participations_represented_idx ON project_par
 -- désigne la participation visée (contact de l'annuaire, ou fiche créée à l'envoi) et les rôles proposés par portée ;
 -- rien n'est accordé avant l'acceptation, qui lie le compte vérifié à la fiche, active la participation et pose les rôles
 -- (lib/project-invitations-db.ts). `access_expires_at` (colonne UM-3 existante) est recopiée sur la participation à
--- l'acceptation et appliquée par la vue `project_effective_access` (ci-dessus). Le miroir `op_sync_access` reste le pont
--- de l'accès de base (lecteur / concepteur) : voir docs/workstreams/organisations-participation/phase-3.md.
+-- l'acceptation et appliquée par la vue `project_effective_access` (ci-dessus). L'accès de base (lecteur / concepteur)
+-- passait par le pont `op_sync_access` (phase-3.md) jusqu'au lot OP-PONT, qui l'écrit directement (lot-pont.md).
 -- ---------------------------------------------------------------------------
 ALTER TABLE auth.invitations ADD COLUMN IF NOT EXISTS participation_id text
   REFERENCES public.project_participations (id) ON DELETE SET NULL;
@@ -2160,6 +2090,181 @@ BEGIN
   END IF;
 END $$;
 CREATE INDEX IF NOT EXISTS invitations_mandate_idx ON auth.invitations (mandate_id) WHERE mandate_id IS NOT NULL;
+-- ---------------------------------------------------------------------------
+-- Organisations, participation — lot OP-PONT (Issue #262, autorisé par le maître d'ouvrage le 2026-10-25) : retrait du
+-- pont `op_sync_access`. L'application écrit DIRECTEMENT participations et rôles (lib/project-access-db.ts : partage,
+-- changement de rôle ou d'export, retrait, départ, transfert de propriété, invitations acceptées, anonymisation,
+-- restauration d'archive, création de projet), dans la transaction de l'action et avec son journal. Le partage garde son
+-- rôle d'origine `acces` (accès de base : Lecteur ou Concepteur, un seul par participation) ; `attribution` reste
+-- l'affectation explicite. `project_members` devient une VUE DE COMPATIBILITÉ en lecture, dérivée des participations,
+-- avec les mêmes colonnes, pour les lectures restantes (listes des membres, exports de données personnelles, archives,
+-- notifications, Communication, simulation de migration R-MEMBRES…). Docs : lot-pont.md, RUNBOOK-deploiement.md § 9.
+--
+-- Une seule fois, sur une base qui porte encore la TABLE `project_members` (base neuve comprise : table vide créée plus
+-- haut), dans la transaction unique de la migration. Règle : depuis la phase 2, les participations DÉCIDENT de l'accès ;
+-- la table n'est plus la source que d'un partage qu'aucun miroir n'a jamais repris (base antérieure à la phase 1).
+--  1. reprise : un partage lecteur / éditeur (hors propriétaire) SANS participation en cours reçoit personne,
+--     participation active datée de son partage, export accordé (NULL d'archive = TRUE) et rôle `acces` — exactement
+--     l'ancien miroir. Une participation en cours n'est JAMAIS modifiée (aucun rôle retiré n'est rendu, aucun export
+--     changé, une suspension reste) : les écarts de dérive (écriture SQL directe) sont comptés et signalés ;
+--  2. l'invitant (`invited_by`, libellé historique) et la date du partage (`created_at`) passent sur la participation
+--     qui porte le partage (`access_granted_by`, `access_granted_at`) ; le `can_export` d'un éditeur, jamais consulté
+--     (un éditeur exporte toujours), n'est pas repris ;
+--  3. preuve dans la migration : (a) chaque accès effectif relevé avant le bloc existe encore, identique (rôle, export,
+--     approbation, diffusion) ; (b) chaque partage repris ou déjà tenu par le miroir se retrouve À L'IDENTIQUE dans la
+--     vue de compatibilité (rôle, export effectif, invitant, date). Sinon : exception, la migration entière est annulée
+--     et rien n'est supprimé ;
+--  4. déclencheurs et fonctions du miroir supprimés, table supprimée, vue créée.
+-- Rejoué ensuite : la vue existe, rien n'est repris ni supprimé (seule la participation des propriétaires est réparée).
+-- ---------------------------------------------------------------------------
+ALTER TABLE project_participations ADD COLUMN IF NOT EXISTS access_granted_by text;
+ALTER TABLE project_participations ADD COLUMN IF NOT EXISTS access_granted_at timestamptz;
+
+DO $$
+DECLARE
+  r record;
+  v_person text; v_part text;
+  v_before text[];
+  v_lost text[];
+  v_missing text[];
+  v_created integer := 0;
+  v_gained integer;
+  v_drift integer;
+  v_ignored integer;
+BEGIN
+  IF coalesce((SELECT c.relkind FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+                WHERE n.nspname = 'public' AND c.relname = 'project_members'), 'v') <> 'r' THEN
+    RETURN;
+  END IF;
+  -- Plus aucune écriture par le miroir pendant le retrait.
+  DROP TRIGGER IF EXISTS project_members_op_mirror ON project_members;
+  DROP TRIGGER IF EXISTS projects_op_owner_mirror ON projects;
+  -- Accès effectifs avant le retrait (la vue `project_effective_access` ne lit pas `project_members`).
+  SELECT coalesce(array_agg(concat_ws('|', project_id, user_id, role, can_export, can_approve, can_publish) ORDER BY 1), '{}')
+    INTO v_before FROM project_effective_access;
+  -- 1. Reprise des partages qu'aucun miroir n'a repris (règle de l'ancien `op_sync_access`).
+  FOR r IN
+    SELECT m.project_id, m.user_id, m.role, m.can_export, m.created_at FROM project_members m
+      JOIN projects p ON p.id = m.project_id AND p.owner_id <> m.user_id
+      JOIN users u ON u.id = m.user_id
+     WHERE m.role IN ('lecteur', 'editeur')
+       AND NOT EXISTS (SELECT 1 FROM people pe JOIN project_participations pp ON pp.person_id = pe.id
+                        WHERE pe.user_id = m.user_id AND pp.project_id = m.project_id AND pp.status <> 'terminee')
+  LOOP
+    INSERT INTO people (id, user_id) VALUES ('per_' || gen_random_uuid(), r.user_id) ON CONFLICT (user_id) WHERE user_id IS NOT NULL DO NOTHING;
+    SELECT id INTO v_person FROM people WHERE user_id = r.user_id;
+    v_part := 'ppa_' || gen_random_uuid();
+    INSERT INTO project_participations (id, project_id, person_id, status, starts_on, can_export)
+    VALUES (v_part, r.project_id, v_person, 'active', least(r.created_at::date, current_date), r.role = 'lecteur' AND coalesce(r.can_export, true));
+    INSERT INTO project_role_assignments (id, participation_id, role, scope_type, origin)
+    VALUES ('pra_' || gen_random_uuid(), v_part, CASE r.role WHEN 'lecteur' THEN 'lecteur' ELSE 'concepteur' END, 'projet', 'acces');
+    v_created := v_created + 1;
+  END LOOP;
+  -- 2. Invitant et date du partage portés par la participation en cours qui porte le partage.
+  UPDATE project_participations pp SET access_granted_by = m.invited_by, access_granted_at = m.created_at
+    FROM project_members m JOIN people pe ON pe.user_id = m.user_id
+   WHERE pp.project_id = m.project_id AND pp.person_id = pe.id AND pp.status <> 'terminee'
+     AND EXISTS (SELECT 1 FROM project_role_assignments ra WHERE ra.participation_id = pp.id AND ra.origin = 'acces' AND ra.scope_type = 'projet')
+     AND (pp.access_granted_by IS DISTINCT FROM m.invited_by OR pp.access_granted_at IS DISTINCT FROM m.created_at);
+  -- 3a. Aucun accès effectif perdu ni modifié.
+  SELECT coalesce(array_agg(b ORDER BY b), '{}') INTO v_lost FROM unnest(v_before) b
+   WHERE b NOT IN (SELECT concat_ws('|', project_id, user_id, role, can_export, can_approve, can_publish) FROM project_effective_access);
+  IF cardinality(v_lost) > 0 THEN
+    RAISE EXCEPTION 'OP-PONT : % accès effectif(s) perdu(s) ou modifié(s), rien n''est supprimé : %',
+      cardinality(v_lost), array_to_string(v_lost[1:5], ', ');
+  END IF;
+  SELECT count(*) INTO v_gained FROM project_effective_access
+   WHERE concat_ws('|', project_id, user_id, role, can_export, can_approve, can_publish) <> ALL (v_before);
+  -- 3b. Chaque partage (lecteur / éditeur, hors propriétaire) dont la participation porte le rôle de partage du même rôle
+  -- et le même export se retrouve à l'identique dans la vue de compatibilité (même requête que la vue, plus bas).
+  WITH compat AS (
+    SELECT pp.project_id, pe.user_id,
+           CASE WHEN EXISTS (SELECT 1 FROM project_role_assignments ra WHERE ra.participation_id = pp.id AND ra.origin = 'acces'
+                              AND ra.scope_type = 'projet' AND ra.role = 'concepteur') THEN 'editeur' ELSE 'lecteur' END AS role,
+           coalesce(pp.access_granted_by, '') AS invited_by, coalesce(pp.access_granted_at, pp.created_at) AS created_at, pp.can_export
+      FROM project_participations pp
+      JOIN people pe ON pe.id = pp.person_id AND pe.user_id IS NOT NULL
+      JOIN projects p ON p.id = pp.project_id AND p.owner_id <> pe.user_id
+     WHERE pp.status <> 'terminee'
+       AND EXISTS (SELECT 1 FROM project_role_assignments ra WHERE ra.participation_id = pp.id AND ra.origin = 'acces' AND ra.scope_type = 'projet')
+  ), legacy AS (
+    SELECT m.project_id, m.user_id, m.role, (m.role = 'editeur' OR coalesce(m.can_export, true)) AS exports, m.invited_by, m.created_at
+      FROM project_members m JOIN projects p ON p.id = m.project_id AND p.owner_id <> m.user_id
+     WHERE m.role IN ('lecteur', 'editeur')
+  ), classified AS (
+    SELECT l.*, c.role AS c_role, c.can_export AS c_export, c.invited_by AS c_by, c.created_at AS c_at FROM legacy l
+      LEFT JOIN compat c ON c.project_id = l.project_id AND c.user_id = l.user_id
+  )
+  SELECT coalesce(array_agg(concat_ws('|', project_id, user_id, role) ORDER BY 1) FILTER (
+           WHERE c_role = role AND (c_role = 'editeur' OR c_export) = exports AND (c_by IS DISTINCT FROM invited_by OR c_at IS DISTINCT FROM created_at)), '{}'),
+         count(*) FILTER (WHERE c_role IS NULL OR c_role <> role OR (c_role = 'editeur' OR c_export) <> exports)
+    INTO v_missing, v_drift FROM classified;
+  IF cardinality(v_missing) > 0 THEN
+    RAISE EXCEPTION 'OP-PONT : % partage(s) différent(s) dans la vue de compatibilité, rien n''est supprimé : %',
+      cardinality(v_missing), array_to_string(v_missing[1:5], ', ');
+  END IF;
+  IF v_drift > 0 THEN
+    -- Écart de dérive (écriture SQL directe) : la participation, qui décide de l'accès depuis la phase 2, est gardée
+    -- telle quelle ; aucun accès n'est donné ni retiré (3a). Liste : RUNBOOK-deploiement.md § 9.2.
+    RAISE NOTICE 'OP-PONT : % partage(s) dont la participation diffère de la ligne de partage (dérive) : participation conservée, accès inchangé', v_drift;
+  END IF;
+  SELECT count(*) INTO v_ignored FROM project_members m JOIN projects p ON p.id = m.project_id
+   WHERE p.owner_id = m.user_id OR m.role NOT IN ('lecteur', 'editeur');
+  IF v_ignored > 0 THEN
+    -- Ligne du propriétaire ou rôle inconnu : l'ancien miroir n'en tirait aucun rôle, donc aucun accès ; rien ne change.
+    RAISE NOTICE 'OP-PONT : % ligne(s) de partage sans accès de base (propriétaire ou rôle inconnu) non reprises', v_ignored;
+  END IF;
+  -- 4. Table remplacée par la vue (créée juste après ce bloc).
+  DROP TABLE project_members;
+  RAISE NOTICE 'OP-PONT : pont retiré ; % accès effectif(s) relevés avant, tous conservés ; % partage(s) repris, % accès complété(s)',
+    cardinality(v_before), v_created, v_gained;
+END $$;
+-- Fonctions et déclencheurs du miroir supprimés (rejouable) ; dans un bloc DO : init.sql ne porte au premier niveau que
+-- CREATE / ALTER / DO (contrôle du profil Studio V1, scripts/validation/studio-v1-profile.py).
+DO $$
+BEGIN
+  DROP TRIGGER IF EXISTS projects_op_owner_mirror ON projects;
+  DROP FUNCTION IF EXISTS op_projects_owner_mirror();
+  DROP FUNCTION IF EXISTS op_project_members_mirror();
+  DROP FUNCTION IF EXISTS op_sync_access(text, text, date);
+END $$;
+
+-- Vue de compatibilité (lecture seule : non modifiable par construction — jointures — et `fadi_app` n'y a que SELECT,
+-- bloc D-7) : une ligne par partage en cours = participation non terminée d'un compte, hors propriétaire, portant le rôle
+-- de partage (origine `acces`, portée projet). Rôle : `editeur` pour Concepteur, sinon `lecteur`. `can_export` : export
+-- accordé à un lecteur (un éditeur exporte toujours). Comme l'ancienne table, elle liste aussi un partage suspendu ou
+-- échu : la DÉCISION d'accès reste `project_effective_access`.
+CREATE OR REPLACE VIEW project_members AS
+SELECT pp.project_id, pe.user_id,
+       CASE WHEN EXISTS (SELECT 1 FROM project_role_assignments ra WHERE ra.participation_id = pp.id AND ra.origin = 'acces'
+                          AND ra.scope_type = 'projet' AND ra.role = 'concepteur') THEN 'editeur' ELSE 'lecteur' END AS role,
+       coalesce(pp.access_granted_by, '') AS invited_by,
+       coalesce(pp.access_granted_at, pp.created_at) AS created_at,
+       pp.can_export
+  FROM project_participations pp
+  JOIN people pe ON pe.id = pp.person_id AND pe.user_id IS NOT NULL
+  JOIN projects p ON p.id = pp.project_id AND p.owner_id <> pe.user_id
+ WHERE pp.status <> 'terminee'
+   AND EXISTS (SELECT 1 FROM project_role_assignments ra WHERE ra.participation_id = pp.id AND ra.origin = 'acces' AND ra.scope_type = 'projet');
+
+-- Propriétaire : sa participation au projet (ancien déclencheur `projects_op_owner_mirror`) est désormais écrite par
+-- l'application à la création, à l'import ou au transfert (`ensureOwnerParticipation`). Réparation idempotente d'un
+-- projet créé hors de l'application (script, essai) : personne et participation active, sans rôle de partage.
+DO $$
+BEGIN
+  INSERT INTO people (id, user_id)
+  SELECT 'per_' || gen_random_uuid(), o.owner_id FROM (SELECT DISTINCT owner_id FROM projects) o
+   WHERE EXISTS (SELECT 1 FROM users u WHERE u.id = o.owner_id) AND NOT EXISTS (SELECT 1 FROM people pe WHERE pe.user_id = o.owner_id)
+  ON CONFLICT (user_id) WHERE user_id IS NOT NULL DO NOTHING;
+  UPDATE project_participations pp SET status = 'active', updated_at = now()
+    FROM projects p JOIN people pe ON pe.user_id = p.owner_id
+   WHERE pp.project_id = p.id AND pp.person_id = pe.id AND pp.status = 'contact';
+  INSERT INTO project_participations (id, project_id, person_id, status, starts_on)
+  SELECT 'ppa_' || gen_random_uuid(), p.id, pe.id, 'active', least(p.created_at::date, current_date)
+    FROM projects p JOIN people pe ON pe.user_id = p.owner_id
+   WHERE NOT EXISTS (SELECT 1 FROM project_participations pp WHERE pp.project_id = p.id AND pp.person_id = pe.id AND pp.status <> 'terminee');
+END $$;
+
 -- Communication (COM, Issue #280, docs/workstreams/communication/PLAN.md) — tables nouvelles, additif.
 -- Une conversation appartient à un projet et porte une audience explicite : `participants` (personnes nommées),
 -- `equipe` (propriétaire et éditeurs) ou `projet` (tous les membres). La lisibilité est recalculée à chaque requête
@@ -2734,6 +2839,8 @@ BEGIN
   GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public, auth, admin TO fadi_app;
   REVOKE UPDATE, DELETE, TRUNCATE ON admin.audit_log FROM fadi_app;
   REVOKE TRUNCATE ON ALL TABLES IN SCHEMA public, auth, admin FROM fadi_app;
+  -- Lot OP-PONT : `project_members` est une vue de compatibilité en LECTURE ; le partage s'écrit dans les participations.
+  REVOKE INSERT, UPDATE, DELETE ON public.project_members FROM fadi_app;
   REVOKE ALL ON ALL TABLES IN SCHEMA public, auth, admin FROM fadi_retention;
   GRANT SELECT ON admin.audit_log TO fadi_retention;
   GRANT UPDATE (actor_id, ip, metadata) ON admin.audit_log TO fadi_retention;

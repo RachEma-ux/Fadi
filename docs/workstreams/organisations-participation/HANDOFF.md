@@ -5,21 +5,20 @@ Mis à jour : 2026-10-25 (UTC).
 ## Point de reprise
 
 - Chantier : organisations-participation. Issue : [#262](https://github.com/RachEma-ux/Fadi/issues/262).
-- Branche / PR : `ccr-3b26a9f6-z073dc`, PR [#290](https://github.com/RachEma-ux/Fadi/pull/290) (phases 3, 4, 6 et reliquats).
-  PR #281 (phases 2, 3 bis, 5) fusionnée le 2026-10-24.
+- Branche : `ccr-3b26a9f6-z073dc` (repartie de `main` après la fusion de la PR #297, `cd2b9f7`). PR #281, #290 et #297 fusionnées.
 - Dernier commit vérifié : à relever en début de session ; ne pas réutiliser un SHA périmé.
 
 ## Dernier état vérifié
 
-- Toutes les phases du plan implémentées (STATUS.md) ; vérifications locales vertes ; suites DB-3 des lots de la PR #290
-  à constater en CI.
+- Toutes les phases du plan implémentées et fusionnées ; CI complète verte sur `866f54d` (PR #290). OP-4 et OP-5 fusionnées
+  (PR #297, CI verte sur `739d019`). Lot OP-PONT livré sur la branche, PR à suivre.
 
 ## Prochaine action
 
-- Relever la CI de la PR #290 et la mener au vert (premier point : suites DB-3 des phases 3 et 4, des portées étroites et du
-  mandat).
-- Puis présenter le 🛑 final au maître d'ouvrage avec [recette-finale.md](recette-finale.md) et les décisions en attente.
-- Lot suivant possible, sur décision : retrait du pont `op_sync_access` (OP-PONT).
+- Mener la PR du lot OP-PONT (retrait du pont `op_sync_access`, `lot-pont.md`) jusqu'à la CI verte (DB-3 comprises), la
+  fusionner : la préproduction la déploie seule (`fadi-preprod-auto`).
+- 🛑 final franchi (OP-5, 2026-10-25). Déploiement : seulement sur accord explicite, selon le runbook (poser
+  `CONTACT_RETENTION_ENABLED=1`).
 
 ## Tests et preuves
 
@@ -32,7 +31,7 @@ Mis à jour : 2026-10-25 (UTC).
 - Fin de l'ajout direct (OP-D2) : changement visible pour les propriétaires qui partagent un projet ; à annoncer.
 - Accès externe : la moindre fuite par une route, un aperçu ou un export est un défaut bloquant (`revue-externe.mjs`,
   recette finale).
-- Réserve juridique d'OP-2 non levée avant d'activer l'effacement automatique en production.
+- Réserve juridique d'OP-2 levée par le maître d'ouvrage (OP-5) ; l'effacement automatique reste à activer explicitement en production.
 
 ## Arrêt sûr
 

@@ -134,7 +134,7 @@ function traiter(etat0: EtatRectanglePivote, ev: EvenementOutil, ctx: ContexteOu
         if (ev.genre === "survol") return { etat: { ...etat, inference: inf, normaleSurvol: normale } };
         const n = normalize(verrou ?? normale);
         return {
-          etat: { ...retour(etat), etape: 2, p1: inf.point, normale: n, base: axesDuPlan(n).u, inference: inf, texte: null, dimensions: null },
+          etat: { ...retour(etat), etape: 2, p1: inf.point, normale: n, base: axesDuPlan(n, ctx.repere).u, inference: inf, texte: null, dimensions: null },
         };
       }
       const p1 = etat.p1 as Vec3;

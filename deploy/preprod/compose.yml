@@ -100,6 +100,9 @@ services:
       MAIL_FROM: ${PREPROD_MAIL_FROM:-}
       MAIL_DAILY_LIMIT: ${PREPROD_MAIL_DAILY_LIMIT:-50}
       MAIL_RECIPIENT_HOURLY_LIMIT: ${PREPROD_MAIL_RECIPIENT_HOURLY_LIMIT:-5}
+      # Organisations-participation (OP-5) : effacement automatique des contacts sans compte 2 ans après la clôture de
+      # tous leurs projets — réserve d'OP-2 levée par le maître d'ouvrage ; activé en préproduction (données synthétiques).
+      CONTACT_RETENTION_ENABLED: ${PREPROD_CONTACT_RETENTION_ENABLED:-1}
     ports:
       - "127.0.0.1:3101:3001"
     networks:

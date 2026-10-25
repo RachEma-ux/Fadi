@@ -266,7 +266,7 @@ function traiter(etat0: EtatArc2Points, ev: EvenementOutil, ctx: ContexteOutil):
       if (etat.etape === 2) {
         if (r.genre !== "longueur") return { etat: { ...etat, texte, erreur: "Saisissez la longueur de la corde (le rayon « Nr » se donne à l'étape de la flèche)." } };
         if (!(r.valeur > TOL)) return { etat: { ...etat, texte, erreur: "La longueur doit être strictement positive." } };
-        const vers = etat.fin && dist(etat.fin, debut) > TOL ? normalize(sub(etat.fin, debut)) : (etat.tangente ?? axesDuPlan(etat.normale).u);
+        const vers = etat.fin && dist(etat.fin, debut) > TOL ? normalize(sub(etat.fin, debut)) : (etat.tangente ?? axesDuPlan(etat.normale, ctx.repere).u);
         const fin = add(debut, scale(vers, r.valeur));
         if (etat.tangente && etat.verrouTangence) {
           const t = arcTangent(debut, etat.tangente, fin);

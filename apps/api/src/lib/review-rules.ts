@@ -62,8 +62,11 @@ export function permissionsOf(input: { comment?: boolean | undefined; attach?: b
   return { view: true, comment: p.comment, attach: p.comment && p.attach, download: p.download, export: p.export };
 }
 
-/** Durée d'accès par défaut (déclarée, modifiable à l'invitation) et durée maximale. */
-export const DEFAULT_ACCESS_DAYS = 30;
+/**
+ * Durée d'accès par défaut (modifiable à l'invitation, prolongeable) et durée maximale. 14 jours : décision OP-4 du maître
+ * d'ouvrage (2026-10-25) — une revue a une échéance, un accès externe reste court.
+ */
+export const DEFAULT_ACCESS_DAYS = 14;
 export const MAX_ACCESS_DAYS = 365;
 const DAY = 24 * 3600 * 1000;
 
