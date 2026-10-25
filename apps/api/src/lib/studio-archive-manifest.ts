@@ -603,7 +603,7 @@ export function distrustStudioPublications(
     });
     const after: Dimensions = { travail: before.travail === "approuve" ? "en-revue" : before.travail, diffusion: before.diffusion === "diffuse" ? "non-diffuse" : before.diffusion };
     const row: StudioArchiveRow = {
-      ...p, approved_revision_id: null, approved_document_hash: null, approved_manifest_hash: null, approved_by: null, approved_at: null,
+      ...p, approved_revision_id: null, approved_document_hash: null, approved_manifest_hash: null, approved_by: null, approved_at: null, approved_self_control: null,
       work_status: after.travail, diffusion_status: after.diffusion, status: statutCombine(after),
     };
     if (after.travail !== before.travail || after.diffusion !== before.diffusion) {

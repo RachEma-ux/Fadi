@@ -15,6 +15,9 @@ import {
   libelleActualite, libelleEcart, messageRefus, ORDRE_ACTIONS,
 } from "./publication-ui";
 import "./publication.css";
+import type { ControleApprobation } from "../../../lib/api";
+import { LIBELLE_EVENEMENT_AUTO, refusServeur } from "../../../lib/auto-controle";
+import { AvisAutoControle, MarqueAutoControle } from "../../../components/AutoControle";
 
 export interface PanneauPublicationsProps {
   projectId: string;
@@ -115,16 +118,27 @@ function CartePublication({ projectId, studyId, publication: p, surChange }: { p
   const [journal, setJournal] = useState(false);
   const detail = useQuery({ queryKey: ["studio-publication", projectId, studyId, p.id, p.updatedAt], queryFn: () => api.studioPublication(projectId, studyId, p.id), enabled: journal });
   const actions = ORDRE_ACTIONS.filter((a) => p.allowed.includes(a));
+  // OP-6 : auto-contrôle de l'utilisateur courant, relu du serveur dès que l'approbation lui est proposée.
+  const peutApprouver = p.allowed.includes("approuver");
+  const apercu = useQuery({ queryKey: ["controle-approbation", "studio", projectId, studyId, p.id, p.updatedAt], queryFn: () => api.studioApprovalCheck(projectId, studyId, p.id), enabled: peutApprouver, retry: false });
+  const [controleRefus, setControleRefus] = useState<ControleApprobation | null>(null);
+  const controle = controleRefus ?? apercu.data ?? null;
+  const approbationFermee = controle !== null && controle.autoControle && !controle.autorise;
+  const [confirmeAuto, setConfirmeAuto] = useState(false);
+  const confirmationManquante = action === "approuver" && !!controle?.autoControle && controle.autorise && !confirmeAuto;
   async function confirmer(e: FormEvent) {
     e.preventDefault();
     if (!action || enCours) return;
     if (COMMENTAIRE_REQUIS.has(action) && !commentaire.trim()) { setErreur("Un commentaire est requis pour cette action."); return; }
+    if (action === "approuver" && (approbationFermee || confirmationManquante)) return;
     setEnCours(true); setErreur("");
     try {
       await api.transitionStudioPublication(projectId, studyId, p.id, action, corpsTransition(p, action, commentaire));
-      setAction(null); setCommentaire("");
+      setAction(null); setCommentaire(""); setConfirmeAuto(false);
       await surChange();
     } catch (err) {
+      const refus = err instanceof ApiError ? refusServeur(err.status, err.body) : null;
+      if (refus) { setControleRefus(refus); setAction(null); }
       setErreur(err instanceof ApiError ? messageRefus(err.status, err.body) : "Action non confirmée : rechargez la liste avant de réessayer.");
     } finally { setEnCours(false); }
   }
@@ -138,6 +152,7 @@ function CartePublication({ projectId, studyId, publication: p, surChange }: { p
         <span className={`studio-publication-statut ${p.freshness === "perimee" ? "studio-publication-perimee" : ""}`} data-studio-publication-actualite title="Actualité">{libelleActualite(p)}</span>
         {p.freshness === "perimee" && <span className="studio-publication-perimee" data-studio-publication-perimee>Variante modifiée depuis</span>}
         {p.replacedBy && <span className="studio-publication-perimee" data-studio-publication-remplacee>Remplacée par une diffusion plus récente</span>}
+        {p.approval && p.approvedSelfControl && <MarqueAutoControle data="data-studio-publication-auto-controle" />}
       </div>
       <dl className="studio-publication-faits">
         <dt>Variante</dt><dd translate="no">{p.variantName}</dd>
@@ -168,17 +183,19 @@ function CartePublication({ projectId, studyId, publication: p, surChange }: { p
       )}
       {actions.length > 0 && (
         <div className="studio-publication-actions">
-          {actions.map((a) => <button key={a} type="button" aria-pressed={action === a} onClick={() => { setAction(action === a ? null : a); setErreur(""); }} data-studio-publication-action={a}>{LIBELLE_ACTION[a]}</button>)}
+          {actions.map((a) => <button key={a} type="button" aria-pressed={action === a} disabled={a === "approuver" && approbationFermee} aria-describedby={a === "approuver" && approbationFermee ? `studio-publication-auto-${p.id}` : undefined} onClick={() => { setAction(action === a ? null : a); setErreur(""); setConfirmeAuto(false); }} data-studio-publication-action={a}>{LIBELLE_ACTION[a]}</button>)}
         </div>
       )}
+      {peutApprouver && approbationFermee && controle && <div id={`studio-publication-auto-${p.id}`}><AvisAutoControle controle={controle} confirme={false} surConfirme={() => undefined} id={`studio-publication-auto-case-${p.id}`} /></div>}
       {action && (
         <form className="studio-publication-confirmer" onSubmit={(e) => void confirmer(e)}>
           {action === "approuver" && <p data-studio-publication-examine>{`Vous approuvez le manifeste ${empreinteCourte(p.manifestHash ?? "")} : révision ${court(p.revisionId)} (empreinte ${empreinteCourte(p.documentHash)}).`}</p>}
+          {action === "approuver" && controle?.autorise && <AvisAutoControle controle={controle} confirme={confirmeAuto} surConfirme={setConfirmeAuto} id={`studio-publication-auto-case-${p.id}`} />}
           {action === "diffuser" && <p>{p.contenu === "dessin-2d" ? "La diffusion fige un paquet SVG, DXF et feuille PDF de la révision approuvée (dessin 2D, sans IFC)." : "La diffusion fige un paquet SVG, DXF, IFC et feuille PDF de la révision approuvée."}</p>}
           {action === "actualiser" && <p>Le manifeste est reconstruit depuis les révisions courantes ; l’approbation précédente ne vaut plus et le dossier repasse en brouillon.</p>}
           <label htmlFor={`studio-publication-commentaire-${p.id}`}>{COMMENTAIRE_REQUIS.has(action) ? "Commentaire (requis)" : "Commentaire (facultatif)"}</label>
           <textarea id={`studio-publication-commentaire-${p.id}`} maxLength={2000} value={commentaire} onChange={(e) => setCommentaire(e.target.value)} />
-          <button disabled={enCours}>Confirmer</button>
+          <button disabled={enCours || (action === "approuver" && (confirmationManquante || approbationFermee || apercu.isPending))}>Confirmer</button>
           <button type="button" onClick={() => setAction(null)}>Annuler</button>
         </form>
       )}
@@ -188,7 +205,7 @@ function CartePublication({ projectId, studyId, publication: p, surChange }: { p
         <ol className="studio-publication-journal" data-studio-publication-journal>
           {detail.data.events.map((ev) => (
             <li key={ev.id}>
-              <strong>{LIBELLE_EVENEMENT[ev.action]}</strong>{" "}
+              <strong data-studio-publication-evenement={ev.action} {...(ev.selfControl ? { "data-auto-controle": "" } : {})}>{ev.action === "approuver" && ev.selfControl ? LIBELLE_EVENEMENT_AUTO : LIBELLE_EVENEMENT[ev.action]}</strong>{" "}
               <span translate="no">{`${ev.author.email} · ${date(ev.createdAt)} · ${court(ev.revisionId)}`}</span>
               {ev.relatedPublicationId && <span translate="no">{` → ${court(ev.relatedPublicationId)}`}</span>}
               {ev.comment && <q translate="no">{ev.comment}</q>}

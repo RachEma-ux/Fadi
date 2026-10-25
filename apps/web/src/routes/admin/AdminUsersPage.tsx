@@ -17,6 +17,7 @@ import { apiMessage, ConfirmDialog, CopyLink } from "../../components/comptes/Co
 import { IconeAdmin } from "../../components/comptes/IconeAdmin";
 import { commandeAdminDuClavier, RACCOURCIS_ADMIN } from "../../components/comptes/raccourcis-admin";
 import { AdminNav } from "./AdminNav";
+import "../../components/auto-controle.css";
 
 const STATUS_LABEL: Record<AdminStatus, string> = { active: "actif", suspended: "suspendu", closed: "fermé (anonymisé)", locked: "verrouillé", deletion_pending: "suppression programmée" };
 const ROLE_PLATFORM: Record<"user" | "admin", string> = { user: "utilisateur", admin: "administrateur" };
@@ -24,12 +25,15 @@ const INVITATION_STATUS: Record<string, string> = { pending: "en attente", accep
 const date = (iso: string | null) => (iso ? new Date(iso).toLocaleString(LOCALE, { dateStyle: "short", timeStyle: "short" }) : "—");
 const OFFLINE = "Hors connexion : les actions d’administration exigent le réseau (jamais mises en attente).";
 
-type Action = { kind: "suspend" | "reactivate" | "revoke" | "delete" | "role"; user: AdminUser };
+type Action = { kind: "suspend" | "reactivate" | "revoke" | "delete" | "role" | "self-control"; user: AdminUser };
 const ACTION_TEXT: Record<Action["kind"], { title: string; confirm: string; danger: boolean; consequence: (u: AdminUser) => string }> = {
   suspend: { title: "Suspendre le compte", confirm: "Suspendre", danger: true, consequence: (u) => `${u.email} sera déconnecté de toutes ses sessions et ne pourra plus se connecter ; ses réservations d’édition seront libérées. Un courriel le prévient.` },
   reactivate: { title: "Réactiver le compte", confirm: "Réactiver le compte", danger: false, consequence: (u) => `${u.email} pourra de nouveau se connecter (un verrouillage éventuel est levé).` },
   revoke: { title: "Révoquer les sessions", confirm: "Révoquer", danger: false, consequence: (u) => `Toutes les sessions ouvertes de ${u.email} seront fermées ; il devra se reconnecter.` },
   delete: { title: "Supprimer le compte", confirm: "Programmer la suppression", danger: true, consequence: (u) => `La connexion de ${u.email} est bloquée aussitôt ; ses données personnelles seront anonymisées dans 30 jours, sauf annulation par le lien envoyé. Refusé s’il possède des projets partagés.` },
+  "self-control": { title: "Option « Auto-contrôle »", confirm: "Changer l’option", danger: false, consequence: (u) => u.selfControlAllowed
+    ? `${u.email} ne pourra plus approuver un dossier qu’il a produit ou soumis : l’API refusera cette approbation et lui indiquera les autres approbateurs du projet. Les approbations passées ne changent pas.`
+    : `${u.email} pourra de nouveau approuver un dossier qu’il a produit ou soumis ; chacune de ces approbations sera signalée « auto-contrôle ».` },
   role: { title: "Changer le rôle", confirm: "Changer le rôle", danger: false, consequence: (u) => u.platformRole === "admin" ? `${u.email} perdra le rôle administrateur ; ses sessions seront fermées.` : `${u.email} deviendra administrateur de la plateforme (gestion des comptes, jamais le contenu des projets) ; ses sessions seront fermées et la double authentification lui sera exigée.` },
 };
 
@@ -253,6 +257,18 @@ function UserDetail({ id, onAction, onClose }: { id: string; onAction: (a: Actio
   const online = useOnline();
   const { user: me } = useAuth();
   const q = useQuery({ queryKey: ["admin", "user", id], queryFn: () => accountApi.adminUser(id) });
+  // Raccourci (règle d'or) : Alt+Maj+A bascule l'option « Auto-contrôle » de la fiche ouverte, après confirmation.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (commandeAdminDuClavier(e) !== "auto-controle") return;
+      const u = q.data?.user;
+      if (!u || u.id === me?.id || u.status === "closed" || !online) return;
+      e.preventDefault();
+      onAction({ kind: "self-control", user: u });
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  });
   if (q.isLoading) return <p role="status">Lecture de la fiche…</p>;
   if (!q.data) return <p role="alert">{apiMessage(q.error, "Fiche indisponible.")}</p>;
   const { user: u, projects, sessions, supportGrants, audit } = q.data;
@@ -270,6 +286,17 @@ function UserDetail({ id, onAction, onClose }: { id: string; onAction: (a: Actio
           {u.status !== "closed" && !u.deletionRequestedAt && <button type="button" className="danger-button" disabled={!online} onClick={() => onAction({ kind: "delete", user: u })}>Supprimer…</button>}
         </div>
       )}
+      <div className="admin-self-control" role="group" aria-labelledby="admin-autorisations" data-admin-autorisations>
+        <h3 id="admin-autorisations">Autorisations</h3>
+        <label className="admin-checkbox" title={RACCOURCIS_ADMIN["auto-controle"].libelle}>
+          <input type="checkbox" role="switch" name="selfControl" data-self-control aria-keyshortcuts={RACCOURCIS_ADMIN["auto-controle"].aria} aria-describedby="admin-self-control-aide" checked={u.selfControlAllowed} disabled={!online || self || u.status === "closed"} onChange={() => onAction({ kind: "self-control", user: u })} />
+          <IconeAdmin commande="auto-controle" />Auto-contrôle
+          <span className="admin-status" data-self-control-state={u.selfControlAllowed ? "on" : "off"}>{u.selfControlAllowed ? "activé" : "désactivé"}</span>
+        </label>
+        <small id="admin-self-control-aide">{self
+          ? "Votre propre option ne se change pas depuis l’administration."
+          : "Activé (par défaut) : cette personne peut approuver un dossier qu’elle a produit ou soumis, et l’approbation est signalée « auto-contrôle ». Désactivé : cette approbation lui est refusée."}</small>
+      </div>
       <div>
         <h3>{`Projets (${projects.length})`}</h3>
         {projects.length ? <ul>{projects.map((p) => <li key={p.id}><span translate="no">{p.code} — {p.name}</span> · {ROLE_LABEL[p.role]}</li>)}</ul> : <p className="h7-muted">Aucun projet.</p>}
@@ -323,6 +350,7 @@ export function AdminUsersPage() {
           return r.mail?.link ? "Suppression programmée (30 jours) ; aucun courriel n’a pu partir : transmettez au titulaire le lien d’annulation ci-dessous." : "Suppression programmée (30 jours).";
         });
         case "role": return accountApi.adminSetRole(a.user.id, a.user.platformRole === "admin" ? "user" : "admin").then(() => "Rôle modifié.");
+        case "self-control": return accountApi.adminSetSelfControl(a.user.id, !a.user.selfControlAllowed).then((r) => r.user.selfControlAllowed ? "Auto-contrôle activé : les approbations de ses propres dossiers seront signalées." : "Auto-contrôle désactivé : l’approbation de ses propres dossiers lui sera refusée.");
       }
     },
     onSuccess: (text) => { setAction(null); setMsg({ ok: true, text }); void queryClient.invalidateQueries({ queryKey: ["admin"] }); },

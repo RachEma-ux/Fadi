@@ -104,7 +104,7 @@ export interface TeamAssignmentView {
 export interface TeamPackageSummary {
   id: string; lineageId: string; version: number; title: string; status: string; dueOn: string | null; publicationId: string; studyId: string; variantId: string;
   supersedes: string | null; replacedBy: string | null; sharedAt: string | null; createdAt: string; followUp: FollowUp;
-  publication: { title: string; workStatus: string; diffusionStatus: string; freshness: string; manifestHash: string | null; revisionId: string } | null;
+  publication: { title: string; workStatus: string; diffusionStatus: string; freshness: string; manifestHash: string | null; revisionId: string; approvedSelfControl: boolean | null } | null;
 }
 
 async function summaries(q: Querier, access: AccessibleProject, rows: PackageRow[]): Promise<TeamPackageSummary[]> {
@@ -128,7 +128,7 @@ async function summaries(q: Querier, access: AccessibleProject, rows: PackageRow
       id: r.id, lineageId: r.lineageId, version: r.version, title: r.title, status: r.status, dueOn: r.dueOn, publicationId: r.publicationId, studyId: r.studyId, variantId: r.variantId,
       supersedes: r.supersedesPackageId, replacedBy: r.replacedByPackageId, sharedAt: r.sharedAt?.toISOString() ?? null, createdAt: r.createdAt.toISOString(),
       followUp: followUp({ packageStatus: r.status, dueOn: r.dueOn, assignments: assignments.filter((a) => a.packageId === r.id), findings: findings.filter((f) => scope.has(f.packageId)), decision: decisionOf(r, pub), now }),
-      publication: pub ? { title: pub.title, workStatus: pub.workStatus, diffusionStatus: pub.diffusionStatus, freshness: pub.freshness, manifestHash: pub.manifestHash, revisionId: pub.revisionId } : null,
+      publication: pub ? { title: pub.title, workStatus: pub.workStatus, diffusionStatus: pub.diffusionStatus, freshness: pub.freshness, manifestHash: pub.manifestHash, revisionId: pub.revisionId, approvedSelfControl: pub.approvedSelfControl } : null,
     };
   });
 }

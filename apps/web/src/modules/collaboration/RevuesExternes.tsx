@@ -18,6 +18,7 @@ import {
   type AccessPreview, type AssignmentInput, type InvitationMail, type ReviewResponsibility, type TeamPackageDetail,
 } from "../../lib/revues-api";
 import { declencheRevue, propsRaccourciRevue, type CommandeRevue } from "./commandes-revue";
+import { MarqueAutoControle } from "../../components/AutoControle";
 import { IconeRevue, RaccourciRevue } from "./IconeRevue";
 import "../../routes/revues/revues.css";
 
@@ -267,6 +268,7 @@ export function RevuesExternes({ projectId }: { projectId: string }) {
                   <span data-revue-retards>{`Retards : ${p.followUp.overdue}`}</span>
                   {p.followUp.blockedDecision && <span>{`Décision bloquée : ${BLOCAGE[p.followUp.blockedDecision] ?? p.followUp.blockedDecision}`}</span>}
                   <span>{p.followUp.approved ? "Approuvé (Studio)" : "Non approuvé"}</span>
+                  {p.followUp.approved && p.publication?.approvedSelfControl && <MarqueAutoControle data="data-revue-auto-controle" />}
                 </div>
               </div>
               <div className="admin-actions">

@@ -420,6 +420,8 @@ try {
   const ap = alice.page;
   await ap.goto(`${BASE}/projets/${pid}?module=collaboration`);
   await ap.waitForSelector("[data-revues-externes]", { timeout: 30000 });
+  // La liste se charge après le cadre du panneau : on attend le paquet (borné) avant de compter.
+  await ap.waitForSelector(`[data-revue-equipe="${p2}"]`, { timeout: 15000 }).catch(() => {});
   check("panneau « Revues externes » : paquets et suivi", await ap.locator(`[data-revue-equipe="${p2}"]`).count() === 1 && await ap.locator("[data-revue-retards]").count() >= 1);
   await ap.locator(`[data-revue-equipe="${p2}"] [data-ouvrir-revue]`).click();
   await ap.waitForSelector("[data-revue-detail]");
