@@ -10,12 +10,14 @@ Branche `ccr-187fd2e6-08dk6e`, base `main@3e992b6`. Le maître d'ouvrage a accor
 
 Recette ([RECETTE-PILOTE-2026-10-25.md](recettes/RECETTE-PILOTE-2026-10-25.md)) : les 21 recettes Studio de la CI, rejouées sur une base PostGIS jetable, donnent 1 435 contrôles réussis et 0 échec. La CI de `main` est verte sur le même commit (exécution 40192137528).
 
-Compteurs recalculés du registre : **16 À définir / 205 À faire / 293 En cours / 13 Bloqué / 72 Vérifié / 31 Accepté**. **P630=103/630**. Détail :
-- 25 obligations vérifiées par recette : NAV-001 à 007 et NAV-009, 15 scénarios TEST, REC-A-03, REC-C-03 ;
-- 29 acceptations par décision ;
+Compteurs recalculés du registre : **16 À définir / 205 À faire / 291 En cours / 11 Bloqué / 74 Vérifié / 33 Accepté**. **P630=107/630**. Détail :
+- 27 obligations vérifiées par recette : NAV-001 à 009, 15 scénarios TEST, REC-I-02, REC-A-03, REC-C-03. NAV-008 a été vérifié après correction d'un défaut : « Réessayer » ne relançait aucun téléchargement après une panne du moteur de la planche ;
+- 31 acceptations par décision (P-06 ajoute F.2-03 et F.3-01) ;
 - 189 obligations bloquées par les seules décisions requalifiées « À faire » ;
 - 19 scénarios TEST « En cours » avec une preuve partielle ;
-- 13 obligations restent bloquées : 9 obligations R de bascule et de déploiement attendent G4 et la décision de déploiement du maître d'ouvrage, et 4 relèvent de l'option IA/MCP exclue du pilote.
+- 11 obligations restent bloquées :
+  - 9 obligations R attendent la recette utilisateur du maître d'ouvrage ([guide](recettes/RECETTE-UTILISATEUR-PILOTE.md)), puis G4, puis sa Release (P-07) ;
+  - TEST-032 et TEST-033 recettent des fonctions absentes (illustration IA, adaptateur MCP).
 
 Ce compteur n'est pas un taux de développement. G1 à G4 ne sont pas acceptées, aucune case source n'est cochée, et les appareils physiques et le GPU réel restent non évalués.
 

@@ -95,6 +95,30 @@ COEX-06. C'est ce que réalise le code de `main` (`apps/web/src/modules/studio/S
 - Une autorisation n'est pas une preuve : les portes G1, G2, G3 et G4 restent soumises à leurs critères. Chaque obligation
   de recette reste « à faire » jusqu'à son exécution.
 
+### P-06 — Modes IA et extensions du pilote (F.2-03, F.3-01) — complément du 25 octobre 2026
+
+À la demande du maître d'ouvrage (« Règle ça aussi », même session) :
+- **F.3-01** : les extensions et l'adaptateur MCP sont instruits par DEC-15 (P-04), qui les exclut du pilote. L'option
+  reste au backlog.
+- **F.2-03** : **aucun mode IA n'est retenu pour le pilote** (report D02). Il n'y a donc rien à implémenter dans ce
+  périmètre. Studio annonce « Illustration IA » « Non disponible », sans bouton ni lien qui puisse la déclencher
+  (test `apps/web/src/modules/studio/vue3d/scenes/scenes.test.ts`). Retenir un mode rouvre l'obligation.
+- **TEST-032 et TEST-033** restent bloqués. Ils recettent des fonctions absentes (illustration IA, adaptateur MCP) :
+  aucune décision ne peut tenir lieu de leur exécution. Les débloquer suppose de rouvrir DEC-15 et de construire ces
+  fonctions. L'illustration IA demande en plus un fournisseur externe et sa clé.
+
+### P-07 — Livraison (R.2-01 à R.5-04)
+
+La délégation ne couvre pas la production : la Release GitHub reste le geste du maître d'ouvrage
+(`docs/deploiement-automatique.md`, décision du 20 octobre 2026). Les 9 obligations R restent bloquées sur trois
+conditions, dans cet ordre :
+1. la recette utilisateur des trois parcours par le maître d'ouvrage (R.3-01), guidée par
+   [`RECETTE-UTILISATEUR-PILOTE.md`](../../workstreams/studio/recettes/RECETTE-UTILISATEUR-PILOTE.md) ;
+2. la porte G4 sur ses critères (dossier de livraison, absence de défaut éliminatoire) ;
+3. la Release du maître d'ouvrage sur le commit validé en préproduction.
+
+Le chef de projet prépare tout le reste et ne publie aucune Release.
+
 ## Justification
 
 Chaque option retenue est celle du dossier préparatoire. Elle est réalisée par le code de `main` au 25 octobre 2026

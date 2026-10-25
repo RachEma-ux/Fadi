@@ -16,29 +16,49 @@ Aucun géocodeur externe n'est appelé (D-GD-05) : recherche locale des unités 
 
 Trois rôles distincts, jamais déduits d'un rôle de projet ou de plateforme : `gestionnaire-donnees` (prépare),
 `responsable-publication` (publie, retire), `administrateur` (attribue les rôles par l'API `/geodata/api/admin/roles`).
-Amorçage du premier compte :
+Aucun n'implique les autres. Désigner d'abord les **comptes Fadi** (adresses de connexion) qui les reçoivent.
+
+## Outils d'exploitation (image de production)
+
+Les deux outils sont compilés dans l'image, à côté du serveur, comme `create-admin.mjs`, et s'exécutent avec la base et
+le compte applicatif du conteneur (`DATABASE_URL`, sans DDL) — aucun secret à recopier :
 
 ```sh
-npm run geodata:role --workspace=@fadi/api -- --email <courriel> --role administrateur
+# Rôles (amorçage ; ensuite l'administrateur GeoData passe par l'API)
+docker compose --env-file .env.deploy exec app node apps/api/dist/geodata-role.js --email <compte> --role administrateur
+docker compose --env-file .env.deploy exec app node apps/api/dist/geodata-role.js --email <compte> --role gestionnaire-donnees
+docker compose --env-file .env.deploy exec app node apps/api/dist/geodata-role.js --email <compte> --role responsable-publication
+
+# Limites geoBoundaries du Maroc : préparation (rapport de contrôle affiché), puis publication après examen.
+docker compose --env-file .env.deploy exec app node apps/api/dist/geodata-reference.js --fiche geoboundaries-mar-adm1 --preparateur <gestionnaire>
+docker compose --env-file .env.deploy exec app node apps/api/dist/geodata-reference.js --fiche geoboundaries-mar-adm1 --preparateur <gestionnaire> --publier-par <responsable>
+# (idem avec geoboundaries-mar-adm2)
 ```
+
+En préproduction, le conteneur s'appelle `fadi-preprod-app-1` (`sudo docker exec fadi-preprod-app-1 node apps/api/dist/…`).
+Le contrôle CI `image` exécute `geodata-role.js` dans le conteneur construit et vérifie la présence des fiches.
 
 ## Chaîne d'import de référence (D-GD-04, D-GD-07)
 
 Réception → empreinte SHA-256 comparée à la fiche → lecture (GeoJSON CRS84, ou GeoPackage EPSG:4326 lu sans GDAL) →
 contrôles (validation partagée, codes texte uniques et présents) → version **en préparation** → publication séparée
-(un droit `inconnu` pour la consultation ou les tuiles, ou des contrôles en échec, bloquent la publication). Une empreinte
-déjà importée pour la même source ne crée pas de nouvelle version.
+(un droit `inconnu` pour la consultation ou les tuiles, ou des contrôles en échec, bloquent la publication).
 
-```sh
-# Pilote réel : limites geoBoundaries du Maroc (ODbL 1.0), téléchargées depuis l'adresse de la fiche et vérifiées.
-npm run geodata:import-reference --workspace=@fadi/api -- --fiche ../../docs/geodata/sources/geoboundaries-mar-adm1.json --preparateur <gestionnaire>
-npm run geodata:import-reference --workspace=@fadi/api -- --fiche ../../docs/geodata/sources/geoboundaries-mar-adm2.json --preparateur <gestionnaire>
-# puis publication par un responsable : POST /geodata/api/admin/versions/:id/publier (ou --publier-par <responsable>)
-```
+- `--fiche` : chemin d'une fiche, ou nom d'une fiche qualifiée (`docs/geodata/sources/<nom>.json`, embarquées dans
+  l'image sous `apps/api/dist/geodata-sources/`). Sans `--fichier`, la donnée est téléchargée depuis l'adresse de la fiche
+  et son empreinte vérifiée.
+- **Relance** : une empreinte déjà importée pour la même source ne crée pas de nouvelle version ; avec `--publier-par`,
+  la version restée **en préparation** est alors publiée, aux mêmes conditions (rôle, contrôles réussis, droits). La
+  publication peut aussi se faire par l'API : `POST /geodata/api/admin/versions/:id/publier` (compte responsable).
+- Attendu pour le pilote : ADM1 12 unités, empreinte `6c4e3e25…129f` ; ADM2 75 unités, empreinte `5b3f09cb…1714`. Ces
+  limites représentent l'année 2017 (geoBoundaries, d'après OpenStreetMap) : elles ne sont pas un découpage officiel.
+
+Développement (dépôt complet) : `npm run geodata:role --workspace=@fadi/api -- …` et
+`npm run geodata:import-reference --workspace=@fadi/api -- --fiche <nom ou chemin> …`.
 
 Fiches de source : `docs/geodata/sources/*.json` (producteur, adresse, empreinte, période, licence, attribution, droits par
 usage, précision, conditions). Le jeu `apps/api/test-corpus/geodata/synthetique-unites.*` est **synthétique** (tests et
-recette uniquement) et se déclare comme tel partout (catalogue, fiche, export).
+recette uniquement), n'est pas embarqué dans l'image et ne doit jamais être publié sur un environnement réel.
 
 Sources non publiées faute de droits établis : population HCP RGPH 2024 (conditions de réutilisation non qualifiées).
 Un indicateur « Superficie calculée » est produit par GeoData (ellipsoïde WGS 84) : c'est un résultat calculé, pas une

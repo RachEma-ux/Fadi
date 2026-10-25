@@ -15,7 +15,9 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 
 ## Prochaine action
 
-Maître d'ouvrage : vérifier la préproduction (`/geodata`), publier la Release de production, attribuer les rôles GeoData et importer les limites geoBoundaries sur l'environnement (`docs/geodata/README.md`), puis valider l'usage sur appareils. Ensuite seulement : extensions V1.1 (TASKS.md).
+Suivre `RELEASE-V1.md` : vérifier le SHA en préproduction, y attribuer les rôles et importer geoBoundaries avec les outils
+de l'image (`apps/api/dist/geodata-role.js`, `geodata-reference.js`), recette d'usage, puis production. **Attention :**
+`fadi-prod-auto` (phase B du déploiement) n'existe pas encore ; une Release seule ne met rien en production.
 
 ## Tests et preuves
 

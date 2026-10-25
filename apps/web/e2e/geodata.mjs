@@ -66,7 +66,7 @@ const gestionnaire = `gd-gestion-${suffixe}@example.test`;
 await inscrire(page, gestionnaire);
 for (const role of ["gestionnaire-donnees", "responsable-publication"]) npmApi("geodata:role", ["--email", gestionnaire, "--role", role]);
 const sortieImport = npmApi("geodata:import-reference", ["--fiche", "apps/api/test-corpus/geodata/synthetique-unites.fiche.json", "--fichier", "apps/api/test-corpus/geodata/synthetique-unites.geojson", "--preparateur", gestionnaire, "--publier-par", gestionnaire].map((a) => (a.startsWith("apps/") ? join(RACINE, a) : a)));
-check("chaîne administrative : jeu synthétique préparé puis publié (ou déjà présent, même empreinte)", /Version publiée|Version déjà présente/.test(sortieImport), sortieImport.split("\n").filter((l) => /Version/.test(l)).join(" | "));
+check("chaîne administrative : jeu synthétique préparé puis publié (ou déjà présent, même empreinte)", /Version (\S+ )?publiée|Version déjà présente/.test(sortieImport), sortieImport.split("\n").filter((l) => /Version/.test(l)).join(" | "));
 await page.context().clearCookies();
 
 // --- GEO 01 / 02 : compte sans projet, accès direct ---

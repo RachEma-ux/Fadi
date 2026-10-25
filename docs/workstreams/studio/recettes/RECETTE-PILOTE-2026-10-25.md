@@ -32,7 +32,7 @@ navigateur 1194. Le rendu est logiciel, et aucun appareil physique n'a été uti
 | `studio-corpus-s6` | 57 | 0 |
 | `studio-corpus-s7` | 11 | 0 |
 | `studio-conflits` | 27 | 0 |
-| `studio-chargement` | 35 | 0 |
+| `studio-chargement` (étape 8 NAV-008 ajoutée ensuite : 41 contrôles, 0 échec) | 35 | 0 |
 | `studio-mesures-chargement` | mesure seule, sans verdict | 0 |
 | `studio-accessibilite` | 49 | 0 |
 | `studio-quantites` | 29 | 0 |
@@ -50,8 +50,14 @@ fichier de chaque assertion sont dans la preuve de l'ID, au registre.
 - **Vérifié — navigation** : NAV-001 à NAV-007 et NAV-009. NAV-005 et NAV-007 sont contrôlés par `studio-domaines`,
   les autres par `studio-navigation`. Pour NAV-009, la non-régression s'appuie aussi sur les cinq tranches e2e vertes de
   la CI.
-- **En cours — NAV-008** : aucune recette ne provoque de panne de chargement ou de moteur ni n'en contrôle la reprise.
-  Seule la visibilité de la barre hors mode immersif est vérifiée (correction après la revue Codex de la PR #306).
+- **Vérifié — NAV-008**, après complément. Une nouvelle étape de `studio-chargement` (étape 8) provoque la panne :
+  - les fichiers du moteur de la planche sont refusés par le réseau ;
+  - l'alerte « Réessayer » s'affiche, rien n'est écrit, et la barre de Fadi mène à l'Accueil ;
+  - une fois le réseau rétabli, « Réessayer » rend la planche.
+
+  Cette étape a révélé un défaut : après une panne, Chromium garde l'import de module raté et « Réessayer » ne relançait
+  aucune requête. Correctif : `reessayerPlanche` recharge le document si le nouvel essai échoue encore
+  (`chargement/DemarrageStudio.tsx`, tests dans `ouverture.test.ts`).
 - **Vérifié — scénarios TEST** :
 
   | Scénarios | Recette ou test |
@@ -65,13 +71,17 @@ fichier de chaque assertion sont dans la preuve de l'ID, au registre.
   | TEST-004, TEST-008, TEST-017, TEST-019, TEST-023, TEST-026 | Tests automatisés du modèle, de l'API et de l'interface, exécutés en CI |
 
 - **Vérifié — recette** : REC-A-03 (3,180 m³ dans `studio-dossier`, puis 3,096 m³ dans `studio-navigation`) et
-  REC-C-03 (DEC-08). REC-I-02 reste « En cours » tant que NAV-008 est partiel.
+  REC-C-03 (DEC-08). REC-I-02 (résultats NAV-001 à 009) est vérifié avec NAV-008.
 - **Bloqué — livraison** : les 9 obligations R de bascule et de déploiement (R.2-01, R.3-01, R.3-02, R.4-01 à 03,
-  R.5-01, R.5-03, R.5-04) attendent G4 et la décision de déploiement du maître d'ouvrage.
+  R.5-01, R.5-03, R.5-04) attendent, dans l'ordre :
+  - la recette utilisateur du maître d'ouvrage ([guide](RECETTE-UTILISATEUR-PILOTE.md)) ;
+  - la porte G4 ;
+  - sa Release.
 - **En cours, preuve partielle** : TEST-002, 003, 005, 006, 007, 010, 011, 012, 014, 015, 016, 018, 021, 022, 024, 027,
   028, 035, 036. Ce qui manque est consigné dans la `suite` de chaque ID.
 - **À faire, aucun test** : TEST-025 (comparaison SVG / Canvas / GPU), TEST-037 (50 cycles et courbe mémoire).
-- **Exclus du pilote** (DEC-15) : TEST-032, TEST-033, F.2-03, F.3-01.
+- **Décidés, hors pilote** : F.3-01 (instruit par DEC-15) et F.2-03 (aucun mode IA retenu) sont acceptés par P-06.
+  TEST-032 et TEST-033 restent bloqués : ils recettent des fonctions absentes (illustration IA, adaptateur MCP).
 
 ## Limites
 
