@@ -87,6 +87,14 @@ catégorie, l'en déplacer ou l'en retirer (elle revient alors à son thème). S
 couche. API : `GET/POST /geodata/api/categories`, `PATCH/DELETE /categories/:id`, `PUT /categories-ordre`,
 `PUT /categories/:id/sources/:sourceId`, `DELETE /categories-sources/:sourceId` ; chaque modification est journalisée.
 
+## Contours et limites administratives (D-GD-16)
+
+Le contour d'une entité prend sa couleur (couleur unie, une couleur par entité ou classe thématique) et reste opaque même
+quand l'opacité du remplissage est à 0 % : régler l'opacité à 0 % montre les seules limites. Les contours passent
+au-dessus de tous les remplissages. Entre couches de limites administratives, la région est au-dessus (contour le plus
+épais), puis la province, puis la commune, quel que soit l'ordre des couches ; le rang vient de la source (ADM1, ADM2,
+niveau administratif OpenStreetMap).
+
 ## Fonds de carte et fournisseurs (D-GD-15)
 
 Paramètres → « Fournisseurs de fonds de carte » : MapTiler est intégré et fournisseur par défaut (Satellite, Satellite et

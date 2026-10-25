@@ -3,7 +3,7 @@
  * connaissent que ce contrat ; l'implantation MapLibre (`moteur-maplibre.ts`) est chargée à la demande. La carte n'est
  * jamais le seul accès à l'information : recherche, table et fiches fonctionnent sans elle (repli sans WebGL, GEO 11).
  */
-import type { Composition, ValeurIndicateur } from "@parcours/geodata-model";
+import type { Composition, RangAdministratif, ValeurIndicateur } from "@parcours/geodata-model";
 import type { Fond } from "../client";
 
 export type OutilCarte = "navigation" | "distance" | "surface" | "zone" | "annotation";
@@ -15,6 +15,8 @@ export interface DonneesAffichage {
   readonly valeurs: ReadonlyMap<string, ReadonlyMap<string, ValeurIndicateur>>;
   /** Couleur de chaque unité (code → couleur) des couches au style « une couleur par entité ». */
   readonly categories: ReadonlyMap<string, ReadonlyMap<string, string>>;
+  /** Rang administratif des couches de limites (1 région, 2 province, 3 commune ; D-GD-16) : ordre et épaisseur des contours. */
+  readonly rangs: ReadonlyMap<string, RangAdministratif>;
   /** Couches raster de la composition (tuiles d'image, D-GD-13). */
   readonly rasters: ReadonlySet<string>;
   /** Codes retenus par le filtre d'une couche ; absent = pas de filtre. */
