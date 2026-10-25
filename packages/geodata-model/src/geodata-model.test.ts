@@ -194,3 +194,32 @@ describe("une couleur par entité (style categories)", () => {
     expect(r.ok && r.composition.couches[0]!.style).toEqual({ mode: "categories" });
   });
 });
+
+describe("couches raster (D-GD-13)", () => {
+  it("couleur d'un pixel : bornes, interpolation, nodata transparent, classes", async () => {
+    const { couleurPixel, PALETTES_RASTER } = await import("./index.js");
+    const d = { palette: "gris" as const, min: 0, max: 100, classes: null };
+    expect(couleurPixel(0, d)).toEqual([0, 0, 0, 255]);
+    expect(couleurPixel(100, d)).toEqual([255, 255, 255, 255]);
+    expect(couleurPixel(50, d)).toEqual([128, 128, 128, 255]);
+    expect(couleurPixel(-5, d)).toEqual([0, 0, 0, 255]);
+    expect(couleurPixel(null, d)[3]).toBe(0);
+    expect(couleurPixel(Number.NaN, d)[3]).toBe(0);
+    const k = { palette: "viridis" as const, min: 0, max: 1, classes: [{ valeur: 10, libelle: "Arbres", couleur: "#006400" }] };
+    expect(couleurPixel(10, k)).toEqual([0, 100, 0, 255]);
+    expect(couleurPixel(20, k)[3]).toBe(0);
+    expect(Object.keys(PALETTES_RASTER).length).toBeGreaterThan(5);
+  });
+  it("déclaration validée ; bornes robustes sans nodata ; style « raster » accepté par la composition", async () => {
+    const { validerDeclarationRaster, bornesRobustes } = await import("./index.js");
+    expect(validerDeclarationRaster({ unite: "m", grandeur: "Altitude", palette: "relief" }).ok).toBe(true);
+    expect(validerDeclarationRaster({ unite: "m", grandeur: "", palette: "inconnue" }).ok).toBe(false);
+    const xs = new Float32Array(1000).map((_, i) => (i < 10 ? -9999 : i));
+    const b = bornesRobustes(xs, -9999)!;
+    expect(b.min).toBeGreaterThan(10);
+    expect(b.max).toBeLessThan(1000);
+    expect(bornesRobustes(new Float32Array([-9999, -9999]), -9999)).toBeNull();
+    const r = validerComposition({ ...COMPOSITION_INITIALE, couches: [{ coucheId: "c1", versionId: "v1", visible: true, opacite: 0.8, style: { mode: "raster" }, filtre: null }] });
+    expect(r.ok).toBe(true);
+  });
+});

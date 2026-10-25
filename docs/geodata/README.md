@@ -72,6 +72,16 @@ fiche qualifiée à côté (`version.fichier`, empreinte contrôlée à l'import
 de plus de 5 000 objets n'est pas écrite (borne V1) ; les couches raster (relief, climat, sols, imagerie) n'entrent pas
 dans GeoData V1. Ces données sont collaboratives : ni exhaustives ni officielles.
 
+## Couches raster (D-GD-13)
+
+Fiche avec `couche.raster` (`unite`, `grandeur`, `palette` parmi `viridis`, `relief`, `precipitations`, `temperature`,
+`vegetation`, `sols`, `population`, `energie`, `eau`, `gris` ; `min`/`max` facultatifs, sinon 2ᵉ et 98ᵉ centiles ; ou
+`classes` `{ valeur, libelle, couleur }`) et données GeoTIFF mono-bande en EPSG:4326. La grille est ramenée au plus à
+4 000 000 cellules (plus proche voisin, consigné dans la version), stockée figée, servie en tuiles PNG
+(`/geodata/api/raster/:couche/{z}/{x}/{y}.png`, droit « tuiles » exigé) ; `GET /geodata/api/raster/:couche/valeur?lon&lat`
+donne la valeur au point (`null` = non évaluée). Sur la carte : légende en dégradé ou par classes, toucher la carte lit la
+valeur de la couche raster visible la plus haute.
+
 Sources non publiées faute de droits établis : population HCP RGPH 2024 (conditions de réutilisation non qualifiées).
 Un indicateur « Superficie calculée » est produit par GeoData (ellipsoïde WGS 84) : c'est un résultat calculé, pas une
 superficie officielle.

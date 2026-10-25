@@ -9,7 +9,8 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { OBJETS_PAR_COUCHE, USAGES, validerGeoJSON } from "@parcours/geodata-model";
+import { MAX_PIXELS_RASTER, OBJETS_PAR_COUCHE, USAGES, validerDeclarationRaster, validerGeoJSON } from "@parcours/geodata-model";
+import { lireGeoTiff } from "../lib/geodata/raster.js";
 import { codesDesObjets } from "../lib/geodata/versions.js";
 import type { FicheSource } from "./geodata-reference.js";
 
@@ -23,7 +24,7 @@ describe("fiches de source GeoData livrées", () => {
   });
 
   for (const nom of fiches) {
-    it(nom, () => {
+    it(nom, async () => {
       const fiche = JSON.parse(readFileSync(join(DOSSIER, nom), "utf8")) as FicheSource;
       expect(`${fiche.cle}.json`).toBe(nom);
       expect(fiche.version.licence.length).toBeGreaterThan(5);
@@ -32,9 +33,16 @@ describe("fiches de source GeoData livrées", () => {
       for (const u of USAGES) expect(["autorise", "refuse", "inconnu"]).toContain(fiche.version.droits[u]);
       expect(fiche.version.url || fiche.version.fichier).toBeTruthy();
       if (!fiche.version.fichier) return;
-      expect(fiche.version.fichier).toMatch(/^donnees\/[a-z0-9-]+\.geojson$/);
+      expect(fiche.version.fichier).toMatch(/^donnees\/[a-z0-9-]+\.(geojson|tif)$/);
       const octets = readFileSync(join(DOSSIER, fiche.version.fichier));
       expect(createHash("sha256").update(octets).digest("hex")).toBe(fiche.version.empreinte);
+      if (fiche.version.fichier.endsWith(".tif")) {
+        // Couche raster (D-GD-13) : déclaration valide, GeoTIFF EPSG:4326 lisible sous la borne de cellules.
+        expect(validerDeclarationRaster(fiche.couche.raster).ok).toBe(true);
+        const r = await lireGeoTiff(octets);
+        expect(r.grille.largeur * r.grille.hauteur).toBeLessThanOrEqual(MAX_PIXELS_RASTER);
+        return;
+      }
       const v = validerGeoJSON(JSON.parse(octets.toString("utf8")), { octets: 200 * 1024 * 1024, objets: OBJETS_PAR_COUCHE, sommets: 20_000_000, proprietes: 200, longueurTexte: 2000 });
       expect(v.ok).toBe(true);
       if (!v.ok) return;

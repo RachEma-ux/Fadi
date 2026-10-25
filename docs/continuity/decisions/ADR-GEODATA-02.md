@@ -43,6 +43,11 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
      restreintes au territoire de geoBoundaries MAR ADM1, livrées avec leur fiche dans `docs/geodata/sources/` (données
      dans `donnees/`, empreinte contrôlée). Écartées : couches raster (hors V1), couches de plus de 5 000 objets,
      sources aux droits non établis (HCP, producteurs non identifiés, résultats électoraux).
+   - D-GD-13 (25 octobre 2026, demande du maître d'ouvrage d'intégrer aussi les couches raster) : couches raster dans
+     GeoData — GeoTIFF mono-bande EPSG:4326 (aucune reprojection devinée), grille ramenée au plus à 4 000 000 cellules
+     (plus proche voisin, consigné), stockée figée (`geodata_rasters`), tuiles PNG rendues par le serveur, symbologie
+     déclarée par la fiche (palette continue et bornes, ou classes), valeur au point ; une cellule sans donnée est
+     transparente et « non évaluée », jamais zéro. Dépendance `geotiff` (MIT) côté serveur.
 
 ## Conséquences
 

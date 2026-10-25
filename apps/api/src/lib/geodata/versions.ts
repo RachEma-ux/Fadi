@@ -7,9 +7,10 @@
  * réparation est **comptée et consignée** dans les transformations de la version (jamais silencieuse).
  */
 import type { PoolClient } from "pg";
-import type { DroitsVersion, MotifAbsence, ObjetImporte, StyleCouche } from "@parcours/geodata-model";
+import type { DescriptionRaster, DroitsVersion, MotifAbsence, ObjetImporte, StyleCouche } from "@parcours/geodata-model";
 import { estMotifAbsence } from "@parcours/geodata-model";
 import { newId } from "../ids.js";
+import { compresser, type GrilleRaster } from "./raster.js";
 
 export interface IndicateurDeclare {
   /** Propriété de l'objet qui porte la valeur. */
@@ -57,6 +58,8 @@ export interface VersionAEcrire {
   /** Ajouter l'indicateur calculé « Superficie » (couches de polygones). */
   readonly superficie: boolean;
   readonly preparePar: string | null;
+  /** Couche raster (D-GD-13) : grille et symbologie ; `objets` est alors vide. */
+  readonly raster?: { readonly grille: GrilleRaster; readonly description: DescriptionRaster };
 }
 
 export interface VersionEcrite {
@@ -113,8 +116,18 @@ export async function ecrireVersion(client: PoolClient, v: VersionAEcrire): Prom
   const coucheId = newId("gdcou");
   await client.query(
     `INSERT INTO geodata_couches (id, version_id, titre, description, type_geometrie, niveau, proprietes_exposees, style_defaut) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-    [coucheId, versionId, v.couche.titre, v.couche.description, typeCouche(v.objets), v.couche.niveau, JSON.stringify(v.couche.proprietesExposees), JSON.stringify(v.couche.styleDefaut)],
+    [coucheId, versionId, v.couche.titre, v.couche.description, v.raster ? "raster" : typeCouche(v.objets), v.couche.niveau, JSON.stringify(v.couche.proprietesExposees), JSON.stringify(v.couche.styleDefaut)],
   );
+  if (v.raster) {
+    const { grille: g, description } = v.raster;
+    const [ouest, sud, est, nord] = g.emprise;
+    await client.query(
+      `INSERT INTO geodata_rasters (couche_id, largeur, hauteur, ouest, sud, est, nord, nodata, valeurs, description) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      [coucheId, g.largeur, g.hauteur, ouest, sud, est, nord, g.nodata, compresser(g.valeurs), JSON.stringify(description)],
+    );
+    await client.query(`UPDATE geodata_couches SET nombre_objets = 0, emprise = ST_MakeEnvelope($2, $3, $4, $5, 4326) WHERE id = $1`, [coucheId, ouest, sud, est, nord]);
+    return { sourceId, versionId, coucheId, objets: 0, reparees: 0, indicateurs: [] };
+  }
   let reparees = 0;
   for (let debut = 0; debut < v.objets.length; debut += 400) {
     const lot = v.objets.slice(debut, debut + 400).map((o, k) => ({

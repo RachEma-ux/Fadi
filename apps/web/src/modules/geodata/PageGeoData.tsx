@@ -9,16 +9,16 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { COMPOSITION_INITIALE, couleurCategorie, formatNombre, legende, lireValeur, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
-import { api, ErreurGeoData, type CarteRecue, type CoucheRecue, type EspaceRecu, type FicheRecue, type ResultatRecherche, type ZoneRecue } from "./client";
-import { ajouterCouche, basculerVisibilite, definirFiltre, definirOpacite, definirStyle, deplacerCouche, etatDepuis, LIBELLES_ENREGISTREMENT, entreesCategories, retirerCouche, type Categorie, type EtatEnregistrement } from "./composition-ops";
+import { api, ErreurGeoData, type ValeurRasterRecue, type CarteRecue, type CoucheRecue, type EspaceRecu, type FicheRecue, type ResultatRecherche, type ZoneRecue } from "./client";
+import { ajouterCouche, basculerVisibilite, definirFiltre, definirOpacite, definirStyle, deplacerCouche, etatDepuis, LIBELLES_ENREGISTREMENT, entreesCategories, entreesRaster, retirerCouche, type Categorie, type EtatEnregistrement } from "./composition-ops";
 import { webglDisponible, type MoteurCarte, type OutilCarte } from "./carte/moteur";
-import { FicheObjet, PanneauCatalogue, PanneauCouches, PanneauLegende, TableAttributs } from "./panneaux/consultation";
+import { FicheObjet, FicheValeur, PanneauCatalogue, PanneauCouches, PanneauLegende, TableAttributs } from "./panneaux/consultation";
 import { Etudes, Export, Import, MesCartes, type TraceEnCours } from "./panneaux/travail";
 import { composerPng, telecharger } from "./export-png";
 import "./geodata.css";
 
 type Onglet = "catalogue" | "couches" | "legende";
-type Volet = "fiche" | "cartes" | "etudes" | "import" | "export";
+type Volet = "fiche" | "valeur" | "cartes" | "etudes" | "import" | "export";
 
 const CLE_DERNIERE_CARTE = "geodata.derniere-carte";
 const lireLocal = (k: string) => { try { return window.localStorage.getItem(k); } catch { return null; } };
@@ -58,6 +58,7 @@ export function PageGeoData() {
   const [valeurs, setValeurs] = useState<Map<string, Map<string, ValeurIndicateur>>>(new Map());
   const [filtres, setFiltres] = useState<Map<string, string[]>>(new Map());
   const [categories, setCategories] = useState<Map<string, Categorie[]>>(new Map());
+  const [valeurPoint, setValeurPoint] = useState<{ titre: string; etat: "chargement" | "erreur" | "ok"; recue?: ValeurRasterRecue; erreur?: string } | null>(null);
   const [selection, setSelection] = useState<{ coucheId: string; code: string } | null>(null);
   const [fiche, setFiche] = useState<FicheRecue | null>(null);
   const [ficheEtat, setFicheEtat] = useState<{ chargement: boolean; erreur: string | null }>({ chargement: false, erreur: null });
@@ -141,6 +142,10 @@ export function PageGeoData() {
   const disponibilite = carte?.disponibilite ?? {};
   const compositionAffichee = useMemo(() => ({ ...composition, couches: composition.couches.filter((k) => !disponibilite[k.coucheId] || disponibilite[k.coucheId]!.etat === "disponible") }), [composition, disponibilite]);
   const attributions = useMemo(() => [...new Set(compositionAffichee.couches.filter((k) => k.visible).map((k) => couchesConnues.get(k.coucheId)?.version.attribution).filter((x): x is string => !!x))], [compositionAffichee, couchesConnues]);
+  // Couches raster (D-GD-13) connues ; référence lue par le moteur (créé une fois) au moment d'un clic.
+  const rasters = useMemo(() => new Set([...couchesConnues.values()].filter((c) => c.typeGeometrie === "raster").map((c) => c.id)), [couchesConnues]);
+  const rastersCourants = useRef<{ rasters: Set<string>; couches: Map<string, CoucheRecue> }>({ rasters, couches: couchesConnues });
+  rastersCourants.current = { rasters, couches: couchesConnues };
   const zonesGeo = useMemo(() => ({ type: "FeatureCollection" as const, features: zones.map((z) => ({ type: "Feature", properties: { id: z.id, nom: z.nom }, geometry: z.geometrie })) }), [zones]);
 
   // Moteur : créé une fois, à la demande (import dynamique).
@@ -152,7 +157,14 @@ export function PageGeoData() {
       try {
         moteur.current = creerMoteur(conteneurCarte.current, compositionCourante.current, {
           surDeplacement: (camera) => setComposition((c) => (c.camera.lon === camera.lon && c.camera.lat === camera.lat && c.camera.zoom === camera.zoom && c.camera.cap === camera.cap ? c : { ...c, camera })),
-          surClic: (o) => { setSelection(o); if (o) ouvrirFiche(o.coucheId, o.code); },
+          surClic: (o, p) => {
+            setSelection(o);
+            if (o) return void ouvrirFiche(o.coucheId, o.code);
+            // Aucun objet touché : valeur de la couche raster visible la plus haute, s'il y en a une.
+            const { rasters: rs, couches } = rastersCourants.current;
+            const haut = [...compositionCourante.current.couches].reverse().find((k) => k.visible && rs.has(k.coucheId));
+            if (haut) void ouvrirValeur(haut.coucheId, couches.get(haut.coucheId)?.titre ?? haut.coucheId, p);
+          },
           surTrace: (o, s) => setTrace({ outil: o, sommets: [...s] }),
           surTraceTermine: (o, s) => { setTrace({ outil: o, sommets: [...s] }); if (o === "zone" || o === "annotation") setTracePret({ outil: o, sommets: [...s] }); },
           surErreur: (m) => setErreurCarte(m),
@@ -170,12 +182,19 @@ export function PageGeoData() {
   }, [webgl]);
 
   useEffect(() => {
-    moteur.current?.appliquer(compositionAffichee, fond, { valeurs, categories: couleursCategories, filtres, selection, zones: zonesGeo, attributions });
-  }, [compositionAffichee, fond, valeurs, couleursCategories, filtres, selection, zonesGeo, attributions, chargementMoteur]);
+    moteur.current?.appliquer(compositionAffichee, fond, { valeurs, categories: couleursCategories, rasters, filtres, selection, zones: zonesGeo, attributions });
+  }, [compositionAffichee, fond, valeurs, couleursCategories, rasters, filtres, selection, zonesGeo, attributions, chargementMoteur]);
   useEffect(() => { moteur.current?.definirOutil(outil); setTrace(null); setTracePret(null); }, [outil, chargementMoteur]);
 
   compositionCourante.current = composition;
   const etat: EtatEnregistrement = etatForce ?? etatDepuis(composition, carte?.composition ?? null);
+
+  async function ouvrirValeur(coucheId: string, titre: string, p: { lon: number; lat: number }) {
+    setVolet("valeur");
+    setValeurPoint({ titre, etat: "chargement" });
+    try { setValeurPoint({ titre, etat: "ok", recue: await api.valeurRaster(coucheId, Number(p.lon.toFixed(6)), Number(p.lat.toFixed(6))) }); }
+    catch (e) { setValeurPoint({ titre, etat: "erreur", erreur: message(e) }); }
+  }
 
   async function ouvrirFiche(coucheId: string, code: string) {
     setVolet("fiche");
@@ -250,6 +269,7 @@ export function PageGeoData() {
       const c = couchesConnues.get(k.coucheId);
       if (k.style.mode === "simple") return { titre: c?.titre ?? k.coucheId, entrees: null, couleur: k.style.couleur };
       if (k.style.mode === "categories") return { titre: c?.titre ?? k.coucheId, entrees: entreesCategories(categories.get(k.coucheId) ?? []), sansEffectif: true };
+      if (k.style.mode === "raster") return { titre: `${c?.titre ?? k.coucheId}${c?.raster ? ` — ${c.raster.grandeur}${c.raster.unite ? ` (${c.raster.unite})` : ""}` : ""}`, entrees: c?.raster ? entreesRaster(c.raster) : null, sansEffectif: true };
       const vs = [...(valeurs.get(k.style.indicateurId)?.values() ?? [])];
       const ind = c?.indicateurs.find((i) => i.id === (k.style.mode === "thematique" ? k.style.indicateurId : ""));
       return { titre: `${c?.titre ?? k.coucheId}${ind ? ` — ${ind.titre} (${ind.unite})` : ""}`, entrees: legende(vs, k.style.seuils, k.style.couleurs, (x) => formatNombre(x, Math.abs(x) >= 100 ? 0 : 2)) };
@@ -339,8 +359,9 @@ export function PageGeoData() {
           {trace && outil !== "navigation" && <p className="gd-sur-carte gd-mesure-carte" role="status">{trace.sommets.length < 2 ? "Cliquez sur la carte pour commencer." : (outil === "distance" || outil === "surface" || outil === "zone") ? "Tracé en cours — détails dans Études." : ""}</p>}
         </main>
         {volet && (
-          <aside className="gd-volet gd-ouvert" aria-label={({ fiche: "Fiche d'information", cartes: "Mes cartes", etudes: "Études", import: "Importer", export: "Exporter" })[volet]} data-gd-volet-ouvert={volet}>
-            <div className="gd-ligne-titre"><h2>{({ fiche: "Fiche d'information", cartes: "Mes cartes", etudes: "Études", import: "Importer des données", export: "Exporter" })[volet]}</h2><button type="button" onClick={() => setVolet(null)}>Fermer</button></div>
+          <aside className="gd-volet gd-ouvert" aria-label={({ fiche: "Fiche d'information", valeur: "Valeur au point", cartes: "Mes cartes", etudes: "Études", import: "Importer", export: "Exporter" })[volet]} data-gd-volet-ouvert={volet}>
+            <div className="gd-ligne-titre"><h2>{({ fiche: "Fiche d'information", valeur: "Valeur au point", cartes: "Mes cartes", etudes: "Études", import: "Importer des données", export: "Exporter" })[volet]}</h2><button type="button" onClick={() => setVolet(null)}>Fermer</button></div>
+            {volet === "valeur" && valeurPoint && <FicheValeur {...valeurPoint} onFermer={() => { setVolet(null); setValeurPoint(null); }} />}
             {volet === "fiche" && <FicheObjet fiche={fiche} chargement={ficheEtat.chargement} erreur={ficheEtat.erreur} onFermer={() => { setVolet(null); setSelection(null); }} onCentrer={(f) => { const e = empriseDe(f.emprise.coordinates); if (e) moteur.current?.allerA({ emprise: e }); }} />}
             {volet === "cartes" && <MesCartes carte={carte} nouvelle={!carte} onOuvrir={(id) => void ouvrirCarte(id)} onCarteModifiee={(c) => { setCarte(c); setEtatForce(null); }}
               onNouvelle={() => { setCarte(null); setComposition({ ...COMPOSITION_INITIALE, camera: composition.camera }); setEtatForce(null); ecrireLocal(CLE_DERNIERE_CARTE, null); }}

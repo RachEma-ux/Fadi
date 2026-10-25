@@ -12730,5 +12730,11 @@
 "Une couleur par entité": "One colour per feature",
 "Une couleur par entité (repère visuel, sans valeur).": "One colour per feature (visual cue, no value).",
 "Chargement des couleurs…": "Loading colours…",
-"… et {0} autres entités (couleurs visibles sur la carte)": "… and {0} other features (colours visible on the map)"
+"… et {0} autres entités (couleurs visibles sur la carte)": "… and {0} other features (colours visible on the map)",
+"Couche raster : symbologie de la source, touchez la carte pour lire une valeur.": "Raster layer: source symbology, tap the map to read a value.",
+"Dégradé de {0} à {1}": "Gradient from {0} to {1}",
+"Cellule sans valeur : transparente (non évaluée, jamais zéro).": "Cell without a value: transparent (not assessed, never zero).",
+"Lecture de la valeur…": "Reading the value…",
+"Non évaluée (hors emprise ou cellule sans donnée)": "Not assessed (outside the extent or cell without data)",
+"Valeur au point": "Value at point"
 }

@@ -9,7 +9,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import type { Feature, FeatureCollection } from "geojson";
 import urlWorker from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import { COULEUR_ABSENTE, type Composition } from "@parcours/geodata-model";
-import { adresseTuiles, type Fond } from "../client";
+import { adresseRaster, adresseTuiles, type Fond } from "../client";
 import type { DonneesAffichage, EvenementsMoteur, MoteurCarte, OutilCarte } from "./moteur";
 
 setWorkerUrl(urlWorker);
@@ -90,7 +90,7 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     const couches = couchesAffichees.filter((id) => carte.getLayer(`${id}-remplissage`) || carte.getLayer(`${id}-points`) || carte.getLayer(`${id}-lignes`));
     const ids = couches.flatMap((id) => [`${id}-remplissage`, `${id}-lignes`, `${id}-points`]).filter((l) => carte.getLayer(l));
     const f = ids.length ? carte.queryRenderedFeatures(e.point, { layers: ids })[0] : undefined;
-    ev.surClic(f ? { coucheId: f.layer.id.replace(/-(remplissage|lignes|points)$/, "").slice(PREFIXE.length), code: String(f.properties["code"]) } : null);
+    ev.surClic(f ? { coucheId: f.layer.id.replace(/-(remplissage|lignes|points)$/, "").slice(PREFIXE.length), code: String(f.properties["code"]) } : null, { lon: e.lngLat.lng, lat: e.lngLat.lat });
   });
   carte.on("dblclick", (e) => {
     if (outil === "navigation") return;
@@ -120,11 +120,22 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     const voulues = composition.couches.map((k) => `${PREFIXE}${k.coucheId}`);
     for (const id of couchesAffichees) {
       if (voulues.includes(id)) continue;
-      for (const suffixe of ["-remplissage", "-absentes", "-contour", "-selection", "-lignes", "-points"]) if (carte.getLayer(id + suffixe)) carte.removeLayer(id + suffixe);
+      for (const suffixe of ["-remplissage", "-absentes", "-contour", "-selection", "-lignes", "-points", "-raster"]) if (carte.getLayer(id + suffixe)) carte.removeLayer(id + suffixe);
       if (carte.getSource(id)) carte.removeSource(id);
     }
     for (const k of composition.couches) {
       const id = `${PREFIXE}${k.coucheId}`;
+      if (d.rasters.has(k.coucheId)) {
+        // Couche raster : tuiles d'image rendues par le serveur, seule l'opacité est réglable (symbologie de la couche).
+        if (!carte.getSource(id)) {
+          carte.addSource(id, { type: "raster", tiles: [adresseRaster(k.coucheId)], tileSize: 256, minzoom: 0, maxzoom: 14 });
+          carte.addLayer({ id: `${id}-raster`, type: "raster", source: id, paint: { "raster-opacity": k.opacite, "raster-resampling": "nearest" } });
+        }
+        carte.moveLayer(`${id}-raster`, "gd-zones-remplissage");
+        carte.setLayoutProperty(`${id}-raster`, "visibility", k.visible ? "visible" : "none");
+        carte.setPaintProperty(`${id}-raster`, "raster-opacity", k.opacite);
+        continue;
+      }
       if (!carte.getSource(id)) {
         carte.addSource(id, { type: "vector", tiles: [adresseTuiles(k.coucheId)], minzoom: 0, maxzoom: 14, promoteId: "code" });
         carte.addLayer({ id: `${id}-remplissage`, type: "fill", source: id, "source-layer": "objets", filter: ["==", ["geometry-type"], "Polygon"], paint: { "fill-color": "#2b8cbe", "fill-opacity": 0.8 } });
@@ -152,7 +163,7 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
         // Une couleur par entité ; tant que les couleurs ne sont pas reçues, la couleur par défaut.
         const branches = [...(d.categories.get(k.coucheId) ?? new Map<string, string>())].flat();
         couleur = branches.length ? (["match", ["get", "code"], ...branches, "#2b8cbe"] as unknown as ExpressionSpecification) : "#2b8cbe";
-      } else {
+      } else if (k.style.mode === "thematique") {
         const valeurs = d.valeurs.get(k.style.indicateurId);
         const branches: (string | number)[] = [];
         const { seuils, couleurs } = k.style;
