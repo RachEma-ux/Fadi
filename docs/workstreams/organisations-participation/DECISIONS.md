@@ -75,6 +75,20 @@ Journal du chantier. Les décisions héritées de la gestion des comptes (D-1 à
     de participation ni de types d'organisation n'est imposé.
   Le lot OP-PONT (retrait du pont) suit son cours sous OP-4.
 
+- **OP-6 — Séparation des responsabilités : auto-contrôle signalé (2026-10-25).** Le maître d'ouvrage lance le lot
+  OP-AUTOCONTROLE (reporté par OP-4) et décide :
+  1. **signaler** quand une même personne produit et approuve un dossier (« auto-contrôle »), **sans bloquer par défaut** ;
+  2. une **option par utilisateur, « Auto-contrôle »**, que **l'administrateur de la plateforme** change dans les
+     autorisations du compte (administration des comptes). **Activée par défaut** : la personne peut approuver un
+     dossier qu'elle a produit, l'approbation est alors marquée « auto-contrôle ». **Désactivée** : l'API refuse cette
+     approbation (422 `self_approval_forbidden`) et nomme les autres approbateurs du projet ;
+  3. choix par défaut retenus : **le diffuseur n'est pas concerné** (seule l'approbation l'est) ; **rien de rétroactif**
+     (les approbations antérieures ne sont pas re-marquées : leur marque reste « non renseignée ») ; **aucune correction
+     automatique** ; **le propriétaire seul sur son projet reste libre d'approuver** (signalé) ; **aucun seuil inventé**
+     (une seule révision produite suffit à signaler).
+  Mise en œuvre et choix techniques (périmètre des révisions, révisions d'initialisation, empreintes inchangées) :
+  [lot-autocontrole.md](lot-autocontrole.md).
+
 ## Décisions en attente
 
 - Autorisation explicite d'un déploiement (préproduction, puis production) selon le runbook.

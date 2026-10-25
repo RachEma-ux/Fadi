@@ -3,7 +3,7 @@
  * visibilité, opacité, style et filtre d'une couche, et état d'enregistrement. La composition locale n'est écrite au
  * serveur que par l'action « Enregistrer » ; déplacer la carte la rend seulement « non enregistrée ».
  */
-import { calculerSeuils, couleursPour, memeComposition, type CoucheComposee, type Composition, type FiltreCouche, type MethodeClassification, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
+import { calculerSeuils, couleurCategorie, couleursPour, memeComposition, type CoucheComposee, type EntreeLegende, type Composition, type FiltreCouche, type MethodeClassification, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
 
 export type EtatEnregistrement =
   | { readonly etat: "nouvelle" }
@@ -70,3 +70,14 @@ export function lireSeuilsManuels(texte: string): number[] | null {
 
 /** Identifiant de demande d'un import (idempotence côté serveur). */
 export const nouvelIdDemande = () => `imp-${(globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`).replace(/[^A-Za-z0-9_-]/g, "")}`;
+
+/** Unité d'une couche au style « une couleur par entité », telle que servie par `/couches/:id/categories`. */
+export interface Categorie { readonly code: string; readonly nom: string | null; readonly rang: number }
+
+/** Légende « une couleur par entité » : une entrée par unité (ordre des noms), au plus `max`, puis une ligne de reste sans pastille. */
+export function entreesCategories(cs: readonly Categorie[], max = 60): EntreeLegende[] {
+  const tries = [...cs].sort((a, b) => (a.nom ?? a.code).localeCompare(b.nom ?? b.code, "fr") || a.code.localeCompare(b.code));
+  const entrees: EntreeLegende[] = tries.slice(0, max).map((c, i) => ({ classe: i, couleur: couleurCategorie(c.rang), libelle: c.nom ?? c.code, effectif: 1 }));
+  if (tries.length > max) entrees.push({ classe: max, couleur: "", libelle: `… et ${tries.length - max} autres entités (couleurs visibles sur la carte)`, effectif: tries.length - max });
+  return entrees;
+}

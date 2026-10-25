@@ -114,6 +114,7 @@ export function messageRefus(status: number, body: unknown): string {
   if (status === 400 && b["code"] === "drawing_coordinated_invalid") return "Un dessin 2D indépendant se publie seul : retirez les variantes coordonnées.";
   if (typeof b["code"] === "string" && REFUS_DELEGATION[b["code"]]) return REFUS_DELEGATION[b["code"]]!;
   if (status === 409 && b["error"] === "delegation_revoquee") return REFUS_DELEGATION["delegation_revoquee"]!;
+  if (status === 422 && b["error"] === "self_approval_forbidden") return "Approbation refusée : vous avez produit ou soumis ce dossier et l’auto-contrôle n’est pas autorisé pour votre compte.";
   if (status === 403) return "Action refusée : vos droits sur ce projet ne la permettent pas.";
   if (status === 423) return "Édition réservée par un autre compte : réessayez plus tard.";
   return "Action refusée par le serveur.";

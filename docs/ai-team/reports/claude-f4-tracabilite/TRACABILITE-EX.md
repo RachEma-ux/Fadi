@@ -12,24 +12,24 @@ manquant ; aucun test citant une exigence inconnue des fiches ; aucun lien de CI
 
 ## EX-100 — critère de preuve (preuves d'exécution du registre)
 
-Preuves d'exécution (`test_automatise`, `recette_e2e`) : 616 ; conformité attribuable : 0.
+Preuves d'exécution (`test_automatise`, `recette_e2e`) : 627 ; conformité attribuable : 0.
 
 | Champ exigé | Preuves où il manque |
 |---|---:|
-| build | 588 |
-| commit | 588 |
-| contrat | 616 |
-| corpus | 616 |
-| environnement | 616 |
-| executant | 616 |
-| date | 616 |
-| verdict | 616 |
+| build | 599 |
+| commit | 599 |
+| contrat | 627 |
+| corpus | 627 |
+| environnement | 627 |
+| executant | 627 |
+| date | 627 |
+| verdict | 627 |
 | log | 578 |
 | reference | 1 |
 | scenario | 0 |
 
-Refus « preuve sans SHA » : 588 preuves, 143 tâches. Refus « lien de CI sans scénario » : 0.
-Tâches « Vérifié » ou « Accepté » dont aucune preuve d'exécution n'est attribuable : 167 (le statut documentaire du registre n'est pas une conformité ; aucune n'est déclarée conforme).
+Refus « preuve sans SHA » : 599 preuves, 150 tâches. Refus « lien de CI sans scénario » : 0.
+Tâches « Vérifié » ou « Accepté » dont aucune preuve d'exécution n'est attribuable : 174 (le statut documentaire du registre n'est pas une conformité ; aucune n'est déclarée conforme).
 
 ## EX-102 — lien bidirectionnel (104 fiches EX)
 
@@ -40,17 +40,18 @@ Tâches « Vérifié » ou « Accepté » dont aucune preuve d'exécution n'est 
 | proprietaire | 0 |
 | contrat | 0 |
 | composant | 0 |
-| tests | 88 |
-| preuves | 95 |
+| tests | 87 |
+| preuves | 94 |
 | etat | 0 |
 | decision | 0 |
 
 Composants candidats cités sans source dans le dépôt : 0.
 Tests citant une exigence inconnue des fiches : 0.
-Contrôles consignés au registre introuvables mot pour mot dans le fichier cité (libellé composé, déplacé ou reformulé) : 54.
+Contrôles consignés au registre introuvables mot pour mot dans le fichier cité (libellé composé, déplacé ou reformulé) : 56.
 
 Fiches EX avec au moins un test lié (registre ou titre de test) :
 
+- EX-006 : 2 test(s), 1 preuve(s) d'exécution consignée(s)
 - EX-009 : 4 test(s), 4 preuve(s) d'exécution consignée(s)
 - EX-017 : 6 test(s), 6 preuve(s) d'exécution consignée(s)
 - EX-018 : 5 test(s), 5 preuve(s) d'exécution consignée(s)
@@ -86,8 +87,8 @@ Fiches critiques : 141 ; déclarées conformes : 0 ; pouvant l'être aujourd'hui
 
 | Champ | Fiches critiques où il manque |
 |---|---:|
-| test | 119 |
-| resultat | 127 |
+| test | 118 |
+| resultat | 126 |
 | build | 141 |
 | preuve | 141 |
 | decision | 0 |

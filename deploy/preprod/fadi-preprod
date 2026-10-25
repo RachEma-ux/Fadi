@@ -62,7 +62,7 @@ OWNER_UID=$(id -u)
 # les recettes qui lisent les courriels envoyés (lib-invitations, MAILPIT_URL ou API_LOG) : la préproduction n'envoie
 # jamais aux domaines réservés des comptes de recette et n'a pas de Mailpit (tests/run.sh les repère dans les sources).
 E2E_DEFAUT="accueils-design studio-exemple-p118 studio-domaines studio-corpus-s6 studio-corpus-s7 studio-chargement studio-memoire
-studio-mesures-chargement studio-accessibilite studio-echanges atelier-nouveau atelier-documents atelier-echanges
+studio-faces studio-mesures-chargement studio-accessibilite studio-echanges atelier-nouveau atelier-documents atelier-echanges
 atelier-complements collaboration-support-telephone atelier-canevas planche planche-modification planche-outils
 planche-pousser-aretes planche-pousser-modes planche-objets planche-clavier planche-pousser-l10a planche-liens
 planche-suivez-moi planche-revolution planche-profiles planche-assemblages planche-debit planche-texte-3d
@@ -240,9 +240,10 @@ for name, s in c.get("services", {}).items():
     if not (img == allowed_images[0] or img.startswith(allowed_images[1:])): err(f"{p} : image {img!r}")
     b = s.get("build")
     if b and b.get("context") != src: err(f"{p} : contexte de build {b.get('context')!r}")
-    # Contextes de build supplémentaires : seule la recette en a un, l'image applicative du projet (COPY --from=app).
-    ac = (b or {}).get("additional_contexts") or {}
-    if ac and not (name == "recette" and ac == {"app": "service:app"}): err(f"{p} : additional_contexts {ac!r}")
+    if (b or {}).get("additional_contexts"): err(f"{p} : additional_contexts interdit")
+    # Image de base de la recette (FROM ${APP_IMAGE}) : seulement l'image applicative de la préproduction.
+    for k, v in ((b or {}).get("args") or {}).items():
+        if k == "APP_IMAGE" and not str(v).startswith("fadi-preprod-app:"): err(f"{p} : APP_IMAGE {v!r}")
     for v in s.get("volumes", []):
         if v.get("type") != "volume": err(f"{p} : montage {v.get('type')!r} ({v.get('source')!r}) — seuls les volumes nommés sont admis")
         elif not str(v.get("source", "")).startswith("fadi-preprod"): err(f"{p} : volume {v.get('source')!r}")
@@ -440,9 +441,11 @@ case "$cmd" in
   garde) verifier_disposition; garde ;;
   build)
     verifier_disposition; nouveau_run build; garde
-    # La recette copie les builds de l'image applicative du même commit (additional_contexts app = service:app) :
-    # Compose construit app d'abord, aucun second `npm run build`.
-    FADI_BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ) journal build.log dc --profile recette build app recette ;;
+    # Dans cet ordre : la recette copie les builds de l'image applicative du même commit (FROM ${APP_IMAGE}), aucun
+    # second `npm run build`.
+    export FADI_BUILD_DATE; FADI_BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+    journal build.log dc build app
+    journal build.log dc --profile recette build recette ;;
   nettoyer)
     # Images par commit (étiquette = 12 premiers caractères) : sans nettoyage, chaque déploiement en ajoute deux et le
     # disque du VPS se remplit. Seuls les dépôts fadi-preprod-app et fadi-preprod-recette sont touchés, jamais la

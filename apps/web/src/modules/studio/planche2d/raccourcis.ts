@@ -154,13 +154,18 @@ export const OUTILS_MODES: ReadonlySet<StudioToolId> = new Set<StudioToolId>([
   "studio.dessin.cote", "studio.dessin.deplacer", "studio.dessin.modifier", "studio.dessin.decaler",
   // Volume libre : modes de la vue 3D (poser une boîte, un prisme sur profil, déplacer un solide).
   "studio.solide.boite", "studio.solide.prisme", "studio.solide.deplacer",
+  // Lot F1 : édition des faces, pivot et lien du solide sélectionné (formulaires de la vue 3D).
+  "studio.solide.face-decaler", "studio.solide.face-diviser", "studio.solide.pivoter", "studio.solide.resoudre",
   "studio.dessin.copier", "studio.dessin.rotation", "studio.dessin.symetrie", "studio.dessin.echelle",
   "studio.dessin.cote-angulaire", "studio.dessin.texte",
   // Architecture (A.4) : poser l'axe d'un mur, désigner le mur d'une ouverture.
   "studio.architecture.mur", "studio.architecture.ouverture",
 ]);
 /** Outils du volume libre : ils agissent dans la vue 3D, qu'ils ouvrent. */
-export const OUTILS_VOLUME_LIBRE: ReadonlySet<StudioToolId> = new Set<StudioToolId>(["studio.solide.boite", "studio.solide.prisme", "studio.solide.deplacer", "studio.solide.supprimer"]);
+export const OUTILS_VOLUME_LIBRE: ReadonlySet<StudioToolId> = new Set<StudioToolId>([
+  "studio.solide.boite", "studio.solide.prisme", "studio.solide.deplacer", "studio.solide.supprimer",
+  "studio.solide.face-decaler", "studio.solide.face-diviser", "studio.solide.pivoter", "studio.solide.resoudre",
+]);
 /** Outils qui posent des points sur la planche. */
 export const OUTILS_TRACE: ReadonlySet<StudioToolId> = new Set<StudioToolId>(["studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle", "studio.dessin.arc", "studio.dessin.polyligne", "studio.dessin.cote", "studio.dessin.cote-angulaire", "studio.dessin.texte", "studio.architecture.mur", "studio.architecture.ouverture"]);
 

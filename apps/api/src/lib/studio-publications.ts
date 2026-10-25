@@ -43,6 +43,9 @@ import {
 } from "../db/schema.js";
 import type { Tx } from "./atelier-validation.js";
 import { newId } from "./ids.js";
+import { autresApprobateurs, controleApprobation, type ApprobateurPossible } from "./auto-controle-db.js";
+import { messageRefusAutoControle, type ResultatAutoControle } from "./auto-controle.js";
+import { audit } from "./audit.js";
 import { activeLock, loadProjectAccess, lockedMessage, projectAccessRefusal, type AccessibleProject } from "./owned-project.js";
 import type { CiblePortee } from "@parcours/domain-model";
 import { lockProject, type Querier } from "./step-rows.js";
@@ -136,6 +139,8 @@ export interface StudioPublicationEventView {
   relatedPublicationId: string | null; createdAt: string;
   /** Délégation employée par cette décision (EX-085) ; null : droit propre de l'auteur. */
   delegationId: string | null;
+  /** OP-6 : approbation marquée auto-contrôle (true) ou non (false) ; null hors approbation et avant le lot. */
+  selfControl: boolean | null;
 }
 export interface StudioPublicationView {
   id: string; projectId: string; studyId: string; variantId: string; variantName: string; title: string;
@@ -150,6 +155,8 @@ export interface StudioPublicationView {
   manifest: StudioPublicationManifest | null; manifestHash: string | null; manifestBuiltAt: string | null;
   createdBy: Who; createdAt: string; updatedAt: string;
   approval: { revisionId: string; documentHash: string; manifestHash: string | null; by: Who | null; at: string | null; delegationId: string | null } | null;
+  /** OP-6 : approbation marquée auto-contrôle (true), non (false), ou null (approuvée avant le lot, ou non approuvée). */
+  approvedSelfControl: boolean | null;
   diffusion: { by: Who | null; at: string | null; packageHash: string; manifestHash: string | null; files: StudioPackageFile[] } | null;
   /** Actualité des contenus dérivés et écarts constatés (source déplacée, métadonnée renommée). */
   headRevisionId: string; freshness: Actualite; drift: EcartManifeste[];
@@ -297,6 +304,7 @@ async function views(q: Querier, access: AccessibleProject, actorId: string, row
       createdBy: who(row.createdBy)!, createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString(),
       approval: row.approvedRevisionId && row.approvedDocumentHash
         ? { revisionId: row.approvedRevisionId, documentHash: row.approvedDocumentHash, manifestHash: row.approvedManifestHash, by: who(row.approvedBy), at: row.approvedAt?.toISOString() ?? null, delegationId: row.approvedDelegationId ?? null } : null,
+      approvedSelfControl: row.approvedRevisionId ? row.approvedSelfControl ?? null : null,
       diffusion: row.package && row.packageHash
         ? { by: who(row.diffusedBy), at: row.diffusedAt?.toISOString() ?? null, packageHash: row.packageHash, manifestHash: row.package.manifestHash ?? null, files: row.package.files } : null,
       headRevisionId: variant?.headRevisionId ?? row.revisionId, freshness, drift, documentsCheck,
@@ -315,7 +323,7 @@ async function views(q: Querier, access: AccessibleProject, actorId: string, row
       view.events = own.map((e) => ({
         id: e.id, action: e.action, fromStatus: e.fromStatus, toStatus: e.toStatus, workStatus: e.workStatus, diffusionStatus: e.diffusionStatus,
         author: who(e.authorId)!, comment: e.comment, revisionId: e.revisionId, documentHash: e.documentHash, manifestHash: e.manifestHash,
-        headRevisionId: e.headRevisionId, relatedPublicationId: e.relatedPublicationId, createdAt: e.createdAt.toISOString(), delegationId: e.delegationId ?? null,
+        headRevisionId: e.headRevisionId, relatedPublicationId: e.relatedPublicationId, createdAt: e.createdAt.toISOString(), selfControl: e.selfControl ?? null, delegationId: e.delegationId ?? null,
       }));
     }
     return view;
@@ -366,13 +374,15 @@ const coordinatedOf = (manifest: StudioPublicationManifest | null): string[] => 
 interface JournalEntry {
   action: StudioPublicationAction; from: StudioPublicationStatus | null; to: StudioPublicationStatus; dims: Dimensions;
   authorId: string; comment: string | undefined | null; headRevisionId: string; at: Date; related?: string | null; delegationId?: string | null;
+  /** OP-6 : marque d'un évènement `approuver`. */
+  selfControl?: boolean | null;
 }
 async function journal(tx: Tx, row: Pick<PublicationRow, "id" | "revisionId" | "documentHash" | "manifestHash">, e: JournalEntry) {
   await tx.insert(studioPublicationEvents).values({
     id: newId("studio_publication_event"), publicationId: row.id, action: e.action, fromStatus: e.from, toStatus: e.to,
     workStatus: e.dims.travail, diffusionStatus: e.dims.diffusion, authorId: e.authorId, comment: e.comment ?? null,
     revisionId: row.revisionId, documentHash: row.documentHash, manifestHash: row.manifestHash, headRevisionId: e.headRevisionId,
-    relatedPublicationId: e.related ?? null, delegationId: e.delegationId ?? null, createdAt: e.at,
+    relatedPublicationId: e.related ?? null, selfControl: e.selfControl ?? null, delegationId: e.delegationId ?? null, createdAt: e.at,
   });
 }
 
@@ -470,7 +480,7 @@ export async function createStudioPublication(projectId: string, studyId: string
 }
 
 /** Transition d'un dossier : dimensions de départ, droit, commentaire, manifeste examiné ou courant, journal. */
-export async function transitionStudioPublication(projectId: string, studyId: string, publicationId: string, actorId: string, action: StudioPublicationTransition, input: StudioPublicationTransitionInput): Promise<StudioPublicationView> {
+export async function transitionStudioPublication(projectId: string, studyId: string, publicationId: string, actorId: string, action: StudioPublicationTransition, input: StudioPublicationTransitionInput, ip?: string | null): Promise<StudioPublicationView> {
   return db.transaction(async (tx) => {
     const access = await lockedAccess(tx, projectId, actorId);
     const study = await studyOf(tx, projectId, studyId);
@@ -480,22 +490,72 @@ export async function transitionStudioPublication(projectId: string, studyId: st
     // Le besoin de la transition (`write`, `approve`, `publish`) porte aussi la réservation d'édition : celle d'un autre
     // compte la bloque (423), propriétaire compris. Approbateur et Diffuseur de portée projet (phase 2, OP-D3 c) approuvent
     // ou diffusent sans droit de modification.
+    let controle: ResultatAutoControle | null;
+    let delegationId: string | null = null;
     if (input.delegationId !== undefined) {
-      // Délégation d'approbation (EX-085) : explicite, pour approuver ou refuser seulement, revérifiée ici.
+      // Délégation d'approbation (EX-085) : explicite, pour approuver ou refuser seulement, revérifiée ici ; la séparation
+      // des responsabilités (OP-6) s'applique au délégué comme à tout approbateur.
       if (action !== "approuver" && action !== "refuser") {
         throw new StudioRequestError(400, { error: "invalid_input", code: "delegation_non_applicable", message: "Une délégation ne permet que d’approuver ou de refuser une publication." });
       }
       const now = new Date();
       const delegation = await delegationEmployable(tx, access, row, actorId, input.delegationId, now);
-      await appliquerTransition(tx, access, study, row, actorId, action, input, delegation.id);
+      delegationId = delegation.id;
+      ({ controle } = await appliquerTransition(tx, access, study, row, actorId, action, input, "studio", delegation.id));
       await journalDelegation(tx, delegation.id, "employer", actorId, now, { publicationId: row.id, publicationAction: action, comment: input.comment ?? null });
     } else {
       assertAccess(access, actorId, besoinTransition(action), ciblePublication(row));
-      await appliquerTransition(tx, access, study, row, actorId, action, input);
+      ({ controle } = await appliquerTransition(tx, access, study, row, actorId, action, input, "studio"));
+    }
+    if (controle) {
+      // OP-6 : approbation Studio journalisée avec sa marque (historique de la participation : famille `review.`).
+      await audit(tx, {
+        actorId, action: "review.approval.recorded", target: { type: "project", id: projectId },
+        metadata: { projectId, publicationId: row.id, via: "studio", selfControl: controle.autoControle, revisionsAuteur: controle.revisionsAuteur, soumisParLui: controle.soumisParLui, manifestHash: row.manifestHash, ...(delegationId ? { delegationId } : {}) },
+        ip: ip ?? null,
+      });
     }
     const [stored] = await tx.select().from(studioPublications).where(eq(studioPublications.id, row.id)).limit(1);
     return (await views(tx, access, actorId, [stored!], true))[0]!;
   });
+}
+
+/** Voie d'une approbation : Studio (rôle de projet) ou revue externe (affectation nominative ; aucun e-mail rendu). */
+export type VoieApprobation = "studio" | "revue";
+
+/** Refus 422 `self_approval_forbidden` : motifs relevés et autres approbateurs nommés (sans e-mail pour la revue). */
+async function refusAutoControle(tx: Tx, row: PublicationRow, actorId: string, controle: ResultatAutoControle, voie: VoieApprobation): Promise<never> {
+  const approvers: ApprobateurPossible[] = await autresApprobateurs(tx, row.projectId, row.id, actorId, voie === "revue");
+  throw new StudioRequestError(422, {
+    error: "self_approval_forbidden", message: messageRefusAutoControle(controle),
+    autoControle: true, revisionsAuteur: controle.revisionsAuteur, soumisParLui: controle.soumisParLui, approvers,
+  });
+}
+
+/** Aperçu de l'auto-contrôle avant d'approuver (`GET …/controle-approbation`) : même règle que l'approbation. */
+export interface ApercuControleApprobation {
+  autoControle: boolean; revisionsAuteur: number; soumisParLui: boolean; autorise: boolean;
+  /** Autres approbateurs nommés, renseignés seulement quand l'approbation serait refusée. */
+  approvers: ApprobateurPossible[];
+}
+export async function apercuControleApprobation(q: Querier, row: PublicationRow, actorId: string, voie: VoieApprobation): Promise<ApercuControleApprobation> {
+  const c = await controleApprobation(q, row, actorId);
+  const autorise = c.decision === "autorise";
+  return {
+    autoControle: c.autoControle, revisionsAuteur: c.revisionsAuteur, soumisParLui: c.soumisParLui, autorise,
+    approvers: autorise ? [] : await autresApprobateurs(q, row.projectId, row.id, actorId, voie === "revue"),
+  };
+}
+
+/** Aperçu Studio pour l'utilisateur courant : même accès que l'approbation (`approve` sur le dossier, portées comprises). */
+export async function controleApprobationStudio(projectId: string, studyId: string, publicationId: string, actorId: string): Promise<ApercuControleApprobation> {
+  const access = assertAccess(await loadProjectAccess(projectId, actorId), actorId, "read");
+  const study = await studyOf(db, projectId, studyId);
+  const [row] = await db.select().from(studioPublications)
+    .where(and(eq(studioPublications.id, publicationId), eq(studioPublications.studyId, study.id), eq(studioPublications.projectId, projectId))).limit(1);
+  if (!row) return notFound();
+  assertAccess(access, actorId, "approve", ciblePublication(row));
+  return apercuControleApprobation(db, row, actorId, "studio");
 }
 
 /**
@@ -503,7 +563,8 @@ export async function transitionStudioPublication(projectId: string, studyId: st
  * projet ; revue externe : affectation d'approbation nominative, `lib/reviews.ts`) : statuts de départ, manifeste
  * courant recalculé, empreinte relue de la révision immuable, ensemble examiné, journal append-only.
  */
-async function appliquerTransition(tx: Tx, access: ProjetNoms, study: Study, row: PublicationRow, actorId: string, action: StudioPublicationTransition, input: StudioPublicationTransitionInput, delegationId: string | null = null): Promise<void> {
+async function appliquerTransition(tx: Tx, access: ProjetNoms, study: Study, row: PublicationRow, actorId: string, action: StudioPublicationTransition, input: StudioPublicationTransitionInput, voie: VoieApprobation, delegationId: string | null = null): Promise<{ controle: ResultatAutoControle | null }> {
+  let controle: ResultatAutoControle | null = null;
   {
     const variant = await variantOf(tx, study.id, row.variantId);
     const dims = dimensionsDe(row);
@@ -527,7 +588,13 @@ async function appliquerTransition(tx: Tx, access: ProjetNoms, study: Study, row
     if (action === "approuver") {
       const refus = controlerEnsembleExamine(input, { manifestHash: row.manifestHash!, revisionId: row.revisionId, documentHash: actualHash });
       if (refus) throw new StudioRequestError(refus.status, refus.body);
-      Object.assign(patch, { approvedRevisionId: row.revisionId, approvedDocumentHash: actualHash, approvedManifestHash: row.manifestHash, approvedBy: actorId, approvedAt: now, approvedDelegationId: delegationId });
+      // OP-6 : séparation des responsabilités, après tous les autres contrôles (le refus 422 n'en masque aucun).
+      controle = await controleApprobation(tx, row, actorId);
+      if (controle.decision === "refuse") await refusAutoControle(tx, row, actorId, controle, voie);
+      Object.assign(patch, {
+        approvedRevisionId: row.revisionId, approvedDocumentHash: actualHash, approvedManifestHash: row.manifestHash, approvedBy: actorId, approvedAt: now,
+        approvedSelfControl: controle.autoControle, approvedDelegationId: delegationId,
+      });
     }
     if (action === "actualiser") {
       // Nouveau manifeste depuis les têtes courantes ; l'approbation précédente ne vaut plus (elle reste au journal).
@@ -535,7 +602,7 @@ async function appliquerTransition(tx: Tx, access: ProjetNoms, study: Study, row
       const dossier = current ?? await construireDossier(tx, access, study, variant, head, []);
       Object.assign(patch, {
         revisionId: head.id, documentHash: dossier.documentHash, manifest: dossier.manifest, manifestHash: dossier.manifestHash, manifestBuiltAt: now,
-        approvedRevisionId: null, approvedDocumentHash: null, approvedManifestHash: null, approvedBy: null, approvedAt: null, approvedDelegationId: null,
+        approvedRevisionId: null, approvedDocumentHash: null, approvedManifestHash: null, approvedBy: null, approvedAt: null, approvedSelfControl: null, approvedDelegationId: null,
       });
       after = { id: row.id, revisionId: head.id, documentHash: dossier.documentHash, manifestHash: dossier.manifestHash };
     }
@@ -576,8 +643,9 @@ async function appliquerTransition(tx: Tx, access: ProjetNoms, study: Study, row
       }
     }
     await tx.update(studioPublications).set(patch).where(eq(studioPublications.id, row.id));
-    await journal(tx, after, { action, from: row.status, to: statutCombine(vers), dims: vers, authorId: actorId, comment: input.comment, headRevisionId: variant.headRevisionId, at: now, delegationId });
+    await journal(tx, after, { action, from: row.status, to: statutCombine(vers), dims: vers, authorId: actorId, comment: input.comment, headRevisionId: variant.headRevisionId, at: now, selfControl: controle?.autoControle ?? null, delegationId });
   }
+  return { controle };
 }
 
 /** État d'une publication lu par la revue externe : dimensions, empreinte du manifeste courant, actualité. */
@@ -586,6 +654,8 @@ export interface PublicationReviewState {
   workStatus: StudioPublicationWorkStatus; diffusionStatus: StudioPublicationDiffusionStatus;
   manifest: StudioPublicationManifest | null; manifestHash: string | null; approvedManifestHash: string | null;
   approvedBy: string | null; approvedAt: Date | null; headRevisionId: string; freshness: Actualite;
+  /** OP-6 : marque de l'approbation en vigueur (null : avant le lot ou non approuvée). */
+  approvedSelfControl: boolean | null;
 }
 export async function publicationReviewState(q: Querier, project: ProjetNoms, publicationId: string, projectId: string): Promise<PublicationReviewState | null> {
   const [row] = await q.select().from(studioPublications).where(and(eq(studioPublications.id, publicationId), eq(studioPublications.projectId, projectId))).limit(1);
@@ -597,6 +667,7 @@ export async function publicationReviewState(q: Querier, project: ProjetNoms, pu
     id: row.id, projectId: row.projectId, studyId: row.studyId, variantId: row.variantId, title: row.title, revisionId: row.revisionId, documentHash: row.documentHash,
     workStatus: dims.travail, diffusionStatus: dims.diffusion, manifest: row.manifest, manifestHash: row.manifestHash, approvedManifestHash: row.approvedManifestHash,
     approvedBy: row.approvedBy, approvedAt: row.approvedAt, headRevisionId: states.get(row.variantId)?.headRevisionId ?? row.revisionId, freshness: actualiteDe(drift),
+    approvedSelfControl: row.approvedRevisionId ? row.approvedSelfControl ?? null : null,
   };
 }
 
@@ -628,7 +699,7 @@ export async function frozenPublicationFiles(q: Querier, publicationId: string, 
  * par l'appelant (`lib/reviews.ts`) sous cette même transaction. La réservation d'édition d'un autre compte bloque
  * (423) comme pour toute transition ; la diffusion reste une opération distincte, jamais ouverte à la revue.
  */
-export async function decideStudioPublicationByReview(tx: Tx, project: ProjetNoms & { id: string; editingLock: AccessibleProject["editingLock"] }, publicationId: string, actorId: string, action: "approuver" | "refuser", input: StudioPublicationTransitionInput): Promise<PublicationRow> {
+export async function decideStudioPublicationByReview(tx: Tx, project: ProjetNoms & { id: string; editingLock: AccessibleProject["editingLock"] }, publicationId: string, actorId: string, action: "approuver" | "refuser", input: StudioPublicationTransitionInput): Promise<{ row: PublicationRow; controle: ResultatAutoControle | null }> {
   // Même sérialisation qu'une transition Studio : verrou du projet, réservation d'édition relue sous ce verrou.
   await lockProject(tx, project.id);
   const [current] = await tx.select({ editingLock: projects.editingLock }).from(projects).where(eq(projects.id, project.id)).limit(1);
@@ -637,9 +708,9 @@ export async function decideStudioPublicationByReview(tx: Tx, project: ProjetNom
   const [row] = await tx.select().from(studioPublications).where(and(eq(studioPublications.id, publicationId), eq(studioPublications.projectId, project.id))).for("update");
   if (!row) return notFound();
   const study = await studyOf(tx, project.id, row.studyId);
-  await appliquerTransition(tx, project, study, row, actorId, action, input);
+  const { controle } = await appliquerTransition(tx, project, study, row, actorId, action, input, "revue");
   const [stored] = await tx.select().from(studioPublications).where(eq(studioPublications.id, row.id)).limit(1);
-  return stored!;
+  return { row: stored!, controle };
 }
 
 async function packageOf(projectId: string, studyId: string, publicationId: string, actorId: string) {

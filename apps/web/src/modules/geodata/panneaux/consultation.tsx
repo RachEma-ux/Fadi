@@ -6,7 +6,10 @@
 import { useEffect, useState } from "react";
 import { couleursPour, formatNombre, legende, libelleAbsence, LIBELLES_USAGES, USAGES, type Composition, type MethodeClassification, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
 import { api, type CoucheRecue, type Disponibilite, type FicheRecue, type LigneTable, type ValeurRecue } from "../client";
-import { lireSeuilsManuels, styleThematique } from "../composition-ops";
+import { entreesCategories, lireSeuilsManuels, styleThematique, type Categorie } from "../composition-ops";
+
+/** Valeur de l'option « une couleur par entité » (jamais un identifiant d'indicateur : ceux-ci commencent par une lettre). */
+const ENTITES = "__entites__";
 
 export const formaterValeur = (v: ValeurRecue | ValeurIndicateur | undefined, unite = ""): string => {
   if (!v) return "Valeur absente — Non évaluée";
@@ -92,14 +95,16 @@ export function PanneauCouches(p: {
             {indispo && <p role="status" className="gd-alerte" data-gd-indisponible>{d.motif}</p>}
             {d?.etat === "disponible" && d.versionPlusRecente && <p className="gd-discret">Une version plus récente de cette source est publiée ; la carte garde la version enregistrée.</p>}
             <label className="gd-champ">{`Opacité : ${Math.round(k.opacite * 100)} %`}<input type="range" min={0} max={100} value={Math.round(k.opacite * 100)} onChange={(e) => p.onOpacite(k.coucheId, Number(e.target.value) / 100)} /></label>
-            {c && c.indicateurs.length > 0 && (
-              <label className="gd-champ">Indicateur affiché
-                <select value={k.style.mode === "thematique" ? k.style.indicateurId : ""} onChange={async (e) => {
+            {c && (
+              <label className="gd-champ">Coloration
+                <select value={k.style.mode === "thematique" ? k.style.indicateurId : k.style.mode === "categories" ? ENTITES : ""} onChange={async (e) => {
                   const id = e.target.value;
                   if (!id) return p.onStyle(k.coucheId, c.styleDefaut.mode === "simple" ? c.styleDefaut : { mode: "simple", couleur: "#2b8cbe" });
+                  if (id === ENTITES) return p.onStyle(k.coucheId, { mode: "categories" });
                   p.onStyle(k.coucheId, styleThematique(id, await p.valeursDe(id)));
                 }} data-gd-indicateur={k.coucheId}>
-                  <option value="">Aucun (couleur unie)</option>
+                  <option value="">Couleur unie</option>
+                  <option value={ENTITES}>Une couleur par entité</option>
                   {c.indicateurs.map((ind) => <option key={ind.id} value={ind.id} translate="no">{`${ind.titre} (${ind.unite})`}</option>)}
                 </select>
               </label>
@@ -118,7 +123,7 @@ export function PanneauCouches(p: {
   );
 }
 
-export function PanneauLegende(p: { composition: Composition; couches: Map<string, CoucheRecue>; valeurs: Map<string, Map<string, ValeurIndicateur>>; onStyle(id: string, s: StyleCouche): void }) {
+export function PanneauLegende(p: { composition: Composition; couches: Map<string, CoucheRecue>; valeurs: Map<string, Map<string, ValeurIndicateur>>; categories: Map<string, Categorie[]>; onStyle(id: string, s: StyleCouche): void }) {
   const visibles = [...p.composition.couches].reverse().filter((k) => k.visible);
   if (!visibles.length) return <p className="gd-etat">Aucune couche visible.</p>;
   return (
@@ -126,6 +131,18 @@ export function PanneauLegende(p: { composition: Composition; couches: Map<strin
       {visibles.map((k) => {
         const c = p.couches.get(k.coucheId);
         if (k.style.mode === "simple") return <section key={k.coucheId} className="gd-legende"><h3 translate="no">{c?.titre ?? k.coucheId}</h3><p className="gd-entree"><span className="gd-pastille" style={{ background: k.style.couleur }} />Objets de la couche</p></section>;
+        if (k.style.mode === "categories") {
+          const cs = p.categories.get(k.coucheId);
+          return (
+            <section key={k.coucheId} className="gd-legende" data-gd-legende-couche={k.coucheId}>
+              <h3 translate="no">{c?.titre ?? k.coucheId}</h3>
+              <p>Une couleur par entité (repère visuel, sans valeur).</p>
+              {!cs ? <p role="status" className="gd-discret">Chargement des couleurs…</p> : (
+                <ul className="gd-entrees">{entreesCategories(cs).map((e) => <li key={String(e.classe)} className="gd-entree" data-gd-entite={e.couleur ? "" : undefined}>{e.couleur && <span className="gd-pastille" style={{ background: e.couleur }} />}<span translate={e.couleur ? "no" : undefined}>{e.libelle}</span></li>)}</ul>
+              )}
+            </section>
+          );
+        }
         const style = k.style;
         const ind = c?.indicateurs.find((x) => x.id === style.indicateurId);
         const vs = [...(p.valeurs.get(style.indicateurId)?.values() ?? [])];

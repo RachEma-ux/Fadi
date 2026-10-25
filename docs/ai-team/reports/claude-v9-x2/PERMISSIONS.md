@@ -58,6 +58,7 @@ chargé de tâche — rôle vérifié ensuite par `lib/studio-observations.ts`, 
 | `GET /studies/:studyId/publications/:publicationId` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `GET /studies/:studyId/publications/:publicationId/verification` | lecture | 404 | admis | admis | admis | admis | admis | admis | 404 not_found |  |
 | `GET /studies/:studyId/publications/:publicationId/files/:format` | lecture | 404 | admis | admis | admis | admis | admis | admis | 404 not_found |  |
+| `GET /studies/:studyId/publications/:publicationId/controle-approbation` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 200 | aperçu de l'auto-contrôle (OP-6) : même accès que l'approbation (rôle, puis réservation d'édition d'un autre compte) ; lecture seule |
 | `POST /studies/:studyId/publications/:publicationId/:action` | ecriture | 404 | 403 | admis | 423 | admis | 423 | admis | 200 | action soumettre |
 | `POST /studies/:studyId/publications/:publicationId/:action` | ecriture | 404 | 403 | admis | 423 | admis | 423 | admis | 409 manifest_current | action actualiser |
 | `POST /studies/:studyId/publications/:publicationId/:action` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 409 invalid_transition | action approuver |

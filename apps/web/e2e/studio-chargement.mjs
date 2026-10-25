@@ -247,8 +247,11 @@ try {
   await page.locator("[data-studio-exporter-file-locale]").click();
   const exporte2 = JSON.parse(readFileSync(await (await telechargement2).path(), "utf8"));
   check("nouvel export : la ligne relue au clic (réécrite), pas la copie signalée", exporte2.ligne.stamp === "futur-2" && exporte2.ligne.donnees === reecrite.donnees);
+  // L'abandon recharge la page après une attente asynchrone : on attend CE rechargement (sinon la lecture d'IndexedDB
+  // peut tomber pendant la navigation : « Execution context was destroyed »).
+  const rechargement = page.waitForEvent("load");
   await page.locator("[data-studio-abandonner-file-locale]").click();
-  await page.waitForLoadState("load");
+  await rechargement;
   await outils.waitFor();
   await page.waitForFunction(() => !document.querySelector("[data-studio-file-locale-incompatible]"));
   check("abandon confirmé : file retirée, version serveur rouverte", (await presente()) === null && commandes.length === 0);

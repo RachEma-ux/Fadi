@@ -8,7 +8,7 @@
 import { Link } from "react-router-dom";
 import { LOCALE } from "../../lib/i18n";
 import {
-  actionLabel, actorLabel, DETAIL_LABEL, detailValue, familyLabel, isAccountData, SUBJECT_LABEL, type JournalEntry,
+  actorLabel, DETAIL_LABEL, detailValue, entryActionLabel, familyLabel, isAccountData, SUBJECT_LABEL, type JournalEntry,
   type JournalPage,
 } from "../../lib/journal-activite";
 import "../comptes/comptes.css";
@@ -64,7 +64,7 @@ export function TableJournal({ pages, label, showProject = false, projectLinks =
             return (
               <tr key={e.id} data-journal-entry={e.action} data-journal-actor={e.actor.kind}>
                 <td data-label="Date">{when(e.at)}</td>
-                <td data-label="Action"><b>{actionLabel(e.action)}</b></td>
+                <td data-label="Action"><b {...(e.details["selfControl"] === true ? { "data-journal-auto-controle": "" } : {})}>{entryActionLabel(e)}</b></td>
                 {showFamily && <td data-label="Famille">{familyLabel(e.family)}</td>}
                 <td data-label="Acteur" translate={isAccountData(e.actor) ? "no" : undefined}>{actorLabel(e.actor)}</td>
                 {showProject && (
