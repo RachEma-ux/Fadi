@@ -167,6 +167,32 @@ l'ouverture. Le comportement est donc conservé, et la déclaration « premier u
 toutes les tâches qui ont sollicité ce moteur à l'ouverture soient des calculs de quantités, et que le rendu 3D, lui, ne
 soit pas initialisé.
 
+### P-11 — Porte G1 franchie, avec réserves — 25 octobre 2026
+
+Les critères de G1, jugés sur le code de `main` après les lots F1 à F5 et le point 2 :
+
+| Critère | Preuve | État |
+|---|---|---|
+| G1-01 — contrats, modèles, droits, historique, migrations, risques rassemblés | [DOSSIER-PILOTE.md](../../workstreams/studio/DOSSIER-PILOTE.md) | vérifié |
+| G1-02 — exigences du référentiel relevées au registre | registre et relevé REF-02 (`studio-releve-ref02.preuves-e.test.ts`) | vérifié |
+| G1-03 — source de vérité et contrat vérifiable pour chaque fonction livrée | [REVUE-G1-03.md](../../workstreams/studio/REVUE-G1-03.md), généré et contrôlé par `apps/api/src/testing/revue-g1.test.ts` | vérifié |
+
+La revue G1-03 porte sur les 45 outils, les 79 routes et les 21 formats livrés. Chaque fonction a un contrat
+vérifiable et au moins un test qui l'exerce. La source de vérité est établie pour toutes, sauf le relevé de
+performance (`diagnostic-releve-perf`) : il ne lit que des mesures du navigateur, ce qui est justifié. Les libellés
+de preuve du registre sont désormais contrôlés mot pour mot par `registre-libelles.test.ts`, joué en CI. Ce test a
+réaligné 68 libellés ; une preuve qui n'en était pas une (REC-I-02) a été retirée.
+
+**Décision : G1 est franchie**, avec les réserves suivantes, qui restent ouvertes :
+- **48 routes** de l'API Studio ont un contrat vérifiable (schéma zod et besoin de droit de la matrice X.2-02), mais
+  sans identifiant de version. Une version leur est due avant toute évolution incompatible.
+- **35 décisions**, **50 fonctions absentes** et **9 mesures sur appareil réel**, relevées par le point 2
+  ([PREUVES-POINT2](../../workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md)). Aucune n'empêche d'engager le
+  lot, mais chacune reste due avant G4.
+- **Tâches du maître d'ouvrage** : appareils réels (DEC-13), réviseur indépendant, données réelles et Release.
+
+G1 n'emporte ni G4, ni l'acceptation du périmètre livré, ni le déploiement en production.
+
 ## Justification
 
 Chaque option retenue est celle du dossier préparatoire. Elle est réalisée par le code de `main` au 25 octobre 2026

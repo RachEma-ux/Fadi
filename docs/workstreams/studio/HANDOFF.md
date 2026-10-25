@@ -1,5 +1,28 @@
 # Reprise — Studio
 
+## Point 4 — porte G1 franchie, G4 instruite — 25 octobre 2026
+
+Branche `ccr-187fd2e6-08dk6e`, base `main@bf775d9` (point 2 fusionné, PR #320).
+
+Ce qui a été fait :
+- **Revue G1-03 fonction par fonction**, générée et contrôlée par `apps/api/src/testing/revue-g1.test.ts`. Elle couvre 45 outils, 79 routes et 21 formats : chacun a un contrat vérifiable et au moins un test. Quatre lectures sans test fonctionnel en ont reçu un (`studio-lectures.preuves-g1.test.ts`). Écarts restants : 48 routes à contrat non versionné, et le relevé de performance, sans source de modèle (justifié). Rapport : [REVUE-G1-03](REVUE-G1-03.md).
+- **Libellés de preuve contrôlés mot pour mot en CI** (`registre-libelles.test.ts`) : 68 réalignés au registre, et la fausse preuve REC-I-02 retirée.
+- **G1 franchie avec réserves** : [ADR-STUDIO-PILOTE-01](../../continuity/decisions/ADR-STUDIO-PILOTE-01.md) P-11, G1-04 « Accepté », G1-03 « Vérifié ».
+- **G4 instruite, non franchie** ([DOSSIER-G4](DOSSIER-G4.md)). BLOC-01, 03 et 04 sont vérifiés. Restent :
+  - BLOC-02, partiel ;
+  - le build candidat figé ;
+  - l'installation de la phase B ;
+  - la recette utilisateur réelle ;
+  - les actes du maître d'ouvrage.
+
+Compteurs recalculés du registre : **0 À définir / 61 À faire / 135 En cours / 11 Bloqué / 364 Vérifié / 59 Accepté**. **P630=423/630**.
+
+Prochaine action : PR de ce lot, puis CI verte et fusion. Ensuite, côté session cloud :
+- recetter BLOC-02 (refus par une tâche serveur) ;
+- livrer, ou faire déclarer hors pilote, les fonctions absentes et les décisions du point 2.
+
+Les actes de G4 reviennent à l'administrateur (installation) et au maître d'ouvrage (recette réelle, Release).
+
 ## Point 2 — tests des preuves partielles ou réfutées — 25 octobre 2026
 
 Branche `ccr-187fd2e6-08dk6e`, base `main@d87a82e` (lot F2 fusionné, PR #319).
@@ -17,7 +40,7 @@ Ce qui a été fait :
 - **Recettes de preuves et recettes Studio auparavant hors CI**, désormais branchées : `studio-preuves-a`, `-b`, `-c`, `-d1`, `-d2`, `-e`, `studio-visualisation`, `studio-exigences`. Les 22 recettes concernées passent sur base neuve (1 642 contrôles).
 - **Écarts du registre relevés** : 57 libellés introuvables ; 92 obligations « Vérifié » sans preuve par test ; 577 preuves sans commit ni environnement. À traiter avant G1.
 
-Compteurs recalculés du registre : **0 À définir / 61 À faire / 140 En cours / 11 Bloqué / 360 Vérifié / 58 Accepté**. **P630=418/630**.
+Compteurs recalculés du registre : à cette date 360 Vérifié, 58 Accepté, 11 Bloqué, 140 En cours, 61 À faire, 0 À définir ; 418 obligations sur 630 closes.
 
 Prochaine action : PR de ce lot, puis CI verte et fusion. Ensuite instruire G1 puis G4 sur leurs critères (point 4), en commençant par les écarts du registre.
 
