@@ -22,6 +22,8 @@ import { assertAccess, lockedAccess, notFound, studioArchivedRefusal, StudioRequ
 import {
   decideComparaison, deciderPassage, deciderReception, empreinteRequete, rejeuAdmis, studioModelePassageSchema, studioModeleReceptionSchema, type Decision,
 } from "../lib/studio-modeles-externes.js";
+import { avecContrat } from "../lib/studio-contrats.js";
+import { CONTRAT_MODELES_EXTERNES_LISTER, CONTRAT_MODELE_EXTERNE_LIRE, CONTRAT_MODELE_EXTERNE_CONTENU, CONTRAT_MODELE_EXTERNE_RECEVOIR, CONTRAT_MODELE_EXTERNE_ACTION } from "../lib/studio-contrats-routes.js";
 
 export const studioModelesExternesRouter = Router({ mergeParams: true });
 
@@ -94,7 +96,7 @@ async function lecture(req: Request) {
   return { access, study, variant: v };
 }
 
-studioModelesExternesRouter.get(base, endpoint(async (req, res) => {
+studioModelesExternesRouter.get(base, avecContrat(CONTRAT_MODELES_EXTERNES_LISTER), endpoint(async (req, res) => {
   const { access, study, variant } = await lecture(req);
   const rows = await db.select().from(studioExternalModels).where(eq(studioExternalModels.variantId, variant.id))
     .orderBy(desc(studioExternalModels.createdAt), desc(studioExternalModels.id)).limit(200);
@@ -109,7 +111,7 @@ studioModelesExternesRouter.get(base, endpoint(async (req, res) => {
   });
 }));
 
-studioModelesExternesRouter.get(`${base}/:modelId`, endpoint(async (req, res) => {
+studioModelesExternesRouter.get(`${base}/:modelId`, avecContrat(CONTRAT_MODELE_EXTERNE_LIRE), endpoint(async (req, res) => {
   const { variant } = await lecture(req);
   const row = await modele(db, variant.id, param(req, "modelId"));
   const events = await journal(db, row.id);
@@ -117,7 +119,7 @@ studioModelesExternesRouter.get(`${base}/:modelId`, endpoint(async (req, res) =>
   res.json(vue(row, await emails(db, [row.createdBy, row.decidedBy, ...events.map((e) => e.actorId)]), events));
 }));
 
-studioModelesExternesRouter.get(`${base}/:modelId/contenu`, endpoint(async (req, res) => {
+studioModelesExternesRouter.get(`${base}/:modelId/contenu`, avecContrat(CONTRAT_MODELE_EXTERNE_CONTENU), endpoint(async (req, res) => {
   const { access, variant } = await lecture(req);
   // Le fichier reçu sort du projet tel quel : droit `export` (refusé à l'accès support, lecture seule).
   assertAccess(access, req.user!.id, "export");
@@ -136,7 +138,7 @@ async function ecriture(tx: Tx, req: Request) {
   return { access, study, variant: v, habilite: projectAccessRefusal(access, actorId, "approve") === null, assertModify: () => assertAccess(access, actorId, "modify") };
 }
 
-studioModelesExternesRouter.post(base, endpoint(async (req, res) => {
+studioModelesExternesRouter.post(base, avecContrat(CONTRAT_MODELE_EXTERNE_RECEVOIR), endpoint(async (req, res) => {
   const parsed = studioModeleReceptionSchema.safeParse(req.body ?? {});
   if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
   const input = parsed.data;
@@ -171,7 +173,7 @@ studioModelesExternesRouter.post(base, endpoint(async (req, res) => {
   res.status(201).json(out);
 }));
 
-studioModelesExternesRouter.post(`${base}/:modelId/:action`, endpoint(async (req, res) => {
+studioModelesExternesRouter.post(`${base}/:modelId/:action`, avecContrat(CONTRAT_MODELE_EXTERNE_ACTION), endpoint(async (req, res) => {
   const action = param(req, "action");
   if (!(STUDIO_ACTIONS_MODELE_EXTERNE as readonly string[]).includes(action)) { res.status(404).json({ error: "not_found" }); return; }
   const parsed = studioModelePassageSchema.safeParse(req.body ?? {});

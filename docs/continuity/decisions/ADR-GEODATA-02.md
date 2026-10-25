@@ -69,6 +69,11 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
      l'identifiant `navigateur:<fournisseur>:<style>`. Sans clé, aucun fond n'est inventé (option « clé absente ») ; tuiles
      refusées → avis non bloquant et retour au fond neutre en un geste. Conditions d'export non établies : un fond de
      fournisseur n'est jamais exportable (refus motivé du serveur).
+   - D-GD-16 (25 octobre 2026, demande du maître d'ouvrage, limites administratives) : le contour d'une entité prend
+     la couleur de l'entité, opaque même à 0 % de remplissage ; tous les contours sont dessinés au-dessus de tous les
+     remplissages ; en superposition, hiérarchie Région (dessus, contour 3,5 px) → Province (2,2 px) → Commune (1,2 px).
+     Le rang se lit de la source (niveau `ADM1`/`ADM2`/`ADM3`, ou niveau administratif OpenStreetMap du titre : 4, 5, 8),
+     jamais deviné ; une couche hors hiérarchie garde l'ordre de la composition (contour 1,5 px).
 
 ## Conséquences
 
