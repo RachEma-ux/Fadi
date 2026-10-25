@@ -64,6 +64,15 @@ Exporter en IFC / OBJ / STL, Importer en IFC / OBJ / STL | Informations, Téléc
 - **Barre « Axes et repères »** (AX-2, `planche/BarreReperes.tsx`, `planche/commandes-reperes.ts`) : compacte et
   flottante, ouverte par Placer les axes (Maj + Y), Alt + Maj + 1 ou la ligne d'état du pied ; commandes Alt + Maj + 1 à 8
   et F4 ; inspecteur (origine, orientation, rotation par axe nommé, plan, verrou). Recette `apps/web/e2e/sandbox-axes.mjs`.
+- **Repères enregistrés** (AX-3, `annotations.reperes`, panneau « Repères », `planche/PanneauReperes.tsx`) : mutations du
+  document (Annuler les défait) ; « Modifié » ; suppression d'un repère cité par une scène après résolution explicite ;
+  option de scène « Rappeler le repère » ; triade d'orientation (`planche/triade.ts`), exclue du PNG par défaut.
+  Recette `apps/web/e2e/sandbox-reperes.mjs`.
+- **Origine du composant** (AX-4, `planche/PanneauOrigineComposant.tsx`, Maj + F4, menu « Changer les axes ») : 27 ancrages,
+  point libre, orientation séparée, portée et refus explicites, aucun sommet monde déplacé. Recette `sandbox-origine.mjs`.
+- **Repères liés et coordonnées des exports** (AX-5) : santé du lien explicite, mise à jour seulement depuis la même face ;
+  exports en coordonnées du modèle, du repère de travail ou d'origine (si l'import l'a consignée). Recette
+  `sandbox-reperes-lies.mjs` ; dossier de recette `docs/workstreams/axes/RECETTE.md`.
 
 ## Frontières
 

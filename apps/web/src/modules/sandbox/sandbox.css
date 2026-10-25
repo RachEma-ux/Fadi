@@ -2849,3 +2849,119 @@
     display: none;
   }
 }
+.sandbox-planche .planche-triade {
+  position: absolute;
+  overflow: visible;
+  pointer-events: none;
+}
+.sandbox-planche .planche-triade-fond {
+  fill: rgba(255, 255, 255, 0.72);
+  stroke: rgba(24, 61, 50, 0.18);
+}
+.sandbox-planche .planche-triade-lettre {
+  font: 700 12px/1 system-ui, sans-serif;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.sandbox-planche .planche-reperes-panneau {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.sandbox-planche .planche-reperes-badge {
+  color: #b54708;
+  font-weight: 600;
+}
+.sandbox-planche .planche-reperes-enregistrer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.4rem;
+}
+.sandbox-planche .planche-reperes-enregistrer label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.sandbox-planche .planche-reperes-portee {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--atelier-doux, #5b7468);
+}
+.sandbox-planche .planche-reperes-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sandbox-planche .planche-reperes-liste li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
+  padding: 0.3rem;
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 7px;
+}
+.sandbox-planche .planche-reperes-liste li.est-actif {
+  border-color: #1a5fd6;
+}
+.sandbox-planche .planche-reperes-nom-bouton {
+  font-weight: 600;
+}
+.sandbox-planche .planche-reperes-details {
+  flex-basis: 100%;
+  font-size: 0.75rem;
+  color: var(--atelier-doux, #5b7468);
+}
+.sandbox-planche .planche-reperes-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+.sandbox-planche .planche-reperes-confirmation {
+  flex-basis: 100%;
+  padding: 0.35rem;
+  background: #fff7ed;
+  border-radius: 6px;
+}
+.sandbox-planche .planche-reperes-affichage {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 7px;
+}
+/* Chantier Axes (AX-4) : édition de l'origine du composant, flottante, hors de la grille des panneaux. */
+.sandbox-planche .planche-origine {
+  position: fixed;
+  top: 7rem;
+  right: 5.5rem;
+  margin: 0;
+  width: min(24rem, calc(100vw - 7rem));
+  max-height: calc(100vh - 12rem);
+}
+.sandbox-planche .planche-origine fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 7px;
+}
+.sandbox-planche .planche-origine-ancrage {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+@media (max-width: 760px) {
+  .sandbox-planche .planche-origine {
+    top: 4rem;
+    right: 0.5rem;
+    left: 0.5rem;
+    width: auto;
+  }
+}
+.sandbox-planche .planche-reperes-details.est-alerte {
+  color: #b54708;
+}

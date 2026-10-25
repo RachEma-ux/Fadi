@@ -130,7 +130,22 @@ import {
 } from "@parcours/sandbox-planche-model";
 import { contexteMemorise, memoriserContexte } from "./contexte-travail";
 import { BarreReperes, libellePlan } from "./BarreReperes";
-import { COMMANDES_REPERES, type IdCommandeRepere, cleNomRepere, disponibiliteRepere, planSuivant, verrouApplicable } from "./commandes-reperes";
+import { PanneauReperes } from "./PanneauReperes";
+import { PanneauOrigineComposant } from "./PanneauOrigineComposant";
+import { type OptionsOrigine, changerOrigineLot, detacherRepereLie, enregistrerRepereLie, mettreAJourDepuisSource, modeleAExporter } from "@parcours/sandbox-planche-model";
+import {
+  captureDuContexte,
+  contexteDeScene,
+  contexteEnregistre,
+  dupliquerRepere,
+  enregistrerRepere,
+  etatRepereActif,
+  mettreAJourRepere,
+  renommerRepere,
+  reperesEnregistres,
+  supprimerRepere,
+} from "@parcours/sandbox-planche-model";
+import { COMMANDES_REPERES, type IdCommandeRepere, disponibiliteRepere, nomRepereActif, planSuivant, verrouApplicable } from "./commandes-reperes";
 import { ErreurImport, compter as compterContexte, exporterIfc, importerMaillages, lireMaillages, maillagesPlanche, nonEtanchesDe, omisExport } from "@parcours/sandbox-planche-model";
 import { ajouterEntree, chargerJournal, dernieresEntrees, enregistrerJournal, supprimerJournal, type EntreeJournal } from "./journal-planche";
 import { avecCourante, avecInfo, avecNouvelle, chargerIndex, enregistrerIndex, indexInitial, nouvelId, planche as plancheDe, sansPlanche, supprimerDocument, type IndexPlanches } from "./registre-planches";
@@ -210,7 +225,7 @@ function telechargerFichier(blob: Blob, nom: string): void {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit";
+type Panneau = "personnaliser" | "instructeur" | "materiaux" | "balises" | "info-entite" | "composants" | "styles" | "ombres" | "scenes" | "affichage" | "adoucir" | "info-modele" | "navigateur" | "debit" | "reperes";
 /**
  * Colonne de droite (lot 4, comme le plateau de SketchUp) : chaque panneau à un clic, dans l'ordre du registre, Info
  * modèle en bas (emplacement « colonne-bas ») ; la sous-liste « Objets et vue » a disparu.
@@ -276,6 +291,11 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   }, []);
   const changerContexte = useCallback((c: ContexteTravail) => poserContextes(pousserContexte(histContexteRef.current, c)), [poserContextes]);
   useEffect(() => vueRef.current?.poserRepereTravail(histContexte.courant.repere), [histContexte]);
+  // Chantier Axes (AX-3) : triade d'orientation (préférence de l'appareil) et sa légende.
+  const triadeUi = useEtatUi().triade;
+  useEffect(() => {
+    vueRef.current?.poserTriade(triadeUi, t("planche.reperes.triade", { repere: t(triadeUi.represente === "modele" ? "planche.reperes.affichage.represente.modele" : "planche.reperes.affichage.represente.travail") }));
+  }, [triadeUi, histContexte]);
   const outilRef = useRef(OUTIL_INITIAL());
   const precedentRef = useRef(outilRef.current);
   const [outilId, setOutilId] = useState(outilRef.current);
@@ -790,6 +810,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const executerNavigateurRef = useRef<(id: IdCommandeNavigateur) => void>(() => {});
   const executerVueRef = useRef<(id: IdCommandeVue) => void>(() => {});
   const executerCommandeRef = useRef<(c: EntreeRegistre) => void>(() => {});
+  /** Chantier Axes (AX-4) : ouverture de l'édition d'origine du composant (menu contextuel, barre, Maj + F4). */
+  const ouvrirOrigineRef = useRef<() => void>(() => {});
   const etatVueRef = useRef<() => { entites: number; isole: boolean; dansObjet: boolean }>(() => ({ entites: 0, isole: false, dansObjet: false }));
   const selectionDe = useCallback((genre: "faces" | "aretes" | "occurrences", m = histRef.current.present.modele) => {
     const c = contexteDe(m, dansRef.current);
@@ -1267,7 +1289,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         if (dans === undefined && faces.length > 0 && liensDesFaces(m, faces).length > 0) entrees.push({ id: "detacher-lien", libelle: t("planche.lien.detacher"), separateurAvant: true, grise: readOnly, action: detacherLienSelection });
         if (faces.length > 0) {
           entrees.push({ id: "aligner-vue", libelle: t("planche.menu.aligner-vue"), separateurAvant: true, action: alignerVue });
-          entrees.push({ id: "aligner-axes", libelle: t("planche.menu.aligner-axes"), grise: readOnly, action: alignerAxes });
+          entrees.push({ id: "aligner-repere", libelle: t("planche.menu.aligner-axes"), grise: false, action: alignerAxes });
           entrees.push({ id: "inverser-faces", libelle: t("planche.menu.inverser-faces"), grise: readOnly, action: inverserSelection });
           entrees.push({ id: "orienter-faces", libelle: t("planche.menu.orienter-faces"), grise: readOnly, action: orienterSelection });
           entrees.push({ id: "texture-unique", libelle: t("planche.menu.texture-unique"), grise: true });
@@ -1289,7 +1311,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           entrees.push({ id: "adoucir-lisser", libelle: t("planche.menu.adoucir-lisser"), grise: readOnly, action: () => setPanneau("adoucir") });
           entrees.push({ id: "reinitialiser-echelle", libelle: t("planche.menu.reinitialiser-echelle"), grise: true });
           entrees.push({ id: "reinitialiser-inclinaison", libelle: t("planche.menu.reinitialiser-inclinaison"), grise: true });
-          entrees.push({ id: "changer-axes", libelle: t("planche.menu.changer-axes"), grise: true });
+          // Chantier Axes (AX-4) : « Changer les axes » ouvre l'édition d'origine et d'axes du composant (Maj + F4).
+          entrees.push({ id: "origine-composant", libelle: t("planche.menu.changer-axes"), grise: readOnly, action: () => ouvrirOrigineRef.current() });
         }
         // Objets O-1 : Éclater reste visible, grisé, quand la sélection ne contient aucun objet (comme SketchUp).
         if (occs.length === 0) entrees.push({ id: "eclater", libelle: t("planche.menu.eclater"), separateurAvant: true, grise: true });
@@ -1338,6 +1361,12 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const menuRappel = useRef(ouvrirMenuContextuel);
   menuRappel.current = ouvrirMenuContextuel;
 
+  /** Chantier Axes (AX-3) : capture du contexte de travail pour une scène, seulement si l'option est cochée. */
+  const captureScene = (): { repere?: ReturnType<typeof captureDuContexte> } => {
+    if (!etatUi.get().rappelerRepereScene) return {};
+    const c = histContexteRef.current.courant;
+    return { repere: captureDuContexte(c, repereDuContexte(c)) };
+  };
   /** Scènes (§6.8) : caméra enregistrée dans la Planche (annotation « v »), un pas chacune. */
   const ajouterScene = useCallback(
     () =>
@@ -1347,7 +1376,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         const cam = v.etatCamera();
         const r = modifierAnnotations(m, (a, id) => {
           const i = id("v");
-          a.scenes[i] = { id: i, nom: t("planche.scenes.nom", { numero: String(Object.keys(a.scenes).length + 1) }), position: cam.position, cible: cam.cible, champDeVision: cam.champDeVision, projection: cam.projection, ombres: vueRef.current?.lireOptions().ombres ?? false };
+          a.scenes[i] = { id: i, nom: t("planche.scenes.nom", { numero: String(Object.keys(a.scenes).length + 1) }), position: cam.position, cible: cam.cible, champDeVision: cam.champDeVision, projection: cam.projection, ombres: vueRef.current?.lireOptions().ombres ?? false, ...captureScene() };
           return i;
         });
         return { modele: r.modele, selection: [r.extra] };
@@ -1361,7 +1390,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         const s = m.annotations?.scenes?.[id];
         if (!v || !s) return null;
         const cam = v.etatCamera();
-        return { modele: modifierAnnotations(m, (a) => void (a.scenes[id] = { ...s, position: cam.position, cible: cam.cible, champDeVision: cam.champDeVision, projection: cam.projection, ombres: v.lireOptions().ombres })).modele };
+        // Chantier Axes (AX-3) : la capture de repère suit l'option ; décochée, la scène ne rappelle plus que la caméra.
+        const { repere: _ancien, ...sansRepere } = s;
+        return { modele: modifierAnnotations(m, (a) => void (a.scenes[id] = { ...sansRepere, position: cam.position, cible: cam.cible, champDeVision: cam.champDeVision, projection: cam.projection, ombres: v.lireOptions().ombres, ...captureScene() })).modele };
       }),
     [operer],
   );
@@ -1372,11 +1403,20 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       if (!v) return;
       v.appliquerScene(s);
       if (s.ombres !== undefined) majOptions({ ombres: s.ombres });
+      // Chantier Axes (AX-3, AX14) : une scène qui capture un repère le rappelle ; sinon le contexte reste tel quel.
+      if (s.repere) {
+        const r = contexteDeScene(histContexteRef.current.courant, s.repere, histRef.current.present.modele);
+        if (!r) setMessage(t("planche.scenes.repere-invalide"));
+        else {
+          changerContexte(r.contexte);
+          if (r.perime) setMessage(t("planche.scenes.repere-perime"));
+        }
+      }
       setCamera({ projection: s.projection, champDeVision: s.champDeVision });
       setSelection([s.id]);
       rafraichir();
     },
-    [majOptions, rafraichir, setSelection],
+    [majOptions, rafraichir, setSelection, changerContexte],
   );
   const vueStandard = useCallback((nom: VueStandard) => {
     vueRef.current?.vueStandard(nom);
@@ -1590,6 +1630,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     }
     vueRef.current = v;
     v.poserRepereTravail(histContexteRef.current.courant.repere);
+    v.poserTriade(etatUi.get().triade, t("planche.reperes.triade", { repere: t(etatUi.get().triade.represente === "modele" ? "planche.reperes.affichage.represente.modele" : "planche.reperes.affichage.represente.travail") }));
     v.majModele(histRef.current.present.modele);
     rafraichir();
     fenetreRecette().fadiPlanche = {
@@ -1694,14 +1735,28 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       setChargeId((n) => n + 1);
     };
     const exporter = (format: FormatEchange) => {
-      const modele = histRef.current.present.modele;
+      // Chantier Axes (AX-5, AX-D10) : coordonnées choisies explicitement ; un choix non pris en charge est refusé.
+      const choix = etatUi.get().coordonneesExport;
+      const c = modeleAExporter(histRef.current.present.modele, choix, format, histContexteRef.current.courant.repere);
+      if (!c.ok) {
+        setMessage(c.motif);
+        return;
+      }
+      const modele = c.modele;
+      const o = c.repere?.origine;
+      const coordonnees =
+        choix === "travail" && o
+          ? t("planche.export.coordonnees.travail", { origine: `(${o.x.toFixed(3)} ; ${o.y.toFixed(3)} ; ${o.z.toFixed(3)})` })
+          : choix === "source"
+            ? t("planche.export.coordonnees.source", { unite: c.unite })
+            : t("planche.export.coordonnees.modele");
       const nom = nomFichier();
-      const r = format === "ifc" ? exporterIfc(modele, nomAffiche(courante())) : format === "obj" ? exporterObj(modele, nom) : exporterStl(modele, nom);
+      const r = format === "ifc" ? exporterIfc(modele, nomAffiche(courante())) : format === "obj" ? exporterObj(modele, nom, choix === "modele" ? undefined : `unités : ${c.unite}, ${coordonnees}`) : exporterStl(modele, nom);
       telechargerFichier(new Blob([r.contenu], { type: "text/plain;charset=utf-8" }), `${nom}.${format}`);
       const omis = r.omis.aretesLibres + r.omis.annotations > 0 ? ` ${t("planche.export.omis", { aretes: String(r.omis.aretesLibres), annotations: String(r.omis.annotations) })}` : "";
       // Lot L19 (EX-SAVE-04) : une surface ouverte n'est jamais annoncée comme un solide étanche.
       const ouverts = r.nonEtanches > 0 ? ` ${t("planche.export.non-etanches", { nombre: String(r.nonEtanches) })}` : "";
-      setMessage(t("planche.export.maillage", { format: format.toUpperCase(), objets: String(r.objets), triangles: String(r.triangles) }) + omis + ouverts);
+      setMessage(t("planche.export.maillage", { format: format.toUpperCase(), objets: String(r.objets), triangles: String(r.triangles) }) + omis + ouverts + ` ${t("planche.export.coordonnees", { format: format.toUpperCase(), coordonnees })}`);
     };
     return {
       ouvrir: async (id) => {
@@ -1809,7 +1864,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           const donnees = format === "stl" ? new Uint8Array(await fichier.arrayBuffer()) : await fichier.text();
           const lu = lireMaillages(format, donnees);
           const echelle = lu.echelleFichier ?? ECHELLE_UNITE[unite];
-          const r = importerMaillages(histRef.current.present.modele, lu.maillages, echelle, fichier.name.replace(/\.[^.]+$/, ""));
+          const r = importerMaillages(histRef.current.present.modele, lu.maillages, echelle, fichier.name.replace(/\.[^.]+$/, ""), { format, fichier: fichier.name });
           poserHistorique(enregistrer(histRef.current, r.modele, t("planche.sb.import.operation", { format: format.toUpperCase() }), false));
           rafraichir();
           const u = echelle === 1 ? "m" : echelle === 0.01 ? "cm" : echelle === 0.001 ? "mm" : `×${echelle}`;
@@ -2420,7 +2475,29 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const [demandeListeReperes, setDemandeListeReperes] = useState(0);
   const [demandeInspecteurReperes, setDemandeInspecteurReperes] = useState(0);
   const afficherBarreReperes = (visible: boolean) => etatUi.set((u) => ({ barreReperes: { ...u.barreReperes, visible } }));
-  const etatReperes = () => ({ contexte: histContexte.courant, precedents: histContexte.precedents.length, face: faceMonde() !== null });
+  const occurrencesSelectionnees = () => {
+    const c = contexteDe(hist.present.modele, dans);
+    return selectionRef.current.filter((id) => c.occurrences[id] !== undefined);
+  };
+  const etatReperes = () => ({ contexte: histContexte.courant, precedents: histContexte.precedents.length, face: faceMonde() !== null, objet: occurrencesSelectionnees().length > 0, lecture: readOnly });
+  const [origineOuverte, setOrigineOuverte] = useState(false);
+  /** Revue Codex de #303 : chemin complet de chaque objet sélectionné (l'instance ouverte, pas la première rencontrée). */
+  const cheminsSelection = (): Record<string, string[]> => Object.fromEntries(occurrencesSelectionnees().map((id) => [id, [...cheminRef.current, id]]));
+  ouvrirOrigineRef.current = () => {
+    setPanneau(null);
+    setOrigineOuverte(true);
+  };
+  const apercuOrigine = useCallback((r: { origine: Vec3; x: Vec3; y: Vec3; z: Vec3 } | null) => vueRef.current?.poserApercuRepere(r), []);
+  const appliquerOrigine = (opts: OptionsOrigine) => {
+    const { resultat } = changerOrigineLot(histRef.current.present.modele, occurrencesSelectionnees(), opts, cheminsSelection());
+    if (!resultat.ok) {
+      setMessage(resultat.motif);
+      return;
+    }
+    appliquer({ etat: null, modele: resultat.modele }, t("planche.origine.operation"));
+    setMessage(t("planche.origine.fait", { touchees: String(resultat.apercus.reduce((n, a) => n + a.touchees, 0)) }));
+    setOrigineOuverte(false);
+  };
   const vueNormaleAuPlan = () => {
     const v = vueRef.current;
     if (!v) return;
@@ -2455,8 +2532,42 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       if (h) poserContextes(h);
     } else if (id === "repere-modele") changerContexte(CONTEXTE_MODELE);
     else if (id === "affichage-axes") majOptions({ axes: !(vueRef.current?.lireOptions().axes ?? true) });
+    else if (id === "enregistrer-repere") {
+      setPanneau("reperes");
+      setDemandeEnregistrerRepere((n) => n + 1);
+    } else if (id === "gerer-reperes") setPanneau("reperes");
+    else if (id === "origine-composant") ouvrirOrigineRef.current();
     rafraichir();
   };
+  // ——— Chantier Axes (AX-3) : repères enregistrés — mutations du document (un pas d'historique chacune).
+  const [demandeEnregistrerRepere, setDemandeEnregistrerRepere] = useState(0);
+  const muterReperes = (r: { ok: true; modele: typeof hist.present.modele; id: string } | { ok: false; erreur: string }, operation: CleMessage): string | null => {
+    if (!r.ok) return r.erreur;
+    if (readOnly) return null;
+    appliquer({ etat: null, modele: r.modele }, t(operation));
+    return null;
+  };
+  const activerRepereEnregistre = (id: string) => {
+    const r = histRef.current.present.modele.annotations?.reperes?.[id];
+    if (r) changerContexte(contexteEnregistre(histContexteRef.current.courant, r));
+  };
+  const enregistrerRepereNouveau = (nom: string): string | null => {
+    const c = histContexteRef.current.courant;
+    const r = enregistrerRepere(histRef.current.present.modele, nom, repereDuContexte(c));
+    const e = muterReperes(r, "planche.reperes.operation.enregistrer");
+    if (!e && r.ok) activerRepereEnregistre(r.id);
+    return e;
+  };
+  const enregistrerModificationsRepere = (): string | null => {
+    const c = histContexteRef.current.courant;
+    if (c.source.genre !== "temporaire" || !c.source.depuis) return null;
+    const r = mettreAJourRepere(histRef.current.present.modele, c.source.depuis.id, repereDuContexte(c));
+    const e = muterReperes(r, "planche.reperes.operation.maj");
+    if (!e && r.ok) activerRepereEnregistre(r.id);
+    return e;
+  };
+  const etatRepere = etatRepereActif(histContexte.courant, hist.present.modele);
+  const nomActifRepere = nomRepereActif(histContexte.courant, hist.present.modele.annotations?.reperes ?? {}, t);
   const origineReperes = (o: Vec3): string | null => {
     const courant = histContexteRef.current.courant;
     const r = deplacerOrigine(repereDuContexte(courant), o);
@@ -2473,7 +2584,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   };
   /** Ligne d'état du contexte de travail (§ 4.1) : décrit l'état réel, mise à jour avant la saisie suivante. */
   const ligneReperes = t("planche.reperes.etat", {
-    repere: t(cleNomRepere(histContexte.courant)),
+    repere: `${nomActifRepere}${etatRepere === "modifie" ? ` (${t("planche.reperes.modifie")})` : ""}`,
     plan: libellePlan(histContexte.courant),
     portee: t(histContexte.courant.source.genre === "modele" ? "planche.reperes.portee.modele" : "planche.reperes.portee.travail"),
     unite: "m",
@@ -2688,6 +2799,19 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         </p>
       )}
       {barresOutils}
+      {origineOuverte && (
+        <PanneauOrigineComposant
+          modele={hist.present.modele}
+          occurrences={occurrencesSelectionnees()}
+          chemins={cheminsSelection()}
+          contexte={histContexte.courant}
+          lecture={readOnly}
+          separateurDecimal={SEPARATEUR_DECIMAL}
+          onApercu={apercuOrigine}
+          onAppliquer={appliquerOrigine}
+          onFermer={() => setOrigineOuverte(false)}
+        />
+      )}
       {ui.barreReperes.visible && (
         <BarreReperes
           contexte={histContexte.courant}
@@ -2700,6 +2824,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           fenetreCle={detache}
           demandeListe={demandeListeReperes}
           demandeInspecteur={demandeInspecteurReperes}
+          enregistres={reperesEnregistres(hist.present.modele)}
+          nomActif={nomActifRepere}
+          modifie={etatRepere === "modifie"}
+          onActiverEnregistre={activerRepereEnregistre}
           onCommande={executerRepere}
           onPlacer={() => choisirOutil("axes")}
           onOrigine={origineReperes}
@@ -2914,7 +3042,45 @@ export function Planche({ readOnly = false }: PropsPlanche) {
               />
             )}
             {panneau === "scenes" && (
-              <PanneauScenes modele={hist.present.modele} lecture={readOnly} projection={camera.projection} champDeVision={camera.champDeVision} onAjouter={ajouterScene} onMettreAJour={mettreAJourScene} onAppliquer={appliquerScene} onSupprimer={supprimerScene} onVueStandard={vueStandard} onProjection={poserProjection} onChampDeVision={poserChampDeVision} />
+              <PanneauScenes modele={hist.present.modele} lecture={readOnly} projection={camera.projection} champDeVision={camera.champDeVision} onAjouter={ajouterScene} onMettreAJour={mettreAJourScene} onAppliquer={appliquerScene} onSupprimer={supprimerScene} onVueStandard={vueStandard} onProjection={poserProjection} onChampDeVision={poserChampDeVision} rappelerRepere={ui.rappelerRepereScene} onRappelerRepere={(v) => etatUi.set({ rappelerRepereScene: v })} />
+            )}
+            {panneau === "reperes" && (
+              <PanneauReperes
+                modele={hist.present.modele}
+                contexte={histContexte.courant}
+                etat={etatRepere}
+                nomActif={nomActifRepere}
+                lecture={readOnly}
+                demandeEnregistrer={demandeEnregistrerRepere}
+                axesVisibles={options.axes}
+                triade={ui.triade}
+                onActiver={activerRepereEnregistre}
+                onEnregistrerNouveau={enregistrerRepereNouveau}
+                onEnregistrerModifications={enregistrerModificationsRepere}
+                onRenommer={(id, nom) => muterReperes(renommerRepere(histRef.current.present.modele, id, nom), "planche.reperes.operation.renommer")}
+                onDupliquer={(id, nom) => muterReperes(dupliquerRepere(histRef.current.present.modele, id, nom), "planche.reperes.operation.dupliquer")}
+                onSupprimer={(id, detacher) => muterReperes(supprimerRepere(histRef.current.present.modele, id, detacher ? "detacher" : "refuser"), "planche.reperes.operation.supprimer")}
+                onAxes={(v) => majOptions({ axes: v })}
+                onTriade={(triade) => etatUi.set({ triade })}
+                faceLiable={dans === undefined ? (selectionRef.current.find((id) => hist.present.modele.racine.faces[id] !== undefined) ?? null) : null}
+                onEnregistrerLie={(nom) => {
+                  const face = selectionRef.current.find((id) => histRef.current.present.modele.racine.faces[id] !== undefined);
+                  const r = enregistrerRepereLie(histRef.current.present.modele, nom, face ?? "");
+                  const e = muterReperes(r, "planche.reperes.operation.lier");
+                  if (!e && r.ok) activerRepereEnregistre(r.id);
+                  return e;
+                }}
+                onMajSource={(id) => {
+                  const r = mettreAJourDepuisSource(histRef.current.present.modele, id);
+                  const e = muterReperes(r, "planche.reperes.operation.maj-source");
+                  const c = histContexteRef.current.courant;
+                  if (!e && r.ok && c.source.genre === "enregistre" && c.source.id === id) activerRepereEnregistre(id);
+                  return e;
+                }}
+                onDetacherLien={(id) => muterReperes(detacherRepereLie(histRef.current.present.modele, id), "planche.reperes.operation.detacher")}
+                coordonneesExport={ui.coordonneesExport}
+                onCoordonneesExport={(c) => etatUi.set({ coordonneesExport: c })}
+              />
             )}
             {panneau === "adoucir" && <PanneauAdoucir selection={vue.selection ?? selectionRef.current} lecture={readOnly} onAppliquer={adoucirLisserSelection} />}
             {panneau === "info-modele" && <PanneauInfoModele modele={hist.present.modele} lecture={readOnly} precision={precision} onPrecision={poserPrecision} onReglages={poserReglages} />}

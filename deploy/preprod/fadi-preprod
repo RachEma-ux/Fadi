@@ -14,7 +14,7 @@
 # Règle sudoers proposée (NON installée ; seulement après revue indépendante), qui borne aussi les sous-commandes :
 #   Cmnd_Alias FADI_PREPROD_OP = /usr/local/sbin/fadi-preprod garde, /usr/local/sbin/fadi-preprod build, \
 #     /usr/local/sbin/fadi-preprod up-db, /usr/local/sbin/fadi-preprod up, /usr/local/sbin/fadi-preprod migrate, \
-#     /usr/local/sbin/fadi-preprod smoke, /usr/local/sbin/fadi-preprod check, /usr/local/sbin/fadi-preprod e2e, \
+#     /usr/local/sbin/fadi-preprod nettoyer, /usr/local/sbin/fadi-preprod smoke, /usr/local/sbin/fadi-preprod check, /usr/local/sbin/fadi-preprod e2e, \
 #     /usr/local/sbin/fadi-preprod e2e *, /usr/local/sbin/fadi-preprod backup, /usr/local/sbin/fadi-preprod restore-check, \
 #     /usr/local/sbin/fadi-preprod show, /usr/local/sbin/fadi-preprod show *, /usr/local/sbin/fadi-preprod status, \
 #     /usr/local/sbin/fadi-preprod logs, /usr/local/sbin/fadi-preprod logs *, /usr/local/sbin/fadi-preprod down
@@ -57,18 +57,19 @@ OWNER_UID=$(id -u)
 
 # Scénarios de bout en bout, dans l'ordre de la CI (.github/workflows/ci.yml, jobs e2e) — tests/ vérifie l'égalité —,
 # sauf comptes-api, comptes-securite et comptes-admin : ils exigent une base JETABLE locale (127.0.0.1, écritures
-# directes, anonymisation) et un transport de courriel, jamais la base persistante de la préproduction.
+# directes, anonymisation) et un transport de courriel, jamais la base persistante de la préproduction ; et sauf geodata :
+# son amorçage publie un jeu de référence par la chaîne administrative sur une base jetable (ADR-GEODATA-02).
 E2E_DEFAUT="accueils-design parcours-scenario studio-persistance studio-navigation studio-exemple-p118 studio-domaines
 studio-espace studio-publication studio-observations studio-profils studio-catalogue studio-hors-ligne
 studio-corpus-s6 studio-corpus-s7 studio-conflits studio-chargement studio-mesures-chargement studio-accessibilite
 studio-quantites studio-dossier studio-echanges notifications-preferences atelier-nouveau atelier-documents
-atelier-echanges atelier-versions atelier-automatisation atelier-complements geodata collaboration-audience participants
+atelier-echanges atelier-versions atelier-automatisation atelier-complements collaboration-audience participants
 portees-etroites communication journal-activite organisations revue-externe auto-controle invitations-participation
 collaboration-support-telephone organisations-participation-final atelier-canevas planche planche-modification planche-outils planche-pousser-aretes planche-pousser-modes
 planche-objets planche-clavier planche-pousser-l10a planche-liens planche-suivez-moi planche-revolution
 planche-profiles planche-assemblages planche-debit planche-texte-3d planche-pieces-edition planche-modification-l18
 planche-diagnostics-l19 planche-etirement-plis planche-epaissir planche-effilement-loft planche-lots-4-6 planche-lot-5
-sandbox-module sandbox-axes temps-reel-sessions temps-reel-studio temps-reel-annotations temps-reel-revue
+sandbox-module sandbox-axes sandbox-reperes sandbox-origine sandbox-reperes-lies temps-reel-sessions temps-reel-studio temps-reel-annotations temps-reel-revue
 temps-reel-robustesse temps-reel-charge planche-lot-7 porte-p1-reduite p2-noyau-exact porte-p1-p2 p2-structure p2-bois-tolerie p2-reseaux
 p2-coordination p2-documentation p2-automatisation interface-anglais planche-boutons planche-detachee-documents
 atelier-barre planche-barre-outils studio-restauration"
@@ -86,7 +87,9 @@ Administrateur :
   edge on|off         rattache (ou non) l'application au réseau fadi-preprod-edge (phase 4, proxy partagé)
 Opérateur (code approuvé seulement) :
   garde               rend la configuration et vérifie l'isolation (aucune action Docker)
-  build               construit les images fadi-preprod-app et fadi-preprod-recette
+  build               construit les images fadi-preprod-app et fadi-preprod-recette (qui reprend les builds de app)
+  nettoyer [<sha>…]   supprime les images fadi-preprod-app / fadi-preprod-recette des anciens commits ; garde le commit
+                      approuvé et les commits donnés (version de retour arrière)
   up-db | up          démarre la base seule | base + application (fadi_app, MIGRATE_ON_START=0, sans migration)
   migrate             service à usage unique `migrate` (D-7) : schéma et rôles sur la base de la préproduction, puis
                       démarrage de l'application en fadi_app
@@ -239,6 +242,9 @@ for name, s in c.get("services", {}).items():
     if not (img == allowed_images[0] or img.startswith(allowed_images[1:])): err(f"{p} : image {img!r}")
     b = s.get("build")
     if b and b.get("context") != src: err(f"{p} : contexte de build {b.get('context')!r}")
+    # Contextes de build supplémentaires : seule la recette en a un, l'image applicative du projet (COPY --from=app).
+    ac = (b or {}).get("additional_contexts") or {}
+    if ac and not (name == "recette" and ac == {"app": "service:app"}): err(f"{p} : additional_contexts {ac!r}")
     for v in s.get("volumes", []):
         if v.get("type") != "volume": err(f"{p} : montage {v.get('type')!r} ({v.get('source')!r}) — seuls les volumes nommés sont admis")
         elif not str(v.get("source", "")).startswith("fadi-preprod"): err(f"{p} : volume {v.get('source')!r}")
@@ -357,7 +363,7 @@ cmd=${1:-}; [ $# -gt 0 ] && shift
 case "$cmd" in
   ""|-h|--help|help) usage; exit 0 ;;
   sync|init-env|edge) admin_seulement "$cmd" ;;
-  garde|build|up-db|migrate|up|smoke|check|e2e|backup|restore-check|show|ps|status|logs|down) ;;
+  garde|build|nettoyer|up-db|migrate|up|smoke|check|e2e|backup|restore-check|show|ps|status|logs|down) ;;
   *) usage; die "commande inconnue : $cmd" ;;
 esac
 
@@ -436,7 +442,28 @@ case "$cmd" in
   garde) verifier_disposition; garde ;;
   build)
     verifier_disposition; nouveau_run build; garde
+    # La recette copie les builds de l'image applicative du même commit (additional_contexts app = service:app) :
+    # Compose construit app d'abord, aucun second `npm run build`.
     FADI_BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ) journal build.log dc --profile recette build app recette ;;
+  nettoyer)
+    # Images par commit (étiquette = 12 premiers caractères) : sans nettoyage, chaque déploiement en ajoute deux et le
+    # disque du VPS se remplit. Seuls les dépôts fadi-preprod-app et fadi-preprod-recette sont touchés, jamais la
+    # production ni le cache de construction ; une image utilisée par un conteneur n'est pas supprimée (docker refuse).
+    verifier_disposition
+    garder=" $(commit | cut -c1-12) "
+    for g in "$@"; do
+      [[ $g =~ ^[0-9a-f]{40}$ ]] || die "sha complet (40 caractères hexadécimaux) attendu : $g"
+      garder="$garder${g:0:12} "
+    done
+    n=0
+    for depot in fadi-preprod-app fadi-preprod-recette; do
+      while read -r etiquette; do
+        [[ $etiquette =~ ^[0-9a-f]{12}$ ]] || continue
+        [[ $garder == *" $etiquette "* ]] && continue
+        if docker image rm "$depot:$etiquette" > /dev/null; then n=$((n + 1)); else log "⚠ $depot:$etiquette conservée (en usage ?)"; fi
+      done < <(docker image ls "$depot" --format '{{.Tag}}')
+    done
+    log "nettoyage : $n image(s) supprimée(s) ; conservées :$garder" ;;
   up-db)
     verifier_disposition; garde; dc up -d db; attendre_sante db 120 ;;
   migrate)

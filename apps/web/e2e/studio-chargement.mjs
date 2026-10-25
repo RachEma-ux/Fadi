@@ -13,7 +13,9 @@
  *     disponibles ; « Préparer le profil hors ligne » le range à nouveau ;
  *  6. file locale incompatible (format futur) : ni envoyée ni effacée, exportée (ligne relue au clic) puis abandonnée
  *     sur confirmation ; une ligne réécrite après l'export n'est pas abandonnée (nouvel export exigé) ;
- *  7. cache du build de la page purgé après avoir été vu : « non » hors connexion et avertissement.
+ *  7. cache du build de la page purgé après avoir été vu : « non » hors connexion et avertissement ;
+ *  8. NAV-008 : moteur de la planche impossible à charger → alerte récupérable, rien d'écrit, navigation de Fadi
+ *     utilisable, « Réessayer » recharge le moteur une fois le réseau rétabli.
  *
  * Les fichiers lourds (three.js, vue 3D, noyau exact, planche) sont désignés par la carte du build (`/chargement.json`),
  * jamais par un nom de fichier supposé. PERF-01 : page ouverte sur la variante → depuis la navigation ; navigation
@@ -260,6 +262,39 @@ try {
     (await g.locator("[data-studio-cache-purge]").count()) === 1 && (await attr("planche-2d")).h === "non" && (await attr("rendu-3d")).h === "non"
     && (await g.locator('[data-studio-indisponible-hors-ligne="studio.dessin.ligne"]').count()) === 1);
   await fermerGestionnaire();
+
+  // 8. NAV-008 : le moteur de la planche ne se charge pas (fichiers refusés par le réseau, sans service worker ni cache)
+  // → erreur annoncée et récupérable, rien n'est écrit, la navigation de Fadi reste utilisable ; « Réessayer » recharge.
+  const panne = await browser.newContext({ viewport: { width: 1280, height: 900 }, serviceWorkers: "block", storageState: await context.storageState() });
+  const p8 = await panne.newPage();
+  p8.setDefaultTimeout(20000);
+  const erreurs8 = [];
+  p8.on("pageerror", (e) => erreurs8.push(e.message));
+  let bloque = true;
+  const ecritures8 = [];
+  p8.on("request", (r) => { if (r.method() !== "GET" && r.url().includes("/studio/")) ecritures8.push(r.url()); });
+  await p8.route((u) => PLANCHE.has(u.pathname), (route) => (bloque ? route.abort("failed") : route.continue()));
+  await p8.goto(url);
+  const alerte = p8.locator("[data-studio-planche-indisponible]");
+  await alerte.waitFor();
+  check("NAV-008 : moteur de la planche impossible à charger — erreur annoncée (role=alert) avec « Réessayer », aucune planche",
+    (await alerte.getAttribute("role")) === "alert" && (await p8.locator("[data-studio-reessayer-planche]").count()) === 1
+    && (await p8.getByRole("toolbar", { name: "Outils de dessin" }).count()) === 0);
+  check("NAV-008 : la barre de Fadi reste visible, sans mode immersif", (await p8.locator(".app-sidebar").isVisible())
+    && !(await p8.evaluate(() => document.body.classList.contains("atelier-immersive"))));
+  await p8.locator('#workspace-navigation a[aria-label="Accueil"]').click();
+  await p8.waitForURL(/\/accueil$/);
+  check("NAV-008 : la navigation de Fadi n'est pas bloquée (Accueil atteint depuis la barre)", new URL(p8.url()).pathname === "/accueil");
+  await p8.goBack();
+  await alerte.waitFor();
+  bloque = false;
+  await p8.locator("[data-studio-reessayer-planche]").click();
+  await p8.getByRole("toolbar", { name: "Outils de dessin" }).waitFor();
+  check("NAV-008 : « Réessayer » recharge le moteur une fois le réseau rétabli — planche affichée, alerte retirée",
+    (await alerte.count()) === 0 && (await p8.locator("[data-studio-planche-indisponible]").count()) === 0);
+  check("NAV-008 : rien n'a été écrit pendant la panne (aucune requête d'écriture Studio)", ecritures8.length === 0, ecritures8.join(" "));
+  check("NAV-008 : aucune erreur JavaScript non interceptée pendant la panne et la reprise", erreurs8.length === 0, erreurs8.join(" | "));
+  await panne.close();
 
   check("aucune erreur JavaScript non interceptée", erreurs.length === 0, erreurs.join(" | "));
   await context.close();

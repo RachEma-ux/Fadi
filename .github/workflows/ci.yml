@@ -1,6 +1,9 @@
 name: CI
 # Un seul run par commit : les branches de PR passent par `pull_request`, `push` ne couvre que `main`.
-# Un nouveau push sur la même branche annule le run dépassé (jamais sur `main`).
+# Un nouveau push sur la même branche annule le run dépassé (jamais sur `main`). Sur `main`, le groupe porte le commit :
+# chaque push a sa propre exécution, lancée tout de suite et menée à son terme (un groupe par branche les mettait en
+# file — jusqu'à 13 min d'attente avant le premier job, autant de retard pour la préproduction — et GitHub annulait
+# l'exécution en attente dès qu'un troisième push arrivait).
 on:
   push:
     branches: [main]
@@ -11,7 +14,7 @@ on:
   schedule:
     - cron: "17 3 * * 1"
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '-corpus-lourd' || '' }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}${{ github.ref == 'refs/heads/main' && format('-{0}', github.sha) || '' }}${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '-corpus-lourd' || '' }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 permissions:
   contents: read
@@ -327,9 +330,11 @@ jobs:
   # recette ne tourne que dans sa tranche (`if: matrix.shard == …`), dans l'ordre relatif d'origine. Chaque recette
   # crée son compte et importe elle-même l'exemple P.118 ; la seule dépendance d'état est la sauvegarde / restauration,
   # qui reste dans la tranche du scénario, après lui. Répartition par durées mesurées (run 39159805146, ≈ 7 min par
-  # tranche) : parcours (accueils, scénario, Studio, restauration), complements (atelier-complements seul),
-  # atelier (Atelier P1, interface anglaise, barre), planche (outils et lots Planche), p2 (P2-0 à P2-8, Planche lot 7,
-  # boutons, détachée, barres d'outils). Le job agrégé `e2e` garde le nom du contrôle requis.
+  # tranche) : parcours (accueils, scénario, Studio, restauration), complements (atelier-complements, GeoData),
+  # organisations (comptes, collaboration, organisations-participation, simulation de migration ; séparée de complements
+  # le 25 octobre 2026, qui durait alors 15,7 min, la plus longue de la CI — run 40192137528), atelier (Atelier P1,
+  # interface anglaise, barre), planche (outils et lots Planche), p2 (P2-0 à P2-8, Planche lot 7, boutons, détachée,
+  # barres d'outils). Le job agrégé `e2e` garde le nom du contrôle requis.
   e2e-shard:
     name: e2e (${{ matrix.shard }})
     # Exceptions bornées sans base réelle : branches exactes listées ; condition avant création des services.
@@ -339,7 +344,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [parcours, complements, atelier, planche, p2]
+        shard: [parcours, complements, organisations, atelier, planche, p2]
     services:
       postgres:
         image: postgis/postgis:16-3.4
@@ -386,7 +391,7 @@ jobs:
       WEB_ORIGIN: http://localhost:3001
       WEB_DIST: apps/web/dist
       PORT: "3001"
-      # Une seule API pour toute la tranche (même adresse, fenêtre de 15 min) : la tranche complements enchaîne les recettes
+      # Une seule API pour toute la tranche (même adresse, fenêtre de 15 min) : la tranche organisations enchaîne les recettes
       # des comptes, du journal, des participants et des organisations, qui dépassaient 500 appels /auth (429). Réglage de
       # test seulement ; la production garde 20.
       AUTH_RATE_LIMIT: "3000"
@@ -583,7 +588,7 @@ jobs:
       # la base jetable ; politique de mot de passe, sessions, TOTP, admin, accès support, invitations, suspension,
       # mot de passe oublié, export et suppression (anonymisation à 30 jours), garde-fou de quota.
       - name: Recette Gestion des comptes par l'API (apps/web/e2e/comptes-api.mjs)
-        if: ${{ matrix.shard == 'complements' }}
+        if: ${{ matrix.shard == 'organisations' }}
         run: |
           set -o pipefail
           node apps/web/e2e/comptes-api.mjs 2>&1 | tee -a e2e.log
@@ -591,14 +596,14 @@ jobs:
       # export. Les courses du dernier administrateur exigent une base vierge : ici déclarées NON EXÉCUTÉES, elles
       # tournent dans app.test.ts (base jetable attestée, DB-3) et en local avec COMPTES_SECURITE_BASE_VIERGE=1.
       - name: Recette sécurité des comptes par l'API — session et double authentification, accès support sans export (apps/web/e2e/comptes-securite.mjs)
-        if: ${{ matrix.shard == 'complements' }}
+        if: ${{ matrix.shard == 'organisations' }}
         run: |
           set -o pipefail
           node apps/web/e2e/comptes-securite.mjs 2>&1 | tee -a e2e.log
       # Règles communes de collaboration (cadrage PR #273) : écarts graves E1 (audience à l'intérieur d'un projet), E2 (export
       # explicite du lecteur), E3 (journal des changements d'accès), par l'API et l'interface ; journal relu en base.
       - name: Recette des règles communes — audience équipe / projet, export du lecteur, journal des accès (apps/web/e2e/collaboration-audience.mjs)
-        if: ${{ matrix.shard == 'complements' }}
+        if: ${{ matrix.shard == 'organisations' }}
         run: |
           set -o pipefail
           node apps/web/e2e/collaboration-audience.mjs 2>&1 | tee -a e2e.log
@@ -606,7 +611,7 @@ jobs:
       # suspension / fin / retour, rôles Approbateur et Diffuseur, effacement, clôture et conservation (horloge simulée),
       # onglets Participants et Équipe, règle d'or, axe-core bureau et téléphone, passe anglaise ; journal relu en base.
       - name: Recette Équipe et participants — annuaire, bascule de l'accès, effacement, interface (apps/web/e2e/participants.mjs)
-        if: ${{ matrix.shard == 'complements' }}
+        if: ${{ matrix.shard == 'organisations' }}
         run: |
           set -o pipefail
           node apps/web/e2e/participants.mjs 2>&1 | tee -a e2e.log
@@ -615,26 +620,26 @@ jobs:
       # téléchargement), refusée hors périmètre ; aucune régression des rôles de projet ; sélecteur de l'élément et
       # capacité résultante dans l'onglet Participants, axe-core bureau et téléphone, passe anglaise.
       - name: Recette Portées étroites — périmètres Studio et Documents, interface d'attribution (apps/web/e2e/portees-etroites.mjs)
-        if: ${{ matrix.shard == 'complements' }}
+        if: ${{ matrix.shard == 'organisations' }}
         run: |
           set -o pipefail
           node apps/web/e2e/portees-etroites.mjs 2>&1 | tee -a e2e.log
       # Communication (COM, Issue #280) : audiences, mentions et références sans accès, partage d'extraits avec aperçu,
       # rejeu hors ligne, accusés, demandes de précision, actions liées, révocation avant synchronisation, interface.
       - name: Recette Communication — audiences, mentions, partages, hors ligne, accusés, demandes, révocation, interface (apps/web/e2e/communication.mjs)
-        if: ${{ matrix.shard == 'complements' }}
+        if: ${{ matrix.shard == 'organisations' }}
         run: |
           set -o pipefail
           OUT=atelier-captures/communication node apps/web/e2e/communication.mjs 2>&1 | tee -a e2e.log
       - name: Recette Gestion des comptes dans le navigateur — écrans, axe-core bureau et téléphone (apps/web/e2e/comptes-admin.mjs)
-        if: ${{ matrix.shard == 'complements' }}
+        if: ${{ matrix.shard == 'organisations' }}
         run: |
           set -o pipefail
           OUT=atelier-captures/comptes node apps/web/e2e/comptes-admin.mjs 2>&1 | tee -a e2e.log
       # Organisations-participation, phase 3 bis (OP-D13 a) : journal d'activité consultable par audience — administration,
       # Mon historique, historique du projet réservé aux responsables ; axe-core bureau et téléphone, passe anglaise.
       - name: Recette du journal d'activité et de l'historique — audiences, axe-core bureau et téléphone, anglais (apps/web/e2e/journal-activite.mjs)
-        if: ${{ matrix.shard == 'complements' }}
+        if: ${{ matrix.shard == 'organisations' }}
         run: |
           set -o pipefail
           node apps/web/e2e/journal-activite.mjs 2>&1 | tee -a e2e.log
@@ -642,7 +647,7 @@ jobs:
       # de projet, gabarits versionnés, départ, administrateur plateforme sans droit implicite ; axe-core bureau et
       # téléphone, passe anglaise.
       - name: Recette de l'espace d'organisation — API, navigateur, axe-core bureau et téléphone, passe anglaise (apps/web/e2e/organisations.mjs)
-        if: ${{ matrix.shard == 'complements' }}
+        if: ${{ matrix.shard == 'organisations' }}
         run: |
           set -o pipefail
           OUT=atelier-captures/organisations node apps/web/e2e/organisations.mjs 2>&1 | tee -a e2e.log
@@ -652,7 +657,7 @@ jobs:
       # diffusion, approbateur nommé par les transitions Studio, nouvelle version et nouveaux contrôles, dossier diffusé
       # conforme ; espace de revue et panneau de l'équipe : règle d'or, axe-core bureau et téléphone, passe anglaise.
       - name: Recette de la revue externe — scénario complet, non-fuite, axe-core bureau et téléphone, anglais (apps/web/e2e/revue-externe.mjs)
-        if: ${{ matrix.shard == 'complements' }}
+        if: ${{ matrix.shard == 'organisations' }}
         run: |
           set -o pipefail
           OUT=atelier-captures/revue-externe node apps/web/e2e/revue-externe.mjs 2>&1 | tee -a e2e.log
@@ -670,7 +675,7 @@ jobs:
       # invitant révoqué, mauvaise fiche, participation terminée, accès expiré), double soumission, nouvel utilisateur ;
       # navigateur, axe-core bureau et téléphone, passe anglaise. Courriels lus dans Mailpit, horloge simulée par la base.
       - name: Recette des invitations acceptées liées à une participation — API, refus v2.2, navigateur, axe-core, anglais (apps/web/e2e/invitations-participation.mjs)
-        if: ${{ matrix.shard == 'complements' }}
+        if: ${{ matrix.shard == 'organisations' }}
         run: |
           set -o pipefail
           node apps/web/e2e/invitations-participation.mjs 2>&1 | tee -a e2e.log
@@ -678,7 +683,7 @@ jobs:
       # (fadi_mig) peuplée du jeu synthétique déclaré — jamais sur une base existante. La recette crée un rôle SELECT
       # seul, compare l'empreinte de chaque table avant / après et exige le refus de toute écriture (25006, 42501).
       - name: Simulation de migration — base neuve, jeu synthétique, lecture seule prouvée, rapport JSON + Markdown (scripts/migration/)
-        if: ${{ matrix.shard == 'complements' }}
+        if: ${{ matrix.shard == 'organisations' }}
         env:
           PGPASSWORD: fadi_ci_password
         run: |
@@ -694,7 +699,7 @@ jobs:
       # Reliquat organisations-participation (#262) : le formulaire « Accès support » ne déborde plus sur téléphone quand un
       # administrateur au nom long existe (crée un administrateur : en fin de tranche, après les recettes qui les comptent).
       - name: Recette de l'accès support sur téléphone — aucun défilement horizontal (apps/web/e2e/collaboration-support-telephone.mjs)
-        if: ${{ matrix.shard == 'complements' }}
+        if: ${{ matrix.shard == 'organisations' }}
         run: |
           set -o pipefail
           node apps/web/e2e/collaboration-support-telephone.mjs 2>&1 | tee -a e2e.log
@@ -704,12 +709,12 @@ jobs:
       # approbatrice externe nommée, diffusion par l'équipe, fin de participation, journal par audience sans adresse ;
       # axe-core bureau et téléphone, passe anglaise. En fin de tranche (crée un administrateur).
       - name: Recette finale organisations-participation — scénario de bout en bout, audiences du journal, axe-core, anglais (apps/web/e2e/organisations-participation-final.mjs)
-        if: ${{ matrix.shard == 'complements' }}
+        if: ${{ matrix.shard == 'organisations' }}
         run: |
           set -o pipefail
           OUT=atelier-captures/organisations-participation-final node apps/web/e2e/organisations-participation-final.mjs 2>&1 | tee -a e2e.log
       - name: Rapports de simulation de migration
-        if: ${{ always() && matrix.shard == 'complements' }}
+        if: ${{ always() && matrix.shard == 'organisations' }}
         uses: actions/upload-artifact@v4
         with:
           name: simulation-migration
@@ -846,6 +851,21 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/sandbox-axes node apps/web/e2e/sandbox-axes.mjs 2>&1 | tee -a e2e.log
+      - name: Recette Repères enregistrés du Sandbox — enregistrer, Modifié, mettre à jour, renommer, dupliquer, supprimer avec résolution, scènes avec et sans rappel du repère, triade exclue du PNG par défaut, rechargement (apps/web/e2e/sandbox-reperes.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/sandbox-reperes node apps/web/e2e/sandbox-reperes.mjs 2>&1 | tee -a e2e.log
+      - name: Recette Origine du composant du Sandbox — Changer les axes, portée toutes ou cette occurrence, aucun sommet monde déplacé, refus d'un point invalide, lot en un pas (apps/web/e2e/sandbox-origine.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/sandbox-origine node apps/web/e2e/sandbox-origine.mjs 2>&1 | tee -a e2e.log
+      - name: Recette Repères liés et coordonnées des exports du Sandbox — santé du lien (à jour, face changée, face supprimée), mise à jour explicite, détacher, export OBJ modèle et repère de travail (apps/web/e2e/sandbox-reperes-lies.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/sandbox-reperes-lies node apps/web/e2e/sandbox-reperes-lies.mjs 2>&1 | tee -a e2e.log
       - name: Recette du socle Temps réel — montée de protocole refusée, session idempotente, présence, vue et sélection projetées, révision annoncée, hôte sans droit, révocations immédiates, clôture et journal (apps/web/e2e/temps-reel-sessions.mjs)
         if: ${{ matrix.shard == 'p2' }}
         run: |
@@ -1056,6 +1076,12 @@ jobs:
           curl -sf http://localhost:3001/version | tee /dev/stderr | grep -q '"commit":"${{ github.sha }}"'
           curl -sf http://localhost:3001/version | grep -Eq '"buildDate":"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:]{8}Z"'
           curl -sf -o /dev/null -X POST -H "Content-Type: application/json" -d '{"email":"image@example.com","password":"correct-horse-battery"}' http://localhost:3001/auth/register
+          # GeoData (ADR-GEODATA-02) : les outils d'exploitation sont dans l'image et tournent avec le compte applicatif
+          # (fadi_app, sans DDL), comme `create-admin.mjs` ; les fiches de source qualifiées sont embarquées.
+          docker exec fadi node apps/api/dist/geodata-role.js --email image@example.com --role gestionnaire-donnees | grep -q "attribué"
+          docker exec fadi test -f apps/api/dist/geodata-reference.js
+          docker exec fadi test -f apps/api/dist/geodata-sources/geoboundaries-mar-adm1.json
+          docker exec fadi test -f apps/api/dist/geodata-sources/geoboundaries-mar-adm2.json
       - name: Journal du conteneur
         if: always()
         run: |

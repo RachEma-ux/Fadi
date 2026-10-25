@@ -189,7 +189,11 @@ export const projeterSurPlanDeTravail = (p: Vec3, pl: Pick<PlanDeTravail, "origi
 // ————————————————————————————————————————————————————————————— Contexte de travail
 
 /** D'où vient le repère actif : le modèle, un repère temporaire (placé, aligné, pivoté) ou un repère enregistré. */
-export type SourceContexte = { readonly genre: "modele" } | { readonly genre: "temporaire" } | { readonly genre: "enregistre"; readonly id: string; readonly revision: number };
+export type SourceContexte =
+  | { readonly genre: "modele" }
+  /** `depuis` : repère enregistré dont ce repère temporaire est une modification (« Modifié », AX-3). */
+  | { readonly genre: "temporaire"; readonly depuis?: { readonly id: string; readonly revision: number } }
+  | { readonly genre: "enregistre"; readonly id: string; readonly revision: number };
 
 /**
  * Contexte de travail (personnel, AX-D3) : repère actif, plan de travail de ce repère, verrou. `repere` vaut `null` pour
@@ -209,8 +213,15 @@ export const repereDuContexte = (c: ContexteTravail): Repere => c.repere ?? REPE
 /** Plan de travail effectif du contexte. */
 export const planDuContexte = (c: ContexteTravail): PlanDeTravail => planDuRepere(repereDuContexte(c), c.plan, c.verrou);
 
-/** Contexte temporaire à partir d'un repère validé ; le plan et le verrou sont conservés. */
-export const contexteTemporaire = (c: ContexteTravail, repere: Repere): ContexteTravail => ({ ...c, repere, source: { genre: "temporaire" } });
+/**
+ * Contexte temporaire à partir d'un repère validé ; le plan et le verrou sont conservés. Modifier un repère enregistré
+ * garde la trace de son origine (`depuis`) : l'interface affiche « Modifié » et offre « Enregistrer les modifications »
+ * ou « Enregistrer comme nouveau » ; la définition enregistrée n'est jamais réécrite en silence (AX-3).
+ */
+export function contexteTemporaire(c: ContexteTravail, repere: Repere): ContexteTravail {
+  const depuis = c.source.genre === "enregistre" ? { id: c.source.id, revision: c.source.revision } : c.source.genre === "temporaire" ? c.source.depuis : undefined;
+  return { ...c, repere, source: depuis ? { genre: "temporaire", depuis } : { genre: "temporaire" } };
+}
 
 /** Retour au repère du modèle et au plan par défaut (XY, non verrouillé) ; caméra et géométrie inchangées. */
 export const contexteDuModele = (): ContexteTravail => CONTEXTE_MODELE;

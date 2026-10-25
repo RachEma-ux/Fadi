@@ -16,7 +16,10 @@ export type IdCommandeRepere =
   | "vue-normale-plan"
   | "repere-precedent"
   | "repere-modele"
-  | "affichage-axes";
+  | "affichage-axes"
+  | "enregistrer-repere"
+  | "gerer-reperes"
+  | "origine-composant";
 
 export interface CommandeRepere {
   readonly id: IdCommandeRepere;
@@ -57,6 +60,9 @@ export const COMMANDES_REPERES: readonly CommandeRepere[] = [
   c("verrouiller-plan", false),
   c("vue-normale-plan", false),
   c("affichage-axes", false),
+  c("enregistrer-repere", false),
+  c("gerer-reperes", false),
+  c("origine-composant", false),
 ];
 
 export const commandeRepere = (id: IdCommandeRepere): CommandeRepere => COMMANDES_REPERES.find((x) => x.id === id) as CommandeRepere;
@@ -68,6 +74,10 @@ export interface EtatReperes {
   readonly precedents: number;
   /** Une face est sélectionnée (Aligner). */
   readonly face: boolean;
+  /** Un groupe ou un composant est sélectionné (Origine du composant). */
+  readonly objet?: boolean;
+  /** Lecture seule : l'origine d'un composant est une édition d'objet, refusée au lecteur. */
+  readonly lecture?: boolean;
 }
 
 export interface DisponibiliteRepere {
@@ -81,6 +91,8 @@ export interface DisponibiliteRepere {
  */
 export function disponibiliteRepere(id: IdCommandeRepere, e: EtatReperes): DisponibiliteRepere {
   if (id === "aligner-repere" && !e.face) return { disponible: false, motif: "planche.reperes.motif.face" };
+  if (id === "origine-composant" && e.lecture) return { disponible: false, motif: "planche.objets.motif.lecture" };
+  if (id === "origine-composant" && !e.objet) return { disponible: false, motif: "planche.reperes.motif.objet" };
   if (id === "repere-precedent" && e.precedents === 0) return { disponible: false, motif: "planche.reperes.motif.precedent" };
   if (id === "repere-modele" && e.contexte.source.genre === "modele" && e.contexte.plan === "xy" && !e.contexte.verrou) return { disponible: false, motif: "planche.reperes.motif.modele" };
   return { disponible: true, motif: null };
@@ -97,4 +109,11 @@ export const verrouApplicable = (outil: string): boolean => OUTILS_PLAN_VERROUIL
 /** Nom du repère actif (clé de message), d'après sa source. */
 export function cleNomRepere(c: ContexteTravail): CleMessage {
   return c.source.genre === "modele" ? "planche.reperes.nom.modele" : c.source.genre === "temporaire" ? "planche.reperes.nom.temporaire" : "planche.reperes.nom.enregistre";
+}
+
+/** Nom affiché du repère actif : le nom d'un repère enregistré (lu au document), sinon le nom de sa source. */
+export function nomRepereActif(c: ContexteTravail, noms: Readonly<Record<string, { readonly nom: string }>>, t: (cle: CleMessage) => string): string {
+  if (c.source.genre === "enregistre") return noms[c.source.id]?.nom ?? t("planche.reperes.nom.enregistre");
+  if (c.source.genre === "temporaire" && c.source.depuis && noms[c.source.depuis.id]) return noms[c.source.depuis.id]!.nom;
+  return t(cleNomRepere(c));
 }

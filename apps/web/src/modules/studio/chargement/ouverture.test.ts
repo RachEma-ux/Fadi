@@ -4,7 +4,7 @@
 import { isValidElement, type ReactElement } from "react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { ErreurMoteur } from "./gestionnaire-ressources";
-import { LimitePlanche, nouvellePlanche, plancheActuelle } from "./DemarrageStudio";
+import { LimitePlanche, nouvellePlanche, plancheActuelle, reessayerPlanche } from "./DemarrageStudio";
 import { perfStudio } from "./perf";
 import { _reinitialiserOuverture, debutOuverture, finOuverture, origineOuverture, quitterVariante } from "./useRessources";
 
@@ -70,15 +70,44 @@ describe("Limite de la planche : échec de moteur seulement, réessai réel", ()
     expect(() => l.render()).toThrow(autre);
   });
 
-  it("« Réessayer » : nouveau composant différé, puis la planche est rendue à nouveau", () => {
+  it("« Réessayer » : nouveau composant différé, puis la planche est rendue à nouveau", async () => {
     const avant = plancheActuelle();
     let cree: unknown = null;
     const { l, etat } = limite(() => { cree = nouvellePlanche(); });
     l.state = { erreur: new ErreurMoteur("echec-chargement", "planche-2d", "x") };
-    l.reessayer();
+    await l.reessayer();
     expect(cree).not.toBe(avant);
     expect(plancheActuelle()).toBe(cree);
     expect(etat().erreur).toBeNull();
     expect(l.render()).toBe("planche");
+  });
+
+  it("« Réessayer » : l'alerte reste tant que la planche n'est pas installée", async () => {
+    let finir: () => void = () => undefined;
+    const { l } = limite(() => new Promise<void>((r) => { finir = r; }));
+    l.state = { erreur: new ErreurMoteur("echec-chargement", "planche-2d", "x") };
+    const attente = l.reessayer();
+    await Promise.resolve();
+    expect(l.state.erreur).toBeInstanceOf(ErreurMoteur);
+    finir();
+    await attente;
+    expect(l.state.erreur).toBeNull();
+  });
+});
+
+describe("Réessai du moteur de la planche (NAV-008)", () => {
+  it("chargement réussi : la planche est installée, la page n'est pas rechargée", async () => {
+    const appels: string[] = [];
+    await reessayerPlanche(async () => "module", () => appels.push("installer"), () => appels.push("recharger"));
+    expect(appels).toEqual(["installer"]);
+  });
+
+  it("nouvel échec (import gardé en échec par le navigateur) : la page est rechargée, rien n'est installé", async () => {
+    const appels: string[] = [];
+    let resolue = false;
+    void reessayerPlanche(() => Promise.reject(new Error("module")), () => appels.push("installer"), () => appels.push("recharger")).then(() => { resolue = true; });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(appels).toEqual(["recharger"]);
+    expect(resolue).toBe(false);
   });
 });

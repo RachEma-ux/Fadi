@@ -1,6 +1,6 @@
 # Déploiement automatique — préproduction puis production
 
-20 octobre 2026 · Roch · **Statut : plan validé par le maître d'ouvrage, aucune implémentation engagée**
+20 octobre 2026 · Roch · **Statut : plan validé par le maître d'ouvrage ; phase A en service (`fadi-preprod-auto`), durée revue le 25 octobre 2026 (section « Durée d'un déploiement »)**
 
 Le VPS **tire** les versions validées depuis GitHub : `main` vérifiée par la CI part automatiquement en préproduction ; la production ne reçoit que la version validée en préproduction, après une autorisation explicite du maître d'ouvrage. GitHub ne détient aucune clé du serveur.
 
@@ -31,7 +31,7 @@ Options écartées : push SSH depuis GitHub Actions (clé dans les secrets GitHu
 
 ## Phase A — préproduction automatique
 
-1. **Service `fadi-preprod-auto`** (script root, minuteur systemd toutes les 5 minutes, installé par l'administrateur) :
+1. **Service `fadi-preprod-auto`** (script root, minuteur systemd toutes les 3 minutes depuis le 25 octobre 2026, 5 auparavant, installé par l'administrateur) :
    - lit le dernier commit de `main` par l'API publique de GitHub ;
    - exige que les contrôles `validate`, `e2e` et `image` soient verts sur ce commit, et que le commit appartienne à l'historique de `main` ;
    - s'il est nouveau : `fadi-preprod sync <sha>`, `build`, `migrate`, `up`, `smoke`, puis un jeu court de scénarios (`sandbox-module`, `parcours-scenario`) — la CI a déjà joué tous les scénarios ;
@@ -40,6 +40,36 @@ Options écartées : push SSH depuis GitHub Actions (clé dans les secrets GitHu
 2. **Échec** : la version précédente reste en ligne. Une construction ratée ne remplace rien ; un démarrage raté revient à l'image précédente (images étiquetées par commit, conservées). La base de préproduction ne contient que des données synthétiques et peut être réinitialisée.
 3. **Notification** : succès et échec envoyés au maître d'ouvrage (Healthchecks, e-mail).
 4. **Route `/version`** dans l'application : commit et date de construction, pour vérifier d'un coup d'œil ce qui tourne (petit lot de code).
+
+## Durée d'un déploiement (analyse et correctifs du 25 octobre 2026)
+
+Mesures sur les pushes de `main` du 25 octobre (API GitHub) ; la durée côté VPS n'est pas observable depuis une session
+cloud et reste à mesurer sur place (`fadi-preprod show <run>-auto journal.log`, horodatage des étapes dans `etat.json`).
+
+| Poste | Avant | Cause | Correctif |
+| --- | --- | --- | --- |
+| Attente de la CI avant son premier job | jusqu'à 13 min (run 40187030690 : créé 10:59:58, premier job 11:13:07) | groupe de concurrence par branche : sur `main`, chaque exécution attendait la fin de la précédente ; GitHub annulait de plus l'exécution en attente dès un troisième push | `ci.yml` : groupe par commit sur `main` (exécutions parallèles, aucune annulée) |
+| CI elle-même | 15,7 min (tranche `e2e (complements)`, la plus longue) | 15 recettes ajoutées à la tranche prévue pour `atelier-complements` seule | tranche `organisations` (comptes, collaboration, organisations-participation, simulation de migration) ; reste ≈ 13,5 min, borné par `validate` (tests API, 8 min) |
+| Détection du feu vert | 0 à 5,5 min (minuteur de 5 min) | budget de 60 appels / h de l'API publique (un 304 compte aussi sans jeton) | minuteur de 3 min ; pendant l'attente de la CI, l'exécution trouvée est retenue (2 appels par passage au lieu de 3) ; un refus (CI rouge) n'est revu que toutes les 15 min |
+| Construction sur le VPS | deux `npm run build` en parallèle (≈ 1 min 30 chacun sur 4 cœurs, plus sur le VPS) + une couche `chown -R /work` qui recopiait node_modules : ≈ 0,9 Go propres à chaque commit pour l'image de recette | `recette.Dockerfile` refaisait le build de l'image applicative et changeait le propriétaire après coup | la recette copie `apps/api/dist` et `apps/web/dist` de l'image applicative du même commit (`APP_IMAGE`, vérifiée par la garde), construite d'abord par Compose (`additional_contexts: app: service:app`, seul contexte admis par la garde) ; tout est installé directement en `pwuser`. Mesuré le 25 octobre (session cloud, Docker 29, Compose 5.6) : image de recette construite en ≈ 1 min hors cache npm, ≈ 0,2 Go propres à chaque commit ; `pwuser` propriétaire, builds présents, Chromium et `psql` opérationnels |
+| Disque du VPS | deux images par commit, jamais supprimées | aucune purge | `fadi-preprod nettoyer` après chaque succès : seuls le commit en ligne et le précédent (retour arrière) restent ; dépôts `fadi-preprod-*` seulement, ni production ni cache de construction |
+| Liste e2e de la préproduction | `geodata`, `sandbox-axes`, `sandbox-reperes`, `sandbox-origine`, `sandbox-reperes-lies` absents : `tests/run.sh` échouait | contrôle lancé seulement quand `deploy/preprod/**` change | liste réalignée (`geodata` exclu : base jetable, comme `comptes-*`) ; `consolidation-validation.yml` tourne aussi quand `ci.yml` ou `apps/web/e2e/` change |
+
+### Mise en service (administrateur, une fois)
+
+Les correctifs de `ci.yml` s'appliquent dès la fusion. Ceux du VPS demandent la réinstallation des scripts depuis le
+commit fusionné, relu, empreinte vérifiée, comme à l'installation :
+
+```
+install -o root -g root -m 0755 deploy/preprod/fadi-preprod /usr/local/sbin/fadi-preprod
+install -o root -g root -m 0755 deploy/preprod/fadi-preprod-auto /usr/local/sbin/fadi-preprod-auto
+install -o root -g root -m 0644 deploy/preprod/systemd/fadi-preprod-auto.timer /etc/systemd/system/
+systemctl daemon-reload && systemctl restart fadi-preprod-auto.timer
+fadi-preprod nettoyer "$(cat /opt/fadi-preprod/approved-commit)"   # première purge des images accumulées
+```
+
+Le premier déploiement suivant reconstruit une fois la couche `npm ci` de l'image de recette (propriétaire `pwuser`) ;
+les suivants la reprennent du cache. Règle sudoers proposée : `fadi-preprod nettoyer` ajouté aux commandes de l'opérateur.
 
 ## Phase B — production après autorisation
 

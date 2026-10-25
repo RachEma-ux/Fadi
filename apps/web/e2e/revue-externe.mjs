@@ -370,6 +370,8 @@ try {
   const ui = rex.page;
   await ui.goto(`${BASE}/revues`);
   await ui.waitForSelector("[data-revues] h1");
+  // La liste se charge après le titre : attente bornée de l'élément avant de compter.
+  await ui.locator(`[data-revue-item="${p2}"]`).first().waitFor({ timeout: 15000 }).catch(() => {});
   check("espace de revue : liste des paquets", await ui.locator(`[data-revue-item="${p2}"]`).count() === 1);
   await axe(ui, "liste des revues (bureau)");
   await ui.goto(`${BASE}/revues/${p2}`);
@@ -420,8 +422,9 @@ try {
   const ap = alice.page;
   await ap.goto(`${BASE}/projets/${pid}?module=collaboration`);
   await ap.waitForSelector("[data-revues-externes]", { timeout: 30000 });
-  // La liste se charge après le cadre du panneau : on attend le paquet (borné) avant de compter.
-  await ap.waitForSelector(`[data-revue-equipe="${p2}"]`, { timeout: 15000 }).catch(() => {});
+  // Le panneau se monte avant ses données : attente bornée des paquets et du suivi des retards avant de compter.
+  await ap.locator(`[data-revue-equipe="${p2}"]`).first().waitFor({ timeout: 15000 }).catch(() => {});
+  await ap.locator("[data-revue-retards]").first().waitFor({ timeout: 15000 }).catch(() => {});
   check("panneau « Revues externes » : paquets et suivi", await ap.locator(`[data-revue-equipe="${p2}"]`).count() === 1 && await ap.locator("[data-revue-retards]").count() >= 1);
   await ap.locator(`[data-revue-equipe="${p2}"] [data-ouvrir-revue]`).click();
   await ap.waitForSelector("[data-revue-detail]");

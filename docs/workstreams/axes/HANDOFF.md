@@ -10,16 +10,18 @@ Mis à jour : 2026-10-25 (UTC).
 
 ## Dernier état vérifié
 
-AX-0 + AX-1 : PR #298 ouverte (CI verte sauf un job d'API relancé : délais de `TRUNCATE` sans lien). AX-2 : commité
-sur la branche, recette locale verte, à pousser après la fusion de #298.
+Phase A fusionnée (#298, `a37bc69`). Phases B, C et D et recette : PR #303 (revue Codex corrigée dans `8b079f8`,
+phase D dans `a7176bd`), recettes locales vertes.
 
 ## Prochaine action
 
-Fusionner #298 CI verte, pousser AX-2 (nouvelle PR), puis AX-3 (repères enregistrés, triade, scènes).
+Fusionner #303 CI verte (elle clôt l'Issue #296). Ensuite : acceptation
+par le maître d'ouvrage, aucun lot suivant sans sa décision.
 
 ## Tests et preuves
 
-`lots/ax-1.md`, `lots/ax-2.md` ; recette `apps/web/e2e/sandbox-axes.mjs`.
+`lots/ax-1.md` à `lots/ax-5.md` ; recettes `apps/web/e2e/sandbox-axes.mjs`, `sandbox-reperes.mjs`, `sandbox-origine.mjs`,
+`sandbox-reperes-lies.mjs` ; `RECETTE.md`.
 
 ## Risques et blocages
 

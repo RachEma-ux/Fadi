@@ -8,7 +8,7 @@
  * une entrée du delta est la valeur d'après, ou `null` pour une suppression ; une clé absente est inchangée.
  */
 import { type RepereEnregistre, repereEnregistreValide } from "./reperes.js";
-import type { Annotations, Balise, Cote, Extrusion, Guide, LienPiece, Materiau, PlanDeCoupe, ReglagesPlanche, Repere, Scene, TexteAnnotation } from "./annotations.js";
+import type { Annotations, Balise, CorrespondanceImport, Cote, Extrusion, Guide, LienPiece, Materiau, PlanDeCoupe, ReglagesPlanche, Repere, Scene, TexteAnnotation } from "./annotations.js";
 import type { Arete, Contexte, Courbe, Definition, Face, Id, Modele, Occurrence, Sommet } from "./geometrie-libre.js";
 
 export type DeltaTable<T> = Readonly<Record<Id, T | null>>;
@@ -32,6 +32,7 @@ export interface DeltaAnnotations {
   readonly extrusions?: DeltaTable<Extrusion>;
   readonly pieces?: DeltaTable<LienPiece>;
   readonly reperes?: DeltaTable<RepereEnregistre>;
+  readonly correspondances?: DeltaTable<CorrespondanceImport>;
   /** `null` = repère retiré ; absent = inchangé. */
   readonly repere?: Repere | null;
   readonly reglages?: ReglagesPlanche | null;
@@ -46,7 +47,7 @@ export interface DeltaPlanche {
 }
 
 const CLES_CONTEXTE = ["sommets", "aretes", "faces", "courbes", "occurrences"] as const;
-const CLES_ANNOTATIONS = ["guides", "cotes", "textes", "plansDeCoupe", "materiaux", "balises", "scenes", "extrusions", "pieces", "reperes"] as const;
+const CLES_ANNOTATIONS = ["guides", "cotes", "textes", "plansDeCoupe", "materiaux", "balises", "scenes", "extrusions", "pieces", "reperes", "correspondances"] as const;
 
 function differenceTable<T>(a: Readonly<Record<Id, T>> | undefined, b: Readonly<Record<Id, T>> | undefined): DeltaTable<T> | undefined {
   if (a === b) return undefined;
@@ -141,6 +142,7 @@ export function appliquerDeltaPlanche(m: Modele, delta: DeltaPlanche): Modele {
     if (Object.keys(an["extrusions"] as object).length === 0) delete an["extrusions"];
     if (an["pieces"] !== undefined && Object.keys(an["pieces"] as object).length === 0) delete an["pieces"];
     if (an["reperes"] !== undefined && Object.keys(an["reperes"] as object).length === 0) delete an["reperes"];
+    if (an["correspondances"] !== undefined && Object.keys(an["correspondances"] as object).length === 0) delete an["correspondances"];
     if (delta.annotations.repere !== undefined) {
       if (delta.annotations.repere === null) delete an["repere"];
       else an["repere"] = delta.annotations.repere;

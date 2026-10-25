@@ -64,7 +64,7 @@ async function disposition(page, contexte) {
   check(`${contexte} : barre gauche — seize outils dans l'ordre de SketchUp, puis « ⋯ »`, JSON.stringify(barre) === JSON.stringify(attendue), barre.join(", "));
   check(`${contexte} : « ⋯ » en bas de la barre`, await racine.locator("[data-planche-plus]").count() === 1);
   const colonne = await racine.locator("[data-planche-panneau-icone]").evaluateAll((l) => l.map((b) => b.getAttribute("data-planche-panneau-icone")));
-  check(`${contexte} : colonne — chaque panneau à un clic, Info modèle en bas`, colonne.length === 13 && colonne.at(-1) === "info-modele" && !colonne.includes("objets"), colonne.join(", "));
+  check(`${contexte} : colonne — chaque panneau à un clic (Repères compris, chantier Axes), Info modèle en bas`, colonne.length === 14 && colonne.includes("reperes") && colonne.at(-1) === "info-modele" && !colonne.includes("objets"), colonne.join(", "));
   check(`${contexte} : menu Planche (pictogramme seul) et loupe ; plus de barre du haut`, (await racine.locator(".planche > [data-planche-menu-principal] [data-planche-menu-ouvrir]").count()) === 1 && (await racine.locator("[data-planche-recherche]").count() === 1) && (await racine.locator(".planche-haut").count()) === 0 && (await racine.locator("[data-planche-outils-bouton]").count()) === 0);
   check(`${contexte} : Cadrer dans la barre d'actions`, (await racine.locator("[data-barre-actions] [data-planche-cadrer]").count()) === 1);
   const curseur = await racine.locator("[data-planche-vue]").evaluate((v) => v.style.cursor);
