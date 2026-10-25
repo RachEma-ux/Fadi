@@ -37,6 +37,7 @@ import { invalidationsApresEngagement, lectureApplicable } from "./revision-cour
 import { ecrireBrouillonHorsLigne, memoriserContexte, retirerBrouillonHorsLigne } from "../hors-ligne/stockage";
 import type { RepriseHorsLigne } from "../hors-ligne/useChargementVariante";
 import { warning } from "./etat-variante";
+import { journalStudio } from "../taches/journal-correlation";
 
 export interface OptionsEnregistrement {
   projectId: string;
@@ -190,7 +191,15 @@ export function useEnregistrement(o: OptionsEnregistrement) {
       if (local.current || !navigateurEnLigne()) await conserver(context, brouillon, envelope.current, null);
       if (horsJeu.current) return;
       for (let lot = enveloppeSuivante(envelope.current!); lot; lot = enveloppeSuivante(envelope.current!)) {
-        const accuse = await api.studioCommands(projectId, studyId, variantId, lot);
+        // Journal de corrélation (EX-095) : identifiant du lot et outils seulement, jamais les paramètres (géométrie).
+        const issue = journalStudio.noterCommande(lot);
+        let accuse: Awaited<ReturnType<typeof api.studioCommands>>;
+        try { accuse = await api.studioCommands(projectId, studyId, variantId, lot); }
+        catch (err) {
+          issue(err instanceof ApiError ? "refusee" : "non-confirmee", err instanceof ApiError ? { statut: err.status, code: err.code } : {});
+          throw err;
+        }
+        issue("confirmee", { revision: accuse.revision.id });
         poserPlan(accuserLot(envelope.current!, accuse.revision.id));
         dernierAccuse.current = accuse;
         if (local.current) await conserver(context, brouillon, envelope.current, null);

@@ -19,6 +19,7 @@ import { TRAITEMENTS_STUDIO } from "../workers/traitements";
 import { CONCURRENCE_DEFAUT, CONCURRENCE_FOND_DEFAUT, ErreurTache, Ordonnanceur, type CodeEchec, type EvenementTache, type Executeur } from "./ordonnanceur";
 import { enregistrerLiberationCalcul, ressourcesStudio } from "../chargement/ressources-studio";
 import { perfStudio } from "../chargement/perf";
+import { journalStudio } from "./journal-correlation";
 
 /** Délai par défaut d'une tâche — borne de sûreté choisie par Fadi, pas une mesure. */
 export const DELAI_TACHE_MS = 30_000;
@@ -70,6 +71,8 @@ enregistrerLiberationCalcul(() => { for (const h of hotes ?? []) h.arreter(); })
 
 export const journalTaches: EvenementTache[] = [];
 function noter(e: EvenementTache): void {
+  // Corrélation commande ↔ tâche par identifiants non sensibles (EX-095) : ni charge, ni résultat, ni géométrie.
+  journalStudio.noterTache(e);
   journalTaches.push(e);
   if (journalTaches.length > TAILLE_JOURNAL) journalTaches.splice(0, journalTaches.length - TAILLE_JOURNAL);
 }

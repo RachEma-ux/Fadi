@@ -33,9 +33,9 @@ export function messageImport(e: unknown): string {
   return "Fichier DXF illisible : seul le DXF ASCII (R12 ou suivant) est lu.";
 }
 
-export function lireDxf(texte: string, document: StudioDocument, unite: StudioDxfUnite | null): LectureDxf {
+export function lireDxf(texte: string, document: StudioDocument, unite: StudioDxfUnite | null, conserverNonNatifs = false): LectureDxf {
   try {
-    return { resultat: lireDxfStudio(texte, { document, ...(unite ? { unite } : {}) }) };
+    return { resultat: lireDxfStudio(texte, { document, ...(unite ? { unite } : {}), ...(conserverNonNatifs ? { conserverNonNatifs } : {}) }) };
   } catch (e) {
     return { erreur: messageImport(e) };
   }

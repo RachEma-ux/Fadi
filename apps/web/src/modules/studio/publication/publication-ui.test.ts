@@ -3,7 +3,7 @@ import dico from "../../../lib/i18n/en.json";
 import { Traducteur } from "../../../lib/i18n/traduire";
 import {
   COMMENTAIRE_REQUIS, corpsTransition, LIBELLE_ACTION, LIBELLE_ACTUALITE, LIBELLE_DIFFUSION, LIBELLE_EVENEMENT, LIBELLE_STATUT, LIBELLE_TRAVAIL,
-  libelleActualite, libelleEcart, messageRefus, ORDRE_ACTIONS,
+  libelleActualite, libelleEcart, LIBELLE_ETAT_DELEGATION, LIBELLE_PORTEE_DELEGATION, messageRefus, ORDRE_ACTIONS,
 } from "./publication-ui";
 
 const pub = { revisionId: "studio_revision_0123456789abcdef", documentHash: "a".repeat(64), manifestHash: "c".repeat(64) };
@@ -43,6 +43,31 @@ describe("Publications Studio — règles d'affichage pures", () => {
     expect(libelleEcart({ type: "source", role: "coordonnee", variantId: "v", revisionFigee: "r_aaaaaaaa11111111", revisionCourante: null })).toContain("introuvable");
     expect(libelleEcart({ type: "meta", champ: "studyName", figee: "A", courante: "B" })).toContain("étude");
     expect(libelleEcart({ type: "documents", formats: ["pdf", "svg"] })).toBe("Documents régénérés : PDF, SVG.");
+  });
+
+  it("EX-085 [+] approuver ou refuser au titre d'une délégation l'envoie explicitement ; diffuser ou retirer, jamais", () => {
+    const delegue = { ...pub, delegation: { id: "dl1", delegator: { id: "p", email: "p@x.test" }, endsAt: "2026-10-30T00:00:00.000Z", reason: "Congés" } };
+    expect(corpsTransition(delegue, "approuver", "")).toEqual({ manifestHash: pub.manifestHash, revisionId: pub.revisionId, documentHash: pub.documentHash, delegationId: "dl1" });
+    expect(corpsTransition(delegue, "refuser", "motif")).toEqual({ comment: "motif", delegationId: "dl1" });
+    expect(corpsTransition(delegue, "diffuser", "")).toEqual({});
+    expect(corpsTransition({ ...delegue, delegation: null }, "approuver", "")).not.toHaveProperty("delegationId");
+  });
+
+  it("EX-085 [−] chaque refus de délégation du serveur a son message (hors période, hors portée, révoquée…), traduit", () => {
+    const t = new Traducteur(dico as Record<string, string>);
+    const codes = ["delegation_autre_delegue", "delegation_revoquee", "delegation_a_venir", "delegation_expiree", "delegation_hors_portee", "delegant_sans_droit", "delegation_sans_droit",
+      "delegation_delegue_identique", "delegation_periode_invalide", "delegation_periode_terminee", "delegation_motif_requis", "delegue_inconnu", "portee_inconnue", "portee_invalide"];
+    const messages = codes.map((code) => messageRefus(403, { error: "forbidden", code }));
+    expect(new Set(messages).size).toBe(codes.length);
+    for (const m of messages) { expect(m).not.toBe(messageRefus(403, {})); expect(t.traduire(m), m).not.toBe(m); }
+    for (const l of [...Object.values(LIBELLE_ETAT_DELEGATION), ...Object.values(LIBELLE_PORTEE_DELEGATION), "Délégations d’approbation", "Déléguer l’approbation", "Révoquer la délégation",
+      "Une délégation porte une portée, une période, un délégant, un délégué et un motif ; elle ne transmet que l’approbation et le refus, jamais la diffusion. L’absence de l’approbateur ne vaut jamais accord.",
+      "Délégué", "Portée", "Début", "Fin (exclue)", "Motif (requis)", "Créer la délégation", "Motif de la révocation (requis)", "Approuvée par délégation", "Vous agissez par délégation de",
+      "Révocation", "Approbation par délégation", "Refus par délégation", "Révoquée par", "Période", "Motif", "Élément de la portée", "Délégations indisponibles.", "Aucun autre participant ne lit ce projet.",
+      "(par délégation)", "Délégation non confirmée. Réessayez : la même demande sera rejouée sans doublon.", "Révocation non confirmée : rechargez avant de réessayer."]) {
+      // Un libellé identique dans les deux langues (« Active », « Publication ») doit tout de même figurer au dictionnaire.
+      expect(l in dico || t.traduire(l) !== l, l).toBe(true);
+    }
   });
 
   it("chaque libellé français a sa traduction anglaise", () => {

@@ -60,7 +60,19 @@ const base = (p: string, s: string, v: string) => `/projects/${e(p)}/studio/stud
 const post = <T>(chemin: string, corps: unknown) => appel<T>(chemin, { method: "POST", body: JSON.stringify(corps) });
 type Ecrite = ObservationSuivie & { replayed: boolean };
 
+/** Rapprochement consigné d'une observation avec une révision ultérieure (EX-086) ; le statut de l'observation est inchangé. */
+export type SuiviRapprochement = "objet-disparu" | "persiste" | "a-recontroler" | "non-rapprochable";
+export interface RapprochementLu {
+  id: string; observationId: string; revisionId: string; checkId: string | null; observationStatus: string; suivi: SuiviRapprochement;
+  elements: { domaine: string; ref: string; issue: string }[]; actor: { id: string; email: string }; createdAt: string;
+}
+
 export const apiObservations = {
+  /** Rapprochements consignés de la variante (EX-086). */
+  rapprochements: (p: string, s: string, v: string) => appel<{ rapprochements: RapprochementLu[] }>(`${base(p, s, v)}/rapprochements`),
+  /** Rapprochement sur demande avec une révision (tête par défaut) : aucun statut d'observation n'est modifié. */
+  rapprocher: (p: string, s: string, v: string, revisionId?: string) =>
+    post<{ revisionId: string; checkId: string | null; resultats: { observationId: string; suivi: SuiviRapprochement; statut: string }[] }>(`${base(p, s, v)}/rapprochements`, revisionId ? { revisionId } : {}),
   lire: (p: string, s: string, v: string) => appel<LectureObservations>(base(p, s, v)),
   /** L'observation qui suit cet élément d'un domaine (au plus une : identité réemployée). */
   suivie: (p: string, s: string, v: string, domaine: DomaineObservation, ref: string) => appel<LectureObservations>(`${base(p, s, v)}?domaine=${e(domaine)}&ref=${e(ref)}`),

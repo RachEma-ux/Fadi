@@ -138,7 +138,7 @@ describe("Planche 2D de Studio — règle d'or", () => {
     expect(RACCOURCIS_RESERVES).toContain("Ctrl+U");
     expect(COMMANDES_EDITEUR.find((c) => c.id === "importer-dxf")).toMatchObject({ groupe: "import", ecrit: true, iconeSymbolique: "studio-import-dxf", libelleFR: "Importer DXF" });
     expect(COMMANDES_EDITEUR.find((c) => c.id === "importer-dxf")?.telechargement).toBeUndefined();
-    expect(commandesDeBarre("import").map((c) => c.id)).toEqual(["importer-dxf"]);
+    expect(commandesDeBarre("import").map((c) => c.id)).toEqual(["importer-dxf", "importer-ifc", "modeles-externes"]);
     expect(BARRES_STUDIO.map((b) => b.id).indexOf("import")).toBe(BARRES_STUDIO.map((b) => b.id).indexOf("export") - 1);
     // Dans un champ de saisie, seuls Enregistrer et la palette restent actifs.
     expect(actifDansUnChamp("Ctrl+S")).toBe(true);

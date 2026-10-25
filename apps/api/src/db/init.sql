@@ -1225,6 +1225,149 @@ ALTER TABLE studio_dossiers ADD COLUMN IF NOT EXISTS quantities_adjustment_seq i
 ALTER TABLE studio_dossiers DROP CONSTRAINT IF EXISTS studio_dossiers_quantities_adjustment_seq_check,
   ADD CONSTRAINT studio_dossiers_quantities_adjustment_seq_check
   CHECK (quantities_adjustment_seq IS NULL OR (quantities_adjustment_seq >= 1 AND quantities_variant_id IS NOT NULL)) NOT VALID;
+-- Modèles externes (partenaires) d'une variante Studio (lot F3, TR-EX-066, lib/studio-modeles-externes.ts) : une ligne
+-- par réception, avec ce que l'émetteur déclare (référence, auteur, discipline, format, version, unité, transformation),
+-- le fichier reçu tel quel et son empreinte SHA-256 (`content_digest`), le rapport du lecteur (unité lue, pertes, éléments non natifs), la dernière
+-- comparaison avec une révision de la variante, et le statut (compare → accepte | refuse). Un modèle reçu ne modifie
+-- jamais la variante. Le journal des passages (`studio_external_model_events`) est en ajout seul (UPDATE refusée par
+-- déclencheur). Additif et idempotent : tables nouvelles, contraintes recréées à chaque application (NOT VALID).
+CREATE TABLE IF NOT EXISTS studio_external_models (
+  id text PRIMARY KEY,
+  study_id text NOT NULL REFERENCES studio_studies(id) ON DELETE CASCADE,
+  variant_id text NOT NULL,
+  reference text NOT NULL,
+  author_name text NOT NULL,
+  discipline text NOT NULL,
+  format text NOT NULL,
+  version_label text NOT NULL,
+  declared_unit text NOT NULL,
+  transformation jsonb,
+  file_name text NOT NULL,
+  content text NOT NULL,
+  content_digest text NOT NULL,
+  report jsonb NOT NULL,
+  comparison jsonb NOT NULL,
+  compared_revision_id text NOT NULL,
+  status text NOT NULL,
+  decided_by text REFERENCES users(id) ON DELETE RESTRICT,
+  decided_at timestamptz,
+  decision_motif text,
+  created_by text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  request_id text,
+  payload_hash text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS studio_external_models_variant_idx ON studio_external_models(variant_id, created_at);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_external_models_request_unique ON studio_external_models(variant_id, request_id) WHERE request_id IS NOT NULL;
+ALTER TABLE studio_external_models DROP CONSTRAINT IF EXISTS studio_external_models_variant_of_study,
+  ADD CONSTRAINT studio_external_models_variant_of_study FOREIGN KEY(study_id, variant_id)
+  REFERENCES studio_variants(study_id, id) ON DELETE CASCADE NOT VALID;
+ALTER TABLE studio_external_models DROP CONSTRAINT IF EXISTS studio_external_models_status_check,
+  ADD CONSTRAINT studio_external_models_status_check CHECK (status IN ('compare', 'accepte', 'refuse')) NOT VALID;
+ALTER TABLE studio_external_models DROP CONSTRAINT IF EXISTS studio_external_models_format_check,
+  ADD CONSTRAINT studio_external_models_format_check CHECK (format IN ('ifc')) NOT VALID;
+ALTER TABLE studio_external_models DROP CONSTRAINT IF EXISTS studio_external_models_unit_check,
+  ADD CONSTRAINT studio_external_models_unit_check CHECK (declared_unit IN ('m', 'cm', 'mm', 'ft', 'in')) NOT VALID;
+ALTER TABLE studio_external_models DROP CONSTRAINT IF EXISTS studio_external_models_decision_check,
+  ADD CONSTRAINT studio_external_models_decision_check
+  CHECK ((status = 'compare') = (decided_by IS NULL AND decided_at IS NULL) AND (status <> 'refuse' OR length(btrim(coalesce(decision_motif, ''))) BETWEEN 1 AND 2000)) NOT VALID;
+ALTER TABLE studio_external_models DROP CONSTRAINT IF EXISTS studio_external_models_sha_check,
+  ADD CONSTRAINT studio_external_models_sha_check CHECK (content_digest ~ '^[0-9a-f]{64}$' AND (payload_hash IS NULL OR payload_hash ~ '^[0-9a-f]{64}$')) NOT VALID;
+ALTER TABLE studio_external_models DROP CONSTRAINT IF EXISTS studio_external_models_text_lengths,
+  ADD CONSTRAINT studio_external_models_text_lengths CHECK (length(btrim(reference)) BETWEEN 1 AND 200 AND length(btrim(author_name)) BETWEEN 1 AND 200
+    AND length(btrim(discipline)) BETWEEN 1 AND 80 AND length(btrim(version_label)) BETWEEN 1 AND 80 AND length(btrim(file_name)) BETWEEN 1 AND 255) NOT VALID;
+CREATE TABLE IF NOT EXISTS studio_external_model_events (
+  id text PRIMARY KEY,
+  model_id text NOT NULL REFERENCES studio_external_models(id) ON DELETE CASCADE,
+  seq integer NOT NULL,
+  action text NOT NULL,
+  actor_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  revision_id text,
+  motif text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_external_model_events_seq_unique ON studio_external_model_events(model_id, seq);
+ALTER TABLE studio_external_model_events DROP CONSTRAINT IF EXISTS studio_external_model_events_action_check,
+  ADD CONSTRAINT studio_external_model_events_action_check CHECK (action IN ('recevoir', 'comparer', 'accepter', 'refuser')) NOT VALID;
+CREATE OR REPLACE FUNCTION studio_external_model_event_immutable() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'studio_external_model_event_immutable';
+END;
+$$;
+CREATE OR REPLACE TRIGGER studio_external_model_events_no_update BEFORE UPDATE ON studio_external_model_events
+  FOR EACH ROW EXECUTE FUNCTION studio_external_model_event_immutable();
+
+-- Délégation contrôlée de l'approbation (EX-085, lib/studio-delegations.ts) : délégant, délégué distinct, portée
+-- (projet, étude, variante, publication), période (début inclus, fin exclue), motif ; seule la révocation motivée
+-- modifie la ligne. Journal en ajout seul : création, révocation et chaque emploi (publication et transition).
+-- Additif et idempotent : tables et colonnes nouvelles, contraintes recréées (DROP … IF EXISTS puis ADD, NOT VALID).
+CREATE TABLE IF NOT EXISTS studio_approval_delegations (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  delegator_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  delegate_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  scope_type text NOT NULL,
+  scope_id text,
+  starts_at timestamptz NOT NULL,
+  ends_at timestamptz NOT NULL,
+  reason text NOT NULL,
+  request_id text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  revoked_at timestamptz,
+  revoked_by text REFERENCES users(id) ON DELETE RESTRICT,
+  revoke_reason text
+);
+CREATE INDEX IF NOT EXISTS studio_approval_delegations_project_idx ON studio_approval_delegations(project_id, delegate_id);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_approval_delegations_request_unique ON studio_approval_delegations(project_id, delegator_id, request_id)
+  WHERE request_id IS NOT NULL;
+ALTER TABLE studio_approval_delegations DROP CONSTRAINT IF EXISTS studio_approval_delegations_scope_check,
+  ADD CONSTRAINT studio_approval_delegations_scope_check
+  CHECK ((scope_type = 'projet' AND scope_id IS NULL) OR (scope_type IN ('etude', 'variante', 'publication') AND scope_id IS NOT NULL)) NOT VALID;
+ALTER TABLE studio_approval_delegations DROP CONSTRAINT IF EXISTS studio_approval_delegations_period_check,
+  ADD CONSTRAINT studio_approval_delegations_period_check CHECK (ends_at > starts_at) NOT VALID;
+ALTER TABLE studio_approval_delegations DROP CONSTRAINT IF EXISTS studio_approval_delegations_distinct_check,
+  ADD CONSTRAINT studio_approval_delegations_distinct_check CHECK (delegate_id <> delegator_id) NOT VALID;
+ALTER TABLE studio_approval_delegations DROP CONSTRAINT IF EXISTS studio_approval_delegations_reason_length,
+  ADD CONSTRAINT studio_approval_delegations_reason_length CHECK (length(btrim(reason)) BETWEEN 1 AND 2000) NOT VALID;
+ALTER TABLE studio_approval_delegations DROP CONSTRAINT IF EXISTS studio_approval_delegations_revocation_complete,
+  ADD CONSTRAINT studio_approval_delegations_revocation_complete
+  CHECK ((revoked_at IS NULL) = (revoked_by IS NULL) AND (revoked_at IS NULL) = (revoke_reason IS NULL)) NOT VALID;
+CREATE TABLE IF NOT EXISTS studio_approval_delegation_events (
+  id text PRIMARY KEY,
+  delegation_id text NOT NULL REFERENCES studio_approval_delegations(id) ON DELETE CASCADE,
+  action text NOT NULL CONSTRAINT studio_approval_delegation_events_action_check CHECK (action IN ('creer', 'revoquer', 'employer')),
+  actor_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  publication_id text,
+  publication_action text CONSTRAINT studio_approval_delegation_events_publication_action_check
+    CHECK (publication_action IS NULL OR publication_action IN ('approuver', 'refuser')),
+  comment text CONSTRAINT studio_approval_delegation_events_comment_length CHECK (comment IS NULL OR length(comment) BETWEEN 1 AND 2000),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS studio_approval_delegation_events_delegation_idx ON studio_approval_delegation_events(delegation_id, created_at);
+CREATE OR REPLACE TRIGGER studio_approval_delegation_events_no_update BEFORE UPDATE ON studio_approval_delegation_events
+  FOR EACH ROW EXECUTE FUNCTION studio_publication_event_immutable();
+ALTER TABLE studio_publication_events ADD COLUMN IF NOT EXISTS delegation_id text;
+ALTER TABLE studio_publications ADD COLUMN IF NOT EXISTS approved_delegation_id text;
+-- Rapprochement des observations avec une nouvelle révision (EX-086, lib/studio-observations-rapprochement.ts) : un
+-- résultat par observation et par contrôle, en ajout seul ; le statut de l'observation n'est jamais modifié ici.
+CREATE TABLE IF NOT EXISTS studio_observation_reconciliations (
+  id text PRIMARY KEY,
+  variant_id text NOT NULL REFERENCES studio_variants(id) ON DELETE CASCADE,
+  observation_id text NOT NULL,
+  revision_id text NOT NULL,
+  check_id text,
+  observation_status text NOT NULL,
+  suivi text NOT NULL CONSTRAINT studio_observation_reconciliations_suivi_check
+    CHECK (suivi IN ('objet-disparu', 'persiste', 'a-recontroler', 'non-rapprochable')),
+  elements jsonb NOT NULL,
+  actor_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS studio_observation_reconciliations_variant_idx ON studio_observation_reconciliations(variant_id, created_at);
+CREATE INDEX IF NOT EXISTS studio_observation_reconciliations_observation_idx ON studio_observation_reconciliations(observation_id);
+CREATE OR REPLACE TRIGGER studio_observation_reconciliations_no_update BEFORE UPDATE ON studio_observation_reconciliations
+  FOR EACH ROW EXECUTE FUNCTION studio_observation_event_immutable();
 
 -- ---------------------------------------------------------------------------
 -- Gestion des comptes (docs/workstreams/users-management, Issue #253) — Phase 1.

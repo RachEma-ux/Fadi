@@ -67,7 +67,7 @@ export const DOMAINES_COMMANDES = Object.freeze({
   "accrochage-sommets": "dessin", "accrochage-grille": "dessin", "accrochage-milieu": "dessin", "accrochage-centre": "dessin", "accrochage-quadrant": "dessin",
   "accrochage-intersection": "dessin", "accrochage-perpendiculaire": "dessin", "accrochage-tangente": "dessin", "accrochage-proche": "dessin",
   "reperage-orthogonal": "dessin", "reperage-polaire": "dessin", "pas-polaire": "dessin",
-  "exporter-png": A_DEFINIR, "importer-dxf": A_DEFINIR, "exporter-svg": A_DEFINIR, "exporter-dxf": A_DEFINIR, "exporter-ifc": A_DEFINIR, echanges: A_DEFINIR,
+  "exporter-png": A_DEFINIR, "importer-dxf": A_DEFINIR, "importer-ifc": A_DEFINIR, "modeles-externes": A_DEFINIR, "exporter-svg": A_DEFINIR, "exporter-dxf": A_DEFINIR, "exporter-ifc": A_DEFINIR, echanges: A_DEFINIR,
   feuille: "documentation", dossier: "documentation",
   outils: A_DEFINIR, palette: A_DEFINIR,
   exigences: "bim",
@@ -81,6 +81,8 @@ export const DOMAINES_COMMANDES = Object.freeze({
 export const DOMAINES_FAMILLES_OUTILS = Object.freeze({
   dessin: "dessin", modification: "dessin", calques: "dessin", volume: "dessin", "volume-libre": "dessin", architecture: "dessin",
   proprietes: "bim", visualisation: "visualisation",
+  // Éléments non natifs (lot F3) : la référence ne fixe pas leur domaine (comme l’import) : à définir.
+  "non-natifs": A_DEFINIR,
 } as const satisfies Record<StudioToolGroup, DomaineAttribue>);
 
 /** Domaine d'une entrée du catalogue (outil du registre ou commande de l'éditeur). */
