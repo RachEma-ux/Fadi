@@ -1,12 +1,13 @@
 # GeoData — Reprise de session
 
 Mis à jour : 2026-10-25 (UTC).
+État relevé après la fusion de la PR #301.
 
 ## Point de reprise
 
 - Chantier : geodata. Délégation totale (ADR-GEODATA-02).
 - Issue : https://github.com/RachEma-ux/Fadi/issues/299.
-- Branche : `ccr-e71fe633-hjxnjf` (depuis `main@0ff0638`) ; relever le HEAD et la PR courants avant reprise.
+- Code fusionné dans `main` par la PR #301 (`1d92920`) ; aucune branche de réalisation ouverte.
 
 ## Dernier état vérifié
 
@@ -14,7 +15,7 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 
 ## Prochaine action
 
-Relire la CI de la PR ; corriger tout échec ; fusionner CI verte (délégation). Ensuite : le maître d'ouvrage publie la Release de production, importe les limites geoBoundaries (`docs/geodata/README.md`) sur l'environnement et valide l'usage.
+Maître d'ouvrage : vérifier la préproduction (`/geodata`), publier la Release de production, attribuer les rôles GeoData et importer les limites geoBoundaries sur l'environnement (`docs/geodata/README.md`), puis valider l'usage sur appareils. Ensuite seulement : extensions V1.1 (TASKS.md).
 
 ## Tests et preuves
 

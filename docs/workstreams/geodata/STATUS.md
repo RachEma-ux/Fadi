@@ -1,10 +1,11 @@
 # GeoData — Statut
 
 Mis à jour : 2026-10-25 (UTC).
+État relevé après la fusion de la PR #301.
 
 ## État
 
-**Implémenté et vérifié** (tests et recette locale, CI à relire sur le HEAD de la PR) pour GeoData V1 sous délégation totale (ADR-GEODATA-02, Issue #299). **Non accepté** en production : la mise en production reste la Release du maître d'ouvrage.
+**Vérifié et fusionné dans `main`** : GeoData V1 (ADR-GEODATA-02, Issue #299), PR #301 fusionnée le 25 octobre 2026 (`1d92920`), CI entièrement verte sur `1d7798e`. **Non accepté** en production : la mise en production reste la Release du maître d'ouvrage.
 
 ## Faits vérifiés
 
@@ -17,6 +18,9 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
 - Recette navigateur `apps/web/e2e/geodata.mjs` contre l'API qui sert le build : **tout conforme** (GEO 01, 02, 05, 06, 07, 08, 09, 11, 12, 13, axe-core sans violation critique ou sérieuse, interface anglaise sans résidu).
 - Données réelles : geoBoundaries MAR ADM1 (12 régions, SHA-256 `6c4e3e25…129f`) et ADM2 (75 unités, `5b3f09cb…1714`) importées et publiées par la chaîne administrative sur la base locale ; empreintes conformes aux objets LFS publiés.
 
+- CI GitHub sur `1d7798e` (run 40187001869) : `validate` (dont `geodata.test.ts` sur base PostGIS attestée DB-3), les cinq tranches e2e (dont `apps/web/e2e/geodata.mjs` dans `complements`), `image`, architecture, continuité : succès.
+- Revue Codex : quatre constats P2 (valeurs > 5 000 objets, hauteur de la légende PNG, export lié à la révision affichée, orientation restituée) corrigés dans `63bcce2`, fils résolus.
+
 ## Points ouverts
 
 Recette sur appareils physiques et validation d'usage ; Release de production ; qualification des droits HCP ; extensions V1.1.
@@ -24,8 +28,8 @@ Recette sur appareils physiques et validation d'usage ; Release de production ; 
 ## Liens de suivi
 
 - Issue de réalisation : https://github.com/RachEma-ux/Fadi/issues/299 ; cadrage : #243 (PR #245 fusionnée).
-- Branche : https://github.com/RachEma-ux/Fadi/tree/ccr-e71fe633-hjxnjf.
+- PR : https://github.com/RachEma-ux/Fadi/pull/301 (fusionnée).
 
 ## Préconditions de clôture
 
-CI verte sur le HEAD de la PR, fusion, puis Release de production et recette d'usage par le maître d'ouvrage.
+Release de production et recette d'usage par le maître d'ouvrage.
