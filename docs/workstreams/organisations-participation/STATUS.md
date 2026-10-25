@@ -1,11 +1,12 @@
 # Organisations, participation et revue externe — Statut
 
-Mis à jour : 2026-10-24 (UTC).
+Mis à jour : 2026-10-25 (UTC).
 
 ## État
 
-**En cours — phase 1 fusionnée (PR #265) ; exécution de bout en bout autorisée (OP-3, 2026-10-24) ; phases 2 à 6 en cours
-sur la branche `ccr-3b26a9f6-z073dc` (PR #281).**
+**Implémenté — toutes les phases du plan.** Phases 1, 2, 3 bis et 5 fusionnées dans `main` (PR #265, #281). Phases 3, 4, 6 et
+reliquats sur la PR #290 (branche `ccr-3b26a9f6-z073dc`), vérifiés en local ; CI de la PR à relever. Rien n'est accepté ni
+déployé : 🛑 final au maître d'ouvrage.
 
 ## Faits vérifiés
 
@@ -42,17 +43,27 @@ sur la branche `ccr-3b26a9f6-z073dc` (PR #281).**
   acceptée, groupes et mandats sans droit, gabarits versionnés). **CI complète verte sur `9abca29`** (run 40137263799), suites
   DB-3 comprises.
 
+- Phases 3, 4, 6 et reliquats (2026-10-25, PR #290), vérifiés en local : typecheck, tests (seules les suites DB-3 refusées
+  par la garde), build, migrations ×2 sur base neuve et existante, contrôles `*-migration-check.mjs`, script
+  post-déploiement « conforme » ; recettes `invitations-participation` 107, `revue-externe` 132, `portees-etroites` 87,
+  `organisations` 182, `organisations-participation-final` 155, `participants` 92, `collaboration-support-telephone` 5.
+  **DB-3 de ces lots : non exécutées localement (CI seulement).** Matrice des exigences : [recette-finale.md](recette-finale.md).
+- Écarts déclarés : pont `op_sync_access` conservé (lot dédié OP-PONT) ; acceptation dans l'application réservée aux adresses
+  vérifiées ; durée d'accès de revue par défaut 30 jours (valeur d'implémentation) ; séparation des responsabilités non
+  modélisée ; raccourcis des Participants en Ctrl+Alt+Maj (Alt+Maj saturé).
+
 ## Points ouverts
 
-- 🛑 final (phase 6) : acceptation du périmètre livré par le maître d'ouvrage.
-- OP-D9 décidée le 2026-10-24 (OP-2 : projet + 2 ans après clôture, plus tôt sur demande) ; effacement à livrer en phase 2 ;
-  réserve : obligations légales de conservation à vérifier par le conseil juridique du maître d'ouvrage.
-- OP-D12 révisée le 2026-10-24 (OP-2) : envoi réel des courriels en préproduction, réalisé dans une PR distincte (UM-28).
+- 🛑 final : acceptation du périmètre livré ; tout déploiement suit [RUNBOOK-deploiement.md](RUNBOOK-deploiement.md).
+- À décider par le maître d'ouvrage : réserve juridique d'OP-2 (aucun interrupteur propre à la tâche de conservation hors
+  `ACCOUNT_WORKERS=0`) ; listes métier OP-D4 ; durée d'accès de revue par défaut ; portées étroites (téléchargement par un
+  Lecteur à portée documents, pas d'export pour un Concepteur d'étude) ; retrait du pont ; contenu de « Mon historique » d'un
+  invité externe.
 
 ## Liens de suivi
 
 - Issue : [#262](https://github.com/RachEma-ux/Fadi/issues/262).
-- Branche des phases 2 à 6 : `ccr-3b26a9f6-z073dc`, PR [#281](https://github.com/RachEma-ux/Fadi/pull/281). Cadrage : PR #263 ; phase 1 : PR #265 (fusionnées).
+- Branche : `ccr-3b26a9f6-z073dc`. PR #263 (cadrage), #265 (phase 1), #281 (phases 2, 3 bis, 5) fusionnées ; PR [#290](https://github.com/RachEma-ux/Fadi/pull/290) (phases 3, 4, 6, reliquats) ouverte.
   Le commit était d'abord poussé sur la PR #259, fusionnée avec sa tête précédente sans lui : il est rebasé sur `main`.
 
 ## Préconditions de clôture

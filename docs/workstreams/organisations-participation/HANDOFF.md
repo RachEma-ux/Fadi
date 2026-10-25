@@ -1,35 +1,38 @@
 # Organisations, participation et revue externe — Reprise de session
 
-Mis à jour : 2026-10-24 (UTC).
+Mis à jour : 2026-10-25 (UTC).
 
 ## Point de reprise
 
 - Chantier : organisations-participation. Issue : [#262](https://github.com/RachEma-ux/Fadi/issues/262).
-- Branche / PR : `ccr-3b26a9f6-z073dc`, PR [#281](https://github.com/RachEma-ux/Fadi/pull/281) (phases 2 à 6).
-- Phase 1 fusionnée dans `main` (PR #265). Dernier commit vérifié : à relever en début de session ; ne pas réutiliser un SHA périmé.
+- Branche / PR : `ccr-3b26a9f6-z073dc`, PR [#290](https://github.com/RachEma-ux/Fadi/pull/290) (phases 3, 4, 6 et reliquats).
+  PR #281 (phases 2, 3 bis, 5) fusionnée le 2026-10-24.
+- Dernier commit vérifié : à relever en début de session ; ne pas réutiliser un SHA périmé.
 
 ## Dernier état vérifié
 
-- OP-3 (2026-10-24) : le maître d'ouvrage demande l'exécution du plan de bout en bout ; 🛑 1 franchi, phases enchaînées sans
-  attente intermédiaire, 🛑 final et tout déploiement restent au maître d'ouvrage.
-- Phase 3 bis (journal d'activité) livrée sur la branche : compte rendu [phase-3bis.md](phase-3bis.md).
-- Phases 2 et 5 livrées (comptes rendus [phase-2.md](phase-2.md), [phase-5.md](phase-5.md)) ; CI verte sur `9abca29`.
-- Phases 3 (invitations acceptées) et 4 (revue externe) en cours ; puis phase 6.
+- Toutes les phases du plan implémentées (STATUS.md) ; vérifications locales vertes ; suites DB-3 des lots de la PR #290
+  à constater en CI.
 
 ## Prochaine action
 
-- Fusionner les phases 3 et 4, puis la phase 6 (recette finale, runbook) ; CI verte de la PR #281.
+- Relever la CI de la PR #290 et la mener au vert (premier point : suites DB-3 des phases 3 et 4, des portées étroites et du
+  mandat).
+- Puis présenter le 🛑 final au maître d'ouvrage avec [recette-finale.md](recette-finale.md) et les décisions en attente.
+- Lot suivant possible, sur décision : retrait du pont `op_sync_access` (OP-PONT).
 
 ## Tests et preuves
 
-- Locales : `npm run typecheck`, `npm test`, `npm run build`, `scripts/validation/*-migration-check.mjs`, recettes
-  `apps/web/e2e/*.mjs` sur PostgreSQL 16 + PostGIS jetable. Les suites DB-3 ne tournent qu'en CI.
+- `npm run typecheck`, `npm test`, `npm run build` ; `scripts/validation/*-migration-check.mjs` (base locale jetable) ;
+  `scripts/validation/organisations-participation-post-deploiement.mjs` (lecture seule) ; recettes `apps/web/e2e/*.mjs`, dont
+  `organisations-participation-final.mjs`. Les suites DB-3 ne tournent qu'en CI.
 
 ## Risques et blocages
 
-- Fin de l'ajout direct (OP-D2) : changement visible pour les propriétaires qui partagent un projet.
-- Accès externe : la moindre fuite par une route, un aperçu ou un export est un défaut bloquant (recette dédiée en phase 4).
-- Réserve juridique d'OP-2 (obligations de conservation) non levée.
+- Fin de l'ajout direct (OP-D2) : changement visible pour les propriétaires qui partagent un projet ; à annoncer.
+- Accès externe : la moindre fuite par une route, un aperçu ou un export est un défaut bloquant (`revue-externe.mjs`,
+  recette finale).
+- Réserve juridique d'OP-2 non levée avant d'activer l'effacement automatique en production.
 
 ## Arrêt sûr
 
