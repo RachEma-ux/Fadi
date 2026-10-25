@@ -34,6 +34,9 @@ export const LIBELLES_RAISON_FIDELITE: Readonly<Record<StudioRaisonFidelite, str
   "visualisation-hors-export": "Réglage de visualisation (scène, apparence d’affichage), jamais exporté",
   "type-sans-capacite": "Type sans capacité déclarée, non exporté",
   "non-natif-hors-export": "Élément non natif (import sans équivalent natif), jamais exporté",
+  "spline-decoupee": "Spline découpée en polyligne (16 segments par morceau de Bézier)",
+  "transparence-non-portee": "Transparence non portée par ce format (déclarée)",
+  "graphisme-hors-ifc": "Graphisme 2D (spline, hachure, symbole) hors IFC",
   "propriete-non-exportee": "Propriété déclarée non écrite dans le fichier",
   "propriete-en-pset": "Propriété déclarée écrite dans le jeu de propriétés du projet",
   "propriete-non-evaluee": "Propriété déclarée sans valeur (non évaluée), non écrite",
@@ -44,6 +47,7 @@ export const LIBELLES_TYPE_ELEMENT: Readonly<Record<string, string>> = Object.fr
   line: "Ligne", rectangle: "Rectangle", circle: "Cercle", arc: "Arc", polyline: "Polyligne",
   dimension: "Cote", "angular-dimension": "Cote angulaire", text: "Texte", box: "Boîte", prism: "Prisme", exact: "Solide exact",
   wall: "Mur", opening: "Ouverture", propriete: "Propriété", scene: "Scène", appearance: "Apparence d’affichage", "non-native": "Élément non natif",
+  spline: "Spline", hachure: "Hachure", symbole: "Symbole",
 });
 export const libelleType = (type: string): string => (Object.hasOwn(LIBELLES_TYPE_ELEMENT, type) ? LIBELLES_TYPE_ELEMENT[type]! : type);
 

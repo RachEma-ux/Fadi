@@ -1,22 +1,32 @@
 /**
- * Comparaison des moteurs de rendu 2D SVG / Canvas / GPU (TEST-025) — **preuve seulement** : DEC-08 retient SVG pour la
- * planche ; ce module ne bascule rien et n'est importé par aucun écran. Il sert à la recette `e2e/studio-rendu.mjs`
+ * Comparaison des moteurs de rendu 2D SVG / Canvas / GPU (TEST-025) — **preuve** : DEC-08 retient SVG pour la planche ;
+ * ce module ne bascule rien. Son tracé Canvas sert aussi au moteur Canvas de la planche (`moteur-canvas.ts`, F.1-02),
+ * monté seulement quand la règle F.1-01 l'autorise. Il sert à la recette `e2e/studio-rendu.mjs`
  * (mesures dans le navigateur : fidélité en pixels, accessibilité, latence) et au test `comparaison-moteurs.test.ts`
  * (fidélité des primitives et des positions, sans navigateur).
  *
  * Scène commune : le SVG exporté par le modèle (`exportStudioSvg`, référence des scènes S1–S3 du corpus). Il est lu en
- * primitives (`lirePrimitivesSvg` : ligne, rectangle, cercle, chemin M/L/A/Z, polygone, texte) ; le moteur Canvas les
- * trace par l'API Canvas 2D (`dessinerCanvas`, sur tout contexte qui offre ses méthodes) ; le moteur GPU les réduit en
- * segments de droite (`segmentsGpu` ; arcs découpés à pas angulaire fixe déclaré, textes **non tracés** : il faudrait un
- * atlas de glyphes, absent). Fidélité géométrique : les deux tracés sont ramenés en traits élémentaires (segments, arcs
- * exacts, textes) dans le repère de l'utilisateur SVG et comparés (`comparerTraits`). Aucun seuil n'est posé ici.
+ * primitives (`lirePrimitivesSvg` : ligne, rectangle, cercle, chemin M/L/A/C/Z, polygone, texte, avec l'opacité
+ * héritée des groupes `opacity`) ; le moteur Canvas les trace par l'API Canvas 2D (`dessinerCanvas`, sur tout contexte qui
+ * offre ses méthodes : `bezierCurveTo` pour les splines, `globalAlpha` pour les transparences) ; le moteur GPU les réduit
+ * en segments de droite (`segmentsGpu` ; arcs découpés à pas angulaire fixe déclaré, courbes de Bézier en
+ * `SEGMENTS_BEZIER_GPU` segments, opacité portée par segment, textes **non tracés** : il faudrait un atlas de glyphes,
+ * absent). Fidélité géométrique : les deux tracés sont ramenés en traits élémentaires (segments, arcs exacts, courbes de
+ * Bézier exactes, textes, chacun avec son opacité) dans le repère de l'utilisateur SVG et comparés (`comparerTraits`).
+ * Graphismes du modèle (EX-055) : splines, hachures (traits), symboles et transparences sont lus comme les autres
+ * primitives. Aucun seuil n'est posé ici.
  *
  * Pur : aucun import, ni React ni DOM (le contexte Canvas est injecté).
  */
 
-export type CommandeChemin = { c: "M" | "L"; x: number; y: number } | { c: "A"; r: number; grand: boolean; sens: boolean; x: number; y: number } | { c: "Z" };
+export type CommandeChemin =
+  | { c: "M" | "L"; x: number; y: number }
+  | { c: "A"; r: number; grand: boolean; sens: boolean; x: number; y: number }
+  | { c: "C"; x1: number; y1: number; x2: number; y2: number; x: number; y: number }
+  | { c: "Z" };
 
-interface Commun { calque: string; visible: boolean }
+/** `alpha` : opacité effective (produit des `opacity` des groupes englobants, 1 sans transparence). */
+interface Commun { calque: string; visible: boolean; alpha: number }
 export type Primitive2D = Commun & (
   | { genre: "ligne"; x1: number; y1: number; x2: number; y2: number }
   | { genre: "rect"; x: number; y: number; w: number; h: number }
@@ -34,7 +44,7 @@ const attributs = (s: string): Record<string, string> => Object.fromEntries([...
 const nombre = (v: string | undefined): number => (v === undefined ? Number.NaN : Number(v));
 
 function lireChemin(d: string): CommandeChemin[] {
-  const jetons = d.match(/[MLAZ]|-?\d*\.?\d+(?:e[-+]?\d+)?/gi) ?? [];
+  const jetons = d.match(/[MLACZ]|-?\d*\.?\d+(?:e[-+]?\d+)?/gi) ?? [];
   const out: CommandeChemin[] = [];
   let i = 0;
   const n = () => Number(jetons[i++]);
@@ -42,6 +52,7 @@ function lireChemin(d: string): CommandeChemin[] {
     const c = jetons[i++]!.toUpperCase();
     if (c === "M" || c === "L") out.push({ c, x: n(), y: n() });
     else if (c === "A") { const rx = n(); n(); n(); const grand = n() === 1, sens = n() === 1; out.push({ c: "A", r: rx, grand, sens, x: n(), y: n() }); }
+    else if (c === "C") out.push({ c: "C", x1: n(), y1: n(), x2: n(), y2: n(), x: n(), y: n() });
     else if (c === "Z") out.push({ c: "Z" });
     else throw new Error(`commande de chemin non prise en charge : ${c}`);
   }
@@ -66,11 +77,11 @@ export function lirePrimitivesSvg(svg: string): SceneSvg {
   const vb = (attributs(racine[1]!).viewBox ?? "").split(/[\s,]+/).map(Number);
   if (vb.length !== 4 || vb.some((v) => !Number.isFinite(v))) throw new Error("viewBox absente ou illisible");
   const primitives: Primitive2D[] = [];
-  const pile: { calque: string | null; visible: boolean }[] = [];
+  const pile: { calque: string | null; visible: boolean; alpha: number }[] = [];
   const re = /<(\/?)([a-zA-Z]+)\b([^>]*?)(\/?)>|([^<]+)/g;
   let texte: (Commun & { genre: "texte"; x: number; y: number; taille: number; ancre: "start" | "middle" | "end"; rotation: number; contenu: string }) | null = null;
   let m: RegExpExecArray | null;
-  const etat = () => ({ calque: [...pile].reverse().find((p) => p.calque !== null)?.calque ?? "", visible: pile.every((p) => p.visible) });
+  const etat = () => ({ calque: [...pile].reverse().find((p) => p.calque !== null)?.calque ?? "", visible: pile.every((p) => p.visible), alpha: pile.reduce((a, p) => a * p.alpha, 1) });
   while ((m = re.exec(svg))) {
     if (m[5] !== undefined) { if (texte) texte.contenu += decoder(m[5]); continue; }
     const [, fin, nom, brut, auto] = m;
@@ -81,7 +92,12 @@ export function lirePrimitivesSvg(svg: string): SceneSvg {
       continue;
     }
     const a = attributs(brut ?? "");
-    if (nom === "g") { if (!auto) pile.push({ calque: a["data-layer"] ?? null, visible: a.display !== "none" }); continue; }
+    if (nom === "g") {
+      const opacite = a.opacity === undefined ? 1 : Number(a.opacity);
+      if (!(opacite >= 0 && opacite <= 1)) throw new Error(`opacité illisible : ${a.opacity}`);
+      if (!auto) pile.push({ calque: a["data-layer"] ?? null, visible: a.display !== "none", alpha: opacite });
+      continue;
+    }
     const c = etat();
     switch (nom) {
       case "line": primitives.push({ ...c, genre: "ligne", x1: nombre(a.x1), y1: nombre(a.y1), x2: nombre(a.x2), y2: nombre(a.y2) }); break;
@@ -129,6 +145,7 @@ export interface Contexte2D {
   lineWidth: number;
   strokeStyle: string;
   fillStyle: string;
+  globalAlpha: number;
   font: string;
   textAlign: string;
   textBaseline: string;
@@ -140,13 +157,18 @@ export interface Contexte2D {
   moveTo(x: number, y: number): void;
   lineTo(x: number, y: number): void;
   arc(x: number, y: number, r: number, a0: number, a1: number, antihoraire?: boolean): void;
+  bezierCurveTo(c1x: number, c1y: number, c2x: number, c2y: number, x: number, y: number): void;
   closePath(): void;
   stroke(): void;
   fillText(t: string, x: number, y: number): void;
 }
 
-/** Cadre d'affichage : la viewBox posée dans `largeur` × `hauteur` pixels (préservation des proportions, centrée, comme SVG). */
-export interface Cadre2D { echelle: number; ox: number; oy: number }
+/**
+ * Cadre d'affichage : la viewBox posée dans `largeur` × `hauteur` pixels (préservation des proportions, centrée, comme
+ * SVG). `sy` = −1 : axe y retourné (planche 2D, dont l'écran descend avec y du document alors que le SVG exporté le
+ * retourne) ; les angles des arcs et la rotation des textes suivent la réflexion.
+ */
+export interface Cadre2D { echelle: number; ox: number; oy: number; sy?: 1 | -1 }
 export function cadreViewBox(vb: readonly [number, number, number, number], largeur: number, hauteur: number): Cadre2D {
   const echelle = Math.min(largeur / vb[2], hauteur / vb[3]);
   return { echelle, ox: (largeur - vb[2] * echelle) / 2 - vb[0] * echelle, oy: (hauteur - vb[3] * echelle) / 2 - vb[1] * echelle };
@@ -156,18 +178,20 @@ const ALIGN = { start: "left", middle: "center", end: "right" } as const;
 
 /**
  * Trace les primitives visibles sur `ctx` : traits de 1 px (comme `vector-effect="non-scaling-stroke"` de l'export),
- * noir, sans remplissage ; textes remplis, police sans empattement, ligne de base alphabétique. Les coordonnées sont
- * transformées à la main (le trait garde 1 px quelle que soit l'échelle).
+ * noir, sans remplissage ; textes remplis, police sans empattement, ligne de base alphabétique ; opacité de chaque
+ * primitive par `globalAlpha`. Les coordonnées sont transformées à la main (le trait garde 1 px quelle que soit
+ * l'échelle). `cadre` : cadre imposé (planche : sa vue courante), sinon celui de la viewBox dans `largeur` × `hauteur`.
  */
-export function dessinerCanvas(ctx: Contexte2D, scene: SceneSvg, largeur: number, hauteur: number): void {
-  const { echelle: s, ox, oy } = cadreViewBox(scene.viewBox, largeur, hauteur);
-  const X = (x: number) => ox + x * s, Y = (y: number) => oy + y * s;
+export function dessinerCanvas(ctx: Contexte2D, scene: SceneSvg, largeur: number, hauteur: number, cadre?: Cadre2D): void {
+  const { echelle: s, ox, oy, sy = 1 } = cadre ?? cadreViewBox(scene.viewBox, largeur, hauteur);
+  const X = (x: number) => ox + x * s, Y = (y: number) => oy + sy * y * s;
   ctx.lineWidth = 1;
   ctx.strokeStyle = "#000";
   ctx.fillStyle = "#000";
   ctx.textBaseline = "alphabetic";
   for (const p of scene.primitives) {
     if (!p.visible) continue;
+    ctx.globalAlpha = p.alpha;
     switch (p.genre) {
       case "ligne": ctx.beginPath(); ctx.moveTo(X(p.x1), Y(p.y1)); ctx.lineTo(X(p.x2), Y(p.y2)); ctx.stroke(); break;
       case "rect": ctx.beginPath(); ctx.moveTo(X(p.x), Y(p.y)); ctx.lineTo(X(p.x + p.w), Y(p.y)); ctx.lineTo(X(p.x + p.w), Y(p.y + p.h)); ctx.lineTo(X(p.x), Y(p.y + p.h)); ctx.closePath(); ctx.stroke(); break;
@@ -181,9 +205,10 @@ export function dessinerCanvas(ctx: Contexte2D, scene: SceneSvg, largeur: number
           else if (c.c === "L") { ctx.lineTo(X(c.x), Y(c.y)); cx = c.x; cy = c.y; }
           else if (c.c === "A") {
             const a = arcCentre(cx, cy, c.r, c.grand, c.sens, c.x, c.y);
-            if (a) ctx.arc(X(a.cx), Y(a.cy), a.r * s, a.debut, a.fin, !a.positif); else ctx.lineTo(X(c.x), Y(c.y));
+            if (a) ctx.arc(X(a.cx), Y(a.cy), a.r * s, sy * a.debut, sy * a.fin, sy < 0 ? a.positif : !a.positif); else ctx.lineTo(X(c.x), Y(c.y));
             cx = c.x; cy = c.y;
-          } else ctx.closePath();
+          } else if (c.c === "C") { ctx.bezierCurveTo(X(c.x1), Y(c.y1), X(c.x2), Y(c.y2), X(c.x), Y(c.y)); cx = c.x; cy = c.y; }
+          else ctx.closePath();
         }
         ctx.stroke();
         break;
@@ -191,7 +216,7 @@ export function dessinerCanvas(ctx: Contexte2D, scene: SceneSvg, largeur: number
       case "texte":
         ctx.save();
         ctx.translate(X(p.x), Y(p.y));
-        if (p.rotation) ctx.rotate((p.rotation * Math.PI) / 180);
+        if (p.rotation) ctx.rotate((sy * p.rotation * Math.PI) / 180);
         ctx.font = `${p.taille * s}px sans-serif`;
         ctx.textAlign = ALIGN[p.ancre];
         ctx.fillText(p.contenu, 0, 0);
@@ -199,16 +224,17 @@ export function dessinerCanvas(ctx: Contexte2D, scene: SceneSvg, largeur: number
         break;
     }
   }
+  ctx.globalAlpha = 1;
 }
 
 /** Enregistreur : un `Contexte2D` qui consigne les appels (avec la transformation courante) au lieu de dessiner. */
-export type Appel = { f: string; args: number[]; texte?: string; font?: string; align?: string; m: [number, number, number, number, number, number] };
+export type Appel = { f: string; args: number[]; texte?: string; font?: string; align?: string; alpha: number; m: [number, number, number, number, number, number] };
 export class EnregistreurCanvas implements Contexte2D {
-  lineWidth = 1; strokeStyle = "#000"; fillStyle = "#000"; font = "10px sans-serif"; textAlign = "start"; textBaseline = "alphabetic";
+  lineWidth = 1; strokeStyle = "#000"; fillStyle = "#000"; globalAlpha = 1; font = "10px sans-serif"; textAlign = "start"; textBaseline = "alphabetic";
   readonly appels: Appel[] = [];
   private m: [number, number, number, number, number, number] = [1, 0, 0, 1, 0, 0];
   private pile: [number, number, number, number, number, number][] = [];
-  private noter(f: string, args: number[], plus: Partial<Appel> = {}) { this.appels.push({ f, args, m: [...this.m], ...plus }); }
+  private noter(f: string, args: number[], plus: Partial<Appel> = {}) { this.appels.push({ f, args, alpha: this.globalAlpha, m: [...this.m], ...plus }); }
   save() { this.pile.push([...this.m]); }
   restore() { this.m = this.pile.pop() ?? [1, 0, 0, 1, 0, 0]; }
   translate(x: number, y: number) { const [a, b, c, d, e, f] = this.m; this.m = [a, b, c, d, e + a * x + c * y, f + b * x + d * y]; }
@@ -217,6 +243,7 @@ export class EnregistreurCanvas implements Contexte2D {
   moveTo(x: number, y: number) { this.noter("moveTo", [x, y]); }
   lineTo(x: number, y: number) { this.noter("lineTo", [x, y]); }
   arc(x: number, y: number, r: number, a0: number, a1: number, anti = false) { this.noter("arc", [x, y, r, a0, a1, anti ? 1 : 0]); }
+  bezierCurveTo(c1x: number, c1y: number, c2x: number, c2y: number, x: number, y: number) { this.noter("bezierCurveTo", [c1x, c1y, c2x, c2y, x, y]); }
   closePath() { this.noter("closePath", []); }
   stroke() { this.noter("stroke", []); }
   fillText(t: string, x: number, y: number) { this.noter("fillText", [x, y], { texte: t, font: this.font, align: this.textAlign }); }
@@ -224,24 +251,32 @@ export class EnregistreurCanvas implements Contexte2D {
 
 // ——— Traits élémentaires (fidélité géométrique) ———
 
-/** Trait élémentaire dans le repère de l'utilisateur SVG : segment, arc exact (centre, rayon, angles) ou texte. */
-export type Trait =
+/**
+ * Trait élémentaire dans le repère de l'utilisateur SVG : segment, arc exact (centre, rayon, angles), courbe de Bézier
+ * cubique exacte (extrémités et points de contrôle) ou texte ; `a` : opacité effective du trait.
+ */
+export type Trait = { a: number } & (
   | { t: "segment"; x1: number; y1: number; x2: number; y2: number }
   | { t: "arc"; cx: number; cy: number; r: number; debut: number; balayage: number }
-  | { t: "texte"; x: number; y: number; taille: number; rotation: number; ancre: string; contenu: string };
+  | { t: "bezier"; x0: number; y0: number; c1x: number; c1y: number; c2x: number; c2y: number; x1: number; y1: number }
+  | { t: "texte"; x: number; y: number; taille: number; rotation: number; ancre: string; contenu: string });
 
 const DEUX_PI = 2 * Math.PI;
 const norm = (a: number) => ((a % DEUX_PI) + DEUX_PI) % DEUX_PI;
 /** Arc ramené au sens positif : départ normalisé, balayage dans ]0 ; 2π]. */
-function arcPositif(cx: number, cy: number, r: number, a0: number, a1: number, positif: boolean, complet = false): Trait {
-  if (complet) return { t: "arc", cx, cy, r, debut: 0, balayage: DEUX_PI };
+function arcPositif(cx: number, cy: number, r: number, a0: number, a1: number, positif: boolean, complet = false, a = 1): Trait {
+  if (complet) return { a, t: "arc", cx, cy, r, debut: 0, balayage: DEUX_PI };
   const [d, f] = positif ? [a0, a1] : [a1, a0];
   const b = norm(f - d);
-  return { t: "arc", cx, cy, r, debut: norm(d), balayage: b === 0 ? DEUX_PI : b };
+  return { a, t: "arc", cx, cy, r, debut: norm(d), balayage: b === 0 ? DEUX_PI : b };
 }
-function segment(x1: number, y1: number, x2: number, y2: number): Trait {
+function segment(x1: number, y1: number, x2: number, y2: number, a = 1): Trait {
   // Orientation canonique : un même segment se compare quel que soit son sens de parcours.
-  return x1 < x2 || (x1 === x2 && y1 <= y2) ? { t: "segment", x1, y1, x2, y2 } : { t: "segment", x1: x2, y1: y2, x2: x1, y2: y1 };
+  return x1 < x2 || (x1 === x2 && y1 <= y2) ? { a, t: "segment", x1, y1, x2, y2 } : { a, t: "segment", x1: x2, y1: y2, x2: x1, y2: y1 };
+}
+function bezier(x0: number, y0: number, c1x: number, c1y: number, c2x: number, c2y: number, x1: number, y1: number, a = 1): Trait {
+  // Orientation canonique (même courbe parcourue à l'envers : extrémités et contrôles permutés).
+  return x0 < x1 || (x0 === x1 && y0 <= y1) ? { a, t: "bezier", x0, y0, c1x, c1y, c2x, c2y, x1, y1 } : { a, t: "bezier", x0: x1, y0: y1, c1x: c2x, c1y: c2y, c2x: c1x, c2y: c1y, x1: x0, y1: y0 };
 }
 
 /** Traits des primitives visibles de la scène SVG. */
@@ -249,22 +284,24 @@ export function traitsSvg(scene: SceneSvg): Trait[] {
   const out: Trait[] = [];
   for (const p of scene.primitives) {
     if (!p.visible) continue;
+    const al = p.alpha;
     switch (p.genre) {
-      case "ligne": out.push(segment(p.x1, p.y1, p.x2, p.y2)); break;
-      case "rect": { const q = [[p.x, p.y], [p.x + p.w, p.y], [p.x + p.w, p.y + p.h], [p.x, p.y + p.h]] as const; q.forEach((a, i) => { const b = q[(i + 1) % 4]!; out.push(segment(a[0], a[1], b[0], b[1])); }); break; }
-      case "cercle": out.push(arcPositif(p.cx, p.cy, p.r, 0, 0, true, true)); break;
-      case "polygone": p.points.forEach((a, i) => { const b = p.points[(i + 1) % p.points.length]!; out.push(segment(a[0], a[1], b[0], b[1])); }); break;
+      case "ligne": out.push(segment(p.x1, p.y1, p.x2, p.y2, al)); break;
+      case "rect": { const q = [[p.x, p.y], [p.x + p.w, p.y], [p.x + p.w, p.y + p.h], [p.x, p.y + p.h]] as const; q.forEach((a, i) => { const b = q[(i + 1) % 4]!; out.push(segment(a[0], a[1], b[0], b[1], al)); }); break; }
+      case "cercle": out.push(arcPositif(p.cx, p.cy, p.r, 0, 0, true, true, al)); break;
+      case "polygone": p.points.forEach((a, i) => { const b = p.points[(i + 1) % p.points.length]!; out.push(segment(a[0], a[1], b[0], b[1], al)); }); break;
       case "chemin": {
         let x = 0, y = 0, x0 = 0, y0 = 0;
         for (const c of p.commandes) {
           if (c.c === "M") { x = x0 = c.x; y = y0 = c.y; }
-          else if (c.c === "L") { out.push(segment(x, y, c.x, c.y)); x = c.x; y = c.y; }
-          else if (c.c === "A") { const a = arcCentre(x, y, c.r, c.grand, c.sens, c.x, c.y); out.push(a ? arcPositif(a.cx, a.cy, a.r, a.debut, a.fin, a.positif) : segment(x, y, c.x, c.y)); x = c.x; y = c.y; }
-          else { if (x !== x0 || y !== y0) out.push(segment(x, y, x0, y0)); x = x0; y = y0; }
+          else if (c.c === "L") { out.push(segment(x, y, c.x, c.y, al)); x = c.x; y = c.y; }
+          else if (c.c === "A") { const a = arcCentre(x, y, c.r, c.grand, c.sens, c.x, c.y); out.push(a ? arcPositif(a.cx, a.cy, a.r, a.debut, a.fin, a.positif, false, al) : segment(x, y, c.x, c.y, al)); x = c.x; y = c.y; }
+          else if (c.c === "C") { out.push(bezier(x, y, c.x1, c.y1, c.x2, c.y2, c.x, c.y, al)); x = c.x; y = c.y; }
+          else { if (x !== x0 || y !== y0) out.push(segment(x, y, x0, y0, al)); x = x0; y = y0; }
         }
         break;
       }
-      case "texte": out.push({ t: "texte", x: p.x, y: p.y, taille: p.taille, rotation: p.rotation, ancre: p.ancre, contenu: p.contenu }); break;
+      case "texte": out.push({ a: al, t: "texte", x: p.x, y: p.y, taille: p.taille, rotation: p.rotation, ancre: p.ancre, contenu: p.contenu }); break;
     }
   }
   return out;
@@ -276,7 +313,8 @@ export function traitsSvg(scene: SceneSvg): Trait[] {
  * rotation lues de la transformation courante).
  */
 export function traitsCanvas(appels: readonly Appel[], cadre: Cadre2D): Trait[] {
-  const ux = (x: number) => (x - cadre.ox) / cadre.echelle, uy = (y: number) => (y - cadre.oy) / cadre.echelle;
+  const sy = cadre.sy ?? 1;
+  const ux = (x: number) => (x - cadre.ox) / cadre.echelle, uy = (y: number) => (sy * (y - cadre.oy)) / cadre.echelle;
   const out: Trait[] = [];
   let x = 0, y = 0, x0 = 0, y0 = 0, ouvert = false;
   const ANCRE: Record<string, string> = { left: "start", center: "middle", right: "end" };
@@ -284,24 +322,31 @@ export function traitsCanvas(appels: readonly Appel[], cadre: Cadre2D): Trait[] 
     switch (a.f) {
       case "beginPath": ouvert = false; break;
       case "moveTo": x = x0 = a.args[0]!; y = y0 = a.args[1]!; ouvert = true; break;
-      case "lineTo": out.push(segment(ux(x), uy(y), ux(a.args[0]!), uy(a.args[1]!))); x = a.args[0]!; y = a.args[1]!; break;
+      case "lineTo": out.push(segment(ux(x), uy(y), ux(a.args[0]!), uy(a.args[1]!), a.alpha)); x = a.args[0]!; y = a.args[1]!; break;
+      case "bezierCurveTo": {
+        const [c1x, c1y, c2x, c2y, ex, ey] = a.args as [number, number, number, number, number, number];
+        out.push(bezier(ux(x), uy(y), ux(c1x), uy(c1y), ux(c2x), uy(c2y), ux(ex), uy(ey), a.alpha));
+        x = ex; y = ey;
+        break;
+      }
       case "arc": {
         const [cx, cy, r, d, f, anti] = a.args as [number, number, number, number, number, number];
         const complet = Math.abs(f - d) >= DEUX_PI - 1e-12;
-        const sx = cx + r * Math.cos(d), sy = cy + r * Math.sin(d);
+        const sx = cx + r * Math.cos(d), sya = cy + r * Math.sin(d);
         // Le contexte relie le point courant au départ de l'arc ; un départ confondu n'ajoute rien.
-        if (ouvert && Math.hypot(sx - x, sy - y) > 1e-9 * Math.max(1, r)) out.push(segment(ux(x), uy(y), ux(sx), uy(sy)));
-        out.push(arcPositif(ux(cx), uy(cy), r / cadre.echelle, d, f, anti === 0, complet));
+        if (ouvert && Math.hypot(sx - x, sya - y) > 1e-9 * Math.max(1, r)) out.push(segment(ux(x), uy(y), ux(sx), uy(sya), a.alpha));
+        // Réflexion (sy = −1) : angles opposés et sens inversé, ramenés dans le repère de l'utilisateur SVG.
+        out.push(sy < 0 ? arcPositif(ux(cx), uy(cy), r / cadre.echelle, -d, -f, anti !== 0, complet, a.alpha) : arcPositif(ux(cx), uy(cy), r / cadre.echelle, d, f, anti === 0, complet, a.alpha));
         x = cx + r * Math.cos(f); y = cy + r * Math.sin(f);
-        if (!ouvert) { x0 = sx; y0 = sy; ouvert = true; }
+        if (!ouvert) { x0 = sx; y0 = sya; ouvert = true; }
         break;
       }
-      case "closePath": if (Math.hypot(x - x0, y - y0) > 1e-9) out.push(segment(ux(x), uy(y), ux(x0), uy(y0))); x = x0; y = y0; break;
+      case "closePath": if (Math.hypot(x - x0, y - y0) > 1e-9) out.push(segment(ux(x), uy(y), ux(x0), uy(y0), a.alpha)); x = x0; y = y0; break;
       case "fillText": {
         const [m0, m1, , , e, f] = a.m;
         const taille = Number(/^([\d.e+-]+)px/.exec(a.font ?? "")?.[1] ?? Number.NaN) / cadre.echelle;
-        const rot = (Math.atan2(m1, m0) * 180) / Math.PI;
-        out.push({ t: "texte", x: ux(e + m0 * a.args[0]!), y: uy(f + m1 * a.args[0]!), taille, rotation: Math.abs(rot) < 1e-12 ? 0 : rot, ancre: ANCRE[a.align ?? "left"] ?? "start", contenu: a.texte ?? "" });
+        const rot = (sy * Math.atan2(m1, m0) * 180) / Math.PI;
+        out.push({ a: a.alpha, t: "texte", x: ux(e + m0 * a.args[0]!), y: uy(f + m1 * a.args[0]!), taille, rotation: Math.abs(rot) < 1e-12 ? 0 : rot, ancre: ANCRE[a.align ?? "left"] ?? "start", contenu: a.texte ?? "" });
         break;
       }
     }
@@ -320,9 +365,11 @@ export interface ComparaisonTraits {
   ecartMax: number;
 }
 
-const cleTri = (t: Trait): string => (t.t === "segment" ? `s${t.x1.toFixed(4)},${t.y1.toFixed(4)}` : t.t === "arc" ? `a${t.cx.toFixed(4)},${t.cy.toFixed(4)}` : `t${t.contenu}`);
+const cleTri = (t: Trait): string => (t.t === "segment" ? `s${t.x1.toFixed(4)},${t.y1.toFixed(4)}` : t.t === "arc" ? `a${t.cx.toFixed(4)},${t.cy.toFixed(4)}` : t.t === "bezier" ? `b${t.x0.toFixed(4)},${t.y0.toFixed(4)}` : `t${t.contenu}`);
 function ecart(a: Trait, b: Trait): number {
-  if (a.t !== b.t) return Infinity;
+  // Une opacité différente est une primitive différente (la transparence fait partie du rendu).
+  if (a.t !== b.t || Math.abs(a.a - b.a) > 1e-9) return Infinity;
+  if (a.t === "bezier" && b.t === "bezier") return Math.max(...(["x0", "y0", "c1x", "c1y", "c2x", "c2y", "x1", "y1"] as const).map((k) => Math.abs(a[k] - b[k])));
   if (a.t === "segment" && b.t === "segment") return Math.max(Math.abs(a.x1 - b.x1), Math.abs(a.y1 - b.y1), Math.abs(a.x2 - b.x2), Math.abs(a.y2 - b.y2));
   if (a.t === "arc" && b.t === "arc") {
     const da = Math.abs(norm(a.debut - b.debut + Math.PI) - Math.PI), db = Math.abs(a.balayage - b.balayage);
@@ -334,7 +381,7 @@ function ecart(a: Trait, b: Trait): number {
 
 /** Appariement des traits (même type, plus proche, à `tolerance` près) : écarts mesurés, rien n'est corrigé. */
 export function comparerTraits(reference: readonly Trait[], compare: readonly Trait[], tolerance = 1e-6): ComparaisonTraits {
-  const compte = (l: readonly Trait[]) => l.reduce((o, t) => ({ ...o, [t.t]: o[t.t] + 1 }), { segment: 0, arc: 0, texte: 0 } as Record<Trait["t"], number>);
+  const compte = (l: readonly Trait[]) => l.reduce((o, t) => ({ ...o, [t.t]: o[t.t] + 1 }), { segment: 0, arc: 0, bezier: 0, texte: 0 } as Record<Trait["t"], number>);
   const restants = new Map<string, Trait[]>();
   for (const t of compare) { const k = `${t.t}|${cleTri(t)}`; (restants.get(k) ?? restants.set(k, []).get(k)!).push(t); }
   let manquants = 0, ecartMax = 0;
@@ -353,27 +400,34 @@ export function comparerTraits(reference: readonly Trait[], compare: readonly Tr
 
 /** Pas angulaire de découpe des arcs pour le moteur GPU (radians) : choix de la comparaison, déclaré, pas une tolérance métier. */
 export const PAS_ARC_GPU = Math.PI / 32;
+/** Segments d'une courbe de Bézier pour le moteur GPU : choix de la comparaison, déclaré. */
+export const SEGMENTS_BEZIER_GPU = 16;
 
 /**
  * Segments de droite des primitives visibles, en coordonnées de découpe WebGL (x, y dans [−1 ; 1], y montant), deux
- * sommets par segment. Les arcs sont découpés au pas `PAS_ARC_GPU` ; les textes ne sont pas tracés (comptés à part).
+ * sommets par segment, et l'opacité de chaque segment (`alphas`). Les arcs sont découpés au pas `PAS_ARC_GPU`, les
+ * courbes de Bézier en `SEGMENTS_BEZIER_GPU` segments ; les textes ne sont pas tracés (comptés à part).
  */
-export function segmentsGpu(scene: SceneSvg, largeur: number, hauteur: number): { sommets: Float32Array; segments: number; textesNonTraces: number } {
+export function segmentsGpu(scene: SceneSvg, largeur: number, hauteur: number): { sommets: Float32Array; alphas: Float32Array; segments: number; textesNonTraces: number } {
   const { echelle: s, ox, oy } = cadreViewBox(scene.viewBox, largeur, hauteur);
   const cx = (x: number) => ((ox + x * s) / largeur) * 2 - 1, cy = (y: number) => 1 - ((oy + y * s) / hauteur) * 2;
-  const v: number[] = [];
+  const v: number[] = [], al: number[] = [];
   let textes = 0;
+  const seg = (x1: number, y1: number, x2: number, y2: number, a: number) => { v.push(cx(x1), cy(y1), cx(x2), cy(y2)); al.push(a); };
   for (const t of traitsSvg(scene)) {
-    if (t.t === "segment") v.push(cx(t.x1), cy(t.y1), cx(t.x2), cy(t.y2));
+    if (t.t === "segment") seg(t.x1, t.y1, t.x2, t.y2, t.a);
     else if (t.t === "arc") {
       const n = Math.max(1, Math.ceil(t.balayage / PAS_ARC_GPU));
       for (let i = 0; i < n; i++) {
         const a = t.debut + (t.balayage * i) / n, b = t.debut + (t.balayage * (i + 1)) / n;
-        v.push(cx(t.cx + t.r * Math.cos(a)), cy(t.cy + t.r * Math.sin(a)), cx(t.cx + t.r * Math.cos(b)), cy(t.cy + t.r * Math.sin(b)));
+        seg(t.cx + t.r * Math.cos(a), t.cy + t.r * Math.sin(a), t.cx + t.r * Math.cos(b), t.cy + t.r * Math.sin(b), t.a);
       }
+    } else if (t.t === "bezier") {
+      const P = (u: number) => { const w = 1 - u, k0 = w * w * w, k1 = 3 * w * w * u, k2 = 3 * w * u * u, k3 = u * u * u; return [k0 * t.x0 + k1 * t.c1x + k2 * t.c2x + k3 * t.x1, k0 * t.y0 + k1 * t.c1y + k2 * t.c2y + k3 * t.y1] as const; };
+      for (let i = 0; i < SEGMENTS_BEZIER_GPU; i++) { const [x1, y1] = P(i / SEGMENTS_BEZIER_GPU), [x2, y2] = P((i + 1) / SEGMENTS_BEZIER_GPU); seg(x1, y1, x2, y2, t.a); }
     } else textes++;
   }
-  return { sommets: new Float32Array(v), segments: v.length / 4, textesNonTraces: textes };
+  return { sommets: new Float32Array(v), alphas: new Float32Array(al), segments: v.length / 4, textesNonTraces: textes };
 }
 
 /** Statistiques d'une série de durées (rang le plus proche : valeurs effectivement mesurées). */
