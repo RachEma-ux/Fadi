@@ -453,6 +453,9 @@ async function staleRevisionBody(tx: Tx, variantId: string, envelope: StudioEnve
 export async function submitStudioCommands(scope: StudioScope, actorId: string, input: unknown, ecriture: StudioEcriture = "modify"): Promise<StudioContext & { replayed: boolean }> {
   // Capture avant le premier await : aucun changement du payload durant les verrous/rejeu.
   scope = Object.freeze({ projectId: scope.projectId, studyId: scope.studyId, variantId: scope.variantId });
+  // EX-003 : aucune géométrie sans variante propriétaire — un contexte incomplet est refusé avant toute lecture ou
+  // écriture (sans s'en remettre à la sémantique de NULL de la requête).
+  if ([scope.projectId, scope.studyId, scope.variantId].some((x) => typeof x !== "string" || x === "")) return notFound();
   const envelope = parseStudioEnvelope(input);
   refuserPrefixeReserve(envelope.requestId, ecriture);
   const payloadHash = studioPayloadHash(envelope);

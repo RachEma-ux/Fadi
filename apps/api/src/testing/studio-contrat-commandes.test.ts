@@ -154,6 +154,15 @@ describe("A.5-02 — validation serveur de chaque enveloppe", () => {
     expect((await refus("proprietaire", enveloppe("q1", "r2", [ligne("a", 0)]), { ...scope, variantId: "v2" })).status).toBe(404);
     expect((await refus("proprietaire", enveloppe("q1", "r0", [ligne("a", 0)]), { ...scope, projectId: "autre" })).status).toBe(404);
   });
+  it("EX-003 [−] contexte : un objet soumis sans variante (variantId absent ou vide) est rejeté (404), sans objet orphelin", async () => {
+    for (const variantId of [undefined, "", null]) {
+      const e = await refus("proprietaire", enveloppe("q1", "r0", [ligne("orphelin", 0)]), { ...scope, variantId } as unknown as typeof scope);
+      expect(e.status).toBe(404);
+    }
+    // Rien n'est écrit (contrôlé par `refus`) : aucune révision ne porte l'objet soumis, la tête reste r0.
+    expect(banc.lignes.get(studioRevisions)!.some((r) => JSON.stringify(r.document).includes("orphelin"))).toBe(false);
+    expect(tete()).toBe("r0");
+  });
   it("paramètres : une géométrie invalide est refusée (400 invalid_commands)", async () => {
     const e = await refus("proprietaire", enveloppe("q1", "r0", [{ toolId: "studio.dessin.ligne", params: { id: "a", type: "line", start: { x: 0, y: 0 }, end: { x: 0, y: 0 } } } as StudioCommand]));
     expect(e.status).toBe(400);

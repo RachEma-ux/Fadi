@@ -406,12 +406,28 @@ try {
   check("rétablir (Ctrl+Y) : le calque est de nouveau masqué", (await surCalque.count()) === 0);
   const envois = [];
   page.on("request", (r) => { if (r.method() === "POST" && /\/studio\/studies\/[^/]+\/variants\/[^/]+\/commands$/.test(new URL(r.url()).pathname)) envois.push(r.postDataJSON()); });
+  // A.5-11 : ordre observé des échanges — lectures dérivées (historique, étude) relues seulement après l'accusé du
+  // serveur d'un lot confirmé ; un envoi sans réponse (coupure) n'en déclenche aucune.
+  const ordreEngagement = [];
+  const lectureDerivee = (r) => r.method() === "GET" && /\/studio\/studies\/[^/]+(\/variants\/[^/]+\/revisions)?$/.test(new URL(r.url()).pathname);
+  const estLot = (r) => r.method() === "POST" && /\/studio\/studies\/[^/]+\/variants\/[^/]+\/commands$/.test(new URL(r.url()).pathname);
+  const surDemande = (r) => { if (lectureDerivee(r)) ordreEngagement.push("relecture"); else if (estLot(r)) ordreEngagement.push("envoi"); };
+  const surReponse = (r) => { if (estLot(r.request())) ordreEngagement.push(`accuse-${r.status()}`); };
+  const surEchec = (r) => { if (estLot(r)) ordreEngagement.push("coupure"); };
+  page.on("request", surDemande); page.on("response", surReponse); page.on("requestfailed", surEchec);
   let coupe = false;
   await page.route("**/commands", (route) => { if (!coupe) { coupe = true; return route.abort("failed"); } return route.continue(); });
   await page.keyboard.press("Control+s");
   await page.locator("[data-studio-erreur-planche]").filter({ hasText: "Confirmation serveur indisponible" }).waitFor();
+  const apresCoupure = [...ordreEngagement];
   await cliquerBouton(outils, "Réessayer la sauvegarde");
   await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
+  await page.waitForTimeout(500);
+  page.off("request", surDemande); page.off("response", surReponse); page.off("requestfailed", surEchec);
+  const iAccuse = ordreEngagement.indexOf("accuse-200");
+  check("A.5-11 : invalidations après engagement — aucune relecture dérivée après la coupure ; relectures seulement après l'accusé 200 du lot",
+    JSON.stringify(apresCoupure) === JSON.stringify(["envoi", "coupure"]) && iAccuse > 0 && !ordreEngagement.slice(0, iAccuse).includes("relecture") && ordreEngagement.slice(iAccuse + 1).includes("relecture"),
+    ordreEngagement.join(" "));
   await page.unroute("**/commands");
   const enveloppe = envois[0];
   check("enregistrement (Ctrl+S) : un lot de commandes studio-commands/1 sur la tête", envois.length === 2 && enveloppe.contractVersion === "studio-commands/1" && enveloppe.commands.map((c) => c.toolId).join() === "studio.dessin.ligne,studio.dessin.cote,studio.dessin.deplacer,studio.dessin.supprimer,studio.calque.creer,studio.dessin.rectangle,studio.calque.modifier", enveloppe.commands.map((c) => c.toolId).join());
@@ -858,6 +874,43 @@ try {
   check("navigation 3D : Maj+G passe en vue en plan (bascule enfoncée), sans modifier le brouillon", (await outils.locator('[data-studio-commande="navigation-3d"]').getAttribute("aria-pressed")) === "true" && (await portee()).includes("(2 commande(s)"));
   await page.keyboard.press("Shift+G");
   await page.locator('[data-studio-vue3d][data-studio-navigation="orbite"]').waitFor();
+  // A.3-05 — navigation 3D du parcours autonome : orbite (glisser), zoom (molette) et panoramique (glisser droit)
+  // déplacent la caméra rendue, sans aucune commande ni écriture (brouillon, solides et envois inchangés).
+  {
+    const canevas = panneaux3d.locator("canvas[data-studio-vue3d-canvas]");
+    await canevas.scrollIntoViewIfNeeded();
+    const cadre = await canevas.boundingBox();
+    const camera = async () => JSON.parse((await canevas.getAttribute("data-studio-camera")) ?? "null");
+    const distance = (c) => Math.hypot(c.position.x - c.target.x, c.position.y - c.target.y, c.position.z - c.target.z);
+    const envoisNav = [];
+    const surEnvoi = (r) => { if (r.method() !== "GET" && /\/studio\//.test(new URL(r.url()).pathname)) envoisNav.push(r.url()); };
+    page.on("request", surEnvoi);
+    const cx = cadre.x + cadre.width / 2, cy = cadre.y + cadre.height / 2;
+    const glisser = async (dx, dy, button = "left") => {
+      await page.mouse.move(cx, cy);
+      await page.mouse.down({ button });
+      for (let i = 1; i <= 8; i++) await page.mouse.move(cx + (dx * i) / 8, cy + (dy * i) / 8);
+      await page.mouse.up({ button });
+    };
+    const c0 = await camera();
+    await glisser(120, 40);
+    const c1 = await camera();
+    check("A.3-05 : orbite (glisser) — la caméra tourne autour de la même cible, à la même distance",
+      c0?.projection === "perspective" && JSON.stringify(c1.target) === JSON.stringify(c0.target) && JSON.stringify(c1.position) !== JSON.stringify(c0.position) && Math.abs(distance(c1) - distance(c0)) < 1e-6 * Math.max(1, distance(c0)),
+      JSON.stringify([c0, c1]));
+    await page.mouse.move(cx, cy);
+    await page.mouse.wheel(0, -400);
+    await page.waitForFunction((d) => { const c = JSON.parse(document.querySelector("canvas[data-studio-vue3d-canvas]")?.getAttribute("data-studio-camera") ?? "null"); return c && Math.hypot(c.position.x - c.target.x, c.position.y - c.target.y, c.position.z - c.target.z) < d - 1e-6; }, distance(c1), { timeout: 5000 }).catch(() => {});
+    const c2 = await camera();
+    check("A.3-05 : zoom (molette) — la caméra se rapproche de sa cible, cible inchangée", distance(c2) < distance(c1) && JSON.stringify(c2.target) === JSON.stringify(c1.target), JSON.stringify([c1, c2]));
+    await glisser(80, -60, "right");
+    const c3 = await camera();
+    check("A.3-05 : panoramique (glisser droit) — cible et caméra translatées ensemble, distance gardée",
+      JSON.stringify(c3.target) !== JSON.stringify(c2.target) && Math.abs(distance(c3) - distance(c2)) < 1e-6 * Math.max(1, distance(c2)), JSON.stringify([c2, c3]));
+    page.off("request", surEnvoi);
+    check("A.3-05 : orbite, zoom et panoramique ne modifient pas le document — brouillon, solides et envois inchangés",
+      (await portee()).includes("(2 commande(s)") && (await vueLibre.getAttribute("data-studio-solides-libres")) === "2" && envoisNav.length === 0, `${await portee()} ${envoisNav.join()}`);
+  }
   await page.keyboard.press("Shift+K");
   const panneauCoupe = panneaux3d.locator("[data-studio-coupe]");
   await panneauCoupe.waitFor();
@@ -1459,6 +1512,45 @@ try {
   await page.reload();
   await page.locator(`svg [data-studio-architecture="${murCopie?.id}"]`).waitFor({ state: "attached" });
   check("architecture : l'actualisation restitue le mur copié et son ouverture", (await page.locator('svg [data-studio-architecture][data-studio-type="opening"]').count()) === 2);
+
+  // A.4-03 / A.4-09 — le même mur modifié avec succès depuis la planche 2D (hauteur 3 → 3,2 m), puis depuis la vue 3D
+  // (épaisseur 0,2 → 0,25 m) : même objectId de bout en bout, ouverture toujours portée par ce mur.
+  {
+    const enAttente = (n) => page.waitForFunction((x) => document.querySelector("[data-studio-annuler-portee]")?.getAttribute("data-studio-en-attente-nombre") === x, String(n));
+    await page.evaluate(() => document.activeElement?.blur());
+    await page.keyboard.press("Shift+Z");
+    await page.locator(`svg [data-studio-architecture="${idMur}"] polygon`).first().click();
+    await page.waitForFunction((id) => document.querySelector(`svg [data-studio-architecture="${id}"]`)?.getAttribute("aria-pressed") === "true", idMur);
+    const murEdite = proprietes.locator(`[data-studio-architecture-choisi="${idMur}"]`);
+    await murEdite.getByLabel("Hauteur (m)", { exact: true }).fill("3.2");
+    await murEdite.getByRole("button", { name: "Appliquer", exact: true }).click();
+    await enAttente(1);
+    const plan2d = await page.locator(`svg [data-studio-architecture="${idMur}"]`).count();
+    check("A.4-09 : mur modifié depuis la planche 2D (hauteur 3,2 m) — accepté, une commande en attente, même mur dessiné", plan2d === 1 && (await portee()).includes("(1 commande(s)"), await portee());
+    await page.evaluate(() => document.activeElement?.blur());
+    await page.keyboard.press("Shift+D");
+    await panneaux3d.locator("[data-studio-architecture-vue3d]").waitFor();
+    await panneaux3d.locator(`[data-studio-architecture-3d-objet="${idMur}"]`).click();
+    await proprietes.locator(`[data-studio-architecture-choisi="${idMur}"]`).waitFor();
+    await proprietes.locator(`[data-studio-architecture-choisi="${idMur}"]`).getByLabel("Épaisseur (m)", { exact: true }).fill("0.25");
+    await proprietes.locator(`[data-studio-architecture-choisi="${idMur}"]`).getByRole("button", { name: "Appliquer", exact: true }).click();
+    await enAttente(2);
+    const ids3dApres = await panneaux3d.locator("[data-studio-architecture-3d-objet]").evaluateAll((els) => els.map((e) => e.getAttribute("data-studio-architecture-3d-objet")));
+    check("A.4-09 : le même mur modifié ensuite depuis la vue 3D (épaisseur 0,25 m) — accepté, la vue 3D garde ses identifiants", ids3dApres.includes(idMur) && ids3dApres.includes(idOuv) && (await portee()).includes("(2 commande(s)"), JSON.stringify(ids3dApres));
+    await page.evaluate(() => document.activeElement?.blur());
+    await page.keyboard.press("Shift+D");
+    const avantDeux = envois.length;
+    await page.keyboard.press("Control+s");
+    await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
+    const envoiDeux = envois[envois.length - 1];
+    const archiDeux = (await a.api("get", variantePath)).revision.document.architecture ?? [];
+    const murDeux = archiDeux.find((x) => x.id === idMur), ouvDeux = archiDeux.find((x) => x.id === idOuv);
+    check("A.4-03 / A.4-09 : une enveloppe — deux « modifier » du même objectId (2D puis 3D) ; le serveur relit ce mur, hauteur 3,2 m et épaisseur 0,25 m, ouverture toujours hébergée",
+      envois.length === avantDeux + 1 && JSON.stringify(envoiDeux.commands.map((c) => [c.toolId, c.params.id])) === JSON.stringify([["studio.architecture.modifier", idMur], ["studio.architecture.modifier", idMur]])
+        && murDeux?.height === 3.2 && murDeux?.thickness === 0.25 && JSON.stringify(murDeux?.axis) === JSON.stringify([{ x: 0, y: -30 }, { x: 6, y: -30 }]) && ouvDeux?.hostId === idMur && ouvDeux?.width === 1.2
+        && archiDeux.filter((x) => x.type === "wall").length === 2,
+      JSON.stringify([envoiDeux?.commands, murDeux, ouvDeux]));
+  }
 
   // Accessibilité de l'accueil Studio.
   await page.goto(`${BASE}/studio`);

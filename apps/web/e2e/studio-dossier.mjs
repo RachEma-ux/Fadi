@@ -144,7 +144,7 @@ try {
   const docA = (await api("get", variante)).body.revision.document;
   check("TEST-001 : enregistré — révision avec une ligne et une cote, sans extrusion ni solide (planche 2D seule)",
     docA.objects.length === 1 && docA.objects[0].type === "line" && !docA.objects[0].extrusion && (docA.dimensions ?? []).length === 1 && !(docA.solides ?? []).length && !(docA.architecture ?? []).length, court(docA));
-  const revA = await tete();
+  let revA = await tete();
   // Fermer : la session se termine ; rouvrir : nouvelle session, nouvelle connexion, même adresse.
   await context.close();
   ({ context, page } = await session());
@@ -157,6 +157,44 @@ try {
   await page.locator("svg [data-studio-cote]").waitFor({ state: "attached" });
   check("TEST-001 : rouverte dans une nouvelle session, la ligne et la cote reviennent du serveur",
     (await page.locator('svg [role="button"][aria-label^="Ligne "]').count()) === 1 && (await page.locator("svg [data-studio-cote]").getAttribute("data-studio-cote-valeur")) === valeurCote && (await tete()) === revA);
+
+  // A.2-08 — parcours intermédiaire complet : la variante rouverte est modifiée dans l'interface (ligne déplacée de
+  // 1 m en X), enregistrée (Ctrl+S), la session est fermée puis rouverte : la modification revient du serveur.
+  const ligneRouverte = page.locator('svg [role="button"][aria-label^="Ligne "]');
+  const geometrieLigne = () => ligneRouverte.locator("line").evaluate((l) => ["x1", "y1", "x2", "y2"].map((k) => Number(l.getAttribute(k))));
+  const avantModif = await geometrieLigne();
+  const proprietes = page.getByRole("complementary", { name: "Propriétés du dessin" });
+  await (await atteindre(outilsDe(page), ':is(button,a)[aria-label="Sélection"]')).click();
+  await ligneRouverte.press("Enter");
+  await (await atteindre(outilsDe(page), ':is(button,a)[aria-label="Déplacer"]')).click();
+  await proprietes.getByLabel("Déplacement X", { exact: true }).fill("1");
+  await proprietes.getByLabel("Déplacement Y", { exact: true }).fill("0");
+  await proprietes.getByRole("button", { name: "Déplacer la sélection", exact: true }).click();
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("Control+s");
+  await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
+  const revModif = await tete();
+  const histModif = (await api("get", `${variante}/revisions`)).body?.revisions ?? [];
+  const ligneServeur = (await api("get", variante)).body.revision.document.objects[0];
+  check("A.2-08 : modification enregistrée — nouvelle révision fille de la révision rouverte, ligne déplacée de 1 m",
+    revModif !== revA && histModif[0]?.id === revModif && histModif[0]?.parentRevisionId === revA
+    && Math.abs(ligneServeur.start.x - avantModif[0] - 1) < 1e-9 && Math.abs(ligneServeur.end.x - avantModif[2] - 1) < 1e-9,
+    court([revA, revModif, histModif[0], ligneServeur, avantModif]));
+  await context.close();
+  ({ context, page } = await session());
+  await page.goto(`${BASE}/connexion`);
+  await page.fill('input[name="email"]', email);
+  await page.fill('input[name="password"]', motDePasse);
+  await page.click('button[type="submit"]');
+  await page.waitForURL(/\/(accueil|projets)$/);
+  await ouvrirVariante(page);
+  await page.locator("svg [data-studio-cote]").waitFor({ state: "attached" });
+  const apresReouverture = await page.locator('svg [role="button"][aria-label^="Ligne "] line').evaluate((l) => ["x1", "y1", "x2", "y2"].map((k) => Number(l.getAttribute(k))));
+  check("A.2-08 : fermée puis rouverte dans une nouvelle session, la ligne déplacée revient du serveur, la cote la suit (même valeur)",
+    (await tete()) === revModif && Math.abs(apresReouverture[0] - avantModif[0] - 1) < 1e-9 && Math.abs(apresReouverture[2] - avantModif[2] - 1) < 1e-9
+    && (await page.locator("svg [data-studio-cote]").getAttribute("data-studio-cote-valeur")) === valeurCote && (await page.locator("svg [data-studio-cote]").getAttribute("data-studio-cote-etat")) === "resolue",
+    court([apresReouverture, avantModif]));
+  revA = revModif;
 
   // Publication sans modèle 3D : panneau « Publications » de l'étude, « Dessin 2D indépendant ».
   await page.goto(`${BASE}/studio/projets/${projet.id}/etudes/${studyId}`);
@@ -376,6 +414,48 @@ try {
   check("archive : feuilles et dossier exportés dans la section Studio, comptés par le manifeste",
     st?.tables?.studio_sheets?.length === 2 && st.tables.studio_dossiers?.length === 1 && st.manifest?.tables?.studio_sheets?.count === 2 && st.manifest?.tables?.studio_dossiers?.count === 1
       && st.schemaVersion?.tables === "studio-v1/2026-10-19.3", court(st ? { version: st.schemaVersion, sheets: st.tables?.studio_sheets?.length } : Object.keys(archive ?? {})));
+
+  // ——— TR-EX-004 (EX-004) — segment, arc, calque, cote et texte dans un document 2D, publié sans modèle 3D ———
+  const e4 = (await api("post", `${racine}/studies`, { name: "Étude EX-004" })).body;
+  const v4 = `${racine}/studies/${e4.study.id}/variants/${e4.variant.id}`;
+  const d4 = await api("post", `${v4}/commands`, {
+    contractVersion: "studio-commands/1", requestId: `ex004-${randomUUID()}`, baseRevisionId: e4.revision.id, commands: [
+      { toolId: "studio.calque.creer", params: { id: "plan-ex4", name: "Plan EX-004", visible: true, locked: false } },
+      { toolId: "studio.dessin.ligne", params: { id: "seg-ex4", type: "line", layerId: "plan-ex4", start: { x: 0, y: 0 }, end: { x: 4, y: 0 } } },
+      { toolId: "studio.dessin.arc", params: { id: "arc-ex4", type: "arc", layerId: "plan-ex4", center: { x: 4, y: 2 }, radius: 2, startAngle: 0, endAngle: Math.PI / 2 } },
+      { toolId: "studio.dessin.cote", params: { id: "cote-ex4", type: "dimension", layerId: "plan-ex4", start: { x: 0, y: 0 }, end: { x: 4, y: 0 }, offset: -0.5, links: { start: { objectId: "seg-ex4", anchor: "start" }, end: { objectId: "seg-ex4", anchor: "end" } }, toResolve: false } },
+      { toolId: "studio.dessin.texte", params: { id: "texte-ex4", type: "text", layerId: "plan-ex4", position: { x: 1, y: 1 }, height: 0.3, rotation: 0, content: "Piece EX-004", justification: "left" } },
+    ],
+  });
+  const doc4 = d4.body?.revision?.document;
+  check("EX-004 : segment, arc, calque, cote et texte enregistrés dans un document 2D, sans extrusion, solide ni objet architectural",
+    d4.status === 200 && JSON.stringify(doc4.objects.map((o) => o.type)) === JSON.stringify(["line", "arc"]) && doc4.objects.every((o) => !o.extrusion && o.layerId === "plan-ex4")
+      && doc4.layers?.some((l) => l.id === "plan-ex4") && doc4.dimensions?.length === 1 && (doc4.annotations ?? []).some((a) => a.type === "text" && a.id === "texte-ex4")
+      && !(doc4.solides ?? []).length && !(doc4.architecture ?? []).length, court(d4.body));
+  const pub4 = await api("post", `${v4}/publications`, { contenu: "dessin-2d", title: "EX-004 — dessin 2D" });
+  const pubs4 = `${racine}/studies/${e4.study.id}/publications`;
+  const id4 = pub4.body?.id ?? pub4.body?.publication?.id;
+  const m4 = (await api("get", `${pubs4}/${id4}`)).body;
+  const s4 = await api("post", `${pubs4}/${id4}/soumettre`, {});
+  const a4 = await api("post", `${pubs4}/${id4}/approuver`, { manifestHash: m4?.manifestHash });
+  const f4d = await api("post", `${pubs4}/${id4}/diffuser`, {});
+  check("EX-004 : publication « dessin-2d » de cette révision préparée, revue, approuvée et diffusée — SVG, DXF, PDF, aucun IFC",
+    pub4.status === 201 && m4?.revisionId === d4.body.revision.id && m4.contenu === "dessin-2d" && s4.status === 200 && a4.status === 200 && f4d.body?.diffusionStatus === "diffuse"
+      && JSON.stringify((f4d.body.diffusion?.files ?? []).map((f) => f.format)) === JSON.stringify(["svg", "dxf", "pdf"]) && (await fichier(`${pubs4}/${id4}/files/ifc`)).status === 404,
+    court([pub4.status, m4?.manifest, s4.status, a4.status, f4d.body?.diffusion]));
+  const svg4 = (await fichier(`${pubs4}/${id4}/files/svg`)).octets.toString("utf8");
+  const dxf4 = (await fichier(`${pubs4}/${id4}/files/dxf`)).octets.toString("utf8");
+  check("EX-004 : le dessin publié (SVG) porte le calque, le segment, l'arc, la cote et le texte",
+    svg4.includes('data-layer="plan-ex4"') && svg4.includes('<line data-id="seg-ex4"') && svg4.includes('data-id="arc-ex4" data-type="arc"') && /<g data-dimension="cote-ex4"/.test(svg4) && svg4.includes('data-text="texte-ex4"') && svg4.includes(">Piece EX-004</text>"),
+    svg4.slice(0, 400));
+  check("EX-004 : le dessin publié (DXF) porte le calque, le segment, l'arc, la cote éclatée et le texte",
+    /\r\nLINE\r\n/.test(dxf4) && /\r\nARC\r\n/.test(dxf4) && dxf4.includes("\r\nPiece EX-004\r\n") && dxf4.includes("\r\n4,00 m\r\n") && /LAYER\r\n2\r\nPLAN[ _-]EX-004\r\n/i.test(dxf4),
+    dxf4.slice(0, 400));
+  const rouvert4 = (await lecteur("GET", v4)).body;
+  check("EX-004 : rouverte après publication, la variante n'a ni modèle 3D ni volume de substitution, et la publication n'a créé aucune révision",
+    rouvert4?.revision?.id === d4.body.revision.id && !(rouvert4.revision.document.solides ?? []).length && !(rouvert4.revision.document.architecture ?? []).length
+      && rouvert4.revision.document.objects.every((o) => !o.extrusion) && ((await api("get", `${v4}/revisions`)).body?.revisions ?? []).length === 2,
+    court(rouvert4?.revision));
 
   check("aucune erreur de page", erreurs.length === 0, erreurs.join(" | "));
 } catch (e) {
