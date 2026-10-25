@@ -193,6 +193,44 @@ réaligné 68 libellés ; une preuve qui n'en était pas une (REC-I-02) a été 
 
 G1 n'emporte ni G4, ni l'acceptation du périmètre livré, ni le déploiement en production.
 
+### P-12 — Achèvement de Studio : mandat et décisions courantes — 25 octobre 2026
+
+Le maître d'ouvrage confie l'achèvement complet de Studio, jusqu'à une livraison vérifiée. Il délègue les décisions
+techniques et fonctionnelles courantes, et rien d'autre :
+- aucune validation humaine inventée ;
+- aucun engagement juridique ou financier ;
+- aucune opération destructive irréversible ;
+- aucune restauration de la base de production.
+
+Les exclusions antérieures sont **levées** : DEC-15 (extensions et MCP), le point « aucun mode IA » de P-06, et les
+réserves « hors pilote ». F.2-03 et F.3-01, qui avaient été closes par ces exclusions, sont **rouvertes**. Ces capacités sont désormais implémentées et vérifiées comme le reste du périmètre. Aucune
+exigence n'est close par simple décision.
+
+Décisions courantes, **à implémenter et tester** dans les lots d'achèvement. Une décision n'emporte la clôture d'aucune obligation : celle-ci passe à « Vérifié » seulement quand l'implémentation et son test sont fusionnés. Exceptions : REC-I-03 et MIG-COEX-07, qui sont des actes de gouvernance et sont inscrits « Accepté ».
+
+| ID | Décision | Justification | Conséquence |
+|---|---|---|---|
+| CAD-07 | L'inventaire qualifié est COEX-01, adopté en P-09 : 22 composants, aucun retrait ni remplacement automatique. | Inventaire déjà qualifié et adopté. | Un contrôle vérifie que les 22 composants restent présents. |
+| ARC-03 | `StudioShell` obtient l'authentification et la résolution du projet par une façade publique propre à Studio, sans dépendance à `ProjectShell`. | Isolation déjà exigée par les frontières du dépôt. | Façade dédiée et contrôle de frontière. |
+| ARC-05 | Les modèles purs restent dans `packages/atelier-model/src/studio`, exposés par le paquet `@parcours/atelier-model`. Aucune extraction nouvelle. | COEX-01 ne relève aucun besoin d'extraction ; décision réversible. | Contrôle de pureté : ni React ni DOM dans ce dossier. |
+| TR-EX-013 / TR-INV-003 | Une variante dérivée est une **version** du même ensemble d'objets, qui garde leurs identifiants. Une dérivation en **copie indépendante**, avec de nouvelles identités, est ajoutée comme mode explicite. | La comparaison entre variantes et la provenance reposent sur l'identité conservée ; la fiche demande aussi le cas positif. | Les deux modes coexistent ; INV-003 s'applique au mode copie. |
+| TR-IF-002 | Tolérance contractuelle du geste Ligne : une valeur saisie est engagée exactement ; une valeur pointée est engagée à 1e-9 m près après accrochage. | Précision du modèle existant ; aucune valeur réglementaire en jeu. | Tolérance déclarée dans le contrat de commandes et testée. |
+| TR-EX-036 | Chaque geste a une alternative au clavier ou par saisie numérique. La bascule entre planche 2D et vue 3D déplace le focus de façon visible. | Accessibilité WCAG 2.2 visée par Fadi. | Contrôle automatisé des alternatives. |
+| TR-EX-046 | Les événements sensibles du serveur (journal d'accès Studio) sont conservés 12 mois, puis purgés par une tâche datée. Les journaux d'audit des publications restent immuables. | Minimisation ; politique réversible et paramétrable. | Purge testée sur base jetable ; durée configurable. |
+| X.2-02 | Une invitation est refusée sous verrou de projet et sur un projet de référence. | Choix le plus prudent et réversible. | Scénarios positifs et négatifs ajoutés. |
+| MIG-COEX-04 | Les données locales sans propriétaire ne seront plus vidées : elles seront mises en quarantaine, consultables et exportables. | Règle « ne jamais supprimer ». | **À implémenter** : jusqu'à la livraison de la migration locale modifiée et de ses tests, les migrations v6 et v7 vident encore ces données, et MIG-COEX-04 reste ouverte. |
+| MIG-COEX-07 | La règle COEX-06 est ratifiée : supprimer d'anciens écrans, routes ou stockages est un lot ultérieur, explicitement autorisé. | Réversibilité. | Aucune suppression dans le présent achèvement. |
+| REC-I-03 | Le lot I est accepté **pleinement**, et non comme simple intégration technique, puisque l'édition et la sauvegarde métier sont livrées et recettées (`studio-preuves-d1`, parcours A, B et C). | Les conditions du critère sont remplies. | REC-I-03 est inscrit « Accepté ». |
+| REC-A-01 | Le corpus de migration est l'ensemble des documents `studio-document/1` du dépôt, migrés vers la version suivante du schéma, avec aller-retour testé. | DEC-03 exclut la migration des projets existants, pas celle du schéma. | Corpus et rapport de migration livrés. |
+| X.2-04 / BLOC-06 | La porte G4 est un contrôle automatisé : il refuse la livraison si un défaut éliminatoire n'est pas vérifié, en nommant le défaut, sa preuve et son propriétaire. | Le blocage ne doit pas dépendre d'une lecture humaine. | Script de porte joué en CI. |
+
+Restent des actes humains réels, qui ne sont pas délégués :
+- la recette sur appareil physique (DEC-13, R.3-01) ;
+- la validation de la maquette d'interaction (REC-I-01) ;
+- l'acceptation du périmètre et la Release (G4-03) ;
+- les données réelles de migration (MIG-01 à 06) ;
+- les accès au VPS.
+
 ## Justification
 
 Chaque option retenue est celle du dossier préparatoire. Elle est réalisée par le code de `main` au 25 octobre 2026
