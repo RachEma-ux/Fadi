@@ -29,7 +29,9 @@ export type AppliquerStudio = (document: StudioDocument, commands: readonly Stud
 export async function revaliderBooleensStudio(document: StudioDocument, commands: StudioCommand[], appliquer: AppliquerStudio): Promise<RefusExactStudio | null> {
   const cibles = commands.map((c, i) => [c, i] as const).filter(([c]) => c.toolId === TYPE_BOOLEEN_STUDIO);
   if (!cibles.length) return null;
-  const M = await moteurExact();
+  // Noyau chargé seulement pour un booléen dont les opérandes sont relus dans CE document : des opérandes absents (d'une
+  // autre variante ou d'un autre projet, BLOC-02) sont refusés avant tout appel au noyau.
+  let M: Awaited<ReturnType<typeof moteurExact>> | null = null;
   let doc = document;
   let applique = 0;
   for (const [c, i] of cibles) {
@@ -47,6 +49,7 @@ export async function revaliderBooleensStudio(document: StudioDocument, commands
     const operandes = Array.isArray(p["operandes"]) ? (p["operandes"] as unknown[]).map(String) : [];
     const capture = studioCaptureBooleen(doc, { operation: String(p["operation"] ?? ""), operandes });
     if (!capture.ok) return refus(`commands[${i}].params`, "studio-invalid", capture.message);
+    M ??= await moteurExact();
     let r: SolideExact;
     try {
       r = M.executer(capture.capture.entrees);
