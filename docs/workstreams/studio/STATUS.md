@@ -1,5 +1,28 @@
 # État — Studio
 
+## Pilote Studio — décisions déléguées et recette — 25 octobre 2026
+
+Branche `ccr-187fd2e6-08dk6e`, base `main@3e992b6`. Le maître d'ouvrage a accordé la délégation totale pour ses décisions sur Studio. Elles sont consignées dans [ADR-STUDIO-PILOTE-01](../../continuity/decisions/ADR-STUDIO-PILOTE-01.md) :
+- responsabilités RESP-01 à 05 et CAD-DEC-02/03 : une seule personne habilitée, le maître d'ouvrage ;
+- ADR-STUDIO-NAV-01 acceptée, option A (ADR-03) ;
+- DEC-01 à DEC-18 arbitrées selon [DEC-OUVERTES-PILOTE.md](DEC-OUVERTES-PILOTE.md), dont DEC-15 (extensions et MCP) exclue du pilote ;
+- POC et sous-ensemble du pilote autorisés (G2-02, G3-01, G3-04).
+
+Recette ([RECETTE-PILOTE-2026-10-25.md](recettes/RECETTE-PILOTE-2026-10-25.md)) : les 21 recettes Studio de la CI, rejouées sur une base PostGIS jetable, donnent 1 435 contrôles réussis et 0 échec. La CI de `main` est verte sur le même commit (exécution 40192137528).
+
+Compteurs recalculés du registre : **16 À définir / 205 À faire / 293 En cours / 13 Bloqué / 72 Vérifié / 31 Accepté**. **P630=103/630**. Détail :
+- 25 obligations vérifiées par recette : NAV-001 à 007 et NAV-009, 15 scénarios TEST, REC-A-03, REC-C-03 ;
+- 29 acceptations par décision ;
+- 189 obligations bloquées par les seules décisions requalifiées « À faire » ;
+- 19 scénarios TEST « En cours » avec une preuve partielle ;
+- 13 obligations restent bloquées : 9 obligations R de bascule et de déploiement attendent G4 et la décision de déploiement du maître d'ouvrage, et 4 relèvent de l'option IA/MCP exclue du pilote.
+
+Ce compteur n'est pas un taux de développement. G1 à G4 ne sont pas acceptées, aucune case source n'est cochée, et les appareils physiques et le GPU réel restent non évalués.
+
+## Décisions DEC ouvertes — 25 octobre 2026
+
+Préparation documentaire sur `main@3e992b6` : [DEC-OUVERTES-PILOTE.md](DEC-OUVERTES-PILOTE.md). Le recalcul du registre confirme les compteurs du 21 octobre (47 Vérifié, 2 Accepté, 209 Bloqué, 292 En cours, 58 À faire, 22 À définir). Le document compare DEC-01 à DEC-18 à l'état du code et recommande une option par décision. Il rappelle que le pilote est déjà ratifié (CAD-DEC-01, parcours A/B/C). Aucun statut du registre n'est modifié, aucune décision n'est prise et aucun POC n'a été exécuté.
+
 ## Dépôt du plan Axes — 25 octobre 2026
 
 Tâche documentaire [#294](https://github.com/RachEma-ux/Fadi/issues/294), branche `docs/294-axes-implementation-plan`, base `0ff0638c3f6781bb94fce9b22c82c69c7ed7083e`. Le [plan d’implémentation Axes v1.0](Fadi-Concept-Axes%20Pan.md) est ajouté avec le nom demandé et le contenu du fichier remis à l’utilisateur : 12 lots AXE-00 à AXE-11, quatre phases et 20 scénarios AX01–AX20. Il complète la paire de concepts sans la remplacer.
@@ -18,7 +41,7 @@ Vérification documentaire : mêmes 356 blocs de contenu et 25 liens dans les de
 
 Référence examinée : `main@78e9f4a89e9634189c3bd4fb9ed82576eafe2a64` (#222), après consolidation #209. Le code porte les quatre domaines Studio et les lots Sandbox 1–6 ; les anciennes instructions de fusion #181 ci-dessous sont historiques, plus une action à exécuter. La branche corrective de cet audit traite sauvegarde locale, cohérence des compteurs et nettoyage de la branche d'exploitation.
 
-Compteurs recalculés du registre (états documentaires, sans nouvelle acceptation) : **22 À définir / 58 À faire / 292 En cours / 209 Bloqué / 47 Vérifié / 2 Accepté**. **P630=49/630** ; ce compteur documentaire/cadrage n'est pas un pourcentage du logiciel livré. PDEV reste non défini. Aucune tâche du registre n'a été promue à partir de la seule présence de code.
+Compteurs du registre au 21 octobre (historique, remplacés le 25 octobre) : 22 à définir, 58 à faire, 292 en cours, 209 bloquées, 47 vérifiées, 2 acceptées ; P630 valait alors 49 sur 630 ; ce compteur documentaire/cadrage n'est pas un pourcentage du logiciel livré. PDEV reste non défini. Aucune tâche du registre n'a été promue à partir de la seule présence de code.
 
 Preuves actuelles : sources au SHA ci-dessus ; vérification locale de l'audit : types, frontières, isolation, structure de continuité et affectation 630/630 réussis. Le contrôle `tableau_registre.py --controle` est réparé et ajouté à la CI par ce correctif. Résultats finaux de la branche et liens vers les exécutions : PR du correctif, à vérifier au SHA exact.
 

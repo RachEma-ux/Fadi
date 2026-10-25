@@ -1,6 +1,6 @@
 # ADR-STUDIO-NAV-01 — Intégration de Studio dans la navigation de Fadi et coexistence avec l'Atelier
 
-Statut : **Proposé** (Proposé / Accepté / Remplacé).
+Statut : **Accepté**, option A, le 25 octobre 2026 ([ADR-STUDIO-PILOTE-01](ADR-STUDIO-PILOTE-01.md), P-03 : décision prise sous délégation du maître d'ouvrage).
 Date : 18 octobre 2026 ; mise à jour du 19 octobre 2026 (espace de travail par domaine, menu « Studio », workflow déclaré).
 Chantier : `studio` (programme [#156](https://github.com/RachEma-ux/Fadi/issues/156)).
 Issue / PR : questions et arbitrages dans [#166](https://github.com/RachEma-ux/Fadi/issues/166) ; ouverture annoncée dans [#166/6251022689](https://github.com/RachEma-ux/Fadi/issues/166#issuecomment-6251022689).
@@ -159,7 +159,7 @@ Les priorités se confirment au cadrage du pilote (ADR-05).
 
 ## Décision et responsable
 
-**Non décidé.** À compléter après arbitrage, au titre d'ADR-03 : décision déléguée dans #166 pour l'architecture, accord du propriétaire pour les points réservés (R2 et R3 de COEX-06, fusion, production). Jusque-là, le statut reste « Proposé ».
+**Option A acceptée** le 25 octobre 2026, au titre d'ADR-03, par [ADR-STUDIO-PILOTE-01](ADR-STUDIO-PILOTE-01.md) (P-03). Le chef de projet a décidé sous la délégation totale du maître d'ouvrage. Le code de `main` réalise déjà cette option (`StudioShell`, routes `/studio`). La fusion relève des PR, CI verte ; la production reste réservée au maître d'ouvrage.
 
 ## Justification
 
