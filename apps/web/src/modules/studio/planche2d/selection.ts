@@ -12,7 +12,7 @@ import {
 } from "@parcours/atelier-model";
 import { estSelectionnable } from "./calques";
 import { traceCote } from "./geometrie-2d";
-import { indexGrille, SEUIL_INDEX_SPATIAL, type Boite2D, type IndexSpatial } from "./index-spatial";
+import { indexGrille, SEUIL_INDEX_SPATIAL, suiviIncremental, type Boite2D, type IndexSpatial } from "./index-spatial";
 
 export type Element2D = StudioShape | StudioDimension | StudioAnnotation;
 export type ModeRectangle = "fenetre" | "capture";
@@ -122,7 +122,24 @@ function trace(e: Element2D | StudioWall): Trace {
   }
   return t;
 }
-const INDEX_SELECTION = new WeakMap<StudioDocument, IndexSpatial<Trace>>();
+/**
+ * Index de sélection (C.1-05) : un index **incrémental** suit le document de révision en révision — seuls les éléments
+ * ajoutés, retirés ou modifiés (nouvel objet immuable) y sont insérés ou retirés, sans reconstruction. Le dernier
+ * document indexé est retenu : une requête sur le même document ne resynchronise rien ; un autre document (révision
+ * suivante, ou une autre étude) est synchronisé avant la requête. Le résultat reste celui du parcours linéaire (test de
+ * propriétés sur suites de mutations).
+ */
+const SUIVI_SELECTION = suiviIncremental<Trace>((t) => t.boite);
+let documentIndexe: { doc: StudioDocument; index: IndexSpatial<Trace> } | null = null;
+function indexSelection(doc: StudioDocument): IndexSpatial<Trace> {
+  if (documentIndexe?.doc === doc) return documentIndexe.index;
+  const traces = [...elements(doc), ...murs(doc)].map(trace);
+  const index = SUIVI_SELECTION.suivre(traces) ?? indexGrille(traces, (t) => t.boite);
+  documentIndexe = { doc, index };
+  return index;
+}
+/** Bilan de la dernière synchronisation de l'index de sélection (recette, mesure). */
+export const bilanIndexSelection = () => SUIVI_SELECTION.dernierBilan;
 
 /**
  * Sélection par rectangle : éléments sélectionnables retenus, dans l'ordre du document. Au-dessus du seuil, seuls les
@@ -132,11 +149,7 @@ const INDEX_SELECTION = new WeakMap<StudioDocument, IndexSpatial<Trace>>();
 export function selectionParRectangle(doc: StudioDocument, a: StudioPoint, b: StudioPoint, seuil = SEUIL_INDEX_SPATIAL): string[] {
   const n = doc.objects.length + (doc.dimensions?.length ?? 0) + (doc.annotations?.length ?? 0) + (doc.architecture?.length ?? 0);
   if (n < seuil) return selectionParRectangleLineaire(doc, a, b);
-  let index = INDEX_SELECTION.get(doc);
-  if (!index) {
-    index = indexGrille([...elements(doc), ...murs(doc)].map(trace), (t) => t.boite);
-    INDEX_SELECTION.set(doc, index);
-  }
+  const index = indexSelection(doc);
   const r = rectangleEntre(a, b), mode = modeRectangle(a, b);
   const m = 1e-9 * (1 + Math.max(Math.abs(r.min.x), Math.abs(r.min.y), Math.abs(r.max.x), Math.abs(r.max.y)));
   const zone = { min: { x: r.min.x - m, y: r.min.y - m }, max: { x: r.max.x + m, y: r.max.y + m } };

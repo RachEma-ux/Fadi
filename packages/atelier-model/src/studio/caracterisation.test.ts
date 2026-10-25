@@ -321,6 +321,8 @@ const AJOUTS = {
     "STUDIO_OPENING_KINDS", "STUDIO_WALL_JUSTIFICATIONS", "SCHEMA_ARCHITECTURE", "SCHEMA_MUR", "SCHEMA_OUVERTURE",
     "controlerArchitecture", "validerElementArchitectural", "validerMur", "validerOuverture", "geometrieMur", "lateraux", "placerOuverture",
     "studioPlanArchitecture", "studioMaillageArchitecture", "studioQuantitesArchitecture",
+    // Inventaire de couverture des types 3D (A.3-08, lot F5, `couverture-3d.ts`).
+    "STUDIO_COUVERTURE_3D", "STUDIO_COUVERTURE_3D_VERSION", "studioControlerCouverture3d", "studioTypes3dNonDisponibles",
     // Manifeste versionné du catalogue d'outils, chargeurs et alias de migration (B.1, `manifeste-outils.ts`).
     "STUDIO_ALIAS_OUTILS", "STUDIO_CHARGEURS_OUTILS", "STUDIO_CONTEXTES_OUTILS", "STUDIO_MANIFESTE_OUTILS", "STUDIO_MANIFESTE_OUTILS_VERSION",
     "controlerManifesteOutils", "entreeManifeste", "resoudreAliasOutil", "toolIdCanonique",

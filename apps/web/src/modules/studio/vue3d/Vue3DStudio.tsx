@@ -50,6 +50,12 @@ import { MESSAGES_TACHE } from "../taches/messages";
 import { compteGpu, libererObjet, libererTexturesPartagees, texturesPartagees, vider } from "./ressources-gpu";
 import { cleAspect, objetsVolume, preparer, SceneRendu, type AspectVolume, type DonneesLot, type EntreeRendu, type GeometrieObjet } from "./scene-rendu";
 import { designer, type Impact } from "./picking";
+import {
+  descriptionReduction, ETAT_QUALITE_INITIAL, observerTrame, paliersApplicables, PALIERS_QUALITE, rapportPixels, reglageEffectif, reglageQualite,
+  type CapacitesRendu, type EtatQualite, type ReglageQualite,
+} from "./qualite-rendu";
+import { PresentationSansMsaa } from "./presentation";
+import { CouvertureTypes3d } from "./CouvertureTypes3d";
 import { architectureDesignable, estOuverture, solidesDesignables } from "./designation";
 import { Icon } from "../../../components/Icon";
 import { estSelectionnable } from "../planche2d/calques";
@@ -132,10 +138,26 @@ interface Moteur {
   presence: THREE.Group;
   /** Scènes de rendu incrémentales (C.2) des trois groupes. */
   rendus: { contenu: SceneRendu; libres: SceneRendu; architecture: SceneRendu };
+  /** Dégradation sûre sous charge (TR-EX-057) : état de la politique, réglage appliqué, présentation sans MSAA. */
+  qualite: EtatQualite;
+  reglage: ReglageQualite;
+  presentation: PresentationSansMsaa | null;
+  /** Vrai pendant l'export PNG : la qualité complète est tenue, la politique n'observe pas. */
+  qualiteTenue: boolean;
+  /** Charge simulée (ms ajoutées à chaque rendu) : recette seulement (`__fadiVue3d.charge`), nulle sinon. */
+  charge: number;
+  appliquerQualite: (r: ReglageQualite) => void;
   rendre: () => void;
   /** Caméra déplacée (navigation, rappel) : la scène active est réévaluée. */
   surCamera: () => void;
 }
+
+/**
+ * Leviers de la dégradation sûre (TR-EX-057, `qualite-rendu.ts`) : la scène de la vue (lumière hémisphérique et soleil
+ * sans ombre portée) ne calcule aucune ombre — le palier « ombres » est donc sans objet et sauté ; résolution de
+ * présentation (rapport de pixels) et anti-crénelage (`presentation.ts`) sont actionnés.
+ */
+const CAPACITES_RENDU: CapacitesRendu = Object.freeze({ ombres: false, antiCrenelage: true });
 
 /** Teinte d'une personne (même suite que la surimpression 2D) : complète son nom, ne le remplace jamais. */
 const TEINTES_PRESENCE = ["#b4005a", "#005fb4", "#007a3d", "#8a4b00", "#5a2db4", "#00707a"];
@@ -382,6 +404,8 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   const [finition, setFinition] = useState<StudioFinitionAffichage | "">("");
   const [statut, setStatut] = useState("");
   const [cameraVersion, setCameraVersion] = useState(0);
+  // Palier de qualité appliqué (TR-EX-057) : l'indicateur « Qualité d'affichage réduite » le suit.
+  const [palierQualite, setPalierQualite] = useState(0);
   const enAttente = useRef<StudioScene | null>(null);
   // Session en direct : la dernière fonction de partage, et un garde pendant qu'on pose la caméra suivie (aucun écho).
   const surCameraLocaleRef = useRef(surCameraLocale);
@@ -479,7 +503,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     let renderer: THREE.WebGLRenderer;
     try { renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); }
     catch { setIndisponible(true); return; }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setPixelRatio(rapportPixels(window.devicePixelRatio || 1, PALIERS_QUALITE[0]!));
     renderer.domElement.setAttribute("data-studio-vue3d-canvas", "");
     renderer.domElement.setAttribute("aria-label", "Vue 3D du dessin");
     renderer.domElement.setAttribute("role", "img");
@@ -501,12 +525,39 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     const m: Moteur = {
       renderer, scene, perspective, plan, camera: perspective, controls: null, contenu, libres, architecture, surimpression, presence,
       rendus: { contenu: new SceneRendu(contenu), libres: new SceneRendu(libres), architecture: new SceneRendu(architecture) },
+      qualite: ETAT_QUALITE_INITIAL, reglage: PALIERS_QUALITE[0]!, presentation: null, qualiteTenue: false, charge: 0,
+      // Réglages de présentation seulement : ni le document, ni la désignation, ni aucune tolérance ne sont touchés.
+      appliquerQualite: (voulu) => {
+        const r = reglageEffectif(voulu, CAPACITES_RENDU);
+        m.reglage = r;
+        renderer.shadowMap.enabled = CAPACITES_RENDU.ombres && r.ombres;
+        renderer.setPixelRatio(rapportPixels(window.devicePixelRatio || 1, r));
+        if (!r.antiCrenelage && !m.presentation) m.presentation = new PresentationSansMsaa();
+        if (r.antiCrenelage && m.presentation) { m.presentation.liberer(); m.presentation = null; }
+        const d = renderer.domElement.dataset;
+        d.studioQualitePalier = String(paliersApplicables(CAPACITES_RENDU).findIndex((p) => p.ombres === r.ombres && p.resolution === r.resolution && p.antiCrenelage === r.antiCrenelage));
+        d.studioPixelRatio = String(renderer.getPixelRatio());
+        d.studioAntiCrenelage = r.antiCrenelage ? "oui" : "non";
+      },
       rendre: () => {
-        mesurerRendu3d(() => renderer.render(scene, m.camera));
+        const t0 = performance.now();
+        mesurerRendu3d(() => {
+          if (m.charge > 0) { const fin = performance.now() + m.charge; while (performance.now() < fin) { /* charge simulée (recette) */ } }
+          if (m.presentation) m.presentation.rendre(renderer, scene, m.camera); else renderer.render(scene, m.camera);
+        });
+        // Dégradation sûre (TR-EX-057) : la durée de la trame nourrit la politique ; un changement de palier est appliqué
+        // à la présentation et annoncé (jamais silencieux), puis vaut pour les trames suivantes.
+        if (!m.qualiteTenue) {
+          const suivant = observerTrame(m.qualite, performance.now() - t0, CAPACITES_RENDU);
+          const change = suivant.palier !== m.qualite.palier;
+          m.qualite = suivant;
+          if (change) { m.appliquerQualite(reglageQualite(suivant, CAPACITES_RENDU)); setPalierQualite(suivant.palier); }
+        }
         // Compteurs GPU (recette D.3-02) : ils reviennent à leur ligne de base après chaque reconstruction.
-        const c = compteGpu(renderer);
-        renderer.domElement.dataset.studioGpuGeometries = String(c.geometries);
-        renderer.domElement.dataset.studioGpuTextures = String(c.textures);
+        // Ressources de la scène : celles de la présentation dégradée (TR-EX-057), temporaires, n'en font pas partie.
+        const c = compteGpu(renderer), p = m.presentation?.ressources ?? { geometries: 0, textures: 0 };
+        renderer.domElement.dataset.studioGpuGeometries = String(c.geometries - p.geometries);
+        renderer.domElement.dataset.studioGpuTextures = String(c.textures - p.textures);
         // Étiquettes des pointeurs distants : leur point 3D projeté sur le canevas à chaque rendu.
         const w = renderer.domElement.clientWidth, h = renderer.domElement.clientHeight;
         for (const p of pointeurs3dRef.current ?? []) {
@@ -520,6 +571,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       surCamera: () => { if (suiviCamera.current) setCameraVersion((v) => v + 1); if (!applicationPartagee.current) surCameraLocaleRef.current?.(cameraCourante(m)); },
     };
     moteur.current = m;
+    m.appliquerQualite(PALIERS_QUALITE[0]!);
     poserControles(m, navigation);
     const taille = () => {
       // Canevas de l'espace : la hauteur du conteneur (fixée par la mise en page, jamais par le canevas lui-même).
@@ -580,6 +632,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       // Relevées avant la libération des matériaux (TEST-037 : sans quoi chaque fermeture retient ce moteur de rendu).
       const partagees = texturesPartagees(renderer, [scene]);
       m.rendus.contenu.vider(); m.rendus.libres.vider(); m.rendus.architecture.vider();
+      m.presentation?.liberer(); m.presentation = null;
       vider(contenu); vider(libres); vider(architecture); vider(surimpression); vider(presence);
       libererObjet(grille);
       libererTexturesPartagees(partagees);
@@ -657,7 +710,13 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
 
   // Recette (C.2-03) : position à l'écran du centre d'un objet affiché, pour cliquer là où il est (ou était).
   useEffect(() => {
-    const crochet = { ecran: (id: string) => { const m = moteur.current; return m ? centreEcran(m, mesh, id) : null; } };
+    const crochet = {
+      ecran: (id: string) => { const m = moteur.current; return m ? centreEcran(m, mesh, id) : null; },
+      // Recette TR-EX-057 : charge simulée (ms ajoutées à chaque rendu, 0 pour l'ôter) et lecture du réglage appliqué.
+      charge: (ms: number) => { const m = moteur.current; if (m) m.charge = Number.isFinite(ms) && ms > 0 ? ms : 0; },
+      qualite: () => { const m = moteur.current; return m ? { palier: m.qualite.palier, changements: m.qualite.changements, ...m.reglage, pixelRatio: m.renderer.getPixelRatio() } : null; },
+      rendre: (n = 1) => { const m = moteur.current; for (let i = 0; i < n && m; i++) m.rendre(); },
+    };
     (globalThis as { __fadiVue3d?: unknown }).__fadiVue3d = crochet;
     return () => { if ((globalThis as { __fadiVue3d?: unknown }).__fadiVue3d === crochet) delete (globalThis as { __fadiVue3d?: unknown }).__fadiVue3d; };
   }, [mesh]);
@@ -742,8 +801,19 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
         etude: provenance.etude, variante: provenance.variante, revisionId: provenance.revisionId,
         scene: actif ? { id: actif.id, nom: actif.name } : null, date: new Date(), camera: cameraCourante(m),
       });
-      m.rendre();
-      const blob = await new Promise<Blob | null>((ok) => m.renderer.domElement.toBlob(ok, "image/png"));
+      // Le rendu exporté est toujours en qualité complète (la dégradation ne vaut que pour la présentation à l'écran).
+      const reglage = m.reglage;
+      m.qualiteTenue = true;
+      let blob: Blob | null;
+      try {
+        m.appliquerQualite(PALIERS_QUALITE[0]!);
+        m.rendre();
+        blob = await new Promise<Blob | null>((ok) => m.renderer.domElement.toBlob(ok, "image/png"));
+      } finally {
+        m.appliquerQualite(reglage);
+        m.qualiteTenue = false;
+        m.rendre();
+      }
       if (!blob) throw new Error("canevas vide");
       const octets = insererTextePng(new Uint8Array(await blob.arrayBuffer()), CLE_PROVENANCE_PNG, JSON.stringify(p));
       const url = URL.createObjectURL(new Blob([octets as BlobPart], { type: "image/png" }));
@@ -810,6 +880,14 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
         <button type="button" onClick={() => { const m = moteur.current; if (m) cadrer(m, mesh); }} disabled={indisponible}>Recadrer la vue 3D</button>
       </div>
       {maillage.message && <p className="studio-alert" role="alert" data-studio-maillage-erreur>{maillage.message}</p>}
+      {palierQualite > 0 && (() => {
+        const r = reglageQualite({ palier: palierQualite, trames: [], changements: 0 }, CAPACITES_RENDU);
+        return <p className="studio-info studio-vue3d-qualite" role="status" data-studio-qualite-reduite={palierQualite}>
+          <span>Qualité d’affichage réduite sous charge</span>{" : "}
+          {descriptionReduction(r, CAPACITES_RENDU).map((t, i) => <span key={t}>{i > 0 ? ", " : ""}<span>{t}</span></span>)}
+          {" ; "}<span>accrochage et tolérances inchangés</span>
+        </p>;
+      })()}
       {maillage.valeur === undefined && !maillage.message && <p className="studio-hint" role="status">{MESSAGES_TACHE.enCours}</p>}
       {indisponible && <p className="studio-alert" role="alert" data-studio-vue3d-indisponible>Vue 3D indisponible : WebGL n’est pas pris en charge par ce navigateur.</p>}
       <div ref={hote} className="studio-vue3d-hote" data-studio-vue3d-outil={outil} data-studio-remplir={remplir ? "" : undefined}
@@ -976,6 +1054,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
 
       {!hotePanneaux && panneauVisualisation}
 
+      <CouvertureTypes3d />
       {coupe && <div className="studio-vue3d-coupe" data-studio-coupe data-studio-coupe-z={Number.isFinite(coteCoupe) ? coteCoupe : ""} data-studio-coupe-segments={resultatCoupe?.segments.length ?? 0}
         data-studio-coupe-sources={resultatCoupe?.sources.map((s) => s.id).join(" ") ?? ""}>
         <h3><Icon name="studio-section-plane" size={18} /> Coupe horizontale</h3>
