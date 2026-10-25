@@ -1,5 +1,22 @@
 # Reprise — Studio
 
+## Lot F1 — géométrie 3D — 25 octobre 2026
+
+Branche `ccr-187fd2e6-08dk6e`, base `main@cb9e4be` (phase B fusionnée, PR #316).
+
+Ce qui a été fait :
+- **Direction d'extrusion.** L'extrusion 2D va vers `+z` ou `-z` ; un prisme suit un vecteur saisi. La direction est demandée, jamais proposée d'office.
+- **Relations explicites du prisme à sa polyligne source.** Trois relations : « référence liée » (recalcul dans la même révision, ou « à résoudre »), « associé » et « copie indépendante ».
+- **Édition de faces.** Pousser ou tirer une face, pivoter un solide.
+- **Division de face cotée**, avec réattachement prouvé des cotes, ou « à résoudre ».
+- **Preuves.** Recette `studio-faces` (CI et préproduction) et tests `f1-geometrie.test.ts`. Détail : [lots de fonctions](recettes/LOTS-FONCTIONS-2026-10-25.md).
+- **Vérifiés** : TEST-002, TEST-005, TEST-006, TEST-007, A.4-02, A.4-07, TR-EX-006.
+- **Partiels** : A.3-03 (pas de rotation horizontale ni d'échelle 3D) et TR-EX-005 (pas d'édition de groupe).
+
+Compteurs recalculés du registre : **0 À définir / 91 À faire / 204 En cours / 11 Bloqué / 266 Vérifié / 58 Accepté**. **P630=324/630**.
+
+Prochaine action : lots F3 (IFC, modèle externe), F4 (délégation, observations, traçabilité), F2 (noyau exact) et F5 (rendu, index), puis le point 2 (tests des preuves partielles), puis G1 et G4.
+
 ## Phase B de production livrée côté dépôt — 25 octobre 2026
 
 Branche `ccr-187fd2e6-08dk6e`, base `main@44c6ef4`. Ordre demandé par le maître d'ouvrage : lots de fonctions (point 3), tests des preuves partielles (point 2), portes G1 puis G4 (point 4) ; en parallèle, phase B.
