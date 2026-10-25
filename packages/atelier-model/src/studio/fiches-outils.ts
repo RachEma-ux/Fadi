@@ -145,7 +145,7 @@ export const STUDIO_FICHES_OUTILS: readonly FicheOutil[] = Object.freeze(STUDIO_
     risques: risquesDe(t.nature, t.toolId),
     mesures: [...(MESURES_PAR_BARRE[t.groupe] ?? []), ...(t.toolId === "studio.solide.booleen" ? ["PERF-07" as const] : [])],
     jeuxEssai: [
-      { cas: "positif", fichier: POSITIFS[t.toolId] ?? CARACTERISATION },
+      { cas: "positif" as const, fichier: POSITIFS[t.toolId] ?? CARACTERISATION },
       ...(NEGATIFS[t.toolId] ?? []).map((fichier) => ({ cas: "negatif" as const, fichier })),
     ],
   });

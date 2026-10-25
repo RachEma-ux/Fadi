@@ -922,6 +922,19 @@ ALTER TABLE studio_tool_preferences DROP CONSTRAINT IF EXISTS studio_tool_prefer
 ALTER TABLE studio_tool_preferences DROP CONSTRAINT IF EXISTS studio_tool_preferences_manifest_check,
   ADD CONSTRAINT studio_tool_preferences_manifest_check
   CHECK (manifest_version IS NULL OR manifest_version ~ '^studio-tool-manifest/[1-9][0-9]*$') NOT VALID;
+-- Profil persistant (EX-034) : identifiant stable du profil du compte, version (+1 à chaque enregistrement ou import),
+-- raccourcis personnels (capacité → combinaison), ordre des capacités et provenance d'un profil importé
+-- (`profileId@version`). Colonnes additives facultatives : une ligne antérieure se relit sans elles (version 0).
+ALTER TABLE studio_tool_preferences ADD COLUMN IF NOT EXISTS profile_id text;
+ALTER TABLE studio_tool_preferences ADD COLUMN IF NOT EXISTS profile_version integer;
+ALTER TABLE studio_tool_preferences ADD COLUMN IF NOT EXISTS shortcuts jsonb;
+ALTER TABLE studio_tool_preferences ADD COLUMN IF NOT EXISTS capability_order jsonb;
+ALTER TABLE studio_tool_preferences ADD COLUMN IF NOT EXISTS imported_from text;
+ALTER TABLE studio_tool_preferences DROP CONSTRAINT IF EXISTS studio_tool_preferences_profile_v2_check,
+  ADD CONSTRAINT studio_tool_preferences_profile_v2_check
+  CHECK ((profile_version IS NULL OR profile_version >= 0)
+    AND (shortcuts IS NULL OR jsonb_typeof(shortcuts) = 'object')
+    AND (capability_order IS NULL OR jsonb_typeof(capability_order) = 'array')) NOT VALID;
 -- Préférences d'outils du Sandbox d'un compte (lot 5, décision du maître d'ouvrage du 20 octobre 2026) : profil des
 -- barres (standard, personnel, metier:<id>), barre gauche personnelle, favoris et regroupements nommés, identifiants du
 -- registre REGISTRE_SANDBOX vérifiés par le serveur. Table PROPRE au Sandbox (jamais studio_tool_preferences du 01) ;

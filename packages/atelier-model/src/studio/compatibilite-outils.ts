@@ -17,7 +17,7 @@
  * Aucun outil n'est déprécié aujourd'hui (constat au commit de réalisation) : les tables sont vides et rien n'est
  * inventé ; le mécanisme et ses contrôles sont éprouvés par les tests sur des tables d'essai. Pur : ni React, ni DOM.
  */
-import { STUDIO_CHARGEURS_OUTILS, STUDIO_MANIFESTE_OUTILS, type StudioEntreeManifeste, type StudioIdChargeur } from "./manifeste-outils.js";
+import { STUDIO_CHARGEURS_OUTILS, type StudioIdChargeur } from "./manifeste-outils.js";
 import { STUDIO_TOOL_IDS, type StudioToolId } from "./registry.js";
 import type { StudioDocument } from "./composition/types.js";
 
@@ -56,7 +56,6 @@ export function statutOutil(toolId: string, deprecies: readonly DeclarationDepre
 export function controlerDepreciations(
   deprecies: readonly DeclarationDepreciation[] = STUDIO_OUTILS_DEPRECIES,
   modules: readonly DeclarationModuleDeprecie[] = STUDIO_MODULES_DEPRECIES,
-  manifeste: { readonly entrees: readonly StudioEntreeManifeste[] } = STUDIO_MANIFESTE_OUTILS,
 ): string[] {
   const pbs: string[] = [];
   const vus = new Set<string>();

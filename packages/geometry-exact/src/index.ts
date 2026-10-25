@@ -245,8 +245,17 @@ export interface OptionsMoteur {
 
 let partage: Promise<MoteurExact> | null = null;
 
+/** Sous-ensemble de l'API WebAssembly observé (sans dépendre de la bibliothèque DOM du compilateur). */
+interface MemoireWasm { readonly buffer: ArrayBuffer }
+interface ApiWasm {
+  instantiate: (...a: unknown[]) => Promise<unknown>;
+  instantiateStreaming?: (...a: unknown[]) => Promise<unknown>;
+  Instance: abstract new (...a: never[]) => { readonly exports: Record<string, unknown> };
+  Memory: abstract new (...a: never[]) => MemoireWasm;
+}
+
 /** Mémoires linéaires des instances WebAssembly du noyau, relevées à leur instanciation (EX-062). */
-const memoires: WebAssembly.Memory[] = [];
+const memoires: MemoireWasm[] = [];
 
 /**
  * Relève la mémoire linéaire exportée par les instances WebAssembly créées pendant `f` (le module d'occt-wasm ne
@@ -254,7 +263,7 @@ const memoires: WebAssembly.Memory[] = [];
  * puis rendus tels quels. Rien n'est modifié dans l'instance ; sans WebAssembly observable, rien n'est relevé.
  */
 async function avecReleveMemoire<T>(f: () => Promise<T>): Promise<T> {
-  const W = globalThis.WebAssembly as typeof WebAssembly | undefined;
+  const W = (globalThis as unknown as { WebAssembly?: ApiWasm }).WebAssembly;
   if (!W) return f();
   const instantiate = W.instantiate, streaming = W.instantiateStreaming;
   const noter = (r: unknown) => {
@@ -262,8 +271,8 @@ async function avecReleveMemoire<T>(f: () => Promise<T>): Promise<T> {
     if (instance instanceof W.Instance) for (const v of Object.values(instance.exports)) if (v instanceof W.Memory && !memoires.includes(v)) memoires.push(v);
     return r;
   };
-  W.instantiate = ((...a: Parameters<typeof WebAssembly.instantiate>) => (instantiate.apply(W, a) as Promise<unknown>).then(noter)) as typeof WebAssembly.instantiate;
-  if (streaming) W.instantiateStreaming = ((...a: Parameters<typeof WebAssembly.instantiateStreaming>) => streaming.apply(W, a).then(noter)) as typeof WebAssembly.instantiateStreaming;
+  W.instantiate = (...a: unknown[]) => instantiate.apply(W, a).then(noter);
+  if (streaming) W.instantiateStreaming = (...a: unknown[]) => streaming.apply(W, a).then(noter);
   try { return await f(); } finally {
     W.instantiate = instantiate;
     if (streaming) W.instantiateStreaming = streaming;

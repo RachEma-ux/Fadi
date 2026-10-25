@@ -18,14 +18,14 @@
  */
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent, type ReactNode } from "react";
 import { Icon } from "../../../components/Icon";
-import { api } from "../../../lib/api";
+import { api, ApiError, type StudioConflitRaccourci } from "../../../lib/api";
 import { useAuth } from "../../../lib/auth-context";
 import { lireRouteStudio } from "../routes-studio";
 import { STUDIO_CONTEXTES_OUTILS, STUDIO_MANIFESTE_OUTILS_VERSION, type StudioContexteOutil } from "@parcours/atelier-model";
 import { LIBELLES_RAISON, estRefusDeDroit, type RaisonIndisponible } from "../variante/droits";
 import { CATALOGUE, filtrerCatalogue, groupesCatalogue, rechercher, separerFavoris, type EntreeCatalogue, type FiltresCatalogue } from "./catalogue";
 import {
-  basculerDansGroupe, basculerFavori, basculerPersonnel, CHOIX_PROFILS, choisirProfil, corpsPreferences, creerGroupe, filtreBarres, LIMITES_GROUPES, normaliserPreferences,
+  basculerDansGroupe, basculerFavori, basculerPersonnel, CHOIX_PROFILS, choisirProfil, conflitsRaccourcisPersonnels, corpsPreferences, creerGroupe, filtreBarres, LIMITES_GROUPES, normaliserPreferences,
   OUTIL_TOUJOURS_VISIBLE, PREFERENCES_DEFAUT, refusNomGroupe, supprimerGroupe,
   type IdProfil, type PreferencesOutils,
 } from "./profils";
@@ -181,6 +181,9 @@ export function useProfilOutils(projectId?: string | null) {
     creerGroupe: (nom: string) => modifier((p) => creerGroupe(p, nom)),
     supprimerGroupe: (id: string) => modifier((p) => supprimerGroupe(p, id)),
     basculerDansGroupe: (id: string, outil: StudioToolId) => modifier((p) => basculerDansGroupe(p, id, outil)),
+    projet,
+    /** Relit les préférences du serveur (après un import de profil). */
+    recharger: () => { if (compte && projet) magasin.charger(compte, projet); },
   };
 }
 
@@ -233,6 +236,91 @@ const ENREGISTREMENT: Record<EtatEnregistrement, string | null> = {
   aucun: null, "en-cours": "Enregistrement des préférences…", enregistre: "Préférences enregistrées.", echec: "Préférences non enregistrées : état du serveur relu.",
 };
 
+const TYPE_CONFLIT: Record<StudioConflitRaccourci["type"], string> = {
+  doublon: "déjà donné à", registre: "raccourci de l’outil", editeur: "raccourci de la commande", navigateur: "réservé au navigateur",
+};
+
+type EtatImport =
+  | { etape: "repos" }
+  | { etape: "conflits"; fichier: Record<string, unknown>; conflits: StudioConflitRaccourci[] }
+  | { etape: "refus"; message: string; capacites: string[] }
+  | { etape: "importe"; ecartes: number };
+
+/**
+ * Exporter / importer le profil du compte (EX-033, EX-034) : un import ne confère aucun droit (refus nommé), et ses
+ * conflits de raccourcis sont montrés avant toute écriture ; « Importer sans les raccourcis en conflit » importe le
+ * reste, sans modifier le fichier choisi.
+ */
+function ImportExportProfil({ profil }: { profil: ReturnType<typeof useProfilOutils> }) {
+  const [etat, setEtat] = useState<EtatImport>({ etape: "repos" });
+  const champ = useRef<HTMLInputElement>(null);
+  const p = profil.preferences;
+  const exporter = async () => {
+    if (!profil.projet) return;
+    const f = await api.exportStudioProfil(profil.projet);
+    const lien = document.createElement("a");
+    lien.href = URL.createObjectURL(new Blob([JSON.stringify(f, null, 2)], { type: "application/json" }));
+    lien.download = `profil-studio-${f.profileId}-v${f.version}.json`;
+    lien.click();
+    URL.revokeObjectURL(lien.href);
+  };
+  const envoyer = async (fichier: Record<string, unknown>, ecarter: boolean) => {
+    if (!profil.projet) return;
+    // Conflits connus de l'interface seule (commandes de l'éditeur, navigateur) : retirés d'une COPIE du fichier.
+    const raccourcis = { ...((fichier["raccourcis"] as Record<string, string> | undefined) ?? {}) };
+    const locaux = conflitsRaccourcisPersonnels(raccourcis);
+    if (locaux.length && !ecarter) { setEtat({ etape: "conflits", fichier, conflits: locaux }); return; }
+    for (const c of locaux) delete raccourcis[c.capacite];
+    try {
+      const r = await api.importStudioProfil(profil.projet, { ...fichier, raccourcis }, ecarter ? "ecarter" : undefined);
+      setEtat({ etape: "importe", ecartes: r.ecartes.length + locaux.length });
+      profil.recharger();
+    } catch (e) {
+      const corps = e instanceof ApiError ? (e.body as { conflits?: StudioConflitRaccourci[]; capacites?: string[] } | null) : null;
+      if (e instanceof ApiError && e.status === 409 && corps?.conflits) setEtat({ etape: "conflits", fichier, conflits: corps.conflits });
+      else if (e instanceof ApiError && e.status === 403) setEtat({ etape: "refus", message: "Un profil ne confère aucun droit : ce profil place une capacité que votre compte ne peut pas exécuter dans ce projet. Rien n’a été importé.", capacites: corps?.capacites ?? [] });
+      else setEtat({ etape: "refus", message: "Fichier de profil illisible ou refusé : rien n’a été importé.", capacites: [] });
+    }
+  };
+  const choisir = async (f: File | undefined) => {
+    if (!f) return;
+    let fichier: unknown;
+    try { fichier = JSON.parse(await f.text()); } catch { setEtat({ etape: "refus", message: "Fichier de profil illisible ou refusé : rien n’a été importé.", capacites: [] }); return; }
+    if (!fichier || typeof fichier !== "object" || Array.isArray(fichier)) { setEtat({ etape: "refus", message: "Fichier de profil illisible ou refusé : rien n’a été importé.", capacites: [] }); return; }
+    await envoyer(fichier as Record<string, unknown>, false);
+    if (champ.current) champ.current.value = "";
+  };
+  return (
+    <div className="studio-profil-echange" data-studio-profil-echange data-studio-profil-id={p.profileId ?? ""} data-studio-profil-version={p.version}>
+      <p className="studio-dialogue-aide" data-studio-profil-identite>
+        <span>{p.profileId ? `Profil ${p.profileId} · version ${p.version}` : "Aucun profil enregistré pour l’instant."}</span>
+        {p.importeDe && <span>{` · importé depuis ${p.importeDe}`}</span>}
+      </p>
+      {Object.keys(p.raccourcis).length > 0 && (
+        <ul className="studio-profil-raccourcis" data-studio-raccourcis-personnels>
+          {Object.entries(p.raccourcis).map(([capacite, r]) => <li key={capacite} data-studio-raccourci-personnel={capacite}><span translate="no">{capacite}</span> <kbd>{libelleRaccourci(r)}</kbd></li>)}
+        </ul>
+      )}
+      <button type="button" disabled={!profil.modifiable || !p.profileId} onClick={() => void exporter()} data-studio-exporter-profil>Exporter le profil</button>
+      <label className="studio-profil-importer">Importer un profil
+        <input ref={champ} type="file" accept="application/json,.json" disabled={!profil.modifiable} onChange={(e) => void choisir(e.target.files?.[0])} data-studio-importer-profil />
+      </label>
+      {etat.etape === "conflits" && (
+        <div role="alert" data-studio-import-conflits={etat.conflits.length}>
+          <p>Raccourcis en conflit : rien n’a été importé.</p>
+          <ul>{etat.conflits.map((c) => <li key={`${c.capacite}-${c.raccourci}`} data-studio-conflit-raccourci={c.capacite}><kbd>{libelleRaccourci(c.raccourci)}</kbd> <span translate="no">{c.capacite}</span> <span>{TYPE_CONFLIT[c.type]}</span> <span translate="no">{c.avec}</span></li>)}</ul>
+          <button type="button" onClick={() => void envoyer(etat.fichier, true)} data-studio-import-ecarter>Importer sans les raccourcis en conflit</button>
+          <button type="button" onClick={() => setEtat({ etape: "repos" })}>Annuler l’import</button>
+        </div>
+      )}
+      {etat.etape === "refus" && (
+        <p role="alert" data-studio-import-refus={etat.capacites.join(" ")}><span>{etat.message}</span>{etat.capacites.length > 0 && <span translate="no">{` (${etat.capacites.join(", ")})`}</span>}</p>
+      )}
+      {etat.etape === "importe" && <p role="status" data-studio-import-ok={etat.ecartes}>{etat.ecartes ? `Profil importé ; ${etat.ecartes} raccourci(s) en conflit écarté(s).` : "Profil importé."}</p>}
+    </div>
+  );
+}
+
 /** Choix du profil des barres d'outils, avec l'avertissement sur ce qu'il ne change pas. */
 function ChoixProfil({ profil }: { profil: ReturnType<typeof useProfilOutils> }) {
   const enregistrement = ENREGISTREMENT[profil.enregistrement];
@@ -249,6 +337,7 @@ function ChoixProfil({ profil }: { profil: ReturnType<typeof useProfilOutils> })
       <p className="studio-dialogue-aide" role="status" data-studio-preferences-enregistrement={profil.enregistrement}>
         {enregistrement ?? ETAT_PREFERENCES[profil.etat]}
       </p>
+      <ImportExportProfil profil={profil} />
     </fieldset>
   );
 }

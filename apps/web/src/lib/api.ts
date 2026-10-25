@@ -1300,9 +1300,20 @@ export interface StudioDossier {
 }
 /** Préférences d'outils Studio du compte : visibilité dans les barres seulement, jamais un droit (B.2-06). */
 export interface StudioGroupeOutilsVue { id: string; nom: string; outils: string[] }
-export interface StudioToolPreferencesInput { profil: string; favoris: string[]; personnel: string[]; groupes?: StudioGroupeOutilsVue[] }
+export interface StudioToolPreferencesInput {
+  profil: string; favoris: string[]; personnel: string[]; groupes?: StudioGroupeOutilsVue[];
+  /** Raccourcis personnels (EX-034) : capacité → combinaison ; absent : inchangés. */
+  raccourcis?: Record<string, string>;
+  /** Ordre des capacités (EX-034) ; absent : inchangé. */
+  ordre?: string[];
+}
 export interface StudioToolPreferences extends StudioToolPreferencesInput {
   groupes: StudioGroupeOutilsVue[];
+  /** Profil persistant (EX-034) : identifiant stable (null tant que rien n'est enregistré), propriétaire, version, provenance. */
+  profileId?: string | null;
+  proprietaire?: string | null;
+  version?: number;
+  importeDe?: string | null;
   /** Outils enregistrés puis retirés du registre (écartés à la lecture). */
   retires: string[];
   /** Version du manifeste du catalogue d'outils du serveur. */
@@ -1310,6 +1321,13 @@ export interface StudioToolPreferences extends StudioToolPreferencesInput {
   updatedAt: string | null;
 }
 /** Catalogue autorisé : droit réel d'exécution de chaque outil pour le compte dans ce projet (B.2-06). */
+/** Fichier de profil d'outils échangé (EX-034, format `fadi-studio-profil/1`). */
+export interface StudioProfilExporte {
+  format: "fadi-studio-profil/1"; profileId: string; proprietaire?: string; version: number; manifeste?: string;
+  profil: string; favoris: string[]; personnel: string[]; groupes: StudioGroupeOutilsVue[]; ordre: string[]; raccourcis: Record<string, string>;
+}
+/** Conflit de raccourci détecté à l'import (EX-034). */
+export interface StudioConflitRaccourci { raccourci: string; capacite: string; type: "doublon" | "registre" | "editeur" | "navigateur"; avec: string }
 export interface StudioCatalogueAutorise {
   manifeste: string;
   role: string;
@@ -1390,6 +1408,13 @@ export const api = {
   studioToolPreferences: (p: string) => request<StudioToolPreferences>(`/projects/${encodeURIComponent(p)}/studio/preferences/outils`),
   /** Remplace les préférences d'outils du compte ; un outil hors registre → 400 `unknown_tool`. */
   setStudioToolPreferences: (p: string, prefs: StudioToolPreferencesInput) => request<StudioToolPreferences>(`/projects/${encodeURIComponent(p)}/studio/preferences/outils`, { method: "PUT", body: JSON.stringify(prefs) }),
+  /** Fichier de profil du compte (EX-034) ; 404 tant qu'aucun profil n'est enregistré. */
+  exportStudioProfil: (p: string) => request<StudioProfilExporte>(`/projects/${encodeURIComponent(p)}/studio/preferences/outils/export`),
+  /**
+   * Importe un fichier de profil (EX-033, EX-034) : 403 `permission_non_conferee` (capacité exigeant un droit absent),
+   * 409 `shortcut_conflict` (conflits nommés, rien d'écrit) ; `resolution: "ecarter"` importe sans les raccourcis en conflit.
+   */
+  importStudioProfil: (p: string, profil: unknown, resolution?: "ecarter") => request<StudioToolPreferences & { ecartes: StudioConflitRaccourci[] }>(`/projects/${encodeURIComponent(p)}/studio/preferences/outils/import`, { method: "POST", body: JSON.stringify(resolution ? { profil, resolution } : { profil }) }),
   /** Catalogue autorisé : droit réel d'exécution de chaque outil du manifeste pour le compte (lecture seule). */
   studioCatalogueOutils: (p: string) => request<StudioCatalogueAutorise>(`/projects/${encodeURIComponent(p)}/studio/preferences/catalogue`),
   register: (email: string, password: string) =>

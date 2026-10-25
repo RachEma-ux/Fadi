@@ -55,6 +55,8 @@ import { useAuth } from "../../lib/auth-context";
 import { LOCALE } from "../../lib/i18n";
 import { StudioRefus } from "./studio-ecrans";
 import { BarreOutils } from "./planche2d/BarreOutils";
+import { useProfilOutils } from "./planche2d/CatalogueOutils";
+import { tableRaccourcisPersonnels } from "./planche2d/profils";
 import { annulerBrouillon, apercuBrouillon, appliquerBrouillon, commandesEnAttente, creerBrouillon, documentBrouillon, messageRefus, pasHorsHistorique, peutAnnuler, peutRetablir, retablirBrouillon, type Brouillon } from "./planche2d/brouillon";
 import { commandeDisponible, outilDisponible } from "./variante/disponibilite";
 import { calqueActifOuPremier, commandeReglage, estVisible, layerIdPour, listeCalques, prochainNomCalque } from "./planche2d/calques";
@@ -731,7 +733,10 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     setDialogue(null);
     executer(e.cible, true);
   }
-  useClavierStudio({ dialogue: !!dialogue, pret: !!context && !!drawing, commandeDisponible: commandAvailable, executer, espace: gestes.espace });
+  // Raccourcis personnels du profil (EX-034) : appliqués après la table native, jamais une combinaison en conflit.
+  const prefsOutils = useProfilOutils(projectId).preferences;
+  const raccourcisPersonnels = useMemo(() => tableRaccourcisPersonnels(prefsOutils), [prefsOutils]);
+  useClavierStudio({ dialogue: !!dialogue, pret: !!context && !!drawing, commandeDisponible: commandAvailable, executer, espace: gestes.espace, personnels: raccourcisPersonnels });
   // Cycle des outils (B.3-01) : moteurs de l'outil chargés au besoin puis actifs ; première planche prête (PERF-01).
   useCycleOutils({ outil: tool, pret: !loading && !!context && !!drawing, objets: drawing?.objects.length ?? 0 });
 
