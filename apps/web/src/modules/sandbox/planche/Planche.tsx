@@ -30,7 +30,6 @@ import {
   detacherLiens,
   liensDesFaces,
   copier,
-  cross,
   differencePlanche,
   diviserCourbes,
   eclater,
@@ -111,6 +110,27 @@ import {
 } from "@parcours/sandbox-planche-model";
 import { etatUi, useEtatUi } from "../etat-ui";
 import { MenuPlanche, ECHELLE_UNITE, nomAffiche, type ActionsMenuPlanche, type FormatEchange, type UniteFichier } from "./menu-planche";
+import {
+  type ContexteTravail,
+  type HistoriqueContextes,
+  contexteDepuisDocument,
+  CONTEXTE_MODELE,
+  contextePrecedent,
+  contexteTemporaire,
+  deplacerOrigine,
+  pivoterRepere,
+  type BaseAxe,
+  type NomAxe,
+  type PlanRepere,
+  historiqueInitial as historiqueContextes,
+  planDuContexte,
+  pousserContexte,
+  repereDepuisFace,
+  repereDuContexte,
+} from "@parcours/sandbox-planche-model";
+import { contexteMemorise, memoriserContexte } from "./contexte-travail";
+import { BarreReperes, libellePlan } from "./BarreReperes";
+import { COMMANDES_REPERES, type IdCommandeRepere, cleNomRepere, disponibiliteRepere, planSuivant, verrouApplicable } from "./commandes-reperes";
 import { ErreurImport, compter as compterContexte, exporterIfc, importerMaillages, lireMaillages, maillagesPlanche, nonEtanchesDe, omisExport } from "@parcours/sandbox-planche-model";
 import { ajouterEntree, chargerJournal, dernieresEntrees, enregistrerJournal, supprimerJournal, type EntreeJournal } from "./journal-planche";
 import { avecCourante, avecInfo, avecNouvelle, chargerIndex, enregistrerIndex, indexInitial, nouvelId, planche as plancheDe, sansPlanche, supprimerDocument, type IndexPlanches } from "./registre-planches";
@@ -140,10 +160,12 @@ import { barresRendues, basculerBarre, reinitialiserDisposition } from "./barres
 import { chargerBooleens } from "./booleens-manifold";
 import "../sandbox.css";
 
-declare global {
-  interface Window {
-    /** Instrumentation de la recette (lecture seule) : modèle du brouillon, outil actif, projection écran. */
-    fadiPlanche?: {
+/**
+ * Instrumentation de la recette (lecture seule) : modèle du brouillon, outil actif, projection écran. Posée sur
+ * `window.fadiPlanche` sans déclaration globale : la Planche de l'Atelier en déclare une avec son propre modèle
+ * (`@parcours/planche-model`), que celui du Sandbox ne recouvre plus depuis les repères enregistrés (chantier Axes).
+ */
+interface CrochetRecette {
       modele: () => Modele;
       outil: () => string;
       etatOutil: () => unknown;
@@ -165,9 +187,10 @@ declare global {
       /** Objets O-5 : nombre de faces rendues par la vue (isolement, masquer le reste). */
       facesRendues: () => number;
       pressePapiers: () => number;
-    };
-  }
+      /** Chantier Axes (AX-1) : contexte de travail courant (repère, plan, verrou) et nombre de contextes précédents. */
+      contexteTravail: () => { contexte: ContexteTravail; precedents: number };
 }
+const fenetreRecette = (): { fadiPlanche?: CrochetRecette } => window as unknown as { fadiPlanche?: CrochetRecette };
 
 export interface PropsPlanche {
   /** Lecture seule (jamais en Sandbox : la Planche y est entièrement à soi). */
@@ -242,6 +265,17 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const readOnlyRef = useRef(readOnly);
   readOnlyRef.current = readOnly;
   const [hist, setHist] = useState(histRef.current);
+  // Chantier Axes (AX-1, AX-D3) : contexte de travail personnel — repère, plan, verrou — et son historique de session
+  // (« Repère précédent »), hors de l'historique de géométrie ; mémorisé par Planche dans ce navigateur.
+  const histContexteRef = useRef<HistoriqueContextes>(historiqueContextes());
+  const [histContexte, setHistContexte] = useState(histContexteRef.current);
+  const poserContextes = useCallback((h: HistoriqueContextes) => {
+    histContexteRef.current = h;
+    setHistContexte(h);
+    memoriserContexte(indexRef.current.courante, h.courant);
+  }, []);
+  const changerContexte = useCallback((c: ContexteTravail) => poserContextes(pousserContexte(histContexteRef.current, c)), [poserContextes]);
+  useEffect(() => vueRef.current?.poserRepereTravail(histContexte.courant.repere), [histContexte]);
   const outilRef = useRef(OUTIL_INITIAL());
   const precedentRef = useRef(outilRef.current);
   const [outilId, setOutilId] = useState(outilRef.current);
@@ -435,7 +469,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       ...(materiauRef.current ? { materiauCourant: materiauRef.current } : {}),
       ...(baliseRef.current ? { baliseCourante: baliseRef.current } : {}),
       ...(sectionRef.current ? { sectionCourante: sectionRef.current } : {}),
-      ...(histRef.current.present.modele.annotations?.repere ? { repere: histRef.current.present.modele.annotations.repere } : {}),
+      ...(histContexteRef.current.courant.repere ? { repere: histContexteRef.current.courant.repere } : {}),
+      planDeTravail: planDuContexte(histContexteRef.current.courant),
       ...(booleensRef.current ? { booleens: booleensRef.current } : {}),
       hauteurOeil: hauteurOeilRef.current,
       lecture: readOnly,
@@ -522,6 +557,11 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         setEdition({ id: tr.editerTexte.id, texte: tr.editerTexte.texte });
         change = true;
       }
+      // Chantier Axes (AX-1) : l'outil Axes pose le repère de travail, sans pas d'historique de géométrie (AX-D3).
+      if (tr.repereTravail) {
+        changerContexte(contexteTemporaire(histContexteRef.current.courant, tr.repereTravail));
+        change = true;
+      }
       // Un survol ou le simple relâchement d'une touche (Ctrl après Ctrl + Z) n'efface pas le message en cours.
       if (ev.genre !== "survol" && !(ev.genre === "touche" && ev.etat === "relachee")) setMessage(null);
       rafraichir();
@@ -536,7 +576,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       }
       return change;
     },
-    [contexte, poserHistorique, poserDans, rafraichir, readOnly, setSelection, setMateriau, setBalise],
+    [contexte, poserHistorique, poserDans, rafraichir, readOnly, setSelection, setMateriau, setBalise, changerContexte],
   );
 
   /**
@@ -644,6 +684,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       setOutilId(id);
       setTexte(null);
       setMessage(null);
+      // Chantier Axes (AX-2) : Placer les axes montre la barre « Axes et repères » (repère courant et aperçu distincts).
+      if (id === "axes" && !etatUi.get().barreReperes.visible) etatUi.set((u) => ({ barreReperes: { ...u.barreReperes, visible: true } }));
       if (!idsBarreRef.current.includes(id)) setRecent(id);
       rafraichir();
     },
@@ -1076,18 +1118,21 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     const d = Math.max(3, Math.hypot(etat.position.x - etat.cible.x, etat.position.y - etat.cible.y, etat.position.z - etat.cible.z));
     v.appliquerScene({ position: { x: f.centre.x + f.normale.x * d, y: f.centre.y + f.normale.y * d, z: f.centre.z + f.normale.z * d }, cible: f.centre, champDeVision: etat.champDeVision, projection: etat.projection });
   }, [faceMonde]);
-  const alignerAxes = useCallback(
-    () =>
-      operer(t("planche.menu.aligner-axes"), (m) => {
-        const f = faceMonde();
-        if (!f) return { modele: m, message: t("planche.aligner-axes.face") };
-        const z = f.normale;
-        const x = normalize(sub(f.u, { x: z.x * (f.u.x * z.x + f.u.y * z.y + f.u.z * z.z), y: z.y * (f.u.x * z.x + f.u.y * z.y + f.u.z * z.z), z: z.z * (f.u.x * z.x + f.u.y * z.y + f.u.z * z.z) }));
-        const y = cross(z, x);
-        return { modele: modifierAnnotations(m, (a) => void (a.repere = { origine: f.centre, x, y, z })).modele };
-      }),
-    [operer, faceMonde],
-  );
+  // Chantier Axes (AX-1) : aligner sur la face = repère de travail (instantané, AX-D7), contrôlé — jamais de pas de
+  // géométrie ni de repli silencieux.
+  const alignerAxes = useCallback(() => {
+    const f = faceMonde();
+    if (!f) {
+      setMessage(t("planche.aligner-axes.face"));
+      return;
+    }
+    const r = repereDepuisFace(f.centre, f.normale, f.u);
+    if (!r.ok) {
+      setMessage(r.message);
+      return;
+    }
+    changerContexte(contexteTemporaire(histContexteRef.current.courant, r.repere));
+  }, [faceMonde, changerContexte]);
   const aireDe = useCallback(
     (quoi: "selection" | "balise" | "materiau") => {
       const m = histRef.current.present.modele;
@@ -1544,9 +1589,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       return;
     }
     vueRef.current = v;
+    v.poserRepereTravail(histContexteRef.current.courant.repere);
     v.majModele(histRef.current.present.modele);
     rafraichir();
-    window.fadiPlanche = {
+    fenetreRecette().fadiPlanche = {
       modele: () => histRef.current.present.modele,
       outil: () => outilRef.current,
       etatOutil: () => etatMachineRef.current,
@@ -1565,11 +1611,12 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       menu: () => menuRef.current?.entrees.map((e) => e.id) ?? null,
       pressePapiers: () => pressePapiers.current?.ids.length ?? 0,
       facesRendues: () => vueRef.current?.facesRendues() ?? 0,
+      contexteTravail: () => ({ contexte: histContexteRef.current.courant, precedents: histContexteRef.current.precedents.length }),
     };
     return () => {
       v.detruire();
       vueRef.current = null;
-      delete window.fadiPlanche;
+      delete fenetreRecette().fadiPlanche;
     };
   }, [envoyer, rafraichir, setTexte]);
 
@@ -1594,6 +1641,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           setSelection([]);
           poserHistorique(historiqueInitial(m ?? modeleVide()), { envoyer: false });
         } else if (m && histRef.current.passe.length === 0 && histRef.current.futur.length === 0) poserHistorique(historiqueInitial(m), { envoyer: false });
+        // Contexte de travail de cette Planche : celui de ce navigateur, sinon l'ancien repère du document (AX-D4).
+        poserContextes(historiqueContextes(contexteMemorise(idx.courante) ?? contexteDepuisDocument(histRef.current.present.modele.annotations?.repere)));
         setBrouillonCharge(true);
         rafraichir();
       } catch {
@@ -1603,7 +1652,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     return () => {
       annule = true;
     };
-  }, [poserHistorique, rafraichir, essaiLecture, chargeId, poserDans, setSelection]);
+  }, [poserHistorique, rafraichir, essaiLecture, chargeId, poserDans, setSelection, poserContextes]);
   useEffect(() => {
     if (!brouillonCharge || readOnly) return;
     const ticket = sauvegarde.modifier();
@@ -1697,6 +1746,9 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           const maintenant = new Date().toISOString();
           const idx = avecNouvelle(indexRef.current, { id: nouvelId(indexRef.current), nom, altitudeRef: courante().altitudeRef, creeA: maintenant, modifieA: maintenant });
           await enregistrerBrouillon(histRef.current.present.modele, idx.courante);
+          // Chantier Axes (revue Codex de #298) : la copie garde le contexte de travail affiché — il est personnel et
+          // hors du document, donc mémorisé sous l'identifiant de la nouvelle Planche.
+          memoriserContexte(idx.courante, histContexteRef.current.courant);
           // Le journal de la copie reprend celui de l'original, puis note la copie.
           journalRef.current = ajouterEntree(journalRef.current, { a: maintenant, auteur: t("planche.sb.auteur"), description: t("planche.sb.journal.copiee", { nom }) });
           await enregistrerJournal(idx.courante, journalRef.current).catch(() => undefined);
@@ -2364,9 +2416,77 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       return { id: c.id, picto: c.picto, nom, raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.objets.motif.vide"), executer: () => executerVue(c.id) };
     });
   executerVueRef.current = executerVue;
+  // ——— Chantier Axes (AX-2) : barre « Axes et repères ». Le contexte de travail change ; le document jamais (AX-D3).
+  const [demandeListeReperes, setDemandeListeReperes] = useState(0);
+  const [demandeInspecteurReperes, setDemandeInspecteurReperes] = useState(0);
+  const afficherBarreReperes = (visible: boolean) => etatUi.set((u) => ({ barreReperes: { ...u.barreReperes, visible } }));
+  const etatReperes = () => ({ contexte: histContexte.courant, precedents: histContexte.precedents.length, face: faceMonde() !== null });
+  const vueNormaleAuPlan = () => {
+    const v = vueRef.current;
+    if (!v) return;
+    const pl = planDuContexte(histContexteRef.current.courant);
+    const etat = v.etatCamera();
+    const d = Math.max(3, Math.hypot(etat.position.x - etat.cible.x, etat.position.y - etat.cible.y, etat.position.z - etat.cible.z));
+    // Cible ramenée sur le plan (la vue reste sur ce que l'on regardait) ; la caméra seule bouge (§ 4.2).
+    const k = (etat.cible.x - pl.origine.x) * pl.normale.x + (etat.cible.y - pl.origine.y) * pl.normale.y + (etat.cible.z - pl.origine.z) * pl.normale.z;
+    const cible = { x: etat.cible.x - pl.normale.x * k, y: etat.cible.y - pl.normale.y * k, z: etat.cible.z - pl.normale.z * k };
+    v.appliquerScene({ position: { x: cible.x + pl.normale.x * d, y: cible.y + pl.normale.y * d, z: cible.z + pl.normale.z * d }, cible, champDeVision: etat.champDeVision, projection: etat.projection });
+    setMessage(t("planche.reperes.vue-normale.fait"));
+  };
+  const executerRepere = (id: IdCommandeRepere) => {
+    const d = disponibiliteRepere(id, etatReperes());
+    if (!d.disponible) {
+      setMessage(t(d.motif ?? "planche.reperes.motif.face"));
+      return;
+    }
+    const courant = histContexteRef.current.courant;
+    if (id === "choisir-repere") {
+      afficherBarreReperes(true);
+      setDemandeListeReperes((n) => n + 1);
+    } else if (id === "aligner-repere") alignerAxes();
+    else if (id === "pivoter-repere") {
+      afficherBarreReperes(true);
+      setDemandeInspecteurReperes((n) => n + 1);
+    } else if (id === "plan-de-travail") changerContexte({ ...courant, plan: planSuivant(courant.plan) });
+    else if (id === "verrouiller-plan") changerContexte({ ...courant, verrou: !courant.verrou });
+    else if (id === "vue-normale-plan") vueNormaleAuPlan();
+    else if (id === "repere-precedent") {
+      const h = contextePrecedent(histContexteRef.current);
+      if (h) poserContextes(h);
+    } else if (id === "repere-modele") changerContexte(CONTEXTE_MODELE);
+    else if (id === "affichage-axes") majOptions({ axes: !(vueRef.current?.lireOptions().axes ?? true) });
+    rafraichir();
+  };
+  const origineReperes = (o: Vec3): string | null => {
+    const courant = histContexteRef.current.courant;
+    const r = deplacerOrigine(repereDuContexte(courant), o);
+    if (!r.ok) return r.message;
+    changerContexte(contexteTemporaire(courant, r.repere));
+    return null;
+  };
+  const pivoterReperes = (axe: NomAxe, base: BaseAxe, degres: number): string | null => {
+    const courant = histContexteRef.current.courant;
+    const r = pivoterRepere(repereDuContexte(courant), axe, base, (degres * Math.PI) / 180);
+    if (!r.ok) return r.message;
+    changerContexte(contexteTemporaire(courant, r.repere));
+    return null;
+  };
+  /** Ligne d'état du contexte de travail (§ 4.1) : décrit l'état réel, mise à jour avant la saisie suivante. */
+  const ligneReperes = t("planche.reperes.etat", {
+    repere: t(cleNomRepere(histContexte.courant)),
+    plan: libellePlan(histContexte.courant),
+    portee: t(histContexte.courant.source.genre === "modele" ? "planche.reperes.portee.modele" : "planche.reperes.portee.travail"),
+    unite: "m",
+  });
+  const verrouInapplicable = histContexte.courant.verrou && !verrouApplicable(outilId) ? t("planche.reperes.verrou.inapplicable", { outil: libelleOutil(outilId) }) : null;
+
   /** Lot 9 : exécution d'une entrée du registre au clavier, après la disponibilité de sa famille (mêmes motifs qu'ailleurs). */
   executerCommandeRef.current = (c: EntreeRegistre) => {
     const s = etatSelectionObjets();
+    if (c.famille === "repere") {
+      executerRepere(c.id as IdCommandeRepere);
+      return;
+    }
     if (c.famille === "objet") {
       const id = c.id as IdCommandeObjet;
       if (disponibiliteObjet(id, s).disponible) executerObjet(id);
@@ -2408,6 +2528,11 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         ...COMMANDES_DEBIT.map((c) => {
           const d = disponibiliteCommandeDebit(c.id);
           return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.debit.motif.vide"), executer: () => executerDebit(c.id) };
+        }),
+        // Chantier Axes (AX-2) : les commandes de la barre « Axes et repères », mêmes disponibilités et exécution.
+        ...COMMANDES_REPERES.map((c) => {
+          const d = disponibiliteRepere(c.id, etatReperes());
+          return { id: c.id, picto: c.picto, nom: t(c.libelle), raccourci: c.raccourci, motif: d.disponible ? null : t(d.motif ?? "planche.reperes.motif.face"), executer: () => executerRepere(c.id) };
         }),
   ];
   /** Même liste « Outils », deux déclencheurs indépendants : le bouton de la barre du haut et la loupe de la barre verticale. */
@@ -2563,6 +2688,27 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         </p>
       )}
       {barresOutils}
+      {ui.barreReperes.visible && (
+        <BarreReperes
+          contexte={histContexte.courant}
+          precedents={histContexte.precedents.length}
+          face={faceMonde() !== null}
+          outilId={outilId}
+          telephone={etroit}
+          separateurDecimal={SEPARATEUR_DECIMAL}
+          reference={racineRef}
+          fenetreCle={detache}
+          demandeListe={demandeListeReperes}
+          demandeInspecteur={demandeInspecteurReperes}
+          onCommande={executerRepere}
+          onPlacer={() => choisirOutil("axes")}
+          onOrigine={origineReperes}
+          onPivoter={pivoterReperes}
+          onPlan={(pl: PlanRepere) => changerContexte({ ...histContexteRef.current.courant, plan: pl })}
+          onVerrou={(v: boolean) => changerContexte({ ...histContexteRef.current.courant, verrou: v })}
+          onFermer={() => afficherBarreReperes(false)}
+        />
+      )}
       {barreActions}
 
       {/* Volet : au bureau, `display: contents` (barre d'outils à gauche, pied en bas, comme avant) ; au téléphone,
@@ -2955,6 +3101,14 @@ export function Planche({ readOnly = false }: PropsPlanche) {
               </span>
             );
           })()}
+        </p>
+        {/* Chantier Axes (AX-2) : contexte de travail toujours lisible, hors de la consigne (jamais coupé par elle) ; un clic
+            ouvre la barre « Axes et repères » ; les changements sont annoncés (aria-live). */}
+        <p className="planche-reperes-etat" aria-live="polite" data-reperes-etat>
+          <button type="button" className="planche-reperes-etat-bouton" onClick={() => afficherBarreReperes(true)} title={`${ligneReperes} — ${t("planche.reperes.barre")}`}>
+            {ligneReperes}
+          </button>
+          {verrouInapplicable && <span className="planche-reperes-avertissement" data-reperes-verrou-inapplicable>{verrouInapplicable}</span>}
         </p>
         {lienSelectionne() && (
           <button type="button" className="planche-lien-detacher" title={`${t(COMMANDE_DETACHER_LIEN.libelle)} (${afficherRaccourci(COMMANDE_DETACHER_LIEN.raccourci)})`} aria-label={t(COMMANDE_DETACHER_LIEN.libelle)} onClick={detacherLienSelection} data-planche-commande={COMMANDE_DETACHER_LIEN.id}>

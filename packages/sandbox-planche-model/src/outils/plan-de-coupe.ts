@@ -10,7 +10,7 @@
 import { type Id, modifierAnnotations } from "../geometrie-libre.js";
 import { type Inference, COULEURS, geometrieVisible, inferer } from "../inference.js";
 import { type Vec3, AXE_X, AXE_Y, AXE_Z, add, dot, normalize, scale, sub } from "../vecteur.js";
-import { axesDuPlan, contexteSaisie, mesures, messageErreur } from "./commun-formes.js";
+import { axesDuPlan, contexteSaisie, mesures, messageErreur, axesDeSaisie } from "./commun-formes.js";
 import { consigneDe, vueModif } from "./commun-modif.js";
 import type { ContexteOutil, MachineOutil, Touche, Transition, VueOutil } from "./machine.js";
 import type { PlanDeCoupe } from "../annotations.js";
@@ -91,11 +91,11 @@ export const machinePlanDeCoupe: MachineOutil<EtatPlanDeCoupe> = {
   traiter(etat, ev, ctx): Transition<EtatPlanDeCoupe> {
     switch (ev.genre) {
       case "survol": {
-        const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele), ...(ctx.repere ? { axes: ctx.repere } : {}) });
+        const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele), ...axesDeSaisie(ctx) });
         return { etat: { ...etat, inference: i, apercu: apercuDe(etat, ctx, i), erreur: null } };
       }
       case "clic": {
-        const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele), ...(ctx.repere ? { axes: ctx.repere } : {}) });
+        const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele), ...axesDeSaisie(ctx) });
         const a = apercuDe(etat, ctx, i);
         try {
           const r = modifierAnnotations(ctx.modele, (an, id) => {

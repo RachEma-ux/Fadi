@@ -13,6 +13,7 @@
  * Ce module porte aussi les aides communes aux outils de tracé (visée par rayon, scène aplatie, consignes du
  * catalogue, conversion monde → contexte d'édition).
  */
+import { axesDeSaisie } from "./commun-formes.js";
 import { outilParId, type EtapeOutil, type Outil } from "../catalogue-outils.js";
 import {
   type Contexte,
@@ -534,7 +535,7 @@ export const machineSelection: MachineOutil<EtatSelection> = {
       case "glisser": {
         if (!etat.appui) return { etat };
         if (etat.poignee) {
-          const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele), depart: etat.poignee.ancre, ...(ctx.repere ? { axes: ctx.repere } : {}) });
+          const i = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie: geometrieVisible(ctx.modele), depart: etat.poignee.ancre, ...axesDeSaisie(ctx) });
           return { etat: { ...etat, poignee: { ...etat.poignee, courant: i.point, inference: i } } };
         }
         if (!etat.cadre && distance2(etat.appui, ev.ecran) <= SEUIL_GLISSER) return { etat };

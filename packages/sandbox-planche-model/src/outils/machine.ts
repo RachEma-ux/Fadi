@@ -11,6 +11,7 @@
  * - Ctrl et Alt sont des bascules à l'appui ; Maj agit tant qu'elle est maintenue ;
  * - Échap annule l'opération en cours (sinon : sans effet, l'interface gère le retour à l'outil précédent).
  */
+import type { PlanDeTravail } from "../reperes.js";
 import type { Modele } from "../geometrie-libre.js";
 import type { Maillage } from "../maillage.js";
 import type { Repere } from "../annotations.js";
@@ -145,6 +146,12 @@ export interface ContexteOutil {
   readonly baliseCourante?: string;
   /** (Lot 4) Repère de saisie courant (Axes) ; absent = repère du modèle. */
   readonly repere?: Repere;
+  /**
+   * (Chantier Axes, AX-1) Plan de travail du contexte de travail : plan de dessin hors face survolée (au lieu du sol du
+   * monde) et, s'il est verrouillé, contrainte des saisies des outils éligibles (`OUTILS_PLAN_VERROUILLABLE`). Absent =
+   * plan XY du repère de saisie.
+   */
+  readonly planDeTravail?: PlanDeTravail;
   /** (Lot 6) Moteur booléen injecté par l'interface (manifold-3d) ; absent = outils de solides indisponibles. */
   readonly booleens?: AdaptateurBooleens;
   /** (Lot 4) Hauteur d'œil courante (m) pour les outils caméra, lue par la vue. */
@@ -178,6 +185,11 @@ export interface Transition<E> {
   readonly chemin?: readonly string[];
   /** (Ajout lot 3, optionnel) Outil à activer après cette transition (Diviser rend la main à Sélection). */
   readonly outil?: string;
+  /**
+   * (Chantier Axes, AX-1) Nouveau repère de travail posé par l'outil Axes : l'interface le pousse dans le contexte de
+   * travail (personnel, hors historique de géométrie, AX-D3) ; le modèle n'est pas modifié.
+   */
+  readonly repereTravail?: Repere;
   /** (Lot 4) `true` : revenir à l'outil précédent (Axes, outils temporaires). */
   readonly outilPrecedent?: boolean;
   /** (Lot 5) Nouvelle matière courante du pot de peinture (Prélever) ; `null` = matière par défaut. */

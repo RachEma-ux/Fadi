@@ -160,7 +160,7 @@ function traiter(etat0: EtatRectangle, ev: Parameters<MachineOutil<EtatRectangle
         const inf = verrou ? marquerContraint(inference) : inference;
         if (ev.genre === "survol") return { etat: { ...etat, inference: inf, normaleSurvol: normale } };
         const n = verrou ?? normale;
-        const { u, w } = axesDuPlan(n);
+        const { u, w } = axesDuPlan(n, ctx.repere);
         return {
           etat: {
             ...etat,

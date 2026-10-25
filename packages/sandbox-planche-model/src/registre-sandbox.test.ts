@@ -19,7 +19,9 @@ describe("registre du Sandbox — contenu", () => {
   });
 
   it("hors catalogue : seulement zoom + / − ; la commande Diviser, doublon de l'outil, a disparu (lot 6)", () => {
-    expect(REGISTRE_SANDBOX.filter((e) => e.horsCatalogue).map((e) => `${e.nature}:${e.id}`)).toEqual(["commande:zoom-plus", "commande:zoom-moins"]);
+    // Hors catalogue : zoom + / − (lot 4) et les commandes de la barre « Axes et repères » (chantier Axes, AX-2).
+    expect(REGISTRE_SANDBOX.filter((e) => e.horsCatalogue && e.famille !== "repere").map((e) => `${e.nature}:${e.id}`)).toEqual(["commande:zoom-plus", "commande:zoom-moins"]);
+    expect(REGISTRE_SANDBOX.filter((e) => e.famille === "repere").every((e) => e.horsCatalogue && e.emplacement === "barre-reperes")).toBe(true);
     expect(entreeSandbox("commande", "diviser")).toBeUndefined();
     expect(entreeOutil("diviser").horsCatalogue).toBeUndefined();
     expect(entreeOutil("diviser").raccourci).toBe("Maj+D");
@@ -67,6 +69,12 @@ describe("registre du Sandbox — contenu", () => {
     // La couche Fadi ne couvre que des outils sans raccourci relevé, et tous ceux-là.
     for (const id of Object.keys(RACCOURCIS_FADI_OUTILS)) expect(OUTILS.find((o) => o.id === id)?.raccourci, id).toBeNull();
     for (const o of OUTILS.filter((x) => x.raccourci === null)) expect(RACCOURCIS_FADI_OUTILS[o.id], o.id).toBeDefined();
+  });
+
+  it("chantier Axes (AX-D6) : Alt + Maj + chiffre et F4 pour la barre « Axes et repères » ; Placer reste l'outil Axes (Maj + Y)", () => {
+    expect(entreeOutil("axes").raccourci).toBe("Maj+Y");
+    const r = entreesSandbox("commande").filter((e) => e.famille === "repere").map((e) => e.raccourci);
+    expect(r).toEqual(["Alt+Maj+1", "Alt+Maj+2", "Alt+Maj+3", "Alt+Maj+4", "Alt+Maj+5", "Alt+Maj+6", "Alt+Maj+7", "Alt+Maj+8", "F4"]);
   });
 
   it("raccourcis : les 52 outils et les 20 commandes en ont un, unique ; les 13 panneaux n'en ont pas", () => {
@@ -142,9 +150,11 @@ describe("registre du Sandbox — contenu", () => {
     for (const e of entreesSandbox("panneau")) expect(e.pictogramme.teinte, e.id).toBe("info");
   });
 
-  it("douze dessins sur mesure, ceux validés le 20 octobre 2026", () => {
-    const fadi = new Set(REGISTRE_SANDBOX.filter((e) => e.pictogramme.source === "fadi").map((e) => e.pictogramme.nom));
+  it("douze dessins sur mesure validés le 20 octobre 2026, plus ceux de la barre « Axes et repères » (chantier Axes)", () => {
+    const fadi = new Set(REGISTRE_SANDBOX.filter((e) => e.pictogramme.source === "fadi" && e.famille !== "repere").map((e) => e.pictogramme.nom));
     expect([...fadi].sort()).toEqual(["aligner", "allonger", "coupe-profil", "debit", "decalage", "eclater", "epaissir", "onglet", "pousser", "profile", "rapporteur", "suivez"]);
+    const axes = REGISTRE_SANDBOX.filter((e) => e.famille === "repere").map((e) => e.pictogramme.nom);
+    expect(axes.sort()).toEqual(["axes-affichage", "plan-travail", "plan-verrou", "repere-actif", "repere-aligner", "repere-modele", "repere-pivoter", "repere-precedent", "vue-normale"]);
   });
 
   it("le registre est figé", () => {

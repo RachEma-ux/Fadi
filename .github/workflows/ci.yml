@@ -825,6 +825,11 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/sandbox node apps/web/e2e/sandbox-module.mjs 2>&1 | tee -a e2e.log
+      - name: Recette Axes et repères du Sandbox — repère de travail hors historique, origine saisie, points alignés refusés, aligner sur une face, plan de travail et verrou, vue normale, Précédent ≠ Annuler, inspecteur, clavier et téléphone (apps/web/e2e/sandbox-axes.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/sandbox-axes node apps/web/e2e/sandbox-axes.mjs 2>&1 | tee -a e2e.log
       - name: Recette du socle Temps réel — montée de protocole refusée, session idempotente, présence, vue et sélection projetées, révision annoncée, hôte sans droit, révocations immédiates, clôture et journal (apps/web/e2e/temps-reel-sessions.mjs)
         if: ${{ matrix.shard == 'p2' }}
         run: |
