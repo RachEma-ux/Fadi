@@ -2951,8 +2951,8 @@ CREATE TABLE IF NOT EXISTS geodata_rasters (
 );
 -- Catégories du catalogue (D-GD-14) : communes à tous les comptes, gérées par un gestionnaire de données (créer, renommer,
 -- ordonner, supprimer) ; une source y est rangée explicitement, sinon par les thèmes déclarés de la catégorie, sinon
--- « Autres ». Les catégories initiales sont semées une seule fois (repère geodata_reglages) : une catégorie supprimée
--- ne réapparaît pas au déploiement suivant.
+-- « Autres ». Les catégories initiales (modèle `CATEGORIES_CATALOGUE`) sont semées une seule fois par l'API, à la
+-- première lecture (repère geodata_reglages) : une base neuve reste vide et une catégorie supprimée ne réapparaît pas.
 CREATE TABLE IF NOT EXISTS geodata_categories (
   id text PRIMARY KEY,
   libelle text NOT NULL CHECK (char_length(libelle) BETWEEN 2 AND 80),
@@ -2973,29 +2973,6 @@ CREATE TABLE IF NOT EXISTS geodata_reglages (
   valeur jsonb NOT NULL DEFAULT 'true'::jsonb,
   le timestamptz NOT NULL DEFAULT now()
 );
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM geodata_reglages WHERE cle = 'categories-semees') THEN
-    INSERT INTO geodata_categories (id, libelle, ordre, themes) VALUES
-      ('limites', 'Limites administratives', 0, '{limites-administratives}'),
-      ('population', 'Population et démographie', 10, '{population}'),
-      ('agriculture', 'Agriculture et irrigation', 20, '{agriculture}'),
-      ('hydrologie', 'Eau et hydrologie', 30, '{hydrologie}'),
-      ('infrastructures', 'Infrastructures et transport', 40, '{infrastructures}'),
-      ('energie', 'Énergie et mines', 50, '{energie}'),
-      ('equipements', 'Équipements et services', 60, '{equipements}'),
-      ('tourisme', 'Tourisme et patrimoine', 70, '{tourisme,patrimoine}'),
-      ('relief', 'Altitude et relief', 80, '{relief}'),
-      ('climat', 'Climat et précipitations', 90, '{climat}'),
-      ('occupation-sol', 'Occupation du sol', 100, '{occupation-sol}'),
-      ('sols', 'Sols et pédologie', 110, '{sols}'),
-      ('geologie', 'Géologie', 120, '{geologie}'),
-      ('personnelles', 'Mes données importées', 130, '{donnees-personnelles}'),
-      ('test', 'Jeux de test', 140, '{test}')
-    ON CONFLICT DO NOTHING;
-    INSERT INTO geodata_reglages (cle) VALUES ('categories-semees');
-  END IF;
-END $$;
 CREATE OR REPLACE FUNCTION geodata_contenu_fige() RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE
   v text;

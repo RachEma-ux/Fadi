@@ -6,17 +6,35 @@
  * à « Autres ». Chaque modification est journalisée.
  */
 import { Router, type NextFunction, type Request, type Response } from "express";
-import { validerLibelleCategorie } from "@parcours/geodata-model";
+import { CATEGORIES_CATALOGUE, validerLibelleCategorie } from "@parcours/geodata-model";
 import { capacites, erreur, introuvable, journal, requete, transaction } from "../../lib/geodata/acces.js";
 import { newId } from "../../lib/ids.js";
 
 export const categoriesRouter = Router();
+
+/**
+ * Catégories initiales semées une seule fois (repère `categories-semees`) : le premier appel qui pose le repère les
+ * insère, dans la même transaction ; une catégorie supprimée ensuite ne revient jamais.
+ */
+let semees = false;
+export async function semerCategories(): Promise<void> {
+  if (semees) return;
+  await transaction(async (c) => {
+    const pose = await c.query(`INSERT INTO geodata_reglages (cle) VALUES ('categories-semees') ON CONFLICT DO NOTHING RETURNING cle`);
+    if (!pose.rowCount) return;
+    for (const [i, k] of CATEGORIES_CATALOGUE.entries()) {
+      await c.query(`INSERT INTO geodata_categories (id, libelle, ordre, themes) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`, [k.cle, k.libelle, i * 10, [...k.themes]]);
+    }
+  });
+  semees = true;
+}
 
 const organiser = async (req: Request, res: Response, next: NextFunction) => {
   if (!(await capacites(req.user!.id)).has("organiser-catalogue")) {
     await journal(req.user!.id, "categorie.refusee", req.path, "refus");
     return erreur(res, 403, "forbidden", "Rôle GeoData « gestionnaire de données » requis pour organiser les catégories.");
   }
+  await semerCategories();
   next();
 };
 
@@ -31,6 +49,7 @@ async function libellesExistants(sauf: string | null): Promise<string[]> {
 
 /** Catégories, affectations explicites (source → catégorie) et droit de les modifier. */
 categoriesRouter.get("/categories", async (req, res) => {
+  await semerCategories();
   const categories = (await requete(`SELECT id, libelle, ordre, themes FROM geodata_categories ORDER BY ordre, libelle`)).map(lireCategorie);
   const affectations = Object.fromEntries((await requete(`SELECT a.source_id, a.categorie_id FROM geodata_categories_sources a JOIN geodata_sources s ON s.id = a.source_id WHERE s.espace_id IS NULL`)).map((l) => [String(l["source_id"]), String(l["categorie_id"])]));
   res.json({ categories, affectations, modifiable: (await capacites(req.user!.id)).has("organiser-catalogue") });

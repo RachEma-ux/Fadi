@@ -52,10 +52,6 @@ describe("fiches de source GeoData livrées", () => {
     });
   }
 
-  it("catégories initiales semées par init.sql identiques au modèle (D-GD-14)", () => {
-    const sql = readFileSync(fileURLToPath(new URL("./init.sql", import.meta.url)), "utf8");
-    for (const [i, c] of CATEGORIES_CATALOGUE.entries()) expect(sql).toContain(`('${c.cle}', '${c.libelle}', ${i * 10}, '{${c.themes.join(",")}}')`);
-  });
   it("chaque thème déclaré par une fiche livrée a sa catégorie initiale", () => {
     const themes = new Set(CATEGORIES_CATALOGUE.flatMap((c) => c.themes));
     for (const nom of fiches) expect(themes.has((JSON.parse(readFileSync(join(DOSSIER, nom), "utf8")) as FicheSource).theme)).toBe(true);
