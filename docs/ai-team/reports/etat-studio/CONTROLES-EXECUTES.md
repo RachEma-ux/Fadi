@@ -268,4 +268,4 @@ Aucun : chaque test ou recette cité par le registre a une exécution réussie r
 
 ### 2.3 Recettes Studio présentes mais non branchées en CI (0)
 
-Aucune : chaque `apps/web/e2e/studio-*.mjs` est une étape nommée de la CI.
+Aucune : chaque `apps/web/e2e/studio-*.mjs` est une étape nommée de la CI ou lancée par un script qu’elle exécute.
