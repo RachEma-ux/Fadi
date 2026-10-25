@@ -85,6 +85,16 @@ COEX-06. C'est ce que réalise le code de `main` (`apps/web/src/modules/studio/S
   comme cible d'interface. Pour la géométrie, on exige l'exactitude, pas la vitesse. Aucun autre seuil chiffré n'est
   fixé.
 
+### P-05 — Autorisations (G2-02, G3-01, G3-04)
+
+- **G3-01** : les DEC de l'annexe B sont arbitrées par P-04. L'option exclue (DEC-15 : extensions et MCP) ne
+  conditionne pas la livraison du pilote.
+- **G2-02 et G3-04** : le périmètre des POC (contexte, 2D, association, chargement, index, conflit, reprise,
+  publication) et le sous-ensemble du pilote (lots A, B, C, D, E, I, R, X) sont **autorisés**. Le lot F n'est autorisé
+  que pour ce qui ne dépend pas de DEC-15.
+- Une autorisation n'est pas une preuve : les portes G1, G2, G3 et G4 restent soumises à leurs critères. Chaque obligation
+  de recette reste « à faire » jusqu'à son exécution.
+
 ## Justification
 
 Chaque option retenue est celle du dossier préparatoire. Elle est réalisée par le code de `main` au 25 octobre 2026
@@ -93,7 +103,7 @@ fonctionne, sans gain démontré (DEC-18).
 
 ## Conséquences
 
-- Au registre, RESP-01 à 05, CAD-DEC-02, CAD-DEC-03, ADR-03 et DEC-01 à DEC-18 passent à « Accepté », avec cet acte
+- Au registre, RESP-01 à 05, CAD-DEC-02, CAD-DEC-03, ADR-03, DEC-01 à DEC-18, G2-02, G3-01 et G3-04 passent à « Accepté », avec cet acte
   comme preuve.
 - Les obligations de recette (NAV, TEST, REC) ne passent à « Vérifié » que sur une recette exécutée qui contrôle
   leur critère exact (voir `STATUS.md`).
