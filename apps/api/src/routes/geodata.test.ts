@@ -229,7 +229,9 @@ describe("Zones et analyses — GEO 10", () => {
     expect(modif.body.revision).toBe(2);
     expect((await alice.client.put(`${API}/zones/${zone.body.id}`).send({ revisionAttendue: 1, nom: "périmé" })).status).toBe(409);
     expect((await alice.client.get(`${API}/analyses/${a1.body.id}`)).body.motifsRecalcul).toContain("La zone a été modifiée depuis le calcul.");
-    await expect(pool.query("UPDATE geodata_analyses SET methode = 'x' WHERE id = $1", [a1.body.id])).rejects.toThrow(/geodata_analyse_immuable/);
+    // La garde DB-3 masque le texte de l'erreur SQL (QUERY_FAILED) : refus constaté, puis ligne vérifiée intacte.
+    await expect(pool.query("UPDATE geodata_analyses SET methode = 'x' WHERE id = $1", [a1.body.id])).rejects.toThrow();
+    expect((await pool.query("SELECT methode FROM geodata_analyses WHERE id = $1", [a1.body.id])).rows[0].methode).toBe("geodata-analyse-superficie");
   });
   it("une zone non polygonale et un calcul non autorisé sont refusés", async () => {
     const alice = await compte("gd-z2@example.com");
@@ -287,9 +289,12 @@ describe("Rôles GeoData, publication et immuabilité (INV-07, INV-08)", () => {
     const alice = await compte("gd-ret@example.com");
     await pool.query("INSERT INTO geodata_roles (user_id, role) VALUES ($1, 'responsable-publication')", [alice.id]);
     const ref = await publierReference();
-    await expect(pool.query("UPDATE geodata_versions SET libelle = 'réécrite' WHERE id = $1", [ref.versionId])).rejects.toThrow(/geodata_version_immuable/);
-    await expect(pool.query("DELETE FROM geodata_versions WHERE id = $1", [ref.versionId])).rejects.toThrow(/geodata_version_publiee_non_effacable/);
-    await expect(pool.query("UPDATE geodata_valeurs SET valeur = 99 WHERE indicateur_id = $1", [ref.indicateurs[0]])).rejects.toThrow(/geodata_contenu_fige/);
+    // La garde DB-3 masque le texte de l'erreur SQL (QUERY_FAILED) : refus constatés, puis lignes vérifiées intactes.
+    await expect(pool.query("UPDATE geodata_versions SET libelle = 'réécrite' WHERE id = $1", [ref.versionId])).rejects.toThrow();
+    await expect(pool.query("DELETE FROM geodata_versions WHERE id = $1", [ref.versionId])).rejects.toThrow();
+    await expect(pool.query("UPDATE geodata_valeurs SET valeur = 99 WHERE indicateur_id = $1", [ref.indicateurs[0]])).rejects.toThrow();
+    expect((await pool.query("SELECT libelle FROM geodata_versions WHERE id = $1", [ref.versionId])).rows).toEqual([{ libelle: "v1" }]);
+    expect((await pool.query("SELECT count(*)::int AS n FROM geodata_valeurs WHERE indicateur_id = $1 AND valeur = 99", [ref.indicateurs[0]])).rows[0].n).toBe(0);
     const carte = await alice.client.post(`${API}/cartes`).send({ nom: "Référence", composition: composition(ref.coucheId, ref.versionId) });
     expect((await alice.client.post(`${API}/admin/versions/${ref.versionId}/retirer`).send({})).status).toBe(400);
     expect((await alice.client.post(`${API}/admin/versions/${ref.versionId}/retirer`).send({ motif: "Droits retirés par le producteur" })).status).toBe(200);
