@@ -25,7 +25,9 @@ export type CommandeTempsReel =
   | "ouvrir-session" | "rejoindre-session" | "quitter-session" | "suivre-presentateur" | "naviguer-librement" | "presenter"
   | "designer-presentateur" | "transmettre-hote" | "reprendre-animation" | "afficher-revision-session" | "passer-revision" | "clore-session"
   // Annotations enregistrées (RTC-3).
-  | "annoter" | "enregistrer-annotation" | "voir-point-de-vue";
+  | "annoter" | "enregistrer-annotation" | "voir-point-de-vue"
+  // Revue en direct sur une publication figée (RTC-4).
+  | "ouvrir-revue";
 
 /**
  * Participants et équipe (Issue #262, phase 2) : chaque commande de l'annuaire a sa propre icône, sa barre (en-tête de
@@ -213,6 +215,8 @@ export const COMMANDES_COLLABORATION: Readonly<Record<CommandeCollaboration, Def
   // Enregistrer l'annotation : épingle et coche.
   "enregistrer-annotation": { libelle: "Enregistrer l’annotation", barre: "annotation", raccourci: ctrlAltMajLettre("E"), icone: ["M10 21s-6-6.5-6-11a6 6 0 0 1 12 0", "M10 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z", "M14 18l3 3 5-6"] },
   // Voir le point de vue : épingle et cadre de visée.
+  // Ouvrir une revue en direct : paquet scellé et onde.
+  "ouvrir-revue": { libelle: "Ouvrir une revue en direct", barre: "session", raccourci: ctrlAltMajLettre("U"), icone: ["M4 7l8-4 8 4v10l-8 4-8-4z", "M4 7l8 4 8-4", "M12 11v10", "M9 15.5a3 3 0 0 1 6 0"] },
   "voir-point-de-vue": { libelle: "Voir le point de vue", barre: "annotation", raccourci: ctrlAltMajLettre("G"), icone: ["M3 8V3h5", "M16 3h5v5", "M21 16v5h-5", "M8 21H3v-5", "M12 16s-3.5-3.5-3.5-6a3.5 3.5 0 0 1 7 0c0 2.5-3.5 6-3.5 6z"] },
 });
 
@@ -220,7 +224,7 @@ export const COMMANDES_COLLABORATION: Readonly<Record<CommandeCollaboration, Def
 export const COMMANDES_TEMPS_REEL: readonly CommandeTempsReel[] = [
   "ouvrir-session", "rejoindre-session", "quitter-session", "suivre-presentateur", "naviguer-librement", "presenter",
   "designer-presentateur", "transmettre-hote", "reprendre-animation", "afficher-revision-session", "passer-revision", "clore-session",
-  "annoter", "enregistrer-annotation", "voir-point-de-vue",
+  "annoter", "enregistrer-annotation", "voir-point-de-vue", "ouvrir-revue",
 ];
 
 /** Commandes du module Communication (COM-D14). */

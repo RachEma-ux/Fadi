@@ -3,7 +3,7 @@
  * destinataire. Pur, sans base.
  */
 import { describe, expect, it } from "vitest";
-import { BORNES_TEMPS_REEL, canonique, JournalReprise, LimiteurDebit, lireMessage, POINT_DE_VUE, pointDeVue } from "./temps-reel-protocole.js";
+import { BORNES_TEMPS_REEL, canonique, JournalReprise, refusRevue, LimiteurDebit, lireMessage, POINT_DE_VUE, pointDeVue } from "./temps-reel-protocole.js";
 import { droitFrais, evenementVisible, objetsAutorises, projeter } from "./temps-reel-projection.js";
 
 const camera = { projection: "perspective", position: { x: 10, y: -8, z: 6 }, target: { x: 0, y: 0, z: 0 }, fov: 50 };
@@ -94,5 +94,15 @@ describe("Temps réel — point de vue d'une annotation (RTC-3)", () => {
   it("comparaison du rejeu indépendante de l'ordre des clés (jsonb ne le garde pas)", () => {
     expect(canonique({ b: 1, a: { d: [1, { y: 2, x: 1 }], c: null } })).toBe(canonique({ a: { c: null, d: [1, { x: 1, y: 2 }] }, b: 1 }));
     expect(canonique({ a: 1 })).not.toBe(canonique({ a: 2 }));
+  });
+});
+
+describe("Temps réel — revue en direct (RTC-4)", () => {
+  it("seulement sur un manifeste figé, ni retiré ni remplacé", () => {
+    const p = { manifestHash: "a".repeat(64), status: "soumis", diffusionStatus: "non-diffuse", replacedByPublicationId: null };
+    expect(refusRevue(p)).toBeNull();
+    expect(refusRevue({ ...p, manifestHash: null })).toMatch(/manifeste figé/);
+    expect(refusRevue({ ...p, status: "retire", diffusionStatus: "retire" })).toMatch(/retirée/);
+    expect(refusRevue({ ...p, diffusionStatus: "remplace", replacedByPublicationId: "pub_2" })).toMatch(/remplacée/);
   });
 });

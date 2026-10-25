@@ -68,6 +68,8 @@ export function BandeauSession({ tr, revisionAffichee, teteVariante, nomVariante
   const enSessionMaintenant = etat.connexion !== "hors-session";
   // Entrer dans une session referme le panneau d'entrée : en la quittant, on retrouve l'entrée compacte.
   useEffect(() => { if (enSessionMaintenant) setEntreeOuverte(false); }, [enSessionMaintenant]);
+  const [publicationChoisie, setPublicationChoisie] = useState<string>("");
+  const revue = tr.publicationsFigees.find((p) => p.id === publicationChoisie) ?? tr.publicationsFigees[0];
   const enSession = etat.connexion !== "hors-session";
   const s = etat.session;
   const hote = estHote(etat), presente = estPresentateur(etat), suit = tr.suit;
@@ -89,7 +91,11 @@ export function BandeauSession({ tr, revisionAffichee, teteVariante, nomVariante
   /** Commandes disponibles maintenant (le raccourci n'agit que sur celles-ci). */
   const actif = emplacement === "barre" ? !enSession && tr.disponible : enSession;
   const disponibles: Partial<Record<CommandeTempsReel, () => void>> = !actif ? {} : !enSession
-    ? { "ouvrir-session": () => void actions.ouvrir(revisionAffichee), ...(sessions[0] ? { "rejoindre-session": () => actions.rejoindre(sessions[0]!.id) } : {}) }
+    ? {
+        "ouvrir-session": () => void actions.ouvrir(revisionAffichee),
+        ...(sessions[0] ? { "rejoindre-session": () => actions.rejoindre(sessions[0]!.id) } : {}),
+        ...(revue ? { "ouvrir-revue": () => void actions.ouvrirRevue(revue.id) } : {}),
+      }
     : {
         "quitter-session": () => actions.quitter(),
         ...(etat.connexion === "connecte" && !presente ? { [suit ? "naviguer-librement" : "suivre-presentateur"]: () => actions.suivre(!suit) } : {}),
@@ -138,6 +144,15 @@ export function BandeauSession({ tr, revisionAffichee, teteVariante, nomVariante
             ))
             : <span className="tr-detail">Aucune session ouverte sur cette variante.</span>}
           {bouton("ouvrir-session")}
+          {tr.publicationsFigees.length > 0 && <span className="tr-revue" data-tr-revue>
+            {tr.publicationsFigees.length > 1
+              ? <label className="tr-case"><span>Publication</span>
+                <select value={revue?.id ?? ""} onChange={(e) => setPublicationChoisie(e.target.value)} data-tr-revue-publication>
+                  {tr.publicationsFigees.map((p) => <option key={p.id} value={p.id} translate="no">{p.title}</option>)}
+                </select></label>
+              : <span className="tr-detail">{`Publication figée : ${revue?.title ?? ""}`}</span>}
+            {bouton("ouvrir-revue")}
+          </span>}
           {erreur && <p className="studio-alert" role="alert">{erreur}</p>}
         </section>}
       </span>
@@ -152,6 +167,7 @@ export function BandeauSession({ tr, revisionAffichee, teteVariante, nomVariante
         <span translate="no">{s.titre}</span>
         <span className="tr-detail">{`Variante « ${nomVariante} » · révision ${court(s.revisionId)}${s.portee === "paquet-revue" ? " (revue figée)" : ""}`}</span>
         <span className="tr-detail">Visible par : les participants de la session, membres du projet</span>
+        {s.portee === "paquet-revue" && <span className="tr-detail" data-tr-revue-figee>Revue figée : la session reste sur la révision publiée ; ni export ni approbation depuis la session.</span>}
       </span>}
       <span className="tr-etat" role="status" data-tr-connexion={etat.connexion}>{LIBELLE_CONNEXION[etat.connexion]}</span>
       {!fin && s && <span className="tr-detail" data-tr-suivi={presente ? "presentateur" : suit ? "suit" : "libre"}>
@@ -244,5 +260,5 @@ const LIBELLES: Record<CommandeTempsReel, string> = {
   "suivre-presentateur": "Suivre le présentateur", "naviguer-librement": "Naviguer librement", presenter: "Présenter",
   "designer-presentateur": "Désigner comme présentateur", "transmettre-hote": "Transmettre l’animation", "reprendre-animation": "Reprendre l’animation",
   "afficher-revision-session": "Afficher la révision de la session", "passer-revision": "Passer la session à la nouvelle révision", "clore-session": "Clore la session",
-  annoter: "Annoter", "enregistrer-annotation": "Enregistrer l’annotation", "voir-point-de-vue": "Voir le point de vue",
+  "ouvrir-revue": "Ouvrir une revue en direct", annoter: "Annoter", "enregistrer-annotation": "Enregistrer l’annotation", "voir-point-de-vue": "Voir le point de vue",
 };

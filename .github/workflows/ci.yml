@@ -780,6 +780,11 @@ jobs:
         run: |
           set -o pipefail
           node apps/web/e2e/temps-reel-annotations.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de la revue en direct (RTC-4) — publication figée, révision publiée épinglée, aucune annonce de tête, audiences, hôte sans droit d'approbation, refus d'ouverture (apps/web/e2e/temps-reel-revue.mjs)
+        if: ${{ matrix.shard == 'p2' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/temps-reel-revue.mjs 2>&1 | tee -a e2e.log
       - name: Recette du lot 7 de la Planche — persistance par commandes, Planches nommées, IFC, PNG, téléphone, axe-core (apps/web/e2e/planche-lot-7.mjs)
         if: ${{ matrix.shard == 'p2' }}
         run: |

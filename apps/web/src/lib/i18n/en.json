@@ -11917,5 +11917,14 @@
 "Cet identifiant de requête est déjà utilisé pour une autre annotation.": "This request identifier is already used for another annotation.",
 "Texte, identifiant de requête et point de vue (cadre plan ou caméra) attendus.": "Text, request identifier and viewpoint (plan frame or camera) expected.",
 "Annotation refusée.": "Annotation refused.",
-"Session introuvable.": "Session not found."
+"Session introuvable.": "Session not found.",
+"Ouvrir une revue en direct": "Open a live review",
+"Ctrl+Alt+Maj+U": "Ctrl+Alt+Shift+U",
+"Publication figée : {0}": "Frozen publication: {0}",
+"Revue figée : la session reste sur la révision publiée ; ni export ni approbation depuis la session.": "Frozen review: the session stays on the published revision; no export or approval from the session.",
+"Cette publication n’a pas de manifeste figé : figez-le avant d’ouvrir une revue.": "This publication has no frozen manifest: freeze it before opening a review.",
+"Cette publication est retirée : aucune revue ne s’y ouvre.": "This publication is withdrawn: no review can be opened on it.",
+"Cette publication est remplacée : ouvrez la revue sur la publication qui la remplace.": "This publication has been replaced: open the review on the publication that replaces it.",
+"Publication introuvable pour cette variante.": "Publication not found for this variant.",
+"Une revue montre la révision publiée.": "A review shows the published revision."
 }

@@ -6,13 +6,15 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ApiError } from "../../../lib/api";
+import { api, ApiError, type StudioPublication } from "../../../lib/api";
 import { apiTempsReel, type AnnotationSession, type SaisieAnnotation, type SessionListee } from "./api-temps-reel";
 import { CanalTempsReel } from "./canal";
 import { ETAT_INITIAL, type EtatSession } from "./etat-session";
 
 export interface ActionsTempsReel {
   ouvrir(revisionId: string): Promise<void>;
+  /** Revue en direct (RTC-4) sur une publication figée de la variante. */
+  ouvrirRevue(publicationId: string): Promise<void>;
   rejoindre(sessionId: string): void;
   quitter(): void;
   suivre(actif: boolean): void;
@@ -37,6 +39,8 @@ export interface SessionTempsReel {
   suit: boolean;
   /** Annotations de la session rejointe, lisibles par cette personne (audience relue par le serveur). */
   annotations: AnnotationSession[];
+  /** Publications figées de la variante (manifeste figé, ni retirées ni remplacées) : ouvrables en revue. */
+  publicationsFigees: StudioPublication[];
 }
 
 /**
@@ -85,6 +89,12 @@ export function useSessionTempsReel(projectId: string, studyId: string, variantI
     refetchInterval: enSession ? false : 15_000,
   });
   const sessionId = etat.session?.id ?? null;
+  const publications = useQuery({
+    queryKey: ["temps-reel-publications", projectId, studyId, variantId], enabled: actif && !enSession && Array.isArray(liste.data), retry: false, staleTime: 30_000,
+    queryFn: async () => (await api.studioPublications(projectId, studyId)).publications,
+  });
+  const publicationsFigees = (publications.data ?? []).filter((p) => p.variantId === variantId && !!p.manifestHash && p.status !== "retire"
+    && p.diffusionStatus !== "retire" && p.diffusionStatus !== "remplace" && !p.replacedBy);
   const cleAnnotations = ["temps-reel-annotations", projectId, variantId, sessionId];
   const annotations = useQuery({
     queryKey: cleAnnotations, enabled: actif && !!sessionId, retry: false,
@@ -109,6 +119,10 @@ export function useSessionTempsReel(projectId: string, studyId: string, variantI
       const { session } = await apiTempsReel.ouvrir(projectId, { studyId, variantId, revisionId, requestId: `tr-${crypto.randomUUID()}` });
       setSuit(true); canal.rejoindre(session.id, true);
     }),
+    ouvrirRevue: (publicationId) => geste(async () => {
+      const { session } = await apiTempsReel.ouvrir(projectId, { studyId, variantId, publicationId, requestId: `tr-${crypto.randomUUID()}` });
+      setSuit(true); canal.rejoindre(session.id, true);
+    }),
     rejoindre: (id) => { setErreur(null); setSuit(true); canal.rejoindre(id, true); },
     quitter: () => { canal.quitter(); void qc.invalidateQueries({ queryKey: cle }); },
     suivre: (a) => { setSuit(a); canal.suivrePresentateur(a); },
@@ -130,5 +144,5 @@ export function useSessionTempsReel(projectId: string, studyId: string, variantI
       return ok;
     },
   };
-  return { disponible: actif && Array.isArray(liste.data), sessions: liste.data ?? [], etat, canal, actions, erreur, enCours, suit, annotations: annotations.data ?? [] };
+  return { disponible: actif && Array.isArray(liste.data), sessions: liste.data ?? [], etat, canal, actions, erreur, enCours, suit, annotations: annotations.data ?? [], publicationsFigees };
 }

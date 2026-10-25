@@ -48,7 +48,7 @@ export const apiTempsReel = {
       throw e;
     }
   },
-  ouvrir: (projectId: string, p: { studyId: string; variantId: string; revisionId?: string; titre?: string; requestId: string }) =>
+  ouvrir: (projectId: string, p: { studyId: string; variantId: string; revisionId?: string; publicationId?: string; titre?: string; requestId: string }) =>
     request<{ session: SessionListee; rejoue: boolean }>(racine(projectId), corps(p)),
   detail: (projectId: string, sessionId: string) =>
     request<{ session: SessionListee; journal: EntreeJournalSession[] }>(`${racine(projectId)}/${encodeURIComponent(sessionId)}`),

@@ -200,6 +200,17 @@ export function repriseAutorisee(hoteAbsentDepuisMs: number | null): boolean {
   return hoteAbsentDepuisMs !== null && hoteAbsentDepuisMs >= BORNES_TEMPS_REEL.hoteAbsentMs;
 }
 
+/**
+ * Revue en direct (RTC-4, RT-D5 § 8) : seulement sur une publication Studio dont le manifeste est figé, ni retirée ni
+ * remplacée. Rend le motif du refus, ou `null` si la revue peut s'ouvrir.
+ */
+export function refusRevue(p: { manifestHash: string | null; status: string; diffusionStatus: string | null; replacedByPublicationId: string | null }): string | null {
+  if (!p.manifestHash) return "Cette publication n’a pas de manifeste figé : figez-le avant d’ouvrir une revue.";
+  if (p.status === "retire" || p.diffusionStatus === "retire") return "Cette publication est retirée : aucune revue ne s’y ouvre.";
+  if (p.replacedByPublicationId || p.diffusionStatus === "remplace") return "Cette publication est remplacée : ouvrez la revue sur la publication qui la remplace.";
+  return null;
+}
+
 export class LimiteurDebit {
   private instants: number[] = [];
   constructor(private readonly parSeconde: number = BORNES_TEMPS_REEL.messagesEphemeresParSeconde) {}

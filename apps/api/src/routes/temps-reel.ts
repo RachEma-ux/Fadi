@@ -3,7 +3,8 @@
  * `/projects/:projectId/temps-reel`. Tout ce qui est durable passe ici (le canal n'annonce que des faits enregistrés) :
  *
  *   GET  /sessions[?variantId=…][&toutes=1]  sessions (ouvertes par défaut) et personnes connectées
- *   POST /sessions                           ouvrir une session sur une révision Studio (idempotent par requestId)
+ *   POST /sessions                           ouvrir une session sur une révision Studio, ou une revue sur une
+ *                                            publication figée (`publicationId`, RTC-4) ; idempotent par requestId
  *   GET  /sessions/:sessionId                détail, journal et personnes connectées
  *   POST /sessions/:sessionId/presentateur   désigner le présentateur (hôte)
  *   POST /sessions/:sessionId/hote           transmettre l'animation (hôte)
@@ -43,7 +44,7 @@ tempsReelRouter.use((req, res, next) => {
 });
 
 const identifiant = z.string().min(1).max(200).regex(/^[A-Za-z0-9_.:-]+$/);
-const ouverture = z.object({ studyId: identifiant, variantId: identifiant, revisionId: identifiant.optional(), titre: z.string().max(120).optional(), requestId: identifiant }).strict();
+const ouverture = z.object({ studyId: identifiant, variantId: identifiant, revisionId: identifiant.optional(), publicationId: identifiant.optional(), titre: z.string().max(120).optional(), requestId: identifiant }).strict();
 const personne = z.object({ userId: identifiant }).strict();
 const presentateur = z.object({ userId: identifiant.nullable() }).strict();
 const revision = z.object({ revisionId: identifiant }).strict();
