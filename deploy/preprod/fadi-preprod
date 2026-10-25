@@ -62,7 +62,7 @@ OWNER_UID=$(id -u)
 # les recettes qui lisent les courriels envoyés (lib-invitations, MAILPIT_URL ou API_LOG) : la préproduction n'envoie
 # jamais aux domaines réservés des comptes de recette et n'a pas de Mailpit (tests/run.sh les repère dans les sources).
 E2E_DEFAUT="accueils-design studio-exemple-p118 studio-domaines studio-corpus-s6 studio-corpus-s7 studio-chargement studio-memoire
-studio-faces studio-rendu studio-mesures-chargement studio-accessibilite studio-echanges atelier-nouveau atelier-documents atelier-echanges
+studio-faces studio-rendu studio-exact studio-mesures-chargement studio-accessibilite studio-echanges atelier-nouveau atelier-documents atelier-echanges
 atelier-complements collaboration-support-telephone atelier-canevas planche planche-modification planche-outils
 planche-pousser-aretes planche-pousser-modes planche-objets planche-clavier planche-pousser-l10a planche-liens
 planche-suivez-moi planche-revolution planche-profiles planche-assemblages planche-debit planche-texte-3d

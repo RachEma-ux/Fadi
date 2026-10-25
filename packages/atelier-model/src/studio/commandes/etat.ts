@@ -2,6 +2,7 @@ import { controlerLiens, validerCote, type StudioDimension } from "../objets/cot
 import { studioAnchorPoint } from "../objets/index.js";
 import { etatCalque, type StudioLayerState } from "../noyau/calques.js";
 import type { StudioSolid } from "../objets-3d/solides.js";
+import type { StudioSolideExact } from "../objets-3d/exacts.js";
 import type { StudioLayer } from "../noyau/types.js";
 import { fail, same } from "../noyau/validation.js";
 import type { StudioAnnotation, StudioShape } from "../objets/formes.js";
@@ -18,6 +19,8 @@ export interface Etat {
   dimensions: StudioDimension[];
   /** Solides libres (`objets-3d/`). */
   solides: StudioSolid[];
+  /** Solides exacts (lot F2, `StudioDocument.exacts`) : résultats du noyau exact, opérandes conservés. */
+  exacts: StudioSolideExact[];
   /** Cotes angulaires et textes (`StudioDocument.annotations`). */
   annotations: StudioAnnotation[];
   /** Murs et ouvertures (`StudioDocument.architecture`, A.4). */

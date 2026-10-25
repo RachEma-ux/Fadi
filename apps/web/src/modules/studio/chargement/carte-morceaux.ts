@@ -7,7 +7,8 @@
  *
  * 1. **contrôle du découpage** (`verifierDecoupage`) : le bundle initial ne contient ni three.js, ni OCCT, ni Manifold,
  *    ni la planche, ni la vue 3D ; la coquille de Studio ne force pas la planche ni la 3D ; la planche ne force pas la
- *    3D ; aucun moteur de Studio n'embarque un noyau exact. Une violation fait échouer le build ;
+ *    3D ; aucun moteur de Studio n'embarque un noyau exact, sauf le moteur `noyau-exact` (Worker dédié, lot F2). Une
+ *    violation fait échouer le build ;
  * 2. **classes du précache** du service worker (`classesPrecache`, EX-042) : coquille minimale, ressources du profil
  *    Studio, modules facultatifs ;
  * 3. **disponibilité hors connexion véridique** (EX-043) : les fichiers de chaque moteur, comparés au contenu réel du
@@ -141,6 +142,7 @@ export const REGLES_DECOUPAGE: readonly { readonly cible: "initial" | IdMoteur; 
   { cible: "planche-2d", interdites: ["three", "occt", "manifold", "studio-3d", "atelier"], motif: "ouvrir une planche 2D ne force ni three.js ni un noyau exact (EX-039)" },
   { cible: "rendu-3d", interdites: ["occt", "manifold", "atelier"], motif: "la vue 3D de Studio n'embarque aucun noyau exact (EX-040, D.3-04)" },
   { cible: "calcul", interdites: [], motif: "le script du groupe de Workers est repéré dans le build (disponibilité hors connexion)" },
+  { cible: "noyau-exact", interdites: ["three", "manifold", "atelier", "studio-planche", "studio-3d"], motif: "le Worker du noyau exact de Studio (lot F2) est repéré dans le build et n'embarque ni three.js, ni l'Atelier, ni la planche" },
 ]);
 
 /** Contrôle du découpage d'une carte ; la liste vide signifie conforme. */
@@ -172,7 +174,8 @@ export function construireCarte(sorties: readonly SortieBuild[], build: string):
   const fichiers = {} as Record<IdMoteur, string[]>;
   for (const m of MOTEURS) {
     const f = fichierDuMoteur(sorties, m.source, m.nature);
-    fichiers[m.id] = f ? fermetureStatique(morceaux, [f]) : [];
+    const annexes = m.annexes ? sorties.filter((s) => s.type === "asset" && new RegExp(m.annexes!).test(s.fileName)).map((s) => servi(s.fileName)) : [];
+    fichiers[m.id] = f ? [...fermetureStatique(morceaux, [f]), ...annexes].sort() : [];
   }
   const moteurs = {} as Record<IdMoteur, MoteurCarte>;
   const dejaLa = (m: (typeof MOTEURS)[number]): Set<string> => new Set([...initial, ...m.dependances.flatMap((d) => fichiers[d])]);

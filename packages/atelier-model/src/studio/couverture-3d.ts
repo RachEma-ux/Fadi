@@ -55,6 +55,9 @@ const PERF_07: StudioSourceType3d = { document: "STUDIO-RT-001 V1.0", reference:
 
 const OBJETS_3D_TEST = "packages/atelier-model/src/studio/objets-3d/objets-3d.test.ts";
 const F1_TEST = "packages/atelier-model/src/studio/composition/f1-geometrie.test.ts";
+const F2_TEST = "packages/atelier-model/src/studio/f2-booleen.test.ts";
+const EXACT_TEST = "packages/geometry-exact/src/index.test.ts";
+const SERVEUR_TEST = "apps/api/src/lib/studio-exact.test.ts";
 
 const TYPES = [
   // ——— Types livrés : chacun cite ses tests ———
@@ -73,6 +76,13 @@ const TYPES = [
     tests: [{ fichier: F1_TEST, libelle: "pousser / tirer le sommet et la base d'une boîte : hauteur et cote recalculées, identité stable, volume relu" },
       { fichier: F1_TEST, libelle: "face latérale d'une boîte : elle devient un prisme de même identité, même placement, même volume" }],
   },
+  {
+    // Lot F2 : booléen exact calculé par le noyau OCCT (Worker à la demande), recalculé par le serveur.
+    id: "booleen", libelle: "Booléen (union, différence, intersection)", source: SCENE_S5, etat: "disponible", outils: ["studio.solide.booleen"],
+    tests: [{ fichier: F2_TEST, libelle: "le booléen retire les deux opérandes de `solides` et les conserve intacts dans le solide exact ; le résultat est celui fourni" },
+      { fichier: EXACT_TEST, libelle: "union, soustraction, intersection de deux extrusions (boîtes Studio 2 × 2 × 2 décalées de 1 m) : 12, 4, 4 m³ ; empreinte reproductible" },
+      { fichier: SERVEUR_TEST, libelle: "même empreinte : le résultat du serveur remplace celui du client (un maillage altéré par le client est corrigé)" }],
+  },
   // ——— Types avancés : non disponibles tant qu'ils n'ont pas de test ———
   {
     id: "sommets-aretes", libelle: "Sommets et arêtes éditables", source: OBJETS_PRIMAIRES, etat: "non-disponible", outils: [], tests: [],
@@ -85,10 +95,6 @@ const TYPES = [
   {
     id: "composant-3d", libelle: "Composant 3D", source: OBJETS_PRIMAIRES, etat: "non-disponible", outils: [], tests: [],
     manque: "studio-document/1 n'a ni définition ni occurrence de composant 3D.",
-  },
-  {
-    id: "booleen", libelle: "Booléen (union, différence, intersection)", source: SCENE_S5, etat: "non-disponible", outils: [], tests: [],
-    manque: "Aucune opération booléenne dans studio-document/1 ; le noyau exact n'est pas branché sur Studio.",
   },
   {
     id: "courbe-exacte-3d", libelle: "Courbe exacte 3D", source: SCENE_S5, etat: "non-disponible", outils: [], tests: [],

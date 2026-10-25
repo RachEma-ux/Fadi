@@ -12,6 +12,7 @@ import { loadProjectAccess, projectAccessRefusal, type AccessibleProject, type P
 import type { CiblePortee } from "@parcours/domain-model";
 import { orchestrerCommandesDansTransaction, type Tx } from "./atelier-validation.js";
 import { lockProject, type Querier } from "./step-rows.js";
+import { revaliderBooleensStudio } from "./studio-exact.js";
 
 export interface StudioScope { projectId: string; studyId: string; variantId: string }
 export class StudioRequestError extends Error {
@@ -486,6 +487,9 @@ export async function submitStudioCommands(scope: StudioScope, actorId: string, 
         if (envelope.baseRevisionId !== current.variant.headRevisionId) {
           throw new StudioRequestError(409, await staleRevisionBody(transaction, scope.variantId, envelope, current.variant.headRevisionId, current.revision.document));
         }
+        // Booléens exacts (lot F2) : recalculés par le noyau du serveur, qui remplace le résultat annoncé (R9).
+        const refusExact = await revaliderBooleensStudio(current.revision.document, envelope.commands, applyStudioCommands);
+        if (refusExact) throw new StudioRequestError(refusExact.status, refusExact.body);
         let document;
         try { document = applyStudioCommands(current.revision.document, envelope.commands); }
         catch (error) {

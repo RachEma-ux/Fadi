@@ -104,3 +104,31 @@ Preuves : `studio-rendu` (CI), `index-incremental.test.ts`, `qualite-rendu.test.
 Limites :
 - la vue 3D ne calcule aucune ombre, donc le palier « ombres » est sauté ;
 - le GPU mesuré est un rendu logiciel (SwiftShader), et les appareils réels ne sont pas évalués.
+
+## Lot F2 — noyau exact
+
+Livraison :
+- **outil « Booléen exact »** : union, différence et intersection de deux solides (boîtes, prismes droits, solides
+  exacts), calculées par le noyau exact.
+  - Le noyau tourne dans un Worker chargé seulement à l'activation de l'outil, jamais à l'ouverture.
+  - Le résultat va dans `exacts`, avec ses deux opérandes conservés (R15) ; l'engagement est explicite.
+  - Le serveur recalcule chaque booléen et fait autorité ; une empreinte différente est refusée (`exact-mismatch`).
+- **aperçu provisoire, jamais engagé** : il est confirmé par le calcul exact, ou refusé au-delà de la tolérance.
+- **résultat d'une ancienne révision** : marqué périmé, il n'est pas engageable.
+- **panne du Worker** :
+  - erreur affichée et attentes résolues ;
+  - aucune relance silencieuse : la relance est contrôlée ;
+  - le document reste identique.
+- **suivi du WASM** : taille reçue, instance unique, durée de chargement ; 50 ouvertures sans croissance.
+- **contrôle de licence** du binaire distribué (15 points : SHA-256, version, LGPL-2.1-only, remplacement, chargement
+  séparé), joué en CI.
+- **TR-EX-032** : des espions prouvent que le Manager ne calcule ni ne valide aucune géométrie.
+
+Preuves : recette `studio-exact` (CI), `f2-booleen.test.ts`, `booleen-session.test.ts`, `licence-occt.test.ts`,
+`manager-exact.test.ts`, `studio-exact.test.ts` (API). Le booléen est désormais « disponible » dans l'inventaire A.3-08.
+
+Limites :
+- les prismes obliques sont refusés comme opérandes ;
+- un solide exact ne se déplace pas et ne s'édite pas par ses faces ;
+- les solides exacts ne sont exportés ni en IFC, ni en SVG, ni en DXF : ils sont comptés « non couverts » ;
+- les allocations internes au WASM ne sont pas mesurées (TR-EX-062 reste partiel).

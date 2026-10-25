@@ -4,6 +4,8 @@
  * - `coquille-studio` est déjà là : ce module fait partie de la coquille de Studio (démarrage léger, B.3-02).
  * - `planche-2d` : l'éditeur de variante, importé à l'ouverture d'une planche (B.3-03).
  * - `rendu-3d` : la vue 3D (three.js), importée au premier usage d'un outil 3D ou de la vue 3D (B.3-04).
+ * - `noyau-exact` (lot F2) : le noyau exact OCCT, importé et chargé (Worker dédié, `.wasm` séparé) à l'activation de
+ *   l'outil « Booléen exact » ; sa libération arrête ce Worker (rechargé à la demande suivante).
  * - `calcul` : moteur passif — le groupe partagé de Workers (`taches/pool-studio.ts`) signale sa première création
  *   et ses tâches ; sa libération arrête les Workers (recréés à la demande suivante, D.3-02).
  *
@@ -22,6 +24,10 @@ export const ressourcesStudio = new GestionnaireRessources({
     "planche-2d": { charger: () => import("../VariantWorkspace") },
     "rendu-3d": { charger: () => import("../vue3d/Vue3DStudio") },
     calcul: { liberer: () => { liberateurCalcul?.(); echantillonMemoire("liberation-calcul"); } },
+    "noyau-exact": {
+      charger: () => import("../exact/noyau-studio").then(async (m) => { await m.chargerNoyauExactStudio(); return m; }),
+      liberer: () => { void import("../exact/noyau-studio").then((m) => m.noyauExactStudio.arreter()); echantillonMemoire("liberation-noyau-exact"); },
+    },
   },
   enLigne: () => (typeof navigator === "undefined" ? true : navigator.onLine !== false),
   surActivation: (m) => {

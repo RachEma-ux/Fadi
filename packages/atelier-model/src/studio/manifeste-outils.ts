@@ -120,6 +120,7 @@ const DECLARATIONS = {
   "studio.solide.face-diviser": { contextes: V3D, prerequis: ["studio.solide.boite", "studio.solide.prisme"] },
   "studio.solide.pivoter": { contextes: V3D, prerequis: ["studio.solide.boite", "studio.solide.prisme"] },
   "studio.solide.resoudre": { contextes: V3D, prerequis: ["studio.solide.prisme"] },
+  "studio.solide.booleen": { contextes: V3D, prerequis: ["studio.solide.boite", "studio.solide.prisme"] },
   "studio.architecture.mur": { contextes: P2D },
   "studio.architecture.ouverture": { contextes: P2D, prerequis: ["studio.architecture.mur"] },
   "studio.architecture.modifier": { contextes: P2D, prerequis: ["studio.architecture.mur"] },

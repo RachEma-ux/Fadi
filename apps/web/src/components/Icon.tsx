@@ -92,6 +92,7 @@ export type IconName =
   | "studio-solid-split-face"
   | "studio-solid-rotate"
   | "studio-solid-link"
+  | "studio-solid-boolean"
   | "studio-nav-plan"
   | "studio-section-plane"
   | "studio-copy"
@@ -231,6 +232,8 @@ const PATHS: Record<IconName, string> = {
   "studio-solid-split-face": "M3 7h18v12H3ZM12 7v12M8 4h8M3 7l3-3h12l3 3",
   "studio-solid-rotate": "M7 9h10v10H7ZM12 2v5M5 5a9 4 0 0 1 14 0M19 5l-1 3",
   "studio-solid-link": "M9 15l6-6M7 11l-2 2a3 3 0 0 0 4 4l2-2M17 13l2-2a3 3 0 0 0-4-4l-2 2",
+  // Lot F2 : deux blocs qui se recouvrent, la partie commune marquée (booléen exact : union, différence, intersection).
+  "studio-solid-boolean": "M3 7h10v10H3ZM11 11h10v10H11ZM11 11h2v6h-2M15 3v4M13 5h4",
   "studio-nav-plan": "M3 17l9 4 9-4-9-4ZM12 3v7M9 7l3 3 3-3M7 3h10",
   "studio-section-plane": "M8 3h8v18H8ZM2 13l4-3h16l-4 3ZM2 13h16",
   // Transformations : deux carrés décalés (copier), flèche circulaire (rotation), axe et deux triangles opposés

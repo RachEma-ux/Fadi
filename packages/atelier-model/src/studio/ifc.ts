@@ -237,6 +237,8 @@ function studioIfc(input: StudioDocument, meta: StudioIfcMeta): { content: strin
     prop("DimensionsNotExported", integer(summary.dimensions)),
     prop("ObjectsOnHiddenLayers", integer(summary.onHiddenLayers)),
     ...(solides.length ? [prop("FreeSolids", integer(solides.length))] : []),
+    // Solides exacts (lot F2) : leur brep n'est pas traduit en IFC par Studio ; ils sont comptés, jamais omis en silence.
+    ...(doc.exacts?.length ? [prop("ExactSolidsNotExported", integer(doc.exacts.length))] : []),
     ...(summary.annotations !== undefined ? [prop("AnnotationsNotExported", integer(summary.annotations))] : []),
     ...(summary.architecture ? [
       prop("ArchitecturalWalls", integer(summary.architecture.walls)), prop("Openings", integer(summary.architecture.openings)),

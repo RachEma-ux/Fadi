@@ -5,6 +5,7 @@ import type { StudioDocument } from "../composition/types.js";
 import type { StudioAnnotation, StudioShape } from "../objets/formes.js";
 import type { StudioDimension } from "../objets/cote.js";
 import type { StudioSolid } from "../objets-3d/solides.js";
+import type { StudioSolideExact } from "../objets-3d/exacts.js";
 import type { StudioArchitectureItem } from "../architecture/types.js";
 import type { StudioPropriete } from "../exigences/proprietes.js";
 import type { StudioElementVisualisation } from "../scenes/scenes.js";
@@ -47,13 +48,15 @@ export const STUDIO_RAISONS_FIDELITE = Object.freeze([
   // Propriétés BIM déclarées (E.1-01) : jeu de projet `Fadi_ProprietesDeclarees` en IFC ; ni SVG ni DXF ; une propriété
   // sans valeur (« non évaluée ») n'est écrite nulle part.
   "propriete-non-exportee", "propriete-en-pset", "propriete-non-evaluee",
+  // Solides exacts (lot F2) : leur brep n'est traduit dans aucun format d'échange de Studio (compté, jamais omis).
+  "solide-exact-hors-ifc",
 ] as const);
 export type StudioRaisonFidelite = (typeof STUDIO_RAISONS_FIDELITE)[number];
 
 /** Catégorie = liste du document qui porte l'élément. */
-export type StudioCategorieEchange = "objets" | "cotes" | "annotations" | "solides" | "architecture" | "proprietes" | "scenes" | "nonNatifs" | "inconnue";
+export type StudioCategorieEchange = "objets" | "cotes" | "annotations" | "solides" | "exacts" | "architecture" | "proprietes" | "scenes" | "nonNatifs" | "inconnue";
 /** Liste du document de chaque catégorie connue (clé de `StudioDocument`). */
-export const STUDIO_LISTES_ECHANGE = Object.freeze({ objets: "objects", cotes: "dimensions", annotations: "annotations", solides: "solides", architecture: "architecture", proprietes: "proprietes", scenes: "scenes", nonNatifs: "nonNatifs" } as const);
+export const STUDIO_LISTES_ECHANGE = Object.freeze({ objets: "objects", cotes: "dimensions", annotations: "annotations", solides: "solides", exacts: "exacts", architecture: "architecture", proprietes: "proprietes", scenes: "scenes", nonNatifs: "nonNatifs" } as const);
 
 export interface StudioJugementFidelite { statut: StudioStatutFidelite; raison: StudioRaisonFidelite }
 type Juge<T> = (item: T) => StudioJugementFidelite;
@@ -112,6 +115,8 @@ export const STUDIO_CAPACITES_EXPORT: {
   readonly cotes: { readonly dimension: ParFormat<StudioDimension> };
   readonly annotations: { readonly [K in StudioAnnotation["type"]]: ParFormat<Extract<StudioAnnotation, { type: K }>> };
   readonly solides: { readonly [K in StudioSolid["type"]]: ParFormat<Extract<StudioSolid, { type: K }>> };
+  /** Solides exacts (lot F2) : résultat du noyau exact (brep), absent des trois formats. */
+  readonly exacts: { readonly exact: ParFormat<StudioSolideExact> };
   readonly architecture: { readonly [K in StudioArchitectureItem["type"]]: ParFormat<Extract<StudioArchitectureItem, { type: K }>> };
   /** Propriétés déclarées (E.1-01) : sans discriminant de type, un seul type « propriete ». */
   readonly proprietes: { readonly propriete: ParFormat<StudioPropriete> };
@@ -139,6 +144,9 @@ export const STUDIO_CAPACITES_EXPORT: {
   solides: {
     box: { svg: () => nonCouvert("solide-hors-2d"), dxf: () => nonCouvert("solide-hors-2d"), ifc: () => exact("profil-exact") },
     prism: { svg: () => nonCouvert("solide-hors-2d"), dxf: () => nonCouvert("solide-hors-2d"), ifc: () => exact("profil-exact") },
+  },
+  exacts: {
+    exact: { svg: () => nonCouvert("solide-hors-2d"), dxf: () => nonCouvert("solide-hors-2d"), ifc: () => nonCouvert("solide-exact-hors-ifc") },
   },
   architecture: {
     wall: { svg: () => approche("extrusion-non-portee"), dxf: () => approche("extrusion-non-portee"), ifc: () => exact("extrusion-exacte") },
@@ -228,6 +236,7 @@ export function studioRapportFidelite(input: StudioDocument, format: StudioForma
   parcourir("cotes", doc.dimensions);
   parcourir("annotations", doc.annotations);
   parcourir("solides", doc.solides);
+  parcourir("exacts", doc.exacts);
   // Une ouverture n'a pas de calque propre : elle suit celui de son mur hôte.
   const avecCalque = (layerId: string | undefined): { layerId?: string } => (layerId === undefined ? {} : { layerId });
   const calqueMur = new Map((doc.architecture ?? []).filter((e) => e.type === "wall").map((m) => [m.id, (m as { layerId?: string }).layerId]));

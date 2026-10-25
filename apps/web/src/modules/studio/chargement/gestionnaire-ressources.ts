@@ -21,7 +21,7 @@
  *
  * Pur : ni React, ni DOM ; chargeurs, horloge et mesures injectés.
  */
-import { fermetureMoteurs, MOTEURS, moteursDeBarre, type IdMoteur } from "./moteurs";
+import { fermetureMoteurs, MOTEURS, moteursDeOutil, type IdMoteur } from "./moteurs";
 
 export type PhaseMoteur = "non-charge" | "chargement" | "initialise" | "libere" | "echec";
 export type CodeErreurMoteur = "echec-chargement" | "hors-ligne" | "inconnu";
@@ -226,7 +226,7 @@ export class GestionnaireRessources {
    * autre (changement d'outil pendant un chargement) ne marque rien.
    */
   async activerOutil(outil: string, groupe: string): Promise<ResultatActivation> {
-    const moteurs = moteursDeBarre(groupe);
+    const moteurs = moteursDeOutil(outil, groupe);
     if (!moteurs) throw new ErreurMoteur("inconnu", null, `Barre sans moteur connu : ${groupe}`);
     const debut = this.maintenant();
     const generation = ++this.generationOutil;

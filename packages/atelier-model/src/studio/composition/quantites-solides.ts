@@ -13,7 +13,8 @@ import { studioLienSolide } from "../commandes/liens-solides.js";
 
 export interface StudioQuantiteSolide {
   id: string;
-  type: StudioSolid["type"];
+  /** `exact` (lot F2) : solide exact, volume calculé par le noyau exact, emprise non évaluée. */
+  type: StudioSolid["type"] | "exact";
   layerId?: string;
   /** Aire du profil (emprise), m² ; null pour un solide lié à résoudre. */
   footprint: number | null;
@@ -36,6 +37,8 @@ export function studioQuantitesSolides(document: StudioDocument): { units: { foo
       footprint: evalue ? aireProfil(s) : null, volume: evalue ? studioVolumeSolide(s) : null, ...(lien ? { lien } : {}),
     };
   });
+  // Solides exacts (lot F2) : volume du noyau exact ; leur emprise n'est pas évaluée ici (null), jamais estimée.
+  for (const s of doc.exacts ?? []) items.push({ id: s.id, type: "exact", ...(s.layerId !== undefined ? { layerId: s.layerId } : {}), footprint: null, volume: s.resultat.volume });
   // Un total qui omettrait un volume non évalué serait faux : il n'est alors pas évalué non plus.
   const totalVolume = items.some((q) => q.volume === null) ? null : items.reduce((t, q) => t + (q.volume ?? 0), 0);
   return { units: { footprint: "m2", volume: "m3" }, items, totalVolume };

@@ -1,6 +1,7 @@
 import { controlerLiens, studioDimensionValue, validerCote, type StudioDimension } from "../objets/cote.js";
 import { validerForme } from "../objets/index.js";
 import { validerSolide, type StudioSolid } from "../objets-3d/solides.js";
+import { studioIdsOperandes, validerSolideExact, type StudioSolideExact } from "../objets-3d/exacts.js";
 import { controlerLiensAnnotation, validerAnnotation } from "../objets/annotation.js";
 import { studioAngularValue } from "../objets/cote-angulaire.js";
 import { etatCalque, validerCalque, type StudioLayerState } from "../noyau/calques.js";
@@ -18,12 +19,13 @@ import type { StudioDocument } from "./types.js";
 /** Document Studio : forme canonique, validation complète, création, lectures (sélection, mesure d'une cote). */
 
 /** Forme canonique : `layers`, `dimensions`, `solides` et `annotations` vides sont omis. */
-export function sortie(id: string, objects: StudioShape[], layers: StudioLayer[], dimensions: StudioDimension[], solides: StudioSolid[] = [], annotations: StudioAnnotation[] = [], architecture: StudioArchitectureItem[] = [], proprietes: StudioPropriete[] = [], scenes: StudioElementVisualisation[] = [], nonNatifs: StudioNonNatif[] = []): StudioDocument {
+export function sortie(id: string, objects: StudioShape[], layers: StudioLayer[], dimensions: StudioDimension[], solides: StudioSolid[] = [], annotations: StudioAnnotation[] = [], architecture: StudioArchitectureItem[] = [], proprietes: StudioPropriete[] = [], scenes: StudioElementVisualisation[] = [], nonNatifs: StudioNonNatif[] = [], exacts: StudioSolideExact[] = []): StudioDocument {
   return {
     id, schemaVersion: "studio-document/1", units: "m", frame: "local-2d", objects,
     ...(layers.length ? { layers } : {}),
     ...(dimensions.length ? { dimensions } : {}),
     ...(solides.length ? { solides } : {}),
+    ...(exacts.length ? { exacts } : {}),
     ...(annotations.length ? { annotations } : {}),
     ...(architecture.length ? { architecture } : {}),
     ...(proprietes.length ? { proprietes } : {}),
@@ -34,7 +36,7 @@ export function sortie(id: string, objects: StudioShape[], layers: StudioLayer[]
 
 /** Returns a private, canonical copy (empty `layers` / `dimensions` / `annotations` omitted) or throws `StudioValidationError`. */
 export function validateStudioDocument(value: unknown): StudioDocument {
-  const d = record(value, ["id", "schemaVersion", "units", "frame", "objects"], "document", ["layers", "dimensions", "solides", "annotations", "architecture", "proprietes", "scenes", "nonNatifs"]);
+  const d = record(value, ["id", "schemaVersion", "units", "frame", "objects"], "document", ["layers", "dimensions", "solides", "annotations", "architecture", "proprietes", "scenes", "nonNatifs", "exacts"]);
   if (d.schemaVersion !== "studio-document/1") fail("studioDocument.schemaVersion", "version non prise en charge");
   if (d.units !== "m") fail("studioDocument.units", "unité m attendue");
   if (d.frame !== "local-2d") fail("studioDocument.frame", "repère local-2d attendu");
@@ -74,6 +76,17 @@ export function validateStudioDocument(value: unknown): StudioDocument {
     dimensionIds.add(s.id);
     if (s.layerId !== undefined && !layerIds.has(s.layerId)) fail("studioDocument.solides", "calque inconnu");
   }
+  // Solides exacts (lot F2) : identifiants uniques dans tout le document, opérandes conservés compris ; calque connu.
+  const rawExacts = Object.hasOwn(d, "exacts") ? array(d.exacts, "studioDocument.exacts") : [];
+  if (rawObjects.length + rawDimensions.length + rawAnnotations.length + rawSolides.length + rawExacts.length > STUDIO_LIMITS.objects) fail("studioDocument.exacts", `${STUDIO_LIMITS.objects} objets au plus, solides exacts compris`);
+  const exacts = rawExacts.map((o, i) => validerSolideExact(o, `studioDocument.exacts[${i}]`));
+  for (const s of exacts) {
+    for (const id of [s.id, ...studioIdsOperandes(s)]) {
+      if (shapes.has(id) || dimensionIds.has(id)) fail("studioDocument.exacts", "identifiant dupliqué");
+      dimensionIds.add(id);
+    }
+    if (s.layerId !== undefined && !layerIds.has(s.layerId)) fail("studioDocument.exacts", "calque inconnu");
+  }
   const annotations = rawAnnotations.map((o, i) => validerAnnotation(o, `studioDocument.annotations[${i}]`));
   const annotationIds = new Set<string>();
   annotations.forEach((o, i) => {
@@ -97,7 +110,7 @@ export function validateStudioDocument(value: unknown): StudioDocument {
   // Visualisation (lot E.5) : scènes et apparences, identifiants propres à la liste, calques et objets 3D connus.
   const rawScenes = Object.hasOwn(d, "scenes") ? array(d.scenes, "studioDocument.scenes") : [];
   const scenes = rawScenes.map((o, i) => validerElementVisualisation(o, `studioDocument.scenes[${i}]`));
-  if (scenes.length) controlerVisualisation(scenes, { calques: layerIds, objets: new Set([...shapes.keys(), ...solides.map((s) => s.id), ...architecture.map((a) => a.id)]) }, "studioDocument.scenes");
+  if (scenes.length) controlerVisualisation(scenes, { calques: layerIds, objets: new Set([...shapes.keys(), ...solides.map((s) => s.id), ...exacts.map((s) => s.id), ...architecture.map((a) => a.id)]) }, "studioDocument.scenes");
   // Éléments non natifs (lot F3) : identifiants uniques dans tout le document, calque connu ; jamais métrés ni exportés.
   const rawNonNatifs = Object.hasOwn(d, "nonNatifs") ? array(d.nonNatifs, "studioDocument.nonNatifs") : [];
   if (rawNonNatifs.length > STUDIO_LIMITS.objects) fail("studioDocument.nonNatifs", `${STUDIO_LIMITS.objects} éléments non natifs au plus`);
@@ -107,7 +120,7 @@ export function validateStudioDocument(value: unknown): StudioDocument {
     annotationIds.add(n.id);
     if (n.layerId !== undefined && !layerIds.has(n.layerId)) fail("studioDocument.nonNatifs", "calque inconnu");
   }
-  return sortie(identifier(d.id, "studioDocument.id"), objects, layers, dimensions, solides, annotations, architecture, proprietes, scenes, nonNatifs);
+  return sortie(identifier(d.id, "studioDocument.id"), objects, layers, dimensions, solides, annotations, architecture, proprietes, scenes, nonNatifs, exacts);
 }
 
 /** Valeur mesurée d'une cote angulaire (degrés), dérivée ; « non évaluée » (null) tant qu'elle est à résoudre. */

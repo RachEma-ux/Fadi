@@ -67,7 +67,7 @@ export function corpusS5(taille: number): CorpusStudio {
     couverture: {
       representes: ["solides libres placés et tournés (boîtes, prismes)", "courbes exactes (arc, renflements) métrées sans discrétisation", "profils complexes jusqu'à 1 024 sommets"],
       absents: [
-        { element: "booléens", raison: "studio-document/1 n'a pas d'opération booléenne ; le noyau exact (OCCT) n'est pas branché sur Studio" },
+        { element: "booléens", raison: "solides exacts (lot F2) calculés par le noyau exact OCCT seulement (Worker à la demande, recalcul par le serveur) : un corpus synthétique pur ne peut pas fabriquer de brep sans ce noyau ; couverts par la recette studio-exact" },
         { element: "surfaces libres (NURBS, subdivision)", raison: "aucun type de surface libre dans studio-document/1 ; profils polygonaux seulement" },
       ],
     },

@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { STUDIO_TOOLS } from "@parcours/atelier-model";
-import { fermetureMoteurs, MOTEURS, MOTEURS_PAR_BARRE, moteursDeBarre } from "./moteurs";
+import { fermetureMoteurs, MOTEURS, MOTEURS_PAR_BARRE, MOTEURS_PAR_OUTIL, moteursDeBarre, moteursDeOutil } from "./moteurs";
 import { RAISONS_INCOMPATIBLE } from "../hors-ligne/contrats";
 import { TEXTES_FILE_LOCALE } from "../hors-ligne/AvisFileLocale";
 import { tousLesTextes } from "./textes";
@@ -18,7 +18,7 @@ describe("Moteurs de Studio et moments de chargement (B.3-01 à B.3-05)", () => 
   it("trois temps : démarrage léger, planche, premier usage ; jamais un moteur par bouton", () => {
     expect(MOTEURS.find((m) => m.moment === "demarrage")?.id).toBe("coquille-studio");
     expect(MOTEURS.filter((m) => m.moment === "planche").map((m) => m.id)).toEqual(["planche-2d"]);
-    expect(MOTEURS.filter((m) => m.moment === "premier-usage").map((m) => m.id).sort()).toEqual(["calcul", "rendu-3d"]);
+    expect(MOTEURS.filter((m) => m.moment === "premier-usage").map((m) => m.id).sort()).toEqual(["calcul", "noyau-exact", "rendu-3d"]);
     // Bien moins de moteurs que d'outils : les outils mutualisent leurs moteurs (EX-041).
     expect(MOTEURS.length).toBeLessThan(STUDIO_TOOLS.length / 4);
   });
@@ -30,9 +30,15 @@ describe("Moteurs de Studio et moments de chargement (B.3-01 à B.3-05)", () => 
     for (const m of MOTEURS) expect(new Set(fermetureMoteurs([m.id])).size).toBe(fermetureMoteurs([m.id]).length);
   });
 
-  it("le rendu 3D partage le groupe de Workers de calcul (aucun noyau propre, D.3-04)", () => {
+  it("le rendu 3D partage le groupe de Workers de calcul (aucun noyau propre, D.3-04) ; seul le booléen exact charge le noyau exact (lot F2)", () => {
     expect(MOTEURS.find((m) => m.id === "rendu-3d")?.dependances).toContain("calcul");
-    expect(MOTEURS.filter((m) => m.nature === "worker").map((m) => m.id)).toEqual(["calcul"]);
+    expect(fermetureMoteurs(["rendu-3d"])).not.toContain("noyau-exact");
+    expect(MOTEURS.filter((m) => m.nature === "worker").map((m) => m.id)).toEqual(["calcul", "noyau-exact"]);
+    // Granularité du moteur (EX-041) : le noyau exact s'ajoute au seul outil qui le demande, pas à sa barre.
+    expect(moteursDeOutil("studio.solide.booleen", "volume-libre")).toEqual(["coquille-studio", "planche-2d", "calcul", "rendu-3d", "noyau-exact"]);
+    for (const t of STUDIO_TOOLS.filter((x) => x.toolId !== "studio.solide.booleen")) expect(moteursDeOutil(t.toolId, t.groupe), t.toolId).not.toContain("noyau-exact");
+    expect(Object.keys(MOTEURS_PAR_OUTIL)).toEqual(["studio.solide.booleen"]);
+    expect(MOTEURS.find((m) => m.id === "noyau-exact")?.annexes).toBe("(^|/)occt-wasm[^/]*\\.wasm$");
   });
 
   it("chaque moteur désigne un module source existant (lu par vite.config.ts)", () => {

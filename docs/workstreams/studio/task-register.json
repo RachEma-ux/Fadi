@@ -56510,11 +56510,11 @@
         ],
         "preparation_initiale": "Corpus autorisé, SHA/build, contrats ; bases jetables pour tests mutateurs"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Partiel",
-        "portee": "Tâche du noyau exact dans Studio (ordonnanceur générique contrôlé)."
+        "etat": "Exécuté",
+        "portee": "Lot F2 — noyau exact dans Studio (25 octobre 2026)"
       },
       "preuves": [
         {
@@ -56534,6 +56534,24 @@
           "fichier": "docs/ai-team/reports/mission-003/A5/studio-38-oracles.csv",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "recette_e2e",
+          "fichier": "apps/web/e2e/studio-exact.mjs",
+          "controles": [
+            "TEST-014 : le résultat calculé pour l'ancienne révision est marqué périmé, aucun bouton d'engagement, rien d'engagé"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite le 25 octobre 2026 ; tests et recette studio-exact exécutés localement puis en CI ; rendu logiciel, appareils réels non évalués."
+        },
+        {
+          "type": "test_automatise",
+          "fichier": "packages/atelier-model/src/studio/f2-booleen.test.ts",
+          "controles": [
+            "TEST-014 — tâche exacte rendue pour une ancienne révision"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite le 25 octobre 2026 ; tests et recette studio-exact exécutés localement puis en CI ; rendu logiciel, appareils réels non évalués."
         }
       ],
       "github": {
@@ -56544,14 +56562,14 @@
       "blocage": {
         "cause": null,
         "responsable": "Chef de projet",
-        "essais_effectues": "Rapprochement des assertions existantes (rapport).",
+        "essais_effectues": "Lot F2 — noyau exact dans Studio (25 octobre 2026)",
         "deblocage": null
       },
-      "suite": "Rapprochement du 25 octobre 2026 (partiel) : L'ordonnanceur générique est vérifié. Aucune tâche du noyau exact n'existe dans Studio : OCCT n'est pas branché (corpus/s5-libre.ts:70, PERF-07 non applicable).",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "apps/web/e2e ; tests packages ; scripts/bench ; workflows",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -56582,6 +56600,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Lot F2 — noyau exact dans Studio (25 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -56606,11 +56631,11 @@
         ],
         "preparation_initiale": "Corpus autorisé, SHA/build, contrats ; bases jetables pour tests mutateurs"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Partiel",
-        "portee": "Studio n’a pas de worker OCCT ; relance contrôlée sur le pool Studio seulement."
+        "etat": "Exécuté",
+        "portee": "Lot F2 — noyau exact dans Studio (25 octobre 2026)"
       },
       "preuves": [
         {
@@ -56630,6 +56655,17 @@
           "fichier": "docs/ai-team/reports/mission-003/A5/studio-38-oracles.csv",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "recette_e2e",
+          "fichier": "apps/web/e2e/studio-exact.mjs",
+          "controles": [
+            "TEST-015 : coupure du Worker — erreur affichée, noyau en échec, Worker arrêté, aucune attente en suspens",
+            "TEST-015 : pas de corruption — document identique (empreinte de contenu), aucune commande en attente",
+            "TEST-015 : relance contrôlée — nouveau Worker, calcul de nouveau abouti"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite le 25 octobre 2026 ; tests et recette studio-exact exécutés localement puis en CI ; rendu logiciel, appareils réels non évalués."
         }
       ],
       "github": {
@@ -56640,14 +56676,14 @@
       "blocage": {
         "cause": null,
         "responsable": "Chef de projet",
-        "essais_effectues": "Rapprochement des assertions existantes (rapport).",
+        "essais_effectues": "Lot F2 — noyau exact dans Studio (25 octobre 2026)",
         "deblocage": null
       },
-      "suite": "Rapprochement du 25 octobre 2026 (partiel) : La relance contrôlée est vérifiée sur le pool Studio. Studio n'a pas de worker OCCT, et l'absence de corruption du document n'est pas vérifiée.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "apps/web/e2e ; tests packages ; scripts/bench ; workflows",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -56678,6 +56714,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Lot F2 — noyau exact dans Studio (25 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -64143,11 +64186,11 @@
         "preparation_initiale": "REF-02 texte exact + contrat + composant + scénario + preuve + décision",
         "decisions_applicables_a_instruire": "DEC-04,DEC-06"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Oracles individuels prescrits et extraction documentaire vérifiée, aucune recette Studio"
+        "etat": "Exécuté",
+        "portee": "Lot F2 — noyau exact dans Studio (25 octobre 2026)"
       },
       "preuves": [
         {
@@ -64177,6 +64220,15 @@
             468
           ],
           "limite": "Exactitude extraction vérifiée ; pas acceptation de la capacité."
+        },
+        {
+          "type": "test_automatise",
+          "fichier": "apps/web/src/modules/studio/chargement/manager-exact.test.ts",
+          "controles": [
+            "activer, désactiver, réactiver 50 fois le Booléen exact puis libérer le moteur : chargeur appelé une fois, aucun booléen, aucune tessellation, aucun Worker créé par le Manager"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite le 25 octobre 2026 ; tests et recette studio-exact exécutés localement puis en CI ; rendu logiciel, appareils réels non évalués."
         }
       ],
       "github": {
@@ -64185,16 +64237,16 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Contrat et preuves actuelles Studio non validés ; décisions applicables ouvertes.",
-        "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot F2 — noyau exact dans Studio (25 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Rapprochement du 25 octobre 2026 (partiel) : Cas négatif non testé et non testable en l'état : aucun booléen dans Studio V1 (PERF-07 non applicable) et aucun test n'espionne le Manager pour montrer qu'il ne calcule ni ne valide la géométrie.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "Voir matrice A1-exigences.csv",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -64218,6 +64270,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Lot F2 — noyau exact dans Studio (25 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -66917,11 +66976,11 @@
         "preparation_initiale": "REF-02 texte exact + contrat + composant + scénario + preuve + décision",
         "decisions_applicables_a_instruire": "DEC-08,DEC-10,DEC-17"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Oracles individuels prescrits et extraction documentaire vérifiée, aucune recette Studio"
+        "etat": "Exécuté",
+        "portee": "Lot F2 — noyau exact dans Studio (25 octobre 2026)"
       },
       "preuves": [
         {
@@ -66951,6 +67010,16 @@
             632
           ],
           "limite": "Exactitude extraction vérifiée ; pas acceptation de la capacité."
+        },
+        {
+          "type": "recette_e2e",
+          "fichier": "apps/web/e2e/studio-exact.mjs",
+          "controles": [
+            "TR-EX-058 : aperçu marqué « provisoire, jamais engagé », estimé 12 m³, confirmé par le résultat exact (12 m³)",
+            "TR-EX-058 : boîte tournée de 45° — aperçu provisoire refusé (écart au-delà de la tolérance, expliqué), résultat exact seul engageable"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite le 25 octobre 2026 ; tests et recette studio-exact exécutés localement puis en CI ; rendu logiciel, appareils réels non évalués."
         }
       ],
       "github": {
@@ -66959,16 +67028,16 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Contrat et preuves actuelles Studio non validés ; décisions applicables ouvertes.",
-        "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot F2 — noyau exact dans Studio (25 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Rapprochement du 25 octobre 2026 (non couvert) : Studio n'a ni aperçu approximatif (offset/booléen simplifié) ni calcul exact distinct (PERF-07 déclaré non applicable) ; aucun test d'identification « provisoire » ni de refus sur écart preview/exact.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "Voir matrice A1-exigences.csv",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -66992,6 +67061,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Lot F2 — noyau exact dans Studio (25 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -67403,7 +67479,7 @@
         "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
         "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
       },
-      "suite": "Rapprochement du 25 octobre 2026 (non couvert) : Studio ne charge aucun noyau WASM/OCCT (interdit par la carte des morceaux) : ni suivi taille transférée/instance/allocations WASM, ni 50 ouvertures d'outil exact ; seules les ressources GPU sont suivies (vue3d/ressources-gpu.test.ts).",
+      "suite": "Lot F2 : taille transférée et décodée, instance unique, durée de chargement et 50 ouvertures sans croissance sont recettés (studio-exact, « TR-EX-062 : … »). Reste : allocations internes au WASM, que le noyau n'expose pas.",
       "composants_candidats": "Voir matrice A1-exigences.csv",
       "source_checked": false,
       "cloture": {
@@ -67431,6 +67507,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Lot F2 — noyau exact dans Studio (25 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "En cours",
+          "preuve": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
         }
       ],
       "preparation_documentaire": {
@@ -70926,11 +71009,11 @@
         "preparation_initiale": "REF-02 texte exact + contrat + composant + scénario + preuve + décision",
         "decisions_applicables_a_instruire": "DEC-11,DEC-15,DEC-18"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Oracles individuels prescrits et extraction documentaire vérifiée, aucune recette Studio"
+        "etat": "Exécuté",
+        "portee": "Lot F2 — noyau exact dans Studio (25 octobre 2026)"
       },
       "preuves": [
         {
@@ -70960,6 +71043,24 @@
             912
           ],
           "limite": "Exactitude extraction vérifiée ; pas acceptation de la capacité."
+        },
+        {
+          "type": "recette_e2e",
+          "fichier": "apps/web/e2e/studio-exact.mjs",
+          "controles": [
+            "TR-EX-096 : notice servie (occt-wasm 5.6.1, LGPL-2.1-only, remplacement), texte LGPL 2.1 servi, binaire servi identique à la notice (SHA-256) et seul .wasm demandé"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite le 25 octobre 2026 ; tests et recette studio-exact exécutés localement puis en CI ; rendu logiciel, appareils réels non évalués."
+        },
+        {
+          "type": "test_automatise",
+          "fichier": "apps/web/src/modules/studio/exact/licence-occt.test.ts",
+          "controles": [
+            "TR-EX-096 — licence et provenance du noyau exact distribué"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite le 25 octobre 2026 ; tests et recette studio-exact exécutés localement puis en CI ; rendu logiciel, appareils réels non évalués."
         }
       ],
       "github": {
@@ -70968,16 +71069,16 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Contrat et preuves actuelles Studio non validés ; décisions applicables ouvertes.",
-        "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot F2 — noyau exact dans Studio (25 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Rapprochement du 25 octobre 2026 (non couvert) : Aucun contrôle automatisé de version/licence/obligation LGPL sur l'artefact WASM distribué ; seule la décision D-177 (docs/atelier/decisions.md, ligne 181) consigne la chaîne de licence vérifiée hors dépôt — critère non purement documentaire (vérification sur l'artefact).",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "Voir matrice A1-exigences.csv",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -71001,6 +71102,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Lot F2 — noyau exact dans Studio (25 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -76463,9 +76571,9 @@
       "raison": "DEV_SCOPE et baseline du périmètre accepté non établis ; ne pas inventer un dénominateur."
     },
     "P630": {
-      "V630": 337,
+      "V630": 342,
       "denominateur": 630,
-      "pourcentage": 53.5,
+      "pourcentage": 54.3,
       "IDs": [
         "SRC-01",
         "SRC-02",
@@ -76739,6 +76847,8 @@
         "TEST-010",
         "TEST-012",
         "TEST-013",
+        "TEST-014",
+        "TEST-015",
         "TEST-016",
         "TEST-017",
         "TEST-018",
@@ -76780,16 +76890,19 @@
         "TR-EX-017",
         "TR-EX-018",
         "TR-EX-024",
+        "TR-EX-032",
         "TR-EX-039",
         "TR-EX-048",
         "TR-EX-050",
         "TR-EX-057",
+        "TR-EX-058",
         "TR-EX-060",
         "TR-EX-066",
         "TR-EX-085",
         "TR-EX-086",
         "TR-EX-092",
         "TR-EX-095",
+        "TR-EX-096",
         "TR-EX-100",
         "TR-EX-102",
         "TR-EX-103",
@@ -76807,7 +76920,7 @@
       ],
       "limite": "259 obligations vérifiées (documentaires, par recette ou test exécuté, ou par contrôle existant contre-vérifié indépendamment le 25 octobre 2026) et 58 acceptations (2 de cadrage G0, 56 décisions ADR-STUDIO-PILOTE-01 sous délégation du maître d’ouvrage). Pas un taux de développement ; G1–G4 non acceptées.",
       "mapping_barre": {
-        "Vérifié documentaire": 279,
+        "Vérifié documentaire": 284,
         "Accepté cadrage documentaire G0": 58
       }
     }
