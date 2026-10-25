@@ -266,6 +266,33 @@ const LIVREES: readonly StudioEntreeEchange[] = [
     sources: [S_PLAN, S_LISTE("E.6-02")],
   },
   {
+    id: "natif-profil-outils-export", format: "Profil d’outils Studio (JSON)", versionFormat: "fadi-studio-profil/1", sens: "export", famille: "natif",
+    objet: "Profil d’outils du compte (profileId, version, ordre, raccourcis personnels, visibilité)", taches: ["E.6-02"], statut: "livre",
+    limite: "Préférences du compte seulement : aucune donnée du projet, aucun droit (EX-033, INV-009).",
+    entites: [{ entite: "Profil d’outils", couverture: "portee", detail: "Profil des barres, favoris, liste personnelle, regroupements, ordre des capacités, raccourcis personnels, version." }],
+    controle: "Tests des profils importés et exportés.",
+    preuves: {
+      code: [p(`${API}routes/studio-preferences.ts`, "STUDIO_FORMAT_PROFIL")],
+      tests: [p(`${API}routes/studio-profils-import.test.ts`, "fadi-studio-profil/1")],
+      interfaces: [p(`${WEB}planche2d/CatalogueOutils.tsx`, "lien.download = `profil-studio-${f.profileId}-v${f.version}.json`")],
+      routes: [p(`${API}routes/studio-preferences.ts`, "/outils/export")],
+    },
+    sources: [S_LISTE("E.6-02")],
+  },
+  {
+    id: "natif-profil-outils-import", format: "Profil d’outils Studio (JSON)", versionFormat: "fadi-studio-profil/1", sens: "import", famille: "natif",
+    objet: "Profil d’outils importé dans le compte", taches: ["E.6-02"], statut: "livre",
+    limite: "Aucun droit conféré : une capacité exigeant un droit absent est refusée ; raccourcis en conflit refusés ou écartés sur demande explicite.",
+    entites: [{ entite: "Profil d’outils", couverture: "portee", detail: "Relu, contrôlé (outils du registre, droits, conflits de raccourcis), version +1, provenance gardée." }],
+    controle: "Tests des profils importés et exportés.",
+    preuves: {
+      code: [p(`${API}lib/studio-profils.ts`, "conflitsRaccourcis")],
+      tests: [p(`${API}routes/studio-profils-import.test.ts`, "permission_non_conferee")],
+      routes: [p(`${API}routes/studio-preferences.ts`, "/outils/import")],
+    },
+    sources: [S_LISTE("E.6-02")],
+  },
+  {
     id: "dessin-svg", format: "SVG", versionFormat: "SVG (espace de noms W3C, aucune version déclarée dans le fichier)", sens: "export", famille: "dessin",
     objet: "Document d’une révision de variante (plan 2D)", taches: ["E.6-03"], statut: "livre", fidelite: "svg",
     limite: "Plan 2D seulement : solides et hauteurs absents ; calques masqués conservés sous display=\"none\" ; aucun script ni ressource externe.",
