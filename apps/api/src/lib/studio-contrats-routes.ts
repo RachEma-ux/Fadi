@@ -20,7 +20,8 @@ const qui = z.looseObject({ id: z.string(), email: z.string().nullable() });
 const quiOuNull = qui.nullable();
 /** Document `studio-document/1` relu par son validateur (jamais une forme approchée). */
 const documentStudio = z.custom<unknown>((d) => { try { validateStudioDocument(d); return true; } catch { return false; } }, "document Studio invalide");
-const provenance = z.object({ variantId: ident, revisionId: ident }).nullable();
+/** Provenance d'une dérivation ; `mode: "copie"` et `identites` (nouvel identifiant → source) pour une copie indépendante (TR-EX-013). */
+const provenance = z.strictObject({ variantId: ident, revisionId: ident, mode: z.literal("copie").optional(), identites: z.record(z.string(), z.string()).optional() }).nullable();
 const phase = z.string().nullable();
 
 const etudeResume = z.strictObject({ id: ident, name: z.string(), projectId: ident });
@@ -164,7 +165,7 @@ export const CONTRAT_VARIANTES_LISTER = contratRoute({
 });
 export const CONTRAT_VARIANTE_CREER = contratRoute({
   id: "studio-api-variante-creer/1", routes: ["POST /studies/:studyId/variants"], objet: "Nouvelle variante, vide ou dérivée d'une révision de l'étude.",
-  entree: "Corps : `{ name, requestId?, fromVariantId?, fromRevisionId? }` (schéma `variantSchema`).", statuts: [201], corps: "json", reponse: creation,
+  entree: "Corps : `{ name, requestId?, fromVariantId?, fromRevisionId?, mode? }` (schéma `variantSchema` ; `mode` : `version` par défaut, ou `copie` — copie indépendante à nouvelles identités).", statuts: [201], corps: "json", reponse: creation,
 });
 export const CONTRAT_VARIANTE_RENOMMER = contratRoute({
   id: "studio-api-variante-renommer/1", routes: ["PATCH /studies/:studyId/variants/:variantId"], objet: "Renommage de la variante.",

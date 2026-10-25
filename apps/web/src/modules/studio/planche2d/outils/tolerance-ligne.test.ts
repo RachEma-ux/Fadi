@@ -3,7 +3,7 @@
  * `studio-commands/1` (`STUDIO_TOLERANCES_GESTES`) — une valeur saisie est engagée exactement ; une valeur pointée est
  * engagée à 1e-9 m près après accrochage. Chaîne réelle : moteur d'accrochage → point posé → outil Ligne → commande →
  * document (applyStudioCommands). Le cas négatif « Échap sur l'aperçu, aucune mutation » est contrôlé par la recette
- * (`apps/web/e2e/studio-preuves-d2.mjs`).
+ * (`apps/web/e2e/studio-dec.mjs`, « TR-IF-002 [−] Ligne commencée puis Échap »).
  */
 import { describe, expect, it } from "vitest";
 import { applyStudioCommands, newStudioDocument, STUDIO_CONTRACT, STUDIO_TOLERANCES_GESTES, studioDansToleranceGeste, type StudioLine, type StudioPoint, type StudioShape } from "@parcours/atelier-model";
