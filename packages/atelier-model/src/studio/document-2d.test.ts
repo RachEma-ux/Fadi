@@ -116,14 +116,14 @@ describe("Studio : document 2D natif", () => {
 });
 
 describe("Registry Studio minimal", () => {
-  it("publie trente-huit identités, icônes et raccourcis propres (volume libre, transformations, annotations, architecture, propriétés et visualisation compris), sans agent", () => {
+  it("publie quarante identités, icônes et raccourcis propres (volume libre, transformations, annotations, architecture, propriétés, visualisation et éléments non natifs compris), sans agent", () => {
     // Seize outils de base, le volume libre (boîte, prisme, déplacer, supprimer), Copier, Rotation, Symétrie, Échelle,
     // puis la cote angulaire et le texte, l'architecture (mur, ouverture, modifier, supprimer avec cascade), les
     // propriétés BIM déclarées (E.1-01 : déclarer, retirer), enfin la visualisation (E.5 : scène nouvelle, mettre à
-    // jour, rappeler, supprimer ; apparence définir, retirer).
-    expect(STUDIO_TOOLS).toHaveLength(38);
+    // jour, rappeler, supprimer ; apparence définir, retirer), enfin les éléments non natifs (lot F3 : conserver, retirer).
+    expect(STUDIO_TOOLS).toHaveLength(40);
     for (const key of ["toolId", "iconeSymbolique", "raccourci"] as const) {
-      expect(new Set(STUDIO_TOOLS.map((tool) => tool[key])).size).toBe(38);
+      expect(new Set(STUDIO_TOOLS.map((tool) => tool[key])).size).toBe(40);
     }
     for (const tool of STUDIO_TOOLS) {
       expect(tool.agentExposure).toBe("none");

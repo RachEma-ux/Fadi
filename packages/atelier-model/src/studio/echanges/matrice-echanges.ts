@@ -27,9 +27,9 @@ import { STUDIO_CAPACITES_EXPORT, STUDIO_RAISONS_FIDELITE, type StudioFormatEcha
 
 export const STUDIO_MATRICE_ECHANGES_SCHEMA = "studio-matrice-echanges/1" as const;
 /** Révision de la matrice : à incrémenter avec toute modification d'une entrée (empreinte épinglée par test). */
-export const STUDIO_MATRICE_ECHANGES_REVISION = 2 as const;
+export const STUDIO_MATRICE_ECHANGES_REVISION = 3 as const;
 /** Date de l'audit qui a établi la révision courante. */
-export const STUDIO_MATRICE_ECHANGES_DATE = "2026-10-19" as const;
+export const STUDIO_MATRICE_ECHANGES_DATE = "2026-10-25" as const;
 
 /**
  * Décisions **Studio** admises pour un statut « renoncé » : vide aujourd'hui (aucune décision du maître d'ouvrage ne
@@ -122,7 +122,7 @@ export const STUDIO_STATUT_DE_RAISON: Readonly<Record<StudioRaisonFidelite, Stud
   "texte-ascii-echappe": "approche", "texte-remplace": "approche", "texte-tronque": "approche", "ouverture-en-lacune": "approche",
   "non-extrude": "non-couvert", "cote-hors-ifc": "non-couvert", "annotation-hors-ifc": "non-couvert", "solide-hors-2d": "non-couvert",
   "visualisation-hors-export": "non-couvert", "type-sans-capacite": "non-couvert", "propriete-non-exportee": "non-couvert",
-  "propriete-non-evaluee": "non-couvert",
+  "propriete-non-evaluee": "non-couvert", "non-natif-hors-export": "non-couvert",
 });
 
 type Categorie = keyof typeof STUDIO_CAPACITES_EXPORT;
@@ -130,6 +130,7 @@ type ParType = { readonly [C in Categorie]: { readonly [T in keyof (typeof STUDI
 
 const TRACE_2D = ["trace-exact", "extrusion-non-portee"] as const;
 const VISU = ["visualisation-hors-export"] as const;
+const NN = ["non-natif-hors-export"] as const;
 /**
  * Couverture par type et par format des exports SVG, DXF et IFC : raisons que le juge de `STUDIO_CAPACITES_EXPORT`
  * peut rendre pour ce type. Recoupée par test avec la table des capacités (aucune raison de plus, aucune de moins).
@@ -143,6 +144,7 @@ export const STUDIO_COUVERTURE_EXPORT: { readonly [F in StudioFormatEchange]: Pa
     architecture: { wall: ["extrusion-non-portee"], opening: ["ouverture-en-lacune"] },
     proprietes: { propriete: ["propriete-non-exportee"] },
     scenes: { scene: VISU, appearance: VISU },
+    nonNatifs: { "non-native": NN },
   },
   dxf: {
     objets: { line: TRACE_2D, rectangle: TRACE_2D, circle: TRACE_2D, arc: ["arcs-exacts", "extrusion-non-portee"], polyline: ["trace-exact", "renflements-exacts", "extrusion-non-portee"] },
@@ -152,6 +154,7 @@ export const STUDIO_COUVERTURE_EXPORT: { readonly [F in StudioFormatEchange]: Pa
     architecture: { wall: ["extrusion-non-portee"], opening: ["ouverture-en-lacune"] },
     proprietes: { propriete: ["propriete-non-exportee"] },
     scenes: { scene: VISU, appearance: VISU },
+    nonNatifs: { "non-native": NN },
   },
   ifc: {
     objets: {
@@ -164,6 +167,7 @@ export const STUDIO_COUVERTURE_EXPORT: { readonly [F in StudioFormatEchange]: Pa
     architecture: { wall: ["extrusion-exacte"], opening: ["ouverture-evidee"] },
     proprietes: { propriete: ["propriete-en-pset", "propriete-non-evaluee"] },
     scenes: { scene: VISU, appearance: VISU },
+    nonNatifs: { "non-native": NN },
   },
 });
 
@@ -311,8 +315,8 @@ const LIVREES: readonly StudioEntreeEchange[] = [
       { entite: "ARC", couverture: "portee", detail: "Arc (angles ramenés en radians), cercle si ses angles se confondent." },
       { entite: "LWPOLYLINE / POLYLINE 2D", couverture: "partielle", detail: "Polyligne à renflements ; rectangle si fermée à 4 sommets parallèles aux axes ; sinon un segment droit par ligne." },
       { entite: "Calques (table LAYER)", couverture: "portee", detail: "Repris par nom ou créés, visibilité et verrouillage du fichier." },
-      { entite: "TEXT, INSERT, SPLINE, HATCH, DIMENSION, ELLIPSE…", couverture: "absente", detail: "Non importés, comptés par type." },
-      { entite: "Polylignes 3D ou lissées, espace papier", couverture: "absente", detail: "Non importées, comptées." },
+      { entite: "TEXT, INSERT, SPLINE, HATCH, DIMENSION, ELLIPSE…", couverture: "absente", detail: "Non importés comme objets, comptés par type ; conservés comme éléments non natifs (type, handle, nom de bloc, raison) si l’option est cochée." },
+      { entite: "Polylignes 3D ou lissées, espace papier", couverture: "absente", detail: "Non importées comme objets, comptées ; conservées comme éléments non natifs si l’option est cochée." },
     ],
     controle: "Tests de l’import (modèle et interface) ; rapport d’import à l’aperçu.",
     preuves: {
@@ -321,6 +325,46 @@ const LIVREES: readonly StudioEntreeEchange[] = [
       interfaces: [p(`${WEB}import/DialogueImportDxf.tsx`, "export function DialogueImportDxf(")],
     },
     sources: [S_PLAN, S_LISTE("E.6-03")],
+  },
+  {
+    id: "maquette-ifc-import", format: "IFC (STEP physique, ISO 10303-21)", versionFormat: "IFC2X3, IFC4, IFC4X1 à IFC4X3 (FILE_SCHEMA lu) ; ifcXML et ifcZIP refusés", sens: "import", famille: "maquette",
+    objet: "Maquette d’un autre logiciel ajoutée au brouillon d’une variante, par commandes", taches: ["E.6-04"], statut: "livre",
+    limite: "5 Mo au plus ; lecteur STEP propre, sans web-ifc ; unité de longueur lue dans l’IfcUnitAssignment du projet (IfcSIUnit et son préfixe, ou IfcConversionBasedUnit dont le facteur est déclaré), absente : rien n’est importé, jamais supposée ; seules les extrusions verticales (IfcExtrudedAreaSolid d’un IfcRectangleProfileDef ou d’un IfcArbitraryClosedProfileDef droit) placées par IfcLocalPlacement tourné autour de z sont traduites ; toute autre entité ou géométrie est conservée comme élément non natif, et chaque information non reprise est comptée dans le rapport de pertes.",
+    entites: [
+      { entite: "IfcWall, IfcWallStandardCase", couverture: "partielle", detail: "Mur (axe, épaisseur, hauteur, cote de base lus ; justification déduite de l’axe Axis) si le corps est rectangulaire ; sinon prisme libre, perte comptée." },
+      { entite: "IfcOpeningElement, IfcRelVoidsElement", couverture: "portee", detail: "Ouverture du mur importé : position, largeur, hauteur et allège lues de son corps." },
+      { entite: "IfcDoor, IfcWindow, IfcRelFillsElement", couverture: "partielle", detail: "Type déclaré porte ou fenêtre de l’ouverture remplie ; géométrie propre du remplissage non reprise (perte comptée)." },
+      { entite: "IfcSlab", couverture: "partielle", detail: "Prisme libre à sa cote ; sémantique de dalle non reprise (perte comptée)." },
+      { entite: "IfcBuildingStorey", couverture: "partielle", detail: "Calque nommé d’après le niveau ; ses éléments y sont rangés ; l’élévation est portée par les placements." },
+      { entite: "IfcSpace, IfcColumn, IfcBeam, IfcBuildingElementProxy…", couverture: "absente", detail: "Conservés comme éléments non natifs : type, GlobalId, nom, raison, empreinte lue ; non éditables, exclus des métrés." },
+      { entite: "IfcPropertySet, IfcRelAssociatesMaterial, IfcRelDefinesByType, IfcMapConversion, IfcSite, IfcBuilding…", couverture: "absente", detail: "Comptés par type dans le rapport de pertes." },
+    ],
+    controle: "Tests du lecteur (fixture IFC2X3 écrite à la main, IFC4 en pieds, aller-retour avec l’export IFC4X3 de Studio) ; recette studio-echanges.mjs (import par l’interface, éléments non natifs visibles).",
+    preuves: {
+      code: [p(`${M}import-ifc/import-ifc.ts`, "lireIfcStudio")],
+      tests: [p(`${M}import-ifc/import-ifc.test.ts`, "lireIfcStudio"), p(`${WEB}import/import-ifc.test.ts`, "lireIfcStudio"), p(`${E2E}studio-echanges.mjs`, "check(\"Importer IFC : rapport de pertes")],
+      interfaces: [p(`${WEB}import/DialogueImportIfc.tsx`, "export function DialogueImportIfc(")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-04"), S_LISTE("TEST-028")],
+  },
+  {
+    id: "modele-externe-ifc", format: "IFC (STEP physique, ISO 10303-21)", versionFormat: "IFC2X3, IFC4, IFC4X1 à IFC4X3 (lecteur de l’import IFC)", sens: "import", famille: "coordination",
+    objet: "Modèle d’un partenaire référencé, comparé à la révision courante, accepté ou refusé", taches: ["E.6-04"], statut: "livre",
+    limite: "Référence, auteur, discipline, version, unité et transformation déclarées par l’émetteur ; fichier relu par le serveur dans un document à part, jamais dans la variante ; comparaison par identifiant (GlobalId) avec la révision courante ; acceptation ou refus réservés au propriétaire et aux approbateurs, journalisés, un refus avec motif ; accepté, le modèle s’ajoute au brouillon seulement par une action explicite ; non repris par l’archive du projet.",
+    entites: [
+      { entite: "Déclarations de l’émetteur", couverture: "portee", detail: "Conservées telles quelles ; l’unité déclarée est comparée à l’unité lue, jamais substituée." },
+      { entite: "Fichier reçu", couverture: "portee", detail: "Conservé tel quel avec son SHA-256 ; lecture et pertes comme l’import IFC." },
+      { entite: "Écarts avec la révision courante", couverture: "portee", detail: "Objets, calques, cotes, murs et ouvertures, solides libres, éléments non natifs : ajoutés, supprimés, modifiés." },
+    ],
+    controle: "Tests des règles (modèle et serveur) ; recette studio-echanges.mjs (réception, comparaison, acceptation journalisée).",
+    route: `POST ${ROUTE_VARIANTE}/modeles-externes`,
+    preuves: {
+      code: [p(`${M}echanges/modeles-externes.ts`, "lireModeleExterne"), p(`${API}lib/studio-modeles-externes.ts`, "deciderReception")],
+      tests: [p(`${M}echanges/modeles-externes.test.ts`, "passageModeleExterne"), p(`${API}lib/studio-modeles-externes.test.ts`, "deciderReception"), p(`${E2E}studio-echanges.mjs`, "check(\"Modèle externe : accepté par le propriétaire")],
+      routes: [p(`${API}routes/studio-modeles-externes.ts`, "/studies/:studyId/variants/:variantId/modeles-externes")],
+      interfaces: [p(`${WEB}echanges/PanneauModelesExternes.tsx`, "export function PanneauModelesExternes(")],
+    },
+    sources: [S_PLAN, S_LISTE("TR-EX-066")],
   },
   {
     id: "feuille-svg", format: "SVG", versionFormat: "studio-sheet/1 (SVG en millimètres)", sens: "export", famille: "feuille",
@@ -525,11 +569,6 @@ const REPORTS: readonly Report[] = [
     id: "gltf", format: "glTF", versionFormat: "non évaluée (2.0)", sens: ["export"], famille: "maquette", objet: "Maillage 3D et apparences d’affichage", taches: ["E.6-04", "E.6-05"],
     raison: `${RAISON_SANS_CONTRAT} Aucun écrivain glTF.`,
     sources: [S_PLAN, S_LISTE("E.6-04")],
-  },
-  {
-    id: "ifc-lecture", format: "IFC", versionFormat: "non évaluée (IFC2X3, IFC4, IFC4X3)", sens: ["import"], famille: "maquette", objet: "Maquette d’un autre logiciel", taches: ["E.6-04", "E.6-05"],
-    raison: `${RAISON_SANS_CONTRAT} La lecture IFC de l’Atelier (web-ifc) n’est pas un échange Studio.`,
-    sources: [S_PLAN, S_LISTE("E.6-04"), S_FRONTIERE],
   },
   {
     id: "ifc-autres-versions", format: "IFC", versionFormat: "IFC2X3, IFC4", sens: ["export"], famille: "maquette", objet: "Document d’une révision", taches: ["E.6-05"],

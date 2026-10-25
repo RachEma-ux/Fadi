@@ -11,6 +11,7 @@ import { SCHEMA_SOLIDE } from "../objets-3d/solides.js";
 import { SCHEMA_ARCHITECTURE } from "../architecture/schemas.js";
 import { SCHEMA_PROPRIETE } from "../exigences/schemas.js";
 import { SCHEMA_ELEMENT_VISUALISATION, STUDIO_LIMITES_SCENES } from "../scenes/scenes.js";
+import { SCHEMA_NON_NATIF } from "../non-natifs/non-natifs.js";
 import { id } from "./schemas-base.js";
 
 /** Schémas JSON du document entier et des listes, composés des schémas déclarés par chaque type d'objet (`objets/`). */
@@ -33,5 +34,6 @@ export const STUDIO_DOCUMENT_SCHEMA = {
     architecture: { type: "array", maxItems: STUDIO_LIMITS.objects, items: SCHEMA_ARCHITECTURE },
     proprietes: { type: "array", maxItems: STUDIO_LIMITS.objects, items: SCHEMA_PROPRIETE },
     scenes: { type: "array", maxItems: STUDIO_LIMITES_SCENES.scenes + STUDIO_LIMITES_SCENES.apparences, items: SCHEMA_ELEMENT_VISUALISATION },
+    nonNatifs: { type: "array", maxItems: STUDIO_LIMITS.objects, items: SCHEMA_NON_NATIF },
   },
 } as const;

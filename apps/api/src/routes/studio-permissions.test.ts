@@ -89,6 +89,11 @@ const publication = async () => ({ pub: await creer(`${V}/publications`, { title
 const observation = async () => ({ obs: await creer(`${V}/observations`, { body: "Observation d'essai", responsableId: "editeur", audience: "projet" }) });
 const feuille = async () => ({ f: await creer(`${V}/sheets`, { number: "A-01", title: "Plan", format: "A3", orientation: "paysage", scale: "ajuster" }) });
 const dossier = async () => { const { f } = await feuille(); return { f, d: await creer(`${S}/studies/s/dossiers`, { title: "Dossier", sheetIds: [f] }) }; };
+/** Modèle externe (lot F3, TR-EX-066) : fixture IFC écrite à la main, reçue par le propriétaire. */
+const IFC_RECETTE = readFileSync(new URL("../../../../packages/atelier-model/src/studio/import-ifc/fixtures/recette-ifc2x3.ifc", import.meta.url), "utf8");
+const receptionModele = { reference: "Architecte — bâtiment A", auteur: "Cabinet partenaire", discipline: "architecture", format: "ifc", version: "B", uniteDeclaree: "mm", transformation: null, nomFichier: "recette.ifc", contenu: IFC_RECETTE };
+const modeleExterne = async () => ({ mx: await creer(`${V}/modeles-externes`, receptionModele) });
+const MX = "/studies/:studyId/variants/:variantId/modeles-externes";
 
 /**
  * Règles d'acteur des observations (`lib/studio-observations.ts`), l'observation étant ouverte par le propriétaire
@@ -233,6 +238,15 @@ export const ROUTES: Route[] = [
   { route: "GET /studies/:studyId/dossiers/:dossierId", besoin: "lecture", preparer: dossier, url: (c) => `${S}/studies/s/dossiers/${c["d"]}` },
   { route: "PATCH /studies/:studyId/dossiers/:dossierId", besoin: "modification", preparer: dossier, url: (c) => `${S}/studies/s/dossiers/${c["d"]}`, body: { title: "Dossier 2" } },
   { route: "GET /studies/:studyId/dossiers/:dossierId/files/:format", besoin: "lecture", preparer: dossier, url: (c) => `${S}/studies/s/dossiers/${c["d"]}/files/json` },
+  // Modèles externes (lot F3, TR-EX-066) : recevoir et comparer (modification), accepter ou refuser (rôle habilité).
+  { route: `GET ${MX}`, besoin: "lecture", url: () => `${V}/modeles-externes` },
+  { route: `POST ${MX}`, besoin: "modification", url: () => `${V}/modeles-externes`, body: receptionModele, note: "fichier relu et comparé par le serveur ; la variante n'est pas modifiée" },
+  { route: `GET ${MX}/:modelId`, besoin: "lecture", preparer: modeleExterne, url: (c) => `${V}/modeles-externes/${c["mx"]}` },
+  { route: `GET ${MX}/:modelId/contenu`, besoin: "lecture", preparer: modeleExterne, url: (c) => `${V}/modeles-externes/${c["mx"]}/contenu`, note: "fichier reçu tel quel : droit export (lecteur compris, jamais l'accès support)" },
+  { route: `POST ${MX}/:modelId/:action`, besoin: "modification", preparer: modeleExterne, url: (c) => `${V}/modeles-externes/${c["mx"]}/comparer`, body: {}, note: "action comparer" },
+  ...(["accepter", "refuser"] as const).map((action): Route => ({
+    route: `POST ${MX}/:modelId/:action`, besoin: "proprietaire", preparer: modeleExterne, url: (c) => `${V}/modeles-externes/${c["mx"]}/${action}`, body: { motif: "Motif d'essai" }, note: `action ${action}`,
+  })),
 ];
 
 /**
@@ -261,6 +275,7 @@ const REPONSES: Readonly<Record<string, string>> = {
   "POST /studies/:studyId/variants/:variantId/observations/:observationId/taches": "201",
   "POST /studies/:studyId/variants/:variantId/observations/:observationId/decisions": "201",
   "POST /studies/:studyId/variants/:variantId/sheets": "201", "POST /studies/:studyId/dossiers": "201",
+  "POST /studies/:studyId/variants/:variantId/modeles-externes": "201",
 };
 const cleReponse = (r: Route) => `${r.route}${r.note?.startsWith("action ") ? ` ${r.note.slice(7)}` : ""}`;
 export const reponseProprietaire = (r: Route): string => REPONSES[cleReponse(r)] ?? "200";

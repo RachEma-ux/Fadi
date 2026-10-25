@@ -308,8 +308,10 @@ const AJOUTS = {
     "studio.propriete.definir", "studio.propriete.retirer",
     // Visualisation (lot E.5, extension additive consignée) : scènes et apparences d'affichage.
     "studio.scene.creer", "studio.scene.modifier", "studio.scene.rappeler", "studio.scene.supprimer", "studio.apparence.definir", "studio.apparence.retirer",
+    // Éléments non natifs (lot F3, extension additive consignée, champ facultatif `nonNatifs` du document).
+    "studio.nonnatif.conserver", "studio.nonnatif.retirer",
   ]),
-  types: new Set(["angular-dimension", "text", "wall", "opening", "scene", "appearance"]),
+  types: new Set(["angular-dimension", "text", "wall", "opening", "scene", "appearance", "non-native"]),
   exports: new Set([
     "dessinerCoteAngulaire", "formatStudioAngle", "measureStudioAngularDimension", "STUDIO_TEXT_JUSTIFICATIONS", "STUDIO_TEXT_MAX",
     "studioAngularFromSegments", "studioAngularValue", "studioStraightSegment", "studioTextBox", "studioTextRotationDegrees",
@@ -349,6 +351,11 @@ const AJOUTS = {
     "assemblerDossierConception", "pdfDossierConception",
     // Workflow de conception déclaré d'une étude (REF-01 §06, `workflow.ts`, extension additive).
     "STUDIO_PHASES_WORKFLOW", "estPhaseWorkflowStudio",
+    // Lot F3 : éléments non natifs, import IFC (lecteur STEP propre), comparaison des éléments hors `objects`, modèles externes.
+    "SCHEMA_NON_NATIF", "STUDIO_FORMATS_NON_NATIFS", "STUDIO_LIMITES_NON_NATIFS", "STUDIO_RAISONS_NON_NATIF", "validerNonNatif",
+    "STUDIO_IFC_SCHEMAS_LUS", "lireIfcStudio", "nomIfc", "validerTransformation", "comparerElementsStudio",
+    "STUDIO_ACTIONS_MODELE_EXTERNE", "STUDIO_FORMATS_MODELE_EXTERNE", "STUDIO_LIMITES_MODELE_EXTERNE", "STUDIO_STATUTS_MODELE_EXTERNE", "STUDIO_UNITES_DECLAREES",
+    "comparerModeleExterne", "lireModeleExterne", "passageModeleExterne", "validerMetaModeleExterne",
   ]),
 };
 function sansAjouts(value: unknown): unknown {
@@ -360,7 +367,7 @@ function sansAjouts(value: unknown): unknown {
   if (!value || typeof value !== "object") return value;
   const out = Object.fromEntries(Object.entries(value).map(([k, v]) => [k, sansAjouts(v)]));
   const props = out.properties as Record<string, unknown> | undefined;
-  if (props && "schemaVersion" in props) { delete props.annotations; delete props.architecture; delete props.proprietes; delete props.scenes; }
+  if (props && "schemaVersion" in props) { delete props.annotations; delete props.architecture; delete props.proprietes; delete props.scenes; delete props.nonNatifs; }
   return out;
 }
 

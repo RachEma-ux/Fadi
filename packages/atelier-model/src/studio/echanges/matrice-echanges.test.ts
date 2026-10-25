@@ -91,6 +91,8 @@ describe("Matrice d'échanges : donnée versionnée et cohérente", () => {
     /** Empreinte SHA-256 des entrées et de la couverture de chaque révision (ajouter la ligne de la nouvelle révision). */
     const EMPREINTES: Readonly<Record<number, string>> = {
       2: "2be9a875025eda0b2b9a28f5365c2c466d95f0943a2ce7d878499d380c568c92",
+      // Lot F3 (2026-10-25) : import IFC et modèle externe livrés, « ifc-lecture » retiré des reports, éléments non natifs à l'import DXF.
+      3: "8f2308d0949b5465baeb43d256547d3153874825149e6d9b3e82f0c2b704b7b8",
     };
     const empreinte = createHash("sha256").update(JSON.stringify({ entrees: STUDIO_MATRICE_ECHANGES.entrees, couverture: STUDIO_COUVERTURE_EXPORT, statuts: STUDIO_STATUT_DE_RAISON })).digest("hex");
     expect(empreinte, `révision ${STUDIO_MATRICE_ECHANGES.revision} : entrées modifiées sans nouvelle révision ? (empreinte calculée ${empreinte})`).toBe(EMPREINTES[STUDIO_MATRICE_ECHANGES.revision]);
@@ -182,6 +184,7 @@ const complet = (): StudioDocument => ({
     { id: "sc1", type: "scene", frame: "local-3d", name: "Vue", camera: { projection: "perspective", position: { x: 10, y: -12, z: 8 }, target: { x: 3, y: 1, z: 1.5 }, fov: 45 }, visibleLayers: ["default"], displayMode: "shaded" },
     { id: "ap1", type: "appearance", target: { kind: "object", id: "m1" }, color: "#c0392b" },
   ],
+  nonNatifs: [{ id: "nn1", type: "non-native", origine: { format: "ifc", entite: "IfcColumn" }, raison: "type-sans-equivalent" }],
 } as StudioDocument);
 
 describe("E.6-03 : sous-ensemble SVG / DXF / IFC = rapport de fidélité", () => {

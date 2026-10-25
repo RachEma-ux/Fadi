@@ -27,7 +27,7 @@ describe("Matrice d'échanges : boîte en lecture seule (E.6-01 à E.6-05)", () 
     expect(entreesFiltrees("livre").every((e) => e.statut === "livre")).toBe(true);
     expect(entreesFiltrees("non-livre").map((e) => e.id)).toContain("dwg-export");
     expect(entreesFiltrees("renonce")).toEqual([]);
-    expect(resumeMatrice()).toMatch(new RegExp(`^Révision ${STUDIO_MATRICE_ECHANGES.revision} du 2026-10-19 : \\d+ entrées — \\d+ livrées, \\d+ non livrées, 0 renoncées\\.$`));
+    expect(resumeMatrice()).toMatch(new RegExp(`^Révision ${STUDIO_MATRICE_ECHANGES.revision} du 2026-10-25 : \\d+ entrées — \\d+ livrées, \\d+ non livrées, 0 renoncées\\.$`));
   });
 
   it("a11y : chaque bloc de détails porte un nom distinct (format, sens, objet) ; intertitres h3 sous le h2 de la boîte", () => {
@@ -55,7 +55,7 @@ describe("Matrice d'échanges : boîte en lecture seule (E.6-01 à E.6-05)", () 
     const cles = new Set(Object.keys(dico));
     const manquants = textesAffiches().filter((s) => !cles.has(s) && t.traduire(s) === s);
     expect(manquants).toEqual([]);
-    expect(t.traduire(resumeMatrice())).toMatch(new RegExp(`^Revision ${STUDIO_MATRICE_ECHANGES.revision} of 2026-10-19`));
+    expect(t.traduire(resumeMatrice())).toMatch(new RegExp(`^Revision ${STUDIO_MATRICE_ECHANGES.revision} of 2026-10-25`));
     expect(t.traduire(nomDetails(STUDIO_MATRICE_ECHANGES.entrees.find((e) => e.id === "feuille-pdf")!))).toBe("Entities, check and sources of PDF (Export): Presentation sheet of a revision");
   });
 });

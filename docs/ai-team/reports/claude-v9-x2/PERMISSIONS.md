@@ -90,6 +90,13 @@ chargé de tâche — rôle vérifié ensuite par `lib/studio-observations.ts`, 
 | `GET /studies/:studyId/dossiers/:dossierId` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `PATCH /studies/:studyId/dossiers/:dossierId` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 200 |  |
 | `GET /studies/:studyId/dossiers/:dossierId/files/:format` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `GET /studies/:studyId/variants/:variantId/modeles-externes` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `POST /studies/:studyId/variants/:variantId/modeles-externes` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 201 | fichier relu et comparé par le serveur ; la variante n'est pas modifiée |
+| `GET /studies/:studyId/variants/:variantId/modeles-externes/:modelId` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `GET /studies/:studyId/variants/:variantId/modeles-externes/:modelId/contenu` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | fichier reçu tel quel : droit export (lecteur compris, jamais l'accès support) |
+| `POST /studies/:studyId/variants/:variantId/modeles-externes/:modelId/:action` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 200 | action comparer |
+| `POST /studies/:studyId/variants/:variantId/modeles-externes/:modelId/:action` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 200 | action accepter |
+| `POST /studies/:studyId/variants/:variantId/modeles-externes/:modelId/:action` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 200 | action refuser |
 
 « (à arbitrer) » : cellule exécutée et épinglée telle que le serveur répond aujourd'hui, sans changement de
 comportement ; la règle attend une décision du maître d'ouvrage.

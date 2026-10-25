@@ -1422,6 +1422,50 @@ export const studioDossiers = pgTable("studio_dossiers", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("studio_dossiers_study_idx").on(t.studyId, t.createdAt)]);
 
+/**
+ * Modèles externes (partenaires) d'une variante Studio (lot F3, TR-EX-066, lib/studio-modeles-externes.ts) : une ligne
+ * par réception (déclarations de l'émetteur, fichier reçu et son empreinte, rapport du lecteur, dernière comparaison,
+ * statut et décision) ; journal des passages en ajout seul (UPDATE refusée par déclencheur, init.sql).
+ */
+export const studioExternalModels = pgTable("studio_external_models", {
+  id: text("id").primaryKey(),
+  studyId: text("study_id").notNull().references(() => studioStudies.id, { onDelete: "cascade" }),
+  variantId: text("variant_id").notNull(),
+  reference: text("reference").notNull(),
+  authorName: text("author_name").notNull(),
+  discipline: text("discipline").notNull(),
+  format: text("format").$type<"ifc">().notNull(),
+  versionLabel: text("version_label").notNull(),
+  declaredUnit: text("declared_unit").$type<"m" | "cm" | "mm" | "ft" | "in">().notNull(),
+  transformation: jsonb("transformation").$type<{ dx: number; dy: number; dz: number; rotation: number } | null>(),
+  fileName: text("file_name").notNull(),
+  content: text("content").notNull(),
+  contentDigest: text("content_digest").notNull(),
+  report: jsonb("report").$type<Record<string, unknown>>().notNull(),
+  comparison: jsonb("comparison").$type<Record<string, unknown>>().notNull(),
+  comparedRevisionId: text("compared_revision_id").notNull(),
+  status: text("status").$type<"compare" | "accepte" | "refuse">().notNull(),
+  decidedBy: text("decided_by").references(() => users.id, { onDelete: "restrict" }),
+  decidedAt: timestamp("decided_at", { withTimezone: true }),
+  decisionMotif: text("decision_motif"),
+  createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
+  requestId: text("request_id"),
+  payloadHash: text("payload_hash"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("studio_external_models_variant_idx").on(t.variantId, t.createdAt)]);
+
+export const studioExternalModelEvents = pgTable("studio_external_model_events", {
+  id: text("id").primaryKey(),
+  modelId: text("model_id").notNull().references(() => studioExternalModels.id, { onDelete: "cascade" }),
+  seq: integer("seq").notNull(),
+  action: text("action").$type<"recevoir" | "comparer" | "accepter" | "refuser">().notNull(),
+  actorId: text("actor_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  revisionId: text("revision_id"),
+  motif: text("motif"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [uniqueIndex("studio_external_model_events_seq_unique").on(t.modelId, t.seq)]);
+
 // ---------------------------------------------------------------------------
 // Revue externe — phase 4 (concept partie 4). Miroir de init.sql : paquets de revue figés au partage, affectations
 // nominatives (relecture / approbation), constats rattachés, notes internes. Règles pures : `lib/review-rules.ts`.

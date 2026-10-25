@@ -17,7 +17,7 @@ export const LIBELLES_FAMILLE_ECHANGE: Readonly<Record<StudioFamilleEchange, str
   rendu: "Rendu", paquet: "Paquet", rapport: "Rapport", diagnostic: "Diagnostic", coordination: "Coordination",
 });
 export const LIBELLES_CATEGORIE: Readonly<Record<string, string>> = Object.freeze({
-  objets: "Formes", cotes: "Cotes", annotations: "Annotations", solides: "Solides", architecture: "Architecture", proprietes: "Propriétés", scenes: "Visualisation",
+  objets: "Formes", cotes: "Cotes", annotations: "Annotations", solides: "Solides", architecture: "Architecture", proprietes: "Propriétés", scenes: "Visualisation", nonNatifs: "Éléments non natifs",
 });
 
 export const TEXTES_ECHANGES = Object.freeze({
