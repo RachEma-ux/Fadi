@@ -1,6 +1,6 @@
 # GeoData — Reprise de session
 
-Mis à jour : 2026-10-25 (heure suisse).
+Mis à jour : 2026-10-25 (UTC).
 État relevé après la fusion de la PR #301.
 
 ## Point de reprise
