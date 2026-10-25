@@ -113,6 +113,8 @@ export interface EtatUi {
   triade: PreferencesTriade;
   /** Scènes (AX-3) : capturer le repère de travail avec la caméra (option explicite, décochée par défaut). */
   rappelerRepereScene: boolean;
+  /** Coordonnées des exports (chantier Axes, AX-5) : modèle (défaut), repère de travail ou d'origine. */
+  coordonneesExport: "modele" | "travail" | "source";
 }
 
 /** Disposition de l'Atelier (D-156) : grille à cinq repères (défaut) ou canevas plein écran à panneaux flottants. */
@@ -155,7 +157,7 @@ export function lireBarreReperes(v: unknown): EtatUi["barreReperes"] {
 
 const CLE_PREFS = "fadi.sandbox.prefs";
 
-const CLES_PERSISTEES = ["affichage", "accrochages", "favoris", "parametresOutil", "filtres", "ensembles", "stylesClasses", "disposition", "outilsReplies", "navigation", "raccourcis", "ombres", "barreActions", "barreActionsVisible", "barresOutils", "barreReperes", "triade", "rappelerRepereScene"] as const;
+const CLES_PERSISTEES = ["affichage", "accrochages", "favoris", "parametresOutil", "filtres", "ensembles", "stylesClasses", "disposition", "outilsReplies", "navigation", "raccourcis", "ombres", "barreActions", "barreActionsVisible", "barresOutils", "barreReperes", "triade", "rappelerRepereScene", "coordonneesExport"] as const;
 
 function lirePrefs(): Partial<Pick<EtatUi, (typeof CLES_PERSISTEES)[number]>> {
   try {
@@ -213,6 +215,7 @@ let etat: EtatUi = {
   barreReperes: lireBarreReperes(prefs.barreReperes),
   triade: lireTriade(prefs.triade),
   rappelerRepereScene: prefs.rappelerRepereScene === true,
+  coordonneesExport: prefs.coordonneesExport === "travail" || prefs.coordonneesExport === "source" ? prefs.coordonneesExport : "modele",
 };
 
 const ecouteurs = new Set<() => void>();

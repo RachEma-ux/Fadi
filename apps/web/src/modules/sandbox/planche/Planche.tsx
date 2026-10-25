@@ -132,7 +132,7 @@ import { contexteMemorise, memoriserContexte } from "./contexte-travail";
 import { BarreReperes, libellePlan } from "./BarreReperes";
 import { PanneauReperes } from "./PanneauReperes";
 import { PanneauOrigineComposant } from "./PanneauOrigineComposant";
-import { type OptionsOrigine, changerOrigineLot } from "@parcours/sandbox-planche-model";
+import { type OptionsOrigine, changerOrigineLot, detacherRepereLie, enregistrerRepereLie, mettreAJourDepuisSource, modeleAExporter } from "@parcours/sandbox-planche-model";
 import {
   captureDuContexte,
   contexteDeScene,
@@ -1735,14 +1735,28 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       setChargeId((n) => n + 1);
     };
     const exporter = (format: FormatEchange) => {
-      const modele = histRef.current.present.modele;
+      // Chantier Axes (AX-5, AX-D10) : coordonnées choisies explicitement ; un choix non pris en charge est refusé.
+      const choix = etatUi.get().coordonneesExport;
+      const c = modeleAExporter(histRef.current.present.modele, choix, format, histContexteRef.current.courant.repere);
+      if (!c.ok) {
+        setMessage(c.motif);
+        return;
+      }
+      const modele = c.modele;
+      const o = c.repere?.origine;
+      const coordonnees =
+        choix === "travail" && o
+          ? t("planche.export.coordonnees.travail", { origine: `(${o.x.toFixed(3)} ; ${o.y.toFixed(3)} ; ${o.z.toFixed(3)})` })
+          : choix === "source"
+            ? t("planche.export.coordonnees.source", { unite: c.unite })
+            : t("planche.export.coordonnees.modele");
       const nom = nomFichier();
-      const r = format === "ifc" ? exporterIfc(modele, nomAffiche(courante())) : format === "obj" ? exporterObj(modele, nom) : exporterStl(modele, nom);
+      const r = format === "ifc" ? exporterIfc(modele, nomAffiche(courante())) : format === "obj" ? exporterObj(modele, nom, choix === "modele" ? undefined : `unités : ${c.unite}, ${coordonnees}`) : exporterStl(modele, nom);
       telechargerFichier(new Blob([r.contenu], { type: "text/plain;charset=utf-8" }), `${nom}.${format}`);
       const omis = r.omis.aretesLibres + r.omis.annotations > 0 ? ` ${t("planche.export.omis", { aretes: String(r.omis.aretesLibres), annotations: String(r.omis.annotations) })}` : "";
       // Lot L19 (EX-SAVE-04) : une surface ouverte n'est jamais annoncée comme un solide étanche.
       const ouverts = r.nonEtanches > 0 ? ` ${t("planche.export.non-etanches", { nombre: String(r.nonEtanches) })}` : "";
-      setMessage(t("planche.export.maillage", { format: format.toUpperCase(), objets: String(r.objets), triangles: String(r.triangles) }) + omis + ouverts);
+      setMessage(t("planche.export.maillage", { format: format.toUpperCase(), objets: String(r.objets), triangles: String(r.triangles) }) + omis + ouverts + ` ${t("planche.export.coordonnees", { format: format.toUpperCase(), coordonnees })}`);
     };
     return {
       ouvrir: async (id) => {
@@ -1850,7 +1864,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           const donnees = format === "stl" ? new Uint8Array(await fichier.arrayBuffer()) : await fichier.text();
           const lu = lireMaillages(format, donnees);
           const echelle = lu.echelleFichier ?? ECHELLE_UNITE[unite];
-          const r = importerMaillages(histRef.current.present.modele, lu.maillages, echelle, fichier.name.replace(/\.[^.]+$/, ""));
+          const r = importerMaillages(histRef.current.present.modele, lu.maillages, echelle, fichier.name.replace(/\.[^.]+$/, ""), { format, fichier: fichier.name });
           poserHistorique(enregistrer(histRef.current, r.modele, t("planche.sb.import.operation", { format: format.toUpperCase() }), false));
           rafraichir();
           const u = echelle === 1 ? "m" : echelle === 0.01 ? "cm" : echelle === 0.001 ? "mm" : `×${echelle}`;
@@ -3048,6 +3062,24 @@ export function Planche({ readOnly = false }: PropsPlanche) {
                 onSupprimer={(id, detacher) => muterReperes(supprimerRepere(histRef.current.present.modele, id, detacher ? "detacher" : "refuser"), "planche.reperes.operation.supprimer")}
                 onAxes={(v) => majOptions({ axes: v })}
                 onTriade={(triade) => etatUi.set({ triade })}
+                faceLiable={dans === undefined ? (selectionRef.current.find((id) => hist.present.modele.racine.faces[id] !== undefined) ?? null) : null}
+                onEnregistrerLie={(nom) => {
+                  const face = selectionRef.current.find((id) => histRef.current.present.modele.racine.faces[id] !== undefined);
+                  const r = enregistrerRepereLie(histRef.current.present.modele, nom, face ?? "");
+                  const e = muterReperes(r, "planche.reperes.operation.lier");
+                  if (!e && r.ok) activerRepereEnregistre(r.id);
+                  return e;
+                }}
+                onMajSource={(id) => {
+                  const r = mettreAJourDepuisSource(histRef.current.present.modele, id);
+                  const e = muterReperes(r, "planche.reperes.operation.maj-source");
+                  const c = histContexteRef.current.courant;
+                  if (!e && r.ok && c.source.genre === "enregistre" && c.source.id === id) activerRepereEnregistre(id);
+                  return e;
+                }}
+                onDetacherLien={(id) => muterReperes(detacherRepereLie(histRef.current.present.modele, id), "planche.reperes.operation.detacher")}
+                coordonneesExport={ui.coordonneesExport}
+                onCoordonneesExport={(c) => etatUi.set({ coordonneesExport: c })}
               />
             )}
             {panneau === "adoucir" && <PanneauAdoucir selection={vue.selection ?? selectionRef.current} lecture={readOnly} onAppliquer={adoucirLisserSelection} />}

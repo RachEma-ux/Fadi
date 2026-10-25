@@ -12365,5 +12365,12 @@
 "Ce repère enregistré n'existe plus.": "This saved frame no longer exists.",
 "Ce repère est cité par une ou plusieurs scènes : choisissez de les détacher (elles gardent leur instantané) ou annulez.": "This frame is cited by one or more scenes: choose to detach them (they keep their snapshot) or cancel.",
 "Cet objet est imbriqué dans un composant partagé : « cette occurrence seulement » changerait toutes les copies du parent. Rendez d'abord le parent unique, ou choisissez « toutes les occurrences ».": "This object is nested in a shared component: “this instance only” would change every copy of the parent. Make the parent unique first, or choose “all instances”.",
-"Le chemin de l'objet sélectionné ne correspond plus au document.": "The path of the selected object no longer matches the document."
+"Le chemin de l'objet sélectionné ne correspond plus au document.": "The path of the selected object no longer matches the document.",
+"Le lien demande une face de la Planche (hors groupe ou composant).": "The link requires a face of the Planche (outside groups and components).",
+"La face source n'existe plus : le repère garde sa base ; aucune autre face n'est substituée. Détachez le lien ou supprimez le repère.": "The source face no longer exists: the frame keeps its basis; no other face is substituted. Detach the link or delete the frame.",
+"Ce repère n'est pas lié à une face.": "This frame is not linked to a face.",
+"Aucune correspondance d'import consignée dans cette Planche : les coordonnées d'origine ne sont pas connues.": "No import mapping recorded in this Planche: the original coordinates are not known.",
+"Plusieurs imports d'unités différentes : aucune coordonnée d'origine unique.": "Several imports with different units: no single original coordinate system.",
+"L'export IFC déclare ses unités (mètres) : un export en unité source y serait faux. Choisissez OBJ ou STL.": "The IFC export declares its units (metres): a source-unit export would be wrong there. Choose OBJ or STL.",
+"Repère de travail invalide.": "Invalid working frame."
 }

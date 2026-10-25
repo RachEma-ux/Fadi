@@ -10,16 +10,18 @@ Mis à jour : 2026-10-25 (UTC).
 
 ## Dernier état vérifié
 
-Phase A : PR #298 (AX-0, AX-1, AX-2), CI verte sur `d89a4b0`, corrections Codex poussées (`e32f6eb`). AX-3 et AX-4
-commités sur la branche après #298, non poussés.
+Phase A fusionnée (#298, `a37bc69`). Phases B et C : PR #303 (`8b079f8`, revue Codex corrigée). Phase D et recette :
+commitées sur la branche, recettes locales vertes, PR après la fusion de #303.
 
 ## Prochaine action
 
-Fusionner #298 CI verte ; pousser AX-3 et AX-4 (phases B et C) dans une nouvelle PR ; puis AX-5 (phase D).
+Fusionner #303 CI verte, ouvrir la PR de la phase D, la fusionner CI verte, clore l'Issue #296. Ensuite : acceptation
+par le maître d'ouvrage, aucun lot suivant sans sa décision.
 
 ## Tests et preuves
 
-`lots/ax-1.md` à `lots/ax-4.md` ; recettes `apps/web/e2e/sandbox-axes.mjs`, `sandbox-reperes.mjs`, `sandbox-origine.mjs`.
+`lots/ax-1.md` à `lots/ax-5.md` ; recettes `apps/web/e2e/sandbox-axes.mjs`, `sandbox-reperes.mjs`, `sandbox-origine.mjs`,
+`sandbox-reperes-lies.mjs` ; `RECETTE.md`.
 
 ## Risques et blocages
 

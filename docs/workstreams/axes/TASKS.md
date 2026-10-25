@@ -2,22 +2,21 @@
 
 ## À faire
 
-- AX-5 — repères liés, échanges, recette finale (phase D).
+- Acceptation du maître d'ouvrage (scénarios `RECETTE.md`) ; aucun lot suivant engagé.
 
 ## En cours
 
-- Phase A (AX-0, AX-1, AX-2) — PR #298 : revue Codex corrigée (`e32f6eb`), CI en cours.
-- AX-3 (phase B) et AX-4 (phase C) — commités sur la branche, recettes locales vertes ; PR après la fusion de #298
-  (`lots/ax-3.md`, `lots/ax-4.md`).
+- Phases B et C — PR #303 (revue Codex corrigée, `8b079f8`).
+- Phase D et clôture (AX-5) — PR suivante après la fusion de #303.
 
 ## Terminé
 
-- Analyse du concept et évaluation de son plan (`EVALUATION.md`), plan propre (`PLAN.md`), décisions AX-D1 à AX-D10.
-- AX-1 et AX-2 implémentés et recettés (`lots/ax-1.md`, `lots/ax-2.md`).
+- AX-0 à AX-5 implémentés et recettés (`lots/ax-1.md` à `lots/ax-5.md`) ; phase A fusionnée (#298).
+- Dossier de recette AX01 à AX20 (`RECETTE.md`).
 
 ## Bloqué
 
-Aucun blocage : la délégation AX-D1 couvre toutes les décisions du chantier.
+Aucun blocage : la délégation AX-D1 couvre le chantier jusqu'à sa clôture (AX-D11).
 
 ## Critères de sortie
 

@@ -840,6 +840,11 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/sandbox-origine node apps/web/e2e/sandbox-origine.mjs 2>&1 | tee -a e2e.log
+      - name: Recette Repères liés et coordonnées des exports du Sandbox — santé du lien (à jour, face changée, face supprimée), mise à jour explicite, détacher, export OBJ modèle et repère de travail (apps/web/e2e/sandbox-reperes-lies.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/sandbox-reperes-lies node apps/web/e2e/sandbox-reperes-lies.mjs 2>&1 | tee -a e2e.log
       - name: Recette du socle Temps réel — montée de protocole refusée, session idempotente, présence, vue et sélection projetées, révision annoncée, hôte sans droit, révocations immédiates, clôture et journal (apps/web/e2e/temps-reel-sessions.mjs)
         if: ${{ matrix.shard == 'p2' }}
         run: |

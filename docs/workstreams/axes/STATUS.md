@@ -4,8 +4,8 @@ Mis à jour : 2026-10-25 (UTC).
 
 ## État
 
-Chantier ouvert sous délégation totale (AX-D1). Phase A (AX-0 à AX-2) en PR #298, revue Codex corrigée ; AX-3 (phase B)
-prêt sur la branche, recettes locales vertes.
+Phases A (#298) fusionnée ; B et C en PR #303 ; D (AX-5) et recette finale prêtes. Clôture de la délégation consignée
+(AX-D11), effective à la fusion de la dernière PR.
 
 ## Faits vérifiés
 
@@ -15,7 +15,9 @@ prêt sur la branche, recettes locales vertes.
 - Le plan documentaire AXE-00 à AXE-11 (PR #295) concorde avec AX-D2 à AX-D10 ; correspondance dans `PLAN.md`.
 - PR #298 : 17 contrôles verts sur `d89a4b0` ; trois constats Codex (P2) corrigés dans `e32f6eb`, fils résolus.
 - AX-3 : `sandbox-reperes.mjs` OK en local ; modèle 859 tests, web du Sandbox 124 tests.
-- AX-4 : `origine-composant.test.ts` (9 tests) ; `sandbox-origine.mjs` OK ; les quatre recettes du Sandbox vertes ensemble.
+- AX-4 : `origine-composant.test.ts` (12 tests, dont 3 de la revue Codex de #303) ; `sandbox-origine.mjs` OK.
+- AX-5 : `axes-phase-d.test.ts` (5 tests) ; `sandbox-reperes-lies.mjs` OK ; `RECETTE.md` : 18 scénarios vérifiés (dont
+  2 avec partie déclarée), AX09 vérifié au modèle, AX15 sans objet.
 
 ## Points ouverts
 

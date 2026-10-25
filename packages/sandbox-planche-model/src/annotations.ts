@@ -103,6 +103,18 @@ export interface Scene {
   readonly repere?: CaptureRepere;
 }
 
+/**
+ * Correspondance source → modèle consignée à l'import (chantier Axes, AX-5 ; concept § 9) : format, nom du fichier,
+ * mètres par unité du fichier. Seule cette correspondance explicite permet un export « en coordonnées d'origine » ;
+ * aucune correspondance géographique n'est déduite.
+ */
+export interface CorrespondanceImport {
+  readonly id: Id;
+  readonly format: "obj" | "stl" | "ifc";
+  readonly fichier: string;
+  readonly metresParUnite: number;
+}
+
 /** Capture de repère d'une scène (chantier Axes, AX-3). */
 export interface CaptureRepere {
   readonly instantane: Repere;
@@ -183,6 +195,8 @@ export interface Annotations {
   readonly repere?: Repere;
   /** (Chantier Axes) Repères enregistrés, nommés et révisés ; absent = aucun. */
   readonly reperes?: Readonly<Record<Id, RepereEnregistre>>;
+  /** (Chantier Axes, AX-5) Correspondances consignées à l'import (unité source) ; absent = aucun import consigné. */
+  readonly correspondances?: Readonly<Record<Id, CorrespondanceImport>>;
   /** Scènes enregistrées (lot 5). */
   readonly scenes?: Readonly<Record<Id, Scene>>;
   /** Réglages de la Planche (lot 5) ; absent = `REGLAGES_DEFAUT`. */
@@ -212,6 +226,7 @@ export interface AnnotationsMutables {
   balises: Record<Id, Balise>;
   repere?: Repere;
   reperes: Record<Id, RepereEnregistre>;
+  correspondances: Record<Id, CorrespondanceImport>;
   scenes: Record<Id, Scene>;
   reglages?: ReglagesPlanche;
   extrusions: Record<Id, Extrusion>;

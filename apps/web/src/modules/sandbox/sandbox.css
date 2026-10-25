@@ -2962,3 +2962,6 @@
     width: auto;
   }
 }
+.sandbox-planche .planche-reperes-details.est-alerte {
+  color: #b54708;
+}

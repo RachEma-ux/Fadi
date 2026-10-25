@@ -5,7 +5,7 @@
  * et de la triade d'orientation. Les enregistrements sont des pas d'historique ; le contexte de travail ne l'est pas.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { type ContexteTravail, type EtatRepereActif, type Modele, normaliserTexte, referencesRepere, reperesEnregistres } from "@parcours/sandbox-planche-model";
+import { type ContexteTravail, type EtatRepereActif, type Modele, disponibiliteCoordonnees, normaliserTexte, referencesRepere, reperesEnregistres, santeRepere } from "@parcours/sandbox-planche-model";
 import { t } from "../messages";
 import { COINS_TRIADE, type CoinTriade, type PreferencesTriade } from "./triade";
 
@@ -27,6 +27,13 @@ export interface PropsPanneauReperes {
   onSupprimer: (id: string, detacher: boolean) => string | null;
   onAxes: (visible: boolean) => void;
   onTriade: (p: PreferencesTriade) => void;
+  /** AX-5 : face de la racine sélectionnée (lien possible), sinon `null`. */
+  faceLiable: string | null;
+  onEnregistrerLie: (nom: string) => string | null;
+  onMajSource: (id: string) => string | null;
+  onDetacherLien: (id: string) => string | null;
+  coordonneesExport: "modele" | "travail" | "source";
+  onCoordonneesExport: (c: "modele" | "travail" | "source") => void;
 }
 
 export function PanneauReperes(p: PropsPanneauReperes) {
@@ -77,6 +84,15 @@ export function PanneauReperes(p: PropsPanneauReperes) {
         <button type="submit" disabled={p.lecture} data-reperes-enregistrer>
           {p.etat === "modifie" ? t("planche.reperes.enregistrer.nouveau") : t("planche.reperes.cmd.enregistrer-repere")}
         </button>
+        <button
+          type="button"
+          disabled={p.lecture || !p.faceLiable}
+          title={p.faceLiable ? undefined : t("planche.reperes.lier.motif")}
+          onClick={() => faire(p.onEnregistrerLie(nom.trim() === "" ? nomParDefaut : nom), () => setNom(""))}
+          data-reperes-lier
+        >
+          {t("planche.reperes.lier")}
+        </button>
       </form>
       <p className="planche-reperes-portee">{t("planche.reperes.portee-planche")}</p>
       {liste.length > 0 && (
@@ -90,6 +106,7 @@ export function PanneauReperes(p: PropsPanneauReperes) {
         <ul className="planche-reperes-liste" data-reperes-enregistres>
           {visibles.map((r) => {
             const scenes = referencesRepere(p.modele, r.id).length;
+            const sante = santeRepere(p.modele, r);
             return (
               <li key={r.id} className={actifId === r.id ? "est-actif" : undefined} data-repere-enregistre={r.id}>
                 {edition?.id === r.id ? (
@@ -108,7 +125,19 @@ export function PanneauReperes(p: PropsPanneauReperes) {
                     <button type="button" className="planche-reperes-nom-bouton" aria-pressed={actifId === r.id} onClick={() => p.onActiver(r.id)} data-reperes-activer={r.id}>
                       {r.nom}
                     </button>
-                    <span className="planche-reperes-details">{t("planche.reperes.ligne.details", { revision: String(r.revision), scenes: String(scenes) })}</span>
+                    <span className={`planche-reperes-details${sante === "perime" || sante === "manquant" ? " est-alerte" : ""}`} data-reperes-sante={sante}>
+                      {sante === "instantane"
+                        ? t("planche.reperes.ligne.details", { revision: String(r.revision), scenes: String(scenes) })
+                        : t("planche.reperes.ligne.details.lie", { revision: String(r.revision), sante: t(`planche.reperes.sante.${sante}`), scenes: String(scenes) })}
+                    </span>
+                    {sante !== "instantane" && (
+                      <span className="planche-reperes-actions">
+                        {sante === "perime" && (
+                          <button type="button" disabled={p.lecture} onClick={() => faire(p.onMajSource(r.id))} data-reperes-maj-source={r.id}>{t("planche.reperes.maj-source")}</button>
+                        )}
+                        <button type="button" disabled={p.lecture} onClick={() => faire(p.onDetacherLien(r.id))} data-reperes-detacher-lien={r.id}>{t("planche.reperes.detacher-lien")}</button>
+                      </span>
+                    )}
                     <span className="planche-reperes-actions">
                       <button type="button" disabled={p.lecture} onClick={() => setEdition({ id: r.id, nom: r.nom })} data-reperes-renommer={r.id}>{t("planche.reperes.renommer")}</button>
                       <button type="button" disabled={p.lecture} onClick={() => faire(p.onDupliquer(r.id, t("planche.reperes.copie", { nom: r.nom })))} data-reperes-dupliquer={r.id}>{t("planche.reperes.dupliquer")}</button>
@@ -136,6 +165,19 @@ export function PanneauReperes(p: PropsPanneauReperes) {
         </ul>
       )}
       {erreur && <p className="planche-reperes-erreur" role="alert" data-reperes-panneau-erreur>{erreur}</p>}
+      <fieldset className="planche-reperes-affichage">
+        <legend>{t("planche.reperes.exports")}</legend>
+        {(["modele", "travail", "source"] as const).map((c) => {
+          const motif = disponibiliteCoordonnees(p.modele, c, "obj");
+          return (
+            <label key={c} title={motif ?? undefined}>
+              <input type="radio" name="reperes-exports" checked={p.coordonneesExport === c} disabled={motif !== null} onChange={() => p.onCoordonneesExport(c)} data-reperes-exports={c} />
+              {t(`planche.reperes.exports.${c}`)}
+              {motif && <span className="planche-reperes-details"> — {motif}</span>}
+            </label>
+          );
+        })}
+      </fieldset>
       <fieldset className="planche-reperes-affichage">
         <legend>{t("planche.reperes.affichage")}</legend>
         <label>
