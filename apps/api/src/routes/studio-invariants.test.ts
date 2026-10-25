@@ -39,6 +39,7 @@ import { importStudioArchive, StudioArchiveError } from "../lib/studio-archive.j
 import { buildStudioManifest, checkStudioArchive, emptyStudioTables, STUDIO_ARCHIVE_SCHEMA, STUDIO_ARCHIVE_SCHEMA_VERSION } from "../lib/studio-archive-manifest.js";
 import { controlerApprobation, controlerEnsembleExamine, empreinteManifeste, construireManifeste } from "../lib/studio-publication-statuts.js";
 import { catalogueAutorise, lireCorpsPreferences, lireLignePreferences, motifRefusEcriture } from "../lib/studio-preferences.js";
+import { studioDocumentHash } from "../lib/studio-publications.js";
 import { studioRouter } from "./studio.js";
 import { banc, initialiserProjet, instantane, SCHEMA, type Acteur } from "../testing/studio-base-simulee.js";
 
@@ -291,6 +292,26 @@ describe("INV-009 — un profil personnalisé ne change ni données, ni droits, 
     // Relu, un identifiant retiré du registre est signalé, jamais réinterprété comme un droit.
     expect(lireLignePreferences({ profile: "personnel", favorites: ["studio.retire"], personal: [] })).toMatchObject({ favoris: [], retires: ["studio.retire"] });
   });
+  it("TEST-018 INV-009 [−] profil importé contenant « Publier » : la barre peut le montrer, la création et les transitions de publication du lecteur sont refusées par le serveur (403), rien n'est écrit", async () => {
+    // Profil personnel du lecteur : toutes les mutations du registre en favoris (dont celles que la barre range sous « Publier »).
+    const mutations = STUDIO_TOOLS.filter((t) => t.nature === "mutation").map((t) => t.toolId);
+    expect((await request(app).put(`${S}/preferences/outils`).set("x-acteur", "lecteur").send({ profil: "personnel", favoris: mutations, personnel: mutations })).status).toBe(200);
+    // Un brouillon existant (créé par le propriétaire) : le lecteur tente de le soumettre, l'approuver, le diffuser.
+    const brouillon = await post("proprietaire", `${V}/publications`, { title: "Dossier du propriétaire", contenu: "dessin-2d" });
+    expect(brouillon.status).toBe(201);
+    const avant = instantane();
+    const nbPublications = banc.lignes.get(studioPublications)!.length;
+    const creation = await post("lecteur", `${V}/publications`, { title: "Publication du lecteur", contenu: "dessin-2d", requestId: "pub-lecteur" });
+    expect(creation.status).toBe(403);
+    expect(creation.body.id).toBeUndefined();
+    for (const action of ["soumettre", "approuver", "diffuser", "actualiser"]) {
+      const r = await post("lecteur", `${S}/studies/s/publications/${brouillon.body.id}/${action}`, action === "approuver" ? presente(brouillon.body) : {});
+      expect(r.status, action).toBe(403);
+    }
+    expect(instantane()).toBe(avant);
+    expect(banc.lignes.get(studioPublications)!).toHaveLength(nbPublications);
+    expect(pub(brouillon.body.id)).toMatchObject({ workStatus: "brouillon", diffusionStatus: "non-diffuse", approvedManifestHash: null });
+  });
 });
 
 describe("INV-010 — une requête IA ou extension passe par les mêmes validations centrales qu'une action humaine", () => {
@@ -427,6 +448,26 @@ describe("BLOC-02 — aucun accès inter-projets non autorisé", () => {
       expect(r.status, url).toBe(404);
     }
     expect(instantane()).toBe(avant);
+  });
+  it("TEST-035 BLOC-02 [−] publication de p référençant la variante ou la révision RÉELLES du projet q : refusée côté serveur, sans fuite (ni nom, ni empreinte, ni révision de q), rien n'est écrit", async () => {
+    const docQ = banc.lignes.get(studioRevisions)!.find((r) => r.id === "rq1")!.document;
+    const empreinteQ = studioDocumentHash(docQ as never);
+    const fuite = new RegExp(["Variante de q", "Étude de q", "Autre projet", "doc-q", "rq1", empreinteQ].map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"));
+    const avant = instantane();
+    // Variante coordonnée d'un autre projet (par son identifiant) ; révision d'un autre projet comme source principale.
+    for (const corps of [{ title: "Dossier coordonné", coordinatedVariantIds: ["vq"] }, { title: "Dossier coordonné", coordinatedVariantIds: ["vq"], requestId: "pub-q" }, { title: "Dossier révision q", revisionId: "rq1" }, { title: "Dossier révision q", contenu: "dessin-2d", revisionId: "rq1" }]) {
+      const r = await post("proprietaire", `${V}/publications`, corps);
+      expect([400, 404], JSON.stringify(corps)).toContain(r.status);
+      expect(r.body.id, JSON.stringify(corps)).toBeUndefined();
+      expect(r.body.manifest, JSON.stringify(corps)).toBeUndefined();
+      expect(JSON.stringify(r.body), JSON.stringify(corps)).not.toMatch(fuite);
+    }
+    // Par la variante de q directement sous /projects/p/… : 404 nu.
+    const direct = await post("proprietaire", `${S}/studies/s/variants/vq/publications`, { title: "Intrus" });
+    expect(direct.status).toBe(404);
+    expect(direct.body).toEqual({ error: "not_found" });
+    expect(instantane()).toBe(avant);
+    expect(banc.lignes.get(studioPublications) ?? []).toHaveLength(0);
   });
 });
 

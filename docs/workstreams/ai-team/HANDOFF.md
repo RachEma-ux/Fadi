@@ -1,8 +1,12 @@
 # Reprise — équipe Codex Fadi
 
+## Studio — rapprochement complet — 25 octobre 2026
+
+Registre Studio : **0 À définir / 92 À faire / 210 En cours / 11 Bloqué / 259 Vérifié / 58 Accepté** ; **P630=317/630**. Détail : `docs/workstreams/studio/STATUS.md`.
+
 ## Studio — 25 octobre 2026
 
-Registre Studio après les décisions déléguées ADR-STUDIO-PILOTE-01 et la recette du pilote : **16 À définir / 205 À faire / 291 En cours / 11 Bloqué / 74 Vérifié / 33 Accepté** ; **P630=107/630**. Le détail est dans `docs/workstreams/studio/STATUS.md`.
+Registre Studio après les décisions déléguées ADR-STUDIO-PILOTE-01 et la recette du pilote : compteurs de ce point d'étape (historique) : 16 à définir, 205 à faire, 291 en cours, 11 bloquées, 74 vérifiées, 33 acceptées ; P630 valait alors 107 sur 630. Le détail est dans `docs/workstreams/studio/STATUS.md`.
 
 ## Checkpoint courant — 21 octobre 2026
 

@@ -138,6 +138,64 @@ try {
     && (await palette.locator('[role="option"]').first().getAttribute("data-studio-palette-entree")) === "studio.dessin.ligne");
   check("palette : aucune entrée retirée par le profil", (await palette.locator('[data-studio-palette-entree="studio.objet.extruder"]').count()) === 1);
   await page.keyboard.press("Escape");
+
+  // TEST-016 : Studio ouvert avec un profil personnel de vingt outils (même profil que studio-mesures-chargement.mjs) —
+  // aucun moteur rare initialisé d'office (rendu 3D ; calcul seulement par le métré affiché), three.js ni vue 3D demandés ; ressources relevées sans
+  // seuil ni verdict (DEC-13).
+  const VINGT = [
+    "studio.dessin.selection", "studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle", "studio.dessin.arc", "studio.dessin.polyligne",
+    "studio.dessin.cote", "studio.dessin.cote-angulaire", "studio.dessin.texte", "studio.dessin.deplacer", "studio.dessin.copier", "studio.dessin.rotation",
+    "studio.dessin.symetrie", "studio.dessin.echelle", "studio.dessin.modifier", "studio.dessin.decaler", "studio.architecture.mur", "studio.architecture.ouverture",
+    "studio.dessin.supprimer", "studio.objet.calque",
+  ];
+  const vingt = await owner("PUT", prefsPath(), { profil: "personnel", favoris: [], personnel: VINGT });
+  check("TEST-016 : profil personnel de vingt outils enregistré", vingt.status === 200 && vingt.body.profil === "personnel" && vingt.body.personnel.length === 20, JSON.stringify(vingt.body));
+  const contexte20 = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  try {
+    const p20 = await contexte20.newPage();
+    p20.setDefaultTimeout(20000);
+    p20.on("pageerror", (e) => erreurs.push(e.message));
+    const login20 = await contexte20.request.post(`${BASE}/auth/login`, { data: ownerCredentials, headers: { origin: BASE } });
+    check("TEST-016 : connexion du propriétaire (contexte neuf)", login20.ok(), String(login20.status()));
+    await p20.goto(`${BASE}/studio/projets/${projectId}/etudes/${study.body.study.id}/variantes/${study.body.variant.id}`);
+    await p20.getByRole("toolbar", { name: "Outils de dessin" }).waitFor();
+    await p20.waitForFunction(() => !!globalThis.__fadiRessources);
+    const e20 = await p20.evaluate(() => Object.fromEntries(globalThis.__fadiRessources.etats().map((e) => [e.id, { ...e }])));
+    check("TEST-016 : rendu 3D non initialisé à l'ouverture, planche initialisée",
+      !!e20["rendu-3d"] && !e20["rendu-3d"].initialise && e20["planche-2d"]?.initialise === true,
+      JSON.stringify(Object.values(e20).map((e) => [e.id, e.phase, e.initialise])));
+    // Le groupe de Workers (« calcul ») n'est jamais démarré d'office : son premier usage justifié à l'ouverture est le
+    // métré du panneau « Quantités », affiché par défaut (ADR-STUDIO-PILOTE-01, P-10). S'il est initialisé, toutes les
+    // tâches qui l'ont sollicité sont des calculs de quantités.
+    const natures20 = await p20.evaluate(() => [...new Set((globalThis.__fadiTaches?.journal ?? []).map((e) => e.cle))]);
+    check("TEST-016 : groupe de Workers démarré seulement par son premier usage justifié (métré du panneau Quantités affiché), jamais d'office",
+      !!e20.calcul && (!e20.calcul.initialise || (natures20.length > 0 && natures20.every((n) => /quantites/.test(String(n))))),
+      JSON.stringify({ calcul: [e20.calcul?.phase, e20.calcul?.initialise], natures: natures20 }));
+    const carte = await p20.evaluate(async () => (await fetch("/chargement.json")).json());
+    const famille = (f) => new Set(Object.entries(carte.morceaux).filter(([, m]) => m.familles.includes(f)).map(([chemin]) => chemin));
+    const three = famille("three"), vue3d = famille("studio-3d");
+    const scripts = await p20.evaluate(() => performance.getEntriesByType("resource").map((e) => new URL(e.name).pathname).filter((c) => c.endsWith(".js")));
+    check("TEST-016 : three.js et vue 3D repérés dans la carte du build, aucun de leurs morceaux demandé",
+      three.size > 0 && vue3d.size > 0 && !scripts.some((c) => three.has(c) || vue3d.has(c)),
+      JSON.stringify({ three: [...three], vue3d: [...vue3d], demandes: scripts.filter((c) => three.has(c) || vue3d.has(c)) }));
+    const ressources = await p20.evaluate(() => {
+      const entrees = performance.getEntriesByType("resource");
+      const nav = performance.getEntriesByType("navigation")[0];
+      const memoire = performance.memory;
+      return {
+        requetes: entrees.length,
+        octetsTransferes: entrees.reduce((s, e) => s + (e.transferSize ?? 0), 0) + (nav?.transferSize ?? 0),
+        octetsDecodes: entrees.reduce((s, e) => s + (e.decodedBodySize ?? 0), 0) + (nav?.decodedBodySize ?? 0),
+        tasJs: memoire ? memoire.usedJSHeapSize : null,
+      };
+    });
+    console.log(`  TEST-016 relevé (sans seuil, DEC-13) : ${JSON.stringify(ressources)}`);
+    check("TEST-016 : ressources relevées (requêtes, octets transférés et décodés, tas JavaScript si exposé) — nombres finis, sans seuil",
+      [ressources.requetes, ressources.octetsTransferes, ressources.octetsDecodes].every((n) => Number.isFinite(n) && n >= 0) && ressources.requetes > 0
+      && (ressources.tasJs === null || (Number.isFinite(ressources.tasJs) && ressources.tasJs > 0)), JSON.stringify(ressources));
+  } finally {
+    await contexte20.close();
+  }
   check("aucune erreur JavaScript non interceptée", erreurs.length === 0, erreurs.join(" | "));
 } finally {
   await browser.close();

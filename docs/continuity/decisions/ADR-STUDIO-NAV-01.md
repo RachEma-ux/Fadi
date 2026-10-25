@@ -171,7 +171,7 @@ Cette ADR rassemble en un seul document de décision des éléments aujourd'hui 
 - Elle n'en dispense pas : il faut encore G1, G2 et G3, la stabilisation du contrat de contexte M17 et une autorisation de code distincte.
 - Aucun nouveau numéro de DEC n'est créé.
 - Les identifiants R-A … E-D sont locaux à cette ADR.
-- Les chemins de routes restent des propositions jusqu'à ROUTE-09.
+- Les chemins de routes sont finals depuis l'arbitrage ROUTE-09 du 25 octobre 2026 ([ADR-STUDIO-PILOTE-01](ADR-STUDIO-PILOTE-01.md), P-09 ; [dossier du pilote](../../workstreams/studio/DOSSIER-PILOTE.md)).
 
 ## Vérifications / références
 
