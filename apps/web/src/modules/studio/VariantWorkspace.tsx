@@ -626,6 +626,14 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   function undo() { if (brouillon && peutAnnuler(brouillon) && writable) { cancelTrace(); setBrouillon(annulerBrouillon(brouillon)); setError(""); } }
   function redo() { if (brouillon && peutRetablir(brouillon) && writable) { cancelTrace(); setBrouillon(retablirBrouillon(brouillon)); setError(""); } }
   function fullscreen() { if (!document.fullscreenElement) void shell.current?.requestFullscreen().catch(() => setError("Plein écran indisponible. La planche reste accessible.")); else void document.exitFullscreen(); }
+  // Plein écran (ADR-STUDIO-NAV-01, E-C ; I.5-03) : tant que l'espace est en plein écran, une sortie reste visible dans
+  // la barre de l'espace (la commande « Plein écran / Quitter » peut être rangée dans un menu replié de la barre d'outils).
+  const [pleinEcran, setPleinEcran] = useState(false);
+  useEffect(() => {
+    const suivre = () => setPleinEcran(!!shell.current && document.fullscreenElement === shell.current);
+    document.addEventListener("fullscreenchange", suivre);
+    return () => document.removeEventListener("fullscreenchange", suivre);
+  }, []);
   // Console : « Enregistrer » crée, dans un projet choisi, une étude avec ce qui a été dessiné (boîte `console/`).
   const canSave = autonome ? commands.length > 0 : !historical && !!context?.canWrite && !pending && (uncertain || (commands.length > 0 && !blocked));
   const liens: Partial<Record<IdCommandeEditeur, string>> = autonome ? {} : {
@@ -868,6 +876,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
         {context && drawing && <ActionsEspace disponible={commandAvailable} raison={(id) => raisonCible({ type: "commande", id })} libelle={libelleSave} surCommande={(id) => executer({ type: "commande", id }, true)} />}
         {context && drawing && !autonome && <BandeauSession emplacement="barre" tr={tr} revisionAffichee={context.revision.id} teteVariante={context.variant.headRevisionId} nomVariante={context.variant.name} affichageLocal={affichage}
           surAfficherRevision={(r) => void afficherRevisionSession(r)} vueCourante={vueCourante} selectionIds={selectionIds} surVoirPointDeVue={voirPointDeVue} />}
+        {pleinEcran && <button type="button" className="studio-bouton-commentaires" aria-label="Quitter le plein écran" title="Quitter le plein écran" aria-keyshortcuts="Control+Shift+F Escape"
+          onClick={() => void document.exitFullscreen()} data-studio-quitter-plein-ecran><Icon name="studio-fullscreen" size={18} /></button>}
         {context && drawing && !autonome && <button type="button" className="studio-bouton-commentaires" aria-pressed={commentaires} aria-label="Commentaires" title="Commentaires" onClick={basculerCommentaires} data-studio-basculer-commentaires><Icon name="studio-comments" size={18} /></button>}
       </div>
       <AlerteStudio error={error} blocked={blocked && !enr.horsLigne.conflit} surRecharger={() => void enr.rechargerServeur()} />
