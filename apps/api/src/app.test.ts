@@ -2774,9 +2774,11 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
       expect((await partager(owner.a, pid, reader.email, "lecteur")).status).toBeLessThan(300);
       expect((await partager(owner.a, other, reader.email, "lecteur")).status).toBeLessThan(300);
       // Invitation d'une adresse sans compte (rattachée par metadata.projectId), puis annulée.
-      const invited = await owner.a.post(`/projects/${pid}/members`).send({ email: `journal-invite-${n}@example.com`, role: "lecteur" });
+      const invitedEmail = `journal-invite-${n}@example.com`;
+      const invited = await owner.a.post(`/projects/${pid}/members`).send({ email: invitedEmail, role: "lecteur" });
       expect(invited.status).toBeLessThan(300);
-      const invitationId = (await pool.query("SELECT id FROM auth.invitations WHERE project_id = $1", [pid])).rows[0]?.id as string;
+      // Phase 3 : les partages ci-dessus sont eux aussi des invitations (acceptées) — viser celle de cette adresse, en attente.
+      const invitationId = (await pool.query("SELECT id FROM auth.invitations WHERE project_id = $1 AND email = $2 AND status = 'pending'", [pid, invitedEmail])).rows[0]?.id as string;
       expect(invitationId).toBeTruthy();
       expect((await owner.a.delete(`/projects/${pid}/members/invitations/${invitationId}`)).status).toBeLessThan(300);
 
