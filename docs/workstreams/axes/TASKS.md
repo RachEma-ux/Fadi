@@ -2,14 +2,14 @@
 
 ## À faire
 
-- AX-2 — interface « Axes et repères » (phase A).
 - AX-3 — repères enregistrés, scènes, triade (phase B).
 - AX-4 — origine de composant (phase C).
 - AX-5 — repères liés, échanges, recette finale (phase D).
 
 ## En cours
 
-- AX-0 + AX-1 — cadrage et modèle pur (phase A), Issue #296.
+- AX-0 + AX-1 — PR #298 (CI : relance d'un job d'API sans lien avec la PR).
+- AX-2 — interface « Axes et repères » : prêt sur la branche, poussé après la fusion de #298 (`lots/ax-2.md`).
 
 ## Terminé
 

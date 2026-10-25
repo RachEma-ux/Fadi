@@ -10,15 +10,16 @@ Mis à jour : 2026-10-25 (UTC).
 
 ## Dernier état vérifié
 
-Cadrage écrit (décisions, évaluation, plan) ; AX-1 en cours.
+AX-0 + AX-1 : PR #298 ouverte (CI verte sauf un job d'API relancé : délais de `TRUNCATE` sans lien). AX-2 : commité
+sur la branche, recette locale verte, à pousser après la fusion de #298.
 
 ## Prochaine action
 
-Terminer AX-1 (modèle pur), ouvrir la PR, fusionner CI verte, puis AX-2.
+Fusionner #298 CI verte, pousser AX-2 (nouvelle PR), puis AX-3 (repères enregistrés, triade, scènes).
 
 ## Tests et preuves
 
-À relever à la fin d'AX-1 (`lots/ax-1.md`).
+`lots/ax-1.md`, `lots/ax-2.md` ; recette `apps/web/e2e/sandbox-axes.mjs`.
 
 ## Risques et blocages
 

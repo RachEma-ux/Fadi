@@ -59,3 +59,20 @@ Repères liés à une face (santé sain / périmé / manquant, « Mettre à jour
 exports OBJ / STL / IFC en coordonnées du modèle ou du repère de travail, coordonnées d'origine si l'import les a
 consignées (AX-D10), test d'indépendance du dessin 2D du Studio (AX19). Recette finale `RECETTE.md` (AX01–AX20, chacun
 avec sa preuve ou son motif « sans objet »).
+
+## Correspondance avec le plan AXE-00 à AXE-11 (PR #295, Issue #294)
+
+Une autre session a publié, le 25 octobre 2026, un plan d'implémentation documentaire
+(`docs/workstreams/studio/Fadi-Concept-Axes Pan.md`, lots AXE-00 à AXE-11) sans lancer l'implémentation. Ses règles
+non négociables (§ 3) et ses recommandations (§ 10) concordent avec AX-D2 à AX-D10 : Sandbox comme premier hôte, ancien
+`repere` simple entrée de migration, instantané avant le lien, historiques séparés. Le présent chantier en est
+l'exécution ; correspondance :
+
+| Lot du chantier | Lots AXE | Remarque |
+| --- | --- | --- |
+| AX-0 | AXE-00 | Base, écarts et décisions : `EVALUATION.md`, AX-D1 à AX-D10. |
+| AX-1 | AXE-01, AXE-02, AXE-03 (modèle) | Repère et plans validés, contexte hors historique, saisie numérique et plans. |
+| AX-2 | AXE-03 (interface), AXE-04 | Barre compacte, inspecteur, parcours de la phase A. |
+| AX-3 | AXE-05, AXE-06 | Repères enregistrés, triade, rappel par scène. |
+| AX-4 | AXE-07, AXE-08 | Origine d'un composant, puis lots de composants. |
+| AX-5 | AXE-09, AXE-10, AXE-11 | Repères liés, échanges, recette ; le déploiement reste hors délégation. |
