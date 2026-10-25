@@ -12,7 +12,7 @@
  *   POST /sessions/:sessionId/clore          clore (hôte, propriétaire, responsables)
  *
  * Chaque route exige le droit `comment` sur le projet (propriétaire, éditeurs, lecteurs ; jamais l'accès support) et
- * répond 404 tant que le drapeau `FADI_TEMPS_REEL` n'est pas posé. L'hôte n'obtient aucun droit sur le projet (RT-R2).
+ * répond 404 tant que le drapeau `FADI_TEMPS_REEL` n'est pas posé (sauf la liste des sessions : 200 `{ actif: false }`). L'hôte n'obtient aucun droit sur le projet (RT-R2).
  */
 import { Router, type Request, type Response } from "express";
 import { z } from "zod";
@@ -28,11 +28,14 @@ import {
 
 export const tempsReelRouter = Router({ mergeParams: true });
 
-tempsReelRouter.use((_req, res, next) => {
-  if (!tempsReelActif()) { res.status(404).json({ error: "temps_reel_desactive" }); return; }
-  next();
-});
 tempsReelRouter.use(requireAuth);
+tempsReelRouter.use((req, res, next) => {
+  if (tempsReelActif()) { next(); return; }
+  // Drapeau absent : la liste des sessions, que l'espace de travail Studio lit à l'ouverture, répond « inactif » (200, sans
+  // aucune donnée, identique pour tout projet) plutôt qu'une 404 que le navigateur consigne comme erreur ; tout le reste 404.
+  if (req.method === "GET" && req.path === "/sessions") { res.json({ actif: false, sessions: [] }); return; }
+  res.status(404).json({ error: "temps_reel_desactive" });
+});
 
 const identifiant = z.string().min(1).max(200).regex(/^[A-Za-z0-9_.:-]+$/);
 const ouverture = z.object({ studyId: identifiant, variantId: identifiant, revisionId: identifiant.optional(), titre: z.string().max(120).optional(), requestId: identifiant }).strict();

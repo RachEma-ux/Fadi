@@ -23,7 +23,8 @@ export const apiTempsReel = {
   /** Sessions ouvertes de la variante ; `null` si le temps réel n'est pas activé. */
   async sessions(projectId: string, variantId: string): Promise<SessionListee[] | null> {
     try {
-      return (await request<{ sessions: SessionListee[] }>(`${racine(projectId)}?variantId=${encodeURIComponent(variantId)}`)).sessions;
+      const r = await request<{ sessions: SessionListee[]; actif?: false }>(`${racine(projectId)}?variantId=${encodeURIComponent(variantId)}`);
+      return r.actif === false ? null : r.sessions;
     } catch (e) {
       if (desactive(e)) return null;
       throw e;
