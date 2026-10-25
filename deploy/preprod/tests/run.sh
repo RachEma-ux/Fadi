@@ -90,8 +90,8 @@ MUT=(
   "réseau de production externe|    name: fadi-preprod-front|    name: app_default${NL}    external: true"
   "image non autorisée|image: postgis/postgis:16-3.4${NL}    restart|image: postgres:16${NL}    restart"
   "SMTP_PASS donné à la recette (UM-28)|      ARCHIVE_SIGNING_KEY: \${PREPROD_ARCHIVE_SIGNING_KEY}${NL}|      ARCHIVE_SIGNING_KEY: \${PREPROD_ARCHIVE_SIGNING_KEY}${NL}      SMTP_PASS: \${PREPROD_SMTP_PASS:-}${NL}"
-  "contexte de build étranger (image)|        app: service:app|        app: docker-image://node:22"
-  "contexte de build de l'hôte|        app: service:app|        app: service:app${NL}        hote: /etc"
+  "recette sur une image de base étrangère|APP_IMAGE: fadi-preprod-app:|APP_IMAGE: node:22-"
+  "contexte de build supplémentaire|        APP_IMAGE: fadi-preprod-app:|        APP_IMAGE: fadi-preprod-app:\${FADI_COMMIT}${NL}      additional_contexts:${NL}        hote: /etc${NL}#"
   "volume de production externe|  fadi-preprod-db:${NL}    name: fadi-preprod-db|  fadi-preprod-db:${NL}    name: app_fadi-db${NL}    external: true"
 )
 # D-7 : refus attendus de la garde elle-même (motif exact), pas d'une configuration invalide.
@@ -106,8 +106,8 @@ declare -A MOTIF=(
   ["migrate sur le réseau front"]="attendu internal seul"
   ["migrate sans MIGRATE_ONLY"]="MIGRATE_ONLY=1 exigé"
   ["SMTP_PASS donné à la recette (UM-28)"]="SMTP_PASS réservé au service app"
-  ["contexte de build étranger (image)"]="additional_contexts"
-  ["contexte de build de l'hôte"]="additional_contexts"
+  ["recette sur une image de base étrangère"]="APP_IMAGE"
+  ["contexte de build supplémentaire"]="additional_contexts interdit"
 )
 for m in "${MUT[@]}"; do
   # Découpage sans `read` : les motifs contiennent des sauts de ligne (${NL}), que `read` tronquerait.
@@ -122,14 +122,18 @@ B=$(dispo codes)
 attendu 0  "build réussi" -- fp build
 SHA_CODES=$(git -C "$B/src" rev-parse HEAD); : > "$T/trace-build"
 attendu 0  "build avec version de l'image" -- fpe MOCK_TRACE="$T/trace-build" build
-grep ' build app recette$' "$T/trace-build" | grep -Eq "FADI_BUILD_COMMIT=$SHA_CODES FADI_BUILD_DATE=[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z " \
+grep ' build app$' "$T/trace-build" | grep -Eq "FADI_BUILD_COMMIT=$SHA_CODES FADI_BUILD_DATE=[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z " \
   && { ok=$((ok + 1)); echo "✓ build : commit complet et date UTC fournis à l'image (GET /version)"; } \
   || { ko=$((ko + 1)); echo "✗ arguments de version absents : $(grep ' build ' "$T/trace-build")"; }
+# La recette reprend les builds de l'image applicative : construite après elle, jamais en parallèle.
+grep -n ' build ' "$T/trace-build" | sed -E 's/^([0-9]+):.* build (.*)$/\1 \2/' | tr '\n' ';' | grep -Eq '^[0-9]+ app;[0-9]+ recette;$' \
+  && { ok=$((ok + 1)); echo "✓ build : app d'abord, puis la recette (builds copiés de l'image applicative)"; } \
+  || { ko=$((ko + 1)); echo "✗ ordre des constructions : $(grep ' build ' "$T/trace-build")"; }
 FADI_SRC=$B/src FADI_COMMIT=0123456789ab PREPROD_POSTGRES_PASSWORD=x PREPROD_ARCHIVE_SIGNING_KEY=x PREPROD_FADI_APP_DB_PASSWORD=x \
   docker compose -f "$B/src/deploy/preprod/compose.yml" --profile recette config --format json 2>/dev/null \
-  | python3 -I -c 'import json, sys; a = json.load(sys.stdin)["services"]["recette"]["build"]["additional_contexts"]; sys.exit(0 if a == {"app": "service:app"} else 1)' \
-  && { ok=$((ok + 1)); echo "✓ compose : la recette reprend les builds de l'image applicative du même commit (service:app)"; } \
-  || { ko=$((ko + 1)); echo "✗ compose : contexte app de la recette absent ou faux"; }
+  | python3 -I -c 'import json, sys; b = json.load(sys.stdin)["services"]["recette"]["build"]; sys.exit(0 if b["args"] == {"APP_IMAGE": "fadi-preprod-app:0123456789ab"} and not b.get("additional_contexts") else 1)' \
+  && { ok=$((ok + 1)); echo "✓ compose : la recette part de l'image applicative du même commit (APP_IMAGE), sans additional_contexts"; } \
+  || { ko=$((ko + 1)); echo "✗ compose : APP_IMAGE de la recette absent ou faux"; }
 FADI_SRC=$B/src FADI_COMMIT=x FADI_BUILD_COMMIT=$SHA_CODES FADI_BUILD_DATE=2026-10-20T00:00:00Z PREPROD_POSTGRES_PASSWORD=x PREPROD_ARCHIVE_SIGNING_KEY=x PREPROD_FADI_APP_DB_PASSWORD=x \
   docker compose -f "$B/src/deploy/preprod/compose.yml" config --format json 2>/dev/null \
   | python3 -I -c 'import json, sys; a = json.load(sys.stdin)["services"]["app"]["build"]["args"]; sys.exit(0 if a == {"FADI_COMMIT": sys.argv[1], "FADI_BUILD_DATE": "2026-10-20T00:00:00Z"} else 1)' "$SHA_CODES" \
