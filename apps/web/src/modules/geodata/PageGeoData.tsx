@@ -13,13 +13,14 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { COMPOSITION_INITIALE, couleurCategorie, formatNombre, legende, lireValeur, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
-import { api, ErreurGeoData, type ValeurRasterRecue, type CarteRecue, type RangementRecu, type CoucheRecue, type EspaceRecu, type FicheRecue, type ResultatRecherche, type ZoneRecue } from "./client";
+import { api, ErreurGeoData, type ValeurRasterRecue, type CarteRecue, type RangementRecu, type Fond, type CoucheRecue, type EspaceRecu, type FicheRecue, type ResultatRecherche, type ZoneRecue } from "./client";
 import { ajouterCouche, basculerVisibilite, definirFiltre, definirOpacite, definirStyle, deplacerCouche, etatDepuis, LIBELLES_ENREGISTREMENT, entreesCategories, entreesRaster, retirerCouche, type Categorie, type EtatEnregistrement } from "./composition-ops";
 import { webglDisponible, type MoteurCarte, type OutilCarte } from "./carte/moteur";
 import { FicheObjet, FicheValeur, PanneauCatalogue, PanneauCouches, PanneauLegende, TableAttributs } from "./panneaux/consultation";
 import { Etudes, Export, Import, MesCartes, type TraceEnCours } from "./panneaux/travail";
 import { BarreOutilsCarte } from "./panneaux/BarreOutilsCarte";
 import { GestionDonnees, rangementDepuis } from "./panneaux/donnees";
+import { lireFondsNavigateur } from "./fonds-navigateur";
 import { composerPng, telecharger } from "./export-png";
 import "./geodata.css";
 
@@ -86,6 +87,17 @@ export function PageGeoData() {
   const [annonce, setAnnonce] = useState("");
   const [menuOuvert, setMenuOuvert] = useState(false);
   const [rangement, setRangement] = useState<RangementRecu | null>(null);
+  // Fonds des fournisseurs réglés dans Paramètres (D-GD-15), relus au retour sur la page ou après un réglage d'un autre onglet.
+  const [fondsNav, setFondsNav] = useState(lireFondsNavigateur);
+  const [avisFond, setAvisFond] = useState<string | null>(null);
+  useEffect(() => {
+    const relire = () => setFondsNav(lireFondsNavigateur());
+    window.addEventListener("storage", relire);
+    window.addEventListener("focus", relire);
+    return () => { window.removeEventListener("storage", relire); window.removeEventListener("focus", relire); };
+  }, []);
+  /** Composition d'une nouvelle carte : fond du fournisseur par défaut quand il est utilisable, sinon fond neutre. */
+  const compositionNeuve = (camera = COMPOSITION_INITIALE.camera): Composition => ({ ...COMPOSITION_INITIALE, camera, fond: lireFondsNavigateur().defaut ?? COMPOSITION_INITIALE.fond });
   const [erreurRangement, setErreurRangement] = useState<string | null>(null);
   const [pleinEcran, setPleinEcran] = useState(false);
 
@@ -122,6 +134,7 @@ export function PageGeoData() {
     chargerZones();
     const derniere = lireLocal(CLE_DERNIERE_CARTE);
     if (derniere) void ouvrirCarte(derniere, true);
+    else setComposition((c) => (c === COMPOSITION_INITIALE ? compositionNeuve() : c));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -160,7 +173,10 @@ export function PageGeoData() {
     for (const k of composition.couches) if (!couchesConnues.has(k.coucheId) && carte?.disponibilite[k.coucheId]?.etat === "disponible") api.couche(k.coucheId).then((c) => connaitre([c])).catch(() => undefined);
   }, [composition, couchesConnues, carte, connaitre]);
 
-  const fond = useMemo(() => espace?.fonds.find((f) => f.id === composition.fond) ?? espace?.fonds[0] ?? { id: "neutre", libelle: "Fond neutre", type: "neutre" as const, tuiles: null, attribution: "", export: true, zoomMax: null }, [espace, composition.fond]);
+  const fondsDisponibles = useMemo<Fond[]>(() => [...(espace?.fonds ?? []), ...fondsNav.fonds.map((f) => ({ ...f, tuiles: [...f.tuiles] }))], [espace, fondsNav]);
+  const fondTrouve = fondsDisponibles.find((f) => f.id === composition.fond);
+  const fond = useMemo(() => fondTrouve ?? espace?.fonds[0] ?? { id: "neutre", libelle: "Fond neutre", type: "neutre" as const, tuiles: null, attribution: "", export: true, zoomMax: null }, [fondTrouve, espace]);
+  useEffect(() => setAvisFond(null), [fond.id]);
   const disponibilite = carte?.disponibilite ?? {};
   const compositionAffichee = useMemo(() => ({ ...composition, couches: composition.couches.filter((k) => !disponibilite[k.coucheId] || disponibilite[k.coucheId]!.etat === "disponible") }), [composition, disponibilite]);
   const attributions = useMemo(() => [...new Set(compositionAffichee.couches.filter((k) => k.visible).map((k) => couchesConnues.get(k.coucheId)?.version.attribution).filter((x): x is string => !!x))], [compositionAffichee, couchesConnues]);
@@ -190,6 +206,7 @@ export function PageGeoData() {
           surTrace: (o, s) => setTrace({ outil: o, sommets: [...s] }),
           surTraceTermine: (o, s) => { setTrace({ outil: o, sommets: [...s] }); if (o === "zone" || o === "annotation") setTracePret({ outil: o, sommets: [...s] }); },
           surErreur: (m) => setErreurCarte(m),
+          surErreurFond: (m) => setAvisFond(m),
         });
         setChargementMoteur(false);
       } catch (e) {
@@ -343,9 +360,12 @@ export function PageGeoData() {
         </form>
         <label className="gd-champ gd-fond">Fond
           <select value={composition.fond} onChange={(e) => setComposition((c) => ({ ...c, fond: e.target.value }))} data-gd-fond>
-            {(espace?.fonds ?? [fond]).map((f) => <option key={f.id} value={f.id}>{f.libelle}</option>)}
+            {(espace ? fondsDisponibles : [fond]).map((f) => <option key={f.id} value={f.id}>{f.libelle}</option>)}
+            {!fondTrouve && composition.fond !== fond.id && <option value={composition.fond} disabled>Fond enregistré indisponible dans ce navigateur</option>}
+            {fondsNav.sansCle.map((f) => <option key={f.fournisseurId} value="" disabled>{`${f.nom} — clé absente (Paramètres)`}</option>)}
           </select>
         </label>
+        <a className="gd-lien-fonds" href="/parametres#settings-fournisseurs" title="Saisir ou modifier les fournisseurs de fonds de carte (Paramètres)" data-gd-fournisseurs>Fournisseurs</a>
         <div className="gd-enregistrement" data-gd-etat-enregistrement={etat.etat}>
           <span role="status" translate="no">{carte ? <strong>{carte.nom}</strong> : null}</span>
           <span role="status">{LIBELLES_ENREGISTREMENT[etat.etat]}</span>
@@ -396,6 +416,7 @@ export function PageGeoData() {
           <BarreOutilsCarte outil={outil} pleinEcran={pleinEcran} legendeOuverte={panneauOuvert && onglet === "legende"} carteDisponible={!erreurCarte}
             onZoom={(d) => moteur.current?.zoomer(d)} onNord={() => moteur.current?.orienterNord()} onPosition={localiser} onPleinEcran={basculerPleinEcran} onOutil={choisirOutil} onLegende={basculerLegende} />
           {chargementMoteur && <p role="status" className="gd-sur-carte">Chargement de la carte…</p>}
+          {avisFond && <div role="status" className="gd-sur-carte gd-alerte" data-gd-avis-fond><p>{avisFond}</p><div className="gd-actions"><button type="button" onClick={() => setComposition((c) => ({ ...c, fond: "neutre" }))}>Fond neutre</button><button type="button" onClick={() => setAvisFond(null)}>Fermer</button></div></div>}
           {erreurCarte && <div role="alert" className="gd-sur-carte gd-alerte" data-gd-erreur-carte><p>{erreurCarte}</p></div>}
           {trace && outil !== "navigation" && <p className="gd-sur-carte gd-mesure-carte" role="status">{trace.sommets.length < 2 ? "Cliquez sur la carte pour commencer." : (outil === "distance" || outil === "surface" || outil === "zone") ? "Tracé en cours — détails dans Études." : ""}</p>}
         </main>
@@ -406,7 +427,7 @@ export function PageGeoData() {
             {volet === "fiche" && <FicheObjet fiche={fiche} chargement={ficheEtat.chargement} erreur={ficheEtat.erreur} onFermer={() => { setVolet(null); setSelection(null); }} onCentrer={(f) => { const e = empriseDe(f.emprise.coordinates); if (e) moteur.current?.allerA({ emprise: e }); }} />}
             {volet === "donnees" && <GestionDonnees rangement={rangement} erreur={erreurRangement} couches={catalogue} onChange={chargerRangement} />}
             {volet === "cartes" && <MesCartes carte={carte} nouvelle={!carte} onOuvrir={(id) => void ouvrirCarte(id)} onCarteModifiee={(c) => { setCarte(c); setEtatForce(null); }}
-              onNouvelle={() => { setCarte(null); setComposition({ ...COMPOSITION_INITIALE, camera: composition.camera }); setEtatForce(null); ecrireLocal(CLE_DERNIERE_CARTE, null); }}
+              onNouvelle={() => { setCarte(null); setComposition(compositionNeuve(composition.camera)); setEtatForce(null); ecrireLocal(CLE_DERNIERE_CARTE, null); }}
               onEnregistrerSous={async (nom, collectionId) => { const c = await api.creerCarte(nom, composition, collectionId); setCarte(c); setComposition(c.composition); setEtatForce(null); ecrireLocal(CLE_DERNIERE_CARTE, c.id); setAnnonce(`Carte « ${c.nom} » enregistrée.`); }} />}
             {volet === "etudes" && <Etudes outil={outil} trace={trace} tracePret={tracePret} couchesPolygones={couchesPolygones} zones={zones} onOutil={setOutil}
               onTerminer={() => moteur.current?.terminerTrace()} onAnnulerTrace={() => { moteur.current?.annulerTrace(); setTrace(null); setTracePret(null); }} onZonesChangees={chargerZones}

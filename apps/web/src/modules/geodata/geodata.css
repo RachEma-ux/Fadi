@@ -122,3 +122,4 @@
 .geodata-page .gd-carte-couche.gd-active{border-color:var(--gd-accent)}
 .geodata-page .gd-ligne-couche{display:flex;flex-direction:column;gap:2px;padding:6px 0;border-bottom:1px solid #edf2f2}
 .geodata-page .gd-danger{border-color:var(--gd-alerte);color:var(--gd-alerte)}
+.geodata-page .gd-lien-fonds{font-size:13px;color:var(--gd-accent);text-decoration:underline}

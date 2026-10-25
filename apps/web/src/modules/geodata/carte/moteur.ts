@@ -35,6 +35,8 @@ export interface EvenementsMoteur {
   /** Tracé terminé (double-clic, Entrée ou « Terminer »). */
   surTraceTermine(outil: OutilCarte, sommets: readonly [number, number][]): void;
   surErreur(message: string): void;
+  /** Tuiles du fond refusées (clé absente, invalide, quota) : avis non bloquant, la carte reste utilisable. */
+  surErreurFond?(message: string): void;
 }
 
 export interface MoteurCarte {

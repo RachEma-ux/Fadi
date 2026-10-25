@@ -15,8 +15,11 @@
  * - aucune image ni altitude n'est inventée : sans clé ou sans
  *   géolocalisation, l'écran le dit.
  */
-export const MAPTILER_KEY_STORAGE = "parcelle-maptiler-key-v1";
-const SESSION_KEY = "fadi.maptiler.session-key";
+import { CLE_LOCALE_MAPTILER, CLE_SESSION_MAPTILER } from "@parcours/geodata-model";
+
+/** Noms de stockage partagés avec les fonds de GeoData (`@parcours/geodata-model`, D-GD-15). */
+export const MAPTILER_KEY_STORAGE = CLE_LOCALE_MAPTILER;
+const SESSION_KEY = CLE_SESSION_MAPTILER;
 const HOST = "api.maptiler.com";
 
 export function maptilerKey(): string {

@@ -268,6 +268,17 @@ describe("GEO 09 — exports", () => {
     expect(fiche.text).toContain("Attribution de test");
     expect(fiche.text).toContain("Jeu synthétique de test");
   });
+  it("fond d'un fournisseur réglé dans le navigateur (D-GD-15) : carte enregistrée (identifiant seul), export refusé et motivé", async () => {
+    const alice = await compte("gd-fond@example.com");
+    const libre = await publierReference({ cle: "libre-fond" });
+    const comp = { ...composition(libre.coucheId, libre.versionId), fond: "navigateur:maptiler:satellite" };
+    const c = await alice.client.post(`${API}/cartes`).send({ nom: "Sur fond MapTiler", composition: comp });
+    expect(c.status).toBe(201);
+    expect(c.body.composition.fond).toBe("navigateur:maptiler:satellite");
+    const r = await alice.client.post(`${API}/exports`).send({ carteId: c.body.id, revisionAttendue: 1 });
+    expect(r.body.etat).toBe("refuse");
+    expect(r.body.refus).toEqual([{ coucheId: null, titre: "Fond de fournisseur", motif: expect.stringContaining("conditions d'export ne sont pas établies") }]);
+  });
 });
 
 describe("Rôles GeoData, publication et immuabilité (INV-07, INV-08)", () => {

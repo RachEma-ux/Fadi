@@ -60,6 +60,15 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
      droite), bornée à la carte, position mémorisée dans le navigateur seulement ; bouton « Données » ouvrant le catalogue en surimpression (sections repliables, compte
      actives / total, bascule Vecteurs / Imagerie), menu ☰ en haut à droite (Données, Mes cartes, Études, Importer,
      Exporter).
+   - D-GD-15 (25 octobre 2026, demande du maître d'ouvrage : lier le fond de la carte aux Paramètres, qui permettent
+     la saisie et la modification des fournisseurs de carte, MapTiler par défaut) : section « Fournisseurs de fonds de
+     carte » des Paramètres ; MapTiler intégré et fournisseur par défaut (fonds Satellite, Satellite et noms, Plan,
+     Topographique ; clé de « Connexion MapTiler ») ; fournisseurs XYZ saisis (https, `{z}{x}{y}`, `{cle}` facultatif,
+     attribution obligatoire), modifiables, désactivables, supprimables ; fond neutre choisissable par défaut. Réglages et
+     clés **dans le navigateur seulement** (jamais envoyés à l'API Fadi) ; une carte enregistrée ne garde que
+     l'identifiant `navigateur:<fournisseur>:<style>`. Sans clé, aucun fond n'est inventé (option « clé absente ») ; tuiles
+     refusées → avis non bloquant et retour au fond neutre en un geste. Conditions d'export non établies : un fond de
+     fournisseur n'est jamais exportable (refus motivé du serveur).
 
 ## Conséquences
 

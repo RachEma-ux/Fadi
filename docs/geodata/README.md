@@ -87,6 +87,17 @@ catégorie, l'en déplacer ou l'en retirer (elle revient alors à son thème). S
 couche. API : `GET/POST /geodata/api/categories`, `PATCH/DELETE /categories/:id`, `PUT /categories-ordre`,
 `PUT /categories/:id/sources/:sourceId`, `DELETE /categories-sources/:sourceId` ; chaque modification est journalisée.
 
+## Fonds de carte et fournisseurs (D-GD-15)
+
+Paramètres → « Fournisseurs de fonds de carte » : MapTiler est intégré et fournisseur par défaut (Satellite, Satellite et
+noms, Plan, Topographique), avec la clé saisie dans « Connexion MapTiler ». « Ajouter un fournisseur » saisit un autre
+service par son adresse de tuiles XYZ en https (`{z}`, `{x}`, `{y}`, et `{cle}` avec sa clé), son attribution et un zoom
+maximal facultatif ; chaque fournisseur se modifie, se désactive ou se supprime (MapTiler se désactive seulement), et le
+fournisseur par défaut se choisit (ou le fond neutre). Ces réglages et les clés restent dans le navigateur : la carte
+enregistrée ne garde que l'identifiant du fond. Une nouvelle carte s'ouvre sur le premier fond du fournisseur par défaut
+quand sa clé est présente. Un fond de fournisseur n'est pas exportable (conditions non établies) : exporter sur le fond
+neutre.
+
 ## Couches raster (D-GD-13)
 
 Fiche avec `couche.raster` (`unite`, `grandeur`, `palette` parmi `viridis`, `relief`, `precipitations`, `temperature`,

@@ -8,3 +8,4 @@ export * from "./droits.js";
 export * from "./categories.js";
 export * from "./raster.js";
 export * from "./catalogue.js";
+export * from "./fournisseurs.js";

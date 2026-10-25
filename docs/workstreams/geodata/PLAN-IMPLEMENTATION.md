@@ -62,6 +62,7 @@ Décision d’exécution : [ADR-GEODATA-02](../../continuity/decisions/ADR-GEODA
 | D-GD-09 | V1 privée : aucun partage ; le modèle réserve les rôles d’espace collectif sans afficher d’action inopérante. |
 | D-GD-11 | Style « une couleur par entité » : palette qualitative de 12 couleurs, voisins distincts au-delà de 12 unités (graphe de voisinage calculé au serveur) ; rien n'est enregistré dans la composition hors le mode. |
 | D-GD-12 | Couches de sources d'origine ouvertes (OpenStreetMap ODbL, OurAirports domaine public), données livrées avec leur fiche ; raster, > 5 000 objets et droits non établis écartés. |
+| D-GD-15 | Fournisseurs de fonds réglés dans Paramètres (MapTiler intégré et par défaut, XYZ saisis), stockés dans le navigateur ; fond de fournisseur jamais exportable. |
 | D-GD-14 | Catalogue rangé par catégories gérées (capacité `organiser-catalogue`), barre d'outils verticale flottante (à droite par défaut, déplaçable), bouton « Données », menu ☰ (Données = gestion des catégories et de leurs couches). |
 | D-GD-13 | Couches raster : GeoTIFF EPSG:4326, grille ≤ 4 M cellules figée, tuiles PNG serveur, palette ou classes déclarées, valeur au point, nodata transparent et « non évalué ». |
 | D-GD-10 | Traitements synchrones bornés, état durable en base, journal `geodata_journal` sans coordonnées. |

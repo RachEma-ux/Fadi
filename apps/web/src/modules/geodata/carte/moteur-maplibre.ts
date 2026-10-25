@@ -60,8 +60,14 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     enAttente?.();
     enAttente = null;
   });
+  let fondSignale: string | null = null;
   carte.on("error", (e) => {
     const m = (e as { error?: { status?: number; message?: string } }).error;
+    // Fond d'un fournisseur (D-GD-15) : un refus de tuiles (clé, quota, adresse) est signalé une fois, sans bloquer la carte.
+    if ((e as { sourceId?: string }).sourceId === "gd-fond-raster") {
+      if (fondSignale !== fondCourant) { fondSignale = fondCourant; ev.surErreurFond?.(`Le fond choisi ne se charge pas${m?.status ? ` (réponse ${m.status})` : ""} : vérifiez le fournisseur et sa clé dans Paramètres, ou revenez au fond neutre.`); }
+      return;
+    }
     if (m?.status === 404 || m?.status === 403) ev.surErreur("Une couche n'est plus accessible : ses tuiles sont refusées par le serveur.");
   });
   conteneur.addEventListener("webglcontextlost", () => ev.surErreur("Le rendu graphique (WebGL) a été perdu : la recherche, la table et les fiches restent disponibles."), true);

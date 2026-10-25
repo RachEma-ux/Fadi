@@ -386,6 +386,62 @@ check("GEO 12 · téléphone : aucun débordement horizontal", await page.evalua
 await page.screenshot({ path: join(OUT, "02-telephone.png") });
 await page.setViewportSize({ width: 1440, height: 900 });
 
+// --- Fournisseurs de fonds (D-GD-15) : saisis dans Paramètres, MapTiler par défaut, proposés par GeoData ---
+const ctxFonds = await navigateur.newContext({ viewport: { width: 1440, height: 900 } });
+const pf = await ctxFonds.newPage();
+const erreursFonds = [];
+pf.on("pageerror", (e) => erreursFonds.push(e.message));
+// Aucune requête réelle vers le fournisseur : ses tuiles sont refusées ici, comme une clé invalide.
+await pf.route("https://api.maptiler.com/**", (r) => r.fulfill({ status: 403, body: "" }));
+await pf.route("https://tuiles.example.org/**", (r) => r.fulfill({ status: 403, body: "" }));
+await connecter(pf, alice);
+await pf.goto(`${BASE}/parametres`);
+const sectionFonds = pf.locator("[data-settings-fournisseurs]");
+await sectionFonds.waitFor();
+check("Paramètres : fournisseurs de fonds, MapTiler intégré et par défaut", (await pf.locator("[data-fournisseur-defaut='maptiler']").isChecked()) && ((await sectionFonds.textContent()) ?? "").includes("clé MapTiler absente"));
+await pf.goto(`${BASE}/geodata`);
+await pf.locator("[data-gd-fond]").waitFor();
+check("GeoData sans clé MapTiler : fond neutre, MapTiler signalé « clé absente » (aucun fond inventé)", (await pf.locator("[data-gd-fond]").inputValue()) === "neutre" && (await pf.locator("[data-gd-fond] option[disabled]").filter({ hasText: "clé absente" }).count()) === 1);
+await pf.goto(`${BASE}/parametres`);
+await pf.fill("#settings-maptiler-key", "cle-recette-geodata");
+await pf.locator("#settings-maptiler-key").press("Enter");
+await pf.locator("[data-fournisseur-ajouter]").click();
+await pf.locator("[data-fournisseur-nom]").fill("Fournisseur recette");
+await pf.locator("[data-fournisseur-modele]").fill("http://tuiles.example.org/{z}/{x}/{y}.png");
+await pf.locator("[data-fournisseur-attribution]").fill("© Recette");
+await pf.locator("[data-fournisseur-enregistrer]").click();
+check("Paramètres : adresse de tuiles non https refusée", ((await pf.locator(".settings-erreurs").textContent()) ?? "").includes("https"));
+await pf.locator("[data-fournisseur-modele]").fill("https://tuiles.example.org/{z}/{x}/{y}.png?k={cle}");
+await pf.locator("[data-fournisseur-cle]").fill("cle-xyz");
+await pf.locator("[data-fournisseur-enregistrer]").click();
+await pf.locator("[data-fournisseur='fournisseur-recette']").waitFor();
+await pf.locator("[data-fournisseur-modifier='fournisseur-recette']").click();
+await pf.locator("[data-fournisseur-nom]").fill("Fournisseur recette modifié");
+await pf.locator("[data-fournisseur-enregistrer]").click();
+check("Paramètres : fournisseur saisi puis modifié", ((await pf.locator("[data-fournisseur='fournisseur-recette']").textContent()) ?? "").includes("Fournisseur recette modifié"));
+const stockage = await pf.evaluate(() => localStorage.getItem("fadi.fournisseurs-carte.v1") ?? "");
+await pf.goto(`${BASE}/geodata`);
+await pf.locator("[data-gd-fond]").waitFor();
+const optionsFond = await pf.locator("[data-gd-fond] option:not([disabled])").allTextContents();
+check("GeoData : fonds MapTiler et fournisseur saisi proposés ; nouvelle carte sur le fond MapTiler par défaut", optionsFond.includes("MapTiler — Satellite") && optionsFond.includes("Fournisseur recette modifié") && (await pf.locator("[data-gd-fond]").inputValue()) === "navigateur:maptiler:satellite", optionsFond.join(" | "));
+await pf.locator("[data-gd-avis-fond]").waitFor({ timeout: 15_000 });
+check("GeoData : tuiles du fond refusées → avis non bloquant, outils de la carte disponibles", (await pf.locator("[data-gd-erreur-carte]").count()) === 0 && !(await pf.locator("[data-gd-barre-outil='zoom-plus']").isDisabled()));
+await pf.locator("[data-gd-avis-fond] button").filter({ hasText: "Fond neutre" }).click();
+check("GeoData : retour au fond neutre en un geste", (await pf.locator("[data-gd-fond]").inputValue()) === "neutre");
+const appelsApi = [];
+pf.on("request", (r) => { if (r.url().startsWith(`${BASE}/geodata/api`) && /cle-recette-geodata|cle-xyz/.test(`${r.url()} ${r.postData() ?? ""}`)) appelsApi.push(r.url()); });
+await pf.locator("[data-gd-fond]").selectOption("navigateur:fournisseur-recette:fond");
+await volet(pf, "cartes");
+await pf.locator("[data-gd-nom-carte]").fill(`Fond fournisseur ${suffixe}`);
+await pf.locator("[data-gd-enregistrer-sous]").click();
+await pf.locator("[data-gd-etat-enregistrement='enregistree']").waitFor();
+check("carte enregistrée sur un fond de fournisseur : ni adresse ni clé envoyées à l'API Fadi", appelsApi.length === 0 && !stockage.includes("cle-recette-geodata"), appelsApi.join(", "));
+await pf.goto(`${BASE}/parametres`);
+await pf.locator("[data-fournisseur-supprimer='fournisseur-recette']").click();
+check("Paramètres : fournisseur supprimé, MapTiler reste", (await pf.locator("[data-fournisseur='fournisseur-recette']").count()) === 0 && (await pf.locator("[data-fournisseur='maptiler']").count()) === 1);
+check("fournisseurs de fonds : aucune erreur JavaScript", erreursFonds.length === 0, erreursFonds.slice(0, 3).join(" | "));
+await ctxFonds.close();
+
 // --- GEO 08 : un tiers ---
 const tiers = await (await navigateur.newContext()).newPage();
 await inscrire(tiers, `gd-bob-${suffixe}@example.test`);
