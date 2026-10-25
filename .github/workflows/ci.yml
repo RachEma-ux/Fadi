@@ -259,6 +259,13 @@ jobs:
       # finalités, participation « revue seule » sans accès au projet, droits fadi_app — transactions annulées.
       - name: Schéma revue externe — paquets figés, affectations, constats, invitations review_package, aucun accès au projet
         run: node scripts/validation/revues-migration-check.mjs
+      # Phase 6 (runbook de déploiement, § 6) : contrôle après déploiement en LECTURE SEULE (transaction READ ONLY, sonde
+      # d'écriture refusée 25006) — reprise sans perte d'accès, pont op_sync_access, participations, paquets figés,
+      # organisations, journal sans adresse, droits D-7 ; instantané avant / après comparé sur la base du job.
+      - name: Contrôle après déploiement organisations-participation — lecture seule, aucune perte d'accès
+        run: |
+          node scripts/validation/organisations-participation-post-deploiement.mjs --instantane "$RUNNER_TEMP/op-acces.json"
+          node scripts/validation/organisations-participation-post-deploiement.mjs --reference "$RUNNER_TEMP/op-acces.json"
       - name: Tests des paquets purs et du web
         run: npm run test --workspace=@parcours/core-geometry --workspace=@parcours/domain-model --workspace=@parcours/atelier-model --workspace=@parcours/planche-model --workspace=@parcours/sandbox-planche-model --workspace=@parcours/geometry-exact --workspace=@fadi/web
       - name: Garde DB-1/2 — tests simulés sans base
@@ -670,6 +677,16 @@ jobs:
         run: |
           set -o pipefail
           node apps/web/e2e/collaboration-support-telephone.mjs 2>&1 | tee -a e2e.log
+      # Organisations-participation (#262, phase 6) : recette finale de bout en bout du scénario du concept — organisation
+      # et adhésions acceptées, partie propriétaire sans droit, équipe (contact, invitations avec aperçu, portée étroite,
+      # échéance d'accès), revue externe d'un paquet figé (404 hors paquet), boucle de correction et nouvelle version,
+      # approbatrice externe nommée, diffusion par l'équipe, fin de participation, journal par audience sans adresse ;
+      # axe-core bureau et téléphone, passe anglaise. En fin de tranche (crée un administrateur).
+      - name: Recette finale organisations-participation — scénario de bout en bout, audiences du journal, axe-core, anglais (apps/web/e2e/organisations-participation-final.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/organisations-participation-final node apps/web/e2e/organisations-participation-final.mjs 2>&1 | tee -a e2e.log
       - name: Rapports de simulation de migration
         if: ${{ always() && matrix.shard == 'complements' }}
         uses: actions/upload-artifact@v4

@@ -20,6 +20,7 @@
 import { chromium } from "playwright";
 import { randomBytes, randomUUID } from "node:crypto";
 import { createRequire } from "node:module";
+import { inviterEtAccepter } from "./lib-invitations.mjs";
 
 const AXE_SCRIPT = createRequire(import.meta.url).resolve("axe-core/axe.min.js");
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
@@ -55,8 +56,10 @@ const idOf = async (c) => { const me = (await c("GET", "/auth/me")).body; return
 const project = await owner("POST", "/projects", { code: `PE_${randomUUID().slice(0, 6)}`, name: "Portées étroites (recette synthétique)" });
 const pid = project.body?.id;
 check("projet créé", project.status === 201, String(project.status));
-for (const [cred, role] of [[cEditor, "editeur"], [cLea, "lecteur"], [cRemi, "lecteur"], [cNora, "lecteur"], [cPlain, "lecteur"]]) {
-  check(`partage ${role} (${cred.email.split("-")[1]})`, (await owner("POST", `/projects/${pid}/members`, { email: cred.email, role })).status === 201);
+// Phase 3 (OP-D2 a) : plus d'ajout direct — chaque compte est invité, puis accepte depuis sa notification.
+for (const [c, cred, role] of [[editor, cEditor, "editeur"], [lea, cLea, "lecteur"], [remi, cRemi, "lecteur"], [nora, cNora, "lecteur"], [plain, cPlain, "lecteur"]]) {
+  const r = await inviterEtAccepter(owner, c, pid, cred.email, role);
+  check(`partage ${role} (${cred.email.split("-")[1]}) par invitation acceptée`, r.ok, short({ invite: r.invite?.status, accept: r.accept?.status, body: r.accept?.body }));
 }
 const P = `/projects/${pid}/participants`;
 const ids = { owner: await idOf(owner), lea: await idOf(lea), remi: await idOf(remi), nora: await idOf(nora) };
