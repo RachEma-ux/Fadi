@@ -447,7 +447,7 @@ function StudioEtude({ projectId, studyId, archives }: { projectId: string; stud
 
 const SOURCES_REVISION: Record<string, string> = {
   "study-initialization": "Création de l’étude", "variant-initialization": "Création de la variante",
-  "variant-derivation": "Dérivation", "authenticated-session": "Enregistrement",
+  "variant-derivation": "Dérivation", "authenticated-session": "Enregistrement", "agent-mcp": "Proposition d’agent (MCP) confirmée",
 };
 
 /**

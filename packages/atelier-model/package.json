@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./studio-corpus": "./src/studio/corpus/index.ts",
+    "./studio-agents": "./src/studio/agents/index.ts",
     "./studio-exemples": "./src/studio/exemples/index.ts"
   },
   "scripts": {

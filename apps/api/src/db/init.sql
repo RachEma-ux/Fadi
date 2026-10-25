@@ -1392,6 +1392,110 @@ CREATE INDEX IF NOT EXISTS studio_observation_reconciliations_observation_idx ON
 CREATE OR REPLACE TRIGGER studio_observation_reconciliations_no_update BEFORE UPDATE ON studio_observation_reconciliations
   FOR EACH ROW EXECUTE FUNCTION studio_observation_event_immutable();
 
+-- Lot F (décision P-12) : illustrations depuis une vue (EX-071, EX-072, AC-007), adaptateur d'agents MCP (TEST-033,
+-- F.3-02), journal agent / humain (INV-010). Additif et idempotent : tables nouvelles, contraintes recréées (DROP … IF
+-- EXISTS puis ADD, NOT VALID). Une révision confirmée depuis une proposition d'agent porte la source `agent-mcp`.
+ALTER TABLE studio_revisions DROP CONSTRAINT IF EXISTS studio_revisions_source_check,
+  ADD CONSTRAINT studio_revisions_source_check
+  CHECK (source IN ('authenticated-session', 'study-initialization', 'variant-initialization', 'variant-derivation', 'agent-mcp')) NOT VALID;
+CREATE TABLE IF NOT EXISTS studio_illustrations (
+  id text PRIMARY KEY,
+  study_id text NOT NULL REFERENCES studio_studies(id) ON DELETE CASCADE,
+  variant_id text NOT NULL,
+  revision_id text NOT NULL,
+  provider_id text NOT NULL,
+  provider_nature text NOT NULL,
+  parameters jsonb NOT NULL,
+  provenance jsonb NOT NULL,
+  source_digest text NOT NULL,
+  document_digest text NOT NULL,
+  image_base64 text NOT NULL,
+  image_digest text NOT NULL,
+  width integer NOT NULL,
+  height integer NOT NULL,
+  created_by text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  request_id text NOT NULL,
+  payload_hash text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS studio_illustrations_variant_idx ON studio_illustrations(variant_id, created_at);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_illustrations_request_unique ON studio_illustrations(variant_id, request_id);
+ALTER TABLE studio_illustrations DROP CONSTRAINT IF EXISTS studio_illustrations_variant_of_study,
+  ADD CONSTRAINT studio_illustrations_variant_of_study FOREIGN KEY(study_id, variant_id)
+  REFERENCES studio_variants(study_id, id) ON DELETE CASCADE NOT VALID;
+ALTER TABLE studio_illustrations DROP CONSTRAINT IF EXISTS studio_illustrations_revision_of_variant,
+  ADD CONSTRAINT studio_illustrations_revision_of_variant FOREIGN KEY(variant_id, revision_id)
+  REFERENCES studio_revisions(variant_id, id) ON DELETE CASCADE NOT VALID;
+ALTER TABLE studio_illustrations DROP CONSTRAINT IF EXISTS studio_illustrations_nature_check,
+  ADD CONSTRAINT studio_illustrations_nature_check CHECK (provider_nature IN ('local-deterministe', 'ia-externe')) NOT VALID;
+ALTER TABLE studio_illustrations DROP CONSTRAINT IF EXISTS studio_illustrations_sha_check,
+  ADD CONSTRAINT studio_illustrations_sha_check CHECK (source_digest ~ '^[0-9a-f]{64}$' AND document_digest ~ '^[0-9a-f]{64}$'
+    AND image_digest ~ '^[0-9a-f]{64}$' AND payload_hash ~ '^[0-9a-f]{64}$') NOT VALID;
+CREATE OR REPLACE FUNCTION studio_illustration_immutable() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'studio_illustration_immutable';
+END;
+$$;
+CREATE OR REPLACE TRIGGER studio_illustrations_no_update BEFORE UPDATE ON studio_illustrations
+  FOR EACH ROW EXECUTE FUNCTION studio_illustration_immutable();
+-- Jetons d'agent : liés à un compte et à un projet ; seule l'empreinte SHA-256 est gardée ; révocables.
+CREATE TABLE IF NOT EXISTS studio_agent_tokens (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  user_id text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name text NOT NULL CONSTRAINT studio_agent_tokens_name_length CHECK (length(btrim(name)) BETWEEN 1 AND 80),
+  token_hash text NOT NULL CONSTRAINT studio_agent_tokens_hash_check CHECK (token_hash ~ '^[0-9a-f]{64}$'),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  expires_at timestamptz NOT NULL,
+  revoked_at timestamptz
+);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_agent_tokens_hash_unique ON studio_agent_tokens(token_hash);
+CREATE INDEX IF NOT EXISTS studio_agent_tokens_user_idx ON studio_agent_tokens(project_id, user_id);
+-- Propositions d'agent : rien n'est écrit avant la confirmation humaine (point d'entrée commun des commandes).
+CREATE TABLE IF NOT EXISTS studio_agent_proposals (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  study_id text NOT NULL REFERENCES studio_studies(id) ON DELETE CASCADE,
+  variant_id text NOT NULL REFERENCES studio_variants(id) ON DELETE CASCADE,
+  token_id text NOT NULL REFERENCES studio_agent_tokens(id) ON DELETE CASCADE,
+  user_id text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  request_id text NOT NULL,
+  payload_hash text NOT NULL CONSTRAINT studio_agent_proposals_hash_check CHECK (payload_hash ~ '^[0-9a-f]{64}$'),
+  envelope jsonb NOT NULL,
+  base_revision_id text NOT NULL,
+  preview jsonb NOT NULL,
+  status text NOT NULL CONSTRAINT studio_agent_proposals_status_check CHECK (status IN ('en-attente', 'confirmee', 'refusee', 'expiree', 'echec')),
+  revision_id text,
+  failure jsonb,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  expires_at timestamptz NOT NULL,
+  decided_at timestamptz
+);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_agent_proposals_request_unique ON studio_agent_proposals(variant_id, user_id, request_id);
+CREATE INDEX IF NOT EXISTS studio_agent_proposals_user_idx ON studio_agent_proposals(project_id, user_id, created_at);
+-- Journal agent / humain (INV-010), en ajout seul : qui (compte), sous quelle forme (agent par jeton, ou humain en session).
+CREATE TABLE IF NOT EXISTS studio_agent_events (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  actor_id text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  actor_kind text NOT NULL CONSTRAINT studio_agent_events_kind_check CHECK (actor_kind IN ('agent', 'humain')),
+  token_id text,
+  action text NOT NULL CONSTRAINT studio_agent_events_action_check
+    CHECK (action IN ('jeton.creer', 'jeton.revoquer', 'outil.appeler', 'proposition.creer', 'proposition.confirmer', 'proposition.refuser', 'proposition.echec')),
+  tool text,
+  proposal_id text,
+  revision_id text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS studio_agent_events_project_idx ON studio_agent_events(project_id, created_at);
+CREATE OR REPLACE FUNCTION studio_agent_event_immutable() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'studio_agent_event_immutable';
+END;
+$$;
+CREATE OR REPLACE TRIGGER studio_agent_events_no_update BEFORE UPDATE ON studio_agent_events
+  FOR EACH ROW EXECUTE FUNCTION studio_agent_event_immutable();
+
 -- ---------------------------------------------------------------------------
 -- Gestion des comptes (docs/workstreams/users-management, Issue #253) — Phase 1.
 -- Additif et idempotent : colonnes avec défaut ou nullables, contraintes posées une seule fois, aucune suppression.

@@ -176,7 +176,7 @@ function useHauteurDisponible(ref: { current: HTMLElement | null }, minimum: num
 /** Panneaux latéraux qui lisent ou écrivent dans une étude : indisponibles dans la Console (aucun projet). */
 const PANNEAUX_D_ETUDE: ReadonlySet<FonctionStudio> = new Set<FonctionStudio>(["exigences", "publications", "commentaires-observations", "revisions", "metre"]);
 /** Commandes qui passent par le serveur (exports de la révision enregistrée, feuilles du dossier) : indisponibles dans la Console. */
-const COMMANDES_D_ETUDE: ReadonlySet<IdCommandeEditeur> = new Set<IdCommandeEditeur>(["exporter-svg", "exporter-dxf", "exporter-ifc", "dossier", "modeles-externes"]);
+const COMMANDES_D_ETUDE: ReadonlySet<IdCommandeEditeur> = new Set<IdCommandeEditeur>(["exporter-svg", "exporter-dxf", "exporter-ifc", "dossier", "modeles-externes", "illustration", "agents"]);
 
 export function VariantWorkspace({ projectId, studyId, variantId, revisionId, commentairesOuverts = false, domaine = null, planche = null, autonome = false, surEnregistreVersProjet, surAdresse }: VariantWorkspaceProps) {
   const [context, setContext] = useState<StudioContext | null>(() => (autonome ? contexteConsole() : null));
@@ -194,6 +194,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const [accrocheSommets, setAccrocheSommets] = useState(true);
   const [accrocheGrille, setAccrocheGrille] = useState(false);
   const [dialogue, setDialogue] = useState<DialogueStudio>(null);
+  // Lot F : rendu du modèle capturé par la vue 3D pour l'illustration (ouvre la boîte « Illustration depuis la vue »).
+  const [captureIllustration, setCaptureIllustration] = useState<{ png: Uint8Array; provenance: { revisionId: string; scene: { nom: string } | null } } | null>(null);
   // Rapport de fidélité du dernier export lancé (E.6-03) : boîte non modale, fermée à la demande.
   const [rapportExport, setRapportExport] = useState<"exporter-svg" | "exporter-dxf" | "exporter-ifc" | null>(null);
   // Compteur des lancements d'export : chaque export a son propre rapport (jamais celui d'une révision précédente).
@@ -671,6 +673,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
         shell.current?.querySelector<HTMLAnchorElement>(`a[data-studio-commande="${id}"][href]`)?.click();
         return;
       case "exporter-png": return demander3d("exporter-png");
+      case "illustration": return demander3d("illustration");
+      case "agents": return setDialogue("agents");
       case "importer-dxf": return setDialogue("import-dxf");
       case "importer-ifc": return setDialogue("import-ifc");
       case "modeles-externes": return setDialogue("modeles-externes");
@@ -801,7 +805,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       surPointeur3d={enDirect ? (p) => tr.canal.pointeur(p ? { espace: "3d", ...p } : null) : undefined}
       pointeurs3d={enDirect ? pointeursFrais(tr.etat, Date.now()).filter((p) => p.espace === "3d").map((p) => ({ userId: p.userId, nom: p.nom || nomsSession[p.userId] || "", x: p.x, y: p.y, z: p.z ?? 0 })) : undefined}
       hotePanneaux={domaineActif === "visualisation" ? hoteVisualisation : hote3dDessin} visualisation={domaineActif === "visualisation"}
-      provenance={{ etude: { id: context.study.id, nom: context.study.name }, variante: { id: context.variant.id, nom: context.variant.name }, revisionId: context.revision.id, nonEnregistre: commands.length > 0 }} /></div>}
+      provenance={{ etude: { id: context.study.id, nom: context.study.name }, variante: { id: context.variant.id, nom: context.variant.name }, revisionId: context.revision.id, nonEnregistre: commands.length > 0 }}
+      surIllustration={(c) => { setCaptureIllustration(c); setDialogue("illustration"); }} /></div>}
     </div>
     {/* Saisie des mesures et avis : sous les vues (jamais par-dessus le dessin, où ils intercepteraient les clics). */}
     <div className="studio-canevas-avis">
@@ -914,6 +919,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       revision={context.revision.document} brouillonNonEnregistre={commands.length > 0}
       cartouche={() => cartoucheInitial({ projet: projet.data, etude: context.study, variante: context.variant, revision: { id: context.revision.id, ...revisionAffichee }, utilisateur: user })}
       portee={{ projectId, studyId, variantId, revisionId: context.revision.id }}
+      captureIllustration={captureIllustration}
       enregistrementConsole={autonome ? { commandes: commands, surEnregistre: (c) => { dirty.current = false; surEnregistreVersProjet?.(c, { domaine: domaineActif, planche: domaineActif === "dessin" ? modePlanche : null }); } } : undefined} />
     {rapportExport && liens[rapportExport] && <RapportExport format={FORMATS_RAPPORT[rapportExport]!} urlExport={liens[rapportExport]!} exportId={`${context?.revision.id ?? ""}#${exportsLances}`} surFermer={() => setRapportExport(null)} />}</>}
   </section>;

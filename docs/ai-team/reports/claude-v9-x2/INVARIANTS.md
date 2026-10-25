@@ -55,7 +55,7 @@ compense aucun de ces défauts. » Chaque contrôle ci-dessous est un test d'éc
 |---|---|
 | BLOC-06 | Automatisé par construction : chaque contrôle bloquant ci-dessus est un test des suites `npm test` (atelier-model, web) et du rapport API vérifié par `scripts/check-api-tests-db3.mjs` en CI ; un échec bloque la fusion, aucune mesure de performance n'entre dans ces tests. La décision de livraison (porte G4) reste une décision distincte, non automatisée. |
 | BLOC-07 | Non automatisé : une non-applicabilité est une décision motivée et validée par une personne habilitée (aucune n'est déclarée par ce lot). |
-| BLOC-08 | Non automatisé : déclaration. Hors périmètre constaté au commit de ce lot : adaptateur IA / MCP (aucun point d'entrée d'agent, `agentExposure: none` — INV-010 prouve qu'il n'existerait que par le point d'entrée commun) ; un test n'est réputé réussi que par son exécution (résultats consignés dans le compte rendu), pas par sa seule présence en CI. |
+| BLOC-08 | Non automatisé : déclaration. L'adaptateur d'agents MCP (lot F, décision P-12) n'a aucune voie propre (`agentExposure: none` au registre) : ses propositions n'écrivent qu'après confirmation humaine, par le point d'entrée commun (INV-010, `routes/studio-agents.test.ts`) ; un test n'est réputé réussi que par son exécution (résultats consignés dans le compte rendu), pas par sa seule présence en CI. |
 
 ## Validations centrales à l'exécution (X.2-03)
 

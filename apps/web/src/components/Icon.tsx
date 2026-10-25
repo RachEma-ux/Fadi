@@ -120,6 +120,8 @@ export type IconName =
   | "studio-exchanges"
   | "studio-import-ifc"
   | "studio-external-models"
+  | "studio-illustration"
+  | "studio-agents"
   | "studio-non-native-keep"
   | "studio-non-native-remove"
   | "studio-comments";
@@ -273,6 +275,10 @@ const PATHS: Record<IconName, string> = {
   "studio-import-ifc": "M9 3h7l4 4v14H9v-4M16 3v4h4M12 10l3-2 3 2v4l-3 2-3-2ZM12 10l3 2 3-2M15 12v4M2 13h7M6 10l3 3-3 3",
   // Modèles externes (lot F3) : deux maquettes côte à côte reliées par une coche de validation.
   "studio-external-models": "M3 8l4-2 4 2v5l-4 2-4-2ZM3 8l4 2 4-2M7 10v5M13 8l4-2 4 2v5l-4 2-4-2ZM13 8l4 2 4-2M17 10v5M9 19l2 2 4-4",
+  // Illustration depuis la vue (lot F) : cadre de rendu et pinceau posé en diagonale (image séparée, jamais le modèle).
+  "studio-illustration": "M3 4h13v11H3ZM3 12l3-3 3 3 2-2 3 3M14 21l7-7-2-2-7 7v2ZM17 14l2 2",
+  // Agents (MCP, lot F) : tête de robot à antenne et coche de confirmation (rien n'est écrit sans la personne).
+  "studio-agents": "M5 8h12v9H5ZM11 8V5M9.5 4h3M8 12h1M13 12h1M9 15h4M3 11v3M19 11v3M15 20l2 2 4-4",
   // Élément non natif conservé : boîte en pointillés tenue par une pince (gardée telle quelle).
   "studio-non-native-keep": "M4 8h3M10 8h4M17 8h3v3M20 14v3h-3M14 17h-4M7 17H4v-3M4 11V8M9 3h6v5H9ZM12 11v3",
   // Retirer les éléments non natifs : boîte en pointillés barrée d’une croix.

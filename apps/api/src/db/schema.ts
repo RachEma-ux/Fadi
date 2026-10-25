@@ -1041,7 +1041,7 @@ export const studioRevisions = pgTable("studio_revisions", {
   envelope: jsonb("envelope").$type<StudioEnvelope | null>(),
   requestId: text("request_id").notNull(),
   payloadHash: text("payload_hash").notNull(),
-  source: text("source").$type<"authenticated-session" | "study-initialization" | "variant-initialization" | "variant-derivation">().notNull(),
+  source: text("source").$type<"authenticated-session" | "study-initialization" | "variant-initialization" | "variant-derivation" | "agent-mcp">().notNull(),
   authorId: text("author_id").notNull().references(() => users.id, { onDelete: "restrict" }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   response: jsonb("response").$type<StudioContext>().notNull(),
@@ -1534,6 +1534,74 @@ export const studioExternalModelEvents = pgTable("studio_external_model_events",
   motif: text("motif"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [uniqueIndex("studio_external_model_events_seq_unique").on(t.modelId, t.seq)]);
+
+// Lot F (décision P-12) : illustrations depuis une vue, jetons et propositions d'agent (MCP), journal agent / humain.
+export const studioIllustrations = pgTable("studio_illustrations", {
+  id: text("id").primaryKey(),
+  studyId: text("study_id").notNull().references(() => studioStudies.id, { onDelete: "cascade" }),
+  variantId: text("variant_id").notNull(),
+  revisionId: text("revision_id").notNull(),
+  providerId: text("provider_id").notNull(),
+  providerNature: text("provider_nature").$type<"local-deterministe" | "ia-externe">().notNull(),
+  parameters: jsonb("parameters").$type<Record<string, unknown>>().notNull(),
+  provenance: jsonb("provenance").$type<Record<string, unknown>>().notNull(),
+  sourceDigest: text("source_digest").notNull(),
+  documentDigest: text("document_digest").notNull(),
+  imageBase64: text("image_base64").notNull(),
+  imageDigest: text("image_digest").notNull(),
+  width: integer("width").notNull(),
+  height: integer("height").notNull(),
+  createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
+  requestId: text("request_id").notNull(),
+  payloadHash: text("payload_hash").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("studio_illustrations_variant_idx").on(t.variantId, t.createdAt), uniqueIndex("studio_illustrations_request_unique").on(t.variantId, t.requestId)]);
+
+export const studioAgentTokens = pgTable("studio_agent_tokens", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  tokenHash: text("token_hash").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  revokedAt: timestamp("revoked_at", { withTimezone: true }),
+}, (t) => [uniqueIndex("studio_agent_tokens_hash_unique").on(t.tokenHash), index("studio_agent_tokens_user_idx").on(t.projectId, t.userId)]);
+
+export type StudioAgentProposalStatus = "en-attente" | "confirmee" | "refusee" | "expiree" | "echec";
+export const studioAgentProposals = pgTable("studio_agent_proposals", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  studyId: text("study_id").notNull().references(() => studioStudies.id, { onDelete: "cascade" }),
+  variantId: text("variant_id").notNull().references(() => studioVariants.id, { onDelete: "cascade" }),
+  tokenId: text("token_id").notNull().references(() => studioAgentTokens.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  requestId: text("request_id").notNull(),
+  payloadHash: text("payload_hash").notNull(),
+  envelope: jsonb("envelope").$type<StudioEnvelope>().notNull(),
+  baseRevisionId: text("base_revision_id").notNull(),
+  preview: jsonb("preview").$type<Record<string, unknown>>().notNull(),
+  status: text("status").$type<StudioAgentProposalStatus>().notNull(),
+  revisionId: text("revision_id"),
+  failure: jsonb("failure").$type<Record<string, unknown> | null>(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  decidedAt: timestamp("decided_at", { withTimezone: true }),
+}, (t) => [uniqueIndex("studio_agent_proposals_request_unique").on(t.variantId, t.userId, t.requestId), index("studio_agent_proposals_user_idx").on(t.projectId, t.userId, t.createdAt)]);
+
+export type StudioAgentEventAction = "jeton.creer" | "jeton.revoquer" | "outil.appeler" | "proposition.creer" | "proposition.confirmer" | "proposition.refuser" | "proposition.echec";
+export const studioAgentEvents = pgTable("studio_agent_events", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  actorId: text("actor_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  actorKind: text("actor_kind").$type<"agent" | "humain">().notNull(),
+  tokenId: text("token_id"),
+  action: text("action").$type<StudioAgentEventAction>().notNull(),
+  tool: text("tool"),
+  proposalId: text("proposal_id"),
+  revisionId: text("revision_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("studio_agent_events_project_idx").on(t.projectId, t.createdAt)]);
 
 // ---------------------------------------------------------------------------
 // Revue externe — phase 4 (concept partie 4). Miroir de init.sql : paquets de revue figés au partage, affectations

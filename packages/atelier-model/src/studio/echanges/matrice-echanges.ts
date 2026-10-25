@@ -489,6 +489,21 @@ const LIVREES: readonly StudioEntreeEchange[] = [
     sources: [S_PLAN, S_LISTE("E.6-02"), S_LISTE("E.5-03")],
   },
   {
+    id: "illustration-png", format: "PNG", versionFormat: "PNG (bloc iTXt « fadi:illustration » de provenance, studio-illustration/1)", sens: "export", famille: "rendu",
+    objet: "Illustration archivée, tirée du rendu du modèle d’une vue (lot F)", taches: ["E.6-02"], statut: "livre",
+    limite: "Image séparée « non vérifiée » : ni métrique, ni conforme, aucune donnée du modèle relisible ; provenance : rendu source, empreintes du document avant et après, paramètres, fournisseur, coûts, reproductibilité.",
+    entites: [{ entite: "Vue 3D affichée", couverture: "partielle", detail: "Illustration seulement : le modèle n’est ni exporté ni modifié." }],
+    controle: "Tests des routes d’illustration (base simulée) ; recette studio-lot-f.mjs.",
+    route: "GET /projects/:projectId/studio/studies/:studyId/variants/:variantId/illustrations/:illustrationId/image",
+    preuves: {
+      code: [p(`${API}lib/studio-illustrations.ts`, "lireImageIllustration")],
+      tests: [p(`${API}routes/studio-illustrations.test.ts`, "x-studio-verification")],
+      routes: [p(`${API}routes/studio-illustrations.ts`, "${base}/:illustrationId/image")],
+      interfaces: [p(`${WEB}illustration/DialogueIllustration.tsx`, "data-studio-illustration-archivee")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-02"), S_LISTE("E.5-03")],
+  },
+  {
     id: "paquet-publication", format: "Paquet de publication (SVG, DXF, IFC, feuille PDF)", versionFormat: "studio-publication-manifest/1", sens: "export", famille: "paquet",
     objet: "Fichiers figés d’une publication approuvée et diffusée", taches: ["E.6-02"], statut: "livre",
     limite: "Fichiers du manifeste approuvé, identifiés par SHA-256 et vérifiables ; dessin 2D indépendant : sans IFC ; mêmes limites que chaque export.",

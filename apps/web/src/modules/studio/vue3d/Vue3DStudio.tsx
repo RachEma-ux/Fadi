@@ -124,6 +124,11 @@ export interface Vue3DStudioProps {
   surPointeur3d?: (p: { x: number; y: number; z: number } | null) => void;
   /** Pointeurs des autres participants (session en direct) : marques nommées, jamais une donnée du document. */
   pointeurs3d?: readonly { userId: string; nom: string; x: number; y: number; z: number }[];
+  /**
+   * Illustration depuis la vue (lot F) : rendu du modèle capturé (PNG portant sa provenance `fadi:rendu`), transmis à
+   * l'espace de travail qui ouvre la boîte « Illustration ». Rien n'est envoyé ni modifié ici.
+   */
+  surIllustration?: (c: { png: Uint8Array; provenance: ReturnType<typeof studioProvenanceRendu> }) => void;
 }
 
 interface Moteur {
@@ -390,7 +395,7 @@ function Champ({ nom, libelle, valeur, surValeur, requis = true }: { nom: string
   </label>;
 }
 
-export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbite", coupe = false, selection = null, layerId, surSelection, surCommandes, selectionArchitecture = null, surSelectionArchitecture, demande = null, surDemandeTraitee, surNavigation, provenance, hotePanneaux, visualisation: avecVisualisation = true, remplir = false, cameraPartagee = null, surCameraLocale, surPointeur3d, pointeurs3d }: Vue3DStudioProps) {
+export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbite", coupe = false, selection = null, layerId, surSelection, surCommandes, selectionArchitecture = null, surSelectionArchitecture, demande = null, surDemandeTraitee, surNavigation, provenance, hotePanneaux, visualisation: avecVisualisation = true, remplir = false, cameraPartagee = null, surCameraLocale, surPointeur3d, pointeurs3d, surIllustration }: Vue3DStudioProps) {
   const hote = useRef<HTMLDivElement>(null);
   const moteur = useRef<Moteur | null>(null);
   const cadre = useRef(false);
@@ -769,7 +774,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   function reglages() { return { nom: nomScene.trim() || prochainNomScene(doc), calques: calquesVue, mode }; }
   function visualisation(action: string) {
     const m = moteur.current;
-    const mutation = action !== "studio.scene.rappeler" && action !== "exporter-png";
+    const mutation = action !== "studio.scene.rappeler" && action !== "exporter-png" && action !== "illustration";
     if (mutation && !modifiable) { setErreur("Lecture seule : les scènes et les apparences ne se modifient pas ici."); return; }
     switch (action) {
       case "studio.scene.creer": {
@@ -799,12 +804,46 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
         envoyer(commandeRetraitApparence(doc, cibleApparence), () => setStatut("Apparence d’affichage retirée."));
         return;
       case "exporter-png": void exporterPng(); return;
+      case "illustration": void illustrer(); return;
     }
   }
   const raisonRendu = indisponible ? "Vue 3D indisponible : aucun rendu ne peut être tiré du canevas."
     : !provenance ? "Provenance inconnue : le rendu n’est pas exporté."
     : provenance.nonEnregistre ? "Enregistrez d’abord : le rendu porte sur une révision enregistrée, pas sur les modifications non enregistrées."
     : !maillageAJour ? "Maillage en cours de calcul : le rendu attend la géométrie du document affiché." : null;
+  /** Rendu du modèle de la vue (qualité complète), PNG portant sa provenance ; null : indisponible (raison affichée). */
+  async function capturerRendu(): Promise<{ png: Uint8Array; provenance: ReturnType<typeof studioProvenanceRendu>; actif: boolean } | null> {
+    const m = moteur.current;
+    if (!m || !provenance || raisonRendu) { setErreur(raisonRendu ?? "Vue 3D indisponible."); return null; }
+    try {
+      const actif = scenes.find((s) => s.id === sceneActive) ?? null;
+      const p = studioProvenanceRendu({
+        etude: provenance.etude, variante: provenance.variante, revisionId: provenance.revisionId,
+        scene: actif ? { id: actif.id, nom: actif.name } : null, date: new Date(), camera: cameraCourante(m),
+      });
+      const reglage = m.reglage;
+      m.qualiteTenue = true;
+      let blob: Blob | null;
+      try {
+        m.appliquerQualite(PALIERS_QUALITE[0]!);
+        m.rendre();
+        blob = await new Promise<Blob | null>((ok) => m.renderer.domElement.toBlob(ok, "image/png"));
+      } finally {
+        m.appliquerQualite(reglage);
+        m.qualiteTenue = false;
+        m.rendre();
+      }
+      if (!blob) throw new Error("canevas vide");
+      return { png: insererTextePng(new Uint8Array(await blob.arrayBuffer()), CLE_PROVENANCE_PNG, JSON.stringify(p)), provenance: p, actif: !!actif };
+    } catch { setErreur("Rendu impossible : le canevas n’a pas pu être lu."); return null; }
+  }
+  async function illustrer() {
+    const c = await capturerRendu();
+    if (!c) return;
+    setErreur("");
+    setStatut("Rendu du modèle capturé pour l’illustration : le modèle n’est pas modifié.");
+    surIllustration?.({ png: c.png, provenance: c.provenance });
+  }
   async function exporterPng() {
     const m = moteur.current;
     if (!m || !provenance || raisonRendu) { setErreur(raisonRendu ?? "Vue 3D indisponible."); return; }

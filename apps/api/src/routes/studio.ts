@@ -18,11 +18,15 @@ import { studioPreferencesRouter } from "./studio-preferences.js";
 import { studioQuantitesRouter } from "./studio-quantites.js";
 import { studioDossiersRouter } from "./studio-dossiers.js";
 import { studioModelesExternesRouter } from "./studio-modeles-externes.js";
+import { studioIllustrationsRouter } from "./studio-illustrations.js";
+import { studioAgentsRouter } from "./studio-agents.js";
 
 export const studioRouter = Router({ mergeParams: true });
 studioRouter.use(requireAuth);
 // Modèles externes (lot F3) : le fichier reçu (5 Mo de texte au plus) voyage dans le corps JSON, borné à 6 Mo ici seulement.
 studioRouter.use("/studies/:studyId/variants/:variantId/modeles-externes", json({ limit: "6mb" }));
+// Illustrations (lot F) : le rendu de la vue (8 Mo de PNG au plus) voyage en base64 dans le corps JSON, borné à 12 Mo ici seulement.
+studioRouter.use("/studies/:studyId/variants/:variantId/illustrations", json({ limit: "12mb" }));
 studioRouter.use(json({ limit: "1mb" }));
 studioRouter.use("/preferences", studioPreferencesRouter);
 // `requestId` facultatif : même règle d'identifiant que les enveloppes de commandes ; rejeu = réponse 201 d'origine.
@@ -271,3 +275,6 @@ studioRouter.use(studioObservationsRouter);
 studioRouter.use(studioDossiersRouter);
 // Modèles externes (partenaires) d'une variante (lot F3) : réception, comparaison, acceptation ou refus.
 studioRouter.use(studioModelesExternesRouter);
+// Lot F (décision P-12) : illustrations depuis une vue ; jetons, propositions et journal des agents ; extensions.
+studioRouter.use(studioIllustrationsRouter);
+studioRouter.use(studioAgentsRouter);

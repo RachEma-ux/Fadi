@@ -451,7 +451,13 @@ async function staleRevisionBody(tx: Tx, variantId: string, envelope: StudioEnve
   };
 }
 
-export async function submitStudioCommands(scope: StudioScope, actorId: string, input: unknown, ecriture: StudioEcriture = "modify"): Promise<StudioContext & { replayed: boolean }> {
+/**
+ * Source d'une révision écrite par ce point d'entrée : `authenticated-session` (l'interface, la console, l'exemple) ou
+ * `agent-mcp` (proposition d'un agent confirmée par la personne dans Studio, `lib/studio-agents.ts`, INV-010). Jamais lue
+ * dans le corps de la requête : seul le serveur la fixe.
+ */
+export type StudioSourceEcriture = "authenticated-session" | "agent-mcp";
+export async function submitStudioCommands(scope: StudioScope, actorId: string, input: unknown, ecriture: StudioEcriture = "modify", source: StudioSourceEcriture = "authenticated-session"): Promise<StudioContext & { replayed: boolean }> {
   // Capture avant le premier await : aucun changement du payload durant les verrous/rejeu.
   scope = Object.freeze({ projectId: scope.projectId, studyId: scope.studyId, variantId: scope.variantId });
   // EX-003 : aucune géométrie sans variante propriétaire — un contexte incomplet est refusé avant toute lecture ou
@@ -504,7 +510,7 @@ export async function submitStudioCommands(scope: StudioScope, actorId: string, 
           study: current.study, variant: { ...current.variant, headRevisionId: id },
           revision: { id, parentRevisionId: current.variant.headRevisionId, document }, canWrite: true,
         };
-        await transaction.insert(studioRevisions).values({ id, variantId: scope.variantId, parentRevisionId: current.variant.headRevisionId, document, envelope, requestId: envelope.requestId, payloadHash, source: "authenticated-session", authorId: actorId, response });
+        await transaction.insert(studioRevisions).values({ id, variantId: scope.variantId, parentRevisionId: current.variant.headRevisionId, document, envelope, requestId: envelope.requestId, payloadHash, source, authorId: actorId, response });
         await transaction.update(studioVariants).set({ headRevisionId: id }).where(eq(studioVariants.id, scope.variantId));
         return { ...response, replayed: false };
       },
