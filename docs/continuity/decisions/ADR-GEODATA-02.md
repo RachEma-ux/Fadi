@@ -55,8 +55,9 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
      source commune est rangée explicitement (`geodata_categories_sources`, par source : le rangement survit aux nouvelles
      versions), sinon par les thèmes déclarés de la catégorie, sinon « Autres » ; une source privée n'est rangée que par
      son thème. Supprimer une catégorie ne supprime aucune couche. 15 catégories initiales semées une seule fois
-     (`geodata_reglages`). Interface : carte pleine surface, barre d'outils verticale **à gauche** (comme demandé ; elle
-     est à droite chez Kharita), bouton « Données » ouvrant le catalogue en surimpression (sections repliables, compte
+     (`geodata_reglages`). Interface : carte pleine surface, barre d'outils verticale **flottante**, à droite par défaut
+     (précision du maître d'ouvrage), déplaçable par sa poignée (souris, doigt, flèches ; double-clic : retour à
+     droite), bornée à la carte, position mémorisée dans le navigateur seulement ; bouton « Données » ouvrant le catalogue en surimpression (sections repliables, compte
      actives / total, bascule Vecteurs / Imagerie), menu ☰ en haut à droite (Données, Mes cartes, Études, Importer,
      Exporter).
 

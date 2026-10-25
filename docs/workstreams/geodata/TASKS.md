@@ -25,7 +25,7 @@
 - [x] GEO-EXPL-01 — Outils d'exploitation dans l'image et dossier de Release (PR #307 fusionnée).
 - [x] GEO-STYLE-01 — Style « une couleur par entité » (D-GD-11, PR #314 fusionnée).
 - [x] GEO-RASTER-01 — Couches raster (D-GD-13) et 17 rasters de sources d'origine ; communes OSM ; USGS MRDS.
-- [x] GEO-UI-02 — Catalogue rangé par catégories gérées, barre d'outils verticale, bouton « Données », menu ☰ (D-GD-14).
+- [x] GEO-UI-02 — Catalogue rangé par catégories gérées, barre d'outils verticale flottante (à droite par défaut), bouton « Données », menu ☰ (D-GD-14).
 - [ ] GEO-SRC-02 — Couches sans source d'origine accessible (HCP, élections, « SIG Maroc », ERA5, MODIS…) : téléchargement
   par le compte du maître d'ouvrage sur le portail tiers (identifiants en secrets d'environnement, ou fichiers déposés).
 - [x] GEO-SRC-01 — Couches de sources ouvertes OpenStreetMap et OurAirports livrées avec leur fiche (D-GD-12).

@@ -74,9 +74,11 @@ dans GeoData V1. Ces données sont collaboratives : ni exhaustives ni officielle
 
 ## Catégories du catalogue et disposition (D-GD-14)
 
-La carte occupe tout l'espace. À gauche : bouton « Données » (catalogue en surimpression : sections par catégorie
-repliables, compte « actives / total », bascule Vecteurs / Imagerie ; onglets Couches et Légende) et barre d'outils
-verticale (zoom, nord, position, plein écran, mesurer une distance ou une surface, zone, annotation, légende). En haut à
+La carte occupe tout l'espace. En haut à gauche : bouton « Données » (catalogue en surimpression : sections par
+catégorie repliables, compte « actives / total », bascule Vecteurs / Imagerie ; onglets Couches et Légende). Barre
+d'outils verticale **flottante**, à droite par défaut (zoom, nord, position, plein écran, mesurer une distance ou une
+surface, zone, annotation, légende) : la poignée du haut la déplace (glisser ou flèches du clavier, double-clic pour la
+remettre à droite) ; elle reste dans la carte et sa position est mémorisée dans ce navigateur. En haut à
 droite : menu ☰ — Données, Mes cartes, Études, Importer, Exporter.
 
 Menu ☰ → « Données » : catégories communes à tous les comptes. Avec le rôle « gestionnaire-donnees » (ou

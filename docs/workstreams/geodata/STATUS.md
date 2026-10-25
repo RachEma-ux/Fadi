@@ -46,8 +46,8 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
 - Catalogue par catégories et disposition Kharita (D-GD-14) : modèle pur `catalogue.ts` (5 tests), tables
   `geodata_categories` / `geodata_categories_sources` / `geodata_reglages`, routes `/geodata/api/categories*` (suite DB-3,
   CI seulement), panneau « Données » du menu ☰ (créer, renommer, ordonner, supprimer ; ranger, déplacer, retirer une
-  couche), barre d'outils verticale à gauche, bouton « Données » ; recette `geodata.mjs` conforme en local (59
-  vérifications, dont téléphone 390 px, axe-core et interface anglaise). Suites API DB-3 non exécutées localement (base
+  couche), barre d'outils verticale flottante (à droite par défaut, déplaçable, bornée), bouton « Données » ; recette
+  `geodata.mjs` conforme en local (63 vérifications, dont téléphone 390 px, axe-core et interface anglaise). Suites API DB-3 non exécutées localement (base
   attestée de la CI seulement).
 
 ## Points ouverts

@@ -13059,5 +13059,7 @@
 "Le libellé compte de 2 à 80 caractères.": "The label has 2 to 80 characters.",
 "Une catégorie porte déjà ce libellé.": "A category already has this label.",
 "Libellé attendu.": "Label expected.",
-"Ordre attendu : la liste exacte des catégories existantes.": "Order expected: the exact list of existing categories."
+"Ordre attendu : la liste exacte des catégories existantes.": "Order expected: the exact list of existing categories.",
+"Déplacer la barre d'outils": "Move the toolbar",
+"Déplacer la barre d'outils (glisser ou flèches ; double-clic : position par défaut)": "Move the toolbar (drag or arrow keys; double-click: default position)"
 }

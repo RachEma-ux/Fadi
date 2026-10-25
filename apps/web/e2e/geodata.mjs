@@ -97,11 +97,32 @@ check("carte : moteur chargé (canevas MapLibre)", (await page.locator(".maplibr
 
 // --- Disposition (D-GD-14) : barre d'outils verticale à gauche, bouton « Données », menu hamburger ---
 const barreOutils = page.locator("[data-gd-barre-outils]");
-const outils = await barreOutils.locator("button").evaluateAll((bs) => bs.map((b) => b.getAttribute("aria-label")));
+const outils = await barreOutils.locator("[data-gd-barre-outil]").evaluateAll((bs) => bs.map((b) => b.getAttribute("aria-label")));
 check("carte : barre d'outils verticale (zoom, nord, position, plein écran, mesures, zone, annotation, légende), chaque bouton nommé", outils.length === 10 && outils.every(Boolean), outils.join(" | "));
 const boiteBarre = await barreOutils.boundingBox();
 const boiteCarte = await page.locator("main.gd-carte").boundingBox();
-check("carte : la barre d'outils est à gauche de la carte et verticale", !!boiteBarre && !!boiteCarte && boiteBarre.x - boiteCarte.x < 30 && boiteBarre.height > boiteBarre.width * 3);
+check("carte : barre d'outils flottante, verticale, à droite par défaut", !!boiteBarre && !!boiteCarte && boiteCarte.x + boiteCarte.width - (boiteBarre.x + boiteBarre.width) < 30 && boiteBarre.height > boiteBarre.width * 3);
+// Déplacement par la poignée (glisser), borné à la carte, mémorisé ; flèches du clavier ; double-clic : retour à droite.
+const poignee = await page.locator("[data-gd-poignee]").boundingBox();
+const px = poignee.x + poignee.width / 2, py = poignee.y + poignee.height / 2;
+await page.mouse.move(px, py);
+await page.mouse.down();
+await page.mouse.move(px - 300, py + 40, { steps: 8 });
+await page.mouse.up();
+const deplacee = await barreOutils.boundingBox();
+check("barre d'outils : déplacée à la souris par sa poignée", Math.abs(deplacee.x - (boiteBarre.x - 300)) < 3 && Math.abs(deplacee.y - (boiteBarre.y + 40)) < 3, `${boiteBarre.x},${boiteBarre.y} → ${deplacee.x},${deplacee.y}`);
+await page.mouse.move(px - 300, py + 40);
+await page.mouse.down();
+await page.mouse.move(px + 900, py - 900, { steps: 8 });
+await page.mouse.up();
+const bornee = await barreOutils.boundingBox();
+check("barre d'outils : reste entière dans la carte", bornee.x + bornee.width <= boiteCarte.x + boiteCarte.width && bornee.y >= boiteCarte.y);
+await page.locator("[data-gd-poignee]").focus();
+await page.keyboard.press("ArrowLeft");
+check("barre d'outils : déplaçable au clavier (flèches)", Math.abs((await barreOutils.boundingBox()).x - (bornee.x - 10)) < 2);
+await page.locator("[data-gd-poignee]").dblclick();
+const retour = await barreOutils.boundingBox();
+check("barre d'outils : double-clic sur la poignée → position par défaut à droite", Math.abs(retour.x - boiteBarre.x) < 2 && Math.abs(retour.y - boiteBarre.y) < 2);
 check("carte : aucun contrôle de navigation MapLibre en double", (await page.locator(".maplibregl-ctrl-zoom-in").count()) === 0);
 const zoomAvant = Number(await page.locator("main.gd-carte").getAttribute("data-gd-zoom"));
 await page.locator("[data-gd-barre-outil='zoom-plus']").click();

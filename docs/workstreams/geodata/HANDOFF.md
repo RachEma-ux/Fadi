@@ -20,7 +20,7 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
   d'ouvrage (carte, fiche, recherche, enregistrement, export).
 - Style « une couleur par entité » (D-GD-11) : PR #314 fusionnée.
 - Couches raster (D-GD-13) et 17 rasters de sources d'origine ; communes OSM (1 498) ; sites minéraux USGS (110).
-- Catalogue par catégories gérées, barre d'outils verticale à gauche, bouton « Données », menu ☰ (D-GD-14).
+- Catalogue par catégories gérées, barre d'outils verticale flottante (à droite par défaut), bouton « Données », menu ☰ (D-GD-14).
 - Sources ouvertes (D-GD-12) : 29 couches OpenStreetMap / OurAirports livrées avec leur fiche (15332 objets).
 
 ## Prochaine action
