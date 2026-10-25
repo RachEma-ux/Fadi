@@ -518,6 +518,11 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/studio-memoire node apps/web/e2e/studio-memoire.mjs 2>&1 | tee -a e2e.log
+      - name: Recette de la géométrie 3D Studio — édition des faces, direction d'extrusion, profil source lié, division d'une face cotée (lot F1, apps/web/e2e/studio-faces.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-faces node apps/web/e2e/studio-faces.mjs 2>&1 | tee -a e2e.log
       # Mesure seulement (B.3-12, D.3-03) : rapport sans seuil ni verdict, joint aux captures (atelier-captures/). Un
       # incident d'interaction est consigné dans le rapport ; l'étape ne bloque jamais (la recette bloquante est
       # studio-chargement.mjs).

@@ -4,7 +4,7 @@ import { studioLayerState, validateStudioDocument, type StudioDocument, type Stu
 import { STUDIO_FRAME_3D, studioLocal2dVers3d, type StudioPoint3, type StudioSolid3d } from "./exporteurs/maillage.js";
 import { typeObjet } from "./objets/index.js";
 import { studioCotesExtrusion } from "./noyau/types.js";
-import { studioLienSolide } from "./composition/liens-solides.js";
+import { studioLienSolide } from "./commandes/liens-solides.js";
 import { studioMaillageSolide, type StudioFreeSolid3d } from "./objets-3d/maillage.js";
 import { studioMaillageArchitecture, type StudioArchitecture3d } from "./architecture/maillage.js";
 import type { StudioArchitectureItem } from "./architecture/types.js";

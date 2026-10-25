@@ -3,7 +3,7 @@ import { STUDIO_DEFAULT_LAYER_ID, StudioValidationError, validateStudioDocument,
 import { bool, ref, refs, Step, studioIfcGuid, studioStepReal, studioStepString, type IfcConstruit, type IfcContexte, type StudioIfcSummary } from "./exporteurs/ifc-step.js";
 import { typeObjet } from "./objets/index.js";
 import { studioCotesExtrusion } from "./noyau/types.js";
-import { studioLienSolide } from "./composition/liens-solides.js";
+import { studioLienSolide } from "./commandes/liens-solides.js";
 import { studioIfcSolide } from "./objets-3d/ifc.js";
 import { studioIfcArchitecture } from "./architecture/ifc.js";
 import { studioIfcProprietes } from "./exigences/ifc.js";

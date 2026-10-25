@@ -5,7 +5,7 @@ import type { StudioPoint } from "../noyau/types.js";
 import {
   directionUnitaire, estDroit, estSolideLie, validerSolide, type StudioBox, type StudioProfilePrism, type StudioSolid,
 } from "../objets-3d/solides.js";
-import { studioEmpriseConforme, studioProfilDepuisPolyligne } from "../composition/liens-solides.js";
+import { studioEmpriseConforme, studioProfilDepuisPolyligne } from "./liens-solides.js";
 import { diviserSegmentPolyligne } from "./division.js";
 
 /**

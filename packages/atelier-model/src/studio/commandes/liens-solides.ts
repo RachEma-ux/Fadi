@@ -4,9 +4,10 @@ import type { StudioShape } from "../objets/formes.js";
 import { estSolideLie, validerSolide, type StudioLienSolide, type StudioProfilePrism, type StudioSolid } from "../objets-3d/solides.js";
 
 /**
- * Liens des prismes à leur polyligne source (lot F1 : TEST-006, A.4-02, TR-EX-006). Lecture du document entier
- * (couche de composition) : l'état d'un lien n'est jamais stocké, il est relu de la source à chaque lecture, donc une
- * géométrie périmée n'est jamais présentée comme à jour. Pur : ni React, ni DOM.
+ * Liens des prismes à leur polyligne source (lot F1 : TEST-006, A.4-02, TR-EX-006). Rangés avec les commandes, qui les
+ * suivent en fin de lot (`suivreSourcesSolides`), et lus au-dessus (composition, maillage, IFC, projections) : l'état
+ * d'un lien n'est jamais stocké, il est relu de la source à chaque lecture, donc une géométrie périmée n'est jamais
+ * présentée comme à jour. Pur : ni React, ni DOM.
  */
 
 /** Emprise en plan dérivée d'une polyligne fermée : origine au premier sommet du contour discrétisé, profil relatif. */
