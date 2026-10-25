@@ -308,10 +308,12 @@ const AJOUTS = {
     "studio.propriete.definir", "studio.propriete.retirer",
     // Visualisation (lot E.5, extension additive consignée) : scènes et apparences d'affichage.
     "studio.scene.creer", "studio.scene.modifier", "studio.scene.rappeler", "studio.scene.supprimer", "studio.apparence.definir", "studio.apparence.retirer",
+    // Éléments non natifs (lot F3, extension additive consignée, champ facultatif `nonNatifs` du document).
+    "studio.nonnatif.conserver", "studio.nonnatif.retirer",
     // Géométrie 3D du lot F1 (extension additive consignée) : édition des faces, rotation, lien des solides à leur profil.
     "studio.solide.face-decaler", "studio.solide.face-diviser", "studio.solide.pivoter", "studio.solide.resoudre",
   ]),
-  types: new Set(["angular-dimension", "text", "wall", "opening", "scene", "appearance"]),
+  types: new Set(["angular-dimension", "text", "wall", "opening", "scene", "appearance", "non-native"]),
   exports: new Set([
     "dessinerCoteAngulaire", "formatStudioAngle", "measureStudioAngularDimension", "STUDIO_TEXT_JUSTIFICATIONS", "STUDIO_TEXT_MAX",
     "studioAngularFromSegments", "studioAngularValue", "studioStraightSegment", "studioTextBox", "studioTextRotationDegrees",
@@ -319,6 +321,8 @@ const AJOUTS = {
     "STUDIO_OPENING_KINDS", "STUDIO_WALL_JUSTIFICATIONS", "SCHEMA_ARCHITECTURE", "SCHEMA_MUR", "SCHEMA_OUVERTURE",
     "controlerArchitecture", "validerElementArchitectural", "validerMur", "validerOuverture", "geometrieMur", "lateraux", "placerOuverture",
     "studioPlanArchitecture", "studioMaillageArchitecture", "studioQuantitesArchitecture",
+    // Inventaire de couverture des types 3D (A.3-08, lot F5, `couverture-3d.ts`).
+    "STUDIO_COUVERTURE_3D", "STUDIO_COUVERTURE_3D_VERSION", "studioControlerCouverture3d", "studioTypes3dNonDisponibles",
     // Manifeste versionné du catalogue d'outils, chargeurs et alias de migration (B.1, `manifeste-outils.ts`).
     "STUDIO_ALIAS_OUTILS", "STUDIO_CHARGEURS_OUTILS", "STUDIO_CONTEXTES_OUTILS", "STUDIO_MANIFESTE_OUTILS", "STUDIO_MANIFESTE_OUTILS_VERSION",
     "controlerManifesteOutils", "entreeManifeste", "resoudreAliasOutil", "toolIdCanonique",
@@ -351,6 +355,15 @@ const AJOUTS = {
     "assemblerDossierConception", "pdfDossierConception",
     // Workflow de conception déclaré d'une étude (REF-01 §06, `workflow.ts`, extension additive).
     "STUDIO_PHASES_WORKFLOW", "estPhaseWorkflowStudio",
+    // Lot F3 : éléments non natifs, import IFC (lecteur STEP propre), comparaison des éléments hors `objects`, modèles externes.
+    "SCHEMA_NON_NATIF", "STUDIO_FORMATS_NON_NATIFS", "STUDIO_LIMITES_NON_NATIFS", "STUDIO_RAISONS_NON_NATIF", "validerNonNatif",
+    "STUDIO_IFC_SCHEMAS_LUS", "lireIfcStudio", "nomIfc", "validerTransformation", "comparerElementsStudio",
+    "STUDIO_ACTIONS_MODELE_EXTERNE", "STUDIO_FORMATS_MODELE_EXTERNE", "STUDIO_LIMITES_MODELE_EXTERNE", "STUDIO_STATUTS_MODELE_EXTERNE", "STUDIO_UNITES_DECLAREES",
+    "comparerModeleExterne", "lireModeleExterne", "passageModeleExterne", "validerMetaModeleExterne",
+    // Délégation d'approbation (EX-085, `delegation-approbation.ts`) et rapprochement des observations (EX-086,
+    // `rapprochement-observations.ts`), lot F4 : extensions additives.
+    "MESSAGES_PROBLEME_DELEGATION", "MESSAGES_REFUS_DELEGATION", "TYPES_PORTEE_DELEGATION", "couvreDelegation", "decisionApprobation", "etatDelegation",
+    "problemesNouvelleDelegation", "verifierDelegation", "SUIVIS_RAPPROCHEMENT", "identitesDuDocument", "rapprocherObservations",
     // Géométrie 3D du lot F1 : direction d'extrusion, relation des prismes à leur profil source, faces.
     "STUDIO_DIRECTIONS_EXTRUSION", "studioCotesExtrusion", "directionUnitaire", "estDroit", "estSolideLie", "hauteurPerpendiculaire",
     "STUDIO_RELATIONS_SOURCE", "translationSommet", "validerDirection", "studioEmpriseConforme", "studioLienSolide", "studioLiensSolides",
@@ -366,7 +379,7 @@ function sansAjouts(value: unknown): unknown {
   if (!value || typeof value !== "object") return value;
   const out = Object.fromEntries(Object.entries(value).map(([k, v]) => [k, sansAjouts(v)]));
   const props = out.properties as Record<string, unknown> | undefined;
-  if (props && "schemaVersion" in props) { delete props.annotations; delete props.architecture; delete props.proprietes; delete props.scenes; }
+  if (props && "schemaVersion" in props) { delete props.annotations; delete props.architecture; delete props.proprietes; delete props.scenes; delete props.nonNatifs; }
   // Lot F1 (extension additive consignée) : direction d'extrusion facultative (`extrusion.direction`, `extruder`) et,
   // pour le prisme, direction et source facultatives ; retirées pour comparer à la base.
   if (props && "base" in props && "height" in props) delete props.direction;

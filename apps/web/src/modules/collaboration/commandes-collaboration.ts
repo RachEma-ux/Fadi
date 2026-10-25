@@ -25,7 +25,15 @@ export type CommandeCollaboration =
   // Invitations acceptées (Issue #262, phase 3).
   | CommandeInvitations
   // Temps réel (Issue #283, RT-D5 § 10).
-  | CommandeTempsReel;
+  | CommandeTempsReel
+  // Lot F4 : délégation d'approbation (EX-085) et rapprochement des observations (EX-086).
+  | CommandeTracabilite;
+
+/**
+ * Lot F4 (Studio) : déléguer l'approbation et révoquer une délégation (panneau Publications, EX-085), rapprocher les
+ * observations de la révision courante (panneau Observations, EX-086). Ctrl+Alt+Maj+lettre restée libre (B, X, M).
+ */
+export type CommandeTracabilite = "deleguer-approbation" | "revoquer-delegation" | "rapprocher-observations";
 
 /**
  * Sessions en direct du Studio (Issue #283, RTC-2) : chaque commande a sa propre icône, sa barre (bandeau de session,
@@ -64,7 +72,7 @@ export interface DefinitionCommande {
   libelle: string;
   /** Où la commande agit : sa barre. */
   barre: "rédaction" | "fil" | "membres" | "conversations" | "conversation" | "message" | "demandes" | "demande" | "annuaire" | "participant" | "rôles" | "invitation"
-    | "session" | "participant-session" | "annotation";
+    | "session" | "participant-session" | "annotation" | "publications" | "délégation" | "observations";
   raccourci: Raccourci;
   /** Tracés SVG (24 × 24) de son icône propre. */
   icone: readonly string[];
@@ -256,7 +264,17 @@ export const COMMANDES_COLLABORATION: Readonly<Record<CommandeCollaboration, Def
   "ouvrir-revue": { libelle: "Ouvrir une revue en direct", barre: "session", raccourci: ctrlAltMajLettre("U"), icone: ["M4 7l8-4 8 4v10l-8 4-8-4z", "M4 7l8 4 8-4", "M12 11v10", "M9 15.5a3 3 0 0 1 6 0"] },
   // Voir le point de vue : épingle et cadre de visée.
   "voir-point-de-vue": { libelle: "Voir le point de vue", barre: "annotation", raccourci: ctrlAltMajLettre("G"), icone: ["M3 8V3h5", "M16 3h5v5", "M21 16v5h-5", "M8 21H3v-5", "M12 16s-3.5-3.5-3.5-6a3.5 3.5 0 0 1 7 0c0 2.5-3.5 6-3.5 6z"] },
+  // --- Lot F4 : délégation d'approbation (EX-085), rapprochement des observations (EX-086) ---
+  // Déléguer l'approbation : sceau et flèche vers une personne.
+  "deleguer-approbation": { libelle: "Déléguer l’approbation", barre: "publications", raccourci: ctrlAltMajLettre("B"), icone: ["M7 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", "M2 20a5 5 0 0 1 10 0", "M13 9h7", "M17 6l3 3-3 3", "M15 17l2 2 4-4"] },
+  // Révoquer la délégation : sceau barré d'une croix.
+  "revoquer-delegation": { libelle: "Révoquer la délégation", barre: "délégation", raccourci: ctrlAltMajLettre("X"), icone: ["M12 2l2.5 5 5.5.8-4 3.9.9 5.5L12 14.6 7.1 17.2 8 11.7 4 7.8 9.5 7z", "M16 18l4 4", "M20 18l-4 4"] },
+  // Rapprocher les observations : deux cibles reliées par une flèche.
+  "rapprocher-observations": { libelle: "Rapprocher avec la révision courante", barre: "observations", raccourci: ctrlAltMajLettre("M"), icone: ["M6 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", "M18 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", "M8.5 8.5l7 7", "M15.5 11v4.5H11"] },
 });
+
+/** Commandes du lot F4 (EX-085, EX-086). */
+export const COMMANDES_TRACABILITE: readonly CommandeTracabilite[] = ["deleguer-approbation", "revoquer-delegation", "rapprocher-observations"];
 
 /** Commandes des sessions en direct (Issue #283). */
 export const COMMANDES_TEMPS_REEL: readonly CommandeTempsReel[] = [

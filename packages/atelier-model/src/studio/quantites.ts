@@ -94,6 +94,8 @@ export interface QuantitesStudio {
   cotesExclues: number;
   /** Objets d'un type inconnu de ce métré (rapportés, jamais ignorés). */
   nonPrisEnCharge: number;
+  /** Éléments non natifs du document (lot F3) : exclus du métré, avec mention ; absent quand il n'y en a aucun. */
+  nonNatifsExclus?: number;
 }
 
 const val = (grandeur: GrandeurQuantite, valeur: number | null, motif?: MotifNonEvalue): ValeurQuantite => {
@@ -308,6 +310,7 @@ export function quantitesStudio(doc: StudioDocument): QuantitesStudio {
     calques, objets, totaux: totaliserQuantites(objets),
     cotesExclues: doc.dimensions?.length ?? 0,
     nonPrisEnCharge: objets.filter((o) => o.nature === "non-pris-en-charge").length,
+    ...(doc.nonNatifs?.length ? { nonNatifsExclus: doc.nonNatifs.length } : {}),
   };
 }
 

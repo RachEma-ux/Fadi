@@ -176,7 +176,7 @@ function useHauteurDisponible(ref: { current: HTMLElement | null }, minimum: num
 /** Panneaux latéraux qui lisent ou écrivent dans une étude : indisponibles dans la Console (aucun projet). */
 const PANNEAUX_D_ETUDE: ReadonlySet<FonctionStudio> = new Set<FonctionStudio>(["exigences", "publications", "commentaires-observations", "revisions", "metre"]);
 /** Commandes qui passent par le serveur (exports de la révision enregistrée, feuilles du dossier) : indisponibles dans la Console. */
-const COMMANDES_D_ETUDE: ReadonlySet<IdCommandeEditeur> = new Set<IdCommandeEditeur>(["exporter-svg", "exporter-dxf", "exporter-ifc", "dossier"]);
+const COMMANDES_D_ETUDE: ReadonlySet<IdCommandeEditeur> = new Set<IdCommandeEditeur>(["exporter-svg", "exporter-dxf", "exporter-ifc", "dossier", "modeles-externes"]);
 
 export function VariantWorkspace({ projectId, studyId, variantId, revisionId, commentairesOuverts = false, domaine = null, planche = null, autonome = false, surEnregistreVersProjet, surAdresse }: VariantWorkspaceProps) {
   const [context, setContext] = useState<StudioContext | null>(() => (autonome ? contexteConsole() : null));
@@ -555,6 +555,13 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       if (b) b.click(); else setInfo("Sélectionnez d’abord un mur, une ouverture ou un objet extrudé.");
       return;
     }
+    // Éléments non natifs (lot F3) : ils naissent d'un import (Importer IFC) ; on les retire depuis « Éléments du dessin ».
+    if (toolId === "studio.nonnatif.conserver") { setDialogue("import-ifc"); setInfo("Un élément non natif naît d’un import : choisissez le fichier IFC."); return; }
+    if (toolId === "studio.nonnatif.retirer") {
+      const b = shell.current?.querySelector<HTMLButtonElement>("[data-studio-nonnatif-retirer]");
+      if (b && !b.disabled) b.click(); else setInfo("Cochez d’abord, dans « Éléments du dessin », l’élément non natif à retirer.");
+      return;
+    }
     if (toolId === "studio.solide.supprimer") {
       if (!solide3d || !drawing.solides?.some(s => s.id === solide3d)) { setInfo("Sélectionnez d’abord, dans la vue 3D, le solide à supprimer."); return; }
       if (apply([{ toolId: "studio.solide.supprimer", params: { ids: [solide3d] } }])) setSolide3d(null);
@@ -657,6 +664,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
         return;
       case "exporter-png": return demander3d("exporter-png");
       case "importer-dxf": return setDialogue("import-dxf");
+      case "importer-ifc": return setDialogue("import-ifc");
+      case "modeles-externes": return setDialogue("modeles-externes");
       case "feuille": return setDialogue("feuille");
       case "dossier": return setDialogue("dossier");
       case "echanges": return setDialogue("echanges");
@@ -751,7 +760,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     if (autonome && PANNEAUX_D_ETUDE.has(f)) return <p className="studio-info" data-studio-console-indisponible={f}>Ce panneau lit et écrit dans une étude de projet : il n’est pas disponible dans la Console.</p>;
     switch (f) {
       case "outils": case "planches": case "portee-annuler": return null;
-      case "elements": return <ListeElements doc={drawing} selection={selectionIds} modifiable={writable} surSelection={select} surSupprimer={() => runTool("studio.dessin.supprimer")} />;
+      case "elements": return <ListeElements doc={drawing} selection={selectionIds} modifiable={writable} surSelection={select} surSupprimer={() => runTool("studio.dessin.supprimer")}
+        surRetirerNonNatifs={(ids) => apply([{ toolId: "studio.nonnatif.retirer", params: { ids } }])} />;
       case "exigences": return <PanneauExigences projectId={projectId} studyId={studyId} variantId={variantId} revisionId={context.revision.id} doc={drawing} cibleId={cibleSelection(drawing, selectionArchi, selectionIds)}
         modifiable={writable} ecriture={!historical && context.canWrite} nonEnregistre={commands.length > 0} surCommandes={apply} surErreur={setError} />;
       // Scènes, apparence et rendus : les panneaux de la vue 3D (même moteur), rendus ici par un portail.
@@ -889,6 +899,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     {context && drawing && <>
     <DialoguesStudio dialogue={dialogue} surFermer={() => setDialogue(null)} disponible={entreeDisponible} raison={raisonDe} surExecuter={executerEntree} drawing={drawing} modifiable={writable}
       surImporter={(cs, r) => { if (!apply(cs)) return false; setDialogue(null); setInfo(`Import DXF ajouté au brouillon : ${r.rapport.entites.total} objet(s). Enregistrez pour l’envoyer au serveur.`); return true; }}
+      surImporterIfc={(cs, r) => { if (!apply(cs)) return false; setDialogue(null); setInfo(`Import IFC ajouté au brouillon : ${r.rapport.entites.total} objet(s) natif(s), ${r.rapport.nonNatifsTotal} élément(s) non natif(s). Enregistrez pour l’envoyer au serveur.`); return true; }}
+      ecritureServeur={!historical && context.canWrite}
       revision={context.revision.document} brouillonNonEnregistre={commands.length > 0}
       cartouche={() => cartoucheInitial({ projet: projet.data, etude: context.study, variante: context.variant, revision: { id: context.revision.id, ...revisionAffichee }, utilisateur: user })}
       portee={{ projectId, studyId, variantId, revisionId: context.revision.id }}

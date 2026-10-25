@@ -8,6 +8,7 @@ import type { StudioSolid } from "../objets-3d/solides.js";
 import type { StudioArchitectureItem } from "../architecture/types.js";
 import type { StudioPropriete } from "../exigences/proprietes.js";
 import type { StudioElementVisualisation } from "../scenes/scenes.js";
+import type { StudioNonNatif } from "../non-natifs/non-natifs.js";
 
 /**
  * Rapport de fidélité d'un export Studio (E.6-03) : pour un document et un format (SVG, DXF, IFC), ce qui est exporté
@@ -41,6 +42,8 @@ export const STUDIO_RAISONS_FIDELITE = Object.freeze([
   "ouverture-en-lacune",
   // Non couvert
   "non-extrude", "cote-hors-ifc", "annotation-hors-ifc", "solide-hors-2d", "visualisation-hors-export", "type-sans-capacite",
+  // Élément non natif (lot F3) : conservé tel que l’import l’a lu, écrit dans aucun format.
+  "non-natif-hors-export",
   // Propriétés BIM déclarées (E.1-01) : jeu de projet `Fadi_ProprietesDeclarees` en IFC ; ni SVG ni DXF ; une propriété
   // sans valeur (« non évaluée ») n'est écrite nulle part.
   "propriete-non-exportee", "propriete-en-pset", "propriete-non-evaluee",
@@ -48,9 +51,9 @@ export const STUDIO_RAISONS_FIDELITE = Object.freeze([
 export type StudioRaisonFidelite = (typeof STUDIO_RAISONS_FIDELITE)[number];
 
 /** Catégorie = liste du document qui porte l'élément. */
-export type StudioCategorieEchange = "objets" | "cotes" | "annotations" | "solides" | "architecture" | "proprietes" | "scenes" | "inconnue";
+export type StudioCategorieEchange = "objets" | "cotes" | "annotations" | "solides" | "architecture" | "proprietes" | "scenes" | "nonNatifs" | "inconnue";
 /** Liste du document de chaque catégorie connue (clé de `StudioDocument`). */
-export const STUDIO_LISTES_ECHANGE = Object.freeze({ objets: "objects", cotes: "dimensions", annotations: "annotations", solides: "solides", architecture: "architecture", proprietes: "proprietes", scenes: "scenes" } as const);
+export const STUDIO_LISTES_ECHANGE = Object.freeze({ objets: "objects", cotes: "dimensions", annotations: "annotations", solides: "solides", architecture: "architecture", proprietes: "proprietes", scenes: "scenes", nonNatifs: "nonNatifs" } as const);
 
 export interface StudioJugementFidelite { statut: StudioStatutFidelite; raison: StudioRaisonFidelite }
 type Juge<T> = (item: T) => StudioJugementFidelite;
@@ -101,7 +104,8 @@ function texteDxf(content: string): StudioJugementFidelite {
  *   exactes (valeur, unité et source déclarées, `exigences/ifc.ts`) quand elles ont une valeur ; sans valeur : non
  *   couvertes (`propriete-non-evaluee`) ; SVG et DXF ne les portent pas ;
  * - visualisation (lot E.5) : scènes et apparences d'affichage ne sont écrites dans aucun format (réglages de vue, pas
- *   des données du modèle) : non couvertes.
+ *   des données du modèle) : non couvertes ;
+ * - éléments non natifs (lot F3) : conservés tels que l’import les a lus, écrits dans aucun format : non couverts.
  */
 export const STUDIO_CAPACITES_EXPORT: {
   readonly objets: { readonly [K in StudioShape["type"]]: ParFormat<Extract<StudioShape, { type: K }>> };
@@ -112,6 +116,7 @@ export const STUDIO_CAPACITES_EXPORT: {
   /** Propriétés déclarées (E.1-01) : sans discriminant de type, un seul type « propriete ». */
   readonly proprietes: { readonly propriete: ParFormat<StudioPropriete> };
   readonly scenes: { readonly [K in StudioElementVisualisation["type"]]: ParFormat<Extract<StudioElementVisualisation, { type: K }>> };
+  readonly nonNatifs: { readonly "non-native": ParFormat<StudioNonNatif> };
 } = Object.freeze({
   objets: {
     line: { svg: trace2d("trace-exact"), dxf: trace2d("trace-exact"), ifc: ifc3d((o) => exact(o.extrusion && "thickness" in o.extrusion && o.extrusion.thickness !== undefined ? "extrusion-exacte" : "surface-exacte")) },
@@ -149,6 +154,9 @@ export const STUDIO_CAPACITES_EXPORT: {
   scenes: {
     scene: { svg: () => nonCouvert("visualisation-hors-export"), dxf: () => nonCouvert("visualisation-hors-export"), ifc: () => nonCouvert("visualisation-hors-export") },
     appearance: { svg: () => nonCouvert("visualisation-hors-export"), dxf: () => nonCouvert("visualisation-hors-export"), ifc: () => nonCouvert("visualisation-hors-export") },
+  },
+  nonNatifs: {
+    "non-native": { svg: () => nonCouvert("non-natif-hors-export"), dxf: () => nonCouvert("non-natif-hors-export"), ifc: () => nonCouvert("non-natif-hors-export") },
   },
 });
 
@@ -228,6 +236,8 @@ export function studioRapportFidelite(input: StudioDocument, format: StudioForma
   for (const p of doc.proprietes ?? []) poser("proprietes", "propriete", STUDIO_CAPACITES_EXPORT.proprietes.propriete[format](p), `${p.cibleId}#${p.nom}`);
   // Scènes et apparences : sans calque propre (une apparence de calque ne pose rien sur ce calque).
   for (const s of doc.scenes ?? []) poser("scenes", s.type, STUDIO_CAPACITES_EXPORT.scenes[s.type][format](s as never), s.id);
+  // Éléments non natifs (lot F3) : jamais exportés ; comptés sur leur calque.
+  parcourir("nonNatifs", doc.nonNatifs);
   // Liste du document qu'aucune catégorie ne connaît : comptée non couverte, jamais omise.
   for (const [cle, valeur] of Object.entries(doc as unknown as Record<string, unknown>)) {
     if (CLES_CONNUES.has(cle) || !Array.isArray(valeur)) continue;

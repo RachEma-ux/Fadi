@@ -173,6 +173,7 @@ export function PanneauQuantites({ projectId, studyId, variantId, revisionId, do
       ? <p data-studio-quantites-deductions="ouvertures-declarees"><strong>Déductions : ouvertures déclarées seulement</strong> — chaque mur architectural déduit les ouvertures créées dans ce mur (volume net) ; rien n’est déduit d’un recouvrement.</p>
       : <p data-studio-quantites-deductions><strong>Déductions : non déclarées</strong> — aucune ouverture n’est déduite d’un recouvrement ; les quantités nettes ne sont pas évaluées.</p>}
     {brut.cotesExclues > 0 && <p>{`${brut.cotesExclues} cote(s) exclue(s) du métré.`}</p>}
+    {(brut.nonNatifsExclus ?? 0) > 0 && <p data-studio-metre-non-natifs={brut.nonNatifsExclus}>{`${brut.nonNatifsExclus} élément(s) non natif(s) exclu(s) du métré (importés sans équivalent natif).`}</p>}
     {brut.nonPrisEnCharge > 0 && <p role="note" data-studio-quantites-inconnus>{`${brut.nonPrisEnCharge} objet(s) d’un type non pris en charge : non évalué(s).`}</p>}
     {evaluation.aRevoir.length > 0 && <p role="note" className="studio-quantites-revoir" data-studio-quantites-a-revoir={evaluation.aRevoir.length}>
       {`${evaluation.aRevoir.length} ajustement(s) à revoir : leur cible a changé depuis leur révision ; ils ne sont pas appliqués.`}

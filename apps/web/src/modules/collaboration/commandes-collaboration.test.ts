@@ -10,7 +10,7 @@ import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { BASCULES, COMMANDES_COLLABORATION, COMMANDES_COM, COMMANDES_TEMPS_REEL, declenche, propsRaccourci, type CommandeCollaboration } from "./commandes-collaboration";
+import { BASCULES, COMMANDES_COLLABORATION, COMMANDES_COM, COMMANDES_TEMPS_REEL, COMMANDES_TRACABILITE, declenche, propsRaccourci, type CommandeCollaboration } from "./commandes-collaboration";
 import { IconeCollaboration, RaccourciCollaboration } from "./IconeCollaboration";
 
 const SRC = new URL("../../", import.meta.url).pathname;
@@ -44,6 +44,10 @@ const ECRANS: Record<CommandeCollaboration, string[]> = {
     "terminer-participation", "retour-participant", "effacer-contact", "clore-projet", "rouvrir-projet"] as const).map((c) => [c, ["modules/collaboration/Participants.tsx"]])),
   // Temps réel (Issue #283) : bandeau de session et ligne d'un participant, dans le même écran.
   ...Object.fromEntries(COMMANDES_TEMPS_REEL.map((c) => [c, ["modules/studio/temps-reel/BandeauSession.tsx"]])),
+  // Lot F4 : barre des délégations et ligne d'une délégation (EX-085) ; barre du panneau Observations (EX-086).
+  "deleguer-approbation": ["modules/studio/publication/PanneauDelegations.tsx"],
+  "revoquer-delegation": ["modules/studio/publication/PanneauDelegations.tsx"],
+  "rapprocher-observations": ["modules/studio/observations/PanneauObservations.tsx"],
 } as Record<CommandeCollaboration, string[]>;
 
 function sources(dir: string): string[] {
@@ -140,6 +144,15 @@ describe("Règle d'or — commandes de collaboration (audience, export du lecteu
     expect(propsRaccourci("clore-session")["aria-keyshortcuts"]).toBe("Control+Alt+Shift+C");
     const bandeau = lire("modules/studio/temps-reel/BandeauSession.tsx");
     expect(bandeau.includes("<IconeCollaboration commande={commande}") && bandeau.includes("<RaccourciCollaboration commande={commande}") && bandeau.includes("propsRaccourci(commande)")).toBe(true);
+  });
+
+  it("Lot F4 (EX-085, EX-086) : déléguer, révoquer, rapprocher — Ctrl+Alt+Maj+B, X, M, chacune dans sa barre", () => {
+    expect(COMMANDES_TRACABILITE.map((c) => [c, COMMANDES_COLLABORATION[c].raccourci.libelle, COMMANDES_COLLABORATION[c].barre])).toEqual([
+      ["deleguer-approbation", "Ctrl+Alt+Maj+B", "publications"], ["revoquer-delegation", "Ctrl+Alt+Maj+X", "délégation"], ["rapprocher-observations", "Ctrl+Alt+Maj+M", "observations"],
+    ]);
+    const t = (code: string, ctrlKey = true) => ({ code, altKey: true, shiftKey: true, ctrlKey, metaKey: false });
+    expect(declenche(t("KeyB"), "deleguer-approbation") && declenche(t("KeyX"), "revoquer-delegation") && declenche(t("KeyM"), "rapprocher-observations")).toBe(true);
+    expect(declenche(t("KeyB", false), "deleguer-approbation")).toBe(false);
   });
 
   it("rendu : icône SVG décorative, raccourci affiché", () => {

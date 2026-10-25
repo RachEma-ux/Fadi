@@ -32,6 +32,7 @@ export const LIBELLES_RAISON_FIDELITE: Readonly<Record<StudioRaisonFidelite, str
   "solide-hors-2d": "Solide 3D absent du fichier 2D",
   "visualisation-hors-export": "Réglage de visualisation (scène, apparence d’affichage), jamais exporté",
   "type-sans-capacite": "Type sans capacité déclarée, non exporté",
+  "non-natif-hors-export": "Élément non natif (import sans équivalent natif), jamais exporté",
   "propriete-non-exportee": "Propriété déclarée non écrite dans le fichier",
   "propriete-en-pset": "Propriété déclarée écrite dans le jeu de propriétés du projet",
   "propriete-non-evaluee": "Propriété déclarée sans valeur (non évaluée), non écrite",
@@ -41,7 +42,7 @@ export const LIBELLES_RAISON_FIDELITE: Readonly<Record<StudioRaisonFidelite, str
 export const LIBELLES_TYPE_ELEMENT: Readonly<Record<string, string>> = Object.freeze({
   line: "Ligne", rectangle: "Rectangle", circle: "Cercle", arc: "Arc", polyline: "Polyligne",
   dimension: "Cote", "angular-dimension": "Cote angulaire", text: "Texte", box: "Boîte", prism: "Prisme",
-  wall: "Mur", opening: "Ouverture", propriete: "Propriété", scene: "Scène", appearance: "Apparence d’affichage",
+  wall: "Mur", opening: "Ouverture", propriete: "Propriété", scene: "Scène", appearance: "Apparence d’affichage", "non-native": "Élément non natif",
 });
 export const libelleType = (type: string): string => (Object.hasOwn(LIBELLES_TYPE_ELEMENT, type) ? LIBELLES_TYPE_ELEMENT[type]! : type);
 
