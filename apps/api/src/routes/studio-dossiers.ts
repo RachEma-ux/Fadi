@@ -12,6 +12,11 @@
  *   GET    /studies/:studyId/dossiers/:dossierId                  détail et dossier assemblé
  *   PATCH  /studies/:studyId/dossiers/:dossierId                  titre, feuilles ordonnées, métré, fidélité
  *   GET    /studies/:studyId/dossiers/:dossierId/files/:format    pdf | json
+ *   GET    /studies/:studyId/section-views                        vues de coupe enregistrées de l'étude (EX-075, lot PUB)
+ *   POST   /studies/:studyId/variants/:variantId/section-views    nouvelle vue de coupe sur une révision de la variante (201)
+ *   GET    /studies/:studyId/section-views/:viewId                vue recalculée (section, sources, actualité)
+ *   PATCH  /studies/:studyId/section-views/:viewId                définition, annotation propre, réépinglage
+ *   DELETE /studies/:studyId/section-views/:viewId                suppression (409 si un dossier la cite)
  * Aucune de ces routes n'écrit une révision : la planche de travail n'est jamais modifiée.
  */
 import { Router, type NextFunction, type Request, type Response } from "express";
@@ -21,6 +26,10 @@ import {
   readStudioDossierFile, readStudioSheetFile, studioDossierCreateSchema, studioDossierUpdateSchema, studioSheetCreateSchema, studioSheetUpdateSchema,
   updateStudioDossier, updateStudioSheet,
 } from "../lib/studio-dossiers.js";
+
+import {
+  createStudioVueCoupe, deleteStudioVueCoupe, listStudioVuesCoupe, readStudioVueCoupe, studioVueCoupeCreateSchema, studioVueCoupeUpdateSchema, updateStudioVueCoupe,
+} from "../lib/studio-vues-coupe.js";
 
 export const studioDossiersRouter = Router({ mergeParams: true });
 
@@ -102,4 +111,27 @@ studioDossiersRouter.patch(dossier, endpoint(async (req, res) => {
 studioDossiersRouter.get(`${dossier}/files/:format`, endpoint(async (req, res) => {
   const out = await readStudioDossierFile(param(req, "projectId"), param(req, "studyId"), param(req, "dossierId"), req.user!.id, param(req, "format"));
   sendFile(res, out, { "X-Studio-Dossier-Hash": out.empreinte });
+}));
+
+const vueCoupe = "/studies/:studyId/section-views/:viewId";
+studioDossiersRouter.get("/studies/:studyId/section-views", endpoint(async (req, res) => {
+  res.setHeader("Cache-Control", "private, no-store");
+  res.json(await listStudioVuesCoupe(param(req, "projectId"), param(req, "studyId"), req.user!.id));
+}));
+studioDossiersRouter.post("/studies/:studyId/variants/:variantId/section-views", endpoint(async (req, res) => {
+  const parsed = studioVueCoupeCreateSchema.safeParse(req.body ?? {});
+  if (!parsed.success) { invalid(res, parsed.error.flatten()); return; }
+  res.status(201).json(await createStudioVueCoupe(param(req, "projectId"), param(req, "studyId"), param(req, "variantId"), req.user!.id, parsed.data));
+}));
+studioDossiersRouter.get(vueCoupe, endpoint(async (req, res) => {
+  res.setHeader("Cache-Control", "private, no-store");
+  res.json(await readStudioVueCoupe(param(req, "projectId"), param(req, "studyId"), param(req, "viewId"), req.user!.id));
+}));
+studioDossiersRouter.patch(vueCoupe, endpoint(async (req, res) => {
+  const parsed = studioVueCoupeUpdateSchema.safeParse(req.body ?? {});
+  if (!parsed.success) { invalid(res, parsed.error.flatten()); return; }
+  res.json(await updateStudioVueCoupe(param(req, "projectId"), param(req, "studyId"), param(req, "viewId"), req.user!.id, parsed.data));
+}));
+studioDossiersRouter.delete(vueCoupe, endpoint(async (req, res) => {
+  res.json(await deleteStudioVueCoupe(param(req, "projectId"), param(req, "studyId"), param(req, "viewId"), req.user!.id));
 }));

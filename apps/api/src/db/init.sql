@@ -1248,6 +1248,54 @@ ALTER TABLE studio_dossiers ADD COLUMN IF NOT EXISTS quantities_adjustment_seq i
 ALTER TABLE studio_dossiers DROP CONSTRAINT IF EXISTS studio_dossiers_quantities_adjustment_seq_check,
   ADD CONSTRAINT studio_dossiers_quantities_adjustment_seq_check
   CHECK (quantities_adjustment_seq IS NULL OR (quantities_adjustment_seq >= 1 AND quantities_variant_id IS NOT NULL)) NOT VALID;
+-- Lot PUB (25 octobre 2026) — additif : colonnes nullables ou à défaut, tables nouvelles ; aucune ligne métier réécrite.
+-- EX-075 : vues de coupe enregistrées, rangées à part des révisions (une vue LIT une révision, elle ne l'écrit jamais) :
+-- définition (niveau / repère, cadrage, échelle, visibilité, styles, annotations propres) et révision source épinglée.
+CREATE TABLE IF NOT EXISTS studio_section_views (
+  id text PRIMARY KEY,
+  study_id text NOT NULL REFERENCES studio_studies(id) ON DELETE CASCADE,
+  variant_id text NOT NULL,
+  revision_id text NOT NULL,
+  definition jsonb NOT NULL,
+  created_by text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS studio_section_views_study_idx ON studio_section_views(study_id, created_at);
+ALTER TABLE studio_section_views DROP CONSTRAINT IF EXISTS studio_section_views_variant_of_study,
+  ADD CONSTRAINT studio_section_views_variant_of_study FOREIGN KEY(study_id, variant_id)
+  REFERENCES studio_variants(study_id, id) ON DELETE CASCADE NOT VALID;
+ALTER TABLE studio_section_views DROP CONSTRAINT IF EXISTS studio_section_views_revision_of_variant,
+  ADD CONSTRAINT studio_section_views_revision_of_variant FOREIGN KEY(variant_id, revision_id)
+  REFERENCES studio_revisions(variant_id, id) ON DELETE CASCADE NOT VALID;
+ALTER TABLE studio_section_views DROP CONSTRAINT IF EXISTS studio_section_views_definition_object,
+  ADD CONSTRAINT studio_section_views_definition_object CHECK (jsonb_typeof(definition) = 'object') NOT VALID;
+-- EX-076 : un dossier de conception réunit ses feuilles et des vues de coupe de la maquette (ordre conservé).
+ALTER TABLE studio_dossiers ADD COLUMN IF NOT EXISTS section_view_ids jsonb NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE studio_dossiers DROP CONSTRAINT IF EXISTS studio_dossiers_section_view_ids_array,
+  ADD CONSTRAINT studio_dossiers_section_view_ids_array CHECK (jsonb_typeof(section_view_ids) = 'array') NOT VALID;
+-- IF-010 / EX-084 : identité propre de l'observation (`issue_id`, distincte du commentaire d'origine qui reste la note),
+-- catégorie, gravité (vocabulaire décidé par le lot PUB), pièces justificatives (volumes adressés par SHA-256) et
+-- références BCF reçues (conservées comme références, jamais assimilées à l'identité interne). Le défaut couvre toutes
+-- les voies d'insertion ; les lignes existantes reçoivent une identité dérivée de leur commentaire.
+ALTER TABLE studio_observations ADD COLUMN IF NOT EXISTS issue_id text;
+ALTER TABLE studio_observations ALTER COLUMN issue_id SET DEFAULT ('issue_' || md5(random()::text || clock_timestamp()::text));
+UPDATE studio_observations SET issue_id = 'issue_' || md5(comment_id) WHERE issue_id IS NULL;
+ALTER TABLE studio_observations ALTER COLUMN issue_id SET NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS studio_observations_issue_unique ON studio_observations(issue_id);
+ALTER TABLE studio_observations ADD COLUMN IF NOT EXISTS categorie text;
+ALTER TABLE studio_observations ADD COLUMN IF NOT EXISTS gravite text;
+ALTER TABLE studio_observations ADD COLUMN IF NOT EXISTS pieces jsonb NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE studio_observations ADD COLUMN IF NOT EXISTS bcf_refs jsonb NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE studio_observations DROP CONSTRAINT IF EXISTS studio_observations_categorie_check,
+  ADD CONSTRAINT studio_observations_categorie_check CHECK (categorie IS NULL OR categorie IN ('coordination', 'conformite', 'geometrie', 'documentation', 'metre', 'autre')) NOT VALID;
+ALTER TABLE studio_observations DROP CONSTRAINT IF EXISTS studio_observations_gravite_check,
+  ADD CONSTRAINT studio_observations_gravite_check CHECK (gravite IS NULL OR gravite IN ('bloquante', 'majeure', 'mineure', 'information')) NOT VALID;
+ALTER TABLE studio_observations DROP CONSTRAINT IF EXISTS studio_observations_pieces_array,
+  ADD CONSTRAINT studio_observations_pieces_array CHECK (jsonb_typeof(pieces) = 'array' AND jsonb_typeof(bcf_refs) = 'array') NOT VALID;
+-- IF-009 : une observation bloquante se résout par sa clôture, ou se déroge par une décision du propriétaire.
+ALTER TABLE studio_observation_decisions DROP CONSTRAINT IF EXISTS studio_observation_decisions_portee_check,
+  ADD CONSTRAINT studio_observation_decisions_portee_check CHECK (portee IN ('cloture', 'autre', 'derogation')) NOT VALID;
 -- Modèles externes (partenaires) d'une variante Studio (lot F3, TR-EX-066, lib/studio-modeles-externes.ts) : une ligne
 -- par réception, avec ce que l'émetteur déclare (référence, auteur, discipline, format, version, unité, transformation),
 -- le fichier reçu tel quel et son empreinte SHA-256 (`content_digest`), le rapport du lecteur (unité lue, pertes, éléments non natifs), la dernière

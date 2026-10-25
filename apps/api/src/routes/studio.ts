@@ -23,6 +23,9 @@ export const studioRouter = Router({ mergeParams: true });
 studioRouter.use(requireAuth);
 // Modèles externes (lot F3) : le fichier reçu (5 Mo de texte au plus) voyage dans le corps JSON, borné à 6 Mo ici seulement.
 studioRouter.use("/studies/:studyId/variants/:variantId/modeles-externes", json({ limit: "6mb" }));
+// Observations (lot PUB) : pièces justificatives (5 × 2 Mo) et fichier BCF (8 Mo) en base64 dans le corps JSON.
+studioRouter.use("/studies/:studyId/variants/:variantId/observations", json({ limit: "12mb" }));
+studioRouter.use("/studies/:studyId/variants/:variantId/comments", json({ limit: "12mb" }));
 studioRouter.use(json({ limit: "1mb" }));
 studioRouter.use("/preferences", studioPreferencesRouter);
 // `requestId` facultatif : même règle d'identifiant que les enveloppes de commandes ; rejeu = réponse 201 d'origine.

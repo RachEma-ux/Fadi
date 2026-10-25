@@ -147,7 +147,10 @@ export const STUDIO_JSON_FIELDS_WITHOUT_ACCOUNTS: Readonly<Partial<Record<Studio
   // Définition d'une feuille composée (numéro, titre, format, vue source, auteur saisi en texte) et feuilles d'un
   // dossier (identifiants) : aucun compte (l'auteur du cartouche est un texte saisi, jamais un identifiant de compte).
   studio_sheets: ["definition"],
-  studio_dossiers: ["sheet_ids"],
+  // Vues de coupe d'un dossier (identifiants, lot PUB) : aucun compte.
+  studio_dossiers: ["sheet_ids", "section_view_ids"],
+  // Pièces justificatives (nom, type, taille, empreinte) et références BCF reçues (Guid, contexte) d'une observation (IF-010) : aucun compte.
+  studio_observations: ["pieces", "bcf_refs"],
   studio_publications: ["package", "manifest"],
   studio_tool_preferences: ["favorites", "personal", "groups"],
 });

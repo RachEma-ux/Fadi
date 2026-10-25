@@ -11,8 +11,9 @@
  * typé par `@parcours/domain-model`. Mélanger les deux serait exactement
  * l'erreur de repères que `docs/architecture.md` interdit.
  */
+import { sql } from "drizzle-orm";
 import { bigint, bigserial, boolean, customType, pgSchema, date, doublePrecision, index, integer, jsonb, pgTable, pgView, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
-import type { ConclusionControle, EtatExecution, ExigenceStudio, GrandeurQuantite, ResultatControle, StudioDocument, StudioEnvelope, StudioFeuilleComposeeDefinition, StudioPhaseWorkflow, UniteQuantite } from "@parcours/atelier-model";
+import type { ConclusionControle, EtatExecution, ExigenceStudio, GrandeurQuantite, ResultatControle, StudioDocument, StudioEnvelope, StudioFeuilleComposeeDefinition, StudioPhaseWorkflow, StudioVueCoupeDefinition, UniteQuantite } from "@parcours/atelier-model";
 
 /** Colonne PostGIS brute : on ne fait pas transiter la géométrie par du JS côté serveur, on la laisse en WKT/EWKT et on laisse Postgres faire le travail spatial. */
 const geography = customType<{ data: string; driverData: string }>({
@@ -189,6 +190,7 @@ export const mailOutbox = adminSchema.table("mail_outbox", {
 });
 
 import type { SiteContextDeclaration } from "@parcours/domain-model";
+import type { ManifestePublication } from "../lib/studio-publication-statuts.js";
 
 export interface EditingLock {
   userId: string;
@@ -1100,7 +1102,23 @@ export const studioObservations = pgTable("studio_observations", {
   // Contexte de vue déclaré à l'ouverture (E.2-02) ; null pour une observation antérieure ou sans vue citée.
   vueMode: text("vue_mode").$type<StudioObservationVueMode | null>(),
   vueRef: text("vue_ref"),
+  // IF-010 / EX-084 (lot PUB) : identité propre (distincte du commentaire d'origine, qui reste la note), catégorie,
+  // gravité, pièces justificatives (volumes par SHA-256) et références BCF reçues (jamais l'identité interne).
+  issueId: text("issue_id").notNull().default(sql`('issue_' || md5(random()::text || clock_timestamp()::text))`),
+  categorie: text("categorie").$type<StudioObservationCategorie | null>(),
+  gravite: text("gravite").$type<StudioObservationGravite | null>(),
+  pieces: jsonb("pieces").$type<(StudioObservationPiece & { sha256: string })[]>().notNull().default([]),
+  bcfRefs: jsonb("bcf_refs").$type<StudioObservationBcfRef[]>().notNull().default([]),
 }, (t) => [index("studio_observations_variant_idx").on(t.variantId), index("studio_observations_responsable_idx").on(t.responsableId)]);
+
+/** Catégories d'une observation (IF-010, vocabulaire du lot PUB). */
+export type StudioObservationCategorie = "coordination" | "conformite" | "geometrie" | "documentation" | "metre" | "autre";
+/** Gravité d'une observation (IF-010) ; `bloquante` empêche la publication tant qu'elle n'est ni résolue ni dérogée (IF-009). */
+export type StudioObservationGravite = "bloquante" | "majeure" | "mineure" | "information";
+/** Pièce justificative d'une observation : contenu dans `volumes` (identifiant = SHA-256). */
+export interface StudioObservationPiece { name: string; mime: string; size: number; sha256: string }
+/** Référence BCF reçue : identifiant du sujet dans SON contexte d'origine (projet BCF, fichier), jamais l'identité interne. */
+export interface StudioObservationBcfRef { guid: string; contexte: string; fichierSha256: string; importeLe: string }
 
 /** Modes de l'espace de travail Studio cités comme contexte de vue d'une observation (E.2-02). */
 export type StudioObservationVueMode = "plan" | "3d" | "feuille" | "quantites" | "exigences" | "revue";
@@ -1109,7 +1127,7 @@ export type StudioObservationDomaine = "exigence" | "metre" | "revue" | "objet";
 export type StudioObservationTacheStatut = "a-faire" | "faite" | "annulee";
 export type StudioObservationTacheAction = "creer" | "terminer" | "annuler" | "rouvrir" | "reattribuer";
 export type StudioObservationDecisionNature = "proposition" | "decision";
-export type StudioObservationDecisionPortee = "cloture" | "autre";
+export type StudioObservationDecisionPortee = "cloture" | "autre" | "derogation";
 
 /** Journal append-only des passages d'une observation (qui, quand, révision, note), ordonné par `seq`. */
 export const studioObservationEvents = pgTable("studio_observation_events", {
@@ -1227,23 +1245,20 @@ export type StudioPublicationAction = "creer" | "soumettre" | "approuver" | "ref
 /** Dimensions distinctes du lot E.4 (lib/studio-publication-statuts.ts) ; NULL sur une ligne antérieure (déduites du statut combiné). */
 export type StudioPublicationWorkStatus = "brouillon" | "en-revue" | "approuve" | "refuse";
 export type StudioPublicationDiffusionStatus = "non-diffuse" | "diffuse" | "retire" | "remplace";
-/** Manifeste figé multi-sources d'un dossier (E.4-03) : sources coordonnées, métadonnées gelées, documents du paquet. */
-export interface StudioPublicationManifest {
-  schema: "studio-publication-manifest/1";
-  /** E.3-07 : dessin 2D indépendant (SVG, DXF, feuille PDF ; sans IFC) ; absent : dossier complet. */
-  contenu?: "dessin-2d";
-  sources: { role: "principale" | "coordonnee"; variantId: string; revisionId: string; documentHash: string }[];
-  meta: { projectCode: string; projectName: string; studyName: string; variantName: string; revisionCreatedAt: string };
-  documents: { format: string; fileName: string; mime: string; size: number; sha256: string }[];
-}
-export type StudioPackageFormat = "svg" | "dxf" | "ifc" | "pdf";
+/**
+ * Manifeste figé multi-sources d'un dossier (E.4-03) : sources coordonnées, métadonnées gelées, documents du paquet ;
+ * lot PUB : usage déclaré, contrôles (IF-009) et dossier de conception publié (EX-074 / EX-076). Forme et règles :
+ * `lib/studio-publication-statuts.ts` (type importé, aucune dépendance d'exécution).
+ */
+export type StudioPublicationManifest = ManifestePublication;
+export type StudioPackageFormat = "svg" | "dxf" | "ifc" | "pdf" | "json";
 /** Fichier figé d'un paquet diffusé : contenu dans `volumes` (identifiant = SHA-256 du contenu). */
 export interface StudioPackageFile { format: StudioPackageFormat; fileName: string; mime: string; size: number; sha256: string }
 /** Paquet figé à la diffusion : révision, empreinte du document, métadonnées gelées des exports et fichiers. */
 export interface StudioPublicationPackage {
   schema: "studio-publication-package/1";
-  /** E.3-07 : dessin 2D indépendant ; absent : paquet complet. */
-  contenu?: "dessin-2d";
+  /** E.3-07 : dessin 2D indépendant ; lot PUB : dossier de conception ; absent : paquet complet. */
+  contenu?: "dessin-2d" | "dossier-conception";
   revisionId: string;
   documentHash: string;
   meta: { projectCode: string; projectName: string; studyName: string; variantName: string; revisionCreatedAt: string };
@@ -1473,6 +1488,18 @@ export const studioSheets = pgTable("studio_sheets", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [uniqueIndex("studio_sheets_number_unique").on(t.studyId, t.number)]);
 
+/** Vues de coupe enregistrées (EX-075, lot PUB) : définition propre et révision source épinglée, à part des révisions. */
+export const studioSectionViews = pgTable("studio_section_views", {
+  id: text("id").primaryKey(),
+  studyId: text("study_id").notNull().references(() => studioStudies.id, { onDelete: "cascade" }),
+  variantId: text("variant_id").notNull(),
+  revisionId: text("revision_id").notNull(),
+  definition: jsonb("definition").$type<StudioVueCoupeDefinition>().notNull(),
+  createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("studio_section_views_study_idx").on(t.studyId, t.createdAt)]);
+
 /** Dossiers de conception Studio (E.3-03) : feuilles ordonnées, métré facultatif, fidélité. */
 export const studioDossiers = pgTable("studio_dossiers", {
   id: text("id").primaryKey(),
@@ -1484,6 +1511,8 @@ export const studioDossiers = pgTable("studio_dossiers", {
   /** Borne du journal des ajustements du métré lue par le dossier (séquence max à l'épinglage) ; null : aucun ajustement. */
   quantitiesAdjustmentSeq: integer("quantities_adjustment_seq"),
   includeFidelity: boolean("include_fidelity").notNull().default(true),
+  /** EX-076 (lot PUB) : vues de coupe de la maquette réunies au dossier, dans l'ordre. */
+  sectionViewIds: jsonb("section_view_ids").$type<string[]>().notNull().default([]),
   requestId: text("request_id"),
   payloadHash: text("payload_hash"),
   createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),

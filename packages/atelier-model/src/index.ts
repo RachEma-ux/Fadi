@@ -31,6 +31,12 @@ export * from "./studio/facade-scenes.js";
 export * from "./studio/workflow.js";
 export * from "./studio/delegation-approbation.js";
 export * from "./studio/rapprochement-observations.js";
+// Lot PUB (publications, coupes, quantités, observations, manifeste).
+export * from "./studio/resultats-quantitatifs.js";
+export * from "./studio/vues-coupe.js";
+export * from "./studio/chaine-documentaire.js";
+export * from "./studio/conclusions-controle.js";
+export * from "./studio/echanges/bcf-observations.js";
 export * from "./ontologie.js";
 export * from "./modele.js";
 export * from "./geometrie.js";

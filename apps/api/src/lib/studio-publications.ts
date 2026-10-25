@@ -34,10 +34,14 @@
  */
 import { and, asc, desc, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import { z } from "zod";
-import { composerFeuilleStudio, exportStudioDxf, exportStudioIfc, exportStudioSvg, studioSheetPdf, validateStudioDocument, type StudioDocument } from "@parcours/atelier-model";
+import {
+  composerFeuilleStudio, conclureControle, exportStudioDxf, exportStudioIfc, exportStudioSvg, STUDIO_PRESENTATIONS_PIECE, STUDIO_REGLES_METRE, studioSheetPdf, validateStudioDocument,
+  type StudioDocument, type StudioPresentationPiece,
+} from "@parcours/atelier-model";
 import { db } from "../db/client.js";
 import {
-  projects, studioPublicationEvents, studioPublications, studioRevisions, studioStudies, studioVariants, users, volumes,
+  projects, studioObservationDecisions, studioObservationEvents, studioObservations, studioPublicationEvents, studioPublications, studioRequirementChecks, studioRequirementSets,
+  studioRevisions, studioStudies, studioVariants, users, volumes,
   type StudioPackageFile, type StudioPackageFormat, type StudioPublicationAction, type StudioPublicationDiffusionStatus, type StudioPublicationManifest,
   type StudioPublicationPackage, type StudioPublicationStatus, type StudioPublicationWorkStatus,
 } from "../db/schema.js";
@@ -52,15 +56,18 @@ import { lockProject, type Querier } from "./step-rows.js";
 import { assertAccess, lockedAccess, notFound, StudioRequestError, studioArchivedRefusal, studioFileSegment, studioIdentifierSchema, studyOf } from "./studio-commands.js";
 import { delegationEmployable, delegationsUtilisables, journalDelegation } from "./studio-delegations.js";
 import {
+  ACTIONS_BLOQUEES_PAR_OBSERVATION, controlerObservationsBloquantes, type ManifesteControles, type ManifesteDossier,
   actualiteDe, actualiteParEmpreinte, actualiteVue, besoinTransition, CacheRegeneration, cleRegeneration, type ContenuPublication, contenuDe, formatsDuContenu, type ControleDocuments, canonicalJson, construireManifeste, controlerApprobation, controlerEnsembleExamine, controlerTransition,
   diffusionPlusRecente, dimensionsDe, ecartsManifeste, memeContenu, empreinteManifeste, sha256, statutCombine, STUDIO_PUBLICATION_ACTIONS,
   type Actualite, type Dimensions, type EcartManifeste, type ManifesteDocument, type ManifesteMeta, type ManifesteSource, type StudioPublicationTransition,
 } from "./studio-publication-statuts.js";
+import { dossierPourPublication } from "./studio-dossiers.js";
+import { resolutionObservation } from "./studio-observations.js";
 
 export { canonicalJson, STUDIO_PUBLICATION_ACTIONS, type StudioPublicationTransition };
 export const STUDIO_PACKAGE_FORMATS: readonly StudioPackageFormat[] = ["svg", "dxf", "ifc", "pdf"];
 const MIME: Readonly<Record<StudioPackageFormat, string>> = Object.freeze({
-  svg: "image/svg+xml; charset=utf-8", dxf: "application/dxf", ifc: "application/x-step", pdf: "application/pdf",
+  svg: "image/svg+xml; charset=utf-8", dxf: "application/dxf", ifc: "application/x-step", pdf: "application/pdf", json: "application/json; charset=utf-8",
 });
 /** Au plus dix variantes coordonnées par dossier. */
 export const STUDIO_MAX_COORDINATED = 10;
@@ -76,10 +83,18 @@ export const studioPublicationCreateSchema = z.object({
    * Contenu (E.3-07) : `complet` par défaut (SVG, DXF, IFC, feuille PDF) ; `dessin-2d` publie un dessin 2D indépendant,
    * sans modèle 3D (SVG, DXF, feuille PDF ; sans IFC ni variante coordonnée).
    */
-  contenu: z.enum(["complet", "dessin-2d"]).optional(),
+  contenu: z.enum(["complet", "dessin-2d", "dossier-conception"]).optional(),
+  /** EX-074 (lot PUB) : dossier de conception publié (contenu `dossier-conception`, et lui seul). */
+  dossierId: studioIdentifierSchema.optional(),
+  /** EX-076 : présentation déclarée de pièces du dossier (document indépendant par défaut ; extrait synchronisé seulement si fondé). */
+  presentations: z.record(studioIdentifierSchema, z.enum(STUDIO_PRESENTATIONS_PIECE as [StudioPresentationPiece, ...StudioPresentationPiece[]])).optional(),
+  /** IF-009 : intention / usage de la publication (porté par le manifeste). */
+  usage: z.string().trim().min(1).max(200).optional(),
   comment: comment.optional(),
   requestId: studioIdentifierSchema.optional(),
-}).strict();
+}).strict().refine((v) => (v.contenu === "dossier-conception") === (v.dossierId !== undefined), {
+  message: "dossierId est exigé par le contenu « dossier-conception » et refusé par les autres.", path: ["dossierId"],
+}).refine((v) => v.presentations === undefined || v.contenu === "dossier-conception", { message: "presentations ne s'emploie qu'avec un dossier de conception.", path: ["presentations"] });
 export const studioPublicationTransitionSchema = z.object({
   comment: comment.optional(),
   manifestHash: hash.optional(),
@@ -112,6 +127,8 @@ export function studioPackageFiles(doc: StudioDocument, revisionId: string, meta
     dxf: () => Buffer.from(exportStudioDxf(doc), "utf8"),
     ifc: () => Buffer.from(exportStudioIfc(doc, { studyName: meta.studyName, variantName: meta.variantName, revisionId, timestamp: meta.revisionCreatedAt.slice(0, 19), key: ifcKey }), "utf8"),
     pdf: () => Buffer.from(studioSheetPdf(sheet)),
+    // Un dossier de conception porte son JSON par `fichiersDe` (jamais par l'export d'une révision seule).
+    json: () => { throw new Error("studio_package_json_dossier_only"); },
   };
   return studioPackageFormats(contenu).map((format) => ({ format, fileName: `${base}${format === "pdf" ? "-feuille" : ""}.${format}`, mime: MIME[format], body: bodies[format]() }));
 }
@@ -235,12 +252,13 @@ async function regeneratedDocuments(q: Querier, access: AccessibleProject, rows:
     const contenu = contenuDe(row.manifest);
     const key = regenerationKey(row.documentHash, row.manifest.meta, row.studyId, row.variantId, contenu);
     if (!exact) {
-      const cached = regenerationCache.get(key);
+      // Un dossier de conception peut changer sans changer de révision : jamais lu du cache (documents « non vérifiée »).
+      const cached = contenu === "dossier-conception" ? undefined : regenerationCache.get(key);
       if (cached) out.set(row.id, cached);
       continue;
     }
     const revision = await revisionOf(q, row.variantId, row.revisionId);
-    const docs = manifestDocumentsOf(studioPackageFiles(validateStudioDocument(revision.document), row.revisionId, row.manifest.meta, `${row.studyId}|${row.variantId}`, contenu));
+    const docs = manifestDocumentsOf((await fichiersDe(q, await studyOf(q, row.projectId, row.studyId), row.variantId, revision, row.manifest.meta, paramsDe(row.manifest))).files);
     regenerationCache.set(key, docs);
     out.set(row.id, docs);
   }
@@ -251,6 +269,7 @@ function allowedFor(access: AccessibleProject, actorId: string, dims: Dimensions
   return STUDIO_PUBLICATION_ACTIONS.filter((action) => {
     if (!controlerTransition(action, { ...dims, manifeste: row.manifest !== null, actualite: freshness }, "-").ok) return false;
     if (action === "diffuser" && (freshness === "perimee" || !row.approvedManifestHash)) return false;
+    if (ACTIONS_BLOQUEES_PAR_OBSERVATION.includes(action) && controlerObservationsBloquantes(row.manifest)) return false;
     if (archived && action !== "retirer") return false;
     const refus = projectAccessRefusal(access, actorId, besoinTransition(action), ciblePublication(row));
     // Délégation d'approbation (EX-085) : approuver ou refuser seulement, jamais diffuser ; la réservation d'un autre bloque toujours.
@@ -281,11 +300,14 @@ async function views(q: Querier, access: AccessibleProject, actorId: string, row
   const mails = await emails(q, [...rows.flatMap((r) => [r.createdBy, r.approvedBy, r.diffusedBy, r.replacedBy]), ...eventsRows.map((e) => e.authorId)]);
   const who = (id: string | null) => (id ? { id, email: mails.get(id) ?? "" } : null);
   const regenerated = await regeneratedDocuments(q, access, rows, states, withEvents);
+  // Lecture exacte : contrôles relus maintenant (IF-009), comparés au manifeste figé ; une liste ne les vérifie pas.
+  const controlesCourants = new Map<string, ManifesteControles | null>();
+  if (withEvents) for (const row of rows) if (row.manifest) controlesCourants.set(row.id, await controlesDe(q, row.studyId, row.manifest.sources, (row.manifest.controles?.regles ?? []).some((r) => r.type === "metre")));
   const delegables = await delegationsUtilisables(q, actorId, rows);
   return rows.map((row) => {
     const variant = states.get(row.variantId);
     // Documents : comparés si régénérés (lecture exacte ou cache), sinon « non vérifiée » ; jamais « à jour » par défaut.
-    const vue = row.manifest ? actualiteVue(row.manifest, currentSources(row.manifest, states), currentNames(access, variant), regenerated.get(row.id)) : null;
+    const vue = row.manifest ? actualiteVue(row.manifest, currentSources(row.manifest, states), currentNames(access, variant), regenerated.get(row.id), withEvents ? controlesCourants.get(row.id) ?? null : undefined) : null;
     const drift = vue ? vue.ecarts : driftOf(access, row, states);
     const freshness = vue ? vue.actualite : actualiteDe(drift);
     const documentsCheck: ControleDocuments = vue ? vue.documents : "non-verifiee";
@@ -347,14 +369,80 @@ type Variant = Awaited<ReturnType<typeof variantOf>>;
 type Revision = Awaited<ReturnType<typeof revisionOf>>;
 interface Dossier {
   manifest: StudioPublicationManifest; manifestHash: string; documentHash: string;
-  meta: StudioPublicationPackage["meta"]; files: ReturnType<typeof studioPackageFiles>;
+  meta: StudioPublicationPackage["meta"]; files: FichierPaquet[];
+}
+type FichierPaquet = { format: StudioPackageFormat; fileName: string; mime: string; body: Buffer };
+
+/** Paramètres du contenu d'un dossier de publication (contenu, dossier de conception et présentations, usage). */
+export interface ParamsContenu {
+  contenu: ContenuPublication;
+  dossierId?: string | undefined;
+  presentations?: Readonly<Record<string, StudioPresentationPiece>> | undefined;
+  usage?: string | null | undefined;
+}
+/** Paramètres relus d'un manifeste figé (les présentations sont celles de ses pièces). */
+export function paramsDe(m: StudioPublicationManifest | null): ParamsContenu {
+  return {
+    contenu: contenuDe(m), dossierId: m?.dossier?.id, usage: m?.usage ?? null,
+    presentations: m?.dossier ? Object.fromEntries(m.dossier.pieces.map((p) => [p.documentId, p.presentation])) : undefined,
+  };
+}
+
+/**
+ * Fichiers d'un paquet selon son contenu : exports de la révision (complet, dessin 2D), ou PDF et JSON du dossier de
+ * conception recalculés depuis ses révisions épinglées (EX-074), avec ses pièces contrôlées (EX-076). Les noms du projet
+ * sont ceux, gelés, des métadonnées.
+ */
+async function fichiersDe(q: Querier, study: Study, variantId: string, revision: { id: string; document: StudioDocument }, meta: ManifesteMeta, params: ParamsContenu): Promise<{ files: FichierPaquet[]; dossier: ManifesteDossier | null; metreJoint: boolean }> {
+  if (params.contenu !== "dossier-conception") {
+    return { files: studioPackageFiles(validateStudioDocument(revision.document), revision.id, meta, `${study.id}|${variantId}`, params.contenu), dossier: null, metreJoint: false };
+  }
+  const d = await dossierPourPublication(q, { code: meta.projectCode, name: meta.projectName }, study, params.dossierId!, params.presentations ?? {});
+  return { files: d.fichiers, dossier: d.manifeste, metreJoint: d.metreJoint };
+}
+
+/**
+ * Contrôles de l'ensemble publié (IF-009) : jeu d'exigences en vigueur de l'étude (et règles du métré si un dossier
+ * joint un métré), dernier contrôle enregistré de chaque révision source (exécution et conclusion normative, EX-068),
+ * observations bloquantes des variantes sources avec leur résolution.
+ */
+async function controlesDe(q: Querier, studyId: string, sources: readonly ManifesteSource[], metreJoint: boolean): Promise<ManifesteControles> {
+  const regles: ManifesteControles["regles"] = [];
+  const [jeu] = await q.select({ id: studioRequirementSets.id, version: studioRequirementSets.version }).from(studioRequirementSets)
+    .where(eq(studioRequirementSets.studyId, studyId)).orderBy(desc(studioRequirementSets.version)).limit(1);
+  if (jeu) regles.push({ type: "exigences", id: jeu.id, version: String(jeu.version) });
+  if (metreJoint) for (const g of ["volume", "volume-deduit", "volume-net"] as const) regles.push({ type: "metre", id: STUDIO_REGLES_METRE[g].ruleId, version: STUDIO_REGLES_METRE[g].ruleVersion });
+  const rapports: ManifesteControles["rapports"] = [];
+  for (const s of sources) {
+    const [c] = await q.select().from(studioRequirementChecks).where(and(eq(studioRequirementChecks.variantId, s.variantId), eq(studioRequirementChecks.revisionId, s.revisionId)))
+      .orderBy(desc(studioRequirementChecks.createdAt), desc(studioRequirementChecks.id)).limit(1);
+    if (!c) continue;
+    const n = conclureControle(c.result, null);
+    rapports.push({ controleId: c.id, variantId: s.variantId, revisionId: s.revisionId, version: c.setVersion ?? null, execution: n.execution, conclusion: n.conclusion, documentHash: c.documentHash });
+  }
+  const variantIds = [...new Set(sources.map((s) => s.variantId))];
+  const obs = variantIds.length ? await q.select({ id: studioObservations.commentId, issueId: studioObservations.issueId, variantId: studioObservations.variantId, statut: studioObservations.statut })
+    .from(studioObservations).where(and(inArray(studioObservations.variantId, variantIds), eq(studioObservations.gravite, "bloquante"))) : [];
+  const ids = obs.map((o) => o.id);
+  const decisions = ids.length ? await q.select({ observationId: studioObservationDecisions.observationId, nature: studioObservationDecisions.nature, portee: studioObservationDecisions.portee, at: studioObservationDecisions.at })
+    .from(studioObservationDecisions).where(inArray(studioObservationDecisions.observationId, ids)).orderBy(asc(studioObservationDecisions.seq)) : [];
+  const evenements = ids.length ? await q.select({ observationId: studioObservationEvents.observationId, action: studioObservationEvents.action, at: studioObservationEvents.at })
+    .from(studioObservationEvents).where(inArray(studioObservationEvents.observationId, ids)).orderBy(asc(studioObservationEvents.seq)) : [];
+  const observations: ManifesteControles["observations"] = obs.map((o) => ({
+    issueId: o.issueId, observationId: o.id, variantId: o.variantId, gravite: "bloquante" as const, statut: o.statut,
+    resolution: resolutionObservation(o.statut,
+      decisions.filter((d) => d.observationId === o.id).map((d) => ({ nature: d.nature, portee: d.portee, at: d.at.toISOString() })),
+      evenements.filter((e) => e.observationId === o.id).map((e) => ({ action: e.action, at: e.at.toISOString() }))).resolution,
+  }));
+  return { regles, rapports, observations };
 }
 
 /**
  * Dossier calculé depuis l'état présent : révision principale donnée, tête courante de chaque variante coordonnée,
  * noms actuels gelés dans les métadonnées, documents exportés de façon déterministe.
  */
-async function construireDossier(q: Querier, access: ProjetNoms, study: Study, variant: Variant, revision: Revision, coordinated: readonly string[], contenu: ContenuPublication = "complet"): Promise<Dossier> {
+async function construireDossier(q: Querier, access: ProjetNoms, study: Study, variant: Variant, revision: Revision, coordinated: readonly string[], params: ParamsContenu = { contenu: "complet" }): Promise<Dossier> {
+  const contenu = params.contenu;
   const documentHash = studioDocumentHash(revision.document);
   const sources: ManifesteSource[] = [{ role: "principale", variantId: variant.id, revisionId: revision.id, documentHash }];
   for (const id of coordinated) {
@@ -363,10 +451,11 @@ async function construireDossier(q: Querier, access: ProjetNoms, study: Study, v
     sources.push({ role: "coordonnee", variantId: other.id, revisionId: head.id, documentHash: studioDocumentHash(head.document) });
   }
   const meta: ManifesteMeta = { projectCode: access.code, projectName: access.name, studyName: study.name, variantName: variant.name, revisionCreatedAt: revision.createdAt.toISOString() };
-  const files = studioPackageFiles(validateStudioDocument(revision.document), revision.id, meta, `${study.id}|${variant.id}`, contenu);
+  const { files, dossier, metreJoint } = await fichiersDe(q, study, variant.id, revision, meta, params);
   const documents = manifestDocumentsOf(files);
-  regenerationCache.set(regenerationKey(documentHash, meta, study.id, variant.id, contenu), documents);
-  const manifest = construireManifeste(sources, meta, documents, contenu);
+  if (contenu !== "dossier-conception") regenerationCache.set(regenerationKey(documentHash, meta, study.id, variant.id, contenu), documents);
+  const controles = await controlesDe(q, study.id, sources, metreJoint);
+  const manifest = construireManifeste(sources, meta, documents, contenu, { usage: params.usage ?? null, controles, dossier });
   return { manifest, manifestHash: empreinteManifeste(manifest), documentHash, meta, files };
 }
 const coordinatedOf = (manifest: StudioPublicationManifest | null): string[] => manifest?.sources.filter((s) => s.role === "coordonnee").map((s) => s.variantId) ?? [];
@@ -439,6 +528,10 @@ export async function createStudioPublication(projectId: string, studyId: string
     if (contenu === "dessin-2d" && coordinated.length) {
       throw new StudioRequestError(400, { error: "invalid_input", code: "drawing_coordinated_invalid", message: "Un dessin 2D indépendant se publie seul : aucune variante coordonnée." });
     }
+    if (contenu === "dossier-conception" && coordinated.length) {
+      throw new StudioRequestError(400, { error: "invalid_input", code: "dossier_coordinated_invalid", message: "Un dossier de conception porte ses propres sources : aucune variante coordonnée." });
+    }
+    const params: ParamsContenu = { contenu, dossierId: input.dossierId, presentations: input.presentations, usage: input.usage ?? null };
     if (coordinated.includes(variant.id)) {
       throw new StudioRequestError(400, { error: "invalid_input", code: "coordinated_variant_invalid", message: "Une variante coordonnée doit être distincte de la variante publiée." });
     }
@@ -450,7 +543,7 @@ export async function createStudioPublication(projectId: string, studyId: string
         const same = (a: string[], b: string[]) => a.length === b.length && [...a].sort().every((x, i) => x === [...b].sort()[i]);
         if (previous.createdBy !== actorId || (input.revisionId !== undefined && previous.revisionId !== input.revisionId) || (input.title !== undefined && previous.title !== input.title)
           || (input.coordinatedVariantIds !== undefined && !same(coordinated, coordinatedOf(previous.manifest)))
-          || contenuDe(previous.manifest) !== contenu) {
+          || contenuDe(previous.manifest) !== contenu || (previous.manifest?.dossier?.id ?? undefined) !== input.dossierId || (previous.manifest?.usage ?? undefined) !== input.usage) {
           throw new StudioRequestError(409, { error: "request_conflict", message: "Cet identifiant de requête est déjà utilisé pour un autre contenu ou auteur." });
         }
         return { ...(await views(tx, access, actorId, [previous], true))[0]!, replayed: true };
@@ -463,7 +556,7 @@ export async function createStudioPublication(projectId: string, studyId: string
       });
       if (other.archivedAt !== null) return studioArchivedRefusal();
     }
-    const dossier = await construireDossier(tx, access, study, variant, revision, coordinated, contenu);
+    const dossier = await construireDossier(tx, access, study, variant, revision, coordinated, params);
     const now = new Date();
     const dims: Dimensions = { travail: "brouillon", diffusion: "non-diffuse" };
     const row = {
@@ -571,12 +664,17 @@ async function appliquerTransition(tx: Tx, access: ProjetNoms, study: Study, row
     // Manifeste recalculé maintenant (têtes, noms et exporteurs actuels) : son empreinte fait foi pour l'actualité, de
     // sorte qu'un dossier dont seuls les octets d'export ont changé peut toujours être actualisé (jamais bloqué).
     const current = row.manifest
-      ? await construireDossier(tx, access, study, variant, await revisionOf(tx, variant.id, variant.headRevisionId), coordinatedOf(row.manifest), contenuDe(row.manifest))
+      ? await construireDossier(tx, access, study, variant, await revisionOf(tx, variant.id, variant.headRevisionId), coordinatedOf(row.manifest), paramsDe(row.manifest))
       : null;
     const freshness = current ? actualiteParEmpreinte(row.manifestHash, current.manifestHash) : actualiteDe(driftOf(access, row, await variantStates(tx, sourceIds(row))));
     const verdict = controlerTransition(action, { ...dims, manifeste: row.manifest !== null, actualite: freshness }, input.comment);
     if (!verdict.ok) throw new StudioRequestError(verdict.refus.status, verdict.refus.body);
     if (action !== "retirer" && (study.archivedAt !== null || variant.archivedAt !== null)) return studioArchivedRefusal();
+    // IF-009 : observation bloquante ni résolue ni dérogée dans l'ensemble courant → soumission, approbation et diffusion refusées.
+    if (ACTIONS_BLOQUEES_PAR_OBSERVATION.includes(action)) {
+      const bloque = controlerObservationsBloquantes(current?.manifest ?? row.manifest);
+      if (bloque) throw new StudioRequestError(bloque.status, bloque.body);
+    }
     // Empreinte recalculée depuis la révision immuable : jamais crue sur parole.
     const revision = await revisionOf(tx, variant.id, row.revisionId);
     const actualHash = studioDocumentHash(revision.document);
@@ -599,7 +697,7 @@ async function appliquerTransition(tx: Tx, access: ProjetNoms, study: Study, row
     if (action === "actualiser") {
       // Nouveau manifeste depuis les têtes courantes ; l'approbation précédente ne vaut plus (elle reste au journal).
       const head = await revisionOf(tx, variant.id, variant.headRevisionId);
-      const dossier = current ?? await construireDossier(tx, access, study, variant, head, []);
+      const dossier = current ?? await construireDossier(tx, access, study, variant, head, [], paramsDe(row.manifest));
       Object.assign(patch, {
         revisionId: head.id, documentHash: dossier.documentHash, manifest: dossier.manifest, manifestHash: dossier.manifestHash, manifestBuiltAt: now,
         approvedRevisionId: null, approvedDocumentHash: null, approvedManifestHash: null, approvedBy: null, approvedAt: null, approvedSelfControl: null, approvedDelegationId: null,
@@ -683,7 +781,7 @@ export async function frozenPublicationFiles(q: Querier, publicationId: string, 
   if (!row || !row.manifest || !row.manifestHash) return null;
   const revision = await revisionOf(q, row.variantId, row.revisionId);
   if (studioDocumentHash(revision.document) !== row.documentHash) throw new Error("studio_publication_hash_drift");
-  const generated = studioPackageFiles(validateStudioDocument(revision.document), row.revisionId, row.manifest.meta, `${row.studyId}|${row.variantId}`, contenuDe(row.manifest));
+  const generated = (await fichiersDe(q, await studyOf(q, row.projectId, row.studyId), row.variantId, revision, row.manifest.meta, paramsDe(row.manifest))).files;
   const files = generated.map((f) => ({ ...f, sha256: sha256(f.body) }));
   const mismatch = row.manifest.documents
     .filter((d) => !files.some((f) => f.format === d.format && f.sha256 === d.sha256))
@@ -739,7 +837,7 @@ export async function readStudioPackageFile(projectId: string, studyId: string, 
 export async function verifierPaquet(projectId: string, studyId: string, publicationId: string, actorId: string) {
   const { row, pkg } = await packageOf(projectId, studyId, publicationId, actorId);
   const revision = await revisionOf(db, row.variantId, pkg.revisionId);
-  const recomputed = studioPackageFiles(validateStudioDocument(revision.document), pkg.revisionId, pkg.meta, `${row.studyId}|${row.variantId}`, contenuDe(pkg));
+  const recomputed = (await fichiersDe(db, await studyOf(db, row.projectId, row.studyId), row.variantId, revision, pkg.meta, pkg.contenu === "dossier-conception" ? paramsDe(row.manifest) : { contenu: contenuDe(pkg) })).files;
   const files = pkg.files.map((f) => {
     const again = recomputed.find((r) => r.format === f.format);
     const h = again ? sha256(again.body) : null;
