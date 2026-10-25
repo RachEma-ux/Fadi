@@ -23,7 +23,7 @@
 
 ## Bloqué
 
-- Aucun.
+- Aucune tâche bloquée : OP-PONT suit son cours, OP-DEPLOI attend la CI verte de `main`.
 
 ## Critères de sortie
 
