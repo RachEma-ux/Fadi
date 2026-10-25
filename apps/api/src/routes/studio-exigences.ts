@@ -12,7 +12,8 @@
  */
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { Router, type NextFunction, type Request, type Response } from "express";
-import type { ExigenceStudio, JeuExigences } from "@parcours/atelier-model";
+import type { ExigenceStudio, JeuExigences, StudioDocument } from "@parcours/atelier-model";
+import { rapprocherVariante } from "../lib/studio-observations-rapprochement.js";
 import { db } from "../db/client.js";
 import { studioRequirementChecks, studioRequirementSets, studioRevisions, studioVariants, users } from "../db/schema.js";
 import type { Tx } from "../lib/atelier-validation.js";
@@ -213,7 +214,12 @@ studioExigencesRouter.post(controlesPath, endpoint(async (req, res) => {
       id: newId("studio_requirement_check"), studyId: study.id, variantId: variant.id, revisionId: revision.id, setVersion: version,
       execution, conclusion, result, documentHash: empreinte(revision.document), authorId: actorId, requestId: input.requestId ?? null,
     }).returning();
-    return { ...controleDe(row!, await emails(tx, [actorId])), replayed: false };
+    // Réexamen (EX-086) : les observations non clôturées de la variante sont rapprochées de la révision contrôlée, dans
+    // la même transaction ; aucun statut d'observation n'est modifié (objet disparu : marqué, jamais clos).
+    const rapprochements = await rapprocherVariante(tx, {
+      variantId: variant.id, revision: { id: revision.id, document: revision.document as StudioDocument }, controle: { id: row!.id, result }, actorId, at: row!.createdAt,
+    });
+    return { ...controleDe(row!, await emails(tx, [actorId])), rapprochements: rapprochements.map((r) => ({ observationId: r.observationId, suivi: r.suivi, statut: r.statut })), replayed: false };
   });
   res.setHeader("Idempotent-Replayed", String(out.replayed));
   res.status(201).json(out);

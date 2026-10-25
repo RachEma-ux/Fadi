@@ -188,6 +188,27 @@ check("E.2-04 rouvrir réservé à l'auteur ou au propriétaire (lecteur non aut
 check("E.2-04 l'élément reste suivi par la même identité après réouverture", (await owner("GET", `${obsPath}?domaine=exigence&ref=exi-1`)).body?.observations?.[0]?.id === O);
 
 // ---------------------------------------------------------------------------
+// EX-086 — réexamen : le contrôle d'une nouvelle révision rapproche les observations par identité/source/règle ;
+// un objet disparu est marqué, jamais clos.
+const obsLigne = await owner("POST", obsPath, { body: "Ligne à reprendre (recette)", responsableId: ids.editor, revisionId: r3, objectIds: ["ligne-1"], liens: [{ domaine: "objet", ref: "ligne-1", revisionId: r3 }], requestId: rid(), audience: "projet" });
+const OL = obsLigne.body?.id;
+check("EX-086 préparation : observation ancrée sur ligne-1 (r3)", obsLigne.status === 201 && Boolean(OL), j(obsLigne.body).slice(0, 300));
+const r4 = (await envoi(r3, [{ toolId: "studio.dessin.supprimer", params: { ids: ["ligne-1"] } }])).body?.revision?.id;
+const ctl4 = await owner("POST", `${vp}/controles`, { revisionId: r4, requestId: rid() });
+const rapLigne = ctl4.body?.rapprochements?.find((x) => x.observationId === OL);
+check("EX-086 contrôle de r4 : l'observation est rapprochée, objet disparu marqué, statut inchangé (ouverte)", ctl4.status === 201 && rapLigne?.suivi === "objet-disparu" && rapLigne.statut === "ouverte", j(ctl4.body?.rapprochements));
+const rapO = ctl4.body?.rapprochements?.find((x) => x.observationId === O);
+check("EX-086 l'observation rouverte (exigence, mur) est rapprochée par règle et identité, sans changer de statut", rapO?.statut === "rouverte" && ["persiste", "a-recontroler"].includes(rapO.suivi), j(rapO));
+const relueLigne = (await owner("GET", one(OL))).body;
+check("EX-086 aucune fermeture automatique : observation toujours ouverte, journal inchangé (ouvrir seul)", relueLigne?.statut === "ouverte" && j(relueLigne.journal?.map((e) => e.action)) === '["ouvrir"]', j(relueLigne?.journal));
+const consignes = (await reader("GET", `${obsPath}/rapprochements`)).body?.rapprochements ?? [];
+check("EX-086 le lecteur lit le rapprochement consigné (révision, contrôle, éléments)", consignes.some((x) => x.observationId === OL && x.revisionId === r4 && x.checkId === ctl4.body?.id && x.suivi === "objet-disparu"
+  && x.elements.some((e) => e.domaine === "objet" && e.ref === "ligne-1" && e.issue === "disparu")), j(consignes).slice(0, 400));
+check("EX-086 le lecteur ne lance pas de rapprochement (403)", (await reader("POST", `${obsPath}/rapprochements`, {})).status === 403);
+const surR3 = await editor("POST", `${obsPath}/rapprochements`, { revisionId: r3 });
+check("EX-086 sur r3 (objet présent) : l'objet est retrouvé, à recontrôler", surR3.status === 200 && surR3.body?.resultats?.find((x) => x.observationId === OL)?.suivi === "a-recontroler", j(surR3.body).slice(0, 300));
+
+// ---------------------------------------------------------------------------
 // Notifications et refus d'accès.
 const notes = async (c, prefix) => ((await c("GET", "/notifications")).body?.items ?? []).filter((n) => String(n.id).startsWith(prefix));
 // Observation rouverte : une nouvelle tâche confiée à l'éditeur par le propriétaire.
@@ -219,6 +240,17 @@ try {
   await panneau.waitFor();
   await panneau.locator(`[data-studio-suivi="${O}"]`).waitFor();
   check("interface : l'observation suivie est listée avec ses quatre domaines", (await panneau.locator(`[data-studio-suivi="${O}"] [data-studio-suivi-liens] li`).count()) === 4);
+  // EX-086 : le dernier rapprochement est affiché ; « Rapprocher » (icône, raccourci) ne ferme rien.
+  await panneau.locator(`[data-studio-suivi="${OL}"] [data-studio-suivi-rapprochement]`).waitFor();
+  check("interface : rapprochement affiché « objet disparu », observation toujours ouverte", (await panneau.locator(`[data-studio-suivi="${OL}"]`).getAttribute("data-statut")) === "ouverte"
+    && (await panneau.locator(`[data-studio-suivi="${OL}"] [data-studio-suivi-rapprochement]`).getAttribute("data-studio-suivi-rapprochement")) === "objet-disparu");
+  const rapprocher = panneau.locator("[data-studio-suivi-rapprocher]");
+  check("interface : commande « Rapprocher » avec icône et raccourci déclaré", (await rapprocher.locator("[data-icone-collaboration=\"rapprocher-observations\"]").count()) === 1
+    && (await rapprocher.getAttribute("aria-keyshortcuts")) === "Control+Alt+Shift+M");
+  await rapprocher.click();
+  await panneau.locator("[data-studio-suivi-rapprochement-message]").waitFor();
+  check("interface : rapprochement sur demande annoncé, aucune observation close", /aucune n’est close/.test(await panneau.locator("[data-studio-suivi-rapprochement-message]").innerText())
+    && (await panneau.locator(`[data-studio-suivi="${OL}"]`).getAttribute("data-statut")) === "ouverte");
 
   // Identité réemployée : choisir une exigence déjà suivie la signale et bloque une seconde ouverture.
   await panneau.locator("[data-studio-suivi-ouvrir]").click();

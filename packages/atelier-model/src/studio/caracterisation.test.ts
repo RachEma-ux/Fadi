@@ -358,6 +358,10 @@ const AJOUTS = {
     "STUDIO_IFC_SCHEMAS_LUS", "lireIfcStudio", "nomIfc", "validerTransformation", "comparerElementsStudio",
     "STUDIO_ACTIONS_MODELE_EXTERNE", "STUDIO_FORMATS_MODELE_EXTERNE", "STUDIO_LIMITES_MODELE_EXTERNE", "STUDIO_STATUTS_MODELE_EXTERNE", "STUDIO_UNITES_DECLAREES",
     "comparerModeleExterne", "lireModeleExterne", "passageModeleExterne", "validerMetaModeleExterne",
+    // Délégation d'approbation (EX-085, `delegation-approbation.ts`) et rapprochement des observations (EX-086,
+    // `rapprochement-observations.ts`), lot F4 : extensions additives.
+    "MESSAGES_PROBLEME_DELEGATION", "MESSAGES_REFUS_DELEGATION", "TYPES_PORTEE_DELEGATION", "couvreDelegation", "decisionApprobation", "etatDelegation",
+    "problemesNouvelleDelegation", "verifierDelegation", "SUIVIS_RAPPROCHEMENT", "identitesDuDocument", "rapprocherObservations",
     // Géométrie 3D du lot F1 : direction d'extrusion, relation des prismes à leur profil source, faces.
     "STUDIO_DIRECTIONS_EXTRUSION", "studioCotesExtrusion", "directionUnitaire", "estDroit", "estSolideLie", "hauteurPerpendiculaire",
     "STUDIO_RELATIONS_SOURCE", "translationSommet", "validerDirection", "studioEmpriseConforme", "studioLienSolide", "studioLiensSolides",

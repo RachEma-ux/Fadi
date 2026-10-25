@@ -1222,6 +1222,8 @@ export interface StudioPublicationEvent {
   id: string; action: "creer" | "remplacer" | StudioPublicationTransition; fromStatus: StudioPublicationStatus | null; toStatus: StudioPublicationStatus;
   workStatus?: StudioPublicationWorkStatus | null; diffusionStatus?: StudioPublicationDiffusionStatus | null; manifestHash?: string | null; relatedPublicationId?: string | null;
   author: { id: string; email: string }; comment: string | null; revisionId: string; documentHash: string; headRevisionId: string; createdAt: string;
+  /** Délégation employée par cette décision (EX-085) ; absente ou null : droit propre de l'auteur. */
+  delegationId?: string | null;
   /** OP-6 : approbation marquée auto-contrôle ; null hors approbation et avant le lot. */
   selfControl?: boolean | null;
 }
@@ -1233,7 +1235,7 @@ export interface StudioPublication {
   workStatus: StudioPublicationWorkStatus; diffusionStatus: StudioPublicationDiffusionStatus;
   manifest: StudioPublicationManifest | null; manifestHash: string | null; manifestBuiltAt: string | null;
   createdBy: { id: string; email: string }; createdAt: string; updatedAt: string;
-  approval: { revisionId: string; documentHash: string; manifestHash?: string | null; by: { id: string; email: string } | null; at: string | null } | null;
+  approval: { revisionId: string; documentHash: string; manifestHash?: string | null; by: { id: string; email: string } | null; at: string | null; delegationId?: string | null } | null;
   /** OP-6 : approbation marquée auto-contrôle (true), non (false), ou null (avant le lot, ou non approuvée). */
   approvedSelfControl?: boolean | null;
   diffusion: { by: { id: string; email: string } | null; at: string | null; packageHash: string; manifestHash?: string | null; files: StudioPackageFile[] } | null;
@@ -1243,9 +1245,22 @@ export interface StudioPublication {
   replacement: { publicationId: string; by: { id: string; email: string } | null; at: string | null } | null;
   withdrawal: { by: { id: string; email: string }; at: string; comment: string | null } | null;
   allowed: StudioPublicationTransition[];
+  /** Délégation que le compte, sans droit propre, peut employer pour approuver ou refuser (EX-085) ; le serveur revérifie. */
+  delegation?: { id: string; delegator: { id: string; email: string }; endsAt: string; reason: string } | null;
   events?: StudioPublicationEvent[];
 }
-export interface StudioPublicationTransitionInput { comment?: string; manifestHash?: string; revisionId?: string; documentHash?: string }
+export interface StudioPublicationTransitionInput { comment?: string; manifestHash?: string; revisionId?: string; documentHash?: string; delegationId?: string }
+/** Délégation d'approbation (EX-085) : portée, période (début inclus, fin exclue), délégant, délégué, motif, journal. */
+export type StudioDelegationScopeType = "projet" | "etude" | "variante" | "publication";
+export interface StudioDelegation {
+  id: string; projectId: string; delegator: { id: string; email: string }; delegate: { id: string; email: string };
+  scope: { type: StudioDelegationScopeType; id: string | null }; startsAt: string; endsAt: string; reason: string; createdAt: string;
+  state: "a-venir" | "active" | "expiree" | "revoquee";
+  revocation: { by: { id: string; email: string }; at: string; reason: string } | null;
+  canRevoke: boolean;
+  events: { id: string; action: "creer" | "revoquer" | "employer"; actor: { id: string; email: string }; publicationId: string | null; publicationAction: "approuver" | "refuser" | null; comment: string | null; createdAt: string }[];
+}
+export interface StudioDelegationInput { delegateId: string; scopeType: StudioDelegationScopeType; scopeId?: string; startsAt: string; endsAt: string; reason: string; requestId?: string }
 /** OP-6 : autre approbateur nommé (sans e-mail dans l'espace de revue externe). */
 export interface ApprobateurPossible { name: string | null; role: "proprietaire" | "approbateur" | "approbateur-revue" }
 /** OP-6 : aperçu de l'auto-contrôle (Studio et revue externe) ; `approvers` renseigné quand l'approbation serait refusée. */
@@ -1350,6 +1365,10 @@ export const api = {
   createStudioPublication: (p: string, s: string, v: string, input: { title?: string; revisionId?: string; coordinatedVariantIds?: string[]; contenu?: "complet" | "dessin-2d"; comment?: string; requestId?: string }) => request<StudioPublication & { replayed: boolean }>(`${studioVariantPath(p, s, v)}/publications`, { method: "POST", body: JSON.stringify(input) }),
   /** Transition (soumettre, approuver, refuser, diffuser, retirer) ; l'approbation porte revisionId + documentHash examinés. */
   transitionStudioPublication: (p: string, s: string, id: string, action: StudioPublicationTransition, input: StudioPublicationTransitionInput) => request<StudioPublication>(`${studioPublicationPath(p, s, id)}/${action}`, { method: "POST", body: JSON.stringify(input) }),
+  /** Délégations d'approbation visibles (EX-085) : toutes pour le propriétaire, sinon celles dont on est délégant ou délégué. */
+  studioDelegations: (p: string) => request<{ delegations: StudioDelegation[] }>(`/projects/${encodeURIComponent(p)}/studio/delegations`),
+  createStudioDelegation: (p: string, input: StudioDelegationInput) => request<StudioDelegation & { replayed: boolean }>(`/projects/${encodeURIComponent(p)}/studio/delegations`, { method: "POST", body: JSON.stringify(input) }),
+  revokeStudioDelegation: (p: string, id: string, reason: string) => request<StudioDelegation>(`/projects/${encodeURIComponent(p)}/studio/delegations/${encodeURIComponent(id)}/revoquer`, { method: "POST", body: JSON.stringify({ reason }) }),
   /** OP-6 : aperçu de l'auto-contrôle de l'utilisateur courant avant d'approuver. */
   studioApprovalCheck: (p: string, s: string, id: string) => request<ControleApprobation>(`${studioPublicationPath(p, s, id)}/controle-approbation`),
   /** Feuilles composées de l'étude (E.3-02), provenance recalculée par le serveur. */

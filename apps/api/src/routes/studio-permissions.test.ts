@@ -87,6 +87,9 @@ const exigence = { id: "e1", libelle: "Exigence e1", metrique: { type: "nombre" 
 const publication = async () => ({ pub: await creer(`${V}/publications`, { title: "Dossier d'essai", contenu: "dessin-2d" }) });
 // Audience « projet » (écart E1) : le lecteur voit l'observation, les cellules jugent donc son rôle (403), pas son audience (404).
 const observation = async () => ({ obs: await creer(`${V}/observations`, { body: "Observation d'essai", responsableId: "editeur", audience: "projet" }) });
+/** Délégation d'approbation (EX-085) du propriétaire à l'éditeur, portée projet, période en cours. */
+const DELEGATION = { delegateId: "editeur", scopeType: "projet", startsAt: new Date(Date.now() - 3_600_000).toISOString(), endsAt: new Date(Date.now() + 30 * 86_400_000).toISOString(), reason: "Absence du propriétaire (essai)" };
+const delegation = async () => ({ dl: await creer(`${S}/delegations`, DELEGATION) });
 const feuille = async () => ({ f: await creer(`${V}/sheets`, { number: "A-01", title: "Plan", format: "A3", orientation: "paysage", scale: "ajuster" }) });
 const dossier = async () => { const { f } = await feuille(); return { f, d: await creer(`${S}/studies/s/dossiers`, { title: "Dossier", sheetIds: [f] }) }; };
 /** Modèle externe (lot F3, TR-EX-066) : fixture IFC écrite à la main, reçue par le propriétaire. */
@@ -161,6 +164,16 @@ export const ROUTES: Route[] = [
   { route: "PUT /preferences/outils", besoin: "lecture", url: () => `${S}/preferences/outils`, body: { profil: "standard", favoris: ["studio.dessin.ligne"], personnel: [] }, note: "préférences du compte (INV-009) : lecture du projet suffit" },
   { route: "GET /preferences/catalogue", besoin: "lecture", url: () => `${S}/preferences/catalogue` },
   { route: "GET /publications", besoin: "lecture", url: () => `${S}/publications` },
+  { route: "GET /delegations", besoin: "lecture", url: () => `${S}/delegations`, note: "délégations d'approbation (EX-085) : toutes pour le propriétaire, sinon celles dont on est délégant ou délégué" },
+  {
+    route: "POST /delegations", besoin: "proprietaire", url: () => `${S}/delegations`, body: DELEGATION, acteurs: { "proprietaire-verrou": "admis" },
+    note: "délégation d'approbation (EX-085) : qui détient le droit d'approuver sur la portée ; elle ne modifie aucun contenu, la réservation d'édition ne s'y oppose pas (elle s'oppose à son emploi)",
+  },
+  {
+    route: "POST /delegations/:delegationId/revoquer", besoin: "acteur", preparer: delegation, url: (c) => `${S}/delegations/${c["dl"]}/revoquer`, body: { reason: "Retour du propriétaire" },
+    note: "révocation motivée : le délégant (propriétaire) ou le propriétaire du projet ; le délégué ne révoque pas",
+    acteurs: { etranger: "404", lecteur: "403", editeur: "403", "editeur-verrou": "403", proprietaire: "admis", "proprietaire-verrou": "admis", "proprietaire-reference": "admis" },
+  },
   { route: "GET /studies/:studyId/publications", besoin: "lecture", url: () => `${S}/studies/s/publications` },
   { route: "POST /studies/:studyId/variants/:variantId/publications", besoin: "ecriture", url: () => `${V}/publications`, body: { title: "Dossier", contenu: "dessin-2d" } },
   { route: `GET ${PUB}`, besoin: "lecture", preparer: publication, url: (c) => `${S}/studies/s/publications/${c["pub"]}` },
@@ -210,6 +223,11 @@ export const ROUTES: Route[] = [
   { route: `GET ${OBS}`, besoin: "lecture", url: () => `${V}/observations` },
   { route: `POST ${OBS}`, besoin: "commentaire", url: () => `${V}/observations`, body: { body: "Observation", responsableId: "editeur" } },
   { route: `GET ${OBS}/:observationId`, besoin: "lecture", preparer: observation, url: (c) => `${V}/observations/${c["obs"]}` },
+  { route: `GET ${OBS}/rapprochements`, besoin: "lecture", preparer: observation, url: () => `${V}/observations/rapprochements`, note: "rapprochements consignés (EX-086), audience du fil respectée" },
+  {
+    route: `POST ${OBS}/rapprochements`, besoin: "ecriture", preparer: observation, url: () => `${V}/observations/rapprochements`, body: {},
+    note: "rapprochement sur demande avec la tête (EX-086) : propriétaire ou éditeur ; aucun statut d'observation modifié",
+  },
   {
     route: `POST ${OBS}/:observationId/transitions`, besoin: "acteur", preparer: observation, url: (c) => `${V}/observations/${c["obs"]}/transitions`, body: { action: "corriger", revisionId: "r1" },
     note: "corriger : le responsable (éditeur) avec le droit d'écrire, seul", acteurs: RESPONSABLE,
@@ -265,6 +283,7 @@ const REPONSES: Readonly<Record<string, string>> = {
   "POST /studies/:studyId/variants/:variantId/comments/:commentId/observation/transitions": "403 forbidden",
   "DELETE /studies/:studyId/variants/:variantId/comments/:commentId": "403 forbidden",
   "POST /studies/:studyId/variants/:variantId/publications": "201",
+  "POST /delegations": "201",
   "GET /studies/:studyId/publications/:publicationId/verification": "404 not_found",
   "GET /studies/:studyId/publications/:publicationId/files/:format": "404 not_found",
   "POST /studies/:studyId/publications/:publicationId/:action actualiser": "409 manifest_current",
