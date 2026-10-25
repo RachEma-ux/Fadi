@@ -35,11 +35,21 @@ export interface BandeauSessionProps {
   /** Affichage du présentateur différent du sien : l'écran le signale, sans changer de domaine ni de planche. */
   affichageLocal: "2d" | "3d" | "double";
   surAfficherRevision: (revisionId: string) => void;
+  /**
+   * Où ce bandeau s'affiche : `barre` (hors session) — une entrée compacte « En direct » dans la barre de l'espace, qui
+   * ouvre le panneau des sessions par-dessus le canevas sans lui prendre de hauteur ; `bandeau` (en session) — le
+   * bandeau complet sous la barre. Chaque emplacement ne répond qu'aux raccourcis de son état.
+   */
+  emplacement: "barre" | "bandeau";
 }
 
-export function BandeauSession({ tr, revisionAffichee, teteVariante, nomVariante, affichageLocal, surAfficherRevision }: BandeauSessionProps) {
+export function BandeauSession({ tr, revisionAffichee, teteVariante, nomVariante, affichageLocal, surAfficherRevision, emplacement }: BandeauSessionProps) {
   const { etat, sessions, actions, erreur, enCours } = tr;
   const [participantsOuverts, setParticipantsOuverts] = useState(false);
+  const [entreeOuverte, setEntreeOuverte] = useState(false);
+  const enSessionMaintenant = etat.connexion !== "hors-session";
+  // Entrer dans une session referme le panneau d'entrée : en la quittant, on retrouve l'entrée compacte.
+  useEffect(() => { if (enSessionMaintenant) setEntreeOuverte(false); }, [enSessionMaintenant]);
   const enSession = etat.connexion !== "hors-session";
   const s = etat.session;
   const hote = estHote(etat), presente = estPresentateur(etat), suit = tr.suit;
@@ -49,7 +59,8 @@ export function BandeauSession({ tr, revisionAffichee, teteVariante, nomVariante
   const vueAilleurs = !!etat.vue && !presente && suit && etat.vue.affichage !== affichageLocal && affichageLocal !== "double";
 
   /** Commandes disponibles maintenant (le raccourci n'agit que sur celles-ci). */
-  const disponibles: Partial<Record<CommandeTempsReel, () => void>> = !enSession
+  const actif = emplacement === "barre" ? !enSession && tr.disponible : enSession;
+  const disponibles: Partial<Record<CommandeTempsReel, () => void>> = !actif ? {} : !enSession
     ? { "ouvrir-session": () => void actions.ouvrir(revisionAffichee), ...(sessions[0] ? { "rejoindre-session": () => actions.rejoindre(sessions[0]!.id) } : {}) }
     : {
         "quitter-session": () => actions.quitter(),
@@ -72,7 +83,7 @@ export function BandeauSession({ tr, revisionAffichee, teteVariante, nomVariante
     return () => window.removeEventListener("keydown", touche);
   });
 
-  if (!tr.disponible && !enSession) return null;
+  if (!actif) return null;
   const bouton = (c: CommandeTempsReel, libelle?: string, primaire = false) => {
     const f = disponibles[c];
     return <BoutonSession commande={c} libelle={libelle} onClick={f ?? (() => {})} disabled={!f || enCours} primaire={primaire} />;
@@ -80,20 +91,25 @@ export function BandeauSession({ tr, revisionAffichee, teteVariante, nomVariante
 
   if (!enSession) {
     return (
-      <section className="tr-bandeau" aria-label="Sessions en direct" data-tr-bandeau="hors-session">
-        <span className="tr-titre">Sessions en direct</span>
-        {sessions.length
-          ? sessions.slice(0, 3).map((x) => (
-            <span key={x.id} className="tr-session-dispo" data-tr-session={x.id}>
-              <span translate="no">{x.titre}</span>
-              <span className="tr-detail">{`${x.connectes.length} connecté(s) · hôte : ${x.hote.nom}`}</span>
-              <BoutonSession commande="rejoindre-session" onClick={() => actions.rejoindre(x.id)} disabled={enCours} primaire />
-            </span>
-          ))
-          : <span className="tr-detail">Aucune session ouverte sur cette variante.</span>}
-        {bouton("ouvrir-session")}
-        {erreur && <p className="studio-alert" role="alert">{erreur}</p>}
-      </section>
+      <span className="tr-entree" data-tr-entree onKeyDown={(e) => { if (e.key === "Escape" && entreeOuverte) { e.preventDefault(); setEntreeOuverte(false); } }}>
+        <button type="button" className="tr-entree-bouton" aria-expanded={entreeOuverte} aria-controls="tr-sessions-direct" onClick={() => setEntreeOuverte((o) => !o)} data-tr-entree-bouton>
+          <span className="tr-direct" aria-hidden="true" />{sessions.length ? `En direct (${sessions.length})` : "En direct"}
+        </button>
+        {entreeOuverte && <section id="tr-sessions-direct" className="tr-bandeau tr-flottant" aria-label="Sessions en direct" data-tr-bandeau="hors-session">
+          <span className="tr-titre">Sessions en direct</span>
+          {sessions.length
+            ? sessions.slice(0, 3).map((x) => (
+              <span key={x.id} className="tr-session-dispo" data-tr-session={x.id}>
+                <span translate="no">{x.titre}</span>
+                <span className="tr-detail">{`${x.connectes.length} connecté(s) · hôte : ${x.hote.nom}`}</span>
+                <BoutonSession commande="rejoindre-session" onClick={() => actions.rejoindre(x.id)} disabled={enCours} primaire />
+              </span>
+            ))
+            : <span className="tr-detail">Aucune session ouverte sur cette variante.</span>}
+          {bouton("ouvrir-session")}
+          {erreur && <p className="studio-alert" role="alert">{erreur}</p>}
+        </section>}
+      </span>
     );
   }
 

@@ -825,10 +825,12 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
         {domaineActif === "dessin" && <SelecteurPlanche active={plancheActive} surChoix={choisirPlanche} />}
         <span className="studio-barre-espace-vide" />
         {context && drawing && <ActionsEspace disponible={commandAvailable} raison={(id) => raisonCible({ type: "commande", id })} libelle={libelleSave} surCommande={(id) => executer({ type: "commande", id }, true)} />}
+        {context && drawing && !autonome && <BandeauSession emplacement="barre" tr={tr} revisionAffichee={context.revision.id} teteVariante={context.variant.headRevisionId} nomVariante={context.variant.name} affichageLocal={affichage}
+          surAfficherRevision={(r) => void afficherRevisionSession(r)} />}
         {context && drawing && !autonome && <button type="button" className="studio-bouton-commentaires" aria-pressed={commentaires} aria-label="Commentaires" title="Commentaires" onClick={basculerCommentaires} data-studio-basculer-commentaires><Icon name="studio-comments" size={18} /></button>}
       </div>
       <AlerteStudio error={error} blocked={blocked && !enr.horsLigne.conflit} surRecharger={() => void enr.rechargerServeur()} />
-      {context && drawing && !autonome && <BandeauSession tr={tr} revisionAffichee={context.revision.id} teteVariante={context.variant.headRevisionId} nomVariante={context.variant.name} affichageLocal={affichage}
+      {context && drawing && !autonome && <BandeauSession emplacement="bandeau" tr={tr} revisionAffichee={context.revision.id} teteVariante={context.variant.headRevisionId} nomVariante={context.variant.name} affichageLocal={affichage}
         surAfficherRevision={(r) => void afficherRevisionSession(r)} />}
       <AvisFileLocale cle={user && !historical && !autonome ? cleVariante(user.id, projectId, studyId, variantId) : null} />
       {loading && <p role="status">Chargement de la planche…</p>}

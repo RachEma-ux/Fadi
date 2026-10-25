@@ -47,6 +47,14 @@ async function compte(nom, viewport = { width: 1280, height: 900 }) {
 const credentials = (n) => ({ email: `trs-${n}-${randomUUID().replaceAll("-", "").slice(0, 12)}@example.test`, password: randomBytes(18).toString("hex") });
 const viewBox = (page) => page.getByRole("group", { name: "Planche de dessin 2D", exact: true }).getAttribute("viewBox");
 const bandeau = (page) => page.locator("[data-tr-bandeau]");
+/** Hors session : ouvre l'entrée « En direct » de la barre, puis rejoint la première session (sinon, déjà connecté). */
+async function rejoindre(page) {
+  await page.locator('[data-tr-entree-bouton], [data-tr-connexion="connecte"]').first().waitFor();
+  if (await page.locator('[data-tr-connexion="connecte"]').count()) return;
+  if ((await page.locator("[data-tr-entree-bouton]").getAttribute("aria-expanded")) !== "true") await page.locator("[data-tr-entree-bouton]").click();
+  await page.locator('[data-tr-session] button[data-commande-collaboration="rejoindre-session"]').first().click();
+  await page.locator('[data-tr-connexion="connecte"]').waitFor();
+}
 async function attendreQue(f, ms = 8000) {
   const t0 = Date.now();
   while (Date.now() - t0 < ms) { if (await f()) return true; await new Promise((r) => setTimeout(r, 100)); }
@@ -77,8 +85,12 @@ try {
   }
 
   // 1. Ouverture et entrée.
+  const vbAvantEntree = await A.page.getByRole("group", { name: "Planche de dessin 2D", exact: true }).boundingBox();
+  await A.page.locator("[data-studio-barre-espace] [data-tr-entree-bouton]").click();
   await bandeau(A.page).filter({ has: A.page.getByText("Sessions en direct", { exact: true }) }).waitFor();
-  check("bandeau « Sessions en direct » dans la variante", await bandeau(A.page).getAttribute("data-tr-bandeau") === "hors-session");
+  check("entrée « En direct » dans la barre de l'espace ; le panneau des sessions s'ouvre par-dessus", await bandeau(A.page).getAttribute("data-tr-bandeau") === "hors-session");
+  const vbApresEntree = await A.page.getByRole("group", { name: "Planche de dessin 2D", exact: true }).boundingBox();
+  check("hors session, le canevas garde toute sa hauteur", Math.abs(vbApresEntree.height - vbAvantEntree.height) < 1 && Math.abs(vbApresEntree.y - vbAvantEntree.y) < 1, `${vbAvantEntree.height} → ${vbApresEntree.height}`);
   const ouvrir = A.page.getByRole("button", { name: /Ouvrir une session en direct/ });
   check("« Ouvrir une session » : icône propre et raccourci déclaré", (await ouvrir.locator("svg[data-icone-collaboration=ouvrir-session]").count()) === 1
     && (await ouvrir.getAttribute("aria-keyshortcuts")) === "Control+Alt+Shift+O");
@@ -86,8 +98,7 @@ try {
   await A.page.locator('[data-tr-connexion="connecte"]').waitFor();
   check("le propriétaire est connecté et présente", (await A.page.locator('[data-tr-suivi="presentateur"]').count()) === 1);
   await B.page.reload();
-  await B.page.locator('[data-tr-session] button[data-commande-collaboration="rejoindre-session"]').first().click();
-  await B.page.locator('[data-tr-connexion="connecte"]').waitFor();
+  await rejoindre(B.page);
   check("le lecteur rejoint et suit le présentateur", (await B.page.locator('[data-tr-suivi="suit"]').count()) === 1);
   await A.page.getByRole("button", { name: "Participants (2)" }).waitFor();
   check("présence : deux participants", true);
@@ -154,23 +165,22 @@ try {
   await axe(B.page, "bandeau et participants");
   await B.page.evaluate(() => { localStorage.setItem("fadi.langue", "en"); });
   await B.page.reload();
-  await B.page.locator('[data-tr-session] button[data-commande-collaboration="rejoindre-session"], [data-tr-connexion="connecte"]').first().waitFor();
-  if (await B.page.locator('[data-tr-session] button[data-commande-collaboration="rejoindre-session"]').count()) await B.page.locator('[data-tr-session] button[data-commande-collaboration="rejoindre-session"]').first().click();
-  await B.page.locator('[data-tr-connexion="connecte"]').waitFor();
+  await rejoindre(B.page);
   const anglais = await bandeau(B.page).innerText();
   check("passe anglaise : le bandeau est traduit", anglais.includes("Live") && anglais.includes("Connected") && !anglais.includes("Connecté") && !anglais.includes("Quitter"), anglais);
   await B.page.evaluate(() => { localStorage.setItem("fadi.langue", "fr"); });
   const T = await compte("telephone", { width: 390, height: 844 });
   await T.context.addCookies(await B.context.cookies());
   await T.page.goto(url);
+  await T.page.locator("[data-tr-entree-bouton]").click();
   await bandeau(T.page).waitFor();
   check("téléphone : aucun débordement horizontal", await T.page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
   await T.context.close();
 
   // 7. Quitter, clore.
   await B.page.locator("[data-tr-bandeau] button[data-commande-collaboration=quitter-session]").click();
-  await B.page.locator('[data-tr-bandeau="hors-session"]').waitFor();
-  check("le lecteur a quitté la session", true);
+  await B.page.locator("[data-tr-entree-bouton]").waitFor();
+  check("le lecteur a quitté la session (l'entrée compacte revient)", (await B.page.locator("[data-tr-bandeau]").count()) === 0);
   await A.page.getByRole("button", { name: /Clore la session/ }).click();
   await A.page.locator('[data-tr-connexion="session-close"]').waitFor();
   check("l'hôte clôt la session", true);

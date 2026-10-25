@@ -15,3 +15,6 @@
 .tr-superposition text{font-family:inherit;font-weight:600}
 @media (max-width:640px){.tr-commandes{margin-left:0}.tr-commande .collab-raccourci{display:none}}
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]) .tr-bandeau{background:#13292c;border-color:#2c4b4f}:root:not([data-theme=light]) .tr-detail{color:#a9c1c5}:root:not([data-theme=light]) .tr-participants li{background:#0f2224;border-color:#2c4b4f}}
+.tr-entree{position:relative;flex:0 0 auto}
+.tr-entree-bouton{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.tr-flottant{position:absolute;right:0;top:calc(100% + 6px);z-index:40;width:min(560px,calc(100vw - 32px));box-sizing:border-box;margin:0;box-shadow:0 10px 30px #153b4326}

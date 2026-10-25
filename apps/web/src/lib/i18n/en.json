@@ -11891,5 +11891,6 @@
 "Ctrl+Alt+Maj+V": "Ctrl+Alt+Shift+V",
 "Ctrl+Alt+Maj+N": "Ctrl+Alt+Shift+N",
 "Ctrl+Alt+Maj+C": "Ctrl+Alt+Shift+C",
-"Enregistrez ou abandonnez votre brouillon avant d’afficher la révision de la session : il n’est jamais remplacé.": "Save or discard your draft before showing the session revision: it is never replaced."
+"Enregistrez ou abandonnez votre brouillon avant d’afficher la révision de la session : il n’est jamais remplacé.": "Save or discard your draft before showing the session revision: it is never replaced.",
+"En direct ({0})": "Live ({0})"
 }
