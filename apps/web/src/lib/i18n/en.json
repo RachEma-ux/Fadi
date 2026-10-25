@@ -10523,6 +10523,8 @@
 "Accrochages : aucun": "Snaps: none",
 "{0} commande(s) en attente": "{0} pending command(s)",
 "Annuler et Rétablir ne portent que sur les modifications non enregistrées ; une révision enregistrée ne s’annule pas ici.": "Undo and Redo only apply to unsaved changes; a saved revision cannot be undone here.",
+"Historique local borné : {0} modification(s) plus ancienne(s) ne s’annulent plus (toujours à enregistrer)": "Bounded local history: {0} older change(s) can no longer be undone (still to be saved)",
+"L’historique local garde un nombre borné d’états : les modifications plus anciennes restent en attente et seront enregistrées, mais ne peuvent plus être annulées ici.": "The local history keeps a bounded number of states: older changes remain pending and will be saved, but can no longer be undone here.",
 "Double vue": "Dual view",
 "Dessin 2D et vue 3D": "2D drawing and 3D view",
 "Replier les panneaux": "Collapse the panels",

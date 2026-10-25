@@ -88,10 +88,30 @@ try {
   check("démarrage : seule la coquille est initialisée", e0["coquille-studio"].initialise && !e0["planche-2d"].initialise && !e0["rendu-3d"].initialise && !e0.calcul.initialise, JSON.stringify(Object.values(e0).map((e) => [e.id, e.phase])));
 
   // 2. Ouverture d'une planche.
+  const lecturesOuverture = [];
+  const noterLecture = (r) => { const u = new URL(r.url()); if (r.request().method() === "GET" && /\/studio\/(preferences\/(outils|catalogue)|studies\/[^/]+(\/variants\/[^/]+)?)$/.test(u.pathname)) lecturesOuverture.push([u.pathname.replace(/^.*\/studio\//, ""), r.status()]); };
+  page.on("response", noterLecture);
   await page.goto(url);
   const outils = page.getByRole("toolbar", { name: "Outils de dessin" });
   await outils.waitFor();
   await page.waitForFunction(() => globalThis.__fadiPerf?.mesures("PERF-01").length > 0);
+  // EX-038 (cas positif) : avant toute action, la coquille, l'identité (rôle), le profil d'outils, le contexte d'étude
+  // (étude, variante, révision), le catalogue autorisé (métadonnées du registre) et les commandes essentielles sont là.
+  await page.locator('[data-studio-role="proprietaire"]').waitFor();
+  await page.waitForFunction(() => document.querySelectorAll('[role="toolbar"] [data-studio-outil]').length > 0);
+  await page.waitForTimeout(300);
+  page.off("response", noterLecture);
+  const lu = (motif) => lecturesOuverture.some(([p, s]) => motif.test(p) && s === 200);
+  const fil = await page.locator("nav, header").filter({ hasText: "Étude chargement" }).count();
+  check("démarrage (avant toute action) : coquille Studio, rôle de l'utilisateur et contexte d'étude (étude, variante, révision de tête) affichés (EX-038)",
+    (await page.locator(`section.studio-workspace[aria-label="Studio"][data-studio-variante="${variantId}"]`).count()) === 1 && fil > 0
+      && (await page.locator('[data-studio-role="proprietaire"]').count()) === 1
+      && lu(/^studies\/[^/]+$/) && lu(/^studies\/[^/]+\/variants\/[^/]+$/), JSON.stringify(lecturesOuverture));
+  check("démarrage (avant toute action) : profil d'outils et catalogue autorisé lus du serveur, barres d'outils et commandes essentielles présentes (EX-038)",
+    lu(/^preferences\/outils$/) && lu(/^preferences\/catalogue$/)
+      && (await outils.locator('[data-studio-outil="studio.dessin.selection"][aria-pressed="true"]').count()) === 1 && (await outils.locator("[data-studio-outil]").count()) > 1
+      && (await page.getByRole("toolbar", { name: "Actions de l’espace" }).getByRole("button", { name: "Outils", exact: true }).count()) === 1
+      && (await page.locator('[data-studio-commande="enregistrer"]').count()) >= 1, JSON.stringify(lecturesOuverture));
   const aLaPlanche = await scriptsDemandes(page);
   check("planche : l'éditeur est chargé, three.js / vue 3D / noyau exact toujours pas (B.3-03, EX-039)",
     contient(aLaPlanche, PLANCHE) && !Object.values(LOURDS).some((m) => contient(aLaPlanche, m)), aLaPlanche.filter((p) => !/index-/.test(p)).join(" "));

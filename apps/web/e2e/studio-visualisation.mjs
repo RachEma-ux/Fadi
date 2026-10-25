@@ -175,9 +175,18 @@ try {
   await page.locator(`[data-studio-vue3d][data-studio-scene-active="${sceneId}"]`).waitFor();
   // Le maillage de la scène (tous calques affichés, filtré) est calculé en tâche de fond : l'export attend qu'il soit à jour.
   await panneauVue.locator("[data-studio-exporter-png]:not([disabled])").waitFor();
+  const ajustementsAvantPng = (await json("get", `${variantePath}/ajustements-quantites`)).sequence;
+  const envoisAvantPng = envois.length;
   const telechargement = page.waitForEvent("download");
   await page.keyboard.press("F4");
   const fichier = await telechargement;
+  // E.5-05 (négatif) : produire l'image n'émet aucune commande et ne touche ni le BIM ni le métré.
+  await page.waitForTimeout(300);
+  const teteApresPng = (await json("get", variantePath)).revision;
+  check("image produite : aucune commande envoyée par l'export PNG", envois.length === envoisAvantPng, `${envoisAvantPng} → ${envois.length}`);
+  check("image produite : révision de tête et modèle constructif inchangés (BIM non modifié)", teteApresPng.id === docApres.id && constructif(teteApresPng.document) === constructif(docApres.document));
+  check("image produite : journal du métré inchangé (aucun ajustement), aucune modification en attente",
+    (await json("get", `${variantePath}/ajustements-quantites`)).sequence === ajustementsAvantPng && (await page.locator("[data-studio-annuler-portee]").getAttribute("data-studio-en-attente-nombre")) === "0");
   const octets = readFileSync(await fichier.path());
   const textes = textesPng(octets);
   const p = textes?.["fadi:rendu"] ? JSON.parse(textes["fadi:rendu"]) : null;

@@ -1235,6 +1235,36 @@ try {
     await page.reload();
     await page.locator(`svg [data-studio-objet="${idPolaire}"]`).waitFor({ state: "attached" });
     check("accrochage : l'actualisation restitue le même dessin", (await empreinte()) === avantRelecture && JSON.stringify(await lignesAcc()) === JSON.stringify(enregistrees));
+
+    // EX-037 : la palette (Ctrl+K) ouverte puis refermée PENDANT un geste — premier point posé, repérage polaire 45°,
+    // longueur « 2 » tapée — ne perd ni le point posé, ni la contrainte, ni la saisie : Entrée trace exactement la ligne.
+    await page.evaluate(() => document.activeElement?.blur());
+    await page.keyboard.press("l");
+    if ((await element(outils, "Repérage polaire").getAttribute("aria-pressed")) !== "true") await page.keyboard.press("F10");
+    await cliquer(3, 14);
+    const debutGeste = await page.locator("svg .studio-point-pose").first().evaluate((c) => [Number(c.getAttribute("cx")), Number(c.getAttribute("cy"))]);
+    await survoler(debutGeste[0] + 2, debutGeste[1] + 2.03);
+    await page.locator('svg [data-studio-accroche-mode="polaire"]').waitFor();
+    await page.keyboard.press("2");
+    await page.locator("[data-studio-mesures-saisie]").waitFor();
+    await page.keyboard.press("Control+k");
+    const paletteGeste = page.locator("[data-studio-palette]");
+    const paletteOuverte = await paletteGeste.waitFor({ timeout: 5000 }).then(() => true, () => false);
+    await page.keyboard.press("Escape");
+    await paletteGeste.waitFor({ state: "detached" });
+    check("geste : palette ouverte puis fermée pendant la saisie — point posé, champ Mesures et saisie « 2 » conservés, polaire toujours actif",
+      paletteOuverte && (await page.locator("svg .studio-point-pose").count()) >= 1 && (await page.locator("[data-studio-mesures-saisie]").inputValue()) === "2"
+        && (await element(outils, "Repérage polaire").getAttribute("aria-pressed")) === "true" && (await nouvelles()).length === 3);
+    await page.locator("[data-studio-mesures-saisie]").focus();
+    await page.keyboard.press("Enter");
+    await page.locator("[data-studio-mesures]").waitFor({ state: "detached" });
+    const idGeste = (await nouvelles()).find((id) => ![idInter, idPerp, idPolaire].includes(id));
+    const geste = idGeste ? await geometrieDe(idGeste) : [];
+    const attenduGeste = [net(debutGeste[0] + 2 * Math.cos(Math.PI / 4)), net(debutGeste[1] + 2 * Math.sin(Math.PI / 4))];
+    check("geste : après la palette, Entrée trace la ligne polaire 45° de longueur 2 depuis le point posé (aucun paramètre remplacé)",
+      geste[0] === debutGeste[0] && geste[1] === debutGeste[1] && geste[2] === attenduGeste[0] && geste[3] === attenduGeste[1], `${geste.join(" ")} / ${attenduGeste.join(" ")}`);
+    await page.keyboard.press("F10");
+    await page.keyboard.press("Escape");
   }
   // Transformations (barre Modification) sur une sélection mixte (rectangle, cercle, ligne, arc) : Copier ×3 (D),
   // aperçu au pointeur, Rotation 90° (Maj+R), Symétrie en gardant l'original (I), Échelle 2 (S) ; enregistrement en

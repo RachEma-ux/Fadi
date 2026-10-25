@@ -55,7 +55,7 @@ import { useAuth } from "../../lib/auth-context";
 import { LOCALE } from "../../lib/i18n";
 import { StudioRefus } from "./studio-ecrans";
 import { BarreOutils } from "./planche2d/BarreOutils";
-import { annulerBrouillon, apercuBrouillon, appliquerBrouillon, commandesEnAttente, creerBrouillon, documentBrouillon, messageRefus, peutAnnuler, peutRetablir, retablirBrouillon, type Brouillon } from "./planche2d/brouillon";
+import { annulerBrouillon, apercuBrouillon, appliquerBrouillon, commandesEnAttente, creerBrouillon, documentBrouillon, messageRefus, pasHorsHistorique, peutAnnuler, peutRetablir, retablirBrouillon, type Brouillon } from "./planche2d/brouillon";
 import { commandeDisponible, outilDisponible } from "./variante/disponibilite";
 import { calqueActifOuPremier, commandeReglage, estVisible, layerIdPour, listeCalques, prochainNomCalque } from "./planche2d/calques";
 import { ListeElements } from "./planche2d/ListeElements";
@@ -828,7 +828,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     </div>
   </aside> : null;
   const barreEtat = context && drawing ? <BarreEtat aide={hint} coordonnees={plan2d ? survol?.point ?? null : null} accrochages={accrochagesActifs} pas={pas} pasAffiche={pasAffiche}
-    planche={libelleModePlanche(affichage)} sousTitre={SOUS_TITRE_PLANCHE[affichage]} enAttente={commands.length} etat={etat} lectureSeule={!context.canWrite} revision={context.revision.id}
+    planche={libelleModePlanche(affichage)} sousTitre={SOUS_TITRE_PLANCHE[affichage]} enAttente={commands.length} horsHistorique={brouillon ? pasHorsHistorique(brouillon) : 0} etat={etat} lectureSeule={!context.canWrite} revision={context.revision.id}
     connexion={!historical && !autonome ? <EtatConnexionStudio etat={enr.horsLigne} /> : undefined} /> : null;
   /**
    * Session en direct : afficher la révision qu'elle montre, sur demande explicite. Tête de la variante : relue sur place
