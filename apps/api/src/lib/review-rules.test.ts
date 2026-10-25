@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
-  ASSIGNMENT_TRANSITIONS, DEFAULT_REVIEW_PERMISSIONS, PACKAGE_TRANSITIONS, REVIEW_ACTIONS, accessExpiryProblem, assignmentTransitionAllowed, attachmentProblem,
+  ASSIGNMENT_TRANSITIONS, DEFAULT_ACCESS_DAYS, DEFAULT_REVIEW_PERMISSIONS, PACKAGE_TRANSITIONS, REVIEW_ACTIONS, accessExpiryProblem, defaultAccessExpiry, assignmentTransitionAllowed, attachmentProblem,
   decisionBlock, fileDelivery, followUp, isOverdue, packageTransitionAllowed, permissionsOf, previewAccess, responseRefusal, reviewAccessRefusal, reviewActions,
   reviewMailGate, safeFileName, type AssignmentState, type DecisionContext,
 } from "./review-rules.js";
@@ -41,6 +41,14 @@ describe("affectation — machine d'états", () => {
     expect(assignmentTransitionAllowed("terminee", "en-cours")).toBe(false);
     expect(ASSIGNMENT_TRANSITIONS.annulee).toEqual([]);
     expect(ASSIGNMENT_TRANSITIONS.remplacee).toEqual([]);
+  });
+});
+
+describe("durée d'accès par défaut (OP-4)", () => {
+  it("14 jours, prolongeables jusqu'au maximum", () => {
+    expect(DEFAULT_ACCESS_DAYS).toBe(14);
+    expect(defaultAccessExpiry(now).getTime() - now.getTime()).toBe(14 * 24 * 3600 * 1000);
+    expect(accessExpiryProblem(new Date(now.getTime() + 60 * 24 * 3600 * 1000), now)).toBeNull();
   });
 });
 
