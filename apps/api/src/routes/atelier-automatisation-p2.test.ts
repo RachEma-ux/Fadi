@@ -14,7 +14,7 @@ import { pool } from "../db/client.js";
 const app = createApp();
 const CONTRAT = "atelier-commands/3";
 async function resetDb() {
-  await resetTestDatabase(pool, ["volumes", "atelier_outbox", "atelier_commands", "atelier_site", "atelier_problemes", "atelier_references", "atelier_groupes", "atelier_calques", "atelier_definitions", "atelier_relations", "atelier_objets", "atelier_niveaux", "parcels", "project_members", "projects", "users", "atelier_scripts", "atelier_propositions"]);
+  await resetTestDatabase(pool, ["volumes", "atelier_outbox", "atelier_commands", "atelier_site", "atelier_problemes", "atelier_references", "atelier_groupes", "atelier_calques", "atelier_definitions", "atelier_relations", "atelier_objets", "atelier_niveaux", "parcels", "projects", "users", "atelier_scripts", "atelier_propositions"]);
 }
 beforeAll(resetDb);
 beforeEach(resetDb);

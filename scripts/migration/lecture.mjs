@@ -62,7 +62,9 @@ export async function lireBase({ connectionString, copieDeclaree }) {
     await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
     const ro = (await client.query('SHOW transaction_read_only')).rows[0]?.transaction_read_only;
     if (ro !== 'on') throw new RefusLecture('TRANSACTION_ECRIVABLE', 'La transaction n\'est pas en lecture seule : lecture refusée.');
-    const presentes = new Set((await client.query("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")).rows.map((r) => r.tablename));
+    // Tables et vues (lot OP-PONT, Issue #262 : `project_members` est une vue de compatibilité en lecture).
+    const presentes = new Set((await client.query(`SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p', 'v')`)).rows.map((r) => r.relname));
     const lignes = {};
     for (const [table, { sql }] of Object.entries(REQUETES)) {
       if (!/^\s*SELECT\b/i.test(sql)) throw new RefusLecture('REQUETE_NON_LECTURE', `Requête de ${table} hors SELECT.`);

@@ -18,7 +18,7 @@ const m = (value: number) => ({ value, unit: "m" });
 const pt = (x: number, y: number) => ({ x, y, frame: "local", unit: "m" });
 
 async function resetDb() {
-  await resetTestDatabase(pool, ["volumes", "atelier_outbox", "atelier_commands", "atelier_site", "atelier_problemes", "atelier_references", "atelier_groupes", "atelier_calques", "atelier_definitions", "atelier_relations", "atelier_objets", "atelier_niveaux", "parcels", "produced_documents", "project_comments", "project_members", "programme_cases", "programme_repartitions", "project_steps", "step_files", "projects", "sessions", "users"]);
+  await resetTestDatabase(pool, ["volumes", "atelier_outbox", "atelier_commands", "atelier_site", "atelier_problemes", "atelier_references", "atelier_groupes", "atelier_calques", "atelier_definitions", "atelier_relations", "atelier_objets", "atelier_niveaux", "parcels", "produced_documents", "project_comments", "programme_cases", "programme_repartitions", "project_steps", "step_files", "projects", "sessions", "users"]);
 }
 beforeAll(resetDb);
 beforeEach(resetDb);

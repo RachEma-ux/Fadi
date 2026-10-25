@@ -6,7 +6,7 @@
  * un schéma déjà provisionné ; essais DB-3 soumis à autorisation distincte.
  */
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { accepterEnBase, partager } from "./test-helpers/partage.js";
+import { accepterEnBase, exportAccordeEnBase, partager, partagerEnBase } from "./test-helpers/partage.js";
 import { readFileSync } from "node:fs";
 import { randomBytes } from "node:crypto";
 import request from "supertest";
@@ -30,7 +30,7 @@ const pt = (x: number, y: number) => ({ x, y, frame: "local", unit: "m" });
 async function resetDb() {
   // L'ordre respecte les clés étrangères (CASCADE serait aussi suffisant,
   // mais l'ordre explicite documente les dépendances).
-  await resetTestDatabase(pool, ["parcels", "produced_documents", "project_comments", "project_members", "programme_cases", "programme_repartitions", "project_steps", "step_files", "projects", "sessions", "users"]);
+  await resetTestDatabase(pool, ["parcels", "produced_documents", "project_comments", "programme_cases", "programme_repartitions", "project_steps", "step_files", "projects", "sessions", "users"]);
 }
 
 beforeAll(async () => {
@@ -2477,7 +2477,7 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
       expect(wrong.status).toBe(422);
       expect(wrong.body.error).toBe("confirmation_mismatch");
       const project = await pool.query("INSERT INTO projects (id, owner_id, code, name) VALUES ($1, $2, 'TR-1', 'Partagé') RETURNING id", [`prj_tr_${target.id}`, target.id]);
-      await pool.query("INSERT INTO project_members (project_id, user_id, role, invited_by) VALUES ($1, $2, 'lecteur', 'test')", [project.rows[0].id, plain.id]);
+      await partagerEnBase(project.rows[0].id, plain.id, "lecteur");
       const shared = await boss.a.post(`/admin/users/${target.id}/anonymize`).send({ confirmEmail: target.email });
       expect(shared.status).toBe(409);
       expect(shared.body.error).toBe("owns_shared_projects");
@@ -2937,11 +2937,12 @@ describe("règles communes — E1 audience, E2 export du lecteur, E3 journal des
     expect((await owner.a.patch(`/projects/${pid}/members/${reader.id}`).send({ canExport: true })).status).toBe(200);
     for (const url of exports) expect((await reader.a.get(url)).status).toBe(200);
     expect((await reader.a.post(`/projects/${pid}/copies`).send({})).status).toBe(201);
-    // Lignes antérieures à la règle : la migration leur a donné TRUE ; une ligne restaurée d'une archive antérieure (NULL) vaut TRUE.
-    await pool.query("UPDATE project_members SET can_export = NULL WHERE project_id = $1 AND user_id = $2", [pid, reader.id]);
+    // Lignes antérieures à la règle : la migration leur a donné TRUE (une ligne restaurée d'une archive antérieure, NULL,
+    // vaut TRUE : `shareExportFlag`) ; depuis le lot OP-PONT l'export accordé est porté par la participation.
+    await exportAccordeEnBase(pid, reader.id, true);
     expect((await reader.a.get(`/projects/${pid}/archive`)).status).toBe(200);
     expect((await reader.a.get(`/projects/${pid}`)).body.canExport).toBe(true);
-    await pool.query("UPDATE project_members SET can_export = false WHERE project_id = $1 AND user_id = $2", [pid, reader.id]);
+    await exportAccordeEnBase(pid, reader.id, false);
     expect((await reader.a.get(`/projects/${pid}/archive`)).status).toBe(403);
   });
 
@@ -2962,7 +2963,9 @@ describe("règles communes — E1 audience, E2 export du lecteur, E3 journal des
       expect(rows).toEqual([{ user_id: "ancien", can_export: true }, { user_id: "nouveau", can_export: false }]);
       const sqlText = readFileSync(new URL("./db/init.sql", import.meta.url), "utf8");
       expect(sqlText).toContain("ALTER TABLE project_members ADD COLUMN IF NOT EXISTS can_export boolean DEFAULT true;\nALTER TABLE project_members ALTER COLUMN can_export SET DEFAULT false;");
-      const def = (await client.query("SELECT column_default FROM information_schema.columns WHERE table_name = 'project_members' AND column_name = 'can_export'")).rows[0];
+      // Lot OP-PONT : la table est devenue une vue de compatibilité ; un nouveau partage n'exporte pas (participation).
+      expect((await client.query("SELECT relkind FROM pg_class WHERE relname = 'project_members' AND relnamespace = 'public'::regnamespace")).rows[0].relkind).toBe("v");
+      const def = (await client.query("SELECT column_default FROM information_schema.columns WHERE table_name = 'project_participations' AND column_name = 'can_export'")).rows[0];
       expect(def.column_default).toBe("false");
       const aud = (await client.query("SELECT table_name, column_default FROM information_schema.columns WHERE column_name = 'audience' AND table_name IN ('project_comments', 'studio_comments') ORDER BY table_name")).rows;
       expect(aud).toEqual([{ table_name: "project_comments", column_default: "'equipe'::text" }, { table_name: "studio_comments", column_default: "'equipe'::text" }]);
@@ -3076,8 +3079,8 @@ describe("Équipe et participants — bascule de l'accès sur les participations
     await partager(owner, pid, "op2-editor@example.com", "editeur");
     await partager(owner, pid, "op2-reader@example.com", "lecteur");
     await partager(owner, pid, "op2-legacy@example.com", "lecteur");
-    // Lecteur antérieur à l'écart E2 (NULL d'archive) : l'export est conservé à travers la participation.
-    await pool.query("UPDATE project_members SET can_export = NULL WHERE project_id = $1 AND user_id = $2", [pid, await meId(legacy)]);
+    // Lecteur antérieur à l'écart E2 (NULL d'archive = TRUE) : l'export est conservé à travers la participation.
+    await exportAccordeEnBase(pid, await meId(legacy), true);
     expect(await effective(pid, await meId(owner))).toEqual({ role: "proprietaire", can_export: true, can_approve: true, can_publish: true });
     expect(await effective(pid, await meId(editor))).toEqual({ role: "editeur", can_export: true, can_approve: false, can_publish: false });
     expect(await effective(pid, await meId(reader))).toEqual({ role: "lecteur", can_export: false, can_approve: false, can_publish: false });
@@ -3114,7 +3117,7 @@ describe("Équipe et participants — bascule de l'accès sur les participations
     expect((await owner.post(`/projects/${pid}/participants/${rp}/status`).send({ change: "suspendre" })).body).toMatchObject({ status: "suspendue" });
     expect((await reader.get(`/projects/${pid}`)).status).toBe(404);
     expect((await reader.get("/projects")).body.some((p: { id: string }) => p.id === pid)).toBe(false);
-    // Le pont (`project_members`) garde la ligne : un changement de partage ne réactive pas la participation.
+    // Le partage reste listé (vue `project_members`) : un changement de partage ne réactive pas la participation.
     await owner.patch(`/projects/${pid}/members/${readerId}`).send({ role: "editeur" });
     expect((await reader.get(`/projects/${pid}`)).status).toBe(404);
     expect((await owner.post(`/projects/${pid}/participants/${rp}/status`).send({ change: "reactiver" })).body).toMatchObject({ status: "active" });
@@ -3177,6 +3180,68 @@ describe("Équipe et participants — bascule de l'accès sur les participations
       });
       expect(sqlVerdict ? { role: sqlVerdict.role, canExport: sqlVerdict.can_export, canApprove: sqlVerdict.can_approve, canPublish: sqlVerdict.can_publish } : null, `${status} ${roles.join(",")} ${startsOn}`).toEqual(pure);
     }
+  });
+
+  it("lot OP-PONT : le partage s'écrit dans les participations — aucune perte d'accès, vue de compatibilité, plus aucun miroir", async () => {
+    const owner = await registerAndLogin("pont-owner@example.com");
+    const editor = await registerAndLogin("pont-editor@example.com");
+    const reader = await registerAndLogin("pont-reader@example.com");
+    const leaver = await registerAndLogin("pont-leaver@example.com");
+    const [ownerId, editorId, readerId, leaverId] = [await meId(owner), await meId(editor), await meId(reader), await meId(leaver)];
+    const pid = (await owner.post("/projects").send({ code: "P.PONT", name: "Retrait du pont" })).body.id as string;
+    const compat = async () => (await pool.query("SELECT user_id, role, can_export, invited_by FROM project_members WHERE project_id = $1 ORDER BY user_id", [pid])).rows;
+    // Plus aucun déclencheur ni fonction du miroir ; la participation du propriétaire est écrite par l'application.
+    expect((await pool.query("SELECT count(*)::int AS n FROM pg_trigger WHERE tgname IN ('project_members_op_mirror', 'projects_op_owner_mirror')")).rows[0].n).toBe(0);
+    expect((await pool.query("SELECT to_regprocedure('op_sync_access(text,text,date)') AS f")).rows[0].f).toBeNull();
+    expect((await pool.query("SELECT relkind FROM pg_class WHERE relname = 'project_members' AND relnamespace = 'public'::regnamespace")).rows[0].relkind).toBe("v");
+    const ownerPart = await participationOf(pid, ownerId);
+    expect(ownerPart).toBeTruthy();
+    expect(await effective(pid, ownerId)).toEqual({ role: "proprietaire", can_export: true, can_approve: true, can_publish: true });
+    await partager(owner, pid, "pont-editor@example.com", "editeur");
+    await partager(owner, pid, "pont-reader@example.com", "lecteur");
+    await partager(owner, pid, "pont-leaver@example.com", "lecteur");
+    expect(await compat()).toEqual([
+      { user_id: editorId, role: "editeur", can_export: false, invited_by: "pont-owner@example.com" },
+      { user_id: leaverId, role: "lecteur", can_export: false, invited_by: "pont-owner@example.com" },
+      { user_id: readerId, role: "lecteur", can_export: false, invited_by: "pont-owner@example.com" },
+    ].sort((a, b) => a.user_id.localeCompare(b.user_id)));
+    expect(await effective(pid, editorId)).toEqual({ role: "editeur", can_export: true, can_approve: false, can_publish: false });
+    expect(await effective(pid, readerId)).toEqual({ role: "lecteur", can_export: false, can_approve: false, can_publish: false });
+    // Rôle de partage : origine `acces`, un seul par participation, portée projet.
+    const accesRoles = async (userId: string) => (await pool.query("SELECT role FROM project_role_assignments WHERE participation_id = $1 AND origin = 'acces'", [await participationOf(pid, userId)])).rows.map((r) => r.role);
+    expect(await accesRoles(editorId)).toEqual(["concepteur"]);
+    // Export accordé puis rôle changé : écrits sur la participation, journalisés comme avant.
+    expect((await owner.patch(`/projects/${pid}/members/${readerId}`).send({ canExport: true })).body).toMatchObject({ role: "lecteur", canExport: true });
+    expect(await effective(pid, readerId)).toMatchObject({ role: "lecteur", can_export: true });
+    expect((await owner.patch(`/projects/${pid}/members/${editorId}`).send({ role: "lecteur" })).body).toMatchObject({ role: "lecteur", canExport: false });
+    expect(await accesRoles(editorId)).toEqual(["lecteur"]);
+    expect((await owner.patch(`/projects/${pid}/members/${editorId}`).send({ role: "editeur" })).body).toMatchObject({ role: "editeur", canExport: true });
+    expect(await accesRoles(editorId)).toEqual(["concepteur"]);
+    // La vue est en lecture seule : aucune écriture directe n'y passe.
+    await expect(pool.query("INSERT INTO project_members (project_id, user_id, role, invited_by) VALUES ($1, $2, 'lecteur', 'x')", [pid, ownerId])).rejects.toThrow();
+    // Départ : participation terminée et datée, accès retiré, absent de la vue.
+    const leaverPart = await participationOf(pid, leaverId);
+    expect((await leaver.delete(`/projects/${pid}/members/${leaverId}`)).status).toBe(204);
+    expect((await pool.query("SELECT status, ends_on IS NOT NULL AS dated FROM project_participations WHERE id = $1", [leaverPart])).rows[0]).toEqual({ status: "terminee", dated: true });
+    expect(await effective(pid, leaverId)).toBeNull();
+    expect((await compat()).some((r) => r.user_id === leaverId)).toBe(false);
+    // Transfert : continuité des participations, le nouveau propriétaire sans rôle de partage, l'ancien éditeur.
+    const editorPart = await participationOf(pid, editorId);
+    expect((await owner.post(`/projects/${pid}/members/${editorId}/propriete`)).status).toBe(200);
+    expect(await participationOf(pid, editorId)).toBe(editorPart);
+    expect(await participationOf(pid, ownerId)).toBe(ownerPart);
+    expect(await accesRoles(editorId)).toEqual([]);
+    expect(await effective(pid, editorId)).toEqual({ role: "proprietaire", can_export: true, can_approve: true, can_publish: true });
+    expect(await effective(pid, ownerId)).toEqual({ role: "editeur", can_export: true, can_approve: false, can_publish: false });
+    expect((await compat()).find((r) => r.user_id === ownerId)).toEqual({ user_id: ownerId, role: "editeur", can_export: false, invited_by: "pont-editor@example.com" });
+    expect((await compat()).some((r) => r.user_id === editorId)).toBe(false);
+    // Retrait par le nouveau propriétaire ; 404 pour un compte sans partage.
+    expect((await editor.delete(`/projects/${pid}/members/${readerId}`)).status).toBe(204);
+    expect(await effective(pid, readerId)).toBeNull();
+    expect((await editor.delete(`/projects/${pid}/members/${readerId}`)).status).toBe(404);
+    const journal = (await pool.query("SELECT action, metadata::text AS m FROM admin.audit_log WHERE target_type = 'project' AND target_id = $1", [pid])).rows as { action: string; m: string }[];
+    expect(journal.map((r) => r.action)).toEqual(expect.arrayContaining(["project.member.export_changed", "project.member.role_changed", "project.member.left", "project.ownership.transferred", "project.member.removed"]));
+    expect(journal.every((r) => !r.m.includes("@"))).toBe(true);
   });
 });
 

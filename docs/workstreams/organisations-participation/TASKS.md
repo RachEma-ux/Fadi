@@ -2,15 +2,16 @@
 
 ## À faire
 
-- [ ] OP-DEPLOI — Déploiement (préproduction puis production) selon RUNBOOK-deploiement.md, sur accord explicite du maître d'ouvrage ; poser `CONTACT_RETENTION_ENABLED=1` (OP-5).
+- [ ] OP-DEPLOI — Préproduction : demandée par le maître d'ouvrage (2026-10-25) ; déployée automatiquement par `fadi-preprod-auto` depuis `main` vert (PR #297 : OP-4, OP-5, `CONTACT_RETENTION_ENABLED=1` dans `deploy/preprod/compose.yml`), puis OP-PONT après sa PR. Production : sur accord explicite seulement, selon RUNBOOK-deploiement.md.
 - [ ] OP-AUTOCONTROLE — Séparation des responsabilités (auto-contrôle signalé), lot ultérieur (OP-4).
 
 ## En cours
 
-- OP-PONT — Retrait du pont `op_sync_access` (lancé par OP-4, 2026-10-25) : `lot-pont.md`, PR et CI à suivre (Issue : #262).
+- OP-PONT — Retrait du pont `op_sync_access` livré (`lot-pont.md`) : PR vers `main`, suites DB-3 et CI à faire passer (Issue : #262).
 
 ## Terminé
 
+- [x] OP-P297 — OP-4, OP-5 et réglage de préproduction fusionnés (PR #297, CI verte sur `739d019`).
 - [x] OP-FINAL — 🛑 final franchi : périmètre accepté (OP-5, 2026-10-25).
 - [x] OP-JURIDIQUE — Réserve d'OP-2 levée par le maître d'ouvrage, sous sa responsabilité (OP-5).
 - [x] OP-LISTES — Listes métier : saisie libre définitive (OP-5).
@@ -23,7 +24,7 @@
 
 ## Bloqué
 
-- Aucune tâche bloquée : OP-PONT suit son cours, OP-DEPLOI attend la CI verte de `main`.
+- Aucune tâche bloquée : OP-PONT attend sa CI ; la production attend l'accord explicite du maître d'ouvrage.
 
 ## Critères de sortie
 

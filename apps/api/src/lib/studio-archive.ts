@@ -21,6 +21,8 @@
 import { sql } from "drizzle-orm";
 import { validateStudioDocument } from "@parcours/atelier-model";
 import { newId } from "./ids.js";
+import { archivedShareRole } from "./project-access.js";
+import { grantShare } from "./project-access-db.js";
 import type { Querier, Tx } from "./step-rows.js";
 import { signManifestHash, verifyArchiveSignature, type ArchiveTrust } from "./archive-signature.js";
 import { currentSigningKey, verificationKeys } from "./archive-signing-key.js";
@@ -262,8 +264,17 @@ export async function importStudioArchive(tx: Tx, projectId: string, importerId:
   // Droits : membres retrouvés par leur adresse, rôle et date conservés ; le compte qui restaure est propriétaire.
   const reassignedIds = new Set(section.accounts.filter((a) => reassigned.includes(a.email || a.id)).map((a) => a.id));
   const retrouve = (row: StudioArchiveRow) => !reassignedIds.has(row["user_id"] as string);
-  const members = remapStudioRows("project_members", section.tables.project_members.filter(retrouve), projectId, map).filter((m) => m["user_id"] !== importerId);
-  await insertRows(tx, "project_members", members, "ignore");
+  const members = remapStudioRows("project_members", section.tables.project_members.filter(retrouve), projectId, map)
+    .filter((m) => m["user_id"] !== importerId && archivedShareRole(m["role"]));
+  // Lot OP-PONT : `project_members` est une vue — chaque membre retrouvé reçoit son partage sur une participation (rôle
+  // `acces`, export de l'archive, NULL antérieur à E2 = TRUE, invitant et date conservés) ; un partage existant n'est
+  // jamais écrasé (comme l'ancien `ON CONFLICT DO NOTHING`).
+  for (const m of members) {
+    await grantShare(tx, {
+      projectId, userId: m["user_id"] as string, role: archivedShareRole(m["role"])!, canExport: (m["can_export"] as boolean | null | undefined) ?? null,
+      invitedBy: String(m["invited_by"] ?? ""), grantedAt: m["created_at"] ? new Date(m["created_at"] as string) : new Date(), grantedBy: null, mode: "if-absent",
+    });
+  }
   const lostMembers = section.tables.project_members.length - members.length;
   if (lostMembers > 0) warnings.push(`Droits : ${lostMembers} membre(s) non repris (compte absent de cette base ou compte qui restaure).`);
   const owner = section.accounts.find((a) => a.id === section.ownerId);
