@@ -13,7 +13,7 @@ Application web bilingue français / anglais (D-163 ; le français est la langue
 `apps/web/src/lib/i18n/en.json`) : Parcours de 21 étapes, Atelier architectural, Programmation, Analyses métier,
 Documents, Collaboration. Monorepo npm : `packages/domain-model` (entités, repères, règles métier pures),
 `packages/core-geometry` (géométrie pure), `packages/atelier-model` (chantier Atelier), `apps/api` (Express 5,
-PostgreSQL + PostGIS, Drizzle), `apps/web` (React 19, Vite, TanStack Query, Dexie, service worker). Entrées
+PostgreSQL + PostGIS, Drizzle), `apps/web` (React 19, Vite, TanStack Query, Dexie, service worker), `packages/geodata-model` (GeoData, logique pure). Entrées
 développeur : `README.md`, `docs/architecture.md`, `docs/migration/matrix.md`.
 
 ## Commandes
@@ -99,6 +99,11 @@ développeur : `README.md`, `docs/architecture.md`, `docs/migration/matrix.md`.
 - Suivi : `docs/atelier/` (fiches de capacité, décisions, mesures, maquette, comptes rendus de lot).
 - Un lot à la fois ; acceptation du maître d'ouvrage entre deux lots ; les décisions de la section 10.1 du
   cahier lui appartiennent : s'arrêter et demander, ne pas inventer.
+- GeoData (9ᵉ module, ADR-GEODATA-01/02, chantier `docs/workstreams/geodata/`) : **délégation totale** du 25 octobre 2026 ;
+  module autonome des projets (aucun `projectId`, rôle ou contexte de projet ; tests d'indépendance), page `/geodata`, API
+  `/geodata/api`, tables `geodata_*`, MapLibre chargé à la demande ; une valeur absente n'est jamais zéro ; version publiée
+  immuable ; données réelles seulement depuis une fiche de source qualifiée (`docs/geodata/sources/`) ; production = Release
+  du maître d'ouvrage.
 - Planche, programme D-202 (`docs/planche/analyses/programme-lots.md` : L8 suite, Objets O-1 à O-6, L9, L10, L11–L14,
   L16–L22) : **délégation D-203** — les lots s'enchaînent un à un sans attendre d'acceptation intermédiaire, chacun fusionné
   CI verte et consigné (décision + compte rendu) ; **règle d'or** (`AGENTS.md`) : chaque outil et chaque commande livrée a

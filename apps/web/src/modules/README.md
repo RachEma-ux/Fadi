@@ -14,6 +14,8 @@ mutable global.
 | `analyses` | Quantities, constraints, checks and scenario comparison |
 | `documents` | Plans, tables, schedules and reports |
 | `collaboration` | Access, comments, revisions and synchronisation |
+| `sandbox` | Free 3D board, autonomous (8th module) |
+| `geodata` | Autonomous geographic data and maps, no project (9th module, ADR-GEODATA-01/02) |
 
 **État requalifié le 18 octobre 2026 (Mission 003, M06).** Les sept modules sont déclarés dans
 `module-registry.ts` et raccordés par `routes/ProjectShell.tsx` ; les routes API et les README propres aux

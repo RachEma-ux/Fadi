@@ -99,6 +99,7 @@ export function AppShell() {
           <Link to={collaborationLink} className={collaborationActive ? "active" : undefined} aria-current={collaborationActive ? "page" : undefined} title="Collaboration" aria-label="Collaboration"><Icon name="people" /><span className="sidebar-label">Collaboration</span></Link>
         </nav>
         <div className="app-nav-secondary">
+          <NavLink to="/geodata" title="GeoData" aria-label="GeoData" className={({ isActive }) => isActive ? "active" : undefined} data-nav-geodata><Icon name="map" /><span className="sidebar-label" translate="no">GeoData</span></NavLink>
           <NavLink to="/bibliotheque/batiments" title="Bibliothèque" aria-label="Bibliothèque" className={({ isActive }) => isActive ? "active" : undefined}><Icon name="book" /><span className="sidebar-label">Bibliothèque</span></NavLink>
           {/* Espace d'organisation (concept partie 5) : équipe interne, groupes, gabarits ; n'ouvre aucun projet. */}
           {/* Revue externe (phase 4) : paquets partagés nominativement ; n'ouvre aucun projet. */}

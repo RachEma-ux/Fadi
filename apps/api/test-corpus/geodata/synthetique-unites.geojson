@@ -1,0 +1,221 @@
+{
+ "type": "FeatureCollection",
+ "crs": {
+  "type": "name",
+  "properties": {
+   "name": "urn:ogc:def:crs:OGC:1.3:CRS84"
+  }
+ },
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "code": "001",
+    "nom": "Unité synthétique A",
+    "effectif_synthetique": 0
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -9.0,
+       30.0
+      ],
+      [
+       -8.8,
+       30.0
+      ],
+      [
+       -8.8,
+       30.2
+      ],
+      [
+       -9.0,
+       30.2
+      ],
+      [
+       -9.0,
+       30.0
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "code": "002",
+    "nom": "Unité synthétique B",
+    "effectif_synthetique": 12
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -8.8,
+       30.0
+      ],
+      [
+       -8.6,
+       30.0
+      ],
+      [
+       -8.6,
+       30.2
+      ],
+      [
+       -8.8,
+       30.2
+      ],
+      [
+       -8.8,
+       30.0
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "code": "003",
+    "nom": "Unité synthétique C",
+    "effectif_synthetique": null
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -8.6,
+       30.0
+      ],
+      [
+       -8.4,
+       30.0
+      ],
+      [
+       -8.4,
+       30.2
+      ],
+      [
+       -8.6,
+       30.2
+      ],
+      [
+       -8.6,
+       30.0
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "code": "004",
+    "nom": "Unité synthétique D",
+    "effectif_synthetique": 45
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -9.0,
+       30.2
+      ],
+      [
+       -8.8,
+       30.2
+      ],
+      [
+       -8.8,
+       30.4
+      ],
+      [
+       -9.0,
+       30.4
+      ],
+      [
+       -9.0,
+       30.2
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "code": "005",
+    "nom": "Unité synthétique E",
+    "effectif_synthetique": 0
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -8.8,
+       30.2
+      ],
+      [
+       -8.6,
+       30.2
+      ],
+      [
+       -8.6,
+       30.4
+      ],
+      [
+       -8.8,
+       30.4
+      ],
+      [
+       -8.8,
+       30.2
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "code": "006",
+    "nom": "Unité synthétique F",
+    "effectif_synthetique": 7
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -8.6,
+       30.2
+      ],
+      [
+       -8.4,
+       30.2
+      ],
+      [
+       -8.4,
+       30.4
+      ],
+      [
+       -8.6,
+       30.4
+      ],
+      [
+       -8.6,
+       30.2
+      ]
+     ]
+    ]
+   }
+  }
+ ]
+}
