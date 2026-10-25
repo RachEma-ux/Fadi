@@ -533,7 +533,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-09",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Contradictions arbitrées (P-09) : fonctions communes aux quatre domaines, workflow par étude, ROUTE-09 final, recette déléguée (P-08 remplace P-07 point 1)."
@@ -1668,7 +1668,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-02",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -1799,7 +1799,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-02",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Une seule personne habilitée réelle (maître d’ouvrage) ; aucun réviseur humain indépendant identifié (profil solo D05)."
@@ -5618,7 +5618,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-09",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Contrat final : ADR-STUDIO-NAV-01 §1 (P-03) et paramètres P-08 I.4-03 ; DOSSIER-PILOTE.md."
@@ -5849,7 +5849,7 @@
           "type": "recette_e2e",
           "fichier": "apps/web/e2e/studio-navigation.mjs",
           "controles": [
-            "NAV-002 : aucune lecture du Parcours, du programme ni de l’Atelier"
+            "NAV-002 : aucune lecture du Parcours, du programme ni de l'Atelier"
           ],
           "url": "https://github.com/RachEma-ux/Fadi/actions/runs/40192137528/job/121165189052",
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
@@ -5896,6 +5896,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par recette automatisée ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -5948,8 +5954,8 @@
           "type": "recette_e2e",
           "fichier": "apps/web/e2e/studio-navigation.mjs",
           "controles": [
-            "NAV-003 : les projets autorisés sont proposés…",
-            "NAV-003 : aucun projet créé par l’ouverture",
+            "NAV-003 : les projets autorisés sont proposés, sans projet d'autrui",
+            "NAV-003 : aucun projet créé par l'ouverture de Studio",
             "NAV-003 : le projet choisi montre ses études (aucune), choix explicite"
           ],
           "url": "https://github.com/RachEma-ux/Fadi/actions/runs/40192137528/job/121165189052",
@@ -5997,6 +6003,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par recette automatisée ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -6050,9 +6062,10 @@
           "fichier": "apps/web/e2e/studio-navigation.mjs",
           "controles": [
             "NAV-004 : précédent / suivant conservent le contexte",
-            "NAV-004 : ouverture directe par l’adresse",
+            "NAV-004 : ouverture directe par l'adresse",
             "NAV-004 : refus sans redirection silencieuse",
-            "étude / variante ouverte sous un autre projet : refusée sans divulgation"
+            "étude ouverte sous un autre projet : refusée sans divulgation",
+            "variante ouverte sous un autre projet : refusée sans divulgation"
           ],
           "url": "https://github.com/RachEma-ux/Fadi/actions/runs/40192137528/job/121165189052",
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
@@ -6099,6 +6112,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par recette automatisée ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -6151,8 +6170,8 @@
           "type": "recette_e2e",
           "fichier": "apps/web/e2e/studio-domaines.mjs",
           "controles": [
-            "I.4-01 : quatre domaines, dans l’ordre et sous le nom de la référence",
-            "I.4-02 : choix des planches seulement dans « Dessin et modélisation »"
+            "I.4-01 : quatre domaines, dans l'ordre et sous le nom de la référence (REF-01 §02)",
+            "I.4-02 : choix des planches (2D, 3D, Double vue) seulement dans « Dessin et modélisation »"
           ],
           "url": "https://github.com/RachEma-ux/Fadi/actions/runs/40192137528/job/121165189052",
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
@@ -6199,6 +6218,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par recette automatisée ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -6253,7 +6278,7 @@
           "controles": [
             "NAV-006 : titre de page « Studio »",
             "NAV-006 : Studio reste actif, Projets non",
-            "variante : nommée dans le fil avec sa révision"
+            "variante : la création ouvre son espace, nommée dans le fil avec sa révision"
           ],
           "url": "https://github.com/RachEma-ux/Fadi/actions/runs/40192137528/job/121165189052",
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
@@ -6300,6 +6325,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par recette automatisée ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -6353,8 +6384,8 @@
           "fichier": "apps/web/e2e/studio-domaines.mjs",
           "controles": [
             "NAV-007 : changer de domaine ne demande rien et garde le brouillon",
-            "NAV-007 : changer de domaine pendant une sauvegarde en attente ne l’interrompt pas",
-            "NAV-007 : la sauvegarde retenue aboutit"
+            "NAV-007 : changer de domaine pendant une sauvegarde en attente ne demande rien et ne l'interrompt pas",
+            "NAV-007 : la sauvegarde retenue aboutit (brouillon enregistré, rien de perdu)"
           ],
           "url": "https://github.com/RachEma-ux/Fadi/actions/runs/40192137528/job/121165189052",
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
@@ -6401,6 +6432,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par recette automatisée ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -6466,9 +6503,9 @@
           "controles": [
             "NAV-008 : moteur de la planche impossible à charger — erreur annoncée (role=alert) avec « Réessayer », aucune planche",
             "NAV-008 : la barre de Fadi reste visible, sans mode immersif",
-            "NAV-008 : la navigation de Fadi n’est pas bloquée (Accueil atteint depuis la barre)",
+            "NAV-008 : la navigation de Fadi n'est pas bloquée (Accueil atteint depuis la barre)",
             "NAV-008 : « Réessayer » recharge le moteur une fois le réseau rétabli — planche affichée, alerte retirée",
-            "NAV-008 : rien n’a été écrit pendant la panne"
+            "NAV-008 : rien n'a été écrit pendant la panne (aucune requête d'écriture Studio)"
           ],
           "correctif": "apps/web/src/modules/studio/chargement/DemarrageStudio.tsx (reessayerPlanche : nouveau document si l’import reste en échec)",
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
@@ -6528,6 +6565,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérifié par recette automatisée après correctif."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -8915,7 +8958,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-09",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -9277,7 +9320,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-09",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -9462,7 +9505,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-09",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -9640,7 +9683,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-09",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -9827,7 +9870,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-09",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -10559,11 +10602,11 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Exécuté",
+        "portee": "Porte G1 — revue G1-03 fonction par fonction et contrôle des libellés du registre (25 octobre 2026)"
       },
       "preuves": [
         {
@@ -10591,6 +10634,17 @@
           "ID": "G1-03",
           "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
           "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
+        },
+        {
+          "type": "test_automatise",
+          "fichier": "apps/api/src/testing/revue-g1.test.ts",
+          "controles": [
+            "G1-03 — revue fonction par fonction : écarts > aucune fonction livrée sans source, sans contrat ou sans test hors des écarts connus",
+            "G1-03 — revue fonction par fonction : écarts > les manques calculés sont exactement les écarts connus : aucun écart fantôme, aucun écart caché",
+            "G1-03 — rapport publié > docs/workstreams/studio/REVUE-G1-03.md est celui que ce test calcule (régénéré, comparé à l'octet près)"
+          ],
+          "rapport": "docs/workstreams/studio/REVUE-G1-03.md",
+          "limite": "Revue établie par lecture statique du code et contrôlée par test en CI ; contrat de 48 routes vérifiable mais non versionné (réserve P-11)."
         }
       ],
       "github": {
@@ -10599,16 +10653,16 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Périmètrepremierlot arrêté, contratsratifiés et revue fonctionparfonction, pas seulementprésence141fichiers.",
-        "responsable": "A2",
-        "essais_effectues": "M17troisautorités, M21capacités/cycle, M24publication/reopen et oraclescandidats.",
-        "deblocage": "DECcritique dulot et décisionG1 ; D01/02/07cadrage acquis ne fermepasG1."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Porte G1 — revue G1-03 fonction par fonction et contrôle des libellés du registre (25 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Rapprochement du 25 octobre 2026 (mesure requise) : Il faut exécuter une revue fonction par fonction du lot : source de vérité, contrat versionné et test qui le contrôle. La matrice 141 ne relève que des chemins présents.",
+      "suite": "Conserver la revue ; versionner les contrats des 48 routes avant toute évolution incompatible (réserve P-11).",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -10639,6 +10693,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Porte G1 — revue G1-03 fonction par fonction et contrôle des libellés du registre (25 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/REVUE-G1-03.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -10672,7 +10733,7 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "En cours",
+      "statut": "Accepté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -10704,6 +10765,14 @@
           "ID": "G1-04",
           "revue": "docs/ai-team/reports/mission-004/A4/REVUE-32-QUALIFICATIONS.json",
           "limite": "Les preuves de contenu sources y sont ancrées à7b0cca4 ; pas réalisation ou conformité produit."
+        },
+        {
+          "type": "decision_deleguee",
+          "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "section": "P-11",
+          "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
+          "limite": "G1 franchie avec réserves : 48 contrats de routes non versionnés ; décisions, fonctions absentes et mesures du point 2 dues avant G4."
         }
       ],
       "github": {
@@ -10712,18 +10781,19 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Résultat formelG1 consolidé et décision applicable, liste précise descontrats ouverts/conditions de sortie aucheckpoint.",
-        "responsable": "A2",
-        "essais_effectues": "Rapports M17/M21/M24 etrevuesdocumentaires distinguentnonimplémenté/nongate ; dossiersDECpriorisés.",
-        "deblocage": "Décision/évaluationG1 selon souslot ; pasassimiler publicationdoc7b0cca4 àporte passée."
+        "cause": null,
+        "responsable": "Maître d’ouvrage (délégation au chef de projet)",
+        "essais_effectues": "Revue G1-03, DOSSIER-PILOTE, relevé REF-02.",
+        "deblocage": null
       },
-      "suite": "Rapprochement du 25 octobre 2026 (decision requise) : Il faut une décision de porte G1, passée ou non passée, avec les points ouverts. Elle suppose G1-01 à G1-03. Sous délégation (P-01), le chef de projet peut la consigner, mais aucun acte G1 n'existe.",
+      "suite": "G1 franchie (P-11) avec réserves ; reprendre les réserves avant G4.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": true,
+        "nature": "decision"
       },
       "historique": [
         {
@@ -10752,6 +10822,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "ADR-STUDIO-PILOTE-01 P-11 (délégation totale du maître d’ouvrage, 2026-10-25)",
+          "statut_precedent": "En cours",
+          "statut": "Accepté",
+          "preuve": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
+          "limite": "Décision de porte prise sous délégation ; réserves consignées ; G4 non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -10996,7 +11073,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-05",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -11560,7 +11637,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-05",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -11705,7 +11782,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -11988,7 +12065,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-05",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -12137,7 +12214,7 @@
         "essais_effectues": "Qualification individuelle A6 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
         "deblocage": "A0/A2/A5 revoient ce critère et instruisent les décisions/cible/accord propres avant exécution ; poursuivre les autres READY."
       },
-      "suite": "Rapprochement du 25 octobre 2026 (production requise) : Le dossier exige la recette utilisateur réelle (R.3-01) et un build candidat figé (R.1-01). Les scénarios (RECETTE-PILOTE) et la procédure (deploiement-automatique.md) existent. La procédure de production phase B (`fadi-prod-auto`) n'existe pas dans le dépôt.",
+      "suite": "Instruction du 25 octobre 2026 : dossier tenu à jour (DOSSIER-G4) ; phase B livrée côté dépôt (fadi-prod-auto, PR #316), non installée ; manquent le build candidat figé (R.1-01) et la recette utilisateur réelle (R.3-01).",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
@@ -12173,6 +12250,13 @@
           "statut": "À faire",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Instruction G4 du 25 octobre 2026",
+          "statut_precedent": "À faire",
+          "statut": "À faire",
+          "preuve": "docs/workstreams/studio/DOSSIER-G4.md",
+          "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
         }
       ],
       "preparation_documentaire": {
@@ -12267,7 +12351,7 @@
         "essais_effectues": "Qualification individuelle A6 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
         "deblocage": "A0/A2/A5 revoient ce critère et instruisent les décisions/cible/accord propres avant exécution ; poursuivre les autres READY."
       },
-      "suite": "Rapprochement du 25 octobre 2026 (mesure requise) : Il faut vérifier chaque critère applicable et chaque éliminatoire sur le build candidat. Restent 19 TEST partiels, TEST-025 et TEST-037, appareils réels « non évalués ».",
+      "suite": "Instruction du 25 octobre 2026 (DOSSIER-G4 §3) : BLOC-01, 03, 04 vérifiés ; BLOC-02 partiel (refus par une tâche serveur à recetter) ; 50 fonctions absentes et 35 décisions du point 2 à livrer ou à déclarer hors pilote ; appareils réels non évalués ; à rejouer sur le build candidat figé.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
@@ -12303,6 +12387,13 @@
           "statut": "À faire",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Instruction G4 du 25 octobre 2026",
+          "statut_precedent": "À faire",
+          "statut": "À faire",
+          "preuve": "docs/workstreams/studio/DOSSIER-G4.md",
+          "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
         }
       ],
       "preparation_documentaire": {
@@ -14103,7 +14194,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -14819,9 +14910,7 @@
         {
           "type": "recette_e2e",
           "fichier": "apps/web/e2e/studio-navigation.mjs",
-          "controles": [
-            "NAV-001 à NAV-009 (voir ces IDs)"
-          ],
+          "controles": [],
           "url": "https://github.com/RachEma-ux/Fadi/actions/runs/40192137528/job/121165189052",
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "commit": "3e992b66a0e7b03d4bcdd4d7e49b4af65b333a30",
@@ -14895,6 +14984,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "NAV-008 vérifié : résultats complets."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -15437,7 +15532,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -15574,7 +15669,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -16058,7 +16153,7 @@
           "type": "test_automatise",
           "fichier": "packages/atelier-model/src/studio/document-2d.test.ts",
           "ligne": 119,
-          "controle": "publie trente-huit identités, icônes et raccourcis propres (volume libre, transformations, annotations, architecture, propriétés et visualisation compris), sans agent",
+          "controle": "publie quarante-cinq identités, icônes et raccourcis propres (volume libre, édition des faces et booléen exact, transformations, annotations, architecture, propriétés, visualisation et éléments non natifs compris), sans agent",
           "limite": "Contrôle automatisé exécuté en CI ; rapproché puis contre-vérifié indépendamment le 25 octobre 2026. Lignes citées au commit 4e026ac (avant les tests ajoutés par cette branche). Pas une recette utilisateur."
         },
         {
@@ -16117,6 +16212,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par contrôle existant ou document ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -17217,7 +17318,7 @@
           "type": "test_automatise",
           "fichier": "packages/atelier-model/src/studio/objets-3d/objets-3d.test.ts",
           "ligne": 106,
-          "controle": "registre : quatre outils de la barre « volume-libre », icône, raccourci et schéma propres ; acceptés par l'API",
+          "controle": "registre : neuf outils de la barre « volume-libre » (édition des faces et lien du lot F1, booléen exact du lot F2 compris), icône, raccourci et schéma propres ; acceptés par l'API",
           "limite": "Contrôle automatisé exécuté en CI ; rapproché puis contre-vérifié indépendamment le 25 octobre 2026. Lignes citées au commit 4e026ac (avant les tests ajoutés par cette branche). Pas une recette utilisateur."
         },
         {
@@ -17276,6 +17377,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par contrôle existant ou document ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -18051,7 +18158,7 @@
           "fichier": "packages/atelier-model/src/studio/couverture-3d.test.ts",
           "controles": [
             "échoue si un type est annoncé disponible sans test associé, ou avec un test introuvable",
-            "types avancés du référentiel (§ 4.1, S5, PERF-07) : sommets et arêtes, groupe, composant, booléen, courbe exacte 3D, surface complexe, BRep fournisseur — tous non disponibles"
+            "types avancés du référentiel (§ 4.1, S5, PERF-07) : sommets et arêtes, groupe, composant, courbe exacte 3D, surface complexe, BRep fournisseur — tous non disponibles (le booléen est disponible depuis le lot F2)"
           ],
           "rapport": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
           "limite": "Fonction construite le 25 octobre 2026 ; tests exécutés localement puis en CI ; les suites API sur base attestée tournent seulement en CI."
@@ -18060,7 +18167,7 @@
           "type": "recette_e2e",
           "fichier": "apps/web/e2e/studio-rendu.mjs",
           "controles": [
-            "A.3-08 : inventaire affiché — sommets et arêtes, groupe, composant, booléen, courbe exacte 3D, surface complexe, BRep fournisseur « Non disponible », sans commande",
+            "A.3-08 : inventaire affiché — sommets et arêtes, groupe, composant, courbe exacte 3D, surface complexe, BRep fournisseur « Non disponible », sans commande",
             "A.3-08 : aucun outil de la barre ne propose un type avancé"
           ],
           "rapport": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
@@ -18120,6 +18227,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
           "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -19554,7 +19667,7 @@
           "type": "test_automatise",
           "fichier": "packages/atelier-model/src/studio/architecture/architecture.test.ts",
           "ligne": 76,
-          "controle": "it.each « Ouverture incompatible avec son mur : refus atomique, motif clair, rien n'est rogné » (hors du mur, plus haute, mur raccourci, mur abaissé, chevauchement, hôte non mur)",
+          "controle": "Ouverture incompatible avec son mur : refus atomique, motif clair, rien n'est rogné",
           "limite": "Contrôle automatisé exécuté en CI ; rapproché puis contre-vérifié indépendamment le 25 octobre 2026. Lignes citées au commit 4e026ac (avant les tests ajoutés par cette branche). Pas une recette utilisateur."
         },
         {
@@ -19625,6 +19738,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par contrôle existant ou document ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -21338,7 +21457,7 @@
           "type": "recette_e2e",
           "fichier": "apps/web/e2e/studio-dossier.mjs",
           "controles": [
-            "E.3-04 : net 3,180 m³"
+            "E.3-04 (interface) : brut 3,600 m³, déductions 0,420 m³ (une ouverture), net 3,180 m³, totaux partiels déclarés"
           ],
           "url": "https://github.com/RachEma-ux/Fadi/actions/runs/40192137528/job/121165189052",
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
@@ -21349,7 +21468,7 @@
           "type": "recette_e2e",
           "fichier": "apps/web/e2e/studio-navigation.mjs",
           "controles": [
-            "REC-A-03 : élargie à 1,20 m depuis la vue 3D — net 3,096 m³"
+            "REC-A-03 : élargie à 1,20 m depuis la vue 3D — déduction 0,504 m³, net 3,096 m³"
           ],
           "url": "https://github.com/RachEma-ux/Fadi/actions/runs/40192137528/job/121165189052",
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
@@ -21396,6 +21515,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par recette automatisée ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -21566,7 +21691,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -21827,7 +21952,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -24649,7 +24774,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Protocole approuvé ; mesures sans verdict ni gain annoncé."
@@ -27352,7 +27477,7 @@
         "essais_effectues": "Qualification individuelle A5 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
         "deblocage": "Compléter obligation→lot→TEST/NAV→preuve→DEC/ADR avec nature statique/exécutée et SHA exact."
       },
-      "suite": "Point 2 du 25 octobre 2026 (fonction absente) : Aucun contrôle automatique des chaînes obligation → lot → TEST/NAV → DEC/ADR ni des libellés cités. Relevé (script hors dépôt, /tmp/claude-0/-home-user-Fadi/3e3e4ed3-e169-5044-801d-ea3082e15f4d/scratchpad/p2/d1-libelles-introuvables.json) : 57 des 738 libellés cités dans preuves[].controles / controle ne se trouvent pas tels quels dans le fichier cité (41 tâches, dont NAV-002 à NAV-008, REC-I-02, A.1-06, A.2-01, REC-A-03, X.4-01, E.1-04 ; souvent ’ au lieu de ' ou libellé résumé). Le registre relève de l'orchestrateur (docs/workstreams/ interdit au groupe) : un contrôle bloquant échouerait aujourd'hui.",
+      "suite": "Revue G1 : les libellés cités par le registre sont contrôlés mot pour mot en CI (registre-libelles.test.ts, « X.3-02 — libellés cités par le registre Studio ») ; 68 réalignés, REC-I-02 retiré. Reste : contrôle automatique des chaînes obligation → lot → TEST/NAV → DEC/ADR.",
       "composants_candidats": "apps/web/e2e ; tests packages ; scripts/bench ; workflows",
       "source_checked": false,
       "cloture": {
@@ -27394,6 +27519,13 @@
           "statut_precedent": "En cours",
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
+          "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Porte G1 — revue G1-03 fonction par fonction et contrôle des libellés du registre (25 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "En cours",
+          "preuve": "docs/workstreams/studio/REVUE-G1-03.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
         }
       ],
@@ -30375,7 +30507,7 @@
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
           "limite": "DEC-08 : SVG retenu ; aucun renderer alternatif imposé.",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0"
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98"
         }
       ],
       "github": {
@@ -30623,7 +30755,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -32223,7 +32355,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Mesurée par la recette studio-memoire (TEST-037) ; seuil fixé après mesure."
@@ -32370,7 +32502,7 @@
           "type": "test_automatise",
           "fichier": "apps/web/src/modules/studio/chargement/moteurs.test.ts",
           "ligne": 33,
-          "controle": "le rendu 3D partage le groupe de Workers de calcul (aucun noyau propre, D.3-04)",
+          "controle": "le rendu 3D partage le groupe de Workers de calcul (aucun noyau propre, D.3-04) ; seul le booléen exact charge le noyau exact (lot F2)",
           "limite": "Contrôle automatisé exécuté en CI ; rapproché puis contre-vérifié indépendamment le 25 octobre 2026. Lignes citées au commit 4e026ac (avant les tests ajoutés par cette branche). Pas une recette utilisateur."
         },
         {
@@ -32429,6 +32561,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par contrôle existant ou document ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -36598,7 +36736,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -36736,7 +36874,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -37796,7 +37934,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-06",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Aucun mode IA retenu au pilote (D02) ; « Illustration IA » annoncée non disponible, sans déclencheur ; retenir un mode rouvre l’obligation."
@@ -37995,7 +38133,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-06",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Instruit par DEC-15 : extensions et MCP exclus du pilote ; option conservée au backlog."
@@ -41081,21 +41219,21 @@
           "type": "recette_e2e",
           "fichier": "apps/web/e2e/studio-navigation.mjs",
           "ligne": 89,
-          "controle": "check(\"NAV-001 : entrée Studio dans la navigation principale\", await entree.isVisible());",
+          "controle": "NAV-001 : entrée Studio dans la navigation principale",
           "limite": "Contrôle automatisé exécuté en CI ; rapproché puis contre-vérifié indépendamment le 25 octobre 2026. Lignes citées au commit 4e026ac (avant les tests ajoutés par cette branche). Pas une recette utilisateur."
         },
         {
           "type": "recette_e2e",
           "fichier": "apps/web/e2e/studio-navigation.mjs",
           "ligne": 165,
-          "controle": "check(\"NAV-004 : projet d'autrui refusé sans divulguer son code ni son nom\", …",
+          "controle": "NAV-004 : projet d'autrui refusé sans divulguer son code ni son nom",
           "limite": "Contrôle automatisé exécuté en CI ; rapproché puis contre-vérifié indépendamment le 25 octobre 2026. Lignes citées au commit 4e026ac (avant les tests ajoutés par cette branche). Pas une recette utilisateur."
         },
         {
           "type": "recette_e2e",
           "fichier": "apps/web/e2e/studio-navigation.mjs",
           "ligne": 141,
-          "controle": "check(\"NAV-002 : aucune lecture du Parcours, du programme ni de l'Atelier\", …",
+          "controle": "NAV-002 : aucune lecture du Parcours, du programme ni de l'Atelier",
           "limite": "Contrôle automatisé exécuté en CI ; rapproché puis contre-vérifié indépendamment le 25 octobre 2026. Lignes citées au commit 4e026ac (avant les tests ajoutés par cette branche). Pas une recette utilisateur."
         },
         {
@@ -41154,6 +41292,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par contrôle existant ou document ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -42297,7 +42441,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -42570,7 +42714,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -44807,11 +44951,11 @@
         ],
         "preparation_initiale": "Corpus autorisé, SHA/build, contrats ; bases jetables pour tests mutateurs"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Exécuté",
+        "portee": "Instruction G4 — défauts éliminatoires BLOC-01, 03, 04 contrôlés par les scénarios vérifiés (25 octobre 2026)"
       },
       "preuves": [
         {
@@ -44841,6 +44985,66 @@
           "auteur": "A5",
           "date_UTC": "2026-10-18",
           "limite": "État de préparation documentaire ; aucune réalisation logicielle, conformité, gate ou acceptation métier déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "fichier": "apps/web/e2e/studio-navigation.mjs",
+          "controles": [
+            "TEST-003 : hauteur du mur portée à 3,2 m depuis la planche 2D, modification acceptée (une commande en attente, aucune alerte)",
+            "TEST-003 : relu après Ctrl+S — même identifiant du mur, hauteur 3,2 m, épaisseur 0,25 m ; l'ouverture reste hébergée (hostId) par ce mur",
+            "TEST-003 : après actualisation, la désignation 3D porte les mêmes identifiants que la planche 2D (mur, ouverture)"
+          ],
+          "rapport": "docs/workstreams/studio/DOSSIER-G4.md",
+          "limite": "Contrôles exécutés en CI sur build de main ; rendu logiciel, appareils réels non évalués."
+        },
+        {
+          "type": "recette_e2e",
+          "fichier": "apps/web/e2e/studio-faces.mjs",
+          "controles": [
+            "TEST-007 : arête source divisée, cotes réattachées de façon prouvée (sommets 2-3 → 3-4, milieu 1 → nouveau sommet 2), cote angulaire 2-3 → 3-4",
+            "TEST-007 : la cote angulaire du segment divisé passe « à résoudre » (lien rompu, jamais rattachée à une moitié)"
+          ],
+          "rapport": "docs/workstreams/studio/DOSSIER-G4.md",
+          "limite": "Contrôles exécutés en CI sur build de main ; rendu logiciel, appareils réels non évalués."
+        },
+        {
+          "type": "test_automatise",
+          "fichier": "packages/atelier-model/src/studio/composition/f1-geometrie.test.ts",
+          "controles": [
+            "division hors du milieu : la cote du milieu divisé passe « à résoudre » (valeur non évaluée), les autres restent prouvées"
+          ],
+          "rapport": "docs/workstreams/studio/DOSSIER-G4.md",
+          "limite": "Contrôles exécutés en CI sur build de main ; rendu logiciel, appareils réels non évalués."
+        },
+        {
+          "type": "test_automatise",
+          "fichier": "packages/atelier-model/src/studio/studio-invariants.test.ts",
+          "controles": [
+            "INV-013 BLOC-01 [+] sommet déplacé (même topologie) : la cote suit le même sommet ; sommet ajouté en fin : correspondance vérifiée, liens gardés",
+            "INV-013 BLOC-01 [−] segment coté divisé (sommet inséré) : liens rompus, cotes « à résoudre », géométrie gardée, valeur non évaluée"
+          ],
+          "rapport": "docs/workstreams/studio/DOSSIER-G4.md",
+          "limite": "Contrôles exécutés en CI sur build de main ; rendu logiciel, appareils réels non évalués."
+        },
+        {
+          "type": "test_automatise",
+          "fichier": "packages/atelier-model/src/studio/composition/f1-geometrie.test.ts",
+          "controles": [
+            "prisme en référence liée : l'arête de la source est divisée ; cotes réattachées de façon prouvée, mid du segment divisé réattaché au nouveau sommet qui le recouvre exactement",
+            "division hors du milieu : la cote du milieu divisé passe « à résoudre » (valeur non évaluée), les autres restent prouvées"
+          ],
+          "rapport": "docs/workstreams/studio/DOSSIER-G4.md",
+          "limite": "Contrôles exécutés en CI sur build de main ; rendu logiciel, appareils réels non évalués."
+        },
+        {
+          "type": "recette_e2e",
+          "fichier": "apps/web/e2e/studio-faces.mjs",
+          "controles": [
+            "TEST-007 : arête source divisée, cotes réattachées de façon prouvée (sommets 2-3 → 3-4, milieu 1 → nouveau sommet 2), cote angulaire 2-3 → 3-4",
+            "TEST-007 : la cote angulaire du segment divisé passe « à résoudre » (lien rompu, jamais rattachée à une moitié)"
+          ],
+          "rapport": "docs/workstreams/studio/DOSSIER-G4.md",
+          "limite": "Contrôles exécutés en CI sur build de main ; rendu logiciel, appareils réels non évalués."
         }
       ],
       "github": {
@@ -44850,24 +45054,16 @@
         "pr_preparation_courante": 172
       },
       "blocage": {
-        "cause": {
-          "lacunes": [
-            "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
-          ],
-          "responsable_declencheur": {
-            "owner": "A5",
-            "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
-          }
-        },
-        "responsable": "A5",
-        "essais_effectues": "Qualification individuelle A5 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
-        "deblocage": "Transformer prescription en cas de non-régression du lot autorisé ; conserver défaut ouvert jusqu’à résultat réel et revue."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Instruction G4 — défauts éliminatoires BLOC-01, 03, 04 contrôlés par les scénarios vérifiés (25 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Rapprochement du 25 octobre 2026 (mesure requise) : Contrôle à exécuter : modification associée 2D puis 3D (TEST-003) et rattachement « à résoudre » (TEST-007) « En cours » ; A.4-05 « À faire ».",
+      "suite": "Rejouer sur le build candidat figé (R.1-01) au moment de G4.",
       "composants_candidats": "apps/web/e2e ; tests packages ; scripts/bench ; workflows",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -44899,6 +45095,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Instruction G4 — défauts éliminatoires BLOC-01, 03, 04 contrôlés par les scénarios vérifiés (25 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/DOSSIER-G4.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -45009,7 +45212,7 @@
         "essais_effectues": "Qualification individuelle A5 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
         "deblocage": "Transformer prescription en cas de non-régression du lot autorisé ; conserver défaut ouvert jusqu’à résultat réel et revue."
       },
-      "suite": "Rapprochement du 25 octobre 2026 (mesure requise) : TEST-035 « En cours » : refus d'accès par une tâche (job) à recetter ; refus par URL déjà contrôlés.",
+      "suite": "Instruction G4 : refus par URL, export et composition prouvés (TEST-035) ; reste à recetter un refus d'accès entre projets par une tâche serveur (le recalcul des booléens exacts, lot F2, en est une).",
       "composants_candidats": "apps/web/e2e ; tests packages ; scripts/bench ; workflows",
       "source_checked": false,
       "cloture": {
@@ -45045,6 +45248,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Instruction G4 du 25 octobre 2026",
+          "statut_precedent": "En cours",
+          "statut": "En cours",
+          "preuve": "docs/workstreams/studio/DOSSIER-G4.md",
+          "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
         }
       ],
       "preparation_documentaire": {
@@ -45099,11 +45309,11 @@
         ],
         "preparation_initiale": "Corpus autorisé, SHA/build, contrats ; bases jetables pour tests mutateurs"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Exécuté",
+        "portee": "Instruction G4 — défauts éliminatoires BLOC-01, 03, 04 contrôlés par les scénarios vérifiés (25 octobre 2026)"
       },
       "preuves": [
         {
@@ -45133,6 +45343,25 @@
           "auteur": "A5",
           "date_UTC": "2026-10-18",
           "limite": "État de préparation documentaire ; aucune réalisation logicielle, conformité, gate ou acceptation métier déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "fichier": "apps/web/e2e/studio-conflits.mjs",
+          "controles": [
+            "TEST-012 : session B, restée sur l'ancienne tête, modifie l'épaisseur du même mur → 409 stale_revision nommant le mur",
+            "TEST-012 : tête de A intacte (hauteur 3,2 m, épaisseur 0,2 m), aucune révision écrite pour B : pas d'écrasement « dernier écrit gagne »"
+          ],
+          "rapport": "docs/workstreams/studio/DOSSIER-G4.md",
+          "limite": "Contrôles exécutés en CI sur build de main ; rendu logiciel, appareils réels non évalués."
+        },
+        {
+          "type": "recette_e2e",
+          "fichier": "apps/web/e2e/studio-conflits.mjs",
+          "controles": [
+            "coupure : même requestId renvoyé, rejeu reconnu, une seule révision"
+          ],
+          "rapport": "docs/workstreams/studio/DOSSIER-G4.md",
+          "limite": "Contrôles exécutés en CI sur build de main ; rendu logiciel, appareils réels non évalués."
         }
       ],
       "github": {
@@ -45142,24 +45371,16 @@
         "pr_preparation_courante": 172
       },
       "blocage": {
-        "cause": {
-          "lacunes": [
-            "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
-          ],
-          "responsable_declencheur": {
-            "owner": "A5",
-            "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
-          }
-        },
-        "responsable": "A5",
-        "essais_effectues": "Qualification individuelle A5 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
-        "deblocage": "Transformer prescription en cas de non-régression du lot autorisé ; conserver défaut ouvert jusqu’à résultat réel et revue."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Instruction G4 — défauts éliminatoires BLOC-01, 03, 04 contrôlés par les scénarios vérifiés (25 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Rapprochement du 25 octobre 2026 (mesure requise) : Double application : TEST-013 vérifié. Écrasement de conflit : TEST-012 (même mur, deux sessions) « En cours ».",
+      "suite": "Rejouer sur le build candidat figé (R.1-01) au moment de G4.",
       "composants_candidats": "apps/web/e2e ; tests packages ; scripts/bench ; workflows",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -45191,6 +45412,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Instruction G4 — défauts éliminatoires BLOC-01, 03, 04 contrôlés par les scénarios vérifiés (25 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/DOSSIER-G4.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -45245,11 +45473,11 @@
         ],
         "preparation_initiale": "Corpus autorisé, SHA/build, contrats ; bases jetables pour tests mutateurs"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Exécuté",
+        "portee": "Instruction G4 — défauts éliminatoires BLOC-01, 03, 04 contrôlés par les scénarios vérifiés (25 octobre 2026)"
       },
       "preuves": [
         {
@@ -45279,6 +45507,43 @@
           "auteur": "A5",
           "date_UTC": "2026-10-18",
           "limite": "État de préparation documentaire ; aucune réalisation logicielle, conformité, gate ou acceptation métier déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "fichier": "apps/web/e2e/studio-exact.mjs",
+          "controles": [
+            "TEST-014 : le résultat calculé pour l'ancienne révision est marqué périmé, aucun bouton d'engagement, rien d'engagé"
+          ],
+          "rapport": "docs/workstreams/studio/DOSSIER-G4.md",
+          "limite": "Contrôles exécutés en CI sur build de main ; rendu logiciel, appareils réels non évalués."
+        },
+        {
+          "type": "test_automatise",
+          "fichier": "packages/atelier-model/src/studio/f2-booleen.test.ts",
+          "controles": [
+            "TEST-014 — résultat d'une ancienne révision : périmé, non engagé"
+          ],
+          "rapport": "docs/workstreams/studio/DOSSIER-G4.md",
+          "limite": "Contrôles exécutés en CI sur build de main ; rendu logiciel, appareils réels non évalués."
+        },
+        {
+          "type": "recette_e2e",
+          "fichier": "apps/web/e2e/studio-faces.mjs",
+          "controles": [
+            "TEST-006 : polyligne modifiée — le prisme lié est recalculé dans la même révision, la copie indépendante est intacte",
+            "TEST-006 : source supprimée — le prisme lié est « à résoudre », volume non évalué, mise à jour impossible, géométrie gardée"
+          ],
+          "rapport": "docs/workstreams/studio/DOSSIER-G4.md",
+          "limite": "Contrôles exécutés en CI sur build de main ; rendu logiciel, appareils réels non évalués."
+        },
+        {
+          "type": "test_automatise",
+          "fichier": "packages/atelier-model/src/studio/composition/f1-geometrie.test.ts",
+          "controles": [
+            "référence liée : source supprimée ou devenue invalide → « à résoudre », quantités non évaluées, dernière géométrie gardée"
+          ],
+          "rapport": "docs/workstreams/studio/DOSSIER-G4.md",
+          "limite": "Contrôles exécutés en CI sur build de main ; rendu logiciel, appareils réels non évalués."
         }
       ],
       "github": {
@@ -45288,24 +45553,16 @@
         "pr_preparation_courante": 172
       },
       "blocage": {
-        "cause": {
-          "lacunes": [
-            "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
-          ],
-          "responsable_declencheur": {
-            "owner": "A5",
-            "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
-          }
-        },
-        "responsable": "A5",
-        "essais_effectues": "Qualification individuelle A5 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
-        "deblocage": "Transformer prescription en cas de non-régression du lot autorisé ; conserver défaut ouvert jusqu’à résultat réel et revue."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Instruction G4 — défauts éliminatoires BLOC-01, 03, 04 contrôlés par les scénarios vérifiés (25 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Rapprochement du 25 octobre 2026 (mesure requise) : TEST-014 et TEST-006 « En cours » : résultat périmé d'une tâche et réponse périmée après modification d'un profil lié à recetter.",
+      "suite": "Rejouer sur le build candidat figé (R.1-01) au moment de G4.",
       "composants_candidats": "apps/web/e2e ; tests packages ; scripts/bench ; workflows",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -45337,6 +45594,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Instruction G4 — défauts éliminatoires BLOC-01, 03, 04 contrôlés par les scénarios vérifiés (25 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/DOSSIER-G4.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -46850,14 +47114,14 @@
           "type": "test_automatise",
           "fichier": "scripts/migration/migration-lib.test.mjs",
           "ligne": 134,
-          "controle": "it('MIG-07 : une correspondance par transformation, nouvelle identité distincte, filiation avec empreinte de la source', …",
+          "controle": "MIG-07 : une correspondance par transformation, nouvelle identité distincte, filiation avec empreinte de la source",
           "limite": "Contrôle automatisé exécuté en CI ; rapproché puis contre-vérifié indépendamment le 25 octobre 2026. Lignes citées au commit 4e026ac (avant les tests ajoutés par cette branche). Pas une recette utilisateur."
         },
         {
           "type": "document",
           "fichier": "scripts/migration/recette-simulation.mjs",
           "ligne": 230,
-          "controle": "ok(`MIG-07 : ${r.correspondances.length} correspondances ancienne → nouvelle identité avec filiation`);",
+          "controle": "MIG-07 : ${r.correspondances.length} correspondances ancienne → nouvelle identité avec filiation",
           "limite": "Contrôle automatisé exécuté en CI ; rapproché puis contre-vérifié indépendamment le 25 octobre 2026. Lignes citées au commit 4e026ac (avant les tests ajoutés par cette branche). Pas une recette utilisateur."
         },
         {
@@ -46916,6 +47180,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par contrôle existant ou document ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -47001,7 +47271,7 @@
           "type": "document",
           "fichier": "scripts/migration/recette-simulation.mjs",
           "ligne": 244,
-          "controle": "ok('MIG-08/09/10 : pertes et ambiguïtés listées, non-convertibles conservés, 3 erreurs partielles par projet …');",
+          "controle": "MIG-08/09/10 : pertes et ambiguïtés listées, non-convertibles conservés, 3 erreurs partielles par projet + 1 volume non intègre hors projet, comptées dans les totaux ; sections Volumes et Tables absentes",
           "limite": "Contrôle automatisé exécuté en CI ; rapproché puis contre-vérifié indépendamment le 25 octobre 2026. Lignes citées au commit 4e026ac (avant les tests ajoutés par cette branche). Pas une recette utilisateur."
         },
         {
@@ -47060,6 +47330,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par contrôle existant ou document ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -47145,14 +47421,14 @@
           "type": "test_automatise",
           "fichier": "scripts/migration/migration-lib.test.mjs",
           "ligne": 150,
-          "controle": "it('MIG-09 : rien n\\'est omis — chaque ligne lue a son élément ; chaque non-convertible est conservé et signalé', …",
+          "controle": "MIG-09 : rien n'est omis — chaque ligne lue a son élément ; chaque non-convertible est conservé et signalé",
           "limite": "Contrôle automatisé exécuté en CI ; rapproché puis contre-vérifié indépendamment le 25 octobre 2026. Lignes citées au commit 4e026ac (avant les tests ajoutés par cette branche). Pas une recette utilisateur."
         },
         {
           "type": "document",
           "fichier": "scripts/migration/recette-simulation.mjs",
           "ligne": 244,
-          "controle": "ok('MIG-08/09/10 : … non-convertibles conservés …');",
+          "controle": "MIG-08/09/10 : pertes et ambiguïtés listées, non-convertibles conservés, 3 erreurs partielles par projet + 1 volume non intègre hors projet, comptées dans les totaux ; sections Volumes et Tables absentes",
           "limite": "Contrôle automatisé exécuté en CI ; rapproché puis contre-vérifié indépendamment le 25 octobre 2026. Lignes citées au commit 4e026ac (avant les tests ajoutés par cette branche). Pas une recette utilisateur."
         },
         {
@@ -47211,6 +47487,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par contrôle existant ou document ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -47296,7 +47578,7 @@
           "type": "test_automatise",
           "fichier": "scripts/migration/migration-lib.test.mjs",
           "ligne": 160,
-          "controle": "it('MIG-10 : erreurs partielles rattachées à leur élément et comptées par projet ; aucun taux global', …",
+          "controle": "MIG-10 : erreurs partielles rattachées à leur élément et comptées par projet ; aucun taux global",
           "limite": "Contrôle automatisé exécuté en CI ; rapproché puis contre-vérifié indépendamment le 25 octobre 2026. Lignes citées au commit 4e026ac (avant les tests ajoutés par cette branche). Pas une recette utilisateur."
         },
         {
@@ -47355,6 +47637,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par contrôle existant ou document ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -47569,7 +47857,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -47709,21 +47997,21 @@
           "type": "test_automatise",
           "fichier": "scripts/migration/migration-lib.test.mjs",
           "ligne": 302,
-          "controle": "it('MIG-COEX-03 : publication liée à sa version et à des pièces intègres, sinon lien rompu signalé', …",
+          "controle": "MIG-COEX-03 : publication liée à sa version et à des pièces intègres, sinon lien rompu signalé",
           "limite": "Contrôle automatisé exécuté en CI ; rapproché puis contre-vérifié indépendamment le 25 octobre 2026. Lignes citées au commit 4e026ac (avant les tests ajoutés par cette branche). Pas une recette utilisateur."
         },
         {
           "type": "document",
           "fichier": "scripts/migration/recette-simulation.mjs",
           "ligne": 261,
-          "controle": "ok('MIG-COEX-03 : publication intacte et publication rompue (pièce absente, empreinte divergente) distinguées');",
+          "controle": "MIG-COEX-03 : publication intacte et publication rompue (pièce absente, empreinte divergente) distinguées",
           "limite": "Contrôle automatisé exécuté en CI ; rapproché puis contre-vérifié indépendamment le 25 octobre 2026. Lignes citées au commit 4e026ac (avant les tests ajoutés par cette branche). Pas une recette utilisateur."
         },
         {
           "type": "recette_e2e",
           "fichier": "apps/web/e2e/studio-restauration.mjs",
           "ligne": 414,
-          "controle": "check('publication, approbation, paquet et journal de publication identiques', …",
+          "controle": "publication, approbation, paquet et journal de publication identiques",
           "limite": "Contrôle automatisé exécuté en CI ; rapproché puis contre-vérifié indépendamment le 25 octobre 2026. Lignes citées au commit 4e026ac (avant les tests ajoutés par cette branche). Pas une recette utilisateur."
         },
         {
@@ -47789,6 +48077,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par contrôle existant ou document ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -48010,7 +48304,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -48689,7 +48983,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-09",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -48829,21 +49123,21 @@
           "type": "test_automatise",
           "fichier": "apps/api/src/testing/studio-validation-runtime.test.ts",
           "ligne": 125,
-          "controle": "it(\"refuse une enveloppe d'un autre contrat ou des paramètres qui ne sont pas un objet, avant toute transaction\", …",
+          "controle": "refuse une enveloppe d'un autre contrat ou des paramètres qui ne sont pas un objet, avant toute transaction",
           "limite": "Contrôle automatisé exécuté en CI ; rapproché puis contre-vérifié indépendamment le 25 octobre 2026. Lignes citées au commit 4e026ac (avant les tests ajoutés par cette branche). Pas une recette utilisateur."
         },
         {
           "type": "test_automatise",
           "fichier": "packages/atelier-model/src/studio/history.test.ts",
           "ligne": 60,
-          "controle": "contractVersion: \"studio-commands/2\" } as never])).toThrow(StudioValidationError);",
+          "controle": "rejoue des enveloppes appliquées : un pas par enveloppe",
           "limite": "Contrôle automatisé exécuté en CI ; rapproché puis contre-vérifié indépendamment le 25 octobre 2026. Lignes citées au commit 4e026ac (avant les tests ajoutés par cette branche). Pas une recette utilisateur."
         },
         {
           "type": "test_automatise",
           "fichier": "apps/web/src/modules/studio/chargement/service-worker.test.ts",
           "ligne": 77,
-          "controle": "it(\"mise à jour avec une page ouverte : le dernier ancien cache est gardé, la page est prévenue, sans rechargement imposé\", …",
+          "controle": "mise à jour avec une page ouverte : le dernier ancien cache est gardé, la page est prévenue, sans rechargement imposé",
           "limite": "Contrôle automatisé exécuté en CI ; rapproché puis contre-vérifié indépendamment le 25 octobre 2026. Lignes citées au commit 4e026ac (avant les tests ajoutés par cette branche). Pas une recette utilisateur."
         }
       ],
@@ -48895,6 +49189,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par contrôle existant ou document ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -49506,7 +49806,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Perte maximale d’un jour et conservation fondées sur l’existant ; temps de reprise et coûts « non évalués » (aucune mesure ni budget au dépôt)."
@@ -52172,7 +52472,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-02",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -52314,7 +52614,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-02",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -52456,7 +52756,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-02",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -52598,7 +52898,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-02",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -52740,7 +53040,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-02",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -53239,7 +53539,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-03",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -53554,7 +53854,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-09",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -56336,10 +56636,10 @@
           "type": "recette_e2e",
           "fichier": "apps/web/e2e/studio-dossier.mjs",
           "controles": [
-            "TEST-001 : deux clics tracent une ligne",
+            "TEST-001 : deux clics tracent une ligne sur la planche 2D",
             "TEST-001 : cote accrochée à la ligne, valeur mesurée",
-            "TEST-001 : enregistré — sans extrusion ni solide",
-            "TEST-001 : rouverte dans une nouvelle session",
+            "TEST-001 : enregistré — révision avec une ligne et une cote, sans extrusion ni solide (planche 2D seule)",
+            "TEST-001 : rouverte dans une nouvelle session, la ligne et la cote reviennent du serveur",
             "E.3-07 : revue, approbation liée au manifeste, diffusion"
           ],
           "url": "https://github.com/RachEma-ux/Fadi/actions/runs/40192137528/job/121165189052",
@@ -56387,6 +56687,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par recette automatisée ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -56555,8 +56861,8 @@
           "type": "recette_e2e",
           "fichier": "apps/web/e2e/studio-navigation.mjs",
           "controles": [
-            "TEST-003 : hauteur du mur portée à 3,2 m depuis la planche 2D, modification acceptée",
-            "TEST-003 : relu après Ctrl+S — même identifiant du mur, hauteur 3,2 m, épaisseur 0,25 m ; l’ouverture reste hébergée (hostId) par ce mur",
+            "TEST-003 : hauteur du mur portée à 3,2 m depuis la planche 2D, modification acceptée (une commande en attente, aucune alerte)",
+            "TEST-003 : relu après Ctrl+S — même identifiant du mur, hauteur 3,2 m, épaisseur 0,25 m ; l'ouverture reste hébergée (hostId) par ce mur",
             "TEST-003 : après actualisation, la désignation 3D porte les mêmes identifiants que la planche 2D (mur, ouverture)"
           ],
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
@@ -56609,6 +56915,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par contrôle existant ou document ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -56662,7 +56974,7 @@
           "type": "test_automatise",
           "fichier": "packages/atelier-model/src/studio/studio-invariants.test.ts",
           "controles": [
-            "INV-003 [+] copier : nouvelles identités ; aucune propagation dans les deux sens"
+            "INV-003 [+] copier : nouvelles identités ; modifier la copie ne touche pas la source, modifier la source ne touche pas la copie"
           ],
           "url": "https://github.com/RachEma-ux/Fadi/actions/runs/40192137528/job/121165188997",
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
@@ -56709,6 +57021,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par recette automatisée ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -57130,8 +57448,8 @@
           "type": "test_automatise",
           "fichier": "packages/atelier-model/src/studio/architecture/architecture.test.ts",
           "controles": [
-            "refus « hors du mur » : lot refusé, document inchangé",
-            "une ouverture seule ne se déplace pas hors de son mur"
+            "Ouverture incompatible avec son mur : refus atomique, motif clair, rien n'est rogné > hors du mur",
+            "Déplacer : le mur emporte ses ouvertures ; une ouverture seule ne se déplace pas hors de son mur"
           ],
           "url": "https://github.com/RachEma-ux/Fadi/actions/runs/40192137528/job/121165188997",
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
@@ -57178,6 +57496,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par recette automatisée ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -57231,8 +57555,8 @@
           "type": "recette_e2e",
           "fichier": "apps/web/e2e/studio-dossier.mjs",
           "controles": [
-            "E.3-04 (interface) : brut 3,600 m³, déductions 0,420 m³, net 3,180 m³",
-            "E.3-04 : bilan séparé — brut 3,6, déduction 0,42, net 3,18"
+            "E.3-04 (interface) : brut 3,600 m³, déductions 0,420 m³ (une ouverture), net 3,180 m³, totaux partiels déclarés",
+            "E.3-04 : bilan séparé — brut 3,6, déduction de o1 0,42, net 3,18 ; objets hors architecture « non évalués » (jamais net = brut)"
           ],
           "url": "https://github.com/RachEma-ux/Fadi/actions/runs/40192137528/job/121165189052",
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
@@ -57279,6 +57603,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par recette automatisée ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -57333,7 +57663,7 @@
           "fichier": "apps/web/e2e/studio-navigation.mjs",
           "controles": [
             "TEST-010 : ouverture élargie à 1,20 m depuis la vue 3D — nouveau volume net 3,096 m³ (déduction 0,504 m³)",
-            "TEST-010 : R2 en tête avec l’ouverture à 1,20 m ; R1 relue par l’API inchangée (ouverture 1 m, document identique)",
+            "TEST-010 : R2 en tête avec l'ouverture à 1,20 m ; R1 relue par l'API inchangée (ouverture 1 m, document identique)",
             "TEST-010 : révision historique R1 ouverte en lecture seule — volume net toujours 3,180 m³ (déduction 0,420 m³)"
           ],
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
@@ -57386,6 +57716,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par contrôle existant ou document ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -57535,8 +57871,8 @@
           "type": "recette_e2e",
           "fichier": "apps/web/e2e/studio-conflits.mjs",
           "controles": [
-            "TEST-012 : session B, restée sur l’ancienne tête, modifie l’épaisseur du même mur → 409 stale_revision nommant le mur",
-            "TEST-012 : tête de A intacte (hauteur 3,2 m, épaisseur 0,2 m), aucune révision écrite pour B : pas d’écrasement « dernier écrit gagne »"
+            "TEST-012 : session B, restée sur l'ancienne tête, modifie l'épaisseur du même mur → 409 stale_revision nommant le mur",
+            "TEST-012 : tête de A intacte (hauteur 3,2 m, épaisseur 0,2 m), aucune révision écrite pour B : pas d'écrasement « dernier écrit gagne »"
           ],
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Test ajouté le 25 octobre 2026, exécuté localement sur base jetable puis en CI ; rendu logiciel, appareils physiques non évalués."
@@ -57588,6 +57924,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par contrôle existant ou document ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -57750,7 +58092,7 @@
           "type": "test_automatise",
           "fichier": "packages/atelier-model/src/studio/f2-booleen.test.ts",
           "controles": [
-            "TEST-014 — tâche exacte rendue pour une ancienne révision"
+            "TEST-014 — résultat d'une ancienne révision : périmé, non engagé"
           ],
           "rapport": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
           "limite": "Fonction construite le 25 octobre 2026 ; tests et recette studio-exact exécutés localement puis en CI ; rendu logiciel, appareils réels non évalués."
@@ -57809,6 +58151,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
           "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -57976,8 +58324,8 @@
           "type": "recette_e2e",
           "fichier": "apps/web/e2e/studio-profils.mjs",
           "controles": [
-            "TEST-016 : rendu 3D non initialisé à l’ouverture, planche initialisée",
-            "TEST-016 : groupe de Workers démarré seulement par son premier usage justifié (métré du panneau Quantités affiché), jamais d’office",
+            "TEST-016 : rendu 3D non initialisé à l'ouverture, planche initialisée",
+            "TEST-016 : groupe de Workers démarré seulement par son premier usage justifié (métré du panneau Quantités affiché), jamais d'office",
             "TEST-016 : ressources relevées (requêtes, octets transférés et décodés, tas JavaScript si exposé) — nombres finis, sans seuil"
           ],
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
@@ -58030,6 +58378,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par contrôle existant ou document ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -58083,7 +58437,7 @@
           "type": "test_automatise",
           "fichier": "apps/web/src/modules/studio/studio-invariants.test.ts",
           "controles": [
-            "INV-015 [+] chaque outil masqué reste au catalogue et se retrouve par son nom"
+            "INV-015 [+] chaque outil masqué par un profil métier reste au catalogue et se retrouve par son nom"
           ],
           "url": "https://github.com/RachEma-ux/Fadi/actions/runs/40192137528/job/121165188997",
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
@@ -58141,6 +58495,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par recette automatisée ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -58194,7 +58554,7 @@
           "type": "test_automatise",
           "fichier": "apps/api/src/routes/studio-invariants.test.ts",
           "controles": [
-            "TEST-018 INV-009 [−] profil importé contenant « Publier » : la barre peut le montrer, la création et les transitions de publication du lecteur sont refusées par le serveur (403), rien n’est écrit"
+            "TEST-018 INV-009 [−] profil importé contenant « Publier » : la barre peut le montrer, la création et les transitions de publication du lecteur sont refusées par le serveur (403), rien n'est écrit"
           ],
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Test ajouté le 25 octobre 2026, exécuté localement sur base jetable puis en CI ; rendu logiciel, appareils physiques non évalués."
@@ -58246,6 +58606,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par contrôle existant ou document ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -58299,7 +58665,7 @@
           "type": "test_automatise",
           "fichier": "apps/api/src/routes/studio-invariants.test.ts",
           "controles": [
-            "INV-009 [+] standard → métier → personnel : révisions, tête et catalogue autorisé inchangés"
+            "INV-009 [+] standard → métier → personnel : préférences du compte seulement ; révisions, tête et catalogue autorisé inchangés"
           ],
           "url": "https://github.com/RachEma-ux/Fadi/actions/runs/40192137528/job/121165188997",
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
@@ -58346,6 +58712,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par recette automatisée ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -58399,7 +58771,7 @@
           "type": "recette_e2e",
           "fichier": "apps/web/e2e/studio-chargement.mjs",
           "controles": [
-            "hors connexion : rendu 3D indisponible, outils 3D listés, outils 2D disponibles"
+            "hors connexion : rendu 3D indisponible, outils 3D listés, outils 2D disponibles (B.3-09, EX-043)"
           ],
           "url": "https://github.com/RachEma-ux/Fadi/actions/runs/40192137528/job/121165189052",
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
@@ -58446,6 +58818,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par recette automatisée ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -58605,7 +58983,7 @@
           "type": "test_automatise",
           "fichier": "apps/web/src/modules/studio/planche2d/mesure-spatiale.test.ts",
           "controles": [
-            "TEST-022 — S1–S3 : même repère résolu (point, genre, objet, priorité) par l’index et le parcours linéaire"
+            "TEST-022 — S1–S3 : même repère résolu (point, genre, objet, priorité) par l'index et le parcours linéaire"
           ],
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Test ajouté le 25 octobre 2026, exécuté localement sur base jetable puis en CI ; rendu logiciel, appareils physiques non évalués."
@@ -58657,6 +59035,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par contrôle existant ou document ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -58710,8 +59094,8 @@
           "type": "test_automatise",
           "fichier": "apps/web/src/modules/studio/vue3d/picking.test.ts",
           "controles": [
-            "propriété : chaque triangle se résout vers l’objet dont la plage le contient",
-            "objet supprimé : jamais désigné"
+            "propriété : chaque triangle se résout vers l'objet dont la plage le contient",
+            "objet supprimé : jamais désigné ; l'objet derrière l'est, sinon rien"
           ],
           "url": "https://github.com/RachEma-ux/Fadi/actions/runs/40192137528/job/121165188997",
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
@@ -58758,6 +59142,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par recette automatisée ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -59039,7 +59429,7 @@
           "type": "test_automatise",
           "fichier": "packages/atelier-model/src/studio/scenes/scenes.test.ts",
           "controles": [
-            "ne change ni la géométrie, ni les quantités, ni l’IFC, ni le SVG / DXF"
+            "ne change ni la géométrie, ni les quantités, ni l'IFC, ni le SVG / DXF"
           ],
           "url": "https://github.com/RachEma-ux/Fadi/actions/runs/40192137528/job/121165188997",
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
@@ -59086,6 +59476,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par recette automatisée ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -59362,8 +59758,8 @@
           "type": "recette_e2e",
           "fichier": "apps/web/e2e/studio-observations.mjs",
           "controles": [
-            "E.2-01 une seule identité",
-            "le propriétaire clôt : décision de clôture consignée"
+            "E.2-01 une seule identité : l'observation est le commentaire d'origine de même identifiant",
+            "E.2-04 / E.2-05 le propriétaire clôt : décision de clôture consignée (motif, rôle, révision recontrôlée)"
           ],
           "url": "https://github.com/RachEma-ux/Fadi/actions/runs/40192137528/job/121165189052",
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
@@ -59410,6 +59806,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par recette automatisée ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -59463,7 +59865,7 @@
           "type": "recette_e2e",
           "fichier": "apps/web/e2e/studio-publication.mjs",
           "controles": [
-            "diffusion sous manifeste changé refusée (409 manifest_mismatch)"
+            "diffusion sous manifeste changé refusée (409 manifest_mismatch, deux révisions et deux empreintes)"
           ],
           "url": "https://github.com/RachEma-ux/Fadi/actions/runs/40192137528/job/121165189052",
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
@@ -59510,6 +59912,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par recette automatisée ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -59563,7 +59971,7 @@
           "type": "recette_e2e",
           "fichier": "apps/web/e2e/studio-publication.mjs",
           "controles": [
-            "retrait (retire), paquet conservé",
+            "propriétaire : retrait (retire), paquet conservé",
             "journal : auteur, date et commentaire du retrait"
           ],
           "url": "https://github.com/RachEma-ux/Fadi/actions/runs/40192137528/job/121165189052",
@@ -59611,6 +60019,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par recette automatisée ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -59870,8 +60284,8 @@
           "type": "recette_e2e",
           "fichier": "apps/web/e2e/studio-restauration.mjs",
           "controles": [
-            "texte jsonb des documents, empreintes et requestId identiques",
-            "0 anomalie"
+            "base : texte jsonb des documents, empreintes et requestId identiques (… révisions)",
+            "outil de comparaison A / B : 0 anomalie (identifiants, empreintes, effectifs, déclencheurs, sonde d'immuabilité)"
           ],
           "url": "https://github.com/RachEma-ux/Fadi/actions/runs/40192137528/job/121165189052",
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
@@ -59918,6 +60332,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par recette automatisée ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -60185,8 +60605,8 @@
           "fichier": "apps/web/e2e/studio-memoire.mjs",
           "controles": [
             "TEST-037 : 80 réouvertures de la vue 3D — compteurs GPU identiques à la première ouverture à chaque cycle",
-            "TEST-037 : tas JavaScript après ramasse-miettes sans croissance",
-            "TEST-037 : après 80 cycles, aucun écouteur de plus sur le document"
+            "TEST-037 : tas JavaScript après ramasse-miettes sans croissance (pente ≤ 16384 o/cycle sur 50 cycles après 30 de chauffe)",
+            "TEST-037 : après 80 cycles, aucun écouteur de plus sur le document (contrôles de caméra libérés)"
           ],
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Test ajouté le 25 octobre 2026, exécuté localement sur base jetable puis en CI ; rendu logiciel, appareils physiques non évalués."
@@ -60238,6 +60658,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par contrôle existant ou document ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -60292,7 +60718,7 @@
           "fichier": "apps/web/e2e/studio-publication.mjs",
           "controles": [
             "E.4 : manifeste multi-sources (variante principale et coordonnée, révisions et empreintes)",
-            "approuve le manifeste examiné"
+            "E.4 : propriétaire approuve le manifeste examiné (son empreinte)"
           ],
           "url": "https://github.com/RachEma-ux/Fadi/actions/runs/40192137528/job/121165189052",
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
@@ -60339,6 +60765,12 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par recette automatisée ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Revue G1 — libellés de preuve relus mot pour mot (X.3-02), 25 octobre 2026",
+          "statut_precedent": "Vérifié",
+          "statut": "Vérifié",
+          "limite": "Libellé de contrôle réaligné sur le texte exact du fichier cité (apostrophe, libellé résumé ou modifié depuis) ; statut inchangé. REC-I-02 : renvoi groupé « NAV-001 à NAV-009 » retiré, ce n’est pas une assertion."
         }
       ],
       "preparation_documentaire": {
@@ -60390,7 +60822,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -60487,7 +60919,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -60584,7 +61016,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -60681,7 +61113,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -60778,7 +61210,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -60875,7 +61307,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -60972,7 +61404,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -61069,7 +61501,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -61166,7 +61598,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -61263,7 +61695,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -61360,7 +61792,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -61457,7 +61889,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -61554,7 +61986,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Appareils physiques et GPU réel non évalués ; seuils Core Web Vitals retenus comme cible, non mesurés sur appareil réel."
@@ -61651,7 +62083,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -61748,7 +62180,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Option exclue du pilote, conservée au backlog ; TEST-033 hors pilote."
@@ -61845,7 +62277,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -61942,7 +62374,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -62039,7 +62471,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ff1c411a81e0445aed79ab4b669ae3589d6e4c7f9d8793b2dade104373dd74f0",
+          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -79353,9 +79785,9 @@
       "raison": "DEV_SCOPE et baseline du périmètre accepté non établis ; ne pas inventer un dénominateur."
     },
     "P630": {
-      "V630": 418,
+      "V630": 423,
       "denominateur": 630,
-      "pourcentage": 66.3,
+      "pourcentage": 67.1,
       "IDs": [
         "SRC-01",
         "SRC-02",
@@ -79436,6 +79868,8 @@
         "G0-03",
         "G1-01",
         "G1-02",
+        "G1-03",
+        "G1-04",
         "G2-01",
         "G2-02",
         "G3-01",
@@ -79620,6 +80054,9 @@
         "MES-01",
         "MES-02",
         "MES-04",
+        "BLOC-01",
+        "BLOC-03",
+        "BLOC-04",
         "BLOC-05",
         "BLOC-08",
         "MIG-05",
@@ -79778,8 +80215,8 @@
       ],
       "limite": "259 obligations vérifiées (documentaires, par recette ou test exécuté, ou par contrôle existant contre-vérifié indépendamment le 25 octobre 2026) et 58 acceptations (2 de cadrage G0, 56 décisions ADR-STUDIO-PILOTE-01 sous délégation du maître d’ouvrage). Pas un taux de développement ; G1–G4 non acceptées.",
       "mapping_barre": {
-        "Vérifié documentaire": 360,
-        "Accepté cadrage documentaire G0": 58
+        "Vérifié documentaire": 364,
+        "Accepté cadrage documentaire G0": 59
       }
     }
   },

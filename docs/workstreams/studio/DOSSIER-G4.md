@@ -3,9 +3,13 @@
 Instruit le 25 octobre 2026 par le chef de projet, sous délégation du maître d'ouvrage
 ([ADR-STUDIO-PILOTE-01](../../continuity/decisions/ADR-STUDIO-PILOTE-01.md)).
 
-**Verdict : G4 n'est pas franchie.** Le dossier est constitué, mais plusieurs critères ne sont pas prouvés (§3), et la
-procédure de mise en production n'existe pas encore (§4). Ce dossier sert à reprendre la porte dès que ces points seront
-levés.
+**Verdict au 25 octobre 2026 : G4 n'est pas franchie.** G1 est franchie. Les éliminatoires BLOC-01, 03 et 04 sont
+vérifiés. Restent :
+- la recette utilisateur réelle (R.3-01) ;
+- un build candidat figé et vérifié en préproduction (R.1-01) ;
+- BLOC-02, partiel ;
+- l'installation de la phase B sur le VPS (§4) ;
+- les actes du maître d'ouvrage (G4-03).
 
 ## 1. Build identifié
 
@@ -24,27 +28,27 @@ levés.
 | Contrats, décisions, coexistence | [DOSSIER-PILOTE.md](DOSSIER-PILOTE.md), ADR-STUDIO-NAV-01, ADR-STUDIO-PILOTE-01 |
 | État obligation par obligation | `task-register.json` ; synthèse dans `STATUS.md` |
 
-## 3. Critères non prouvés (G4-02)
+## 3. Critères (G4-02) — instruction du 25 octobre 2026, après les lots F1 à F5, le point 2 et G1
 
-- **Défauts éliminatoires** : leur absence n'est pas démontrée par des contrôles complets. Restent partiels :
-  - BLOC-01 : double autorité 2D/3D (TEST-003, TEST-007) ;
-  - BLOC-02 : accès entre projets par une tâche (TEST-035) ;
-  - BLOC-04 : résultat périmé engagé (TEST-006, TEST-014).
-- **Fonctions absentes** que des scénarios du référentiel supposent :
-  - édition de faces 3D (TEST-002, A.3-03) ;
-  - profil source lié et référence liée (TEST-006, A.4-02) ;
-  - direction d'extrusion (TEST-005) ;
-  - division de face cotée (TEST-007) ;
-  - noyau exact dans Studio (TEST-014, TEST-015) ;
-  - import IFC et état « non natif » (TEST-028) ;
-  - opérations booléennes (IF-003) ;
-  - délégation, appariement automatique d'observations, contrôle de politique avant transfert externe (fiches TR non
-    couvertes).
-- **Mesures** :
-  - appareils physiques et GPU réel non évalués (DEC-13) ;
-  - comparaison SVG / Canvas / GPU non faite (TEST-025) ;
-  - corpus S1 à S5 et POC de G2 partiels (G2-03).
-- **Porte G1** non prononcée : la revue fonction par fonction de G1-03 reste à faire.
+- **Défauts éliminatoires** :
+  - BLOC-01 (double autorité 2D/3D), BLOC-03 (double application, écrasement) et BLOC-04 (résultat périmé engagé)
+    sont **vérifiés** par les scénarios TEST-003, 006, 007, 012, 013 et 014, et par A.4-05, joués en CI.
+  - BLOC-02 (accès entre projets par une tâche) reste **partiel** : les refus par URL, par export et par composition
+    sont prouvés (TEST-035). Le cas « job serveur » n'a pas de recette dédiée, alors que le serveur recalcule désormais
+    les booléens exacts (lot F2).
+- **Fonctions** : les fonctions que le dossier relevait comme absentes sont livrées et recettées :
+  - lot F1 : édition de faces, profil source lié, direction d'extrusion, division de face cotée ;
+  - lot F2 : noyau exact et booléens ;
+  - lot F3 : import IFC et état « non natif » ;
+  - lot F4 : délégation d'approbation et appariement des observations ;
+  - lot F5 : rendu sous charge, index et comparaison des moteurs.
+
+  Restent 50 fonctions absentes et 35 décisions, recensées par le point 2
+  ([PREUVES-POINT2](recettes/PREUVES-POINT2-2026-10-25.md)). Aucune ne relève d'un défaut éliminatoire, mais chacune
+  doit être livrée ou déclarée hors pilote par une décision qui la nomme.
+- **Mesures** : appareils physiques et GPU réel non évalués (DEC-13). La comparaison SVG / Canvas / GPU est faite
+  (TEST-025), mais sur un rendu logiciel.
+- **Porte G1** : **franchie avec réserves** (ADR-STUDIO-PILOTE-01 P-11, [REVUE-G1-03](REVUE-G1-03.md)).
 
 ## 4. Procédure d'exploitation et mise en production
 
@@ -59,7 +63,12 @@ levés.
 
 ## 5. Pour franchir G4
 
-1. Lever les critères du §3, ou accepter explicitement les réserves par une décision qui nomme chaque fonction absente
-   comme hors pilote.
-2. Installer `fadi-prod-auto` sur le VPS et jouer sa recette d'échec simulé et de retour arrière (administrateur).
-3. Prononcer G1, puis G4 (G4-03) ; ensuite seulement vient la Release.
+| Étape | Par qui | État |
+|---|---|---|
+| G1 | chef de projet (délégation) | franchie avec réserves (P-11) |
+| BLOC-02 : recette d'un accès refusé par une tâche serveur | session cloud | à faire |
+| Fonctions absentes et décisions du point 2 : livrées, ou déclarées hors pilote par une décision qui les nomme | chef de projet ou maître d'ouvrage | à faire |
+| `fadi-prod-auto` installé sur le VPS, recette d'échec simulé et de retour arrière jouée | administrateur | à faire |
+| Build candidat figé, déployé en préproduction, NAV-001 à 009 rejouées dessus (R.1-01, R.3-02) | session cloud, après installation | à faire |
+| Recette utilisateur sur appareil réel (R.3-01, DEC-13) | maître d'ouvrage | à faire |
+| Acceptation du périmètre, puis décision distincte de déploiement : la Release (G4-03) | maître d'ouvrage | à faire |
