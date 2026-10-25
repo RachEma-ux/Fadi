@@ -120,14 +120,42 @@
 
 ### 4.3 Recettes (API construite, port 3101, connectée en `fadi_app`, base neuve migrée)
 
-RECETTES
+| Recette | Résultat |
+| --- | --- |
+| `participants.mjs` | 92 ✓, 0 ✗ |
+| `invitations-participation.mjs` | 107 ✓, 0 ✗ |
+| `organisations.mjs` | 182 ✓, 0 ✗ |
+| `collaboration-audience.mjs` | 45 ✓, 0 ✗ |
+| `comptes-api.mjs` | 119 ✓, 0 ✗ |
+| `comptes-securite.mjs` (partage simulé par `lib-partage-sql.mjs` : « corbeille : projets partagés signalés », 409 `owns_shared_projects`) | 73 ✓, 0 ✗ (scénarios concurrents du dernier administrateur non exécutés : base partagée, comme toujours hors `COMPTES_SECURITE_BASE_VIERGE=1`) |
+| `revue-externe.mjs` | 132 ✓, 0 ✗ |
+| `organisations-participation-final.mjs` | 155 ✓, 0 ✗ |
+| `communication.mjs` | 124 ✓, 0 ✗ |
+| `temps-reel-sessions.mjs` (`FADI_TEMPS_REEL=1`) | 44 ✓, 0 ✗ |
+| `studio-publication.mjs` | 129 ✓, 0 ✗ |
+| `portees-etroites.mjs` | 87 ✓, 0 ✗ |
+| `journal-activite.mjs` | 50 ✓, 0 ✗ |
+| `notifications-preferences.mjs` | 32 ✓, 0 ✗ |
+| `interface-anglais.mjs` | 7 ✓, vert |
+| `studio-restauration.mjs` (seconde base `fadi_pont_restore`, API B sur 3102 ; membres restaurés par `grantShare`) + `studio-compare-lib.test.mjs` | 92 ✓, 0 ✗ ; vert |
+| `parcours-scenario.mjs` | 338 ✓, 1 ✗ (deux exécutions) : toute la section partage verte (invitation, acceptation, lecteur, éditeur, notification « … vous a donné accès … », transfert de propriété, départ) ; l'échec est la relecture hors-ligne de l'étape 02 depuis le cache persistant, sans lien avec le partage, déjà signalée instable en phase 3 |
+| Simulation de migration (`migration-lib.test.mjs` 27, `simulation-studio.test.mjs` 5, base `fadi_pont_mig` + `jeu-synthetique.mjs` + `recette-simulation.mjs`) | « Recette réussie : 21 vérifications » après correction de `lecture.mjs` (la vue n'était pas vue par `pg_tables`) |
+| `npm run test:scripts` | 18 pass |
+
+Recettes de référence avant le lot (ancien code, base `fadi_pont_avant`) : participants 77 ✓ (sans `DATABASE_URL`),
+invitations-participation 107 ✓, collaboration-audience 43 ✓, organisations 164 ✓, revue-externe 127 ✓ / 1 ✗ (comptage
+d'interface instable connu), communication 124 ✓, portees-etroites 87 ✓, journal-activite 50 ✓, studio-publication 129 ✓,
+temps-reel-sessions 44 ✓, organisations-participation-final 155 ✓.
 
 ## 5. Ce qui n'a pas tourné
 
 - **Suites DB-3** (`app.test.ts` dont le cas nouveau « lot OP-PONT : le partage s'écrit dans les participations… »,
   `organizations.test.ts`, suites Atelier) : refusées par la garde hors CI — à vérifier en CI (DB-3 actif).
 - **CI GitHub** : rien n'est poussé.
-- RESTE
+- `parcours-scenario.mjs` : 1 ✗ sur la relecture hors-ligne de l'étape 02 (deux fois) ; non relancé sur l'ancien code
+  pour comparaison — hors du périmètre du partage (section partage entièrement verte).
+- `comptes-admin.mjs` (Mailpit absent de ce poste) et `studio-v1.mjs` (attestation requise) : non lancés.
+- `npm test` complet : vert hors les 15 suites DB-3 refusées par la garde (attendu localement).
 
 ## 6. Retour arrière
 
