@@ -20,12 +20,15 @@ import { versionRouter } from "./routes/version.js";
 import { adminRouter } from "./routes/admin/index.js";
 import { organizationsRouter } from "./routes/organizations.js";
 import { csrfGuard } from "./middleware/csrf.js";
+import { activerJournalAccesStudio } from "./lib/studio-journal-acces.js";
 
 /** Préfixes servis par l'API ; tout le reste est l'application (fichiers du build, ou `index.html` pour une route du client). */
 const API_PREFIX = /^\/(auth|admin\/(?:users|invitations|trash|audit)|projects|organizations|examples|library|notifications|com|preferences|health|sandbox\/preferences|geodata\/api|version|reviews)(\/|$)/;
 
 export function createApp() {
   const app = express();
+  // Journal d'accès Studio (TR-EX-046) : refus et sorties de contenu des routes Studio, minimisés, conservés 12 mois.
+  activerJournalAccesStudio();
 
   app.disable("x-powered-by");
   // Derrière un relais TLS (Caddy, Traefik, hébergeur) : `TRUST_PROXY=1` pour que l'adresse du client (limites) et le

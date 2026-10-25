@@ -38,3 +38,5 @@
 .studio-page .studio-projects>li>form{flex:1 1 100%}
 .studio-welcome.studio-page{padding:18px 20px}
 .studio-page-entete h1{font-size:clamp(20px,2.4vw,28px)}
+/* TR-EX-036 : focus déplacé à la bascule Planche 2D ⇄ 3D, toujours visible (même après un clic). */
+.studio-workspace [data-studio-focus-bascule]:focus{outline:3px solid #c77b35;outline-offset:3px}

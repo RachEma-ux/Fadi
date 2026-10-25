@@ -14,6 +14,7 @@ import { and, eq, isNotNull, lte, ne, or, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { accountTokens, invitations, mailOutbox, people, projectComments, projectMembers, projects, sessions, userRecoveryCodes, users } from "../db/schema.js";
 import { runContactRetentionJob } from "./participants-db.js";
+import { runStudioAccessRetentionJob } from "./studio-journal-acces.js";
 import { contactRetentionEnabled } from "./participants.js";
 import { relabelShareInviter, revokeSharesOfUser } from "./project-access-db.js";
 import { audit } from "./audit.js";
@@ -91,6 +92,12 @@ export function startAccountWorkers(log: (line: string) => void = (l) => console
       const r = await runDeletionJob();
       if (r.anonymised || r.blocked) log(JSON.stringify({ level: "info", message: "account_deletion_job", ...r }));
     } catch (err) { log(JSON.stringify({ level: "error", message: "account_deletion_job", detail: (err as Error).message })); }
+    // Journal d'accès Studio (TR-EX-046) : événements au-delà de la durée de conservation (12 mois par défaut) purgés,
+    // chaque purge datée dans `studio_access_purges` ; le journal des publications n'est jamais touché.
+    try {
+      const p = await runStudioAccessRetentionJob(new Date(), process.env, log);
+      if (p.supprimes) log(JSON.stringify({ level: "info", message: "studio_access_retention_job", supprimes: p.supprimes, limite: p.limite.toISOString() }));
+    } catch (err) { log(JSON.stringify({ level: "error", message: "studio_access_retention_job", detail: (err as Error).message })); }
     // Contacts sans compte (Issue #262, OP-D9 / OP-2) : effacés 2 ans après la clôture de tous leurs projets — seulement
     // si l'effacement automatique est activé (OP-4, réserve juridique).
     if (!contactRetentionEnabled()) return;

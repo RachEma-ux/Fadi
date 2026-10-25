@@ -317,6 +317,9 @@ const AJOUTS = {
   ]),
   types: new Set(["angular-dimension", "text", "wall", "opening", "scene", "appearance", "non-native"]),
   exports: new Set([
+    // Dérivation en copie indépendante (TR-EX-013 / TR-INV-003) et tolérance contractuelle des gestes (TR-IF-002), P-12.
+    "STUDIO_MODES_DERIVATION", "studioCopieIndependante", "studioIdentitesDocument", "studioIdentitesReutilisees",
+    "STUDIO_TOLERANCES_GESTES", "studioDansToleranceGeste",
     "dessinerCoteAngulaire", "formatStudioAngle", "measureStudioAngularDimension", "STUDIO_TEXT_JUSTIFICATIONS", "STUDIO_TEXT_MAX",
     "studioAngularFromSegments", "studioAngularValue", "studioStraightSegment", "studioTextBox", "studioTextRotationDegrees",
     // Architecture (A.4).

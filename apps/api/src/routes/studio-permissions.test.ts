@@ -206,8 +206,8 @@ export const ROUTES: Route[] = [
   { route: "POST /studies/:studyId/exigences", besoin: "modification", url: () => `${S}/studies/s/exigences`, body: { baseVersion: 0, exigences: [exigence] } },
   {
     route: "POST /studies/:studyId/exigences/acceptations", besoin: "proprietaire", url: () => `${S}/studies/s/exigences/acceptations`, body: { baseVersion: 1, exigenceId: "e1" },
-    acteurs: { "proprietaire-verrou": "admis" }, arbitrer: ["proprietaire-verrou", "proprietaire-reference"],
-    note: "à arbitrer (maître d'ouvrage) : l'acceptation n'est refusée ni par le verrou d'édition d'un autre compte ni par la référence protégée (comportement actuel épinglé, non changé)",
+    acteurs: { "proprietaire-reference": "403-reference" },
+    note: "X.2-02 (ADR-STUDIO-PILOTE-01 P-12) : propriétaire seul ; refusée sous le verrou d'édition d'un autre compte (423) et sur le projet de référence protégé (403 réf.)",
   },
   { route: "GET /studies/:studyId/variants/:variantId/controles", besoin: "lecture", url: () => `${V}/controles` },
   {
@@ -491,10 +491,13 @@ export function matriceMarkdown(): string {
     `|---|---|${ACTEURS.map(() => "---").join("|")}|---|---|`,
   ];
   for (const r of ROUTES) lignes.push(`| \`${r.route}\` | ${r.besoin} | ${ACTEURS.map((a) => symbole(r, a)).join(" | ")} | ${reponseProprietaire(r)} | ${r.note ?? ""} |`);
-  lignes.push(
+  if (ROUTES.some((r) => r.arbitrer?.length)) lignes.push(
     "",
     "« (à arbitrer) » : cellule exécutée et épinglée telle que le serveur répond aujourd'hui, sans changement de",
     "comportement ; la règle attend une décision du maître d'ouvrage.",
+  );
+  else lignes.push("", "Aucune cellule « à arbitrer » : la dernière (acceptation des exigences) est tranchée par X.2-02, ADR-STUDIO-PILOTE-01 P-12.");
+  lignes.push(
     "",
     "## Routes hors Studio touchant des données Studio — non couvertes par la matrice (suites DB-3)",
     "",

@@ -832,6 +832,15 @@ ALTER TABLE studio_variants DROP CONSTRAINT IF EXISTS studio_variants_derived_fr
 ALTER TABLE studio_variants DROP CONSTRAINT IF EXISTS studio_variants_derived_from_revision,
   ADD CONSTRAINT studio_variants_derived_from_revision FOREIGN KEY(derived_from_variant_id, derived_from_revision_id)
   REFERENCES studio_revisions(variant_id, id) DEFERRABLE INITIALLY DEFERRED NOT VALID;
+-- Mode de dérivation (TR-EX-013 / TR-INV-003, ADR-STUDIO-PILOTE-01 P-12) : NULL = version du même ensemble d'objets
+-- (identifiants conservés, comportement historique) ; 'copie' = copie indépendante à nouvelles identités, avec sa
+-- provenance par élément (nouvel identifiant → identifiant source). Colonnes nullables, aucune ligne réécrite.
+ALTER TABLE studio_variants ADD COLUMN IF NOT EXISTS derivation_mode text;
+ALTER TABLE studio_variants ADD COLUMN IF NOT EXISTS derivation_identities jsonb;
+ALTER TABLE studio_variants DROP CONSTRAINT IF EXISTS studio_variants_derivation_mode_check,
+  ADD CONSTRAINT studio_variants_derivation_mode_check
+  CHECK ((derivation_mode IS NULL OR (derivation_mode = 'copie' AND derived_from_variant_id IS NOT NULL))
+    AND ((derivation_mode IS NULL) = (derivation_identities IS NULL))) NOT VALID;
 -- Publications Studio (E.4-01 à E.4-06, E.3-06) : une publication porte sur UNE révision d'une variante, identifiée par
 -- son identifiant et l'empreinte SHA-256 de son document ; statuts travail → soumis → approuve | refuse → diffuse, et
 -- retire (jamais de suppression). L'approbation est liée à la révision et à l'empreinte examinées ; la diffusion fige
@@ -1320,6 +1329,41 @@ END;
 $$;
 CREATE OR REPLACE TRIGGER studio_external_model_events_no_update BEFORE UPDATE ON studio_external_model_events
   FOR EACH ROW EXECUTE FUNCTION studio_external_model_event_immutable();
+
+-- Journal d'accès Studio (TR-EX-046, ADR-STUDIO-PILOTE-01 P-12, lib/studio-journal-acces.ts) : événements sensibles du
+-- serveur — refus d'accès (401, 403, 404, 423) et sorties de contenu (exports, fichiers) des routes Studio. Minimisation :
+-- ni adresse IP, ni courriel, ni corps, ni géométrie ; la route est enregistrée sous sa forme générique (`:studyId`…).
+-- Conservation : 12 mois par défaut (STUDIO_ACCESS_RETENTION_MONTHS), puis purge par la tâche horaire, chaque purge
+-- datée dans `studio_access_purges`. Les lignes ne sont jamais modifiées (UPDATE refusée) ; seule la purge les supprime.
+-- Le journal d'audit des publications (`studio_publication_events`) n'est pas concerné : il reste immuable.
+CREATE TABLE IF NOT EXISTS studio_access_events (
+  id text PRIMARY KEY,
+  occurred_at timestamptz NOT NULL DEFAULT now(),
+  -- Compte : clé vers users (EX-001) ; la suppression d'un compte efface ses événements (minimisation).
+  actor_id text REFERENCES users(id) ON DELETE CASCADE,
+  project_id text NOT NULL,
+  method text NOT NULL,
+  route text NOT NULL CONSTRAINT studio_access_events_route_length CHECK (length(route) BETWEEN 1 AND 300),
+  status integer NOT NULL,
+  kind text NOT NULL CONSTRAINT studio_access_events_kind_check CHECK (kind IN ('refus', 'export')),
+  motif text
+);
+CREATE INDEX IF NOT EXISTS studio_access_events_occurred_idx ON studio_access_events(occurred_at);
+CREATE INDEX IF NOT EXISTS studio_access_events_project_idx ON studio_access_events(project_id, occurred_at);
+CREATE OR REPLACE FUNCTION studio_access_event_immutable() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'studio_access_event_immutable';
+END;
+$$;
+CREATE OR REPLACE TRIGGER studio_access_events_no_update BEFORE UPDATE ON studio_access_events
+  FOR EACH ROW EXECUTE FUNCTION studio_access_event_immutable();
+CREATE TABLE IF NOT EXISTS studio_access_purges (
+  id text PRIMARY KEY,
+  ran_at timestamptz NOT NULL DEFAULT now(),
+  cutoff timestamptz NOT NULL,
+  retention_months integer NOT NULL CONSTRAINT studio_access_purges_retention_check CHECK (retention_months BETWEEN 1 AND 120),
+  deleted integer NOT NULL CONSTRAINT studio_access_purges_deleted_check CHECK (deleted >= 0)
+);
 
 -- Délégation contrôlée de l'approbation (EX-085, lib/studio-delegations.ts) : délégant, délégué distinct, portée
 -- (projet, étude, variante, publication), période (début inclus, fin exclue), motif ; seule la révocation motivée

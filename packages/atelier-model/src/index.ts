@@ -31,6 +31,7 @@ export * from "./studio/facade-scenes.js";
 export * from "./studio/workflow.js";
 export * from "./studio/delegation-approbation.js";
 export * from "./studio/rapprochement-observations.js";
+export * from "./studio/copie-independante.js";
 export * from "./ontologie.js";
 export * from "./modele.js";
 export * from "./geometrie.js";

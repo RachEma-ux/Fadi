@@ -1,9 +1,10 @@
 /** Module Studio autonome : aucun rattachement au modèle Atelier ; lien de lecture facultatif vers des étapes du Parcours (studio-liens). */
 import { Router, json, type Request, type Response, type NextFunction } from "express";
 import { z } from "zod";
-import { studioRapportFidelite } from "@parcours/atelier-model";
+import { STUDIO_MODES_DERIVATION, studioRapportFidelite } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
 import { requireAuth } from "../middleware/require-auth.js";
+import { journalAccesStudio } from "../lib/studio-journal-acces.js";
 import { compareStudioRevisions, createStudioStudy, createStudioVariant, exportStudioVariant, listStudioRevisions, listStudioStudies, listStudioVariants, parseStudioCompareSide, readStudioContext, readStudioRevisionChanges, readStudioStudy, STUDIO_EXPORT_FORMATS, StudioRequestError, studioIdentifierSchema, submitStudioCommands, type StudioCreation, type StudioScope } from "../lib/studio-commands.js";
 import { createStudioComment, createStudioObservation, deleteStudioComment, listStudioComments, setStudioCommentAudience, studioCommentSchema, studioObservationSchema, studioObservationTransitionSchema, transitionStudioObservation } from "../lib/studio-commentaires.js";
 import { audienceSchema } from "../lib/audience.js";
@@ -20,6 +21,8 @@ import { studioDossiersRouter } from "./studio-dossiers.js";
 import { studioModelesExternesRouter } from "./studio-modeles-externes.js";
 
 export const studioRouter = Router({ mergeParams: true });
+// Journal d'accès (TR-EX-046) : avant l'authentification, pour tracer aussi les 401 (lib/studio-journal-acces.ts).
+studioRouter.use(journalAccesStudio());
 studioRouter.use(requireAuth);
 // Modèles externes (lot F3) : le fichier reçu (5 Mo de texte au plus) voyage dans le corps JSON, borné à 6 Mo ici seulement.
 studioRouter.use("/studies/:studyId/variants/:variantId/modeles-externes", json({ limit: "6mb" }));
@@ -27,11 +30,14 @@ studioRouter.use(json({ limit: "1mb" }));
 studioRouter.use("/preferences", studioPreferencesRouter);
 // `requestId` facultatif : même règle d'identifiant que les enveloppes de commandes ; rejeu = réponse 201 d'origine.
 const studySchema = z.object({ name: z.string().trim().min(1).max(200), requestId: studioIdentifierSchema.optional() }).strict();
-// Dérivation facultative : `fromVariantId` (même étude) et, si donnée, `fromRevisionId` (de cette variante ; tête sinon).
+// Dérivation facultative : `fromVariantId` (même étude) et, si donnée, `fromRevisionId` (de cette variante ; tête sinon) ;
+// `mode` : `version` (défaut, identifiants conservés) ou `copie` (copie indépendante à nouvelles identités, TR-EX-013).
 const variantSchema = z.object({
   name: z.string().trim().min(1).max(200), requestId: studioIdentifierSchema.optional(),
   fromVariantId: studioIdentifierSchema.optional(), fromRevisionId: studioIdentifierSchema.optional(),
-}).strict().refine((v) => v.fromRevisionId === undefined || v.fromVariantId !== undefined, { message: "fromRevisionId exige fromVariantId.", path: ["fromRevisionId"] });
+  mode: z.enum(STUDIO_MODES_DERIVATION).optional(),
+}).strict().refine((v) => v.fromRevisionId === undefined || v.fromVariantId !== undefined, { message: "fromRevisionId exige fromVariantId.", path: ["fromRevisionId"] })
+  .refine((v) => v.mode === undefined || v.fromVariantId !== undefined, { message: "mode exige fromVariantId.", path: ["mode"] });
 const exportSchema = z.object({ format: z.enum(STUDIO_EXPORT_FORMATS), revision: studioIdentifierSchema.optional() });
 function scope(req: Request): StudioScope {
   const params = req.params as Record<string, string>;
@@ -146,8 +152,8 @@ studioRouter.post("/studies/:studyId/variants", endpoint(async (req, res) => {
   const parsed = variantSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
   const s = scope(req);
-  const { name, requestId, fromVariantId, fromRevisionId } = parsed.data;
-  const from = fromVariantId === undefined ? undefined : { variantId: fromVariantId, ...(fromRevisionId === undefined ? {} : { revisionId: fromRevisionId }) };
+  const { name, requestId, fromVariantId, fromRevisionId, mode } = parsed.data;
+  const from = fromVariantId === undefined ? undefined : { variantId: fromVariantId, ...(fromRevisionId === undefined ? {} : { revisionId: fromRevisionId }), ...(mode === undefined ? {} : { mode }) };
   created(res, await createStudioVariant(s.projectId, s.studyId, req.user!.id, name, requestId, from));
 }));
 studioRouter.get("/studies/:studyId/variants/:variantId/revisions", endpoint(async (req, res) => {

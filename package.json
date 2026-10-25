@@ -21,6 +21,6 @@
     "test:corpus-lourd": "npm run test:corpus-lourd --workspace=@parcours/atelier-model",
     "test:db-guard": "npm run test:db-guard --workspace=@fadi/api",
     "check:deps": "node scripts/check-module-deps.mjs",
-    "test:scripts": "node --test scripts/check-continuity.test.mjs scripts/check-module-deps.test.mjs"
+    "test:scripts": "node --test scripts/check-continuity.test.mjs scripts/check-module-deps.test.mjs scripts/validation/porte-g4.test.mjs"
   }
 }

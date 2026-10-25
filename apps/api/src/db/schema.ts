@@ -983,8 +983,13 @@ export interface StudioContext {
   /** Réponse de création d'une variante : variante et révision sources d'une dérivation, null sinon. */
   derivedFrom?: StudioProvenance | null;
 }
-/** Provenance d'une variante dérivée : variante et révision de la même étude dont le document a été copié. */
-export interface StudioProvenance { variantId: string; revisionId: string }
+/**
+ * Provenance d'une variante dérivée : variante et révision de la même étude dont le document a été copié. `mode` absent :
+ * version du même ensemble d'objets (identifiants conservés, mode historique) ; `copie` : copie indépendante, nouvelles
+ * identités (TR-EX-013 / TR-INV-003) — `identites` (nouvel identifiant → identifiant source) n'est renvoyé qu'avec le
+ * contexte d'une variante (création, lecture), jamais dans les listes.
+ */
+export interface StudioProvenance { variantId: string; revisionId: string; mode?: "copie"; identites?: Record<string, string> }
 
 export const studioStudies = pgTable("studio_studies", {
   id: text("id").primaryKey(),
@@ -1029,6 +1034,10 @@ export const studioVariants = pgTable("studio_variants", {
   // Provenance d'une variante dérivée (paire renseignée ensemble ; FK composite vers la révision source, init.sql).
   derivedFromVariantId: text("derived_from_variant_id"),
   derivedFromRevisionId: text("derived_from_revision_id"),
+  // Mode de dérivation (TR-EX-013) : NULL = version (identifiants conservés) ; 'copie' = copie indépendante, dont la
+  // provenance par élément (nouvel identifiant → identifiant source) est gardée dans `derivation_identities`.
+  derivationMode: text("derivation_mode").$type<"copie">(),
+  derivationIdentities: jsonb("derivation_identities").$type<Record<string, string>>(),
 }, (t) => [uniqueIndex("studio_variants_study_id_unique").on(t.studyId, t.id)]);
 
 /** Append-only : une réponse historique n'est jamais reconstruite depuis le head actuel. */
@@ -1534,6 +1543,29 @@ export const studioExternalModelEvents = pgTable("studio_external_model_events",
   motif: text("motif"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [uniqueIndex("studio_external_model_events_seq_unique").on(t.modelId, t.seq)]);
+
+/**
+ * Journal d'accès Studio (TR-EX-046, `lib/studio-journal-acces.ts`) : refus d'accès et sorties de contenu des routes
+ * Studio, minimisés (ni IP, ni courriel, ni corps) ; conservés 12 mois par défaut puis purgés (purges datées).
+ */
+export const studioAccessEvents = pgTable("studio_access_events", {
+  id: text("id").primaryKey(),
+  occurredAt: timestamp("occurred_at", { withTimezone: true }).defaultNow().notNull(),
+  actorId: text("actor_id").references(() => users.id, { onDelete: "cascade" }),
+  projectId: text("project_id").notNull(),
+  method: text("method").notNull(),
+  route: text("route").notNull(),
+  status: integer("status").notNull(),
+  kind: text("kind").$type<"refus" | "export">().notNull(),
+  motif: text("motif"),
+});
+export const studioAccessPurges = pgTable("studio_access_purges", {
+  id: text("id").primaryKey(),
+  ranAt: timestamp("ran_at", { withTimezone: true }).defaultNow().notNull(),
+  cutoff: timestamp("cutoff", { withTimezone: true }).notNull(),
+  retentionMonths: integer("retention_months").notNull(),
+  deleted: integer("deleted").notNull(),
+});
 
 // ---------------------------------------------------------------------------
 // Revue externe — phase 4 (concept partie 4). Miroir de init.sql : paquets de revue figés au partage, affectations

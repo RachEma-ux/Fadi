@@ -69,7 +69,7 @@ chargé de tâche — rôle vérifié ensuite par `lib/studio-observations.ts`, 
 | `GET /studies/:studyId/exigences` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `GET /studies/:studyId/exigences/versions/:version` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `POST /studies/:studyId/exigences` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 201 |  |
-| `POST /studies/:studyId/exigences/acceptations` | proprietaire | 404 | 403 | 403 | 403 | admis | admis (à arbitrer) | admis (à arbitrer) | 409 version_perimee | à arbitrer (maître d'ouvrage) : l'acceptation n'est refusée ni par le verrou d'édition d'un autre compte ni par la référence protégée (comportement actuel épinglé, non changé) |
+| `POST /studies/:studyId/exigences/acceptations` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | 403 réf. | 409 version_perimee | X.2-02 (ADR-STUDIO-PILOTE-01 P-12) : propriétaire seul ; refusée sous le verrou d'édition d'un autre compte (423) et sur le projet de référence protégé (403 réf.) |
 | `GET /studies/:studyId/variants/:variantId/controles` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `GET /studies/:studyId/variants/:variantId/controles/:checkId` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `POST /studies/:studyId/variants/:variantId/controles` | ecriture | 404 | 403 | admis | 423 | admis | 423 | admis | 201 |  |
@@ -104,8 +104,7 @@ chargé de tâche — rôle vérifié ensuite par `lib/studio-observations.ts`, 
 | `POST /studies/:studyId/variants/:variantId/modeles-externes/:modelId/:action` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 200 | action accepter |
 | `POST /studies/:studyId/variants/:variantId/modeles-externes/:modelId/:action` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 200 | action refuser |
 
-« (à arbitrer) » : cellule exécutée et épinglée telle que le serveur répond aujourd'hui, sans changement de
-comportement ; la règle attend une décision du maître d'ouvrage.
+Aucune cellule « à arbitrer » : la dernière (acceptation des exigences) est tranchée par X.2-02, ADR-STUDIO-PILOTE-01 P-12.
 
 ## Routes hors Studio touchant des données Studio — non couvertes par la matrice (suites DB-3)
 

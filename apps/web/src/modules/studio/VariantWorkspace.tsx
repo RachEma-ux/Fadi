@@ -108,6 +108,8 @@ import { cleVariante } from "./hors-ligne/persistance";
 import { mesurerCommandes } from "./chargement/mesures-studio";
 import { cheminEtudeStudio, cheminOutilConsoleStudio, cheminVarianteStudio, type OptionsDomaineVariante } from "./routes-studio";
 import { contexteConsole } from "./console/contexte-console";
+import { cibleFocusBascule, deplacerFocusBascule } from "./variante/focus-bascule";
+import { panoramiqueClavier } from "./planche2d/vue-clavier";
 import {
   dansPaletteDuDomaine, definitionDomaine, DOMAINES_STUDIO, domaineDeLAdresse, domaineExecution, montre2d, montre3d, panneauxDuDomaine, PLANCHE_PAR_DEFAUT,
   type DomaineStudio, type FonctionStudio, type ModePlanche,
@@ -220,6 +222,15 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   /** Ce que montre le canevas : la planche choisie en Dessin, la vue 3D en Visualisation, le plan ailleurs. */
   const affichage: ModePlanche = domaineActif === "dessin" ? modePlanche : domaineActif === "visualisation" ? "3d" : "2d";
   const vue3d = montre3d(affichage), plan2d = montre2d(affichage);
+  /** Planche affichée avant une bascule demandée par l'utilisateur (Maj+D, sélecteur de planche) ; null sinon. */
+  const basculeDemandee = useRef<ModePlanche | null>(null);
+  useEffect(() => {
+    const avant = basculeDemandee.current;
+    if (avant === null) return;
+    basculeDemandee.current = null;
+    const cible = cibleFocusBascule(avant, affichage);
+    return cible && shell.current ? deplacerFocusBascule(shell.current, cible) : undefined;
+  }, [affichage]);
   // Vue 3D : navigation (orbite ou plan), coupe horizontale affichée, solide libre sélectionné.
   const [navigation3d, setNavigation3d] = useState<"orbite" | "plan">("orbite");
   const [coupe3d, setCoupe3d] = useState(false);
@@ -299,6 +310,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   /** Mode des planches de Dessin et modélisation : dans l'adresse si elle porte le domaine, sinon en mémoire locale. */
   function poserPlanche(p: ModePlanche) {
     if (domaineActif !== "dessin") { choisirDomaine("dessin", p); return; }
+    // TR-EX-036 : la bascule demandée déplace le focus, de façon visible, vers la planche qui apparaît.
+    basculeDemandee.current = modePlanche;
     if (adresseSuivie) ecrireAdresse({ domaine: "dessin", planche: p, commentaires: false }, true);
     else setPlancheLocale(p);
   }
@@ -357,6 +370,14 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     base: suite[suite.length - 1] ?? trace?.point ?? null,
   });
   const { cadre, pas, survol, poserCadre, cadreRef } = gestes;
+  /** TR-EX-036 : la planche 2D ayant le focus, les flèches déplacent la vue (Maj : d'une demi-vue), sans glisser. */
+  function panoramiquePlanche(e: { key: string; shiftKey: boolean; altKey: boolean; ctrlKey: boolean; metaKey: boolean; target: EventTarget; preventDefault: () => void }) {
+    if (e.altKey || e.ctrlKey || e.metaKey || !(e.target instanceof SVGSVGElement)) return;
+    const suivant = panoramiqueClavier(cadreRef.current, e.key, e.shiftKey);
+    if (!suivant) return;
+    e.preventDefault();
+    poserCadre(suivant);
+  }
 
   // ——— Session en direct (Issue #283, RTC-2) : présence, vue du présentateur, pointeurs et sélections partagés ———
   const navigate = useNavigate();
@@ -786,7 +807,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   /** Canevas : Planche 2D, Planche 3D ou les deux (Double vue) ; la vue 3D garde sa place (même moteur d'un domaine à l'autre). */
   const canevas = context && drawing ? <div className="studio-canevas" data-studio-canevas={affichage} data-studio-domaine-canevas={domaineActif}>
     <div className="studio-canevas-vues">
-    {plan2d && <div className="studio-sheet" onPointerMove={enDirect ? pointeurSession : undefined} onPointerLeave={enDirect ? () => pointeurSession(null) : undefined} data-studio-projection-plan={versionPlan(drawing)} title="Molette : zoom sur le pointeur ; bouton du milieu, Espace + glisser ou deux doigts : déplacer la vue." data-studio-aide-vue>
+    {plan2d && <div className="studio-sheet" onKeyDown={panoramiquePlanche} onPointerMove={enDirect ? pointeurSession : undefined} onPointerLeave={enDirect ? () => pointeurSession(null) : undefined} data-studio-projection-plan={versionPlan(drawing)} title="Molette : zoom sur le pointeur ; bouton du milieu, Espace + glisser ou deux doigts : déplacer la vue." data-studio-aide-vue>
       <Dessin2D svgRef={gestes.refPlanche} doc={apercuDoc ?? apercuTransformation ?? drawing} cadre={cadre} pas={pas} outil={tool} selection={selectionSet} trace={trace} survol={survol} rectangle={gestes.rectangle} glissement={!!gestes.apercu}
         apercuForme={apercuForme} sommetsPoses={suite}
         clicsVersPlanche={o => OUTILS_TRACE.has(tool) || (moveWithPointer && (!!trace || selectionSet.has(o.id)))}

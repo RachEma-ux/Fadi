@@ -3,7 +3,7 @@ import { signalerTempsReel } from "./temps-reel-signaux.js";
 import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import { applyStudioCommands, comparerDocumentsStudio, exportStudioDxf, exportStudioIfc, exportStudioSvg, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, studioChevauchements, studioElementsModifies, StudioValidationError, validateStudioDocument, type StudioDifferenceDocuments, type StudioDocument, type StudioEnvelope, type StudioPhaseWorkflow } from "@parcours/atelier-model";
+import { applyStudioCommands, comparerDocumentsStudio, exportStudioDxf, exportStudioIfc, exportStudioSvg, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, studioChevauchements, studioCopieIndependante, studioElementsModifies, StudioValidationError, validateStudioDocument, type StudioModeDerivation, type StudioDifferenceDocuments, type StudioDocument, type StudioEnvelope, type StudioPhaseWorkflow } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
 import { studioRevisions, studioStudies, studioVariants, type StudioContext, type StudioExampleInstall, type StudioProvenance } from "../db/schema.js";
 import { newId } from "./ids.js";
@@ -101,8 +101,10 @@ export async function lockedAccess(tx: Tx, projectId: string, actorId: string): 
 
 /** Lecture d'une variante : `archived` si l'étude ou la variante l'est (alors `canWrite` faux) ; provenance d'une dérivation. */
 export type StudioRead = StudioContext & { archived: boolean; derivedFrom: StudioProvenance | null };
-const provenanceOf = (row: { derivedFromVariantId: string | null; derivedFromRevisionId: string | null }): StudioProvenance | null =>
-  row.derivedFromVariantId && row.derivedFromRevisionId ? { variantId: row.derivedFromVariantId, revisionId: row.derivedFromRevisionId } : null;
+const provenanceOf = (row: { derivedFromVariantId: string | null; derivedFromRevisionId: string | null; derivationMode?: "copie" | null; derivationIdentities?: Record<string, string> | null }, identites = false): StudioProvenance | null =>
+  row.derivedFromVariantId && row.derivedFromRevisionId
+    ? { variantId: row.derivedFromVariantId, revisionId: row.derivedFromRevisionId, ...(row.derivationMode === "copie" ? { mode: "copie" as const, ...(identites && row.derivationIdentities ? { identites: row.derivationIdentities } : {}) } : {}) }
+    : null;
 
 export async function readStudioContext(q: Querier, scope: StudioScope, actorId: string, revisionId?: string): Promise<StudioRead> {
   const access = assertAccess(await loadProjectAccess(scope.projectId, actorId, q), actorId, "read");
@@ -121,7 +123,7 @@ export async function readStudioContext(q: Querier, scope: StudioScope, actorId:
     variant: { id: variant.id, name: variant.name, studyId: study.id, headRevisionId: variant.headRevisionId },
     revision: { id: revision.id, parentRevisionId: revision.parentRevisionId, document: validateStudioDocument(revision.document) },
     canWrite: revisionId === undefined && !archived && projectAccessRefusal(access, actorId, "modify", { studyId: study.id, variantIds: [variant.id] }) === null,
-    archived, derivedFrom: provenanceOf(variant),
+    archived, derivedFrom: provenanceOf(variant, true),
   };
 }
 
@@ -156,8 +158,9 @@ export async function studyOf(q: Querier, projectId: string, studyId: string) {
 export const studioVariantSummaryColumns = {
   id: studioVariants.id, name: studioVariants.name, headRevisionId: studioVariants.headRevisionId, archivedAt: studioVariants.archivedAt,
   derivedFromVariantId: studioVariants.derivedFromVariantId, derivedFromRevisionId: studioVariants.derivedFromRevisionId,
+  derivationMode: studioVariants.derivationMode,
 };
-type VariantSummaryRow = { id: string; name: string; headRevisionId: string; archivedAt: Date | null; derivedFromVariantId: string | null; derivedFromRevisionId: string | null };
+type VariantSummaryRow = { id: string; name: string; headRevisionId: string; archivedAt: Date | null; derivedFromVariantId: string | null; derivedFromRevisionId: string | null; derivationMode?: "copie" | null };
 export const toVariantSummary = (row: VariantSummaryRow): StudioVariantSummary =>
   ({ id: row.id, name: row.name, headRevisionId: row.headRevisionId, archived: row.archivedAt !== null, derivedFrom: provenanceOf(row) });
 
@@ -293,8 +296,11 @@ export async function createStudioStudy(projectId: string, actorId: string, name
   });
 }
 
-/** Source d'une dérivation : variante de la même étude, révision donnée (sinon sa tête au moment de la création). */
-export interface StudioDerivationSource { variantId: string; revisionId?: string }
+/**
+ * Source d'une dérivation : variante de la même étude, révision donnée (sinon sa tête au moment de la création) ; `mode`
+ * `version` (défaut : identifiants conservés) ou `copie` (copie indépendante, nouvelles identités — TR-EX-013).
+ */
+export interface StudioDerivationSource { variantId: string; revisionId?: string; mode?: StudioModeDerivation }
 
 /**
  * Nouvelle variante d'une étude active : une seule révision initiale, sans parent. Document vide, ou — dérivation —
@@ -316,13 +322,15 @@ export async function createStudioVariant(projectId: string, studyId: string, ac
         return replayCreation(tx, previous.id, ["variant-initialization", "variant-derivation"], actorId, name, (r) => r.variant.name, (r) => {
           const stored = r.derivedFrom ?? null;
           if (!from) return stored === null;
-          return stored !== null && stored.variantId === from.variantId && (from.revisionId === undefined || stored.revisionId === from.revisionId);
+          return stored !== null && stored.variantId === from.variantId && (from.revisionId === undefined || stored.revisionId === from.revisionId)
+            && (stored.mode ?? "version") === (from.mode ?? "version");
         });
       }
     }
     if (study.archivedAt !== null) return studioArchivedRefusal();
     let document = newStudioDocument(newId("studio_document"));
     let derivedFrom: StudioProvenance | null = null;
+    const variantId = newId("studio_variant"), revisionId = newId("studio_revision");
     if (from) {
       const [source] = await tx.select({ id: studioVariants.id, headRevisionId: studioVariants.headRevisionId }).from(studioVariants)
         .where(and(eq(studioVariants.id, from.variantId), eq(studioVariants.studyId, study.id))).limit(1);
@@ -330,10 +338,16 @@ export async function createStudioVariant(projectId: string, studyId: string, ac
       const [revision] = await tx.select({ id: studioRevisions.id, document: studioRevisions.document }).from(studioRevisions)
         .where(and(eq(studioRevisions.id, from.revisionId ?? source.headRevisionId), eq(studioRevisions.variantId, source.id))).limit(1);
       if (!revision) return notFound();
-      document = structuredClone(validateStudioDocument(revision.document));
-      derivedFrom = { variantId: source.id, revisionId: revision.id };
+      if (from.mode === "copie") {
+        // Copie indépendante (TR-INV-003) : nouvelles identités, provenance par élément, aucune propagation.
+        const copie = studioCopieIndependante(validateStudioDocument(revision.document), newId("studio_document"), variantId.slice(-8));
+        document = copie.document;
+        derivedFrom = { variantId: source.id, revisionId: revision.id, mode: "copie", identites: copie.identites };
+      } else {
+        document = structuredClone(validateStudioDocument(revision.document));
+        derivedFrom = { variantId: source.id, revisionId: revision.id };
+      }
     }
-    const variantId = newId("studio_variant"), revisionId = newId("studio_revision");
     const response: StudioContext = {
       study: { id: study.id, name: study.name, projectId },
       variant: { id: variantId, name, studyId: study.id, headRevisionId: revisionId },
@@ -342,6 +356,7 @@ export async function createStudioVariant(projectId: string, studyId: string, ac
     await tx.insert(studioVariants).values({
       id: variantId, studyId: study.id, name, headRevisionId: revisionId, creationRequestId: requestId ?? null,
       derivedFromVariantId: derivedFrom?.variantId ?? null, derivedFromRevisionId: derivedFrom?.revisionId ?? null,
+      derivationMode: derivedFrom?.mode ?? null, derivationIdentities: derivedFrom?.identites ?? null,
     });
     await tx.insert(studioRevisions).values({
       id: revisionId, variantId, parentRevisionId: null, document, envelope: null,
