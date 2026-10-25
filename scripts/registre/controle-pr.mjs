@@ -20,7 +20,7 @@
  * Studio, recettes `studio-*`, `docs/ai-team/`). Exemption unique : PR ouverte par `github-actions[bot]` depuis une
  * branche `automation/…` (instantanés automatiques, corps généré).
  *
- *   node scripts/registre/controle-pr.mjs --corps corps.md --branche feat/123-x --base origin/main [--auteur login]
+ *   node scripts/registre/controle-pr.mjs --corps corps.md --branche feat/123-x --base origin/main [--tete SHA] [--auteur login]
  *     [--sortie-issues fichier]   # numéros des Issues propres liées, un par ligne
  */
 import { execFileSync } from 'node:child_process';
@@ -107,11 +107,13 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const racine = fileURLToPath(new URL('../../', import.meta.url));
   const base = arg('--base') ?? 'origin/main';
   const git = (...a) => execFileSync('git', ['-C', racine, ...a], { encoding: 'utf8' });
-  const fichiers = git('diff', '--name-only', `${base}...HEAD`).split('\n').filter(Boolean);
+  // Tête de la PR (--tete) : jamais le commit de fusion de test de GitHub, qui contient toujours la base.
+  const tete = arg('--tete') ?? 'HEAD';
+  const fichiers = git('diff', '--name-only', `${base}...${tete}`).split('\n').filter(Boolean);
   const ancetre = (sha, de) => { try { execFileSync('git', ['-C', racine, 'merge-base', '--is-ancestor', sha, de]); return true; } catch { return false; } };
   const r = controlerPr({
     corps: readFileSync(arg('--corps'), 'utf8'), branche: arg('--branche') ?? '', auteur: arg('--auteur') ?? '', fichiers,
-    contient: (sha) => ancetre(sha, 'HEAD') && ancetre(sha, base),
+    contient: (sha) => ancetre(sha, tete) && ancetre(sha, base),
   });
   if (!r.applicable) { console.log(`Contrôle de PR Studio non applicable : ${r.raison}.`); process.exit(0); }
   if (r.ecarts.length) { for (const e of r.ecarts) console.error(e); console.error(`PR non conforme au protocole Studio (${r.ecarts.length} écart(s)).`); process.exit(1); }

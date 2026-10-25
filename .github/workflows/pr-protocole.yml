@@ -36,11 +36,12 @@ jobs:
           HEAD_REF: ${{ github.head_ref }}
           BASE_REF: ${{ github.base_ref }}
           AUTEUR: ${{ github.event.pull_request.user.login }}
+          TETE: ${{ github.event.pull_request.head.sha }}
         run: |
           git fetch origin "$BASE_REF"
           printf '%s' "$PR_BODY" > "$RUNNER_TEMP/corps.md"
           node scripts/registre/controle-pr.mjs --corps "$RUNNER_TEMP/corps.md" --branche "$HEAD_REF" \
-            --base "origin/$BASE_REF" --auteur "$AUTEUR" --sortie-issues "$RUNNER_TEMP/issues.txt"
+            --base "origin/$BASE_REF" --tete "$TETE" --auteur "$AUTEUR" --sortie-issues "$RUNNER_TEMP/issues.txt"
       - name: Issues liées existantes (PR-01)
         env:
           GH_TOKEN: ${{ github.token }}

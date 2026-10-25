@@ -10,7 +10,7 @@
  * Règles :
  *  - secrets : clés AWS, jetons GitHub / GitLab / Slack / Stripe / Google / OpenAI / Anthropic, clés privées PEM,
  *    jetons JWT, affectations de mot de passe / clé / jeton à une valeur littérale longue ;
- *  - URL sensibles : identifiants dans l'URL (`scheme://user:mot-de-passe@hôte`, hors hôtes locaux), paramètres de
+ *  - URL sensibles : identifiants écrits dans l’URL (utilisateur et mot de passe littéral avant l’hôte, hors hôtes locaux), paramètres de
  *    signature ou de jeton (`X-Amz-Signature`, `sig`, `token`, `access_token`, `api_key`…), webhooks Slack / Discord ;
  *  - géométries privées : fichiers de modèle ou de relevé (IFC, DXF, DWG, DGN, STEP, LAS / LAZ / E57, RVT, SKP, 3DM,
  *    OBJ, PLY) hors des dossiers de corpus et d'exemples déclarés.

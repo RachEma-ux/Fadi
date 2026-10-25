@@ -13,7 +13,8 @@
  *  - SUIVI-08 : noms du protocole sans registre dupliqué — ADR seulement dans docs/continuity/decisions/, nommée par son
  *              identifiant, unique et listée dans l'index ; un seul registre vivant de tâches ; identifiants de décision
  *              uniques dans chaque journal et entre journaux.
- *  - SUIVI-07 / X.3-02 : chaînes obligation → lot → TEST/NAV → DEC → ADR — chaque fiche EX/INV/IF/AC a un lot du Plan,
+ *  - SUIVI-07 / X.3-02 : chaînes obligation → lot → composants → TEST/NAV → DEC → ADR — chaque fiche EX/INV/IF/AC a un lot
+ *              du Plan et des composants candidats présents au dépôt,
  *              ses scénarios TEST/NAV existent au registre, ses DEC existent et chaque DEC arbitrée cite une décision
  *              versionnée qui la nomme ; matrice 141 = fiches ; dépendances DEC du registre résolues.
  *  - SUIVI-09 : rapports lourds identifiés — tout fichier de plus de 1 Mio du suivi (docs/ai-team/reports, docs/workstreams)
@@ -216,6 +217,9 @@ export function chaines(registre, fiches, matriceCsv, decisionsM002, contenu, ex
     if (!decs.length) ecarts.push(`X.3-02 : ${f.id} — aucune décision DEC rattachée`);
     for (const d of decs) if (!taches.has(d)) ecarts.push(`X.3-02 : ${f.id} — décision ${d} absente du registre`);
     for (const d of liste(m.decision_retenue)) if (!decisionsM002.includes(`## ${d} `)) ecarts.push(`X.3-02 : ${f.id} — décision ${d} absente de ${DECISIONS_M002}`);
+    const composants = (f.composants_candidats ?? []).map((c) => c.chemin).filter(Boolean);
+    if (!composants.length) ecarts.push(`X.3-02 : ${f.id} — aucun composant candidat`);
+    for (const c of composants) if (!existe(c)) ecarts.push(`X.3-02 : ${f.id} — composant ${c} absent du dépôt`);
     const t = taches.get(`TR-${f.id}`);
     for (const p of t?.preuves ?? []) if (p.fichier && !existe(p.fichier)) ecarts.push(`X.3-02 : TR-${f.id} — preuve ${p.fichier} absente du dépôt`);
     resume.push({ id: f.id, lot, scenarios: scen, decisions: decs });

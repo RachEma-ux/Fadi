@@ -74,7 +74,7 @@ test('SUIVI-08 — ADR nommées et rangées selon le protocole, sans doublon ; r
   assert.match(avec('docs/workstreams/axes/DECISIONS.md', '## AX-D1 — a\n## AX-D1 — b'), /AX-D1 définie deux fois/);
 });
 
-test('X.3-02 / SUIVI-07 — chaînes obligation → lot → TEST/NAV → DEC → décision versionnée, contrôlées', () => {
+test('X.3-02 / SUIVI-07 — chaînes obligation → lot → composants → TEST/NAV → DEC → décision versionnée, contrôlées', () => {
   assert.deepEqual(scenarios('001,022 ; 005,008 secondaires seulement'), ['TEST-001', 'TEST-022', 'TEST-005', 'TEST-008']);
   assert.deepEqual(scenarios('TEST spécifiques outil §19.3'), ['§19.3']);
   assert.deepEqual(scenarios('035,NAV-003'), ['TEST-035', 'NAV-003']);
@@ -83,10 +83,10 @@ test('X.3-02 / SUIVI-07 — chaînes obligation → lot → TEST/NAV → DEC →
     { id: 'TR-EX-001', preuves: [{ type: 'test_automatise', fichier: 'a.test.ts' }] }, { id: 'TEST-001' }, { id: 'NAV-002' },
     { id: 'DEC-01', statut: 'Accepté', preuves: [{ type: 'decision_deleguee', fichier: 'adr.md' }] },
   ] };
-  const fiche = { id: 'EX-001', lot: 'I/A/E', scenarios_RT_lies_proposes: '001,NAV-002', decisions_applicables_a_qualifier: 'DEC-01' };
+  const fiche = { id: 'EX-001', lot: 'I/A/E', scenarios_RT_lies_proposes: '001,NAV-002', decisions_applicables_a_qualifier: 'DEC-01', composants_candidats: [{ chemin: 'apps/web/src/App.tsx' }] };
   const matrice = 'id,tests_proposes,decision_retenue,dec_techniques\nEX-001,"001,NAV-002",M002-D01,DEC-01\n';
   const decisions = '## M002-D01 — Référence\n';
-  const docs = new Map([['adr.md', '### DEC-01 retenue'], ['a.test.ts', '']]);
+  const docs = new Map([['adr.md', '### DEC-01 retenue'], ['a.test.ts', ''], ['apps/web/src/App.tsx', '']]);
   const ok = chaines(registre, [fiche], matrice, decisions, lecteur(docs), (f) => docs.has(f));
   assert.deepEqual(ok.ecarts, []);
   assert.deepEqual(ok.resume, [{ id: 'EX-001', lot: 'I/A/E', scenarios: ['TEST-001', 'NAV-002'], decisions: ['DEC-01'] }]);
@@ -95,9 +95,11 @@ test('X.3-02 / SUIVI-07 — chaînes obligation → lot → TEST/NAV → DEC →
   assert.match(casse({ ...fiche, scenarios_RT_lies_proposes: '001,NAV-099' }, matrice.replace('NAV-002', 'NAV-099')), /scénario NAV-099 absent du registre/);
   assert.match(casse(fiche, matrice.replace('"001,NAV-002"', '001')), /scénarios de la matrice/);
   assert.match(casse({ ...fiche, decisions_applicables_a_qualifier: 'DEC-07' }), /décision DEC-07 absente du registre/);
-  assert.match(casse(fiche, matrice, new Map([['adr.md', 'sans la décision'], ['a.test.ts', '']])), /DEC-01 — arbitrée sans décision versionnée/);
+  assert.match(casse(fiche, matrice, new Map([['adr.md', 'sans la décision'], ['a.test.ts', ''], ['apps/web/src/App.tsx', '']])), /DEC-01 — arbitrée sans décision versionnée/);
+  assert.match(casse({ ...fiche, composants_candidats: [{ chemin: 'apps/web/src/Disparu.tsx' }] }), /composant apps\/web\/src\/Disparu\.tsx absent du dépôt/);
+  assert.match(casse({ ...fiche, composants_candidats: [] }), /aucun composant candidat/);
   assert.match(casse(fiche, matrice.replace('M002-D01', 'M002-D09')), /M002-D09 absente/);
-  assert.match(casse(fiche, matrice, new Map([['adr.md', 'DEC-01']])), /preuve a\.test\.ts absente/);
+  assert.match(casse(fiche, matrice, new Map([['adr.md', 'DEC-01'], ['apps/web/src/App.tsx', '']])), /preuve a\.test\.ts absente/);
 });
 
 test('SUIVI-09 — rapports lourds déclarés avec empreinte et raison ; empreintes des preuves stables ; exécutions citées avec leur verdict', () => {
