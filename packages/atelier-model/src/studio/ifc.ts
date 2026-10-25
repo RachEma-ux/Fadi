@@ -2,6 +2,8 @@ import { studioSignedArea } from "./courbes.js";
 import { STUDIO_DEFAULT_LAYER_ID, StudioValidationError, validateStudioDocument, type StudioDocument, type StudioExtrusion, type StudioPoint, type StudioShape } from "./document-2d.js";
 import { bool, ref, refs, Step, studioIfcGuid, studioStepReal, studioStepString, type IfcConstruit, type IfcContexte, type StudioIfcSummary } from "./exporteurs/ifc-step.js";
 import { typeObjet } from "./objets/index.js";
+import { studioCotesExtrusion } from "./noyau/types.js";
+import { studioLienSolide } from "./commandes/liens-solides.js";
 import { studioIfcSolide } from "./objets-3d/ifc.js";
 import { studioIfcArchitecture } from "./architecture/ifc.js";
 import { studioIfcProprietes } from "./exigences/ifc.js";
@@ -139,11 +141,12 @@ function studioIfc(input: StudioDocument, meta: StudioIfcMeta): { content: strin
   if (doc.annotations?.length) summary.annotations = doc.annotations.length;
 
   /** Profil fermé discrétisé (coordonnées absolues du plan, sens trigonométrique), extrudé depuis la cote de base. */
-  const arbitrarySolid = (ring: StudioPoint[], depth: number) => {
+  const arbitrarySolid = (ring: StudioPoint[], depth: number, direction?: { x: number; y: number; z: number }) => {
     const r = studioSignedArea(ring) < 0 ? [...ring].reverse() : ring;
     const curve = s.add(`IFCPOLYLINE(${refs([...r, r[0]!].map((p) => pt2(p.x, p.y)))})`);
     const profile = s.add(`IFCARBITRARYCLOSEDPROFILEDEF(.AREA.,$,${ref(curve)})`);
-    return s.add(`IFCEXTRUDEDAREASOLID(${ref(profile)},$,${ref(zAxis)},${studioStepReal(depth)})`);
+    const sens = direction ? dir3(direction.x, direction.y, direction.z) : zAxis;
+    return s.add(`IFCEXTRUDEDAREASOLID(${ref(profile)},$,${ref(sens)},${studioStepReal(depth)})`);
   };
   const proxy = (o: StudioShape, description: string, item: number, representation: "SweptSolid" | "Tessellation", placement: number) => {
     const rep = s.add(`IFCSHAPEREPRESENTATION(${ref(body)},'Body','${representation}',${refs([item])})`);
@@ -163,10 +166,14 @@ function studioIfc(input: StudioDocument, meta: StudioIfcMeta): { content: strin
   for (const o of doc.objects) {
     if (!o.extrusion) { summary.nonExtruded++; continue; }
     const e: StudioExtrusion = o.extrusion;
-    const b = typeObjet(o).ifc(o, e, contexte);
+    // Direction −z (lot F1) : le volume est écrit de la cote inférieure vers le haut, même géométrie ; la base déclarée
+    // et la direction restent dans le jeu de propriétés.
+    const { direction: _sens, ...geometrie } = { ...e, base: studioCotesExtrusion(e).zMin };
+    const b = typeObjet(o).ifc(o, geometrie, contexte);
     pset(`object|${o.id}`, "Fadi_StudioExtrusion", b.element, [
       prop("StudioId", label(o.id)), prop("Base", length(e.base)), prop("Height", length(e.height)),
       ...(e.thickness !== undefined ? [prop("Thickness", length(e.thickness))] : []),
+      ...(e.direction !== undefined ? [prop("Direction", label(e.direction))] : []),
     ]);
     if (hiddenLayers.has(b.layerId)) summary.onHiddenLayers++;
     built.push(b);
@@ -175,7 +182,8 @@ function studioIfc(input: StudioDocument, meta: StudioIfcMeta): { content: strin
   // Solides libres : un `IfcBuildingElementProxy` `.NOTDEFINED.` chacun (A.3-09), comptés parmi les prismes.
   const solides = doc.solides ?? [];
   for (const sol of solides) {
-    const b = studioIfcSolide(sol, contexte);
+    const lien = studioLienSolide(doc, sol);
+    const b = studioIfcSolide(sol, contexte, lien);
     const { origin, rotation } = sol.placement;
     pset(`solid|${sol.id}`, "Fadi_StudioFreeSolid", b.element, [
       prop("StudioId", label(sol.id)), prop("Shape", label(sol.type)),
@@ -183,6 +191,8 @@ function studioIfc(input: StudioDocument, meta: StudioIfcMeta): { content: strin
       prop("RotationZ", `IFCPLANEANGLEMEASURE(${studioStepReal(rotation)})`),
       ...(sol.type === "box" ? [prop("Width", length(sol.width)), prop("Depth", length(sol.depth))] : [prop("ProfileVertices", integer(sol.profile.length))]),
       prop("Height", length(sol.height)),
+      ...(sol.type === "prism" && sol.direction ? [prop("DirectionX", `IFCREAL(${studioStepReal(sol.direction.x)})`), prop("DirectionY", `IFCREAL(${studioStepReal(sol.direction.y)})`), prop("DirectionZ", `IFCREAL(${studioStepReal(sol.direction.z)})`)] : []),
+      ...(lien ? [prop("SourceRelation", label(lien.relation)), prop("SourceObject", label(lien.objectId)), prop("SourceState", label(lien.etat))] : []),
     ]);
     if (hiddenLayers.has(b.layerId)) summary.onHiddenLayers++;
     built.push(b);

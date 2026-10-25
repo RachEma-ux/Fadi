@@ -571,6 +571,8 @@ try {
   await formExtrusion.getByLabel("Base (m)").fill("0");
   await formExtrusion.getByLabel("Hauteur (m)").fill("2.5");
   await formExtrusion.getByLabel("Épaisseur (m, lignes, facultative)").fill("0.2");
+  check("volume (TEST-005) : direction d'extrusion demandée, aucune proposée", (await formExtrusion.locator("[data-studio-extrusion-direction]").inputValue()) === "");
+  await formExtrusion.locator("[data-studio-extrusion-direction]").selectOption("+z");
   await formExtrusion.getByRole("button", { name: "Extruder la sélection", exact: true }).click();
   await page.locator('[data-studio-extrusion-etat="extrude"]').waitFor();
   check("volume : une commande d'extrusion en attente", (await portee()).includes("(2 commande(s)"), await portee());
@@ -598,11 +600,11 @@ try {
   await page.keyboard.press("Control+s");
   await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
   const envoiVolume = envois[envois.length - 1];
-  check("volume : enregistré par studio.dessin.ligne puis studio.objet.extruder", envois.length === avantVolume + 1 && envoiVolume.commands.map((c) => c.toolId).join() === "studio.dessin.ligne,studio.objet.extruder" && JSON.stringify(envoiVolume.commands[1].params) === JSON.stringify({ ids: [murId], base: 0, height: 2.5, thickness: 0.2 }), JSON.stringify(envoiVolume?.commands));
+  check("volume : enregistré par studio.dessin.ligne puis studio.objet.extruder", envois.length === avantVolume + 1 && envoiVolume.commands.map((c) => c.toolId).join() === "studio.dessin.ligne,studio.objet.extruder" && JSON.stringify(envoiVolume.commands[1].params) === JSON.stringify({ ids: [murId], base: 0, height: 2.5, thickness: 0.2, direction: "+z" }), JSON.stringify(envoiVolume?.commands));
   await page.reload();
   await page.locator(`[data-studio-objet="${murId}"]`).waitFor({ state: "attached" });
   const murRelu = (await a.api("get", variantePath)).revision.document.objects.find((o) => o.id === murId);
-  check("volume : extrusion persistée côté serveur", JSON.stringify(murRelu?.extrusion) === JSON.stringify({ base: 0, height: 2.5, thickness: 0.2 }), JSON.stringify(murRelu));
+  check("volume : extrusion persistée côté serveur (direction +Z choisie comprise)", JSON.stringify(murRelu?.extrusion) === JSON.stringify({ base: 0, height: 2.5, thickness: 0.2, direction: "+z" }), JSON.stringify(murRelu));
   await page.locator(`[data-studio-objet="${murId}"]`).focus();
   await page.keyboard.press("Enter");
   await formExtrusion.waitFor();
@@ -844,6 +846,9 @@ try {
   await formPrisme.locator("[data-studio-prisme-profil]").selectOption(polyId);
   await formPrisme.getByLabel("Cote de base z (m)", { exact: true }).fill("0");
   await formPrisme.getByLabel("Hauteur (m)", { exact: true }).fill("2");
+  // Lot F1 (TEST-006, TEST-005) : relation et direction demandées ; copie indépendante vers le haut, comme avant le lot.
+  await formPrisme.locator("[data-studio-prisme-relation]").selectOption("copie-independante");
+  await formPrisme.locator("[data-studio-prisme-direction]").selectOption("+z");
   await formPrisme.getByRole("button", { name: "Poser le prisme", exact: true }).click();
   await page.locator('[data-studio-vue3d][data-studio-solides-libres="2"]').waitFor();
   check("volume libre : prisme sur le profil de la polyligne fermée (deux solides libres)", (await vueLibre.getAttribute("data-studio-solides-libres")) === "2" && (await portee()).includes("(2 commande(s)"), await portee());
@@ -1645,14 +1650,14 @@ try {
   };
   const enAttente = (n) => page.waitForFunction((v) => document.querySelector("[data-studio-annuler-portee]")?.getAttribute("data-studio-en-attente-nombre") === v, String(n));
 
-  // TEST-002 : nouvelle étude, Planche 3D seule — volume construit, enregistré, vue plane dérivée (coupe horizontale).
-  // L'édition des faces n'existe pas dans Studio : elle n'est pas éprouvée ici (déclaré dans le libellé).
+  // TEST-002 : nouvelle étude, Planche 3D seule — volume construit, face poussée (lot F1), enregistré, vue plane dérivée
+  // (coupe horizontale à une cote que seule la face poussée atteint). Parcours détaillé : studio-faces.mjs.
   const etude3d = await a.api("post", `/projects/${pA2.id}/studio/studies`, { name: "Étude 3D seule" });
   const chemin3d = `/projects/${pA2.id}/studio/studies/${etude3d.study.id}/variants/${etude3d.variant.id}`;
   await page.goto(`${BASE}/studio/projets/${pA2.id}/etudes/${etude3d.study.id}/variantes/${etude3d.variant.id}`);
   await page.getByRole("toolbar", { name: "Outils de dessin" }).waitFor();
   const docNeuf = (await a.api("get", chemin3d)).revision.document;
-  check("TEST-002 (sans édition de faces) : étude neuve ouverte, document vide (aucun objet 2D, aucun solide)",
+  check("TEST-002 : étude neuve ouverte, document vide (aucun objet 2D, aucun solide)",
     docNeuf.objects.length === 0 && (docNeuf.solides ?? []).length === 0 && (await page.locator('svg [role="button"]').count()) === 0, JSON.stringify(docNeuf));
   await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press("Shift+D");
@@ -1661,24 +1666,32 @@ try {
   await page.keyboard.press("b");
   const formBoite3d = panneaux3d.locator("[data-studio-boite]");
   await formBoite3d.waitFor();
-  check("TEST-002 (sans édition de faces) : Maj+D ouvre la vue 3D sans rien dessiner en 2D (aucune planche 2D), outil Boîte prêt",
+  check("TEST-002 : Maj+D ouvre la vue 3D sans rien dessiner en 2D (aucune planche 2D), outil Boîte prêt",
     (await planche.count()) === 0 && (await outils.locator('[data-studio-outil="studio.solide.boite"]').getAttribute("aria-pressed")) === "true");
   for (const [libelle, valeur] of [["Origine x (m)", "1"], ["Origine y (m)", "1"], ["Origine z (m)", "0"], ["Largeur selon x (m)", "2"], ["Profondeur selon y (m)", "1"], ["Hauteur selon z (m)", "3"]]) await formBoite3d.getByLabel(libelle, { exact: true }).fill(valeur);
   await formBoite3d.getByRole("button", { name: "Poser la boîte", exact: true }).click();
   await page.locator('[data-studio-vue3d][data-studio-solides-libres="1"]').waitFor();
-  check("TEST-002 (sans édition de faces) : volume construit dans la vue 3D (un solide libre, une commande en attente)", (await portee()).includes("(1 commande(s)"), await portee());
+  check("TEST-002 : volume construit dans la vue 3D (un solide libre, une commande en attente)", (await portee()).includes("(1 commande(s)"), await portee());
+  const [idBoite3d] = await panneaux3d.locator('[data-studio-solide-type="box"]').evaluateAll((els) => els.map((e) => e.getAttribute("data-studio-solide")));
+  if (!(await panneaux3d.locator(`[data-studio-face-decaler="${idBoite3d}"]`).count())) await panneaux3d.locator(`[data-studio-solide="${idBoite3d}"]`).click();
+  const formFace3d = panneaux3d.locator(`[data-studio-face-decaler="${idBoite3d}"]`);
+  await formFace3d.locator("[data-studio-face-choix]").selectOption("sommet");
+  await formFace3d.getByLabel("Distance (m, positive vers l’extérieur)").fill("1");
+  await formFace3d.getByRole("button", { name: "Pousser / tirer la face", exact: true }).click();
+  await enAttente(2);
+  check("TEST-002 : édition de face — sommet poussé de 1 m, même solide, 8 m³", (await panneaux3d.locator(`[data-studio-solide="${idBoite3d}"]`).textContent()).includes("Boîte 2 × 1 × 4 m · 8 m³"));
   await enregistrer();
   const doc3d = (await a.api("get", chemin3d)).revision.document;
-  check("TEST-002 (sans édition de faces) : après Ctrl+S, le document relu compte 1 solide libre et 0 objet 2D (ni architecture)",
-    (doc3d.solides ?? []).length === 1 && doc3d.solides[0].type === "box" && doc3d.solides[0].width === 2 && doc3d.solides[0].depth === 1 && doc3d.solides[0].height === 3
+  check("TEST-002 : après Ctrl+S, le document relu compte 1 solide libre et 0 objet 2D (ni architecture)",
+    (doc3d.solides ?? []).length === 1 && doc3d.solides[0].id === idBoite3d && doc3d.solides[0].type === "box" && doc3d.solides[0].width === 2 && doc3d.solides[0].depth === 1 && doc3d.solides[0].height === 4
     && doc3d.objects.length === 0 && (doc3d.architecture ?? []).length === 0, JSON.stringify({ solides: doc3d.solides, objets: doc3d.objects.length }));
   await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press("Shift+K");
   const coupe3d = panneaux3d.locator("[data-studio-coupe]");
   await coupe3d.waitFor();
-  await coupe3d.getByLabel("Cote de coupe z (m)", { exact: true }).fill("1.5");
-  await page.locator('[data-studio-coupe][data-studio-coupe-z="1.5"]').waitFor();
-  check("TEST-002 (sans édition de faces) : vue plane dérivée (coupe horizontale à z = 1,5) — 4 contours de la boîte enregistrée, provenance par solide, non modifiable, brouillon inchangé",
+  await coupe3d.getByLabel("Cote de coupe z (m)", { exact: true }).fill("3.5");
+  await page.locator('[data-studio-coupe][data-studio-coupe-z="3.5"]').waitFor();
+  check("TEST-002 : vue plane dérivée (coupe horizontale à z = 3,5, atteinte par la seule face poussée) — 4 contours de la boîte enregistrée, provenance par solide, non modifiable, brouillon inchangé",
     (await coupe3d.getAttribute("data-studio-coupe-segments")) === "4" && (await coupe3d.getAttribute("data-studio-coupe-sources")) === doc3d.solides[0].id
     && (await coupe3d.getByRole("status").textContent()).includes("non modifiable") && (await portee()).includes("(0 commande(s)"),
     `${await coupe3d.getAttribute("data-studio-coupe-segments")} · ${await coupe3d.getAttribute("data-studio-coupe-sources")}`);
