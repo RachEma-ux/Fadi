@@ -61,7 +61,7 @@ OWNER_UID=$(id -u)
 # son amorçage publie un jeu de référence par la chaîne administrative sur une base jetable (ADR-GEODATA-02).
 E2E_DEFAUT="accueils-design parcours-scenario studio-persistance studio-navigation studio-exemple-p118 studio-domaines
 studio-espace studio-publication studio-observations studio-profils studio-catalogue studio-hors-ligne
-studio-corpus-s6 studio-corpus-s7 studio-conflits studio-chargement studio-mesures-chargement studio-accessibilite
+studio-corpus-s6 studio-corpus-s7 studio-conflits studio-chargement studio-memoire studio-mesures-chargement studio-accessibilite
 studio-quantites studio-dossier studio-echanges notifications-preferences atelier-nouveau atelier-documents
 atelier-echanges atelier-versions atelier-automatisation atelier-complements collaboration-audience participants
 portees-etroites communication journal-activite organisations revue-externe invitations-participation
