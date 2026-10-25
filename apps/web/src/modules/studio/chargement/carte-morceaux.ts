@@ -27,7 +27,7 @@ export type Famille = "three" | "occt" | "manifold" | "atelier" | "studio-planch
  * gestionnaire « Outils », jamais l'éditeur, le rendu ni la géométrie de la planche. Tout autre module de
  * `planche2d/` appartient à la famille `studio-planche`.
  */
-export const PLANCHE_PARTAGES_COQUILLE: readonly string[] = Object.freeze(["CatalogueOutils.tsx", "catalogue.ts", "raccourcis.ts", "profils.ts"]);
+export const PLANCHE_PARTAGES_COQUILLE: readonly string[] = Object.freeze(["CatalogueOutils.tsx", "catalogue.ts", "raccourcis.ts", "profils.ts", "etats-outils.ts"]);
 
 const echapper = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 

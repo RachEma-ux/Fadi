@@ -31,6 +31,8 @@ import {
 } from "./profils";
 import { ariaRaccourci, BARRES_STUDIO, libelleRaccourci, type BarreStudio, type StudioToolId } from "./raccourcis";
 import { PanneauRessources } from "../chargement/PanneauRessources";
+import { useEtatsRessources } from "../chargement/useRessources";
+import { etatOutilCatalogue, LIBELLES_ETAT_OUTIL, type EtatOutilCatalogue } from "./etats-outils";
 
 export interface CatalogueProps {
   disponible: (e: EntreeCatalogue) => boolean;
@@ -444,6 +446,10 @@ export function GestionnaireOutils({ disponible, raison, surExecuter, surFermer,
   const retenues = new Set(trouvees);
   // Le gestionnaire garde l'ordre du catalogue, rangé par barre ; la recherche et les filtres ne font que filtrer.
   const groupes = groupesCatalogue(CATALOGUE.filter((e) => retenues.has(e)));
+  // EX-029 : état de chaque outil, lu dans le gestionnaire des ressources sans rien charger.
+  const moteurs = useEtatsRessources();
+  const enLigne = typeof navigator === "undefined" || navigator.onLine !== false;
+  const etatDe = (e: EntreeCatalogue, r: RaisonIndisponible | null): EtatOutilCatalogue => etatOutilCatalogue(e, { raison: r, moteurs, enLigne });
   return (
     <Dialogue titre="Outils" id="studio-outils-titre" classe="studio-gestionnaire" surFermer={surFermer}>
       <div data-studio-gestionnaire-outils data-studio-manifeste={STUDIO_MANIFESTE_OUTILS_VERSION}>
@@ -452,7 +458,7 @@ export function GestionnaireOutils({ disponible, raison, surExecuter, surFermer,
         <ChoixProfil profil={profil} />
         <Regroupements profil={profil} compose={groupeCompose?.id ?? null} surComposer={setCompose} />
         <PanneauRessources />
-        <label>Rechercher un outil<input ref={champ} type="search" value={recherche} placeholder="Nom, raccourci ou identifiant" onChange={(e) => setRecherche(e.target.value)} data-studio-recherche-outils /></label>
+        <label>Rechercher un outil<input ref={champ} type="search" value={recherche} placeholder="Nom, synonyme, famille, domaine, raccourci ou identifiant" onChange={(e) => setRecherche(e.target.value)} data-studio-recherche-outils /></label>
         <FiltresOutils filtres={filtresActifs} surFiltres={setFiltres} groupes={profil.groupes} />
         <p role="status" className="studio-dialogue-aide" data-studio-nombre-entrees={trouvees.length}>{`${trouvees.length} entrée(s)`}</p>
         {!trouvees.length && <p>Aucun outil ne correspond à la recherche.</p>}
@@ -466,9 +472,10 @@ export function GestionnaireOutils({ disponible, raison, surExecuter, surFermer,
                 const outil = e.outil?.toolId ?? null;
                 const favori = outil !== null && profil.favoris.includes(outil);
                 const dansLesBarres = outil === null || profil.visible(outil);
+                const etatOutil = etatDe(e, r);
                 return (
                   <li key={e.identifiant} data-studio-catalogue-entree={e.identifiant} data-studio-disponible={ok ? "oui" : "non"}
-                    data-studio-autorise={estRefusDeDroit(r) ? "non" : "oui"} data-studio-raison={r ?? undefined}>
+                    data-studio-autorise={estRefusDeDroit(r) ? "non" : "oui"} data-studio-raison={r ?? undefined} data-studio-etat-outil={etatOutil}>
                     <Icon name={e.icone} size={20} />
                     <span className="studio-catalogue-nom" ref={noms.poser(e.identifiant)}>{e.libelleFR}</span>
                     <Raccourcis e={e} />
@@ -483,6 +490,7 @@ export function GestionnaireOutils({ disponible, raison, surExecuter, surFermer,
                       </span>
                     )}
                     <span className="studio-catalogue-meta" data-studio-disponibilite>{r === null ? "Disponible" : raison ? LIBELLES_RAISON[r] : "Indisponible"}</span>
+                    <span className="studio-catalogue-meta" data-studio-etat-libelle>{LIBELLES_ETAT_OUTIL[etatOutil]}</span>
                     {e.agentExposure === null
                       ? <span className="studio-catalogue-meta" data-studio-exposition="hors-registre">Hors registre (commande locale)</span>
                       : <span className="studio-catalogue-meta" data-studio-exposition={e.agentExposure}>Exposition aux agents : <code translate="no">{e.agentExposure}</code></span>}

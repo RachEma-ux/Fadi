@@ -12,6 +12,7 @@ import { entreeManifeste, STUDIO_TOOLS, type StudioContexteOutil, type StudioDro
 import {
   BARRES_STUDIO, COMMANDES_EDITEUR, libelleRaccourci, type BarreStudio, type CibleRaccourci, type CommandeEditeur, type IdCommandeEditeur, type StudioToolEntry,
 } from "./raccourcis";
+import { termesSupplementaires } from "./etats-outils";
 
 const P2D = ["planche-2d"] as const;
 const V3D = ["vue-3d"] as const;
@@ -113,7 +114,8 @@ export const normaliser = (s: string): string => s.normalize("NFD").replace(/\p{
 
 /**
  * Pertinence d'une entrée pour une recherche (0 = écartée) : nom commençant par la recherche, puis nom, raccourci
- * (forme du registre ou forme affichée, « Maj+C »), identifiant. `autres` : textes affichés en plus (traduction).
+ * (forme du registre ou forme affichée, « Maj+C »), synonyme (EX-029), identifiant, puis famille (barre) et domaine.
+ * `autres` : textes affichés en plus (traduction). Ne lit que des descripteurs : aucun moteur n'est chargé.
  */
 export function pertinence(e: EntreeCatalogue, recherche: string, autres: readonly string[] = []): number {
   const q = normaliser(recherche);
@@ -123,8 +125,13 @@ export function pertinence(e: EntreeCatalogue, recherche: string, autres: readon
   if (noms.some((n) => n.startsWith(q))) return 4;
   if (noms.some((n) => n.includes(q))) return 3;
   if (e.raccourcis.some((r) => normaliser(r) === q || normaliser(libelleRaccourci(r)) === q)) return 3;
+  const t = termesSupplementaires(e, BARRES_STUDIO.find((b) => b.id === e.barre)?.libelleFR ?? e.barre);
+  const synonymes = t.synonymes.map(normaliser);
+  if (synonymes.some((x) => x === q)) return 3;
   if (normaliser(e.identifiant).includes(q)) return 2;
+  if (synonymes.some((x) => x.includes(q))) return 2;
   if (e.raccourcis.some((r) => normaliser(r).includes(q) || normaliser(libelleRaccourci(r)).includes(q))) return 1;
+  if (normaliser(t.famille).includes(q) || t.domaines.some((d) => normaliser(d).includes(q))) return 1;
   return 0;
 }
 
