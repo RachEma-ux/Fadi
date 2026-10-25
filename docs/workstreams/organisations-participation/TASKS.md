@@ -1,15 +1,18 @@
 # Organisations, participation et revue externe — Tâches
 
+Mis à jour : 2026-10-25 (UTC).
+
 ## À faire
 
-- [ ] OP-DEPLOI — Préproduction : demandée par le maître d'ouvrage (2026-10-25) ; déployée automatiquement par `fadi-preprod-auto` depuis `main` vert (PR #297 : OP-4, OP-5, `CONTACT_RETENTION_ENABLED=1` dans `deploy/preprod/compose.yml`), puis OP-PONT après sa PR. Production : sur accord explicite seulement, selon RUNBOOK-deploiement.md.
-- [ ] OP-AUTOCONTROLE — Séparation des responsabilités (auto-contrôle signalé), lot ultérieur (OP-4).
+- [ ] OP-DEPLOI — Préproduction : demandée par le maître d'ouvrage (2026-10-25) ; déployée automatiquement par `fadi-preprod-auto` depuis `main` vert (PR #297 : OP-4, OP-5, `CONTACT_RETENTION_ENABLED=1` dans `deploy/preprod/compose.yml`), OP-PONT compris. Production : sur accord explicite seulement, selon RUNBOOK-deploiement.md.
 
 ## En cours
 
-- OP-PONT — Retrait du pont `op_sync_access` livré (`lot-pont.md`) : PR vers `main`, suites DB-3 et CI à faire passer (Issue : #262).
+- OP-AUTOCONTROLE — Séparation des responsabilités (décision OP-6) : implémenté sur `lot-autocontrole`, vérifié en local (`lot-autocontrole.md`) ; PR, suites DB-3 et CI à faire passer, acceptation à recueillir (Issue : #262).
 
 ## Terminé
+
+- [x] OP-PONT — Retrait du pont `op_sync_access` fusionné dans `main` (`7eed727`, `d23a880`).
 
 - [x] OP-P297 — OP-4, OP-5 et réglage de préproduction fusionnés (PR #297, CI verte sur `739d019`).
 - [x] OP-FINAL — 🛑 final franchi : périmètre accepté (OP-5, 2026-10-25).
@@ -24,7 +27,7 @@
 
 ## Bloqué
 
-- Aucune tâche bloquée : OP-PONT attend sa CI ; la production attend l'accord explicite du maître d'ouvrage.
+- Aucune tâche bloquée : OP-AUTOCONTROLE attend sa PR et sa CI (suites DB-3 non exécutables hors CI) ; la production attend l'accord explicite du maître d'ouvrage.
 
 ## Critères de sortie
 

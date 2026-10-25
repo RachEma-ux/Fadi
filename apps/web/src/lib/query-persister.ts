@@ -13,7 +13,7 @@ import { localStore } from "./local-store";
 export const QUERY_CACHE_VERSION = "fadi-queries-1";
 
 /** Premières clés des requêtes jamais déshydratées dans IndexedDB. */
-export const NON_PERSISTED_QUERIES: readonly string[] = ["auth", "account", "admin", "support-grants", "journal-projet", "invitations-recues", "invitation-apercu"];
+export const NON_PERSISTED_QUERIES: readonly string[] = ["auth", "account", "admin", "support-grants", "journal-projet", "invitations-recues", "invitation-apercu", "controle-approbation"];
 
 interface QueryPersistenceState { failedProjects: readonly string[]; error: string | null; saving: boolean }
 let queryPersistenceState: QueryPersistenceState = { failedProjects: [], error: null, saving: false };

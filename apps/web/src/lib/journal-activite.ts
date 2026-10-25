@@ -161,7 +161,22 @@ export const ACTION_LABEL: Readonly<Record<string, string>> = {
   "review.finding.rechecked": "Constat de revue recontrôlé",
   "review.response.recorded": "Réponse de relecture enregistrée",
   "review.decision.recorded": "Décision d’approbation enregistrée par la revue",
+  // Lot OP-AUTOCONTROLE (OP-6).
+  "review.approval.recorded": "Approbation enregistrée",
+  "admin.user.self_control_changed": "Option « Auto-contrôle » modifiée",
 };
+
+/** Libellés d'une entrée marquée auto-contrôle (`details.selfControl === true`, OP-6). */
+export const ACTION_LABEL_AUTO_CONTROLE: Readonly<Record<string, string>> = {
+  "review.approval.recorded": "Approbation enregistrée (auto-contrôle)",
+  "review.decision.recorded": "Décision d’approbation enregistrée par la revue (auto-contrôle)",
+};
+
+/** Libellé d'une entrée : celui de son action, marqué quand l'approbation est un auto-contrôle. */
+export function entryActionLabel(e: Pick<JournalEntry, "action" | "details">): string {
+  if (e.details["selfControl"] === true && ACTION_LABEL_AUTO_CONTROLE[e.action]) return ACTION_LABEL_AUTO_CONTROLE[e.action]!;
+  return actionLabel(e.action);
+}
 
 export const FAMILY_LABEL: Readonly<Record<string, string>> = {
   auth: "Connexion et sécurité",
@@ -211,6 +226,7 @@ export const DETAIL_LABEL: Readonly<Record<string, string>> = {
   replies: "réponses", path: "chemin consulté",
   accessExpiresAt: "échéance d’accès", invitationExpiresAt: "échéance de l’invitation", statusBefore: "statut avant", statusAfter: "statut après",
   wasActive: "déjà active", link: "liaison",
+  selfControl: "auto-contrôle", revisionsAuteur: "révisions produites par l’approbateur", soumisParLui: "soumis par l’approbateur",
 };
 
 export const SUBJECT_LABEL: Readonly<Record<string, string>> = {

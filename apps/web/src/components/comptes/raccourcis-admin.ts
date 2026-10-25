@@ -5,8 +5,8 @@
  */
 import type { CommandeAdmin } from "./icones-admin";
 
-/** Commandes des invitations et des comptes de test (UM-31). */
-export type CommandeRaccourcie = Extract<CommandeAdmin, "renvoyer" | "copier-lien" | "comptes-test">;
+/** Commandes des invitations et des comptes de test (UM-31), option « Auto-contrôle » d'un compte (OP-6). */
+export type CommandeRaccourcie = Extract<CommandeAdmin, "renvoyer" | "copier-lien" | "comptes-test" | "auto-controle">;
 
 export const RACCOURCIS_ADMIN: Record<CommandeRaccourcie, { touche: string; aria: string; libelle: string }> = {
   // Agit sur la ligne d'invitation qui a le focus.
@@ -15,6 +15,8 @@ export const RACCOURCIS_ADMIN: Record<CommandeRaccourcie, { touche: string; aria
   "copier-lien": { touche: "KeyL", aria: "Alt+Shift+L", libelle: "Raccourci : Alt+Maj+L" },
   // Bascule « Masquer les comptes de test ».
   "comptes-test": { touche: "KeyT", aria: "Alt+Shift+T", libelle: "Raccourci : Alt+Maj+T" },
+  // Bascule l'option « Auto-contrôle » du compte dont la fiche est ouverte (OP-6), après confirmation.
+  "auto-controle": { touche: "KeyA", aria: "Alt+Shift+A", libelle: "Raccourci : Alt+Maj+A" },
 };
 
 /** Commande désignée par une frappe (Alt+Maj+lettre, sans Ctrl ni Méta), sinon `null`. */
