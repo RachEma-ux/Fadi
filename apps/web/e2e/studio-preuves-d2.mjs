@@ -87,7 +87,7 @@ const tentatives = [
 for (const [nom, sql] of tentatives) {
   const params = sql.includes('$2') ? [p1.id, study.body.revision.id] : [p1.id];
   const err = await base.query(sql, params).then(() => null, (e) => e.message);
-  check(`INV-012 [−] : publication diffusée, réécriture directe refusée par la base (${nom}, rôle ${role})`, err === 'studio_publication_package_frozen', String(err));
+  check(`INV-012 [−] : publication diffusée, réécriture directe refusée par la base (${nom}, rôle ${role})`, err === 'studio_publication_package_immutable', String(err));
 }
 // Les dimensions restent modifiables (vérifié dans une transaction annulée : rien n'est gardé).
 await base.query('BEGIN');

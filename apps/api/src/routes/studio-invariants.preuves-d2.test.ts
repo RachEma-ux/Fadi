@@ -124,7 +124,7 @@ describe("INV-012 — une publication antérieure n'est pas réécrite par la cr
       { package: ecrase }, { packageHash: "f".repeat(64) }, { manifest: { ...(pub(d.id).manifest as Record<string, unknown>), documents: [] } }, { manifestHash: "e".repeat(64) },
       { revisionId: "r-autre" },{ documentHash: "d".repeat(64) }, { approvedManifestHash: "c".repeat(64) },
     ]) {
-      expect(await message(db.update(studioPublications).set(patch as never).where(eq(studioPublications.id, d.id))), JSON.stringify(Object.keys(patch))).toBe("studio_publication_package_frozen");
+      expect(await message(db.update(studioPublications).set(patch as never).where(eq(studioPublications.id, d.id))), JSON.stringify(Object.keys(patch))).toBe("studio_publication_package_immutable");
     }
     expect(instantane()).toBe(avant);
     // Les dimensions (retrait, remplacement) restent modifiables, contenu inchangé ; un brouillon non diffusé s'actualise.
