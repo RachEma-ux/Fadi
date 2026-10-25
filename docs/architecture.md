@@ -35,6 +35,7 @@ type).
 | Documents | Plans, tables, schedules and reports |
 | Collaboration | Access, comments, revisions and synchronisation |
 | Sandbox | Free 3D board on its own (`/sandbox`): no project, no link with the step 10 Planche; only its tool preferences reach the server |
+| GeoData | Autonomous geographic data and map space (`/geodata`): catalogue of versioned sources, saved maps, study zones, bounded analyses and authorised exports; no project anywhere in its core |
 
 The Sandbox is the eighth module (owner decision of 2026-10-20; lot 1 moved it out of the Studio Console,
 `Studio/Sandbox/Recommandation_Sandbox_Architecture.md`). It is independent in both directions: it imports neither
@@ -45,6 +46,15 @@ link, and the former address `/studio/console/sandbox` redirects to `/sandbox`. 
 account's tool preferences (lot 5, owner decision of 2026-10-20): `GET`/`PUT /sandbox/preferences`, table
 `sandbox_tool_preferences`, through a minimal client (`modules/sandbox/preferences/client.ts`), the one file the
 independence test lets call the server; the drawing draft stays in the browser.
+
+GeoData is the ninth module (owner decisions ADR-GEODATA-01 of 2026-10-22 and ADR-GEODATA-02 of 2026-10-25), independent of
+projects in both directions: no `projectId`, project role or project context in its routes, models, permissions or SQL
+(`geodata_*` tables reference only `users`), enforced by `apps/web/src/modules/geodata/independance.test.ts`,
+`apps/api/src/routes/geodata-independance.test.ts` and `scripts/frontieres.json`. Its API lives under `/geodata/api`
+(the page is `/geodata`), its shared pure logic in `packages/geodata-model` (labelled coordinates, composition format,
+classification where a missing value is never zero, GeoJSON validation, rights by use), its map engine (MapLibre GL JS) is
+loaded on demand and kept out of the initial bundle. PostGIS serves vector tiles (`ST_AsMVT`) and measures on the WGS 84
+ellipsoid; published data versions are immutable. See `docs/geodata/README.md`.
 
 Scaffolded as `apps/web/src/modules/<module>/README.md` (one file per module stating its responsibility and
 current status) so the boundary exists in the repository before it exists in the UI, instead of emerging by

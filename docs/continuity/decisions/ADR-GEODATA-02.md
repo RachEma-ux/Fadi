@@ -3,7 +3,7 @@
 Statut : **Accepté** (délégation du maître d’ouvrage) ; décisions techniques prises par le chef de projet sous délégation.
 Date : 2026-10-25.
 Chantier : geodata.
-Issue : https://github.com/RachEma-ux/Fadi/issues/243 (cadrage) ; suivi de réalisation dans la PR du lot.
+Issues : https://github.com/RachEma-ux/Fadi/issues/243 (cadrage) et https://github.com/RachEma-ux/Fadi/issues/299 (réalisation).
 
 ## Contexte
 

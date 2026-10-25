@@ -569,6 +569,13 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures node apps/web/e2e/atelier-complements.mjs 2>&1 | tee -a e2e.log
+      # GeoData (9ᵉ module, ADR-GEODATA-02) : amorçage par la chaîne administrative réelle (rôles GeoData, jeu SYNTHÉTIQUE
+      # publié), puis GEO 01 à GEO 13 dans le navigateur (WebGL logiciel), sans WebGL, au téléphone et en anglais.
+      - name: Recette GeoData — compte sans projet, carte, catalogue, absence ≠ zéro, cartes et conflits, import, études, export, sans WebGL, téléphone, anglais (apps/web/e2e/geodata.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/geodata node apps/web/e2e/geodata.mjs 2>&1 | tee -a e2e.log
       # Gestion des comptes (#253, phases 1 à 4, D-7) : API réelle en fadi_app, courriels par Mailpit, horloge simulée par
       # la base jetable ; politique de mot de passe, sessions, TOTP, admin, accès support, invitations, suspension,
       # mot de passe oublié, export et suppression (anonymisation à 30 jours), garde-fou de quota.

@@ -1,42 +1,39 @@
-# GeoData — Vérification documentaire
+# GeoData — Vérifications
 
-Date : 2026-10-22 (UTC).
-Issue : https://github.com/RachEma-ux/Fadi/issues/243.
+## Lot documentaire (22 octobre 2026, Issue #243)
 
-## Livrables contrôlés
+Concept 1.0 MD/DOCX : parité de 288 blocs, 18 liens, rendu Word de 10 pages, empreintes Markdown `7c8d8256…53dc` et Word `141181c7…7222`, contrôle de continuité réussi. PR #245 fusionnée le 23 octobre 2026.
 
-- `Fadi Concept/Fadi Concept - GeoData.md` — version 1.0.
-- `Fadi Concept/Fadi Concept - GeoData.docx` — version 1.0.
-- Titre commun : Fadi Concept GeoData.
+## Lot de réalisation V1 (25 octobre 2026, Issue #299)
 
-## Résultats
+| Contrôle | Résultat |
+| --- | --- |
+| `npm run typecheck` (dont `check-module-deps`) | Succès |
+| Tests paquets et web (`npm run test` hors API) | Succès ; `@parcours/geodata-model` 18/18 ; module web GeoData 11/11 |
+| `npm run test:db-guard` ; `check-api-tests-db3` sans attestation | Succès ; seules les suites DB-3 listées refusées |
+| Suite API GeoData + GeoPackage + audit GEO 04 sur PostGIS 16 local | 21/21 (garde contournée localement, non commité) |
+| `npm run build` ; carte des morceaux | Succès ; `{"ok":true,"violations":[]}` |
+| `init.sql` rejoué deux fois | Succès |
+| Recette `apps/web/e2e/geodata.mjs` (Chromium, WebGL logiciel et sans WebGL, 1440 px et 390 px, anglais) | Tout conforme |
+| `node scripts/check-continuity.mjs` | Succès |
 
-- Parité MD/DOCX : **288 blocs de texte** comparés dans l’ordre, y compris cellules et libellés des hyperliens ; égalité exacte après retrait du balisage Markdown.
-- Liens : **18 destinations** identiques dans le Markdown et les relations du Word ; syntaxe contrôlée. Ce contrôle ne certifie pas la disponibilité de chaque service externe.
-- Markdown : niveaux de titres et structure des tableaux contrôlés.
-- Word : rendu de **10 pages**, toutes inspectées visuellement ; titres, tableaux, marges, caractères français et pagination lisibles, sans chevauchement ni contenu coupé.
-- Continuité du chantier : `validateWorkstream(..., "geodata")` et `validateChangedPaths(...)` du validateur existant exécutés avec succès sur le dossier et les checkpoints de ce lot. Le contrôle local porte sur le nouveau chantier, pas sur une copie complète du dépôt.
-- Nommage : paire courante sans suffixe de version, même nom de base, index associé. Aucun précédent GeoData à archiver dans l’arbre de base inspecté.
+## Traçabilité GEO
 
-## Empreintes SHA256
+| Critère | Preuve |
+| --- | --- |
+| GEO 01, 02 | `geodata.test.ts` (compte sans projet, espace idempotent) ; recette (entrée de menu, accès direct, aucun sélecteur de projet) |
+| GEO 03 | `geodata.test.ts` : projet créé puis supprimé, carte inchangée |
+| GEO 04 | `geodata-independance.test.ts` (API, SQL, paquet) ; `modules/geodata/independance.test.ts` ; `scripts/frontieres.json` |
+| GEO 05 | `geodata.test.ts` ; recette (reconnexion, composition identique) |
+| GEO 06 | paquet pur, `geodata.test.ts`, recette (légende hachurée, fiche, table) |
+| GEO 07 | paquet pur, `geopackage.test.ts`, `geodata.test.ts`, recette (import projeté refusé) |
+| GEO 08 | `geodata.test.ts` (cartes, zones, analyses, imports, tuiles, fiches) ; recette |
+| GEO 09 | `geodata.test.ts` (droit inconnu → refus motivé) ; recette (PNG + fiche) |
+| GEO 10 | `geodata.test.ts` (nouvelle version : analyse « à recalculer », résultat et version conservés) |
+| GEO 11 | recette sans WebGL (message, recherche, fiche) |
+| GEO 12 | recette téléphone (un panneau), clavier, axe-core ; appareils physiques : **non exécuté** (maître d'ouvrage) |
+| GEO 13 | `geodata.test.ts` ; recette deux onglets (409, copie « ma version ») |
 
-- Markdown : `7c8d8256907727c6477a46c2289ca180717cd500bd20082dbd938e7a7fab53dc`.
-- Word : `141181c7ae0cf926f4ae4208cc25a2904e34d627693a022a95e7351e516b7222`.
+## Limites
 
-## Limites de vérification
-
-Aucun code applicatif modifié, aucun test applicatif ou de base de données exécuté, aucune migration ni mise en production. Les critères GEO 01 à GEO 13 sont des scénarios de réception futurs et ne sont pas déclarés réussis. La CI distante doit être consultée sur le HEAD de la PR ; aucun résultat n’est présumé ici.
-
-La revue du concept détaillé et la décision de fusion restent distinctes de ces vérifications documentaires.
-
-## Vérification du dépôt GitHub
-
-- Commit de la paire : `022db53547c73ac3b0c6a446c539d8dfcc68d565`.
-- [PR #245](https://github.com/RachEma-ux/Fadi/pull/245), liée à l’Issue #243, ouverte pour revue.
-- Les 11 fichiers de ce commit ont été retrouvés dans l’arbre distant et leurs empreintes Git comparées aux fichiers préparés : 11 correspondances exactes.
-- Markdown : blob `f0e1064abea556dc15b320544af08d7a1f1e5d9e` ; Word : blob `a34298b24d1dd7c59a44cdb1d9f27f8b065024ea`.
-- Liens relatifs des documents modifiés résolus sur l’arbre existant augmenté des nouveaux fichiers : aucune cible manquante.
-- [Continuité — docs, checkpoints et tests](https://github.com/RachEma-ux/Fadi/actions/runs/39756762346/job/119750597832) : succès sur le commit documentaire cité. Les autres contrôles étaient partiellement en cours lors du relevé ; aucune réussite globale présumée.
-- Main a avancé vers `bcaeb9b744cbc83332f568075891a5b42fece207` pendant la préparation, uniquement sur deux fichiers du Sandbox. GitHub a confirmé la PR fusionnable sans conflit au relevé. Aucun changement du Sandbox n’a été inclus dans la PR documentaire.
-
-Le présent checkpoint actualise les références de suivi sans modifier la paire documentaire. La CI du dernier HEAD doit être relue avant toute décision de fusion.
+La suite API GeoData ne s'exécute avec sa garde qu'en CI (DB-3). Aucune vérification sur appareils physiques ni en production.

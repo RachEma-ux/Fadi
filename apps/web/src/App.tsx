@@ -17,6 +17,7 @@ import { AnnulerSuppressionPage, InvitationPage, MotDePasseOubliePage, Reinitial
 // Les pages lourdes (projet ouvert avec ses sept modules, bibliothèque des bâtiments) sont chargées à leur première ouverture ;
 // l'enveloppe (connexion, accueil, liste des projets) reste légère. Le moteur de l'Atelier est lui-même un morceau séparé.
 const PageSandbox = lazy(() => import("./modules/sandbox/PageSandbox").then((m) => ({ default: m.PageSandbox })));
+const PageGeoData = lazy(() => import("./modules/geodata/PageGeoData").then((m) => ({ default: m.PageGeoData })));
 const StudioShell = lazy(() => import("./modules/studio/StudioShell").then((m) => ({ default: m.StudioShell })));
 const ProjectShell = lazy(() => import("./routes/ProjectShell").then((m) => ({ default: m.ProjectShell })));
 const ProjectCockpitPage = lazy(() => import("./modules/pilotage/ProjectCockpitPage").then((m) => ({ default: m.ProjectCockpitPage })));
@@ -92,6 +93,15 @@ export function App() {
             element={
               <Suspense fallback={<Loading />}>
                 <PageSandbox />
+              </Suspense>
+            }
+          />
+          {/* GeoData : 9ᵉ module, autonome des projets (ADR-GEODATA-01/02) ; la page est la carte elle-même. */}
+          <Route
+            path="/geodata"
+            element={
+              <Suspense fallback={<Loading />}>
+                <PageGeoData />
               </Suspense>
             }
           />

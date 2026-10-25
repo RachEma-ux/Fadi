@@ -6,18 +6,23 @@
     "regles": [
       {
         "de": "modules/studio",
-        "interdits": ["modules/atelier", "modules/parcours", "routes/ProjectShell", "lib/use-immersive", "modules/sandbox"],
+        "interdits": ["modules/atelier", "modules/parcours", "routes/ProjectShell", "lib/use-immersive", "modules/sandbox", "modules/geodata"],
         "motif": "Studio n'importe ni l'Atelier (Planche comprise), ni le Parcours, ni ProjectShell, ni le mode immersif (ADR-STUDIO-NAV-01), ni le module Sandbox (lot 1 : la carte « 00 Sandbox » n'est qu'un lien d'adresse)"
       },
       {
         "de": "modules/atelier",
-        "interdits": ["modules/studio", "modules/sandbox"],
+        "interdits": ["modules/studio", "modules/sandbox", "modules/geodata"],
         "motif": "l'Atelier (Planche comprise) ne dépend ni de Studio (ADR-STUDIO-NAV-01) ni du module Sandbox (lot 1)"
       },
       {
         "de": "modules/sandbox",
-        "interdits": ["modules/studio", "modules/atelier", "modules/parcours", "routes/ProjectShell", "lib/api"],
+        "interdits": ["modules/studio", "modules/atelier", "modules/parcours", "routes/ProjectShell", "lib/api", "modules/geodata"],
         "motif": "le Sandbox (8ᵉ module, autonome, lot 1) n'importe ni le Studio, ni l'Atelier (Planche de l'étape 10 comprise), ni le Parcours, ni ProjectShell, ni le client d'API"
+      },
+      {
+        "de": "modules/geodata",
+        "interdits": ["modules/studio", "modules/atelier", "modules/parcours", "modules/sandbox", "modules/projets-sources", "modules/pilotage", "routes/ProjectShell", "lib/api"],
+        "motif": "GeoData (9ᵉ module, ADR-GEODATA-01/02) est autonome des projets : il n'importe ni le Studio, ni l'Atelier, ni le Parcours, ni le Sandbox, ni les projets et leur pilotage, ni ProjectShell, ni le client d'API général (son client minimal parle seulement à /geodata/api)"
       }
     ],
     "interfacesPubliques": {

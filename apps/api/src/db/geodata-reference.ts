@@ -73,6 +73,11 @@ async function main() {
   const client = await pool.connect();
   try {
     const role = async (email: string, r: string) => (await client.query("SELECT u.id FROM users u JOIN geodata_roles g ON g.user_id = u.id AND g.role = $2 WHERE lower(u.email) = lower($1)", [email, r])).rows[0]?.id as string | undefined;
+    const [deja] = (await client.query("SELECT v.id, v.etat FROM geodata_versions v JOIN geodata_sources s ON s.id = v.source_id WHERE s.cle = $1 AND v.empreinte = $2 AND v.espace_id IS NULL", [fiche.cle, empreinte])).rows;
+    if (deja) {
+      console.log(`Version déjà présente (même source, empreinte identique) : ${deja.id} (${deja.etat}) ; aucune nouvelle version.`);
+      return;
+    }
     const prepareParId = await role(preparateur, "gestionnaire-donnees");
     if (!prepareParId) throw new Error(`${preparateur} n'a pas le rôle GeoData « gestionnaire-donnees ».`);
     await client.query("BEGIN");

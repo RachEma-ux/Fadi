@@ -125,6 +125,7 @@ export default defineConfig({
       "/notifications": "http://localhost:3001",
       "/preferences": "http://localhost:3001",
       "/sandbox/preferences": "http://localhost:3001",
+      "/geodata/api": "http://localhost:3001",
       "/health": "http://localhost:3001",
       "/version": "http://localhost:3001",
       // Temps réel (Issue #283) : canal WebSocket des sessions en direct.
@@ -151,6 +152,7 @@ export default defineConfig({
       "/notifications": "http://localhost:3001",
       "/preferences": "http://localhost:3001",
       "/sandbox/preferences": "http://localhost:3001",
+      "/geodata/api": "http://localhost:3001",
       "/health": "http://localhost:3001",
       "/version": "http://localhost:3001",
       // Temps réel (Issue #283) : canal WebSocket des sessions en direct.

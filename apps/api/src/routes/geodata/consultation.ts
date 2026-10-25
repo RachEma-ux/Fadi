@@ -16,6 +16,13 @@ export const COLONNES_VERSION = `v.id AS version_id, v.libelle, v.empreinte, v.u
   v.crs_source, v.precision_donnees, v.transformations, v.controles, v.synthetique, v.etat, v.publiee_le, v.motif_retrait, (v.espace_id IS NOT NULL) AS privee,
   s.id AS source_id, s.titre AS source_titre, s.producteur, s.theme, s.couverture, s.description AS source_description`;
 
+/**
+ * Catalogue et recherche présentent, pour chaque source, sa version publiée la plus récente ; les versions précédentes
+ * restent servies (tuiles, table, fiches) aux cartes et analyses qui les référencent (INV-07).
+ */
+const DERNIERE_VERSION = (alias: string, parametreEspace: string) =>
+  `NOT EXISTS (SELECT 1 FROM geodata_versions vr WHERE vr.source_id = ${alias}.source_id AND ${VERSION_CONSULTABLE("vr", parametreEspace)} AND vr.publiee_le > ${alias}.publiee_le)`;
+
 export function lireVersion(r: Record<string, unknown>) {
   return {
     id: r["version_id"], libelle: r["libelle"], empreinte: r["empreinte"], urlSource: r["url_source"], recupereLe: r["recupere_le"], periode: r["periode"],
@@ -67,7 +74,9 @@ consultationRouter.get("/catalogue", async (req, res) => {
   const q = typeof req.query["q"] === "string" ? req.query["q"].trim().slice(0, 80).toLowerCase() : "";
   const lignes = await requete(
     `SELECT ${COLONNES_COUCHE} FROM geodata_couches c JOIN geodata_versions v ON v.id = c.version_id JOIN geodata_sources s ON s.id = v.source_id
-      WHERE ${VERSION_CONSULTABLE("v", "$1")} AND ($2 = '' OR lower(c.titre || ' ' || s.titre || ' ' || s.theme || ' ' || s.producteur) LIKE '%' || $2 || '%')
+      WHERE ${VERSION_CONSULTABLE("v", "$1")}
+        AND ${DERNIERE_VERSION("v", "$1")}
+        AND ($2 = '' OR lower(c.titre || ' ' || s.titre || ' ' || s.theme || ' ' || s.producteur) LIKE '%' || $2 || '%')
       ORDER BY (v.espace_id IS NOT NULL), s.theme, c.titre LIMIT 200`,
     [espaceId, q],
   );
@@ -96,7 +105,7 @@ consultationRouter.get("/recherche", async (req, res) => {
     `SELECT o.code, o.nom, o.niveau, c.id AS couche_id, c.titre AS couche_titre, v.libelle, s.titre AS source_titre,
             ST_AsGeoJSON(ST_Envelope(o.geom), 6) AS emprise, ST_AsGeoJSON(ST_PointOnSurface(o.geom), 6) AS centre
        FROM geodata_objets o JOIN geodata_couches c ON c.id = o.couche_id JOIN geodata_versions v ON v.id = c.version_id JOIN geodata_sources s ON s.id = v.source_id
-      WHERE ${VERSION_CONSULTABLE("v", "$1")} AND (lower(o.nom) LIKE '%' || $2 || '%' OR lower(o.code) = $2)
+      WHERE ${VERSION_CONSULTABLE("v", "$1")} AND ${DERNIERE_VERSION("v", "$1")} AND (lower(o.nom) LIKE '%' || $2 || '%' OR lower(o.code) = $2)
       ORDER BY (lower(o.nom) LIKE $2 || '%') DESC, length(o.nom), o.nom LIMIT 20`,
     [espaceId, t],
   );
