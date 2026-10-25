@@ -1,0 +1,57 @@
+#!/bin/bash
+# Double de curl pour fadi-prod-auto : API publique de GitHub, sondes de https://www.fadimmo.com, Healthchecks.
+# MOCK_DIR reçoit la trace (curl.trace, curl.args, notifications) ; réponses réglées par MOCK_* (voir run.sh).
+# La production « sert » le commit écrit dans MOCK_DIR/en-ligne (posé par le double de docker à chaque `up`) ;
+# MOCK_KO_COMMIT + MOCK_SONDE_KO (health|accueil|projects|version) cassent une sonde quand ce commit est en ligne.
+o=/dev/null; d=/dev/null; w=; url=; data=; conf=0
+args="$*"
+while [ $# -gt 0 ]; do case "$1" in
+  -o) o=$2; shift 2 ;; -D) d=$2; shift 2 ;; -w) w=$2; shift 2 ;; --data-binary) data=$2; shift 2 ;;
+  -K) [ "$2" = - ] && conf=1; shift 2 ;; -H|-m|--retry) shift 2 ;; -*) shift ;; *) url=$1; shift ;; esac; done
+if [ "$conf" = 1 ]; then url=$(sed -n 's/^url = "\(.*\)"$/\1/p'); fi
+echo "$url" >> "$MOCK_DIR/curl.trace"
+echo "$args" >> "$MOCK_DIR/curl.args"
+reponse() {  # $1 = code, $2 = corps
+  { printf 'HTTP/1.1 %s X\r\n' "$1"; printf 'x-ratelimit-remaining: %s\r\n' "${MOCK_RESERVE:-55}"; printf '\r\n'; } > "$d"
+  printf '%s' "$2" > "$o"
+  [ -n "$w" ] && printf '%s' "$1"
+  exit 0
+}
+release() {
+  [ "${MOCK_RELEASE_ID:-}" = absent ] && reponse 404 '{"message":"Not Found"}'
+  reponse 200 "{\"id\":${MOCK_RELEASE_ID:-41},\"tag_name\":\"${MOCK_TAG:-v2026.10.25}\",\"draft\":${MOCK_DRAFT:-false},\"prerelease\":${MOCK_PRERELEASE:-false},\"target_commitish\":\"main\"}"
+}
+case "$url" in
+  https://hc.example.invalid/*)
+    [ -n "${MOCK_HC_DOWN:-}" ] && { echo "curl: (22) 503" >&2; exit 22; }
+    printf '%s | %s\n' "$url" "$data" >> "$MOCK_DIR/notifications"; exit 0 ;;
+  https://api.github.com/repos/RachEma-ux/Fadi/*)
+    [ -n "${MOCK_API_DOWN:-}" ] && { echo "curl: (6) Could not resolve host" >&2; printf '000'; exit 6; }
+    [ -n "${MOCK_API_CODE:-}" ] && reponse "$MOCK_API_CODE" '{"message":"API rate limit exceeded"}'
+    chemin=${url#https://api.github.com/repos/RachEma-ux/Fadi/}
+    case "$chemin" in
+      releases/latest) release ;;
+      git/ref/tags/*)
+        if [ -n "${MOCK_ANNOTEE:-}" ]; then reponse 200 "{\"object\":{\"type\":\"tag\",\"sha\":\"$(printf 'c%.0s' {1..40})\"}}"; fi
+        reponse 200 "{\"ref\":\"refs/tags/${chemin#git/ref/tags/}\",\"object\":{\"type\":\"commit\",\"sha\":\"${MOCK_RELEASE_SHA:?}\"}}" ;;
+      git/tags/*) reponse 200 "{\"object\":{\"type\":\"commit\",\"sha\":\"${MOCK_RELEASE_SHA:?}\"}}" ;;
+      compare/*) reponse 200 "{\"status\":\"${MOCK_COMPARE-ahead}\"}" ;;
+    esac
+    reponse 404 '{"message":"Not Found"}' ;;
+  https://www.fadimmo.com/*)
+    chemin=/${url#https://www.fadimmo.com/}
+    c=$(cat "$MOCK_DIR/en-ligne" 2>/dev/null)
+    ko=; [ -n "${MOCK_KO_COMMIT:-}" ] && [ "$c" = "$MOCK_KO_COMMIT" ] && ko=${MOCK_SONDE_KO:-health}
+    case "$chemin" in
+      /health) [ "$ko" = health ] && reponse 503 '{"status":"degraded","db":"error"}'
+        reponse 200 '{"status":"ok","db":"ok"}' ;;
+      /) [ "$ko" = accueil ] && reponse 502 'Bad Gateway'
+        reponse 200 '<!doctype html><div id="root"></div>' ;;
+      /projects) [ "$ko" = projects ] && reponse 200 '[]'
+        reponse 401 '{"error":"authentication_required"}' ;;
+      /version) [ "$ko" = version ] && c=inconnu
+        printf '{"commit":"%s","buildDate":"2026-10-25T10:00:00Z"}' "$c"; exit 0 ;;
+    esac
+    reponse 404 'Not Found' ;;
+esac
+echo "double curl : adresse inattendue $url" >&2; exit 9

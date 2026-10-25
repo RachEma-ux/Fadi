@@ -8,6 +8,10 @@
  * saisies ; Prisme sur profil copie le contour d'une polyligne fermée, posé à la cote saisie ; un clic sur un solide
  * libre (ou la liste des solides) le sélectionne pour le déplacer (dx, dy, dz) ou le supprimer. Chaque geste passe par
  * les commandes `studio.solide.*` du brouillon ; aucun geste de navigation ne modifie le document.
+ * Lot F1 : le prisme demande sa relation à la polyligne (référence liée, associé, copie indépendante) et sa direction
+ * (+Z, −Z, vecteur) ; le solide sélectionné se modifie par ses faces (pousser / tirer, diviser), pivote autour de son axe
+ * vertical, et son lien au profil (relation, état « à jour » ou « à résoudre ») est affiché et se résout explicitement.
+ * Un solide lié à résoudre n'a pas de volume évalué : sa dernière géométrie reste dessinée, marquée comme telle.
  * Coupe horizontale (A.3-07, Maj+K) : `couperStudio` à la cote saisie, dessinée en surimpression dérivée, non
  * modifiable, chaque contour rattaché à son solide. Studio n'importe aucun module de l'Atelier.
  * Maillage en tâche de fond (D.1/D.2, `taches/`) : le maillage tourne dans le groupe de Workers ; le maillage
@@ -36,7 +40,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { mesurerRendu3d } from "../chargement/mesures-studio";
 import {
   couperStudio, projectionsAInvalider, studioApparenceResolue, studioAssemblerMaillage, studioDocumentToutVisible, studioFiltrerMaillageScene, studioFusionnerMorceaux, studioMaillerObjets,
-  studioNomFichierRendu, studioProvenanceRendu, studioScenes, studioVersionProjection, studioVolumeSolide,
+  studioLienSolide, studioNomFichierRendu, studioProvenanceRendu, studioScenes, studioVersionProjection, studioVolumeSolide, type StudioSolid,
   type StudioCacheMaillage, type StudioCameraScene, type StudioCommand, type StudioCoupe, type StudioDocument, type StudioFinitionAffichage, type StudioInvalidation, type StudioMesh3d,
   type StudioModeAffichage, type StudioMorceauMaillage, type StudioScene,
 } from "@parcours/atelier-model";
@@ -51,8 +55,9 @@ import { Icon } from "../../../components/Icon";
 import { estSelectionnable } from "../planche2d/calques";
 import { LOCALE } from "../../../lib/i18n";
 import {
-  auCentimetre, BOITE_VIDE, commandeBoite, commandeDeplacementSolide, commandePrisme, DEPLACEMENT_VIDE, descriptionSolide, PRISME_VIDE, profilsFermes,
-  type ValeursBoite, type ValeursDeplacement, type ValeursPrisme,
+  auCentimetre, BOITE_VIDE, commandeBoite, commandeDeplacementSolide, commandeDivision, commandeFace, commandePivot, commandePrisme, commandeResolution, DEPLACEMENT_VIDE,
+  descriptionLien, descriptionSolide, FACE_VIDE, facesDe, PRISME_VIDE, profilsFermes, RELATIONS_PRISME,
+  type ValeursBoite, type ValeursDeplacement, type ValeursFace, type ValeursPrisme,
 } from "./volume-libre";
 import { CLE_PROVENANCE_PNG, insererTextePng } from "./scenes/png";
 import { PanneauVisualisation } from "./scenes/PanneauVisualisation";
@@ -197,7 +202,8 @@ function entreesContenu(l: Lecture): EntreeRendu[] {
 /** Solides libres, construits seuls et désignables. */
 function entreesLibres(l: Lecture): EntreeRendu[] {
   return (l.mesh.freeSolids ?? []).filter((s) => l.present(s.id)).map((s) => {
-    const aspect = aspectDe(l.doc, l.mode, s, 0xc9bde3, s.id === l.selection);
+    // Un solide lié « à résoudre » garde sa dernière géométrie, dans une teinte distincte (jamais comme à jour).
+    const aspect = aspectDe(l.doc, l.mode, s, s.lien?.etat === "a-resoudre" ? 0xe0a8a0 : 0xc9bde3, s.id === l.selection);
     return { id: s.id, signature: `${l.cle(s.id)}|${cleAspect(aspect)}`, construire: () => volumeSeul(s, aspect, s.id, { solide: s.id }) };
   });
 }
@@ -361,6 +367,9 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   const [boite, setBoite] = useState<ValeursBoite>(BOITE_VIDE);
   const [prisme, setPrisme] = useState<ValeursPrisme>(PRISME_VIDE);
   const [deplacement, setDeplacement] = useState<ValeursDeplacement>(DEPLACEMENT_VIDE);
+  const [face, setFace] = useState<ValeursFace>(FACE_VIDE);
+  const [division, setDivision] = useState<ValeursFace>(FACE_VIDE);
+  const [pivot, setPivot] = useState(Number.NaN);
   const [coteCoupe, setCoteCoupe] = useState(Number.NaN);
   const [erreur, setErreur] = useState("");
   // Visualisation (lot E.5) : scène choisie, calques montrés par la vue (null : visibilité du dessin), mode, apparence.
@@ -431,6 +440,11 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   suiviCamera.current = sceneChoisie !== null && calquesMontres !== null;
   const solides = doc.solides ?? [];
   const choisi = solides.find((s) => s.id === selection) ?? null;
+  // Lien de chaque solide à sa polyligne source, relu du document courant (jamais stocké) ; volume non évalué à résoudre.
+  const lienDe = (s: StudioSolid) => studioLienSolide(doc, s);
+  const volumeTexte = (s: StudioSolid) => (lienDe(s)?.etat === "a-resoudre" ? "volume non évalué" : `${nombre(studioVolumeSolide(s))} m³`);
+  const lienChoisi = choisi ? lienDe(choisi) : null;
+  const facesChoisi = choisi ? facesDe(choisi) : [];
   const resultatCoupe = useMemo(() => (coupe && Number.isFinite(coteCoupe) ? couperStudio(doc, { z: coteCoupe }) : null), [doc, coupe, coteCoupe]);
   const profils = profilsFermes(doc);
   // Le clic sur la planche lit l'état courant (outil, droits) sans réinstaller les écouteurs.
@@ -768,6 +782,18 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     e.preventDefault();
     envoyer(commandeDeplacementSolide(choisi?.id ?? null, deplacement), () => setDeplacement(DEPLACEMENT_VIDE));
   }
+  function pousser(e: FormEvent) {
+    e.preventDefault();
+    envoyer(commandeFace(choisi?.id ?? null, face), () => setFace((v) => ({ ...v, distance: Number.NaN })));
+  }
+  function diviser(e: FormEvent) {
+    e.preventDefault();
+    envoyer(commandeDivision(choisi?.id ?? null, division), () => setDivision(FACE_VIDE));
+  }
+  function pivoter(e: FormEvent) {
+    e.preventDefault();
+    envoyer(commandePivot(choisi?.id ?? null, pivot), () => setPivot(Number.NaN));
+  }
   function supprimer() {
     if (!choisi) return;
     envoyer({ commandes: [{ toolId: "studio.solide.supprimer", params: { ids: [choisi.id] } }] }, () => surSelection?.(null));
@@ -824,7 +850,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
 
       {outil === "studio.solide.prisme" && <form className="studio-vue3d-formulaire" onSubmit={poserPrisme} data-studio-prisme aria-labelledby="studio-prisme-titre">
         <h3 id="studio-prisme-titre"><Icon name="studio-solid-prism" size={18} /> Prisme sur profil</h3>
-        <p className="studio-hint">Le contour d’une polyligne fermée est copié comme profil ; le solide ne reste pas lié à la polyligne.</p>
+        <p className="studio-hint">Le contour d’une polyligne fermée sert de profil ; choisissez la relation du prisme à cette polyligne et la direction d’extrusion. Rien n’est choisi d’office.</p>
         <fieldset disabled={!modifiable}>
           <legend>Profil, cote et hauteur, en mètres</legend>
           <label>Profil (polyligne fermée)
@@ -837,23 +863,49 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
           <Champ nom="prisme-cote" libelle="Cote de base z (m)" valeur={prisme.cote} surValeur={(cote) => setPrisme({ ...prisme, cote })} />
           <Champ nom="prisme-hauteur" libelle="Hauteur (m)" valeur={prisme.hauteur} surValeur={(hauteur) => setPrisme({ ...prisme, hauteur })} />
           <Champ nom="prisme-rotation" libelle="Rotation autour de z (°)" valeur={prisme.rotation} surValeur={(rotation) => setPrisme({ ...prisme, rotation })} />
+          <label>Relation au profil
+            <select name="prisme-relation" required value={prisme.relation} onChange={(e) => setPrisme({ ...prisme, relation: e.target.value as ValeursPrisme["relation"] })} data-studio-prisme-relation>
+              <option value="">Choisir la relation…</option>
+              {RELATIONS_PRISME.map((r) => <option key={r.valeur} value={r.valeur}>{r.libelle}</option>)}
+            </select>
+          </label>
+          {prisme.relation && <p className="studio-hint" data-studio-prisme-relation-aide>{RELATIONS_PRISME.find((r) => r.valeur === prisme.relation)?.aide}</p>}
+          <label>Direction d’extrusion
+            <select name="prisme-direction" required value={prisme.direction} onChange={(e) => setPrisme({ ...prisme, direction: e.target.value as ValeursPrisme["direction"] })} data-studio-prisme-direction>
+              <option value="">Choisir la direction…</option>
+              <option value="+z">Vers le haut (+Z, normale du plan)</option>
+              <option value="-z">Vers le bas (−Z)</option>
+              <option value="vecteur">Vecteur saisi (dx, dy, dz)</option>
+            </select>
+          </label>
+          {prisme.direction === "vecteur" && <>
+            <Champ nom="prisme-dx" libelle="Direction dx" valeur={prisme.dx} surValeur={(dx) => setPrisme({ ...prisme, dx })} />
+            <Champ nom="prisme-dy" libelle="Direction dy" valeur={prisme.dy} surValeur={(dy) => setPrisme({ ...prisme, dy })} />
+            <Champ nom="prisme-dz" libelle="Direction dz" valeur={prisme.dz} surValeur={(dz) => setPrisme({ ...prisme, dz })} />
+          </>}
           <button type="submit" data-studio-poser-prisme>Poser le prisme</button>
         </fieldset>
       </form>}
+
+      {!choisi && outil && ["studio.solide.face-decaler", "studio.solide.face-diviser", "studio.solide.pivoter", "studio.solide.resoudre"].includes(outil) && <p className="studio-hint" data-studio-face-indice>Sélectionnez d’abord, dans la vue 3D ou la liste des solides, le solide à modifier.</p>}
 
       {solides.length > 0 && <div className="studio-vue3d-solides" data-studio-solides>
         <h3>Solides libres</h3>
         <ul>
           {solides.map((s) => (
             <li key={s.id}>
-              <button type="button" aria-pressed={s.id === selection} onClick={() => surSelection?.(s.id === selection ? null : s.id)} data-studio-solide={s.id} data-studio-solide-type={s.type}>
-                {`${descriptionSolide(s, nombre)} · ${nombre(studioVolumeSolide(s))} m³`}
+              <button type="button" aria-pressed={s.id === selection} onClick={() => surSelection?.(s.id === selection ? null : s.id)} data-studio-solide={s.id} data-studio-solide-type={s.type}
+                data-studio-solide-relation={lienDe(s)?.relation ?? ""} data-studio-solide-lien={lienDe(s)?.etat ?? ""}>
+                {`${descriptionSolide(s, nombre)} · ${volumeTexte(s)}`}
               </button>
+              {lienDe(s) && <span className="studio-hint" data-studio-solide-lien-texte={s.id}>{descriptionLien(lienDe(s)!)}</span>}
             </li>
           ))}
         </ul>
         {choisi && <form onSubmit={deplacer} data-studio-solide-choisi={choisi.id} aria-label="Solide sélectionné">
-          <p>{`Sélection : ${descriptionSolide(choisi, nombre)}, origine (${nombre(choisi.placement.origin.x)} ; ${nombre(choisi.placement.origin.y)} ; ${nombre(choisi.placement.origin.z)}) m, volume ${nombre(studioVolumeSolide(choisi))} m³`}</p>
+          <p>{lienChoisi?.etat === "a-resoudre"
+            ? `Sélection : ${descriptionSolide(choisi, nombre)}, origine (${nombre(choisi.placement.origin.x)} ; ${nombre(choisi.placement.origin.y)} ; ${nombre(choisi.placement.origin.z)}) m, volume non évalué`
+            : `Sélection : ${descriptionSolide(choisi, nombre)}, origine (${nombre(choisi.placement.origin.x)} ; ${nombre(choisi.placement.origin.y)} ; ${nombre(choisi.placement.origin.z)}) m, volume ${nombre(studioVolumeSolide(choisi))} m³`}</p>
           <fieldset disabled={!modifiable}>
             <legend>Déplacer le solide, en mètres</legend>
             <Champ nom="solide-dx" libelle="dx (m)" valeur={deplacement.dx} surValeur={(dx) => setDeplacement({ ...deplacement, dx })} />
@@ -863,6 +915,49 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
             <button type="button" onClick={supprimer} data-studio-supprimer-solide><Icon name="studio-solid-delete" size={18} /> Supprimer le solide</button>
           </fieldset>
         </form>}
+        {choisi && <form onSubmit={pousser} data-studio-face-decaler={choisi.id} aria-label="Pousser / tirer une face">
+          <fieldset disabled={!modifiable}>
+            <legend>Pousser / tirer une face, en mètres</legend>
+            <label>Face
+              <select name="face-decaler" required value={facesChoisi.some((f) => f.valeur === face.face) ? face.face : ""} onChange={(e) => setFace({ ...face, face: e.target.value })} data-studio-face-choix>
+                <option value="">Choisir la face…</option>
+                {facesChoisi.map((f) => <option key={f.valeur} value={f.valeur}>{f.libelle}</option>)}
+              </select>
+            </label>
+            <Champ nom="face-distance" libelle="Distance (m, positive vers l’extérieur)" valeur={face.distance} surValeur={(distance) => setFace({ ...face, distance })} />
+            <button type="submit" data-studio-pousser-face><Icon name="studio-solid-push-pull" size={18} /> Pousser / tirer la face</button>
+          </fieldset>
+        </form>}
+        {choisi && <form onSubmit={diviser} data-studio-face-diviser={choisi.id} aria-label="Diviser une face">
+          <fieldset disabled={!modifiable}>
+            <legend>Diviser une face latérale, en mètres</legend>
+            <label>Face latérale
+              <select name="face-diviser" required value={facesChoisi.some((f) => f.valeur === division.face) ? division.face : ""} onChange={(e) => setDivision({ ...division, face: e.target.value })} data-studio-division-choix>
+                <option value="">Choisir la face…</option>
+                {facesChoisi.filter((f) => f.laterale).map((f) => <option key={f.valeur} value={f.valeur}>{f.libelle}</option>)}
+              </select>
+            </label>
+            <Champ nom="division-distance" libelle="Distance depuis le début de l’arête (m)" valeur={division.distance} surValeur={(distance) => setDivision({ ...division, distance })} />
+            {lienChoisi?.relation === "reference-liee" && <p className="studio-hint">Prisme en référence liée : l’arête de la polyligne source est divisée ; ses cotes sont réattachées si c’est prouvé, sinon marquées « à résoudre ».</p>}
+            <button type="submit" data-studio-diviser-face><Icon name="studio-solid-split-face" size={18} /> Diviser la face</button>
+          </fieldset>
+        </form>}
+        {choisi && <form onSubmit={pivoter} data-studio-pivoter={choisi.id} aria-label="Pivoter le solide">
+          <fieldset disabled={!modifiable}>
+            <legend>Pivoter autour de l’axe vertical de l’origine</legend>
+            <Champ nom="pivot-angle" libelle="Angle (°, sens trigonométrique)" valeur={pivot} surValeur={setPivot} />
+            <button type="submit" data-studio-pivoter-solide><Icon name="studio-solid-rotate" size={18} /> Pivoter le solide</button>
+          </fieldset>
+        </form>}
+        {choisi && lienChoisi && <div className="studio-vue3d-lien" data-studio-lien-solide={choisi.id} data-studio-lien-etat={lienChoisi.etat} data-studio-lien-relation={lienChoisi.relation}>
+          <h4><Icon name="studio-solid-link" size={16} /> Profil source</h4>
+          <p role="status">{descriptionLien(lienChoisi)} <span translate="no">{lienChoisi.objectId.slice(0, 8)}</span></p>
+          {lienChoisi.relation !== "copie-independante" && <fieldset disabled={!modifiable}>
+            <legend>Résoudre le lien du solide</legend>
+            <button type="button" disabled={lienChoisi.etat !== "a-resoudre" || lienChoisi.motif !== "source-modifiee"} onClick={() => envoyer(commandeResolution(choisi.id, "mettre-a-jour"), () => {})} data-studio-lien-mettre-a-jour>Mettre à jour depuis la source</button>
+            <button type="button" onClick={() => envoyer(commandeResolution(choisi.id, "detacher"), () => {})} data-studio-lien-detacher>Détacher (copie indépendante)</button>
+          </fieldset>}
+        </div>}
       </div>}
 
       {architecture.length > 0 && <div className="studio-vue3d-solides" data-studio-architecture-vue3d="">

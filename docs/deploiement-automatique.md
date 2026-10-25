@@ -1,6 +1,6 @@
 # Déploiement automatique — préproduction puis production
 
-20 octobre 2026 · Roch · **Statut : plan validé par le maître d'ouvrage ; phase A en service (`fadi-preprod-auto`), durée revue le 25 octobre 2026 (section « Durée d'un déploiement »)**
+20 octobre 2026 · Roch · **Statut : plan validé par le maître d'ouvrage ; phase A en service (`fadi-preprod-auto`), durée revue le 25 octobre 2026 (section « Durée d'un déploiement ») ; phase B : scripts et tests livrés le 25 octobre 2026 (`fadi-prod-auto`), installation et première mise en production en attente de l'administrateur / du maître d'ouvrage**
 
 Le VPS **tire** les versions validées depuis GitHub : `main` vérifiée par la CI part automatiquement en préproduction ; la production ne reçoit que la version validée en préproduction, après une autorisation explicite du maître d'ouvrage. GitHub ne détient aucune clé du serveur.
 
@@ -26,6 +26,7 @@ Options écartées : push SSH depuis GitHub Actions (clé dans les secrets GitHu
 - **CI** (`.github/workflows/ci.yml`) : `validate`, tranches `e2e`, et `image`, qui construit l'image de production et la sonde : c'est le feu vert du déploiement.
 - **`fadi-preprod`** (`deploy/preprod/`, installé sur le VPS) : `sync`, `build`, `migrate`, `up`, `smoke`, `e2e`, `backup`, `restore-check`, avec garde d'isolation et rôles administrateur / opérateur. Testé par `consolidation-validation.yml`.
 - **Sauvegarde chiffrée hors VPS** (restic, service `fadi-backup-offsite` surveillé par Healthchecks).
+- **`fadi-prod-auto`** (`deploy/prod/`, phase B, **non installé**) : script, unités systemd, installateur à empreintes et tests à doubles (`deploy/prod/tests/run.sh`, joués par `consolidation-validation.yml` avec shellcheck).
 - **Plan d'activation** : `docs/exploitation-fadi-cloud.md`, portes 4 à 6 (compte limité, livraison immuable, environnement protégé).
 - À ne pas confondre : Builder Deploy (démo temporaire par tunnel, environnement `recette`) et `fadifront.yml` (site statique Infomaniak) ne sont pas des déploiements permanents.
 
@@ -81,7 +82,117 @@ les suivants la reprennent du cache. Règle sudoers proposée : `fadi-preprod ne
    3. nouvelle image, puis redémarrage du seul service `app` — ni la base ni Caddy ne sont recréés ; la surcharge du proxy (`deploy/preprod/proxy/proxy-preprod.override.yml`) est toujours incluse ;
    4. sondes : `https://www.fadimmo.com/health` (`"db":"ok"`), page d'accueil, `/projects` en 401.
 3. **Retour arrière** : si une sonde échoue, l'application revient automatiquement à l'image précédente. La base n'est restaurée qu'avec l'accord du maître d'ouvrage, depuis la sauvegarde prise à l'étape 1.
-4. **Migrations** : la production applique le schéma au démarrage (`MIGRATE_ON_START=1`) ; c'est pourquoi la sauvegarde vérifiée précède toujours le redémarrage.
+4. **Migrations** : la production applique le schéma au démarrage (`MIGRATE_ON_START=1` à l'origine, aujourd'hui le service `migrate`, voir ci-dessous) ; c'est pourquoi la sauvegarde vérifiée précède toujours le redémarrage.
+
+### État au 25 octobre 2026 : scripts et tests livrés, installation et première mise en production en attente
+
+| Élément | Statut | Preuve |
+| --- | --- | --- |
+| `deploy/prod/fadi-prod-auto` (script root) | Implémenté, vérifié par tests à doubles | `bash deploy/prod/tests/run.sh` : 121 contrôles, 0 échec (session cloud, 25 octobre 2026) ; shellcheck sans avertissement |
+| `deploy/prod/systemd/fadi-prod-auto.service` / `.timer` | Implémenté | contrôlés par les mêmes tests ; `systemd-analyze calendar '*:0/10'` |
+| `deploy/prod/installation/installer-prod-auto.sh` (installateur à empreintes) | Implémenté | les tests vérifient que ses SHA-256 sont celles des fichiers du dépôt |
+| Branchement CI | Implémenté | `consolidation-validation.yml`, job `deployment-sources` (déclenché par `deploy/**`, `docker-compose.yml`, `ops/systemd/**`) |
+| Recette d'un échec simulé et du retour arrière en préproduction, sur le VPS | **En attente** (session VPS / administrateur) | procédure : [recette de la phase B](deploiement-automatique-recette-phase-b.md) |
+| Installation root, adresse Healthchecks de production, règle de protection des étiquettes | **En attente** (administrateur / maître d'ouvrage) | procédure ci-dessous |
+| Première mise en production autorisée (Release) | **En attente** (maître d'ouvrage) | — |
+
+La session cloud n'a aucun accès au VPS (et `preprod.fadimmo.com` lui répond 401) : rien de ce qui précède n'a été
+exécuté sur le serveur ; aucun lot n'est déclaré accepté.
+
+### Choix de réalisation (session cloud, délégation du 25 octobre 2026)
+
+- **Emplacement** : `deploy/prod/`, et non `deploy/preprod/`. La garde de `fadi-preprod` ne pilote que le projet Compose
+  `fadi-preprod` et refuse par construction tout ce qui touche la production ; `fadi-prod-auto` pilote le projet
+  `app` de `/mnt/data/fadi/app` et n'appelle jamais `fadi-preprod`. Il **lit** seulement l'état de la préproduction.
+- **« Dernier commit passé en préproduction sans échec »**, lu dans ce qui existe vraiment sur le VPS :
+  `/opt/fadi-preprod/etat.json` (écrit par `fadi-preprod-auto`) et `/opt/fadi-preprod/approved-commit` (écrit par
+  `fadi-preprod sync`). Exigé : `dernier_essai` = `en_ligne` = commit de la Release, résultat qui n'est ni `echec`,
+  ni `echec-retour`, ni `en-cours`, et commit approuvé = commit de la Release. Si `main` a avancé et que la
+  préproduction a essayé un commit plus récent (réussi ou non), la Release est refusée : il faut la publier sur le
+  commit que la préproduction sert. Un refus de ce type est revu à chaque passage sans appel à l'API (la
+  préproduction peut être en train de passer ce commit) et notifié une fois.
+- **Release** : `releases/latest` (dernière Release publiée, ni brouillon ni prérelease, revérifiés), étiquette
+  résolue par `git/ref/tags/<étiquette>` (étiquette annotée suivie) ; puis comparaison `compare/<sha>...main`
+  (`identical` ou `ahead`) et contrôle local (`git merge-base --is-ancestor` après `git fetch` de `main`).
+- **Sauvegarde vérifiée**, par les mécanismes établis du dépôt : dump local `pg_dump -Fc` (service `db` de
+  `docker-compose.yml`) dans le dossier du déploiement, relu par `pg_restore --list` (service `backup`), empreinte
+  SHA-256 ; puis `systemctl start fadi-backup-offsite.service` (`scripts/backup-offsite-restic.sh` : dump, `restic
+  backup`, `restic check`, `docs/sauvegarde-externe.md`), dont l'exécution réelle est relue dans systemd
+  (`ConditionResult=yes`, `Result=success`, `ExecMainStatus=0`, nouvelle fin d'exécution). Le nom de l'unité est
+  réglable (`UNITE_SAUVEGARDE` dans `/etc/fadi-prod-auto/config`, root 0600, lu sans être exécuté). Sauvegarde non
+  vérifiée → rien n'est modifié ni redémarré.
+- **Copie du dépôt** : `git fetch` puis `git reset --keep <sha>` par le **propriétaire** de `/mnt/data/fadi/app/.git`
+  (`runuser`, jamais root dans le dépôt d'un autre compte), seulement si la copie est propre et que le commit est une
+  avance rapide ; `.env.deploy` (ignoré par git) n'est jamais touché.
+- **Image** : `fadi-prod-app:<12 caractères du commit>`, construite depuis `git archive` du commit (aucun fichier non
+  suivi), avec `FADI_COMMIT` / `FADI_BUILD_DATE` (route `/version`) ; l'image en ligne est étiquetée
+  `fadi-prod-app:retour`. Après succès, `app-app:latest` désigne la nouvelle image (commandes Compose manuelles) et
+  les anciennes `fadi-prod-app:*` sont retirées (en ligne, précédente et retour gardées).
+- **`MIGRATE_ON_START=1`** : depuis D-7, `docker-compose.yml` fixe `MIGRATE_ON_START=0` pour `app` (connectée en
+  `fadi_app`, sans droit DDL : forcer `1` ferait échouer le démarrage) et applique le schéma par le service à usage
+  unique `migrate` (`MIGRATE_ONLY=1`), dont `app` dépend. `fadi-prod-auto` joue donc ce service avec la nouvelle image
+  (`docker compose run --rm --no-deps -T migrate`, journal « Migration terminée » exigé) juste avant de redémarrer
+  `app` ; il ne force jamais `MIGRATE_ON_START` (contrôlé par test). Un échec de migration n'entraîne aucun
+  redémarrage ; le message rappelle que le schéma a pu changer et nomme la sauvegarde.
+- **Redémarrage** : `docker compose -p app … -f docker-compose.yml -f <surcharge du proxy prise au commit>
+  -f <image> up -d --no-deps --no-build --pull never --wait app` — ni `db`, ni `proxy`, ni `backup` ne sont recréés ;
+  leurs identifiants et heures de démarrage sont comparés avant / après (un écart déclenche le retour arrière).
+- **Sondes** (12 essais, 5 s d'écart) : `/health` (`"status":"ok"`, `"db":"ok"`), `/` (`<div id="root"`),
+  `/projects` en 401, `/version` = commit. Elles sont aussi exigées **avant** le déploiement, sur la version en
+  ligne, et `/version` doit alors être le commit de la copie : sinon refus, rien n'est modifié.
+- **Retour arrière** : copie rendue au commit précédent, `up` de `fadi-prod-app:retour`, nouvelles sondes (dont
+  `/version` = commit précédent). Résultat `echec` (version précédente rétablie) ou `echec-retour` (intervention
+  requise). La base n'est **jamais** restaurée : le message, l'état et la notification nomment le dump de l'étape 1
+  (chemin et empreinte) et l'instantané restic, et rappellent que la restauration exige l'accord du maître d'ouvrage.
+- **Sondage et déploiement séparés** : l'état du dernier passage auprès de GitHub (Release absente, brouillon ou
+  prérelease, erreur ou budget de l'API) est consigné dans `sondage` et `sondage_message`. Il ne remplace jamais le
+  résultat du dernier déploiement (`release_id`, `etape`, `resultat`) : une panne passagère de l'API ne peut pas effacer
+  l'échec d'une Release ni autoriser un nouvel essai sans `fadi-prod-auto relancer` (contrôlé par test).
+- **État, verrou, journal** : `/mnt/data/fadi/deployments/etat.json` (0600) ; verrou
+  `/mnt/data/fadi/deployments/deploiement.lock`, **le même** que celui des déploiements contrôlés
+  (`scripts/deploy-*-controlled.sh`) ; journal et dump dans `/mnt/data/fadi/deployments/<run>-auto/` (0700). Un
+  passage interrompu (délai systemd de 4 h, redémarrage) est repris au passage suivant : retour à l'image précédente si
+  `app` avait été redémarrée, sinon copie rendue à son commit. Une Release en échec n'est pas rejouée :
+  `fadi-prod-auto relancer` (administrateur).
+- **Budget de l'API publique**, partagé avec `fadi-preprod-auto` (même adresse, 60 appels / h) : minuteur de
+  10 minutes, 1 appel par passage sans nouveauté (6 / h), 3 ou 4 pour une Release nouvelle ; arrêt si la réserve
+  annoncée tombe sous 20 (laissés à la préproduction).
+- **Notification** : Healthchecks, contrôle **distinct** de celui de la préproduction
+  (`/etc/fadi-prod-auto/healthchecks-url`, root 0600, transmis à curl par l'entrée standard) ; succès → ping,
+  échec ou refus → `/fail`.
+
+### Installation (administrateur, une fois, après fusion)
+
+Prérequis : `fadi-preprod-auto` en service, `fadi-backup-offsite.service` installé et vérifié
+(`docs/sauvegarde-externe.md`), copie `/mnt/data/fadi/app` propre et alignée sur la version servie
+(`curl -s https://www.fadimmo.com/version` = `git -C /mnt/data/fadi/app rev-parse HEAD`).
+
+1. Relire, sur le commit fusionné de `main`, `deploy/prod/fadi-prod-auto`, ses unités et
+   `deploy/prod/installation/installer-prod-auto.sh` ; recalculer les empreintes et les comparer à celles inscrites
+   dans l'installateur :
+   ```
+   git clone --quiet https://github.com/RachEma-ux/Fadi.git /root/fadi-relecture
+   git -C /root/fadi-relecture -c advice.detachedHead=false checkout --quiet <commit>
+   sha256sum /root/fadi-relecture/deploy/prod/fadi-prod-auto /root/fadi-relecture/deploy/prod/systemd/fadi-prod-auto.*
+   grep -A4 '^FICHIERS=' /root/fadi-relecture/deploy/prod/installation/installer-prod-auto.sh
+   ```
+2. Installer, minuteur **non activé** (l'installateur vérifie que le commit est dans `main`, télécharge les fichiers
+   figés sur ce commit, refuse toute empreinte différente, garde les versions précédentes en `*.avant-<commit>`) :
+   ```
+   sudo bash /root/fadi-relecture/deploy/prod/installation/installer-prod-auto.sh <commit>
+   ```
+3. Adresse Healthchecks de la production (nouveau contrôle, e-mail du maître d'ouvrage) :
+   `sudo install -o root -g root -m 0600 /dev/stdin /etc/fadi-prod-auto/healthchecks-url` (coller l'adresse, Ctrl-D).
+4. **Règle de protection des étiquettes** (maître d'ouvrage, GitHub → Settings → Rules → Rulesets → New tag ruleset) :
+   cible « toutes les étiquettes », restreindre création, mise à jour et suppression, liste de contournement réduite
+   au compte du maître d'ouvrage. Sans elle, toute personne ayant le droit d'écriture pourrait publier une Release.
+5. Passage manuel à blanc, sans Release nouvelle : `sudo systemctl start fadi-prod-auto.service`, puis
+   `cat /mnt/data/fadi/deployments/etat.json` (attendu : `sondage` à `aucune`, ou la dernière Release « déjà traitée » / « déjà
+   servie »), `journalctl -u fadi-prod-auto.service -n 50`.
+6. Jouer la [recette de la phase B](deploiement-automatique-recette-phase-b.md) (tests à doubles sur le VPS, échec
+   simulé et retour arrière en préproduction), puis activer le minuteur : `sudo systemctl enable --now fadi-prod-auto.timer`.
+7. Première mise en production : le maître d'ouvrage publie une Release sur le commit que sert la préproduction
+   (`fadi-preprod status`), et suit l'état (`etat.json`) et la notification.
 
 ## Phase C — optionnelle
 
@@ -106,5 +217,5 @@ les suivants la reprennent du cache. Règle sudoers proposée : `fadi-preprod ne
 ## Ordre des travaux
 
 1. Phase A : route `/version`, puis `fadi-preprod-auto` et ses tests, puis installation et premier déploiement automatique observé.
-2. Phase B : `fadi-prod-auto`, recette d'un échec simulé et du retour arrière en préproduction, règle de protection des Releases, puis première mise en production autorisée.
+2. Phase B : `fadi-prod-auto` (scripts et tests livrés le 25 octobre 2026), recette d'un échec simulé et du retour arrière en préproduction, règle de protection des Releases, puis première mise en production autorisée (en attente de l'administrateur et du maître d'ouvrage).
 3. Phase C, si utile.

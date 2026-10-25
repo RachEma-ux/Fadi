@@ -144,7 +144,7 @@ export interface IfcContexte {
   placed(x: number, y: number, z: number, ux?: number, uy?: number): number;
   rectangleSolid(cx: number, cy: number, xDim: number, yDim: number, depth: number): number;
   /** Profil fermé discrétisé (coordonnées absolues du plan, sens trigonométrique), extrudé depuis la cote de base. */
-  arbitrarySolid(ring: StudioPoint[], depth: number): number;
+  arbitrarySolid(ring: StudioPoint[], depth: number, direction?: { x: number; y: number; z: number }): number;
   proxy(o: StudioShapeBase, description: string, item: number, representation: "SweptSolid" | "Tessellation", placement: number): number;
   /** Surface verticale ouverte le long d'un tracé discrétisé (coordonnées absolues, z de 0 à h au-dessus de la base). */
   stripItem(path: StudioPoint[], h: number): number;

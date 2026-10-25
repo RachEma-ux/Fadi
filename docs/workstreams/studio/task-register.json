@@ -17186,7 +17186,7 @@
         "essais_effectues": "Décisions et autorisations levées (ADR-STUDIO-PILOTE-01, P-04 et P-05).",
         "deblocage": null
       },
-      "suite": "Rapprochement du 25 octobre 2026 (partiel) : Seule la translation (et la suppression) d'un solide est testée ; aucune édition de faces n'existe (le registre volume-libre n'a que boîte, prisme, déplacer, supprimer) ni aucune rotation/échelle 3D testée.",
+      "suite": "Lot F1 : pousser / tirer une face plane (boîte, prisme droit) et pivoter autour de l'axe vertical sont livrés et testés (f1-geometrie.test.ts, studio-faces). Restent : rotation autour d'axes horizontaux, échelle 3D depuis la vue 3D, faces obliques (refusées explicitement).",
       "composants_candidats": "packages/atelier-model/src ; packages/planche-model/src ; apps/api/src/db/schema.ts",
       "source_checked": false,
       "cloture": {
@@ -17221,6 +17221,13 @@
           "statut": "À faire",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Lot F1 — géométrie 3D Studio (25 octobre 2026)",
+          "statut_precedent": "À faire",
+          "statut": "À faire",
+          "preuve": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
         }
       ],
       "preparation_documentaire": {
@@ -18039,11 +18046,11 @@
         ],
         "preparation_initiale": "DEC-01/02/03/12/18 ; G3 avant code"
       },
-      "statut": "À faire",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Exécuté",
+        "portee": "Lot F1 — géométrie 3D Studio (25 octobre 2026)"
       },
       "preuves": [
         {
@@ -18063,6 +18070,17 @@
           "fichier": "docs/ai-team/reports/mission-003/A2/LOT-A.4-A.5.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "test_automatise",
+          "fichier": "packages/atelier-model/src/studio/composition/f1-geometrie.test.ts",
+          "controles": [
+            "référence liée : modifier la polyligne recalcule le prisme dans le même lot (volume relu, jamais l'ancien)",
+            "associé : le lien est contrôlé mais rien n'est recalculé seul ; mise à jour ou détachement explicites",
+            "copie indépendante : aucune propagation, la source n'est qu'une provenance"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite le 25 octobre 2026 ; recette exécutée sur base jetable puis en CI ; rendu logiciel, appareils physiques non évalués."
         }
       ],
       "github": {
@@ -18073,14 +18091,14 @@
       "blocage": {
         "cause": null,
         "responsable": "Chef de projet",
-        "essais_effectues": "Décisions et autorisations levées (ADR-STUDIO-PILOTE-01, P-04 et P-05).",
+        "essais_effectues": "Lot F1 — géométrie 3D Studio (25 octobre 2026)",
         "deblocage": null
       },
-      "suite": "Rapprochement du 25 octobre 2026 (non couvert) : Aucun type de relation explicite « associé » / « référence liée » / « copie indépendante » n'existe dans le modèle Studio (DEC-02) ; seuls le comportement de copie (INV-003) et l'unicité d'autorité (INV-002) sont testés, sans relation nommée.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "packages/atelier-model/src ; packages/planche-model/src ; apps/api/src/db/schema.ts",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -18111,6 +18129,13 @@
           "statut": "À faire",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Lot F1 — géométrie 3D Studio (25 octobre 2026)",
+          "statut_precedent": "À faire",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -18680,11 +18705,11 @@
         ],
         "preparation_initiale": "DEC-01/02/03/12/18 ; G3 avant code"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Exécuté",
+        "portee": "Lot F1 — géométrie 3D Studio (25 octobre 2026)"
       },
       "preuves": [
         {
@@ -18723,6 +18748,27 @@
           "auteur": "A3",
           "date_UTC": "2026-10-18",
           "limite": "Proposition/scénario documentaire ; aucun code, test runtime, mesure, gate ou acceptation déduit."
+        },
+        {
+          "type": "test_automatise",
+          "fichier": "packages/atelier-model/src/studio/composition/f1-geometrie.test.ts",
+          "controles": [
+            "extrusion 2D vers le bas (-z) : volume de base − hauteur à base, direction enregistrée et relue, +z inchangé",
+            "prisme : direction saisie validée (non nulle, hors du plan du profil), portée par le maillage, les quantités et la coupe",
+            "référence liée : modifier la polyligne recalcule le prisme dans le même lot (volume relu, jamais l'ancien)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite le 25 octobre 2026 ; recette exécutée sur base jetable puis en CI ; rendu logiciel, appareils physiques non évalués."
+        },
+        {
+          "type": "recette_e2e",
+          "fichier": "apps/web/e2e/studio-faces.mjs",
+          "controles": [
+            "TEST-005 : direction −Z enregistrée et relue par le serveur (base 3, hauteur 2)",
+            "TEST-006 : polyligne modifiée — le prisme lié est recalculé dans la même révision, la copie indépendante est intacte"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite le 25 octobre 2026 ; recette exécutée sur base jetable puis en CI ; rendu logiciel, appareils physiques non évalués."
         }
       ],
       "github": {
@@ -18732,16 +18778,16 @@
         "pr_preparation_courante": 172
       },
       "blocage": {
-        "cause": "Contrat moteur DEC18 et choix suivi topologique DEC02 non arrêtés ; aucune conversion automatique adoptée.",
-        "responsable": "A2",
-        "essais_effectues": "Qualification individuelle A2 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
-        "deblocage": "Réutiliser EX020/023 et LOT-A.3/A.4 ; distinguer preuve moteurs actuels et future relation de suivi Studio."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot F1 — géométrie 3D Studio (25 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Rapprochement du 25 octobre 2026 (partiel) : Hauteur et base sont saisies et testées, mais la direction n'est pas un paramètre (toujours z vers le haut) et aucune relation de suivi n'est déclarée explicitement (l'extrusion est une propriété de l'objet 2D ; le prisme copie le contour sans lien).",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "packages/atelier-model/src ; packages/planche-model/src ; apps/api/src/db/schema.ts",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -18780,6 +18826,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Lot F1 — géométrie 3D Studio (25 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -55111,11 +55164,11 @@
         ],
         "preparation_initiale": "Corpus autorisé, SHA/build, contrats ; bases jetables pour tests mutateurs"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Partiel",
-        "portee": "Étude démarrée en Planche 3D seule et édition de faces à recetter (volume libre et coupe déjà contrôlés, navigation)."
+        "etat": "Exécuté",
+        "portee": "Lot F1 — géométrie 3D Studio (25 octobre 2026)"
       },
       "preuves": [
         {
@@ -55135,6 +55188,18 @@
           "fichier": "docs/ai-team/reports/mission-003/A5/studio-38-oracles.csv",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "recette_e2e",
+          "fichier": "apps/web/e2e/studio-faces.mjs",
+          "controles": [
+            "TEST-002 : étude neuve, document vide (aucun objet 2D, aucun solide)",
+            "TEST-002 / TR-EX-005 : sommet poussé de 1 m — même solide, hauteur 4 m, volume recalculé 8 m³",
+            "TEST-002 : après Ctrl+S, le document relu a un solide, même identifiant, 2,5 × 1 × 4 m, aucun objet 2D",
+            "TEST-002 : vue plane dérivée — coupe à z = 3,5 m (atteinte par la seule face poussée) : 4 contours du solide, provenance, non modifiable"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite le 25 octobre 2026 ; recette exécutée sur base jetable puis en CI ; rendu logiciel, appareils physiques non évalués."
         }
       ],
       "github": {
@@ -55145,14 +55210,14 @@
       "blocage": {
         "cause": null,
         "responsable": "Chef de projet",
-        "essais_effectues": "Rapprochement des assertions existantes (rapport).",
+        "essais_effectues": "Lot F1 — géométrie 3D Studio (25 octobre 2026)",
         "deblocage": null
       },
-      "suite": "Édition de faces absente de Studio ; le reste (étude neuve en 3D seule, volume, enregistrement, coupe) est recetté (studio-navigation, préfixe « TEST-002 (sans édition de faces) »).",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "apps/web/e2e ; tests packages ; scripts/bench ; workflows",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -55183,6 +55248,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Lot F1 — géométrie 3D Studio (25 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -55414,11 +55486,11 @@
         ],
         "preparation_initiale": "Corpus autorisé, SHA/build, contrats ; bases jetables pour tests mutateurs"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Partiel",
-        "portee": "Demande explicite de la direction d’extrusion à recetter (hauteur et suivi contrôlés)."
+        "etat": "Exécuté",
+        "portee": "Lot F1 — géométrie 3D Studio (25 octobre 2026)"
       },
       "preuves": [
         {
@@ -55438,6 +55510,27 @@
           "fichier": "docs/ai-team/reports/mission-003/A5/studio-38-oracles.csv",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "recette_e2e",
+          "fichier": "apps/web/e2e/studio-faces.mjs",
+          "controles": [
+            "TEST-005 : formulaire Volume — direction d'extrusion vide, rien n'est proposé",
+            "TEST-005 : sans direction choisie, l'extrusion n'est pas envoyée (aucune commande en attente)",
+            "TEST-005 : direction −Z enregistrée et relue par le serveur (base 3, hauteur 2)",
+            "TEST-005 : prisme selon le vecteur (1 ; 0 ; 1) — direction affichée, volume = aire × hauteur perpendiculaire (12 × 3 × 0,7071 ≈ 25,456 m³)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite le 25 octobre 2026 ; recette exécutée sur base jetable puis en CI ; rendu logiciel, appareils physiques non évalués."
+        },
+        {
+          "type": "test_automatise",
+          "fichier": "packages/atelier-model/src/studio/composition/f1-geometrie.test.ts",
+          "controles": [
+            "prisme : direction saisie validée (non nulle, hors du plan du profil), portée par le maillage, les quantités et la coupe"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite le 25 octobre 2026 ; recette exécutée sur base jetable puis en CI ; rendu logiciel, appareils physiques non évalués."
         }
       ],
       "github": {
@@ -55448,14 +55541,14 @@
       "blocage": {
         "cause": null,
         "responsable": "Chef de projet",
-        "essais_effectues": "Rapprochement des assertions existantes (rapport).",
+        "essais_effectues": "Lot F1 — géométrie 3D Studio (25 octobre 2026)",
         "deblocage": null
       },
-      "suite": "Rapprochement du 25 octobre 2026 (partiel) : La hauteur est demandée sans valeur proposée et le suivi est vérifié. La direction n'est ni demandée ni représentée : l'extrusion du modèle n'a que base, height et thickness, la direction est implicitement +Z, et aucun champ ni paramètre « direction » n'existe.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "apps/web/e2e ; tests packages ; scripts/bench ; workflows",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -55486,6 +55579,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Lot F1 — géométrie 3D Studio (25 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -55510,11 +55610,11 @@
         ],
         "preparation_initiale": "Corpus autorisé, SHA/build, contrats ; bases jetables pour tests mutateurs"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Partiel",
-        "portee": "Volume dépendant d’un profil lié et refus d’une réponse périmée à recetter."
+        "etat": "Exécuté",
+        "portee": "Lot F1 — géométrie 3D Studio (25 octobre 2026)"
       },
       "preuves": [
         {
@@ -55534,6 +55634,25 @@
           "fichier": "docs/ai-team/reports/mission-003/A5/studio-38-oracles.csv",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "recette_e2e",
+          "fichier": "apps/web/e2e/studio-faces.mjs",
+          "controles": [
+            "TEST-006 : polyligne modifiée — le prisme lié est recalculé dans la même révision, la copie indépendante est intacte",
+            "TEST-006 : source supprimée — le prisme lié est « à résoudre », volume non évalué, mise à jour impossible, géométrie gardée"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite le 25 octobre 2026 ; recette exécutée sur base jetable puis en CI ; rendu logiciel, appareils physiques non évalués."
+        },
+        {
+          "type": "test_automatise",
+          "fichier": "packages/atelier-model/src/studio/composition/f1-geometrie.test.ts",
+          "controles": [
+            "référence liée : source supprimée ou devenue invalide → « à résoudre », quantités non évaluées, dernière géométrie gardée"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite le 25 octobre 2026 ; recette exécutée sur base jetable puis en CI ; rendu logiciel, appareils physiques non évalués."
         }
       ],
       "github": {
@@ -55544,14 +55663,14 @@
       "blocage": {
         "cause": null,
         "responsable": "Chef de projet",
-        "essais_effectues": "Rapprochement des assertions existantes (rapport).",
+        "essais_effectues": "Lot F1 — géométrie 3D Studio (25 octobre 2026)",
         "deblocage": null
       },
-      "suite": "Rapprochement du 25 octobre 2026 (partiel) : Le refus d'une réponse périmée est prouvé en général. Il n'existe pas de « profil source lié » : le prisme copie le profil de la polyligne (l.926 : profile = points relatifs), sans lien. Modifier la polyligne ne recalcule ni n'invalide le prisme. La fonction est absente.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "apps/web/e2e ; tests packages ; scripts/bench ; workflows",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -55582,6 +55701,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Lot F1 — géométrie 3D Studio (25 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -55606,11 +55732,11 @@
         ],
         "preparation_initiale": "Corpus autorisé, SHA/build, contrats ; bases jetables pour tests mutateurs"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Partiel",
-        "portee": "Division d’une face cotée à recetter (segment 2D coté contrôlé, INV-013)."
+        "etat": "Exécuté",
+        "portee": "Lot F1 — géométrie 3D Studio (25 octobre 2026)"
       },
       "preuves": [
         {
@@ -55630,6 +55756,25 @@
           "fichier": "docs/ai-team/reports/mission-003/A5/studio-38-oracles.csv",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "recette_e2e",
+          "fichier": "apps/web/e2e/studio-faces.mjs",
+          "controles": [
+            "TEST-007 : arête source divisée, cotes réattachées de façon prouvée (sommets 2-3 → 3-4, milieu 1 → nouveau sommet 2), cote angulaire 2-3 → 3-4",
+            "TEST-007 : la cote angulaire du segment divisé passe « à résoudre » (lien rompu, jamais rattachée à une moitié)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite le 25 octobre 2026 ; recette exécutée sur base jetable puis en CI ; rendu logiciel, appareils physiques non évalués."
+        },
+        {
+          "type": "test_automatise",
+          "fichier": "packages/atelier-model/src/studio/composition/f1-geometrie.test.ts",
+          "controles": [
+            "division hors du milieu : la cote du milieu divisé passe « à résoudre » (valeur non évaluée), les autres restent prouvées"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite le 25 octobre 2026 ; recette exécutée sur base jetable puis en CI ; rendu logiciel, appareils physiques non évalués."
         }
       ],
       "github": {
@@ -55640,14 +55785,14 @@
       "blocage": {
         "cause": null,
         "responsable": "Chef de projet",
-        "essais_effectues": "Rapprochement des assertions existantes (rapport).",
+        "essais_effectues": "Lot F1 — géométrie 3D Studio (25 octobre 2026)",
         "deblocage": null
       },
-      "suite": "Rapprochement du 25 octobre 2026 (partiel) : La division d'un segment 2D coté est vérifiée. Aucune face 3D cotée ne peut être divisée : il n'y a ni outil de division ni cote sur face de solide.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "apps/web/e2e ; tests packages ; scripts/bench ; workflows",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -55678,6 +55823,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Lot F1 — géométrie 3D Studio (25 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -61038,7 +61190,7 @@
         "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
         "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
       },
-      "suite": "Rapprochement du 25 octobre 2026 (partiel) : Édition de face et de groupe absente : aucun outil studio.* de face ou de groupe au registre, donc non testable ; le cas « nouvelle étude sans dessin 2D » n'est pas asserté en recette (la boîte est posée après des lignes).",
+      "suite": "Lot F1 : l'édition de face est livrée et recettée (studio-faces, « TEST-002 / TR-EX-005 »), y compris l'étude neuve sans dessin 2D. L'édition de groupe reste absente.",
       "composants_candidats": "Voir matrice A1-exigences.csv",
       "source_checked": false,
       "cloture": {
@@ -61066,6 +61218,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Lot F1 — géométrie 3D Studio (25 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "En cours",
+          "preuve": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
         }
       ],
       "preparation_documentaire": {
@@ -61092,11 +61251,11 @@
         "preparation_initiale": "REF-02 texte exact + contrat + composant + scénario + preuve + décision",
         "decisions_applicables_a_instruire": "DEC-01,DEC-02,DEC-03"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Oracles individuels prescrits et extraction documentaire vérifiée, aucune recette Studio"
+        "etat": "Exécuté",
+        "portee": "Lot F1 — géométrie 3D Studio (25 octobre 2026)"
       },
       "preuves": [
         {
@@ -61126,6 +61285,16 @@
             109
           ],
           "limite": "Exactitude extraction vérifiée ; pas acceptation de la capacité."
+        },
+        {
+          "type": "recette_e2e",
+          "fichier": "apps/web/e2e/studio-faces.mjs",
+          "controles": [
+            "TEST-006 : relations affichées dans la désignation — « référence liée · à jour » (36 m³), « copie indépendante · aucune propagation »",
+            "TEST-006 : « Détacher » en fait une copie indépendante, volume de nouveau évalué (45 m³)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite le 25 octobre 2026 ; recette exécutée sur base jetable puis en CI ; rendu logiciel, appareils physiques non évalués."
         }
       ],
       "github": {
@@ -61134,16 +61303,16 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Contrat et preuves actuelles Studio non validés ; décisions applicables ouvertes.",
-        "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot F1 — géométrie 3D Studio (25 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Rapprochement du 25 octobre 2026 (partiel) : Aucun affichage des trois relations (associé / référence liée / copie indépendante) n'est testé ; la relation « référence liée » n'existe pas dans le code Studio.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "Voir matrice A1-exigences.csv",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -61167,6 +61336,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Lot F1 — géométrie 3D Studio (25 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -75990,9 +76166,9 @@
       "raison": "DEV_SCOPE et baseline du périmètre accepté non établis ; ne pas inventer un dénominateur."
     },
     "P630": {
-      "V630": 317,
+      "V630": 324,
       "denominateur": 630,
-      "pourcentage": 50.3,
+      "pourcentage": 51.4,
       "IDs": [
         "SRC-01",
         "SRC-02",
@@ -76107,8 +76283,10 @@
         "A.3-07",
         "A.3-09",
         "A.4-01",
+        "A.4-02",
         "A.4-04",
         "A.4-06",
+        "A.4-07",
         "A.4-08",
         "A.4-10",
         "A.5-01",
@@ -76251,8 +76429,12 @@
         "PASS-02",
         "PASS-07",
         "TEST-001",
+        "TEST-002",
         "TEST-003",
         "TEST-004",
+        "TEST-005",
+        "TEST-006",
+        "TEST-007",
         "TEST-008",
         "TEST-009",
         "TEST-010",
@@ -76292,6 +76474,7 @@
         "DEC-16",
         "DEC-17",
         "DEC-18",
+        "TR-EX-006",
         "TR-EX-009",
         "TR-EX-017",
         "TR-EX-018",
@@ -76314,8 +76497,8 @@
       ],
       "limite": "259 obligations vérifiées (documentaires, par recette ou test exécuté, ou par contrôle existant contre-vérifié indépendamment le 25 octobre 2026) et 58 acceptations (2 de cadrage G0, 56 décisions ADR-STUDIO-PILOTE-01 sous délégation du maître d’ouvrage). Pas un taux de développement ; G1–G4 non acceptées.",
       "mapping_barre": {
-        "Vérifié (documentaire, recette ou contrôle contre-vérifié)": 259,
-        "Accepté (G0 et décisions déléguées)": 58
+        "Vérifié documentaire": 266,
+        "Accepté cadrage documentaire G0": 58
       }
     }
   },

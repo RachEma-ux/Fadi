@@ -308,6 +308,8 @@ const AJOUTS = {
     "studio.propriete.definir", "studio.propriete.retirer",
     // Visualisation (lot E.5, extension additive consignée) : scènes et apparences d'affichage.
     "studio.scene.creer", "studio.scene.modifier", "studio.scene.rappeler", "studio.scene.supprimer", "studio.apparence.definir", "studio.apparence.retirer",
+    // Géométrie 3D du lot F1 (extension additive consignée) : édition des faces, rotation, lien des solides à leur profil.
+    "studio.solide.face-decaler", "studio.solide.face-diviser", "studio.solide.pivoter", "studio.solide.resoudre",
   ]),
   types: new Set(["angular-dimension", "text", "wall", "opening", "scene", "appearance"]),
   exports: new Set([
@@ -349,6 +351,10 @@ const AJOUTS = {
     "assemblerDossierConception", "pdfDossierConception",
     // Workflow de conception déclaré d'une étude (REF-01 §06, `workflow.ts`, extension additive).
     "STUDIO_PHASES_WORKFLOW", "estPhaseWorkflowStudio",
+    // Géométrie 3D du lot F1 : direction d'extrusion, relation des prismes à leur profil source, faces.
+    "STUDIO_DIRECTIONS_EXTRUSION", "studioCotesExtrusion", "directionUnitaire", "estDroit", "estSolideLie", "hauteurPerpendiculaire",
+    "STUDIO_RELATIONS_SOURCE", "translationSommet", "validerDirection", "studioEmpriseConforme", "studioLienSolide", "studioLiensSolides",
+    "studioProfilDepuisPolyligne",
   ]),
 };
 function sansAjouts(value: unknown): unknown {
@@ -361,6 +367,10 @@ function sansAjouts(value: unknown): unknown {
   const out = Object.fromEntries(Object.entries(value).map(([k, v]) => [k, sansAjouts(v)]));
   const props = out.properties as Record<string, unknown> | undefined;
   if (props && "schemaVersion" in props) { delete props.annotations; delete props.architecture; delete props.proprietes; delete props.scenes; }
+  // Lot F1 (extension additive consignée) : direction d'extrusion facultative (`extrusion.direction`, `extruder`) et,
+  // pour le prisme, direction et source facultatives ; retirées pour comparer à la base.
+  if (props && "base" in props && "height" in props) delete props.direction;
+  if (props && "profile" in props) { delete props.direction; delete props.source; }
   return out;
 }
 
