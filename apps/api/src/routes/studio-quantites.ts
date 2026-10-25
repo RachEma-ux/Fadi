@@ -21,6 +21,8 @@ import { assertAccess, lockedAccess, notFound, studioArchivedRefusal, StudioRequ
 import { rejeuAdmis } from "../lib/studio-exigences.js";
 import { ajustementDe, deciderAjustement, empreinteAjustement, resultatsDeRevision, studioAjustementSchema, type LigneAjustement } from "../lib/studio-quantites.js";
 import { studioDocumentHash } from "../lib/studio-publications.js";
+import { avecContrat } from "../lib/studio-contrats.js";
+import { CONTRAT_AJUSTEMENTS_LISTER, CONTRAT_AJUSTEMENT_CREER } from "../lib/studio-contrats-routes.js";
 
 export const studioQuantitesRouter = Router({ mergeParams: true });
 
@@ -50,7 +52,7 @@ async function journalDe(q: Querier, variantId: string): Promise<LigneAjustement
   return await q.select().from(studioQuantityAdjustments).where(eq(studioQuantityAdjustments.variantId, variantId)).orderBy(asc(studioQuantityAdjustments.seq)) as LigneAjustement[];
 }
 
-studioQuantitesRouter.get(chemin, endpoint(async (req, res) => {
+studioQuantitesRouter.get(chemin, avecContrat(CONTRAT_AJUSTEMENTS_LISTER), endpoint(async (req, res) => {
   const actorId = req.user!.id;
   const access = assertAccess(await loadProjectAccess(param(req, "projectId"), actorId), actorId, "read");
   const study = await studyOf(db, access.id, param(req, "studyId"));
@@ -91,7 +93,7 @@ studioQuantitesRouter.get("/studies/:studyId/variants/:variantId/resultats-quant
   res.json({ studyId: study.id, variantId: variant.id, revisionId: revision.id, headRevisionId: variant.headRevisionId, resultats });
 }));
 
-studioQuantitesRouter.post(chemin, endpoint(async (req, res) => {
+studioQuantitesRouter.post(chemin, avecContrat(CONTRAT_AJUSTEMENT_CREER), endpoint(async (req, res) => {
   const parsed = studioAjustementSchema.safeParse(req.body ?? {});
   if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
   const input = parsed.data;

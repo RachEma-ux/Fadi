@@ -1,5 +1,20 @@
 # État — Studio
 
+## Achèvement de Studio — mandat P-12, réconciliation, requalification — 25 octobre 2026
+
+Branche `ccr-187fd2e6-08dk6e`, base `main@93a5c18` (BLOC-02, PR #323).
+
+Ce qui a été fait :
+- **Mandat d'achèvement consigné** (ADR-STUDIO-PILOTE-01 P-12). Les exclusions antérieures (DEC-15, mode IA de P-06, « hors pilote ») sont levées, et les décisions courantes sont listées avec leur justification.
+- **Réconciliation des chiffres** : 205 obligations restantes, dont 119 issues du point 2 et 86 du rapprochement. Détail : [ACHEVEMENT-STUDIO](recettes/ACHEVEMENT-STUDIO.md).
+- **Requalification par dépendances vérifiées** : J3, RISQ-03, 05, 06, 07, 09, 10, PASS-04, PIL-01 et A.1-08 passent à « Vérifié ».
+- **Décisions inscrites** : REC-I-03 (lot I accepté pleinement) et MIG-COEX-07 (règle COEX-06) passent à « Accepté ». F.2-03 et F.3-01, closes jusque-là par les exclusions désormais levées, sont rouvertes.
+- **Lots d'achèvement en cours** : PUB, CMD, OUT, REND, F, API, REG.
+
+Compteurs recalculés du registre : **0 À définir / 57 À faire / 127 En cours / 11 Bloqué / 376 Vérifié / 59 Accepté**. **P630=435/630**.
+
+Prochaine action : intégrer les lots d'achèvement un par un (PR, CI verte, fusion), puis les décisions de P-12 qui restent à implémenter, puis le build candidat.
+
 ## BLOC-02 vérifié — les quatre éliminatoires de G4 contrôlés — 25 octobre 2026
 
 Branche `ccr-187fd2e6-08dk6e`, base `main@933da19` (G1 franchie, PR #322).
@@ -12,7 +27,7 @@ Ce qui a été fait :
 - **Correctif.** Le noyau exact n'est plus chargé avant que le serveur ait relu les opérandes.
 - **G4.** Ses quatre défauts éliminatoires (BLOC-01 à 04) sont désormais contrôlés en CI ([DOSSIER-G4](DOSSIER-G4.md)). G4 n'est pas franchie : le build candidat figé, l'installation de la phase B, la recette utilisateur réelle et les actes du maître d'ouvrage restent dus.
 
-Compteurs recalculés du registre : **0 À définir / 61 À faire / 133 En cours / 11 Bloqué / 366 Vérifié / 59 Accepté**. **P630=425/630**.
+Compteurs recalculés du registre : à cette date 366 Vérifié, 59 Accepté, 11 Bloqué, 133 En cours, 61 À faire, 0 À définir ; 425 obligations sur 630 closes.
 
 Prochaine action : PR de ce lot, CI verte, puis fusion. Ensuite, livrer ou faire déclarer hors pilote les fonctions absentes et les décisions du point 2. Les étapes de G4 qui reviennent à l'administrateur et au maître d'ouvrage sont décrites au §5 du dossier.
 

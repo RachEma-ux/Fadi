@@ -25,6 +25,8 @@ import {
   verifierPaquet, type StudioPublicationTransition,
 } from "../lib/studio-publications.js";
 import { createStudioDelegation, listStudioDelegations, revokeStudioDelegation, studioDelegationCreateSchema, studioDelegationRevokeSchema } from "../lib/studio-delegations.js";
+import { avecContrat } from "../lib/studio-contrats.js";
+import { CONTRAT_PAQUETS_LISTER, CONTRAT_PUBLICATIONS_LISTER, CONTRAT_PUBLICATION_CREER, CONTRAT_PUBLICATION_LIRE, CONTRAT_PUBLICATION_CONTROLE_APPROBATION, CONTRAT_PUBLICATION_VERIFICATION, CONTRAT_PUBLICATION_FICHIER, CONTRAT_DELEGATIONS_LISTER, CONTRAT_DELEGATION_CREER, CONTRAT_DELEGATION_REVOQUER, CONTRAT_PUBLICATION_TRANSITION } from "../lib/studio-contrats-routes.js";
 
 export const studioPublicationsRouter = Router({ mergeParams: true });
 
@@ -40,35 +42,35 @@ function endpoint(handler: (req: Request, res: Response) => Promise<void>) {
 const param = (req: Request, key: string) => (req.params as Record<string, string>)[key] ?? "";
 const base = "/studies/:studyId/publications/:publicationId";
 
-studioPublicationsRouter.get("/publications", endpoint(async (req, res) => {
+studioPublicationsRouter.get("/publications", avecContrat(CONTRAT_PAQUETS_LISTER), endpoint(async (req, res) => {
   res.setHeader("Cache-Control", "private, no-store");
   res.json(await listProjectStudioPackages(param(req, "projectId"), req.user!.id));
 }));
-studioPublicationsRouter.get("/studies/:studyId/publications", endpoint(async (req, res) => {
+studioPublicationsRouter.get("/studies/:studyId/publications", avecContrat(CONTRAT_PUBLICATIONS_LISTER), endpoint(async (req, res) => {
   res.setHeader("Cache-Control", "private, no-store");
   res.json(await listStudyPublications(param(req, "projectId"), param(req, "studyId"), req.user!.id));
 }));
-studioPublicationsRouter.post("/studies/:studyId/variants/:variantId/publications", endpoint(async (req, res) => {
+studioPublicationsRouter.post("/studies/:studyId/variants/:variantId/publications", avecContrat(CONTRAT_PUBLICATION_CREER), endpoint(async (req, res) => {
   const parsed = studioPublicationCreateSchema.safeParse(req.body ?? {});
   if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
   const created = await createStudioPublication(param(req, "projectId"), param(req, "studyId"), param(req, "variantId"), req.user!.id, parsed.data);
   res.setHeader("Idempotent-Replayed", String(created.replayed));
   res.status(201).json(created);
 }));
-studioPublicationsRouter.get(base, endpoint(async (req, res) => {
+studioPublicationsRouter.get(base, avecContrat(CONTRAT_PUBLICATION_LIRE), endpoint(async (req, res) => {
   res.setHeader("Cache-Control", "private, no-store");
   res.json(await readStudioPublication(param(req, "projectId"), param(req, "studyId"), param(req, "publicationId"), req.user!.id));
 }));
 // OP-6 : aperçu de l'auto-contrôle pour l'utilisateur courant, avant d'approuver (même accès que l'approbation).
-studioPublicationsRouter.get(`${base}/controle-approbation`, endpoint(async (req, res) => {
+studioPublicationsRouter.get(`${base}/controle-approbation`, avecContrat(CONTRAT_PUBLICATION_CONTROLE_APPROBATION), endpoint(async (req, res) => {
   res.setHeader("Cache-Control", "private, no-store");
   res.json(await controleApprobationStudio(param(req, "projectId"), param(req, "studyId"), param(req, "publicationId"), req.user!.id));
 }));
-studioPublicationsRouter.get(`${base}/verification`, endpoint(async (req, res) => {
+studioPublicationsRouter.get(`${base}/verification`, avecContrat(CONTRAT_PUBLICATION_VERIFICATION), endpoint(async (req, res) => {
   res.setHeader("Cache-Control", "private, no-store");
   res.json(await verifierPaquet(param(req, "projectId"), param(req, "studyId"), param(req, "publicationId"), req.user!.id));
 }));
-studioPublicationsRouter.get(`${base}/files/:format`, endpoint(async (req, res) => {
+studioPublicationsRouter.get(`${base}/files/:format`, avecContrat(CONTRAT_PUBLICATION_FICHIER), endpoint(async (req, res) => {
   const out = await readStudioPackageFile(param(req, "projectId"), param(req, "studyId"), param(req, "publicationId"), req.user!.id, param(req, "format"));
   res.setHeader("Content-Type", out.file.mime);
   res.setHeader("Content-Disposition", `attachment; filename="${out.file.fileName}"`);
@@ -82,23 +84,23 @@ studioPublicationsRouter.get(`${base}/files/:format`, endpoint(async (req, res) 
   res.status(200).send(Buffer.from(out.content));
 }));
 // Délégations d'approbation (EX-085) : lecture, création (délégant), révocation motivée (délégant ou propriétaire).
-studioPublicationsRouter.get("/delegations", endpoint(async (req, res) => {
+studioPublicationsRouter.get("/delegations", avecContrat(CONTRAT_DELEGATIONS_LISTER), endpoint(async (req, res) => {
   res.setHeader("Cache-Control", "private, no-store");
   res.json(await listStudioDelegations(param(req, "projectId"), req.user!.id));
 }));
-studioPublicationsRouter.post("/delegations", endpoint(async (req, res) => {
+studioPublicationsRouter.post("/delegations", avecContrat(CONTRAT_DELEGATION_CREER), endpoint(async (req, res) => {
   const parsed = studioDelegationCreateSchema.safeParse(req.body ?? {});
   if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
   const created = await createStudioDelegation(param(req, "projectId"), req.user!.id, parsed.data);
   res.setHeader("Idempotent-Replayed", String(created.replayed));
   res.status(created.replayed ? 200 : 201).json(created);
 }));
-studioPublicationsRouter.post("/delegations/:delegationId/revoquer", endpoint(async (req, res) => {
+studioPublicationsRouter.post("/delegations/:delegationId/revoquer", avecContrat(CONTRAT_DELEGATION_REVOQUER), endpoint(async (req, res) => {
   const parsed = studioDelegationRevokeSchema.safeParse(req.body ?? {});
   if (!parsed.success) { res.status(400).json({ error: "invalid_input", code: "motif_exige", details: parsed.error.flatten() }); return; }
   res.json(await revokeStudioDelegation(param(req, "projectId"), param(req, "delegationId"), req.user!.id, parsed.data.reason));
 }));
-studioPublicationsRouter.post(`${base}/:action`, endpoint(async (req, res) => {
+studioPublicationsRouter.post(`${base}/:action`, avecContrat(CONTRAT_PUBLICATION_TRANSITION), endpoint(async (req, res) => {
   const action = param(req, "action");
   if (!(STUDIO_PUBLICATION_ACTIONS as readonly string[]).includes(action)) { res.status(404).json({ error: "not_found" }); return; }
   const parsed = studioPublicationTransitionSchema.safeParse(req.body ?? {});

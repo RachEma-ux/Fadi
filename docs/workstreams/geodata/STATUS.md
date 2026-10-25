@@ -49,6 +49,8 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   couche), barre d'outils verticale flottante (à droite par défaut, déplaçable, bornée), bouton « Données » ; recette
   `geodata.mjs` conforme en local (63 vérifications, dont téléphone 390 px, axe-core et interface anglaise). Suites API DB-3 non exécutées localement (base
   attestée de la CI seulement).
+- Limites administratives (D-GD-16) : `limites.ts` (3 tests), contours colorés et hiérarchisés, vérifiés visuellement
+  en local sur ADM1, ADM2 et communes OSM (opacité 0 %, une couleur par entité).
 - Fournisseurs de fonds (D-GD-15) : modèle pur `fournisseurs.ts` (5 tests), section Paramètres `FournisseursCarte.tsx`,
   fonds lus par GeoData (`fonds-navigateur.ts`), refus d'export motivé (suite DB-3) ; recette `geodata.mjs` conforme en
   local (73 vérifications, tuiles du fournisseur interceptées, aucune requête réelle) ; `interface-anglais.mjs` conforme.
