@@ -44,3 +44,27 @@ Les obligations sont reprises par lots cohérents. Un lot est inscrit au registr
 ## État au moment de ce document
 
 193 obligations ouvertes après la requalification par dépendances et les décisions P-12. Elles sont suivies au registre. Leur état exact est recalculé à chaque lot dans les checkpoints `STATUS.md` et `HANDOFF.md`.
+
+## Lot API — contrats versionnés (réserve G1 levée)
+
+Les 79 routes de l'API Studio portent chacune un contrat versionné `studio-api-<nom>/<n>` (77 contrats).
+
+**Mécanisme**
+- La version est renvoyée dans l'en-tête `X-Studio-Contrat`, en succès comme en refus.
+- Le schéma zod de réponse est strict et vérifié par test.
+- Une version demandée incompatible est refusée (400 `contrat_incompatible`), sans écriture.
+- Une route sans contrat fait échouer les tests.
+
+**Preuves**
+- `apps/api/src/routes/studio-contrats.test.ts` (89 tests) ;
+- `apps/api/src/testing/studio-contrats.test.ts` ;
+- recette `studio-contrats-api` (CI) ;
+- `docs/studio/CONTRATS-API.md`, généré.
+
+Le relevé de performance porte le schéma `studio-releve-perf/1`. La revue G1-03 compte 79/79 routes et 21/21 formats à
+contrat versionné : la réserve « 48 routes non versionnées » de P-11 est levée.
+
+**Décisions du lot**
+- Un identifiant par route, pour l'entrée et la réponse.
+- La version passe par un en-tête, sur le modèle de `X-Studio-Revision`.
+- Règle d'évolution : un champ facultatif ajouté garde la version ; retirer, renommer ou changer un type impose `/2`.

@@ -186,6 +186,7 @@ réaligné 68 libellés ; une preuve qui n'en était pas une (REC-I-02) a été 
 **Décision : G1 est franchie**, avec les réserves suivantes, qui restent ouvertes :
 - **48 routes** de l'API Studio ont un contrat vérifiable (schéma zod et besoin de droit de la matrice X.2-02), mais
   sans identifiant de version. Une version leur est due avant toute évolution incompatible.
+  *Levée le 25 octobre 2026 (achèvement, lot API) : les 79 routes portent un contrat versionné `studio-api-<nom>/<n>`, contrôlé en CI.*
 - **35 décisions**, **50 fonctions absentes** et **9 mesures sur appareil réel**, relevées par le point 2
   ([PREUVES-POINT2](../../workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md)). Aucune n'empêche d'engager le
   lot, mais chacune reste due avant G4.
