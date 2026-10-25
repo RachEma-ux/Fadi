@@ -58,21 +58,19 @@ OWNER_UID=$(id -u)
 # Scénarios de bout en bout, dans l'ordre de la CI (.github/workflows/ci.yml, jobs e2e) — tests/ vérifie l'égalité —,
 # sauf comptes-api, comptes-securite et comptes-admin : ils exigent une base JETABLE locale (127.0.0.1, écritures
 # directes, anonymisation) et un transport de courriel, jamais la base persistante de la préproduction ; et sauf geodata :
-# son amorçage publie un jeu de référence par la chaîne administrative sur une base jetable (ADR-GEODATA-02).
-E2E_DEFAUT="accueils-design parcours-scenario studio-persistance studio-navigation studio-exemple-p118 studio-domaines
-studio-espace studio-publication studio-observations studio-profils studio-catalogue studio-hors-ligne
-studio-corpus-s6 studio-corpus-s7 studio-conflits studio-chargement studio-memoire studio-mesures-chargement studio-accessibilite
-studio-quantites studio-dossier studio-echanges notifications-preferences atelier-nouveau atelier-documents
-atelier-echanges atelier-versions atelier-automatisation atelier-complements collaboration-audience participants
-portees-etroites communication journal-activite organisations revue-externe invitations-participation
-collaboration-support-telephone organisations-participation-final atelier-canevas planche planche-modification planche-outils planche-pousser-aretes planche-pousser-modes
-planche-objets planche-clavier planche-pousser-l10a planche-liens planche-suivez-moi planche-revolution
-planche-profiles planche-assemblages planche-debit planche-texte-3d planche-pieces-edition planche-modification-l18
-planche-diagnostics-l19 planche-etirement-plis planche-epaissir planche-effilement-loft planche-lots-4-6 planche-lot-5
-sandbox-module sandbox-axes sandbox-reperes sandbox-origine sandbox-reperes-lies temps-reel-sessions temps-reel-studio temps-reel-annotations temps-reel-revue
-temps-reel-robustesse temps-reel-charge planche-lot-7 porte-p1-reduite p2-noyau-exact porte-p1-p2 p2-structure p2-bois-tolerie p2-reseaux
+# son amorçage publie un jeu de référence par la chaîne administrative sur une base jetable (ADR-GEODATA-02) ; et sauf
+# les recettes qui lisent les courriels envoyés (lib-invitations, MAILPIT_URL ou API_LOG) : la préproduction n'envoie
+# jamais aux domaines réservés des comptes de recette et n'a pas de Mailpit (tests/run.sh les repère dans les sources).
+E2E_DEFAUT="accueils-design studio-exemple-p118 studio-domaines studio-corpus-s6 studio-corpus-s7 studio-chargement studio-memoire
+studio-mesures-chargement studio-accessibilite studio-echanges atelier-nouveau atelier-documents atelier-echanges
+atelier-complements collaboration-support-telephone atelier-canevas planche planche-modification planche-outils
+planche-pousser-aretes planche-pousser-modes planche-objets planche-clavier planche-pousser-l10a planche-liens
+planche-suivez-moi planche-revolution planche-profiles planche-assemblages planche-debit planche-texte-3d
+planche-pieces-edition planche-modification-l18 planche-diagnostics-l19 planche-etirement-plis planche-epaissir
+planche-effilement-loft planche-lots-4-6 planche-lot-5 sandbox-module sandbox-axes sandbox-reperes sandbox-origine
+sandbox-reperes-lies planche-lot-7 porte-p1-reduite p2-noyau-exact porte-p1-p2 p2-structure p2-bois-tolerie p2-reseaux
 p2-coordination p2-documentation p2-automatisation interface-anglais planche-boutons planche-detachee-documents
-atelier-barre planche-barre-outils studio-restauration"
+atelier-barre planche-barre-outils"
 
 die() { echo "fadi-preprod : $*" >&2; exit 1; }
 log() { echo "── $*"; }

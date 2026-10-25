@@ -176,8 +176,8 @@ j = next(j for j, x in enumerate(l) if x.endswith("up -d --no-deps --force-recre
 sys.exit(0 if i < j and not any(x.endswith("rm -f -s migrate") for x in l) else 1)
 PY
 attendu nz "up en échec → code non nul" -- fpe MOCK_FAIL=up up
-attendu 0  "e2e réussi (2 scénarios)" "2 réussi(s)" -- fp e2e accueils-design parcours-scenario
-attendu nz "e2e avec un scénario en échec → code non nul" "échecs : parcours-scenario" -- fpe MOCK_FAIL=e2e-parcours-scenario e2e accueils-design parcours-scenario
+attendu 0  "e2e réussi (2 scénarios)" "2 réussi(s)" -- fp e2e accueils-design studio-domaines
+attendu nz "e2e avec un scénario en échec → code non nul" "échecs : studio-domaines" -- fpe MOCK_FAIL=e2e-studio-domaines e2e accueils-design studio-domaines
 attendu nz "e2e : scénario inconnu refusé" "scénario inconnu" -- fp e2e inexistant
 attendu nz "e2e : nom de scénario invalide refusé" "scénario invalide" -- fp e2e '../x'
 
@@ -346,14 +346,17 @@ courriel "avec les variables PREPROD_* : SMTP transmis à app seul, SMTP_PASS ja
   PREPROD_MAIL_TRANSPORT=smtp PREPROD_SMTP_USER=noreply@fadimmo.com PREPROD_SMTP_PASS=secret-test "PREPROD_MAIL_FROM=Fadi <noreply@fadimmo.com>" PREPROD_MAIL_DAILY_LIMIT=20
 
 echo "== Liste e2e identique à la CI"
-python3 -I - "$REPO/.github/workflows/ci.yml" "$SCRIPT" <<'PY' && { ok=$((ok + 1)); echo "✓ E2E_DEFAUT = scénarios de la CI, même ordre, sans comptes-* ni geodata (base jetable)"; } || { ko=$((ko + 1)); echo "✗ E2E_DEFAUT ≠ CI"; }
+python3 -I - "$REPO/.github/workflows/ci.yml" "$SCRIPT" <<'PY' && { ok=$((ok + 1)); echo "✓ E2E_DEFAUT = scénarios de la CI, même ordre, sans comptes-* ni geodata (base jetable) ni lecture de courriel"; } || { ko=$((ko + 1)); echo "✗ E2E_DEFAUT ≠ CI"; }
 import re, sys
 ci = open(sys.argv[1]).read(); order = []
 for m in re.finditer(r'^\s+(?:[A-Z_]+=\S+ )*node apps/web/e2e/([a-z0-9-]+)\.mjs', ci, re.M):
     if m.group(1) not in order: order.append(m.group(1))
 hors = {"comptes-api", "comptes-securite", "comptes-admin", "geodata"}  # base jetable exigée : jamais en préproduction
 assert hors <= set(order), "scénarios exclus absents de la CI"
-order = [s for s in order if s not in hors]
+# Recettes qui lisent les courriels envoyés : impossibles en préproduction (aucun envoi aux domaines réservés, pas de Mailpit).
+racine = sys.argv[1].rsplit("/.github/", 1)[0]
+courriel = lambda s: re.search(r"lib-invitations|MAILPIT|API_LOG", open(f"{racine}/apps/web/e2e/{s}.mjs").read())
+order = [s for s in order if s not in hors and not courriel(s)]
 lst = re.search(r'E2E_DEFAUT="([^"]+)"', open(sys.argv[2]).read()).group(1).split()
 print(f"   CI {len(order)}, préproduction {len(lst)}")
 sys.exit(0 if order == lst else 1)
