@@ -8,7 +8,7 @@
  * (`STUDIO_MANIFESTE_OUTILS`) pour les outils du registre, et de `MANIFESTE_COMMANDES` (ci-dessous) pour les commandes
  * de l'éditeur, propriété de l'interface Studio. Filtres du catalogue (B.2-01) : `filtrerCatalogue`.
  */
-import { entreeManifeste, STUDIO_TOOLS, type StudioContexteOutil, type StudioDroitOutil } from "@parcours/atelier-model";
+import { entreeManifeste, STUDIO_TOOLS, type StudioContexteOutil, type StudioDroitOutil, type StudioIdChargeur } from "@parcours/atelier-model";
 import {
   BARRES_STUDIO, COMMANDES_EDITEUR, libelleRaccourci, type BarreStudio, type CibleRaccourci, type CommandeEditeur, type IdCommandeEditeur, type StudioToolEntry,
 } from "./raccourcis";
@@ -54,6 +54,10 @@ export interface EntreeCatalogue {
   readonly droit: StudioDroitOutil;
   /** Propriétaire du contrat (module du modèle, ou l'interface pour une commande de l'éditeur). */
   readonly proprietaire: string;
+  /** Dépendances lues dans le manifeste léger (EX-026) : chargeur du moteur (null : commande locale de l'éditeur). */
+  readonly chargeur: StudioIdChargeur | null;
+  /** Outils prérequis (manifeste) ; vide pour une commande de l'éditeur. */
+  readonly prerequis: readonly string[];
 }
 
 export const CATALOGUE: readonly EntreeCatalogue[] = Object.freeze([
@@ -62,13 +66,13 @@ export const CATALOGUE: readonly EntreeCatalogue[] = Object.freeze([
     return {
       identifiant: t.toolId, cible: { type: "outil", toolId: t.toolId }, libelleFR: t.libelleFR, raccourcis: [t.raccourci],
       icone: t.iconeSymbolique, barre: t.groupe, nature: t.nature, agentExposure: t.agentExposure, outil: t, commande: null,
-      contextes: m.contextes, droit: m.droit, proprietaire: m.proprietaire.id,
+      contextes: m.contextes, droit: m.droit, proprietaire: m.proprietaire.id, chargeur: m.chargeur, prerequis: m.prerequis,
     };
   }),
   ...COMMANDES_EDITEUR.map((c): EntreeCatalogue => ({
     identifiant: c.id, cible: { type: "commande", id: c.id }, libelleFR: c.libelleFR, raccourcis: [c.raccourci, ...(c.autres ?? [])],
     icone: c.iconeSymbolique, barre: c.groupe, nature: "editeur", agentExposure: null, outil: null, commande: c,
-    contextes: MANIFESTE_COMMANDES[c.id], droit: c.ecrit ? "ecriture" : "lecture", proprietaire: PROPRIETAIRE_EDITEUR.id,
+    contextes: MANIFESTE_COMMANDES[c.id], droit: c.ecrit ? "ecriture" : "lecture", proprietaire: PROPRIETAIRE_EDITEUR.id, chargeur: null, prerequis: [],
   })),
 ]);
 
