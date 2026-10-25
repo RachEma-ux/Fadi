@@ -1,0 +1,580 @@
+#!/bin/bash
+# fadi-prod-auto — mise en production automatique d'une Release GitHub (docs/deploiement-automatique.md, phase B).
+#
+# Installé par l'administrateur, propriété de root (0755), en /usr/local/sbin/fadi-prod-auto, lancé toutes les
+# 10 minutes par fadi-prod-auto.timer (deploy/prod/systemd/). Le VPS tire : seule l'API publique de GitHub est lue
+# (aucun jeton, aucun secret dans GitHub, aucune connexion entrante). L'autorisation de production est la Release
+# publiée par le maître d'ouvrage ; ce script ne crée, ne modifie ni ne choisit aucune Release.
+#
+# Un passage :
+#   1. passage précédent interrompu (« en-cours » sans verrou tenu) → reprise : retour à l'image précédente si
+#      l'application avait été redémarrée, sinon copie du dépôt rendue à son commit ; jamais de restauration de la base ;
+#   2. lit la dernière Release publiée (releases/latest, 1 appel ; ni brouillon, ni prérelease) ; aucune → rien ;
+#      Release déjà traitée (succès, échec, refus définitif) → rien ;
+#   3. résout son étiquette en commit (git/ref/tags, étiquette annotée suivie) ;
+#   4. exige que ce commit soit EXACTEMENT le dernier commit passé en préproduction sans échec : état de
+#      fadi-preprod-auto (/opt/fadi-preprod/etat.json : en_ligne = dernier_essai = commit, résultat sans échec) et
+#      commit approuvé de la préproduction (/opt/fadi-preprod/approved-commit) ; sinon refus, revu à chaque passage
+#      sans appel à l'API (la préproduction peut encore être en train de déployer ce commit) ;
+#   5. exige que le commit appartienne à l'historique de main (comparaison GitHub, puis contrôle git local) ;
+#   6. déploie, dans cet ordre :
+#      a. contrôles de départ : copie /mnt/data/fadi/app propre, avance rapide vers le commit, version servie
+#         (/version) = commit de la copie, sondes de la production en ligne conformes ;
+#      b. SAUVEGARDE VÉRIFIÉE : dump local (pg_dump -Fc dans le dossier du déploiement, relu par pg_restore --list,
+#         empreinte SHA-256) puis sauvegarde chiffrée hors VPS par le service établi fadi-backup-offsite.service
+#         (dump + restic backup + restic check), dont l'exécution réelle et le succès sont relus dans systemd ;
+#         une sauvegarde non vérifiée arrête tout : rien n'est modifié ni redémarré ;
+#      c. mise à jour de la copie /mnt/data/fadi/app au commit (git, par son propriétaire), jamais à la main ;
+#      d. image fadi-prod-app:<12 premiers caractères du commit>, construite depuis `git archive` du commit (aucun
+#         fichier non suivi, ni .env.deploy) ; l'image en ligne est étiquetée fadi-prod-app:retour ;
+#      e. schéma : service à usage unique `migrate` de docker-compose.yml (MIGRATE_ONLY=1, D-7), avec la nouvelle
+#         image — c'est la forme actuelle de « MIGRATE_ON_START=1 » en production : l'API, en fadi_app, n'a aucun
+#         droit DDL et garde la valeur de docker-compose.yml ;
+#      f. redémarrage du SEUL service app (--no-deps : ni la base, ni Caddy, ni la sauvegarde ne sont recréés) ; la
+#         surcharge deploy/preprod/proxy/proxy-preprod.override.yml (prise au commit déployé) est toujours incluse ;
+#      g. sondes https://www.fadimmo.com : /health (« "db":"ok" »), page d'accueil, /projects en 401, /version = commit,
+#         et base / proxy / sauvegarde inchangés (identifiant et heure de démarrage des conteneurs).
+# Échec d'une sonde après le redémarrage : retour automatique à l'image précédente (fadi-prod-app:retour) et à son
+# commit dans la copie, puis nouvelles sondes. La base n'est JAMAIS restaurée automatiquement : le message nomme la
+# sauvegarde de l'étape b, et sa restauration exige l'accord explicite du maître d'ouvrage.
+#
+# État : /mnt/data/fadi/deployments/etat.json (Release, commit, heure, étape, résultat, message, commit en ligne,
+# sauvegarde, journal). Journal d'un déploiement : /mnt/data/fadi/deployments/<run>-auto/journal.log. Verrou :
+# /mnt/data/fadi/deployments/deploiement.lock, le même que les déploiements contrôlés de scripts/deploy-*-controlled.sh
+# (jamais deux déploiements de production simultanés). Budget de l'API publique (60 appels / heure, partagé avec
+# fadi-preprod-auto sur la même adresse) : 1 appel par passage sans nouveauté (6 / heure), 4 au plus pour une Release
+# nouvelle ; aucun appel si la réserve annoncée tombe sous BUDGET_MIN (20, laissés à la préproduction).
+# Notification : Healthchecks (succès → ping, échec ou refus → /fail), adresse lue dans
+# /etc/fadi-prod-auto/healthchecks-url (root, 0600, jamais dans le dépôt), passée à curl par l'entrée standard.
+# Réglage facultatif : /etc/fadi-prod-auto/config (root, 0600), lignes CLE=valeur lues sans être exécutées :
+#   UNITE_SAUVEGARDE=fadi-backup-offsite.service   unité systemd de la sauvegarde hors VPS (défaut : celle d'ops/systemd)
+#
+# `fadi-prod-auto relancer` (administrateur) : la dernière Release sera de nouveau essayée au passage suivant.
+# Codes de sortie : 0 rien à faire / refus / déployé ; 1 déploiement en échec ; 3 API GitHub injoignable ou réponse
+# illisible ; 4 commit hors de l'historique de main.
+#
+# Hors root (deploy/prod/tests/run.sh) : FADI_PROD_BASE, FADI_PROD_AUTO_CONF, FADI_PROD_APP, FADI_PROD_PREPROD_BASE,
+# FADI_PROD_REPO, FADI_PROD_TEST_BIN (doubles de curl, docker, systemctl, git) et FADI_PROD_PAUSE désignent une
+# disposition de test. Ces variables sont ignorées sous root.
+set -euo pipefail
+umask 077
+
+REPO_API=https://api.github.com/repos/RachEma-ux/Fadi
+URL=https://www.fadimmo.com
+IMAGE=fadi-prod-app
+BUDGET_MIN=20
+SONDE_ESSAIS=12
+if [ "$(id -u)" -eq 0 ]; then
+  BASE=/mnt/data/fadi/deployments
+  CONF=/etc/fadi-prod-auto
+  APP=/mnt/data/fadi/app
+  PREPROD=/opt/fadi-preprod
+  REPO_URL=https://github.com/RachEma-ux/Fadi.git
+  PAUSE=5
+  PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+else
+  BASE=${FADI_PROD_BASE:-/mnt/data/fadi/deployments}
+  CONF=${FADI_PROD_AUTO_CONF:-/etc/fadi-prod-auto}
+  APP=${FADI_PROD_APP:-/mnt/data/fadi/app}
+  PREPROD=${FADI_PROD_PREPROD_BASE:-/opt/fadi-preprod}
+  REPO_URL=${FADI_PROD_REPO:-https://github.com/RachEma-ux/Fadi.git}
+  PAUSE=${FADI_PROD_PAUSE:-5}
+  PATH=${FADI_PROD_TEST_BIN:+$FADI_PROD_TEST_BIN:}/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+fi
+export PATH
+export GIT_TERMINAL_PROMPT=0
+unset DOCKER_HOST DOCKER_CONTEXT DOCKER_CONFIG DOCKER_TLS_VERIFY DOCKER_CERT_PATH BUILDKIT_HOST \
+  COMPOSE_FILE COMPOSE_PROJECT_NAME COMPOSE_PROFILES COMPOSE_ENV_FILES COMPOSE_PATH_SEPARATOR || true
+ETAT=$BASE/etat.json
+HC_FICHIER=$CONF/healthchecks-url
+OWNER_UID=$(id -u)
+TMP=$(mktemp -d)
+trap 'rm -rf "$TMP"' EXIT
+
+die() { echo "fadi-prod-auto : $*" >&2; exit "${2:-1}"; }
+log() { echo "── $*"; }
+maintenant() { date -u +%Y-%m-%dT%H:%M:%SZ; }
+
+# Élément de la disposition : présent, pas un lien, propriété du compte d'exécution, sans écriture groupe / autres.
+sur() {  # $1 = chemin, $2 = d|f
+  local u m
+  [ -L "$1" ] && die "$1 est un lien symbolique"
+  [ "$2" = d ] && { [ -d "$1" ] || die "$1 absent"; }
+  [ "$2" = f ] && { [ -f "$1" ] || die "$1 absent"; }
+  read -r u m < <(stat -c '%u %a' "$1")
+  [ "$u" = "$OWNER_UID" ] || die "$1 n'appartient pas au compte d'exécution ($u)"
+  (( (8#$m & 8#022) == 0 )) || die "$1 est modifiable par le groupe ou les autres ($m)"
+}
+
+# ── état ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
+# Lecture : champ $2 du fichier JSON $1 (vide si absent ou illisible). Écriture : fusion des champs clé=valeur, atomique.
+json_lire() {
+  [ -f "$1" ] && [ ! -L "$1" ] || return 0
+  python3 -I -c 'import json, sys
+try: v = json.load(open(sys.argv[1])).get(sys.argv[2], "")
+except Exception: v = ""
+print(v if isinstance(v, str) else "")' "$1" "$2"
+}
+etat_lire() { json_lire "$ETAT" "$1"; }
+etat_ecrire() {
+  [ -L "$ETAT" ] && die "$ETAT est un lien symbolique"
+  python3 -I - "$ETAT" "heure=$(maintenant)" "$@" <<'PY'
+import json, os, sys
+p = sys.argv[1]
+try: e = json.load(open(p))
+except Exception: e = {}
+if not isinstance(e, dict): e = {}
+for kv in sys.argv[2:]:
+    k, v = kv.split("=", 1); e[k] = v
+t = p + ".tmp"
+fd = os.open(t, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600)
+with os.fdopen(fd, "w") as f: json.dump(e, f, ensure_ascii=False, indent=2); f.write("\n")
+os.replace(t, p)
+PY
+}
+
+# Réglage facultatif : seules les clés connues, aux valeurs validées ; rien n'est exécuté.
+UNITE_SAUVEGARDE=fadi-backup-offsite.service
+if [ -e "$CONF/config" ]; then
+  if [ -L "$CONF/config" ] || [ ! -f "$CONF/config" ] || [ "$(stat -c '%u %a' "$CONF/config")" != "$OWNER_UID 600" ]; then
+    die "$CONF/config doit être un fichier ordinaire du compte d'exécution, en 0600"
+  fi
+  while IFS='=' read -r cle valeur; do
+    case "$cle" in
+      ""|\#*) ;;
+      UNITE_SAUVEGARDE) [[ $valeur =~ ^[A-Za-z0-9@._-]+\.service$ ]] || die "UNITE_SAUVEGARDE invalide dans $CONF/config"
+        UNITE_SAUVEGARDE=$valeur ;;
+      *) die "clé inconnue dans $CONF/config : $cle" ;;
+    esac
+  done < "$CONF/config"
+fi
+
+# ── API publique de GitHub ───────────────────────────────────────────────────────────────────────────────────────────
+# api <chemin> <accept> <fichier> [codes admis] : 200 exigé par défaut ; code rendu dans CODE_API.
+RESERVE=
+CODE_API=
+api() {
+  local chemin=$1 accept=$2 sortie=$3 admis=${4:-200}
+  if [ -n "$RESERVE" ] && [ "$RESERVE" -lt "$BUDGET_MIN" ]; then
+    etat_ecrire etape=api resultat=attente "message=budget de l'API GitHub presque épuisé (reste $RESERVE)"
+    log "budget de l'API GitHub presque épuisé (reste $RESERVE) : passage suivant"; exit 0
+  fi
+  CODE_API=$(curl -sS -m 20 -o "$sortie" -D "$TMP/entetes" -H "Accept: $accept" -H "X-GitHub-Api-Version: 2022-11-28" \
+    -H "User-Agent: fadi-prod-auto" -w '%{http_code}' "$REPO_API/$chemin") || CODE_API=000
+  RESERVE=$(grep -i '^x-ratelimit-remaining:' "$TMP/entetes" 2>/dev/null | tr -dc '0-9' || true)
+  if [[ " $admis " != *" $CODE_API "* ]]; then
+    etat_ecrire etape=api resultat=erreur "message=API GitHub : $chemin → code $CODE_API"
+    die "API GitHub : $chemin → code $CODE_API" 3
+  fi
+}
+
+# Dernière Release : « id<TAB>étiquette<TAB>brouillon<TAB>prérelease » (vide si illisible).
+lire_release() {
+  python3 -I - "$1" <<'PY'
+import json, re, sys
+try: r = json.load(open(sys.argv[1]))
+except Exception: sys.exit()
+i, t = r.get("id"), r.get("tag_name")
+if not isinstance(i, int) or not isinstance(t, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,99}", t): sys.exit()
+print(f"{i}\t{t}\t{str(r.get('draft') is not False).lower()}\t{str(r.get('prerelease') is not False).lower()}")
+PY
+}
+# Objet désigné par une référence git (git/ref, git/tags) : « type<TAB>sha » (vide si illisible).
+lire_objet() {
+  python3 -I - "$1" <<'PY'
+import json, re, sys
+try: o = json.load(open(sys.argv[1]))["object"]
+except Exception: sys.exit()
+if o.get("type") in ("commit", "tag") and re.fullmatch(r"[0-9a-f]{40}", str(o.get("sha"))): print(f"{o['type']}\t{o['sha']}")
+PY
+}
+# Étiquette → commit, rendu dans SHA_RELEASE (pas de sous-shell : un arrêt pour budget ou erreur arrête le passage) ;
+# une étiquette annotée est suivie (au plus 3 niveaux).
+SHA_RELEASE=
+resoudre_etiquette() {  # $1 = étiquette
+  local type sha n=0
+  api "git/ref/tags/$1" application/vnd.github+json "$TMP/ref"
+  IFS=$'\t' read -r type sha < <(lire_objet "$TMP/ref") || true
+  while [ "${type:-}" = tag ] && [ $n -lt 3 ]; do
+    api "git/tags/$sha" application/vnd.github+json "$TMP/tag"
+    IFS=$'\t' read -r type sha < <(lire_objet "$TMP/tag") || true
+    n=$((n + 1))
+  done
+  if [ "${type:-}" != commit ]; then
+    etat_ecrire etape=api resultat=erreur "message=étiquette $1 : commit illisible"
+    die "étiquette $1 : commit illisible" 3
+  fi
+  SHA_RELEASE=$sha
+}
+
+# ── préproduction (lecture seule) ────────────────────────────────────────────────────────────────────────────────────
+# Le commit doit être EXACTEMENT le dernier commit passé en préproduction sans échec : dernier essai de
+# fadi-preprod-auto = commit en ligne = ce commit, résultat sans échec, commit approuvé de fadi-preprod = ce commit.
+# Sortie : « ok » ou le motif du refus.
+preprod_valide() {  # $1 = commit
+  local e=$PREPROD/etat.json a=$PREPROD/approved-commit res en ess appr
+  ( sur "$PREPROD" d && sur "$e" f && sur "$a" f ) 2>/dev/null || { echo "état de la préproduction absent ou non sûr ($e, $a)"; return; }
+  res=$(json_lire "$e" resultat); en=$(json_lire "$e" en_ligne); ess=$(json_lire "$e" dernier_essai)
+  appr=$(tr -dc '0-9a-f' < "$a")
+  case "$res" in
+    en-cours) echo "un déploiement de préproduction est en cours (${ess:-commit inconnu})"; return ;;
+    echec|echec-retour) echo "préproduction en échec (dernier essai ${ess:-inconnu}, résultat $res)"; return ;;
+    succes|attente|refus|erreur) ;;
+    *) echo "état de la préproduction illisible (résultat « $res »)"; return ;;
+  esac
+  [ "$ess" = "$1" ] || { echo "dernier commit essayé en préproduction : ${ess:-aucun} ≠ $1"; return; }
+  [ "$en" = "$1" ] || { echo "commit en ligne en préproduction : ${en:-aucun} ≠ $1"; return; }
+  [ "$appr" = "$1" ] || { echo "commit approuvé de la préproduction : ${appr:-aucun} ≠ $1"; return; }
+  echo ok
+}
+
+# ── notification (Healthchecks) ──────────────────────────────────────────────────────────────────────────────────────
+notifier() {  # $1 = succes|echec, $2 = résumé
+  local url
+  if [ ! -e "$HC_FICHIER" ]; then log "notification non configurée ($HC_FICHIER absent)"; return 0; fi
+  if [ -L "$HC_FICHIER" ] || [ ! -f "$HC_FICHIER" ] || [ "$(stat -c '%u %a' "$HC_FICHIER")" != "$OWNER_UID 600" ]; then
+    log "⚠ notification refusée : $HC_FICHIER doit être un fichier ordinaire du compte d'exécution, en 0600"; return 0
+  fi
+  url=$(tr -d '[:space:]' < "$HC_FICHIER")
+  [[ $url =~ ^https://[A-Za-z0-9.-]+(:[0-9]+)?/[A-Za-z0-9._~/-]+$ ]] || { log "⚠ adresse de notification invalide (non affichée)"; return 0; }
+  [ "$1" = succes ] || url=$url/fail
+  if printf 'url = "%s"\n' "$url" | curl -fsS -m 10 --retry 3 -o /dev/null -K - --data-binary "$2"; then
+    log "notification envoyée ($1)"
+  else
+    log "⚠ notification non envoyée ($1)"
+  fi
+}
+
+# ── production ───────────────────────────────────────────────────────────────────────────────────────────────────────
+JOURNAL=/dev/null
+RUN=
+RUNID=
+jlog() { echo "── $*" | tee -a "$JOURNAL"; }
+
+# git dans la copie de production, par son propriétaire (jamais root dans un dépôt d'un autre compte), sans crochets.
+g() {
+  local u; u=$(stat -c '%u' "$APP/.git")
+  if [ "$u" = "$OWNER_UID" ]; then git -c core.hooksPath=/dev/null -C "$APP" "$@"
+  else runuser -u "$(stat -c '%U' "$APP/.git")" -- git -c core.hooksPath=/dev/null -C "$APP" "$@"; fi
+}
+# docker compose du projet de production « app » ; la surcharge du proxy est toujours incluse ; $1 = fichier d'image
+# (ou « - » : configuration de base).
+dc() {
+  local img=$1; shift
+  local f=(-f "$APP/docker-compose.yml" -f "$RUN/proxy-preprod.override.yml")
+  [ "$img" = - ] || f+=(-f "$img")
+  docker compose --ansi never -p app --project-directory "$APP" --env-file "$APP/.env.deploy" "${f[@]}" "$@"
+}
+# Commande journalisée ; code de sortie de la commande.
+j() {
+  local st
+  set +e; "$@" 2>&1 | tee -a "$JOURNAL"; st=("${PIPESTATUS[@]}"); set -e
+  return "${st[0]}"
+}
+fichier_image() {  # $1 = fichier, $2 = image : app et migrate sur cette image, jamais reconstruite
+  printf 'services:\n  app:\n    image: %s\n  migrate:\n    image: %s\n' "$2" "$2" > "$1"
+}
+
+# Sondes HTTPS de la production, répétées jusqu'à SONDE_ESSAIS fois. $1 = commit attendu sur /version.
+sonde_une() {  # $1 = chemin, $2 = Accept, $3 = code attendu, puis des textes attendus dans le corps
+  local chemin=$1 accept=$2 attendu=$3 code t; shift 3
+  code=$(curl -sS -m 15 -o "$TMP/corps" -H "Accept: $accept" -w '%{http_code}' "$URL$chemin") || code=000
+  [ "$code" = "$attendu" ] || { echo "   $chemin : code $code au lieu de $attendu"; return 1; }
+  for t in "$@"; do grep -qF -- "$t" "$TMP/corps" 2>/dev/null || { echo "   $chemin : « $t » absent"; return 1; }; done
+}
+version_servie() {
+  curl -sS -m 15 -H 'Accept: application/json' "$URL/version" 2>/dev/null | python3 -I -c 'import json, sys
+try: print(json.load(sys.stdin).get("commit", ""))
+except Exception: print("")' || true
+}
+sondes() {  # $1 = commit attendu
+  local i=1 v
+  while :; do
+    if { sonde_une /health application/json 200 '"status":"ok"' '"db":"ok"' \
+        && sonde_une / text/html 200 '<div id="root"' \
+        && sonde_une /projects application/json 401 \
+        && { v=$(version_servie); [ "$v" = "$1" ] || { echo "   /version : commit ${v:-illisible} au lieu de $1"; false; }; }; } \
+        >> "$JOURNAL" 2>&1; then
+      jlog "sondes conformes ($URL : /health db ok, accueil, /projects 401, /version $1)"; return 0
+    fi
+    [ "$i" -ge "$SONDE_ESSAIS" ] && break
+    i=$((i + 1)); sleep "$PAUSE"
+  done
+  jlog "sondes en échec après $SONDE_ESSAIS essais (détail : journal.log)"; return 1
+}
+# Identifiant et démarrage des conteneurs db, proxy et backup : rien d'autre que app ne doit changer.
+autres_services() {
+  local ids; ids=$(dc - ps -q db proxy backup | sort) || return 1
+  [ -n "$ids" ] || return 1
+  # shellcheck disable=SC2086
+  docker inspect -f '{{.Name}} {{.Id}} {{.State.StartedAt}}' $ids
+}
+
+nouveau_journal() {
+  RUNID=$(date -u +%Y%m%dT%H%M%SZ)-$$-auto
+  RUN=$BASE/$RUNID
+  mkdir -m 0700 "$RUN"
+  JOURNAL=$RUN/journal.log
+  : > "$JOURNAL"
+}
+
+# Message commun : la base n'est jamais restaurée automatiquement.
+BASE_MSG="base NON restaurée (restauration seulement avec l'accord du maître d'ouvrage)"
+msg_sauvegarde() {
+  local s; s=$(etat_lire sauvegarde)
+  if [ -n "$s" ]; then echo "sauvegarde vérifiée de l'étape 1 : $s ; $BASE_MSG"; else echo "$BASE_MSG"; fi
+}
+
+# Échec avant le redémarrage de l'application : la copie revient à son commit, l'application en ligne est inchangée.
+echec_avant() {  # $1 = étape, $2 = motif, $3 = commit précédent (copie), $4 = 1 si la base a pu changer (migrate)
+  local etape=$1 motif=$2 prec=$3 msg
+  msg="échec à l'étape $etape pour $(etat_lire commit) ($motif) ; application en ligne inchangée"
+  if [ -n "$prec" ] && [ "$(g rev-parse HEAD 2>/dev/null)" != "$prec" ]; then
+    if j g reset --quiet --keep "$prec"; then msg="$msg ; copie rendue à $prec"; else msg="$msg ; ⚠ COPIE NON RENDUE à $prec : intervention requise"; fi
+  fi
+  [ "${4:-0}" = 1 ] && msg="$msg ; schéma peut-être partiellement appliqué, $(msg_sauvegarde)"
+  etat_ecrire "etape=$etape" resultat=echec "message=$msg"
+  echo "❌ $msg" | tee -a "$JOURNAL" >&2
+  notifier echec "fadi-prod-auto : $msg (journal : $JOURNAL)"
+  exit 1
+}
+
+# Échec après le redémarrage : retour à l'image précédente et à son commit, nouvelles sondes ; base jamais restaurée.
+retour_arriere() {  # $1 = étape, $2 = motif
+  local etape=$1 motif=$2 prec msg
+  prec=$(etat_lire precedent)
+  jlog "retour à l'image précédente ($IMAGE:retour, commit $prec)"
+  etat_ecrire etape=retour resultat=en-cours "message=échec à l'étape $etape ($motif), retour à $prec"
+  [ -f "$RUN/retour.yml" ] || fichier_image "$RUN/retour.yml" "$IMAGE:retour"
+  if [ "$(g rev-parse HEAD 2>/dev/null)" != "$prec" ]; then j g reset --quiet --keep "$prec" || jlog "⚠ copie non rendue à $prec"; fi
+  if j dc "$RUN/retour.yml" up -d --no-deps --no-build --pull never --wait --wait-timeout 180 app && sondes "$prec"; then
+    msg="échec à l'étape $etape pour $(etat_lire commit) ($motif) ; image précédente rétablie ($prec), sondes conformes ; $(msg_sauvegarde)"
+    etat_ecrire "etape=$etape" resultat=echec "message=$msg" "en_ligne=$prec"
+  else
+    msg="échec à l'étape $etape pour $(etat_lire commit) ($motif) ; ÉCHEC DU RETOUR à $prec : intervention requise ; $(msg_sauvegarde)"
+    etat_ecrire "etape=$etape" resultat=echec-retour "message=$msg" en_ligne=
+  fi
+  echo "❌ $msg" | tee -a "$JOURNAL" >&2
+  notifier echec "fadi-prod-auto : $msg (journal : $JOURNAL)"
+  exit 1
+}
+
+# Refus au départ (rien n'est modifié) : consigné, notifié, définitif pour cette Release (relancer pour réessayer).
+refus_depart() {  # $1 = motif
+  etat_ecrire etape=depart resultat=refus "message=refus avant toute modification : $1"
+  echo "❌ refus avant toute modification : $1" | tee -a "$JOURNAL" >&2
+  notifier echec "fadi-prod-auto : Release $(etat_lire release_tag) refusée avant toute modification : $1"
+  exit 0
+}
+
+# ── sauvegarde vérifiée ──────────────────────────────────────────────────────────────────────────────────────────────
+sauvegarde_locale() {
+  local d=$RUN/avant-deploiement.dump
+  jlog "sauvegarde locale : pg_dump -Fc de la base fadi"
+  dc - exec -T db pg_dump -U fadi -d fadi --format=custom --lock-wait-timeout=10000 > "$d.part" 2>> "$JOURNAL" || return 1
+  [ -s "$d.part" ] || { jlog "dump vide"; return 1; }
+  mv "$d.part" "$d"
+  dc - exec -T backup pg_restore --list < "$d" > "$RUN/dump-catalogue.txt" 2>> "$JOURNAL" || { jlog "pg_restore --list en échec"; return 1; }
+  grep -q ' TABLE DATA ' "$RUN/dump-catalogue.txt" || { jlog "catalogue du dump sans données de table"; return 1; }
+  sha256sum "$d" > "$RUN/empreintes.sha256"
+  jlog "dump vérifié : $d ($(wc -c < "$d") octets, $(grep -c ' TABLE DATA ' "$RUN/dump-catalogue.txt") tables, sha256 $(cut -c1-16 "$RUN/empreintes.sha256")…)"
+}
+sauvegarde_hors_vps() {
+  local avant apres cond res code
+  avant=$(systemctl show -p ExecMainExitTimestampMonotonic --value "$UNITE_SAUVEGARDE" 2>/dev/null) || avant=
+  jlog "sauvegarde hors VPS : systemctl start $UNITE_SAUVEGARDE (dump, restic backup, restic check)"
+  j systemctl start "$UNITE_SAUVEGARDE" || { jlog "$UNITE_SAUVEGARDE en échec"; return 1; }
+  cond=$(systemctl show -p ConditionResult --value "$UNITE_SAUVEGARDE")
+  res=$(systemctl show -p Result --value "$UNITE_SAUVEGARDE")
+  code=$(systemctl show -p ExecMainStatus --value "$UNITE_SAUVEGARDE")
+  apres=$(systemctl show -p ExecMainExitTimestampMonotonic --value "$UNITE_SAUVEGARDE")
+  jlog "$UNITE_SAUVEGARDE : ConditionResult=$cond Result=$res ExecMainStatus=$code"
+  [ "$cond" = yes ] || { jlog "$UNITE_SAUVEGARDE non exécutée (condition non remplie)"; return 1; }
+  [ "$res" = success ] && [ "$code" = 0 ] || return 1
+  [[ $apres =~ ^[0-9]+$ ]] && [ "$apres" -gt 0 ] && [ "$apres" != "$avant" ] || { jlog "$UNITE_SAUVEGARDE : aucune exécution nouvelle constatée"; return 1; }
+}
+
+# ── déploiement ──────────────────────────────────────────────────────────────────────────────────────────────────────
+deployer() {  # $1 = commit, $2 = id de la Release, $3 = étiquette
+  local sha=$1 rid=$2 tag=$3 prec court ancienne v rc
+  court=${sha:0:12}
+  nouveau_journal
+  jlog "Release $tag (id $rid) → commit $sha — journal : $JOURNAL"
+  etat_ecrire "release_id=$rid" "release_tag=$tag" "commit=$sha" etape=depart resultat=en-cours message= \
+    "journal=$RUNID" sauvegarde= precedent=
+
+  # a. contrôles de départ (rien n'est modifié)
+  for f in "$APP/.git" "$APP/docker-compose.yml" "$APP/.env.deploy"; do [ -e "$f" ] || refus_depart "$f absent"; done
+  v=$(version_servie)
+  if [ "$v" = "$sha" ]; then
+    etat_ecrire etape=fin resultat=succes "message=Release $tag : $sha déjà servi par la production" "en_ligne=$sha"
+    jlog "Release $tag : $sha déjà servi par la production : rien à faire"; exit 0
+  fi
+  j g fetch --quiet --no-tags "$REPO_URL" main || refus_depart "git fetch de main impossible"
+  g cat-file -e "$sha^{commit}" 2>/dev/null || refus_depart "commit $sha introuvable dans la copie"
+  g merge-base --is-ancestor "$sha" FETCH_HEAD || refus_depart "$sha n'appartient pas à main (contrôle local)"
+  [ -z "$(g status --porcelain)" ] || refus_depart "la copie $APP contient des modifications (aucun écrasement)"
+  prec=$(g rev-parse HEAD)
+  [ "$prec" != "$sha" ] || refus_depart "la copie est déjà au commit $sha sans que la production l'annonce"
+  g merge-base --is-ancestor "$prec" "$sha" || refus_depart "$sha n'est pas une avance rapide depuis $prec (retour en arrière : administrateur)"
+  g show "$sha:deploy/preprod/proxy/proxy-preprod.override.yml" > "$RUN/proxy-preprod.override.yml" 2>/dev/null \
+    || refus_depart "surcharge du proxy absente du commit $sha"
+  [ "$v" = "$prec" ] || refus_depart "version servie (${v:-illisible}) ≠ commit de la copie ($prec)"
+  etat_ecrire "precedent=$prec"
+  sondes "$prec" || refus_depart "la production en ligne ne passe pas les sondes"
+  ancienne=$(dc - ps -q app | head -1)
+  [ -n "$ancienne" ] || refus_depart "conteneur app introuvable"
+  ancienne=$(docker inspect -f '{{.Image}}' "$ancienne") || refus_depart "image du conteneur app illisible"
+  autres_services > "$RUN/services-avant.txt" || refus_depart "conteneurs db / proxy / backup illisibles"
+  etat_ecrire "image_retour=$ancienne"
+
+  # b. sauvegarde vérifiée (locale puis hors VPS) — sans elle, rien n'est modifié ni redémarré
+  etat_ecrire etape=sauvegarde
+  sauvegarde_locale || echec_avant sauvegarde "sauvegarde locale non vérifiée" ""
+  etat_ecrire "sauvegarde=$RUN/avant-deploiement.dump (sha256 $(cut -d' ' -f1 "$RUN/empreintes.sha256")) et instantané restic de $UNITE_SAUVEGARDE du $(maintenant)"
+  sauvegarde_hors_vps || echec_avant sauvegarde "sauvegarde hors VPS non vérifiée" ""
+
+  # c. copie du dépôt au commit (par git, jamais à la main)
+  etat_ecrire etape=sync
+  j g reset --quiet --keep "$sha" || echec_avant sync "git reset --keep $sha" "$prec"
+  [ "$(g rev-parse HEAD)" = "$sha" ] && [ -z "$(g status --porcelain)" ] || echec_avant sync "copie non conforme après la mise à jour" "$prec"
+  jlog "copie $APP au commit $sha"
+
+  # d. nouvelle image étiquetée par commit ; l'image en ligne devient l'image de retour
+  etat_ecrire etape=build
+  mkdir -m 0700 "$RUN/source"
+  g archive "$sha" | tar -x -C "$RUN/source" || echec_avant build "git archive" "$prec"
+  j docker tag "$ancienne" "$IMAGE:retour" || echec_avant build "étiquette de l'image de retour" "$prec"
+  j docker build --build-arg "FADI_COMMIT=$sha" --build-arg "FADI_BUILD_DATE=$(maintenant)" \
+    --label "org.opencontainers.image.revision=$sha" -t "$IMAGE:$court" "$RUN/source" || echec_avant build "docker build" "$prec"
+  fichier_image "$RUN/image.yml" "$IMAGE:$court"
+  fichier_image "$RUN/retour.yml" "$IMAGE:retour"
+  { j dc "$RUN/image.yml" config --quiet && j dc "$RUN/retour.yml" config --quiet; } || echec_avant build "configuration Compose invalide" "$prec"
+
+  # e. schéma : service à usage unique migrate (D-7) avec la nouvelle image ; la base n'est pas recréée (--no-deps)
+  etat_ecrire etape=migrate
+  jlog "schéma : service migrate (MIGRATE_ONLY=1, D-7), image $IMAGE:$court"
+  rc=0; dc "$RUN/image.yml" run --rm --no-deps -T migrate > "$RUN/migrate.log" 2>&1 || rc=$?
+  cat "$RUN/migrate.log" >> "$JOURNAL"
+  [ "$rc" = 0 ] || echec_avant migrate "service migrate en échec (code $rc)" "$prec" 1
+  grep -qF "Migration terminée" "$RUN/migrate.log" || echec_avant migrate "« Migration terminée » absent" "$prec" 1
+
+  # f. redémarrage du seul service app
+  etat_ecrire etape=redemarrage
+  j dc "$RUN/image.yml" up -d --no-deps --no-build --pull never --wait --wait-timeout 180 app || retour_arriere redemarrage "docker compose up app"
+
+  # g. sondes, et services voisins inchangés
+  etat_ecrire etape=sondes
+  sondes "$sha" || retour_arriere sondes "sonde en échec"
+  { autres_services > "$RUN/services-apres.txt" && cmp -s "$RUN/services-avant.txt" "$RUN/services-apres.txt"; } \
+    || retour_arriere sondes "base, proxy ou sauvegarde modifiés pendant le redémarrage"
+
+  # Étiquette habituelle des commandes Compose manuelles ; images anciennes retirées (en ligne, précédente, retour gardées).
+  docker tag "$IMAGE:$court" app-app:latest >> "$JOURNAL" 2>&1 || jlog "⚠ étiquette app-app:latest non posée"
+  local garder=" $court ${prec:0:12} retour " t n=0
+  while read -r t; do
+    [[ $garder == *" $t "* ]] && continue
+    [[ $t =~ ^[0-9a-f]{12}$ ]] || continue
+    docker image rm "$IMAGE:$t" > /dev/null 2>&1 && n=$((n + 1))
+  done < <(docker image ls "$IMAGE" --format '{{.Tag}}' 2>/dev/null || true)
+  local msg="Release $tag : $sha en production (sauvegarde vérifiée, migrate, app redémarrée seule, sondes conformes) ; image de retour $IMAGE:retour ($prec) ; $n ancienne(s) image(s) retirée(s)"
+  etat_ecrire etape=fin resultat=succes "message=$msg" "en_ligne=$sha"
+  echo "✓ $msg" | tee -a "$JOURNAL"
+  notifier succes "fadi-prod-auto : $msg"
+}
+
+# Passage précédent interrompu (délai systemd, redémarrage) : jamais de restauration de la base.
+reprendre_interrompu() {
+  local etape prec run
+  etape=$(etat_lire etape); prec=$(etat_lire precedent); run=$(etat_lire journal)
+  [[ $prec =~ ^[0-9a-f]{40}$ ]] || prec=
+  if [[ $run =~ ^[0-9]{8}T[0-9]{6}Z-[0-9]+-auto$ ]] && [ -d "$BASE/$run" ] && [ ! -L "$BASE/$run" ]; then
+    RUN=$BASE/$run; RUNID=$run; JOURNAL=$RUN/journal.log
+  else
+    nouveau_journal
+  fi
+  jlog "passage précédent interrompu (Release $(etat_lire release_tag), étape ${etape:-inconnue})"
+  case "$etape" in
+    depart|sauvegarde) echec_avant "interrompu-$etape" "interruption avant toute modification" "" ;;
+    sync|build) echec_avant "interrompu-$etape" "interruption" "$prec" ;;
+    migrate) echec_avant "interrompu-$etape" "interruption" "$prec" 1 ;;
+    *) [ -n "$prec" ] && [ -f "$RUN/proxy-preprod.override.yml" ] || {
+         etat_ecrire "etape=interrompu-${etape:-inconnue}" resultat=echec-retour en_ligne= \
+           "message=interruption à l'étape ${etape:-inconnue} sans version précédente connue : intervention requise ; $(msg_sauvegarde)"
+         notifier echec "fadi-prod-auto : interruption à l'étape ${etape:-inconnue}, intervention requise"; exit 1; }
+       retour_arriere "interrompu-${etape:-inconnue}" "interruption" ;;
+  esac
+}
+
+# ── passage ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+[ -e "$BASE" ] || die "$BASE absent : la production n'est pas installée sur cette machine"
+sur "$BASE" d
+[ -L "$ETAT" ] && die "$ETAT est un lien symbolique"
+exec 9>"$BASE/deploiement.lock"
+flock -n 9 || { log "un autre déploiement de production est en cours"; exit 0; }
+
+case "${1:-}" in
+  "") ;;
+  relancer) etat_ecrire release_id= "message=nouvel essai demandé par l'administrateur"
+    log "la dernière Release sera de nouveau essayée au prochain passage"; exit 0 ;;
+  *) die "usage : fadi-prod-auto [relancer]" ;;
+esac
+
+[ "$(etat_lire resultat)" = en-cours ] && reprendre_interrompu
+
+api releases/latest application/vnd.github+json "$TMP/release" "200 404"
+if [ "$CODE_API" = 404 ]; then
+  etat_ecrire etape=release resultat=aucune "message=aucune Release publiée"
+  log "aucune Release publiée : rien à faire"; exit 0
+fi
+IFS=$'\t' read -r rid tag brouillon prerelease < <(lire_release "$TMP/release") || true
+if [ -z "${rid:-}" ]; then
+  etat_ecrire etape=api resultat=erreur "message=dernière Release illisible"; die "dernière Release illisible" 3
+fi
+if [ "$brouillon" != false ] || [ "$prerelease" != false ]; then
+  etat_ecrire etape=release resultat=refus "message=Release $tag : brouillon ou prérelease, rien n'est déployé"
+  log "Release $tag : brouillon ou prérelease : rien n'est déployé"; exit 0
+fi
+
+# Release déjà traitée : succès, échec et refus définitifs ne sont pas rejoués (relancer pour réessayer).
+if [ "$rid" = "$(etat_lire release_id)" ]; then
+  res=$(etat_lire resultat); et=$(etat_lire etape)
+  case "$res" in
+    succes|echec|echec-retour) log "Release $tag déjà traitée ($res) : rien à faire"; exit 0 ;;
+    refus) case "$et" in
+        depart|historique) log "Release $tag déjà refusée ($et) : rien à faire (relancer pour réessayer)"; exit 0 ;;
+        # Refus lié à la préproduction : revu localement, sans appel à l'API, jusqu'à ce que la préproduction concorde.
+        preprod) motif=$(preprod_valide "$(etat_lire commit)")
+          if [ "$motif" != ok ]; then log "Release $tag toujours refusée : $motif"; exit 0; fi ;;
+      esac ;;
+  esac
+fi
+
+resoudre_etiquette "$tag"; sha=$SHA_RELEASE
+if [ "$sha" = "$(etat_lire en_ligne)" ]; then
+  etat_ecrire "release_id=$rid" "release_tag=$tag" "commit=$sha" etape=fin resultat=succes "message=Release $tag : $sha déjà en production"
+  log "Release $tag : $sha déjà en production : rien à faire"; exit 0
+fi
+motif=$(preprod_valide "$sha")
+if [ "$motif" != ok ]; then
+  premiere=1; [ "$rid" = "$(etat_lire release_id)" ] && premiere=0
+  etat_ecrire "release_id=$rid" "release_tag=$tag" "commit=$sha" etape=preprod resultat=refus "message=refus : $motif"
+  log "Release $tag ($sha) refusée : $motif"
+  [ "$premiere" = 1 ] && notifier echec "fadi-prod-auto : Release $tag ($sha) refusée, rien n'est déployé : $motif"
+  exit 0
+fi
+log "Release $tag : $sha est le dernier commit passé en préproduction sans échec"
+
+api "compare/$sha...main" application/vnd.github+json "$TMP/comparaison"
+statut=$(python3 -I -c 'import json, sys
+try: print(json.load(open(sys.argv[1])).get("status", ""))
+except Exception: print("")' "$TMP/comparaison")
+case "$statut" in
+  identical|ahead) log "$sha appartient à l'historique de main ($statut)" ;;
+  *) etat_ecrire "release_id=$rid" "release_tag=$tag" "commit=$sha" etape=historique resultat=refus \
+       "message=commit hors de l'historique de main (${statut:-illisible})"
+    notifier echec "fadi-prod-auto : Release $tag refusée : $sha hors de l'historique de main"
+    die "$sha n'appartient pas à l'historique de main (${statut:-illisible}) : rien n'est déployé" 4 ;;
+esac
+
+deployer "$sha" "$rid" "$tag"
