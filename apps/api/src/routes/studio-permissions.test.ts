@@ -34,7 +34,7 @@ import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import express from "express";
 import request from "supertest";
-import { STUDIO_CONTRACT } from "@parcours/atelier-model";
+import { STUDIO_CONTRACT, studioExporterBcf, studioSujetsBcf } from "@parcours/atelier-model";
 import { studioRouter } from "./studio.js";
 import { ACTEURS, banc, initialiserProjet, verdicts, type Acteur } from "../testing/studio-base-simulee.js";
 
@@ -97,6 +97,15 @@ const IFC_RECETTE = readFileSync(new URL("../../../../packages/atelier-model/src
 const receptionModele = { reference: "Architecte — bâtiment A", auteur: "Cabinet partenaire", discipline: "architecture", format: "ifc", version: "B", uniteDeclaree: "mm", transformation: null, nomFichier: "recette.ifc", contenu: IFC_RECETTE };
 const modeleExterne = async () => ({ mx: await creer(`${V}/modeles-externes`, receptionModele) });
 const MX = "/studies/:studyId/variants/:variantId/modeles-externes";
+// Lot PUB : vue de coupe (EX-075), observation avec pièce justificative (IF-010), fichier BCF d'essai.
+const VUE_COUPE = { nom: "Coupe AA", niveau: { repere: "local-3d", z: 1 }, cadrage: { xMin: -1, yMin: -1, xMax: 5, yMax: 5 }, echelle: 50, styles: { trait: "fort", hachure: "diagonale" }, annotations: [] };
+const vueCoupe = async () => ({ vc: await creer(`${V}/section-views`, { definition: VUE_COUPE }) });
+const observationPiece = async () => {
+  const res = await comme("proprietaire")(request(app).post(`${V}/observations`)).send({ body: "Observation avec pièce", responsableId: "editeur", audience: "projet", pieces: [{ name: "releve.png", mime: "image/png", contentBase64: "iVBORw0KGgo=" }] });
+  if (res.status !== 201) throw new Error(`préparation observation : ${res.status}`);
+  return { obs: res.body.id as string, sha: res.body.pieces[0].sha256 as string };
+};
+const BCF = Buffer.from(studioExporterBcf(studioSujetsBcf([{ issueId: "x1", titre: "Sujet", description: "", statut: "Open", categorie: null, gravite: null, creeLe: "2026-10-25T08:00:00.000Z", auteur: "a@x", responsable: null, objets: [], journal: [] }]), { id: "partenaire", nom: "Partenaire" })).toString("base64");
 
 /**
  * Règles d'acteur des observations (`lib/studio-observations.ts`), l'observation étant ouverte par le propriétaire
@@ -249,6 +258,15 @@ export const ROUTES: Route[] = [
     route: `POST ${OBS}/:observationId/decisions`, besoin: "acteur", preparer: observation, url: (c) => `${V}/observations/${c["obs"]}/decisions`, body: { nature: "proposition", portee: "autre", texte: "Proposition" },
     note: "proposition : droit d'écrire (rôle ; le verrou d'édition ne s'y applique pas)", acteurs: { etranger: "404", lecteur: "403" },
   },
+  { route: `GET ${OBS}/bcf`, besoin: "lecture", preparer: observation, url: () => `${V}/observations/bcf`, note: "export BCF 2.1 minimal (IF-010), audience du fil respectée" },
+  { route: `POST ${OBS}/bcf`, besoin: "ecriture", url: () => `${V}/observations/bcf`, body: { fichierBase64: BCF }, note: "import BCF : sujets nouveaux dans leur contexte (IF-010)" },
+  { route: `GET ${OBS}/:observationId/pieces/:sha256`, besoin: "lecture", preparer: observationPiece, url: (c) => `${V}/observations/${c["obs"]}/pieces/${c["sha"]}` },
+  { route: "GET /studies/:studyId/variants/:variantId/resultats-quantitatifs", besoin: "lecture", url: () => `${V}/resultats-quantitatifs` },
+  { route: "GET /studies/:studyId/section-views", besoin: "lecture", url: () => `${S}/studies/s/section-views` },
+  { route: "POST /studies/:studyId/variants/:variantId/section-views", besoin: "modification", url: () => `${V}/section-views`, body: { definition: VUE_COUPE } },
+  { route: "GET /studies/:studyId/section-views/:viewId", besoin: "lecture", preparer: vueCoupe, url: (c) => `${S}/studies/s/section-views/${c["vc"]}` },
+  { route: "PATCH /studies/:studyId/section-views/:viewId", besoin: "modification", preparer: vueCoupe, url: (c) => `${S}/studies/s/section-views/${c["vc"]}`, body: { definition: { ...VUE_COUPE, nom: "Coupe BB" } } },
+  { route: "DELETE /studies/:studyId/section-views/:viewId", besoin: "modification", preparer: vueCoupe, url: (c) => `${S}/studies/s/section-views/${c["vc"]}` },
   { route: "GET /dossiers", besoin: "lecture", url: () => `${S}/dossiers` },
   { route: "GET /studies/:studyId/sheets", besoin: "lecture", url: () => `${S}/studies/s/sheets` },
   { route: "POST /studies/:studyId/variants/:variantId/sheets", besoin: "modification", url: () => `${V}/sheets`, body: { number: "A-02", title: "Plan", format: "A3", orientation: "paysage", scale: "ajuster" } },
@@ -299,6 +317,7 @@ const REPONSES: Readonly<Record<string, string>> = {
   "POST /studies/:studyId/variants/:variantId/observations/:observationId/decisions": "201",
   "POST /studies/:studyId/variants/:variantId/sheets": "201", "POST /studies/:studyId/dossiers": "201",
   "POST /studies/:studyId/variants/:variantId/modeles-externes": "201",
+  "POST /studies/:studyId/variants/:variantId/section-views": "201",
 };
 const cleReponse = (r: Route) => `${r.route}${r.note?.startsWith("action ") ? ` ${r.note.slice(7)}` : ""}`;
 export const reponseProprietaire = (r: Route): string => REPONSES[cleReponse(r)] ?? "200";

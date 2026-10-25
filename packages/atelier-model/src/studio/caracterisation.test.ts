@@ -375,6 +375,9 @@ const AJOUTS = {
     "STUDIO_TOLERANCE_APERCU", "studioApercuBooleen", "studioBoiteEnglobante", "studioCaptureBooleen", "studioCommandeBooleen", "studioComparerApercu",
     "studioEmpreinteOperandes", "studioIdsOperandes", "studioMaillageExact", "studioOperandeNoyau", "studioVerifierEngagement", "validerResultatExact",
     "validerSolideExact",
+    // Lot PUB : résultats quantitatifs (IF-008), vues de coupe (EX-075), chaîne documentaire (EX-074 / EX-076),
+    // conclusions normatives (EX-068), repères des exports (EX-080), BCF des observations (IF-010).
+    "STUDIO_BCF_LIMITES", "STUDIO_BCF_LIMITES_EXPORT", "STUDIO_BCF_VERSION", "STUDIO_CONCLUSIONS_NORMATIVES", "STUDIO_HACHURES_COUPE", "STUDIO_LIMITES_VUE_COUPE", "STUDIO_MESSAGES_REFUS_PIECE", "STUDIO_NON_EVALUE_QUANTITE", "STUDIO_PIECES_LIVRABLES_SCHEMA", "STUDIO_PRESENTATIONS_PIECE", "STUDIO_REGLES_METRE", "STUDIO_REPERES_EXPORT", "STUDIO_RESULTAT_QUANTITATIF_SCHEMA", "STUDIO_TRAITS_COUPE", "STUDIO_VUE_COUPE_SCHEMA", "actualiteVueCoupe", "ajusterResultat", "annoterVueCoupe", "chaineDocumentaire", "conclureControle", "conclusionDemande", "controlerPiecesLivrables", "creerVueCoupe", "estConforme", "etatDemandeControle", "executionDe", "fraicheurResultats", "jeuSourcesQuantite", "pageVueCoupe", "piecesDuDossier", "rebaserVueCoupe", "resultatsQuantitatifs", "studioContexteBcf", "studioExporterBcf", "studioGuidBcf", "studioLireBcf", "studioPlanImportBcf", "studioSujetsBcf", "totaliserResultats", "uniteDeGrandeur", "valeurAffichee", "valeurRetenue", "validerVueCoupe", "verifierJustification",
   ]),
 };
 function sansAjouts(value: unknown): unknown {

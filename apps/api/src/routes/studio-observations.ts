@@ -32,7 +32,7 @@ import {
 import { listStudioRapprochements, rapprocherSurDemande, studioRapprochementSchema } from "../lib/studio-observations-rapprochement.js";
 import { exporterObservationsBcf, importerObservationsBcf, lirePieceObservation, studioBcfImportSchema } from "../lib/studio-observations-bcf.js";
 import { avecContrat } from "../lib/studio-contrats.js";
-import { CONTRAT_OBSERVATIONS_LISTER, CONTRAT_OBSERVATION_CREER, CONTRAT_RAPPROCHEMENTS_LISTER, CONTRAT_RAPPROCHEMENT_DEMANDER, CONTRAT_OBSERVATION_LIRE, CONTRAT_OBSERVATION_TRANSITION, CONTRAT_OBSERVATION_LIER, CONTRAT_OBSERVATION_TACHE_CREER, CONTRAT_OBSERVATION_TACHE_TRANSITION, CONTRAT_OBSERVATION_DECISION } from "../lib/studio-contrats-routes.js";
+import { CONTRAT_OBSERVATIONS_LISTER, CONTRAT_OBSERVATION_CREER, CONTRAT_RAPPROCHEMENTS_LISTER, CONTRAT_RAPPROCHEMENT_DEMANDER, CONTRAT_OBSERVATION_LIRE, CONTRAT_OBSERVATION_TRANSITION, CONTRAT_OBSERVATION_LIER, CONTRAT_OBSERVATION_TACHE_CREER, CONTRAT_OBSERVATION_TACHE_TRANSITION, CONTRAT_OBSERVATION_DECISION, CONTRAT_OBSERVATIONS_BCF_EXPORTER, CONTRAT_OBSERVATIONS_BCF_IMPORTER, CONTRAT_OBSERVATION_PIECE } from "../lib/studio-contrats-routes.js";
 
 export const studioObservationsRouter = Router({ mergeParams: true });
 
@@ -85,7 +85,7 @@ studioObservationsRouter.post(`${base}/rapprochements`, avecContrat(CONTRAT_RAPP
   if (input) res.status(200).json(await rapprocherSurDemande(scope(req), req.user!.id, input));
 }));
 // Échange BCF (IF-010) : déclaré avant `/:observationId`, qui le prendrait sinon.
-studioObservationsRouter.get(`${base}/bcf`, endpoint(async (req, res) => {
+studioObservationsRouter.get(`${base}/bcf`, avecContrat(CONTRAT_OBSERVATIONS_BCF_EXPORTER), endpoint(async (req, res) => {
   const out = await exporterObservationsBcf(scope(req), req.user!.id);
   res.setHeader("Content-Type", "application/octet-stream");
   res.setHeader("Content-Disposition", `attachment; filename="${out.fileName}"`);
@@ -94,11 +94,11 @@ studioObservationsRouter.get(`${base}/bcf`, endpoint(async (req, res) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.status(200).send(out.body);
 }));
-studioObservationsRouter.post(`${base}/bcf`, endpoint(async (req, res) => {
+studioObservationsRouter.post(`${base}/bcf`, avecContrat(CONTRAT_OBSERVATIONS_BCF_IMPORTER), endpoint(async (req, res) => {
   const input = corps(studioBcfImportSchema, req, res);
   if (input) res.status(200).json(await importerObservationsBcf(scope(req), req.user!.id, input));
 }));
-studioObservationsRouter.get(`${base}/:observationId/pieces/:sha256`, endpoint(async (req, res) => {
+studioObservationsRouter.get(`${base}/:observationId/pieces/:sha256`, avecContrat(CONTRAT_OBSERVATION_PIECE), endpoint(async (req, res) => {
   const p = await lirePieceObservation(scope(req), req.user!.id, param(req, "observationId"), param(req, "sha256"));
   res.setHeader("Content-Type", p.mime);
   res.setHeader("Content-Disposition", `attachment; filename="${p.name}"`);

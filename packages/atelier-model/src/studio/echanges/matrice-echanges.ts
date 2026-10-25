@@ -27,7 +27,7 @@ import { STUDIO_CAPACITES_EXPORT, STUDIO_RAISONS_FIDELITE, type StudioFormatEcha
 
 export const STUDIO_MATRICE_ECHANGES_SCHEMA = "studio-matrice-echanges/1" as const;
 /** Révision de la matrice : à incrémenter avec toute modification d'une entrée (empreinte épinglée par test). */
-export const STUDIO_MATRICE_ECHANGES_REVISION = 5 as const;
+export const STUDIO_MATRICE_ECHANGES_REVISION = 6 as const;
 /** Date de l'audit qui a établi la révision courante. */
 export const STUDIO_MATRICE_ECHANGES_DATE = "2026-10-25" as const;
 
@@ -549,7 +549,7 @@ const LIVREES: readonly StudioEntreeEchange[] = [
       tests: [p(`${M}echanges/bcf-observations.test.ts`, "IF-010 [+] export BCF 2.1 relu à l'identique")],
       routes: [p(`${API}routes/studio-observations.ts`, "${base}/bcf")],
     },
-    sources: [S_PLAN, S_LISTE("E.6-04"), src("docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#IF-010", "Contrat IF-010 : identifiants BCF conservés comme références")],
+    sources: [S_PLAN, S_LISTE("E.6-04"), src("docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json", "Contrat IF-010 : identifiants BCF conservés comme références")],
   },
   {
     id: "bcf-import", format: "BCF (BIM Collaboration Format, .bcfzip)", versionFormat: "2.x lu selon le contrat 2.1 minimal ; entrées stockées (sans compression)", sens: "import", famille: "coordination",
@@ -566,7 +566,7 @@ const LIVREES: readonly StudioEntreeEchange[] = [
       tests: [p(`${M}echanges/bcf-observations.test.ts`, "IF-010 [−] même BCF-ID reçu dans un autre contexte")],
       routes: [p(`${API}routes/studio-observations.ts`, "${base}/bcf")],
     },
-    sources: [S_PLAN, S_LISTE("E.6-04"), src("docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json#IF-010", "Cas négatif « Même BCF-ID »")],
+    sources: [S_PLAN, S_LISTE("E.6-04"), src("docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json", "Cas négatif « Même BCF-ID »")],
   },
 ];
 

@@ -85,6 +85,15 @@ chargé de tâche — rôle vérifié ensuite par `lib/studio-observations.ts`, 
 | `POST /studies/:studyId/variants/:variantId/observations/:observationId/taches` | acteur | 404 | 403 | admis | 403 | admis | admis | admis | 201 | propriétaire, ou responsable (éditeur) avec le droit d'écrire |
 | `POST /studies/:studyId/variants/:variantId/observations/:observationId/taches/:taskId/transitions` | acteur | 404 | 403 | admis | 403 | admis | admis | admis | 200 | terminer : personne chargée (éditeur) avec le droit d'écrire, ou propriétaire |
 | `POST /studies/:studyId/variants/:variantId/observations/:observationId/decisions` | acteur | 404 | 403 | admis | admis | admis | admis | admis | 201 | proposition : droit d'écrire (rôle ; le verrou d'édition ne s'y applique pas) |
+| `GET /studies/:studyId/variants/:variantId/observations/bcf` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | export BCF 2.1 minimal (IF-010), audience du fil respectée |
+| `POST /studies/:studyId/variants/:variantId/observations/bcf` | ecriture | 404 | 403 | admis | 423 | admis | 423 | admis | 200 | import BCF : sujets nouveaux dans leur contexte (IF-010) |
+| `GET /studies/:studyId/variants/:variantId/observations/:observationId/pieces/:sha256` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `GET /studies/:studyId/variants/:variantId/resultats-quantitatifs` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `GET /studies/:studyId/section-views` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `POST /studies/:studyId/variants/:variantId/section-views` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 201 |  |
+| `GET /studies/:studyId/section-views/:viewId` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `PATCH /studies/:studyId/section-views/:viewId` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 200 |  |
+| `DELETE /studies/:studyId/section-views/:viewId` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 200 |  |
 | `GET /dossiers` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `GET /studies/:studyId/sheets` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `POST /studies/:studyId/variants/:variantId/sheets` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 201 |  |

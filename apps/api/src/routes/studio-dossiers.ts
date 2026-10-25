@@ -27,7 +27,7 @@ import {
   updateStudioDossier, updateStudioSheet,
 } from "../lib/studio-dossiers.js";
 import { avecContrat } from "../lib/studio-contrats.js";
-import { CONTRAT_DOSSIERS_PROJET, CONTRAT_FEUILLES_LISTER, CONTRAT_FEUILLE_CREER, CONTRAT_FEUILLE_MODIFIER, CONTRAT_FEUILLE_SUPPRIMER, CONTRAT_FEUILLE_FICHIER, CONTRAT_DOSSIERS_LISTER, CONTRAT_DOSSIER_CREER, CONTRAT_DOSSIER_LIRE, CONTRAT_DOSSIER_MODIFIER, CONTRAT_DOSSIER_FICHIER } from "../lib/studio-contrats-routes.js";
+import { CONTRAT_DOSSIERS_PROJET, CONTRAT_FEUILLES_LISTER, CONTRAT_FEUILLE_CREER, CONTRAT_FEUILLE_MODIFIER, CONTRAT_FEUILLE_SUPPRIMER, CONTRAT_FEUILLE_FICHIER, CONTRAT_DOSSIERS_LISTER, CONTRAT_DOSSIER_CREER, CONTRAT_DOSSIER_LIRE, CONTRAT_DOSSIER_MODIFIER, CONTRAT_DOSSIER_FICHIER, CONTRAT_VUES_COUPE_LISTER, CONTRAT_VUE_COUPE_CREER, CONTRAT_VUE_COUPE_LIRE, CONTRAT_VUE_COUPE_MODIFIER, CONTRAT_VUE_COUPE_SUPPRIMER } from "../lib/studio-contrats-routes.js";
 
 import {
   createStudioVueCoupe, deleteStudioVueCoupe, listStudioVuesCoupe, readStudioVueCoupe, studioVueCoupeCreateSchema, studioVueCoupeUpdateSchema, updateStudioVueCoupe,
@@ -116,24 +116,24 @@ studioDossiersRouter.get(`${dossier}/files/:format`, avecContrat(CONTRAT_DOSSIER
 }));
 
 const vueCoupe = "/studies/:studyId/section-views/:viewId";
-studioDossiersRouter.get("/studies/:studyId/section-views", endpoint(async (req, res) => {
+studioDossiersRouter.get("/studies/:studyId/section-views", avecContrat(CONTRAT_VUES_COUPE_LISTER), endpoint(async (req, res) => {
   res.setHeader("Cache-Control", "private, no-store");
   res.json(await listStudioVuesCoupe(param(req, "projectId"), param(req, "studyId"), req.user!.id));
 }));
-studioDossiersRouter.post("/studies/:studyId/variants/:variantId/section-views", endpoint(async (req, res) => {
+studioDossiersRouter.post("/studies/:studyId/variants/:variantId/section-views", avecContrat(CONTRAT_VUE_COUPE_CREER), endpoint(async (req, res) => {
   const parsed = studioVueCoupeCreateSchema.safeParse(req.body ?? {});
   if (!parsed.success) { invalid(res, parsed.error.flatten()); return; }
   res.status(201).json(await createStudioVueCoupe(param(req, "projectId"), param(req, "studyId"), param(req, "variantId"), req.user!.id, parsed.data));
 }));
-studioDossiersRouter.get(vueCoupe, endpoint(async (req, res) => {
+studioDossiersRouter.get(vueCoupe, avecContrat(CONTRAT_VUE_COUPE_LIRE), endpoint(async (req, res) => {
   res.setHeader("Cache-Control", "private, no-store");
   res.json(await readStudioVueCoupe(param(req, "projectId"), param(req, "studyId"), param(req, "viewId"), req.user!.id));
 }));
-studioDossiersRouter.patch(vueCoupe, endpoint(async (req, res) => {
+studioDossiersRouter.patch(vueCoupe, avecContrat(CONTRAT_VUE_COUPE_MODIFIER), endpoint(async (req, res) => {
   const parsed = studioVueCoupeUpdateSchema.safeParse(req.body ?? {});
   if (!parsed.success) { invalid(res, parsed.error.flatten()); return; }
   res.json(await updateStudioVueCoupe(param(req, "projectId"), param(req, "studyId"), param(req, "viewId"), req.user!.id, parsed.data));
 }));
-studioDossiersRouter.delete(vueCoupe, endpoint(async (req, res) => {
+studioDossiersRouter.delete(vueCoupe, avecContrat(CONTRAT_VUE_COUPE_SUPPRIMER), endpoint(async (req, res) => {
   res.json(await deleteStudioVueCoupe(param(req, "projectId"), param(req, "studyId"), param(req, "viewId"), req.user!.id));
 }));
