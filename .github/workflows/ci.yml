@@ -728,6 +728,11 @@ jobs:
         run: |
           set -o pipefail
           REOPEN_PORT=3007 OUT=atelier-captures/studio-preuves-e node apps/web/e2e/studio-preuves-e.mjs 2>&1 | tee -a e2e.log
+      - name: Preuves Studio, groupe A — mise à jour du service worker pendant que des commandes attendent, même requestId, une seule révision (TEST-036, apps/web/e2e/studio-preuves-a.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-preuves-a node apps/web/e2e/studio-preuves-a.mjs 2>&1 | tee -a e2e.log
       # Organisations-participation, phase 3 (OP-D2 a) : invitation acceptée pour tous, fin de l'ajout direct (UM-8) —
       # aperçu de l'accès, renvoi sans doublon, notification, refus v2.2 (lien transféré, expirée, annulée, déclinée,
       # invitant révoqué, mauvaise fiche, participation terminée, accès expiré), double soumission, nouvel utilisateur ;
