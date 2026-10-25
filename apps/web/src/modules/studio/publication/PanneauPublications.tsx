@@ -14,6 +14,7 @@ import {
   COMMENTAIRE_REQUIS, corpsTransition, court, empreinteCourte, LIBELLE_ACTION, LIBELLE_DIFFUSION, LIBELLE_EVENEMENT, LIBELLE_TRAVAIL,
   libelleActualite, libelleEcart, messageRefus, ORDRE_ACTIONS,
 } from "./publication-ui";
+import { PanneauDelegations } from "./PanneauDelegations";
 import "./publication.css";
 
 export interface PanneauPublicationsProps {
@@ -41,6 +42,7 @@ export function PanneauPublications({ projectId, studyId, variants, canWrite }: 
       {liste.isPending && <p role="status">Chargement des publications…</p>}
       {liste.isError && <p role="alert">Publications indisponibles. <button type="button" onClick={() => void liste.refetch()}>Réessayer</button></p>}
       {liste.data && liste.data.publications.length === 0 && <p data-studio-publications-vide>Aucune publication pour cette étude.</p>}
+      <PanneauDelegations projectId={projectId} studyId={studyId} variants={variants} publications={liste.data?.publications ?? []} />
       {liste.data && liste.data.publications.length > 0 && (
         <ul className="studio-publications-liste">
           {liste.data.publications.map((p) => <CartePublication key={p.id} projectId={projectId} studyId={studyId} publication={p} surChange={relire} />)}
@@ -147,6 +149,7 @@ function CartePublication({ projectId, studyId, publication: p, surChange }: { p
         <dt>Manifeste</dt><dd translate="no" data-studio-publication-manifeste title={p.manifestHash ?? ""}>{p.manifestHash ? empreinteCourte(p.manifestHash) : "—"}</dd>
         {p.manifest && p.manifest.sources.length > 1 && <><dt>Sources</dt><dd translate="no">{p.manifest.sources.map((s) => court(s.revisionId)).join(" · ")}</dd></>}
         {p.approval && <><dt>Approuvée par</dt><dd translate="no">{`${p.approval.by?.email ?? "—"} · ${date(p.approval.at)}${p.approval.manifestHash ? ` · ${empreinteCourte(p.approval.manifestHash)}` : ""}`}</dd></>}
+        {p.approval?.delegationId && <><dt>Délégation</dt><dd data-studio-publication-approbation-delegation><span>Approuvée par délégation</span> <span translate="no">{court(p.approval.delegationId)}</span></dd></>}
         {p.diffusion && <><dt>Diffusée par</dt><dd translate="no">{`${p.diffusion.by?.email ?? "—"} · ${date(p.diffusion.at)}`}</dd></>}
         {p.replacement && <><dt>Remplacée</dt><dd translate="no" data-studio-publication-remplacement>{`${p.replacement.by?.email ?? "—"} · ${date(p.replacement.at)} · ${court(p.replacement.publicationId)}`}</dd></>}
         {p.withdrawal && <><dt>Retirée par</dt><dd translate="no" data-studio-publication-retrait>{`${p.withdrawal.by.email} · ${date(p.withdrawal.at)}${p.withdrawal.comment ? ` · ${p.withdrawal.comment}` : ""}`}</dd></>}
@@ -173,6 +176,7 @@ function CartePublication({ projectId, studyId, publication: p, surChange }: { p
       )}
       {action && (
         <form className="studio-publication-confirmer" onSubmit={(e) => void confirmer(e)}>
+          {(action === "approuver" || action === "refuser") && p.delegation && <p data-studio-publication-delegation><span>Vous agissez par délégation de</span> <span translate="no">{`${p.delegation.delegator.email} · ${p.delegation.reason} · ${date(p.delegation.endsAt)}`}</span></p>}
           {action === "approuver" && <p data-studio-publication-examine>{`Vous approuvez le manifeste ${empreinteCourte(p.manifestHash ?? "")} : révision ${court(p.revisionId)} (empreinte ${empreinteCourte(p.documentHash)}).`}</p>}
           {action === "diffuser" && <p>{p.contenu === "dessin-2d" ? "La diffusion fige un paquet SVG, DXF et feuille PDF de la révision approuvée (dessin 2D, sans IFC)." : "La diffusion fige un paquet SVG, DXF, IFC et feuille PDF de la révision approuvée."}</p>}
           {action === "actualiser" && <p>Le manifeste est reconstruit depuis les révisions courantes ; l’approbation précédente ne vaut plus et le dossier repasse en brouillon.</p>}
@@ -191,6 +195,7 @@ function CartePublication({ projectId, studyId, publication: p, surChange }: { p
               <strong>{LIBELLE_EVENEMENT[ev.action]}</strong>{" "}
               <span translate="no">{`${ev.author.email} · ${date(ev.createdAt)} · ${court(ev.revisionId)}`}</span>
               {ev.relatedPublicationId && <span translate="no">{` → ${court(ev.relatedPublicationId)}`}</span>}
+              {ev.delegationId && <span data-studio-publication-journal-delegation> (par délégation)</span>}
               {ev.comment && <q translate="no">{ev.comment}</q>}
             </li>
           ))}

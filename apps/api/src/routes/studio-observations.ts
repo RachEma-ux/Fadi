@@ -11,6 +11,9 @@
  *   POST …/observations/:observationId/taches                   tâche attribuée (201)
  *   POST …/observations/:observationId/taches/:taskId/transitions  passage d'une tâche (200)
  *   POST …/observations/:observationId/decisions                proposition (éditeur) ou décision (propriétaire), 201
+ *   GET  …/observations/rapprochements                          rapprochements consignés avec les révisions ultérieures (EX-086)
+ *   POST …/observations/rapprochements                          rapprochement sur demande (propriétaire, éditeur) ; il est aussi
+ *                                                              fait à chaque contrôle d'exigences enregistré (routes/studio-exigences.ts)
  * Les passages restent aussi servis par `…/comments/:commentId/observation/transitions` (même fonction, même identité).
  * Toutes les écritures sont idempotentes par `requestId` (en-tête `Idempotent-Replayed`).
  */
@@ -23,6 +26,7 @@ import {
   studioObservationDecisionSchema, studioObservationLienAjoutSchema, studioObservationOuvertureSchema, studioObservationTacheSchema,
   studioObservationTacheTransitionSchema, transitionStudioObservationTask,
 } from "../lib/studio-observations-suivi.js";
+import { listStudioRapprochements, rapprocherSurDemande, studioRapprochementSchema } from "../lib/studio-observations-rapprochement.js";
 
 export const studioObservationsRouter = Router({ mergeParams: true });
 
@@ -64,6 +68,15 @@ studioObservationsRouter.get(base, endpoint(async (req, res) => {
 studioObservationsRouter.post(base, endpoint(async (req, res) => {
   const input = corps(studioObservationOuvertureSchema, req, res);
   if (input) repondre(res, 201, await openStudioObservation(scope(req), req.user!.id, input));
+}));
+// Rapprochement avec une nouvelle révision (EX-086) : déclarés avant `/:observationId`, qui les prendrait sinon.
+studioObservationsRouter.get(`${base}/rapprochements`, endpoint(async (req, res) => {
+  res.setHeader("Cache-Control", "private, no-store");
+  res.json(await listStudioRapprochements(scope(req), req.user!.id));
+}));
+studioObservationsRouter.post(`${base}/rapprochements`, endpoint(async (req, res) => {
+  const input = corps(studioRapprochementSchema, req, res);
+  if (input) res.status(200).json(await rapprocherSurDemande(scope(req), req.user!.id, input));
 }));
 studioObservationsRouter.get(`${base}/:observationId`, endpoint(async (req, res) => {
   res.setHeader("Cache-Control", "private, no-store");

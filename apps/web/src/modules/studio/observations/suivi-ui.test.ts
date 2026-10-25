@@ -5,7 +5,7 @@ import { ApiError } from "../../../lib/api";
 import { Traducteur } from "../../../lib/i18n/traduire";
 import type { ObservationSuivie } from "./api-observations";
 import {
-  compterSuivi, libelleDecision, libelleLien, LIBELLE_DOMAINE, LIBELLE_FILTRE_SUIVI, LIBELLE_JOURNAL_TACHE, LIBELLE_PASSAGE_TACHE, LIBELLE_STATUT_TACHE, LIBELLE_VUE,
+  compterSuivi, dernierRapprochement, LIBELLE_SUIVI_RAPPROCHEMENT, libelleDecision, libelleLien, LIBELLE_DOMAINE, LIBELLE_FILTRE_SUIVI, LIBELLE_JOURNAL_TACHE, LIBELLE_PASSAGE_TACHE, LIBELLE_STATUT_TACHE, LIBELLE_VUE,
   lireRefus, optionsLien, passeFiltreSuivi, suiviPar,
 } from "./suivi-ui";
 
@@ -66,5 +66,18 @@ describe("Observations Studio — suivi (affichage pur)", () => {
     ];
     // Un libellé identique dans les deux langues (« Plan ») doit tout de même figurer au dictionnaire.
     for (const l of libelles) expect(l in dico || t.traduire(l) !== l, l).toBe(true);
+  });
+});
+
+describe("EX-086 — suivi des rapprochements (affichage)", () => {
+  const r = (id: string, observationId: string, createdAt: string, suivi: "objet-disparu" | "persiste" | "a-recontroler" | "non-rapprochable") =>
+    ({ id, observationId, revisionId: "r", checkId: null, observationStatus: "ouverte", suivi, elements: [], actor: { id: "a", email: "a@x.test" }, createdAt });
+  it("EX-086 [+] le dernier rapprochement de chaque observation est affiché ; un objet disparu n'est jamais présenté comme une clôture", () => {
+    const m = dernierRapprochement([r("1", "o1", "2026-10-25T08:00:00.000Z", "a-recontroler"), r("2", "o1", "2026-10-25T09:00:00.000Z", "objet-disparu"), r("3", "o2", "2026-10-25T08:30:00.000Z", "persiste")]);
+    expect([...m.entries()].map(([k, v]) => [k, v.suivi])).toEqual([["o1", "objet-disparu"], ["o2", "persiste"]]);
+    for (const l of Object.values(LIBELLE_SUIVI_RAPPROCHEMENT)) expect(l.toLowerCase()).not.toMatch(/clôtur|\bclos|\bfermé/);
+    const t = new Traducteur(dico as Record<string, string>);
+    for (const l of [...Object.values(LIBELLE_SUIVI_RAPPROCHEMENT), "Rapprocher avec la révision courante", "Rapprochement refusé par le serveur.",
+      "2 observation(s) rapprochée(s) avec la révision 89abcdef ; 1 avec un objet disparu (aucune n’est close)."]) expect(t.traduire(l), l).not.toBe(l);
   });
 });

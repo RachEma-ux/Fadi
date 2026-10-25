@@ -1226,6 +1226,77 @@ ALTER TABLE studio_dossiers DROP CONSTRAINT IF EXISTS studio_dossiers_quantities
   ADD CONSTRAINT studio_dossiers_quantities_adjustment_seq_check
   CHECK (quantities_adjustment_seq IS NULL OR (quantities_adjustment_seq >= 1 AND quantities_variant_id IS NOT NULL)) NOT VALID;
 
+-- Délégation contrôlée de l'approbation (EX-085, lib/studio-delegations.ts) : délégant, délégué distinct, portée
+-- (projet, étude, variante, publication), période (début inclus, fin exclue), motif ; seule la révocation motivée
+-- modifie la ligne. Journal en ajout seul : création, révocation et chaque emploi (publication et transition).
+-- Additif et idempotent : tables et colonnes nouvelles, contraintes recréées (DROP … IF EXISTS puis ADD, NOT VALID).
+CREATE TABLE IF NOT EXISTS studio_approval_delegations (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  delegator_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  delegate_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  scope_type text NOT NULL,
+  scope_id text,
+  starts_at timestamptz NOT NULL,
+  ends_at timestamptz NOT NULL,
+  reason text NOT NULL,
+  request_id text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  revoked_at timestamptz,
+  revoked_by text REFERENCES users(id) ON DELETE RESTRICT,
+  revoke_reason text
+);
+CREATE INDEX IF NOT EXISTS studio_approval_delegations_project_idx ON studio_approval_delegations(project_id, delegate_id);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_approval_delegations_request_unique ON studio_approval_delegations(project_id, delegator_id, request_id)
+  WHERE request_id IS NOT NULL;
+ALTER TABLE studio_approval_delegations DROP CONSTRAINT IF EXISTS studio_approval_delegations_scope_check,
+  ADD CONSTRAINT studio_approval_delegations_scope_check
+  CHECK ((scope_type = 'projet' AND scope_id IS NULL) OR (scope_type IN ('etude', 'variante', 'publication') AND scope_id IS NOT NULL)) NOT VALID;
+ALTER TABLE studio_approval_delegations DROP CONSTRAINT IF EXISTS studio_approval_delegations_period_check,
+  ADD CONSTRAINT studio_approval_delegations_period_check CHECK (ends_at > starts_at) NOT VALID;
+ALTER TABLE studio_approval_delegations DROP CONSTRAINT IF EXISTS studio_approval_delegations_distinct_check,
+  ADD CONSTRAINT studio_approval_delegations_distinct_check CHECK (delegate_id <> delegator_id) NOT VALID;
+ALTER TABLE studio_approval_delegations DROP CONSTRAINT IF EXISTS studio_approval_delegations_reason_length,
+  ADD CONSTRAINT studio_approval_delegations_reason_length CHECK (length(btrim(reason)) BETWEEN 1 AND 2000) NOT VALID;
+ALTER TABLE studio_approval_delegations DROP CONSTRAINT IF EXISTS studio_approval_delegations_revocation_complete,
+  ADD CONSTRAINT studio_approval_delegations_revocation_complete
+  CHECK ((revoked_at IS NULL) = (revoked_by IS NULL) AND (revoked_at IS NULL) = (revoke_reason IS NULL)) NOT VALID;
+CREATE TABLE IF NOT EXISTS studio_approval_delegation_events (
+  id text PRIMARY KEY,
+  delegation_id text NOT NULL REFERENCES studio_approval_delegations(id) ON DELETE CASCADE,
+  action text NOT NULL CONSTRAINT studio_approval_delegation_events_action_check CHECK (action IN ('creer', 'revoquer', 'employer')),
+  actor_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  publication_id text,
+  publication_action text CONSTRAINT studio_approval_delegation_events_publication_action_check
+    CHECK (publication_action IS NULL OR publication_action IN ('approuver', 'refuser')),
+  comment text CONSTRAINT studio_approval_delegation_events_comment_length CHECK (comment IS NULL OR length(comment) BETWEEN 1 AND 2000),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS studio_approval_delegation_events_delegation_idx ON studio_approval_delegation_events(delegation_id, created_at);
+CREATE OR REPLACE TRIGGER studio_approval_delegation_events_no_update BEFORE UPDATE ON studio_approval_delegation_events
+  FOR EACH ROW EXECUTE FUNCTION studio_publication_event_immutable();
+ALTER TABLE studio_publication_events ADD COLUMN IF NOT EXISTS delegation_id text;
+ALTER TABLE studio_publications ADD COLUMN IF NOT EXISTS approved_delegation_id text;
+-- Rapprochement des observations avec une nouvelle révision (EX-086, lib/studio-observations-rapprochement.ts) : un
+-- résultat par observation et par contrôle, en ajout seul ; le statut de l'observation n'est jamais modifié ici.
+CREATE TABLE IF NOT EXISTS studio_observation_reconciliations (
+  id text PRIMARY KEY,
+  variant_id text NOT NULL REFERENCES studio_variants(id) ON DELETE CASCADE,
+  observation_id text NOT NULL,
+  revision_id text NOT NULL,
+  check_id text,
+  observation_status text NOT NULL,
+  suivi text NOT NULL CONSTRAINT studio_observation_reconciliations_suivi_check
+    CHECK (suivi IN ('objet-disparu', 'persiste', 'a-recontroler', 'non-rapprochable')),
+  elements jsonb NOT NULL,
+  actor_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS studio_observation_reconciliations_variant_idx ON studio_observation_reconciliations(variant_id, created_at);
+CREATE INDEX IF NOT EXISTS studio_observation_reconciliations_observation_idx ON studio_observation_reconciliations(observation_id);
+CREATE OR REPLACE TRIGGER studio_observation_reconciliations_no_update BEFORE UPDATE ON studio_observation_reconciliations
+  FOR EACH ROW EXECUTE FUNCTION studio_observation_event_immutable();
+
 -- ---------------------------------------------------------------------------
 -- Gestion des comptes (docs/workstreams/users-management, Issue #253) — Phase 1.
 -- Additif et idempotent : colonnes avec défaut ou nullables, contraintes posées une seule fois, aucune suppression.

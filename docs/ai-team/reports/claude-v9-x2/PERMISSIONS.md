@@ -50,6 +50,9 @@ chargé de tâche — rôle vérifié ensuite par `lib/studio-observations.ts`, 
 | `PUT /preferences/outils` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | préférences du compte (INV-009) : lecture du projet suffit |
 | `GET /preferences/catalogue` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `GET /publications` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `GET /delegations` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | délégations d'approbation (EX-085) : toutes pour le propriétaire, sinon celles dont on est délégant ou délégué |
+| `POST /delegations` | proprietaire | 404 | 403 | 403 | 403 | admis | admis | admis | 201 | délégation d'approbation (EX-085) : qui détient le droit d'approuver sur la portée ; elle ne modifie aucun contenu, la réservation d'édition ne s'y oppose pas (elle s'oppose à son emploi) |
+| `POST /delegations/:delegationId/revoquer` | acteur | 404 | 403 | 403 | 403 | admis | admis | admis | 200 | révocation motivée : le délégant (propriétaire) ou le propriétaire du projet ; le délégué ne révoque pas |
 | `GET /studies/:studyId/publications` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `POST /studies/:studyId/variants/:variantId/publications` | ecriture | 404 | 403 | admis | 423 | admis | 423 | admis | 201 |  |
 | `GET /studies/:studyId/publications/:publicationId` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
@@ -74,6 +77,8 @@ chargé de tâche — rôle vérifié ensuite par `lib/studio-observations.ts`, 
 | `GET /studies/:studyId/variants/:variantId/observations` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `POST /studies/:studyId/variants/:variantId/observations` | commentaire | 404 | admis | admis | admis | admis | admis | admis | 201 |  |
 | `GET /studies/:studyId/variants/:variantId/observations/:observationId` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `GET /studies/:studyId/variants/:variantId/observations/rapprochements` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | rapprochements consignés (EX-086), audience du fil respectée |
+| `POST /studies/:studyId/variants/:variantId/observations/rapprochements` | ecriture | 404 | 403 | admis | 423 | admis | 423 | admis | 200 | rapprochement sur demande avec la tête (EX-086) : propriétaire ou éditeur ; aucun statut d'observation modifié |
 | `POST /studies/:studyId/variants/:variantId/observations/:observationId/transitions` | acteur | 404 | 403 | admis | 403 | 403 | 403 | 403 | 403 forbidden | corriger : le responsable (éditeur) avec le droit d'écrire, seul |
 | `POST /studies/:studyId/variants/:variantId/observations/:observationId/liens` | acteur | 404 | 403 | admis | 403 | admis | admis | admis | 201 | droit d'écrire et auteur (propriétaire), responsable (éditeur) ou propriétaire |
 | `POST /studies/:studyId/variants/:variantId/observations/:observationId/taches` | acteur | 404 | 403 | admis | 403 | admis | admis | admis | 201 | propriétaire, ou responsable (éditeur) avec le droit d'écrire |

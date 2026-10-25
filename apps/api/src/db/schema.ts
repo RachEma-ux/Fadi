@@ -1271,6 +1271,8 @@ export const studioPublications = pgTable("studio_publications", {
   manifestHash: text("manifest_hash"),
   manifestBuiltAt: timestamp("manifest_built_at", { withTimezone: true }),
   approvedManifestHash: text("approved_manifest_hash"),
+  /** Délégation employée par l'approbation en vigueur (EX-085) ; null : approbation par un droit propre. */
+  approvedDelegationId: text("approved_delegation_id"),
   replacedByPublicationId: text("replaced_by_publication_id"),
   replacedBy: text("replaced_by").references(() => users.id, { onDelete: "restrict" }),
   replacedAt: timestamp("replaced_at", { withTimezone: true }),
@@ -1299,8 +1301,66 @@ export const studioPublicationEvents = pgTable("studio_publication_events", {
   workStatus: text("work_status").$type<StudioPublicationWorkStatus | null>(),
   diffusionStatus: text("diffusion_status").$type<StudioPublicationDiffusionStatus | null>(),
   relatedPublicationId: text("related_publication_id"),
+  /** Délégation employée par cette approbation ou ce refus (EX-085) ; null : droit propre de l'auteur. */
+  delegationId: text("delegation_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("studio_publication_events_publication_idx").on(t.publicationId, t.createdAt)]);
+
+/**
+ * Délégations d'approbation des publications Studio (EX-085, `lib/studio-delegations.ts`) : nominatives (délégant,
+ * délégué), bornées (début inclus, fin exclue), motivées, à portée désignée (projet, étude, variante, publication). Une
+ * délégation n'approuve rien par elle-même ; seule sa révocation (motivée) modifie la ligne. Journal : `studioApprovalDelegationEvents`.
+ */
+export type StudioDelegationScopeType = "projet" | "etude" | "variante" | "publication";
+export const studioApprovalDelegations = pgTable("studio_approval_delegations", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  delegatorId: text("delegator_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  delegateId: text("delegate_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  scopeType: text("scope_type").$type<StudioDelegationScopeType>().notNull(),
+  scopeId: text("scope_id"),
+  startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+  endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
+  reason: text("reason").notNull(),
+  requestId: text("request_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  revokedBy: text("revoked_by").references(() => users.id, { onDelete: "restrict" }),
+  revokeReason: text("revoke_reason"),
+}, (t) => [index("studio_approval_delegations_project_idx").on(t.projectId, t.delegateId)]);
+
+/** Journal append-only (UPDATE refusée par déclencheur, init.sql) des délégations : création, révocation, chaque emploi. */
+export type StudioDelegationEventAction = "creer" | "revoquer" | "employer";
+export const studioApprovalDelegationEvents = pgTable("studio_approval_delegation_events", {
+  id: text("id").primaryKey(),
+  delegationId: text("delegation_id").notNull().references(() => studioApprovalDelegations.id, { onDelete: "cascade" }),
+  action: text("action").$type<StudioDelegationEventAction>().notNull(),
+  actorId: text("actor_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  /** Emploi : publication décidée et transition (`approuver`, `refuser`). */
+  publicationId: text("publication_id"),
+  publicationAction: text("publication_action").$type<"approuver" | "refuser" | null>(),
+  comment: text("comment"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("studio_approval_delegation_events_delegation_idx").on(t.delegationId, t.createdAt)]);
+
+/**
+ * Rapprochements des observations Studio avec une nouvelle révision (EX-086, `lib/studio-observations-rapprochement.ts`) :
+ * un résultat par observation et par contrôle (journal en ajout seul, UPDATE refusée par déclencheur). Le statut de
+ * l'observation n'est jamais modifié ici ; `suivi` = objet-disparu | persiste | a-recontroler | non-rapprochable.
+ */
+export type StudioRapprochementSuivi = "objet-disparu" | "persiste" | "a-recontroler" | "non-rapprochable";
+export const studioObservationReconciliations = pgTable("studio_observation_reconciliations", {
+  id: text("id").primaryKey(),
+  variantId: text("variant_id").notNull().references(() => studioVariants.id, { onDelete: "cascade" }),
+  observationId: text("observation_id").notNull(),
+  revisionId: text("revision_id").notNull(),
+  checkId: text("check_id"),
+  observationStatus: text("observation_status").notNull(),
+  suivi: text("suivi").$type<StudioRapprochementSuivi>().notNull(),
+  elements: jsonb("elements").$type<{ domaine: string; ref: string; issue: string }[]>().notNull(),
+  actorId: text("actor_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("studio_observation_reconciliations_variant_idx").on(t.variantId, t.createdAt), index("studio_observation_reconciliations_observation_idx").on(t.observationId)]);
 /**
  * Préférences d'outils Studio d'un compte (lib/studio-preferences.ts) : profil des barres (`standard`,
  * `metier:<id>`, `personnel`), favoris et liste personnelle, identifiants du registre `STUDIO_TOOLS`. Une ligne par
