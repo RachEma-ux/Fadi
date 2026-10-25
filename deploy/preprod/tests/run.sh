@@ -90,6 +90,8 @@ MUT=(
   "réseau de production externe|    name: fadi-preprod-front|    name: app_default${NL}    external: true"
   "image non autorisée|image: postgis/postgis:16-3.4${NL}    restart|image: postgres:16${NL}    restart"
   "SMTP_PASS donné à la recette (UM-28)|      ARCHIVE_SIGNING_KEY: \${PREPROD_ARCHIVE_SIGNING_KEY}${NL}|      ARCHIVE_SIGNING_KEY: \${PREPROD_ARCHIVE_SIGNING_KEY}${NL}      SMTP_PASS: \${PREPROD_SMTP_PASS:-}${NL}"
+  "contexte de build étranger (image)|        app: service:app|        app: docker-image://node:22"
+  "contexte de build de l'hôte|        app: service:app|        app: service:app${NL}        hote: /etc"
   "volume de production externe|  fadi-preprod-db:${NL}    name: fadi-preprod-db|  fadi-preprod-db:${NL}    name: app_fadi-db${NL}    external: true"
 )
 # D-7 : refus attendus de la garde elle-même (motif exact), pas d'une configuration invalide.
@@ -104,6 +106,8 @@ declare -A MOTIF=(
   ["migrate sur le réseau front"]="attendu internal seul"
   ["migrate sans MIGRATE_ONLY"]="MIGRATE_ONLY=1 exigé"
   ["SMTP_PASS donné à la recette (UM-28)"]="SMTP_PASS réservé au service app"
+  ["contexte de build étranger (image)"]="additional_contexts"
+  ["contexte de build de l'hôte"]="additional_contexts"
 )
 for m in "${MUT[@]}"; do
   # Découpage sans `read` : les motifs contiennent des sauts de ligne (${NL}), que `read` tronquerait.
@@ -121,12 +125,32 @@ attendu 0  "build avec version de l'image" -- fpe MOCK_TRACE="$T/trace-build" bu
 grep ' build app recette$' "$T/trace-build" | grep -Eq "FADI_BUILD_COMMIT=$SHA_CODES FADI_BUILD_DATE=[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z " \
   && { ok=$((ok + 1)); echo "✓ build : commit complet et date UTC fournis à l'image (GET /version)"; } \
   || { ko=$((ko + 1)); echo "✗ arguments de version absents : $(grep ' build ' "$T/trace-build")"; }
+FADI_SRC=$B/src FADI_COMMIT=0123456789ab PREPROD_POSTGRES_PASSWORD=x PREPROD_ARCHIVE_SIGNING_KEY=x PREPROD_FADI_APP_DB_PASSWORD=x \
+  docker compose -f "$B/src/deploy/preprod/compose.yml" --profile recette config --format json 2>/dev/null \
+  | python3 -I -c 'import json, sys; a = json.load(sys.stdin)["services"]["recette"]["build"]["additional_contexts"]; sys.exit(0 if a == {"app": "service:app"} else 1)' \
+  && { ok=$((ok + 1)); echo "✓ compose : la recette reprend les builds de l'image applicative du même commit (service:app)"; } \
+  || { ko=$((ko + 1)); echo "✗ compose : contexte app de la recette absent ou faux"; }
 FADI_SRC=$B/src FADI_COMMIT=x FADI_BUILD_COMMIT=$SHA_CODES FADI_BUILD_DATE=2026-10-20T00:00:00Z PREPROD_POSTGRES_PASSWORD=x PREPROD_ARCHIVE_SIGNING_KEY=x PREPROD_FADI_APP_DB_PASSWORD=x \
   docker compose -f "$B/src/deploy/preprod/compose.yml" config --format json 2>/dev/null \
   | python3 -I -c 'import json, sys; a = json.load(sys.stdin)["services"]["app"]["build"]["args"]; sys.exit(0 if a == {"FADI_COMMIT": sys.argv[1], "FADI_BUILD_DATE": "2026-10-20T00:00:00Z"} else 1)' "$SHA_CODES" \
   && { ok=$((ok + 1)); echo "✓ compose : arguments FADI_COMMIT / FADI_BUILD_DATE transmis au Dockerfile"; } \
   || { ko=$((ko + 1)); echo "✗ compose : arguments de build de l'image absents ou faux"; }
 attendu nz "build en échec → code non nul" "échec simulé (build)" -- fpe MOCK_FAIL=build build
+
+echo "== Nettoyage des images"
+C12=$(git -C "$B/src" rev-parse HEAD | cut -c1-12)
+PREC=1111111111111111111111111111111111111111
+: > "$T/trace-net"
+attendu 0 "nettoyer : anciens commits supprimés" "nettoyage : 4 image(s) supprimée(s)" -- \
+  fpe "MOCK_IMAGES=$C12 111111111111 222222222222 333333333333 latest" MOCK_TRACE="$T/trace-net" nettoyer $PREC
+python3 -I - "$T/trace-net" "$C12" <<'PY' && { ok=$((ok + 1)); echo "✓ nettoyer : commit approuvé et retour arrière gardés, dépôts fadi-preprod seuls, étiquette non-commit ignorée"; } || { ko=$((ko + 1)); echo "✗ nettoyer : suppressions inattendues"; cat "$T/trace-net"; }
+import sys
+rm = sorted(l.split()[-1] for l in open(sys.argv[1]) if " image rm " in l)
+att = sorted(f"{d}:{t}" for d in ("fadi-preprod-app", "fadi-preprod-recette") for t in ("222222222222", "333333333333"))
+sys.exit(0 if rm == att else 1)
+PY
+attendu nz "nettoyer : sha à garder invalide refusé" "sha complet" -- fp nettoyer 1234
+attendu 0 "nettoyer : image en usage conservée sans échec" "conservée (en usage ?)" -- fpe "MOCK_IMAGES=222222222222" MOCK_FAIL=image-rm nettoyer
 attendu 0  "check réussi" -- fp check
 attendu nz "check en échec → code non nul, journal nommé" "journal : check.log" -- fpe MOCK_FAIL=run-check check
 attendu 0  "backup réussi" -- fp backup
@@ -322,12 +346,12 @@ courriel "avec les variables PREPROD_* : SMTP transmis à app seul, SMTP_PASS ja
   PREPROD_MAIL_TRANSPORT=smtp PREPROD_SMTP_USER=noreply@fadimmo.com PREPROD_SMTP_PASS=secret-test "PREPROD_MAIL_FROM=Fadi <noreply@fadimmo.com>" PREPROD_MAIL_DAILY_LIMIT=20
 
 echo "== Liste e2e identique à la CI"
-python3 -I - "$REPO/.github/workflows/ci.yml" "$SCRIPT" <<'PY' && { ok=$((ok + 1)); echo "✓ E2E_DEFAUT = scénarios de la CI, même ordre, sans comptes-* (base jetable)"; } || { ko=$((ko + 1)); echo "✗ E2E_DEFAUT ≠ CI"; }
+python3 -I - "$REPO/.github/workflows/ci.yml" "$SCRIPT" <<'PY' && { ok=$((ok + 1)); echo "✓ E2E_DEFAUT = scénarios de la CI, même ordre, sans comptes-* ni geodata (base jetable)"; } || { ko=$((ko + 1)); echo "✗ E2E_DEFAUT ≠ CI"; }
 import re, sys
 ci = open(sys.argv[1]).read(); order = []
 for m in re.finditer(r'^\s+(?:[A-Z_]+=\S+ )*node apps/web/e2e/([a-z0-9-]+)\.mjs', ci, re.M):
     if m.group(1) not in order: order.append(m.group(1))
-hors = {"comptes-api", "comptes-securite", "comptes-admin"}  # base jetable locale exigée : jamais en préproduction
+hors = {"comptes-api", "comptes-securite", "comptes-admin", "geodata"}  # base jetable exigée : jamais en préproduction
 assert hors <= set(order), "scénarios exclus absents de la CI"
 order = [s for s in order if s not in hors]
 lst = re.search(r'E2E_DEFAUT="([^"]+)"', open(sys.argv[2]).read()).group(1).split()

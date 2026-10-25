@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Recette de la simulation de migration (CI, tranche « complements ») sur une base NEUVE peuplée du jeu synthétique
+ * Recette de la simulation de migration (CI, tranche « organisations ») sur une base NEUVE peuplée du jeu synthétique
  * (`jeu-synthetique.mjs`). Elle prouve que l'outil n'écrit rien et que son rapport dit ce qu'il doit dire :
  *
  * 1. garde : la base ne contient que des projets « SYNTH- » (jamais une base existante) ;

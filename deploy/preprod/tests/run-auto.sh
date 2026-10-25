@@ -64,8 +64,8 @@ pas_de_deploiement() { [ ! -s "$C/mock/fp.trace" ]; }
 echo "== Déploiement nominal"
 cas nominal; en_ligne "$P"; auto
 verifie "nouveau commit à CI verte : déployé (code 0)" test "$RC" = 0
-verifie "séquence sync, build, migrate, up, smoke, e2e court" \
-  test "$(trace)" = "sync $S;build;migrate;up;smoke;e2e sandbox-module parcours-scenario"
+verifie "séquence sync, build, migrate, up, smoke, e2e court, puis nettoyage (précédent $P gardé)" \
+  test "$(trace)" = "sync $S;build;migrate;up;smoke;e2e sandbox-module parcours-scenario;nettoyer $P"
 verifie "fadi-preprod appelé en administrateur (sans SUDO_USER)" bash -c "! grep -v 'SUDO_USER=absent' '$C/mock/fp.trace'"
 verifie "état : succès, commit en ligne et dernier essai = $S" \
   test "$(etat resultat):$(etat en_ligne):$(etat dernier_essai):$(etat etape)" = "succes:$S:$S:fin"
@@ -93,6 +93,10 @@ controles validate:completed:success e2e:in_progress: image:completed:success > 
 verifie "CI en cours : attente (code 0), rien déployé" bash -c "[ $RC = 0 ] && [ ! -s '$C/mock/fp.trace' ]"
 verifie "CI en cours : état attente, commit en ligne inchangé, pas marqué essayé" \
   test "$(etat resultat):$(etat en_ligne):$(etat dernier_essai)" = "attente:$P:$P"
+verifie "CI en cours : exécution retenue dans l'état" test "$(etat ci_sha):$(etat ci_run)" = "$S:7"
+: > "$C/mock/curl.trace"; auto
+verifie "CI toujours en cours : 2 appels (main, jobs de l'exécution retenue), sans relister les exécutions" \
+  bash -c "[ $RC = 0 ] && [ $(appels_api) = 2 ] && ! grep -q 'actions/runs?' '$C/mock/curl.trace' && grep -q 'actions/runs/7/jobs' '$C/mock/curl.trace'"
 controles "${VERTS[@]}" > "$C/checks.json"; auto
 verifie "CI devenue verte : déployé au passage suivant" bash -c "[ $RC = 0 ] && grep -q '^sync $S' '$C/mock/fp.trace'"
 
@@ -101,6 +105,13 @@ controles validate:completed:success e2e:completed:success image:completed:failu
 verifie "CI rouge (image) : refus (code 0), rien déployé" bash -c "[ $RC = 0 ] && [ ! -s '$C/mock/fp.trace' ]"
 verifie "CI rouge : état refus nommant le contrôle" bash -c "[ '$(etat resultat)' = refus ] && grep -q 'image=failure' '$C/base/etat.json'"
 verifie "CI rouge : aucune comparaison demandée (3 appels)" test "$(appels_api)" = 3
+: > "$C/mock/curl.trace"; auto
+verifie "refus récent : revu plus tard, 1 seul appel (main)" \
+  bash -c "[ $RC = 0 ] && [ $(appels_api) = 1 ] && [ '$(etat resultat)' = refus ] && grep -q 'revue au plus tous les 15 min' '$C/sortie'"
+python3 -I -c 'import json, sys; e = json.load(open(sys.argv[1])); e["controle_epoch"] = "0"; json.dump(e, open(sys.argv[1], "w"))' "$C/base/etat.json"
+controles "${VERTS[@]}" > "$C/checks.json"; : > "$C/mock/curl.trace"; auto
+verifie "refus ancien revu : CI relancée et verte → déployé (exécutions relistées)" \
+  bash -c "[ $RC = 0 ] && grep -q '^sync $S' '$C/mock/fp.trace' && grep -q 'actions/runs?' '$C/mock/curl.trace'"
 
 cas annule; en_ligne "$P"
 controles validate:completed:success e2e:completed:cancelled image:completed:success > "$C/checks.json"; auto
@@ -250,10 +261,10 @@ verifie "service : oneshot, script installé, délai borné" \
   bash -c "grep -qx 'Type=oneshot' '$U/fadi-preprod-auto.service' && grep -qx 'ExecStart=/usr/local/sbin/fadi-preprod-auto' '$U/fadi-preprod-auto.service' && grep -q '^TimeoutStartSec=' '$U/fadi-preprod-auto.service'"
 verifie "service : /root en lecture seule sauf l'état du client Docker (buildx)" \
   bash -c "grep -qx 'ProtectHome=read-only' '$U/fadi-preprod-auto.service' && grep -qx 'ReadWritePaths=-/root/.docker' '$U/fadi-preprod-auto.service'"
-verifie "minuteur : toutes les 5 minutes, sur ce service" \
-  bash -c "grep -qx 'OnCalendar=\*:0/5' '$U/fadi-preprod-auto.timer' && grep -qx 'Unit=fadi-preprod-auto.service' '$U/fadi-preprod-auto.timer' && grep -qx 'WantedBy=timers.target' '$U/fadi-preprod-auto.timer'"
+verifie "minuteur : toutes les 3 minutes, sur ce service" \
+  bash -c "grep -qx 'OnCalendar=\*:0/3' '$U/fadi-preprod-auto.timer' && grep -qx 'Unit=fadi-preprod-auto.service' '$U/fadi-preprod-auto.timer' && grep -qx 'WantedBy=timers.target' '$U/fadi-preprod-auto.timer'"
 if command -v systemd-analyze > /dev/null; then
-  verifie "systemd-analyze : calendrier *:0/5 valide" bash -c "systemd-analyze calendar '*:0/5' > /dev/null"
+  verifie "systemd-analyze : calendrier *:0/3 valide" bash -c "systemd-analyze calendar '*:0/3' > /dev/null"
 fi
 
 echo
