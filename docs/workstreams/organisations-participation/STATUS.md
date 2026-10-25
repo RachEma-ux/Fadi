@@ -6,8 +6,8 @@ Mis à jour : 2026-10-25 (UTC).
 
 **Implémenté et fusionné — toutes les phases du plan.** Phases 1, 2, 3 bis et 5 (PR #265, #281), phases 3, 4, 6 et
 reliquats (PR #290, `0ff0638`, CI complète verte sur `866f54d`, suites DB-3 comprises). Recommandations de la recette
-appliquées et lot OP-PONT (retrait du pont) lancé : décision OP-4 du 2026-10-25. Rien n'est accepté ni déployé : 🛑 final
-au maître d'ouvrage.
+appliquées et lot OP-PONT (retrait du pont) lancé : décision OP-4 du 2026-10-25. **Accepté par le maître d'ouvrage le
+2026-10-25 (OP-5, 🛑 final franchi)** ; rien n'est déployé (accord explicite requis).
 
 ## Faits vérifiés
 
@@ -56,9 +56,9 @@ au maître d'ouvrage.
 
 ## Points ouverts
 
-- 🛑 final : acceptation du périmètre livré ; tout déploiement suit [RUNBOOK-deploiement.md](RUNBOOK-deploiement.md).
-- À fournir ou décider par le maître d'ouvrage : avis juridique de la réserve d'OP-2 (avant `CONTACT_RETENTION_ENABLED=1`) ;
-  listes métier OP-D4.
+- OP-5 : réserve juridique levée par le maître d'ouvrage (activation `CONTACT_RETENTION_ENABLED=1` au déploiement) ;
+  listes métier : saisie libre définitive.
+- Déploiement : accord explicite du maître d'ouvrage requis (runbook).
 - Lot OP-PONT (retrait du pont `op_sync_access`) en cours : compte rendu `lot-pont.md` à son terme, PR et CI à suivre.
 
 ## Liens de suivi

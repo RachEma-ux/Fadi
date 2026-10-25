@@ -15,8 +15,8 @@ Mis à jour : 2026-10-25 (UTC).
 ## Prochaine action
 
 - Mener le lot OP-PONT (retrait du pont `op_sync_access`) jusqu'à une PR verte en CI.
-- Puis présenter le 🛑 final au maître d'ouvrage avec [recette-finale.md](recette-finale.md) ; restent : avis juridique
-  (OP-2), listes métier (OP-D4).
+- 🛑 final franchi (OP-5, 2026-10-25). Déploiement : seulement sur accord explicite, selon le runbook (poser
+  `CONTACT_RETENTION_ENABLED=1`).
 
 ## Tests et preuves
 

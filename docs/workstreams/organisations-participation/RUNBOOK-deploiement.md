@@ -168,7 +168,7 @@ Tout ❌ (hors l'exception de comptage ci-dessus) **bloque** le déploiement.
 - La tâche `runContactRetentionJob` tourne **dans l'API**, toutes les heures, avec les autres tâches de fond
   (`startAccountWorkers`), **seulement si `CONTACT_RETENTION_ENABLED=1`** (décision OP-4 du 2026-10-25 : désactivée par
   défaut tant que la réserve juridique d'OP-2 n'est pas levée ; la file des courriels et les suppressions de comptes
-  continuent). **Ne pas poser cette variable en production avant l'avis juridique.** Activée, elle efface un contact sans compte dont **tous** les projets sont clos
+  continuent). **OP-5 (2026-10-25) : réserve levée par le maître d'ouvrage — poser `CONTACT_RETENTION_ENABLED=1` au déploiement.** Activée, elle efface un contact sans compte dont **tous** les projets sont clos
   depuis plus de deux ans (nom remplacé par « Contact effacé », coordonnées supprimées, `erased_at` posé, fiche et
   participations gardées comme trace sans donnée personnelle ; journal `person.contact_erased`).
 - La clôture d'un projet (`projects.closed_at`, « Clore le projet ») est **nouvelle** : aucun projet existant n'est clos à
@@ -337,6 +337,6 @@ En dernier recours : restauration du dump de l'étape 1.1 (`scripts/restore.sh`)
 
 ## 8. Décisions encore ouvertes qui touchent le déploiement
 
-Voir [recette-finale.md](recette-finale.md) § 4 : 🛑 final, réserve juridique d'OP-2 (l'effacement automatique reste
-désactivé, `CONTACT_RETENTION_ENABLED` absent — OP-4), listes métier OP-D4, retrait du pont `op_sync_access` (lot OP-PONT
-en cours). Décidés par OP-4 : durée d'accès de revue par défaut 14 jours, portées étroites conservées telles quelles.
+Décidés : OP-4 (accès de revue 14 jours, portées étroites conservées) et OP-5 (périmètre accepté, réserve d'OP-2 levée —
+`CONTACT_RETENTION_ENABLED=1` au déploiement —, saisie libre définitive des listes métier). Reste : l'accord explicite de
+déploiement, et le lot OP-PONT (retrait du pont `op_sync_access`) en cours.

@@ -77,13 +77,13 @@ Recette finale de bout en bout : [`apps/web/e2e/organisations-participation-fina
 
 ## 4. Décisions encore à prendre par le maître d'ouvrage
 
-1. **🛑 Point d'arrêt final** : acceptation du périmètre livré (phases 1 à 6), après une CI complète verte sur le commit
+1. **🛑 Point d'arrêt final — franchi (OP-5, 2026-10-25)** : acceptation du périmètre livré (phases 1 à 6), après une CI complète verte sur le commit
    final de la branche (aujourd'hui non relancée depuis `0d5bb9b`) ; puis, séparément, autorisation (ou non) d'un
    déploiement en préproduction, puis en production, selon le [runbook](RUNBOOK-deploiement.md).
 2. **Réserve juridique d'OP-2** : avis du conseil juridique sur les obligations de conservation (garantie décennale…)
    avant que l'effacement automatique des contacts (2 ans après la clôture) puisse jouer. **OP-4** : interrupteur propre
-   livré, effacement automatique désactivé par défaut (`CONTACT_RETENTION_ENABLED=1` pour l'activer, après l'avis).
-3. **Listes métier OP-D4** : rôles de participation (rôle métier), types d'organisation, fonctions — aujourd'hui en saisie
+   livré, effacement automatique désactivé par défaut. **OP-5 : réserve levée par le maître d'ouvrage** — activation au déploiement.
+3. **Listes métier OP-D4 — décidé (OP-5) : saisie libre définitive** : rôles de participation (rôle métier), types d'organisation, fonctions — aujourd'hui en saisie
    libre déclarée.
 4. **Durée d'accès de revue par défaut** : **décidée (OP-4)** — 14 jours, prolongeables (≤ 365).
 5. **Portées étroites** ([portees-etroites.md](portees-etroites.md) § 5) : **décidé (OP-4)** — téléchargement par tout rôle
