@@ -283,6 +283,9 @@ export class RevueG1 {
         ...(e.sens === "import" && outils.size ? [`commandes produites : ${[...outils].sort().join(", ")}`] : []),
         ...(entrees.size ? [`entrées typées : ${[...entrees].sort().join(" ; ")}`] : []),
       ];
+      // Code du format qui ne lit que des octets ou une horloge : la source se lit chez ses appelants du dépôt (la
+      // déclaration de premier niveau qui l'appelle, ses champs du document lus et ses entrées typées), jamais supposée.
+      if (!source.length) source.push(...(e.preuves?.code ?? []).flatMap((c) => this.appelants(c.fichier, c.motif)));
       if (!source.length) manques.push("source");
       const versionFormat = e.versionFormat && !/^non évaluée/.test(e.versionFormat) ? e.versionFormat : null;
       const contrat = [`${STUDIO_MATRICE_ECHANGES.schema} révision ${STUDIO_MATRICE_ECHANGES.revision}`, versionFormat ? `format : ${versionFormat}` : "version du format non déclarée", ...(versions.size ? [`contrats atteints : ${[...versions].sort().join(", ")}`] : [])];
@@ -292,6 +295,50 @@ export class RevueG1 {
       if (!trouves.length) manques.push("test");
       return { categorie: "format", id: e.id, groupe: e.famille, source, contrat, test: trouves[0] ? preuve(trouves[0]) : null, controles: distincts(trouves), manques };
     });
+  }
+
+  /**
+   * Appelants de `symbole` (exporté par `fichier`) dans le même espace de code (`…/src/`), hors tests : pour chacun, la
+   * déclaration de premier niveau qui l'appelle, les champs du document lus dans son corps et ses entrées typées.
+   */
+  private appelants(fichier: string, symbole: string): string[] {
+    const cible = this.code.exportee(this.chemin(fichier), symbole) ?? this.code.declaration(this.chemin(fichier), symbole);
+    const i = fichier.indexOf("/src/");
+    if (!cible || i < 0) return [];
+    const racine = this.chemin(fichier.slice(0, i + 5));
+    const fichiers: string[] = [];
+    const parcourir = (d: string): void => {
+      for (const nom of readdirSync(d, { withFileTypes: true })) {
+        const p = join(d, nom.name);
+        if (nom.isDirectory()) parcourir(p);
+        else if (/\.tsx?$/.test(nom.name) && !/\.test\.tsx?$/.test(nom.name)) fichiers.push(p);
+      }
+    };
+    parcourir(racine);
+    const out: string[] = [];
+    for (const f of fichiers.sort()) {
+      const fi = this.code.fichier(f);
+      if (!fi || f === cible.fichier) continue;
+      const locaux = [...fi.imports].filter(([, v]) => v.nom !== "*" && this.code.exportee(v.module, v.nom)?.noeud === cible.noeud).map(([k]) => k);
+      if (!locaux.length) continue;
+      const vus = new Set<string>();
+      const visiter = (n: ts.Node): void => {
+        if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && locaux.includes(n.expression.text)) {
+          const decl = [...fi.declarations].find(([, d]) => d.getStart() <= n.getStart() && n.getEnd() <= d.getEnd());
+          if (decl && !vus.has(decl[0])) {
+            vus.add(decl[0]);
+            const champs = champsLus({ noeuds: [{ fichier: f, noeud: decl[1] }], declarations: new Set() }, CHAMPS_DOCUMENT);
+            const typees = entreesTypees(this.code, f, decl[1]);
+            if (champs.length || typees.length) {
+              out.push(`appelant ${decl[0]} (${this.code.relatif(f)})${champs.length ? ` : StudioDocument : ${champs.join(", ")} (lus)` : ""}${typees.length ? ` ; entrées typées : ${decl[0]}(${typees.join(", ")})` : ""}`);
+            }
+          }
+        }
+        ts.forEachChild(n, visiter);
+      };
+      visiter(fi.source);
+    }
+    return out;
   }
 
   toutes(): Fonction[] { return [...this.outils(), ...this.routes(), ...this.formats()]; }
@@ -315,7 +362,7 @@ function entreesTypees(code: IndexCode, fichier: string, n: ts.Node): string[] {
     v(t);
     return oui;
   };
-  return (f?.parameters ?? []).filter((p) => p.type && duDepot(p.type)).map((p) => `${p.name.getText()}: ${p.type!.getText()}`);
+  return (f?.parameters ?? []).filter((p) => p.type && duDepot(p.type)).map((p) => `${ts.isIdentifier(p.name) ? p.name.text : "{…}"}: ${p.type!.getText()}`);
 }
 
 function skipAs(e: ts.Expression): ts.Expression {

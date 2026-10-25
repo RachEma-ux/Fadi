@@ -26,19 +26,10 @@ const RAPPORT = "docs/workstreams/studio/REVUE-G1-03.md";
 
 /**
  * Écarts réels connus, relevés par la revue et vérifiés à la main dans le dépôt (25 octobre 2026). Une entrée par
- * manque ; la revue échoue si le calcul en trouve un de plus ou un de moins.
+ * manque ; la revue échoue si le calcul en trouve un de plus ou un de moins. `justifie` : manque admis par nature de la
+ * fonction (raison donnée), publié à part des écarts à lever.
  */
-const ECARTS: readonly { manque: Manque; raison: string; ids: readonly string[] }[] = [
-  {
-    manque: "test-fonctionnel",
-    raison: "Route exercée par la seule matrice des droits X.2-02 (statut de la réponse du propriétaire) : aucun test ni aucune recette n'en contrôle le résultat (recherche dans tous les tests et recettes du dépôt, y compris par adresse résolue).",
-    ids: [
-      "GET /dossiers",
-      "GET /studies/:studyId/variants/:variantId/controles/:checkId",
-      "GET /studies/:studyId/variants/:variantId/modeles-externes/:modelId",
-      "GET /studies/:studyId/variants/:variantId/modeles-externes/:modelId/contenu",
-    ],
-  },
+const ECARTS: readonly { manque: Manque; raison: string; ids: readonly string[]; justifie?: true }[] = [
   {
     manque: "contrat-non-versionne",
     raison: "Contrat vérifiable (schéma d'entrée zod ou aucune entrée, besoin de droit épinglé par la matrice X.2-02, test), mais aucun identifiant de contrat versionné n'est atteint par la route : ni l'adresse, ni le corps, ni la réponse ne portent de version (`studio-…/n`). Les routes Studio ne sont pas versionnées en propre (ROUTE-09 arbitre les chemins de l'interface, pas un contrat d'API versionné).",
@@ -100,13 +91,9 @@ const ECARTS: readonly { manque: Manque; raison: string; ids: readonly string[] 
   },
   {
     manque: "source",
-    raison: "Le code du format ne lit qu'un relevé du navigateur (horloge, mesures) : aucune donnée du dépôt, champ du document ou table n'est sa source ; le relevé est un diagnostic, pas une donnée de conception.",
+    justifie: true,
+    raison: "Sans source de modèle, justifié : le relevé de performances (`ReleveurPerf`, appelé nulle part ailleurs que dans son module) ne lit qu'une horloge et les mesures du navigateur (PERF-01 à PERF-10) ; c'est un diagnostic d'exploitation, pas une donnée de conception — aucun champ du document ni aucune table n'en est, ni n'a à en être, la source.",
     ids: ["diagnostic-releve-perf"],
-  },
-  {
-    manque: "source",
-    raison: "Le code du format (`insererTextePng`) ne reçoit que les octets du canevas et du texte : la scène et la révision rendues ne sont pas établies par le code du format (la provenance est un texte inséré, non relu contre la révision).",
-    ids: ["rendu-png"],
   },
 ];
 
@@ -202,7 +189,8 @@ function rapport(fs: readonly Fonction[]): string {
     "  l'outil de lecture ; le document est persisté par révision (`studio_revisions`, route `POST …/commands`). Route :",
     "  tables `studio_*` écrites par le gestionnaire (lues pour un `GET`), à travers `lib/` et le modèle. Format : champs du",
     "  document lus dans le fichier du code cité par la matrice, tables atteintes, commandes produites (import) et entrées",
-    "  typées par une donnée du dépôt.",
+    "  typées par une donnée du dépôt ; si ce code ne lit que des octets ou une horloge, ses appelants du dépôt (déclaration",
+    "  qui l'appelle, champs du document qu'elle lit, entrées typées).",
     "- **Contrat** — outil : version de contrat, schéma de paramètres, sortie, codes de refus et entrée du manifeste",
     "  `studio-tool-manifest/1`. Route : besoin de droit de la matrice X.2-02 (`docs/ai-team/reports/claude-v9-x2/PERMISSIONS.md`,",
     "  épinglée par son test), schémas zod d'entrée atteints, identifiants de contrats versionnés atteints. Format : version",
@@ -227,7 +215,12 @@ function rapport(fs: readonly Fonction[]): string {
     "",
     "Liste **exacte** (le test échoue sur un écart de plus ou de moins). Aucun n'est corrigé par cette revue.",
     "",
-    ...ECARTS.flatMap((e) => [`### ${LIBELLE_MANQUE[e.manque]} (${e.ids.length})`, "", e.raison, "", ...e.ids.map((id) => `- \`${id}\``), ""]),
+    ...ECARTS.filter((e) => !e.justifie).flatMap((e) => [`### ${LIBELLE_MANQUE[e.manque]} (${e.ids.length})`, "", e.raison, "", ...e.ids.map((id) => `- \`${id}\``), ""]),
+    "## Manques justifiés",
+    "",
+    "Manques admis par la nature de la fonction, avec leur raison (comptés dans la liste exacte ci-dessus par le test).",
+    "",
+    ...ECARTS.filter((e) => e.justifie).flatMap((e) => [`### ${LIBELLE_MANQUE[e.manque]} — justifié (${e.ids.length})`, "", e.raison, "", ...e.ids.map((id) => `- \`${id}\``), ""]),
   ];
   for (const c of ["outil", "route", "format"] as const) {
     lignes.push(`## ${TITRES[c]} (${n(c)})`, "", "| Fonction | Groupe | Source de vérité | Contrat | Test (fichier — libellé) | Écart |", "|---|---|---|---|---|---|");
