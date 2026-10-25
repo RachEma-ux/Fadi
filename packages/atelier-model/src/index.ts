@@ -3,6 +3,7 @@ export * from "./studio/document-2d.js";
 export * from "./studio/courbes.js";
 export * from "./studio/registry.js";
 export * from "./studio/manifeste-outils.js";
+export * from "./studio/couverture-3d.js";
 export * from "./studio/history.js";
 export * from "./studio/export.js";
 export * from "./studio/mesh-3d.js";
