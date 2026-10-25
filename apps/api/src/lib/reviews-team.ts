@@ -111,16 +111,23 @@ async function summaries(q: Querier, access: AccessibleProject, rows: PackageRow
   if (!rows.length) return [];
   const ids = rows.map((r) => r.id);
   const assignments = await q.select().from(reviewAssignments).where(inArray(reviewAssignments.packageId, ids));
-  const findings = await findingsOf(q, ids);
+  // Constats hérités (revue Codex, PR #290) : une version suit aussi les constats encore ouverts des versions précédentes
+  // de sa lignée, comme l'espace du relecteur, qui les lui oppose avant une réponse satisfaisante.
+  const lineagePackages = await q.select({ id: reviewPackages.id, lineageId: reviewPackages.lineageId, version: reviewPackages.version, status: reviewPackages.status })
+    .from(reviewPackages).where(inArray(reviewPackages.lineageId, [...new Set(rows.map((r) => r.lineageId))]));
+  const findings = await findingsOf(q, lineagePackages.map((p) => p.id));
+  const lineageScope = (r: PackageRow) => new Set(lineagePackages
+    .filter((p) => p.lineageId === r.lineageId && p.version <= r.version && (p.id === r.id || p.status !== "brouillon")).map((p) => p.id));
   const pubs = new Map<string, PublicationReviewState | null>();
   for (const id of [...new Set(rows.map((r) => r.publicationId))]) pubs.set(id, await publicationReviewState(q, access, id, access.id));
   const now = new Date();
   return rows.map((r) => {
     const pub = pubs.get(r.publicationId) ?? null;
+    const scope = lineageScope(r);
     return {
       id: r.id, lineageId: r.lineageId, version: r.version, title: r.title, status: r.status, dueOn: r.dueOn, publicationId: r.publicationId, studyId: r.studyId, variantId: r.variantId,
       supersedes: r.supersedesPackageId, replacedBy: r.replacedByPackageId, sharedAt: r.sharedAt?.toISOString() ?? null, createdAt: r.createdAt.toISOString(),
-      followUp: followUp({ packageStatus: r.status, dueOn: r.dueOn, assignments: assignments.filter((a) => a.packageId === r.id), findings: findings.filter((f) => f.packageId === r.id), decision: decisionOf(r, pub), now }),
+      followUp: followUp({ packageStatus: r.status, dueOn: r.dueOn, assignments: assignments.filter((a) => a.packageId === r.id), findings: findings.filter((f) => scope.has(f.packageId)), decision: decisionOf(r, pub), now }),
       publication: pub ? { title: pub.title, workStatus: pub.workStatus, diffusionStatus: pub.diffusionStatus, freshness: pub.freshness, manifestHash: pub.manifestHash, revisionId: pub.revisionId } : null,
     };
   });

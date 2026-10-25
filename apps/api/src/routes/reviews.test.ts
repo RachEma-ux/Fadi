@@ -130,6 +130,18 @@ describe("revue externe : accès borné au paquet", () => {
     expect(summary.followUp.overdue).toBe(1);
     expect(summary.followUp.approved).toBe(false);
   });
+
+  it("une relecture déjà rendue reste révocable : accès retiré, résultat conservé (revue Codex PR #290)", async () => {
+    const s = await setup();
+    await s.rex.client.post("/auth/invitations/accept").send({ token: tokenOf(s.linkRex) });
+    expect((await s.rex.client.post(`/reviews/${s.p1}/response`).send({ result: "satisfaisante" })).status).toBe(200);
+    expect((await s.alice.client.post(`/projects/${s.pid}/reviews/${s.p1}/assignments/${s.aRexId}/revoke`).send({ reason: "Fin de mission" })).status).toBe(200);
+    expect((await s.rex.client.get(`/reviews/${s.p1}`)).status).toBe(404);
+    const row = (await pool.query("SELECT status, result, revoked_at FROM review_assignments WHERE id = $1", [s.aRexId])).rows[0];
+    expect(row.status).toBe("annulee");
+    expect(row.result).toBe("satisfaisante");
+    expect(row.revoked_at).not.toBeNull();
+  });
 });
 
 describe("revue externe : constats, nouvelle version, approbation nommée, diffusion conforme", () => {

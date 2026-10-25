@@ -35,7 +35,7 @@ import { randomToken, sha256Hex } from "./security/tokens.js";
 import { invitationRefusal, INVITATION_REFUSAL_MESSAGE, participationRefusal, type InvitationRefusal, type ParticipationRefusal } from "./security/invitation-rules.js";
 import { normalizeEmail } from "./participants.js";
 import {
-  narrowScopes, previewWarnings, projectRoleFor, proposedRolesFrom, proposedRolesValid, resultingAccess, rolesToAttribute, targetRefusal,
+  memberChangeProblem, narrowScopes, previewWarnings, projectRoleFor, proposedRolesFrom, proposedRolesValid, resultingAccess, rolesToAttribute, targetRefusal,
   type InvitationPreview, type InvitationTarget,
 } from "./project-invitations.js";
 import type { Tx } from "./step-rows.js";
@@ -150,7 +150,9 @@ export async function previewProjectInvitation(q: Querier, d: InvitationDraft, n
     roles: d.roles, baseRole, access: resultingAccess(d.roles, { now }), narrowScopes: narrowScopes(d.roles),
     invitationExpiresAt: d.invitationExpiresAt.toISOString(), accessExpiresAt: d.accessExpiresAt?.toISOString() ?? null,
     warnings: previewWarnings({ roles: d.roles, invitationExpiresAt: d.invitationExpiresAt, accessExpiresAt: d.accessExpiresAt, target: resolved.target }),
-    blocking: resolved.blocking ?? await proposedScopesProblem(q, d.projectId, d.roles),
+    blocking: resolved.blocking
+      ?? (resolved.target.kind === "membre" ? memberChangeProblem(d.roles, d.accessExpiresAt) : null)
+      ?? await proposedScopesProblem(q, d.projectId, d.roles),
   };
 }
 

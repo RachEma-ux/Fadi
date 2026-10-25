@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import {
-  invitationExpiry, narrowScopes, parseAccessExpiry, previewWarnings, projectRoleFor, proposedRolesFrom, proposedRolesValid, resultingAccess,
+  invitationExpiry, memberChangeProblem, narrowScopes, parseAccessExpiry, previewWarnings, projectRoleFor, proposedRolesFrom, proposedRolesValid, resultingAccess,
   rolesToAttribute, targetRefusal,
 } from "./project-invitations.js";
 import { participationRefusal, invitationRefusal, INVITATION_REFUSAL_MESSAGE } from "./security/invitation-rules.js";
@@ -79,6 +79,16 @@ describe("échéances indépendantes", () => {
     const roles = proposedRolesFrom({ roles: [{ role: "lecteur" }, { role: "relecteur", scopeType: "etude", scopeId: "E" }] }).roles;
     const w = previewWarnings({ roles, invitationExpiresAt: new Date("2026-11-01"), accessExpiresAt: new Date("2026-10-28"), target: { kind: "membre", participationId: null } });
     expect(w).toHaveLength(3);
+  });
+});
+
+describe("compte déjà membre : seul le rôle de partage se change par l'envoi", () => {
+  it("rôle de base seul : accepté ; rôle complémentaire ou échéance d'accès : refus explicite, jamais ignorés", () => {
+    expect(memberChangeProblem([{ role: "lecteur", scopeType: "projet", scopeId: null }], null)).toBeNull();
+    expect(memberChangeProblem([{ role: "concepteur", scopeType: "projet", scopeId: null }], null)).toBeNull();
+    expect(memberChangeProblem([{ role: "lecteur", scopeType: "projet", scopeId: null }, { role: "approbateur", scopeType: "projet", scopeId: null }], null)).toMatch(/Équipe et participants/);
+    expect(memberChangeProblem([{ role: "lecteur", scopeType: "projet", scopeId: null }, { role: "concepteur", scopeType: "etude", scopeId: "etude-1" }], null)).not.toBeNull();
+    expect(memberChangeProblem([{ role: "lecteur", scopeType: "projet", scopeId: null }], new Date("2026-12-31T23:59:59Z"))).toMatch(/échéance d’accès/);
   });
 });
 

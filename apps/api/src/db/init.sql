@@ -1986,14 +1986,27 @@ CREATE TABLE IF NOT EXISTS review_assignments (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   -- Le résultat (constats / revue satisfaisante) est celui d'une relecture terminée ; l'approbation s'enregistre par les
-  -- transitions Studio (aucun statut d'approbation concurrent).
-  CONSTRAINT review_assignments_result_check CHECK (result IS NULL OR (responsibility = 'relecture' AND status IN ('terminee', 'remplacee'))),
+  -- transitions Studio (aucun statut d'approbation concurrent). Une relecture terminée puis révoquée (`annulee`) garde
+  -- son résultat : la révocation coupe l'accès sans effacer la réponse rendue.
+  CONSTRAINT review_assignments_result_check CHECK (result IS NULL OR (responsibility = 'relecture' AND status IN ('terminee', 'remplacee', 'annulee'))),
   CONSTRAINT review_assignments_revoked_check CHECK ((revoked_at IS NULL) = (revoked_by IS NULL) AND (revoked_at IS NULL OR status = 'annulee'))
 );
 CREATE UNIQUE INDEX IF NOT EXISTS review_assignments_current_unique ON review_assignments (package_id, participation_id, responsibility)
   WHERE status NOT IN ('annulee', 'remplacee');
 CREATE INDEX IF NOT EXISTS review_assignments_user_idx ON review_assignments (user_id) WHERE user_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS review_assignments_package_idx ON review_assignments (package_id);
+-- Bases créées avant le correctif (revue Codex, PR #290) : la contrainte du résultat n'admettait pas `annulee`, si bien
+-- qu'une relecture terminée ne pouvait plus être révoquée (transaction annulée, accès maintenu). Remplacée une seule fois,
+-- reconnue à sa définition.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'review_assignments_result_check'
+             AND conrelid = 'public.review_assignments'::regclass AND pg_get_constraintdef(oid) NOT LIKE '%annulee%') THEN
+    ALTER TABLE review_assignments DROP CONSTRAINT review_assignments_result_check;
+    ALTER TABLE review_assignments ADD CONSTRAINT review_assignments_result_check
+      CHECK (result IS NULL OR (responsibility = 'relecture' AND status IN ('terminee', 'remplacee', 'annulee')));
+  END IF;
+END $$;
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'review_assignments_invitation_fk') THEN

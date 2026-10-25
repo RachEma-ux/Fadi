@@ -118,6 +118,12 @@ try {
   await client.query(assign('rv_a2', {}));
   await client.query("INSERT INTO auth.invitations (id, purpose, email, token_hash, invited_by, expires_at, review_assignment_id) VALUES ('rv_inv2', 'review_package', 'rv_ext@invalid', 'h_rv_inv2', 'rv_owner', now() + interval '7 days', 'rv_a2')");
   ok('une même adresse invitée sur deux affectations (relecture et approbation)');
+  // Revue Codex de la PR #290 : une relecture terminée (résultat rendu) reste révocable — l'accès cesse, le résultat reste.
+  await client.query("UPDATE review_assignments SET status = 'terminee', result = 'constats', responded_at = now() WHERE id = 'rv_a1'");
+  await client.query("UPDATE review_assignments SET status = 'annulee', revoked_at = now(), revoked_by = 'rv_owner' WHERE id = 'rv_a1'");
+  const revoked = await one("SELECT status, result FROM review_assignments WHERE id = 'rv_a1'");
+  check(revoked.status === 'annulee' && revoked.result === 'constats', 'relecture terminée puis révoquée : accès annulé, résultat conservé', revoked);
+  await client.query("UPDATE review_assignments SET status = 'en-attente', result = NULL, responded_at = NULL, revoked_at = NULL, revoked_by = NULL WHERE id = 'rv_a1'");
   await rejects('deux invitations en attente pour la même affectation', "INSERT INTO auth.invitations (id, purpose, email, token_hash, invited_by, expires_at, review_assignment_id) VALUES ('rv_x', 'review_package', 'rv_ext@invalid', 'h_x', 'rv_owner', now() + interval '7 days', 'rv_a1')");
   await rejects('fil « revue » sans paquet', "INSERT INTO studio_comments (id, variant_id, author_id, body, audience) VALUES ('rv_x', 'rv_v', 'rv_ext', 'x', 'revue')", 'studio_comments_review_check');
   await rejects('paquet sur un fil de l\'équipe', "INSERT INTO studio_comments (id, variant_id, author_id, body, audience, review_package_id) VALUES ('rv_x', 'rv_v', 'rv_ext', 'x', 'equipe', 'rv_k1')", 'studio_comments_review_check');

@@ -57,7 +57,7 @@ import { audit, clientIp } from "../lib/audit.js";
 import { formatDate, mailLocale, PUBLIC_PATHS, publicLink, sendAccountMail } from "../lib/account.js";
 import { invitationView } from "../lib/invitations.js";
 import { accountByEmail, createProjectInvitation, previewProjectInvitation, proposedScopesProblem, resolveInvitationTarget } from "../lib/project-invitations-db.js";
-import { invitationExpiry, parseAccessExpiry, projectRoleFor, proposedRolesFrom } from "../lib/project-invitations.js";
+import { invitationExpiry, memberChangeProblem, parseAccessExpiry, projectRoleFor, proposedRolesFrom } from "../lib/project-invitations.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { projectOr404, type ProjectRole } from "../lib/owned-project.js";
 import { lockProject } from "../lib/step-rows.js";
@@ -253,6 +253,12 @@ membersRouter.post("/", async (req, res) => {
   }
   if (resolved.target.kind === "membre" && account) {
     // Déjà membre : changement du rôle de partage, sans invitation (le changement de rôle d'un membre reste direct).
+    // Rôles complémentaires ou échéance d'accès : non appliqués ici, donc refusés explicitement (l'aperçu dit de même).
+    const unsupported = memberChangeProblem(input.roles, input.accessExpiresAt);
+    if (unsupported) {
+      res.status(422).json({ error: "member_settings_unsupported", message: unsupported });
+      return;
+    }
     const role = projectRoleFor(input.roles);
     const outcome = await db.transaction(async (tx) => {
       const [before] = await lockedMember(tx, project.id, account.id);

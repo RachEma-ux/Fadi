@@ -62,6 +62,17 @@ export function rolesToAttribute(roles: readonly ProposedRole[], baseRole: "lect
   return roles.filter((r) => !(r.scopeType === "projet" && r.role === mirror));
 }
 
+/**
+ * Compte déjà membre : l'envoi ne change que son rôle de partage (Lecteur ou Concepteur à la portée projet). Des rôles
+ * complémentaires ou une échéance d'accès ne seraient pas appliqués : refus explicite plutôt qu'un aperçu trompeur
+ * (les rôles s'attribuent depuis « Équipe et participants », l'échéance depuis la ligne du membre).
+ */
+export function memberChangeProblem(roles: readonly ProposedRole[], accessExpiresAt: Date | null): string | null {
+  const extra = rolesToAttribute(roles, projectRoleFor(roles));
+  if (!extra.length && !accessExpiresAt) return null;
+  return "Ce compte a déjà accès au projet : seul son rôle de partage (Lecteur ou Concepteur) se change ici. Attribuez les autres rôles depuis « Équipe et participants » et l’échéance d’accès depuis la ligne du membre.";
+}
+
 /** Rôles de portée étroite : enregistrés et affichés, sans droit (phase 2, échec fermé). */
 export const narrowScopes = (roles: readonly ProposedRole[]): ProposedRole[] => roles.filter((r) => r.scopeType !== "projet");
 
