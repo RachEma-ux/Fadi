@@ -70,10 +70,10 @@ Recette finale de bout en bout : [`apps/web/e2e/organisations-participation-fina
 | phase-2.md | Administration déléguée de projet non décidée : écritures de participation au propriétaire seul. |
 | [phase-3.md](phase-3.md) | Acceptation depuis la notification : adresse vérifiée exigée (`email_unverified`). Raccourcis Ctrl+Alt+Maj+' \ ` (chiffres pris). Revalidation des « restrictions » limitée au statut, à l'échéance et aux rôles. |
 | [phase-3bis.md](phase-3bis.md) | Route `GET /auth/me/history` (au lieu de `/account/history`) ; aucun export du journal (UM-20 ne le définit pas) ; « Mon historique » d'un invité externe montre aussi les actions visant son compte (à confirmer). |
-| [phase-4.md](phase-4.md) | Délégation d'un destinataire absent = révocation + nouvelle affectation ; exception autorisée non livrée ; durée d'accès de revue par défaut 30 jours (déclarée) ; fils `revue` et tables de revue non archivés (archive de projet). |
+| [phase-4.md](phase-4.md) | Délégation d'un destinataire absent = révocation + nouvelle affectation ; exception autorisée non livrée ; durée d'accès de revue par défaut 14 jours (OP-4) ; fils `revue` et tables de revue non archivés (archive de projet). |
 | [phase-5.md](phase-5.md), [phase-5-reliquats.md](phase-5-reliquats.md) | Mandat sans droit de projet ; gabarit = fiches contact, rôles jamais accordés ; droits par groupe et administration déléguée fine non livrés ; aucun raccourci propre aux actions de l'écran Organisations ; pas de bouton « déclarer » côté projet ; invitation de projet du représentant mandaté depuis l'annuaire : raccordée en parallèle par un autre lot (hors phase 6). |
 | [portees-etroites.md](portees-etroites.md) | Tout rôle de portée `documents` télécharge ces documents (Lecteur compris) ; Concepteur d'étude sans export ; auto-contrôle non identifié ; messages 403 génériques ; Atelier sans portée étroite (modèle unique). |
-| phase 6 (ce lot) | Aucun interrupteur propre à la tâche de conservation des contacts (seul `ACCOUNT_WORKERS=0`, qui coupe aussi les courriels) ; les scripts `*-migration-check.mjs` ne se lancent pas en production (ils écrivent dans des transactions annulées et refusent une base non locale) : le contrôle de production est le script en lecture seule. |
+| phase 6 (ce lot) | Interrupteur propre à la tâche de conservation des contacts : `CONTACT_RETENTION_ENABLED` (OP-4, désactivée par défaut) ; les scripts `*-migration-check.mjs` ne se lancent pas en production (ils écrivent dans des transactions annulées et refusent une base non locale) : le contrôle de production est le script en lecture seule. |
 
 ## 4. Décisions encore à prendre par le maître d'ouvrage
 
@@ -81,15 +81,15 @@ Recette finale de bout en bout : [`apps/web/e2e/organisations-participation-fina
    final de la branche (aujourd'hui non relancée depuis `0d5bb9b`) ; puis, séparément, autorisation (ou non) d'un
    déploiement en préproduction, puis en production, selon le [runbook](RUNBOOK-deploiement.md).
 2. **Réserve juridique d'OP-2** : avis du conseil juridique sur les obligations de conservation (garantie décennale…)
-   avant que l'effacement automatique des contacts (2 ans après la clôture) puisse jouer ; et, au besoin, demande d'un
-   interrupteur propre à cette tâche.
+   avant que l'effacement automatique des contacts (2 ans après la clôture) puisse jouer. **OP-4** : interrupteur propre
+   livré, effacement automatique désactivé par défaut (`CONTACT_RETENTION_ENABLED=1` pour l'activer, après l'avis).
 3. **Listes métier OP-D4** : rôles de participation (rôle métier), types d'organisation, fonctions — aujourd'hui en saisie
    libre déclarée.
-4. **Durée d'accès de revue par défaut** : 30 jours (≤ 365), choisie par la phase 4 sans décision du maître d'ouvrage.
-5. **Portées étroites à arbitrer** ([portees-etroites.md](portees-etroites.md) § 5) : téléchargement par tout rôle de
-   portée `documents`, export du Concepteur d'étude, auto-contrôle, Atelier sans portée, messages de refus.
-6. **Retrait du pont `op_sync_access`** : lot dédié (remplacer `project_members` par une vue de compatibilité, réécrire
-   les écritures et les suites DB-3), à décider et à vérifier en CI.
-7. À confirmer (phase 3 bis) : un invité externe voit-il dans « Mon historique » les actions qui visent son compte ?
+4. **Durée d'accès de revue par défaut** : **décidée (OP-4)** — 14 jours, prolongeables (≤ 365).
+5. **Portées étroites** ([portees-etroites.md](portees-etroites.md) § 5) : **décidé (OP-4)** — téléchargement par tout rôle
+   de portée `documents` conservé, pas d'export pour un Concepteur d'étude ; restent ouverts : auto-contrôle (séparation
+   des responsabilités, lot ultérieur), messages de refus nommant la portée.
+6. **Retrait du pont `op_sync_access`** : **lancé (OP-4)**, lot OP-PONT ([lot-pont.md](lot-pont.md) à son terme), vérifié en CI.
+7. **Décidé (OP-4)** : un invité externe voit dans « Mon historique » ses actions et celles qui visent son compte (administrateur anonyme).
 8. Hors priorité, sur besoin : transfert accepté par le successeur (C2-06), affectations de travail et délégation
    (C3-08), finalités `restricted_resource` et `live_session` (OP-D11).

@@ -5,7 +5,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import {
-  contactDetailsFor, contactProblems, contactRetentionDue, deriveAccess, normalizeName, participationImpact, roleAssignmentRefusal, statusChangeRefusal,
+  contactDetailsFor, contactProblems, contactRetentionDue, contactRetentionEnabled, deriveAccess, normalizeName, participationImpact, roleAssignmentRefusal, statusChangeRefusal,
   type AccessInput,
 } from "./participants.js";
 import { accessAllows } from "./owned-project.js";
@@ -97,6 +97,13 @@ describe("Contacts sans compte (OP-D9)", () => {
     expect(contactRetentionDue({ hasAccount: false, erasedAt: null, projectsClosedAt: [] }, now)).toBe(true);
     expect(contactRetentionDue({ hasAccount: true, erasedAt: null, projectsClosedAt: [closed] }, now)).toBe(false);
     expect(contactRetentionDue({ hasAccount: false, erasedAt: now, projectsClosedAt: [closed] }, now)).toBe(false);
+  });
+
+  it("effacement automatique désactivé sauf activation explicite (OP-4, réserve juridique d'OP-2)", () => {
+    expect(contactRetentionEnabled({})).toBe(false);
+    expect(contactRetentionEnabled({ CONTACT_RETENTION_ENABLED: "0" })).toBe(false);
+    expect(contactRetentionEnabled({ CONTACT_RETENTION_ENABLED: "true" })).toBe(false);
+    expect(contactRetentionEnabled({ CONTACT_RETENTION_ENABLED: "1" })).toBe(true);
   });
 });
 

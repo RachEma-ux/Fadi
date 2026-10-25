@@ -4,9 +4,10 @@ Mis à jour : 2026-10-25 (UTC).
 
 ## État
 
-**Implémenté — toutes les phases du plan.** Phases 1, 2, 3 bis et 5 fusionnées dans `main` (PR #265, #281). Phases 3, 4, 6 et
-reliquats sur la PR #290 (branche `ccr-3b26a9f6-z073dc`), vérifiés en local ; CI de la PR à relever. Rien n'est accepté ni
-déployé : 🛑 final au maître d'ouvrage.
+**Implémenté et fusionné — toutes les phases du plan.** Phases 1, 2, 3 bis et 5 (PR #265, #281), phases 3, 4, 6 et
+reliquats (PR #290, `0ff0638`, CI complète verte sur `866f54d`, suites DB-3 comprises). Recommandations de la recette
+appliquées et lot OP-PONT (retrait du pont) lancé : décision OP-4 du 2026-10-25. Rien n'est accepté ni déployé : 🛑 final
+au maître d'ouvrage.
 
 ## Faits vérifiés
 
@@ -47,23 +48,23 @@ déployé : 🛑 final au maître d'ouvrage.
   par la garde), build, migrations ×2 sur base neuve et existante, contrôles `*-migration-check.mjs`, script
   post-déploiement « conforme » ; recettes `invitations-participation` 107, `revue-externe` 132, `portees-etroites` 87,
   `organisations` 182, `organisations-participation-final` 155, `participants` 92, `collaboration-support-telephone` 5.
-  **DB-3 de ces lots : non exécutées localement (CI seulement).** Matrice des exigences : [recette-finale.md](recette-finale.md).
+  Suites DB-3 de ces lots : **vertes en CI** sur `866f54d` (PR #290). Matrice des exigences : [recette-finale.md](recette-finale.md).
+- OP-4 (2026-10-25) appliquée : durée d'accès de revue par défaut 14 jours ; effacement automatique des contacts désactivé
+  par défaut (`CONTACT_RETENTION_ENABLED=1` pour l'activer après l'avis juridique) ; tests purs ajoutés.
 - Écarts déclarés : pont `op_sync_access` conservé (lot dédié OP-PONT) ; acceptation dans l'application réservée aux adresses
-  vérifiées ; durée d'accès de revue par défaut 30 jours (valeur d'implémentation) ; séparation des responsabilités non
-  modélisée ; raccourcis des Participants en Ctrl+Alt+Maj (Alt+Maj saturé).
+  vérifiées (conservée, OP-4) ; séparation des responsabilités non modélisée (lot ultérieur, OP-4) ; raccourcis des Participants en Ctrl+Alt+Maj (Alt+Maj saturé).
 
 ## Points ouverts
 
 - 🛑 final : acceptation du périmètre livré ; tout déploiement suit [RUNBOOK-deploiement.md](RUNBOOK-deploiement.md).
-- À décider par le maître d'ouvrage : réserve juridique d'OP-2 (aucun interrupteur propre à la tâche de conservation hors
-  `ACCOUNT_WORKERS=0`) ; listes métier OP-D4 ; durée d'accès de revue par défaut ; portées étroites (téléchargement par un
-  Lecteur à portée documents, pas d'export pour un Concepteur d'étude) ; retrait du pont ; contenu de « Mon historique » d'un
-  invité externe.
+- À fournir ou décider par le maître d'ouvrage : avis juridique de la réserve d'OP-2 (avant `CONTACT_RETENTION_ENABLED=1`) ;
+  listes métier OP-D4.
+- Lot OP-PONT (retrait du pont `op_sync_access`) en cours : compte rendu `lot-pont.md` à son terme, PR et CI à suivre.
 
 ## Liens de suivi
 
 - Issue : [#262](https://github.com/RachEma-ux/Fadi/issues/262).
-- Branche : `ccr-3b26a9f6-z073dc`. PR #263 (cadrage), #265 (phase 1), #281 (phases 2, 3 bis, 5) fusionnées ; PR [#290](https://github.com/RachEma-ux/Fadi/pull/290) (phases 3, 4, 6, reliquats) ouverte.
+- Branche : `ccr-3b26a9f6-z073dc`. PR #263 (cadrage), #265 (phase 1), #281 (phases 2, 3 bis, 5) fusionnées ; PR [#290](https://github.com/RachEma-ux/Fadi/pull/290) (phases 3, 4, 6, reliquats) fusionnée le 2026-10-25.
   Le commit était d'abord poussé sur la PR #259, fusionnée avec sa tête précédente sans lui : il est rebasé sur `main`.
 
 ## Préconditions de clôture
