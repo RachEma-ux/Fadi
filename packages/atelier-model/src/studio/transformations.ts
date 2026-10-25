@@ -194,5 +194,7 @@ export function studioTransformerSolide(s: StudioSolid, t: StudioTransformation,
     return { ...s, id, placement: { origin: place(depart), rotation: rot }, width: s.width * k, depth: s.depth * k, height: s.height * k };
   }
   const profile = s.profile.map((p) => P(p.x * k, (t.miroir ? -p.y : p.y) * k));
-  return { ...s, id, placement: { origin: place(origin), rotation: rot }, profile, height: s.height * k };
+  // Direction saisie (lot F1, repère local) : une symétrie la réfléchit comme le profil (y local opposé).
+  const direction = s.direction && t.miroir ? { direction: { ...s.direction, y: s.direction.y === 0 ? 0 : -s.direction.y } } : {};
+  return { ...s, id, placement: { origin: place(origin), rotation: rot }, profile, height: s.height * k, ...direction };
 }

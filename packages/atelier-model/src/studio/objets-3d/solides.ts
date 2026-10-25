@@ -45,6 +45,39 @@ export interface StudioBox {
   height: number;
 }
 
+/**
+ * Relation d'un prisme à la polyligne fermée dont son profil vient (lot F1, TEST-006 / A.4-02 / TR-EX-006), choisie
+ * explicitement à la création, jamais déduite :
+ * - `reference-liee` : le profil suit la source ; toute modification de la polyligne recalcule le prisme dans le même
+ *   lot ; une source supprimée ou devenue invalide (ouverte, croisée) laisse le prisme « à résoudre » ;
+ * - `associe` : le lien est gardé et contrôlé, mais rien n'est recalculé seul : une source modifiée, supprimée ou
+ *   invalide laisse le prisme « à résoudre » jusqu'à sa mise à jour ou son détachement explicites
+ *   (`studio.solide.resoudre`) ;
+ * - `copie-independante` : le profil a été copié ; la source n'est qu'une provenance, aucune propagation.
+ * Un prisme lié (`reference-liee`, `associe`) a son emprise en plan égale à la source : origine au premier sommet du
+ * contour, profil relatif à lui, rotation nulle ; seules sa cote, sa hauteur et sa direction lui sont propres.
+ */
+export const STUDIO_RELATIONS_SOURCE = Object.freeze(["associe", "reference-liee", "copie-independante"] as const);
+export type StudioRelationSource = (typeof STUDIO_RELATIONS_SOURCE)[number];
+export interface StudioSourceSolide {
+  /** Identifiant de la polyligne fermée source (`objects`). */
+  objectId: string;
+  relation: StudioRelationSource;
+}
+
+/**
+ * État dérivé du lien d'un prisme à sa source (jamais stocké : relu du document à chaque lecture) :
+ * `a-jour` (emprise égale à la source), `independant` (copie indépendante), `a-resoudre` avec son motif — la géométrie
+ * affichée est alors la dernière connue et ses quantités ne sont pas évaluées.
+ */
+export type StudioMotifLien = "source-absente" | "source-invalide" | "source-modifiee";
+export interface StudioLienSolide {
+  objectId: string;
+  relation: StudioRelationSource;
+  etat: "a-jour" | "independant" | "a-resoudre";
+  motif?: StudioMotifLien;
+}
+
 export interface StudioProfilePrism {
   id: string;
   type: "prism";
@@ -52,10 +85,22 @@ export interface StudioProfilePrism {
   placement: StudioPlacement3d;
   /** Profil fermé simple, coordonnées locales du plan (avant placement). */
   profile: StudioPoint[];
+  /** Longueur d'extrusion le long de `direction` (normale du plan : hauteur), strictement positive. */
   height: number;
+  /**
+   * Direction d'extrusion saisie (lot F1, TEST-005 / A.4-07), dans le repère local du solide (avant la rotation de
+   * placement) : vecteur fini, non nul, de composante z non nulle (un vecteur dans le plan du profil donnerait un volume
+   * nul). Seule sa direction compte (normalisée au calcul). Absente : +z, sens des documents antérieurs au lot F1.
+   */
+  direction?: StudioPoint3;
+  /** Profil venu d'une polyligne, avec sa relation explicite (absente : profil saisi directement). */
+  source?: StudioSourceSolide;
 }
 
 export type StudioSolid = StudioBox | StudioProfilePrism;
+
+/** Face d'un solide libre : plan du profil, face d'arrivée, face latérale portée par l'arête i du profil (lot F1). */
+export type StudioFaceSolide = "base" | "sommet" | `lateral-${number}`;
 
 // ——— Schémas JSON (registre, document) ———
 
@@ -71,11 +116,16 @@ export const SCHEMA_BOITE = {
   type: "object", additionalProperties: false, required: ["id", "type", "placement", "width", "depth", "height"],
   properties: { id, type: { const: "box" }, layerId, placement: placementSchema, width: dimension, depth: dimension, height: dimension },
 } as const;
+const sourceSchema = {
+  type: "object", additionalProperties: false, required: ["objectId", "relation"],
+  properties: { objectId: id, relation: { enum: [...STUDIO_RELATIONS_SOURCE] } },
+} as const;
 export const SCHEMA_PRISME = {
   type: "object", additionalProperties: false, required: ["id", "type", "placement", "profile", "height"],
   properties: {
     id, type: { const: "prism" }, layerId, placement: placementSchema,
     profile: { type: "array", minItems: 3, maxItems: STUDIO_LIMITES_SOLIDES.profilSommets, items: point2 }, height: dimension,
+    direction: point3, source: sourceSchema,
   },
 } as const;
 export const SCHEMA_SOLIDE = { oneOf: [SCHEMA_BOITE, SCHEMA_PRISME] } as const;
@@ -113,8 +163,28 @@ function validerBoite(value: unknown, path: string): StudioBox {
   };
 }
 
+/** Direction saisie : vecteur fini, non nul, hors du plan du profil (z ≠ 0) ; bornée comme une dimension. */
+export function validerDirection(value: unknown, path: string): StudioPoint3 {
+  const d = record(value, ["x", "y", "z"], path);
+  const max = STUDIO_LIMITES_SOLIDES.dimensionMax;
+  const v = { x: borne(d.x, max, `${path}.x`), y: borne(d.y, max, `${path}.y`), z: borne(d.z, max, `${path}.z`) };
+  if (v.x === 0 && v.y === 0 && v.z === 0) fail(path, "direction nulle : vecteur non nul attendu");
+  if (v.z === 0) fail(`${path}.z`, "direction dans le plan du profil : le volume serait nul (composante z non nulle attendue)");
+  return v;
+}
+
+function validerSource(value: unknown, path: string): StudioSourceSolide {
+  const s = record(value, ["objectId", "relation"], path);
+  if (typeof s.relation !== "string" || !(STUDIO_RELATIONS_SOURCE as readonly string[]).includes(s.relation)) fail(`${path}.relation`, "relation « associe », « reference-liee » ou « copie-independante » attendue");
+  return { objectId: identifier(s.objectId, `${path}.objectId`), relation: s.relation as StudioRelationSource };
+}
+
+/** Le prisme suit-il sa source (relation `reference-liee` ou `associe`) ? */
+export const estSolideLie = (s: StudioSolid): s is StudioProfilePrism & { source: StudioSourceSolide } =>
+  s.type === "prism" && !!s.source && s.source.relation !== "copie-independante";
+
 function validerPrisme(value: unknown, path: string): StudioProfilePrism {
-  const o = record(value, ["id", "type", "placement", "profile", "height"], path, ["layerId"]);
+  const o = record(value, ["id", "type", "placement", "profile", "height"], path, ["layerId", "direction", "source"]);
   const raw = array(o.profile, `${path}.profile`);
   if (raw.length < 3) fail(`${path}.profile`, "trois sommets au moins attendus");
   if (raw.length > STUDIO_LIMITES_SOLIDES.profilSommets) fail(`${path}.profile`, `${STUDIO_LIMITES_SOLIDES.profilSommets} sommets au plus`);
@@ -125,9 +195,13 @@ function validerPrisme(value: unknown, path: string): StudioProfilePrism {
   });
   for (let i = 0; i < profile.length; i++) if (same(profile[i]!, profile[(i + 1) % profile.length]!)) fail(`${path}.profile[${(i + 1) % profile.length}]`, "sommets consécutifs confondus");
   if (!studioRingSimple(profile)) fail(`${path}.profile`, "profil fermé simple attendu (sans croisement, aire non nulle)");
+  const direction = Object.hasOwn(o, "direction") ? { direction: validerDirection(o.direction, `${path}.direction`) } : {};
+  const source = Object.hasOwn(o, "source") ? { source: validerSource(o.source, `${path}.source`) } : {};
+  const placement = validerPlacement(o.placement, `${path}.placement`);
+  if (source.source && source.source.relation !== "copie-independante" && placement.rotation !== 0) fail(`${path}.placement.rotation`, "un prisme lié suit sa source en plan : rotation nulle attendue");
   return {
-    id: identifier(o.id, `${path}.id`), type: "prism", ...layerRef(o, path), placement: validerPlacement(o.placement, `${path}.placement`),
-    profile, height: dimensionValue(o.height, `${path}.height`),
+    id: identifier(o.id, `${path}.id`), type: "prism", ...layerRef(o, path), placement,
+    profile, height: dimensionValue(o.height, `${path}.height`), ...direction, ...source,
   };
 }
 
@@ -168,8 +242,34 @@ export function empriseSolide(s: StudioSolid): StudioPoint[] {
   });
 }
 
-/** Cotes inférieure et supérieure du solide dans `local-3d`. */
-export const cotesSolide = (s: StudioSolid): { zMin: number; zMax: number } => ({ zMin: s.placement.origin.z, zMax: s.placement.origin.z + s.height });
+/** Direction unitaire d'extrusion dans le repère local du solide (+z pour une boîte ou sans direction saisie). */
+export function directionUnitaire(s: StudioSolid): StudioPoint3 {
+  if (s.type === "box" || !s.direction) return { x: 0, y: 0, z: 1 };
+  const d = s.direction, n = Math.hypot(d.x, d.y, d.z);
+  return { x: d.x / n, y: d.y / n, z: d.z / n };
+}
+
+/** Le solide est-il un prisme droit (direction ±z) ? */
+export const estDroit = (s: StudioSolid): boolean => { const u = directionUnitaire(s); return u.x === 0 && u.y === 0; };
+
+/**
+ * Translation de la face d'arrivée (sommet) par rapport au profil, dans `local-3d` : hauteur × direction unitaire, la
+ * composante plane tournée de la rotation de placement. Nulle en plan pour un prisme droit.
+ */
+export function translationSommet(s: StudioSolid): StudioPoint3 {
+  const u = directionUnitaire(s), h = s.height, c = Math.cos(s.placement.rotation), si = Math.sin(s.placement.rotation);
+  const x = h * u.x, y = h * u.y;
+  return { x: c * x - si * y, y: si * x + c * y, z: h * u.z };
+}
+
+/** Cotes inférieure et supérieure du solide dans `local-3d` (la direction peut descendre sous le profil). */
+export const cotesSolide = (s: StudioSolid): { zMin: number; zMax: number } => {
+  const z0 = s.placement.origin.z, z1 = z0 + translationSommet(s).z;
+  return { zMin: Math.min(z0, z1), zMax: Math.max(z0, z1) };
+};
 
 /** Aire du profil (m², valeur absolue). */
 export const aireProfil = (s: StudioSolid): number => (s.type === "box" ? s.width * s.depth : Math.abs(studioSignedArea(s.profile)));
+
+/** Hauteur perpendiculaire au profil (m) : longueur × |composante z de la direction unitaire| (la longueur pour un prisme droit). */
+export const hauteurPerpendiculaire = (s: StudioSolid): number => (estDroit(s) ? s.height : s.height * Math.abs(directionUnitaire(s).z));

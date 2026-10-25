@@ -1,6 +1,6 @@
 import type { StudioPoint } from "../noyau/types.js";
 import { fail, finite, record } from "../noyau/validation.js";
-import { cotesSolide, empriseSolide } from "../objets-3d/solides.js";
+import { cotesSolide, empriseSolide, translationSommet } from "../objets-3d/solides.js";
 import { studioLayerState, validateStudioDocument } from "./document.js";
 import type { StudioDocument } from "./types.js";
 
@@ -49,7 +49,11 @@ export function couperStudio(document: StudioDocument, plan: StudioPlanCoupe): S
     if (!studioLayerState(doc, s.layerId)?.visible) { hidden++; continue; }
     const { zMin, zMax } = cotesSolide(s);
     if (z < zMin || z > zMax) continue;
-    const ring = empriseSolide(s);
+    // Prisme oblique (direction saisie, lot F1) : la section à la cote z est l'emprise translatée de la part de la
+    // composante plane parcourue depuis le profil ; nulle pour un prisme droit (même contour qu'avant).
+    const t = translationSommet(s);
+    const k = t.x === 0 && t.y === 0 ? 0 : (z - s.placement.origin.z) / t.z;
+    const ring = k === 0 ? empriseSolide(s) : empriseSolide(s).map((p) => ({ x: p.x + k * t.x, y: p.y + k * t.y }));
     ring.forEach((a, i) => segments.push({ id: `${s.id}#${i}`, source: s.id, start: a, end: ring[(i + 1) % ring.length]! }));
     sources.push({ id: s.id, segments: ring.length });
   }

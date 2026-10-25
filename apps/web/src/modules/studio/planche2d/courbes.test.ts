@@ -87,11 +87,11 @@ describe("Courbes : rendu et extrusion", () => {
   });
 
   it("épaisseur pour lignes et arcs seulement ; cercles et polylignes en prisme sans épaisseur", () => {
-    const r = commandesExtrusion(doc(), ["c", "a", "p"], { base: 0, hauteur: 3, epaisseur: 0.2 });
+    const r = commandesExtrusion(doc(), ["c", "a", "p"], { base: 0, hauteur: 3, epaisseur: 0.2, direction: "+z" });
     if (!("commandes" in r)) throw new Error("commandes attendues");
     expect(r.commandes).toEqual([
-      { toolId: "studio.objet.extruder", params: { ids: ["a"], base: 0, height: 3, thickness: 0.2 } },
-      { toolId: "studio.objet.extruder", params: { ids: ["c", "p"], base: 0, height: 3 } },
+      { toolId: "studio.objet.extruder", params: { ids: ["a"], base: 0, height: 3, thickness: 0.2, direction: "+z" } },
+      { toolId: "studio.objet.extruder", params: { ids: ["c", "p"], base: 0, height: 3, direction: "+z" } },
     ]);
     expect(r.info).toBe("L’épaisseur ne s’applique qu’aux lignes et aux arcs : les autres objets s’extrudent sans épaisseur.");
     expect(applyStudioCommands(doc(), r.commandes).objects.every((o) => o.extrusion)).toBe(true);

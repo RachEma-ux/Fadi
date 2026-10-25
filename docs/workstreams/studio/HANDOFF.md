@@ -1,5 +1,22 @@
 # Reprise — Studio
 
+## Lot F1 — géométrie 3D — 25 octobre 2026
+
+Branche `ccr-187fd2e6-08dk6e`, base `main@cb9e4be` (phase B fusionnée, PR #316).
+
+Ce qui a été fait :
+- **Direction d'extrusion.** L'extrusion 2D va vers `+z` ou `-z` ; un prisme suit un vecteur saisi. La direction est demandée, jamais proposée d'office.
+- **Relations explicites du prisme à sa polyligne source.** Trois relations : « référence liée » (recalcul dans la même révision, ou « à résoudre »), « associé » et « copie indépendante ».
+- **Édition de faces.** Pousser ou tirer une face, pivoter un solide.
+- **Division de face cotée**, avec réattachement prouvé des cotes, ou « à résoudre ».
+- **Preuves.** Recette `studio-faces` (CI et préproduction) et tests `f1-geometrie.test.ts`. Détail : [lots de fonctions](recettes/LOTS-FONCTIONS-2026-10-25.md).
+- **Vérifiés** : TEST-002, TEST-005, TEST-006, TEST-007, A.4-02, A.4-07, TR-EX-006.
+- **Partiels** : A.3-03 (pas de rotation horizontale ni d'échelle 3D) et TR-EX-005 (pas d'édition de groupe).
+
+Compteurs recalculés du registre : **0 À définir / 91 À faire / 204 En cours / 11 Bloqué / 266 Vérifié / 58 Accepté**. **P630=324/630**.
+
+Prochaine action : lots F3 (IFC, modèle externe), F4 (délégation, observations, traçabilité), F2 (noyau exact) et F5 (rendu, index), puis le point 2 (tests des preuves partielles), puis G1 et G4.
+
 ## Phase B de production livrée côté dépôt — 25 octobre 2026
 
 Branche `ccr-187fd2e6-08dk6e`, base `main@44c6ef4`. Ordre demandé par le maître d'ouvrage : lots de fonctions (point 3), tests des preuves partielles (point 2), portes G1 puis G4 (point 4) ; en parallèle, phase B.
@@ -8,7 +25,7 @@ Ce qui a été fait :
 - **`deploy/prod/fadi-prod-auto`**, ses unités systemd, son installateur à empreintes et 121 contrôles à doubles (`deploy/prod/tests/run.sh`, joués en CI). Parmi eux : l'échec simulé de chaque sonde, avec retour à l'image précédente sans restauration de la base, et la sauvegarde non vérifiée, qui bloque tout redémarrage. Recette sur le VPS : [`docs/deploiement-automatique-recette-phase-b.md`](../../deploiement-automatique-recette-phase-b.md).
 - [DOSSIER-G4.md](DOSSIER-G4.md) §4 mis à jour : scripts livrés, installation et recette sur le VPS restantes (administrateur).
 
-Compteurs recalculés du registre : **0 À définir / 92 À faire / 210 En cours / 11 Bloqué / 259 Vérifié / 58 Accepté**. **P630=317/630** (inchangés : les obligations R restent bloquées tant que le service n'est ni installé ni recetté sur le VPS).
+Compteurs recalculés du registre : à cette date 259 Vérifié, 58 Accepté, 11 Bloqué, 210 En cours, 92 À faire, 0 À définir ; 317 obligations sur 630 closes (inchangés : les obligations R restent bloquées tant que le service n'est ni installé ni recetté sur le VPS).
 
 Prochaine action : lots F1 (géométrie 3D), F3 (import IFC, modèle externe) et F4 (délégation, observations, traçabilité) en cours ; puis F2 (noyau exact), F5 (rendu, index), point 2, et G1 puis G4.
 
@@ -27,7 +44,7 @@ Preuves d'exécution :
 - les 22 recettes Studio passent sur une base jetable, dont `studio-memoire`. La navigation a échoué une fois, sous la charge des tests unitaires joués en parallèle, puis passé seule (278 contrôles) ;
 - typecheck, tests des espaces de travail et garde-fou de base : tous réussis.
 
-Compteurs recalculés du registre : **0 À définir / 92 À faire / 210 En cours / 11 Bloqué / 259 Vérifié / 58 Accepté**. **P630=317/630**.
+Compteurs recalculés du registre : à cette date 259 Vérifié, 58 Accepté, 11 Bloqué, 210 En cours, 92 À faire, 0 À définir ; 317 obligations sur 630 closes.
 
 Ce qui reste, et pourquoi :
 - 9 obligations R : G4 non franchie, phase B de production (`fadi-prod-auto`) absente du dépôt, Release réservée au maître d'ouvrage ;

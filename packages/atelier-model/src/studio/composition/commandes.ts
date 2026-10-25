@@ -4,7 +4,7 @@ import { CREATION_FORMES, creerCote, creerCoteAngulaire, creerTexte } from "../c
 import { decaler, deplacer, modifier, supprimer } from "../commandes/modification.js";
 import { copier, echelle, rotation, symetrie } from "../commandes/modification.js";
 import { aplatir, extruder } from "../commandes/volume.js";
-import { creerBoite, creerPrisme, deplacerSolide, supprimerSolides } from "../commandes/volume-libre.js";
+import { creerBoite, creerPrisme, decalerFace, deplacerSolide, diviserFace, pivoterSolide, resoudreLien, suivreSourcesSolides, supprimerSolides } from "../commandes/volume-libre.js";
 import { definirPropriete, elaguerProprietes, retirerPropriete, type StudioPropriete } from "../exigences/proprietes.js";
 import { studioExtrudedRingVertices } from "../objets/polyligne.js";
 import { creerScene, definirApparence, modifierScene, retirerApparences, retirerApparencesOrphelines, supprimerScenes } from "../commandes/scenes.js";
@@ -45,6 +45,10 @@ const HANDLERS: Record<StudioCommandToolId, Gestionnaire> = {
   "studio.solide.prisme": creerPrisme,
   "studio.solide.deplacer": deplacerSolide,
   "studio.solide.supprimer": supprimerSolides,
+  "studio.solide.face-decaler": decalerFace,
+  "studio.solide.face-diviser": diviserFace,
+  "studio.solide.pivoter": pivoterSolide,
+  "studio.solide.resoudre": resoudreLien,
   "studio.dessin.cote-angulaire": creerCoteAngulaire,
   "studio.dessin.texte": creerTexte,
   // Architecture (A.4) : murs et ouvertures ; la part architecturale des commandes générales est branchée ci-dessus.
@@ -76,6 +80,8 @@ export function applyStudioCommands(document: StudioDocument, commands: readonly
     id: current.id, objects: current.objects, layers: current.layers ?? [], dimensions: current.dimensions ?? [], solides: current.solides ?? [], annotations: current.annotations ?? [], architecture: current.architecture ?? [], scenes: current.scenes ?? [],
     ids: new Set([...current.objects.map((o) => o.id), ...(current.dimensions ?? []).map((d) => d.id), ...(current.solides ?? []).map((s) => s.id), ...(current.annotations ?? []).map((a) => a.id), ...(current.architecture ?? []).map((a) => a.id)]),
   };
+  // Solides avant le lot (les solides sont remplacés, jamais modifiés en place) : le suivi des sources en dépend.
+  const solidesAvant = new Map((current.solides ?? []).map((s) => [s.id, s]));
   const batch = array(commands, "commands");
   if (batch.length === 0) fail("commands", "au moins une commande attendue");
   for (let i = 0; i < batch.length; i++) {
@@ -85,6 +91,8 @@ export function applyStudioCommands(document: StudioDocument, commands: readonly
     if (typeof toolId !== "string" || !Object.hasOwn(HANDLERS, toolId)) fail(`${path}.toolId`, "outil de mutation non pris en charge");
     HANDLERS[toolId as StudioCommandToolId](state, c.params, path);
   }
+  // Prismes liés à une polyligne (lot F1) : recalculés, ou refus si une commande a changé seule leur emprise liée.
+  if (state.solides.length) suivreSourcesSolides(state, solidesAvant, "commands");
   // L'apparence d'un objet supprimé disparaît avec lui (lot E.5).
   retirerApparencesOrphelines(state);
   // Contrôle final : limites, unicité et liens sur le document entier, avant de rendre la copie.
