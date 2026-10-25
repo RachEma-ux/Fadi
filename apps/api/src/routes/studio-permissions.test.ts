@@ -166,6 +166,10 @@ export const ROUTES: Route[] = [
   { route: `GET ${PUB}`, besoin: "lecture", preparer: publication, url: (c) => `${S}/studies/s/publications/${c["pub"]}` },
   { route: `GET ${PUB}/verification`, besoin: "lecture", preparer: publication, url: (c) => `${S}/studies/s/publications/${c["pub"]}/verification` },
   { route: `GET ${PUB}/files/:format`, besoin: "lecture", preparer: publication, url: (c) => `${S}/studies/s/publications/${c["pub"]}/files/svg` },
+  {
+    route: `GET ${PUB}/controle-approbation`, besoin: "proprietaire", preparer: publication, url: (c) => `${S}/studies/s/publications/${c["pub"]}/controle-approbation`,
+    note: "aperçu de l'auto-contrôle (OP-6) : même accès que l'approbation (rôle, puis réservation d'édition d'un autre compte) ; lecture seule",
+  },
   ...([["soumettre", "ecriture"], ["actualiser", "ecriture"], ["approuver", "proprietaire"], ["refuser", "proprietaire"], ["diffuser", "proprietaire"], ["retirer", "proprietaire"]] as const).map(([action, besoin]): Route => ({
     route: `POST ${PUB}/:action`, besoin, preparer: publication, url: (c) => `${S}/studies/s/publications/${c["pub"]}/${action}`, body: { comment: "Motif" }, note: `action ${action}`,
   })),

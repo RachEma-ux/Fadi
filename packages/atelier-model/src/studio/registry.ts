@@ -19,7 +19,16 @@ import { OUTILS_NON_NATIFS } from "./registre/non-natifs.js";
 export { STUDIO_DOCUMENT_SCHEMA } from "./registre/schemas.js";
 export type { StudioToolDescriptor, StudioToolGroup } from "./registre/communs.js";
 
-export const STUDIO_TOOLS = freezeTree([
+/**
+ * Type du registre écrit par références aux familles : sans lui, le type inféré du tableau (déroulé outil par outil)
+ * dépasse la longueur que le compilateur sait sérialiser dans les déclarations (TS7056).
+ */
+type RegistreStudio = readonly [
+  ...typeof OUTILS_DESSIN, ...typeof OUTILS_MODIFICATION, ...typeof OUTILS_CALQUES, ...typeof OUTILS_VOLUME, ...typeof OUTILS_VOLUME_LIBRE,
+  ...typeof OUTILS_ARCHITECTURE, ...typeof OUTILS_PROPRIETES, ...typeof OUTILS_SCENES, ...typeof OUTILS_NON_NATIFS,
+];
+
+export const STUDIO_TOOLS: RegistreStudio = freezeTree([
   ...OUTILS_DESSIN,
   ...OUTILS_MODIFICATION,
   ...OUTILS_CALQUES,

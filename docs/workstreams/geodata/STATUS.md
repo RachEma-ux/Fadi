@@ -24,6 +24,14 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
 - Outils d'exploitation compilés dans l'image (`dist/geodata-role.js`, `dist/geodata-reference.js`, fiches `dist/geodata-sources/`) et reprise de publication d'une version préparée : vérifiés sur une base neuve depuis un autre répertoire (téléchargement réel, empreintes conformes, ADM1 12 et ADM2 75 publiées) ; contrôle ajouté au job CI `image`.
 - Aucune Release GitHub ; `fadi-prod-auto` absent du dépôt (phase B non réalisée) : voir `RELEASE-V1.md`.
 
+- Préproduction (25 octobre 2026, compte du maître d'ouvrage) : rôles attribués, geoBoundaries ADM1 (12) et ADM2 (75)
+  importés et publiés par les outils de l'image ; carte, fiche, recherche « Casablanca », enregistrement et export PNG
+  constatés par le maître d'ouvrage sur téléphone.
+- Style « une couleur par entité » (D-GD-11, demande du maître d'ouvrage du 25 octobre 2026) : paquet pur (palette, attribution
+  déterministe, 3 tests), route `GET /geodata/api/couches/:id/categories`, choix « Coloration » du panneau Couches, légende
+  et export PNG ; vérifié localement sur geoBoundaries (ADM1 : 12 couleurs distinctes ; ADM2 : voisins toujours distincts,
+  palette entière employée) ; recette `geodata.mjs` conforme (36 vérifications).
+
 ## Points ouverts
 
 Recette sur appareils physiques et validation d'usage ; Release de production ; qualification des droits HCP ; extensions V1.1.

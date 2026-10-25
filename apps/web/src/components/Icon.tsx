@@ -88,6 +88,10 @@ export type IconName =
   | "studio-solid-prism"
   | "studio-solid-move"
   | "studio-solid-delete"
+  | "studio-solid-push-pull"
+  | "studio-solid-split-face"
+  | "studio-solid-rotate"
+  | "studio-solid-link"
   | "studio-nav-plan"
   | "studio-section-plane"
   | "studio-copy"
@@ -221,6 +225,12 @@ const PATHS: Record<IconName, string> = {
   "studio-solid-prism": "M4 8h7v4h5v8H4ZM4 8l3-3h7l-3 3M11 12l3-3h5l-3 3M16 20l3-3V9",
   "studio-solid-move": "M3 10l5-3 6 2v7l-5 3-6-2ZM3 10l6 2 5-3M9 12v7M16 6h6M19 3l3 3-3 3",
   "studio-solid-delete": "M3 9l6-3 8 2v8l-6 3-8-2ZM3 9l8 2 6-3M11 11v8M16 16l6 6M22 16l-6 6",
+  // Lot F1 : face supérieure poussée (flèche verticale au-dessus d'un bloc) ; face partagée par un trait médian ;
+  // bloc et flèche circulaire autour d'un axe vertical ; maillons de chaîne (lien au profil source).
+  "studio-solid-push-pull": "M4 14l8-3 8 3-8 3ZM4 14v5l8 3 8-3v-5M12 2v7M9 5l3-3 3 3",
+  "studio-solid-split-face": "M3 7h18v12H3ZM12 7v12M8 4h8M3 7l3-3h12l3 3",
+  "studio-solid-rotate": "M7 9h10v10H7ZM12 2v5M5 5a9 4 0 0 1 14 0M19 5l-1 3",
+  "studio-solid-link": "M9 15l6-6M7 11l-2 2a3 3 0 0 0 4 4l2-2M17 13l2-2a3 3 0 0 0-4-4l-2 2",
   "studio-nav-plan": "M3 17l9 4 9-4-9-4ZM12 3v7M9 7l3 3 3-3M7 3h10",
   "studio-section-plane": "M8 3h8v18H8ZM2 13l4-3h16l-4 3ZM2 13h16",
   // Transformations : deux carrés décalés (copier), flèche circulaire (rotation), axe et deux triangles opposés

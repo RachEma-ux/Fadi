@@ -310,6 +310,8 @@ const AJOUTS = {
     "studio.scene.creer", "studio.scene.modifier", "studio.scene.rappeler", "studio.scene.supprimer", "studio.apparence.definir", "studio.apparence.retirer",
     // Éléments non natifs (lot F3, extension additive consignée, champ facultatif `nonNatifs` du document).
     "studio.nonnatif.conserver", "studio.nonnatif.retirer",
+    // Géométrie 3D du lot F1 (extension additive consignée) : édition des faces, rotation, lien des solides à leur profil.
+    "studio.solide.face-decaler", "studio.solide.face-diviser", "studio.solide.pivoter", "studio.solide.resoudre",
   ]),
   types: new Set(["angular-dimension", "text", "wall", "opening", "scene", "appearance", "non-native"]),
   exports: new Set([
@@ -356,6 +358,10 @@ const AJOUTS = {
     "STUDIO_IFC_SCHEMAS_LUS", "lireIfcStudio", "nomIfc", "validerTransformation", "comparerElementsStudio",
     "STUDIO_ACTIONS_MODELE_EXTERNE", "STUDIO_FORMATS_MODELE_EXTERNE", "STUDIO_LIMITES_MODELE_EXTERNE", "STUDIO_STATUTS_MODELE_EXTERNE", "STUDIO_UNITES_DECLAREES",
     "comparerModeleExterne", "lireModeleExterne", "passageModeleExterne", "validerMetaModeleExterne",
+    // Géométrie 3D du lot F1 : direction d'extrusion, relation des prismes à leur profil source, faces.
+    "STUDIO_DIRECTIONS_EXTRUSION", "studioCotesExtrusion", "directionUnitaire", "estDroit", "estSolideLie", "hauteurPerpendiculaire",
+    "STUDIO_RELATIONS_SOURCE", "translationSommet", "validerDirection", "studioEmpriseConforme", "studioLienSolide", "studioLiensSolides",
+    "studioProfilDepuisPolyligne",
   ]),
 };
 function sansAjouts(value: unknown): unknown {
@@ -368,6 +374,10 @@ function sansAjouts(value: unknown): unknown {
   const out = Object.fromEntries(Object.entries(value).map(([k, v]) => [k, sansAjouts(v)]));
   const props = out.properties as Record<string, unknown> | undefined;
   if (props && "schemaVersion" in props) { delete props.annotations; delete props.architecture; delete props.proprietes; delete props.scenes; delete props.nonNatifs; }
+  // Lot F1 (extension additive consignée) : direction d'extrusion facultative (`extrusion.direction`, `extruder`) et,
+  // pour le prisme, direction et source facultatives ; retirées pour comparer à la base.
+  if (props && "base" in props && "height" in props) delete props.direction;
+  if (props && "profile" in props) { delete props.direction; delete props.source; }
   return out;
 }
 

@@ -23,14 +23,14 @@ const en = dico as Record<string, string>;
 describe("Boîte « Importer IFC » (TEST-028)", () => {
   const doc = newStudioDocument("d");
 
-  it("commandes « Importer IFC » (Ctrl+Maj+U) et « Modèles externes » (Maj+F2) : barre Importer, icônes propres, raccourcis non réservés", () => {
-    expect(COMMANDES_EDITEUR.find((c) => c.id === "importer-ifc")).toMatchObject({ groupe: "import", ecrit: true, iconeSymbolique: "studio-import-ifc", raccourci: "Ctrl+Shift+U" });
+  it("commandes « Importer IFC » (Maj+F9) et « Modèles externes » (Maj+F2) : barre Importer, icônes propres, raccourcis non réservés", () => {
+    expect(COMMANDES_EDITEUR.find((c) => c.id === "importer-ifc")).toMatchObject({ groupe: "import", ecrit: true, iconeSymbolique: "studio-import-ifc", raccourci: "Shift+F9" });
     expect(COMMANDES_EDITEUR.find((c) => c.id === "modeles-externes")).toMatchObject({ groupe: "import", ecrit: false, iconeSymbolique: "studio-external-models", raccourci: "Shift+F2" });
-    expect(cibleRaccourci("Ctrl+Shift+U")).toEqual({ type: "commande", id: "importer-ifc" });
+    expect(cibleRaccourci("Shift+F9")).toEqual({ type: "commande", id: "importer-ifc" });
     expect(cibleRaccourci("Shift+F2")).toEqual({ type: "commande", id: "modeles-externes" });
     expect(cibleRaccourci("Shift+F4")).toEqual({ type: "outil", toolId: "studio.nonnatif.conserver" });
     expect(cibleRaccourci("Shift+F8")).toEqual({ type: "outil", toolId: "studio.nonnatif.retirer" });
-    for (const r of ["Ctrl+Shift+U", "Shift+F2", "Shift+F4", "Shift+F8"]) expect(RACCOURCIS_RESERVES).not.toContain(r);
+    for (const r of ["Shift+F9", "Shift+F2", "Shift+F4", "Shift+F8"]) expect(RACCOURCIS_RESERVES).not.toContain(r);
   });
 
   it("rapport de pertes : unité lue, objets natifs, éléments non natifs par type, pertes par type et motif ; noms IFC non traduits", () => {

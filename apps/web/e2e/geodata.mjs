@@ -120,6 +120,17 @@ const valeurAbsente = fiche.locator("[data-gd-valeur][data-absente]");
 check("GEO 06 · fiche : « Valeur absente — Valeur couverte par le secret statistique », jamais 0", ((await valeurAbsente.textContent()) ?? "").includes("Valeur absente — Valeur couverte par le secret statistique"));
 await page.screenshot({ path: join(OUT, "01-carte-thematique.png") });
 
+// Une couleur par entité : six unités → six couleurs distinctes en légende, puis retour à l'indicateur.
+await page.locator("[data-gd-onglet='couches']").click();
+await page.locator("[data-gd-couche-active]").first().locator("[data-gd-indicateur]").selectOption("__entites__");
+await page.locator("[data-gd-onglet='legende']").click();
+const entites = page.locator("[data-gd-legende] [data-gd-entite]");
+await entites.first().waitFor();
+const pastilles = await entites.locator(".gd-pastille").evaluateAll((els) => els.map((e) => getComputedStyle(e).backgroundColor));
+check("une couleur par entité : six unités, six couleurs distinctes en légende", (await entites.count()) === 6 && new Set(pastilles).size === 6, `${await entites.count()} / ${new Set(pastilles).size}`);
+await page.locator("[data-gd-onglet='couches']").click();
+await page.locator("[data-gd-couche-active]").first().locator("[data-gd-indicateur]").selectOption(optionEffectif);
+
 // Table : zéro affiché 0, absence affichée « Valeur absente ».
 await page.locator("[data-gd-onglet='couches']").click();
 await page.locator("[data-gd-couche-active]").first().getByRole("button", { name: "Table" }).click();

@@ -8,9 +8,9 @@
  * enregistrer sa version comme copie (GEO 13). Téléphone : un seul panneau ouvert à la fois (GEO 12).
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { COMPOSITION_INITIALE, formatNombre, legende, lireValeur, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
+import { COMPOSITION_INITIALE, couleurCategorie, formatNombre, legende, lireValeur, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
 import { api, ErreurGeoData, type CarteRecue, type CoucheRecue, type EspaceRecu, type FicheRecue, type ResultatRecherche, type ZoneRecue } from "./client";
-import { ajouterCouche, basculerVisibilite, definirFiltre, definirOpacite, definirStyle, deplacerCouche, etatDepuis, LIBELLES_ENREGISTREMENT, retirerCouche, type EtatEnregistrement } from "./composition-ops";
+import { ajouterCouche, basculerVisibilite, definirFiltre, definirOpacite, definirStyle, deplacerCouche, etatDepuis, LIBELLES_ENREGISTREMENT, entreesCategories, retirerCouche, type Categorie, type EtatEnregistrement } from "./composition-ops";
 import { webglDisponible, type MoteurCarte, type OutilCarte } from "./carte/moteur";
 import { FicheObjet, PanneauCatalogue, PanneauCouches, PanneauLegende, TableAttributs } from "./panneaux/consultation";
 import { Etudes, Export, Import, MesCartes, type TraceEnCours } from "./panneaux/travail";
@@ -57,6 +57,7 @@ export function PageGeoData() {
   const [etatForce, setEtatForce] = useState<EtatEnregistrement | null>(null);
   const [valeurs, setValeurs] = useState<Map<string, Map<string, ValeurIndicateur>>>(new Map());
   const [filtres, setFiltres] = useState<Map<string, string[]>>(new Map());
+  const [categories, setCategories] = useState<Map<string, Categorie[]>>(new Map());
   const [selection, setSelection] = useState<{ coucheId: string; code: string } | null>(null);
   const [fiche, setFiche] = useState<FicheRecue | null>(null);
   const [ficheEtat, setFicheEtat] = useState<{ chargement: boolean; erreur: string | null }>({ chargement: false, erreur: null });
@@ -114,6 +115,15 @@ export function PageGeoData() {
   useEffect(() => {
     for (const k of composition.couches) if (k.style.mode === "thematique" && !valeurs.has(k.style.indicateurId)) void valeursDe(k.style.indicateurId).catch(() => undefined);
   }, [composition, valeurs, valeursDe]);
+  // Une couleur par entité : rangs de couleur de chaque couche concernée (chargés une fois par couche, contenu figé).
+  useEffect(() => {
+    for (const k of composition.couches) {
+      if (k.style.mode !== "categories" || categories.has(k.coucheId)) continue;
+      const id = k.coucheId;
+      api.categories(id).then((r) => setCategories((m) => new Map(m).set(id, r.categories))).catch(() => undefined);
+    }
+  }, [composition, categories]);
+  const couleursCategories = useMemo(() => new Map([...categories].map(([id, cs]) => [id, new Map(cs.map((c) => [c.code, couleurCategorie(c.rang)]))])), [categories]);
   // Filtres : codes retenus par couche (filtre appliqué à la carte comme à la table).
   useEffect(() => {
     for (const k of composition.couches) {
@@ -160,8 +170,8 @@ export function PageGeoData() {
   }, [webgl]);
 
   useEffect(() => {
-    moteur.current?.appliquer(compositionAffichee, fond, { valeurs, filtres, selection, zones: zonesGeo, attributions });
-  }, [compositionAffichee, fond, valeurs, filtres, selection, zonesGeo, attributions, chargementMoteur]);
+    moteur.current?.appliquer(compositionAffichee, fond, { valeurs, categories: couleursCategories, filtres, selection, zones: zonesGeo, attributions });
+  }, [compositionAffichee, fond, valeurs, couleursCategories, filtres, selection, zonesGeo, attributions, chargementMoteur]);
   useEffect(() => { moteur.current?.definirOutil(outil); setTrace(null); setTracePret(null); }, [outil, chargementMoteur]);
 
   compositionCourante.current = composition;
@@ -239,6 +249,7 @@ export function PageGeoData() {
     const legendes = [...compositionAffichee.couches].reverse().filter((k) => k.visible).map((k) => {
       const c = couchesConnues.get(k.coucheId);
       if (k.style.mode === "simple") return { titre: c?.titre ?? k.coucheId, entrees: null, couleur: k.style.couleur };
+      if (k.style.mode === "categories") return { titre: c?.titre ?? k.coucheId, entrees: entreesCategories(categories.get(k.coucheId) ?? []), sansEffectif: true };
       const vs = [...(valeurs.get(k.style.indicateurId)?.values() ?? [])];
       const ind = c?.indicateurs.find((i) => i.id === (k.style.mode === "thematique" ? k.style.indicateurId : ""));
       return { titre: `${c?.titre ?? k.coucheId}${ind ? ` — ${ind.titre} (${ind.unite})` : ""}`, entrees: legende(vs, k.style.seuils, k.style.couleurs, (x) => formatNombre(x, Math.abs(x) >= 100 ? 0 : 2)) };
@@ -317,7 +328,7 @@ export function PageGeoData() {
               {onglet === "couches" && <PanneauCouches composition={composition} couches={couchesConnues} disponibilite={disponibilite} valeursDe={valeursDe}
                 onVisibilite={(id) => setComposition((c) => basculerVisibilite(c, id))} onOpacite={(id, o) => setComposition((c) => definirOpacite(c, id, o))}
                 onDeplacer={(id, s) => setComposition((c) => deplacerCouche(c, id, s))} onRetirer={(id) => setComposition((c) => retirerCouche(c, id))} onStyle={changerStyle} onTable={setCoucheTable} />}
-              {onglet === "legende" && <PanneauLegende composition={composition} couches={couchesConnues} valeurs={valeurs} onStyle={changerStyle} />}
+              {onglet === "legende" && <PanneauLegende composition={composition} couches={couchesConnues} valeurs={valeurs} categories={categories} onStyle={changerStyle} />}
             </div>
           )}
         </aside>

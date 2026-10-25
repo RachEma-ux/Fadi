@@ -96,9 +96,10 @@ export const COMMANDES_EDITEUR: readonly CommandeEditeur[] = Object.freeze([
   { id: "exporter-png", libelleFR: "Exporter le rendu PNG", raccourci: "F4", iconeSymbolique: "studio-export-png", groupe: "visualisation", ecrit: false },
   // Import DXF vers le brouillon (aperçu, unité, entités non prises) : Maj+U (U comme « upload »), libre et non réservé.
   { id: "importer-dxf", libelleFR: "Importer DXF", raccourci: "Shift+U", iconeSymbolique: "studio-import-dxf", groupe: "import", ecrit: true },
-  // Import IFC (lot F3, TEST-028) : Ctrl+Maj+U, le pendant de Maj+U (toutes les combinaisons Maj+lettre sont prises ;
-  // Ctrl+U reste au navigateur). Rapport de pertes et éléments non natifs à l’aperçu ; écriture du brouillon.
-  { id: "importer-ifc", libelleFR: "Importer IFC", raccourci: "Ctrl+Shift+U", iconeSymbolique: "studio-import-ifc", groupe: "import", ecrit: true },
+  // Import IFC (lot F3, TEST-028) : Maj+F9 (toutes les combinaisons Maj+lettre sont prises, Ctrl+Maj+U est « Pousser /
+  // tirer la face » du lot F1 ; F9 seul est la grille), libre et non réservé. Rapport de pertes et éléments non natifs à
+  // l’aperçu ; écriture du brouillon.
+  { id: "importer-ifc", libelleFR: "Importer IFC", raccourci: "Shift+F9", iconeSymbolique: "studio-import-ifc", groupe: "import", ecrit: true },
   // Modèles externes (lot F3, TR-EX-066) : réception, comparaison, acceptation ou refus ; Maj+F2 (F2 est « Mettre à jour la
   // scène »), libre et non réservé. Lecture admise (un lecteur consulte la liste et le journal).
   { id: "modeles-externes", libelleFR: "Modèles externes", raccourci: "Shift+F2", iconeSymbolique: "studio-external-models", groupe: "import", ecrit: false },
@@ -161,13 +162,18 @@ export const OUTILS_MODES: ReadonlySet<StudioToolId> = new Set<StudioToolId>([
   "studio.dessin.cote", "studio.dessin.deplacer", "studio.dessin.modifier", "studio.dessin.decaler",
   // Volume libre : modes de la vue 3D (poser une boîte, un prisme sur profil, déplacer un solide).
   "studio.solide.boite", "studio.solide.prisme", "studio.solide.deplacer",
+  // Lot F1 : édition des faces, pivot et lien du solide sélectionné (formulaires de la vue 3D).
+  "studio.solide.face-decaler", "studio.solide.face-diviser", "studio.solide.pivoter", "studio.solide.resoudre",
   "studio.dessin.copier", "studio.dessin.rotation", "studio.dessin.symetrie", "studio.dessin.echelle",
   "studio.dessin.cote-angulaire", "studio.dessin.texte",
   // Architecture (A.4) : poser l'axe d'un mur, désigner le mur d'une ouverture.
   "studio.architecture.mur", "studio.architecture.ouverture",
 ]);
 /** Outils du volume libre : ils agissent dans la vue 3D, qu'ils ouvrent. */
-export const OUTILS_VOLUME_LIBRE: ReadonlySet<StudioToolId> = new Set<StudioToolId>(["studio.solide.boite", "studio.solide.prisme", "studio.solide.deplacer", "studio.solide.supprimer"]);
+export const OUTILS_VOLUME_LIBRE: ReadonlySet<StudioToolId> = new Set<StudioToolId>([
+  "studio.solide.boite", "studio.solide.prisme", "studio.solide.deplacer", "studio.solide.supprimer",
+  "studio.solide.face-decaler", "studio.solide.face-diviser", "studio.solide.pivoter", "studio.solide.resoudre",
+]);
 /** Outils qui posent des points sur la planche. */
 export const OUTILS_TRACE: ReadonlySet<StudioToolId> = new Set<StudioToolId>(["studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle", "studio.dessin.arc", "studio.dessin.polyligne", "studio.dessin.cote", "studio.dessin.cote-angulaire", "studio.dessin.texte", "studio.architecture.mur", "studio.architecture.ouverture"]);
 

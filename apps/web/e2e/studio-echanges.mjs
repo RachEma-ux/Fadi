@@ -7,7 +7,7 @@
  *      (rapport de fidélité), DWG / BCF / STEP / OBJ / STL « non livré » avec leur raison, aucun « renoncé » ;
  *   3. aucun champ de saisie hors du filtre ; le filtre par statut ne garde que les entrées du statut choisi ;
  *   4. Échap ferme la boîte ;
- *   5. Importer IFC (Ctrl+Maj+U, lot F3, TEST-028) : rapport de pertes, éléments non natifs visibles, enregistrés, non
+ *   5. Importer IFC (Maj+F9, lot F3, TEST-028) : rapport de pertes, éléments non natifs visibles, enregistrés, non
  *      éditables (refus du serveur) ;
  *   6. Modèles externes (Maj+F2, TR-EX-066) : réception déclarée, comparaison par le serveur, acceptation et refus
  *      journalisés, décision définitive ;
@@ -107,15 +107,15 @@ try {
   await boite.waitFor({ state: "detached" });
   check("Échap ferme la boîte", (await page.getByRole("dialog").count()) === 0);
 
-  // 5. Import IFC (lot F3, TEST-028) : commande Ctrl+Maj+U de la barre Importer ; rapport de pertes ; éléments non natifs
+  // 5. Import IFC (lot F3, TEST-028) : commande Maj+F9 de la barre Importer ; rapport de pertes ; éléments non natifs
   //    conservés, visibles, non éditables, exclus des métrés ; enregistrés par le serveur.
   const variantePath = `${racine}/${studyId}/variants/${variantId}`;
   const boutonIfc = outils.locator('button[data-studio-commande="importer-ifc"]').first();
   await boutonIfc.waitFor({ state: "attached" });
-  check("commande « Importer IFC » dans la famille Importer / Exporter, raccourci Ctrl+Maj+U", (await boutonIfc.getAttribute("aria-keyshortcuts")) === "Control+Shift+U"
+  check("commande « Importer IFC » dans la famille Importer / Exporter, raccourci Maj+F9", (await boutonIfc.getAttribute("aria-keyshortcuts")) === "Shift+F9"
     && (await boutonIfc.evaluate((x) => x.closest("[data-studio-famille]")?.getAttribute("data-studio-famille") ?? null)) === "echanges");
   await page.evaluate(() => document.activeElement?.blur());
-  await page.keyboard.press("Control+Shift+U");
+  await page.keyboard.press("Shift+F9");
   const boiteIfc = page.getByRole("dialog", { name: "Importer IFC" });
   await boiteIfc.waitFor();
   check("Importer IFC : « Ajouter au brouillon » indisponible avant le choix d'un fichier", await boiteIfc.locator("[data-studio-import-ifc-ajouter]").isDisabled());

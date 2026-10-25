@@ -449,3 +449,27 @@ sans effet sur des participations déjà tenues) et redémarrer cette version. L
 `access_granted_at` restent (additives, ignorées par l'ancienne version). Ne **pas** rejouer ensuite l'`init.sql` du lot
 OP-PONT sans vouloir refaire le retrait (il le referait, avec sa preuve). En dernier recours : restauration du dump du
 § 1.1.
+
+## 10. Auto-contrôle (lot OP-AUTOCONTROLE, décision OP-6)
+
+Migration **additive et idempotente**, appliquée par le même `npm run db:migrate` (`init.sql`, bloc « Lot
+OP-AUTOCONTROLE ») ; aucune reprise de données, aucun droit nouveau (les droits D-7 sont donnés par table : `fadi_app`
+lit et écrit déjà `users`, `studio_publications`, `studio_publication_events`) :
+
+| Colonne | Effet |
+| --- | --- |
+| `users.self_control_allowed boolean NOT NULL DEFAULT true` | option « Auto-contrôle » ; tout compte existant la reçoit **activée** (comportement inchangé : rien n'est bloqué) |
+| `studio_publications.approved_self_control boolean` | marque de l'approbation en vigueur ; **NULL** pour toute approbation antérieure (rien de rétroactif) |
+| `studio_publication_events.self_control boolean` | marque figée de l'évènement `approuver` ; NULL ailleurs (journal append-only : seules les nouvelles lignes la portent) |
+
+Contrôles après migration (lecture seule) :
+
+```sql
+SELECT count(*) FILTER (WHERE NOT self_control_allowed) AS desactives FROM users;            -- 0 juste après la migration
+SELECT count(*) FROM studio_publications WHERE approved_by IS NOT NULL AND approved_self_control IS NOT NULL; -- 0 juste après
+```
+
+Manifeste, paquet et empreintes (`manifest_hash`, `approved_manifest_hash`, `package_hash`) ne sont pas touchés : la
+marque est hors du manifeste et du paquet. Retour arrière : une version antérieure ignore ces colonnes (additives) ;
+aucune suppression n'est nécessaire. Désactiver l'option d'un compte se fait dans l'administration (fiche du compte,
+« Autorisations »), jamais par SQL.

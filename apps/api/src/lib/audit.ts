@@ -31,6 +31,7 @@ export type AuditAction =
   | "account.deletion.cancelled"
   | "account.anonymized"
   | "admin.user.role_changed"
+  | "admin.user.self_control_changed"
   | "admin.user.suspended"
   | "admin.user.reactivated"
   | "admin.user.sessions_revoked"
@@ -113,6 +114,8 @@ export type AuditAction =
   | "review.finding.rechecked"
   | "review.response.recorded"
   | "review.decision.recorded"
+  // OP-6 (lot OP-AUTOCONTROLE) : approbation Studio, avec sa marque d'auto-contrôle.
+  | "review.approval.recorded"
   | "mail.quota_exceeded";
 
 export interface AuditEntry {

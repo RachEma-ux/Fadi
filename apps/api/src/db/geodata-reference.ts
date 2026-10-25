@@ -5,6 +5,9 @@
  *        --preparateur <courriel> [--publier-par <courriel>]
  *   (image de production : node apps/api/dist/geodata-reference.js --fiche geoboundaries-mar-adm1 --preparateur …)
  *
+ * Les données sont lues de `--fichier`, sinon du fichier livré avec la fiche (`version.fichier`, ex. extractions
+ * OpenStreetMap de `docs/geodata/sources/osm/`), sinon téléchargées depuis `version.url`.
+ *
  * `--fiche` accepte un chemin, ou le nom d'une fiche qualifiée du dépôt (`docs/geodata/sources/<nom>.json`, copiées à
  * côté du bundle dans `dist/geodata-sources/`). Relancée sur une version déjà préparée (même source, même empreinte),
  * la commande ne crée rien ; avec `--publier-par`, elle publie cette version si elle est encore en préparation, aux
@@ -21,7 +24,7 @@ import "dotenv/config";
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { basename } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { Pool } from "pg";
 import { lireDroits, OBJETS_PAR_COUCHE, validerGeoJSON, verifierUsage, type StyleCouche } from "@parcours/geodata-model";
 import { lireGeoPackage } from "../lib/geodata/geopackage.js";
@@ -29,7 +32,7 @@ import { codesDesObjets, ecrireVersion, type IndicateurDeclare } from "../lib/ge
 
 export interface FicheSource {
   cle: string; titre: string; producteur: string; theme: string; couverture: string; description: string;
-  version: { libelle: string; url: string | null; empreinte: string; periode: string | null; licence: string; attribution: string; droits: Record<string, string>; precision: string | null; synthetique: boolean; conditions?: string };
+  version: { libelle: string; url: string | null; /** Fichier livré avec la fiche (chemin relatif au dossier des fiches), à défaut d'adresse. */ fichier?: string; empreinte: string; periode: string | null; licence: string; attribution: string; droits: Record<string, string>; precision: string | null; synthetique: boolean; conditions?: string };
   couche: { titre: string; description: string; niveau: string | null; champCode: string; champNom: string | null; proprietesExposees: string[]; styleDefaut: StyleCouche };
   indicateurs?: IndicateurDeclare[];
   superficie?: boolean;
@@ -56,10 +59,13 @@ async function main() {
   const argFiche = argument("fiche");
   const preparateur = argument("preparateur");
   if (!argFiche || !preparateur) throw new Error("Usage : --fiche <fiche.json> --preparateur <courriel> [--fichier <données>] [--table <table>] [--publier-par <courriel>]");
-  const fiche = JSON.parse(readFileSync(cheminFiche(argFiche), "utf8")) as FicheSource;
+  const chemin = cheminFiche(argFiche);
+  const fiche = JSON.parse(readFileSync(chemin, "utf8")) as FicheSource;
   let octets: Buffer;
   let nomFichier: string;
-  const fichier = argument("fichier");
+  // Fichier : --fichier, sinon celui livré avec la fiche (`version.fichier`, sans remontée de dossier), sinon l'adresse.
+  const livre = fiche.version.fichier && /^[a-z0-9/_.-]+$/.test(fiche.version.fichier) && !fiche.version.fichier.includes("..") ? join(dirname(chemin), fiche.version.fichier) : undefined;
+  const fichier = argument("fichier") ?? livre;
   if (fichier) { octets = readFileSync(fichier); nomFichier = basename(fichier); }
   else {
     if (!fiche.version.url) throw new Error("Ni --fichier ni adresse de téléchargement dans la fiche.");

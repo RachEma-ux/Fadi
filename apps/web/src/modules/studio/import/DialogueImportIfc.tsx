@@ -1,5 +1,5 @@
 /**
- * Boîte « Importer IFC » (Ctrl+Maj+U, lot F3, TEST-028) : choix du fichier, aperçu du rapport de `lireIfcStudio`
+ * Boîte « Importer IFC » (Maj+F9, lot F3, TEST-028) : choix du fichier, aperçu du rapport de `lireIfcStudio`
  * (schéma, unité lue et facteur vers le mètre, objets natifs ajoutés, éléments **non natifs** conservés par type, pertes
  * par type, calques des niveaux, étendue), puis « Ajouter au brouillon » : un seul lot local, annulable par Ctrl+Z,
  * envoyé au serveur seulement à l'enregistrement. Une unité absente du fichier n'est jamais choisie à sa place : rien

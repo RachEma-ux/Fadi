@@ -83,7 +83,7 @@ const layerOf = (o: { layerId?: string }): string => o.layerId ?? STUDIO_DEFAULT
 const sameExtrusion = (a: StudioShape["extrusion"], b: StudioShape["extrusion"]): boolean => {
   if (!a || !b) return !a && !b;
   const ta = (a as { thickness?: number }).thickness, tb = (b as { thickness?: number }).thickness;
-  return a.base === b.base && a.height === b.height && ta === tb;
+  return a.base === b.base && a.height === b.height && ta === tb && (a.direction ?? "+z") === (b.direction ?? "+z");
 };
 
 /** Points de la géométrie, dans un ordre fixe par type ; les grandeurs non ponctuelles sont comparées à part. */

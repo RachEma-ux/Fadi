@@ -2844,6 +2844,101 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
       }
     });
   });
+
+  describe("8. séparation des responsabilités : auto-contrôle (OP-6, lot OP-AUTOCONTROLE)", () => {
+    const participation = async (pid: string, userId: string) => (await pool.query(
+      "SELECT pp.id FROM project_participations pp JOIN people pe ON pe.id = pp.person_id WHERE pp.project_id = $1 AND pe.user_id = $2 AND pp.status = 'active'", [pid, userId])).rows[0]?.id as string;
+
+    it("option par défaut, administration (refuseSelf, audit), approbation signalée ou refusée (422), Studio et journal ; empreintes inchangées", async () => {
+      const boss = await account("auto-admin");
+      await enableMfa(boss, boss.a);
+      await promoteInDb(boss.id);
+      const owner = await account("auto-proprio");
+      const eve = await account("auto-eve");
+      const project = await owner.a.post("/projects").send({ code: "AC.1", name: "Auto-contrôle" });
+      expect(project.status).toBe(201);
+      const pid = project.body.id as string;
+      await partagerEnBase(pid, eve.id, "editeur");
+      const study = await owner.a.post(`/projects/${pid}/studio/studies`).send({ name: "Étude" });
+      const vp = `/projects/${pid}/studio/studies/${study.body.study.id}/variants/${study.body.variant.id}`;
+      const pubs = `/projects/${pid}/studio/studies/${study.body.study.id}/publications`;
+      let head = study.body.revision.id as string;
+      const draw = async (id: string) => {
+        const r = await eve.a.post(`${vp}/commands`).send({ contractVersion: "studio-commands/1", requestId: `ac-${id}`, baseRevisionId: head, commands: [{ toolId: "studio.dessin.ligne", params: { id, type: "line", start: { x: 0, y: 0 }, end: { x: 4, y: 1 } } }] });
+        expect(r.status).toBe(200);
+        head = r.body.revision.id;
+      };
+      const dossier = async (title: string) => {
+        const pub = await eve.a.post(`${vp}/publications`).send({ title });
+        expect(pub.status).toBe(201);
+        const sub = await eve.a.post(`${pubs}/${pub.body.id}/soumettre`).send({});
+        expect(sub.status).toBe(200);
+        return sub.body as { id: string; manifestHash: string; revisionId: string; documentHash: string };
+      };
+      const examine = (p: { manifestHash: string; revisionId: string; documentHash: string }) => ({ manifestHash: p.manifestHash, revisionId: p.revisionId, documentHash: p.documentHash });
+
+      // Option activée par défaut, exposée par l'administration.
+      expect((await boss.a.get(`/admin/users/${eve.id}`)).body.user.selfControlAllowed).toBe(true);
+      await draw("l1");
+      const d1 = await dossier("Dossier 1");
+      // Le propriétaire n'a produit que l'initialisation vide (non comptée) et n'a pas soumis : pas d'auto-contrôle.
+      expect((await owner.a.get(`${pubs}/${d1.id}/controle-approbation`)).body).toEqual({ autoControle: false, revisionsAuteur: 0, soumisParLui: false, autorise: true, approvers: [] });
+      // Éditrice sans rôle Approbateur : même refus que l'approbation.
+      expect((await eve.a.get(`${pubs}/${d1.id}/controle-approbation`)).status).toBe(403);
+      expect((await owner.a.post(`/projects/${pid}/participants/${await participation(pid, eve.id)}/roles`).send({ role: "approbateur", scopeType: "projet" })).status).toBe(201);
+      expect((await eve.a.get(`${pubs}/${d1.id}/controle-approbation`)).body).toEqual({ autoControle: true, revisionsAuteur: 1, soumisParLui: true, autorise: true, approvers: [] });
+
+      // Administration : garde-fous, puis désactivation journalisée (from / to).
+      expect((await boss.a.patch(`/admin/users/${boss.id}/self-control`).send({ allowed: false })).body.error).toBe("self_action");
+      expect((await boss.a.patch(`/admin/users/${eve.id}/self-control`).send({ allowed: "non" })).status).toBe(400);
+      expect((await owner.a.patch(`/admin/users/${eve.id}/self-control`).send({ allowed: false })).status).toBe(404);
+      const off = await boss.a.patch(`/admin/users/${eve.id}/self-control`).send({ allowed: false });
+      expect(off.status).toBe(200);
+      expect(off.body.user.selfControlAllowed).toBe(false);
+      const changed = await pool.query("SELECT actor_id, metadata FROM admin.audit_log WHERE action = 'admin.user.self_control_changed' AND target_id = $1", [eve.id]);
+      expect(changed.rows).toEqual([{ actor_id: boss.id, metadata: { from: true, to: false } }]);
+
+      // Option désactivée : approbation de son propre dossier refusée, autres approbateurs nommés, rien d'écrit.
+      const refused = await eve.a.post(`${pubs}/${d1.id}/approuver`).send(examine(d1));
+      expect(refused.status).toBe(422);
+      expect(refused.body).toMatchObject({ error: "self_approval_forbidden", revisionsAuteur: 1, soumisParLui: true, approvers: [{ name: owner.email, role: "proprietaire" }] });
+      expect((await eve.a.get(`${pubs}/${d1.id}/controle-approbation`)).body).toMatchObject({ autorise: false, approvers: [{ name: owner.email, role: "proprietaire" }] });
+      expect((await owner.a.get(`${pubs}/${d1.id}`)).body.workStatus).toBe("en-revue");
+
+      // Un autre approbateur : approbation non marquée ; journal du projet et audit portent la marque.
+      const ok = await owner.a.post(`${pubs}/${d1.id}/approuver`).send(examine(d1));
+      expect(ok.status).toBe(200);
+      expect(ok.body.approvedSelfControl).toBe(false);
+      // Rien de rétroactif : rétablir l'option ne re-marque pas l'approbation passée.
+      expect((await boss.a.patch(`/admin/users/${eve.id}/self-control`).send({ allowed: true })).body.user.selfControlAllowed).toBe(true);
+      expect((await owner.a.get(`${pubs}/${d1.id}`)).body.approvedSelfControl).toBe(false);
+
+      // Option activée : Eve approuve son propre dossier, approbation signalée (évènement, vue, audit, journal).
+      await draw("l2");
+      const d2 = await dossier("Dossier 2");
+      const before = (await pool.query("SELECT manifest_hash FROM studio_publications WHERE id = $1", [d2.id])).rows[0].manifest_hash;
+      const self = await eve.a.post(`${pubs}/${d2.id}/approuver`).send(examine(d2));
+      expect(self.status).toBe(200);
+      expect(self.body.approvedSelfControl).toBe(true);
+      expect((self.body.events as { action: string; selfControl: boolean | null }[]).find((e) => e.action === "approuver")!.selfControl).toBe(true);
+      expect(self.body.manifestHash).toBe(before);
+      expect(self.body.approval.manifestHash).toBe(before);
+      // Le périmètre s'arrête à la révision déjà approuvée (dossier 1) : une seule révision d'Eve depuis.
+      const audits = (await pool.query("SELECT actor_id, metadata FROM admin.audit_log WHERE action = 'review.approval.recorded' AND metadata->>'projectId' = $1 ORDER BY id", [pid])).rows;
+      expect(audits.map((a) => [a.actor_id, a.metadata.selfControl, a.metadata.revisionsAuteur, a.metadata.soumisParLui])).toEqual([[owner.id, false, 0, false], [eve.id, true, 1, true]]);
+      const journal = await owner.a.get(`/projects/${pid}/journal`);
+      expect(journal.status).toBe(200);
+      const marked = (journal.body.entries as { action: string; details: Record<string, unknown> }[]).filter((e) => e.action === "review.approval.recorded").map((e) => e.details["selfControl"]);
+      expect(marked).toEqual([true, false]);
+      // Le diffuseur n'est pas concerné : Eve n'est pas Diffuseur, le propriétaire diffuse sans contrôle ni marque.
+      const diffused = await owner.a.post(`${pubs}/${d2.id}/diffuser`).send({});
+      expect(diffused.status).toBe(200);
+      expect(diffused.body.diffusion.manifestHash).toBe(before);
+      expect(diffused.body.approvedSelfControl).toBe(true);
+      const row = (await pool.query("SELECT approved_self_control, manifest_hash, approved_manifest_hash FROM studio_publications WHERE id = $1", [d2.id])).rows[0];
+      expect(row).toEqual({ approved_self_control: true, manifest_hash: before, approved_manifest_hash: before });
+    });
+  });
 });
 
 // ---------------------------------------------------------------------------------------------------------------------

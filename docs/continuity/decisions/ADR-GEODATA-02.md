@@ -33,6 +33,10 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
    - D-GD-08 : versions immuables, retrait motivé, expiration des imports (24 h) et des fiches d’export (30 jours).
    - D-GD-09 : V1 privée, sans partage.
    - D-GD-10 : traitements synchrones bornés, journal GeoData sans coordonnées.
+   - D-GD-11 (25 octobre 2026, demande du maître d'ouvrage) : style « une couleur par entité » (`categories`) — palette
+     qualitative de 12 couleurs (ColorBrewer « Paired »), une couleur distincte par unité jusqu'à 12 unités, au-delà
+     coloration du graphe de voisinage (voisins distincts) calculée par le serveur ; aucune couleur ni valeur enregistrée
+     dans la composition, la couleur n'est qu'un repère visuel.
 
 ## Conséquences
 

@@ -37,7 +37,7 @@
 .admin-status[data-status="suspended"], .admin-status[data-status="closed"] { background: #f6e1e1; color: #7e2020; }
 .admin-status[data-status="locked"], .admin-status[data-status="deletion_pending"] { background: #fdf0d8; color: #6b4206; }
 .admin-pager { display: flex; gap: 8px; align-items: center; margin: 10px 0; flex-wrap: wrap; }
-.admin-detail { display: grid; gap: 14px; margin-top: 16px; }
+.admin-detail { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; margin-top: 16px; overflow-wrap: anywhere; }
 .admin-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .public-account-page dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; }
 .public-account-page dt { font-weight: 600; }

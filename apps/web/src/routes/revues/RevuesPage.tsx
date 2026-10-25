@@ -20,6 +20,9 @@ import {
 import { declencheRevue, propsRaccourciRevue, type CommandeRevue } from "../../modules/collaboration/commandes-revue";
 import { IconeRevue, RaccourciRevue } from "../../modules/collaboration/IconeRevue";
 import "./revues.css";
+import { ApiError, type ControleApprobation } from "../../lib/api";
+import { refusServeur } from "../../lib/auto-controle";
+import { AvisAutoControle, MarqueAutoControle } from "../../components/AutoControle";
 
 const date = (iso: string | null | undefined) => (iso ? new Date(iso.length === 10 ? `${iso}T12:00:00Z` : iso).toLocaleDateString(LOCALE, { day: "2-digit", month: "long", year: "numeric" }) : "—");
 const dateHeure = (iso: string) => new Date(iso).toLocaleString(LOCALE, { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
@@ -148,10 +151,22 @@ export function RevuePage() {
     onSuccess: (r) => { setReponse(false); setNote(""); refresh(); setMsg({ ok: true, text: r.result === "satisfaisante" ? "Réponse enregistrée : revue satisfaisante pour la portée. Elle ne vaut pas approbation." : "Réponse enregistrée : constats rendus." }); },
     onError: (e) => setMsg({ ok: false, text: apiMessage(e, "La réponse n’a pas pu être enregistrée.") }),
   });
+  // OP-6 : auto-contrôle de l'approbateur nommé, relu du serveur quand la décision lui est ouverte.
+  const peutApprouver = !!review && peut(review, "approuver");
+  const apercu = useQuery({ queryKey: ["controle-approbation", "revue", packageId, review?.publication.workStatus], queryFn: () => revuesApi.approvalCheck(packageId), enabled: peutApprouver, retry: false });
+  const [controleRefus, setControleRefus] = useState<ControleApprobation | null>(null);
+  const controle = controleRefus ?? apercu.data ?? null;
+  const approbationFermee = controle !== null && controle.autoControle && !controle.autorise;
+  const [confirmeAuto, setConfirmeAuto] = useState(false);
+  const confirmationManquante = !!controle?.autoControle && controle.autorise && !confirmeAuto;
   const decide = useMutation({
     mutationFn: (d: "approuver" | "refuser") => (d === "approuver" ? revuesApi.approve(packageId, review!.package.manifestHash, note.trim() || undefined) : revuesApi.refuse(packageId, note.trim())),
-    onSuccess: (r) => { setDecision(false); setNote(""); refresh(); setMsg({ ok: true, text: r.decision === "approuver" ? "Approbation enregistrée par Studio, pour le manifeste de ce paquet. La diffusion reste une opération distincte." : "Refus enregistré par Studio." }); },
-    onError: (e) => setMsg({ ok: false, text: apiMessage(e, "La décision n’a pas pu être enregistrée.") }),
+    onSuccess: (r) => { setDecision(false); setNote(""); setConfirmeAuto(false); refresh(); setMsg({ ok: true, text: r.decision === "approuver" ? "Approbation enregistrée par Studio, pour le manifeste de ce paquet. La diffusion reste une opération distincte." : "Refus enregistré par Studio." }); },
+    onError: (e) => {
+      const refus = e instanceof ApiError ? refusServeur(e.status, e.body) : null;
+      if (refus) setControleRefus(refus);
+      setMsg({ ok: false, text: refus ? "Approbation refusée : vous avez produit ou soumis ce dossier et l’auto-contrôle n’est pas autorisé pour votre compte." : apiMessage(e, "La décision n’a pas pu être enregistrée.") });
+    },
   });
 
   const ouvrirConstat = () => { if (review && peut(review, "commenter")) { setForm(true); setTimeout(() => area.current?.focus(), 0); } };
@@ -196,7 +211,7 @@ export function RevuePage() {
           <dt>Échéance de réponse</dt><dd data-revue-echeance>{date(p.dueOn)}{p.overdue && <strong className="revue-retard"> · en retard (une échéance dépassée ne vaut pas accord)</strong>}</dd>
           <dt>Coordination</dt><dd translate="no">{p.coordinator}</dd>
           <dt>Statut du paquet</dt><dd data-revue-statut><span className="admin-status revue-status" data-status={p.status}>{STATUT_PAQUET[p.status]}</span>{p.replacedBy && <> · <Link to={`/revues/${p.replacedBy}`}>version plus récente</Link></>}{p.supersedes && <> · remplace la <Link to={`/revues/${p.supersedes.id}`}>version {p.supersedes.version}</Link></>}</dd>
-          <dt>Statut enregistré par Studio</dt><dd>{STATUT_TRAVAIL[review.publication.workStatus] ?? review.publication.workStatus}{!review.publication.matchesPackage && " · la publication a changé depuis ce paquet"}</dd>
+          <dt>Statut enregistré par Studio</dt><dd>{STATUT_TRAVAIL[review.publication.workStatus] ?? review.publication.workStatus}{!review.publication.matchesPackage && " · la publication a changé depuis ce paquet"}{review.publication.approvedSelfControl && <>{" "}<MarqueAutoControle data="data-revue-auto-controle" /></>}</dd>
           <dt>Révision examinée</dt><dd><code translate="no">{court(p.revisionId)}</code> · manifeste <code translate="no">{court(p.manifestHash)}</code></dd>
         </dl>
       </section>
@@ -235,8 +250,9 @@ export function RevuePage() {
             <p className="h7-muted">La décision porte sur le manifeste <code translate="no">{court(p.manifestHash)}</code> de ce paquet ; elle est enregistrée par les transitions Studio. La diffusion reste distincte.</p>
             <label htmlFor="revue-motif">Commentaire (requis pour refuser)</label>
             <textarea id="revue-motif" rows={2} maxLength={2000} value={note} onChange={(e) => setNote(e.target.value)} />
+            {controle && <div id="revue-auto-controle"><AvisAutoControle controle={controle} confirme={confirmeAuto} surConfirme={setConfirmeAuto} id="revue-auto-controle-case" /></div>}
             <div className="h7-actions">
-              <button type="button" className="button-primary" disabled={!online || decide.isPending} onClick={() => decide.mutate("approuver")}>Approuver</button>
+              <button type="button" className="button-primary" data-revue-approuver aria-describedby={controle?.autoControle ? "revue-auto-controle" : undefined} disabled={!online || decide.isPending || apercu.isPending || approbationFermee || confirmationManquante} onClick={() => decide.mutate("approuver")}>Approuver</button>
               <button type="button" className="button-secondary" disabled={!online || decide.isPending || !note.trim()} onClick={() => decide.mutate("refuser")}>Refuser</button>
               <button type="button" className="link-button" onClick={() => setDecision(false)}>Fermer</button>
             </div>
