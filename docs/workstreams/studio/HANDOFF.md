@@ -1,5 +1,11 @@
 # Reprise — Studio
 
+## Dépôt du plan Axes — 25 octobre 2026
+
+Tâche documentaire [#294](https://github.com/RachEma-ux/Fadi/issues/294), branche `docs/294-axes-implementation-plan`, base `0ff0638c3f6781bb94fce9b22c82c69c7ed7083e`. Le [plan d’implémentation Axes v1.0](Fadi-Concept-Axes%20Pan.md) est ajouté avec le nom demandé et le contenu du fichier remis à l’utilisateur : 12 lots AXE-00 à AXE-11, quatre phases et 20 scénarios AX01–AX20. Il complète la paire de concepts sans la remplacer.
+
+Prochaine action : ouvrir la PR liée à #294 et vérifier son HEAD, son diff et ses checks. La demande présente autorise le dépôt du fichier ; elle ne lance pas l’implémentation. Si celle-ci est ensuite demandée, commencer par AXE-00, rechercher le suivi existant et revalider le dépôt. Les checkpoints antérieurs ci-dessous restent historiques ; ne pas reprendre leurs anciennes instructions de fusion comme un mandat actuel.
+
 ## Complément documentaire Axes — 23 octobre 2026
 
 Tâche bornée [#260](https://github.com/RachEma-ux/Fadi/issues/260), branche `docs/260-axes-concept`, base vérifiée `516e2f747c15d84f8c589e5271c015e929dc37e4`. Le concept Axes v1.0 est proposé pour validation dans [la paire MD/DOCX](../../../Fadi%20Concept/README.md). Il formalise la barre d’outils, les repères et plans de travail, les origines de composants, la persistance, les limites de recherche et 20 scénarios de recette futurs.
