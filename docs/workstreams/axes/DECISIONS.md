@@ -77,3 +77,9 @@ Export OBJ, STL et IFC : choix explicite « Coordonnées du modèle » (défaut)
 exprimées dans le repère actif, origine et unité affichées). « Coordonnées d'origine » n'est offert que pour une
 Planche dont l'import a consigné sa correspondance (unité source et facteur) ; sinon il est grisé avec son motif.
 Aucune correspondance géographique n'est inventée.
+
+## AX-D11 — Clôture de la délégation (25 octobre 2026)
+
+Les lots AX-0 à AX-5 sont livrés : phase A fusionnée (#298), phases B et C (#303), phase D et recette (`RECETTE.md`)
+dans la même PR #303. La délégation AX-D1 s'éteint avec la fusion de cette dernière PR. L'acceptation des scénarios,
+tout déploiement et toute suite (hôte Studio, collaboration sur des repères partagés) attendent le maître d'ouvrage.

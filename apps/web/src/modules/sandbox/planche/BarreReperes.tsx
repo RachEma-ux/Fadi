@@ -15,7 +15,7 @@ import { useNavigationBarre } from "../navigation-barre";
 import { pasClavier } from "../panneaux/barre-actions-position";
 import { IconeSandbox, Pictogramme } from "../pictogrammes/Pictogramme";
 import { borner, positionDefautBarre, positionDocquee, type Position, type Taille, type Zone } from "./barres-outils-disposition";
-import { COMMANDES_REPERES, type CommandeRepere, type IdCommandeRepere, cleNomRepere, disponibiliteRepere } from "./commandes-reperes";
+import { COMMANDES_REPERES, type CommandeRepere, type IdCommandeRepere, disponibiliteRepere } from "./commandes-reperes";
 import { afficherRaccourci, pictoOutil } from "./outils-planche";
 
 const RACCOURCI_PLACER = entreeOutil("axes").raccourci ?? "";
@@ -34,6 +34,12 @@ export interface PropsBarreReperes {
   demandeListe: number;
   /** Change pour ouvrir l'inspecteur sur la rotation (raccourci Alt + Maj + 3). */
   demandeInspecteur: number;
+  /** Repères enregistrés de la Planche (AX-3), dans l'ordre du gestionnaire. */
+  enregistres: readonly { readonly id: string; readonly nom: string }[];
+  /** Nom affiché du repère actif et marque « Modifié » (AX-3). */
+  nomActif: string;
+  modifie: boolean;
+  onActiverEnregistre: (id: string) => void;
   onCommande: (id: IdCommandeRepere) => void;
   onPlacer: () => void;
   onOrigine: (o: Vec3) => string | null;
@@ -201,7 +207,7 @@ export function BarreReperes(p: PropsBarreReperes) {
     const d = disponibiliteRepere(c.id, etat);
     const motif = d.motif ? t(d.motif) : null;
     const actif = (c.id === "verrouiller-plan" && p.contexte.verrou) || (c.id === "choisir-repere" && ouvert === "liste");
-    const nom = c.id === "plan-de-travail" ? libellePlan(p.contexte) : c.id === "choisir-repere" ? t(cleNomRepere(p.contexte)) : t(c.court);
+    const nom = c.id === "plan-de-travail" ? libellePlan(p.contexte) : c.id === "choisir-repere" ? `${p.nomActif}${p.modifie ? ` (${t("planche.reperes.modifie")})` : ""}` : t(c.court);
     return (
       <button
         key={c.id}
@@ -303,8 +309,24 @@ export function BarreReperes(p: PropsBarreReperes) {
           {p.contexte.source.genre === "temporaire" && (
             <button type="button" role="menuitemradio" aria-checked data-reperes-choix="temporaire" onClick={() => setOuvert(null)}>
               {t("planche.reperes.liste.courant")}
+              {p.modifie ? ` — ${t("planche.reperes.modifie")}` : ""}
             </button>
           )}
+          {p.enregistres.map((r) => (
+            <button
+              key={r.id}
+              type="button"
+              role="menuitemradio"
+              aria-checked={p.contexte.source.genre === "enregistre" && p.contexte.source.id === r.id}
+              data-reperes-choix={r.id}
+              onClick={() => {
+                setOuvert(null);
+                p.onActiverEnregistre(r.id);
+              }}
+            >
+              {r.nom}
+            </button>
+          ))}
         </div>
       )}
       {ouvert === "plus" && (

@@ -99,3 +99,24 @@ describe("Sandbox — module autonome (lot 1)", () => {
     expect(fichiers(STUDIO).some((f) => /SandboxPlanche|PageSandbox/.test(code(f)))).toBe(false);
   });
 });
+
+/**
+ * Chantier Axes (AX-D2, scénarios AX18 et AX19) : le contexte de travail, les repères enregistrés et l'origine de
+ * composant vivent dans le Sandbox seul. Le dessin 2D du Studio reste un document 2D indépendant : il n'importe ni le
+ * Sandbox ni son modèle, et ne porte aucun contexte de travail 3D caché.
+ */
+describe("Axes — frontières (AX18, AX19)", () => {
+  const studio = fichiers(STUDIO).filter((f) => /\.tsx?$/.test(f));
+  it("aucun fichier du Studio n'importe le modèle du Sandbox (repères, contexte de travail)", () => {
+    for (const f of studio) for (const i of imports(f)) expect(i, f).not.toMatch(/@parcours\/sandbox-planche-model|modules\/sandbox/);
+  });
+  it("le dessin 2D du Studio (planche2d) ne porte ni contexte de travail ni plan de travail 3D", () => {
+    const planche2d = studio.filter((f) => f.includes(`${sep}planche2d${sep}`));
+    expect(planche2d.length).toBeGreaterThan(0);
+    for (const f of planche2d) expect(code(f), f).not.toMatch(/ContexteTravail|repereTravail|planDeTravail|REPERE_DU_MODELE/);
+  });
+  it("la barre « Axes et repères » est propre au Sandbox (aucune copie dans l'Atelier ni le Studio)", () => {
+    const ailleurs = [...studio, ...fichiers(resolve(RACINE, "../atelier")).filter((f) => /\.tsx?$/.test(f))];
+    for (const f of ailleurs) expect(code(f), f).not.toMatch(/BarreReperes|PanneauReperes|PanneauOrigineComposant/);
+  });
+});

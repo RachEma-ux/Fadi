@@ -837,6 +837,21 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/sandbox-axes node apps/web/e2e/sandbox-axes.mjs 2>&1 | tee -a e2e.log
+      - name: Recette Repères enregistrés du Sandbox — enregistrer, Modifié, mettre à jour, renommer, dupliquer, supprimer avec résolution, scènes avec et sans rappel du repère, triade exclue du PNG par défaut, rechargement (apps/web/e2e/sandbox-reperes.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/sandbox-reperes node apps/web/e2e/sandbox-reperes.mjs 2>&1 | tee -a e2e.log
+      - name: Recette Origine du composant du Sandbox — Changer les axes, portée toutes ou cette occurrence, aucun sommet monde déplacé, refus d'un point invalide, lot en un pas (apps/web/e2e/sandbox-origine.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/sandbox-origine node apps/web/e2e/sandbox-origine.mjs 2>&1 | tee -a e2e.log
+      - name: Recette Repères liés et coordonnées des exports du Sandbox — santé du lien (à jour, face changée, face supprimée), mise à jour explicite, détacher, export OBJ modèle et repère de travail (apps/web/e2e/sandbox-reperes-lies.mjs)
+        if: ${{ matrix.shard == 'planche' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/sandbox-reperes-lies node apps/web/e2e/sandbox-reperes-lies.mjs 2>&1 | tee -a e2e.log
       - name: Recette du socle Temps réel — montée de protocole refusée, session idempotente, présence, vue et sélection projetées, révision annoncée, hôte sans droit, révocations immédiates, clôture et journal (apps/web/e2e/temps-reel-sessions.mjs)
         if: ${{ matrix.shard == 'p2' }}
         run: |
