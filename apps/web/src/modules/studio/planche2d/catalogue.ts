@@ -26,7 +26,7 @@ export const MANIFESTE_COMMANDES = Object.freeze({
   "terminer-polyligne": P2D, "fermer-polyligne": P2D,
   "zoom-avant": P2D, "zoom-arriere": P2D, cadrer: P2D, "plein-ecran": P2D_V3D, "vue-3d": P2D_V3D, "navigation-3d": V3D, "coupe-3d": V3D,
   "accrochage-sommets": P2D, "accrochage-grille": P2D, "accrochage-milieu": P2D, "accrochage-centre": P2D, "accrochage-quadrant": P2D,
-  "accrochage-intersection": P2D, "accrochage-perpendiculaire": P2D, "accrochage-tangente": P2D, "accrochage-proche": P2D,
+  "accrochage-intersection": P2D, "accrochage-perpendiculaire": P2D, "accrochage-tangente": P2D, "accrochage-parallele": P2D, "accrochage-proche": P2D,
   "reperage-orthogonal": P2D, "reperage-polaire": P2D, "pas-polaire": P2D,
   "importer-dxf": P2D, "importer-ifc": P2D, "modeles-externes": ["planche-2d", "vue-3d", "feuille"], "exporter-svg": P2D, "exporter-dxf": P2D, "exporter-ifc": P2D, feuille: ["feuille"], "exporter-png": V3D,
   outils: ["planche-2d", "vue-3d", "feuille"], palette: ["planche-2d", "vue-3d", "feuille"],

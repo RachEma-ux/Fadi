@@ -204,6 +204,7 @@ describe("Planche 2D de Studio — règle d'or", () => {
       ["accrochage-intersection", "X", "accrochage", "studio-snap-intersection"],
       ["accrochage-perpendiculaire", "N", "accrochage", "studio-snap-perpendicular"],
       ["accrochage-tangente", "U", "accrochage", "studio-snap-tangent"],
+      ["accrochage-parallele", "Shift+F6", "accrochage", "studio-snap-parallel"],
       ["accrochage-proche", "Shift+J", "accrochage", "studio-snap-nearest"],
       ["reperage-orthogonal", "F8", "reperage", "studio-track-ortho"],
       ["reperage-polaire", "F10", "reperage", "studio-track-polar"],

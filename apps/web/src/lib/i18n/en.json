@@ -10245,6 +10245,7 @@
 "libéré": "released",
 "échec du chargement": "loading failed",
 "Le moteur n’a pas pu être chargé : réessayez.": "The engine could not be loaded: try again.",
+"Accrocher en parallèle": "Snap parallel",
 "Découvert (non chargé)": "Discovered (not loaded)",
 "Non disponible ici": "Not available here",
 "Incompatible avec ce contexte": "Incompatible with this context",
