@@ -104,6 +104,11 @@ for (const [domaine, ref] of [["metre", "mur-1#volume-net"], ["objet", "mur-1"],
 const relu = await reader("GET", `${obsPath}?domaine=metre&ref=${encodeURIComponent("mur-1#volume-net")}`);
 check("E.2-01 recherche par domaine (lecteur) : la même identité, une seule", relu.status === 200 && relu.body?.observations?.length === 1 && relu.body.observations[0].id === O);
 check("E.2-01 élément déjà lié à cette observation → 409 deja_liee", (await owner("POST", `${one(O)}/liens`, { domaine: "objet", ref: "mur-1", requestId: rid() })).body?.error === "deja_liee");
+// EX-069 : le même constat ouvert depuis un AUTRE domaine (Dessin, objet mur-1 déjà suivi par O ouverte depuis l'exigence).
+const autreDomaine = await editor("POST", obsPath, { body: "Mur 1 : même écart vu depuis le dessin", responsableId: ids.editor, vue: { mode: "plan" }, liens: [{ domaine: "objet", ref: "mur-1" }], requestId: rid(), audience: "projet" });
+const nbObservations = (await owner("GET", obsPath)).body?.observations?.length;
+check("EX-069 [−] même constat ouvert depuis un second domaine (objet) : doublon détecté (409 deja_suivie, identifiant de l'observation existante), aucune seconde observation",
+  autreDomaine.status === 409 && autreDomaine.body?.error === "deja_suivie" && autreDomaine.body?.observationId === O && autreDomaine.body?.domaine === "objet" && nbObservations === 1, j([autreDomaine.status, autreDomaine.body, nbObservations]));
 const invalides = await Promise.all([
   owner("POST", `${one(O)}/liens`, { domaine: "objet", ref: "inconnu" }), owner("POST", `${one(O)}/liens`, { domaine: "metre", ref: "mur-1#surface" }),
   owner("POST", `${one(O)}/liens`, { domaine: "exigence", ref: "exi-9" }), owner("POST", `${one(O)}/liens`, { domaine: "revue", ref: "publication-inconnue" }),
@@ -175,6 +180,10 @@ check("E.2-04 décision de clôture non motivée → 400 motif_exige", (await tr
 const attente = await transition(owner, { action: "cloturer", note: "Recontrôle conforme" });
 check("E.2-04 clôture refusée tant qu'une tâche reste à faire (409 taches_ouvertes)", attente.status === 409 && attente.body?.error === "taches_ouvertes" && attente.body?.count === 2, j(attente.body));
 check("E.2-03 le propriétaire termine et annule les tâches restantes", (await passe(owner, T2, { action: "terminer" })).status === 200 && (await passe(owner, T3, { action: "annuler" })).status === 200);
+const sansTache = (await owner("GET", one(O))).body;
+check("EX-084 [−] toutes les tâches faites ou annulées : l'observation reste non clôturée (aucune transition implicite, la clôture reste une décision)",
+  sansTache?.statut === "recontrolee" && (sansTache.taches ?? []).length >= 3 && sansTache.taches.every((t) => ["faite", "annulee"].includes(t.statut))
+  && !(sansTache.decisions ?? []).some((d) => d.portee === "cloture" && d.nature === "decision"), j([sansTache?.statut, sansTache?.taches?.map((t) => t.statut)]));
 const close = await transition(owner, { action: "cloturer", note: "Recontrôle conforme en r3" });
 const derniere = close.body?.decisions?.at(-1);
 check("E.2-04 / E.2-05 le propriétaire clôt : décision de clôture consignée (motif, rôle, révision recontrôlée)", close.status === 200 && close.body.statut === "cloturee"

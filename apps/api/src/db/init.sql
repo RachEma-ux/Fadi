@@ -1008,6 +1008,29 @@ ALTER TABLE studio_publication_events DROP CONSTRAINT IF EXISTS studio_publicati
   ADD CONSTRAINT studio_publication_events_manifest_hash_check
   CHECK (manifest_hash IS NULL OR manifest_hash ~ '^[0-9a-f]{64}$') NOT VALID;
 CREATE INDEX IF NOT EXISTS studio_publications_variant_idx ON studio_publications(variant_id, diffused_at);
+-- Publication non réécrite (EX-082) : une fois diffusée (paquet figé), une publication garde son paquet, son manifeste,
+-- la révision et l'empreinte publiées, l'approbation et la diffusion qui les couvrent. Toute UPDATE qui changerait l'un
+-- d'eux est refusée ; retrait et remplacement (statuts, `replaced_*`, `updated_at`) restent de nouveaux évènements.
+-- Diffusée s'entend d'une diffusion en vigueur ou historique (diffusée, retirée, remplacée ; statut combiné pour une ligne
+-- antérieure au lot E.4) : une publication restaurée d'une archive non vérifiée, remise « non diffusée » à relire,
+-- n'est la diffusion de personne et repasse par le circuit complet. Aucune ligne existante n'est réécrite.
+CREATE OR REPLACE FUNCTION studio_publication_package_frozen() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF OLD.package_hash IS NOT NULL AND (OLD.diffusion_status IN ('diffuse', 'retire', 'remplace')
+    OR (OLD.diffusion_status IS NULL AND OLD.status IN ('diffuse', 'retire'))) AND (
+    NEW.package IS DISTINCT FROM OLD.package OR NEW.package_hash IS DISTINCT FROM OLD.package_hash
+    OR NEW.manifest IS DISTINCT FROM OLD.manifest OR NEW.manifest_hash IS DISTINCT FROM OLD.manifest_hash
+    OR NEW.approved_manifest_hash IS DISTINCT FROM OLD.approved_manifest_hash
+    OR NEW.revision_id IS DISTINCT FROM OLD.revision_id OR NEW.document_hash IS DISTINCT FROM OLD.document_hash
+    OR NEW.diffused_by IS DISTINCT FROM OLD.diffused_by OR NEW.diffused_at IS DISTINCT FROM OLD.diffused_at
+  ) THEN
+    RAISE EXCEPTION 'studio_publication_package_immutable';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+CREATE OR REPLACE TRIGGER studio_publications_package_frozen BEFORE UPDATE ON studio_publications
+  FOR EACH ROW EXECUTE FUNCTION studio_publication_package_frozen();
 -- Clé de signature des archives de projet propre à la base (lib/archive-signing-key.ts) : utilisée seulement quand
 -- ARCHIVE_SIGNING_KEY n'est pas fournie, créée à la première signature (une ligne, id 'local'). La clé ne sort jamais
 -- du serveur : l'archive ne porte que son identifiant. Table nouvelle, additive.
