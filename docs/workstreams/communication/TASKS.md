@@ -8,11 +8,11 @@
 
 ## En cours
 
-- COM-13 — Photos et épingles : implémenté et vérifié en local, PR de livraison ouverte ; fusion et déploiement sur accord.
+- Aucun lot COM en cours : COM-13 fusionné (PR #287) ; COM-10 à COM-12 attendent leurs préalables ou une décision.
 
 ## Terminé
 
-- [x] COM-13 (implémentation) — Photos et épingles : `com_pieces`, `lib/com-images.ts`, routes pièces / plan, épingle et position, interface, recette § 13.
+- [x] COM-13 — Photos et épingles : `com_pieces`, `lib/com-images.ts`, routes pièces / plan, épingle et position, interface, recette § 13 ; fusionné (PR #287, `f2cc31b`, COM-A4), non déployé.
 - [x] COM-9 — Décisions COM-D1 à COM-D14 acceptées (COM-A2, 2026-10-24).
 - [x] Livraison — PR #285 fusionnée dans `main` (`173b9f1`, 2026-10-24), CI verte, revue Codex traitée.
 - [x] COM-0 — Plan d'implémentation et décisions COM-D1 à COM-D14 (`PLAN.md`, `DECISIONS.md`).

@@ -1,13 +1,14 @@
 # Communication (COM) — Statut
 
-Mis à jour : 2026-10-24 (UTC).
+Mis à jour : 2026-10-25 (UTC).
 
 ## État
 
 **Implémenté, vérifié et fusionné dans `main`** (PR #285, commit de fusion `173b9f1`, 2026-10-24, à la demande du maître
 d'ouvrage) — CI verte sur `a5ef51b`. Décisions COM-D1 à COM-D14 **acceptées** (COM-A2). **Non déployé.**
 
-**Lot COM-13 (photos et épingles, COM-A3) : implémenté et vérifié en local, PR à suivre ; non fusionné, non déployé.**
+**Lot COM-13 (photos et épingles, COM-A3) : fusionné dans `main`** (PR #287, commit de fusion `f2cc31b`, 2026-10-25, à la
+demande du maître d'ouvrage, COM-A4) — CI verte sur `53eafb1`. **Non déployé.**
 
 ## Faits vérifiés
 
@@ -40,6 +41,10 @@ Le 2026-10-24, sur la branche `ccr-a50667e3-fng2br`, avec une base PostGIS local
   retirées, 413 / 415 / 422, rejeu, photo non jointe réservée à l'auteur, épingle sur révision exacte, position
   geographic, photo d'un fil d'équipe refusée au lecteur, recopie au partage, observation reprenant la révision, photo
   d'un message retiré non servie ; § 11 : photo jointe et épingle posée depuis l'interface) ; `interface-anglais.mjs` vert.
+- PR #287 (2026-10-25) : relecture Codex (4 fils) corrigée dans `73066b0` (JPEG : tous les balayages, rien après EOI ;
+  limite de six photos par sélection ; lecture GPS invalidée au décochage) ; `main` intégré (`53eafb1`, conflit
+  `en.json` résolu en gardant les deux côtés) ; CI verte sur `53eafb1` après une relance de `e2e (parcours)` (échec
+  ponctuel dans `studio-navigation.mjs`, hors COM, vert sur `main` et en local — consigné sur la PR).
 
 ## Points ouverts
 

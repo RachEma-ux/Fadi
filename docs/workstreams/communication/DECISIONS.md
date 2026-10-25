@@ -44,6 +44,8 @@ Nommées COM-A* (accords) pour ne pas se confondre avec les critères COM-R1 à 
   par défaut (COM-D15 à COM-D19). Les autres recommandations (invitations après UM-28, BCF par fichier en premier
   connecteur, annuaires après Organisations phase 5, ni courriel entrant, ni réunions, IA limitée au résumé d'un fil
   si un jour retenue) restent des recommandations, non engagées.
+- **COM-A4 (2026-10-25)** — « Fusionne 287 » : fusion de la PR #287 (lot COM-13) demandée et réalisée (`f2cc31b`),
+  après intégration de `main` et CI verte. Aucun déploiement demandé.
 
 ## Questions ouvertes (non bloquantes)
 
