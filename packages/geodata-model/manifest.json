@@ -1,0 +1,7 @@
+{
+  "name": "@parcours/geodata-model",
+  "version": "0.1.0",
+  "description": "Logique pure de GeoData (9ᵉ module, ADR-GEODATA-02) partagée par le navigateur et le serveur : coordonnées étiquetées, mesures indicatives, composition de carte, classification avec absence distincte de zéro, validation GeoJSON, capacités et droits par usage. Aucune notion de projet.",
+  "contracts": {},
+  "allowedDependencies": []
+}

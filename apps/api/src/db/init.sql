@@ -2417,6 +2417,277 @@ CREATE INDEX IF NOT EXISTS rt_annotations_session_idx ON rt_annotations (session
 ALTER TABLE rt_sessions ADD COLUMN IF NOT EXISTS publication_manifest_hash text;
 
 -- ---------------------------------------------------------------------------
+-- GeoData (9ᵉ module, ADR-GEODATA-01 et ADR-GEODATA-02, D-GD-02) : tables préfixées `geodata_`, AUCUNE clé ni colonne
+-- vers les projets (GEO 04) ; seule l'identité des comptes (`users`) est référencée. Un espace personnel par compte
+-- (création idempotente) ; cartes, collections, zones, analyses, imports et exports appartiennent à un espace. Versions
+-- de données publiées immuables (déclencheurs) ; une version commune publiée n'est jamais effacée, seulement retirée avec
+-- motif ; une valeur absente porte un motif et n'est jamais zéro (INV-06). Additif et rejouable.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS geodata_espaces (
+  id text PRIMARY KEY,
+  type text NOT NULL DEFAULT 'personnel' CHECK (type IN ('personnel', 'collectif')),
+  proprietaire_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  nom text,
+  etat text NOT NULL DEFAULT 'actif' CHECK (etat IN ('actif', 'archive')),
+  cree_le timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS geodata_espaces_personnel_uniq ON geodata_espaces (proprietaire_id) WHERE type = 'personnel';
+-- Membres d'un espace collectif (extension préparée, D-GD-09 : aucune action exposée en V1).
+CREATE TABLE IF NOT EXISTS geodata_membres (
+  espace_id text NOT NULL REFERENCES geodata_espaces (id) ON DELETE CASCADE,
+  user_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  role text NOT NULL CHECK (role IN ('lecteur', 'contributeur')),
+  valide_jusqu_au timestamptz,
+  PRIMARY KEY (espace_id, user_id)
+);
+-- Rôles GeoData à l'échelle du module (jamais déduits d'un rôle de projet ou de plateforme).
+CREATE TABLE IF NOT EXISTS geodata_roles (
+  user_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  role text NOT NULL CHECK (role IN ('gestionnaire-donnees', 'responsable-publication', 'administrateur')),
+  attribue_par text REFERENCES users (id) ON DELETE SET NULL,
+  attribue_le timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, role)
+);
+-- Source : identité stable d'un jeu, indépendante de ses versions. `espace_id` nul = catalogue commun ; sinon import privé.
+CREATE TABLE IF NOT EXISTS geodata_sources (
+  id text PRIMARY KEY,
+  cle text NOT NULL UNIQUE,
+  espace_id text REFERENCES geodata_espaces (id) ON DELETE CASCADE,
+  titre text NOT NULL,
+  producteur text NOT NULL,
+  theme text NOT NULL,
+  couverture text NOT NULL,
+  description text NOT NULL DEFAULT '',
+  cree_le timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS geodata_versions (
+  id text PRIMARY KEY,
+  source_id text NOT NULL REFERENCES geodata_sources (id),
+  espace_id text REFERENCES geodata_espaces (id) ON DELETE CASCADE,
+  libelle text NOT NULL,
+  empreinte text NOT NULL CHECK (empreinte ~ '^[0-9a-f]{64}$'),
+  fichier_nom text,
+  fichier_taille bigint,
+  url_source text,
+  recupere_le timestamptz,
+  periode text,
+  licence text NOT NULL,
+  attribution text NOT NULL,
+  droits jsonb NOT NULL,
+  crs_source text NOT NULL,
+  precision_donnees text,
+  transformations jsonb NOT NULL DEFAULT '[]'::jsonb,
+  controles jsonb NOT NULL DEFAULT '{}'::jsonb,
+  synthetique boolean NOT NULL DEFAULT false,
+  etat text NOT NULL DEFAULT 'preparation' CHECK (etat IN ('preparation', 'publiee', 'retiree')),
+  preparee_par text REFERENCES users (id) ON DELETE SET NULL,
+  preparee_le timestamptz NOT NULL DEFAULT now(),
+  publiee_par text REFERENCES users (id) ON DELETE SET NULL,
+  publiee_le timestamptz,
+  retiree_le timestamptz,
+  motif_retrait text,
+  CONSTRAINT geodata_versions_retrait_motif CHECK (etat <> 'retiree' OR (motif_retrait IS NOT NULL AND length(btrim(motif_retrait)) >= 3))
+);
+CREATE INDEX IF NOT EXISTS geodata_versions_source_idx ON geodata_versions (source_id, etat);
+CREATE TABLE IF NOT EXISTS geodata_couches (
+  id text PRIMARY KEY,
+  version_id text NOT NULL REFERENCES geodata_versions (id) ON DELETE CASCADE,
+  titre text NOT NULL,
+  description text NOT NULL DEFAULT '',
+  type_geometrie text NOT NULL CHECK (type_geometrie IN ('polygone', 'ligne', 'point', 'mixte')),
+  niveau text,
+  proprietes_exposees jsonb NOT NULL DEFAULT '[]'::jsonb,
+  style_defaut jsonb NOT NULL DEFAULT '{"mode":"simple","couleur":"#2b8cbe"}'::jsonb,
+  emprise geometry(Polygon, 4326),
+  nombre_objets integer NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS geodata_couches_version_idx ON geodata_couches (version_id);
+-- Objets : géométrie de RÉFÉRENCE (WGS 84) ; les simplifications d'affichage sont calculées à la volée pour les tuiles,
+-- jamais pour les calculs (INV-09). Code texte : les zéros initiaux sont conservés.
+CREATE TABLE IF NOT EXISTS geodata_objets (
+  id bigserial PRIMARY KEY,
+  couche_id text NOT NULL REFERENCES geodata_couches (id) ON DELETE CASCADE,
+  code text NOT NULL,
+  nom text,
+  niveau text,
+  parent_code text,
+  proprietes jsonb NOT NULL DEFAULT '{}'::jsonb,
+  geom geometry(Geometry, 4326) NOT NULL,
+  geometrie_reparee boolean NOT NULL DEFAULT false,
+  CONSTRAINT geodata_objets_code_uniq UNIQUE (couche_id, code)
+);
+CREATE INDEX IF NOT EXISTS geodata_objets_geom_idx ON geodata_objets USING gist (geom);
+CREATE INDEX IF NOT EXISTS geodata_objets_nom_idx ON geodata_objets (couche_id, lower(nom));
+CREATE TABLE IF NOT EXISTS geodata_indicateurs (
+  id text PRIMARY KEY,
+  couche_id text NOT NULL REFERENCES geodata_couches (id) ON DELETE CASCADE,
+  titre text NOT NULL,
+  unite text NOT NULL,
+  periode text,
+  nature text NOT NULL CHECK (nature IN ('source', 'calcule')),
+  methode text NOT NULL,
+  denominateur text,
+  description text NOT NULL DEFAULT ''
+);
+CREATE TABLE IF NOT EXISTS geodata_valeurs (
+  indicateur_id text NOT NULL REFERENCES geodata_indicateurs (id) ON DELETE CASCADE,
+  code text NOT NULL,
+  valeur double precision,
+  motif_absence text CHECK (motif_absence IN ('non-publiee', 'secret-statistique', 'hors-couverture', 'non-appariee', 'non-comparable', 'non-evaluee')),
+  PRIMARY KEY (indicateur_id, code),
+  CONSTRAINT geodata_valeurs_absence CHECK ((valeur IS NULL) <> (motif_absence IS NULL))
+);
+CREATE TABLE IF NOT EXISTS geodata_collections (
+  id text PRIMARY KEY,
+  espace_id text NOT NULL REFERENCES geodata_espaces (id) ON DELETE CASCADE,
+  nom text NOT NULL CHECK (length(btrim(nom)) BETWEEN 1 AND 120),
+  etat text NOT NULL DEFAULT 'active' CHECK (etat IN ('active', 'archivee')),
+  cree_le timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT geodata_collections_espace_uniq UNIQUE (id, espace_id)
+);
+-- Une carte et sa collection sont du même espace (clé composite) : aucun rattachement croisé.
+CREATE TABLE IF NOT EXISTS geodata_cartes (
+  id text PRIMARY KEY,
+  espace_id text NOT NULL REFERENCES geodata_espaces (id) ON DELETE CASCADE,
+  proprietaire_id text NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  nom text NOT NULL CHECK (length(btrim(nom)) BETWEEN 1 AND 120),
+  collection_id text,
+  revision integer NOT NULL DEFAULT 1 CHECK (revision >= 1),
+  etat text NOT NULL DEFAULT 'active' CHECK (etat IN ('active', 'archivee')),
+  composition jsonb NOT NULL,
+  cree_le timestamptz NOT NULL DEFAULT now(),
+  modifie_le timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT geodata_cartes_espace_uniq UNIQUE (id, espace_id),
+  CONSTRAINT geodata_cartes_collection_fk FOREIGN KEY (collection_id, espace_id) REFERENCES geodata_collections (id, espace_id)
+);
+CREATE INDEX IF NOT EXISTS geodata_cartes_espace_idx ON geodata_cartes (espace_id, etat, modifie_le DESC);
+CREATE TABLE IF NOT EXISTS geodata_zones (
+  id text PRIMARY KEY,
+  espace_id text NOT NULL REFERENCES geodata_espaces (id) ON DELETE CASCADE,
+  auteur_id text REFERENCES users (id) ON DELETE SET NULL,
+  nature text NOT NULL CHECK (nature IN ('zone', 'annotation')),
+  nom text NOT NULL CHECK (length(btrim(nom)) BETWEEN 1 AND 120),
+  texte text NOT NULL DEFAULT '' CHECK (length(texte) <= 2000),
+  provenance text NOT NULL CHECK (provenance IN ('dessin', 'import', 'coordonnees')),
+  provenance_detail text,
+  crs text NOT NULL DEFAULT 'EPSG:4326' CHECK (crs = 'EPSG:4326'),
+  geom geometry(Geometry, 4326) NOT NULL,
+  geometrie_reparee boolean NOT NULL DEFAULT false,
+  revision integer NOT NULL DEFAULT 1 CHECK (revision >= 1),
+  etat text NOT NULL DEFAULT 'active' CHECK (etat IN ('active', 'archivee')),
+  cree_le timestamptz NOT NULL DEFAULT now(),
+  modifie_le timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT geodata_zones_espace_uniq UNIQUE (id, espace_id)
+);
+CREATE INDEX IF NOT EXISTS geodata_zones_geom_idx ON geodata_zones USING gist (geom);
+-- Analyses : entrées FIGÉES (géométrie copiée, révision de la zone, version de la couche, méthode) ; immuables. Recalculer
+-- crée une nouvelle analyse (GEO 10).
+CREATE TABLE IF NOT EXISTS geodata_analyses (
+  id text PRIMARY KEY,
+  espace_id text NOT NULL REFERENCES geodata_espaces (id) ON DELETE CASCADE,
+  auteur_id text REFERENCES users (id) ON DELETE SET NULL,
+  zone_id text NOT NULL,
+  zone_revision integer NOT NULL,
+  geom_entree geometry(Geometry, 4326) NOT NULL,
+  couche_id text NOT NULL,
+  version_id text NOT NULL REFERENCES geodata_versions (id),
+  methode text NOT NULL,
+  version_methode text NOT NULL,
+  parametres jsonb NOT NULL DEFAULT '{}'::jsonb,
+  resultat jsonb NOT NULL,
+  cree_le timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT geodata_analyses_zone_fk FOREIGN KEY (zone_id, espace_id) REFERENCES geodata_zones (id, espace_id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS geodata_analyses_espace_idx ON geodata_analyses (espace_id, cree_le DESC);
+CREATE TABLE IF NOT EXISTS geodata_imports (
+  id text PRIMARY KEY,
+  espace_id text NOT NULL REFERENCES geodata_espaces (id) ON DELETE CASCADE,
+  demandeur_id text REFERENCES users (id) ON DELETE SET NULL,
+  request_id text NOT NULL CHECK (length(request_id) BETWEEN 8 AND 80),
+  etat text NOT NULL CHECK (etat IN ('valide', 'rejete', 'confirme', 'annule', 'expire')),
+  nom_fichier text NOT NULL,
+  taille integer NOT NULL,
+  empreinte text NOT NULL,
+  rapport jsonb NOT NULL,
+  contenu jsonb,
+  version_id text REFERENCES geodata_versions (id) ON DELETE SET NULL,
+  cree_le timestamptz NOT NULL DEFAULT now(),
+  expire_le timestamptz NOT NULL,
+  CONSTRAINT geodata_imports_request_uniq UNIQUE (espace_id, request_id)
+);
+CREATE TABLE IF NOT EXISTS geodata_exports (
+  id text PRIMARY KEY,
+  espace_id text NOT NULL REFERENCES geodata_espaces (id) ON DELETE CASCADE,
+  demandeur_id text REFERENCES users (id) ON DELETE SET NULL,
+  carte_id text NOT NULL,
+  carte_revision integer NOT NULL,
+  composition jsonb NOT NULL,
+  etat text NOT NULL CHECK (etat IN ('autorise', 'refuse')),
+  refus jsonb NOT NULL DEFAULT '[]'::jsonb,
+  attributions jsonb NOT NULL DEFAULT '[]'::jsonb,
+  fiche_html text,
+  cree_le timestamptz NOT NULL DEFAULT now(),
+  expire_le timestamptz NOT NULL,
+  CONSTRAINT geodata_exports_carte_fk FOREIGN KEY (carte_id, espace_id) REFERENCES geodata_cartes (id, espace_id) ON DELETE CASCADE
+);
+-- Journal GeoData : acteur, action, ressource, résultat — ni secret, ni coordonnées (D-GD-10).
+CREATE TABLE IF NOT EXISTS geodata_journal (
+  id bigserial PRIMARY KEY,
+  acteur_id text REFERENCES users (id) ON DELETE SET NULL,
+  action text NOT NULL,
+  ressource text,
+  resultat text NOT NULL,
+  details jsonb NOT NULL DEFAULT '{}'::jsonb,
+  le timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS geodata_journal_le_idx ON geodata_journal (le DESC);
+
+-- Immuabilité d'une version hors préparation (INV-07) : seul le retrait (etat, date, motif) reste possible ; une version
+-- commune publiée ou retirée ne s'efface pas (une version privée part avec son espace).
+CREATE OR REPLACE FUNCTION geodata_version_immuable() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF TG_OP = 'DELETE' THEN
+    IF OLD.etat <> 'preparation' AND OLD.espace_id IS NULL THEN RAISE EXCEPTION 'geodata_version_publiee_non_effacable'; END IF;
+    RETURN OLD;
+  END IF;
+  IF OLD.etat = 'preparation' THEN RETURN NEW; END IF;
+  IF OLD.etat = 'retiree' THEN RAISE EXCEPTION 'geodata_version_immuable'; END IF;
+  IF NEW.etat <> 'retiree' OR (to_jsonb(NEW) - ARRAY['etat', 'retiree_le', 'motif_retrait']) <> (to_jsonb(OLD) - ARRAY['etat', 'retiree_le', 'motif_retrait']) THEN
+    RAISE EXCEPTION 'geodata_version_immuable';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+CREATE OR REPLACE TRIGGER geodata_versions_immuables BEFORE UPDATE OR DELETE ON geodata_versions
+  FOR EACH ROW EXECUTE FUNCTION geodata_version_immuable();
+-- Contenu d'une version (couches, objets, indicateurs, valeurs) figé dès qu'elle n'est plus en préparation.
+CREATE OR REPLACE FUNCTION geodata_contenu_fige() RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE
+  v text;
+BEGIN
+  IF TG_TABLE_NAME = 'geodata_couches' THEN
+    SELECT etat INTO v FROM geodata_versions WHERE id = NEW.version_id;
+  ELSIF TG_TABLE_NAME = 'geodata_objets' OR TG_TABLE_NAME = 'geodata_indicateurs' THEN
+    SELECT ve.etat INTO v FROM geodata_couches c JOIN geodata_versions ve ON ve.id = c.version_id WHERE c.id = NEW.couche_id;
+  ELSE
+    SELECT ve.etat INTO v FROM geodata_indicateurs i JOIN geodata_couches c ON c.id = i.couche_id JOIN geodata_versions ve ON ve.id = c.version_id WHERE i.id = NEW.indicateur_id;
+  END IF;
+  IF v IS DISTINCT FROM 'preparation' THEN RAISE EXCEPTION 'geodata_contenu_fige'; END IF;
+  RETURN NEW;
+END;
+$$;
+CREATE OR REPLACE TRIGGER geodata_couches_figees BEFORE INSERT OR UPDATE ON geodata_couches FOR EACH ROW EXECUTE FUNCTION geodata_contenu_fige();
+CREATE OR REPLACE TRIGGER geodata_objets_figes BEFORE INSERT OR UPDATE ON geodata_objets FOR EACH ROW EXECUTE FUNCTION geodata_contenu_fige();
+CREATE OR REPLACE TRIGGER geodata_indicateurs_figes BEFORE INSERT OR UPDATE ON geodata_indicateurs FOR EACH ROW EXECUTE FUNCTION geodata_contenu_fige();
+CREATE OR REPLACE TRIGGER geodata_valeurs_figees BEFORE INSERT OR UPDATE ON geodata_valeurs FOR EACH ROW EXECUTE FUNCTION geodata_contenu_fige();
+CREATE OR REPLACE FUNCTION geodata_analyse_immuable() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'geodata_analyse_immuable';
+END;
+$$;
+CREATE OR REPLACE TRIGGER geodata_analyses_immuables BEFORE UPDATE ON geodata_analyses FOR EACH ROW EXECUTE FUNCTION geodata_analyse_immuable();
+
+-- ---------------------------------------------------------------------------
 -- D-7 : droits au moindre privilège. Exécuté par un super-utilisateur (amorçage, CI) : propriété de tout transférée à
 -- `fadi_owner` ; exécuté par `fadi_migrator` (membre de `fadi_owner`) : droits rejoués ; sinon, simple avis (rôles non
 -- provisionnés : rien n'est changé). `fadi_app` : lecture / écriture des tables, aucun DDL, journal d'audit en lecture et

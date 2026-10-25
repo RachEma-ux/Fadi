@@ -1,0 +1,48 @@
+{
+  "cle": "geoboundaries-mar-adm1",
+  "titre": "Limites administratives du Maroc — régions (ADM1)",
+  "description": "Douze régions, découpage geoBoundaries gbOpen (année représentée 2017, données source mises à jour le 19 janvier 2023, construction du 12 décembre 2023). Jeu ouvert à qualifier face aux limites officielles : il ne remplace pas un document administratif.",
+  "producteur": "geoBoundaries (William & Mary geoLab), d'après OpenStreetMap et Wambacher",
+  "theme": "limites-administratives",
+  "couverture": "Maroc (gbOpen MAR)",
+  "version": {
+    "libelle": "geoBoundaries gbOpen MAR ADM1 — commit 9469f09",
+    "url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/9469f09/releaseData/gbOpen/MAR/ADM1/geoBoundaries-MAR-ADM1.geojson",
+    "empreinte": "6c4e3e25ecade3d00530faa820dcf3fecec4728218089a34bcb922bdb29c129f",
+    "periode": "Année représentée 2017 ; source mise à jour le 2023-01-19",
+    "licence": "Open Data Commons Open Database License 1.0 (ODbL)",
+    "attribution": "© contributeurs OpenStreetMap (ODbL) ; geoBoundaries, wmgeolab",
+    "droits": {
+      "consultation": "autorise",
+      "stockage": "autorise",
+      "calcul": "autorise",
+      "tuiles": "autorise",
+      "commercial": "autorise",
+      "partage": "autorise",
+      "telechargement": "autorise",
+      "export": "autorise"
+    },
+    "precision": "Limites OpenStreetMap (Wambacher) ; précision non garantie par le producteur ; 753 à 14 421 sommets par unité",
+    "synthetique": false,
+    "conditions": "ODbL 1.0 : attribution « © contributeurs OpenStreetMap » obligatoire ; une base dérivée redistribuée reste sous ODbL (partage à l'identique) ; une œuvre produite (carte, image) peut être diffusée avec l'attribution."
+  },
+  "couche": {
+    "titre": "Régions du Maroc (ADM1)",
+    "description": "Unités administratives de niveau 1 ; code ISO 3166-2 (shapeISO).",
+    "niveau": "ADM1",
+    "champCode": "shapeISO",
+    "champNom": "shapeName",
+    "proprietesExposees": [
+      "shapeISO",
+      "shapeName",
+      "shapeID",
+      "shapeType"
+    ],
+    "styleDefaut": {
+      "mode": "simple",
+      "couleur": "#2b8cbe"
+    }
+  },
+  "indicateurs": [],
+  "superficie": true
+}

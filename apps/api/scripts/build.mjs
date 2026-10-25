@@ -39,6 +39,7 @@ await build({
     "@parcours/domain-model": join(root, "../../packages/domain-model/src/index.ts"),
     "@parcours/core-geometry": join(root, "../../packages/core-geometry/src/index.ts"),
     "@parcours/geometry-exact": join(root, "../../packages/geometry-exact/src/index.ts"),
+    "@parcours/geodata-model": join(root, "../../packages/geodata-model/src/index.ts"),
   },
   logLevel: "info",
 });
