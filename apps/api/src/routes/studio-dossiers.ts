@@ -21,6 +21,8 @@ import {
   readStudioDossierFile, readStudioSheetFile, studioDossierCreateSchema, studioDossierUpdateSchema, studioSheetCreateSchema, studioSheetUpdateSchema,
   updateStudioDossier, updateStudioSheet,
 } from "../lib/studio-dossiers.js";
+import { avecContrat } from "../lib/studio-contrats.js";
+import { CONTRAT_DOSSIERS_PROJET, CONTRAT_FEUILLES_LISTER, CONTRAT_FEUILLE_CREER, CONTRAT_FEUILLE_MODIFIER, CONTRAT_FEUILLE_SUPPRIMER, CONTRAT_FEUILLE_FICHIER, CONTRAT_DOSSIERS_LISTER, CONTRAT_DOSSIER_CREER, CONTRAT_DOSSIER_LIRE, CONTRAT_DOSSIER_MODIFIER, CONTRAT_DOSSIER_FICHIER } from "../lib/studio-contrats-routes.js";
 
 export const studioDossiersRouter = Router({ mergeParams: true });
 
@@ -49,57 +51,57 @@ function sendFile(res: Response, out: { body: Buffer; fileName: string; mime: st
   res.status(200).send(out.body);
 }
 
-studioDossiersRouter.get("/dossiers", endpoint(async (req, res) => {
+studioDossiersRouter.get("/dossiers", avecContrat(CONTRAT_DOSSIERS_PROJET), endpoint(async (req, res) => {
   res.setHeader("Cache-Control", "private, no-store");
   res.json(await listProjectStudioDossiers(param(req, "projectId"), req.user!.id));
 }));
-studioDossiersRouter.get("/studies/:studyId/sheets", endpoint(async (req, res) => {
+studioDossiersRouter.get("/studies/:studyId/sheets", avecContrat(CONTRAT_FEUILLES_LISTER), endpoint(async (req, res) => {
   res.setHeader("Cache-Control", "private, no-store");
   res.json(await listStudioSheets(param(req, "projectId"), param(req, "studyId"), req.user!.id));
 }));
-studioDossiersRouter.post("/studies/:studyId/variants/:variantId/sheets", endpoint(async (req, res) => {
+studioDossiersRouter.post("/studies/:studyId/variants/:variantId/sheets", avecContrat(CONTRAT_FEUILLE_CREER), endpoint(async (req, res) => {
   const parsed = studioSheetCreateSchema.safeParse(req.body ?? {});
   if (!parsed.success) { invalid(res, parsed.error.flatten()); return; }
   const out = await createStudioSheet(param(req, "projectId"), param(req, "studyId"), param(req, "variantId"), req.user!.id, parsed.data);
   res.setHeader("Idempotent-Replayed", String(out.replayed));
   res.status(201).json(out);
 }));
-studioDossiersRouter.patch(sheet, endpoint(async (req, res) => {
+studioDossiersRouter.patch(sheet, avecContrat(CONTRAT_FEUILLE_MODIFIER), endpoint(async (req, res) => {
   const parsed = studioSheetUpdateSchema.safeParse(req.body ?? {});
   if (!parsed.success) { invalid(res, parsed.error.flatten()); return; }
   res.json(await updateStudioSheet(param(req, "projectId"), param(req, "studyId"), param(req, "sheetId"), req.user!.id, parsed.data));
 }));
-studioDossiersRouter.delete(sheet, endpoint(async (req, res) => {
+studioDossiersRouter.delete(sheet, avecContrat(CONTRAT_FEUILLE_SUPPRIMER), endpoint(async (req, res) => {
   res.json(await deleteStudioSheet(param(req, "projectId"), param(req, "studyId"), param(req, "sheetId"), req.user!.id));
 }));
-studioDossiersRouter.get(`${sheet}/files/:format`, endpoint(async (req, res) => {
+studioDossiersRouter.get(`${sheet}/files/:format`, avecContrat(CONTRAT_FEUILLE_FICHIER), endpoint(async (req, res) => {
   const out = await readStudioSheetFile(param(req, "projectId"), param(req, "studyId"), param(req, "sheetId"), req.user!.id, param(req, "format"));
   sendFile(res, out, {
     "X-Studio-Revision": out.feuille.vue.source.revisionId, "X-Studio-Variant": out.feuille.vue.source.variantId,
     "X-Studio-Document-Hash": out.feuille.vue.source.documentHash, "X-Studio-View-Hash": out.feuille.vue.empreinteDonnees, "X-Studio-Sheet-Hash": out.feuille.empreinte,
   });
 }));
-studioDossiersRouter.get("/studies/:studyId/dossiers", endpoint(async (req, res) => {
+studioDossiersRouter.get("/studies/:studyId/dossiers", avecContrat(CONTRAT_DOSSIERS_LISTER), endpoint(async (req, res) => {
   res.setHeader("Cache-Control", "private, no-store");
   res.json(await listStudioDossiers(param(req, "projectId"), param(req, "studyId"), req.user!.id));
 }));
-studioDossiersRouter.post("/studies/:studyId/dossiers", endpoint(async (req, res) => {
+studioDossiersRouter.post("/studies/:studyId/dossiers", avecContrat(CONTRAT_DOSSIER_CREER), endpoint(async (req, res) => {
   const parsed = studioDossierCreateSchema.safeParse(req.body ?? {});
   if (!parsed.success) { invalid(res, parsed.error.flatten()); return; }
   const out = await createStudioDossier(param(req, "projectId"), param(req, "studyId"), req.user!.id, parsed.data);
   res.setHeader("Idempotent-Replayed", String(out.replayed));
   res.status(201).json(out);
 }));
-studioDossiersRouter.get(dossier, endpoint(async (req, res) => {
+studioDossiersRouter.get(dossier, avecContrat(CONTRAT_DOSSIER_LIRE), endpoint(async (req, res) => {
   res.setHeader("Cache-Control", "private, no-store");
   res.json(await readStudioDossier(param(req, "projectId"), param(req, "studyId"), param(req, "dossierId"), req.user!.id));
 }));
-studioDossiersRouter.patch(dossier, endpoint(async (req, res) => {
+studioDossiersRouter.patch(dossier, avecContrat(CONTRAT_DOSSIER_MODIFIER), endpoint(async (req, res) => {
   const parsed = studioDossierUpdateSchema.safeParse(req.body ?? {});
   if (!parsed.success) { invalid(res, parsed.error.flatten()); return; }
   res.json(await updateStudioDossier(param(req, "projectId"), param(req, "studyId"), param(req, "dossierId"), req.user!.id, parsed.data));
 }));
-studioDossiersRouter.get(`${dossier}/files/:format`, endpoint(async (req, res) => {
+studioDossiersRouter.get(`${dossier}/files/:format`, avecContrat(CONTRAT_DOSSIER_FICHIER), endpoint(async (req, res) => {
   const out = await readStudioDossierFile(param(req, "projectId"), param(req, "studyId"), param(req, "dossierId"), req.user!.id, param(req, "format"));
   sendFile(res, out, { "X-Studio-Dossier-Hash": out.empreinte });
 }));
