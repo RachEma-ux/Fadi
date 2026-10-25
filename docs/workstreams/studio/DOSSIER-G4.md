@@ -4,10 +4,9 @@ Instruit le 25 octobre 2026 par le chef de projet, sous délégation du maître 
 ([ADR-STUDIO-PILOTE-01](../../continuity/decisions/ADR-STUDIO-PILOTE-01.md)).
 
 **Verdict au 25 octobre 2026 : G4 n'est pas franchie.** G1 est franchie. Les éliminatoires BLOC-01, 03 et 04 sont
-vérifiés. Restent :
+vérifiés, comme BLOC-02 (tâches serveur comprises). Les quatre défauts éliminatoires sont donc contrôlés. Restent :
 - la recette utilisateur réelle (R.3-01) ;
 - un build candidat figé et vérifié en préproduction (R.1-01) ;
-- BLOC-02, partiel ;
 - l'installation de la phase B sur le VPS (§4) ;
 - les actes du maître d'ouvrage (G4-03).
 
@@ -33,9 +32,10 @@ vérifiés. Restent :
 - **Défauts éliminatoires** :
   - BLOC-01 (double autorité 2D/3D), BLOC-03 (double application, écrasement) et BLOC-04 (résultat périmé engagé)
     sont **vérifiés** par les scénarios TEST-003, 006, 007, 012, 013 et 014, et par A.4-05, joués en CI.
-  - BLOC-02 (accès entre projets par une tâche) reste **partiel** : les refus par URL, par export et par composition
-    sont prouvés (TEST-035). Le cas « job serveur » n'a pas de recette dédiée, alors que le serveur recalcule désormais
-    les booléens exacts (lot F2).
+  - BLOC-02 (accès entre projets par une tâche) est **vérifié** : refus par URL, export et composition (TEST-035), et
+    refus par chaque tâche serveur (`studio-taches-projets.preuves-bloc02.test.ts`). Sont couverts le recalcul des
+    booléens exacts, le contrôle d'exigences, le rapprochement des observations, la relecture des modèles externes et
+    la composition des feuilles et dossiers. Le noyau exact n'est plus chargé avant que les opérandes aient été relus.
 - **Fonctions** : les fonctions que le dossier relevait comme absentes sont livrées et recettées :
   - lot F1 : édition de faces, profil source lié, direction d'extrusion, division de face cotée ;
   - lot F2 : noyau exact et booléens ;
@@ -66,7 +66,7 @@ vérifiés. Restent :
 | Étape | Par qui | État |
 |---|---|---|
 | G1 | chef de projet (délégation) | franchie avec réserves (P-11) |
-| BLOC-02 : recette d'un accès refusé par une tâche serveur | session cloud | à faire |
+| BLOC-02 : recette d'un accès refusé par une tâche serveur | session cloud | fait |
 | Fonctions absentes et décisions du point 2 : livrées, ou déclarées hors pilote par une décision qui les nomme | chef de projet ou maître d'ouvrage | à faire |
 | `fadi-prod-auto` installé sur le VPS, recette d'échec simulé et de retour arrière jouée | administrateur | à faire |
 | Build candidat figé, déployé en préproduction, NAV-001 à 009 rejouées dessus (R.1-01, R.3-02) | session cloud, après installation | à faire |
