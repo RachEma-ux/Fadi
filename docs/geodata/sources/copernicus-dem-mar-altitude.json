@@ -1,0 +1,48 @@
+{
+  "cle": "copernicus-dem-mar-altitude",
+  "titre": "Altitude du Maroc (Copernicus DEM)",
+  "description": "Modèle numérique de surface Copernicus GLO-90 (tuiles COG publiques AWS, aperçus au 1/2), moyenné sur la grille Fadi. Surface (bâti, végétation compris), pas le terrain nu.",
+  "producteur": "Agence spatiale européenne (ESA), programme Copernicus",
+  "theme": "relief",
+  "couverture": "Maroc (territoire de geoBoundaries gbOpen MAR ADM1)",
+  "version": {
+    "libelle": "Copernicus DEM GLO-90 (COG AWS Open Data), lu le 2026-10-25",
+    "url": null,
+    "fichier": "donnees/copernicus-dem-mar-altitude.tif",
+    "empreinte": "23c459c7891f0cf3b35cd9577876f948e33ecdb630de70d92c6e8e992c88d0e7",
+    "periode": "Acquisitions TanDEM-X 2011–2015",
+    "licence": "Licence Copernicus DEM GLO-90 : libre et gratuite, attribution obligatoire",
+    "attribution": "Copernicus DEM GLO-90 © DLR e.V. 2010-2014 et © Airbus Defence and Space GmbH 2014-2018, fourni par l'ESA (programme Copernicus)",
+    "droits": {
+      "consultation": "autorise",
+      "stockage": "autorise",
+      "calcul": "autorise",
+      "tuiles": "autorise",
+      "commercial": "autorise",
+      "partage": "autorise",
+      "telechargement": "autorise",
+      "export": "autorise"
+    },
+    "precision": "Modèle de surface à 90 m d'origine ; grille Fadi de 0,01° (≈ 1,1 km), 1625 × 1525 cellules, rééchantillonnage moyenne ; hors territoire geoBoundaries MAR ADM1 : sans donnée",
+    "synthetique": false,
+    "conditions": "Réutilisation libre et gratuite ; mention de la source obligatoire."
+  },
+  "couche": {
+    "titre": "Altitude du Maroc (Copernicus DEM)",
+    "description": "Altitude de la surface",
+    "niveau": null,
+    "champCode": "code",
+    "champNom": null,
+    "proprietesExposees": [],
+    "styleDefaut": {
+      "mode": "raster"
+    },
+    "raster": {
+      "unite": "m",
+      "grandeur": "Altitude de la surface",
+      "palette": "relief"
+    }
+  },
+  "indicateurs": [],
+  "superficie": false
+}

@@ -38,6 +38,12 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   `apps/api/src/db/geodata-sources.test.ts` ; `--fiche toutes` les importe et publie en une commande (vérifié sur la base
   locale). Écartées : couches raster (hors V1), sources aux droits non établis.
 
+- Couches raster (D-GD-13) : capacité livrée (grille figée, tuiles PNG serveur, légende, valeur au point) et 17 couches
+  préparées depuis leurs sources d'origine par `scripts/geodata/preparer_rasters.py` (grille 0,01°, masque geoBoundaries) :
+  Copernicus DEM (altitude, pente calculée), ESA WorldCover 2021, SoilGrids 2.0 (10 propriétés), CHIRPS 2024, Global Wind
+  Atlas, Global Solar Atlas (PVOUT), WorldPop 2020 ; vérifiées sur la base locale (import, tuiles, valeur au point).
+- Couches complémentaires : communes OSM (1 498, niveau 8) et sites minéraux USGS MRDS (110).
+
 ## Points ouverts
 
 Recette sur appareils physiques et validation d'usage ; Release de production ; qualification des droits HCP ; extensions V1.1.

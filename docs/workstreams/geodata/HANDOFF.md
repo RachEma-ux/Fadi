@@ -19,6 +19,7 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 - Préproduction : rôles et geoBoundaries ADM1/ADM2 importés le 25 octobre 2026 ; recette d'usage constatée par le maître
   d'ouvrage (carte, fiche, recherche, enregistrement, export).
 - Style « une couleur par entité » (D-GD-11) : PR #314 fusionnée.
+- Couches raster (D-GD-13) et 17 rasters de sources d'origine ; communes OSM (1 498) ; sites minéraux USGS (110).
 - Sources ouvertes (D-GD-12) : 29 couches OpenStreetMap / OurAirports livrées avec leur fiche (15332 objets).
 
 ## Prochaine action
