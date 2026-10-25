@@ -1062,6 +1062,12 @@ jobs:
           curl -sf http://localhost:3001/version | tee /dev/stderr | grep -q '"commit":"${{ github.sha }}"'
           curl -sf http://localhost:3001/version | grep -Eq '"buildDate":"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:]{8}Z"'
           curl -sf -o /dev/null -X POST -H "Content-Type: application/json" -d '{"email":"image@example.com","password":"correct-horse-battery"}' http://localhost:3001/auth/register
+          # GeoData (ADR-GEODATA-02) : les outils d'exploitation sont dans l'image et tournent avec le compte applicatif
+          # (fadi_app, sans DDL), comme `create-admin.mjs` ; les fiches de source qualifiées sont embarquées.
+          docker exec fadi node apps/api/dist/geodata-role.js --email image@example.com --role gestionnaire-donnees | grep -q "attribué"
+          docker exec fadi test -f apps/api/dist/geodata-reference.js
+          docker exec fadi test -f apps/api/dist/geodata-sources/geoboundaries-mar-adm1.json
+          docker exec fadi test -f apps/api/dist/geodata-sources/geoboundaries-mar-adm2.json
       - name: Journal du conteneur
         if: always()
         run: |

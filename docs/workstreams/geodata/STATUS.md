@@ -21,6 +21,9 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
 - CI GitHub sur `1d7798e` (run 40187001869) : `validate` (dont `geodata.test.ts` sur base PostGIS attestée DB-3), les cinq tranches e2e (dont `apps/web/e2e/geodata.mjs` dans `complements`), `image`, architecture, continuité : succès.
 - Revue Codex : quatre constats P2 (valeurs > 5 000 objets, hauteur de la légende PNG, export lié à la révision affichée, orientation restituée) corrigés dans `63bcce2`, fils résolus.
 
+- Outils d'exploitation compilés dans l'image (`dist/geodata-role.js`, `dist/geodata-reference.js`, fiches `dist/geodata-sources/`) et reprise de publication d'une version préparée : vérifiés sur une base neuve depuis un autre répertoire (téléchargement réel, empreintes conformes, ADM1 12 et ADM2 75 publiées) ; contrôle ajouté au job CI `image`.
+- Aucune Release GitHub ; `fadi-prod-auto` absent du dépôt (phase B non réalisée) : voir `RELEASE-V1.md`.
+
 ## Points ouverts
 
 Recette sur appareils physiques et validation d'usage ; Release de production ; qualification des droits HCP ; extensions V1.1.
