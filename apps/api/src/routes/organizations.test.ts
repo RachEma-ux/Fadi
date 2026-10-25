@@ -4,6 +4,7 @@
  */
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
+import { partager } from "../test-helpers/partage.js";
 import { createApp } from "../app.js";
 import { resetTestDatabase } from "../testing/guarded-test-pool.js";
 import { pool } from "../db/client.js";
@@ -145,7 +146,7 @@ describe("organisations côté projet : partie propriétaire et parties affiché
   it("déclarer la partie propriétaire ne change ni l'accès ni les rôles ; un lecteur voit l'identité seule ; une organisation close reste affichée", async () => {
     const { alice, bob, orgId, projectId, bobMember } = await setup();
     const carol = await account("org-carol@example.com");
-    expect((await alice.client.post(`/projects/${projectId}/members`).send({ email: carol.email, role: "lecteur" })).status).toBe(201);
+    expect((await partager(alice.client, projectId, carol.email, "lecteur")).status).toBe(201);
     const snapshot = async () => ({
       access: (await pool.query("SELECT user_id, role, can_export, can_approve, can_publish FROM project_effective_access WHERE project_id = $1 ORDER BY user_id", [projectId])).rows,
       roles: (await pool.query("SELECT ra.role, ra.scope_type, ra.origin, pe.user_id FROM project_role_assignments ra JOIN project_participations pp ON pp.id = ra.participation_id LEFT JOIN people pe ON pe.id = pp.person_id WHERE pp.project_id = $1 ORDER BY pe.user_id, ra.role", [projectId])).rows,

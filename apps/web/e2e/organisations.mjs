@@ -27,6 +27,7 @@ import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { chromium } from "playwright";
+import { inviterEtAccepter } from "./lib-invitations.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const require = createRequire(import.meta.url);
@@ -405,7 +406,7 @@ try {
   // ------------------------------------------------------------------------------------------------------------------
   // Dave lit le projet (partage en lecture), sans être membre d'aucune organisation ; une seconde organisation partie
   // (Bureau Sud, créée par le formulaire) est close : elle reste affichée avec son statut.
-  check("côté projet : dave reçoit la lecture du projet", (await alice.call("post", `/projects/${pid}/members`, { email: dave.email, role: "lecteur" })).status === 201);
+  check("côté projet : dave reçoit la lecture du projet (invitation acceptée, phase 3)", (await inviterEtAccepter((m, p, b) => alice.call(m.toLowerCase(), p, b), (m, p, b) => dave.call(m.toLowerCase(), p, b), pid, dave.email, "lecteur")).ok);
   await alice.call("patch", `/organizations/${orgId}`, { details: `12 rue des Lilas ${RUN}` });
   const sudId = (await alice.call("get", "/organizations")).body.memberships.find((m) => m.organization.name === `Bureau Sud ${RUN}`).organization.id;
   check("côté projet : seconde organisation enregistrée comme partie", (await alice.call("put", `/organizations/${sudId}/projects/${pid}/participation`, { businessRole: "Bureau d'études" })).status === 201);
