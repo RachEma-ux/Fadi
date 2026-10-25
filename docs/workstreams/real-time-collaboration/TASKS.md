@@ -13,14 +13,14 @@
 
 ## En cours
 
-- RTC-3, RTC-4, RTC-5 — implémentés, relus en équipe (RT-D7) et vérifiés en local ; PR unique, un commit par lot
-  (`lots/rtc-3.md`, `rtc-4.md`, `rtc-5.md`).
 - Préproduction et mise en service : au maître d'ouvrage (recettes `temps-reel-redemarrage.mjs`,
   `temps-reel-retour-arriere.mjs`, `temps-reel-charge.mjs` prêtes ; Caddy `basic_auth`, P.118 sur l'appareil Android,
   Firefox / WebKit).
 
 ## Terminé
 
+- RTC-3, RTC-4, RTC-5 — annotations, revue sur publication figée, robustesse : PR #291 fusionnée CI verte (`84e2be0`),
+  relue en équipe (RT-D7) et par Codex / ECC Tools (`lots/rtc-3.md`, `rtc-4.md`, `rtc-5.md`, `PREUVES-SECURITE-ET-CI.md`).
 - RTC-2 — Vue partagée Studio : PR #289 fusionnée CI verte (`lots/rtc-2.md`).
 - RTC-1 — Socle des sessions et canal temps réel : PR #288 fusionnée CI verte (`lots/rtc-1.md`), trois remarques de revue corrigées (`eb3cf3a`).
 - RTC-0.1 — Dossier, plan amendé, traçabilité RT-R1 à RT-R7 : PR #284 fusionnée (`c3f87de`).

@@ -1,7 +1,7 @@
 # RTC-3 — Annotations enregistrées (compte rendu)
 
 Issue [#283](https://github.com/RachEma-ux/Fadi/issues/283) ; critères RT-R3, RT-R5 ; test TR-T04 ; décisions RT-D4, RT-D5.
-Statut : **implémenté et vérifié en local** ; CI et fusion : voir la PR du lot.
+Statut : **fusionné** (PR #291, `84e2be0`, CI verte) ; acceptation : maître d'ouvrage.
 
 ## Choix (pris par délégation RT-D4)
 
