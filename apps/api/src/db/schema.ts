@@ -1122,7 +1122,7 @@ export const studioObservationEvents = pgTable("studio_observation_events", {
   actorId: text("actor_id").notNull().references(() => users.id, { onDelete: "restrict" }),
   revisionId: text("revision_id"),
   // Responsable désigné par ce passage (ouverture, réattribution) ; null pour les autres passages.
-  responsableId: text("responsable_id"),
+  responsableId: text("responsable_id").references(() => users.id, { onDelete: "restrict" }),
   note: text("note"),
   // Passage idempotent : unique par observation quand renseigné (index partiel, init.sql).
   requestId: text("request_id"),
@@ -1177,7 +1177,7 @@ export const studioObservationTaskEvents = pgTable("studio_observation_task_even
   fromStatut: text("from_statut").$type<StudioObservationTacheStatut | null>(),
   toStatut: text("to_statut").$type<StudioObservationTacheStatut>().notNull(),
   actorId: text("actor_id").notNull().references(() => users.id, { onDelete: "restrict" }),
-  assigneeId: text("assignee_id"),
+  assigneeId: text("assignee_id").references(() => users.id, { onDelete: "restrict" }),
   note: text("note"),
   requestId: text("request_id"),
   payloadHash: text("payload_hash"),
