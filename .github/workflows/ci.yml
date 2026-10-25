@@ -259,6 +259,13 @@ jobs:
       # finalités, participation « revue seule » sans accès au projet, droits fadi_app — transactions annulées.
       - name: Schéma revue externe — paquets figés, affectations, constats, invitations review_package, aucun accès au projet
         run: node scripts/validation/revues-migration-check.mjs
+      # Phase 6 (runbook de déploiement, § 6) : contrôle après déploiement en LECTURE SEULE (transaction READ ONLY, sonde
+      # d'écriture refusée 25006) — reprise sans perte d'accès, pont op_sync_access, participations, paquets figés,
+      # organisations, journal sans adresse, droits D-7 ; instantané avant / après comparé sur la base du job.
+      - name: Contrôle après déploiement organisations-participation — lecture seule, aucune perte d'accès
+        run: |
+          node scripts/validation/organisations-participation-post-deploiement.mjs --instantane "$RUNNER_TEMP/op-acces.json"
+          node scripts/validation/organisations-participation-post-deploiement.mjs --reference "$RUNNER_TEMP/op-acces.json"
       - name: Tests des paquets purs et du web
         run: npm run test --workspace=@parcours/core-geometry --workspace=@parcours/domain-model --workspace=@parcours/atelier-model --workspace=@parcours/planche-model --workspace=@parcours/sandbox-planche-model --workspace=@parcours/geometry-exact --workspace=@fadi/web
       - name: Garde DB-1/2 — tests simulés sans base
