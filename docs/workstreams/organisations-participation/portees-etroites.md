@@ -123,7 +123,8 @@ Légende : **retenue** = la garde passe une `cible` et la capacité de portée s
   de ces documents (y compris Lecteur) ; un Concepteur d'étude **n'exporte pas** (prudent ; à la portée projet, le
   Concepteur exporte).
 - Séparation des responsabilités (« self-checking must be identified ») : non modélisée — un Relecteur de portée qui est
-  aussi l'auteur recontrôle comme avant (auteur).
+  aussi l'auteur recontrôle comme avant (auteur). Pour l'approbation, traitée depuis par le lot OP-AUTOCONTROLE
+  (décision OP-6, [lot-autocontrole.md](lot-autocontrole.md)) : signalée, refusée si l'option du compte est désactivée.
 - Restrictions explicites et délégation : toujours hors périmètre (phase 2 § 3).
 - Messages de refus 403 génériques (`FORBIDDEN_MESSAGE`) inchangés : ils citent les rôles de projet, pas la portée
   manquante (aucune fuite ; à préciser si le maître d'ouvrage le souhaite).

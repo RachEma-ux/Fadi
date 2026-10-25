@@ -7,6 +7,7 @@
  *                                            (`true` : comptes de test des recettes masqués, domaines réservés, UM-31)
  *   GET    /admin/users/:id                  fiche : projets (rôles), sessions, accès support, historique d'audit
  *   PATCH  /admin/users/:id/role             { role: "user" | "admin" }
+ *   PATCH  /admin/users/:id/self-control     { allowed: boolean } — option « Auto-contrôle » (OP-6), activée par défaut
  *   POST   /admin/users/:id/suspend          sessions révoquées, réservations d'édition libérées
  *   POST   /admin/users/:id/reactivate
  *   POST   /admin/users/:id/revoke-sessions
@@ -70,6 +71,8 @@ function userView(u: typeof users.$inferSelect, projectsCount: number) {
     id: u.id, email: u.email, displayName: u.displayName, platformRole: u.platformRole, status: displayStatus(u, new Date()),
     createdAt: u.createdAt.toISOString(), lastLoginAt: u.lastLoginAt?.toISOString() ?? null, emailVerified: !!u.emailVerifiedAt,
     mfaEnabled: !!u.totpEnabledAt, deletionRequestedAt: u.deletionRequestedAt?.toISOString() ?? null, projectsCount,
+    /** OP-6 : option « Auto-contrôle » (TRUE par défaut : approbation d'un dossier produit permise et marquée). */
+    selfControlAllowed: u.selfControlAllowed,
   };
 }
 
@@ -152,6 +155,28 @@ adminRouter.patch("/users/:userId/role", async (req, res) => {
   });
   if (outcome === "not_found") return void notFound(res);
   if (outcome === "last_admin") return void lastAdmin(res);
+  res.json({ user: userView(outcome, 0) });
+});
+
+/**
+ * OP-6 (lot OP-AUTOCONTROLE) : option « Auto-contrôle » d'un compte. TRUE : la personne peut approuver un dossier Studio
+ * qu'elle a produit ou soumis (approbation marquée) ; FALSE : l'API refuse cette approbation (422 `self_approval_forbidden`).
+ * Jamais sur soi-même ; rien de rétroactif (les approbations passées gardent leur marque) ; sessions inchangées.
+ */
+adminRouter.patch("/users/:userId/self-control", async (req, res) => {
+  const id = req.params["userId"] as string;
+  const parsed = z.object({ allowed: z.boolean() }).strict().safeParse(req.body);
+  if (!parsed.success) return void res.status(400).json({ error: "invalid_input" });
+  if (refuseSelf(req, res, id)) return;
+  const outcome = await db.transaction(async (tx) => {
+    const [u] = await tx.select().from(users).where(eq(users.id, id)).limit(1).for("update");
+    if (!u || u.status === "closed") return "not_found" as const;
+    if (u.selfControlAllowed === parsed.data.allowed) return u;
+    const [updated] = await tx.update(users).set({ selfControlAllowed: parsed.data.allowed }).where(eq(users.id, id)).returning();
+    await audit(tx, { actorId: req.user!.id, action: "admin.user.self_control_changed", target: { type: "user", id }, metadata: { from: u.selfControlAllowed, to: parsed.data.allowed }, ip: clientIp(req) });
+    return updated!;
+  });
+  if (outcome === "not_found") return void notFound(res);
   res.json({ user: userView(outcome, 0) });
 });
 

@@ -28,6 +28,7 @@
  *   GET  /:packageId/findings/:id/attachments/:sha256
  *   POST /:packageId/response       { result: constats | satisfaisante, note? }
  *   POST /:packageId/approve | /refuse   approbateur nommé seulement (transitions Studio)
+ *   GET  /:packageId/controle-approbation  aperçu de l'auto-contrôle (OP-6) de l'approbateur nommé, sans e-mail
  *
  * Toute absence d'accès répond 404 sans rien révéler ; un droit insuffisant 403 avec motif.
  */
@@ -46,7 +47,7 @@ import {
 } from "../lib/reviews-team.js";
 import {
   createFinding, decideReview, exportReviewReport, listMyReviews, readFindingAttachment, readMyReview, readReviewFile, recheckFinding, replyToFinding,
-  respondToReview, reviewDecisionSchema, reviewFindingSchema, reviewRecheckSchema, reviewRecipientReplySchema, reviewResponseSchema,
+  respondToReview, reviewApprovalCheck, reviewDecisionSchema, reviewFindingSchema, reviewRecheckSchema, reviewRecipientReplySchema, reviewResponseSchema,
 } from "../lib/reviews-recipient.js";
 import { db } from "../db/client.js";
 import { reviewFindings, reviewPackages, volumes } from "../db/schema.js";
@@ -162,6 +163,8 @@ const pk = (req: Request) => param(req, "packageId");
 
 reviewsRouter.get("/", endpoint(async (req, res) => { res.json(await listMyReviews(req.user!.id)); }));
 reviewsRouter.get("/:packageId", endpoint(async (req, res) => { res.json(await readMyReview(pk(req), req.user!.id)); }));
+// OP-6 : aperçu de l'auto-contrôle avant la décision (approbateur nommé seulement).
+reviewsRouter.get("/:packageId/controle-approbation", endpoint(async (req, res) => { res.json(await reviewApprovalCheck(pk(req), req.user!.id)); }));
 reviewsRouter.get("/:packageId/files/:format", endpoint(async (req, res) => {
   const out = await readReviewFile(pk(req), req.user!.id, param(req, "format"), req.query["download"] === "1");
   safeContentHeaders(res, out.file.mime, out.disposition, out.file.fileName, out.file.sha256);

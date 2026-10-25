@@ -63,12 +63,12 @@ studio-espace studio-publication studio-observations studio-profils studio-catal
 studio-corpus-s6 studio-corpus-s7 studio-conflits studio-chargement studio-mesures-chargement studio-accessibilite
 studio-quantites studio-dossier studio-echanges notifications-preferences atelier-nouveau atelier-documents
 atelier-echanges atelier-versions atelier-automatisation atelier-complements collaboration-audience participants
-portees-etroites communication journal-activite organisations revue-externe invitations-participation
+portees-etroites communication journal-activite organisations revue-externe auto-controle invitations-participation
 collaboration-support-telephone organisations-participation-final atelier-canevas planche planche-modification planche-outils planche-pousser-aretes planche-pousser-modes
 planche-objets planche-clavier planche-pousser-l10a planche-liens planche-suivez-moi planche-revolution
 planche-profiles planche-assemblages planche-debit planche-texte-3d planche-pieces-edition planche-modification-l18
 planche-diagnostics-l19 planche-etirement-plis planche-epaissir planche-effilement-loft planche-lots-4-6 planche-lot-5
-sandbox-module temps-reel-sessions temps-reel-studio temps-reel-annotations temps-reel-revue
+sandbox-module sandbox-axes temps-reel-sessions temps-reel-studio temps-reel-annotations temps-reel-revue
 temps-reel-robustesse temps-reel-charge planche-lot-7 porte-p1-reduite p2-noyau-exact porte-p1-p2 p2-structure p2-bois-tolerie p2-reseaux
 p2-coordination p2-documentation p2-automatisation interface-anglais planche-boutons planche-detachee-documents
 atelier-barre planche-barre-outils studio-restauration"

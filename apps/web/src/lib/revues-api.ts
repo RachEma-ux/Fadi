@@ -3,7 +3,7 @@
  * Le serveur fait seul autorité : les actions affichées sont celles qu'il déclare permises (`me.actions`), revérifiées
  * à chaque requête.
  */
-import { apiRequest } from "./api";
+import { apiRequest, type ControleApprobation } from "./api";
 
 export type ReviewAction = "consulter" | "commenter" | "joindre" | "telecharger" | "exporter" | "repondre" | "recontroler" | "approuver" | "refuser";
 export type ReviewPackageStatus = "brouillon" | "partage" | "clos" | "remplace";
@@ -29,7 +29,8 @@ export interface MyReview {
     projectLabel: string; coordinator: string; supersedes: { id: string; version: number } | null; replacedBy: string | null; sharedAt: string | null;
     revisionId: string; documentHash: string; manifestHash: string; files: ReviewFile[];
   };
-  publication: { workStatus: string; diffusionStatus: string; matchesPackage: boolean; approvedAt: string | null };
+  /** `approvedSelfControl` (OP-6) : approbation de ce paquet marquée auto-contrôle ; null si non approuvée ou avant le lot. */
+  publication: { workStatus: string; diffusionStatus: string; matchesPackage: boolean; approvedAt: string | null; approvedSelfControl?: boolean | null };
   decisionBlock: string | null;
   me: {
     assignments: { id: string; responsibility: ReviewResponsibility; status: ReviewAssignmentStatus; result: string | null; responseNote: string | null; respondedAt: string | null; accessExpiresAt: string;
@@ -46,7 +47,7 @@ export interface FollowUp {
 export interface TeamPackageSummary {
   id: string; lineageId: string; version: number; title: string; status: ReviewPackageStatus; dueOn: string | null; publicationId: string; studyId: string; variantId: string;
   supersedes: string | null; replacedBy: string | null; sharedAt: string | null; createdAt: string; followUp: FollowUp;
-  publication: { title: string; workStatus: string; diffusionStatus: string; freshness: string; manifestHash: string | null; revisionId: string } | null;
+  publication: { title: string; workStatus: string; diffusionStatus: string; freshness: string; manifestHash: string | null; revisionId: string; approvedSelfControl?: boolean | null } | null;
 }
 export interface TeamAssignment {
   id: string; responsibility: ReviewResponsibility; status: ReviewAssignmentStatus; result: string | null; responseNote: string | null; respondedAt: string | null;
@@ -86,6 +87,8 @@ export const revuesApi = {
   respond: (id: string, result: "constats" | "satisfaisante", note?: string) => apiRequest<{ result: string }>(`${mine(id)}/response`, json("POST", { result, ...(note ? { note } : {}) })),
   approve: (id: string, manifestHash: string, comment?: string) => apiRequest<{ decision: string }>(`${mine(id)}/approve`, json("POST", { manifestHash, ...(comment ? { comment } : {}) })),
   refuse: (id: string, comment: string) => apiRequest<{ decision: string }>(`${mine(id)}/refuse`, json("POST", { comment })),
+  /** OP-6 : aperçu de l'auto-contrôle de l'approbateur nommé avant sa décision. */
+  approvalCheck: (id: string) => apiRequest<ControleApprobation>(`${mine(id)}/controle-approbation`),
   // Équipe
   teamList: (projectId: string) => apiRequest<{ canSend: boolean; packages: TeamPackageSummary[] }>(team(projectId)),
   teamGet: (projectId: string, id: string) => apiRequest<TeamPackageDetail>(`${team(projectId)}/${encodeURIComponent(id)}`),

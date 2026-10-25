@@ -10,7 +10,7 @@ import { z } from "zod";
 import { validateStudioDocument } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
 import {
-  projects as projectsTable, reviewAssignments, reviewFindings, reviewPackages as reviewPackagesTable, studioComments, studioObservationEvents, studioObservations, studioRevisions, studioStudies, studioVariants, volumes,
+  projects as projectsTable, reviewAssignments, reviewFindings, reviewPackages as reviewPackagesTable, studioComments, studioObservationEvents, studioObservations, studioPublications, studioRevisions, studioStudies, studioVariants, volumes,
   type ReviewAttachment,
 } from "../db/schema.js";
 import type { Tx } from "./atelier-validation.js";
@@ -27,7 +27,8 @@ import {
 import { estAncetreOuEgale, statutApres } from "./studio-observations.js";
 import { revisionParents } from "./studio-commentaires.js";
 import { StudioRequestError } from "./studio-commands.js";
-import { decideStudioPublicationByReview, publicationReviewState } from "./studio-publications.js";
+import { apercuControleApprobation, decideStudioPublicationByReview, publicationReviewState } from "./studio-publications.js";
+import type { ResultatAutoControle } from "./auto-controle.js";
 import { sha256 } from "./studio-publication-statuts.js";
 import type { Querier } from "./step-rows.js";
 
@@ -110,7 +111,9 @@ export async function readMyReview(packageId: string, userId: string) {
     },
     /** États enregistrés par Studio (aucun statut d'approbation concurrent). */
     publication: { workStatus: decision.publicationWorkStatus, diffusionStatus: decision.publicationDiffusionStatus, matchesPackage: decision.publicationMatchesPackage,
-      approvedAt: decision.publicationMatchesPackage && pub?.approvedAt ? pub.approvedAt.toISOString() : null },
+      approvedAt: decision.publicationMatchesPackage && pub?.approvedAt ? pub.approvedAt.toISOString() : null,
+      /** OP-6 : marque de l'approbation de ce paquet (null : non approuvée, ou approuvée avant le lot). */
+      approvedSelfControl: decision.publicationMatchesPackage && pub?.approvedAt ? pub.approvedSelfControl : null },
     decisionBlock: access.assignments.some((a) => a.responsibility === "approbation" && isOpenAssignment(a.status)) ? decisionBlock(pkg.status, decision) : null,
     me: {
       assignments: access.assignments.map((a) => ({
@@ -305,20 +308,39 @@ export async function decideReview(packageId: string, userId: string, decision: 
     if (decision === "approuver" && input.manifestHash !== access.pkg.manifestHash) {
       refuse(409, "manifest_mismatch", "L'empreinte examinée n'est pas celle du paquet.", { packageManifestHash: access.pkg.manifestHash });
     }
+    let controle: ResultatAutoControle | null = null;
     try {
-      await decideStudioPublicationByReview(tx, access.project, access.pkg.publicationId, userId, decision, {
+      ({ controle } = await decideStudioPublicationByReview(tx, access.project, access.pkg.publicationId, userId, decision, {
         ...(input.comment ? { comment: input.comment } : {}),
         ...(decision === "approuver" ? { manifestHash: access.pkg.manifestHash!, revisionId: access.pkg.revisionId!, documentHash: access.pkg.documentHash! } : {}),
-      });
+      }));
     } catch (e) {
       if (e instanceof StudioRequestError) refuse(e.status, String(e.body["error"] ?? "refused"), String(e.body["message"] ?? "Transition refusée par Studio."), e.body);
       throw e;
     }
     const now = new Date();
     await tx.update(reviewAssignments).set({ status: "terminee", respondedAt: now, responseNote: input.comment ?? null, updatedAt: now }).where(inArray(reviewAssignments.id, open.map((a) => a.id)));
-    await audit(tx, { actorId: userId, action: "review.decision.recorded", target: { type: "project", id: access.pkg.projectId }, metadata: { projectId: access.pkg.projectId, packageId: access.pkg.id, publicationId: access.pkg.publicationId, decision, manifestHash: access.pkg.manifestHash }, ip });
-    return { decision };
+    await audit(tx, { actorId: userId, action: "review.decision.recorded", target: { type: "project", id: access.pkg.projectId }, metadata: {
+      projectId: access.pkg.projectId, packageId: access.pkg.id, publicationId: access.pkg.publicationId, decision, manifestHash: access.pkg.manifestHash,
+      // OP-6 : marque de l'approbation (absente d'un refus, qui n'est pas concerné).
+      ...(controle ? { selfControl: controle.autoControle, revisionsAuteur: controle.revisionsAuteur, soumisParLui: controle.soumisParLui } : {}),
+    }, ip });
+    return { decision, ...(controle ? { selfControl: controle.autoControle } : {}) };
   });
+}
+
+/**
+ * Aperçu de l'auto-contrôle (OP-6) pour l'approbateur nommé, avant sa décision : même règle que l'approbation ; réservé à
+ * une affectation d'approbation ouverte (un relecteur n'y a pas accès). Les autres approbateurs sont nommés sans e-mail.
+ */
+export async function reviewApprovalCheck(packageId: string, userId: string) {
+  const access = await required(packageId, userId);
+  if (!access.assignments.some((a) => a.responsibility === "approbation" && isOpenAssignment(a.status))) {
+    refuse(403, "forbidden", "Vous n'avez pas d'affectation d'approbation attendue sur ce paquet : un relecteur n'approuve pas.");
+  }
+  const [row] = await db.select().from(studioPublications).where(and(eq(studioPublications.id, access.pkg.publicationId), eq(studioPublications.projectId, access.project.id))).limit(1);
+  if (!row) return reviewNotFound();
+  return apercuControleApprobation(db, row, userId, "revue");
 }
 
 /** Rapport de revue exporté (droit `exporter`) : identité du paquet, empreintes, constats et réponses ; jamais de note interne. */

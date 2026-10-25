@@ -55,6 +55,11 @@ export const users = pgTable("users", {
   termsAcceptedAt: timestamp("terms_accepted_at", { withTimezone: true }),
   /** D-3 : réservée, aucune logique ne la lit. */
   organizationId: text("organization_id"),
+  /**
+   * OP-6 (lot OP-AUTOCONTROLE) : option « Auto-contrôle », changée par l'administration de la plateforme. TRUE (défaut) :
+   * la personne peut approuver un dossier Studio qu'elle a produit ou soumis (approbation marquée) ; FALSE : refusé (422).
+   */
+  selfControlAllowed: boolean("self_control_allowed").notNull().default(true),
 }, (t) => [uniqueIndex("users_email_unique").on(t.email)]);
 
 export type AccountStatus = "active" | "suspended" | "closed";
@@ -1261,6 +1266,8 @@ export const studioPublications = pgTable("studio_publications", {
   approvedDocumentHash: text("approved_document_hash"),
   approvedBy: text("approved_by").references(() => users.id, { onDelete: "restrict" }),
   approvedAt: timestamp("approved_at", { withTimezone: true }),
+  /** OP-6 : approbation marquée « auto-contrôle » (true), ou non (false) ; null = approuvée avant le lot ou non approuvée. */
+  approvedSelfControl: boolean("approved_self_control"),
   package: jsonb("package").$type<StudioPublicationPackage | null>(),
   packageHash: text("package_hash"),
   diffusedBy: text("diffused_by").references(() => users.id, { onDelete: "restrict" }),
@@ -1299,6 +1306,8 @@ export const studioPublicationEvents = pgTable("studio_publication_events", {
   workStatus: text("work_status").$type<StudioPublicationWorkStatus | null>(),
   diffusionStatus: text("diffusion_status").$type<StudioPublicationDiffusionStatus | null>(),
   relatedPublicationId: text("related_publication_id"),
+  /** OP-6 : marque de l'évènement `approuver` (auto-contrôle ou non) ; null pour les autres actions et avant le lot. */
+  selfControl: boolean("self_control"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("studio_publication_events_publication_idx").on(t.publicationId, t.createdAt)]);
 /**

@@ -9,11 +9,14 @@
  *        (droits distincts : revue = propriétaire et éditeur ; approbation et publication = propriétaire ; lecteur = lecture)
  *   GET  /studies/:studyId/publications/:publicationId/files/:format fichier figé (svg | dxf | ifc | pdf)
  *   GET  /studies/:studyId/publications/:publicationId/verification  recalcul déterministe des empreintes du paquet
+ *   GET  /studies/:studyId/publications/:publicationId/controle-approbation  aperçu de l'auto-contrôle (OP-6) pour
+ *        l'utilisateur courant : { autoControle, revisionsAuteur, soumisParLui, autorise, approvers } ; droit `approve`
  */
 import { Router, type NextFunction, type Request, type Response } from "express";
 import { StudioRequestError } from "../lib/studio-commands.js";
+import { clientIp } from "../lib/audit.js";
 import {
-  createStudioPublication, listProjectStudioPackages, listStudyPublications, readStudioPackageFile, readStudioPublication,
+  controleApprobationStudio, createStudioPublication, listProjectStudioPackages, listStudyPublications, readStudioPackageFile, readStudioPublication,
   STUDIO_PUBLICATION_ACTIONS, studioPublicationCreateSchema, studioPublicationTransitionSchema, transitionStudioPublication,
   verifierPaquet, type StudioPublicationTransition,
 } from "../lib/studio-publications.js";
@@ -51,6 +54,11 @@ studioPublicationsRouter.get(base, endpoint(async (req, res) => {
   res.setHeader("Cache-Control", "private, no-store");
   res.json(await readStudioPublication(param(req, "projectId"), param(req, "studyId"), param(req, "publicationId"), req.user!.id));
 }));
+// OP-6 : aperçu de l'auto-contrôle pour l'utilisateur courant, avant d'approuver (même accès que l'approbation).
+studioPublicationsRouter.get(`${base}/controle-approbation`, endpoint(async (req, res) => {
+  res.setHeader("Cache-Control", "private, no-store");
+  res.json(await controleApprobationStudio(param(req, "projectId"), param(req, "studyId"), param(req, "publicationId"), req.user!.id));
+}));
 studioPublicationsRouter.get(`${base}/verification`, endpoint(async (req, res) => {
   res.setHeader("Cache-Control", "private, no-store");
   res.json(await verifierPaquet(param(req, "projectId"), param(req, "studyId"), param(req, "publicationId"), req.user!.id));
@@ -73,5 +81,5 @@ studioPublicationsRouter.post(`${base}/:action`, endpoint(async (req, res) => {
   if (!(STUDIO_PUBLICATION_ACTIONS as readonly string[]).includes(action)) { res.status(404).json({ error: "not_found" }); return; }
   const parsed = studioPublicationTransitionSchema.safeParse(req.body ?? {});
   if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
-  res.json(await transitionStudioPublication(param(req, "projectId"), param(req, "studyId"), param(req, "publicationId"), req.user!.id, action as StudioPublicationTransition, parsed.data));
+  res.json(await transitionStudioPublication(param(req, "projectId"), param(req, "studyId"), param(req, "publicationId"), req.user!.id, action as StudioPublicationTransition, parsed.data, clientIp(req)));
 }));

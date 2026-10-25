@@ -2522,6 +2522,19 @@ CREATE INDEX IF NOT EXISTS rt_annotations_session_idx ON rt_annotations (session
 ALTER TABLE rt_sessions ADD COLUMN IF NOT EXISTS publication_manifest_hash text;
 
 -- ---------------------------------------------------------------------------
+-- Lot OP-AUTOCONTROLE (décision OP-6 du 2026-10-25) : séparation des responsabilités. Option « Auto-contrôle » du
+-- compte, changée par l'administration de la plateforme : TRUE (par défaut) = la personne peut approuver un dossier
+-- qu'elle a produit ou soumis, l'approbation est alors marquée ; FALSE = l'API refuse cette approbation (422).
+-- Marque d'une approbation : NULL = approuvée avant ce lot (rien n'est re-marqué, aucune rétroactivité) ou non
+-- approuvée. Colonnes additives, hors manifeste et hors paquet : aucune empreinte ne change.
+-- ---------------------------------------------------------------------------
+ALTER TABLE users ADD COLUMN IF NOT EXISTS self_control_allowed boolean NOT NULL DEFAULT true;
+ALTER TABLE studio_publications ADD COLUMN IF NOT EXISTS approved_self_control boolean;
+-- Évènement `approuver` du journal append-only : marque figée au moment de l'approbation (NULL pour les autres actions
+-- et pour les approbations antérieures au lot).
+ALTER TABLE studio_publication_events ADD COLUMN IF NOT EXISTS self_control boolean;
+
+-- ---------------------------------------------------------------------------
 -- D-7 : droits au moindre privilège. Exécuté par un super-utilisateur (amorçage, CI) : propriété de tout transférée à
 -- `fadi_owner` ; exécuté par `fadi_migrator` (membre de `fadi_owner`) : droits rejoués ; sinon, simple avis (rôles non
 -- provisionnés : rien n'est changé). `fadi_app` : lecture / écriture des tables, aucun DDL, journal d'audit en lecture et

@@ -551,7 +551,8 @@ const documentInitial = (id: string, longueur: number) => applyStudioCommands(ne
 export function initialiserProjet(): void {
   const maintenant = new Date();
   banc.lignes = new Map<unknown, Ligne[]>([
-    [users, [...ACTEURS, "autre"].map((id) => ({ id, email: `${id}@exemple.test`, displayName: null }))],
+    // `selfControlAllowed` : valeur par défaut de la colonne (OP-6), que la base simulée n'applique pas d'elle-même.
+    [users, [...ACTEURS, "autre"].map((id) => ({ id, email: `${id}@exemple.test`, displayName: null, status: "active", deletionRequestedAt: null, selfControlAllowed: true }))],
     [projects, [
       { id: "p", ownerId: "proprietaire", code: "P", name: "Projet", exampleMode: null, editingLock: null },
       { id: "q", ownerId: "autre", code: "Q", name: "Autre projet", exampleMode: null, editingLock: null },
