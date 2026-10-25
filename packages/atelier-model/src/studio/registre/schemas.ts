@@ -13,6 +13,8 @@ import { SCHEMA_ARCHITECTURE } from "../architecture/schemas.js";
 import { SCHEMA_PROPRIETE } from "../exigences/schemas.js";
 import { SCHEMA_ELEMENT_VISUALISATION, STUDIO_LIMITES_SCENES } from "../scenes/scenes.js";
 import { SCHEMA_NON_NATIF } from "../non-natifs/non-natifs.js";
+import { SCHEMA_GRAPHISME, STUDIO_LIMITES_GRAPHISMES } from "../graphismes/graphismes.js";
+import { STUDIO_LIMITE_VERSIONS_PROJET } from "../reperes.js";
 import { id } from "./schemas-base.js";
 
 /** Schémas JSON du document entier et des listes, composés des schémas déclarés par chaque type d'objet (`objets/`). */
@@ -37,5 +39,15 @@ export const STUDIO_DOCUMENT_SCHEMA = {
     proprietes: { type: "array", maxItems: STUDIO_LIMITS.objects, items: SCHEMA_PROPRIETE },
     scenes: { type: "array", maxItems: STUDIO_LIMITES_SCENES.scenes + STUDIO_LIMITES_SCENES.apparences, items: SCHEMA_ELEMENT_VISUALISATION },
     nonNatifs: { type: "array", maxItems: STUDIO_LIMITS.objects, items: SCHEMA_NON_NATIF },
+    graphismes: { type: "array", maxItems: STUDIO_LIMITES_GRAPHISMES.graphismes, items: SCHEMA_GRAPHISME },
+    systemeProjet: {
+      type: "object", additionalProperties: false, required: ["versions"],
+      properties: {
+        versions: {
+          type: "array", minItems: 1, maxItems: STUDIO_LIMITE_VERSIONS_PROJET,
+          items: { type: "object", additionalProperties: false, required: ["version", "origine", "rotation"], properties: { version: { type: "integer", minimum: 1 }, origine: { type: "object", additionalProperties: false, required: ["x", "y"], properties: { x: { type: "number" }, y: { type: "number" } } }, rotation: { type: "number", minimum: -2 * Math.PI, maximum: 2 * Math.PI } } },
+        },
+      },
+    },
   },
 } as const;

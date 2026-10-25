@@ -14,12 +14,14 @@ import type { StudioLayer } from "../noyau/types.js";
 import { array, fail, identifier, record } from "../noyau/validation.js";
 import type { StudioAnnotation, StudioShape } from "../objets/formes.js";
 import { validerNonNatif, type StudioNonNatif } from "../non-natifs/non-natifs.js";
+import { validerGraphisme, STUDIO_LIMITES_GRAPHISMES, type StudioGraphisme } from "../graphismes/graphismes.js";
+import { validerSystemeProjet, type StudioSystemeProjet } from "../reperes.js";
 import type { StudioDocument } from "./types.js";
 
 /** Document Studio : forme canonique, validation complète, création, lectures (sélection, mesure d'une cote). */
 
 /** Forme canonique : `layers`, `dimensions`, `solides` et `annotations` vides sont omis. */
-export function sortie(id: string, objects: StudioShape[], layers: StudioLayer[], dimensions: StudioDimension[], solides: StudioSolid[] = [], annotations: StudioAnnotation[] = [], architecture: StudioArchitectureItem[] = [], proprietes: StudioPropriete[] = [], scenes: StudioElementVisualisation[] = [], nonNatifs: StudioNonNatif[] = [], exacts: StudioSolideExact[] = []): StudioDocument {
+export function sortie(id: string, objects: StudioShape[], layers: StudioLayer[], dimensions: StudioDimension[], solides: StudioSolid[] = [], annotations: StudioAnnotation[] = [], architecture: StudioArchitectureItem[] = [], proprietes: StudioPropriete[] = [], scenes: StudioElementVisualisation[] = [], nonNatifs: StudioNonNatif[] = [], exacts: StudioSolideExact[] = [], graphismes: StudioGraphisme[] = [], systemeProjet?: StudioSystemeProjet): StudioDocument {
   return {
     id, schemaVersion: "studio-document/1", units: "m", frame: "local-2d", objects,
     ...(layers.length ? { layers } : {}),
@@ -31,12 +33,14 @@ export function sortie(id: string, objects: StudioShape[], layers: StudioLayer[]
     ...(proprietes.length ? { proprietes } : {}),
     ...(scenes.length ? { scenes } : {}),
     ...(nonNatifs.length ? { nonNatifs } : {}),
+    ...(graphismes.length ? { graphismes } : {}),
+    ...(systemeProjet ? { systemeProjet } : {}),
   };
 }
 
 /** Returns a private, canonical copy (empty `layers` / `dimensions` / `annotations` omitted) or throws `StudioValidationError`. */
 export function validateStudioDocument(value: unknown): StudioDocument {
-  const d = record(value, ["id", "schemaVersion", "units", "frame", "objects"], "document", ["layers", "dimensions", "solides", "annotations", "architecture", "proprietes", "scenes", "nonNatifs", "exacts"]);
+  const d = record(value, ["id", "schemaVersion", "units", "frame", "objects"], "document", ["layers", "dimensions", "solides", "annotations", "architecture", "proprietes", "scenes", "nonNatifs", "exacts", "graphismes", "systemeProjet"]);
   if (d.schemaVersion !== "studio-document/1") fail("studioDocument.schemaVersion", "version non prise en charge");
   if (d.units !== "m") fail("studioDocument.units", "unité m attendue");
   if (d.frame !== "local-2d") fail("studioDocument.frame", "repère local-2d attendu");
@@ -120,7 +124,18 @@ export function validateStudioDocument(value: unknown): StudioDocument {
     annotationIds.add(n.id);
     if (n.layerId !== undefined && !layerIds.has(n.layerId)) fail("studioDocument.nonNatifs", "calque inconnu");
   }
-  return sortie(identifier(d.id, "studioDocument.id"), objects, layers, dimensions, solides, annotations, architecture, proprietes, scenes, nonNatifs, exacts);
+  // Graphismes (EX-055) : identifiants uniques dans tout le document, calque connu ; dessin 2D seulement.
+  const rawGraphismes = Object.hasOwn(d, "graphismes") ? array(d.graphismes, "studioDocument.graphismes") : [];
+  if (rawGraphismes.length > STUDIO_LIMITES_GRAPHISMES.graphismes) fail("studioDocument.graphismes", `${STUDIO_LIMITES_GRAPHISMES.graphismes} graphismes au plus`);
+  const graphismes = rawGraphismes.map((o, i) => validerGraphisme(o, `studioDocument.graphismes[${i}]`));
+  for (const g of graphismes) {
+    if (shapes.has(g.id) || dimensionIds.has(g.id) || annotationIds.has(g.id)) fail("studioDocument.graphismes", "identifiant dupliqué");
+    annotationIds.add(g.id);
+    if (g.layerId !== undefined && !layerIds.has(g.layerId)) fail("studioDocument.graphismes", "calque inconnu");
+  }
+  // Système de projet (EX-023) : versions 1, 2, 3… sans trou, la dernière en vigueur.
+  const systemeProjet = Object.hasOwn(d, "systemeProjet") ? validerSystemeProjet(d.systemeProjet, "studioDocument.systemeProjet") : undefined;
+  return sortie(identifier(d.id, "studioDocument.id"), objects, layers, dimensions, solides, annotations, architecture, proprietes, scenes, nonNatifs, exacts, graphismes, systemeProjet);
 }
 
 /** Valeur mesurée d'une cote angulaire (degrés), dérivée ; « non évaluée » (null) tant qu'elle est à résoudre. */

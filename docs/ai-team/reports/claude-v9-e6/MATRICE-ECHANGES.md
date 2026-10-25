@@ -1,8 +1,8 @@
 # Matrice d’échanges de Studio
 
-<!-- Généré depuis packages/atelier-model/src/studio/echanges/matrice-echanges.ts (studio-matrice-echanges/1, révision 4) : ne pas éditer à la main. -->
+<!-- Généré depuis packages/atelier-model/src/studio/echanges/matrice-echanges.ts (studio-matrice-echanges/1, révision 5) : ne pas éditer à la main. -->
 
-Établie le 2026-10-25 (révision 4, schéma `studio-matrice-echanges/1`), à partir de l’audit des exporteurs et importeurs Studio. Lots E.6-01 à E.6-05 du plan d’implémentation Studio V1.0 (§5.7).
+Établie le 2026-10-25 (révision 5, schéma `studio-matrice-echanges/1`), à partir de l’audit des exporteurs et importeurs Studio. Lots E.6-01 à E.6-05 du plan d’implémentation Studio V1.0 (§5.7).
 
 **Aucune entrée n’est une déclaration de conformité** : « livré » dit ce que le code écrit ou lit et le contrôle qui le vérifie ; la conformité d’un format reste non évaluée. Un format reporté est inscrit « non livré » avec sa raison et sa source ; « renoncé » exige une décision Studio admise (aucune aujourd’hui).
 
@@ -16,8 +16,8 @@ Entrées : 40 — livrées : 21, non livrées : 19, renoncées : 0.
 | `natif-archive-export` | Archive de projet (section Studio, JSON) | fadi-studio-archive/1 (document studio-document/1) | export | natif | Études, variantes, révisions immuables, commentaires, observations, publications et leurs fichiers figés, exigences, journal du métré | livré | E.6-02 | Section signée (HMAC-SHA256 du manifeste, clé du serveur) ; empreintes de contenu conservées ; rien n’est recalculé. |
 | `natif-archive-import` | Archive de projet (section Studio, JSON) | fadi-studio-archive/1 (document studio-document/1) | import | natif | Restauration de la section Studio dans un nouveau projet | livré | E.6-02 | Manifeste et empreintes contrôlés (refus 422) ; sans signature vérifiée par ce serveur, auteurs et approbations ne sont pas crus ; identifiant déjà présent : partie Studio non restaurée, réserve signalée. |
 | `natif-file-locale` | File locale hors ligne (JSON) | fadi-studio-file-locale/1 | export | natif | Copie de secours d’une file locale de commandes non synchronisée | livré | E.6-02 | Export de secours seulement : Studio ne relit pas ce fichier ; la ligne exportée est relue du stockage, jamais de la mémoire. |
-| `dessin-svg` | SVG | SVG (espace de noms W3C, aucune version déclarée dans le fichier) | export | dessin | Document d’une révision de variante (plan 2D) | livré | E.6-03 | Plan 2D seulement : solides et hauteurs absents ; calques masqués conservés sous display="none" ; aucun script ni ressource externe. |
-| `dessin-dxf` | DXF ASCII | R12 (AC1009), CRLF, $INSUNITS = 6 (mètre) | export | dessin | Document d’une révision de variante (plan 2D) | livré | E.6-03 | R12 seulement ; $INSUNITS n’appartient pas à R12 (variable introduite avec AC1015) : l’unité n’est pas garantie chez un lecteur R12 strict ; ASCII strict (texte échappé, 250 caractères) ; cotes non associatives ; noms de calque réécrits (31 caractères ASCII) ; solides absents. |
+| `dessin-svg` | SVG | SVG (espace de noms W3C, aucune version déclarée dans le fichier) | export | dessin | Document d’une révision de variante (plan 2D) | livré | E.6-03 | Plan 2D seulement : solides et hauteurs absents ; calques masqués conservés sous display="none" ; graphismes (splines en courbes de Bézier exactes, traits de hachure, symboles) avec leur transparence (opacity) ; aucun script ni ressource externe. |
+| `dessin-dxf` | DXF ASCII | R12 (AC1009), CRLF, $INSUNITS = 6 (mètre) | export | dessin | Document d’une révision de variante (plan 2D) | livré | E.6-03 | R12 seulement ; $INSUNITS n’appartient pas à R12 (variable introduite avec AC1015) : l’unité n’est pas garantie chez un lecteur R12 strict ; ASCII strict (texte échappé, 250 caractères) ; cotes non associatives ; noms de calque réécrits (31 caractères ASCII) ; solides absents ; splines découpées en POLYLINE (16 segments par morceau de Bézier), transparence des graphismes non portée (déclarée en commentaire 999). |
 | `maquette-ifc` | IFC (STEP physique, ISO 10303-21) | IFC4X3_ADD2, ViewDefinition [ReferenceView] | export | maquette | Objets extrudés, solides libres, murs et ouvertures, propriétés déclarées d’une révision | livré | E.6-03 | Seuls les éléments 3D sont écrits ; arcs discrétisés ; cotes, annotations et réglages de visualisation absents ; IfcDoor / IfcWindow seulement si le type est déclaré, sans représentation propre. |
 | `dessin-dxf-import` | DXF ASCII | R12 et suivantes (codes de groupe), CRLF ou LF ; DXF binaire refusé | import | dessin | Plan 2D ajouté au brouillon d’une variante, par commandes | livré | E.6-03 | 5 Mo au plus ; unité lue dans $INSUNITS (16 codes reconnus ; tout autre code, 0 ou absent : unité inconnue, choisie par l’utilisateur, jamais devinée) ; un calque déjà verrouillé dans le document (calque implicite compris) qui recevrait des objets fait échouer l’import ; Z ignoré (compté) ; tout le reste compté par type dans le rapport d’import, jamais écarté en silence. |
 | `maquette-ifc-import` | IFC (STEP physique, ISO 10303-21) | IFC2X3, IFC4, IFC4X1 à IFC4X3 (FILE_SCHEMA lu) ; ifcXML et ifcZIP refusés | import | maquette | Maquette d’un autre logiciel ajoutée au brouillon d’une variante, par commandes | livré | E.6-04 | 5 Mo au plus ; lecteur STEP propre, sans web-ifc ; unité de longueur lue dans l’IfcUnitAssignment du projet (IfcSIUnit et son préfixe, ou IfcConversionBasedUnit dont le facteur est déclaré), absente : rien n’est importé, jamais supposée ; seules les extrusions verticales (IfcExtrudedAreaSolid d’un IfcRectangleProfileDef ou d’un IfcArbitraryClosedProfileDef droit) placées par IfcLocalPlacement tourné autour de z sont traduites ; toute autre entité ou géométrie est conservée comme élément non natif, et chaque information non reprise est comptée dans le rapport de pertes. |
@@ -110,7 +110,7 @@ Entrées : 40 — livrées : 21, non livrées : 19, renoncées : 0.
 
 - Version : SVG (espace de noms W3C, aucune version déclarée dans le fichier)
 - Objet : Document d’une révision de variante (plan 2D)
-- Limite : Plan 2D seulement : solides et hauteurs absents ; calques masqués conservés sous display="none" ; aucun script ni ressource externe.
+- Limite : Plan 2D seulement : solides et hauteurs absents ; calques masqués conservés sous display="none" ; graphismes (splines en courbes de Bézier exactes, traits de hachure, symboles) avec leur transparence (opacity) ; aucun script ni ressource externe.
 - Route : `GET /projects/:projectId/studio/studies/:studyId/variants/:variantId/export?format=svg`
 - Contrôle : Tests de l’export ; recette studio-persistance.mjs ; rapport de fidélité servi à côté du fichier.
 - Couverture par entité : rapport de fidélité `svg` (tableau ci-dessous).
@@ -124,7 +124,7 @@ Entrées : 40 — livrées : 21, non livrées : 19, renoncées : 0.
 
 - Version : R12 (AC1009), CRLF, $INSUNITS = 6 (mètre)
 - Objet : Document d’une révision de variante (plan 2D)
-- Limite : R12 seulement ; $INSUNITS n’appartient pas à R12 (variable introduite avec AC1015) : l’unité n’est pas garantie chez un lecteur R12 strict ; ASCII strict (texte échappé, 250 caractères) ; cotes non associatives ; noms de calque réécrits (31 caractères ASCII) ; solides absents.
+- Limite : R12 seulement ; $INSUNITS n’appartient pas à R12 (variable introduite avec AC1015) : l’unité n’est pas garantie chez un lecteur R12 strict ; ASCII strict (texte échappé, 250 caractères) ; cotes non associatives ; noms de calque réécrits (31 caractères ASCII) ; solides absents ; splines découpées en POLYLINE (16 segments par morceau de Bézier), transparence des graphismes non portée (déclarée en commentaire 999).
 - Route : `GET /projects/:projectId/studio/studies/:studyId/variants/:variantId/export?format=dxf`
 - Contrôle : Tests de l’export ; recette studio-persistance.mjs ; rapport de fidélité servi à côté du fichier.
 - Couverture par entité : rapport de fidélité `dxf` (tableau ci-dessous).
@@ -385,6 +385,9 @@ Raisons possibles du rapport de fidélité (`studioRapportFidelite`) pour chaque
 | scenes | scene | `visualisation-hors-export` (non-couvert) | `visualisation-hors-export` (non-couvert) | `visualisation-hors-export` (non-couvert) |
 | scenes | appearance | `visualisation-hors-export` (non-couvert) | `visualisation-hors-export` (non-couvert) | `visualisation-hors-export` (non-couvert) |
 | nonNatifs | non-native | `non-natif-hors-export` (non-couvert) | `non-natif-hors-export` (non-couvert) | `non-natif-hors-export` (non-couvert) |
+| graphismes | spline | `trace-exact` (exact) | `spline-decoupee` (approche) | `graphisme-hors-ifc` (non-couvert) |
+| graphismes | hachure | `trace-exact` (exact) | `trace-exact` (exact), `transparence-non-portee` (approche) | `graphisme-hors-ifc` (non-couvert) |
+| graphismes | symbole | `trace-exact` (exact) | `trace-exact` (exact), `transparence-non-portee` (approche) | `graphisme-hors-ifc` (non-couvert) |
 
 ## Formats reportés (E.6-04, E.6-05)
 

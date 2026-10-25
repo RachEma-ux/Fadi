@@ -15,6 +15,8 @@ import type { StudioArchitectureItem, StudioOpening, StudioWall } from "../archi
 import type { StudioPropriete } from "../exigences/proprietes.js";
 import type { StudioApparence, StudioElementVisualisation, StudioScene } from "../scenes/scenes.js";
 import type { StudioNonNatif } from "../non-natifs/non-natifs.js";
+import type { StudioGraphisme } from "../graphismes/graphismes.js";
+import type { StudioSystemeProjet, StudioVersionSystemeProjet } from "../reperes.js";
 
 /**
  * Types composés du document Studio (`studio-document/1`) : le document entier et le contrat de commandes rassemblent
@@ -64,6 +66,17 @@ export interface StudioDocument {
    * conservées avec leur origine et leur raison (`non-natifs/`) ; non éditables, exclues des métrés et des exports.
    */
   nonNatifs?: StudioNonNatif[];
+  /**
+   * Graphismes (extension additive, facultative, EX-055) : splines, hachures et symboles, avec leur transparence
+   * (`graphismes/`), séparés de `objects` pour qu'un lecteur antérieur ne les interprète jamais à tort ; dessin 2D
+   * seulement (ni extrusion, ni métré, ni IFC). Absent ou vide : aucun (forme canonique).
+   */
+  graphismes?: StudioGraphisme[];
+  /**
+   * Système de projet (extension additive, facultative, EX-023) : toutes ses versions déclarées (`reperes.ts`), la
+   * dernière en vigueur ; absent : non déclaré, aucune conversion vers le projet n'est supposée.
+   */
+  systemeProjet?: StudioSystemeProjet;
 }
 export type StudioCommand =
   | { toolId: "studio.dessin.ligne"; params: StudioLine }
@@ -108,7 +121,10 @@ export type StudioCommand =
   | { toolId: "studio.apparence.definir"; params: StudioApparence }
   | { toolId: "studio.apparence.retirer"; params: { ids: string[] } }
   | { toolId: "studio.nonnatif.conserver"; params: StudioNonNatif }
-  | { toolId: "studio.nonnatif.retirer"; params: { ids: string[] } };
+  | { toolId: "studio.nonnatif.retirer"; params: { ids: string[] } }
+  | { toolId: "studio.graphisme.creer"; params: StudioGraphisme }
+  | { toolId: "studio.graphisme.retirer"; params: { ids: string[] } }
+  | { toolId: "studio.repere.projet"; params: StudioVersionSystemeProjet };
 export type StudioCommandToolId = StudioCommand["toolId"];
 export interface StudioEnvelope {
   contractVersion: typeof STUDIO_CONTRACT;

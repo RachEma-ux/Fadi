@@ -314,8 +314,11 @@ const AJOUTS = {
     "studio.solide.face-decaler", "studio.solide.face-diviser", "studio.solide.pivoter", "studio.solide.resoudre",
     // Noyau exact du lot F2 (extension additive consignée) : booléen exact, champ facultatif `exacts` du document.
     "studio.solide.booleen",
+    // Graphismes (EX-055) et système de projet (EX-023), extensions additives consignées (champs facultatifs
+    // `graphismes` et `systemeProjet` du document).
+    "studio.graphisme.creer", "studio.graphisme.retirer", "studio.repere.projet",
   ]),
-  types: new Set(["angular-dimension", "text", "wall", "opening", "scene", "appearance", "non-native"]),
+  types: new Set(["angular-dimension", "text", "wall", "opening", "scene", "appearance", "non-native", "spline", "hachure", "symbole"]),
   exports: new Set([
     "dessinerCoteAngulaire", "formatStudioAngle", "measureStudioAngularDimension", "STUDIO_TEXT_JUSTIFICATIONS", "STUDIO_TEXT_MAX",
     "studioAngularFromSegments", "studioAngularValue", "studioStraightSegment", "studioTextBox", "studioTextRotationDegrees",
@@ -375,6 +378,11 @@ const AJOUTS = {
     "STUDIO_TOLERANCE_APERCU", "studioApercuBooleen", "studioBoiteEnglobante", "studioCaptureBooleen", "studioCommandeBooleen", "studioComparerApercu",
     "studioEmpreinteOperandes", "studioIdsOperandes", "studioMaillageExact", "studioOperandeNoyau", "studioVerifierEngagement", "validerResultatExact",
     "validerSolideExact",
+    // Graphismes (EX-055, `graphismes/`), repères et système de projet (EX-023, `reperes.ts`), règle des accélérations
+    // (F.1-01, `accelerations.ts`) : extensions additives.
+    "STUDIO_SYMBOLES", "STUDIO_LIMITES_GRAPHISMES", "STUDIO_SEGMENTS_PAR_BEZIER", "STUDIO_TYPES_GRAPHISMES", "studioDefinitionSymbole", "studioAireContour", "studioNombreDroitesHachure", "validerGraphisme", "studioPointBezier", "studioPointsSpline", "studioTraitsHachure", "studioPrimitivesSymbole", "studioPrimitivesGraphisme", "studioPointsGraphisme", "primitiveSvg", "graphismeSvg", "graphismeDxf", "SCHEMA_GRAPHISME",
+    "STUDIO_REPERES", "STUDIO_TOLERANCE_REPERE", "studioPointRepere", "studioTransformationRepere", "studioAppliquerTransformation", "studioInverserTransformation", "studioVerifierTransformation", "studioConvertirPoint", "studioComposerTransformations", "STUDIO_LIMITE_VERSIONS_PROJET", "validerVersionSystemeProjet", "validerSystemeProjet", "studioTransformationProjet", "studioVersProjet", "studioDepuisProjet", "studioTransformationPose",
+    "STUDIO_RAPPORT_ACCELERATION_SCHEMA", "STUDIO_CRITERES_EQUIVALENCE", "STUDIO_MOTEURS", "STUDIO_ACCELERATIONS", "STUDIO_MOTEURS_DE_REFERENCE", "STUDIO_MOTEURS_PAR_DEFAUT", "STUDIO_ACCELERATION_DU_MOTEUR", "studioEvaluerAcceleration", "studioMoteurEffectif", "studioControlerMoteursParDefaut", "STUDIO_RAPPORTS_ACCELERATION",
   ]),
 };
 function sansAjouts(value: unknown): unknown {
@@ -386,7 +394,7 @@ function sansAjouts(value: unknown): unknown {
   if (!value || typeof value !== "object") return value;
   const out = Object.fromEntries(Object.entries(value).map(([k, v]) => [k, sansAjouts(v)]));
   const props = out.properties as Record<string, unknown> | undefined;
-  if (props && "schemaVersion" in props) { delete props.annotations; delete props.architecture; delete props.proprietes; delete props.scenes; delete props.nonNatifs; delete props.exacts; }
+  if (props && "schemaVersion" in props) { delete props.annotations; delete props.architecture; delete props.proprietes; delete props.scenes; delete props.nonNatifs; delete props.exacts; delete props.graphismes; delete props.systemeProjet; }
   // Lot F1 (extension additive consignée) : direction d'extrusion facultative (`extrusion.direction`, `extruder`) et,
   // pour le prisme, direction et source facultatives ; retirées pour comparer à la base.
   if (props && "base" in props && "height" in props) delete props.direction;

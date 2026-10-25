@@ -96,6 +96,8 @@ describe("Matrice d'échanges : donnée versionnée et cohérente", () => {
       3: "8f2308d0949b5465baeb43d256547d3153874825149e6d9b3e82f0c2b704b7b8",
       // Lot F2 : catégorie « exacts » (solides exacts, non couverts par SVG / DXF / IFC).
       4: "46bee5f95b4b04bd2cd1e24a1b2c7ae00a5cbdcde8d7a687722778d43479f373",
+      // Graphismes (EX-055) : couverture SVG / DXF / IFC des splines, hachures et symboles.
+      5: "c3e7c79cbc494f8da1ae6fe6f10e444f2175cc033b1f46a577161644e75c540c",
     };
     const empreinte = createHash("sha256").update(JSON.stringify({ entrees: STUDIO_MATRICE_ECHANGES.entrees, couverture: STUDIO_COUVERTURE_EXPORT, statuts: STUDIO_STATUT_DE_RAISON })).digest("hex");
     expect(empreinte, `révision ${STUDIO_MATRICE_ECHANGES.revision} : entrées modifiées sans nouvelle révision ? (empreinte calculée ${empreinte})`).toBe(EMPREINTES[STUDIO_MATRICE_ECHANGES.revision]);
@@ -193,6 +195,14 @@ const complet = (): StudioDocument => ({
     { id: "ap1", type: "appearance", target: { kind: "object", id: "m1" }, color: "#c0392b" },
   ],
   nonNatifs: [{ id: "nn1", type: "non-native", origine: { format: "ifc", entite: "IfcColumn" }, raison: "type-sans-equivalent" }],
+  // Graphismes (EX-055) : spline, hachure opaque et transparente, symbole opaque et transparent.
+  graphismes: [
+    { id: "gs1", type: "spline", points: [{ x: 0, y: 30 }, { x: 1, y: 31 }, { x: 2, y: 31 }, { x: 3, y: 30 }] },
+    { id: "gh1", type: "hachure", contour: [{ x: 0, y: 32 }, { x: 2, y: 32 }, { x: 2, y: 34 }, { x: 0, y: 34 }], angle: Math.PI / 4, espacement: 0.25 },
+    { id: "gh2", type: "hachure", contour: [{ x: 3, y: 32 }, { x: 5, y: 32 }, { x: 5, y: 34 }], angle: 0, espacement: 0.5, opacite: 0.5 },
+    { id: "gy1", type: "symbole", symbole: "nord", position: { x: 8, y: 32 }, rotation: 0, echelle: 1 },
+    { id: "gy2", type: "symbole", symbole: "croix", position: { x: 10, y: 32 }, rotation: 0.3, echelle: 0.5, opacite: 0.4 },
+  ],
 } as StudioDocument);
 
 describe("E.6-03 : sous-ensemble SVG / DXF / IFC = rapport de fidélité", () => {

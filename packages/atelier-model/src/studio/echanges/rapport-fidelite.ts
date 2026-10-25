@@ -10,6 +10,7 @@ import type { StudioArchitectureItem } from "../architecture/types.js";
 import type { StudioPropriete } from "../exigences/proprietes.js";
 import type { StudioElementVisualisation } from "../scenes/scenes.js";
 import type { StudioNonNatif } from "../non-natifs/non-natifs.js";
+import type { StudioGraphisme } from "../graphismes/graphismes.js";
 
 /**
  * Rapport de fidélité d'un export Studio (E.6-03) : pour un document et un format (SVG, DXF, IFC), ce qui est exporté
@@ -50,13 +51,16 @@ export const STUDIO_RAISONS_FIDELITE = Object.freeze([
   "propriete-non-exportee", "propriete-en-pset", "propriete-non-evaluee",
   // Solides exacts (lot F2) : leur brep n'est traduit dans aucun format d'échange de Studio (compté, jamais omis).
   "solide-exact-hors-ifc",
+  // Graphismes (EX-055) : spline découpée en DXF R12 (pas de courbe de Bézier), transparence non portée en DXF R12,
+  // graphismes absents de l'IFC (dessin 2D seulement).
+  "spline-decoupee", "transparence-non-portee", "graphisme-hors-ifc",
 ] as const);
 export type StudioRaisonFidelite = (typeof STUDIO_RAISONS_FIDELITE)[number];
 
 /** Catégorie = liste du document qui porte l'élément. */
-export type StudioCategorieEchange = "objets" | "cotes" | "annotations" | "solides" | "exacts" | "architecture" | "proprietes" | "scenes" | "nonNatifs" | "inconnue";
+export type StudioCategorieEchange = "objets" | "cotes" | "annotations" | "solides" | "exacts" | "architecture" | "proprietes" | "scenes" | "nonNatifs" | "graphismes" | "inconnue";
 /** Liste du document de chaque catégorie connue (clé de `StudioDocument`). */
-export const STUDIO_LISTES_ECHANGE = Object.freeze({ objets: "objects", cotes: "dimensions", annotations: "annotations", solides: "solides", exacts: "exacts", architecture: "architecture", proprietes: "proprietes", scenes: "scenes", nonNatifs: "nonNatifs" } as const);
+export const STUDIO_LISTES_ECHANGE = Object.freeze({ objets: "objects", cotes: "dimensions", annotations: "annotations", solides: "solides", exacts: "exacts", architecture: "architecture", proprietes: "proprietes", scenes: "scenes", nonNatifs: "nonNatifs", graphismes: "graphismes" } as const);
 
 export interface StudioJugementFidelite { statut: StudioStatutFidelite; raison: StudioRaisonFidelite }
 type Juge<T> = (item: T) => StudioJugementFidelite;
@@ -122,6 +126,8 @@ export const STUDIO_CAPACITES_EXPORT: {
   readonly proprietes: { readonly propriete: ParFormat<StudioPropriete> };
   readonly scenes: { readonly [K in StudioElementVisualisation["type"]]: ParFormat<Extract<StudioElementVisualisation, { type: K }>> };
   readonly nonNatifs: { readonly "non-native": ParFormat<StudioNonNatif> };
+  /** Graphismes (EX-055) : splines, hachures, symboles et leur transparence ; dessin 2D seulement. */
+  readonly graphismes: { readonly [K in StudioGraphisme["type"]]: ParFormat<Extract<StudioGraphisme, { type: K }>> };
 } = Object.freeze({
   objets: {
     line: { svg: trace2d("trace-exact"), dxf: trace2d("trace-exact"), ifc: ifc3d((o) => exact(o.extrusion && "thickness" in o.extrusion && o.extrusion.thickness !== undefined ? "extrusion-exacte" : "surface-exacte")) },
@@ -165,6 +171,13 @@ export const STUDIO_CAPACITES_EXPORT: {
   },
   nonNatifs: {
     "non-native": { svg: () => nonCouvert("non-natif-hors-export"), dxf: () => nonCouvert("non-natif-hors-export"), ifc: () => nonCouvert("non-natif-hors-export") },
+  },
+  // Graphismes (EX-055) : SVG exact (courbes de Bézier `C`, traits de hachure, symboles, `opacity`) ; DXF R12 sans
+  // courbe de Bézier ni transparence ; aucun en IFC.
+  graphismes: {
+    spline: { svg: () => exact("trace-exact"), dxf: () => approche("spline-decoupee"), ifc: () => nonCouvert("graphisme-hors-ifc") },
+    hachure: { svg: () => exact("trace-exact"), dxf: (g) => (g.opacite === undefined ? exact("trace-exact") : approche("transparence-non-portee")), ifc: () => nonCouvert("graphisme-hors-ifc") },
+    symbole: { svg: () => exact("trace-exact"), dxf: (g) => (g.opacite === undefined ? exact("trace-exact") : approche("transparence-non-portee")), ifc: () => nonCouvert("graphisme-hors-ifc") },
   },
 });
 
@@ -247,6 +260,8 @@ export function studioRapportFidelite(input: StudioDocument, format: StudioForma
   for (const s of doc.scenes ?? []) poser("scenes", s.type, STUDIO_CAPACITES_EXPORT.scenes[s.type][format](s as never), s.id);
   // Éléments non natifs (lot F3) : jamais exportés ; comptés sur leur calque.
   parcourir("nonNatifs", doc.nonNatifs);
+  // Graphismes (EX-055) : comptés sur leur calque.
+  parcourir("graphismes", doc.graphismes);
   // Liste du document qu'aucune catégorie ne connaît : comptée non couverte, jamais omise.
   for (const [cle, valeur] of Object.entries(doc as unknown as Record<string, unknown>)) {
     if (CLES_CONNUES.has(cle) || !Array.isArray(valeur)) continue;
