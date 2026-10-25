@@ -396,7 +396,9 @@ try {
   await vp.waitForSelector("[data-revue-paquet]");
   await vp.keyboard.press("Control+Alt+Shift+Comma");
   await vp.waitForSelector("[data-constat-form] textarea");
-  check("raccourci Ctrl+Alt+Maj+, : le formulaire de constat s'ouvre et reçoit le focus", await vp.evaluate(() => document.activeElement?.tagName === "TEXTAREA"));
+  // Le focus est posé après le rendu du formulaire : on l'attend (borné) plutôt que de le lire à l'instant.
+  const focusConstat = await vp.waitForFunction(() => document.activeElement?.matches?.("[data-constat-form] textarea") === true, null, { timeout: 5000 }).then(() => true, () => false);
+  check("raccourci Ctrl+Alt+Maj+, : le formulaire de constat s'ouvre et reçoit le focus", focusConstat);
   await vp.fill("[data-constat-form] textarea", "Constat saisi dans l'interface");
   await vp.locator('[data-constat-form] select[name="document"]').selectOption("svg");
   await vp.locator('[data-commande-revue="envoyer-constat"]').click();
