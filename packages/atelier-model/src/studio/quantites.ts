@@ -253,7 +253,9 @@ export function totaliserQuantites(objets: readonly QuantitesObjet[]): TotalQuan
     for (const o of objets) {
       const v = o.valeurs.find((x) => x.grandeur === grandeur);
       if (!v) continue;
-      if (v.valeur === null) nonEvalues++;
+      // Valeur non évaluée, ou portée dans une autre unité que celle de sa grandeur (EX-078) : jamais additionnée, le total
+      // est déclaré partiel.
+      if (v.valeur === null || v.unite !== UNITE_GRANDEUR[grandeur]) nonEvalues++;
       else { somme += v.valeur; evalues++; }
     }
     if (evalues === 0 && nonEvalues === 0) continue;

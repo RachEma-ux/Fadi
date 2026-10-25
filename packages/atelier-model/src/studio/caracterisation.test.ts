@@ -312,6 +312,8 @@ const AJOUTS = {
     "studio.nonnatif.conserver", "studio.nonnatif.retirer",
     // Géométrie 3D du lot F1 (extension additive consignée) : édition des faces, rotation, lien des solides à leur profil.
     "studio.solide.face-decaler", "studio.solide.face-diviser", "studio.solide.pivoter", "studio.solide.resoudre",
+    // Noyau exact du lot F2 (extension additive consignée) : booléen exact, champ facultatif `exacts` du document.
+    "studio.solide.booleen",
   ]),
   types: new Set(["angular-dimension", "text", "wall", "opening", "scene", "appearance", "non-native"]),
   exports: new Set([
@@ -368,6 +370,11 @@ const AJOUTS = {
     "STUDIO_DIRECTIONS_EXTRUSION", "studioCotesExtrusion", "directionUnitaire", "estDroit", "estSolideLie", "hauteurPerpendiculaire",
     "STUDIO_RELATIONS_SOURCE", "translationSommet", "validerDirection", "studioEmpriseConforme", "studioLienSolide", "studioLiensSolides",
     "studioProfilDepuisPolyligne",
+    // Noyau exact du lot F2 : solides exacts, capture, aperçu provisoire, engagement (`objets-3d/exacts.ts`, `booleens-exacts.ts`).
+    "OP_NOYAU", "SCHEMA_RESULTAT_EXACT", "SCHEMA_SOLIDE_EXACT", "STUDIO_LIMITES_EXACTS", "STUDIO_MOTEUR_EXACT", "STUDIO_OPERATIONS_BOOLEENNES",
+    "STUDIO_TOLERANCE_APERCU", "studioApercuBooleen", "studioBoiteEnglobante", "studioCaptureBooleen", "studioCommandeBooleen", "studioComparerApercu",
+    "studioEmpreinteOperandes", "studioIdsOperandes", "studioMaillageExact", "studioOperandeNoyau", "studioVerifierEngagement", "validerResultatExact",
+    "validerSolideExact",
   ]),
 };
 function sansAjouts(value: unknown): unknown {
@@ -379,7 +386,7 @@ function sansAjouts(value: unknown): unknown {
   if (!value || typeof value !== "object") return value;
   const out = Object.fromEntries(Object.entries(value).map(([k, v]) => [k, sansAjouts(v)]));
   const props = out.properties as Record<string, unknown> | undefined;
-  if (props && "schemaVersion" in props) { delete props.annotations; delete props.architecture; delete props.proprietes; delete props.scenes; delete props.nonNatifs; }
+  if (props && "schemaVersion" in props) { delete props.annotations; delete props.architecture; delete props.proprietes; delete props.scenes; delete props.nonNatifs; delete props.exacts; }
   // Lot F1 (extension additive consignée) : direction d'extrusion facultative (`extrusion.direction`, `extruder`) et,
   // pour le prisme, direction et source facultatives ; retirées pour comparer à la base.
   if (props && "base" in props && "height" in props) delete props.direction;

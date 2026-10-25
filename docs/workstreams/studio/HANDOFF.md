@@ -1,5 +1,48 @@
 # Reprise — Studio
 
+## Point 2 — tests des preuves partielles ou réfutées — 25 octobre 2026
+
+Branche `ccr-187fd2e6-08dk6e`, base `main@d87a82e` (lot F2 fusionné, PR #319).
+
+Ce qui a été fait :
+- **196 obligations reprises** par six groupes : 76 vérifiées par un test qui contrôle le critère exact (mutation comprise), 24 partielles, 35 décisions requises, 50 fonctions absentes, 9 mesures. Les 2 preuves documentaires ne sont pas retenues. Détail : [PREUVES-POINT2](recettes/PREUVES-POINT2-2026-10-25.md).
+- **Défauts trouvés et corrigés** :
+  - une publication diffusée pouvait être réécrite en base ; un déclencheur l'en empêche maintenant ;
+  - un corps trop volumineux renvoyait 500 au lieu de 413 ;
+  - des quantités d'unités différentes étaient additionnées ;
+  - l'historique local était tronqué sans le dire ;
+  - aucune sortie du plein écran n'était visible ;
+  - une écriture de commandes sans variante n'était pas refusée explicitement ;
+  - le schéma Drizzle n'était pas aligné sur `init.sql`.
+- **Recettes de preuves et recettes Studio auparavant hors CI**, désormais branchées : `studio-preuves-a`, `-b`, `-c`, `-d1`, `-d2`, `-e`, `studio-visualisation`, `studio-exigences`. Les 22 recettes concernées passent sur base neuve (1 642 contrôles).
+- **Écarts du registre relevés** : 57 libellés introuvables ; 92 obligations « Vérifié » sans preuve par test ; 577 preuves sans commit ni environnement. À traiter avant G1.
+
+Compteurs recalculés du registre : **0 À définir / 61 À faire / 140 En cours / 11 Bloqué / 360 Vérifié / 58 Accepté**. **P630=418/630**.
+
+Prochaine action : PR de ce lot, puis CI verte et fusion. Ensuite instruire G1 puis G4 sur leurs critères (point 4), en commençant par les écarts du registre.
+
+## Lot F2 — noyau exact — 25 octobre 2026
+
+Branche `ccr-187fd2e6-08dk6e`, base `main@12abdb2` (lots F3, F4, F5 fusionnés, PR #318 ; GeoData #315).
+
+Ce qui a été fait :
+- **Booléens exacts** (union, différence, intersection) par le noyau exact, dans un Worker à la demande. Le serveur fait autorité, et les opérandes sont conservés (R15).
+- **Garanties du calcul.**
+  - Un aperçu reste provisoire et n'est jamais engagé.
+  - Un résultat calculé sur une ancienne révision est marqué périmé.
+  - Une panne du Worker n'altère pas le document, et la relance est contrôlée.
+- **Suivi et licence.**
+  - Le chargement du WASM est suivi.
+  - La licence de l'artefact distribué est contrôlée en CI.
+  - Des espions prouvent que le Manager ne calcule aucune géométrie.
+- **Recette `studio-exact`**, en CI et en préproduction. Détail : [lots de fonctions](recettes/LOTS-FONCTIONS-2026-10-25.md).
+- **Vérifiés** : TEST-014, TEST-015, TR-EX-032, TR-EX-058, TR-EX-096.
+- **Partiel** : TR-EX-062, car les allocations internes au WASM ne sont pas exposées.
+
+Compteurs recalculés du registre : à cette date 284 Vérifié, 58 Accepté, 11 Bloqué, 189 En cours, 88 À faire, 0 À définir ; 342 obligations sur 630 closes.
+
+Prochaine action : PR de ce lot, CI verte, puis fusion. Ensuite intégrer le point 2 (six groupes en cours), puis prononcer G1 et G4 sur leurs critères.
+
 ## Lots F3, F4 et F5 — échanges, collaboration, rendu — 25 octobre 2026
 
 Branche `ccr-187fd2e6-08dk6e`, base `main@4377815` (lot F1 fusionné, PR #317).
@@ -21,7 +64,7 @@ Ce qui a été fait :
 - **Recettes `studio-echanges`, `studio-publication`, `studio-observations` et `studio-rendu`** (nouvelle, en CI et en préproduction). Détail et limites : [lots de fonctions](recettes/LOTS-FONCTIONS-2026-10-25.md).
 - **13 obligations vérifiées** : TEST-028, TR-EX-066, TR-EX-085, 086, 095, 100, 102, 103, 104, C.1-05, TR-EX-057, TEST-025, A.3-08.
 
-Compteurs recalculés du registre : **0 À définir / 88 À faire / 194 En cours / 11 Bloqué / 279 Vérifié / 58 Accepté**. **P630=337/630**.
+Compteurs recalculés du registre : à cette date 279 Vérifié, 58 Accepté, 11 Bloqué, 194 En cours, 88 À faire, 0 À définir ; 337 obligations sur 630 closes.
 
 Prochaine action : PR de ces lots, CI verte, puis fusion. Ensuite F2 (noyau exact), le point 2 (tests des preuves partielles), puis G1 et G4.
 

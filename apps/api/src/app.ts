@@ -129,6 +129,12 @@ export function createApp() {
   // Gestionnaire d'erreurs final : jamais de stack trace renvoyée au client
   // (Definition of Done), log structuré côté serveur.
   const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+    // Corps au-delà de la limite de sa route (lecture JSON d'express) : refus explicite 413, jamais une erreur interne
+    // (EX-087 : taille d'entrée contrôlée ; rien n'a été lu ni écrit).
+    if ((err as { type?: string } | null)?.type === "entity.too.large") {
+      res.status(413).json({ error: "payload_too_large", message: "Le corps de la requête dépasse la taille admise." });
+      return;
+    }
     // eslint-disable-next-line no-console
     console.error(JSON.stringify({ level: "error", message: (err as Error).message, stack: (err as Error).stack }));
     res.status(500).json({ error: "internal_error" });

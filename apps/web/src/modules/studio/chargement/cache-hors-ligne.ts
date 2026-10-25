@@ -13,7 +13,7 @@
  *
  * Accès au navigateur injecté (`caches`, `fetch`, identifiant du build) : testable sans navigateur.
  */
-import { FICHIER_CARTE, fermetureMoteurs, MOTEURS, moteursDeBarre, type IdMoteur } from "./moteurs";
+import { FICHIER_CARTE, fermetureMoteurs, MOTEURS, moteursDeOutil, type IdMoteur } from "./moteurs";
 import type { CarteChargement } from "./carte-morceaux";
 
 export interface CacheLike { match(req: string): Promise<unknown>; put(req: string, res: Response): Promise<void> }
@@ -110,7 +110,8 @@ export async function verifierHorsConnexion(env: EnvCache, carte: CarteChargemen
 export function outilsHorsConnexion<T extends { toolId: string; groupe: string }>(outils: readonly T[], v: VerificationHorsConnexion): { disponibles: T[]; indisponibles: T[] } | null {
   if (v.raison === "cache-purge") return { disponibles: [], indisponibles: [...outils] };
   if (v.raison !== "evalue") return null;
-  const ok = (t: T) => (moteursDeBarre(t.groupe) ?? []).every((id) => v.moteurs[id] === true) && moteursDeBarre(t.groupe) !== null;
+  // Moteurs de l'outil (barre et moteurs propres, lot F2 : le booléen exact demande aussi le noyau exact).
+  const ok = (t: T) => { const m = moteursDeOutil(t.toolId, t.groupe); return m !== null && m.every((id) => v.moteurs[id] === true); };
   return { disponibles: outils.filter(ok), indisponibles: outils.filter((t) => !ok(t)) };
 }
 

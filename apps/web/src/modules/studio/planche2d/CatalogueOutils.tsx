@@ -387,6 +387,12 @@ export function GestionnaireOutils({ disponible, raison, surExecuter, surFermer,
                     <span className="studio-catalogue-meta">{NATURE[e.nature]}</span>
                     <span className="studio-catalogue-meta" data-studio-contextes={e.contextes.join(" ")}>{e.contextes.map((c) => LIBELLE_CONTEXTE[c]).join(" · ")}</span>
                     <span className="studio-catalogue-meta" data-studio-droit={e.droit}>{e.droit === "ecriture" ? "Droit requis : écriture" : "Droit requis : lecture"}</span>
+                    {e.chargeur !== null && <span className="studio-catalogue-meta" data-studio-chargeur={e.chargeur}>Chargeur : <code translate="no">{e.chargeur}</code></span>}
+                    {e.outil !== null && (
+                      <span className="studio-catalogue-meta" data-studio-prerequis={e.prerequis.join(" ")}>
+                        {e.prerequis.length ? <>Prérequis : <code translate="no">{e.prerequis.join(", ")}</code></> : "Aucun prérequis"}
+                      </span>
+                    )}
                     <span className="studio-catalogue-meta" data-studio-disponibilite>{r === null ? "Disponible" : raison ? LIBELLES_RAISON[r] : "Indisponible"}</span>
                     {e.agentExposure === null
                       ? <span className="studio-catalogue-meta" data-studio-exposition="hors-registre">Hors registre (commande locale)</span>

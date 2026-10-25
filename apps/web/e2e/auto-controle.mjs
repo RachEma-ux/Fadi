@@ -216,8 +216,15 @@ try {
   const d2 = await dossier("Dossier auto 2");
   check("aperçu : périmètre depuis la dernière révision approuvée (1 révision)", (await eve.call("GET", `${pubs}/${d2.id}/controle-approbation`)).body?.revisionsAuteur === 1);
   const avant = d2.manifestHash;
+  // EX-083 : l'administrateur technique (plateforme) sans fonction métier dans le projet n'obtient pas l'approbation.
+  const parAdmin = await admin.call("POST", `${pubs}/${d2.id}/approuver`, examine(d2));
+  check("EX-083 [−] administrateur technique sans rôle dans le projet : approbation refusée par le serveur (404, rien révélé), dossier toujours en revue",
+    parAdmin.status === 404 && (await owner.call("GET", `${pubs}/${d2.id}`)).body?.workStatus === "en-revue", `${parAdmin.status} ${short(parAdmin.body)}`);
   const okEve = await eve.call("POST", `${pubs}/${d2.id}/approuver`, examine(d2));
   check("Eve : approbation de son dossier enregistrée et marquée auto-contrôle", okEve.status === 200 && okEve.body.approvedSelfControl === true && okEve.body.events.some((e) => e.action === "approuver" && e.selfControl === true), short(okEve.body));
+  const diffEve = await eve.call("POST", `${pubs}/${d2.id}/diffuser`, {});
+  check("EX-083 [−] approuver et publier sont deux permissions : l'approbatrice (éditrice) ne diffuse pas (403), dossier non diffusé",
+    diffEve.status === 403 && (await owner.call("GET", `${pubs}/${d2.id}`)).body?.diffusionStatus === "non-diffuse", `${diffEve.status} ${short(diffEve.body)}`);
   check("manifeste et empreinte approuvée inchangés par la marque", okEve.body?.manifestHash === avant && okEve.body.approval.manifestHash === avant);
   const journal = await owner.call("GET", `/projects/${pid}/journal`);
   const marques = (journal.body?.entries ?? []).filter((e) => e.action === "review.approval.recorded").map((e) => e.details.selfControl);

@@ -12,6 +12,7 @@ import { loadProjectAccess, projectAccessRefusal, type AccessibleProject, type P
 import type { CiblePortee } from "@parcours/domain-model";
 import { orchestrerCommandesDansTransaction, type Tx } from "./atelier-validation.js";
 import { lockProject, type Querier } from "./step-rows.js";
+import { revaliderBooleensStudio } from "./studio-exact.js";
 
 export interface StudioScope { projectId: string; studyId: string; variantId: string }
 export class StudioRequestError extends Error {
@@ -453,6 +454,9 @@ async function staleRevisionBody(tx: Tx, variantId: string, envelope: StudioEnve
 export async function submitStudioCommands(scope: StudioScope, actorId: string, input: unknown, ecriture: StudioEcriture = "modify"): Promise<StudioContext & { replayed: boolean }> {
   // Capture avant le premier await : aucun changement du payload durant les verrous/rejeu.
   scope = Object.freeze({ projectId: scope.projectId, studyId: scope.studyId, variantId: scope.variantId });
+  // EX-003 : aucune géométrie sans variante propriétaire — un contexte incomplet est refusé avant toute lecture ou
+  // écriture (sans s'en remettre à la sémantique de NULL de la requête).
+  if ([scope.projectId, scope.studyId, scope.variantId].some((x) => typeof x !== "string" || x === "")) return notFound();
   const envelope = parseStudioEnvelope(input);
   refuserPrefixeReserve(envelope.requestId, ecriture);
   const payloadHash = studioPayloadHash(envelope);
@@ -486,6 +490,9 @@ export async function submitStudioCommands(scope: StudioScope, actorId: string, 
         if (envelope.baseRevisionId !== current.variant.headRevisionId) {
           throw new StudioRequestError(409, await staleRevisionBody(transaction, scope.variantId, envelope, current.variant.headRevisionId, current.revision.document));
         }
+        // Booléens exacts (lot F2) : recalculés par le noyau du serveur, qui remplace le résultat annoncé (R9).
+        const refusExact = await revaliderBooleensStudio(current.revision.document, envelope.commands, applyStudioCommands);
+        if (refusExact) throw new StudioRequestError(refusExact.status, refusExact.body);
         let document;
         try { document = applyStudioCommands(current.revision.document, envelope.commands); }
         catch (error) {

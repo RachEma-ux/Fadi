@@ -6,7 +6,8 @@
  *  1. démarrage léger : l'accueil de Studio n'exécute ni la planche, ni three.js, ni un noyau exact, ni un Worker ;
  *  2. ouverture d'une planche : l'éditeur est chargé, three.js toujours pas ; moteurs « planche » initialisés et actifs ;
  *  3. Tool Manager : quatre états distincts par moteur — le rendu 3D est « téléchargé » et « disponible hors connexion »
- *     (précaché) mais ni initialisé ni actif ; relevé PERF-01 à PERF-10 (PERF-07 non applicable) ;
+ *     (précaché) mais ni initialisé ni actif ; relevé PERF-01 à PERF-10 (PERF-07, booléen exact du lot F2, non mesuré tant
+ *     que l'outil n'a pas servi) ; noyau exact ni chargé ni disponible hors connexion (son .wasm n'est jamais préchargé) ;
  *  4. premier usage de la vue 3D : three.js chargé une fois, moteur initialisé une fois, actif tant que la vue est
  *     ouverte, inactif sans réinitialisation à la réouverture ; le groupe de Workers est partagé puis libérable ;
  *  5. hors connexion véridique : un fichier du rendu 3D retiré du cache → outils 3D annoncés indisponibles, outils 2D
@@ -88,10 +89,30 @@ try {
   check("démarrage : seule la coquille est initialisée", e0["coquille-studio"].initialise && !e0["planche-2d"].initialise && !e0["rendu-3d"].initialise && !e0.calcul.initialise, JSON.stringify(Object.values(e0).map((e) => [e.id, e.phase])));
 
   // 2. Ouverture d'une planche.
+  const lecturesOuverture = [];
+  const noterLecture = (r) => { const u = new URL(r.url()); if (r.request().method() === "GET" && /\/studio\/(preferences\/(outils|catalogue)|studies\/[^/]+(\/variants\/[^/]+)?)$/.test(u.pathname)) lecturesOuverture.push([u.pathname.replace(/^.*\/studio\//, ""), r.status()]); };
+  page.on("response", noterLecture);
   await page.goto(url);
   const outils = page.getByRole("toolbar", { name: "Outils de dessin" });
   await outils.waitFor();
   await page.waitForFunction(() => globalThis.__fadiPerf?.mesures("PERF-01").length > 0);
+  // EX-038 (cas positif) : avant toute action, la coquille, l'identité (rôle), le profil d'outils, le contexte d'étude
+  // (étude, variante, révision), le catalogue autorisé (métadonnées du registre) et les commandes essentielles sont là.
+  await page.locator('[data-studio-role="proprietaire"]').waitFor();
+  await page.waitForFunction(() => document.querySelectorAll('[role="toolbar"] [data-studio-outil]').length > 0);
+  await page.waitForTimeout(300);
+  page.off("response", noterLecture);
+  const lu = (motif) => lecturesOuverture.some(([p, s]) => motif.test(p) && s === 200);
+  const fil = await page.locator("nav, header").filter({ hasText: "Étude chargement" }).count();
+  check("démarrage (avant toute action) : coquille Studio, rôle de l'utilisateur et contexte d'étude (étude, variante, révision de tête) affichés (EX-038)",
+    (await page.locator(`section.studio-workspace[aria-label="Studio"][data-studio-variante="${variantId}"]`).count()) === 1 && fil > 0
+      && (await page.locator('[data-studio-role="proprietaire"]').count()) === 1
+      && lu(/^studies\/[^/]+$/) && lu(/^studies\/[^/]+\/variants\/[^/]+$/), JSON.stringify(lecturesOuverture));
+  check("démarrage (avant toute action) : profil d'outils et catalogue autorisé lus du serveur, barres d'outils et commandes essentielles présentes (EX-038)",
+    lu(/^preferences\/outils$/) && lu(/^preferences\/catalogue$/)
+      && (await outils.locator('[data-studio-outil="studio.dessin.selection"][aria-pressed="true"]').count()) === 1 && (await outils.locator("[data-studio-outil]").count()) > 1
+      && (await page.getByRole("toolbar", { name: "Actions de l’espace" }).getByRole("button", { name: "Outils", exact: true }).count()) === 1
+      && (await page.locator('[data-studio-commande="enregistrer"]').count()) >= 1, JSON.stringify(lecturesOuverture));
   const aLaPlanche = await scriptsDemandes(page);
   check("planche : l'éditeur est chargé, three.js / vue 3D / noyau exact toujours pas (B.3-03, EX-039)",
     contient(aLaPlanche, PLANCHE) && !Object.values(LOURDS).some((m) => contient(aLaPlanche, m)), aLaPlanche.filter((p) => !/index-/.test(p)).join(" "));
@@ -134,9 +155,11 @@ try {
   check("Tool Manager : rendu 3D précaché — téléchargé et disponible hors connexion, mais ni initialisé ni actif (B.3-08)", r3d.t === "oui" && r3d.h === "oui" && r3d.i === "non" && r3d.a === "non", JSON.stringify(r3d));
   const p2d = await attr("planche-2d");
   check("Tool Manager : planche téléchargée, initialisée, active, disponible hors connexion", p2d.t === "oui" && p2d.i === "oui" && p2d.a === "oui" && p2d.h === "oui", JSON.stringify(p2d));
-  check("Tool Manager : relevé PERF-01 à PERF-10 affiché, PERF-07 non applicable (X.1-09)",
+  check("Tool Manager : relevé PERF-01 à PERF-10 affiché, PERF-07 (booléen exact) non mesuré tant que l'outil n'a pas servi (X.1-09)",
     (await g.locator("[data-studio-perf]").count()) === 10 && Number(await g.locator('[data-studio-perf="PERF-01"]').getAttribute("data-n")) >= 1
-    && /non applicable/.test(await g.locator('[data-studio-perf="PERF-07"]').textContent()));
+    && /non mesuré/.test(await g.locator('[data-studio-perf="PERF-07"]').textContent()));
+  const exact = await attr("noyau-exact");
+  check("Tool Manager : noyau exact (lot F2) ni initialisé ni actif à l'ouverture, indisponible hors connexion (.wasm jamais préchargé)", exact.i === "non" && exact.a === "non" && exact.h === "non", JSON.stringify(exact));
   check("Tool Manager : file locale et persistance du stockage annoncées (B.3-10)", /^\d+$/.test(await g.locator("[data-studio-file-locale]").getAttribute("data-studio-file-locale")) && !!(await g.locator("[data-studio-persistance]").getAttribute("data-studio-persistance")));
   const releve = page.waitForEvent("download");
   await g.locator("[data-studio-telecharger-releve]").click();

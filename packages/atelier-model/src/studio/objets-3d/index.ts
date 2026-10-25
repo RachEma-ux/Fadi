@@ -12,3 +12,10 @@ export {
   type StudioFaceSolide, type StudioLienSolide, type StudioMotifLien, type StudioRelationSource, type StudioSourceSolide,
 } from "./solides.js";
 export { studioMaillageSolide, type StudioFreeSolid3d } from "./maillage.js";
+// Lot F2 : solides exacts (résultats du noyau exact, opérandes conservés).
+export {
+  OP_NOYAU, SCHEMA_RESULTAT_EXACT, SCHEMA_SOLIDE_EXACT, STUDIO_LIMITES_EXACTS, STUDIO_MOTEUR_EXACT, STUDIO_OPERATIONS_BOOLEENNES,
+  studioBoiteEnglobante, studioIdsOperandes, studioMaillageExact, studioOperandeNoyau, validerResultatExact, validerSolideExact,
+  type StudioBoiteEnglobante, type StudioExact3d, type StudioMaillageExact, type StudioOperandeExact, type StudioOperandeNoyau, type StudioOperationBooleenne,
+  type StudioOperationNoyau, type StudioResultatExact, type StudioSolideExact,
+} from "./exacts.js";

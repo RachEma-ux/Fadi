@@ -42,7 +42,7 @@ export const DEFINITIONS_PERF: readonly DefinitionPerf[] = Object.freeze([
   { code: "PERF-06", mesure: "Modif. objet architectural.", profils: "Mur hôte, ouvertures, dépendances, index.", porte: "Coût d’invalidation vs reconstruction totale.",
     instrumentation: "Durée d’application d’une commande d’architecture au brouillon (application complète par le modèle) ; l’invalidation incrémentale n’existe pas encore, la comparaison reste à faire.", etat: "instrumente" },
   { code: "PERF-07", mesure: "Booléen exact.", profils: "Formes simples, cas dégénérés, BRep fournisseurs.", porte: "Chargement, calcul, mémoire, erreurs, précision.",
-    instrumentation: "Aucun booléen exact dans Studio V1 (aucun noyau exact chargé) : non mesuré, déclaré non applicable.", etat: "non-applicable" },
+    instrumentation: "Booléen exact (lot F2, noyau OCCT chargé à la demande dans un Worker) : durée du premier chargement, octets transférés du .wasm, instances compilées, durée de chaque calcul et son issue (aboutie, calcul, plantage, délai, annulée) ; mémoire du tas après chaque calcul (PERF-09). Précision : comparaison aperçu / exact relevée par le panneau, cas dégénérés et BRep fournisseurs non mesurés.", etat: "instrumente" },
   { code: "PERF-08", mesure: "Génération documentaire.", profils: "Détails, vues, feuilles multi-sources, PDF/DXF.", porte: "Temps, annulation, export fidèle.",
     instrumentation: "Durée de composition de la feuille de présentation (tâche du groupe de Workers), aboutie, annulée ou en échec.", etat: "instrumente" },
   { code: "PERF-09", mesure: "Mémoire longue session.", profils: "Changement d’outils, fermer/réouvrir.", porte: "Pic, résiduelle, absence de fuite.",

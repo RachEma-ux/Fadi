@@ -9,7 +9,8 @@
  *    d’affichage réduite sous charge » le dit ; sous charge, désignation (clic sur un solide), volumes, document et
  *    révision sont identiques ; la charge ôtée, la qualité revient palier par palier et les compteurs GPU reviennent à
  *    leur ligne de base ;
- *  - A.3-08 : l'inventaire « Types 3D : inventaire de couverture » affiche chaque type avancé « Non disponible », sans
+ *  - A.3-08 : l'inventaire « Types 3D : inventaire de couverture » affiche chaque type avancé « Non disponible » (le booléen
+ *    exact, livré au lot F2, est disponible), sans
  *    commande, et aucun outil de la barre ne le propose ;
  *  - TEST-025 : comparaison SVG / Canvas / GPU (WebGL brut, sans dépendance nouvelle) sur les scènes S1–S3 du corpus
  *    (100 et 10 000 primitives) dans le navigateur : fidélité (pixels à 1 px près, traits relus), accessibilité (textes
@@ -161,9 +162,10 @@ try {
   await couverture.locator("summary").click();
   const types = await couverture.locator("[data-studio-type-3d]").evaluateAll((els) => els.map((e) => ({ id: e.getAttribute("data-studio-type-3d"), etat: e.getAttribute("data-studio-type-3d-etat"), texte: e.textContent, commandes: e.querySelectorAll("button, input, select, a").length, libelle: e.querySelector("strong")?.textContent })));
   const avances = types.filter((t) => t.etat === "non-disponible");
-  check("A.3-08 : inventaire affiché — sommets et arêtes, groupe, composant, booléen, courbe exacte 3D, surface complexe, BRep fournisseur « Non disponible », sans commande",
-    avances.map((t) => t.id).join(" ") === "sommets-aretes groupe-3d composant-3d booleen courbe-exacte-3d surface-complexe brep-fournisseur"
+  check("A.3-08 : inventaire affiché — sommets et arêtes, groupe, composant, courbe exacte 3D, surface complexe, BRep fournisseur « Non disponible », sans commande",
+    avances.map((t) => t.id).join(" ") === "sommets-aretes groupe-3d composant-3d courbe-exacte-3d surface-complexe brep-fournisseur"
       && avances.every((t) => t.texte.includes("— Non disponible") && t.commandes === 0), JSON.stringify(avances.map((t) => [t.id, t.commandes])));
+  check("A.3-08 : le booléen exact (lot F2) est annoncé disponible, avec ses tests", types.find((t) => t.id === "booleen")?.etat === "disponible", JSON.stringify(types.find((t) => t.id === "booleen")));
   const libellesBarre = await page.locator("[data-studio-outil]").evaluateAll((els) => els.map((e) => (e.getAttribute("aria-label") ?? "").toLowerCase()));
   const proposes = avances.filter((t) => libellesBarre.some((l) => l.includes((t.libelle ?? "").split(" (")[0].toLowerCase())));
   check("A.3-08 : aucun outil de la barre ne propose un type avancé", proposes.length === 0 && libellesBarre.length > 0, JSON.stringify(proposes.map((t) => t.id)));
