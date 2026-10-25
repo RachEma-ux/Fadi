@@ -1,10 +1,14 @@
 # Reprise — équipe Codex Fadi
 
+## Studio — 25 octobre 2026
+
+Registre Studio après les décisions déléguées ADR-STUDIO-PILOTE-01 et la recette du pilote : **16 À définir / 205 À faire / 293 En cours / 13 Bloqué / 72 Vérifié / 31 Accepté** ; **P630=103/630**. Le détail est dans `docs/workstreams/studio/STATUS.md`.
+
 ## Checkpoint courant — 21 octobre 2026
 
 Référence examinée : `main@78e9f4a89e9634189c3bd4fb9ed82576eafe2a64` (#222), après consolidation #209. Le code porte les quatre domaines Studio et les lots Sandbox 1–6 ; les anciennes instructions de fusion #181 ci-dessous sont historiques, plus une action à exécuter. La branche corrective de cet audit traite sauvegarde locale, cohérence des compteurs et nettoyage de la branche d'exploitation.
 
-Compteurs recalculés du registre (états documentaires, sans nouvelle acceptation) : **22 À définir / 58 À faire / 292 En cours / 209 Bloqué / 47 Vérifié / 2 Accepté**. **P630=49/630** ; ce compteur documentaire/cadrage n'est pas un pourcentage du logiciel livré. PDEV reste non défini. Aucune tâche du registre n'a été promue à partir de la seule présence de code.
+Compteurs du registre au 21 octobre (historique, remplacés le 25 octobre) : 22 à définir, 58 à faire, 292 en cours, 209 bloquées, 47 vérifiées, 2 acceptées ; P630 valait alors 49 sur 630 ; ce compteur documentaire/cadrage n'est pas un pourcentage du logiciel livré. PDEV reste non défini. Aucune tâche du registre n'a été promue à partir de la seule présence de code.
 
 Preuves actuelles : sources au SHA ci-dessus ; vérification locale de l'audit : types, frontières, isolation, structure de continuité et affectation 630/630 réussis. Le contrôle `tableau_registre.py --controle` est réparé et ajouté à la CI par ce correctif. Résultats finaux de la branche et liens vers les exécutions : PR du correctif, à vérifier au SHA exact.
 
