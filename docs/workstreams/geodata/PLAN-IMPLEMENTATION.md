@@ -61,6 +61,7 @@ Décision d’exécution : [ADR-GEODATA-02](../../continuity/decisions/ADR-GEODA
 | D-GD-08 | Versions publiées immuables ; retrait tracé avec motif ; imports non confirmés expirés après 24 h ; fiches d’export 30 jours. |
 | D-GD-09 | V1 privée : aucun partage ; le modèle réserve les rôles d’espace collectif sans afficher d’action inopérante. |
 | D-GD-11 | Style « une couleur par entité » : palette qualitative de 12 couleurs, voisins distincts au-delà de 12 unités (graphe de voisinage calculé au serveur) ; rien n'est enregistré dans la composition hors le mode. |
+| D-GD-12 | Couches de sources d'origine ouvertes (OpenStreetMap ODbL, OurAirports domaine public), données livrées avec leur fiche ; raster, > 5 000 objets et droits non établis écartés. |
 | D-GD-10 | Traitements synchrones bornés, état durable en base, journal `geodata_journal` sans coordonnées. |
 
 ## 3. Plan retenu — cinq incréments

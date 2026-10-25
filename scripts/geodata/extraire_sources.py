@@ -32,6 +32,9 @@ import osmium
 RACINE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 FICHES = os.path.join(RACINE, "docs", "geodata", "sources")
 MAX_OBJETS = 5000
+# Couleur par défaut d'une couche selon son thème (ColorBrewer « Paired » / « Set1 ») : les couches se distinguent sur la carte.
+COULEURS_THEME = {"hydrologie": "#1f78b4", "infrastructures": "#6a3d9a", "energie": "#ff7f00", "tourisme": "#e31a1c",
+                  "patrimoine": "#b15928", "equipements": "#33a02c", "population": "#984ea3", "agriculture": "#4daf4a"}
 DROITS_OUVERTS = {u: "autorise" for u in ["consultation", "stockage", "calcul", "tuiles", "commercial", "partage", "telechargement", "export"]}
 
 
@@ -154,7 +157,7 @@ class Lecteur(osmium.SimpleHandler):
             return
         t = self._tags(w)
         for cle, _, _, _, f, g, _ in self.couches:
-            if not f(t) or g in ("noeud", "surface"):
+            if not f(t) or g == "noeud":
                 continue
             try:
                 coords = [[r7(nd.lon), r7(nd.lat)] for nd in w.nodes]
@@ -162,7 +165,11 @@ class Lecteur(osmium.SimpleHandler):
                 continue
             if len(coords) < 2:
                 continue
-            if g == "ligne":
+            ferme = coords[0] == coords[-1] and len(coords) >= 4
+            if g == "surface" and ferme:
+                continue  # surface fermée : assemblée par area()
+            if g in ("ligne", "surface"):
+                # Couche de surfaces : une voie ouverte (ex. barrage tracé en ligne) est reprise comme ligne.
                 self._garder(cle, f"w{w.id}", t, {"type": "LineString", "coordinates": coords}, coords[0])
             else:
                 c = centre(coords[:-1] if coords[0] == coords[-1] and len(coords) > 2 else coords)
@@ -235,7 +242,7 @@ def ecrire(sortie, cle, titre, theme, features, meta, resultat):
             "conditions": meta["conditions"],
         },
         "couche": {"titre": titre, "description": f"{len(features)} objets ; {meta['codes']}.", "niveau": None, "champCode": "code", "champNom": "nom",
-                   "proprietesExposees": exposees, "styleDefaut": {"mode": "simple", "couleur": "#2b8cbe"}},
+                   "proprietesExposees": exposees, "styleDefaut": {"mode": "simple", "couleur": COULEURS_THEME.get(theme, "#2b8cbe")}},
         "indicateurs": [],
         "superficie": all(t in ("Polygon", "MultiPolygon") for t in types),
     }
@@ -289,7 +296,7 @@ def main():
                 "periode": f"Base OpenStreetMap des extraits du {extraits[0].split(' du ')[1].split(' ')[0]}",
                 "licence": "Open Data Commons Open Database License 1.0 (ODbL)",
                 "attribution": "© contributeurs OpenStreetMap (ODbL)",
-                "precision": ("Positions saisies par les contributeurs OSM ; voies et surfaces représentées par leur point central (moyenne des sommets)" if point else "Géométries des contributeurs OSM reprises telles quelles (surfaces assemblées par osmium)") + " ; coordonnées arrondies à 10⁻⁷ degré",
+                "precision": ("Positions saisies par les contributeurs OSM ; voies et surfaces représentées par leur point central (moyenne des sommets)" if point else "Géométries des contributeurs OSM reprises telles quelles (surfaces assemblées par osmium ; voies ouvertes en lignes, nœuds en points)") + " ; coordonnées arrondies à 10⁻⁷ degré",
                 "conditions": "ODbL 1.0 : attribution « © contributeurs OpenStreetMap » obligatoire ; une base dérivée redistribuée reste sous ODbL (partage à l'identique) ; une œuvre produite (carte, image) peut être diffusée avec l'attribution.",
                 "codes": "code = type et identifiant OSM (n = nœud, w = voie, r = relation)",
             }, resultat)
