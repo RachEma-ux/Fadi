@@ -27,7 +27,7 @@ import { STUDIO_CAPACITES_EXPORT, STUDIO_RAISONS_FIDELITE, type StudioFormatEcha
 
 export const STUDIO_MATRICE_ECHANGES_SCHEMA = "studio-matrice-echanges/1" as const;
 /** Révision de la matrice : à incrémenter avec toute modification d'une entrée (empreinte épinglée par test). */
-export const STUDIO_MATRICE_ECHANGES_REVISION = 4 as const;
+export const STUDIO_MATRICE_ECHANGES_REVISION = 5 as const;
 /** Date de l'audit qui a établi la révision courante. */
 export const STUDIO_MATRICE_ECHANGES_DATE = "2026-10-25" as const;
 
@@ -533,14 +533,14 @@ const LIVREES: readonly StudioEntreeEchange[] = [
     sources: [S_PLAN, S_LISTE("E.6-03")],
   },
   {
-    id: "diagnostic-releve-perf", format: "JSON", versionFormat: "Relevé de performances Studio (sans schéma versionné)", sens: "export", famille: "diagnostic",
+    id: "diagnostic-releve-perf", format: "JSON", versionFormat: "studio-releve-perf/1 (relevé de performances Studio, JSON)", sens: "export", famille: "diagnostic",
     objet: "Mesures de chargement et d’exécution de la session (hors modèle)", taches: ["E.6-02"], statut: "livre",
     limite: "Diagnostic seulement : aucune donnée du projet ; non relu par Studio.",
-    entites: [{ entite: "Mesures de la session", couverture: "portee", detail: "Définitions, contexte, synthèse, journal." }],
-    controle: "Tests du relevé.",
+    entites: [{ entite: "Mesures de la session", couverture: "portee", detail: "Schéma versionné, définitions, contexte, synthèse, journal." }],
+    controle: "Tests du relevé et de son schéma versionné (controlerRelevePerf).",
     preuves: {
-      code: [p(`${WEB}chargement/perf.ts`, "ReleveurPerf")],
-      tests: [p(`${WEB}chargement/perf.test.ts`, "ReleveurPerf")],
+      code: [p(`${WEB}chargement/perf.ts`, "ReleveurPerf"), p(`${WEB}chargement/perf.ts`, "controlerRelevePerf")],
+      tests: [p(`${WEB}chargement/perf.test.ts`, "ReleveurPerf"), p(`${WEB}chargement/perf.test.ts`, "controlerRelevePerf")],
       interfaces: [p(`${WEB}chargement/PanneauRessources.tsx`, "a.download = \"studio-releve-perf.json\"")],
     },
     sources: [S_LISTE("X.1-09")],

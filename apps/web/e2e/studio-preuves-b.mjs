@@ -267,7 +267,10 @@ try {
   check("B.3-10 : après la mise à jour, la file locale est intacte (même requestId, mêmes pas), rien n'a atteint le serveur",
     JSON.stringify(fileApres?.pas) === JSON.stringify(fileAvant.pas) && fileApres?.plan?.requestIds?.[0] === requestId && (await revisions()).length === revisionsAvant,
     JSON.stringify({ avant: fileAvant.plan, apres: fileApres?.plan }));
-  await page.reload();
+  // Rechargements sous le service worker remplacé : l'événement « load » peut tarder (vérification de mise à jour du
+  // script intercepté) ; on attend le document, puis les éléments que la preuve contrôle réellement.
+  const recharger = () => page.reload({ waitUntil: "domcontentloaded", timeout: 40000 });
+  await recharger();
   await outils.waitFor();
   await page.locator('[data-studio-hors-ligne="en-attente"]').waitFor({ timeout: 40000 }).catch(() => {});
   const apresRechargement = await brouillonLocal(page, cle);
@@ -276,7 +279,7 @@ try {
     && (await page.evaluate(() => !!navigator.serviceWorker.controller)), JSON.stringify(apresRechargement?.plan));
   envois.length = 0;
   await page.unroute(`**${variantePath}/commands`);
-  await page.reload();
+  await recharger();
   await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor({ timeout: 40000 });
   const tete = await api("get", variantePath);
   check("B.3-10 : envoi rétabli — enregistré une seule fois avec le même requestId, rectangle dans la tête, plus rien sur l'appareil",

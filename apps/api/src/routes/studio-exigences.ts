@@ -25,6 +25,8 @@ import {
   deciderAcceptation, deciderEdition, empreinte, rejeuAdmis, resultatControle, studioControleSchema, studioExigenceAcceptationSchema,
   studioExigencesEditionSchema, versionExaminee, type Decision,
 } from "../lib/studio-exigences.js";
+import { avecContrat } from "../lib/studio-contrats.js";
+import { CONTRAT_EXIGENCES_LIRE, CONTRAT_EXIGENCES_VERSION, CONTRAT_EXIGENCES_ENREGISTRER, CONTRAT_EXIGENCES_ACCEPTER, CONTRAT_CONTROLES_LISTER, CONTRAT_CONTROLE_LIRE, CONTRAT_CONTROLE_EXECUTER } from "../lib/studio-contrats-routes.js";
 
 export const studioExigencesRouter = Router({ mergeParams: true });
 
@@ -70,7 +72,7 @@ async function derniere(q: Querier, studyId: string): Promise<SetRow | null> {
   return row ?? null;
 }
 
-studioExigencesRouter.get("/studies/:studyId/exigences", endpoint(async (req, res) => {
+studioExigencesRouter.get("/studies/:studyId/exigences", avecContrat(CONTRAT_EXIGENCES_LIRE), endpoint(async (req, res) => {
   const projectId = param(req, "projectId");
   const access = assertAccess(await loadProjectAccess(projectId, req.user!.id), req.user!.id, "read");
   const study = await studyOf(db, access.id, param(req, "studyId"));
@@ -86,7 +88,7 @@ studioExigencesRouter.get("/studies/:studyId/exigences", endpoint(async (req, re
   });
 }));
 
-studioExigencesRouter.get("/studies/:studyId/exigences/versions/:version", endpoint(async (req, res) => {
+studioExigencesRouter.get("/studies/:studyId/exigences/versions/:version", avecContrat(CONTRAT_EXIGENCES_VERSION), endpoint(async (req, res) => {
   const projectId = param(req, "projectId");
   const access = assertAccess(await loadProjectAccess(projectId, req.user!.id), req.user!.id, "read");
   const study = await studyOf(db, access.id, param(req, "studyId"));
@@ -125,7 +127,7 @@ async function enregistrerVersion(tx: Tx, studyId: string, actorId: string, requ
   return { row: row!, replayed: false };
 }
 
-studioExigencesRouter.post("/studies/:studyId/exigences", endpoint(async (req, res) => {
+studioExigencesRouter.post("/studies/:studyId/exigences", avecContrat(CONTRAT_EXIGENCES_ENREGISTRER), endpoint(async (req, res) => {
   const parsed = studioExigencesEditionSchema.safeParse(req.body ?? {});
   if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
   const input = parsed.data;
@@ -140,7 +142,7 @@ studioExigencesRouter.post("/studies/:studyId/exigences", endpoint(async (req, r
   res.status(201).json(out);
 }));
 
-studioExigencesRouter.post("/studies/:studyId/exigences/acceptations", endpoint(async (req, res) => {
+studioExigencesRouter.post("/studies/:studyId/exigences/acceptations", avecContrat(CONTRAT_EXIGENCES_ACCEPTER), endpoint(async (req, res) => {
   const parsed = studioExigenceAcceptationSchema.safeParse(req.body ?? {});
   if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
   const input = parsed.data;
@@ -163,7 +165,7 @@ async function varianteDe(q: Querier, studyId: string, variantId: string) {
   return variant ?? notFound();
 }
 
-studioExigencesRouter.get(controlesPath, endpoint(async (req, res) => {
+studioExigencesRouter.get(controlesPath, avecContrat(CONTRAT_CONTROLES_LISTER), endpoint(async (req, res) => {
   const access = assertAccess(await loadProjectAccess(param(req, "projectId"), req.user!.id), req.user!.id, "read");
   const study = await studyOf(db, access.id, param(req, "studyId"));
   const variant = await varianteDe(db, study.id, param(req, "variantId"));
@@ -174,7 +176,7 @@ studioExigencesRouter.get(controlesPath, endpoint(async (req, res) => {
   res.json({ controles: rows.map((r) => controleDe(r, email)) });
 }));
 
-studioExigencesRouter.get(`${controlesPath}/:checkId`, endpoint(async (req, res) => {
+studioExigencesRouter.get(`${controlesPath}/:checkId`, avecContrat(CONTRAT_CONTROLE_LIRE), endpoint(async (req, res) => {
   const access = assertAccess(await loadProjectAccess(param(req, "projectId"), req.user!.id), req.user!.id, "read");
   const study = await studyOf(db, access.id, param(req, "studyId"));
   const variant = await varianteDe(db, study.id, param(req, "variantId"));
@@ -185,7 +187,7 @@ studioExigencesRouter.get(`${controlesPath}/:checkId`, endpoint(async (req, res)
   res.json(controleDe(row, await emails(db, [row.authorId])));
 }));
 
-studioExigencesRouter.post(controlesPath, endpoint(async (req, res) => {
+studioExigencesRouter.post(controlesPath, avecContrat(CONTRAT_CONTROLE_EXECUTER), endpoint(async (req, res) => {
   const parsed = studioControleSchema.safeParse(req.body ?? {});
   if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
   const input = parsed.data;
