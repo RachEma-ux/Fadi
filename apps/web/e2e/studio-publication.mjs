@@ -284,6 +284,14 @@ const g5 = (await reader('GET', `${pubs2}/${p5.id}`)).body;
 const docsE4 = (await reader('GET', `/projects/${projectId}/documents`)).body?.studioPackages ?? [];
 check('E.4 : Documents : dossier E listé remplacé, dossier F seul en vigueur', docsE4.find((p) => p.publicationId === p5.id)?.diffusionStatus === 'remplace' && docsE4.filter((p) => p.variantId === vA && p.diffusionStatus === 'diffuse').map((p) => p.publicationId).join() === p6.id, short(docsE4.map((p) => [p.publicationId, p.diffusionStatus])));
 check('E.4 : dossier E remplacé, journalisé, paquet toujours lisible', g5?.diffusionStatus === 'remplace' && g5.replacement?.publicationId === p6.id && g5.events?.at(-1)?.action === 'remplacer' && (await reader('GET', `${pubs2}/${p5.id}/files/pdf`, undefined, true)).status === 200, short(g5));
+// EX-081 [−] : la modification après approbation n'atteint pas la publication historique — contenu identique, octet pour octet.
+const filesE = d5.body?.diffusion?.files ?? [];
+let intactE = filesE.length === 4 && g5?.diffusion?.packageHash === d5.body.diffusion.packageHash && g5.diffusion.manifestHash === p5.manifestHash && g5.manifestHash === p5.manifestHash && g5.revisionId === p5.revisionId;
+for (const f of filesE) {
+  const file = await reader('GET', `${pubs2}/${p5.id}/files/${f.format}`, undefined, true);
+  intactE &&= file.status === 200 && sha(file.bytes) === f.sha256 && file.bytes.length === f.size;
+}
+check('EX-081 [−] dossier E diffusé puis variante modifiée et dossier F diffusé : ses quatre fichiers ont les empreintes de sa diffusion, paquet, manifeste et révision inchangés', intactE, short([g5?.diffusion?.packageHash, d5.body?.diffusion?.packageHash]));
 const j6 = (await owner('GET', `${pubs2}/${p6.id}`)).body?.events ?? [];
 check('E.4 : journal du dossier F (deux approbations, actualisation entre les deux)', JSON.stringify(j6.map((e) => e.action)) === JSON.stringify(['creer', 'soumettre', 'approuver', 'actualiser', 'soumettre', 'approuver', 'diffuser']) && j6[2].manifestHash === p6.manifestHash && j6[5].manifestHash === u6.body.manifestHash, short(j6));
 // Actualité multi-sources : la variante coordonnée change.
