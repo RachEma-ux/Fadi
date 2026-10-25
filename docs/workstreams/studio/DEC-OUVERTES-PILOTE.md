@@ -1,7 +1,9 @@
 # Studio — décisions DEC ouvertes et recommandations pour le pilote
 
 Préparé le 25 octobre 2026 sur `main@3e992b6`, pour arbitrage du maître d'ouvrage (canal [#166](https://github.com/RachEma-ux/Fadi/issues/166)).
-**Ce document recommande et ne décide rien.** Il ne change aucun statut du registre `task-register.json` : DEC-01 à DEC-18
+> **Mise à jour du 25 octobre 2026** : sous la délégation totale du maître d'ouvrage, ces recommandations sont devenues des décisions, consignées dans [ADR-STUDIO-PILOTE-01](../../continuity/decisions/ADR-STUDIO-PILOTE-01.md). Le registre est mis à jour en conséquence.
+
+**À sa rédaction, ce document recommandait sans rien décider.** Il ne change aucun statut du registre `task-register.json` : DEC-01 à DEC-18
 restent « En cours » tant que le maître d'ouvrage n'a pas tranché, avec les preuves que chaque DEC exige.
 
 Sources : registre `task-register.json` (630 obligations) ; dossier des options
