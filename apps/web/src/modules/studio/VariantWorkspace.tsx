@@ -801,11 +801,18 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
    * (jamais par-dessus un brouillon non enregistré) ; révision antérieure : ouverte en lecture, la session reste rejointe.
    */
   async function afficherRevisionSession(r: string) {
+    // Le brouillon n'est jamais remplacé ni déchargé : la protection précède les deux voies (rechargement sur place, ou
+    // navigation qui démonte l'espace de travail sans passer par la garde de navigation) et se relit après la lecture.
+    const brouillonNonVide = () => !!affiche.current.brouillon && commandesEnAttente(affiche.current.brouillon).length > 0;
+    const refuser = () => setInfo("Enregistrez ou abandonnez votre brouillon avant d’afficher la révision de la session : il n’est jamais remplacé.");
+    if (brouillonNonVide()) { refuser(); return; }
+    const depart = affiche.current.context?.revision.id ?? "", brouillonDepart = affiche.current.brouillon;
     try {
       const c = await api.studioContext(projectId, studyId, variantId);
       if (!alive.current) return;
+      // Une saisie ou un enregistrement survenu pendant la lecture la rend caduque (même règle que l'avis de révision).
+      if (brouillonNonVide() || !lectureApplicable(depart, affiche.current.context, affiche.current.brouillon, brouillonDepart)) { refuser(); return; }
       if (c.revision.id === r && !historical) {
-        if (commands.length) { setInfo("Enregistrez ou abandonnez votre brouillon avant d’afficher la révision de la session : il n’est jamais remplacé."); return; }
         setContext(c); setBrouillon(creerBrouillon(c.revision.document)); cancelTrace(); enr.setSaved(false); setError("");
         return;
       }

@@ -106,6 +106,22 @@ describe("Temps réel — canal du navigateur", () => {
     expect(p2.envoyes[0]).toEqual({ v: 1, type: "rejoindre", sessionId: "rtses_1", depuis: 5 });
   });
 
+  it("suivi et sélection rétablis seulement après l'état de la session (l'appartenance existe alors)", () => {
+    const m = monde();
+    m.canal.rejoindre("rtses_1", false);
+    const p1 = m.prises[0]!;
+    p1.ouvrir();
+    p1.recevoir({ v: 1, type: "etat", session, participants, seq: 0, resynchronise: false, vue: null });
+    m.canal.selection(["mur-1"]);
+    p1.fermer(1006);
+    m.avancer(1000);
+    const p2 = m.prises[1]!;
+    p2.ouvrir();
+    expect(p2.envoyes.map((e) => e["type"])).toEqual(["rejoindre"]);
+    p2.recevoir({ v: 1, type: "etat", session, participants, seq: 0, resynchronise: false, vue: null });
+    expect(p2.envoyes.slice(1)).toEqual([{ v: 1, type: "suivre", actif: false }, { v: 1, type: "selection", objectIds: ["mur-1"] }]);
+  });
+
   it("accès retiré (4403) : arrêt définitif, plus aucune tentative", () => {
     const m = monde();
     m.canal.rejoindre("rtses_1");
@@ -133,6 +149,20 @@ describe("Temps réel — canal du navigateur", () => {
     m.canal.selection(["a", "a", "b"]);
     m.canal.selection(["a", "b"]);
     expect(p.envoyes.filter((e) => e["type"] === "selection")).toHaveLength(1);
+  });
+
+  it("pointeur masqué : la position en attente n'est jamais envoyée après le masque", () => {
+    const m = monde();
+    m.canal.rejoindre("rtses_1");
+    const p = m.prises[0]!;
+    p.ouvrir();
+    p.recevoir({ v: 1, type: "etat", session, participants, seq: 0, resynchronise: false, vue: null });
+    m.avancer(100);
+    m.canal.pointeur({ espace: "3d", x: 1, y: 1, z: 0 });
+    m.canal.pointeur({ espace: "3d", x: 2, y: 2, z: 0 });
+    m.canal.pointeur(null);
+    m.avancer(300);
+    expect(p.envoyes.filter((e) => e["type"] === "pointeur" || e["type"] === "pointeur-masque").map((e) => e["type"])).toEqual(["pointeur", "pointeur-masque"]);
   });
 
   it("quitter : le serveur est prévenu, l'état revient hors session", () => {

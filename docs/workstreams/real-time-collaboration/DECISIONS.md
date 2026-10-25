@@ -43,7 +43,7 @@
   adaptateur quand la phase 4 sera livrée.
 
 - **RT-D5 — Choix techniques et produit de la première version (2026-10-24, délégation RT-D4).**
-  1. **Transport** : `ws` 8.18.3 (version exacte, aucune dépendance native), montée de protocole sur le seul chemin
+  1. **Transport** : `ws` 8.18.3, porté à **8.22.0** le 2026-10-25 (avis GHSA-58qx-3vcg-4xpx et GHSA-96hv-2xvq-fx4p, `PREUVES-SECURITE-ET-CI.md`) (version exacte, aucune dépendance native), montée de protocole sur le seul chemin
      `/temps-reel` du serveur HTTP de l'API ; HTTP pour tout ce qui est durable (`/projects/:id/temps-reel/sessions`).
   2. **Drapeau** `FADI_TEMPS_REEL=1` côté serveur : absent, routes et canal répondent 404 et l'interface n'affiche
      aucune entrée ; activé en CI ; production inchangée tant que le drapeau n'y est pas posé.

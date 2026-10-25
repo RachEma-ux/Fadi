@@ -157,6 +157,8 @@ export class Regroupeur<T> {
     this.enAttente = v;
     return null;
   }
+  /** Oublie la valeur en attente (un pointeur masqué ne doit pas réapparaître au tic suivant). */
+  oublier(): void { this.enAttente = null; }
   tic(maintenant: number): T | null {
     if (this.enAttente === null || maintenant - this.dernier < this.intervalleMs) return null;
     const v = this.enAttente;

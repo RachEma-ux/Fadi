@@ -110,7 +110,7 @@ export class CanalTempsReel {
   }
 
   pointeur(p: { espace: "plan" | "3d"; x: number; y: number; z?: number } | null): void {
-    if (!p) { this.envoyer({ type: "pointeur-masque" }); return; }
+    if (!p) { this.pointeurs.oublier(); this.envoyer({ type: "pointeur-masque" }); return; }
     const m = this.pointeurs.proposer({ type: "pointeur", ...p }, this.o.maintenant());
     if (m) this.envoyer(m);
   }
@@ -141,14 +141,18 @@ export class CanalTempsReel {
       this.tentatives = 0;
       const depuis = this.etatCourant.seq > 0 ? { depuis: this.etatCourant.seq } : {};
       p.send(JSON.stringify({ v: 1, type: "rejoindre", sessionId: this.sessionId, ...depuis }));
-      p.send(JSON.stringify({ v: 1, type: "suivre", actif: this.suivre }));
-      if (this.derniereSelection.length) p.send(JSON.stringify({ v: 1, type: "selection", objectIds: this.derniereSelection }));
     };
     p.onmessage = (e) => {
       if (typeof e.data !== "string") return;
       let m: MessageServeur;
       try { m = JSON.parse(e.data) as MessageServeur; } catch { return; }
       this.poser(recevoir(this.etatCourant, m, this.o.maintenant()));
+      // L'appartenance n'existe côté serveur qu'une fois l'état reçu : le suivi et la dernière sélection sont rétablis
+      // ensuite (envoyés avec « rejoindre », ils arrivaient avant l'entrée et étaient refusés « pas-en-session »).
+      if (m.type === "etat" && p.readyState === OUVERT) {
+        p.send(JSON.stringify({ v: 1, type: "suivre", actif: this.suivre }));
+        if (this.derniereSelection.length) p.send(JSON.stringify({ v: 1, type: "selection", objectIds: this.derniereSelection }));
+      }
     };
     p.onerror = () => {};
     p.onclose = (e) => {
