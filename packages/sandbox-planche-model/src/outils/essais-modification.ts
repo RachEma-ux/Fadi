@@ -1,6 +1,7 @@
 /** Aides de test des machines de modification (lot 3), importées par les *.test.ts seulement. */
 import { type Id, type Modele, aire, ajouterRectangle, contexte, modeleVide, pousserTirer } from "../geometrie-libre.js";
 import { type Vec3, normalize, scale, add, v3 } from "../vecteur.js";
+import type { Repere } from "../annotations.js";
 import type { ContexteOutil, EvenementOutil, MachineOutil, ModificateurSeul, Rayon, Touche, VueOutil } from "./machine.js";
 
 export const TOLERANCE = 0.01;
@@ -31,6 +32,8 @@ export interface Partie<E> {
   operations: string[];
   outilDemande: string | undefined;
   separateurDecimal: "." | ",";
+  /** (Chantier Axes) Repère de travail posé par l'outil Axes, relu par le contexte des outils suivants (comme l'interface). */
+  repere: Repere | undefined;
   jouer(...evs: EvenementOutil[]): Partie<E>;
   /** (Lot 8) Choix d'une option, comme un bouton de la barre d'options. */
   configurer(option: string, valeur: string): Partie<E>;
@@ -49,13 +52,15 @@ export function partie<E>(machine: MachineOutil<E>, modele: Modele = modeleVide(
     operations: [],
     outilDemande: undefined,
     separateurDecimal,
-    ctx: () => ({ modele: p.modele, selection: p.selection, separateurDecimal: p.separateurDecimal }),
+    repere: undefined,
+    ctx: () => ({ modele: p.modele, selection: p.selection, separateurDecimal: p.separateurDecimal, ...(p.repere ? { repere: p.repere } : {}) }),
     jouer(...evs) {
       for (const ev of evs) {
         const t = machine.traiter(p.etat, ev, p.ctx());
         p.etat = t.etat;
         if (t.selection) p.selection = t.selection;
         if (t.outil) p.outilDemande = t.outil;
+        if (t.repereTravail) p.repere = t.repereTravail;
         if (t.modele) {
           if (t.remplaceDernier) {
             p.historique[p.historique.length - 1] = t.modele;

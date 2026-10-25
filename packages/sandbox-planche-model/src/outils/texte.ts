@@ -10,7 +10,7 @@
 import { type Id, aire, contexte, modifierAnnotations } from "../geometrie-libre.js";
 import { type Inference, geometrieVisible, inferer } from "../inference.js";
 import { type Vec3, dist } from "../vecteur.js";
-import { contexteSaisie, formaterLongueur, formaterNombre, mesures, messageErreur } from "./commun-formes.js";
+import { contexteSaisie, formaterLongueur, formaterNombre, mesures, messageErreur, axesDeSaisie } from "./commun-formes.js";
 import { consigneDe, viseeElement, vueModif } from "./commun-modif.js";
 import type { ContexteOutil, MachineOutil, Rayon, Transition, VueOutil } from "./machine.js";
 import { formaterAire } from "./metre.js";
@@ -33,7 +33,7 @@ export interface EtatTexte {
 const initial = (): EtatTexte => ({ etape: 1, ancre: null, entite: undefined, defaut: "", enEdition: null, inference: null, erreur: null });
 
 function inferer2(ctx: ContexteOutil, rayon: Rayon, tolerance: number): Inference {
-  return inferer({ rayon, tolerance, geometrie: geometrieVisible(ctx.modele), ...(ctx.repere ? { axes: ctx.repere } : {}) });
+  return inferer({ rayon, tolerance, geometrie: geometrieVisible(ctx.modele), ...axesDeSaisie(ctx) });
 }
 
 /** Texte par défaut selon l'entité visée : aire, longueur ou coordonnées. */

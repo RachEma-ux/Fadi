@@ -8,7 +8,7 @@
  * outils Orbite, Panoramique et Zoom au bouton gauche. Rendu à la demande ; rien n'est écrit dans le modèle (R10).
  */
 import * as THREE from "three";
-import { COULEURS, COULEUR_MATERIAU_DEFAUT, aretesMasquees, baseDuPlan, boiteOccurrence, cheminOccurrence, contexte, geometrieVisible, newell, type EvenementOutil, type FaceVisible, type GeometrieVisible, type Inference, type Modele, type Rayon, type Scene, type Vec3, type VueOutil } from "@parcours/sandbox-planche-model";
+import { COULEURS, COULEUR_MATERIAU_DEFAUT, aretesMasquees, baseDuPlan, boiteOccurrence, cheminOccurrence, contexte, geometrieVisible, newell, type EvenementOutil, type FaceVisible, type GeometrieVisible, type Inference, type Modele, type Rayon, type Repere, type Scene, type Vec3, type VueOutil } from "@parcours/sandbox-planche-model";
 import type { ReglagesNavigation } from "../etat-ui";
 import { borneSensibilite, facteurPan, interpreterMolette } from "../navigation";
 import { COULEUR_RECTO, COULEUR_TRAME_SELECTION, SHADER_TRAME_FRAGMENT, SHADER_TRAME_VERTEX, TRAME_SELECTION, intensiteLumiere } from "./apparence-faces";
@@ -472,9 +472,19 @@ export class VuePlanche {
     this.rendre();
   }
 
-  /** Axes de dessin au repère de saisie (outil Axes) : origine et orientation du repère, ou repère du modèle. */
-  private majAxes(modele: Modele): void {
-    const r = modele.annotations?.repere;
+  /** Repère de travail affiché (chantier Axes, AX-D3) : tenu par la Planche, hors du document ; `null` = repère du modèle. */
+  private repereTravail: Repere | null = null;
+
+  /** Pose le repère de travail affiché par les axes de dessin ; la géométrie n'est pas touchée. */
+  poserRepereTravail(r: Repere | null): void {
+    this.repereTravail = r;
+    this.majAxes();
+    this.rendre();
+  }
+
+  /** Axes de dessin au repère de travail (outil Axes) : origine et orientation du repère, ou repère du modèle. */
+  private majAxes(_modele?: Modele): void {
+    const r = this.repereTravail;
     const o = r?.origine ?? { x: 0, y: 0, z: 0 };
     const x = r?.x ?? { x: 1, y: 0, z: 0 };
     const y = r?.y ?? { x: 0, y: 1, z: 0 };

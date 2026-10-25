@@ -162,7 +162,7 @@ function traiter(etat0: EtatArc3Points, ev: EvenementOutil, ctx: ContexteOutil):
         if (r.genre === "erreur") return { etat: { ...etat, texte, erreur: r.message } };
         if (r.genre !== "longueur") return { etat: { ...etat, texte, erreur: "Saisie non reconnue." } };
         if (!(r.valeur > TOL)) return { etat: { ...etat, texte, erreur: "La longueur doit être strictement positive." } };
-        const vers = etat.curseur && dist(etat.curseur, debut) > TOL ? normalize(sub(etat.curseur, debut)) : axesDuPlan(etat.normale).u;
+        const vers = etat.curseur && dist(etat.curseur, debut) > TOL ? normalize(sub(etat.curseur, debut)) : axesDuPlan(etat.normale, ctx.repere).u;
         return { etat: { ...etat, etape: 3, second: add(debut, scale(vers, r.valeur)), curseur: null, apercu: null, texte } };
       }
       const r = analyserSaisie(texte, contexteSaisie("angle-arc", ctx));

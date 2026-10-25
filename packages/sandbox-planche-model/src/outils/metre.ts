@@ -14,7 +14,7 @@ import { type Id, type Modele, modifierAnnotations as modifierGuides, redimensio
 import { type Inference, type Verrou, geometrieVisible, inferer } from "../inference.js";
 import { analyserSaisie } from "../saisie-vcb.js";
 import { type Vec3, add, cross, dist, dot, len, normalize, scale, sub } from "../vecteur.js";
-import { contexteSaisie, formaterLongueur, formaterNombre, mesures, messageErreur, prefixe } from "./commun-formes.js";
+import { contexteSaisie, formaterLongueur, formaterNombre, mesures, messageErreur, prefixe, axesDeSaisie } from "./commun-formes.js";
 import { type VerrouFleche, axeDeToucheFleche, consigneDe, libelleMesuresDe, reference, vueModif } from "./commun-modif.js";
 import { REPERE_MODELE } from "./axes.js";
 import type { ContexteOutil, MachineOutil, Rayon, Transition, VueOutil } from "./machine.js";
@@ -76,7 +76,7 @@ function inferer2(e: EtatMetre, ctx: ContexteOutil, rayon: Rayon, tolerance: num
     ...(e.depart ? { depart: e.depart } : {}),
     ...(v ? { verrou: v } : {}),
     ...(e.areteReference ? { areteReference: e.areteReference } : {}),
-    ...(ctx.repere ? { axes: ctx.repere } : {}),
+    ...axesDeSaisie(ctx),
   });
 }
 

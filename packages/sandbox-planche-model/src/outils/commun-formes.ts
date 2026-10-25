@@ -26,6 +26,8 @@ import {
   tourner,
 } from "../vecteur.js";
 import type { ContexteOutil, Rayon, Touche, VueOutil } from "./machine.js";
+import type { Repere } from "../annotations.js";
+import { type PlanDeTravail, REPERE_DU_MODELE, intersectionPlanDeTravail, planDuRepere, projeterSurPlanDeTravail } from "../reperes.js";
 
 // ————————————————————————————————————————————————————————————— Catalogue
 
@@ -127,15 +129,49 @@ export const estFleche = (t: Touche): boolean =>
  * Axes (u, w) d'un plan de normale n, dans l'ordre relevé « R puis V, R puis B, V puis B » pour les plans
  * des axes ; pour un plan quelconque, u = projection de l'axe rouge (sinon du vert), w = n × u.
  */
-export function axesDuPlan(n0: Vec3): { u: Vec3; w: Vec3 } {
+export function axesDuPlan(n0: Vec3, repere?: Repere): { u: Vec3; w: Vec3 } {
   const n = normalize(n0);
-  if (Math.abs(Math.abs(n.z) - 1) < 1e-9) return { u: AXE_X, w: AXE_Y };
-  if (Math.abs(Math.abs(n.x) - 1) < 1e-9) return { u: AXE_Y, w: AXE_Z };
-  if (Math.abs(Math.abs(n.y) - 1) < 1e-9) return { u: AXE_X, w: AXE_Z };
-  let u = sub(AXE_X, scale(n, n.x));
-  if (len(u) < 0.1) u = sub(AXE_Y, scale(n, n.y));
+  // Chantier Axes (AX-1) : les axes du plan suivent le repère de saisie, jamais le monde quand un repère est actif.
+  const X = repere?.x ?? AXE_X;
+  const Y = repere?.y ?? AXE_Y;
+  const Z = repere?.z ?? AXE_Z;
+  if (Math.abs(Math.abs(dot(n, Z)) - 1) < 1e-9) return { u: X, w: Y };
+  if (Math.abs(Math.abs(dot(n, X)) - 1) < 1e-9) return { u: Y, w: Z };
+  if (Math.abs(Math.abs(dot(n, Y)) - 1) < 1e-9) return { u: X, w: Z };
+  let u = sub(X, scale(n, dot(n, X)));
+  if (len(u) < 0.1) u = sub(Y, scale(n, dot(n, Y)));
   u = normalize(u);
   return { u, w: normalize(cross(n, u)) };
+}
+
+/**
+ * (Chantier Axes, AX-1) Axes et sol de l'inférence pour un outil : repère de saisie et plan de travail. Un seul endroit,
+ * pour que tous les outils lisent le même contexte (concept § 8.2).
+ */
+export function axesDeSaisie(ctx: Pick<ContexteOutil, "repere" | "planDeTravail">): { axes?: Repere; sol?: { origine: Vec3; normale: Vec3 } } {
+  return {
+    ...(ctx.repere ? { axes: ctx.repere } : {}),
+    ...(ctx.planDeTravail ? { sol: { origine: ctx.planDeTravail.origine, normale: ctx.planDeTravail.normale } } : {}),
+  };
+}
+
+/** Plan de travail effectif d'un outil : celui du contexte, sinon le plan XY du repère de saisie (du modèle par défaut). */
+export function planDeTravailDe(ctx: Pick<ContexteOutil, "repere" | "planDeTravail">): PlanDeTravail {
+  return ctx.planDeTravail ?? planDuRepere(ctx.repere ?? REPERE_DU_MODELE, "xy");
+}
+
+/**
+ * Outils qui respectent le verrou du plan de travail (concept § 5.3) : formes planes, Ligne, Main levée. Les autres le
+ * signalent avant le premier point (l'interface lit cette liste).
+ */
+export const OUTILS_PLAN_VERROUILLABLE: readonly string[] = Object.freeze(["ligne", "main-levee", "rectangle", "rectangle-pivote", "cercle", "polygone", "arc", "arc-2-points", "arc-3-points", "secteur"]);
+
+/** Point contraint au plan verrouillé : l'inférence gardée si elle est sur le plan, sinon le rayon coupé par le plan. */
+export function contraindreAuPlan(inference: Inference, rayon: Rayon | undefined, pl: PlanDeTravail): Inference {
+  const surLePlan = Math.abs(dot(pl.normale, sub(inference.point, pl.origine))) <= 1e-6 * Math.max(1, len(inference.point));
+  if (surLePlan && inference.type !== "aucune") return marquerContraint(inference);
+  const x = (rayon ? intersectionPlanDeTravail(rayon.origine, rayon.direction, pl) : null) ?? projeterSurPlanDeTravail(inference.point, pl);
+  return marquerContraint(inferenceBrute(x));
 }
 
 export function intersectionRayonPlan(r: Rayon, pl: PlanDessin): Vec3 | null {
@@ -198,8 +234,13 @@ interface Viser {
 /** Inférence libre (accrochages, axes depuis `depart`), et normale du plan inféré : face survolée, sinon sol. */
 export function viserLibre(ctx: ContexteOutil, ev: Viser, depart?: Vec3): { inference: Inference; normale: Vec3 } {
   const geometrie = geometrieVisible(ctx.modele);
-  const inference = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie, ...(depart ? { depart } : {}), ...(ctx.repere ? { axes: ctx.repere } : {}) });
-  let normale = AXE_Z;
+  const brute = inferer({ rayon: ev.rayon, tolerance: ev.tolerance, geometrie, ...(depart ? { depart } : {}), ...axesDeSaisie(ctx) });
+  // AX-1 : hors face, la normale est celle du plan de travail (plus jamais Z du monde sous un repère incliné, AX05) ;
+  // plan verrouillé : le point reste sur le plan et la normale ne suit plus les faces survolées.
+  const plan = planDeTravailDe(ctx);
+  if (plan.verrouille) return { inference: contraindreAuPlan(brute, ev.rayon, plan), normale: plan.normale };
+  const inference = brute;
+  let normale = plan.normale;
   if (inference.type === "sur-face" && inference.entite !== undefined) {
     const f = geometrie.faces.find((x) => x.id === inference.entite);
     if (f) normale = normalize(f.normale);

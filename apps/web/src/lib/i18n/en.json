@@ -12345,5 +12345,13 @@
 "Contenu figé au premier envoi : un nouvel envoi retrouve la même annotation. Échap abandonne la saisie.": "Content frozen at the first send: sending again finds the same annotation. Esc abandons the entry.",
 "La publication a changé depuis l’ouverture (actualisée, retirée ou remplacée) : la revue reste sur la révision examinée ; ouvrez une nouvelle revue pour la version actuelle.": "The publication has changed since the review opened (updated, withdrawn or replaced): the review stays on the revision examined; open a new review for the current version.",
 "Pour annoter, affichez la révision de la session.": "To annotate, show the session revision.",
-"Ce compte a déjà accès au projet : seul son rôle de partage (Lecteur ou Concepteur) se change ici. Attribuez les autres rôles depuis « Équipe et participants » et l’échéance d’accès depuis la ligne du membre.": "This account already has access to the project: only its sharing role (Reader or Designer) can be changed here. Assign other roles from “Team and participants” and the access expiry from the member's row."
+"Ce compte a déjà accès au projet : seul son rôle de partage (Lecteur ou Concepteur) se change ici. Attribuez les autres rôles depuis « Équipe et participants » et l’échéance d’accès depuis la ligne du membre.": "This account already has access to the project: only its sharing role (Reader or Designer) can be changed here. Assign other roles from “Team and participants” and the access expiry from the member's row.",
+"Repère refusé : une coordonnée n'est pas un nombre fini.": "Frame refused: a coordinate is not a finite number.",
+"Repère refusé : le point d'axe est confondu avec l'origine. Choisissez un point distinct.": "Frame refused: the axis point coincides with the origin. Choose a distinct point.",
+"Repère refusé : les points sont alignés, ils ne définissent pas de plan. Choisissez un point hors de l'axe rouge.": "Frame refused: the points are aligned and do not define a plane. Choose a point off the red axis.",
+"Repère refusé : un axe n'est pas unitaire.": "Frame refused: an axis is not a unit vector.",
+"Repère refusé : les axes ne sont pas perpendiculaires.": "Frame refused: the axes are not perpendicular.",
+"Repère refusé : les axes ne forment pas un repère direct (main droite).": "Frame refused: the axes do not form a right-handed frame.",
+"Saisie attendue : un point [x;y;z] ou un décalage <dx;dy;dz>.": "Expected entry: a point [x;y;z] or an offset <dx;dy;dz>.",
+"Saisie « {0} » non reconnue : attendu un point [x, y, z] ou un décalage <x, y, z>.": "Entry “{0}” not recognised: expected a point [x, y, z] or an offset <x, y, z>."
 }

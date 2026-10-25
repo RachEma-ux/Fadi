@@ -30,7 +30,6 @@ import {
   detacherLiens,
   liensDesFaces,
   copier,
-  cross,
   differencePlanche,
   diviserCourbes,
   eclater,
@@ -111,6 +110,17 @@ import {
 } from "@parcours/sandbox-planche-model";
 import { etatUi, useEtatUi } from "../etat-ui";
 import { MenuPlanche, ECHELLE_UNITE, nomAffiche, type ActionsMenuPlanche, type FormatEchange, type UniteFichier } from "./menu-planche";
+import {
+  type ContexteTravail,
+  type HistoriqueContextes,
+  contexteDepuisDocument,
+  contexteTemporaire,
+  historiqueInitial as historiqueContextes,
+  planDuContexte,
+  pousserContexte,
+  repereDepuisFace,
+} from "@parcours/sandbox-planche-model";
+import { contexteMemorise, memoriserContexte } from "./contexte-travail";
 import { ErreurImport, compter as compterContexte, exporterIfc, importerMaillages, lireMaillages, maillagesPlanche, nonEtanchesDe, omisExport } from "@parcours/sandbox-planche-model";
 import { ajouterEntree, chargerJournal, dernieresEntrees, enregistrerJournal, supprimerJournal, type EntreeJournal } from "./journal-planche";
 import { avecCourante, avecInfo, avecNouvelle, chargerIndex, enregistrerIndex, indexInitial, nouvelId, planche as plancheDe, sansPlanche, supprimerDocument, type IndexPlanches } from "./registre-planches";
@@ -140,10 +150,12 @@ import { barresRendues, basculerBarre, reinitialiserDisposition } from "./barres
 import { chargerBooleens } from "./booleens-manifold";
 import "../sandbox.css";
 
-declare global {
-  interface Window {
-    /** Instrumentation de la recette (lecture seule) : modèle du brouillon, outil actif, projection écran. */
-    fadiPlanche?: {
+/**
+ * Instrumentation de la recette (lecture seule) : modèle du brouillon, outil actif, projection écran. Posée sur
+ * `window.fadiPlanche` sans déclaration globale : la Planche de l'Atelier en déclare une avec son propre modèle
+ * (`@parcours/planche-model`), que celui du Sandbox ne recouvre plus depuis les repères enregistrés (chantier Axes).
+ */
+interface CrochetRecette {
       modele: () => Modele;
       outil: () => string;
       etatOutil: () => unknown;
@@ -165,9 +177,10 @@ declare global {
       /** Objets O-5 : nombre de faces rendues par la vue (isolement, masquer le reste). */
       facesRendues: () => number;
       pressePapiers: () => number;
-    };
-  }
+      /** Chantier Axes (AX-1) : contexte de travail courant (repère, plan, verrou) et nombre de contextes précédents. */
+      contexteTravail: () => { contexte: ContexteTravail; precedents: number };
 }
+const fenetreRecette = (): { fadiPlanche?: CrochetRecette } => window as unknown as { fadiPlanche?: CrochetRecette };
 
 export interface PropsPlanche {
   /** Lecture seule (jamais en Sandbox : la Planche y est entièrement à soi). */
@@ -242,6 +255,17 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const readOnlyRef = useRef(readOnly);
   readOnlyRef.current = readOnly;
   const [hist, setHist] = useState(histRef.current);
+  // Chantier Axes (AX-1, AX-D3) : contexte de travail personnel — repère, plan, verrou — et son historique de session
+  // (« Repère précédent »), hors de l'historique de géométrie ; mémorisé par Planche dans ce navigateur.
+  const histContexteRef = useRef<HistoriqueContextes>(historiqueContextes());
+  const [histContexte, setHistContexte] = useState(histContexteRef.current);
+  const poserContextes = useCallback((h: HistoriqueContextes) => {
+    histContexteRef.current = h;
+    setHistContexte(h);
+    memoriserContexte(indexRef.current.courante, h.courant);
+  }, []);
+  const changerContexte = useCallback((c: ContexteTravail) => poserContextes(pousserContexte(histContexteRef.current, c)), [poserContextes]);
+  useEffect(() => vueRef.current?.poserRepereTravail(histContexte.courant.repere), [histContexte]);
   const outilRef = useRef(OUTIL_INITIAL());
   const precedentRef = useRef(outilRef.current);
   const [outilId, setOutilId] = useState(outilRef.current);
@@ -435,7 +459,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       ...(materiauRef.current ? { materiauCourant: materiauRef.current } : {}),
       ...(baliseRef.current ? { baliseCourante: baliseRef.current } : {}),
       ...(sectionRef.current ? { sectionCourante: sectionRef.current } : {}),
-      ...(histRef.current.present.modele.annotations?.repere ? { repere: histRef.current.present.modele.annotations.repere } : {}),
+      ...(histContexteRef.current.courant.repere ? { repere: histContexteRef.current.courant.repere } : {}),
+      planDeTravail: planDuContexte(histContexteRef.current.courant),
       ...(booleensRef.current ? { booleens: booleensRef.current } : {}),
       hauteurOeil: hauteurOeilRef.current,
       lecture: readOnly,
@@ -522,6 +547,11 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         setEdition({ id: tr.editerTexte.id, texte: tr.editerTexte.texte });
         change = true;
       }
+      // Chantier Axes (AX-1) : l'outil Axes pose le repère de travail, sans pas d'historique de géométrie (AX-D3).
+      if (tr.repereTravail) {
+        changerContexte(contexteTemporaire(histContexteRef.current.courant, tr.repereTravail));
+        change = true;
+      }
       // Un survol ou le simple relâchement d'une touche (Ctrl après Ctrl + Z) n'efface pas le message en cours.
       if (ev.genre !== "survol" && !(ev.genre === "touche" && ev.etat === "relachee")) setMessage(null);
       rafraichir();
@@ -536,7 +566,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       }
       return change;
     },
-    [contexte, poserHistorique, poserDans, rafraichir, readOnly, setSelection, setMateriau, setBalise],
+    [contexte, poserHistorique, poserDans, rafraichir, readOnly, setSelection, setMateriau, setBalise, changerContexte],
   );
 
   /**
@@ -1076,18 +1106,21 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     const d = Math.max(3, Math.hypot(etat.position.x - etat.cible.x, etat.position.y - etat.cible.y, etat.position.z - etat.cible.z));
     v.appliquerScene({ position: { x: f.centre.x + f.normale.x * d, y: f.centre.y + f.normale.y * d, z: f.centre.z + f.normale.z * d }, cible: f.centre, champDeVision: etat.champDeVision, projection: etat.projection });
   }, [faceMonde]);
-  const alignerAxes = useCallback(
-    () =>
-      operer(t("planche.menu.aligner-axes"), (m) => {
-        const f = faceMonde();
-        if (!f) return { modele: m, message: t("planche.aligner-axes.face") };
-        const z = f.normale;
-        const x = normalize(sub(f.u, { x: z.x * (f.u.x * z.x + f.u.y * z.y + f.u.z * z.z), y: z.y * (f.u.x * z.x + f.u.y * z.y + f.u.z * z.z), z: z.z * (f.u.x * z.x + f.u.y * z.y + f.u.z * z.z) }));
-        const y = cross(z, x);
-        return { modele: modifierAnnotations(m, (a) => void (a.repere = { origine: f.centre, x, y, z })).modele };
-      }),
-    [operer, faceMonde],
-  );
+  // Chantier Axes (AX-1) : aligner sur la face = repère de travail (instantané, AX-D7), contrôlé — jamais de pas de
+  // géométrie ni de repli silencieux.
+  const alignerAxes = useCallback(() => {
+    const f = faceMonde();
+    if (!f) {
+      setMessage(t("planche.aligner-axes.face"));
+      return;
+    }
+    const r = repereDepuisFace(f.centre, f.normale, f.u);
+    if (!r.ok) {
+      setMessage(r.message);
+      return;
+    }
+    changerContexte(contexteTemporaire(histContexteRef.current.courant, r.repere));
+  }, [faceMonde, changerContexte]);
   const aireDe = useCallback(
     (quoi: "selection" | "balise" | "materiau") => {
       const m = histRef.current.present.modele;
@@ -1544,9 +1577,10 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       return;
     }
     vueRef.current = v;
+    v.poserRepereTravail(histContexteRef.current.courant.repere);
     v.majModele(histRef.current.present.modele);
     rafraichir();
-    window.fadiPlanche = {
+    fenetreRecette().fadiPlanche = {
       modele: () => histRef.current.present.modele,
       outil: () => outilRef.current,
       etatOutil: () => etatMachineRef.current,
@@ -1565,11 +1599,12 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       menu: () => menuRef.current?.entrees.map((e) => e.id) ?? null,
       pressePapiers: () => pressePapiers.current?.ids.length ?? 0,
       facesRendues: () => vueRef.current?.facesRendues() ?? 0,
+      contexteTravail: () => ({ contexte: histContexteRef.current.courant, precedents: histContexteRef.current.precedents.length }),
     };
     return () => {
       v.detruire();
       vueRef.current = null;
-      delete window.fadiPlanche;
+      delete fenetreRecette().fadiPlanche;
     };
   }, [envoyer, rafraichir, setTexte]);
 
@@ -1594,6 +1629,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           setSelection([]);
           poserHistorique(historiqueInitial(m ?? modeleVide()), { envoyer: false });
         } else if (m && histRef.current.passe.length === 0 && histRef.current.futur.length === 0) poserHistorique(historiqueInitial(m), { envoyer: false });
+        // Contexte de travail de cette Planche : celui de ce navigateur, sinon l'ancien repère du document (AX-D4).
+        poserContextes(historiqueContextes(contexteMemorise(idx.courante) ?? contexteDepuisDocument(histRef.current.present.modele.annotations?.repere)));
         setBrouillonCharge(true);
         rafraichir();
       } catch {
@@ -1603,7 +1640,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
     return () => {
       annule = true;
     };
-  }, [poserHistorique, rafraichir, essaiLecture, chargeId, poserDans, setSelection]);
+  }, [poserHistorique, rafraichir, essaiLecture, chargeId, poserDans, setSelection, poserContextes]);
   useEffect(() => {
     if (!brouillonCharge || readOnly) return;
     const ticket = sauvegarde.modifier();

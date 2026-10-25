@@ -8,6 +8,7 @@
  * Les opérations sont dans `geometrie-libre.ts` (`modifierAnnotations`, `peindreFaces`, `peindreOccurrences`,
  * `baliserOccurrences`, `redimensionner`) : elles passent par le chantier `Travail`, donc par un pas d'annulation.
  */
+import type { RepereEnregistre } from "./reperes.js";
 import type { Id } from "./geometrie-libre.js";
 import type { Vec3 } from "./vecteur.js";
 
@@ -160,8 +161,13 @@ export interface Annotations {
   readonly plansDeCoupe: Readonly<Record<Id, PlanDeCoupe>>;
   readonly materiaux: Readonly<Record<Id, Materiau>>;
   readonly balises: Readonly<Record<Id, Balise>>;
-  /** Absent : repère du modèle (origine, axes canoniques). */
+  /**
+   * Ancien repère de saisie unique (outil Axes avant AX-1) : lu une seule fois comme contexte de travail initial
+   * (AX-D4), jamais réécrit. Le contexte de travail est désormais personnel, hors du document (AX-D3).
+   */
   readonly repere?: Repere;
+  /** (Chantier Axes) Repères enregistrés, nommés et révisés ; absent = aucun. */
+  readonly reperes?: Readonly<Record<Id, RepereEnregistre>>;
   /** Scènes enregistrées (lot 5). */
   readonly scenes?: Readonly<Record<Id, Scene>>;
   /** Réglages de la Planche (lot 5) ; absent = `REGLAGES_DEFAUT`. */
@@ -190,6 +196,7 @@ export interface AnnotationsMutables {
   materiaux: Record<Id, Materiau>;
   balises: Record<Id, Balise>;
   repere?: Repere;
+  reperes: Record<Id, RepereEnregistre>;
   scenes: Record<Id, Scene>;
   reglages?: ReglagesPlanche;
   extrusions: Record<Id, Extrusion>;
