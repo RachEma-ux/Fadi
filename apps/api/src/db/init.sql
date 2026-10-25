@@ -1008,6 +1008,27 @@ ALTER TABLE studio_publication_events DROP CONSTRAINT IF EXISTS studio_publicati
   ADD CONSTRAINT studio_publication_events_manifest_hash_check
   CHECK (manifest_hash IS NULL OR manifest_hash ~ '^[0-9a-f]{64}$') NOT VALID;
 CREATE INDEX IF NOT EXISTS studio_publications_variant_idx ON studio_publications(variant_id, diffused_at);
+-- Contenu figé d'une publication diffusée (INV-012) : une fois le paquet posé (diffusion), ni le paquet, ni le
+-- manifeste, ni la révision et l'empreinte examinées, ni l'approbation qui les couvre ne se réécrivent — une nouvelle
+-- diffusion crée une autre publication et ne change de l'ancienne que ses dimensions (remplacée, retirée), journalisées.
+-- Refus explicite par la base, en plus des transitions refusées par l'API. Les lignes non diffusées (package NULL) ne
+-- sont pas concernées (actualisation d'un brouillon permise).
+CREATE OR REPLACE FUNCTION studio_publication_package_frozen() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF OLD.package IS NOT NULL AND (
+    NEW.package IS DISTINCT FROM OLD.package OR NEW.package_hash IS DISTINCT FROM OLD.package_hash
+    OR NEW.manifest IS DISTINCT FROM OLD.manifest OR NEW.manifest_hash IS DISTINCT FROM OLD.manifest_hash
+    OR NEW.revision_id IS DISTINCT FROM OLD.revision_id OR NEW.document_hash IS DISTINCT FROM OLD.document_hash
+    OR NEW.approved_manifest_hash IS DISTINCT FROM OLD.approved_manifest_hash
+    OR NEW.approved_revision_id IS DISTINCT FROM OLD.approved_revision_id
+    OR NEW.approved_document_hash IS DISTINCT FROM OLD.approved_document_hash) THEN
+    RAISE EXCEPTION 'studio_publication_package_frozen';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+CREATE OR REPLACE TRIGGER studio_publications_package_frozen BEFORE UPDATE ON studio_publications
+  FOR EACH ROW EXECUTE FUNCTION studio_publication_package_frozen();
 -- Clé de signature des archives de projet propre à la base (lib/archive-signing-key.ts) : utilisée seulement quand
 -- ARCHIVE_SIGNING_KEY n'est pas fournie, créée à la première signature (une ligne, id 'local'). La clé ne sort jamais
 -- du serveur : l'archive ne porte que son identifiant. Table nouvelle, additive.

@@ -22,7 +22,8 @@
  *   conflit de leur cible ; les valeurs nulles ne se heurtent pas (règle SQL) ;
  * - déclencheurs de `db/init.sql` : les `BEFORE UPDATE` / `BEFORE DELETE` qui lèvent sans condition refusent toute
  *   ligne visée (message du déclencheur) ; les deux déclencheurs conditionnels de suppression (journal d'une
- *   publication existante, publication diffusée ou retirée d'un projet existant) sont évalués ; un déclencheur d'une
+ *   publication existante, publication diffusée ou retirée d'un projet existant) et celui de mise à jour (contenu figé
+ *   d'une publication diffusée, INV-012 : ancienne et nouvelle ligne comparées) sont évalués ; un déclencheur d'une
  *   autre forme lève « non simulé » à la première écriture de sa table.
  *
  * Limites déclarées (ce qui n'est PAS simulé) : aucun ordre (`orderBy`) ni borne (`limit`, `offset`) n'est appliqué (les
@@ -117,24 +118,38 @@ export function lireSchema(source: string): { unicites: Map<string, Unicite[]>; 
 export const SCHEMA = lireSchema(SQL_INIT);
 
 /** Déclencheurs conditionnels de `db/init.sql` évalués ici (corps relus : voir `init.sql`). */
-const CONDITIONNELS: Record<string, (old: Ligne) => string | null> = {
+const CONDITIONNELS: Record<string, (old: Ligne, neu?: Ligne) => string | null> = {
   // IF EXISTS (SELECT 1 FROM studio_publications WHERE id = OLD.publication_id) → studio_publication_event_undeletable
   studio_publication_event_no_delete: (old) => (lignesDe("studio_publications").some((p) => p["id"] === old["publicationId"]) ? "studio_publication_event_undeletable" : null),
   // IF OLD.status IN ('diffuse', 'retire') AND EXISTS (SELECT 1 FROM projects WHERE id = OLD.project_id)
   studio_publication_no_delete: (old) => (["diffuse", "retire"].includes(old["status"] as string) && lignesDe("projects").some((p) => p["id"] === old["projectId"]) ? "studio_publication_undeletable" : null),
+  // BEFORE UPDATE : IF OLD.package IS NOT NULL AND (une colonne figée change : paquet, manifeste, révision, empreinte,
+  // approbation) → studio_publication_package_frozen (INV-012). Comparaison par JSON canonique (jsonb : clés non ordonnées).
+  studio_publication_package_frozen: (old, neu) => {
+    if (old["package"] === null || old["package"] === undefined || !neu) return null;
+    const figees = ["package", "packageHash", "manifest", "manifestHash", "revisionId", "documentHash", "approvedManifestHash", "approvedRevisionId", "approvedDocumentHash"];
+    return figees.some((k) => jsonCanonique(old[k] ?? null) !== jsonCanonique(neu[k] ?? null)) ? "studio_publication_package_frozen" : null;
+  },
 };
+/** JSON à clés triées (comparaison d'une valeur jsonb). */
+function jsonCanonique(v: unknown): string {
+  if (v === null || typeof v !== "object" || v instanceof Date) return JSON.stringify(v) ?? "null";
+  if (Array.isArray(v)) return `[${v.map(jsonCanonique).join(",")}]`;
+  const o = v as Record<string, unknown>;
+  return `{${Object.keys(o).sort().filter((k) => o[k] !== undefined).map((k) => `${JSON.stringify(k)}:${jsonCanonique(o[k])}`).join(",")}}`;
+}
 function lignesDe(nomSql: string): Ligne[] {
   for (const [t, ls] of banc.lignes) if (getTableName(t as never) === nomSql) return ls;
   return [];
 }
-function declencher(table: unknown, quand: "UPDATE" | "DELETE", visees: Ligne[]): void {
+function declencher(table: unknown, quand: "UPDATE" | "DELETE", visees: Ligne[], nouvelles?: Ligne[]): void {
   if (!visees.length) return;
   for (const d of SCHEMA.declencheurs.get(getTableName(table as never)) ?? []) {
     if (d.quand !== quand) continue;
     if (d.message) throw new Error(d.message);
     const f = CONDITIONNELS[d.fonction];
     if (!f) throw new Error(`base simulée : déclencheur ${d.nom} non simulé`);
-    for (const l of visees) { const m = f(l); if (m) throw new Error(m); }
+    for (const [i, l] of visees.entries()) { const m = f(l, nouvelles?.[i]); if (m) throw new Error(m); }
   }
 }
 
@@ -412,8 +427,8 @@ function client(ctx: Contexte | null) {
           if (banc.panneSur === table) throw new Error("panne simulée");
           const ls = banc.lignes.get(table) ?? [];
           const rows = ls.filter((l) => evaluer(q._where, seule(table, l)));
-          declencher(table, "UPDATE", rows);
           const valeurs = structuredClone(Object.fromEntries(Object.entries(v).filter(([, y]) => y !== undefined)));
+          declencher(table, "UPDATE", rows, rows.map((l) => ({ ...l, ...valeurs })));
           const apres = new Map(rows.map((l) => [l, { ...l, ...structuredClone(valeurs) }]));
           for (const u of unicitesDe(table)) {
             const finales = ls.map((l) => apres.get(l) ?? l);
