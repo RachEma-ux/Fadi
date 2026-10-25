@@ -15,6 +15,7 @@ export const PICTOGRAMMES: Readonly<Record<string, DonneesPictogramme>> = {
   "fadi:eclater": {"trait":[["path",{"d":"M3 3h5v5H3z"}],["path",{"d":"M16 3h5v5h-5z"}],["path",{"d":"M3 16h5v5H3z"}],["path",{"d":"M16 16h5v5h-5z"}],["path",{"d":"M12 10v4"}],["path",{"d":"M10 12h4"}]]},
   "fadi:epaissir": {"trait":[["path",{"d":"M4 15c4-5 12-5 16 0"}],["path",{"d":"M4 19c4-5 12-5 16 0"}],["path",{"d":"M4 15v4"}],["path",{"d":"M20 15v4"}],["path",{"d":"M12 9V4"}],["path",{"d":"M10 6l2-2l2 2"}]]},
   "fadi:onglet": {"trait":[["path",{"d":"M4 20V4h16"}],["path",{"d":"M8 20V8h12"}],["path",{"d":"M4 4l4 4"}],["path",{"d":"M4 20h4"}],["path",{"d":"M20 4v4"}]]},
+  "fadi:origine-composant": {"trait":[["path",{"d":"M13 3l7 4v8l-7 4l-7 -4v-8z"}],["path",{"d":"M6 7l7 4l7 -4"}],["path",{"d":"M13 11v8"}],["path",{"d":"M3 21l3 -3"}],["path",{"d":"M2 18h4"}],["path",{"d":"M6 18v4"}]]},
   "fadi:plan-travail": {"trait":[["path",{"d":"M3 19h11l7 -6h-11z"}],["path",{"d":"M12 16v-12"}],["path",{"d":"M10 6l2 -2l2 2"}]]},
   "fadi:plan-verrou": {"trait":[["path",{"d":"M3 20h9l5 -5h-9z"}],["path",{"d":"M15 7h6v5h-6z"}],["path",{"d":"M16 7v-2a2 2 0 0 1 4 0v2"}]]},
   "fadi:pousser": {"trait":[["path",{"d":"M4 15l8 4l8-4l-8-4z"}],["path",{"d":"M12 15V4"}],["path",{"d":"M9 7l3-3l3 3"}]]},

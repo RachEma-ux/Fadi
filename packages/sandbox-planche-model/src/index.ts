@@ -10,6 +10,7 @@ export * from "./police-geometrique.js";
 export * from "./inference.js";
 export * from "./reperes.js";
 export * from "./reperes-enregistres.js";
+export * from "./origine-composant.js";
 export * from "./saisie-vcb.js";
 export * from "./catalogue-outils.js";
 export * from "./outils/index.js";

@@ -18,7 +18,8 @@ export type IdCommandeRepere =
   | "repere-modele"
   | "affichage-axes"
   | "enregistrer-repere"
-  | "gerer-reperes";
+  | "gerer-reperes"
+  | "origine-composant";
 
 export interface CommandeRepere {
   readonly id: IdCommandeRepere;
@@ -61,6 +62,7 @@ export const COMMANDES_REPERES: readonly CommandeRepere[] = [
   c("affichage-axes", false),
   c("enregistrer-repere", false),
   c("gerer-reperes", false),
+  c("origine-composant", false),
 ];
 
 export const commandeRepere = (id: IdCommandeRepere): CommandeRepere => COMMANDES_REPERES.find((x) => x.id === id) as CommandeRepere;
@@ -72,6 +74,10 @@ export interface EtatReperes {
   readonly precedents: number;
   /** Une face est sélectionnée (Aligner). */
   readonly face: boolean;
+  /** Un groupe ou un composant est sélectionné (Origine du composant). */
+  readonly objet?: boolean;
+  /** Lecture seule : l'origine d'un composant est une édition d'objet, refusée au lecteur. */
+  readonly lecture?: boolean;
 }
 
 export interface DisponibiliteRepere {
@@ -85,6 +91,8 @@ export interface DisponibiliteRepere {
  */
 export function disponibiliteRepere(id: IdCommandeRepere, e: EtatReperes): DisponibiliteRepere {
   if (id === "aligner-repere" && !e.face) return { disponible: false, motif: "planche.reperes.motif.face" };
+  if (id === "origine-composant" && e.lecture) return { disponible: false, motif: "planche.objets.motif.lecture" };
+  if (id === "origine-composant" && !e.objet) return { disponible: false, motif: "planche.reperes.motif.objet" };
   if (id === "repere-precedent" && e.precedents === 0) return { disponible: false, motif: "planche.reperes.motif.precedent" };
   if (id === "repere-modele" && e.contexte.source.genre === "modele" && e.contexte.plan === "xy" && !e.contexte.verrou) return { disponible: false, motif: "planche.reperes.motif.modele" };
   return { disponible: true, motif: null };

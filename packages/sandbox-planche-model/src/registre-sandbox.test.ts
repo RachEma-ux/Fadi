@@ -75,7 +75,7 @@ describe("registre du Sandbox — contenu", () => {
   it("chantier Axes (AX-D6) : Alt + Maj + chiffre et F4 pour la barre « Axes et repères » ; Placer reste l'outil Axes (Maj + Y)", () => {
     expect(entreeOutil("axes").raccourci).toBe("Maj+Y");
     const r = entreesSandbox("commande").filter((e) => e.famille === "repere").map((e) => e.raccourci);
-    expect(r).toEqual(["Alt+Maj+1", "Alt+Maj+2", "Alt+Maj+3", "Alt+Maj+4", "Alt+Maj+5", "Alt+Maj+6", "Alt+Maj+7", "Alt+Maj+8", "F4", "Alt+Maj+9", "Alt+Maj+0"]);
+    expect(r).toEqual(["Alt+Maj+1", "Alt+Maj+2", "Alt+Maj+3", "Alt+Maj+4", "Alt+Maj+5", "Alt+Maj+6", "Alt+Maj+7", "Alt+Maj+8", "F4", "Alt+Maj+9", "Alt+Maj+0", "Maj+F4"]);
   });
 
   it("raccourcis : les 52 outils et les 20 commandes en ont un, unique ; les 13 panneaux n'en ont pas", () => {
@@ -155,7 +155,7 @@ describe("registre du Sandbox — contenu", () => {
     const fadi = new Set(REGISTRE_SANDBOX.filter((e) => e.pictogramme.source === "fadi" && e.famille !== "repere" && e.id !== "reperes").map((e) => e.pictogramme.nom));
     expect([...fadi].sort()).toEqual(["aligner", "allonger", "coupe-profil", "debit", "decalage", "eclater", "epaissir", "onglet", "pousser", "profile", "rapporteur", "suivez"]);
     const axes = REGISTRE_SANDBOX.filter((e) => e.famille === "repere").map((e) => e.pictogramme.nom);
-    expect(axes.sort()).toEqual(["axes-affichage", "plan-travail", "plan-verrou", "repere-actif", "repere-aligner", "repere-enregistrer", "repere-modele", "repere-pivoter", "repere-precedent", "reperes-liste", "vue-normale"]);
+    expect(axes.sort()).toEqual(["axes-affichage", "origine-composant", "plan-travail", "plan-verrou", "repere-actif", "repere-aligner", "repere-enregistrer", "repere-modele", "repere-pivoter", "repere-precedent", "reperes-liste", "vue-normale"]);
   });
 
   it("le registre est figé", () => {

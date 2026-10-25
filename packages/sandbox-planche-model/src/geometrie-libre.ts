@@ -2959,6 +2959,47 @@ export function rendreUnique(m: Modele, occurrence: Id): Resultat {
   return { modele, rapport: differences(m, modele) };
 }
 
+/**
+ * (Chantier Axes, AX-4) Redéfinit le repère local de définitions de composants ou de groupes, en UN pas atomique, sans
+ * qu'aucun sommet ne bouge dans le monde. Pour chaque opération, `F` exprime le nouveau repère local dans l'ancien
+ * (colonnes : nouveaux axes, translation : nouvelle origine) : le contenu de la définition reçoit F⁻¹ (sommets, normales,
+ * courbes, occurrences imbriquées) et chaque occurrence de la définition, où qu'elle soit, reçoit M · F. `rendreUnique` :
+ * l'occurrence reçoit d'abord sa propre définition (les autres occurrences ne changent pas). Deux opérations sur la même
+ * définition (après « rendre unique ») ne l'appliquent qu'une fois. `F` doit être inversible ; le contrôle de rigidité et
+ * des cas refusés est fait par l'appelant (`origine-composant.ts`).
+ */
+export function redefinirReperesDefinitions(m: Modele, operations: readonly { readonly occurrence: Id; readonly rendreUnique: boolean; readonly F: Matrice4 }[]): Resultat & { extra: Id[] } {
+  const t = new Travail(m);
+  const faites: Id[] = [];
+  for (const op of operations) {
+    const { occ } = t.occurrence(op.occurrence);
+    if (op.rendreUnique && t.nombreOccurrences(occ.definition) > 1) t.rendreUnique(op.occurrence);
+    const def = t.occurrence(op.occurrence).occ.definition;
+    if (faites.includes(def)) continue;
+    const d = t.definitions.get(def);
+    const Finv = inverserMatrice(op.F);
+    if (!d || !Finv) throw new RangeError("Repère local non inversible : redéfinition refusée.");
+    const c = t.salir(d.contenu);
+    for (const so of c.sommets.values()) c.sommets.set(so.id, { ...so, position: appliquer(Finv, so.position) });
+    for (const f of c.faces.values()) c.faces.set(f.id, { ...f, normale: normalize(transformerNormale(Finv, f.normale)) });
+    for (const k of c.courbes.values()) c.courbes.set(k.id, { ...k, centre: appliquer(Finv, k.centre), normale: normalize(transformerNormale(Finv, k.normale)) });
+    for (const o of c.occurrences.values()) c.occurrences.set(o.id, { ...o, transformation: composer(Finv, o.transformation) });
+    for (const ctx of t.tousContextes()) {
+      if (ctx === c) continue;
+      for (const o of ctx.occurrences.values()) {
+        if (o.definition !== def) continue;
+        t.salir(ctx);
+        ctx.occurrences.set(o.id, { ...o, transformation: composer(o.transformation, op.F) });
+      }
+    }
+    faites.push(def);
+  }
+  actualiserExtrusions(t);
+  actualiserPieces(t);
+  const modele = t.fermer();
+  return { modele, rapport: differences(m, modele), extra: faites };
+}
+
 // --- Lot 2 : formes ---
 
 /** Données portées par une courbe d'arc (centre, rayon, normale du plan de l'arc). */

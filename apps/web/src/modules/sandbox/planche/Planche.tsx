@@ -131,6 +131,8 @@ import {
 import { contexteMemorise, memoriserContexte } from "./contexte-travail";
 import { BarreReperes, libellePlan } from "./BarreReperes";
 import { PanneauReperes } from "./PanneauReperes";
+import { PanneauOrigineComposant } from "./PanneauOrigineComposant";
+import { type OptionsOrigine, changerOrigineLot } from "@parcours/sandbox-planche-model";
 import {
   captureDuContexte,
   contexteDeScene,
@@ -808,6 +810,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const executerNavigateurRef = useRef<(id: IdCommandeNavigateur) => void>(() => {});
   const executerVueRef = useRef<(id: IdCommandeVue) => void>(() => {});
   const executerCommandeRef = useRef<(c: EntreeRegistre) => void>(() => {});
+  /** Chantier Axes (AX-4) : ouverture de l'édition d'origine du composant (menu contextuel, barre, Maj + F4). */
+  const ouvrirOrigineRef = useRef<() => void>(() => {});
   const etatVueRef = useRef<() => { entites: number; isole: boolean; dansObjet: boolean }>(() => ({ entites: 0, isole: false, dansObjet: false }));
   const selectionDe = useCallback((genre: "faces" | "aretes" | "occurrences", m = histRef.current.present.modele) => {
     const c = contexteDe(m, dansRef.current);
@@ -1285,7 +1289,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         if (dans === undefined && faces.length > 0 && liensDesFaces(m, faces).length > 0) entrees.push({ id: "detacher-lien", libelle: t("planche.lien.detacher"), separateurAvant: true, grise: readOnly, action: detacherLienSelection });
         if (faces.length > 0) {
           entrees.push({ id: "aligner-vue", libelle: t("planche.menu.aligner-vue"), separateurAvant: true, action: alignerVue });
-          entrees.push({ id: "aligner-axes", libelle: t("planche.menu.aligner-axes"), grise: readOnly, action: alignerAxes });
+          entrees.push({ id: "aligner-repere", libelle: t("planche.menu.aligner-axes"), grise: false, action: alignerAxes });
           entrees.push({ id: "inverser-faces", libelle: t("planche.menu.inverser-faces"), grise: readOnly, action: inverserSelection });
           entrees.push({ id: "orienter-faces", libelle: t("planche.menu.orienter-faces"), grise: readOnly, action: orienterSelection });
           entrees.push({ id: "texture-unique", libelle: t("planche.menu.texture-unique"), grise: true });
@@ -1307,7 +1311,8 @@ export function Planche({ readOnly = false }: PropsPlanche) {
           entrees.push({ id: "adoucir-lisser", libelle: t("planche.menu.adoucir-lisser"), grise: readOnly, action: () => setPanneau("adoucir") });
           entrees.push({ id: "reinitialiser-echelle", libelle: t("planche.menu.reinitialiser-echelle"), grise: true });
           entrees.push({ id: "reinitialiser-inclinaison", libelle: t("planche.menu.reinitialiser-inclinaison"), grise: true });
-          entrees.push({ id: "changer-axes", libelle: t("planche.menu.changer-axes"), grise: true });
+          // Chantier Axes (AX-4) : « Changer les axes » ouvre l'édition d'origine et d'axes du composant (Maj + F4).
+          entrees.push({ id: "origine-composant", libelle: t("planche.menu.changer-axes"), grise: readOnly, action: () => ouvrirOrigineRef.current() });
         }
         // Objets O-1 : Éclater reste visible, grisé, quand la sélection ne contient aucun objet (comme SketchUp).
         if (occs.length === 0) entrees.push({ id: "eclater", libelle: t("planche.menu.eclater"), separateurAvant: true, grise: true });
@@ -2456,7 +2461,27 @@ export function Planche({ readOnly = false }: PropsPlanche) {
   const [demandeListeReperes, setDemandeListeReperes] = useState(0);
   const [demandeInspecteurReperes, setDemandeInspecteurReperes] = useState(0);
   const afficherBarreReperes = (visible: boolean) => etatUi.set((u) => ({ barreReperes: { ...u.barreReperes, visible } }));
-  const etatReperes = () => ({ contexte: histContexte.courant, precedents: histContexte.precedents.length, face: faceMonde() !== null });
+  const occurrencesSelectionnees = () => {
+    const c = contexteDe(hist.present.modele, dans);
+    return selectionRef.current.filter((id) => c.occurrences[id] !== undefined);
+  };
+  const etatReperes = () => ({ contexte: histContexte.courant, precedents: histContexte.precedents.length, face: faceMonde() !== null, objet: occurrencesSelectionnees().length > 0, lecture: readOnly });
+  const [origineOuverte, setOrigineOuverte] = useState(false);
+  ouvrirOrigineRef.current = () => {
+    setPanneau(null);
+    setOrigineOuverte(true);
+  };
+  const apercuOrigine = useCallback((r: { origine: Vec3; x: Vec3; y: Vec3; z: Vec3 } | null) => vueRef.current?.poserApercuRepere(r), []);
+  const appliquerOrigine = (opts: OptionsOrigine) => {
+    const { resultat } = changerOrigineLot(histRef.current.present.modele, occurrencesSelectionnees(), opts);
+    if (!resultat.ok) {
+      setMessage(resultat.motif);
+      return;
+    }
+    appliquer({ etat: null, modele: resultat.modele }, t("planche.origine.operation"));
+    setMessage(t("planche.origine.fait", { touchees: String(resultat.apercus.reduce((n, a) => n + a.touchees, 0)) }));
+    setOrigineOuverte(false);
+  };
   const vueNormaleAuPlan = () => {
     const v = vueRef.current;
     if (!v) return;
@@ -2495,6 +2520,7 @@ export function Planche({ readOnly = false }: PropsPlanche) {
       setPanneau("reperes");
       setDemandeEnregistrerRepere((n) => n + 1);
     } else if (id === "gerer-reperes") setPanneau("reperes");
+    else if (id === "origine-composant") ouvrirOrigineRef.current();
     rafraichir();
   };
   // ——— Chantier Axes (AX-3) : repères enregistrés — mutations du document (un pas d'historique chacune).
@@ -2757,6 +2783,18 @@ export function Planche({ readOnly = false }: PropsPlanche) {
         </p>
       )}
       {barresOutils}
+      {origineOuverte && (
+        <PanneauOrigineComposant
+          modele={hist.present.modele}
+          occurrences={occurrencesSelectionnees()}
+          contexte={histContexte.courant}
+          lecture={readOnly}
+          separateurDecimal={SEPARATEUR_DECIMAL}
+          onApercu={apercuOrigine}
+          onAppliquer={appliquerOrigine}
+          onFermer={() => setOrigineOuverte(false)}
+        />
+      )}
       {ui.barreReperes.visible && (
         <BarreReperes
           contexte={histContexte.courant}

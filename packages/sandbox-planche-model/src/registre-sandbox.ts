@@ -295,6 +295,8 @@ const commandes: EntreeSandbox[] = [
   // AX-3 : repères enregistrés (le gestionnaire est le panneau « Repères », même pictogramme, partage déclaré).
   c("enregistrer-repere", "repere", "fadi:repere-enregistrer", "Alt+Maj+9", "barre-reperes", true),
   c("gerer-reperes", "repere", "fadi:reperes-liste", "Alt+Maj+0", "barre-reperes", true),
+  // AX-4 : origine et axes d'un composant (édition d'objet, menu contextuel « Changer les axes »).
+  c("origine-composant", "repere", "fadi:origine-composant", "Maj+F4", "barre-reperes", true),
 ];
 
 const p = (id: string, picto: string, emplacement: "colonne" | "colonne-bas", horsCatalogue = false): EntreeSandbox => ({

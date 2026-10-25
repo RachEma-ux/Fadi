@@ -51,7 +51,7 @@ describe("Sandbox — pictogrammes (lot 3)", () => {
 
   it("dessins sur mesure (douze validés le 20 octobre 2026, plus la barre « Axes et repères »), sur la grille de 24 px de Tabler au trait de 2 px, tous utilisés", () => {
     expect(Object.keys(surMesure).sort()).toEqual([
-      "aligner", "allonger", "axes-affichage", "coupe-profil", "debit", "decalage", "eclater", "epaissir", "onglet", "plan-travail", "plan-verrou", "pousser", "profile", "rapporteur",
+      "aligner", "allonger", "axes-affichage", "coupe-profil", "debit", "decalage", "eclater", "epaissir", "onglet", "origine-composant", "plan-travail", "plan-verrou", "pousser", "profile", "rapporteur",
       "repere-actif", "repere-aligner", "repere-enregistrer", "repere-modele", "repere-pivoter", "repere-precedent", "reperes-liste", "suivez", "vue-normale",
     ]);
     for (const [nom, svg] of Object.entries(surMesure)) {

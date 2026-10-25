@@ -2,13 +2,13 @@
 
 ## À faire
 
-- AX-4 — origine de composant (phase C).
 - AX-5 — repères liés, échanges, recette finale (phase D).
 
 ## En cours
 
 - Phase A (AX-0, AX-1, AX-2) — PR #298 : revue Codex corrigée (`e32f6eb`), CI en cours.
-- AX-3 (phase B) — commité sur la branche, recettes locales vertes ; PR après la fusion de #298 (`lots/ax-3.md`).
+- AX-3 (phase B) et AX-4 (phase C) — commités sur la branche, recettes locales vertes ; PR après la fusion de #298
+  (`lots/ax-3.md`, `lots/ax-4.md`).
 
 ## Terminé
 

@@ -2933,3 +2933,32 @@
   border: 1px solid var(--atelier-ligne, #dce5df);
   border-radius: 7px;
 }
+/* Chantier Axes (AX-4) : édition de l'origine du composant, flottante, hors de la grille des panneaux. */
+.sandbox-planche .planche-origine {
+  position: fixed;
+  top: 7rem;
+  right: 5.5rem;
+  margin: 0;
+  width: min(24rem, calc(100vw - 7rem));
+  max-height: calc(100vh - 12rem);
+}
+.sandbox-planche .planche-origine fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  border: 1px solid var(--atelier-ligne, #dce5df);
+  border-radius: 7px;
+}
+.sandbox-planche .planche-origine-ancrage {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+@media (max-width: 760px) {
+  .sandbox-planche .planche-origine {
+    top: 4rem;
+    right: 0.5rem;
+    left: 0.5rem;
+    width: auto;
+  }
+}

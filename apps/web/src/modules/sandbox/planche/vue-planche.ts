@@ -531,6 +531,31 @@ export class VuePlanche {
   /** Repère de travail affiché (chantier Axes, AX-D3) : tenu par la Planche, hors du document ; `null` = repère du modèle. */
   private repereTravail: Repere | null = null;
 
+  /** Aperçu d'un repère (origine de composant, AX-4) : trois axes étiquetés en pointillé épais ; `null` l'efface. */
+  private groupeApercuRepere: THREE.Group | null = null;
+  poserApercuRepere(r: { origine: Vec3; x: Vec3; y: Vec3; z: Vec3 } | null): void {
+    if (this.groupeApercuRepere) {
+      vider(this.groupeApercuRepere);
+      this.scene.remove(this.groupeApercuRepere);
+      this.groupeApercuRepere = null;
+    }
+    if (r) {
+      const g = new THREE.Group();
+      const l = this.metresParPixel(this.cible) * 70;
+      for (const [axe, couleur] of [["x", COULEURS_TRIADE.x], ["y", COULEURS_TRIADE.y], ["z", COULEURS_TRIADE.z]] as const) {
+        const d = r[axe];
+        const fin = { x: r.origine.x + d.x * l, y: r.origine.y + d.y * l, z: r.origine.z + d.z * l };
+        const ligne = new THREE.Line(new THREE.BufferGeometry().setFromPoints([v3(r.origine), v3(fin)]), new THREE.LineBasicMaterial({ color: couleur, depthTest: false }));
+        ligne.renderOrder = 10;
+        g.add(ligne);
+      }
+      g.userData["apercuRepere"] = r;
+      this.scene.add(g);
+      this.groupeApercuRepere = g;
+    }
+    this.rendre();
+  }
+
   /** Pose le repère de travail affiché par les axes de dessin ; la géométrie n'est pas touchée. */
   poserRepereTravail(r: Repere | null): void {
     this.repereTravail = r;

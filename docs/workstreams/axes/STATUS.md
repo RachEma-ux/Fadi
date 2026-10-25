@@ -15,6 +15,7 @@ prêt sur la branche, recettes locales vertes.
 - Le plan documentaire AXE-00 à AXE-11 (PR #295) concorde avec AX-D2 à AX-D10 ; correspondance dans `PLAN.md`.
 - PR #298 : 17 contrôles verts sur `d89a4b0` ; trois constats Codex (P2) corrigés dans `e32f6eb`, fils résolus.
 - AX-3 : `sandbox-reperes.mjs` OK en local ; modèle 859 tests, web du Sandbox 124 tests.
+- AX-4 : `origine-composant.test.ts` (9 tests) ; `sandbox-origine.mjs` OK ; les quatre recettes du Sandbox vertes ensemble.
 
 ## Points ouverts
 

@@ -10,16 +10,16 @@ Mis à jour : 2026-10-25 (UTC).
 
 ## Dernier état vérifié
 
-Phase A : PR #298 (AX-0, AX-1, AX-2), CI verte sur `d89a4b0`, corrections Codex poussées (`e32f6eb`). AX-3 commité sur
-la branche après #298, non poussé.
+Phase A : PR #298 (AX-0, AX-1, AX-2), CI verte sur `d89a4b0`, corrections Codex poussées (`e32f6eb`). AX-3 et AX-4
+commités sur la branche après #298, non poussés.
 
 ## Prochaine action
 
-Fusionner #298 CI verte ; pousser AX-3 dans une nouvelle PR (phase B) ; puis AX-4 (origine de composant).
+Fusionner #298 CI verte ; pousser AX-3 et AX-4 (phases B et C) dans une nouvelle PR ; puis AX-5 (phase D).
 
 ## Tests et preuves
 
-`lots/ax-1.md`, `lots/ax-2.md`, `lots/ax-3.md` ; recettes `apps/web/e2e/sandbox-axes.mjs`, `sandbox-reperes.mjs`.
+`lots/ax-1.md` à `lots/ax-4.md` ; recettes `apps/web/e2e/sandbox-axes.mjs`, `sandbox-reperes.mjs`, `sandbox-origine.mjs`.
 
 ## Risques et blocages
 
