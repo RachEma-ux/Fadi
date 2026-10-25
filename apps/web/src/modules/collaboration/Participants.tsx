@@ -20,6 +20,7 @@ import { apiMessage, ConfirmDialog } from "../../components/comptes/ComptesUI";
 import { COMMANDES_COLLABORATION, declenche, propsRaccourci, type CommandeParticipants } from "./commandes-collaboration";
 import { IconeCollaboration, RaccourciCollaboration } from "./IconeCollaboration";
 import { CapaciteResultante, libelleElement, resumeCapacite, SelecteurElement, useElementsPortee } from "./PorteeElement";
+import { OrganisationsProjet } from "./OrganisationsProjet";
 import {
   BUSINESS_ROLES, participantsApi, RESPONSIBILITIES, ROLE_SCOPES,
   type BusinessRole, type ContactInput, type ExistingMatches, type Participant, type ParticipationStatus, type Responsibility, type RoleScope, type StatusChange,
@@ -128,6 +129,7 @@ export function ParticipantsSection({ projectId }: { projectId: string }) {
           : <Commande commande="clore-projet" disabled={busy} onClick={() => closure.mutate(true)} />)}
         <small className="h7-muted">La clôture est déclarative : elle ne change aucun droit. Un contact sans compte est effacé 2 ans après la clôture de tous ses projets, plus tôt à sa demande. Réserve : d’éventuelles obligations légales de conservation (garantie décennale…) restent à vérifier par le conseil juridique du maître d’ouvrage.</small>
       </div>
+      {v.organizations ? <OrganisationsProjet v={v.organizations} ownerFallback={(() => { const o = v.participants.find((p) => p.isOwner); return o ? nomTexte(o) : null; })()} /> : null}
       <div className="h7-tabs" role="tablist" aria-label="Vues de l’annuaire">
         <button type="button" role="tab" id="tab-participants" aria-controls="panel-participants" aria-selected={tab === "participants"} className={tab === "participants" ? "sel" : ""} onClick={() => setTab("participants")}>
           {`Participants (${v.participants.length})`}

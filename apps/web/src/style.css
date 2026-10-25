@@ -3934,6 +3934,72 @@ fieldset.access-fieldset:disabled {
 .participants-section .danger-button {
   color: #fff;
 }
+/* Organisations du projet : partie propriétaire et parties (Issue #262, reliquat de la phase 5) */
+.projet-organisations {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 8px 0 14px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.projet-organisations h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+.projet-organisations h4 {
+  margin: 10px 0 4px;
+  font-size: 0.95rem;
+}
+.projet-organisations-tete {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin: 0;
+}
+.projet-organisations-tete dt {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.projet-organisations-tete dd {
+  margin: 2px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+.projet-organisations-note {
+  margin: 6px 0 0;
+}
+.projet-organisations-parties {
+  list-style: none;
+  margin: 0 0 6px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.projet-organisations-parties > li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.projet-organisations-ligne {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+.projet-organisations-representants ul {
+  margin: 2px 0 0;
+  padding-left: 18px;
+}
+.projet-organisations-representants li small {
+  margin-left: 6px;
+}
+.project-owner-org {
+  overflow-wrap: anywhere;
+}
 .participants-correspondances {
   grid-column: 1 / -1;
   border-left: 3px solid #bd873d;

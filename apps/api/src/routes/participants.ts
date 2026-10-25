@@ -2,7 +2,7 @@
  * Collaboration > Équipe et participants (Issue #262, phase 2 ; concept, parties 1 à 3). Monté sous
  * `/projects/:projectId/participants`.
  *
- *   GET    /                          → { project, you, participants, invitations? } : l'annuaire complet (personnes avec
+ *   GET    /                          → { project, you, participants, organizations, invitations? } : l'annuaire complet (personnes avec
  *                                       ou sans compte, organisations ; participations terminées comprises) — tout lecteur
  *   GET    /team                      → la vue Équipe : participations en cours portant des responsabilités — tout lecteur
  *   GET    /search?q=&email=          → existant avant création : personnes et organisations visibles, compte par adresse
@@ -40,6 +40,7 @@ import {
 } from "../lib/participants-db.js";
 import { lockProject, type Tx } from "../lib/step-rows.js";
 import { isProjectResponsible } from "../lib/project-responsables.js";
+import { projectOrganizations } from "../lib/project-organizations.js";
 import { projectOr404, type AccessibleProject } from "../lib/owned-project.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { porteeInconnue } from "../lib/portees-db.js";
@@ -136,6 +137,8 @@ participantsRouter.get("/", async (req, res) => {
     project: { id: ctx.project.id, closedAt: ctx.project.closedAt ? ctx.project.closedAt.toISOString() : null },
     you: { userId: req.user!.id, role: ctx.project.role, responsible: ctx.responsible, canManage: ctx.project.role === "proprietaire", canErase: ctx.responsible },
     participants,
+    // Partie propriétaire déclarée et organisations parties (phase 5, OP-D1 a) : lecture seule, aucun droit.
+    organizations: await projectOrganizations(ctx.project.id, req.user!.id),
     ...(ctx.responsible ? { invitations } : {}),
   });
 });
