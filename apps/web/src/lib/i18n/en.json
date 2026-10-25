@@ -12724,5 +12724,11 @@
 "Aucune correspondance d'import consignée dans cette Planche : les coordonnées d'origine ne sont pas connues.": "No import mapping recorded in this Planche: the original coordinates are not known.",
 "Plusieurs imports d'unités différentes : aucune coordonnée d'origine unique.": "Several imports with different units: no single original coordinate system.",
 "L'export IFC déclare ses unités (mètres) : un export en unité source y serait faux. Choisissez OBJ ou STL.": "The IFC export declares its units (metres): a source-unit export would be wrong there. Choose OBJ or STL.",
-"Repère de travail invalide.": "Invalid working frame."
+"Repère de travail invalide.": "Invalid working frame.",
+"Coloration": "Colouring",
+"Couleur unie": "Plain colour",
+"Une couleur par entité": "One colour per feature",
+"Une couleur par entité (repère visuel, sans valeur).": "One colour per feature (visual cue, no value).",
+"Chargement des couleurs…": "Loading colours…",
+"… et {0} autres entités (couleurs visibles sur la carte)": "… and {0} other features (colours visible on the map)"
 }

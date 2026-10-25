@@ -73,6 +73,7 @@ export const api = {
   },
   codesFiltres: (id: string, f: { propriete: string; operateur: "egal" | "contient"; valeur: string }) => appeler<{ codes: string[] }>(`/couches/${encodeURIComponent(id)}/codes?${new URLSearchParams(f)}`),
   fiche: (coucheId: string, code: string) => appeler<FicheRecue>(`/couches/${encodeURIComponent(coucheId)}/objets/${encodeURIComponent(code)}`),
+  categories: (coucheId: string) => appeler<{ categories: { code: string; nom: string | null; rang: number }[] }>(`/couches/${encodeURIComponent(coucheId)}/categories`),
   valeurs: (indicateurId: string) => appeler<{ valeurs: ({ code: string } & ValeurRecue)[] }>(`/indicateurs/${encodeURIComponent(indicateurId)}/valeurs`),
   cartes: (etat: "active" | "archivee" = "active") => appeler<{ cartes: ResumeCarte[] }>(`/cartes?etat=${etat}`),
   carte: (id: string) => appeler<CarteRecue>(`/cartes/${encodeURIComponent(id)}`),

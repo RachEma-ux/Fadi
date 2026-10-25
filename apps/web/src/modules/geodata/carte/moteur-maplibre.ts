@@ -148,7 +148,11 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       let couleur: string | ExpressionSpecification = "#2b8cbe";
       const absentes: string[] = [];
       if (k.style.mode === "simple") couleur = k.style.couleur;
-      else {
+      else if (k.style.mode === "categories") {
+        // Une couleur par entité ; tant que les couleurs ne sont pas reçues, la couleur par défaut.
+        const branches = [...(d.categories.get(k.coucheId) ?? new Map<string, string>())].flat();
+        couleur = branches.length ? (["match", ["get", "code"], ...branches, "#2b8cbe"] as unknown as ExpressionSpecification) : "#2b8cbe";
+      } else {
         const valeurs = d.valeurs.get(k.style.indicateurId);
         const branches: (string | number)[] = [];
         const { seuils, couleurs } = k.style;
