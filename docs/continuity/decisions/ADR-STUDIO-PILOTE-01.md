@@ -158,6 +158,15 @@ compte du maître d'ouvrage.
 | OPS-03 | Écritures postérieures à une bascule. Le schéma Studio est additif (`init.sql` idempotent) : revenir à l'image précédente conserve les écritures. Une restauration de base, que seul le maître d'ouvrage décide, est précédée de l'export par l'archive Studio (`fadi-studio-archive/1`) des écritures postérieures, qui sont réimportées ou abandonnées sur décision explicite. Le retour arrière ne se réduit jamais au rétablissement de l'image. |
 | SRC-06 | Contradictions restantes : (1) Importer DXF, les exports (SVG, DXF, IFC, PNG), la matrice d'échanges, Outils et la palette de commandes ne relèvent d'aucun domaine unique. Ils sont **communs aux quatre domaines**, tels que présentés aujourd'hui ; la valeur `A_DEFINIR` du code signifie désormais « commun », sans domaine propre. (2) Le workflow est déclaré **par étude**, comme réalisé. (3) ROUTE-09 : le contrat de routes d'ADR-STUDIO-NAV-01 §1 est final (P-03), avec les paramètres de P-08 (I.4-03). (4) R.3-01 : P-08 **remplace** le point 1 de P-07, puisque le maître d'ouvrage a délégué ses propres tâches. La recette est jouée par le chef de projet et consignée comme déléguée, jamais comme constat du maître d'ouvrage en personne. |
 
+### P-10 — Démarrage du groupe de Workers (TEST-016) — 25 octobre 2026
+
+La recette TEST-016 a montré que le moteur « calcul », le groupe de Workers, démarre dès l'ouverture d'une planche.
+La cause : le panneau « Quantités », affiché par défaut, calcule aussitôt le métré hors du fil principal. Ce démarrage
+est un **premier usage justifié**, pas un démarrage d'office : le métré est nécessaire au parcours C et visible à
+l'ouverture. Le comportement est donc conservé, et la déclaration « premier usage » reste exacte. La recette exige que
+toutes les tâches qui ont sollicité ce moteur à l'ouverture soient des calculs de quantités, et que le rendu 3D, lui, ne
+soit pas initialisé.
+
 ## Justification
 
 Chaque option retenue est celle du dossier préparatoire. Elle est réalisée par le code de `main` au 25 octobre 2026

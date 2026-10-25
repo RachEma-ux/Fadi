@@ -140,7 +140,7 @@ try {
   await page.keyboard.press("Escape");
 
   // TEST-016 : Studio ouvert avec un profil personnel de vingt outils (même profil que studio-mesures-chargement.mjs) —
-  // aucun moteur rare initialisé d'office (rendu 3D, calcul), three.js ni vue 3D demandés ; ressources relevées sans
+  // aucun moteur rare initialisé d'office (rendu 3D ; calcul seulement par le métré affiché), three.js ni vue 3D demandés ; ressources relevées sans
   // seuil ni verdict (DEC-13).
   const VINGT = [
     "studio.dessin.selection", "studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle", "studio.dessin.arc", "studio.dessin.polyligne",
@@ -161,9 +161,16 @@ try {
     await p20.getByRole("toolbar", { name: "Outils de dessin" }).waitFor();
     await p20.waitForFunction(() => !!globalThis.__fadiRessources);
     const e20 = await p20.evaluate(() => Object.fromEntries(globalThis.__fadiRessources.etats().map((e) => [e.id, { ...e }])));
-    check("TEST-016 : moteurs rares non initialisés à l'ouverture (rendu-3d, calcul), planche initialisée",
-      !!e20["rendu-3d"] && !!e20.calcul && !e20["rendu-3d"].initialise && !e20.calcul.initialise && e20["planche-2d"]?.initialise === true,
+    check("TEST-016 : rendu 3D non initialisé à l'ouverture, planche initialisée",
+      !!e20["rendu-3d"] && !e20["rendu-3d"].initialise && e20["planche-2d"]?.initialise === true,
       JSON.stringify(Object.values(e20).map((e) => [e.id, e.phase, e.initialise])));
+    // Le groupe de Workers (« calcul ») n'est jamais démarré d'office : son premier usage justifié à l'ouverture est le
+    // métré du panneau « Quantités », affiché par défaut (ADR-STUDIO-PILOTE-01, P-10). S'il est initialisé, toutes les
+    // tâches qui l'ont sollicité sont des calculs de quantités.
+    const natures20 = await p20.evaluate(() => [...new Set((globalThis.__fadiTaches?.journal ?? []).map((e) => e.cle))]);
+    check("TEST-016 : groupe de Workers démarré seulement par son premier usage justifié (métré du panneau Quantités affiché), jamais d'office",
+      !!e20.calcul && (!e20.calcul.initialise || (natures20.length > 0 && natures20.every((n) => /quantites/.test(String(n))))),
+      JSON.stringify({ calcul: [e20.calcul?.phase, e20.calcul?.initialise], natures: natures20 }));
     const carte = await p20.evaluate(async () => (await fetch("/chargement.json")).json());
     const famille = (f) => new Set(Object.entries(carte.morceaux).filter(([, m]) => m.familles.includes(f)).map(([chemin]) => chemin));
     const three = famille("three"), vue3d = famille("studio-3d");
