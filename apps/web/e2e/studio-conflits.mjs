@@ -14,6 +14,8 @@
  * 6. Serveur (A.5-02, A.5-04, A.5-07, A.5-10) : anonyme 401, auteur forgé dans l'enveloppe 400, lot refusé au milieu
  *    sans aucune écriture, base périmée 409 avec chevauchements, rejeu ancien sans effet sur la tête, commandes et
  *    delta d'une révision relus tels qu'envoyés.
+ * 7. TEST-012 (serveur) : A et B modifient le même mur depuis la même tête ; A enregistre (hauteur), B (épaisseur) est
+ *    refusé 409 stale_revision nommant le mur, la tête de A reste intacte (aucun « dernier écrit gagne »).
  *
  * BASE_URL=http://localhost:3001 node apps/web/e2e/studio-conflits.mjs
  */
@@ -217,6 +219,25 @@ try {
     canonique(premier.commands) === canonique([deplacer("ligne-a", 1)]) && JSON.stringify(premier.changedKeys) === JSON.stringify(["objects:ligne-a"]) && premier.parentRevisionId === r3.id, JSON.stringify(premier));
   const initChanges = await B.api("GET", `${chemin}/revisions/${etude.revision.id}/changes`);
   check("historique hybride : révision d'initialisation sans commandes, lisible par l'éditeur", initChanges.commands.length === 0 && initChanges.requestId === null);
+  // 7. TEST-012 : modification simultanée du même mur sur deux sessions, sans écrasement « dernier écrit gagne ».
+  const idMur = `mur-${randomUUID().slice(0, 8)}`;
+  const murInitial = { id: idMur, type: "wall", axis: [{ x: 0, y: 30 }, { x: 6, y: 30 }], thickness: 0.2, height: 3, base: 0, justification: "center" };
+  const pose = await A.api("POST", `${chemin}/commands`, enveloppe(`mur-pose-${randomUUID()}`, (await tete()).id, [{ toolId: "studio.architecture.mur", params: murInitial }]));
+  const baseMur = pose.revision.id;
+  const murDe = (rev) => (rev.document.architecture ?? []).find((o) => o.id === idMur);
+  check("TEST-012 : mur posé par l'API (6 × 3 × 0,2 m), tête commune aux deux sessions", (await tete()).id === baseMur && murDe(await tete())?.height === 3, JSON.stringify(murDe(await tete())));
+  const modifA = await A.brut("POST", `${chemin}/commands`, enveloppe(`mur-a-${randomUUID()}`, baseMur, [{ toolId: "studio.architecture.modifier", params: { ...murInitial, height: 3.2 } }]));
+  check("TEST-012 : session A modifie la hauteur du mur (3,2 m) et enregistre", modifA.status === 200 && modifA.body?.revision?.parentRevisionId === baseMur && murDe(modifA.body.revision)?.height === 3.2, JSON.stringify(modifA.body));
+  const nbAvantB = (await revisions()).length;
+  const modifB = await B.brut("POST", `${chemin}/commands`, enveloppe(`mur-b-${randomUUID()}`, baseMur, [{ toolId: "studio.architecture.modifier", params: { ...murInitial, thickness: 0.25 } }]));
+  check("TEST-012 : session B, restée sur l'ancienne tête, modifie l'épaisseur du même mur → 409 stale_revision nommant le mur",
+    modifB.status === 409 && modifB.body?.error === "stale_revision" && modifB.body?.headRevisionId === modifA.body?.revision?.id && JSON.stringify(modifB.body?.overlaps) === JSON.stringify([`architecture:${idMur}`]), JSON.stringify(modifB.body));
+  const teteMur = await tete();
+  check("TEST-012 : tête de A intacte (hauteur 3,2 m, épaisseur 0,2 m), aucune révision écrite pour B : pas d'écrasement « dernier écrit gagne »",
+    teteMur.id === modifA.body?.revision?.id && murDe(teteMur)?.height === 3.2 && murDe(teteMur)?.thickness === 0.2 && (await revisions()).length === nbAvantB, JSON.stringify(murDe(teteMur)));
+  const reportB = await B.brut("POST", `${chemin}/commands`, enveloppe(`mur-b-report-${randomUUID()}`, teteMur.id, [{ toolId: "studio.architecture.modifier", params: { ...murDe(teteMur), thickness: 0.25 } }]));
+  check("TEST-012 : revalidée sur la nouvelle tête, la modification de B garde celle de A (hauteur 3,2 m et épaisseur 0,25 m)",
+    reportB.status === 200 && reportB.body?.revision?.parentRevisionId === teteMur.id && murDe(reportB.body.revision)?.height === 3.2 && murDe(reportB.body.revision)?.thickness === 0.25, JSON.stringify(reportB.body));
   check("aucune erreur JavaScript", erreurs.length === 0, erreurs.join(" | "));
 } catch (e) {
   echecs++;
