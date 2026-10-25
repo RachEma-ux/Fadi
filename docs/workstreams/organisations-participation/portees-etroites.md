@@ -144,7 +144,11 @@ Exécuté le 2026-10-24, base jetable `fadi_scopes`, API construite sur le port 
 | `npx vitest run src/lib/portees-acces.test.ts` (api) | 8/8 |
 | `apps/web/e2e/portees-etroites.mjs` | **87 ✓, 0 ✗** (API, portée seule = 404 partout avec `DATABASE_URL`, périmètres, interface, axe-core bureau et téléphone, passe anglaise) |
 | `participants.mjs`, `studio-publication.mjs`, `collaboration-audience.mjs`, `revue-externe.mjs` | 92 ✓, 129 ✓, 45 ✓, 132 ✓ — aucune régression |
-| `interface-anglais.mjs`, `npm run typecheck`, `npm test`, `npm run build`, `check-api-tests-db3` | voir le compte rendu final ci-dessous |
+| `interface-anglais.mjs` | vert (7 ✓) |
+| `scripts/validation/participations-migration-check.mjs` | ✅ phases 1 et 2 |
+| `npm run typecheck` | 0 erreur |
+| `npm test` | vert hors suites DB-3 : API 574 tests hors base ; 15 suites DB-3 (dont la nouvelle) refusées par la garde ; `node scripts/check-api-tests-db3.mjs` : ✓ seules les suites de la liste, uniquement par la garde |
+| `npm run build` | vert |
 
 Ce qui n'a pas tourné localement : la suite DB-3 `routes/portees-etroites.test.ts` et le cas adapté d'`app.test.ts`
 (garde DB-3, en CI seulement — ils reprennent le scénario de la recette HTTP, verte localement) ; la CI GitHub (aucun push).
