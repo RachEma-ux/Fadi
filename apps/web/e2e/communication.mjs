@@ -378,7 +378,9 @@ try {
   const msgPhoto = page.locator("[data-com-message]", { hasText: "Relevé photo envoyé depuis l'interface (recette)" });
   await msgPhoto.waitFor({ timeout: 20_000 });
   await msgPhoto.locator("[data-com-photo]").first().waitFor({ timeout: 20_000 });
-  check("11. photo envoyée : affichée dans le fil (image décodée)", await msgPhoto.locator("[data-com-photo]").first().evaluate((img) => img.complete && img.naturalWidth > 0));
+  // Chargement différé (unlazy) : l'espace réservé s'affiche d'abord, l'image réelle remplace ensuite l'attribut src.
+  await msgPhoto.locator('[data-com-photo][data-image-chargee="oui"]').first().waitFor({ timeout: 20_000 });
+  check("11. photo envoyée : affichée dans le fil (image décodée, chargement différé)", await msgPhoto.locator("[data-com-photo]").first().evaluate((img) => img.complete && img.naturalWidth > 0 && !img.src.startsWith("data:")));
   check("11. règle d'or : « Joindre une photo » et « Épingler sur un plan » avec leur raccourci", (await page.locator('[data-raccourci-collaboration="joindre-photo"]').first().textContent()) === "Alt+Maj+." && (await page.locator('[data-raccourci-collaboration="epingler"]').first().textContent()) === "Alt+Maj+`");
   // Épingle posée au clavier puis sur le plan.
   await zone.press("Alt+Shift+Backquote");
