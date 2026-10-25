@@ -2120,7 +2120,7 @@ CREATE INDEX IF NOT EXISTS invitations_mandate_idx ON auth.invitations (mandate_
 ALTER TABLE project_participations ADD COLUMN IF NOT EXISTS access_granted_by text;
 ALTER TABLE project_participations ADD COLUMN IF NOT EXISTS access_granted_at timestamptz;
 
-DO $pont$
+DO $$
 DECLARE
   r record;
   v_person text; v_part text;
@@ -2218,11 +2218,16 @@ BEGIN
   DROP TABLE project_members;
   RAISE NOTICE 'OP-PONT : pont retiré ; % accès effectif(s) relevés avant, tous conservés ; % partage(s) repris, % accès complété(s)',
     cardinality(v_before), v_created, v_gained;
-END $pont$;
-DROP TRIGGER IF EXISTS projects_op_owner_mirror ON projects;
-DROP FUNCTION IF EXISTS op_projects_owner_mirror();
-DROP FUNCTION IF EXISTS op_project_members_mirror();
-DROP FUNCTION IF EXISTS op_sync_access(text, text, date);
+END $$;
+-- Fonctions et déclencheurs du miroir supprimés (rejouable) ; dans un bloc DO : init.sql ne porte au premier niveau que
+-- CREATE / ALTER / DO (contrôle du profil Studio V1, scripts/validation/studio-v1-profile.py).
+DO $$
+BEGIN
+  DROP TRIGGER IF EXISTS projects_op_owner_mirror ON projects;
+  DROP FUNCTION IF EXISTS op_projects_owner_mirror();
+  DROP FUNCTION IF EXISTS op_project_members_mirror();
+  DROP FUNCTION IF EXISTS op_sync_access(text, text, date);
+END $$;
 
 -- Vue de compatibilité (lecture seule : non modifiable par construction — jointures — et `fadi_app` n'y a que SELECT,
 -- bloc D-7) : une ligne par partage en cours = participation non terminée d'un compte, hors propriétaire, portant le rôle
@@ -2245,17 +2250,20 @@ SELECT pp.project_id, pe.user_id,
 -- Propriétaire : sa participation au projet (ancien déclencheur `projects_op_owner_mirror`) est désormais écrite par
 -- l'application à la création, à l'import ou au transfert (`ensureOwnerParticipation`). Réparation idempotente d'un
 -- projet créé hors de l'application (script, essai) : personne et participation active, sans rôle de partage.
-INSERT INTO people (id, user_id)
-SELECT 'per_' || gen_random_uuid(), o.owner_id FROM (SELECT DISTINCT owner_id FROM projects) o
- WHERE EXISTS (SELECT 1 FROM users u WHERE u.id = o.owner_id) AND NOT EXISTS (SELECT 1 FROM people pe WHERE pe.user_id = o.owner_id)
-ON CONFLICT (user_id) WHERE user_id IS NOT NULL DO NOTHING;
-UPDATE project_participations pp SET status = 'active', updated_at = now()
-  FROM projects p JOIN people pe ON pe.user_id = p.owner_id
- WHERE pp.project_id = p.id AND pp.person_id = pe.id AND pp.status = 'contact';
-INSERT INTO project_participations (id, project_id, person_id, status, starts_on)
-SELECT 'ppa_' || gen_random_uuid(), p.id, pe.id, 'active', least(p.created_at::date, current_date)
-  FROM projects p JOIN people pe ON pe.user_id = p.owner_id
- WHERE NOT EXISTS (SELECT 1 FROM project_participations pp WHERE pp.project_id = p.id AND pp.person_id = pe.id AND pp.status <> 'terminee');
+DO $$
+BEGIN
+  INSERT INTO people (id, user_id)
+  SELECT 'per_' || gen_random_uuid(), o.owner_id FROM (SELECT DISTINCT owner_id FROM projects) o
+   WHERE EXISTS (SELECT 1 FROM users u WHERE u.id = o.owner_id) AND NOT EXISTS (SELECT 1 FROM people pe WHERE pe.user_id = o.owner_id)
+  ON CONFLICT (user_id) WHERE user_id IS NOT NULL DO NOTHING;
+  UPDATE project_participations pp SET status = 'active', updated_at = now()
+    FROM projects p JOIN people pe ON pe.user_id = p.owner_id
+   WHERE pp.project_id = p.id AND pp.person_id = pe.id AND pp.status = 'contact';
+  INSERT INTO project_participations (id, project_id, person_id, status, starts_on)
+  SELECT 'ppa_' || gen_random_uuid(), p.id, pe.id, 'active', least(p.created_at::date, current_date)
+    FROM projects p JOIN people pe ON pe.user_id = p.owner_id
+   WHERE NOT EXISTS (SELECT 1 FROM project_participations pp WHERE pp.project_id = p.id AND pp.person_id = pe.id AND pp.status <> 'terminee');
+END $$;
 
 -- Communication (COM, Issue #280, docs/workstreams/communication/PLAN.md) — tables nouvelles, additif.
 -- Une conversation appartient à un projet et porte une audience explicite : `participants` (personnes nommées),
