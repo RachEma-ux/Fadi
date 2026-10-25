@@ -25,7 +25,7 @@ Ce qui a été fait :
 - **`deploy/prod/fadi-prod-auto`**, ses unités systemd, son installateur à empreintes et 121 contrôles à doubles (`deploy/prod/tests/run.sh`, joués en CI). Parmi eux : l'échec simulé de chaque sonde, avec retour à l'image précédente sans restauration de la base, et la sauvegarde non vérifiée, qui bloque tout redémarrage. Recette sur le VPS : [`docs/deploiement-automatique-recette-phase-b.md`](../../deploiement-automatique-recette-phase-b.md).
 - [DOSSIER-G4.md](DOSSIER-G4.md) §4 mis à jour : scripts livrés, installation et recette sur le VPS restantes (administrateur).
 
-Compteurs recalculés du registre : **0 À définir / 92 À faire / 210 En cours / 11 Bloqué / 259 Vérifié / 58 Accepté**. **P630=317/630** (inchangés : les obligations R restent bloquées tant que le service n'est ni installé ni recetté sur le VPS).
+Compteurs recalculés du registre : à cette date 259 Vérifié, 58 Accepté, 11 Bloqué, 210 En cours, 92 À faire, 0 À définir ; 317 obligations sur 630 closes (inchangés : les obligations R restent bloquées tant que le service n'est ni installé ni recetté sur le VPS).
 
 Prochaine action : lots F1 (géométrie 3D), F3 (import IFC, modèle externe) et F4 (délégation, observations, traçabilité) en cours ; puis F2 (noyau exact), F5 (rendu, index), point 2, et G1 puis G4.
 
@@ -44,7 +44,7 @@ Preuves d'exécution :
 - les 22 recettes Studio passent sur une base jetable, dont `studio-memoire`. La navigation a échoué une fois, sous la charge des tests unitaires joués en parallèle, puis passé seule (278 contrôles) ;
 - typecheck, tests des espaces de travail et garde-fou de base : tous réussis.
 
-Compteurs recalculés du registre : **0 À définir / 92 À faire / 210 En cours / 11 Bloqué / 259 Vérifié / 58 Accepté**. **P630=317/630**.
+Compteurs recalculés du registre : à cette date 259 Vérifié, 58 Accepté, 11 Bloqué, 210 En cours, 92 À faire, 0 À définir ; 317 obligations sur 630 closes.
 
 Ce qui reste, et pourquoi :
 - 9 obligations R : G4 non franchie, phase B de production (`fadi-prod-auto`) absente du dépôt, Release réservée au maître d'ouvrage ;
