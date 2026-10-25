@@ -7,6 +7,7 @@
  */
 import { useEffect, useState } from "react";
 import "./temps-reel.css";
+import { LOCALE } from "../../../lib/i18n";
 import { COMMANDES_TEMPS_REEL, declenche, propsRaccourci, type CommandeTempsReel } from "../../collaboration/commandes-collaboration";
 import { IconeCollaboration, RaccourciCollaboration } from "../../collaboration/IconeCollaboration";
 import { estHote, estPresentateur, nomPresentateur, type EtatConnexion, type Participant } from "./etat-session";
@@ -195,6 +196,9 @@ export function BandeauSession({ tr, revisionAffichee, teteVariante, nomVariante
         {`Une révision plus récente existe (${court(nouvelleRevision)}) : la session reste sur sa révision tant que l’hôte ne la change pas.`}
       </p>}
       {vueAilleurs && <p className="studio-info" role="status" data-tr-vue-ailleurs>{etat.vue!.affichage === "3d" ? "Le présentateur montre la vue 3D." : "Le présentateur montre la planche 2D."}</p>}
+      {tr.reservation && !fin && <p className="studio-info" role="status" data-tr-reservation={tr.reservation.userId}>
+        {`Édition du projet réservée par ${tr.reservation.email} jusqu’à ${new Date(tr.reservation.expiresAt).toLocaleTimeString(LOCALE, { hour: "2-digit", minute: "2-digit" })} : la session ne la transmet jamais ; son titulaire la rend ou le propriétaire la libère.`}
+      </p>}
       {hoteAbsent && !fin && <p className="studio-info" role="status" data-tr-hote-absent>L’hôte n’est plus connecté : le propriétaire ou un responsable du projet peut reprendre l’animation après deux minutes.</p>}
       {etat.resynchronise && !fin && <p className="studio-info" role="status" data-tr-resynchronise>Reconnecté : l’état de la session a été relu.</p>}
       {(erreur ?? etat.erreur) && <p className="studio-alert" role="alert" data-tr-erreur>{erreur ?? etat.erreur}</p>}

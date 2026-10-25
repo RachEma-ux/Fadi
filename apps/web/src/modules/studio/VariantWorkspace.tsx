@@ -768,6 +768,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       surSelection={setSolide3d} surCommandes={apply} selectionArchitecture={panneauArchi} surSelectionArchitecture={(id) => (id ? choisirArchitecture(id, false) : setSelectionArchi(null))}
       demande={demande3d} surDemandeTraitee={() => setDemande3d(null)} surNavigation={setNavigation3d} remplir
       cameraPartagee={enDirect && tr.suit && !presenteEnDirect ? cameraPartagee : cameraAnnotation} surCameraLocale={partagerCamera}
+      surPointeur3d={enDirect ? (p) => tr.canal.pointeur(p ? { espace: "3d", ...p } : null) : undefined}
+      pointeurs3d={enDirect ? pointeursFrais(tr.etat, Date.now()).filter((p) => p.espace === "3d").map((p) => ({ userId: p.userId, nom: p.nom || nomsSession[p.userId] || "", x: p.x, y: p.y, z: p.z ?? 0 })) : undefined}
       hotePanneaux={domaineActif === "visualisation" ? hoteVisualisation : hote3dDessin} visualisation={domaineActif === "visualisation"}
       provenance={{ etude: { id: context.study.id, nom: context.study.name }, variante: { id: context.variant.id, nom: context.variant.name }, revisionId: context.revision.id, nonEnregistre: commands.length > 0 }} /></div>}
     </div>

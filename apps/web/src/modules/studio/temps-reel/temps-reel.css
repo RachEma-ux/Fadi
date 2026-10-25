@@ -1,7 +1,11 @@
 /* Sessions en direct (Issue #283, RTC-2) : bandeau compact sous la barre de l'espace, participants repliables. */
 .tr-bandeau{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:8px 12px;margin:0 0 8px;background:#f2f7f6;border:1px solid #c9dcda;border-radius:10px;font-size:13px;min-width:0;overflow-wrap:anywhere}
 .tr-titre{display:inline-flex;align-items:center;gap:6px;font-weight:700}
-.tr-direct{width:9px;height:9px;border-radius:50%;background:#b4005a;box-shadow:0 0 0 3px #b4005a33}
+.tr-direct{width:9px;height:9px;border-radius:50%;background:#b4005a;box-shadow:0 0 0 3px #b4005a33;animation:tr-pulsation 2s ease-in-out infinite}
+@keyframes tr-pulsation{50%{box-shadow:0 0 0 6px #b4005a11}}
+@media (prefers-reduced-motion:reduce){.tr-direct{animation:none}}
+.tr-commande{min-height:32px}
+@media (pointer:coarse){.tr-commande,.tr-bandeau button,.tr-bandeau select{min-height:44px}}
 .tr-portee,.tr-session-dispo{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px 10px;min-width:0}
 .tr-detail{color:#4f666d}
 .tr-etat{font-weight:600}

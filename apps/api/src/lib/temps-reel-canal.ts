@@ -73,15 +73,17 @@ export function attacherTempsReel(server: Server, options: { origines: readonly 
   const origines = new Set(options.origines.map((o) => o.trim()).filter(Boolean));
   const wss = new WebSocketServer({ noServer: true, maxPayload: BORNES_TEMPS_REEL.octetsParMessage, perMessageDeflate: false });
 
+  const refus: Record<number, number> = {};
+  const refuserCompte = (socket: Duplex, code: 401 | 403 | 404, texte: string) => { refus[code] = (refus[code] ?? 0) + 1; refuser(socket, code, texte); };
   server.on("upgrade", (req: IncomingMessage, socket: Duplex, head: Buffer) => {
     socket.on("error", () => socket.destroy());
     void (async () => {
       const chemin = new URL(req.url ?? "/", "http://fadi.invalid").pathname;
-      if (chemin !== CHEMIN_CANAL) return refuser(socket, 404, "Not Found");
-      if (!req.headers.origin || !origines.has(req.headers.origin)) return refuser(socket, 403, "Forbidden");
+      if (chemin !== CHEMIN_CANAL) return refuserCompte(socket, 404, "Not Found");
+      if (!req.headers.origin || !origines.has(req.headers.origin)) return refuserCompte(socket, 403, "Forbidden");
       const presente = sessionTokenFrom(req.headers.cookie ? parse(req.headers.cookie) : {});
       const compte = presente ? await d.verifierCompte(presente.token).catch(() => null) : null;
-      if (!presente || !compte) return refuser(socket, 401, "Unauthorized");
+      if (!presente || !compte) return refuserCompte(socket, 401, "Unauthorized");
       wss.handleUpgrade(req, socket, head, (ws: WebSocket) => {
         const c = hub.ouvrir({
           envoyer: (t) => ws.send(t),
@@ -97,7 +99,7 @@ export function attacherTempsReel(server: Server, options: { origines: readonly 
       });
     })().catch((e: unknown) => {
       journal("error", "temps-reel : montée de protocole en échec", { erreur: (e as Error).message });
-      refuser(socket, 401, "Unauthorized");
+      refuserCompte(socket, 401, "Unauthorized");
     });
   });
 
@@ -106,6 +108,8 @@ export function attacherTempsReel(server: Server, options: { origines: readonly 
     setInterval(() => hub.battement(), BORNES_TEMPS_REEL.battementMs),
     setInterval(() => void hub.revalider(), BORNES_TEMPS_REEL.revalidationMs),
     setInterval(() => void (async () => {
+      // Supervision (RTC-5) : une ligne de mesures par minute, agrégée, sans contenu ni identifiant.
+      journal("info", "temps-reel : mesures", { ...hub.mesures(), refusMontee: { ...refus } });
       hub.purger();
       await toucherActivite(hub.sallesActives());
       for (const id of await sessionsAExpirer((sid) => hub.sansConnexion(sid))) {

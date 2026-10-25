@@ -1397,7 +1397,7 @@
 "Commentaires (": "Comments (",
 "Commentaires ({0})": "Comments ({0})",
 "Commentaires par projet et par étape, journal des révisions, synchronisation hors-ligne de l'Atelier (file locale des modifications, envoyée dans l'ordre) et lecture hors-ligne": "Comments per project and per step, revision log, offline synchronisation of the Workshop (local queue of changes, sent in order) and offline reading",
-"Commentaires par projet et par étape, journal des révisions, synchronisation hors-ligne de l'Atelier (file locale des modifications, envoyée dans l'ordre) et lecture hors-ligne ; partage multi-utilisateur et droits non disponibles (Lot 4), annoncés tels quels.": "Comments per project and per step, revision log, offline synchronisation of the Workshop (local queue of changes, sent in order) and offline reading; multi-user sharing and rights not available (Batch 4), announced as such.",
+"Commentaires par projet, par étape et dans le Studio, avec leur audience ; membres, rôles et participants ; observations et communication ; journal des révisions ; synchronisation hors-ligne de l'Atelier (file locale des modifications, envoyée dans l'ordre) et lecture hors-ligne ; sessions en direct du Studio (vue partagée, annotations, revue figée) lorsque le serveur les active.": "Comments per project, per step and in the Studio, with their audience; members, roles and participants; observations and communication; revision history; offline synchronisation of the Atelier (local queue of changes, sent in order) and offline reading; live Studio sessions (shared view, annotations, frozen review) when the server enables them.",
 "Commenter": "Comment",
 "Commerce": "Retail",
 "Commerce / retail": "Retail",
@@ -11926,5 +11926,6 @@
 "Cette publication est retirée : aucune revue ne s’y ouvre.": "This publication is withdrawn: no review can be opened on it.",
 "Cette publication est remplacée : ouvrez la revue sur la publication qui la remplace.": "This publication has been replaced: open the review on the publication that replaces it.",
 "Publication introuvable pour cette variante.": "Publication not found for this variant.",
-"Une revue montre la révision publiée.": "A review shows the published revision."
+"Une revue montre la révision publiée.": "A review shows the published revision.",
+"Édition du projet réservée par {0} jusqu’à {1} : la session ne la transmet jamais ; son titulaire la rend ou le propriétaire la libère.": "Project editing reserved by {0} until {1}: the session never hands it over; its holder releases it or the owner frees it."
 }

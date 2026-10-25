@@ -6,7 +6,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, ApiError, type StudioPublication } from "../../../lib/api";
+import { api, ApiError, type EditingLock, type StudioPublication } from "../../../lib/api";
 import { apiTempsReel, type AnnotationSession, type SaisieAnnotation, type SessionListee } from "./api-temps-reel";
 import { CanalTempsReel } from "./canal";
 import { ETAT_INITIAL, type EtatSession } from "./etat-session";
@@ -41,6 +41,8 @@ export interface SessionTempsReel {
   annotations: AnnotationSession[];
   /** Publications figées de la variante (manifeste figé, ni retirées ni remplacées) : ouvrables en revue. */
   publicationsFigees: StudioPublication[];
+  /** Réservation d'édition du projet (RT-R6) : titulaire et échéance, montrés en session ; jamais transmise par elle. */
+  reservation: EditingLock | null;
 }
 
 /**
@@ -93,6 +95,10 @@ export function useSessionTempsReel(projectId: string, studyId: string, variantI
     queryKey: ["temps-reel-publications", projectId, studyId, variantId], enabled: actif && !enSession && Array.isArray(liste.data), retry: false, staleTime: 30_000,
     queryFn: async () => (await api.studioPublications(projectId, studyId)).publications,
   });
+  const reservation = useQuery({
+    queryKey: ["temps-reel-reservation", projectId], enabled: actif && enSession, retry: false, refetchInterval: 30_000,
+    queryFn: async () => (await api.getLock(projectId)).lock,
+  });
   const publicationsFigees = (publications.data ?? []).filter((p) => p.variantId === variantId && !!p.manifestHash && p.status !== "retire"
     && p.diffusionStatus !== "retire" && p.diffusionStatus !== "remplace" && !p.replacedBy);
   const cleAnnotations = ["temps-reel-annotations", projectId, variantId, sessionId];
@@ -144,5 +150,5 @@ export function useSessionTempsReel(projectId: string, studyId: string, variantI
       return ok;
     },
   };
-  return { disponible: actif && Array.isArray(liste.data), sessions: liste.data ?? [], etat, canal, actions, erreur, enCours, suit, annotations: annotations.data ?? [], publicationsFigees };
+  return { disponible: actif && Array.isArray(liste.data), sessions: liste.data ?? [], etat, canal, actions, erreur, enCours, suit, annotations: annotations.data ?? [], publicationsFigees, reservation: reservation.data ?? null };
 }

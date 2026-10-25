@@ -72,9 +72,31 @@
       la collaboration et à COM, les Ctrl+Alt+Maj+chiffre ou ponctuation aux Participants) ; commandes enregistrées dans
       le registre commun `commandes-collaboration.ts`, test de non-collision.
 
+- **RT-D6 — Choix de réalisation RTC-2 à RTC-5 (2026-10-25, délégation RT-D4).**
+  1. **Entrée hors session** : une entrée compacte « En direct (n) » dans la barre de l'espace Studio ouvre le panneau des
+     sessions par-dessus le canevas ; le bandeau complet n'apparaît qu'en session (la recette `studio-navigation.mjs`
+     exige 360 px de planche à 1280 × 720 : un bandeau permanent la réduisait).
+  2. **Drapeau absent** : `GET /sessions` répond 200 `{ actif: false }` (aucune donnée, identique pour tout projet) au
+     lieu d'une 404 consignée par le navigateur ; toute autre route et la montée de protocole restent 404.
+  3. **Annotation (RTC-3)** = commentaire Studio de même identifiant, ancré à la révision de la session, plus une ligne
+     `rt_annotations` (point de vue tagué `local-2d` / `local-3d`, mètres ; session `SET NULL`). Rejeu comparé de façon
+     canonique ; autre point de vue avec le même `requestId` = 409.
+  4. **Revue (RTC-4)** : seulement sur une publication de la variante au manifeste figé, ni retirée ni remplacée ;
+     relecteurs = membres du projet tant que la phase 4 d'Organisations n'est pas livrée (adaptateur de droit ensuite).
+  5. **Conservation (RT-Q5, avant RTC-5)** : les durées de RT-D5 § 9 sont retenues telles quelles — présence, pointeurs
+     et caméra jamais enregistrés ; rejeu en mémoire 5 minutes ou 500 événements ; journal de session conservé avec le
+     projet — l'assiduité se limite à ce journal (entrées et sorties, aucun temps de présence calculé) ; annotations :
+     politique des commentaires Studio.
+  6. **Supervision (RTC-5)** : une ligne de journal structurée par minute (`temps-reel : mesures` : connexions, salles,
+     personnes, envois, abandons d'éphémères, fermetures par motif, refus de montée par code), sans contenu ni
+     identifiant ; aucune route publique de mesures.
+  7. **Profil de budgets (RTC-0.4)** : mesuré sur l'environnement de recette (10 sessions × 10 participants, base locale)
+     — p95 de relais 19 ms, 100 reconnexions en 0,3 s ; le profil de référence P.118 sur l'appareil Android de recette et
+     la préproduction restent à valider par le maître d'ouvrage (hors délégation : aucun déploiement).
+
 ## Points restant ouverts (non bloquants pour RTC-0)
 
-- Durées chiffrées de conservation (présence, rejeu, assiduité) : à fixer avant RTC-5 (RT-Q5).
+- ~~Durées chiffrées de conservation (RT-Q5)~~ : retenues par RT-D6 § 5.
 - Profil de référence des budgets (modèle, appareil, réseau) : RTC-0.4.
 - L'Atelier et Documents dans une version ultérieure : décision à part, après la première version.
 
