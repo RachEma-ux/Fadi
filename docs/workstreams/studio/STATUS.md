@@ -1,5 +1,17 @@
 # État — Studio
 
+## Phase B de production livrée côté dépôt — 25 octobre 2026
+
+Branche `ccr-187fd2e6-08dk6e`, base `main@44c6ef4`. Ordre demandé par le maître d'ouvrage : lots de fonctions (point 3), tests des preuves partielles (point 2), portes G1 puis G4 (point 4) ; en parallèle, phase B.
+
+Ce qui a été fait :
+- **`deploy/prod/fadi-prod-auto`**, ses unités systemd, son installateur à empreintes et 121 contrôles à doubles (`deploy/prod/tests/run.sh`, joués en CI). Parmi eux : l'échec simulé de chaque sonde, avec retour à l'image précédente sans restauration de la base, et la sauvegarde non vérifiée, qui bloque tout redémarrage. Recette sur le VPS : [`docs/deploiement-automatique-recette-phase-b.md`](../../deploiement-automatique-recette-phase-b.md).
+- [DOSSIER-G4.md](DOSSIER-G4.md) §4 mis à jour : scripts livrés, installation et recette sur le VPS restantes (administrateur).
+
+Compteurs recalculés du registre : **0 À définir / 92 À faire / 210 En cours / 11 Bloqué / 259 Vérifié / 58 Accepté**. **P630=317/630** (inchangés : les obligations R restent bloquées tant que le service n'est ni installé ni recetté sur le VPS).
+
+Prochaine action : lots F1 (géométrie 3D), F3 (import IFC, modèle externe) et F4 (délégation, observations, traçabilité) en cours ; puis F2 (noyau exact), F5 (rendu, index), point 2, et G1 puis G4.
+
 ## Rapprochement complet et compléments — 25 octobre 2026
 
 Branche `ccr-187fd2e6-08dk6e`, base `main@4e026ac`. Le maître d'ouvrage délègue aussi ses propres tâches : « Exécute tout ce qui reste à faire ».
