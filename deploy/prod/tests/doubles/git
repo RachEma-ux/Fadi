@@ -1,0 +1,11 @@
+#!/bin/bash
+# Enveloppe de git pour fadi-prod-auto : le vrai git travaille sur les dépôts jetables ; seules les mises à jour de la
+# copie (reset) sont ajoutées à MOCK_DIR/ordre, et chaque appel à MOCK_DIR/git.args. MOCK_GIT_FAIL=reset : échec simulé.
+echo "$*" >> "$MOCK_DIR/git.args"
+a=("$@"); i=0
+while [ $i -lt ${#a[@]} ]; do case "${a[$i]}" in -c|-C) i=$((i + 2)) ;; *) break ;; esac; done
+if [ "${a[$i]:-}" = reset ]; then
+  echo "git-reset ${a[*]: -1}" >> "$MOCK_DIR/ordre"
+  [ "${MOCK_GIT_FAIL:-}" = reset ] && { echo "double git : échec simulé (reset)" >&2; exit 3; }
+fi
+exec /usr/bin/git "$@"
