@@ -5,7 +5,7 @@
  */
 import { formatNombre, type EntreeLegende } from "@parcours/geodata-model";
 
-export interface LegendeExport { readonly titre: string; readonly entrees: readonly EntreeLegende[] | null; readonly couleur?: string }
+export interface LegendeExport { readonly titre: string; readonly entrees: readonly EntreeLegende[] | null; readonly couleur?: string; /** Entrées sans effectif (une couleur par entité). */ readonly sansEffectif?: boolean }
 
 export async function composerPng(p: { carte: HTMLCanvasElement; titre: string; date: Date; metresParPixel: number; legendes: readonly LegendeExport[]; attributions: readonly string[]; revision: number }): Promise<Blob> {
   const ratio = p.carte.width / Math.max(1, p.carte.clientWidth || p.carte.width);
@@ -68,8 +68,11 @@ export async function composerPng(p: { carte: HTMLCanvasElement; titre: string; 
     y += 16 * ratio;
     const entrees = l.entrees ?? [{ classe: 0, couleur: l.couleur ?? "#2b8cbe", libelle: "Objets de la couche", effectif: 0 }];
     for (const e of entrees) {
-      g.fillStyle = e.couleur;
-      g.fillRect(x0, y - 10 * ratio, 14 * ratio, 12 * ratio);
+      // Ligne de reste (« … et N autres entités ») : sans pastille.
+      if (e.couleur) {
+        g.fillStyle = e.couleur;
+        g.fillRect(x0, y - 10 * ratio, 14 * ratio, 12 * ratio);
+      }
       if (e.classe === "absente") {
         // Valeur absente : hachures en plus de la couleur (la couleur n'est pas le seul signe).
         g.save();
@@ -83,7 +86,7 @@ export async function composerPng(p: { carte: HTMLCanvasElement; titre: string; 
       }
       g.fillStyle = "#173b43";
       t(11);
-      g.fillText(`${e.libelle}${l.entrees ? ` (${e.effectif})` : ""}`.slice(0, 44), x0 + 20 * ratio, y);
+      g.fillText(`${e.libelle}${l.entrees && !l.sansEffectif ? ` (${e.effectif})` : ""}`.slice(0, 44), e.couleur ? x0 + 20 * ratio : x0, y);
       y += 15 * ratio;
     }
     y += 8 * ratio;

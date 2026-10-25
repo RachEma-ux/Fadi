@@ -19,6 +19,8 @@ export interface Camera {
 
 export type StyleCouche =
   | { readonly mode: "simple"; readonly couleur: string }
+  /** Une couleur par entité (palette qualitative, attribution déterministe : `categories.ts`) ; aucun indicateur. */
+  | { readonly mode: "categories" }
   | {
       readonly mode: "thematique";
       readonly indicateurId: string;
@@ -74,6 +76,7 @@ function lireStyle(x: unknown, chemin: string, erreurs: string[]): StyleCouche |
     if (typeof x["couleur"] !== "string" || !COULEUR.test(x["couleur"])) return erreurs.push(`${chemin}.couleur : couleur #rrggbb attendue`), null;
     return { mode: "simple", couleur: x["couleur"] };
   }
+  if (x["mode"] === "categories") return { mode: "categories" };
   if (x["mode"] === "thematique") {
     const { indicateurId, methode, seuils, couleurs } = x;
     if (typeof indicateurId !== "string" || !ID.test(indicateurId)) erreurs.push(`${chemin}.indicateurId : identifiant attendu`);
@@ -83,7 +86,7 @@ function lireStyle(x: unknown, chemin: string, erreurs: string[]): StyleCouche |
     if (erreurs.length) return null;
     return { mode: "thematique", indicateurId: indicateurId as string, methode: methode as MethodeClassification, seuils: [...(seuils as number[])], couleurs: [...(couleurs as string[])] };
   }
-  return erreurs.push(`${chemin}.mode : simple ou thematique`), null;
+  return erreurs.push(`${chemin}.mode : simple, categories ou thematique`), null;
 }
 
 function lireFiltre(x: unknown, chemin: string, erreurs: string[]): FiltreCouche | null {

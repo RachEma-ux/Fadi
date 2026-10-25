@@ -319,3 +319,23 @@ describe("Recherche", () => {
     expect((await alice.client.get(`${API}/recherche?q=004`)).body.resultats[0]).toMatchObject({ code: "004" });
   });
 });
+
+describe("Une couleur par entité (style categories)", () => {
+  it("six unités : six rangs distincts dans l'ordre des noms ; composition « categories » enregistrée ; couche d'un tiers → 404", async () => {
+    const alice = await compte("gd-k@example.com");
+    const ref = await publierReference();
+    const r = await alice.client.get(`${API}/couches/${ref.coucheId}/categories`);
+    expect(r.status).toBe(200);
+    const cs = r.body.categories as { code: string; nom: string; rang: number }[];
+    expect(cs).toHaveLength(6);
+    expect(cs.find((c) => c.code === "001")).toEqual({ code: "001", nom: "Unité A", rang: 0 });
+    expect(new Set(cs.map((c) => c.rang)).size).toBe(6);
+    // Même résultat au second appel (contenu figé).
+    expect((await alice.client.get(`${API}/couches/${ref.coucheId}/categories`)).body.categories).toEqual(cs);
+    const comp = { ...composition(ref.coucheId, ref.versionId), couches: [{ ...composition(ref.coucheId, ref.versionId).couches[0]!, style: { mode: "categories" } }] };
+    const c = await alice.client.post(`${API}/cartes`).send({ nom: "Par entité", composition: comp });
+    expect(c.status).toBe(201);
+    expect((await alice.client.get(`${API}/cartes/${c.body.id}`)).body.composition).toEqual(comp);
+    expect((await alice.client.get(`${API}/couches/gdcou_inconnue/categories`)).status).toBe(404);
+  });
+});

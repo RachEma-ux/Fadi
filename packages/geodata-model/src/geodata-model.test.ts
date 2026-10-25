@@ -157,3 +157,40 @@ describe("borne d'une couche", () => {
     expect(r.rapport.diagnostics[0]!.code).toBe("limite-objets");
   });
 });
+
+describe("une couleur par entité (style categories)", () => {
+  it("au plus 12 unités : une couleur distincte par unité, dans l'ordre des noms, déterministe", async () => {
+    const { attribuerCategories, couleurCategorie, PALETTE_CATEGORIES } = await import("./index.js");
+    const entites = Array.from({ length: 12 }, (_, i) => ({ code: `MA-${String(12 - i).padStart(2, "0")}`, nom: `Région ${String.fromCharCode(76 - i)}` }));
+    const rangs = attribuerCategories(entites, []);
+    expect(new Set(rangs.values()).size).toBe(12);
+    expect(rangs.get("MA-01")).toBe(0); // « Région A » vient en premier
+    expect(attribuerCategories([...entites].reverse(), [])).toEqual(rangs);
+    expect(new Set(PALETTE_CATEGORIES).size).toBe(12);
+    expect(PALETTE_CATEGORIES).not.toContain("#9e9e9e");
+    expect(couleurCategorie(13)).toBe(PALETTE_CATEGORIES[1]);
+  });
+  it("au-delà de la palette : deux unités voisines n'ont jamais la même couleur", async () => {
+    const { attribuerCategories } = await import("./index.js");
+    // Grille 10 × 10 : chaque cellule touche ses 8 voisines.
+    const entites = Array.from({ length: 100 }, (_, i) => ({ code: `c${i}`, nom: null }));
+    const voisins: [string, string][] = [];
+    for (let y = 0; y < 10; y++) for (let x = 0; x < 10; x++) for (const [dx, dy] of [[1, 0], [0, 1], [1, 1], [1, -1]] as const) {
+      const nx = x + dx, ny = y + dy;
+      if (nx < 10 && ny >= 0 && ny < 10) voisins.push([`c${y * 10 + x}`, `c${ny * 10 + nx}`]);
+    }
+    const rangs = attribuerCategories(entites, voisins);
+    expect(rangs.size).toBe(100);
+    for (const [a, b] of voisins) expect(rangs.get(a)).not.toBe(rangs.get(b));
+    expect(Math.max(...rangs.values())).toBeLessThan(12);
+    // Toute la palette sert, de façon équilibrée (100 unités, 12 couleurs : au plus 9 par couleur).
+    const emplois = [...rangs.values()].reduce((m, r) => m.set(r, (m.get(r) ?? 0) + 1), new Map<number, number>());
+    expect(emplois.size).toBe(12);
+    expect(Math.max(...emplois.values())).toBeLessThanOrEqual(9);
+  });
+  it("le mode est accepté et relu par la composition, sans indicateur ni couleur enregistrés", () => {
+    const couche = { coucheId: "c1", versionId: "v1", visible: true, opacite: 0.8, style: { mode: "categories" }, filtre: null };
+    const r = validerComposition({ ...COMPOSITION_INITIALE, couches: [couche] });
+    expect(r.ok && r.composition.couches[0]!.style).toEqual({ mode: "categories" });
+  });
+});

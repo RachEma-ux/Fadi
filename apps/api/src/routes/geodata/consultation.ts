@@ -4,7 +4,7 @@
  * préparation n'est jamais servie (GEO 08) ; réponses bornées (pagination, plafond d'objets).
  */
 import { Router, type Request } from "express";
-import { lireCoordonnees, lireDroits, OBJETS_PAR_COUCHE, verifierUsage } from "@parcours/geodata-model";
+import { attribuerCategories, lireCoordonnees, lireDroits, OBJETS_PAR_COUCHE, verifierUsage } from "@parcours/geodata-model";
 import { erreur, espacePersonnel, introuvable, requete, VERSION_CONSULTABLE } from "../../lib/geodata/acces.js";
 
 export const consultationRouter = Router();
@@ -198,6 +198,29 @@ consultationRouter.get("/couches/:id/codes", async (req, res) => {
   const cond = req.query["operateur"] === "egal" ? `lower(${expr}) = lower($2)` : `lower(${expr}) LIKE '%' || lower($2) || '%'`;
   const lignes = await requete<{ code: string }>(`SELECT o.code FROM geodata_objets o WHERE o.couche_id = $1 AND ${cond} LIMIT 5000`, prop === "nom" || prop === "code" ? [req.params.id, val] : [req.params.id, val, prop]);
   res.json({ codes: lignes.map((l) => l.code) });
+});
+
+/**
+ * Couleur par entité (style `categories`) : rang de couleur de chaque unité, calculé sur la géométrie de référence (unités
+ * qui se touchent ou se recouvrent = voisines). Le contenu d'une couche est figé : le résultat est conservé en mémoire par
+ * couche (au plus 50 couches).
+ */
+const cacheCategories = new Map<string, { code: string; nom: string | null; rang: number }[]>();
+consultationRouter.get("/couches/:id/categories", async (req, res) => {
+  const couche = await coucheConsultable(await espaceDe(req), req.params.id);
+  if (!couche) return introuvable(res);
+  let categories = cacheCategories.get(req.params.id);
+  if (!categories) {
+    const objets = await requete<{ code: string; nom: string | null }>(`SELECT o.code, o.nom FROM geodata_objets o WHERE o.couche_id = $1 ORDER BY o.code LIMIT $2`, [req.params.id, OBJETS_PAR_COUCHE]);
+    const paires = await requete<{ a: string; b: string }>(
+      `SELECT a.code AS a, b.code AS b FROM geodata_objets a JOIN geodata_objets b ON b.couche_id = a.couche_id AND a.code < b.code AND a.geom && b.geom AND ST_Intersects(a.geom, b.geom)
+        WHERE a.couche_id = $1`, [req.params.id]);
+    const rangs = attribuerCategories(objets, paires.map((p) => [p.a, p.b] as const));
+    categories = objets.map((o) => ({ code: o.code, nom: o.nom, rang: rangs.get(o.code) ?? 0 }));
+    if (cacheCategories.size >= 50) cacheCategories.delete(cacheCategories.keys().next().value!);
+    cacheCategories.set(req.params.id, categories);
+  }
+  res.json({ categories });
 });
 
 /** Fiche d'un objet : attributs exposés, valeurs d'indicateurs (absence avec motif), source et qualité. */

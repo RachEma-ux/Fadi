@@ -13,6 +13,8 @@ export interface ObjetDesigne { readonly coucheId: string; readonly code: string
 export interface DonneesAffichage {
   /** Valeurs par indicateur (code → valeur), pour les styles thématiques. */
   readonly valeurs: ReadonlyMap<string, ReadonlyMap<string, ValeurIndicateur>>;
+  /** Couleur de chaque unité (code → couleur) des couches au style « une couleur par entité ». */
+  readonly categories: ReadonlyMap<string, ReadonlyMap<string, string>>;
   /** Codes retenus par le filtre d'une couche ; absent = pas de filtre. */
   readonly filtres: ReadonlyMap<string, readonly string[]>;
   readonly selection: ObjetDesigne | null;
