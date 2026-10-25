@@ -21,6 +21,8 @@ export type StyleCouche =
   | { readonly mode: "simple"; readonly couleur: string }
   /** Une couleur par entité (palette qualitative, attribution déterministe : `categories.ts`) ; aucun indicateur. */
   | { readonly mode: "categories" }
+  /** Couche raster : symbologie portée par la couche (palette ou classes déclarées), seule l'opacité est réglable. */
+  | { readonly mode: "raster" }
   | {
       readonly mode: "thematique";
       readonly indicateurId: string;
@@ -77,6 +79,7 @@ function lireStyle(x: unknown, chemin: string, erreurs: string[]): StyleCouche |
     return { mode: "simple", couleur: x["couleur"] };
   }
   if (x["mode"] === "categories") return { mode: "categories" };
+  if (x["mode"] === "raster") return { mode: "raster" };
   if (x["mode"] === "thematique") {
     const { indicateurId, methode, seuils, couleurs } = x;
     if (typeof indicateurId !== "string" || !ID.test(indicateurId)) erreurs.push(`${chemin}.indicateurId : identifiant attendu`);
@@ -86,7 +89,7 @@ function lireStyle(x: unknown, chemin: string, erreurs: string[]): StyleCouche |
     if (erreurs.length) return null;
     return { mode: "thematique", indicateurId: indicateurId as string, methode: methode as MethodeClassification, seuils: [...(seuils as number[])], couleurs: [...(couleurs as string[])] };
   }
-  return erreurs.push(`${chemin}.mode : simple, categories ou thematique`), null;
+  return erreurs.push(`${chemin}.mode : simple, categories, raster ou thematique`), null;
 }
 
 function lireFiltre(x: unknown, chemin: string, erreurs: string[]): FiltreCouche | null {

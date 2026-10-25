@@ -2909,13 +2909,30 @@ $$;
 CREATE OR REPLACE TRIGGER geodata_versions_immuables BEFORE UPDATE OR DELETE ON geodata_versions
   FOR EACH ROW EXECUTE FUNCTION geodata_version_immuable();
 -- Contenu d'une version (couches, objets, indicateurs, valeurs) figé dès qu'elle n'est plus en préparation.
+-- Couches raster (D-GD-13) : type de couche « raster » et grille de valeurs (Float32 petit-boutiste compressé par deflate),
+-- figée comme les objets une fois la version sortie de préparation.
+ALTER TABLE geodata_couches DROP CONSTRAINT IF EXISTS geodata_couches_type_geometrie_check;
+ALTER TABLE geodata_couches ADD CONSTRAINT geodata_couches_type_geometrie_check CHECK (type_geometrie IN ('polygone', 'ligne', 'point', 'mixte', 'raster'));
+CREATE TABLE IF NOT EXISTS geodata_rasters (
+  couche_id text PRIMARY KEY REFERENCES geodata_couches (id) ON DELETE CASCADE,
+  largeur integer NOT NULL CHECK (largeur > 0),
+  hauteur integer NOT NULL CHECK (hauteur > 0),
+  ouest double precision NOT NULL,
+  sud double precision NOT NULL,
+  est double precision NOT NULL,
+  nord double precision NOT NULL,
+  nodata double precision,
+  valeurs bytea NOT NULL,
+  description jsonb NOT NULL,
+  CHECK (largeur::bigint * hauteur <= 4000000 AND est > ouest AND nord > sud)
+);
 CREATE OR REPLACE FUNCTION geodata_contenu_fige() RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE
   v text;
 BEGIN
   IF TG_TABLE_NAME = 'geodata_couches' THEN
     SELECT etat INTO v FROM geodata_versions WHERE id = NEW.version_id;
-  ELSIF TG_TABLE_NAME = 'geodata_objets' OR TG_TABLE_NAME = 'geodata_indicateurs' THEN
+  ELSIF TG_TABLE_NAME = 'geodata_objets' OR TG_TABLE_NAME = 'geodata_indicateurs' OR TG_TABLE_NAME = 'geodata_rasters' THEN
     SELECT ve.etat INTO v FROM geodata_couches c JOIN geodata_versions ve ON ve.id = c.version_id WHERE c.id = NEW.couche_id;
   ELSE
     SELECT ve.etat INTO v FROM geodata_indicateurs i JOIN geodata_couches c ON c.id = i.couche_id JOIN geodata_versions ve ON ve.id = c.version_id WHERE i.id = NEW.indicateur_id;
@@ -2928,6 +2945,7 @@ CREATE OR REPLACE TRIGGER geodata_couches_figees BEFORE INSERT OR UPDATE ON geod
 CREATE OR REPLACE TRIGGER geodata_objets_figes BEFORE INSERT OR UPDATE ON geodata_objets FOR EACH ROW EXECUTE FUNCTION geodata_contenu_fige();
 CREATE OR REPLACE TRIGGER geodata_indicateurs_figes BEFORE INSERT OR UPDATE ON geodata_indicateurs FOR EACH ROW EXECUTE FUNCTION geodata_contenu_fige();
 CREATE OR REPLACE TRIGGER geodata_valeurs_figees BEFORE INSERT OR UPDATE ON geodata_valeurs FOR EACH ROW EXECUTE FUNCTION geodata_contenu_fige();
+CREATE OR REPLACE TRIGGER geodata_rasters_figes BEFORE INSERT OR UPDATE ON geodata_rasters FOR EACH ROW EXECUTE FUNCTION geodata_contenu_fige();
 CREATE OR REPLACE FUNCTION geodata_analyse_immuable() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
   RAISE EXCEPTION 'geodata_analyse_immuable';

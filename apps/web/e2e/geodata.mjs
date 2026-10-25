@@ -67,6 +67,8 @@ await inscrire(page, gestionnaire);
 for (const role of ["gestionnaire-donnees", "responsable-publication"]) npmApi("geodata:role", ["--email", gestionnaire, "--role", role]);
 const sortieImport = npmApi("geodata:import-reference", ["--fiche", "apps/api/test-corpus/geodata/synthetique-unites.fiche.json", "--fichier", "apps/api/test-corpus/geodata/synthetique-unites.geojson", "--preparateur", gestionnaire, "--publier-par", gestionnaire].map((a) => (a.startsWith("apps/") ? join(RACINE, a) : a)));
 check("chaîne administrative : jeu synthétique préparé puis publié (ou déjà présent, même empreinte)", /Version (\S+ )?publiée|Version déjà présente/.test(sortieImport), sortieImport.split("\n").filter((l) => /Version/.test(l)).join(" | "));
+const sortieRaster = npmApi("geodata:import-reference", ["--fiche", join(RACINE, "apps/api/test-corpus/geodata/synthetique-raster.fiche.json"), "--preparateur", gestionnaire, "--publier-par", gestionnaire]);
+check("chaîne administrative : grille raster synthétique (GeoTIFF) préparée puis publiée", /Version (\S+ )?publiée|Version déjà présente/.test(sortieRaster), sortieRaster.split("\n").filter((l) => /Version|raster/.test(l)).join(" | "));
 await page.context().clearCookies();
 
 // --- GEO 01 / 02 : compte sans projet, accès direct ---
@@ -233,6 +235,25 @@ await page.locator("[data-gd-export-ok]").waitFor();
 const lienFiche = await page.locator("[data-gd-export-ok] a").getAttribute("href");
 const ficheHtml = await (await page.request.get(`${BASE}${lienFiche}`)).text();
 check("GEO 09 · fiche de sources : attribution et nature synthétique déclarées", ficheHtml.includes("Jeu synthétique GeoData — aucune donnée réelle") && ficheHtml.includes("Empreinte SHA-256"));
+
+// --- Couche raster (D-GD-13) : tuiles d'image, légende en dégradé, valeur au point, nodata « non évaluée » ---
+await page.locator("[data-gd-onglet='catalogue']").click();
+const carteRaster = page.locator("[data-gd-couche-catalogue]").filter({ hasText: "Grille synthétique (test)" });
+await carteRaster.waitFor();
+const reponseTuile = page.waitForResponse((r) => /\/geodata\/api\/raster\/.+\/\d+\/\d+\/\d+\.png$/.test(r.url()), { timeout: 20_000 });
+await carteRaster.locator("[data-gd-ajouter]").click();
+const tuile = await reponseTuile;
+check("raster : tuile d'image servie (PNG)", tuile.status() === 200 && tuile.headers()["content-type"] === "image/png");
+await page.locator("[data-gd-onglet='legende']").click();
+const legendeRaster = page.locator("[data-gd-legende-raster]");
+await legendeRaster.waitFor();
+check("raster : légende en dégradé avec grandeur et unité", (await legendeRaster.locator(".gd-degrade").count()) === 1 && ((await legendeRaster.textContent()) ?? "").includes("Valeur synthétique (u)"));
+const idRaster = (await legendeRaster.getAttribute("data-gd-legende-couche")) ?? "";
+const valeurRaster = await (await page.request.get(`${BASE}/geodata/api/raster/${idRaster}/valeur?lon=-8.79&lat=30.15`)).json();
+const horsRaster = await (await page.request.get(`${BASE}/geodata/api/raster/${idRaster}/valeur?lon=-8.995&lat=30.295`)).json();
+check("raster : valeur au point exacte ; cellule sans donnée « non évaluée » (null, jamais 0)", valeurRaster.valeur === 225 && horsRaster.valeur === null, `${valeurRaster.valeur} / ${horsRaster.valeur}`);
+await page.locator("[data-gd-onglet='couches']").click();
+await page.locator(`[data-gd-couche-active='${idRaster}']`).getByRole("button", { name: "Retirer" }).click();
 
 // --- Accessibilité (axe-core), clavier ---
 await page.addScriptTag({ path: AXE });

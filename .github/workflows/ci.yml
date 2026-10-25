@@ -1097,6 +1097,8 @@ jobs:
           docker exec fadi test -f apps/api/dist/geodata-reference.js
           docker exec fadi test -f apps/api/dist/geodata-sources/geoboundaries-mar-adm1.json
           docker exec fadi test -f apps/api/dist/geodata-sources/geoboundaries-mar-adm2.json
+          # Sources ouvertes (D-GD-12) : une fiche dont les données sont livrées dans l'image se prépare sans réseau.
+          docker exec fadi node apps/api/dist/geodata-reference.js --fiche ourairports-mar-aerodromes --preparateur image@example.com | tee /dev/stderr | grep -q "Version préparée"
       - name: Journal du conteneur
         if: always()
         run: |

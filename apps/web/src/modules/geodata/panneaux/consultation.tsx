@@ -4,8 +4,8 @@
  * (`translate="no"`), arabe compris. Une valeur absente est écrite « Valeur absente » avec son motif, jamais « 0 ».
  */
 import { useEffect, useState } from "react";
-import { couleursPour, formatNombre, legende, libelleAbsence, LIBELLES_USAGES, USAGES, type Composition, type MethodeClassification, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
-import { api, type CoucheRecue, type Disponibilite, type FicheRecue, type LigneTable, type ValeurRecue } from "../client";
+import { couleursPour, degradeCss, formatNombre, legende, libelleAbsence, LIBELLES_USAGES, USAGES, type Composition, type MethodeClassification, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
+import { api, type ValeurRasterRecue, type CoucheRecue, type Disponibilite, type FicheRecue, type LigneTable, type ValeurRecue } from "../client";
 import { entreesCategories, lireSeuilsManuels, styleThematique, type Categorie } from "../composition-ops";
 
 /** Valeur de l'option « une couleur par entité » (jamais un identifiant d'indicateur : ceux-ci commencent par une lettre). */
@@ -95,7 +95,8 @@ export function PanneauCouches(p: {
             {indispo && <p role="status" className="gd-alerte" data-gd-indisponible>{d.motif}</p>}
             {d?.etat === "disponible" && d.versionPlusRecente && <p className="gd-discret">Une version plus récente de cette source est publiée ; la carte garde la version enregistrée.</p>}
             <label className="gd-champ">{`Opacité : ${Math.round(k.opacite * 100)} %`}<input type="range" min={0} max={100} value={Math.round(k.opacite * 100)} onChange={(e) => p.onOpacite(k.coucheId, Number(e.target.value) / 100)} /></label>
-            {c && (
+            {c?.raster && <p className="gd-discret" data-gd-raster-info={k.coucheId}><span translate="no">{`${c.raster.grandeur}${c.raster.unite ? ` (${c.raster.unite})` : ""}`}</span> · Couche raster : symbologie de la source, touchez la carte pour lire une valeur.</p>}
+            {c && !c.raster && (
               <label className="gd-champ">Coloration
                 <select value={k.style.mode === "thematique" ? k.style.indicateurId : k.style.mode === "categories" ? ENTITES : ""} onChange={async (e) => {
                   const id = e.target.value;
@@ -113,7 +114,7 @@ export function PanneauCouches(p: {
             <div className="gd-actions">
               <button type="button" onClick={() => p.onDeplacer(k.coucheId, 1)} disabled={i === 0} aria-label={`Monter ${c?.titre ?? ""}`}>Monter</button>
               <button type="button" onClick={() => p.onDeplacer(k.coucheId, -1)} disabled={i === ordre.length - 1} aria-label={`Descendre ${c?.titre ?? ""}`}>Descendre</button>
-              <button type="button" onClick={() => p.onTable(k.coucheId)} disabled={!!indispo}>Table</button>
+              <button type="button" onClick={() => p.onTable(k.coucheId)} disabled={!!indispo || !!c?.raster}>Table</button>
               <button type="button" onClick={() => p.onRetirer(k.coucheId)}>Retirer</button>
             </div>
           </li>
@@ -131,6 +132,25 @@ export function PanneauLegende(p: { composition: Composition; couches: Map<strin
       {visibles.map((k) => {
         const c = p.couches.get(k.coucheId);
         if (k.style.mode === "simple") return <section key={k.coucheId} className="gd-legende"><h3 translate="no">{c?.titre ?? k.coucheId}</h3><p className="gd-entree"><span className="gd-pastille" style={{ background: k.style.couleur }} />Objets de la couche</p></section>;
+        if (k.style.mode === "raster") {
+          const r = c?.raster;
+          if (!r) return null;
+          return (
+            <section key={k.coucheId} className="gd-legende" data-gd-legende-couche={k.coucheId} data-gd-legende-raster>
+              <h3 translate="no">{c.titre}</h3>
+              <p translate="no">{`${r.grandeur}${r.unite ? ` (${r.unite})` : ""}`}</p>
+              {r.classes ? (
+                <ul className="gd-entrees">{r.classes.map((cl) => <li key={cl.valeur} className="gd-entree"><span className="gd-pastille" style={{ background: cl.couleur }} /><span translate="no">{cl.libelle}</span></li>)}</ul>
+              ) : (
+                <div className="gd-degrade-bloc">
+                  <div className="gd-degrade" style={{ background: degradeCss(r.palette) }} role="img" aria-label={`Dégradé de ${formatNombre(r.min, 2)} à ${formatNombre(r.max, 2)}`} />
+                  <div className="gd-degrade-bornes"><span>{formatNombre(r.min, Math.abs(r.min) >= 100 ? 0 : 2)}</span><span>{formatNombre(r.max, Math.abs(r.max) >= 100 ? 0 : 2)}</span></div>
+                </div>
+              )}
+              <p className="gd-discret">Cellule sans valeur : transparente (non évaluée, jamais zéro).</p>
+            </section>
+          );
+        }
         if (k.style.mode === "categories") {
           const cs = p.categories.get(k.coucheId);
           return (
@@ -281,3 +301,18 @@ export function TableAttributs(p: { couche: CoucheRecue; onSelection(code: strin
   );
 }
 
+
+/** Valeur d'une couche raster au point touché (D-GD-13) : « non évaluée » hors emprise ou sans donnée, jamais zéro. */
+export function FicheValeur(p: { titre: string; etat: "chargement" | "erreur" | "ok"; recue?: ValeurRasterRecue; erreur?: string; onFermer(): void }) {
+  if (p.etat === "chargement") return <p role="status" className="gd-etat">Lecture de la valeur…</p>;
+  if (p.etat === "erreur") return <p role="alert" className="gd-etat">{p.erreur}</p>;
+  const r = p.recue!;
+  return (
+    <article className="gd-fiche" data-gd-valeur-raster>
+      <h3 translate="no">{p.titre}</h3>
+      <p className="gd-discret">{`lon ${r.lon.toFixed(5)} · lat ${r.lat.toFixed(5)}`}</p>
+      <dl className="gd-valeurs"><div data-absente={r.valeur === null ? "" : undefined}><dt translate="no">{r.grandeur}</dt><dd>{r.valeur === null ? "Non évaluée (hors emprise ou cellule sans donnée)" : r.classe ? <span translate="no">{r.classe}</span> : `${formatNombre(r.valeur, Math.abs(r.valeur) >= 100 ? 0 : 2)}${r.unite ? ` ${r.unite}` : ""}`}</dd></div></dl>
+      <div className="gd-actions"><button type="button" onClick={p.onFermer}>Fermer</button></div>
+    </article>
+  );
+}

@@ -15,6 +15,8 @@ export interface DonneesAffichage {
   readonly valeurs: ReadonlyMap<string, ReadonlyMap<string, ValeurIndicateur>>;
   /** Couleur de chaque unité (code → couleur) des couches au style « une couleur par entité ». */
   readonly categories: ReadonlyMap<string, ReadonlyMap<string, string>>;
+  /** Couches raster de la composition (tuiles d'image, D-GD-13). */
+  readonly rasters: ReadonlySet<string>;
   /** Codes retenus par le filtre d'une couche ; absent = pas de filtre. */
   readonly filtres: ReadonlyMap<string, readonly string[]>;
   readonly selection: ObjetDesigne | null;
@@ -26,7 +28,8 @@ export interface DonneesAffichage {
 
 export interface EvenementsMoteur {
   surDeplacement(camera: Composition["camera"]): void;
-  surClic(objet: ObjetDesigne | null): void;
+  /** Clic en navigation : objet touché (ou null) et point cliqué (valeur d'une couche raster). */
+  surClic(objet: ObjetDesigne | null, point: { lon: number; lat: number }): void;
   /** Tracé en cours : sommets [lon, lat] (mesures en direct). */
   surTrace(outil: OutilCarte, sommets: readonly [number, number][]): void;
   /** Tracé terminé (double-clic, Entrée ou « Terminer »). */

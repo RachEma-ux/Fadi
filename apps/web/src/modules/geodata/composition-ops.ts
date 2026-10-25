@@ -3,7 +3,7 @@
  * visibilité, opacité, style et filtre d'une couche, et état d'enregistrement. La composition locale n'est écrite au
  * serveur que par l'action « Enregistrer » ; déplacer la carte la rend seulement « non enregistrée ».
  */
-import { calculerSeuils, couleurCategorie, couleursPour, memeComposition, type CoucheComposee, type EntreeLegende, type Composition, type FiltreCouche, type MethodeClassification, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
+import { calculerSeuils, couleurCategorie, couleurPixel, formatNombre, type DescriptionRaster, couleursPour, memeComposition, type CoucheComposee, type EntreeLegende, type Composition, type FiltreCouche, type MethodeClassification, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
 
 export type EtatEnregistrement =
   | { readonly etat: "nouvelle" }
@@ -80,4 +80,15 @@ export function entreesCategories(cs: readonly Categorie[], max = 60): EntreeLeg
   const entrees: EntreeLegende[] = tries.slice(0, max).map((c, i) => ({ classe: i, couleur: couleurCategorie(c.rang), libelle: c.nom ?? c.code, effectif: 1 }));
   if (tries.length > max) entrees.push({ classe: max, couleur: "", libelle: `… et ${tries.length - max} autres entités (couleurs visibles sur la carte)`, effectif: tries.length - max });
   return entrees;
+}
+
+/** Légende d'une couche raster : classes déclarées, ou cinq paliers de la palette entre ses bornes (unité comprise). */
+export function entreesRaster(d: DescriptionRaster): EntreeLegende[] {
+  const hex = (c: readonly number[]) => `#${c.slice(0, 3).map((x) => x.toString(16).padStart(2, "0")).join("")}`;
+  if (d.classes) return d.classes.map((c, i) => ({ classe: i, couleur: c.couleur, libelle: c.libelle, effectif: 0 }));
+  const fmt = (x: number) => `${formatNombre(x, Math.abs(x) >= 100 ? 0 : 2)}${d.unite ? ` ${d.unite}` : ""}`;
+  return [0, 0.25, 0.5, 0.75, 1].map((t, i) => {
+    const v = d.min + (d.max - d.min) * t;
+    return { classe: i, couleur: hex(couleurPixel(v, d)), libelle: `${i === 0 ? "≤ " : i === 4 ? "≥ " : ""}${fmt(v)}`, effectif: 0 };
+  });
 }
