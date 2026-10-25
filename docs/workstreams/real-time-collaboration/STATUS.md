@@ -1,12 +1,12 @@
 # Temps réel (Real-time Collaboration) — Statut
 
-Mis à jour : 2026-10-24 (UTC).
+Mis à jour : 2026-10-25 (UTC).
 
 ## État
 
-**En cours — exécution des lots RTC-1 à RTC-5 (RT-D4, délégation).** RTC-0 fusionné (PR #284). **RTC-1 implémenté et
-vérifié en local** (socle des sessions et canal ; [compte rendu](lots/rtc-1.md)) ; CI et fusion par sa PR. RTC-2 à
-RTC-5 à suivre, un lot par PR.
+**En cours — exécution des lots RTC-1 à RTC-5 (RT-D4, délégation).** RTC-0 fusionné (PR #284). **RTC-1 fusionné**
+(PR #288, CI verte ; [compte rendu](lots/rtc-1.md)). **RTC-2 implémenté et vérifié en local** (vue partagée Studio ;
+[compte rendu](lots/rtc-2.md)) ; CI et fusion par sa PR. RTC-3 à RTC-5 à suivre, un lot par PR.
 
 ## Faits vérifiés
 
@@ -36,7 +36,7 @@ RTC-5 à suivre, un lot par PR.
 
 - Issue : https://github.com/RachEma-ux/Fadi/issues/283
 - Branche de tâche : `ccr-93a486a1-cbijf8`
-- Pull Request : https://github.com/RachEma-ux/Fadi/pull/284
+- Pull Requests : #284 (RTC-0), #288 (RTC-1), PR du lot RTC-2
 
 ## Préconditions de clôture
 

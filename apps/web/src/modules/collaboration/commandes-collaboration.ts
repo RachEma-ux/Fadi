@@ -13,7 +13,17 @@ export type CommandeCollaboration =
   | "ajouter-participant" | "retirer-participant" | "transferer-animation" | "modifier-message" | "retirer-message"
   | "repondre-demande" | "cloturer-demande" | "rouvrir-demande" | "reattribuer-demande"
   // Participants et équipe (Issue #262, phase 2).
-  | CommandeParticipants;
+  | CommandeParticipants
+  // Temps réel (Issue #283, RT-D5 § 10).
+  | CommandeTempsReel;
+
+/**
+ * Sessions en direct du Studio (Issue #283, RTC-2) : chaque commande a sa propre icône, sa barre (bandeau de session,
+ * ligne d'un participant) et un raccourci Ctrl+Alt+Maj+lettre (RT-D5 § 10). Aucune ne donne de droit sur le projet.
+ */
+export type CommandeTempsReel =
+  | "ouvrir-session" | "rejoindre-session" | "quitter-session" | "suivre-presentateur" | "naviguer-librement" | "presenter"
+  | "designer-presentateur" | "transmettre-hote" | "reprendre-animation" | "afficher-revision-session" | "passer-revision" | "clore-session";
 
 /**
  * Participants et équipe (Issue #262, phase 2) : chaque commande de l'annuaire a sa propre icône, sa barre (en-tête de
@@ -37,7 +47,8 @@ export interface Raccourci {
 export interface DefinitionCommande {
   libelle: string;
   /** Où la commande agit : sa barre. */
-  barre: "rédaction" | "fil" | "membres" | "conversations" | "conversation" | "message" | "demandes" | "demande" | "annuaire" | "participant" | "rôles";
+  barre: "rédaction" | "fil" | "membres" | "conversations" | "conversation" | "message" | "demandes" | "demande" | "annuaire" | "participant" | "rôles"
+    | "session" | "participant-session";
   raccourci: Raccourci;
   /** Tracés SVG (24 × 24) de son icône propre. */
   icone: readonly string[];
@@ -56,6 +67,8 @@ const altMajSigne = (code: string, signe: string): Raccourci => ({ code, libelle
  * raccourci unique dans Fadi. Ces commandes agissent là où se trouve le focus (en-tête de l'annuaire, ligne du participant).
  */
 const ctrlAltMaj = (code: string, signe: string): Raccourci => ({ code, libelle: `Ctrl+Alt+Maj+${signe}`, aria: `Control+Alt+Shift+${signe}`, ctrl: true });
+/** Ctrl+Alt+Maj+lettre (Temps réel, RT-D5 § 10) : aucune autre commande de Fadi n'emploie cette combinaison. */
+const ctrlAltMajLettre = (lettre: string): Raccourci => ctrlAltMaj(`Key${lettre}`, lettre);
 
 export const COMMANDES_COLLABORATION: Readonly<Record<CommandeCollaboration, DefinitionCommande>> = Object.freeze({
   // Case de rédaction : œil ouvert (le fil sera lu par les lecteurs).
@@ -167,7 +180,38 @@ export const COMMANDES_COLLABORATION: Readonly<Record<CommandeCollaboration, Def
     libelle: "Rouvrir le projet", barre: "annuaire", raccourci: ctrlAltMaj("Equal", "="),
     icone: ["M3 7h7l2 2h9v3", "M3 7v13h15l3-8H6l-3 8"],
   },
+  // --- Temps réel (Issue #283, RTC-2) ---
+  // Ouvrir une session : écran et onde.
+  "ouvrir-session": { libelle: "Ouvrir une session en direct", barre: "session", raccourci: ctrlAltMajLettre("O"), icone: ["M3 5h18v11H3z", "M8 20h8", "M12 16v4", "M9 10.5a3 3 0 0 1 6 0"] },
+  // Rejoindre : flèche entrante dans un cadre.
+  "rejoindre-session": { libelle: "Rejoindre la session", barre: "session", raccourci: ctrlAltMajLettre("J"), icone: ["M14 3h6v18h-6", "M3 12h11", "M10 8l4 4-4 4"] },
+  // Quitter : flèche sortante d'un cadre.
+  "quitter-session": { libelle: "Quitter la session", barre: "session", raccourci: ctrlAltMajLettre("Q"), icone: ["M10 3H4v18h6", "M9 12h11", "M16 8l4 4-4 4"] },
+  // Suivre le présentateur : œil et lien.
+  "suivre-presentateur": { libelle: "Suivre le présentateur", barre: "session", raccourci: ctrlAltMajLettre("F"), icone: ["M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z", "M12 9v6", "M9 12h6"] },
+  // Naviguer librement : boussole.
+  "naviguer-librement": { libelle: "Naviguer librement", barre: "session", raccourci: ctrlAltMajLettre("F"), icone: ["M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z", "M16 8l-2.5 5.5L8 16l2.5-5.5z"] },
+  // Présenter : chevalet.
+  "presenter": { libelle: "Présenter", barre: "session", raccourci: ctrlAltMajLettre("P"), icone: ["M3 4h18", "M5 4v10h14V4", "M12 14v3", "M8 21l4-4 4 4"] },
+  // Désigner le présentateur : personne et chevalet.
+  "designer-presentateur": { libelle: "Désigner comme présentateur", barre: "participant-session", raccourci: ctrlAltMajLettre("D"), icone: ["M7 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", "M2 15a5 5 0 0 1 10 0", "M14 6h8v7h-8z", "M18 13v3"] },
+  // Transmettre l'animation : couronne et flèche.
+  "transmettre-hote": { libelle: "Transmettre l’animation", barre: "participant-session", raccourci: ctrlAltMajLettre("H"), icone: ["M3 8l4 3 5-6 5 6 4-3-2 10H5z", "M8 21h8"] },
+  // Reprendre l'animation : couronne et flèche circulaire.
+  "reprendre-animation": { libelle: "Reprendre l’animation", barre: "session", raccourci: ctrlAltMajLettre("R"), icone: ["M4 9l3 2 5-5 5 5 3-2-1.5 7h-13z", "M4 21a8 8 0 0 0 16 0", "M20 18v3h-3"] },
+  // Afficher la révision de la session : document et loupe.
+  "afficher-revision-session": { libelle: "Afficher la révision de la session", barre: "session", raccourci: ctrlAltMajLettre("V"), icone: ["M6 2h9l5 5v8", "M6 2v20h7", "M18 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", "M22 23l-2-2"] },
+  // Passer à la nouvelle révision : document et flèche vers le haut.
+  "passer-revision": { libelle: "Passer la session à la nouvelle révision", barre: "session", raccourci: ctrlAltMajLettre("N"), icone: ["M6 2h9l5 5v15H6z", "M13 18v-8", "M10 13l3-3 3 3"] },
+  // Clore la session : écran barré.
+  "clore-session": { libelle: "Clore la session", barre: "session", raccourci: ctrlAltMajLettre("C"), icone: ["M3 5h18v11H3z", "M8 20h8", "M9 8l6 5", "M15 8l-6 5"] },
 });
+
+/** Commandes des sessions en direct (Issue #283). */
+export const COMMANDES_TEMPS_REEL: readonly CommandeTempsReel[] = [
+  "ouvrir-session", "rejoindre-session", "quitter-session", "suivre-presentateur", "naviguer-librement", "presenter",
+  "designer-presentateur", "transmettre-hote", "reprendre-animation", "afficher-revision-session", "passer-revision", "clore-session",
+];
 
 /** Commandes du module Communication (COM-D14). */
 export const COMMANDES_COM: readonly CommandeCollaboration[] = [
@@ -184,6 +228,7 @@ export const BASCULE_AUDIENCE: readonly CommandeCollaboration[] = ["rendre-visib
 /** Bascules : les deux sens d'un même bouton partagent leur raccourci, et seulement entre eux. */
 export const BASCULES: readonly (readonly CommandeCollaboration[])[] = [
   BASCULE_AUDIENCE, ["suspendre-participation", "reactiver-participation"], ["clore-projet", "rouvrir-projet"],
+  ["suivre-presentateur", "naviguer-librement"],
 ];
 
 /**

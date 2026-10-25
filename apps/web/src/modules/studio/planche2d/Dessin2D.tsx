@@ -5,7 +5,7 @@
  * Les gestes (molette, panoramique, rectangle, glisser) sont interprétés par l'espace de travail.
  * Rendus par type : formes (`rendus/formes.tsx`), cotes (`rendus/cote.tsx`), aperçu du geste (`rendus/apercu.tsx`).
  */
-import type { MouseEvent, PointerEvent, Ref } from "react";
+import type { MouseEvent, PointerEvent, ReactNode, Ref } from "react";
 import type { StudioDocument, StudioPoint, StudioShape } from "@parcours/atelier-model";
 import { estSelectionnable, estVisible } from "./calques";
 import { viewBox, type Cadre, type PointAccroche } from "./geometrie-2d";
@@ -53,9 +53,11 @@ export interface Dessin2DProps {
   surSelection: (id: string, ajouter: boolean) => void;
   /** Murs et ouvertures (A.4) : objet architectural sélectionné, sa désignation, clics vers la planche (outil Ouverture). */
   architecture?: { selection: ReadonlySet<string>; surSelection: (id: string, ajouter: boolean) => void; versPlanche: boolean };
+  /** Surimpression dessinée par-dessus (sessions en direct : pointeurs et sélections des autres participants), jamais une donnée. */
+  superposition?: ReactNode;
 }
 
-export function Dessin2D({ svgRef, doc, cadre, pas, outil, selection, trace, survol, rectangle, glissement, apercuForme, sommetsPoses = [], clicsVersPlanche, surPlanche, surSurvol, surPointeurBas, surPointeurHaut, surClicCapture, surSelection, architecture }: Dessin2DProps) {
+export function Dessin2D({ svgRef, doc, cadre, pas, outil, selection, trace, survol, rectangle, glissement, apercuForme, sommetsPoses = [], clicsVersPlanche, surPlanche, surSurvol, surPointeurBas, surPointeurHaut, surClicCapture, surSelection, architecture, superposition }: Dessin2DProps) {
   const visible = (layerId: string | undefined) => estVisible(doc, layerId);
   return (
     <svg ref={svgRef} viewBox={viewBox(cadre)} role="group" aria-label="Planche de dessin 2D" data-studio-outil-actif={outil} data-studio-glissement={glissement || undefined}
@@ -74,6 +76,7 @@ export function Dessin2D({ svgRef, doc, cadre, pas, outil, selection, trace, sur
         <Annotation key={a.id} a={a} choisie={selection.has(a.id)} selectionnable={estSelectionnable(doc, a.layerId)} surSelection={surSelection} versPlanche={clicsVersPlanche(a)} />
       ))}
       <Apercu cadre={cadre} outil={outil} trace={trace} survol={survol} rectangle={rectangle} apercuForme={apercuForme} sommetsPoses={sommetsPoses} />
+      {superposition}
     </svg>
   );
 }

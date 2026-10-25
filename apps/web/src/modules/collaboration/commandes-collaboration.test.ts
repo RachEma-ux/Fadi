@@ -10,7 +10,7 @@ import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { BASCULES, COMMANDES_COLLABORATION, COMMANDES_COM, declenche, propsRaccourci, type CommandeCollaboration } from "./commandes-collaboration";
+import { BASCULES, COMMANDES_COLLABORATION, COMMANDES_COM, COMMANDES_TEMPS_REEL, declenche, propsRaccourci, type CommandeCollaboration } from "./commandes-collaboration";
 import { IconeCollaboration, RaccourciCollaboration } from "./IconeCollaboration";
 
 const SRC = new URL("../../", import.meta.url).pathname;
@@ -37,6 +37,8 @@ const ECRANS: Record<CommandeCollaboration, string[]> = {
   // Participants et équipe (Issue #262, phase 2) : en-tête de l'annuaire, ligne du participant, formulaire des rôles.
   ...Object.fromEntries((["nouveau-contact", "modifier-participation", "attribuer-role", "retirer-role", "suspendre-participation", "reactiver-participation",
     "terminer-participation", "retour-participant", "effacer-contact", "clore-projet", "rouvrir-projet"] as const).map((c) => [c, ["modules/collaboration/Participants.tsx"]])),
+  // Temps réel (Issue #283) : bandeau de session et ligne d'un participant, dans le même écran.
+  ...Object.fromEntries(COMMANDES_TEMPS_REEL.map((c) => [c, ["modules/studio/temps-reel/BandeauSession.tsx"]])),
 } as Record<CommandeCollaboration, string[]>;
 
 function sources(dir: string): string[] {
@@ -115,6 +117,18 @@ describe("Règle d'or — commandes de collaboration (audience, export du lecteu
     expect(declenche(t("Digit5"), "nouvelle-conversation")).toBe(false);
     const panneau = lire(PANNEAU_COM);
     expect(panneau.includes("BoutonCommande") && panneau.includes("<IconeCollaboration commande={commande}") && panneau.includes("<RaccourciCollaboration commande={commande}") && panneau.includes("propsRaccourci(commande)")).toBe(true);
+  });
+
+  it("Temps réel (Issue #283) : douze commandes, Ctrl+Alt+Maj+lettre, touche physique ; suivre et naviguer librement sont une bascule", () => {
+    expect(COMMANDES_TEMPS_REEL).toHaveLength(12);
+    for (const c of COMMANDES_TEMPS_REEL) expect(COMMANDES_COLLABORATION[c].raccourci.libelle, c).toMatch(/^Ctrl\+Alt\+Maj\+[A-Z]$/);
+    const t = (code: string, ctrlKey = true) => ({ code, altKey: true, shiftKey: true, ctrlKey, metaKey: false });
+    expect(declenche(t("KeyO"), "ouvrir-session")).toBe(true);
+    expect(declenche(t("KeyO", false), "ouvrir-session")).toBe(false);
+    expect(declenche(t("KeyF"), "suivre-presentateur") && declenche(t("KeyF"), "naviguer-librement")).toBe(true);
+    expect(propsRaccourci("clore-session")["aria-keyshortcuts"]).toBe("Control+Alt+Shift+C");
+    const bandeau = lire("modules/studio/temps-reel/BandeauSession.tsx");
+    expect(bandeau.includes("<IconeCollaboration commande={commande}") && bandeau.includes("<RaccourciCollaboration commande={commande}") && bandeau.includes("propsRaccourci(commande)")).toBe(true);
   });
 
   it("rendu : icône SVG décorative, raccourci affiché", () => {

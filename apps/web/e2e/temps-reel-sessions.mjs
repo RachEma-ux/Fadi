@@ -127,7 +127,8 @@ const cP1 = await canal(proprio.cookie()), cE1 = await canal(editeur.cookie()), 
 for (const c of [cP1, cE1, cL1]) c.envoyer({ type: "rejoindre", sessionId: sid });
 const etatL = await cL1.attendre((m) => m.type === "etat");
 check("le lecteur reçoit l'état de la session (révision épinglée)", etatL?.session?.revisionId === revision1 && etatL.session.presentateurId === ids.proprio);
-const presence = await cL1.attendre((m) => m.type === "participants" && m.participants.length === 3);
+// Selon l'ordre d'arrivée, la liste complète vient dans l'état (dernier arrivé) ou dans une diffusion « participants ».
+const presence = await cL1.attendre((m) => (m.type === "participants" || m.type === "etat") && m.participants.length === 3);
 check("présence : trois personnes, hôte et présentateur nommés", !!presence && presence.participants.find((p) => p.userId === ids.proprio)?.roles.join() === "hote,presentateur");
 const camera = { projection: "perspective", position: { x: 12, y: -9, z: 7 }, target: { x: 2, y: 0, z: 0 }, fov: 45 };
 cP1.envoyer({ type: "vue", affichage: "3d", camera });
