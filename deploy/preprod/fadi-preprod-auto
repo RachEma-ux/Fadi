@@ -39,7 +39,9 @@ umask 077
 
 REPO_API=https://api.github.com/repos/RachEma-ux/Fadi
 CONTROLES_REQUIS="validate e2e image"
-E2E_COURT="sandbox-module parcours-scenario"
+# Jeu court : recettes sans lecture de courriel (la préproduction n'envoie jamais aux domaines réservés des comptes de
+# recette ; parcours-scenario lit le lien de vérification depuis c6818eb et échouait à chaque déploiement).
+E2E_COURT="sandbox-module accueils-design studio-exemple-p118"
 APP_URL=http://127.0.0.1:3101
 BUDGET_MIN=10
 REFUS_DELAI=900
