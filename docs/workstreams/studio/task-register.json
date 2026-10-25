@@ -533,7 +533,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-09",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Contradictions arbitrées (P-09) : fonctions communes aux quatre domaines, workflow par étude, ROUTE-09 final, recette déléguée (P-08 remplace P-07 point 1)."
@@ -1668,7 +1668,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-02",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -1799,7 +1799,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-02",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Une seule personne habilitée réelle (maître d’ouvrage) ; aucun réviseur humain indépendant identifié (profil solo D05)."
@@ -5618,7 +5618,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-09",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Contrat final : ADR-STUDIO-NAV-01 §1 (P-03) et paramètres P-08 I.4-03 ; DOSSIER-PILOTE.md."
@@ -8958,7 +8958,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-09",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -9320,7 +9320,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-09",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -9505,7 +9505,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-09",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -9683,7 +9683,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-09",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -9870,7 +9870,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-09",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -10769,7 +10769,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-11",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "G1 franchie avec réserves : 48 contrats de routes non versionnés ; décisions, fonctions absentes et mesures du point 2 dues avant G4."
@@ -11073,7 +11073,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-05",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -11637,7 +11637,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-05",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -11782,7 +11782,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -12065,7 +12065,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-05",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -14194,7 +14194,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -15021,7 +15021,7 @@
         ],
         "preparation_initiale": "ADR navigation + DEC-03 ; G3 avant code"
       },
-      "statut": "À faire",
+      "statut": "Accepté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -15045,6 +15045,14 @@
           "fichier": "docs/ai-team/reports/mission-003/A2/LOT-I.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "decision_deleguee",
+          "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "section": "P-12",
+          "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
+          "limite": "Lot I accepté pleinement : édition et sauvegarde métier livrées et recettées (studio-preuves-d1, parcours A, B, C)."
         }
       ],
       "github": {
@@ -15054,17 +15062,18 @@
       },
       "blocage": {
         "cause": null,
-        "responsable": "Chef de projet",
-        "essais_effectues": "Décisions et autorisations levées (ADR-STUDIO-PILOTE-01, P-04 et P-05).",
+        "responsable": "Maître d’ouvrage (délégation au chef de projet)",
+        "essais_effectues": "Achèvement Studio",
         "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (décision requise) : Acte d'acceptation du lot I (restreinte « intégration technique » ou pleine) absent ; décision humaine. Les conditions techniques sont désormais aussi couvertes par studio-preuves-d1.mjs (I.1-01, I.2-01, I.3-02, I.5-02 à I.5-04).",
+      "suite": "Lot I accepté pleinement : édition et sauvegarde métier livrées et recettées (studio-preuves-d1, parcours A, B, C).",
       "composants_candidats": "apps/web/src/App.tsx ; routes/AppShell.tsx ; routes/ProjectShell.tsx ; lib/use-immersive.ts",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": true,
+        "nature": "decision"
       },
       "historique": [
         {
@@ -15100,6 +15109,13 @@
           "statut": "À faire",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "ADR-STUDIO-PILOTE-01 P-12 (délégation du maître d’ouvrage, 2026-10-25)",
+          "statut_precedent": "À faire",
+          "statut": "Accepté",
+          "preuve": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
+          "limite": "Décision prise sous délégation ; aucune validation humaine inventée."
         }
       ],
       "preparation_documentaire": {
@@ -15540,7 +15556,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -15677,7 +15693,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -16006,11 +16022,11 @@
         ],
         "preparation_initiale": "DEC-01/02/03/12/18 ; G3 avant code"
       },
-      "statut": "À faire",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Exécuté",
+        "portee": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)"
       },
       "preuves": [
         {
@@ -16030,6 +16046,17 @@
           "fichier": "docs/ai-team/reports/mission-003/A2/LOT-A.1.md",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "test_automatise",
+          "fichier": "apps/api/src/testing/revue-g1.test.ts",
+          "controles": [
+            "G1-03 — revue fonction par fonction : écarts > aucune fonction livrée sans source, sans contrat ou sans test hors des écarts connus",
+            "G1-03 — revue fonction par fonction : écarts > les manques calculés sont exactement les écarts connus : aucun écart fantôme, aucun écart caché",
+            "G1-03 — rapport publié > docs/workstreams/studio/REVUE-G1-03.md est celui que ce test calcule (régénéré, comparé à l'octet près)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Obligation de vérification dont chaque scénario cité est lui-même vérifié par un test exécuté en CI ; rendu logiciel, appareils réels non évalués."
         }
       ],
       "github": {
@@ -16040,14 +16067,14 @@
       "blocage": {
         "cause": null,
         "responsable": "Chef de projet",
-        "essais_effectues": "Décisions et autorisations levées (ADR-STUDIO-PILOTE-01, P-04 et P-05).",
+        "essais_effectues": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)",
         "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (décision requise) : Critère sans liste close : « les API/adaptateurs nécessaires » doivent être énumérés par le maître d'ouvrage (ou le chef de projet) pour être confrontés aux routes testées ; les routes étude / variante / révision / commandes / publications / dossiers / modèles externes sont déjà couvertes par leurs recettes.",
+      "suite": "Rejouer sur le build candidat figé au moment de G4.",
       "composants_candidats": "packages/atelier-model/src ; packages/planche-model/src ; apps/api/src/db/schema.ts",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -16085,6 +16112,13 @@
           "statut": "À faire",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)",
+          "statut_precedent": "À faire",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -21699,7 +21733,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -21960,7 +21994,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -24782,7 +24816,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Protocole approuvé ; mesures sans verdict ni gain annoncé."
@@ -30515,7 +30549,7 @@
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
           "limite": "DEC-08 : SVG retenu ; aucun renderer alternatif imposé.",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98"
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099"
         }
       ],
       "github": {
@@ -30763,7 +30797,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -32363,7 +32397,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Mesurée par la recette studio-memoire (TEST-037) ; seuil fixé après mesure."
@@ -36744,7 +36778,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -36882,7 +36916,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -37942,7 +37976,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-06",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Aucun mode IA retenu au pilote (D02) ; « Illustration IA » annoncée non disponible, sans déclencheur ; retenir un mode rouvre l’obligation."
@@ -38141,7 +38175,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-06",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Instruit par DEC-15 : extensions et MCP exclus du pilote ; option conservée au backlog."
@@ -41501,11 +41535,11 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "À faire",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Exécuté",
+        "portee": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)"
       },
       "preuves": [
         {
@@ -41535,6 +41569,31 @@
           "auteur": "A1",
           "date_UTC": "2026-10-18",
           "limite": "État de préparation documentaire ; aucune réalisation logicielle, conformité, gate ou acceptation métier déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "fichier": "apps/web/e2e/studio-dossier.mjs",
+          "controles": [
+            "TEST-001 : deux clics tracent une ligne sur la planche 2D",
+            "TEST-001 : cote accrochée à la ligne, valeur mesurée",
+            "TEST-001 : enregistré — révision avec une ligne et une cote, sans extrusion ni solide (planche 2D seule)",
+            "TEST-001 : rouverte dans une nouvelle session, la ligne et la cote reviennent du serveur",
+            "E.3-07 : revue, approbation liée au manifeste, diffusion"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Obligation de vérification dont chaque scénario cité est lui-même vérifié par un test exécuté en CI ; rendu logiciel, appareils réels non évalués."
+        },
+        {
+          "type": "recette_e2e",
+          "fichier": "apps/web/e2e/studio-faces.mjs",
+          "controles": [
+            "TEST-002 : étude neuve, document vide (aucun objet 2D, aucun solide)",
+            "TEST-002 / TR-EX-005 : sommet poussé de 1 m — même solide, hauteur 4 m, volume recalculé 8 m³",
+            "TEST-002 : après Ctrl+S, le document relu a un solide, même identifiant, 2,5 × 1 × 4 m, aucun objet 2D",
+            "TEST-002 : vue plane dérivée — coupe à z = 3,5 m (atteinte par la seule face poussée) : 4 contours du solide, provenance, non modifiable"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Obligation de vérification dont chaque scénario cité est lui-même vérifié par un test exécuté en CI ; rendu logiciel, appareils réels non évalués."
         }
       ],
       "github": {
@@ -41544,16 +41603,16 @@
         "pr_preparation_courante": 172
       },
       "blocage": {
-        "cause": "Aucune autorisation applicative déduite de la fiche",
-        "responsable": "A0",
-        "essais_effectues": "Qualification individuelle A1 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
-        "deblocage": "Préparer fiche prerequis/preuves/nonpreuve ; effectuer vérification seulement lorsque capacités/cible/build/accord applicables présents."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Rapprochement du 25 octobre 2026 (mesure requise) : Il faut recetter la création et l'édition de faces en Planche 3D seule (TEST-002). Le côté 2D (TEST-001) et les profils (studio-profils) sont couverts.",
+      "suite": "Rejouer sur le build candidat figé au moment de G4.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -41585,6 +41644,13 @@
           "statut": "À faire",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)",
+          "statut_precedent": "À faire",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -42275,11 +42341,11 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Exécuté",
+        "portee": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)"
       },
       "preuves": [
         {
@@ -42309,6 +42375,15 @@
           "auteur": "A1",
           "date_UTC": "2026-10-18",
           "limite": "État de préparation documentaire ; aucune réalisation logicielle, conformité, gate ou acceptation métier déduite."
+        },
+        {
+          "type": "document",
+          "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
+          "controles": [
+            "section P-08"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Obligation de vérification dont chaque scénario cité est lui-même vérifié par un test exécuté en CI ; rendu logiciel, appareils réels non évalués."
         }
       ],
       "github": {
@@ -42318,16 +42393,16 @@
         "pr_preparation_courante": 172
       },
       "blocage": {
-        "cause": "Réalisation/accord aval reste distinct du dossier préparé",
-        "responsable": "A0",
-        "essais_effectues": "Qualification individuelle A1 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
-        "deblocage": "Réemployer tableMVP G0 et exigences ; conserver publication/observation/reprise comme critères éliminatoires."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (décision requise) : Les outils usuels du périmètre ratifié reposent sur P-08 (PIL-02), non consigné : ratification du maître d'ouvrage.",
+      "suite": "Rejouer sur le build candidat figé au moment de G4.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -42366,6 +42441,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -42449,7 +42531,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -42722,7 +42804,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -47876,7 +47958,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -48323,7 +48405,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -48561,7 +48643,7 @@
         ],
         "preparation_initiale": "A/B/E + C/D selon charges ; autorisations migration/déploiement séparées"
       },
-      "statut": "À faire",
+      "statut": "Accepté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -48595,6 +48677,14 @@
           "auteur": "A6",
           "date_UTC": "2026-10-18",
           "limite": "État de préparation documentaire ; aucune réalisation logicielle, conformité, gate ou acceptation métier déduite."
+        },
+        {
+          "type": "decision_deleguee",
+          "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
+          "section": "P-12",
+          "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
+          "limite": "Règle COEX-06 ratifiée : toute suppression d’écran, de route ou de stockage est un lot ultérieur explicitement autorisé."
         }
       ],
       "github": {
@@ -48604,18 +48694,19 @@
         "pr_preparation_courante": 172
       },
       "blocage": {
-        "cause": "Aucun retrait autorisé ni route désignée pour suppression",
-        "responsable": "A6",
-        "essais_effectues": "Qualification individuelle A6 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
-        "deblocage": "A0/A2/A5 revoient ce critère et instruisent les décisions/cible/accord propres avant exécution ; poursuivre les autres READY."
+        "cause": null,
+        "responsable": "Maître d’ouvrage (délégation au chef de projet)",
+        "essais_effectues": "Achèvement Studio",
+        "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (décision requise) : La règle COEX-06 est « accueillie sous réserve de ratification » dans ADR-STUDIO-NAV-01 : ratification du maître d'ouvrage.",
+      "suite": "Règle COEX-06 ratifiée : toute suppression d’écran, de route ou de stockage est un lot ultérieur explicitement autorisé.",
       "composants_candidats": "Schémas, sauvegardes, corpus historique, service worker",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
-        "acceptation_metier": false
+        "acceptation_metier": true,
+        "nature": "decision"
       },
       "historique": [
         {
@@ -48652,6 +48743,13 @@
           "statut": "À faire",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "ADR-STUDIO-PILOTE-01 P-12 (délégation du maître d’ouvrage, 2026-10-25)",
+          "statut_precedent": "À faire",
+          "statut": "Accepté",
+          "preuve": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
+          "limite": "Décision prise sous délégation ; aucune validation humaine inventée."
         }
       ],
       "preparation_documentaire": {
@@ -49002,7 +49100,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-09",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -49825,7 +49923,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-08",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Perte maximale d’un jour et conservation fondées sur l’existant ; temps de reprise et coûts « non évalués » (aucune mesure ni budget au dépôt)."
@@ -52491,7 +52589,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-02",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -52633,7 +52731,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-02",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -52775,7 +52873,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-02",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -52917,7 +53015,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-02",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -53059,7 +53157,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-02",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -53558,7 +53656,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-03",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -53873,7 +53971,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-09",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -54290,11 +54388,11 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Exécuté",
+        "portee": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)"
       },
       "preuves": [
         {
@@ -54324,6 +54422,43 @@
           "auteur": "A5",
           "date_UTC": "2026-10-18",
           "limite": "État de préparation documentaire ; aucune réalisation logicielle, conformité, gate ou acceptation métier déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "fichier": "apps/web/e2e/studio-navigation.mjs",
+          "controles": [
+            "NAV-004 : précédent / suivant conservent le contexte",
+            "NAV-004 : ouverture directe par l'adresse",
+            "NAV-004 : refus sans redirection silencieuse",
+            "étude ouverte sous un autre projet : refusée sans divulgation",
+            "variante ouverte sous un autre projet : refusée sans divulgation"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Obligation de vérification dont chaque scénario cité est lui-même vérifié par un test exécuté en CI ; rendu logiciel, appareils réels non évalués."
+        },
+        {
+          "type": "test_automatise",
+          "fichier": "apps/api/src/routes/studio-taches-projets.preuves-bloc02.test.ts",
+          "controles": [
+            "TEST-035 / BLOC-02 — aucun accès entre projets par une tâche serveur > TEST-035 / BLOC-02 [−] booléen exact : lot visant la variante de q, adresse mêlée, opérandes ou base de q dans un lot sur p → refusé sans fuite, noyau exact jamais chargé ni appelé, rien d'écrit",
+            "TEST-035 / BLOC-02 — aucun accès entre projets par une tâche serveur > TEST-035 / BLOC-02 [−] contrôle d'exigences et rapprochement des observations : variante de q, adresse mêlée ou révision de q citée sur p → 404 (objet de q ancré : refus nommé), ni contrôle ni rapprochement calculé, rien d'écrit",
+            "TEST-035 / BLOC-02 — aucun accès entre projets par une tâche serveur > TEST-035 / BLOC-02 [−] relecture des modèles externes : réception sur la variante de q ou adresse mêlée, comparaison / décision d'un modèle de q depuis p → 404 (décision : 403 avant toute recherche), aucun modèle relu ni comparé, rien d'écrit",
+            "TEST-035 / BLOC-02 — aucun accès entre projets par une tâche serveur > TEST-035 / BLOC-02 [−] composition des feuilles et dossiers : feuille sur la variante ou la révision de q, dossier citant une feuille ou un métré de q → refusé sans fuite, aucune vue composée, rien d'écrit"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Obligation de vérification dont chaque scénario cité est lui-même vérifié par un test exécuté en CI ; rendu logiciel, appareils réels non évalués."
+        },
+        {
+          "type": "test_automatise",
+          "fichier": "apps/api/src/routes/studio-taches-projets.preuves-bloc02.test.ts",
+          "controles": [
+            "TEST-035 / BLOC-02 — aucun accès entre projets par une tâche serveur > TEST-035 / BLOC-02 [−] booléen exact : lot visant la variante de q, adresse mêlée, opérandes ou base de q dans un lot sur p → refusé sans fuite, noyau exact jamais chargé ni appelé, rien d'écrit",
+            "TEST-035 / BLOC-02 — aucun accès entre projets par une tâche serveur > TEST-035 / BLOC-02 [−] contrôle d'exigences et rapprochement des observations : variante de q, adresse mêlée ou révision de q citée sur p → 404 (objet de q ancré : refus nommé), ni contrôle ni rapprochement calculé, rien d'écrit",
+            "TEST-035 / BLOC-02 — aucun accès entre projets par une tâche serveur > TEST-035 / BLOC-02 [−] relecture des modèles externes : réception sur la variante de q ou adresse mêlée, comparaison / décision d'un modèle de q depuis p → 404 (décision : 403 avant toute recherche), aucun modèle relu ni comparé, rien d'écrit",
+            "TEST-035 / BLOC-02 — aucun accès entre projets par une tâche serveur > TEST-035 / BLOC-02 [−] composition des feuilles et dossiers : feuille sur la variante ou la révision de q, dossier citant une feuille ou un métré de q → refusé sans fuite, aucune vue composée, rien d'écrit"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Obligation de vérification dont chaque scénario cité est lui-même vérifié par un test exécuté en CI ; rendu logiciel, appareils réels non évalués."
         }
       ],
       "github": {
@@ -54333,24 +54468,16 @@
         "pr_preparation_courante": 172
       },
       "blocage": {
-        "cause": {
-          "lacunes": [
-            "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
-          ],
-          "responsable_declencheur": {
-            "owner": "A5",
-            "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
-          }
-        },
-        "responsable": "A5",
-        "essais_effectues": "Qualification individuelle A5 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
-        "deblocage": "A2/A3 lotI après gate/autorisation : contrepreuve ciblée et rejeu oracle existant ; A5 recette sans transformer omission en succès."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Rapprochement du 25 octobre 2026 (mesure requise) : Refus par URL vérifié (NAV-004) ; refus par tâche (job) et export de TEST-035 à recetter.",
+      "suite": "Rejouer sur le build candidat figé au moment de G4.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -54382,6 +54509,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -54576,11 +54710,11 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Exécuté",
+        "portee": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)"
       },
       "preuves": [
         {
@@ -54610,6 +54744,17 @@
           "auteur": "A5",
           "date_UTC": "2026-10-18",
           "limite": "État de préparation documentaire ; aucune réalisation logicielle, conformité, gate ou acceptation métier déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "fichier": "apps/web/e2e/studio-profils.mjs",
+          "controles": [
+            "TEST-016 : rendu 3D non initialisé à l'ouverture, planche initialisée",
+            "TEST-016 : groupe de Workers démarré seulement par son premier usage justifié (métré du panneau Quantités affiché), jamais d'office",
+            "TEST-016 : ressources relevées (requêtes, octets transférés et décodés, tas JavaScript si exposé) — nombres finis, sans seuil"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Obligation de vérification dont chaque scénario cité est lui-même vérifié par un test exécuté en CI ; rendu logiciel, appareils réels non évalués."
         }
       ],
       "github": {
@@ -54619,24 +54764,16 @@
         "pr_preparation_courante": 172
       },
       "blocage": {
-        "cause": {
-          "lacunes": [
-            "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
-          ],
-          "responsable_declencheur": {
-            "owner": "A5",
-            "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
-          }
-        },
-        "responsable": "A5",
-        "essais_effectues": "Qualification individuelle A5 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
-        "deblocage": "A2/A3 lotB après gate/autorisation : contrepreuve ciblée et rejeu oracle existant ; A5 recette sans transformer omission en succès."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Rapprochement du 25 octobre 2026 (mesure requise) : TEST-016 « En cours » : profil de vingt outils et verdict de mesure de ressources à ajouter.",
+      "suite": "Rejouer sur le build candidat figé au moment de G4.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -54668,6 +54805,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -54720,11 +54864,11 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Exécuté",
+        "portee": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)"
       },
       "preuves": [
         {
@@ -54754,6 +54898,25 @@
           "auteur": "A5",
           "date_UTC": "2026-10-18",
           "limite": "État de préparation documentaire ; aucune réalisation logicielle, conformité, gate ou acceptation métier déduite."
+        },
+        {
+          "type": "test_automatise",
+          "fichier": "apps/web/src/modules/studio/planche2d/mesure-spatiale.test.ts",
+          "controles": [
+            "TEST-022 — S1–S3 : même repère résolu (point, genre, objet, priorité) par l'index et le parcours linéaire"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Obligation de vérification dont chaque scénario cité est lui-même vérifié par un test exécuté en CI ; rendu logiciel, appareils réels non évalués."
+        },
+        {
+          "type": "test_automatise",
+          "fichier": "apps/web/src/modules/studio/vue3d/picking.test.ts",
+          "controles": [
+            "propriété : chaque triangle se résout vers l'objet dont la plage le contient",
+            "objet supprimé : jamais désigné ; l'objet derrière l'est, sinon rien"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Obligation de vérification dont chaque scénario cité est lui-même vérifié par un test exécuté en CI ; rendu logiciel, appareils réels non évalués."
         }
       ],
       "github": {
@@ -54763,24 +54926,16 @@
         "pr_preparation_courante": 172
       },
       "blocage": {
-        "cause": {
-          "lacunes": [
-            "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
-          ],
-          "responsable_declencheur": {
-            "owner": "A5",
-            "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
-          }
-        },
-        "responsable": "A5",
-        "essais_effectues": "Qualification individuelle A5 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
-        "deblocage": "A2/A3 lotC après gate/autorisation : contrepreuve ciblée et rejeu oracle existant ; A5 recette sans transformer omission en succès."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Rapprochement du 25 octobre 2026 (mesure requise) : TEST-022 (équivalence indexé = linéaire sur S1–S3) à rejouer ; corpus X intégral ouvert. TEST-023 vérifié.",
+      "suite": "Rejouer sur le build candidat figé au moment de G4.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -54812,6 +54967,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -54864,11 +55026,11 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Exécuté",
+        "portee": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)"
       },
       "preuves": [
         {
@@ -54898,6 +55060,46 @@
           "auteur": "A5",
           "date_UTC": "2026-10-18",
           "limite": "État de préparation documentaire ; aucune réalisation logicielle, conformité, gate ou acceptation métier déduite."
+        },
+        {
+          "type": "test_automatise",
+          "fichier": "packages/atelier-model/src/studio/f2-booleen.test.ts",
+          "controles": [
+            "TEST-014 — résultat d'une ancienne révision : périmé, non engagé"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Obligation de vérification dont chaque scénario cité est lui-même vérifié par un test exécuté en CI ; rendu logiciel, appareils réels non évalués."
+        },
+        {
+          "type": "recette_e2e",
+          "fichier": "apps/web/e2e/studio-exact.mjs",
+          "controles": [
+            "TEST-014 : le résultat calculé pour l'ancienne révision est marqué périmé, aucun bouton d'engagement, rien d'engagé"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Obligation de vérification dont chaque scénario cité est lui-même vérifié par un test exécuté en CI ; rendu logiciel, appareils réels non évalués."
+        },
+        {
+          "type": "recette_e2e",
+          "fichier": "apps/web/e2e/studio-exact.mjs",
+          "controles": [
+            "TEST-015 : coupure du Worker — erreur affichée, noyau en échec, Worker arrêté, aucune attente en suspens",
+            "TEST-015 : pas de corruption — document identique (empreinte de contenu), aucune commande en attente",
+            "TEST-015 : relance contrôlée — nouveau Worker, calcul de nouveau abouti"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Obligation de vérification dont chaque scénario cité est lui-même vérifié par un test exécuté en CI ; rendu logiciel, appareils réels non évalués."
+        },
+        {
+          "type": "recette_e2e",
+          "fichier": "apps/web/e2e/studio-memoire.mjs",
+          "controles": [
+            "TEST-037 : 80 réouvertures de la vue 3D — compteurs GPU identiques à la première ouverture à chaque cycle",
+            "TEST-037 : tas JavaScript après ramasse-miettes sans croissance (pente ≤ 16384 o/cycle sur 50 cycles après 30 de chauffe)",
+            "TEST-037 : après 80 cycles, aucun écouteur de plus sur le document (contrôles de caméra libérés)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Obligation de vérification dont chaque scénario cité est lui-même vérifié par un test exécuté en CI ; rendu logiciel, appareils réels non évalués."
         }
       ],
       "github": {
@@ -54907,24 +55109,16 @@
         "pr_preparation_courante": 172
       },
       "blocage": {
-        "cause": {
-          "lacunes": [
-            "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
-          ],
-          "responsable_declencheur": {
-            "owner": "A5",
-            "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
-          }
-        },
-        "responsable": "A5",
-        "essais_effectues": "Qualification individuelle A5 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
-        "deblocage": "A2/A3 lotD après gate/autorisation : contrepreuve ciblée et rejeu oracle existant ; A5 recette sans transformer omission en succès."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Rapprochement du 25 octobre 2026 (mesure requise) : TEST-014 et TEST-015 « En cours », TEST-037 « À faire ».",
+      "suite": "Rejouer sur le build candidat figé au moment de G4.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -54956,6 +55150,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -55185,11 +55386,11 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Exécuté",
+        "portee": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)"
       },
       "preuves": [
         {
@@ -55219,6 +55420,48 @@
           "auteur": "A5",
           "date_UTC": "2026-10-18",
           "limite": "État de préparation documentaire ; aucune réalisation logicielle, conformité, gate ou acceptation métier déduite."
+        },
+        {
+          "type": "test_automatise",
+          "fichier": "packages/atelier-model/src/studio/import-ifc/import-ifc.test.ts",
+          "controles": [
+            "état non natif : espace, poteau répété et porte isolée conservés (type, GlobalId, nom, raison, empreinte lue)",
+            "rapport de pertes : jeux de propriétés, matériaux, site et bâtiment comptés par type, jamais écartés en silence",
+            "unité de longueur absente : aucune commande, unité « non évaluée » (statut unite-inconnue)",
+            "import DXF : avec conserverNonNatifs, chaque entité entière non prise devient un élément non natif (type, handle, bloc)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Obligation de vérification dont chaque scénario cité est lui-même vérifié par un test exécuté en CI ; rendu logiciel, appareils réels non évalués."
+        },
+        {
+          "type": "recette_e2e",
+          "fichier": "apps/web/e2e/studio-echanges.mjs",
+          "controles": [
+            "Importer IFC : rapport de pertes et éléments non natifs à l’aperçu (unité lue, 5 objets natifs, 3 non natifs, pertes par type)",
+            "Importer IFC : état « non natif » explicite dans « Éléments du dessin » (type, GlobalId, raison)",
+            "Importer IFC : enregistré par le serveur — 2 murs, 2 ouvertures (porte, fenêtre), 1 prisme, 3 éléments non natifs, 2 calques de niveau",
+            "élément non natif non éditable : le serveur refuse de le déplacer comme un objet natif"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Obligation de vérification dont chaque scénario cité est lui-même vérifié par un test exécuté en CI ; rendu logiciel, appareils réels non évalués."
+        },
+        {
+          "type": "recette_e2e",
+          "fichier": "apps/web/e2e/studio-echanges.mjs",
+          "controles": [
+            "Q ouvre la boîte : une ligne par entrée"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Obligation de vérification dont chaque scénario cité est lui-même vérifié par un test exécuté en CI ; rendu logiciel, appareils réels non évalués."
+        },
+        {
+          "type": "test_automatise",
+          "fichier": "apps/web/src/modules/studio/echanges/echanges-ui.test.ts",
+          "controles": [
+            "affiche chaque entrée de la matrice, sans champ de saisie autre que le filtre ; filtre par statut"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Obligation de vérification dont chaque scénario cité est lui-même vérifié par un test exécuté en CI ; rendu logiciel, appareils réels non évalués."
         }
       ],
       "github": {
@@ -55228,24 +55471,16 @@
         "pr_preparation_courante": 172
       },
       "blocage": {
-        "cause": {
-          "lacunes": [
-            "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
-          ],
-          "responsable_declencheur": {
-            "owner": "A5",
-            "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
-          }
-        },
-        "responsable": "A5",
-        "essais_effectues": "Qualification individuelle A5 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
-        "deblocage": "A2/A3 lotE après gate/autorisation : contrepreuve ciblée et rejeu oracle existant ; A5 recette sans transformer omission en succès."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Rapprochement du 25 octobre 2026 (mesure requise) : La matrice existe dans le code et ses tests ; TEST-028 (rapport de pertes à l'import) « En cours » et E.6-01 encore « À faire » au registre.",
+      "suite": "Rejouer sur le build candidat figé au moment de G4.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -55277,6 +55512,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -55329,11 +55571,11 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Exécuté",
+        "portee": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)"
       },
       "preuves": [
         {
@@ -55363,6 +55605,30 @@
           "auteur": "A5",
           "date_UTC": "2026-10-18",
           "limite": "État de préparation documentaire ; aucune réalisation logicielle, conformité, gate ou acceptation métier déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "fichier": "apps/web/e2e/studio-restauration.mjs",
+          "controles": [
+            "base : texte jsonb des documents, empreintes et requestId identiques (… révisions)",
+            "outil de comparaison A / B : 0 anomalie (identifiants, empreintes, effectifs, déclencheurs, sonde d'immuabilité)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Obligation de vérification dont chaque scénario cité est lui-même vérifié par un test exécuté en CI ; rendu logiciel, appareils réels non évalués."
+        },
+        {
+          "type": "recette_e2e",
+          "fichier": "apps/web/e2e/studio-preuves-a.mjs",
+          "controles": [
+            "TEST-036 : hors ligne, commande locale en attente (enveloppe conservée avec requestId et baseRevisionId)",
+            "TEST-036 : envoi bloqué — rien n'a atteint le serveur, l'enveloppe attend toujours",
+            "TEST-036 : service worker mis à jour pendant l'attente — nouveau script actif, contrôleur de la page changé",
+            "TEST-036 : file locale intacte après la mise à jour — même requestId, même lot, rien envoyé",
+            "TEST-036 : après la mise à jour, la commande en attente est envoyée avec le même requestId — une seule révision, rectangle dans la tête",
+            "TEST-036 : aucune file perdue ni rejouée en double — plus rien de conservé sur l'appareil, un rectangle affiché"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Obligation de vérification dont chaque scénario cité est lui-même vérifié par un test exécuté en CI ; rendu logiciel, appareils réels non évalués."
         }
       ],
       "github": {
@@ -55372,24 +55638,16 @@
         "pr_preparation_courante": 172
       },
       "blocage": {
-        "cause": {
-          "lacunes": [
-            "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
-          ],
-          "responsable_declencheur": {
-            "owner": "A5",
-            "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
-          }
-        },
-        "responsable": "A5",
-        "essais_effectues": "Qualification individuelle A5 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
-        "deblocage": "A2/A3 lotR après gate/autorisation : contrepreuve ciblée et rejeu oracle existant ; A5 recette sans transformer omission en succès."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Rapprochement du 25 octobre 2026 (mesure requise) : TEST-034 vérifié ; TEST-036 (service worker avec commandes pendantes) « En cours » ; lot R bloqué (P-07).",
+      "suite": "Rejouer sur le build candidat figé au moment de G4.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -55421,6 +55679,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -55914,11 +56179,11 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Exécuté",
+        "portee": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)"
       },
       "preuves": [
         {
@@ -55948,6 +56213,26 @@
           "auteur": "A3",
           "date_UTC": "2026-10-18",
           "limite": "État de préparation documentaire ; aucune réalisation logicielle, conformité, gate ou acceptation métier déduite."
+        },
+        {
+          "type": "test_automatise",
+          "fichier": "apps/api/src/testing/revue-g1.test.ts",
+          "controles": [
+            "G1-03 — revue fonction par fonction : écarts > aucune fonction livrée sans source, sans contrat ou sans test hors des écarts connus",
+            "G1-03 — revue fonction par fonction : écarts > les manques calculés sont exactement les écarts connus : aucun écart fantôme, aucun écart caché",
+            "G1-03 — rapport publié > docs/workstreams/studio/REVUE-G1-03.md est celui que ce test calcule (régénéré, comparé à l'octet près)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Obligation de vérification dont chaque scénario cité est lui-même vérifié par un test exécuté en CI ; rendu logiciel, appareils réels non évalués."
+        },
+        {
+          "type": "document",
+          "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
+          "controles": [
+            "section P-11"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Obligation de vérification dont chaque scénario cité est lui-même vérifié par un test exécuté en CI ; rendu logiciel, appareils réels non évalués."
         }
       ],
       "github": {
@@ -55957,21 +56242,16 @@
         "pr_preparation_courante": 172
       },
       "blocage": {
-        "cause": {
-          "cause": "Revue du dossier et preuves/contrats/autorisation correspondant à la nature exacte de cetID encore à obtenir",
-          "responsable": "A0",
-          "essais_effectues": "Rapprochement20sources et définitions, réemploi de dossiers existants et rédaction ciblée ; aucun test oucode",
-          "deblocage": "Vérifier surlivraisons auSHAexact isolation et raccordement des fonctions retenues, sans exiger la clôture de touslots transverses pour continuer leurs études."
-        },
-        "responsable": "A0",
-        "essais_effectues": "Qualification individuelle A3 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
-        "deblocage": "A0 fait revoir cette fiche par les propriétaires/reviewers indiqués et intègre seulement un delta documentaire rebased après comparaison au registre courant ; garderID ouvert"
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Rapprochement du 25 octobre 2026 (decision requise) : Acceptation de G1 (contrats stabilisés) à instruire puis prononcer ; G1-01 à G1-04 « En cours ».",
+      "suite": "Rejouer sur le build candidat figé au moment de G4.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -56003,6 +56283,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Requalification par dépendances vérifiées (achèvement Studio, 25 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -60860,7 +61147,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -60957,7 +61244,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -61054,7 +61341,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -61151,7 +61438,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -61248,7 +61535,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -61345,7 +61632,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -61442,7 +61729,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -61539,7 +61826,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -61636,7 +61923,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -61733,7 +62020,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -61830,7 +62117,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -61927,7 +62214,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -62024,7 +62311,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Appareils physiques et GPU réel non évalués ; seuils Core Web Vitals retenus comme cible, non mesurés sur appareil réel."
@@ -62121,7 +62408,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -62218,7 +62505,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Option exclue du pilote, conservée au backlog ; TEST-033 hors pilote."
@@ -62315,7 +62602,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -62412,7 +62699,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -62509,7 +62796,7 @@
         {
           "type": "decision_deleguee",
           "fichier": "docs/continuity/decisions/ADR-STUDIO-PILOTE-01.md",
-          "sha256": "ea7ee3f8ffc1f7c8e2a87176b9e09677e77e3c8d55320d37496a86714331ac98",
+          "sha256": "0cf4b1983ff7329a293bf1097153f97d2b2bfb117fd8345901c9b6f9c073a099",
           "section": "P-04",
           "session": "https://claude.ai/code/session_01SzdZkEDSfXjCgLT91JDVFJ",
           "limite": "Arbitrage consigné ; la preuve de recette reste portée par les obligations NAV/TEST/REC."
@@ -79823,9 +80110,9 @@
       "raison": "DEV_SCOPE et baseline du périmètre accepté non établis ; ne pas inventer un dénominateur."
     },
     "P630": {
-      "V630": 425,
+      "V630": 437,
       "denominateur": 630,
-      "pourcentage": 67.5,
+      "pourcentage": 69.4,
       "IDs": [
         "SRC-01",
         "SRC-02",
@@ -79931,12 +80218,14 @@
         "I.5-03",
         "I.5-04",
         "REC-I-02",
+        "REC-I-03",
         "A.1-01",
         "A.1-02",
         "A.1-03",
         "A.1-04",
         "A.1-05",
         "A.1-06",
+        "A.1-08",
         "A.2-01",
         "A.2-02",
         "A.2-03",
@@ -80077,6 +80366,8 @@
         "J0",
         "J1",
         "J2",
+        "J3",
+        "PIL-01",
         "PIL-02",
         "PIL-03",
         "PIL-04",
@@ -80106,6 +80397,7 @@
         "MIG-COEX-02",
         "MIG-COEX-03",
         "MIG-COEX-05",
+        "MIG-COEX-07",
         "OPS-02",
         "OPS-03",
         "OPS-04",
@@ -80125,9 +80417,16 @@
         "ADR-05",
         "RISQ-01",
         "RISQ-02",
+        "RISQ-03",
         "RISQ-04",
+        "RISQ-05",
+        "RISQ-06",
+        "RISQ-07",
         "RISQ-08",
+        "RISQ-09",
+        "RISQ-10",
         "PASS-02",
+        "PASS-04",
         "PASS-07",
         "TEST-001",
         "TEST-002",
@@ -80255,8 +80554,8 @@
       ],
       "limite": "259 obligations vérifiées (documentaires, par recette ou test exécuté, ou par contrôle existant contre-vérifié indépendamment le 25 octobre 2026) et 58 acceptations (2 de cadrage G0, 56 décisions ADR-STUDIO-PILOTE-01 sous délégation du maître d’ouvrage). Pas un taux de développement ; G1–G4 non acceptées.",
       "mapping_barre": {
-        "Vérifié documentaire": 366,
-        "Accepté cadrage documentaire G0": 59
+        "Vérifié documentaire": 376,
+        "Accepté cadrage documentaire G0": 61
       }
     }
   },
