@@ -8,7 +8,7 @@ import { AttributionControl, Map as CarteMapLibre, ScaleControl, setWorkerUrl, t
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Feature, FeatureCollection } from "geojson";
 import urlWorker from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
-import { COULEUR_ABSENTE, type Composition } from "@parcours/geodata-model";
+import { COULEUR_ABSENTE, epaisseurContour, ordreAffichage, type Composition } from "@parcours/geodata-model";
 import { adresseRaster, adresseTuiles, type Fond } from "../client";
 import type { DonneesAffichage, EvenementsMoteur, MoteurCarte, OutilCarte } from "./moteur";
 
@@ -129,7 +129,9 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       for (const suffixe of ["-remplissage", "-absentes", "-contour", "-selection", "-lignes", "-points", "-raster"]) if (carte.getLayer(id + suffixe)) carte.removeLayer(id + suffixe);
       if (carte.getSource(id)) carte.removeSource(id);
     }
-    for (const k of composition.couches) {
+    // Ordre d'affichage (D-GD-16) : celui de la composition, sauf entre limites administratives (région au-dessus).
+    const ordre = ordreAffichage(composition.couches, d.rangs);
+    for (const k of ordre) {
       const id = `${PREFIXE}${k.coucheId}`;
       if (d.rasters.has(k.coucheId)) {
         // Couche raster : tuiles d'image rendues par le serveur, seule l'opacité est réglable (symbologie de la couche).
@@ -151,8 +153,9 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
         carte.addLayer({ id: `${id}-points`, type: "circle", source: id, "source-layer": "objets", filter: ["==", ["geometry-type"], "Point"], paint: { "circle-color": "#2b8cbe", "circle-radius": 5, "circle-stroke-color": "#ffffff", "circle-stroke-width": 1 } });
         carte.addLayer({ id: `${id}-selection`, type: "line", source: id, "source-layer": "objets", filter: ["==", ["get", "code"], "__aucun__"], paint: { "line-color": "#c77b35", "line-width": 4 } });
       }
-      // Ordre : la première couche de la composition est dessous.
-      for (const suffixe of ["-remplissage", "-absentes", "-contour", "-lignes", "-points", "-selection"]) carte.moveLayer(id + suffixe, "gd-zones-remplissage");
+      // Ordre : la première couche est dessous ; les remplissages ici, les contours et objets linéaires ensuite, au-dessus
+      // de tous les remplissages (une bordure n'est jamais masquée par le remplissage d'une autre couche).
+      for (const suffixe of ["-remplissage", "-absentes"]) carte.moveLayer(id + suffixe, "gd-zones-remplissage");
       const visible = k.visible ? "visible" : "none";
       for (const suffixe of ["-remplissage", "-absentes", "-contour", "-lignes", "-points", "-selection"]) carte.setLayoutProperty(id + suffixe, "visibility", visible);
       const codes = d.filtres.get(k.coucheId);
@@ -186,11 +189,20 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       carte.setPaintProperty(`${id}-remplissage`, "fill-color", couleur);
       carte.setPaintProperty(`${id}-remplissage`, "fill-opacity", k.opacite);
       carte.setPaintProperty(`${id}-absentes`, "fill-opacity", k.style.mode === "thematique" ? Math.min(1, k.opacite + 0.1) : 0);
+      // Contour de la couleur de l'entité, opaque même à 0 % de remplissage ; épaisseur selon le rang administratif.
+      carte.setPaintProperty(`${id}-contour`, "line-color", couleur);
+      carte.setPaintProperty(`${id}-contour`, "line-width", epaisseurContour(d.rangs.get(k.coucheId) ?? null));
+      carte.setPaintProperty(`${id}-contour`, "line-opacity", 1);
       carte.setPaintProperty(`${id}-lignes`, "line-color", couleur);
       carte.setPaintProperty(`${id}-points`, "circle-color", couleur);
       carte.setPaintProperty(`${id}-lignes`, "line-opacity", k.opacite);
       carte.setPaintProperty(`${id}-points`, "circle-opacity", k.opacite);
       carte.setFilter(`${id}-selection`, ["==", ["get", "code"], d.selection?.coucheId === k.coucheId ? d.selection.code : "__aucun__"]);
+    }
+    for (const k of ordre) {
+      const id = `${PREFIXE}${k.coucheId}`;
+      if (d.rasters.has(k.coucheId)) continue;
+      for (const suffixe of ["-contour", "-lignes", "-points", "-selection"]) carte.moveLayer(id + suffixe, "gd-zones-remplissage");
     }
     couchesAffichees = voulues;
     (carte.getSource("gd-zones") as GeoJSONSource).setData(d.zones as FeatureCollection);

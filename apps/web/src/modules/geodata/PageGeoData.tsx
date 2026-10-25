@@ -12,7 +12,7 @@
  * droite (Données, Mes cartes, Études, Importer, Exporter).
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { COMPOSITION_INITIALE, couleurCategorie, formatNombre, legende, lireValeur, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
+import { COMPOSITION_INITIALE, couleurCategorie, rangAdministratif, formatNombre, legende, lireValeur, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
 import { api, ErreurGeoData, type ValeurRasterRecue, type CarteRecue, type RangementRecu, type Fond, type CoucheRecue, type EspaceRecu, type FicheRecue, type ResultatRecherche, type ZoneRecue } from "./client";
 import { ajouterCouche, basculerVisibilite, definirFiltre, definirOpacite, definirStyle, deplacerCouche, etatDepuis, LIBELLES_ENREGISTREMENT, entreesCategories, entreesRaster, retirerCouche, type Categorie, type EtatEnregistrement } from "./composition-ops";
 import { webglDisponible, type MoteurCarte, type OutilCarte } from "./carte/moteur";
@@ -182,6 +182,8 @@ export function PageGeoData() {
   const attributions = useMemo(() => [...new Set(compositionAffichee.couches.filter((k) => k.visible).map((k) => couchesConnues.get(k.coucheId)?.version.attribution).filter((x): x is string => !!x))], [compositionAffichee, couchesConnues]);
   // Couches raster (D-GD-13) connues ; référence lue par le moteur (créé une fois) au moment d'un clic.
   const rasters = useMemo(() => new Set([...couchesConnues.values()].filter((c) => c.typeGeometrie === "raster").map((c) => c.id)), [couchesConnues]);
+  // Rang administratif des couches de limites (D-GD-16), lu de leur niveau ou du niveau OpenStreetMap de leur titre.
+  const rangs = useMemo(() => new Map([...couchesConnues.values()].flatMap((c) => { const r = rangAdministratif(c); return r ? [[c.id, r] as const] : []; })), [couchesConnues]);
   const rastersCourants = useRef<{ rasters: Set<string>; couches: Map<string, CoucheRecue> }>({ rasters, couches: couchesConnues });
   rastersCourants.current = { rasters, couches: couchesConnues };
   const zonesGeo = useMemo(() => ({ type: "FeatureCollection" as const, features: zones.map((z) => ({ type: "Feature", properties: { id: z.id, nom: z.nom }, geometry: z.geometrie })) }), [zones]);
@@ -221,8 +223,8 @@ export function PageGeoData() {
   }, [webgl]);
 
   useEffect(() => {
-    moteur.current?.appliquer(compositionAffichee, fond, { valeurs, categories: couleursCategories, rasters, filtres, selection, zones: zonesGeo, attributions });
-  }, [compositionAffichee, fond, valeurs, couleursCategories, rasters, filtres, selection, zonesGeo, attributions, chargementMoteur]);
+    moteur.current?.appliquer(compositionAffichee, fond, { valeurs, categories: couleursCategories, rangs, rasters, filtres, selection, zones: zonesGeo, attributions });
+  }, [compositionAffichee, fond, valeurs, couleursCategories, rangs, rasters, filtres, selection, zonesGeo, attributions, chargementMoteur]);
   useEffect(() => { moteur.current?.definirOutil(outil); setTrace(null); setTracePret(null); }, [outil, chargementMoteur]);
 
   compositionCourante.current = composition;
