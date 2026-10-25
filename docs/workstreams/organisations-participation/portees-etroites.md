@@ -150,6 +150,11 @@ Exécuté le 2026-10-24, base jetable `fadi_scopes`, API construite sur le port 
 | `npm test` | vert hors suites DB-3 : API 574 tests hors base ; 15 suites DB-3 (dont la nouvelle) refusées par la garde ; `node scripts/check-api-tests-db3.mjs` : ✓ seules les suites de la liste, uniquement par la garde |
 | `npm run build` | vert |
 
+Après fusion de `ccr-3b26a9f6-z073dc` à jour (phase 5, reliquats ; conflits résolus dans `Participants.tsx` et
+`en.json`, aucune clé en double) : migration rejouée, `npm run typecheck` vert, `npm run build` vert, tests web (988) et
+domain-model (104) verts ; recettes `portees-etroites.mjs` 87 ✓, `participants.mjs` 92 ✓, `organisations.mjs` 139 ✓,
+`collaboration-support-telephone.mjs` 5 ✓, `interface-anglais.mjs` vert.
+
 Ce qui n'a pas tourné localement : la suite DB-3 `routes/portees-etroites.test.ts` et le cas adapté d'`app.test.ts`
 (garde DB-3, en CI seulement — ils reprennent le scénario de la recette HTTP, verte localement) ; la CI GitHub (aucun push).
 
