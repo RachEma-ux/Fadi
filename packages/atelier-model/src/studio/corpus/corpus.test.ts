@@ -87,7 +87,7 @@ function mesures(corpus: CorpusStudio) {
       if (t.valeur !== null) totaux[t.grandeur] = (totaux[t.grandeur] ?? 0) + t.valeur;
       if (t.grandeur === "volume") volumeNonEvalues += t.nonEvalues;
     }
-    volumeSolides += studioQuantitesSolides(d).totalVolume;
+    volumeSolides += studioQuantitesSolides(d).totalVolume ?? Number.NaN;
     const cotes = d.dimensions ?? [];
     for (const c of cotes) {
       if (c.links.start && c.links.end) liees++; else libres++;

@@ -18,7 +18,8 @@
 
 export { STUDIO_BULGE_MAX, STUDIO_CONTRACT, STUDIO_DEFAULT_LAYER_ID, STUDIO_LIMITS } from "./noyau/limites.js";
 export type { StudioCommand, StudioCommandToolId, StudioDocument, StudioEnvelope } from "./composition/types.js";
-export type { StudioExtrusion, StudioLayer, StudioPoint } from "./noyau/types.js";
+export type { StudioDirectionExtrusion, StudioExtrusion, StudioLayer, StudioPoint } from "./noyau/types.js";
+export { STUDIO_DIRECTIONS_EXTRUSION, studioCotesExtrusion } from "./noyau/types.js";
 export type { StudioItem, StudioShape } from "./objets/formes.js";
 export {
   STUDIO_FIXED_ANCHORS, STUDIO_INDEXED_ANCHOR, STUDIO_LINE_ANCHORS, STUDIO_RECTANGLE_ANCHORS,

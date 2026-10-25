@@ -3,6 +3,8 @@ import { STUDIO_DEFAULT_LAYER_ID } from "./noyau/limites.js";
 import { studioLayerState, validateStudioDocument, type StudioDocument, type StudioShape } from "./document-2d.js";
 import { STUDIO_FRAME_3D, studioLocal2dVers3d, type StudioPoint3, type StudioSolid3d } from "./exporteurs/maillage.js";
 import { typeObjet } from "./objets/index.js";
+import { studioCotesExtrusion } from "./noyau/types.js";
+import { studioLienSolide } from "./composition/liens-solides.js";
 import { studioMaillageSolide, type StudioFreeSolid3d } from "./objets-3d/maillage.js";
 import { studioMaillageArchitecture, type StudioArchitecture3d } from "./architecture/maillage.js";
 import type { StudioArchitectureItem } from "./architecture/types.js";
@@ -105,6 +107,8 @@ function cles(doc: StudioDocument): Cles {
     if (a.type === "wall") projection.set(a.id, empreinteTexte([propres.get(a.id), ...(ouvertures.get(a.id) ?? [])].join("|")));
     else projection.set(a.id, empreinteTexte(`${propres.get(a.id)}|${propres.get(a.hostId) ?? ""}`));
   }
+  // Un solide lié à un profil source (lot F1) lit cette source : son état (à jour, à résoudre) en dépend.
+  for (const s of doc.solides ?? []) if (s.type === "prism" && s.source && s.source.relation !== "copie-independante") projection.set(s.id, empreinteTexte(`${propres.get(s.id)}|source:${propres.get(s.source.objectId) ?? "absente"}`));
   const apparences = new Map<string, string>();
   for (const s of doc.scenes ?? []) if (s.type === "appearance") apparences.set(s.id, empreinteElement(s));
   c = { propres, projection, famille, calques: empreinteElement(doc.layers ?? []), apparences, versions: new Map() };
@@ -268,14 +272,15 @@ export function studioMaillerObjets(document: StudioDocument, ids: readonly stri
     if (!visible(o.layerId)) m.hidden = true;
     else if (!o.extrusion) m.outline = contour(o);
     else {
-      const s = typeObjet(o).volume(o, o.extrusion.base, o.extrusion.base + o.extrusion.height);
+      const { zMin, zMax } = studioCotesExtrusion(o.extrusion);
+      const s = typeObjet(o).volume(o, zMin, zMax);
       if (s) m.solid = { id: o.id, type: o.type, ...(o.layerId !== undefined ? { layerId: o.layerId } : {}), kind: s.kind, ...s.geometry };
     }
     out.push(m);
   }
   for (const s of doc.solides ?? []) {
     if (!veut(s.id)) continue;
-    out.push(visible(s.layerId) ? { id: s.id, cle: cle.get(s.id)!, freeSolid: studioMaillageSolide(s) } : { id: s.id, cle: cle.get(s.id)!, hidden: true });
+    out.push(visible(s.layerId) ? { id: s.id, cle: cle.get(s.id)!, freeSolid: studioMaillageSolide(s, studioLienSolide(doc, s)) } : { id: s.id, cle: cle.get(s.id)!, hidden: true });
   }
   const archi = doc.architecture ?? [];
   if (archi.length) {

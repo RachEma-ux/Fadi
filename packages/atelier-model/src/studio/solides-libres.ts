@@ -7,3 +7,4 @@
 export * from "./objets-3d/index.js";
 export { couperStudio, type StudioCoupe, type StudioPlanCoupe, type StudioSegmentCoupe } from "./composition/coupe.js";
 export { studioQuantitesSolides, studioVolumeSolide, type StudioQuantiteSolide } from "./composition/quantites-solides.js";
+export { studioEmpriseConforme, studioLienSolide, studioLiensSolides, studioProfilDepuisPolyligne, type StudioProfilDerive } from "./composition/liens-solides.js";

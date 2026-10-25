@@ -6,7 +6,7 @@ import type { StudioAnnotation, StudioItem, StudioShape } from "../objets/formes
 import type { StudioLine } from "../objets/ligne.js";
 import type { StudioPolyline } from "../objets/polyligne.js";
 import type { StudioRectangle } from "../objets/rectangle.js";
-import type { StudioBox, StudioProfilePrism, StudioSolid } from "../objets-3d/solides.js";
+import type { StudioBox, StudioFaceSolide, StudioProfilePrism, StudioSolid } from "../objets-3d/solides.js";
 import type { StudioText } from "../objets/texte.js";
 import type { STUDIO_CONTRACT } from "../noyau/limites.js";
 import type { StudioLayer, StudioPoint } from "../noyau/types.js";
@@ -73,12 +73,16 @@ export type StudioCommand =
   | { toolId: "studio.calque.creer"; params: StudioLayer }
   | { toolId: "studio.calque.modifier"; params: StudioLayer }
   | { toolId: "studio.objet.calque"; params: { ids: string[]; layerId: string } }
-  | { toolId: "studio.objet.extruder"; params: { ids: string[]; base: number; height: number; thickness?: number } }
+  | { toolId: "studio.objet.extruder"; params: { ids: string[]; base: number; height: number; thickness?: number; direction?: "+z" | "-z" } }
   | { toolId: "studio.objet.aplatir"; params: { ids: string[] } }
   | { toolId: "studio.solide.boite"; params: StudioBox }
   | { toolId: "studio.solide.prisme"; params: StudioProfilePrism }
   | { toolId: "studio.solide.deplacer"; params: { id: string; dx: number; dy: number; dz: number } }
   | { toolId: "studio.solide.supprimer"; params: { ids: string[] } }
+  | { toolId: "studio.solide.face-decaler"; params: { id: string; face: StudioFaceSolide; distance: number } }
+  | { toolId: "studio.solide.face-diviser"; params: { id: string; face: `lateral-${number}`; distance: number } }
+  | { toolId: "studio.solide.pivoter"; params: { id: string; angle: number } }
+  | { toolId: "studio.solide.resoudre"; params: { id: string; action: "mettre-a-jour" | "detacher" } }
   | { toolId: "studio.architecture.mur"; params: StudioWall }
   | { toolId: "studio.architecture.ouverture"; params: StudioOpening }
   | { toolId: "studio.architecture.modifier"; params: StudioArchitectureItem }

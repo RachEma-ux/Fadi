@@ -2,6 +2,8 @@ import { studioShapeOutline } from "./courbes.js";
 import { studioLayerState, validateStudioDocument, type StudioDocument, type StudioShape } from "./document-2d.js";
 import { STUDIO_FRAME_3D, studioLocal2dVers3d, type StudioPoint3, type StudioSolid3d } from "./exporteurs/maillage.js";
 import { typeObjet } from "./objets/index.js";
+import { studioCotesExtrusion } from "./noyau/types.js";
+import { studioLienSolide } from "./composition/liens-solides.js";
 import { studioMaillageSolide, type StudioFreeSolid3d } from "./objets-3d/maillage.js";
 import { studioMaillageArchitecture, type StudioArchitecture3d } from "./architecture/maillage.js";
 
@@ -65,14 +67,15 @@ export function studioMesh3d(document: StudioDocument): StudioMesh3d {
     if (!studioLayerState(doc, o.layerId)?.visible) { hidden++; continue; }
     const e = o.extrusion;
     if (!e) { outlines.push(outline(o)); continue; }
-    const s = typeObjet(o).volume(o, e.base, e.base + e.height);
+    const { zMin, zMax } = studioCotesExtrusion(e);
+    const s = typeObjet(o).volume(o, zMin, zMax);
     if (!s) continue;
     solids.push({ id: o.id, type: o.type, ...(o.layerId !== undefined ? { layerId: o.layerId } : {}), kind: s.kind, ...s.geometry });
   }
   const freeSolids: StudioFreeSolid3d[] = [];
   for (const s of doc.solides ?? []) {
     if (!studioLayerState(doc, s.layerId)?.visible) { hidden++; continue; }
-    freeSolids.push(studioMaillageSolide(s));
+    freeSolids.push(studioMaillageSolide(s, studioLienSolide(doc, s)));
   }
   const architecture = doc.architecture?.length ? studioMaillageArchitecture(doc.architecture, (l) => !!studioLayerState(doc, l)?.visible) : [];
   if (doc.architecture?.length) hidden += doc.architecture.length - architecture.length;

@@ -79,7 +79,10 @@ describe("Studio : extrusion déclarée (studio.objet.extruder / studio.objet.ap
     const [l, r] = STUDIO_DOCUMENT_SCHEMA.properties.objects.items.oneOf;
     expect(l.required).not.toContain("extrusion");
     expect(l.properties.extrusion.properties.thickness.exclusiveMinimum).toBe(0);
-    expect(Object.keys(r.properties.extrusion.properties)).toEqual(["base", "height"]);
+    // Lot F1 : direction d'extrusion facultative (+z / -z), jamais requise par le schéma.
+    expect(Object.keys(r.properties.extrusion.properties)).toEqual(["base", "height", "direction"]);
+    expect(r.properties.extrusion.properties.direction).toEqual({ enum: ["+z", "-z"] });
+    expect(r.properties.extrusion.required).toEqual(["base", "height"]);
   });
 });
 
