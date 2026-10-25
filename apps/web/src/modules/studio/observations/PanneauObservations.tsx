@@ -86,7 +86,7 @@ export function PanneauObservations(props: PanneauObservationsProps) {
     },
     // Le fil des commentaires montre aussi les observations : les deux lectures sont relues ensemble.
     relire: () => { void client.invalidateQueries({ queryKey: cle }); void client.invalidateQueries({ queryKey: ["studio-comments", projectId, studyId, variantId] }); },
-    rapprochements: dernierRapprochement(rapprochements.data?.rapprochements ?? []),
+    rapprochements: dernierRapprochement(rapprochements.data?.rapprochements ?? [], props.revisionId),
     montrer: (id) => {
       setFiltre("toutes");
       requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-studio-suivi="${CSS.escape(id)}"]`)?.focus());

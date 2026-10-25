@@ -349,6 +349,10 @@ const AJOUTS = {
     "assemblerDossierConception", "pdfDossierConception",
     // Workflow de conception déclaré d'une étude (REF-01 §06, `workflow.ts`, extension additive).
     "STUDIO_PHASES_WORKFLOW", "estPhaseWorkflowStudio",
+    // Délégation d'approbation (EX-085, `delegation-approbation.ts`) et rapprochement des observations (EX-086,
+    // `rapprochement-observations.ts`), lot F4 : extensions additives.
+    "MESSAGES_PROBLEME_DELEGATION", "MESSAGES_REFUS_DELEGATION", "TYPES_PORTEE_DELEGATION", "couvreDelegation", "decisionApprobation", "etatDelegation",
+    "problemesNouvelleDelegation", "verifierDelegation", "SUIVIS_RAPPROCHEMENT", "identitesDuDocument", "rapprocherObservations",
   ]),
 };
 function sansAjouts(value: unknown): unknown {

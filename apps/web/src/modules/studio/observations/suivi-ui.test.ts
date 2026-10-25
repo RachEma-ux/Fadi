@@ -75,6 +75,10 @@ describe("EX-086 — suivi des rapprochements (affichage)", () => {
   it("EX-086 [+] le dernier rapprochement de chaque observation est affiché ; un objet disparu n'est jamais présenté comme une clôture", () => {
     const m = dernierRapprochement([r("1", "o1", "2026-10-25T08:00:00.000Z", "a-recontroler"), r("2", "o1", "2026-10-25T09:00:00.000Z", "objet-disparu"), r("3", "o2", "2026-10-25T08:30:00.000Z", "persiste")]);
     expect([...m.entries()].map(([k, v]) => [k, v.suivi])).toEqual([["o1", "objet-disparu"], ["o2", "persiste"]]);
+    // La révision affichée l'emporte sur un rapprochement plus récent d'une autre révision.
+    const autre = { ...r("4", "o1", "2026-10-25T10:00:00.000Z", "a-recontroler"), revisionId: "r-ancienne" };
+    expect(dernierRapprochement([r("2", "o1", "2026-10-25T09:00:00.000Z", "objet-disparu"), autre], "r").get("o1")!.suivi).toBe("objet-disparu");
+    expect(dernierRapprochement([r("2", "o1", "2026-10-25T09:00:00.000Z", "objet-disparu"), autre]).get("o1")!.suivi).toBe("a-recontroler");
     for (const l of Object.values(LIBELLE_SUIVI_RAPPROCHEMENT)) expect(l.toLowerCase()).not.toMatch(/clôtur|\bclos|\bfermé/);
     const t = new Traducteur(dico as Record<string, string>);
     for (const l of [...Object.values(LIBELLE_SUIVI_RAPPROCHEMENT), "Rapprocher avec la révision courante", "Rapprochement refusé par le serveur.",

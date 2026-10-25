@@ -30,12 +30,16 @@ export const LIBELLE_SUIVI_RAPPROCHEMENT: Record<SuiviRapprochement, string> = {
   "a-recontroler": "Éléments retrouvés : à recontrôler",
   "non-rapprochable": "Aucun élément rapprochable",
 };
-/** Dernier rapprochement consigné de chaque observation (plus récent par date, puis par identifiant). */
-export function dernierRapprochement(liste: readonly RapprochementLu[]): Map<string, RapprochementLu> {
+/**
+ * Rapprochement affiché pour chaque observation : le plus récent avec la révision affichée s'il en existe un, sinon le
+ * plus récent tout court (par date, puis par identifiant).
+ */
+export function dernierRapprochement(liste: readonly RapprochementLu[], revisionAffichee?: string): Map<string, RapprochementLu> {
   const out = new Map<string, RapprochementLu>();
+  const rang = (r: RapprochementLu) => (r.revisionId === revisionAffichee ? 1 : 0);
   for (const r of liste) {
     const prec = out.get(r.observationId);
-    if (!prec || prec.createdAt < r.createdAt || (prec.createdAt === r.createdAt && prec.id < r.id)) out.set(r.observationId, r);
+    if (!prec || rang(r) > rang(prec) || (rang(r) === rang(prec) && (prec.createdAt < r.createdAt || (prec.createdAt === r.createdAt && prec.id < r.id)))) out.set(r.observationId, r);
   }
   return out;
 }
