@@ -47,6 +47,22 @@ describe("revaliderBooleensStudio (lot F2) : le serveur fait autorité", () => {
     expect(refus).toMatchObject({ status: 400, body: { error: "invalid_commands", code: "exact-mismatch", path: "commands[0].params.resultat.empreinte" } });
   });
 
+  it("préfixe qui ne s'applique pas seul (calque créé plus loin dans le lot) : 400 exact-etat-intermediaire, jamais accepté sans recalcul", async () => {
+    const d = doc();
+    const faux = { brep: "x", maillage: { positions: [], indices: [] }, volume: 1, empreinte: "fabriquee" };
+    const cs: StudioCommand[] = [
+      boite("C", 5),
+      { toolId: "studio.solide.booleen", params: { id: "E", operation: "union", operandes: ["A", "B"], resultat: faux } } as unknown as StudioCommand,
+    ];
+    const appliquerPrefixeInvalide = (dd: StudioDocument, cc: readonly StudioCommand[]) => {
+      if (cc.length) throw new Error("calque « later » absent");
+      return dd;
+    };
+    const r = await revaliderBooleensStudio(d, cs, appliquerPrefixeInvalide);
+    expect(r).toMatchObject({ status: 400, body: { code: "exact-etat-intermediaire", path: "commands[1]" } });
+    expect((cs[1]!.params as { resultat: unknown }).resultat).toBe(faux);
+  });
+
   it("lot à plusieurs commandes : chaque booléen est recalculé sur le document du serveur juste avant lui (chaîne comprise)", async () => {
     const d = doc();
     const u = await resultatNavigateur(d, "union", ["A", "B"]);

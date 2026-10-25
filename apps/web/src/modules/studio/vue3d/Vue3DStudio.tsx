@@ -1095,6 +1095,8 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
         {resultatCoupe && resultatCoupe.sources.length > 0 && <ul data-studio-coupe-provenance>
           {resultatCoupe.sources.map((s) => <li key={s.id} data-studio-coupe-source={s.id}>{`Contour de ${s.segments} segment(s), provenance : solide ${s.id}`}</li>)}
         </ul>}
+        {resultatCoupe && resultatCoupe.exactsNonCoupes.length > 0 && <p role="note" data-studio-coupe-exacts-non-coupes={resultatCoupe.exactsNonCoupes.join(" ")}>
+          {`Section non dérivée pour ${resultatCoupe.exactsNonCoupes.length} solide(s) exact(s) dont une face horizontale est dans le plan de coupe : ${resultatCoupe.exactsNonCoupes.join(", ")}.`}</p>}
       </div>}
       </>; return hotePanneaux ? createPortal(<div className="studio-vue3d-panneaux" data-studio-vue3d-panneaux>{panneaux}</div>, hotePanneaux) : panneaux; })()}
     </section>

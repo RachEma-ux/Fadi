@@ -5,7 +5,7 @@ import { studioMesh3d } from "./mesh-3d.js";
 import { createStudioHistory, recordStudioHistory, redoStudioHistory, undoStudioHistory } from "./history.js";
 import { studioAssemblerMaillage, studioMaillerObjets, projectionsAInvalider } from "./projections.js";
 import { studioRapportFidelite } from "./echanges/rapport-fidelite.js";
-import { studioQuantitesSolides, type StudioBox, type StudioProfilePrism } from "./solides-libres.js";
+import { couperStudio, studioQuantitesSolides, type StudioBox, type StudioProfilePrism } from "./solides-libres.js";
 import {
   studioApercuBooleen, studioCaptureBooleen, studioCommandeBooleen, studioComparerApercu, studioVerifierEngagement, STUDIO_TOLERANCE_APERCU,
 } from "./booleens-exacts.js";
@@ -87,6 +87,23 @@ describe("IF-003 / R15 — solide exact : commande d'engagement explicite, opér
     let x = exactSynthetique("n0", [boite("a0", 0), boite("b0", 1)]);
     for (let i = 1; i <= 8; i++) x = exactSynthetique(`n${i}`, [x, boite(`b${i}`, 1)]);
     expect(refus(() => validerSolideExact(x, "x"))).toMatch(/8 niveaux au plus/);
+  });
+
+  it("coupe horizontale : le solide exact est coupé par son maillage (provenance), jamais omis ; face dans le plan : comptée non dérivée", () => {
+    const e = appliquer(deuxBoites(), booleen());
+    // Maillage synthétique : tétraèdre unité. À z = 0,5 : trois côtés du triangle (0,5 ; 0,5) traversés.
+    const c = couperStudio(e, { z: 0.5 });
+    expect(c.sources).toEqual([{ id: "E", segments: 3 }]);
+    expect(c.segments.every((g) => g.source === "E")).toBe(true);
+    const xs = c.segments.flatMap((g) => [g.start.x + g.start.y, g.end.x + g.end.y]);
+    expect(Math.max(...xs)).toBeCloseTo(0.5, 12);
+    expect(c.exactsNonCoupes).toEqual([]);
+    // À z = 0 la base est dans le plan : section non dérivée, nommée.
+    const base = couperStudio(e, { z: 0 });
+    expect(base.exactsNonCoupes).toEqual(["E"]);
+    expect(base.sources).toEqual([]);
+    // Hors du solide : rien, sans signalement.
+    expect(couperStudio(e, { z: 2 })).toMatchObject({ segments: [], sources: [], exactsNonCoupes: [] });
   });
 
   it("annuler / rétablir : le booléen se défait (opérandes rendus) et se rejoue, comme toute commande", () => {

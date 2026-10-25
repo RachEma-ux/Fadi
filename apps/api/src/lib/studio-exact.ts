@@ -24,7 +24,7 @@ export type AppliquerStudio = (document: StudioDocument, commands: readonly Stud
  * Recalcule les booléens exacts du lot (sur `document`, la tête du serveur) et remplace leurs résultats par ceux du
  * serveur. Retourne un refus à renvoyer tel quel, ou null quand tout est cohérent (ou qu'il n'y a aucun booléen : le
  * noyau n'est alors pas chargé). `appliquer` (l'application du modèle, en mémoire, sans écriture) donne le document
- * juste avant chaque booléen ; une commande intermédiaire invalide est laissée au refus de l'application du lot.
+ * juste avant chaque booléen ; un état intermédiaire invalide avant un booléen est refusé (`exact-etat-intermediaire`), jamais laissé sans recalcul.
  */
 export async function revaliderBooleensStudio(document: StudioDocument, commands: StudioCommand[], appliquer: AppliquerStudio): Promise<RefusExactStudio | null> {
   const cibles = commands.map((c, i) => [c, i] as const).filter(([c]) => c.toolId === TYPE_BOOLEEN_STUDIO);
@@ -35,7 +35,12 @@ export async function revaliderBooleensStudio(document: StudioDocument, commands
   for (const [c, i] of cibles) {
     // Document du serveur juste avant la commande i (les booléens précédents portent déjà le résultat du serveur).
     if (i > applique) {
-      try { doc = appliquer(doc, commands.slice(applique, i)); } catch { return null; }
+      // Le serveur ne recalcule un booléen que sur un état intermédiaire valide : si les commandes qui le précèdent ne
+      // s'appliquent pas seules (même si le lot complet serait valide), le lot est refusé — jamais accepté sans recalcul.
+      try { doc = appliquer(doc, commands.slice(applique, i)); } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        return refus(`commands[${i}]`, "exact-etat-intermediaire", `les commandes qui précèdent ce booléen ne s’appliquent pas seules (${message}) : envoyez le booléen dans un lot séparé`);
+      }
       applique = i;
     }
     const p = (c.params ?? {}) as Brut;

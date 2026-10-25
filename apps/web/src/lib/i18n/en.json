@@ -9625,6 +9625,7 @@
 "Coupe dérivée à z = {0} m : {1} segment(s) issus de {2} solide(s), non modifiable.": "Derived section at z = {0} m: {1} segment(s) from {2} solid(s), not editable.",
 "Saisissez la cote du plan de coupe : aucune cote n’est proposée.": "Enter the level of the section plane: no level is suggested.",
 "Contour de {0} segment(s), provenance : solide {1}": "Outline of {0} segment(s), provenance: solid {1}",
+"Section non dérivée pour {0} solide(s) exact(s) dont une face horizontale est dans le plan de coupe : {1}.": "Section not derived for {0} exact solid(s) with a horizontal face lying in the section plane: {1}.",
 "Rotation": "Rotate",
 "Facteur": "Factor",
 "Conserver l’original": "Keep the original",
