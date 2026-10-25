@@ -22,6 +22,7 @@
  * « identifiants invalides » (compte inconnu, mauvais mot de passe, compte verrouillé), avec une vérification factice
  * pour un temps de réponse constant ; seul le titulaire du bon mot de passe apprend qu'un compte est suspendu.
  */
+import { representedOrganizationOfMandate } from "../lib/mandate-invitations-db.js";
 import { Router, type Request, type Response } from "express";
 import rateLimit from "express-rate-limit";
 import QRCode from "qrcode";
@@ -623,6 +624,7 @@ async function describeInvitation(inv: typeof invitations.$inferSelect) {
   return invitationView(inv, {
     projectName: project ? `${project.code} — ${project.name}` : null, inviterName: inviter?.displayName || inviter?.email || (inv.invitedBy ? "" : "Exploitation de la plateforme"),
     organizationName: await organizationNameOf(inv.organizationId),
+    representedOrganizationName: (await representedOrganizationOfMandate(db, inv.mandateId))?.name ?? null,
     reviewPackage: await reviewInvitationContext(inv.reviewAssignmentId ?? null).then((r) => (r ? { id: r.packageId, title: r.title, version: r.version, projectLabel: r.projectLabel, responsibility: r.responsibility } : null)),
   });
 }

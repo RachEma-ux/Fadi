@@ -48,6 +48,8 @@ export interface Participant {
 }
 
 export type OrganizationStatus = "active" | "suspendue" | "close";
+/** État côté projet d'un mandat de représentant (reliquat de la phase 5). */
+export type MandateProjectSide = "non_invite" | "invitation_en_attente" | "participation_active" | "terminee";
 export interface OrganizationIdentity { id: string; name: string; kind: string | null; status: OrganizationStatus }
 
 /** Partie propriétaire déclarée et organisations parties (phase 5, OP-D1 a) : lecture seule, aucun droit. */
@@ -58,7 +60,15 @@ export interface ProjectOrganizations {
   parties: (OrganizationIdentity & {
     participationId: string; participationStatus: ParticipationStatus; businessRole: string | null; responsibilities: Responsibility[];
     startsOn: string | null; youAreMember: boolean;
-    representatives: { mandateId: string; name: string | null; responsibilities: Responsibility[]; startsOn: string | null }[];
+    representatives: {
+      mandateId: string; name: string | null; responsibilities: Responsibility[]; startsOn: string | null;
+      /** Reliquat de la phase 5 — propriétaire seul (null sinon) : état côté projet du représentant. */
+      projectSide: MandateProjectSide | null;
+      /** Le propriétaire peut lui envoyer une invitation de projet. */
+      invitable: boolean;
+    }[];
+    /** « Mandat terminé » : participation du représentant conservée, à revoir (jamais terminée d'office). */
+    endedRepresentatives: { participationId: string; mandateId: string; name: string | null; endsOn: string | null; endReason: string | null }[];
   })[];
 }
 

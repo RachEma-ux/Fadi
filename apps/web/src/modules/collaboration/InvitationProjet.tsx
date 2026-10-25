@@ -5,10 +5,14 @@
  * (indépendantes), puis lit l'**aperçu de l'accès résultant** avant l'envoi : l'envoi n'est possible qu'après un aperçu
  * des valeurs saisies, sans motif bloquant. Le serveur refait tous les contrôles à l'envoi et à l'acceptation.
  * Règle d'or : « Aperçu de l'accès » a son icône, sa barre (le formulaire d'invitation) et son raccourci Ctrl+Alt+Maj+'.
+ *
+ * Représentant mandaté (reliquat de la phase 5) : avec `representative`, le même formulaire invite le représentant d'un
+ * mandat actif d'une organisation partie au projet — ni adresse (celle de son compte, jamais montrée), ni fiche à choisir ;
+ * mêmes rôles, mêmes échéances, même aperçu, même commande (aucune commande nouvelle : plus aucun raccourci libre).
  */
 import { useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { api, ROLE_LABEL, type BusinessRole, type InvitationCreated, type InvitationInput, type InvitationPreview, type ProjectMember } from "../../lib/api";
+import { api, ROLE_LABEL, type BusinessRole, type InvitationCreated, type InvitationInput, type InvitationPreview, type MandateInvitationInput, type ProjectMember } from "../../lib/api";
 import { apiMessage } from "../../components/comptes/ComptesUI";
 import { LOCALE } from "../../lib/i18n";
 import { declenche, propsRaccourci } from "./commandes-collaboration";
@@ -24,7 +28,10 @@ const TARGET_LABEL: Record<InvitationPreview["target"]["kind"], string> = {
   "nouvelle-fiche": "nouvelle fiche créée à l’envoi (contact, sans droit avant l’acceptation)",
 };
 
-export function InvitationProjet({ projectId, onSent }: { projectId: string; onSent: (r: ProjectMember | InvitationCreated) => void }) {
+/** Représentant mandaté à inviter (reliquat de la phase 5) : mandat, nom d'affichage, organisation représentée. */
+export interface RepresentantAInviter { mandateId: string; name: string | null; organizationName: string }
+
+export function InvitationProjet({ projectId, onSent, representative }: { projectId: string; onSent: (r: ProjectMember | InvitationCreated) => void; representative?: RepresentantAInviter }) {
   const [email, setEmail] = useState("");
   const [base, setBase] = useState<"lecteur" | "concepteur">("lecteur");
   const [extras, setExtras] = useState<BusinessRole[]>([]);
@@ -35,7 +42,7 @@ export function InvitationProjet({ projectId, onSent }: { projectId: string; onS
   const [preview, setPreview] = useState<{ key: string; value: InvitationPreview } | null>(null);
   const [error, setError] = useState<string | null>(null);
   // Contacts de l'annuaire (participations `contact` de personnes) proposables comme fiche visée.
-  const participants = useQuery({ queryKey: ["participants", projectId], queryFn: () => participantsApi.list(projectId) });
+  const participants = useQuery({ queryKey: ["participants", projectId], queryFn: () => participantsApi.list(projectId), enabled: !representative });
   const contacts = (participants.data?.participants ?? []).filter((p) => p.kind === "personne" && p.status === "contact" && !p.person?.erased);
 
   const input: InvitationInput = useMemo(() => ({
@@ -48,14 +55,16 @@ export function InvitationProjet({ projectId, onSent }: { projectId: string; onS
   }), [email, base, extras, participationId, displayName, accessUntil, days]);
   const key = JSON.stringify(input);
   const current = preview?.key === key ? preview.value : null;
+  // Représentant mandaté : ni adresse, ni fiche, ni nom — le serveur les tire du mandat.
+  const mandateInput: MandateInvitationInput = { roles: input.roles, accessExpiresAt: input.accessExpiresAt ?? null, ...(input.invitationDays ? { invitationDays: input.invitationDays } : {}) };
 
   const look = useMutation({
-    mutationFn: () => api.previewInvitation(projectId, input),
+    mutationFn: () => (representative ? api.previewMandateInvitation(projectId, representative.mandateId, mandateInput) : api.previewInvitation(projectId, input)),
     onSuccess: (r) => { setError(null); setPreview({ key, value: r.preview }); },
     onError: (err) => { setPreview(null); setError(apiMessage(err, "L’aperçu n’a pas pu être calculé.")); },
   });
   const send = useMutation({
-    mutationFn: () => api.inviteMember(projectId, input),
+    mutationFn: () => (representative ? api.inviteRepresentative(projectId, representative.mandateId, mandateInput) : api.inviteMember(projectId, input)),
     onSuccess: (r) => {
       setError(null); setPreview(null); setEmail(""); setDisplayName(""); setParticipationId(""); setExtras([]); setAccessUntil("");
       onSent(r);
@@ -63,23 +72,32 @@ export function InvitationProjet({ projectId, onSent }: { projectId: string; onS
     onError: (err) => setError(apiMessage(err, "L’invitation n’a pas pu être enregistrée.")),
   });
   const busy = look.isPending || send.isPending;
-  const canPreview = !!email.trim() && !busy;
+  const canPreview = (!!representative || !!email.trim()) && !busy;
   const canSend = !!current && !current.blocking && !busy;
 
   return (
     <form
       className="members-invite"
       data-invitation-form
+      data-invitation-representant={representative?.mandateId}
+      aria-label={representative ? `Inviter ${representative.name ?? "le représentant"} au projet` : undefined}
       onSubmit={(e: FormEvent) => { e.preventDefault(); if (canSend) send.mutate(); }}
       onKeyDown={(e) => {
         // Règle d'or : Ctrl+Alt+Maj+' calcule l'aperçu de l'accès depuis n'importe quel champ du formulaire.
         if (declenche(e, "apercu-invitation")) { e.preventDefault(); if (canPreview) look.mutate(); }
       }}
     >
-      <label>
-        Adresse à inviter
-        <input type="email" value={email} required maxLength={254} placeholder="prenom.nom@exemple.fr" autoComplete="off" onChange={(e) => setEmail(e.target.value)} />
-      </label>
+      {representative ? (
+        <div data-representant-invite>
+          <p>{"Partie représentée : "}<b translate="no">{representative.organizationName}</b></p>
+          <p className="h7-muted">L’invitation part à l’adresse du compte du représentant, qui l’accepte lui-même ; la participation acceptée représentera cette organisation. Le mandat seul n’ouvre aucun accès.</p>
+        </div>
+      ) : (
+        <label>
+          Adresse à inviter
+          <input type="email" value={email} required maxLength={254} placeholder="prenom.nom@exemple.fr" autoComplete="off" onChange={(e) => setEmail(e.target.value)} />
+        </label>
+      )}
       <label>
         Rôle au projet
         <select value={base} onChange={(e) => setBase(e.target.value as "lecteur" | "concepteur")}>
@@ -96,7 +114,7 @@ export function InvitationProjet({ projectId, onSent }: { projectId: string; onS
           </label>
         ))}
       </fieldset>
-      {contacts.length > 0 && (
+      {!representative && contacts.length > 0 && (
         <label>
           Fiche de l’annuaire (facultatif)
           <select value={participationId} onChange={(e) => setParticipationId(e.target.value)}>
@@ -105,10 +123,12 @@ export function InvitationProjet({ projectId, onSent }: { projectId: string; onS
           </select>
         </label>
       )}
-      <label>
-        Nom de la personne (fiche nouvelle, facultatif)
-        <input type="text" value={displayName} maxLength={200} autoComplete="off" onChange={(e) => setDisplayName(e.target.value)} />
-      </label>
+      {!representative && (
+        <label>
+          Nom de la personne (fiche nouvelle, facultatif)
+          <input type="text" value={displayName} maxLength={200} autoComplete="off" onChange={(e) => setDisplayName(e.target.value)} />
+        </label>
+      )}
       <label>
         Invitation valable (jours)
         <input type="number" min={1} max={30} value={days} onChange={(e) => setDays(Math.min(30, Math.max(1, Number(e.target.value) || 7)))} />
@@ -127,7 +147,12 @@ export function InvitationProjet({ projectId, onSent }: { projectId: string; onS
       {current && (
         <div className="invitation-apercu" data-invitation-apercu role="region" aria-label="Aperçu de l’accès">
           <dl>
-            <dt>Adresse</dt><dd translate="no">{current.email}</dd>
+            {current.representative ? (
+              <>
+                <dt>Représentant</dt><dd translate="no">{current.representative.name ?? "—"}</dd>
+                <dt>Partie représentée</dt><dd translate="no" data-apercu-partie>{current.representative.organization.name}</dd>
+              </>
+            ) : <><dt>Adresse</dt><dd translate="no">{current.email}</dd></>}
             <dt>Compte</dt><dd>{current.accountExists ? "compte existant : il acceptera depuis le lien ou sa notification" : "aucun compte : il le créera depuis le lien"}</dd>
             <dt>Fiche visée</dt><dd>{TARGET_LABEL[current.target.kind]}</dd>
             <dt>Invitation en attente</dt><dd>{current.pendingInvitation ? `oui : elle sera renvoyée (même invitation, nouveau lien), valable jusqu’au ${date(current.invitationExpiresAt)}` : "aucune"}</dd>

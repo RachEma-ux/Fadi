@@ -15,6 +15,10 @@
  *   - `pendingProjectInvitationsFor(email)` : invitations en attente du compte (notification dans l'application) ;
  *   - `acceptInvitationById(user, id, ip)` / `declineInvitationById(user, id, ip)` : acceptation depuis la notification.
  *
+ * Représentant mandaté (reliquat de la phase 5) : une invitation peut partir d'un mandat (`mandateId`, routes
+ * `/members/mandates/:mandateId`) ; l'acceptation exige que le mandat soit encore actif (`mandate_ended`) et la
+ * participation activée porte alors la partie représentée (l'organisation du mandat).
+ *
  * Pont : l'accès de base (Lecteur / Concepteur) passe toujours par la ligne `project_members` que le miroir
  * `op_sync_access` traduit en participation active et rôle `acces` (voir phase-3.md, « Pont conservé ») ; les autres rôles
  * proposés sont posés avec l'origine `attribution`, l'échéance d'accès sur la participation.
@@ -22,7 +26,7 @@
 import { and, asc, eq, gt, isNull, ne, sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import {
-  invitations, people, projectMembers, projectParticipations, projectRoleAssignments, projects, studioObservations, studioObservationTasks,
+  invitations, organizationMandates, organizations, people, projectMembers, projectParticipations, projectRoleAssignments, projects, studioObservations, studioObservationTasks,
   studioStudies, studioVariants, users, type ProposedRole,
 } from "../db/schema.js";
 import { audit } from "./audit.js";
@@ -36,6 +40,7 @@ import {
 } from "./project-invitations.js";
 import type { Tx } from "./step-rows.js";
 import { porteeInconnue } from "./portees-db.js";
+import { mandateStillValidFor, representedOrganizationOfMandate } from "./mandate-invitations-db.js";
 import type { TypePortee } from "@parcours/domain-model";
 
 type Querier = Pick<typeof db, "select">;
@@ -130,6 +135,8 @@ export interface InvitationDraft {
   invitationExpiresAt: Date;
   accessExpiresAt: Date | null;
   participationId?: string | null | undefined;
+  /** Invitation d'un représentant mandaté (reliquat de la phase 5) : le mandat d'où elle part. */
+  mandateId?: string | null | undefined;
 }
 
 /** Aperçu de l'accès résultant, avant envoi : rien n'est écrit. */
@@ -173,9 +180,13 @@ export async function createProjectInvitation(tx: Tx, d: InvitationDraft & { inv
   )).limit(1).for("update");
   const values = {
     tokenHash: sha256Hex(token), expiresAt: d.invitationExpiresAt, accessExpiresAt: d.accessExpiresAt, projectRole: baseRole, invitedBy: d.invitedBy,
-    participationId, proposedRoles: d.roles,
+    participationId, proposedRoles: d.roles, mandateId: d.mandateId ?? null,
   };
-  const meta = { purpose: "project_participation", projectId: d.projectId, participationId, role: baseRole, roles: d.roles.map(roleLabel), accessExpiresAt: d.accessExpiresAt?.toISOString() ?? null, invitationExpiresAt: d.invitationExpiresAt.toISOString() };
+  const represented = d.mandateId ? await representedOrganizationOfMandate(tx, d.mandateId) : null;
+  const meta = {
+    purpose: "project_participation", projectId: d.projectId, participationId, role: baseRole, roles: d.roles.map(roleLabel), accessExpiresAt: d.accessExpiresAt?.toISOString() ?? null, invitationExpiresAt: d.invitationExpiresAt.toISOString(),
+    ...(d.mandateId ? { mandateId: d.mandateId, representedOrganizationId: represented?.id ?? null, via: "mandat" } : {}),
+  };
   if (existing) {
     const [row] = await tx.update(invitations).set(values).where(eq(invitations.id, existing.id)).returning();
     await audit(tx, { actorId: d.invitedBy, action: "invitation.resent", target: { type: "invitation", id: existing.id }, metadata: meta, ip: d.ip ?? null });
@@ -253,7 +264,9 @@ export async function projectParticipationRefusal(tx: Tx | typeof db, inv: Invit
   if (opts.identityKnown === false) personUserId = null;
   // Revalidation de la portée : un élément désigné supprimé depuis l'envoi rend les rôles proposés inattribuables.
   const rolesValid = proposedRolesValid(rolesOf(inv)) && !(await proposedScopesProblem(tx, inv.projectId, rolesOf(inv)));
-  return participationRefusal({ personUserId, acceptingUserId: userId, participationStatus: status, accessExpiresAt: inv.accessExpiresAt ?? null, rolesValid, now });
+  // Représentant mandaté : le mandat doit être encore actif et son organisation partie au projet (reliquat de la phase 5).
+  const mandateActive = inv.mandateId ? await mandateStillValidFor(tx, inv.mandateId, inv.projectId) : null;
+  return participationRefusal({ personUserId, acceptingUserId: userId, participationStatus: status, accessExpiresAt: inv.accessExpiresAt ?? null, rolesValid, mandateActive, now });
 }
 
 /**
@@ -314,6 +327,16 @@ export async function activateProjectParticipation(tx: Tx, inv: InvitationRow, u
     // Même entrée qu'un ajout de membre (écart E3), désormais au moment de l'acceptation et par la voie de l'invitation.
     await audit(tx, { actorId: userId, action: "project.member.added", target, metadata: { memberId: userId, role: baseRole, canExport: baseRole === "editeur", via: "invitation" }, ip });
   }
+  // Représentant mandaté (reliquat de la phase 5) : la participation porte la partie représentée — l'organisation du
+  // mandat —, sans écraser une autre partie déjà enregistrée (l'envoi l'a refusé ; elle aurait pu changer depuis).
+  if (inv.mandateId) {
+    const represented = await representedOrganizationOfMandate(tx, inv.mandateId);
+    if (represented) {
+      const set = await tx.update(projectParticipations).set({ representedOrganizationId: represented.id, updatedAt: new Date() })
+        .where(and(eq(projectParticipations.id, part.id), sql`${projectParticipations.representedOrganizationId} IS NULL`)).returning({ id: projectParticipations.id });
+      if (set.length) await audit(tx, { actorId: userId, action: "participation.representation_recorded", target, metadata: { participationId: part.id, memberId: userId, mandateId: inv.mandateId, representedOrganizationId: represented.id, via: "invitation" }, ip });
+    }
+  }
   for (const r of rolesToAttribute(roles, baseRole)) {
     const id = newId("pra");
     const inserted = await tx.insert(projectRoleAssignments).values({ id, participationId: part.id, role: r.role, scopeType: r.scopeType, scopeId: r.scopeId, origin: "attribution", grantedBy: inv.invitedBy })
@@ -343,19 +366,22 @@ export async function pendingWorkFor(q: Querier, projectId: string, userId: stri
 export interface ReceivedInvitation {
   id: string; projectId: string; projectCode: string; projectName: string; invitedBy: string; baseRole: "lecteur" | "editeur";
   roles: ProposedRole[]; createdAt: string; expiresAt: string; accessExpiresAt: string | null;
+  /** Invitation d'un représentant mandaté : l'organisation que la participation représentera. */
+  representedOrganizationName: string | null;
 }
 
 /** Invitations de projet en attente (non échues) adressées à ce compte : jamais le jeton. */
 export async function pendingProjectInvitationsFor(email: string, q: Querier = db): Promise<ReceivedInvitation[]> {
-  const rows = await q.select({ inv: invitations, code: projects.code, name: projects.name, inviterEmail: users.email, inviterName: users.displayName })
+  const rows = await q.select({ inv: invitations, code: projects.code, name: projects.name, inviterEmail: users.email, inviterName: users.displayName, represented: organizations.name })
     .from(invitations).innerJoin(projects, eq(projects.id, invitations.projectId)).leftJoin(users, eq(users.id, invitations.invitedBy))
+    .leftJoin(organizationMandates, eq(organizationMandates.id, invitations.mandateId)).leftJoin(organizations, eq(organizations.id, organizationMandates.organizationId))
     .where(and(eq(invitations.purpose, "project_participation"), eq(invitations.status, "pending"), gt(invitations.expiresAt, new Date()),
       sql`lower(${invitations.email}) = ${normalizeEmail(email)}`))
     .orderBy(asc(invitations.createdAt));
   return rows.map((r) => ({
     id: r.inv.id, projectId: r.inv.projectId!, projectCode: r.code, projectName: r.name, invitedBy: r.inviterName || r.inviterEmail || "",
     baseRole: r.inv.projectRole ?? "lecteur", roles: rolesOf(r.inv), createdAt: r.inv.createdAt.toISOString(), expiresAt: r.inv.expiresAt.toISOString(),
-    accessExpiresAt: r.inv.accessExpiresAt?.toISOString() ?? null,
+    accessExpiresAt: r.inv.accessExpiresAt?.toISOString() ?? null, representedOrganizationName: r.represented ?? null,
   }));
 }
 

@@ -94,6 +94,8 @@ export function ParticipantsSection({ projectId }: { projectId: string }) {
   const closed = Boolean(v.project.closedAt);
   const busy = closure.isPending || returning.isPending;
   const team = v.participants.filter((p) => p.status !== "terminee" && p.responsibilities.length > 0);
+  // « Mandat terminé » (reliquat de la phase 5) : participation d'un représentant dont le mandat a pris fin, conservée.
+  const endedMandates = new Set((v.organizations?.parties ?? []).flatMap((o) => o.endedRepresentatives.map((e) => e.participationId)));
 
   const rowKeys = (p: Participant) => (e: KeyboardEvent) => {
     if (!manage && !v.you.canErase) return;
@@ -129,7 +131,16 @@ export function ParticipantsSection({ projectId }: { projectId: string }) {
           : <Commande commande="clore-projet" disabled={busy} onClick={() => closure.mutate(true)} />)}
         <small className="h7-muted">La clôture est déclarative : elle ne change aucun droit. Un contact sans compte est effacé 2 ans après la clôture de tous ses projets, plus tôt à sa demande. Réserve : d’éventuelles obligations légales de conservation (garantie décennale…) restent à vérifier par le conseil juridique du maître d’ouvrage.</small>
       </div>
-      {v.organizations ? <OrganisationsProjet v={v.organizations} ownerFallback={(() => { const o = v.participants.find((p) => p.isOwner); return o ? nomTexte(o) : null; })()} /> : null}
+      {v.organizations ? (
+        <OrganisationsProjet
+          v={v.organizations}
+          ownerFallback={(() => { const o = v.participants.find((p) => p.isOwner); return o ? nomTexte(o) : null; })()}
+          projectId={projectId}
+          onInvited={(r) => done("mail" in r && !r.mail.queued
+            ? "Invitation enregistrée pour le représentant : le courriel n’a pas pu partir, il la verra dans ses notifications. Rien n’est accordé avant son acceptation."
+            : "Invitation envoyée au représentant : il l’accepte depuis le courriel ou sa notification. Rien n’est accordé avant son acceptation.")}
+        />
+      ) : null}
       <div className="h7-tabs" role="tablist" aria-label="Vues de l’annuaire">
         <button type="button" role="tab" id="tab-participants" aria-controls="panel-participants" aria-selected={tab === "participants"} className={tab === "participants" ? "sel" : ""} onClick={() => setTab("participants")}>
           {`Participants (${v.participants.length})`}
@@ -172,6 +183,7 @@ export function ParticipantsSection({ projectId }: { projectId: string }) {
                         {p.businessRole ? <small translate="no">{p.businessRole}</small> : null}
                         {p.person?.jobTitle ? <small translate="no">{p.person.jobTitle}</small> : null}
                         {p.representedOrganization ? <small>{"Représente "}<span translate="no">{p.representedOrganization.name}</span></small> : null}
+                        {endedMandates.has(p.id) ? <span className="h7-chip warn" data-participant-mandat-termine>mandat terminé</span> : null}
                         {p.person?.workEmail ? <small translate="no" data-coordonnee="email">{p.person.workEmail}</small> : null}
                         {p.person?.workPhone ? <small translate="no" data-coordonnee="telephone">{p.person.workPhone}</small> : null}
                         {p.responsibilities.length ? <small>{p.responsibilities.map((r) => RESP_LABEL[r]).join(" · ")}</small> : null}

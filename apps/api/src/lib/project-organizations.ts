@@ -17,6 +17,7 @@ import {
   type OrganizationStatus, type ParticipationStatus, type TeamResponsibility,
 } from "../db/schema.js";
 import { shapeProjectOrganizations, type ProjectOrganizationsView } from "./project-organizations-view.js";
+import { endedMandatesOfProject, projectSideOfMandates } from "./mandate-invitations-db.js";
 
 type Querier = Pick<typeof db, "select">;
 
@@ -65,7 +66,7 @@ export async function projectOrganizations(projectId: string, viewerId: string, 
   const mandates = await q.select({
     id: organizationMandates.id, organizationId: organizationMandates.organizationId, participationId: organizationMandates.participationId,
     responsibilities: organizationMandates.responsibilities, startsOn: organizationMandates.startsOn,
-    accountName: users.displayName, personName: people.displayName,
+    accountName: users.displayName, personName: people.displayName, personId: people.id, userId: people.userId,
   }).from(organizationMandates)
     .innerJoin(organizationMemberships, eq(organizationMemberships.id, organizationMandates.membershipId))
     .innerJoin(people, eq(people.id, organizationMemberships.personId))
@@ -74,7 +75,15 @@ export async function projectOrganizations(projectId: string, viewerId: string, 
     .orderBy(organizationMandates.proposedAt, organizationMandates.id);
   const orgIds = [...new Set([...(owner ? [owner.id] : []), ...parties.map((p) => p.org.id)])];
   const memberOf = await memberOrganizations(viewerId, orgIds, q);
+  // Reliquat de la phase 5 : états côté projet des représentants pour le propriétaire seul ; marques « mandat terminé »
+  // pour tout lecteur (aucune coordonnée : nom d'affichage seul).
+  const viewerIsOwner = project.ownerId === viewerId;
+  const sides = viewerIsOwner
+    ? await projectSideOfMandates(q, mandates.map((m) => ({ mandateId: m.id, projectId, personId: m.personId, userId: m.userId ?? null })))
+    : new Map();
+  const ended = await endedMandatesOfProject(q, projectId);
   return shapeProjectOrganizations({
+    viewerIsOwner, sides, ended,
     owner,
     ownerUserId: project.ownerId,
     ownerPersonName: project.ownerName || ownerPerson?.displayName || null,
@@ -83,7 +92,7 @@ export async function projectOrganizations(projectId: string, viewerId: string, 
       responsibilities: p.responsibilities as TeamResponsibility[], startsOn: p.startsOn,
       org: { ...p.org, status: p.org.status as OrganizationStatus },
     })),
-    mandates: mandates.map((m) => ({ ...m, responsibilities: m.responsibilities as TeamResponsibility[] })),
+    mandates: mandates.map((m) => ({ id: m.id, organizationId: m.organizationId, participationId: m.participationId, startsOn: m.startsOn, accountName: m.accountName, personName: m.personName, userId: m.userId ?? null, responsibilities: m.responsibilities as TeamResponsibility[] })),
     memberOf,
   });
 }

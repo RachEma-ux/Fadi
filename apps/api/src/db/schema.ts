@@ -133,6 +133,8 @@ export const invitations = authSchema.table("invitations", {
    */
   participationId: text("participation_id"),
   proposedRoles: jsonb("proposed_roles").$type<ProposedRole[] | null>(),
+  /** Invitation d'un représentant mandaté (reliquat de la phase 5) : le mandat d'où elle part ; aucun droit avant l'acceptation. */
+  mandateId: text("mandate_id"),
 }, (t) => [uniqueIndex("invitations_token_hash_unique").on(t.tokenHash)]);
 
 /** Rôle proposé par une invitation de projet (phase 3) : rôle métier et portée exacte. */

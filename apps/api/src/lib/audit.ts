@@ -68,6 +68,8 @@ export type AuditAction =
   | "participation.linked"
   | "participation.activated"
   | "participation.access_expiry_changed"
+  // Représentant mandaté invité au projet (reliquat de la phase 5) : partie représentée posée à l'acceptation.
+  | "participation.representation_recorded"
   | "person.contact_created"
   | "person.contact_erased"
   | "project.closed"

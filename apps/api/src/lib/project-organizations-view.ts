@@ -3,6 +3,7 @@
  * Aucune décision d'accès ici : la vue dit explicitement que la partie propriétaire ne donne aucun droit (OP-D1 a).
  */
 import type { OrganizationStatus, ParticipationStatus, TeamResponsibility } from "../db/schema.js";
+import type { MandateProjectSide } from "./mandate-invitations.js";
 
 export interface OrganizationIdentity { id: string; name: string; kind: string | null; status: OrganizationStatus }
 
@@ -12,6 +13,22 @@ export interface RepresentativeView {
   name: string | null;
   responsibilities: TeamResponsibility[];
   startsOn: string | null;
+  /**
+   * Reliquat de la phase 5 — vu par le propriétaire seul (null pour les autres lecteurs) : état côté projet du
+   * représentant (non invité, invitation en attente, participation active, terminée).
+   */
+  projectSide: MandateProjectSide | null;
+  /** Le propriétaire peut lui envoyer une invitation de projet (revalidé par le serveur à l'envoi). */
+  invitable: boolean;
+}
+
+/** « Mandat terminé » : la participation du représentant est conservée (jamais terminée d'office), à revoir. */
+export interface EndedRepresentativeMark {
+  participationId: string;
+  mandateId: string;
+  name: string | null;
+  endsOn: string | null;
+  endReason: string | null;
 }
 
 export interface OrganizationPartyView extends OrganizationIdentity {
@@ -23,6 +40,7 @@ export interface OrganizationPartyView extends OrganizationIdentity {
   /** Le lecteur est membre (adhésion non terminée) : l'interface renvoie vers l'espace d'organisation. */
   youAreMember: boolean;
   representatives: RepresentativeView[];
+  endedRepresentatives: EndedRepresentativeMark[];
 }
 
 export interface ProjectOrganizationsView {
@@ -40,8 +58,13 @@ export interface ShapeInput {
   ownerUserId: string | null;
   ownerPersonName: string | null;
   parties: { participationId: string; status: ParticipationStatus; businessRole: string | null; responsibilities: TeamResponsibility[]; startsOn: string | null; org: OrganizationIdentity }[];
-  mandates: { id: string; organizationId: string; participationId: string; responsibilities: TeamResponsibility[]; startsOn: string | null; accountName: string | null; personName: string | null }[];
+  mandates: { id: string; organizationId: string; participationId: string; responsibilities: TeamResponsibility[]; startsOn: string | null; accountName: string | null; personName: string | null; userId?: string | null }[];
   memberOf: string[];
+  /** Le lecteur est le propriétaire du projet : états côté projet et invitations des représentants. */
+  viewerIsOwner?: boolean;
+  /** État côté projet par mandat (lu pour le propriétaire seul). */
+  sides?: ReadonlyMap<string, MandateProjectSide>;
+  ended?: readonly (EndedRepresentativeMark & { organizationId: string })[];
 }
 
 export function shapeProjectOrganizations(input: ShapeInput): ProjectOrganizationsView {
@@ -59,7 +82,16 @@ export function shapeProjectOrganizations(input: ShapeInput): ProjectOrganizatio
       responsibilities: p.responsibilities, startsOn: p.startsOn, youAreMember: member.has(p.org.id),
       representatives: input.mandates
         .filter((m) => m.organizationId === p.org.id && m.participationId === p.participationId)
-        .map((m) => ({ mandateId: m.id, name: m.accountName || m.personName || null, responsibilities: m.responsibilities, startsOn: m.startsOn })),
+        .map((m) => {
+          const side = input.viewerIsOwner ? input.sides?.get(m.id) ?? "non_invite" : null;
+          return {
+            mandateId: m.id, name: m.accountName || m.personName || null, responsibilities: m.responsibilities, startsOn: m.startsOn,
+            projectSide: side,
+            invitable: !!input.viewerIsOwner && side !== "participation_active" && p.org.status === "active" && !!m.userId && m.userId !== input.ownerUserId,
+          };
+        }),
+      endedRepresentatives: (input.ended ?? []).filter((e) => e.organizationId === p.org.id)
+        .map((e) => ({ participationId: e.participationId, mandateId: e.mandateId, name: e.name, endsOn: e.endsOn, endReason: e.endReason })),
     })),
   };
 }

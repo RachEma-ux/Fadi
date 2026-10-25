@@ -104,9 +104,11 @@ export interface InvitationView {
   reviewPackage: { id: string; title: string; version: number; projectLabel: string; responsibility: string } | null;
   /** Finalité `project_participation` (phase 3) : participation visée et rôles proposés par portée. */
   participationId: string | null; roles: ProposedRole[] | null;
+  /** Invitation d'un représentant mandaté (reliquat de la phase 5) : mandat d'origine et organisation représentée. */
+  mandateId: string | null; representedOrganizationName: string | null;
 }
 
-export function invitationView(inv: InvitationRow, extra: { projectName?: string | null; inviterName?: string; organizationName?: string | null; reviewPackage?: InvitationView["reviewPackage"] } = {}): InvitationView {
+export function invitationView(inv: InvitationRow, extra: { projectName?: string | null; inviterName?: string; organizationName?: string | null; reviewPackage?: InvitationView["reviewPackage"]; representedOrganizationName?: string | null } = {}): InvitationView {
   const expired = inv.status === "pending" && inv.expiresAt.getTime() <= Date.now();
   return {
     id: inv.id, purpose: inv.purpose, email: inv.email, status: expired ? "expired" : inv.status,
@@ -115,5 +117,6 @@ export function invitationView(inv: InvitationRow, extra: { projectName?: string
     organizationId: inv.organizationId ?? null, organizationName: extra.organizationName ?? null, organizationRole: inv.organizationRole ?? null,
     organizationJobTitle: inv.organizationJobTitle ?? null, reviewPackage: extra.reviewPackage ?? null,
     participationId: inv.participationId ?? null, roles: inv.purpose === "project_participation" ? rolesOf(inv) : null,
+    mandateId: inv.mandateId ?? null, representedOrganizationName: extra.representedOrganizationName ?? null,
   };
 }

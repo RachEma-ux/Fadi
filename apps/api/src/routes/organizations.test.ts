@@ -187,3 +187,115 @@ describe("organisations côté projet : partie propriétaire et parties affiché
     expect(await snapshot()).toEqual(before);
   });
 });
+
+describe("représentant mandaté → invitation de projet (reliquat de la phase 5)", () => {
+  it("le propriétaire invite le représentant d'un mandat actif ; l'accès naît de l'acceptation seule, la partie représentée est posée ; fin de mandat signalée, participation conservée", async () => {
+    const { alice, bob, orgId, projectId, bobMember } = await setup();
+    const carol = await account("org-carol-mdt@example.com");
+    const stranger = await account("org-stranger-mdt@example.com");
+    expect((await partager(alice.client, projectId, carol.email, "lecteur")).status).toBe(201);
+    expect((await alice.client.put(`/organizations/${orgId}/projects/${projectId}/participation`).send({})).status).toBe(201);
+    const proposed = await alice.client.post(`/organizations/${orgId}/mandates`).send({ projectId, membershipId: bobMember.membershipId, responsibilities: ["produire"] });
+    expect(proposed.status).toBe(201);
+    const mandateId = proposed.body.mandate.id as string;
+    const route = `/projects/${projectId}/members/mandates/${mandateId}`;
+    const body = { roles: [{ role: "lecteur" }], invitationDays: 7 };
+
+    // Mandat seulement proposé : 409 avec motif ; non propriétaire : 403 ; sans accès : 404 ; mandat d'un autre projet : 404.
+    const notActive = await alice.client.post(route).send(body);
+    expect(notActive.status).toBe(409);
+    expect(notActive.body.error).toBe("mandate_inactive");
+    expect(notActive.body.message).toBeTruthy();
+    expect((await bob.client.post(`/organizations/mandates/${mandateId}/accept`)).body.status).toBe("actif");
+    const forbidden = await carol.client.post(route).send(body);
+    expect(forbidden.status).toBe(403);
+    expect(forbidden.body.message).toBeTruthy();
+    expect((await stranger.client.post(route).send(body)).status).toBe(404);
+    const other = await alice.client.post("/projects").send({ code: "ORG.2", name: "Autre projet" });
+    expect((await alice.client.post(`/projects/${other.body.id}/members/mandates/${mandateId}`).send(body)).status).toBe(404);
+
+    // L'annuaire du propriétaire montre l'état côté projet ; le lecteur, non. Aucune adresse.
+    const ownerView = await alice.client.get(`/projects/${projectId}/participants`);
+    expect(ownerView.body.organizations.parties[0].representatives[0]).toMatchObject({ mandateId, projectSide: "non_invite", invitable: true });
+    expect((await carol.client.get(`/projects/${projectId}/participants`)).body.organizations.parties[0].representatives[0]).toMatchObject({ projectSide: null, invitable: false });
+    expect(JSON.stringify(ownerView.body.organizations)).not.toContain(bob.email);
+
+    // Aperçu : rien n'est écrit, l'adresse n'est pas montrée, la partie représentée l'est.
+    const preview = await alice.client.post(`${route}/preview`).send(body);
+    expect(preview.status).toBe(200);
+    expect(preview.body.preview).toMatchObject({ email: null, accountExists: true, blocking: null, representative: { mandateId, organization: { id: orgId, name: "Atelier Nord" } } });
+    expect((await pool.query("SELECT 1 FROM auth.invitations WHERE mandate_id = $1", [mandateId])).rowCount).toBe(0);
+
+    const sent = await alice.client.post(route).send(body);
+    expect(sent.status).toBe(202);
+    expect(sent.body.invitation).toMatchObject({ mandateId, representedOrganizationName: "Atelier Nord" });
+    expect((await bob.client.get(`/projects/${projectId}`)).status).toBe(404);
+    expect(await projectRowsOf(bob.id, projectId)).toEqual({ members: 0, activeParticipations: 0 });
+    expect((await alice.client.get(`/projects/${projectId}/participants`)).body.organizations.parties[0].representatives[0].projectSide).toBe("invitation_en_attente");
+    const orgSide = await alice.client.get(`/organizations/${orgId}/projects`);
+    expect(orgSide.body.projects.find((p: { projectId: string }) => p.projectId === projectId).mandates[0].projectSide).toBe("invitation_en_attente");
+    // Un membre non administrateur ne voit pas l'état côté projet.
+    expect((await bob.client.get(`/organizations/${orgId}/projects`)).body.projects.find((p: { projectId: string }) => p.projectId === projectId).mandates[0].projectSide).toBeNull();
+    const received = await bob.client.get("/notifications/invitations");
+    expect(received.body.invitations[0]).toMatchObject({ projectId, representedOrganizationName: "Atelier Nord" });
+
+    const accepted = await bob.client.post("/auth/invitations/accept").send({ token: tokenOf(sent.body.mail.link) });
+    expect(accepted.status).toBe(200);
+    expect((await bob.client.get(`/projects/${projectId}`)).status).toBe(200);
+    const part = await pool.query(
+      "SELECT pp.id, pp.status, pp.represented_organization_id FROM project_participations pp JOIN people pe ON pe.id = pp.person_id WHERE pp.project_id = $1 AND pe.user_id = $2 AND pp.status <> 'terminee'",
+      [projectId, bob.id],
+    );
+    expect(part.rows).toEqual([{ id: expect.any(String), status: "active", represented_organization_id: orgId }]);
+    const recorded = await pool.query("SELECT metadata FROM admin.audit_log WHERE action = 'participation.representation_recorded' AND target_id = $1", [projectId]);
+    expect(recorded.rows[0].metadata).toMatchObject({ mandateId, representedOrganizationId: orgId });
+    const created = await pool.query("SELECT metadata::text AS m FROM admin.audit_log WHERE action = 'invitation.created' AND metadata->>'mandateId' = $1", [mandateId]);
+    expect(created.rowCount).toBe(1);
+    expect(created.rows[0].m).not.toContain("@");
+    const again = await alice.client.post(route).send(body);
+    expect(again.status).toBe(409);
+    expect(again.body.error).toBe("already_participant");
+    expect((await alice.client.get(`/projects/${projectId}/participants`)).body.organizations.parties[0].representatives[0]).toMatchObject({ projectSide: "participation_active", invitable: false });
+
+    // Fin du mandat : la participation n'est pas terminée d'office ; l'annuaire la marque, le propriétaire est notifié.
+    expect((await alice.client.post(`/organizations/${orgId}/mandates/${mandateId}/end`)).status).toBe(200);
+    expect((await bob.client.get(`/projects/${projectId}`)).status).toBe(200);
+    expect(await projectRowsOf(bob.id, projectId)).toEqual({ members: 1, activeParticipations: 1 });
+    const marked = await carol.client.get(`/projects/${projectId}/participants`);
+    expect(marked.body.organizations.parties[0].endedRepresentatives).toHaveLength(1);
+    expect(marked.body.organizations.parties[0].endedRepresentatives[0]).toMatchObject({ participationId: part.rows[0].id, mandateId, endsOn: expect.any(String), endReason: "retrait" });
+    expect(JSON.stringify(marked.body.organizations)).not.toContain(bob.email);
+    const notices = await alice.client.get("/notifications");
+    const notice = notices.body.items.find((n: { mandate?: { mandateId: string } }) => n.mandate?.mandateId === mandateId);
+    expect(notice).toMatchObject({ kind: "acces", projectId, mandate: { participationId: part.rows[0].id } });
+    expect(notice.text).toContain("Atelier Nord");
+    expect((await bob.client.get("/notifications")).body.items.some((n: { mandate?: unknown }) => n.mandate)).toBe(false);
+    // Mandat terminé : plus aucune invitation depuis ce mandat.
+    expect((await alice.client.post(route).send(body)).body.error).toBe("mandate_inactive");
+  });
+
+  it("acceptation refusée si le mandat a pris fin depuis l'envoi ; organisation qui n'est plus partie refusée à l'envoi", async () => {
+    const { alice, bob, orgId, projectId, bobMember } = await setup();
+    expect((await alice.client.put(`/organizations/${orgId}/projects/${projectId}/participation`).send({})).status).toBe(201);
+    const proposed = await alice.client.post(`/organizations/${orgId}/mandates`).send({ projectId, membershipId: bobMember.membershipId });
+    const mandateId = proposed.body.mandate.id as string;
+    expect((await bob.client.post(`/organizations/mandates/${mandateId}/accept`)).body.status).toBe("actif");
+    const sent = await alice.client.post(`/projects/${projectId}/members/mandates/${mandateId}`).send({ roles: [{ role: "concepteur" }] });
+    expect(sent.status).toBe(202);
+    // Le représentant renonce avant d'accepter : l'invitation ne donne plus rien.
+    expect((await bob.client.post(`/organizations/mandates/${mandateId}/resign`)).status).toBe(200);
+    const refused = await bob.client.post("/auth/invitations/accept").send({ token: tokenOf(sent.body.mail.link) });
+    expect(refused.status).toBe(409);
+    expect(refused.body.error).toBe("mandate_ended");
+    expect((await bob.client.get(`/projects/${projectId}`)).status).toBe(404);
+    expect(await projectRowsOf(bob.id, projectId)).toEqual({ members: 0, activeParticipations: 0 });
+
+    // Nouveau mandat, puis l'organisation cesse d'être partie : l'envoi est refusé avec motif.
+    const second = await alice.client.post(`/organizations/${orgId}/mandates`).send({ projectId, membershipId: bobMember.membershipId });
+    expect((await bob.client.post(`/organizations/mandates/${second.body.mandate.id}/accept`)).body.status).toBe("actif");
+    await pool.query("UPDATE project_participations SET status = 'terminee', ends_on = greatest(current_date, coalesce(starts_on, current_date)) WHERE project_id = $1 AND organization_id = $2", [projectId, orgId]);
+    const notParty = await alice.client.post(`/projects/${projectId}/members/mandates/${second.body.mandate.id}`).send({ roles: [{ role: "lecteur" }] });
+    expect(notParty.status).toBe(409);
+    expect(notParty.body.error).toBe("organization_not_party");
+  });
+});

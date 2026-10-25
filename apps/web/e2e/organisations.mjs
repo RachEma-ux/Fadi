@@ -314,7 +314,8 @@ try {
   // Mandat accepté dans l'interface par un nouveau membre (fred, invité par bob).
   const fred = await account("fred");
   const invFred = await bob.call("post", `/organizations/${orgId}/invitations`, { email: fred.email, role: "membre" });
-  await fred.call("post", "/auth/invitations/accept", { token: tokenOf(await invitationLink(invFred.body, fred.email)) });
+  const fredOrgLink = await invitationLink(invFred.body, fred.email);
+  await fred.call("post", "/auth/invitations/accept", { token: tokenOf(fredOrgLink) });
   const mFred = (await bob.call("get", `/organizations/${orgId}/directory`)).body.members.find((m) => m.email === fred.email);
   const propFred = await bob.call("post", `/organizations/${orgId}/mandates`, { projectId: pid, membershipId: mFred.membershipId, note: "Projet de l'agence" });
   check("mandat proposé à un nouveau membre", propFred.status === 201);
@@ -484,6 +485,155 @@ try {
   check("passe anglaise (côté projet) : titre de la carte traduit", (await card.locator("h3").textContent())?.trim() === "Project organisations");
   check("passe anglaise (côté projet) : aucun texte d'interface resté en français", residus.size === 0, [...residus.keys()].slice(0, 10).join(" | "));
   await dave.page.evaluate(() => localStorage.setItem("fadi.langue", "fr"));
+
+  // ------------------------------------------------------------------------------------------------------------------
+  // Représentant mandaté → invitation de projet (reliquat de la phase 5) : fred représente Atelier Nord (mandat actif,
+  // accepté plus haut) ; bob a une proposition de remplacement en attente.
+  // ------------------------------------------------------------------------------------------------------------------
+  const fredMandate = propFred.body.mandate.id;
+  const mdtRoute = (m) => `/projects/${pid}/members/mandates/${m}`;
+  const mdtBody = { roles: [{ role: "lecteur" }], invitationDays: 7 };
+  const byDave = await dave.call("post", mdtRoute(fredMandate), mdtBody);
+  check("représentant : un lecteur du projet ne peut pas inviter (403 avec motif)", byDave.status === 403 && !!byDave.body?.message, JSON.stringify(byDave.body));
+  check("représentant : sans accès au projet, 404", (await erin.call("post", mdtRoute(fredMandate), mdtBody)).status === 404);
+  const proposedOnly = await alice.call("post", mdtRoute(propBob.body.mandate.id), mdtBody);
+  check("représentant : mandat seulement proposé refusé (409 mandate_inactive, motif)", proposedOnly.status === 409 && proposedOnly.body.error === "mandate_inactive" && !!proposedOnly.body.message);
+  check("représentant : mandat d'un autre projet (404)", (await dave.call("post", `/projects/${daveProject.body.id}/members/mandates/${fredMandate}`, mdtBody)).status === 404);
+  const nordOwner = (await alice.call("get", `/projects/${pid}/participants`)).body.organizations.parties.find((p) => p.id === orgId);
+  const fredRep = nordOwner.representatives.find((r) => r.mandateId === fredMandate);
+  check("représentant : le propriétaire voit « non invité » et peut inviter", fredRep?.projectSide === "non_invite" && fredRep.invitable === true, JSON.stringify(fredRep));
+  const nordReader = (await dave.call("get", `/projects/${pid}/participants`)).body.organizations.parties.find((p) => p.id === orgId);
+  check("représentant : un lecteur ne voit ni l'état côté projet ni l'invitation", nordReader.representatives.every((r) => r.projectSide === null && r.invitable === false));
+  const mdtPreview = await alice.call("post", `${mdtRoute(fredMandate)}/preview`, mdtBody);
+  check("représentant : aperçu sans adresse, partie représentée, accès Lecteur, rien d'écrit",
+    mdtPreview.status === 200 && mdtPreview.body.preview.email === null && mdtPreview.body.preview.representative?.organization?.id === orgId && mdtPreview.body.preview.access?.role === "lecteur" && mdtPreview.body.preview.blocking === null,
+    JSON.stringify(mdtPreview.body));
+  check("représentant : avant l'envoi, aucune invitation", (await alice.call("get", `/projects/${pid}/members`)).body.invitations.every((i) => i.mandateId !== fredMandate));
+
+  // Navigateur : volet d'invitation du représentant dans la carte « Organisations du projet » (formulaire de la phase 3).
+  const cardSel = `${zone} [data-representant="${fredMandate}"]`;
+  await alice.page.goto(`${BASE}/projets/${pid}?module=collaboration`);
+  await alice.page.waitForSelector(`${cardSel} [data-etat-representant="non_invite"]`, { timeout: 20000 });
+  await alice.page.click(`${cardSel} [data-inviter-representant] > summary`);
+  const mdtForm = alice.page.locator(`${cardSel} form[data-invitation-representant="${fredMandate}"]`);
+  await mdtForm.waitFor();
+  check("interface : le formulaire du représentant ne demande pas d'adresse", (await mdtForm.locator('input[type="email"]').count()) === 0 && (await mdtForm.locator("[data-representant-invite]").count()) === 1);
+  check("interface : commande « Aperçu de l'accès » réutilisée (icône, raccourci déclaré)",
+    (await mdtForm.locator('[data-commande-collaboration="apercu-invitation"][aria-keyshortcuts="Control+Alt+Shift+\'"] svg').count()) === 1);
+  check("interface : envoi impossible avant l'aperçu", await mdtForm.locator('button[type="submit"]').isDisabled());
+  await mdtForm.locator('[data-commande-collaboration="apercu-invitation"]').focus();
+  await alice.page.keyboard.press("Control+Alt+Shift+Quote");
+  await mdtForm.locator("[data-invitation-apercu]").waitFor();
+  check("interface : aperçu au raccourci, partie représentée affichée", (await mdtForm.locator("[data-apercu-partie]").textContent())?.trim() === `Atelier Nord ${RUN}`);
+  await axe(alice.page, "invitation du représentant mandaté (bureau)");
+  await mdtForm.locator('button[type="submit"]').click();
+  await alice.page.waitForSelector('[data-participants] [role="status"]:has-text("Invitation")', { timeout: 20000 });
+  const pending = (await alice.call("get", `/projects/${pid}/members`)).body.invitations.find((i) => i.mandateId === fredMandate);
+  check("représentant : invitation en attente portant le mandat", !!pending && pending.representedOrganizationName === `Atelier Nord ${RUN}` && pending.purpose === "project_participation", JSON.stringify(pending));
+  check("représentant : aucun accès avant l'acceptation (404)", (await fred.call("get", `/projects/${pid}`)).status === 404);
+  check("représentant : état « invitation en attente » côté projet",
+    (await alice.call("get", `/projects/${pid}/participants`)).body.organizations.parties.find((p) => p.id === orgId).representatives.find((r) => r.mandateId === fredMandate)?.projectSide === "invitation_en_attente");
+  const orgProjects = async (who) => (await who.call("get", `/organizations/${orgId}/projects`)).body.projects.find((p) => p.projectId === pid);
+  check("espace d'organisation : l'administratrice lit « invitation en attente » (lecture seule)", (await orgProjects(alice)).mandates.find((m) => m.id === fredMandate)?.projectSide === "invitation_en_attente");
+  check("espace d'organisation : un membre non administrateur ne lit pas l'état côté projet", (await orgProjects(fred)).mandates.every((m) => m.projectSide === null));
+  const fredReceived = (await fred.call("get", "/notifications/invitations")).body.invitations.find((i) => i.projectId === pid);
+  check("représentant : invitation reçue, partie représentée nommée", fredReceived?.representedOrganizationName === `Atelier Nord ${RUN}`, JSON.stringify(fredReceived));
+
+  // Acceptation par le représentant, depuis le lien du courriel (page d'invitation).
+  const fredProjectLink = await invitationLink({}, fred.email, fredOrgLink);
+  await fred.page.goto(`${BASE}/compte/invitation#jeton=${encodeURIComponent(tokenOf(fredProjectLink))}`);
+  await fred.page.waitForSelector("[data-invitation-partie]", { timeout: 20000 });
+  check("page d'invitation : partie représentée affichée", (await fred.page.locator("[data-invitation-partie]").textContent())?.trim() === `Atelier Nord ${RUN}`);
+  await fred.page.click("[data-accept-invitation]");
+  await fred.page.waitForURL(new RegExp(`/projets/${pid}`), { timeout: 20000 });
+  check("acceptation : le représentant entre dans le projet", (await fred.call("get", `/projects/${pid}`)).status === 200);
+  const fredPart = (await alice.call("get", `/projects/${pid}/participants`)).body.participants.find((p) => p.person?.account?.userId === fred.id && p.status !== "terminee");
+  check("acceptation : participation active portant la partie représentée", fredPart?.status === "active" && fredPart.representedOrganization?.id === orgId, JSON.stringify(fredPart));
+  const afterAccept = (await alice.call("get", `/projects/${pid}/participants`)).body.organizations.parties.find((p) => p.id === orgId).representatives.find((r) => r.mandateId === fredMandate);
+  check("acceptation : « participation active », plus d'invitation proposée", afterAccept?.projectSide === "participation_active" && afterAccept.invitable === false);
+  const twice = await alice.call("post", mdtRoute(fredMandate), mdtBody);
+  check("représentant déjà participant : nouvelle invitation refusée (409 avec motif)", twice.status === 409 && twice.body.error === "already_participant");
+  check("espace d'organisation : « participation active »", (await orgProjects(alice)).mandates.find((m) => m.id === fredMandate)?.projectSide === "participation_active");
+
+  // Remplacement du représentant : la participation de fred n'est pas terminée d'office ; l'annuaire la marque et le
+  // propriétaire reçoit une notification calculée.
+  check("remplacement accepté par bob", (await bob.call("post", `/organizations/mandates/${propBob.body.mandate.id}/accept`)).body?.status === "actif");
+  check("après le remplacement : fred garde son accès au projet", (await fred.call("get", `/projects/${pid}`)).status === 200);
+  const marks = (await dave.call("get", `/projects/${pid}/participants`)).body.organizations.parties.find((p) => p.id === orgId).endedRepresentatives;
+  check("annuaire : « mandat terminé » (remplacé), participation conservée", marks.length === 1 && marks[0].participationId === fredPart?.id && marks[0].endReason === "remplace", JSON.stringify(marks));
+  const notif = (await alice.call("get", "/notifications")).body.items.find((n) => n.mandate?.mandateId === fredMandate);
+  check("notification calculée au propriétaire : mandat terminé, participation à revoir", notif?.kind === "acces" && notif.projectId === pid && notif.text.includes(`Atelier Nord ${RUN}`), JSON.stringify(notif));
+  check("notification : réservée au propriétaire", !(await fred.call("get", "/notifications")).body.items.some((n) => n.mandate) && !(await dave.call("get", "/notifications")).body.items.some((n) => n.mandate));
+  check("nouveau représentant (bob) : « non invité », invitation possible",
+    (await alice.call("get", `/projects/${pid}/participants`)).body.organizations.parties.find((p) => p.id === orgId).representatives.find((r) => r.mandateId === propBob.body.mandate.id)?.invitable === true);
+  check("mandat terminé : plus aucune invitation depuis ce mandat (409)", (await alice.call("post", mdtRoute(fredMandate), mdtBody)).body?.error === "mandate_inactive");
+  if (pgClient) {
+    const rows = (await pgClient.query("SELECT action, metadata::text AS m FROM admin.audit_log WHERE (action = 'invitation.created' AND metadata->>'mandateId' = $1) OR (action = 'participation.representation_recorded' AND metadata->>'mandateId' = $1)", [fredMandate])).rows;
+    check("journal : invitation.created (mandat) et participation.representation_recorded, sans adresse",
+      rows.some((r) => r.action === "invitation.created") && rows.some((r) => r.action === "participation.representation_recorded") && rows.every((r) => !r.m.includes("@")));
+  } else notRun("journal de l'invitation du représentant", "DATABASE_URL absente");
+
+  // Interface : marques « mandat terminé », état côté projet dans l'espace d'organisation ; téléphone ; passe anglaise.
+  await alice.page.goto(`${BASE}/projets/${pid}?module=collaboration`);
+  // Le cache de requêtes peut montrer d'abord l'état précédent : on attend la marque de CETTE participation.
+  await alice.page.waitForSelector(`${zone} [data-mandat-termine="${fredPart?.id}"]`, { timeout: 20000 }).catch(() => null);
+  check("interface : la carte marque « mandat terminé »", (await alice.page.locator(`${zone} [data-mandat-termine="${fredPart?.id}"]`).count()) === 1);
+  check("interface : l'annuaire marque la participation « mandat terminé »", (await alice.page.locator(`tr[data-participant="${fred.email}"] [data-participant-mandat-termine]`).count()) === 1);
+  check("interface : état côté projet du nouveau représentant affiché", (await alice.page.locator(`${zone} [data-representant="${propBob.body.mandate.id}"] [data-etat-representant="non_invite"]`).count()) === 1);
+  await axe(alice.page, "mandat terminé et représentant à inviter (bureau)");
+  await alice.page.goto(`${BASE}/organisations/${orgId}`);
+  await alice.page.locator("#org-tab-projets").click();
+  await alice.page.waitForSelector(`[data-org-mandate="${propBob.body.mandate.id}"] [data-org-mandate-side="non_invite"]`, { timeout: 20000 });
+  check("espace d'organisation (interface) : état côté projet du mandat affiché", true);
+  await axe(alice.page, "état côté projet des mandats (bureau)");
+  const telOwner = await browser.newContext(phone);
+  const telAlice = await telOwner.newPage();
+  await telAlice.request.post(`${BASE}/auth/login`, { data: { email: alice.email, password: PASSWORD } });
+  await telAlice.goto(`${BASE}/projets/${pid}?module=collaboration`);
+  await telAlice.waitForSelector(`${zone} [data-representant="${propBob.body.mandate.id}"] [data-inviter-representant]`, { timeout: 20000 });
+  await telAlice.click(`${zone} [data-representant="${propBob.body.mandate.id}"] [data-inviter-representant] > summary`);
+  const telForm = telAlice.locator(`${zone} form[data-invitation-representant="${propBob.body.mandate.id}"]`);
+  await telForm.waitFor();
+  await telForm.locator('[data-commande-collaboration="apercu-invitation"]').click();
+  await telForm.locator("[data-invitation-apercu]").waitFor();
+  await axe(telAlice, "invitation du représentant mandaté (téléphone)");
+  const overInvite = await telAlice.evaluate((sel) => { const el = document.querySelector(sel); return el ? el.scrollWidth - el.clientWidth : -1; }, zone);
+  check("invitation du représentant (téléphone) : la carte ne déborde pas", overInvite >= 0 && overInvite <= 1, `${overInvite}px`);
+  await noHorizontalScroll(telAlice, "invitation du représentant (téléphone)");
+  await telOwner.close();
+
+  residus.clear();
+  await alice.page.evaluate(() => localStorage.setItem("fadi.langue", "en"));
+  const releveSel = async (page, sels) => {
+    await page.waitForTimeout(700);
+    return page.evaluate((list) => {
+      const out = [];
+      for (const root of list.flatMap((s) => [...document.querySelectorAll(s)])) {
+        const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        for (let n = w.nextNode(); n; n = w.nextNode()) {
+          if (n.parentElement?.closest('[translate="no"]') || n.parentElement?.closest("option")) continue;
+          const t = (n.nodeValue ?? "").replace(/\s+/g, " ").trim();
+          if (t.length >= 2 && /[A-Za-zÀ-ÿ]/.test(t)) out.push(t);
+        }
+        for (const el of [root, ...root.querySelectorAll("[title],[aria-label]")]) for (const a of ["title", "aria-label"]) { const v = el.getAttribute(a); if (v && !el.closest('[translate="no"]')) out.push(v); }
+      }
+      return out;
+    }, sels);
+  };
+  await alice.page.goto(`${BASE}/projets/${pid}?module=collaboration`);
+  await alice.page.waitForSelector(`${zone} [data-mandat-termine]`, { timeout: 20000 });
+  await alice.page.click(`${zone} [data-representant="${propBob.body.mandate.id}"] [data-inviter-representant] > summary`);
+  const enForm = alice.page.locator(`${zone} form[data-invitation-representant="${propBob.body.mandate.id}"]`);
+  await enForm.locator('[data-commande-collaboration="apercu-invitation"]').click();
+  await enForm.locator("[data-invitation-apercu]").waitFor();
+  for (const t of await releveSel(alice.page, [zone, `tr[data-participant="${fred.email}"] [data-participant-mandat-termine]`])) if (FR.test(t)) residus.set(t, "représentant");
+  // Message d'un refus du serveur (409) traduit lui aussi.
+  await alice.page.goto(`${BASE}/organisations/${orgId}`);
+  await alice.page.locator("#org-tab-projets").click();
+  await alice.page.waitForSelector(`[data-org-mandate-side]`, { timeout: 20000 });
+  for (const t of await releveSel(alice.page, ["[data-org-mandate]"])) if (FR.test(t)) residus.set(t, "espace d'organisation");
+  check("passe anglaise (représentant) : aucun texte d'interface resté en français", residus.size === 0, [...residus.keys()].slice(0, 10).join(" | "));
+  await alice.page.evaluate(() => localStorage.setItem("fadi.langue", "fr"));
 } catch (e) {
   check("déroulé sans erreur inattendue", false, e.stack ?? String(e));
 } finally {

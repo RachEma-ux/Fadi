@@ -170,6 +170,8 @@ export interface NotificationItem {
   review?: { packageId: string };
   /** Invitation de projet en attente pour vous (phase 3) : à accepter ou décliner. */
   invitation?: { id: string; role: MemberRole; expiresAt: string };
+  /** Mandat de représentant terminé (reliquat de la phase 5) : participation conservée, à revoir. */
+  mandate?: { mandateId: string; participationId: string };
   /** Conversation ou demande de précision visée (Communication : `message`, `demande`). */
   com?: { conversationId?: string; demandeId?: string };
   text: string;
@@ -269,6 +271,9 @@ export interface InvitationView {
   /** Finalité `project_participation` (phase 3) : participation visée et rôles proposés par portée. */
   participationId?: string | null;
   roles?: ProposedRole[] | null;
+  /** Invitation d'un représentant mandaté (reliquat de la phase 5) : mandat d'origine et organisation représentée. */
+  mandateId?: string | null;
+  representedOrganizationName?: string | null;
 }
 // --- Invitations de projet liées à une participation (Issue #262, phase 3) ----------------------------------------------
 export type RoleScope = "projet" | "etude" | "variante" | "revision" | "documents";
@@ -277,8 +282,13 @@ export interface InvitationInput {
   email: string; roles: { role: BusinessRole; scopeType?: RoleScope; scopeId?: string | null }[]; participationId?: string | null; displayName?: string | null;
   accessExpiresAt?: string | null; invitationDays?: number;
 }
+/** Invitation d'un représentant mandaté (reliquat de la phase 5) : l'adresse vient de son compte, jamais saisie. */
+export type MandateInvitationInput = Omit<InvitationInput, "email" | "participationId" | "displayName">;
+export interface RepresentativeRef { mandateId: string; name: string | null; organization: { id: string; name: string } }
 export interface InvitationPreview {
-  email: string; accountExists: boolean;
+  /** null pour l'invitation d'un représentant mandaté : son adresse n'est pas montrée. */
+  email: string | null; accountExists: boolean;
+  representative?: RepresentativeRef;
   target: { kind: "membre"; participationId: string | null } | { kind: "participation"; participationId: string; status: "contact" | "active" } | { kind: "nouvelle-fiche" };
   pendingInvitation: { id: string; expiresAt: string } | null; roles: ProposedRole[]; baseRole: MemberRole;
   access: { role: "proprietaire" | "editeur" | "lecteur"; canExport: boolean; canApprove: boolean; canPublish: boolean } | null;
@@ -287,6 +297,8 @@ export interface InvitationPreview {
 export interface ReceivedInvitation {
   id: string; projectId: string; projectCode: string; projectName: string; invitedBy: string; baseRole: MemberRole; roles: ProposedRole[];
   createdAt: string; expiresAt: string; accessExpiresAt: string | null;
+  /** Invitation d'un représentant mandaté : l'organisation que la participation représentera. */
+  representedOrganizationName?: string | null;
 }
 export interface AcceptedInvitation {
   accepted: boolean; projectId: string | null; organizationId?: string | null; participationId?: string | null;
@@ -294,9 +306,9 @@ export interface AcceptedInvitation {
 }
 /** Réponse d'un envoi : `link` présent seulement quand le courriel n'a pas pu partir (lien à transmettre soi-même, D-1). */
 export interface MailOutcome { queued: boolean; reason: string | null; link?: string }
-export interface InvitationCreated { invitation: InvitationView; resent: boolean; mail: MailOutcome; accountExists?: boolean; participationId?: string }
+export interface InvitationCreated { invitation: InvitationView; resent: boolean; mail: MailOutcome; accountExists?: boolean; participationId?: string; representative?: RepresentativeRef }
 export type InvitationRefusal = "not_found" | "expired" | "already_accepted" | "declined" | "cancelled" | "wrong_account" | "inviter_not_authorized" | "account_inactive"
-  | "identity_conflict" | "wrong_person" | "participation_unavailable" | "access_expired" | "roles_invalid" | "email_unverified";
+  | "identity_conflict" | "wrong_person" | "participation_unavailable" | "access_expired" | "roles_invalid" | "mandate_ended" | "email_unverified";
 export interface InvitationLookup { invitation: InvitationView; accountExists: boolean; signedInAs: string | null; refusal: InvitationRefusal | null; message: string | null }
 export type LoginResult = { mfaRequired: true; expiresAt: string } | (CurrentUser & { mfaRequired?: undefined });
 export interface AccountSession { id: string; current: boolean; createdAt: string; lastSeenAt: string; expiresAt: string; absoluteExpiresAt: string | null; userAgent: string | null; ip: string | null }
@@ -345,6 +357,11 @@ export interface OrganizationMandate {
   id: string; organizationId: string; projectId: string; projectName: string | null; membershipId: string; responsibilities: TeamResponsibility[];
   status: MandateStatus; startsOn: string | null; endsOn: string | null; endReason: string | null; replacesMandateId: string | null; note: string | null;
   proposedAt: string; respondedAt: string | null; endedAt: string | null; organizationName?: string; representativeName?: string | null;
+  /**
+   * Onglet Projets, administrateurs seuls (reliquat de la phase 5) : état côté projet du représentant — non invité,
+   * invitation en attente, participation active, terminée. Lecture seule ; null pour les autres membres.
+   */
+  projectSide?: "non_invite" | "invitation_en_attente" | "participation_active" | "terminee" | null;
 }
 export interface OrganizationDetail { organization: Organization; you: MembershipSelf & { can: OrganizationCapabilities }; administrators: { membershipId: string; name: string | null }[] }
 export interface DirectoryMember {
@@ -1524,6 +1541,11 @@ export const api = {
   inviteMember: (projectId: string, input: InvitationInput) => request<ProjectMember | InvitationCreated>(`/projects/${projectId}/members`, { method: "POST", body: JSON.stringify(withLocale(input)) }),
   /** Aperçu de l'accès résultant, sans rien écrire (phase 3). */
   previewInvitation: (projectId: string, input: InvitationInput) => request<{ preview: InvitationPreview }>(`/projects/${projectId}/members/preview`, { method: "POST", body: JSON.stringify(input) }),
+  /** Représentant mandaté d'une organisation partie (reliquat de la phase 5) : aperçu puis invitation, propriétaire seulement. */
+  previewMandateInvitation: (projectId: string, mandateId: string, input: MandateInvitationInput) =>
+    request<{ preview: InvitationPreview }>(`/projects/${projectId}/members/mandates/${encodeURIComponent(mandateId)}/preview`, { method: "POST", body: JSON.stringify(input) }),
+  inviteRepresentative: (projectId: string, mandateId: string, input: MandateInvitationInput) =>
+    request<InvitationCreated>(`/projects/${projectId}/members/mandates/${encodeURIComponent(mandateId)}`, { method: "POST", body: JSON.stringify(withLocale(input)) }),
   /** Échéance de l'accès d'un membre (null : sans échéance). */
   setMemberAccessExpiry: (projectId: string, userId: string, accessExpiresAt: string | null) => request<ProjectMember>(`/projects/${projectId}/members/${encodeURIComponent(userId)}`, { method: "PATCH", body: JSON.stringify({ accessExpiresAt }) }),
   setMemberRole: (projectId: string, userId: string, role: MemberRole) => request<ProjectMember>(`/projects/${projectId}/members/${encodeURIComponent(userId)}`, { method: "PATCH", body: JSON.stringify({ role }) }),

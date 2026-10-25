@@ -4058,6 +4058,22 @@ fieldset.access-fieldset:disabled {
 .projet-organisations-representants li small {
   margin-left: 6px;
 }
+/* Représentant mandaté → invitation de projet (reliquat de la phase 5) : état, volet d'invitation, mandat terminé. */
+.projet-organisations-representants li .h7-chip {
+  margin-left: 6px;
+}
+.projet-organisations-inviter {
+  margin: 4px 0 6px;
+  min-width: 0;
+}
+.projet-organisations-inviter > summary {
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 24px;
+}
+.projet-organisations-inviter .members-invite {
+  margin-top: 6px;
+}
 .project-owner-org {
   overflow-wrap: anywhere;
 }

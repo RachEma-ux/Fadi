@@ -37,6 +37,8 @@
  * Journal : chaque écriture ajoute son entrée `organization.*` (cible = l'organisation) dans la transaction de l'action ;
  * jamais d'adresse ni de nom de personne dans les métadonnées.
  */
+import { projectSideOfMandates } from "../lib/mandate-invitations-db.js";
+import type { MandateProjectSide } from "../lib/mandate-invitations.js";
 import { Router, type Request, type Response } from "express";
 import { and, asc, desc, eq, gt, inArray, isNotNull, ne, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -786,11 +788,16 @@ organizationsRouter.get("/:orgId/projects", async (req, res) => {
   const owned = await db.select({ id: projects.id }).from(projects).where(eq(projects.organizationId, orgId));
   const participations = await db.select({ id: projectParticipations.id, projectId: projectParticipations.projectId, status: projectParticipations.status, businessRole: projectParticipations.businessRole, responsibilities: projectParticipations.responsibilities })
     .from(projectParticipations).where(and(eq(projectParticipations.organizationId, orgId), ne(projectParticipations.status, "terminee")));
-  const mandates = await db.select({ m: organizationMandates, displayName: users.displayName, personName: people.displayName }).from(organizationMandates)
+  const mandates = await db.select({ m: organizationMandates, displayName: users.displayName, personName: people.displayName, personId: people.id, userId: people.userId }).from(organizationMandates)
     .innerJoin(organizationMemberships, eq(organizationMemberships.id, organizationMandates.membershipId))
     .innerJoin(people, eq(people.id, organizationMemberships.personId)).leftJoin(users, eq(users.id, people.userId))
     .where(and(eq(organizationMandates.organizationId, orgId), inArray(organizationMandates.status, ["propose", "actif"])))
     .orderBy(asc(organizationMandates.proposedAt));
+  // État côté projet de chaque mandat (reliquat de la phase 5), en lecture seule et pour les administrateurs seuls : non
+  // invité, invitation en attente, participation active, terminée. Le mandat lui-même n'ouvre toujours aucun accès.
+  const sides = access.can.manage
+    ? await projectSideOfMandates(db, mandates.map((m) => ({ mandateId: m.m.id, projectId: m.m.projectId, personId: m.personId, userId: m.userId ?? null })))
+    : new Map<string, MandateProjectSide>();
   const representations = await db.select({ projectId: projectParticipations.projectId, membershipId: organizationMemberships.id, status: projectParticipations.status })
     .from(projectParticipations)
     .innerJoin(organizationMemberships, and(eq(organizationMemberships.personId, projectParticipations.personId), eq(organizationMemberships.organizationId, orgId), ne(organizationMemberships.status, "terminee")))
@@ -807,7 +814,10 @@ organizationsRouter.get("/:orgId/projects", async (req, res) => {
       name: names.get(id) ?? null,
       owned: owned.some((p) => p.id === id),
       participation: participations.find((p) => p.projectId === id) ?? null,
-      mandates: mandates.filter((m) => m.m.projectId === id).map((m) => ({ ...mandateView(m.m, names), representativeName: shownName({ displayName: m.displayName }, { displayName: m.personName }) })),
+      mandates: mandates.filter((m) => m.m.projectId === id).map((m) => ({
+        ...mandateView(m.m, names), representativeName: shownName({ displayName: m.displayName }, { displayName: m.personName }),
+        projectSide: access.can.manage ? sides.get(m.m.id) ?? "non_invite" : null,
+      })),
       representedBy: representations.filter((r) => r.projectId === id).map((r) => ({ membershipId: r.membershipId, status: r.status })),
     })),
     // Les projets dont VOUS êtes propriétaire : déclarer cette organisation comme partie propriétaire (OP-D1 a).

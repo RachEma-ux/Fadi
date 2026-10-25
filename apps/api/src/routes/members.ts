@@ -8,6 +8,13 @@
  *                      (OP-D2 a, fin de l'ajout direct UM-8 ; lien à copier si le courriel n'a pas pu partir) ; 200 :
  *                      changement du rôle d'un compte déjà membre ; 409 `invitation_rule` (participation suspendue…) —
  *                      propriétaire seulement
+ *   POST   /mandates/:mandateId/preview { role | roles, accessExpiresAt?, invitationDays? } → aperçu de l'invitation du
+ *                      REPRÉSENTANT d'un mandat actif d'une organisation partie au projet (reliquat de la phase 5) —
+ *                      propriétaire seulement ; l'adresse vient du compte du représentant, jamais saisie ni montrée ici
+ *   POST   /mandates/:mandateId  (même corps) → 202 : invitation de projet de ce représentant (parcours de la phase 3) ;
+ *                      la participation activée par son acceptation porte la partie représentée. 403 non propriétaire ;
+ *                      404 mandat hors projet ; 409 mandat non actif, organisation non partie ou inactive, représentant
+ *                      déjà participant… ; 422 représentant propriétaire. Un mandat ne donne aucun droit.
  *   DELETE /invitations/:invitationId → 204 : annulation d'une invitation en attente — propriétaire seulement
  *   PATCH  /:userId   { role?, canExport?, accessExpiresAt? } → le rôle d'un membre, l'export accordé ou retiré à un lecteur
  *                      (E2), l'échéance de son accès (phase 3, null = sans échéance) —
@@ -40,11 +47,11 @@
  * de propriété écrit son entrée `admin.audit_log` dans la transaction de l'action — acteur, projet (cible), membre visé,
  * rôle et export avant → après ; jamais d'adresse.
  */
-import { Router, type Request } from "express";
+import { Router, type Request, type Response } from "express";
 import { and, asc, eq, gt, inArray, ne, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client.js";
-import { invitations, people, projectMembers, projectParticipations, projects, users } from "../db/schema.js";
+import { invitations, organizationMandates, organizations, people, projectMembers, projectParticipations, projects, users } from "../db/schema.js";
 import type { Tx } from "../lib/step-rows.js";
 import { audit, clientIp } from "../lib/audit.js";
 import { formatDate, mailLocale, PUBLIC_PATHS, publicLink, sendAccountMail } from "../lib/account.js";
@@ -54,6 +61,7 @@ import { invitationExpiry, parseAccessExpiry, projectRoleFor, proposedRolesFrom 
 import { requireAuth } from "../middleware/require-auth.js";
 import { projectOr404, type ProjectRole } from "../lib/owned-project.js";
 import { lockProject } from "../lib/step-rows.js";
+import { mandateInvitationTarget } from "../lib/mandate-invitations-db.js";
 
 export const membersRouter = Router({ mergeParams: true });
 membersRouter.use(requireAuth);
@@ -131,13 +139,15 @@ export async function ownerEmailOf(ownerId: string): Promise<string> {
 
 /** Invitations du projet en attente (propriétaire seulement) : adresse, rôle, échéance — jamais le jeton. */
 async function pendingInvitations(projectId: string) {
-  const rows = await db.select({ inv: invitations, accountId: users.id }).from(invitations)
+  const rows = await db.select({ inv: invitations, accountId: users.id, represented: organizations.name }).from(invitations)
     .leftJoin(users, sql`lower(${users.email}) = lower(${invitations.email}) AND ${users.status} <> 'closed'`)
+    // Invitation d'un représentant mandaté (reliquat de la phase 5) : l'organisation représentée.
+    .leftJoin(organizationMandates, eq(organizationMandates.id, invitations.mandateId)).leftJoin(organizations, eq(organizations.id, organizationMandates.organizationId))
     .where(and(eq(invitations.projectId, projectId), eq(invitations.status, "pending"), gt(invitations.expiresAt, new Date())))
     .orderBy(asc(invitations.createdAt));
   // État distinct (phase 3) : un compte existant doit accepter (lien ou notification) ; une adresse sans compte doit
   // d'abord créer son compte depuis le lien.
-  return rows.map((r) => ({ ...invitationView(r.inv), awaiting: r.accountId ? "acceptation" as const : "creation-compte" as const }));
+  return rows.map((r) => ({ ...invitationView(r.inv, { representedOrganizationName: r.represented ?? null }), awaiting: r.accountId ? "acceptation" as const : "creation-compte" as const }));
 }
 
 membersRouter.get("/", async (req, res) => {
@@ -264,6 +274,71 @@ membersRouter.post("/", async (req, res) => {
   });
   res.status(202).json({
     invitation: invitationView(result.invitation, { projectName }), resent: result.resent, accountExists: !!account, participationId: result.participationId,
+    mail: { queued: result.mail.queued, reason: result.mail.reason, ...(result.mail.queued ? {} : { link: result.link }) },
+  });
+});
+
+/**
+ * Invitation du représentant mandaté d'une organisation partie au projet (Issue #262, reliquat de la phase 5). Le mandat
+ * ne donne aucun droit : il désigne la personne à inviter ; l'invitation suit le parcours de la phase 3 (aperçu, rôles par
+ * portée, échéances indépendantes) et n'ouvre rien avant son acceptation par l'identité visée. L'adresse est celle du
+ * compte du représentant : le propriétaire ne la saisit pas, l'aperçu ne la montre pas.
+ */
+async function mandateInvitation(req: Request, res: Response) {
+  const project = await projectOr404(req, res, "owner");
+  if (!project) return null;
+  const target = await mandateInvitationTarget(db, { id: project.id, ownerId: project.ownerId }, String(req.params["mandateId"] ?? ""));
+  if (!target.ok) {
+    res.status(target.refusal.status).json({ error: target.refusal.error, message: target.refusal.message });
+    return null;
+  }
+  const input = readInvitation({ ...(req.body && typeof req.body === "object" ? req.body : {}), email: target.rep.email, participationId: null, displayName: null });
+  if (!input.ok) {
+    res.status(400).json({ error: "invalid_input", message: input.problems.join(" ; "), problems: input.problems, details: input.details });
+    return null;
+  }
+  return { project, rep: target.rep, input };
+}
+
+const representativeView = (rep: { mandateId: string; name: string | null; organization: { id: string; name: string } }) =>
+  ({ mandateId: rep.mandateId, name: rep.name, organization: rep.organization });
+
+membersRouter.post("/mandates/:mandateId/preview", async (req, res) => {
+  const ctx = await mandateInvitation(req, res);
+  if (!ctx) return;
+  const preview = await previewProjectInvitation(db, { projectId: ctx.project.id, ...ctx.input });
+  // L'adresse du représentant n'est pas montrée : l'annuaire de l'organisation la réserve à ses administrateurs.
+  res.json({ preview: { ...preview, email: null, representative: representativeView(ctx.rep) } });
+});
+
+membersRouter.post("/mandates/:mandateId", async (req, res) => {
+  const ctx = await mandateInvitation(req, res);
+  if (!ctx) return;
+  const { project, rep, input } = ctx;
+  const scopeProblem = await proposedScopesProblem(db, project.id, input.roles);
+  if (scopeProblem) {
+    res.status(422).json({ error: "scope_rule", message: scopeProblem });
+    return;
+  }
+  const resolved = await resolveInvitationTarget(db, project.id, input.email, null);
+  if (resolved.blocking || resolved.target.kind === "membre") {
+    res.status(409).json({ error: "invitation_rule", message: resolved.blocking ?? "Le représentant est déjà membre du projet." });
+    return;
+  }
+  const locale = mailLocale(req);
+  const projectName = `${project.code} — ${project.name}`;
+  const result = await db.transaction(async (tx) => {
+    await lockProject(tx, project.id);
+    const created = await createProjectInvitation(tx, { projectId: project.id, ...input, mandateId: rep.mandateId, invitedBy: req.user!.id, ip: clientIp(req) });
+    const link = publicLink(PUBLIC_PATHS.invitation, created.token);
+    const mail = await sendAccountMail(input.email, "invitation", {
+      link, projectName, role: ROLE_LABEL[created.invitation.projectRole ?? "lecteur"], expiresAt: formatDate(created.invitation.expiresAt, locale),
+    }, locale, tx);
+    return { ...created, link, mail };
+  });
+  res.status(202).json({
+    invitation: invitationView(result.invitation, { projectName, representedOrganizationName: rep.organization.name }), resent: result.resent, accountExists: true,
+    participationId: result.participationId, representative: representativeView(rep),
     mail: { queued: result.mail.queued, reason: result.mail.reason, ...(result.mail.queued ? {} : { link: result.link }) },
   });
 });

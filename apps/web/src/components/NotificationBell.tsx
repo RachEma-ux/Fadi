@@ -25,6 +25,8 @@ export const NOTIFICATION_PREFERENCES_KEY = ["preferences", "notifications"] as 
 function targetOf(n: NotificationItem): string {
   // Invitation de projet en attente (phase 3) : le projet n'est pas encore ouvert ; « Invitations reçues » de Mes projets.
   if (n.invitation) return "/projets#invitations-recues";
+  // Mandat de représentant terminé (reliquat de la phase 5) : l'annuaire du projet, où la participation est à revoir.
+  if (n.mandate) return "/projets/" + n.projectId + "?module=collaboration#collab-organisations";
   // Commentaire d'une variante Studio : la variante, panneau des commentaires ouvert.
   if (n.kind === "commentaire-studio" && n.studio) return cheminVarianteStudio(n.projectId, n.studio.studyId, n.studio.variantId, null, { commentaires: true, domaine: "documentation" });
   if (n.kind === "commentaire") return n.stepNumber ? "/projets/" + n.projectId + "?module=parcours&etape=" + n.stepNumber : "/projets/" + n.projectId + "?module=collaboration";

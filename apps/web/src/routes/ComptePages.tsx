@@ -204,6 +204,7 @@ export function InvitationPage() {
             <dt>Projet</dt><dd translate="no">{inv.projectName}</dd>
             <dt>Rôle proposé</dt><dd>{inv.projectRole ? ROLE_LABEL[inv.projectRole] : "—"}</dd>
             {inv.roles?.length ? <><dt>Rôles par portée</dt><dd data-invitation-roles>{rolesLisibles(inv.roles)}</dd></> : null}
+            {inv.representedOrganizationName ? <><dt>Partie représentée</dt><dd translate="no" data-invitation-partie>{inv.representedOrganizationName}</dd></> : null}
             <dt>Accès</dt><dd>{inv.accessExpiresAt ? `jusqu’au ${dateLong(inv.accessExpiresAt)}` : "sans échéance"}</dd>
           </>
         ) : <><dt>Objet</dt><dd>Création d’un compte Fadi</dd></>}

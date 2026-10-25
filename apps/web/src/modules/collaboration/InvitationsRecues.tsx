@@ -77,6 +77,7 @@ export function InvitationsRecues() {
               <span>{`De la part de `}<span translate="no">{inv.invitedBy || "—"}</span></span>
               <span>{`Accès proposé : ${ROLE_LABEL[inv.baseRole]}`}</span>
               <span>{`Rôles : ${rolesLisibles(inv.roles)}`}</span>
+              {inv.representedOrganizationName ? <span data-invitation-partie>{"En tant que représentant de "}<span translate="no">{inv.representedOrganizationName}</span></span> : null}
               <span>{`Invitation valable jusqu’au ${date(inv.expiresAt)}`}</span>
               <span>{inv.accessExpiresAt ? `Accès jusqu’au ${date(inv.accessExpiresAt)}` : "Accès sans échéance"}</span>
             </small>

@@ -18,9 +18,11 @@ export type InvitationRefusal =
  * - `wrong_person` : la fiche visée est déjà liée à un AUTRE compte (mauvaise identité) ;
  * - `participation_unavailable` : la participation visée a été suspendue ou terminée depuis l'envoi ;
  * - `access_expired` : l'échéance d'accès proposée est déjà passée ;
- * - `roles_invalid` : les rôles proposés ne sont plus attribuables (aucun rôle de portée projet, rôle ou portée inconnus).
+ * - `roles_invalid` : les rôles proposés ne sont plus attribuables (aucun rôle de portée projet, rôle ou portée inconnus) ;
+ * - `mandate_ended` : invitation d'un représentant mandaté (reliquat de la phase 5) dont le mandat n'est plus actif, ou
+ *   dont l'organisation n'est plus partie au projet ou plus active, depuis l'envoi.
  */
-export type ParticipationRefusal = "wrong_person" | "participation_unavailable" | "access_expired" | "roles_invalid";
+export type ParticipationRefusal = "wrong_person" | "participation_unavailable" | "access_expired" | "roles_invalid" | "mandate_ended";
 
 /** Décision pure des refus propres à une invitation de projet liée à une participation. */
 export function participationRefusal(input: {
@@ -31,9 +33,12 @@ export function participationRefusal(input: {
   participationStatus: "contact" | "active" | "suspendue" | "terminee" | null;
   accessExpiresAt: Date | null;
   rolesValid: boolean;
+  /** Invitation d'un représentant mandaté : le mandat est-il encore actif ? (null / absent : invitation ordinaire.) */
+  mandateActive?: boolean | null;
   now: Date;
 }): ParticipationRefusal | null {
   if (input.personUserId && input.personUserId !== input.acceptingUserId) return "wrong_person";
+  if (input.mandateActive === false) return "mandate_ended";
   if (input.participationStatus === "suspendue" || input.participationStatus === "terminee") return "participation_unavailable";
   if (input.accessExpiresAt && input.accessExpiresAt.getTime() <= input.now.getTime()) return "access_expired";
   if (!input.rolesValid) return "roles_invalid";
@@ -71,6 +76,7 @@ export const INVITATION_REFUSAL_MESSAGE: Record<InvitationRefusal, string> = {
   participation_unavailable: "La participation visée a été suspendue ou terminée depuis l'envoi : demandez une nouvelle invitation.",
   access_expired: "L'accès proposé par cette invitation a déjà expiré : demandez une nouvelle invitation.",
   roles_invalid: "Les rôles proposés par cette invitation ne sont plus attribuables : demandez une nouvelle invitation.",
+  mandate_ended: "Le mandat de représentant d'où part cette invitation n'est plus actif : demandez une nouvelle invitation.",
   email_unverified: "Votre adresse n'est pas encore vérifiée : acceptez depuis le lien reçu par courriel, ou vérifiez d'abord votre adresse.",
 };
 

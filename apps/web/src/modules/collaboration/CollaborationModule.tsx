@@ -472,6 +472,7 @@ export function MembersPanel({ projectId }: { projectId: string }) {
                 <span>
                   <span className="collab-email">{i.email}</span>{" "}
                   <span className="badge">{i.awaiting === "creation-compte" ? "En attente de création du compte" : "En attente d’acceptation"}</span>
+                  {i.representedOrganizationName ? <small data-invitation-partie>{"représentant de "}<span translate="no">{i.representedOrganizationName}</span></small> : null}
                   <small>{` · ${i.roles?.length ? rolesLisibles(i.roles) : i.projectRole ? ROLE_LABEL[i.projectRole] : ""} · valable jusqu’au ${new Date(i.expiresAt).toLocaleDateString(LOCALE)}`}{i.accessExpiresAt ? ` · accès jusqu’au ${new Date(i.accessExpiresAt).toLocaleDateString(LOCALE)}` : ""}</small>
                 </span>
                 <button type="button" className="button-secondary" disabled={busy || cancelInvitation.isPending} onClick={() => cancelInvitation.mutate(i.id)}>Annuler l’invitation</button>

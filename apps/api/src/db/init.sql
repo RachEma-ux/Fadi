@@ -2130,6 +2130,23 @@ END $$;
 CREATE INDEX IF NOT EXISTS invitations_participation_idx ON auth.invitations (participation_id) WHERE participation_id IS NOT NULL;
 -- Notification « invitation en attente » du compte visé : lecture par adresse des invitations en attente.
 CREATE INDEX IF NOT EXISTS invitations_pending_email_idx ON auth.invitations (lower(email)) WHERE status = 'pending';
+-- ---------------------------------------------------------------------------
+-- Organisations, participation — reliquat de la phase 5 (Issue #262) : invitation de projet d'un REPRÉSENTANT MANDATÉ.
+-- Le propriétaire du projet invite, depuis l'annuaire, le représentant d'un mandat actif d'une organisation partie au
+-- projet ; l'invitation garde le mandat (`mandate_id`). Un mandat ne donne toujours aucun droit : seule l'acceptation par
+-- l'identité visée active la participation, qui porte alors la partie représentée (`represented_organization_id` =
+-- l'organisation du mandat). L'acceptation est refusée si le mandat n'est plus actif. Additif et rejouable.
+-- ---------------------------------------------------------------------------
+ALTER TABLE auth.invitations ADD COLUMN IF NOT EXISTS mandate_id text
+  REFERENCES public.organization_mandates (id) ON DELETE SET NULL;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'invitations_mandate_check') THEN
+    ALTER TABLE auth.invitations ADD CONSTRAINT invitations_mandate_check
+      CHECK (mandate_id IS NULL OR purpose = 'project_participation');
+  END IF;
+END $$;
+CREATE INDEX IF NOT EXISTS invitations_mandate_idx ON auth.invitations (mandate_id) WHERE mandate_id IS NOT NULL;
 -- Communication (COM, Issue #280, docs/workstreams/communication/PLAN.md) — tables nouvelles, additif.
 -- Une conversation appartient à un projet et porte une audience explicite : `participants` (personnes nommées),
 -- `equipe` (propriétaire et éditeurs) ou `projet` (tous les membres). La lisibilité est recalculée à chaque requête

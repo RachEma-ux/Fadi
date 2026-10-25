@@ -139,6 +139,8 @@ export const ACTION_LABEL: Readonly<Record<string, string>> = {
   "participation.linked": "Fiche liée au compte qui a accepté",
   "participation.activated": "Participation activée par une invitation acceptée",
   "participation.access_expiry_changed": "Échéance d’accès modifiée",
+  // Représentant mandaté invité au projet (reliquat de la phase 5).
+  "participation.representation_recorded": "Partie représentée enregistrée (représentant mandaté invité)",
   "person.contact_created": "Contact sans compte enregistré",
   "person.contact_erased": "Contact sans compte effacé",
   "project.closed": "Projet clos",

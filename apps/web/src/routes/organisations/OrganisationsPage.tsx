@@ -658,6 +658,10 @@ function ApplyTemplate({ orgId, template, version, onClose }: { orgId: string; t
 }
 
 // --- Projets : vue transversale, partie propriétaire, mandats -------------------------------------------------------------
+/** État côté projet d'un mandat (reliquat de la phase 5), lu par les administrateurs. */
+const ETAT_COTE_PROJET: Record<NonNullable<OrganizationMandate["projectSide"]>, string> = {
+  non_invite: "non invité", invitation_en_attente: "invitation en attente", participation_active: "participation active", terminee: "participation terminée",
+};
 
 function Projets({ d }: { d: OrganizationDetail }) {
   const online = useOnline();
@@ -693,6 +697,10 @@ function Projets({ d }: { d: OrganizationDetail }) {
                 <span className="org-block">{p.owned ? "Partie propriétaire" : null}{p.owned && p.participation ? " · " : null}{p.participation ? "Partie participante" : null}</span>
                 {p.mandates.map((m) => (
                   <span key={m.id} className="org-block" data-org-mandate={m.id}>Représentant : <span translate="no">{m.representativeName ?? "—"}</span> · <Statut value={m.status} label={STATUT_MANDAT[m.status]} />
+                    {m.projectSide && (
+                      // État côté projet (lecture seule) : l'invitation et l'accès restent décidés par le propriétaire du projet.
+                      <span className="h7-chip" data-org-mandate-side={m.projectSide} title="Côté projet : décidé par le propriétaire du projet ; un mandat n’ouvre aucun accès.">{`Côté projet : ${ETAT_COTE_PROJET[m.projectSide]}`}</span>
+                    )}
                     {manage && m.status === "propose" && <button type="button" className="link-button" disabled={!online} onClick={() => mandate.mutate({ id: m.id, how: "cancel" })}>Annuler la proposition</button>}
                     {manage && m.status === "actif" && <button type="button" className="link-button" disabled={!online} onClick={() => mandate.mutate({ id: m.id, how: "end" })}>Mettre fin au mandat</button>}
                   </span>
