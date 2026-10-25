@@ -355,7 +355,7 @@ import re, sys
 ci = open(sys.argv[1]).read(); order = []
 for m in re.finditer(r'^\s+(?:[A-Z_]+=\S+ )*node apps/web/e2e/([a-z0-9-]+)\.mjs', ci, re.M):
     if m.group(1) not in order: order.append(m.group(1))
-hors = {"comptes-api", "comptes-securite", "comptes-admin", "geodata"}  # base jetable exigée : jamais en préproduction
+hors = {"comptes-api", "comptes-securite", "comptes-admin", "geodata", "studio-preuves-e"}  # base jetable exigée (studio-preuves-e : écritures SQL directes et seconde API) : jamais en préproduction
 assert hors <= set(order), "scénarios exclus absents de la CI"
 # Recettes qui lisent les courriels envoyés : impossibles en préproduction (aucun envoi aux domaines réservés, pas de Mailpit).
 racine = sys.argv[1].rsplit("/.github/", 1)[0]
