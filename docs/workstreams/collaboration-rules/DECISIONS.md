@@ -102,7 +102,7 @@ Journal du chantier. Les décisions des chantiers propriétaires restent dans le
 - **CR-R3 — Ordre d'ouverture CR-D9 : dérogation pour COM (2026-10-24).** Sur demande explicite du maître d'ouvrage
   (Issue #280), le chantier COM est ouvert et livré (PR #285, fusionnée `173b9f1`) avant les phases 2 à 4
   d'Organisations ; dérogation acceptée avec les décisions COM-D1 à COM-D14 ([communication/DECISIONS.md](../communication/DECISIONS.md),
-  COM-R2). CR-D9 reste valable pour l'ordre Organisations → Temps réel. Conséquence : COM s'appuie sur les rôles
+  COM-A2). CR-D9 reste valable pour l'ordre Organisations → Temps réel. Conséquence : COM s'appuie sur les rôles
   actuels et basculera sur les affectations avec la phase 2 d'Organisations (TASKS COM-10). La vague 3 de la recette
   (S3, S4 sur notifications et recherche, S6 côté diffusion) est jouable avec `apps/web/e2e/communication.mjs`.
 

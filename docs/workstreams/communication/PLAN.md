@@ -28,7 +28,7 @@
 | Étape du concept | Retenu ici | Reporté (motif) |
 | --- | --- | --- |
 | 1 Fondation | deux modes (contextuel ; direct / groupe), règles d'audience, propriété des enregistrements, liens de contexte, politique d'historique, placement | espace d'**organisation** (Organisations phase 5, OP-D10) |
-| 2 Première boucle | fils contextuels, conversations directes et de groupe, références (étape, document, fichier, variante, observation, message, demande, révision de l'Atelier), réponses tenues, notifications, file hors ligne idempotente | **photos et épingles** téléversées (politique d'appareils et de stockage non décidée, concept « supported field devices ») ; **espace de revue externe** et audience « paquet » (Organisations phase 4) |
+| 2 Première boucle | fils contextuels, conversations directes et de groupe, références (étape, document, fichier, variante, observation, message, demande, révision de l'Atelier), réponses tenues, notifications, file hors ligne idempotente ; **photos et épingles** (lot COM-13, COM-A3) | **espace de revue externe** et audience « paquet » (Organisations phase 4) |
 | 3 Organisations et échanges | outil de reprise au départ d'un participant (responsabilités, réattribution, animation) | modèles d'organisation, vues de portefeuille, BCF, SCIM, Procore (décisions « first external connector ») |
 | 4 Assistance | — | connecteurs natifs, courriel entrant, réunions, résumés IA (après le socle, concept § 6) |
 | v1.2 Invitations | — | événements de remise des courriels d'invitation : relèvent de UM-28 (envoi), affichage à reprendre ensuite |
@@ -135,6 +135,20 @@ d'acceptation du concept : conversation privée qui mentionne un projet ; mentio
 fil d'équipe sur toutes les routes (liste, détail, boîte, notifications, références) ; partage interne → partagé avec
 aperçu et empreinte ; révocation avant synchronisation (envoi refusé, aucune publication) ; rejeu sans doublon ; demande de
 précision complète ; départ d'un participant ; interface, clavier et traduction anglaise.
+
+### COM-13 — Photos et épingles (COM-A3, COM-D15 à COM-D19)
+
+1. Photos : compressées sur l'appareil (JPEG, 2 560 px et 2 Mo au plus), gardées dans IndexedDB (`comPhotos`) jusqu'à
+   l'acceptation du message ; `POST …/com/conversations/:id/pieces` (corps brut, rejeu par `X-Client-Request-Id`) :
+   type par signature, dimensions lues, métadonnées EXIF / XMP / texte retirées par le serveur (`lib/com-images.ts`) ;
+   jointes par `pieces` à l'envoi du message ; `GET …/com/pieces/:id` à qui lit le message (l'auteur seul avant de
+   joindre ; jamais l'accès support ; rien pour un message retiré) ; recopiées au partage d'un extrait.
+2. Épingle : point sur le plan d'une révision exacte d'une variante Studio (repère local, mètres), validé par
+   `readStudioContext` ; plan servi par `GET …/com/plan` (export SVG Studio) ; une observation Studio créée depuis le
+   message reprend la révision et les objets.
+3. Position : seulement si l'auteur coche « Joindre ma position », repère geographic (WGS84), précision déclarée.
+4. Interface : « Joindre une photo » (Alt+Maj+.) et « Épingler sur un plan » (Alt+Maj+`), aperçus, plan cliquable ;
+   recette `communication.mjs` § 13 et § 11.
 
 ## 4. Traçabilité COM-R1 à COM-R7
 

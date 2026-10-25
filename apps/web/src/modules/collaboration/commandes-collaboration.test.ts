@@ -33,6 +33,7 @@ const ECRANS: Record<CommandeCollaboration, string[]> = {
   "nouvelle-conversation": [PANNEAU_COM], "envoyer-message": [PANNEAU_COM], "partager-extrait": [PANNEAU_COM], "action-liee": [PANNEAU_COM],
   "audience-conversation": [PANNEAU_COM], "accuser-reception": [PANNEAU_COM], "ajouter-participant": [PANNEAU_COM], "retirer-participant": [PANNEAU_COM],
   "transferer-animation": [PANNEAU_COM], "modifier-message": [PANNEAU_COM], "retirer-message": [PANNEAU_COM],
+  "joindre-photo": [PANNEAU_COM], "epingler": [PANNEAU_COM],
   "nouvelle-demande": [PANNEAU_DEMANDES], "repondre-demande": [PANNEAU_DEMANDES], "cloturer-demande": [PANNEAU_DEMANDES], "rouvrir-demande": [PANNEAU_DEMANDES], "reattribuer-demande": [PANNEAU_DEMANDES],
   // Participants et équipe (Issue #262, phase 2) : en-tête de l'annuaire, ligne du participant, formulaire des rôles.
   ...Object.fromEntries((["nouveau-contact", "modifier-participation", "attribuer-role", "retirer-role", "suspendre-participation", "reactiver-participation",
@@ -65,7 +66,7 @@ describe("Règle d'or — commandes de collaboration (audience, export du lecteu
   it("aucun autre raccourci de Fadi n'emploie ces combinaisons", () => {
     const nos = new Set(COMMANDES.map((c) => COMMANDES_COLLABORATION[c].raccourci.libelle));
     const ailleurs = sources(SRC).filter((f) => !f.includes("/modules/collaboration/"))
-      .flatMap((f) => [...readFileSync(f, "utf8").matchAll(/(?:Ctrl\+)?Alt\+Maj\+(?:[A-Z0-9]+|[-=[\];',./\\])/g)].map((m) => ({ f, r: m[0] })))
+      .flatMap((f) => [...readFileSync(f, "utf8").matchAll(/(?:Ctrl\+)?Alt\+Maj\+(?:[A-Z0-9]+|[-=[\];',./\\`])/g)].map((m) => ({ f, r: m[0] })))
       .filter(({ r, f }) => nos.has(r) && !(f.endsWith("Modifications.tsx") || f.includes("/studio/commentaires/") || f.includes("/studio/observations/")));
     expect(ailleurs).toEqual([]);
   });
@@ -107,9 +108,9 @@ describe("Règle d'or — commandes de collaboration (audience, export du lecteu
     expect(propsRaccourci("nouveau-contact")["aria-keyshortcuts"]).toBe("Control+Alt+Shift+6");
   });
 
-  it("Communication (COM-D14) : seize commandes, Alt+Maj+chiffre ou ponctuation, touche physique", () => {
-    expect(COMMANDES_COM).toHaveLength(16);
-    for (const c of COMMANDES_COM) expect(COMMANDES_COLLABORATION[c].raccourci.libelle, c).toMatch(/^Alt\+Maj\+(?:[0-9]|[-=[\];',./\\])$/);
+  it("Communication (COM-D14) : dix-huit commandes, Alt+Maj+chiffre ou ponctuation, touche physique", () => {
+    expect(COMMANDES_COM).toHaveLength(18);
+    for (const c of COMMANDES_COM) expect(COMMANDES_COLLABORATION[c].raccourci.libelle, c).toMatch(/^Alt\+Maj\+(?:[0-9]|[-=[\];',./\\`])$/);
     const t = (code: string) => ({ code, altKey: true, shiftKey: true, ctrlKey: false, metaKey: false });
     expect(declenche(t("Digit5"), "envoyer-message")).toBe(true);
     expect(declenche(t("Minus"), "ajouter-participant")).toBe(true);
