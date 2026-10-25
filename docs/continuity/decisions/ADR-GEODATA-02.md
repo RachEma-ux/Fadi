@@ -48,6 +48,17 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
      (plus proche voisin, consigné), stockée figée (`geodata_rasters`), tuiles PNG rendues par le serveur, symbologie
      déclarée par la fiche (palette continue et bornes, ou classes), valeur au point ; une cellule sans donnée est
      transparente et « non évaluée », jamais zéro. Dépendance `geotiff` (MIT) côté serveur.
+   - D-GD-14 (25 octobre 2026, demande du maître d'ouvrage : couches rangées par catégorie, barre verticale, bouton
+     « Data », menu hamburger dont l'article « Data » crée, modifie et supprime les catégories et leurs couches) :
+     catégories du catalogue **communes à tous les comptes** (`geodata_categories`), gérées par la nouvelle capacité
+     `organiser-catalogue` (rôles « gestionnaire-donnees » et « administrateur ») ; lecture seule pour les autres. Une
+     source commune est rangée explicitement (`geodata_categories_sources`, par source : le rangement survit aux nouvelles
+     versions), sinon par les thèmes déclarés de la catégorie, sinon « Autres » ; une source privée n'est rangée que par
+     son thème. Supprimer une catégorie ne supprime aucune couche. 15 catégories initiales semées une seule fois
+     (`geodata_reglages`). Interface : carte pleine surface, barre d'outils verticale **à gauche** (comme demandé ; elle
+     est à droite chez Kharita), bouton « Données » ouvrant le catalogue en surimpression (sections repliables, compte
+     actives / total, bascule Vecteurs / Imagerie), menu ☰ en haut à droite (Données, Mes cartes, Études, Importer,
+     Exporter).
 
 ## Conséquences
 

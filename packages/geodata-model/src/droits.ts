@@ -53,7 +53,7 @@ export const ROLES_GEODATA = ["gestionnaire-donnees", "responsable-publication",
 export type RoleGeoData = (typeof ROLES_GEODATA)[number];
 export const estRoleGeoData = (x: unknown): x is RoleGeoData => typeof x === "string" && (ROLES_GEODATA as readonly string[]).includes(x);
 
-export const CAPACITES = ["consulter", "composer", "importer", "exporter", "preparer-version", "publier-version", "gerer-roles"] as const;
+export const CAPACITES = ["consulter", "composer", "importer", "exporter", "preparer-version", "publier-version", "gerer-roles", "organiser-catalogue"] as const;
 export type Capacite = (typeof CAPACITES)[number];
 
 /**
@@ -64,6 +64,8 @@ export type Capacite = (typeof CAPACITES)[number];
 export function capacitesDe(roles: readonly RoleGeoData[]): ReadonlySet<Capacite> {
   const c = new Set<Capacite>(["consulter", "composer", "importer", "exporter"]);
   if (roles.includes("gestionnaire-donnees")) c.add("preparer-version");
+  // Catégories du catalogue (D-GD-14) : gestionnaire de données ou administrateur GeoData.
+  if (roles.includes("gestionnaire-donnees") || roles.includes("administrateur")) c.add("organiser-catalogue");
   if (roles.includes("responsable-publication")) c.add("publier-version");
   if (roles.includes("administrateur")) c.add("gerer-roles");
   return c;

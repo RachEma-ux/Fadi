@@ -72,6 +72,19 @@ fiche qualifiée à côté (`version.fichier`, empreinte contrôlée à l'import
 de plus de 5 000 objets n'est pas écrite (borne V1) ; les couches raster (relief, climat, sols, imagerie) n'entrent pas
 dans GeoData V1. Ces données sont collaboratives : ni exhaustives ni officielles.
 
+## Catégories du catalogue et disposition (D-GD-14)
+
+La carte occupe tout l'espace. À gauche : bouton « Données » (catalogue en surimpression : sections par catégorie
+repliables, compte « actives / total », bascule Vecteurs / Imagerie ; onglets Couches et Légende) et barre d'outils
+verticale (zoom, nord, position, plein écran, mesurer une distance ou une surface, zone, annotation, légende). En haut à
+droite : menu ☰ — Données, Mes cartes, Études, Importer, Exporter.
+
+Menu ☰ → « Données » : catégories communes à tous les comptes. Avec le rôle « gestionnaire-donnees » (ou
+« administrateur ») : créer, renommer, monter / descendre, supprimer une catégorie ; ranger une couche commune dans une
+catégorie, l'en déplacer ou l'en retirer (elle revient alors à son thème). Supprimer une catégorie ne supprime aucune
+couche. API : `GET/POST /geodata/api/categories`, `PATCH/DELETE /categories/:id`, `PUT /categories-ordre`,
+`PUT /categories/:id/sources/:sourceId`, `DELETE /categories-sources/:sourceId` ; chaque modification est journalisée.
+
 ## Couches raster (D-GD-13)
 
 Fiche avec `couche.raster` (`unite`, `grandeur`, `palette` parmi `viridis`, `relief`, `precipitations`, `temperature`,

@@ -65,6 +65,9 @@ export interface AnalyseRecue {
 export interface ImportRecu { id: string; requestId: string; etat: "valide" | "rejete" | "confirme" | "annule" | "expire"; nomFichier: string; taille: number; rapport: RapportImport; versionId: string | null; coucheId?: string | null; expireLe: string }
 export interface ExportRecu { id: string; etat: "autorise" | "refuse"; carteRevision: number; refus: { coucheId: string | null; titre: string; motif: string }[]; attributions: string[]; sources: { titre: string; version: string; licence: string; attribution: string; periode: string | null }[]; fiche: string | null; expireLe: string }
 
+export interface CategorieRecue { readonly id: string; readonly libelle: string; readonly ordre: number; readonly themes: readonly string[] }
+export interface RangementRecu { readonly categories: readonly CategorieRecue[]; readonly affectations: Readonly<Record<string, string>>; readonly modifiable: boolean }
+
 export const api = {
   espace: () => appeler<EspaceRecu>("/espace"),
   catalogue: (q = "") => appeler<{ couches: CoucheRecue[] }>(`/catalogue${q ? `?q=${encodeURIComponent(q)}` : ""}`),
@@ -78,6 +81,14 @@ export const api = {
   fiche: (coucheId: string, code: string) => appeler<FicheRecue>(`/couches/${encodeURIComponent(coucheId)}/objets/${encodeURIComponent(code)}`),
   valeurRaster: (coucheId: string, lon: number, lat: number) => appeler<ValeurRasterRecue>(`/raster/${encodeURIComponent(coucheId)}/valeur?lon=${lon}&lat=${lat}`),
   categories: (coucheId: string) => appeler<{ categories: { code: string; nom: string | null; rang: number }[] }>(`/couches/${encodeURIComponent(coucheId)}/categories`),
+  // Catégories du catalogue (D-GD-14) : lecture pour tous, gestion réservée au gestionnaire de données.
+  rangement: () => appeler<RangementRecu>("/categories"),
+  creerCategorie: (libelle: string) => envoyer<CategorieRecue>("/categories", "POST", { libelle }),
+  renommerCategorie: (id: string, libelle: string) => envoyer<CategorieRecue>(`/categories/${encodeURIComponent(id)}`, "PATCH", { libelle }),
+  ordonnerCategories: (ids: string[]) => envoyer<{ ids: string[] }>("/categories-ordre", "PUT", { ids }),
+  supprimerCategorie: (id: string) => envoyer<null>(`/categories/${encodeURIComponent(id)}`, "DELETE"),
+  rangerSource: (categorieId: string, sourceId: string) => envoyer<{ sourceId: string; categorieId: string }>(`/categories/${encodeURIComponent(categorieId)}/sources/${encodeURIComponent(sourceId)}`, "PUT", {}),
+  libererSource: (sourceId: string) => envoyer<null>(`/categories-sources/${encodeURIComponent(sourceId)}`, "DELETE"),
   valeurs: (indicateurId: string) => appeler<{ valeurs: ({ code: string } & ValeurRecue)[] }>(`/indicateurs/${encodeURIComponent(indicateurId)}/valeurs`),
   cartes: (etat: "active" | "archivee" = "active") => appeler<{ cartes: ResumeCarte[] }>(`/cartes?etat=${etat}`),
   carte: (id: string) => appeler<CarteRecue>(`/cartes/${encodeURIComponent(id)}`),

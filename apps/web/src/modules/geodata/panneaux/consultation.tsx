@@ -4,7 +4,7 @@
  * (`translate="no"`), arabe compris. Une valeur absente est écrite « Valeur absente » avec son motif, jamais « 0 ».
  */
 import { useEffect, useState } from "react";
-import { couleursPour, degradeCss, formatNombre, legende, libelleAbsence, LIBELLES_USAGES, USAGES, type Composition, type MethodeClassification, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
+import { categorieDe, compterParType, type RangementCatalogue, couleursPour, degradeCss, regrouperCatalogue, type TypeCatalogue, formatNombre, legende, libelleAbsence, LIBELLES_USAGES, USAGES, type Composition, type MethodeClassification, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
 import { api, type ValeurRasterRecue, type CoucheRecue, type Disponibilite, type FicheRecue, type LigneTable, type ValeurRecue } from "../client";
 import { entreesCategories, lireSeuilsManuels, styleThematique, type Categorie } from "../composition-ops";
 
@@ -17,31 +17,57 @@ export const formaterValeur = (v: ValeurRecue | ValeurIndicateur | undefined, un
   return `${formatNombre(v.valeur, Math.abs(v.valeur) >= 100 || Number.isInteger(v.valeur) ? 0 : 2)}${unite ? ` ${unite}` : ""}`;
 };
 
-export function PanneauCatalogue(p: { couches: CoucheRecue[] | null; erreur: string | null; composition: Composition; onAjouter(c: CoucheRecue): void; onRecharger(): void }) {
+export function PanneauCatalogue(p: { rangement?: RangementCatalogue | undefined; couches: CoucheRecue[] | null; erreur: string | null; composition: Composition; onAjouter(c: CoucheRecue): void; onRecharger(): void }) {
   const [filtre, setFiltre] = useState("");
   const [details, setDetails] = useState<string | null>(null);
+  const [type, setType] = useState<TypeCatalogue>("vecteurs");
+  const [ouvertes, setOuvertes] = useState<Set<string>>(new Set());
   if (p.erreur) return <div role="alert" className="gd-etat"><p>{p.erreur}</p><button type="button" onClick={p.onRecharger}>Réessayer</button></div>;
   if (!p.couches) return <p role="status" className="gd-etat">Chargement du catalogue…</p>;
   const f = filtre.trim().toLowerCase();
-  const liste = p.couches.filter((c) => !f || `${c.titre} ${c.version.source.titre} ${c.version.source.theme}`.toLowerCase().includes(f));
+  const liste = p.couches.filter((c) => !f || `${c.titre} ${c.version.source.titre} ${c.version.source.theme} ${categorieDe(c, p.rangement).libelle}`.toLowerCase().includes(f));
+  const actives = new Set(p.composition.couches.map((k) => k.coucheId));
+  const groupes = regrouperCatalogue(liste, type, actives, p.rangement);
+  const nombres = compterParType(p.couches);
+  const basculer = (cle: string) => setOuvertes((o) => { const n = new Set(o); if (n.has(cle)) n.delete(cle); else n.add(cle); return n; });
   return (
     <div className="gd-catalogue" data-gd-catalogue>
-      <label className="gd-champ">Filtrer le catalogue<input type="search" value={filtre} onChange={(e) => setFiltre(e.target.value)} /></label>
+      <div className="gd-types" role="group" aria-label="Type de couches">
+        {(["vecteurs", "imagerie"] as const).map((t) => <button key={t} type="button" aria-pressed={type === t} onClick={() => setType(t)} data-gd-type={t}>{`${t === "vecteurs" ? "Vecteurs" : "Imagerie"} (${nombres[t]})`}</button>)}
+      </div>
+      <label className="gd-champ">Filtrer le catalogue<input type="search" value={filtre} onChange={(e) => setFiltre(e.target.value)} data-gd-filtre-catalogue /></label>
       {p.couches.length === 0 && <p className="gd-etat">Catalogue vide : aucune couche n'est encore publiée ni importée pour ce compte.</p>}
-      {p.couches.length > 0 && liste.length === 0 && <p className="gd-etat">Aucune couche ne correspond au filtre.</p>}
-      <ul className="gd-liste">
-        {liste.map((c) => {
-          const dedans = p.composition.couches.some((k) => k.coucheId === c.id);
+      {p.couches.length > 0 && groupes.length === 0 && <p className="gd-etat">{f ? "Aucune couche de ce type ne correspond au filtre." : "Aucune couche de ce type au catalogue."}</p>}
+      <ul className="gd-categories">
+        {groupes.map(({ categorie, couches, actives: n }) => {
+          // Avec un filtre, les catégories qui ont un résultat s'ouvrent d'elles-mêmes.
+          const ouverte = !!f || ouvertes.has(categorie.cle);
           return (
-            <li key={c.id} className="gd-carte-couche" data-gd-couche-catalogue={c.id}>
-              <div className="gd-ligne-titre"><strong translate="no">{c.titre}</strong>{c.version.privee && <span className="gd-badge">Privée</span>}{c.version.synthetique && <span className="gd-badge gd-badge-alerte">Jeu synthétique</span>}</div>
-              <p className="gd-discret" translate="no">{c.version.source.producteur}</p>
-              <p className="gd-discret">{`${c.nombreObjets} objets · ${c.indicateurs.length} indicateur(s)`}</p>
-              <div className="gd-actions">
-                <button type="button" disabled={dedans} onClick={() => p.onAjouter(c)} data-gd-ajouter={c.id}>{dedans ? "Déjà sur la carte" : "Ajouter à la carte"}</button>
-                <button type="button" aria-expanded={details === c.id} onClick={() => setDetails(details === c.id ? null : c.id)}>Fiche de la couche</button>
-              </div>
-              {details === c.id && <FicheVersion couche={c} />}
+            <li key={categorie.cle} className="gd-categorie" data-gd-categorie={categorie.cle}>
+              <button type="button" className="gd-entete-categorie" aria-expanded={ouverte} aria-controls={`gd-categorie-${categorie.cle}`} onClick={() => basculer(categorie.cle)} data-gd-entete-categorie={categorie.cle}>
+                <span aria-hidden="true" className="gd-chevron">{ouverte ? "▾" : "▸"}</span>
+                <span className="gd-nom-categorie">{categorie.libelle}</span>
+                <span className={`gd-compte${n ? " gd-compte-actif" : ""}`} title={`${n} couche(s) active(s) sur ${couches.length}`}>{n ? `${n}/${couches.length}` : String(couches.length)}</span>
+              </button>
+              {ouverte && (
+                <ul className="gd-liste" id={`gd-categorie-${categorie.cle}`}>
+                  {couches.map((c) => {
+                    const dedans = actives.has(c.id);
+                    return (
+                      <li key={c.id} className={`gd-carte-couche${dedans ? " gd-active" : ""}`} data-gd-couche-catalogue={c.id}>
+                        <div className="gd-ligne-titre"><strong translate="no">{c.titre}</strong>{c.version.privee && <span className="gd-badge">Privée</span>}{c.version.synthetique && <span className="gd-badge gd-badge-alerte">Jeu synthétique</span>}</div>
+                        <p className="gd-discret" translate="no">{c.version.source.producteur}</p>
+                        <p className="gd-discret">{c.typeGeometrie === "raster" ? "Couche raster (grille de valeurs)" : `${c.nombreObjets} objets · ${c.indicateurs.length} indicateur(s)`}</p>
+                        <div className="gd-actions">
+                          <button type="button" disabled={dedans} onClick={() => p.onAjouter(c)} data-gd-ajouter={c.id}>{dedans ? "Déjà sur la carte" : "Ajouter à la carte"}</button>
+                          <button type="button" aria-expanded={details === c.id} onClick={() => setDetails(details === c.id ? null : c.id)}>Fiche de la couche</button>
+                        </div>
+                        {details === c.id && <FicheVersion couche={c} />}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
             </li>
           );
         })}

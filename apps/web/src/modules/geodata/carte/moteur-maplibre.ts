@@ -4,7 +4,7 @@
  * couches servies par `/geodata/api/tuiles` (autorisées au serveur), fond neutre par défaut ; une valeur absente est grise
  * ET hachurée, jamais confondue avec zéro ; l'objet sélectionné a un contour épais (la couleur n'est pas le seul signe).
  */
-import { AttributionControl, Map as CarteMapLibre, NavigationControl, ScaleControl, setWorkerUrl, type ExpressionSpecification, type GeoJSONSource, type MapMouseEvent } from "maplibre-gl";
+import { AttributionControl, Map as CarteMapLibre, ScaleControl, setWorkerUrl, type ExpressionSpecification, type GeoJSONSource, type MapMouseEvent } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Feature, FeatureCollection } from "geojson";
 import urlWorker from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
@@ -40,8 +40,8 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     maxZoom: 18,
   });
   const attribution = new AttributionControl({ compact: false, customAttribution: [] });
-  carte.addControl(new NavigationControl({ visualizePitch: false, showCompass: true }), "top-right");
-  carte.addControl(new ScaleControl({ unit: "metric", maxWidth: 120 }), "bottom-left");
+  // Zoom, nord et plein écran : barre d'outils verticale de la page (BarreOutilsCarte), pas de contrôle MapLibre.
+  carte.addControl(new ScaleControl({ unit: "metric", maxWidth: 120 }), "bottom-right");
   carte.addControl(attribution, "bottom-right");
   carte.keyboard.enable();
 
@@ -213,6 +213,9 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       else if (cible.cap !== undefined) carte.jumpTo({ center: [cible.lon, cible.lat], zoom: cible.zoom ?? carte.getZoom(), bearing: cible.cap });
       else carte.flyTo({ center: [cible.lon, cible.lat], zoom: cible.zoom ?? Math.max(carte.getZoom(), 11), duration: 600 });
     },
+    zoomer(delta) { if (delta > 0) carte.zoomIn({ duration: 250 }); else carte.zoomOut({ duration: 250 }); },
+    orienterNord() { carte.easeTo({ bearing: 0, pitch: 0, duration: 400 }); },
+    redimensionner() { carte.resize(); },
     definirOutil(o) {
       outil = o;
       sommets = [];

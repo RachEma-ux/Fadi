@@ -1,6 +1,6 @@
 # GeoData — Reprise de session
 
-Mis à jour : 2026-10-25 (UTC).
+Mis à jour : 2026-10-25 (heure suisse).
 État relevé après la fusion de la PR #301.
 
 ## Point de reprise
@@ -20,9 +20,14 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
   d'ouvrage (carte, fiche, recherche, enregistrement, export).
 - Style « une couleur par entité » (D-GD-11) : PR #314 fusionnée.
 - Couches raster (D-GD-13) et 17 rasters de sources d'origine ; communes OSM (1 498) ; sites minéraux USGS (110).
+- Catalogue par catégories gérées, barre d'outils verticale à gauche, bouton « Données », menu ☰ (D-GD-14).
 - Sources ouvertes (D-GD-12) : 29 couches OpenStreetMap / OurAirports livrées avec leur fiche (15332 objets).
 
 ## Prochaine action
+
+Catégories (D-GD-14) : en préproduction, menu ☰ → « Données » avec un compte « gestionnaire-donnees » pour créer,
+renommer, ordonner ou supprimer une catégorie et y ranger des couches ; les autres comptes voient les catégories en
+lecture seule.
 
 Préproduction, après déploiement de `main` : importer les sources ouvertes en une commande
 (`sudo docker exec fadi-preprod-app-1 node apps/api/dist/geodata-reference.js --fiche toutes --preparateur <compte>

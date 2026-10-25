@@ -43,6 +43,12 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   Copernicus DEM (altitude, pente calculée), ESA WorldCover 2021, SoilGrids 2.0 (10 propriétés), CHIRPS 2024, Global Wind
   Atlas, Global Solar Atlas (PVOUT), WorldPop 2020 ; vérifiées sur la base locale (import, tuiles, valeur au point).
 - Couches complémentaires : communes OSM (1 498, niveau 8) et sites minéraux USGS MRDS (110).
+- Catalogue par catégories et disposition Kharita (D-GD-14) : modèle pur `catalogue.ts` (5 tests), tables
+  `geodata_categories` / `geodata_categories_sources` / `geodata_reglages`, routes `/geodata/api/categories*` (suite DB-3,
+  CI seulement), panneau « Données » du menu ☰ (créer, renommer, ordonner, supprimer ; ranger, déplacer, retirer une
+  couche), barre d'outils verticale à gauche, bouton « Données » ; recette `geodata.mjs` conforme en local (59
+  vérifications, dont téléphone 390 px, axe-core et interface anglaise). Suites API DB-3 non exécutées localement (base
+  attestée de la CI seulement).
 
 ## Points ouverts
 
