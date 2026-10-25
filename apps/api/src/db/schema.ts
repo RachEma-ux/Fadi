@@ -446,6 +446,11 @@ export const projectComments = pgTable("project_comments", {
  * éditeur (modifications). Chaque route re-vérifie le rôle côté serveur
  * (`lib/owned-project.ts`) ; la gestion des membres est réservée au
  * propriétaire.
+ *
+ * Lot OP-PONT (Issue #262) : `project_members` n'est plus une table mais une VUE de compatibilité EN LECTURE, dérivée
+ * des participations (init.sql). Déclarée ici avec ses colonnes pour les lectures restantes ; aucune écriture (insert,
+ * update, delete) n'est permise — `fadi_app` n'en a pas le droit et un test relit le code (project-access.test.ts). Les
+ * écritures du partage passent par `lib/project-access-db.ts`.
  */
 export const projectMembers = pgTable("project_members", {
   projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
@@ -471,9 +476,9 @@ export const projectSupportGrants = pgTable("project_support_grants", {
 }, (t) => [index("project_support_grants_project_idx").on(t.projectId, t.adminId)]);
 
 // ---------------------------------------------------------------------------
-// Organisations, participation et revue externe — phase 1 (Issue #262). Miroir de init.sql ; jusqu'à la phase 2,
-// l'accès reste porté par `projects.owner_id` et `project_members`, dont participations et rôles `acces` sont le
-// miroir tenu par déclencheurs SQL (`op_sync_access`). Règles pures : `lib/participations.ts`.
+// Organisations, participation et revue externe — phase 1 (Issue #262). Miroir de init.sql. Participations et rôles
+// portent l'accès (vue `project_effective_access`, phase 2) ; le partage y est écrit directement depuis le lot OP-PONT
+// (`lib/project-access-db.ts`, plus de miroir `op_sync_access`). Règles pures : `lib/participations.ts`.
 // ---------------------------------------------------------------------------
 
 /** Personne : compte vérifié (`userId`) ou contact sans compte (nom requis, OP-D9). */
@@ -519,10 +524,14 @@ export const projectParticipations = pgTable("project_participations", {
   businessRole: text("business_role"),
   responsibilities: text("responsibilities").array().notNull().default([]).$type<TeamResponsibility[]>(),
   status: text("status").notNull().$type<ParticipationStatus>(),
-  /** Export accordé (écart E2), tenu par le miroir depuis `project_members.can_export` ; un Concepteur exporte toujours. */
+  /** Export accordé à un lecteur (écart E2), écrit par le partage (lib/project-access-db.ts) ; un Concepteur exporte toujours. */
   canExport: boolean("can_export").notNull().default(false),
   /** Échéance de l'accès (phase 3), recopiée de l'invitation acceptée : passée, la participation ne donne plus rien. */
   accessExpiresAt: timestamp("access_expires_at", { withTimezone: true }),
+  /** Partage (lot OP-PONT) : libellé de l'invitant (historiquement son adresse) et date du partage — colonnes
+   *  `invited_by` / `created_at` de la vue de compatibilité `project_members`. */
+  accessGrantedBy: text("access_granted_by"),
+  accessGrantedAt: timestamp("access_granted_at", { withTimezone: true }),
   startsOn: date("starts_on"),
   endsOn: date("ends_on"),
   createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
@@ -533,7 +542,7 @@ export const projectParticipations = pgTable("project_participations", {
 export type ProjectBusinessRole = "lecteur" | "concepteur" | "relecteur" | "coordinateur" | "approbateur" | "diffuseur";
 export type RoleScopeType = "projet" | "etude" | "variante" | "revision" | "documents";
 
-/** Rôle métier par portée (OP-D3 c) ; `acces` = miroir de l'accès actuel, `attribution` = affectation explicite. */
+/** Rôle métier par portée (OP-D3 c) ; `acces` = rôle du partage (Lecteur / Concepteur), `attribution` = affectation explicite. */
 export const projectRoleAssignments = pgTable("project_role_assignments", {
   id: text("id").primaryKey(),
   participationId: text("participation_id").notNull().references(() => projectParticipations.id, { onDelete: "cascade" }),

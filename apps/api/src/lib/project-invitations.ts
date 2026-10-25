@@ -6,7 +6,7 @@
  * - Rôles proposés par portée : au moins un rôle de portée `projet` (sans lui, l'acceptation ne donnerait rien — la
  *   participation sans rôle de projet n'ouvre pas le projet) ; l'ancienne forme `{ role: lecteur | editeur }` reste acceptée
  *   (Lecteur, Concepteur).
- * - Accès de base porté par le pont `project_members` (lecteur / éditeur), rôles complémentaires d'origine
+ * - Accès de base porté par le rôle de partage (origine `acces` : lecteur / éditeur, lot OP-PONT), rôles complémentaires d'origine
  *   `attribution` : leur somme décrit exactement l'accès que `deriveAccess` (donc la vue) donnera à l'acceptation.
  * - Échéances indépendantes : celle de l'invitation (1 à 30 jours) et celle de l'accès (facultative, future).
  */

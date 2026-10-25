@@ -34,7 +34,7 @@ export type ProjectNeed = "read" | "comment" | "write" | "modify" | "owner" | "e
  * trace de production), archive, copie vers un autre projet, publication servie comme source d'un autre projet. Déclaré
  * par chaque route concernée : la garde de chemin `supportReadOnlyGuard` n'est qu'une défense supplémentaire, jamais la
  * frontière. Propriétaire et éditeur exportent ; l'accès support jamais. Un `lecteur` n'exporte que si le propriétaire le
- * lui a accordé (`project_members.can_export`, écart E2 du 2026-10-24, tranche CR-D4) : TRUE pour les lecteurs antérieurs
+ * lui a accordé (`project_participations.can_export`, écart E2 du 2026-10-24, tranche CR-D4) : TRUE pour les lecteurs antérieurs
  * à cette règle (aucune régression), FALSE par défaut pour un nouveau lecteur — `exportAllowed(access)`.
  */
 const ALLOWED: Record<ProjectNeed, readonly ProjectRole[]> = {
@@ -130,8 +130,9 @@ export function lockedMessage(lock: EditingLock): string {
  * Phase 2 (Issue #262, OP-D3 c) : la décision vient de la seule vue `project_effective_access` (init.sql) — le
  * propriétaire, sinon une participation active et commencée portant un rôle métier de portée projet (Concepteur →
  * `editeur` ; Lecteur, Relecteur, Coordinateur, Approbateur, Diffuseur → `lecteur`). Une participation suspendue,
- * terminée, sans rôle de projet ou un simple contact ne donne rien. `project_members` n'est plus lu ici : il reste
- * l'interface d'écriture du partage, dont le miroir par déclencheurs tire participations et rôles `acces`.
+ * terminée, sans rôle de projet ou un simple contact ne donne rien. `project_members` n'est pas lu ici : depuis le lot
+ * OP-PONT, ce n'est plus qu'une vue de compatibilité dérivée des participations (le partage s'écrit dans
+ * `project-access-db.ts`).
  */
 export async function loadProjectAccess(projectId: string, userId: string, executor: Pick<typeof db, "select"> = db): Promise<AccessibleProject | null> {
   const rows = await executor

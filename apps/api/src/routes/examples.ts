@@ -9,6 +9,7 @@ import { CONTRAT_COMMANDES, TYPE_RESTAURER, importerModeleNatif } from "@parcour
 import { remplacerModele } from "../lib/atelier-modele.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { newId } from "../lib/ids.js";
+import { ensureOwnerParticipation } from "../lib/project-access-db.js";
 import { stampStepFingerprints } from "../lib/project-archive.js";
 import { applyExampleDecisions } from "../lib/example-decisions.js";
 import { estProjetExempleP118, installerExempleStudio } from "../lib/studio-exemple.js";
@@ -80,6 +81,8 @@ examplesRouter.post("/:exampleId/import", async (req, res) => {
       })
       .returning();
     if (!project) throw new Error("project insert returned nothing");
+    // Participation du propriétaire (lot OP-PONT : écrite ici, autrefois par le déclencheur du miroir).
+    await ensureOwnerParticipation(tx, id, req.user!.id);
     await tx.insert(projectSteps).values(
       PARCOURS_STEPS.map((def) => {
         const content = contents[def.number]!;

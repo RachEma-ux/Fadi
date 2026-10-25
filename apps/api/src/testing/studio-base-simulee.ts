@@ -296,9 +296,9 @@ function requete(executer: (q: Etat) => unknown[]) {
   return q;
 }
 /**
- * Vue `project_effective_access` (Issue #262, phase 2) recalculée à chaque lecture depuis le pont qu'emploient ces suites :
- * le propriétaire (`projects.ownerId`), puis chaque membre (éditeur → `editeur`, lecteur → `lecteur`, export comme la
- * vue réelle) — aucune participation suspendue ni rôle attribué n'existe dans la base simulée.
+ * Vue `project_effective_access` (Issue #262, phase 2) recalculée à chaque lecture depuis les partages simulés (lignes
+ * de la vue de compatibilité `project_members`, lot OP-PONT) qu'emploient ces suites : le propriétaire
+ * (`projects.ownerId`), puis chaque membre (éditeur → `editeur`, lecteur → `lecteur`, export comme la vue réelle) — aucune participation suspendue ni rôle attribué n'existe dans la base simulée.
  */
 function lignesTable(table: unknown): Ligne[] {
   if (table !== projectEffectiveAccess) return banc.lignes.get(table) ?? [];

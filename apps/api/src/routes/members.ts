@@ -31,10 +31,11 @@
  * et le contrôle de concurrence (409) s'applique entre eux comme entre deux
  * appareils d'un même compte.
  *
- * Phase 2 de l'Issue #262 (OP-D3 c) : ces écritures restent l'interface du partage, mais la DÉCISION d'accès se lit dans
- * la vue `project_effective_access` (participations actives et rôles par portée) ; le miroir par déclencheurs
- * (`op_sync_access`, init.sql) en tire la participation, le rôle `acces` (lecteur → Lecteur, editeur → Concepteur) et
- * l'export accordé. Une participation suspendue depuis « Équipe et participants » le reste quoi qu'écrive ce routeur.
+ * Phase 2 de l'Issue #262 (OP-D3 c) : la DÉCISION d'accès se lit dans la vue `project_effective_access` (participations
+ * actives et rôles par portée). Lot OP-PONT : ces routes écrivent DIRECTEMENT la participation, le rôle `acces`
+ * (lecteur → Lecteur, editeur → Concepteur) et l'export accordé (`lib/project-access-db.ts`), dans la transaction de
+ * l'action et avec son journal ; `project_members` n'est plus qu'une vue de compatibilité en lecture. Une participation
+ * suspendue depuis « Équipe et participants » le reste quoi qu'écrive ce routeur.
  *
  * Phase 3 (OP-D2 a) : plus aucun ajout direct. Toute adresse reçoit une invitation liée à une participation (contact de
  * l'annuaire, ou fiche créée à l'envoi), avec ses rôles par portée et deux échéances indépendantes (invitation, accès) ;
@@ -52,6 +53,7 @@ import { and, asc, eq, gt, inArray, ne, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client.js";
 import { invitations, organizationMandates, organizations, people, projectMembers, projectParticipations, projects, users } from "../db/schema.js";
+import { ensureOwnerParticipation, grantShare, revokeShare, shareOf, type ShareRow } from "../lib/project-access-db.js";
 import type { Tx } from "../lib/step-rows.js";
 import { audit, clientIp } from "../lib/audit.js";
 import { formatDate, mailLocale, PUBLIC_PATHS, publicLink, sendAccountMail } from "../lib/account.js";
@@ -352,11 +354,12 @@ membersRouter.post("/mandates/:mandateId", async (req, res) => {
   });
 });
 
-type MemberRow = typeof projectMembers.$inferSelect;
+type MemberRow = ShareRow;
 
-/** Ligne du membre verrouillée (FOR UPDATE) : deux changements concurrents ne journalisent pas le même « avant ». */
-function lockedMember(tx: Tx, projectId: string, userId: string) {
-  return tx.select().from(projectMembers).where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, userId))).limit(1).for("update");
+/** Partage du membre, participation verrouillée (FOR UPDATE) : deux changements concurrents ne journalisent pas le même « avant ». */
+async function lockedMember(tx: Tx, projectId: string, userId: string): Promise<MemberRow[]> {
+  const row = await shareOf(tx, projectId, userId, { lock: true });
+  return row ? [row] : [];
 }
 
 /**
@@ -368,16 +371,15 @@ async function changeMember(tx: Tx, req: Request, projectId: string, before: Mem
   const role = next.role ?? before.role;
   const exportsBefore = memberExports(before.role, before.canExport);
   const canExport = next.canExport ?? (before.role === "editeur" && role === "lecteur" ? false : exportsBefore);
-  const [row] = await tx.update(projectMembers).set({ role, canExport })
-    .where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, before.userId))).returning();
-  const exportsAfter = memberExports(row!.role, row!.canExport);
+  const { after: row } = await grantShare(tx, { projectId, userId: before.userId, role, canExport, invitedBy: before.invitedBy, grantedBy: req.user!.id, mode: "set" });
+  const exportsAfter = memberExports(row.role, row.canExport);
   const target = { type: "project" as const, id: projectId };
   if (role !== before.role) {
     await audit(tx, { actorId: req.user!.id, action: "project.member.role_changed", target, metadata: { memberId: before.userId, roleBefore: before.role, roleAfter: role, canExportBefore: exportsBefore, canExportAfter: exportsAfter }, ip: clientIp(req) });
   } else if (exportsAfter !== exportsBefore) {
     await audit(tx, { actorId: req.user!.id, action: "project.member.export_changed", target, metadata: { memberId: before.userId, role, canExportBefore: exportsBefore, canExportAfter: exportsAfter }, ip: clientIp(req) });
   }
-  return row!;
+  return row;
 }
 
 membersRouter.patch("/:userId", async (req, res) => {
@@ -428,11 +430,9 @@ membersRouter.delete("/:userId", async (req, res) => {
   const project = await projectOr404(req, res, userId === req.user!.id ? "read" : "owner");
   if (!project) return;
   const deleted = await db.transaction(async (tx) => {
-    const rows = await tx
-      .delete(projectMembers)
-      .where(and(eq(projectMembers.projectId, project.id), eq(projectMembers.userId, userId)))
-      .returning({ userId: projectMembers.userId, role: projectMembers.role, canExport: projectMembers.canExport });
-    const [gone] = rows;
+    // Retrait ou départ : la participation qui porte le partage est terminée et datée (lot OP-PONT, ancien miroir).
+    const gone = await revokeShare(tx, project.id, userId);
+    const rows = gone ? [gone] : [];
     if (gone) {
       await audit(tx, {
         actorId: req.user!.id, action: userId === req.user!.id ? "project.member.left" : "project.member.removed", target: { type: "project", id: project.id },
@@ -460,18 +460,15 @@ membersRouter.post("/:userId/propriete", async (req, res) => {
   const userId = req.params["userId"] as string;
   const result = await db.transaction(async (tx) => {
     await lockProject(tx, project.id);
-    const [member] = await tx
-      .select({ userId: projectMembers.userId, email: users.email, role: projectMembers.role })
-      .from(projectMembers)
-      .innerJoin(users, eq(users.id, projectMembers.userId))
-      .where(and(eq(projectMembers.projectId, project.id), eq(projectMembers.userId, userId)))
-      .limit(1);
-    if (!member) return null;
-    // Ordre voulu : chacun garde un accès à chaque écriture, sa participation au projet (miroir tenu par déclencheurs,
-    // init.sql) continue sans interruption.
-    await tx.insert(projectMembers).values({ projectId: project.id, userId: project.ownerId, role: "editeur", invitedBy: member.email });
+    const share = await shareOf(tx, project.id, userId, { lock: true });
+    const [account] = share ? await tx.select({ email: users.email }).from(users).where(eq(users.id, userId)).limit(1) : [];
+    if (!share || !account) return null;
+    const member = { userId, email: account.email, role: share.role };
+    // Lot OP-PONT (même effet que l'ancien miroir) : chacun garde sa participation au projet, sans interruption — le
+    // nouveau propriétaire perd son rôle de partage (il a tous les droits), l'ancien devient éditeur (Concepteur).
     await tx.update(projects).set({ ownerId: userId, updatedAt: new Date() }).where(eq(projects.id, project.id));
-    await tx.delete(projectMembers).where(and(eq(projectMembers.projectId, project.id), eq(projectMembers.userId, userId)));
+    await ensureOwnerParticipation(tx, project.id, userId);
+    await grantShare(tx, { projectId: project.id, userId: project.ownerId, role: "editeur", canExport: false, invitedBy: member.email, grantedBy: req.user!.id, mode: "set" });
     await audit(tx, {
       actorId: req.user!.id, action: "project.ownership.transferred", target: { type: "project", id: project.id },
       metadata: { memberId: userId, fromOwnerId: project.ownerId, toOwnerId: userId, roleBefore: member.role, roleAfter: "proprietaire", previousOwnerRoleAfter: "editeur" }, ip: clientIp(req),

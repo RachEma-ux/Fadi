@@ -51,7 +51,7 @@ appliquées et lot OP-PONT (retrait du pont) lancé : décision OP-4 du 2026-10-
   Suites DB-3 de ces lots : **vertes en CI** sur `866f54d` (PR #290). Matrice des exigences : [recette-finale.md](recette-finale.md).
 - OP-4 (2026-10-25) appliquée : durée d'accès de revue par défaut 14 jours ; effacement automatique des contacts désactivé
   par défaut (`CONTACT_RETENTION_ENABLED=1` pour l'activer après l'avis juridique) ; tests purs ajoutés.
-- Écarts déclarés : pont `op_sync_access` conservé (lot dédié OP-PONT) ; acceptation dans l'application réservée aux adresses
+- Écarts déclarés : pont `op_sync_access` retiré par le lot OP-PONT (PR en cours) ; acceptation dans l'application réservée aux adresses
   vérifiées (conservée, OP-4) ; séparation des responsabilités non modélisée (lot ultérieur, OP-4) ; raccourcis des Participants en Ctrl+Alt+Maj (Alt+Maj saturé).
 
 ## Points ouverts
@@ -59,7 +59,10 @@ appliquées et lot OP-PONT (retrait du pont) lancé : décision OP-4 du 2026-10-
 - OP-5 : réserve juridique levée par le maître d'ouvrage (activation `CONTACT_RETENTION_ENABLED=1` au déploiement) ;
   listes métier : saisie libre définitive.
 - Déploiement : accord explicite du maître d'ouvrage requis (runbook).
-- Lot OP-PONT (retrait du pont `op_sync_access`) en cours : compte rendu `lot-pont.md` à son terme, PR et CI à suivre.
+- Lot OP-PONT livré (`lot-pont.md`) : égalité des accès prouvée localement (base des phases 1 à 6 et production d'avant le
+  chantier), recettes vertes ; suites DB-3 et CI à passer sur sa PR.
+- PR #297 (OP-4, OP-5, préproduction) fusionnée, CI verte sur `739d019` ; préproduction déployée par `fadi-preprod-auto`
+  depuis `main` vert (version en ligne vérifiable sur le VPS : `sudo fadi-preprod status`).
 
 ## Liens de suivi
 
