@@ -30,6 +30,48 @@
   - RT-Q2 : le Temps réel a **son propre canal**, dont il est seul propriétaire ; COM n'y passe pas et garde sa propre
     remise (relecture actuelle ou transport qu'il choisira lui-même). Aucun canal commun n'est à prévoir.
 
+- **RT-D4 — Exécution de RTC-1 à RTC-5 et délégation (2026-10-24).** Demande du maître d'ouvrage : « Exécute no-stop
+  les lots RTC-1 à RTC-5. Gère avec l'avancement des autres sessions. Je te délègue la prise de décisions nécessaires à
+  ma part. » Même forme que D-203 (Planche) et OP-3 (Organisations) : les lots s'enchaînent un à un sans acceptation
+  intermédiaire, chacun par sa PR, **fusionné CI verte** et consigné (décision, statut, reprise). Les choix qui
+  revenaient au maître d'ouvrage sont pris par le chef de projet et consignés ici (RT-D5 et suivantes) ; ils restent
+  révisables. La délégation ne vaut **ni** déploiement en production, **ni** fusion sans CI verte, **ni** modification
+  d'un autre chantier au-delà du strict raccordement. Porte des prérequis (`PLAN.md` § 4) : COM et la phase 2
+  d'Organisations (droits, Approbateur / Diffuseur) sont fusionnés, ce qui suffit à RTC-1, RTC-2 et RTC-3 ; la phase 4
+  d'Organisations (paquet de revue à accès limité) est **reportée** par son chantier : RTC-4 se construit sur la
+  publication Studio figée existante et les rôles de projet actuels (RT-D5 § 8), l'accès « paquet seul » viendra par un
+  adaptateur quand la phase 4 sera livrée.
+
+- **RT-D5 — Choix techniques et produit de la première version (2026-10-24, délégation RT-D4).**
+  1. **Transport** : `ws` 8.18.3 (version exacte, aucune dépendance native), montée de protocole sur le seul chemin
+     `/temps-reel` du serveur HTTP de l'API ; HTTP pour tout ce qui est durable (`/projects/:id/temps-reel/sessions`).
+  2. **Drapeau** `FADI_TEMPS_REEL=1` côté serveur : absent, routes et canal répondent 404 et l'interface n'affiche
+     aucune entrée ; activé en CI ; production inchangée tant que le drapeau n'y est pas posé.
+  3. **Qui** : créer, animer et rejoindre une session demande le droit `comment` (propriétaire, éditeurs, lecteurs, rôles
+     de participation) ; l'accès support (lecture seule) n'entre jamais en session. L'hôte et le présentateur n'en
+     tirent aucun droit (RT-R2) : toute écriture passe par les routes existantes et leurs droits.
+  4. **Portée** : `studio-revision` (étude, variante, révision épinglée à l'ouverture ; une session de travail propose
+     explicitement de passer à la nouvelle tête, jamais en silence) et `paquet-revue` (publication Studio figée, RTC-4).
+  5. **Hôte** : présentateur par défaut ; il transmet l'animation et le rôle de présentateur. Hôte absent plus de
+     2 minutes : le propriétaire ou un responsable du projet (`isProjectResponsible`) peut reprendre l'animation,
+     journalisé ; aucun participant n'est promu automatiquement. Session sans aucune connexion pendant 30 minutes :
+     expirée ; durée maximale 12 heures.
+  6. **Bornes** : 16 Kio par message, 10 messages éphémères par seconde et par connexion (au-delà, abandonnés), file
+     d'envoi de 256 Kio (au-delà, l'éphémère est abandonné, puis la connexion est fermée et le client se resynchronise),
+     battement de 10 s (présence périmée retirée sous 30 s), 50 participants par session, 20 connexions par compte.
+  7. **Revalidation** : droits relus à l'entrée, avant chaque relais protégé (cache de 2 s au plus), toutes les 5 s pour
+     chaque connexion, et immédiatement sur les gestes connus (retrait ou changement de rôle d'un membre, déconnexion,
+     révocation de session) par un appel direct au canal ; échec de lecture = refus.
+  8. **Revue externe (RTC-4)** : sur une publication Studio dont le manifeste est figé ; le relecteur est un membre du
+     projet (Lecteur, Relecteur) tant que la phase 4 d'Organisations n'existe pas ; la session reste épinglée sur la
+     révision publiée ; notes `equipe` jamais servies à un lecteur ; aucun export ni approbation par la session.
+  9. **Conservation (RT-Q5)** : présence, pointeurs et caméra jamais enregistrés ; rejeu en mémoire, 5 minutes ou
+     500 événements par session ; journal de session (ouverture, entrées, sorties, transferts, clôture) en ajout seul,
+     conservé avec le projet ; annotations : politique des commentaires Studio.
+  10. **Raccourcis** : Ctrl+Alt+Maj+lettre (les Alt+Maj+lettre sont à la Planche, les Alt+Maj+chiffre ou ponctuation à
+      la collaboration et à COM, les Ctrl+Alt+Maj+chiffre ou ponctuation aux Participants) ; commandes enregistrées dans
+      le registre commun `commandes-collaboration.ts`, test de non-collision.
+
 ## Points restant ouverts (non bloquants pour RTC-0)
 
 - Durées chiffrées de conservation (présence, rejeu, assiduité) : à fixer avant RTC-5 (RT-Q5).

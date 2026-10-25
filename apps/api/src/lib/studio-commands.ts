@@ -1,4 +1,5 @@
 /** Handler Studio de l'orchestrateur commun : droits, rejeu, base, révision append-only. */
+import { signalerTempsReel } from "./temps-reel-signaux.js";
 import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { z } from "zod";
@@ -447,7 +448,7 @@ export async function submitStudioCommands(scope: StudioScope, actorId: string, 
   const envelope = parseStudioEnvelope(input);
   refuserPrefixeReserve(envelope.requestId, ecriture);
   const payloadHash = studioPayloadHash(envelope);
-  return db.transaction(async (tx) => {
+  const resultat = await db.transaction(async (tx) => {
     let current: StudioRead | undefined;
     return orchestrerCommandesDansTransaction<StudioContext & { replayed: boolean }>(tx, { kind: "studio", ...scope }, {
       prepare: async (transaction) => {
@@ -494,4 +495,8 @@ export async function submitStudioCommands(scope: StudioScope, actorId: string, 
       },
     });
   });
+  // Temps réel (Issue #283), après validation : les sessions de cette variante apprennent qu'une révision plus récente
+  // existe ; elle ne leur est jamais appliquée en silence.
+  if (!resultat.replayed) signalerTempsReel({ type: "studio-revision", projectId: scope.projectId, variantId: scope.variantId, revisionId: resultat.revision.id });
+  return resultat;
 }

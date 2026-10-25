@@ -11,16 +11,16 @@ Mis à jour : 2026-10-24 (UTC).
 
 ## Dernier état vérifié
 
-- Évaluation, plan amendé, RT-D1, RT-D2 (réponses RT-Q1 à RT-Q7), RT-D3 (Studio seul, canal propre au Temps réel), traçabilité RT-R1 à RT-R7, essai de transport
+- RTC-1 implémenté (socle, canal, routes, signaux ; `lots/rtc-1.md`). Évaluation, plan amendé, RT-D1, RT-D2 (réponses RT-Q1 à RT-Q7), RT-D3 (Studio seul, canal propre au Temps réel), traçabilité RT-R1 à RT-R7, essai de transport
   (`ESSAI-TRANSPORT.md`), reprise du plan du 22 octobre (`PLAN.md` § 10). Aucun code applicatif.
 
 ## Prochaine action
 
-- RTC-0.4 : profil de référence des budgets (P.118, appareil Android, réseau déclaré).
+- RTC-1 : relever la CI de sa PR, fusionner CI verte, consigner ; puis RTC-2 (vue partagée Studio : bandeau de session,
+  suivi du présentateur, caméra 3D et cadre plan partagés, pointeurs, sélection, révision annoncée, règle d'or et
+  traductions), RTC-3, RTC-4, RTC-5 (RT-D4).
 - CR-3 (#272) est satisfaite par `PLAN.md` § 5 : la cocher dans `collaboration-rules/TASKS.md` après fusion de la
   PR #282, qui modifie les mêmes lignes (évite un conflit).
-- COM (PR #285) et Organisations phases 2, 3 bis, 5 (PR #281) sont fusionnés. Restent pour la porte de RTC-1 : phases 3
-  et 4 d'Organisations et PR #282 ; RTC-0.5 (réaligner sur `project_effective_access`) peut commencer.
 
 ## Tests et preuves
 
