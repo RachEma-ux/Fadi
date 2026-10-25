@@ -2,7 +2,7 @@
 
 Issue [#283](https://github.com/RachEma-ux/Fadi/issues/283) ; décisions RT-D4, RT-D5, RT-D6 ; critères RT-R1, RT-R5,
 RT-R6 ; tests TR-T08, TR-T09, TR-T10, TR-T16, TR-T17 (partie automatisable). Statut : **fusionné** (PR #291,
-`84e2be0`, CI verte). **La préproduction et la mise en service restent au maître d'ouvrage**
+`84e2be0`, CI verte) et **accepté** (RT-D8). **La préproduction et la mise en service restent au maître d'ouvrage**
 (hors délégation : aucun déploiement).
 
 ## Livré

@@ -4,7 +4,7 @@ Mis à jour : 2026-10-25 (UTC).
 
 ## État
 
-**Lots RTC-1 à RTC-5 livrés et fusionnés CI verte (RT-D4, délégation) ; acceptation et mise en service : au maître d’ouvrage.** RTC-0 fusionné (PR #284). **RTC-1 fusionné**
+**Lots RTC-1 à RTC-5 livrés, fusionnés CI verte et acceptés (RT-D8, 2026-10-25) ; préproduction et mise en service : au maître d’ouvrage ; aucun lot suivant engagé.** RTC-0 fusionné (PR #284). **RTC-1 fusionné**
 (PR #288, CI verte ; [compte rendu](lots/rtc-1.md)). **RTC-2 fusionné** (PR #289 ; [compte rendu](lots/rtc-2.md)).
 **RTC-3 à RTC-5 fusionnés** (PR #291, `84e2be0`, CI verte ; relus en équipe, RT-D7) ([RTC-3](lots/rtc-3.md),
 [RTC-4](lots/rtc-4.md), [RTC-5](lots/rtc-5.md), [preuves](PREUVES-SECURITE-ET-CI.md)).
