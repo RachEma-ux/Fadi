@@ -358,6 +358,8 @@ try {
     check("I.5-03 : le plein écran est une action explicite de la barre (icône, raccourci Ctrl+Maj+F annoncé)", (await entree.locator("svg").count()) >= 1 && /Control\+Shift\+F/.test((await entree.getAttribute("aria-keyshortcuts")) ?? ""), await entree.getAttribute("aria-keyshortcuts"));
     await entree.click();
     await page.waitForFunction(() => document.fullscreenElement !== null);
+    // La sortie se rend au changement d'état « fullscreenchange » (React) : on attend son rendu, borné, sans le supposer.
+    await page.waitForFunction(() => !!document.fullscreenElement?.querySelector("[data-studio-quitter-plein-ecran]"), null, { timeout: 5000 }).catch(() => {});
     const etat = await page.evaluate(() => {
       const fs = document.fullscreenElement;
       const sortie = [...(fs?.querySelectorAll("[data-studio-quitter-plein-ecran]") ?? [])].find((b) => { const r = b.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(b).visibility !== "hidden"; });
@@ -368,6 +370,8 @@ try {
     check("I.5-03 : la sortie visible porte son nom accessible, son icône et ses raccourcis (Ctrl+Maj+F, Échap)", (await sortie.getAttribute("aria-label")) === "Quitter le plein écran" && (await sortie.locator("svg").count()) === 1 && (await sortie.getAttribute("aria-keyshortcuts")) === "Control+Shift+F Escape");
     await sortie.click();
     await page.waitForFunction(() => document.fullscreenElement === null);
+    await sortie.waitFor({ state: "detached", timeout: 5000 }).catch(() => {});
+    await page.locator(".app-sidebar").waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
     check("I.5-03 : la commande visible quitte le plein écran ; la navigation de Fadi revient, la sortie disparaît", await page.evaluate(() => document.fullscreenElement === null) && await page.locator(".app-sidebar").isVisible() && (await sortie.count()) === 0);
     await flou(page);
     await page.keyboard.press("Control+Shift+F");
