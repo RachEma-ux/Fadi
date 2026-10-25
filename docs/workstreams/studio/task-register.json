@@ -14910,11 +14910,19 @@
         {
           "type": "recette_e2e",
           "fichier": "apps/web/e2e/studio-navigation.mjs",
-          "controles": [],
+          "controles": [
+            "NAV-001 : entrée Studio dans la navigation principale",
+            "NAV-002 : aucune lecture du Parcours, du programme ni de l'Atelier",
+            "NAV-003 : les projets autorisés sont proposés, sans projet d'autrui",
+            "NAV-004 : précédent / suivant conservent le contexte",
+            "NAV-006 : titre de page « Studio »",
+            "NAV-008 : barre latérale visible, aucun mode immersif",
+            "NAV-009 : le module Atelier du projet reste accessible"
+          ],
           "url": "https://github.com/RachEma-ux/Fadi/actions/runs/40192137528/job/121165189052",
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "commit": "3e992b66a0e7b03d4bcdd4d7e49b4af65b333a30",
-          "limite": "Preuve partielle seulement (correction du 25 octobre, revue Codex PR #306) : Recette automatisée Chromium (bureau et gabarit téléphone, rendu logiciel) sur base jetable ; appareils physiques et GPU réel non évalués ; pas une recette utilisateur."
+          "limite": "Preuve partielle seulement (correction du 25 octobre, revue Codex PR #306) : Recette automatisée Chromium (bureau et gabarit téléphone, rendu logiciel) sur base jetable ; appareils physiques et GPU réel non évalués ; pas une recette utilisateur. — Revue G1 : renvoi groupé remplacé par le premier contrôle cité par chacune des NAV de studio-navigation.mjs."
         },
         {
           "type": "ci_non_regression",
