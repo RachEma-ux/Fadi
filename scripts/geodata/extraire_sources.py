@@ -10,6 +10,7 @@ Sources :
 - OpenStreetMap (ODbL) : extraits PBF régionaux (ex. https://download.openstreetmap.fr/extracts/africa/), lus avec
   pyosmium ; l'empreinte SHA-256 et la date de chaque extrait sont consignées dans la fiche.
 - OurAirports (domaine public) : https://davidmegginson.github.io/ourairports-data/airports.csv.
+- USGS MRDS (domaine public) : https://mrdata.usgs.gov/mrds/mrds-csv.zip.
 
 Chaque couche est restreinte au territoire couvert par geoBoundaries MAR ADM1 (commit 9469f09, empreinte vérifiée),
 écrite en GeoJSON déterministe (codes triés, coordonnées à 7 décimales) dans `<sortie>/donnees/<cle>.geojson`, avec
@@ -34,7 +35,8 @@ FICHES = os.path.join(RACINE, "docs", "geodata", "sources")
 MAX_OBJETS = 5000
 # Couleur par défaut d'une couche selon son thème (ColorBrewer « Paired » / « Set1 ») : les couches se distinguent sur la carte.
 COULEURS_THEME = {"hydrologie": "#1f78b4", "infrastructures": "#6a3d9a", "energie": "#ff7f00", "tourisme": "#e31a1c",
-                  "patrimoine": "#b15928", "equipements": "#33a02c", "population": "#984ea3", "agriculture": "#4daf4a"}
+                  "patrimoine": "#b15928", "equipements": "#33a02c", "population": "#984ea3", "agriculture": "#4daf4a",
+                  "limites-administratives": "#2b8cbe", "geologie": "#a65628"}
 DROITS_OUVERTS = {u: "autorise" for u in ["consultation", "stockage", "calcul", "tuiles", "commercial", "partage", "telechargement", "export"]}
 
 
@@ -79,8 +81,14 @@ COUCHES_OSM = [
     ("osm-mar-apiculture", "Sites apicoles du Maroc (OpenStreetMap)", "agriculture", "man_made=beehive ou craft=beekeeper", ou(egal("man_made", "beehive"), egal("craft", "beekeeper")), "point", ["name", "operator"]),
     ("osm-mar-vignobles", "Vignobles du Maroc (OpenStreetMap)", "agriculture", "landuse=vineyard", egal("landuse", "vineyard"), "surface", ["name", "crop"]),
     ("osm-mar-serres-horticoles", "Zones horticoles sous serre du Maroc (OpenStreetMap)", "agriculture", "landuse=greenhouse_horticulture", egal("landuse", "greenhouse_horticulture"), "surface", ["name", "operator"]),
+    ("osm-mar-communes", "Communes du Maroc (OpenStreetMap, niveau administratif 8)", "limites-administratives", "relations boundary=administrative et admin_level=8", et(egal("boundary", "administrative"), egal("admin_level", "8")), "aire", ["name", "name:fr", "name:ar", "ref", "admin_level", "wikidata"]),
     ("osm-mar-canaux", "Canaux d'eau du Maroc (OpenStreetMap)", "hydrologie", "voies waterway=canal", egal("waterway", "canal"), "ligne", ["name", "name:fr", "name:ar", "usage"]),
 ]
+
+
+def telecharger(url):
+    req = urllib.request.Request(url, headers={"User-Agent": "Fadi-GeoData/1 (+https://www.fadimmo.com)"})
+    return urllib.request.urlopen(req, timeout=600).read()
 
 
 def r7(x):
@@ -94,7 +102,7 @@ def sha256(octets):
 # --- Territoire : geoBoundaries MAR ADM1 (empreinte vérifiée) ---
 def territoire():
     fiche = json.load(open(os.path.join(FICHES, "geoboundaries-mar-adm1.json"), encoding="utf-8"))
-    brut = urllib.request.urlopen(fiche["version"]["url"], timeout=300).read()
+    brut = telecharger(fiche["version"]["url"])
     if sha256(brut) != fiche["version"]["empreinte"]:
         sys.exit("Empreinte geoBoundaries ADM1 non conforme")
     polys = []
@@ -157,7 +165,7 @@ class Lecteur(osmium.SimpleHandler):
             return
         t = self._tags(w)
         for cle, _, _, _, f, g, _ in self.couches:
-            if not f(t) or g == "noeud":
+            if not f(t) or g in ("noeud", "aire"):
                 continue
             try:
                 coords = [[r7(nd.lon), r7(nd.lat)] for nd in w.nodes]
@@ -185,7 +193,7 @@ class Lecteur(osmium.SimpleHandler):
             # Points : les voies sont déjà traitées par way() ; seules les relations passent ici (point central).
             if g == "point" and a.from_way():
                 continue
-            if g not in ("point", "surface"):
+            if g not in ("point", "surface", "aire"):
                 continue
             polys = []
             for ext in a.outer_rings():
@@ -304,7 +312,7 @@ def main():
     cle_oa = "ourairports-mar-aerodromes"
     if not seulement or cle_oa in seulement:
         url = "https://davidmegginson.github.io/ourairports-data/airports.csv"
-        brut = urllib.request.urlopen(url, timeout=300).read().decode("utf-8")
+        brut = telecharger(url).decode("utf-8")
         attrs = ["type", "ident", "icao_code", "iata_code", "municipality", "elevation_ft", "scheduled_service"]
         features = []
         for r in csv.DictReader(io.StringIO(brut)):
@@ -334,6 +342,41 @@ def main():
             "precision": "Position de référence de chaque aérodrome telle que publiée par OurAirports ; altitude en pieds (elevation_ft) telle que publiée",
             "conditions": "Domaine public : réutilisation libre ; la source est citée par courtoisie et traçabilité.",
             "codes": "code = « oa » + identifiant OurAirports",
+        }, resultat)
+
+    cle_mrds = "usgs-mar-sites-mineraux"
+    if not seulement or cle_mrds in seulement:
+        import zipfile
+        url = "https://mrdata.usgs.gov/mrds/mrds-csv.zip"
+        brut = telecharger(url)
+        texte = zipfile.ZipFile(io.BytesIO(brut)).read("mrds.csv").decode("latin-1")
+        attrs = ["site_name", "dev_stat", "commod1", "commod2", "commod3", "ore", "dep_type", "oper_type", "prod_size", "url"]
+        features = []
+        for r in csv.DictReader(io.StringIO(texte)):
+            try:
+                p = [r7(float(r["longitude"])), r7(float(r["latitude"]))]
+            except ValueError:
+                continue
+            if not (-17.3 <= p[0] <= -0.9 and 20.6 <= p[1] <= 36.0) or not au_maroc(p[0], p[1]):
+                continue
+            props = {"code": f"mrds{r['dep_id']}", "nom": r["site_name"] or None}
+            for at in attrs:
+                if r.get(at):
+                    props[at] = r[at][:500]
+            features.append({"type": "Feature", "properties": props, "geometry": {"type": "Point", "coordinates": p}})
+        features.sort(key=lambda f: f["properties"]["code"])
+        jour = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        ecrire(a.sortie, cle_mrds, "Sites minéraux historiques du Maroc (USGS MRDS)", "geologie", features, {
+            "attrs": attrs,
+            "description": f"Gisements, indices et sites miniers de la Mineral Resources Data System de l'USGS ({url}, archive SHA-256 {sha256(brut)}), restreints au territoire couvert par geoBoundaries MAR ADM1. Base historique (gelée par l'USGS en 2011) : ni exhaustive ni à jour.",
+            "producteur": "U.S. Geological Survey (USGS), Mineral Resources Data System",
+            "libelle": f"USGS MRDS — mrds-csv.zip téléchargé le {jour}",
+            "periode": "Base MRDS figée en 2011 ; fichier téléchargé le " + jour,
+            "licence": "Domaine public (données produites par l'USGS)",
+            "attribution": "U.S. Geological Survey, Mineral Resources Data System (domaine public)",
+            "precision": "Positions telles que publiées par l'USGS ; précision variable selon la fiche (score de qualité MRDS)",
+            "conditions": "Domaine public : réutilisation libre ; la source est citée par courtoisie et traçabilité.",
+            "codes": "code = « mrds » + identifiant de dépôt USGS (dep_id)",
         }, resultat)
 
     print(json.dumps(resultat, ensure_ascii=False, indent=2))
