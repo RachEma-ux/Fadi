@@ -53,7 +53,7 @@ check("commentaires du propriétaire", (await owner("POST", `/projects/${p1.id}/
 let n = await member("GET", "/notifications");
 check("notifications reçues : 2 accès et 2 commentaires, non lues", n.status === 200 && kinds(n).filter((k) => k === "acces").length === 2 && kinds(n).filter((k) => k === "commentaire").length === 2 && n.body.items.every((i) => i.unread) && n.body.masquees === 0, JSON.stringify(n.body).slice(0, 300));
 let prefs = await member("GET", "/preferences/notifications");
-check("préférences par défaut : rien de masqué, neuf types listés (dont message et demande, Communication)", prefs.status === 200 && prefs.body.typesMasques.length === 0 && prefs.body.projetsMuets.length === 0 && prefs.body.types.length === 9 && prefs.body.types.includes("commentaire-studio") && prefs.body.types.includes("message") && prefs.body.types.includes("demande"), JSON.stringify(prefs.body));
+check("préférences par défaut : rien de masqué, dix types listés (dont message et demande, Communication, et revue, phase 4)", prefs.status === 200 && prefs.body.typesMasques.length === 0 && prefs.body.projetsMuets.length === 0 && prefs.body.types.length === 10 && prefs.body.types.includes("commentaire-studio") && prefs.body.types.includes("message") && prefs.body.types.includes("demande") && prefs.body.types.includes("revue"), JSON.stringify(prefs.body));
 check("préférences refusées sans session", (await anonymous("GET", "/preferences/notifications")).status === 401);
 check("type inconnu refusé (400)", (await member("PUT", "/preferences/notifications", { typesMasques: ["courriel"] })).status === 400);
 
@@ -105,7 +105,7 @@ try {
   await page.goto(`${BASE}/parametres`);
   const section = page.locator("[data-settings-notifications]");
   await section.locator("li[data-kind]").first().waitFor();
-  check("Paramètres : un interrupteur par type (9)", (await section.locator("li[data-kind] input[type=checkbox]").count()) === 9);
+  check("Paramètres : un interrupteur par type (10)", (await section.locator("li[data-kind] input[type=checkbox]").count()) === 10);
   const acces = section.locator('li[data-kind="acces"] input[type=checkbox]');
   check("Paramètres : « Accès » affiché par défaut", await acces.isChecked());
   await Promise.all([page.waitForResponse((r) => r.url().endsWith("/preferences/notifications") && r.request().method() === "PUT" && r.ok()), acces.click()]);

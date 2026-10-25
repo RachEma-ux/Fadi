@@ -29,6 +29,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { chromium } from "playwright";
+import { inviterEtAccepter } from "./lib-invitations.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const require = createRequire(import.meta.url);
@@ -125,9 +126,10 @@ try {
   const project = await alice.call("post", "/projects", { code: `REV_${RUN.slice(0, 6)}`, name: `Revue externe ${RUN}` });
   check("projet créé", project.status === 201, short(project.body));
   const pid = project.body.id;
-  const ritaAdd = await alice.call("post", `/projects/${pid}/members`, { email: rita.email, role: "lecteur" });
-  const ritaReader = ritaAdd.status === 201;
-  if (!ritaReader) notRun("lectrice du projet par partage direct", `POST /members : ${ritaAdd.status}`);
+  // Phase 3 (OP-D2 a) : plus d'ajout direct — Rita est invitée, puis accepte l'invitation depuis sa notification.
+  const ritaAdd = await inviterEtAccepter((m, p, b) => alice.call(m.toLowerCase(), p, b), (m, p, b) => rita.call(m.toLowerCase(), p, b), pid, rita.email, "lecteur");
+  const ritaReader = ritaAdd.ok;
+  if (!ritaReader) notRun("lectrice du projet par invitation acceptée", `POST /members : ${ritaAdd.invite.status}, acceptation : ${ritaAdd.accept?.status}`);
 
   const root = `/projects/${pid}/studio`;
   const study = await alice.call("post", `${root}/studies`, { name: "Étude revue" });
