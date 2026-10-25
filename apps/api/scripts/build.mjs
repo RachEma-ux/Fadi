@@ -44,12 +44,30 @@ await build({
   logLevel: "info",
 });
 
+// Outils d'exploitation GeoData (ADR-GEODATA-02) : bundles à côté du serveur, exécutables dans l'image de production
+// comme `create-admin.mjs` (`node apps/api/dist/geodata-role.js …`, `node apps/api/dist/geodata-reference.js …`), sans
+// tsx ni sources TypeScript. Mêmes dépendances externes que le serveur (pg, dotenv présents en production).
+await build({
+  entryPoints: { "geodata-role": join(root, "src/db/geodata-role.ts"), "geodata-reference": join(root, "src/db/geodata-reference.ts") },
+  outdir: join(root, "dist"),
+  bundle: true,
+  platform: "node",
+  format: "esm",
+  target: "node22",
+  sourcemap: true,
+  external,
+  alias: { "@parcours/geodata-model": join(root, "../../packages/geodata-model/src/index.ts") },
+  logLevel: "info",
+});
+
 // Les fichiers lus à l'exécution (schéma SQL, données du Parcours) ne sont
 // pas des modules : copie à côté du bundle, aux chemins que
 // `src/runtime-paths.ts` attend (dist/db/init.sql, dist/data/**).
 for (const [from, to] of [
   ["src/db/init.sql", "dist/db/init.sql"],
   ["src/data", "dist/data"],
+  // Fiches de source GeoData qualifiées (adresse, empreinte, licence, droits) : lues par dist/geodata-reference.js.
+  ["../../docs/geodata/sources", "dist/geodata-sources"],
 ]) {
   const src = join(root, from);
   if (!existsSync(src)) {

@@ -3,6 +3,8 @@
 ## À faire
 
 - [ ] GEO-REC-01 — Recette métier par le maître d'ouvrage sur appareils physiques (GEO 12) et validation d'usage.
+- [x] GEO-OPS-01 — Outils `geodata-role` / `geodata-reference` exécutables dans l'image de production, fiches embarquées, publication d'une version préparée à la relance ; dossier `RELEASE-V1.md`.
+- [ ] GEO-PROD-00 — Phase B du déploiement (`fadi-prod-auto`) ou procédure manuelle de l'exploitant : préalable à toute mise en production (hors délégation).
 - [ ] GEO-PROD-01 — Publication en production : Release GitHub du maître d'ouvrage (hors délégation), puis rôles GeoData et import geoBoundaries sur l'environnement.
 - [ ] GEO-DATA-01 — Qualifier les droits HCP (population RGPH 2024) avant toute publication d'indicateur officiel.
 - [ ] GEO-V11 — Extensions V1.1 : partage nominatif, espaces collectifs, KML/KMZ/Shapefile, analyses avancées.
