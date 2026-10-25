@@ -35,6 +35,8 @@ import {
   type InvitationPreview, type InvitationTarget,
 } from "./project-invitations.js";
 import type { Tx } from "./step-rows.js";
+import { porteeInconnue } from "./portees-db.js";
+import type { TypePortee } from "@parcours/domain-model";
 
 type Querier = Pick<typeof db, "select">;
 type InvitationRow = typeof invitations.$inferSelect;
@@ -100,6 +102,19 @@ export async function resolveInvitationTarget(q: Querier, projectId: string, ema
   return { target: { kind: "nouvelle-fiche" }, account, blocking: null };
 }
 
+/**
+ * Portées étroites proposées : l'élément désigné (étude, variante, révision, documents) doit exister dans CE projet
+ * (même contrôle que l'attribution directe, `porteeInconnue`). Motif du premier refus, ou null.
+ */
+export async function proposedScopesProblem(q: Querier, projectId: string, roles: readonly ProposedRole[]): Promise<string | null> {
+  for (const r of roles) {
+    if (r.scopeType === "projet") continue;
+    const problem = await porteeInconnue(q as never, projectId, r.scopeType as TypePortee, r.scopeId);
+    if (problem) return `${r.scopeType} ${r.scopeId ?? ""} : ${problem}`;
+  }
+  return null;
+}
+
 /** Invitation de projet en attente (non échue) pour cette adresse. */
 async function pendingFor(q: Querier, projectId: string, email: string) {
   const [row] = await q.select({ id: invitations.id, expiresAt: invitations.expiresAt }).from(invitations)
@@ -128,7 +143,7 @@ export async function previewProjectInvitation(q: Querier, d: InvitationDraft, n
     roles: d.roles, baseRole, access: resultingAccess(d.roles, { now }), narrowScopes: narrowScopes(d.roles),
     invitationExpiresAt: d.invitationExpiresAt.toISOString(), accessExpiresAt: d.accessExpiresAt?.toISOString() ?? null,
     warnings: previewWarnings({ roles: d.roles, invitationExpiresAt: d.invitationExpiresAt, accessExpiresAt: d.accessExpiresAt, target: resolved.target }),
-    blocking: resolved.blocking,
+    blocking: resolved.blocking ?? await proposedScopesProblem(q, d.projectId, d.roles),
   };
 }
 
@@ -236,7 +251,9 @@ export async function projectParticipationRefusal(tx: Tx | typeof db, inv: Invit
   }
   // Lecture du lien sans session (`identityKnown: false`) : qui acceptera n'est pas encore connu.
   if (opts.identityKnown === false) personUserId = null;
-  return participationRefusal({ personUserId, acceptingUserId: userId, participationStatus: status, accessExpiresAt: inv.accessExpiresAt ?? null, rolesValid: proposedRolesValid(rolesOf(inv)), now });
+  // Revalidation de la portée : un élément désigné supprimé depuis l'envoi rend les rôles proposés inattribuables.
+  const rolesValid = proposedRolesValid(rolesOf(inv)) && !(await proposedScopesProblem(tx, inv.projectId, rolesOf(inv)));
+  return participationRefusal({ personUserId, acceptingUserId: userId, participationStatus: status, accessExpiresAt: inv.accessExpiresAt ?? null, rolesValid, now });
 }
 
 /**

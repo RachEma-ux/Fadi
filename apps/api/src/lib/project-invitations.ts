@@ -4,7 +4,7 @@
  * `project-invitations.test.ts`.
  *
  * - Rôles proposés par portée : au moins un rôle de portée `projet` (sans lui, l'acceptation ne donnerait rien — la
- *   phase 2 n'accorde aucun droit aux portées étroites) ; l'ancienne forme `{ role: lecteur | editeur }` reste acceptée
+ *   participation sans rôle de projet n'ouvre pas le projet) ; l'ancienne forme `{ role: lecteur | editeur }` reste acceptée
  *   (Lecteur, Concepteur).
  * - Accès de base porté par le pont `project_members` (lecteur / éditeur), rôles complémentaires d'origine
  *   `attribution` : leur somme décrit exactement l'accès que `deriveAccess` (donc la vue) donnera à l'acceptation.
@@ -41,7 +41,7 @@ export function proposedRolesFrom(input: { roles?: readonly RoleDraft[] | undefi
     roles.push({ role: d.role as ProjectBusinessRole, scopeType: scopeType as RoleScopeType, scopeId });
   }
   if (!drafts.length) problems.push("rôles : au moins un rôle proposé");
-  else if (!roles.some((r) => r.scopeType === "projet")) problems.push("rôles : au moins un rôle de portée projet (les portées plus étroites ne donnent encore aucun droit)");
+  else if (!roles.some((r) => r.scopeType === "projet")) problems.push("rôles : au moins un rôle de portée projet (sans lui, une participation n’ouvre pas le projet)");
   return { roles, problems };
 }
 
@@ -138,6 +138,6 @@ export function previewWarnings(i: { roles: readonly ProposedRole[]; invitationE
   const w: string[] = [];
   if (i.target.kind === "membre") w.push("Ce compte a déjà accès au projet : son rôle sera changé directement, sans invitation.");
   if (i.accessExpiresAt && i.accessExpiresAt.getTime() < i.invitationExpiresAt.getTime()) w.push("L'accès expire avant l'invitation : une acceptation tardive serait refusée.");
-  if (narrowScopes(i.roles).length) w.push("Les rôles de portée étude, variante, révision ou documents sont enregistrés mais ne donnent encore aucun droit.");
+  if (narrowScopes(i.roles).length) w.push("Les rôles de portée étude, variante, révision ou documents ne valent que pour l’élément désigné, pas pour le projet entier.");
   return w;
 }

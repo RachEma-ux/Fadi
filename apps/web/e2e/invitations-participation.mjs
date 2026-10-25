@@ -73,7 +73,13 @@ try {
   const pid = project.body?.id;
   check("projet créé", project.status === 201, String(project.status));
   const M = `/projects/${pid}/members`;
-  const corps = { email: x.email, roles: [{ role: "lecteur" }, { role: "approbateur" }, { role: "relecteur", scopeType: "etude", scopeId: "ETUDE-1" }], accessExpiresAt: jour(60), invitationDays: 10 };
+  // Portée étroite : une étude réelle du projet (un élément inconnu est refusé, comme pour l'attribution directe).
+  const ETUDE = (await owner.call("POST", `/projects/${pid}/studio/studies`, { name: "Étude des invitations" })).body?.study?.id;
+  check("étude Studio créée (portée étroite)", !!ETUDE);
+  const inconnue = { email: x.email, roles: [{ role: "lecteur" }, { role: "relecteur", scopeType: "etude", scopeId: "etude-inconnue" }] };
+  check("portée vers un élément inconnu : envoi refusé (422 scope_rule), aperçu bloquant", (await owner.call("POST", M, inconnue)).body?.error === "scope_rule"
+    && !!(await owner.call("POST", `${M}/preview`, inconnue)).body?.preview?.blocking);
+  const corps = { email: x.email, roles: [{ role: "lecteur" }, { role: "approbateur" }, { role: "relecteur", scopeType: "etude", scopeId: ETUDE }], accessExpiresAt: jour(60), invitationDays: 10 };
   check("aperçu : non-propriétaire refusé (403/404)", [403, 404].includes((await autre.call("POST", `${M}/preview`, corps)).status));
   check("aperçu : au moins un rôle de portée projet exigé (400)", (await owner.call("POST", `${M}/preview`, { email: x.email, roles: [{ role: "relecteur", scopeType: "etude", scopeId: "E" }] })).status === 400);
   check("aperçu : échéance d'accès passée refusée (400)", (await owner.call("POST", `${M}/preview`, { ...corps, accessExpiresAt: "2020-01-01" })).status === 400);
@@ -81,7 +87,7 @@ try {
   const p = ap.body?.preview;
   check("aperçu : compte existant, fiche à créer, aucune invitation en attente", ap.status === 200 && p.accountExists === true && p.target.kind === "nouvelle-fiche" && p.pendingInvitation === null, ap.body);
   check("aperçu : accès résultant = lecteur + approbation, sans export ni diffusion", p?.access?.role === "lecteur" && p.access.canApprove === true && p.access.canExport === false && p.access.canPublish === false, p?.access);
-  check("aperçu : portée étroite signalée sans droit, échéances indépendantes", p?.narrowScopes?.length === 1 && p.warnings.some((w) => /aucun droit/.test(w)) && p.accessExpiresAt?.startsWith(jour(60)) && p.invitationExpiresAt?.startsWith(jour(10)), p);
+  check("aperçu : portée étroite signalée (élément désigné seulement), échéances indépendantes", p?.narrowScopes?.length === 1 && p.warnings.some((w) => /élément désigné/.test(w)) && p.accessExpiresAt?.startsWith(jour(60)) && p.invitationExpiresAt?.startsWith(jour(10)), p);
   check("aperçu : rien n'est écrit", (await sql.query("SELECT count(*)::int AS c FROM auth.invitations WHERE project_id = $1", [pid])).rows[0].c === 0);
   const inv = await owner.call("POST", M, corps);
   check("envoi : compte existant → invitation 202 (aucun ajout direct)", inv.status === 202 && inv.body.accountExists === true && inv.body.invitation.projectRole === "lecteur" && inv.body.invitation.roles?.length === 3, inv.body);
@@ -119,7 +125,7 @@ try {
   const fiche = (await owner.call("GET", `/projects/${pid}/participants`)).body?.participants?.find((q) => q.person?.account?.userId === x.id);
   check("participation active liée au compte, rôles proposés posés (Lecteur du partage + Approbateur + Relecteur d'étude)", fiche?.status === "active" && fiche.id === inv.body.participationId
     && fiche.roles.some((r) => r.role === "lecteur" && r.origin === "acces") && fiche.roles.some((r) => r.role === "approbateur" && r.origin === "attribution")
-    && fiche.roles.some((r) => r.role === "relecteur" && r.scopeType === "etude" && r.scopeId === "ETUDE-1") && fiche.access?.canApprove === true, fiche);
+    && fiche.roles.some((r) => r.role === "relecteur" && r.scopeType === "etude" && r.scopeId === ETUDE) && fiche.access?.canApprove === true, fiche);
   check("notification retirée après acceptation", !(await x.call("GET", "/notifications")).body?.items?.some((i) => i.invitation));
   // Accès expiré : la participation ne donne plus rien ; le propriétaire le rétablit.
   check("échéance d'accès recopiée sur le membre", (await owner.call("GET", M)).body?.members?.find((m) => m.userId === x.id)?.accessExpiresAt?.startsWith(jour(60)));

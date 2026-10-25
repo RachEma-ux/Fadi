@@ -49,7 +49,7 @@ import type { Tx } from "../lib/step-rows.js";
 import { audit, clientIp } from "../lib/audit.js";
 import { formatDate, mailLocale, PUBLIC_PATHS, publicLink, sendAccountMail } from "../lib/account.js";
 import { invitationView } from "../lib/invitations.js";
-import { accountByEmail, createProjectInvitation, previewProjectInvitation, resolveInvitationTarget } from "../lib/project-invitations-db.js";
+import { accountByEmail, createProjectInvitation, previewProjectInvitation, proposedScopesProblem, resolveInvitationTarget } from "../lib/project-invitations-db.js";
 import { invitationExpiry, parseAccessExpiry, projectRoleFor, proposedRolesFrom } from "../lib/project-invitations.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { projectOr404, type ProjectRole } from "../lib/owned-project.js";
@@ -221,6 +221,12 @@ membersRouter.post("/", async (req, res) => {
   }
   if (account && account.id === project.ownerId) {
     res.status(422).json({ error: "sharing_rule", message: "Le propriétaire du projet a déjà tous les droits." });
+    return;
+  }
+  // Portées étroites : l'élément désigné doit exister dans ce projet (même règle que l'attribution directe, 422).
+  const scopeProblem = await proposedScopesProblem(db, project.id, input.roles);
+  if (scopeProblem) {
+    res.status(422).json({ error: "scope_rule", message: scopeProblem });
     return;
   }
   const resolved = await resolveInvitationTarget(db, project.id, input.email, input.participationId);

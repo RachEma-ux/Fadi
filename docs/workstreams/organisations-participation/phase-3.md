@@ -3,7 +3,8 @@
 > Issue #262, [PLAN.md](PLAN.md) phase 3 (tâches 1 à 5). Décision appliquée : **OP-D2 (a)** — invitation acceptée pour
 > tous, **fin de l'ajout direct d'un compte existant** (UM-8), notification dans l'application en plus du courriel.
 > Concept normatif : `docs/workstreams/users-management/concept.md` (partie 3, v2.2 « An invitation is a proposal, not a
-> grant »). Base : `ccr-3b26a9f6-z073dc` (phases 1, 2, 3 bis, 5, Communication, puis phase 4), fusionnée trois fois.
+> grant »). Base : `ccr-3b26a9f6-z073dc` (phases 1, 2, 3 bis, 5, Communication, phase 4, reliquats de la phase 5 et
+> portées étroites), fusionnée à chaque avancée jusqu'à `d6bb1cb`.
 > État : **Implémenté**, vérifié localement (preuves § 5) ; DB-3 et CI **non exécutés** ici ; non accepté.
 
 ## 1. Livré
@@ -74,9 +75,12 @@
    rôle le plus large et son échéance d'accès.
 5. **Participation active sans rôle de projet** (revue externe, phase 4) : reste sans accès ; une invitation de projet la
    vise, et seule son acceptation pose un rôle de projet (arrivée journalisée, échéance recopiée).
-6. **Portées étroites** : saisies par l'API, affichées, sans droit (phase 2) ; l'interface ne propose que la portée projet.
-7. **Revalidation de la portée** : rôles et portées revalidés par la règle pure ; l'existence des identifiants d'étude,
-   variante, révision ou documents n'est pas contrôlée (comme en phase 2, aucune route ne les évalue).
+6. **Portées étroites** (reliquat de la phase 2 fusionné : `porteeInconnue`, `porteeAllows`) : proposées par l'API,
+   l'élément désigné doit exister dans le projet — refus 422 `scope_rule` à l'envoi, motif bloquant dans l'aperçu ; elles ne
+   valent que pour l'élément désigné, jamais pour le projet entier (l'aperçu le dit). Une invitation de projet exige au
+   moins un rôle de portée projet. L'interface ne propose que la portée projet.
+7. **Revalidation de la portée** : à l'acceptation, rôles et portées sont revalidés (règle pure + existence de l'élément
+   désigné) ; un élément supprimé depuis l'envoi refuse l'acceptation (`roles_invalid`).
 8. **Invitant habilité** : propriétaire actif du projet (règle existante) ; un transfert de propriété entre l'envoi et
    l'acceptation rend l'invitation inopérante (`inviter_not_authorized`).
 9. **Suites DB-3** : les ajouts directs sont remplacés par `partager` (invitation par la route, acceptation par la logique
@@ -102,10 +106,10 @@
 | `npm test` | vert hors suites DB-3 (14 refusées par la garde) ; `check-api-tests-db3.mjs` : « ✓ seules les suites de la liste DB-3 sont refusées » ; nouveau `project-invitations.test.ts` ; règle d'or ; web 127 fichiers |
 | `migration-lib.test.mjs`, `simulation-studio.test.mjs`, `npm run test:scripts` | 27 / 5 / 18 pass |
 | `npm run build` | vert |
-| `invitations-participation.mjs` (nouvelle) | ✓ 105, 0 ✗ (API, refus v2.2, base à horloge simulée, navigateur, axe-core bureau et téléphone, passe anglaise) |
+| `invitations-participation.mjs` (nouvelle) | ✓ 107, 0 ✗ après la dernière fusion (portée étroite réelle, élément inconnu refusé) (API, refus v2.2, base à horloge simulée, navigateur, axe-core bureau et téléphone, passe anglaise) |
 | `comptes-api.mjs` (section phase 3 ajoutée) | ✓ 119 avant la dernière fusion ; après : 118 ✓, 1 ✗ « journal : aucune adresse » dû à trois entrées écrites dans `fadi_p3` par une version antérieure de ma recette (séparateur `@` des rôles, corrigé en `/`), journal append-only donc non effaçable — non reproductible sur base neuve |
 | `parcours-scenario.mjs` | « Scénario conforme » (339 ✓) ; deux exécutions précédentes avaient échoué sur la lecture hors-ligne de l'étape 02 (minutage, sans rapport) ; captures restaurées |
-| `collaboration-audience` 45 ✓, `participants` 92 ✓, `journal-activite` 50 ✓, `communication` 97 ✓, `organisations` 112 ✓, `notifications-preferences` 32 ✓, `interface-anglais` vert, `studio-publication` 129 ✓ (après fusion) ; `studio-observations` 71 ✓, `studio-persistance` 293 ✓, `studio-quantites` 29 ✓, `studio-dossier` 55 ✓, `studio-catalogue` 36 ✓, `studio-profils` 30 ✓, `studio-conflits` 27 ✓, `studio-espace` 44 ✓, `studio-navigation` 259 ✓, `studio-hors-ligne` 35 ✓ (2ᵉ essai), `atelier-automatisation` 18 ✓, `atelier-versions` 28 ✓, `comptes-securite` 73 ✓, `project-layout` 593/593, `comptes-admin` 82 ✓ (avant la dernière fusion) | verts |
+| `collaboration-audience` 45 ✓, `participants` 92 ✓, `journal-activite` 50 ✓, `interface-anglais` vert, `organisations` 139 ✓ (après la dernière fusion) ; `communication` 97 ✓, `notifications-preferences` 32 ✓, `interface-anglais` vert, `studio-publication` 129 ✓ (après fusion) ; `studio-observations` 71 ✓, `studio-persistance` 293 ✓, `studio-quantites` 29 ✓, `studio-dossier` 55 ✓, `studio-catalogue` 36 ✓, `studio-profils` 30 ✓, `studio-conflits` 27 ✓, `studio-espace` 44 ✓, `studio-navigation` 259 ✓, `studio-hors-ligne` 35 ✓ (2ᵉ essai), `atelier-automatisation` 18 ✓, `atelier-versions` 28 ✓, `comptes-securite` 73 ✓, `project-layout` 593/593, `comptes-admin` 82 ✓ (avant la dernière fusion) | verts |
 
 ## 6. Ce qui n'a pas tourné ou reste à surveiller
 
