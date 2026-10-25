@@ -81,5 +81,5 @@ Aucune correspondance géographique n'est inventée.
 ## AX-D11 — Clôture de la délégation (25 octobre 2026)
 
 Les lots AX-0 à AX-5 sont livrés : phase A fusionnée (#298), phases B et C (#303), phase D et recette (`RECETTE.md`)
-dans la PR de clôture. La délégation AX-D1 s'éteint avec la fusion de cette dernière PR. L'acceptation des scénarios,
+dans la même PR #303. La délégation AX-D1 s'éteint avec la fusion de cette dernière PR. L'acceptation des scénarios,
 tout déploiement et toute suite (hôte Studio, collaboration sur des repères partagés) attendent le maître d'ouvrage.

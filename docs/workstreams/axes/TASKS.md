@@ -6,8 +6,7 @@
 
 ## En cours
 
-- Phases B et C — PR #303 (revue Codex corrigée, `8b079f8`).
-- Phase D et clôture (AX-5) — PR suivante après la fusion de #303.
+- Phases B, C et D (AX-3 à AX-5) et recette — PR #303 (revue Codex corrigée, `8b079f8`) : fusion CI verte, puis Issue #296 close.
 
 ## Terminé
 

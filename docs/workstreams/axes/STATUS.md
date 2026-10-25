@@ -4,7 +4,7 @@ Mis à jour : 2026-10-25 (UTC).
 
 ## État
 
-Phases A (#298) fusionnée ; B et C en PR #303 ; D (AX-5) et recette finale prêtes. Clôture de la délégation consignée
+Phase A (#298) fusionnée ; phases B, C et D et recette finale en PR #303. Clôture de la délégation consignée
 (AX-D11), effective à la fusion de la dernière PR.
 
 ## Faits vérifiés

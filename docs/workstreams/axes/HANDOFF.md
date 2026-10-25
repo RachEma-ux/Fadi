@@ -10,12 +10,12 @@ Mis à jour : 2026-10-25 (UTC).
 
 ## Dernier état vérifié
 
-Phase A fusionnée (#298, `a37bc69`). Phases B et C : PR #303 (`8b079f8`, revue Codex corrigée). Phase D et recette :
-commitées sur la branche, recettes locales vertes, PR après la fusion de #303.
+Phase A fusionnée (#298, `a37bc69`). Phases B, C et D et recette : PR #303 (revue Codex corrigée dans `8b079f8`,
+phase D dans `a7176bd`), recettes locales vertes.
 
 ## Prochaine action
 
-Fusionner #303 CI verte, ouvrir la PR de la phase D, la fusionner CI verte, clore l'Issue #296. Ensuite : acceptation
+Fusionner #303 CI verte (elle clôt l'Issue #296). Ensuite : acceptation
 par le maître d'ouvrage, aucun lot suivant sans sa décision.
 
 ## Tests et preuves
