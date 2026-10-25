@@ -11,7 +11,7 @@
     "path": "docs/ai-team/reports/mission-002-originals/A1-630-taches.csv",
     "sha256": "eb47f0c8b273718e537160a84eb00a626acf541fce690ef65c0a08cb3f2db894"
   },
-  "note": "630 IDs/textes/propriétaires inchangés. 25 octobre 2026 : décisions déléguées ADR-STUDIO-PILOTE-01 (RESP, DEC-01 à 18, ADR-03, G2-02, G3-01, G3-04) ; 27 obligations vérifiées par recette (docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md) ; 198 obligations bloquées par les décisions requalifiées « À faire ». G1–G4 ouvertes ; zéro case source cochée.",
+  "note": "630 IDs/textes/propriétaires inchangés. 25 octobre 2026 : décisions déléguées ADR-STUDIO-PILOTE-01 (RESP, DEC-01 à 18, ADR-03, G2-02, G3-01, G3-04) ; 25 obligations vérifiées par recette (docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md) ; 189 obligations bloquées par les décisions requalifiées « À faire » (les 9 obligations R de bascule et de déploiement restent bloquées sur G4). G1–G4 ouvertes ; zéro case source cochée.",
   "tasks": [
     {
       "id": "SRC-01",
@@ -6295,11 +6295,11 @@
         ],
         "preparation_initiale": "ADR navigation + DEC-03 ; G3 avant code"
       },
-      "statut": "Vérifié",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Exécuté",
-        "portee": "Recettes et tests automatisés du 25 octobre 2026 (local) et CI de main@3e992b6."
+        "etat": "Partiel",
+        "portee": "Panne de chargement ou de moteur provoquée, puis reprise et navigation Fadi non bloquée à recetter ; seule la visibilité de la barre hors mode immersif est contrôlée."
       },
       "preuves": [
         {
@@ -6329,7 +6329,7 @@
           "url": "https://github.com/RachEma-ux/Fadi/actions/runs/40192137528/job/121165189052",
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "commit": "3e992b66a0e7b03d4bcdd4d7e49b4af65b333a30",
-          "limite": "Recette automatisée Chromium (bureau et gabarit téléphone, rendu logiciel) sur base jetable ; appareils physiques et GPU réel non évalués ; pas une recette utilisateur."
+          "limite": "Preuve partielle seulement (correction du 25 octobre, revue Codex PR #306) : Recette automatisée Chromium (bureau et gabarit téléphone, rendu logiciel) sur base jetable ; appareils physiques et GPU réel non évalués ; pas une recette utilisateur."
         }
       ],
       "github": {
@@ -6343,11 +6343,11 @@
         "essais_effectues": "Recette exécutée, voir rapport.",
         "deblocage": null
       },
-      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
+      "suite": "Compléter : Panne de chargement ou de moteur provoquée, puis reprise et navigation Fadi non bloquée à recetter ; seule la visibilité de la barre hors mode immersif est contrôlée.",
       "composants_candidats": "apps/web/src/App.tsx ; routes/AppShell.tsx ; routes/ProjectShell.tsx ; lib/use-immersive.ts",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": true,
+        "condition_verifiee": false,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -6371,6 +6371,13 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par recette automatisée ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Correction après revue Codex de la PR #306 (25 octobre 2026)",
+          "statut_precedent": "Vérifié",
+          "statut": "En cours",
+          "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
+          "limite": "Correction : la vérification du 25 octobre surestimait la preuve (revue Codex, PR #306)."
         }
       ],
       "preparation_documentaire": {
@@ -13436,11 +13443,11 @@
         ],
         "preparation_initiale": "ADR navigation + DEC-03 ; G3 avant code"
       },
-      "statut": "Vérifié",
+      "statut": "En cours",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Exécuté",
-        "portee": "Recettes et tests automatisés du 25 octobre 2026 (local) et CI de main@3e992b6."
+        "etat": "Partiel",
+        "portee": "NAV-008 reste partiel ; joindre ses résultats une fois la reprise après panne recettée."
       },
       "preuves": [
         {
@@ -13470,13 +13477,13 @@
           "url": "https://github.com/RachEma-ux/Fadi/actions/runs/40192137528/job/121165189052",
           "rapport": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "commit": "3e992b66a0e7b03d4bcdd4d7e49b4af65b333a30",
-          "limite": "Recette automatisée Chromium (bureau et gabarit téléphone, rendu logiciel) sur base jetable ; appareils physiques et GPU réel non évalués ; pas une recette utilisateur."
+          "limite": "Preuve partielle seulement (correction du 25 octobre, revue Codex PR #306) : Recette automatisée Chromium (bureau et gabarit téléphone, rendu logiciel) sur base jetable ; appareils physiques et GPU réel non évalués ; pas une recette utilisateur."
         },
         {
           "type": "ci_non_regression",
           "url": "https://github.com/RachEma-ux/Fadi/actions/runs/40192137528",
           "fichier": ".github/workflows/ci.yml",
-          "limite": "Matrice de non-régression = cinq tranches e2e vertes ; liste dans le rapport."
+          "limite": "Preuve partielle seulement (correction du 25 octobre, revue Codex PR #306) : Matrice de non-régression = cinq tranches e2e vertes ; liste dans le rapport."
         }
       ],
       "github": {
@@ -13490,11 +13497,11 @@
         "essais_effectues": "Recette exécutée, voir rapport.",
         "deblocage": null
       },
-      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
+      "suite": "Compléter : NAV-008 reste partiel ; joindre ses résultats une fois la reprise après panne recettée.",
       "composants_candidats": "apps/web/src/App.tsx ; routes/AppShell.tsx ; routes/ProjectShell.tsx ; lib/use-immersive.ts",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": true,
+        "condition_verifiee": false,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -13518,6 +13525,13 @@
           "statut": "Vérifié",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Vérification par recette automatisée ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Correction après revue Codex de la PR #306 (25 octobre 2026)",
+          "statut_precedent": "Vérifié",
+          "statut": "En cours",
+          "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
+          "limite": "Correction : la vérification du 25 octobre surestimait la preuve (revue Codex, PR #306)."
         }
       ],
       "preparation_documentaire": {
@@ -32275,7 +32289,7 @@
         ],
         "preparation_initiale": "A/B/E + C/D selon charges ; autorisations migration/déploiement séparées"
       },
-      "statut": "À faire",
+      "statut": "Bloqué",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -32307,12 +32321,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": null,
-        "responsable": "Chef de projet",
-        "essais_effectues": "Décisions et autorisations levées (ADR-STUDIO-PILOTE-01, P-04 et P-05).",
-        "deblocage": null
+        "cause": "Porte G4 non acceptée et autorisation de déploiement distincte non obtenue ; la production reste réservée au maître d’ouvrage (ADR-STUDIO-PILOTE-01, P-01).",
+        "responsable": "Maître d’ouvrage",
+        "essais_effectues": "Aucun : opération réservée.",
+        "deblocage": "Acceptation G4 sur ses critères, puis décision de déploiement du maître d’ouvrage."
       },
-      "suite": "Décisions et autorisation acquises ; reste à réaliser ou recetter et à joindre la preuve exacte.",
+      "suite": "Rester bloqué tant que G4 et l’autorisation de déploiement ne sont pas acquises ; l’autorisation du pilote (P-05) ne vaut pas autorisation de déploiement.",
       "composants_candidats": "Schémas, sauvegardes, corpus historique, service worker",
       "source_checked": false,
       "cloture": {
@@ -32340,6 +32354,13 @@
           "statut": "À faire",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Aucune case source cochée ; aucune acceptation produit."
+        },
+        {
+          "origine": "Correction après revue Codex de la PR #306 (25 octobre 2026)",
+          "statut_precedent": "À faire",
+          "statut": "Bloqué",
+          "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
+          "limite": "Correction de la requalification du 25 octobre (revue Codex, PR #306)."
         }
       ],
       "preparation_documentaire": {
@@ -32487,7 +32508,7 @@
         ],
         "preparation_initiale": "A/B/E + C/D selon charges ; autorisations migration/déploiement séparées"
       },
-      "statut": "À faire",
+      "statut": "Bloqué",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -32519,12 +32540,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": null,
-        "responsable": "Chef de projet",
-        "essais_effectues": "Décisions et autorisations levées (ADR-STUDIO-PILOTE-01, P-04 et P-05).",
-        "deblocage": null
+        "cause": "Porte G4 non acceptée et autorisation de déploiement distincte non obtenue ; la production reste réservée au maître d’ouvrage (ADR-STUDIO-PILOTE-01, P-01).",
+        "responsable": "Maître d’ouvrage",
+        "essais_effectues": "Aucun : opération réservée.",
+        "deblocage": "Acceptation G4 sur ses critères, puis décision de déploiement du maître d’ouvrage."
       },
-      "suite": "Décisions et autorisation acquises ; reste à réaliser ou recetter et à joindre la preuve exacte.",
+      "suite": "Rester bloqué tant que G4 et l’autorisation de déploiement ne sont pas acquises ; l’autorisation du pilote (P-05) ne vaut pas autorisation de déploiement.",
       "composants_candidats": "Schémas, sauvegardes, corpus historique, service worker",
       "source_checked": false,
       "cloture": {
@@ -32552,6 +32573,13 @@
           "statut": "À faire",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Aucune case source cochée ; aucune acceptation produit."
+        },
+        {
+          "origine": "Correction après revue Codex de la PR #306 (25 octobre 2026)",
+          "statut_precedent": "À faire",
+          "statut": "Bloqué",
+          "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
+          "limite": "Correction de la requalification du 25 octobre (revue Codex, PR #306)."
         }
       ],
       "preparation_documentaire": {
@@ -32576,7 +32604,7 @@
         ],
         "preparation_initiale": "A/B/E + C/D selon charges ; autorisations migration/déploiement séparées"
       },
-      "statut": "À faire",
+      "statut": "Bloqué",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -32608,12 +32636,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": null,
-        "responsable": "Chef de projet",
-        "essais_effectues": "Décisions et autorisations levées (ADR-STUDIO-PILOTE-01, P-04 et P-05).",
-        "deblocage": null
+        "cause": "Porte G4 non acceptée et autorisation de déploiement distincte non obtenue ; la production reste réservée au maître d’ouvrage (ADR-STUDIO-PILOTE-01, P-01).",
+        "responsable": "Maître d’ouvrage",
+        "essais_effectues": "Aucun : opération réservée.",
+        "deblocage": "Acceptation G4 sur ses critères, puis décision de déploiement du maître d’ouvrage."
       },
-      "suite": "Décisions et autorisation acquises ; reste à réaliser ou recetter et à joindre la preuve exacte.",
+      "suite": "Rester bloqué tant que G4 et l’autorisation de déploiement ne sont pas acquises ; l’autorisation du pilote (P-05) ne vaut pas autorisation de déploiement.",
       "composants_candidats": "Schémas, sauvegardes, corpus historique, service worker",
       "source_checked": false,
       "cloture": {
@@ -32641,6 +32669,13 @@
           "statut": "À faire",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Aucune case source cochée ; aucune acceptation produit."
+        },
+        {
+          "origine": "Correction après revue Codex de la PR #306 (25 octobre 2026)",
+          "statut_precedent": "À faire",
+          "statut": "Bloqué",
+          "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
+          "limite": "Correction de la requalification du 25 octobre (revue Codex, PR #306)."
         }
       ],
       "preparation_documentaire": {
@@ -32665,7 +32700,7 @@
         ],
         "preparation_initiale": "A/B/E + C/D selon charges ; autorisations migration/déploiement séparées"
       },
-      "statut": "À faire",
+      "statut": "Bloqué",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -32697,12 +32732,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": null,
-        "responsable": "Chef de projet",
-        "essais_effectues": "Décisions et autorisations levées (ADR-STUDIO-PILOTE-01, P-04 et P-05).",
-        "deblocage": null
+        "cause": "Porte G4 non acceptée et autorisation de déploiement distincte non obtenue ; la production reste réservée au maître d’ouvrage (ADR-STUDIO-PILOTE-01, P-01).",
+        "responsable": "Maître d’ouvrage",
+        "essais_effectues": "Aucun : opération réservée.",
+        "deblocage": "Acceptation G4 sur ses critères, puis décision de déploiement du maître d’ouvrage."
       },
-      "suite": "Décisions et autorisation acquises ; reste à réaliser ou recetter et à joindre la preuve exacte.",
+      "suite": "Rester bloqué tant que G4 et l’autorisation de déploiement ne sont pas acquises ; l’autorisation du pilote (P-05) ne vaut pas autorisation de déploiement.",
       "composants_candidats": "Schémas, sauvegardes, corpus historique, service worker",
       "source_checked": false,
       "cloture": {
@@ -32730,6 +32765,13 @@
           "statut": "À faire",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Aucune case source cochée ; aucune acceptation produit."
+        },
+        {
+          "origine": "Correction après revue Codex de la PR #306 (25 octobre 2026)",
+          "statut_precedent": "À faire",
+          "statut": "Bloqué",
+          "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
+          "limite": "Correction de la requalification du 25 octobre (revue Codex, PR #306)."
         }
       ],
       "preparation_documentaire": {
@@ -32754,7 +32796,7 @@
         ],
         "preparation_initiale": "A/B/E + C/D selon charges ; autorisations migration/déploiement séparées"
       },
-      "statut": "À faire",
+      "statut": "Bloqué",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -32786,12 +32828,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": null,
-        "responsable": "Chef de projet",
-        "essais_effectues": "Décisions et autorisations levées (ADR-STUDIO-PILOTE-01, P-04 et P-05).",
-        "deblocage": null
+        "cause": "Porte G4 non acceptée et autorisation de déploiement distincte non obtenue ; la production reste réservée au maître d’ouvrage (ADR-STUDIO-PILOTE-01, P-01).",
+        "responsable": "Maître d’ouvrage",
+        "essais_effectues": "Aucun : opération réservée.",
+        "deblocage": "Acceptation G4 sur ses critères, puis décision de déploiement du maître d’ouvrage."
       },
-      "suite": "Décisions et autorisation acquises ; reste à réaliser ou recetter et à joindre la preuve exacte.",
+      "suite": "Rester bloqué tant que G4 et l’autorisation de déploiement ne sont pas acquises ; l’autorisation du pilote (P-05) ne vaut pas autorisation de déploiement.",
       "composants_candidats": "Schémas, sauvegardes, corpus historique, service worker",
       "source_checked": false,
       "cloture": {
@@ -32819,6 +32861,13 @@
           "statut": "À faire",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Aucune case source cochée ; aucune acceptation produit."
+        },
+        {
+          "origine": "Correction après revue Codex de la PR #306 (25 octobre 2026)",
+          "statut_precedent": "À faire",
+          "statut": "Bloqué",
+          "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
+          "limite": "Correction de la requalification du 25 octobre (revue Codex, PR #306)."
         }
       ],
       "preparation_documentaire": {
@@ -32843,7 +32892,7 @@
         ],
         "preparation_initiale": "A/B/E + C/D selon charges ; autorisations migration/déploiement séparées"
       },
-      "statut": "À faire",
+      "statut": "Bloqué",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -32875,12 +32924,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": null,
-        "responsable": "Chef de projet",
-        "essais_effectues": "Décisions et autorisations levées (ADR-STUDIO-PILOTE-01, P-04 et P-05).",
-        "deblocage": null
+        "cause": "Porte G4 non acceptée et autorisation de déploiement distincte non obtenue ; la production reste réservée au maître d’ouvrage (ADR-STUDIO-PILOTE-01, P-01).",
+        "responsable": "Maître d’ouvrage",
+        "essais_effectues": "Aucun : opération réservée.",
+        "deblocage": "Acceptation G4 sur ses critères, puis décision de déploiement du maître d’ouvrage."
       },
-      "suite": "Décisions et autorisation acquises ; reste à réaliser ou recetter et à joindre la preuve exacte.",
+      "suite": "Rester bloqué tant que G4 et l’autorisation de déploiement ne sont pas acquises ; l’autorisation du pilote (P-05) ne vaut pas autorisation de déploiement.",
       "composants_candidats": "Schémas, sauvegardes, corpus historique, service worker",
       "source_checked": false,
       "cloture": {
@@ -32908,6 +32957,13 @@
           "statut": "À faire",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Aucune case source cochée ; aucune acceptation produit."
+        },
+        {
+          "origine": "Correction après revue Codex de la PR #306 (25 octobre 2026)",
+          "statut_precedent": "À faire",
+          "statut": "Bloqué",
+          "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
+          "limite": "Correction de la requalification du 25 octobre (revue Codex, PR #306)."
         }
       ],
       "preparation_documentaire": {
@@ -32932,7 +32988,7 @@
         ],
         "preparation_initiale": "A/B/E + C/D selon charges ; autorisations migration/déploiement séparées"
       },
-      "statut": "À faire",
+      "statut": "Bloqué",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -32964,12 +33020,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": null,
-        "responsable": "Chef de projet",
-        "essais_effectues": "Décisions et autorisations levées (ADR-STUDIO-PILOTE-01, P-04 et P-05).",
-        "deblocage": null
+        "cause": "Porte G4 non acceptée et autorisation de déploiement distincte non obtenue ; la production reste réservée au maître d’ouvrage (ADR-STUDIO-PILOTE-01, P-01).",
+        "responsable": "Maître d’ouvrage",
+        "essais_effectues": "Aucun : opération réservée.",
+        "deblocage": "Acceptation G4 sur ses critères, puis décision de déploiement du maître d’ouvrage."
       },
-      "suite": "Décisions et autorisation acquises ; reste à réaliser ou recetter et à joindre la preuve exacte.",
+      "suite": "Rester bloqué tant que G4 et l’autorisation de déploiement ne sont pas acquises ; l’autorisation du pilote (P-05) ne vaut pas autorisation de déploiement.",
       "composants_candidats": "Schémas, sauvegardes, corpus historique, service worker",
       "source_checked": false,
       "cloture": {
@@ -32997,6 +33053,13 @@
           "statut": "À faire",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Aucune case source cochée ; aucune acceptation produit."
+        },
+        {
+          "origine": "Correction après revue Codex de la PR #306 (25 octobre 2026)",
+          "statut_precedent": "À faire",
+          "statut": "Bloqué",
+          "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
+          "limite": "Correction de la requalification du 25 octobre (revue Codex, PR #306)."
         }
       ],
       "preparation_documentaire": {
@@ -33144,7 +33207,7 @@
         ],
         "preparation_initiale": "A/B/E + C/D selon charges ; autorisations migration/déploiement séparées"
       },
-      "statut": "À faire",
+      "statut": "Bloqué",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -33176,12 +33239,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": null,
-        "responsable": "Chef de projet",
-        "essais_effectues": "Décisions et autorisations levées (ADR-STUDIO-PILOTE-01, P-04 et P-05).",
-        "deblocage": null
+        "cause": "Porte G4 non acceptée et autorisation de déploiement distincte non obtenue ; la production reste réservée au maître d’ouvrage (ADR-STUDIO-PILOTE-01, P-01).",
+        "responsable": "Maître d’ouvrage",
+        "essais_effectues": "Aucun : opération réservée.",
+        "deblocage": "Acceptation G4 sur ses critères, puis décision de déploiement du maître d’ouvrage."
       },
-      "suite": "Décisions et autorisation acquises ; reste à réaliser ou recetter et à joindre la preuve exacte.",
+      "suite": "Rester bloqué tant que G4 et l’autorisation de déploiement ne sont pas acquises ; l’autorisation du pilote (P-05) ne vaut pas autorisation de déploiement.",
       "composants_candidats": "Schémas, sauvegardes, corpus historique, service worker",
       "source_checked": false,
       "cloture": {
@@ -33209,6 +33272,13 @@
           "statut": "À faire",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Aucune case source cochée ; aucune acceptation produit."
+        },
+        {
+          "origine": "Correction après revue Codex de la PR #306 (25 octobre 2026)",
+          "statut_precedent": "À faire",
+          "statut": "Bloqué",
+          "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
+          "limite": "Correction de la requalification du 25 octobre (revue Codex, PR #306)."
         }
       ],
       "preparation_documentaire": {
@@ -33233,7 +33303,7 @@
         ],
         "preparation_initiale": "A/B/E + C/D selon charges ; autorisations migration/déploiement séparées"
       },
-      "statut": "À faire",
+      "statut": "Bloqué",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
@@ -33265,12 +33335,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": null,
-        "responsable": "Chef de projet",
-        "essais_effectues": "Décisions et autorisations levées (ADR-STUDIO-PILOTE-01, P-04 et P-05).",
-        "deblocage": null
+        "cause": "Porte G4 non acceptée et autorisation de déploiement distincte non obtenue ; la production reste réservée au maître d’ouvrage (ADR-STUDIO-PILOTE-01, P-01).",
+        "responsable": "Maître d’ouvrage",
+        "essais_effectues": "Aucun : opération réservée.",
+        "deblocage": "Acceptation G4 sur ses critères, puis décision de déploiement du maître d’ouvrage."
       },
-      "suite": "Décisions et autorisation acquises ; reste à réaliser ou recetter et à joindre la preuve exacte.",
+      "suite": "Rester bloqué tant que G4 et l’autorisation de déploiement ne sont pas acquises ; l’autorisation du pilote (P-05) ne vaut pas autorisation de déploiement.",
       "composants_candidats": "Schémas, sauvegardes, corpus historique, service worker",
       "source_checked": false,
       "cloture": {
@@ -33298,6 +33368,13 @@
           "statut": "À faire",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Aucune case source cochée ; aucune acceptation produit."
+        },
+        {
+          "origine": "Correction après revue Codex de la PR #306 (25 octobre 2026)",
+          "statut_precedent": "À faire",
+          "statut": "Bloqué",
+          "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
+          "limite": "Correction de la requalification du 25 octobre (revue Codex, PR #306)."
         }
       ],
       "preparation_documentaire": {
@@ -67376,9 +67453,9 @@
       "raison": "DEV_SCOPE et baseline du périmètre accepté non établis ; ne pas inventer un dénominateur."
     },
     "P630": {
-      "V630": 105,
+      "V630": 103,
       "denominateur": 630,
-      "pourcentage": 16.7,
+      "pourcentage": 16.3,
       "IDs": [
         "SRC-01",
         "SRC-02",
@@ -67426,7 +67503,6 @@
         "NAV-005",
         "NAV-006",
         "NAV-007",
-        "NAV-008",
         "NAV-009",
         "COEX-02",
         "G0-01",
@@ -67435,7 +67511,6 @@
         "G2-02",
         "G3-01",
         "G3-04",
-        "REC-I-02",
         "REC-A-03",
         "REC-C-03",
         "RESP-01",
@@ -67486,9 +67561,9 @@
         "PROV-04",
         "PROV-05"
       ],
-      "limite": "74 obligations vérifiées (47 documentaires, 27 par recette automatisée exécutée le 25 octobre 2026) et 31 acceptations (2 de cadrage G0, 29 décisions ADR-STUDIO-PILOTE-01 sous délégation du maître d’ouvrage). Pas un taux de développement ; G1–G4 non acceptées.",
+      "limite": "72 obligations vérifiées (47 documentaires, 25 par recette automatisée exécutée le 25 octobre 2026) et 31 acceptations (2 de cadrage G0, 29 décisions ADR-STUDIO-PILOTE-01 sous délégation du maître d’ouvrage). Pas un taux de développement ; G1–G4 non acceptées.",
       "mapping_barre": {
-        "Vérifié (documentaire ou recette)": 74,
+        "Vérifié (documentaire ou recette)": 72,
         "Accepté (G0 et décisions déléguées)": 31
       }
     }

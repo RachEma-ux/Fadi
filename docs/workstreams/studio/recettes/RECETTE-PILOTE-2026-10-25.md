@@ -47,8 +47,11 @@ navigateur 1194. Le rendu est logiciel, et aucun appareil physique n'a été uti
 Une obligation passe à « Vérifié » seulement si une assertion exécutée contrôle son critère exact. Le libellé et le
 fichier de chaque assertion sont dans la preuve de l'ID, au registre.
 
-- **Vérifié — navigation** : NAV-001 à NAV-009. NAV-005 et NAV-007 sont contrôlés par `studio-domaines`, les autres
-  par `studio-navigation`. Pour NAV-009, la non-régression s'appuie aussi sur les cinq tranches e2e vertes de la CI.
+- **Vérifié — navigation** : NAV-001 à NAV-007 et NAV-009. NAV-005 et NAV-007 sont contrôlés par `studio-domaines`,
+  les autres par `studio-navigation`. Pour NAV-009, la non-régression s'appuie aussi sur les cinq tranches e2e vertes de
+  la CI.
+- **En cours — NAV-008** : aucune recette ne provoque de panne de chargement ou de moteur ni n'en contrôle la reprise.
+  Seule la visibilité de la barre hors mode immersif est vérifiée (correction après la revue Codex de la PR #306).
 - **Vérifié — scénarios TEST** :
 
   | Scénarios | Recette ou test |
@@ -61,8 +64,10 @@ fichier de chaque assertion sont dans la preuve de l'ID, au registre.
   | TEST-034 | `studio-restauration` |
   | TEST-004, TEST-008, TEST-017, TEST-019, TEST-023, TEST-026 | Tests automatisés du modèle, de l'API et de l'interface, exécutés en CI |
 
-- **Vérifié — recette** : REC-I-02, REC-A-03 (3,180 m³ dans `studio-dossier`, puis 3,096 m³ dans
-  `studio-navigation`), REC-C-03 (DEC-08).
+- **Vérifié — recette** : REC-A-03 (3,180 m³ dans `studio-dossier`, puis 3,096 m³ dans `studio-navigation`) et
+  REC-C-03 (DEC-08). REC-I-02 reste « En cours » tant que NAV-008 est partiel.
+- **Bloqué — livraison** : les 9 obligations R de bascule et de déploiement (R.2-01, R.3-01, R.3-02, R.4-01 à 03,
+  R.5-01, R.5-03, R.5-04) attendent G4 et la décision de déploiement du maître d'ouvrage.
 - **En cours, preuve partielle** : TEST-002, 003, 005, 006, 007, 010, 011, 012, 014, 015, 016, 018, 021, 022, 024, 027,
   028, 035, 036. Ce qui manque est consigné dans la `suite` de chaque ID.
 - **À faire, aucun test** : TEST-025 (comparaison SVG / Canvas / GPU), TEST-037 (50 cycles et courbe mémoire).
