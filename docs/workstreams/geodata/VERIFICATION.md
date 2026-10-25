@@ -17,6 +17,10 @@ Concept 1.0 MD/DOCX : parité de 288 blocs, 18 liens, rendu Word de 10 pages, em
 | Recette `apps/web/e2e/geodata.mjs` (Chromium, WebGL logiciel et sans WebGL, 1440 px et 390 px, anglais) | Tout conforme |
 | `node scripts/check-continuity.mjs` | Succès |
 
+## CI GitHub et fusion
+
+Run 40187001869 sur `1d7798e` : `validate` (suite `geodata.test.ts` sur base attestée DB-3), e2e `parcours`, `complements` (recette GeoData), `atelier`, `planche`, `p2`, `image`, architecture, continuité, Studio V1 : succès. Un échec ponctuel de `invitations-participation.mjs` sur `63bcce2` ne s'est pas reproduit. PR #301 fusionnée le 25 octobre 2026 (`1d92920`).
+
 ## Traçabilité GEO
 
 | Critère | Preuve |
