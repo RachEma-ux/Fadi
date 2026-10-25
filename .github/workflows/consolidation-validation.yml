@@ -4,6 +4,10 @@ on:
     paths:
       - '.github/workflows/consolidation-validation.yml'
       - 'deploy/preprod/**'
+      # La liste e2e de la préproduction doit rester celle de la CI (tests/run.sh) : un scénario ajouté à ci.yml sans
+      # elle passait inaperçu (geodata et sandbox-axes… manquaient le 25 octobre 2026).
+      - '.github/workflows/ci.yml'
+      - 'apps/web/e2e/**'
       - 'deploy/fadifront/**'
       - 'apps/web/src/FrontApp*'
       - 'apps/web/src/front-*'

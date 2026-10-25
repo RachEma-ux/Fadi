@@ -120,6 +120,9 @@ services:
     build:
       context: ${FADI_SRC:?FADI_SRC manquant}
       dockerfile: deploy/preprod/recette.Dockerfile
+      # Builds copiés de l'image applicative du même commit (`COPY --from=app`) : Compose construit `app` d'abord.
+      additional_contexts:
+        app: service:app
     profiles: ["recette"]
     network_mode: "service:app"
     depends_on:
