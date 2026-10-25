@@ -2,7 +2,7 @@
  "scene": "S7",
  "definition": "Scène S7 : session hors réseau puis reconnectée.",
  "synthetique": true,
- "licence": "Licence à valider par le maître d'ouvrage (corpus synthétique, généré par le dépôt Fadi : géométrie seule, aucune source tierce).",
+ "licence": "Licence du dépôt Fadi (RachEma-ux/Fadi) : corpus synthétique généré par le code du dépôt, aucune source tierce ; aucune licence ouverte déclarée, droits réservés au titulaire du dépôt, usage autorisé dans le dépôt pour les essais, recettes et mesures du projet Fadi (corpus/LICENCE.md).",
  "avertissement": "Géométrie synthétique de test : aucune donnée de projet réelle ni inventée ; tailles illustratives (X.1-10), non des engagements de capacité.",
  "couverture": {
   "representes": [
