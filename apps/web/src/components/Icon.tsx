@@ -6,6 +6,7 @@
 export type IconName =
   | "home"
   | "organization"
+  | "map"
   | "review"
   | "folder"
   | "route"
@@ -121,6 +122,8 @@ const PATHS: Record<IconName, string> = {
   admin: "M8 7a4 4 0 1 0 8 0 4 4 0 0 0-8 0M6 21v-2a4 4 0 0 1 4-4h2m10 1c0 4-2.5 6-3.5 6S15 20 15 16c1 0 2.5-.5 3.5-1.5 1 1 2.5 1.5 3.5 1.5Z",
   home: "M3 11.5 12 4l9 7.5M5.5 10.5V20h13v-9.5M10 20v-5h4v5",
   // Organisation (espace d'organisation, phase 5) : deux immeubles côte à côte, fenêtres en rangées.
+  // Carte pliée en trois volets et repère : entrée GeoData de la barre latérale.
+  map: "M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2ZM9 4v14M15 6v14",
   organization: "M3 21h18M5 21V5h8v16M13 9h6v12M8 8h2M8 11h2M8 14h2M16 12h1M16 15h1M8 18h2",
   // Revue externe (phase 4) : feuille et loupe.
   review: "M6 3h8l4 4v6M6 3v18h7M14 3v4h4M15.5 19.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM18 18l3 3",

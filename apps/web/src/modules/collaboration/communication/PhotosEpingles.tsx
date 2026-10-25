@@ -2,7 +2,8 @@
  * Photos et épingles de la Communication (lot COM-13, COM-D15 à COM-D19) : affichage des photos jointes (servies par le
  * serveur, qui relit l'audience à chaque requête), plan d'une révision exacte avec son épingle (repère local, mètres,
  * y inversé comme l'export SVG Studio), pose d'une épingle, position déclarée (repère geographic, WGS84). Le plan est
- * l'export SVG de la révision citée : il ne change jamais quand la variante avance.
+ * l'export SVG de la révision citée : il ne change jamais quand la variante avance. Les photos du fil se chargent en
+ * différé (unlazy, `components/ImageDifferee.tsx`) : seules celles qui approchent de la zone visible sont téléchargées.
  */
 import { useMemo, useState, type MouseEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -10,6 +11,7 @@ import { Link } from "react-router-dom";
 import { api, comApi, type ComEpingle, type ComLocalisation, type ComPiece } from "../../../lib/api";
 import { ConfirmDialog } from "../../../components/comptes/ComptesUI";
 import { cheminVarianteStudio } from "../../studio/routes-studio";
+import { ImageDifferee } from "../../../components/ImageDifferee";
 
 const nf = (n: number, d = 2) => n.toLocaleString("fr-FR", { minimumFractionDigits: d, maximumFractionDigits: d });
 
@@ -30,7 +32,7 @@ export function PhotosMessage({ projectId, pieces, auteur }: { projectId: string
     <div className="com-photos" data-com-photos={pieces.length}>
       {pieces.map((p) => (
         <a key={p.id} href={comApi.urlPiece(projectId, p.id)} target="_blank" rel="noreferrer" className="com-photo">
-          <img src={comApi.urlPiece(projectId, p.id)} alt={`Photo jointe par ${auteur}`} width={p.width} height={p.height} loading="lazy" data-com-photo={p.id} />
+          <ImageDifferee src={comApi.urlPiece(projectId, p.id)} alt={`Photo jointe par ${auteur}`} width={p.width} height={p.height} data-com-photo={p.id} />
         </a>
       ))}
     </div>

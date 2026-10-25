@@ -2,23 +2,28 @@
 
 ## À faire
 
-- [ ] GEO-DOC-04 — Revue du concept détaillé et décision de réception documentaire dans l’Issue #243.
-- [ ] GEO-NEXT-01 — Définir et autoriser le lot de conception suivant avant toute implémentation.
+- [ ] GEO-REC-01 — Recette métier par le maître d'ouvrage sur appareils physiques (GEO 12) et validation d'usage.
+- [ ] GEO-PROD-01 — Publication en production : Release GitHub du maître d'ouvrage (hors délégation).
+- [ ] GEO-DATA-01 — Qualifier les droits HCP (population RGPH 2024) avant toute publication d'indicateur officiel.
+- [ ] GEO-V11 — Extensions V1.1 : partage nominatif, espaces collectifs, KML/KMZ/Shapefile, analyses avancées.
 
 ## En cours
 
-- Aucune rédaction en cours au checkpoint ; revue documentaire en attente.
+- Aucune au checkpoint (voir HANDOFF).
 
 ## Terminé
 
-- [x] GEO-DOC-01 — Formaliser le périmètre demandé et la décision ADR-GEODATA-01 (Issue #243).
-- [x] GEO-DOC-02 — Rédiger le concept version 1.0 et produire les deux formats de contenu identique. Preuves : `VERIFICATION.md`.
-- [x] GEO-DOC-03 — Déposer la paire et les preuves dans `docs/243-geodata-concept` et ouvrir la [PR #245](https://github.com/RachEma-ux/Fadi/pull/245). Commit vérifié : `022db53547c73ac3b0c6a446c539d8dfcc68d565`.
+- [x] GEO-DOC-01 à 04 — Concept 1.0 et ADR-GEODATA-01 (Issue #243, PR #245 fusionnée).
+- [x] GEO-I1 — Évaluation du plan fourni, plan retenu, ADR-GEODATA-02, paquet `@parcours/geodata-model` (Issue #299).
+- [x] GEO-I2 — Schéma `geodata_*`, API `/geodata/api`, chaîne d'import de référence (GeoJSON/GeoPackage), pilote geoBoundaries.
+- [x] GEO-I3 — Page `/geodata` (MapLibre à la demande), catalogue, couches, légende, recherche, fiche, table, Mes cartes, conflits.
+- [x] GEO-I4 — Import GeoJSON personnel, zones et annotations, mesures, analyse figée, export PNG + fiche de sources.
+- [x] GEO-I5 — Suite API DB-3, audit GEO 04, recette `apps/web/e2e/geodata.mjs` en CI, traductions, documentation.
 
 ## Bloqué
 
-Aucun obstacle à la livraison documentaire. Le développement applicatif est hors mandat actuel ; il ne constitue pas une tâche démarrée ou un blocage technique.
+Rien de bloqué dans la délégation. La production et la recette sur appareils physiques attendent le maître d'ouvrage.
 
 ## Critères de sortie
 
-La paire MD/DOCX doit être présente dans le même commit, référencée dans l’index, vérifiée et soumise par une PR liée à l’Issue #243. La revue et une éventuelle fusion suivent la procédure du dépôt. Aucun déploiement ne découle du présent lot.
+GEO 01–13 prouvés par tests et recette sur le HEAD ; CI verte ; fusion dans `main` ; production par Release du maître d'ouvrage.

@@ -1,30 +1,31 @@
 # GeoData — Statut
 
-Mis à jour : 2026-10-22 (UTC).
+Mis à jour : 2026-10-25 (UTC).
 
 ## État
 
-**Vérifié** pour la livraison documentaire de la version 1.0, déposée dans la PR #245 ; revue détaillée en attente. Le module n’est pas implémenté par ce lot.
+**Implémenté et vérifié** (tests et recette locale, CI à relire sur le HEAD de la PR) pour GeoData V1 sous délégation totale (ADR-GEODATA-02, Issue #299). **Non accepté** en production : la mise en production reste la Release du maître d'ouvrage.
 
 ## Faits vérifiés
 
-- Base lue : `main` au commit `7717f9f15d315aaa568bc1fc2336d22a01dbc9b4`.
-- Aucun concept GeoData ni chantier GeoData préexistant dans l’arbre inspecté ; aucun prédécesseur à archiver.
-- La paire française porte le même titre et la version 1.0 ; parité et rendu documentés dans `VERIFICATION.md`.
-- Seuls des documents et leurs index sont destinés au commit.
-- Paire et documents déposés au commit `022db53547c73ac3b0c6a446c539d8dfcc68d565` ; les 11 empreintes Git de l’arbre distant correspondent aux fichiers préparés.
-- Le contrôle distant « Continuité — docs, checkpoints et tests » a réussi sur ce commit ; voir `VERIFICATION.md`. Vérifier à nouveau la CI du HEAD courant.
+Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
+
+- Base : `main@0ff0638` ; branche `ccr-e71fe633-hjxnjf`.
+- `npm run typecheck` : succès ; tests des paquets et du web : succès (dont `@parcours/geodata-model` 18 tests, module web GeoData 11 tests) ; `npm run test:db-guard` : succès ; `check-api-tests-db3` : seule la liste DB-3 (avec `geodata.test.ts`) est refusée sans attestation ; `npm run build` : succès, découpage conforme (famille `maplibre` hors du bundle initial).
+- Suite API GeoData sur PostGIS réel (garde DB-3 contournée localement, non commité) : 21 tests sur 21 (GEO 01, 03, 05–10, 13, rôles, immuabilité, recherche, GeoPackage, audit GEO 04).
+- `init.sql` rejoué deux fois sans erreur.
+- Recette navigateur `apps/web/e2e/geodata.mjs` contre l'API qui sert le build : **tout conforme** (GEO 01, 02, 05, 06, 07, 08, 09, 11, 12, 13, axe-core sans violation critique ou sérieuse, interface anglaise sans résidu).
+- Données réelles : geoBoundaries MAR ADM1 (12 régions, SHA-256 `6c4e3e25…129f`) et ADM2 (75 unités, `5b3f09cb…1714`) importées et publiées par la chaîne administrative sur la base locale ; empreintes conformes aux objets LFS publiés.
 
 ## Points ouverts
 
-Revue du contenu détaillé, décision de fusion et autorisation d’un éventuel lot applicatif. Sources, licences, moteur et contrats techniques restent à qualifier.
+Recette sur appareils physiques et validation d'usage ; Release de production ; qualification des droits HCP ; extensions V1.1.
 
 ## Liens de suivi
 
-- Issue : https://github.com/RachEma-ux/Fadi/issues/243.
-- Branche : https://github.com/RachEma-ux/Fadi/tree/docs/243-geodata-concept.
-- PR : https://github.com/RachEma-ux/Fadi/pull/245 (ouverte pour revue, non fusionnée au checkpoint).
+- Issue de réalisation : https://github.com/RachEma-ux/Fadi/issues/299 ; cadrage : #243 (PR #245 fusionnée).
+- Branche : https://github.com/RachEma-ux/Fadi/tree/ccr-e71fe633-hjxnjf.
 
 ## Préconditions de clôture
 
-Obtenir la revue documentaire et la décision de fusion selon la procédure, après vérification de la CI du HEAD courant. Une CI verte ne vaut pas acceptation du concept ni autorisation de développer.
+CI verte sur le HEAD de la PR, fusion, puis Release de production et recette d'usage par le maître d'ouvrage.

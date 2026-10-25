@@ -17,7 +17,7 @@
  */
 import { MOTEURS, type IdMoteur } from "./moteurs";
 
-export type Famille = "three" | "occt" | "manifold" | "atelier" | "studio-planche" | "studio-3d";
+export type Famille = "three" | "occt" | "manifold" | "atelier" | "studio-planche" | "studio-3d" | "maplibre";
 
 /**
  * Modules de `planche2d/` partagés avec la coquille de Studio (B.3-02) : le catalogue léger des outils et le profil du
@@ -38,6 +38,8 @@ export const MOTIFS_FAMILLES: Readonly<Record<Famille, RegExp>> = Object.freeze(
   atelier: /\/src\/modules\/atelier\/nouveau\//,
   "studio-planche": new RegExp(`/src/modules/studio/(VariantWorkspace\\.tsx|planche2d/(?!(${PLANCHE_PARTAGES_COQUILLE.map(echapper).join("|")})(\\?|$)))`),
   "studio-3d": /\/src\/modules\/studio\/vue3d\/Vue3DStudio\.tsx/,
+  // Moteur cartographique de GeoData (ADR-GEODATA-02, D-GD-03) : chargé à la demande par la page /geodata seulement.
+  maplibre: /\/node_modules\/maplibre-gl\//,
 });
 
 /** Morceau de sortie tel que Rollup le décrit (sous-ensemble utile de `OutputChunk` / `OutputAsset`). */
@@ -134,8 +136,8 @@ function fichierDuMoteur(sorties: readonly SortieBuild[], source: string, nature
 
 /** Règles du découpage : familles interdites dans la fermeture statique de chaque point de chargement. */
 export const REGLES_DECOUPAGE: readonly { readonly cible: "initial" | IdMoteur; readonly interdites: readonly Famille[]; readonly motif: string }[] = Object.freeze([
-  { cible: "initial", interdites: ["three", "occt", "manifold", "studio-planche", "studio-3d", "atelier"], motif: "démarrage léger (EX-038) : aucun moteur lourd ni la planche dans le bundle initial" },
-  { cible: "coquille-studio", interdites: ["three", "occt", "manifold", "studio-planche", "studio-3d", "atelier"], motif: "la coquille de Studio charge le catalogue et le profil, pas la planche ni la 3D (B.3-02)" },
+  { cible: "initial", interdites: ["three", "occt", "manifold", "studio-planche", "studio-3d", "atelier", "maplibre"], motif: "démarrage léger (EX-038) : aucun moteur lourd ni la planche dans le bundle initial" },
+  { cible: "coquille-studio", interdites: ["three", "occt", "manifold", "studio-planche", "studio-3d", "atelier", "maplibre"], motif: "la coquille de Studio charge le catalogue et le profil, pas la planche ni la 3D (B.3-02)" },
   { cible: "planche-2d", interdites: ["three", "occt", "manifold", "studio-3d", "atelier"], motif: "ouvrir une planche 2D ne force ni three.js ni un noyau exact (EX-039)" },
   { cible: "rendu-3d", interdites: ["occt", "manifold", "atelier"], motif: "la vue 3D de Studio n'embarque aucun noyau exact (EX-040, D.3-04)" },
   { cible: "calcul", interdites: [], motif: "le script du groupe de Workers est repéré dans le build (disponibilité hors connexion)" },

@@ -1,0 +1,56 @@
+{
+  "cle": "geodata-synthetique-unites",
+  "titre": "Jeu synthétique de test — six unités",
+  "producteur": "GeoData (jeu de test fabriqué, aucune donnée réelle)",
+  "theme": "test",
+  "couverture": "Territoire fictif (six carrés de 0,2° près de 30° N, 9° O)",
+  "description": "Jeu SYNTHÉTIQUE pour les tests et la recette : codes à zéros initiaux, valeurs nulles et zéro, une valeur absente. Il ne représente aucun territoire ni aucune statistique réelle.",
+  "version": {
+    "libelle": "Jeu synthétique v1",
+    "url": null,
+    "empreinte": "58b123635fbbd2e5348e8be89ef0b689ef1cc64e4a3d222c4dec3b451ce60ec7",
+    "periode": "Sans objet (synthétique)",
+    "licence": "Jeu de test GeoData (aucune restriction)",
+    "attribution": "Jeu synthétique GeoData — aucune donnée réelle",
+    "droits": {
+      "consultation": "autorise",
+      "stockage": "autorise",
+      "calcul": "autorise",
+      "tuiles": "autorise",
+      "commercial": "autorise",
+      "partage": "autorise",
+      "telechargement": "autorise",
+      "export": "autorise"
+    },
+    "precision": "Sans objet",
+    "synthetique": true
+  },
+  "couche": {
+    "titre": "Unités synthétiques (test)",
+    "description": "Six unités fictives.",
+    "niveau": "TEST",
+    "champCode": "code",
+    "champNom": "nom",
+    "proprietesExposees": [
+      "code",
+      "nom",
+      "effectif_synthetique"
+    ],
+    "styleDefaut": {
+      "mode": "simple",
+      "couleur": "#7570b3"
+    }
+  },
+  "indicateurs": [
+    {
+      "propriete": "effectif_synthetique",
+      "titre": "Effectif synthétique",
+      "unite": "unités",
+      "periode": null,
+      "denominateur": null,
+      "description": "Valeur fabriquée pour tester l'absence distincte de zéro.",
+      "motifSiAbsente": "secret-statistique"
+    }
+  ],
+  "superficie": true
+}
