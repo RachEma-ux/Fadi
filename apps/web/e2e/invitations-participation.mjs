@@ -107,7 +107,7 @@ try {
   // ---------------------------------------------------------------------------------------------------------------
   // 2. Acceptation et ses refus.
   check("autre compte : invitation non révélée par identifiant (404)", (await accept(autre.call, invId)).status === 404);
-  const token = await jetonDuCourriel(x.email, "/compte/invitation");
+  const token = await jetonDuCourriel(x.email, "/compte/invitation", { minimum: 2 }); // envoi puis renvoi : le lien du renvoi
   const transfere = await autre.call("POST", "/auth/invitations/accept", { token });
   check("lien transféré à un autre compte : 403 wrong_account, aucun accès", transfere.status === 403 && transfere.body?.error === "wrong_account" && (await autre.call("GET", `/projects/${pid}`)).status === 404, transfere.body);
   const nonVerifie = await accept(x.call, invId);

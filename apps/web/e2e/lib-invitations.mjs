@@ -13,7 +13,7 @@ const MAILPIT = process.env.MAILPIT_URL?.replace(/\/$/, "");
 const API_LOG = process.env.API_LOG;
 
 /** Dernier jeton d'un lien `…<chemin>#jeton=…` envoyé à cette adresse (attente bornée : la file part toutes les 5 s). */
-export async function jetonDuCourriel(to, chemin, { tentatives = 60 } = {}) {
+export async function jetonDuCourriel(to, chemin, { tentatives = 60, minimum = 1 } = {}) {
   if (!MAILPIT && !API_LOG) throw new Error("lib-invitations : MAILPIT_URL ou API_LOG requis pour lire les courriels de la recette");
   for (let i = 0; i < tentatives; i++) {
     let text = "";
@@ -24,7 +24,8 @@ export async function jetonDuCourriel(to, chemin, { tentatives = 60 } = {}) {
       text = readFileSync(API_LOG, "utf8").split("\n").filter((l) => l.includes(`"to":"${to}"`)).map((l) => { try { return JSON.parse(l).text; } catch { return ""; } }).join("\n");
     }
     const links = [...text.matchAll(/https?:\/\/\S+#jeton=([A-Za-z0-9_%-]+)/g)].filter((m) => m[0].includes(chemin));
-    if (links.length) return decodeURIComponent(links[MAILPIT ? 0 : links.length - 1][1]);
+    // `minimum` : nombre de courriels attendus (renvoi : l'ancien lien est remplacé, on attend le plus récent).
+    if (links.length >= minimum) return decodeURIComponent(links[MAILPIT ? 0 : links.length - 1][1]);
     await new Promise((r) => setTimeout(r, 500));
   }
   return null;
