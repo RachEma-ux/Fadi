@@ -33,7 +33,7 @@ import { roleAllows, type ProjectRole } from "./owned-project.js";
 import { audienceOfNew, audienceSchema, type StudioCommentAudience } from "./audience.js";
 import { StudioRequestError, studioArchivedRefusal, studioIdentifierSchema, type StudioScope } from "./studio-commands.js";
 import {
-  acteurDe, assignable, audienceFilter, audienceOrRefuse, conflict, hashOf, insertDecision, insertObservationRows, lockedVariant, notFound, observationViews, participants, scopedVariant,
+  acteurDe, assignable, constaterDans, audienceFilter, audienceOrRefuse, conflict, hashOf, insertDecision, insertObservationRows, lockedVariant, notFound, observationViews, participants, scopedVariant,
   STUDIO_COMMENT_MAX_OBJECTS, studioObservationVueSchema, type Lecteur, type StudioObservationView, type StudioParticipant,
 } from "./studio-commentaires.js";
 import {
@@ -138,7 +138,7 @@ async function details(scope: StudioScope, variantId: string, lecteur: Lecteur, 
 export async function listStudioObservations(scope: StudioScope, actorId: string, filtre: { domaine?: string; ref?: string }): Promise<StudioObservationsLecture> {
   const variant = await scopedVariant(scope, actorId, "read");
   const archived = variant.archived !== null || variant.studyArchived !== null;
-  const lecteur: Lecteur = { actorId, role: variant.access.role, archived };
+  const lecteur: Lecteur = { actorId, role: variant.access.role, archived, constater: constaterDans(variant.access, scope.studyId, variant.id) };
   let ids: string[] | null = null;
   if (filtre.domaine !== undefined || filtre.ref !== undefined) {
     const d = domaineSchema.safeParse(filtre.domaine);
@@ -152,7 +152,7 @@ export async function listStudioObservations(scope: StudioScope, actorId: string
 
 export async function getStudioObservation(scope: StudioScope, actorId: string, observationId: string): Promise<StudioObservationDetail> {
   const variant = await scopedVariant(scope, actorId, "read");
-  const lecteur: Lecteur = { actorId, role: variant.access.role, archived: variant.archived !== null || variant.studyArchived !== null };
+  const lecteur: Lecteur = { actorId, role: variant.access.role, archived: variant.archived !== null || variant.studyArchived !== null, constater: constaterDans(variant.access, scope.studyId, variant.id) };
   const [d] = await details(scope, variant.id, lecteur, [observationId]);
   return d ?? notFound("Observation inconnue pour cette variante.");
 }

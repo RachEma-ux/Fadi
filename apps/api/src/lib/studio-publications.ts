@@ -44,6 +44,7 @@ import {
 import type { Tx } from "./atelier-validation.js";
 import { newId } from "./ids.js";
 import { activeLock, loadProjectAccess, lockedMessage, projectAccessRefusal, type AccessibleProject } from "./owned-project.js";
+import type { CiblePortee } from "@parcours/domain-model";
 import { lockProject, type Querier } from "./step-rows.js";
 import { assertAccess, lockedAccess, notFound, StudioRequestError, studioArchivedRefusal, studioFileSegment, studioIdentifierSchema, studyOf } from "./studio-commands.js";
 import {
@@ -175,6 +176,11 @@ async function variantStates(q: Querier, ids: string[]): Promise<Map<string, Var
 }
 
 const sourceIds = (row: PublicationRow): string[] => [row.variantId, ...(row.manifest?.sources.map((s) => s.variantId) ?? [])];
+/**
+ * Périmètre d'un dossier pour les portées étroites : son étude, TOUTES ses variantes (principale et coordonnées) et sa
+ * révision — un dossier coordonné n'est couvert ni par une portée variante ni par une portée révision.
+ */
+const ciblePublication = (row: PublicationRow): CiblePortee => ({ studyId: row.studyId, variantIds: [...new Set(sourceIds(row))], revisionId: row.revisionId });
 
 /**
  * Écarts et actualité d'un dossier d'après l'état courant de ses sources (dossier antérieur : tête de la variante seule) ;
@@ -226,7 +232,7 @@ function allowedFor(access: AccessibleProject, actorId: string, dims: Dimensions
     if (!controlerTransition(action, { ...dims, manifeste: row.manifest !== null, actualite: freshness }, "-").ok) return false;
     if (action === "diffuser" && (freshness === "perimee" || !row.approvedManifestHash)) return false;
     if (archived && action !== "retirer") return false;
-    return projectAccessRefusal(access, actorId, besoinTransition(action)) === null;
+    return projectAccessRefusal(access, actorId, besoinTransition(action), ciblePublication(row)) === null;
   });
 }
 
@@ -392,8 +398,10 @@ export async function createStudioPublication(projectId: string, studyId: string
     const access = await lockedAccess(tx, projectId, actorId);
     const study = await studyOf(tx, projectId, studyId);
     const variant = await variantOf(tx, study.id, variantId);
-    assertAccess(access, actorId, "write");
     const coordinated = [...new Set(input.coordinatedVariantIds ?? [])];
+    // Portée étroite : un Concepteur de l'étude prépare un dossier de cette étude ; un Concepteur de la variante, un
+    // dossier de cette seule variante (les variantes coordonnées demandées, même inconnues, ne font que restreindre).
+    assertAccess(access, actorId, "write", { studyId: study.id, variantIds: [variant.id, ...coordinated] });
     const contenu: ContenuPublication = input.contenu ?? "complet";
     if (contenu === "dessin-2d" && coordinated.length) {
       throw new StudioRequestError(400, { error: "invalid_input", code: "drawing_coordinated_invalid", message: "Un dessin 2D indépendant se publie seul : aucune variante coordonnée." });
@@ -449,7 +457,7 @@ export async function transitionStudioPublication(projectId: string, studyId: st
     // Le besoin de la transition (`write`, `approve`, `publish`) porte aussi la réservation d'édition : celle d'un autre
     // compte la bloque (423), propriétaire compris. Approbateur et Diffuseur de portée projet (phase 2, OP-D3 c) approuvent
     // ou diffusent sans droit de modification.
-    assertAccess(access, actorId, besoinTransition(action));
+    assertAccess(access, actorId, besoinTransition(action), ciblePublication(row));
     await appliquerTransition(tx, access, study, row, actorId, action, input);
     const [stored] = await tx.select().from(studioPublications).where(eq(studioPublications.id, row.id)).limit(1);
     return (await views(tx, access, actorId, [stored!], true))[0]!;
@@ -612,7 +620,8 @@ async function packageOf(projectId: string, studyId: string, publicationId: stri
 
 /** Fichier figé d'un paquet (diffusé, remplacé ou retiré : l'historique reste lisible) ; contenu vérifié contre son empreinte. */
 export async function readStudioPackageFile(projectId: string, studyId: string, publicationId: string, actorId: string, format: string) {
-  assertAccess(await loadProjectAccess(projectId, actorId), actorId, "export");
+  // Portée `documents` : la famille `studio` ou ce paquet (`studio:<publication>`, kind du catalogue Documents).
+  assertAccess(await loadProjectAccess(projectId, actorId), actorId, "export", { document: { famille: "studio", kind: `studio:${publicationId}` } });
   const { row, pkg } = await packageOf(projectId, studyId, publicationId, actorId);
   const file = pkg.files.find((f) => f.format === format);
   if (!file) return notFound();

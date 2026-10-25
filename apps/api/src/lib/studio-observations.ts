@@ -51,6 +51,11 @@ export interface ActeurObservation {
   estProprietaire: boolean;
   /** Droit `write` actuel (propriétaire ou éditeur). */
   peutEcrire: boolean;
+  /**
+   * Relecteur à une portée étroite qui couvre cette observation (étude, variante, ou révision où elle est ancrée) :
+   * capacité `constater` (`@parcours/domain-model`, portées étroites) — recontrôler et rouvrir, rien d'autre.
+   */
+  estRelecteur?: boolean;
 }
 
 /** Le statut d'arrivée, ou null si le passage n'est pas permis depuis ce statut. */
@@ -67,18 +72,18 @@ export function statutApres(statut: StudioObservationStatut, action: Observation
 export function acteurAutorise(action: ObservationTransition, a: ActeurObservation, _statut?: StudioObservationStatut): boolean {
   switch (action) {
     case "corriger": return a.estResponsable && a.peutEcrire;
-    case "recontroler": return a.estAuteur || a.estProprietaire;
+    case "recontroler": return a.estAuteur || a.estProprietaire || a.estRelecteur === true;
     case "cloturer": return a.estProprietaire;
-    case "rouvrir": return a.estAuteur || a.estProprietaire;
+    case "rouvrir": return a.estAuteur || a.estProprietaire || a.estRelecteur === true;
     case "reattribuer": return a.estProprietaire;
   }
 }
 
 export const REFUS_ACTEUR: Record<ObservationTransition, string> = {
   corriger: "Seul le responsable de l'observation, propriétaire ou éditeur du projet, la déclare corrigée.",
-  recontroler: "Seul l'auteur de l'observation ou le propriétaire du projet la recontrôle.",
+  recontroler: "Seuls l'auteur de l'observation, le propriétaire du projet ou un Relecteur de sa portée la recontrôlent.",
   cloturer: "Seul le propriétaire du projet clôture une observation.",
-  rouvrir: "Seul l'auteur de l'observation ou le propriétaire du projet la rouvre.",
+  rouvrir: "Seuls l'auteur de l'observation, le propriétaire du projet ou un Relecteur de sa portée la rouvrent.",
   reattribuer: "Seul le propriétaire du projet réattribue une observation.",
 };
 

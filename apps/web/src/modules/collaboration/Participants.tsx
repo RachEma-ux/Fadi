@@ -19,6 +19,7 @@ import { LOCALE } from "../../lib/i18n";
 import { apiMessage, ConfirmDialog } from "../../components/comptes/ComptesUI";
 import { COMMANDES_COLLABORATION, declenche, propsRaccourci, type CommandeParticipants } from "./commandes-collaboration";
 import { IconeCollaboration, RaccourciCollaboration } from "./IconeCollaboration";
+import { CapaciteResultante, libelleElement, resumeCapacite, SelecteurElement, useElementsPortee } from "./PorteeElement";
 import { OrganisationsProjet } from "./OrganisationsProjet";
 import {
   BUSINESS_ROLES, participantsApi, RESPONSIBILITIES, ROLE_SCOPES,
@@ -185,7 +186,8 @@ export function ParticipantsSection({ projectId }: { projectId: string }) {
                           {p.roles.map((r) => (
                             <li key={r.id} data-role={`${r.role}:${r.scopeType}`}>
                               {ROLE_LABEL[r.role]}
-                              <small className="h7-muted">{` · ${SCOPE_LABEL[r.scopeType]}${r.scopeId ? ` : ${r.scopeId}` : ""} · ${r.origin === "acces" ? "du partage" : "attribué"}`}</small>
+                              <small className="h7-muted">{` · ${SCOPE_LABEL[r.scopeType]}`}{r.scopeId ? <>{" : "}<span translate="no">{r.scopeId}</span></> : null}{` · ${r.origin === "acces" ? "du partage" : "attribué"}`}</small>
+                              {resumeCapacite(r.role, r.scopeType) ? <small className="h7-muted" data-capacite-role={r.id}>{` · ${resumeCapacite(r.role, r.scopeType)}`}</small> : null}
                             </li>
                           ))}
                         </ul>
@@ -451,6 +453,7 @@ function RolesForm({ projectId, p, onClose, onDone, onError }: { projectId: stri
   const [role, setRole] = useState<BusinessRole>("lecteur");
   const [scope, setScope] = useState<RoleScope>("projet");
   const [scopeId, setScopeId] = useState("");
+  const elements = useElementsPortee(projectId, true);
   const assign = useMutation({
     mutationFn: () => participantsApi.assignRole(projectId, p.id, role, scope, scope === "projet" ? null : scopeId.trim()),
     onSuccess: () => onDone(`Rôle ${ROLE_LABEL[role]} attribué.`),
@@ -474,7 +477,10 @@ function RolesForm({ projectId, p, onClose, onDone, onError }: { projectId: stri
               if (r.origin === "attribution" && !remove.isPending && declenche(e, "retirer-role")) { e.preventDefault(); e.stopPropagation(); remove.mutate(r.id); }
             }}
           >
-            {`${ROLE_LABEL[r.role]} · ${SCOPE_LABEL[r.scopeType]}${r.scopeId ? ` : ${r.scopeId}` : ""} · ${r.origin === "acces" ? "du partage" : "attribué"}`}{" "}
+            {`${ROLE_LABEL[r.role]} · ${SCOPE_LABEL[r.scopeType]}`}
+            {r.scopeId ? <>{" : "}<span translate="no" data-element-portee={r.scopeId}>{libelleElement(elements, r.scopeType, r.scopeId)}</span></> : null}
+            {` · ${r.origin === "acces" ? "du partage" : "attribué"}`}
+            {resumeCapacite(r.role, r.scopeType) ? <small className="h7-muted" data-capacite-role={r.id}>{` · ${resumeCapacite(r.role, r.scopeType)}`}</small> : null}{" "}
             {r.origin === "attribution"
               ? <Commande commande="retirer-role" disabled={remove.isPending} label={`Retirer le rôle ${ROLE_LABEL[r.role]}`} onClick={() => remove.mutate(r.id)} />
               : <small className="h7-muted">se change dans « Membres du projet »</small>}
@@ -489,12 +495,13 @@ function RolesForm({ projectId, p, onClose, onDone, onError }: { projectId: stri
       </label>
       <label>
         Portée
-        <select value={scope} onChange={(e) => setScope(e.target.value as RoleScope)} data-champ="portee">
+        <select value={scope} onChange={(e) => { setScope(e.target.value as RoleScope); setScopeId(""); }} data-champ="portee">
           {ROLE_SCOPES.map((s) => <option key={s} value={s}>{SCOPE_LABEL[s]}</option>)}
         </select>
       </label>
-      {scope !== "projet" && <label>Identifiant de la portée<input value={scopeId} required maxLength={120} onChange={(e) => setScopeId(e.target.value)} /></label>}
-      <p className="h7-muted">Seuls les rôles de portée Projet donnent un accès ; une portée plus étroite est enregistrée sans droit tant qu’aucun écran ne l’évalue. Un contact sans compte ne reçoit aucun rôle avant d’avoir accepté une invitation.</p>
+      {scope !== "projet" && <SelecteurElement projectId={projectId} scope={scope} el={elements} value={scopeId} onChange={setScopeId} />}
+      <CapaciteResultante role={role} scope={scope} lit={p.access !== null} />
+      <p className="h7-muted">Seuls les rôles de portée Projet ouvrent le projet. Un contact sans compte ne reçoit aucun rôle avant d’avoir accepté une invitation.</p>
       <div className="h7-actions">
         <button type="submit" className="button-primary participants-commande" disabled={assign.isPending || (scope !== "projet" && !scopeId.trim())} {...propsRaccourci("attribuer-role")}>
           <IconeCollaboration commande="attribuer-role" />
