@@ -45164,11 +45164,11 @@
         ],
         "preparation_initiale": "Corpus autorisé, SHA/build, contrats ; bases jetables pour tests mutateurs"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Exécuté",
+        "portee": "Instruction G4 — BLOC-02 / TEST-035 : refus d'accès entre projets par les tâches serveur (25 octobre 2026)"
       },
       "preuves": [
         {
@@ -45198,6 +45198,18 @@
           "auteur": "A5",
           "date_UTC": "2026-10-18",
           "limite": "État de préparation documentaire ; aucune réalisation logicielle, conformité, gate ou acceptation métier déduite."
+        },
+        {
+          "type": "test_automatise",
+          "fichier": "apps/api/src/routes/studio-taches-projets.preuves-bloc02.test.ts",
+          "controles": [
+            "TEST-035 / BLOC-02 — aucun accès entre projets par une tâche serveur > TEST-035 / BLOC-02 [−] booléen exact : lot visant la variante de q, adresse mêlée, opérandes ou base de q dans un lot sur p → refusé sans fuite, noyau exact jamais chargé ni appelé, rien d'écrit",
+            "TEST-035 / BLOC-02 — aucun accès entre projets par une tâche serveur > TEST-035 / BLOC-02 [−] contrôle d'exigences et rapprochement des observations : variante de q, adresse mêlée ou révision de q citée sur p → 404 (objet de q ancré : refus nommé), ni contrôle ni rapprochement calculé, rien d'écrit",
+            "TEST-035 / BLOC-02 — aucun accès entre projets par une tâche serveur > TEST-035 / BLOC-02 [−] relecture des modèles externes : réception sur la variante de q ou adresse mêlée, comparaison / décision d'un modèle de q depuis p → 404 (décision : 403 avant toute recherche), aucun modèle relu ni comparé, rien d'écrit",
+            "TEST-035 / BLOC-02 — aucun accès entre projets par une tâche serveur > TEST-035 / BLOC-02 [−] composition des feuilles et dossiers : feuille sur la variante ou la révision de q, dossier citant une feuille ou un métré de q → refusé sans fuite, aucune vue composée, rien d'écrit"
+          ],
+          "rapport": "docs/workstreams/studio/DOSSIER-G4.md",
+          "limite": "Test API sur base simulée avec espions des traitements serveur et instantané de la base, éprouvé par mutation ; exécuté en CI."
         }
       ],
       "github": {
@@ -45207,24 +45219,16 @@
         "pr_preparation_courante": 172
       },
       "blocage": {
-        "cause": {
-          "lacunes": [
-            "Réalisation/test sur SHA cible non démontrés ; contrats/décisions/gates applicables conservés."
-          ],
-          "responsable_declencheur": {
-            "owner": "A5",
-            "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
-          }
-        },
-        "responsable": "A5",
-        "essais_effectues": "Qualification individuelle A5 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
-        "deblocage": "Transformer prescription en cas de non-régression du lot autorisé ; conserver défaut ouvert jusqu’à résultat réel et revue."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Instruction G4 — BLOC-02 / TEST-035 : refus d'accès entre projets par les tâches serveur (25 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Instruction G4 : refus par URL, export et composition prouvés (TEST-035) ; reste à recetter un refus d'accès entre projets par une tâche serveur (le recalcul des booléens exacts, lot F2, en est une).",
+      "suite": "Rejouer sur le build candidat figé (R.1-01) au moment de G4.",
       "composants_candidats": "apps/web/e2e ; tests packages ; scripts/bench ; workflows",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -45263,6 +45267,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/DOSSIER-G4.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Instruction G4 — BLOC-02 / TEST-035 : refus d'accès entre projets par les tâches serveur (25 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/DOSSIER-G4.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -60370,11 +60381,11 @@
         ],
         "preparation_initiale": "Corpus autorisé, SHA/build, contrats ; bases jetables pour tests mutateurs"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Partiel",
-        "portee": "Refus d’accès par une tâche (job) à recetter."
+        "etat": "Exécuté",
+        "portee": "Instruction G4 — BLOC-02 / TEST-035 : refus d'accès entre projets par les tâches serveur (25 octobre 2026)"
       },
       "preuves": [
         {
@@ -60394,6 +60405,18 @@
           "fichier": "docs/ai-team/reports/mission-003/A5/studio-38-oracles.csv",
           "reference_code": "27c0c5a35e2f116752a83a9c66459484488a1975",
           "limite": "Préparation par groupe ; ce lien ne démontre pas à lui seul la condition de clôture de cet ID."
+        },
+        {
+          "type": "test_automatise",
+          "fichier": "apps/api/src/routes/studio-taches-projets.preuves-bloc02.test.ts",
+          "controles": [
+            "TEST-035 / BLOC-02 — aucun accès entre projets par une tâche serveur > TEST-035 / BLOC-02 [−] booléen exact : lot visant la variante de q, adresse mêlée, opérandes ou base de q dans un lot sur p → refusé sans fuite, noyau exact jamais chargé ni appelé, rien d'écrit",
+            "TEST-035 / BLOC-02 — aucun accès entre projets par une tâche serveur > TEST-035 / BLOC-02 [−] contrôle d'exigences et rapprochement des observations : variante de q, adresse mêlée ou révision de q citée sur p → 404 (objet de q ancré : refus nommé), ni contrôle ni rapprochement calculé, rien d'écrit",
+            "TEST-035 / BLOC-02 — aucun accès entre projets par une tâche serveur > TEST-035 / BLOC-02 [−] relecture des modèles externes : réception sur la variante de q ou adresse mêlée, comparaison / décision d'un modèle de q depuis p → 404 (décision : 403 avant toute recherche), aucun modèle relu ni comparé, rien d'écrit",
+            "TEST-035 / BLOC-02 — aucun accès entre projets par une tâche serveur > TEST-035 / BLOC-02 [−] composition des feuilles et dossiers : feuille sur la variante ou la révision de q, dossier citant une feuille ou un métré de q → refusé sans fuite, aucune vue composée, rien d'écrit"
+          ],
+          "rapport": "docs/workstreams/studio/DOSSIER-G4.md",
+          "limite": "Test API sur base simulée avec espions des traitements serveur et instantané de la base, éprouvé par mutation ; exécuté en CI."
         }
       ],
       "github": {
@@ -60404,14 +60427,14 @@
       "blocage": {
         "cause": null,
         "responsable": "Chef de projet",
-        "essais_effectues": "Rapprochement des assertions existantes (rapport).",
+        "essais_effectues": "Instruction G4 — BLOC-02 / TEST-035 : refus d'accès entre projets par les tâches serveur (25 octobre 2026)",
         "deblocage": null
       },
-      "suite": "Refus sans fuite par URL, export et composition de publication (« TEST-035 », API) ; aucune tâche serveur n’existe dans Studio pour éprouver le cas « job ».",
+      "suite": "Rejouer sur le build candidat figé (R.1-01) au moment de G4.",
       "composants_candidats": "apps/web/e2e ; tests packages ; scripts/bench ; workflows",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -60442,6 +60465,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Instruction G4 — BLOC-02 / TEST-035 : refus d'accès entre projets par les tâches serveur (25 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/DOSSIER-G4.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -79793,9 +79823,9 @@
       "raison": "DEV_SCOPE et baseline du périmètre accepté non établis ; ne pas inventer un dénominateur."
     },
     "P630": {
-      "V630": 423,
+      "V630": 425,
       "denominateur": 630,
-      "pourcentage": 67.1,
+      "pourcentage": 67.5,
       "IDs": [
         "SRC-01",
         "SRC-02",
@@ -80063,6 +80093,7 @@
         "MES-02",
         "MES-04",
         "BLOC-01",
+        "BLOC-02",
         "BLOC-03",
         "BLOC-04",
         "BLOC-05",
@@ -80128,6 +80159,7 @@
         "TEST-030",
         "TEST-031",
         "TEST-034",
+        "TEST-035",
         "TEST-036",
         "TEST-037",
         "TEST-038",
@@ -80223,7 +80255,7 @@
       ],
       "limite": "259 obligations vérifiées (documentaires, par recette ou test exécuté, ou par contrôle existant contre-vérifié indépendamment le 25 octobre 2026) et 58 acceptations (2 de cadrage G0, 56 décisions ADR-STUDIO-PILOTE-01 sous délégation du maître d’ouvrage). Pas un taux de développement ; G1–G4 non acceptées.",
       "mapping_barre": {
-        "Vérifié documentaire": 364,
+        "Vérifié documentaire": 366,
         "Accepté cadrage documentaire G0": 59
       }
     }

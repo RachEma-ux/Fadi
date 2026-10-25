@@ -1,5 +1,21 @@
 # Reprise — Studio
 
+## BLOC-02 vérifié — les quatre éliminatoires de G4 contrôlés — 25 octobre 2026
+
+Branche `ccr-187fd2e6-08dk6e`, base `main@933da19` (G1 franchie, PR #322).
+
+Ce qui a été fait :
+- **TEST-035 et BLOC-02 vérifiés.** Un compte du projet A ne peut faire tourner aucune tâche serveur sur le projet B : recalcul des booléens exacts, contrôle d'exigences, rapprochement des observations, relecture des modèles externes, composition des feuilles et dossiers.
+  - Le refus ne fuit rien et n'écrit rien.
+  - Des espions vérifient que le traitement ne tourne pas, et un témoin positif qu'il tourne pour une demande légitime.
+  - Le test est éprouvé par 9 mutations.
+- **Correctif.** Le noyau exact n'est plus chargé avant que le serveur ait relu les opérandes.
+- **G4.** Ses quatre défauts éliminatoires (BLOC-01 à 04) sont désormais contrôlés en CI ([DOSSIER-G4](DOSSIER-G4.md)). G4 n'est pas franchie : le build candidat figé, l'installation de la phase B, la recette utilisateur réelle et les actes du maître d'ouvrage restent dus.
+
+Compteurs recalculés du registre : **0 À définir / 61 À faire / 133 En cours / 11 Bloqué / 366 Vérifié / 59 Accepté**. **P630=425/630**.
+
+Prochaine action : PR de ce lot, CI verte, puis fusion. Ensuite, livrer ou faire déclarer hors pilote les fonctions absentes et les décisions du point 2. Les étapes de G4 qui reviennent à l'administrateur et au maître d'ouvrage sont décrites au §5 du dossier.
+
 ## Point 4 — porte G1 franchie, G4 instruite — 25 octobre 2026
 
 Branche `ccr-187fd2e6-08dk6e`, base `main@bf775d9` (point 2 fusionné, PR #320).
@@ -15,7 +31,7 @@ Ce qui a été fait :
   - la recette utilisateur réelle ;
   - les actes du maître d'ouvrage.
 
-Compteurs recalculés du registre : **0 À définir / 61 À faire / 135 En cours / 11 Bloqué / 364 Vérifié / 59 Accepté**. **P630=423/630**.
+Compteurs recalculés du registre : à cette date 364 Vérifié, 59 Accepté, 11 Bloqué, 135 En cours, 61 À faire, 0 À définir ; 423 obligations sur 630 closes.
 
 Prochaine action : PR de ce lot, puis CI verte et fusion. Ensuite, côté session cloud :
 - recetter BLOC-02 (refus par une tâche serveur) ;
