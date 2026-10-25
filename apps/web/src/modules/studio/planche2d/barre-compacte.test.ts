@@ -19,7 +19,8 @@ describe("Barre compacte — familles", () => {
     expect(ELEMENTS_FAMILLE.get("annotation")?.map((e) => e.id)).toEqual(["studio.dessin.cote", "studio.dessin.cote-angulaire", "studio.dessin.texte"]);
     expect(ELEMENTS_FAMILLE.get("selection")?.map((e) => e.id)).toEqual(["studio.dessin.selection", "tout-selectionner"]);
     expect(ELEMENTS_FAMILLE.get("vue")?.map((e) => e.id)).toContain("accrochage-grille");
-    expect(ELEMENTS_FAMILLE.get("echanges")?.map((e) => e.id)).toEqual(["importer-dxf", "exporter-svg", "exporter-dxf", "exporter-ifc", "echanges"]);
+    // Lot F3 : les deux outils des éléments non natifs (registre) en tête, puis Importer IFC et Modèles externes.
+    expect(ELEMENTS_FAMILLE.get("echanges")?.map((e) => e.id)).toEqual(["studio.nonnatif.conserver", "studio.nonnatif.retirer", "importer-dxf", "importer-ifc", "modeles-externes", "exporter-svg", "exporter-dxf", "exporter-ifc", "echanges"]);
     expect(familleDeOutil("studio.dessin.cote")).toBe("annotation");
     expect(familleDeOutil("studio.objet.extruder")).toBe("volume");
   });

@@ -23,6 +23,8 @@ développeur : `README.md`, `docs/architecture.md`, `docs/migration/matrix.md`.
 
 ## Règles essentielles (le détail est dans AGENTS.md)
 
+- Heures données au maître d'ouvrage : toujours en heure suisse (Europe/Zurich, CET / CEST), jamais en UTC ; convertir
+  les heures des journaux, de la CI et du VPS (UTC) avant de les citer.
 - Les 21 étapes (01–21, phases, libellés, cartes mobiles) sont intouchables ; Harmonie reste dans les étapes. L'anglais
   n'en est qu'un affichage traduit : les libellés source restent ceux du français.
 - Interface bilingue : tout nouveau texte d'interface s'écrit en français dans le code et reçoit sa traduction dans

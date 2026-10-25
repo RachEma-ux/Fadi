@@ -50,11 +50,15 @@ chargé de tâche — rôle vérifié ensuite par `lib/studio-observations.ts`, 
 | `PUT /preferences/outils` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | préférences du compte (INV-009) : lecture du projet suffit |
 | `GET /preferences/catalogue` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `GET /publications` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `GET /delegations` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | délégations d'approbation (EX-085) : toutes pour le propriétaire, sinon celles dont on est délégant ou délégué |
+| `POST /delegations` | proprietaire | 404 | 403 | 403 | 403 | admis | admis | admis | 201 | délégation d'approbation (EX-085) : qui détient le droit d'approuver sur la portée ; elle ne modifie aucun contenu, la réservation d'édition ne s'y oppose pas (elle s'oppose à son emploi) |
+| `POST /delegations/:delegationId/revoquer` | acteur | 404 | 403 | 403 | 403 | admis | admis | admis | 200 | révocation motivée : le délégant (propriétaire) ou le propriétaire du projet ; le délégué ne révoque pas |
 | `GET /studies/:studyId/publications` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `POST /studies/:studyId/variants/:variantId/publications` | ecriture | 404 | 403 | admis | 423 | admis | 423 | admis | 201 |  |
 | `GET /studies/:studyId/publications/:publicationId` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `GET /studies/:studyId/publications/:publicationId/verification` | lecture | 404 | admis | admis | admis | admis | admis | admis | 404 not_found |  |
 | `GET /studies/:studyId/publications/:publicationId/files/:format` | lecture | 404 | admis | admis | admis | admis | admis | admis | 404 not_found |  |
+| `GET /studies/:studyId/publications/:publicationId/controle-approbation` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 200 | aperçu de l'auto-contrôle (OP-6) : même accès que l'approbation (rôle, puis réservation d'édition d'un autre compte) ; lecture seule |
 | `POST /studies/:studyId/publications/:publicationId/:action` | ecriture | 404 | 403 | admis | 423 | admis | 423 | admis | 200 | action soumettre |
 | `POST /studies/:studyId/publications/:publicationId/:action` | ecriture | 404 | 403 | admis | 423 | admis | 423 | admis | 409 manifest_current | action actualiser |
 | `POST /studies/:studyId/publications/:publicationId/:action` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 409 invalid_transition | action approuver |
@@ -74,6 +78,8 @@ chargé de tâche — rôle vérifié ensuite par `lib/studio-observations.ts`, 
 | `GET /studies/:studyId/variants/:variantId/observations` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `POST /studies/:studyId/variants/:variantId/observations` | commentaire | 404 | admis | admis | admis | admis | admis | admis | 201 |  |
 | `GET /studies/:studyId/variants/:variantId/observations/:observationId` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `GET /studies/:studyId/variants/:variantId/observations/rapprochements` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | rapprochements consignés (EX-086), audience du fil respectée |
+| `POST /studies/:studyId/variants/:variantId/observations/rapprochements` | ecriture | 404 | 403 | admis | 423 | admis | 423 | admis | 200 | rapprochement sur demande avec la tête (EX-086) : propriétaire ou éditeur ; aucun statut d'observation modifié |
 | `POST /studies/:studyId/variants/:variantId/observations/:observationId/transitions` | acteur | 404 | 403 | admis | 403 | 403 | 403 | 403 | 403 forbidden | corriger : le responsable (éditeur) avec le droit d'écrire, seul |
 | `POST /studies/:studyId/variants/:variantId/observations/:observationId/liens` | acteur | 404 | 403 | admis | 403 | admis | admis | admis | 201 | droit d'écrire et auteur (propriétaire), responsable (éditeur) ou propriétaire |
 | `POST /studies/:studyId/variants/:variantId/observations/:observationId/taches` | acteur | 404 | 403 | admis | 403 | admis | admis | admis | 201 | propriétaire, ou responsable (éditeur) avec le droit d'écrire |
@@ -90,6 +96,13 @@ chargé de tâche — rôle vérifié ensuite par `lib/studio-observations.ts`, 
 | `GET /studies/:studyId/dossiers/:dossierId` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `PATCH /studies/:studyId/dossiers/:dossierId` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 200 |  |
 | `GET /studies/:studyId/dossiers/:dossierId/files/:format` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `GET /studies/:studyId/variants/:variantId/modeles-externes` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `POST /studies/:studyId/variants/:variantId/modeles-externes` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 201 | fichier relu et comparé par le serveur ; la variante n'est pas modifiée |
+| `GET /studies/:studyId/variants/:variantId/modeles-externes/:modelId` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `GET /studies/:studyId/variants/:variantId/modeles-externes/:modelId/contenu` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | fichier reçu tel quel : droit export (lecteur compris, jamais l'accès support) |
+| `POST /studies/:studyId/variants/:variantId/modeles-externes/:modelId/:action` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 200 | action comparer |
+| `POST /studies/:studyId/variants/:variantId/modeles-externes/:modelId/:action` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 200 | action accepter |
+| `POST /studies/:studyId/variants/:variantId/modeles-externes/:modelId/:action` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 200 | action refuser |
 
 « (à arbitrer) » : cellule exécutée et épinglée telle que le serveur répond aujourd'hui, sans changement de
 comportement ; la règle attend une décision du maître d'ouvrage.

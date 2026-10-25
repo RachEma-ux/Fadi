@@ -176,6 +176,8 @@ describe("revue externe : constats, nouvelle version, approbation nommée, diffu
     const approved = await s.alice.client.get(`${s.pubs}/${s.pubId}`);
     expect(approved.body.workStatus).toBe("approuve");
     expect(approved.body.approval.by.id).toBe(s.ana.id);
+    // OP-6 : Ana n'a ni produit ni soumis le dossier — approbation non marquée.
+    expect(approved.body.approvedSelfControl).toBe(false);
     expect(approved.body.diffusionStatus).toBe("non-diffuse");
     const diffused = await s.alice.client.post(`${s.pubs}/${s.pubId}/diffuser`).send({});
     expect(diffused.status).toBe(200);
@@ -185,5 +187,53 @@ describe("revue externe : constats, nouvelle version, approbation nommée, diffu
     const audit = await pool.query("SELECT action, metadata::text AS m FROM admin.audit_log WHERE action LIKE 'review.%' AND metadata->>'projectId' = $1", [s.pid]);
     expect(audit.rows.map((r) => r.action)).toEqual(expect.arrayContaining(["review.package.shared", "review.finding.created", "review.decision.recorded", "review.package.superseded"]));
     expect(audit.rows.every((r) => !String(r.m).includes("@"))).toBe(true);
+  });
+});
+
+describe("revue externe : auto-contrôle de l'approbatrice nommée (OP-6)", () => {
+  it("signalé par défaut, refusé (422) quand l'option est désactivée, sans e-mail des autres approbateurs ; marque visible", async () => {
+    const s = await setup();
+    await s.ana.client.post("/auth/invitations/accept").send({ token: tokenOf(s.linkAna) });
+    // Ana devient la dernière à avoir soumis le dossier (évènement inséré dans le journal append-only, comme une soumission).
+    const pub = (await pool.query("SELECT revision_id, document_hash, manifest_hash FROM studio_publications WHERE id = $1", [s.pubId])).rows[0];
+    await pool.query(
+      "INSERT INTO studio_publication_events (id, publication_id, action, from_status, to_status, work_status, diffusion_status, author_id, revision_id, document_hash, head_revision_id, manifest_hash, created_at) VALUES ($1, $2, 'soumettre', 'soumis', 'soumis', 'en-revue', 'non-diffuse', $3, $4, $5, $4, $6, now() + interval '1 second')",
+      [`ev-${randomUUID()}`, s.pubId, s.ana.id, pub.revision_id, pub.document_hash, pub.manifest_hash]);
+    const check = await s.ana.client.get(`/reviews/${s.p1}/controle-approbation`);
+    expect(check.status).toBe(200);
+    expect(check.body).toMatchObject({ autoControle: true, revisionsAuteur: 0, soumisParLui: true, autorise: true, approvers: [] });
+    // Relecteur : aucun aperçu (pas d'affectation d'approbation).
+    await s.rex.client.post("/auth/invitations/accept").send({ token: tokenOf(s.linkRex) });
+    expect((await s.rex.client.get(`/reviews/${s.p1}/controle-approbation`)).status).toBe(403);
+    // Option désactivée (administration : voir app.test.ts) → aperçu fermé, approbation refusée, rien n'est écrit.
+    await pool.query("UPDATE users SET self_control_allowed = false WHERE id = $1", [s.ana.id]);
+    const closed = await s.ana.client.get(`/reviews/${s.p1}/controle-approbation`);
+    expect(closed.body.autorise).toBe(false);
+    expect(closed.body.approvers).toEqual([{ name: null, role: "proprietaire" }]);
+    expect(JSON.stringify(closed.body)).not.toContain(s.alice.email);
+    const refused = await s.ana.client.post(`/reviews/${s.p1}/approve`).send({ manifestHash: s.pub.manifestHash });
+    expect(refused.status).toBe(422);
+    expect(refused.body).toMatchObject({ error: "self_approval_forbidden", soumisParLui: true, revisionsAuteur: 0 });
+    expect(JSON.stringify(refused.body)).not.toContain("@");
+    expect((await s.alice.client.get(`${s.pubs}/${s.pubId}`)).body.workStatus).toBe("en-revue");
+    expect((await pool.query("SELECT 1 FROM admin.audit_log WHERE action = 'review.decision.recorded' AND metadata->>'projectId' = $1", [s.pid])).rowCount).toBe(0);
+    // Option rétablie → approbation enregistrée et marquée ; audit, vue de la revue et suivi d'équipe la portent.
+    await pool.query("UPDATE users SET self_control_allowed = true WHERE id = $1", [s.ana.id]);
+    const approve = await s.ana.client.post(`/reviews/${s.p1}/approve`).send({ manifestHash: s.pub.manifestHash });
+    expect(approve.status).toBe(200);
+    expect(approve.body).toEqual({ decision: "approuver", selfControl: true });
+    const view = await s.alice.client.get(`${s.pubs}/${s.pubId}`);
+    expect(view.body.approvedSelfControl).toBe(true);
+    expect((view.body.events as { action: string; selfControl: boolean | null }[]).filter((e) => e.action === "approuver").map((e) => e.selfControl)).toEqual([true]);
+    expect((await s.ana.client.get(`/reviews/${s.p1}`)).body.publication.approvedSelfControl).toBe(true);
+    const team = await s.alice.client.get(`/projects/${s.pid}/reviews`);
+    expect((team.body.packages as { id: string; publication: { approvedSelfControl: boolean } }[]).find((p) => p.id === s.p1)!.publication.approvedSelfControl).toBe(true);
+    const audit = (await pool.query("SELECT metadata FROM admin.audit_log WHERE action = 'review.decision.recorded' AND metadata->>'projectId' = $1", [s.pid])).rows;
+    expect(audit).toHaveLength(1);
+    expect(audit[0].metadata).toMatchObject({ selfControl: true, soumisParLui: true, revisionsAuteur: 0 });
+    // Manifeste et empreintes inchangés par la marque.
+    const after = (await pool.query("SELECT manifest_hash, approved_manifest_hash FROM studio_publications WHERE id = $1", [s.pubId])).rows[0];
+    expect(after.manifest_hash).toBe(pub.manifest_hash);
+    expect(after.approved_manifest_hash).toBe(pub.manifest_hash);
   });
 });

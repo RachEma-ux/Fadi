@@ -3,9 +3,11 @@
 # (même version que package-lock.json), client PostgreSQL 16. Jamais déployée : sert à `fadi-preprod check|e2e|backup|restore-check`.
 #
 # Durée de construction : les builds (apps/api/dist, apps/web/dist) ne sont pas refaits ici, ils sont copiés de l'image
-# applicative du même commit (contexte `app` = `service:app` dans compose.yml, seul contexte admis par la garde ; Compose
-# la construit d'abord) ; tout est installé directement en pwuser (COPY --chown) : aucune couche `chown -R` ne recopie
-# node_modules à chaque commit.
+# applicative du même commit (APP_IMAGE, construite juste avant par `fadi-preprod build`, vérifiée par la garde) ; tout
+# est installé directement en pwuser (COPY --chown) : aucune couche `chown -R` ne recopie node_modules à chaque commit.
+ARG APP_IMAGE=fadi-preprod-app:inconnu
+FROM ${APP_IMAGE} AS app
+
 FROM mcr.microsoft.com/playwright:v1.56.0-noble
 RUN apt-get update \
  && apt-get install -y --no-install-recommends postgresql-client-16 \

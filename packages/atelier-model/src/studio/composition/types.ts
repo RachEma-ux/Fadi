@@ -14,6 +14,7 @@ import type { StudioLayer, StudioPoint } from "../noyau/types.js";
 import type { StudioArchitectureItem, StudioOpening, StudioWall } from "../architecture/types.js";
 import type { StudioPropriete } from "../exigences/proprietes.js";
 import type { StudioApparence, StudioElementVisualisation, StudioScene } from "../scenes/scenes.js";
+import type { StudioNonNatif } from "../non-natifs/non-natifs.js";
 
 /**
  * Types composés du document Studio (`studio-document/1`) : le document entier et le contrat de commandes rassemblent
@@ -58,6 +59,11 @@ export interface StudioDocument {
    * d’affichage (`scenes/`) ; réglages de vue seulement, jamais lus par la géométrie, les quantités ni les exports.
    */
   scenes?: StudioElementVisualisation[];
+  /**
+   * Éléments non natifs (extension additive, facultative, lot F3) : entités lues à l’import sans équivalent natif,
+   * conservées avec leur origine et leur raison (`non-natifs/`) ; non éditables, exclues des métrés et des exports.
+   */
+  nonNatifs?: StudioNonNatif[];
 }
 export type StudioCommand =
   | { toolId: "studio.dessin.ligne"; params: StudioLine }
@@ -100,7 +106,9 @@ export type StudioCommand =
   | { toolId: "studio.scene.modifier"; params: StudioScene }
   | { toolId: "studio.scene.supprimer"; params: { ids: string[] } }
   | { toolId: "studio.apparence.definir"; params: StudioApparence }
-  | { toolId: "studio.apparence.retirer"; params: { ids: string[] } };
+  | { toolId: "studio.apparence.retirer"; params: { ids: string[] } }
+  | { toolId: "studio.nonnatif.conserver"; params: StudioNonNatif }
+  | { toolId: "studio.nonnatif.retirer"; params: { ids: string[] } };
 export type StudioCommandToolId = StudioCommand["toolId"];
 export interface StudioEnvelope {
   contractVersion: typeof STUDIO_CONTRACT;

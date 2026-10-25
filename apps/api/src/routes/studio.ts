@@ -17,9 +17,12 @@ import { studioObservationsRouter } from "./studio-observations.js";
 import { studioPreferencesRouter } from "./studio-preferences.js";
 import { studioQuantitesRouter } from "./studio-quantites.js";
 import { studioDossiersRouter } from "./studio-dossiers.js";
+import { studioModelesExternesRouter } from "./studio-modeles-externes.js";
 
 export const studioRouter = Router({ mergeParams: true });
 studioRouter.use(requireAuth);
+// Modèles externes (lot F3) : le fichier reçu (5 Mo de texte au plus) voyage dans le corps JSON, borné à 6 Mo ici seulement.
+studioRouter.use("/studies/:studyId/variants/:variantId/modeles-externes", json({ limit: "6mb" }));
 studioRouter.use(json({ limit: "1mb" }));
 studioRouter.use("/preferences", studioPreferencesRouter);
 // `requestId` facultatif : même règle d'identifiant que les enveloppes de commandes ; rejeu = réponse 201 d'origine.
@@ -266,3 +269,5 @@ studioRouter.use(studioQuantitesRouter);
 studioRouter.use(studioObservationsRouter);
 // Feuilles composées et dossiers de conception (E.3-01 à E.3-03, E.3-06) : `routes/studio-dossiers.ts`.
 studioRouter.use(studioDossiersRouter);
+// Modèles externes (partenaires) d'une variante (lot F3) : réception, comparaison, acceptation ou refus.
+studioRouter.use(studioModelesExternesRouter);

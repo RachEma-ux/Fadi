@@ -7,7 +7,7 @@
 import { quantitesStudio, type GrandeurQuantite, type StudioDocument } from "@parcours/atelier-model";
 import { ApiError } from "../../../lib/api";
 import { LIBELLE_GRANDEUR } from "../quantites/quantites-vue";
-import type { DecisionObservation, DomaineObservation, ObservationSuivie, PassageTache, PassageTacheLu, StatutTache, VueObservation } from "./api-observations";
+import type { DecisionObservation, DomaineObservation, ObservationSuivie, PassageTache, PassageTacheLu, RapprochementLu, StatutTache, SuiviRapprochement, VueObservation } from "./api-observations";
 
 export const DOMAINES: readonly DomaineObservation[] = ["objet", "metre", "exigence", "revue"];
 export const LIBELLE_DOMAINE: Record<DomaineObservation, string> = {
@@ -22,6 +22,27 @@ export const LIBELLE_VUE: Record<VueObservation, string> = {
 export const LIBELLE_STATUT_TACHE: Record<StatutTache, string> = { "a-faire": "À faire", faite: "Faite", annulee: "Annulée" };
 export const LIBELLE_PASSAGE_TACHE: Record<PassageTache, string> = { terminer: "Déclarer faite", annuler: "Annuler la tâche", rouvrir: "Rouvrir", reattribuer: "Réattribuer" };
 export const LIBELLE_JOURNAL_TACHE: Record<PassageTacheLu["action"], string> = { creer: "Créée", terminer: "Faite", annuler: "Annulée", rouvrir: "Rouverte", reattribuer: "Réattribuée" };
+
+/** Statuts de suivi d'un rapprochement avec une révision ultérieure (EX-086) : jamais une clôture. */
+export const LIBELLE_SUIVI_RAPPROCHEMENT: Record<SuiviRapprochement, string> = {
+  "objet-disparu": "Objet disparu de la révision : résolution explicite requise",
+  persiste: "Écart persistant dans la révision",
+  "a-recontroler": "Éléments retrouvés : à recontrôler",
+  "non-rapprochable": "Aucun élément rapprochable",
+};
+/**
+ * Rapprochement affiché pour chaque observation : le plus récent avec la révision affichée s'il en existe un, sinon le
+ * plus récent tout court (par date, puis par identifiant).
+ */
+export function dernierRapprochement(liste: readonly RapprochementLu[], revisionAffichee?: string): Map<string, RapprochementLu> {
+  const out = new Map<string, RapprochementLu>();
+  const rang = (r: RapprochementLu) => (r.revisionId === revisionAffichee ? 1 : 0);
+  for (const r of liste) {
+    const prec = out.get(r.observationId);
+    if (!prec || rang(r) > rang(prec) || (rang(r) === rang(prec) && (prec.createdAt < r.createdAt || (prec.createdAt === r.createdAt && prec.id < r.id)))) out.set(r.observationId, r);
+  }
+  return out;
+}
 
 export function libelleDecision(d: Pick<DecisionObservation, "nature" | "portee">): string {
   if (d.nature === "decision") return d.portee === "cloture" ? "Décision de clôture" : "Décision";

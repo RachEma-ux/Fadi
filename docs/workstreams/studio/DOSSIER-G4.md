@@ -49,9 +49,11 @@ levés.
 ## 4. Procédure d'exploitation et mise en production
 
 - Préproduction : `deploy/preprod/` existe (sync, build, migrate, up, smoke, backup, restore-check).
-- **Production** : la phase B de [`docs/deploiement-automatique.md`](../../deploiement-automatique.md) prévoit un service
-  `fadi-prod-auto` (sauvegarde vérifiée, redéploiement, sondes, retour arrière). Ce service **n'existe pas dans le
-  dépôt**. Publier une Release ne déploierait donc rien automatiquement.
+- **Production** : la phase B de [`docs/deploiement-automatique.md`](../../deploiement-automatique.md) est livrée côté
+  dépôt : `deploy/prod/fadi-prod-auto`, ses unités systemd, son installateur à empreintes et ses tests à doubles
+  (`deploy/prod/tests/run.sh`, joués en CI par `consolidation-validation.yml`). Le service n'est **pas encore installé**
+  sur le VPS ; la recette d'échec simulé et de retour arrière en préproduction
+  ([recette phase B](../../deploiement-automatique-recette-phase-b.md)) reste à jouer sur place par l'administrateur.
 - Retour arrière et écritures postérieures : P-09 (OPS-03). Objectifs de perte et de conservation : P-08 (OPS-09).
 - La Release reste le geste du maître d'ouvrage ; aucun outil de cette session ne peut la publier.
 
@@ -59,5 +61,5 @@ levés.
 
 1. Lever les critères du §3, ou accepter explicitement les réserves par une décision qui nomme chaque fonction absente
    comme hors pilote.
-2. Livrer la phase B (`fadi-prod-auto`), ou décider d'une procédure manuelle documentée.
+2. Installer `fadi-prod-auto` sur le VPS et jouer sa recette d'échec simulé et de retour arrière (administrateur).
 3. Prononcer G1, puis G4 (G4-03) ; ensuite seulement vient la Release.

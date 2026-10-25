@@ -18,3 +18,16 @@
 .studio-echanges-fidelite{border-collapse:collapse;font-size:12px}
 .studio-echanges-fidelite td,.studio-echanges-fidelite th{padding:3px 6px}
 .studio-echanges-preuves code{font-size:12px}
+
+/* Modèles externes (lot F3) : formulaire de réception et détail d'un modèle reçu. */
+.studio-modeles-reception{display:grid;gap:6px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));align-items:end;border:1px solid rgba(127,127,127,.3);border-radius:8px;padding:8px}
+.studio-modeles-reception h3,.studio-modeles-reception fieldset,.studio-modeles-reception [role=alert],.studio-modeles-reception button{grid-column:1/-1}
+.studio-modeles-reception label{display:grid;gap:2px;font-size:13px}
+.studio-modeles-reception fieldset{display:grid;gap:6px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+.studio-modele-detail{border-top:1px solid rgba(127,127,127,.3);padding-top:8px;display:grid;gap:6px;min-width:0}
+.studio-modele-detail h3{margin:6px 0 2px;font-size:14px}
+.studio-modele-detail p,.studio-modele-detail ul,.studio-modele-detail ol{margin:0;overflow-wrap:anywhere}
+.studio-modele-detail textarea{display:block;width:100%;min-height:3em;font:inherit}
+.studio-lien{background:none;border:0;padding:0;color:inherit;text-decoration:underline;cursor:pointer;font:inherit;text-align:left}
+.studio-modele-declarations{display:grid;grid-template-columns:max-content 1fr;gap:2px 10px;margin:0;font-size:13px}
+.studio-modele-declarations dd{margin:0;overflow-wrap:anywhere}

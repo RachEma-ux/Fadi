@@ -1,0 +1,48 @@
+{
+  "cle": "chirps-mar-precipitations-2024",
+  "titre": "Précipitations annuelles 2024 au Maroc (CHIRPS)",
+  "description": "Cumul annuel 2024 de CHIRPS v2.0 (Climate Hazards Group, UC Santa Barbara), grille 0,05°, interpolé sur la grille Fadi.",
+  "producteur": "Climate Hazards Center, University of California Santa Barbara (CHIRPS v2.0)",
+  "theme": "climat",
+  "couverture": "Maroc (territoire de geoBoundaries gbOpen MAR ADM1)",
+  "version": {
+    "libelle": "CHIRPS v2.0 global_annual 2024",
+    "url": null,
+    "fichier": "donnees/chirps-mar-precipitations-2024.tif",
+    "empreinte": "a4b7af7c5cecd361d10cc74d608e447ba7c1de4b424ac60760f63bbc10a7f86c",
+    "periode": "Année 2024",
+    "licence": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
+    "attribution": "CHIRPS v2.0 — Funk et al. (2015), Climate Hazards Center, UC Santa Barbara",
+    "droits": {
+      "consultation": "autorise",
+      "stockage": "autorise",
+      "calcul": "autorise",
+      "tuiles": "autorise",
+      "commercial": "autorise",
+      "partage": "autorise",
+      "telechargement": "autorise",
+      "export": "autorise"
+    },
+    "precision": "Estimation satellite et stations à 0,05° (≈ 5,5 km) ; grille Fadi de 0,01° (≈ 1,1 km), 1625 × 1525 cellules, rééchantillonnage bilinéaire ; hors territoire geoBoundaries MAR ADM1 : sans donnée",
+    "synthetique": false,
+    "conditions": "CC BY 4.0 : réutilisation libre, y compris commerciale, avec attribution de la source."
+  },
+  "couche": {
+    "titre": "Précipitations annuelles 2024 au Maroc (CHIRPS)",
+    "description": "Cumul de précipitations 2024",
+    "niveau": null,
+    "champCode": "code",
+    "champNom": null,
+    "proprietesExposees": [],
+    "styleDefaut": {
+      "mode": "raster"
+    },
+    "raster": {
+      "unite": "mm",
+      "grandeur": "Cumul de précipitations 2024",
+      "palette": "precipitations"
+    }
+  },
+  "indicateurs": [],
+  "superficie": false
+}

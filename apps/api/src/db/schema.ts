@@ -55,6 +55,11 @@ export const users = pgTable("users", {
   termsAcceptedAt: timestamp("terms_accepted_at", { withTimezone: true }),
   /** D-3 : réservée, aucune logique ne la lit. */
   organizationId: text("organization_id"),
+  /**
+   * OP-6 (lot OP-AUTOCONTROLE) : option « Auto-contrôle », changée par l'administration de la plateforme. TRUE (défaut) :
+   * la personne peut approuver un dossier Studio qu'elle a produit ou soumis (approbation marquée) ; FALSE : refusé (422).
+   */
+  selfControlAllowed: boolean("self_control_allowed").notNull().default(true),
 }, (t) => [uniqueIndex("users_email_unique").on(t.email)]);
 
 export type AccountStatus = "active" | "suspended" | "closed";
@@ -1261,6 +1266,8 @@ export const studioPublications = pgTable("studio_publications", {
   approvedDocumentHash: text("approved_document_hash"),
   approvedBy: text("approved_by").references(() => users.id, { onDelete: "restrict" }),
   approvedAt: timestamp("approved_at", { withTimezone: true }),
+  /** OP-6 : approbation marquée « auto-contrôle » (true), ou non (false) ; null = approuvée avant le lot ou non approuvée. */
+  approvedSelfControl: boolean("approved_self_control"),
   package: jsonb("package").$type<StudioPublicationPackage | null>(),
   packageHash: text("package_hash"),
   diffusedBy: text("diffused_by").references(() => users.id, { onDelete: "restrict" }),
@@ -1271,6 +1278,8 @@ export const studioPublications = pgTable("studio_publications", {
   manifestHash: text("manifest_hash"),
   manifestBuiltAt: timestamp("manifest_built_at", { withTimezone: true }),
   approvedManifestHash: text("approved_manifest_hash"),
+  /** Délégation employée par l'approbation en vigueur (EX-085) ; null : approbation par un droit propre. */
+  approvedDelegationId: text("approved_delegation_id"),
   replacedByPublicationId: text("replaced_by_publication_id"),
   replacedBy: text("replaced_by").references(() => users.id, { onDelete: "restrict" }),
   replacedAt: timestamp("replaced_at", { withTimezone: true }),
@@ -1299,8 +1308,68 @@ export const studioPublicationEvents = pgTable("studio_publication_events", {
   workStatus: text("work_status").$type<StudioPublicationWorkStatus | null>(),
   diffusionStatus: text("diffusion_status").$type<StudioPublicationDiffusionStatus | null>(),
   relatedPublicationId: text("related_publication_id"),
+  /** Délégation employée par cette approbation ou ce refus (EX-085) ; null : droit propre de l'auteur. */
+  delegationId: text("delegation_id"),
+  /** OP-6 : marque de l'évènement `approuver` (auto-contrôle ou non) ; null pour les autres actions et avant le lot. */
+  selfControl: boolean("self_control"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("studio_publication_events_publication_idx").on(t.publicationId, t.createdAt)]);
+
+/**
+ * Délégations d'approbation des publications Studio (EX-085, `lib/studio-delegations.ts`) : nominatives (délégant,
+ * délégué), bornées (début inclus, fin exclue), motivées, à portée désignée (projet, étude, variante, publication). Une
+ * délégation n'approuve rien par elle-même ; seule sa révocation (motivée) modifie la ligne. Journal : `studioApprovalDelegationEvents`.
+ */
+export type StudioDelegationScopeType = "projet" | "etude" | "variante" | "publication";
+export const studioApprovalDelegations = pgTable("studio_approval_delegations", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  delegatorId: text("delegator_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  delegateId: text("delegate_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  scopeType: text("scope_type").$type<StudioDelegationScopeType>().notNull(),
+  scopeId: text("scope_id"),
+  startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+  endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
+  reason: text("reason").notNull(),
+  requestId: text("request_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  revokedBy: text("revoked_by").references(() => users.id, { onDelete: "restrict" }),
+  revokeReason: text("revoke_reason"),
+}, (t) => [index("studio_approval_delegations_project_idx").on(t.projectId, t.delegateId)]);
+
+/** Journal append-only (UPDATE refusée par déclencheur, init.sql) des délégations : création, révocation, chaque emploi. */
+export type StudioDelegationEventAction = "creer" | "revoquer" | "employer";
+export const studioApprovalDelegationEvents = pgTable("studio_approval_delegation_events", {
+  id: text("id").primaryKey(),
+  delegationId: text("delegation_id").notNull().references(() => studioApprovalDelegations.id, { onDelete: "cascade" }),
+  action: text("action").$type<StudioDelegationEventAction>().notNull(),
+  actorId: text("actor_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  /** Emploi : publication décidée et transition (`approuver`, `refuser`). */
+  publicationId: text("publication_id"),
+  publicationAction: text("publication_action").$type<"approuver" | "refuser" | null>(),
+  comment: text("comment"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("studio_approval_delegation_events_delegation_idx").on(t.delegationId, t.createdAt)]);
+
+/**
+ * Rapprochements des observations Studio avec une nouvelle révision (EX-086, `lib/studio-observations-rapprochement.ts`) :
+ * un résultat par observation et par contrôle (journal en ajout seul, UPDATE refusée par déclencheur). Le statut de
+ * l'observation n'est jamais modifié ici ; `suivi` = objet-disparu | persiste | a-recontroler | non-rapprochable.
+ */
+export type StudioRapprochementSuivi = "objet-disparu" | "persiste" | "a-recontroler" | "non-rapprochable";
+export const studioObservationReconciliations = pgTable("studio_observation_reconciliations", {
+  id: text("id").primaryKey(),
+  variantId: text("variant_id").notNull().references(() => studioVariants.id, { onDelete: "cascade" }),
+  observationId: text("observation_id").notNull(),
+  revisionId: text("revision_id").notNull(),
+  checkId: text("check_id"),
+  observationStatus: text("observation_status").notNull(),
+  suivi: text("suivi").$type<StudioRapprochementSuivi>().notNull(),
+  elements: jsonb("elements").$type<{ domaine: string; ref: string; issue: string }[]>().notNull(),
+  actorId: text("actor_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("studio_observation_reconciliations_variant_idx").on(t.variantId, t.createdAt), index("studio_observation_reconciliations_observation_idx").on(t.observationId)]);
 /**
  * Préférences d'outils Studio d'un compte (lib/studio-preferences.ts) : profil des barres (`standard`,
  * `metier:<id>`, `personnel`), favoris et liste personnelle, identifiants du registre `STUDIO_TOOLS`. Une ligne par
@@ -1421,6 +1490,50 @@ export const studioDossiers = pgTable("studio_dossiers", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [index("studio_dossiers_study_idx").on(t.studyId, t.createdAt)]);
+
+/**
+ * Modèles externes (partenaires) d'une variante Studio (lot F3, TR-EX-066, lib/studio-modeles-externes.ts) : une ligne
+ * par réception (déclarations de l'émetteur, fichier reçu et son empreinte, rapport du lecteur, dernière comparaison,
+ * statut et décision) ; journal des passages en ajout seul (UPDATE refusée par déclencheur, init.sql).
+ */
+export const studioExternalModels = pgTable("studio_external_models", {
+  id: text("id").primaryKey(),
+  studyId: text("study_id").notNull().references(() => studioStudies.id, { onDelete: "cascade" }),
+  variantId: text("variant_id").notNull(),
+  reference: text("reference").notNull(),
+  authorName: text("author_name").notNull(),
+  discipline: text("discipline").notNull(),
+  format: text("format").$type<"ifc">().notNull(),
+  versionLabel: text("version_label").notNull(),
+  declaredUnit: text("declared_unit").$type<"m" | "cm" | "mm" | "ft" | "in">().notNull(),
+  transformation: jsonb("transformation").$type<{ dx: number; dy: number; dz: number; rotation: number } | null>(),
+  fileName: text("file_name").notNull(),
+  content: text("content").notNull(),
+  contentDigest: text("content_digest").notNull(),
+  report: jsonb("report").$type<Record<string, unknown>>().notNull(),
+  comparison: jsonb("comparison").$type<Record<string, unknown>>().notNull(),
+  comparedRevisionId: text("compared_revision_id").notNull(),
+  status: text("status").$type<"compare" | "accepte" | "refuse">().notNull(),
+  decidedBy: text("decided_by").references(() => users.id, { onDelete: "restrict" }),
+  decidedAt: timestamp("decided_at", { withTimezone: true }),
+  decisionMotif: text("decision_motif"),
+  createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
+  requestId: text("request_id"),
+  payloadHash: text("payload_hash"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("studio_external_models_variant_idx").on(t.variantId, t.createdAt)]);
+
+export const studioExternalModelEvents = pgTable("studio_external_model_events", {
+  id: text("id").primaryKey(),
+  modelId: text("model_id").notNull().references(() => studioExternalModels.id, { onDelete: "cascade" }),
+  seq: integer("seq").notNull(),
+  action: text("action").$type<"recevoir" | "comparer" | "accepter" | "refuser">().notNull(),
+  actorId: text("actor_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  revisionId: text("revision_id"),
+  motif: text("motif"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [uniqueIndex("studio_external_model_events_seq_unique").on(t.modelId, t.seq)]);
 
 // ---------------------------------------------------------------------------
 // Revue externe — phase 4 (concept partie 4). Miroir de init.sql : paquets de revue figés au partage, affectations

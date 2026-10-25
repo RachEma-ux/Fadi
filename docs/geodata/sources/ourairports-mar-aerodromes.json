@@ -1,0 +1,54 @@
+{
+  "cle": "ourairports-mar-aerodromes",
+  "titre": "Aéroports, aérodromes et héliports du Maroc (OurAirports)",
+  "description": "Aérodromes, aéroports, héliports et hydrobases en service (type ≠ closed) d'OurAirports (https://davidmegginson.github.io/ourairports-data/airports.csv, fichier SHA-256 fe7f0d9dc2646e41b0cc520f1733d99b9c76a6b26a3e6a55f66fa89e62083ad5), restreints au territoire couvert par geoBoundaries MAR ADM1. Base collaborative : ce n'est pas la liste officielle de l'aviation civile.",
+  "producteur": "OurAirports (David Megginson et contributeurs)",
+  "theme": "infrastructures",
+  "couverture": "Maroc (territoire de geoBoundaries gbOpen MAR ADM1)",
+  "version": {
+    "libelle": "OurAirports — airports.csv du 2026-10-25",
+    "url": null,
+    "fichier": "donnees/ourairports-mar-aerodromes.geojson",
+    "empreinte": "a447aa973c942c8bba5612930508ef5e6ae43135b0e0c505263fe681466c37fe",
+    "periode": "Fichier téléchargé le 2026-10-25",
+    "licence": "Domaine public (OurAirports : « released to the Public Domain »)",
+    "attribution": "Données OurAirports (domaine public)",
+    "droits": {
+      "consultation": "autorise",
+      "stockage": "autorise",
+      "calcul": "autorise",
+      "tuiles": "autorise",
+      "commercial": "autorise",
+      "partage": "autorise",
+      "telechargement": "autorise",
+      "export": "autorise"
+    },
+    "precision": "Position de référence de chaque aérodrome telle que publiée par OurAirports ; altitude en pieds (elevation_ft) telle que publiée",
+    "synthetique": false,
+    "conditions": "Domaine public : réutilisation libre ; la source est citée par courtoisie et traçabilité."
+  },
+  "couche": {
+    "titre": "Aéroports, aérodromes et héliports du Maroc (OurAirports)",
+    "description": "67 objets ; code = « oa » + identifiant OurAirports.",
+    "niveau": null,
+    "champCode": "code",
+    "champNom": "nom",
+    "proprietesExposees": [
+      "code",
+      "nom",
+      "type",
+      "ident",
+      "icao_code",
+      "iata_code",
+      "municipality",
+      "elevation_ft",
+      "scheduled_service"
+    ],
+    "styleDefaut": {
+      "mode": "simple",
+      "couleur": "#6a3d9a"
+    }
+  },
+  "indicateurs": [],
+  "superficie": false
+}

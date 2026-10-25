@@ -120,9 +120,11 @@ services:
     build:
       context: ${FADI_SRC:?FADI_SRC manquant}
       dockerfile: deploy/preprod/recette.Dockerfile
-      # Builds copiés de l'image applicative du même commit (`COPY --from=app`) : Compose construit `app` d'abord.
-      additional_contexts:
-        app: service:app
+      # Builds copiés de l'image applicative du même commit (FROM ${APP_IMAGE} AS app), construite d'abord par
+      # `fadi-preprod build`. Pas d'additional_contexts « service:app » : chaque `compose run recette` reconstruirait
+      # alors app et écrirait la progression du build sur la sortie standard, avant l'archive des rapports.
+      args:
+        APP_IMAGE: fadi-preprod-app:${FADI_COMMIT:?FADI_COMMIT manquant}
     profiles: ["recette"]
     network_mode: "service:app"
     depends_on:

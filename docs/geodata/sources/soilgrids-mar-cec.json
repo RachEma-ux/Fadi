@@ -1,0 +1,48 @@
+{
+  "cle": "soilgrids-mar-cec",
+  "titre": "Capacité d'échange cationique à pH 7 (0–5 cm) — SoilGrids",
+  "description": "SoilGrids 2.0 (ISRIC), propriété « cec », moyenne prédite 0–5 cm, servie par le WCS d'ISRIC directement sur la grille Fadi (valeur stockée × 0.1 pour l'unité affichée).",
+  "producteur": "ISRIC — World Soil Information (SoilGrids 2.0)",
+  "theme": "sols",
+  "couverture": "Maroc (territoire de geoBoundaries gbOpen MAR ADM1)",
+  "version": {
+    "libelle": "SoilGrids 2.0 cec_0-5cm_mean, WCS lu le 2026-10-25",
+    "url": null,
+    "fichier": "donnees/soilgrids-mar-cec.tif",
+    "empreinte": "c6b917cf3c3c351280a192cfdb632073ee9a589231629c882c7611a88c7884d1",
+    "periode": "Modèle SoilGrids 2.0 (2020)",
+    "licence": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
+    "attribution": "SoilGrids 2.0 © ISRIC — World Soil Information (CC BY 4.0)",
+    "droits": {
+      "consultation": "autorise",
+      "stockage": "autorise",
+      "calcul": "autorise",
+      "tuiles": "autorise",
+      "commercial": "autorise",
+      "partage": "autorise",
+      "telechargement": "autorise",
+      "export": "autorise"
+    },
+    "precision": "Prédiction statistique à 250 m (incertitude non représentée) ; grille Fadi de 0,01° (≈ 1,1 km), 1625 × 1525 cellules, rééchantillonnage WCS ISRIC (plus proche voisin) ; hors territoire geoBoundaries MAR ADM1 : sans donnée",
+    "synthetique": false,
+    "conditions": "CC BY 4.0 : réutilisation libre, y compris commerciale, avec attribution de la source."
+  },
+  "couche": {
+    "titre": "Capacité d'échange cationique à pH 7 (0–5 cm) — SoilGrids",
+    "description": "Capacité d'échange cationique à pH 7 (0–5 cm)",
+    "niveau": null,
+    "champCode": "code",
+    "champNom": null,
+    "proprietesExposees": [],
+    "styleDefaut": {
+      "mode": "raster"
+    },
+    "raster": {
+      "unite": "cmol(c)/kg",
+      "grandeur": "Capacité d'échange cationique à pH 7 (0–5 cm)",
+      "palette": "sols"
+    }
+  },
+  "indicateurs": [],
+  "superficie": false
+}

@@ -40,6 +40,8 @@ export const ETAPES_LECTURE: Readonly<Record<string, string>> = Object.freeze({
 export function DialogueImportDxf({ doc, modifiable, surAjouter, surFermer }: DialogueImportDxfProps) {
   const [fichier, setFichier] = useState<{ nom: string; source: Blob } | null>(null);
   const [unite, setUnite] = useState<StudioDxfUnite | null>(null);
+  // Lot F3 (TEST-028) : chaque entité entière non prise est conservée comme élément non natif (case cochée par défaut).
+  const [conserver, setConserver] = useState(true);
   const [erreurFichier, setErreurFichier] = useState("");
   const [refus, setRefus] = useState(false);
   const [annulee, setAnnulee] = useState(false);
@@ -60,8 +62,8 @@ export function DialogueImportDxf({ doc, modifiable, surAjouter, surFermer }: Di
     controleur.current = c;
     setAttendue(n); setEtape("attente"); setErreurCalcul("");
     const tache = ordonnanceurStudio().soumettre<unknown, LectureDxf>({
-      cle: "studio.import-dxf", classe: "fond", nature: "dxf.lire", charge: { source: fichier.source, document: doc, unite },
-      empreinte: empreinteDe(doc, { fichier: revisionDocument(fichier.source), unite }), delaiMs: DELAI_LECTURE_DXF_MS, signal: c.signal,
+      cle: "studio.import-dxf", classe: "fond", nature: "dxf.lire", charge: { source: fichier.source, document: doc, unite, conserverNonNatifs: conserver },
+      empreinte: empreinteDe(doc, { fichier: revisionDocument(fichier.source), unite, conserver }), delaiMs: DELAI_LECTURE_DXF_MS, signal: c.signal,
       surProgression: (p: Progression) => { if (numero.current === n) setEtape(p.etape); },
       surResultat: (valeur) => { if (numero.current === n) setLecture({ n, valeur }); },
     });
@@ -70,7 +72,7 @@ export function DialogueImportDxf({ doc, modifiable, surAjouter, surFermer }: Di
       if (numero.current === n && message !== null) { setErreurCalcul(message); setLecture(null); }
     });
     return () => c.abort();
-  }, [fichier, doc, unite]);
+  }, [fichier, doc, unite, conserver]);
 
   const enCours = fichier !== null && !erreurCalcul && lecture?.n !== attendue;
   const courante = fichier && !enCours && lecture?.n === attendue ? lecture.valeur : null;
@@ -99,6 +101,7 @@ export function DialogueImportDxf({ doc, modifiable, surAjouter, surFermer }: Di
     <Dialogue titre="Importer DXF" id="studio-import-dxf-titre" classe="studio-import-dxf" surFermer={surFermer}>
       <div data-studio-import-dxf aria-busy={enCours || undefined}>
         <p className="studio-dialogue-aide">DXF ASCII (R12 ou suivant). Lignes et polylignes deviennent des lignes et des rectangles du brouillon ; les autres entités sont listées, jamais écartées en silence. Rien n’est enregistré avant « Enregistrer ».</p>
+        <label className="studio-import-option"><input type="checkbox" checked={conserver} disabled={!modifiable} onChange={(e) => setConserver(e.target.checked)} data-studio-import-conserver-non-natifs /> Conserver les entités non prises comme éléments non natifs</label>
         <label>Fichier DXF<input key={cleChamp} type="file" accept=".dxf,application/dxf,image/vnd.dxf" disabled={!modifiable} onChange={choisir} data-studio-import-fichier /></label>
         {erreurFichier && <p role="alert" data-studio-import-erreur>{erreurFichier}</p>}
         {enCours && <div className="studio-import-en-cours" role="status" data-studio-import-en-cours data-studio-import-etape={etape}>
@@ -142,6 +145,7 @@ export function Rapport({ nom, resultat, unite, surUnite, enCours = false }: { n
       <p data-studio-import-decompte>{`${r.entites.total} objet(s) à ajouter : ${r.entites.lignes} ligne(s), ${r.entites.rectangles} rectangle(s), ${r.entites.segments} segment(s) de polyligne.`}</p>
       {r.entites.cercles + r.entites.arcs + r.entites.polylignes > 0 && <p data-studio-import-courbes>{`Courbes : ${r.entites.cercles} cercle(s), ${r.entites.arcs} arc(s), ${r.entites.polylignes} polyligne(s).`}</p>}
       {r.bornes && <p data-studio-import-bornes>{`Étendue : X de ${metres(r.bornes.min.x, LOCALE)} à ${metres(r.bornes.max.x, LOCALE)} m, Y de ${metres(r.bornes.min.y, LOCALE)} à ${metres(r.bornes.max.y, LOCALE)} m (repère local).`}</p>}
+      {r.nonNatifs !== undefined && r.nonNatifs > 0 && <p data-studio-import-non-natifs={r.nonNatifs}>{`${r.nonNatifs} entité(s) conservée(s) comme éléments non natifs (non éditables, exclues des métrés).`}</p>}
       {r.zIgnores > 0 && <p>{`${r.zIgnores} entité(s) avec une cote Z non nulle : projetée(s) sur le plan, Z ignoré.`}</p>}
       {nonPris === 0
         ? <p data-studio-import-tout-pris>Toutes les entités lues sont prises.</p>

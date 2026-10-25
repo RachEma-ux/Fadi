@@ -8,6 +8,7 @@ import { fail, same } from "../noyau/validation.js";
 import type { StudioAnnotation, StudioShape } from "../objets/formes.js";
 import type { StudioArchitectureItem } from "../architecture/types.js";
 import type { StudioElementVisualisation } from "../scenes/scenes.js";
+import type { StudioNonNatif } from "../non-natifs/non-natifs.js";
 
 /** État privé d'un lot de commandes (clone du document, tout ou rien) et contrôles partagés par les familles de commandes. */
 
@@ -26,6 +27,8 @@ export interface Etat {
   architecture: StudioArchitectureItem[];
   /** Scènes et apparences d’affichage (`StudioDocument.scenes`, lot E.5) ; identifiants propres à la liste. */
   scenes: StudioElementVisualisation[];
+  /** Éléments non natifs conservés à l’import (`StudioDocument.nonNatifs`, lot F3) ; non éditables. */
+  nonNatifs: StudioNonNatif[];
   /** Identifiants d'objets et de cotes présents : contrôle d'unicité en temps constant (un import peut compter 20 000 créations). */
   ids: Set<string>;
 }

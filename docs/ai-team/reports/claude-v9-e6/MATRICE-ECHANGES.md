@@ -1,12 +1,12 @@
 # Matrice d’échanges de Studio
 
-<!-- Généré depuis packages/atelier-model/src/studio/echanges/matrice-echanges.ts (studio-matrice-echanges/1, révision 3) : ne pas éditer à la main. -->
+<!-- Généré depuis packages/atelier-model/src/studio/echanges/matrice-echanges.ts (studio-matrice-echanges/1, révision 4) : ne pas éditer à la main. -->
 
-Établie le 2026-10-25 (révision 3, schéma `studio-matrice-echanges/1`), à partir de l’audit des exporteurs et importeurs Studio. Lots E.6-01 à E.6-05 du plan d’implémentation Studio V1.0 (§5.7).
+Établie le 2026-10-25 (révision 4, schéma `studio-matrice-echanges/1`), à partir de l’audit des exporteurs et importeurs Studio. Lots E.6-01 à E.6-05 du plan d’implémentation Studio V1.0 (§5.7).
 
 **Aucune entrée n’est une déclaration de conformité** : « livré » dit ce que le code écrit ou lit et le contrôle qui le vérifie ; la conformité d’un format reste non évaluée. Un format reporté est inscrit « non livré » avec sa raison et sa source ; « renoncé » exige une décision Studio admise (aucune aujourd’hui).
 
-Entrées : 39 — livrées : 19, non livrées : 20, renoncées : 0.
+Entrées : 40 — livrées : 21, non livrées : 19, renoncées : 0.
 
 ## Formats × sens
 
@@ -20,6 +20,8 @@ Entrées : 39 — livrées : 19, non livrées : 20, renoncées : 0.
 | `dessin-dxf` | DXF ASCII | R12 (AC1009), CRLF, $INSUNITS = 6 (mètre) | export | dessin | Document d’une révision de variante (plan 2D) | livré | E.6-03 | R12 seulement ; $INSUNITS n’appartient pas à R12 (variable introduite avec AC1015) : l’unité n’est pas garantie chez un lecteur R12 strict ; ASCII strict (texte échappé, 250 caractères) ; cotes non associatives ; noms de calque réécrits (31 caractères ASCII) ; solides absents. |
 | `maquette-ifc` | IFC (STEP physique, ISO 10303-21) | IFC4X3_ADD2, ViewDefinition [ReferenceView] | export | maquette | Objets extrudés, solides libres, murs et ouvertures, propriétés déclarées d’une révision | livré | E.6-03 | Seuls les éléments 3D sont écrits ; arcs discrétisés ; cotes, annotations et réglages de visualisation absents ; IfcDoor / IfcWindow seulement si le type est déclaré, sans représentation propre. |
 | `dessin-dxf-import` | DXF ASCII | R12 et suivantes (codes de groupe), CRLF ou LF ; DXF binaire refusé | import | dessin | Plan 2D ajouté au brouillon d’une variante, par commandes | livré | E.6-03 | 5 Mo au plus ; unité lue dans $INSUNITS (16 codes reconnus ; tout autre code, 0 ou absent : unité inconnue, choisie par l’utilisateur, jamais devinée) ; un calque déjà verrouillé dans le document (calque implicite compris) qui recevrait des objets fait échouer l’import ; Z ignoré (compté) ; tout le reste compté par type dans le rapport d’import, jamais écarté en silence. |
+| `maquette-ifc-import` | IFC (STEP physique, ISO 10303-21) | IFC2X3, IFC4, IFC4X1 à IFC4X3 (FILE_SCHEMA lu) ; ifcXML et ifcZIP refusés | import | maquette | Maquette d’un autre logiciel ajoutée au brouillon d’une variante, par commandes | livré | E.6-04 | 5 Mo au plus ; lecteur STEP propre, sans web-ifc ; unité de longueur lue dans l’IfcUnitAssignment du projet (IfcSIUnit et son préfixe, ou IfcConversionBasedUnit dont le facteur est déclaré), absente : rien n’est importé, jamais supposée ; seules les extrusions verticales (IfcExtrudedAreaSolid d’un IfcRectangleProfileDef ou d’un IfcArbitraryClosedProfileDef droit) placées par IfcLocalPlacement tourné autour de z sont traduites ; toute autre entité ou géométrie est conservée comme élément non natif, et chaque information non reprise est comptée dans le rapport de pertes. |
+| `modele-externe-ifc` | IFC (STEP physique, ISO 10303-21) | IFC2X3, IFC4, IFC4X1 à IFC4X3 (lecteur de l’import IFC) | import | coordination | Modèle d’un partenaire référencé, comparé à la révision courante, accepté ou refusé | livré | E.6-04 | Référence, auteur, discipline, version, unité et transformation déclarées par l’émetteur ; fichier relu par le serveur dans un document à part, jamais dans la variante ; comparaison par identifiant (GlobalId) avec la révision courante ; acceptation ou refus réservés au propriétaire et aux approbateurs, journalisés, un refus avec motif ; accepté, le modèle s’ajoute au brouillon seulement par une action explicite ; non repris par l’archive du projet. |
 | `feuille-svg` | SVG | studio-sheet/1 (SVG en millimètres) | export | feuille | Feuille de présentation d’une révision (format, échelle, cartouche) | livré | E.6-02 | A4 à A1 ; échelle choisie ou ajustée ; dessin découpé au cadre ; valeur absente du cartouche imprimée « non évalué ». |
 | `feuille-pdf` | PDF | PDF 1.4 (une page) | export | feuille | Feuille de présentation d’une révision | livré | E.6-02 | Mêmes primitives que la feuille SVG ; aucune conformité PDF/A déclarée. |
 | `feuille-composee-svg` | SVG | studio-feuille-composee/1 (feuille studio-sheet/1 avec ligne de provenance) | export | feuille | Feuille composée enregistrée (vue source, révision épinglée) | livré | E.6-02 | Lit une révision enregistrée, jamais le brouillon ; provenance recalculée par le serveur (révision, empreintes du document et de la vue). |
@@ -44,7 +46,6 @@ Entrées : 39 — livrées : 19, non livrées : 20, renoncées : 0.
 | `stl-import` | STL | non évaluée (ASCII / binaire) | import | maquette | Maillage 3D | non livré | E.6-04, E.6-05 | Non livré ; aucune conformité évaluée. |
 | `stl-export` | STL | non évaluée (ASCII / binaire) | export | maquette | Maillage 3D | non livré | E.6-04, E.6-05 | Non livré ; aucune conformité évaluée. |
 | `gltf-export` | glTF | non évaluée (2.0) | export | maquette | Maillage 3D et apparences d’affichage | non livré | E.6-04, E.6-05 | Non livré ; aucune conformité évaluée. |
-| `ifc-lecture-import` | IFC | non évaluée (IFC2X3, IFC4, IFC4X3) | import | maquette | Maquette d’un autre logiciel | non livré | E.6-04, E.6-05 | Non livré ; aucune conformité évaluée. |
 | `ifc-autres-versions-export` | IFC | IFC2X3, IFC4 | export | maquette | Document d’une révision | non livré | E.6-05 | Non livré ; aucune conformité évaluée. |
 | `dxf-autres-versions-export` | DXF ASCII | AC1015 (2000) et suivantes | export | dessin | Document d’une révision | non livré | E.6-05 | Non livré ; aucune conformité évaluée. |
 | `dxf-binaire-import` | DXF binaire | non évaluée | import | dessin | Plan 2D | non livré | E.6-05 | Non livré ; aucune conformité évaluée. |
@@ -174,12 +175,46 @@ Entrées : 39 — livrées : 19, non livrées : 20, renoncées : 0.
 - Entité ARC : portée — Arc (angles ramenés en radians), cercle si ses angles se confondent.
 - Entité LWPOLYLINE / POLYLINE 2D : partielle — Polyligne à renflements ; rectangle si fermée à 4 sommets parallèles aux axes ; sinon un segment droit par ligne.
 - Entité Calques (table LAYER) : portée — Repris par nom ou créés, visibilité et verrouillage du fichier.
-- Entité TEXT, INSERT, SPLINE, HATCH, DIMENSION, ELLIPSE… : absente — Non importés, comptés par type.
-- Entité Polylignes 3D ou lissées, espace papier : absente — Non importées, comptées.
+- Entité TEXT, INSERT, SPLINE, HATCH, DIMENSION, ELLIPSE… : absente — Non importés comme objets, comptés par type ; conservés comme éléments non natifs (type, handle, nom de bloc, raison) si l’option est cochée.
+- Entité Polylignes 3D ou lissées, espace papier : absente — Non importées comme objets, comptées ; conservées comme éléments non natifs si l’option est cochée.
 - Code : `packages/atelier-model/src/studio/import-dxf.ts` (`` lireDxfStudio ``)
 - Tests : `packages/atelier-model/src/studio/import-dxf.test.ts` (`` lireDxfStudio ``) ; `apps/web/src/modules/studio/import/import-dxf.test.ts` (`` lireDxfStudio ``)
 - Interface : `apps/web/src/modules/studio/import/DialogueImportDxf.tsx` (`` export function DialogueImportDxf( ``)
 - Sources : `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-03` — Liste d’exécution Studio V1.0
+
+### `maquette-ifc-import` — IFC (STEP physique, ISO 10303-21) (import)
+
+- Version : IFC2X3, IFC4, IFC4X1 à IFC4X3 (FILE_SCHEMA lu) ; ifcXML et ifcZIP refusés
+- Objet : Maquette d’un autre logiciel ajoutée au brouillon d’une variante, par commandes
+- Limite : 5 Mo au plus ; lecteur STEP propre, sans web-ifc ; unité de longueur lue dans l’IfcUnitAssignment du projet (IfcSIUnit et son préfixe, ou IfcConversionBasedUnit dont le facteur est déclaré), absente : rien n’est importé, jamais supposée ; seules les extrusions verticales (IfcExtrudedAreaSolid d’un IfcRectangleProfileDef ou d’un IfcArbitraryClosedProfileDef droit) placées par IfcLocalPlacement tourné autour de z sont traduites ; toute autre entité ou géométrie est conservée comme élément non natif, et chaque information non reprise est comptée dans le rapport de pertes.
+- Contrôle : Tests du lecteur (fixture IFC2X3 écrite à la main, IFC4 en pieds, aller-retour avec l’export IFC4X3 de Studio) ; recette studio-echanges.mjs (import par l’interface, éléments non natifs visibles).
+- Entité IfcWall, IfcWallStandardCase : partielle — Mur (axe, épaisseur, hauteur, cote de base lus ; justification déduite de l’axe Axis) si le corps est rectangulaire ; sinon prisme libre, perte comptée.
+- Entité IfcOpeningElement, IfcRelVoidsElement : portée — Ouverture du mur importé : position, largeur, hauteur et allège lues de son corps.
+- Entité IfcDoor, IfcWindow, IfcRelFillsElement : partielle — Type déclaré porte ou fenêtre de l’ouverture remplie ; géométrie propre du remplissage non reprise (perte comptée).
+- Entité IfcSlab : partielle — Prisme libre à sa cote ; sémantique de dalle non reprise (perte comptée).
+- Entité IfcBuildingStorey : partielle — Calque nommé d’après le niveau ; ses éléments y sont rangés ; l’élévation est portée par les placements.
+- Entité IfcSpace, IfcColumn, IfcBeam, IfcBuildingElementProxy… : absente — Conservés comme éléments non natifs : type, GlobalId, nom, raison, empreinte lue ; non éditables, exclus des métrés.
+- Entité IfcPropertySet, IfcRelAssociatesMaterial, IfcRelDefinesByType, IfcMapConversion, IfcSite, IfcBuilding… : absente — Comptés par type dans le rapport de pertes.
+- Code : `packages/atelier-model/src/studio/import-ifc/import-ifc.ts` (`` lireIfcStudio ``)
+- Tests : `packages/atelier-model/src/studio/import-ifc/import-ifc.test.ts` (`` lireIfcStudio ``) ; `apps/web/src/modules/studio/import/import-ifc.test.ts` (`` lireIfcStudio ``) ; `apps/web/e2e/studio-echanges.mjs` (`` check("Importer IFC : rapport de pertes ``)
+- Interface : `apps/web/src/modules/studio/import/DialogueImportIfc.tsx` (`` export function DialogueImportIfc( ``)
+- Sources : `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-04` — Liste d’exécution Studio V1.0 ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, TEST-028` — Liste d’exécution Studio V1.0
+
+### `modele-externe-ifc` — IFC (STEP physique, ISO 10303-21) (import)
+
+- Version : IFC2X3, IFC4, IFC4X1 à IFC4X3 (lecteur de l’import IFC)
+- Objet : Modèle d’un partenaire référencé, comparé à la révision courante, accepté ou refusé
+- Limite : Référence, auteur, discipline, version, unité et transformation déclarées par l’émetteur ; fichier relu par le serveur dans un document à part, jamais dans la variante ; comparaison par identifiant (GlobalId) avec la révision courante ; acceptation ou refus réservés au propriétaire et aux approbateurs, journalisés, un refus avec motif ; accepté, le modèle s’ajoute au brouillon seulement par une action explicite ; non repris par l’archive du projet.
+- Route : `POST /projects/:projectId/studio/studies/:studyId/variants/:variantId/modeles-externes`
+- Contrôle : Tests des règles (modèle et serveur) ; recette studio-echanges.mjs (réception, comparaison, acceptation journalisée).
+- Entité Déclarations de l’émetteur : portée — Conservées telles quelles ; l’unité déclarée est comparée à l’unité lue, jamais substituée.
+- Entité Fichier reçu : portée — Conservé tel quel avec son SHA-256 ; lecture et pertes comme l’import IFC.
+- Entité Écarts avec la révision courante : portée — Objets, calques, cotes, murs et ouvertures, solides libres, éléments non natifs : ajoutés, supprimés, modifiés.
+- Code : `packages/atelier-model/src/studio/echanges/modeles-externes.ts` (`` lireModeleExterne ``) ; `apps/api/src/lib/studio-modeles-externes.ts` (`` deciderReception ``)
+- Tests : `packages/atelier-model/src/studio/echanges/modeles-externes.test.ts` (`` passageModeleExterne ``) ; `apps/api/src/lib/studio-modeles-externes.test.ts` (`` deciderReception ``) ; `apps/web/e2e/studio-echanges.mjs` (`` check("Modèle externe : accepté par le propriétaire ``)
+- Routes : `apps/api/src/routes/studio-modeles-externes.ts` (`` /studies/:studyId/variants/:variantId/modeles-externes ``)
+- Interface : `apps/web/src/modules/studio/echanges/PanneauModelesExternes.tsx` (`` export function PanneauModelesExternes( ``)
+- Sources : `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, TR-EX-066` — Liste d’exécution Studio V1.0
 
 ### `feuille-svg` — SVG (export)
 
@@ -349,6 +384,7 @@ Raisons possibles du rapport de fidélité (`studioRapportFidelite`) pour chaque
 | proprietes | propriete | `propriete-non-exportee` (non-couvert) | `propriete-non-exportee` (non-couvert) | `propriete-en-pset` (exact), `propriete-non-evaluee` (non-couvert) |
 | scenes | scene | `visualisation-hors-export` (non-couvert) | `visualisation-hors-export` (non-couvert) | `visualisation-hors-export` (non-couvert) |
 | scenes | appearance | `visualisation-hors-export` (non-couvert) | `visualisation-hors-export` (non-couvert) | `visualisation-hors-export` (non-couvert) |
+| nonNatifs | non-native | `non-natif-hors-export` (non-couvert) | `non-natif-hors-export` (non-couvert) | `non-natif-hors-export` (non-couvert) |
 
 ## Formats reportés (E.6-04, E.6-05)
 
@@ -367,7 +403,6 @@ Raisons possibles du rapport de fidélité (`studioRapportFidelite`) pour chaque
 | `stl-import` | STL | import | non livré | Aucun contrat, aucune preuve ni décision Studio : format reporté, inscrit au périmètre sans être livré ; aucune conformité déclarée. Aucun écrivain ni lecteur STL. | `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-04` — Liste d’exécution Studio V1.0 |
 | `stl-export` | STL | export | non livré | Aucun contrat, aucune preuve ni décision Studio : format reporté, inscrit au périmètre sans être livré ; aucune conformité déclarée. Aucun écrivain ni lecteur STL. | `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-04` — Liste d’exécution Studio V1.0 |
 | `gltf-export` | glTF | export | non livré | Aucun contrat, aucune preuve ni décision Studio : format reporté, inscrit au périmètre sans être livré ; aucune conformité déclarée. Aucun écrivain glTF. | `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-04` — Liste d’exécution Studio V1.0 |
-| `ifc-lecture-import` | IFC | import | non livré | Aucun contrat, aucune preuve ni décision Studio : format reporté, inscrit au périmètre sans être livré ; aucune conformité déclarée. La lecture IFC de l’Atelier (web-ifc) n’est pas un échange Studio. | `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-04` — Liste d’exécution Studio V1.0 ; `scripts/frontieres.json, ADR-STUDIO-NAV-01` — Studio n’importe pas l’Atelier |
 | `ifc-autres-versions-export` | IFC | export | non livré | Aucun contrat, aucune preuve ni décision Studio : format reporté, inscrit au périmètre sans être livré ; aucune conformité déclarée. Seul IFC4X3_ADD2 est écrit. | `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-05` — Liste d’exécution Studio V1.0 |
 | `dxf-autres-versions-export` | DXF ASCII | export | non livré | Aucun contrat, aucune preuve ni décision Studio : format reporté, inscrit au périmètre sans être livré ; aucune conformité déclarée. Seul R12 (AC1009) est écrit ; les fichiers récents sont lus à l’import. | `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-05` — Liste d’exécution Studio V1.0 |
 | `dxf-binaire-import` | DXF binaire | import | non livré | Refusé à l’import avec un message (« enregistrez le fichier en DXF ASCII ») ; aucun lecteur binaire. | `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-05` — Liste d’exécution Studio V1.0 ; `packages/atelier-model/src/studio/import-dxf.ts` — Refus du DXF binaire |

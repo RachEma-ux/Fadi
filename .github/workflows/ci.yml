@@ -526,6 +526,11 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/studio-faces node apps/web/e2e/studio-faces.mjs 2>&1 | tee -a e2e.log
+      - name: Recette du rendu Studio — dégradation sûre de la vue 3D sous charge, types 3D avancés non disponibles, comparaison SVG / Canvas / GPU sur S1–S3 (lot F5, TR-EX-057, A.3-08, TEST-025, apps/web/e2e/studio-rendu.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-rendu node apps/web/e2e/studio-rendu.mjs 2>&1 | tee -a e2e.log
       - name: Recette du noyau exact Studio — booléens exacts chargés à la demande, aperçu provisoire, résultat périmé, panne du Worker OCCT, 50 ouvertures sans croissance, licence servie (lot F2, apps/web/e2e/studio-exact.mjs)
         if: ${{ matrix.shard == 'parcours' }}
         run: |
@@ -679,6 +684,15 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/revue-externe node apps/web/e2e/revue-externe.mjs 2>&1 | tee -a e2e.log
+      # Séparation des responsabilités (#262, lot OP-AUTOCONTROLE, décision OP-6) : option « Auto-contrôle » activée par
+      # défaut, approbation de son propre dossier signalée (avertissement, confirmation, marque, journal), option
+      # désactivée par l'administration → 422 avec les autres approbateurs ; empreintes inchangées ; règle d'or de
+      # l'interrupteur, axe-core bureau et téléphone, passe anglaise.
+      - name: Recette de l'auto-contrôle — option du compte, approbation signalée ou refusée, interface, axe-core, anglais (apps/web/e2e/auto-controle.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          node apps/web/e2e/auto-controle.mjs 2>&1 | tee -a e2e.log
       # Organisations-participation, phase 3 (OP-D2 a) : invitation acceptée pour tous, fin de l'ajout direct (UM-8) —
       # aperçu de l'accès, renvoi sans doublon, notification, refus v2.2 (lien transféré, expirée, annulée, déclinée,
       # invitant révoqué, mauvaise fiche, participation terminée, accès expiré), double soumission, nouvel utilisateur ;
@@ -1091,6 +1105,8 @@ jobs:
           docker exec fadi test -f apps/api/dist/geodata-reference.js
           docker exec fadi test -f apps/api/dist/geodata-sources/geoboundaries-mar-adm1.json
           docker exec fadi test -f apps/api/dist/geodata-sources/geoboundaries-mar-adm2.json
+          # Sources ouvertes (D-GD-12) : une fiche dont les données sont livrées dans l'image se prépare sans réseau.
+          docker exec fadi node apps/api/dist/geodata-reference.js --fiche ourairports-mar-aerodromes --preparateur image@example.com | tee /dev/stderr | grep -q "Version préparée"
       - name: Journal du conteneur
         if: always()
         run: |

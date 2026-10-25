@@ -16,7 +16,7 @@ export type IdCommandeEditeur =
   | "accrochage-milieu" | "accrochage-centre" | "accrochage-quadrant" | "accrochage-intersection"
   | "accrochage-perpendiculaire" | "accrochage-tangente" | "accrochage-proche"
   | "reperage-orthogonal" | "reperage-polaire" | "pas-polaire"
-  | "importer-dxf" | "exporter-svg" | "exporter-dxf" | "exporter-ifc" | "feuille" | "dossier"
+  | "importer-dxf" | "importer-ifc" | "modeles-externes" | "exporter-svg" | "exporter-dxf" | "exporter-ifc" | "feuille" | "dossier"
   | "exporter-png" | "echanges"
   | "outils" | "palette"
   | "exigences";
@@ -30,7 +30,7 @@ export type IconeCommande =
   | "studio-snap-midpoint" | "studio-snap-center" | "studio-snap-quadrant" | "studio-snap-intersection"
   | "studio-snap-perpendicular" | "studio-snap-tangent" | "studio-snap-nearest"
   | "studio-track-ortho" | "studio-track-polar" | "studio-track-polar-step"
-  | "studio-import-dxf" | "studio-export-svg" | "studio-export-dxf" | "studio-export-ifc" | "studio-sheet" | "studio-dossier"
+  | "studio-import-dxf" | "studio-import-ifc" | "studio-external-models" | "studio-export-svg" | "studio-export-dxf" | "studio-export-ifc" | "studio-sheet" | "studio-dossier"
   | "studio-export-png" | "studio-exchanges"
   | "studio-catalog" | "studio-palette"
   | "studio-requirements";
@@ -96,6 +96,13 @@ export const COMMANDES_EDITEUR: readonly CommandeEditeur[] = Object.freeze([
   { id: "exporter-png", libelleFR: "Exporter le rendu PNG", raccourci: "F4", iconeSymbolique: "studio-export-png", groupe: "visualisation", ecrit: false },
   // Import DXF vers le brouillon (aperçu, unité, entités non prises) : Maj+U (U comme « upload »), libre et non réservé.
   { id: "importer-dxf", libelleFR: "Importer DXF", raccourci: "Shift+U", iconeSymbolique: "studio-import-dxf", groupe: "import", ecrit: true },
+  // Import IFC (lot F3, TEST-028) : Maj+F9 (toutes les combinaisons Maj+lettre sont prises, Ctrl+Maj+U est « Pousser /
+  // tirer la face » du lot F1 ; F9 seul est la grille), libre et non réservé. Rapport de pertes et éléments non natifs à
+  // l’aperçu ; écriture du brouillon.
+  { id: "importer-ifc", libelleFR: "Importer IFC", raccourci: "Shift+F9", iconeSymbolique: "studio-import-ifc", groupe: "import", ecrit: true },
+  // Modèles externes (lot F3, TR-EX-066) : réception, comparaison, acceptation ou refus ; Maj+F2 (F2 est « Mettre à jour la
+  // scène »), libre et non réservé. Lecture admise (un lecteur consulte la liste et le journal).
+  { id: "modeles-externes", libelleFR: "Modèles externes", raccourci: "Shift+F2", iconeSymbolique: "studio-external-models", groupe: "import", ecrit: false },
   { id: "exporter-svg", libelleFR: "Exporter SVG", raccourci: "Shift+V", iconeSymbolique: "studio-export-svg", groupe: "export", ecrit: false, telechargement: "svg" },
   { id: "exporter-dxf", libelleFR: "Exporter DXF", raccourci: "Shift+X", iconeSymbolique: "studio-export-dxf", groupe: "export", ecrit: false, telechargement: "dxf" },
   // IFC4X3 des seuls objets extrudés (Maj+I : I comme IFC, libre et non réservé).
@@ -124,6 +131,7 @@ export const BARRES_STUDIO: readonly { id: BarreStudio; libelleFR: string }[] = 
   { id: "architecture", libelleFR: "Architecture" },
   { id: "proprietes", libelleFR: "Propriétés" },
   { id: "exigences", libelleFR: "Exigences" },
+  { id: "non-natifs", libelleFR: "Éléments non natifs" },
   { id: "edition", libelleFR: "Édition" },
   { id: "vue", libelleFR: "Vue" },
   { id: "accrochage", libelleFR: "Accrochage" },

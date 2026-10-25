@@ -64,6 +64,11 @@ export interface DemandeTache<C = unknown, R = unknown> {
   surProgression?: (p: Progression) => void;
   /** Appelé une seule fois, de façon synchrone, avec le résultat de la tâche si elle est encore la courante de sa clé. */
   surResultat?: (valeur: R) => void;
+  /**
+   * Commande qui a produit l'entrée de la tâche (EX-095) : identifiant non sensible (`requestId` du lot de commandes),
+   * repris tel quel dans le journal pour corréler commande et tâche. Facultatif.
+   */
+  commandId?: string;
 }
 
 export type IssueTache<R> =
@@ -109,7 +114,15 @@ export interface ExecutionDemandee {
 export type Executeur = (e: ExecutionDemandee) => Promise<unknown>;
 
 /** Événement du journal : chaque changement d'état d'une tâche (diagnostic et recette). */
-export interface EvenementTache { id: number; cle: string; classe: ClasseTache; revision: string; etat: EtatTache | "requeued"; tentative: number }
+export interface EvenementTache {
+  id: number; cle: string; classe: ClasseTache; revision: string; etat: EtatTache | "requeued"; tentative: number;
+  /** Identifiant non sensible de la tâche (`job-<id>`), stable d'un état à l'autre (EX-095). */
+  jobId: string;
+  /** Commande d'origine déclarée par la demande, sinon absent. */
+  commandId?: string;
+}
+/** Identifiant de corrélation d'une tâche : son numéro dans la session, jamais son contenu. */
+export const jobIdDe = (id: number): string => `job-${id}`;
 
 export interface OptionsOrdonnanceur {
   executer: Executeur;
@@ -208,7 +221,10 @@ export class Ordonnanceur {
   }
 
   private noter(job: Job, etat: EtatTache | "requeued"): void {
-    this.options.surEvenement?.({ id: job.vue.id, cle: job.vue.cle, classe: job.vue.classe, revision: job.vue.empreinte.revision, etat, tentative: job.vue.tentatives });
+    this.options.surEvenement?.({
+      id: job.vue.id, cle: job.vue.cle, classe: job.vue.classe, revision: job.vue.empreinte.revision, etat, tentative: job.vue.tentatives, jobId: jobIdDe(job.vue.id),
+      ...(job.demande.commandId ? { commandId: job.demande.commandId } : {}),
+    });
   }
 
   private retirerDeFile(job: Job): boolean {

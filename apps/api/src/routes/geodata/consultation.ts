@@ -4,8 +4,10 @@
  * préparation n'est jamais servie (GEO 08) ; réponses bornées (pagination, plafond d'objets).
  */
 import { Router, type Request } from "express";
-import { lireCoordonnees, lireDroits, OBJETS_PAR_COUCHE, verifierUsage } from "@parcours/geodata-model";
+import { attribuerCategories, lireCoordonnees, lireDroits, OBJETS_PAR_COUCHE, verifierUsage } from "@parcours/geodata-model";
 import { erreur, espacePersonnel, introuvable, requete, VERSION_CONSULTABLE } from "../../lib/geodata/acces.js";
+import { decompresser, pngTransparent, tuileRaster, valeurAuPoint, type GrilleRaster } from "../../lib/geodata/raster.js";
+import type { DescriptionRaster } from "@parcours/geodata-model";
 
 export const consultationRouter = Router();
 
@@ -55,12 +57,12 @@ export function lireCouche(r: Record<string, unknown>, indicateurs: unknown[]) {
   return {
     id: r["couche_id"], titre: r["couche_titre"], description: r["couche_description"], typeGeometrie: r["type_geometrie"], niveau: r["niveau"],
     proprietesExposees: r["proprietes_exposees"], styleDefaut: r["style_defaut"], nombreObjets: r["nombre_objets"],
-    emprise: r["emprise"] ? JSON.parse(r["emprise"] as string) : null, indicateurs, version: lireVersion(r),
+    emprise: r["emprise"] ? JSON.parse(r["emprise"] as string) : null, indicateurs, version: lireVersion(r), raster: r["raster"] ?? null,
   };
 }
 
 const COLONNES_COUCHE = `c.id AS couche_id, c.titre AS couche_titre, c.description AS couche_description, c.type_geometrie, c.niveau, c.proprietes_exposees,
-  c.style_defaut, c.nombre_objets, ST_AsGeoJSON(c.emprise, 6) AS emprise, ${COLONNES_VERSION}`;
+  c.style_defaut, c.nombre_objets, ST_AsGeoJSON(c.emprise, 6) AS emprise, (SELECT ra.description FROM geodata_rasters ra WHERE ra.couche_id = c.id) AS raster, ${COLONNES_VERSION}`;
 
 /** Couche consultable par l'espace, sinon `null` (absente, privée d'un tiers, retirée : même réponse). */
 export async function coucheConsultable(espaceId: string, coucheId: string) {
@@ -148,6 +150,53 @@ consultationRouter.get("/tuiles/:coucheId/:z/:x/:y", async (req, res) => {
   res.send(r?.mvt ?? Buffer.alloc(0));
 });
 
+/**
+ * Couches raster (D-GD-13) : grille figée lue une fois puis gardée en mémoire (au plus 12 grilles), tuiles PNG et valeur
+ * en un point. Mêmes règles d'accès que les tuiles vectorielles (couche consultable, droit « tuiles »).
+ */
+const grilles = new Map<string, { grille: GrilleRaster; description: DescriptionRaster }>();
+async function grilleDe(coucheId: string) {
+  const deja = grilles.get(coucheId);
+  if (deja) return deja;
+  const [r] = await requete<{ largeur: number; hauteur: number; ouest: number; sud: number; est: number; nord: number; nodata: number | null; valeurs: Buffer; description: DescriptionRaster }>(
+    `SELECT largeur, hauteur, ouest, sud, est, nord, nodata, valeurs, description FROM geodata_rasters WHERE couche_id = $1`, [coucheId]);
+  if (!r) return null;
+  const g = { grille: { largeur: r.largeur, hauteur: r.hauteur, emprise: [r.ouest, r.sud, r.est, r.nord] as const, nodata: r.nodata, valeurs: decompresser(r.valeurs, r.largeur * r.hauteur) }, description: r.description };
+  if (grilles.size >= 12) grilles.delete(grilles.keys().next().value!);
+  grilles.set(coucheId, g);
+  return g;
+}
+
+consultationRouter.get("/raster/:coucheId/:z/:x/:y", async (req, res) => {
+  const z = Number(req.params.z);
+  const x = Number(req.params.x);
+  const y = Number(String(req.params.y).replace(/\.png$/, ""));
+  if (![z, x, y].every(Number.isInteger) || z < 0 || z > 18 || x < 0 || y < 0 || x >= 2 ** z || y >= 2 ** z) return erreur(res, 400, "invalid_input", "Tuile hors limites.");
+  const couche = await coucheConsultable(await espaceDe(req), req.params.coucheId);
+  if (!couche) return introuvable(res);
+  const droit = verifierUsage(lireDroits(couche["droits"]), "tuiles");
+  if (!droit.ok) return erreur(res, 403, "usage_refuse", droit.motif, { usage: "tuiles", etat: droit.etat });
+  const g = await grilleDe(req.params.coucheId);
+  if (!g) return introuvable(res);
+  res.setHeader("Content-Type", "image/png");
+  res.setHeader("Cache-Control", couche["privee"] ? "private, no-store" : "private, max-age=3600");
+  res.send(tuileRaster(g.grille, g.description, z, x, y) ?? pngTransparent());
+});
+
+/** Valeur d'une couche raster au point (lon, lat WGS 84) ; hors emprise ou nodata : `null` (« non évaluée »). */
+consultationRouter.get("/raster/:coucheId/valeur", async (req, res) => {
+  const lon = Number(req.query["lon"]);
+  const lat = Number(req.query["lat"]);
+  if (!Number.isFinite(lon) || !Number.isFinite(lat) || lon < -180 || lon > 180 || lat < -90 || lat > 90) return erreur(res, 400, "invalid_input", "Point lon/lat attendu.", { champs: ["lon", "lat"] });
+  const couche = await coucheConsultable(await espaceDe(req), req.params.coucheId);
+  if (!couche) return introuvable(res);
+  const g = await grilleDe(req.params.coucheId);
+  if (!g) return introuvable(res);
+  const v = valeurAuPoint(g.grille, lon, lat);
+  const classe = v !== null && g.description.classes ? g.description.classes.find((c) => c.valeur === v) ?? null : null;
+  res.json({ lon, lat, valeur: v, classe: classe?.libelle ?? null, unite: g.description.unite, grandeur: g.description.grandeur });
+});
+
 /** Table paginée des objets d'une couche (sans géométrie), filtre et tri sur liste autorisée. */
 consultationRouter.get("/couches/:id/table", async (req, res) => {
   const espaceId = await espaceDe(req);
@@ -198,6 +247,32 @@ consultationRouter.get("/couches/:id/codes", async (req, res) => {
   const cond = req.query["operateur"] === "egal" ? `lower(${expr}) = lower($2)` : `lower(${expr}) LIKE '%' || lower($2) || '%'`;
   const lignes = await requete<{ code: string }>(`SELECT o.code FROM geodata_objets o WHERE o.couche_id = $1 AND ${cond} LIMIT 5000`, prop === "nom" || prop === "code" ? [req.params.id, val] : [req.params.id, val, prop]);
   res.json({ codes: lignes.map((l) => l.code) });
+});
+
+/**
+ * Couleur par entité (style `categories`) : rang de couleur de chaque unité, calculé sur la géométrie de référence (unités
+ * qui se touchent ou se recouvrent = voisines). Le contenu d'une couche est figé : le résultat est conservé en mémoire par
+ * couche (au plus 50 couches).
+ */
+const cacheCategories = new Map<string, { code: string; nom: string | null; rang: number }[]>();
+/** Borne des paires de voisins lues : au-delà (objets superposés en masse), couleurs attribuées sans voisinage. */
+const PAIRES_MAX = 50_000;
+consultationRouter.get("/couches/:id/categories", async (req, res) => {
+  const couche = await coucheConsultable(await espaceDe(req), req.params.id);
+  if (!couche) return introuvable(res);
+  let categories = cacheCategories.get(req.params.id);
+  if (!categories) {
+    const objets = await requete<{ code: string; nom: string | null }>(`SELECT o.code, o.nom FROM geodata_objets o WHERE o.couche_id = $1 ORDER BY o.code LIMIT $2`, [req.params.id, OBJETS_PAR_COUCHE]);
+    const paires = await requete<{ a: string; b: string }>(
+      `SELECT a.code AS a, b.code AS b FROM geodata_objets a JOIN geodata_objets b ON b.couche_id = a.couche_id AND a.code < b.code AND a.geom && b.geom AND ST_Intersects(a.geom, b.geom)
+        WHERE a.couche_id = $1 LIMIT $2`, [req.params.id, PAIRES_MAX + 1]);
+    // Mémoire bornée : un graphe trop dense n'est pas construit, les couleurs suivent alors l'ordre des noms.
+    const rangs = attribuerCategories(objets, paires.length > PAIRES_MAX ? [] : paires.map((p) => [p.a, p.b] as const));
+    categories = objets.map((o) => ({ code: o.code, nom: o.nom, rang: rangs.get(o.code) ?? 0 }));
+    if (cacheCategories.size >= 50) cacheCategories.delete(cacheCategories.keys().next().value!);
+    cacheCategories.set(req.params.id, categories);
+  }
+  res.json({ categories });
 });
 
 /** Fiche d'un objet : attributs exposés, valeurs d'indicateurs (absence avec motif), source et qualité. */

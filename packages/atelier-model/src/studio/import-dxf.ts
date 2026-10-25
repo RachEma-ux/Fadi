@@ -1,5 +1,6 @@
 import { studioAngleNormal, studioShapeBoundPoints } from "./courbes.js";
 import { STUDIO_BULGE_MAX, STUDIO_DEFAULT_LAYER_ID, STUDIO_LIMITS, StudioValidationError, validateStudioDocument, type StudioCommand, type StudioDocument, type StudioLayer, type StudioPoint, type StudioShape } from "./document-2d.js";
+import { validerNonNatif, type StudioNonNatif, type StudioRaisonNonNatif } from "./non-natifs/non-natifs.js";
 
 /**
  * Import DXF ASCII vers Studio (`studio-document/1`) : du texte DXF à une liste de `StudioCommand` à appliquer au
@@ -19,6 +20,11 @@ import { STUDIO_BULGE_MAX, STUDIO_DEFAULT_LAYER_ID, STUDIO_LIMITS, StudioValidat
  * SPLINE, HATCH, DIMENSION, ELLIPSE…, cercles ou arcs sans rayon ou sans angle, polylignes 3D ou lissées, entités hors du plan XY ou de l'espace papier, segments de longueur nulle) est **compté par
  * type** dans `nonPris`, jamais écarté en silence. Calques : table LAYER et noms portés par les entités ; « 0 » → calque
  * implicite ; un calque du document de même nom est repris, sinon il est créé (visibilité et verrouillage du fichier).
+ *
+ * Éléments non natifs (lot F3, `options.conserverNonNatifs`) : chaque entité **entière** non prise (TEXT, INSERT,
+ * SPLINE…, hors plan, espace papier, coordonnées manquantes) est en plus conservée dans le document comme élément non
+ * natif (`studio.nonnatif.conserver`) : type, handle (code 5), nom de bloc (INSERT), raison ; elle reste comptée dans
+ * `nonPris`. Une partie seulement écartée (largeur, épaisseur, segment nul) n'en fait pas un élément non natif.
  */
 
 /** Unités convertibles, en facteur rationnel exact vers le mètre (valeur en m = x × mul ÷ div). */
@@ -55,6 +61,8 @@ export interface StudioDxfOptions {
   document?: StudioDocument;
   /** Unité choisie par l'utilisateur, utilisée seulement quand le fichier n'en déclare pas de convertible. */
   unite?: StudioDxfUnite;
+  /** Conserver chaque entité entière non prise comme élément non natif (lot F3) ; faux par défaut. */
+  conserverNonNatifs?: boolean;
 }
 
 export interface StudioDxfBornes {
@@ -88,6 +96,8 @@ export interface StudioDxfRapport {
   bornesFichier: StudioDxfBornes | null;
   /** Nombre d'entités prises dont une cote Z non nulle a été ignorée (projection sur le plan XY). */
   zIgnores: number;
+  /** Entités conservées comme éléments non natifs (présent seulement avec `conserverNonNatifs`). */
+  nonNatifs?: number;
 }
 export interface StudioDxfResultat {
   statut: "pret" | "unite-inconnue";
@@ -308,11 +318,22 @@ function rectangle(pts: StudioPoint[]): { min: StudioPoint; max: StudioPoint } |
   return { min: { x: Math.min(...xs), y: Math.min(...ys) }, max: { x: Math.max(...xs), y: Math.max(...ys) } };
 }
 
+/** Entité entière non prise, candidate à l'état non natif. */
+interface Ecartee {
+  entite: string;
+  raison: StudioRaisonNonNatif;
+  detail?: string;
+  handle?: string;
+  nom?: string;
+  calque: string;
+}
+
 interface Lecture {
   formes: Forme[];
   nonPris: Map<string, number>;
   calquesEntites: string[];
   zIgnores: number;
+  ecartees: Ecartee[];
 }
 
 function lire(ents: Entite[]): Lecture {
@@ -320,19 +341,27 @@ function lire(ents: Entite[]): Lecture {
   const nonPris = new Map<string, number>();
   const calquesEntites: string[] = [];
   let zIgnores = 0;
+  const ecartees: Ecartee[] = [];
   const compter = (type: string, n = 1) => nonPris.set(type, (nonPris.get(type) ?? 0) + n);
   const calqueDe = (e: Entite | Paire[]) => nomCalque(champ(e, 8)?.valeur ?? "") || "0";
+  /** Entité entière non prise : comptée, et retenue comme candidate à l'état non natif. */
+  const ecarter = (e: Entite, cle: string, raison: StudioRaisonNonNatif, detail?: string) => {
+    compter(cle);
+    const handle = champ(e, 5)?.valeur.trim();
+    const nom = e.type === "INSERT" ? decoder(champ(e, 2)?.valeur.trim() ?? "") : "";
+    ecartees.push({ entite: e.type || "(sans type)", raison, ...(detail ? { detail } : {}), ...(handle ? { handle } : {}), ...(nom ? { nom } : {}), calque: calqueDe(e) });
+  };
   for (const e of ents) {
     if (e.type !== "LINE" && e.type !== "LWPOLYLINE" && e.type !== "POLYLINE" && e.type !== "CIRCLE" && e.type !== "ARC") {
-      compter(e.type || "(sans type)");
+      ecarter(e, e.type || "(sans type)", "type-sans-equivalent");
       continue;
     }
     if (champ(e, 67) && entier(champ(e, 67)!) === 1) {
-      compter(`${e.type} (espace papier)`);
+      ecarter(e, `${e.type} (espace papier)`, "placement-non-interpretable", "code 67");
       continue;
     }
     if (!dansPlanXY(e)) {
-      compter(`${e.type} (hors plan XY)`);
+      ecarter(e, `${e.type} (hors plan XY)`, "placement-non-interpretable", "code 210");
       continue;
     }
     const calque = calqueDe(e);
@@ -344,7 +373,7 @@ function lire(ents: Entite[]): Lecture {
       if (renflements.slice(0, nbSegments).some((b) => b !== 0)) {
         // Polyligne à segments courbes : sommets consécutifs confondus retirés (segment nul compté), renflements gardés.
         if (renflements.slice(0, nbSegments).some((b) => Math.abs(b) > STUDIO_BULGE_MAX)) {
-          compter(`${e.type} (renflement hors limites)`);
+          ecarter(e, `${e.type} (renflement hors limites)`, "dimensions-non-interpretables", "code 42");
           return;
         }
         const sommets: StudioPoint[] = [], bulges: number[] = [];
@@ -366,7 +395,7 @@ function lire(ents: Entite[]): Lecture {
         }
         if (ferme) bulges.push(fermeture);
         if (sommets.length < 2 || (ferme && sommets.length < 3 && bulges.every((b) => b === 0))) {
-          compter(`${e.type} (moins de deux sommets distincts)`);
+          ecarter(e, `${e.type} (moins de deux sommets distincts)`, "dimensions-non-interpretables", "codes 10 / 20");
           return;
         }
         formes.push({ type: "polyligne", source: e.type, calque, pts: sommets, ferme, bulges });
@@ -396,11 +425,11 @@ function lire(ents: Entite[]): Lecture {
     if (e.type === "CIRCLE" || e.type === "ARC") {
       const x = coord(e, 10), y = coord(e, 20), r = coord(e, 40);
       if (x === null || y === null || r === null) {
-        compter(`${e.type} (coordonnées ou rayon manquants)`);
+        ecarter(e, `${e.type} (coordonnées ou rayon manquants)`, "dimensions-non-interpretables", "codes 10 / 20 / 40");
         continue;
       }
       if (!(r > 0)) {
-        compter(`${e.type} (rayon nul ou négatif)`);
+        ecarter(e, `${e.type} (rayon nul ou négatif)`, "dimensions-non-interpretables", "code 40");
         continue;
       }
       z = valeur(e, 30, 0) !== 0;
@@ -408,7 +437,7 @@ function lire(ents: Entite[]): Lecture {
       else {
         const d0 = coord(e, 50), d1 = coord(e, 51);
         if (d0 === null || d1 === null) {
-          compter("ARC (angles manquants)");
+          ecarter(e, "ARC (angles manquants)", "dimensions-non-interpretables", "codes 50 / 51");
           continue;
         }
         const a0 = studioAngleNormal((d0 * Math.PI) / 180), a1 = studioAngleNormal((d1 * Math.PI) / 180);
@@ -419,11 +448,11 @@ function lire(ents: Entite[]): Lecture {
     } else if (e.type === "LINE") {
       const x1 = coord(e, 10), y1 = coord(e, 20), x2 = coord(e, 11), y2 = coord(e, 21);
       if (x1 === null || y1 === null || x2 === null || y2 === null) {
-        compter("LINE (coordonnées manquantes)");
+        ecarter(e, "LINE (coordonnées manquantes)", "dimensions-non-interpretables", "codes 10 / 20 / 11 / 21");
         continue;
       }
       z = valeur(e, 30, 0) !== 0 || valeur(e, 31, 0) !== 0;
-      if (x1 === x2 && y1 === y2) compter("LINE (longueur nulle)");
+      if (x1 === x2 && y1 === y2) ecarter(e, "LINE (longueur nulle)", "dimensions-non-interpretables", "codes 10 / 20 / 11 / 21");
       else formes.push({ type: "ligne", source: e.type, calque, a: { x: x1, y: y1 }, b: { x: x2, y: y2 }, segment: false });
     } else if (e.type === "LWPOLYLINE") {
       const pts: StudioPoint[] = [], courbes: number[] = [];
@@ -444,21 +473,21 @@ function lire(ents: Entite[]): Lecture {
         else if ((p.code === 40 || p.code === 41 || p.code === 43) && nombre(p) !== 0) largeur = true;
       }
       if (incomplet || x !== null) {
-        compter("LWPOLYLINE (coordonnées manquantes)");
+        ecarter(e, "LWPOLYLINE (coordonnées manquantes)", "dimensions-non-interpretables", "codes 10 / 20");
         continue;
       }
       z = valeur(e, 38, 0) !== 0;
       const ferme = (entier(champ(e, 70) ?? { code: 70, valeur: "0", ligne: 0 }) & 1) === 1;
-      if (pts.length < 2) compter("LWPOLYLINE (moins de deux sommets)");
+      if (pts.length < 2) ecarter(e, "LWPOLYLINE (moins de deux sommets)", "dimensions-non-interpretables", "codes 10 / 20");
       else poser(pts, ferme, courbes);
     } else {
       const flags = champ(e, 70) ? entier(champ(e, 70)!) : 0;
       if (flags & (8 | 16 | 64)) {
-        compter(`POLYLINE (${flags & 8 ? "3D" : "maillage"})`);
+        ecarter(e, `POLYLINE (${flags & 8 ? "3D" : "maillage"})`, "representation-non-interpretable", "code 70");
         continue;
       }
       if (flags & (2 | 4)) {
-        compter("POLYLINE (lissée)");
+        ecarter(e, "POLYLINE (lissée)", "representation-non-interpretable", "code 70");
         continue;
       }
       const pts: StudioPoint[] = [], courbes: number[] = [];
@@ -476,11 +505,11 @@ function lire(ents: Entite[]): Lecture {
         if (nonNul(v, 40, 41)) largeur = true;
       }
       if (incomplet) {
-        compter("POLYLINE (coordonnées manquantes)");
+        ecarter(e, "POLYLINE (coordonnées manquantes)", "dimensions-non-interpretables", "codes 10 / 20");
         continue;
       }
       if (valeur(e, 30, 0) !== 0) z = true;
-      if (pts.length < 2) compter("POLYLINE (moins de deux sommets)");
+      if (pts.length < 2) ecarter(e, "POLYLINE (moins de deux sommets)", "dimensions-non-interpretables", "codes 10 / 20");
       else poser(pts, (flags & 1) === 1, courbes);
     }
     if (formes.length === avant) continue;
@@ -489,7 +518,7 @@ function lire(ents: Entite[]): Lecture {
     if (nonNul(e, 39)) compter(`${e.type} (épaisseur ignorée)`);
     if (z) zIgnores++;
   }
-  return { formes, nonPris, calquesEntites, zIgnores };
+  return { formes, nonPris, calquesEntites, zIgnores, ecartees };
 }
 
 // ——— Conversion et commandes ———
@@ -571,6 +600,11 @@ export function lireDxfStudio(texte: string, options: StudioDxfOptions = {}): St
   const parCle = new Map<string, { nom: string; visible: boolean; verrouille: boolean }>();
   for (const c of s.calques) if (!parCle.has(cleCalque(c.nom))) parCle.set(cleCalque(c.nom), c);
   for (const nom of lecture.calquesEntites) if (!parCle.has(cleCalque(nom))) parCle.set(cleCalque(nom), { nom, visible: true, verrouille: false });
+  // Éléments non natifs (lot F3) : seulement à la demande ; leur calque est repris ou créé comme celui d'un objet.
+  const ecartees = options.conserverNonNatifs ? lecture.ecartees : [];
+  for (const x of ecartees) if (!parCle.has(cleCalque(x.calque))) parCle.set(cleCalque(x.calque), { nom: x.calque, visible: true, verrouille: false });
+  const nnParCalque = new Map<string, number>();
+  for (const x of ecartees) nnParCalque.set(cleCalque(x.calque), (nnParCalque.get(cleCalque(x.calque)) ?? 0) + 1);
   const objetsParCalque = new Map<string, number>();
   for (const { forme } of retenues) objetsParCalque.set(cleCalque(forme.calque), (objetsParCalque.get(cleCalque(forme.calque)) ?? 0) + 1);
   const nomsStudio = nomsDeCalques([...parCle].filter(([, c]) => c.nom !== "0"));
@@ -585,9 +619,10 @@ export function lireDxfStudio(texte: string, options: StudioDxfOptions = {}): St
   const verrouiller: StudioLayer[] = [];
   for (const [cle, c] of parCle) {
     const objets = objetsParCalque.get(cle) ?? 0;
+    const recoit = objets + (nnParCalque.get(cle) ?? 0);
     if (c.nom === "0") {
       const defaut = existants.find((l) => l.id === STUDIO_DEFAULT_LAYER_ID);
-      if (objets && defaut?.locked) fail("dxf.calques", "le calque implicite du document est verrouillé");
+      if (recoit && defaut?.locked) fail("dxf.calques", "le calque implicite du document est verrouillé");
       calques.push({ nom: c.nom, cible: "implicite", objets });
       cible.set(cle, undefined);
       continue;
@@ -596,12 +631,12 @@ export function lireDxfStudio(texte: string, options: StudioDxfOptions = {}): St
     const raccourci = nom !== c.nom ? { nomStudio: nom, nomRaccourci: true as const } : {};
     const meme = existants.find((l) => l.id !== STUDIO_DEFAULT_LAYER_ID && cleCalque(l.name) === cleCalque(nom));
     if (meme) {
-      if (objets && meme.locked) fail("dxf.calques", `calque verrouillé dans le document : ${meme.name}`);
+      if (recoit && meme.locked) fail("dxf.calques", `calque verrouillé dans le document : ${meme.name}`);
       calques.push({ nom: c.nom, cible: "existant", id: meme.id, objets, ...raccourci });
       cible.set(cle, meme.id);
       continue;
     }
-    if (!objets) {
+    if (!recoit) {
       calques.push({ nom: c.nom, cible: "sans-objet", objets, ...raccourci });
       continue;
     }
@@ -631,10 +666,12 @@ export function lireDxfStudio(texte: string, options: StudioDxfOptions = {}): St
     bornes: null,
     bornesFichier: bornesDe(retenues.flatMap(({ forme: f }) => pointsForme(f))),
     zIgnores: lecture.zIgnores,
+    ...(options.conserverNonNatifs ? { nonNatifs: ecartees.length } : {}),
   };
   if (!conv) return { statut: "unite-inconnue", commandes: [], rapport };
 
   const objetsAvant = (doc?.objects.length ?? 0) + (doc?.dimensions?.length ?? 0);
+  if ((doc?.nonNatifs?.length ?? 0) + ecartees.length > STUDIO_LIMITS.objects) fail("dxf.objets", `${STUDIO_LIMITS.objects} éléments non natifs au plus par document`);
   if (objetsAvant + retenues.length > STUDIO_LIMITS.objects) fail("dxf.objets", `${STUDIO_LIMITS.objects} objets au plus par document : l’import en ajouterait ${retenues.length} aux ${objetsAvant} existants`);
   if (existants.length + creer.length > STUDIO_LIMITS.layers) fail("dxf.calques", `${STUDIO_LIMITS.layers} calques au plus par document`);
 
@@ -648,6 +685,18 @@ export function lireDxfStudio(texte: string, options: StudioDxfOptions = {}): St
     const toolId = ({ line: "studio.dessin.ligne", rectangle: "studio.dessin.rectangle", circle: "studio.dessin.cercle", arc: "studio.dessin.arc", polyline: "studio.dessin.polyligne" } as const)[g.type];
     commandes.push({ toolId, params: s } as StudioCommand);
     pts.push(...studioShapeBoundPoints(s));
+  }
+  // Éléments non natifs : origine (type, handle, nom de bloc) et raison ; donnée du fichier, jamais traduite.
+  const pris2 = new Set([...pris, ...(doc?.nonNatifs ?? []).map((n) => n.id), ...(doc?.architecture ?? []).map((x) => x.id), ...(doc?.solides ?? []).map((x) => x.id), ...(doc?.annotations ?? []).map((x) => x.id)]);
+  const idNonNatif = allocateur(pris2, "dxf-nn-");
+  for (const x of ecartees) {
+    const layerId = cible.get(cleCalque(x.calque));
+    const n: StudioNonNatif = validerNonNatif({
+      id: idNonNatif(), type: "non-native", ...(layerId === undefined ? {} : { layerId }),
+      origine: { format: "dxf", entite: x.entite.slice(0, 64), ...(x.handle ? { identifiant: x.handle.slice(0, 128) } : {}), ...(x.nom ? { nom: x.nom.slice(0, 200) } : {}) },
+      raison: x.raison, ...(x.detail ? { detail: x.detail } : {}),
+    }, "dxf.nonNatif");
+    commandes.push({ toolId: "studio.nonnatif.conserver", params: n });
   }
   for (const l of verrouiller) commandes.push({ toolId: "studio.calque.modifier", params: l });
   rapport.bornes = bornesDe(pts);

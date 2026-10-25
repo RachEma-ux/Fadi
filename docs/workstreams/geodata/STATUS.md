@@ -24,6 +24,26 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
 - Outils d'exploitation compilés dans l'image (`dist/geodata-role.js`, `dist/geodata-reference.js`, fiches `dist/geodata-sources/`) et reprise de publication d'une version préparée : vérifiés sur une base neuve depuis un autre répertoire (téléchargement réel, empreintes conformes, ADM1 12 et ADM2 75 publiées) ; contrôle ajouté au job CI `image`.
 - Aucune Release GitHub ; `fadi-prod-auto` absent du dépôt (phase B non réalisée) : voir `RELEASE-V1.md`.
 
+- Préproduction (25 octobre 2026, compte du maître d'ouvrage) : rôles attribués, geoBoundaries ADM1 (12) et ADM2 (75)
+  importés et publiés par les outils de l'image ; carte, fiche, recherche « Casablanca », enregistrement et export PNG
+  constatés par le maître d'ouvrage sur téléphone.
+- Style « une couleur par entité » (D-GD-11, demande du maître d'ouvrage du 25 octobre 2026) : paquet pur (palette, attribution
+  déterministe, 3 tests), route `GET /geodata/api/couches/:id/categories`, choix « Coloration » du panneau Couches, légende
+  et export PNG ; vérifié localement sur geoBoundaries (ADM1 : 12 couleurs distinctes ; ADM2 : voisins toujours distincts,
+  palette entière employée) ; recette `geodata.mjs` conforme (36 vérifications).
+
+- Sources ouvertes (D-GD-12, demande du maître d'ouvrage du 25 octobre 2026) : 29 couches livrées avec leur fiche
+  (`docs/geodata/sources/`, données dans `donnees/`, 15332 objets) — OpenStreetMap, extraits PBF du 23 octobre 2026 lus
+  par `scripts/geodata/extraire_sources.py`, et OurAirports : barrages 606, ports 4, marinas 5, gares 157, centrales-electriques 118, postes-electriques 619, eoliennes 956, musees 148, attractions-touristiques 870, campings 754, hotels 2978, information-touristique 245, plages 378, sites-patrimoniaux 1818, agences-de-voyages 232, etablissements-sante 763, administrations 1575, villes 338, silos-agricoles 96, puits 483, reservoirs-eau 409, stations-pompage 10, pepinieres 38, fournitures-agricoles 15, apiculture 6, vignobles 123, serres-horticoles 565, canaux 956, aerodromes 67. Empreintes et validation contrôlées par
+  `apps/api/src/db/geodata-sources.test.ts` ; `--fiche toutes` les importe et publie en une commande (vérifié sur la base
+  locale). Écartées : couches raster (hors V1), sources aux droits non établis.
+
+- Couches raster (D-GD-13) : capacité livrée (grille figée, tuiles PNG serveur, légende, valeur au point) et 17 couches
+  préparées depuis leurs sources d'origine par `scripts/geodata/preparer_rasters.py` (grille 0,01°, masque geoBoundaries) :
+  Copernicus DEM (altitude, pente calculée), ESA WorldCover 2021, SoilGrids 2.0 (10 propriétés), CHIRPS 2024, Global Wind
+  Atlas, Global Solar Atlas (PVOUT), WorldPop 2020 ; vérifiées sur la base locale (import, tuiles, valeur au point).
+- Couches complémentaires : communes OSM (1 498, niveau 8) et sites minéraux USGS MRDS (110).
+
 ## Points ouverts
 
 Recette sur appareils physiques et validation d'usage ; Release de production ; qualification des droits HCP ; extensions V1.1.

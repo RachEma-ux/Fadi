@@ -2,7 +2,7 @@
  * Client minimal de GeoData : le SEUL fichier du module qui appelle le serveur, et seulement sous `/geodata/api` (test
  * d'indépendance). Le client d'API général de Fadi n'est jamais importé : aucune notion de projet, aucun contexte de projet.
  */
-import type { Composition, DroitsVersion, MotifAbsence, RapportImport, StyleCouche } from "@parcours/geodata-model";
+import type { Composition, DescriptionRaster, DroitsVersion, MotifAbsence, RapportImport, StyleCouche } from "@parcours/geodata-model";
 
 export const RACINE_API = "/geodata/api";
 
@@ -37,12 +37,15 @@ export interface VersionRecue {
   source: { id: string; titre: string; producteur: string; theme: string; couverture: string; description: string };
 }
 export interface CoucheRecue {
-  id: string; titre: string; description: string; typeGeometrie: "polygone" | "ligne" | "point" | "mixte"; niveau: string | null; proprietesExposees: string[];
+  id: string; titre: string; description: string; typeGeometrie: "polygone" | "ligne" | "point" | "mixte" | "raster"; niveau: string | null; proprietesExposees: string[];
   styleDefaut: StyleCouche; nombreObjets: number; emprise: { type: "Polygon"; coordinates: number[][][] } | null; indicateurs: IndicateurRecu[]; version: VersionRecue;
+  /** Couche raster (D-GD-13) : grandeur, unité et symbologie ; null pour une couche d'objets. */
+  raster: DescriptionRaster | null;
 }
 export type ResultatRecherche =
   | { type: "coordonnees"; libelle: string; point: { lon: number; lat: number }; provenance: string }
   | { type: "unite"; code: string; libelle: string; niveau: string | null; coucheId: string; coucheTitre: string; emprise: { coordinates: number[][][] }; centre: { coordinates: [number, number] }; provenance: string };
+export interface ValeurRasterRecue { lon: number; lat: number; valeur: number | null; classe: string | null; unite: string | null; grandeur: string }
 export interface ValeurRecue { valeur: number | null; motifAbsence: MotifAbsence | null }
 export interface LigneTable { code: string; nom: string | null; niveau: string | null; geometrieReparee: boolean; proprietes: Record<string, unknown>; valeurs: Record<string, ValeurRecue> }
 export interface FicheRecue {
@@ -73,6 +76,8 @@ export const api = {
   },
   codesFiltres: (id: string, f: { propriete: string; operateur: "egal" | "contient"; valeur: string }) => appeler<{ codes: string[] }>(`/couches/${encodeURIComponent(id)}/codes?${new URLSearchParams(f)}`),
   fiche: (coucheId: string, code: string) => appeler<FicheRecue>(`/couches/${encodeURIComponent(coucheId)}/objets/${encodeURIComponent(code)}`),
+  valeurRaster: (coucheId: string, lon: number, lat: number) => appeler<ValeurRasterRecue>(`/raster/${encodeURIComponent(coucheId)}/valeur?lon=${lon}&lat=${lat}`),
+  categories: (coucheId: string) => appeler<{ categories: { code: string; nom: string | null; rang: number }[] }>(`/couches/${encodeURIComponent(coucheId)}/categories`),
   valeurs: (indicateurId: string) => appeler<{ valeurs: ({ code: string } & ValeurRecue)[] }>(`/indicateurs/${encodeURIComponent(indicateurId)}/valeurs`),
   cartes: (etat: "active" | "archivee" = "active") => appeler<{ cartes: ResumeCarte[] }>(`/cartes?etat=${etat}`),
   carte: (id: string) => appeler<CarteRecue>(`/cartes/${encodeURIComponent(id)}`),
@@ -96,3 +101,6 @@ export const api = {
 
 /** Adresse des tuiles d'une couche, absolue (le moteur cartographique les demande depuis un Worker). */
 export const adresseTuiles = (coucheId: string) => `${window.location.origin}${RACINE_API}/tuiles/${encodeURIComponent(coucheId)}/{z}/{x}/{y}`;
+
+/** Adresse des tuiles d'image d'une couche raster (D-GD-13). */
+export const adresseRaster = (coucheId: string) => `${window.location.origin}${RACINE_API}/raster/${encodeURIComponent(coucheId)}/{z}/{x}/{y}.png`;

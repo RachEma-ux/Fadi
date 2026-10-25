@@ -63,6 +63,7 @@ export const MOTEURS_PAR_BARRE: Readonly<Record<string, readonly IdMoteur[]>> = 
   proprietes: ["planche-2d"],
   "volume-libre": ["planche-2d", "rendu-3d"],
   visualisation: ["planche-2d", "rendu-3d"],
+  "non-natifs": ["planche-2d"],
 });
 
 /**

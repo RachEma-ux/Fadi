@@ -91,3 +91,8 @@
   .geodata-page .gd-tiroir{max-height:50%}
   .geodata-page button{min-height:44px}
 }
+
+/* Couches raster (D-GD-13) : dégradé de la palette et bornes. */
+.geodata-page .gd-degrade-bloc { margin: 6px 0; }
+.geodata-page .gd-degrade { height: 12px; border-radius: 3px; border: 1px solid rgba(0, 0, 0, 0.2); }
+.geodata-page .gd-degrade-bornes { display: flex; justify-content: space-between; font-size: 0.8rem; }

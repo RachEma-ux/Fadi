@@ -118,6 +118,10 @@ export type IconName =
   | "studio-export-png"
   | "studio-dossier"
   | "studio-exchanges"
+  | "studio-import-ifc"
+  | "studio-external-models"
+  | "studio-non-native-keep"
+  | "studio-non-native-remove"
   | "studio-comments";
 
 const PATHS: Record<IconName, string> = {
@@ -265,6 +269,14 @@ const PATHS: Record<IconName, string> = {
   "studio-dossier": "M3 6h6l2 2h10v12H3ZM7 11h10v6H7ZM9 13h6M9 15h4",
   // Matrice d'échanges (E.6) : grille de trois colonnes traversée par deux flèches opposées (import / export).
   "studio-exchanges": "M3 4h18v16H3ZM9 4v16M15 4v16M5 9h14M17 7l2 2-2 2M5 15h14M7 13l-2 2 2 2",
+  // Import IFC (lot F3) : fichier, petit volume et flèche entrant par la gauche (le pendant de l’export IFC).
+  "studio-import-ifc": "M9 3h7l4 4v14H9v-4M16 3v4h4M12 10l3-2 3 2v4l-3 2-3-2ZM12 10l3 2 3-2M15 12v4M2 13h7M6 10l3 3-3 3",
+  // Modèles externes (lot F3) : deux maquettes côte à côte reliées par une coche de validation.
+  "studio-external-models": "M3 8l4-2 4 2v5l-4 2-4-2ZM3 8l4 2 4-2M7 10v5M13 8l4-2 4 2v5l-4 2-4-2ZM13 8l4 2 4-2M17 10v5M9 19l2 2 4-4",
+  // Élément non natif conservé : boîte en pointillés tenue par une pince (gardée telle quelle).
+  "studio-non-native-keep": "M4 8h3M10 8h4M17 8h3v3M20 14v3h-3M14 17h-4M7 17H4v-3M4 11V8M9 3h6v5H9ZM12 11v3",
+  // Retirer les éléments non natifs : boîte en pointillés barrée d’une croix.
+  "studio-non-native-remove": "M4 6h3M10 6h4M17 6h3v3M20 12v3h-3M14 15h-4M7 15H4v-3M4 9V6M9 18l4 4M13 18l-4 4M15 19h6",
   // Bascule du panneau des commentaires (barre de l’espace ; ni outil ni commande).
   "studio-comments": "M20.5 11.5c0 4.1-3.8 7.5-8.5 7.5-1.2 0-2.3-.2-3.3-.6L4 20l1.3-3.6C4.2 15 3.5 13.3 3.5 11.5 3.5 7.4 7.3 4 12 4s8.5 3.4 8.5 7.5ZM8 10h8M8 13.5h5",
 };

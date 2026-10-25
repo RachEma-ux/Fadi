@@ -5,3 +5,5 @@ export * from "./classification.js";
 export * from "./composition.js";
 export * from "./geojson.js";
 export * from "./droits.js";
+export * from "./categories.js";
+export * from "./raster.js";

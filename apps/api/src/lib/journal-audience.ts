@@ -124,6 +124,8 @@ export const SHARED_DETAIL_KEYS = [
   "to", "status", "sent", "unlocked", "via", "previousOwnerRoleAfter", "replies",
   // Phase 3 (invitations acceptées) : échéances, statut atteint, nature de la liaison.
   "accessExpiresAt", "invitationExpiresAt", "statusBefore", "statusAfter", "wasActive", "link",
+  // OP-6 (auto-contrôle) : marque d'une approbation et ses motifs (nombres et booléens, aucun identifiant).
+  "selfControl", "revisionsAuteur", "soumisParLui",
 ] as const;
 
 /** Clés désignant un compte : résolues en identité (`subjects`) selon l'audience, jamais rendues brutes hors administration. */

@@ -319,3 +319,61 @@ describe("Recherche", () => {
     expect((await alice.client.get(`${API}/recherche?q=004`)).body.resultats[0]).toMatchObject({ code: "004" });
   });
 });
+
+describe("Une couleur par entité (style categories)", () => {
+  it("six unités : six rangs distincts dans l'ordre des noms ; composition « categories » enregistrée ; couche d'un tiers → 404", async () => {
+    const alice = await compte("gd-k@example.com");
+    const ref = await publierReference();
+    const r = await alice.client.get(`${API}/couches/${ref.coucheId}/categories`);
+    expect(r.status).toBe(200);
+    const cs = r.body.categories as { code: string; nom: string; rang: number }[];
+    expect(cs).toHaveLength(6);
+    expect(cs.find((c) => c.code === "001")).toEqual({ code: "001", nom: "Unité A", rang: 0 });
+    expect(new Set(cs.map((c) => c.rang)).size).toBe(6);
+    // Même résultat au second appel (contenu figé).
+    expect((await alice.client.get(`${API}/couches/${ref.coucheId}/categories`)).body.categories).toEqual(cs);
+    const comp = { ...composition(ref.coucheId, ref.versionId), couches: [{ ...composition(ref.coucheId, ref.versionId).couches[0]!, style: { mode: "categories" } }] };
+    const c = await alice.client.post(`${API}/cartes`).send({ nom: "Par entité", composition: comp });
+    expect(c.status).toBe(201);
+    expect((await alice.client.get(`${API}/cartes/${c.body.id}`)).body.composition).toEqual(comp);
+    expect((await alice.client.get(`${API}/couches/gdcou_inconnue/categories`)).status).toBe(404);
+  });
+});
+
+describe("Couches raster (D-GD-13)", () => {
+  it("grille préparée par la chaîne d'import : description, tuile PNG, valeur au point, nodata « non évaluée », droits", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { lireGeoTiff } = await import("../lib/geodata/raster.js");
+    const alice = await compte("gd-r@example.com");
+    const r = await lireGeoTiff(readFileSync(new URL("../../test-corpus/geodata/synthetique-raster.tif", import.meta.url)));
+    const client = await pool.connect();
+    let coucheId = "";
+    try {
+      await client.query("BEGIN");
+      const e = await ecrireVersion(client, {
+        source: { cle: "test-raster", titre: "Raster de test", producteur: "Test", theme: "test", couverture: "Fictive", description: "Jeu synthétique" },
+        espaceId: null,
+        version: { libelle: "v1", empreinte: "b".repeat(64), fichierNom: "t.tif", fichierTaille: 1, urlSource: null, recupereLe: null, periode: null, licence: "Test", attribution: "Attribution raster", droits: TOUT, crsSource: r.crs, precision: null, transformations: [], controles: { ok: true }, synthetique: true },
+        couche: { titre: "Grille", description: "", niveau: null, champCode: null, champNom: null, proprietesExposees: [], styleDefaut: { mode: "raster" } },
+        objets: [], indicateurs: [], superficie: false, preparePar: null,
+        raster: { grille: r.grille, description: { unite: "u", grandeur: "Valeur", palette: "viridis", min: 0, max: 420, classes: null, largeur: r.grille.largeur, hauteur: r.grille.hauteur, emprise: r.grille.emprise } },
+      });
+      await client.query("UPDATE geodata_versions SET etat = 'publiee', publiee_le = clock_timestamp() WHERE id = $1", [e.versionId]);
+      await client.query("COMMIT");
+      coucheId = e.coucheId;
+    } finally { client.release(); }
+    const c = await alice.client.get(`${API}/couches/${coucheId}`);
+    expect(c.body.typeGeometrie).toBe("raster");
+    expect(c.body.raster).toMatchObject({ grandeur: "Valeur", unite: "u", largeur: 40, hauteur: 30 });
+    const t = await alice.client.get(`${API}/raster/${coucheId}/9/243/210.png`).buffer(true);
+    expect(t.status).toBe(200);
+    expect(t.headers["content-type"]).toBe("image/png");
+    expect((t.body as Buffer).subarray(1, 4).toString("ascii")).toBe("PNG");
+    expect((await alice.client.get(`${API}/raster/${coucheId}/valeur?lon=-8.79&lat=30.15`)).body).toMatchObject({ valeur: 225, unite: "u" });
+    expect((await alice.client.get(`${API}/raster/${coucheId}/valeur?lon=-8.995&lat=30.295`)).body.valeur).toBeNull();
+    expect((await alice.client.get(`${API}/raster/${coucheId}/valeur?lon=10&lat=10`)).body.valeur).toBeNull();
+    expect((await alice.client.get(`${API}/raster/gdcou_inconnue/0/0/0.png`)).status).toBe(404);
+    // Contenu figé : la grille d'une version publiée ne se modifie pas.
+    await expect(pool.query("UPDATE geodata_rasters SET nodata = 1 WHERE couche_id = $1", [coucheId])).rejects.toThrow();
+  });
+});

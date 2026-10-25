@@ -9,14 +9,22 @@
  *        (droits distincts : revue = propriétaire et éditeur ; approbation et publication = propriétaire ; lecteur = lecture)
  *   GET  /studies/:studyId/publications/:publicationId/files/:format fichier figé (svg | dxf | ifc | pdf)
  *   GET  /studies/:studyId/publications/:publicationId/verification  recalcul déterministe des empreintes du paquet
+ *   GET  /delegations                                                délégations d'approbation visibles (EX-085)
+ *   POST /delegations                                                nouvelle délégation (201 ; rejeu par requestId : 200)
+ *   POST /delegations/:delegationId/revoquer                         révocation motivée
+ * Une transition `approuver` ou `refuser` peut porter `delegationId` : la délégation est revérifiée par le serveur.
+ *   GET  /studies/:studyId/publications/:publicationId/controle-approbation  aperçu de l'auto-contrôle (OP-6) pour
+ *        l'utilisateur courant : { autoControle, revisionsAuteur, soumisParLui, autorise, approvers } ; droit `approve`
  */
 import { Router, type NextFunction, type Request, type Response } from "express";
 import { StudioRequestError } from "../lib/studio-commands.js";
+import { clientIp } from "../lib/audit.js";
 import {
-  createStudioPublication, listProjectStudioPackages, listStudyPublications, readStudioPackageFile, readStudioPublication,
+  controleApprobationStudio, createStudioPublication, listProjectStudioPackages, listStudyPublications, readStudioPackageFile, readStudioPublication,
   STUDIO_PUBLICATION_ACTIONS, studioPublicationCreateSchema, studioPublicationTransitionSchema, transitionStudioPublication,
   verifierPaquet, type StudioPublicationTransition,
 } from "../lib/studio-publications.js";
+import { createStudioDelegation, listStudioDelegations, revokeStudioDelegation, studioDelegationCreateSchema, studioDelegationRevokeSchema } from "../lib/studio-delegations.js";
 
 export const studioPublicationsRouter = Router({ mergeParams: true });
 
@@ -51,6 +59,11 @@ studioPublicationsRouter.get(base, endpoint(async (req, res) => {
   res.setHeader("Cache-Control", "private, no-store");
   res.json(await readStudioPublication(param(req, "projectId"), param(req, "studyId"), param(req, "publicationId"), req.user!.id));
 }));
+// OP-6 : aperçu de l'auto-contrôle pour l'utilisateur courant, avant d'approuver (même accès que l'approbation).
+studioPublicationsRouter.get(`${base}/controle-approbation`, endpoint(async (req, res) => {
+  res.setHeader("Cache-Control", "private, no-store");
+  res.json(await controleApprobationStudio(param(req, "projectId"), param(req, "studyId"), param(req, "publicationId"), req.user!.id));
+}));
 studioPublicationsRouter.get(`${base}/verification`, endpoint(async (req, res) => {
   res.setHeader("Cache-Control", "private, no-store");
   res.json(await verifierPaquet(param(req, "projectId"), param(req, "studyId"), param(req, "publicationId"), req.user!.id));
@@ -68,10 +81,27 @@ studioPublicationsRouter.get(`${base}/files/:format`, endpoint(async (req, res) 
   if (out.file.format === "svg") res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox");
   res.status(200).send(Buffer.from(out.content));
 }));
+// Délégations d'approbation (EX-085) : lecture, création (délégant), révocation motivée (délégant ou propriétaire).
+studioPublicationsRouter.get("/delegations", endpoint(async (req, res) => {
+  res.setHeader("Cache-Control", "private, no-store");
+  res.json(await listStudioDelegations(param(req, "projectId"), req.user!.id));
+}));
+studioPublicationsRouter.post("/delegations", endpoint(async (req, res) => {
+  const parsed = studioDelegationCreateSchema.safeParse(req.body ?? {});
+  if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
+  const created = await createStudioDelegation(param(req, "projectId"), req.user!.id, parsed.data);
+  res.setHeader("Idempotent-Replayed", String(created.replayed));
+  res.status(created.replayed ? 200 : 201).json(created);
+}));
+studioPublicationsRouter.post("/delegations/:delegationId/revoquer", endpoint(async (req, res) => {
+  const parsed = studioDelegationRevokeSchema.safeParse(req.body ?? {});
+  if (!parsed.success) { res.status(400).json({ error: "invalid_input", code: "motif_exige", details: parsed.error.flatten() }); return; }
+  res.json(await revokeStudioDelegation(param(req, "projectId"), param(req, "delegationId"), req.user!.id, parsed.data.reason));
+}));
 studioPublicationsRouter.post(`${base}/:action`, endpoint(async (req, res) => {
   const action = param(req, "action");
   if (!(STUDIO_PUBLICATION_ACTIONS as readonly string[]).includes(action)) { res.status(404).json({ error: "not_found" }); return; }
   const parsed = studioPublicationTransitionSchema.safeParse(req.body ?? {});
   if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
-  res.json(await transitionStudioPublication(param(req, "projectId"), param(req, "studyId"), param(req, "publicationId"), req.user!.id, action as StudioPublicationTransition, parsed.data));
+  res.json(await transitionStudioPublication(param(req, "projectId"), param(req, "studyId"), param(req, "publicationId"), req.user!.id, action as StudioPublicationTransition, parsed.data, clientIp(req)));
 }));
