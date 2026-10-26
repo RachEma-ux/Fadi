@@ -51,8 +51,8 @@ import { empreinteDe } from "../taches/empreinte";
 import { useTache } from "../taches/useTache";
 import { MESSAGES_TACHE } from "../taches/messages";
 import { compteGpu, libererObjet, libererTexturesPartagees, texturesPartagees, vider } from "./ressources-gpu";
-import { cleAspect, objetsVolume, preparer, SceneRendu, type AspectVolume, type DonneesLot, type EntreeRendu, type GeometrieObjet } from "./scene-rendu";
-import { designer, type Impact } from "./picking";
+import { cleAspect, impactDe, objetsVolume, preparer, SceneRendu, type AspectVolume, type EntreeRendu, type GeometrieObjet } from "./scene-rendu";
+import { designer } from "./picking";
 import {
   descriptionReduction, ETAT_QUALITE_INITIAL, observerTrame, paliersApplicables, PALIERS_QUALITE, rapportPixels, reglageEffectif, reglageQualite,
   type CapacitesRendu, type EtatQualite, type ReglageQualite,
@@ -208,7 +208,7 @@ function entreesContenu(l: Lecture): EntreeRendu[] {
   const out: EntreeRendu[] = [];
   for (const s of l.mesh.solids) {
     if (!l.present(s.id)) continue;
-    out.push({ id: s.id, signature: l.cle(s.id), lot: "contenu", geometrie: s, aspect: aspectDe(l.doc, l.mode, s, s.type === "line" ? 0xd9d2c3 : 0xb9d3cf, false, s.kind === "wall-surface") });
+    out.push({ id: s.id, signature: l.cle(s.id), lot: "contenu", instanciable: true, geometrie: s, aspect: aspectDe(l.doc, l.mode, s, s.type === "line" ? 0xd9d2c3 : 0xb9d3cf, false, s.kind === "wall-surface") });
   }
   for (const o of l.mesh.outlines) {
     if (!l.present(o.id)) continue;
@@ -366,13 +366,8 @@ interface Assemble { cache: StudioCacheMaillage; mesh: StudioMesh3d; revision: s
 const PLANS_GARDES = 16;
 let sansCle = 0;
 
-/** Impact d'un rayon three.js : identifiant porté par l'objet seul, ou triangle d'un lot et sa table. */
-function impact(h: THREE.Intersection): Impact {
-  const lot = h.object.userData.lot as DonneesLot | undefined;
-  if (lot) return { distance: h.distance, table: lot.table, triangle: h.faceIndex ?? null };
-  const id = (h.object.userData.solide ?? h.object.userData.architecture) as string | undefined;
-  return id === undefined ? { distance: h.distance } : { distance: h.distance, id };
-}
+/** Impact d'un rayon three.js (objet seul, triangle d'un lot, exemplaire instancié — C.2-02) : `impactDe`. */
+const impact = impactDe;
 
 /** Centre à l'écran (coordonnées client) de l'objet `id` du maillage affiché ; null s'il n'est pas affiché. */
 function centreEcran(m: Moteur, mesh: StudioMesh3d, id: string): { x: number; y: number } | null {
