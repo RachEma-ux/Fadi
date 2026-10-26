@@ -1,7 +1,7 @@
 # Fiches de traçabilité TR-* (annexe C) — preuve et contre-preuve individuelles
 
 > Document **généré** par `node scripts/registre/etat-studio.mjs --ecrire` depuis le registre et les fiches M004 ; la CI le
-> recalcule à chaque commit. Registre SHA-256 `85e54791265aeb2d71d8ba47729ac00417c683396503a2e65736599fb6fb24b3` ; fiches `docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json`.
+> recalcule à chaque commit. Registre SHA-256 `7e5c46c6cfc0183cb31860034456319f6478af15a2160b9c8d5e2e0fa3dfc017` ; fiches `docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json`.
 
 Règle C (Checklist, annexe C) appliquée à chaque fiche : libellé exact, source, responsable, contrat, composant, tests
 positifs et négatifs, preuves, décisions, état et verdict ; **une preuve absente reste « à produire »**. Preuve = contrôle
@@ -9,8 +9,8 @@ positif exécuté (« scénario exécuté », G2-04) ; contre-preuve = contrôle
 l’échec attendu (titre marqué « [−] » ou qui le dit : refus, rejet, échec, interdit, jamais, aucun, conflit, code 4xx…).
 Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction livrée.
 
-**Synthèse** : 141 fiches ; 129 avec preuve exécutée, 132 avec contre-preuve exécutée ;
-12 preuves et 9 contre-preuves « à produire ».
+**Synthèse** : 141 fiches ; 130 avec preuve exécutée, 133 avec contre-preuve exécutée ;
+11 preuves et 8 contre-preuves « à produire ».
 
 ### TR-AC-001
 
@@ -1065,9 +1065,19 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-12,DEC-11 · **Scénarios** : 012,013
 - **Test positif prescrit** : Accepter commande puis relire acteur cible horodatage base résultat et IDs touchés dans journal.
 - **Test négatif prescrit** : Commande refusée ou trace sensible : aucun faux engagement, pas de secret/géométrie client inutile dans logs.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 3
+  - TR-EX-046 [+] conservation de 12 mois par défaut, paramétrable par STUDIO_ACCESS_RETENTION_MONTHS (1 à 120), limite en mois civils — `apps/api/src/lib/studio-journal-acces.test.ts`, commit 4304050, 2026-10-26 03:21
+  - TR-EX-046 [+] purge datée : supprime seulement les événements antérieurs à la limite, puis date la purge (limite, durée, nombre) — `apps/api/src/lib/studio-journal-acces.test.ts`, commit 4304050, 2026-10-26 03:21
+  - TR-EX-046 : minimisation — ni courriel, ni adresse IP, ni identifiant d'étude dans le journal — `apps/web/e2e/studio-dec.mjs`, commit 4304050, 2026-10-26 03:17
+- **Contre-preuve (contrôles négatifs exécutés)** : 7
+  - TR-EX-046 [−] la purge ne touche jamais le journal d'audit des publications, immuable en base ; une durée invalide est refusée — `apps/api/src/lib/studio-journal-acces.test.ts`, commit 4304050, 2026-10-26 03:21
+  - TR-EX-046 [+] événements sensibles : refus 401/403/404/423 et sorties de contenu, route générique, sans identifiant d'objet — `apps/api/src/lib/studio-journal-acces.test.ts`, commit 4304050, 2026-10-26 03:21
+  - TR-EX-046 [+] intergiciel : un refus et un export sont journalisés minimisés (ni IP, ni courriel, ni corps) ; une lecture ordinaire ne l'est pas — `apps/api/src/lib/studio-journal-acces.test.ts`, commit 4304050, 2026-10-26 03:21
+  - TR-EX-046 [−] sans puits activé (routeur monté seul), rien n'est écrit ; une écriture qui échoue est signalée sans casser la réponse — `apps/api/src/lib/studio-journal-acces.test.ts`, commit 4304050, 2026-10-26 03:21
+  - TR-EX-046 [+] base réelle : un refus et un export Studio sont journalisés sans IP ni courriel ; la purge supprime au-delà de 12 mois, garde le reste et se date — `apps/api/src/routes/studio-journal-acces.test.ts`, commit 4304050, 2026-10-26 03:21
+  - TR-EX-046 [−] base réelle : une ligne du journal d'accès n'est jamais modifiée ; le journal des publications refuse toute modification — `apps/api/src/routes/studio-journal-acces.test.ts`, commit 4304050, 2026-10-26 03:21
+  - … et 1 autre(s) au registre
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-047

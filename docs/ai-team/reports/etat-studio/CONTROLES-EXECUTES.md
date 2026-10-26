@@ -2,7 +2,7 @@
 
 > Document **généré** par `node scripts/registre/etat-studio.mjs --ecrire` depuis le registre ; la CI (workflow
 > « Continuité de développement ») le recalcule à chaque commit et échoue s’il diffère : il est donc tenu au HEAD testé.
-> Registre lu : `docs/workstreams/studio/task-register.json`, SHA-256 `85e54791265aeb2d71d8ba47729ac00417c683396503a2e65736599fb6fb24b3`.
+> Registre lu : `docs/workstreams/studio/task-register.json`, SHA-256 `7e5c46c6cfc0183cb31860034456319f6478af15a2160b9c8d5e2e0fa3dfc017`.
 
 **Une CI verte n’est pas une couverture exhaustive** (X.4-03) : elle prouve seulement que les contrôles listés en partie 1
 ont réussi aux exécutions citées. Les scénarios de la partie 2 ne sont pas couverts, quel que soit l’état de la CI.
@@ -14,9 +14,8 @@ ont réussi aux exécutions citées. Les scénarios de la partie 2 ne sont pas c
 | Accepté / Non applicable | 2 |
 | Accepté / Non exécuté | 57 |
 | Bloqué / Non exécuté | 9 |
-| En cours / Non exécuté | 8 |
-| Implémenté / Non exécuté | 5 |
-| Vérifié / Exécuté | 427 |
+| En cours / Non exécuté | 7 |
+| Vérifié / Exécuté | 433 |
 | Vérifié / Non applicable | 93 |
 | À faire / Non exécuté | 29 |
 
@@ -28,9 +27,11 @@ la date et l’environnement de l’étape qui a réussi.
 | Fichier ou trace | Étape de CI qui l’exécute | Libellés exécutés | Obligations | Exécutions citées | Première date citée | Dernière date citée |
 |---|---|---:|---:|---:|---|---|
 | `.github/workflows/ci.yml` | voir la preuve | 0 | 2 | 1 | 2026-10-25 13:28 | 2026-10-25 13:28 |
+| `apps/api/src/lib/studio-corpus-s5.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 1 | 1 | 1 | 2026-10-26 06:26 | 2026-10-26 06:26 |
 | `apps/api/src/lib/studio-dossiers-regles.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 1 | 1 | 1 | 2026-10-19 12:39 | 2026-10-19 12:39 |
 | `apps/api/src/lib/studio-exigences.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 3 | 4 | 1 | 2026-10-19 08:08 | 2026-10-19 08:08 |
 | `apps/api/src/lib/studio-export-3d.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 1 | 1 | 2026-10-26 06:26 | 2026-10-26 06:26 |
+| `apps/api/src/lib/studio-journal-acces.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 6 | 1 | 1 | 2026-10-26 03:21 | 2026-10-26 03:21 |
 | `apps/api/src/lib/studio-modeles-externes.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 1 | 1 | 1 | 2026-10-26 04:45 | 2026-10-26 04:45 |
 | `apps/api/src/lib/studio-observations-contrat.preuves-pub.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 5 | 2 | 1 | 2026-10-26 04:45 | 2026-10-26 04:45 |
 | `apps/api/src/lib/studio-observations.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 3 | 3 | 1 | 2026-10-19 12:39 | 2026-10-19 12:39 |
@@ -38,15 +39,19 @@ la date et l’environnement de l’étape qui a réussi.
 | `apps/api/src/lib/studio-publication-manifeste.preuves-pub.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 5 | 2 | 1 | 2026-10-26 04:45 | 2026-10-26 04:45 |
 | `apps/api/src/lib/studio-publication-statuts.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 4 | 4 | 1 | 2026-10-19 08:08 | 2026-10-19 08:08 |
 | `apps/api/src/lib/studio-quantites.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 1 | 1 | 2026-10-26 04:45 | 2026-10-26 04:45 |
+| `apps/api/src/lib/studio-surfaces.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 5 | 1 | 1 | 2026-10-26 10:51 | 2026-10-26 10:51 |
 | `apps/api/src/routes/studio-agents.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 10 | 6 | 1 | 2026-10-26 03:21 | 2026-10-26 03:21 |
 | `apps/api/src/routes/studio-cmd.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 11 | 7 | 1 | 2026-10-26 03:21 | 2026-10-26 03:21 |
+| `apps/api/src/routes/studio-contrats.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 3 | 1 | 1 | 2026-10-26 10:51 | 2026-10-26 10:51 |
 | `apps/api/src/routes/studio-delegations.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 4 | 1 | 1 | 2026-10-25 20:25 | 2026-10-25 20:25 |
 | `apps/api/src/routes/studio-derivation-copie.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 3 | 2 | 1 | 2026-10-26 03:21 | 2026-10-26 03:21 |
 | `apps/api/src/routes/studio-export-3d.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 1 | 1 | 2026-10-26 06:26 | 2026-10-26 06:26 |
+| `apps/api/src/routes/studio-fusion.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 7 | 1 | 1 | 2026-10-26 10:51 | 2026-10-26 10:51 |
 | `apps/api/src/routes/studio-g2.preuves-g2.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 6 | 4 | 1 | 2026-10-26 06:26 | 2026-10-26 06:26 |
 | `apps/api/src/routes/studio-illustrations.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 9 | 8 | 1 | 2026-10-26 03:21 | 2026-10-26 03:21 |
 | `apps/api/src/routes/studio-invariants.preuves-d2.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 6 | 3 | 1 | 2026-10-25 21:58 | 2026-10-25 21:58 |
 | `apps/api/src/routes/studio-invariants.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 16 | 27 | 3 | 2026-10-19 14:33 | 2026-10-25 16:17 |
+| `apps/api/src/routes/studio-journal-acces.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 1 | 1 | 2026-10-26 03:21 | 2026-10-26 03:21 |
 | `apps/api/src/routes/studio-observations-rapprochement.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 3 | 1 | 2026-10-25 20:25 | 2026-10-25 20:25 |
 | `apps/api/src/routes/studio-permissions.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 5 | 3 | 2 | 2026-10-19 14:33 | 2026-10-19 20:40 |
 | `apps/api/src/routes/studio-profils-import.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 7 | 4 | 2 | 2026-10-26 04:45 | 2026-10-26 06:26 |
@@ -60,8 +65,8 @@ la date et l’environnement de l’étape qui a réussi.
 | `apps/api/src/testing/regressions-pertinentes.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 8 | 1 | 1 | 2026-10-26 06:26 | 2026-10-26 06:26 |
 | `apps/api/src/testing/revue-g1.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 3 | 3 | 1 | 2026-10-25 22:48 | 2026-10-25 22:48 |
 | `apps/api/src/testing/studio-comptes.preuves-a.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 1 | 1 | 2026-10-25 21:58 | 2026-10-25 21:58 |
-| `apps/api/src/testing/studio-contrat-commandes.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 14 | 12 | 2 | 2026-10-19 12:39 | 2026-10-25 21:58 |
-| `apps/api/src/testing/studio-ecritures-architecture.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 4 | 2 | 1 | 2026-10-19 12:39 | 2026-10-19 12:39 |
+| `apps/api/src/testing/studio-contrat-commandes.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 16 | 13 | 3 | 2026-10-19 12:39 | 2026-10-26 10:51 |
+| `apps/api/src/testing/studio-ecritures-architecture.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 5 | 3 | 2 | 2026-10-19 12:39 | 2026-10-26 10:51 |
 | `apps/api/src/testing/studio-purete-modele.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 3 | 1 | 1 | 2026-10-26 03:21 | 2026-10-26 03:21 |
 | `apps/api/src/testing/studio-releve-ref02.preuves-e.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 1 | 1 | 2026-10-25 21:58 | 2026-10-25 21:58 |
 | `apps/api/src/testing/studio-tracabilite-ex.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 12 | 4 | 1 | 2026-10-25 20:25 | 2026-10-25 20:25 |
@@ -76,7 +81,7 @@ la date et l’environnement de l’étape qui a réussi.
 | `apps/web/e2e/studio-corpus-references.mjs` | Références visuelles des corpus S1–S7 — planche 2D et vue 3D comparées aux captures versi… | 2 | 1 | 1 | 2026-10-26 06:21 | 2026-10-26 06:21 |
 | `apps/web/e2e/studio-corpus-s6.mjs` | Recette du corpus S6 — étude à variantes et révisions créée par l'API, têtes, dossier et … | 2 | 2 | 1 | 2026-10-19 14:40 | 2026-10-19 14:40 |
 | `apps/web/e2e/studio-corpus-s7.mjs` | Recette du corpus S7 — session hors réseau puis reconnectée sur le corpus de départ, une … | 3 | 1 | 1 | 2026-10-26 06:21 | 2026-10-26 06:21 |
-| `apps/web/e2e/studio-dec.mjs` | Décisions P-12 — copie indépendante, tolérances, alternatives clavier, journal d'accès, r… | 19 | 6 | 1 | 2026-10-26 03:17 | 2026-10-26 03:17 |
+| `apps/web/e2e/studio-dec.mjs` | Décisions P-12 — copie indépendante, tolérances, alternatives clavier, journal d'accès, r… | 21 | 7 | 1 | 2026-10-26 03:17 | 2026-10-26 03:17 |
 | `apps/web/e2e/studio-domaines.mjs` | Recette des domaines Studio — quatre domaines de la référence, planches seulement dans De… | 14 | 10 | 4 | 2026-10-19 14:39 | 2026-10-25 22:05 |
 | `apps/web/e2e/studio-dossier.mjs` | Recette de la production documentaire Studio — TEST-001 (dessin 2D publié sans 3D), feuil… | 30 | 20 | 3 | 2026-10-19 12:44 | 2026-10-25 22:08 |
 | `apps/web/e2e/studio-echanges.mjs` | Recette de la matrice d'échanges Studio — commande Q, entrées livrées et reportées, couve… | 16 | 10 | 3 | 2026-10-19 14:41 | 2026-10-26 06:25 |
@@ -108,11 +113,17 @@ la date et l’environnement de l’étape qui a réussi.
 | `apps/web/e2e/studio-rendu.mjs` | Recette du rendu Studio — dégradation sûre de la vue 3D sous charge, types 3D avancés non… | 6 | 4 | 2 | 2026-10-25 20:25 | 2026-10-25 21:21 |
 | `apps/web/e2e/studio-restauration.mjs` | Recette de restauration Studio — archive JSON vers une base neuve, comparaison avant / ap… | 6 | 7 | 3 | 2026-10-19 08:14 | 2026-10-25 13:26 |
 | `apps/web/e2e/studio-visualisation.mjs` | Recette de visualisation Studio — rendu et export d'image sans commande ni effet sur le B… | 15 | 3 | 1 | 2026-10-25 21:54 | 2026-10-25 21:54 |
+| `apps/web/e2e/studio-w3a.mjs` | Lot W3-A — blocs définis par l'utilisateur et contraintes géométriques (apps/web/e2e/stud… | 6 | 1 | 1 | 2026-10-26 10:48 | 2026-10-26 10:48 |
+| `apps/web/e2e/studio-w3b.mjs` | Lot W3-B — niveaux, composants 3D et éléments structurels (apps/web/e2e/studio-w3b.mjs) | 4 | 1 | 1 | 2026-10-26 10:48 | 2026-10-26 10:48 |
+| `apps/web/e2e/studio-w3c.mjs` | Lot W3-C — surfaces libres NURBS et de subdivision (apps/web/e2e/studio-w3c.mjs) | 9 | 1 | 1 | 2026-10-26 10:49 | 2026-10-26 10:49 |
+| `apps/web/e2e/studio-w3d.mjs` | Lot W3-D — fusion de variantes à trois voies (apps/web/e2e/studio-w3d.mjs) | 5 | 1 | 1 | 2026-10-26 10:49 | 2026-10-26 10:49 |
 | `apps/web/src/lib/inventaire-catalogues-outils.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 5 | 2 | 1 | 2026-10-19 12:39 | 2026-10-19 12:39 |
 | `apps/web/src/lib/local-store-migration.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 1 | 1 | 1 | 2026-10-26 03:10 | 2026-10-26 03:10 |
 | `apps/web/src/lib/local-store-quarantaine.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 3 | 1 | 1 | 2026-10-26 03:10 | 2026-10-26 03:10 |
 | `apps/web/src/modules/atelier/nouveau/exact/moteur-exact.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 1 | 1 | 1 | 2026-10-18 22:20 | 2026-10-18 22:20 |
 | `apps/web/src/modules/collaboration/commandes-collaboration.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 1 | 1 | 1 | 2026-10-26 04:35 | 2026-10-26 04:35 |
+| `apps/web/src/modules/studio/batiment/batiment-ui.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 1 | 1 | 2026-10-26 10:40 | 2026-10-26 10:40 |
+| `apps/web/src/modules/studio/blocs/blocs-ui.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 4 | 1 | 1 | 2026-10-26 10:40 | 2026-10-26 10:40 |
 | `apps/web/src/modules/studio/chargement/cache-hors-ligne.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 11 | 2 | 2 | 2026-10-19 12:39 | 2026-10-26 04:35 |
 | `apps/web/src/modules/studio/chargement/carte-morceaux.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 5 | 3 | 1 | 2026-10-19 12:39 | 2026-10-19 12:39 |
 | `apps/web/src/modules/studio/chargement/cycle-activation.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 7 | 3 | 1 | 2026-10-26 04:35 | 2026-10-26 04:35 |
@@ -137,6 +148,7 @@ la date et l’environnement de l’étape qui a réussi.
 | `apps/web/src/modules/studio/exigences/exigences-ui.preuves-d2.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 1 | 1 | 2026-10-25 21:49 | 2026-10-25 21:49 |
 | `apps/web/src/modules/studio/exigences/exigences-ui.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 1 | 1 | 1 | 2026-10-19 08:07 | 2026-10-19 08:07 |
 | `apps/web/src/modules/studio/frontieres.preuves-e.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 7 | 3 | 1 | 2026-10-25 21:49 | 2026-10-25 21:49 |
+| `apps/web/src/modules/studio/fusion/fusion-ui.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 6 | 1 | 1 | 2026-10-26 10:40 | 2026-10-26 10:40 |
 | `apps/web/src/modules/studio/graphismes/graphismes-ui.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 3 | 2 | 1 | 2026-10-26 04:35 | 2026-10-26 04:35 |
 | `apps/web/src/modules/studio/hors-ligne/contrats.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 3 | 1 | 1 | 2026-10-19 12:39 | 2026-10-19 12:39 |
 | `apps/web/src/modules/studio/hors-ligne/file-locale.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 1 | 1 | 2026-10-19 12:39 | 2026-10-19 12:39 |
@@ -191,6 +203,7 @@ la date et l’environnement de l’étape qui a réussi.
 | `apps/web/src/modules/studio/vue3d/scene-rendu.preuves-d2.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 1 | 1 | 2026-10-25 21:49 | 2026-10-25 21:49 |
 | `apps/web/src/modules/studio/vue3d/scene-rendu.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 3 | 4 | 1 | 2026-10-19 10:41 | 2026-10-19 10:41 |
 | `apps/web/src/modules/studio/vue3d/scenes/scenes.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 2 | 2 | 2026-10-19 08:07 | 2026-10-26 03:10 |
+| `apps/web/src/modules/studio/vue3d/surfaces.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 10 | 1 | 1 | 2026-10-26 10:40 | 2026-10-26 10:40 |
 | `apps/web/src/modules/studio/workers/chemins-optimises.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 4 | 2 | 1 | 2026-10-26 04:35 | 2026-10-26 04:35 |
 | `apps/web/src/modules/studio/workers/equivalence.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 1 | 1 | 2026-10-19 06:45 | 2026-10-19 06:45 |
 | `apps/web/src/modules/studio/workers/hote-worker.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 3 | 1 | 2026-10-19 06:45 | 2026-10-19 06:45 |
@@ -202,6 +215,8 @@ la date et l’environnement de l’étape qui a réussi.
 | `packages/atelier-model/src/studio/annotations.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 1 | 1 | 1 | 2026-10-19 06:45 | 2026-10-19 06:45 |
 | `packages/atelier-model/src/studio/architecture/architecture.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 8 | 10 | 2 | 2026-10-19 06:45 | 2026-10-25 13:26 |
 | `packages/atelier-model/src/studio/architecture/echelle.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 10 | 1 | 1 | 2026-10-26 06:14 | 2026-10-26 06:14 |
+| `packages/atelier-model/src/studio/batiment/batiment.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 16 | 1 | 1 | 2026-10-26 10:40 | 2026-10-26 10:40 |
+| `packages/atelier-model/src/studio/blocs/blocs.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 9 | 1 | 1 | 2026-10-26 10:40 | 2026-10-26 10:40 |
 | `packages/atelier-model/src/studio/chaine-documentaire.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 4 | 2 | 1 | 2026-10-26 04:35 | 2026-10-26 04:35 |
 | `packages/atelier-model/src/studio/cmd/cmd.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 14 | 7 | 2 | 2026-10-26 03:10 | 2026-10-26 06:14 |
 | `packages/atelier-model/src/studio/cmd/migration.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 7 | 3 | 1 | 2026-10-26 03:10 | 2026-10-26 03:10 |
@@ -210,10 +225,11 @@ la date et l’environnement de l’étape qui a réussi.
 | `packages/atelier-model/src/studio/composition/basculement.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 6 | 1 | 1 | 2026-10-26 04:35 | 2026-10-26 04:35 |
 | `packages/atelier-model/src/studio/composition/f1-geometrie.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 8 | 11 | 1 | 2026-10-25 19:50 | 2026-10-25 19:50 |
 | `packages/atelier-model/src/studio/conclusions-controle.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 3 | 1 | 1 | 2026-10-26 04:35 | 2026-10-26 04:35 |
+| `packages/atelier-model/src/studio/contraintes/contraintes.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 6 | 1 | 1 | 2026-10-26 10:40 | 2026-10-26 10:40 |
 | `packages/atelier-model/src/studio/copie-independante.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 4 | 2 | 1 | 2026-10-26 03:10 | 2026-10-26 03:10 |
-| `packages/atelier-model/src/studio/corpus/corpus.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 7 | 5 | 3 | 2026-10-19 14:33 | 2026-10-26 06:14 |
-| `packages/atelier-model/src/studio/couverture-3d.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 1 | 1 | 2026-10-25 21:11 | 2026-10-25 21:11 |
-| `packages/atelier-model/src/studio/document-2d.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 4 | 2 | 2026-10-18 21:27 | 2026-10-25 21:11 |
+| `packages/atelier-model/src/studio/corpus/corpus.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 16 | 9 | 4 | 2026-10-19 14:33 | 2026-10-26 10:40 |
+| `packages/atelier-model/src/studio/couverture-3d.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 3 | 3 | 3 | 2026-10-25 20:16 | 2026-10-26 10:40 |
+| `packages/atelier-model/src/studio/document-2d.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 4 | 6 | 3 | 2026-10-18 21:27 | 2026-10-26 10:40 |
 | `packages/atelier-model/src/studio/dossier-conception.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 2 | 1 | 2026-10-19 12:39 | 2026-10-19 12:39 |
 | `packages/atelier-model/src/studio/echanges/bcf-observations.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 4 | 1 | 1 | 2026-10-26 04:35 | 2026-10-26 04:35 |
 | `packages/atelier-model/src/studio/echanges/matrice-echanges.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 8 | 4 | 2 | 2026-10-19 14:33 | 2026-10-26 06:14 |
@@ -222,6 +238,7 @@ la date et l’environnement de l’étape qui a réussi.
 | `packages/atelier-model/src/studio/exigences/exigences.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 6 | 3 | 2 | 2026-10-19 08:07 | 2026-10-19 08:46 |
 | `packages/atelier-model/src/studio/export-3d.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 4 | 1 | 1 | 2026-10-26 06:14 | 2026-10-26 06:14 |
 | `packages/atelier-model/src/studio/f2-booleen.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 1 | 4 | 1 | 2026-10-25 21:11 | 2026-10-25 21:11 |
+| `packages/atelier-model/src/studio/fusion-variantes.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 11 | 1 | 1 | 2026-10-26 10:40 | 2026-10-26 10:40 |
 | `packages/atelier-model/src/studio/graphismes.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 4 | 1 | 1 | 2026-10-26 04:35 | 2026-10-26 04:35 |
 | `packages/atelier-model/src/studio/history.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 2 | 1 | 2026-10-18 22:56 | 2026-10-18 22:56 |
 | `packages/atelier-model/src/studio/identite-bim.preuves-e.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 1 | 1 | 2026-10-25 21:49 | 2026-10-25 21:49 |
@@ -243,8 +260,11 @@ la date et l’environnement de l’étape qui a réussi.
 | `packages/atelier-model/src/studio/sources/sources.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 4 | 1 | 1 | 2026-10-26 04:35 | 2026-10-26 04:35 |
 | `packages/atelier-model/src/studio/studio-invariants.preuves-d2.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 1 | 3 | 1 | 2026-10-25 21:49 | 2026-10-25 21:49 |
 | `packages/atelier-model/src/studio/studio-invariants.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 18 | 23 | 3 | 2026-10-19 14:33 | 2026-10-25 16:08 |
+| `packages/atelier-model/src/studio/subdivisions.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 7 | 1 | 1 | 2026-10-26 10:40 | 2026-10-26 10:40 |
+| `packages/atelier-model/src/studio/surfaces-libres.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 10 | 1 | 1 | 2026-10-26 10:40 | 2026-10-26 10:40 |
 | `packages/atelier-model/src/studio/vues-coupe.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 4 | 1 | 1 | 2026-10-26 04:35 | 2026-10-26 04:35 |
-| `packages/geometry-exact/src/index.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 3 | 2 | 2 | 2026-10-26 04:35 | 2026-10-26 06:14 |
+| `packages/geometry-exact/src/index.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 8 | 3 | 3 | 2026-10-26 04:35 | 2026-10-26 10:40 |
+| `scripts/check-continuity.test.mjs` | suite Vitest / node --test du job validate ou du workflow cité | 5 | 1 | 1 | 2026-10-17 18:41 | 2026-10-17 18:41 |
 | `scripts/check-frontieres.test.mjs` | suite Vitest / node --test du job validate ou du workflow cité | 4 | 1 | 1 | 2026-10-19 08:05 | 2026-10-19 08:05 |
 | `scripts/migration/migration-lib.test.mjs` | suite Vitest / node --test du job validate ou du workflow cité | 5 | 5 | 2 | 2026-10-19 14:38 | 2026-10-25 21:52 |
 | `scripts/migration/recette-simulation.mjs` | voir la preuve | 3 | 4 | 1 | 2026-10-19 14:38 | 2026-10-19 14:38 |
@@ -254,11 +274,11 @@ la date et l’environnement de l’étape qui a réussi.
 | `scripts/securite/analyse-secrets.test.mjs` | suite Vitest / node --test du job validate ou du workflow cité | 6 | 1 | 1 | 2026-10-26 03:05 | 2026-10-26 03:05 |
 | `scripts/validation/porte-g4.test.mjs` | suite Vitest / node --test du job validate ou du workflow cité | 6 | 2 | 1 | 2026-10-26 03:06 | 2026-10-26 03:06 |
 
-Total : 226 fichiers ou traces, 1554 libellés exécutés.
+Total : 247 fichiers ou traces, 1710 libellés exécutés.
 
 ## 2. Scénarios absents ou incomplets
 
-### 2.1 Obligations de recette ouvertes (7)
+### 2.1 Obligations de recette ouvertes (6)
 
 Obligations TEST, NAV, REC, TR et E2E qui ne sont ni « Vérifié » ni « Accepté » : leur scénario n’est pas (entièrement) couvert.
 
@@ -269,47 +289,14 @@ Obligations TEST, NAV, REC, TR et E2E qui ne sont ni « Vérifié » ni « Accep
 | REC-E-03 | À faire | Non exécuté | Scénario enchaîné vérifié (base simulée simplifiée : pas d'orderBy/limit ; cycle complet sur base réelle dans studio-pub.mjs). La recette d'usage des trois parcours par le maître d'ouvrage est EXTERNE (acte du maître d'ouvrage). |
 | REC-I-01 | À faire | Non exécuté | Point 2 du 25 octobre 2026 (décision requise) : Aucune « maquette d'interaction » n'existe ni n'a été validée ; la validation relève d'une recette utilisateur / décision du maître d'ouvrage (R.3-01). Aucun test ne la remplace. |
 | TR-AC-011 | En cours | Non exécuté | Préparé (fiches-outils.ts) : forme du build désigné (FORME_BUILD_DESIGNE : commit 40 hex + sha256 de l'artefact), profils de charge que le dépôt sait exécuter (PROFILS_CHARGE_CANDIDATS : profil de vingt outils sur Chromium bureau / télépho… |
-| TR-EX-046 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-EX-059 | En cours | Non exécuté | Point (1) fait : booléen exact lourd (union de deux prismes en étoile de 320 sommets, 2,2–3,8 s dans le Worker OCCT) mesuré : trame max ≈ 50–67 ms, 14–20 interactions pendant le calcul, max 80–112 ms (< 200 ms) ; contre-épreuve « bloque » … |
 
-### 2.2 Tests prescrits non exécutés (34)
+### 2.2 Tests prescrits non exécutés (2)
 
 | ID | Fichier | Libellés |
 |---|---|---|
-| X.1-01 | `packages/atelier-model/src/studio/blocs/blocs.test.ts` | X.1-01 blocs : une définition réutilisable et ses insertions transformées (position, rotation, échelle, symétrie) — géométrie dérivée exacte, document relu à l'identique ; X.1-01 blocs : redéfinir le bloc se répercute sur toutes ses insert… |
-| X.1-01 | `packages/atelier-model/src/studio/contraintes/contraintes.test.ts` | X.1-01 contraintes : chaque type est résolu — horizontal, vertical, parallélisme, perpendicularité, tangence, coïncidence, égalité de longueur, distance fixée ; X.1-01 contraintes : résolution déterministe — mêmes formes, mêmes contraintes… |
-| X.1-01 | `packages/atelier-model/src/studio/corpus/corpus.test.ts` | X.1-01 S1 : blocs définis par l'utilisateur (définition réutilisable, insertions transformées) et contraintes géométriques satisfaites dans chaque motif ; plus aucun élément déclaré absent ; X.1-01 S1 : hachures, symboles (blocs de bibliot… |
-| X.1-01 | `packages/atelier-model/src/studio/document-2d.test.ts` | lot W3-A (X.1-01) : blocs (définir, insérer, éclater) et contraintes (contraindre), identités, icônes et raccourcis propres ; registre entier sans doublon |
-| X.1-01 | `apps/web/src/modules/studio/blocs/blocs-ui.test.ts` | X.1-01 interface blocs : définir depuis la sélection, insérer, modifier la pose, éclater et retirer — commandes du modèle, refus dits ; X.1-01 interface blocs : une insertion se sélectionne (clic, rectangle, tout sélectionner), se déplace … |
-| X.1-01 | `apps/web/e2e/studio-w3a.mjs` | Redéfinir le bloc : les deux insertions suivent la nouvelle définition (une ligne, plus de cercle), sans recopie ; Ctrl+F12 : l'insertion est éclatée en formes du dessin (identifiant insertion.élément) ; Export du serveur : DXF en BLOCK / … |
-| X.1-04 | `packages/atelier-model/src/studio/corpus/corpus.test.ts` | X.1-04 S4 : niveaux comme objets, structure typée (poteau, poutre, dalle) et composant répété — déplacer un niveau translate ses seuls objets, modifier la gaine change toutes ses occurrences ; chaque scène S1–S7 (100 primitives) : les comm… |
-| X.1-04 | `packages/atelier-model/src/studio/batiment/batiment.test.ts` | niveau nommé avec sa cote ; murs, échelle, poteau, poutre, dalle et occurrences rattachés ; l'ouverture suit son mur ; déplacer un niveau (nouvelle cote) translate tous ses objets du même écart, dans la même commande ; les autres ne bougen… |
-| X.1-04 | `packages/atelier-model/src/studio/couverture-3d.test.ts` | cohérent : chaque type disponible cite au moins un test existant (fichier et libellé exact), chaque type avancé est non disponible sans outil ni test |
-| X.1-04 | `apps/api/src/testing/studio-contrat-commandes.test.ts` | X.1-04 serveur : les quatre outils du bâtiment sont acceptés par le schéma de l'API et appliqués par le serveur ; déplacer le niveau translate ses objets dans la révision enregistrée ; X.1-04 serveur [−] niveau inconnu, définition inconnue… |
-| X.1-04 | `apps/web/src/modules/studio/batiment/batiment-ui.test.ts` | élément structurel : poteau, poutre, dalle depuis la saisie ; refus sans type, sans section ou avec une géométrie incomplète ; le modèle les accepte ; rendre unique : une définition copiée et l'occurrence replacée sur elle, en un seul lot … |
-| X.1-04 | `apps/web/e2e/studio-w3b.mjs` | X.1-04 (règle d'or) : Niveau Ctrl+F2, Composant Ctrl+F3, Occurrence Ctrl+F6, Élément structurel Ctrl+F7 — chacun son icône, famille Architecture ; X.1-04 : déplacer l'étage (3,2 → 4 m) translate de 0,8 m ses poteau, poutre, dalle, mur et o… |
-| X.1-05 | `packages/atelier-model/src/studio/corpus/corpus.test.ts` | X.1-05 S5 : surface libre NURBS (quart de cylindre rationnel, pôles et poids) et surface épaissie par le noyau, surface conservée — oracle de forme close (aire π R L / 2, volume π/4 ((R + e)² − R²) L) ; X.1-05 S5 : booléens exacts (union, … |
-| X.1-05 | `apps/api/src/lib/studio-corpus-s5.test.ts` | X.1-05 booléens S5 : union, différence et intersection recalculées par le noyau — même empreinte que la donnée conservée, volumes de forme close |
-| X.1-05 | `packages/geometry-exact/src/index.test.ts` | NURBS rationnelle : quart de cylindre R 2 m, L 3 m épaissi de 0,1 m vers l'extérieur — volume π/4 ((R + e)² − R²) L, intérieur π/4 (R² − (R − e)²) L ; NURBS : les pôles ne sont pas des points de passage — plaque bilinéaire 2 × 3 épaissie d… |
-| X.1-05 | `packages/atelier-model/src/studio/surfaces-libres.test.ts` | X.1-05 NURBS : quart de cylindre rationnel (poids 1, √2/2, 1) — chaque point évalué est à la distance R de l'axe, aire approchée → π R L / 2 ; X.1-05 NURBS : les pôles ne sont pas des points de passage — la nappe passe par ses quatre coins… |
-| X.1-05 | `apps/api/src/lib/studio-surfaces.test.ts` | X.1-05 serveur : l'épaississement est recalculé depuis la surface du document du serveur ; son résultat remplace celui du client ; X.1-05 serveur : empreinte d'un calcul sur une autre surface ou d'un autre côté — refus 400 exact-mismatch ;… |
-| X.1-05 | `apps/web/src/modules/studio/vue3d/surfaces.test.ts` | X.1-05 interface : Surface NURBS — grille plane de pôles saisie (normale +z), champs vides refusés, aucune valeur proposée ; X.1-05 interface : Modifier la surface — le pôle choisi reprend ses valeurs, position et poids saisis, même identi… |
-| X.1-05 | `packages/atelier-model/src/studio/document-2d.test.ts` | X.1-05 : surfaces libres — Surface NURBS (Ctrl+F8), Modifier la surface (Ctrl+F9), Épaissir la surface (Shift+F11), identités, icônes et raccourcis propres, barre « volume-libre » |
-| X.1-05 | `apps/web/e2e/studio-w3c.mjs` | Modifier la surface : un clic sur le repère du pôle central (canevas WebGL) le choisit dans le formulaire ; oracle : volume du noyau dans le navigateur = π/4 ((R + e)² − R²) L à 1e-6 près ; rien d'engagé par le calcul ; enregistrement : le… |
-| X.1-05 | `packages/atelier-model/src/studio/subdivisions.test.ts` | X.1-05 subdivision : tétraèdre régulier, niveau 1 — sommets a/4 et points d'arête (a + b)/4, aire s² (3√2/4 + √3/2), volume 5 s³ / 24 ; niveau 2 dans l'enveloppe convexe, volume décroissant ; X.1-05 subdivision validation : face non triang… |
-| X.1-05 | `packages/atelier-model/src/studio/couverture-3d.test.ts` | types avancés du référentiel (§ 4.1, S5, PERF-07) : sommets et arêtes, groupe, courbe exacte 3D, BRep fournisseur — non disponibles (booléen depuis le lot F2, composant 3D depuis le lot W3-B, surfaces NURBS et de subdivision depuis X.1-05 … |
-| X.1-06 | `packages/atelier-model/src/studio/fusion-variantes.test.ts` | fusion sans conflit : changements de la source repris, ceux de la cible conservés, ancêtre respecté ; par propriété : deux propriétés différentes du même objet modifiées de chaque côté sont fusionnées sans conflit ; même objet modifié des … |
-| X.1-06 | `packages/atelier-model/src/studio/corpus/corpus.test.ts` | F1 (lot W3-D) : B fusionnée dans C depuis l'ancêtre A1 — conflit de collision attendu, tranché explicitement ; tête fusionnée = oracle ; A1 recrée exactement le plan de base ; têtes A, B, C conformes à l'oracle ; REC-A-03 3,180 puis 3,096 … |
-| X.1-06 | `apps/api/src/routes/studio-fusion.test.ts` | aperçu : ancêtre = révision de dérivation, changements des deux côtés, conflit par propriété, rien n'est écrit ; application : refusée tant qu'un conflit n'est pas résolu ; résolue, une seule révision `variant-merge` de la cible, journalis… |
-| X.1-06 | `apps/api/src/routes/studio-contrats.test.ts` | studio-api-fusion-apercu/1 — POST …/fusion/apercu : réponse conforme, en-tête X-Studio-Contrat ; studio-api-fusion-appliquer/1 — POST …/fusion : réponse conforme, en-tête X-Studio-Contrat ; studio-api-fusion-annuler/1 — POST …/fusion/annul… |
-| X.1-06 | `apps/api/src/testing/studio-ecritures-architecture.test.ts` | fusion de variantes (lot W3-D) : sa révision est écrite par le même module, sous la même orchestration (verrous, rejeu, chemin d'écriture, journal) |
-| X.1-06 | `apps/web/src/modules/studio/fusion/fusion-ui.test.ts` | W3-D [+] « Fusionner une variante » (Ctrl+F10) et « Annuler la dernière fusion » (Ctrl+F11) : icône propre, barre Édition, raccourci libre, trouvées par recherche, ouvertes par-dessus le domaine ; W3-D [−] en lecture seule (lecteur, révisi… |
-| X.1-06 | `apps/web/e2e/studio-w3d.mjs` | Ctrl+F10 ouvre la boîte « Fusionner une variante » ; chaque conflit tranché au clavier (« Garder la source ») : la fusion devient possible ; la source B n'est pas écrite ; Ctrl+F11 : annulation en une nouvelle révision `variant-merge-undo`… |
 | E.5-04 | `apps/web/src/modules/studio/vue3d/scenes/scenes.test.ts` | F.2-03 [+] trois types annoncés ; l'illustration contrainte est disponible avec son déclencheur (honnêtement décrite : locale sans IA par défaut, jamais de mutation) ; l'exploration libre reste indisponible sans bouton ; un seul bouton d'e… |
 | F.2-02 | `apps/web/src/modules/studio/vue3d/scenes/scenes.test.ts` | F.2-03 [+] trois types annoncés ; l'illustration contrainte est disponible avec son déclencheur (honnêtement décrite : locale sans IA par défaut, jamais de mutation) ; l'exploration libre reste indisponible sans bouton ; un seul bouton d'e… |
-| TR-EX-046 | `apps/api/src/lib/studio-journal-acces.test.ts` | TR-EX-046 [+] conservation de 12 mois par défaut, paramétrable par STUDIO_ACCESS_RETENTION_MONTHS (1 à 120), limite en mois civils ; TR-EX-046 [+] purge datée : supprime seulement les événements antérieurs à la limite, puis date la purge (… |
-| TR-EX-046 | `apps/api/src/routes/studio-journal-acces.test.ts` | TR-EX-046 [+] base réelle : un refus et un export Studio sont journalisés sans IP ni courriel ; la purge supprime au-delà de 12 mois, garde le reste et se date ; TR-EX-046 [−] base réelle : une ligne du journal d'accès n'est jamais modifié… |
-| TR-EX-046 | `apps/web/e2e/studio-dec.mjs` | TR-EX-046 : le refus et l'export sont journalisés, route générique, statut et genre ; TR-EX-046 : minimisation — ni courriel, ni adresse IP, ni identifiant d'étude dans le journal |
 
 ### 2.3 Recettes Studio présentes mais non branchées en CI (0)
 

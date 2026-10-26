@@ -34,6 +34,7 @@ jobs:
       - name: Vérifier la cohérence du registre et de ses compteurs
         run: |
           python3 -m unittest discover -s docs/ai-team -p test_tableau_registre.py -v
+          python3 -m unittest scripts/registre/test_completer_preuves.py -v
           python3 docs/ai-team/tableau_registre.py --controle
           python3 scripts/test-apply-main-ruleset.py -v
       # X.5-02, G2-04, PR-07, PR-08, BLOC-07 : chaque « Vérifié » a une preuve datée, versionnée et étiquetée ; états

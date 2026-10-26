@@ -15153,7 +15153,7 @@
         "essais_effectues": "Qualification individuelle A6 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
         "deblocage": "A0/A2/A5 revoient ce critère et instruisent les décisions/cible/accord propres avant exécution ; poursuivre les autres READY."
       },
-      "suite": "Instruction du 25 octobre 2026 : dossier tenu à jour (DOSSIER-G4) ; phase B livrée côté dépôt (fadi-prod-auto, PR #316), non installée ; manquent le build candidat figé (R.1-01) et la recette utilisateur réelle (R.3-01).",
+      "suite": "Dossier tenu à jour (DOSSIER-G4) ; phase B livrée côté dépôt (fadi-prod-auto, PR #316), non installée ; build candidat proposé (R.1-01) en attente de préproduction et de désignation ; recette utilisateur réelle (R.3-01) à faire — DEMANDE-INTERVENTIONS.md.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
@@ -15196,6 +15196,13 @@
           "statut": "À faire",
           "preuve": "docs/workstreams/studio/DOSSIER-G4.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Bilan final de l’achèvement Studio : suites relues (26 octobre 2026)",
+          "statut_precedent": "À faire",
+          "statut": "À faire",
+          "preuve": "docs/workstreams/studio/DEMANDE-INTERVENTIONS.md",
+          "limite": "Suite relue sur le dépôt du 26 octobre 2026 ; aucun acte externe déduit."
         }
       ],
       "preparation_documentaire": {
@@ -15310,7 +15317,7 @@
         "essais_effectues": "Qualification individuelle A6 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
         "deblocage": "A0/A2/A5 revoient ce critère et instruisent les décisions/cible/accord propres avant exécution ; poursuivre les autres READY."
       },
-      "suite": "Instruction du 25 octobre 2026 (DOSSIER-G4 §3) : BLOC-01, 03, 04 vérifiés ; BLOC-02 partiel (refus par une tâche serveur à recetter) ; 50 fonctions absentes et 35 décisions du point 2 à livrer ou à déclarer hors pilote ; appareils réels non évalués ; à rejouer sur le build candidat figé.",
+      "suite": "Instruction du 26 octobre 2026 : BLOC-01 à BLOC-08 vérifiés ; porte G4 automatisée (scripts/validation/porte-g4.mjs) admise sur main. Des 85 fonctions absentes du point 2, 81 sont livrées et vérifiées ; restent TR-AC-011 et REC-B-01 (désignation DEC-13), REC-C-02 et TR-EX-059 (appareil réel). Des 35 décisions, restent PASS-01, REC-E-03, REC-I-01, SUIVI-01 (actes externes). À rejouer sur le build candidat déployé.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
@@ -15353,6 +15360,13 @@
           "statut": "À faire",
           "preuve": "docs/workstreams/studio/DOSSIER-G4.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Bilan final de l’achèvement Studio : suites relues (26 octobre 2026)",
+          "statut_precedent": "À faire",
+          "statut": "À faire",
+          "preuve": "docs/workstreams/studio/DEMANDE-INTERVENTIONS.md",
+          "limite": "Suite relue sur le dépôt du 26 octobre 2026 ; aucun acte externe déduit."
         }
       ],
       "preparation_documentaire": {
@@ -32234,11 +32248,11 @@
         ],
         "preparation_initiale": "Corpus autorisé, SHA/build, contrats ; bases jetables pour tests mutateurs"
       },
-      "statut": "Implémenté",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Lot W3-A (vague 3) — test prescrit, exécution CI de la PR attendue"
+        "etat": "Exécuté",
+        "portee": "Exécution CI verte de main (https://github.com/RachEma-ux/Fadi/actions/runs/40300604328)"
       },
       "preuves": [
         {
@@ -32291,7 +32305,7 @@
         },
         {
           "type": "test_automatise",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "packages/atelier-model/src/studio/blocs/blocs.test.ts",
           "controles": [
             "X.1-01 blocs : une définition réutilisable et ses insertions transformées (position, rotation, échelle, symétrie) — géométrie dérivée exacte, document relu à l'identique",
@@ -32305,11 +32319,16 @@
             "X.1-01 blocs : import DXF — INSERT à attributs, en réseau, à échelle non uniforme ou d'un bloc non représentable compté, jamais deviné"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "02c0dc2bb1789cc57e30976108cc5b14de1b7f9e",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40300604328/job/121497246466",
+          "date": "2026-10-26T10:40:03+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « validate » (ubuntu-latest), étape « Tests des paquets purs et du web » : success ; exécution 40300604328, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans packages/atelier-model/src/studio/blocs/blocs.test.ts au commit 02c0dc2bb178 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         },
         {
           "type": "test_automatise",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "packages/atelier-model/src/studio/contraintes/contraintes.test.ts",
           "controles": [
             "X.1-01 contraintes : chaque type est résolu — horizontal, vertical, parallélisme, perpendicularité, tangence, coïncidence, égalité de longueur, distance fixée",
@@ -32320,11 +32339,16 @@
             "X.1-01 contraintes : les cotes liées suivent la géométrie résolue ; refus explicites des cibles et des valeurs"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "02c0dc2bb1789cc57e30976108cc5b14de1b7f9e",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40300604328/job/121497246466",
+          "date": "2026-10-26T10:40:03+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « validate » (ubuntu-latest), étape « Tests des paquets purs et du web » : success ; exécution 40300604328, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans packages/atelier-model/src/studio/contraintes/contraintes.test.ts au commit 02c0dc2bb178 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         },
         {
           "type": "test_automatise",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "packages/atelier-model/src/studio/corpus/corpus.test.ts",
           "controles": [
             "X.1-01 S1 : blocs définis par l'utilisateur (définition réutilisable, insertions transformées) et contraintes géométriques satisfaites dans chaque motif ; plus aucun élément déclaré absent",
@@ -32333,21 +32357,31 @@
             "X.1-08 captures de référence versionnées : chaque image (planche 2D et vue 3D, S1–S7) existe avec son empreinte SHA-256"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "02c0dc2bb1789cc57e30976108cc5b14de1b7f9e",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40300604328/job/121497246466",
+          "date": "2026-10-26T10:40:03+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « validate » (ubuntu-latest), étape « Tests des paquets purs et du web » : success ; exécution 40300604328, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans packages/atelier-model/src/studio/corpus/corpus.test.ts au commit 02c0dc2bb178 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         },
         {
           "type": "test_automatise",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "packages/atelier-model/src/studio/document-2d.test.ts",
           "controles": [
             "lot W3-A (X.1-01) : blocs (définir, insérer, éclater) et contraintes (contraindre), identités, icônes et raccourcis propres ; registre entier sans doublon"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "02c0dc2bb1789cc57e30976108cc5b14de1b7f9e",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40300604328/job/121497246466",
+          "date": "2026-10-26T10:40:03+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « validate » (ubuntu-latest), étape « Tests des paquets purs et du web » : success ; exécution 40300604328, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans packages/atelier-model/src/studio/document-2d.test.ts au commit 02c0dc2bb178 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         },
         {
           "type": "test_automatise",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "apps/web/src/modules/studio/blocs/blocs-ui.test.ts",
           "controles": [
             "X.1-01 interface blocs : définir depuis la sélection, insérer, modifier la pose, éclater et retirer — commandes du modèle, refus dits",
@@ -32356,11 +32390,16 @@
             "X.1-01 interface : règle d'or des quatre outils (icône, barre, raccourci libre et non réservé, alternative clavier) ; textes traduits"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "02c0dc2bb1789cc57e30976108cc5b14de1b7f9e",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40300604328/job/121497246466",
+          "date": "2026-10-26T10:40:03+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « validate » (ubuntu-latest), étape « Tests des paquets purs et du web » : success ; exécution 40300604328, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans apps/web/src/modules/studio/blocs/blocs-ui.test.ts au commit 02c0dc2bb178 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         },
         {
           "type": "recette_e2e",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "apps/web/e2e/studio-w3a.mjs",
           "controles": [
             "Redéfinir le bloc : les deux insertions suivent la nouvelle définition (une ligne, plus de cercle), sans recopie",
@@ -32371,7 +32410,12 @@
             "« Résoudre les contraintes cochées » : satisfaite de nouveau, sur demande seulement"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "02c0dc2bb1789cc57e30976108cc5b14de1b7f9e",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40300604328/job/121497247124",
+          "date": "2026-10-26T10:48:53+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « e2e (complements) » (ubuntu-latest), étape « Lot W3-A — blocs définis par l'utilisateur et contraintes géométriques (apps/web/e2e/studio-w3a.mjs) » : success ; exécution 40300604328, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans apps/web/e2e/studio-w3a.mjs au commit 02c0dc2bb178 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         }
       ],
       "github": {
@@ -32390,7 +32434,7 @@
       "composants_candidats": "apps/web/e2e ; tests packages ; scripts/bench ; workflows",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -32450,6 +32494,13 @@
           "statut": "Implémenté",
           "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
           "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Promotion après CI verte de main (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "Implémenté",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Preuves rattachées à l’exécution CI verte de main où les libellés cités sont présents ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -32909,11 +32960,11 @@
         ],
         "preparation_initiale": "Corpus autorisé, SHA/build, contrats ; bases jetables pour tests mutateurs"
       },
-      "statut": "Implémenté",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Lot W3-B (vague 3) — test prescrit, exécution CI de la PR attendue"
+        "etat": "Exécuté",
+        "portee": "Exécution CI verte de main (https://github.com/RachEma-ux/Fadi/actions/runs/40224910228, https://github.com/RachEma-ux/Fadi/actions/runs/40300604328)"
       },
       "preuves": [
         {
@@ -32965,19 +33016,38 @@
           "etiquette": "lecture statique"
         },
         {
+          "type": "document",
+          "etiquette": "lecture statique",
+          "fichier": "apps/api/test-corpus/ifc/generer-studio.ts",
+          "controles": [
+            "exportStudioIfc"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "02c0dc2bb1789cc57e30976108cc5b14de1b7f9e",
+          "date": "2026-10-26T10:34:23+01:00",
+          "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
+          "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt."
+        },
+        {
           "type": "test_automatise",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "packages/atelier-model/src/studio/corpus/corpus.test.ts",
           "controles": [
             "X.1-04 S4 : niveaux comme objets, structure typée (poteau, poutre, dalle) et composant répété — déplacer un niveau translate ses seuls objets, modifier la gaine change toutes ses occurrences",
             "chaque scène S1–S7 (100 primitives) : les commandes appliquées à un document vide rendent le feuillet à l'identique (graphismes, exacts, sources compris)"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "02c0dc2bb1789cc57e30976108cc5b14de1b7f9e",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40300604328/job/121497246466",
+          "date": "2026-10-26T10:40:03+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « validate » (ubuntu-latest), étape « Tests des paquets purs et du web » : success ; exécution 40300604328, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans packages/atelier-model/src/studio/corpus/corpus.test.ts au commit 02c0dc2bb178 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         },
         {
           "type": "test_automatise",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "packages/atelier-model/src/studio/batiment/batiment.test.ts",
           "controles": [
             "niveau nommé avec sa cote ; murs, échelle, poteau, poutre, dalle et occurrences rattachés ; l'ouverture suit son mur",
@@ -32998,43 +33068,63 @@
             "modifier une définition invalide la projection de ses seules occurrences ; les effets citent la définition et les relations occurrence → définition"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "02c0dc2bb1789cc57e30976108cc5b14de1b7f9e",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40300604328/job/121497246466",
+          "date": "2026-10-26T10:40:03+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « validate » (ubuntu-latest), étape « Tests des paquets purs et du web » : success ; exécution 40300604328, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans packages/atelier-model/src/studio/batiment/batiment.test.ts au commit 02c0dc2bb178 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         },
         {
           "type": "test_automatise",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "packages/atelier-model/src/studio/couverture-3d.test.ts",
           "controles": [
             "cohérent : chaque type disponible cite au moins un test existant (fichier et libellé exact), chaque type avancé est non disponible sans outil ni test"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "5edae3e07f0634cd2c4befa6d872c9d7aaadcb87",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40224910228/job/121264115389",
+          "date": "2026-10-25T20:16:19+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « validate » (ubuntu-latest), étape « Tests des paquets purs et du web » : success ; exécution 40224910228, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans packages/atelier-model/src/studio/couverture-3d.test.ts au commit 5edae3e07f06 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         },
         {
           "type": "test_automatise",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "apps/api/src/testing/studio-contrat-commandes.test.ts",
           "controles": [
             "X.1-04 serveur : les quatre outils du bâtiment sont acceptés par le schéma de l'API et appliqués par le serveur ; déplacer le niveau translate ses objets dans la révision enregistrée",
             "X.1-04 serveur [−] niveau inconnu, définition inconnue, champ métier ajouté : 400, rien n'est écrit"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "02c0dc2bb1789cc57e30976108cc5b14de1b7f9e",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40300604328/job/121497246466",
+          "date": "2026-10-26T10:51:50+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « validate » (ubuntu-latest), étape « Tests API — sur base jetable attestée (DB-3), sinon suites DB-3 déclarées non exécutées » : success ; exécution 40300604328, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans apps/api/src/testing/studio-contrat-commandes.test.ts au commit 02c0dc2bb178 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         },
         {
           "type": "test_automatise",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "apps/web/src/modules/studio/batiment/batiment-ui.test.ts",
           "controles": [
             "élément structurel : poteau, poutre, dalle depuis la saisie ; refus sans type, sans section ou avec une géométrie incomplète ; le modèle les accepte",
             "rendre unique : une définition copiée et l'occurrence replacée sur elle, en un seul lot accepté"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "02c0dc2bb1789cc57e30976108cc5b14de1b7f9e",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40300604328/job/121497246466",
+          "date": "2026-10-26T10:40:03+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « validate » (ubuntu-latest), étape « Tests des paquets purs et du web » : success ; exécution 40300604328, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans apps/web/src/modules/studio/batiment/batiment-ui.test.ts au commit 02c0dc2bb178 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         },
         {
           "type": "recette_e2e",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "apps/web/e2e/studio-w3b.mjs",
           "controles": [
             "X.1-04 (règle d'or) : Niveau Ctrl+F2, Composant Ctrl+F3, Occurrence Ctrl+F6, Élément structurel Ctrl+F7 — chacun son icône, famille Architecture",
@@ -33043,17 +33133,12 @@
             "X.1-04 : export IFC — trois IfcBuildingStorey (référence, rez, étage à 4 m), IfcColumn / IfcBeam / IfcSlab, deux IfcMappedItem d'un type partagé"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
-        },
-        {
-          "type": "document",
-          "etiquette": "lecture statique",
-          "fichier": "apps/api/test-corpus/ifc/generer-studio.ts",
-          "controles": [
-            "exportStudioIfc"
-          ],
-          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "02c0dc2bb1789cc57e30976108cc5b14de1b7f9e",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40300604328/job/121497247124",
+          "date": "2026-10-26T10:48:59+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « e2e (complements) » (ubuntu-latest), étape « Lot W3-B — niveaux, composants 3D et éléments structurels (apps/web/e2e/studio-w3b.mjs) » : success ; exécution 40300604328, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans apps/web/e2e/studio-w3b.mjs au commit 02c0dc2bb178 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         }
       ],
       "github": {
@@ -33072,7 +33157,7 @@
       "composants_candidats": "apps/web/e2e ; tests packages ; scripts/bench ; workflows",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -33132,6 +33217,13 @@
           "statut": "Implémenté",
           "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
           "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Promotion après CI verte de main (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "Implémenté",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Preuves rattachées à l’exécution CI verte de main où les libellés cités sont présents ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -33184,11 +33276,11 @@
         ],
         "preparation_initiale": "Corpus autorisé, SHA/build, contrats ; bases jetables pour tests mutateurs"
       },
-      "statut": "Implémenté",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Lot W3-C (vague 3) — test prescrit, exécution CI de la PR attendue"
+        "etat": "Exécuté",
+        "portee": "Exécution CI verte de main (https://github.com/RachEma-ux/Fadi/actions/runs/40272737223, https://github.com/RachEma-ux/Fadi/actions/runs/40300604328)"
       },
       "preuves": [
         {
@@ -33241,7 +33333,7 @@
         },
         {
           "type": "test_automatise",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "packages/atelier-model/src/studio/corpus/corpus.test.ts",
           "controles": [
             "X.1-05 S5 : surface libre NURBS (quart de cylindre rationnel, pôles et poids) et surface épaissie par le noyau, surface conservée — oracle de forme close (aire π R L / 2, volume π/4 ((R + e)² − R²) L)",
@@ -33250,21 +33342,31 @@
             "X.1-05 S5 : surface de subdivision de Loop (tétraèdre régulier, niveau 1) et sa solidification polyédrique par le noyau, surface conservée — oracle de forme close (sommets a/4, points d'arête (a + b)/4 ; aire s² (3√2/4 + √3/2), volume 5 s³ / 24), dans l'enveloppe convexe du maillage de contrôle"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "02c0dc2bb1789cc57e30976108cc5b14de1b7f9e",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40300604328/job/121497246466",
+          "date": "2026-10-26T10:40:03+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « validate » (ubuntu-latest), étape « Tests des paquets purs et du web » : success ; exécution 40300604328, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans packages/atelier-model/src/studio/corpus/corpus.test.ts au commit 02c0dc2bb178 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         },
         {
           "type": "test_automatise",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "apps/api/src/lib/studio-corpus-s5.test.ts",
           "controles": [
             "X.1-05 booléens S5 : union, différence et intersection recalculées par le noyau — même empreinte que la donnée conservée, volumes de forme close"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "2e1564d77ad9a97996cff3f8954ef251d0f3e7bb",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40272737223/job/121408888554",
+          "date": "2026-10-26T06:26:35+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « validate » (ubuntu-latest), étape « Tests API — sur base jetable attestée (DB-3), sinon suites DB-3 déclarées non exécutées » : success ; exécution 40272737223, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans apps/api/src/lib/studio-corpus-s5.test.ts au commit 2e1564d77ad9 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         },
         {
           "type": "test_automatise",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "packages/geometry-exact/src/index.test.ts",
           "controles": [
             "NURBS rationnelle : quart de cylindre R 2 m, L 3 m épaissi de 0,1 m vers l'extérieur — volume π/4 ((R + e)² − R²) L, intérieur π/4 (R² − (R − e)²) L",
@@ -33274,11 +33376,16 @@
             "polyèdre : non fermé, indice hors sommets, triangle dégénéré — refusés avant le noyau"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "02c0dc2bb1789cc57e30976108cc5b14de1b7f9e",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40300604328/job/121497246466",
+          "date": "2026-10-26T10:40:03+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « validate » (ubuntu-latest), étape « Tests des paquets purs et du web » : success ; exécution 40300604328, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans packages/geometry-exact/src/index.test.ts au commit 02c0dc2bb178 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         },
         {
           "type": "test_automatise",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "packages/atelier-model/src/studio/surfaces-libres.test.ts",
           "controles": [
             "X.1-05 NURBS : quart de cylindre rationnel (poids 1, √2/2, 1) — chaque point évalué est à la distance R de l'axe, aire approchée → π R L / 2",
@@ -33293,11 +33400,16 @@
             "X.1-05 exports : OBJ écrit la nappe ; STL et STEP la comptent « surface-libre-non-epaissie » ; épaissie, elle est un solide exact écrit en STL et STEP ; IFC et rapport de fidélité la déclarent"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "02c0dc2bb1789cc57e30976108cc5b14de1b7f9e",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40300604328/job/121497246466",
+          "date": "2026-10-26T10:40:03+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « validate » (ubuntu-latest), étape « Tests des paquets purs et du web » : success ; exécution 40300604328, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans packages/atelier-model/src/studio/surfaces-libres.test.ts au commit 02c0dc2bb178 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         },
         {
           "type": "test_automatise",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "apps/api/src/lib/studio-surfaces.test.ts",
           "controles": [
             "X.1-05 serveur : l'épaississement est recalculé depuis la surface du document du serveur ; son résultat remplace celui du client",
@@ -33307,11 +33419,16 @@
             "X.1-05 serveur : la solidification d'une surface de subdivision est recalculée depuis le maillage du serveur ; volume 5 s³ / 24 ; maillage ouvert refusé sans noyau"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "02c0dc2bb1789cc57e30976108cc5b14de1b7f9e",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40300604328/job/121497246466",
+          "date": "2026-10-26T10:51:50+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « validate » (ubuntu-latest), étape « Tests API — sur base jetable attestée (DB-3), sinon suites DB-3 déclarées non exécutées » : success ; exécution 40300604328, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans apps/api/src/lib/studio-surfaces.test.ts au commit 02c0dc2bb178 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         },
         {
           "type": "test_automatise",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "apps/web/src/modules/studio/vue3d/surfaces.test.ts",
           "controles": [
             "X.1-05 interface : Surface NURBS — grille plane de pôles saisie (normale +z), champs vides refusés, aucune valeur proposée",
@@ -33326,21 +33443,31 @@
             "X.1-05 vue 3D : surface de subdivision sélectionnée — maillage de contrôle et un repère désignable par sommet (userData.sommet) ; panneaux : saisies vides, sommet choisi, solidification"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "02c0dc2bb1789cc57e30976108cc5b14de1b7f9e",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40300604328/job/121497246466",
+          "date": "2026-10-26T10:40:03+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « validate » (ubuntu-latest), étape « Tests des paquets purs et du web » : success ; exécution 40300604328, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans apps/web/src/modules/studio/vue3d/surfaces.test.ts au commit 02c0dc2bb178 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         },
         {
           "type": "test_automatise",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "packages/atelier-model/src/studio/document-2d.test.ts",
           "controles": [
             "X.1-05 : surfaces libres — Surface NURBS (Ctrl+F8), Modifier la surface (Ctrl+F9), Épaissir la surface (Shift+F11), identités, icônes et raccourcis propres, barre « volume-libre »"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "02c0dc2bb1789cc57e30976108cc5b14de1b7f9e",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40300604328/job/121497246466",
+          "date": "2026-10-26T10:40:03+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « validate » (ubuntu-latest), étape « Tests des paquets purs et du web » : success ; exécution 40300604328, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans packages/atelier-model/src/studio/document-2d.test.ts au commit 02c0dc2bb178 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         },
         {
           "type": "recette_e2e",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "apps/web/e2e/studio-w3c.mjs",
           "controles": [
             "Modifier la surface : un clic sur le repère du pôle central (canevas WebGL) le choisit dans le formulaire",
@@ -33354,11 +33481,16 @@
             "surface de subdivision ouverte : solidification refusée (400 studio-invalid), rien n'est écrit"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "02c0dc2bb1789cc57e30976108cc5b14de1b7f9e",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40300604328/job/121497247124",
+          "date": "2026-10-26T10:49:08+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « e2e (complements) » (ubuntu-latest), étape « Lot W3-C — surfaces libres NURBS et de subdivision (apps/web/e2e/studio-w3c.mjs) » : success ; exécution 40300604328, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans apps/web/e2e/studio-w3c.mjs au commit 02c0dc2bb178 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         },
         {
           "type": "test_automatise",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "packages/atelier-model/src/studio/subdivisions.test.ts",
           "controles": [
             "X.1-05 subdivision : tétraèdre régulier, niveau 1 — sommets a/4 et points d'arête (a + b)/4, aire s² (3√2/4 + √3/2), volume 5 s³ / 24 ; niveau 2 dans l'enveloppe convexe, volume décroissant",
@@ -33370,17 +33502,27 @@
             "X.1-05 subdivision exports : STL écrit la surface fermée, compte la surface ouverte ; OBJ les écrit ; STEP compte la surface non solidifiée, écrit le solide ; IFC et rapport de fidélité la déclarent"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "02c0dc2bb1789cc57e30976108cc5b14de1b7f9e",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40300604328/job/121497246466",
+          "date": "2026-10-26T10:40:03+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « validate » (ubuntu-latest), étape « Tests des paquets purs et du web » : success ; exécution 40300604328, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans packages/atelier-model/src/studio/subdivisions.test.ts au commit 02c0dc2bb178 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         },
         {
           "type": "test_automatise",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "packages/atelier-model/src/studio/couverture-3d.test.ts",
           "controles": [
             "types avancés du référentiel (§ 4.1, S5, PERF-07) : sommets et arêtes, groupe, courbe exacte 3D, BRep fournisseur — non disponibles (booléen depuis le lot F2, composant 3D depuis le lot W3-B, surfaces NURBS et de subdivision depuis X.1-05 : disponibles)"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "02c0dc2bb1789cc57e30976108cc5b14de1b7f9e",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40300604328/job/121497246466",
+          "date": "2026-10-26T10:40:03+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « validate » (ubuntu-latest), étape « Tests des paquets purs et du web » : success ; exécution 40300604328, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans packages/atelier-model/src/studio/couverture-3d.test.ts au commit 02c0dc2bb178 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         }
       ],
       "github": {
@@ -33399,7 +33541,7 @@
       "composants_candidats": "apps/web/e2e ; tests packages ; scripts/bench ; workflows",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -33459,6 +33601,13 @@
           "statut": "Implémenté",
           "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
           "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Promotion après CI verte de main (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "Implémenté",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Preuves rattachées à l’exécution CI verte de main où les libellés cités sont présents ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -33511,11 +33660,11 @@
         ],
         "preparation_initiale": "Corpus autorisé, SHA/build, contrats ; bases jetables pour tests mutateurs"
       },
-      "statut": "Implémenté",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Lot W3-D (vague 3) — test prescrit, exécution CI de la PR attendue"
+        "etat": "Exécuté",
+        "portee": "Exécution CI verte de main (https://github.com/RachEma-ux/Fadi/actions/runs/40300604328)"
       },
       "preuves": [
         {
@@ -33568,7 +33717,7 @@
         },
         {
           "type": "test_automatise",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "packages/atelier-model/src/studio/fusion-variantes.test.ts",
           "controles": [
             "fusion sans conflit : changements de la source repris, ceux de la cible conservés, ancêtre respecté",
@@ -33584,22 +33733,32 @@
             "révision de dérivation la plus proche ; une fusion déplace l'ancêtre ; aucune histoire commune ; ambiguïté refusée"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "02c0dc2bb1789cc57e30976108cc5b14de1b7f9e",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40300604328/job/121497246466",
+          "date": "2026-10-26T10:40:03+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « validate » (ubuntu-latest), étape « Tests des paquets purs et du web » : success ; exécution 40300604328, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans packages/atelier-model/src/studio/fusion-variantes.test.ts au commit 02c0dc2bb178 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         },
         {
           "type": "test_automatise",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "packages/atelier-model/src/studio/corpus/corpus.test.ts",
           "controles": [
             "F1 (lot W3-D) : B fusionnée dans C depuis l'ancêtre A1 — conflit de collision attendu, tranché explicitement ; tête fusionnée = oracle",
             "A1 recrée exactement le plan de base ; têtes A, B, C conformes à l'oracle ; REC-A-03 3,180 puis 3,096 m³"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "02c0dc2bb1789cc57e30976108cc5b14de1b7f9e",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40300604328/job/121497246466",
+          "date": "2026-10-26T10:40:03+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « validate » (ubuntu-latest), étape « Tests des paquets purs et du web » : success ; exécution 40300604328, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans packages/atelier-model/src/studio/corpus/corpus.test.ts au commit 02c0dc2bb178 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         },
         {
           "type": "test_automatise",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "apps/api/src/routes/studio-fusion.test.ts",
           "controles": [
             "aperçu : ancêtre = révision de dérivation, changements des deux côtés, conflit par propriété, rien n'est écrit",
@@ -33611,11 +33770,16 @@
             "aucun ancêtre commun (variante créée vide, copie indépendante) : 409 fusion_sans_ancetre ; même variante : 400"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "02c0dc2bb1789cc57e30976108cc5b14de1b7f9e",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40300604328/job/121497246466",
+          "date": "2026-10-26T10:51:50+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « validate » (ubuntu-latest), étape « Tests API — sur base jetable attestée (DB-3), sinon suites DB-3 déclarées non exécutées » : success ; exécution 40300604328, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans apps/api/src/routes/studio-fusion.test.ts au commit 02c0dc2bb178 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         },
         {
           "type": "test_automatise",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "apps/api/src/routes/studio-contrats.test.ts",
           "controles": [
             "studio-api-fusion-apercu/1 — POST …/fusion/apercu : réponse conforme, en-tête X-Studio-Contrat",
@@ -33623,21 +33787,31 @@
             "studio-api-fusion-annuler/1 — POST …/fusion/annulation : réponse conforme, en-tête X-Studio-Contrat"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "02c0dc2bb1789cc57e30976108cc5b14de1b7f9e",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40300604328/job/121497246466",
+          "date": "2026-10-26T10:51:50+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « validate » (ubuntu-latest), étape « Tests API — sur base jetable attestée (DB-3), sinon suites DB-3 déclarées non exécutées » : success ; exécution 40300604328, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans apps/api/src/routes/studio-contrats.test.ts au commit 02c0dc2bb178 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         },
         {
           "type": "test_automatise",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "apps/api/src/testing/studio-ecritures-architecture.test.ts",
           "controles": [
             "fusion de variantes (lot W3-D) : sa révision est écrite par le même module, sous la même orchestration (verrous, rejeu, chemin d'écriture, journal)"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "02c0dc2bb1789cc57e30976108cc5b14de1b7f9e",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40300604328/job/121497246466",
+          "date": "2026-10-26T10:51:50+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « validate » (ubuntu-latest), étape « Tests API — sur base jetable attestée (DB-3), sinon suites DB-3 déclarées non exécutées » : success ; exécution 40300604328, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans apps/api/src/testing/studio-ecritures-architecture.test.ts au commit 02c0dc2bb178 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         },
         {
           "type": "test_automatise",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "apps/web/src/modules/studio/fusion/fusion-ui.test.ts",
           "controles": [
             "W3-D [+] « Fusionner une variante » (Ctrl+F10) et « Annuler la dernière fusion » (Ctrl+F11) : icône propre, barre Édition, raccourci libre, trouvées par recherche, ouvertes par-dessus le domaine",
@@ -33648,11 +33822,16 @@
             "W3-D [+] chaque texte de la boîte et des règles a sa traduction anglaise (en.json)"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "02c0dc2bb1789cc57e30976108cc5b14de1b7f9e",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40300604328/job/121497246466",
+          "date": "2026-10-26T10:40:03+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « validate » (ubuntu-latest), étape « Tests des paquets purs et du web » : success ; exécution 40300604328, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans apps/web/src/modules/studio/fusion/fusion-ui.test.ts au commit 02c0dc2bb178 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         },
         {
           "type": "recette_e2e",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "apps/web/e2e/studio-w3d.mjs",
           "controles": [
             "Ctrl+F10 ouvre la boîte « Fusionner une variante »",
@@ -33662,7 +33841,12 @@
             "aperçu périmé (A changée entre-temps) : 409 stale_revision, rien n'est fusionné"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "02c0dc2bb1789cc57e30976108cc5b14de1b7f9e",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40300604328/job/121497247124",
+          "date": "2026-10-26T10:49:16+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « e2e (complements) » (ubuntu-latest), étape « Lot W3-D — fusion de variantes à trois voies (apps/web/e2e/studio-w3d.mjs) » : success ; exécution 40300604328, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans apps/web/e2e/studio-w3d.mjs au commit 02c0dc2bb178 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         }
       ],
       "github": {
@@ -33681,7 +33865,7 @@
       "composants_candidats": "apps/web/e2e ; tests packages ; scripts/bench ; workflows",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -33741,6 +33925,13 @@
           "statut": "Implémenté",
           "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
           "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Promotion après CI verte de main (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "Implémenté",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Preuves rattachées à l’exécution CI verte de main où les libellés cités sont présents ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -51292,7 +51483,7 @@
         "essais_effectues": "Qualification individuelle A6 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
         "deblocage": "A0/A2/A5 revoient ce critère et instruisent les décisions/cible/accord propres avant exécution ; poursuivre les autres READY."
       },
-      "suite": "Rapprochement du 25 octobre 2026 (mesure requise) : Aucun build candidat n'est figé. Le commit recetté (3e992b6) est antérieur au correctif NAV-008 (8d659a6). Il faut choisir un commit, vérifier en direct sa CI verte et son passage en préproduction (`fadi-preprod show` / `etat.json`), puis le consigner avec le périmètre A, B, C, D, E, I, R, X.",
+      "suite": "Candidat proposé au dépôt : main@02c0dc2bb1789cc57e30976108cc5b14de1b7f9e (CI verte : https://github.com/RachEma-ux/Fadi/actions/runs/40300604328, 26 octobre 2026, 10:58 heure suisse), contenant les vagues 1 à 3 de l'achèvement ; porte G4 automatisée admise sur ce commit (BLOC-01 à 07 vérifiés). Reste : le déployer en préproduction (`fadi-preprod`, `etat.json`), puis sa désignation par le maître d'ouvrage (DEC-13 : commit + sha256 de l'artefact, `validerDesignation`) avec le périmètre A, B, C, D, E, F (hors DEC-15), I, R, X — DEMANDE-INTERVENTIONS.md §A1, §B2.",
       "composants_candidats": "Schémas, sauvegardes, corpus historique, service worker",
       "source_checked": false,
       "cloture": {
@@ -51328,6 +51519,13 @@
           "statut": "À faire",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Bilan final de l’achèvement Studio : suites relues (26 octobre 2026)",
+          "statut_precedent": "À faire",
+          "statut": "À faire",
+          "preuve": "docs/workstreams/studio/DEMANDE-INTERVENTIONS.md",
+          "limite": "Suite relue sur le dépôt du 26 octobre 2026 ; aucun acte externe déduit."
         }
       ],
       "preparation_documentaire": {
@@ -52355,7 +52553,7 @@
         "essais_effectues": "Aucun : opération réservée.",
         "deblocage": "Acceptation G4 sur ses critères, puis décision de déploiement du maître d’ouvrage."
       },
-      "suite": "Rapprochement du 25 octobre 2026 (production requise) : Il faut une bascule réelle. Le mécanisme phase B (`fadi-prod-auto` : sauvegarde vérifiée, redéploiement, sondes) n'existe pas dans le dépôt.",
+      "suite": "Le mécanisme de bascule (phase B : `deploy/prod/fadi-prod-auto`, unités systemd, installateur à empreintes, tests à doubles en CI — PR #316) est livré au dépôt mais non installé sur le VPS. Reste : installation et recette d'échec simulé par l'administrateur, puis bascule réelle après la Release — DEMANDE-INTERVENTIONS.md §B1, §A5.",
       "composants_candidats": "Schémas, sauvegardes, corpus historique, service worker",
       "source_checked": false,
       "cloture": {
@@ -52397,6 +52595,13 @@
           "statut": "Bloqué",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Bilan final de l’achèvement Studio : suites relues (26 octobre 2026)",
+          "statut_precedent": "Bloqué",
+          "statut": "Bloqué",
+          "preuve": "docs/workstreams/studio/DEMANDE-INTERVENTIONS.md",
+          "limite": "Suite relue sur le dépôt du 26 octobre 2026 ; aucun acte externe déduit."
         }
       ],
       "preparation_documentaire": {
@@ -66368,11 +66573,11 @@
         ],
         "preparation_initiale": "G0 / périmètre et sources"
       },
-      "statut": "En cours",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "etat": "Exécuté",
+        "portee": "Exécution CI verte de main (https://github.com/RachEma-ux/Fadi/actions/runs/39050506263)"
       },
       "preuves": [
         {
@@ -66422,6 +66627,25 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version du fichier dont le SHA-256 est celui cité, retrouvée dans l’historique de main ; date du commit.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "scénario exécuté",
+          "fichier": "scripts/check-continuity.test.mjs",
+          "controles": [
+            "HANDOFF.md manquant = échec explicite",
+            "en-tête de reprise absent = échec explicite",
+            "modèle incomplet, conflit Git ou secret détectés",
+            "un changement de chantier exige STATUS et HANDOFF dans le même diff",
+            "dates STATUS/HANDOFF divergentes sont refusées"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "412a9c3b702dd04310367d5fa95b4e687b4a93a7",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/39050506263/job/117447944093",
+          "date": "2026-10-17T18:41:36+02:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/continuity.yml (push sur main), job « Continuité — docs, checkpoints et tests » (ubuntu-latest), étape « Tests unitaires des règles de reprise » : success ; exécution 39050506263, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans scripts/check-continuity.test.mjs au commit 412a9c3b702d ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         }
       ],
       "github": {
@@ -66431,16 +66655,16 @@
         "pr_preparation_courante": 172
       },
       "blocage": {
-        "cause": "Prochaineaction réellementautorisée et checkpointSTATUS/HANDOFFensemble.",
-        "responsable": "A0",
-        "essais_effectues": "Qualification individuelle A4 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
-        "deblocage": "A0 écrit prochainereprise depuis817/branchequalification en gardant tracesantérieures et limites."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Orchestration de l'achèvement Studio : HANDOFF tenu par checkpoints contrôlés (26 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (décision requise) : HANDOFF.md est périmé (base main@3e992b6, sans P-08/P-09) : sa mise à jour relève de l'orchestrateur (docs/workstreams hors de ce groupe) ; aucun test ne le couvre.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "Documents Studio, AGENTS.md, docs/continuity/README.md",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -66479,6 +66703,20 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Orchestration de l'achèvement Studio : HANDOFF tenu par checkpoints contrôlés (26 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Promotion après CI verte de main (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "Implémenté",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Preuves rattachées à l’exécution CI verte de main où les libellés cités sont présents ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -89349,11 +89587,11 @@
         "preparation_initiale": "REF-02 texte exact + contrat + composant + scénario + preuve + décision",
         "decisions_applicables_a_instruire": "DEC-12,DEC-11"
       },
-      "statut": "Implémenté",
+      "statut": "Vérifié",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Non exécuté",
-        "portee": "Lot DEC (achèvement Studio, décisions P-12, 26 octobre 2026) — test prescrit, exécution CI de la PR attendue"
+        "etat": "Exécuté",
+        "portee": "Exécution CI verte de main (https://github.com/RachEma-ux/Fadi/actions/runs/40257380028)"
       },
       "preuves": [
         {
@@ -89406,7 +89644,7 @@
         },
         {
           "type": "test_automatise",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "apps/api/src/lib/studio-journal-acces.test.ts",
           "controles": [
             "TR-EX-046 [+] conservation de 12 mois par défaut, paramétrable par STUDIO_ACCESS_RETENTION_MONTHS (1 à 120), limite en mois civils",
@@ -89426,18 +89664,23 @@
         },
         {
           "type": "test_automatise",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "apps/api/src/routes/studio-journal-acces.test.ts",
           "controles": [
             "TR-EX-046 [+] base réelle : un refus et un export Studio sont journalisés sans IP ni courriel ; la purge supprime au-delà de 12 mois, garde le reste et se date",
             "TR-EX-046 [−] base réelle : une ligne du journal d'accès n'est jamais modifiée ; le journal des publications refuse toute modification"
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
-          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite.",
+          "commit": "4304050a8b675f7fb0b172222899570eb6282800",
+          "url_execution": "https://github.com/RachEma-ux/Fadi/actions/runs/40257380028/job/121362029834",
+          "date": "2026-10-26T03:21:42+01:00",
+          "environnement": "GitHub Actions, workflow .github/workflows/ci.yml (push sur main), job « validate » (ubuntu-latest), étape « Tests API — sur base jetable attestée (DB-3), sinon suites DB-3 déclarées non exécutées » : success ; exécution 40257380028, tentative 1",
+          "methode": "Libellés cités relus (règle de libelles-sources.ts) dans apps/api/src/routes/studio-journal-acces.test.ts au commit 4304050a8b67 ; première exécution de main dont l'étape qui exécute ce fichier a réussi, trouvée par l'API GitHub (jobs et étapes)."
         },
         {
           "type": "recette_e2e",
-          "etiquette": "test prescrit",
+          "etiquette": "scénario exécuté",
           "fichier": "apps/web/e2e/studio-dec.mjs",
           "controles": [
             "TR-EX-046 : le refus et l'export sont journalisés, route générique, statut et genre",
@@ -89467,7 +89710,7 @@
       "composants_candidats": "Voir matrice A1-exigences.csv",
       "source_checked": false,
       "cloture": {
-        "condition_verifiee": false,
+        "condition_verifiee": true,
         "case_source_modifiee": false,
         "acceptation_metier": false
       },
@@ -89505,6 +89748,13 @@
           "statut": "Implémenté",
           "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
           "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Promotion après CI verte de main (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "Implémenté",
+          "statut": "Vérifié",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Preuves rattachées à l’exécution CI verte de main où les libellés cités sont présents ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -106680,9 +106930,9 @@
       "raison": "DEV_SCOPE et baseline du périmètre accepté non établis ; ne pas inventer un dénominateur."
     },
     "P630": {
-      "V630": 579,
+      "V630": 585,
       "denominateur": 630,
-      "pourcentage": 91.9,
+      "pourcentage": 92.9,
       "IDs": [
         "SRC-01",
         "SRC-02",
@@ -106872,8 +107122,12 @@
         "B.3-11",
         "B.3-12",
         "REC-B-02",
+        "X.1-01",
         "X.1-02",
         "X.1-03",
+        "X.1-04",
+        "X.1-05",
+        "X.1-06",
         "X.1-07",
         "X.1-08",
         "X.1-09",
@@ -107027,6 +107281,7 @@
         "SUIVI-03",
         "SUIVI-04",
         "SUIVI-05",
+        "SUIVI-06",
         "SUIVI-07",
         "SUIVI-08",
         "SUIVI-09",
@@ -107165,6 +107420,7 @@
         "TR-EX-043",
         "TR-EX-044",
         "TR-EX-045",
+        "TR-EX-046",
         "TR-EX-047",
         "TR-EX-048",
         "TR-EX-049",
@@ -107266,7 +107522,7 @@
       ],
       "limite": "259 obligations vérifiées (documentaires, par recette ou test exécuté, ou par contrôle existant contre-vérifié indépendamment le 25 octobre 2026) et 58 acceptations (2 de cadrage G0, 56 décisions ADR-STUDIO-PILOTE-01 sous délégation du maître d’ouvrage). Pas un taux de développement ; G1–G4 non acceptées.",
       "mapping_barre": {
-        "Vérifié documentaire": 520,
+        "Vérifié documentaire": 526,
         "Accepté cadrage documentaire G0": 59
       }
     }
