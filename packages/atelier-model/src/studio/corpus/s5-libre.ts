@@ -1,5 +1,8 @@
-import { calque, construireCorpus, coteGrille, nombreMotifs, objet, solide, type Primitive } from "./commun.js";
+import { calque, construireCorpus, coteGrille, exact, nombreMotifs, objet, solide, type Primitive } from "./commun.js";
 import type { StudioPoint } from "../document-2d.js";
+import type { StudioBox } from "../objets-3d/solides.js";
+import type { StudioOperationBooleenne } from "../objets-3d/exacts.js";
+import { RESULTATS_EXACTS_S5 } from "./fixtures/s5-exacts.js";
 import type { CorpusStudio } from "./types.js";
 
 /**
@@ -8,7 +11,28 @@ import type { CorpusStudio } from "./types.js";
  * profil en étoile de 16 à 256 sommets (1 024, la borne du profil, tous les 100 motifs), mur courbe (arc à épaisseur, balayage k · π/6), polyligne fermée extrudée à un
  * côté en demi-cercle (renflement 1), cylindre (cercle extrudé), prisme d'un polygone régulier de 3 à 100 sommets.
  * Dimensions nominales ci-dessous (entrées des oracles) ; aires des profils en forme close.
+ *
+ * Booléens : dans les `BOOLEENS_S5.length` premiers motifs, la boîte est remplacée par un **solide exact** (union,
+ * différence, intersection) de deux boîtes droites de mêmes dimensions décalées d'une demi-largeur, opérandes conservés
+ * (R15). Le résultat (brep, maillage, volume) est celui du noyau exact OCCT, calculé par
+ * `apps/api/src/lib/studio-corpus-s5.test.ts` et conservé dans `fixtures/s5-exacts.ts` avec son empreinte ; le
+ * générateur reste pur (il ne charge aucun noyau) et refuse un résultat absent. Volumes attendus en forme close : union
+ * 1,5 V, différence 0,5 V, intersection 0,5 V (V : volume d'une boîte).
  */
+
+/** Opérations des booléens du corpus, une par motif (les premiers). */
+export const BOOLEENS_S5: readonly StudioOperationBooleenne[] = Object.freeze(["union", "difference", "intersection"] as const);
+
+/**
+ * Opérandes du booléen du motif `j` (j < BOOLEENS_S5.length) : deux boîtes droites, B décalée de la demi-largeur en x,
+ * posées hors de la grille en (−20 (j + 1) ; −20) — une position qui ne dépend pas de la taille du corpus, donc un même
+ * résultat exact pour toutes les tailles.
+ */
+export function operandesBooleenS5(j: number): [StudioBox, StudioBox] {
+  const b = parametresS5(j).boite, x = -20 * (j + 1), y = -20;
+  const boite = (cle: string, dx: number): StudioBox => ({ id: `s5-${j}-op-${cle}`, type: "box", layerId: "solides", placement: { origin: { x: x + dx, y, z: b.z }, rotation: 0 }, width: b.largeur, depth: b.profondeur, height: b.hauteur });
+  return [boite("a", 0), boite("b", b.largeur / 2)];
+}
 
 export const MOTIF_S5 = 6;
 export const DEFINITION_S5 = "Scène S5 : géométrie 3D libre avec booléens, courbes exactes et surfaces complexes.";
@@ -38,7 +62,12 @@ export function corpusS5(taille: number): CorpusStudio {
   const primitive = (j: number, role: number): Primitive => {
     const x = (j % cols) * 20, y = Math.floor(j / cols) * 20, p = parametresS5(j), id = (s: string) => `s5-${j}-${s}`;
     switch (role) {
-      case 0: return solide({ id: id("boite"), type: "box", layerId: "solides", placement: { origin: { x, y, z: p.boite.z }, rotation: p.boite.rotation }, width: p.boite.largeur, depth: p.boite.profondeur, height: p.boite.hauteur });
+      case 0: if (j < BOOLEENS_S5.length) {
+        const resultat = RESULTATS_EXACTS_S5[id("booleen")];
+        if (!resultat) throw new Error(`corpus S5 : résultat exact absent pour ${id("booleen")} (STUDIO_CORPUS_ECRIRE=1 sur apps/api/src/lib/studio-corpus-s5.test.ts)`);
+        return exact({ id: id("booleen"), type: "exact", layerId: "solides", operation: BOOLEENS_S5[j]!, operandes: operandesBooleenS5(j), resultat });
+      }
+      return solide({ id: id("boite"), type: "box", layerId: "solides", placement: { origin: { x, y, z: p.boite.z }, rotation: p.boite.rotation }, width: p.boite.largeur, depth: p.boite.profondeur, height: p.boite.hauteur });
       case 1: {
         const e = p.etoile;
         return solide({ id: id("etoile"), type: "prism", layerId: "solides", placement: { origin: { x: x + 6, y, z: 0 }, rotation: 0 }, profile: polaire(2 * e.branches, (i) => (i % 2 === 0 ? e.rayonExterieur : e.rayonInterieur)), height: e.hauteur });
@@ -65,9 +94,11 @@ export function corpusS5(taille: number): CorpusStudio {
     scene: "S5", definition: DEFINITION_S5, taille, motif: MOTIF_S5, primitive,
     calques: [calque("solides", "Solides libres (synthétique)"), calque("courbes", "Courbes extrudées (synthétique)")],
     couverture: {
-      representes: ["solides libres placés et tournés (boîtes, prismes)", "courbes exactes (arc, renflements) métrées sans discrétisation", "profils complexes jusqu'à 1 024 sommets"],
+      representes: [
+        "solides libres placés et tournés (boîtes, prismes)", "courbes exactes (arc, renflements) métrées sans discrétisation", "profils complexes jusqu'à 1 024 sommets",
+        "booléens exacts (union, différence, intersection) calculés par le noyau OCCT, opérandes conservés, résultat conservé avec son empreinte",
+      ],
       absents: [
-        { element: "booléens", raison: "solides exacts (lot F2) calculés par le noyau exact OCCT seulement (Worker à la demande, recalcul par le serveur) : un corpus synthétique pur ne peut pas fabriquer de brep sans ce noyau ; couverts par la recette studio-exact" },
         { element: "surfaces libres (NURBS, subdivision)", raison: "aucun type de surface libre dans studio-document/1 ; profils polygonaux seulement" },
       ],
     },

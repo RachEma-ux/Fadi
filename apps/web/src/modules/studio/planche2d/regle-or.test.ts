@@ -121,6 +121,12 @@ describe("Planche 2D de Studio — règle d'or", () => {
     expect(cibleRaccourci("Shift+I")).toEqual({ type: "commande", id: "exporter-ifc" });
     expect(cibleRaccourci("Ctrl+Shift+I")).toBeNull();
     expect(COMMANDES_EDITEUR.find((c) => c.id === "exporter-ifc")).toMatchObject({ groupe: "export", ecrit: false, telechargement: "ifc", iconeSymbolique: "studio-export-ifc" });
+    // Exports 3D (E.6-04) : Ctrl+Maj+F7 (OBJ), Ctrl+Maj+F8 (STL), Ctrl+Maj+F10 (STEP), barre Exporter, icônes propres, lecture admise.
+    for (const [id, r, f] of [["exporter-obj", "Ctrl+Shift+F7", "obj"], ["exporter-stl", "Ctrl+Shift+F8", "stl"], ["exporter-step", "Ctrl+Shift+F10", "step"]] as const) {
+      expect(cibleRaccourci(r)).toEqual({ type: "commande", id });
+      expect(COMMANDES_EDITEUR.find((c) => c.id === id)).toMatchObject({ groupe: "export", ecrit: false, telechargement: f, iconeSymbolique: `studio-export-${f}` });
+      expect(studioExportUrl("p", "s", "v", f)).toBe(`/projects/p/studio/studies/s/variants/v/export?format=${f}`);
+    }
     expect(outilsDeBarre("volume").map((t) => t.toolId)).toEqual(["studio.objet.extruder", "studio.objet.aplatir"]);
     expect(COMMANDES_EDITEUR.find((c) => c.id === "vue-3d")).toMatchObject({ groupe: "vue", bascule: true, ecrit: false, iconeSymbolique: "studio-view-3d" });
     // Feuille de présentation : Maj+P, barre Présentation, icône propre ; Ctrl+P (impression) reste au navigateur.

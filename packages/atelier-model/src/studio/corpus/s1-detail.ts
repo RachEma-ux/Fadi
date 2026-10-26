@@ -1,16 +1,19 @@
 import { aleaMotif, memoMotif } from "./alea.js";
-import { annotation, calque, construireCorpus, cote, coteGrille, nombreMotifs, objet, type Primitive } from "./commun.js";
+import { annotation, calque, construireCorpus, cote, coteGrille, graphisme, nombreMotifs, objet, type Primitive } from "./commun.js";
 import { GRAINES_CORPUS, type CorpusStudio } from "./types.js";
 
 /**
  * S1 — détail 2D (X.1-01). REF-02 §18.2 : « détail 2D isolé avec cotes, textes, hachures, blocs, entités courbes et
- * contraintes ». Motif de 12 primitives, répété sur une grille (pas 12 m × 8 m, décalage tiré au millimètre) :
+ * contraintes ». Motif de 16 primitives, répété sur une grille (pas 12 m × 8 m, décalage tiré au millimètre) :
  * rectangle, cercle, arc, polyligne fermée à renflements (cercle exact), polyligne ouverte (droite puis demi-cercle),
  * ligne de direction 3-4-5, deux cotes **liées** aux sommets du rectangle, une cote libre sur la ligne, une cote
- * angulaire libre (90°), deux textes. Géométrie synthétique ; dimensions nominales ci-dessous (entrées des oracles).
+ * angulaire libre (90°), deux textes, puis les graphismes (EX-055) : une hachure du rectangle (angle et espacement
+ * saisis, transparence 0,5), deux symboles de la bibliothèque posés comme des blocs (nord, croix ; position, rotation,
+ * échelle) et une spline de deux morceaux de Bézier. Géométrie synthétique ; dimensions nominales ci-dessous (entrées des
+ * oracles).
  */
 
-export const MOTIF_S1 = 12;
+export const MOTIF_S1 = 16;
 export const DEFINITION_S1 = "Scène S1 : détail 2D isolé avec cotes, textes, hachures, blocs, entités courbes et contraintes.";
 
 /** Dimensions nominales du motif `j` (mètres, radians) : les seules entrées des oracles. */
@@ -29,6 +32,11 @@ export function parametresS1(j: number) {
     cordeDemiCercle: 0.5,
     /** Ligne de direction (0,6 ; 0,8) : longueur exacte. */
     longueurLigne: 1 + (j % 3),
+    /** Hachure du rectangle : angle (rad) et espacement (m) saisis, aucun motif normalisé. */
+    hachure: { angle: Math.PI / 4, espacement: 0.1 + (j % 3) * 0.05, opacite: 0.5 },
+    /** Symboles posés : échelle et rotation (rad). */
+    nord: { echelle: 0.5 + (j % 2) * 0.5, rotation: (j % 4) * (Math.PI / 2) },
+    croix: { echelle: 0.4 },
   };
 }
 
@@ -69,17 +77,32 @@ export function corpusS1(taille: number): CorpusStudio {
         radius: 0.5, links: { first: null, second: null }, toResolve: false,
       });
       case 10: return annotation({ id: id("titre"), type: "text", layerId: "textes", position: { x: o.x, y: o.y + p.hauteur + 2 }, height: 0.2, rotation: 0, content: `Détail synthétique S1 n° ${j}`, justification: "left" });
-      default: return annotation({ id: id("repere"), type: "text", layerId: "textes", position: { x: o.x - 0.5, y: o.y }, height: 0.15, rotation: Math.PI / 2, content: `Repère synthétique ${j}`, justification: "center" });
+      case 11: return annotation({ id: id("repere"), type: "text", layerId: "textes", position: { x: o.x - 0.5, y: o.y }, height: 0.15, rotation: Math.PI / 2, content: `Repère synthétique ${j}`, justification: "center" });
+      case 12: return graphisme({
+        id: id("hachure"), type: "hachure", layerId: "hachures", opacite: p.hachure.opacite, angle: p.hachure.angle, espacement: p.hachure.espacement,
+        contour: [{ x: o.x, y: o.y }, { x: o.x + p.largeur, y: o.y }, { x: o.x + p.largeur, y: o.y + p.hauteur }, { x: o.x, y: o.y + p.hauteur }],
+      });
+      case 13: return graphisme({ id: id("nord"), type: "symbole", layerId: "symboles", symbole: "nord", position: { x: o.x + p.largeur + 6.5, y: o.y + 1.5 }, rotation: p.nord.rotation, echelle: p.nord.echelle });
+      case 14: return graphisme({ id: id("croix"), type: "symbole", layerId: "symboles", symbole: "croix", position: { x: o.x - 1, y: o.y + p.hauteur + 1 }, rotation: 0, echelle: p.croix.echelle });
+      default: {
+        // Spline de deux morceaux de Bézier cubiques (7 points explicites), sous le détail.
+        const a = { x: o.x + 3, y: o.y - 2 };
+        return graphisme({ id: id("spline"), type: "spline", layerId: "courbes", points: [a, { x: a.x + 0.5, y: a.y + 0.8 }, { x: a.x + 1, y: a.y - 0.8 }, { x: a.x + 1.5, y: a.y }, { x: a.x + 2, y: a.y + 0.8 }, { x: a.x + 2.5, y: a.y - 0.8 }, { x: a.x + 3, y: a.y }] });
+      }
     }
   };
   return construireCorpus({
     scene: "S1", definition: DEFINITION_S1, taille, motif: MOTIF_S1, primitive,
-    calques: [calque("contours", "Contours (synthétique)"), calque("courbes", "Courbes (synthétique)"), calque("cotes", "Cotes (synthétique)"), calque("textes", "Textes (synthétique)")],
+    calques: [calque("contours", "Contours (synthétique)"), calque("courbes", "Courbes (synthétique)"), calque("cotes", "Cotes (synthétique)"), calque("textes", "Textes (synthétique)"), calque("hachures", "Hachures (synthétique)"), calque("symboles", "Symboles (synthétique)")],
     couverture: {
-      representes: ["cotes linéaires (liées et libres)", "cote angulaire", "textes", "entités courbes (cercle, arc, polylignes à renflements)", "liens associatifs cote → sommet (seule forme de contrainte du modèle)"],
+      representes: [
+        "cotes linéaires (liées et libres)", "cote angulaire", "textes", "entités courbes (cercle, arc, polylignes à renflements)", "liens associatifs cote → sommet (seule forme de contrainte du modèle)",
+        "hachures : contour, angle et espacement saisis, transparence (graphismes, EX-055)",
+        "blocs de bibliothèque : symboles nord et croix posés par position, rotation et échelle (transformation local-objet → local-2d)",
+        "courbes de Bézier exactes : splines de deux morceaux",
+      ],
       absents: [
-        { element: "hachures", raison: "aucun type « hachure » dans studio-document/1" },
-        { element: "blocs", raison: "aucun type « bloc » (définition réutilisable) dans studio-document/1" },
+        { element: "blocs définis par l'utilisateur", raison: "studio-document/1 n'a qu'une bibliothèque fermée de symboles (STUDIO_SYMBOLES : nord, croix, niveau) ; aucune définition de bloc saisie ni insertion d'une telle définition" },
         { element: "contraintes géométriques", raison: "le modèle ne porte que les liens associatifs des cotes ; aucune contrainte (parallélisme, tangence…) n'existe" },
       ],
     },
