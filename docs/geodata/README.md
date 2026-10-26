@@ -132,7 +132,9 @@ leur justification). Quatre fiches : `hcp-rgph2024-population-regions`, `-provin
 socio-économiques, livrés dans un tableau `donnees/<clé>.csv` déclaré par `version.tableau` ; « … » = sans objet,
 « . » = non publiée, jamais zéro). Contours des arrondissements : OpenStreetMap niveau 10
 (`donnees/osm-mar-arrondissements.geojson`, extrait par `extraire_sources.py`, sans fiche propre : il ne sert qu'au
-rattachement). Priorité HCP (D-GD-18) : quand une donnée existe dans le HCP et dans OpenStreetMap, celle du HCP est
+rattachement). Indicateurs communaux complémentaires (D-GD-20) : `--logement`, `--transport` et `--cee` ajoutent le parc
+de logement urbain 2024, le mode de transport domicile – travail (RGPH 2024) et la CEE 2023/2024 (lecture :
+`scripts/geodata/sources_hcp_communales.py`). Priorité HCP (D-GD-18) : quand une donnée existe dans le HCP et dans OpenStreetMap, celle du HCP est
 retenue ; les extraits OSM des communes, villes et arrondissements n'ont plus de fiche importable (fiches consignées dans
 `donnees/osm-extraits.json`) et la couche `hcp-rgph2024-villes` porte les effectifs du HCP sur les points OSM.
 Un indicateur « Superficie calculée » est produit par GeoData (ellipsoïde WGS 84) : c'est un résultat calculé, pas une
