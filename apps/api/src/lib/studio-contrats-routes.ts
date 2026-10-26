@@ -130,7 +130,7 @@ const vueCoupe = z.strictObject({
 });
 const modeleExterne = z.strictObject({
   id: ident, studyId: ident, variantId: ident, reference: z.string(), auteur: z.string(), discipline: z.string(), format: z.string(), version: z.string(),
-  uniteDeclaree: z.string().nullable(), transformation: z.unknown().nullable(), nomFichier: z.string(), contentSha256: z.string(), statut: z.string(),
+  uniteDeclaree: z.string().nullable(), transformation: z.unknown().nullable(), repereSource: z.string().nullable(), restrictions: z.string().nullable(), nomFichier: z.string(), contentSha256: z.string(), statut: z.string(),
   rapport: z.unknown(), comparaison: z.unknown(), revisionComparee: z.string().nullable(),
   decision: z.looseObject({ par: z.string(), parEmail: z.string().nullable(), le: instant.nullable(), motif: z.string().nullable() }).nullable(),
   recuPar: z.string(), recuParEmail: z.string().nullable(), recuLe: instant,

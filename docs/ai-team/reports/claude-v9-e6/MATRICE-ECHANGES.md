@@ -1,12 +1,12 @@
 # Matrice d’échanges de Studio
 
-<!-- Généré depuis packages/atelier-model/src/studio/echanges/matrice-echanges.ts (studio-matrice-echanges/1, révision 5) : ne pas éditer à la main. -->
+<!-- Généré depuis packages/atelier-model/src/studio/echanges/matrice-echanges.ts (studio-matrice-echanges/1, révision 6) : ne pas éditer à la main. -->
 
-Établie le 2026-10-25 (révision 5, schéma `studio-matrice-echanges/1`), à partir de l’audit des exporteurs et importeurs Studio. Lots E.6-01 à E.6-05 du plan d’implémentation Studio V1.0 (§5.7).
+Établie le 2026-10-25 (révision 6, schéma `studio-matrice-echanges/1`), à partir de l’audit des exporteurs et importeurs Studio. Lots E.6-01 à E.6-05 du plan d’implémentation Studio V1.0 (§5.7).
 
 **Aucune entrée n’est une déclaration de conformité** : « livré » dit ce que le code écrit ou lit et le contrôle qui le vérifie ; la conformité d’un format reste non évaluée. Un format reporté est inscrit « non livré » avec sa raison et sa source ; « renoncé » exige une décision Studio admise (aucune aujourd’hui).
 
-Entrées : 42 — livrées : 23, non livrées : 19, renoncées : 0.
+Entrées : 43 — livrées : 26, non livrées : 17, renoncées : 0.
 
 ## Formats × sens
 
@@ -30,17 +30,18 @@ Entrées : 42 — livrées : 23, non livrées : 19, renoncées : 0.
 | `dossier-json` | JSON | studio-dossier-conception/1 | export | dossier | Dossier de conception (données natives du dossier) | livré | E.6-02 | Export seulement : aucun import de dossier ; empreinte du dossier portée en en-tête. |
 | `tableau-metre-csv` | CSV | UTF-8 avec BOM, séparateur « ; », décimale « , » ou « . » | export | tableau | Tableau du métré d’une révision (brut, déductions, net, ajustements) | livré | E.6-02 | Export seulement ; statut de chaque ajustement écrit en clair ; refusé tant que le métré n’est pas à jour. |
 | `rendu-png` | PNG | PNG (bloc iTXt « fadi:rendu » de provenance) | export | rendu | Rendu du modèle depuis la vue 3D d’une révision enregistrée | livré | E.6-02 | Image du canevas, pixels non modifiés ; refusé sur un brouillon non enregistré ou un maillage en cours ; provenance : étude, variante, révision, scène, caméra, date. |
-| `paquet-publication` | Paquet de publication (SVG, DXF, IFC, feuille PDF) | studio-publication-manifest/1 | export | paquet | Fichiers figés d’une publication approuvée et diffusée | livré | E.6-02 | Fichiers du manifeste approuvé, identifiés par SHA-256 et vérifiables ; dessin 2D indépendant : sans IFC ; mêmes limites que chaque export. |
+| `illustration-png` | PNG | PNG (bloc iTXt « fadi:illustration » de provenance, studio-illustration/1) | export | rendu | Illustration archivée, tirée du rendu du modèle d’une vue (lot F) | livré | E.6-02 | Image séparée « non vérifiée » : ni métrique, ni conforme, aucune donnée du modèle relisible ; provenance : rendu source, empreintes du document avant et après, paramètres, fournisseur, coûts, reproductibilité. |
+| `paquet-publication` | Paquet de publication (SVG, DXF, IFC, feuille PDF ; dossier de conception : PDF et JSON) | studio-publication-manifest/1 | export | paquet | Fichiers figés d’une publication approuvée et diffusée | livré | E.6-02 | Fichiers du manifeste approuvé, identifiés par SHA-256 et vérifiables ; dessin 2D indépendant : sans IFC ; dossier de conception (lot PUB) : PDF et JSON du dossier, feuilles et vues de coupe jointes ; mêmes limites que chaque export. |
 | `rapport-fidelite-json` | JSON | studio-rapport-fidelite/1 | export | rapport | Rapport de fidélité d’un export SVG, DXF ou IFC (même révision) | livré | E.6-03 | Décrit le fichier (jamais certifié) : exact, approché, non couvert, par type et par raison ; calques masqués et noms réécrits. |
 | `provenance-sources-json` | JSON | studio-provenance/1 | export | rapport | Provenance des sources importées dans le dessin (import DXF, EX-014) | livré | E.6-04 | Déclarée avec l’import (même lot) : fichier, empreinte SHA-256 et version du format lues, horodatage, unité lue et retenue, repère source, transformation (aucune : identité), auteur et restrictions d’utilisation déclarés ou « non déclarés » ; enregistrée par le navigateur depuis le brouillon affiché. |
 | `provenance-modele-externe-json` | JSON | studio-provenance-modele/1 | export | coordination | Provenance d’un modèle externe reçu (EX-014) | livré | E.6-04 | Ce que l’émetteur déclare (référence, auteur, discipline, version, unité, repère source, transformation, restrictions d’utilisation) et ce que le serveur a lu et calculé (schéma, unité lue, SHA-256, horodatage de réception) ; droit d’export. |
-| `diagnostic-releve-perf` | JSON | Relevé de performances Studio (sans schéma versionné) | export | diagnostic | Mesures de chargement et d’exécution de la session (hors modèle) | livré | E.6-02 | Diagnostic seulement : aucune donnée du projet ; non relu par Studio. |
+| `diagnostic-releve-perf` | JSON | studio-releve-perf/1 (relevé de performances Studio, JSON) | export | diagnostic | Mesures de chargement et d’exécution de la session (hors modèle) | livré | E.6-02 | Diagnostic seulement : aucune donnée du projet ; non relu par Studio. |
+| `bcf-export` | BCF (BIM Collaboration Format, .bcfzip) | 2.1 (bcf.version VersionId 2.1), archive sans compression | export | coordination | Observations d’une variante (sujets BCF) | livré | E.6-04 | Contrat minimal du lot PUB : sujet (Guid stable dérivé de l’identité interne, type = catégorie, statut, titre, priorité = gravité, objets cités en étiquettes, auteur, responsable, description) et commentaires du journal ; aucun point de vue (caméra) ni pièce jointe ; observations lisibles par l’acteur seulement. |
+| `bcf-import` | BCF (BIM Collaboration Format, .bcfzip) | 2.x lu selon le contrat 2.1 minimal ; entrées stockées (sans compression) | import | coordination | Sujets BCF reçus, créés comme observations distinctes de la variante | livré | E.6-04 | 8 Mo au plus ; 500 sujets ; reconnaissance par (Guid, contexte) seulement : un Guid déjà importé dans le même contexte n’est ni recréé ni réécrit, un même Guid venu d’un autre contexte crée une observation distincte, un sujet absent ne clôt rien, un objet cité inconnu reste une référence ; points de vue non repris (avertissement) ; entrées compressées refusées (message). |
 | `dwg-import` | DWG | non évaluée | import | dessin | Dessin 2D | non livré | E.6-04, E.6-05 | Non livré ; aucune conformité évaluée. |
 | `dwg-export` | DWG | non évaluée | export | dessin | Dessin 2D | non livré | E.6-04, E.6-05 | Non livré ; aucune conformité évaluée. |
 | `dgn-import` | DGN | non évaluée | import | dessin | Dessin 2D | non livré | E.6-04, E.6-05 | Non livré ; aucune conformité évaluée. |
 | `dgn-export` | DGN | non évaluée | export | dessin | Dessin 2D | non livré | E.6-04, E.6-05 | Non livré ; aucune conformité évaluée. |
-| `bcf-import` | BCF | non évaluée (2.1 / 3.0) | import | coordination | Observations et sujets de coordination | non livré | E.6-04, E.6-05 | Non livré ; aucune conformité évaluée. |
-| `bcf-export` | BCF | non évaluée (2.1 / 3.0) | export | coordination | Observations et sujets de coordination | non livré | E.6-04, E.6-05 | Non livré ; aucune conformité évaluée. |
 | `step-import` | STEP (ISO 10303-21, AP203 / AP214 / AP242) | non évaluée | import | maquette | Solides exacts (brep) | non livré | E.6-04, E.6-05 | Non livré ; aucune conformité évaluée. |
 | `step-export` | STEP (ISO 10303-21, AP203 / AP214 / AP242) | non évaluée | export | maquette | Solides exacts (brep) | non livré | E.6-04, E.6-05 | Non livré ; aucune conformité évaluée. |
 | `obj-import` | OBJ (Wavefront) | non évaluée | import | maquette | Maillage 3D | non livré | E.6-04, E.6-05 | Non livré ; aucune conformité évaluée. |
@@ -325,14 +326,29 @@ Entrées : 42 — livrées : 23, non livrées : 19, renoncées : 0.
 - Interface : `apps/web/src/modules/studio/vue3d/Vue3DStudio.tsx` (`` lien.download = studioNomFichierRendu(p) ``)
 - Sources : `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-02` — Liste d’exécution Studio V1.0 ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.5-03` — Liste d’exécution Studio V1.0
 
-### `paquet-publication` — Paquet de publication (SVG, DXF, IFC, feuille PDF) (export)
+### `illustration-png` — PNG (export)
+
+- Version : PNG (bloc iTXt « fadi:illustration » de provenance, studio-illustration/1)
+- Objet : Illustration archivée, tirée du rendu du modèle d’une vue (lot F)
+- Limite : Image séparée « non vérifiée » : ni métrique, ni conforme, aucune donnée du modèle relisible ; provenance : rendu source, empreintes du document avant et après, paramètres, fournisseur, coûts, reproductibilité.
+- Route : `GET /projects/:projectId/studio/studies/:studyId/variants/:variantId/illustrations/:illustrationId/image`
+- Contrôle : Tests des routes d’illustration (base simulée) ; recette studio-lot-f.mjs.
+- Entité Vue 3D affichée : partielle — Illustration seulement : le modèle n’est ni exporté ni modifié.
+- Code : `apps/api/src/lib/studio-illustrations.ts` (`` lireImageIllustration ``)
+- Tests : `apps/api/src/routes/studio-illustrations.test.ts` (`` x-studio-verification ``)
+- Routes : `apps/api/src/routes/studio-illustrations.ts` (`` ${base}/:illustrationId/image ``)
+- Interface : `apps/web/src/modules/studio/illustration/DialogueIllustration.tsx` (`` data-studio-illustration-archivee ``)
+- Sources : `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-02` — Liste d’exécution Studio V1.0 ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.5-03` — Liste d’exécution Studio V1.0
+
+### `paquet-publication` — Paquet de publication (SVG, DXF, IFC, feuille PDF ; dossier de conception : PDF et JSON) (export)
 
 - Version : studio-publication-manifest/1
 - Objet : Fichiers figés d’une publication approuvée et diffusée
-- Limite : Fichiers du manifeste approuvé, identifiés par SHA-256 et vérifiables ; dessin 2D indépendant : sans IFC ; mêmes limites que chaque export.
+- Limite : Fichiers du manifeste approuvé, identifiés par SHA-256 et vérifiables ; dessin 2D indépendant : sans IFC ; dossier de conception (lot PUB) : PDF et JSON du dossier, feuilles et vues de coupe jointes ; mêmes limites que chaque export.
 - Route : `GET /projects/:projectId/studio/studies/:studyId/publications/:publicationId/files/:format`
 - Contrôle : Recettes studio-publication.mjs et studio-dossier.mjs (empreintes recalculées).
 - Entité Fichiers du paquet : portée — SVG, DXF, IFC et feuille PDF calculés par les exporteurs du modèle.
+- Entité Dossier de conception : portée — PDF (sommaire, feuilles, métré, fidélité, vues de coupe) et JSON du dossier ; pièces, origine et présentation déclarées dans le manifeste.
 - Code : `apps/api/src/lib/studio-publications.ts` (`` studioPackageFiles ``) ; `apps/api/src/lib/studio-publications.ts` (`` readStudioPackageFile ``)
 - Tests : `apps/web/e2e/studio-publication.mjs` (`` const file = await reader('GET', `${pubs}/${id3}/files/${f.format}` ``)
 - Routes : `apps/api/src/routes/studio-publications.ts` (`` ${base}/files/:format ``)
@@ -380,15 +396,46 @@ Entrées : 42 — livrées : 23, non livrées : 19, renoncées : 0.
 
 ### `diagnostic-releve-perf` — JSON (export)
 
-- Version : Relevé de performances Studio (sans schéma versionné)
+- Version : studio-releve-perf/1 (relevé de performances Studio, JSON)
 - Objet : Mesures de chargement et d’exécution de la session (hors modèle)
 - Limite : Diagnostic seulement : aucune donnée du projet ; non relu par Studio.
-- Contrôle : Tests du relevé.
-- Entité Mesures de la session : portée — Définitions, contexte, synthèse, journal.
-- Code : `apps/web/src/modules/studio/chargement/perf.ts` (`` ReleveurPerf ``)
-- Tests : `apps/web/src/modules/studio/chargement/perf.test.ts` (`` ReleveurPerf ``)
+- Contrôle : Tests du relevé et de son schéma versionné (controlerRelevePerf).
+- Entité Mesures de la session : portée — Schéma versionné, définitions, contexte, synthèse, journal.
+- Code : `apps/web/src/modules/studio/chargement/perf.ts` (`` ReleveurPerf ``) ; `apps/web/src/modules/studio/chargement/perf.ts` (`` controlerRelevePerf ``)
+- Tests : `apps/web/src/modules/studio/chargement/perf.test.ts` (`` ReleveurPerf ``) ; `apps/web/src/modules/studio/chargement/perf.test.ts` (`` controlerRelevePerf ``)
 - Interface : `apps/web/src/modules/studio/chargement/PanneauRessources.tsx` (`` a.download = "studio-releve-perf.json" ``)
 - Sources : `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, X.1-09` — Liste d’exécution Studio V1.0
+
+### `bcf-export` — BCF (BIM Collaboration Format, .bcfzip) (export)
+
+- Version : 2.1 (bcf.version VersionId 2.1), archive sans compression
+- Objet : Observations d’une variante (sujets BCF)
+- Limite : Contrat minimal du lot PUB : sujet (Guid stable dérivé de l’identité interne, type = catégorie, statut, titre, priorité = gravité, objets cités en étiquettes, auteur, responsable, description) et commentaires du journal ; aucun point de vue (caméra) ni pièce jointe ; observations lisibles par l’acteur seulement.
+- Route : `GET /projects/:projectId/studio/studies/:studyId/variants/:variantId/observations/bcf`
+- Contrôle : Tests du modèle (export relu, Guid stable) ; recette studio-pub.mjs (export servi par l’API).
+- Entité Topic : portée — Guid, TopicType, TopicStatus, Title, Priority, Labels, CreationDate, CreationAuthor, AssignedTo, Description.
+- Entité Comment : partielle — Un commentaire par passage du journal (action et note).
+- Entité Viewpoints, Components, pièces justificatives : absente — Les observations Studio ne portent pas de point de vue ; les pièces restent dans Studio.
+- Code : `packages/atelier-model/src/studio/echanges/bcf-observations.ts` (`` studioExporterBcf ``) ; `apps/api/src/lib/studio-observations-bcf.ts` (`` exporterObservationsBcf ``)
+- Tests : `packages/atelier-model/src/studio/echanges/bcf-observations.test.ts` (`` IF-010 [+] export BCF 2.1 relu à l'identique ``)
+- Routes : `apps/api/src/routes/studio-observations.ts` (`` ${base}/bcf ``)
+- Interface : `apps/web/src/modules/studio/observations/PanneauObservations.tsx` (`` data-studio-bcf-exporter ``)
+- Sources : `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-04` — Liste d’exécution Studio V1.0 ; `docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json` — Contrat IF-010 : identifiants BCF conservés comme références
+
+### `bcf-import` — BCF (BIM Collaboration Format, .bcfzip) (import)
+
+- Version : 2.x lu selon le contrat 2.1 minimal ; entrées stockées (sans compression)
+- Objet : Sujets BCF reçus, créés comme observations distinctes de la variante
+- Limite : 8 Mo au plus ; 500 sujets ; reconnaissance par (Guid, contexte) seulement : un Guid déjà importé dans le même contexte n’est ni recréé ni réécrit, un même Guid venu d’un autre contexte crée une observation distincte, un sujet absent ne clôt rien, un objet cité inconnu reste une référence ; points de vue non repris (avertissement) ; entrées compressées refusées (message).
+- Route : `POST /projects/:projectId/studio/studies/:studyId/variants/:variantId/observations/bcf`
+- Contrôle : Tests du modèle (plan d’import : homonymes, reconnus, absents) ; recette studio-pub.mjs (import servi par l’API, même Guid dans un autre contexte).
+- Entité Topic : partielle — Titre et description en note d’origine ; catégorie et gravité reprises seulement dans le vocabulaire décidé ; Guid et contexte conservés comme références BCF.
+- Entité Viewpoints, Components : absente — Non repris, signalés en avertissement.
+- Code : `packages/atelier-model/src/studio/echanges/bcf-observations.ts` (`` studioPlanImportBcf ``) ; `apps/api/src/lib/studio-observations-bcf.ts` (`` importerObservationsBcf ``)
+- Tests : `packages/atelier-model/src/studio/echanges/bcf-observations.test.ts` (`` IF-010 [−] même BCF-ID reçu dans un autre contexte ``)
+- Routes : `apps/api/src/routes/studio-observations.ts` (`` ${base}/bcf ``)
+- Interface : `apps/web/src/modules/studio/observations/PanneauObservations.tsx` (`` data-studio-bcf-importer ``)
+- Sources : `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-04` — Liste d’exécution Studio V1.0 ; `docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json` — Cas négatif « Même BCF-ID »
 
 ## Sous-ensemble SVG / DXF / IFC retenu (E.6-03) : couverture par type
 
@@ -426,8 +473,6 @@ Raisons possibles du rapport de fidélité (`studioRapportFidelite`) pour chaque
 | `dwg-export` | DWG | export | non livré | Aucun contrat, aucune preuve ni décision Studio : format reporté, inscrit au périmètre sans être livré ; aucune conformité déclarée. D-179 renonce au DWG pour l’Atelier P2 (libredwg GPL, ODA SDK commercial) ; elle ne vaut pas pour Studio, dont le choix reste au maître d’ouvrage. | `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-04` — Liste d’exécution Studio V1.0 ; `docs/atelier/decisions.md, D-179` — DWG et DGN renoncés pour l’Atelier P2 seulement |
 | `dgn-import` | DGN | import | non livré | Aucun contrat, aucune preuve ni décision Studio : format reporté, inscrit au périmètre sans être livré ; aucune conformité déclarée. D-179 renonce au DGN pour l’Atelier P2 seulement. | `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-04` — Liste d’exécution Studio V1.0 ; `docs/atelier/decisions.md, D-179` — DWG et DGN renoncés pour l’Atelier P2 seulement |
 | `dgn-export` | DGN | export | non livré | Aucun contrat, aucune preuve ni décision Studio : format reporté, inscrit au périmètre sans être livré ; aucune conformité déclarée. D-179 renonce au DGN pour l’Atelier P2 seulement. | `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-04` — Liste d’exécution Studio V1.0 ; `docs/atelier/decisions.md, D-179` — DWG et DGN renoncés pour l’Atelier P2 seulement |
-| `bcf-import` | BCF | import | non livré | Aucun contrat, aucune preuve ni décision Studio : format reporté, inscrit au périmètre sans être livré ; aucune conformité déclarée. Les observations Studio (E.2) n’ont pas de contrat BCF ; règle d’identité à tenir : un même identifiant BCF reçu dans un autre contexte n’écrase ni ne clôt une observation. | `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-04` — Liste d’exécution Studio V1.0 ; `docs/workstreams/studio/task-register.json` — Cas négatif « Même BCF-ID » |
-| `bcf-export` | BCF | export | non livré | Aucun contrat, aucune preuve ni décision Studio : format reporté, inscrit au périmètre sans être livré ; aucune conformité déclarée. Les observations Studio (E.2) n’ont pas de contrat BCF ; règle d’identité à tenir : un même identifiant BCF reçu dans un autre contexte n’écrase ni ne clôt une observation. | `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-04` — Liste d’exécution Studio V1.0 ; `docs/workstreams/studio/task-register.json` — Cas négatif « Même BCF-ID » |
 | `step-import` | STEP (ISO 10303-21, AP203 / AP214 / AP242) | import | non livré | Aucun contrat, aucune preuve ni décision Studio : format reporté, inscrit au périmètre sans être livré ; aucune conformité déclarée. Studio n’a pas de noyau exact ; l’échange STEP de l’Atelier (OCCT, P2-1, D-182) lui reste interdit par la frontière des modules. | `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-04` — Liste d’exécution Studio V1.0 ; `scripts/frontieres.json, ADR-STUDIO-NAV-01` — Studio n’importe pas l’Atelier |
 | `step-export` | STEP (ISO 10303-21, AP203 / AP214 / AP242) | export | non livré | Aucun contrat, aucune preuve ni décision Studio : format reporté, inscrit au périmètre sans être livré ; aucune conformité déclarée. Studio n’a pas de noyau exact ; l’échange STEP de l’Atelier (OCCT, P2-1, D-182) lui reste interdit par la frontière des modules. | `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-04` — Liste d’exécution Studio V1.0 ; `scripts/frontieres.json, ADR-STUDIO-NAV-01` — Studio n’importe pas l’Atelier |
 | `obj-import` | OBJ (Wavefront) | import | non livré | Aucun contrat, aucune preuve ni décision Studio : format reporté, inscrit au périmètre sans être livré ; aucune conformité déclarée. Le maillage de la vue 3D (studioMesh3d) existe, aucun écrivain ni lecteur OBJ. | `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-04` — Liste d’exécution Studio V1.0 |
