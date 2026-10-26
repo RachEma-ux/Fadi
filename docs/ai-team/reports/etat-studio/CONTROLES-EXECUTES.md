@@ -2,7 +2,7 @@
 
 > Document **généré** par `node scripts/registre/etat-studio.mjs --ecrire` depuis le registre ; la CI (workflow
 > « Continuité de développement ») le recalcule à chaque commit et échoue s’il diffère : il est donc tenu au HEAD testé.
-> Registre lu : `docs/workstreams/studio/task-register.json`, SHA-256 `28a90ff32e27b0139b61eb4f787d3fa6155dbdd2adacc36349013f298daf30d2`.
+> Registre lu : `docs/workstreams/studio/task-register.json`, SHA-256 `85e54791265aeb2d71d8ba47729ac00417c683396503a2e65736599fb6fb24b3`.
 
 **Une CI verte n’est pas une couverture exhaustive** (X.4-03) : elle prouve seulement que les contrôles listés en partie 1
 ont réussi aux exécutions citées. Les scénarios de la partie 2 ne sont pas couverts, quel que soit l’état de la CI.
