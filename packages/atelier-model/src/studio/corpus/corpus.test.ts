@@ -25,8 +25,14 @@ import { studioAngularValue } from "../objets/cote-angulaire.js";
 import { studioDimensionValue } from "../objets/cote.js";
 import { measureStudioDimension } from "../document-2d.js";
 import { controlerExigences } from "../facade-exigences.js";
+import { studioAireContour } from "../graphismes/graphismes.js";
+import { lireDxfStudio } from "../import-dxf.js";
+import { studioSha256 } from "../empreinte-sha256.js";
+import { createHash } from "node:crypto";
+
+const studioSha256Octets = (o: Buffer) => createHash("sha256").update(o).digest("hex");
 import {
-  commandesDuDocument, empreinteCorpus, empreintePlanS6, genererCorpus, oracleCorpus, oracleS6, oracleSessionS7, planS6, primitivesDu, referenceVisuelle,
+  commandesDuDocument, empreinteCorpus, fondAxesS2, primitivesDuDocument, REFERENCE_S2, empreintePlanS6, genererCorpus, oracleCorpus, oracleS6, oracleSessionS7, planS6, primitivesDu, referenceVisuelle,
   LICENCE_CORPUS, SCENES_DOCUMENTS, TAILLES_ILLUSTRATIVES, TOLERANCE_ORACLE, type CorpusStudio, type OracleCorpus, type SceneDocuments,
 } from "./index.js";
 
@@ -70,7 +76,7 @@ function proche(mesure: number | null | undefined, attendu: number, quoi: string
 function comptes(corpus: CorpusStudio): Record<string, number> {
   const c: Record<string, number> = {};
   for (const d of corpus.documents) {
-    for (const e of [...d.objects, ...(d.dimensions ?? []), ...(d.annotations ?? []), ...(d.architecture ?? []), ...(d.solides ?? [])]) c[e.type] = (c[e.type] ?? 0) + 1;
+    for (const e of [...d.objects, ...(d.dimensions ?? []), ...(d.annotations ?? []), ...(d.architecture ?? []), ...(d.solides ?? []), ...(d.exacts ?? []), ...(d.graphismes ?? [])]) c[e.type] = (c[e.type] ?? 0) + 1;
   }
   return c;
 }
@@ -107,7 +113,20 @@ function mesures(corpus: CorpusStudio) {
       if (!premier) premier = { id: m.id, brut: m.volumeBrut, deduit: m.deduction, net: m.volumeNet };
     }
   }
-  return { totaux, volumeNonEvalues, volumeSolides, cotes: { liees, libres, sommeMesures }, angles: { nombre: angles, sommeDegres }, murs, premier };
+  // Graphismes (aire des contours, symboles posés, points des splines), solides exacts (volume du noyau), sources.
+  const graphismes = { aireHachures: 0, symboles: {} as Record<string, number>, pointsSplines: 0 };
+  const exacts = { operations: {} as Record<string, number>, volume: 0 };
+  const sources = { nombre: 0, objets: 0 };
+  for (const d of corpus.documents) {
+    for (const g of d.graphismes ?? []) {
+      if (g.type === "hachure") graphismes.aireHachures += Math.abs(studioAireContour(g.contour));
+      else if (g.type === "symbole") graphismes.symboles[g.symbole] = (graphismes.symboles[g.symbole] ?? 0) + 1;
+      else graphismes.pointsSplines += g.points.length;
+    }
+    for (const e of d.exacts ?? []) { exacts.operations[e.operation] = (exacts.operations[e.operation] ?? 0) + 1; exacts.volume += e.resultat.volume; }
+    for (const x of d.sources ?? []) { sources.nombre++; sources.objets += x.objets; }
+  }
+  return { totaux, volumeNonEvalues, volumeSolides, cotes: { liees, libres, sommeMesures }, angles: { nombre: angles, sommeDegres }, murs, premier, graphismes, exacts, sources };
 }
 
 function controlerOracle(corpus: CorpusStudio, o: OracleCorpus) {
@@ -135,6 +154,16 @@ function controlerOracle(corpus: CorpusStudio, o: OracleCorpus) {
     }
   }
   proche(m.volumeSolides, o.volumeSolides ?? 0, "volume des solides");
+  if (o.graphismes) {
+    proche(m.graphismes.aireHachures, o.graphismes.aireHachures, "aire des hachures");
+    expect(m.graphismes.symboles, "symboles posés").toEqual(o.graphismes.symboles);
+    expect(m.graphismes.pointsSplines, "points des splines").toBe(o.graphismes.pointsSplines);
+  } else expect(m.graphismes).toEqual({ aireHachures: 0, symboles: {}, pointsSplines: 0 });
+  if (o.exacts) {
+    expect(m.exacts.operations, "booléens par opération").toEqual(o.exacts.operations);
+    proche(m.exacts.volume, o.exacts.volume, "volume des solides exacts (noyau)");
+  } else expect(m.exacts.volume).toBe(0);
+  expect(m.sources, "références externes déclarées").toEqual(o.sources ?? { nombre: 0, objets: 0 });
 }
 
 const TAILLES: readonly number[] = LOURD ? TAILLES_ILLUSTRATIVES : TAILLES_ILLUSTRATIVES.filter((t) => t <= 10_000);
@@ -179,8 +208,7 @@ for (const scene of SCENES_DOCUMENTS) {
         expect(corpus.licence).toMatch(/^Licence du dépôt Fadi \(RachEma-ux\/Fadi\) : corpus synthétique généré par le code du dépôt, aucune source tierce/);
         expect(corpus.taille).toBe(taille);
         for (const d of corpus.documents) {
-          const n = d.objects.length + (d.dimensions?.length ?? 0) + (d.annotations?.length ?? 0) + (d.architecture?.length ?? 0) + (d.solides?.length ?? 0);
-          expect(n).toBeLessThanOrEqual(STUDIO_LIMITS.objects);
+          expect(primitivesDuDocument(d)).toBeLessThanOrEqual(STUDIO_LIMITS.objects);
           // Forme canonique : le document validé est identique au document généré.
           expect(JSON.stringify(validateStudioDocument(d))).toBe(JSON.stringify(d));
         }
@@ -228,14 +256,122 @@ for (const scene of SCENES_DOCUMENTS) {
 
 describe("Feuillets au-delà de la borne d'un document", () => {
   it("un feuillet ne coupe jamais un motif : cotes et ouvertures restent avec leur objet", () => {
-    // 20 008 primitives de S2 (motif de 8) : deux feuillets, le second porte un motif entier.
-    const c = genererCorpus("S2", 20_008);
+    // 20 007 primitives de S2 (motif de 9) : deux feuillets, le second porte un motif entier (3 murs, 2 ouvertures).
+    const c = genererCorpus("S2", 20_007);
     expect(c.documents).toHaveLength(2);
-    expect(c.documents[1]!.architecture).toHaveLength(4);
-    controlerOracle(c, oracleCorpus("S2", 20_008));
+    expect(c.documents[1]!.architecture).toHaveLength(5);
+    controlerOracle(c, oracleCorpus("S2", 20_007));
   });
   it("un motif entamé (taille non multiple du motif) reste valide et l'oracle en tient compte", () => {
     for (const scene of SCENES_DOCUMENTS) for (const taille of [1, 3, 7, 13]) controlerOracle(genererCorpus(scene, taille), oracleCorpus(scene, taille));
+  });
+});
+
+describe("X.1-01 / X.1-02 / X.1-05 — éléments ajoutés au corpus depuis les fonctions livrées", () => {
+  it("X.1-01 S1 : hachures, symboles (blocs de bibliothèque) et splines dans chaque motif, rendus dans le SVG de référence", () => {
+    const c = genererCorpus("S1", 100), d = c.documents[0]!;
+    const types = new Set((d.graphismes ?? []).map((g) => g.type));
+    expect([...types].sort()).toEqual(["hachure", "spline", "symbole"]);
+    expect(c.couverture.representes.join(" ")).toMatch(/hachures/);
+    expect(c.couverture.absents.map((x) => x.element)).not.toContain("hachures");
+    const svg = referenceVisuelle(c).svg[0]!;
+    expect(svg).toMatch(/opacity="0.5"/);
+    expect(svg).toMatch(/ C /);
+  });
+
+  it("X.1-02 S2 : croisements de murs en cours de portée et référence externe déclarée — fond DXF des axes relu, empreinte du fichier recalculée", () => {
+    const c = genererCorpus("S2", 100), d = c.documents[0]!;
+    const traversants = (d.architecture ?? []).filter((a) => a.type === "wall" && a.id.endsWith("mur-traversant"));
+    // 100 primitives = 11 motifs entiers et un motif entamé (son premier mur seulement) : 11 murs traversants.
+    expect(traversants.length).toBe(Math.floor(100 / 9));
+    // Un traversant croise le mur vertical de sa cellule à 4,5 m de son départ (hors d'une extrémité).
+    const t = traversants[0]!, v = d.architecture!.find((a) => a.id === "s2-0-mur-v")!;
+    if (t.type !== "wall" || v.type !== "wall") throw new Error("murs attendus");
+    expect(t.axis[0]!.x < v.axis[0]!.x && t.axis[1]!.x > v.axis[0]!.x && t.axis[0]!.y > v.axis[0]!.y && t.axis[0]!.y < v.axis[1]!.y).toBe(true);
+    // Référence externe : provenance d'un vrai fichier — même empreinte que le fond recalculé, relu en autant de lignes.
+    const [source] = d.sources!;
+    const fond = fondAxesS2(d);
+    expect(source).toMatchObject({ format: "dxf", versionFormat: "AC1009", nomFichier: REFERENCE_S2.nomFichier, uniteLue: "m", facteur: 1, transformation: "identite", objets: fond.objets });
+    expect(source!.empreinteSha256).toBe(studioSha256(fond.dxf));
+    const relu = lireDxfStudio(fond.dxf);
+    expect(relu.statut).toBe("pret");
+    const lignes = relu.commandes.filter((x) => x.toolId === "studio.dessin.ligne");
+    expect(lignes).toHaveLength(fond.objets);
+    const axes = d.objects.filter((o) => o.layerId === "axes");
+    for (const [i, l] of lignes.entries()) {
+      const a = axes[i]!, p = l.params as { start: { x: number; y: number }; end: { x: number; y: number } };
+      if (a.type !== "line") throw new Error("ligne attendue");
+      for (const k of ["start", "end"] as const) { expect(p[k].x).toBeCloseTo(a[k].x, 6); expect(p[k].y).toBeCloseTo(a[k].y, 6); }
+    }
+    expect(c.couverture.absents.map((x) => x.element)).toEqual(["jonctions calculées aux croisements de murs", "modèle lié dans le document"]);
+  });
+
+  it("X.1-05 S5 : booléens exacts (union, différence, intersection) aux opérandes conservés, maillage du noyau dans la référence 3D", () => {
+    const c = genererCorpus("S5", 100), d = c.documents[0]!;
+    expect(d.exacts?.map((e) => [e.operation, e.operandes.map((o) => o.id)])).toEqual([
+      ["union", ["s5-0-op-a", "s5-0-op-b"]], ["difference", ["s5-1-op-a", "s5-1-op-b"]], ["intersection", ["s5-2-op-a", "s5-2-op-b"]],
+    ]);
+    // Les opérandes sont conservés, jamais rangés parmi les solides libres.
+    expect((d.solides ?? []).some((s) => s.id.includes("-op-"))).toBe(false);
+    expect(c.couverture.absents.map((x) => x.element)).toEqual(["surfaces libres (NURBS, subdivision)"]);
+  });
+});
+
+describe("Commandes qui recréent le corpus (recettes par l'API)", () => {
+  it("chaque scène S1–S7 (100 primitives) : les commandes appliquées à un document vide rendent le feuillet à l'identique (graphismes, exacts, sources compris)", () => {
+    for (const scene of SCENES_DOCUMENTS) {
+      const doc = genererCorpus(scene, 100).documents[0]!;
+      expect(JSON.stringify(applyStudioCommands(newStudioDocument(doc.id), commandesDuDocument(doc))), scene).toBe(JSON.stringify(doc));
+    }
+  });
+});
+
+/**
+ * Références visuelles rendues (X.1-08) : la recette `apps/web/e2e/studio-corpus-references.mjs` pose chaque scène de
+ * `fixtures/references-100.json` par l'API, la photographie dans Chromium (planche 2D et vue 3D) et compare chaque image
+ * à la référence versionnée de `references/captures/` (empreinte SHA-256 dans `captures.json`). Ici : la fixture est
+ * celle du corpus, et chaque image citée par le manifeste existe avec son empreinte.
+ */
+interface ManifesteCaptures { $commentaire: string; navigateur: string; moteur3d: string; tolerance: { ecartCanal: number; partPixels: number }; viewport: { largeur: number; hauteur: number }; scenes: Record<string, Record<"plan" | "vue3d", { fichier: string; sha256: string; largeur: number; hauteur: number }>> }
+const CAPTURES = join(REFERENCES, "captures");
+const SCENES_REFERENCES = ["S1", "S2", "S3", "S4", "S5", "S6", "S7"] as const;
+
+function fixtureReferences() {
+  const scenes = SCENES_REFERENCES.map((scene) => {
+    if (scene === "S6") {
+      const plan = planS6();
+      const doc = plan.etapes.filter((e) => e.variante === "A").reduce((d, e) => applyStudioCommands(d, e.commandes), newStudioDocument(plan.base.id));
+      return { scene, libelle: "S6 — tête de la variante A (étapes A1 à A3)", empreinte: empreintePlanS6(plan), primitives: primitivesDuDocument(doc), commandes: commandesDuDocument(doc) };
+    }
+    const c = genererCorpus(scene, 100), doc = c.documents[0]!;
+    return { scene, libelle: c.definition, empreinte: empreinteCorpus(c), primitives: primitivesDuDocument(doc), commandes: commandesDuDocument(doc) };
+  });
+  return { $commentaire: "Scènes S1–S7 (100 primitives, S6 : tête de A) posées par la recette studio-corpus-references.mjs ; générées par corpus.test.ts (STUDIO_CORPUS_ECRIRE=1). Géométrie synthétique.", licence: LICENCE_CORPUS, scenes };
+}
+
+describe("X.1-08 — références visuelles rendues (raster 2D et vue 3D)", () => {
+  it("X.1-08 fixture des références rendues : scènes S1–S7 posables par l'API (une enveloppe chacune, sous les limites)", () => {
+    const attendu = `${JSON.stringify(fixtureReferences())}\n`;
+    const fichier = join(FIXTURES, "references-100.json");
+    if (ECRIRE) writeFileSync(fichier, attendu);
+    expect(readFileSync(fichier, "utf8")).toBe(attendu);
+    for (const sc of fixtureReferences().scenes) {
+      expect(sc.commandes.length, sc.scene).toBeLessThanOrEqual(500);
+      expect(JSON.stringify({ contractVersion: "studio-commands/1", requestId: "x".repeat(64), baseRevisionId: "x".repeat(64), commands: sc.commandes }).length, `${sc.scene} : sous la limite de corps de l'API (256 ko)`).toBeLessThan(256 * 1024);
+    }
+  });
+
+  it("X.1-08 captures de référence versionnées : chaque image (planche 2D et vue 3D, S1–S7) existe avec son empreinte SHA-256", () => {
+    const manifeste = JSON.parse(readFileSync(join(CAPTURES, "captures.json"), "utf8")) as ManifesteCaptures;
+    expect(Object.keys(manifeste.scenes).sort()).toEqual([...SCENES_REFERENCES]);
+    expect(manifeste.navigateur).toMatch(/Chrom/);
+    for (const [scene, vues] of Object.entries(manifeste.scenes)) for (const vue of ["plan", "vue3d"] as const) {
+      const r = vues[vue], octets = readFileSync(join(CAPTURES, r.fichier));
+      expect(octets.subarray(1, 4).toString("latin1"), `${scene}/${vue} : PNG`).toBe("PNG");
+      expect(studioSha256Octets(octets), `${scene}/${vue} : empreinte`).toBe(r.sha256);
+      // Largeur et hauteur lues dans l'en-tête IHDR du PNG.
+      expect([octets.readUInt32BE(16), octets.readUInt32BE(20)], `${scene}/${vue} : dimensions`).toEqual([r.largeur, r.hauteur]);
+    }
   });
 });
 

@@ -182,7 +182,7 @@ function useHauteurDisponible(ref: { current: HTMLElement | null }, minimum: num
 /** Panneaux latéraux qui lisent ou écrivent dans une étude : indisponibles dans la Console (aucun projet). */
 const PANNEAUX_D_ETUDE: ReadonlySet<FonctionStudio> = new Set<FonctionStudio>(["exigences", "publications", "commentaires-observations", "revisions", "metre"]);
 /** Commandes qui passent par le serveur (exports de la révision enregistrée, feuilles du dossier) : indisponibles dans la Console. */
-const COMMANDES_D_ETUDE: ReadonlySet<IdCommandeEditeur> = new Set<IdCommandeEditeur>(["exporter-svg", "exporter-dxf", "exporter-ifc", "dossier", "modeles-externes", "illustration", "agents"]);
+const COMMANDES_D_ETUDE: ReadonlySet<IdCommandeEditeur> = new Set<IdCommandeEditeur>(["exporter-svg", "exporter-dxf", "exporter-ifc", "exporter-obj", "exporter-stl", "exporter-step", "dossier", "modeles-externes", "illustration", "agents"]);
 
 export function VariantWorkspace({ projectId, studyId, variantId, revisionId, commentairesOuverts = false, domaine = null, planche = null, autonome = false, surEnregistreVersProjet, surAdresse }: VariantWorkspaceProps) {
   const [context, setContext] = useState<StudioContext | null>(() => (autonome ? contexteConsole() : null));
@@ -694,6 +694,9 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     "exporter-svg": studioExportUrl(projectId, studyId, variantId, "svg", revisionId),
     "exporter-dxf": studioExportUrl(projectId, studyId, variantId, "dxf", revisionId),
     "exporter-ifc": studioExportUrl(projectId, studyId, variantId, "ifc", revisionId),
+    "exporter-obj": studioExportUrl(projectId, studyId, variantId, "obj", revisionId),
+    "exporter-stl": studioExportUrl(projectId, studyId, variantId, "stl", revisionId),
+    "exporter-step": studioExportUrl(projectId, studyId, variantId, "step", revisionId),
   };
   function runCommand(id: CommandeEditeur["id"]) {
     switch (id) {
@@ -720,7 +723,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       case "coupe-3d": ouvrir3d(); return setCoupe3d(v => !(vue3d && v));
       case "accrochage-sommets": return setAccrocheSommets(v => !v);
       case "accrochage-grille": return setAccrocheGrille(v => !v);
-      case "exporter-svg": case "exporter-dxf": case "exporter-ifc":
+      case "exporter-svg": case "exporter-dxf": case "exporter-ifc": case "exporter-obj": case "exporter-stl": case "exporter-step":
         // Le lien de la barre télécharge (même origine, cookie de session) : le raccourci le suit.
         shell.current?.querySelector<HTMLAnchorElement>(`a[data-studio-commande="${id}"][href]`)?.click();
         return;
@@ -746,6 +749,12 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     }
   }
   function surLien(id: IdCommandeEditeur) {
+    if (id === "exporter-obj" || id === "exporter-stl" || id === "exporter-step") {
+      // Exports 3D (E.6-04) : la géométrie 3D seulement ; leur bilan est dans la matrice d’échanges (rien n’est écarté en silence).
+      setInfo("L’export 3D porte sur la révision enregistrée affichée ; cotes, textes et graphismes, qui ne sont pas des géométries 3D, n’y sont pas écrits (matrice d’échanges).");
+      setExportsLances((n) => n + 1);
+      return;
+    }
     if (id !== "exporter-svg" && id !== "exporter-dxf" && id !== "exporter-ifc") return;
     if (commands.length) setInfo("L’export porte sur la révision enregistrée affichée, pas sur les modifications non enregistrées.");
     setExportsLances((n) => n + 1);

@@ -1,0 +1,113 @@
+{
+ "$commentaire": "Références visuelles rendues du corpus S1–S7 (X.1-08) : planche 2D et vue 3D photographiées dans Chromium par apps/web/e2e/studio-corpus-references.mjs (STUDIO_REFERENCES_ECRIRE=1), empreinte SHA-256 de chaque PNG. Vue 3D : WebGL de Chromium sans carte graphique (rastérisation logicielle), pas un banc matériel. Géométrie synthétique.",
+ "navigateur": "Chromium 153.0.8010.12",
+ "moteur3d": "WebGL de Chromium sans tête, sans carte graphique (rastérisation logicielle)",
+ "tolerance": {
+  "ecartCanal": 48,
+  "partPixels": 0.02
+ },
+ "viewport": {
+  "largeur": 1280,
+  "hauteur": 900
+ },
+ "scenes": {
+  "S1": {
+   "plan": {
+    "fichier": "S1-plan.png",
+    "sha256": "ec3d434b19d92ac45ff85b9ba799cb2fe05d780af08abd3343a34bf436752eab",
+    "largeur": 802,
+    "hauteur": 572
+   },
+   "vue3d": {
+    "fichier": "S1-vue3d.png",
+    "sha256": "aa16af4462a523018ac49d115f71ac278c8db0549126209527206b76f203fe89",
+    "largeur": 788,
+    "hauteur": 457
+   }
+  },
+  "S2": {
+   "plan": {
+    "fichier": "S2-plan.png",
+    "sha256": "e2ff5f24b43cb2e8f2b462cd7bdcd50e190d0b349f0ca511dbcdbe791278af46",
+    "largeur": 802,
+    "hauteur": 572
+   },
+   "vue3d": {
+    "fichier": "S2-vue3d.png",
+    "sha256": "21a7244a9b8c2ec628b25ba6c4bc4ff1f7fdacfcff66db07a333b7bac78fd1d9",
+    "largeur": 788,
+    "hauteur": 457
+   }
+  },
+  "S3": {
+   "plan": {
+    "fichier": "S3-plan.png",
+    "sha256": "a21a832bcd4a88ca8da341930d44b8f732a3062f38a866a321437fc38f8662c6",
+    "largeur": 802,
+    "hauteur": 572
+   },
+   "vue3d": {
+    "fichier": "S3-vue3d.png",
+    "sha256": "75fe6d50a68c9ad4d68d42e4ccf12244f49bb5da5d32731e951001aa26be8969",
+    "largeur": 788,
+    "hauteur": 457
+   }
+  },
+  "S4": {
+   "plan": {
+    "fichier": "S4-plan.png",
+    "sha256": "a8410614801e5fa51a2a9b9ecc2eefd93a29468965f666ceaef17ac782a24372",
+    "largeur": 802,
+    "hauteur": 572
+   },
+   "vue3d": {
+    "fichier": "S4-vue3d.png",
+    "sha256": "92b13f98a0a1936e9baa2b6f5bb8c976dfed09fd1307b8e72346c2b606970063",
+    "largeur": 788,
+    "hauteur": 429
+   }
+  },
+  "S5": {
+   "plan": {
+    "fichier": "S5-plan.png",
+    "sha256": "57eb75694ce78e8e898a0d6fb435312f67477540864ca3874792dd3939f0a069",
+    "largeur": 802,
+    "hauteur": 572
+   },
+   "vue3d": {
+    "fichier": "S5-vue3d.png",
+    "sha256": "745621741da1e85c0631552de9433fef05df26ce1f2407fab4d892d9430fb24f",
+    "largeur": 788,
+    "hauteur": 429
+   }
+  },
+  "S6": {
+   "plan": {
+    "fichier": "S6-plan.png",
+    "sha256": "b5bc3c468f9b2cc5f176275238d8ca11e354ea69ad367c616f545f24feceba74",
+    "largeur": 802,
+    "hauteur": 572
+   },
+   "vue3d": {
+    "fichier": "S6-vue3d.png",
+    "sha256": "15f79d23b28c53da63941fbc788486689359a4450f96cda708130611712ab7f2",
+    "largeur": 788,
+    "hauteur": 457
+   }
+  },
+  "S7": {
+   "plan": {
+    "fichier": "S7-plan.png",
+    "sha256": "e7b2d45b316ebfb2ae01e8cb21c82dd026a96d144e435a279fc9fc202979f5c5",
+    "largeur": 802,
+    "hauteur": 572
+   },
+   "vue3d": {
+    "fichier": "S7-vue3d.png",
+    "sha256": "92005406ce916b22bcb7e08afa0d43beb168630e8b9e2baacac3a2fc4769af92",
+    "largeur": 788,
+    "hauteur": 457
+   }
+  }
+ }
+}

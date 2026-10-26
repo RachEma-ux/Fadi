@@ -9,7 +9,10 @@
  * 3. hors ligne : rectangle de 2 × 1 m dessiné au clavier, rechargement (corpus et brouillon servis depuis l'appareil),
  *    enregistrement hors ligne (enveloppe en attente), rien n'atteint le serveur ;
  * 4. reconnexion : une seule révision ajoutée, le corpus de départ intact (mêmes éléments, à l'octet), le rectangle
- *    présent ; métré des murs inchangé (oracle).
+ *    présent ; métré des murs inchangé (oracle) ;
+ * 5. écriture concurrente (X.1-07) : seconde coupure, un second rectangle dessiné hors ligne pendant qu'un autre appareil
+ *    (même compte, en ligne) ajoute une ligne ; reconnexion : conflit, la révision de l'autre appareil n'est pas écrasée ;
+ *    report puis enregistrement : deux révisions de plus, les deux ajouts présents, corpus de départ intact.
  * Géométrie synthétique, aucune donnée de projet réelle.
  *
  * BASE_URL=http://localhost:3001 OUT=atelier-captures/studio-corpus-s7 node apps/web/e2e/studio-corpus-s7.mjs
@@ -123,6 +126,40 @@ try {
   const memes = (cle) => JSON.stringify(sansAjout[cle] ?? null) === JSON.stringify(corpus.document[cle] ?? null);
   check("reconnexion : corpus de départ intact (objets, cotes, annotations, architecture, calques)", ["objects", "dimensions", "annotations", "architecture", "layers"].every(memes));
   check("reconnexion : primitives = départ + 1", tete.objects.length + (tete.dimensions?.length ?? 0) + (tete.annotations?.length ?? 0) + (tete.architecture?.length ?? 0) === corpus.session.primitives);
+
+  // 5. Écriture concurrente pendant une seconde coupure : un autre appareil du même compte reste en ligne.
+  const c = corpus.session.concurrente;
+  const autre = await browser.newContext({ storageState: await context.storageState() });
+  const tete1 = await api("get", variantePath);
+  const avant5 = (await revisions()).length;
+  await context.setOffline(true);
+  await attendreEtat("hors-ligne");
+  await (await atteindre(outils, ':is(button,a)[aria-label="Rectangle"]')).click();
+  for (const [nom, v] of [["X", c.rectangle.origin.x], ["Y", c.rectangle.origin.y], ["Largeur", c.rectangle.width], ["Hauteur", c.rectangle.height]]) await proprietes.getByLabel(nom, { exact: true }).fill(String(v));
+  await proprietes.getByRole("button", { name: "Ajouter au dessin", exact: true }).click();
+  await page.locator('[data-studio-conserve="oui"]').waitFor();
+  await (await atteindre(page.getByRole("toolbar", { name: "Actions de l’espace" }), ':is(button)[aria-label="Enregistrer"], :is(button)[aria-label="Réessayer la sauvegarde"]')).click();
+  await page.locator('[data-studio-hors-ligne="en-attente"]').waitFor();
+  const r2 = await autre.request.post(`${BASE}${variantePath}/commands`, { data: { contractVersion: "studio-commands/1", requestId: `s7-autre-${Date.now()}`, baseRevisionId: tete1.revision.id, commands: [{ toolId: "studio.dessin.ligne", params: c.ligne }] } });
+  check("écriture concurrente : l'autre appareil enregistre sa ligne pendant la coupure", r2.ok(), String(r2.status()));
+  const teteAutre = await r2.json();
+  await context.setOffline(false);
+  await attendreEtat("conflit");
+  check("écriture concurrente : reconnexion en conflit, la révision de l'autre appareil n'est pas écrasée", (await api("get", variantePath)).revision.id === teteAutre.revision.id && (await revisions()).length === avant5 + 1);
+  await page.locator("[data-studio-reporter]").click();
+  await page.locator(".studio-info").filter({ hasText: "reportée(s) sur la nouvelle version courante" }).waitFor();
+  await (await atteindre(page.getByRole("toolbar", { name: "Actions de l’espace" }), ':is(button)[aria-label="Enregistrer"], :is(button)[aria-label="Réessayer la sauvegarde"]')).click();
+  await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor({ timeout: 40000 });
+  const tete5 = (await api("get", variantePath));
+  const d5 = tete5.revision.document;
+  const rect2 = d5.objects.filter((o) => o.type === "rectangle" && o.origin.x === c.rectangle.origin.x && o.origin.y === c.rectangle.origin.y && o.width === c.rectangle.width && o.height === c.rectangle.height);
+  check(`écriture concurrente : report enregistré sur la tête de l'autre appareil, ${c.revisionsAjoutees} révisions de plus, ligne et rectangle présents`,
+    tete5.revision.parentRevisionId === teteAutre.revision.id && (await revisions()).length === avant5 + c.revisionsAjoutees && rect2.length === 1
+    && d5.objects.some((o) => o.id === c.ligne.id && JSON.stringify(o.start) === JSON.stringify(c.ligne.start) && JSON.stringify(o.end) === JSON.stringify(c.ligne.end)), court(d5.objects.slice(-3)));
+  const sans5 = { ...d5, objects: d5.objects.filter((o) => corpus.document.objects.some((x) => x.id === o.id)) };
+  check("écriture concurrente : corpus de départ toujours intact, primitives = départ + 3", ["objects", "dimensions", "annotations", "architecture", "layers"].every((k) => JSON.stringify(sans5[k] ?? null) === JSON.stringify(corpus.document[k] ?? null))
+    && d5.objects.length + (d5.dimensions?.length ?? 0) + (d5.annotations?.length ?? 0) + (d5.architecture?.length ?? 0) === c.primitives);
+  await autre.close();
   check("aucune erreur de page", erreurs.length === 0, erreurs.join(" | "));
   console.log("\nRecette du corpus S7 : conforme.");
 } finally {

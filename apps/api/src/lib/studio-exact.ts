@@ -6,7 +6,7 @@
  * navigateur doit être celle du serveur, sinon le lot est refusé (400 `invalid_commands`, code `exact-mismatch`) ; le
  * serveur écrit ensuite **son** résultat dans la commande (brep, maillage, mesures) : il fait autorité.
  */
-import { studioCaptureBooleen, type StudioCommand, type StudioDocument } from "@parcours/atelier-model";
+import { studioCaptureBooleen, studioPiecesStep, type StudioCommand, type StudioDocument } from "@parcours/atelier-model";
 import { ErreurExacte, type SolideExact } from "@parcours/geometry-exact";
 import { moteurExact } from "./atelier-exact.js";
 import { surveillanceStudio } from "./studio-surveillance.js";
@@ -66,4 +66,17 @@ export async function revaliderBooleensStudio(document: StudioDocument, commands
     p["resultat"] = { brep: r.brep, maillage: r.maillage, volume: r.volume, aire: r.aire, faces: r.faces, solides: r.solides, moteur: r.moteur, versionMoteur: r.versionMoteur, empreinte: r.empreinte };
   }
   return null;
+}
+
+/**
+ * Export STEP d'une révision (E.6-04) : pièces décrites par le modèle (`studioPiecesStep`, une par élément solide,
+ * nommée par son identifiant Studio échappé), écrites par le noyau exact chargé à la demande (`exporterStepPieces` :
+ * assemblage XCAF AP214, millimètres déclarés, géométrie × 1 000, horodatage de la révision). `null` : aucun solide à
+ * écrire (l'appelant refuse, jamais un fichier vide).
+ */
+export async function exportStudioStep(document: StudioDocument, horodatage: string, nomFichier: string): Promise<string | null> {
+  const { pieces } = studioPiecesStep(document);
+  if (!pieces.length) return null;
+  const M = await moteurExact();
+  return M.exporterStepPieces(pieces, { horodatage, nomFichier });
 }

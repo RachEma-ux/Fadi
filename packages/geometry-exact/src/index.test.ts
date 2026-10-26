@@ -210,4 +210,45 @@ describe("lot F2 — booléens des solides libres de Studio, instance unique (IF
   });
 });
 
+describe("noyau exact — STEP nommé (E.6-04)", () => {
+  const H = { horodatage: "2026-10-26T10:00:00", nomFichier: "studio-essai.step" };
+  const pieces = () => [
+    { nom: "boite-1", solides: [{ extrusion: { profil: carre(2), z0: 0, hauteur: 3 } }] },
+    // Deux morceaux juxtaposés (mur avec vide) : un produit, deux solides, volume additionné.
+    { nom: "mur-1", solides: [{ extrusion: { profil: carre(1, 5, 0), z0: 0, hauteur: 1 } }, { extrusion: { profil: carre(1, 5, 0), z0: 2, hauteur: 1 } }] },
+    // Prisme oblique : lissage réglé entre deux carrés décalés (volume = aire × hauteur).
+    { nom: "oblique~00E9~", solides: [{ lissage: [carre(1, 10, 0).map((p) => ({ ...p, z: 0 })), carre(1, 10.5, 0).map((p) => ({ ...p, z: 2 }))] as [{ x: number; y: number; z: number }[], { x: number; y: number; z: number }[]] }] },
+  ];
+
+  it("E.6-04 STEP : un produit nommé par pièce, unité millimètre déclarée et géométrie × 1 000, relu en mètres à l'identique", () => {
+    const step = M.exporterStepPieces(pieces(), H);
+    expect(step.startsWith("ISO-10303-21;")).toBe(true);
+    expect(step).toMatch(/FILE_SCHEMA\(\('AUTOMOTIVE_DESIGN/);
+    expect(step).toMatch(/SI_UNIT\(\.MILLI\.,\.METRE\.\)/);
+    expect(step).toContain("FILE_NAME('studio-essai.step','2026-10-26T10:00:00'");
+    expect(step).toContain("PRODUCT('boite-1','boite-1'");
+    const lues = M.lireStepPieces(step);
+    expect(lues.map((p) => p.nom)).toEqual(["boite-1", "mur-1", "oblique~00E9~"]);
+    expect(lues.map((p) => p.solides)).toEqual([1, 2, 1]);
+    expect(lues[0]!.volume).toBeCloseTo(12, 6);
+    expect(lues[1]!.volume).toBeCloseTo(2, 6);
+    expect(lues[2]!.volume).toBeCloseTo(2, 6);
+    // Boîte de la première pièce : 2 × 2 × 3 m, pas 2 × 2 × 3 mm (l'unité n'est jamais supposée).
+    const b = lues[0]!.boite!;
+    expect(b.max.x - b.min.x).toBeCloseTo(2, 4);
+    expect(b.max.z - b.min.z).toBeCloseTo(3, 4);
+    expect(lues[2]!.boite!.max.x).toBeCloseTo(11.5, 4);
+  });
+
+  it("E.6-04 STEP : reproductible (horodatage de la révision), entrées mal formées refusées", () => {
+    expect(M.exporterStepPieces(pieces(), H)).toBe(M.exporterStepPieces(pieces(), H));
+    expect(() => M.exporterStepPieces([], H)).toThrow(/pièces/);
+    expect(() => M.exporterStepPieces([{ nom: "l'apostrophe", solides: [{ extrusion: { profil: carre(1), z0: 0, hauteur: 1 } }] }], H)).toThrow(/nom ASCII/);
+    expect(() => M.exporterStepPieces([{ nom: "é", solides: [{ extrusion: { profil: carre(1), z0: 0, hauteur: 1 } }] }], H)).toThrow(/nom ASCII/);
+    expect(() => M.exporterStepPieces([{ nom: "x", solides: [] }], H)).toThrow(/solides/);
+    expect(() => M.exporterStepPieces([{ nom: "x", solides: [{ lissage: [carre(1).map((p) => ({ ...p, z: 0 })), [{ x: 0, y: 0, z: 1 }, { x: 1, y: 0, z: 1 }, { x: 1, y: 1, z: 1 }]] }] }], H)).toThrow(/même nombre/);
+    expect(() => M.exporterStepPieces(pieces(), { ...H, horodatage: "maintenant" })).toThrow(/horodatage/);
+  });
+});
+
 export type _S = SolideExact;
