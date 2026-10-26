@@ -168,3 +168,6 @@
 .geodata-page .gd-mini-carte.gd-mini-decalee{left:380px}
 /* Téléphone (même seuil que le panneau, posé en bas sur 62 % de la carte) : mini-carte réduite, au-dessus du panneau. */
 @media (max-width:760px){.geodata-page .gd-mini-carte,.geodata-page .gd-mini-carte.gd-mini-decalee{left:10px;width:120px;height:90px}.geodata-page .gd-mini-carte.gd-mini-decalee{bottom:calc(62% + 10px)}}
+/* Lot H (D-GD-28) : barre territoriale permanente — listes des niveaux dans la pastille de navigation. */
+.geodata-page .gd-territoires select{max-width:13rem;border:1px solid #c9d6d1;border-radius:6px;padding:2px 4px;background:#fff;font:inherit;color:inherit}
+@media (max-width:760px){.geodata-page .gd-territoires select{max-width:8rem}}

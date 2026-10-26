@@ -72,6 +72,21 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   (empreinte attendue = empreinte réelle pour chaque fiche, test), retraits déclarés (test), `GET /version/donnees`
   (test). En local sur l'API construite : 1er démarrage 14 s (2 versions préparées et publiées, 2 retraits, 53 fiches
   déjà en base), 2e démarrage < 1 s (rien refait). CI : installation de Chromium bornée (3 × 10 min).
+- Interface ≠ base, fichiers archivés (D-GD-29) : `lib/geodata/archive-fichiers.ts` (inventaire et archive ; 4 tests sur
+  le dossier réel), table `geodata_fichiers`, `--archiver` dans `geodata-reference.ts`, lancé à chaque démarrage
+  (`import-auto.ts`, 5 tests), test base (ajout, inchangé, modifié, retiré). En local sur la base de développement :
+  121 fichiers (53 fiches, 57 données, 6 correspondances, 4 extraits, 1 déclaration), 52 Mo bruts → 35 Mo en base,
+  2,2 s ; second passage 0,4 s, rien réécrit ; deux fichiers plus livrés marqués retirés. Mode livraison (`--livraison`,
+  sans compte) sur une base neuve (0 compte) : 53 versions publiées, 121 fichiers, découpage MA 12 / 75 / 1 487 / 41 en
+  61 s ; second passage 1 s (53 « déjà présente »). CI : `GEODATA_IMPORT_AUTO=non` sur les recettes et le job `image`.
+- Navigation territoriale (lot H, D-GD-28) : `geodata-model/src/territoires.ts` (déclaration, règles de parent ; 3
+  tests), tables `geodata_pays` / `geodata_territoires`, `lib/geodata/territoires.ts` (chargement idempotent, parents
+  `codes-hcp` ou `inclusion`), routes `routes/geodata/territoires.ts`, `panneaux/BarreTerritoriale.tsx` (remplace le fil
+  du lot B), contour sur la carte. En local sur la base de développement : MA chargé par la chaîne d'import — 12
+  régions, 75/75 provinces et préfectures avec parent, 1 487/1 487 communes (11 contours sans code HCP écartés), 41/41
+  arrondissements ; second passage « déjà chargée(s) » ; la règle `inclusion` donne les mêmes parents que les codes HCP
+  (75/75). Navigateur sans aucune couche posée : Fès-Meknès → 9 provinces, El Hajeb → 16 communes, contour tracé.
+  Recette `geodata.mjs` en local : 113 contrôles conformes dont 6 du lot H (pays de test ZZ en base).
 - Mini-carte et impression (lot G, D-GD-27) : contrat `MoteurCarte.afficherMiniCarte` / `canevasMiniCarte`, seconde carte
   MapLibre dans `moteur-maplibre.ts`, encart dans `composerPng`, `ouvrirFenetreImpression` (`export-png.ts`), boutons
   et raccourcis (Alt+M, Alt+I) dans `BarreOutilsCarte.tsx` et `PageGeoData.tsx`. Recette `geodata.mjs` en local : 106

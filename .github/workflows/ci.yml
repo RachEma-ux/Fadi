@@ -418,6 +418,9 @@ jobs:
       AUTH_RATE_LIMIT: "3000"
       # Limite par adresse (10 / 15 min par défaut) : les recettes reconnectent souvent le même compte.
       AUTH_IDENTIFIER_RATE_LIMIT: "500"
+      # GeoData (D-GD-29) : au démarrage, l'API importe d'elle-même toutes les fiches livrées ; les recettes posent leurs
+      # propres jeux et contrôlent le catalogue : import automatique coupé ici (l'archive et l'import sont testés à part).
+      GEODATA_IMPORT_AUTO: "non"
       API_RATE_LIMIT: "5000"
       BASE_URL: http://localhost:3001
       # Temps réel (Issue #283, RT-D5 § 2) : canal et routes des sessions actifs pour les recettes ; la production garde le drapeau absent.
@@ -1267,7 +1270,9 @@ jobs:
             -e WEB_ORIGIN=http://localhost:3001 -e TRUST_PROXY=0 fadi:ci; then
             echo "::error title=image::l'API a démarré avec DATABASE_MIGRATION_URL en production"; exit 1
           fi
-          docker run -d --name fadi --network host -e MIGRATE_ON_START=0 \
+          # GEODATA_IMPORT_AUTO=non : sans ce réglage l'API importe d'elle-même toutes les fiches livrées (D-GD-29) et la
+          # préparation manuelle contrôlée plus bas répondrait « déjà présente ».
+          docker run -d --name fadi --network host -e MIGRATE_ON_START=0 -e GEODATA_IMPORT_AUTO=non \
             -e DATABASE_URL=postgresql://fadi_app:fadi_app_ci_password@localhost:5432/fadi_image \
             -e WEB_ORIGIN=http://localhost:3001 -e TRUST_PROXY=0 fadi:ci
           for i in $(seq 1 60); do

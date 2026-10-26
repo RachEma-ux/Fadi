@@ -14156,5 +14156,10 @@
 "Mini-carte masquée": "Locator map hidden",
 "Mini-carte affichée": "Locator map shown",
 "Enregistrez la carte pour l'imprimer : l'impression suit les mêmes droits que l'export.": "Save the map to print it: printing follows the same rights as export.",
-"Impression de la carte en préparation.": "Preparing the map for printing."
+"Impression de la carte en préparation.": "Preparing the map for printing.",
+"Navigation territoriale": "Territorial navigation",
+"Pays": "Country",
+"Chargement du découpage territorial…": "Loading the territorial divisions…",
+"Aucun découpage territorial en base.": "No territorial divisions in the database.",
+"Découpage territorial indisponible ({0}).": "Territorial divisions unavailable ({0})."
 }

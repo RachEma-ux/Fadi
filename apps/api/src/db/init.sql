@@ -3210,6 +3210,46 @@ CREATE TABLE IF NOT EXISTS geodata_douars (
 );
 CREATE INDEX IF NOT EXISTS geodata_douars_commune ON geodata_douars (version_id, commune);
 
+-- Découpage territorial (lot H, D-GD-28) : Fadi est neutre ; chaque pays est chargé en base depuis les fiches de source
+-- qui déclarent `territoire` (versions publiées seulement). La barre territoriale de l'interface lit ces tables,
+-- indépendamment des couches affichées. Les niveaux (nom, règle de parenté) sont ceux déclarés par les fiches.
+CREATE TABLE IF NOT EXISTS geodata_pays (
+  code text PRIMARY KEY CHECK (code ~ '^[A-Z]{2}$'),
+  nom text NOT NULL,
+  niveaux jsonb NOT NULL DEFAULT '{}'::jsonb,
+  mis_a_jour_le timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS geodata_territoires (
+  pays text NOT NULL REFERENCES geodata_pays (code) ON DELETE CASCADE,
+  rang smallint NOT NULL CHECK (rang BETWEEN 1 AND 4),
+  code text NOT NULL,
+  nom text NOT NULL,
+  parent_code text,
+  geom geometry(Geometry, 4326) NOT NULL,
+  version_id text NOT NULL REFERENCES geodata_versions (id) ON DELETE CASCADE,
+  PRIMARY KEY (pays, rang, code)
+);
+CREATE INDEX IF NOT EXISTS geodata_territoires_parent ON geodata_territoires (pays, rang, parent_code);
+CREATE INDEX IF NOT EXISTS geodata_territoires_code ON geodata_territoires (pays, code);
+CREATE INDEX IF NOT EXISTS geodata_territoires_geom ON geodata_territoires USING gist (geom);
+
+-- Archive des fichiers de données livrés (D-GD-29) : interface et données distinctes ; chaque fichier du dossier des
+-- sources qualifiées (fiches, données, correspondances, extraits, retraits déclarés) est copié tel quel en base par la
+-- chaîne d'import (contenu compressé par PostgreSQL, empreinte SHA-256). Un fichier qui n'est plus livré reste, retiré.
+CREATE TABLE IF NOT EXISTS geodata_fichiers (
+  chemin text PRIMARY KEY CHECK (chemin ~ '^[A-Za-z0-9._/-]{1,200}$' AND position('..' in chemin) = 0),
+  role text NOT NULL CHECK (role IN ('fiche', 'donnees', 'correspondance', 'extrait', 'declaration')),
+  source_cle text,
+  type_media text NOT NULL,
+  taille bigint NOT NULL CHECK (taille >= 0),
+  empreinte text NOT NULL CHECK (empreinte ~ '^[0-9a-f]{64}$'),
+  contenu bytea NOT NULL,
+  archive_le timestamptz NOT NULL DEFAULT now(),
+  retire_le timestamptz,
+  CONSTRAINT geodata_fichiers_taille CHECK (octet_length(contenu) = taille)
+);
+CREATE INDEX IF NOT EXISTS geodata_fichiers_source ON geodata_fichiers (source_cle);
+
 -- Catégories du catalogue (D-GD-14) : communes à tous les comptes, gérées par un gestionnaire de données (créer, renommer,
 -- ordonner, supprimer) ; une source y est rangée explicitement, sinon par les thèmes déclarés de la catégorie, sinon
 -- « Autres ». Les catégories initiales (modèle `CATEGORIES_CATALOGUE`) sont semées une seule fois par l'API, à la

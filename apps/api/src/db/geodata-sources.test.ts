@@ -9,7 +9,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { CATEGORIES_CATALOGUE, MAX_PIXELS_RASTER, OBJETS_PAR_COUCHE, USAGES, validerDeclarationRaster, validerGeoJSON } from "@parcours/geodata-model";
+import { CATEGORIES_CATALOGUE, MAX_PIXELS_RASTER, OBJETS_PAR_COUCHE, USAGES, validerDeclarationRaster, validerDeclarationTerritoire, validerGeoJSON } from "@parcours/geodata-model";
 import { lireGeoTiff } from "../lib/geodata/raster.js";
 import { codesDesObjets } from "../lib/geodata/versions.js";
 import type { FicheSource } from "./geodata-reference.js";
@@ -142,5 +142,14 @@ describe("fiches de source GeoData livrées", () => {
   it("chaque thème déclaré par une fiche livrée a sa catégorie initiale", () => {
     const themes = new Set(CATEGORIES_CATALOGUE.flatMap((c) => c.themes));
     for (const nom of fiches) expect(themes.has((JSON.parse(readFileSync(join(DOSSIER, nom), "utf8")) as FicheSource).theme)).toBe(true);
+  });
+  it("découpage territorial (lot H) : régions, provinces, communes et arrondissements du HCP déclarent le Maroc, rangs 1 à 4", () => {
+    const decl = (nom: string) => JSON.parse(readFileSync(join(DOSSIER, `${nom}.json`), "utf8")).territoire;
+    const rangs = ["hcp-rgph2024-population-regions", "hcp-rgph2024-population-provinces", "hcp-rgph2024-population-communes", "hcp-rgph2024-arrondissements"].map((n) => {
+      const v = validerDeclarationTerritoire(decl(n));
+      expect(v.ok, n).toBe(true);
+      return v.ok ? [v.declaration.pays, v.declaration.rang, v.declaration.parent] : null;
+    });
+    expect(rangs).toEqual([["MA", 1, "codes-hcp"], ["MA", 2, "codes-hcp"], ["MA", 3, "codes-hcp"], ["MA", 4, "codes-hcp"]]);
   });
 });

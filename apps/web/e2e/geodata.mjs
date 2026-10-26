@@ -439,14 +439,41 @@ check("raster : valeur au point exacte ; cellule sans donnée « non évaluée �
 await onglet(page, "couches");
 await page.locator(`[data-gd-couche-active='${idRaster}']`).getByRole("button", { name: "Retirer" }).click();
 
-// --- Navigation par niveaux (lot B) : descendre depuis la fiche, fil « Maroc › … », couche du niveau inférieur ajoutée, Alt+↑ ---
+// --- Barre territoriale permanente (lot H, D-GD-28) : découpage lu EN BASE (pays synthétique « ZZ » chargé par la
+// chaîne d'import), sans aucune couche de limites sur la carte ; aucun pays écrit dans le code ---
+const barreTerr = page.locator("[data-gd-territoires]");
+check("barre territoriale : présente sans couche de limites sur la carte", (await barreTerr.count()) === 1 && (await page.locator("[data-gd-couche-active]").filter({ hasText: "Régions synthétiques (test)" }).count()) === 0);
+await page.waitForFunction(() => document.querySelector("[data-gd-territoires]")?.getAttribute("data-gd-territoires") !== "", null, { timeout: 15_000 });
+if (await page.locator("[data-gd-pays]").count()) await page.locator("[data-gd-pays]").selectOption("ZZ");
+check("barre territoriale : le pays vient de la base (« Pays synthétique (test) »)", (await barreTerr.getAttribute("data-gd-territoires")) === "ZZ" && ((await barreTerr.textContent()) ?? "").includes("Pays synthétique (test)"));
+const choixRegion = barreTerr.locator("[data-gd-niveau-select='1']");
+await page.waitForFunction(() => (document.querySelector("[data-gd-territoires] [data-gd-niveau-select='1']")?.querySelectorAll("option").length ?? 0) > 1, null, { timeout: 15_000 });
+const optionsRegions = await choixRegion.locator("option").allTextContents();
+check("barre territoriale : niveau « Régions » de la base, ses unités listées", optionsRegions[0]?.startsWith("Régions (2)") === true && optionsRegions.includes("Région synthétique Nord"), optionsRegions.join(" | "));
+await choixRegion.selectOption({ label: "Région synthétique Nord" });
+await page.locator("[data-gd-territoires][data-gd-niveaux='1']").waitFor();
+const choixProvince = barreTerr.locator("[data-gd-niveau-select='2']");
+await page.waitForFunction(() => (document.querySelector("[data-gd-territoires] [data-gd-niveau-select='2']")?.querySelectorAll("option").length ?? 0) > 1, null, { timeout: 15_000 });
+const optionsProvinces = await choixProvince.locator("option").allTextContents();
+check("barre territoriale : une région choisie → ses provinces (parenté lue en base)", optionsProvinces.length === 3 && optionsProvinces.slice(1).every((x) => x.includes(" N-")), optionsProvinces.join(" | "));
+await choixProvince.selectOption({ index: 1 });
+await page.locator("[data-gd-territoires][data-gd-niveaux='2']").waitFor();
+check("barre territoriale : province choisie, Retour actif, attribution de la source affichée", !(await page.locator("[data-gd-retour]").isDisabled()) && ((await page.locator(".maplibregl-ctrl-attrib").textContent()) ?? "").includes("Jeu synthétique GeoData"));
+await page.screenshot({ path: join(OUT, "07a-barre-territoriale.png") });
+await page.locator("body").press("Alt+ArrowUp");
+await page.locator("[data-gd-territoires][data-gd-niveaux='1']").waitFor();
+await page.locator("[data-gd-retour]").click();
+await page.locator("[data-gd-territoires][data-gd-niveaux='0']").waitFor();
+check("barre territoriale : Alt+↑ puis Retour ramènent au pays", (await page.locator("[data-gd-retour]").isDisabled()) === true);
+
+// --- Navigation par niveaux (lot B) : descendre depuis la fiche, barre territoriale à jour, couche du niveau inférieur ajoutée, Alt+↑ ---
 await onglet(page, "catalogue");
 await page.locator("[data-gd-type='vecteurs']").click();
 const carteRegions = page.locator("[data-gd-couche-catalogue]").filter({ hasText: "Régions synthétiques (test)" });
 if (!(await carteRegions.count())) await page.locator("[data-gd-entete-categorie='test']").click();
 await carteRegions.locator("[data-gd-ajouter]").click();
-await page.locator("[data-gd-niveaux='0']").waitFor({ timeout: 20_000 });
-check("niveaux : fil « Maroc » affiché dès qu'une couche de limites à codes HCP est sur la carte, Retour inactif", (await page.locator("[data-gd-retour]").isDisabled()) === true);
+await page.locator("[data-gd-couche-active]").filter({ hasText: "Régions synthétiques (test)" }).waitFor({ state: "attached", timeout: 20_000 }).catch(() => undefined);
+check("niveaux : au pays, Retour inactif", (await page.locator("[data-gd-retour]").isDisabled()) === true);
 await page.locator("[data-gd-recherche]").fill("Région synthétique Nord");
 await page.locator("[data-gd-recherche]").press("Enter");
 await page.locator("[data-gd-resultat='1']").click();
@@ -455,7 +482,7 @@ await descendreBouton.waitFor();
 check("niveaux : la fiche d'une région propose « Voir ses provinces et préfectures » (Alt+↓)", ((await descendreBouton.textContent()) ?? "").includes("Voir ses provinces et préfectures") && (await descendreBouton.getAttribute("aria-keyshortcuts")) === "Alt+ArrowDown");
 await descendreBouton.click();
 await page.locator("[data-gd-niveaux='1']").waitFor();
-check("niveaux : fil « Maroc › Région synthétique Nord »", ((await page.locator("[data-gd-niveaux]").textContent()) ?? "").includes("Région synthétique Nord"));
+check("niveaux : la barre territoriale passe à « Pays synthétique (test) › Région synthétique Nord »", (await page.locator("[data-gd-niveau-select='1']").inputValue()) === "1");
 await onglet(page, "couches");
 check("niveaux : la couche des provinces du même producteur est ajoutée à la carte", (await page.locator("[data-gd-couche-active]").filter({ hasText: "Provinces synthétiques (test)" }).count()) === 1);
 // Fiche territoriale (lot E) : impression de la fiche seule (bouton et Alt+P) dans une fenêtre d'impression, sections
@@ -475,7 +502,7 @@ const impressions = await page.evaluate(() => window.__impressions);
 check("fiche territoriale : « Imprimer la fiche » (et Alt+P) imprime la fiche seule, sections dépliées, sans boutons", impressions.length === 2 && impressions.every((x) => x.titre === "Région synthétique Nord" && x.fermees === 0 && x.boutons === "none"), JSON.stringify(impressions));
 await page.locator("body").press("Alt+ArrowUp");
 await page.locator("[data-gd-niveaux='0']").waitFor();
-check("niveaux : Alt+↑ remonte au Maroc", (await page.locator("[data-gd-retour]").isDisabled()) === true);
+check("niveaux : Alt+↑ remonte au pays", (await page.locator("[data-gd-retour]").isDisabled()) === true);
 await page.screenshot({ path: join(OUT, "07-niveaux.png") });
 
 // --- Menu ☰ → Données : catégories et couches (D-GD-14) ---

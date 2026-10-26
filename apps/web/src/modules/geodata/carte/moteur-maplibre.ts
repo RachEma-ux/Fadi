@@ -57,6 +57,7 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     carte.addImage("gd-hachures", hachures(), { pixelRatio: 1 });
     carte.addSource("gd-zones", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
     carte.addSource("gd-trace", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+    carte.addSource("gd-territoire", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
     pret = true;
     enAttente?.();
     enAttente = null;
@@ -209,6 +210,7 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       if (d.rasters.has(k.coucheId)) continue;
       for (const suffixe of ["-contour", "-lignes", "-points", "-selection"]) carte.moveLayer(id + suffixe, "gd-zones-remplissage");
     }
+    for (const t of ["gd-territoire-lisere", "gd-territoire-trait"]) if (carte.getLayer(t)) carte.moveLayer(t, "gd-trace-ligne");
     // Libellés au-dessus de tous les objets (et sous le tracé en cours), dans l'ordre des couches.
     for (const k of ordre) if (carte.getLayer(`${PREFIXE}${k.coucheId}-etiquettes`)) carte.moveLayer(`${PREFIXE}${k.coucheId}-etiquettes`, "gd-trace-ligne");
     couchesAffichees = voulues;
@@ -258,6 +260,9 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     carte.addLayer({ id: "gd-zones-remplissage", type: "fill", source: "gd-zones", filter: ["==", ["geometry-type"], "Polygon"], paint: { "fill-color": "#c77b35", "fill-opacity": 0.15 } });
     carte.addLayer({ id: "gd-zones-contour", type: "line", source: "gd-zones", filter: ["==", ["geometry-type"], "Polygon"], paint: { "line-color": "#c77b35", "line-width": 2, "line-dasharray": [2, 1] } });
     carte.addLayer({ id: "gd-zones-points", type: "circle", source: "gd-zones", filter: ["==", ["geometry-type"], "Point"], paint: { "circle-color": "#c77b35", "circle-radius": 6, "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } });
+    // Unité choisie dans la barre territoriale : liseré blanc puis trait foncé, au-dessus des couches, sous le tracé.
+    carte.addLayer({ id: "gd-territoire-lisere", type: "line", source: "gd-territoire", paint: { "line-color": "#ffffff", "line-width": 6, "line-opacity": 0.9 } });
+    carte.addLayer({ id: "gd-territoire-trait", type: "line", source: "gd-territoire", paint: { "line-color": "#0b3b45", "line-width": 3 } });
     carte.addLayer({ id: "gd-trace-ligne", type: "line", source: "gd-trace", filter: ["==", ["geometry-type"], "LineString"], paint: { "line-color": "#b0361b", "line-width": 2 } });
     carte.addLayer({ id: "gd-trace-points", type: "circle", source: "gd-trace", filter: ["==", ["geometry-type"], "Point"], paint: { "circle-color": "#b0361b", "circle-radius": 4 } });
   };
@@ -333,6 +338,22 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       m.on("click", (e) => carte.easeTo({ center: e.lngLat, duration: 400 }));
       mini = { carte: m, conteneur: conteneurMini, coucheId };
       m.on("load", synchroniserMini);
+    },
+    afficherTerritoire(contour) {
+      const f = () => {
+        const src = carte.getSource("gd-territoire") as GeoJSONSource | undefined;
+        src?.setData(contour ? { type: "Feature", properties: {}, geometry: contour as Feature["geometry"] } : { type: "FeatureCollection", features: [] });
+      };
+      if (pret) f(); else carte.once("load", f);
+    },
+    async masquerTerritoire(masque) {
+      if (!pret) return;
+      for (const id of ["gd-territoire-lisere", "gd-territoire-trait"]) if (carte.getLayer(id)) carte.setLayoutProperty(id, "visibility", masque ? "none" : "visible");
+      await new Promise<void>((resoudre) => {
+        const fin = setTimeout(resoudre, 2000);
+        carte.once("idle", () => { clearTimeout(fin); resoudre(); });
+        carte.triggerRepaint();
+      });
     },
     canevasMiniCarte: () => mini?.carte.getCanvas() ?? null,
     detruire: () => { mini?.carte.remove(); carte.remove(); },

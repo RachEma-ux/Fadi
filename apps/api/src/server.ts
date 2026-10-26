@@ -99,7 +99,7 @@ Promise.resolve()
     const server = app.listen(host ? { port, host } : { port }, () => {
       // eslint-disable-next-line no-console
       console.log(`Fadi API listening on :${port}${process.env["WEB_DIST"] ? " (sert aussi l'application)" : ""}`);
-      // Données GeoData livrées avec le code (D-GD-23) : importées en arrière-plan si GEODATA_IMPORT_AUTO_PAR est fourni.
+      // Données GeoData livrées avec le code : fichiers archivés en base (D-GD-29), puis importés si GEODATA_IMPORT_AUTO_PAR est fourni (D-GD-23).
       lancerImportAuto();
     });
     // Connexions persistantes gardées plus longtemps que celles des relais et des clients (60 s) : un client qui

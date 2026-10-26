@@ -137,6 +137,26 @@ Barre d'outils : « Mini-carte de situation » (Alt+M) montre l'emprise de la vu
 y recentre la carte. « Imprimer la carte » (Alt+I) imprime une carte enregistrée, après le même contrôle des droits que
 l'export ; la mini-carte figure en encart si elle est affichée.
 
+## Navigation territoriale (lot H, D-GD-28)
+
+Au-dessus de la carte, en permanence : pays, puis une liste par niveau (Région › Province ou préfecture › Commune ›
+Arrondissement pour le Maroc) et Retour (Alt+↑). Elle ne dépend d'aucune couche affichée : le découpage est en base
+(`geodata_pays`, `geodata_territoires`), chargé par la chaîne d'import depuis les fiches qui déclarent `territoire`
+(`pays`, `nomPays`, `rang` 1–4, `niveau` { `singulier`, `pluriel` }, `parent` : `codes-hcp` ou `inclusion`). API :
+`GET /geodata/api/territoires`, `…/territoires/:pays/unites?parent=`, `…/territoires/:pays/unites/:code?rang=`
+(ancêtres, nombre d'enfants, contour simplifié, attribution).
+
+## Interface et base de données (D-GD-29)
+
+L'application ne contient aucune donnée : elle lit la base par l'API. Au démarrage de l'API, l'outil d'import copie
+chaque fichier livré du dossier `docs/geodata/sources/` dans `geodata_fichiers` (rôle `fiche`, `donnees`,
+`correspondance`, `extrait` ou `declaration` ; SHA-256 ; contenu compressé par PostgreSQL), puis importe les fiches si
+puis prépare et publie toutes les fiches livrées **par la livraison elle-même** (`--livraison`, aucun compte ni réglage :
+`preparee_par` / `publiee_par` nuls, journal « livraison »), applique les retraits déclarés et écrit le découpage
+territorial. `GEODATA_IMPORT_AUTO_PAR=<courriel>` fait la même chose au nom d'un compte GeoData ;
+`GEODATA_IMPORT_AUTO=non` coupe tout (CI). À la main : `node apps/api/dist/geodata-reference.js --archiver --fiche toutes
+--livraison`. Base neuve sans compte : 53 versions, 121 fichiers, découpage MA en 61 s ; redémarrage 1 s.
+
 ## Fiche territoriale (D-GD-22)
 
 La fiche d'une entité range ses indicateurs par thème ; une famille déclinée devient un tableau (modalités ×

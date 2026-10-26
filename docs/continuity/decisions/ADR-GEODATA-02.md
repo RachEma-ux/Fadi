@@ -236,6 +236,36 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         pas un contournement de l'export. La fenêtre est ouverte au clic (sinon bloquée), l'image autorisée (titre,
         légende, échelle, attributions, mini-carte en encart si elle est affichée) y est posée puis imprimée ; un refus
         y est expliqué avec ses motifs.
+   - D-GD-28 (26 octobre 2026, lot H) — **navigation territoriale permanente, découpage du pays en base** (choix du
+     maître d'ouvrage : « Fadi neutre, données du pays en base » ; aucun référentiel territorial dans le code) :
+     1. La barre de navigation (pays › niveau 1 › … › niveau 4, une liste par niveau, Retour Alt+↑) fait partie de
+        l'interface : elle est toujours affichée et ne dépend ni des couches posées ni de la source des couches.
+     2. Le découpage vit en base : `geodata_pays` (code ISO alpha-2, nom, noms des niveaux) et `geodata_territoires`
+        (pays, rang 1–4, code, nom, parent, contour, version source). Il se charge à la publication d'une fiche
+        qualifiée qui déclare `territoire` { pays, nomPays, rang, niveau { singulier, pluriel }, parent } ; le
+        chargement est idempotent par version et rejoué par la chaîne d'import (aussi pour une version déjà présente).
+     3. Le parent se déduit par une règle déclarée dans la fiche : `codes-hcp` (code HCP du niveau supérieur) ou
+        `inclusion` (point intérieur du contour dans le contour du niveau supérieur, PostGIS). Le Maroc (fiches HCP
+        RGPH 2024, rangs 1 à 4) est le premier pays ; un autre pays s'ajoute par ses fiches, sans code.
+     4. Choisir une unité cadre la carte sur son emprise et trace son contour (attribution de la version source) ;
+        une base sans découpage l'annonce, sans rien inventer.
+   - D-GD-29 (26 octobre 2026) — **interface et base de données distinctes ; tous les fichiers de données en base**
+     (règle du maître d'ouvrage, inscrite dans `AGENTS.md` et `CLAUDE.md`) :
+     1. Toujours distinguer l'interface (l'application et ses outils) des données, stockées en base dédiée ; ce binôme
+        s'emploie partout où il y a des données. Aucun référentiel ni jeu de données n'est codé dans l'application.
+     2. Chaque fichier du dossier des sources qualifiées (fiches, données GeoJSON / CSV / TSV / GeoTIFF, correspondances,
+        extraits, retraits déclarés) est copié tel quel dans `geodata_fichiers` (contenu, taille, SHA-256, rôle, clé de
+        source) par la chaîne d'import (`--archiver`), à chaque démarrage de l'API, même sans
+        `GEODATA_IMPORT_AUTO_PAR` (aucun compte requis) ; un fichier inchangé n'est pas réécrit, un fichier qui n'est plus
+        livré reste en base, marqué retiré. Bilan dans la quittance `GET /version/donnees`.
+     3. Au même démarrage, le découpage territorial est écrit en base depuis les versions publiées des fiches qui le
+        déclarent (aucune commande pour le maître d'ouvrage).
+     4. **Aucun réglage, aucun compte** : sans `GEODATA_IMPORT_AUTO_PAR`, les fiches livrées sont préparées et publiées
+        **par la livraison elle-même** (`geodata-reference --livraison` : `preparee_par` et `publiee_par` nuls, journal
+        `{ par: "livraison" }`), et les retraits déclarés appliqués. La responsabilité est celle du dépôt : fiche qualifiée
+        relue en PR, empreinte contrôlée, CI verte. `GEODATA_IMPORT_AUTO_PAR=<courriel>` fait la même chose au nom d'un
+        compte ; `GEODATA_IMPORT_AUTO=non` coupe tout (recettes de la CI). Mesuré sur une base neuve sans aucun compte :
+        53 versions publiées, 121 fichiers archivés, découpage MA (4 rangs) en 61 s ; second démarrage 1 s, rien refait.
 
 ## Conséquences
 

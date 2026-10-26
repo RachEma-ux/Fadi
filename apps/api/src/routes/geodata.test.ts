@@ -4,11 +4,14 @@
  */
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
+import { createHash } from "node:crypto";
 import { COMPOSITION_INITIALE, DROITS_IMPORT_PERSONNEL, validerGeoJSON, type DroitsVersion } from "@parcours/geodata-model";
 import { createApp } from "../app.js";
 import { pool } from "../db/client.js";
 import { resetTestDatabase } from "../testing/guarded-test-pool.js";
 import { ecrireVersion } from "../lib/geodata/versions.js";
+import { chargerTerritoires } from "../lib/geodata/territoires.js";
+import { archiverFichiers } from "../lib/geodata/archive-fichiers.js";
 
 const app = createApp();
 // `users` en CASCADE vide aussi toutes les tables geodata_* (espaces → sources → versions → couches…), liste fermée de la garde inchangée.
@@ -451,5 +454,113 @@ describe("Catégories du catalogue (D-GD-14)", () => {
     expect(((await alice.client.get(`${API}/catalogue`)).body.couches as { id: string }[]).map((c) => c.id)).toEqual([ref.coucheId]);
     const actions = (await pool.query("SELECT action FROM geodata_journal WHERE acteur_id = $1 AND action LIKE 'categorie.%'", [alice.id])).rows.map((l) => l.action);
     expect(actions).toEqual(expect.arrayContaining(["categorie.refusee", "categorie.creee", "categorie.renommee", "categorie.ordonnee", "categorie.source_rangee", "categorie.source_liberee", "categorie.supprimee"]));
+  });
+});
+
+describe("découpage territorial en base (lot H, D-GD-28)", () => {
+  /** Version publiée de limites : unités (code, nom, carré), comme la chaîne d'import. */
+  async function publierLimites(cle: string, unites: { code: string; nom: string; x: number; y: number; d: number }[], publier = true) {
+    const v = validerGeoJSON({ type: "FeatureCollection", features: unites.map((u) => ({ type: "Feature", properties: { code: u.code, nom: u.nom }, geometry: { type: "Polygon", coordinates: carre(u.x, u.y, u.d) } })) });
+    if (!v.ok) throw new Error("jeu de test invalide");
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const e = await ecrireVersion(client, {
+        source: { cle, titre: cle, producteur: "Test", theme: "test", couverture: "Fictive", description: "Jeu synthétique" },
+        espaceId: null,
+        version: { libelle: "v1", empreinte: createHash("sha256").update(cle).digest("hex"), fichierNom: "t.geojson", fichierTaille: 1, urlSource: null, recupereLe: null, periode: null, licence: "Test", attribution: `Attribution ${cle}`, droits: TOUT, crsSource: "CRS84", precision: null, transformations: [], controles: { ok: true }, synthetique: true },
+        couche: { titre: cle, description: "", niveau: "TEST", champCode: "code", champNom: "nom", proprietesExposees: ["code", "nom"], styleDefaut: { mode: "simple", couleur: "#123456" } },
+        objets: v.objets, indicateurs: [], superficie: false, preparePar: null,
+      });
+      if (publier) await client.query("UPDATE geodata_versions SET etat = 'publiee', publiee_le = clock_timestamp() WHERE id = $1", [e.versionId]);
+      await client.query("COMMIT");
+      return e.versionId;
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+  const niveau = (rang: 1 | 2, parent: "codes-hcp" | "inclusion" = "codes-hcp") => ({ pays: "ZZ", nomPays: "Pays synthétique", rang, niveau: rang === 1 ? { singulier: "Région", pluriel: "Régions" } : { singulier: "Province", pluriel: "Provinces" }, parent });
+
+  it("chargement depuis des versions publiées (provinces d'abord) : parents par les codes, contour non codé écarté, rechargement sans effet", async () => {
+    const vp = await publierLimites("terr-provinces", [{ code: "1001", nom: "P Nord", x: -8, y: 31, d: 0.1 }, { code: "2001", nom: "P Sud", x: -8, y: 30, d: 0.1 }, { code: "contour:x", nom: "Hors code", x: -7, y: 30, d: 0.1 }]);
+    const vr = await publierLimites("terr-regions", [{ code: "1", nom: "R Nord", x: -8.2, y: 30.9, d: 0.5 }, { code: "2", nom: "R Sud", x: -8.2, y: 29.9, d: 0.5 }]);
+    expect((await chargerTerritoires(pool, vp, niveau(2))).unites).toBe(2);
+    expect(await chargerTerritoires(pool, vr, niveau(1))).toMatchObject({ unites: 2, deja: false });
+    expect(await chargerTerritoires(pool, vr, niveau(1))).toMatchObject({ deja: true });
+    const { rows } = await pool.query("SELECT code, parent_code FROM geodata_territoires WHERE pays = 'ZZ' AND rang = 2 ORDER BY code");
+    expect(rows).toEqual([{ code: "1001", parent_code: "1" }, { code: "2001", parent_code: "2" }]);
+  });
+
+  it("règle « inclusion » (pays sans codes hiérarchiques) : parent = unité du rang supérieur qui contient l'unité", async () => {
+    const vr = await publierLimites("incl-regions", [{ code: "A", nom: "Grande A", x: -8.5, y: 30.5, d: 1 }]);
+    const vp = await publierLimites("incl-provinces", [{ code: "a1", nom: "Petite a1", x: -8.2, y: 30.7, d: 0.2 }, { code: "b1", nom: "Ailleurs", x: -5, y: 30, d: 0.2 }]);
+    await chargerTerritoires(pool, vr, niveau(1, "inclusion"));
+    await chargerTerritoires(pool, vp, niveau(2, "inclusion"));
+    const { rows } = await pool.query("SELECT code, parent_code FROM geodata_territoires WHERE pays = 'ZZ' AND rang = 2 ORDER BY code");
+    expect(rows).toEqual([{ code: "a1", parent_code: "A" }, { code: "b1", parent_code: null }]);
+  });
+
+  it("API : pays et niveaux de la base, unités d'un niveau, unité avec ancêtres, contour et attribution ; version non publiée refusée", async () => {
+    const alice = await compte("gd-terr@example.com");
+    expect((await alice.client.get(`${API}/territoires`)).body).toEqual({ pays: [] });
+    const vr = await publierLimites("api-regions", [{ code: "1", nom: "R Nord", x: -8.2, y: 30.9, d: 0.5 }]);
+    const vp = await publierLimites("api-provinces", [{ code: "1001", nom: "P Nord", x: -8, y: 31, d: 0.1 }]);
+    await chargerTerritoires(pool, vr, niveau(1));
+    await chargerTerritoires(pool, vp, niveau(2));
+    const pays = (await alice.client.get(`${API}/territoires`)).body.pays;
+    expect(pays).toEqual([{ code: "ZZ", nom: "Pays synthétique", niveaux: [{ rang: 1, singulier: "Région", pluriel: "Régions", unites: 1 }, { rang: 2, singulier: "Province", pluriel: "Provinces", unites: 1 }] }]);
+    const racine = (await alice.client.get(`${API}/territoires/ZZ/unites`)).body.unites;
+    expect(racine.map((u: { code: string }) => u.code)).toEqual(["1"]);
+    expect(racine[0].emprise.map((x: number) => Number(x.toFixed(1)))).toEqual([-8.2, 30.9, -7.7, 31.4]);
+    expect((await alice.client.get(`${API}/territoires/ZZ/unites?parent=1`)).body.unites.map((u: { nom: string }) => u.nom)).toEqual(["P Nord"]);
+    const u = (await alice.client.get(`${API}/territoires/ZZ/unites/1001`)).body;
+    expect(u).toMatchObject({ code: "1001", nom: "P Nord", rang: 2, ancetres: [{ code: "1", nom: "R Nord", rang: 1 }], enfants: 0, attribution: "Attribution api-provinces" });
+    expect(u.contour.type).toBe("Polygon");
+    expect((await alice.client.get(`${API}/territoires/ZZ/unites/9999`)).status).toBe(404);
+    expect((await alice.client.get(`${API}/territoires/zz/unites`)).status).toBe(400);
+    const nonPubliee = await publierLimites("api-brouillon", [{ code: "3", nom: "R3", x: 0, y: 0, d: 0.1 }], false);
+    await expect(chargerTerritoires(pool, nonPubliee, niveau(1))).rejects.toThrow(/non publiée/);
+    // Depuis une fiche : unité retrouvée par la version de sa couche, avec son pays.
+    expect((await alice.client.get(`${API}/territoires/version/${vp}/unites/1001`)).body).toMatchObject({ pays: "ZZ", code: "1001", ancetres: [{ code: "1" }] });
+    expect((await alice.client.get(`${API}/territoires/version/${vr}/unites/1001`)).status).toBe(404);
+    // Version retirée : ses unités ne sont plus servies (pays, listes, détail), sans attendre un nouveau chargement.
+    await pool.query("UPDATE geodata_versions SET etat = 'retiree', retiree_le = now(), motif_retrait = 'Remplacée (test)' WHERE id = $1", [vp]);
+    expect((await alice.client.get(`${API}/territoires`)).body.pays[0].niveaux.map((n: { rang: number }) => n.rang)).toEqual([1]);
+    expect((await alice.client.get(`${API}/territoires/ZZ/unites?parent=1`)).body.unites).toEqual([]);
+    expect((await alice.client.get(`${API}/territoires/ZZ/unites/1001`)).status).toBe(404);
+    expect((await alice.client.get(`${API}/territoires/version/${vp}/unites/1001`)).status).toBe(404);
+  });
+});
+
+describe("archive en base des fichiers de données livrés (D-GD-29)", () => {
+  it("copie chaque fichier tel quel ; inchangé non réécrit ; modifié remplacé ; plus livré marqué retiré, jamais effacé", async () => {
+    const { mkdtempSync, mkdirSync, writeFileSync, rmSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const { tmpdir } = await import("node:os");
+    const dossier = mkdtempSync(join(tmpdir(), "gd-fichiers-"));
+    mkdirSync(join(dossier, "donnees"));
+    writeFileSync(join(dossier, "zz-test.json"), JSON.stringify({ cle: "zz-test", version: { fichier: "donnees/zz-test.csv" } }));
+    writeFileSync(join(dossier, "donnees", "zz-test.csv"), "code;valeur\n1;\n");
+    writeFileSync(join(dossier, "donnees", "zz-extrait.geojson"), "{}");
+    await pool.query("DELETE FROM geodata_fichiers");
+    expect(await archiverFichiers(pool, dossier)).toMatchObject({ ajoutes: 3, modifies: 0, inchanges: 0, retires: 0 });
+    const lignes = (await pool.query("SELECT chemin, role, source_cle, taille, convert_from(contenu, 'UTF8') AS texte FROM geodata_fichiers ORDER BY chemin")).rows;
+    expect(lignes).toEqual([
+      { chemin: "donnees/zz-extrait.geojson", role: "extrait", source_cle: null, taille: "2", texte: "{}" },
+      { chemin: "donnees/zz-test.csv", role: "donnees", source_cle: "zz-test", taille: "15", texte: "code;valeur\n1;\n" },
+      expect.objectContaining({ chemin: "zz-test.json", role: "fiche", source_cle: "zz-test" }),
+    ]);
+    expect(await archiverFichiers(pool, dossier)).toMatchObject({ ajoutes: 0, modifies: 0, inchanges: 3, retires: 0 });
+    writeFileSync(join(dossier, "donnees", "zz-test.csv"), "code;valeur\n1;2\n");
+    rmSync(join(dossier, "donnees", "zz-extrait.geojson"));
+    expect(await archiverFichiers(pool, dossier)).toMatchObject({ ajoutes: 0, modifies: 1, inchanges: 1, retires: 1 });
+    const [retire] = (await pool.query("SELECT retire_le IS NOT NULL AS retire FROM geodata_fichiers WHERE chemin = 'donnees/zz-extrait.geojson'")).rows;
+    expect(retire).toEqual({ retire: true });
+    const [csv] = (await pool.query("SELECT convert_from(contenu, 'UTF8') AS texte FROM geodata_fichiers WHERE chemin = 'donnees/zz-test.csv'")).rows;
+    expect(csv).toEqual({ texte: "code;valeur\n1;2\n" });
+    await pool.query("DELETE FROM geodata_fichiers");
   });
 });
