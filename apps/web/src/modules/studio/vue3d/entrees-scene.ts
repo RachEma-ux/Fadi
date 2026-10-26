@@ -83,11 +83,12 @@ export function entreesArchitecture(l: Lecture): EntreeRendu[] {
   for (const a of l.mesh.architecture ?? []) {
     if (!l.present(a.id)) continue;
     const choisi = a.id === l.selectionArchitecture;
-    if (a.type === "wall") {
-      const aspect = aspectDe(l.doc, l.mode, a, 0xd8d2c4, choisi);
+    if (a.type === "wall" || a.type === "ladder") {
+      // Échelle d'accès (EX-027) : montants et échelons, teinte propre, même désignation que le mur.
+      const aspect = aspectDe(l.doc, l.mode, a, a.type === "ladder" ? 0x9c8a6e : 0xd8d2c4, choisi);
       out.push(choisi
         ? { id: a.id, signature: `${l.cle(a.id)}|${cleAspect(aspect)}`, construire: () => volumeSeul(a, aspect, a.id, { architecture: a.id }) }
-        : { id: a.id, signature: l.cle(a.id), lot: "mur", geometrie: a, aspect });
+        : { id: a.id, signature: l.cle(a.id), lot: a.type === "ladder" ? "echelle" : "mur", geometrie: a, aspect });
       continue;
     }
     // Le vide d'une ouverture ne prend que l'apparence de l'ouverture elle-même (pas celle du calque de son mur).

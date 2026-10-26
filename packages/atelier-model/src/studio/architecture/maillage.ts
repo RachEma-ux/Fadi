@@ -1,5 +1,6 @@
 import { prism, type Geometrie3d, type StudioPoint3 } from "../exporteurs/maillage.js";
 import { contourOuverture, morceauxVolume } from "./geometrie.js";
+import { volumesEchelle } from "./echelle.js";
 import type { StudioArchitectureItem, StudioOpeningKind } from "./types.js";
 import { lireArchitecture } from "./validation.js";
 
@@ -10,7 +11,7 @@ import { lireArchitecture } from "./validation.js";
  */
 export interface StudioArchitecture3d {
   id: string;
-  type: "wall" | "opening";
+  type: "wall" | "opening" | "ladder";
   /** Calque du mur (une ouverture suit le calque de son hôte). */
   layerId?: string;
   /** Ouverture : mur hôte et type déclaré. */
@@ -42,6 +43,10 @@ export function studioMaillageArchitecture(items: readonly StudioArchitectureIte
       const m = lue.murs.get(it.id)!;
       const g = fusion(morceauxVolume(it, m.geometrie, m.ouvertures).map((p) => prism(p.plan, p.zMin, p.zMax)));
       out.push({ id: it.id, type: "wall", ...(it.layerId !== undefined ? { layerId: it.layerId } : {}), ...g });
+    } else if (it.type === "ladder") {
+      // Échelle d'accès (EX-027) : montants et échelons, même identifiant qu'en plan.
+      if (!visible(it.layerId)) continue;
+      out.push({ id: it.id, type: "ladder", ...(it.layerId !== undefined ? { layerId: it.layerId } : {}), ...fusion(volumesEchelle(it)) });
     } else {
       const p = lue.ouvertures.get(it.id)!;
       const hote = lue.murs.get(it.hostId)!.mur;

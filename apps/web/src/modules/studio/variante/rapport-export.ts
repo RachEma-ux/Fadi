@@ -47,7 +47,7 @@ export const LIBELLES_RAISON_FIDELITE: Readonly<Record<StudioRaisonFidelite, str
 export const LIBELLES_TYPE_ELEMENT: Readonly<Record<string, string>> = Object.freeze({
   line: "Ligne", rectangle: "Rectangle", circle: "Cercle", arc: "Arc", polyline: "Polyligne",
   dimension: "Cote", "angular-dimension": "Cote angulaire", text: "Texte", box: "Boîte", prism: "Prisme", exact: "Solide exact",
-  wall: "Mur", opening: "Ouverture", propriete: "Propriété", scene: "Scène", appearance: "Apparence d’affichage", "non-native": "Élément non natif",
+  wall: "Mur", opening: "Ouverture", ladder: "Échelle d’accès", "face-dimension": "Cote de face 3D", propriete: "Propriété", scene: "Scène", appearance: "Apparence d’affichage", "non-native": "Élément non natif",
   spline: "Spline", hachure: "Hachure", symbole: "Symbole", source: "Source importée",
 });
 export const libelleType = (type: string): string => (Object.hasOwn(LIBELLES_TYPE_ELEMENT, type) ? LIBELLES_TYPE_ELEMENT[type]! : type);

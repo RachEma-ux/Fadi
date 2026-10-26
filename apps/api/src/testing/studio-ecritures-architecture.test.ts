@@ -39,11 +39,15 @@ describe("A.5-01 — écritures du document Studio par le seul contrat de comman
     expect(avancees.filter((a) => a.champs.includes("headRevisionId")).map((a) => a.chemin)).toEqual(["lib/studio-commands.ts"]);
   });
   it("une seule route, POST …/commands, soumet des enveloppes ; elle passe par l'orchestrateur commun", () => {
-    const appels = API.flatMap((f) => [...f.texte.matchAll(/submitStudioCommands\(/g)].map(() => f.chemin)).filter((c) => c.startsWith("routes/"));
+    // Lot G2 (IF-006) : la route passe par `soumettreEnveloppeStudio`, qui rend l'essai (mode « essai », aucune écriture)
+    // ou délègue l'application à `submitStudioCommands` — le seul point d'écriture des enveloppes.
+    const appels = API.flatMap((f) => [...f.texte.matchAll(/(?:submitStudioCommands|soumettreEnveloppeStudio)\(/g)].map(() => f.chemin)).filter((c) => c.startsWith("routes/"));
     expect(appels).toEqual(["routes/studio.ts"]);
     const route = API.find((f) => f.chemin === "routes/studio.ts")!.texte;
-    expect(route).toMatch(/studioRouter\.post\("\/studies\/:studyId\/variants\/:variantId\/commands", avecContrat\(CONTRAT_COMMANDES\), endpoint\(async \(req, res\) => \{\s*res\.json\(await submitStudioCommands\(scope\(req\), req\.user!\.id, req\.body\)\)/);
+    expect(route).toMatch(/studioRouter\.post\("\/studies\/:studyId\/variants\/:variantId\/commands", avecContrat\(CONTRAT_COMMANDES\), endpoint\(async \(req, res\) => \{\s*res\.json\(await soumettreEnveloppeStudio\(scope\(req\), req\.user!\.id, req\.body\)\)/);
     const lib = API.find((f) => f.chemin === "lib/studio-commands.ts")!.texte;
+    expect(lib).toContain("export async function soumettreEnveloppeStudio(");
+    expect(lib).toContain("if (attributs.mode !== \"essai\") return submitStudioCommands(scope, actorId, input);");
     expect(lib).toMatch(/orchestrerCommandesDansTransaction<[^>]*>\(tx, \{ kind: "studio"/);
     // L'identité vient de la session (`req.user`), jamais du corps de la requête.
     expect(route).not.toMatch(/req\.body\.(?:authorId|actorId|userId)/);

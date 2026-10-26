@@ -21,3 +21,8 @@ export {
   type StudioBoiteEnglobante, type StudioExact3d, type StudioMaillageExact, type StudioOperandeExact, type StudioOperandeNoyau, type StudioOperationBooleenne,
   type StudioOperationNoyau, type StudioResultatExact, type StudioSolideExact,
 } from "./exacts.js";
+// Lot G2 (INV-013) : cotes de faces 3D, référencées à deux faces parallèles d’un solide libre.
+export {
+  SCHEMA_COTE_FACE, STUDIO_TOLERANCE_FACES, controlerCoteFace, studioCorrespondanceFace, studioFaceExiste, studioPlanFace, studioValeurCoteFace, validerCoteFace,
+  type StudioCoteFace, type StudioCorrespondanceFace, type StudioPlanFace,
+} from "./cotes-faces.js";

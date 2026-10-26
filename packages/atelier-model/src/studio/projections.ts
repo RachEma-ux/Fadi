@@ -106,7 +106,7 @@ function cles(doc: StudioDocument): Cles {
   const ouvertures = new Map<string, string[]>();
   for (const a of doc.architecture ?? []) if (a.type === "opening") (ouvertures.get(a.hostId) ?? ouvertures.set(a.hostId, []).get(a.hostId)!).push(propres.get(a.id)!);
   for (const a of doc.architecture ?? []) {
-    if (a.type === "wall") projection.set(a.id, empreinteTexte([propres.get(a.id), ...(ouvertures.get(a.id) ?? [])].join("|")));
+    if (a.type !== "opening") projection.set(a.id, empreinteTexte([propres.get(a.id), ...(ouvertures.get(a.id) ?? [])].join("|")));
     else projection.set(a.id, empreinteTexte(`${propres.get(a.id)}|${propres.get(a.hostId) ?? ""}`));
   }
   // Un solide lié à un profil source (lot F1) lit cette source : son état (à jour, à résoudre) en dépend.
@@ -138,7 +138,7 @@ function clesMorceaux(doc: StudioDocument): Map<string, string> {
   for (const o of doc.solides ?? []) poser(o.id, o.layerId);
   for (const o of doc.exacts ?? []) poser(o.id, o.layerId);
   const murs = new Map((doc.architecture ?? []).flatMap((x) => (x.type === "wall" ? [[x.id, x.layerId] as const] : [])));
-  for (const o of doc.architecture ?? []) poser(o.id, o.type === "wall" ? o.layerId : murs.get(o.hostId));
+  for (const o of doc.architecture ?? []) poser(o.id, o.type !== "opening" ? o.layerId : murs.get(o.hostId));
   c.morceaux = m;
   return m;
 }
@@ -234,7 +234,7 @@ function* calquesDesObjets(d: StudioDocument): Generator<[string, string]> {
   for (const o of d.solides ?? []) yield [o.id, calque(o.layerId)];
   for (const o of d.exacts ?? []) yield [o.id, calque(o.layerId)];
   const murs = new Map((d.architecture ?? []).filter((x) => x.type === "wall").map((x) => [x.id, x.type === "wall" ? x.layerId : undefined]));
-  for (const o of d.architecture ?? []) yield [o.id, calque(o.type === "wall" ? o.layerId : murs.get(o.hostId))];
+  for (const o of d.architecture ?? []) yield [o.id, calque(o.type !== "opening" ? o.layerId : murs.get(o.hostId))];
 }
 
 /**
@@ -296,8 +296,8 @@ export function studioMaillerObjets(document: StudioDocument, ids: readonly stri
   if (archi.length) {
     // Murs concernés : murs voulus et hôtes des ouvertures voulues ; chacun est maillé avec toutes ses ouvertures.
     const murs = new Set<string>();
-    for (const a of archi) if (veut(a.id)) murs.add(a.type === "wall" ? a.id : a.hostId);
-    const sousEnsemble: StudioArchitectureItem[] = voulus === null ? archi : archi.filter((a) => murs.has(a.type === "wall" ? a.id : a.hostId));
+    for (const a of archi) if (veut(a.id)) murs.add(a.type === "opening" ? a.hostId : a.id);
+    const sousEnsemble: StudioArchitectureItem[] = voulus === null ? archi : archi.filter((a) => murs.has(a.type === "opening" ? a.hostId : a.id));
     const mailles = new Map(studioMaillageArchitecture(sousEnsemble, visible).map((m) => [m.id, m]));
     for (const a of sousEnsemble) {
       if (!veut(a.id)) continue;

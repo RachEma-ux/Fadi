@@ -34,4 +34,6 @@ export type NatureQuantite =
   | "polyligne-ouverte" | "polyligne-ouverte-extrudee" | "polyligne-fermee" | "prisme-polyligne"
   /** A.4 : mur et ouverture créés comme tels (`architecture`). */
   | "mur-architectural" | "ouverture"
+  /** EX-027 (lot G2) : échelle d’accès (longueur cumulée des montants et des échelons, hauteur, volume de matière). */
+  | "echelle-acces"
   | "non-pris-en-charge";

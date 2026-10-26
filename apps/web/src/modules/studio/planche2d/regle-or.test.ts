@@ -135,7 +135,7 @@ describe("Planche 2D de Studio — règle d'or", () => {
     expect(RACCOURCIS_RESERVES).toContain("Ctrl+P");
     expect(COMMANDES_EDITEUR.find((c) => c.id === "feuille")).toMatchObject({ groupe: "presentation", ecrit: false, iconeSymbolique: "studio-sheet" });
     // Feuilles composées et dossier de conception (E.3) : Ctrl+Maj+D, même barre, icône propre.
-    expect(commandesDeBarre("presentation").map((c) => c.id)).toEqual(["feuille", "dossier"]);
+    expect(commandesDeBarre("presentation").map((c) => c.id)).toEqual(["feuille", "dossier", "approuver"]);
     expect(cibleRaccourci("Ctrl+Shift+D")).toEqual({ type: "commande", id: "dossier" });
     expect(COMMANDES_EDITEUR.find((c) => c.id === "dossier")).toMatchObject({ groupe: "presentation", ecrit: false, iconeSymbolique: "studio-dossier" });
     // Import DXF : Maj+U, barre Importer, icône propre, indisponible en lecture seule (commande d'écriture), pas un lien.
@@ -263,7 +263,7 @@ describe("Catalogue « Outils » et palette (#166, Registry)", () => {
   it("recherche par nom (sans accents), raccourci (registre ou affiché) et identifiant", () => {
     expect(rechercher("Ligne")[0]?.identifiant).toBe("studio.dessin.ligne");
     expect(rechercher("selection").map((e) => e.identifiant)).toContain("studio.dessin.selection");
-    expect(rechercher("Cote").map((e) => e.identifiant)).toEqual(["studio.dessin.cote", "studio.dessin.cote-angulaire"]);
+    expect(rechercher("Cote").map((e) => e.identifiant)).toEqual(["studio.dessin.cote", "studio.dessin.cote-angulaire", "studio.solide.cote-face"]);
     expect(rechercher("Maj+C")[0]?.identifiant).toBe("studio.dessin.cote");
     expect(rechercher("Shift+C")[0]?.identifiant).toBe("studio.dessin.cote");
     expect(rechercher("studio.calque").map((e) => e.identifiant)).toEqual(["studio.calque.creer", "studio.calque.modifier"]);

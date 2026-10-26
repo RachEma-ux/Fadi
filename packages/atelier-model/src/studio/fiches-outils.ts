@@ -69,6 +69,8 @@ const NEGATIFS: Readonly<Record<StudioToolId, readonly string[]>> = {
   "studio.architecture.ouverture": ["architecture/architecture.test.ts", "studio-invariants.test.ts", "exigences/exigences.test.ts"],
   "studio.architecture.modifier": ["architecture/architecture.test.ts", "studio-invariants.test.ts"],
   "studio.architecture.supprimer": ["architecture/architecture.test.ts", "exigences/exigences.test.ts"],
+  "studio.architecture.echelle-acces": ["architecture/echelle.test.ts"],
+  "studio.solide.cote-face": ["objets-3d/cotes-faces.test.ts"],
   "studio.calque.creer": ["planche-2d.test.ts", "annotations.test.ts", "transformations-annotations.test.ts"],
   "studio.calque.modifier": ["planche-2d.test.ts", "annotations.test.ts", "transformations-annotations.test.ts"],
   "studio.objet.calque": ["planche-2d.test.ts", "annotations.test.ts", "transformations-annotations.test.ts"],

@@ -107,6 +107,9 @@ describe("Matrice d'échanges : donnée versionnée et cohérente", () => {
       // Lot G3 (E.6-04, EX-079) : exports OBJ, STL et STEP livrés (lectures non livrées, chacune sa raison), DWG cité par
       // la décision approuvée D-179 et gardé « non livré » ; capacités par sens d'échange (comprises dans l'empreinte).
       8: "1d67801935927a94c7a3bfed825c4cd2e63a08faaada7fd9942d4ca0b27b4dd0",
+      // Lot G2 (EX-027, INV-013) : échelle d’accès (architecture.ladder : SVG / DXF en plan, IFC IfcStair .LADDER. exact) ;
+      // catégorie « cotesFaces » (cotes de faces 3D, écrites dans aucun format).
+      9: "7f7e636bf4c023b2fa10bc992b666b8a76e1e1c10027037abbc52434e125d6ae",
     };
     // Depuis la révision 8, l'empreinte couvre aussi les capacités par sens d'échange (EX-079).
     const capacites = STUDIO_MATRICE_ECHANGES.revision >= 8 ? { capacites: STUDIO_CAPACITES_PAR_SENS } : {};
@@ -276,6 +279,8 @@ const complet = (): StudioDocument => ({
     { id: "s1", type: "box", placement: { origin: { x: 50, y: 0, z: 0 }, rotation: 0 }, width: 1, depth: 1, height: 1 },
     { id: "s2", type: "prism", placement: { origin: { x: 60, y: 0, z: 0 }, rotation: 0 }, profile: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 0, y: 1 }], height: 2 },
   ],
+  // Lot G2 (INV-013) : une cote de face 3D sur la boîte s1.
+  cotesFaces: [{ id: "cf1", type: "face-dimension", solidId: "s1", faces: ["base", "sommet"], toResolve: false }],
   // Lot F2 : un solide exact (résultat SYNTHÉTIQUE, forme seulement) et ses deux opérandes conservés.
   exacts: [exactSynthetique("e1", [
     { id: "e1a", type: "box", placement: { origin: { x: 80, y: 0, z: 0 }, rotation: 0 }, width: 1, depth: 1, height: 1 },
@@ -286,6 +291,8 @@ const complet = (): StudioDocument => ({
     { id: "o1", type: "opening", hostId: "m1", position: 2.5, width: 1, height: 2.1, sill: 0, kind: "porte" },
     { id: "o2", type: "opening", hostId: "m1", position: 6, width: 1, height: 1, sill: 1, kind: "fenetre" },
     { id: "o3", type: "opening", hostId: "m1", position: 9.5, width: 1, height: 1, sill: 1 },
+    // Lot G2 (EX-027) : échelle d’accès.
+    { id: "ech1", type: "ladder", position: { x: 14, y: 20 }, rotation: 0, width: 0.5, height: 3, base: 0, rungs: 9, section: 0.04 },
   ],
   proprietes: [
     { cibleId: "m1", nom: "Résistance au feu", valeur: "REI 60", source: "Fiche de recette (synthétique)" },

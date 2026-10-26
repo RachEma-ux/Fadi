@@ -253,12 +253,13 @@ export function composerFeuilleStudio(input: StudioDocument, options: StudioShee
   const plan = options.architecture && doc.architecture?.length ? studioPlanArchitecture(doc.architecture) : null;
   const murs = plan ? plan.murs.filter((m) => shown.has(layerOf(m.mur))) : [];
   const ouvertures = plan ? plan.ouvertures.filter((o) => shown.has(layerOf(o))) : [];
+  const echelles = plan ? (plan.echelles ?? []).filter((e) => shown.has(layerOf(e.echelle))) : [];
 
   // Bornes du dessin visible, en mètres.
   const pts: Vec[] = [
     ...shapes.flatMap(shapePoints), ...dims.flatMap((g) => [g.a, g.b, ...g.ext.flat()]),
     ...angulaires.flatMap((g) => [g.dimension.vertex, ...coteAngulairePoints(g), ...g.extensions.flat()]), ...textes.flatMap((t) => studioTextBox(t)),
-    ...murs.flatMap((m) => m.emprise),
+    ...murs.flatMap((m) => m.emprise), ...echelles.flatMap((e) => e.emprise),
   ];
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const p of pts) {
@@ -336,6 +337,11 @@ export function composerFeuilleStudio(input: StudioDocument, options: StudioShee
       for (const o of ouvertures) {
         if (layerOf(o) !== layer.id) continue;
         for (const [a, b] of o.montants) raw.push({ type: "ligne", a: map(a), b: map(b), trait: "vue", objetId: o.id });
+      }
+      // Échelles d'accès (EX-027) : montants et échelons en trait de vue (aucune coupe supposée).
+      for (const e of echelles) {
+        if (layerOf(e.echelle) !== layer.id) continue;
+        for (const q of [...e.montants, e.echelons]) raw.push({ type: "poly", points: q.map(map), ferme: true, trait: "vue", remplissage: null, objetId: e.echelle.id });
       }
       drawing.push({ layerId: layer.id, name: layer.name, primitives: decouper(raw, viewport) });
     }

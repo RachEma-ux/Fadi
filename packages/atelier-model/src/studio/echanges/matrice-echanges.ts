@@ -34,7 +34,7 @@ import { STUDIO_CAPACITES_EXPORT, STUDIO_RAISONS_FIDELITE, type StudioFormatEcha
 
 export const STUDIO_MATRICE_ECHANGES_SCHEMA = "studio-matrice-echanges/1" as const;
 /** Révision de la matrice : à incrémenter avec toute modification d'une entrée (empreinte épinglée par test). */
-export const STUDIO_MATRICE_ECHANGES_REVISION = 8 as const;
+export const STUDIO_MATRICE_ECHANGES_REVISION = 9 as const;
 /** Date de l'audit qui a établi la révision courante. */
 export const STUDIO_MATRICE_ECHANGES_DATE = "2026-10-26" as const;
 
@@ -152,7 +152,8 @@ export const STUDIO_COUVERTURE_EXPORT: { readonly [F in StudioFormatEchange]: Pa
     annotations: { "angular-dimension": ["cote-tracee"], text: ["texte-police-generique"] },
     solides: { box: ["solide-hors-2d"], prism: ["solide-hors-2d"] },
     exacts: { exact: ["solide-hors-2d"] },
-    architecture: { wall: ["extrusion-non-portee"], opening: ["ouverture-en-lacune"] },
+    cotesFaces: { "face-dimension": ["solide-hors-2d"] },
+    architecture: { wall: ["extrusion-non-portee"], opening: ["ouverture-en-lacune"], ladder: ["extrusion-non-portee"] },
     proprietes: { propriete: ["propriete-non-exportee"] },
     scenes: { scene: VISU, appearance: VISU },
     nonNatifs: { "non-native": NN },
@@ -165,7 +166,8 @@ export const STUDIO_COUVERTURE_EXPORT: { readonly [F in StudioFormatEchange]: Pa
     annotations: { "angular-dimension": ["cote-eclatee"], text: ["texte-exact", "texte-ascii-echappe", "texte-remplace", "texte-tronque"] },
     solides: { box: ["solide-hors-2d"], prism: ["solide-hors-2d"] },
     exacts: { exact: ["solide-hors-2d"] },
-    architecture: { wall: ["extrusion-non-portee"], opening: ["ouverture-en-lacune"] },
+    cotesFaces: { "face-dimension": ["solide-hors-2d"] },
+    architecture: { wall: ["extrusion-non-portee"], opening: ["ouverture-en-lacune"], ladder: ["extrusion-non-portee"] },
     proprietes: { propriete: ["propriete-non-exportee"] },
     scenes: { scene: VISU, appearance: VISU },
     nonNatifs: { "non-native": NN },
@@ -181,7 +183,8 @@ export const STUDIO_COUVERTURE_EXPORT: { readonly [F in StudioFormatEchange]: Pa
     annotations: { "angular-dimension": ["annotation-hors-ifc"], text: ["annotation-hors-ifc"] },
     solides: { box: ["profil-exact"], prism: ["profil-exact"] },
     exacts: { exact: ["solide-exact-hors-ifc"] },
-    architecture: { wall: ["extrusion-exacte"], opening: ["ouverture-evidee"] },
+    cotesFaces: { "face-dimension": ["cote-hors-ifc"] },
+    architecture: { wall: ["extrusion-exacte"], opening: ["ouverture-evidee"], ladder: ["extrusion-exacte"] },
     proprietes: { propriete: ["propriete-en-pset", "propriete-non-evaluee"] },
     scenes: { scene: VISU, appearance: VISU },
     nonNatifs: { "non-native": NN },
@@ -214,6 +217,7 @@ const ECRITURE_IFC: NonNullable<StudioEntreeEchange["ecritureIfc"]> = {
     { entites: ["IfcBuildingElementProxy", "IfcTriangulatedFaceSet", "IfcCartesianPointList3D"], detail: "Surface verticale ouverte .NOTDEFINED. (Tessellation) : ligne, arc ou polyligne ouverte extrudés sans épaisseur ; aucun solide." },
     { entites: ["IfcOpeningElement", "IfcRelVoidsElement"], detail: "Ouverture : boîte .OPENING. reliée au mur hôte, placée relativement au mur." },
     { entites: ["IfcDoor", "IfcWindow", "IfcRelFillsElement"], detail: "Porte ou fenêtre seulement si son type est déclaré : remplit l’ouverture, sans représentation propre." },
+    { entites: ["IfcStair"], detail: "Échelle d’accès (EX-027) : type prédéfini .LADDER., montants et échelons extrudés (profils fermés), placée à la cote de son pied ; aucune valeur normative." },
     { entites: ["IfcPropertySet", "IfcPropertySingleValue", "IfcRelDefinesByProperties"], detail: "Jeux de propriétés listés ci-dessous, valeurs saisies seulement." },
     { entites: ["IfcPresentationLayerWithStyle"], detail: "Un calque par calque non vide : nom, identifiant Studio, visibilité, verrou ; calque masqué exporté éteint." },
   ],
@@ -222,6 +226,7 @@ const ECRITURE_IFC: NonNullable<StudioEntreeEchange["ecritureIfc"]> = {
     { nom: "Fadi_StudioFreeSolid", detail: "Solide libre : identifiant, forme, origine, rotation, dimensions saisies." },
     { nom: "Fadi_StudioWall", detail: "Mur : identifiant, épaisseur, hauteur, base, justification, longueur d’axe." },
     { nom: "Fadi_StudioOpening", detail: "Ouverture : identifiant, mur hôte, position, largeur, hauteur, allège, type déclaré." },
+    { nom: "Fadi_StudioLadder", detail: "Échelle d’accès : identifiant, entre-axe, hauteur, base, nombre et pas des échelons, section des montants." },
     { nom: "Fadi_StudioExport", detail: "Projet : document, révision, repère et effectifs (éléments écrits, objets non extrudés, cotes et annotations non exportées)." },
     { nom: "Fadi_ProprietesDeclarees", detail: "Propriétés déclarées valuées de chaque objet porteur ; les propriétés sans valeur sont comptées, jamais écrites." },
   ],

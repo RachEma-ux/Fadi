@@ -46,8 +46,8 @@ export interface StudioEffetsCommande {
   origine: StudioOrigineEffets;
 }
 
-type Famille = "objects" | "layers" | "dimensions" | "annotations" | "solides" | "exacts" | "architecture" | "proprietes" | "scenes" | "nonNatifs";
-const FAMILLES: readonly Famille[] = ["objects", "layers", "dimensions", "annotations", "solides", "exacts", "architecture", "proprietes", "scenes", "nonNatifs"];
+type Famille = "objects" | "layers" | "dimensions" | "annotations" | "solides" | "exacts" | "cotesFaces" | "architecture" | "proprietes" | "scenes" | "nonNatifs";
+const FAMILLES: readonly Famille[] = ["objects", "layers", "dimensions", "annotations", "solides", "exacts", "cotesFaces", "architecture", "proprietes", "scenes", "nonNatifs"];
 
 /** Domaines lus par chaque famille d'éléments (une modification les invalide). Les publications lisent tout. */
 const LECTEURS: Record<Famille, readonly StudioDomaineDerive[]> = {
@@ -57,6 +57,8 @@ const LECTEURS: Record<Famille, readonly StudioDomaineDerive[]> = {
   annotations: ["plan-2d", "exports", "publications"],
   solides: ["maillage-3d", "quantites", "exports", "publications"],
   exacts: ["maillage-3d", "quantites", "exports", "publications"],
+  // Cotes de faces 3D (lot G2) : lues par la vue 3D et les publications (aucun format ne les écrit).
+  cotesFaces: ["maillage-3d", "publications"],
   architecture: ["plan-2d", "maillage-3d", "quantites", "exports", "publications"],
   proprietes: ["quantites", "exports", "publications"],
   // Réglages de vue : seule la vue 3D les lit (jamais la géométrie, le métré ni les exports) ; une feuille publiée les cite.
@@ -92,6 +94,7 @@ export function studioRelations(doc: StudioDocument): StudioRelation[] {
     if (a.type === "angular-dimension") for (const l of [a.links.first, a.links.second]) if (l) out.push({ de: a.id, vers: l.objectId, nature: "cote-liee" });
   }
   for (const a of doc.architecture ?? []) if (a.type === "opening") out.push({ de: a.id, vers: a.hostId, nature: "hote" });
+  for (const c of doc.cotesFaces ?? []) out.push({ de: c.id, vers: c.solidId, nature: "cote-liee" });
   for (const s of doc.solides ?? []) if (s.type === "prism" && s.source) out.push({ de: s.id, vers: s.source.objectId, nature: "source-profil" });
   for (const s of doc.exacts ?? []) for (const id of studioIdsOperandes(s)) out.push({ de: s.id, vers: id, nature: "operande" });
   for (const p of doc.proprietes ?? []) out.push({ de: `${p.cibleId}#${p.nom}`, vers: p.cibleId, nature: "propriete" });
@@ -105,6 +108,7 @@ function aResoudre(doc: StudioDocument): Map<string, boolean> {
   const m = new Map<string, boolean>();
   for (const c of doc.dimensions ?? []) m.set(c.id, c.toResolve);
   for (const a of doc.annotations ?? []) if (a.type === "angular-dimension") m.set(a.id, a.toResolve);
+  for (const c of doc.cotesFaces ?? []) m.set(c.id, c.toResolve);
   return m;
 }
 

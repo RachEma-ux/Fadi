@@ -21,7 +21,7 @@ export function commandesDuDocument(doc: StudioDocument): StudioCommand[] {
     }
   }
   // Ordre du document : dans le corpus, un mur précède toujours ses ouvertures.
-  for (const a of doc.architecture ?? []) out.push(a.type === "wall" ? { toolId: "studio.architecture.mur", params: a } : { toolId: "studio.architecture.ouverture", params: a });
+  for (const a of doc.architecture ?? []) out.push(a.type === "wall" ? { toolId: "studio.architecture.mur", params: a } : a.type === "ladder" ? { toolId: "studio.architecture.echelle-acces", params: a } : { toolId: "studio.architecture.ouverture", params: a });
   for (const d of doc.dimensions ?? []) out.push({ toolId: "studio.dessin.cote", params: d });
   for (const a of doc.annotations ?? []) out.push(a.type === "text" ? { toolId: "studio.dessin.texte", params: a } : { toolId: "studio.dessin.cote-angulaire", params: a });
   const solide = (s: StudioSolid): StudioCommand => (s.type === "box" ? { toolId: "studio.solide.boite", params: s } : { toolId: "studio.solide.prisme", params: s });

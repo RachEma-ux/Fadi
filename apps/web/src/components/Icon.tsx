@@ -63,6 +63,7 @@ export type IconName =
   | "studio-snap-tangent"
   | "studio-snap-parallel"
   | "studio-snap-nearest"
+  | "studio-snap-next"
   | "studio-track-ortho"
   | "studio-track-polar"
   | "studio-track-polar-step"
@@ -97,6 +98,7 @@ export type IconName =
   | "studio-solid-rotate"
   | "studio-solid-link"
   | "studio-solid-boolean"
+  | "studio-solid-face-dimension"
   | "studio-nav-plan"
   | "studio-section-plane"
   | "studio-copy"
@@ -109,6 +111,7 @@ export type IconName =
   | "studio-opening"
   | "studio-architecture-edit"
   | "studio-architecture-delete"
+  | "studio-ladder"
   | "studio-property-set"
   | "console"
   | "studio-property-remove"
@@ -122,6 +125,7 @@ export type IconName =
   | "studio-export-png"
   | "studio-dossier"
   | "studio-exchanges"
+  | "studio-approve"
   | "studio-import-ifc"
   | "studio-external-models"
   | "studio-illustration"
@@ -203,6 +207,8 @@ const PATHS: Record<IconName, string> = {
   "studio-snap-tangent": "M10 8a6 6 0 1 0 0 12 6 6 0 0 0 0-12ZM2 8h20M10 6v4",
   "studio-snap-parallel": "M4 18 14 6M10 18 20 6",
   "studio-snap-nearest": "M4 20 20 6M9 9h6l-6 6h6Z",
+  // Cible d’accrochage suivante (AC-004) : deux repères superposés et une flèche circulaire de passage au suivant.
+  "studio-snap-next": "M4 8h6v6H4ZM8 12h6v6H8ZM16 6a5 5 0 0 1 4 8M20 14l1-3M20 14l-3-1",
   // Repérage : équerre orthogonale ; rayons polaires depuis un point ; pas polaire (rayons et flèche de rotation).
   "studio-track-ortho": "M5 19h15M5 19V4M5 19l-2-2M9 15h2v2",
   "studio-track-polar": "M4 20h16M4 20 18 6M4 20l8-14M4 20A9 9 0 0 1 13 11",
@@ -250,6 +256,8 @@ const PATHS: Record<IconName, string> = {
   "studio-solid-link": "M9 15l6-6M7 11l-2 2a3 3 0 0 0 4 4l2-2M17 13l2-2a3 3 0 0 0-4-4l-2 2",
   // Lot F2 : deux blocs qui se recouvrent, la partie commune marquée (booléen exact : union, différence, intersection).
   "studio-solid-boolean": "M3 7h10v10H3ZM11 11h10v10H11ZM11 11h2v6h-2M15 3v4M13 5h4",
+  // Cote de face 3D (INV-013) : boîte en perspective et cote entre ses faces haute et basse, flèches aux extrémités.
+  "studio-solid-face-dimension": "M4 8l5-3h9v11l-5 3H4ZM4 8h9v11M13 8l5-3M21 5v14M19 7l2-2 2 2M19 17l2 2 2-2",
   "studio-nav-plan": "M3 17l9 4 9-4-9-4ZM12 3v7M9 7l3 3 3-3M7 3h10",
   "studio-section-plane": "M8 3h8v18H8ZM2 13l4-3h16l-4 3ZM2 13h16",
   // Transformations : deux carrés décalés (copier), flèche circulaire (rotation), axe et deux triangles opposés
@@ -267,6 +275,8 @@ const PATHS: Record<IconName, string> = {
   "studio-opening": "M2 8h7v8H2ZM15 8h7v8h-7ZM9 6v12M15 6v12M10.5 12h3",
   "studio-architecture-edit": "M2 13h11v6H2ZM6 13l-4 4M10 13l-6 6M14 14l7-7 2 2-7 7h-2Z",
   "studio-architecture-delete": "M2 9h6v6H2ZM12 9h6v6h-6ZM8 7v10M12 7v10M15 3l6 6M21 3l-6 6",
+  // Échelle d’accès (EX-027) : deux montants verticaux et quatre échelons (distincte de la transformation Échelle).
+  "studio-ladder": "M7 2v20M17 2v20M7 6h10M7 10h10M7 14h10M7 18h10",
   // Propriétés et exigences (E.1) : étiquette et signe plus ; étiquette barrée ; liste cochée et balance (écart).
   "studio-property-set": "M3 4h9l8 8-8 8-9-9ZM7 8h.01M17 3v6M14 6h6",
   "studio-property-remove": "M3 4h9l8 8-8 8-9-9ZM7 8h.01M15 3l6 6M21 3l-6 6",
@@ -285,6 +295,8 @@ const PATHS: Record<IconName, string> = {
   "studio-dossier": "M3 6h6l2 2h10v12H3ZM7 11h10v6H7ZM9 13h6M9 15h4",
   // Matrice d'échanges (E.6) : grille de trois colonnes traversée par deux flèches opposées (import / export).
   "studio-exchanges": "M3 4h18v16H3ZM9 4v16M15 4v16M5 9h14M17 7l2 2-2 2M5 15h14M7 13l-2 2 2 2",
+  // Approuver (AC-010, lot G2) : feuille de dossier portant un sceau rond et une coche.
+  "studio-approve": "M5 3h10l4 4v14H5ZM15 3v4h4M8 9h6M8 12h4M15 17a3 3 0 1 0 0.01 0M13.6 17l1 1 1.8-2",
   // Import IFC (lot F3) : fichier, petit volume et flèche entrant par la gauche (le pendant de l’export IFC).
   "studio-import-ifc": "M9 3h7l4 4v14H9v-4M16 3v4h4M12 10l3-2 3 2v4l-3 2-3-2ZM12 10l3 2 3-2M15 12v4M2 13h7M6 10l3 3-3 3",
   // Modèles externes (lot F3) : deux maquettes côte à côte reliées par une coche de validation.

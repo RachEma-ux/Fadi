@@ -9,3 +9,4 @@ export * from "./simulation-migration.js";
 export * from "./optimisation.js";
 export * from "./perimetre.js";
 export * from "./essai.js";
+export * from "./enveloppe.js";

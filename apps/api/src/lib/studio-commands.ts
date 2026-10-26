@@ -14,7 +14,10 @@ import { orchestrerCommandesDansTransaction, type Tx } from "./atelier-validatio
 import { lockProject, type Querier } from "./step-rows.js";
 import { exportStudioStep, revaliderBooleensStudio } from "./studio-exact.js";
 import { corpsRefusQuota, quotaCommandesStudio } from "./studio-quotas.js";
-import { studioEffetsCommande, studioHorsPerimetre, type StudioEffetsCommande } from "@parcours/atelier-model/studio-cmd";
+import {
+  STUDIO_MODES_ENVELOPPE, STUDIO_OPERATIONS_COMMANDE, studioCommandeNue, studioControlerCibles, studioControlerPortee, studioEffetsCommande, studioHorsPerimetre,
+  type StudioCommandeMetier, type StudioEffetsCommande, type StudioModeEnveloppe, type StudioPorteeEnveloppe,
+} from "@parcours/atelier-model/studio-cmd";
 import { lireContexteEtude, validerContexteEtude, type StudioContexteDeclare } from "./studio-contexte.js";
 import { consignerEvenementRevision, controlerCheminEcriture, engagerPuisNotifier, lireEvenementRevision, nouvelleTransaction, type EvenementRevision } from "./studio-journal.js";
 
@@ -25,15 +28,46 @@ export class StudioRequestError extends Error {
 const identifier = z.string().min(1).max(128).regex(/^[A-Za-z0-9._:-]+$/);
 /** Règle d'identifiant des requêtes Studio (enveloppes, créations idempotentes, révision exportée). */
 export const studioIdentifierSchema = identifier;
+/**
+ * Enveloppe de transport (IF-006) : `contractVersion`, `requestId`, `baseRevisionId`, `commands[toolId, params]` et,
+ * facultatifs, la portée déclarée `scope` (comparée à l'adresse), le `mode` (`appliquer` par défaut, `essai` : rien
+ * n'est écrit) et, par commande, `targetIds` / `operation` (vérifiés contre les effets réels, `studioControlerCibles`).
+ * L'auteur n'est jamais lu dans le corps (schéma strict : un `actorId` est refusé) : c'est la session du serveur.
+ */
 const envelopeSchema = z.object({
   contractVersion: z.literal(STUDIO_CONTRACT), requestId: identifier, baseRevisionId: identifier,
+  scope: z.object({ projectId: identifier, studyId: identifier, variantId: identifier }).strict().optional(),
+  mode: z.enum(STUDIO_MODES_ENVELOPPE).optional(),
   commands: z.array(z.object({
     toolId: z.enum(STUDIO_COMMAND_TOOL_IDS),
     params: z.record(z.string(), z.unknown()),
+    targetIds: z.array(identifier).min(1).max(500).refine((l) => new Set(l).size === l.length, "Cible citée deux fois").optional(),
+    operation: z.enum(STUDIO_OPERATIONS_COMMANDE).optional(),
   }).strict()).min(1).max(500),
 }).strict();
 
+/** Attributs logiques de la commande métier (IF-006), séparés des commandes que le noyau applique. */
+export interface StudioAttributsEnveloppe {
+  scope?: StudioPorteeEnveloppe;
+  mode: StudioModeEnveloppe;
+  commands: StudioCommandeMetier[];
+}
+
+/** Enveloppe validée : les commandes nues (`toolId`, `params`) que le noyau applique, et les attributs logiques à vérifier. */
+export function parseStudioEnvelopeMetier(value: unknown): { envelope: StudioEnvelope; attributs: StudioAttributsEnveloppe } {
+  const { scope, mode, commands, ...reste } = parseEnveloppeComplete(value);
+  const metier = commands as StudioCommandeMetier[];
+  return {
+    envelope: { ...reste, commands: metier.map(studioCommandeNue) } as StudioEnvelope,
+    attributs: { ...(scope ? { scope } : {}), mode: mode ?? "appliquer", commands: metier },
+  };
+}
+
 export function parseStudioEnvelope(value: unknown): StudioEnvelope {
+  return parseStudioEnvelopeMetier(value).envelope;
+}
+
+function parseEnveloppeComplete(value: unknown): z.infer<typeof envelopeSchema> {
   // EX-002 : une demande hors du périmètre du Studio (comptabilité, RH, commerce, chantier, exploitation) est refusée
   // par un motif nommé, avant la validation du contrat (jamais confondue avec un outil inconnu).
   const commandes = (value as { commands?: unknown } | null)?.commands;
@@ -46,7 +80,7 @@ export function parseStudioEnvelope(value: unknown): StudioEnvelope {
   const parsed = envelopeSchema.safeParse(value);
   if (!parsed.success) throw new StudioRequestError(400, { error: "invalid_input", details: parsed.error.flatten() });
   // Le noyau public valide les paramètres géométriques, sans second schéma concurrent.
-  return structuredClone(parsed.data) as StudioEnvelope;
+  return structuredClone(parsed.data);
 }
 
 /** Canonique JSON seulement : ordre des clés ignoré, contenu et ordre des commandes conservés. */
@@ -517,6 +551,77 @@ export function essayerCommandesStudio(document: StudioDocument, commands: reado
   return applyStudioCommands(document, [...commands]);
 }
 
+/**
+ * IF-006 : cibles et opérations déclarées vérifiées sur le document du serveur (commandes après recalcul des booléens),
+ * puis application du lot. Un écart ou un refus du noyau : 400, rien n'est appliqué.
+ */
+function appliquerEtControler(tete: StudioDocument, envelope: StudioEnvelope, attributs: StudioAttributsEnveloppe): StudioDocument {
+  try {
+    // Le lot entier d'abord (refus et chemins d'erreur inchangés), puis les cibles déclarées, commande par commande.
+    const document = applyStudioCommands(tete, envelope.commands);
+    if (attributs.commands.some((c) => c.targetIds !== undefined || c.operation !== undefined)) {
+      const controle = envelope.commands.map((c, i) => ({ ...c, ...(attributs.commands[i]?.targetIds ? { targetIds: attributs.commands[i]!.targetIds } : {}), ...(attributs.commands[i]?.operation ? { operation: attributs.commands[i]!.operation } : {}) }) as StudioCommandeMetier);
+      const ecart = studioControlerCibles(tete, controle);
+      if (ecart) throw new StudioRequestError(400, { error: ecart.code, path: ecart.path, cible: "cible" in ecart ? ecart.cible : undefined, message: ecart.message });
+    }
+    return document;
+  } catch (error) {
+    if (error instanceof StudioValidationError) throw new StudioRequestError(400, { error: "invalid_commands", code: error.code, path: error.path, message: error.message });
+    throw error;
+  }
+}
+
+/** Réponse d'un essai (IF-006, `mode: "essai"`) : document et effets calculés sur la tête ; rien n'est écrit. */
+export interface StudioEssaiEnveloppe {
+  mode: "essai";
+  written: false;
+  baseRevisionId: string;
+  document: StudioDocument;
+  effects: StudioEffetsCommande;
+}
+
+/**
+ * Essai d'une enveloppe (IF-006, `supportsDryRun`) : mêmes droits, même portée, même base, mêmes contrôles que
+ * l'application (booléens recalculés, cibles vérifiées), mais aucune écriture — ni révision, ni journal, ni quota, ni
+ * `requestId` consommé. Les effets sont ceux qu'aurait le lot sur la tête courante.
+ */
+async function essaiEnveloppe(scope: StudioScope, actorId: string, envelope: StudioEnvelope, attributs: StudioAttributsEnveloppe, ecriture: StudioEcriture): Promise<StudioEssaiEnveloppe> {
+  const access = assertAccess(await loadProjectAccess(scope.projectId, actorId), actorId, "read");
+  const [study] = await db.select({ id: studioStudies.id }).from(studioStudies)
+    .where(and(eq(studioStudies.id, scope.studyId), eq(studioStudies.projectId, scope.projectId))).limit(1);
+  if (!study) return notFound();
+  const [variant] = await db.select({ id: studioVariants.id }).from(studioVariants)
+    .where(and(eq(studioVariants.id, scope.variantId), eq(studioVariants.studyId, study.id))).limit(1);
+  if (!variant) return notFound();
+  assertEcriture(access, actorId, ecriture, { studyId: study.id, variantIds: [variant.id] });
+  const current = await readStudioContext(db, scope, actorId);
+  if (current.archived) return studioArchivedRefusal();
+  if (envelope.baseRevisionId !== current.variant.headRevisionId) {
+    throw new StudioRequestError(409, { error: "stale_revision", headRevisionId: current.variant.headRevisionId, baseRevisionId: envelope.baseRevisionId });
+  }
+  const refusExact = await revaliderBooleensStudio(current.revision.document, envelope.commands, applyStudioCommands);
+  if (refusExact) throw new StudioRequestError(refusExact.status, refusExact.body);
+  const document = appliquerEtControler(current.revision.document, envelope, attributs);
+  const effects = studioEffetsCommande(current.revision.document, document, envelope.commands, {
+    revisionBase: current.variant.headRevisionId, revisionSortie: "essai", source: "authenticated-session", auteurId: actorId, requestId: envelope.requestId,
+  });
+  return { mode: "essai", written: false, baseRevisionId: current.variant.headRevisionId, document, effects };
+}
+
+/**
+ * Point d'entrée de la route des commandes (IF-006) : `mode: "essai"` → essai sans écriture ; sinon application
+ * (`submitStudioCommands`). La portée déclarée est contrôlée dans les deux cas.
+ */
+export async function soumettreEnveloppeStudio(scope: StudioScope, actorId: string, input: unknown): Promise<StudioSoumission | StudioEssaiEnveloppe> {
+  if ([scope.projectId, scope.studyId, scope.variantId].some((x) => typeof x !== "string" || x === "")) return notFound();
+  const { envelope, attributs } = parseStudioEnvelopeMetier(input);
+  if (attributs.mode !== "essai") return submitStudioCommands(scope, actorId, input);
+  refuserPrefixeReserve(envelope.requestId, "modify");
+  const ecartPortee = studioControlerPortee(attributs.scope, scope);
+  if (ecartPortee) throw new StudioRequestError(400, { error: ecartPortee.code, path: ecartPortee.path, message: ecartPortee.message });
+  return essaiEnveloppe(scope, actorId, envelope, attributs, "modify");
+}
+
 /** Réponse d'un lot accepté : contexte, rejeu, et (lot neuf) l'événement d'effets engagé avec la révision. */
 export type StudioSoumission = StudioContext & { replayed: boolean; effects?: StudioEffetsCommande; eventId?: string };
 /**
@@ -540,9 +645,15 @@ export async function submitStudioCommands(scope: StudioScope, actorId: string, 
   // EX-003 : aucune géométrie sans variante propriétaire — un contexte incomplet est refusé avant toute lecture ou
   // écriture (sans s'en remettre à la sémantique de NULL de la requête).
   if ([scope.projectId, scope.studyId, scope.variantId].some((x) => typeof x !== "string" || x === "")) return notFound();
-  const envelope = parseStudioEnvelope(input);
+  const { envelope, attributs } = parseStudioEnvelopeMetier(input);
   refuserPrefixeReserve(envelope.requestId, ecriture);
-  const payloadHash = studioPayloadHash(envelope);
+  // IF-006 : la portée déclarée doit être celle de l'adresse (jamais lue comme portée) ; refus avant toute lecture.
+  const ecartPortee = studioControlerPortee(attributs.scope, scope);
+  if (ecartPortee) throw new StudioRequestError(400, { error: ecartPortee.code, path: ecartPortee.path, message: ecartPortee.message });
+  // Empreinte de l'enveloppe complète (attributs logiques compris) ; identique à l'ancienne sans attribut.
+  const payloadHash = studioPayloadHash({ ...envelope, ...(attributs.scope ? { scope: attributs.scope } : {}), ...((input as { mode?: unknown }).mode !== undefined ? { mode: attributs.mode } : {}), commands: attributs.commands } as StudioEnvelope);
+  // Le mode « essai » passe par `soumettreEnveloppeStudio` (route) : ce point d'entrée écrit toujours.
+  if (attributs.mode === "essai") throw new StudioRequestError(400, { error: "invalid_input", path: "mode", message: "Mode « essai » non admis ici." });
   const source: StudioSourceEcriture = options.source ?? "authenticated-session";
   // IF-011 : la notification part après l'engagement de la transaction, jamais avant ni après un échec.
   return engagerPuisNotifier(() => db.transaction(async (tx) => {
@@ -590,12 +701,7 @@ export async function submitStudioCommands(scope: StudioScope, actorId: string, 
         await options.avantEcriture?.(transaction, current);
         const refusExact = await revaliderBooleensStudio(current.revision.document, envelope.commands, applyStudioCommands);
         if (refusExact) throw new StudioRequestError(refusExact.status, refusExact.body);
-        let document;
-        try { document = applyStudioCommands(current.revision.document, envelope.commands); }
-        catch (error) {
-          if (error instanceof StudioValidationError) throw new StudioRequestError(400, { error: "invalid_commands", code: error.code, path: error.path, message: error.message });
-          throw error;
-        }
+        const document = appliquerEtControler(current.revision.document, envelope, attributs);
         const id = newId("studio_revision");
         const response: StudioContext = {
           study: current.study, variant: { ...current.variant, headRevisionId: id },

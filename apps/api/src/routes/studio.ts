@@ -5,7 +5,7 @@ import { STUDIO_MODES_DERIVATION, studioRapportFidelite } from "@parcours/atelie
 import { db } from "../db/client.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { journalAccesStudio } from "../lib/studio-journal-acces.js";
-import { compareStudioRevisions, createStudioStudy, createStudioVariant, exportStudioVariant, listStudioRevisions, listStudioStudies, listStudioVariants, parseStudioCompareSide, readStudioContext, readStudioRevisionChanges, readStudioStudy, STUDIO_EXPORT_FORMATS, STUDIO_RAPPORT_FORMATS, StudioRequestError, studioIdentifierSchema, submitStudioCommands, type StudioCreation, type StudioScope } from "../lib/studio-commands.js";
+import { compareStudioRevisions, createStudioStudy, createStudioVariant, exportStudioVariant, listStudioRevisions, listStudioStudies, listStudioVariants, parseStudioCompareSide, readStudioContext, readStudioRevisionChanges, readStudioStudy, soumettreEnveloppeStudio, STUDIO_EXPORT_FORMATS, STUDIO_RAPPORT_FORMATS, StudioRequestError, studioIdentifierSchema, type StudioCreation, type StudioScope } from "../lib/studio-commands.js";
 import { createStudioComment, createStudioObservation, deleteStudioComment, listStudioComments, setStudioCommentAudience, studioCommentSchema, studioObservationSchema, studioObservationTransitionSchema, transitionStudioObservation } from "../lib/studio-commentaires.js";
 import { audienceSchema } from "../lib/audience.js";
 import { clientIp } from "../lib/audit.js";
@@ -217,7 +217,7 @@ studioRouter.get("/studies/:studyId/variants/:variantId/export/rapport", avecCon
   res.json({ revisionId: context.revision.id, ...studioRapportFidelite(context.revision.document, parsed.data.format) });
 }));
 studioRouter.post("/studies/:studyId/variants/:variantId/commands", avecContrat(CONTRAT_COMMANDES), endpoint(async (req, res) => {
-  res.json(await submitStudioCommands(scope(req), req.user!.id, req.body));
+  res.json(await soumettreEnveloppeStudio(scope(req), req.user!.id, req.body));
 }));
 /**
  * Commentaires d'une variante (règles de la Collaboration) : lecture `read`, écriture `comment` (tout membre),

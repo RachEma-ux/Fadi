@@ -18,6 +18,7 @@ export function architectureDesignable(doc: StudioDocument, affiches: ReadonlySe
   return (id) => {
     const a = courante.get(id);
     if (!a || !affiches.has(id)) return false;
+    if (a.type === "ladder") return estSelectionnable(doc, a.layerId);
     const hote = a.type === "wall" ? a : courante.get(a.hostId);
     return hote?.type === "wall" && estSelectionnable(doc, hote.layerId);
   };

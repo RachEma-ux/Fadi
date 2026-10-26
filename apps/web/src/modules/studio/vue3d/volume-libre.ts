@@ -9,7 +9,7 @@
  * pivot et résolution du lien d'un solide sélectionné.
  */
 import {
-  studioProfilDepuisPolyligne, type StudioCommand, type StudioDocument, type StudioLienSolide, type StudioPolyline, type StudioRelationSource, type StudioSolid,
+  studioProfilDepuisPolyligne, type StudioCommand, type StudioDocument, type StudioLienSolide, type StudioPolyline, type StudioRelationSource, type StudioSolid, type StudioCoteFace,
 } from "@parcours/atelier-model";
 
 export interface ValeursBoite { x: number; y: number; z: number; rotation: number; largeur: number; profondeur: number; hauteur: number }
@@ -115,6 +115,24 @@ export function facesDe(s: StudioSolid): { valeur: string; libelle: string; late
     { valeur: "sommet", libelle: "Sommet (face d’arrivée)", laterale: false },
     ...Array.from({ length: n }, (_, i) => ({ valeur: `lateral-${i}`, libelle: cotes ? `Face latérale ${cotes[i]}` : `Face latérale ${i + 1} (arête ${i + 1} → ${i + 1 === n ? 1 : i + 2})`, laterale: true })),
   ];
+}
+
+/**
+ * Cote de face 3D (INV-013, lot G2) : deux faces distinctes choisies du solide ; `id` existant = rattachement explicite
+ * d'une cote (« à résoudre » ou non) aux faces choisies. Le modèle refuse des faces non parallèles.
+ */
+export function commandeCoteFace(id: string, solidId: string | null, faces: { a: string; b: string }, layerId?: string): ResultatVolume {
+  if (!solidId) return { erreur: "Sélectionnez d’abord, dans la vue 3D, le solide à coter." };
+  if (!faces.a || !faces.b) return { erreur: "Choisissez les deux faces parallèles à coter." };
+  if (faces.a === faces.b) return { erreur: "Choisissez deux faces différentes." };
+  return { commandes: [{ toolId: "studio.solide.cote-face", params: { id, type: "face-dimension", ...(layerId ? { layerId } : {}), solidId, faces: [faces.a as never, faces.b as never], toResolve: false } }] };
+}
+
+/** Libellé d'une cote de face : ses deux faces, sa valeur ou son état (« à résoudre » : non évaluée). */
+export function descriptionCoteFace(c: StudioCoteFace, valeur: number | null, nombre: (v: number) => string, solide: StudioSolid | undefined): string {
+  const nom = (f: string) => (solide ? facesDe(solide).find((x) => x.valeur === f)?.libelle : undefined) ?? f;
+  if (c.toResolve) return `${nom(c.faces[0])} ↔ ${nom(c.faces[1])} : à résoudre (valeur non évaluée)`;
+  return `${nom(c.faces[0])} ↔ ${nom(c.faces[1])} : ${valeur === null ? "non évaluée" : `${nombre(valeur)} m`}`;
 }
 
 /** Pousser / tirer : face choisie, distance non nulle (positive vers l'extérieur). */

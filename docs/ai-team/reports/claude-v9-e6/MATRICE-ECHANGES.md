@@ -1,8 +1,8 @@
 # Matrice d’échanges de Studio
 
-<!-- Généré depuis packages/atelier-model/src/studio/echanges/matrice-echanges.ts (studio-matrice-echanges/1, révision 8) : ne pas éditer à la main. -->
+<!-- Généré depuis packages/atelier-model/src/studio/echanges/matrice-echanges.ts (studio-matrice-echanges/1, révision 9) : ne pas éditer à la main. -->
 
-Établie le 2026-10-26 (révision 8, schéma `studio-matrice-echanges/1`), à partir de l’audit des exporteurs et importeurs Studio. Lots E.6-01 à E.6-05 du plan d’implémentation Studio V1.0 (§5.7).
+Établie le 2026-10-26 (révision 9, schéma `studio-matrice-echanges/1`), à partir de l’audit des exporteurs et importeurs Studio. Lots E.6-01 à E.6-05 du plan d’implémentation Studio V1.0 (§5.7).
 
 **Aucune entrée n’est une déclaration de conformité** : « livré » dit ce que le code écrit ou lit et le contrôle qui le vérifie ; la conformité d’un format reste non évaluée. Un format reporté est inscrit « non livré » avec sa raison et sa source ; « renoncé » exige une décision Studio admise (aucune aujourd’hui).
 
@@ -180,12 +180,14 @@ Entrées : 45 — livrées : 31, non livrées : 14, renoncées : 0.
 - Entités IFC écrites `IfcBuildingElementProxy`, `IfcTriangulatedFaceSet`, `IfcCartesianPointList3D` : Surface verticale ouverte .NOTDEFINED. (Tessellation) : ligne, arc ou polyligne ouverte extrudés sans épaisseur ; aucun solide.
 - Entités IFC écrites `IfcOpeningElement`, `IfcRelVoidsElement` : Ouverture : boîte .OPENING. reliée au mur hôte, placée relativement au mur.
 - Entités IFC écrites `IfcDoor`, `IfcWindow`, `IfcRelFillsElement` : Porte ou fenêtre seulement si son type est déclaré : remplit l’ouverture, sans représentation propre.
+- Entités IFC écrites `IfcStair` : Échelle d’accès (EX-027) : type prédéfini .LADDER., montants et échelons extrudés (profils fermés), placée à la cote de son pied ; aucune valeur normative.
 - Entités IFC écrites `IfcPropertySet`, `IfcPropertySingleValue`, `IfcRelDefinesByProperties` : Jeux de propriétés listés ci-dessous, valeurs saisies seulement.
 - Entités IFC écrites `IfcPresentationLayerWithStyle` : Un calque par calque non vide : nom, identifiant Studio, visibilité, verrou ; calque masqué exporté éteint.
 - Jeu de propriétés `Fadi_StudioExtrusion` : Objet extrudé : identifiant Studio, base, hauteur, épaisseur si saisie.
 - Jeu de propriétés `Fadi_StudioFreeSolid` : Solide libre : identifiant, forme, origine, rotation, dimensions saisies.
 - Jeu de propriétés `Fadi_StudioWall` : Mur : identifiant, épaisseur, hauteur, base, justification, longueur d’axe.
 - Jeu de propriétés `Fadi_StudioOpening` : Ouverture : identifiant, mur hôte, position, largeur, hauteur, allège, type déclaré.
+- Jeu de propriétés `Fadi_StudioLadder` : Échelle d’accès : identifiant, entre-axe, hauteur, base, nombre et pas des échelons, section des montants.
 - Jeu de propriétés `Fadi_StudioExport` : Projet : document, révision, repère et effectifs (éléments écrits, objets non extrudés, cotes et annotations non exportées).
 - Jeu de propriétés `Fadi_ProprietesDeclarees` : Propriétés déclarées valuées de chaque objet porteur ; les propriétés sans valeur sont comptées, jamais écrites.
 - Code : `packages/atelier-model/src/studio/ifc.ts` (`` exportStudioIfc ``) ; `apps/api/src/lib/studio-commands.ts` (`` exportStudioVariant ``)
@@ -535,8 +537,10 @@ Raisons possibles du rapport de fidélité (`studioRapportFidelite`) pour chaque
 | solides | box | `solide-hors-2d` (non-couvert) | `solide-hors-2d` (non-couvert) | `profil-exact` (exact) |
 | solides | prism | `solide-hors-2d` (non-couvert) | `solide-hors-2d` (non-couvert) | `profil-exact` (exact) |
 | exacts | exact | `solide-hors-2d` (non-couvert) | `solide-hors-2d` (non-couvert) | `solide-exact-hors-ifc` (non-couvert) |
+| cotesFaces | face-dimension | `solide-hors-2d` (non-couvert) | `solide-hors-2d` (non-couvert) | `cote-hors-ifc` (non-couvert) |
 | architecture | wall | `extrusion-non-portee` (approche) | `extrusion-non-portee` (approche) | `extrusion-exacte` (exact) |
 | architecture | opening | `ouverture-en-lacune` (approche) | `ouverture-en-lacune` (approche) | `ouverture-evidee` (exact) |
+| architecture | ladder | `extrusion-non-portee` (approche) | `extrusion-non-portee` (approche) | `extrusion-exacte` (exact) |
 | proprietes | propriete | `propriete-non-exportee` (non-couvert) | `propriete-non-exportee` (non-couvert) | `propriete-en-pset` (exact), `propriete-non-evaluee` (non-couvert) |
 | scenes | scene | `visualisation-hors-export` (non-couvert) | `visualisation-hors-export` (non-couvert) | `visualisation-hors-export` (non-couvert) |
 | scenes | appearance | `visualisation-hors-export` (non-couvert) | `visualisation-hors-export` (non-couvert) | `visualisation-hors-export` (non-couvert) |

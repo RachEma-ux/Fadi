@@ -1,6 +1,6 @@
-import { transformerMur, transformerOuverture } from "../architecture/transformations.js";
-import type { StudioArchitectureItem, StudioOpening, StudioWall } from "../architecture/types.js";
-import { controlerMurs, validerElementArchitectural, validerMur, validerOuverture } from "../architecture/validation.js";
+import { transformerEchelle, transformerMur, transformerOuverture } from "../architecture/transformations.js";
+import type { StudioArchitectureItem, StudioLadder, StudioOpening, StudioWall } from "../architecture/types.js";
+import { controlerMurs, validerEchelle, validerElementArchitectural, validerMur, validerOuverture } from "../architecture/validation.js";
 import { calqueEtat, contoursCotes, editable, freeId, rompreCotesMurs, suivreCotesMurs, type ContoursCotes, type Etat, type Gestionnaire } from "./etat.js";
 import { studioAncreContourMur, studioContourMur } from "./cotes-murs.js";
 import { studioAnchorPoint } from "../objets/index.js";
@@ -30,11 +30,14 @@ function ouverturesParMur(state: Etat): Map<string, StudioOpening[]> {
   return m;
 }
 
-/** Calque d'un objet architectural : le sien pour un mur, celui de son mur pour une ouverture. */
+/** Calque d'un objet architectural : le sien pour un mur ou une échelle, celui de son mur pour une ouverture. */
 function calqueDe(state: Etat, it: StudioArchitectureItem): { layerId?: string } {
-  if (it.type === "wall") return it;
+  if (it.type !== "opening") return it;
   return murDe(state, it.hostId) ?? {};
 }
+/** Objet architectural posé librement (mur, échelle d'accès) : il a son calque et se transforme ; une ouverture suit son mur. */
+type Porteur = StudioWall | StudioLadder;
+const estPorteur = (x: StudioArchitectureItem): x is Porteur => x.type !== "opening";
 function modifiable(state: Etat, it: StudioArchitectureItem, path: string): void {
   editable(state, calqueDe(state, it), path);
 }
@@ -74,6 +77,15 @@ export const creerOuverture: Gestionnaire = (state, params, path) => {
   controler(state, [o.hostId], path);
 };
 
+/** Échelle d'accès (EX-027) : posée librement, sur un calque modifiable, valeurs saisies seulement. */
+export const creerEchelle: Gestionnaire = (state, params, path) => {
+  const e = validerEchelle(params, `${path}.params`);
+  editable(state, e, path);
+  freeId(state, e.id, path);
+  state.architecture.push(e);
+  state.ids.add(e.id);
+};
+
 /** Modifier : même identifiant, même nature ; le calque d'un mur se change par « Placer sur le calque ». */
 export const modifierArchitecture: Gestionnaire = (state, params, path) => {
   const it = validerElementArchitectural(params, `${path}.params`);
@@ -81,7 +93,7 @@ export const modifierArchitecture: Gestionnaire = (state, params, path) => {
   const avant = state.architecture[index];
   if (!avant) return introuvable(state, it.id, path);
   if (avant.type !== it.type) fail(path, "la nature de l’objet (mur, ouverture) ne peut pas changer");
-  if (avant.type === "wall" && it.type === "wall" && avant.layerId !== it.layerId) fail(path, "le calque se change par studio.objet.calque");
+  if (estPorteur(avant) && estPorteur(it) && avant.layerId !== it.layerId) fail(path, "le calque se change par studio.objet.calque");
   modifiable(state, avant, path);
   const contours = contoursCotes(state);
   if (it.type === "opening") {
@@ -90,7 +102,7 @@ export const modifierArchitecture: Gestionnaire = (state, params, path) => {
     editable(state, hote, path);
   }
   state.architecture[index] = it;
-  controler(state, [it.type === "wall" ? it.id : it.hostId], path, contours);
+  controler(state, [it.type === "opening" ? it.hostId : it.id], path, contours);
 };
 
 /** Retire les objets architecturaux `ids` ; un mur porteur d'ouvertures exige `cascade` (ses ouvertures partent avec lui). */
@@ -101,7 +113,7 @@ function retirer(state: Etat, ids: readonly string[], cascade: boolean, path: st
   for (const id of ids) {
     const it = index.get(id);
     if (!it) introuvable(state, id, path);
-    editable(state, it.type === "wall" ? it : (index.get(it.hostId) as StudioWall | undefined) ?? {}, path);
+    editable(state, it.type !== "opening" ? it : (index.get(it.hostId) as StudioWall | undefined) ?? {}, path);
     if (it.type !== "wall") continue;
     const portees = (parMur.get(id) ?? []).filter((o) => !partants.has(o.id));
     if (portees.length && !cascade) {
@@ -127,6 +139,7 @@ function transformerSurPlace(state: Etat, ids: readonly string[], t: StudioTrans
   const choisis = new Set(ids);
   state.architecture = state.architecture.map((x) => {
     if (x.type === "wall") return choisis.has(x.id) ? transformerMur(x, t) : x;
+    if (x.type === "ladder") return choisis.has(x.id) ? transformerEchelle(x, t) : x;
     return choisis.has(x.hostId) ? transformerOuverture(x, t) : x;
   });
   return ids;
@@ -134,7 +147,7 @@ function transformerSurPlace(state: Etat, ids: readonly string[], t: StudioTrans
 
 /** Copies des murs choisis (identifiants `studioIdCopie(prefixe, rang, indice)`) et de leurs ouvertures (`…-o<j>`). */
 function copierMurs(state: Etat, ids: readonly string[], ts: readonly StudioTransformation[], prefixe: string, premierIndice: number, path: string, bilan?: BilanPart): string[] {
-  const index = new Map(state.architecture.filter((x): x is StudioWall => x.type === "wall").map((w) => [w.id, w]));
+  const index = new Map(state.architecture.filter(estPorteur).map((w) => [w.id, w]));
   const parMur = ouverturesParMur(state);
   const nouveaux: string[] = [];
   if (bilan) bilan.copies = { prefixe, ts: [...ts], murs: ts.map(() => new Map<string, string>()) };
@@ -144,7 +157,7 @@ function copierMurs(state: Etat, ids: readonly string[], ts: readonly StudioTran
       const nouveau = identifier(studioIdCopie(prefixe, k + 1, premierIndice + i), `${path}.params.prefix`);
       freeId(state, nouveau, path);
       state.ids.add(nouveau);
-      state.architecture.push(transformerMur(w, t, nouveau));
+      state.architecture.push(w.type === "wall" ? transformerMur(w, t, nouveau) : transformerEchelle(w, t, nouveau));
       nouveaux.push(nouveau);
       bilan?.copies?.murs[k]!.set(id, nouveau);
       (parMur.get(id) ?? []).forEach((o, j) => {
@@ -169,7 +182,7 @@ function mursChoisis(state: Etat, ids: readonly string[], path: string): string[
   for (const id of ids) {
     const it = index.get(id)!;
     modifiable(state, it, path);
-    if (it.type === "wall") out.push(id);
+    if (it.type !== "opening") out.push(id);
     else if (!choisis.has(it.hostId)) fail(path, `l’ouverture ${id} suit son mur ${it.hostId} : choisissez le mur, ou modifiez la position de l’ouverture le long de son mur`);
   }
   return out;
@@ -227,7 +240,7 @@ const PARTS: Record<"supprimer" | "copier" | "rotation" | "symetrie" | "echelle"
       editable(state, it, path);
     }
     state.architecture = state.architecture.map((x) => {
-      if (x.type !== "wall" || !choisis.has(x.id)) return x;
+      if (x.type === "opening" || !choisis.has(x.id)) return x;
       const { layerId: _avant, ...reste } = x;
       return cible === undefined ? reste : { ...reste, layerId: cible };
     });

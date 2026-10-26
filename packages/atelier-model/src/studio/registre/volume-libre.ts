@@ -1,3 +1,4 @@
+import { SCHEMA_COTE_FACE } from "../objets-3d/cotes-faces.js";
 import { SCHEMA_BOITE, SCHEMA_PRISME } from "../objets-3d/solides.js";
 import { SCHEMA_RESULTAT_EXACT, STUDIO_OPERATIONS_BOOLEENNES } from "../objets-3d/exacts.js";
 import { mutation } from "./communs.js";
@@ -26,4 +27,7 @@ export const OUTILS_VOLUME_LIBRE = [
   { ...mutation, toolId: "studio.solide.pivoter", libelleFR: "Pivoter le solide", raccourci: "Ctrl+Shift+H", iconeSymbolique: "studio-solid-rotate", groupe: "volume-libre", inputSchema: { type: "object", additionalProperties: false, required: ["id", "angle"], properties: { id, angle: nonNul, axe: { enum: ["z", "x", "y"] } } } },
   { ...mutation, toolId: "studio.solide.resoudre", libelleFR: "Résoudre le lien du solide", raccourci: "Ctrl+Shift+G", iconeSymbolique: "studio-solid-link", groupe: "volume-libre", inputSchema: { type: "object", additionalProperties: false, required: ["id", "action"], properties: { id, action: { enum: ["mettre-a-jour", "detacher"] } } } },
   { ...mutation, toolId: "studio.solide.booleen", libelleFR: "Booléen exact", raccourci: "Ctrl+Shift+Y", iconeSymbolique: "studio-solid-boolean", groupe: "volume-libre", inputSchema: { type: "object", additionalProperties: false, required: ["id", "operation", "operandes", "resultat"], properties: { id, operation: { enum: [...STUDIO_OPERATIONS_BOOLEENNES] }, operandes: { type: "array", minItems: 2, maxItems: 2, items: id }, resultat: SCHEMA_RESULTAT_EXACT } } },
+  // Lot G2 (INV-013) : Cote de face 3D (Maj+F12) — distance entre deux faces parallèles d'un solide libre, qui suit
+  // la face modifiée ou passe « à résoudre » ; la même commande, sur une cote existante, la rattache explicitement.
+  { ...mutation, toolId: "studio.solide.cote-face", libelleFR: "Cote de face 3D", raccourci: "Shift+F12", iconeSymbolique: "studio-solid-face-dimension", groupe: "volume-libre", inputSchema: SCHEMA_COTE_FACE },
 ] as const;

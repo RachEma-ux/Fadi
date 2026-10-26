@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { StudioDocument } from "../document-2d.js";
+import { applyStudioCommands, newStudioDocument, type StudioCommand, type StudioDocument } from "../document-2d.js";
 import { exportStudioDxf, exportStudioSvg } from "../export.js";
 import { exportStudioIfc, studioIfcSummary } from "../ifc.js";
 import { STUDIO_TYPES_ANNOTATIONS } from "../objets/annotation.js";
@@ -175,5 +175,21 @@ describe("Architecture (A.4) : murs et ouvertures", () => {
     expect(ligne(ifc.lignes, "wall", "extrusion-exacte")?.statut).toBe("exact");
     expect(ligne(ifc.lignes, "opening", "ouverture-evidee")?.statut).toBe("exact");
     expect(ifc.lignes.some((l) => l.raison === "type-sans-capacite")).toBe(false);
+  });
+});
+
+describe("Lot G2 : échelle d'accès (EX-027) et cotes de face (INV-013) au rapport de fidélité", () => {
+  // Données de test synthétiques (entre-axe 0,5 m, hauteur 3 m, 9 échelons ; boîte 4 × 2 × 3 m).
+  const avec = (...cs: unknown[]) => applyStudioCommands(newStudioDocument("g2"), cs.map((c) => c as StudioCommand));
+  it("EX-027 : échelle d'accès exacte en IFC (extrusion exacte), approchée en SVG (extrusion non portée)", () => {
+    const d = avec({ toolId: "studio.architecture.echelle-acces", params: { id: "e1", type: "ladder", position: { x: 2, y: 1 }, rotation: 0, width: 0.5, height: 3, base: 0, rungs: 9, section: 0.04 } });
+    expect(studioRapportFidelite(d, "ifc").lignes).toContainEqual({ categorie: "architecture", type: "ladder", statut: "exact", raison: "extrusion-exacte", nombre: 1, ids: ["e1"] });
+    expect(studioRapportFidelite(d, "svg").lignes).toContainEqual({ categorie: "architecture", type: "ladder", statut: "approche", raison: "extrusion-non-portee", nombre: 1, ids: ["e1"] });
+  });
+  it("INV-013 : les cotes de face sont déclarées non couvertes par l'IFC, jamais exportées en silence", () => {
+    const cote = (id: string, faces: [string, string]) => ({ toolId: "studio.solide.cote-face", params: { id, type: "face-dimension", solidId: "b1", faces, toResolve: false } });
+    const d = avec({ toolId: "studio.solide.boite", params: { id: "b1", type: "box", placement: { origin: { x: 0, y: 0, z: 0 }, rotation: 0 }, width: 4, depth: 2, height: 3 } },
+      cote("h", ["base", "sommet"]), cote("l", ["lateral-1", "lateral-3"]), cote("p", ["lateral-0", "lateral-2"]));
+    expect(studioRapportFidelite(d, "ifc").lignes).toContainEqual(expect.objectContaining({ categorie: "cotesFaces", type: "face-dimension", statut: "non-couvert", nombre: 3 }));
   });
 });
