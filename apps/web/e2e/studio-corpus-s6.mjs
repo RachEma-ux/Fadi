@@ -13,7 +13,10 @@
  *    feuille et dossier de conception sur la tête de A, sources identifiées ;
  * 5. exigences de recette (source synthétique, sans valeur réglementaire) contrôlées par le serveur sur chaque tête :
  *    statuts (comparés sans dépendre de l'ordre des écarts) et conclusions attendus, mesures serveur = oracle (volume
- *    net des murs ; REC-A-03 : mur `s6-0-mur-h` mesuré 3,180 m³ sur B et 3,096 m³ sur A et C).
+ *    net des murs ; REC-A-03 : mur `s6-0-mur-h` mesuré 3,180 m³ sur B et 3,096 m³ sur A et C) ;
+ * 6. fusion F1 (lot W3-D) : B fusionnée dans C depuis l'ancêtre commun A1 — conflit de collision d'identifiant sans choix
+ *    par défaut (409 tant qu'il n'est pas tranché), choix explicite, une révision `variant-merge` de C conforme à l'oracle
+ *    (comptes, ligne gardée, suppressions reprises, volume net mesuré par le serveur), rejeu, annulation.
  * Une étape dont dépend la suite (inscription, étude, enveloppe, feuille…) arrête la recette dès son échec, sans
  * erreur en cascade. Géométrie synthétique, aucune donnée de projet réelle. API seule (aucun navigateur).
  *
@@ -191,6 +194,48 @@ check("REC-A-03 : s6-0-mur-h mesuré par le serveur 3,096 m³ net sur A et sur C
 const ctlB = await lire("contrôles de B relus", `${chemin(variantes.get("B").id)}/controles`);
 const murB = ctlB.controles?.[0]?.resultat?.ecarts?.find((e) => e.exigenceId === "s6-mur-0")?.mesure?.valeur;
 check("contrôle de B relu : même mesure serveur de s6-0-mur-h (3,180 m³)", proche(murB, murServeur.get("B")), String(murB));
+
+// 6. Fusion de variantes (lot W3-D, X.1-06) : F1 — B fusionnée dans C depuis leur ancêtre commun (A1), conflit tranché
+// explicitement, une révision `variant-merge` de C, puis annulation (révision `variant-merge-undo`).
+for (const f of plan.fusions ?? []) {
+  const attendu = oracle.fusions[f.cle];
+  const src = variantes.get(f.source), cib = variantes.get(f.cible);
+  const fusion = `${chemin(cib.id)}/fusion`;
+  const ap = await api("POST", `${fusion}/apercu`, { sourceVariantId: src.id });
+  exiger(`${f.cle} : aperçu de la fusion ${f.source} → ${f.cible} lu`, ap.status === 200 && ap.body?.apercu?.schema === "studio-fusion/1", `${ap.status} ${court(ap.body)}`);
+  check(`${f.cle} : ancêtre commun = révision ${attendu.ancetre} (dérivation de ${f.source})`, ap.body.ancetre?.revisionId === apresEtape.get(attendu.ancetre), court(ap.body.ancetre));
+  check(`${f.cle} : conflits attendus, sans aucun choix par défaut`, JSON.stringify(ap.body.apercu.conflits.map((c) => c.id)) === JSON.stringify(attendu.conflits) && ap.body.apercu.conflits.every((c) => c.resolution === null)
+    && JSON.stringify(ap.body.apercu.nonResolus) === JSON.stringify(attendu.conflits), court(ap.body.apercu.conflits));
+  const avant = await nbRevisions(cib.id);
+  const sansChoix = await api("POST", fusion, { requestId: `s6-${f.cle}-sans`, sourceVariantId: src.id, sourceRevisionId: ap.body.source.revisionId, baseRevisionId: ap.body.cible.revisionId, empreinte: ap.body.apercu.empreinte ?? "0".repeat(64) });
+  check(`${f.cle} : sans choix explicite, refus 409 conflits_non_resolus et rien n'est écrit`, sansChoix.status === 409 && sansChoix.body?.error === "conflits_non_resolus" && (await nbRevisions(cib.id)) === avant, `${sansChoix.status} ${court(sansChoix.body)}`);
+  const choisi = await api("POST", `${fusion}/apercu`, { sourceVariantId: src.id, resolutions: f.resolutions });
+  exiger(`${f.cle} : aperçu avec les choix — valide, aucun conflit ouvert`, choisi.status === 200 && choisi.body.apercu.valide && choisi.body.apercu.nonResolus.length === 0 && choisi.body.apercu.aFusionner, court(choisi.body?.apercu));
+  const corps = { requestId: `s6-${f.cle}-${randomUUID()}`, sourceVariantId: src.id, sourceRevisionId: choisi.body.source.revisionId, baseRevisionId: choisi.body.cible.revisionId, empreinte: choisi.body.apercu.empreinte, resolutions: f.resolutions };
+  const ecrite = await api("POST", fusion, corps);
+  exiger(`${f.cle} : fusion appliquée en une révision de ${f.cible}`, ecrite.status === 200 && ecrite.body?.revision?.id && ecrite.body.fusion?.type === "fusion", `${ecrite.status} ${court(ecrite.body)}`);
+  const revisions = await lire(`${f.cle} : révisions de ${f.cible} relues`, `${chemin(cib.id)}/revisions`);
+  const r = revisions.revisions.find((x) => x.id === ecrite.body.revision.id);
+  check(`${f.cle} : une seule révision ajoutée, source variant-merge, parent = tête de ${f.cible} avant fusion`, revisions.revisions.length === avant + 1 && r?.source === "variant-merge" && r?.parentRevisionId === corps.baseRevisionId, court(r));
+  check(`${f.cle} : provenance consignée (source, ancêtre, choix)`, ecrite.body.fusion.sourceRevisionId === src.tete && ecrite.body.fusion.ancetreRevisionId === apresEtape.get(attendu.ancetre) && JSON.stringify(ecrite.body.fusion.resolutions) === JSON.stringify(f.resolutions), court(ecrite.body.fusion));
+  const lu = await lire(`${f.cle} : tête fusionnée lue`, chemin(cib.id));
+  const c = comptes(lu.revision.document), t = attendu.tete;
+  check(`${f.cle} : comptes par type de la tête fusionnée = oracle`, JSON.stringify({ wall: c.wall, opening: c.opening, line: c.line, dimension: c.dimension, text: c.text }) === JSON.stringify({ wall: t.wall, opening: t.opening, line: t.line, dimension: t.dimension, text: t.text }), court(c));
+  const gardee = lu.revision.document.objects.find((o) => o.id === attendu.ligneGardee.id);
+  check(`${f.cle} : ligne ${attendu.ligneGardee.id} = version choisie (source), y = ${attendu.ligneGardee.y}`, gardee?.start?.y === attendu.ligneGardee.y, court(gardee));
+  const archiF = new Set((lu.revision.document.architecture ?? []).map((x) => x.id));
+  check(`${f.cle} : suppressions de ${f.source} reprises (mur s6-1-mur-v et sa fenêtre) ; fenêtre de A2 conservée`, attendu.supprimes.every((k) => !archiF.has(k.slice(k.indexOf(":") + 1))) && archiF.has("s6-0-fenetre-ajoutee"), court([...archiF]));
+  const ctl = await api("POST", `${chemin(cib.id)}/controles`, {});
+  const net = ctl.body?.resultat?.ecarts?.find((e) => e.exigenceId === "s6-volume-net")?.mesure?.valeur;
+  check(`${f.cle} : volume net des murs de la tête fusionnée mesuré par le serveur = oracle`, ctl.status === 201 && proche(net, t.murs.net), String(net));
+  const rejeu = await api("POST", fusion, corps);
+  check(`${f.cle} : rejeu (même requestId) — réponse d'origine, aucune révision en double`, rejeu.status === 200 && rejeu.body?.replayed === true && rejeu.body.revision?.id === ecrite.body.revision.id && (await nbRevisions(cib.id)) === avant + 1, court(rejeu.body));
+  const annulee = await api("POST", `${fusion}/annulation`, { requestId: `s6-${f.cle}-annule-${randomUUID()}`, revisionId: ecrite.body.revision.id });
+  check(`${f.cle} : annulation — nouvelle révision variant-merge-undo au document d'avant la fusion`, annulee.status === 200 && annulee.body?.fusion?.type === "annulation"
+    && JSON.stringify(annulee.body.revision.document) === JSON.stringify(tetes.get(f.cible)), `${annulee.status} ${court(annulee.body?.fusion)}`);
+  const encore = await api("POST", `${fusion}/apercu`, { sourceVariantId: src.id });
+  check(`${f.cle} : après l'annulation, la même fusion se propose de nouveau (ancêtre ${attendu.ancetre}, mêmes conflits)`, encore.status === 200 && encore.body.ancetre?.revisionId === apresEtape.get(attendu.ancetre) && JSON.stringify(encore.body.apercu.nonResolus) === JSON.stringify(attendu.conflits), court(encore.body?.ancetre));
+}
 
 console.log(echecs ? `\n${echecs} échec(s)` : "\nRecette du corpus S6 : tout est conforme à l'oracle.");
 process.exit(echecs ? 1 : 0);

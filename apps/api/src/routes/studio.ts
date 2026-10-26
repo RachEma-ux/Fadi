@@ -22,6 +22,7 @@ import { studioModelesExternesRouter } from "./studio-modeles-externes.js";
 import { studioIllustrationsRouter } from "./studio-illustrations.js";
 import { studioAgentsRouter } from "./studio-agents.js";
 import { studioCmdRouter } from "./studio-cmd.js";
+import { studioFusionRouter } from "./studio-fusion.js";
 import { lireContexteEtude, studioContexteSchema } from "../lib/studio-contexte.js";
 import { avecContrat } from "../lib/studio-contrats.js";
 import { CONTRAT_ETUDES_LISTER, CONTRAT_ETUDE_CREER, CONTRAT_ETUDE_LIRE, CONTRAT_ETUDE_RENOMMER, CONTRAT_ETUDE_PHASE, CONTRAT_EXEMPLE_INSTALLER, CONTRAT_ETUDE_ARCHIVAGE, CONTRAT_VARIANTE_ARCHIVAGE, CONTRAT_VARIANTE_RENOMMER, CONTRAT_VARIANTES_COMPARER, CONTRAT_VARIANTES_LISTER, CONTRAT_VARIANTE_CREER, CONTRAT_REVISIONS_LISTER, CONTRAT_VARIANTE_LIRE, CONTRAT_REVISION_CHANGEMENTS, CONTRAT_REVISION_LIRE, CONTRAT_VARIANTE_EXPORTER, CONTRAT_EXPORT_RAPPORT, CONTRAT_COMMANDES, CONTRAT_COMMENTAIRES_LISTER, CONTRAT_COMMENTAIRE_CREER, CONTRAT_COMMENTAIRE_AUDIENCE, CONTRAT_COMMENTAIRE_SUPPRIMER, CONTRAT_COMMENTAIRE_OBSERVATION, CONTRAT_COMMENTAIRE_OBSERVATION_TRANSITION, CONTRAT_ETAPES_LIRE, CONTRAT_ETAPES_REMPLACER, CONTRAT_ETAPE_ETUDES } from "../lib/studio-contrats-routes.js";
@@ -302,3 +303,5 @@ studioRouter.use(studioIllustrationsRouter);
 studioRouter.use(studioAgentsRouter);
 // Lot CMD : essais, jobs, journal des révisions, migrations de schéma, bascule Atelier → Studio (`routes/studio-cmd.ts`).
 studioRouter.use(studioCmdRouter);
+// Lot W3-D (X.1-06) : fusion à trois voies d’une variante source dans une variante cible (`routes/studio-fusion.ts`).
+studioRouter.use(studioFusionRouter);

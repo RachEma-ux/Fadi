@@ -15,6 +15,7 @@ export * from "./studio/ifc.js";
 export * from "./studio/feuille.js";
 export * from "./studio/comparaison.js";
 export * from "./studio/concurrence.js";
+export * from "./studio/fusion-variantes.js";
 export * from "./studio/import-dxf.js";
 export * from "./studio/import-ifc/import-ifc.js";
 export * from "./studio/non-natifs/non-natifs.js";

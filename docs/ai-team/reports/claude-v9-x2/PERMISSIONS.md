@@ -132,6 +132,9 @@ chargé de tâche — rôle vérifié ensuite par `lib/studio-observations.ts`, 
 | `POST /studies/:studyId/variants/:variantId/essais` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 201 | essai à portée de révision : aucune révision écrite |
 | `POST /studies/:studyId/variants/:variantId/essais/:jobId/abandon` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 200 |  |
 | `POST /studies/:studyId/variants/:variantId/essais/:jobId/confirmer` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 200 | l'enveloppe de l'essai passe par le point d'entrée des écritures |
+| `POST /studies/:studyId/variants/:variantId/fusion/apercu` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | aperçu : rien n'est écrit |
+| `POST /studies/:studyId/variants/:variantId/fusion` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 200 | révision `variant-merge` de la cible ; la source n'est que lue |
+| `POST /studies/:studyId/variants/:variantId/fusion/annulation` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 200 | révision `variant-merge-undo` (document d'avant la fusion) |
 | `GET /jobs/:jobId` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | résultat de job sous l'autorisation de l'étude source |
 | `GET /studies/:studyId/variants/:variantId/journal` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `POST /studies/:studyId/migrations` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 201 | simulation : rien n'est écrit dans les révisions |

@@ -291,12 +291,24 @@ export function oracleS6(taille = 100) {
   const A = { wall: c("wall"), opening: c("opening") + 1, line: c("line"), dimension: c("dimension"), text: c("text"), murs: { brut: m.brut, deduit: m.deduit + fenetre, net: m.net - fenetre } };
   // B part de A1 : sans la fenêtre ajoutée en A2 ; le mur s6-1-mur-v (brut 3,6, fenêtre 0,084) disparaît avec sa fenêtre.
   const B = { wall: c("wall") - 1, opening: c("opening") - 1, line: c("line") + 1, dimension: c("dimension"), text: c("text"), murs: { brut: m.brut - brut, deduit: m.deduit - fenetre, net: m.net - (brut - fenetre) } };
-  const C = { ...A, line: A.line + 2 };
+  // C part de la tête de A : C1 ajoute deux lignes, C2 une troisième (`s6-b-ligne`, autre tracé que celle de B).
+  const C = { ...A, line: A.line + 3 };
+  // F1 : B fusionnée dans C. Repris de B : le mur s6-1-mur-v et sa fenêtre supprimés ; conservé de C : la fenêtre de A2,
+  // le texte déplacé, les lignes de C1 ; s6-b-ligne, ajoutée des deux côtés, garde le tracé de B (choix « source »).
+  const fusionBC = { ...C, wall: C.wall - 1, opening: C.opening - 1, murs: { brut: m.brut - brut, deduit: A.murs.deduit - fenetre, net: A.murs.net - (brut - fenetre) } };
   return {
     base,
     premierMur: { id: "s6-0-mur-h", avant: m.premier!, apres: { brut, deduit: m.premier!.deduit + fenetre, net: m.premier!.net - fenetre } },
     variantes: { A, B, C },
-    revisionsAjoutees: { A: 3, B: 2, C: 1 },
+    revisionsAjoutees: { A: 3, B: 2, C: 2 },
+    /** Fusions (lot W3-D) : conflits attendus avant résolution, tête de la cible après la fusion. */
+    fusions: {
+      F1: {
+        ancetre: "A1", conflits: ["collision:objects:s6-b-ligne"], tete: fusionBC,
+        ligneGardee: { id: "s6-b-ligne", y: -2 },
+        supprimes: ["architecture:s6-1-fenetre", "architecture:s6-1-mur-v"],
+      },
+    },
     /** Valeurs exigées (celles de A) et statut attendu de chaque exigence sur chaque tête. */
     exigences: {
       valeurs: { "s6-nombre-murs": A.wall, "s6-volume-net": A.murs.net, "s6-mur-0": m.premier!.net - fenetre } as Record<string, number>,

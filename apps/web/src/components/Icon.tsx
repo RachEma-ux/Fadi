@@ -126,6 +126,8 @@ export type IconName =
   | "studio-dossier"
   | "studio-exchanges"
   | "studio-approve"
+  | "studio-merge-variants"
+  | "studio-merge-undo"
   | "studio-import-ifc"
   | "studio-external-models"
   | "studio-illustration"
@@ -301,6 +303,10 @@ const PATHS: Record<IconName, string> = {
   "studio-exchanges": "M3 4h18v16H3ZM9 4v16M15 4v16M5 9h14M17 7l2 2-2 2M5 15h14M7 13l-2 2 2 2",
   // Approuver (AC-010, lot G2) : feuille de dossier portant un sceau rond et une coche.
   "studio-approve": "M5 3h10l4 4v14H5ZM15 3v4h4M8 9h6M8 12h4M15 17a3 3 0 1 0 0.01 0M13.6 17l1 1 1.8-2",
+  // Fusionner une variante (lot W3-D) : deux branches qui se rejoignent en une seule, flèche vers le bas.
+  "studio-merge-variants": "M6 3v5a6 6 0 0 0 6 6M18 3v5a6 6 0 0 1-6 6v7M9 18l3 3 3-3M6 3a1 1 0 1 0 0.01 0M18 3a1 1 0 1 0 0.01 0",
+  // Annuler la dernière fusion (lot W3-D) : la jonction des deux branches, et une flèche de retour en arc.
+  "studio-merge-undo": "M6 3v5a6 6 0 0 0 6 6M18 3v5a6 6 0 0 1-6 6v3M8 21h7a3 3 0 0 0 0-6M8 21l2-2M8 21l2 2",
   // Import IFC (lot F3) : fichier, petit volume et flèche entrant par la gauche (le pendant de l’export IFC).
   "studio-import-ifc": "M9 3h7l4 4v14H9v-4M16 3v4h4M12 10l3-2 3 2v4l-3 2-3-2ZM12 10l3 2 3-2M15 12v4M2 13h7M6 10l3 3-3 3",
   // Modèles externes (lot F3) : deux maquettes côte à côte reliées par une coche de validation.

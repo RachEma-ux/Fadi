@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 import { applyStudioCommands, comparerDocumentsStudio, exportStudioDxf, exportStudioIfc, exportStudioObj, exportStudioStl, exportStudioSvg, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, studioChevauchements, studioCopieIndependante, studioElementsModifies, StudioValidationError, validateStudioDocument, type StudioModeDerivation, type StudioDifferenceDocuments, type StudioDocument, type StudioEnvelope, type StudioPhaseWorkflow } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
-import { studioRevisions, studioStudies, studioStudyContexts, studioVariants, type StudioContext, type StudioExampleInstall, type StudioProvenance } from "../db/schema.js";
+import { studioRevisions, studioStudies, studioStudyContexts, studioVariants, type StudioContext, type StudioExampleInstall, type StudioFusionRevision, type StudioProvenance } from "../db/schema.js";
 import { newId } from "./ids.js";
 import { lockAccessRows } from "./access-locks.js";
 import { loadProjectAccess, projectAccessRefusal, type AccessibleProject, type ProjectNeed } from "./owned-project.js";
@@ -425,6 +425,81 @@ export async function createStudioVariant(projectId: string, studyId: string, ac
       source: derivedFrom ? "variant-derivation" : "variant-initialization", authorId: actorId, response,
     });
     return { ...response, replayed: false };
+  });
+}
+
+/** Réponse d'une écriture de fusion ou d'annulation (lot W3-D) : contexte, rejeu, effets, provenance de la fusion. */
+export type StudioFusionEcrite = StudioContext & { replayed: boolean; effects?: StudioEffetsCommande; eventId?: string; fusion: StudioFusionRevision };
+
+export type StudioEcritureFusion = { document: StudioDocument; fusion: StudioFusionRevision; source: "variant-merge" | "variant-merge-undo" };
+
+/**
+ * Fusion de variantes (lot W3-D, X.1-06) — écriture d'une révision de fusion (ou d'annulation) dans la variante CIBLE.
+ * Second chemin d'écriture d'une révision, rangé ici avec le premier (A.5-01 : ce module reste le seul à insérer des
+ * révisions et à avancer une tête) et passé par la MÊME orchestration que les lots de commandes : préparation sous les
+ * verrous du projet et de la variante, droit `modify` sur la cible (verrou d'édition d'un autre compte : 423), rejeu par
+ * `requestId`, chemin d'écriture (bascule), refus d'une cible archivée, quota d'invocation, journal et effets dans la
+ * même transaction, notification après l'engagement. Le document écrit est calculé par `calculer` sous ces verrous
+ * (`lib/studio-fusion.ts` : fusion à trois voies validée, ou document d'avant la fusion) ; aucune enveloppe n'est
+ * enregistrée (`envelope` nulle), la provenance de la fusion l'est (`fusion`).
+ */
+export async function ecrireRevisionFusionStudio(scope: StudioScope, actorId: string, requestId: string, payloadHash: string, calculer: (tx: Tx, tete: { revisionId: string; document: StudioDocument }) => Promise<StudioEcritureFusion>): Promise<StudioFusionEcrite> {
+  refuserPrefixeReserve(requestId, "modify");
+  return engagerPuisNotifier(() => db.transaction(async (tx) => {
+    let tete: Awaited<ReturnType<typeof readStudioContext>> | undefined;
+    const transactionId = nouvelleTransaction();
+    return orchestrerCommandesDansTransaction<StudioFusionEcrite>(tx, { kind: "studio", ...scope }, {
+      prepare: async (t) => {
+        const access = await lockedAccess(t, scope.projectId, actorId);
+        const [study] = await t.select({ id: studioStudies.id }).from(studioStudies)
+          .where(and(eq(studioStudies.id, scope.studyId), eq(studioStudies.projectId, scope.projectId))).limit(1);
+        if (!study) return notFound();
+        const [variant] = await t.select({ id: studioVariants.id }).from(studioVariants)
+          .where(and(eq(studioVariants.id, scope.variantId), eq(studioVariants.studyId, study.id))).for("update");
+        if (!variant) return notFound();
+        // Seul un rôle qui peut modifier la CIBLE fusionne (propriétaire, éditeur, Concepteur de l'étude) ; le verrou
+        // d'édition d'un autre compte refuse (423).
+        assertAccess(access, actorId, "modify", { studyId: study.id, variantIds: [variant.id] });
+        tete = await readStudioContext(t, scope, actorId);
+      },
+      replay: async (t) => {
+        const [previous] = await t.select().from(studioRevisions)
+          .where(and(eq(studioRevisions.variantId, scope.variantId), eq(studioRevisions.requestId, requestId))).limit(1);
+        if (!previous) return undefined;
+        if (previous.authorId !== actorId || previous.payloadHash !== payloadHash || !previous.fusion) {
+          throw new StudioRequestError(409, { error: "request_conflict", message: "Cet identifiant de requête est déjà utilisé pour un autre contenu ou auteur." });
+        }
+        return { ...structuredClone(previous.response), replayed: true, fusion: previous.fusion };
+      },
+      cheminEcriture: async (t, captured) => {
+        const refus = await controlerCheminEcriture(t, captured);
+        if (refus) throw new StudioRequestError(409, refus);
+      },
+      execute: async (t) => {
+        if (!tete) throw new Error("studio_scope_not_prepared");
+        if (tete.archived) return studioArchivedRefusal();
+        const depasse = quotaCommandesStudio.verifier(actorId);
+        if (depasse) throw new StudioRequestError(429, corpsRefusQuota(depasse));
+        const e = await calculer(t, { revisionId: tete.variant.headRevisionId, document: tete.revision.document });
+        const id = newId("studio_revision");
+        const response: StudioContext = {
+          study: tete.study, variant: { ...tete.variant, headRevisionId: id },
+          revision: { id, parentRevisionId: tete.variant.headRevisionId, document: e.document }, canWrite: true,
+        };
+        await t.insert(studioRevisions).values({ id, variantId: scope.variantId, parentRevisionId: tete.variant.headRevisionId, document: e.document, envelope: null, requestId, payloadHash, source: e.source, authorId: actorId, response, fusion: e.fusion });
+        await t.update(studioVariants).set({ headRevisionId: id }).where(eq(studioVariants.id, scope.variantId));
+        const effects = studioEffetsCommande(tete.revision.document, e.document, [], { revisionBase: tete.variant.headRevisionId, revisionSortie: id, source: e.source, auteurId: actorId, requestId });
+        const eventId = await consignerEvenementRevision(t, {
+          transactionId, projectId: scope.projectId, studyId: scope.studyId, variantId: scope.variantId, baseRevisionId: tete.variant.headRevisionId,
+          revisionId: id, authorId: actorId, requestId, effects, jobId: null,
+        });
+        return { ...response, replayed: false, effects, eventId, fusion: e.fusion };
+      },
+    });
+  }), (r) => {
+    if (r.replayed) return;
+    quotaCommandesStudio.consommer(actorId);
+    signalerTempsReel({ type: "studio-revision", projectId: scope.projectId, variantId: scope.variantId, revisionId: r.revision.id });
   });
 }
 

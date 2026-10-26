@@ -1512,7 +1512,12 @@ CREATE OR REPLACE TRIGGER studio_observation_reconciliations_no_update BEFORE UP
 -- EXISTS puis ADD, NOT VALID). Une révision confirmée depuis une proposition d'agent porte la source `agent-mcp`.
 ALTER TABLE studio_revisions DROP CONSTRAINT IF EXISTS studio_revisions_source_check,
   ADD CONSTRAINT studio_revisions_source_check
-  CHECK (source IN ('authenticated-session', 'study-initialization', 'variant-initialization', 'variant-derivation', 'agent-mcp')) NOT VALID;
+  CHECK (source IN ('authenticated-session', 'study-initialization', 'variant-initialization', 'variant-derivation', 'agent-mcp', 'variant-merge', 'variant-merge-undo')) NOT VALID;
+-- Lot W3-D (X.1-06) : fusion de variantes. Une révision `variant-merge` reçoit dans la cible la fusion à trois voies d'une
+-- variante source ; `variant-merge-undo` l'annule par une nouvelle révision (jamais une réécriture). Colonne nullable
+-- additive : provenance de la fusion (variante et révision sources, ancêtre commun, résolutions explicites des conflits),
+-- NULL pour toute autre révision (et pour une archive antérieure, restaurée à NULL).
+ALTER TABLE studio_revisions ADD COLUMN IF NOT EXISTS fusion jsonb;
 CREATE TABLE IF NOT EXISTS studio_illustrations (
   id text PRIMARY KEY,
   study_id text NOT NULL REFERENCES studio_studies(id) ON DELETE CASCADE,

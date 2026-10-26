@@ -139,6 +139,21 @@ const observationPiece = async () => {
 };
 const BCF = Buffer.from(studioExporterBcf(studioSujetsBcf([{ issueId: "x1", titre: "Sujet", description: "Description", statut: "Open", categorie: "coordination", gravite: "mineure", creeLe: "2026-10-25T08:00:00.000Z", auteur: "a@x", responsable: null, objets: [], journal: [] }]), { id: "partenaire", nom: "Partenaire" })).toString("base64");
 
+// Lot W3-D : fusion de variantes — v2 dérivée de v (r1) puis une ligne ajoutée à v2 ; aperçu, application, annulation.
+const fusionPreparee = async () => {
+  const { v2 } = await variante2Derivee();
+  await exiger("post", `${S}/studies/s/variants/${v2}/commands`, { contractVersion: STUDIO_CONTRACT, requestId: "fu-1", baseRevisionId: (await exiger("get", `${S}/studies/s/variants/${v2}`))["revision"]["id"], commands: [{ toolId: "studio.dessin.ligne", params: { id: "fu", type: "line", start: { x: 0, y: 4 }, end: { x: 1, y: 4 } } }] });
+  const a = await exiger("post", `${V}/fusion/apercu`, { sourceVariantId: v2 });
+  return { v2, sourceRevisionId: a["source"]["revisionId"] as string, baseRevisionId: a["cible"]["revisionId"] as string, empreinte: a["apercu"]["empreinte"] as string };
+};
+const variante2Derivee = async () => ({ v2: await creer(`${S}/studies/s/variants`, { name: "Variante dérivée", fromVariantId: "v", fromRevisionId: "r1" }, (b) => b?.variant?.id) });
+const corpsFusion = (c: Contexte) => ({ requestId: "fusion-1", sourceVariantId: c["v2"], sourceRevisionId: c["sourceRevisionId"], baseRevisionId: c["baseRevisionId"], empreinte: c["empreinte"] });
+const fusionAppliquee = async () => {
+  const c = await fusionPreparee();
+  const r = await exiger("post", `${V}/fusion`, corpsFusion(c));
+  return { ...c, fusionne: r["revision"]["id"] as string };
+};
+
 export const CAS: Cas[] = [
   // Études et variantes.
   { libelle: "studio-api-etudes-lister/1 — GET /studies : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_ETUDES_LISTER, route: "GET /studies", url: () => `${S}/studies` },
@@ -312,7 +327,10 @@ export const CAS: Cas[] = [
   { libelle: "studio-api-agents-proposition-refuser/1 — POST /agents/propositions/:proposalId/refuser : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_AGENTS_PROPOSITION_REFUSER, route: "POST /agents/propositions/:proposalId/refuser", url: (c) => `${S}/agents/propositions/${c["pr"]}/refuser`, corps: fixe({}), preparer: propositionAgent },
   { libelle: "studio-api-agents-journal/1 — GET /agents/journal : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_AGENTS_JOURNAL, route: "GET /agents/journal", url: () => `${S}/agents/journal`, preparer: propositionAgent },
   { libelle: "studio-api-extensions-lister/1 — GET /extensions : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_EXTENSIONS_LISTER, route: "GET /extensions", url: () => `${S}/extensions` },
-  { libelle: "studio-api-extension-evaluer/1 — POST /extensions/evaluer : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_EXTENSION_EVALUER, route: "POST /extensions/evaluer", url: () => `${S}/extensions/evaluer`, corps: fixe({ declaration: { schema: "studio-extension/1", id: "x" } }) },
+  { libelle: "studio-api-extension-evaluer/1 — POST /extensions/evaluer : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_EXTENSION_EVALUER, route: "POST /extensions/evaluer", url: () => `${S}/extensions/evaluer`, corps: fixe({ declaration: { schema: "studio-extension/1", id: "x" } }) },  // Lot W3-D (X.1-06) : fusion de variantes.
+  { libelle: "studio-api-fusion-apercu/1 — POST …/fusion/apercu : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_FUSION_APERCU, route: "POST /studies/:studyId/variants/:variantId/fusion/apercu", url: () => `${V}/fusion/apercu`, corps: (c) => ({ sourceVariantId: c["v2"] }), preparer: fusionPreparee },
+  { libelle: "studio-api-fusion-appliquer/1 — POST …/fusion : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_FUSION_APPLIQUER, route: "POST /studies/:studyId/variants/:variantId/fusion", url: () => `${V}/fusion`, corps: corpsFusion, preparer: fusionPreparee },
+  { libelle: "studio-api-fusion-annuler/1 — POST …/fusion/annulation : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_FUSION_ANNULER, route: "POST /studies/:studyId/variants/:variantId/fusion/annulation", url: () => `${V}/fusion/annulation`, corps: (c) => ({ requestId: "annule-1", revisionId: c["fusionne"] }), preparer: fusionAppliquee },
 ];
 
 const methodeDe = (route: string) => route.split(" ")[0]!.toLowerCase() as Methode;
