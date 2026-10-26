@@ -1,8 +1,8 @@
 # Matrice d’échanges de Studio
 
-<!-- Généré depuis packages/atelier-model/src/studio/echanges/matrice-echanges.ts (studio-matrice-echanges/1, révision 8) : ne pas éditer à la main. -->
+<!-- Généré depuis packages/atelier-model/src/studio/echanges/matrice-echanges.ts (studio-matrice-echanges/1, révision 9) : ne pas éditer à la main. -->
 
-Établie le 2026-10-25 (révision 8, schéma `studio-matrice-echanges/1`), à partir de l’audit des exporteurs et importeurs Studio. Lots E.6-01 à E.6-05 du plan d’implémentation Studio V1.0 (§5.7).
+Établie le 2026-10-25 (révision 9, schéma `studio-matrice-echanges/1`), à partir de l’audit des exporteurs et importeurs Studio. Lots E.6-01 à E.6-05 du plan d’implémentation Studio V1.0 (§5.7).
 
 **Aucune entrée n’est une déclaration de conformité** : « livré » dit ce que le code écrit ou lit et le contrôle qui le vérifie ; la conformité d’un format reste non évaluée. Un format reporté est inscrit « non livré » avec sa raison et sa source ; « renoncé » exige une décision Studio admise (aucune aujourd’hui).
 
@@ -483,6 +483,7 @@ Raisons possibles du rapport de fidélité (`studioRapportFidelite`) pour chaque
 | solides | box | `solide-hors-2d` (non-couvert) | `solide-hors-2d` (non-couvert) | `profil-exact` (exact) |
 | solides | prism | `solide-hors-2d` (non-couvert) | `solide-hors-2d` (non-couvert) | `profil-exact` (exact) |
 | exacts | exact | `solide-hors-2d` (non-couvert) | `solide-hors-2d` (non-couvert) | `solide-exact-hors-ifc` (non-couvert) |
+| cotesFaces | face-dimension | `solide-hors-2d` (non-couvert) | `solide-hors-2d` (non-couvert) | `cote-hors-ifc` (non-couvert) |
 | architecture | wall | `extrusion-non-portee` (approche) | `extrusion-non-portee` (approche) | `extrusion-exacte` (exact) |
 | architecture | opening | `ouverture-en-lacune` (approche) | `ouverture-en-lacune` (approche) | `ouverture-evidee` (exact) |
 | architecture | ladder | `extrusion-non-portee` (approche) | `extrusion-non-portee` (approche) | `extrusion-exacte` (exact) |

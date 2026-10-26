@@ -13606,5 +13606,21 @@
 "Pied : saisissez un point « x y », en mètres.": "Foot: enter a point “x y”, in metres.",
 "Pied : saisissez un point « x y », en mètres, ou cliquez-le sur la planche.": "Foot: enter a point “x y”, in metres, or click it on the board.",
 "Cliquez le pied de l’échelle.": "Click the foot of the ladder.",
-"Échelle d’accès : cliquez le milieu du pied ; entre-axe, hauteur, cote du pied, échelons, section et orientation se saisissent dans le panneau Architecture.": "Access ladder: click the middle of the foot; centre distance, height, foot level, rungs, section and orientation are entered in the Architecture panel."
+"Échelle d’accès : cliquez le milieu du pied ; entre-axe, hauteur, cote du pied, échelons, section et orientation se saisissent dans le panneau Architecture.": "Access ladder: click the middle of the foot; centre distance, height, foot level, rungs, section and orientation are entered in the Architecture panel.",
+"Cote de face 3D": "3D face dimension",
+"Coter deux faces du solide": "Dimension two faces of the solid",
+"Rattacher la cote de face à deux faces": "Reattach the face dimension to two faces",
+"Coter deux faces parallèles": "Dimension two parallel faces",
+"Première face": "First face",
+"Seconde face": "Second face",
+"La cote suit la face poussée, tirée, déplacée ou pivotée. Si la face cotée est divisée, aucune des deux moitiés n’est choisie à votre place : la cote passe « à résoudre » et se rattache ici.": "The dimension follows the face when it is pushed, pulled, moved or rotated. If the dimensioned face is split, neither half is chosen for you: the dimension becomes “to resolve” and is reattached here.",
+"Rattacher la cote": "Reattach the dimension",
+"Coter les faces": "Dimension the faces",
+"Cotes de faces 3D": "3D face dimensions",
+"{0} ↔ {1} : à résoudre (valeur non évaluée)": "{0} ↔ {1}: to resolve (value not evaluated)",
+"{0} ↔ {1} : {2} m": "{0} ↔ {1}: {2} m",
+"{0} ↔ {1} : non évaluée": "{0} ↔ {1}: not evaluated",
+"Sélectionnez d’abord, dans la vue 3D, le solide à coter.": "First select, in the 3D view, the solid to dimension.",
+"Choisissez les deux faces parallèles à coter.": "Choose the two parallel faces to dimension.",
+"Choisissez deux faces différentes.": "Choose two different faces."
 }

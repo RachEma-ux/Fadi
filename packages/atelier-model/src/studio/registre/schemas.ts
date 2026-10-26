@@ -9,6 +9,7 @@ import { SCHEMA_POLYLIGNE } from "../objets/polyligne.js";
 import { SCHEMA_RECTANGLE } from "../objets/rectangle.js";
 import { SCHEMA_SOLIDE } from "../objets-3d/solides.js";
 import { SCHEMA_SOLIDE_EXACT } from "../objets-3d/exacts.js";
+import { SCHEMA_COTE_FACE } from "../objets-3d/cotes-faces.js";
 import { SCHEMA_ARCHITECTURE } from "../architecture/schemas.js";
 import { SCHEMA_PROPRIETE } from "../exigences/schemas.js";
 import { SCHEMA_ELEMENT_VISUALISATION, STUDIO_LIMITES_SCENES } from "../scenes/scenes.js";
@@ -35,6 +36,7 @@ export const STUDIO_DOCUMENT_SCHEMA = {
     dimensions: { type: "array", maxItems: STUDIO_LIMITS.objects, items: SCHEMA_COTE },
     solides: { type: "array", maxItems: STUDIO_LIMITS.objects, items: SCHEMA_SOLIDE },
     exacts: { type: "array", maxItems: STUDIO_LIMITS.objects, items: SCHEMA_SOLIDE_EXACT },
+    cotesFaces: { type: "array", maxItems: STUDIO_LIMITS.objects, items: SCHEMA_COTE_FACE },
     annotations: { type: "array", maxItems: STUDIO_LIMITS.objects, items: { oneOf: [SCHEMA_COTE_ANGULAIRE, SCHEMA_TEXTE] } },
     architecture: { type: "array", maxItems: STUDIO_LIMITS.objects, items: SCHEMA_ARCHITECTURE },
     proprietes: { type: "array", maxItems: STUDIO_LIMITS.objects, items: SCHEMA_PROPRIETE },

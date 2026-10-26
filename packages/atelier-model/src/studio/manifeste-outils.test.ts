@@ -99,6 +99,14 @@ describe("alias de migration des identifiants (B.1-04)", () => {
     expect(resoudreAliasOutil("echelle", { catalogue: "atelier", periode: "avant-1a6f9b5", contexte: "DA-02-05" })).toMatchObject({ statut: "alias", toolId: "studio.dessin.echelle" });
   });
 
+  // Libellé cité par le registre pour B.1-05 (constat au commit de réalisation, avant le lot G2) : depuis G2, l'échelle
+  // d'accès existe sous un identifiant distinct — aucune collision ; le test suivant (EX-027) en est la preuve courante.
+  it("Studio n'a qu'un outil « échelle » (transformation) et aucun objet d'accès : pas de collision dans le registre", () => {
+    expect(STUDIO_TOOLS.filter((t) => t.libelleFR === "Échelle").map((t) => [t.toolId, t.groupe])).toEqual([["studio.dessin.echelle", "modification"]]);
+    expect(STUDIO_TOOLS.filter((t) => /échelle/i.test(t.libelleFR) && t.groupe !== "modification").map((t) => t.toolId)).toEqual(["studio.architecture.echelle-acces"]);
+    expect(new Set(STUDIO_TOOL_IDS).size).toBe(STUDIO_TOOL_IDS.length);
+  });
+
   it("EX-027 [+] manifeste valide avec deux capacités « échelle » distinctes (transformation et échelle d'accès) ; identifiants du référentiel et alias anciens résolus", () => {
     expect(controlerManifesteOutils()).toEqual([]);
     const echelles = STUDIO_TOOLS.filter((t) => /echelle|scale|ladder/i.test(t.toolId) || /échelle/i.test(t.libelleFR));

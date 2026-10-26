@@ -321,8 +321,10 @@ const AJOUTS = {
     "studio.source.declarer",
     // Lot G2 (extension additive consignée) : échelle d’accès (EX-027), objet `ladder` de `architecture`.
     "studio.architecture.echelle-acces",
+    // Lot G2 (INV-013) : cote de face 3D, champ facultatif `cotesFaces` du document.
+    "studio.solide.cote-face",
   ]),
-  types: new Set(["angular-dimension", "text", "wall", "opening", "scene", "appearance", "non-native", "spline", "hachure", "symbole", "source", "ladder"]),
+  types: new Set(["angular-dimension", "text", "wall", "opening", "scene", "appearance", "non-native", "spline", "hachure", "symbole", "source", "ladder", "face-dimension"]),
   exports: new Set([
     // Dérivation en copie indépendante (TR-EX-013 / TR-INV-003) et tolérance contractuelle des gestes (TR-IF-002), P-12.
     "STUDIO_MODES_DERIVATION", "studioCopieIndependante", "studioIdentitesDocument", "studioIdentitesReutilisees",
@@ -403,6 +405,8 @@ const AJOUTS = {
     "STUDIO_PROVENANCE_SCHEMA", "STUDIO_FORMATS_SOURCE", "STUDIO_LIMITES_SOURCES", "validerSource", "validerSources", "studioVersionDxf", "studioSourceDxf", "studioSourceDxfLue", "studioSourceIfcLue", "studioExportProvenance", "studioProvenanceModeleExterne", "SCHEMA_SOURCE",
     // Lot G2 : échelle d’accès (EX-027, `architecture/echelle.ts`).
     "SCHEMA_ECHELLE", "STUDIO_ECHELONS_MAX", "validerEchelle", "geometrieEchelle", "metreEchelle", "volumesEchelle",
+    // Lot G2 : cotes de faces 3D (INV-013, `objets-3d/cotes-faces.ts`).
+    "SCHEMA_COTE_FACE", "STUDIO_TOLERANCE_FACES", "controlerCoteFace", "studioCorrespondanceFace", "studioFaceExiste", "studioPlanFace", "studioValeurCoteFace", "validerCoteFace",
   ]),
 };
 function sansAjouts(value: unknown): unknown {
@@ -414,7 +418,7 @@ function sansAjouts(value: unknown): unknown {
   if (!value || typeof value !== "object") return value;
   const out = Object.fromEntries(Object.entries(value).map(([k, v]) => [k, sansAjouts(v)]));
   const props = out.properties as Record<string, unknown> | undefined;
-  if (props && "schemaVersion" in props) { delete props.annotations; delete props.architecture; delete props.proprietes; delete props.scenes; delete props.nonNatifs; delete props.exacts; delete props.graphismes; delete props.systemeProjet; delete props.sources; }
+  if (props && "schemaVersion" in props) { delete props.annotations; delete props.architecture; delete props.proprietes; delete props.scenes; delete props.nonNatifs; delete props.exacts; delete props.graphismes; delete props.systemeProjet; delete props.sources; delete props.cotesFaces; }
   // Lot F1 (extension additive consignée) : direction d'extrusion facultative (`extrusion.direction`, `extruder`) et,
   // pour le prisme, direction et source facultatives ; retirées pour comparer à la base.
   if (props && "base" in props && "height" in props) delete props.direction;

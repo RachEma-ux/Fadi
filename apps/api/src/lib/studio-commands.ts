@@ -541,10 +541,14 @@ export function essayerCommandesStudio(document: StudioDocument, commands: reado
  */
 function appliquerEtControler(tete: StudioDocument, envelope: StudioEnvelope, attributs: StudioAttributsEnveloppe): StudioDocument {
   try {
-    const controle = envelope.commands.map((c, i) => ({ ...c, ...(attributs.commands[i]?.targetIds ? { targetIds: attributs.commands[i]!.targetIds } : {}), ...(attributs.commands[i]?.operation ? { operation: attributs.commands[i]!.operation } : {}) }) as StudioCommandeMetier);
-    const ecart = studioControlerCibles(tete, controle);
-    if (ecart) throw new StudioRequestError(400, { error: ecart.code, path: ecart.path, cible: "cible" in ecart ? ecart.cible : undefined, message: ecart.message });
-    return applyStudioCommands(tete, envelope.commands);
+    // Le lot entier d'abord (refus et chemins d'erreur inchangés), puis les cibles déclarées, commande par commande.
+    const document = applyStudioCommands(tete, envelope.commands);
+    if (attributs.commands.some((c) => c.targetIds !== undefined || c.operation !== undefined)) {
+      const controle = envelope.commands.map((c, i) => ({ ...c, ...(attributs.commands[i]?.targetIds ? { targetIds: attributs.commands[i]!.targetIds } : {}), ...(attributs.commands[i]?.operation ? { operation: attributs.commands[i]!.operation } : {}) }) as StudioCommandeMetier);
+      const ecart = studioControlerCibles(tete, controle);
+      if (ecart) throw new StudioRequestError(400, { error: ecart.code, path: ecart.path, cible: "cible" in ecart ? ecart.cible : undefined, message: ecart.message });
+    }
+    return document;
   } catch (error) {
     if (error instanceof StudioValidationError) throw new StudioRequestError(400, { error: "invalid_commands", code: error.code, path: error.path, message: error.message });
     throw error;

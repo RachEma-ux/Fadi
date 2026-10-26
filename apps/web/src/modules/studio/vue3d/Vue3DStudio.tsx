@@ -43,7 +43,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { mesurerRendu3d } from "../chargement/mesures-studio";
 import {
   couperStudio, projectionsAInvalider, studioApparenceResolue, studioAssemblerMaillage, studioDocumentToutVisible, studioFiltrerMaillageScene, studioFusionnerMorceaux, studioMaillerObjets,
-  studioLienSolide, studioNomFichierRendu, studioProvenanceRendu, studioScenes, studioVersionProjection, studioVolumeSolide, type StudioSolid,
+  studioLienSolide, studioNomFichierRendu, studioProvenanceRendu, studioScenes, studioValeurCoteFace, studioVersionProjection, studioVolumeSolide, type StudioSolid,
   type StudioCacheMaillage, type StudioCameraScene, type StudioCommand, type StudioCoupe, type StudioDocument, type StudioFinitionAffichage, type StudioInvalidation, type StudioMesh3d,
   type StudioModeAffichage, type StudioMorceauMaillage, type StudioScene,
 } from "@parcours/atelier-model";
@@ -67,7 +67,7 @@ import { Icon } from "../../../components/Icon";
 import { estSelectionnable } from "../planche2d/calques";
 import { LOCALE } from "../../../lib/i18n";
 import {
-  AXES_PIVOT, auCentimetre, BOITE_VIDE, commandeBoite, commandeDeplacementSolide, commandeDivision, commandeEchelle3d, commandeFace, commandePivot, commandePrisme, commandeResolution, DEPLACEMENT_VIDE,
+  AXES_PIVOT, auCentimetre, BOITE_VIDE, commandeBoite, commandeCoteFace, commandeDeplacementSolide, commandeDivision, descriptionCoteFace, commandeEchelle3d, commandeFace, commandePivot, commandePrisme, commandeResolution, DEPLACEMENT_VIDE,
   type AxePivot,
   descriptionLien, descriptionSolide, FACE_VIDE, facesDe, PRISME_VIDE, profilsFermes, RELATIONS_PRISME,
   type ValeursBoite, type ValeursDeplacement, type ValeursFace, type ValeursPrisme,
@@ -414,6 +414,8 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   const [deplacement, setDeplacement] = useState<ValeursDeplacement>(DEPLACEMENT_VIDE);
   const [face, setFace] = useState<ValeursFace>(FACE_VIDE);
   const [division, setDivision] = useState<ValeursFace>(FACE_VIDE);
+  // Cote de face 3D (INV-013) : deux faces du solide choisi ; `rattacher` = identifiant d'une cote existante à rattacher.
+  const [coteFaces, setCoteFaces] = useState<{ a: string; b: string; rattacher: string }>({ a: "", b: "", rattacher: "" });
   const [pivot, setPivot] = useState(Number.NaN);
   // A.3-03 : axe du pivot (vertical ou axes horizontaux du solide) et échelle 3D (point fixe en plan, facteur).
   const [axePivot, setAxePivot] = useState<AxePivot>("z");
@@ -947,6 +949,12 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     e.preventDefault();
     envoyer(commandeDivision(choisi?.id ?? null, division), () => setDivision(FACE_VIDE));
   }
+  function coter(e: FormEvent) {
+    e.preventDefault();
+    const id = coteFaces.rattacher || crypto.randomUUID();
+    const existante = (doc.cotesFaces ?? []).find((c) => c.id === coteFaces.rattacher);
+    envoyer(commandeCoteFace(id, choisi?.id ?? null, coteFaces, existante?.layerId ?? choisi?.layerId), () => setCoteFaces({ a: "", b: "", rattacher: "" }));
+  }
   function pivoter(e: FormEvent) {
     e.preventDefault();
     envoyer(commandePivot(choisi?.id ?? null, pivot, axePivot), () => setPivot(Number.NaN));
@@ -1070,7 +1078,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
 
       {outil === "studio.solide.booleen" && <PanneauBooleen doc={doc} revision={empreinte.revision} modifiable={modifiable} surCommandes={surCommandes} surSelection={surSelection} />}
 
-      {!choisi && outil && ["studio.solide.face-decaler", "studio.solide.face-diviser", "studio.solide.pivoter", "studio.solide.resoudre"].includes(outil) && <p className="studio-hint" data-studio-face-indice>Sélectionnez d’abord, dans la vue 3D ou la liste des solides, le solide à modifier.</p>}
+      {!choisi && outil && ["studio.solide.face-decaler", "studio.solide.face-diviser", "studio.solide.pivoter", "studio.solide.resoudre", "studio.solide.cote-face"].includes(outil) && <p className="studio-hint" data-studio-face-indice>Sélectionnez d’abord, dans la vue 3D ou la liste des solides, le solide à modifier.</p>}
 
       {(solides.length > 0 || exacts.length > 0) && <div className="studio-vue3d-solides" data-studio-solides>
         <h3>Solides libres</h3>
@@ -1142,6 +1150,37 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
             <button type="submit" data-studio-diviser-face><Icon name="studio-solid-split-face" size={18} /> Diviser la face</button>
           </fieldset>
         </form>}
+        {choisi && <form onSubmit={coter} data-studio-cote-face={choisi.id} aria-label="Coter deux faces du solide">
+          <fieldset disabled={!modifiable}>
+            <legend>{coteFaces.rattacher ? "Rattacher la cote de face à deux faces" : "Coter deux faces parallèles"}</legend>
+            <label>Première face
+              <select name="cote-face-a" required value={coteFaces.a} onChange={(e) => setCoteFaces({ ...coteFaces, a: e.target.value })} data-studio-cote-face-a>
+                <option value="">Choisir la face…</option>
+                {facesChoisi.map((f) => <option key={f.valeur} value={f.valeur}>{f.libelle}</option>)}
+              </select>
+            </label>
+            <label>Seconde face
+              <select name="cote-face-b" required value={coteFaces.b} onChange={(e) => setCoteFaces({ ...coteFaces, b: e.target.value })} data-studio-cote-face-b>
+                <option value="">Choisir la face…</option>
+                {facesChoisi.map((f) => <option key={f.valeur} value={f.valeur}>{f.libelle}</option>)}
+              </select>
+            </label>
+            <p className="studio-hint">La cote suit la face poussée, tirée, déplacée ou pivotée. Si la face cotée est divisée, aucune des deux moitiés n’est choisie à votre place : la cote passe « à résoudre » et se rattache ici.</p>
+            <button type="submit" data-studio-coter-faces><Icon name="studio-solid-face-dimension" size={18} /> {coteFaces.rattacher ? "Rattacher la cote" : "Coter les faces"}</button>
+          </fieldset>
+        </form>}
+        {(doc.cotesFaces?.length ?? 0) > 0 && <div data-studio-cotes-faces="">
+          <h4>Cotes de faces 3D</h4>
+          <ul>
+            {(doc.cotesFaces ?? []).map((c) => {
+              const s = solides.find((x) => x.id === c.solidId);
+              return <li key={c.id} data-studio-cote-face-etat={c.toResolve ? "a-resoudre" : "rattachee"} data-studio-cote-face-id={c.id}>
+                <span>{descriptionCoteFace(c, studioValeurCoteFace(solides, c), nombre, s)}</span>
+                <button type="button" disabled={!modifiable || !s} aria-pressed={coteFaces.rattacher === c.id} onClick={() => { if (s) surSelection?.(s.id); setCoteFaces({ a: "", b: "", rattacher: coteFaces.rattacher === c.id ? "" : c.id }); }} data-studio-cote-face-rattacher={c.id}>Rattacher</button>
+              </li>;
+            })}
+          </ul>
+        </div>}
         {choisi && <form onSubmit={pivoter} data-studio-pivoter={choisi.id} aria-label="Pivoter le solide">
           <fieldset disabled={!modifiable}>
             <legend>Pivoter autour d’un axe passant par l’origine</legend>

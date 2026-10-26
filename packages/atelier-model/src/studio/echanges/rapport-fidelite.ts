@@ -6,6 +6,7 @@ import type { StudioAnnotation, StudioShape } from "../objets/formes.js";
 import type { StudioDimension } from "../objets/cote.js";
 import type { StudioSolid } from "../objets-3d/solides.js";
 import type { StudioSolideExact } from "../objets-3d/exacts.js";
+import type { StudioCoteFace } from "../objets-3d/cotes-faces.js";
 import type { StudioArchitectureItem } from "../architecture/types.js";
 import type { StudioPropriete } from "../exigences/proprietes.js";
 import type { StudioElementVisualisation } from "../scenes/scenes.js";
@@ -61,9 +62,9 @@ export const STUDIO_RAISONS_FIDELITE = Object.freeze([
 export type StudioRaisonFidelite = (typeof STUDIO_RAISONS_FIDELITE)[number];
 
 /** Catégorie = liste du document qui porte l'élément. */
-export type StudioCategorieEchange = "objets" | "cotes" | "annotations" | "solides" | "exacts" | "architecture" | "proprietes" | "scenes" | "nonNatifs" | "graphismes" | "sources" | "inconnue";
+export type StudioCategorieEchange = "objets" | "cotes" | "annotations" | "solides" | "exacts" | "cotesFaces" | "architecture" | "proprietes" | "scenes" | "nonNatifs" | "graphismes" | "sources" | "inconnue";
 /** Liste du document de chaque catégorie connue (clé de `StudioDocument`). */
-export const STUDIO_LISTES_ECHANGE = Object.freeze({ objets: "objects", cotes: "dimensions", annotations: "annotations", solides: "solides", exacts: "exacts", architecture: "architecture", proprietes: "proprietes", scenes: "scenes", nonNatifs: "nonNatifs", graphismes: "graphismes", sources: "sources" } as const);
+export const STUDIO_LISTES_ECHANGE = Object.freeze({ objets: "objects", cotes: "dimensions", annotations: "annotations", solides: "solides", exacts: "exacts", cotesFaces: "cotesFaces", architecture: "architecture", proprietes: "proprietes", scenes: "scenes", nonNatifs: "nonNatifs", graphismes: "graphismes", sources: "sources" } as const);
 
 export interface StudioJugementFidelite { statut: StudioStatutFidelite; raison: StudioRaisonFidelite }
 type Juge<T> = (item: T) => StudioJugementFidelite;
@@ -124,6 +125,8 @@ export const STUDIO_CAPACITES_EXPORT: {
   readonly solides: { readonly [K in StudioSolid["type"]]: ParFormat<Extract<StudioSolid, { type: K }>> };
   /** Solides exacts (lot F2) : résultat du noyau exact (brep), absent des trois formats. */
   readonly exacts: { readonly exact: ParFormat<StudioSolideExact> };
+  /** Cotes de faces 3D (lot G2, INV-013) : annotations du modèle 3D, écrites dans aucun format de dessin ni en IFC. */
+  readonly cotesFaces: { readonly "face-dimension": ParFormat<StudioCoteFace> };
   readonly architecture: { readonly [K in StudioArchitectureItem["type"]]: ParFormat<Extract<StudioArchitectureItem, { type: K }>> };
   /** Propriétés déclarées (E.1-01) : sans discriminant de type, un seul type « propriete ». */
   readonly proprietes: { readonly propriete: ParFormat<StudioPropriete> };
@@ -158,6 +161,9 @@ export const STUDIO_CAPACITES_EXPORT: {
   },
   exacts: {
     exact: { svg: () => nonCouvert("solide-hors-2d"), dxf: () => nonCouvert("solide-hors-2d"), ifc: () => nonCouvert("solide-exact-hors-ifc") },
+  },
+  cotesFaces: {
+    "face-dimension": { svg: () => nonCouvert("solide-hors-2d"), dxf: () => nonCouvert("solide-hors-2d"), ifc: () => nonCouvert("cote-hors-ifc") },
   },
   architecture: {
     wall: { svg: () => approche("extrusion-non-portee"), dxf: () => approche("extrusion-non-portee"), ifc: () => exact("extrusion-exacte") },
@@ -278,6 +284,8 @@ export function studioRapportFidelite(input: StudioDocument, format: StudioForma
   parcourir("annotations", doc.annotations);
   parcourir("solides", doc.solides);
   parcourir("exacts", doc.exacts);
+  // Cotes de faces 3D (lot G2) : comptées sur leur calque, écrites dans aucun format.
+  parcourir("cotesFaces", doc.cotesFaces);
   // Une ouverture n'a pas de calque propre : elle suit celui de son mur hôte.
   const avecCalque = (layerId: string | undefined): { layerId?: string } => (layerId === undefined ? {} : { layerId });
   const calqueMur = new Map((doc.architecture ?? []).filter((e) => e.type === "wall").map((m) => [m.id, (m as { layerId?: string }).layerId]));

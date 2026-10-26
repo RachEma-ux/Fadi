@@ -53,6 +53,7 @@ export const SYNONYMES: Readonly<Record<string, readonly string[]>> = Object.fre
   "studio.solide.pivoter": ["tourner le solide", "rotation 3D"],
   "studio.solide.resoudre": ["recalculer", "lien au profil"],
   "studio.solide.booleen": ["union", "soustraction", "intersection", "noyau exact"],
+  "studio.solide.cote-face": ["cote 3D", "distance entre faces", "épaisseur", "hauteur du solide"],
   "studio.architecture.mur": ["cloison", "paroi", "voile"],
   "studio.architecture.ouverture": ["porte", "fenêtre", "baie"],
   "studio.architecture.echelle-acces": ["échelle fixe", "accès", "échelons", "montants"],

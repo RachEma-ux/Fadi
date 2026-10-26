@@ -64,6 +64,7 @@ export const ALTERNATIVES_GESTES: Readonly<Record<string, AlternativeGeste>> = O
   "studio.solide.pivoter": saisie("panneau-volume-3d"),
   "studio.solide.resoudre": commande,
   "studio.solide.booleen": commande,
+  "studio.solide.cote-face": commande,
   "studio.architecture.mur": saisie("panneau-architecture"),
   "studio.architecture.ouverture": saisie("panneau-architecture"),
   "studio.architecture.echelle-acces": saisie("panneau-architecture"),

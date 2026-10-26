@@ -257,7 +257,7 @@ describe("Catalogue « Outils » et palette (#166, Registry)", () => {
   it("recherche par nom (sans accents), raccourci (registre ou affiché) et identifiant", () => {
     expect(rechercher("Ligne")[0]?.identifiant).toBe("studio.dessin.ligne");
     expect(rechercher("selection").map((e) => e.identifiant)).toContain("studio.dessin.selection");
-    expect(rechercher("Cote").map((e) => e.identifiant)).toEqual(["studio.dessin.cote", "studio.dessin.cote-angulaire"]);
+    expect(rechercher("Cote").map((e) => e.identifiant)).toEqual(["studio.dessin.cote", "studio.dessin.cote-angulaire", "studio.solide.cote-face"]);
     expect(rechercher("Maj+C")[0]?.identifiant).toBe("studio.dessin.cote");
     expect(rechercher("Shift+C")[0]?.identifiant).toBe("studio.dessin.cote");
     expect(rechercher("studio.calque").map((e) => e.identifiant)).toEqual(["studio.calque.creer", "studio.calque.modifier"]);

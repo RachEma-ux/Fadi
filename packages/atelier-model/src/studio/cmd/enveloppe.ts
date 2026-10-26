@@ -1,4 +1,5 @@
 import { applyStudioCommands } from "../composition/commandes.js";
+import { StudioValidationError } from "../noyau/validation.js";
 import type { StudioCommand, StudioDocument } from "../composition/types.js";
 import { studioEffetsCommande } from "./effets.js";
 
@@ -56,7 +57,13 @@ export function studioControlerCibles(document: StudioDocument, commands: readon
   let courant = document;
   for (const [i, c] of commands.entries()) {
     const nue = studioCommandeNue(c);
-    const suivant = applyStudioCommands(courant, [nue]);
+    let suivant: StudioDocument;
+    try { suivant = applyStudioCommands(courant, [nue]); }
+    catch (e) {
+      // Commande appliquée seule : son chemin d'erreur est ramené à son rang dans le lot.
+      if (e instanceof StudioValidationError) throw new StudioValidationError(e.path.replace(/^commands\[0\]/, `commands[${i}]`), e.message.slice(e.message.indexOf(" : ") + 3));
+      throw e;
+    }
     if (c.targetIds !== undefined || c.operation !== undefined) {
       const e = studioEffetsCommande(courant, suivant, [nue], { revisionBase: null, revisionSortie: "controle", source: "controle", auteurId: "controle", requestId: null });
       const affectes = new Set([...e.crees, ...e.modifies, ...e.supprimes]);

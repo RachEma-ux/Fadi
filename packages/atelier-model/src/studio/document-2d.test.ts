@@ -115,8 +115,9 @@ describe("Studio : document 2D natif", () => {
   });
 });
 
-/** Outils ajoutés par le lot G2 (achèvement Studio), comptés à part des socles déjà caractérisés. */
+/** Outils ajoutés par le lot G2 (achèvement Studio), comptés à part des socles déjà caractérisés, dans l’ordre du registre. */
 const OUTILS_LOT_G2_ATTENDUS = [
+  ["studio.solide.cote-face", "Ctrl+Shift+F10", "studio-solid-face-dimension", "volume-libre"],
   ["studio.architecture.echelle-acces", "Ctrl+Shift+F8", "studio-ladder", "architecture"],
 ] as const;
 const OUTILS_LOT_G2: ReadonlySet<string> = new Set(OUTILS_LOT_G2_ATTENDUS.map((t) => t[0]));

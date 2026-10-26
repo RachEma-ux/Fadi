@@ -106,6 +106,8 @@ describe("Matrice d'échanges : donnée versionnée et cohérente", () => {
       7: "da45ee1baee0b0a8b15dad3128d40f9cb5ddc884aea22a36b10ce269176efbe0",
       // Lot G2 (EX-027) : échelle d’accès (architecture.ladder : SVG / DXF en plan, IFC IfcStair .LADDER. exact).
       8: "bdc872461695a471cc1473a47469cb106b63255d529624065fb808a2aa362fb6",
+      // Lot G2 (INV-013) : catégorie « cotesFaces » (cotes de faces 3D, écrites dans aucun format).
+      9: "9a127ce490d93abcea796ec4fd53213cd9716c01649c891d72baba1ad623ec47",
     };
     const empreinte = createHash("sha256").update(JSON.stringify({ entrees: STUDIO_MATRICE_ECHANGES.entrees, couverture: STUDIO_COUVERTURE_EXPORT, statuts: STUDIO_STATUT_DE_RAISON })).digest("hex");
     expect(empreinte, `révision ${STUDIO_MATRICE_ECHANGES.revision} : entrées modifiées sans nouvelle révision ? (empreinte calculée ${empreinte})`).toBe(EMPREINTES[STUDIO_MATRICE_ECHANGES.revision]);
@@ -206,6 +208,8 @@ const complet = (): StudioDocument => ({
     { id: "s1", type: "box", placement: { origin: { x: 50, y: 0, z: 0 }, rotation: 0 }, width: 1, depth: 1, height: 1 },
     { id: "s2", type: "prism", placement: { origin: { x: 60, y: 0, z: 0 }, rotation: 0 }, profile: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 0, y: 1 }], height: 2 },
   ],
+  // Lot G2 (INV-013) : une cote de face 3D sur la boîte s1.
+  cotesFaces: [{ id: "cf1", type: "face-dimension", solidId: "s1", faces: ["base", "sommet"], toResolve: false }],
   // Lot F2 : un solide exact (résultat SYNTHÉTIQUE, forme seulement) et ses deux opérandes conservés.
   exacts: [exactSynthetique("e1", [
     { id: "e1a", type: "box", placement: { origin: { x: 80, y: 0, z: 0 }, rotation: 0 }, width: 1, depth: 1, height: 1 },
