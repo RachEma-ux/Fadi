@@ -117,6 +117,10 @@ export type IconName =
   | "studio-architecture-edit"
   | "studio-architecture-delete"
   | "studio-ladder"
+  | "studio-level"
+  | "studio-component"
+  | "studio-component-instance"
+  | "studio-structure"
   | "studio-property-set"
   | "console"
   | "studio-property-remove"
@@ -131,6 +135,8 @@ export type IconName =
   | "studio-dossier"
   | "studio-exchanges"
   | "studio-approve"
+  | "studio-merge-variants"
+  | "studio-merge-undo"
   | "studio-import-ifc"
   | "studio-external-models"
   | "studio-illustration"
@@ -141,6 +147,10 @@ export type IconName =
   | "studio-graphic-remove"
   | "studio-project-frame"
   | "studio-source-declare"
+  | "studio-block-define"
+  | "studio-block-insert"
+  | "studio-block-explode"
+  | "studio-constraint"
   | "studio-comments";
 
 const PATHS: Record<IconName, string> = {
@@ -292,6 +302,12 @@ const PATHS: Record<IconName, string> = {
   "studio-architecture-delete": "M2 9h6v6H2ZM12 9h6v6h-6ZM8 7v10M12 7v10M15 3l6 6M21 3l-6 6",
   // Échelle d’accès (EX-027) : deux montants verticaux et quatre échelons (distincte de la transformation Échelle).
   "studio-ladder": "M7 2v20M17 2v20M7 6h10M7 10h10M7 14h10M7 18h10",
+  // Lot W3-B : niveau (deux planchers superposés et repère de cote) ; composant (cube et ses arêtes cachées) ;
+  // occurrence de composant (deux cubes, l'un reprenant l'autre) ; élément structurel (poteau et poutre en T).
+  "studio-level": "M3 9h13M3 17h13M19 5v16M17 7l2-2 2 2M17 19l2 2 2-2",
+  "studio-component": "M12 3 20 7.5v9L12 21l-8-4.5v-9ZM4 7.5 12 12l8-4.5M12 12v9",
+  "studio-component-instance": "M3 9 8 6.5 13 9v6l-5 2.5L3 15ZM13 9l5-2.5L23 9v6l-5 2.5-5-2.5M8 12v5.5M18 12v5.5",
+  "studio-structure": "M2 5h20v3H2ZM10 8h4v13h-4ZM6 21h12",
   // Propriétés et exigences (E.1) : étiquette et signe plus ; étiquette barrée ; liste cochée et balance (écart).
   "studio-property-set": "M3 4h9l8 8-8 8-9-9ZM7 8h.01M17 3v6M14 6h6",
   "studio-property-remove": "M3 4h9l8 8-8 8-9-9ZM7 8h.01M15 3l6 6M21 3l-6 6",
@@ -312,6 +328,10 @@ const PATHS: Record<IconName, string> = {
   "studio-exchanges": "M3 4h18v16H3ZM9 4v16M15 4v16M5 9h14M17 7l2 2-2 2M5 15h14M7 13l-2 2 2 2",
   // Approuver (AC-010, lot G2) : feuille de dossier portant un sceau rond et une coche.
   "studio-approve": "M5 3h10l4 4v14H5ZM15 3v4h4M8 9h6M8 12h4M15 17a3 3 0 1 0 0.01 0M13.6 17l1 1 1.8-2",
+  // Fusionner une variante (lot W3-D) : deux branches qui se rejoignent en une seule, flèche vers le bas.
+  "studio-merge-variants": "M6 3v5a6 6 0 0 0 6 6M18 3v5a6 6 0 0 1-6 6v7M9 18l3 3 3-3M6 3a1 1 0 1 0 0.01 0M18 3a1 1 0 1 0 0.01 0",
+  // Annuler la dernière fusion (lot W3-D) : la jonction des deux branches, et une flèche de retour en arc.
+  "studio-merge-undo": "M6 3v5a6 6 0 0 0 6 6M18 3v5a6 6 0 0 1-6 6v3M8 21h7a3 3 0 0 0 0-6M8 21l2-2M8 21l2 2",
   // Import IFC (lot F3) : fichier, petit volume et flèche entrant par la gauche (le pendant de l’export IFC).
   "studio-import-ifc": "M9 3h7l4 4v14H9v-4M16 3v4h4M12 10l3-2 3 2v4l-3 2-3-2ZM12 10l3 2 3-2M15 12v4M2 13h7M6 10l3 3-3 3",
   // Modèles externes (lot F3) : deux maquettes côte à côte reliées par une coche de validation.
@@ -331,6 +351,14 @@ const PATHS: Record<IconName, string> = {
   // Système de projet (EX-023) : axes du document et axes du projet tournés, origine déportée.
   // Déclarer une source importée (EX-014) : feuille de fichier avec empreinte (dièse) et flèche d'entrée.
   "studio-source-declare": "M6 2h8l4 4v6M14 2v4h4M6 2v20h7M9 10h2M8 13h4M10 9l-1 5M12 9l-1 5M15 19h7M19 16l3 3-3 3",
+  // Définir un bloc (X.1-01) : carré et cercle groupés dans un cadre en pointillés, signe plus.
+  "studio-block-define": "M3 3h3M9 3h3M15 3h2M3 3v3M3 9v3M3 15v2M5 7h6v6H5ZM14 10a2.5 2.5 0 1 0 5 0 2.5 2.5 0 0 0-5 0M18 16v6M15 19h6",
+  // Insérer un bloc : petit bloc (carré et cercle) posé au bout d'une flèche, tourné.
+  "studio-block-insert": "M14 4l6 2-2 6-6-2ZM15.5 7.5a1 1 0 1 0 2 0 1 1 0 0 0-2 0M3 21l8-8M11 13H6M11 13v5",
+  // Éclater l'insertion : carré dont les côtés s'écartent vers l'extérieur.
+  "studio-block-explode": "M8 4h8M8 20h8M4 8v8M20 8v8M3 3l3 3M21 3l-3 3M3 21l3-3M21 21l-3-3M10 12h4",
+  // Contraindre (X.1-01) : deux traits parallèles et un cadenas d'équerre (relation tenue, résolue sur demande).
+  "studio-constraint": "M3 18L15 6M7 21L19 9M14 14h7v7h-7ZM15.5 14v-2a2 2 0 0 1 4 0v2",
   "studio-project-frame": "M3 21V9M3 21h12M3 9l-1.5 2M3 9l1.5 2M15 21l-2-1.5M15 21l-2 1.5M12 12l8-6M12 12l5 7M20 6l-2.5.3M20 6l-.8 2.3M9 15l3-3",
   // Bascule du panneau des commentaires (barre de l’espace ; ni outil ni commande).
   "studio-comments": "M20.5 11.5c0 4.1-3.8 7.5-8.5 7.5-1.2 0-2.3-.2-3.3-.6L4 20l1.3-3.6C4.2 15 3.5 13.3 3.5 11.5 3.5 7.4 7.3 4 12 4s8.5 3.4 8.5 7.5ZM8 10h8M8 13.5h5",

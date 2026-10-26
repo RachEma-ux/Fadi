@@ -14,13 +14,17 @@ import type { StudioSensEpaisseur, StudioSurfaceLibre } from "../objets-3d/surfa
 import type { StudioSurfaceSubdivision } from "../objets-3d/subdivisions.js";
 import type { STUDIO_CONTRACT } from "../noyau/limites.js";
 import type { StudioLayer, StudioPoint } from "../noyau/types.js";
-import type { StudioArchitectureItem, StudioLadder, StudioOpening, StudioWall } from "../architecture/types.js";
+import type { StudioArchitectureItem, StudioLadder, StudioOpening, StudioStructuralElement, StudioWall } from "../architecture/types.js";
+import type { StudioNiveau } from "../batiment/niveaux.js";
+import type { StudioComposant, StudioOccurrence } from "../batiment/composants.js";
 import type { StudioPropriete } from "../exigences/proprietes.js";
 import type { StudioApparence, StudioElementVisualisation, StudioScene } from "../scenes/scenes.js";
 import type { StudioNonNatif } from "../non-natifs/non-natifs.js";
 import type { StudioGraphisme } from "../graphismes/graphismes.js";
 import type { StudioSystemeProjet, StudioVersionSystemeProjet } from "../reperes.js";
 import type { StudioSourceExterne } from "../sources/sources.js";
+import type { StudioDefinitionBloc, StudioInsertionBloc } from "../blocs/blocs.js";
+import type { StudioContrainte } from "../contraintes/contraintes.js";
 
 /**
  * Types composés du document Studio (`studio-document/1`) : le document entier et le contrat de commandes rassemblent
@@ -101,6 +105,33 @@ export interface StudioDocument {
    * le dessin (`sources/`) ; absent ou vide : aucune (forme canonique).
    */
   sources?: StudioSourceExterne[];
+  /**
+   * Niveaux comme objets (extension additive, facultative, lot W3-B, X.1-04) : nom et cote saisis (`batiment/niveaux.ts`) ;
+   * murs, échelles, éléments structurels et occurrences y sont rattachés par `niveauId`. Absent ou vide : aucun.
+   */
+  niveaux?: StudioNiveau[];
+  /**
+   * Définitions de composants 3D (extension additive, facultative, lot W3-B) : solides libres dans le repère local du
+   * composant (`batiment/composants.ts`), partagés par leurs occurrences. Absent ou vide : aucune.
+   */
+  composants?: StudioComposant[];
+  /** Occurrences de composants 3D (extension additive, facultative, lot W3-B) : définition désignée et placement. */
+  occurrences?: StudioOccurrence[];
+  /**
+   * Blocs définis par l'utilisateur (extension additive, facultative, X.1-01) : définitions réutilisables — nom, point
+   * de base, formes dans le repère du bloc (`blocs/`). Absent ou vide : aucun (forme canonique).
+   */
+  blocs?: StudioDefinitionBloc[];
+  /**
+   * Insertions de blocs (extension additive, facultative, X.1-01) : position, rotation, échelle, symétrie ; leur
+   * géométrie est dérivée de la définition, jamais stockée (une redéfinition se répercute sur toutes).
+   */
+  insertions?: StudioInsertionBloc[];
+  /**
+   * Contraintes géométriques 2D (extension additive, facultative, X.1-01) : résolues explicitement, « à résoudre »
+   * quand une commande les rompt (`contraintes/`). Absent ou vide : aucune.
+   */
+  contraintes?: StudioContrainte[];
 }
 export type StudioCommand =
   | { toolId: "studio.dessin.ligne"; params: StudioLine }
@@ -156,7 +187,15 @@ export type StudioCommand =
   | { toolId: "studio.graphisme.creer"; params: StudioGraphisme }
   | { toolId: "studio.graphisme.retirer"; params: { ids: string[] } }
   | { toolId: "studio.repere.projet"; params: StudioVersionSystemeProjet }
-  | { toolId: "studio.source.declarer"; params: StudioSourceExterne };
+  | { toolId: "studio.source.declarer"; params: StudioSourceExterne }
+  | { toolId: "studio.niveau.definir"; params: StudioNiveau }
+  | { toolId: "studio.composant.definir"; params: StudioComposant }
+  | { toolId: "studio.composant.placer"; params: StudioOccurrence }
+  | { toolId: "studio.structure.element"; params: StudioStructuralElement }
+  | { toolId: "studio.bloc.definir"; params: { id: string; nom: string; base: StudioPoint; elements?: StudioShape[]; objets?: string[]; insertion?: string; redefinir?: boolean } }
+  | { toolId: "studio.bloc.inserer"; params: StudioInsertionBloc & { modifier?: boolean } }
+  | { toolId: "studio.bloc.eclater"; params: { ids: string[] } }
+  | { toolId: "studio.contrainte.poser"; params: { contraintes?: StudioContrainte[]; resoudre?: string[] } };
 export type StudioCommandToolId = StudioCommand["toolId"];
 export interface StudioEnvelope {
   contractVersion: typeof STUDIO_CONTRACT;

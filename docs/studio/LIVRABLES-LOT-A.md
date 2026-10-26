@@ -22,7 +22,7 @@ Preuves :
 ## Contrats versionnés
 
 - Enveloppe de commandes `studio-commands/1` (contrat de l'orchestrateur commun).
-- 115 contrats de route `studio-api-<nom>/<n>` (`apps/api/src/lib/studio-contrats-routes.ts`, en-tête `X-Studio-Contrat`), catalogue `docs/studio/CONTRATS-API.md`.
+- 118 contrats de route `studio-api-<nom>/<n>` (`apps/api/src/lib/studio-contrats-routes.ts`, en-tête `X-Studio-Contrat`), catalogue `docs/studio/CONTRATS-API.md`.
 
 Preuves :
 
@@ -31,7 +31,7 @@ Preuves :
 
 ## API et adaptateurs
 
-- 121 routes Studio sous `/projects/:projectId/studio`, chacune sous contrat ; matrice des droits `docs/ai-team/reports/claude-v9-x2/PERMISSIONS.md`.
+- 124 routes Studio sous `/projects/:projectId/studio`, chacune sous contrat ; matrice des droits `docs/ai-team/reports/claude-v9-x2/PERMISSIONS.md`.
 - Essais et jobs serveur (EX-045, EX-088), contrat d'étude (IF-001), migrations de schéma (EX-091), bascule Atelier → Studio à chemin d'écriture unique (MIG-COEX-06).
 - Adaptateurs d'échange : exports SVG, DXF, IFC ; imports DXF, IFC (matrice d'échanges `packages/atelier-model/src/studio/echanges/matrice-echanges.ts`).
 

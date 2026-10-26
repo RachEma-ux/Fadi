@@ -24,7 +24,7 @@ export { aleaMotif, alea, type Alea } from "./alea.js";
 export { corpusS1, DEFINITION_S1, MOTIF_S1, parametresS1 } from "./s1-detail.js";
 export { corpusS2, COUVERTURE_S2, DEFINITION_S2, fondAxesS2, MOTIF_PLAN, MOTIF_S2, PARAMETRES_S2, REFERENCE_S2 } from "./s2-niveau.js";
 export { corpusS3, DEFINITION_S3, MOTIF_S3 } from "./s3-dense.js";
-export { corpusS4, DEFINITION_S4, MOTIF_S4 } from "./s4-immeuble.js";
+export { COMPOSANT_S4, composantS4, corpusS4, DEFINITION_S4, MOTIF_S4, niveauS4, PARAMETRES_S4, traveesParNiveau } from "./s4-immeuble.js";
 export { RESULTATS_EXACTS_S5 } from "./fixtures/s5-exacts.js";
 export { BOOLEENS_S5, corpusS5, DEFINITION_S5, MOTIF_S5, operandesBooleenS5, parametresS5, quartCylindreS5, SURFACES_S5, tetraedreS5 } from "./s5-libre.js";
 export { DEFINITION_S6, planS6, type CleVarianteS6, type EtapeS6, type ExigenceS6, type PlanS6, type VarianteS6 } from "./s6-variantes.js";

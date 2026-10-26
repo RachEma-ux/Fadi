@@ -21,7 +21,8 @@ export type IdCommandeEditeur =
   | "exporter-png" | "echanges"
   | "illustration" | "agents"
   | "outils" | "palette"
-  | "exigences" | "approuver";
+  | "exigences" | "approuver"
+  | "fusionner-variantes" | "annuler-fusion";
 export type GroupeCommande = "edition" | "vue" | "accrochage" | "reperage" | "visualisation" | "import" | "export" | "presentation" | "catalogue" | "exigences";
 export type BarreStudio = StudioToolGroup | GroupeCommande;
 export type IconeCommande =
@@ -37,7 +38,8 @@ export type IconeCommande =
   | "studio-export-png" | "studio-exchanges"
   | "studio-illustration" | "studio-agents"
   | "studio-catalog" | "studio-palette"
-  | "studio-requirements" | "studio-approve";
+  | "studio-requirements" | "studio-approve"
+  | "studio-merge-variants" | "studio-merge-undo";
 
 export interface CommandeEditeur {
   readonly id: IdCommandeEditeur;
@@ -141,6 +143,12 @@ export const COMMANDES_EDITEUR: readonly CommandeEditeur[] = Object.freeze([
   // commande ; le serveur seul juge du droit métier (canApprove) — un concepteur sans ce droit reçoit son refus.
   // Ctrl+Maj+F11, libre et non réservé (F11 seul, plein écran, l'est). Lecture du document admise : l'approbation n'écrit pas la variante.
   { id: "approuver", libelleFR: "Approuver", raccourci: "Ctrl+Shift+F11", iconeSymbolique: "studio-approve", groupe: "presentation", ecrit: false },
+  // Fusion de variantes (lot W3-D, X.1-06) : fusion à trois voies d'une variante source dans la variante affichée, conflits
+  // tranchés explicitement ; « Annuler la dernière fusion » rend le document d'avant par une nouvelle révision. Ctrl+F10 et
+  // Ctrl+F11 (réserve du lot ; F10 seul est le repérage polaire, F11 seul le plein écran du navigateur), libres et non
+  // réservés ; barre Édition (elles écrivent une révision de la variante) : indisponibles en lecture seule.
+  { id: "fusionner-variantes", libelleFR: "Fusionner une variante", raccourci: "Ctrl+F10", iconeSymbolique: "studio-merge-variants", groupe: "edition", ecrit: true },
+  { id: "annuler-fusion", libelleFR: "Annuler la dernière fusion", raccourci: "Ctrl+F11", iconeSymbolique: "studio-merge-undo", groupe: "edition", ecrit: true },
   { id: "outils", libelleFR: "Outils", raccourci: "Shift+O", iconeSymbolique: "studio-catalog", groupe: "catalogue", ecrit: false },
   { id: "palette", libelleFR: "Palette de commandes", raccourci: "Ctrl+K", iconeSymbolique: "studio-palette", groupe: "catalogue", ecrit: false, dansUnChamp: true },
   // Exigences et écarts (E.1) : F comme « fiche d’exigences » (lettre seule libre et non réservée ; V appartient à la Visualisation) ; lecture admise.
@@ -161,6 +169,9 @@ export const BARRES_STUDIO: readonly { id: BarreStudio; libelleFR: string }[] = 
   { id: "graphismes", libelleFR: "Graphismes" },
   { id: "reperes", libelleFR: "Repères" },
   { id: "sources", libelleFR: "Sources importées" },
+  { id: "batiment", libelleFR: "Bâtiment" },
+  { id: "blocs", libelleFR: "Blocs" },
+  { id: "contraintes", libelleFR: "Contraintes" },
   { id: "edition", libelleFR: "Édition" },
   { id: "vue", libelleFR: "Vue" },
   { id: "accrochage", libelleFR: "Accrochage" },
@@ -205,6 +216,8 @@ export const OUTILS_MODES: ReadonlySet<StudioToolId> = new Set<StudioToolId>([
   "studio.dessin.cote-angulaire", "studio.dessin.texte",
   // Architecture (A.4) : poser l'axe d'un mur, désigner le mur d'une ouverture.
   "studio.architecture.mur", "studio.architecture.ouverture", "studio.architecture.echelle-acces",
+  // Lot W3-B : niveaux, composants 3D et éléments structurels (formulaires du panneau « Bâtiment »).
+  "studio.niveau.definir", "studio.composant.definir", "studio.composant.placer", "studio.structure.element",
 ]);
 /** Outils du volume libre : ils agissent dans la vue 3D, qu'ils ouvrent. */
 export const OUTILS_VOLUME_LIBRE: ReadonlySet<StudioToolId> = new Set<StudioToolId>([
@@ -213,6 +226,8 @@ export const OUTILS_VOLUME_LIBRE: ReadonlySet<StudioToolId> = new Set<StudioTool
   "studio.solide.booleen", "studio.solide.cote-face",
   "studio.surface.nurbs", "studio.surface.modifier", "studio.surface.epaissir", "studio.subdivision.creer", "studio.subdivision.solidifier",
 ]);
+/** Outils du bâtiment (lot W3-B) : leurs formulaires sont dans le panneau « Bâtiment » des propriétés. */
+export const OUTILS_BATIMENT: ReadonlySet<StudioToolId> = new Set<StudioToolId>(["studio.niveau.definir", "studio.composant.definir", "studio.composant.placer", "studio.structure.element"]);
 /** Outils qui posent des points sur la planche. */
 export const OUTILS_TRACE: ReadonlySet<StudioToolId> = new Set<StudioToolId>(["studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle", "studio.dessin.arc", "studio.dessin.polyligne", "studio.dessin.cote", "studio.dessin.cote-angulaire", "studio.dessin.texte", "studio.architecture.mur", "studio.architecture.ouverture", "studio.architecture.echelle-acces"]);
 

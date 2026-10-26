@@ -240,7 +240,7 @@ export function comparerDocumentsStudio(a: StudioDocument, b: StudioDocument): S
 
 /** Propriétés comparées d'un élément : géométrie (valeurs saisies ou lues), calque, attributs déclarés. */
 export type StudioProprieteElement = "geometrie" | "calque" | "attributs";
-export type StudioFamilleElement = "architecture" | "solides" | "nonNatifs";
+export type StudioFamilleElement = "architecture" | "solides" | "nonNatifs" | "niveaux" | "composants" | "occurrences";
 export interface StudioDifferenceElement {
   id: string;
   famille: StudioFamilleElement;
@@ -262,7 +262,7 @@ const canon = (v: unknown): string => {
   return JSON.stringify(v) ?? "null";
 };
 /** Attributs déclarés (hors géométrie) par type d'élément ; le reste, hors `id`, `type` et `layerId`, est la géométrie. */
-const ATTRIBUTS: Record<string, readonly string[]> = { opening: ["kind"], "non-native": ["origine", "raison", "detail"] };
+const ATTRIBUTS: Record<string, readonly string[]> = { opening: ["kind"], "non-native": ["origine", "raison", "detail"], niveau: ["nom"], composant: ["nom"] };
 function partager(o: Record<string, unknown>): { geometrie: string; attributs: string } {
   const attrs = ATTRIBUTS[String(o.type)] ?? [];
   const g: Record<string, unknown> = {}, a: Record<string, unknown> = {};
@@ -282,9 +282,13 @@ type ElementRange = { id: string; type: string; layerId?: string };
  */
 export function comparerElementsStudio(a: StudioDocument, b: StudioDocument): StudioDifferenceElements {
   const elements: StudioDifferenceElement[] = [];
-  const resume = { architecture: emptyCount(), solides: emptyCount(), nonNatifs: emptyCount() };
+  const resume = { architecture: emptyCount(), solides: emptyCount(), nonNatifs: emptyCount(), niveaux: emptyCount(), composants: emptyCount(), occurrences: emptyCount() };
+  // Lot W3-B : niveaux et définitions de composants n'ont pas de discriminant de type ; ils sont comparés sous « niveau » et « composant ».
+  const typer = <T extends { id: string }>(xs: readonly T[] | undefined, type: string): ElementRange[] | undefined => xs?.map((x) => ({ ...x, type }));
   const familles: [StudioFamilleElement, readonly ElementRange[] | undefined, readonly ElementRange[] | undefined][] = [
     ["architecture", a.architecture, b.architecture], ["solides", a.solides, b.solides], ["nonNatifs", a.nonNatifs, b.nonNatifs],
+    ["niveaux", typer(a.niveaux, "niveau"), typer(b.niveaux, "niveau")], ["composants", typer(a.composants, "composant"), typer(b.composants, "composant")],
+    ["occurrences", a.occurrences, b.occurrences],
   ];
   for (const [famille, xa, xb] of familles) {
     const ma = byId(xa), mb = byId(xb);

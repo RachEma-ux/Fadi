@@ -21,6 +21,7 @@ import { commandesExtrusion, VALEURS_VIDES } from "../vue3d/extrusion";
 import { commandeBoite, commandeDeplacementSolide, commandeDivision, commandeFace, commandePivot, commandePrisme, BOITE_VIDE, PRISME_VIDE } from "../vue3d/volume-libre";
 import { cibleFocusBascule, SELECTEURS_FOCUS_BASCULE } from "../variante/focus-bascule";
 import { commandeModifierPole, commandeSubdivision, commandeSurfacePlane, valeursPole } from "../vue3d/surfaces-ui";
+import { commandeComposant, commandeNiveau, commandeOccurrence, commandeStructure, SAISIE_STRUCTURE_VIDE } from "../batiment/batiment-ui";
 
 let n = 0;
 const creation: ContexteCreation = { nouvelId: () => `k${++n}`, layerId: undefined, decalageCote: 0.5, texte: { contenu: "Repère", hauteur: 0.25, rotation: 0, justification: "left" } };
@@ -82,6 +83,14 @@ const ESSAIS: Record<string, (d: StudioDocument) => StudioCommand[]> = {
   "studio.architecture.ouverture": () => ok(commandeOuverture(creation, "m1", 2, { largeur: 1, hauteur: 2.1, allege: 0, type: "porte" })),
   "studio.architecture.echelle-acces": () => ok(commandeEchelle(creation, { x: 1, y: 9 }, { largeur: 0.5, hauteur: 3, base: 0, echelons: 9, section: 0.04, orientation: 0 })),
   "studio.architecture.modifier": (d) => { const m = d.architecture![0]!; return ok(commandeModifierArchitecture(m, { ...editionDe(m), hauteur: 2.8 } as never, lireSommets)); },
+  // Lot W3-B : panneau « Bâtiment » (valeurs de test synthétiques).
+  "studio.niveau.definir": () => ok(commandeNiveau(creation, { nom: "Étage 1", cote: 3.2 })),
+  "studio.composant.definir": () => ok(commandeComposant(creation, { nom: "Gaine", boites: "0 0 0 0.2 0.2 3" })),
+  "studio.composant.placer": (d) => {
+    const def = ok(commandeComposant({ nouvelId: () => "kd", layerId: undefined }, { nom: "Gaine", boites: "0 0 0 0.2 0.2 3" }));
+    return [...def, ...ok(commandeOccurrence(creation, d, { composantId: "kd", niveauId: "", x: 1, y: 2, z: 0, orientation: 90 }))];
+  },
+  "studio.structure.element": (d) => ok(commandeStructure(creation, d, { ...SAISIE_STRUCTURE_VIDE, type: "column", geometrie: "1 1", largeur: 0.3, profondeur: 0.3, hauteur: 3, base: 0, orientation: 0 }, lireSommets)),
 };
 
 describe("TR-EX-036 — chaque geste a une alternative au clavier ou par saisie numérique (contrôle sur le manifeste)", () => {

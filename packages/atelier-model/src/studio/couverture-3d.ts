@@ -61,6 +61,7 @@ const SERVEUR_TEST = "apps/api/src/lib/studio-exact.test.ts";
 const SURFACES_TEST = "packages/atelier-model/src/studio/surfaces-libres.test.ts";
 const SURFACES_SERVEUR_TEST = "apps/api/src/lib/studio-surfaces.test.ts";
 const SUBDIVISIONS_TEST = "packages/atelier-model/src/studio/subdivisions.test.ts";
+const BATIMENT_TEST = "packages/atelier-model/src/studio/batiment/batiment.test.ts";
 
 const TYPES = [
   // ——— Types livrés : chacun cite ses tests ———
@@ -96,6 +97,13 @@ const TYPES = [
       { fichier: EXACT_TEST, libelle: "NURBS rationnelle : quart de cylindre R 2 m, L 3 m épaissi de 0,1 m vers l'extérieur — volume π/4 ((R + e)² − R²) L, intérieur π/4 (R² − (R − e)²) L" },
       { fichier: SURFACES_SERVEUR_TEST, libelle: "X.1-05 serveur : l'épaississement est recalculé depuis la surface du document du serveur ; son résultat remplace celui du client" }],
   },
+  {
+    // Lot W3-B (X.1-04) : définition partagée et occurrences placées, géométrie dérivée de la définition.
+    id: "composant-3d", libelle: "Composant 3D", source: OBJETS_PRIMAIRES, etat: "disponible", outils: ["studio.composant.definir", "studio.composant.placer"],
+    tests: [{ fichier: BATIMENT_TEST, libelle: "chaque occurrence dérive sa géométrie de la définition placée ; modifier la définition change toutes ses occurrences dans la même révision" },
+      { fichier: BATIMENT_TEST, libelle: "rendre unique : l'occurrence désigne une copie de la définition ; la définition d'origine modifiée ne la touche plus" },
+      { fichier: BATIMENT_TEST, libelle: "table d'instanciation : une géométrie par définition, l'indice d'instance désigne son occurrence (désignation conservée après instanciation)" }],
+  },
   // ——— Types avancés : non disponibles tant qu'ils n'ont pas de test ———
   {
     id: "sommets-aretes", libelle: "Sommets et arêtes éditables", source: OBJETS_PRIMAIRES, etat: "non-disponible", outils: [], tests: [],
@@ -104,10 +112,6 @@ const TYPES = [
   {
     id: "groupe-3d", libelle: "Groupe 3D", source: OBJETS_PRIMAIRES, etat: "non-disponible", outils: [], tests: [],
     manque: "studio-document/1 n'a pas de groupe de solides.",
-  },
-  {
-    id: "composant-3d", libelle: "Composant 3D", source: OBJETS_PRIMAIRES, etat: "non-disponible", outils: [], tests: [],
-    manque: "studio-document/1 n'a ni définition ni occurrence de composant 3D.",
   },
   {
     id: "courbe-exacte-3d", libelle: "Courbe exacte 3D", source: SCENE_S5, etat: "non-disponible", outils: [], tests: [],

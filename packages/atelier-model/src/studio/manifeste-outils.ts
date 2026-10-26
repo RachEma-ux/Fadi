@@ -67,6 +67,9 @@ const PROPRIETAIRES: Readonly<Record<StudioToolGroup, StudioProprietaireOutil>> 
   graphismes: { id: "studio.graphismes", module: "packages/atelier-model/src/studio/graphismes" },
   reperes: { id: "studio.reperes", module: "packages/atelier-model/src/studio/reperes.ts" },
   sources: { id: "studio.sources", module: "packages/atelier-model/src/studio/sources" },
+  batiment: { id: "studio.batiment", module: "packages/atelier-model/src/studio/batiment" },
+  blocs: { id: "studio.blocs", module: "packages/atelier-model/src/studio/blocs" },
+  contraintes: { id: "studio.contraintes", module: "packages/atelier-model/src/studio/contraintes" },
 });
 
 export interface StudioEntreeManifeste {
@@ -149,6 +152,15 @@ const DECLARATIONS = {
   "studio.graphisme.retirer": { contextes: P2D, prerequis: ["studio.graphisme.creer"] },
   "studio.repere.projet": { contextes: P2D },
   "studio.source.declarer": { contextes: P2D },
+  // Lot W3-B : niveaux, composants 3D et éléments structurels — panneau « Bâtiment » de la planche, rendus en vue 3D.
+  "studio.niveau.definir": { contextes: ["planche-2d", "vue-3d"] },
+  "studio.composant.definir": { contextes: ["planche-2d", "vue-3d"] },
+  "studio.composant.placer": { contextes: ["planche-2d", "vue-3d"], prerequis: ["studio.composant.definir"] },
+  "studio.structure.element": { contextes: ["planche-2d", "vue-3d"] },
+  "studio.bloc.definir": { contextes: P2D },
+  "studio.bloc.inserer": { contextes: P2D, prerequis: ["studio.bloc.definir"] },
+  "studio.bloc.eclater": { contextes: P2D, prerequis: ["studio.bloc.inserer"] },
+  "studio.contrainte.poser": { contextes: P2D },
 } as const satisfies Record<StudioToolId, Declaration>;
 
 const chargeurDe = (contextes: readonly StudioContexteOutil[]): StudioIdChargeur =>

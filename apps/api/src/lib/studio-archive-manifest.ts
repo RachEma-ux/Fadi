@@ -141,7 +141,9 @@ export const STUDIO_JSON_FIELDS_WITHOUT_ACCOUNTS: Readonly<Partial<Record<Studio
   studio_studies: ["example_install"],
   // Provenance d'une copie indépendante (nouvel identifiant d'objet → identifiant source, TR-EX-013) : aucun compte.
   studio_variants: ["derivation_identities"],
-  studio_revisions: ["document", "envelope", "response"],
+  // Provenance d'une fusion de variantes (lot W3-D : variantes, révisions, résolutions) : aucun compte. Colonne nullable
+  // additive : une archive antérieure (sans elle) se restaure en NULL, version des tables inchangée.
+  studio_revisions: ["document", "envelope", "response", "fusion"],
   studio_comments: ["object_ids"],
   studio_requirement_checks: ["result"],
   // État de la cible d'un ajustement du métré (objet du document, quantités brutes) : aucun compte.

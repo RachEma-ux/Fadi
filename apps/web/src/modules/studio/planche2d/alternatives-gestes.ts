@@ -21,6 +21,7 @@ export type MoyenAlternatif =
   | "panneau-architecture" // axe, hôte et position saisis (architecture/PanneauArchitecture.tsx)
   | "panneau-volume-3d" // solides libres, faces, pivot saisis (vue3d/volume-libre.ts)
   | "panneau-extrusion" // extrusion saisie (vue3d/extrusion.ts)
+  | "panneau-batiment" // niveaux, composants, occurrences et éléments structurels saisis (batiment/PanneauBatiment.tsx)
   | "bouton-raccourci"; // bouton nommé de la barre et raccourci de l'outil
 
 export interface AlternativeGeste {
@@ -93,6 +94,16 @@ export const ALTERNATIVES_GESTES: Readonly<Record<string, AlternativeGeste>> = O
   "studio.graphisme.retirer": commande,
   "studio.repere.projet": commande,
   "studio.source.declarer": commande,
+  // Lot W3-B : formulaires du panneau « Bâtiment » (tout au clavier, aucun geste au pointeur requis).
+  "studio.niveau.definir": saisie("panneau-batiment"),
+  "studio.composant.definir": saisie("panneau-batiment"),
+  "studio.composant.placer": saisie("panneau-batiment"),
+  "studio.structure.element": saisie("panneau-batiment"),
+  // Lot W3-A (X.1-01) : boîtes « Blocs » et « Contraintes » (valeurs saisies, cibles cochées dans la liste), raccourci propre.
+  "studio.bloc.definir": commande,
+  "studio.bloc.inserer": commande,
+  "studio.bloc.eclater": commande,
+  "studio.contrainte.poser": commande,
 });
 
 /** Gestes de vue et de sélection au pointeur (outils/gestes.ts) → commandes de l'éditeur au clavier (raccourcis.ts). */

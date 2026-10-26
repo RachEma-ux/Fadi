@@ -1125,6 +1125,42 @@ export interface StudioComparison {
   to: { variantId: string; revisionId: string };
   difference: StudioDifferenceDocuments;
 }
+/** Fusion de variantes (lot W3-D, X.1-06) : aperçu à trois voies (`studio-fusion/1`), sans le document fusionné. */
+export type StudioCoteFusion = "source" | "cible";
+export interface StudioConflitFusion {
+  id: string;
+  type: "modification-concurrente" | "suppression-modification" | "collision-identifiant" | "combinaison-invalide" | "reference-cassee";
+  cles: string[];
+  propriete: string | null;
+  supprimeDans?: StudioCoteFusion;
+  reference?: { de: string; vers: string; nature: string };
+  etats: { base: string | null; source: string | null; cible: string | null };
+  valeurs?: { base: unknown; source: unknown; cible: unknown };
+  resolution: StudioCoteFusion | null;
+}
+export interface StudioApercuFusion {
+  schema: "studio-fusion/1";
+  changementsSource: { cle: string; etat: "ajoute" | "supprime" | "modifie" }[];
+  changementsCible: { cle: string; etat: "ajoute" | "supprime" | "modifie" }[];
+  appliques: { cle: string; etat: "ajoute" | "supprime" | "modifie"; origine: "source" | "mixte" | "resolution" }[];
+  conflits: StudioConflitFusion[];
+  nonResolus: string[];
+  resolutionsInconnues: string[];
+  provisoire: boolean;
+  valide: boolean;
+  erreur: { path: string; message: string } | null;
+  empreinte: string | null;
+  aFusionner: boolean;
+}
+export interface StudioFusionLue {
+  cible: { variantId: string; revisionId: string };
+  source: { variantId: string; revisionId: string };
+  ancetre: { variantId: string; revisionId: string };
+  canWrite: boolean;
+  apercu: StudioApercuFusion;
+}
+export interface StudioFusionCorps { requestId: string; sourceVariantId: string; sourceRevisionId: string; baseRevisionId: string; empreinte: string; resolutions?: Record<string, StudioCoteFusion> }
+export type StudioFusionEcrite = StudioContext & { replayed: boolean; fusion: { type: "fusion" | "annulation" } & Record<string, unknown> };
 const studioRoot = (p: string) => `/projects/${encodeURIComponent(p)}/studio/studies`;
 const studioStudyPath = (p: string, s: string) => `${studioRoot(p)}/${encodeURIComponent(s)}`;
 const studioVariantPath = (p: string, s: string, v: string) => `${studioStudyPath(p, s)}/variants/${encodeURIComponent(v)}`;
@@ -1388,6 +1424,10 @@ export const api = {
   studioRevision: (p: string, s: string, v: string, r: string) => request<StudioContext>(`${studioVariantPath(p, s, v)}/revisions/${encodeURIComponent(r)}`),
   /** Comparaison lecture seule de deux côtés de la même étude (`variantId` ou `variantId:revisionId`), calculée par le serveur. */
   studioCompare: (p: string, s: string, from: string, to: string) => request<StudioComparison>(`${studioStudyPath(p, s)}/compare?${new URLSearchParams({ from, to })}`),
+  /** Fusion de variantes (lot W3-D) : aperçu (lecture), application (révision `variant-merge` de la cible), annulation. */
+  studioFusionApercu: (p: string, s: string, v: string, sourceVariantId: string, resolutions?: Record<string, StudioCoteFusion>) => request<StudioFusionLue>(`${studioVariantPath(p, s, v)}/fusion/apercu`, { method: "POST", body: JSON.stringify({ sourceVariantId, ...(resolutions ? { resolutions } : {}) }) }),
+  studioFusionAppliquer: (p: string, s: string, v: string, corps: StudioFusionCorps) => request<StudioFusionEcrite>(`${studioVariantPath(p, s, v)}/fusion`, { method: "POST", body: JSON.stringify(corps) }),
+  studioFusionAnnuler: (p: string, s: string, v: string, requestId: string, revisionId: string) => request<StudioFusionEcrite>(`${studioVariantPath(p, s, v)}/fusion/annulation`, { method: "POST", body: JSON.stringify({ requestId, revisionId }) }),
   /** Fils de commentaires de la variante, dans l'ordre des fils (origine puis réponses). */
   studioComments: (p: string, s: string, v: string) => request<StudioCommentsView>(`${studioVariantPath(p, s, v)}/comments`),
   /** Promotion d'un commentaire d'origine en observation (auteur ou propriétaire). */

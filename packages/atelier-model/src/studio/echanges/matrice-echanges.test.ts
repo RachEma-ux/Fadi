@@ -110,12 +110,16 @@ describe("Matrice d'échanges : donnée versionnée et cohérente", () => {
       // Lot G2 (EX-027, INV-013) : échelle d’accès (architecture.ladder : SVG / DXF en plan, IFC IfcStair .LADDER. exact) ;
       // catégorie « cotesFaces » (cotes de faces 3D, écrites dans aucun format).
       9: "7f7e636bf4c023b2fa10bc992b666b8a76e1e1c10027037abbc52434e125d6ae",
+      // Lot W3-A (X.1-01) : blocs définis par l'utilisateur (BLOCK / INSERT en DXF, lus et écrits ; insertions développées
+      // en SVG ; hors IFC) et contraintes géométriques (écrites dans aucun format).
+      10: "2d49765192412217c8d40b522ae46a6dc855a27aa0627b1d856c0035db7d9d66",
+      // Lot W3-B (X.1-04) : poteau, poutre, dalle (architecture : SVG / DXF en plan, IFC IfcColumn / IfcBeam / IfcSlab exacts) ;
+      // catégories « niveaux » (IfcBuildingStorey réel), « composants » (type partagé) et « occurrences » (IfcMappedItem).
+      11: "80bfbd30d7aebb34f5dc435fccb79a8829b244cd7d45feb83a11eb85eef22805",
       // Lot W3-C (X.1-05) : catégorie « surfaces » (surfaces libres NURBS : OBJ maillé, STEP une fois épaissies, absentes
-      // de SVG / DXF / IFC / STL), raison « surface-libre-hors-export ».
-      10: "0cdd01983dd69550bb340aeb5f88fb959a7d2a2aafcf2ae7b77a061d4f1652f2",
-      // Lot W3-C (X.1-05, suite) : catégorie « subdivisions » (surfaces de subdivision : OBJ et STL maillés — STL si fermées —,
-      // STEP une fois solidifiées), raison « surface-subdivision-hors-export ».
-      11: "ba7e4ca422761cbd62b82ca3e0dc5eef4960ace484a5010a16a25863e1c42de4",
+      // de SVG / DXF / IFC / STL), raison « surface-libre-hors-export » ; catégorie « subdivisions » (surfaces de subdivision :
+      // OBJ et STL maillés — STL si fermées —, STEP une fois solidifiées), raison « surface-subdivision-hors-export ».
+      12: "cc5c28cbb4b8d490f3be39efe30821648282a2732e34206d394d799645ebf5ed",
     };
     // Depuis la révision 8, l'empreinte couvre aussi les capacités par sens d'échange (EX-079).
     const capacites = STUDIO_MATRICE_ECHANGES.revision >= 8 ? { capacites: STUDIO_CAPACITES_PAR_SENS } : {};
@@ -303,7 +307,15 @@ const complet = (): StudioDocument => ({
     { id: "o3", type: "opening", hostId: "m1", position: 9.5, width: 1, height: 1, sill: 1 },
     // Lot G2 (EX-027) : échelle d’accès.
     { id: "ech1", type: "ladder", position: { x: 14, y: 20 }, rotation: 0, width: 0.5, height: 3, base: 0, rungs: 9, section: 0.04 },
+    // Lot W3-B : éléments structurels typés rattachés à un niveau (valeurs SYNTHÉTIQUES).
+    { id: "po1", type: "column", niveauId: "niv1", position: { x: 20, y: 20 }, rotation: 0, width: 0.3, depth: 0.3, height: 3, base: 3 },
+    { id: "pt1", type: "beam", niveauId: "niv1", start: { x: 20, y: 20 }, end: { x: 26, y: 20 }, width: 0.2, height: 0.4, base: 5.6 },
+    { id: "da1", type: "slab", niveauId: "niv1", contour: [{ x: 20, y: 20 }, { x: 26, y: 20 }, { x: 26, y: 26 }, { x: 20, y: 26 }], thickness: 0.2, base: 6 },
   ],
+  // Lot W3-B : niveau, définition de composant et occurrence (géométrie SYNTHÉTIQUE).
+  niveaux: [{ id: "niv1", nom: "Étage 1", cote: 3 }],
+  composants: [{ id: "cp1", nom: "Gaine", solides: [{ id: "g", type: "box", placement: { origin: { x: 0, y: 0, z: 0 }, rotation: 0 }, width: 0.2, depth: 0.2, height: 3 }] }],
+  occurrences: [{ id: "oc1", type: "occurrence", composantId: "cp1", niveauId: "niv1", placement: { origin: { x: 30, y: 20, z: 3 }, rotation: 0 } }],
   proprietes: [
     { cibleId: "m1", nom: "Résistance au feu", valeur: "REI 60", source: "Fiche de recette (synthétique)" },
     { cibleId: "m1", nom: "Isolation" },
@@ -323,6 +335,10 @@ const complet = (): StudioDocument => ({
   ],
   // Source importée (EX-014) : provenance déclarée (empreinte SYNTHÉTIQUE).
   sources: [{ id: "src1", type: "source", format: "dxf", versionFormat: "AC1009", nomFichier: "plan.dxf", empreinteSha256: "0".repeat(64), recuLe: "2026-10-25T10:00:00.000Z", auteur: null, uniteLue: "mm", uniteRetenue: "mm", facteur: 0.001, repereSource: null, transformation: "identite", restrictions: null, objets: 3 }],
+  // Lot W3-A (X.1-01) : un bloc défini par l'utilisateur, une insertion, une contrainte (ligne l1 horizontale).
+  blocs: [{ id: "bl1", type: "bloc", nom: "Repère", base: { x: 0, y: 0 }, elements: [{ id: "e1", type: "line", start: { x: 0, y: 0 }, end: { x: 1, y: 0 } }] }],
+  insertions: [{ id: "in1", type: "insertion", bloc: "bl1", position: { x: 90, y: 0 }, rotation: 0, echelle: 1 }],
+  contraintes: [{ id: "ct1", type: "horizontal", cibles: [{ objet: "l1" }] }],
 } as StudioDocument);
 
 describe("E.6-03 : sous-ensemble SVG / DXF / IFC = rapport de fidélité", () => {
@@ -417,7 +433,9 @@ describe("E.6-03 : sous-ensemble SVG / DXF / IFC = rapport de fidélité", () =>
     expect(r.rapport.nonPris.map((n) => n.type)).toEqual(["INSERT", "TEXT"]);
     const e = entree("dessin-dxf-import");
     for (const nom of ["LINE", "CIRCLE", "ARC", "LWPOLYLINE / POLYLINE 2D"]) expect(e.entites.find((x) => x.entite === nom)?.couverture).not.toBe("absente");
-    expect(e.entites.some((x) => x.couverture === "absente" && x.entite.includes("TEXT") && x.entite.includes("INSERT"))).toBe(true);
+    expect(e.entites.some((x) => x.couverture === "absente" && x.entite.includes("TEXT"))).toBe(true);
+    // Lot W3-A (X.1-01) : un INSERT d'un bloc représentable devient une insertion ; celui d'un bloc absent reste compté.
+    expect(e.entites.find((x) => x.entite === "BLOCK / INSERT")?.couverture).toBe("partielle");
     expect(() => lireDxfStudio("AutoCAD Binary DXF\r\n\u001a\u0000")).toThrow(/binaire/);
   });
 });

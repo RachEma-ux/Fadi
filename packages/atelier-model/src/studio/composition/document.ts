@@ -21,12 +21,18 @@ import { validerNonNatif, type StudioNonNatif } from "../non-natifs/non-natifs.j
 import { validerGraphisme, STUDIO_LIMITES_GRAPHISMES, type StudioGraphisme } from "../graphismes/graphismes.js";
 import { validerSystemeProjet, type StudioSystemeProjet } from "../reperes.js";
 import { validerSources, type StudioSourceExterne } from "../sources/sources.js";
+import { controlerBlocs, validerDefinitionBloc, validerInsertionBloc, type StudioDefinitionBloc, type StudioInsertionBloc } from "../blocs/blocs.js";
+import { STUDIO_LIMITES_CONTRAINTES, studioRefusContrainte, validerContrainte, type StudioContrainte } from "../contraintes/contraintes.js";
 import type { StudioDocument } from "./types.js";
+import { validerNiveaux, type StudioNiveau } from "../batiment/niveaux.js";
+import { validerComposants, validerOccurrence, type StudioComposant, type StudioOccurrence } from "../batiment/composants.js";
 
 /** Document Studio : forme canonique, validation complète, création, lectures (sélection, mesure d'une cote). */
 
 /** Forme canonique : `layers`, `dimensions`, `solides` et `annotations` vides sont omis. */
-export function sortie(id: string, objects: StudioShape[], layers: StudioLayer[], dimensions: StudioDimension[], solides: StudioSolid[] = [], annotations: StudioAnnotation[] = [], architecture: StudioArchitectureItem[] = [], proprietes: StudioPropriete[] = [], scenes: StudioElementVisualisation[] = [], nonNatifs: StudioNonNatif[] = [], exacts: StudioSolideExact[] = [], graphismes: StudioGraphisme[] = [], systemeProjet?: StudioSystemeProjet, sources: StudioSourceExterne[] = [], cotesFaces: StudioCoteFace[] = [], surfaces: StudioSurfaceLibre[] = [], subdivisions: StudioSurfaceSubdivision[] = []): StudioDocument {
+export function sortie(id: string, objects: StudioShape[], layers: StudioLayer[], dimensions: StudioDimension[], solides: StudioSolid[] = [], annotations: StudioAnnotation[] = [], architecture: StudioArchitectureItem[] = [], proprietes: StudioPropriete[] = [], scenes: StudioElementVisualisation[] = [], nonNatifs: StudioNonNatif[] = [], exacts: StudioSolideExact[] = [], graphismes: StudioGraphisme[] = [], systemeProjet?: StudioSystemeProjet, sources: StudioSourceExterne[] = [], cotesFaces: StudioCoteFace[] = [], blocs: StudioDefinitionBloc[] = [], insertions: StudioInsertionBloc[] = [], contraintes: StudioContrainte[] = [], batiment: Batiment = {}, libres: Libres = {}): StudioDocument {
+  const { niveaux = [], composants = [], occurrences = [] } = batiment;
+  const { surfaces = [], subdivisions = [] } = libres;
   return {
     id, schemaVersion: "studio-document/1", units: "m", frame: "local-2d", objects,
     ...(layers.length ? { layers } : {}),
@@ -44,12 +50,23 @@ export function sortie(id: string, objects: StudioShape[], layers: StudioLayer[]
     ...(graphismes.length ? { graphismes } : {}),
     ...(systemeProjet ? { systemeProjet } : {}),
     ...(sources.length ? { sources } : {}),
+    ...(niveaux.length ? { niveaux } : {}),
+    ...(composants.length ? { composants } : {}),
+    ...(occurrences.length ? { occurrences } : {}),
+    ...(blocs.length ? { blocs } : {}),
+    ...(insertions.length ? { insertions } : {}),
+    ...(contraintes.length ? { contraintes } : {}),
   };
 }
 
+/** Extensions du bâtiment (lot W3-B) : niveaux, définitions de composants et occurrences. */
+export interface Batiment { niveaux?: StudioNiveau[]; composants?: StudioComposant[]; occurrences?: StudioOccurrence[] }
+/** Surfaces libres (X.1-05) : NURBS et surfaces de subdivision. */
+export interface Libres { surfaces?: StudioSurfaceLibre[]; subdivisions?: StudioSurfaceSubdivision[] }
+
 /** Returns a private, canonical copy (empty `layers` / `dimensions` / `annotations` omitted) or throws `StudioValidationError`. */
 export function validateStudioDocument(value: unknown): StudioDocument {
-  const d = record(value, ["id", "schemaVersion", "units", "frame", "objects"], "document", ["layers", "dimensions", "solides", "annotations", "architecture", "proprietes", "scenes", "nonNatifs", "exacts", "graphismes", "systemeProjet", "sources", "cotesFaces", "surfaces", "subdivisions"]);
+  const d = record(value, ["id", "schemaVersion", "units", "frame", "objects"], "document", ["layers", "dimensions", "solides", "annotations", "architecture", "proprietes", "scenes", "nonNatifs", "exacts", "graphismes", "systemeProjet", "sources", "cotesFaces", "blocs", "insertions", "contraintes", "niveaux", "composants", "occurrences", "surfaces", "subdivisions"]);
   if (d.schemaVersion !== "studio-document/1") fail("studioDocument.schemaVersion", "version non prise en charge");
   if (d.units !== "m") fail("studioDocument.units", "unité m attendue");
   if (d.frame !== "local-2d") fail("studioDocument.frame", "repère local-2d attendu");
@@ -136,6 +153,30 @@ export function validateStudioDocument(value: unknown): StudioDocument {
     if (o.type !== "opening" && o.layerId !== undefined && !layerIds.has(o.layerId)) fail("studioDocument.architecture", "calque inconnu");
   }
   controlerArchitecture(architecture, "studioDocument.architecture");
+  // Bâtiment (lot W3-B) : niveaux, définitions de composants et occurrences, identifiants uniques dans tout le document ;
+  // chaque niveau désigné existe, chaque occurrence désigne une définition existante, sur un calque connu.
+  const unique = (id: string, champ: string) => {
+    if (shapes.has(id) || dimensionIds.has(id) || annotationIds.has(id)) fail(`studioDocument.${champ}`, "identifiant dupliqué");
+    annotationIds.add(id);
+  };
+  const niveaux = Object.hasOwn(d, "niveaux") ? validerNiveaux(array(d.niveaux, "studioDocument.niveaux"), "studioDocument.niveaux") : [];
+  for (const n of niveaux) unique(n.id, "niveaux");
+  const niveauIds = new Set(niveaux.map((n) => n.id));
+  architecture.forEach((o, i) => {
+    if (o.type !== "opening" && o.niveauId !== undefined && !niveauIds.has(o.niveauId)) fail(`studioDocument.architecture[${i}].niveauId`, `niveau introuvable : ${o.niveauId}`);
+  });
+  const composants = Object.hasOwn(d, "composants") ? validerComposants(array(d.composants, "studioDocument.composants"), "studioDocument.composants") : [];
+  for (const c of composants) unique(c.id, "composants");
+  const composantIds = new Set(composants.map((c) => c.id));
+  const rawOccurrences = Object.hasOwn(d, "occurrences") ? array(d.occurrences, "studioDocument.occurrences") : [];
+  if (rawOccurrences.length > STUDIO_LIMITS.objects) fail("studioDocument.occurrences", `${STUDIO_LIMITS.objects} occurrences au plus`);
+  const occurrences = rawOccurrences.map((o, i) => validerOccurrence(o, `studioDocument.occurrences[${i}]`));
+  occurrences.forEach((o, i) => {
+    unique(o.id, "occurrences");
+    if (!composantIds.has(o.composantId)) fail(`studioDocument.occurrences[${i}].composantId`, `définition de composant introuvable : ${o.composantId}`);
+    if (o.niveauId !== undefined && !niveauIds.has(o.niveauId)) fail(`studioDocument.occurrences[${i}].niveauId`, `niveau introuvable : ${o.niveauId}`);
+    if (o.layerId !== undefined && !layerIds.has(o.layerId)) fail("studioDocument.occurrences", "calque inconnu");
+  });
   // Liens des cotes : vers une forme, ou vers un mur (cote associative sur objet architectural, AC-001).
   const ciblesCotes = studioResolveurCotes(shapes.values(), architecture);
   dimensions.forEach((o, i) => controlerLiens(o, ciblesCotes, `studioDocument.dimensions[${i}]`));
@@ -144,7 +185,7 @@ export function validateStudioDocument(value: unknown): StudioDocument {
   // Visualisation (lot E.5) : scènes et apparences, identifiants propres à la liste, calques et objets 3D connus.
   const rawScenes = Object.hasOwn(d, "scenes") ? array(d.scenes, "studioDocument.scenes") : [];
   const scenes = rawScenes.map((o, i) => validerElementVisualisation(o, `studioDocument.scenes[${i}]`));
-  if (scenes.length) controlerVisualisation(scenes, { calques: layerIds, objets: new Set([...shapes.keys(), ...solides.map((s) => s.id), ...exacts.map((s) => s.id), ...surfaces.map((s) => s.id), ...subdivisions.map((s) => s.id), ...architecture.map((a) => a.id)]) }, "studioDocument.scenes");
+  if (scenes.length) controlerVisualisation(scenes, { calques: layerIds, objets: new Set([...shapes.keys(), ...solides.map((s) => s.id), ...exacts.map((s) => s.id), ...surfaces.map((s) => s.id), ...subdivisions.map((s) => s.id), ...architecture.map((a) => a.id), ...occurrences.map((o) => o.id)]) }, "studioDocument.scenes");
   // Éléments non natifs (lot F3) : identifiants uniques dans tout le document, calque connu ; jamais métrés ni exportés.
   const rawNonNatifs = Object.hasOwn(d, "nonNatifs") ? array(d.nonNatifs, "studioDocument.nonNatifs") : [];
   if (rawNonNatifs.length > STUDIO_LIMITS.objects) fail("studioDocument.nonNatifs", `${STUDIO_LIMITS.objects} éléments non natifs au plus`);
@@ -176,7 +217,27 @@ export function validateStudioDocument(value: unknown): StudioDocument {
     if (c.layerId !== undefined && !layerIds.has(c.layerId)) fail("studioDocument.cotesFaces", "calque inconnu");
     controlerCoteFace(c, solides, `studioDocument.cotesFaces[${i}]`);
   }
-  return sortie(identifier(d.id, "studioDocument.id"), objects, layers, dimensions, solides, annotations, architecture, proprietes, scenes, nonNatifs, exacts, graphismes, systemeProjet, sources, cotesFaces, surfaces, subdivisions);
+  // Blocs (X.1-01) : définitions et insertions, identifiants uniques dans tout le document, noms uniques, calque connu.
+  const blocs = (Object.hasOwn(d, "blocs") ? array(d.blocs, "studioDocument.blocs") : []).map((o, i) => validerDefinitionBloc(o, `studioDocument.blocs[${i}]`));
+  const insertions = (Object.hasOwn(d, "insertions") ? array(d.insertions, "studioDocument.insertions") : []).map((o, i) => validerInsertionBloc(o, `studioDocument.insertions[${i}]`));
+  controlerBlocs(blocs, insertions, "studioDocument");
+  for (const x of [...blocs, ...insertions]) {
+    if (shapes.has(x.id) || dimensionIds.has(x.id) || annotationIds.has(x.id)) fail(`studioDocument.${x.type === "bloc" ? "blocs" : "insertions"}`, "identifiant dupliqué");
+    annotationIds.add(x.id);
+    if (x.type === "insertion" && x.layerId !== undefined && !layerIds.has(x.layerId)) fail("studioDocument.insertions", "calque inconnu");
+  }
+  // Contraintes (X.1-01) : identifiants uniques ; une contrainte qui n'est pas « à résoudre » vise des cibles présentes
+  // et compatibles (une contrainte rompue garde sa cible même disparue, jusqu'à sa résolution ou son retrait).
+  const rawContraintes = Object.hasOwn(d, "contraintes") ? array(d.contraintes, "studioDocument.contraintes") : [];
+  if (rawContraintes.length > STUDIO_LIMITES_CONTRAINTES.contraintes) fail("studioDocument.contraintes", `${STUDIO_LIMITES_CONTRAINTES.contraintes} contraintes au plus`);
+  const contraintes = rawContraintes.map((o, i) => validerContrainte(o, `studioDocument.contraintes[${i}]`));
+  contraintes.forEach((c, i) => {
+    if (shapes.has(c.id) || dimensionIds.has(c.id) || annotationIds.has(c.id)) fail("studioDocument.contraintes", "identifiant dupliqué");
+    annotationIds.add(c.id);
+    const refus = c.aResoudre ? null : studioRefusContrainte(c, shapes);
+    if (refus) fail(`studioDocument.contraintes[${i}]`, `contrainte ${c.id} : ${refus}`);
+  });
+  return sortie(identifier(d.id, "studioDocument.id"), objects, layers, dimensions, solides, annotations, architecture, proprietes, scenes, nonNatifs, exacts, graphismes, systemeProjet, sources, cotesFaces, blocs, insertions, contraintes, { niveaux, composants, occurrences }, { surfaces, subdivisions });
 }
 
 /** Valeur mesurée d'une cote angulaire (degrés), dérivée ; « non évaluée » (null) tant qu'elle est à résoudre. */

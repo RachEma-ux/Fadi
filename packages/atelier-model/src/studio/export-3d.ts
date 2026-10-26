@@ -7,6 +7,9 @@ import { cotesSolide, empriseSolide, estBascule, estDroit } from "./objets-3d/so
 import { studioMaillageSolide } from "./objets-3d/maillage.js";
 import { lireArchitecture } from "./architecture/validation.js";
 import { morceauxVolume } from "./architecture/geometrie.js";
+import { volumesEchelle } from "./architecture/echelle.js";
+import { cotesStructurelles, empriseStructurelle } from "./architecture/structure.js";
+import { studioPointOccurrence } from "./batiment/composants.js";
 
 /**
  * Exports 3D d'un document Studio (`studio-document/1`) — E.6-04, chacun avec son contrat :
@@ -27,6 +30,10 @@ import { morceauxVolume } from "./architecture/geometrie.js";
  *   oblique ou basculé) ou brep du noyau (solide exact, dont une surface libre épaissie). Une surface libre non épaissie
  *   n'est pas un solide : comptée « surface-libre-non-epaissie », jamais écrite. Le document n'est jamais modifié : un objet paramétrique reste
  *   canonique, son extrusion n'est qu'une entrée de l'écriture (R15).
+ *
+ * Lot W3-B : poteaux, poutres et dalles (extrusion de leur emprise), échelles d'accès (montants et échelons) et
+ * occurrences de composants (solides de leur définition placés) sont des solides écrits ; niveaux et définitions de
+ * composants ne sont pas des géométries : ils sont comptés (une définition est écrite par ses occurrences).
  *
  * Tous les calques sont écrits (un calque masqué l'est aussi, ses éléments sont comptés « masqués » dans l'en-tête), pour
  * qu'aucune géométrie ne disparaisse en silence ; cotes, annotations, graphismes, propriétés, scènes et éléments non
@@ -69,7 +76,7 @@ export interface StudioBilanExport3d {
   nonEcrits: Readonly<Record<string, number>>;
 }
 
-interface Element3d { id: string; layerId?: string; categorie: "objet" | "solide" | "exact" | "mur" | "surface" | "surface-libre" | "subdivision-fermee" | "subdivision-ouverte"; vertices: StudioPoint3[]; triangles: [number, number, number][] }
+interface Element3d { id: string; layerId?: string; categorie: "objet" | "solide" | "exact" | "mur" | "echelle" | "structure" | "occurrence" | "surface" | "surface-libre" | "subdivision-fermee" | "subdivision-ouverte"; vertices: StudioPoint3[]; triangles: [number, number, number][] }
 
 function elements3d(mesh: StudioMesh3d): Element3d[] {
   const out: Element3d[] = [];
@@ -79,7 +86,12 @@ function elements3d(mesh: StudioMesh3d): Element3d[] {
   for (const s of mesh.exacts ?? []) out.push({ id: s.id, ...lay(s.layerId), categorie: "exact", vertices: s.vertices, triangles: s.triangles });
   for (const s of mesh.surfaces ?? []) out.push({ id: s.id, ...lay(s.layerId), categorie: "surface-libre", vertices: s.vertices, triangles: s.triangles });
   for (const s of mesh.subdivisions ?? []) out.push({ id: s.id, ...lay(s.layerId), categorie: s.fermee ? "subdivision-fermee" : "subdivision-ouverte", vertices: s.vertices, triangles: s.triangles });
-  for (const s of mesh.architecture ?? []) if (s.type === "wall") out.push({ id: s.id, ...lay(s.layerId), categorie: "mur", vertices: s.vertices, triangles: s.triangles });
+  for (const s of mesh.architecture ?? []) {
+    if (s.type === "opening") continue;
+    const categorie = s.type === "wall" ? "mur" : s.type === "ladder" ? "echelle" : "structure";
+    out.push({ id: s.id, ...lay(s.layerId), categorie, vertices: s.vertices, triangles: s.triangles });
+  }
+  for (const s of mesh.occurrences ?? []) out.push({ id: s.id, ...lay(s.layerId), categorie: "occurrence", vertices: s.vertices, triangles: s.triangles });
   return out;
 }
 
@@ -94,6 +106,8 @@ function horsGeometrie(doc: StudioDocument): Record<string, number> {
   n("propriete", doc.proprietes?.length ?? 0);
   n("visualisation", doc.scenes?.length ?? 0);
   n("non-natif", doc.nonNatifs?.length ?? 0);
+  n("niveau", doc.niveaux?.length ?? 0);
+  n("definition-composant", doc.composants?.length ?? 0);
   return c;
 }
 
@@ -210,7 +224,7 @@ export type StudioSolideStep =
 export interface StudioPieceStep {
   /** Identifiant Studio échappé (`studioNomEchange3d`) : nom du produit STEP. */
   nom: string;
-  categorie: "objet" | "solide" | "exact" | "mur";
+  categorie: "objet" | "solide" | "exact" | "mur" | "echelle" | "structure" | "occurrence";
   solides: StudioSolideStep[];
 }
 
@@ -259,6 +273,25 @@ export function studioPiecesStep(document: StudioDocument): { pieces: StudioPiec
       const morceaux = morceauxVolume(mur, geometrie, ouvertures);
       poser({ nom: studioNomEchange3d(mur.id), categorie: "mur", solides: morceaux.map((m) => ({ extrusion: { profil: m.plan.map((p) => ({ x: p.x, y: p.y })), z0: m.zMin, hauteur: m.zMax - m.zMin } })) }, mur.layerId);
     }
+    // Lot W3-B : échelles d'accès (prismes des montants et échelons), poteaux, poutres et dalles (emprise extrudée).
+    for (const a of doc.architecture) {
+      if (a.type === "ladder") {
+        poser({ nom: studioNomEchange3d(a.id), categorie: "echelle", solides: volumesEchelle(a).map((g) => { const n = g.vertices.length / 2; return { extrusion: { profil: plan(g.vertices.slice(0, n)), z0: g.vertices[0]!.z, hauteur: g.vertices[n]!.z - g.vertices[0]!.z } }; }) }, a.layerId);
+      } else if (a.type === "column" || a.type === "beam" || a.type === "slab") {
+        const { zMin, zMax } = cotesStructurelles(a);
+        poser({ nom: studioNomEchange3d(a.id), categorie: "structure", solides: [{ extrusion: { profil: empriseStructurelle(a).map((p) => ({ x: p.x, y: p.y })), z0: zMin, hauteur: zMax - zMin } }] }, a.layerId);
+      }
+    }
+  }
+  // Occurrences de composants (lot W3-B) : chaque solide de la définition, placé par l'occurrence (lissage réglé, exact).
+  const definitions = new Map((doc.composants ?? []).map((c) => [c.id, c]));
+  for (const o of doc.occurrences ?? []) {
+    const solides = definitions.get(o.composantId)!.solides.map((s): StudioSolideStep => {
+      const m = studioMaillageSolide(s), n = m.vertices.length / 2;
+      const place = m.vertices.map((v) => studioPointOccurrence(o.placement, v));
+      return { lissage: [place.slice(0, n), place.slice(n)] };
+    });
+    poser({ nom: studioNomEchange3d(o.id), categorie: "occurrence", solides }, o.layerId);
   }
   return { pieces, bilan: { format: "step", ecrits: pieces.length, masques: nMasques, nonEcrits } };
 }

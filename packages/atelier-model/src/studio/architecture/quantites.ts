@@ -1,5 +1,6 @@
 import { metreEchelle, type MetreEchelle } from "./echelle.js";
-import type { StudioArchitectureItem } from "./types.js";
+import type { StudioArchitectureItem, StudioStructuralElement } from "./types.js";
+import { metreStructurel, type MetreStructurel } from "./structure.js";
 import { lireArchitecture } from "./validation.js";
 
 /**
@@ -38,9 +39,16 @@ export interface QuantiteEchelle extends MetreEchelle {
   layerId?: string;
 }
 
-export function studioQuantitesArchitecture(items: readonly StudioArchitectureItem[]): (QuantiteMur | QuantiteOuverture | QuantiteEchelle)[] {
+/** Élément structurel typé (lot W3-B) : métré des seules valeurs saisies (`metreStructurel`), ni masse ni matériau. */
+export interface QuantiteStructurelle extends MetreStructurel {
+  id: string;
+  type: StudioStructuralElement["type"];
+  layerId?: string;
+}
+
+export function studioQuantitesArchitecture(items: readonly StudioArchitectureItem[]): (QuantiteMur | QuantiteOuverture | QuantiteEchelle | QuantiteStructurelle)[] {
   const lue = lireArchitecture(items);
-  const out: (QuantiteMur | QuantiteOuverture | QuantiteEchelle)[] = [];
+  const out: (QuantiteMur | QuantiteOuverture | QuantiteEchelle | QuantiteStructurelle)[] = [];
   for (const it of items) {
     if (it.type === "wall") {
       const m = lue.murs.get(it.id)!;
@@ -52,6 +60,8 @@ export function studioQuantitesArchitecture(items: readonly StudioArchitectureIt
       });
     } else if (it.type === "ladder") {
       out.push({ id: it.id, type: "ladder", ...(it.layerId !== undefined ? { layerId: it.layerId } : {}), ...metreEchelle(it) });
+    } else if (it.type === "column" || it.type === "beam" || it.type === "slab") {
+      out.push({ id: it.id, type: it.type, ...(it.layerId !== undefined ? { layerId: it.layerId } : {}), ...metreStructurel(it) });
     } else {
       const hote = lue.murs.get(it.hostId)!.mur;
       out.push({

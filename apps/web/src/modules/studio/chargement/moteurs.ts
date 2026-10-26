@@ -68,6 +68,11 @@ export const MOTEURS_PAR_BARRE: Readonly<Record<string, readonly IdMoteur[]>> = 
   graphismes: ["planche-2d"],
   reperes: ["planche-2d"],
   sources: ["planche-2d"],
+  // Lot W3-B : panneau « Bâtiment » de la planche ; la vue 3D, si elle est ouverte, rend niveaux, structure et occurrences.
+  batiment: ["planche-2d"],
+  // Blocs et contraintes (X.1-01) : planche 2D seulement.
+  blocs: ["planche-2d"],
+  contraintes: ["planche-2d"],
 });
 
 /**

@@ -36,7 +36,18 @@ describe("A.5-01 — écritures du document Studio par le seul contrat de comman
   });
   it("seule l'orchestration des commandes avance la tête d'une variante", () => {
     const avancees = API.flatMap((f) => [...f.texte.matchAll(/update\(studioVariants\)\.set\(\{([^}]*)\}/g)].map((m) => ({ chemin: f.chemin, champs: m[1]! })));
-    expect(avancees.filter((a) => a.champs.includes("headRevisionId")).map((a) => a.chemin)).toEqual(["lib/studio-commands.ts"]);
+    // Deux avancées dans ce seul module : lot de commandes et révision de fusion (lot W3-D), même orchestration.
+    expect(avancees.filter((a) => a.champs.includes("headRevisionId")).map((a) => a.chemin)).toEqual(["lib/studio-commands.ts", "lib/studio-commands.ts"]);
+  });
+  it("fusion de variantes (lot W3-D) : sa révision est écrite par le même module, sous la même orchestration (verrous, rejeu, chemin d'écriture, journal)", () => {
+    const lib = API.find((f) => f.chemin === "lib/studio-commands.ts")!.texte;
+    const debut = lib.indexOf("export async function ecrireRevisionFusionStudio(");
+    expect(debut).toBeGreaterThan(0);
+    const corps = lib.slice(debut, lib.indexOf("\n}\n", debut));
+    expect(corps).toMatch(/orchestrerCommandesDansTransaction<StudioFusionEcrite>\(tx, \{ kind: "studio"/);
+    for (const etape of ["lockedAccess(", "assertAccess(access, actorId, \"modify\"", "controlerCheminEcriture(", "studioArchivedRefusal()", "quotaCommandesStudio.verifier(", "consignerEvenementRevision(", "signalerTempsReel("]) expect(corps).toContain(etape);
+    const fusion = API.find((f) => f.chemin === "lib/studio-fusion.ts")!.texte;
+    expect(fusion).toContain("ecrireRevisionFusionStudio(");
   });
   it("une seule route, POST …/commands, soumet des enveloppes ; elle passe par l'orchestrateur commun", () => {
     // Lot G2 (IF-006) : la route passe par `soumettreEnveloppeStudio`, qui rend l'essai (mode « essai », aucune écriture)
