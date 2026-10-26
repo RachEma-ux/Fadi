@@ -4,9 +4,9 @@
  * (`translate="no"`), arabe compris. Une valeur absente est écrite « Valeur absente » avec son motif, jamais « 0 ».
  */
 import { useEffect, useState } from "react";
-import { categorieDe, declinaisonParDefaut, declinaisonProche, grouperIndicateurs, indicateursPrincipaux, LIBELLES_MILIEU, LIBELLES_SEXE, type FamilleIndicateurs, type Milieu, type Sexe, compterParType, type RangementCatalogue, couleursPour, degradeCss, regrouperCatalogue, type TypeCatalogue, formatNombre, legende, libelleAbsence, LIBELLES_USAGES, USAGES, type Composition, type MethodeClassification, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
+import { categorieDe, declinaisonParDefaut, declinaisonProche, grouperIndicateurs, indicateursPrincipaux, LIBELLES_MILIEU, LIBELLES_SEXE, type FamilleIndicateurs, type Milieu, type Sexe, compterParType, type RangementCatalogue, degradeCss, regrouperCatalogue, type TypeCatalogue, formatNombre, legende, libelleAbsence, LIBELLES_USAGES, USAGES, CLASSES_MAX, CLASSES_MIN, couleursPalette, PALETTE_PAR_DEFAUT, PALETTES_CLASSES, type IdPalette, type Composition, type MethodeClassification, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
 import { api, type IndicateurRecu, type ValeurRasterRecue, type CoucheRecue, type Disponibilite, type LigneTable, type ValeurRecue } from "../client";
-import { entreesCategories, lireSeuilsManuels, styleThematique, type Categorie } from "../composition-ops";
+import { entreesCategories, lireSeuilsManuels, reclasser, recolorerClasse, styleThematique, type Categorie } from "../composition-ops";
 
 /** Valeur de l'option « une couleur par entité » (jamais un identifiant d'indicateur : ceux-ci commencent par une lettre). */
 const ENTITES = "__entites__";
@@ -252,7 +252,15 @@ export function PanneauLegende(p: { composition: Composition; couches: Map<strin
             <h3 translate="no">{c?.titre ?? k.coucheId}</h3>
             <p translate="no">{ind ? `${ind.titre} (${ind.unite})${ind.periode ? ` — ${ind.periode}` : ""}` : style.indicateurId}</p>
             {ind?.nature === "calcule" && <p className="gd-discret">Résultat calculé par GeoData, non une valeur de la source.</p>}
-            <ul className="gd-entrees">{entrees.map((e) => <li key={String(e.classe)} className="gd-entree" data-classe={String(e.classe)}><span className={`gd-pastille${e.classe === "absente" ? " gd-hachure" : ""}`} style={{ background: e.classe === "absente" ? undefined : e.couleur }} />{`${e.libelle} (${e.effectif})`}</li>)}</ul>
+            <ul className="gd-entrees">{entrees.map((e) => (
+              <li key={String(e.classe)} className="gd-entree" data-classe={String(e.classe)}>
+                {e.classe === "absente"
+                  ? <span className="gd-pastille gd-hachure" />
+                  : <input type="color" className="gd-pastille gd-pastille-choix" value={e.couleur} data-gd-couleur-classe={e.classe} title={`Couleur de la classe ${e.libelle}`} aria-label={`Couleur de la classe ${e.libelle}`}
+                      onChange={(ev) => p.onStyle(k.coucheId, recolorerClasse(style, e.classe as number, ev.target.value))} />}
+                {`${e.libelle} (${e.effectif})`}
+              </li>
+            ))}</ul>
             <Seuils style={style} onChange={(s) => p.onStyle(k.coucheId, s)} valeurs={vs} />
           </section>
         );
@@ -261,30 +269,56 @@ export function PanneauLegende(p: { composition: Composition; couches: Map<strin
   );
 }
 
+const LIBELLES_METHODES: Record<MethodeClassification, string> = {
+  quantiles: "Quantiles (effectifs égaux)",
+  "intervalles-egaux": "Intervalles égaux",
+  "seuils-naturels": "Seuils naturels (Jenks)",
+  manuel: "Seuils manuels",
+};
+
+/** Dégradé d'aperçu d'une palette (n classes), pour la liste des palettes. */
+const apercu = (id: IdPalette, n: number, inverser: boolean) => `linear-gradient(to right, ${couleursPalette(id, n, inverser).flatMap((c, i, t) => [`${c} ${(i / t.length) * 100}%`, `${c} ${((i + 1) / t.length) * 100}%`]).join(", ")})`;
+
+/**
+ * Classification d'une couche thématique (lot D, D-GD-25) : méthode (quantiles, intervalles égaux, seuils naturels de
+ * Jenks, seuils manuels), nombre de classes, palette prédéfinie (et inversion) ; la couleur de chaque classe se choisit
+ * aussi dans la légende. Tout est enregistré avec la carte ; une valeur absente garde sa propre entrée hachurée.
+ */
 function Seuils({ style, valeurs, onChange }: { style: Extract<StyleCouche, { mode: "thematique" }>; valeurs: ValeurIndicateur[]; onChange(s: StyleCouche): void }) {
   const [texte, setTexte] = useState(style.seuils.join(" ; "));
   const [erreur, setErreur] = useState<string | null>(null);
   useEffect(() => setTexte(style.seuils.join(" ; ")), [style.seuils]);
+  const palette = style.palette ?? PALETTE_PAR_DEFAUT;
+  const classes = style.seuils.length + 1;
   return (
-    <div className="gd-seuils">
+    <div className="gd-seuils" data-gd-classification>
       <label className="gd-champ">Classification
-        <select value={style.methode} onChange={(e) => {
-          const m = e.target.value as MethodeClassification;
-          if (m !== "manuel") onChange(styleThematique(style.indicateurId, valeurs, m));
-          else onChange({ ...style, methode: "manuel" });
-        }}>
-          <option value="quantiles">Quantiles</option>
-          <option value="intervalles-egaux">Intervalles égaux</option>
-          <option value="manuel">Seuils manuels</option>
+        <select value={style.methode} data-gd-methode onChange={(e) => onChange(reclasser(style, valeurs, { methode: e.target.value as MethodeClassification }))}>
+          {(Object.keys(LIBELLES_METHODES) as MethodeClassification[]).map((m) => <option key={m} value={m}>{LIBELLES_METHODES[m]}</option>)}
         </select>
       </label>
+      {style.methode !== "manuel" && (
+        <label className="gd-champ">Nombre de classes
+          <select value={classes} data-gd-classes onChange={(e) => onChange(reclasser(style, valeurs, { classes: Number(e.target.value) }))}>
+            {Array.from({ length: CLASSES_MAX - CLASSES_MIN + 1 }, (_, i) => CLASSES_MIN + i).map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </label>
+      )}
+      <label className="gd-champ">Palette
+        <select value={palette} data-gd-palette onChange={(e) => onChange(reclasser(style, valeurs, { palette: e.target.value as IdPalette }))}>
+          {(Object.keys(PALETTES_CLASSES) as IdPalette[]).map((id) => <option key={id} value={id}>{PALETTES_CLASSES[id].libelle}</option>)}
+        </select>
+      </label>
+      <div className="gd-degrade" style={{ background: apercu(palette, classes, !!style.inverser) }} role="img" aria-label={`Aperçu de la palette ${PALETTES_CLASSES[palette].libelle}`} data-gd-apercu-palette />
+      <label className="gd-case"><input type="checkbox" checked={!!style.inverser} data-gd-inverser onChange={(e) => onChange(reclasser(style, valeurs, { inverser: e.target.checked }))} />Inverser la palette</label>
+      <p className="gd-discret">Touchez la pastille d'une classe pour en choisir la couleur.</p>
       {style.methode === "manuel" && (
         <form onSubmit={(e) => {
           e.preventDefault();
           const s = lireSeuilsManuels(texte);
           if (!s) return setErreur("Seuils : nombres strictement croissants séparés par « ; » (9 au plus).");
           setErreur(null);
-          onChange({ ...style, seuils: s, couleurs: couleursPour(s.length + 1) });
+          onChange(reclasser({ ...style, seuils: s }, valeurs, {}));
         }}>
           <label className="gd-champ">Seuils (enregistrés avec la carte)<input value={texte} onChange={(e) => setTexte(e.target.value)} inputMode="decimal" /></label>
           {erreur && <p role="alert" className="gd-alerte">{erreur}</p>}

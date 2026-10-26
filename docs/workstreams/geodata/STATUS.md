@@ -72,6 +72,12 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   (empreinte attendue = empreinte réelle pour chaque fiche, test), retraits déclarés (test), `GET /version/donnees`
   (test). En local sur l'API construite : 1er démarrage 14 s (2 versions préparées et publiées, 2 retraits, 53 fiches
   déjà en base), 2e démarrage < 1 s (rien refait). CI : installation de Chromium bornée (3 × 10 min).
+- Palettes et classes (lot D, D-GD-25) : `classification.ts` (palettes, `couleursPalette`, `rupturesNaturelles` de
+  Fisher-Jenks, méthode `seuils-naturels`), composition (`palette`, `inverser`), `composition-ops.ts` (`reclasser`,
+  `recolorerClasse`), légende (`Seuils` : méthode, classes, palette, inversion ; pastille = sélecteur de couleur). Tests :
+  `palettes.test.ts` (6, dont l'optimum de Jenks et l'absence jamais classée), opérations de composition. Recette
+  `geodata.mjs` en local : 95 contrôles conformes dont 5 du lot D ; capture : carte et légende concordantes (palette
+  « Verts » inversée, classe recolorée, valeur absente hachurée).
 - Libellés sur la carte (lot C, D-GD-24) : `geodata-model/src/etiquettes.ts` (valeur abrégée, plages des glyphes ;
   4 tests), `composition-ops.ts` (bascule par couche et bouton ; test), route `/etiquettes` (test d'intégration : point
   dans la seule tuile qui le contient, nom sans caractère non traçable, accès refusé à un tiers ; requête vérifiée en

@@ -199,6 +199,28 @@ check("libellés : le bouton les masque", !(await caseLibelles.isChecked()));
 page.off("request", surRequete);
 await onglet(page, "legende");
 
+// --- Classification (lot D, D-GD-25) : méthode, nombre de classes, palette, inversion, couleur d'une classe ---
+const classification = page.locator("[data-gd-legende] [data-gd-classification]").first();
+await classification.waitFor();
+const methodes = await classification.locator("[data-gd-methode] option").evaluateAll((os) => os.map((o) => o.value));
+check("classification : quatre méthodes, dont « Seuils naturels (Jenks) »", methodes.join(",") === "quantiles,intervalles-egaux,seuils-naturels,manuel", methodes.join(","));
+await classification.locator("[data-gd-methode]").selectOption("seuils-naturels");
+await classification.locator("[data-gd-classes]").selectOption("3");
+const classesNumeriques = () => page.locator("[data-gd-legende] [data-classe]:not([data-classe='absente'])");
+check("classification : seuils naturels en 3 classes au plus, valeur absente toujours à part et hachurée", (await classesNumeriques().count()) <= 3 && (await classesNumeriques().count()) >= 2 && (await page.locator("[data-gd-legende] [data-classe='absente'] .gd-hachure").count()) === 1);
+await classification.locator("[data-gd-palette]").selectOption("verts");
+const couleursClasses = () => page.locator("[data-gd-legende] [data-gd-couleur-classe]").evaluateAll((is) => is.map((i) => i.value));
+let cs = await couleursClasses();
+check("palette « Verts » : de la plus claire à la plus foncée", cs[0] === "#f7fcf5" && cs[cs.length - 1] === "#00441b", cs.join(" "));
+await classification.locator("[data-gd-inverser]").check();
+cs = await couleursClasses();
+check("palette inversée : la plus foncée pour les petites valeurs", cs[0] === "#00441b" && cs[cs.length - 1] === "#f7fcf5", cs.join(" "));
+await page.locator("[data-gd-legende] [data-gd-couleur-classe='0']").fill("#ff0000");
+cs = await couleursClasses();
+check("couleur d'une classe choisie dans la légende, les autres inchangées", cs[0] === "#ff0000" && cs[cs.length - 1] === "#f7fcf5", cs.join(" "));
+await page.waitForTimeout(1500);
+await page.screenshot({ path: join(OUT, "01c-classification.png") });
+
 // Recherche : coordonnées étiquetées, paire nue refusée, unité par code à zéro initial.
 const recherche = page.locator("[data-gd-recherche]");
 await recherche.fill("33.5, -7.6");

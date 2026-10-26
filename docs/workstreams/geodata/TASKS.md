@@ -13,7 +13,7 @@
 - [x] GEO-HCP-A3 — Logement urbain, mobilité domicile – travail, établissements économiques CEE (D-GD-20).
 - [x] GEO-HCP-B — Navigation par niveaux (fil « Maroc › Région › Province », Retour Alt+↑, descente Alt+↓ ; D-GD-19).
 - [x] GEO-HCP-C — Libellés sur la carte (un par entité, valeur abrégée, par couche et Alt+L ; glyphes hébergés ; D-GD-24).
-- [ ] GEO-HCP-D — Palettes prédéfinies, N classes, couleur par classe, seuils naturels (Jenks).
+- [x] GEO-HCP-D — Palettes prédéfinies, N classes, couleur par classe, seuils naturels (Jenks) (D-GD-25).
 - [x] GEO-DEPLOI-AUTO — Import automatique des données au déploiement, retraits déclarés, quittance `/version/donnees`, Chromium borné en CI (D-GD-23).
 - [x] GEO-HCP-E — Fiche territoriale par thème, ventilations, impression (Alt+P), arrondissements de la commune, douars de la commune rurale (D-GD-22).
 - [ ] GEO-HCP-F — Arbre d'indicateurs par thème, avec recherche.

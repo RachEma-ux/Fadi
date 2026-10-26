@@ -3,7 +3,7 @@
  * visibilité, opacité, style et filtre d'une couche, et état d'enregistrement. La composition locale n'est écrite au
  * serveur que par l'action « Enregistrer » ; déplacer la carte la rend seulement « non enregistrée ».
  */
-import { calculerSeuils, couleurCategorie, couleurPixel, formatNombre, type DescriptionRaster, couleursPour, memeComposition, type CoucheComposee, type EntreeLegende, type Composition, type FiltreCouche, type MethodeClassification, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
+import { calculerSeuils, couleurCategorie, couleurPixel, couleursPalette, formatNombre, PALETTE_PAR_DEFAUT, type DescriptionRaster, type IdPalette, memeComposition, type CoucheComposee, type EntreeLegende, type Composition, type FiltreCouche, type MethodeClassification, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
 
 export type EtatEnregistrement =
   | { readonly etat: "nouvelle" }
@@ -80,10 +80,35 @@ export function deplacerCouche(c: Composition, coucheId: string, sens: 1 | -1): 
   return avecCouches(c, couches);
 }
 
+type Thematique = Extract<StyleCouche, { mode: "thematique" }>;
+const avecPalette = (palette: IdPalette, inverser: boolean) => ({ ...(palette !== PALETTE_PAR_DEFAUT ? { palette } : {}), ...(inverser ? { inverser: true as const } : {}) });
+
 /** Style thématique d'un indicateur : seuils calculés (quantiles par défaut) sur les valeurs présentes seulement. */
-export function styleThematique(indicateurId: string, valeurs: readonly ValeurIndicateur[], methode: Exclude<MethodeClassification, "manuel"> = "quantiles", classes = 5): StyleCouche {
+export function styleThematique(indicateurId: string, valeurs: readonly ValeurIndicateur[], methode: Exclude<MethodeClassification, "manuel"> = "quantiles", classes = 5, palette: IdPalette = PALETTE_PAR_DEFAUT, inverser = false): StyleCouche {
   const seuils = calculerSeuils(valeurs, methode, classes);
-  return { mode: "thematique", indicateurId, methode, seuils, couleurs: couleursPour(seuils.length + 1) };
+  return { mode: "thematique", indicateurId, methode, seuils, couleurs: couleursPalette(palette, seuils.length + 1, inverser), ...avecPalette(palette, inverser) };
+}
+
+/**
+ * Reclassement (lot D) : méthode, nombre de classes, palette ou inversion changés. Les seuils ne sont recalculés que si la
+ * méthode ou le nombre de classes change (jamais en seuils manuels) : changer de palette ou l'inverser ne modifie pas le
+ * regroupement des données. Les couleurs sont reprises de la palette (une couleur choisie à la main est remplacée).
+ */
+export function reclasser(style: Thematique, valeurs: readonly ValeurIndicateur[], o: { methode?: MethodeClassification; classes?: number; palette?: IdPalette; inverser?: boolean }): Thematique {
+  const methode = o.methode ?? style.methode;
+  const palette = o.palette ?? style.palette ?? PALETTE_PAR_DEFAUT;
+  const inverser = o.inverser ?? !!style.inverser;
+  const classes = o.classes ?? style.seuils.length + 1;
+  const recalculer = methode !== "manuel" && (methode !== style.methode || (o.classes !== undefined && o.classes !== style.seuils.length + 1));
+  const seuils = recalculer ? calculerSeuils(valeurs, methode, classes) : [...style.seuils];
+  const { palette: _p, inverser: _i, ...base } = style;
+  return { ...base, methode, seuils, couleurs: couleursPalette(palette, seuils.length + 1, inverser), ...avecPalette(palette, inverser) };
+}
+
+/** Couleur d'une classe choisie à la main (#rrggbb) ; les autres classes et les seuils ne changent pas. */
+export function recolorerClasse(style: Thematique, classe: number, couleur: string): Thematique {
+  if (!/^#[0-9a-fA-F]{6}$/.test(couleur) || classe < 0 || classe >= style.couleurs.length) return style;
+  return { ...style, couleurs: style.couleurs.map((c, i) => (i === classe ? couleur.toLowerCase() : c)) };
 }
 
 /** Seuils saisis à la main (« 10 ; 20 ; 50 ») : nombres strictement croissants, sinon `null`. */

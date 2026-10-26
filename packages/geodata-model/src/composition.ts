@@ -4,7 +4,7 @@
  * clé embarquée) et ne référence aucun projet. Déplacer la carte ne modifie pas la composition enregistrée : seul
  * l'enregistrement explicite l'écrit.
  */
-import { seuilsValides, type MethodeClassification } from "./classification.js";
+import { estPalette, METHODES_CLASSIFICATION, seuilsValides, type IdPalette, type MethodeClassification } from "./classification.js";
 
 export const FORMAT_COMPOSITION = "geodata-composition/1";
 export const MAX_COUCHES = 20;
@@ -29,6 +29,10 @@ export type StyleCouche =
       readonly methode: MethodeClassification;
       readonly seuils: readonly number[];
       readonly couleurs: readonly string[];
+      /** Palette d'origine des couleurs (lot D) ; les couleurs enregistrées font foi (une classe peut être recolorée). */
+      readonly palette?: IdPalette;
+      /** Palette parcourue à l'envers (le foncé pour les petites valeurs). */
+      readonly inverser?: true;
     };
 
 export interface FiltreCouche {
@@ -87,11 +91,17 @@ function lireStyle(x: unknown, chemin: string, erreurs: string[]): StyleCouche |
   if (x["mode"] === "thematique") {
     const { indicateurId, methode, seuils, couleurs } = x;
     if (typeof indicateurId !== "string" || !ID.test(indicateurId)) erreurs.push(`${chemin}.indicateurId : identifiant attendu`);
-    if (methode !== "quantiles" && methode !== "intervalles-egaux" && methode !== "manuel") erreurs.push(`${chemin}.methode : quantiles, intervalles-egaux ou manuel`);
+    if (!METHODES_CLASSIFICATION.includes(methode as MethodeClassification)) erreurs.push(`${chemin}.methode : ${METHODES_CLASSIFICATION.join(", ")}`);
+    if (x["palette"] !== undefined && !estPalette(x["palette"])) erreurs.push(`${chemin}.palette : palette prédéfinie attendue`);
+    if (x["inverser"] !== undefined && typeof x["inverser"] !== "boolean") erreurs.push(`${chemin}.inverser : booléen attendu`);
     if (!Array.isArray(seuils) || seuils.length > 9 || !seuils.every(fini) || !seuilsValides(seuils)) erreurs.push(`${chemin}.seuils : au plus 9 nombres strictement croissants`);
     if (!Array.isArray(couleurs) || !couleurs.every((c) => typeof c === "string" && COULEUR.test(c)) || (Array.isArray(seuils) && couleurs.length !== seuils.length + 1)) erreurs.push(`${chemin}.couleurs : une couleur #rrggbb par classe (seuils + 1)`);
     if (erreurs.length) return null;
-    return { mode: "thematique", indicateurId: indicateurId as string, methode: methode as MethodeClassification, seuils: [...(seuils as number[])], couleurs: [...(couleurs as string[])] };
+    // Palette et inversion absentes par défaut : une composition antérieure au lot D reste identique.
+    return {
+      mode: "thematique", indicateurId: indicateurId as string, methode: methode as MethodeClassification, seuils: [...(seuils as number[])], couleurs: [...(couleurs as string[])],
+      ...(estPalette(x["palette"]) ? { palette: x["palette"] } : {}), ...(x["inverser"] === true ? { inverser: true as const } : {}),
+    };
   }
   return erreurs.push(`${chemin}.mode : simple, categories, raster ou thematique`), null;
 }
