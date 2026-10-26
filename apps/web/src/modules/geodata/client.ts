@@ -124,5 +124,11 @@ export const api = {
 /** Adresse des tuiles d'une couche, absolue (le moteur cartographique les demande depuis un Worker). */
 export const adresseTuiles = (coucheId: string) => `${window.location.origin}${RACINE_API}/tuiles/${encodeURIComponent(coucheId)}/{z}/{x}/{y}`;
 
+/** Adresse des points d'étiquette d'une couche (lot C, D-GD-24), lus seulement quand ses libellés sont affichés. */
+export const adresseEtiquettes = (coucheId: string) => `${window.location.origin}${RACINE_API}/etiquettes/${encodeURIComponent(coucheId)}/{z}/{x}/{y}`;
+
+/** Glyphes des libellés, hébergés avec l'application (écriture latine, Noto Sans, OFL) : aucune police tierce. */
+export const adresseGlyphes = () => `${window.location.origin}/geodata/glyphes/{fontstack}/{range}.pbf`;
+
 /** Adresse des tuiles d'image d'une couche raster (D-GD-13). */
 export const adresseRaster = (coucheId: string) => `${window.location.origin}${RACINE_API}/raster/${encodeURIComponent(coucheId)}/{z}/{x}/{y}.png`;

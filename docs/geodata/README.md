@@ -111,6 +111,13 @@ sont pas encore en base (même empreinte = rien n'est refait), puis applique les
 `sources/donnees/retraits-sources.json`. État : `GET /version/donnees` (`desactive`, `en-cours`, `termine` + bilan,
 `echec` + dernière erreur). Les imports manuels (`geodata-reference.js --fiche …`) restent possibles.
 
+## Libellés sur la carte (lot C, D-GD-24)
+
+Case « Libellés » de chaque couche (panneau Couches) ou bouton « Libellés » de la barre d'outils (Alt+L, toutes les
+couches vectorielles visibles) : le nom de chaque entité, et sa valeur abrégée pour une couche thématique (une valeur
+absente n'affiche que le nom). Points d'étiquette : `GET /geodata/api/etiquettes/:couche/:z/:x/:y`. Glyphes : Noto Sans
+Regular (OFL), plages latines, servis par l'application (`/geodata/glyphes/…`, licence `/licences/noto-sans/`).
+
 ## Fiche territoriale (D-GD-22)
 
 La fiche d'une entité range ses indicateurs par thème ; une famille déclinée devient un tableau (modalités ×

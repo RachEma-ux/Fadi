@@ -72,6 +72,13 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   (empreinte attendue = empreinte réelle pour chaque fiche, test), retraits déclarés (test), `GET /version/donnees`
   (test). En local sur l'API construite : 1er démarrage 14 s (2 versions préparées et publiées, 2 retraits, 53 fiches
   déjà en base), 2e démarrage < 1 s (rien refait). CI : installation de Chromium bornée (3 × 10 min).
+- Libellés sur la carte (lot C, D-GD-24) : `geodata-model/src/etiquettes.ts` (valeur abrégée, plages des glyphes ;
+  4 tests), `composition-ops.ts` (bascule par couche et bouton ; test), route `/etiquettes` (test d'intégration : point
+  dans la seule tuile qui le contient, nom sans caractère non traçable, accès refusé à un tiers ; requête vérifiée en
+  local sur PostGIS), glyphes Noto Sans hébergés (test : plages exactes, empreintes de la notice, licence OFL). Recette
+  `geodata.mjs` en local : 90 contrôles conformes dont 10 sur les libellés (Alt+L, bouton, case, glyphes servis par
+  Fadi, aucune police tierce, points d'étiquette lus à la demande) ; capture : nom et valeur abrégée, « 0 » pour zéro, nom
+  seul pour la valeur absente.
 - Fiche territoriale (lot E, D-GD-22) : `panneaux/FicheTerritoriale.tsx` (thèmes, tableaux de ventilation via
   `tableauVentilation`, arrondissements, douars, impression Alt+P), table `geodata_douars` et annexe
   `donnees/hcp-rgph2024-douars.tsv` (33 189 douars, 1 279 communes rurales ; `scripts/geodata/douars_hcp.py`), test de

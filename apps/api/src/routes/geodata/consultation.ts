@@ -4,7 +4,7 @@
  * préparation n'est jamais servie (GEO 08) ; réponses bornées (pagination, plafond d'objets).
  */
 import { Router, type Request } from "express";
-import { attribuerCategories, lireCoordonnees, lireDroits, OBJETS_PAR_COUCHE, verifierUsage } from "@parcours/geodata-model";
+import { attribuerCategories, lireCoordonnees, lireDroits, OBJETS_PAR_COUCHE, PLAGES_GLYPHES, verifierUsage } from "@parcours/geodata-model";
 import { erreur, espacePersonnel, introuvable, requete, VERSION_CONSULTABLE } from "../../lib/geodata/acces.js";
 import { decompresser, pngTransparent, tuileRaster, valeurAuPoint, type GrilleRaster } from "../../lib/geodata/raster.js";
 import type { DescriptionRaster } from "@parcours/geodata-model";
@@ -151,6 +151,44 @@ consultationRouter.get("/tuiles/:coucheId/:z/:x/:y", async (req, res) => {
      )
      SELECT ST_AsMVT(m.*, 'objets', 4096, 'geom') AS mvt FROM m WHERE m.geom IS NOT NULL`,
     [req.params.coucheId, z, x, y, tolerance],
+  );
+  res.setHeader("Content-Type", "application/vnd.mapbox-vector-tile");
+  res.setHeader("Cache-Control", couche["privee"] ? "private, no-store" : "private, max-age=300");
+  res.send(r?.mvt ?? Buffer.alloc(0));
+});
+
+/**
+ * Points d'étiquette d'une couche (lot C, D-GD-24), demandés seulement quand ses libellés sont affichés : un point par
+ * entité, sur sa surface (`ST_PointOnSurface`, jamais hors de l'entité), placé dans la seule tuile qui le contient (aucun
+ * libellé doublé au bord des tuiles). Le nom ne garde que les caractères des glyphes livrés (écriture latine, voir
+ * `etiquettes.ts`) ; s'il n'en reste rien, le code de l'entité. Mêmes règles d'accès que les tuiles.
+ */
+const hex4 = (n: number) => n.toString(16).padStart(4, "0");
+const HORS_GLYPHES = `[^${PLAGES_GLYPHES.map(([a, b]) => `\\u${hex4(Math.max(a, 32))}-\\u${hex4(b)}`).join("")}]`;
+consultationRouter.get("/etiquettes/:coucheId/:z/:x/:y", async (req, res) => {
+  const z = Number(req.params.z);
+  const x = Number(req.params.x);
+  const y = Number(String(req.params.y).replace(/\.pbf$|\.mvt$/, ""));
+  if (![z, x, y].every(Number.isInteger) || z < 0 || z > 18 || x < 0 || y < 0 || x >= 2 ** z || y >= 2 ** z) return erreur(res, 400, "invalid_input", "Tuile hors limites.");
+  const couche = await coucheConsultable(await espaceDe(req), req.params.coucheId);
+  if (!couche) return introuvable(res);
+  const droit = verifierUsage(lireDroits(couche["droits"]), "tuiles");
+  if (!droit.ok) return erreur(res, 403, "usage_refuse", droit.motif, { usage: "tuiles", etat: droit.etat });
+  const [r] = await requete<{ mvt: Buffer | null }>(
+    `WITH b AS (SELECT ST_TileEnvelope($2, $3, $4) AS e),
+     p AS (
+       SELECT o.code, nullif(btrim(regexp_replace(regexp_replace(coalesce(o.nom, ''), $5, '', 'g'), '\\s+', ' ', 'g')), '') AS nom,
+              ST_Transform(ST_PointOnSurface(o.geom), 3857) AS pt
+         FROM geodata_objets o, b
+        WHERE o.couche_id = $1 AND o.geom && ST_Transform(b.e, 4326) AND NOT ST_IsEmpty(o.geom)
+     ),
+     m AS (
+       SELECT ST_AsMVTGeom(p.pt, b.e, 4096, 0, true) AS geom, p.code, coalesce(p.nom, p.code) AS nom
+         FROM p, b
+        WHERE ST_Intersects(p.pt, b.e)
+     )
+     SELECT ST_AsMVT(m.*, 'etiquettes', 4096, 'geom') AS mvt FROM m WHERE m.geom IS NOT NULL`,
+    [req.params.coucheId, z, x, y, HORS_GLYPHES],
   );
   res.setHeader("Content-Type", "application/vnd.mapbox-vector-tile");
   res.setHeader("Cache-Control", couche["privee"] ? "private, no-store" : "private, max-age=300");

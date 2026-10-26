@@ -8,8 +8,8 @@ import { AttributionControl, Map as CarteMapLibre, ScaleControl, setWorkerUrl, t
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Feature, FeatureCollection } from "geojson";
 import urlWorker from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
-import { COULEUR_ABSENTE, epaisseurContour, ordreAffichage, type Composition } from "@parcours/geodata-model";
-import { adresseRaster, adresseTuiles, type Fond } from "../client";
+import { COULEUR_ABSENTE, epaisseurContour, ordreAffichage, POLICE_ETIQUETTES, type Composition } from "@parcours/geodata-model";
+import { adresseEtiquettes, adresseGlyphes, adresseRaster, adresseTuiles, type Fond } from "../client";
 import type { DonneesAffichage, EvenementsMoteur, MoteurCarte, OutilCarte } from "./moteur";
 
 setWorkerUrl(urlWorker);
@@ -31,7 +31,8 @@ function hachures(): ImageData {
 export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev: EvenementsMoteur): MoteurCarte {
   const carte = new CarteMapLibre({
     container: conteneur,
-    style: { version: 8, sources: {}, layers: [{ id: "gd-fond-neutre", type: "background", paint: { "background-color": FOND_NEUTRE } }] },
+    // Glyphes des libellés servis par Fadi (D-GD-24) : demandés seulement quand un libellé est affiché.
+    style: { version: 8, glyphs: adresseGlyphes(), sources: {}, layers: [{ id: "gd-fond-neutre", type: "background", paint: { "background-color": FOND_NEUTRE } }] },
     center: [composition.camera.lon, composition.camera.lat],
     zoom: composition.camera.zoom,
     bearing: composition.camera.cap,
@@ -68,6 +69,8 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       if (fondSignale !== fondCourant) { fondSignale = fondCourant; ev.surErreurFond?.(`Le fond choisi ne se charge pas${m?.status ? ` (réponse ${m.status})` : ""} : vérifiez le fournisseur et sa clé dans Paramètres, ou revenez au fond neutre.`); }
       return;
     }
+    // Glyphe d'une plage non livrée : le libellé perd ce caractère, la couche reste accessible (pas une erreur de couche).
+    if (/\/geodata\/glyphes\//.test(m?.message ?? "")) return;
     if (m?.status === 404 || m?.status === 403) ev.surErreur("Une couche n'est plus accessible : ses tuiles sont refusées par le serveur.");
   });
   conteneur.addEventListener("webglcontextlost", () => ev.surErreur("Le rendu graphique (WebGL) a été perdu : la recherche, la table et les fiches restent disponibles."), true);
@@ -126,8 +129,9 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     const voulues = composition.couches.map((k) => `${PREFIXE}${k.coucheId}`);
     for (const id of couchesAffichees) {
       if (voulues.includes(id)) continue;
-      for (const suffixe of ["-remplissage", "-absentes", "-contour", "-selection", "-lignes", "-points", "-raster"]) if (carte.getLayer(id + suffixe)) carte.removeLayer(id + suffixe);
+      for (const suffixe of ["-remplissage", "-absentes", "-contour", "-selection", "-lignes", "-points", "-raster", "-etiquettes"]) if (carte.getLayer(id + suffixe)) carte.removeLayer(id + suffixe);
       if (carte.getSource(id)) carte.removeSource(id);
+      if (carte.getSource(`${id}-etq`)) carte.removeSource(`${id}-etq`);
     }
     // Ordre d'affichage (D-GD-16) : celui de la composition, sauf entre limites administratives (région au-dessus).
     const ordre = ordreAffichage(composition.couches, d.rangs);
@@ -198,16 +202,44 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       carte.setPaintProperty(`${id}-lignes`, "line-opacity", k.opacite);
       carte.setPaintProperty(`${id}-points`, "circle-opacity", k.opacite);
       carte.setFilter(`${id}-selection`, ["==", ["get", "code"], d.selection?.coucheId === k.coucheId ? d.selection.code : "__aucun__"]);
+      etiqueter(id, k, filtreCode, d);
     }
     for (const k of ordre) {
       const id = `${PREFIXE}${k.coucheId}`;
       if (d.rasters.has(k.coucheId)) continue;
       for (const suffixe of ["-contour", "-lignes", "-points", "-selection"]) carte.moveLayer(id + suffixe, "gd-zones-remplissage");
     }
+    // Libellés au-dessus de tous les objets (et sous le tracé en cours), dans l'ordre des couches.
+    for (const k of ordre) if (carte.getLayer(`${PREFIXE}${k.coucheId}-etiquettes`)) carte.moveLayer(`${PREFIXE}${k.coucheId}-etiquettes`, "gd-trace-ligne");
     couchesAffichees = voulues;
     (carte.getSource("gd-zones") as GeoJSONSource).setData(d.zones as FeatureCollection);
     attribution.options.customAttribution = [...d.attributions, ...(fond.attribution ? [fond.attribution] : [])];
     (attribution as unknown as { _updateAttributions(): void })._updateAttributions();
+  }
+
+  /**
+   * Libellés d'une couche vectorielle (D-GD-24) : nom de l'entité, puis sa valeur abrégée (couche thématique) ; points
+   * d'étiquette lus seulement une fois les libellés demandés. Les collisions sont résolues par MapLibre (un libellé qui
+   * en chevauche un autre n'est pas tracé) ; une valeur absente n'affiche que le nom.
+   */
+  function etiqueter(id: string, k: Composition["couches"][number], filtreCode: ExpressionSpecification | null, d: DonneesAffichage) {
+    const couche = `${id}-etiquettes`;
+    if (!k.etiquettes) { if (carte.getLayer(couche)) carte.setLayoutProperty(couche, "visibility", "none"); return; }
+    if (!carte.getSource(`${id}-etq`)) carte.addSource(`${id}-etq`, { type: "vector", tiles: [adresseEtiquettes(k.coucheId)], minzoom: 0, maxzoom: 14 });
+    if (!carte.getLayer(couche)) {
+      carte.addLayer({
+        id: couche, type: "symbol", source: `${id}-etq`, "source-layer": "etiquettes",
+        layout: { "text-font": [POLICE_ETIQUETTES], "text-size": 12, "text-max-width": 9, "text-line-height": 1.15, "text-padding": 2, "text-allow-overlap": false },
+        paint: { "text-color": "#1d2b30", "text-halo-color": "#ffffff", "text-halo-width": 1.4, "text-halo-blur": 0.3 },
+      });
+    }
+    const branches = [...(d.etiquettes.get(k.coucheId) ?? new Map<string, string>())].flat();
+    const valeur = ["match", ["get", "code"], ...branches, ""] as unknown as ExpressionSpecification;
+    carte.setLayoutProperty(couche, "text-field", branches.length
+      ? (["format", ["get", "nom"], {}, ["case", ["==", valeur, ""], "", ["concat", "\n", valeur]], { "font-scale": 0.92 }] as unknown as ExpressionSpecification)
+      : ["get", "nom"]);
+    carte.setFilter(couche, filtreCode);
+    carte.setLayoutProperty(couche, "visibility", k.visible ? "visible" : "none");
   }
 
   const posees = () => {

@@ -1,0 +1,16 @@
+Glyphes des libellés de la carte GeoData (lot C, D-GD-24)
+
+Police : Noto Sans Regular — Copyright The Noto Project Authors — SIL Open Font License 1.1 (OFL.txt, ci-joint).
+Format : glyphes SDF au format PBF de MapLibre, tels que publiés par OpenMapTiles (« Noto Sans (patched by Klokan
+Technologies) »), sans modification.
+Origine : https://github.com/openmaptiles/fonts/releases/download/v2.0/noto-sans.zip
+Archive : 61 899 817 octets, SHA-256 d117316544b43a5dde7ee761b36e17701e9f85574e181d76a74814240fdbaf34
+Texte de la licence : https://raw.githubusercontent.com/notofonts/latin-greek-cyrillic/main/OFL.txt
+
+Fichiers servis sous /geodata/glyphes/NotoSans-Regular/ (écriture latine seulement) et leur SHA-256 :
+0-255.pbf        ef1f38a3f1978591e846e9eaddf8a54f7047f546fc6aaed7872cc53151a5de78
+256-511.pbf      992557f9e2574cfb9a75e16c7b52832578849772b7c9a6e480d6213fb008fe5d
+512-767.pbf      a4c5cdf9623cb0bf7e9c6b0e8be4bf38b524bc29819dd2276c8ca63d5e43dd21
+768-1023.pbf     6e27cdd6edce5b11c469a24b333ecefc0d4b082491b71d6924ce0be6eeba71c3
+7680-7935.pbf    21672116227dc22128cb43a58ae19d4bc5ebb5d7d321600317d2df828dced514
+8192-8447.pbf    f061e5b4e42e5925228534d8822b423a029569263db09f5ce44573600d45295f

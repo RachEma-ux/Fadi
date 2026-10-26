@@ -46,6 +46,8 @@ export interface CoucheComposee {
   readonly opacite: number;
   readonly style: StyleCouche;
   readonly filtre: FiltreCouche | null;
+  /** Libellés affichés (nom de l'entité, valeur abrégée en thématique ; lot C, D-GD-24). Absent = masqués. */
+  readonly etiquettes?: true;
 }
 
 export interface Composition {
@@ -132,8 +134,10 @@ export function validerComposition(x: unknown): ValidationComposition {
       if (!fini(opacite) || opacite < 0 || opacite > 1) erreurs.push(`${chemin}.opacite : 0 à 1`);
       const style = lireStyle(k["style"], `${chemin}.style`, erreurs);
       const filtre = lireFiltre(k["filtre"], `${chemin}.filtre`, erreurs);
+      if (k["etiquettes"] !== undefined && typeof k["etiquettes"] !== "boolean") erreurs.push(`${chemin}.etiquettes : booléen attendu`);
       if (style && typeof coucheId === "string" && typeof versionId === "string" && typeof visible === "boolean" && fini(opacite)) {
-        couches.push({ coucheId, versionId, visible, opacite, style, filtre });
+        // « Libellés masqués » n'est pas écrit : une composition enregistrée avant le lot C reste identique.
+        couches.push({ coucheId, versionId, visible, opacite, style, filtre, ...(k["etiquettes"] === true ? { etiquettes: true as const } : {}) });
       }
     });
   }
