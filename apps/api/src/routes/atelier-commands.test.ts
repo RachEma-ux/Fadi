@@ -4,7 +4,7 @@
  * import typé de P.118 et persistance par différentiel.
  */
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { partager } from "../test-helpers/partage.js";
+import { partager, partagerEnBase } from "../test-helpers/partage.js";
 import { readFileSync } from "node:fs";
 import request from "supertest";
 import { createApp } from "../app.js";
@@ -1008,7 +1008,10 @@ describe("référence protégée : refus serveur (D-016 tranchée, D-194)", () =
     expect((await client.post(`/projects/${ref}/atelier/publications`).send({ nom: "Référence publiée" })).status).toBe(201);
     // Le refus est inconditionnel : un verrou d'édition posé par un autre membre ne le transforme pas en 423.
     const editeur = await registerAndLogin("reference-editeur@example.com");
-    expect((await partager(client, ref, "reference-editeur@example.com", "editeur")).status).toBe(201);
+    // X.2-02 (P-12) : la référence ne se partage plus (403) ; un membre antérieur à cette règle (posé en base) peut encore
+    // tenir la réservation d'édition.
+    expect((await partager(client, ref, "reference-editeur@example.com", "editeur")).body).toMatchObject({ motif: "reference-protegee" });
+    await partagerEnBase(ref, (await editeur.get("/auth/me")).body.id as string, "editeur");
     expect((await editeur.put(`/projects/${ref}/lock`).send({})).status).toBe(200);
     const sousVerrou = await client.post(`/projects/${ref}/atelier/commands`).send(lot);
     expect(sousVerrou.status).toBe(403);
