@@ -1,5 +1,18 @@
 # Reprise — Studio
 
+## Checkpoint 2026-10-26 (heure suisse 11:30) — vague 3 promue, bilan et demande unique d'interventions
+
+- PR #336 (vague 3) fusionnée (`main@02c0dc2b`), CI verte sur `main`. Promotion : X.1-01, X.1-04, X.1-05, X.1-06 Vérifiées.
+- TR-EX-046 promue : `completer_preuves.py` sautait les suites de la liste DB-3 même quand le job avait tourné sur la base
+  attestée ; il lit désormais le verdict « DB-3 actif » du journal du job (test ajouté, joué par `continuity.yml`).
+- SUIVI-06 Vérifiée (HANDOFF tenu par checkpoints, contrôlé par `check-continuity` et ses tests sur `main`).
+- Suites relues : R.1-01 (candidat proposé `main@02c0dc2b`), G4-01, G4-02 (81 / 85 fonctions, 31 / 35 décisions), R.4-02
+  (phase B livrée au dépôt, non installée).
+- `DEMANDE-INTERVENTIONS.md` : demande unique d'interventions externes (maître d'ouvrage, administrateur), chaque acte avec
+  les obligations qu'il débloque ; `DOSSIER-G4.md` à jour ; bilan dans `recettes/ACHEVEMENT-STUDIO.md`.
+- Compteurs recalculés du registre : **0 À définir / 29 À faire / 7 En cours / 0 Implémenté / 9 Bloqué / 526 Vérifié / 59 Accepté**. **P630=585/630**.
+- Reprise : attendre les actes de `DEMANDE-INTERVENTIONS.md` (ordre conseillé : B2 → A1 → A2 / A3 → B1 → A7 → A8 / B4).
+
 ## Checkpoint 2026-10-26 (heure suisse 09:20) — vague 3 intégrée (fonctions de modèle absentes)
 
 - PR #334 fusionnée (promotion de la vague 2 : 28 obligations Vérifiées, 5 agrégats clos).
@@ -9,7 +22,7 @@
   solide recalculée par le serveur (X.1-05) ; fusion de variantes à trois voies avec conflits résolus explicitement,
   annulable (X.1-06). Les quatre obligations sont inscrites **Implémenté** ; recettes `studio-w3a` à `studio-w3d` en CI.
 - Libellé A.3-08 du registre reporté (le composant 3D et les surfaces complexes sont désormais disponibles).
-- Compteurs recalculés du registre : **0 À définir / 29 À faire / 8 En cours / 5 Implémenté / 9 Bloqué / 520 Vérifié / 59 Accepté**. **P630=579/630**.
+- Compteurs recalculés du registre : à cette date 520 Vérifié, 59 Accepté, 9 Bloqué, 5 Implémenté, 8 En cours, 29 À faire, 0 À définir ; 579 obligations sur 630 closes.
 - Reprise : CI de la PR de la vague 3, fusion, promotion après la CI verte de `main`.
 
 ## Checkpoint 2026-10-26 (heure suisse 06:35) — promotion de la vague 2 et agrégats de recette

@@ -341,3 +341,28 @@ Quatre lots livrent les fonctions que le corpus et la couverture 3D déclaraient
   - Décision : D7 — Annulable : « Annuler la dernière fusion » crée une révision `variant-merge-undo` au document d'avant, seulement tant que la fusion est la tête (EX-012 : une annulation est une nouvelle opération) ; la fusion annulée sort de l'histoire suivie (la même fusion se repropose).
   - Décision : D8 — Interface : deux commandes de l'éditeur (pas des outils du registre, ce ne sont pas des commandes de document) : « Fusionner une variante » Ctrl+F10 et « Annuler la dernière fusion » Ctrl+F11 (réserve W3-D, libres), icônes studio-merge-variants / studio-merge-undo, barre Édition, ecrit: true ; domaine « à définir » (REF-01 §02 ne range pas la gestion des variantes) consigné dans ADR-STUDIO-NAV-01. Shift+F11 non utilisé. Pas d'entrée dans alternatives-gestes.ts ni fiches-outils.ts (réservés aux outils du registre) : l'alternative clavier est le raccourci + bouton nommé + choix des conflits au clavier (recette).
   - Décision : D9 — Corpus S6 : étape C2 (ligne s6-b-ligne, autre tracé) et fusion F1 B → C avec résolution « source » ; oracles C (3 lignes, 2 révisions) et F1 ; empreinte du plan, fixture s6-plan.json, references-100.json, S6-C-100.svg et S6-100.json régénérés ; captures PNG (tête de A) inchangées.
+
+## Bilan consolidé de l'achèvement délégué (26 octobre 2026)
+
+**Livré et fusionné dans `main`** (CI verte à chaque fusion) : PR #326 et #328 (lots d'achèvement API, REG, DEC, F, CMD,
+PUB, REND, OUT), #330 (corrections de revue), #332 (vague 2 : G1–G5), #334 (promotion de la vague 2 et agrégats de
+recette), #336 (vague 3 : blocs et contraintes, niveaux / composants / structure, surfaces NURBS et de subdivision, fusion de
+variantes), puis la PR de ce bilan (promotion de la vague 3, TR-EX-046, SUIVI-06).
+
+**Testé** : chaque obligation promue Vérifié porte une preuve rattachée à une exécution verte de `main` (commit, URL du
+job, date, environnement), après la contre-vérification des libellés cités (`completer_preuves.py`). Les suites API à base
+attestée (DB-3) tournent sur `main` ; `completer_preuves.py` les reconnaît désormais au verdict « DB-3 actif » du journal
+du job (test `scripts/registre/test_completer_preuves.py`).
+
+**Registre** : 585 / 630 (526 Vérifié, 59 Accepté), aucune obligation « Implémenté » en attente. Porte G4 automatisée :
+livraison admise (BLOC-01 à BLOC-07 vérifiés). Des 85 fonctions absentes du point 2, 81 sont livrées ; des 35 décisions, 31
+sont prises ou prouvées. Aucune exigence n'a été déclarée hors périmètre, hors pilote ou close par simple décision.
+
+**Déployé** : rien. La production et la préproduction ne sont pas accessibles à la session ; la Release reste l'acte du
+maître d'ouvrage.
+
+**Obligations restantes** : 45 (29 À faire, 7 En cours, 9 Bloqué), toutes suspendues à un acte externe recensé dans
+[`DEMANDE-INTERVENTIONS.md`](../DEMANDE-INTERVENTIONS.md) : désignation du build et du profil de référence, recette
+utilisateur et mesures sur appareil réel, décisions de cadrage et estimations, accord sur une copie des données réelles,
+installation de la phase B, déploiement en préproduction, acceptation G4 puis Release, restauration et surveillance après
+déploiement.

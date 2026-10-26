@@ -159,6 +159,8 @@ def etape_executante(fichier: str) -> tuple[str, re.Pattern] | None:
         return 'ci', re.compile(r'\(scripts/migration/\)')
     # Outillage du registre, porte G4 et analyse de secrets : étapes nommées de continuity.yml et securite-secrets.yml
     # (exécutées sur main à chaque fusion).
+    if fichier == 'scripts/check-continuity.test.mjs':
+        return 'continuity', re.compile(r'^Tests unitaires des règles de reprise$')
     if fichier == 'scripts/registre/controle-preuves.test.mjs':
         return 'continuity', re.compile(r'^Règles de preuve du registre Studio')
     if fichier == 'scripts/registre/controles-suivi.test.mjs':
@@ -181,6 +183,23 @@ def etape_executante(fichier: str) -> tuple[str, re.Pattern] | None:
 def suite_db3_en_attente(contenu_garde: str | None, fichier: str) -> bool:
     rel = fichier.removeprefix('apps/api/')
     return bool(contenu_garde) and f"'{rel}'" in contenu_garde
+
+
+MARQUEUR_DB3_ACTIF = '✓ DB-3 actif : toutes les suites API tournent sur la base attestée'
+_JOURNAUX: dict[int, str] = {}
+
+
+def db3_actif(journal: str | None) -> bool:
+    """Le journal d'un job porte-t-il le verdict de check-api-tests-db3.mjs --db3-actif (ligne de sortie, pas l'écho) ?"""
+    return bool(journal) and any(l.split(' ', 1)[-1].startswith(MARQUEUR_DB3_ACTIF) for l in journal.splitlines())
+
+
+def journal_job(job_id: int) -> str | None:
+    """Journal brut d'un job (lecture seule, `gh api …/logs`), gardé en mémoire le temps de l'exécution."""
+    if job_id not in _JOURNAUX:
+        r = subprocess.run(['gh', 'api', f'repos/{DEPOT}/actions/jobs/{job_id}/logs'], capture_output=True, text=True)
+        _JOURNAUX[job_id] = r.stdout if r.returncode == 0 else ''
+    return _JOURNAUX[job_id] or None
 
 
 def desactive(contenu: str, libelles: list[str]) -> bool:
@@ -246,9 +265,12 @@ def completer_execution(h: Historique, fichier: str, libelles: list[str], presen
                     if sha not in garde:
                         b = git_octets('show', f'{sha}:scripts/check-api-tests-db3.mjs')
                         garde[sha] = b.decode() if b else None
-                    if suite_db3_en_attente(garde[sha], fichier):
-                        continue  # suite refusée par la garde DB-3 à ce commit : pas exécutée sans base attestée
+                en_attente = fichier.startswith('apps/api/') and suite_db3_en_attente(garde[sha], fichier)
                 for job in h.jobs(run['id']):
+                    # Suite de la liste DB-3 : exécutée seulement si ce job a tourné sur la base attestée (marqueur écrit
+                    # par check-api-tests-db3.mjs --db3-actif dans son journal) ; sinon refusée par la garde, jamais réussie.
+                    if en_attente and not db3_actif(journal_job(job['id'])):
+                        continue
                     for st in job.get('steps', []):
                         if motif.search(st['name']) and st.get('conclusion') == 'success':
                             return {
