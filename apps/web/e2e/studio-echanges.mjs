@@ -70,10 +70,10 @@ try {
   const n = await lignes.count();
   check("Q ouvre la boîte : une ligne par entrée", n >= 30, `${n} lignes`);
   const statut = async (id) => boite.locator(`tr[data-studio-echange="${id}"]`).getAttribute("data-studio-echange-statut");
-  for (const id of ["dessin-svg", "dessin-dxf", "maquette-ifc", "dessin-dxf-import", "maquette-ifc-import", "modele-externe-ifc", "feuille-pdf", "dossier-pdf", "tableau-metre-csv", "rendu-png", "paquet-publication", "natif-archive-export"]) {
+  for (const id of ["dessin-svg", "dessin-dxf", "maquette-ifc", "dessin-dxf-import", "maquette-ifc-import", "modele-externe-ifc", "feuille-pdf", "dossier-pdf", "tableau-metre-csv", "rendu-png", "paquet-publication", "natif-archive-export", "bcf-import", "bcf-export"]) {
     check(`livré : ${id}`, (await statut(id)) === "livre");
   }
-  for (const id of ["dwg-import", "dwg-export", "bcf-import", "bcf-export", "step-export", "obj-export", "stl-export", "gltf-export"]) {
+  for (const id of ["dwg-import", "dwg-export", "step-export", "obj-export", "stl-export", "gltf-export"]) {
     check(`non livré : ${id}`, (await statut(id)) === "non-livre");
   }
   check("aucune entrée « renoncé »", (await boite.locator('tr[data-studio-echange-statut="renonce"]').count()) === 0);
