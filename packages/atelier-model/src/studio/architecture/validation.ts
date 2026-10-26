@@ -1,5 +1,6 @@
 import { array, discriminator, fail, finite, identifier, layerRef, point, record, same } from "../noyau/validation.js";
 import { geometrieMur, ouverturesSeChevauchent, placerOuverture, STUDIO_LIMITES_MUR, type GeometrieMur, type OuverturePlacee } from "./geometrie.js";
+import { niveauRef, validerDalle, validerPoteau, validerPoutre } from "./structure.js";
 import { STUDIO_OPENING_KINDS, STUDIO_WALL_JUSTIFICATIONS, type StudioArchitectureItem, type StudioLadder, type StudioOpening, type StudioOpeningKind, type StudioWall, type StudioWallJustification } from "./types.js";
 
 /**
@@ -26,7 +27,7 @@ function positifOuNul(value: unknown, path: string, nom: string): number {
 }
 
 export function validerMur(value: unknown, path: string): StudioWall {
-  const o = record(value, ["id", "type", "axis", "thickness", "height", "base", "justification"], path, ["layerId"]);
+  const o = record(value, ["id", "type", "axis", "thickness", "height", "base", "justification"], path, ["layerId", "niveauId"]);
   if (o.type !== "wall") fail(`${path}.type`, "mur attendu");
   const id = identifier(o.id, `${path}.id`);
   const raw = array(o.axis, `${path}.axis`);
@@ -40,7 +41,7 @@ export function validerMur(value: unknown, path: string): StudioWall {
   finite(base + height, `${path}.height`);
   if (typeof o.justification !== "string" || !STUDIO_WALL_JUSTIFICATIONS.includes(o.justification as StudioWallJustification)) fail(`${path}.justification`, "justification left, center ou right attendue");
   const w: StudioWall = {
-    id, type: "wall", ...layerRef(o, path), axis, thickness, height, base: Object.is(base, -0) ? 0 : base,
+    id, type: "wall", ...layerRef(o, path), ...niveauRef(o, path), axis, thickness, height, base: Object.is(base, -0) ? 0 : base,
     justification: o.justification as StudioWallJustification,
   };
   const g = geometrieMur(w);
@@ -71,7 +72,7 @@ export const STUDIO_ECHELONS_MAX = 1000;
  * entre les montants (section ≥ entre-axe), ou échelons qui se touchent (pas ≤ section) — jamais corrigés.
  */
 export function validerEchelle(value: unknown, path: string): StudioLadder {
-  const o = record(value, ["id", "type", "position", "rotation", "width", "height", "base", "rungs", "section"], path, ["layerId"]);
+  const o = record(value, ["id", "type", "position", "rotation", "width", "height", "base", "rungs", "section"], path, ["layerId", "niveauId"]);
   if (o.type !== "ladder") fail(`${path}.type`, "échelle attendue");
   const id = identifier(o.id, `${path}.id`);
   const position = point(o.position, `${path}.position`);
@@ -86,7 +87,7 @@ export function validerEchelle(value: unknown, path: string): StudioLadder {
   const section = positif(o.section, `${path}.section`, "section");
   if (section >= width) fail(`${path}.section`, `échelle ${id} : la section des montants (${section} m) ne laisse aucun échelon dans l’entre-axe (${width} m)`);
   if (height / (rungs + 1) <= section) fail(`${path}.rungs`, `échelle ${id} : ${rungs} échelons de ${section} m sur ${height} m se touchent (pas ${height / (rungs + 1)} m)`);
-  return { id, type: "ladder", ...layerRef(o, path), position, rotation: Object.is(rotation, -0) ? 0 : rotation, width, height, base: Object.is(base, -0) ? 0 : base, rungs, section };
+  return { id, type: "ladder", ...layerRef(o, path), ...niveauRef(o, path), position, rotation: Object.is(rotation, -0) ? 0 : rotation, width, height, base: Object.is(base, -0) ? 0 : base, rungs, section };
 }
 
 export function validerElementArchitectural(value: unknown, path: string): StudioArchitectureItem {
@@ -94,7 +95,11 @@ export function validerElementArchitectural(value: unknown, path: string): Studi
   if (t === "wall") return validerMur(value, path);
   if (t === "opening") return validerOuverture(value, path);
   if (t === "ladder") return validerEchelle(value, path);
-  return fail(`${path}.type`, "objet architectural wall, opening ou ladder attendu");
+  // Lot W3-B : éléments structurels typés (poteau, poutre, dalle).
+  if (t === "column") return validerPoteau(value, path);
+  if (t === "beam") return validerPoutre(value, path);
+  if (t === "slab") return validerDalle(value, path);
+  return fail(`${path}.type`, "objet architectural wall, opening, ladder, column, beam ou slab attendu");
 }
 
 /** Lecture dérivée du document architectural : géométrie de chaque mur et placement de chaque ouverture. */

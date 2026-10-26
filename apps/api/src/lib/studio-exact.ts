@@ -5,13 +5,22 @@
  * est juste avant la commande — jamais depuis une géométrie fournie par le client. L'empreinte annoncée par le
  * navigateur doit être celle du serveur, sinon le lot est refusé (400 `invalid_commands`, code `exact-mismatch`) ; le
  * serveur écrit ensuite **son** résultat dans la commande (brep, maillage, mesures) : il fait autorité.
+ *
+ * X.1-05 : chaque `studio.surface.epaissir` (épaississement d'une surface libre NURBS) suit le même chemin — recalculé
+ * depuis la surface du document du serveur (opération `nurbs` du noyau), empreinte comparée, résultat du serveur écrit ;
+ * de même chaque `studio.subdivision.solidifier` (maillage subdivisé recalculé, opération `polyedre`).
  */
-import { studioCaptureBooleen, studioPiecesStep, type StudioCommand, type StudioDocument } from "@parcours/atelier-model";
+import { studioCaptureBooleen, studioCaptureEpaississement, studioCaptureSolidification, studioPiecesStep, type StudioCommand, type StudioDocument } from "@parcours/atelier-model";
 import { ErreurExacte, type SolideExact } from "@parcours/geometry-exact";
 import { moteurExact } from "./atelier-exact.js";
 import { surveillanceStudio } from "./studio-surveillance.js";
 
 export const TYPE_BOOLEEN_STUDIO = "studio.solide.booleen";
+/** X.1-05 : épaississement exact d'une surface libre, recalculé comme le booléen. */
+export const TYPE_EPAISSIR_STUDIO = "studio.surface.epaissir";
+/** X.1-05 : solidification d'une surface de subdivision fermée (polyèdre du maillage subdivisé), recalculée de même. */
+export const TYPE_SOLIDIFIER_STUDIO = "studio.subdivision.solidifier";
+const TYPES_EXACTS_STUDIO: ReadonlySet<string> = new Set([TYPE_BOOLEEN_STUDIO, TYPE_EPAISSIR_STUDIO, TYPE_SOLIDIFIER_STUDIO]);
 
 export interface RefusExactStudio { status: 400; body: Record<string, unknown> }
 
@@ -28,7 +37,7 @@ export type AppliquerStudio = (document: StudioDocument, commands: readonly Stud
  * juste avant chaque booléen ; un état intermédiaire invalide avant un booléen est refusé (`exact-etat-intermediaire`), jamais laissé sans recalcul.
  */
 export async function revaliderBooleensStudio(document: StudioDocument, commands: StudioCommand[], appliquer: AppliquerStudio): Promise<RefusExactStudio | null> {
-  const cibles = commands.map((c, i) => [c, i] as const).filter(([c]) => c.toolId === TYPE_BOOLEEN_STUDIO);
+  const cibles = commands.map((c, i) => [c, i] as const).filter(([c]) => TYPES_EXACTS_STUDIO.has(c.toolId));
   if (!cibles.length) return null;
   // Noyau chargé seulement pour un booléen dont les opérandes sont relus dans CE document : des opérandes absents (d'une
   // autre variante ou d'un autre projet, BLOC-02) sont refusés avant tout appel au noyau.
@@ -47,14 +56,29 @@ export async function revaliderBooleensStudio(document: StudioDocument, commands
       applique = i;
     }
     const p = (c.params ?? {}) as Brut;
-    const operandes = Array.isArray(p["operandes"]) ? (p["operandes"] as unknown[]).map(String) : [];
-    const capture = studioCaptureBooleen(doc, { operation: String(p["operation"] ?? ""), operandes });
-    if (!capture.ok) return refus(`commands[${i}].params`, "studio-invalid", capture.message);
+    let entrees: unknown;
+    if (c.toolId === TYPE_SOLIDIFIER_STUDIO) {
+      // Maillage subdivisé recalculé depuis la surface de CE document (Loop, pur), puis cousu par le noyau.
+      const capture = studioCaptureSolidification(doc, { subdivision: String(p["subdivision"] ?? "") });
+      if (!capture.ok) return refus(`commands[${i}].params`, "studio-invalid", capture.message);
+      entrees = capture.capture.entrees;
+    } else if (c.toolId === TYPE_EPAISSIR_STUDIO) {
+      // Surface relue dans CE document ; épaisseur et côté de la commande (validés par la capture, rien par défaut).
+      const e = p["epaisseur"];
+      const capture = studioCaptureEpaississement(doc, { surface: String(p["surface"] ?? ""), epaisseur: typeof e === "number" ? e : null, sens: String(p["sens"] ?? "") });
+      if (!capture.ok) return refus(`commands[${i}].params`, "studio-invalid", capture.message);
+      entrees = capture.capture.entrees;
+    } else {
+      const operandes = Array.isArray(p["operandes"]) ? (p["operandes"] as unknown[]).map(String) : [];
+      const capture = studioCaptureBooleen(doc, { operation: String(p["operation"] ?? ""), operandes });
+      if (!capture.ok) return refus(`commands[${i}].params`, "studio-invalid", capture.message);
+      entrees = capture.capture.entrees;
+    }
     M ??= await moteurExact();
     let r: SolideExact;
     try {
       const moteur = M;
-      r = surveillanceStudio.mesurer("exact", TYPE_BOOLEEN_STUDIO, () => moteur.executer(capture.capture.entrees));
+      r = surveillanceStudio.mesurer("exact", c.toolId, () => moteur.executer(entrees));
     } catch (err) {
       const message = err instanceof ErreurExacte || err instanceof Error ? err.message : String(err);
       return refus(`commands[${i}].params`, "exact-echec", `noyau exact : ${message}`);

@@ -21,7 +21,9 @@ import { studioIdsOperandes } from "../objets-3d/exacts.js";
 export const STUDIO_DOMAINES_DERIVES = Object.freeze(["plan-2d", "maillage-3d", "quantites", "exports", "publications"] as const);
 export type StudioDomaineDerive = (typeof STUDIO_DOMAINES_DERIVES)[number];
 
-export type StudioNatureRelation = "cote-liee" | "hote" | "source-profil" | "operande" | "propriete" | "apparence";
+export type StudioNatureRelation = "cote-liee" | "hote" | "source-profil" | "operande" | "propriete" | "apparence"
+  /** Lot W3-B : objet rattaché à un niveau ; occurrence → définition de composant. */
+  | "niveau" | "definition";
 export interface StudioRelation { de: string; vers: string; nature: StudioNatureRelation }
 export interface StudioContrainteModifiee { id: string; contrainte: "a-resoudre"; avant: boolean | null; apres: boolean | null }
 
@@ -46,8 +48,8 @@ export interface StudioEffetsCommande {
   origine: StudioOrigineEffets;
 }
 
-type Famille = "objects" | "layers" | "dimensions" | "annotations" | "solides" | "exacts" | "cotesFaces" | "architecture" | "proprietes" | "scenes" | "nonNatifs";
-const FAMILLES: readonly Famille[] = ["objects", "layers", "dimensions", "annotations", "solides", "exacts", "cotesFaces", "architecture", "proprietes", "scenes", "nonNatifs"];
+type Famille = "objects" | "layers" | "dimensions" | "annotations" | "solides" | "exacts" | "surfaces" | "subdivisions" | "cotesFaces" | "architecture" | "proprietes" | "scenes" | "nonNatifs" | "niveaux" | "composants" | "occurrences";
+const FAMILLES: readonly Famille[] = ["objects", "layers", "dimensions", "annotations", "solides", "exacts", "surfaces", "subdivisions", "cotesFaces", "architecture", "proprietes", "scenes", "nonNatifs", "niveaux", "composants", "occurrences"];
 
 /** Domaines lus par chaque famille d'éléments (une modification les invalide). Les publications lisent tout. */
 const LECTEURS: Record<Famille, readonly StudioDomaineDerive[]> = {
@@ -57,6 +59,9 @@ const LECTEURS: Record<Famille, readonly StudioDomaineDerive[]> = {
   annotations: ["plan-2d", "exports", "publications"],
   solides: ["maillage-3d", "quantites", "exports", "publications"],
   exacts: ["maillage-3d", "quantites", "exports", "publications"],
+  // Surfaces libres (X.1-05) : vue 3D, exports (OBJ ; comptées ailleurs) et publications ; aucun métré.
+  surfaces: ["maillage-3d", "exports", "publications"],
+  subdivisions: ["maillage-3d", "exports", "publications"],
   // Cotes de faces 3D (lot G2) : lues par la vue 3D et les publications (aucun format ne les écrit).
   cotesFaces: ["maillage-3d", "publications"],
   architecture: ["plan-2d", "maillage-3d", "quantites", "exports", "publications"],
@@ -64,6 +69,11 @@ const LECTEURS: Record<Famille, readonly StudioDomaineDerive[]> = {
   // Réglages de vue : seule la vue 3D les lit (jamais la géométrie, le métré ni les exports) ; une feuille publiée les cite.
   scenes: ["maillage-3d", "publications"],
   nonNatifs: ["plan-2d", "publications"],
+  // Lot W3-B : un niveau est lu par le plan (vue par niveau), la vue 3D, le métré et l'IFC ; une définition par la vue 3D
+  // (ses occurrences), le métré et l'IFC.
+  niveaux: ["plan-2d", "maillage-3d", "quantites", "exports", "publications"],
+  composants: ["maillage-3d", "quantites", "exports", "publications"],
+  occurrences: ["maillage-3d", "quantites", "exports", "publications"],
 };
 
 const stable = (v: unknown): string => {
@@ -93,7 +103,14 @@ export function studioRelations(doc: StudioDocument): StudioRelation[] {
   for (const a of doc.annotations ?? []) {
     if (a.type === "angular-dimension") for (const l of [a.links.first, a.links.second]) if (l) out.push({ de: a.id, vers: l.objectId, nature: "cote-liee" });
   }
-  for (const a of doc.architecture ?? []) if (a.type === "opening") out.push({ de: a.id, vers: a.hostId, nature: "hote" });
+  for (const a of doc.architecture ?? []) {
+    if (a.type === "opening") out.push({ de: a.id, vers: a.hostId, nature: "hote" });
+    else if (a.niveauId !== undefined) out.push({ de: a.id, vers: a.niveauId, nature: "niveau" });
+  }
+  for (const o of doc.occurrences ?? []) {
+    out.push({ de: o.id, vers: o.composantId, nature: "definition" });
+    if (o.niveauId !== undefined) out.push({ de: o.id, vers: o.niveauId, nature: "niveau" });
+  }
   for (const c of doc.cotesFaces ?? []) out.push({ de: c.id, vers: c.solidId, nature: "cote-liee" });
   for (const s of doc.solides ?? []) if (s.type === "prism" && s.source) out.push({ de: s.id, vers: s.source.objectId, nature: "source-profil" });
   for (const s of doc.exacts ?? []) for (const id of studioIdsOperandes(s)) out.push({ de: s.id, vers: id, nature: "operande" });

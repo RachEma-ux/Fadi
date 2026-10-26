@@ -323,8 +323,18 @@ const AJOUTS = {
     "studio.architecture.echelle-acces",
     // Lot G2 (INV-013) : cote de face 3D, champ facultatif `cotesFaces` du document.
     "studio.solide.cote-face",
+    // X.1-05 (extension additive consignée) : surfaces libres NURBS, champ facultatif `surfaces` du document ; solide
+    // exact par épaississement (variante additive de `exacts`).
+    "studio.surface.nurbs", "studio.surface.modifier", "studio.surface.epaissir",
+    // X.1-05 : surfaces de subdivision (champ facultatif `subdivisions`), solidification (variante additive de `exacts`).
+    "studio.subdivision.creer", "studio.subdivision.solidifier",
+    // Lot W3-B (X.1-04, extension additive consignée) : niveaux, composants 3D et éléments structurels typés.
+    "studio.niveau.definir", "studio.composant.definir", "studio.composant.placer", "studio.structure.element",
+    // Lot W3-A (X.1-01) : blocs définis par l'utilisateur et contraintes géométriques, champs facultatifs `blocs`,
+    // `insertions` et `contraintes` du document.
+    "studio.bloc.definir", "studio.bloc.inserer", "studio.bloc.eclater", "studio.contrainte.poser",
   ]),
-  types: new Set(["angular-dimension", "text", "wall", "opening", "scene", "appearance", "non-native", "spline", "hachure", "symbole", "source", "ladder", "face-dimension"]),
+  types: new Set(["angular-dimension", "text", "wall", "opening", "scene", "appearance", "non-native", "spline", "hachure", "symbole", "source", "ladder", "face-dimension", "column", "beam", "slab", "occurrence"]),
   exports: new Set([
     // Dérivation en copie indépendante (TR-EX-013 / TR-INV-003) et tolérance contractuelle des gestes (TR-IF-002), P-12.
     "STUDIO_MODES_DERIVATION", "studioCopieIndependante", "studioIdentitesDocument", "studioIdentitesReutilisees",
@@ -370,6 +380,8 @@ const AJOUTS = {
     "STUDIO_LIMITES_AJUSTEMENTS", "appliquerAjustementsEnregistres", "controlerSaisieAjustement", "etatCibleQuantite", "evaluerAjustementsQuantites", "jsonCanoniqueQuantites",
     // Concurrence des écritures (A.5-06, A.5-08, `concurrence.ts`).
     "studioChevauchements", "studioElementsModifies",
+    // Fusion de variantes à trois voies (lot W3-D, X.1-06, `fusion-variantes.ts`, extension additive).
+    "STUDIO_TYPES_CONFLITS_FUSION", "studioAncetreCommun", "studioEmpreinteFusion", "studioFusionnerVariantes",
     // Production documentaire (lot E.3 : vues, feuilles composées, dossier de conception, bilan brut / déductions / net).
     "STUDIO_BILAN_QUANTITES_SCHEMA", "bilanQuantitesStudio", "sousTotauxAvecNet", "studioTexteTronque", "largeurHelvetica","studioSha256", "studioSha256Octets", "studioUtf8", "pdfPages",
     "STUDIO_VUE_DOCUMENTAIRE_SCHEMA", "STUDIO_FEUILLE_COMPOSEE_SCHEMA", "STUDIO_DOSSIER_CONCEPTION_SCHEMA", "STUDIO_NON_EVALUE", "STUDIO_LIMITES_DOSSIER",
@@ -409,6 +421,24 @@ const AJOUTS = {
     "SCHEMA_ECHELLE", "STUDIO_ECHELONS_MAX", "validerEchelle", "geometrieEchelle", "metreEchelle", "volumesEchelle",
     // Lot G2 : cotes de faces 3D (INV-013, `objets-3d/cotes-faces.ts`).
     "SCHEMA_COTE_FACE", "STUDIO_TOLERANCE_FACES", "controlerCoteFace", "studioCorrespondanceFace", "studioFaceExiste", "studioPlanFace", "studioValeurCoteFace", "validerCoteFace",
+    // X.1-05 : surfaces libres NURBS (`objets-3d/surfaces-libres.ts`) et leur épaississement exact (`surfaces-exactes.ts`).
+    "estBooleenExact", "SCHEMA_SURFACE_LIBRE", "STUDIO_LIMITES_SURFACES", "STUDIO_SENS_EPAISSEUR", "studioAireApprocheeSurface", "studioMaillageSurface",
+    "studioNoeudsUniformes", "studioOperationNurbs", "studioPointSurface", "validerSurfaceLibre",
+    "studioCaptureEpaississement", "studioVerifierEpaississement", "studioCommandeEpaississement",
+    // X.1-05 : surfaces de subdivision (`objets-3d/subdivisions.ts`), solidification (`surfaces-exactes.ts`).
+    "SCHEMA_SURFACE_SUBDIVISION", "STUDIO_LIMITES_SUBDIVISION", "studioAireSubdivision", "studioMaillageSubdivise", "studioMaillageSubdivision", "studioOperationPolyedre",
+    "studioSubdivisionFermee", "studioVolumeSubdivision", "validerSurfaceSubdivision",
+    "studioCaptureSolidification", "studioVerifierSolidification", "studioCommandeSolidification",
+    // Lot W3-B : éléments structurels typés (`architecture/structure.ts`), niveaux et composants 3D (`batiment/`).
+    "STUDIO_TYPES_STRUCTURELS", "estStructurel", "SCHEMA_DALLE", "SCHEMA_ELEMENT_STRUCTUREL", "SCHEMA_POTEAU", "SCHEMA_POUTRE",
+    "axePoutre", "cotesStructurelles", "empriseStructurelle", "metreStructurel", "STUDIO_LIMITES_STRUCTURE", "transformerStructurel", "validerDalle", "validerPoteau", "validerPoutre", "volumeStructurel",
+    "SCHEMA_NIVEAU", "STUDIO_LIMITES_NIVEAUX", "studioNiveauxParCote", "validerNiveau",
+    "SCHEMA_COMPOSANT", "SCHEMA_OCCURRENCE", "STUDIO_LIMITES_COMPOSANTS", "studioCommandesRendreUnique", "studioInstancesComposants", "studioMaillageComposant",
+    "studioMaillageOccurrence", "studioPointOccurrence", "studioVolumeComposant", "validerComposant", "validerOccurrence",
+    "STUDIO_SANS_NIVEAU", "studioMembresNiveau", "studioVueNiveau",
+    // Lot W3-A (X.1-01) : blocs définis par l'utilisateur (`blocs/blocs.ts`) et contraintes géométriques (`contraintes/contraintes.ts`).
+    "STUDIO_LIMITES_BLOCS", "validerDefinitionBloc", "validerInsertionBloc", "studioCleNomBloc", "controlerBlocs", "studioComposerTransformationsPlanes", "studioTransformationInsertion", "studioIdElementInsertion", "studioFormesInsertion", "studioPoseTransformee", "studioPointsInsertion", "studioInsertionsParBloc", "insertionSvg", "studioNomsDxfBlocs", "blocsDxf", "insertionDxf", "SCHEMA_DEFINITION_BLOC", "SCHEMA_INSERTION_BLOC",
+    "STUDIO_TYPES_CONTRAINTES", "STUDIO_POINTS_CONTRAINTE", "STUDIO_MODES_TANGENCE", "STUDIO_LIMITES_CONTRAINTES", "STUDIO_TOLERANCES_CONTRAINTES", "validerContrainte", "studioRefusContrainte", "studioEvaluerContrainte", "studioModeTangence", "studioResoudreContraintes", "studioPointContrainte", "SCHEMA_CONTRAINTE",
   ]),
 };
 function sansAjouts(value: unknown): unknown {
@@ -420,7 +450,7 @@ function sansAjouts(value: unknown): unknown {
   if (!value || typeof value !== "object") return value;
   const out = Object.fromEntries(Object.entries(value).map(([k, v]) => [k, sansAjouts(v)]));
   const props = out.properties as Record<string, unknown> | undefined;
-  if (props && "schemaVersion" in props) { delete props.annotations; delete props.architecture; delete props.proprietes; delete props.scenes; delete props.nonNatifs; delete props.exacts; delete props.graphismes; delete props.systemeProjet; delete props.sources; delete props.cotesFaces; }
+  if (props && "schemaVersion" in props) { delete props.annotations; delete props.architecture; delete props.proprietes; delete props.scenes; delete props.nonNatifs; delete props.exacts; delete props.graphismes; delete props.systemeProjet; delete props.sources; delete props.cotesFaces; delete props.surfaces; delete props.subdivisions; delete props.blocs; delete props.insertions; delete props.contraintes; delete props.niveaux; delete props.composants; delete props.occurrences; }
   // Lot F1 (extension additive consignée) : direction d'extrusion facultative (`extrusion.direction`, `extruder`) et,
   // pour le prisme, direction et source facultatives ; retirées pour comparer à la base.
   if (props && "base" in props && "height" in props) delete props.direction;

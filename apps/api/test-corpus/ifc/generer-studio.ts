@@ -1,7 +1,9 @@
 /**
  * Corpus IFC de Studio : un document `studio-document/1` construit par commandes (mur diagonal avec épaisseur, ligne
  * extrudée sans épaisseur, rectangle extrudé, ligne plate, cote, calque masqué et calque verrouillé ; mur architectural
- * coudé avec une porte déclarée et une ouverture sans type, A.4 ; propriétés déclarées E.1-01, dont une non évaluée),
+ * coudé avec une porte déclarée et une ouverture sans type, A.4 ; propriétés déclarées E.1-01, dont une non évaluée ;
+ * lot W3-B : un niveau objet « Étage 1 » à 3 m, poteau, poutre et dalle typés rattachés, un composant partagé et deux
+ * occurrences, l'une rattachée au niveau — valeurs synthétiques de test, aucune vérification structurelle),
  * exporté par
  * `exportStudioIfc` et comparé octet pour octet à la référence commitée (`studio.attendu.ifc`) ; effectifs attendus
  * dans `studio.attendus.json`, relus par `valider.py` (conformité testée avec IfcOpenShell, jamais « certifiée »).
@@ -52,11 +54,19 @@ const doc = applyStudioCommands(newStudioDocument("corpus-studio"), [
   // Propriétés déclarées (E.1-01) : jeu de projet `Fadi_ProprietesDeclarees` ; valeurs de corpus saisies pour le test,
   // pas des données de projet. Une propriété sans valeur (non évaluée) n'est pas écrite.
   ...PROPRIETES.map((params) => ({ toolId: "studio.propriete.definir", params })),
+  // Lot W3-B : niveau objet (IfcBuildingStorey réel), éléments structurels typés et composant 3D partagé (IfcMappedItem).
+  { toolId: "studio.niveau.definir", params: { id: "n1", nom: "Étage 1", cote: 3 } },
+  { toolId: "studio.structure.element", params: { id: "po1", type: "column", niveauId: "n1", position: { x: 12, y: 0 }, rotation: 0, width: 0.3, depth: 0.3, height: 3, base: 3 } },
+  { toolId: "studio.structure.element", params: { id: "pt1", type: "beam", niveauId: "n1", start: { x: 12, y: 0 }, end: { x: 18, y: 0 }, width: 0.2, height: 0.4, base: 5.6 } },
+  { toolId: "studio.structure.element", params: { id: "da1", type: "slab", niveauId: "n1", contour: [{ x: 12, y: 0 }, { x: 18, y: 0 }, { x: 18, y: 5 }, { x: 12, y: 5 }], thickness: 0.2, base: 6 } },
+  { toolId: "studio.composant.definir", params: { id: "k1", nom: "Gaine", solides: [{ id: "g", type: "box", placement: { origin: { x: 0, y: 0, z: 0 }, rotation: 0 }, width: 0.2, depth: 0.2, height: 3 }, { id: "c", type: "prism", placement: { origin: { x: 0, y: 0, z: 3 }, rotation: 0 }, profile: [{ x: 0, y: 0 }, { x: 0.4, y: 0 }, { x: 0, y: 0.4 }], height: 0.1 }] } },
+  { toolId: "studio.composant.placer", params: { id: "oc1", type: "occurrence", composantId: "k1", placement: { origin: { x: 20, y: 0, z: 0 }, rotation: 0 } } },
+  { toolId: "studio.composant.placer", params: { id: "oc2", type: "occurrence", composantId: "k1", niveauId: "n1", placement: { origin: { x: 20, y: 3, z: 3 }, rotation: Math.PI / 2 } } },
   { toolId: "studio.calque.modifier", params: { id: "murs", name: "Murs", visible: true, locked: true } },
 ]);
 const contenu = exportStudioIfc(doc, { studyName: "Corpus Studio", variantName: "Variante A", revisionId: "corpus-1", timestamp: "2026-10-18T00:00:00" });
 writeFileSync(join(sortie, "studio.ifc"), contenu);
-writeFileSync(join(sortie, "studio.attendus.json"), JSON.stringify({ IfcBuildingStorey: 1, IfcWall: 3, IfcOpeningElement: 2, IfcDoor: 1, IfcWindow: 0, IfcBuildingElementProxy: 3, IfcSlab: 0, IfcColumn: 0, IfcMapConversion: 0, IfcPropertySet: 15, IfcRelDefinesByProperties: 15, IfcPropertySingleValue: 60 }));
+writeFileSync(join(sortie, "studio.attendus.json"), JSON.stringify({ IfcBuildingStorey: 2, IfcWall: 3, IfcOpeningElement: 2, IfcDoor: 1, IfcWindow: 0, IfcBuildingElementProxy: 5, IfcSlab: 1, IfcColumn: 1, IfcBeam: 1, IfcBuildingElementProxyType: 1, IfcMappedItem: 2, IfcRelDefinesByType: 1, IfcRelContainedInSpatialStructure: 2, IfcMapConversion: 0, IfcPropertySet: 21, IfcRelDefinesByProperties: 20, IfcPropertySingleValue: 100 }));
 // Propriétés attendues par élément (Tag = identifiant Studio) : relues par `valider-proprietes.py`.
 writeFileSync(join(sortie, "studio.proprietes.json"), JSON.stringify({
   pset: "Fadi_ProprietesDeclarees",

@@ -21,9 +21,9 @@ export const STUDIO_MODES_DERIVATION = Object.freeze(["version", "copie"] as con
 export type StudioModeDerivation = (typeof STUDIO_MODES_DERIVATION)[number];
 
 /** Collections dont les éléments ont une identité propre (les calques n'en font pas partie). */
-const COLLECTIONS = ["objects", "dimensions", "solides", "exacts", "cotesFaces", "annotations", "architecture", "scenes", "nonNatifs"] as const;
+const COLLECTIONS = ["objects", "dimensions", "solides", "exacts", "cotesFaces", "annotations", "architecture", "scenes", "nonNatifs", "niveaux", "composants", "occurrences"] as const;
 /** Champs qui désignent un élément identifié du document. */
-const REFERENCES = new Set(["id", "objectId", "hostId", "cibleId", "solidId"]);
+const REFERENCES = new Set(["id", "objectId", "hostId", "cibleId", "solidId", "niveauId", "composantId"]);
 const ID_MAX = 128;
 
 export interface StudioCopieIndependante {

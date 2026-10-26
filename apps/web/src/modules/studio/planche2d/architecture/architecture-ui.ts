@@ -128,7 +128,11 @@ export function murSousPoint(doc: StudioDocument, p: StudioPoint, tolerance: num
 export type EditionArchitecture =
   | { type: "wall"; axe: string; epaisseur: number; hauteur: number; base: number; justification: StudioWallJustification }
   | { type: "opening"; position: number; largeur: number; hauteur: number; allege: number; genre: StudioOpeningKind | "" }
-  | { type: "ladder"; pied: string; orientation: number; largeur: number; hauteur: number; base: number; echelons: number; section: number };
+  | { type: "ladder"; pied: string; orientation: number; largeur: number; hauteur: number; base: number; echelons: number; section: number }
+  // Lot W3-B : éléments structurels typés, modifiés comme les autres objets architecturaux (même identifiant).
+  | { type: "column"; position: string; orientation: number; largeur: number; profondeur: number; hauteur: number; base: number }
+  | { type: "beam"; axe: string; largeur: number; hauteur: number; base: number }
+  | { type: "slab"; contour: string; epaisseur: number; base: number };
 
 export const ecrireAxe = (points: readonly StudioPoint[]): string => points.map((p) => `${p.x} ${p.y}`).join("; ");
 
@@ -136,10 +140,15 @@ export function editionDe(it: StudioArchitectureItem): EditionArchitecture {
   if (it.type === "ladder") {
     return { type: "ladder", pied: ecrireAxe([it.position]), orientation: degresOrientation(it.rotation), largeur: it.width, hauteur: it.height, base: it.base, echelons: it.rungs, section: it.section };
   }
+  if (it.type === "column") return { type: "column", position: ecrireAxe([it.position]), orientation: degresOrientation(it.rotation), largeur: it.width, profondeur: it.depth, hauteur: it.height, base: it.base };
+  if (it.type === "beam") return { type: "beam", axe: ecrireAxe([it.start, it.end]), largeur: it.width, hauteur: it.height, base: it.base };
+  if (it.type === "slab") return { type: "slab", contour: ecrireAxe(it.contour), epaisseur: it.thickness, base: it.base };
   return it.type === "wall"
     ? { type: "wall", axe: ecrireAxe(it.axis), epaisseur: it.thickness, hauteur: it.height, base: it.base, justification: it.justification }
     : { type: "opening", position: it.position, largeur: it.width, hauteur: it.height, allege: it.sill, genre: it.kind ?? "" };
 }
+
+export const ERREUR_PARAMETRES_STRUCTURE = "Saisissez la géométrie et les dimensions de l’élément structurel (m) : aucune section ni hauteur n’est proposée.";
 
 /** Commande Modifier (même identifiant) depuis les valeurs éditées ; `lireAxe` lit le texte « x y ; x y … ». */
 export function commandeModifierArchitecture(it: StudioArchitectureItem, e: EditionArchitecture, lireAxe: (t: string) => StudioPoint[] | null): ResultatArchitecture {
@@ -160,5 +169,36 @@ export function commandeModifierArchitecture(it: StudioArchitectureItem, e: Edit
     if (![e.orientation, e.largeur, e.hauteur, e.base, e.echelons, e.section].every(fini)) return { erreur: ERREUR_PARAMETRES_ECHELLE };
     return { commandes: [{ toolId: "studio.architecture.modifier", params: { ...it, position: pied[0]!, rotation: radiansOrientation(e.orientation), width: e.largeur, height: e.hauteur, base: e.base, rungs: e.echelons, section: e.section } }] };
   }
+  if (it.type === "column" && e.type === "column") {
+    const p = lireAxe(e.position);
+    if (!p || p.length !== 1) return { erreur: "Position : saisissez un point « x y », en mètres." };
+    if (![e.orientation, e.largeur, e.profondeur, e.hauteur, e.base].every(fini)) return { erreur: ERREUR_PARAMETRES_STRUCTURE };
+    return { commandes: [{ toolId: "studio.architecture.modifier", params: { ...it, position: p[0]!, rotation: radiansOrientation(e.orientation), width: e.largeur, depth: e.profondeur, height: e.hauteur, base: e.base } }] };
+  }
+  if (it.type === "beam" && e.type === "beam") {
+    const axe = lireAxe(e.axe);
+    if (!axe || axe.length !== 2) return { erreur: "Axe : saisissez deux points « x y ; x y », en mètres." };
+    if (![e.largeur, e.hauteur, e.base].every(fini)) return { erreur: ERREUR_PARAMETRES_STRUCTURE };
+    return { commandes: [{ toolId: "studio.architecture.modifier", params: { ...it, start: axe[0]!, end: axe[1]!, width: e.largeur, height: e.hauteur, base: e.base } }] };
+  }
+  if (it.type === "slab" && e.type === "slab") {
+    const contour = lireAxe(e.contour);
+    if (!contour || contour.length < 3) return { erreur: "Contour : saisissez trois points au moins, « x y ; x y ; x y », en mètres." };
+    if (![e.epaisseur, e.base].every(fini)) return { erreur: ERREUR_PARAMETRES_STRUCTURE };
+    return { commandes: [{ toolId: "studio.architecture.modifier", params: { ...it, contour, thickness: e.epaisseur, base: e.base } }] };
+  }
   return { erreur: "Valeurs d’un autre objet." };
 }
+
+/**
+ * Rattacher (ou détacher, `niveauId` vide) un objet posé librement à un niveau (lot W3-B) : Modifier, même identifiant ;
+ * ses cotes restent absolues (rien ne bouge). Une ouverture suit le niveau de son mur.
+ */
+export function commandeRattacherNiveau(it: StudioArchitectureItem, niveauId: string): ResultatArchitecture {
+  if (it.type === "opening") return { erreur: "Une ouverture suit le niveau de son mur." };
+  const { niveauId: _avant, ...reste } = it;
+  return { commandes: [{ toolId: "studio.architecture.modifier", params: { ...reste, ...(niveauId ? { niveauId } : {}) } as StudioArchitectureItem }] };
+}
+
+/** Libellé d'un objet architectural ou structurel (liste, sélection). */
+export const LIBELLES_STRUCTURE: Readonly<Record<"column" | "beam" | "slab", string>> = { column: "Poteau", beam: "Poutre", slab: "Dalle" };

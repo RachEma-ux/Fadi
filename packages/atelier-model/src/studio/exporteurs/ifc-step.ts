@@ -113,7 +113,15 @@ export interface StudioIfcSummary {
    */
   annotations?: number;
   /** Objets architecturaux (A.4), présents seulement quand le document en compte : murs, ouvertures, portes, fenêtres. */
-  architecture?: { walls: number; openings: number; doors: number; windows: number; /** EX-027 : échelles d’accès (IfcStair .LADDER.), présent seulement s’il y en a. */ ladders?: number };
+  architecture?: {
+    walls: number; openings: number; doors: number; windows: number; /** EX-027 : échelles d’accès (IfcStair .LADDER.), présent seulement s’il y en a. */ ladders?: number;
+    /** Lot W3-B : poteaux, poutres, dalles (IfcColumn, IfcBeam, IfcSlab), présents seulement s’il y en a. */
+    columns?: number; beams?: number; slabs?: number;
+  };
+  /** Lot W3-B : niveaux écrits en `IfcBuildingStorey` (en plus du niveau de référence), présent seulement s’il y en a. */
+  storeys?: number;
+  /** Lot W3-B : définitions de composants (`IfcBuildingElementProxyType`) et occurrences (`IfcMappedItem`). */
+  components?: { types: number; occurrences: number };
   /**
    * Propriétés déclarées (E.1-01), présent seulement quand le document en porte : écrites dans `Fadi_ProprietesDeclarees`
    * (valuées) et non écrites (sans valeur, « non évaluées »).
@@ -126,6 +134,8 @@ export interface IfcConstruit {
   element: number;
   item: number;
   layerId: string;
+  /** Niveau de rattachement (lot W3-B) : l'élément est contenu dans l'`IfcBuildingStorey` de ce niveau. */
+  niveauId?: string;
 }
 
 /**

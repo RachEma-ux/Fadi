@@ -17,10 +17,22 @@ export { studioMaillageSolide, type StudioFreeSolid3d } from "./maillage.js";
 // Lot F2 : solides exacts (résultats du noyau exact, opérandes conservés).
 export {
   OP_NOYAU, SCHEMA_RESULTAT_EXACT, SCHEMA_SOLIDE_EXACT, STUDIO_LIMITES_EXACTS, STUDIO_MOTEUR_EXACT, STUDIO_OPERATIONS_BOOLEENNES,
-  studioBoiteEnglobante, studioIdsOperandes, studioMaillageExact, studioOperandeNoyau, validerResultatExact, validerSolideExact,
+  estBooleenExact, studioBoiteEnglobante, studioIdsOperandes, studioMaillageExact, studioOperandeNoyau, validerResultatExact, validerSolideExact,
   type StudioBoiteEnglobante, type StudioExact3d, type StudioMaillageExact, type StudioOperandeExact, type StudioOperandeNoyau, type StudioOperationBooleenne,
-  type StudioOperationNoyau, type StudioResultatExact, type StudioSolideExact,
+  type StudioOperationNoyau, type StudioResultatExact, type StudioSolideExact, type StudioSolideExactBooleen, type StudioSolideExactEpaissi, type StudioSolideExactSolidifie,
 } from "./exacts.js";
+// X.1-05 : surfaces libres NURBS (pôles, degrés, poids), maillage d'affichage dérivé, épaississement par le noyau exact.
+export {
+  SCHEMA_SURFACE_LIBRE, STUDIO_LIMITES_SURFACES, STUDIO_SENS_EPAISSEUR, studioAireApprocheeSurface, studioMaillageSurface, studioNoeudsUniformes,
+  studioOperationNurbs, studioPointSurface, validerSurfaceLibre,
+  type StudioOperationNurbs, type StudioSensEpaisseur, type StudioSurface3d, type StudioSurfaceLibre,
+} from "./surfaces-libres.js";
+// X.1-05 : surfaces de subdivision (Loop), maillage de contrôle et niveau, solidification polyédrique d'un maillage fermé.
+export {
+  SCHEMA_SURFACE_SUBDIVISION, STUDIO_LIMITES_SUBDIVISION, studioAireSubdivision, studioMaillageSubdivise, studioMaillageSubdivision, studioOperationPolyedre,
+  studioSubdivisionFermee, studioVolumeSubdivision, validerSurfaceSubdivision,
+  type StudioOperationPolyedre, type StudioSubdivision3d, type StudioSurfaceSubdivision,
+} from "./subdivisions.js";
 // Lot G2 (INV-013) : cotes de faces 3D, référencées à deux faces parallèles d’un solide libre.
 export {
   SCHEMA_COTE_FACE, STUDIO_TOLERANCE_FACES, controlerCoteFace, studioCorrespondanceFace, studioFaceExiste, studioPlanFace, studioValeurCoteFace, validerCoteFace,

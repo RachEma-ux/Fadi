@@ -31,6 +31,7 @@ export const MANIFESTE_COMMANDES = Object.freeze({
   "importer-dxf": P2D, "importer-ifc": P2D, "modeles-externes": ["planche-2d", "vue-3d", "feuille"], "exporter-svg": P2D, "exporter-dxf": P2D, "exporter-ifc": P2D, "exporter-obj": ["planche-2d", "vue-3d"], "exporter-stl": ["planche-2d", "vue-3d"], "exporter-step": ["planche-2d", "vue-3d"], feuille: ["feuille"], "exporter-png": V3D, illustration: V3D, agents: ["planche-2d", "vue-3d", "feuille"],
   outils: ["planche-2d", "vue-3d", "feuille"], palette: ["planche-2d", "vue-3d", "feuille"],
   exigences: P2D, dossier: ["planche-2d", "vue-3d", "feuille"], echanges: ["planche-2d", "vue-3d", "feuille"], approuver: ["planche-2d", "vue-3d", "feuille"],
+  "fusionner-variantes": ["planche-2d", "vue-3d", "feuille"], "annuler-fusion": ["planche-2d", "vue-3d", "feuille"],
 } as const satisfies Record<IdCommandeEditeur, readonly StudioContexteOutil[]>);
 export const PROPRIETAIRE_EDITEUR = Object.freeze({ id: "studio.editeur", module: "apps/web/src/modules/studio" });
 

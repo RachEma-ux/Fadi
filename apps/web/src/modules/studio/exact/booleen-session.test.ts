@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyStudioCommands, newStudioDocument, studioEmpreinteContenu, type StudioCommand, type StudioDocument } from "@parcours/atelier-model";
+import { applyStudioCommands, newStudioDocument, studioEmpreinteContenu, type StudioCommand, type StudioDocument, type StudioSolideExactBooleen } from "@parcours/atelier-model";
 import { Ordonnanceur } from "../taches/ordonnanceur";
 import { NoyauExactStudio } from "./client-exact";
 import { FauxWorker, type CompteurFaux } from "./faux-worker";
@@ -43,7 +43,7 @@ describe("IF-003 — capture, tâche, retour, vérification, engagement explicit
     expect(r.commandes).toHaveLength(1);
     const apres = applyStudioCommands(d, r.commandes);
     expect(apres.exacts![0]).toMatchObject({ id: "E", operation: "union", resultat: { volume: 12 } });
-    expect(apres.exacts![0]!.operandes.map((o) => o.id)).toEqual(["A", "B"]);
+    expect((apres.exacts![0]! as StudioSolideExactBooleen).operandes.map((o) => o.id)).toEqual(["A", "B"]);
   });
 
   it("refus de capture : rien n'est soumis, message dit ce qui manque", () => {

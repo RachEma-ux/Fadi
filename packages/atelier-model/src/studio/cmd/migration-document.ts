@@ -65,7 +65,7 @@ export const STUDIO_MIGRATIONS_DOCUMENT = Object.freeze([
   }),
 ]);
 
-const LISTES = ["objects", "layers", "dimensions", "solides", "exacts", "annotations", "architecture", "proprietes", "scenes", "nonNatifs"] as const;
+const LISTES = ["objects", "layers", "dimensions", "solides", "exacts", "annotations", "architecture", "proprietes", "scenes", "nonNatifs", "niveaux", "composants", "occurrences"] as const;
 const MAX_ETAPES = 100_000;
 
 type Segment = string | number;

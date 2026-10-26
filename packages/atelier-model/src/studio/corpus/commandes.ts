@@ -5,7 +5,8 @@ import type { StudioSolid } from "../objets-3d/solides.js";
  * Commandes `studio-commands/1` qui recréent un document du corpus depuis un document vide, dans un ordre où toute
  * référence précède ce qui la vise : calques, objets, architecture (dans l'ordre du document), cotes, annotations, solides,
  * solides exacts (opérandes posés comme solides, puis le booléen avec le résultat du noyau, que le serveur recalcule),
- * graphismes, sources déclarées. Sert aux recettes qui posent un corpus par l'API (S6, S7, références visuelles) ; un test
+ * graphismes, sources déclarées, définitions et insertions de blocs, contraintes (posées en une commande : déjà
+ * satisfaites, leur résolution ne change rien). Sert aux recettes qui posent un corpus par l'API (S6, S7, références visuelles) ; un test
  * contrôle que leur application rend le document à l'identique.
  */
 export function commandesDuDocument(doc: StudioDocument): StudioCommand[] {
@@ -21,17 +22,37 @@ export function commandesDuDocument(doc: StudioDocument): StudioCommand[] {
     }
   }
   // Ordre du document : dans le corpus, un mur précède toujours ses ouvertures.
-  for (const a of doc.architecture ?? []) out.push(a.type === "wall" ? { toolId: "studio.architecture.mur", params: a } : a.type === "ladder" ? { toolId: "studio.architecture.echelle-acces", params: a } : { toolId: "studio.architecture.ouverture", params: a });
+  // Bâtiment (lot W3-B) : niveaux avant les objets qui s'y rattachent ; définitions avant leurs occurrences.
+  for (const n of doc.niveaux ?? []) out.push({ toolId: "studio.niveau.definir", params: n });
+  for (const a of doc.architecture ?? []) {
+    out.push(a.type === "wall" ? { toolId: "studio.architecture.mur", params: a } : a.type === "ladder" ? { toolId: "studio.architecture.echelle-acces", params: a }
+      : a.type === "opening" ? { toolId: "studio.architecture.ouverture", params: a } : { toolId: "studio.structure.element", params: a });
+  }
+  for (const c of doc.composants ?? []) out.push({ toolId: "studio.composant.definir", params: c });
+  for (const o of doc.occurrences ?? []) out.push({ toolId: "studio.composant.placer", params: o });
   for (const d of doc.dimensions ?? []) out.push({ toolId: "studio.dessin.cote", params: d });
   for (const a of doc.annotations ?? []) out.push(a.type === "text" ? { toolId: "studio.dessin.texte", params: a } : { toolId: "studio.dessin.cote-angulaire", params: a });
   const solide = (s: StudioSolid): StudioCommand => (s.type === "box" ? { toolId: "studio.solide.boite", params: s } : { toolId: "studio.solide.prisme", params: s });
   for (const s of doc.solides ?? []) out.push(solide(s));
+  for (const e of doc.surfaces ?? []) out.push({ toolId: "studio.surface.nurbs", params: e });
+  for (const e of doc.subdivisions ?? []) out.push({ toolId: "studio.subdivision.creer", params: e });
   for (const e of doc.exacts ?? []) {
+    if (e.operation === "epaississement") {
+      out.push({ toolId: "studio.surface.nurbs", params: e.surface }, { toolId: "studio.surface.epaissir", params: { id: e.id, surface: e.surface.id, epaisseur: e.epaisseur, sens: e.sens, resultat: e.resultat } });
+      continue;
+    }
+    if (e.operation === "solidification") {
+      out.push({ toolId: "studio.subdivision.creer", params: e.subdivision }, { toolId: "studio.subdivision.solidifier", params: { id: e.id, subdivision: e.subdivision.id, resultat: e.resultat } });
+      continue;
+    }
     const [a, b] = e.operandes;
     if (a.type === "exact" || b.type === "exact") throw new Error(`corpus : opérande exact imbriqué non pris en charge (${e.id})`);
     out.push(solide(a), solide(b), { toolId: "studio.solide.booleen", params: { id: e.id, operation: e.operation, operandes: [a.id, b.id], resultat: e.resultat } });
   }
   for (const g of doc.graphismes ?? []) out.push({ toolId: "studio.graphisme.creer", params: g });
   for (const src of doc.sources ?? []) out.push({ toolId: "studio.source.declarer", params: src });
+  for (const b of doc.blocs ?? []) out.push({ toolId: "studio.bloc.definir", params: { id: b.id, nom: b.nom, base: b.base, elements: b.elements } });
+  for (const i of doc.insertions ?? []) out.push({ toolId: "studio.bloc.inserer", params: i });
+  if (doc.contraintes?.length) out.push({ toolId: "studio.contrainte.poser", params: { contraintes: doc.contraintes } });
   return out;
 }

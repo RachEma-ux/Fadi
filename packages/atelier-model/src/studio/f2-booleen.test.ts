@@ -9,7 +9,7 @@ import { couperStudio, studioQuantitesSolides, type StudioBox, type StudioProfil
 import {
   studioApercuBooleen, studioCaptureBooleen, studioCommandeBooleen, studioComparerApercu, studioVerifierEngagement, STUDIO_TOLERANCE_APERCU,
 } from "./booleens-exacts.js";
-import { studioMaillageExact, studioOperandeNoyau, validerSolideExact } from "./objets-3d/exacts.js";
+import { studioMaillageExact, studioOperandeNoyau, validerSolideExact, type StudioSolideExactBooleen } from "./objets-3d/exacts.js";
 import { exactSynthetique, resultatSynthetique } from "./exacts.fixtures.js";
 
 /**
@@ -37,7 +37,7 @@ describe("IF-003 / R15 — solide exact : commande d'engagement explicite, opér
     const e = appliquer(d, booleen());
     expect(e.solides ?? []).toEqual([]);
     expect(e.exacts).toHaveLength(1);
-    const x = e.exacts![0]!;
+    const x = e.exacts![0]! as StudioSolideExactBooleen;
     expect(x).toMatchObject({ id: "E", type: "exact", operation: "union" });
     expect(x.operandes).toEqual([a, b]);
     expect(x.resultat).toEqual(resultatSynthetique(12));
@@ -74,7 +74,7 @@ describe("IF-003 / R15 — solide exact : commande d'engagement explicite, opér
     expect(refus(() => appliquer(e, { toolId: "studio.solide.deplacer", params: { id: "E", dx: 1, dy: 0, dz: 0 } }))).toBe("commands[0] : ce n’est pas un solide libre : E");
     const chaine = appliquer(e, { toolId: "studio.solide.boite", params: boite("C", 4) }, booleen("difference", ["E", "C"], resultatSynthetique(3), "E2"));
     expect(chaine.exacts!.map((x) => x.id)).toEqual(["E2"]);
-    expect(chaine.exacts![0]!.operandes.map((o) => o.id)).toEqual(["E", "C"]);
+    expect((chaine.exacts![0]! as StudioSolideExactBooleen).operandes.map((o) => o.id)).toEqual(["E", "C"]);
     const vide = appliquer(chaine, { toolId: "studio.solide.supprimer", params: { ids: ["E2"] } });
     expect(vide.exacts ?? []).toEqual([]);
     expect(appliquer(vide, { toolId: "studio.solide.boite", params: boite("A", 5) }).solides!.map((s) => s.id)).toEqual(["A"]);

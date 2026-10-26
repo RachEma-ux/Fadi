@@ -1,3 +1,4 @@
+import { studioMaillageComposant, studioMaillageOccurrence, type StudioMaillageComposant, type StudioOccurrence3d } from "./batiment/composants.js";
 import { studioShapeOutline } from "./courbes.js";
 import { STUDIO_DEFAULT_LAYER_ID } from "./noyau/limites.js";
 import { studioLayerState, validateStudioDocument, type StudioDocument, type StudioShape } from "./document-2d.js";
@@ -7,6 +8,8 @@ import { studioCotesExtrusion } from "./noyau/types.js";
 import { studioLienSolide } from "./commandes/liens-solides.js";
 import { studioMaillageSolide, type StudioFreeSolid3d } from "./objets-3d/maillage.js";
 import { studioMaillageExact, type StudioExact3d } from "./objets-3d/exacts.js";
+import { studioMaillageSurface, type StudioSurface3d } from "./objets-3d/surfaces-libres.js";
+import { studioMaillageSubdivision, type StudioSubdivision3d } from "./objets-3d/subdivisions.js";
 import { studioMaillageArchitecture, type StudioArchitecture3d } from "./architecture/maillage.js";
 import type { StudioArchitectureItem } from "./architecture/types.js";
 import type { StudioMesh3d, StudioOutline3d } from "./mesh-3d.js";
@@ -72,7 +75,7 @@ export interface StudioVersionProjection {
   contenu: string;
 }
 
-type Famille = "objet" | "cote" | "annotation" | "solide" | "architecture";
+type Famille = "objet" | "cote" | "annotation" | "solide" | "architecture" | "occurrence";
 
 /** Clés par objet d'un document (mémorisées : un document est immuable). */
 interface Cles {
@@ -100,8 +103,14 @@ function cles(doc: StudioDocument): Cles {
   (doc.annotations ?? []).forEach(poser("annotation"));
   (doc.solides ?? []).forEach(poser("solide"));
   (doc.exacts ?? []).forEach(poser("solide"));
+  (doc.surfaces ?? []).forEach(poser("solide"));
+  (doc.subdivisions ?? []).forEach(poser("solide"));
   (doc.architecture ?? []).forEach(poser("architecture"));
+  // Occurrences de composants (lot W3-B) : leur géométrie dérive de leur définition, lue par leur clé de projection.
+  (doc.occurrences ?? []).forEach(poser("occurrence"));
   const projection = new Map(propres);
+  const definitions = new Map((doc.composants ?? []).map((d) => [d.id, empreinteElement(d)]));
+  for (const o of doc.occurrences ?? []) projection.set(o.id, empreinteTexte(`${propres.get(o.id)}|definition:${definitions.get(o.composantId) ?? "absente"}`));
   // Un mur lit ses ouvertures (vides) ; une ouverture lit son mur hôte (cote de base, axe, épaisseur, calque).
   const ouvertures = new Map<string, string[]>();
   for (const a of doc.architecture ?? []) if (a.type === "opening") (ouvertures.get(a.hostId) ?? ouvertures.set(a.hostId, []).get(a.hostId)!).push(propres.get(a.id)!);
@@ -120,7 +129,7 @@ function cles(doc: StudioDocument): Cles {
 
 /** Entrées lues par chaque projection (familles d'objets) ; les deux lisent les calques. */
 const LECTURES: Record<StudioProjection, ReadonlySet<string>> = {
-  "maillage-3d": new Set(["objet", "solide", "architecture"]),
+  "maillage-3d": new Set(["objet", "solide", "architecture", "occurrence"]),
   "plan-2d": new Set(["objet", "cote", "annotation", "architecture"]),
 };
 
@@ -137,8 +146,11 @@ function clesMorceaux(doc: StudioDocument): Map<string, string> {
   for (const o of doc.objects) poser(o.id, o.layerId);
   for (const o of doc.solides ?? []) poser(o.id, o.layerId);
   for (const o of doc.exacts ?? []) poser(o.id, o.layerId);
+  for (const o of doc.surfaces ?? []) poser(o.id, o.layerId);
+  for (const o of doc.subdivisions ?? []) poser(o.id, o.layerId);
   const murs = new Map((doc.architecture ?? []).flatMap((x) => (x.type === "wall" ? [[x.id, x.layerId] as const] : [])));
   for (const o of doc.architecture ?? []) poser(o.id, o.type !== "opening" ? o.layerId : murs.get(o.hostId));
+  for (const o of doc.occurrences ?? []) poser(o.id, o.layerId);
   c.morceaux = m;
   return m;
 }
@@ -233,8 +245,11 @@ function* calquesDesObjets(d: StudioDocument): Generator<[string, string]> {
   for (const o of d.annotations ?? []) yield [o.id, calque(o.layerId)];
   for (const o of d.solides ?? []) yield [o.id, calque(o.layerId)];
   for (const o of d.exacts ?? []) yield [o.id, calque(o.layerId)];
+  for (const o of d.surfaces ?? []) yield [o.id, calque(o.layerId)];
+  for (const o of d.subdivisions ?? []) yield [o.id, calque(o.layerId)];
   const murs = new Map((d.architecture ?? []).filter((x) => x.type === "wall").map((x) => [x.id, x.type === "wall" ? x.layerId : undefined]));
   for (const o of d.architecture ?? []) yield [o.id, calque(o.type !== "opening" ? o.layerId : murs.get(o.hostId))];
+  for (const o of d.occurrences ?? []) yield [o.id, calque(o.layerId)];
 }
 
 /**
@@ -250,7 +265,13 @@ export interface StudioMorceauMaillage {
   freeSolid?: StudioFreeSolid3d;
   /** Solide exact (lot F2) : maillage du noyau, conservé dans le document. */
   exact?: StudioExact3d;
+  /** Surface libre NURBS (X.1-05) : nappe évaluée depuis sa définition. */
+  surface?: StudioSurface3d;
+  /** Surface de subdivision (X.1-05) : maillage subdivisé. */
+  subdivision?: StudioSubdivision3d;
   architecture?: StudioArchitecture3d;
+  /** Occurrence de composant (lot W3-B) : maillage de sa définition placé. */
+  occurrence?: StudioOccurrence3d;
   hidden?: true;
 }
 
@@ -292,6 +313,14 @@ export function studioMaillerObjets(document: StudioDocument, ids: readonly stri
     if (!veut(s.id)) continue;
     out.push(visible(s.layerId) ? { id: s.id, cle: cle.get(s.id)!, exact: studioMaillageExact(s) } : { id: s.id, cle: cle.get(s.id)!, hidden: true });
   }
+  for (const s of doc.surfaces ?? []) {
+    if (!veut(s.id)) continue;
+    out.push(visible(s.layerId) ? { id: s.id, cle: cle.get(s.id)!, surface: studioMaillageSurface(s) } : { id: s.id, cle: cle.get(s.id)!, hidden: true });
+  }
+  for (const s of doc.subdivisions ?? []) {
+    if (!veut(s.id)) continue;
+    out.push(visible(s.layerId) ? { id: s.id, cle: cle.get(s.id)!, subdivision: studioMaillageSubdivision(s) } : { id: s.id, cle: cle.get(s.id)!, hidden: true });
+  }
   const archi = doc.architecture ?? [];
   if (archi.length) {
     // Murs concernés : murs voulus et hôtes des ouvertures voulues ; chacun est maillé avec toutes ses ouvertures.
@@ -303,6 +332,18 @@ export function studioMaillerObjets(document: StudioDocument, ids: readonly stri
       if (!veut(a.id)) continue;
       const m = mailles.get(a.id);
       out.push(m ? { id: a.id, cle: cle.get(a.id)!, architecture: m } : { id: a.id, cle: cle.get(a.id)!, hidden: true });
+    }
+  }
+  // Occurrences de composants (lot W3-B) : la définition maillée une fois, placée par chaque occurrence voulue.
+  if (doc.occurrences?.length) {
+    const composants = new Map((doc.composants ?? []).map((c) => [c.id, c]));
+    const definitions = new Map<string, StudioMaillageComposant>();
+    for (const o of doc.occurrences) {
+      if (!veut(o.id)) continue;
+      if (!visible(o.layerId)) { out.push({ id: o.id, cle: cle.get(o.id)!, hidden: true }); continue; }
+      let d = definitions.get(o.composantId);
+      if (!d) definitions.set(o.composantId, d = studioMaillageComposant(composants.get(o.composantId)!));
+      out.push({ id: o.id, cle: cle.get(o.id)!, occurrence: studioMaillageOccurrence(o, d) });
     }
   }
   return out;
@@ -317,11 +358,11 @@ export function studioMaillerObjets(document: StudioDocument, ids: readonly stri
 export function studioAssemblerMaillage(doc: StudioDocument, morceaux: ReadonlyMap<string, StudioMorceauMaillage>): StudioMesh3d {
   const cle = clesMorceaux(doc);
   const manquants: string[] = [];
-  const maillables = [...doc.objects, ...(doc.solides ?? []), ...(doc.exacts ?? []), ...(doc.architecture ?? [])];
+  const maillables = [...doc.objects, ...(doc.solides ?? []), ...(doc.exacts ?? []), ...(doc.surfaces ?? []), ...(doc.subdivisions ?? []), ...(doc.architecture ?? []), ...(doc.occurrences ?? [])];
   for (const o of maillables) if (morceaux.get(o.id)?.cle !== cle.get(o.id)) manquants.push(o.id);
   const complements = manquants.length ? new Map(studioMaillerObjets(doc, manquants).map((m) => [m.id, m])) : null;
   const lire = (id: string) => complements?.get(id) ?? morceaux.get(id)!;
-  const solids: StudioSolid3d[] = [], outlines: StudioOutline3d[] = [], freeSolids: StudioFreeSolid3d[] = [], exacts: StudioExact3d[] = [], architecture: StudioArchitecture3d[] = [];
+  const solids: StudioSolid3d[] = [], outlines: StudioOutline3d[] = [], freeSolids: StudioFreeSolid3d[] = [], exacts: StudioExact3d[] = [], surfaces: StudioSurface3d[] = [], subdivisions: StudioSubdivision3d[] = [], architecture: StudioArchitecture3d[] = [], occurrences: StudioOccurrence3d[] = [];
   let hidden = 0;
   for (const o of doc.objects) {
     const m = lire(o.id);
@@ -337,9 +378,21 @@ export function studioAssemblerMaillage(doc: StudioDocument, morceaux: ReadonlyM
     const m = lire(s.id);
     if (m.exact) exacts.push(m.exact); else hidden++;
   }
+  for (const s of doc.surfaces ?? []) {
+    const m = lire(s.id);
+    if (m.surface) surfaces.push(m.surface); else hidden++;
+  }
+  for (const s of doc.subdivisions ?? []) {
+    const m = lire(s.id);
+    if (m.subdivision) subdivisions.push(m.subdivision); else hidden++;
+  }
   for (const a of doc.architecture ?? []) {
     const m = lire(a.id);
     if (m.architecture) architecture.push(m.architecture); else hidden++;
+  }
+  for (const o of doc.occurrences ?? []) {
+    const m = lire(o.id);
+    if (m.occurrence) occurrences.push(m.occurrence); else hidden++;
   }
   // Emprise : min / max par composante, indépendants de l'ordre (Math.min tient -0 pour inférieur à +0 dans tous les
   // ordres) ; l'emprise de chaque morceau est mémorisée, l'assemblage ne parcourt donc que les morceaux.
@@ -353,11 +406,14 @@ export function studioAssemblerMaillage(doc: StudioDocument, morceaux: ReadonlyM
   for (const l of outlines) etendre(emprise(l, l.points));
   for (const s of freeSolids) etendre(emprise(s, s.vertices));
   for (const s of exacts) etendre(emprise(s, s.vertices));
+  for (const s of surfaces) etendre(emprise(s, s.vertices));
+  for (const s of subdivisions) etendre(emprise(s, s.vertices));
   for (const s of architecture) etendre(emprise(s, s.vertices));
+  for (const s of occurrences) etendre(emprise(s, s.vertices));
   const bounds: StudioMesh3d["bounds"] = vide ? null : { min: { x: x0, y: y0, z: z0 }, max: { x: x1, y: y1, z: z1 } };
   return {
     frame: STUDIO_FRAME_3D, units: "m", source: { frame: "local-2d", conversion: "(x, y) → (x, y, z)" }, solids, outlines, nonExtruded: outlines.length, hidden,
-    ...(doc.solides?.length ? { freeSolids } : {}), ...(doc.exacts?.length ? { exacts } : {}), ...(doc.architecture?.length ? { architecture } : {}), bounds,
+    ...(doc.solides?.length ? { freeSolids } : {}), ...(doc.exacts?.length ? { exacts } : {}), ...(doc.surfaces?.length ? { surfaces } : {}), ...(doc.subdivisions?.length ? { subdivisions } : {}), ...(doc.architecture?.length ? { architecture } : {}), ...(doc.occurrences?.length ? { occurrences } : {}), bounds,
   };
 }
 

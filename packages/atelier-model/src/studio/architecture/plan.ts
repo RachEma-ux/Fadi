@@ -2,7 +2,8 @@ import type { DxfWriter } from "../exporteurs/dxf.js";
 import { nb, svgY, xml } from "../exporteurs/texte.js";
 import type { StudioPoint } from "../noyau/types.js";
 import { contourOuverture, montantsOuverture, morceauxPlan } from "./geometrie.js";
-import type { StudioArchitectureItem, StudioLadder, StudioWall } from "./types.js";
+import type { StudioArchitectureItem, StudioLadder, StudioStructuralElement, StudioWall } from "./types.js";
+import { empriseStructurelle } from "./structure.js";
 import { geometrieEchelle } from "./echelle.js";
 import { lireArchitecture } from "./validation.js";
 
@@ -16,6 +17,8 @@ export interface PlanArchitectural {
   ouvertures: { id: string; hostId: string; kind?: string; layerId?: string; montants: [StudioPoint, StudioPoint][]; contour: StudioPoint[] }[];
   /** Échelles d'accès (EX-027) : sections des montants, contour des échelons (superposés en plan), emprise. */
   echelles?: { echelle: StudioLadder; montants: StudioPoint[][]; echelons: StudioPoint[]; emprise: StudioPoint[] }[];
+  /** Éléments structurels typés (lot W3-B) : emprise en plan (section d'un poteau, emprise d'une poutre, contour d'une dalle). */
+  structure?: { element: StudioStructuralElement; emprise: StudioPoint[] }[];
 }
 
 export function studioPlanArchitecture(items: readonly StudioArchitectureItem[] | undefined): PlanArchitectural {
@@ -37,7 +40,8 @@ export function studioPlanArchitecture(items: readonly StudioArchitectureItem[] 
     const g = geometrieEchelle(it);
     return [{ echelle: it, montants: [g.montants[0], g.montants[1]], echelons: g.echelons, emprise: g.emprise }];
   });
-  return { murs, ouvertures, ...(echelles.length ? { echelles } : {}) };
+  const structure = (items ?? []).flatMap((it) => (it.type === "column" || it.type === "beam" || it.type === "slab" ? [{ element: it, emprise: empriseStructurelle(it) }] : []));
+  return { murs, ouvertures, ...(echelles.length ? { echelles } : {}), ...(structure.length ? { structure } : {}) };
 }
 
 const points = (pts: readonly StudioPoint[]) => pts.map((p) => `${nb(p.x)},${svgY(p.y)}`).join(" ");
@@ -63,6 +67,10 @@ export function architectureSvg(plan: PlanArchitectural, layer: string, layerKey
     for (const q of [...e.montants, e.echelons]) out.push(`<polygon points="${points(q)}" vector-effect="non-scaling-stroke"/>`);
     out.push("</g>");
   }
+  for (const e of plan.structure ?? []) {
+    if (layerKey(e.element) !== layer) continue;
+    out.push(`<g data-architecture="${e.element.type}" data-id="${xml(e.element.id)}"><polygon points="${points(e.emprise)}" vector-effect="non-scaling-stroke"/></g>`);
+  }
   return out;
 }
 
@@ -71,6 +79,7 @@ export function architectureDxf(plan: PlanArchitectural, nomCalque: (o: { layerI
   for (const m of plan.murs) for (const q of m.morceaux) w.closedPolyline(nomCalque(m.mur), q);
   for (const o of plan.ouvertures) for (const [a, b] of o.montants) w.line(nomCalque(o), a, b);
   for (const e of plan.echelles ?? []) for (const q of [...e.montants, e.echelons]) w.closedPolyline(nomCalque(e.echelle), q);
+  for (const e of plan.structure ?? []) w.closedPolyline(nomCalque(e.element), e.emprise);
 }
 
 /** Points d'emprise (bornes de la vue SVG) par calque. */
@@ -78,5 +87,6 @@ export function architecturePoints(plan: PlanArchitectural): { layerId?: string;
   return [
     ...plan.murs.map((m) => ({ ...(m.mur.layerId !== undefined ? { layerId: m.mur.layerId } : {}), points: m.emprise })),
     ...(plan.echelles ?? []).map((e) => ({ ...(e.echelle.layerId !== undefined ? { layerId: e.echelle.layerId } : {}), points: e.emprise })),
+    ...(plan.structure ?? []).map((e) => ({ ...(e.element.layerId !== undefined ? { layerId: e.element.layerId } : {}), points: e.emprise })),
   ];
 }

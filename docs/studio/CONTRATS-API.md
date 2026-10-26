@@ -5,7 +5,7 @@ Fichier **généré et vérifié** par `apps/api/src/testing/studio-contrats.tes
 `apps/api/src/lib/studio-contrats-routes.ts` (un contrat par constante) et `apps/api/src/lib/studio-contrats.ts`
 (mécanisme). Réserve G1 de l'ADR-STUDIO-PILOTE-01 (P-11) : chaque route de l'API Studio a un contrat versionné.
 
-115 contrats servent les 121 routes déclarées par `apps/api/src/routes/studio*.ts` (sous `/projects/:projectId/studio`).
+118 contrats servent les 124 routes déclarées par `apps/api/src/routes/studio*.ts` (sous `/projects/:projectId/studio`).
 
 ## Règles
 
@@ -199,6 +199,14 @@ version incompatible sans écriture, inventaire à l'exécution) et `apps/api/sr
 | `studio-api-migration-document/1` | `GET /studies/:studyId/migrations/:migrationId/documents/:revisionId` | Copie `studio-document/2` d'une révision dans une migration appliquée. | Aucune. | — | 200 | JSON : `revisionId`, `document` |
 | `studio-api-bascule-lire/1` | `GET /bascule` | Bascule Atelier → Studio du projet (MIG-COEX-06), ou null. | Aucune. | — | 200 | JSON : `bascule` |
 | `studio-api-bascule-passage/1` | `POST /bascule/preparer`<br>`POST /bascule/basculer`<br>`POST /bascule/retour-arriere` | Préparer (étude désignée), basculer l'autorité d'écriture vers Studio, retour arrière (propriétaire). | Corps de `preparer` : `{ studyId }` ; aucun pour les autres. | — | 200 | JSON : `projectId`, `studyId`, `autorite`, `pointRetour?`, `historique`, `ecriture`, `lecture` |
+
+## `apps/api/src/routes/studio-fusion.ts`
+
+| Contrat | Route(s) | Objet | Entrée | Schémas zod d'entrée atteints | Succès | Réponse |
+|---|---|---|---|---|---|---|
+| `studio-api-fusion-apercu/1` | `POST /studies/:studyId/variants/:variantId/fusion/apercu` | Aperçu de la fusion à trois voies d'une variante source dans la variante de l'adresse (cible) : ancêtre commun, changements, conflits et résolutions, empreinte du résultat ; rien n'est écrit. | Corps : `{ sourceVariantId, resolutions? }` (résolution : identifiant de conflit → `source` \| `cible`). | `resolutionsSchema`, `studioFusionApercuSchema` | 200 | JSON : `cible`, `source`, `ancetre`, `canWrite`, `apercu` |
+| `studio-api-fusion-appliquer/1` | `POST /studies/:studyId/variants/:variantId/fusion` | Application de la fusion acceptée en une révision `variant-merge` de la cible (journal, effets) ; refus si un conflit reste sans résolution, si une tête a changé ou si le résultat n'est plus celui de l'aperçu. | Corps : `{ requestId, sourceVariantId, sourceRevisionId, baseRevisionId, empreinte, resolutions? }`. | `resolutionsSchema`, `studioFusionAppliquerSchema` | 200 | JSON : `study`, `variant`, `revision`, `canWrite`, `derivedFrom?`, `replayed`, `effects?`, `eventId?`, `fusion` |
+| `studio-api-fusion-annuler/1` | `POST /studies/:studyId/variants/:variantId/fusion/annulation` | Annulation de la fusion qui est la tête de la cible : nouvelle révision `variant-merge-undo` au document d'avant la fusion. | Corps : `{ requestId, revisionId }` (la révision de fusion, tête de la variante). | `studioFusionAnnulerSchema` | 200 | JSON : `study`, `variant`, `revision`, `canWrite`, `derivedFrom?`, `replayed`, `effects?`, `eventId?`, `fusion` |
 
 ## Format de diagnostic
 

@@ -104,8 +104,9 @@ describe("Volume libre : création directe dans l'espace (A.3-02)", () => {
   });
 
   it("registre : neuf outils de la barre « volume-libre » (édition des faces et lien du lot F1, booléen exact du lot F2 compris), icône, raccourci et schéma propres ; acceptés par l'API", () => {
-    // Lot G2 : la cote de face 3D (INV-013) s’ajoute à la barre ; elle est contrôlée à part (document-2d.test.ts).
-    const outils = STUDIO_TOOLS.filter((t) => t.groupe === "volume-libre" && t.toolId !== "studio.solide.cote-face");
+    // Lot G2 : la cote de face 3D (INV-013) s’ajoute à la barre ; X.1-05 : les trois outils des surfaces libres aussi ;
+    // ils sont contrôlés à part (document-2d.test.ts).
+    const outils = STUDIO_TOOLS.filter((t) => t.groupe === "volume-libre" && t.toolId !== "studio.solide.cote-face" && !t.toolId.startsWith("studio.surface.") && !t.toolId.startsWith("studio.subdivision."));
     expect(outils.map((t) => [t.toolId, t.raccourci, t.iconeSymbolique])).toEqual([
       ["studio.solide.boite", "B", "studio-solid-box"], ["studio.solide.prisme", "Shift+B", "studio-solid-prism"],
       ["studio.solide.deplacer", "Shift+W", "studio-solid-move"], ["studio.solide.supprimer", "Shift+Delete", "studio-solid-delete"],
