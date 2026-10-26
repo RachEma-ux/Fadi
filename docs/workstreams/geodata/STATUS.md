@@ -68,6 +68,12 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   population OSM retirée pour ces villes (test), gardée pour 8 villes sans unité HCP ; extraits OSM des communes, villes
   et arrondissements régénérés à l'identique (mêmes empreintes) sans fiche importable ; recherche HCP d'abord. En local :
   import et publication, Casablanca 3 215 935, Ouezzane 57 737 (HCP) au lieu de 58 684 (OSM).
+- Arabe là où il est nécessaire (D-GD-21) : décision consignée ; application aux douars au lot E.
+- Indicateurs communaux complémentaires (D-GD-20) : `scripts/geodata/sources_hcp_communales.py` (logement urbain
+  55, transport domicile – travail 117, CEE 22 indicateurs ; codes CEE recomposés et contrôlés, 1 625 unités) ;
+  844 indicateurs par niveau ; `geodata-sources.test.ts` conforme (57) ; import local : Tanger 485 227 logements
+  urbains, 25,6 % des actifs à pied, arrondissement de Bni Makada 18 602 établissements, CEE de la commune de Tanger
+  « non publiée ».
 - Navigation par niveaux (lot B, D-GD-19) : `niveaux.ts` (7 tests : parenté par codes HCP, filtres d'un chemin,
   intersection, chemin coupé), `panneaux/FilNiveaux.tsx`, bouton « Voir ses … » de la fiche, raccourcis Alt+↑ / Alt+↓
   sur toute la page ; jeu synthétique `synthetique-regions` / `synthetique-provinces` ; recette `geodata.mjs` conforme

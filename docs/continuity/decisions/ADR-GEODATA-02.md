@@ -135,6 +135,28 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
      4. Affichage : l'entité seule à son niveau, ses ancêtres au-dessus, ses descendants en dessous ; ce filtre de
         navigation s'ajoute au filtre de la table (intersection) et n'est pas enregistré dans la carte.
 
+   - D-GD-20 (26 octobre 2026, fichiers HCP transmis par le maître d'ouvrage) — **indicateurs communaux complémentaires** :
+     1. Trois fichiers du HCP (CC BY 4.0) ajoutés aux couches RGPH 2024 (régions, provinces, communes, arrondissements),
+        rangés comme le lot A2 : « Logement urbain » (parc logement urbain 2024, 55 indicateurs, milieu urbain),
+        « Mobilité domicile – travail » (mode de transport des actifs occupés, RGPH 2024, 117 indicateurs par milieu et
+        sexe), « Établissements économiques » (CEE 2023/2024, 22 indicateurs) : 844 indicateurs par niveau.
+     2. Codes : ceux du RGPH ; pour la CEE, code en colonnes recomposé (« 01.511.01.03 » → « 15110103 ») et contrôlé par
+        les unités du RGPH (noms relus : 2 écarts seulement, arrondissements renommés à Tanger) ; les grandes communes
+        n'ont dans la CEE que leurs arrondissements : la commune reste « non publiée » (aucune somme calculée).
+     3. Signes : « _ » (pas de logement urbain) = sans objet ; cellule vide, ou unité absente d'un fichier = « vide »,
+        non publiée ; jamais zéro.
+     4. Les deux autres fichiers transmis sont ceux déjà intégrés (mêmes empreintes). La base des **douars** (33 000
+        douars, sans contour, noms en arabe seulement) n'est pas une couche : elle ira dans la fiche territoriale de la
+        commune rurale (lot E), par code, nom (en arabe, D-GD-21), type de douar, ménages et population.
+
+   - D-GD-21 (26 octobre 2026, consigne du maître d'ouvrage : « là où l'arabe est nécessaire, utilise-la ») —
+     **arabe là où il est nécessaire**, précision de D-GD-17 point 2 :
+     1. Une donnée publiée **seulement en arabe** (noms des douars, de leur fraction et de leur commune dans la base des
+        douars du HCP) est affichée en arabe, telle quelle : écriture de droite à gauche (`dir="rtl"`, `lang="ar"`),
+        jamais traduite ni translittérée par Fadi (`translate="no"`).
+     2. Quand un nom existe en français (régions, provinces, communes, arrondissements, villes), seul le français est
+        affiché, comme décidé le 26 octobre 2026 ; l'interface reste en français et en anglais (aucune interface arabe).
+
 ## Conséquences
 
 - `docs/architecture.md` et `module-registry.ts` déclarent GeoData une fois le code livré.

@@ -36,6 +36,7 @@ from shapely.geometry import shape
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from indicateurs_hcp import lire_indicateurs  # noqa: E402
+from sources_hcp_communales import SIGNE_VIDE, lire_cee, lire_logement, lire_transport  # noqa: E402
 
 RACINE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 FICHES = os.path.join(RACINE, "docs", "geodata", "sources")
@@ -561,6 +562,12 @@ def cellule(v):
     return repr(round(v, 6)) if isinstance(v, float) else str(v)
 
 
+TITRES_SOURCES = {
+    "logement": "« Indicateurs communaux du parc logement urbain au Maroc en 2024 » (HCP)",
+    "transport": "« Indicateurs communaux : mode de transport domicile – lieu de travail des actifs occupés, RGPH 2024 » (HCP, juin 2026)",
+    "cee": "« Cartographie des Établissements Économiques (CEE 2023/2024) : principaux résultats par commune » (HCP)",
+}
+
 NIVEAUX = {
     "regions": ("12 régions", "geoboundaries-mar-adm1"),
     "provinces": ("75 provinces et préfectures", "geoboundaries-mar-adm2"),
@@ -585,7 +592,7 @@ def ecrire(sortie, cle, couche_titre, niveau, entites, desc, sources, lignes, co
             continue
         v = valeurs.get(code, {})
         u = hcp_par_code.get(code, {})
-        lignes_tab.append(",".join([code] + [cellule(v.get(c)) for c in colonnes[:len(declarations)]] + [cellule(u.get(k)) for _, k, *_ in NATIONALITE]))
+        lignes_tab.append(",".join([code] + [cellule(v.get(c, SIGNE_VIDE)) for c in colonnes[:len(declarations)]] + [cellule(u.get(k)) for _, k, *_ in NATIONALITE]))
     tab = ("\n".join(lignes_tab) + "\n").encode()
     with open(os.path.join(sortie, "donnees", f"{cle}.csv"), "wb") as f:
         f.write(tab)
@@ -610,7 +617,7 @@ def ecrire(sortie, cle, couche_titre, niveau, entites, desc, sources, lignes, co
         "titre": couche_titre,
         "description": desc + f" Rattachement aux contours : {comptes}. Table de correspondance relisible : `{nom_csv}`. "
                        "Les noms ne sont pas une clé sûre : chaque rattachement est contrôlé par la géographie ; une entité non rattachée garde ses valeurs absentes (« non appariée »), jamais zéro. "
-                       "Signes du HCP : « … » = sans objet (n'a pas lieu de figurer), « . » = indisponible ; jamais zéro.",
+                       "Signes du HCP : « … » et « _ » = sans objet (n'a pas lieu de figurer), « . » = indisponible ; cellule vide ou unité absente d'un fichier = « vide » (non publiée) ; jamais zéro.",
         "producteur": "Haut-Commissariat au Plan (HCP), Recensement général de la population et de l'habitat 2024 ; contours : " + prod_contours,
         "theme": "population",
         "couverture": "Maroc — " + couverture,
@@ -619,7 +626,7 @@ def ecrire(sortie, cle, couche_titre, niveau, entites, desc, sources, lignes, co
             "url": None,
             "fichier": f"donnees/{cle}.geojson",
             "empreinte": hashlib.sha256(octets).hexdigest(),
-            "tableau": {"fichier": f"donnees/{cle}.csv", "empreinte": hashlib.sha256(tab).hexdigest(), "signes": {"…": "sans-objet", ".": "non-publiee"}},
+            "tableau": {"fichier": f"donnees/{cle}.csv", "empreinte": hashlib.sha256(tab).hexdigest(), "signes": {"…": "sans-objet", ".": "non-publiee", "_": "sans-objet", SIGNE_VIDE: "non-publiee"}},
             "periode": "Recensement de septembre 2024",
             "licence": "Valeurs : Creative Commons Attribution 4.0 (CC BY 4.0, CGU du HCP v1.0 § 3) ; contours : " + lic_contours,
             "attribution": "HCP, RGPH 2024 (CC BY 4.0), données retraitées ; " + attr_contours,
@@ -628,7 +635,9 @@ def ecrire(sortie, cle, couche_titre, niveau, entites, desc, sources, lignes, co
             "synthetique": False,
             "conditions": f"Valeurs HCP sous CC BY 4.0 ({CGU_HCP}) : citer « HCP, RGPH 2024 », indiquer les modifications (rattachement aux contours, mise en tableau), "
                           "ne pas laisser entendre que le HCP soutient Fadi, respecter l'intégrité des données (valeurs reprises sans modification). "
-                          f"Sources : {URL_HCP} (SHA-256 {sources['population']}) et {URL_IND} (SHA-256 {sources['indicateurs']}). Contours : {cond_contours}",
+                          f"Sources : {URL_HCP} (SHA-256 {sources['population']}) et {URL_IND} (SHA-256 {sources['indicateurs']})"
+                          + "".join(f" ; {TITRES_SOURCES[k]} (SHA-256 {sources[k]})" for k in TITRES_SOURCES if k in sources)
+                          + f". Contours : {cond_contours}",
         },
         "couche": {
             "titre": couche_titre,
@@ -652,14 +661,31 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--excel", required=True, help="Population légale RGPH 2024 (https://www.hcp.ma/file/242341/)")
     ap.add_argument("--indicateurs", required=True, help="Indicateurs démographiques et socio-économiques RGPH 2024 (https://www.hcp.ma/file/242671/)")
+    ap.add_argument("--logement", help="Indicateurs communaux du parc logement urbain 2024 (HCP)")
+    ap.add_argument("--transport", help="Indicateurs communaux : mode de transport domicile – lieu de travail, RGPH 2024 (HCP)")
+    ap.add_argument("--cee", help="Cartographie des établissements économiques 2023/2024, principaux résultats par commune (HCP)")
     ap.add_argument("--sortie", default=FICHES)
     a = ap.parse_args()
     sources = {}
-    for k, chemin in (("population", a.excel), ("indicateurs", a.indicateurs)):
+    for k, chemin in (("population", a.excel), ("indicateurs", a.indicateurs), ("logement", a.logement), ("transport", a.transport), ("cee", a.cee)):
+        if not chemin:
+            continue
         with open(chemin, "rb") as f:
             sources[k] = hashlib.sha256(f.read()).hexdigest()
     hcp = lire_hcp(a.excel)
     declarations, valeurs = lire_indicateurs(a.indicateurs)
+    # Indicateurs communaux complémentaires (D-GD-20) : ajoutés après ceux du lot A2, rangés par thème.
+    unites = {c for (_, c) in hcp}
+    for k, lire in (("logement", lire_logement), ("transport", lire_transport), ("cee", lambda ch: lire_cee(ch, unites)[:2])):
+        chemin = getattr(a, k)
+        if not chemin:
+            continue
+        d, v = lire(chemin)
+        for x in d:
+            x["ordre"] = len(declarations)
+            declarations.append(x)
+        for code, cols in v.items():
+            valeurs.setdefault(code, {}).update(cols)
     adm1, adm2, communes = charger_contours()
     arrondissements, empreinte_arr = charger_arrondissements()
     lignes = apparier(hcp, adm1, adm2, communes)
