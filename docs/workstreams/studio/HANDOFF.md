@@ -1,5 +1,18 @@
 # Reprise — Studio
 
+## Achèvement — PR #328 fusionnée, promotion des preuves, intégration PUB / REND / OUT — 26 octobre 2026
+
+Branche `ccr-187fd2e6-08dk6e`, base `main@4304050` (PR #328 : lots REG, DEC, F et CMD, CI verte y compris DB-3).
+
+Ce qui a été fait :
+- **PR #328 fusionnée** ; CI de `main` verte sur le commit de fusion.
+- **Promotion** : 56 obligations des lots REG, DEC, F et CMD passent « Vérifié », leurs preuves rattachées à l'exécution verte de `main`.
+- **Lots PUB, REND et OUT intégrés** sur cette branche (recettes jouées en local : studio-pub, studio-rend, studio-out, studio-navigation, publication, observations, exigences, visualisation, contrats, interface anglaise) ; leurs obligations restent « Implémenté » jusqu'à la CI verte de `main` après fusion. Détail : [ACHEVEMENT-STUDIO](recettes/ACHEVEMENT-STUDIO.md).
+
+Compteurs recalculés du registre : **0 À définir / 39 À faire / 35 En cours / 56 Implémenté / 9 Bloqué / 432 Vérifié / 59 Accepté**. **P630=491/630**.
+
+Prochaine action : CI verte de cette PR, fusion, promotion des obligations PUB / REND / OUT, puis intégration de la vague 2 (lots G1 à G5).
+
 ## Achèvement — intégration du lot OUT — 26 octobre 2026
 
 Branche `ccr-187fd2e6-08dk6e`, au-dessus des lots PUB et REND.
@@ -9,7 +22,7 @@ Ce qui a été fait :
 - **Intégration** : raccourci de l'accrochage parallèle déplacé sur Ctrl+Maj+F6 (Maj+F6 reste à « Créer un graphisme »), fiches d'outils complétées des outils du lot REND, matrice d'échanges en révision 7. Détail : [ACHEVEMENT-STUDIO](recettes/ACHEVEMENT-STUDIO.md).
 - **Les huit lots d'achèvement sont intégrés** ; restent les obligations de mesure sur données réelles et d'appareil réel, et les actes du maître d'ouvrage.
 
-Compteurs recalculés du registre : **0 À définir / 39 À faire / 35 En cours / 112 Implémenté / 9 Bloqué / 376 Vérifié / 59 Accepté**. **P630=435/630**.
+Compteurs recalculés du registre : à cette date 376 Vérifié, 59 Accepté, 9 Bloqué, 112 Implémenté, 35 En cours, 39 À faire, 0 À définir ; 435 obligations sur 630 closes.
 
 Prochaine action : CI verte, passage « Vérifié » des obligations « Implémenté », fusion, puis build candidat et bilan.
 

@@ -230,3 +230,11 @@ désignés par le maître d'ouvrage : `DESIGNATION_CONFORMITE = null`).
 **Intégration** : l'accrochage parallèle prend **Ctrl+Maj+F6** (Maj+F6 est « Créer un graphisme » du lot REND, règle
 d'or : un raccourci par commande) ; fiches d'outils complétées des quatre outils du lot REND ; matrice d'échanges en
 révision 7 ; recette `studio-out` branchée en CI.
+
+## Promotion après la CI verte de main (PR #328 fusionnée, main@4304050)
+
+Les preuves « test prescrit » des lots REG, DEC, F et CMD ont été rattachées par `scripts/registre/completer_preuves.py`
+à l'exécution verte de `main` sur le commit de fusion (libellés présents au commit, étape nommée réussie) : 115 preuves
+complétées, **56 obligations passées « Vérifié »**. Restent « Implémenté » : les obligations des lots PUB, REND et OUT
+(leurs fichiers ne sont pas encore sur `main`), PR-01 à PR-06 et PR-09 (les tests du contrôle de PR tournent sur `main`
+à partir de la prochaine fusion) et TR-EX-046 (suite DB-3 du journal d'accès à rattacher).
