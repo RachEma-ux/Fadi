@@ -3173,6 +3173,22 @@ CREATE TABLE IF NOT EXISTS geodata_rasters (
   description jsonb NOT NULL,
   CHECK (largeur::bigint * hauteur <= 4000000 AND est > ouest AND nord > sud)
 );
+-- Dimensions d'indicateur (D-GD-17, lot A2) : thème, famille, modalité, milieu, sexe, ordre ; motif « sans-objet »
+-- (signe « … » du HCP : n'ayant pas lieu de figurer), distinct de « non publiée » (signe « . »).
+ALTER TABLE geodata_indicateurs ADD COLUMN IF NOT EXISTS theme text;
+ALTER TABLE geodata_indicateurs ADD COLUMN IF NOT EXISTS famille text;
+ALTER TABLE geodata_indicateurs ADD COLUMN IF NOT EXISTS modalite text;
+ALTER TABLE geodata_indicateurs ADD COLUMN IF NOT EXISTS milieu text;
+ALTER TABLE geodata_indicateurs ADD COLUMN IF NOT EXISTS sexe text;
+ALTER TABLE geodata_indicateurs ADD COLUMN IF NOT EXISTS ordre integer NOT NULL DEFAULT 0;
+ALTER TABLE geodata_indicateurs ADD COLUMN IF NOT EXISTS nb_absentes integer;
+ALTER TABLE geodata_indicateurs ADD COLUMN IF NOT EXISTS nb_total integer;
+ALTER TABLE geodata_indicateurs DROP CONSTRAINT IF EXISTS geodata_indicateurs_milieu_check;
+ALTER TABLE geodata_indicateurs ADD CONSTRAINT geodata_indicateurs_milieu_check CHECK (milieu IS NULL OR milieu IN ('ensemble', 'urbain', 'rural'));
+ALTER TABLE geodata_indicateurs DROP CONSTRAINT IF EXISTS geodata_indicateurs_sexe_check;
+ALTER TABLE geodata_indicateurs ADD CONSTRAINT geodata_indicateurs_sexe_check CHECK (sexe IS NULL OR sexe IN ('ensemble', 'masculin', 'feminin'));
+ALTER TABLE geodata_valeurs DROP CONSTRAINT IF EXISTS geodata_valeurs_motif_absence_check;
+ALTER TABLE geodata_valeurs ADD CONSTRAINT geodata_valeurs_motif_absence_check CHECK (motif_absence IN ('non-publiee', 'secret-statistique', 'hors-couverture', 'non-appariee', 'non-comparable', 'non-evaluee', 'sans-objet'));
 -- Catégories du catalogue (D-GD-14) : communes à tous les comptes, gérées par un gestionnaire de données (créer, renommer,
 -- ordonner, supprimer) ; une source y est rangée explicitement, sinon par les thèmes déclarés de la catégorie, sinon
 -- « Autres ». Les catégories initiales (modèle `CATEGORIES_CATALOGUE`) sont semées une seule fois par l'API, à la

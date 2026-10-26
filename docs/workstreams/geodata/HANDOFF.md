@@ -1,7 +1,7 @@
 # GeoData — Reprise de session
 
-Mis à jour : 2026-10-25 (UTC).
-État relevé après la fusion de la PR #301.
+Mis à jour : 2026-10-26 (UTC).
+État relevé après la fusion de la PR #339.
 
 ## Point de reprise
 
@@ -21,7 +21,12 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 - Style « une couleur par entité » (D-GD-11) : PR #314 fusionnée.
 - Couches raster (D-GD-13) et 17 rasters de sources d'origine ; communes OSM (1 498) ; sites minéraux USGS (110).
 - Catalogue par catégories gérées, barre d'outils verticale flottante (à droite par défaut), bouton « Données », menu ☰ (D-GD-14).
-- Population RGPH 2024 du HCP sur 3 niveaux (D-GD-17, lot A) ; lots B à G à suivre (TASKS).
+- Population RGPH 2024 du HCP sur 3 niveaux (D-GD-17, lot A, PR #339 fusionnée).
+- Lot A2 (D-GD-17 point 5) : 648 indicateurs HCP par niveau (thème, famille, modalité, milieu, sexe) en tableau CSV,
+  arrondissements (41/41 contours OSM niveau 10) ; PR en cours sur `ccr-e71fe633-hjxnjf`. Ensuite, un lot à la fois :
+  B, E, C, D, F, G (TASKS).
+- Priorité HCP (D-GD-18) : couche `hcp-rgph2024-villes` (258/338 villes avec les effectifs du HCP), extraits OSM des
+  communes / villes / arrondissements sans fiche importable (`donnees/osm-extraits.json`), recherche HCP d'abord.
 - Contours colorés et hiérarchie des limites administratives (D-GD-16).
 - Fournisseurs de fonds dans Paramètres, MapTiler par défaut (D-GD-15).
 - Sources ouvertes (D-GD-12) : 29 couches OpenStreetMap / OurAirports livrées avec leur fiche (15332 objets).
@@ -31,6 +36,13 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 Catégories (D-GD-14) : en préproduction, menu ☰ → « Données » avec un compte « gestionnaire-donnees » pour créer,
 renommer, ordonner ou supprimer une catégorie et y ranger des couches ; les autres comptes voient les catégories en
 lecture seule.
+
+HCP (lots A et A2), après déploiement de `main` en préproduction : importer les 4 fiches
+`hcp-rgph2024-population-regions`, `-provinces`, `-communes`, `hcp-rgph2024-arrondissements` et `hcp-rgph2024-villes`
+(même commande, une
+fiche à la fois avec `--fiche <clé>`). Régénération : `python3 scripts/geodata/preparer_hcp.py --excel <population
+légale> --indicateurs <indicateurs>` (fichiers hcp.ma, empreintes consignées dans les fiches). Puis, avec un compte
+« gestionnaire-donnees », retirer du catalogue `osm-mar-communes` et `osm-mar-villes` (doublons des couches HCP, D-GD-18).
 
 Préproduction, après déploiement de `main` : importer les sources ouvertes en une commande
 (`sudo docker exec fadi-preprod-app-1 node apps/api/dist/geodata-reference.js --fiche toutes --preparateur <compte>

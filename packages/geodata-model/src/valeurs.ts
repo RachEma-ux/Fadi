@@ -9,6 +9,7 @@ export const MOTIFS_ABSENCE = {
   "non-appariee": "Unité non appariée entre l'indicateur et les limites",
   "non-comparable": "Valeur non comparable (définition ou période différente)",
   "non-evaluee": "Non évaluée",
+  "sans-objet": "Sans objet (n'a pas lieu de figurer)",
 } as const;
 
 export type MotifAbsence = keyof typeof MOTIFS_ABSENCE;

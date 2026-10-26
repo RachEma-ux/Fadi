@@ -5,10 +5,10 @@
  * province, elle-même au-dessus de la commune, avec un contour plus épais. Pur.
  */
 
-/** 1 = région, 2 = province / préfecture, 3 = commune ; null = couche hors hiérarchie. */
-export type RangAdministratif = 1 | 2 | 3;
+/** 1 = région, 2 = province / préfecture, 3 = commune, 4 = arrondissement ; null = couche hors hiérarchie. */
+export type RangAdministratif = 1 | 2 | 3 | 4;
 
-const OSM: Record<string, RangAdministratif> = { "4": 1, "5": 2, "8": 3 };
+const OSM: Record<string, RangAdministratif> = { "4": 1, "5": 2, "8": 3, "10": 4 };
 
 export function rangAdministratif(c: { readonly niveau: string | null; readonly titre: string }): RangAdministratif | null {
   const n = c.niveau?.trim().toUpperCase() ?? "";
@@ -19,7 +19,7 @@ export function rangAdministratif(c: { readonly niveau: string | null; readonly 
 }
 
 /** Épaisseur du contour (px) : la région la plus épaisse ; une couche hors hiérarchie garde un contour moyen. */
-export const epaisseurContour = (rang: RangAdministratif | null): number => (rang === 1 ? 3.5 : rang === 2 ? 2.2 : rang === 3 ? 1.2 : 1.5);
+export const epaisseurContour = (rang: RangAdministratif | null): number => (rang === 1 ? 3.5 : rang === 2 ? 2.2 : rang === 3 ? 1.2 : rang === 4 ? 0.8 : 1.5);
 
 /**
  * Ordre d'affichage (du dessous vers le dessus) : l'ordre de la composition est gardé, sauf entre couches

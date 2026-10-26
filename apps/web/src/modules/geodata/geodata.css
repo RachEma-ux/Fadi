@@ -123,3 +123,8 @@
 .geodata-page .gd-ligne-couche{display:flex;flex-direction:column;gap:2px;padding:6px 0;border-bottom:1px solid #edf2f2}
 .geodata-page .gd-danger{border-color:var(--gd-alerte);color:var(--gd-alerte)}
 .geodata-page .gd-lien-fonds{font-size:13px;color:var(--gd-accent);text-decoration:underline}
+/* Choix d'une déclinaison d'indicateur et fiche par thème (D-GD-17, lot A2). */
+.geodata-page .gd-dimensions{display:flex;flex-wrap:wrap;gap:6px 10px}
+.geodata-page .gd-dimensions .gd-champ{flex:1 1 120px;min-width:0}
+.geodata-page .gd-theme{border-bottom:1px solid #eef3f3;padding:4px 0}
+.geodata-page .gd-theme>summary{cursor:pointer;font-weight:600;padding:4px 0}

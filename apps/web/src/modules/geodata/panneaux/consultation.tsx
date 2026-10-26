@@ -4,8 +4,8 @@
  * (`translate="no"`), arabe compris. Une valeur absente est écrite « Valeur absente » avec son motif, jamais « 0 ».
  */
 import { useEffect, useState } from "react";
-import { categorieDe, compterParType, type RangementCatalogue, couleursPour, degradeCss, regrouperCatalogue, type TypeCatalogue, formatNombre, legende, libelleAbsence, LIBELLES_USAGES, USAGES, type Composition, type MethodeClassification, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
-import { api, type ValeurRasterRecue, type CoucheRecue, type Disponibilite, type FicheRecue, type LigneTable, type ValeurRecue } from "../client";
+import { categorieDe, declinaisonParDefaut, declinaisonProche, grouperIndicateurs, indicateursPrincipaux, LIBELLES_MILIEU, LIBELLES_SEXE, type FamilleIndicateurs, type Milieu, type Sexe, compterParType, type RangementCatalogue, couleursPour, degradeCss, regrouperCatalogue, type TypeCatalogue, formatNombre, legende, libelleAbsence, LIBELLES_USAGES, USAGES, type Composition, type MethodeClassification, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
+import { api, type IndicateurRecu, type ValeurRasterRecue, type CoucheRecue, type Disponibilite, type FicheRecue, type LigneTable, type ValeurRecue } from "../client";
 import { entreesCategories, lireSeuilsManuels, styleThematique, type Categorie } from "../composition-ops";
 
 /** Valeur de l'option « une couleur par entité » (jamais un identifiant d'indicateur : ceux-ci commencent par une lettre). */
@@ -95,8 +95,72 @@ export function FicheVersion({ couche: c }: { couche: CoucheRecue }) {
       <dt>Transformations</dt><dd translate="no">{v.transformations.length ? v.transformations.join(" ; ") : "Aucune"}</dd>
       <dt>Droits par usage</dt>
       <dd><ul className="gd-droits">{USAGES.map((u) => <li key={u} data-droit={v.droits[u]}>{`${LIBELLES_USAGES[u]} : ${v.droits[u] === "autorise" ? "autorisé" : v.droits[u] === "refuse" ? "refusé" : "non qualifié"}`}</li>)}</ul></dd>
-      {c.indicateurs.length > 0 && <><dt>Indicateurs</dt><dd><ul>{c.indicateurs.map((i) => <li key={i.id}><span translate="no">{`${i.titre} (${i.unite})`}</span>{` — ${i.nature === "calcule" ? "résultat calculé" : "valeur de la source"} ; ${i.absentes} valeur(s) absente(s)`}<br /><span className="gd-discret" translate="no">{i.methode}</span></li>)}</ul></dd></>}
+      {c.indicateurs.length > 24 && <><dt>Indicateurs</dt><dd><p>{`${c.indicateurs.length} indicateurs, regroupés en familles :`}</p><ul>{grouperIndicateurs(c.indicateurs).map((f) => <li key={`${f.theme}|${f.famille}`}><span translate="no">{`${f.theme} — ${f.famille}`}</span>{` (${f.indicateurs.length} déclinaison(s))`}</li>)}</ul></dd></>}
+      {c.indicateurs.length > 0 && c.indicateurs.length <= 24 && <><dt>Indicateurs</dt><dd><ul>{c.indicateurs.map((i) => <li key={i.id}><span translate="no">{`${i.titre} (${i.unite})`}</span>{` — ${i.nature === "calcule" ? "résultat calculé" : "valeur de la source"} ; ${i.absentes} valeur(s) absente(s)`}<br /><span className="gd-discret" translate="no">{i.methode}</span></li>)}</ul></dd></>}
     </dl>
+  );
+}
+
+/**
+ * Choix de la coloration (D-GD-17, lot A2) : une famille d'indicateurs (rangée par thème), puis sa modalité, son
+ * milieu de résidence et son sexe quand la famille en a plusieurs. Une déclinaison qui n'existe pas n'est jamais
+ * remplacée en silence : les autres dimensions s'adaptent à celle que l'on vient de choisir.
+ */
+function ChoixColoration(p: { couche: CoucheRecue; coucheId: string; style: StyleCouche; onStyle(s: StyleCouche): void; valeursDe(indicateurId: string): Promise<ValeurIndicateur[]> }) {
+  const c = p.couche;
+  const familles = grouperIndicateurs(c.indicateurs);
+  const courant = p.style.mode === "thematique" ? (c.indicateurs.find((i) => i.id === (p.style as { indicateurId: string }).indicateurId) ?? null) : null;
+  const famille = courant ? (familles.find((f) => f.indicateurs.includes(courant)) ?? null) : null;
+  const representant = (f: FamilleIndicateurs<IndicateurRecu>) => (f === famille && courant ? courant : declinaisonParDefaut(f));
+  const appliquer = async (id: string) => p.onStyle(styleThematique(id, await p.valeursDe(id)));
+  const changer = (dim: "modalite" | "milieu" | "sexe", modalite: string | null, milieu: Milieu, sexe: Sexe) => {
+    const i = famille && declinaisonProche(famille, modalite, milieu, sexe, dim);
+    if (i) void appliquer(i.id);
+  };
+  const themes = [...new Set(familles.map((f) => f.theme))];
+  const option = (f: FamilleIndicateurs<IndicateurRecu>) => <option key={`${f.theme}|${f.famille}`} value={representant(f).id} translate="no">{f.famille.includes(`(${f.indicateurs[0]!.unite})`) ? f.famille : `${f.famille} (${f.indicateurs[0]!.unite})`}</option>;
+  const milieu = courant?.milieu ?? "ensemble";
+  const sexe = courant?.sexe ?? "ensemble";
+  return (
+    <>
+      <label className="gd-champ">Coloration
+        <select value={courant ? courant.id : p.style.mode === "categories" ? ENTITES : ""} onChange={async (e) => {
+          const id = e.target.value;
+          if (!id) return p.onStyle(c.styleDefaut.mode === "simple" ? c.styleDefaut : { mode: "simple", couleur: "#2b8cbe" });
+          if (id === ENTITES) return p.onStyle({ mode: "categories" });
+          await appliquer(id);
+        }} data-gd-indicateur={p.coucheId}>
+          <option value="">Couleur unie</option>
+          <option value={ENTITES}>Une couleur par entité</option>
+          {themes.length === 1 && themes[0] === "Autres indicateurs" ? familles.map(option) : themes.map((t) => <optgroup key={t} label={t} translate="no">{familles.filter((f) => f.theme === t).map(option)}</optgroup>)}
+        </select>
+      </label>
+      {famille && courant && famille.indicateurs.length > 1 && (
+        <div className="gd-dimensions" data-gd-dimensions={p.coucheId}>
+          {famille.modalites.length > 1 && (
+            <label className="gd-champ">Modalité
+              <select data-gd-dimension="modalite" value={courant.modalite ?? ""} onChange={(e) => changer("modalite", e.target.value || null, milieu, sexe)}>
+                {famille.modalites.map((m) => (m === null ? <option key="" value="">Sans modalité</option> : <option key={m} value={m} translate="no">{m}</option>))}
+              </select>
+            </label>
+          )}
+          {famille.milieux.length > 1 && (
+            <label className="gd-champ">Milieu de résidence
+              <select data-gd-dimension="milieu" value={milieu} onChange={(e) => changer("milieu", courant.modalite, e.target.value as Milieu, sexe)}>
+                {famille.milieux.map((m) => <option key={m} value={m}>{LIBELLES_MILIEU[m]}</option>)}
+              </select>
+            </label>
+          )}
+          {famille.sexes.length > 1 && (
+            <label className="gd-champ">Sexe
+              <select data-gd-dimension="sexe" value={sexe} onChange={(e) => changer("sexe", courant.modalite, milieu, e.target.value as Sexe)}>
+                {famille.sexes.map((x) => <option key={x} value={x}>{LIBELLES_SEXE[x]}</option>)}
+              </select>
+            </label>
+          )}
+        </div>
+      )}
+    </>
   );
 }
 
@@ -123,18 +187,7 @@ export function PanneauCouches(p: {
             <label className="gd-champ">{`Opacité : ${Math.round(k.opacite * 100)} %`}<input type="range" min={0} max={100} value={Math.round(k.opacite * 100)} onChange={(e) => p.onOpacite(k.coucheId, Number(e.target.value) / 100)} /></label>
             {c?.raster && <p className="gd-discret" data-gd-raster-info={k.coucheId}><span translate="no">{`${c.raster.grandeur}${c.raster.unite ? ` (${c.raster.unite})` : ""}`}</span> · Couche raster : symbologie de la source, touchez la carte pour lire une valeur.</p>}
             {c && !c.raster && (
-              <label className="gd-champ">Coloration
-                <select value={k.style.mode === "thematique" ? k.style.indicateurId : k.style.mode === "categories" ? ENTITES : ""} onChange={async (e) => {
-                  const id = e.target.value;
-                  if (!id) return p.onStyle(k.coucheId, c.styleDefaut.mode === "simple" ? c.styleDefaut : { mode: "simple", couleur: "#2b8cbe" });
-                  if (id === ENTITES) return p.onStyle(k.coucheId, { mode: "categories" });
-                  p.onStyle(k.coucheId, styleThematique(id, await p.valeursDe(id)));
-                }} data-gd-indicateur={k.coucheId}>
-                  <option value="">Couleur unie</option>
-                  <option value={ENTITES}>Une couleur par entité</option>
-                  {c.indicateurs.map((ind) => <option key={ind.id} value={ind.id} translate="no">{`${ind.titre} (${ind.unite})`}</option>)}
-                </select>
-              </label>
+              <ChoixColoration couche={c} style={k.style} onStyle={(st) => p.onStyle(k.coucheId, st)} valeursDe={p.valeursDe} coucheId={k.coucheId} />
             )}
             {k.style.mode === "simple" && <label className="gd-champ">Couleur<input type="color" value={k.style.couleur} onChange={(e) => p.onStyle(k.coucheId, { mode: "simple", couleur: e.target.value })} /></label>}
             <div className="gd-actions">
@@ -253,7 +306,18 @@ export function FicheObjet(p: { fiche: FicheRecue | null; chargement: boolean; e
       {f.geometrieReparee && <p className="gd-alerte">Géométrie réparée à l'import (consignée dans la fiche de la version).</p>}
       <h4>Indicateurs</h4>
       {f.indicateurs.length === 0 && <p className="gd-discret">Aucun indicateur pour cette couche.</p>}
-      <dl className="gd-valeurs">{f.indicateurs.map((i) => <div key={i.id} data-gd-valeur={i.id} data-absente={i.valeur === null ? "" : undefined}><dt translate="no">{`${i.titre}${i.periode ? ` (${i.periode})` : ""}`}</dt><dd>{formaterValeur(i, i.unite)}{i.nature === "calcule" && <span className="gd-discret"> · résultat calculé</span>}</dd></div>)}</dl>
+      {(() => {
+        // Par thème (D-GD-17, lot A2) : un indicateur sans thème va sous « Autres indicateurs » ; le premier thème est ouvert.
+        const valeur = (i: (typeof f.indicateurs)[number]) => <div key={i.id} data-gd-valeur={i.id} data-absente={i.valeur === null ? "" : undefined}><dt translate="no">{`${i.titre}${i.periode ? ` (${i.periode})` : ""}`}</dt><dd>{formaterValeur(i, i.unite)}{i.nature === "calcule" && <span className="gd-discret"> · résultat calculé</span>}</dd></div>;
+        const themes = [...new Set(f.indicateurs.map((i) => i.theme ?? "Autres indicateurs"))];
+        if (themes.length <= 1) return <dl className="gd-valeurs">{f.indicateurs.map(valeur)}</dl>;
+        return themes.map((t, n) => (
+          <details key={t} className="gd-theme" open={n === 0} data-gd-theme={t}>
+            <summary translate="no">{t}</summary>
+            <dl className="gd-valeurs">{f.indicateurs.filter((i) => (i.theme ?? "Autres indicateurs") === t).map(valeur)}</dl>
+          </details>
+        ));
+      })()}
       <h4>Attributs</h4>
       <dl className="gd-valeurs">{Object.entries(f.proprietes).map(([k, v]) => <div key={k}><dt translate="no">{k}</dt><dd translate="no">{v === null || v === "" ? "—" : String(v)}</dd></div>)}</dl>
       <h4>Source</h4>
@@ -281,6 +345,7 @@ export function TableAttributs(p: { couche: CoucheRecue; onSelection(code: strin
     return () => { vivant = false; };
   }, [p.couche.id, page, tri, ordre, p.filtreActif]);
   const pages = donnees ? Math.max(1, Math.ceil(donnees.total / taille)) : 1;
+  const colonnes = indicateursPrincipaux(p.couche.indicateurs);
   const trier = (t: "nom" | "code") => { if (t === tri) setOrdre(ordre === "asc" ? "desc" : "asc"); else { setTri(t); setOrdre("asc"); } setPage(1); };
   return (
     <section className="gd-table" aria-label="Table des attributs" data-gd-table={p.couche.id}>
@@ -297,12 +362,13 @@ export function TableAttributs(p: { couche: CoucheRecue; onSelection(code: strin
       {donnees && (
         <>
           <p className="gd-discret" role="status">{`${donnees.total} objet(s) · page ${page} sur ${pages}`}</p>
+          {colonnes.length < p.couche.indicateurs.length && <p className="gd-discret" data-gd-colonnes-principales>{`${colonnes.length} indicateurs principaux sur ${p.couche.indicateurs.length} ; la fiche d'un objet les montre tous.`}</p>}
           <div className="gd-defilement">
             <table>
               <thead><tr>
                 <th scope="col" aria-sort={tri === "code" ? (ordre === "asc" ? "ascending" : "descending") : "none"}><button type="button" onClick={() => trier("code")}>Code</button></th>
                 <th scope="col" aria-sort={tri === "nom" ? (ordre === "asc" ? "ascending" : "descending") : "none"}><button type="button" onClick={() => trier("nom")}>Nom</button></th>
-                {p.couche.indicateurs.map((i) => <th key={i.id} scope="col" translate="no">{`${i.titre} (${i.unite})`}</th>)}
+                {colonnes.map((i) => <th key={i.id} scope="col" translate="no">{`${i.titre} (${i.unite})`}</th>)}
                 <th scope="col"><span className="sr-only">Actions</span></th>
               </tr></thead>
               <tbody>
@@ -310,7 +376,7 @@ export function TableAttributs(p: { couche: CoucheRecue; onSelection(code: strin
                   <tr key={l.code} data-gd-ligne={l.code}>
                     <td translate="no">{l.code}</td>
                     <td translate="no">{l.nom ?? "—"}</td>
-                    {p.couche.indicateurs.map((i) => <td key={i.id} data-absente={l.valeurs[i.id]?.valeur == null ? "" : undefined}>{formaterValeur(l.valeurs[i.id])}</td>)}
+                    {colonnes.map((i) => <td key={i.id} data-absente={l.valeurs[i.id]?.valeur == null ? "" : undefined}>{formaterValeur(l.valeurs[i.id])}</td>)}
                     <td><button type="button" onClick={() => p.onSelection(l.code)} aria-label={`Voir la fiche de ${l.nom ?? l.code}`}>Fiche</button></td>
                   </tr>
                 ))}

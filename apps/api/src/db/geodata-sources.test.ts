@@ -46,11 +46,54 @@ describe("fiches de source GeoData livrées", () => {
       const v = validerGeoJSON(JSON.parse(octets.toString("utf8")), { octets: 200 * 1024 * 1024, objets: OBJETS_PAR_COUCHE, sommets: 20_000_000, proprietes: 200, longueurTexte: 2000 });
       expect(v.ok).toBe(true);
       if (!v.ok) return;
-      const { doublons, manquants } = codesDesObjets(v.objets, fiche.couche.champCode);
+      const { codes: codesCouche, doublons, manquants } = codesDesObjets(v.objets, fiche.couche.champCode);
       expect(doublons).toEqual([]);
       expect(manquants).toBe(0);
-    });
+      const t = fiche.version.tableau;
+      if (!t) return;
+      // Tableau de valeurs (lot A2) : empreinte de la fiche, une colonne par indicateur déclaré, codes connus de la
+      // couche, cellules numériques ou signes déclarés (jamais un zéro mis pour une absence).
+      expect(t.fichier).toMatch(/^donnees\/[a-z0-9-]+\.csv$/);
+      const tab = readFileSync(join(DOSSIER, t.fichier));
+      expect(createHash("sha256").update(tab).digest("hex")).toBe(t.empreinte);
+      const [entete, ...lignes] = tab.toString("utf8").split("\n").filter((l) => l.length);
+      const colonnes = entete!.split(",");
+      expect(colonnes[0]).toBe("code");
+      expect(colonnes.slice(1).sort()).toEqual((fiche.indicateurs ?? []).map((i) => i.propriete).sort());
+      const codes = new Set(codesCouche);
+      const signes = new Set(Object.keys(t.signes ?? {}));
+      const fautes: string[] = [];
+      for (const l of lignes) {
+        const c = l.split(",");
+        if (c.length !== colonnes.length || !codes.has(c[0]!)) fautes.push(c[0]!);
+        for (const x of c.slice(1)) if (!(x === "" || /^-?\d+(\.\d+)?$/.test(x) || signes.has(x))) fautes.push(`${c[0]} : ${x}`);
+      }
+      expect(fautes).toEqual([]);
+    }, 30_000);
   }
+
+  it("extraits OpenStreetMap sans couche propre (D-GD-18) : fiche consignée, empreinte vérifiée, aucune fiche importable", () => {
+    const extraits = JSON.parse(readFileSync(join(DOSSIER, "donnees", "osm-extraits.json"), "utf8")) as Record<string, FicheSource>;
+    expect(Object.keys(extraits).sort()).toEqual(["osm-mar-arrondissements", "osm-mar-communes", "osm-mar-villes"]);
+    for (const [cle, f] of Object.entries(extraits)) {
+      expect(f.cle).toBe(cle);
+      expect(fiches).not.toContain(`${cle}.json`);
+      expect(createHash("sha256").update(readFileSync(join(DOSSIER, f.version.fichier ?? ""))).digest("hex")).toBe(f.version.empreinte);
+    }
+  });
+
+  it("priorité HCP (D-GD-18) : une ville rattachée au HCP n'a plus la population d'OpenStreetMap", () => {
+    const villes = JSON.parse(readFileSync(join(DOSSIER, "donnees", "hcp-rgph2024-villes.geojson"), "utf8")) as { features: { properties: Record<string, unknown> }[] };
+    const rattachees = villes.features.filter((f) => f.properties["code_hcp"]);
+    expect(rattachees.length).toBeGreaterThan(200);
+    for (const f of rattachees) {
+      expect(f.properties["population"]).toBeUndefined();
+      expect(f.properties["source_population"]).toBe("HCP, RGPH 2024");
+    }
+    for (const f of villes.features.filter((x) => !x.properties["code_hcp"] && x.properties["population"] !== undefined)) {
+      expect(f.properties["source_population"]).toBe("OpenStreetMap (aucune donnée HCP rattachée)");
+    }
+  });
 
   it("chaque thème déclaré par une fiche livrée a sa catégorie initiale", () => {
     const themes = new Set(CATEGORIES_CATALOGUE.flatMap((c) => c.themes));

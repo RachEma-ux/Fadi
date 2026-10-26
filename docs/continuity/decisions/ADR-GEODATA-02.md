@@ -90,8 +90,37 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         province), nom approché seulement s'il est unique et nettement devant, rattachements manuels justifiés ligne à
         ligne ; une entité non rattachée garde « non appariée », jamais zéro. Lot A livré : population légale sur
         3 niveaux (12/12 régions, 75/75 provinces et préfectures, 1 487/1 498 contours communaux, 97,6 % de la population).
-     5. **Suite** (lots B à G de l'analyse : navigation par niveaux, libellés, palettes et classes, fiche territoriale,
+     5. **Lot A2 — indicateurs et arrondissements** (accord du maître d'ouvrage du 26 octobre 2026 : ordre A2, puis B,
+        E, C, D, F, G ; arrondissements : chiffres dans la fiche **et** recherche de leurs contours) :
+        - fichier HCP « Indicateurs démographiques et socio-économiques » (`https://www.hcp.ma/file/242671/`, CC BY 4.0) :
+          648 indicateurs par niveau, rangés par **thème** et **famille**, déclinés par **modalité**, **milieu**
+          (ensemble, urbain, rural) et **sexe** ; plus la population légale selon la nationalité ;
+        - valeurs livrées dans un **tableau CSV** à côté du GeoJSON (`version.tableau`, empreinte contrôlée ; l'empreinte
+          de la version couvre les deux fichiers), jamais dans les propriétés des objets ;
+        - signes du HCP : « … » → motif « sans objet » (nouveau motif d'absence), « . » → « non publiée » ; jamais zéro ;
+        - **arrondissements** (41 du HCP, code de 8 chiffres rattaché à sa commune) : contours OpenStreetMap de niveau
+          administratif 10 (`donnees/osm-mar-arrondissements.geojson`, extrait du 23 octobre 2026), rattachés par nom et
+          inclusion dans la commune mère : 41/41 ; couche `hcp-rgph2024-arrondissements` (rang 4, sous la commune). Les
+          subdivisions OSM sans arrondissement HCP (quartiers…) ne sont pas livrées ;
+        - interface : choix d'une famille par thème puis de sa modalité, de son milieu et de son sexe ; fiche par thème ;
+          table limitée aux 24 indicateurs principaux (la fiche les montre tous).
+     6. **Suite** (lots B à G de l'analyse : navigation par niveaux, libellés, palettes et classes, fiche territoriale,
         arbre d'indicateurs, mini-carte et impression) : un lot à la fois, chacun consigné.
+
+   - D-GD-18 (26 octobre 2026, consigne du maître d'ouvrage : « si des données existent dans HCP et OpenStreetMap,
+     utilise celles du HCP ») — **priorité HCP** :
+     1. Noms, codes et effectifs : ceux du HCP dès qu'une unité HCP est rattachée ; OpenStreetMap ne fournit alors que la
+        géométrie (contour ou point). Sans unité HCP, la donnée OSM reste, avec sa source déclarée.
+     2. **Villes** : la couche `hcp-rgph2024-villes` (points OSM place=city / town) porte la population légale, les
+        ménages et la nationalité du HCP pour 258 villes sur 338, rattachées à une commune entièrement urbaine ou à un
+        centre urbain (« dont le centre urbain de … ») contenant le point, de même nom (jamais l'effectif d'une commune
+        rurale) ; l'attribut `population` d'OSM est alors retiré. 8 villes sans unité HCP gardent la population OSM,
+        signalée par `source_population`.
+     3. **Pas de doublon au catalogue** : les extraits OSM des communes, des villes et des arrondissements n'ont plus de
+        fiche importable ; leur fiche (licence, empreinte) est consignée dans `docs/geodata/sources/donnees/osm-extraits.json`
+        et ne sert qu'aux couches du HCP. Les versions déjà publiées (`osm-mar-communes`, `osm-mar-villes`) restent
+        immuables : le gestionnaire de données les retire du catalogue s'il le souhaite.
+     4. **Recherche** : les unités du HCP sont proposées en premier.
 
 ## Conséquences
 

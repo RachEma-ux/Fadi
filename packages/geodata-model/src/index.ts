@@ -10,3 +10,4 @@ export * from "./raster.js";
 export * from "./catalogue.js";
 export * from "./fournisseurs.js";
 export * from "./limites.js";
+export * from "./dimensions.js";

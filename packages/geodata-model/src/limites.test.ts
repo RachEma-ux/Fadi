@@ -7,6 +7,7 @@ describe("limites administratives (D-GD-16)", () => {
     expect(rangAdministratif({ niveau: "ADM2", titre: "Provinces" })).toBe(2);
     expect(rangAdministratif({ niveau: null, titre: "Communes du Maroc (OpenStreetMap, niveau administratif 8)" })).toBe(3);
     expect(rangAdministratif({ niveau: "OSM8", titre: "Population légale RGPH 2024 — communes" })).toBe(3);
+    expect(rangAdministratif({ niveau: "OSM10", titre: "RGPH 2024 — arrondissements" })).toBe(4);
     expect(rangAdministratif({ niveau: null, titre: "Barrages" })).toBeNull();
     expect(rangAdministratif({ niveau: "TEST", titre: "Unités synthétiques (test)" })).toBeNull();
   });
