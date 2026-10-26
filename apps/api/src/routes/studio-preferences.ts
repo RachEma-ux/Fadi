@@ -22,6 +22,8 @@ import { db } from "../db/client.js";
 import { studioToolPreferences } from "../db/schema.js";
 import { loadProjectAccess, projectAccessRefusal, type AccessibleProject } from "../lib/owned-project.js";
 import { catalogueAutorise, lireCorpsPreferences, lireLignePreferences, motifRefusEcriture } from "../lib/studio-preferences.js";
+import { avecContrat } from "../lib/studio-contrats.js";
+import { CONTRAT_PREFERENCES_LIRE, CONTRAT_PREFERENCES_ECRIRE, CONTRAT_CATALOGUE_OUTILS } from "../lib/studio-contrats-routes.js";
 
 export const studioPreferencesRouter = Router({ mergeParams: true });
 
@@ -44,12 +46,12 @@ function endpoint(handler: (req: Request, res: Response, access: AccessibleProje
   };
 }
 
-studioPreferencesRouter.get("/outils", endpoint(async (req, res) => {
+studioPreferencesRouter.get("/outils", avecContrat(CONTRAT_PREFERENCES_LIRE), endpoint(async (req, res) => {
   const [row] = await db.select().from(studioToolPreferences).where(eq(studioToolPreferences.userId, req.user!.id)).limit(1);
   res.json({ ...lireLignePreferences(row), updatedAt: row ? row.updatedAt.toISOString() : null });
 }));
 
-studioPreferencesRouter.put("/outils", endpoint(async (req, res) => {
+studioPreferencesRouter.put("/outils", avecContrat(CONTRAT_PREFERENCES_ECRIRE), endpoint(async (req, res) => {
   const lu = lireCorpsPreferences(req.body);
   if (!lu.ok) { res.status(400).json(lu.body); return; }
   const { profil, favoris, personnel, groupes } = lu.preferences;
@@ -64,6 +66,6 @@ studioPreferencesRouter.put("/outils", endpoint(async (req, res) => {
   res.json({ ...lireLignePreferences(row), retires: [], updatedAt: at.toISOString() });
 }));
 
-studioPreferencesRouter.get("/catalogue", endpoint(async (req, res, access) => {
+studioPreferencesRouter.get("/catalogue", avecContrat(CONTRAT_CATALOGUE_OUTILS), endpoint(async (req, res, access) => {
   res.json(catalogueAutorise(motifRefusEcriture(projectAccessRefusal(access, req.user!.id, "modify")), access.role));
 }));

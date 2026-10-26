@@ -1,5 +1,18 @@
 # État — Studio
 
+## Achèvement — lot API : contrats versionnés — 25 octobre 2026
+
+Branche `ccr-187fd2e6-08dk6e`, base `main@227fcd1` (P-12, PR #325).
+
+Ce qui a été fait :
+- **Contrats versionnés** : les 79 routes de l'API Studio portent chacune un contrat `studio-api-<nom>/<n>` (en-tête `X-Studio-Contrat`, schéma de réponse strict, version incompatible refusée sans écriture), et le relevé de performance un schéma versionné.
+- **Contrôle en CI** : toute nouvelle route sans contrat fait échouer les tests ; la recette `studio-contrats-api` est branchée en CI et en préproduction.
+- **Réserve G1 levée** : la réserve « 48 routes non versionnées » de P-11 l'est désormais (revue G1-03 : 79/79 routes). Détail : [ACHEVEMENT-STUDIO](recettes/ACHEVEMENT-STUDIO.md).
+
+Compteurs recalculés du registre : **0 À définir / 57 À faire / 127 En cours / 11 Bloqué / 376 Vérifié / 59 Accepté**. **P630=435/630**.
+
+Prochaine action : intégrer les autres lots d'achèvement un par un.
+
 ## Achèvement de Studio — mandat P-12, réconciliation, requalification — 25 octobre 2026
 
 Branche `ccr-187fd2e6-08dk6e`, base `main@93a5c18` (BLOC-02, PR #323).
@@ -11,7 +24,7 @@ Ce qui a été fait :
 - **Décisions inscrites** : REC-I-03 (lot I accepté pleinement) et MIG-COEX-07 (règle COEX-06) passent à « Accepté ». F.2-03 et F.3-01, closes jusque-là par les exclusions désormais levées, sont rouvertes.
 - **Lots d'achèvement en cours** : PUB, CMD, OUT, REND, F, API, REG.
 
-Compteurs recalculés du registre : **0 À définir / 57 À faire / 127 En cours / 11 Bloqué / 376 Vérifié / 59 Accepté**. **P630=435/630**.
+Compteurs recalculés du registre : à cette date 376 Vérifié, 59 Accepté, 11 Bloqué, 127 En cours, 57 À faire, 0 À définir ; 435 obligations sur 630 closes.
 
 Prochaine action : intégrer les lots d'achèvement un par un (PR, CI verte, fusion), puis les décisions de P-12 qui restent à implémenter, puis le build candidat.
 

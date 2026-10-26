@@ -1,8 +1,8 @@
 # Matrice d’échanges de Studio
 
-<!-- Généré depuis packages/atelier-model/src/studio/echanges/matrice-echanges.ts (studio-matrice-echanges/1, révision 4) : ne pas éditer à la main. -->
+<!-- Généré depuis packages/atelier-model/src/studio/echanges/matrice-echanges.ts (studio-matrice-echanges/1, révision 5) : ne pas éditer à la main. -->
 
-Établie le 2026-10-25 (révision 4, schéma `studio-matrice-echanges/1`), à partir de l’audit des exporteurs et importeurs Studio. Lots E.6-01 à E.6-05 du plan d’implémentation Studio V1.0 (§5.7).
+Établie le 2026-10-25 (révision 5, schéma `studio-matrice-echanges/1`), à partir de l’audit des exporteurs et importeurs Studio. Lots E.6-01 à E.6-05 du plan d’implémentation Studio V1.0 (§5.7).
 
 **Aucune entrée n’est une déclaration de conformité** : « livré » dit ce que le code écrit ou lit et le contrôle qui le vérifie ; la conformité d’un format reste non évaluée. Un format reporté est inscrit « non livré » avec sa raison et sa source ; « renoncé » exige une décision Studio admise (aucune aujourd’hui).
 
@@ -32,7 +32,7 @@ Entrées : 40 — livrées : 21, non livrées : 19, renoncées : 0.
 | `rendu-png` | PNG | PNG (bloc iTXt « fadi:rendu » de provenance) | export | rendu | Rendu du modèle depuis la vue 3D d’une révision enregistrée | livré | E.6-02 | Image du canevas, pixels non modifiés ; refusé sur un brouillon non enregistré ou un maillage en cours ; provenance : étude, variante, révision, scène, caméra, date. |
 | `paquet-publication` | Paquet de publication (SVG, DXF, IFC, feuille PDF) | studio-publication-manifest/1 | export | paquet | Fichiers figés d’une publication approuvée et diffusée | livré | E.6-02 | Fichiers du manifeste approuvé, identifiés par SHA-256 et vérifiables ; dessin 2D indépendant : sans IFC ; mêmes limites que chaque export. |
 | `rapport-fidelite-json` | JSON | studio-rapport-fidelite/1 | export | rapport | Rapport de fidélité d’un export SVG, DXF ou IFC (même révision) | livré | E.6-03 | Décrit le fichier (jamais certifié) : exact, approché, non couvert, par type et par raison ; calques masqués et noms réécrits. |
-| `diagnostic-releve-perf` | JSON | Relevé de performances Studio (sans schéma versionné) | export | diagnostic | Mesures de chargement et d’exécution de la session (hors modèle) | livré | E.6-02 | Diagnostic seulement : aucune donnée du projet ; non relu par Studio. |
+| `diagnostic-releve-perf` | JSON | studio-releve-perf/1 (relevé de performances Studio, JSON) | export | diagnostic | Mesures de chargement et d’exécution de la session (hors modèle) | livré | E.6-02 | Diagnostic seulement : aucune donnée du projet ; non relu par Studio. |
 | `dwg-import` | DWG | non évaluée | import | dessin | Dessin 2D | non livré | E.6-04, E.6-05 | Non livré ; aucune conformité évaluée. |
 | `dwg-export` | DWG | non évaluée | export | dessin | Dessin 2D | non livré | E.6-04, E.6-05 | Non livré ; aucune conformité évaluée. |
 | `dgn-import` | DGN | non évaluée | import | dessin | Dessin 2D | non livré | E.6-04, E.6-05 | Non livré ; aucune conformité évaluée. |
@@ -352,13 +352,13 @@ Entrées : 40 — livrées : 21, non livrées : 19, renoncées : 0.
 
 ### `diagnostic-releve-perf` — JSON (export)
 
-- Version : Relevé de performances Studio (sans schéma versionné)
+- Version : studio-releve-perf/1 (relevé de performances Studio, JSON)
 - Objet : Mesures de chargement et d’exécution de la session (hors modèle)
 - Limite : Diagnostic seulement : aucune donnée du projet ; non relu par Studio.
-- Contrôle : Tests du relevé.
-- Entité Mesures de la session : portée — Définitions, contexte, synthèse, journal.
-- Code : `apps/web/src/modules/studio/chargement/perf.ts` (`` ReleveurPerf ``)
-- Tests : `apps/web/src/modules/studio/chargement/perf.test.ts` (`` ReleveurPerf ``)
+- Contrôle : Tests du relevé et de son schéma versionné (controlerRelevePerf).
+- Entité Mesures de la session : portée — Schéma versionné, définitions, contexte, synthèse, journal.
+- Code : `apps/web/src/modules/studio/chargement/perf.ts` (`` ReleveurPerf ``) ; `apps/web/src/modules/studio/chargement/perf.ts` (`` controlerRelevePerf ``)
+- Tests : `apps/web/src/modules/studio/chargement/perf.test.ts` (`` ReleveurPerf ``) ; `apps/web/src/modules/studio/chargement/perf.test.ts` (`` controlerRelevePerf ``)
 - Interface : `apps/web/src/modules/studio/chargement/PanneauRessources.tsx` (`` a.download = "studio-releve-perf.json" ``)
 - Sources : `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, X.1-09` — Liste d’exécution Studio V1.0
 

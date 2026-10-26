@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
-import { DEFINITIONS_PERF, ReleveurPerf } from "./perf";
+import { controlerRelevePerf, DEFINITIONS_PERF, ReleveurPerf, STUDIO_RELEVE_PERF_SCHEMA } from "./perf";
 import { mesurerAccrochage, mesurerCommandes } from "./mesures-studio";
 
 describe("Instrumentation PERF-01 à PERF-10 (X.1-09)", () => {
@@ -33,7 +33,7 @@ describe("Instrumentation PERF-01 à PERF-10 (X.1-09)", () => {
     expect(s).toMatchObject({ n: 4, min: 1, mediane: 2.5, max: 5, unite: "ms" });
     expect(s.derniere?.etiquettes).toEqual({ outil: "studio.dessin.ligne" });
     expect(r.synthese().find((x) => x.code === "PERF-03")).toMatchObject({ n: 0, mediane: null });
-    expect(Object.keys(r.releve())).toEqual(["definitions", "contexte", "synthese", "journal"]);
+    expect(Object.keys(r.releve())).toEqual(["schema", "definitions", "contexte", "synthese", "journal"]);
   });
 
   it("mesures bornées par code : un code fréquent n'efface pas les autres", () => {
@@ -67,5 +67,23 @@ describe("Instrumentation PERF-01 à PERF-10 (X.1-09)", () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+
+  it("relevé exporté versionné studio-releve-perf/1 : conforme à son schéma, chaque écart nommé (champ retiré, inconnu, de type changé, autre version)", () => {
+    let t = 0;
+    const r = new ReleveurPerf(() => t);
+    t = 5; r.enregistrer("PERF-02", 12, "ms", { outil: "studio.dessin.ligne" });
+    t = 9; r.enregistrer("PERF-09", 2048, "octets", { occasion: "outil" });
+    const releve = JSON.parse(JSON.stringify(r.releve({ build: "abc", agent: null })));
+    expect(releve.schema).toBe(STUDIO_RELEVE_PERF_SCHEMA);
+    expect(STUDIO_RELEVE_PERF_SCHEMA).toBe("studio-releve-perf/1");
+    expect(controlerRelevePerf(releve)).toEqual([]);
+    expect(controlerRelevePerf(JSON.parse(JSON.stringify(new ReleveurPerf(() => 0).releve())))).toEqual([]);
+    expect(controlerRelevePerf({ ...releve, schema: "studio-releve-perf/2" })).toEqual(["schema : studio-releve-perf/1 attendu"]);
+    const { journal: _journal, ...sansJournal } = releve;
+    expect(controlerRelevePerf(sansJournal)).toContain("journal : liste attendue");
+    expect(controlerRelevePerf({ ...releve, inconnu: 1 })).toEqual(["relevé : champs schema, definitions, contexte, synthese, journal attendus"]);
+    expect(controlerRelevePerf({ ...releve, journal: [{ ...releve.journal[0], valeur: "12" }] })).toEqual(["journal[0].valeur : nombre fini attendu"]);
+    expect(controlerRelevePerf({ ...releve, definitions: releve.definitions.slice(1) })).toEqual(["definitions : les dix codes PERF-01 à PERF-10, dans l'ordre"]);
   });
 });
