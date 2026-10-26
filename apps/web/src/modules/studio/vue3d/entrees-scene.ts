@@ -1,7 +1,8 @@
 /**
  * Entrées de la scène de rendu de la vue 3D (lot C.2, extraites de `Vue3DStudio.tsx` pour être partagées avec la
  * comparaison avant / après optimisation, AC-005) : ce que la scène incrémentale (`scene-rendu.ts`) reçoit pour chaque
- * objet affiché — volumes en lots (murs, objets extrudés), objets construits seuls (solides libres et exacts, ouvertures,
+ * objet affiché — volumes en lots (murs, objets extrudés), objets construits seuls (solides libres et exacts, surfaces
+ * libres NURBS et leurs pôles, ouvertures,
  * contours, sélection), avec leur aspect (sélection, apparence d'affichage, défaut). Ni React ni DOM : three.js seulement.
  */
 import * as THREE from "three";
@@ -71,7 +72,59 @@ export function entreesLibres(l: Lecture): EntreeRendu[] {
     const aspect = aspectDe(l.doc, l.mode, s, 0xa9c7e8, s.id === l.selection);
     return { id: s.id, signature: `${l.cle(s.id)}|${cleAspect(aspect)}`, construire: () => volumeSeul(s, aspect, s.id, { solide: s.id }) };
   });
-  return [...libres, ...exacts];
+  // Surfaces libres NURBS (X.1-05) : nappe ouverte (deux faces), bords ; sélectionnée, son polygone de contrôle et un
+  // repère par pôle (désignable : `userData.pole`, édition des points de contrôle).
+  const surfaces = (l.mesh.surfaces ?? []).filter((s) => l.present(s.id)).map((s): EntreeRendu => {
+    const choisie = s.id === l.selection;
+    const aspect = aspectDe(l.doc, l.mode, s, 0xa8d8b9, choisie, true);
+    return {
+      id: s.id, signature: `${l.cle(s.id)}|${cleAspect(aspect)}|${choisie ? "poles" : ""}`, construire: () => {
+        const objets = volumeSeul(s, aspect, s.id, { solide: s.id, surface: s.id });
+        if (!choisie) return objets;
+        const reseau = new THREE.BufferGeometry();
+        reseau.setAttribute("position", new THREE.BufferAttribute(new Float32Array(s.controle.segments.flatMap(([a, b]) => { const p = s.controle.points[a]!, q = s.controle.points[b]!; return [p.x, p.y, p.z, q.x, q.y, q.z]; })), 3));
+        const polygone = new THREE.LineSegments(reseau, new THREE.LineDashedMaterial({ color: 0x1f6f4a, dashSize: 0.1, gapSize: 0.06 }));
+        polygone.computeLineDistances();
+        objets.push(polygone);
+        const taille = Math.max(0.03, Math.min(0.2, 0.02 * Math.max(...s.vertices.map((v) => Math.max(Math.abs(v.x), Math.abs(v.y), Math.abs(v.z))), 1) / 4));
+        s.controle.points.forEach((p, k) => {
+          const repere = new THREE.Mesh(new THREE.SphereGeometry(taille, 10, 8), new THREE.MeshBasicMaterial({ color: 0x1f6f4a }));
+          repere.position.set(p.x, p.y, p.z);
+          repere.name = `${s.id}#pole-${k}`;
+          Object.assign(repere.userData, { surface: s.id, pole: k });
+          objets.push(repere);
+        });
+        return objets;
+      },
+    };
+  });
+  // Surfaces de subdivision (X.1-05) : maillage subdivisé (deux faces si ouvert) ; sélectionnée, son maillage de contrôle
+  // et un repère désignable par sommet (`userData.sommet`).
+  const subdivisions = (l.mesh.subdivisions ?? []).filter((s) => l.present(s.id)).map((s): EntreeRendu => {
+    const choisie = s.id === l.selection;
+    const aspect = aspectDe(l.doc, l.mode, s, 0xd8c5a8, choisie, !s.fermee);
+    return {
+      id: s.id, signature: `${l.cle(s.id)}|${cleAspect(aspect)}|${choisie ? "sommets" : ""}`, construire: () => {
+        const objets = volumeSeul(s, aspect, s.id, { solide: s.id, subdivision: s.id });
+        if (!choisie) return objets;
+        const reseau = new THREE.BufferGeometry();
+        reseau.setAttribute("position", new THREE.BufferAttribute(new Float32Array(s.controle.segments.flatMap(([a, b]) => { const p = s.controle.points[a]!, q = s.controle.points[b]!; return [p.x, p.y, p.z, q.x, q.y, q.z]; })), 3));
+        const polygone = new THREE.LineSegments(reseau, new THREE.LineDashedMaterial({ color: 0x7a4f1f, dashSize: 0.1, gapSize: 0.06 }));
+        polygone.computeLineDistances();
+        objets.push(polygone);
+        const taille = Math.max(0.03, Math.min(0.2, 0.02 * Math.max(...s.vertices.map((v) => Math.max(Math.abs(v.x), Math.abs(v.y), Math.abs(v.z))), 1) / 4));
+        s.controle.points.forEach((p, k) => {
+          const repere = new THREE.Mesh(new THREE.SphereGeometry(taille, 10, 8), new THREE.MeshBasicMaterial({ color: 0x7a4f1f }));
+          repere.position.set(p.x, p.y, p.z);
+          repere.name = `${s.id}#sommet-${k}`;
+          Object.assign(repere.userData, { subdivision: s.id, sommet: k });
+          objets.push(repere);
+        });
+        return objets;
+      },
+    };
+  });
+  return [...libres, ...exacts, ...surfaces, ...subdivisions];
 }
 
 /**
@@ -83,12 +136,14 @@ export function entreesArchitecture(l: Lecture): EntreeRendu[] {
   for (const a of l.mesh.architecture ?? []) {
     if (!l.present(a.id)) continue;
     const choisi = a.id === l.selectionArchitecture;
-    if (a.type === "wall" || a.type === "ladder") {
-      // Échelle d'accès (EX-027) : montants et échelons, teinte propre, même désignation que le mur.
-      const aspect = aspectDe(l.doc, l.mode, a, a.type === "ladder" ? 0x9c8a6e : 0xd8d2c4, choisi);
+    if (a.type !== "opening") {
+      // Échelle d'accès (EX-027) : montants et échelons, teinte propre, même désignation que le mur ; poteaux, poutres et
+      // dalles (lot W3-B) : en lots, teinte propre par type.
+      const teinte = a.type === "ladder" ? 0x9c8a6e : a.type === "column" ? 0xa9a396 : a.type === "beam" ? 0xbfb49c : a.type === "slab" ? 0xe3dccd : 0xd8d2c4;
+      const aspect = aspectDe(l.doc, l.mode, a, teinte, choisi);
       out.push(choisi
         ? { id: a.id, signature: `${l.cle(a.id)}|${cleAspect(aspect)}`, construire: () => volumeSeul(a, aspect, a.id, { architecture: a.id }) }
-        : { id: a.id, signature: l.cle(a.id), lot: a.type === "ladder" ? "echelle" : "mur", geometrie: a, aspect });
+        : { id: a.id, signature: l.cle(a.id), lot: a.type === "ladder" ? "echelle" : a.type === "wall" ? "mur" : "structure", geometrie: a, aspect });
       continue;
     }
     // Le vide d'une ouverture ne prend que l'apparence de l'ouverture elle-même (pas celle du calque de son mur).
@@ -106,6 +161,12 @@ export function entreesArchitecture(l: Lecture): EntreeRendu[] {
         return [vide];
       },
     });
+  }
+  // Occurrences de composants (lot W3-B) : géométrie de leur définition placée ; admises à l'instanciation (C.2-02) — les
+  // occurrences de même forme deviennent un seul InstancedMesh dont la table de désignation rend l'occurrence.
+  for (const o of l.mesh.occurrences ?? []) {
+    if (!l.present(o.id)) continue;
+    out.push({ id: o.id, signature: l.cle(o.id), lot: "occurrence", instanciable: true, geometrie: o, aspect: aspectDe(l.doc, l.mode, o, 0x8fb3a0, false) });
   }
   return out;
 }

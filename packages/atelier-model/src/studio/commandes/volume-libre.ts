@@ -66,12 +66,15 @@ export const deplacerSolide: Gestionnaire = (state, params, path) => {
   state.solides[index] = validerSolide({ ...s, placement: { ...s.placement, origin: { x: o.x + dx, y: o.y + dy, z: o.z + dz } } }, path);
 };
 
-/** Supprime des solides libres ou des solides exacts (lot F2 : un solide exact part avec ses opérandes conservés). */
+/**
+ * Supprime des solides libres ou des solides exacts (lot F2 : un solide exact part avec ses opérandes conservés), des
+ * cotes de faces 3D et des surfaces libres (X.1-05).
+ */
 export const supprimerSolides: Gestionnaire = (state, params, path) => {
   const p = record(params, ["ids"], `${path}.params`);
   const ids = new Set(idList(p.ids, `${path}.params.ids`));
   // Lot G2 (INV-013) : une cote de face 3D se supprime aussi par cette commande.
-  const index = new Map<string, { layerId?: string }>([...state.solides, ...state.exacts, ...state.cotesFaces].map((s) => [s.id, s]));
+  const index = new Map<string, { layerId?: string }>([...state.solides, ...state.exacts, ...state.cotesFaces, ...state.surfaces, ...state.subdivisions].map((s) => [s.id, s]));
   for (const id of ids) {
     const s = index.get(id);
     if (!s) introuvable(state, id, path);
@@ -81,6 +84,8 @@ export const supprimerSolides: Gestionnaire = (state, params, path) => {
   state.solides = state.solides.filter((s) => !ids.has(s.id));
   state.exacts = state.exacts.filter((s) => !ids.has(s.id));
   state.cotesFaces = state.cotesFaces.filter((c) => !ids.has(c.id));
+  state.surfaces = state.surfaces.filter((s) => !ids.has(s.id));
+  state.subdivisions = state.subdivisions.filter((s) => !ids.has(s.id));
   for (const id of [...ids, ...liberes]) state.ids.delete(id);
 };
 

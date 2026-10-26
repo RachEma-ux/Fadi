@@ -1,5 +1,17 @@
 # Reprise — Studio
 
+## Checkpoint 2026-10-26 (heure suisse 09:20) — vague 3 intégrée (fonctions de modèle absentes)
+
+- PR #334 fusionnée (promotion de la vague 2 : 28 obligations Vérifiées, 5 agrégats clos).
+- Vague 3 intégrée sur la branche de travail (lots W3-A à W3-D, détail et décisions dans `recettes/ACHEVEMENT-STUDIO.md`) :
+  blocs définis par l'utilisateur et contraintes géométriques 2D (X.1-01) ; niveaux comme objets, composants 3D et poteaux /
+  poutres / dalles, IFC `IfcBuildingStorey` réel (X.1-04) ; surfaces NURBS et de subdivision de Loop, conversion explicite en
+  solide recalculée par le serveur (X.1-05) ; fusion de variantes à trois voies avec conflits résolus explicitement,
+  annulable (X.1-06). Les quatre obligations sont inscrites **Implémenté** ; recettes `studio-w3a` à `studio-w3d` en CI.
+- Libellé A.3-08 du registre reporté (le composant 3D et les surfaces complexes sont désormais disponibles).
+- Compteurs recalculés du registre : **0 À définir / 29 À faire / 8 En cours / 5 Implémenté / 9 Bloqué / 520 Vérifié / 59 Accepté**. **P630=579/630**.
+- Reprise : CI de la PR de la vague 3, fusion, promotion après la CI verte de `main`.
+
 ## Checkpoint 2026-10-26 (heure suisse 06:35) — promotion de la vague 2 et agrégats de recette
 
 - PR #332 (vague 2 : G1–G5) fusionnée dans `main` (2e1564d7), CI verte sur `main`. `completer_preuves.py --reference
@@ -12,7 +24,7 @@
   EXTERNE).
 - Vague 3 engagée (blocs et contraintes X.1-01, niveaux / composants / structure X.1-04, surfaces libres X.1-05, fusion de
   variantes X.1-06).
-- Compteurs recalculés du registre : **0 À définir / 29 À faire / 12 En cours / 1 Implémenté / 9 Bloqué / 520 Vérifié / 59 Accepté**. **P630=579/630**.
+- Compteurs recalculés du registre : à cette date 520 Vérifié, 59 Accepté, 9 Bloqué, 1 Implémenté, 12 En cours, 29 À faire, 0 À définir ; 579 obligations sur 630 closes.
 - Reprise : intégrer la vague 3, CI, fusion, promotion.
 
 ## Checkpoint 2026-10-26 (heure suisse 06:40) — vague 2 : G2 intégré, revue Codex #332 et TR-EX-059

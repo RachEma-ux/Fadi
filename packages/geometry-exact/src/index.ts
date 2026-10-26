@@ -2,7 +2,8 @@
  * Noyau exact (P2-1, D-177) — pur, sans interface.
  *
  * Opérations B-rep exécutées par OCCT compilé en WebAssembly (`occt-wasm`) : révolution, extrusion, balayage,
- * lissage, booléens, trou, coque, surface (grille de contrôle épaissie), patch (face non plane sur un contour 3D,
+ * lissage, booléens, trou, coque, surface (grille de contrôle épaissie), surface NURBS (pôles, degrés, poids, épaissie),
+ * polyèdre fermé (triangles cousus en solide), patch (face non plane sur un contour 3D,
  * épaissie), congé (toutes les arêtes), import STEP. Un résultat est un `SolideExact` : représentation canonique **brep**
  * (binaire OCCT, base64), maillage dérivé (positions, indices ; mètres, z vers le haut), volume, aire, nombre de
  * faces et de solides, nom et version du moteur, empreinte des octets brep. Le même code tourne dans le navigateur
@@ -40,9 +41,23 @@ export type OperationExacte =
   | { type: "trou"; solide: { brep: string; pose?: Pose }; centre: Point3; direction: Point3; diametre: number; profondeur: number | null }
   | { type: "coque"; solide: { brep: string; pose?: Pose }; epaisseur: number; ouvrirDessus: boolean }
   | { type: "surface"; controle: Point3[]; lignes: number; colonnes: number; epaisseur: number }
+  | { type: "nurbs"; nurbs: Nurbs; epaisseur: number }
+  | { type: "polyedre"; sommets: Point3[]; triangles: [number, number, number][] }
   | { type: "patch"; contour: Point3[]; epaisseur: number }
   | { type: "conge"; solide: { brep: string; pose?: Pose }; rayon: number }
   | { type: "import-step"; step: string; solide?: number };
+
+/**
+ * Surface NURBS (Studio, X.1-05) donnée par ses **pôles** (points de contrôle, jamais des points de passage) :
+ * grille `lignes × colonnes` rangée ligne par ligne (`controle[i * colonnes + j]`, i le long de u, j le long de v),
+ * degrés `degreU` ≤ lignes − 1 et `degreV` ≤ colonnes − 1, poids rationnels facultatifs (> 0 ; absents : 1, B-spline
+ * non rationnelle). Vecteurs de nœuds **uniformes bornés** (clamped) sur [0, 1] : multiplicité degré + 1 aux bornes, 1
+ * à l'intérieur. La nappe passe donc par ses quatre coins ; sa normale est ∂S/∂u × ∂S/∂v.
+ */
+export interface Nurbs { degreU: number; degreV: number; lignes: number; colonnes: number; controle: Point3[]; poids?: number[] }
+
+/** Bornes techniques d'une surface NURBS (pas des valeurs métier) : grille 2..64 par sens, degré 1..9. */
+export const LIMITES_NURBS = Object.freeze({ cotes: 64, degre: 9 } as const);
 
 export interface MaillageExact { positions: number[]; indices: number[] }
 
@@ -127,6 +142,81 @@ function operande(o: unknown, chemin: string): OperandeExacte {
   throw new ErreurExacte(chemin, "opérande { brep } ou { extrusion } attendue");
 }
 
+function nombreNonNul(v: unknown, chemin: string): number {
+  const n = nombre(v, chemin);
+  if (Math.abs(n) < 1e-6) throw new ErreurExacte(chemin, "épaisseur non nulle attendue (|e| ≥ 1e-6 m)");
+  return n;
+}
+function entierBorne(v: unknown, chemin: string, min: number, max: number): number {
+  const n = nombre(v, chemin, { min, max });
+  if (!Number.isInteger(n)) throw new ErreurExacte(chemin, "entier attendu");
+  return n;
+}
+
+/** Valide une surface NURBS (pôles, degrés, poids) ; refuse un bord dégénéré (réduit à un point) ou deux coins confondus. */
+export function validerNurbs(brut: unknown, chemin = "nurbs"): Nurbs {
+  if (!brut || typeof brut !== "object") throw new ErreurExacte(chemin, "surface { degreU, degreV, lignes, colonnes, controle, poids? } attendue");
+  const o = brut as Record<string, unknown>;
+  const lignes = entierBorne(o["lignes"], `${chemin}.lignes`, 2, LIMITES_NURBS.cotes), colonnes = entierBorne(o["colonnes"], `${chemin}.colonnes`, 2, LIMITES_NURBS.cotes);
+  const degreU = entierBorne(o["degreU"], `${chemin}.degreU`, 1, Math.min(LIMITES_NURBS.degre, lignes - 1));
+  const degreV = entierBorne(o["degreV"], `${chemin}.degreV`, 1, Math.min(LIMITES_NURBS.degre, colonnes - 1));
+  const controle = contour3(o["controle"], `${chemin}.controle`, 4);
+  if (controle.length !== lignes * colonnes) throw new ErreurExacte(`${chemin}.controle`, `${lignes * colonnes} pôles attendus (lignes × colonnes)`);
+  let poids: number[] | undefined;
+  if (o["poids"] !== undefined) {
+    const w = o["poids"];
+    if (!Array.isArray(w) || w.length !== lignes * colonnes) throw new ErreurExacte(`${chemin}.poids`, `${lignes * colonnes} poids attendus`);
+    poids = w.map((x, i) => { const n = nombre(x, `${chemin}.poids[${i}]`); if (n <= 0) throw new ErreurExacte(`${chemin}.poids[${i}]`, "poids strictement positif attendu"); return n; });
+  }
+  const P = (i: number, j: number) => controle[i * colonnes + j]!;
+  const dist = (a: Point3, b: Point3) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+  const bords: [string, Point3[]][] = [
+    ["u = 0", Array.from({ length: colonnes }, (_, j) => P(0, j))], ["u = 1", Array.from({ length: colonnes }, (_, j) => P(lignes - 1, j))],
+    ["v = 0", Array.from({ length: lignes }, (_, i) => P(i, 0))], ["v = 1", Array.from({ length: lignes }, (_, i) => P(i, colonnes - 1))],
+  ];
+  for (const [nom, pts] of bords) if (pts.every((p) => dist(p, pts[0]!) < 1e-9)) throw new ErreurExacte(`${chemin}.controle`, `bord ${nom} réduit à un point (surface dégénérée non prise en charge)`);
+  const coins = [P(0, 0), P(0, colonnes - 1), P(lignes - 1, 0), P(lignes - 1, colonnes - 1)];
+  for (let a = 0; a < 4; a++) for (let b = a + 1; b < 4; b++) if (dist(coins[a]!, coins[b]!) < 1e-9) throw new ErreurExacte(`${chemin}.controle`, "deux coins de la surface confondus");
+  return { degreU, degreV, lignes, colonnes, controle, ...(poids ? { poids } : {}) };
+}
+
+/** Nœuds distincts et multiplicités d'un vecteur uniforme borné sur [0, 1] (n pôles, degré p). */
+export function noeudsUniformesBornes(n: number, p: number): [number, number][] {
+  const travees = n - p;
+  return Array.from({ length: travees + 1 }, (_, i) => [i / travees, i === 0 || i === travees ? p + 1 : 1] as [number, number]);
+}
+
+/**
+ * Texte BREP OCCT (« CASCADE Topology V3 ») d'une face NURBS à bornes naturelles : la surface rationnelle ou non
+ * (`Geom_BSplineSurface`, type 9), ses quatre bords (courbes iso exactes : pôles et poids de la ligne ou de la colonne
+ * de bord, nœuds du sens concerné) et leurs courbes paramétriques (droites de l'espace (u, v)). Écrit sans perte (les
+ * nombres sont écrits par leur plus courte représentation exacte) ; relu par `fromBREP`. Pur.
+ */
+export function brepTexteNurbs(s: Nurbs): string {
+  const { degreU: pu, degreV: pv, lignes: m, colonnes: n, controle, poids } = s;
+  const f = (x: number) => (Object.is(x, -0) ? "0" : String(x));
+  const rationnel = poids?.some((w) => w !== 1) ? 1 : 0;
+  const pole = (i: number, j: number) => { const p = controle[i * n + j]!; return `${f(p.x)} ${f(p.y)} ${f(p.z)}${rationnel ? ` ${f(poids![i * n + j]!)}` : ""}`; };
+  const ku = noeudsUniformesBornes(m, pu), kv = noeudsUniformesBornes(n, pv);
+  const noeuds = (k: [number, number][], sep: string) => k.map(([u, mu]) => `${f(u)} ${mu}`).join(sep);
+  const courbe = (pts: [number, number][], p: number, k: [number, number][]) => `7 ${rationnel} 0  ${p} ${pts.length} ${k.length}  ${pts.map(([i, j]) => pole(i, j)).join("  ")} \n ${noeuds(k, " ")}`;
+  const ligne = (i: number) => Array.from({ length: n }, (_, j) => [i, j] as [number, number]);
+  const colonne = (j: number) => Array.from({ length: m }, (_, i) => [i, j] as [number, number]);
+  const sommet = (i: number, j: number) => { const p = controle[i * n + j]!; return `Ve\n1e-07\n${f(p.x)} ${f(p.y)} ${f(p.z)}\n0 0\n\n0101101\n*`; };
+  const arete = (c: number, sommets: string) => `Ed\n 1e-07 1 1 0\n1  ${c} 0 0 1\n2  ${c} 1 0 0 1\n0\n\n0101000\n${sommets} *`;
+  const nappe = Array.from({ length: m }, (_, i) => Array.from({ length: n }, (_, j) => pole(i, j)).join("  ") + "  ").join("\n");
+  // Formes numérotées depuis la fin (la dernière écrite est 1) : sommets 10, 9, 7, 5 ; arêtes 8, 6, 4, 3 ; fil 2 ; face 1.
+  return [
+    "CASCADE Topology V3, (c) Open Cascade", "Locations 0", "Curve2ds 4", "1 0 0 0 1 ", "1 0 0 1 0 ", "1 1 0 0 1 ", "1 0 1 1 0 ",
+    "Curves 4", courbe(ligne(0), pv, kv), courbe(colonne(0), pu, ku), courbe(ligne(m - 1), pv, kv), courbe(colonne(n - 1), pu, ku),
+    "Polygon3D 0", "PolygonOnTriangulations 0", "Surfaces 1",
+    `9 ${rationnel} ${rationnel} 0 0 ${pu} ${pv} ${m} ${n} ${ku.length} ${kv.length} ${nappe}`, "", noeuds(ku, "\n"), "", noeuds(kv, "\n"), "",
+    "Triangulations 0", "", "TShapes 10",
+    sommet(0, 0), sommet(0, n - 1), arete(1, "+10 0 -9 0"), sommet(m - 1, 0), arete(2, "+10 0 -7 0"), sommet(m - 1, n - 1),
+    arete(3, "+7 0 -5 0"), arete(4, "+9 0 -5 0"), "Wi\n\n0101100\n-8 0 +6 0 +4 0 -3 0 *", "Fa\n1  1e-07 1 0\n\n1101000\n+2 0 *", "", "+1 0", "",
+  ].join("\n");
+}
+
 /** Valide et normalise une opération reçue (du navigateur, de l'API, d'un script) ; lève `ErreurExacte`. */
 export function validerOperation(brut: unknown): OperationExacte {
   if (!brut || typeof brut !== "object" || typeof (brut as { type?: unknown }).type !== "string") throw new ErreurExacte("type", "opération { type, … } attendue");
@@ -172,6 +262,25 @@ export function validerOperation(brut: unknown): OperationExacte {
       const controle = contour3(o["controle"], "controle", 4);
       if (controle.length !== lignes * colonnes) throw new ErreurExacte("controle", `${lignes * colonnes} points attendus (lignes × colonnes)`);
       return { type: "surface", controle, lignes, colonnes, epaisseur: nombre(o["epaisseur"], "epaisseur", { min: 1e-6 }) };
+    }
+    case "nurbs":
+      // Surface NURBS (Studio, X.1-05) : pôles, degrés et poids ; épaisseur signée (signe : côté de la normale).
+      return { type: "nurbs", nurbs: validerNurbs(o["nurbs"], "nurbs"), epaisseur: nombreNonNul(o["epaisseur"], "epaisseur") };
+    case "polyedre": {
+      // Polyèdre fermé (Studio, X.1-05 : surface de subdivision solidifiée) : triangles cousus en un solide.
+      const sommets = contour3(o["sommets"], "sommets", 4);
+      const t = o["triangles"];
+      if (!Array.isArray(t) || t.length < 4 || t.length > 200000) throw new ErreurExacte("triangles", "4 à 200 000 triangles attendus");
+      const triangles = t.map((x, i): [number, number, number] => {
+        if (!Array.isArray(x) || x.length !== 3 || !x.every((v) => Number.isInteger(v) && v >= 0 && v < sommets.length)) throw new ErreurExacte(`triangles[${i}]`, "trois indices de sommet attendus");
+        if (x[0] === x[1] || x[1] === x[2] || x[0] === x[2]) throw new ErreurExacte(`triangles[${i}]`, "triangle dégénéré (sommets répétés)");
+        return [x[0], x[1], x[2]];
+      });
+      // Fermé : chaque arête portée par exactement deux triangles (sinon le solide n'enferme rien).
+      const aretes = new Map<string, number>();
+      for (const [a, b, c] of triangles) for (const [u, v] of [[a, b], [b, c], [c, a]]) { const k = u! < v! ? `${u}|${v}` : `${v}|${u}`; aretes.set(k, (aretes.get(k) ?? 0) + 1); }
+      for (const [k, n] of aretes) if (n !== 2) throw new ErreurExacte("triangles", `polyèdre non fermé (arête ${k} portée par ${n} triangle(s))`);
+      return { type: "polyedre", sommets, triangles };
     }
     case "patch": {
       // Patch (DA-03-04) : face non plane tendue sur un contour 3D fermé (≥ 3 points), épaissie.
@@ -405,6 +514,22 @@ export class MoteurExact {
         case "surface": {
           const nappe = garder(k.bsplineSurface(op.controle, op.lignes, op.colonnes));
           forme = garder(k.thicken(nappe, op.epaisseur, 1e-4));
+          break;
+        }
+        case "nurbs": {
+          // Face NURBS exacte écrite en BREP texte (pôles, poids, nœuds), relue par le noyau puis épaissie (normale ∂S/∂u × ∂S/∂v).
+          const face = garder(k.fromBREP(brepTexteNurbs(op.nurbs)));
+          if (!k.isValid(face)) throw new ErreurExacte("nurbs", "surface invalide (noyau)");
+          forme = garder(k.thicken(face, op.epaisseur, 1e-6));
+          break;
+        }
+        case "polyedre": {
+          // Faces planes triangulaires cousues puis fermées en solide (représentation exacte du polyèdre donné).
+          const faces = op.triangles.map(([a, b, c]) => {
+            const [A, B, C] = [op.sommets[a]!, op.sommets[b]!, op.sommets[c]!];
+            return garder(k.makeFace(garder(k.makeWire([garder(k.makeLineEdge(A, B)), garder(k.makeLineEdge(B, C)), garder(k.makeLineEdge(C, A))]))));
+          });
+          forme = garder(k.sewAndSolidify(faces, 1e-6));
           break;
         }
         case "patch": {

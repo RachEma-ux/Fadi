@@ -67,9 +67,9 @@ export function studioFiltrerMaillageScene(tout: StudioMesh3d, visibleLayers: re
   const montre = new Set(visibleLayers);
   const garde = (o: { layerId?: string }) => montre.has(o.layerId ?? STUDIO_DEFAULT_LAYER_ID);
   const solids = tout.solids.filter(garde), outlines = tout.outlines.filter(garde);
-  const freeSolids = tout.freeSolids?.filter(garde), exacts = tout.exacts?.filter(garde), architecture = tout.architecture?.filter(garde);
+  const freeSolids = tout.freeSolids?.filter(garde), exacts = tout.exacts?.filter(garde), surfaces = tout.surfaces?.filter(garde), subdivisions = tout.subdivisions?.filter(garde), architecture = tout.architecture?.filter(garde);
   const retires = tout.solids.length - solids.length + tout.outlines.length - outlines.length
-    + (tout.freeSolids?.length ?? 0) - (freeSolids?.length ?? 0) + (tout.exacts?.length ?? 0) - (exacts?.length ?? 0) + (tout.architecture?.length ?? 0) - (architecture?.length ?? 0);
+    + (tout.freeSolids?.length ?? 0) - (freeSolids?.length ?? 0) + (tout.exacts?.length ?? 0) - (exacts?.length ?? 0) + (tout.surfaces?.length ?? 0) - (surfaces?.length ?? 0) + (tout.subdivisions?.length ?? 0) - (subdivisions?.length ?? 0) + (tout.architecture?.length ?? 0) - (architecture?.length ?? 0);
   let bounds: StudioMesh3d["bounds"] = null;
   const etendre = (p: StudioPoint3) => {
     if (!bounds) { bounds = { min: { ...p }, max: { ...p } }; return; }
@@ -80,9 +80,11 @@ export function studioFiltrerMaillageScene(tout: StudioMesh3d, visibleLayers: re
   for (const l of outlines) l.points.forEach(etendre);
   for (const s of freeSolids ?? []) s.vertices.forEach(etendre);
   for (const s of exacts ?? []) s.vertices.forEach(etendre);
+  for (const s of surfaces ?? []) s.vertices.forEach(etendre);
+  for (const s of subdivisions ?? []) s.vertices.forEach(etendre);
   for (const s of architecture ?? []) s.vertices.forEach(etendre);
   return {
     ...tout, solids, outlines, nonExtruded: outlines.length, hidden: tout.hidden + retires,
-    ...(freeSolids ? { freeSolids } : {}), ...(exacts ? { exacts } : {}), ...(architecture ? { architecture } : {}), bounds,
+    ...(freeSolids ? { freeSolids } : {}), ...(exacts ? { exacts } : {}), ...(surfaces ? { surfaces } : {}), ...(subdivisions ? { subdivisions } : {}), ...(architecture ? { architecture } : {}), bounds,
   };
 }

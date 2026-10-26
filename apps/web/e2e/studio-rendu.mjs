@@ -162,9 +162,10 @@ try {
   await couverture.locator("summary").click();
   const types = await couverture.locator("[data-studio-type-3d]").evaluateAll((els) => els.map((e) => ({ id: e.getAttribute("data-studio-type-3d"), etat: e.getAttribute("data-studio-type-3d-etat"), texte: e.textContent, commandes: e.querySelectorAll("button, input, select, a").length, libelle: e.querySelector("strong")?.textContent })));
   const avances = types.filter((t) => t.etat === "non-disponible");
-  check("A.3-08 : inventaire affiché — sommets et arêtes, groupe, composant, courbe exacte 3D, surface complexe, BRep fournisseur « Non disponible », sans commande",
-    avances.map((t) => t.id).join(" ") === "sommets-aretes groupe-3d composant-3d courbe-exacte-3d surface-complexe brep-fournisseur"
+  check("A.3-08 : inventaire affiché — sommets et arêtes, groupe, courbe exacte 3D, BRep fournisseur « Non disponible », sans commande",
+    avances.map((t) => t.id).join(" ") === "sommets-aretes groupe-3d courbe-exacte-3d brep-fournisseur"
       && avances.every((t) => t.texte.includes("— Non disponible") && t.commandes === 0), JSON.stringify(avances.map((t) => [t.id, t.commandes])));
+  check("A.3-08 : composant 3D (X.1-04), surfaces NURBS et de subdivision (X.1-05) annoncés disponibles", ["composant-3d", "surface-nurbs", "surface-complexe"].every((id) => types.find((t) => t.id === id)?.etat === "disponible"), JSON.stringify(types.filter((t) => ["composant-3d", "surface-nurbs", "surface-complexe"].includes(t.id)).map((t) => [t.id, t.etat])));
   check("A.3-08 : le booléen exact (lot F2) est annoncé disponible, avec ses tests", types.find((t) => t.id === "booleen")?.etat === "disponible", JSON.stringify(types.find((t) => t.id === "booleen")));
   const libellesBarre = await page.locator("[data-studio-outil]").evaluateAll((els) => els.map((e) => (e.getAttribute("aria-label") ?? "").toLowerCase()));
   const proposes = avances.filter((t) => libellesBarre.some((l) => l.includes((t.libelle ?? "").split(" (")[0].toLowerCase())));

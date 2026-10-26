@@ -1,6 +1,7 @@
 import { prism, type Geometrie3d, type StudioPoint3 } from "../exporteurs/maillage.js";
 import { contourOuverture, morceauxVolume } from "./geometrie.js";
 import { volumesEchelle } from "./echelle.js";
+import { volumeStructurel } from "./structure.js";
 import type { StudioArchitectureItem, StudioOpeningKind } from "./types.js";
 import { lireArchitecture } from "./validation.js";
 
@@ -11,7 +12,9 @@ import { lireArchitecture } from "./validation.js";
  */
 export interface StudioArchitecture3d {
   id: string;
-  type: "wall" | "opening" | "ladder";
+  type: "wall" | "opening" | "ladder" | "column" | "beam" | "slab";
+  /** Niveau de rattachement (lot W3-B) ; une ouverture prend celui de son mur. */
+  niveauId?: string;
   /** Calque du mur (une ouverture suit le calque de son hôte). */
   layerId?: string;
   /** Ouverture : mur hôte et type déclaré. */
@@ -42,11 +45,15 @@ export function studioMaillageArchitecture(items: readonly StudioArchitectureIte
       if (!visible(it.layerId)) continue;
       const m = lue.murs.get(it.id)!;
       const g = fusion(morceauxVolume(it, m.geometrie, m.ouvertures).map((p) => prism(p.plan, p.zMin, p.zMax)));
-      out.push({ id: it.id, type: "wall", ...(it.layerId !== undefined ? { layerId: it.layerId } : {}), ...g });
+      out.push({ id: it.id, type: "wall", ...(it.layerId !== undefined ? { layerId: it.layerId } : {}), ...(it.niveauId !== undefined ? { niveauId: it.niveauId } : {}), ...g });
     } else if (it.type === "ladder") {
       // Échelle d'accès (EX-027) : montants et échelons, même identifiant qu'en plan.
       if (!visible(it.layerId)) continue;
-      out.push({ id: it.id, type: "ladder", ...(it.layerId !== undefined ? { layerId: it.layerId } : {}), ...fusion(volumesEchelle(it)) });
+      out.push({ id: it.id, type: "ladder", ...(it.layerId !== undefined ? { layerId: it.layerId } : {}), ...(it.niveauId !== undefined ? { niveauId: it.niveauId } : {}), ...fusion(volumesEchelle(it)) });
+    } else if (it.type === "column" || it.type === "beam" || it.type === "slab") {
+      // Lot W3-B : poteau, poutre, dalle — prisme droit sur leur emprise, même identifiant qu'en plan.
+      if (!visible(it.layerId)) continue;
+      out.push({ id: it.id, type: it.type, ...(it.layerId !== undefined ? { layerId: it.layerId } : {}), ...(it.niveauId !== undefined ? { niveauId: it.niveauId } : {}), ...volumeStructurel(it) });
     } else {
       const p = lue.ouvertures.get(it.id)!;
       const hote = lue.murs.get(it.hostId)!.mur;
@@ -54,7 +61,7 @@ export function studioMaillageArchitecture(items: readonly StudioArchitectureIte
       const z0 = hote.base + it.sill;
       const g = prism(contourOuverture(hote, p), z0, z0 + it.height);
       out.push({
-        id: it.id, type: "opening", ...(hote.layerId !== undefined ? { layerId: hote.layerId } : {}), hostId: it.hostId, ...(it.kind ? { kind: it.kind } : {}),
+        id: it.id, type: "opening", ...(hote.layerId !== undefined ? { layerId: hote.layerId } : {}), ...(hote.niveauId !== undefined ? { niveauId: hote.niveauId } : {}), hostId: it.hostId, ...(it.kind ? { kind: it.kind } : {}),
         ...g,
       });
     }

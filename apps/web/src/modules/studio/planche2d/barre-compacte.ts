@@ -69,6 +69,10 @@ const DEPUIS_BARRE: Readonly<Record<BarreStudio, IdFamille>> = Object.freeze({
   graphismes: "annotation", reperes: "vue",
   // Sources importées (EX-014) : nées d'un import, rangées avec Importer / Exporter.
   sources: "echanges",
+  // Lot W3-B : niveaux, composants 3D et éléments structurels, avec l'architecture.
+  batiment: "architecture",
+  // Blocs définis par l'utilisateur avec le dessin ; contraintes géométriques avec la modification (X.1-01).
+  blocs: "dessin", contraintes: "modification",
   edition: "edition", vue: "vue", accrochage: "vue", reperage: "vue", visualisation: "vue", import: "echanges", export: "echanges", presentation: "presentation", catalogue: "catalogue",
 });
 
@@ -126,6 +130,11 @@ export interface OptionsDisposition {
   /** Familles présentes (au moins un élément visible), dans l'ordre affiché. */
   familles: readonly MesureFamille[];
   active: IdFamille;
+  /**
+   * Familles propres au domaine affiché (palette d'un domaine), placées juste après la famille active : une commande
+   * « à définir » montrée dans toutes les palettes ne repousse pas les fonctions du domaine dans un menu.
+   */
+  prioritaires?: readonly IdFamille[];
   /** Largeur du bouton « Plus » (écart compris). */
   plus: number;
   /** Largeur du séparateur qui remplace le bouton « ▾ » d'une famille entièrement en rangée. */
@@ -142,7 +151,8 @@ const somme = (l: readonly number[]) => l.reduce((a, b) => a + b, 0);
  * indispensables y tiennent.
  */
 export function disposerBarre(o: OptionsDisposition): Disposition {
-  const ordre = [o.active, ...PRIORITE_FAMILLES.filter((f) => f !== o.active)];
+  const tete = [o.active, ...(o.prioritaires ?? []).filter((f) => f !== o.active)];
+  const ordre = [...tete, ...PRIORITE_FAMILLES.filter((f) => !tete.includes(f))];
   const rang = (id: IdFamille) => { const i = ordre.indexOf(id); return i < 0 ? ordre.length : i; };
   const presentes = o.familles;
   const dansRangee = new Set(presentes.map((f) => f.id));

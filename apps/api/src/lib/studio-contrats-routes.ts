@@ -710,3 +710,35 @@ export const CONTRAT_BASCULE_PASSAGE = contratRoute({
   id: "studio-api-bascule-passage/1", routes: ["POST /bascule/preparer", "POST /bascule/basculer", "POST /bascule/retour-arriere"],
   objet: "Préparer (étude désignée), basculer l'autorité d'écriture vers Studio, retour arrière (propriétaire).", entree: "Corps de `preparer` : `{ studyId }` ; aucun pour les autres.", statuts: [200], corps: "json", reponse: basculeLue,
 });
+
+// --- Lot W3-D (X.1-06) : fusion de variantes à trois voies ----------------------------------------------------------
+const coteFusion = z.strictObject({ variantId: ident, revisionId: ident });
+const conflitFusion = z.looseObject({ id: ident, type: z.enum(["modification-concurrente", "suppression-modification", "collision-identifiant", "combinaison-invalide", "reference-cassee"]), cles: z.array(z.string()), propriete: z.string().nullable(), resolution: z.enum(["source", "cible"]).nullable() });
+const changementFusion = z.looseObject({ cle: z.string(), etat: z.enum(["ajoute", "supprime", "modifie"]) });
+const apercuFusion = z.strictObject({
+  schema: z.literal("studio-fusion/1"), changementsSource: z.array(changementFusion), changementsCible: z.array(changementFusion),
+  appliques: z.array(z.looseObject({ cle: z.string(), etat: z.enum(["ajoute", "supprime", "modifie"]), origine: z.enum(["source", "mixte", "resolution"]) })),
+  conflits: z.array(conflitFusion), nonResolus: z.array(z.string()), resolutionsInconnues: z.array(z.string()), provisoire: z.boolean(), valide: z.boolean(),
+  erreur: z.strictObject({ path: z.string(), message: z.string() }).nullable(), empreinte: z.string().nullable(), aFusionner: z.boolean(),
+});
+const provenanceFusion = z.union([
+  z.strictObject({ type: z.literal("fusion"), sourceVariantId: ident, sourceRevisionId: ident, ancetreRevisionId: ident, resolutions: z.record(z.string(), z.enum(["source", "cible"])), conflits: z.number().int(), empreinte: z.string() }),
+  z.strictObject({ type: z.literal("annulation"), revisionAnnulee: ident, revisionRendue: ident }),
+]);
+const fusionEcrite = z.strictObject({ ...soumission.shape, fusion: provenanceFusion });
+export const CONTRAT_FUSION_APERCU = contratRoute({
+  id: "studio-api-fusion-apercu/1", routes: ["POST /studies/:studyId/variants/:variantId/fusion/apercu"],
+  objet: "Aperçu de la fusion à trois voies d'une variante source dans la variante de l'adresse (cible) : ancêtre commun, changements, conflits et résolutions, empreinte du résultat ; rien n'est écrit.",
+  entree: "Corps : `{ sourceVariantId, resolutions? }` (résolution : identifiant de conflit → `source` | `cible`).", statuts: [200], corps: "json",
+  reponse: z.strictObject({ cible: coteFusion, source: coteFusion, ancetre: coteFusion, canWrite: z.boolean(), apercu: apercuFusion }),
+});
+export const CONTRAT_FUSION_APPLIQUER = contratRoute({
+  id: "studio-api-fusion-appliquer/1", routes: ["POST /studies/:studyId/variants/:variantId/fusion"],
+  objet: "Application de la fusion acceptée en une révision `variant-merge` de la cible (journal, effets) ; refus si un conflit reste sans résolution, si une tête a changé ou si le résultat n'est plus celui de l'aperçu.",
+  entree: "Corps : `{ requestId, sourceVariantId, sourceRevisionId, baseRevisionId, empreinte, resolutions? }`.", statuts: [200], corps: "json", reponse: fusionEcrite,
+});
+export const CONTRAT_FUSION_ANNULER = contratRoute({
+  id: "studio-api-fusion-annuler/1", routes: ["POST /studies/:studyId/variants/:variantId/fusion/annulation"],
+  objet: "Annulation de la fusion qui est la tête de la cible : nouvelle révision `variant-merge-undo` au document d'avant la fusion.",
+  entree: "Corps : `{ requestId, revisionId }` (la révision de fusion, tête de la variante).", statuts: [200], corps: "json", reponse: fusionEcrite,
+});

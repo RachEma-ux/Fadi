@@ -13,16 +13,13 @@
     "révisions : une enveloppe de commandes par étape (six étapes), rejeu d'une enveloppe sans révision en double (recette)",
     "dossier : une feuille et un dossier de conception sur la tête de A",
     "contrôles : trois exigences de recette contrôlées sur chaque tête, statuts et conclusions attendus",
-    "comparaison de révisions entre variantes (A ↔ B)"
+    "comparaison de révisions entre variantes (A ↔ B)",
+    "fusion de variantes : B fusionnée dans C depuis leur ancêtre commun (A1), conflit de collision d'identifiant tranché explicitement, annulation (lot W3-D)"
    ],
    "absents": [
     {
      "element": "exigences réglementaires",
      "raison": "aucune valeur réglementaire n'est inventée : exigences de recette synthétiques, source déclarée"
-    },
-    {
-     "element": "fusion de variantes",
-     "raison": "le plan dérive et compare des variantes ; il n'en fusionne aucune"
     }
    ]
   },
@@ -3590,6 +3587,29 @@
       }
      }
     ]
+   },
+   {
+    "variante": "C",
+    "cle": "C2",
+    "libelle": "ligne s6-b-ligne ajoutée (autre tracé que dans B)",
+    "commandes": [
+     {
+      "toolId": "studio.dessin.ligne",
+      "params": {
+       "id": "s6-b-ligne",
+       "type": "line",
+       "layerId": "axes",
+       "start": {
+        "x": -3,
+        "y": -6
+       },
+       "end": {
+        "x": -1,
+        "y": -6
+       }
+      }
+     }
+    ]
    }
   ],
   "feuille": {
@@ -3639,6 +3659,17 @@
     "tolerance": 1e-9,
     "unite": "m3",
     "source": "Exigence de recette synthétique du corpus S6, sans valeur réglementaire"
+   }
+  ],
+  "fusions": [
+   {
+    "cle": "F1",
+    "libelle": "B fusionnée dans C (ancêtre A1)",
+    "source": "B",
+    "cible": "C",
+    "resolutions": {
+     "collision:objects:s6-b-ligne": "source"
+    }
    }
   ]
  },
@@ -3722,7 +3753,7 @@
    "C": {
     "wall": 26,
     "opening": 27,
-    "line": 26,
+    "line": 27,
     "dimension": 12,
     "text": 12,
     "murs": {
@@ -3735,7 +3766,35 @@
   "revisionsAjoutees": {
    "A": 3,
    "B": 2,
-   "C": 1
+   "C": 2
+  },
+  "fusions": {
+   "F1": {
+    "ancetre": "A1",
+    "conflits": [
+     "collision:objects:s6-b-ligne"
+    ],
+    "tete": {
+     "wall": 25,
+     "opening": 26,
+     "line": 27,
+     "dimension": 12,
+     "text": 12,
+     "murs": {
+      "brut": 89.99999999999997,
+      "deduit": 6.551999999999998,
+      "net": 83.44800000000002
+     }
+    },
+    "ligneGardee": {
+     "id": "s6-b-ligne",
+     "y": -2
+    },
+    "supprimes": [
+     "architecture:s6-1-fenetre",
+     "architecture:s6-1-mur-v"
+    ]
+   }
   },
   "exigences": {
    "valeurs": {

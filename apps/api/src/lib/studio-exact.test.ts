@@ -4,7 +4,7 @@
  * (fonction pure au-dessus du noyau), la route l'appelle avant `applyStudioCommands`.
  */
 import { describe, expect, it } from "vitest";
-import { applyStudioCommands, newStudioDocument, studioCaptureBooleen, type StudioCommand, type StudioDocument } from "@parcours/atelier-model";
+import { applyStudioCommands, newStudioDocument, studioCaptureBooleen, type StudioCommand, type StudioDocument, type StudioSolideExactBooleen } from "@parcours/atelier-model";
 import { MoteurExact } from "@parcours/geometry-exact";
 import { revaliderBooleensStudio } from "./studio-exact.js";
 
@@ -35,7 +35,7 @@ describe("revaliderBooleensStudio (lot F2) : le serveur fait autorité", () => {
     expect(p.resultat.maillage).toEqual(r.maillage);
     const apres = applyStudioCommands(d, cs);
     expect(apres.exacts![0]!.resultat.volume).toBeCloseTo(12, 9);
-    expect(apres.exacts![0]!.operandes.map((o) => o.id)).toEqual(["A", "B"]);
+    expect((apres.exacts![0]! as StudioSolideExactBooleen).operandes.map((o) => o.id)).toEqual(["A", "B"]);
   });
 
   it("empreinte différente (calcul du client sur d'autres opérandes) : refus 400 exact-mismatch, rien n'est appliqué", async () => {

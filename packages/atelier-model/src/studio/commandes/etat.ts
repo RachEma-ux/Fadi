@@ -7,6 +7,8 @@ import { studioAnchorPoint } from "../objets/index.js";
 import { etatCalque, type StudioLayerState } from "../noyau/calques.js";
 import type { StudioSolid } from "../objets-3d/solides.js";
 import type { StudioSolideExact } from "../objets-3d/exacts.js";
+import type { StudioSurfaceLibre } from "../objets-3d/surfaces-libres.js";
+import type { StudioSurfaceSubdivision } from "../objets-3d/subdivisions.js";
 import type { StudioCoteFace } from "../objets-3d/cotes-faces.js";
 import type { StudioLayer } from "../noyau/types.js";
 import { fail, same } from "../noyau/validation.js";
@@ -17,6 +19,10 @@ import type { StudioNonNatif } from "../non-natifs/non-natifs.js";
 import type { StudioGraphisme } from "../graphismes/graphismes.js";
 import type { StudioSystemeProjet } from "../reperes.js";
 import type { StudioSourceExterne } from "../sources/sources.js";
+import type { StudioNiveau } from "../batiment/niveaux.js";
+import type { StudioComposant, StudioOccurrence } from "../batiment/composants.js";
+import type { StudioDefinitionBloc, StudioInsertionBloc } from "../blocs/blocs.js";
+import type { StudioContrainte } from "../contraintes/contraintes.js";
 
 /** État privé d'un lot de commandes (clone du document, tout ou rien) et contrôles partagés par les familles de commandes. */
 
@@ -29,6 +35,10 @@ export interface Etat {
   solides: StudioSolid[];
   /** Solides exacts (lot F2, `StudioDocument.exacts`) : résultats du noyau exact, opérandes conservés. */
   exacts: StudioSolideExact[];
+  /** Surfaces libres NURBS (X.1-05, `StudioDocument.surfaces`). */
+  surfaces: StudioSurfaceLibre[];
+  /** Surfaces de subdivision (X.1-05, `StudioDocument.subdivisions`). */
+  subdivisions: StudioSurfaceSubdivision[];
   /** Cotes de faces 3D (INV-013, lot G2, `StudioDocument.cotesFaces`). */
   cotesFaces: StudioCoteFace[];
   /** Cotes angulaires et textes (`StudioDocument.annotations`). */
@@ -45,6 +55,18 @@ export interface Etat {
   systemeProjet?: StudioSystemeProjet;
   /** Sources externes déclarées (`StudioDocument.sources`, EX-014) ; identifiants propres à la liste. */
   sources: StudioSourceExterne[];
+  /** Niveaux (`StudioDocument.niveaux`, lot W3-B). */
+  niveaux: StudioNiveau[];
+  /** Définitions de composants 3D (`StudioDocument.composants`, lot W3-B). */
+  composants: StudioComposant[];
+  /** Occurrences de composants 3D (`StudioDocument.occurrences`, lot W3-B). */
+  occurrences: StudioOccurrence[];
+  /** Définitions de blocs (`StudioDocument.blocs`, X.1-01) ; identifiants uniques dans tout le document. */
+  blocs: StudioDefinitionBloc[];
+  /** Insertions de blocs (`StudioDocument.insertions`, X.1-01) ; géométrie dérivée de leur définition. */
+  insertions: StudioInsertionBloc[];
+  /** Contraintes géométriques (`StudioDocument.contraintes`, X.1-01). */
+  contraintes: StudioContrainte[];
   /** Identifiants d'objets et de cotes présents : contrôle d'unicité en temps constant (un import peut compter 20 000 créations). */
   ids: Set<string>;
 }

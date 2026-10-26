@@ -12,7 +12,8 @@ import {
 /** Types déclarés par le schéma d'une liste du document (un `oneOf` de types, ou un type seul). */
 function typesDuSchema(items: unknown): string[] {
   const it = items as { oneOf?: { properties: { type: { const: string } } }[]; properties?: { type: { const: string } } };
-  return it.oneOf ? it.oneOf.map((s) => s.properties.type.const) : [it.properties!.type.const];
+  // Types distincts : un même type peut avoir plusieurs formes (solide exact booléen ou épaissi, X.1-05).
+  return it.oneOf ? [...new Set(it.oneOf.map((s) => s.properties.type.const))] : [it.properties!.type.const];
 }
 
 /** Document qui contient chaque type d'élément, extrudé ou non, sur des calques visibles, masqués et réécrits. */
@@ -60,7 +61,8 @@ describe("Table des capacités : source unique, couvre chaque type du modèle", 
       const categorie = parListe[cle] as keyof typeof STUDIO_CAPACITES_EXPORT;
       const table = STUDIO_CAPACITES_EXPORT[categorie] as Record<string, Record<string, unknown>>;
       // Les propriétés déclarées (E.1-01) n'ont pas de discriminant `type` : un seul type, « propriete ».
-      const types = cle === "proprietes" ? ["propriete"] : typesDuSchema((schema as { items: unknown }).items);
+      // Les contraintes (X.1-01) non plus (leur `type` est la nature de la contrainte) : un seul type, « contrainte ».
+      const types = cle === "proprietes" ? ["propriete"] : cle === "contraintes" ? ["contrainte"] : cle === "niveaux" ? ["niveau"] : cle === "composants" ? ["composant"] : typesDuSchema((schema as { items: unknown }).items);
       expect(Object.keys(table).sort(), cle).toEqual([...types].sort());
       for (const t of types) for (const f of STUDIO_FORMATS_ECHANGE) expect(typeof table[t]![f], `${cle}.${t}.${f}`).toBe("function");
     }

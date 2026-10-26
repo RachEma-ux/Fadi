@@ -21,6 +21,8 @@ export const LIBELLE_NATURE: Readonly<Record<NatureQuantite, string>> = {
   "polyligne-ouverte-extrudee": "Polyligne ouverte extrudée", "polyligne-fermee": "Polyligne fermée",
   "prisme-polyligne": "Prisme (polyligne fermée extrudée)", "non-pris-en-charge": "Type non pris en charge",
   "mur-architectural": "Mur (objet architectural)", ouverture: "Ouverture (objet architectural)", "echelle-acces": "Échelle d’accès (objet architectural)",
+  poteau: "Poteau (élément structurel, géométrie seulement)", poutre: "Poutre (élément structurel, géométrie seulement)", dalle: "Dalle (élément structurel, géométrie seulement)",
+  "occurrence-composant": "Occurrence de composant (volume de sa définition)",
 };
 export const LIBELLE_MOTIF: Readonly<Record<MotifNonEvalue, string>> = {
   "non-extrude": "non extrudé", "epaisseur-non-declaree": "épaisseur non déclarée",

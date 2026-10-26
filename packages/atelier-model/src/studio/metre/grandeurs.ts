@@ -36,4 +36,6 @@ export type NatureQuantite =
   | "mur-architectural" | "ouverture"
   /** EX-027 (lot G2) : échelle d’accès (longueur cumulée des montants et des échelons, hauteur, volume de matière). */
   | "echelle-acces"
+  /** Lot W3-B : éléments structurels typés (géométrie seulement) et occurrence de composant 3D (volume de sa définition). */
+  | "poteau" | "poutre" | "dalle" | "occurrence-composant"
   | "non-pris-en-charge";

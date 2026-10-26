@@ -37,9 +37,10 @@ export function ordonnanceurExact(): Ordonnanceur {
     surEvenement: (e) => { journalExact.push(e); if (journalExact.length > TAILLE_JOURNAL) journalExact.splice(0, journalExact.length - TAILLE_JOURNAL); },
     // IF-007 : tant que le noyau n'est pas prêt, la tâche est d'abord `loading` (téléchargement et compilation du .wasm).
     aCharger: () => noyauExactStudio.metriques().etat !== "pret",
-    executer: async ({ charge, signal, delaiMs, demarre }) => {
-      const fin = ressourcesStudio.utiliser("noyau-exact", "tache:booleen");
-      const mesure = perfStudio.debut("PERF-07", { nature: "booleen" });
+    executer: async ({ charge, nature, signal, delaiMs, demarre }) => {
+      // Booléen (lot F2) ou épaississement d'une surface libre (X.1-05) : même noyau, même relevé PERF-07.
+      const fin = ressourcesStudio.utiliser("noyau-exact", `tache:${nature}`);
+      const mesure = perfStudio.debut("PERF-07", { nature });
       try {
         await noyauExactStudio.charger();
         demarre();
@@ -54,7 +55,7 @@ export function ordonnanceurExact(): Ordonnanceur {
         throw e;
       } finally {
         fin();
-        echantillonMemoire("exact:booleen");
+        echantillonMemoire(`exact:${nature}`);
       }
     },
   }));
