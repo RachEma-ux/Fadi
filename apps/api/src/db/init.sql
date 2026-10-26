@@ -1302,7 +1302,10 @@ ALTER TABLE studio_dossiers DROP CONSTRAINT IF EXISTS studio_dossiers_section_vi
 -- les voies d'insertion ; les lignes existantes reçoivent une identité dérivée de leur commentaire.
 ALTER TABLE studio_observations ADD COLUMN IF NOT EXISTS issue_id text;
 ALTER TABLE studio_observations ALTER COLUMN issue_id SET DEFAULT ('issue_' || md5(random()::text || clock_timestamp()::text));
-UPDATE studio_observations SET issue_id = 'issue_' || md5(comment_id) WHERE issue_id IS NULL;
+-- Reprise en bloc DO : init.sql ne porte que des CREATE / ALTER / DO (contrôle du profil Studio V1, studio-v1-profile.py).
+DO $$ BEGIN
+  UPDATE studio_observations SET issue_id = 'issue_' || md5(comment_id) WHERE issue_id IS NULL;
+END $$;
 ALTER TABLE studio_observations ALTER COLUMN issue_id SET NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS studio_observations_issue_unique ON studio_observations(issue_id);
 ALTER TABLE studio_observations ADD COLUMN IF NOT EXISTS categorie text;

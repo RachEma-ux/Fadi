@@ -67,7 +67,7 @@ export const DOMAINES_COMMANDES = Object.freeze({
   "accrochage-sommets": "dessin", "accrochage-grille": "dessin", "accrochage-milieu": "dessin", "accrochage-centre": "dessin", "accrochage-quadrant": "dessin",
   "accrochage-intersection": "dessin", "accrochage-perpendiculaire": "dessin", "accrochage-tangente": "dessin", "accrochage-parallele": "dessin", "accrochage-proche": "dessin", "accrochage-cible-suivante": "dessin",
   "reperage-orthogonal": "dessin", "reperage-polaire": "dessin", "pas-polaire": "dessin",
-  "exporter-png": A_DEFINIR, "importer-dxf": A_DEFINIR, "importer-ifc": A_DEFINIR, "modeles-externes": A_DEFINIR, "exporter-svg": A_DEFINIR, "exporter-dxf": A_DEFINIR, "exporter-ifc": A_DEFINIR, echanges: A_DEFINIR,
+  "exporter-png": A_DEFINIR, "importer-dxf": A_DEFINIR, "importer-ifc": A_DEFINIR, "modeles-externes": A_DEFINIR, "exporter-svg": A_DEFINIR, "exporter-dxf": A_DEFINIR, "exporter-ifc": A_DEFINIR, "exporter-obj": A_DEFINIR, "exporter-stl": A_DEFINIR, "exporter-step": A_DEFINIR, echanges: A_DEFINIR,
   feuille: "documentation", dossier: "documentation",
   // AC-010 (lot G2) : l'approbation d'une publication (« revues et publications ») : Documentation.
   approuver: "documentation",

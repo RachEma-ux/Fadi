@@ -12,24 +12,24 @@ manquant ; aucun test citant une exigence inconnue des fiches ; aucun lien de CI
 
 ## EX-100 — critère de preuve (preuves d'exécution du registre)
 
-Preuves d'exécution (`test_automatise`, `recette_e2e`) : 995 ; conformité attribuable : 0.
+Preuves d'exécution (`test_automatise`, `recette_e2e`) : 1033 ; conformité attribuable : 0.
 
 | Champ exigé | Preuves où il manque |
 |---|---:|
-| build | 967 |
-| commit | 178 |
-| contrat | 995 |
-| corpus | 995 |
-| environnement | 178 |
-| executant | 995 |
-| date | 178 |
-| verdict | 995 |
+| build | 1005 |
+| commit | 101 |
+| contrat | 1033 |
+| corpus | 1033 |
+| environnement | 101 |
+| executant | 1033 |
+| date | 101 |
+| verdict | 1033 |
 | log | 578 |
 | reference | 1 |
 | scenario | 0 |
 
-Refus « preuve sans SHA » : 178 preuves, 92 tâches. Refus « lien de CI sans scénario » : 0.
-Tâches « Vérifié » ou « Accepté » dont aucune preuve d'exécution n'est attribuable : 283 (le statut documentaire du registre n'est pas une conformité ; aucune n'est déclarée conforme).
+Refus « preuve sans SHA » : 101 preuves, 56 tâches. Refus « lien de CI sans scénario » : 0.
+Tâches « Vérifié » ou « Accepté » dont aucune preuve d'exécution n'est attribuable : 339 (le statut documentaire du registre n'est pas une conformité ; aucune n'est déclarée conforme).
 
 ## EX-102 — lien bidirectionnel (104 fiches EX)
 
@@ -40,8 +40,8 @@ Tâches « Vérifié » ou « Accepté » dont aucune preuve d'exécution n'est 
 | proprietaire | 0 |
 | contrat | 0 |
 | composant | 0 |
-| tests | 17 |
-| preuves | 21 |
+| tests | 4 |
+| preuves | 8 |
 | etat | 0 |
 | decision | 0 |
 
@@ -55,6 +55,7 @@ Fiches EX avec au moins un test lié (registre ou titre de test) :
 - EX-002 : 4 test(s), 0 preuve(s) d'exécution consignée(s)
 - EX-003 : 6 test(s), 2 preuve(s) d'exécution consignée(s)
 - EX-004 : 5 test(s), 1 preuve(s) d'exécution consignée(s)
+- EX-005 : 6 test(s), 2 preuve(s) d'exécution consignée(s)
 - EX-006 : 2 test(s), 1 preuve(s) d'exécution consignée(s)
 - EX-007 : 5 test(s), 3 preuve(s) d'exécution consignée(s)
 - EX-008 : 6 test(s), 2 preuve(s) d'exécution consignée(s)
@@ -65,7 +66,7 @@ Fiches EX avec au moins un test lié (registre ou titre de test) :
 - EX-013 : 8 test(s), 3 preuve(s) d'exécution consignée(s)
 - EX-014 : 9 test(s), 4 preuve(s) d'exécution consignée(s)
 - EX-015 : 5 test(s), 3 preuve(s) d'exécution consignée(s)
-- EX-016 : 2 test(s), 0 preuve(s) d'exécution consignée(s)
+- EX-016 : 3 test(s), 0 preuve(s) d'exécution consignée(s)
 - EX-017 : 6 test(s), 6 preuve(s) d'exécution consignée(s)
 - EX-018 : 5 test(s), 5 preuve(s) d'exécution consignée(s)
 - EX-019 : 8 test(s), 1 preuve(s) d'exécution consignée(s)
@@ -76,14 +77,23 @@ Fiches EX avec au moins un test lié (registre ou titre de test) :
 - EX-024 : 6 test(s), 6 preuve(s) d'exécution consignée(s)
 - EX-025 : 4 test(s), 3 preuve(s) d'exécution consignée(s)
 - EX-026 : 5 test(s), 2 preuve(s) d'exécution consignée(s)
+- EX-028 : 3 test(s), 1 preuve(s) d'exécution consignée(s)
+- EX-029 : 4 test(s), 1 preuve(s) d'exécution consignée(s)
+- EX-030 : 5 test(s), 1 preuve(s) d'exécution consignée(s)
 - EX-031 : 5 test(s), 2 preuve(s) d'exécution consignée(s)
 - EX-032 : 1 test(s), 1 preuve(s) d'exécution consignée(s)
+- EX-033 : 3 test(s), 2 preuve(s) d'exécution consignée(s)
+- EX-034 : 10 test(s), 3 preuve(s) d'exécution consignée(s)
 - EX-035 : 4 test(s), 1 preuve(s) d'exécution consignée(s)
 - EX-036 : 15 test(s), 2 preuve(s) d'exécution consignée(s)
 - EX-037 : 2 test(s), 1 preuve(s) d'exécution consignée(s)
 - EX-038 : 3 test(s), 1 preuve(s) d'exécution consignée(s)
 - EX-039 : 6 test(s), 6 preuve(s) d'exécution consignée(s)
+- EX-040 : 2 test(s), 1 preuve(s) d'exécution consignée(s)
+- EX-041 : 4 test(s), 1 preuve(s) d'exécution consignée(s)
+- EX-042 : 22 test(s), 3 preuve(s) d'exécution consignée(s)
 - EX-043 : 6 test(s), 1 preuve(s) d'exécution consignée(s)
+- EX-044 : 6 test(s), 1 preuve(s) d'exécution consignée(s)
 - EX-045 : 8 test(s), 3 preuve(s) d'exécution consignée(s)
 - EX-046 : 18 test(s), 3 preuve(s) d'exécution consignée(s)
 - EX-047 : 2 test(s), 1 preuve(s) d'exécution consignée(s)
@@ -92,6 +102,7 @@ Fiches EX avec au moins un test lié (registre ou titre de test) :
 - EX-050 : 6 test(s), 6 preuve(s) d'exécution consignée(s)
 - EX-051 : 6 test(s), 3 preuve(s) d'exécution consignée(s)
 - EX-052 : 5 test(s), 3 preuve(s) d'exécution consignée(s)
+- EX-053 : 4 test(s), 1 preuve(s) d'exécution consignée(s)
 - EX-054 : 5 test(s), 2 preuve(s) d'exécution consignée(s)
 - EX-055 : 13 test(s), 4 preuve(s) d'exécution consignée(s)
 - EX-056 : 8 test(s), 3 preuve(s) d'exécution consignée(s)
@@ -99,7 +110,8 @@ Fiches EX avec au moins un test lié (registre ou titre de test) :
 - EX-058 : 2 test(s), 1 preuve(s) d'exécution consignée(s)
 - EX-060 : 5 test(s), 5 preuve(s) d'exécution consignée(s)
 - EX-061 : 6 test(s), 2 preuve(s) d'exécution consignée(s)
-- EX-062 : 1 test(s), 0 preuve(s) d'exécution consignée(s)
+- EX-062 : 4 test(s), 2 preuve(s) d'exécution consignée(s)
+- EX-063 : 6 test(s), 1 preuve(s) d'exécution consignée(s)
 - EX-064 : 4 test(s), 1 preuve(s) d'exécution consignée(s)
 - EX-065 : 3 test(s), 2 preuve(s) d'exécution consignée(s)
 - EX-066 : 7 test(s), 2 preuve(s) d'exécution consignée(s)
@@ -110,11 +122,12 @@ Fiches EX avec au moins un test lié (registre ou titre de test) :
 - EX-071 : 10 test(s), 3 preuve(s) d'exécution consignée(s)
 - EX-072 : 7 test(s), 2 preuve(s) d'exécution consignée(s)
 - EX-073 : 4 test(s), 1 preuve(s) d'exécution consignée(s)
-- EX-074 : 10 test(s), 3 preuve(s) d'exécution consignée(s)
-- EX-075 : 14 test(s), 3 preuve(s) d'exécution consignée(s)
+- EX-074 : 11 test(s), 3 preuve(s) d'exécution consignée(s)
+- EX-075 : 17 test(s), 3 preuve(s) d'exécution consignée(s)
 - EX-076 : 7 test(s), 3 preuve(s) d'exécution consignée(s)
 - EX-077 : 4 test(s), 2 preuve(s) d'exécution consignée(s)
 - EX-078 : 8 test(s), 1 preuve(s) d'exécution consignée(s)
+- EX-079 : 3 test(s), 0 preuve(s) d'exécution consignée(s)
 - EX-080 : 6 test(s), 1 preuve(s) d'exécution consignée(s)
 - EX-081 : 4 test(s), 1 preuve(s) d'exécution consignée(s)
 - EX-082 : 9 test(s), 2 preuve(s) d'exécution consignée(s)
@@ -151,6 +164,7 @@ Sens inverse (test → exigence) : chaque fichier de test qui cite une exigence 
 - `apps/api/src/routes/studio-illustrations.test.ts` → EX-071, EX-072, EX-094
 - `apps/api/src/routes/studio-journal-acces.test.ts` → EX-046
 - `apps/api/src/routes/studio-observations-rapprochement.test.ts` → EX-086
+- `apps/api/src/routes/studio-profils-import.test.ts` → EX-079
 - `apps/api/src/routes/studio-pub.preuves-pub.test.ts` → EX-068, EX-074, EX-075, EX-076, IF-008, IF-009, IF-010
 - `apps/api/src/routes/studio.preuves-e.test.ts` → EX-082, EX-090, EX-093
 - `apps/api/src/testing/studio-comptes.preuves-a.test.ts` → EX-001
@@ -177,6 +191,7 @@ Sens inverse (test → exigence) : chaque fichier de test qui cite une exigence 
 - `packages/atelier-model/src/studio/conclusions-controle.test.ts` → EX-068
 - `packages/atelier-model/src/studio/copie-independante.test.ts` → EX-013
 - `packages/atelier-model/src/studio/delegation-approbation.test.ts` → EX-085
+- `packages/atelier-model/src/studio/echanges/matrice-echanges.test.ts` → EX-079
 - `packages/atelier-model/src/studio/identite-bim.preuves-e.test.ts` → EX-064
 - `packages/atelier-model/src/studio/projections.preuves-a.test.ts` → EX-011
 - `packages/atelier-model/src/studio/quantites.preuves-e.test.ts` → EX-078
@@ -193,8 +208,8 @@ Fiches critiques : 141 ; déclarées conformes : 0 ; pouvant l'être aujourd'hui
 
 | Champ | Fiches critiques où il manque |
 |---|---:|
-| test | 26 |
-| resultat | 75 |
+| test | 9 |
+| resultat | 54 |
 | build | 141 |
 | preuve | 141 |
 | decision | 0 |

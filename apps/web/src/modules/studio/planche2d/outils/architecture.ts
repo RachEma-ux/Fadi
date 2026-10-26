@@ -38,7 +38,7 @@ export const OUTIL_OUVERTURE: OutilPlanche = {
 };
 
 /**
- * Échelle d'accès (EX-027, Ctrl+Maj+F8) : un clic pose le milieu du pied de l'échelle, avec l'entre-axe, la hauteur,
+ * Échelle d'accès (EX-027, Ctrl+Maj+F12) : un clic pose le milieu du pied de l'échelle, avec l'entre-axe, la hauteur,
  * la cote du pied, le nombre d'échelons, la section et l'orientation saisis dans le panneau « Architecture ».
  */
 export const OUTIL_ECHELLE: OutilPlanche = {

@@ -155,6 +155,7 @@ réelle ; la liste des fichiers est vérifiée par ce test (tout nouveau fichier
 
 | Fichier | Routes | Données Studio |
 |---|---|---|
+| `routes/atelier-commands.ts` | GET /atelier/solides-exacts/:objetId/export.step, POST /atelier/import-step | aucune donnée Studio : mesure de la consommation du noyau exact (surveillanceStudio, R.5-03 / OPS-08), compteurs en mémoire du processus |
 | `routes/auth.ts` | GET /auth/me/export | commentaires Studio rédigés par le compte, dans l'export de ses données personnelles (D-5, gestion des comptes) — lecture de ses propres lignes seulement |
 | `routes/examples.ts` | POST /examples/:exampleId/import | étude exemple Studio du P.118 installée après l'import validé (`lib/studio-exemple.ts`, contrat de commandes ; un échec n'annule pas l'import) |
 | `routes/com.ts` | POST /projects/:projectId/com/messages/:messageId/actions (type observation-studio) ; GET /projects/:projectId/com/plan ; POST …/com/conversations/:conversationId/messages (épingle) ; GET …/com/activite, …/com/revues | observation Studio ouverte depuis un message par `openStudioObservation` (mêmes droits et refus que la route Studio d'ouverture directe, révision et objets de l'épingle repris) ; plan SVG et validation d'une épingle par `readStudioContext` (droit `read` de Studio) ; activité et revues relues sans écriture. La Communication ne garde que des liens (COM-R7, Issue #280, lot COM-13) |

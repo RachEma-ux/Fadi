@@ -98,3 +98,31 @@ export function studioInvaliderDomaines(etats: StudioEtatsDomaines, revision: st
 export function studioDomainesPerimes(etats: StudioEtatsDomaines): StudioDomaineDerive[] {
   return STUDIO_DOMAINES_DERIVES.filter((d) => etats[d].etat !== "a-jour" && etats[d].etat !== "non-applicable");
 }
+
+/**
+ * État d'un contenu dérivé affiché par un panneau (métré, feuille, publication — EX-016), depuis ce que le panneau sait
+ * de lui : révision courante de sa source, révision du résultat affiché, calcul en cours, échec, contrat inapplicable.
+ * L'ordre est fixe : non applicable, puis échec, puis « à jour » (le résultat affiché est celui de la révision
+ * courante), puis « en calcul », sinon « à recalculer ». Un échec ne garde jamais pour image la révision courante
+ * (l'ancienne image reste une image ancienne, jamais présentée « à jour », oracle `studioEtatDeriveCoherent`).
+ */
+export interface StudioEntreeEtatContenu {
+  /** Révision courante de la source (clé comparable à `image`). */
+  revision: string;
+  /** Révision du résultat affiché, ou null s'il n'y en a aucun. */
+  image: string | null;
+  /** Un calcul (ou une actualisation) est lancé pour la révision courante. */
+  enCours: boolean;
+  /** Motif d'échec du dernier calcul de la révision courante, ou null. */
+  echec: string | null;
+  /** Motif pour lequel le contrat du contenu ne s'applique pas, ou null. */
+  nonApplicable: string | null;
+}
+
+export function studioEtatDeriveContenu(e: StudioEntreeEtatContenu): StudioEtatDerive {
+  if (e.nonApplicable !== null) return { etat: "non-applicable", revision: e.revision, image: e.image, motif: e.nonApplicable };
+  if (e.echec !== null) return { etat: "echec", revision: e.revision, image: e.image === e.revision ? null : e.image, motif: e.echec };
+  if (e.image !== null && e.image === e.revision) return { etat: "a-jour", revision: e.revision, image: e.image, motif: null };
+  if (e.enCours) return { etat: "en-calcul", revision: e.revision, image: e.image, motif: null };
+  return { etat: "a-recalculer", revision: e.revision, image: e.image, motif: null };
+}

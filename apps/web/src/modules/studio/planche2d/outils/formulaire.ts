@@ -8,6 +8,7 @@ import {
   studioAngleNormal, type StudioAnnotation, type StudioDimension, type StudioDocument, type StudioPoint, type StudioShape, type StudioTextJustification,
 } from "@parcours/atelier-model";
 import { estVisible } from "../calques";
+import { contoursMurs } from "../architecture/architecture-ui";
 import { ecrireSommets, lireSommets, pointsAccroche, sommetExact } from "../geometrie-2d";
 import type { StudioToolId } from "../raccourcis";
 import { commandeCoteAngulaireLibre, commandeTexte } from "./annotations";
@@ -149,7 +150,8 @@ export function soumettre(s: Saisie): ActionFormulaire {
   if (tool === "studio.dessin.texte") return commandeTexte({ ...creation, texte }, { x: values.x, y: values.y });
   if (tool === "studio.dessin.cote" && s.drawing) {
     const drawing = s.drawing;
-    const sommets = pointsAccroche(drawing.objects, l => estVisible(drawing, l));
+    // Sommets des formes et du contour des murs (cote associative sur mur, AC-001) : une extrémité saisie sur l'un d'eux y est liée.
+    const sommets = pointsAccroche([...drawing.objects, ...contoursMurs(drawing, l => estVisible(drawing, l))], l => estVisible(drawing, l));
     const debut = { x: values.x, y: values.y }, fin = { x: values.a, y: values.b };
     return commandeCote(creation, { point: debut, accroche: sommetExact(sommets, debut) }, { point: fin, accroche: sommetExact(sommets, fin) });
   }

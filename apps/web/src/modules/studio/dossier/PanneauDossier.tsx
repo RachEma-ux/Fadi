@@ -16,6 +16,8 @@ import { Icon } from "../../../components/Icon";
 import { api, ApiError, type StudioDossier, type StudioSectionView, type StudioSheet } from "../../../lib/api";
 import { LOCALE } from "../../../lib/i18n";
 import { Dialogue } from "../planche2d/CatalogueOutils";
+import { etatFeuille } from "../taches/etats-contenus";
+import { EtatContenu } from "../taches/EtatContenu";
 import {
   calquesProposes, corpsFeuille, deplacer, empreinteAbregee, libelleAjustements, libelleVueSource, messageRefusDossier, refusSaisie, resumeBilan, revisionCourte,
   saisieInitiale, type SaisieFeuilleUi,
@@ -79,17 +81,21 @@ export function PanneauDossier({ projectId, studyId, variantId, revisionId, revi
 function CarteFeuille({ projectId, studyId, feuille: f, ecriture, surChange }: { projectId: string; studyId: string; feuille: StudioSheet; ecriture: boolean; surChange: () => Promise<unknown> }) {
   const [erreur, setErreur] = useState("");
   const [enCours, setEnCours] = useState(false);
-  async function agir(action: () => Promise<unknown>) {
+  const [actualisation, setActualisation] = useState(false);
+  async function agir(action: () => Promise<unknown>, actualiser = false) {
     if (enCours) return;
-    setEnCours(true); setErreur("");
-    try { await action(); await surChange(); } catch (e) { setErreur(erreurDe(e)); } finally { setEnCours(false); }
+    setEnCours(true); setActualisation(actualiser); setErreur("");
+    try { await action(); await surChange(); } catch (e) { setErreur(erreurDe(e)); } finally { setEnCours(false); setActualisation(false); }
   }
   const p = f.provenance;
+  // EX-016 : l'un des cinq états de la feuille, en plus de son actualité (révision épinglée / tête de la variante).
+  const fraicheur = etatFeuille({ revisionId: f.revisionId, headRevisionId: f.headRevisionId, error: f.error, elements: p?.vue.elements ?? null, enCours: actualisation });
   return (
     <li className="studio-dossier-feuille" data-studio-feuille={f.id} data-numero={f.definition.numero} data-actualite={f.freshness} data-revision={f.revisionId} data-empreinte-donnees={p?.vue.empreinteDonnees ?? ""}>
       <div className="studio-dossier-feuille-tete">
         <strong translate="no">{`${f.definition.numero} — ${f.definition.titre}`}</strong>
         <span className={`studio-dossier-etat ${f.freshness === "perimee" ? "studio-dossier-perimee" : ""}`} data-studio-feuille-actualite>{f.freshness === "perimee" ? "Révision plus récente disponible" : "À jour"}</span>
+        <EtatContenu etat={fraicheur} nom="feuille" />
       </div>
       <dl className="studio-dossier-faits">
         <dt>Variante</dt><dd translate="no">{f.variantName}</dd>
@@ -104,7 +110,7 @@ function CarteFeuille({ projectId, studyId, feuille: f, ecriture, surChange }: {
       <div className="studio-dossier-actions">
         <a className="studio-lien-bouton" href={f.files.svg} download data-studio-feuille-svg><Icon name="studio-sheet-svg" size={18} /> SVG</a>
         <a className="studio-lien-bouton" href={f.files.pdf} download data-studio-feuille-pdf><Icon name="studio-sheet-pdf" size={18} /> PDF</a>
-        {ecriture && f.freshness === "perimee" && <button type="button" disabled={enCours} onClick={() => void agir(() => api.updateStudioSheet(projectId, studyId, f.id, { revisionId: f.headRevisionId }))} data-studio-feuille-actualiser>Actualiser sur la dernière révision</button>}
+        {ecriture && f.freshness === "perimee" && <button type="button" disabled={enCours} onClick={() => void agir(() => api.updateStudioSheet(projectId, studyId, f.id, { revisionId: f.headRevisionId }), true)} data-studio-feuille-actualiser>Actualiser sur la dernière révision</button>}
         {ecriture && <button type="button" disabled={enCours} onClick={() => void agir(() => api.deleteStudioSheet(projectId, studyId, f.id))} data-studio-feuille-supprimer>Supprimer la feuille</button>}
       </div>
       {erreur && <p role="alert" data-studio-feuille-erreur>{erreur}</p>}
@@ -211,6 +217,9 @@ function VuesCoupe({ projectId, studyId, variantId, vues, ecriture, surChange }:
           <span translate="no">{`z = ${v.definition.niveau.z} m · 1:${v.definition.echelle} · ${revisionCourte(v.revisionId)}`}</span>{" "}
           <span data-studio-vue-coupe-actualite>{v.freshness === "perimee" ? "Périmée : la variante a avancé depuis" : "À jour"}</span>
           {v.vue && <span translate="no" title={v.vue.empreinteSection}>{` · ${v.vue.coupe.sources.length} solide(s) coupé(s) · ${empreinteAbregee(v.vue.empreinteSection)}`}</span>}
+          {/* Section incomplète (AGENTS.md L9) : les solides non coupés sont nommés, comme sur la page publiée. */}
+          {v.vue && (v.vue.coupe.exactsNonCoupes?.length ?? 0) > 0 && <p role="note" data-studio-vue-coupe-omis={v.vue.coupe.exactsNonCoupes!.join(" ")}>
+            {`Section incomplète : ${v.vue.coupe.exactsNonCoupes!.length} solide(s) non coupé(s), absents de la page : `}<span translate="no">{v.vue.coupe.exactsNonCoupes!.join(", ")}</span></p>}
           {v.error && <span role="alert">{v.error}</span>}
           {v.definition.annotations.length > 0 && <ul>{v.definition.annotations.map((a) => <li key={a.id} translate="no">{a.texte}</li>)}</ul>}
           {ecriture && <div className="studio-dossier-actions">

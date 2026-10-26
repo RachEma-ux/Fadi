@@ -9,7 +9,10 @@ de leurs oracles et références visuelles (X.1-08).
 1. **Origine** : chaque scène est **générée par le code de ce dossier** (`s1-detail.ts` … `s7-hors-reseau.ts`, graines
    fixes `GRAINES_CORPUS`), de façon déterministe. Aucune donnée n'est importée d'une source tierce, d'un client ou d'un
    projet réel : géométrie synthétique seulement, sans matériau, valeur réglementaire ni valeur structurelle. Les
-   oracles (`oracles.ts`) et références visuelles (`references/`, `empreintes.json`) sont calculés par le même code.
+   oracles (`oracles.ts`) et références visuelles (`references/`, `empreintes.json`) sont calculés par le même code ;
+   les références rendues (`references/captures/`, X.1-08) sont des photographies, par la recette
+   `apps/web/e2e/studio-corpus-references.mjs` dans Chromium, de ces mêmes scènes posées par l'API ; les résultats
+   exacts des booléens de S5 (`fixtures/s5-exacts.ts`) sont calculés par le noyau OCCT du dépôt.
 2. **Licence du dépôt** : le dépôt `RachEma-ux/Fadi` ne déclare **aucune licence ouverte** — aucun fichier `LICENSE`,
    `LICENCE` ou `COPYING` à la racine, aucun champ `license` dans les manifestes, paquets `"private": true`. Le code et
    ce qu'il génère restent donc sous les **droits réservés du titulaire du dépôt** (le maître d'ouvrage), régime par

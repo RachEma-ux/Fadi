@@ -35,9 +35,9 @@ function volumeMaillage(m: { vertices: { x: number; y: number; z: number }[]; tr
 }
 
 describe("EX-027 [+] — Échelle d'accès : outil du registre, géométrie, propriétés, plan, 3D, exports (lot G2)", () => {
-  it("registre : mutation de la barre Architecture, Ctrl+Maj+F8, icône propre, acceptée par l'API et appliquée par le modèle ; distincte de la transformation Échelle", () => {
+  it("registre : mutation de la barre Architecture, Ctrl+Maj+F12, icône propre, acceptée par l'API et appliquée par le modèle ; distincte de la transformation Échelle", () => {
     const t = STUDIO_TOOLS.find((x) => x.toolId === "studio.architecture.echelle-acces")!;
-    expect(t).toMatchObject({ libelleFR: "Échelle d’accès", raccourci: "Ctrl+Shift+F8", iconeSymbolique: "studio-ladder", groupe: "architecture", nature: "mutation", agentExposure: "none" });
+    expect(t).toMatchObject({ libelleFR: "Échelle d’accès", raccourci: "Ctrl+Shift+F12", iconeSymbolique: "studio-ladder", groupe: "architecture", nature: "mutation", agentExposure: "none" });
     expect(STUDIO_COMMAND_TOOL_IDS).toContain("studio.architecture.echelle-acces");
     const transformation = STUDIO_TOOLS.find((x) => x.toolId === "studio.dessin.echelle")!;
     expect(transformation.groupe).toBe("modification");

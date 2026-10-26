@@ -233,6 +233,41 @@ export function empreinteOctets(octets: Uint8Array): string {
 }
 
 // ---------------------------------------------------------------------------
+// Pièces d'un export STEP nommé
+// ---------------------------------------------------------------------------
+
+/** Solide d'une pièce STEP : extrusion, brep existant, ou lissage réglé entre deux contours fermés de même taille (m). */
+export type SolideStep = { extrusion: Extrusion } | { brep: string; pose?: Pose } | { lissage: [Point3[], Point3[]] };
+export interface PieceStep { nom: string; solides: SolideStep[] }
+export interface PieceStepLue { nom: string; solides: number; volume: number; boite: { min: Point3; max: Point3 } | null }
+
+/** Nom d'un produit STEP : ASCII imprimable (1 à 256), sans apostrophe ni barre oblique inverse (aucun échappement). */
+const NOM_STEP = /^[\x20-\x26\x28-\x5B\x5D-\x7E]{1,256}$/;
+const LIMITE_PIECES = 20000;
+
+export function validerPiecesStep(brut: unknown): PieceStep[] {
+  if (!Array.isArray(brut) || brut.length < 1 || brut.length > LIMITE_PIECES) throw new ErreurExacte("pieces", `1 à ${LIMITE_PIECES} pièces attendues`);
+  return brut.map((p, i) => {
+    const chemin = `pieces[${i}]`;
+    const o = (p ?? {}) as { nom?: unknown; solides?: unknown };
+    if (typeof o.nom !== "string" || !NOM_STEP.test(o.nom)) throw new ErreurExacte(`${chemin}.nom`, "nom ASCII imprimable sans apostrophe ni barre oblique inverse attendu");
+    if (!Array.isArray(o.solides) || o.solides.length < 1 || o.solides.length > 1024) throw new ErreurExacte(`${chemin}.solides`, "1 à 1 024 solides attendus");
+    const solides = o.solides.map((s, j): SolideStep => {
+      const cs = `${chemin}.solides[${j}]`;
+      if (s && typeof s === "object" && "lissage" in s) {
+        const l = (s as { lissage: unknown }).lissage;
+        if (!Array.isArray(l) || l.length !== 2) throw new ErreurExacte(`${cs}.lissage`, "deux contours attendus");
+        const a = contour3(l[0], `${cs}.lissage[0]`), b = contour3(l[1], `${cs}.lissage[1]`);
+        if (a.length !== b.length) throw new ErreurExacte(`${cs}.lissage`, "contours de même nombre de sommets attendus");
+        return { lissage: [a, b] };
+      }
+      return operande(s, cs);
+    });
+    return { nom: o.nom, solides };
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Moteur
 // ---------------------------------------------------------------------------
 
@@ -413,6 +448,60 @@ export class MoteurExact {
       const s = this.operande(ps ? { brep: b, pose: ps } : { brep: b }, garder);
       return this.k.exportStep(s);
     } finally { for (const s of liberer) { try { this.k.release(s); } catch { /* déjà libéré */ } } }
+  }
+
+  /**
+   * Fichier STEP **nommé** (assemblage XCAF, schéma AP214 `AUTOMOTIVE_DESIGN` écrit par OCCT) : un produit par pièce,
+   * nommé par `nom`, fait d'un ou plusieurs solides (extrusion d'un contour, lissage réglé entre deux contours 3D, brep
+   * existant), juxtaposés sans fusion. Géométrie reçue en **mètres** (repère local) ; OCCT écrit le STEP en millimètres
+   * (`SI_UNIT(.MILLI.,.METRE.)`) : la géométrie est mise à l'échelle × 1 000 avant l'écriture, l'unité déclarée est donc
+   * exacte. L'horodatage de l'en-tête (`FILE_NAME`) est remplacé par `horodatage` (reproductible) et le nom du fichier
+   * par `nomFichier`. Lève `ErreurExacte` sur une entrée mal formée.
+   */
+  exporterStepPieces(piecesBrutes: unknown, options: { horodatage: string; nomFichier: string }): string {
+    const pieces = validerPiecesStep(piecesBrutes);
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(options.horodatage)) throw new ErreurExacte("horodatage", "AAAA-MM-JJTHH:MM:SS attendu");
+    if (!NOM_STEP.test(options.nomFichier)) throw new ErreurExacte("nomFichier", "nom ASCII imprimable sans apostrophe ni barre oblique inverse attendu");
+    const liberer: ShapeHandle[] = [];
+    const garder = (s: ShapeHandle) => { liberer.push(s); return s; };
+    const doc = this.k.createXCAFDocument();
+    try {
+      for (const p of pieces) {
+        const formes = p.solides.map((s) => ("lissage" in s ? garder(this.k.loft(s.lissage.map((c) => garder(this.fil3(c, true, garder))), true, true)) : this.operande(s, garder)));
+        const forme = formes.length === 1 ? formes[0]! : garder(this.k.makeCompound(formes));
+        doc.addShape(garder(this.k.scale(forme, { x: 0, y: 0, z: 0 }, 1000)), { name: p.nom });
+      }
+      const step = doc.exportSTEP();
+      const entete = /FILE_NAME\('(?:[^']|'')*','[^']*'/;
+      if (!entete.test(step)) throw new ErreurExacte("resultat", "en-tête FILE_NAME absent du STEP écrit");
+      return step.replace(entete, `FILE_NAME('${options.nomFichier}','${options.horodatage}'`);
+    } finally {
+      doc.close();
+      for (const s of liberer) { try { this.k.release(s); } catch { /* déjà libéré */ } }
+    }
+  }
+
+  /**
+   * Relit un STEP nommé (XCAF) : par produit racine, son nom, son nombre de solides, son volume (m³) et sa boîte
+   * englobante (m), l'unité du fichier étant convertie par OCCT. Sert au contrôle d'aller-retour de l'export.
+   */
+  lireStepPieces(step: string): PieceStepLue[] {
+    if (typeof step !== "string" || !/^ISO-10303-21;/.test(step.trimStart())) throw new ErreurExacte("step", "fichier STEP (ISO-10303-21) attendu");
+    const doc = this.k.importXCAFFromSTEP(step);
+    try {
+      return doc.getRoots().map((r) => {
+        const info = doc.getLabelInfo(r);
+        const s = info.shapeHandle;
+        if (s === null || s === undefined) return { nom: info.name, solides: 0, volume: 0, boite: null };
+        try {
+          const b = this.k.getBoundingBox(s);
+          return {
+            nom: info.name, solides: this.k.getSubShapes(s, "solid").length, volume: this.k.getVolume(s) / 1e9,
+            boite: { min: { x: b.xmin / 1000, y: b.ymin / 1000, z: b.zmin / 1000 }, max: { x: b.xmax / 1000, y: b.ymax / 1000, z: b.zmax / 1000 } },
+          };
+        } finally { try { this.k.release(s); } catch { /* déjà libéré */ } }
+      });
+    } finally { doc.close(); }
   }
 
   /** Maillage seul d'un brep (relecture, documents). */

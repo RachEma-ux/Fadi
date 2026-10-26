@@ -162,7 +162,7 @@ const PREF = `${S}/preferences`;
 const presente = (v: Record<string, unknown>) => ({ manifestHash: v.manifestHash, revisionId: v.revisionId, documentHash: v.documentHash });
 const profilAvecApprouver = () => ({
   format: "fadi-studio-profil/1", profileId: "studio_profil_chef", version: 2, profil: "personnel", favoris: [], personnel: [], groupes: [],
-  ordre: ["studio.publication.approuver", "studio.dessin.ligne"], raccourcis: { "studio.publication.approuver": "Ctrl+Shift+F7" },
+  ordre: ["studio.publication.approuver", "studio.dessin.ligne"], raccourcis: { "studio.publication.approuver": "Ctrl+Shift+F11" },
 });
 
 describe("AC-010 — « Approuver » découvert dans le catalogue, refusé par le serveur sans droit métier (lot G2)", () => {

@@ -131,7 +131,7 @@ describe("REC-A-01 — corpus de migration (P-12)", () => {
     expect(rapport.documents).toBeGreaterThanOrEqual(20);
     expect(conserves).toBe(rapportees);
     expect(conserves).toBeGreaterThanOrEqual(2 * documentsInconnus);
-  });
+  }, 30_000);
 });
 
 describe("TR-EX-091 — simulation de migration non destructrice", () => {

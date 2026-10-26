@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2.0482 -21.4352 35.9524 24.2424" data-schema="studio-document/1" data-document="s1-100-f1" data-units="m" data-frame="local-2d">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2.71195 -19.74495 38.4549 24.2159" data-schema="studio-document/1" data-document="s1-100-f1" data-units="m" data-frame="local-2d">
 <g data-layer="default" data-name="0" fill="none" stroke="#000" stroke-width="1" vector-effect="non-scaling-stroke">
 </g>
 <g data-layer="contours" data-name="Contours (synthétique)" fill="none" stroke="#000" stroke-width="1" vector-effect="non-scaling-stroke">
@@ -16,10 +16,6 @@
 <rect data-id="s1-5-rect" x="24.287" y="-10.247" width="2" height="2" vector-effect="non-scaling-stroke"/>
 <line data-id="s1-5-ligne" x1="24.287" y1="-10.747" x2="26.087" y2="-13.147" vector-effect="non-scaling-stroke"/>
 <rect data-id="s1-6-rect" x="0.45" y="-17.497" width="2.5" height="1" vector-effect="non-scaling-stroke"/>
-<line data-id="s1-6-ligne" x1="0.45" y1="-17.997" x2="1.05" y2="-18.797" vector-effect="non-scaling-stroke"/>
-<rect data-id="s1-7-rect" x="12.128" y="-17.521" width="3" height="1.5" vector-effect="non-scaling-stroke"/>
-<line data-id="s1-7-ligne" x1="12.128" y1="-18.021" x2="13.328" y2="-19.621" vector-effect="non-scaling-stroke"/>
-<rect data-id="s1-8-rect" x="24.27" y="-18.446" width="3.5" height="2" vector-effect="non-scaling-stroke"/>
 </g>
 <g data-layer="courbes" data-name="Courbes (synthétique)" fill="none" stroke="#000" stroke-width="1" vector-effect="non-scaling-stroke">
 <circle data-id="s1-0-cercle" cx="1.314" cy="-0.577" r="0.25" vector-effect="non-scaling-stroke"/>
@@ -49,14 +45,24 @@
 <circle data-id="s1-6-cercle" cx="1.7" cy="-16.997" r="0.5" vector-effect="non-scaling-stroke"/>
 <path data-id="s1-6-arc" data-type="arc" d="M 5.95 -17.497 A 0.5 0.5 0 0 0 5.45 -17.997" vector-effect="non-scaling-stroke"/>
 <path data-id="s1-6-renfle" data-type="polyline" d="M 6.95 -16.997 A 0.25 0.25 0 0 0 7.45 -16.997 A 0.25 0.25 0 0 0 6.95 -16.997 Z" vector-effect="non-scaling-stroke"/>
-<path data-id="s1-6-poly" data-type="polyline" d="M 0.45 -15.497 L 1.95 -15.497 A 0.25 0.25 0 0 0 2.45 -15.497" vector-effect="non-scaling-stroke"/>
-<circle data-id="s1-7-cercle" cx="13.628" cy="-16.771" r="0.625" vector-effect="non-scaling-stroke"/>
-<path data-id="s1-7-arc" data-type="arc" d="M 18.378 -17.021 A 0.75 0.75 0 0 0 16.878 -17.021" vector-effect="non-scaling-stroke"/>
-<path data-id="s1-7-renfle" data-type="polyline" d="M 19.128 -16.521 A 0.5 0.5 0 0 0 20.128 -16.521 A 0.5 0.5 0 0 0 19.128 -16.521 Z" vector-effect="non-scaling-stroke"/>
-<path data-id="s1-7-poly" data-type="polyline" d="M 12.128 -15.021 L 13.878 -15.021 A 0.25 0.25 0 0 0 14.378 -15.021" vector-effect="non-scaling-stroke"/>
-<circle data-id="s1-8-cercle" cx="26.02" cy="-17.446" r="0.25" vector-effect="non-scaling-stroke"/>
-<path data-id="s1-8-arc" data-type="arc" d="M 31.27 -17.446 A 1 1 0 1 0 30.27 -16.446" vector-effect="non-scaling-stroke"/>
-<path data-id="s1-8-renfle" data-type="polyline" d="M 31.77 -16.946 A 0.25 0.25 0 0 0 32.27 -16.946 A 0.25 0.25 0 0 0 31.77 -16.946 Z" vector-effect="non-scaling-stroke"/>
+<g data-graphisme="s1-0-spline" data-type="spline">
+<path d="M 3.314 1.923 C 3.814 1.123 4.314 2.723 4.814 1.923 C 5.314 1.123 5.814 2.723 6.314 1.923" vector-effect="non-scaling-stroke"/>
+</g>
+<g data-graphisme="s1-1-spline" data-type="spline">
+<path d="M 15.426 1.906 C 15.926 1.106 16.426 2.706 16.926 1.906 C 17.426 1.106 17.926 2.706 18.426 1.906" vector-effect="non-scaling-stroke"/>
+</g>
+<g data-graphisme="s1-2-spline" data-type="spline">
+<path d="M 27.245 1.544 C 27.745 0.744 28.245 2.344 28.745 1.544 C 29.245 0.744 29.745 2.344 30.245 1.544" vector-effect="non-scaling-stroke"/>
+</g>
+<g data-graphisme="s1-3-spline" data-type="spline">
+<path d="M 3.236 -6.316 C 3.736 -7.116 4.236 -5.516 4.736 -6.316 C 5.236 -7.116 5.736 -5.516 6.236 -6.316" vector-effect="non-scaling-stroke"/>
+</g>
+<g data-graphisme="s1-4-spline" data-type="spline">
+<path d="M 15.197 -6.181 C 15.697 -6.981 16.197 -5.381 16.697 -6.181 C 17.197 -6.981 17.697 -5.381 18.197 -6.181" vector-effect="non-scaling-stroke"/>
+</g>
+<g data-graphisme="s1-5-spline" data-type="spline">
+<path d="M 27.287 -6.247 C 27.787 -7.047 28.287 -5.447 28.787 -6.247 C 29.287 -7.047 29.787 -5.447 30.287 -6.247" vector-effect="non-scaling-stroke"/>
+</g>
 </g>
 <g data-layer="cotes" data-name="Cotes (synthétique)" fill="none" stroke="#000" stroke-width="1" vector-effect="non-scaling-stroke">
 <g data-dimension="s1-0-cote-l" data-status="resolved" data-value="2">
@@ -167,42 +173,6 @@
 <line x1="26.087" y1="-13.147" x2="25.847" y2="-13.327" vector-effect="non-scaling-stroke"/>
 <text x="24.887" y="-12.172" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-53.130102 24.887 -12.172)">3,00 m</text>
 </g>
-<g data-dimension="s1-6-cote-l" data-status="resolved" data-value="2.5">
-<line x1="0.45" y1="-16.097" x2="2.95" y2="-16.097" vector-effect="non-scaling-stroke"/>
-<line x1="0.45" y1="-16.497" x2="0.45" y2="-16.097" vector-effect="non-scaling-stroke"/>
-<line x1="2.95" y1="-16.497" x2="2.95" y2="-16.097" vector-effect="non-scaling-stroke"/>
-<text x="1.7" y="-16.172" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none">2,50 m</text>
-</g>
-<g data-dimension="s1-6-cote-h" data-status="resolved" data-value="1">
-<line x1="2.55" y1="-16.497" x2="2.55" y2="-17.497" vector-effect="non-scaling-stroke"/>
-<line x1="2.95" y1="-16.497" x2="2.55" y2="-16.497" vector-effect="non-scaling-stroke"/>
-<line x1="2.95" y1="-17.497" x2="2.55" y2="-17.497" vector-effect="non-scaling-stroke"/>
-<text x="2.475" y="-16.997" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-90 2.475 -16.997)">1,00 m</text>
-</g>
-<g data-dimension="s1-6-cote-libre" data-status="resolved" data-value="1">
-<line x1="0.21" y1="-18.177" x2="0.81" y2="-18.977" vector-effect="non-scaling-stroke"/>
-<line x1="0.45" y1="-17.997" x2="0.21" y2="-18.177" vector-effect="non-scaling-stroke"/>
-<line x1="1.05" y1="-18.797" x2="0.81" y2="-18.977" vector-effect="non-scaling-stroke"/>
-<text x="0.45" y="-18.622" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-53.130102 0.45 -18.622)">1,00 m</text>
-</g>
-<g data-dimension="s1-7-cote-l" data-status="resolved" data-value="3">
-<line x1="12.128" y1="-15.621" x2="15.128" y2="-15.621" vector-effect="non-scaling-stroke"/>
-<line x1="12.128" y1="-16.021" x2="12.128" y2="-15.621" vector-effect="non-scaling-stroke"/>
-<line x1="15.128" y1="-16.021" x2="15.128" y2="-15.621" vector-effect="non-scaling-stroke"/>
-<text x="13.628" y="-15.696" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none">3,00 m</text>
-</g>
-<g data-dimension="s1-7-cote-h" data-status="resolved" data-value="1.5">
-<line x1="14.728" y1="-16.021" x2="14.728" y2="-17.521" vector-effect="non-scaling-stroke"/>
-<line x1="15.128" y1="-16.021" x2="14.728" y2="-16.021" vector-effect="non-scaling-stroke"/>
-<line x1="15.128" y1="-17.521" x2="14.728" y2="-17.521" vector-effect="non-scaling-stroke"/>
-<text x="14.653" y="-16.771" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-90 14.653 -16.771)">1,50 m</text>
-</g>
-<g data-dimension="s1-7-cote-libre" data-status="resolved" data-value="2">
-<line x1="11.888" y1="-18.201" x2="13.088" y2="-19.801" vector-effect="non-scaling-stroke"/>
-<line x1="12.128" y1="-18.021" x2="11.888" y2="-18.201" vector-effect="non-scaling-stroke"/>
-<line x1="13.328" y1="-19.621" x2="13.088" y2="-19.801" vector-effect="non-scaling-stroke"/>
-<text x="12.428" y="-19.046" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-53.130102 12.428 -19.046)">2,00 m</text>
-</g>
 <g data-angular-dimension="s1-0-angle" data-status="resolved" data-value="90">
 <path d="M 0.814 -0.077 A 0.5 0.5 0 0 0 0.314 -0.577" vector-effect="non-scaling-stroke"/>
 <text x="0.808975" y="-0.571975" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(45 0.808975 -0.571975)">90,00°</text>
@@ -227,14 +197,6 @@
 <path d="M 24.787 -8.247 A 0.5 0.5 0 0 0 24.287 -8.747" vector-effect="non-scaling-stroke"/>
 <text x="24.781975" y="-8.741975" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(45 24.781975 -8.741975)">90,00°</text>
 </g>
-<g data-angular-dimension="s1-6-angle" data-status="resolved" data-value="90">
-<path d="M 0.95 -16.497 A 0.5 0.5 0 0 0 0.45 -16.997" vector-effect="non-scaling-stroke"/>
-<text x="0.944975" y="-16.991975" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(45 0.944975 -16.991975)">90,00°</text>
-</g>
-<g data-angular-dimension="s1-7-angle" data-status="resolved" data-value="90">
-<path d="M 12.628 -16.021 A 0.5 0.5 0 0 0 12.128 -16.521" vector-effect="non-scaling-stroke"/>
-<text x="12.622975" y="-16.515975" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(45 12.622975 -16.515975)">90,00°</text>
-</g>
 </g>
 <g data-layer="textes" data-name="Textes (synthétique)" fill="none" stroke="#000" stroke-width="1" vector-effect="non-scaling-stroke">
 <text data-text="s1-0-titre" data-justification="left" x="0.314" y="-3.077" font-size="0.2" font-family="sans-serif" text-anchor="start" fill="#000" stroke="none">Détail synthétique S1 n° 0</text>
@@ -249,9 +211,209 @@
 <text data-text="s1-4-repere" data-justification="center" x="11.697" y="-8.181" font-size="0.15" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-90 11.697 -8.181)">Repère synthétique 4</text>
 <text data-text="s1-5-titre" data-justification="left" x="24.287" y="-12.247" font-size="0.2" font-family="sans-serif" text-anchor="start" fill="#000" stroke="none">Détail synthétique S1 n° 5</text>
 <text data-text="s1-5-repere" data-justification="center" x="23.787" y="-8.247" font-size="0.15" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-90 23.787 -8.247)">Repère synthétique 5</text>
-<text data-text="s1-6-titre" data-justification="left" x="0.45" y="-19.497" font-size="0.2" font-family="sans-serif" text-anchor="start" fill="#000" stroke="none">Détail synthétique S1 n° 6</text>
-<text data-text="s1-6-repere" data-justification="center" x="-0.05" y="-16.497" font-size="0.15" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-90 -0.05 -16.497)">Repère synthétique 6</text>
-<text data-text="s1-7-titre" data-justification="left" x="12.128" y="-19.521" font-size="0.2" font-family="sans-serif" text-anchor="start" fill="#000" stroke="none">Détail synthétique S1 n° 7</text>
-<text data-text="s1-7-repere" data-justification="center" x="11.628" y="-16.021" font-size="0.15" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-90 11.628 -16.021)">Repère synthétique 7</text>
+</g>
+<g data-layer="hachures" data-name="Hachures (synthétique)" fill="none" stroke="#000" stroke-width="1" vector-effect="non-scaling-stroke">
+<g data-graphisme="s1-0-hachure" data-type="hachure" opacity="0.5">
+<polygon points="0.314,-0.077 2.314,-0.077 2.314,-1.077 0.314,-1.077" vector-effect="non-scaling-stroke"/>
+<line x1="2.19832" y1="-0.077" x2="2.314" y2="-0.19268" vector-effect="non-scaling-stroke"/>
+<line x1="2.056899" y1="-0.077" x2="2.314" y2="-0.334101" vector-effect="non-scaling-stroke"/>
+<line x1="1.915478" y1="-0.077" x2="2.314" y2="-0.475522" vector-effect="non-scaling-stroke"/>
+<line x1="1.774056" y1="-0.077" x2="2.314" y2="-0.616944" vector-effect="non-scaling-stroke"/>
+<line x1="1.632635" y1="-0.077" x2="2.314" y2="-0.758365" vector-effect="non-scaling-stroke"/>
+<line x1="1.491214" y1="-0.077" x2="2.314" y2="-0.899786" vector-effect="non-scaling-stroke"/>
+<line x1="1.349792" y1="-0.077" x2="2.314" y2="-1.041208" vector-effect="non-scaling-stroke"/>
+<line x1="1.208371" y1="-0.077" x2="2.208371" y2="-1.077" vector-effect="non-scaling-stroke"/>
+<line x1="1.066949" y1="-0.077" x2="2.066949" y2="-1.077" vector-effect="non-scaling-stroke"/>
+<line x1="0.925528" y1="-0.077" x2="1.925528" y2="-1.077" vector-effect="non-scaling-stroke"/>
+<line x1="0.784107" y1="-0.077" x2="1.784107" y2="-1.077" vector-effect="non-scaling-stroke"/>
+<line x1="0.642685" y1="-0.077" x2="1.642685" y2="-1.077" vector-effect="non-scaling-stroke"/>
+<line x1="0.501264" y1="-0.077" x2="1.501264" y2="-1.077" vector-effect="non-scaling-stroke"/>
+<line x1="0.359843" y1="-0.077" x2="1.359843" y2="-1.077" vector-effect="non-scaling-stroke"/>
+<line x1="0.314" y1="-0.172579" x2="1.218421" y2="-1.077" vector-effect="non-scaling-stroke"/>
+<line x1="0.314" y1="-0.314" x2="1.077" y2="-1.077" vector-effect="non-scaling-stroke"/>
+<line x1="0.314" y1="-0.455421" x2="0.935579" y2="-1.077" vector-effect="non-scaling-stroke"/>
+<line x1="0.314" y1="-0.596843" x2="0.794157" y2="-1.077" vector-effect="non-scaling-stroke"/>
+<line x1="0.314" y1="-0.738264" x2="0.652736" y2="-1.077" vector-effect="non-scaling-stroke"/>
+<line x1="0.314" y1="-0.879685" x2="0.511315" y2="-1.077" vector-effect="non-scaling-stroke"/>
+<line x1="0.314" y1="-1.021107" x2="0.369893" y2="-1.077" vector-effect="non-scaling-stroke"/>
+</g>
+<g data-graphisme="s1-1-hachure" data-type="hachure" opacity="0.5">
+<polygon points="12.426,-0.094 14.926,-0.094 14.926,-1.594 12.426,-1.594" vector-effect="non-scaling-stroke"/>
+<line x1="14.73111" y1="-0.094" x2="14.926" y2="-0.28889" vector-effect="non-scaling-stroke"/>
+<line x1="14.518978" y1="-0.094" x2="14.926" y2="-0.501022" vector-effect="non-scaling-stroke"/>
+<line x1="14.306846" y1="-0.094" x2="14.926" y2="-0.713154" vector-effect="non-scaling-stroke"/>
+<line x1="14.094714" y1="-0.094" x2="14.926" y2="-0.925286" vector-effect="non-scaling-stroke"/>
+<line x1="13.882582" y1="-0.094" x2="14.926" y2="-1.137418" vector-effect="non-scaling-stroke"/>
+<line x1="13.67045" y1="-0.094" x2="14.926" y2="-1.34955" vector-effect="non-scaling-stroke"/>
+<line x1="13.458318" y1="-0.094" x2="14.926" y2="-1.561682" vector-effect="non-scaling-stroke"/>
+<line x1="13.246186" y1="-0.094" x2="14.746186" y2="-1.594" vector-effect="non-scaling-stroke"/>
+<line x1="13.034054" y1="-0.094" x2="14.534054" y2="-1.594" vector-effect="non-scaling-stroke"/>
+<line x1="12.821922" y1="-0.094" x2="14.321922" y2="-1.594" vector-effect="non-scaling-stroke"/>
+<line x1="12.60979" y1="-0.094" x2="14.10979" y2="-1.594" vector-effect="non-scaling-stroke"/>
+<line x1="12.426" y1="-0.122342" x2="13.897658" y2="-1.594" vector-effect="non-scaling-stroke"/>
+<line x1="12.426" y1="-0.334474" x2="13.685526" y2="-1.594" vector-effect="non-scaling-stroke"/>
+<line x1="12.426" y1="-0.546606" x2="13.473394" y2="-1.594" vector-effect="non-scaling-stroke"/>
+<line x1="12.426" y1="-0.758738" x2="13.261262" y2="-1.594" vector-effect="non-scaling-stroke"/>
+<line x1="12.426" y1="-0.97087" x2="13.04913" y2="-1.594" vector-effect="non-scaling-stroke"/>
+<line x1="12.426" y1="-1.183002" x2="12.836998" y2="-1.594" vector-effect="non-scaling-stroke"/>
+<line x1="12.426" y1="-1.395134" x2="12.624866" y2="-1.594" vector-effect="non-scaling-stroke"/>
+</g>
+<g data-graphisme="s1-2-hachure" data-type="hachure" opacity="0.5">
+<polygon points="24.245,-0.456 27.245,-0.456 27.245,-2.456 24.245,-2.456" vector-effect="non-scaling-stroke"/>
+<line x1="27.043215" y1="-0.456" x2="27.245" y2="-0.657785" vector-effect="non-scaling-stroke"/>
+<line x1="26.760372" y1="-0.456" x2="27.245" y2="-0.940628" vector-effect="non-scaling-stroke"/>
+<line x1="26.47753" y1="-0.456" x2="27.245" y2="-1.22347" vector-effect="non-scaling-stroke"/>
+<line x1="26.194687" y1="-0.456" x2="27.245" y2="-1.506313" vector-effect="non-scaling-stroke"/>
+<line x1="25.911844" y1="-0.456" x2="27.245" y2="-1.789156" vector-effect="non-scaling-stroke"/>
+<line x1="25.629001" y1="-0.456" x2="27.245" y2="-2.071999" vector-effect="non-scaling-stroke"/>
+<line x1="25.346159" y1="-0.456" x2="27.245" y2="-2.354841" vector-effect="non-scaling-stroke"/>
+<line x1="25.063316" y1="-0.456" x2="27.063316" y2="-2.456" vector-effect="non-scaling-stroke"/>
+<line x1="24.780473" y1="-0.456" x2="26.780473" y2="-2.456" vector-effect="non-scaling-stroke"/>
+<line x1="24.497631" y1="-0.456" x2="26.497631" y2="-2.456" vector-effect="non-scaling-stroke"/>
+<line x1="24.245" y1="-0.486212" x2="26.214788" y2="-2.456" vector-effect="non-scaling-stroke"/>
+<line x1="24.245" y1="-0.769055" x2="25.931945" y2="-2.456" vector-effect="non-scaling-stroke"/>
+<line x1="24.245" y1="-1.051898" x2="25.649102" y2="-2.456" vector-effect="non-scaling-stroke"/>
+<line x1="24.245" y1="-1.33474" x2="25.36626" y2="-2.456" vector-effect="non-scaling-stroke"/>
+<line x1="24.245" y1="-1.617583" x2="25.083417" y2="-2.456" vector-effect="non-scaling-stroke"/>
+<line x1="24.245" y1="-1.900426" x2="24.800574" y2="-2.456" vector-effect="non-scaling-stroke"/>
+<line x1="24.245" y1="-2.183268" x2="24.517732" y2="-2.456" vector-effect="non-scaling-stroke"/>
+</g>
+<g data-graphisme="s1-3-hachure" data-type="hachure" opacity="0.5">
+<polygon points="0.236,-8.316 3.736,-8.316 3.736,-9.316 0.236,-9.316" vector-effect="non-scaling-stroke"/>
+<line x1="3.649095" y1="-8.316" x2="3.736" y2="-8.402905" vector-effect="non-scaling-stroke"/>
+<line x1="3.507674" y1="-8.316" x2="3.736" y2="-8.544326" vector-effect="non-scaling-stroke"/>
+<line x1="3.366253" y1="-8.316" x2="3.736" y2="-8.685747" vector-effect="non-scaling-stroke"/>
+<line x1="3.224831" y1="-8.316" x2="3.736" y2="-8.827169" vector-effect="non-scaling-stroke"/>
+<line x1="3.08341" y1="-8.316" x2="3.736" y2="-8.96859" vector-effect="non-scaling-stroke"/>
+<line x1="2.941988" y1="-8.316" x2="3.736" y2="-9.110012" vector-effect="non-scaling-stroke"/>
+<line x1="2.800567" y1="-8.316" x2="3.736" y2="-9.251433" vector-effect="non-scaling-stroke"/>
+<line x1="2.659146" y1="-8.316" x2="3.659146" y2="-9.316" vector-effect="non-scaling-stroke"/>
+<line x1="2.517724" y1="-8.316" x2="3.517724" y2="-9.316" vector-effect="non-scaling-stroke"/>
+<line x1="2.376303" y1="-8.316" x2="3.376303" y2="-9.316" vector-effect="non-scaling-stroke"/>
+<line x1="2.234882" y1="-8.316" x2="3.234882" y2="-9.316" vector-effect="non-scaling-stroke"/>
+<line x1="2.09346" y1="-8.316" x2="3.09346" y2="-9.316" vector-effect="non-scaling-stroke"/>
+<line x1="1.952039" y1="-8.316" x2="2.952039" y2="-9.316" vector-effect="non-scaling-stroke"/>
+<line x1="1.810618" y1="-8.316" x2="2.810618" y2="-9.316" vector-effect="non-scaling-stroke"/>
+<line x1="1.669196" y1="-8.316" x2="2.669196" y2="-9.316" vector-effect="non-scaling-stroke"/>
+<line x1="1.527775" y1="-8.316" x2="2.527775" y2="-9.316" vector-effect="non-scaling-stroke"/>
+<line x1="1.386354" y1="-8.316" x2="2.386354" y2="-9.316" vector-effect="non-scaling-stroke"/>
+<line x1="1.244932" y1="-8.316" x2="2.244932" y2="-9.316" vector-effect="non-scaling-stroke"/>
+<line x1="1.103511" y1="-8.316" x2="2.103511" y2="-9.316" vector-effect="non-scaling-stroke"/>
+<line x1="0.962089" y1="-8.316" x2="1.962089" y2="-9.316" vector-effect="non-scaling-stroke"/>
+<line x1="0.820668" y1="-8.316" x2="1.820668" y2="-9.316" vector-effect="non-scaling-stroke"/>
+<line x1="0.679247" y1="-8.316" x2="1.679247" y2="-9.316" vector-effect="non-scaling-stroke"/>
+<line x1="0.537825" y1="-8.316" x2="1.537825" y2="-9.316" vector-effect="non-scaling-stroke"/>
+<line x1="0.396404" y1="-8.316" x2="1.396404" y2="-9.316" vector-effect="non-scaling-stroke"/>
+<line x1="0.254983" y1="-8.316" x2="1.254983" y2="-9.316" vector-effect="non-scaling-stroke"/>
+<line x1="0.236" y1="-8.438439" x2="1.113561" y2="-9.316" vector-effect="non-scaling-stroke"/>
+<line x1="0.236" y1="-8.57986" x2="0.97214" y2="-9.316" vector-effect="non-scaling-stroke"/>
+<line x1="0.236" y1="-8.721281" x2="0.830719" y2="-9.316" vector-effect="non-scaling-stroke"/>
+<line x1="0.236" y1="-8.862703" x2="0.689297" y2="-9.316" vector-effect="non-scaling-stroke"/>
+<line x1="0.236" y1="-9.004124" x2="0.547876" y2="-9.316" vector-effect="non-scaling-stroke"/>
+<line x1="0.236" y1="-9.145545" x2="0.406455" y2="-9.316" vector-effect="non-scaling-stroke"/>
+<line x1="0.236" y1="-9.286967" x2="0.265033" y2="-9.316" vector-effect="non-scaling-stroke"/>
+</g>
+<g data-graphisme="s1-4-hachure" data-type="hachure" opacity="0.5">
+<polygon points="12.197,-8.181 16.197,-8.181 16.197,-9.681 12.197,-9.681" vector-effect="non-scaling-stroke"/>
+<line x1="16.029885" y1="-8.181" x2="16.197" y2="-8.348115" vector-effect="non-scaling-stroke"/>
+<line x1="15.817753" y1="-8.181" x2="16.197" y2="-8.560247" vector-effect="non-scaling-stroke"/>
+<line x1="15.605621" y1="-8.181" x2="16.197" y2="-8.772379" vector-effect="non-scaling-stroke"/>
+<line x1="15.393489" y1="-8.181" x2="16.197" y2="-8.984511" vector-effect="non-scaling-stroke"/>
+<line x1="15.181357" y1="-8.181" x2="16.197" y2="-9.196643" vector-effect="non-scaling-stroke"/>
+<line x1="14.969225" y1="-8.181" x2="16.197" y2="-9.408775" vector-effect="non-scaling-stroke"/>
+<line x1="14.757093" y1="-8.181" x2="16.197" y2="-9.620907" vector-effect="non-scaling-stroke"/>
+<line x1="14.544961" y1="-8.181" x2="16.044961" y2="-9.681" vector-effect="non-scaling-stroke"/>
+<line x1="14.332829" y1="-8.181" x2="15.832829" y2="-9.681" vector-effect="non-scaling-stroke"/>
+<line x1="14.120697" y1="-8.181" x2="15.620697" y2="-9.681" vector-effect="non-scaling-stroke"/>
+<line x1="13.908565" y1="-8.181" x2="15.408565" y2="-9.681" vector-effect="non-scaling-stroke"/>
+<line x1="13.696433" y1="-8.181" x2="15.196433" y2="-9.681" vector-effect="non-scaling-stroke"/>
+<line x1="13.484301" y1="-8.181" x2="14.984301" y2="-9.681" vector-effect="non-scaling-stroke"/>
+<line x1="13.272169" y1="-8.181" x2="14.772169" y2="-9.681" vector-effect="non-scaling-stroke"/>
+<line x1="13.060037" y1="-8.181" x2="14.560037" y2="-9.681" vector-effect="non-scaling-stroke"/>
+<line x1="12.847905" y1="-8.181" x2="14.347905" y2="-9.681" vector-effect="non-scaling-stroke"/>
+<line x1="12.635773" y1="-8.181" x2="14.135773" y2="-9.681" vector-effect="non-scaling-stroke"/>
+<line x1="12.423641" y1="-8.181" x2="13.923641" y2="-9.681" vector-effect="non-scaling-stroke"/>
+<line x1="12.211509" y1="-8.181" x2="13.711509" y2="-9.681" vector-effect="non-scaling-stroke"/>
+<line x1="12.197" y1="-8.378623" x2="13.499377" y2="-9.681" vector-effect="non-scaling-stroke"/>
+<line x1="12.197" y1="-8.590755" x2="13.287245" y2="-9.681" vector-effect="non-scaling-stroke"/>
+<line x1="12.197" y1="-8.802887" x2="13.075113" y2="-9.681" vector-effect="non-scaling-stroke"/>
+<line x1="12.197" y1="-9.015019" x2="12.862981" y2="-9.681" vector-effect="non-scaling-stroke"/>
+<line x1="12.197" y1="-9.227152" x2="12.650848" y2="-9.681" vector-effect="non-scaling-stroke"/>
+<line x1="12.197" y1="-9.439284" x2="12.438716" y2="-9.681" vector-effect="non-scaling-stroke"/>
+<line x1="12.197" y1="-9.651416" x2="12.226584" y2="-9.681" vector-effect="non-scaling-stroke"/>
+</g>
+<g data-graphisme="s1-5-hachure" data-type="hachure" opacity="0.5">
+<polygon points="24.287,-8.247 26.287,-8.247 26.287,-10.247 24.287,-10.247" vector-effect="non-scaling-stroke"/>
+<line x1="26.066091" y1="-8.247" x2="26.287" y2="-8.467909" vector-effect="non-scaling-stroke"/>
+<line x1="25.783248" y1="-8.247" x2="26.287" y2="-8.750752" vector-effect="non-scaling-stroke"/>
+<line x1="25.500405" y1="-8.247" x2="26.287" y2="-9.033595" vector-effect="non-scaling-stroke"/>
+<line x1="25.217563" y1="-8.247" x2="26.287" y2="-9.316437" vector-effect="non-scaling-stroke"/>
+<line x1="24.93472" y1="-8.247" x2="26.287" y2="-9.59928" vector-effect="non-scaling-stroke"/>
+<line x1="24.651877" y1="-8.247" x2="26.287" y2="-9.882123" vector-effect="non-scaling-stroke"/>
+<line x1="24.369035" y1="-8.247" x2="26.287" y2="-10.164965" vector-effect="non-scaling-stroke"/>
+<line x1="24.287" y1="-8.447808" x2="26.086192" y2="-10.247" vector-effect="non-scaling-stroke"/>
+<line x1="24.287" y1="-8.730651" x2="25.803349" y2="-10.247" vector-effect="non-scaling-stroke"/>
+<line x1="24.287" y1="-9.013494" x2="25.520506" y2="-10.247" vector-effect="non-scaling-stroke"/>
+<line x1="24.287" y1="-9.296336" x2="25.237664" y2="-10.247" vector-effect="non-scaling-stroke"/>
+<line x1="24.287" y1="-9.579179" x2="24.954821" y2="-10.247" vector-effect="non-scaling-stroke"/>
+<line x1="24.287" y1="-9.862022" x2="24.671978" y2="-10.247" vector-effect="non-scaling-stroke"/>
+<line x1="24.287" y1="-10.144864" x2="24.389136" y2="-10.247" vector-effect="non-scaling-stroke"/>
+</g>
+</g>
+<g data-layer="symboles" data-name="Symboles (synthétique)" fill="none" stroke="#000" stroke-width="1" vector-effect="non-scaling-stroke">
+<g data-graphisme="s1-0-nord" data-type="symbole" data-symbole="nord">
+<circle cx="8.814" cy="-1.577" r="0.25" vector-effect="non-scaling-stroke"/>
+<polygon points="8.814,-1.827 8.889,-1.427 8.814,-1.502 8.739,-1.427" vector-effect="non-scaling-stroke"/>
+</g>
+<g data-graphisme="s1-0-croix" data-type="symbole" data-symbole="croix">
+<line x1="-0.886" y1="-2.077" x2="-0.486" y2="-2.077" vector-effect="non-scaling-stroke"/>
+<line x1="-0.686" y1="-1.877" x2="-0.686" y2="-2.277" vector-effect="non-scaling-stroke"/>
+<circle cx="-0.686" cy="-2.077" r="0.1" vector-effect="non-scaling-stroke"/>
+</g>
+<g data-graphisme="s1-1-nord" data-type="symbole" data-symbole="nord">
+<circle cx="21.426" cy="-1.594" r="0.5" vector-effect="non-scaling-stroke"/>
+<polygon points="20.926,-1.594 21.726,-1.744 21.576,-1.594 21.726,-1.444" vector-effect="non-scaling-stroke"/>
+</g>
+<g data-graphisme="s1-1-croix" data-type="symbole" data-symbole="croix">
+<line x1="11.226" y1="-2.594" x2="11.626" y2="-2.594" vector-effect="non-scaling-stroke"/>
+<line x1="11.426" y1="-2.394" x2="11.426" y2="-2.794" vector-effect="non-scaling-stroke"/>
+<circle cx="11.426" cy="-2.594" r="0.1" vector-effect="non-scaling-stroke"/>
+</g>
+<g data-graphisme="s1-2-nord" data-type="symbole" data-symbole="nord">
+<circle cx="33.745" cy="-1.956" r="0.25" vector-effect="non-scaling-stroke"/>
+<polygon points="33.745,-1.706 33.67,-2.106 33.745,-2.031 33.82,-2.106" vector-effect="non-scaling-stroke"/>
+</g>
+<g data-graphisme="s1-2-croix" data-type="symbole" data-symbole="croix">
+<line x1="23.045" y1="-3.456" x2="23.445" y2="-3.456" vector-effect="non-scaling-stroke"/>
+<line x1="23.245" y1="-3.256" x2="23.245" y2="-3.656" vector-effect="non-scaling-stroke"/>
+<circle cx="23.245" cy="-3.456" r="0.1" vector-effect="non-scaling-stroke"/>
+</g>
+<g data-graphisme="s1-3-nord" data-type="symbole" data-symbole="nord">
+<circle cx="10.236" cy="-9.816" r="0.5" vector-effect="non-scaling-stroke"/>
+<polygon points="10.736,-9.816 9.936,-9.666 10.086,-9.816 9.936,-9.966" vector-effect="non-scaling-stroke"/>
+</g>
+<g data-graphisme="s1-3-croix" data-type="symbole" data-symbole="croix">
+<line x1="-0.964" y1="-10.316" x2="-0.564" y2="-10.316" vector-effect="non-scaling-stroke"/>
+<line x1="-0.764" y1="-10.116" x2="-0.764" y2="-10.516" vector-effect="non-scaling-stroke"/>
+<circle cx="-0.764" cy="-10.316" r="0.1" vector-effect="non-scaling-stroke"/>
+</g>
+<g data-graphisme="s1-4-nord" data-type="symbole" data-symbole="nord">
+<circle cx="22.697" cy="-9.681" r="0.25" vector-effect="non-scaling-stroke"/>
+<polygon points="22.697,-9.931 22.772,-9.531 22.697,-9.606 22.622,-9.531" vector-effect="non-scaling-stroke"/>
+</g>
+<g data-graphisme="s1-4-croix" data-type="symbole" data-symbole="croix">
+<line x1="10.997" y1="-10.681" x2="11.397" y2="-10.681" vector-effect="non-scaling-stroke"/>
+<line x1="11.197" y1="-10.481" x2="11.197" y2="-10.881" vector-effect="non-scaling-stroke"/>
+<circle cx="11.197" cy="-10.681" r="0.1" vector-effect="non-scaling-stroke"/>
+</g>
+<g data-graphisme="s1-5-nord" data-type="symbole" data-symbole="nord">
+<circle cx="32.787" cy="-9.747" r="0.5" vector-effect="non-scaling-stroke"/>
+<polygon points="32.287,-9.747 33.087,-9.897 32.937,-9.747 33.087,-9.597" vector-effect="non-scaling-stroke"/>
+</g>
+<g data-graphisme="s1-5-croix" data-type="symbole" data-symbole="croix">
+<line x1="23.087" y1="-11.247" x2="23.487" y2="-11.247" vector-effect="non-scaling-stroke"/>
+<line x1="23.287" y1="-11.047" x2="23.287" y2="-11.447" vector-effect="non-scaling-stroke"/>
+<circle cx="23.287" cy="-11.247" r="0.1" vector-effect="non-scaling-stroke"/>
+</g>
 </g>
 </svg>

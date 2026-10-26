@@ -9,7 +9,7 @@ import { lireDxfStudio, STUDIO_DXF_UNITES } from "../import-dxf.js";
 import { dxf, ligne, lwpolyligne } from "../import-dxf.fixtures.js";
 import { exactSynthetique } from "../exacts.fixtures.js";
 import {
-  controlerMatriceEchanges, STUDIO_COUVERTURE_EXPORT, STUDIO_DECISIONS_RENONCEMENT, STUDIO_MATRICE_ECHANGES, STUDIO_STATUT_DE_RAISON, studioCouvertureFormat,
+  controlerCapacitesParSens, controlerMatriceEchanges, STUDIO_CAPACITES_PAR_SENS, STUDIO_COUVERTURE_EXPORT, STUDIO_SENS_CAPACITE, STUDIO_DECISIONS_RENONCEMENT, STUDIO_MATRICE_ECHANGES, STUDIO_STATUT_DE_RAISON, studioCouvertureFormat,
   studioDeclareConformite, studioMatriceEchangesMarkdown, studioTextesEntree,
   type StudioEntreeEchange, type StudioPreuveEchange,
 } from "./matrice-echanges.js";
@@ -104,32 +104,69 @@ describe("Matrice d'échanges : donnée versionnée et cohérente", () => {
       6: "eac31b5dcf978f90d43ea3d7a6258164f4535af532e17c08f2c6a749df4e24fa",
       // Lot OUT (EX-034) : profil d’outils exporté et importé (fadi-studio-profil/1).
       7: "da45ee1baee0b0a8b15dad3128d40f9cb5ddc884aea22a36b10ce269176efbe0",
-      // Lot G2 (EX-027) : échelle d’accès (architecture.ladder : SVG / DXF en plan, IFC IfcStair .LADDER. exact).
-      8: "bdc872461695a471cc1473a47469cb106b63255d529624065fb808a2aa362fb6",
-      // Lot G2 (INV-013) : catégorie « cotesFaces » (cotes de faces 3D, écrites dans aucun format).
-      9: "9a127ce490d93abcea796ec4fd53213cd9716c01649c891d72baba1ad623ec47",
+      // Lot G3 (E.6-04, EX-079) : exports OBJ, STL et STEP livrés (lectures non livrées, chacune sa raison), DWG cité par
+      // la décision approuvée D-179 et gardé « non livré » ; capacités par sens d'échange (comprises dans l'empreinte).
+      8: "1d67801935927a94c7a3bfed825c4cd2e63a08faaada7fd9942d4ca0b27b4dd0",
+      // Lot G2 (EX-027, INV-013) : échelle d’accès (architecture.ladder : SVG / DXF en plan, IFC IfcStair .LADDER. exact) ;
+      // catégorie « cotesFaces » (cotes de faces 3D, écrites dans aucun format).
+      9: "7f7e636bf4c023b2fa10bc992b666b8a76e1e1c10027037abbc52434e125d6ae",
     };
-    const empreinte = createHash("sha256").update(JSON.stringify({ entrees: STUDIO_MATRICE_ECHANGES.entrees, couverture: STUDIO_COUVERTURE_EXPORT, statuts: STUDIO_STATUT_DE_RAISON })).digest("hex");
+    // Depuis la révision 8, l'empreinte couvre aussi les capacités par sens d'échange (EX-079).
+    const capacites = STUDIO_MATRICE_ECHANGES.revision >= 8 ? { capacites: STUDIO_CAPACITES_PAR_SENS } : {};
+    const empreinte = createHash("sha256").update(JSON.stringify({ entrees: STUDIO_MATRICE_ECHANGES.entrees, couverture: STUDIO_COUVERTURE_EXPORT, statuts: STUDIO_STATUT_DE_RAISON, ...capacites })).digest("hex");
     expect(empreinte, `révision ${STUDIO_MATRICE_ECHANGES.revision} : entrées modifiées sans nouvelle révision ? (empreinte calculée ${empreinte})`).toBe(EMPREINTES[STUDIO_MATRICE_ECHANGES.revision]);
     expect(Math.max(...Object.keys(EMPREINTES).map(Number)), "la révision courante est la dernière épinglée").toBe(STUDIO_MATRICE_ECHANGES.revision);
   });
 
-  // Libellé cité tel quel par le registre (E.6-05) : depuis le lot PUB, BCF est livré (contrat 2.1 minimal, test
-  // suivant) ; ce contrôle garde les autres formats reportés. Citation du registre à actualiser par l'orchestrateur.
+  // Libellé cité tel quel par le registre (E.6-05) : depuis le lot PUB, BCF est livré (contrat 2.1 minimal) et depuis le
+  // lot G3, les exports OBJ, STL et STEP le sont (test « E.6-04 — OBJ, STL et STEP exportés… » plus bas) ; ce contrôle
+  // garde les formats et les sens encore reportés. Citation du registre à actualiser par l'orchestrateur.
   it("E.6-04 / E.6-05 : DWG, DGN, BCF, STEP, OBJ, STL inscrits dans les deux sens, glTF en export, jamais livrés ni conformes", () => {
     for (const sens of ["import", "export"]) expect(entree(`bcf-${sens}`).statut, "BCF : qualifié séparément (lot PUB)").toBe("livre");
-    for (const id of ["dwg", "dgn", "step", "obj", "stl"]) for (const sens of ["import", "export"]) {
-      const e = STUDIO_MATRICE_ECHANGES.entrees.find((x) => x.id === `${id}-${sens}`);
-      expect(e?.statut, `${id}-${sens}`).toBe("non-livre");
+    const reportes = [...["dwg", "dgn"].flatMap((id) => [`${id}-import`, `${id}-export`]), "step-import", "obj-import", "stl-import"];
+    for (const id of reportes) {
+      const e = STUDIO_MATRICE_ECHANGES.entrees.find((x) => x.id === id);
+      expect(e?.statut, id).toBe("non-livre");
       expect(e?.raison).toBeTruthy();
       expect(e?.preuves).toBeUndefined();
     }
+    for (const id of ["maquette-step", "maquette-obj", "maquette-stl"]) expect(entree(id).statut, id).toBe("livre");
     expect(entree("gltf-export").statut).toBe("non-livre");
-    // D-179 (Atelier) est citée, jamais prise pour une renonciation Studio.
+    // D-179 (décision approuvée) est citée pour DWG, jamais contournée : DWG reste « non livré », jamais « renoncé » sans
+    // décision Studio admise, jamais livré.
     const dwg = entree("dwg-export");
-    expect(dwg.sources.some((s) => s.reference.includes("D-179"))).toBe(true);
-    expect(dwg.raison).toMatch(/ne vaut pas pour Studio/);
+    expect(dwg.sources[0]!.reference).toBe("docs/atelier/decisions.md, D-179");
+    expect(dwg.raison).toMatch(/décision approuvée D-179/);
     expect(STUDIO_MATRICE_ECHANGES.entrees.filter((e) => e.statut === "renonce")).toEqual([]);
+  });
+
+  it("E.6-04 — OBJ, STL et STEP exportés, chacun son contrat (version, entités portées / partielles / absentes, limite, route, preuves de code, de test et d'interface) ; leurs lectures non livrées, chacune sa raison ; DWG non livré selon D-179", () => {
+    const contrats = new Map<string, string>();
+    for (const [id, f] of [["maquette-obj", "obj"], ["maquette-stl", "stl"], ["maquette-step", "step"]] as const) {
+      const e = entree(id);
+      expect(e).toMatchObject({ statut: "livre", sens: "export", export3d: f, route: `GET /projects/:projectId/studio/studies/:studyId/variants/:variantId/export?format=${f}` });
+      expect(e.fidelite).toBeUndefined();
+      expect(new Set(e.entites.map((x) => x.couverture)).has("absente"), `${id} : ce qui n'est pas écrit est déclaré`).toBe(true);
+      expect(e.preuves!.code.length && e.preuves!.tests.length && e.preuves!.routes?.length && e.preuves!.interfaces?.length).toBeTruthy();
+      contrats.set(id, `${e.versionFormat}|${e.limite}`);
+      const lecture = entree(`${f}-import`);
+      expect(lecture.statut).toBe("non-livre");
+      expect(lecture.raison).toMatch(/^Lecture non livrée/);
+    }
+    expect(new Set(contrats.values()).size, "un contrat propre par format").toBe(3);
+    expect(entree("maquette-step").versionFormat).toMatch(/AP214/);
+    expect(entree("maquette-step").limite).toMatch(/SI_UNIT \.MILLI\. \.METRE\./);
+    expect(entree("maquette-stl").limite).toMatch(/ni unité .*ni identité, ni calque/);
+    // Une entrée d'export 3D sans entités, ou liée à un rapport de fidélité, est refusée par le contrôle.
+    const sans = { ...STUDIO_MATRICE_ECHANGES, entrees: STUDIO_MATRICE_ECHANGES.entrees.map((e) => (e.id === "maquette-obj" ? { ...e, entites: [] } : e)) };
+    expect(controlerMatriceEchanges(sans)).toContain("maquette-obj : export 3D hors d’une entrée d’export livrée avec ses entités");
+    const deux = { ...STUDIO_MATRICE_ECHANGES, entrees: STUDIO_MATRICE_ECHANGES.entrees.map((e) => (e.id === "maquette-stl" ? { ...e, export3d: "obj" as const } : e)) };
+    expect(controlerMatriceEchanges(deux)).toContain("format obj : 2 entrée(s) d'export 3D (1 attendue)");
+    for (const sens of ["import", "export"]) {
+      const d = entree(`dwg-${sens}`);
+      expect(d.statut).toBe("non-livre");
+      expect(d.sources.map((x) => x.reference)).toContain("docs/atelier/decisions.md, D-179");
+    }
   });
 
   it("E.6-04 — chaque format est qualifié séparément selon son propre contrat : BCF livré (contrat 2.1 minimal, preuves de code, de test et de route, dans les deux sens), DWG / STEP / OBJ / STL non livrés chacun avec sa raison et ses sources, aucun déclaré conforme", () => {
@@ -150,6 +187,40 @@ describe("Matrice d'échanges : donnée versionnée et cohérente", () => {
     }
     expect(raisons.size, "une raison propre par format").toBe(4);
     expect(STUDIO_MATRICE_ECHANGES.conformite).toBe("non-evaluee");
+  });
+
+  it("TR-EX-079 : lecture, consultation, édition, export et aller-retour évalués séparément pour chaque format ; chaque entrée rangée sous un format", () => {
+    expect(controlerCapacitesParSens()).toEqual([]);
+    expect([...STUDIO_SENS_CAPACITE]).toEqual(["lecture", "consultation", "edition", "export", "aller-retour"]);
+    for (const c of STUDIO_CAPACITES_PAR_SENS) expect(Object.keys(c.sens).sort(), c.id).toEqual([...STUDIO_SENS_CAPACITE].sort());
+    const cap = (id: string) => STUDIO_CAPACITES_PAR_SENS.find((c) => c.id === id)!.sens;
+    // Formats distingués : IFC lu, consulté (modèle externe), édité en partie, exporté, aller-retour partiel ; SVG,
+    // OBJ, STL, STEP exportés seulement ; DWG rien.
+    expect(STUDIO_SENS_CAPACITE.map((x) => cap("ifc")[x].statut)).toEqual(["livre", "livre", "livre", "livre", "livre"]);
+    for (const id of ["svg", "obj", "stl", "step"]) expect(STUDIO_SENS_CAPACITE.map((x) => cap(id)[x].statut), id).toEqual(["non-livre", "non-livre", "non-livre", "livre", "non-livre"]);
+    expect(STUDIO_SENS_CAPACITE.every((x) => cap("dwg")[x].statut === "non-livre")).toBe(true);
+    expect(cap("dwg").export.detail).toMatch(/D-179/);
+    // Les sens ne se confondent pas : la lecture d'un profil ou d'une archive est livrée, leur consultation non.
+    expect([cap("archive").lecture.statut, cap("archive").consultation.statut]).toEqual(["livre", "non-livre"]);
+    expect(cap("commandes").export.statut).toBe("non-livre");
+  });
+
+  it("TR-EX-079 [−] : un export syntaxiquement valide ne prouve pas un aller-retour — aller-retour déclaré sans lecture, sans export ou sans test refusé", () => {
+    const avec = (id: string, sens: "aller-retour" | "consultation" | "lecture" | "export", ev: { statut: "livre" | "non-livre"; detail: string; preuves?: StudioPreuveEchange[] }) =>
+      STUDIO_CAPACITES_PAR_SENS.map((c) => (c.id === id ? { ...c, sens: { ...c.sens, [sens]: ev } } : c));
+    const test = { fichier: "packages/atelier-model/src/studio/export-3d.test.ts", motif: "E.6-04 STEP : une pièce nommée par élément solide" };
+    // STEP : export valide relu par le noyau, mais aucun lecteur Studio : l'aller-retour est refusé même avec un test.
+    expect(controlerCapacitesParSens(STUDIO_MATRICE_ECHANGES, avec("step", "aller-retour", { statut: "livre", detail: "relu par le noyau", preuves: [test] }))).toContain("step : aller-retour livré sans lecture livrée");
+    // Aller-retour sans test cité : refusé.
+    expect(controlerCapacitesParSens(STUDIO_MATRICE_ECHANGES, avec("dxf", "aller-retour", { statut: "livre", detail: "relu" }))).toContain("dxf : aller-retour livré sans test cité");
+    // Lecture ou export déclarés contre la matrice : refusés.
+    expect(controlerCapacitesParSens(STUDIO_MATRICE_ECHANGES, avec("svg", "lecture", { statut: "livre", detail: "lu" }))).toContain("svg : lecture livre alors qu’une entrée d’import livrée manque");
+    expect(controlerCapacitesParSens(STUDIO_MATRICE_ECHANGES, avec("obj", "export", { statut: "non-livre", detail: "rien" }))).toContain("obj : export non-livre alors qu’une entrée d’export livrée existe");
+    // Conformité affirmée dans une évaluation : refusée.
+    expect(controlerCapacitesParSens(STUDIO_MATRICE_ECHANGES, avec("ifc", "consultation", { statut: "livre", detail: "Consultation certifiée", preuves: [test] }))).toContain("ifc : consultation déclare une conformité");
+    // Entrée de la matrice rangée sous aucun format, ou sous deux.
+    const sansIfc = STUDIO_CAPACITES_PAR_SENS.map((c) => (c.id === "ifc" ? { ...c, entrees: c.entrees.filter((e) => e !== "modele-externe-ifc") } : c));
+    expect(controlerCapacitesParSens(STUDIO_MATRICE_ECHANGES, sansIfc)).toContain("modele-externe-ifc : rangée sous aucun format");
   });
 
   it("E.6-02 : natif, vues / feuilles, tableaux, rendus et paquets présents et livrés", () => {
@@ -363,6 +434,13 @@ function nonDiscriminant(x: StudioPreuveEchange, contenu: string): string | null
 
 describe("Matrice et code réel : relecture du dépôt", () => {
   it("chaque preuve citée existe : symbole exporté (code), motif présent (test, route, interface)", () => {
+    // Capacités par sens (EX-079) : chaque test cité existe, discriminant, dans un fichier de test.
+    for (const c of STUDIO_CAPACITES_PAR_SENS) for (const sens of STUDIO_SENS_CAPACITE) for (const x of c.sens[sens].preuves ?? []) {
+      expect(existsSync(join(RACINE, x.fichier)), `${c.id}/${sens} : ${x.fichier}`).toBe(true);
+      expect(lire(x.fichier).includes(x.motif), `${c.id}/${sens} : « ${x.motif} » dans ${x.fichier}`).toBe(true);
+      expect(nonDiscriminant(x, lire(x.fichier)), `${c.id}/${sens} : « ${x.motif} »`).toBeNull();
+      expect(/\.test\.tsx?$|e2e\/.*\.mjs$/.test(x.fichier), `${c.id}/${sens} : ${x.fichier} n'est pas un test`).toBe(true);
+    }
     for (const e of livrees) {
       for (const x of preuves(e)) expect(existsSync(join(RACINE, x.fichier)), `${e.id} : ${x.fichier}`).toBe(true);
       for (const x of e.preuves!.code) {
@@ -394,7 +472,7 @@ describe("Matrice et code réel : relecture du dépôt", () => {
   });
 
   it("aucun écrivain ni lecteur du modèle Studio sans entrée (façades de studio/)", () => {
-    const facades = ["export.ts", "ifc.ts", "feuille.ts", "dossier-conception.ts", "import-dxf.ts", "mesh-3d.ts"].map((f) => `packages/atelier-model/src/studio/${f}`);
+    const facades = ["export.ts", "export-3d.ts", "ifc.ts", "feuille.ts", "dossier-conception.ts", "import-dxf.ts", "mesh-3d.ts"].map((f) => `packages/atelier-model/src/studio/${f}`);
     const ecrivains = facades.flatMap((f) => fonctionsExportees(lire(f)).filter((n) => /^(export\w+|lire\w+|pdf\w+|\w+(Svg|Pdf|Dxf|Ifc|Csv|Png|Step|Obj|Stl|Gltf))$/.test(n)).map((n) => `${f}#${n}`));
     expect(ecrivains.length).toBeGreaterThan(5);
     const connus = new Set(cites("code").map((x) => `${x.fichier}#${x.motif}`));
@@ -413,9 +491,9 @@ describe("Matrice et code réel : relecture du dépôt", () => {
     expect(servies.length).toBeGreaterThanOrEqual(5);
     const routesCitees = cites("routes");
     for (const r of servies) expect(routesCitees.some((x) => x.fichier === r.fichier && x.motif === r.chemin), `${r.fichier} ${r.chemin}`).toBe(true);
-    // Formats d'export des variantes : exactement les entrées liées au rapport de fidélité.
+    // Formats d'export des variantes : exactement les entrées liées au rapport de fidélité et les exports 3D (E.6-04).
     const formats = /STUDIO_EXPORT_FORMATS = \[([^\]]+)\]/.exec(lire("apps/api/src/lib/studio-commands.ts"))![1]!.match(/"(\w+)"/g)!.map((s) => s.slice(1, -1));
-    expect(formats.sort()).toEqual(livrees.filter((e) => e.fidelite && e.sens === "export").map((e) => e.fidelite).sort());
+    expect(formats.sort()).toEqual(livrees.filter((e) => (e.fidelite || e.export3d) && e.sens === "export").map((e) => e.fidelite ?? e.export3d).sort());
   });
 
   it("aucun téléchargement de l'interface Studio sans entrée (attribut JSX `download` nu ou valué, propriété `.download`)", () => {

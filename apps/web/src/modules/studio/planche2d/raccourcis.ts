@@ -17,6 +17,7 @@ export type IdCommandeEditeur =
   | "accrochage-perpendiculaire" | "accrochage-tangente" | "accrochage-parallele" | "accrochage-proche" | "accrochage-cible-suivante"
   | "reperage-orthogonal" | "reperage-polaire" | "pas-polaire"
   | "importer-dxf" | "importer-ifc" | "modeles-externes" | "exporter-svg" | "exporter-dxf" | "exporter-ifc" | "feuille" | "dossier"
+  | "exporter-obj" | "exporter-stl" | "exporter-step"
   | "exporter-png" | "echanges"
   | "illustration" | "agents"
   | "outils" | "palette"
@@ -32,6 +33,7 @@ export type IconeCommande =
   | "studio-snap-perpendicular" | "studio-snap-tangent" | "studio-snap-parallel" | "studio-snap-nearest" | "studio-snap-next"
   | "studio-track-ortho" | "studio-track-polar" | "studio-track-polar-step"
   | "studio-import-dxf" | "studio-import-ifc" | "studio-external-models" | "studio-export-svg" | "studio-export-dxf" | "studio-export-ifc" | "studio-sheet" | "studio-dossier"
+  | "studio-export-obj" | "studio-export-stl" | "studio-export-step"
   | "studio-export-png" | "studio-exchanges"
   | "studio-illustration" | "studio-agents"
   | "studio-catalog" | "studio-palette"
@@ -51,7 +53,7 @@ export interface CommandeEditeur {
   /** Bascule (bouton enfoncé ou non) : accrochages. */
   readonly bascule?: boolean;
   /** Téléchargement par un lien (export) plutôt qu'une action de la page. */
-  readonly telechargement?: "svg" | "dxf" | "ifc";
+  readonly telechargement?: "svg" | "dxf" | "ifc" | "obj" | "stl" | "step";
   /** Le raccourci reste actif quand le focus est dans un champ de saisie. */
   readonly dansUnChamp?: boolean;
 }
@@ -120,6 +122,13 @@ export const COMMANDES_EDITEUR: readonly CommandeEditeur[] = Object.freeze([
   { id: "exporter-dxf", libelleFR: "Exporter DXF", raccourci: "Shift+X", iconeSymbolique: "studio-export-dxf", groupe: "export", ecrit: false, telechargement: "dxf" },
   // IFC4X3 des seuls objets extrudés (Maj+I : I comme IFC, libre et non réservé).
   { id: "exporter-ifc", libelleFR: "Exporter IFC", raccourci: "Shift+I", iconeSymbolique: "studio-export-ifc", groupe: "export", ecrit: false, telechargement: "ifc" },
+  // Exports 3D de la révision (E.6-04), chacun son contrat : OBJ (maillage nommé), STL (facettes des solides), STEP
+  // (solides exacts nommés, noyau du serveur). Toutes les combinaisons Maj+lettre sont prises : Ctrl+Maj+F7, F8 et F10,
+  // libres et non réservées (F7 seul est la navigation au curseur, F10 seul est la barre de menus : les variantes
+  // Ctrl+Maj restent à la page). Lecture admise : un lecteur télécharge.
+  { id: "exporter-obj", libelleFR: "Exporter OBJ", raccourci: "Ctrl+Shift+F7", iconeSymbolique: "studio-export-obj", groupe: "export", ecrit: false, telechargement: "obj" },
+  { id: "exporter-stl", libelleFR: "Exporter STL", raccourci: "Ctrl+Shift+F8", iconeSymbolique: "studio-export-stl", groupe: "export", ecrit: false, telechargement: "stl" },
+  { id: "exporter-step", libelleFR: "Exporter STEP", raccourci: "Ctrl+Shift+F10", iconeSymbolique: "studio-export-step", groupe: "export", ecrit: false, telechargement: "step" },
   // Matrice d'échanges (E.6-01 à E.6-05), en lecture seule : Q, dernière lettre seule libre (non réservée, hors des
   // lettres d'outils) ; toutes les combinaisons Maj+lettre sont prises. Lecture admise.
   { id: "echanges", libelleFR: "Matrice d’échanges", raccourci: "Q", iconeSymbolique: "studio-exchanges", groupe: "export", ecrit: false },
@@ -130,8 +139,8 @@ export const COMMANDES_EDITEUR: readonly CommandeEditeur[] = Object.freeze([
   { id: "dossier", libelleFR: "Feuilles et dossier", raccourci: "Ctrl+Shift+D", iconeSymbolique: "studio-dossier", groupe: "presentation", ecrit: false },
   // Approuver (AC-010, lot G2) : la commande d'approbation d'une publication soumise, découverte par recherche comme toute
   // commande ; le serveur seul juge du droit métier (canApprove) — un concepteur sans ce droit reçoit son refus.
-  // Ctrl+Maj+F7, libre et non réservé (F7 seul l'est). Lecture du document admise : l'approbation n'écrit pas la variante.
-  { id: "approuver", libelleFR: "Approuver", raccourci: "Ctrl+Shift+F7", iconeSymbolique: "studio-approve", groupe: "presentation", ecrit: false },
+  // Ctrl+Maj+F11, libre et non réservé (F11 seul, plein écran, l'est). Lecture du document admise : l'approbation n'écrit pas la variante.
+  { id: "approuver", libelleFR: "Approuver", raccourci: "Ctrl+Shift+F11", iconeSymbolique: "studio-approve", groupe: "presentation", ecrit: false },
   { id: "outils", libelleFR: "Outils", raccourci: "Shift+O", iconeSymbolique: "studio-catalog", groupe: "catalogue", ecrit: false },
   { id: "palette", libelleFR: "Palette de commandes", raccourci: "Ctrl+K", iconeSymbolique: "studio-palette", groupe: "catalogue", ecrit: false, dansUnChamp: true },
   // Exigences et écarts (E.1) : F comme « fiche d’exigences » (lettre seule libre et non réservée ; V appartient à la Visualisation) ; lecture admise.

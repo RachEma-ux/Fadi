@@ -11,11 +11,11 @@ import { domaineExecution } from "../domaines/domaines";
 import { messageRefusApprobation, publicationsAApprouver } from "./publication-ui";
 
 describe("AC-010 — « Approuver » dans le catalogue des commandes (lot G2)", () => {
-  it("AC-010 [+] un concepteur découvre « Approuver » par recherche (nom, synonyme, raccourci) : commande de la barre Présentation, icône propre, Ctrl+Maj+F7, aucun droit présumé par l'interface", () => {
-    expect(rechercher("approuver")[0]).toMatchObject({ identifiant: "approuver", nature: "editeur", barre: "presentation", icone: "studio-approve", raccourcis: ["Ctrl+Shift+F7"] });
+  it("AC-010 [+] un concepteur découvre « Approuver » par recherche (nom, synonyme, raccourci) : commande de la barre Présentation, icône propre, Ctrl+Maj+F11, aucun droit présumé par l'interface", () => {
+    expect(rechercher("approuver")[0]).toMatchObject({ identifiant: "approuver", nature: "editeur", barre: "presentation", icone: "studio-approve", raccourcis: ["Ctrl+Shift+F11"] });
     expect(rechercher("approbation").map((e) => e.identifiant)).toContain("approuver");
-    expect(rechercher("Ctrl+Maj+F7").map((e) => e.identifiant)).toContain("approuver");
-    expect(cibleRaccourci("Ctrl+Shift+F7")).toEqual({ type: "commande", id: "approuver" });
+    expect(rechercher("Ctrl+Maj+F11").map((e) => e.identifiant)).toContain("approuver");
+    expect(cibleRaccourci("Ctrl+Shift+F11")).toEqual({ type: "commande", id: "approuver" });
     expect(commandesDeBarre("presentation").map((c) => c.id)).toContain("approuver");
     // Visible et lançable par tout membre (droit « lecture » côté interface) : l'exécution est jugée par le serveur.
     const e = CATALOGUE.find((x) => x.identifiant === "approuver")!;

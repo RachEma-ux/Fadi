@@ -3,7 +3,7 @@ import { signalerTempsReel } from "./temps-reel-signaux.js";
 import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import { applyStudioCommands, comparerDocumentsStudio, exportStudioDxf, exportStudioIfc, exportStudioSvg, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, studioChevauchements, studioCopieIndependante, studioElementsModifies, StudioValidationError, validateStudioDocument, type StudioModeDerivation, type StudioDifferenceDocuments, type StudioDocument, type StudioEnvelope, type StudioPhaseWorkflow } from "@parcours/atelier-model";
+import { applyStudioCommands, comparerDocumentsStudio, exportStudioDxf, exportStudioIfc, exportStudioObj, exportStudioStl, exportStudioSvg, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, studioChevauchements, studioCopieIndependante, studioElementsModifies, StudioValidationError, validateStudioDocument, type StudioModeDerivation, type StudioDifferenceDocuments, type StudioDocument, type StudioEnvelope, type StudioPhaseWorkflow } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
 import { studioRevisions, studioStudies, studioStudyContexts, studioVariants, type StudioContext, type StudioExampleInstall, type StudioProvenance } from "../db/schema.js";
 import { newId } from "./ids.js";
@@ -12,7 +12,7 @@ import { loadProjectAccess, projectAccessRefusal, type AccessibleProject, type P
 import type { CiblePortee } from "@parcours/domain-model";
 import { orchestrerCommandesDansTransaction, type Tx } from "./atelier-validation.js";
 import { lockProject, type Querier } from "./step-rows.js";
-import { revaliderBooleensStudio } from "./studio-exact.js";
+import { exportStudioStep, revaliderBooleensStudio } from "./studio-exact.js";
 import { corpsRefusQuota, quotaCommandesStudio } from "./studio-quotas.js";
 import {
   STUDIO_MODES_ENVELOPPE, STUDIO_OPERATIONS_COMMANDE, studioCommandeNue, studioControlerCibles, studioControlerPortee, studioEffetsCommande, studioHorsPerimetre,
@@ -428,13 +428,20 @@ export async function createStudioVariant(projectId: string, studyId: string, ac
   });
 }
 
-export const STUDIO_EXPORT_FORMATS = ["svg", "dxf", "ifc"] as const;
+/** Formats d'export d'une révision : dessin (SVG, DXF), maquette (IFC) et géométrie 3D (OBJ, STL, STEP — E.6-04). */
+export const STUDIO_EXPORT_FORMATS = ["svg", "dxf", "ifc", "obj", "stl", "step"] as const;
+/** Formats couverts par le rapport de fidélité (E.6-03) ; les exports 3D ont leur bilan (`studioBilanExport3d`). */
+export const STUDIO_RAPPORT_FORMATS = ["svg", "dxf", "ifc"] as const;
 export type StudioExportFormat = (typeof STUDIO_EXPORT_FORMATS)[number];
 export const STUDIO_EXPORT_CONTENT_TYPES: Readonly<Record<StudioExportFormat, string>> = Object.freeze({
   svg: "image/svg+xml; charset=utf-8",
   dxf: "application/dxf",
   // IFC STEP (ISO 10303-21) : chaînes encodées en ASCII (`\X2\`), aucun charset à déclarer.
   ifc: "application/x-step",
+  // OBJ et STL ASCII : texte ASCII (identifiants échappés `~XXXX~`) ; STEP AP214 écrit par OCCT : ASCII.
+  obj: "model/obj",
+  stl: "model/stl",
+  step: "model/step",
 });
 export interface StudioExportFile { format: StudioExportFormat; contentType: string; filename: string; revisionId: string; body: string }
 
@@ -453,7 +460,16 @@ export async function exportStudioVariant(q: Querier, scope: StudioScope, actorI
   let body: string;
   if (format === "svg") body = exportStudioSvg(doc);
   else if (format === "dxf") body = exportStudioDxf(doc);
-  else {
+  else if (format === "obj") body = exportStudioObj(doc);
+  else if (format === "stl") body = exportStudioStl(doc);
+  else if (format === "step") {
+    const [row] = await q.select({ createdAt: studioRevisions.createdAt }).from(studioRevisions).where(eq(studioRevisions.id, context.revision.id)).limit(1);
+    if (!row) return notFound();
+    const step = await exportStudioStep(doc, row.createdAt.toISOString().slice(0, 19), `${studioFileSegment(context.variant.name, "variante")}.step`);
+    // Aucun solide : refus explicite, jamais un fichier STEP vide.
+    if (step === null) throw new StudioRequestError(422, { error: "nothing_to_export", message: "Aucun solide à écrire en STEP : extrudez un objet, posez un solide ou un mur." });
+    body = step;
+  } else {
     // Horodatage de la révision exportée (reproductible) ; GlobalId dérivés de la variante et des identifiants Studio.
     const [row] = await q.select({ createdAt: studioRevisions.createdAt }).from(studioRevisions).where(eq(studioRevisions.id, context.revision.id)).limit(1);
     if (!row) return notFound();

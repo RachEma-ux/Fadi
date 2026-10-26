@@ -3,16 +3,16 @@
  * Recette du lot G2 (achèvement Studio, outils et BIM) — API et application construites (même origine), Chromium réel,
  * comptes et projet synthétiques ; les dimensions sont des données de test, pas des valeurs de projet :
  *
- *  - TR-EX-027 : outil « Échelle d'accès » (Ctrl+Maj+F8, famille Architecture, icône propre), distinct de la
+ *  - TR-EX-027 : outil « Échelle d'accès » (Ctrl+Maj+F12, famille Architecture, icône propre), distinct de la
  *    transformation « Échelle » ; posé d'un clic avec les valeurs saisies au panneau ; dessiné en plan, maillé en 3D,
  *    métré ; enregistré ; exporté en IFC (IfcStair .LADDER.) ;
  *  - TR-AC-004 : cas ambigu d'accrochage (deux lignes confondues) tracé (« 1/n ») et résolu explicitement (« Cible
  *    d'accrochage suivante », Ctrl+Maj+F1) : la cote se lie à l'objet choisi ; désignation ambiguë au clic, résolue de
  *    même ;
- *  - TR-INV-013 : cote de face 3D (Ctrl+Maj+F10) qui suit la face poussée, puis « à résoudre » après la division de la
+ *  - TR-INV-013 : cote de face 3D (Maj+F12) qui suit la face poussée, puis « à résoudre » après la division de la
  *    face cotée, rattachée explicitement ;
  *  - TR-AC-010 : un concepteur (éditeur) trouve « Approuver » par la recherche de la palette, l'exécute et reçoit le
- *    refus du serveur ; le propriétaire, qui a le droit, approuve par la même commande (Ctrl+Maj+F7) ;
+ *    refus du serveur ; le propriétaire, qui a le droit, approuve par la même commande (Ctrl+Maj+F11) ;
  *  - TR-IF-006 : enveloppe complète (portée, cibles, opération, mode) : essai sans écriture puis application.
  *
  * BASE_URL=http://localhost:3001 MAILPIT_URL=http://localhost:8025 OUT=atelier-captures/studio-g2 node apps/web/e2e/studio-g2.mjs
@@ -106,12 +106,12 @@ try {
 
   // ——— TR-EX-027 : Échelle d'accès ———
   await ouvrir();
-  const bouton = outils.locator('[data-studio-outil="studio.architecture.echelle-acces"][aria-label="Échelle d’accès"][aria-keyshortcuts="Control+Shift+F8"]');
-  check("TR-EX-027 (règle d'or) : Échelle d'accès dans la famille Architecture, icône propre, Ctrl+Maj+F8 ; distincte de la transformation Échelle",
+  const bouton = outils.locator('[data-studio-outil="studio.architecture.echelle-acces"][aria-label="Échelle d’accès"][aria-keyshortcuts="Control+Shift+F12"]');
+  check("TR-EX-027 (règle d'or) : Échelle d'accès dans la famille Architecture, icône propre, Ctrl+Maj+F12 ; distincte de la transformation Échelle",
     (await bouton.locator("svg path").count()) === 1 && (await bouton.evaluate((b) => b.closest("[data-studio-famille]")?.getAttribute("data-studio-famille"))) === "architecture"
-    && (await outils.locator('[data-studio-outil="studio.dessin.echelle"]').getAttribute("aria-keyshortcuts")) !== "Control+Shift+F8");
+    && (await outils.locator('[data-studio-outil="studio.dessin.echelle"]').getAttribute("aria-keyshortcuts")) !== "Control+Shift+F12");
   await flou(page);
-  await page.keyboard.press("Control+Shift+F8");
+  await page.keyboard.press("Control+Shift+F12");
   const formEchelle = page.locator("[data-studio-architecture-echelle-formulaire]");
   await formEchelle.waitFor();
   check("TR-EX-027 : formulaire de l'outil, aucune valeur proposée", (await formEchelle.locator('[data-studio-champ-architecture="echelle-largeur"]').inputValue()) === "");
@@ -176,13 +176,13 @@ try {
   await commandes([{ toolId: "studio.solide.boite", params: { id: "b1", type: "box", placement: { origin: { x: 20, y: 0, z: 0 }, rotation: 0 }, width: 4, depth: 2, height: 3 } }]);
   await ouvrir();
   await flou(page);
-  await page.keyboard.press("Control+Shift+F10");
+  await page.keyboard.press("Shift+F12");
   const panneaux3d = page.locator("[data-studio-vue3d], [data-studio-planche3d-panneaux], [data-studio-visualisation-panneaux]");
   await panneaux3d.locator("canvas[data-studio-vue3d-canvas]").waitFor({ timeout: 30000 });
   await panneaux3d.locator('[data-studio-solide="b1"]').click();
   const formCote = panneaux3d.locator('[data-studio-cote-face="b1"]');
   await formCote.waitFor();
-  check("TR-INV-013 (règle d'or) : Cote de face 3D (Ctrl+Maj+F10) active l'outil ; aucune face proposée",
+  check("TR-INV-013 (règle d'or) : Cote de face 3D (Maj+F12) active l'outil ; aucune face proposée",
     (await page.locator('[data-studio-outil="studio.solide.cote-face"]').first().getAttribute("aria-pressed")) === "true" && (await formCote.locator("[data-studio-cote-face-a]").inputValue()) === "");
   await formCote.locator("[data-studio-cote-face-a]").selectOption("lateral-0");
   await formCote.locator("[data-studio-cote-face-b]").selectOption("lateral-2");
@@ -237,12 +237,12 @@ try {
   await ep.keyboard.press("Escape");
   await ouvrir();
   await flou(page);
-  await page.keyboard.press("Control+Shift+F7");
+  await page.keyboard.press("Control+Shift+F11");
   const boiteP = page.locator("[data-studio-approbation]");
   await boiteP.waitFor();
   await boiteP.locator("[data-studio-approbation-confirmer]").click();
   await boiteP.locator('[data-studio-approbation-message="ok"]').waitFor();
-  check("TR-AC-010 : le propriétaire, qui détient le droit, approuve par la même commande (Ctrl+Maj+F7)",
+  check("TR-AC-010 : le propriétaire, qui détient le droit, approuve par la même commande (Ctrl+Maj+F11)",
     (await api("GET", `/projects/${projet.id}/studio/studies/${etude.study.id}/publications/${pub.id}`)).workStatus === "approuve");
 
   check("aucune erreur de page", erreurs.length === 0, erreurs.join(" | "));

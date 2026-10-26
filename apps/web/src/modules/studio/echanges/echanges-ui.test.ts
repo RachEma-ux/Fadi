@@ -43,7 +43,7 @@ describe("Matrice d'échanges : boîte en lecture seule (E.6-01 à E.6-05)", () 
 
   it("sources : référence non traduite (translate=\"no\"), commentaire en prose traduit ; entités IFC non traduites", () => {
     const html = renderToStaticMarkup(createElement(PanneauEchanges, { surFermer: () => {} }));
-    expect(html).toContain('<cite translate="no">docs/atelier/decisions.md, D-179</cite> — <span>DWG et DGN renoncés pour l’Atelier P2 seulement</span>');
+    expect(html).toContain('<cite translate="no">docs/atelier/decisions.md, D-179</cite> — <span>Décision approuvée : DWG et DGN renoncés, déclarés ; DXF et IFC restent les formats d’échange</span>');
     expect(html).not.toMatch(/data-studio-echange-sources[^>]*translate/);
     expect(html).toContain('<code>IfcTriangulatedFaceSet</code>');
     const t = new Traducteur(dico as Record<string, string>);

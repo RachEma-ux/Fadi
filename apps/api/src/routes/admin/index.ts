@@ -18,6 +18,7 @@
  *                                            même anonymisation que la tâche des 30 jours (`anonymiseAccountIn`), irréversible
  *   POST   /admin/users/invitations          { email } → invitation à créer un compte (UM-3)
  *   GET    /admin/audit                      journal d'activité en lecture seule (routes/admin/journal.ts, phase 3 bis)
+ *   GET    /admin/surveillance               règles d'alerte et consommation des noyaux (routes/admin/surveillance.ts, R.5-03)
  *   GET    /admin/invitations                filtres `status`, `hideTest` (UM-31) · DELETE /admin/invitations/:id
  *   « Renvoyer » une invitation de compte = POST /admin/users/invitations sur la même adresse : nouveau jeton (seule
  *   son empreinte est stockée), l'ancien lien cesse de fonctionner ; le lien en clair n'est rendu qu'une fois.
@@ -43,6 +44,7 @@ import { lockAdminEligibility } from "../../lib/admin-eligibility.js";
 import { anonymiseAccountIn } from "../../lib/account-jobs.js";
 import { RESERVED_ADDRESS_PATTERN } from "../../lib/mailer/quota.js";
 import { adminJournalRouter } from "./journal.js";
+import { adminSurveillanceRouter } from "./surveillance.js";
 import { anonymisationAt, anonymiseNowRefusal, deletionRequester, DELETION_GRACE_DAYS, type AnonymiseNowRefusal } from "../../lib/security/deletion.js";
 
 export const adminRouter = Router();
@@ -50,6 +52,8 @@ export const adminRouter = Router();
 adminRouter.use(requirePlatformRole("admin"));
 // Journal d'activité en lecture seule (phase 3 bis) : GET /admin/audit, derrière la même garde.
 adminRouter.use(adminJournalRouter);
+// Surveillance d'exploitation (R.5-03, OPS-08) : GET /admin/surveillance, lecture seule, derrière la même garde.
+adminRouter.use(adminSurveillanceRouter);
 
 const notFound = (res: Response) => res.status(404).json({ error: "not_found" });
 

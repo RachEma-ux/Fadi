@@ -1,4 +1,6 @@
 import { controlerLiens, validerCote, type StudioDimension } from "../objets/cote.js";
+import { studioContourMur, studioPointCibleCote, studioResolveurCotes, type StudioCibleCote } from "./cotes-murs.js";
+import { STUDIO_INDEXED_ANCHOR } from "../noyau/ancres.js";
 import { studioAnchorPoint } from "../objets/index.js";
 import { etatCalque, type StudioLayerState } from "../noyau/calques.js";
 import type { StudioSolid } from "../objets-3d/solides.js";
@@ -83,6 +85,62 @@ export function enteredDimension(state: Etat, params: unknown, path: string): St
   const d = validerCote(params, `${path}.params`);
   if (d.toResolve) fail(`${path}.params.toResolve`, "l’état à résoudre naît d’une suppression, il n’est jamais saisi");
   editable(state, d, path);
-  controlerLiens(d, shapeMap(state), `${path}.params`);
+  // Formes et murs (cote associative sur objet architectural, AC-001).
+  controlerLiens(d, studioResolveurCotes(state.objects, state.architecture), `${path}.params`);
   return d;
+}
+
+/**
+ * Cotes liées aux murs `ids` après leur modification (même identité) : chaque extrémité liée suit le sommet (ou le
+ * milieu) du contour de l'emprise du mur. Si ce contour n'a plus le même nombre de sommets (axe repris, sommet ajouté ou
+ * retiré), l'indice ne désigne plus le même sommet : le lien est rompu et la cote passe « à résoudre » (géométrie
+ * gardée, valeur non évaluée) — jamais rattachée en silence à un autre sommet (A.4-05).
+ */
+export function suivreCotesMurs(state: Etat, avant: ReadonlyMap<string, number>, ids: Iterable<string>, path: string): void {
+  const touches = new Set(ids);
+  if (!touches.size || !state.dimensions.some((d) => (d.links.start && touches.has(d.links.start.objectId)) || (d.links.end && touches.has(d.links.end.objectId)))) return;
+  const murs = new Map(state.architecture.filter((x) => x.type === "wall" && touches.has(x.id)).map((w) => [w.id, w as StudioCibleCote]));
+  state.dimensions = state.dimensions.map((d) => {
+    const lie = (l: StudioDimension["links"]["start"]) => !!l && murs.has(l.objectId);
+    if (!lie(d.links.start) && !lie(d.links.end)) return d;
+    let rompu = false;
+    const suivre = (l: StudioDimension["links"]["start"], p: StudioDimension["start"]) => {
+      if (!l || !murs.has(l.objectId)) return { lien: l, point: p };
+      const mur = murs.get(l.objectId)!;
+      const meme = STUDIO_INDEXED_ANCHOR.test(l.anchor) && avant.get(l.objectId) === sommetsContour(mur);
+      const q = meme ? studioPointCibleCote(mur, l.anchor) : null;
+      if (!q) { rompu = true; return { lien: null, point: p }; }
+      return { lien: l, point: q };
+    };
+    const s = suivre(d.links.start, d.start), e = suivre(d.links.end, d.end);
+    if (!rompu && same(s.point, d.start) && same(e.point, d.end)) return d;
+    editable(state, d, `${path} (cote liée ${d.id})`);
+    if (!rompu && same(s.point, e.point)) fail(path, `la cote liée ${d.id} deviendrait de longueur nulle`);
+    return rompu ? { ...d, start: s.point, end: e.point, links: { start: s.lien, end: e.lien }, toResolve: true } : { ...d, start: s.point, end: e.point };
+  });
+}
+
+/** Nombre de sommets du contour de l'emprise d'un mur (0 si sa géométrie est invalide). */
+export function sommetsContour(w: StudioCibleCote): number {
+  return w.type === "wall" ? studioContourMur(w)?.points.length ?? 0 : 0;
+}
+
+/** Avant une commande qui change des murs : nombre de sommets du contour de chaque mur coté (pour `suivreCotesMurs`). */
+export function contoursCotes(state: Etat): Map<string, number> {
+  const lies = new Set<string>();
+  for (const d of state.dimensions) for (const l of [d.links.start, d.links.end]) if (l) lies.add(l.objectId);
+  const m = new Map<string, number>();
+  if (!lies.size) return m;
+  for (const a of state.architecture) if (a.type === "wall" && lies.has(a.id)) m.set(a.id, sommetsContour(a));
+  return m;
+}
+
+/** Murs retirés : les cotes qui leur étaient liées passent « à résoudre » (lien rompu, géométrie gardée), jamais supprimées. */
+export function rompreCotesMurs(state: Etat, ids: ReadonlySet<string>, path: string): void {
+  state.dimensions = state.dimensions.map((d) => {
+    const rs = !!d.links.start && ids.has(d.links.start.objectId), re = !!d.links.end && ids.has(d.links.end.objectId);
+    if (!rs && !re) return d;
+    editable(state, d, `${path} (cote liée ${d.id})`);
+    return { ...d, links: { start: rs ? null : d.links.start, end: re ? null : d.links.end }, toResolve: true };
+  });
 }

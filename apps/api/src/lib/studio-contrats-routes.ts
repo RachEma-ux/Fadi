@@ -224,12 +224,12 @@ export const CONTRAT_REVISION_CHANGEMENTS = contratRoute({
   }),
 });
 export const CONTRAT_VARIANTE_EXPORTER = contratRoute({
-  id: "studio-api-variante-exporter/1", routes: ["GET /studies/:studyId/variants/:variantId/export"], objet: "Fichier SVG, DXF ou IFC d'une révision (tête par défaut) ; en-tête `X-Studio-Revision`.",
-  entree: "Requête : `format` (svg | dxf | ifc), `revision` facultative (schéma `exportSchema`).", statuts: [200], corps: "fichier", reponse: null, typeFichier: "image/svg+xml | application/dxf | application/x-step",
+  id: "studio-api-variante-exporter/1", routes: ["GET /studies/:studyId/variants/:variantId/export"], objet: "Fichier SVG, DXF, IFC, OBJ, STL ou STEP d'une révision (tête par défaut) ; en-tête `X-Studio-Revision` ; STEP sans aucun solide : 422 `nothing_to_export` (E.6-04).",
+  entree: "Requête : `format` (svg | dxf | ifc | obj | stl | step), `revision` facultative (schéma `exportSchema`).", statuts: [200], corps: "fichier", reponse: null, typeFichier: "image/svg+xml | application/dxf | application/x-step | model/obj | model/stl | model/step",
 });
 export const CONTRAT_EXPORT_RAPPORT = contratRoute({
   id: "studio-api-export-rapport/1", routes: ["GET /studies/:studyId/variants/:variantId/export/rapport"], objet: "Rapport de fidélité de l'export (E.6-03), `studio-rapport-fidelite/1`.",
-  entree: "Requête : `format`, `revision` facultative (schéma `exportSchema`).", statuts: [200], corps: "json",
+  entree: "Requête : `format` (svg | dxf | ifc), `revision` facultative (schéma `rapportSchema`).", statuts: [200], corps: "json",
   reponse: z.looseObject({ revisionId: ident, schema: z.literal("studio-rapport-fidelite/1"), format: z.string(), totaux: z.looseObject({ elements: z.number() }), lignes: z.array(z.unknown()) }),
 });
 export const CONTRAT_COMMANDES = contratRoute({

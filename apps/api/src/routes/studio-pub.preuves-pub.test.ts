@@ -21,6 +21,7 @@ import request from "supertest";
 import { STUDIO_CONTRACT, studioExporterBcf, studioLireBcf, studioSujetsBcf } from "@parcours/atelier-model";
 import { studioRouter } from "./studio.js";
 import { initialiserProjet, type Acteur } from "../testing/studio-base-simulee.js";
+import { bcfCompresse } from "../testing/bcf-compresse.js";
 
 const app = express();
 app.use("/projects/:projectId/studio", studioRouter);
@@ -128,6 +129,12 @@ describe("IF-010 — pièces justificatives et BCF (API)", () => {
     const relu = await studioLireBcf(new Uint8Array(exp.body as Buffer));
     expect(relu.sujets).toHaveLength(2);
   });
+  it("IF-010 [+] API : un .bcfzip aux entrées DEFLATE (zlib.deflateRawSync) est importé, jamais refusé « bcf_illisible »", async () => {
+    const r = await ok("post", `${V}/observations/bcf`, { fichierBase64: Buffer.from(await bcfCompresse("Compresse")).toString("base64") });
+    expect(r["crees"]).toHaveLength(1);
+    const lue = await ok("get", `${V}/observations/${r["crees"][0]["observationId"]}`);
+    expect(lue).toMatchObject({ gravite: "majeure", categorie: "coordination", bcfRefs: [{ guid: r["crees"][0]["guid"] }] });
+  });
 });
 
 describe("IF-009 — observation bloquante et manifeste (API)", () => {
@@ -179,6 +186,81 @@ describe("EX-074 / EX-076 — publication d'un dossier de conception (API)", () 
     ]);
     const refus = await appel("post", `${V}/publications`, { title: "Faux", contenu: "dossier-conception", dossierId: d["id"], presentations: { [f["id"]]: "extrait-synchronise" } });
     expect([refus.status, refus.body["error"], refus.body["refus"]]).toEqual([409, "piece_refusee", [{ code: "synchronisation_non_fondee", documentId: f["id"] }]]);
+  });
+});
+
+describe("IF-009 / EX-074 — périmètre de contrôle et pièces d'un dossier de conception (correctifs revue PR #330)", () => {
+  it("IF-009 [−] API : observation bloquante ouverte sur une AUTRE variante dont le dossier publie une feuille ou le métré → soumission, approbation et diffusion refusées (409)", async () => {
+    for (const via of ["feuille", "metre"] as const) {
+      initialiserProjet();
+      const v2 = (await ok("post", `${S}/studies/s/variants`, { name: `Variante 2 (${via})` }))["variant"]["id"] as string;
+      const V2 = `${S}/studies/s/variants/${v2}`;
+      const fv = await ok("post", `${V}/sheets`, FEUILLE);
+      const f2 = await ok("post", `${V2}/sheets`, { ...FEUILLE, number: "D-02" });
+      const d = await ok("post", `${S}/studies/s/dossiers`, via === "feuille"
+        ? { title: "Dossier croisé", sheetIds: [fv["id"], f2["id"]] }
+        : { title: "Dossier métré", sheetIds: [fv["id"]], quantities: { variantId: v2 } });
+      // Publication soumise AVANT l'observation : son approbation et sa diffusion devront être refusées ensuite.
+      const avant = await ok("post", `${V}/publications`, { title: "DCE soumis", contenu: "dossier-conception", dossierId: d["id"] });
+      const soumis = await ok("post", `${PUBS}/${avant["id"]}/soumettre`, {});
+      const o = await ok("post", `${V2}/observations`, { body: "Bloquant ailleurs", responsableId: "editeur", gravite: "bloquante", audience: "projet" });
+      const lueAvant = await ok("get", `${PUBS}/${avant["id"]}`);
+      expect([lueAvant["drift"], lueAvant["allowed"].includes("approuver")]).toEqual([[{ type: "controles" }], false]);
+      for (const action of ["approuver", "diffuser"]) {
+        const refus = await appel("post", `${PUBS}/${avant["id"]}/${action}`, action === "approuver" ? { manifestHash: soumis["manifestHash"] } : {});
+        expect([action, refus.status]).toEqual([action, 409]);
+      }
+      const pub = await ok("post", `${V}/publications`, { title: "DCE", contenu: "dossier-conception", dossierId: d["id"] });
+      expect(pub["manifest"]["sources"].map((x: { variantId: string }) => x.variantId)).toEqual(["v"]);
+      expect(pub["manifest"]["controles"]["observations"]).toMatchObject([{ issueId: o["issueId"], variantId: v2, resolution: "ouverte" }]);
+      if (via === "metre") expect(pub["manifest"]["dossier"]["metre"]).toMatchObject({ variantId: v2 });
+      expect(pub["allowed"]).not.toContain("soumettre");
+      const refus = await appel("post", `${PUBS}/${pub["id"]}/soumettre`, {});
+      expect([refus.status, refus.body["error"]]).toEqual([409, "blocking_observation_open"]);
+      // Actualisée, la publication soumise avant l'observation la porte à son tour et reste bloquée.
+      const actualisee = await ok("post", `${PUBS}/${avant["id"]}/actualiser`, {});
+      expect(actualisee["manifest"]["controles"]["observations"]).toMatchObject([{ issueId: o["issueId"], resolution: "ouverte" }]);
+      expect(actualisee["allowed"]).not.toContain("soumettre");
+      const refus2 = await appel("post", `${PUBS}/${avant["id"]}/soumettre`, {});
+      expect([refus2.status, refus2.body["error"]]).toEqual([409, "blocking_observation_open"]);
+    }
+  });
+
+  it("EX-074 [+] API : une feuille retirée du dossier après publication → la publication se lit encore (manifeste figé intact), passe « à actualiser » et s'actualise sans la pièce retirée", async () => {
+    await commande([BOITE]);
+    const vue = await ok("post", `${V}/section-views`, { definition: VUE_COUPE });
+    const f1 = await ok("post", `${V}/sheets`, FEUILLE);
+    const f2 = await ok("post", `${V}/sheets`, { ...FEUILLE, number: "D-02" });
+    const d = await ok("post", `${S}/studies/s/dossiers`, { title: "Dossier", sheetIds: [f1["id"], f2["id"]], sectionViewIds: [vue["id"]] });
+    const pub = await ok("post", `${V}/publications`, { title: "DCE", contenu: "dossier-conception", dossierId: d["id"], presentations: { [vue["id"]]: "extrait-synchronise" } });
+    const fige = pub["manifest"];
+    expect(fige["dossier"]["pieces"].map((p: { documentId: string }) => p.documentId)).toEqual([f1["id"], f2["id"], vue["id"]]);
+    await ok("patch", `${S}/studies/s/dossiers/${d["id"]}`, { sheetIds: [f1["id"]], sectionViewIds: [] });
+    const lue = await appel("get", `${PUBS}/${pub["id"]}`);
+    expect(lue.status).toBe(200);
+    expect(lue.body["manifest"]).toEqual(fige);
+    expect(lue.body["allowed"]).toContain("actualiser");
+    expect((await appel("get", `${PUBS}`)).status).toBe(200);
+    const actualisee = await ok("post", `${PUBS}/${pub["id"]}/actualiser`, {});
+    expect(actualisee["manifest"]["dossier"]["pieces"].map((p: { documentId: string }) => p.documentId)).toEqual([f1["id"]]);
+    expect(actualisee["manifestHash"]).not.toBe(pub["manifestHash"]);
+    expect((await ok("post", `${PUBS}/${pub["id"]}/soumettre`, {}))["workStatus"]).toBe("en-revue");
+    // Présentation saisie pour une pièce absente à la création : toujours refusée.
+    const refus = await appel("post", `${V}/publications`, { title: "Faux", contenu: "dossier-conception", dossierId: d["id"], presentations: { [f2["id"]]: "document-independant" } });
+    expect([refus.status, refus.body["code"]]).toEqual([400, "piece_inconnue"]);
+  });
+});
+
+describe("EX-075 / EX-074 — vue de coupe incomplète publiée (correctif revue PR #330, AGENTS.md L9)", () => {
+  it("EX-075 [−] API : solide basculé dont une face est dans le plan de coupe → la vue, la page et le manifeste nomment le solide omis, jamais une section d'apparence complète", async () => {
+    await commande([{ ...BOITE, params: { ...BOITE.params, placement: { origin: { x: 0, y: 0, z: 0 }, rotation: 0, basculement: { x: 0, y: Math.PI / 2 } } } }]);
+    const vue = await ok("post", `${V}/section-views`, { definition: { ...VUE_COUPE, niveau: { repere: "local-3d", z: 0 } } });
+    expect(vue["vue"]["coupe"]["exactsNonCoupes"]).toEqual(["b1"]);
+    const f = await ok("post", `${V}/sheets`, FEUILLE);
+    const d = await ok("post", `${S}/studies/s/dossiers`, { title: "Dossier", sheetIds: [f["id"]], sectionViewIds: [vue["id"]] });
+    const pub = await ok("post", `${V}/publications`, { title: "DCE", contenu: "dossier-conception", dossierId: d["id"] });
+    const pieces = pub["manifest"]["dossier"]["pieces"] as Record<string, any>[];
+    expect(pieces.map((p) => [p["nature"], p["omis"] ?? null])).toEqual([["feuille", null], ["vue-coupe", ["b1"]]]);
   });
 });
 

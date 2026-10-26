@@ -1,5 +1,5 @@
 /**
- * Boîte « Approuver » (AC-010, lot G2) : la commande du catalogue (Ctrl+Maj+F7, palette, gestionnaire « Outils »)
+ * Boîte « Approuver » (AC-010, lot G2) : la commande du catalogue (Ctrl+Maj+F11, palette, gestionnaire « Outils »)
  * liste les publications en revue de l'étude et envoie l'approbation de celle choisie, avec le manifeste affiché
  * (l'ensemble examiné). Elle est proposée à tout membre : la découverte n'est pas un droit. Le serveur seul juge du
  * droit métier (`canApprove`) et un refus est affiché tel quel — ni les préférences, ni un profil importé, ni un rôle
