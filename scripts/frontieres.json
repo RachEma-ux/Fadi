@@ -10,6 +10,11 @@
         "motif": "Studio n'importe ni l'Atelier (Planche comprise), ni le Parcours, ni ProjectShell, ni le mode immersif (ADR-STUDIO-NAV-01), ni le module Sandbox (lot 1 : la carte « 00 Sandbox » n'est qu'un lien d'adresse)"
       },
       {
+        "de": "modules/studio/StudioShell",
+        "interdits": ["routes/ProjectShell", "lib/auth-context", "lib/access"],
+        "motif": "StudioShell obtient l'authentification et la résolution du projet par la façade publique de Studio (modules/studio/contexte/facade-contexte.ts), sans ProjectShell ni accès direct au contexte d'authentification ou à la résolution d'accès de Fadi (ARC-03, ADR-STUDIO-PILOTE-01 P-12)"
+      },
+      {
         "de": "modules/atelier",
         "interdits": ["modules/studio", "modules/sandbox", "modules/geodata"],
         "motif": "l'Atelier (Planche comprise) ne dépend ni de Studio (ADR-STUDIO-NAV-01) ni du module Sandbox (lot 1)"

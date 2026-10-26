@@ -8,7 +8,8 @@
  *   inchangés ;
  * - « Exporter le rendu PNG » (F4) : un vrai PNG du canevas WebGL, provenance incluse (bloc iTXt : étude, variante,
  *   révision, scène, date, « rendu du modèle ») ; d'une révision historique, la provenance porte cette révision ;
- * - les rendus « Illustration IA contrainte » et « Exploration libre » sont annoncés indisponibles, sans bouton.
+ * - « Illustration contrainte depuis la vue » est disponible avec son déclencheur (lot F, recette studio-lot-f.mjs) ;
+ *   « Exploration libre » est annoncée indisponible, sans bouton.
  *
  * BASE_URL=http://localhost:3001 node apps/web/e2e/studio-visualisation.mjs
  */
@@ -100,7 +101,9 @@ try {
   // E.5-04 : types de rendu ; seuls le rendu du modèle a un bouton.
   await ouvrir3d();
   check("rendus : « Rendu du modèle » disponible avec un bouton d'export", (await panneauVue.locator('[data-studio-rendu="rendu-modele"][data-studio-disponible="oui"] [data-studio-exporter-png]').count()) === 1);
-  for (const id of ["illustration-ia", "exploration-libre"]) {
+  // Lot F (décision P-12) : l'illustration contrainte est disponible, avec son déclencheur (recette studio-lot-f.mjs).
+  check("rendus : « Illustration contrainte depuis la vue » disponible avec son déclencheur", (await panneauVue.locator('[data-studio-rendu="illustration-ia"][data-studio-disponible="oui"] [data-studio-illustrer]').count()) === 1);
+  for (const id of ["exploration-libre"]) {
     const li = panneauVue.locator(`[data-studio-rendu="${id}"]`);
     check(`rendus : ${id} annoncé non disponible, sans aucun bouton`, (await li.getAttribute("data-studio-disponible")) === "non" && (await li.locator("button, a").count()) === 0 && (await li.textContent()).includes("Non disponible"));
   }

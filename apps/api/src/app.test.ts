@@ -1878,7 +1878,11 @@ describe("Partage du projet — membres, rôles vérifiés côté serveur", () =
     const reader = await registerAndLogin("share-reader@example.com");
     const editor = await registerAndLogin("share-editor@example.com");
     const stranger = await registerAndLogin("share-stranger@example.com");
-    const pid = (await owner.post("/examples/p118-exemple-complet/import")).body.id as string;
+    // X.2-02 (P-12) : le projet de référence importé ne se partage pas (403 reference-protegee) ; le partage se fait
+    // sur sa copie de travail (même contenu).
+    const ref = (await owner.post("/examples/p118-exemple-complet/import")).body.id as string;
+    expect((await partager(owner, ref, "nobody@example.com", "lecteur")).body).toMatchObject({ motif: "reference-protegee" });
+    const pid = (await owner.post(`/projects/${ref}/copies`).send({ name: "Escalier B et mezzanine" })).body.id as string;
 
     // Invitation : compte inexistant, propriétaire lui-même, adresse normalisée, rôle inconnu.
     // Adresse sans compte (gestion des comptes, UM-3) : invitation nominative en attente, aucun compte ni membre créé.
@@ -1902,7 +1906,8 @@ describe("Partage du projet — membres, rôles vérifiés côté serveur", () =
     const readerList = (await reader.get("/projects")).body as { id: string; role: string; ownerEmail: string }[];
     expect(readerList).toHaveLength(1);
     expect(readerList[0]).toMatchObject({ id: pid, role: "lecteur", ownerEmail: "share-owner@example.com" });
-    expect((await owner.get("/projects")).body[0]).toMatchObject({ id: pid, role: "proprietaire", ownerEmail: "share-owner@example.com" });
+    // Le propriétaire voit la référence importée et sa copie de travail (partagée).
+    expect(((await owner.get("/projects")).body as { id: string }[]).find((p) => p.id === pid)).toMatchObject({ id: pid, role: "proprietaire", ownerEmail: "share-owner@example.com" });
     expect((await reader.get(`/projects/${pid}`)).body).toMatchObject({ role: "lecteur", ownerEmail: "share-owner@example.com" });
     expect((await editor.get(`/projects/${pid}`)).body.role).toBe("editeur");
     const members = (await reader.get(`/projects/${pid}/members`)).body;
@@ -2625,7 +2630,10 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
       const owner = await account("proprio");
       const imported = await owner.a.post("/examples/p118-exemple-complet/import");
       expect(imported.status).toBe(201);
-      const pid = imported.body.id as string;
+      // X.2-02 (P-12) : la référence importée ne se partage pas ; la recette porte sur sa copie de travail (même contenu).
+      const copie = await owner.a.post(`/projects/${imported.body.id as string}/copies`).send({ name: "P.118 · support" });
+      expect(copie.status).toBe(201);
+      const pid = copie.body.id as string;
       const upload = await owner.a.post(`/projects/${pid}/steps/1/files`).set("Content-Type", "text/plain").set("X-File-Name", "note.txt").send("contenu confidentiel");
       expect(upload.status).toBe(201);
       const levels = ((await owner.a.get(`/projects/${pid}/documents`)).body.documents as { kind: string }[])

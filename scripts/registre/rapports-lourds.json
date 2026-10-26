@@ -1,0 +1,9 @@
+{
+  "$commentaire": "Rapports lourds (> 1 Mio) admis dans le suivi versionné (SUIVI-09, scripts/registre/controles-suivi.mjs). Un nouveau rapport lourd est conservé en artefact identifié (CI, release) avec sa référence stable, son empreinte et son verdict dans le suivi ; il ne s'ajoute ici que s'il doit rester versionné, avec son SHA-256 et sa raison. Le registre vivant n'a pas d'empreinte figée : chaque correction cite celle de sa base.",
+  "rapports": [
+    { "fichier": "docs/workstreams/studio/task-register.json", "sha256": null, "raison": "Registre unique des 630 obligations (source de vérité vivante) ; empreinte citée par chaque delta ou correction (base_register_sha256)." },
+    { "fichier": "docs/ai-team/reports/mission-003/A2/isolation-fiches-review.json", "sha256": "2375231769f967cc7de658617534332efca78cef4e64d70aba6b9a0a62f30607", "raison": "Revue d'isolation M08 de la mission 003 (269 fiches, 853 occurrences), citée par le registre ; rapport historique figé." },
+    { "fichier": "docs/ai-team/reports/mission-003/A2/isolation-code-review.json", "sha256": "155d8d16d8be4319dec19651a3118fa0c75afcc70365f0173fe4f2624c4766aa", "raison": "Revue d'isolation du code (mission 003, M08), rapport historique figé cité par les qualifications." },
+    { "fichier": "docs/ai-team/reports/mission-003/A2/isolation-nominal-supplement.json", "sha256": "e9ad75d2c17e9f1ac41bf7c4137dad2b9b4755956f36ee1dc44d54004d79ca07", "raison": "Complément nominal de la revue d'isolation (mission 003, M08), rapport historique figé." }
+  ]
+}

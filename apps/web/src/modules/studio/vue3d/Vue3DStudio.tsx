@@ -59,6 +59,8 @@ import {
 } from "./qualite-rendu";
 import { PresentationSansMsaa } from "./presentation";
 import { CouvertureTypes3d } from "./CouvertureTypes3d";
+import { etatProjection3d, LIBELLES_DOMAINES, type SourceProjection } from "./etat-projection";
+import { traceGeste } from "../taches/trace-geste";
 import { architectureDesignable, estOuverture, solidesDesignables } from "./designation";
 import { Icon } from "../../../components/Icon";
 import { estSelectionnable } from "../planche2d/calques";
@@ -124,6 +126,11 @@ export interface Vue3DStudioProps {
   surPointeur3d?: (p: { x: number; y: number; z: number } | null) => void;
   /** Pointeurs des autres participants (session en direct) : marques nommées, jamais une donnée du document. */
   pointeurs3d?: readonly { userId: string; nom: string; x: number; y: number; z: number }[];
+  /**
+   * Illustration depuis la vue (lot F) : rendu du modèle capturé (PNG portant sa provenance `fadi:rendu`), transmis à
+   * l'espace de travail qui ouvre la boîte « Illustration ». Rien n'est envoyé ni modifié ici.
+   */
+  surIllustration?: (c: { png: Uint8Array; provenance: ReturnType<typeof studioProvenanceRendu> }) => void;
 }
 
 interface Moteur {
@@ -390,7 +397,7 @@ function Champ({ nom, libelle, valeur, surValeur, requis = true }: { nom: string
   </label>;
 }
 
-export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbite", coupe = false, selection = null, layerId, surSelection, surCommandes, selectionArchitecture = null, surSelectionArchitecture, demande = null, surDemandeTraitee, surNavigation, provenance, hotePanneaux, visualisation: avecVisualisation = true, remplir = false, cameraPartagee = null, surCameraLocale, surPointeur3d, pointeurs3d }: Vue3DStudioProps) {
+export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbite", coupe = false, selection = null, layerId, surSelection, surCommandes, selectionArchitecture = null, surSelectionArchitecture, demande = null, surDemandeTraitee, surNavigation, provenance, hotePanneaux, visualisation: avecVisualisation = true, remplir = false, cameraPartagee = null, surCameraLocale, surPointeur3d, pointeurs3d, surIllustration }: Vue3DStudioProps) {
   const hote = useRef<HTMLDivElement>(null);
   const moteur = useRef<Moteur | null>(null);
   const cadre = useRef(false);
@@ -442,9 +449,13 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     const invalidation = projectionsAInvalider(b?.cache.doc ?? null, docMaillage);
     return { doc: docMaillage, base: b?.cache ?? null, invalidation, ids: invalidation.complet ? null : invalidation.ids };
   }, [docMaillage]);
+  // Révision source de chaque plan (EX-051) : révision serveur de la variante au moment de la demande et brouillon.
+  const sourceCourante: SourceProjection = { revisionServeur: provenance?.revisionId ?? "", brouillon: provenance?.nonEnregistre ?? false, revisionSession: empreinte.revision };
+  const sources = useRef(new Map<string, SourceProjection>());
   if (!plans.current.has(empreinte.revision)) {
     plans.current.set(empreinte.revision, plan);
-    for (const k of plans.current.keys()) if (plans.current.size > PLANS_GARDES) plans.current.delete(k);
+    sources.current.set(empreinte.revision, sourceCourante);
+    for (const k of plans.current.keys()) if (plans.current.size > PLANS_GARDES) { plans.current.delete(k); sources.current.delete(k); }
   }
   const maillage = useTache<{ document: StudioDocument; ids: string[] | null }, StudioMorceauMaillage[]>(
     { cle: "studio.maillage-3d", classe: "fond", nature: "maillage.3d.objets", charge: { document: docMaillage, ids: plan.ids }, empreinte },
@@ -468,6 +479,16 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   const mesh = useMemo(() => (calquesMontres && brut !== MAILLAGE_VIDE ? studioFiltrerMaillageScene(brut, calquesMontres) : brut), [brut, calquesMontres]);
   /** Le maillage affiché est celui du document courant (pas un maillage antérieur encore affiché pendant le calcul). */
   const maillageAJour = maillage.valeur !== undefined && maillage.revision === empreinte.revision;
+  // État identifié de la projection (EX-051, INV-006, EX-016) : révision source du résultat affiché, état dérivé, domaines
+  // périmés. Un résultat d'une autre révision reste affiché comme « dernière image », jamais comme « à jour ».
+  const sourceAffichee: SourceProjection | null = !assemble ? null : assemble.revision === empreinte.revision ? sourceCourante : sources.current.get(assemble.revision) ?? null;
+  // EX-008 : la scène est invalidée quand sa révision source canonique change (mutation accusée par le serveur).
+  const revisionCanonique = provenance && !provenance.nonEnregistre ? provenance.revisionId : null;
+  useEffect(() => { if (revisionCanonique) traceGeste.noter("scene", { revision: revisionCanonique }); }, [revisionCanonique]);
+  const etatProjection = etatProjection3d({
+    indisponible, echec: maillage.message, tache: maillage.etat, courante: sourceCourante, affichee: sourceAffichee,
+    docCourant: docMaillage, docAffiche: assemble?.cache.doc ?? null,
+  });
   const scenes = studioScenes(doc);
   const calquesVue = calquesMontres ?? calquesVisualisation(doc).filter((c) => c.visible).map((c) => c.id);
   suiviCamera.current = sceneChoisie !== null && calquesMontres !== null;
@@ -769,7 +790,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   function reglages() { return { nom: nomScene.trim() || prochainNomScene(doc), calques: calquesVue, mode }; }
   function visualisation(action: string) {
     const m = moteur.current;
-    const mutation = action !== "studio.scene.rappeler" && action !== "exporter-png";
+    const mutation = action !== "studio.scene.rappeler" && action !== "exporter-png" && action !== "illustration";
     if (mutation && !modifiable) { setErreur("Lecture seule : les scènes et les apparences ne se modifient pas ici."); return; }
     switch (action) {
       case "studio.scene.creer": {
@@ -799,12 +820,46 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
         envoyer(commandeRetraitApparence(doc, cibleApparence), () => setStatut("Apparence d’affichage retirée."));
         return;
       case "exporter-png": void exporterPng(); return;
+      case "illustration": void illustrer(); return;
     }
   }
   const raisonRendu = indisponible ? "Vue 3D indisponible : aucun rendu ne peut être tiré du canevas."
     : !provenance ? "Provenance inconnue : le rendu n’est pas exporté."
     : provenance.nonEnregistre ? "Enregistrez d’abord : le rendu porte sur une révision enregistrée, pas sur les modifications non enregistrées."
     : !maillageAJour ? "Maillage en cours de calcul : le rendu attend la géométrie du document affiché." : null;
+  /** Rendu du modèle de la vue (qualité complète), PNG portant sa provenance ; null : indisponible (raison affichée). */
+  async function capturerRendu(): Promise<{ png: Uint8Array; provenance: ReturnType<typeof studioProvenanceRendu>; actif: boolean } | null> {
+    const m = moteur.current;
+    if (!m || !provenance || raisonRendu) { setErreur(raisonRendu ?? "Vue 3D indisponible."); return null; }
+    try {
+      const actif = scenes.find((s) => s.id === sceneActive) ?? null;
+      const p = studioProvenanceRendu({
+        etude: provenance.etude, variante: provenance.variante, revisionId: provenance.revisionId,
+        scene: actif ? { id: actif.id, nom: actif.name } : null, date: new Date(), camera: cameraCourante(m),
+      });
+      const reglage = m.reglage;
+      m.qualiteTenue = true;
+      let blob: Blob | null;
+      try {
+        m.appliquerQualite(PALIERS_QUALITE[0]!);
+        m.rendre();
+        blob = await new Promise<Blob | null>((ok) => m.renderer.domElement.toBlob(ok, "image/png"));
+      } finally {
+        m.appliquerQualite(reglage);
+        m.qualiteTenue = false;
+        m.rendre();
+      }
+      if (!blob) throw new Error("canevas vide");
+      return { png: insererTextePng(new Uint8Array(await blob.arrayBuffer()), CLE_PROVENANCE_PNG, JSON.stringify(p)), provenance: p, actif: !!actif };
+    } catch { setErreur("Rendu impossible : le canevas n’a pas pu être lu."); return null; }
+  }
+  async function illustrer() {
+    const c = await capturerRendu();
+    if (!c) return;
+    setErreur("");
+    setStatut("Rendu du modèle capturé pour l’illustration : le modèle n’est pas modifié.");
+    surIllustration?.({ png: c.png, provenance: c.provenance });
+  }
   async function exporterPng() {
     const m = moteur.current;
     if (!m || !provenance || raisonRendu) { setErreur(raisonRendu ?? "Vue 3D indisponible."); return; }
@@ -888,7 +943,14 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   return (
     <section className="studio-vue3d" aria-label="Vue 3D" data-studio-vue3d data-studio-maillage={maillage.etat} data-studio-maillage-revision={maillage.revision ?? ""} data-studio-revision-courante={empreinte.revision}
       data-studio-projection-version={version ? `${version.revision}:${version.contenu}` : ""} data-studio-remailles={assemble?.remailles ?? ""} data-studio-invalidation={assemble ? (assemble.invalidation.complet ? `complet:${assemble.invalidation.raison}` : "partiel") : ""} data-studio-volumes={mesh.solids.length} data-studio-non-extrudes={mesh.nonExtruded} data-studio-solides-libres={libres} data-studio-architecture-3d={architecture.length} data-studio-navigation={navigation}
-      data-studio-affichage={mode} data-studio-scene-active={sceneActive ?? ""} data-studio-calques-montres={calquesMontres?.join(" ") ?? ""}>
+      data-studio-affichage={mode} data-studio-scene-active={sceneActive ?? ""} data-studio-calques-montres={calquesMontres?.join(" ") ?? ""}
+      data-studio-source-revision={etatProjection.sourceRevisionId ?? ""} data-studio-revision-serveur-courante={provenance?.revisionId ?? ""} data-studio-etat-derive={etatProjection.etat.etat}
+      data-studio-domaines-perimes={etatProjection.domainesPerimes.join(" ")}>
+      <p className="studio-vue3d-projection" role="status" data-studio-vue3d-projection>
+        <span>Révision source</span>{" : "}{sourceAffichee ? <><span translate="no" data-studio-source-revision-texte>{sourceAffichee.revisionServeur.slice(-8)}</span>{sourceAffichee.brouillon && <>{" "}<span>(brouillon non enregistré)</span></>}</> : <span>aucune</span>}
+        {" · "}<span data-studio-etat-derive-libelle>{etatProjection.libelle}</span>
+        {etatProjection.domainesPerimes.length > 0 && <>{" · "}<span data-studio-perimes><span>Données périmées</span>{" : "}{etatProjection.domainesPerimes.map((d, i) => <span key={d}>{i > 0 ? ", " : ""}<span>{LIBELLES_DOMAINES[d]}</span></span>)}</span></>}
+      </p>
       <div className="studio-vue3d-bandeau">
         <span role="status" data-studio-vue3d-decompte><span>{`${mesh.solids.length} volume(s)`}</span>{" · "}<span>{`${mesh.nonExtruded} objet(s) non extrudé(s), dessinés à plat`}</span>{libres > 0 && <>{" · "}<span>{`${libres} solide(s) libre(s)`}</span></>}</span>
         <button type="button" onClick={() => { const m = moteur.current; if (m) cadrer(m, mesh); }} disabled={indisponible}>Recadrer la vue 3D</button>

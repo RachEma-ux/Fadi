@@ -16,10 +16,11 @@ import {
 } from "../accrochage";
 import { estVisible } from "../calques";
 import type { PointPose, RectangleSelection } from "../Dessin2D";
-import { auCentimetre, CADRE_INITIAL, type Cadre } from "../geometrie-2d";
+import { CADRE_INITIAL, type Cadre } from "../geometrie-2d";
+import { pointPose } from "../accrochage/point-pose";
 import type { IdCommandeEditeur, StudioToolId } from "../raccourcis";
 import { ajouter, modeRectangle, selectionParRectangle } from "../selection";
-import { ecranVersPlanche, facteurMolette, glisserVue, pasGrille, pincer, surGrille, zoomer, type Rect } from "../vue";
+import { ecranVersPlanche, facteurMolette, glisserVue, pasGrille, pincer, zoomer, type Rect } from "../vue";
 import { ecart } from "./type";
 import { mesurerAccrochage, mesurerApercu, mesurerCadrage } from "../../chargement/mesures-studio";
 
@@ -137,8 +138,7 @@ export function useGestesPlanche(o: OptionsGestes) {
     const tol = ACCROCHE_PX / Math.max(Math.abs(matrix.a), 1e-9);
     const repere = mesurerAccrochage(drawing.objects.length, () => resoudre(index, { curseur: { x: raw.x, y: raw.y }, tolerance: tol, base, vue: vueVisible(matrix), exclure, verrouAngle, pasLongueur: o.accrocheGrille ? pas : 0.01 },
       { objets: o.accrocheSommets, modes: bascules.modes, orthogonal: bascules.orthogonal || e.shiftKey === true, polaire: bascules.polaire, pasPolaire: bascules.pasPolaire }));
-    if (repere) return { point: repere.ancre ? { ...repere.ancre.point } : { ...repere.point }, accroche: repere.ancre, repere };
-    return { point: o.accrocheGrille ? surGrille(raw, pas) : auCentimetre(raw), accroche: null, repere: null };
+    return pointPose(repere, raw, o.accrocheGrille ? pas : null);
   }
   /** Bascule d'accrochage ou de repérage ; false si `id` n'en est pas une. */
   function commandeAccrochage(id: IdCommandeEditeur): boolean {

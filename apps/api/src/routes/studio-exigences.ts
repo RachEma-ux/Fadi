@@ -101,10 +101,11 @@ studioExigencesRouter.get("/studies/:studyId/exigences/versions/:version", avecC
 }));
 
 /** Étude du projet sous verrou, droit `need`, étude active ; renvoie l'étude et la dernière version. */
-async function etudeEcrite(tx: Tx, projectId: string, studyId: string, actorId: string, need: "modify" | "owner" | "write") {
+async function etudeEcrite(tx: Tx, projectId: string, studyId: string, actorId: string, need: "modify" | "owner" | "write", aussi: readonly ("modify" | "write")[] = []) {
   const access = await lockedAccess(tx, projectId, actorId);
   const study = await studyOf(tx, projectId, studyId);
   assertAccess(access, actorId, need);
+  for (const n of aussi) assertAccess(access, actorId, n);
   if (study.archivedAt !== null) return studioArchivedRefusal();
   return { study, courante: await derniere(tx, study.id) };
 }
@@ -148,7 +149,9 @@ studioExigencesRouter.post("/studies/:studyId/exigences/acceptations", avecContr
   const input = parsed.data;
   const actor = req.user!;
   const out = await db.transaction(async (tx) => {
-    const { study, courante } = await etudeEcrite(tx, param(req, "projectId"), param(req, "studyId"), actor.id, "owner");
+    // X.2-02 (ADR-STUDIO-PILOTE-01 P-12) : propriétaire seul, et jamais sous la réservation d'édition d'un autre compte
+    // (423) ni sur le projet de référence protégé (403 reference-protegee) — choix le plus prudent et réversible.
+    const { study, courante } = await etudeEcrite(tx, param(req, "projectId"), param(req, "studyId"), actor.id, "owner", ["modify"]);
     const hash = empreinte({ action: "accepter", baseVersion: input.baseVersion, exigenceId: input.exigenceId });
     const r = await enregistrerVersion(tx, study.id, actor.id, input.requestId, hash, () => unwrap(deciderAcceptation(courante ? { version: courante.version, exigences: courante.requirements } : null, input, actor, new Date())),
       `Acceptation de la référence partenaire de l’exigence ${input.exigenceId}`);

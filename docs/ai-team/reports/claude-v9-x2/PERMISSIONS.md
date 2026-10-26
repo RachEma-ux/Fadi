@@ -69,7 +69,7 @@ chargé de tâche — rôle vérifié ensuite par `lib/studio-observations.ts`, 
 | `GET /studies/:studyId/exigences` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `GET /studies/:studyId/exigences/versions/:version` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `POST /studies/:studyId/exigences` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 201 |  |
-| `POST /studies/:studyId/exigences/acceptations` | proprietaire | 404 | 403 | 403 | 403 | admis | admis (à arbitrer) | admis (à arbitrer) | 409 version_perimee | à arbitrer (maître d'ouvrage) : l'acceptation n'est refusée ni par le verrou d'édition d'un autre compte ni par la référence protégée (comportement actuel épinglé, non changé) |
+| `POST /studies/:studyId/exigences/acceptations` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | 403 réf. | 409 version_perimee | X.2-02 (ADR-STUDIO-PILOTE-01 P-12) : propriétaire seul ; refusée sous le verrou d'édition d'un autre compte (423) et sur le projet de référence protégé (403 réf.) |
 | `GET /studies/:studyId/variants/:variantId/controles` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `GET /studies/:studyId/variants/:variantId/controles/:checkId` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `POST /studies/:studyId/variants/:variantId/controles` | ecriture | 404 | 403 | admis | 423 | admis | 423 | admis | 201 |  |
@@ -103,9 +103,38 @@ chargé de tâche — rôle vérifié ensuite par `lib/studio-observations.ts`, 
 | `POST /studies/:studyId/variants/:variantId/modeles-externes/:modelId/:action` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 200 | action comparer |
 | `POST /studies/:studyId/variants/:variantId/modeles-externes/:modelId/:action` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 200 | action accepter |
 | `POST /studies/:studyId/variants/:variantId/modeles-externes/:modelId/:action` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 200 | action refuser |
+| `GET /studies/:studyId/variants/:variantId/illustrations/fournisseurs` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `GET /studies/:studyId/variants/:variantId/illustrations` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `POST /studies/:studyId/variants/:variantId/illustrations` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 201 | image séparée tirée du rendu ; aucune révision écrite, le modèle n'est pas modifié |
+| `GET /studies/:studyId/variants/:variantId/illustrations/:illustrationId/image` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | téléchargement : droit d'export exigé (lecteur sans export et accès support refusés) |
+| `GET /agents/jetons` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | jetons du compte seulement |
+| `POST /agents/jetons` | lecture | 404 | admis | admis | admis | admis | admis | admis | 201 | tout membre : l'agent n'a que les droits de son titulaire, revérifiés à chaque appel |
+| `POST /agents/jetons/:tokenId/revoquer` | acteur | 404 | admis | admis | admis | admis | admis | admis | 200 | titulaire du jeton seulement ; un autre compte : 404 |
+| `GET /agents/propositions` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | propositions du compte seulement |
+| `POST /agents/propositions/:proposalId/confirmer` | acteur | 404 | admis | admis | admis | admis | admis | admis | 200 | titulaire seulement (un autre compte : 404) ; l'écriture passe par le point d'entrée commun (droits, verrou, référence) |
+| `POST /agents/propositions/:proposalId/refuser` | acteur | 404 | admis | admis | admis | admis | admis | admis | 200 | titulaire seulement ; un autre compte : 404 |
+| `GET /agents/journal` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | journal du compte seulement |
+| `GET /extensions` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `POST /extensions/evaluer` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | évaluation sans écriture ni chargement |
+| `GET /studies/:studyId/contexte` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `POST /studies/:studyId/variants/:variantId/essais` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 201 | essai à portée de révision : aucune révision écrite |
+| `POST /studies/:studyId/variants/:variantId/essais/:jobId/abandon` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 200 |  |
+| `POST /studies/:studyId/variants/:variantId/essais/:jobId/confirmer` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 200 | l'enveloppe de l'essai passe par le point d'entrée des écritures |
+| `GET /jobs/:jobId` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | résultat de job sous l'autorisation de l'étude source |
+| `GET /studies/:studyId/variants/:variantId/journal` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `POST /studies/:studyId/migrations` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 201 | simulation : rien n'est écrit dans les révisions |
+| `GET /studies/:studyId/migrations` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `GET /studies/:studyId/migrations/:migrationId` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `POST /studies/:studyId/migrations/:migrationId/accorder` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 200 | procédure d’accord : propriétaire seul, la réservation d’édition d’un autre compte s’y oppose |
+| `POST /studies/:studyId/migrations/:migrationId/appliquer` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 409 migration_etat |  |
+| `POST /studies/:studyId/migrations/:migrationId/retour-arriere` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 409 migration_etat |  |
+| `GET /studies/:studyId/migrations/:migrationId/documents/:revisionId` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `GET /bascule` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `POST /bascule/preparer` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 200 | bascule Atelier → Studio : une seule chaîne d'écriture |
+| `POST /bascule/basculer` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 409 bascule_absente |  |
+| `POST /bascule/retour-arriere` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 409 bascule_absente |  |
 
-« (à arbitrer) » : cellule exécutée et épinglée telle que le serveur répond aujourd'hui, sans changement de
-comportement ; la règle attend une décision du maître d'ouvrage.
+Aucune cellule « à arbitrer » : la dernière (acceptation des exigences) est tranchée par X.2-02, ADR-STUDIO-PILOTE-01 P-12.
 
 ## Routes hors Studio touchant des données Studio — non couvertes par la matrice (suites DB-3)
 
@@ -120,4 +149,5 @@ réelle ; la liste des fichiers est vérifiée par ce test (tout nouveau fichier
 | `routes/documents.ts` | GET /projects/:projectId/documents | `studioPackages` (paquets diffusés ou retirés), `studioDossiers` (dossiers de conception) |
 | `routes/notifications.ts` | GET /notifications | commentaires Studio des projets du compte, passages des observations, tâches et décisions |
 | `routes/reviews.ts` | /reviews/* (destinataire), /projects/:projectId/reviews/* (équipe) | revue externe (phase 4) : publication Studio candidate figée dans un paquet, constats = observations Studio d'audience `revue`, approbation par un approbateur nommé via les transitions Studio — garde `loadReviewAccess` (destinataire) ou droits de l'équipe, jamais la matrice des rôles Studio |
+| `routes/mcp-studio.ts` | POST /mcp/studio (serveur MCP, lot F) | lectures de Studio et propositions d'agent par jeton d'agent (jamais la session) : mêmes droits du compte titulaire (`readStudioContext`, `modify`), aucune écriture de révision avant la confirmation humaine par `POST /agents/propositions/:proposalId/confirmer` (matrice ci-dessus) ; `routes/studio-agents.test.ts` |
 | `routes/projects.ts` | GET /projects/:projectId/archive, POST /projects/import, POST /projects/:projectId/copies, DELETE /projects/:projectId | section Studio de l'archive (export, import validé), copie sans Studio, suppression refusée si une publication est diffusée ou retirée |

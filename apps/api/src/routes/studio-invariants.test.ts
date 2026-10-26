@@ -343,7 +343,13 @@ describe("INV-010 — une requête IA ou extension passe par les mêmes validati
     const sources = (readdirSync(racine, { recursive: true }) as string[]).filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts") && !f.startsWith("testing/"));
     const motif = /insert\(studioRevisions\)|applyStudioCommands\(|INSERT\s+INTO\s+"?studio_revisions\b|UPDATE\s+"?studio_revisions\b|INSERT\s+INTO\s+\$\{/i;
     const ecrivains = sources.filter((f) => motif.test(readFileSync(`${racine}${f}`, "utf8"))).sort();
-    expect(ecrivains).toEqual(["lib/studio-archive.ts", "lib/studio-commands.ts"]);
+    // Exception déclarée (lot F) : `lib/studio-agents.ts` applique les commandes d'une proposition d'agent **à blanc** sur
+    // la tête (validation par le même noyau, sans écriture) ; elle n'insère aucune révision : la confirmation humaine
+    // passe par `submitStudioCommands`.
+    expect(ecrivains).toEqual(["lib/studio-agents.ts", "lib/studio-archive.ts", "lib/studio-commands.ts"]);
+    const agents = readFileSync(`${racine}lib/studio-agents.ts`, "utf8");
+    expect(agents).not.toMatch(/insert\(studioRevisions\)|update\(studioVariants\)|INSERT\s+INTO\s+"?studio_revisions/i);
+    expect(agents).toMatch(/submitStudioCommands\(scope, userId, structuredClone\(p\.envelope\), "modify", \{\s*source: "agent-mcp"/);
   });
   it("INV-010 [−] import d'archive : un document de révision invalide refuse la section entière (validation centrale), avant toute écriture", async () => {
     const tables = emptyStudioTables();
