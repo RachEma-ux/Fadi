@@ -10,6 +10,7 @@ import { pool } from "../db/client.js";
 import { resetTestDatabase } from "../testing/guarded-test-pool.js";
 import { ecrireVersion } from "../lib/geodata/versions.js";
 import { chargerTerritoires } from "../lib/geodata/territoires.js";
+import { archiverFichiers } from "../lib/geodata/archive-fichiers.js";
 
 const app = createApp();
 // `users` en CASCADE vide aussi toutes les tables geodata_* (espaces → sources → versions → couches…), liste fermée de la garde inchangée.
@@ -521,5 +522,35 @@ describe("découpage territorial en base (lot H, D-GD-28)", () => {
     expect((await alice.client.get(`${API}/territoires/zz/unites`)).status).toBe(400);
     const nonPubliee = await publierLimites("api-brouillon", [{ code: "3", nom: "R3", x: 0, y: 0, d: 0.1 }], false);
     await expect(chargerTerritoires(pool, nonPubliee, niveau(1))).rejects.toThrow(/non publiée/);
+  });
+});
+
+describe("archive en base des fichiers de données livrés (D-GD-29)", () => {
+  it("copie chaque fichier tel quel ; inchangé non réécrit ; modifié remplacé ; plus livré marqué retiré, jamais effacé", async () => {
+    const { mkdtempSync, mkdirSync, writeFileSync, rmSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const { tmpdir } = await import("node:os");
+    const dossier = mkdtempSync(join(tmpdir(), "gd-fichiers-"));
+    mkdirSync(join(dossier, "donnees"));
+    writeFileSync(join(dossier, "zz-test.json"), JSON.stringify({ cle: "zz-test", version: { fichier: "donnees/zz-test.csv" } }));
+    writeFileSync(join(dossier, "donnees", "zz-test.csv"), "code;valeur\n1;\n");
+    writeFileSync(join(dossier, "donnees", "zz-extrait.geojson"), "{}");
+    await pool.query("DELETE FROM geodata_fichiers");
+    expect(await archiverFichiers(pool, dossier)).toMatchObject({ ajoutes: 3, modifies: 0, inchanges: 0, retires: 0 });
+    const lignes = (await pool.query("SELECT chemin, role, source_cle, taille, convert_from(contenu, 'UTF8') AS texte FROM geodata_fichiers ORDER BY chemin")).rows;
+    expect(lignes).toEqual([
+      { chemin: "donnees/zz-extrait.geojson", role: "extrait", source_cle: null, taille: "2", texte: "{}" },
+      { chemin: "donnees/zz-test.csv", role: "donnees", source_cle: "zz-test", taille: "15", texte: "code;valeur\n1;\n" },
+      expect.objectContaining({ chemin: "zz-test.json", role: "fiche", source_cle: "zz-test" }),
+    ]);
+    expect(await archiverFichiers(pool, dossier)).toMatchObject({ ajoutes: 0, modifies: 0, inchanges: 3, retires: 0 });
+    writeFileSync(join(dossier, "donnees", "zz-test.csv"), "code;valeur\n1;2\n");
+    rmSync(join(dossier, "donnees", "zz-extrait.geojson"));
+    expect(await archiverFichiers(pool, dossier)).toMatchObject({ ajoutes: 0, modifies: 1, inchanges: 1, retires: 1 });
+    const [retire] = (await pool.query("SELECT retire_le IS NOT NULL AS retire FROM geodata_fichiers WHERE chemin = 'donnees/zz-extrait.geojson'")).rows;
+    expect(retire).toEqual({ retire: true });
+    const [csv] = (await pool.query("SELECT convert_from(contenu, 'UTF8') AS texte FROM geodata_fichiers WHERE chemin = 'donnees/zz-test.csv'")).rows;
+    expect(csv).toEqual({ texte: "code;valeur\n1;2\n" });
+    await pool.query("DELETE FROM geodata_fichiers");
   });
 });

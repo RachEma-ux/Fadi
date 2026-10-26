@@ -101,7 +101,7 @@ export function PageGeoData() {
   /** Composition d'une nouvelle carte : fond du fournisseur par défaut quand il est utilisable, sinon fond neutre. */
   const compositionNeuve = (camera = COMPOSITION_INITIALE.camera): Composition => ({ ...COMPOSITION_INITIALE, camera, fond: lireFondsNavigateur().defaut ?? COMPOSITION_INITIALE.fond });
   const [erreurRangement, setErreurRangement] = useState<string | null>(null);
-  // Navigation par niveaux (lot B) : chemin Maroc → région → province → commune, et codes / noms des couches de limites.
+  // Chemin dans le découpage territorial lu en base (lot H) : pays → niveau 1 → … (aucun référentiel dans le code).
   const [chemin, setChemin] = useState<EtapeNiveau[]>([]);
   // Découpage territorial en base (lot H, D-GD-28) : pays chargés, pays courant (confort local), contour de l'unité choisie.
   const [paysListe, setPaysListe] = useState<PaysTerritorial[] | null>(null);

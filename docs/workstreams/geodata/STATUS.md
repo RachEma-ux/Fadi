@@ -72,6 +72,11 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   (empreinte attendue = empreinte réelle pour chaque fiche, test), retraits déclarés (test), `GET /version/donnees`
   (test). En local sur l'API construite : 1er démarrage 14 s (2 versions préparées et publiées, 2 retraits, 53 fiches
   déjà en base), 2e démarrage < 1 s (rien refait). CI : installation de Chromium bornée (3 × 10 min).
+- Interface ≠ base, fichiers archivés (D-GD-29) : `lib/geodata/archive-fichiers.ts` (inventaire et archive ; 4 tests sur
+  le dossier réel), table `geodata_fichiers`, `--archiver` dans `geodata-reference.ts`, lancé à chaque démarrage
+  (`import-auto.ts`, 5 tests), test base (ajout, inchangé, modifié, retiré). En local sur la base de développement :
+  121 fichiers (53 fiches, 57 données, 6 correspondances, 4 extraits, 1 déclaration), 52 Mo bruts → 35 Mo en base,
+  2,2 s ; second passage 0,4 s, rien réécrit ; deux fichiers plus livrés marqués retirés.
 - Navigation territoriale (lot H, D-GD-28) : `geodata-model/src/territoires.ts` (déclaration, règles de parent ; 3
   tests), tables `geodata_pays` / `geodata_territoires`, `lib/geodata/territoires.ts` (chargement idempotent, parents
   `codes-hcp` ou `inclusion`), routes `routes/geodata/territoires.ts`, `panneaux/BarreTerritoriale.tsx` (remplace le fil

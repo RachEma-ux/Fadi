@@ -8,6 +8,8 @@
  * Les données sont lues de `--fichier`, sinon du fichier livré avec la fiche (`version.fichier`, ex. extractions
  * OpenStreetMap de `docs/geodata/sources/osm/`), sinon téléchargées depuis `version.url`.
  *
+ * `--archiver` (seul, ou avec `--fiche toutes`) copie d'abord en base tous les fichiers livrés, tels quels (`geodata_fichiers`,
+ * D-GD-29 : l'interface ne garde aucune donnée) ; aucun compte n'est requis.
  * `--fiche toutes` traite une à une toutes les fiches livrées (une déjà importée n'est pas recréée, ni relue ni
  * retéléchargée : l'empreinte attendue se lit dans la fiche), puis applique, avec `--publier-par`, les retraits déclarés
  * dans `donnees/retraits-sources.json` (D-GD-23 : import automatique au déploiement, `lib/geodata/import-auto.ts`).
@@ -36,6 +38,7 @@ import { lireGeoPackage } from "../lib/geodata/geopackage.js";
 import { empreinteAttendue } from "../lib/geodata/empreinte-fiche.js";
 import { codesDesObjets, ecrireVersion, type IndicateurDeclare, type LigneDouar } from "../lib/geodata/versions.js";
 import { chargerTerritoires, type Executeur } from "../lib/geodata/territoires.js";
+import { archiverFichiers, ligneBilanArchive } from "../lib/geodata/archive-fichiers.js";
 
 export interface FicheSource {
   cle: string; titre: string; producteur: string; theme: string; couverture: string; description: string;
@@ -200,9 +203,23 @@ async function appliquerRetraits(retraits: readonly RetraitDeclare[], publierPar
   }
 }
 
+/** Archive en base de tous les fichiers livrés (D-GD-29) ; aucun compte requis, idempotent par empreinte. */
+async function archiver() {
+  const pool = new Pool({ connectionString: process.env["DATABASE_URL"] });
+  try {
+    console.log(ligneBilanArchive(await archiverFichiers(pool, dossierFiches())));
+  } finally {
+    await pool.end();
+  }
+}
+
 async function main() {
   const argFiche = argument("fiche");
   const preparateur = argument("preparateur");
+  if (process.argv.includes("--archiver")) {
+    await archiver();
+    if (!argFiche) return;
+  }
   if (!argFiche || !preparateur) throw new Error("Usage : --fiche <fiche.json | nom | toutes> --preparateur <courriel> [--fichier <données>] [--table <table>] [--publier-par <courriel>]");
   if (argFiche !== "toutes") return importer(cheminFiche(argFiche), preparateur);
   // Toutes les fiches livrées, une à une (une transaction chacune) : un échec n'arrête pas les suivantes ; bilan final.

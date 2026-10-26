@@ -40,8 +40,10 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
   livrés.
 - Navigation territoriale permanente (lot H, D-GD-28) : barre pays › niveaux toujours affichée, découpage en base
   (`geodata_pays`, `geodata_territoires`) chargé depuis les fiches qui déclarent `territoire` ; Maroc (HCP, 4 niveaux)
-  d'abord. En préproduction, le découpage arrive avec l'import automatique (`PREPROD_GEODATA_IMPORT_AUTO_PAR`). Aucune
-  suite engagée sans demande du maître d'ouvrage.
+  d'abord. En préproduction, le découpage arrive avec l'import automatique (`PREPROD_GEODATA_IMPORT_AUTO_PAR`).
+- Règle permanente (D-GD-29, `AGENTS.md`) : interface et base de données toujours distinctes ; aucune donnée dans
+  l'application. Tous les fichiers de données livrés sont archivés en base (`geodata_fichiers`) à chaque démarrage de
+  l'API, même sans compte d'import. Aucune suite engagée sans demande du maître d'ouvrage.
 - Arabe là où il est nécessaire (D-GD-21) : une donnée publiée seulement en arabe (noms des douars) est affichée en
   arabe (rtl, jamais traduite) ; sinon le français seul.
 - Indicateurs communaux complémentaires (D-GD-20) : logement urbain, transport domicile – travail, CEE ; régénération :

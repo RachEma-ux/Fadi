@@ -146,6 +146,13 @@ Arrondissement pour le Maroc) et Retour (Alt+↑). Elle ne dépend d'aucune couc
 `GET /geodata/api/territoires`, `…/territoires/:pays/unites?parent=`, `…/territoires/:pays/unites/:code?rang=`
 (ancêtres, nombre d'enfants, contour simplifié, attribution).
 
+## Interface et base de données (D-GD-29)
+
+L'application ne contient aucune donnée : elle lit la base par l'API. Au démarrage de l'API, l'outil d'import copie
+chaque fichier livré du dossier `docs/geodata/sources/` dans `geodata_fichiers` (rôle `fiche`, `donnees`,
+`correspondance`, `extrait` ou `declaration` ; SHA-256 ; contenu compressé par PostgreSQL), puis importe les fiches si
+`GEODATA_IMPORT_AUTO_PAR` est fourni. À la main : `node apps/api/dist/geodata-reference.js --archiver`.
+
 ## Fiche territoriale (D-GD-22)
 
 La fiche d'une entité range ses indicateurs par thème ; une famille déclinée devient un tableau (modalités ×

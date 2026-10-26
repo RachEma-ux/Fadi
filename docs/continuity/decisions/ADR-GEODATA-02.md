@@ -249,6 +249,15 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         RGPH 2024, rangs 1 à 4) est le premier pays ; un autre pays s'ajoute par ses fiches, sans code.
      4. Choisir une unité cadre la carte sur son emprise et trace son contour (attribution de la version source) ;
         une base sans découpage l'annonce, sans rien inventer.
+   - D-GD-29 (26 octobre 2026) — **interface et base de données distinctes ; tous les fichiers de données en base**
+     (règle du maître d'ouvrage, inscrite dans `AGENTS.md` et `CLAUDE.md`) :
+     1. Toujours distinguer l'interface (l'application et ses outils) des données, stockées en base dédiée ; ce binôme
+        s'emploie partout où il y a des données. Aucun référentiel ni jeu de données n'est codé dans l'application.
+     2. Chaque fichier du dossier des sources qualifiées (fiches, données GeoJSON / CSV / TSV / GeoTIFF, correspondances,
+        extraits, retraits déclarés) est copié tel quel dans `geodata_fichiers` (contenu, taille, SHA-256, rôle, clé de
+        source) par la chaîne d'import (`--archiver`), à chaque démarrage de l'API, même sans
+        `GEODATA_IMPORT_AUTO_PAR` (aucun compte requis) ; un fichier inchangé n'est pas réécrit, un fichier qui n'est plus
+        livré reste en base, marqué retiré. Bilan dans la quittance `GET /version/donnees`.
 
 ## Conséquences
 

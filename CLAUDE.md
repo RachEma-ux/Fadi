@@ -37,6 +37,11 @@ développeur : `README.md`, `docs/architecture.md`, `docs/migration/matrix.md`.
 - `npm run typecheck`, `npm test`, `npm run build` avant tout commit ; scénario e2e et CI verts avant toute
   demande d'acceptation ; un contrôle qui n'a pas pu tourner est déclaré.
 - Jamais de secret, de `node_modules`, de `dist/` ni du HTML de référence dans un commit.
+- **Interface ≠ base de données** (règle du maître d'ouvrage, 26 octobre 2026, D-GD-29) : toujours distinguer l'UI de la
+  BD et toujours employer ce binôme là où il y a des données. L'application et ses outils ne contiennent aucune donnée
+  (aucun référentiel, découpage territorial, statistique ou catalogue codé en dur) ; les données vivent en base dédiée,
+  chargées depuis des sources qualifiées, lues par l'API ; chaque fichier de données utilisé est aussi archivé tel quel en
+  base (`geodata_fichiers`).
 
 ## Chantier Atelier Fadi — suivi historique
 
