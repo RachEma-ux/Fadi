@@ -1,4 +1,5 @@
 import { controlerLiens, studioDimensionValue, validerCote, type StudioDimension } from "../objets/cote.js";
+import { studioResolveurCotes } from "../commandes/cotes-murs.js";
 import { validerForme } from "../objets/index.js";
 import { validerSolide, type StudioSolid } from "../objets-3d/solides.js";
 import { studioIdsOperandes, validerSolideExact, type StudioSolideExact } from "../objets-3d/exacts.js";
@@ -69,11 +70,10 @@ export function validateStudioDocument(value: unknown): StudioDocument {
     shapes.set(o.id, o);
   }
   const dimensionIds = new Set<string>();
-  dimensions.forEach((o, i) => {
+  for (const o of dimensions) {
     if (shapes.has(o.id) || dimensionIds.has(o.id)) fail("studioDocument.dimensions", "identifiant dupliqué");
     dimensionIds.add(o.id);
-    controlerLiens(o, shapes, `studioDocument.dimensions[${i}]`);
-  });
+  }
   for (const o of [...objects, ...dimensions]) {
     if (o.layerId !== undefined && !layerIds.has(o.layerId)) fail(`studioDocument.${o.type === "dimension" ? "dimensions" : "objects"}`, "calque inconnu");
   }
@@ -111,6 +111,9 @@ export function validateStudioDocument(value: unknown): StudioDocument {
     if (o.type === "wall" && o.layerId !== undefined && !layerIds.has(o.layerId)) fail("studioDocument.architecture", "calque inconnu");
   }
   controlerArchitecture(architecture, "studioDocument.architecture");
+  // Liens des cotes : vers une forme, ou vers un mur (cote associative sur objet architectural, AC-001).
+  const ciblesCotes = studioResolveurCotes(shapes.values(), architecture);
+  dimensions.forEach((o, i) => controlerLiens(o, ciblesCotes, `studioDocument.dimensions[${i}]`));
   // Propriétés déclarées (E.1-01) : cible présente et dans le périmètre pilote, clé (cible, nom) unique.
   const proprietes = Object.hasOwn(d, "proprietes") ? validerProprietes(d.proprietes, objects, architecture, "studioDocument.proprietes") : [];
   // Visualisation (lot E.5) : scènes et apparences, identifiants propres à la liste, calques et objets 3D connus.

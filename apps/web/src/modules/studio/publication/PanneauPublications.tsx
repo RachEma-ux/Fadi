@@ -7,6 +7,8 @@
  * suivent les transitions permises renvoyées par le serveur, qui revérifie tout.
  */
 import { useRef, useState, type FormEvent } from "react";
+import { etatPublication } from "../taches/etats-contenus";
+import { EtatContenu } from "../taches/EtatContenu";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError, studioPackageFileUrl, type StudioPublication, type StudioPublicationTransition, type StudioVariantSummary } from "../../../lib/api";
 import { LOCALE } from "../../../lib/i18n";
@@ -139,6 +141,9 @@ function CartePublication({ projectId, studyId, publication: p, surChange }: { p
   const [commentaire, setCommentaire] = useState("");
   const [erreur, setErreur] = useState("");
   const [enCours, setEnCours] = useState(false);
+  // EX-016 : actualisation du manifeste en cours et son dernier refus (état « en calcul » / « échec » du contenu).
+  const [actualisation, setActualisation] = useState(false);
+  const [echecActualisation, setEchecActualisation] = useState<string | null>(null);
   const [journal, setJournal] = useState(false);
   const detail = useQuery({ queryKey: ["studio-publication", projectId, studyId, p.id, p.updatedAt], queryFn: () => api.studioPublication(projectId, studyId, p.id), enabled: journal });
   const actions = ORDRE_ACTIONS.filter((a) => p.allowed.includes(a));
@@ -155,17 +160,21 @@ function CartePublication({ projectId, studyId, publication: p, surChange }: { p
     if (!action || enCours) return;
     if (COMMENTAIRE_REQUIS.has(action) && !commentaire.trim()) { setErreur("Un commentaire est requis pour cette action."); return; }
     if (action === "approuver" && (approbationFermee || confirmationManquante)) return;
-    setEnCours(true); setErreur("");
+    setEnCours(true); setErreur(""); setActualisation(action === "actualiser");
     try {
       await api.transitionStudioPublication(projectId, studyId, p.id, action, corpsTransition(p, action, commentaire));
+      if (action === "actualiser") setEchecActualisation(null);
       setAction(null); setCommentaire(""); setConfirmeAuto(false);
       await surChange();
     } catch (err) {
       const refus = err instanceof ApiError ? refusServeur(err.status, err.body) : null;
       if (refus) { setControleRefus(refus); setAction(null); }
-      setErreur(err instanceof ApiError ? messageRefus(err.status, err.body) : "Action non confirmée : rechargez la liste avant de réessayer.");
-    } finally { setEnCours(false); }
+      const message = err instanceof ApiError ? messageRefus(err.status, err.body) : "Action non confirmée : rechargez la liste avant de réessayer.";
+      if (action === "actualiser") setEchecActualisation(message);
+      setErreur(message);
+    } finally { setEnCours(false); setActualisation(false); }
   }
+  const fraicheur = etatPublication({ ...p, enCours: actualisation, echec: echecActualisation });
   return (
     <li className="studio-publication" data-studio-publication={p.id} data-contenu={p.contenu ?? "complet"} data-statut={p.status} data-travail={p.workStatus} data-diffusion={p.diffusionStatus} data-actualite={p.freshness} data-documents={p.documentsCheck ?? "non-verifiee"}>
       <div className="studio-publication-tete">
@@ -175,6 +184,7 @@ function CartePublication({ projectId, studyId, publication: p, surChange }: { p
         <span className={`studio-publication-statut statut-${p.workStatus}`} data-studio-publication-statut title="Travail">{LIBELLE_TRAVAIL[p.workStatus]}</span>
         <span className={`studio-publication-statut statut-${p.diffusionStatus}`} data-studio-publication-diffusion title="Diffusion">{LIBELLE_DIFFUSION[p.diffusionStatus]}</span>
         <span className={`studio-publication-statut ${p.freshness === "perimee" ? "studio-publication-perimee" : ""}`} data-studio-publication-actualite title="Actualité">{libelleActualite(p)}</span>
+        <EtatContenu etat={fraicheur} nom="publication" />
         {p.freshness === "perimee" && <span className="studio-publication-perimee" data-studio-publication-perimee>Variante modifiée depuis</span>}
         {p.replacedBy && <span className="studio-publication-perimee" data-studio-publication-remplacee>Remplacée par une diffusion plus récente</span>}
         {p.approval && p.approvedSelfControl && <MarqueAutoControle data="data-studio-publication-auto-controle" />}
