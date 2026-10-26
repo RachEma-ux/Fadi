@@ -125,6 +125,12 @@ nombre de classes (2 à 10), palette prédéfinie (Bleu-violet par défaut, pale
 divergentes) et inversion ; la pastille de chaque classe permet d'en choisir la couleur. Tout est enregistré avec la
 carte ; les valeurs absentes restent hors classes, hachurées.
 
+## Arbre d'indicateurs (lot F, D-GD-26)
+
+Panneau Couches, « Parcourir les indicateurs » : thèmes puis familles, recherche sans accents ni casse (chaque mot au
+début d'un mot ; Échap vide la recherche). Choisir une famille colore la couche ; modalité, milieu et sexe se règlent
+ensuite comme avec la liste « Coloration ». Sur les communes du HCP : 844 indicateurs, 9 thèmes, 59 familles.
+
 ## Fiche territoriale (D-GD-22)
 
 La fiche d'une entité range ses indicateurs par thème ; une famille déclinée devient un tableau (modalités ×

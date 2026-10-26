@@ -16,7 +16,7 @@
 - [x] GEO-HCP-D — Palettes prédéfinies, N classes, couleur par classe, seuils naturels (Jenks) (D-GD-25).
 - [x] GEO-DEPLOI-AUTO — Import automatique des données au déploiement, retraits déclarés, quittance `/version/donnees`, Chromium borné en CI (D-GD-23).
 - [x] GEO-HCP-E — Fiche territoriale par thème, ventilations, impression (Alt+P), arrondissements de la commune, douars de la commune rurale (D-GD-22).
-- [ ] GEO-HCP-F — Arbre d'indicateurs par thème, avec recherche.
+- [x] GEO-HCP-F — Arbre d'indicateurs par thème, avec recherche (D-GD-26).
 - [ ] GEO-HCP-G — Mini-carte de situation et impression directe.
 - [ ] GEO-V11 — Extensions V1.1 : partage nominatif, espaces collectifs, KML/KMZ/Shapefile, analyses avancées.
 

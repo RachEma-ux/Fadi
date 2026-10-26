@@ -220,6 +220,12 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
      4. Couleur par classe : la pastille de chaque classe de la légende est un sélecteur de couleur ; les couleurs
         enregistrées dans la composition font foi. Composition : `methode` « seuils-naturels », `palette` et `inverser`
         optionnels (absents par défaut : une carte enregistrée avant le lot D reste identique).
+   - D-GD-26 (26 octobre 2026, lot F) — **arbre d'indicateurs** : dans le panneau Couches, « Parcourir les indicateurs »
+     range les indicateurs d'une couche par thème puis famille (repliés ; le thème de l'indicateur en cours est déplié),
+     avec une recherche qui ignore accents et casse et retient une famille quand chaque mot cherché commence un mot de
+     son thème, de son nom, d'une modalité ou de son unité (« âge » ne trouve pas « chômage »). Choisir une famille colore
+     la couche par sa déclinaison par défaut ; la liste « Coloration » reste disponible. Aucun indicateur n'est renommé
+     ni regroupé autrement que par ses dimensions publiées (`arbreIndicateurs`, `packages/geodata-model`).
 
 ## Conséquences
 

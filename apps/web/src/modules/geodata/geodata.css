@@ -153,3 +153,12 @@
 .geodata-page input.gd-pastille-choix::-webkit-color-swatch-wrapper{padding:0}
 .geodata-page input.gd-pastille-choix::-webkit-color-swatch{border:none}
 .geodata-page input.gd-pastille-choix::-moz-color-swatch{border:none}
+/* Lot F (D-GD-26) : arbre d'indicateurs par thème, avec recherche. */
+.geodata-page .gd-arbre{margin:6px 0;border:1px solid #d5dfdb;border-radius:6px;padding:6px 8px}
+.geodata-page .gd-arbre>summary{cursor:pointer;font-weight:600}
+.geodata-page .gd-arbre-themes{list-style:none;margin:4px 0 0;padding:0;max-height:320px;overflow:auto}
+.geodata-page .gd-arbre-themes ul{list-style:none;margin:2px 0 6px;padding:0 0 0 12px}
+.geodata-page .gd-arbre-themes summary{cursor:pointer;padding:3px 0}
+.geodata-page .gd-arbre-famille{display:flex;flex-wrap:wrap;gap:2px 8px;width:100%;text-align:left;background:none;border:1px solid transparent;border-radius:4px;padding:4px 6px;cursor:pointer}
+.geodata-page .gd-arbre-famille:hover,.geodata-page .gd-arbre-famille:focus-visible{border-color:#29434a}
+.geodata-page .gd-arbre-famille[aria-pressed="true"]{background:#e3eeea;border-color:#29434a;font-weight:600}
