@@ -269,7 +269,17 @@ try {
     JSON.stringify({ avant: fileAvant.plan, apres: fileApres?.plan }));
   // Rechargements sous le service worker remplacé : l'événement « load » peut tarder (vérification de mise à jour du
   // script intercepté) ; on attend le document, puis les éléments que la preuve contrôle réellement.
-  const recharger = () => page.reload({ waitUntil: "domcontentloaded", timeout: 40000 });
+  // Un rechargement peut rester suspendu juste après le remplacement du service worker (navigation interceptée par le
+  // nouveau script en cours de prise de contrôle) : une seule nouvelle navigation vers la même adresse, puis les mêmes
+  // contrôles — rien n'est supposé, la page doit être servie et la file relue.
+  const recharger = async () => {
+    try { await page.reload({ waitUntil: "domcontentloaded", timeout: 40000 }); }
+    catch (err) {
+      if (err?.name !== "TimeoutError") throw err;
+      console.log("B.3-10 : rechargement suspendu après le changement de service worker — nouvelle navigation vers la même adresse");
+      await page.goto(page.url(), { waitUntil: "domcontentloaded", timeout: 40000 });
+    }
+  };
   await recharger();
   await outils.waitFor();
   await page.locator('[data-studio-hors-ligne="en-attente"]').waitFor({ timeout: 40000 }).catch(() => {});
