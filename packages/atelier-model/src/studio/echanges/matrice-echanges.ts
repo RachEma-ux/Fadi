@@ -27,7 +27,7 @@ import { STUDIO_CAPACITES_EXPORT, STUDIO_RAISONS_FIDELITE, type StudioFormatEcha
 
 export const STUDIO_MATRICE_ECHANGES_SCHEMA = "studio-matrice-echanges/1" as const;
 /** Révision de la matrice : à incrémenter avec toute modification d'une entrée (empreinte épinglée par test). */
-export const STUDIO_MATRICE_ECHANGES_REVISION = 5 as const;
+export const STUDIO_MATRICE_ECHANGES_REVISION = 6 as const;
 /** Date de l'audit qui a établi la révision courante. */
 export const STUDIO_MATRICE_ECHANGES_DATE = "2026-10-25" as const;
 
@@ -272,8 +272,8 @@ const LIVREES: readonly StudioEntreeEchange[] = [
     entites: [{ entite: "Profil d’outils", couverture: "portee", detail: "Profil des barres, favoris, liste personnelle, regroupements, ordre des capacités, raccourcis personnels, version." }],
     controle: "Tests des profils importés et exportés.",
     preuves: {
-      code: [p(`${API}routes/studio-preferences.ts`, "STUDIO_FORMAT_PROFIL")],
-      tests: [p(`${API}routes/studio-profils-import.test.ts`, "fadi-studio-profil/1")],
+      code: [p(`${API}routes/studio-preferences.ts`, "lireProfilExporte")],
+      tests: [p(`${API}routes/studio-profils-import.test.ts`, "format: \"fadi-studio-profil/1\", profileId: r1.body.profileId")],
       interfaces: [p(`${WEB}planche2d/CatalogueOutils.tsx`, "lien.download = `profil-studio-${f.profileId}-v${f.version}.json`")],
       routes: [p(`${API}routes/studio-preferences.ts`, "/outils/export")],
     },

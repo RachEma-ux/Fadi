@@ -100,14 +100,20 @@ studioPreferencesRouter.put("/outils", avecContrat(CONTRAT_PREFERENCES_ECRIRE), 
   res.json({ ...lireLignePreferences(row), retires: [], updatedAt: at.toISOString() });
 }));
 
-studioPreferencesRouter.get("/outils/export", avecContrat(CONTRAT_PROFIL_EXPORTER), endpoint(async (req, res) => {
-  const row = await ligneDu(req.user!.id);
-  const p = lireLignePreferences(row);
-  if (!p.profileId) { res.status(404).json({ error: "not_found", message: "Aucun profil enregistré pour ce compte : enregistrez d'abord vos préférences." }); return; }
-  res.json({
+/** Fichier de profil `fadi-studio-profil/1` du compte (EX-034), lu dans `studio_tool_preferences` ; null sans profil enregistré. */
+export async function lireProfilExporte(userId: string) {
+  const p = lireLignePreferences(await ligneDu(userId));
+  if (!p.profileId) return null;
+  return {
     format: STUDIO_FORMAT_PROFIL, profileId: p.profileId, proprietaire: p.proprietaire ?? undefined, version: p.version, manifeste: p.manifeste,
     profil: p.profil, favoris: p.favoris, personnel: p.personnel, groupes: p.groupes, ordre: p.ordre, raccourcis: p.raccourcis,
-  });
+  };
+}
+
+studioPreferencesRouter.get("/outils/export", avecContrat(CONTRAT_PROFIL_EXPORTER), endpoint(async (req, res) => {
+  const f = await lireProfilExporte(req.user!.id);
+  if (!f) { res.status(404).json({ error: "not_found", message: "Aucun profil enregistré pour ce compte : enregistrez d'abord vos préférences." }); return; }
+  res.json(f);
 }));
 
 studioPreferencesRouter.post("/outils/import", avecContrat(CONTRAT_PROFIL_IMPORTER), endpoint(async (req, res, access) => {

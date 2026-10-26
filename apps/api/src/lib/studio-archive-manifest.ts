@@ -149,7 +149,7 @@ export const STUDIO_JSON_FIELDS_WITHOUT_ACCOUNTS: Readonly<Partial<Record<Studio
   studio_sheets: ["definition"],
   studio_dossiers: ["sheet_ids"],
   studio_publications: ["package", "manifest"],
-  studio_tool_preferences: ["favorites", "personal", "groups"],
+  studio_tool_preferences: ["favorites", "personal", "groups", "shortcuts", "capability_order"],
 });
 
 /** Colonnes qui portent l'identifiant du projet (remplacé par celui du projet restauré). */
