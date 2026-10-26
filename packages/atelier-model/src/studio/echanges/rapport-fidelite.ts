@@ -13,6 +13,8 @@ import type { StudioElementVisualisation } from "../scenes/scenes.js";
 import type { StudioNonNatif } from "../non-natifs/non-natifs.js";
 import type { StudioGraphisme } from "../graphismes/graphismes.js";
 import type { StudioSourceExterne } from "../sources/sources.js";
+import type { StudioDefinitionBloc, StudioInsertionBloc } from "../blocs/blocs.js";
+import type { StudioContrainte } from "../contraintes/contraintes.js";
 
 /**
  * Rapport de fidélité d'un export Studio (E.6-03) : pour un document et un format (SVG, DXF, IFC), ce qui est exporté
@@ -58,13 +60,18 @@ export const STUDIO_RAISONS_FIDELITE = Object.freeze([
   "spline-decoupee", "transparence-non-portee", "graphisme-hors-ifc",
   // Sources importées (EX-014) : leur provenance s'exporte à part (`studio-provenance/1`), jamais dans le dessin.
   "provenance-hors-dessin",
+  // Blocs (X.1-01) : définition en BLOCK et insertion en INSERT (DXF), insertion développée en SVG (la définition n'y
+  // est pas réutilisable : chaque insertion porte ses formes, `data-bloc` garde le lien) ; aucun bloc en IFC.
+  "bloc-en-block", "insertion-en-insert", "insertion-developpee", "bloc-developpe", "bloc-hors-ifc",
+  // Contraintes géométriques (X.1-01) : relations du modèle, écrites dans aucun format (la géométrie résolue l'est).
+  "contrainte-hors-export",
 ] as const);
 export type StudioRaisonFidelite = (typeof STUDIO_RAISONS_FIDELITE)[number];
 
 /** Catégorie = liste du document qui porte l'élément. */
-export type StudioCategorieEchange = "objets" | "cotes" | "annotations" | "solides" | "exacts" | "cotesFaces" | "architecture" | "proprietes" | "scenes" | "nonNatifs" | "graphismes" | "sources" | "inconnue";
+export type StudioCategorieEchange = "objets" | "cotes" | "annotations" | "solides" | "exacts" | "cotesFaces" | "architecture" | "proprietes" | "scenes" | "nonNatifs" | "graphismes" | "sources" | "blocs" | "insertions" | "contraintes" | "inconnue";
 /** Liste du document de chaque catégorie connue (clé de `StudioDocument`). */
-export const STUDIO_LISTES_ECHANGE = Object.freeze({ objets: "objects", cotes: "dimensions", annotations: "annotations", solides: "solides", exacts: "exacts", cotesFaces: "cotesFaces", architecture: "architecture", proprietes: "proprietes", scenes: "scenes", nonNatifs: "nonNatifs", graphismes: "graphismes", sources: "sources" } as const);
+export const STUDIO_LISTES_ECHANGE = Object.freeze({ objets: "objects", cotes: "dimensions", annotations: "annotations", solides: "solides", exacts: "exacts", cotesFaces: "cotesFaces", architecture: "architecture", proprietes: "proprietes", scenes: "scenes", nonNatifs: "nonNatifs", graphismes: "graphismes", sources: "sources", blocs: "blocs", insertions: "insertions", contraintes: "contraintes" } as const);
 
 export interface StudioJugementFidelite { statut: StudioStatutFidelite; raison: StudioRaisonFidelite }
 type Juge<T> = (item: T) => StudioJugementFidelite;
@@ -136,6 +143,12 @@ export const STUDIO_CAPACITES_EXPORT: {
   readonly graphismes: { readonly [K in StudioGraphisme["type"]]: ParFormat<Extract<StudioGraphisme, { type: K }>> };
   /** Sources importées (EX-014) : provenance exportée à part, dans aucun format de dessin. */
   readonly sources: { readonly source: ParFormat<StudioSourceExterne> };
+  /** Définitions de blocs (X.1-01). */
+  readonly blocs: { readonly bloc: ParFormat<StudioDefinitionBloc> };
+  /** Insertions de blocs (X.1-01). */
+  readonly insertions: { readonly insertion: ParFormat<StudioInsertionBloc> };
+  /** Contraintes géométriques (X.1-01) : sans discriminant d'élément, un seul type « contrainte ». */
+  readonly contraintes: { readonly contrainte: ParFormat<StudioContrainte> };
 } = Object.freeze({
   objets: {
     line: { svg: trace2d("trace-exact"), dxf: trace2d("trace-exact"), ifc: ifc3d((o) => exact(o.extrusion && "thickness" in o.extrusion && o.extrusion.thickness !== undefined ? "extrusion-exacte" : "surface-exacte")) },
@@ -194,6 +207,15 @@ export const STUDIO_CAPACITES_EXPORT: {
   },
   sources: {
     source: { svg: () => nonCouvert("provenance-hors-dessin"), dxf: () => nonCouvert("provenance-hors-dessin"), ifc: () => nonCouvert("provenance-hors-dessin") },
+  },
+  blocs: {
+    bloc: { svg: () => approche("bloc-developpe"), dxf: () => exact("bloc-en-block"), ifc: () => nonCouvert("bloc-hors-ifc") },
+  },
+  insertions: {
+    insertion: { svg: () => exact("insertion-developpee"), dxf: () => exact("insertion-en-insert"), ifc: () => nonCouvert("bloc-hors-ifc") },
+  },
+  contraintes: {
+    contrainte: { svg: () => nonCouvert("contrainte-hors-export"), dxf: () => nonCouvert("contrainte-hors-export"), ifc: () => nonCouvert("contrainte-hors-export") },
   },
 });
 
@@ -300,6 +322,10 @@ export function studioRapportFidelite(input: StudioDocument, format: StudioForma
   parcourir("graphismes", doc.graphismes);
   // Sources importées (EX-014) : sans calque.
   for (const s of doc.sources ?? []) poser("sources", "source", STUDIO_CAPACITES_EXPORT.sources.source[format](s), s.id);
+  // Blocs (X.1-01) : définitions sans calque, insertions sur le leur ; contraintes sans calque.
+  for (const b of doc.blocs ?? []) poser("blocs", "bloc", STUDIO_CAPACITES_EXPORT.blocs.bloc[format](b), b.id);
+  parcourir("insertions", doc.insertions);
+  for (const c of doc.contraintes ?? []) poser("contraintes", "contrainte", STUDIO_CAPACITES_EXPORT.contraintes.contrainte[format](c), c.id);
   // Liste du document qu'aucune catégorie ne connaît : comptée non couverte, jamais omise.
   for (const [cle, valeur] of Object.entries(doc as unknown as Record<string, unknown>)) {
     if (CLES_CONNUES.has(cle) || !Array.isArray(valeur)) continue;

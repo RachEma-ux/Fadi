@@ -1,6 +1,6 @@
 import { STUDIO_LIMITS } from "../document-2d.js";
 import type { GrandeurQuantite } from "../quantites.js";
-import { MOTIF_S1, parametresS1 } from "./s1-detail.js";
+import { BLOC_S1, MOTIF_S1, parametresS1 } from "./s1-detail.js";
 import { MOTIF_PLAN, MOTIF_S2, PARAMETRES_S2 } from "./s2-niveau.js";
 import { MOTIF_S3, parametresS3 } from "./s3-dense.js";
 import { MOTIF_S4, PARAMETRES_S4 } from "./s4-immeuble.js";
@@ -50,6 +50,13 @@ export interface OracleCorpus {
   exacts?: { operations: Record<string, number>; volume: number };
   /** Graphismes : aire totale des contours de hachure, symboles posés par nom, points de contrôle des splines. */
   graphismes?: { aireHachures: number; symboles: Record<string, number>; pointsSplines: number };
+  /**
+   * Blocs définis par l'utilisateur (S1) : définitions (une par feuillet qui en insère), insertions, insertions
+   * symétriques, aire totale des carrés posés (côté × échelle)², mesurée sur la géométrie dérivée des insertions.
+   */
+  blocs?: { definitions: number; insertions: number; symetriques: number; aireCarres: number };
+  /** Contraintes géométriques (S1) : nombre par type ; toutes satisfaites dans la tolérance déclarée. */
+  contraintes?: { parType: Record<string, number>; satisfaites: number };
   /** Références externes déclarées (S2) : une source par feuillet qui porte des axes, objets venus du fond. */
   sources?: { nombre: number; objets: number };
 }
@@ -76,6 +83,9 @@ export function oracleS1(taille: number): OracleCorpus {
   const a = new Accumulateur();
   const cotes = { liees: 0, libres: 0, sommeMesures: 0 }, angles = { nombre: 0, sommeDegres: 0 };
   const graphismes = { aireHachures: 0, symboles: {} as Record<string, number>, pointsSplines: 0 };
+  const blocs = { definitions: 0, insertions: 0, symetriques: 0, aireCarres: 0 };
+  const contraintes = { parType: {} as Record<string, number>, satisfaites: 0 };
+  const parFeuillet = Math.floor(STUDIO_LIMITS.objects / MOTIF_S1) * MOTIF_S1, feuilletsAvecBloc = new Set<number>();
   parcourir(taille, MOTIF_S1, (j, role) => {
     const p = parametresS1(j);
     switch (role) {
@@ -97,10 +107,21 @@ export function oracleS1(taille: number): OracleCorpus {
       case 13: a.compter("symbole"); graphismes.symboles.nord = (graphismes.symboles.nord ?? 0) + 1; break;
       case 14: a.compter("symbole"); graphismes.symboles.croix = (graphismes.symboles.croix ?? 0) + 1; break;
       // Deux morceaux de Bézier : 3 × 2 + 1 points.
-      default: a.compter("spline"); graphismes.pointsSplines += 7;
+      case 15: a.compter("spline"); graphismes.pointsSplines += 7; break;
+      // Insertion du bloc : carré de côté 0,6 m × échelle ; une définition par feuillet qui insère.
+      case 16:
+        a.compter("insertion"); blocs.insertions++; blocs.aireCarres += (BLOC_S1.cote * p.bloc.echelle) ** 2;
+        if (p.bloc.symetrie) blocs.symetriques++;
+        feuilletsAvecBloc.add(Math.floor((j * MOTIF_S1 + role) / parFeuillet));
+        break;
+      default: {
+        const type = role === 17 ? "horizontal" : "distance";
+        a.compter("contrainte"); contraintes.parType[type] = (contraintes.parType[type] ?? 0) + 1; contraintes.satisfaites++;
+      }
     }
   });
-  return { scene: "S1", taille, primitives: taille, feuillets: feuillets(taille, MOTIF_S1), comptes: a.comptes, totaux: a.totaux, volumeNonEvalues: a.volumeNonEvalues, cotes, angles, graphismes };
+  blocs.definitions = feuilletsAvecBloc.size;
+  return { scene: "S1", taille, primitives: taille, feuillets: feuillets(taille, MOTIF_S1), comptes: a.comptes, totaux: a.totaux, volumeNonEvalues: a.volumeNonEvalues, cotes, angles, graphismes, blocs, contraintes };
 }
 
 /** S2, et S6 / S7 qui en reprennent le plan. */

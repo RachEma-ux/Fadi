@@ -69,6 +69,8 @@ const DEPUIS_BARRE: Readonly<Record<BarreStudio, IdFamille>> = Object.freeze({
   graphismes: "annotation", reperes: "vue",
   // Sources importées (EX-014) : nées d'un import, rangées avec Importer / Exporter.
   sources: "echanges",
+  // Blocs définis par l'utilisateur avec le dessin ; contraintes géométriques avec la modification (X.1-01).
+  blocs: "dessin", contraintes: "modification",
   edition: "edition", vue: "vue", accrochage: "vue", reperage: "vue", visualisation: "vue", import: "echanges", export: "echanges", presentation: "presentation", catalogue: "catalogue",
 });
 

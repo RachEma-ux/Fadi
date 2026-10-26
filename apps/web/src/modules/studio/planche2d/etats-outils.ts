@@ -23,6 +23,10 @@ import type { EntreeCatalogue } from "./catalogue";
 /** Synonymes (français source) par capacité ; une capacité absente n'a que son nom. */
 export const SYNONYMES: Readonly<Record<string, readonly string[]>> = Object.freeze({
   "studio.dessin.selection": ["choisir", "pointer", "désigner"],
+  "studio.bloc.definir": ["créer un bloc", "symbole réutilisable", "redéfinir"],
+  "studio.bloc.inserer": ["placer un bloc", "occurrence"],
+  "studio.bloc.eclater": ["décomposer", "exploser"],
+  "studio.contrainte.poser": ["parallèle", "perpendiculaire", "tangente", "coïncidence", "horizontale", "verticale", "égalité", "distance fixée", "résoudre"],
   "studio.dessin.ligne": ["segment", "trait", "droite"],
   "studio.dessin.rectangle": ["cadre", "carré"],
   "studio.dessin.cercle": ["rond", "disque"],
@@ -83,6 +87,7 @@ export const DOMAINES_PAR_BARRE: Readonly<Record<string, readonly string[]>> = O
   dessin: ["dessin 2D", "annotation"], modification: ["dessin 2D", "transformation"], calques: ["organisation"],
   volume: ["3D", "volume"], "volume-libre": ["3D", "volume", "modélisation"], architecture: ["architecture", "bâtiment"],
   proprietes: ["données", "BIM"], exigences: ["données", "contrôle"], "non-natifs": ["échanges", "import"],
+  blocs: ["dessin 2D", "bibliothèque"], contraintes: ["dessin 2D", "précision"],
   edition: ["édition"], vue: ["affichage", "navigation"], accrochage: ["dessin 2D", "précision"], reperage: ["dessin 2D", "précision"],
   visualisation: ["3D", "présentation"], import: ["échanges", "import"], export: ["échanges", "export"], presentation: ["présentation", "impression"],
   catalogue: ["outils"],

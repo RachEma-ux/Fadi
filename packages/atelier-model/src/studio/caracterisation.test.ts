@@ -323,6 +323,9 @@ const AJOUTS = {
     "studio.architecture.echelle-acces",
     // Lot G2 (INV-013) : cote de face 3D, champ facultatif `cotesFaces` du document.
     "studio.solide.cote-face",
+    // Lot W3-A (X.1-01) : blocs définis par l'utilisateur et contraintes géométriques, champs facultatifs `blocs`,
+    // `insertions` et `contraintes` du document.
+    "studio.bloc.definir", "studio.bloc.inserer", "studio.bloc.eclater", "studio.contrainte.poser",
   ]),
   types: new Set(["angular-dimension", "text", "wall", "opening", "scene", "appearance", "non-native", "spline", "hachure", "symbole", "source", "ladder", "face-dimension"]),
   exports: new Set([
@@ -409,6 +412,9 @@ const AJOUTS = {
     "SCHEMA_ECHELLE", "STUDIO_ECHELONS_MAX", "validerEchelle", "geometrieEchelle", "metreEchelle", "volumesEchelle",
     // Lot G2 : cotes de faces 3D (INV-013, `objets-3d/cotes-faces.ts`).
     "SCHEMA_COTE_FACE", "STUDIO_TOLERANCE_FACES", "controlerCoteFace", "studioCorrespondanceFace", "studioFaceExiste", "studioPlanFace", "studioValeurCoteFace", "validerCoteFace",
+    // Lot W3-A (X.1-01) : blocs définis par l'utilisateur (`blocs/blocs.ts`) et contraintes géométriques (`contraintes/contraintes.ts`).
+    "STUDIO_LIMITES_BLOCS", "validerDefinitionBloc", "validerInsertionBloc", "studioCleNomBloc", "controlerBlocs", "studioComposerTransformationsPlanes", "studioTransformationInsertion", "studioIdElementInsertion", "studioFormesInsertion", "studioPoseTransformee", "studioPointsInsertion", "studioInsertionsParBloc", "insertionSvg", "studioNomsDxfBlocs", "blocsDxf", "insertionDxf", "SCHEMA_DEFINITION_BLOC", "SCHEMA_INSERTION_BLOC",
+    "STUDIO_TYPES_CONTRAINTES", "STUDIO_POINTS_CONTRAINTE", "STUDIO_MODES_TANGENCE", "STUDIO_LIMITES_CONTRAINTES", "STUDIO_TOLERANCES_CONTRAINTES", "validerContrainte", "studioRefusContrainte", "studioEvaluerContrainte", "studioModeTangence", "studioResoudreContraintes", "studioPointContrainte", "SCHEMA_CONTRAINTE",
   ]),
 };
 function sansAjouts(value: unknown): unknown {
@@ -420,7 +426,7 @@ function sansAjouts(value: unknown): unknown {
   if (!value || typeof value !== "object") return value;
   const out = Object.fromEntries(Object.entries(value).map(([k, v]) => [k, sansAjouts(v)]));
   const props = out.properties as Record<string, unknown> | undefined;
-  if (props && "schemaVersion" in props) { delete props.annotations; delete props.architecture; delete props.proprietes; delete props.scenes; delete props.nonNatifs; delete props.exacts; delete props.graphismes; delete props.systemeProjet; delete props.sources; delete props.cotesFaces; }
+  if (props && "schemaVersion" in props) { delete props.annotations; delete props.architecture; delete props.proprietes; delete props.scenes; delete props.nonNatifs; delete props.exacts; delete props.graphismes; delete props.systemeProjet; delete props.sources; delete props.cotesFaces; delete props.blocs; delete props.insertions; delete props.contraintes; }
   // Lot F1 (extension additive consignée) : direction d'extrusion facultative (`extrusion.direction`, `extruder`) et,
   // pour le prisme, direction et source facultatives ; retirées pour comparer à la base.
   if (props && "base" in props && "height" in props) delete props.direction;

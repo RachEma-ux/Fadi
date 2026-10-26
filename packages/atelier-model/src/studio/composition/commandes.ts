@@ -12,6 +12,8 @@ import { studioExtrudedRingVertices } from "../objets/polyligne.js";
 import { creerScene, definirApparence, modifierScene, retirerApparences, retirerApparencesOrphelines, supprimerScenes } from "../commandes/scenes.js";
 import { conserverNonNatif, retirerNonNatifs } from "../commandes/non-natifs.js";
 import { creerGraphisme, declarerSource, definirSystemeProjet, retirerGraphismes } from "../commandes/graphismes.js";
+import { avecBlocs, definirBloc, deplacerAvecBlocs, eclaterBloc, insererBloc } from "../commandes/blocs.js";
+import { poserContraintes, suivreContraintes } from "../commandes/contraintes.js";
 import { sortie, validateStudioDocument } from "./document.js";
 import type { Etat, Gestionnaire } from "../commandes/etat.js";
 import { STUDIO_LIMITS } from "../noyau/limites.js";
@@ -31,18 +33,18 @@ const HANDLERS: Record<StudioCommandToolId, Gestionnaire> = {
   "studio.dessin.cercle": creation("studio.dessin.cercle"),
   "studio.dessin.arc": creation("studio.dessin.arc"),
   "studio.dessin.polyligne": creation("studio.dessin.polyligne"),
-  "studio.dessin.deplacer": deplacerAvecArchitecture(deplacer),
+  "studio.dessin.deplacer": deplacerAvecArchitecture(deplacerAvecBlocs(deplacer)),
   "studio.dessin.modifier": modifier,
   "studio.dessin.decaler": decaler,
   "studio.dessin.cote": creerCote,
-  "studio.dessin.supprimer": avecArchitecture(supprimer, "supprimer"),
-  "studio.dessin.copier": avecArchitecture(copier, "copier"),
-  "studio.dessin.rotation": avecArchitecture(rotation, "rotation"),
-  "studio.dessin.symetrie": avecArchitecture(symetrie, "symetrie"),
-  "studio.dessin.echelle": avecArchitecture(echelle, "echelle"),
+  "studio.dessin.supprimer": avecArchitecture(avecBlocs(supprimer, "supprimer"), "supprimer"),
+  "studio.dessin.copier": avecArchitecture(avecBlocs(copier, "copier"), "copier"),
+  "studio.dessin.rotation": avecArchitecture(avecBlocs(rotation, "rotation"), "rotation"),
+  "studio.dessin.symetrie": avecArchitecture(avecBlocs(symetrie, "symetrie"), "symetrie"),
+  "studio.dessin.echelle": avecArchitecture(avecBlocs(echelle, "echelle"), "echelle"),
   "studio.calque.creer": creerCalque,
   "studio.calque.modifier": modifierCalque,
-  "studio.objet.calque": avecArchitecture(placerSurCalque, "calque"),
+  "studio.objet.calque": avecArchitecture(avecBlocs(placerSurCalque, "calque"), "calque"),
   "studio.objet.extruder": extruder,
   "studio.objet.aplatir": aplatir,
   "studio.solide.boite": creerBoite,
@@ -85,6 +87,13 @@ const HANDLERS: Record<StudioCommandToolId, Gestionnaire> = {
   "studio.repere.projet": definirSystemeProjet,
   // Sources externes (EX-014) : provenance d'un fichier importé, déclarée avec l'import.
   "studio.source.declarer": declarerSource,
+  // Blocs définis par l'utilisateur (X.1-01) : définir / redéfinir, insérer / modifier la pose, éclater ; les commandes
+  // générales à sélection agissent aussi sur les insertions (`avecBlocs`).
+  "studio.bloc.definir": definirBloc,
+  "studio.bloc.inserer": insererBloc,
+  "studio.bloc.eclater": eclaterBloc,
+  // Contraintes géométriques (X.1-01) : poser et résoudre, système résolu ou refusé (insatisfaisable, sur-contraint).
+  "studio.contrainte.poser": poserContraintes,
 };
 
 /** Identifiants réellement acceptés par `applyStudioCommands` (contrôlés contre le registre par test). */
@@ -97,8 +106,8 @@ export function applyStudioCommands(document: StudioDocument, commands: readonly
   const avant = studioExtrudedRingVertices(current.objects);
   const state: Etat & { proprietes?: StudioPropriete[] } = {
     proprietes: current.proprietes ?? [],
-    id: current.id, objects: current.objects, layers: current.layers ?? [], dimensions: current.dimensions ?? [], solides: current.solides ?? [], exacts: current.exacts ?? [], cotesFaces: current.cotesFaces ?? [], annotations: current.annotations ?? [], architecture: current.architecture ?? [], scenes: current.scenes ?? [], nonNatifs: current.nonNatifs ?? [], graphismes: current.graphismes ?? [], sources: current.sources ?? [], ...(current.systemeProjet ? { systemeProjet: current.systemeProjet } : {}),
-    ids: new Set([...current.objects.map((o) => o.id), ...(current.dimensions ?? []).map((d) => d.id), ...(current.solides ?? []).map((s) => s.id), ...(current.exacts ?? []).flatMap(idsReserves), ...(current.annotations ?? []).map((a) => a.id), ...(current.architecture ?? []).map((a) => a.id), ...(current.nonNatifs ?? []).map((n) => n.id), ...(current.graphismes ?? []).map((g) => g.id), ...(current.cotesFaces ?? []).map((c) => c.id)]),
+    id: current.id, objects: current.objects, layers: current.layers ?? [], dimensions: current.dimensions ?? [], solides: current.solides ?? [], exacts: current.exacts ?? [], cotesFaces: current.cotesFaces ?? [], annotations: current.annotations ?? [], architecture: current.architecture ?? [], scenes: current.scenes ?? [], nonNatifs: current.nonNatifs ?? [], graphismes: current.graphismes ?? [], sources: current.sources ?? [], blocs: current.blocs ?? [], insertions: current.insertions ?? [], contraintes: current.contraintes ?? [], ...(current.systemeProjet ? { systemeProjet: current.systemeProjet } : {}),
+    ids: new Set([...current.objects.map((o) => o.id), ...(current.dimensions ?? []).map((d) => d.id), ...(current.solides ?? []).map((s) => s.id), ...(current.exacts ?? []).flatMap(idsReserves), ...(current.annotations ?? []).map((a) => a.id), ...(current.architecture ?? []).map((a) => a.id), ...(current.nonNatifs ?? []).map((n) => n.id), ...(current.graphismes ?? []).map((g) => g.id), ...(current.cotesFaces ?? []).map((c) => c.id), ...(current.blocs ?? []).map((b) => b.id), ...(current.insertions ?? []).map((x) => x.id), ...(current.contraintes ?? []).map((c) => c.id)]),
   };
   // Solides avant le lot (les solides sont remplacés, jamais modifiés en place) : le suivi des sources en dépend.
   const solidesAvant = new Map((current.solides ?? []).map((s) => [s.id, s]));
@@ -126,7 +135,9 @@ export function applyStudioCommands(document: StudioDocument, commands: readonly
   // Les propriétés d'un objet disparu (supprimé, mur supprimé avec ses ouvertures) disparaissent avec lui.
   const presents = new Set([...state.objects.map((o) => o.id), ...state.architecture.map((a) => a.id)]);
   const proprietes = elaguerProprietes(state.proprietes ?? [], (id) => presents.has(id));
-  const result = validateStudioDocument(sortie(state.id, state.objects, state.layers, state.dimensions, state.solides, state.annotations, state.architecture, proprietes, state.scenes, state.nonNatifs, state.exacts, state.graphismes, state.systemeProjet, state.sources, state.cotesFaces));
+  // Contraintes (X.1-01) : celles que la géométrie ne satisfait plus passent « à résoudre », jamais recalculées en silence.
+  suivreContraintes(state);
+  const result = validateStudioDocument(sortie(state.id, state.objects, state.layers, state.dimensions, state.solides, state.annotations, state.architecture, proprietes, state.scenes, state.nonNatifs, state.exacts, state.graphismes, state.systemeProjet, state.sources, state.cotesFaces, state.blocs, state.insertions, state.contraintes));
   // Budget d'écriture des extrusions de polylignes fermées : un lot ne peut pas le dépasser ni l'aggraver une fois
   // dépassé ; une révision enregistrée reste toujours lisible (le budget ne s'applique qu'aux écritures).
   const apres = studioExtrudedRingVertices(result.objects);

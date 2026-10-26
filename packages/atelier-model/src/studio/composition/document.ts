@@ -19,12 +19,14 @@ import { validerNonNatif, type StudioNonNatif } from "../non-natifs/non-natifs.j
 import { validerGraphisme, STUDIO_LIMITES_GRAPHISMES, type StudioGraphisme } from "../graphismes/graphismes.js";
 import { validerSystemeProjet, type StudioSystemeProjet } from "../reperes.js";
 import { validerSources, type StudioSourceExterne } from "../sources/sources.js";
+import { controlerBlocs, validerDefinitionBloc, validerInsertionBloc, type StudioDefinitionBloc, type StudioInsertionBloc } from "../blocs/blocs.js";
+import { STUDIO_LIMITES_CONTRAINTES, studioRefusContrainte, validerContrainte, type StudioContrainte } from "../contraintes/contraintes.js";
 import type { StudioDocument } from "./types.js";
 
 /** Document Studio : forme canonique, validation complète, création, lectures (sélection, mesure d'une cote). */
 
 /** Forme canonique : `layers`, `dimensions`, `solides` et `annotations` vides sont omis. */
-export function sortie(id: string, objects: StudioShape[], layers: StudioLayer[], dimensions: StudioDimension[], solides: StudioSolid[] = [], annotations: StudioAnnotation[] = [], architecture: StudioArchitectureItem[] = [], proprietes: StudioPropriete[] = [], scenes: StudioElementVisualisation[] = [], nonNatifs: StudioNonNatif[] = [], exacts: StudioSolideExact[] = [], graphismes: StudioGraphisme[] = [], systemeProjet?: StudioSystemeProjet, sources: StudioSourceExterne[] = [], cotesFaces: StudioCoteFace[] = []): StudioDocument {
+export function sortie(id: string, objects: StudioShape[], layers: StudioLayer[], dimensions: StudioDimension[], solides: StudioSolid[] = [], annotations: StudioAnnotation[] = [], architecture: StudioArchitectureItem[] = [], proprietes: StudioPropriete[] = [], scenes: StudioElementVisualisation[] = [], nonNatifs: StudioNonNatif[] = [], exacts: StudioSolideExact[] = [], graphismes: StudioGraphisme[] = [], systemeProjet?: StudioSystemeProjet, sources: StudioSourceExterne[] = [], cotesFaces: StudioCoteFace[] = [], blocs: StudioDefinitionBloc[] = [], insertions: StudioInsertionBloc[] = [], contraintes: StudioContrainte[] = []): StudioDocument {
   return {
     id, schemaVersion: "studio-document/1", units: "m", frame: "local-2d", objects,
     ...(layers.length ? { layers } : {}),
@@ -40,12 +42,15 @@ export function sortie(id: string, objects: StudioShape[], layers: StudioLayer[]
     ...(graphismes.length ? { graphismes } : {}),
     ...(systemeProjet ? { systemeProjet } : {}),
     ...(sources.length ? { sources } : {}),
+    ...(blocs.length ? { blocs } : {}),
+    ...(insertions.length ? { insertions } : {}),
+    ...(contraintes.length ? { contraintes } : {}),
   };
 }
 
 /** Returns a private, canonical copy (empty `layers` / `dimensions` / `annotations` omitted) or throws `StudioValidationError`. */
 export function validateStudioDocument(value: unknown): StudioDocument {
-  const d = record(value, ["id", "schemaVersion", "units", "frame", "objects"], "document", ["layers", "dimensions", "solides", "annotations", "architecture", "proprietes", "scenes", "nonNatifs", "exacts", "graphismes", "systemeProjet", "sources", "cotesFaces"]);
+  const d = record(value, ["id", "schemaVersion", "units", "frame", "objects"], "document", ["layers", "dimensions", "solides", "annotations", "architecture", "proprietes", "scenes", "nonNatifs", "exacts", "graphismes", "systemeProjet", "sources", "cotesFaces", "blocs", "insertions", "contraintes"]);
   if (d.schemaVersion !== "studio-document/1") fail("studioDocument.schemaVersion", "version non prise en charge");
   if (d.units !== "m") fail("studioDocument.units", "unité m attendue");
   if (d.frame !== "local-2d") fail("studioDocument.frame", "repère local-2d attendu");
@@ -153,7 +158,27 @@ export function validateStudioDocument(value: unknown): StudioDocument {
     if (c.layerId !== undefined && !layerIds.has(c.layerId)) fail("studioDocument.cotesFaces", "calque inconnu");
     controlerCoteFace(c, solides, `studioDocument.cotesFaces[${i}]`);
   }
-  return sortie(identifier(d.id, "studioDocument.id"), objects, layers, dimensions, solides, annotations, architecture, proprietes, scenes, nonNatifs, exacts, graphismes, systemeProjet, sources, cotesFaces);
+  // Blocs (X.1-01) : définitions et insertions, identifiants uniques dans tout le document, noms uniques, calque connu.
+  const blocs = (Object.hasOwn(d, "blocs") ? array(d.blocs, "studioDocument.blocs") : []).map((o, i) => validerDefinitionBloc(o, `studioDocument.blocs[${i}]`));
+  const insertions = (Object.hasOwn(d, "insertions") ? array(d.insertions, "studioDocument.insertions") : []).map((o, i) => validerInsertionBloc(o, `studioDocument.insertions[${i}]`));
+  controlerBlocs(blocs, insertions, "studioDocument");
+  for (const x of [...blocs, ...insertions]) {
+    if (shapes.has(x.id) || dimensionIds.has(x.id) || annotationIds.has(x.id)) fail(`studioDocument.${x.type === "bloc" ? "blocs" : "insertions"}`, "identifiant dupliqué");
+    annotationIds.add(x.id);
+    if (x.type === "insertion" && x.layerId !== undefined && !layerIds.has(x.layerId)) fail("studioDocument.insertions", "calque inconnu");
+  }
+  // Contraintes (X.1-01) : identifiants uniques ; une contrainte qui n'est pas « à résoudre » vise des cibles présentes
+  // et compatibles (une contrainte rompue garde sa cible même disparue, jusqu'à sa résolution ou son retrait).
+  const rawContraintes = Object.hasOwn(d, "contraintes") ? array(d.contraintes, "studioDocument.contraintes") : [];
+  if (rawContraintes.length > STUDIO_LIMITES_CONTRAINTES.contraintes) fail("studioDocument.contraintes", `${STUDIO_LIMITES_CONTRAINTES.contraintes} contraintes au plus`);
+  const contraintes = rawContraintes.map((o, i) => validerContrainte(o, `studioDocument.contraintes[${i}]`));
+  contraintes.forEach((c, i) => {
+    if (shapes.has(c.id) || dimensionIds.has(c.id) || annotationIds.has(c.id)) fail("studioDocument.contraintes", "identifiant dupliqué");
+    annotationIds.add(c.id);
+    const refus = c.aResoudre ? null : studioRefusContrainte(c, shapes);
+    if (refus) fail(`studioDocument.contraintes[${i}]`, `contrainte ${c.id} : ${refus}`);
+  });
+  return sortie(identifier(d.id, "studioDocument.id"), objects, layers, dimensions, solides, annotations, architecture, proprietes, scenes, nonNatifs, exacts, graphismes, systemeProjet, sources, cotesFaces, blocs, insertions, contraintes);
 }
 
 /** Valeur mesurée d'une cote angulaire (degrés), dérivée ; « non évaluée » (null) tant qu'elle est à résoudre. */

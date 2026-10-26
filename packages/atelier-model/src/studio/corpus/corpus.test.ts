@@ -26,6 +26,9 @@ import { studioDimensionValue } from "../objets/cote.js";
 import { measureStudioDimension } from "../document-2d.js";
 import { controlerExigences } from "../facade-exigences.js";
 import { studioAireContour } from "../graphismes/graphismes.js";
+import { studioFormesInsertion } from "../blocs/blocs.js";
+import { studioEvaluerContrainte } from "../contraintes/contraintes.js";
+import { studioSignedArea } from "../courbes.js";
 import { lireDxfStudio } from "../import-dxf.js";
 import { studioSha256 } from "../empreinte-sha256.js";
 import { createHash } from "node:crypto";
@@ -76,7 +79,9 @@ function proche(mesure: number | null | undefined, attendu: number, quoi: string
 function comptes(corpus: CorpusStudio): Record<string, number> {
   const c: Record<string, number> = {};
   for (const d of corpus.documents) {
-    for (const e of [...d.objects, ...(d.dimensions ?? []), ...(d.annotations ?? []), ...(d.architecture ?? []), ...(d.solides ?? []), ...(d.exacts ?? []), ...(d.graphismes ?? [])]) c[e.type] = (c[e.type] ?? 0) + 1;
+    for (const e of [...d.objects, ...(d.dimensions ?? []), ...(d.annotations ?? []), ...(d.architecture ?? []), ...(d.solides ?? []), ...(d.exacts ?? []), ...(d.graphismes ?? []), ...(d.insertions ?? [])]) c[e.type] = (c[e.type] ?? 0) + 1;
+    // Contraintes : comptées ensemble (leur `type` est leur nature, contrôlée à part).
+    if (d.contraintes?.length) c.contrainte = (c.contrainte ?? 0) + d.contraintes.length;
   }
   return c;
 }
@@ -126,7 +131,26 @@ function mesures(corpus: CorpusStudio) {
     for (const e of d.exacts ?? []) { exacts.operations[e.operation] = (exacts.operations[e.operation] ?? 0) + 1; exacts.volume += e.resultat.volume; }
     for (const x of d.sources ?? []) { sources.nombre++; sources.objets += x.objets; }
   }
-  return { totaux, volumeNonEvalues, volumeSolides, cotes: { liees, libres, sommeMesures }, angles: { nombre: angles, sommeDegres }, murs, premier, graphismes, exacts, sources };
+  // Blocs (définitions, insertions, symétries, aire des carrés posés mesurée sur la géométrie dérivée) et contraintes
+  // (par type, satisfaites selon l'évaluation du modèle).
+  const blocs = { definitions: 0, insertions: 0, symetriques: 0, aireCarres: 0 };
+  const contraintes = { parType: {} as Record<string, number>, satisfaites: 0 };
+  for (const d of corpus.documents) {
+    blocs.definitions += d.blocs?.length ?? 0;
+    const defs = new Map((d.blocs ?? []).map((b) => [b.id, b]));
+    for (const i of d.insertions ?? []) {
+      blocs.insertions++;
+      if (i.symetrie) blocs.symetriques++;
+      const carre = studioFormesInsertion(defs.get(i.bloc)!, i)[0]!;
+      blocs.aireCarres += carre.type === "polyline" ? Math.abs(studioSignedArea(carre.points)) : carre.type === "rectangle" ? carre.width * carre.height : Number.NaN;
+    }
+    const formes = new Map(d.objects.map((o) => [o.id, o]));
+    for (const c of d.contraintes ?? []) {
+      contraintes.parType[c.type] = (contraintes.parType[c.type] ?? 0) + 1;
+      if (studioEvaluerContrainte(c, formes).statut === "satisfaite") contraintes.satisfaites++;
+    }
+  }
+  return { totaux, volumeNonEvalues, volumeSolides, cotes: { liees, libres, sommeMesures }, angles: { nombre: angles, sommeDegres }, murs, premier, graphismes, exacts, sources, blocs, contraintes };
 }
 
 function controlerOracle(corpus: CorpusStudio, o: OracleCorpus) {
@@ -164,6 +188,11 @@ function controlerOracle(corpus: CorpusStudio, o: OracleCorpus) {
     proche(m.exacts.volume, o.exacts.volume, "volume des solides exacts (noyau)");
   } else expect(m.exacts.volume).toBe(0);
   expect(m.sources, "références externes déclarées").toEqual(o.sources ?? { nombre: 0, objets: 0 });
+  if (o.blocs) {
+    expect([m.blocs.definitions, m.blocs.insertions, m.blocs.symetriques], "blocs : définitions, insertions, symétriques").toEqual([o.blocs.definitions, o.blocs.insertions, o.blocs.symetriques]);
+    proche(m.blocs.aireCarres, o.blocs.aireCarres, "aire des carrés posés par les insertions");
+  } else expect(m.blocs).toEqual({ definitions: 0, insertions: 0, symetriques: 0, aireCarres: 0 });
+  expect(m.contraintes, "contraintes par type, satisfaites").toEqual(o.contraintes ?? { parType: {}, satisfaites: 0 });
 }
 
 const TAILLES: readonly number[] = LOURD ? TAILLES_ILLUSTRATIVES : TAILLES_ILLUSTRATIVES.filter((t) => t <= 10_000);
@@ -277,6 +306,29 @@ describe("X.1-01 / X.1-02 / X.1-05 — éléments ajoutés au corpus depuis les 
     const svg = referenceVisuelle(c).svg[0]!;
     expect(svg).toMatch(/opacity="0.5"/);
     expect(svg).toMatch(/ C /);
+  });
+
+  it("X.1-01 S1 : blocs définis par l'utilisateur (définition réutilisable, insertions transformées) et contraintes géométriques satisfaites dans chaque motif ; plus aucun élément déclaré absent", () => {
+    const c = genererCorpus("S1", 100), d = c.documents[0]!;
+    // 100 primitives = 5 motifs entiers (95) et un motif entamé de 5 primitives : 5 insertions, 10 contraintes.
+    expect(d.blocs?.map((b) => [b.id, b.elements.map((e) => e.type)])).toEqual([["s1-bloc", ["polyline", "line", "circle"]]]);
+    expect(d.insertions).toHaveLength(Math.floor(100 / 19));
+    // Insertions transformées : rotations par quarts de tour, échelles 0,5 et 1, symétrie une fois sur trois.
+    expect(new Set(d.insertions!.map((i) => i.echelle))).toEqual(new Set([0.5, 1]));
+    expect(d.insertions!.some((i) => i.symetrie) && d.insertions!.some((i) => !i.symetrie)).toBe(true);
+    expect(new Set(d.insertions!.map((i) => i.rotation)).size).toBe(4);
+    expect(d.contraintes?.map((x) => x.type).sort()).toEqual([...Array(5).fill("distance"), ...Array(5).fill("horizontal")]);
+    expect(c.couverture.absents).toEqual([]);
+    expect(c.couverture.representes.join(" ")).toMatch(/blocs définis par l'utilisateur/);
+    expect(c.couverture.representes.join(" ")).toMatch(/contraintes géométriques/);
+    // Fonctions présentes, jamais simulées : une redéfinition du bloc change toutes les insertions, une ligne tournée
+    // fait passer sa contrainte « à résoudre ».
+    const r = applyStudioCommands(d, [{ toolId: "studio.bloc.definir", params: { id: "s1-bloc", nom: "Repère redéfini (synthétique)", base: { x: 0, y: 0 }, elements: [{ id: "point", type: "circle", center: { x: 0, y: 0 }, radius: 0.1 }], redefinir: true } }]);
+    for (const i of r.insertions!) expect(studioFormesInsertion(r.blocs![0]!, i).map((o) => o.type)).toEqual(["circle"]);
+    const t = applyStudioCommands(d, [{ toolId: "studio.dessin.echelle", params: { ids: ["s1-0-ligne"], center: { x: 0, y: 0 }, factor: 2, includeVolumes: false } }]);
+    expect(t.contraintes?.filter((x) => x.aResoudre).map((x) => x.id)).toEqual(["s1-0-c-distance"]);
+    const svg = referenceVisuelle(c).svg[0]!;
+    expect(svg.match(/data-insertion="/g)).toHaveLength(5);
   });
 
   it("X.1-02 S2 : croisements de murs en cours de portée et référence externe déclarée — fond DXF des axes relu, empreinte du fichier recalculée", () => {

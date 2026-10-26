@@ -67,6 +67,8 @@ const PROPRIETAIRES: Readonly<Record<StudioToolGroup, StudioProprietaireOutil>> 
   graphismes: { id: "studio.graphismes", module: "packages/atelier-model/src/studio/graphismes" },
   reperes: { id: "studio.reperes", module: "packages/atelier-model/src/studio/reperes.ts" },
   sources: { id: "studio.sources", module: "packages/atelier-model/src/studio/sources" },
+  blocs: { id: "studio.blocs", module: "packages/atelier-model/src/studio/blocs" },
+  contraintes: { id: "studio.contraintes", module: "packages/atelier-model/src/studio/contraintes" },
 });
 
 export interface StudioEntreeManifeste {
@@ -144,6 +146,10 @@ const DECLARATIONS = {
   "studio.graphisme.retirer": { contextes: P2D, prerequis: ["studio.graphisme.creer"] },
   "studio.repere.projet": { contextes: P2D },
   "studio.source.declarer": { contextes: P2D },
+  "studio.bloc.definir": { contextes: P2D },
+  "studio.bloc.inserer": { contextes: P2D, prerequis: ["studio.bloc.definir"] },
+  "studio.bloc.eclater": { contextes: P2D, prerequis: ["studio.bloc.inserer"] },
+  "studio.contrainte.poser": { contextes: P2D },
 } as const satisfies Record<StudioToolId, Declaration>;
 
 const chargeurDe = (contextes: readonly StudioContexteOutil[]): StudioIdChargeur =>

@@ -85,6 +85,11 @@ export const ALTERNATIVES_GESTES: Readonly<Record<string, AlternativeGeste>> = O
   "studio.graphisme.retirer": commande,
   "studio.repere.projet": commande,
   "studio.source.declarer": commande,
+  // Lot W3-A (X.1-01) : boîtes « Blocs » et « Contraintes » (valeurs saisies, cibles cochées dans la liste), raccourci propre.
+  "studio.bloc.definir": commande,
+  "studio.bloc.inserer": commande,
+  "studio.bloc.eclater": commande,
+  "studio.contrainte.poser": commande,
 });
 
 /** Gestes de vue et de sélection au pointeur (outils/gestes.ts) → commandes de l'éditeur au clavier (raccourcis.ts). */

@@ -92,6 +92,8 @@ export const DOMAINES_FAMILLES_OUTILS = Object.freeze({
   graphismes: "dessin", reperes: "dessin",
   // Sources importées (EX-014) : nées d'un import, comme lui à définir.
   sources: A_DEFINIR,
+  // Blocs définis par l'utilisateur et contraintes géométriques (X.1-01) : dessin 2D, Dessin et modélisation.
+  blocs: "dessin", contraintes: "dessin",
 } as const satisfies Record<StudioToolGroup, DomaineAttribue>);
 
 /** Domaine d'une entrée du catalogue (outil du registre ou commande de l'éditeur). */

@@ -117,13 +117,18 @@ const NEGATIFS: Readonly<Record<StudioToolId, readonly string[]>> = {
   "studio.graphisme.retirer": ["graphismes.test.ts", "document-2d.test.ts"],
   "studio.repere.projet": ["reperes.test.ts"],
   "studio.source.declarer": ["sources/sources.test.ts"],
+  // Lot W3-A (X.1-01) : blocs définis par l'utilisateur et contraintes géométriques.
+  "studio.bloc.definir": ["blocs/blocs.test.ts"],
+  "studio.bloc.inserer": ["blocs/blocs.test.ts"],
+  "studio.bloc.eclater": ["blocs/blocs.test.ts"],
+  "studio.contrainte.poser": ["contraintes/contraintes.test.ts"],
 };
 
 /** Mesures par barre (codes instrumentés par Studio) ; l'outil exact relève aussi PERF-07. */
 const MESURES_PAR_BARRE: Readonly<Record<string, readonly CodeMesureOutil[]>> = {
   dessin: ["PERF-02", "PERF-03", "PERF-04"], modification: ["PERF-02", "PERF-03", "PERF-04"], calques: ["PERF-02"], volume: ["PERF-02", "PERF-05"],
   "volume-libre": ["PERF-02", "PERF-05"], architecture: ["PERF-02", "PERF-03", "PERF-04"], proprietes: ["PERF-02"], visualisation: ["PERF-02", "PERF-05"], "non-natifs": ["PERF-02"],
-  graphismes: ["PERF-02", "PERF-03"], reperes: ["PERF-02"], sources: ["PERF-02"],
+  graphismes: ["PERF-02", "PERF-03"], reperes: ["PERF-02"], sources: ["PERF-02"], blocs: ["PERF-02", "PERF-03"], contraintes: ["PERF-02"],
 };
 
 /** Risques du contrat d'exécution (EX-028) : chaque refus laisse le document intact. */

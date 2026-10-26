@@ -110,6 +110,9 @@ describe("Matrice d'échanges : donnée versionnée et cohérente", () => {
       // Lot G2 (EX-027, INV-013) : échelle d’accès (architecture.ladder : SVG / DXF en plan, IFC IfcStair .LADDER. exact) ;
       // catégorie « cotesFaces » (cotes de faces 3D, écrites dans aucun format).
       9: "7f7e636bf4c023b2fa10bc992b666b8a76e1e1c10027037abbc52434e125d6ae",
+      // Lot W3-A (X.1-01) : blocs définis par l'utilisateur (BLOCK / INSERT en DXF, lus et écrits ; insertions développées
+      // en SVG ; hors IFC) et contraintes géométriques (écrites dans aucun format).
+      10: "2d49765192412217c8d40b522ae46a6dc855a27aa0627b1d856c0035db7d9d66",
     };
     // Depuis la révision 8, l'empreinte couvre aussi les capacités par sens d'échange (EX-079).
     const capacites = STUDIO_MATRICE_ECHANGES.revision >= 8 ? { capacites: STUDIO_CAPACITES_PAR_SENS } : {};
@@ -313,6 +316,10 @@ const complet = (): StudioDocument => ({
   ],
   // Source importée (EX-014) : provenance déclarée (empreinte SYNTHÉTIQUE).
   sources: [{ id: "src1", type: "source", format: "dxf", versionFormat: "AC1009", nomFichier: "plan.dxf", empreinteSha256: "0".repeat(64), recuLe: "2026-10-25T10:00:00.000Z", auteur: null, uniteLue: "mm", uniteRetenue: "mm", facteur: 0.001, repereSource: null, transformation: "identite", restrictions: null, objets: 3 }],
+  // Lot W3-A (X.1-01) : un bloc défini par l'utilisateur, une insertion, une contrainte (ligne l1 horizontale).
+  blocs: [{ id: "bl1", type: "bloc", nom: "Repère", base: { x: 0, y: 0 }, elements: [{ id: "e1", type: "line", start: { x: 0, y: 0 }, end: { x: 1, y: 0 } }] }],
+  insertions: [{ id: "in1", type: "insertion", bloc: "bl1", position: { x: 90, y: 0 }, rotation: 0, echelle: 1 }],
+  contraintes: [{ id: "ct1", type: "horizontal", cibles: [{ objet: "l1" }] }],
 } as StudioDocument);
 
 describe("E.6-03 : sous-ensemble SVG / DXF / IFC = rapport de fidélité", () => {
@@ -407,7 +414,9 @@ describe("E.6-03 : sous-ensemble SVG / DXF / IFC = rapport de fidélité", () =>
     expect(r.rapport.nonPris.map((n) => n.type)).toEqual(["INSERT", "TEXT"]);
     const e = entree("dessin-dxf-import");
     for (const nom of ["LINE", "CIRCLE", "ARC", "LWPOLYLINE / POLYLINE 2D"]) expect(e.entites.find((x) => x.entite === nom)?.couverture).not.toBe("absente");
-    expect(e.entites.some((x) => x.couverture === "absente" && x.entite.includes("TEXT") && x.entite.includes("INSERT"))).toBe(true);
+    expect(e.entites.some((x) => x.couverture === "absente" && x.entite.includes("TEXT"))).toBe(true);
+    // Lot W3-A (X.1-01) : un INSERT d'un bloc représentable devient une insertion ; celui d'un bloc absent reste compté.
+    expect(e.entites.find((x) => x.entite === "BLOCK / INSERT")?.couverture).toBe("partielle");
     expect(() => lireDxfStudio("AutoCAD Binary DXF\r\n\u001a\u0000")).toThrow(/binaire/);
   });
 });

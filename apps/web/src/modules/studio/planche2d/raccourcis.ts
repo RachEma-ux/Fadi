@@ -161,6 +161,8 @@ export const BARRES_STUDIO: readonly { id: BarreStudio; libelleFR: string }[] = 
   { id: "graphismes", libelleFR: "Graphismes" },
   { id: "reperes", libelleFR: "Repères" },
   { id: "sources", libelleFR: "Sources importées" },
+  { id: "blocs", libelleFR: "Blocs" },
+  { id: "contraintes", libelleFR: "Contraintes" },
   { id: "edition", libelleFR: "Édition" },
   { id: "vue", libelleFR: "Vue" },
   { id: "accrochage", libelleFR: "Accrochage" },

@@ -19,11 +19,13 @@ import { DialogueIllustration, type DialogueIllustrationProps } from "../illustr
 import { PanneauAgents } from "../illustration/PanneauAgents";
 import { DialogueGraphismes } from "../graphismes/DialogueGraphismes";
 import { DialogueSystemeProjet } from "../graphismes/DialogueSystemeProjet";
+import { DialogueBlocs } from "../blocs/DialogueBlocs";
+import { DialogueContraintes } from "../blocs/DialogueContraintes";
 import type { Cible } from "../console/transfert";
 import { appartientAuDialogue, focalisables, suivantDansLePiege } from "./piege-focus";
 import type { RaisonIndisponible } from "./droits";
 
-export type DialogueStudio = "outils" | "palette" | "feuille" | "import-dxf" | "import-ifc" | "modeles-externes" | "dossier" | "echanges" | "enregistrer-console" | "illustration" | "agents" | "graphismes" | "systeme-projet" | "approbation" | null;
+export type DialogueStudio = "outils" | "palette" | "feuille" | "import-dxf" | "import-ifc" | "modeles-externes" | "dossier" | "echanges" | "enregistrer-console" | "illustration" | "agents" | "graphismes" | "systeme-projet" | "approbation" | "blocs" | "contraintes" | null;
 
 export interface PropsDialoguesStudio {
   dialogue: DialogueStudio;
@@ -142,6 +144,8 @@ export function DialoguesStudio({ dialogue, surFermer, disponible, raison, surEx
     {dialogue === "agents" && <PanneauAgents projectId={portee.projectId} surFermer={surFermer} />}
     {dialogue === "enregistrer-console" && enregistrementConsole && <DialogueEnregistrerConsole commandes={enregistrementConsole.commandes} surFermer={surFermer} surEnregistre={enregistrementConsole.surEnregistre} />}
     {dialogue === "graphismes" && <DialogueGraphismes doc={drawing} modifiable={modifiable && !!surAppliquer} layerId={calqueActif} coches={selection.filter((id) => drawing.graphismes?.some((g) => g.id === id))} surAppliquer={surAppliquer ?? (() => false)} surFermer={surFermer} />}
+    {dialogue === "blocs" && <DialogueBlocs doc={drawing} modifiable={modifiable && !!surAppliquer} layerId={calqueActif} selection={selection} surAppliquer={surAppliquer ?? (() => false)} surFermer={surFermer} />}
+    {dialogue === "contraintes" && <DialogueContraintes doc={drawing} modifiable={modifiable && !!surAppliquer} selection={selection} surAppliquer={surAppliquer ?? (() => false)} surFermer={surFermer} />}
     {dialogue === "systeme-projet" && <DialogueSystemeProjet doc={drawing} modifiable={modifiable && !!surAppliquer} surAppliquer={surAppliquer ?? (() => false)} surFermer={surFermer} />}
   </div>;
 }

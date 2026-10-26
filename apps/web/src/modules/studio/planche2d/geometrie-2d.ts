@@ -4,7 +4,7 @@
  * ne modifie le document. Pur : ni React ni DOM.
  */
 import {
-  geometrieEchelle, geometrieMur, studioAnchorPoint, studioShapeAnchors, studioShapeBoundPoints, studioTextBox, type StudioAnchor, type StudioDimension, type StudioDimensionLink,
+  geometrieEchelle, geometrieMur, studioAnchorPoint, studioPointsInsertion, studioShapeAnchors, studioShapeBoundPoints, studioTextBox, type StudioAnchor, type StudioDimension, type StudioDimensionLink,
   type StudioDocument, type StudioPoint, type StudioShape,
 } from "@parcours/atelier-model";
 
@@ -35,6 +35,9 @@ export function emprise(doc: StudioDocument, visible: (layerId: string | undefin
     if (!visible(a.layerId)) continue;
     points.push(...(a.type === "text" ? studioTextBox(a) : [a.vertex, a.first, a.second]));
   }
+  // Insertions de blocs (X.1-01) : formes de leur définition posées.
+  const defs = new Map((doc.blocs ?? []).map((b) => [b.id, b]));
+  for (const i of doc.insertions ?? []) { const d = defs.get(i.bloc); if (d && visible(i.layerId)) points.push(...studioPointsInsertion(d, i)); }
   // Échelles d'accès (EX-027) : leur emprise dérivée.
   for (const e of doc.architecture ?? []) if (e.type === "ladder" && visible(e.layerId)) points.push(...geometrieEchelle(e).emprise);
   // Murs (A.4) : leur emprise dérivée (épaisseur et onglets compris) ; l'axe seul si la géométrie est refusée.
