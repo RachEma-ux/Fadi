@@ -9,6 +9,7 @@
 import { studioCaptureBooleen, type StudioCommand, type StudioDocument } from "@parcours/atelier-model";
 import { ErreurExacte, type SolideExact } from "@parcours/geometry-exact";
 import { moteurExact } from "./atelier-exact.js";
+import { surveillanceStudio } from "./studio-surveillance.js";
 
 export const TYPE_BOOLEEN_STUDIO = "studio.solide.booleen";
 
@@ -52,7 +53,8 @@ export async function revaliderBooleensStudio(document: StudioDocument, commands
     M ??= await moteurExact();
     let r: SolideExact;
     try {
-      r = M.executer(capture.capture.entrees);
+      const moteur = M;
+      r = surveillanceStudio.mesurer("exact", TYPE_BOOLEEN_STUDIO, () => moteur.executer(capture.capture.entrees));
     } catch (err) {
       const message = err instanceof ErreurExacte || err instanceof Error ? err.message : String(err);
       return refus(`commands[${i}].params`, "exact-echec", `noyau exact : ${message}`);

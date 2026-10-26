@@ -26,6 +26,7 @@ import { studioDocumentHash } from "./studio-publications.js";
 import { canonicalJson } from "./studio-publication-statuts.js";
 import { configIllustrationExterne, ErreurFournisseurExterne, genererIllustrationExterne, politiqueTransfert, STUDIO_FOURNISSEUR_EXTERNE_ID } from "./studio-illustration-externe.js";
 import { ecrirePng, lirePng, StudioPngError } from "./studio-png.js";
+import { surveillanceStudio } from "./studio-surveillance.js";
 
 /** 8 Mo d'image PNG au plus (le corps JSON en base64 est borné à 12 Mo par la route). */
 export const STUDIO_ILLUSTRATION_OCTETS_MAX = 8 * 1024 * 1024;
@@ -159,11 +160,12 @@ export async function creerIllustration(scope: StudioScope, actorId: string, e: 
   let image: { largeur: number; hauteur: number; rgba: Uint8Array };
   let fournisseur: StudioFournisseurIllustrationDeclare;
   if (!externe) {
-    image = studioIllustrationLocale(png, parametres);
+    // Noyau de rendu du serveur (R.5-03) : durée et erreurs mesurées.
+    image = surveillanceStudio.mesurer("rendu", STUDIO_FOURNISSEUR_LOCAL.id, () => studioIllustrationLocale(png, parametres));
     fournisseur = { id: STUDIO_FOURNISSEUR_LOCAL.id, nom: STUDIO_FOURNISSEUR_LOCAL.nom, nature: "local-deterministe", version: STUDIO_FOURNISSEUR_LOCAL.version, service: null, reseau: false };
   } else {
     let r;
-    try { r = await genererIllustrationExterne(config, source, { ...parametres }); }
+    try { r = await surveillanceStudio.mesurerAsync("rendu", STUDIO_FOURNISSEUR_EXTERNE_ID, () => genererIllustrationExterne(config, source, { ...parametres })); }
     catch (err) { if (err instanceof ErreurFournisseurExterne) refus(502, "fournisseur_externe", err.message); throw err; }
     try { image = lirePng(r.png); } catch { return refus(502, "fournisseur_externe", "Le service externe n’a pas rendu une image PNG lisible."); }
     fournisseur = { id: STUDIO_FOURNISSEUR_EXTERNE_ID, nom: config.nom, nature: "ia-externe", version: r.version ?? config.version, service: new URL(config.url!).host, reseau: true };

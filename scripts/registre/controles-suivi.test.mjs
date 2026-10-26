@@ -8,11 +8,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { arc08, chaines, controlerDepot, decisionsCitees, scenarios, suivi01, suivi02, suivi08, suivi09 } from './controles-suivi.mjs';
 import { NEGATIF, controlesExecutes, fichesTr } from './etat-studio.mjs';
+import {
+  CHECKLIST, COMPOSANTS_SOUS_LOTS, PREUVES_LOTS, RATTACHEMENT_SOUS_LOTS, citesDe, controlerPreuvesLots, controlerRattachement, documentAgregats,
+  gardeTest001, lecteurDepot, lotsDeFiche, rapportAgregats, sousLotsChecklist,
+} from './rattachements-studio.mjs';
 
 const RACINE = fileURLToPath(new URL('../../', import.meta.url));
 const lecteur = (m) => (f) => m.get(f) ?? '';
@@ -147,5 +151,90 @@ test('dépôt réel — SUIVI-01, ARC-08, SUIVI-02, SUIVI-08, X.3-02 et SUIVI-09
   assert.equal(r.chaines.resume.length, 141);
   assert.equal(r.chaines.resume.filter((x) => x.scenarios.length && x.decisions.length).length, 141);
   assert.ok(readFileSync(join(RACINE, 'scripts/registre/rapports-lourds.json'), 'utf8').includes('task-register.json'));
+});
+
+// --- X.3-01 et rapprochements d'agrégation (scripts/registre/rattachements-studio.mjs, lot G5) ----------------------
+
+const lireJson = (f) => JSON.parse(readFileSync(join(RACINE, f), 'utf8'));
+const FICHES_M004 = () => lireJson('docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json').fiches;
+const REGISTRE = () => lireJson('docs/workstreams/studio/task-register.json');
+const existeDepot = (f) => existsSync(join(RACINE, f));
+const trDuRegistre = () => REGISTRE().tasks.map((t) => t.id).filter((id) => /^TR-(?:EX|INV|IF|AC)-/.test(id));
+const sousLotsDepot = () => sousLotsChecklist(readFileSync(join(RACINE, CHECKLIST), 'utf8'));
+
+test('X.3-01 [+] les 141 fiches EX / INV / IF / AC reliées à leurs sous-lots (Checklist) et composants, identifiants inchangés', () => {
+  const fiches = FICHES_M004();
+  const sousLots = sousLotsDepot();
+  for (const s of ['I.1', 'A.1', 'A.5', 'B.3', 'X.1', 'C.2', 'D.2', 'E.6', 'F.1', 'F.3', 'R.5']) assert.ok(sousLots.has(s), s);
+  assert.equal(sousLots.size, 37);
+  assert.equal(fiches.length, 141);
+  assert.deepEqual(Object.keys(RATTACHEMENT_SOUS_LOTS).sort(), fiches.map((f) => f.id).sort());
+  assert.deepEqual(controlerRattachement(fiches, trDuRegistre(), sousLots, existeDepot), []);
+  assert.deepEqual(lotsDeFiche('B/X/F option'), ['B', 'X', 'F']);
+  assert.deepEqual(lotsDeFiche('X/pilotage'), ['X']);
+});
+
+test('X.3-01 [−] identifiant changé, sous-lot inconnu ou hors des lots de la fiche, lot sans sous-lot, composant absent : refusés', () => {
+  const fiches = FICHES_M004();
+  const sousLots = sousLotsDepot();
+  const tr = trDuRegistre();
+  const renomme = fiches.map((f) => (f.id === 'EX-050' ? { ...f, id: 'EX-950' } : f));
+  assert.match(controlerRattachement(renomme, tr, sousLots, existeDepot).join('\n'), /EX-050 rattaché mais absent des fiches REF-02[\s\S]*TR-EX-050 au registre sans fiche[\s\S]*EX-950 sans sous-lot/);
+  const avec = (id, sl) => ({ ...RATTACHEMENT_SOUS_LOTS, [id]: sl });
+  assert.match(controlerRattachement(fiches, tr, sousLots, existeDepot, avec('EX-050', ['C.9'])).join(), /EX-050 → C\.9 : sous-lot absent de la Checklist/);
+  assert.match(controlerRattachement(fiches, tr, sousLots, existeDepot, avec('EX-050', ['A.2'])).join(), /EX-050 → A\.2 : le lot A n'est pas un lot de la fiche \(C\)[\s\S]*aucun sous-lot du lot C/);
+  assert.match(controlerRattachement(fiches, tr, sousLots, existeDepot, avec('EX-021', ['A.4'])).join(), /EX-021 : aucun sous-lot du lot C porté par la fiche \(A\/C\)/);
+  assert.match(controlerRattachement(fiches, tr, sousLots, existeDepot, RATTACHEMENT_SOUS_LOTS, { ...COMPOSANTS_SOUS_LOTS, 'D.2': ['apps/web/src/modules/studio/exact/absent.ts'] }).join(), /D\.2 : composant Studio absent/);
+  assert.match(controlerRattachement(fiches, tr.filter((x) => x !== 'TR-AC-011'), sousLots, existeDepot).join(), /AC-011 sans obligation TR-AC-011 au registre/);
+});
+
+test('rapprochements [+] chaque TEST / AC cité par les huit agrégats rapproché de son obligation, de ses preuves et de ce qui manque', () => {
+  assert.deepEqual(citesDe('Joindre les preuves des scénarios TEST-001 à TEST-014, TEST-027 et TEST-034/035 applicables'), [...Array.from({ length: 14 }, (_, i) => `TEST-${String(i + 1).padStart(3, '0')}`), 'TEST-027', 'TEST-034', 'TEST-035']);
+  assert.deepEqual(citesDe('Joindre TEST-025/026/032/033/035 applicables'), ['TEST-025', 'TEST-026', 'TEST-032', 'TEST-033', 'TEST-035']);
+  assert.deepEqual(citesDe('Joindre TEST-022 à TEST-025 et AC-004/005'), ['TEST-022', 'TEST-023', 'TEST-024', 'TEST-025', 'AC-004', 'AC-005']);
+  assert.deepEqual(citesDe('Joindre les preuves AC-007 à AC-010 applicables.'), ['AC-007', 'AC-008', 'AC-009', 'AC-010']);
+  const registre = REGISTRE();
+  const lire = lecteurDepot(RACINE);
+  assert.deepEqual(controlerPreuvesLots(lire), []);
+  const r = rapportAgregats(registre, lire);
+  assert.deepEqual(r.map((a) => a.id), ['A.2-09', 'REC-A-02', 'REC-B-01', 'REC-C-02', 'REC-E-01', 'REC-E-02', 'F.3-04', 'J6']);
+  const de = (id) => r.find((a) => a.id === id);
+  assert.equal(de('REC-A-02').groupes[0].obligations.length, 17);
+  assert.deepEqual(de('REC-E-02').groupes[0].obligations.map((o) => o.obligation), ['TR-AC-007', 'TR-AC-008', 'TR-AC-009', 'TR-AC-010']);
+  // Une obligation livrée par un lot et pas encore reportée est couverte « à reporter » ; une obligation ouverte sans preuve manque.
+  const test011 = de('REC-A-02').groupes[0].obligations.find((o) => o.id === 'TEST-011');
+  if (!['Vérifié', 'Accepté'].includes(test011.statut)) assert.match(test011.manque, /lot PUB.*à reporter au registre/);
+  const ac010 = de('REC-E-02').groupes[0].obligations.find((o) => o.id === 'AC-010');
+  if (!['Vérifié', 'Accepté'].includes(ac010.statut)) {
+    assert.ok(de('REC-E-02').manques.some((o) => o.id === 'AC-010'));
+    assert.match(ac010.manque, /Approuver.*fonction absente/);
+  }
+  assert.match(de('REC-C-02').externe, /GPU/);
+  const md = documentAgregats(registre, lire, 'e'.repeat(64));
+  for (const a of r) assert.match(md, new RegExp(`### ${a.id.replace('.', '\\.')}\\n`));
+});
+
+test('rapprochements [−] une preuve de lot dont le libellé n’est plus écrit, ou un fichier disparu, fait échouer la génération', () => {
+  const lire = lecteurDepot(RACINE);
+  const libelle = PREUVES_LOTS['TEST-027'].preuves[1][1][0];
+  const altere = (f) => (f === 'apps/web/e2e/studio-exigences.mjs' ? lire(f).replaceAll(libelle, "libellé réécrit") : lire(f));
+  assert.match(controlerPreuvesLots(altere).join(), /TEST-027 : libellé absent de apps\/web\/e2e\/studio-exigences\.mjs/);
+  assert.match(controlerPreuvesLots((f) => (f === 'apps/web/src/modules/studio/planche2d/accrochage.preuves-b.test.ts' ? null : lire(f))).join(), /TR-AC-004 : fichier absent/);
+});
+
+test('A.2-09 [+] / [−] TEST-001 n’est clos qu’à la preuve exécutée de la publication du dessin (E.3-07) ; clos avant, ou sans elle : refusé', () => {
+  const registre = REGISTRE();
+  assert.deepEqual(gardeTest001(registre), []);
+  const t001 = (r) => r.tasks.find((t) => t.id === 'TEST-001');
+  const sansPublication = structuredClone(registre);
+  for (const p of t001(sansPublication).preuves) if (p.controles) p.controles = p.controles.filter((l) => !/^E\.3-07\b/.test(l));
+  assert.match(gardeTest001(sansPublication).join(), /clos sans preuve exécutée de la publication du dessin/);
+  const closAvant = structuredClone(registre);
+  t001(closAvant).historique[0].statut = 'Vérifié';
+  assert.match(gardeTest001(closAvant).join(), /ne cite pas le rapport de la recette de publication/);
+  const fermetureSansRapport = structuredClone(registre);
+  const h = t001(fermetureSansRapport).historique;
+  h[h.findIndex((e) => e.statut === 'Vérifié')].preuve = 'ailleurs.md';
+  assert.match(gardeTest001(fermetureSansRapport).join(), /ne cite pas le rapport de la recette de publication/);
 });
 
