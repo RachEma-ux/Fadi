@@ -28,6 +28,9 @@ import { projects } from "../db/schema.js";
 import { STUDIO_CONTRAT_ENTETE, studioReponseRefus, type StudioContratRoute, type StudioGestionnaireContrat } from "../lib/studio-contrats.js";
 import * as C from "../lib/studio-contrats-routes.js";
 import { STUDIO_EXEMPLE_P118 } from "../lib/studio-exemple.js";
+import { studioProvenanceRendu } from "@parcours/atelier-model";
+import { creerJetonAgent, proposerCommandes } from "../lib/studio-agents.js";
+import { ecrirePng } from "../lib/studio-png.js";
 import { studioRouter } from "./studio.js";
 import { banc, initialiserProjet, verdicts, type Acteur } from "../testing/studio-base-simulee.js";
 
@@ -99,6 +102,21 @@ const dossier = async () => { const { f } = await feuille(); return { f, d: awai
 const IFC_RECETTE = readFileSync(new URL("../../../../packages/atelier-model/src/studio/import-ifc/fixtures/recette-ifc2x3.ifc", import.meta.url), "utf8");
 const RECEPTION = { reference: "Architecte — bâtiment A", auteur: "Cabinet partenaire", discipline: "architecture", format: "ifc", version: "B", uniteDeclaree: "mm", transformation: null, nomFichier: "recette.ifc", contenu: IFC_RECETTE };
 const modeleExterne = async () => ({ mx: await creer(`${V}/modeles-externes`, RECEPTION) });
+// Lot F : illustration (rendu du modèle portant sa provenance), jeton et proposition d'agent.
+const IL = "/studies/:studyId/variants/:variantId/illustrations";
+const renduSource = () => {
+  const rgba = new Uint8Array(4 * 4 * 4).fill(200);
+  const prov = studioProvenanceRendu({ etude: { id: "s", nom: "Étude" }, variante: { id: "v", nom: "Variante" }, revisionId: "r1", scene: null, date: new Date("2026-10-25T09:00:00Z"), camera: { projection: "perspective", position: { x: 5, y: -5, z: 4 }, target: { x: 0, y: 0, z: 0 }, fov: 45 } });
+  return ecrirePng({ largeur: 4, hauteur: 4, rgba }, { "fadi:rendu": JSON.stringify(prov) }).toString("base64");
+};
+const CORPS_ILLUSTRATION = () => ({ requestId: "illu-c", fournisseur: "local-derive", image: renduSource(), parametres: { style: "trait", intensite: 0.5 } });
+const illustration = async () => ({ il: await creer(`${V}/illustrations`, CORPS_ILLUSTRATION()) });
+const jetonAgent = async () => ({ jt: await creer(`${S}/agents/jetons`, { nom: "Agent" }) });
+const propositionAgent = async () => {
+  const j = await creerJetonAgent("p", "proprietaire", "Agent");
+  const r = await proposerCommandes({ projectId: "p", userId: "proprietaire", tokenId: j.id }, { studyId: "s", variantId: "v", requestId: "agent-c", baseRevisionId: "r1", commands: [{ toolId: "studio.dessin.ligne", params: { id: "ag", type: "line", start: { x: 0, y: 3 }, end: { x: 1, y: 3 } } }] });
+  return { pr: r.proposition.id };
+};
 const projetExemple = async () => { banc.lignes.get(projects)!.find((x) => x["id"] === "p")!["sourceExampleId"] = STUDIO_EXEMPLE_P118.exampleId; return {}; };
 const variante2 = async () => ({ v2: await creer(`${S}/studies/s/variants`, { name: "Variante 2" }, (b) => b?.variant?.id) });
 const commande = async () => {
@@ -227,6 +245,20 @@ export const CAS: Cas[] = [
   { libelle: "studio-api-modele-externe-contenu/1 — GET …/modeles-externes/:modelId/contenu : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_MODELE_EXTERNE_CONTENU, route: `GET ${MX}/:modelId/contenu`, url: (c) => `${V}/modeles-externes/${c["mx"]}/contenu`, preparer: modeleExterne },
   { libelle: "studio-api-modele-externe-action/1 — POST …/modeles-externes/:modelId/:action (comparer) : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_MODELE_EXTERNE_ACTION, route: `POST ${MX}/:modelId/:action`, url: (c) => `${V}/modeles-externes/${c["mx"]}/comparer`, corps: fixe({}), preparer: modeleExterne },
   { libelle: "studio-api-modele-externe-action/1 — POST …/modeles-externes/:modelId/:action (accepter, motivé) : réponse conforme", contrat: C.CONTRAT_MODELE_EXTERNE_ACTION, route: `POST ${MX}/:modelId/:action`, url: (c) => `${V}/modeles-externes/${c["mx"]}/accepter`, corps: fixe({ motif: "Motif d'essai" }), preparer: modeleExterne },
+  // Lot F : illustrations, agents (MCP) et extensions.
+  { libelle: "studio-api-illustrations-fournisseurs/1 — GET …/illustrations/fournisseurs : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_ILLUSTRATIONS_FOURNISSEURS, route: `GET ${IL}/fournisseurs`, url: () => `${V}/illustrations/fournisseurs` },
+  { libelle: "studio-api-illustrations-lister/1 — GET …/illustrations : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_ILLUSTRATIONS_LISTER, route: `GET ${IL}`, url: () => `${V}/illustrations`, preparer: illustration },
+  { libelle: "studio-api-illustration-creer/1 — POST …/illustrations : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_ILLUSTRATION_CREER, route: `POST ${IL}`, url: () => `${V}/illustrations`, corps: CORPS_ILLUSTRATION },
+  { libelle: "studio-api-illustration-image/1 — GET …/illustrations/:illustrationId/image : fichier, en-tête X-Studio-Contrat", contrat: C.CONTRAT_ILLUSTRATION_IMAGE, route: `GET ${IL}/:illustrationId/image`, url: (c) => `${V}/illustrations/${c["il"]}/image`, preparer: illustration },
+  { libelle: "studio-api-agents-jetons-lister/1 — GET /agents/jetons : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_AGENTS_JETONS_LISTER, route: "GET /agents/jetons", url: () => `${S}/agents/jetons`, preparer: jetonAgent },
+  { libelle: "studio-api-agents-jeton-creer/1 — POST /agents/jetons : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_AGENTS_JETON_CREER, route: "POST /agents/jetons", url: () => `${S}/agents/jetons`, corps: fixe({ nom: "Agent" }) },
+  { libelle: "studio-api-agents-jeton-revoquer/1 — POST /agents/jetons/:tokenId/revoquer : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_AGENTS_JETON_REVOQUER, route: "POST /agents/jetons/:tokenId/revoquer", url: (c) => `${S}/agents/jetons/${c["jt"]}/revoquer`, corps: fixe({}), preparer: jetonAgent },
+  { libelle: "studio-api-agents-propositions/1 — GET /agents/propositions : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_AGENTS_PROPOSITIONS, route: "GET /agents/propositions", url: () => `${S}/agents/propositions`, preparer: propositionAgent },
+  { libelle: "studio-api-agents-proposition-confirmer/1 — POST /agents/propositions/:proposalId/confirmer : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_AGENTS_PROPOSITION_CONFIRMER, route: "POST /agents/propositions/:proposalId/confirmer", url: (c) => `${S}/agents/propositions/${c["pr"]}/confirmer`, corps: fixe({}), preparer: propositionAgent },
+  { libelle: "studio-api-agents-proposition-refuser/1 — POST /agents/propositions/:proposalId/refuser : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_AGENTS_PROPOSITION_REFUSER, route: "POST /agents/propositions/:proposalId/refuser", url: (c) => `${S}/agents/propositions/${c["pr"]}/refuser`, corps: fixe({}), preparer: propositionAgent },
+  { libelle: "studio-api-agents-journal/1 — GET /agents/journal : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_AGENTS_JOURNAL, route: "GET /agents/journal", url: () => `${S}/agents/journal`, preparer: propositionAgent },
+  { libelle: "studio-api-extensions-lister/1 — GET /extensions : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_EXTENSIONS_LISTER, route: "GET /extensions", url: () => `${S}/extensions` },
+  { libelle: "studio-api-extension-evaluer/1 — POST /extensions/evaluer : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_EXTENSION_EVALUER, route: "POST /extensions/evaluer", url: () => `${S}/extensions/evaluer`, corps: fixe({ declaration: { schema: "studio-extension/1", id: "x" } }) },
 ];
 
 const methodeDe = (route: string) => route.split(" ")[0]!.toLowerCase() as Methode;

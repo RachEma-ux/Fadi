@@ -20,7 +20,7 @@ import { versionRouter } from "./routes/version.js";
 import { adminRouter } from "./routes/admin/index.js";
 import { organizationsRouter } from "./routes/organizations.js";
 import { csrfGuard } from "./middleware/csrf.js";
-import { studioMcpRouter } from "./routes/studio-mcp.js";
+import { studioMcpRouter } from "./routes/mcp-studio.js";
 
 /** Préfixes servis par l'API ; tout le reste est l'application (fichiers du build, ou `index.html` pour une route du client). */
 const API_PREFIX = /^\/(auth|admin\/(?:users|invitations|trash|audit)|projects|organizations|examples|library|notifications|com|preferences|health|sandbox\/preferences|geodata\/api|version|reviews|mcp)(\/|$)/;

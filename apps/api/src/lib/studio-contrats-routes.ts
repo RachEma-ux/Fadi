@@ -484,3 +484,71 @@ export const CONTRAT_MODELE_EXTERNE_ACTION = contratRoute({
   id: "studio-api-modele-externe-action/1", routes: ["POST /studies/:studyId/variants/:variantId/modeles-externes/:modelId/:action"], objet: "Comparer à la tête, accepter ou refuser (motivé).",
   entree: "Adresse : `action` (comparer | accepter | refuser) ; corps : schéma `studioModelePassageSchema`.", statuts: [200], corps: "json", reponse: modeleExterne,
 });
+
+// --- Lot F : illustrations, agents (MCP) et extensions (routes/studio-illustrations.ts, routes/studio-agents.ts) -------
+
+const illustration = z.strictObject({
+  id: ident, studyId: ident, variantId: ident, revisionId: ident, fournisseur: z.strictObject({ id: z.string(), nature: z.enum(["local-deterministe", "ia-externe"]) }),
+  parametres: z.record(z.string(), z.unknown()),
+  provenance: z.looseObject({ nature: z.literal("illustration"), modele: z.looseObject({ inchange: z.literal(true) }), verification: z.looseObject({ statut: z.literal("non-verifiee") }), reproductibilite: z.looseObject({ deterministe: z.boolean() }) }),
+  largeur: z.number().int(), hauteur: z.number().int(), empreinteImage: z.string(), creePar: z.string(), creeParEmail: z.string().nullable(), creeLe: instant, image: z.string(),
+});
+const fournisseurIllustration = z.looseObject({ id: z.enum(["local-derive", "externe"]), nom: z.string(), nature: z.string(), version: z.string(), reseau: z.boolean(), disponible: z.boolean(), manque: z.array(z.string()) });
+const propositionAgent = z.looseObject({ id: ident, studyId: ident, variantId: ident, requestId: ident, statut: z.enum(["en-attente", "confirmee", "refusee", "expiree", "echec"]), revisionId: z.string().nullable() });
+const evaluationExtension = z.looseObject({ etat: z.enum(["refusee", "decouverte", "verifiee", "autorisee"]), chargement: z.literal("aucun"), motifs: z.array(z.string()) });
+const IL = "/studies/:studyId/variants/:variantId/illustrations";
+const jetonAgent = z.looseObject({ id: ident, nom: z.string(), creeLe: instant, expireLe: instant, revoqueLe: z.string().nullable() });
+
+export const CONTRAT_ILLUSTRATIONS_FOURNISSEURS = contratRoute({
+  id: "studio-api-illustrations-fournisseurs/1", routes: [`GET ${IL}/fournisseurs`], objet: "Fournisseurs d'illustration et leur disponibilité réelle (lot F).",
+  entree: "Aucune.", statuts: [200], corps: "json", reponse: z.strictObject({ fournisseurs: z.array(fournisseurIllustration) }),
+});
+export const CONTRAT_ILLUSTRATIONS_LISTER = contratRoute({
+  id: "studio-api-illustrations-lister/1", routes: [`GET ${IL}`], objet: "Illustrations archivées de la variante (lot F).",
+  entree: "Aucune.", statuts: [200], corps: "json", reponse: z.strictObject({ illustrations: z.array(illustration) }),
+});
+export const CONTRAT_ILLUSTRATION_CREER = contratRoute({
+  id: "studio-api-illustration-creer/1", routes: [`POST ${IL}`], objet: "Illustration depuis le rendu de la vue : image séparée, modèle inchangé, transfert externe contrôlé.",
+  entree: "Corps : schéma `studioIllustrationSchema` (rendu PNG en base64, 8 Mo au plus).", statuts: [201], corps: "json", reponse: illustration.extend({ replayed: z.boolean() }),
+});
+export const CONTRAT_ILLUSTRATION_IMAGE = contratRoute({
+  id: "studio-api-illustration-image/1", routes: [`GET ${IL}/:illustrationId/image`], objet: "Image archivée (PNG portant sa provenance fadi:illustration, statut « non vérifiée »).",
+  entree: "Aucune.", statuts: [200], corps: "fichier", reponse: null, typeFichier: "image/png",
+});
+export const CONTRAT_AGENTS_JETONS_LISTER = contratRoute({
+  id: "studio-api-agents-jetons-lister/1", routes: ["GET /agents/jetons"], objet: "Jetons d'agent du compte sur le projet (jamais leur valeur).",
+  entree: "Aucune.", statuts: [200], corps: "json", reponse: z.strictObject({ jetons: z.array(jetonAgent) }),
+});
+export const CONTRAT_AGENTS_JETON_CREER = contratRoute({
+  id: "studio-api-agents-jeton-creer/1", routes: ["POST /agents/jetons"], objet: "Création d'un jeton d'agent, montré une seule fois.",
+  entree: "Corps : schéma `studioJetonSchema` (nom, joursValidite 1 à 90).", statuts: [201], corps: "json", reponse: z.strictObject({ id: ident, nom: z.string(), jeton: z.string().startsWith("fadi_mcp_"), expireLe: instant }),
+});
+export const CONTRAT_AGENTS_JETON_REVOQUER = contratRoute({
+  id: "studio-api-agents-jeton-revoquer/1", routes: ["POST /agents/jetons/:tokenId/revoquer"], objet: "Révocation d'un jeton d'agent du compte.",
+  entree: "Aucune.", statuts: [200], corps: "json", reponse: z.strictObject({ id: ident, revoque: z.literal(true) }),
+});
+export const CONTRAT_AGENTS_PROPOSITIONS = contratRoute({
+  id: "studio-api-agents-propositions/1", routes: ["GET /agents/propositions"], objet: "Propositions des agents du compte, à confirmer ou refuser.",
+  entree: "Aucune.", statuts: [200], corps: "json", reponse: z.strictObject({ propositions: z.array(propositionAgent) }),
+});
+export const CONTRAT_AGENTS_PROPOSITION_CONFIRMER = contratRoute({
+  id: "studio-api-agents-proposition-confirmer/1", routes: ["POST /agents/propositions/:proposalId/confirmer"], objet: "Confirmation humaine : le point d'entrée commun écrit la révision (source agent-mcp).",
+  entree: "Aucune.", statuts: [200], corps: "json", reponse: z.strictObject({ proposition: propositionAgent, revisionId: ident, replayed: z.boolean() }),
+});
+export const CONTRAT_AGENTS_PROPOSITION_REFUSER = contratRoute({
+  id: "studio-api-agents-proposition-refuser/1", routes: ["POST /agents/propositions/:proposalId/refuser"], objet: "Refus d'une proposition d'agent : rien n'est écrit.",
+  entree: "Aucune.", statuts: [200], corps: "json", reponse: z.strictObject({ proposition: propositionAgent }),
+});
+export const CONTRAT_AGENTS_JOURNAL = contratRoute({
+  id: "studio-api-agents-journal/1", routes: ["GET /agents/journal"], objet: "Journal agent / humain du compte sur le projet (INV-010).",
+  entree: "Aucune.", statuts: [200], corps: "json",
+  reponse: z.strictObject({ evenements: z.array(z.looseObject({ id: ident, acteur: z.enum(["agent", "humain"]), action: z.string(), le: instant })) }),
+});
+export const CONTRAT_EXTENSIONS_LISTER = contratRoute({
+  id: "studio-api-extensions-lister/1", routes: ["GET /extensions"], objet: "Extensions déclarées (adaptateur MCP intégré) et leur évaluation.",
+  entree: "Aucune.", statuts: [200], corps: "json", reponse: z.strictObject({ extensions: z.array(z.strictObject({ declaration: z.looseObject({ id: z.string(), version: z.string() }), evaluation: evaluationExtension })) }),
+});
+export const CONTRAT_EXTENSION_EVALUER = contratRoute({
+  id: "studio-api-extension-evaluer/1", routes: ["POST /extensions/evaluer"], objet: "Évaluation d'une déclaration d'extension, sans rien charger ni écrire.",
+  entree: "Corps : `{ declaration }`.", statuts: [200], corps: "json", reponse: z.strictObject({ evaluation: evaluationExtension }),
+});

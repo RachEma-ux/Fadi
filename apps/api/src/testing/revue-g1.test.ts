@@ -38,6 +38,12 @@ const ECARTS: readonly { manque: Manque; raison: string; ids: readonly string[];
     raison: "Sans source de modèle, justifié : le relevé de performances (`ReleveurPerf`, appelé nulle part ailleurs que dans son module) ne lit qu'une horloge et les mesures du navigateur (PERF-01 à PERF-10) ; c'est un diagnostic d'exploitation, pas une donnée de conception — aucun champ du document ni aucune table n'en est, ni n'a à en être, la source.",
     ids: ["diagnostic-releve-perf"],
   },
+  {
+    manque: "source",
+    justifie: true,
+    raison: "Sans table, justifié (lot F, décision P-12) : les extensions ne sont pas des données de conception ; la liste ne relit que la déclaration de l'adaptateur MCP livrée avec le modèle (`STUDIO_EXTENSION_MCP`) et l'évaluation ne lit que la déclaration fournie, sans rien charger ni écrire (`studioEvaluerExtension`, TR-EX-031).",
+    ids: ["GET /extensions", "POST /extensions/evaluer"],
+  },
 ];
 
 const revue = new RevueG1(RACINE);

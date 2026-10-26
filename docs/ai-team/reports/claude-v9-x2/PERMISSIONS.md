@@ -103,6 +103,19 @@ chargé de tâche — rôle vérifié ensuite par `lib/studio-observations.ts`, 
 | `POST /studies/:studyId/variants/:variantId/modeles-externes/:modelId/:action` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 200 | action comparer |
 | `POST /studies/:studyId/variants/:variantId/modeles-externes/:modelId/:action` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 200 | action accepter |
 | `POST /studies/:studyId/variants/:variantId/modeles-externes/:modelId/:action` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 200 | action refuser |
+| `GET /studies/:studyId/variants/:variantId/illustrations/fournisseurs` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `GET /studies/:studyId/variants/:variantId/illustrations` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `POST /studies/:studyId/variants/:variantId/illustrations` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 201 | image séparée tirée du rendu ; aucune révision écrite, le modèle n'est pas modifié |
+| `GET /studies/:studyId/variants/:variantId/illustrations/:illustrationId/image` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `GET /agents/jetons` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | jetons du compte seulement |
+| `POST /agents/jetons` | lecture | 404 | admis | admis | admis | admis | admis | admis | 201 | tout membre : l'agent n'a que les droits de son titulaire, revérifiés à chaque appel |
+| `POST /agents/jetons/:tokenId/revoquer` | acteur | 404 | admis | admis | admis | admis | admis | admis | 200 | titulaire du jeton seulement ; un autre compte : 404 |
+| `GET /agents/propositions` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | propositions du compte seulement |
+| `POST /agents/propositions/:proposalId/confirmer` | acteur | 404 | admis | admis | admis | admis | admis | admis | 200 | titulaire seulement (un autre compte : 404) ; l'écriture passe par le point d'entrée commun (droits, verrou, référence) |
+| `POST /agents/propositions/:proposalId/refuser` | acteur | 404 | admis | admis | admis | admis | admis | admis | 200 | titulaire seulement ; un autre compte : 404 |
+| `GET /agents/journal` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | journal du compte seulement |
+| `GET /extensions` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `POST /extensions/evaluer` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | évaluation sans écriture ni chargement |
 
 « (à arbitrer) » : cellule exécutée et épinglée telle que le serveur répond aujourd'hui, sans changement de
 comportement ; la règle attend une décision du maître d'ouvrage.
@@ -120,4 +133,5 @@ réelle ; la liste des fichiers est vérifiée par ce test (tout nouveau fichier
 | `routes/documents.ts` | GET /projects/:projectId/documents | `studioPackages` (paquets diffusés ou retirés), `studioDossiers` (dossiers de conception) |
 | `routes/notifications.ts` | GET /notifications | commentaires Studio des projets du compte, passages des observations, tâches et décisions |
 | `routes/reviews.ts` | /reviews/* (destinataire), /projects/:projectId/reviews/* (équipe) | revue externe (phase 4) : publication Studio candidate figée dans un paquet, constats = observations Studio d'audience `revue`, approbation par un approbateur nommé via les transitions Studio — garde `loadReviewAccess` (destinataire) ou droits de l'équipe, jamais la matrice des rôles Studio |
+| `routes/mcp-studio.ts` | POST /mcp/studio (serveur MCP, lot F) | lectures de Studio et propositions d'agent par jeton d'agent (jamais la session) : mêmes droits du compte titulaire (`readStudioContext`, `modify`), aucune écriture de révision avant la confirmation humaine par `POST /agents/propositions/:proposalId/confirmer` (matrice ci-dessus) ; `routes/studio-agents.test.ts` |
 | `routes/projects.ts` | GET /projects/:projectId/archive, POST /projects/import, POST /projects/:projectId/copies, DELETE /projects/:projectId | section Studio de l'archive (export, import validé), copie sans Studio, suppression refusée si une publication est diffusée ou retirée |

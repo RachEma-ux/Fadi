@@ -18,7 +18,7 @@ import express from "express";
 import request from "supertest";
 import { STUDIO_CONTRACT, type StudioCommand } from "@parcours/atelier-model";
 import { studioAgentEvents, studioAgentProposals, studioAgentTokens, studioRevisions, studioVariants } from "../db/schema.js";
-import { studioMcpRouter } from "./studio-mcp.js";
+import { studioMcpRouter } from "./mcp-studio.js";
 import { studioRouter } from "./studio.js";
 import { banc, initialiserProjet, type Acteur } from "../testing/studio-base-simulee.js";
 
@@ -151,6 +151,13 @@ describe("TEST-033 — appel MCP sur une commande protégée : même schéma, m�
     expect((await mcp(j, "ping")).status).toBe(401);
     users.find((u) => u["id"] === "editeur")!["status"] = "active";
     expect((await humain("editeur").post(`${S}/agents/jetons/${row["id"]}/revoquer`)).body).toEqual({ id: row["id"], revoque: true });
+    // La liste des jetons ne montre jamais leur valeur ni leur empreinte ; un autre compte ne voit pas ceux de l'éditeur.
+    const jetons = (await request(app).get(`${S}/agents/jetons`).set("x-acteur", "editeur")).body.jetons as Record<string, unknown>[];
+    expect(jetons).toHaveLength(1);
+    expect(jetons[0]).toMatchObject({ id: row["id"], nom: "Agent d’essai" });
+    expect(jetons[0]!["revoqueLe"]).not.toBeNull();
+    expect(JSON.stringify(jetons)).not.toMatch(/fadi_mcp_|tokenHash|[0-9a-f]{64}/);
+    expect((await request(app).get(`${S}/agents/jetons`).set("x-acteur", "proprietaire")).body.jetons).toEqual([]);
     expect((await mcp(j, "ping")).status).toBe(401);
   });
 });

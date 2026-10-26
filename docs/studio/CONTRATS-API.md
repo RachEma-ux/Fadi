@@ -5,7 +5,7 @@ Fichier **généré et vérifié** par `apps/api/src/testing/studio-contrats.tes
 `apps/api/src/lib/studio-contrats-routes.ts` (un contrat par constante) et `apps/api/src/lib/studio-contrats.ts`
 (mécanisme). Réserve G1 de l'ADR-STUDIO-PILOTE-01 (P-11) : chaque route de l'API Studio a un contrat versionné.
 
-77 contrats servent les 79 routes déclarées par `apps/api/src/routes/studio*.ts` (sous `/projects/:projectId/studio`).
+90 contrats servent les 92 routes déclarées par `apps/api/src/routes/studio*.ts` (sous `/projects/:projectId/studio`).
 
 ## Règles
 
@@ -146,6 +146,29 @@ version incompatible sans écriture, inventaire à l'exécution) et `apps/api/sr
 | `studio-api-modele-externe-lire/1` | `GET /studies/:studyId/variants/:variantId/modeles-externes/:modelId` | Un modèle externe et son journal. | Aucune. | — | 200 | JSON : `id`, `studyId`, `variantId`, `reference`, `auteur`, `discipline`, `format`, `version`, `uniteDeclaree`, `transformation?`, `nomFichier`, `contentSha256`, `statut`, `rapport?`, `comparaison?`, `revisionComparee`, `decision`, `recuPar`, `recuParEmail`, `recuLe`, `journal?`, `replayed?` |
 | `studio-api-modele-externe-contenu/1` | `GET /studies/:studyId/variants/:variantId/modeles-externes/:modelId/contenu` | Fichier reçu tel quel, avec son empreinte (droit export). | Aucune. | — | 200 | JSON : `id`, `statut`, `nomFichier`, `contentSha256`, `transformation?`, `contenu` |
 | `studio-api-modele-externe-action/1` | `POST /studies/:studyId/variants/:variantId/modeles-externes/:modelId/:action` | Comparer à la tête, accepter ou refuser (motivé). | Adresse : `action` (comparer \| accepter \| refuser) ; corps : schéma `studioModelePassageSchema`. | `studioModelePassageSchema` | 200 | JSON : `id`, `studyId`, `variantId`, `reference`, `auteur`, `discipline`, `format`, `version`, `uniteDeclaree`, `transformation?`, `nomFichier`, `contentSha256`, `statut`, `rapport?`, `comparaison?`, `revisionComparee`, `decision`, `recuPar`, `recuParEmail`, `recuLe`, `journal?`, `replayed?` |
+
+## `apps/api/src/routes/studio-illustrations.ts`
+
+| Contrat | Route(s) | Objet | Entrée | Schémas zod d'entrée atteints | Succès | Réponse |
+|---|---|---|---|---|---|---|
+| `studio-api-illustrations-fournisseurs/1` | `GET /studies/:studyId/variants/:variantId/illustrations/fournisseurs` | Fournisseurs d'illustration et leur disponibilité réelle (lot F). | Aucune. | — | 200 | JSON : `fournisseurs` |
+| `studio-api-illustrations-lister/1` | `GET /studies/:studyId/variants/:variantId/illustrations` | Illustrations archivées de la variante (lot F). | Aucune. | — | 200 | JSON : `illustrations` |
+| `studio-api-illustration-creer/1` | `POST /studies/:studyId/variants/:variantId/illustrations` | Illustration depuis le rendu de la vue : image séparée, modèle inchangé, transfert externe contrôlé. | Corps : schéma `studioIllustrationSchema` (rendu PNG en base64, 8 Mo au plus). | `studioIllustrationSchema` | 201 | JSON : `id`, `studyId`, `variantId`, `revisionId`, `fournisseur`, `parametres`, `provenance`, `largeur`, `hauteur`, `empreinteImage`, `creePar`, `creeParEmail`, `creeLe`, `image`, `replayed` |
+| `studio-api-illustration-image/1` | `GET /studies/:studyId/variants/:variantId/illustrations/:illustrationId/image` | Image archivée (PNG portant sa provenance fadi:illustration, statut « non vérifiée »). | Aucune. | — | 200 | fichier (image/png) |
+
+## `apps/api/src/routes/studio-agents.ts`
+
+| Contrat | Route(s) | Objet | Entrée | Schémas zod d'entrée atteints | Succès | Réponse |
+|---|---|---|---|---|---|---|
+| `studio-api-agents-jetons-lister/1` | `GET /agents/jetons` | Jetons d'agent du compte sur le projet (jamais leur valeur). | Aucune. | — | 200 | JSON : `jetons` |
+| `studio-api-agents-jeton-creer/1` | `POST /agents/jetons` | Création d'un jeton d'agent, montré une seule fois. | Corps : schéma `studioJetonSchema` (nom, joursValidite 1 à 90). | `studioJetonSchema` | 201 | JSON : `id`, `nom`, `jeton`, `expireLe` |
+| `studio-api-agents-jeton-revoquer/1` | `POST /agents/jetons/:tokenId/revoquer` | Révocation d'un jeton d'agent du compte. | Aucune. | — | 200 | JSON : `id`, `revoque` |
+| `studio-api-agents-propositions/1` | `GET /agents/propositions` | Propositions des agents du compte, à confirmer ou refuser. | Aucune. | — | 200 | JSON : `propositions` |
+| `studio-api-agents-proposition-confirmer/1` | `POST /agents/propositions/:proposalId/confirmer` | Confirmation humaine : le point d'entrée commun écrit la révision (source agent-mcp). | Aucune. | `envelopeSchema` | 200 | JSON : `proposition`, `revisionId`, `replayed` |
+| `studio-api-agents-proposition-refuser/1` | `POST /agents/propositions/:proposalId/refuser` | Refus d'une proposition d'agent : rien n'est écrit. | Aucune. | — | 200 | JSON : `proposition` |
+| `studio-api-agents-journal/1` | `GET /agents/journal` | Journal agent / humain du compte sur le projet (INV-010). | Aucune. | — | 200 | JSON : `evenements` |
+| `studio-api-extensions-lister/1` | `GET /extensions` | Extensions déclarées (adaptateur MCP intégré) et leur évaluation. | Aucune. | — | 200 | JSON : `extensions` |
+| `studio-api-extension-evaluer/1` | `POST /extensions/evaluer` | Évaluation d'une déclaration d'extension, sans rien charger ni écrire. | Corps : `{ declaration }`. | — | 200 | JSON : `evaluation` |
 
 ## Format de diagnostic
 

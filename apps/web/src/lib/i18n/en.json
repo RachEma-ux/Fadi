@@ -13254,5 +13254,10 @@
 "Proposition échouée": "Proposal failed",
 "Proposition d’agent (MCP) confirmée": "Agent proposal (MCP) confirmed",
 "Jeton révoqué": "Token revoked",
-"Agents et extensions": "Agents and extensions"
+"Agents et extensions": "Agents and extensions",
+"PNG (bloc iTXt « fadi:illustration » de provenance, studio-illustration/1)": "PNG (provenance iTXt chunk “fadi:illustration”, studio-illustration/1)",
+"Illustration archivée, tirée du rendu du modèle d’une vue (lot F)": "Archived illustration, derived from the model render of a view (batch F)",
+"Image séparée « non vérifiée » : ni métrique, ni conforme, aucune donnée du modèle relisible ; provenance : rendu source, empreintes du document avant et après, paramètres, fournisseur, coûts, reproductibilité.": "Separate “not verified” image: neither metric nor compliant, no model data readable; provenance: source render, document fingerprints before and after, parameters, provider, costs, reproducibility.",
+"Tests des routes d’illustration (base simulée) ; recette studio-lot-f.mjs.": "Tests of the illustration routes (simulated database); studio-lot-f.mjs acceptance run.",
+"Illustration seulement : le modèle n’est ni exporté ni modifié.": "Illustration only: the model is neither exported nor modified."
 }

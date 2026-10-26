@@ -81,6 +81,7 @@ export async function listerJetonsAgent(projectId: string, userId: string) {
   return { jetons: rows.map((r) => ({ id: r.id, nom: r.name, creeLe: new Date(r.createdAt).toISOString(), expireLe: new Date(r.expiresAt).toISOString(), revoqueLe: r.revokedAt ? new Date(r.revokedAt).toISOString() : null })) };
 }
 export async function revoquerJetonAgent(projectId: string, userId: string, id: string) {
+  assertAccess(await loadProjectAccess(projectId, userId), userId, "read");
   const [r] = await db.select().from(studioAgentTokens).where(and(eq(studioAgentTokens.id, id), eq(studioAgentTokens.projectId, projectId), eq(studioAgentTokens.userId, userId))).limit(1);
   if (!r) return notFound();
   if (!r.revokedAt) {
@@ -149,6 +150,8 @@ export async function proposerCommandes(ctx: ContexteAgent, args: Record<string,
 }
 
 async function propositionDe(projectId: string, userId: string, id: string): Promise<Proposition> {
+  // Accès au projet revérifié à chaque lecture (un membre retiré ne lit plus ses propositions).
+  assertAccess(await loadProjectAccess(projectId, userId), userId, "read");
   const [p] = await db.select().from(studioAgentProposals).where(and(eq(studioAgentProposals.id, id), eq(studioAgentProposals.projectId, projectId), eq(studioAgentProposals.userId, userId))).limit(1);
   // La proposition d'un autre compte n'est pas divulguée.
   return p ?? notFound();

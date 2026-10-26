@@ -1444,12 +1444,12 @@ CREATE TABLE IF NOT EXISTS studio_agent_tokens (
   project_id text NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
   user_id text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name text NOT NULL CONSTRAINT studio_agent_tokens_name_length CHECK (length(btrim(name)) BETWEEN 1 AND 80),
-  token_hash text NOT NULL CONSTRAINT studio_agent_tokens_hash_check CHECK (token_hash ~ '^[0-9a-f]{64}$'),
+  key_digest text NOT NULL CONSTRAINT studio_agent_tokens_hash_check CHECK (key_digest ~ '^[0-9a-f]{64}$'),
   created_at timestamptz NOT NULL DEFAULT now(),
   expires_at timestamptz NOT NULL,
   revoked_at timestamptz
 );
-CREATE UNIQUE INDEX IF NOT EXISTS studio_agent_tokens_hash_unique ON studio_agent_tokens(token_hash);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_agent_tokens_hash_unique ON studio_agent_tokens(key_digest);
 CREATE INDEX IF NOT EXISTS studio_agent_tokens_user_idx ON studio_agent_tokens(project_id, user_id);
 -- Propositions d'agent : rien n'est écrit avant la confirmation humaine (point d'entrée commun des commandes).
 CREATE TABLE IF NOT EXISTS studio_agent_proposals (
@@ -1457,7 +1457,7 @@ CREATE TABLE IF NOT EXISTS studio_agent_proposals (
   project_id text NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
   study_id text NOT NULL REFERENCES studio_studies(id) ON DELETE CASCADE,
   variant_id text NOT NULL REFERENCES studio_variants(id) ON DELETE CASCADE,
-  token_id text NOT NULL REFERENCES studio_agent_tokens(id) ON DELETE CASCADE,
+  agent_key_id text NOT NULL REFERENCES studio_agent_tokens(id) ON DELETE CASCADE,
   user_id text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   request_id text NOT NULL,
   payload_hash text NOT NULL CONSTRAINT studio_agent_proposals_hash_check CHECK (payload_hash ~ '^[0-9a-f]{64}$'),
@@ -1479,7 +1479,7 @@ CREATE TABLE IF NOT EXISTS studio_agent_events (
   project_id text NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
   actor_id text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   actor_kind text NOT NULL CONSTRAINT studio_agent_events_kind_check CHECK (actor_kind IN ('agent', 'humain')),
-  token_id text,
+  agent_key_id text,
   action text NOT NULL CONSTRAINT studio_agent_events_action_check
     CHECK (action IN ('jeton.creer', 'jeton.revoquer', 'outil.appeler', 'proposition.creer', 'proposition.confirmer', 'proposition.refuser', 'proposition.echec')),
   tool text,

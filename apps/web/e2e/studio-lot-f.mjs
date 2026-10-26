@@ -120,7 +120,8 @@ try {
 
   // F.3-03 : mouvements du pointeur sur la Planche 2D — aucun appel HTTP.
   await page.goto(`${adresse}?domaine=dessin`);
-  const planche = page.locator("svg[data-studio-planche], [data-studio-planche] svg").first();
+  await page.getByRole("toolbar", { name: "Outils de dessin" }).waitFor();
+  const planche = page.locator('svg:has([data-studio-objet="l1"])').first();
   await planche.waitFor();
   await page.waitForTimeout(800);
   const cadre = await planche.boundingBox();

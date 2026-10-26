@@ -35,6 +35,9 @@ import { fileURLToPath } from "node:url";
 import express from "express";
 import request from "supertest";
 import { STUDIO_CONTRACT } from "@parcours/atelier-model";
+import { studioProvenanceRendu } from "@parcours/atelier-model";
+import { creerJetonAgent, proposerCommandes } from "../lib/studio-agents.js";
+import { ecrirePng } from "../lib/studio-png.js";
 import { studioRouter } from "./studio.js";
 import { ACTEURS, banc, initialiserProjet, verdicts, type Acteur } from "../testing/studio-base-simulee.js";
 
@@ -97,6 +100,19 @@ const IFC_RECETTE = readFileSync(new URL("../../../../packages/atelier-model/src
 const receptionModele = { reference: "Architecte — bâtiment A", auteur: "Cabinet partenaire", discipline: "architecture", format: "ifc", version: "B", uniteDeclaree: "mm", transformation: null, nomFichier: "recette.ifc", contenu: IFC_RECETTE };
 const modeleExterne = async () => ({ mx: await creer(`${V}/modeles-externes`, receptionModele) });
 const MX = "/studies/:studyId/variants/:variantId/modeles-externes";
+// Lot F : rendu du modèle portant sa provenance, illustration, jeton et proposition d'agent (préparés par le propriétaire).
+const IL = "/studies/:studyId/variants/:variantId/illustrations";
+const corpsIllustration = () => {
+  const prov = studioProvenanceRendu({ etude: { id: "s", nom: "Étude" }, variante: { id: "v", nom: "Variante" }, revisionId: "r1", scene: null, date: new Date("2026-10-25T09:00:00Z"), camera: { projection: "perspective", position: { x: 5, y: -5, z: 4 }, target: { x: 0, y: 0, z: 0 }, fov: 45 } });
+  return { requestId: "illu-p", fournisseur: "local-derive", image: ecrirePng({ largeur: 4, hauteur: 4, rgba: new Uint8Array(64).fill(180) }, { "fadi:rendu": JSON.stringify(prov) }).toString("base64"), parametres: { style: "trait", intensite: 0.5 } };
+};
+const illustration = async () => ({ il: await creer(`${V}/illustrations`, corpsIllustration()) });
+const jetonAgent = async () => ({ jt: (await creerJetonAgent("p", "proprietaire", "Agent")).id });
+const propositionAgent = async () => {
+  const j = await creerJetonAgent("p", "proprietaire", "Agent");
+  const r = await proposerCommandes({ projectId: "p", userId: "proprietaire", tokenId: j.id }, { studyId: "s", variantId: "v", requestId: "agent-p", baseRevisionId: "r1", commands: [{ toolId: "studio.dessin.ligne", params: { id: "ag", type: "line", start: { x: 0, y: 3 }, end: { x: 1, y: 3 } } }] });
+  return { pr: r.proposition.id };
+};
 
 /**
  * Règles d'acteur des observations (`lib/studio-observations.ts`), l'observation étant ouverte par le propriétaire
@@ -269,6 +285,20 @@ export const ROUTES: Route[] = [
   ...(["accepter", "refuser"] as const).map((action): Route => ({
     route: `POST ${MX}/:modelId/:action`, besoin: "proprietaire", preparer: modeleExterne, url: (c) => `${V}/modeles-externes/${c["mx"]}/${action}`, body: { motif: "Motif d'essai" }, note: `action ${action}`,
   })),
+  // Lot F (décision P-12) : illustrations, agents (MCP) et extensions.
+  { route: `GET ${IL}/fournisseurs`, besoin: "lecture", url: () => `${V}/illustrations/fournisseurs` },
+  { route: `GET ${IL}`, besoin: "lecture", url: () => `${V}/illustrations` },
+  { route: `POST ${IL}`, besoin: "modification", url: () => `${V}/illustrations`, body: corpsIllustration(), note: "image séparée tirée du rendu ; aucune révision écrite, le modèle n'est pas modifié" },
+  { route: `GET ${IL}/:illustrationId/image`, besoin: "lecture", preparer: illustration, url: (c) => `${V}/illustrations/${c["il"]}/image` },
+  { route: "GET /agents/jetons", besoin: "lecture", url: () => `${S}/agents/jetons`, note: "jetons du compte seulement" },
+  { route: "POST /agents/jetons", besoin: "lecture", url: () => `${S}/agents/jetons`, body: { nom: "Agent" }, note: "tout membre : l'agent n'a que les droits de son titulaire, revérifiés à chaque appel" },
+  { route: "POST /agents/jetons/:tokenId/revoquer", besoin: "acteur", preparer: jetonAgent, url: (c) => `${S}/agents/jetons/${c["jt"]}/revoquer`, note: "titulaire du jeton seulement ; un autre compte : 404" },
+  { route: "GET /agents/propositions", besoin: "lecture", url: () => `${S}/agents/propositions`, note: "propositions du compte seulement" },
+  { route: "POST /agents/propositions/:proposalId/confirmer", besoin: "acteur", preparer: propositionAgent, url: (c) => `${S}/agents/propositions/${c["pr"]}/confirmer`, note: "titulaire seulement (un autre compte : 404) ; l'écriture passe par le point d'entrée commun (droits, verrou, référence)" },
+  { route: "POST /agents/propositions/:proposalId/refuser", besoin: "acteur", preparer: propositionAgent, url: (c) => `${S}/agents/propositions/${c["pr"]}/refuser`, note: "titulaire seulement ; un autre compte : 404" },
+  { route: "GET /agents/journal", besoin: "lecture", url: () => `${S}/agents/journal`, note: "journal du compte seulement" },
+  { route: "GET /extensions", besoin: "lecture", url: () => `${S}/extensions` },
+  { route: "POST /extensions/evaluer", besoin: "lecture", url: () => `${S}/extensions/evaluer`, body: { declaration: { schema: "studio-extension/1", id: "x" } }, note: "évaluation sans écriture ni chargement" },
 ];
 
 /**
@@ -299,6 +329,7 @@ const REPONSES: Readonly<Record<string, string>> = {
   "POST /studies/:studyId/variants/:variantId/observations/:observationId/decisions": "201",
   "POST /studies/:studyId/variants/:variantId/sheets": "201", "POST /studies/:studyId/dossiers": "201",
   "POST /studies/:studyId/variants/:variantId/modeles-externes": "201",
+  "POST /studies/:studyId/variants/:variantId/illustrations": "201", "POST /agents/jetons": "201",
 };
 const cleReponse = (r: Route) => `${r.route}${r.note?.startsWith("action ") ? ` ${r.note.slice(7)}` : ""}`;
 export const reponseProprietaire = (r: Route): string => REPONSES[cleReponse(r)] ?? "200";
@@ -458,6 +489,7 @@ export const HORS_MATRICE: { fichier: string; routes: string; donnees: string }[
   { fichier: "routes/documents.ts", routes: "GET /projects/:projectId/documents", donnees: "`studioPackages` (paquets diffusés ou retirés), `studioDossiers` (dossiers de conception)" },
   { fichier: "routes/notifications.ts", routes: "GET /notifications", donnees: "commentaires Studio des projets du compte, passages des observations, tâches et décisions" },
   { fichier: "routes/reviews.ts", routes: "/reviews/* (destinataire), /projects/:projectId/reviews/* (équipe)", donnees: "revue externe (phase 4) : publication Studio candidate figée dans un paquet, constats = observations Studio d'audience `revue`, approbation par un approbateur nommé via les transitions Studio — garde `loadReviewAccess` (destinataire) ou droits de l'équipe, jamais la matrice des rôles Studio" },
+  { fichier: "routes/mcp-studio.ts", routes: "POST /mcp/studio (serveur MCP, lot F)", donnees: "lectures de Studio et propositions d'agent par jeton d'agent (jamais la session) : mêmes droits du compte titulaire (`readStudioContext`, `modify`), aucune écriture de révision avant la confirmation humaine par `POST /agents/propositions/:proposalId/confirmer` (matrice ci-dessus) ; `routes/studio-agents.test.ts`" },
   { fichier: "routes/projects.ts", routes: "GET /projects/:projectId/archive, POST /projects/import, POST /projects/:projectId/copies, DELETE /projects/:projectId", donnees: "section Studio de l'archive (export, import validé), copie sans Studio, suppression refusée si une publication est diffusée ou retirée" },
 ];
 /** Fichiers `routes/*.ts` hors Studio qui citent une table, une bibliothèque ou un routeur Studio. */
