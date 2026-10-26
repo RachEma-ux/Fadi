@@ -528,6 +528,13 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/studio-corpus-s7 node apps/web/e2e/studio-corpus-s7.mjs 2>&1 | tee -a e2e.log
+      # X.1-08 : références visuelles des corpus S1–S7 (planche 2D et vue 3D) photographiées dans Chromium, comparées aux
+      # captures versionnées avec leur empreinte (tolérance déclarée, écart signalé).
+      - name: Références visuelles des corpus S1–S7 — planche 2D et vue 3D comparées aux captures versionnées (apps/web/e2e/studio-corpus-references.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-corpus-references node apps/web/e2e/studio-corpus-references.mjs 2>&1 | tee -a e2e.log
       - name: Recette du contrat de commandes Studio — deux comptes, aperçu annulé, conflit signalé et report revalidé, chevauchement confirmé, annulation concurrente, coupure rejouée, refus atomique (apps/web/e2e/studio-conflits.mjs)
         if: ${{ matrix.shard == 'parcours' }}
         run: |
