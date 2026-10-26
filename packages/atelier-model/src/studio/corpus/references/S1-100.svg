@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2.71195 -19.74495 38.4549 24.2159" data-schema="studio-document/1" data-document="s1-100-f1" data-units="m" data-frame="local-2d">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2.71195 -14.32895 38.4549 18.7999" data-schema="studio-document/1" data-document="s1-100-f1" data-units="m" data-frame="local-2d">
 <g data-layer="default" data-name="0" fill="none" stroke="#000" stroke-width="1" vector-effect="non-scaling-stroke">
 </g>
 <g data-layer="contours" data-name="Contours (synthétique)" fill="none" stroke="#000" stroke-width="1" vector-effect="non-scaling-stroke">
@@ -14,8 +14,6 @@
 <rect data-id="s1-4-rect" x="12.197" y="-9.681" width="4" height="1.5" vector-effect="non-scaling-stroke"/>
 <line data-id="s1-4-ligne" x1="12.197" y1="-10.181" x2="13.397" y2="-11.781" vector-effect="non-scaling-stroke"/>
 <rect data-id="s1-5-rect" x="24.287" y="-10.247" width="2" height="2" vector-effect="non-scaling-stroke"/>
-<line data-id="s1-5-ligne" x1="24.287" y1="-10.747" x2="26.087" y2="-13.147" vector-effect="non-scaling-stroke"/>
-<rect data-id="s1-6-rect" x="0.45" y="-17.497" width="2.5" height="1" vector-effect="non-scaling-stroke"/>
 </g>
 <g data-layer="courbes" data-name="Courbes (synthétique)" fill="none" stroke="#000" stroke-width="1" vector-effect="non-scaling-stroke">
 <circle data-id="s1-0-cercle" cx="1.314" cy="-0.577" r="0.25" vector-effect="non-scaling-stroke"/>
@@ -42,9 +40,6 @@
 <path data-id="s1-5-arc" data-type="arc" d="M 29.787 -9.247 A 1 1 0 1 0 28.787 -8.247" vector-effect="non-scaling-stroke"/>
 <path data-id="s1-5-renfle" data-type="polyline" d="M 30.287 -8.747 A 0.5 0.5 0 0 0 31.287 -8.747 A 0.5 0.5 0 0 0 30.287 -8.747 Z" vector-effect="non-scaling-stroke"/>
 <path data-id="s1-5-poly" data-type="polyline" d="M 24.287 -7.247 L 25.537 -7.247 A 0.25 0.25 0 0 0 26.037 -7.247" vector-effect="non-scaling-stroke"/>
-<circle data-id="s1-6-cercle" cx="1.7" cy="-16.997" r="0.5" vector-effect="non-scaling-stroke"/>
-<path data-id="s1-6-arc" data-type="arc" d="M 5.95 -17.497 A 0.5 0.5 0 0 0 5.45 -17.997" vector-effect="non-scaling-stroke"/>
-<path data-id="s1-6-renfle" data-type="polyline" d="M 6.95 -16.997 A 0.25 0.25 0 0 0 7.45 -16.997 A 0.25 0.25 0 0 0 6.95 -16.997 Z" vector-effect="non-scaling-stroke"/>
 <g data-graphisme="s1-0-spline" data-type="spline">
 <path d="M 3.314 1.923 C 3.814 1.123 4.314 2.723 4.814 1.923 C 5.314 1.123 5.814 2.723 6.314 1.923" vector-effect="non-scaling-stroke"/>
 </g>
@@ -59,9 +54,6 @@
 </g>
 <g data-graphisme="s1-4-spline" data-type="spline">
 <path d="M 15.197 -6.181 C 15.697 -6.981 16.197 -5.381 16.697 -6.181 C 17.197 -6.981 17.697 -5.381 18.197 -6.181" vector-effect="non-scaling-stroke"/>
-</g>
-<g data-graphisme="s1-5-spline" data-type="spline">
-<path d="M 27.287 -6.247 C 27.787 -7.047 28.287 -5.447 28.787 -6.247 C 29.287 -7.047 29.787 -5.447 30.287 -6.247" vector-effect="non-scaling-stroke"/>
 </g>
 </g>
 <g data-layer="cotes" data-name="Cotes (synthétique)" fill="none" stroke="#000" stroke-width="1" vector-effect="non-scaling-stroke">
@@ -155,24 +147,6 @@
 <line x1="13.397" y1="-11.781" x2="13.157" y2="-11.961" vector-effect="non-scaling-stroke"/>
 <text x="12.497" y="-11.206" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-53.130102 12.497 -11.206)">2,00 m</text>
 </g>
-<g data-dimension="s1-5-cote-l" data-status="resolved" data-value="2">
-<line x1="24.287" y1="-7.847" x2="26.287" y2="-7.847" vector-effect="non-scaling-stroke"/>
-<line x1="24.287" y1="-8.247" x2="24.287" y2="-7.847" vector-effect="non-scaling-stroke"/>
-<line x1="26.287" y1="-8.247" x2="26.287" y2="-7.847" vector-effect="non-scaling-stroke"/>
-<text x="25.287" y="-7.922" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none">2,00 m</text>
-</g>
-<g data-dimension="s1-5-cote-h" data-status="resolved" data-value="2">
-<line x1="25.887" y1="-8.247" x2="25.887" y2="-10.247" vector-effect="non-scaling-stroke"/>
-<line x1="26.287" y1="-8.247" x2="25.887" y2="-8.247" vector-effect="non-scaling-stroke"/>
-<line x1="26.287" y1="-10.247" x2="25.887" y2="-10.247" vector-effect="non-scaling-stroke"/>
-<text x="25.812" y="-9.247" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-90 25.812 -9.247)">2,00 m</text>
-</g>
-<g data-dimension="s1-5-cote-libre" data-status="resolved" data-value="3">
-<line x1="24.047" y1="-10.927" x2="25.847" y2="-13.327" vector-effect="non-scaling-stroke"/>
-<line x1="24.287" y1="-10.747" x2="24.047" y2="-10.927" vector-effect="non-scaling-stroke"/>
-<line x1="26.087" y1="-13.147" x2="25.847" y2="-13.327" vector-effect="non-scaling-stroke"/>
-<text x="24.887" y="-12.172" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-53.130102 24.887 -12.172)">3,00 m</text>
-</g>
 <g data-angular-dimension="s1-0-angle" data-status="resolved" data-value="90">
 <path d="M 0.814 -0.077 A 0.5 0.5 0 0 0 0.314 -0.577" vector-effect="non-scaling-stroke"/>
 <text x="0.808975" y="-0.571975" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(45 0.808975 -0.571975)">90,00°</text>
@@ -193,10 +167,6 @@
 <path d="M 12.697 -8.181 A 0.5 0.5 0 0 0 12.197 -8.681" vector-effect="non-scaling-stroke"/>
 <text x="12.691975" y="-8.675975" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(45 12.691975 -8.675975)">90,00°</text>
 </g>
-<g data-angular-dimension="s1-5-angle" data-status="resolved" data-value="90">
-<path d="M 24.787 -8.247 A 0.5 0.5 0 0 0 24.287 -8.747" vector-effect="non-scaling-stroke"/>
-<text x="24.781975" y="-8.741975" font-size="0.25" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(45 24.781975 -8.741975)">90,00°</text>
-</g>
 </g>
 <g data-layer="textes" data-name="Textes (synthétique)" fill="none" stroke="#000" stroke-width="1" vector-effect="non-scaling-stroke">
 <text data-text="s1-0-titre" data-justification="left" x="0.314" y="-3.077" font-size="0.2" font-family="sans-serif" text-anchor="start" fill="#000" stroke="none">Détail synthétique S1 n° 0</text>
@@ -209,8 +179,6 @@
 <text data-text="s1-3-repere" data-justification="center" x="-0.264" y="-8.316" font-size="0.15" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-90 -0.264 -8.316)">Repère synthétique 3</text>
 <text data-text="s1-4-titre" data-justification="left" x="12.197" y="-11.681" font-size="0.2" font-family="sans-serif" text-anchor="start" fill="#000" stroke="none">Détail synthétique S1 n° 4</text>
 <text data-text="s1-4-repere" data-justification="center" x="11.697" y="-8.181" font-size="0.15" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-90 11.697 -8.181)">Repère synthétique 4</text>
-<text data-text="s1-5-titre" data-justification="left" x="24.287" y="-12.247" font-size="0.2" font-family="sans-serif" text-anchor="start" fill="#000" stroke="none">Détail synthétique S1 n° 5</text>
-<text data-text="s1-5-repere" data-justification="center" x="23.787" y="-8.247" font-size="0.15" font-family="sans-serif" text-anchor="middle" fill="#000" stroke="none" transform="rotate(-90 23.787 -8.247)">Repère synthétique 5</text>
 </g>
 <g data-layer="hachures" data-name="Hachures (synthétique)" fill="none" stroke="#000" stroke-width="1" vector-effect="non-scaling-stroke">
 <g data-graphisme="s1-0-hachure" data-type="hachure" opacity="0.5">
@@ -342,23 +310,6 @@
 <line x1="12.197" y1="-9.439284" x2="12.438716" y2="-9.681" vector-effect="non-scaling-stroke"/>
 <line x1="12.197" y1="-9.651416" x2="12.226584" y2="-9.681" vector-effect="non-scaling-stroke"/>
 </g>
-<g data-graphisme="s1-5-hachure" data-type="hachure" opacity="0.5">
-<polygon points="24.287,-8.247 26.287,-8.247 26.287,-10.247 24.287,-10.247" vector-effect="non-scaling-stroke"/>
-<line x1="26.066091" y1="-8.247" x2="26.287" y2="-8.467909" vector-effect="non-scaling-stroke"/>
-<line x1="25.783248" y1="-8.247" x2="26.287" y2="-8.750752" vector-effect="non-scaling-stroke"/>
-<line x1="25.500405" y1="-8.247" x2="26.287" y2="-9.033595" vector-effect="non-scaling-stroke"/>
-<line x1="25.217563" y1="-8.247" x2="26.287" y2="-9.316437" vector-effect="non-scaling-stroke"/>
-<line x1="24.93472" y1="-8.247" x2="26.287" y2="-9.59928" vector-effect="non-scaling-stroke"/>
-<line x1="24.651877" y1="-8.247" x2="26.287" y2="-9.882123" vector-effect="non-scaling-stroke"/>
-<line x1="24.369035" y1="-8.247" x2="26.287" y2="-10.164965" vector-effect="non-scaling-stroke"/>
-<line x1="24.287" y1="-8.447808" x2="26.086192" y2="-10.247" vector-effect="non-scaling-stroke"/>
-<line x1="24.287" y1="-8.730651" x2="25.803349" y2="-10.247" vector-effect="non-scaling-stroke"/>
-<line x1="24.287" y1="-9.013494" x2="25.520506" y2="-10.247" vector-effect="non-scaling-stroke"/>
-<line x1="24.287" y1="-9.296336" x2="25.237664" y2="-10.247" vector-effect="non-scaling-stroke"/>
-<line x1="24.287" y1="-9.579179" x2="24.954821" y2="-10.247" vector-effect="non-scaling-stroke"/>
-<line x1="24.287" y1="-9.862022" x2="24.671978" y2="-10.247" vector-effect="non-scaling-stroke"/>
-<line x1="24.287" y1="-10.144864" x2="24.389136" y2="-10.247" vector-effect="non-scaling-stroke"/>
-</g>
 </g>
 <g data-layer="symboles" data-name="Symboles (synthétique)" fill="none" stroke="#000" stroke-width="1" vector-effect="non-scaling-stroke">
 <g data-graphisme="s1-0-nord" data-type="symbole" data-symbole="nord">
@@ -406,14 +357,32 @@
 <line x1="11.197" y1="-10.481" x2="11.197" y2="-10.881" vector-effect="non-scaling-stroke"/>
 <circle cx="11.197" cy="-10.681" r="0.1" vector-effect="non-scaling-stroke"/>
 </g>
-<g data-graphisme="s1-5-nord" data-type="symbole" data-symbole="nord">
-<circle cx="32.787" cy="-9.747" r="0.5" vector-effect="non-scaling-stroke"/>
-<polygon points="32.287,-9.747 33.087,-9.897 32.937,-9.747 33.087,-9.597" vector-effect="non-scaling-stroke"/>
 </g>
-<g data-graphisme="s1-5-croix" data-type="symbole" data-symbole="croix">
-<line x1="23.087" y1="-11.247" x2="23.487" y2="-11.247" vector-effect="non-scaling-stroke"/>
-<line x1="23.287" y1="-11.047" x2="23.287" y2="-11.447" vector-effect="non-scaling-stroke"/>
-<circle cx="23.287" cy="-11.247" r="0.1" vector-effect="non-scaling-stroke"/>
+<g data-layer="blocs" data-name="Blocs (synthétique)" fill="none" stroke="#000" stroke-width="1" vector-effect="non-scaling-stroke">
+<g data-insertion="s1-0-bloc" data-bloc="s1-bloc" data-bloc-nom="Repère de détail (synthétique)">
+<path data-id="s1-0-bloc.carre" data-type="polyline" d="M 5.814 -3.677 L 5.514 -3.677 L 5.514 -3.977 L 5.814 -3.977 L 5.814 -3.677 Z" vector-effect="non-scaling-stroke"/>
+<line data-id="s1-0-bloc.diagonale" x1="5.814" y1="-3.677" x2="5.514" y2="-3.977" vector-effect="non-scaling-stroke"/>
+<circle data-id="s1-0-bloc.cercle" cx="5.664" cy="-3.827" r="0.1" vector-effect="non-scaling-stroke"/>
+</g>
+<g data-insertion="s1-1-bloc" data-bloc="s1-bloc" data-bloc-nom="Repère de détail (synthétique)">
+<path data-id="s1-1-bloc.carre" data-type="polyline" d="M 17.926 -4.194 L 17.926 -4.794 L 17.326 -4.794 L 17.326 -4.194 L 17.926 -4.194 Z" vector-effect="non-scaling-stroke"/>
+<line data-id="s1-1-bloc.diagonale" x1="17.926" y1="-4.194" x2="17.326" y2="-4.794" vector-effect="non-scaling-stroke"/>
+<circle data-id="s1-1-bloc.cercle" cx="17.626" cy="-4.494" r="0.2" vector-effect="non-scaling-stroke"/>
+</g>
+<g data-insertion="s1-2-bloc" data-bloc="s1-bloc" data-bloc-nom="Repère de détail (synthétique)">
+<path data-id="s1-2-bloc.carre" data-type="polyline" d="M 29.745 -5.056 L 29.445 -5.056 L 29.445 -4.756 L 29.745 -4.756 L 29.745 -5.056 Z" vector-effect="non-scaling-stroke"/>
+<line data-id="s1-2-bloc.diagonale" x1="29.745" y1="-5.056" x2="29.445" y2="-4.756" vector-effect="non-scaling-stroke"/>
+<circle data-id="s1-2-bloc.cercle" cx="29.595" cy="-4.906" r="0.1" vector-effect="non-scaling-stroke"/>
+</g>
+<g data-insertion="s1-3-bloc" data-bloc="s1-bloc" data-bloc-nom="Repère de détail (synthétique)">
+<path data-id="s1-3-bloc.carre" data-type="polyline" d="M 5.736 -11.916 L 5.736 -12.516 L 6.336 -12.516 L 6.336 -11.916 L 5.736 -11.916 Z" vector-effect="non-scaling-stroke"/>
+<line data-id="s1-3-bloc.diagonale" x1="5.736" y1="-11.916" x2="6.336" y2="-12.516" vector-effect="non-scaling-stroke"/>
+<circle data-id="s1-3-bloc.cercle" cx="6.036" cy="-12.216" r="0.2" vector-effect="non-scaling-stroke"/>
+</g>
+<g data-insertion="s1-4-bloc" data-bloc="s1-bloc" data-bloc-nom="Repère de détail (synthétique)">
+<path data-id="s1-4-bloc.carre" data-type="polyline" d="M 17.697 -12.281 L 17.997 -12.281 L 17.997 -12.581 L 17.697 -12.581 L 17.697 -12.281 Z" vector-effect="non-scaling-stroke"/>
+<line data-id="s1-4-bloc.diagonale" x1="17.697" y1="-12.281" x2="17.997" y2="-12.581" vector-effect="non-scaling-stroke"/>
+<circle data-id="s1-4-bloc.cercle" cx="17.847" cy="-12.431" r="0.1" vector-effect="non-scaling-stroke"/>
 </g>
 </g>
 </svg>

@@ -5,7 +5,8 @@ import type { StudioSolid } from "../objets-3d/solides.js";
  * Commandes `studio-commands/1` qui recréent un document du corpus depuis un document vide, dans un ordre où toute
  * référence précède ce qui la vise : calques, objets, architecture (dans l'ordre du document), cotes, annotations, solides,
  * solides exacts (opérandes posés comme solides, puis le booléen avec le résultat du noyau, que le serveur recalcule),
- * graphismes, sources déclarées. Sert aux recettes qui posent un corpus par l'API (S6, S7, références visuelles) ; un test
+ * graphismes, sources déclarées, définitions et insertions de blocs, contraintes (posées en une commande : déjà
+ * satisfaites, leur résolution ne change rien). Sert aux recettes qui posent un corpus par l'API (S6, S7, références visuelles) ; un test
  * contrôle que leur application rend le document à l'identique.
  */
 export function commandesDuDocument(doc: StudioDocument): StudioCommand[] {
@@ -40,5 +41,8 @@ export function commandesDuDocument(doc: StudioDocument): StudioCommand[] {
   }
   for (const g of doc.graphismes ?? []) out.push({ toolId: "studio.graphisme.creer", params: g });
   for (const src of doc.sources ?? []) out.push({ toolId: "studio.source.declarer", params: src });
+  for (const b of doc.blocs ?? []) out.push({ toolId: "studio.bloc.definir", params: { id: b.id, nom: b.nom, base: b.base, elements: b.elements } });
+  for (const i of doc.insertions ?? []) out.push({ toolId: "studio.bloc.inserer", params: i });
+  if (doc.contraintes?.length) out.push({ toolId: "studio.contrainte.poser", params: { contraintes: doc.contraintes } });
   return out;
 }

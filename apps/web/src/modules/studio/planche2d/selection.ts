@@ -8,6 +8,7 @@
  */
 import {
   dessinerCoteAngulaire, empriseStructurelle, geometrieMur, studioArcPoints, type StudioStructuralElement, type StudioWall, type StudioLadder, geometrieEchelle, studioShapeSegments, studioTextBox, type StudioAnnotation, type StudioCommand, type StudioDimension, type StudioDocument,
+  studioFormesInsertion, type StudioDefinitionBloc, type StudioInsertionBloc,
   type StudioPoint, type StudioShape,
 } from "@parcours/atelier-model";
 import { estSelectionnable } from "./calques";
@@ -34,9 +35,33 @@ export const murs = (doc: StudioDocument): StudioWall[] => (doc.architecture ?? 
 export type Porteur2D = StudioWall | StudioLadder | StudioStructuralElement;
 export const porteurs = (doc: StudioDocument): Porteur2D[] => (doc.architecture ?? []).filter((x): x is Porteur2D => x.type !== "opening");
 
+/**
+ * Insertions de blocs (X.1-01), posées : leurs formes dérivées de la définition (jamais stockées). Elles se sélectionnent
+ * comme les objets (clic, rectangle, tout sélectionner) pour Déplacer, Copier, Rotation, Symétrie, Échelle, Supprimer,
+ * Placer sur le calque et Éclater. Mémorisées par insertion et définition (objets immuables du document).
+ */
+export interface InsertionPosee { id: string; type: "insertion"; layerId?: string; insertion: StudioInsertionBloc; formes: StudioShape[] }
+const POSEES = new WeakMap<StudioInsertionBloc, { def: StudioDefinitionBloc; posee: InsertionPosee }>();
+export function insertionsPosees(doc: StudioDocument): InsertionPosee[] {
+  if (!doc.insertions?.length) return [];
+  const defs = new Map((doc.blocs ?? []).map((b) => [b.id, b]));
+  return doc.insertions.flatMap((i) => {
+    const def = defs.get(i.bloc);
+    if (!def) return [];
+    const vu = POSEES.get(i);
+    if (vu && vu.def === def) return [vu.posee];
+    const posee: InsertionPosee = { id: i.id, type: "insertion", ...(i.layerId ? { layerId: i.layerId } : {}), insertion: i, formes: studioFormesInsertion(def, i) };
+    POSEES.set(i, { def, posee });
+    return [posee];
+  });
+}
+/** Tout ce qui se sélectionne sur la planche, dans l'ordre d'affichage. */
+type Selectionnable = Element2D | Porteur2D | InsertionPosee;
+const selectionnables = (doc: StudioDocument): Selectionnable[] => [...elements(doc), ...porteurs(doc), ...insertionsPosees(doc)];
+
 /** Identifiants sélectionnables (affichés, déverrouillés), dans l'ordre du document, murs compris. */
 export const toutSelectionnable = (doc: StudioDocument): string[] =>
-  [...elements(doc), ...porteurs(doc)].filter((e) => estSelectionnable(doc, e.layerId)).map((e) => e.id);
+  selectionnables(doc).filter((e) => estSelectionnable(doc, e.layerId)).map((e) => e.id);
 
 /** Sélection nettoyée : objets encore présents et sélectionnables, sans doublon, ordre conservé. */
 export function selectionValide(doc: StudioDocument, ids: readonly string[]): string[] {
@@ -59,7 +84,8 @@ type Segment = readonly [StudioPoint, StudioPoint];
  * Segments dessinés d'un élément (traits de la ligne, côtés du rectangle, contour discrétisé d'un cercle, d'un arc ou
  * d'une polyligne, lignes d'une cote).
  */
-export function segments(e: Element2D | Porteur2D): Segment[] {
+export function segments(e: Selectionnable): Segment[] {
+  if (e.type === "insertion") return e.formes.flatMap((o) => studioShapeSegments(o));
   if (e.type === "column" || e.type === "beam" || e.type === "slab") {
     // Emprise de l'élément structurel (lot W3-B).
     const r = empriseStructurelle(e);
@@ -108,7 +134,7 @@ export function segmentTouche(r: Rectangle2D, [a, b]: Segment): boolean {
 }
 
 /** L'élément est-il retenu par le rectangle selon le mode (fenêtre : entièrement dedans ; capture : touché) ? */
-export function retenu(e: Element2D | Porteur2D, r: Rectangle2D, mode: ModeRectangle): boolean {
+export function retenu(e: Selectionnable, r: Rectangle2D, mode: ModeRectangle): boolean {
   const s = segments(e);
   return mode === "fenetre" ? s.every(([a, b]) => dedans(r, a) && dedans(r, b)) : s.some((x) => segmentTouche(r, x));
 }
@@ -116,13 +142,13 @@ export function retenu(e: Element2D | Porteur2D, r: Rectangle2D, mode: ModeRecta
 /** Sélection par rectangle, parcours linéaire de tous les éléments (référence de l'index, et règle sous le seuil). */
 export function selectionParRectangleLineaire(doc: StudioDocument, a: StudioPoint, b: StudioPoint): string[] {
   const r = rectangleEntre(a, b), mode = modeRectangle(a, b);
-  return [...elements(doc), ...porteurs(doc)].filter((e) => estSelectionnable(doc, e.layerId) && retenu(e, r, mode)).map((e) => e.id);
+  return selectionnables(doc).filter((e) => estSelectionnable(doc, e.layerId) && retenu(e, r, mode)).map((e) => e.id);
 }
 
 /** Tracé mémorisé d'un élément (objet immuable du document) et son emprise ; emprise infinie s'il n'a aucun segment. */
-interface Trace { e: Element2D | Porteur2D; segments: Segment[]; boite: Boite2D }
-const TRACES = new WeakMap<Element2D | Porteur2D, Trace>();
-function trace(e: Element2D | Porteur2D): Trace {
+interface Trace { e: Selectionnable; segments: Segment[]; boite: Boite2D }
+const TRACES = new WeakMap<Selectionnable, Trace>();
+function trace(e: Selectionnable): Trace {
   let t = TRACES.get(e);
   if (!t) {
     const s = segments(e);
@@ -146,7 +172,7 @@ const SUIVI_SELECTION = suiviIncremental<Trace>((t) => t.boite);
 let documentIndexe: { doc: StudioDocument; index: IndexSpatial<Trace> } | null = null;
 function indexSelection(doc: StudioDocument): IndexSpatial<Trace> {
   if (documentIndexe?.doc === doc) return documentIndexe.index;
-  const traces = [...elements(doc), ...porteurs(doc)].map(trace);
+  const traces = selectionnables(doc).map(trace);
   const index = SUIVI_SELECTION.suivre(traces) ?? indexGrille(traces, (t) => t.boite);
   documentIndexe = { doc, index };
   return index;
@@ -206,7 +232,7 @@ function classerDesignation(point: StudioPoint, tolerance: number, traces: reado
 
 /** Désignation au point par parcours linéaire (référence de l'index). */
 export function designationAuPointLineaire(doc: StudioDocument, point: StudioPoint, tolerance: number): TraceDesignation {
-  const tous = [...elements(doc), ...porteurs(doc)];
+  const tous = selectionnables(doc);
   return classerDesignation(point, tolerance, tous.map((e, rang) => ({ e, rang })).filter(({ e }) => estSelectionnable(doc, e.layerId)).map(({ e, rang }) => ({ t: trace(e), rang })));
 }
 
@@ -214,7 +240,7 @@ export function designationAuPointLineaire(doc: StudioDocument, point: StudioPoi
 export function designationAuPoint(doc: StudioDocument, point: StudioPoint, tolerance: number, seuil = SEUIL_INDEX_SPATIAL): TraceDesignation {
   const n = doc.objects.length + (doc.dimensions?.length ?? 0) + (doc.annotations?.length ?? 0) + (doc.architecture?.length ?? 0);
   if (n < seuil) return designationAuPointLineaire(doc, point, tolerance);
-  const rangs = new Map([...elements(doc), ...porteurs(doc)].map((e, i) => [e, i]));
+  const rangs = new Map(selectionnables(doc).map((e, i) => [e, i]));
   const m = tolerance + 1e-9 * (1 + Math.abs(point.x) + Math.abs(point.y));
   const zone = { min: { x: point.x - m, y: point.y - m }, max: { x: point.x + m, y: point.y + m } };
   return classerDesignation(point, tolerance, indexSelection(doc).chercher(zone).filter(({ e }) => estSelectionnable(doc, e.layerId)).map((t) => ({ t, rang: rangs.get(t.e)! })));
@@ -244,7 +270,7 @@ export interface Deplacement {
 export function commandesDeplacement(doc: StudioDocument, ids: readonly string[], dx: number, dy: number): Deplacement {
   if (!Number.isFinite(dx) || !Number.isFinite(dy) || (dx === 0 && dy === 0)) return { commandes: [], cotesLiees: [] };
   const commandes: StudioCommand[] = [], cotesLiees: string[] = [];
-  const parId = new Map<string, Element2D | Porteur2D>([...elements(doc), ...porteurs(doc)].map((e) => [e.id, e]));
+  const parId = new Map<string, Selectionnable>(selectionnables(doc).map((e) => [e.id, e]));
   for (const id of selectionValide(doc, ids)) {
     const e = parId.get(id)!;
     if (e.type === "dimension" && (e.links.start || e.links.end)) { cotesLiees.push(id); continue; }

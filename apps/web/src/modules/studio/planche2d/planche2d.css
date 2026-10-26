@@ -104,3 +104,6 @@
 .studio-moteur-canvas :is(.studio-shape,.studio-cote,.studio-cote-angulaire,.studio-texte):not(.selected) :is(line,rect,circle,path,polygon,polyline){stroke:transparent}
 .studio-moteur-canvas :is(.studio-cote,.studio-cote-angulaire,.studio-texte):not(.selected) text{fill:transparent}
 .studio-moteur-planche{font-size:12px;color:#587079;margin:6px 0 0}
+/* Blocs et contraintes (X.1-01) : marque d’une contrainte, rouge quand elle est à résoudre. */
+.studio-contrainte-marque{fill:#1d4ed8;font-family:sans-serif;pointer-events:none}
+.studio-contrainte-marque.a-resoudre{fill:#b91c1c;font-weight:700}

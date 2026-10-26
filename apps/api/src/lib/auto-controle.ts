@@ -17,7 +17,7 @@
  * Aucun seuil : une seule révision suffit à signaler. Le diffuseur n'est pas concerné (seule l'approbation l'est).
  */
 
-export type SourceRevision = "authenticated-session" | "study-initialization" | "variant-initialization" | "variant-derivation" | "agent-mcp";
+export type SourceRevision = "authenticated-session" | "study-initialization" | "variant-initialization" | "variant-derivation" | "agent-mcp" | "variant-merge" | "variant-merge-undo";
 
 export interface RevisionAuteur {
   id: string;

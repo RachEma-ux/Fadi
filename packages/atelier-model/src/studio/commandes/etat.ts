@@ -19,6 +19,8 @@ import type { StudioSystemeProjet } from "../reperes.js";
 import type { StudioSourceExterne } from "../sources/sources.js";
 import type { StudioNiveau } from "../batiment/niveaux.js";
 import type { StudioComposant, StudioOccurrence } from "../batiment/composants.js";
+import type { StudioDefinitionBloc, StudioInsertionBloc } from "../blocs/blocs.js";
+import type { StudioContrainte } from "../contraintes/contraintes.js";
 
 /** État privé d'un lot de commandes (clone du document, tout ou rien) et contrôles partagés par les familles de commandes. */
 
@@ -53,6 +55,12 @@ export interface Etat {
   composants: StudioComposant[];
   /** Occurrences de composants 3D (`StudioDocument.occurrences`, lot W3-B). */
   occurrences: StudioOccurrence[];
+  /** Définitions de blocs (`StudioDocument.blocs`, X.1-01) ; identifiants uniques dans tout le document. */
+  blocs: StudioDefinitionBloc[];
+  /** Insertions de blocs (`StudioDocument.insertions`, X.1-01) ; géométrie dérivée de leur définition. */
+  insertions: StudioInsertionBloc[];
+  /** Contraintes géométriques (`StudioDocument.contraintes`, X.1-01). */
+  contraintes: StudioContrainte[];
   /** Identifiants d'objets et de cotes présents : contrôle d'unicité en temps constant (un import peut compter 20 000 créations). */
   ids: Set<string>;
 }

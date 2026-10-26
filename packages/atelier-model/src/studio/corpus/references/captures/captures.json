@@ -14,13 +14,13 @@
   "S1": {
    "plan": {
     "fichier": "S1-plan.png",
-    "sha256": "ec3d434b19d92ac45ff85b9ba799cb2fe05d780af08abd3343a34bf436752eab",
+    "sha256": "d5ca5253a76d430e24e43c964590686d37e7bf704cf458896ed1c55ac687e41a",
     "largeur": 802,
     "hauteur": 572
    },
    "vue3d": {
     "fichier": "S1-vue3d.png",
-    "sha256": "aa16af4462a523018ac49d115f71ac278c8db0549126209527206b76f203fe89",
+    "sha256": "a7d1c35e3017f8e3a14f4848a1484f3d110238c8402303d090b17211607f5332",
     "largeur": 788,
     "hauteur": 457
    }

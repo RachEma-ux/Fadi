@@ -15,6 +15,8 @@ import type { StudioGraphisme } from "../graphismes/graphismes.js";
 import type { StudioSourceExterne } from "../sources/sources.js";
 import type { StudioNiveau } from "../batiment/niveaux.js";
 import type { StudioComposant, StudioOccurrence } from "../batiment/composants.js";
+import type { StudioDefinitionBloc, StudioInsertionBloc } from "../blocs/blocs.js";
+import type { StudioContrainte } from "../contraintes/contraintes.js";
 
 /**
  * Rapport de fidélité d'un export Studio (E.6-03) : pour un document et un format (SVG, DXF, IFC), ce qui est exporté
@@ -64,13 +66,19 @@ export const STUDIO_RAISONS_FIDELITE = Object.freeze([
   // composant → `IfcBuildingElementProxyType` à représentation partagée ; occurrence → `IfcMappedItem` de cette
   // représentation (aucune géométrie recopiée).
   "niveau-en-etage", "niveau-hors-2d", "type-partage", "occurrence-partagee",
+  // Blocs (X.1-01) : définition en BLOCK et insertion en INSERT (DXF), insertion développée en SVG (la définition n'y
+  // est pas réutilisable : chaque insertion porte ses formes, `data-bloc` garde le lien) ; aucun bloc en IFC.
+  "bloc-en-block", "insertion-en-insert", "insertion-developpee", "bloc-developpe", "bloc-hors-ifc",
+  // Contraintes géométriques (X.1-01) : relations du modèle, écrites dans aucun format (la géométrie résolue l'est).
+  "contrainte-hors-export",
 ] as const);
 export type StudioRaisonFidelite = (typeof STUDIO_RAISONS_FIDELITE)[number];
 
 /** Catégorie = liste du document qui porte l'élément. */
-export type StudioCategorieEchange = "objets" | "cotes" | "annotations" | "solides" | "exacts" | "cotesFaces" | "architecture" | "proprietes" | "scenes" | "nonNatifs" | "graphismes" | "sources" | "niveaux" | "composants" | "occurrences" | "inconnue";
 /** Liste du document de chaque catégorie connue (clé de `StudioDocument`). */
-export const STUDIO_LISTES_ECHANGE = Object.freeze({ objets: "objects", cotes: "dimensions", annotations: "annotations", solides: "solides", exacts: "exacts", cotesFaces: "cotesFaces", architecture: "architecture", proprietes: "proprietes", scenes: "scenes", nonNatifs: "nonNatifs", graphismes: "graphismes", sources: "sources", niveaux: "niveaux", composants: "composants", occurrences: "occurrences" } as const);
+export type StudioCategorieEchange = "objets" | "cotes" | "annotations" | "solides" | "exacts" | "cotesFaces" | "architecture" | "proprietes" | "scenes" | "nonNatifs" | "graphismes" | "sources" | "blocs" | "insertions" | "contraintes" | "niveaux" | "composants" | "occurrences" | "inconnue";
+/** Liste du document de chaque catégorie connue (clé de `StudioDocument`). */
+export const STUDIO_LISTES_ECHANGE = Object.freeze({ objets: "objects", cotes: "dimensions", annotations: "annotations", solides: "solides", exacts: "exacts", cotesFaces: "cotesFaces", architecture: "architecture", proprietes: "proprietes", scenes: "scenes", nonNatifs: "nonNatifs", graphismes: "graphismes", sources: "sources", blocs: "blocs", insertions: "insertions", contraintes: "contraintes", niveaux: "niveaux", composants: "composants", occurrences: "occurrences" } as const);
 
 export interface StudioJugementFidelite { statut: StudioStatutFidelite; raison: StudioRaisonFidelite }
 type Juge<T> = (item: T) => StudioJugementFidelite;
@@ -147,6 +155,12 @@ export const STUDIO_CAPACITES_EXPORT: {
   /** Définitions de composants 3D (lot W3-B) : un seul type « composant ». */
   readonly composants: { readonly composant: ParFormat<StudioComposant> };
   readonly occurrences: { readonly occurrence: ParFormat<StudioOccurrence> };
+  /** Définitions de blocs (X.1-01). */
+  readonly blocs: { readonly bloc: ParFormat<StudioDefinitionBloc> };
+  /** Insertions de blocs (X.1-01). */
+  readonly insertions: { readonly insertion: ParFormat<StudioInsertionBloc> };
+  /** Contraintes géométriques (X.1-01) : sans discriminant d'élément, un seul type « contrainte ». */
+  readonly contraintes: { readonly contrainte: ParFormat<StudioContrainte> };
 } = Object.freeze({
   objets: {
     line: { svg: trace2d("trace-exact"), dxf: trace2d("trace-exact"), ifc: ifc3d((o) => exact(o.extrusion && "thickness" in o.extrusion && o.extrusion.thickness !== undefined ? "extrusion-exacte" : "surface-exacte")) },
@@ -219,6 +233,15 @@ export const STUDIO_CAPACITES_EXPORT: {
   },
   occurrences: {
     occurrence: { svg: () => nonCouvert("solide-hors-2d"), dxf: () => nonCouvert("solide-hors-2d"), ifc: () => exact("occurrence-partagee") },
+  },
+  blocs: {
+    bloc: { svg: () => approche("bloc-developpe"), dxf: () => exact("bloc-en-block"), ifc: () => nonCouvert("bloc-hors-ifc") },
+  },
+  insertions: {
+    insertion: { svg: () => exact("insertion-developpee"), dxf: () => exact("insertion-en-insert"), ifc: () => nonCouvert("bloc-hors-ifc") },
+  },
+  contraintes: {
+    contrainte: { svg: () => nonCouvert("contrainte-hors-export"), dxf: () => nonCouvert("contrainte-hors-export"), ifc: () => nonCouvert("contrainte-hors-export") },
   },
 });
 
@@ -329,6 +352,10 @@ export function studioRapportFidelite(input: StudioDocument, format: StudioForma
   for (const n of doc.niveaux ?? []) poser("niveaux", "niveau", STUDIO_CAPACITES_EXPORT.niveaux.niveau[format](n), n.id);
   for (const c of doc.composants ?? []) poser("composants", "composant", STUDIO_CAPACITES_EXPORT.composants.composant[format](c), c.id);
   parcourir("occurrences", doc.occurrences);
+  // Blocs (X.1-01) : définitions sans calque, insertions sur le leur ; contraintes sans calque.
+  for (const b of doc.blocs ?? []) poser("blocs", "bloc", STUDIO_CAPACITES_EXPORT.blocs.bloc[format](b), b.id);
+  parcourir("insertions", doc.insertions);
+  for (const c of doc.contraintes ?? []) poser("contraintes", "contrainte", STUDIO_CAPACITES_EXPORT.contraintes.contrainte[format](c), c.id);
   // Liste du document qu'aucune catégorie ne connaît : comptée non couverte, jamais omise.
   for (const [cle, valeur] of Object.entries(doc as unknown as Record<string, unknown>)) {
     if (CLES_CONNUES.has(cle) || !Array.isArray(valeur)) continue;

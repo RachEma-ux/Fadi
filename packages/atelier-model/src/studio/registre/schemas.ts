@@ -17,6 +17,8 @@ import { SCHEMA_NON_NATIF } from "../non-natifs/non-natifs.js";
 import { SCHEMA_GRAPHISME, STUDIO_LIMITES_GRAPHISMES } from "../graphismes/graphismes.js";
 import { STUDIO_LIMITE_VERSIONS_PROJET } from "../reperes.js";
 import { SCHEMA_SOURCE, STUDIO_LIMITES_SOURCES } from "../sources/sources.js";
+import { SCHEMA_DEFINITION_BLOC, SCHEMA_INSERTION_BLOC, STUDIO_LIMITES_BLOCS } from "../blocs/blocs.js";
+import { SCHEMA_CONTRAINTE, STUDIO_LIMITES_CONTRAINTES } from "../contraintes/contraintes.js";
 import { id } from "./schemas-base.js";
 import { SCHEMA_NIVEAU, STUDIO_LIMITES_NIVEAUX } from "../batiment/niveaux.js";
 import { SCHEMA_COMPOSANT, SCHEMA_OCCURRENCE, STUDIO_LIMITES_COMPOSANTS } from "../batiment/composants.js";
@@ -50,6 +52,9 @@ export const STUDIO_DOCUMENT_SCHEMA = {
     niveaux: { type: "array", maxItems: STUDIO_LIMITES_NIVEAUX.niveaux, items: SCHEMA_NIVEAU },
     composants: { type: "array", maxItems: STUDIO_LIMITES_COMPOSANTS.composants, items: SCHEMA_COMPOSANT },
     occurrences: { type: "array", maxItems: STUDIO_LIMITS.objects, items: SCHEMA_OCCURRENCE },
+    blocs: { type: "array", maxItems: STUDIO_LIMITES_BLOCS.definitions, items: SCHEMA_DEFINITION_BLOC },
+    insertions: { type: "array", maxItems: STUDIO_LIMITES_BLOCS.insertions, items: SCHEMA_INSERTION_BLOC },
+    contraintes: { type: "array", maxItems: STUDIO_LIMITES_CONTRAINTES.contraintes, items: SCHEMA_CONTRAINTE },
     systemeProjet: {
       type: "object", additionalProperties: false, required: ["versions"],
       properties: {

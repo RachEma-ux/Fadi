@@ -1,6 +1,6 @@
 import { STUDIO_LIMITS } from "../document-2d.js";
 import type { GrandeurQuantite } from "../quantites.js";
-import { MOTIF_S1, parametresS1 } from "./s1-detail.js";
+import { BLOC_S1, MOTIF_S1, parametresS1 } from "./s1-detail.js";
 import { MOTIF_PLAN, MOTIF_S2, PARAMETRES_S2 } from "./s2-niveau.js";
 import { MOTIF_S3, parametresS3 } from "./s3-dense.js";
 import { MOTIF_S4, niveauS4, PARAMETRES_S4, traveesParNiveau } from "./s4-immeuble.js";
@@ -50,6 +50,13 @@ export interface OracleCorpus {
   exacts?: { operations: Record<string, number>; volume: number };
   /** Graphismes : aire totale des contours de hachure, symboles posés par nom, points de contrôle des splines. */
   graphismes?: { aireHachures: number; symboles: Record<string, number>; pointsSplines: number };
+  /**
+   * Blocs définis par l'utilisateur (S1) : définitions (une par feuillet qui en insère), insertions, insertions
+   * symétriques, aire totale des carrés posés (côté × échelle)², mesurée sur la géométrie dérivée des insertions.
+   */
+  blocs?: { definitions: number; insertions: number; symetriques: number; aireCarres: number };
+  /** Contraintes géométriques (S1) : nombre par type ; toutes satisfaites dans la tolérance déclarée. */
+  contraintes?: { parType: Record<string, number>; satisfaites: number };
   /** Références externes déclarées (S2) : une source par feuillet qui porte des axes, objets venus du fond. */
   sources?: { nombre: number; objets: number };
   /**
@@ -81,6 +88,9 @@ export function oracleS1(taille: number): OracleCorpus {
   const a = new Accumulateur();
   const cotes = { liees: 0, libres: 0, sommeMesures: 0 }, angles = { nombre: 0, sommeDegres: 0 };
   const graphismes = { aireHachures: 0, symboles: {} as Record<string, number>, pointsSplines: 0 };
+  const blocs = { definitions: 0, insertions: 0, symetriques: 0, aireCarres: 0 };
+  const contraintes = { parType: {} as Record<string, number>, satisfaites: 0 };
+  const parFeuillet = Math.floor(STUDIO_LIMITS.objects / MOTIF_S1) * MOTIF_S1, feuilletsAvecBloc = new Set<number>();
   parcourir(taille, MOTIF_S1, (j, role) => {
     const p = parametresS1(j);
     switch (role) {
@@ -102,10 +112,21 @@ export function oracleS1(taille: number): OracleCorpus {
       case 13: a.compter("symbole"); graphismes.symboles.nord = (graphismes.symboles.nord ?? 0) + 1; break;
       case 14: a.compter("symbole"); graphismes.symboles.croix = (graphismes.symboles.croix ?? 0) + 1; break;
       // Deux morceaux de Bézier : 3 × 2 + 1 points.
-      default: a.compter("spline"); graphismes.pointsSplines += 7;
+      case 15: a.compter("spline"); graphismes.pointsSplines += 7; break;
+      // Insertion du bloc : carré de côté 0,6 m × échelle ; une définition par feuillet qui insère.
+      case 16:
+        a.compter("insertion"); blocs.insertions++; blocs.aireCarres += (BLOC_S1.cote * p.bloc.echelle) ** 2;
+        if (p.bloc.symetrie) blocs.symetriques++;
+        feuilletsAvecBloc.add(Math.floor((j * MOTIF_S1 + role) / parFeuillet));
+        break;
+      default: {
+        const type = role === 17 ? "horizontal" : "distance";
+        a.compter("contrainte"); contraintes.parType[type] = (contraintes.parType[type] ?? 0) + 1; contraintes.satisfaites++;
+      }
     }
   });
-  return { scene: "S1", taille, primitives: taille, feuillets: feuillets(taille, MOTIF_S1), comptes: a.comptes, totaux: a.totaux, volumeNonEvalues: a.volumeNonEvalues, cotes, angles, graphismes };
+  blocs.definitions = feuilletsAvecBloc.size;
+  return { scene: "S1", taille, primitives: taille, feuillets: feuillets(taille, MOTIF_S1), comptes: a.comptes, totaux: a.totaux, volumeNonEvalues: a.volumeNonEvalues, cotes, angles, graphismes, blocs, contraintes };
 }
 
 /** S2, et S6 / S7 qui en reprennent le plan. */
@@ -292,12 +313,24 @@ export function oracleS6(taille = 100) {
   const A = { wall: c("wall"), opening: c("opening") + 1, line: c("line"), dimension: c("dimension"), text: c("text"), murs: { brut: m.brut, deduit: m.deduit + fenetre, net: m.net - fenetre } };
   // B part de A1 : sans la fenêtre ajoutée en A2 ; le mur s6-1-mur-v (brut 3,6, fenêtre 0,084) disparaît avec sa fenêtre.
   const B = { wall: c("wall") - 1, opening: c("opening") - 1, line: c("line") + 1, dimension: c("dimension"), text: c("text"), murs: { brut: m.brut - brut, deduit: m.deduit - fenetre, net: m.net - (brut - fenetre) } };
-  const C = { ...A, line: A.line + 2 };
+  // C part de la tête de A : C1 ajoute deux lignes, C2 une troisième (`s6-b-ligne`, autre tracé que celle de B).
+  const C = { ...A, line: A.line + 3 };
+  // F1 : B fusionnée dans C. Repris de B : le mur s6-1-mur-v et sa fenêtre supprimés ; conservé de C : la fenêtre de A2,
+  // le texte déplacé, les lignes de C1 ; s6-b-ligne, ajoutée des deux côtés, garde le tracé de B (choix « source »).
+  const fusionBC = { ...C, wall: C.wall - 1, opening: C.opening - 1, murs: { brut: m.brut - brut, deduit: A.murs.deduit - fenetre, net: A.murs.net - (brut - fenetre) } };
   return {
     base,
     premierMur: { id: "s6-0-mur-h", avant: m.premier!, apres: { brut, deduit: m.premier!.deduit + fenetre, net: m.premier!.net - fenetre } },
     variantes: { A, B, C },
-    revisionsAjoutees: { A: 3, B: 2, C: 1 },
+    revisionsAjoutees: { A: 3, B: 2, C: 2 },
+    /** Fusions (lot W3-D) : conflits attendus avant résolution, tête de la cible après la fusion. */
+    fusions: {
+      F1: {
+        ancetre: "A1", conflits: ["collision:objects:s6-b-ligne"], tete: fusionBC,
+        ligneGardee: { id: "s6-b-ligne", y: -2 },
+        supprimes: ["architecture:s6-1-fenetre", "architecture:s6-1-mur-v"],
+      },
+    },
     /** Valeurs exigées (celles de A) et statut attendu de chaque exigence sur chaque tête. */
     exigences: {
       valeurs: { "s6-nombre-murs": A.wall, "s6-volume-net": A.murs.net, "s6-mur-0": m.premier!.net - fenetre } as Record<string, number>,

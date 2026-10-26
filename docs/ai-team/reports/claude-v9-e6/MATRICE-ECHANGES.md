@@ -1,8 +1,8 @@
 # Matrice d’échanges de Studio
 
-<!-- Généré depuis packages/atelier-model/src/studio/echanges/matrice-echanges.ts (studio-matrice-echanges/1, révision 10) : ne pas éditer à la main. -->
+<!-- Généré depuis packages/atelier-model/src/studio/echanges/matrice-echanges.ts (studio-matrice-echanges/1, révision 11) : ne pas éditer à la main. -->
 
-Établie le 2026-10-26 (révision 10, schéma `studio-matrice-echanges/1`), à partir de l’audit des exporteurs et importeurs Studio. Lots E.6-01 à E.6-05 du plan d’implémentation Studio V1.0 (§5.7).
+Établie le 2026-10-26 (révision 11, schéma `studio-matrice-echanges/1`), à partir de l’audit des exporteurs et importeurs Studio. Lots E.6-01 à E.6-05 du plan d’implémentation Studio V1.0 (§5.7).
 
 **Aucune entrée n’est une déclaration de conformité** : « livré » dit ce que le code écrit ou lit et le contrôle qui le vérifie ; la conformité d’un format reste non évaluée. Un format reporté est inscrit « non livré » avec sa raison et sa source ; « renoncé » exige une décision Studio admise (aucune aujourd’hui).
 
@@ -18,8 +18,8 @@ Entrées : 45 — livrées : 31, non livrées : 14, renoncées : 0.
 | `natif-file-locale` | File locale hors ligne (JSON) | fadi-studio-file-locale/1 | export | natif | Copie de secours d’une file locale de commandes non synchronisée | livré | E.6-02 | Export de secours seulement : Studio ne relit pas ce fichier ; la ligne exportée est relue du stockage, jamais de la mémoire. |
 | `natif-profil-outils-export` | Profil d’outils Studio (JSON) | fadi-studio-profil/1 | export | natif | Profil d’outils du compte (profileId, version, ordre, raccourcis personnels, visibilité) | livré | E.6-02 | Préférences du compte seulement : aucune donnée du projet, aucun droit (EX-033, INV-009). |
 | `natif-profil-outils-import` | Profil d’outils Studio (JSON) | fadi-studio-profil/1 | import | natif | Profil d’outils importé dans le compte | livré | E.6-02 | Aucun droit conféré : une capacité exigeant un droit absent est refusée ; raccourcis en conflit refusés ou écartés sur demande explicite. |
-| `dessin-svg` | SVG | SVG (espace de noms W3C, aucune version déclarée dans le fichier) | export | dessin | Document d’une révision de variante (plan 2D) | livré | E.6-03 | Plan 2D seulement : solides et hauteurs absents ; calques masqués conservés sous display="none" ; graphismes (splines en courbes de Bézier exactes, traits de hachure, symboles) avec leur transparence (opacity) ; aucun script ni ressource externe. |
-| `dessin-dxf` | DXF ASCII | R12 (AC1009), CRLF, $INSUNITS = 6 (mètre) | export | dessin | Document d’une révision de variante (plan 2D) | livré | E.6-03 | R12 seulement ; $INSUNITS n’appartient pas à R12 (variable introduite avec AC1015) : l’unité n’est pas garantie chez un lecteur R12 strict ; ASCII strict (texte échappé, 250 caractères) ; cotes non associatives ; noms de calque réécrits (31 caractères ASCII) ; solides absents ; splines découpées en POLYLINE (16 segments par morceau de Bézier), transparence des graphismes non portée (déclarée en commentaire 999). |
+| `dessin-svg` | SVG | SVG (espace de noms W3C, aucune version déclarée dans le fichier) | export | dessin | Document d’une révision de variante (plan 2D) | livré | E.6-03 | Plan 2D seulement : solides et hauteurs absents ; calques masqués conservés sous display="none" ; graphismes (splines en courbes de Bézier exactes, traits de hachure, symboles) avec leur transparence (opacity) ; insertions de blocs développées (un groupe data-insertion / data-bloc par insertion, formes de la définition posées ; la définition n’est pas réutilisable dans le fichier) ; contraintes géométriques non écrites (la géométrie résolue l’est) ; aucun script ni ressource externe. |
+| `dessin-dxf` | DXF ASCII | R12 (AC1009), CRLF, $INSUNITS = 6 (mètre) | export | dessin | Document d’une révision de variante (plan 2D) | livré | E.6-03 | R12 seulement ; $INSUNITS n’appartient pas à R12 (variable introduite avec AC1015) : l’unité n’est pas garantie chez un lecteur R12 strict ; ASCII strict (texte échappé, 250 caractères) ; cotes non associatives ; noms de calque réécrits (31 caractères ASCII) ; solides absents ; splines découpées en POLYLINE (16 segments par morceau de Bézier), transparence des graphismes non portée (déclarée en commentaire 999) ; blocs définis par l’utilisateur en section BLOCKS (un BLOCK par définition, nom ASCII dérivé de 31 caractères, éléments sur le calque « 0 ») et INSERT par insertion (facteur x négatif pour la symétrie, rotation en degrés) ; contraintes géométriques non représentables (déclarées en commentaire 999). |
 | `maquette-ifc` | IFC (STEP physique, ISO 10303-21) | IFC4X3_ADD2, ViewDefinition [ReferenceView] | export | maquette | Objets extrudés, solides libres, murs et ouvertures, niveaux, poteaux, poutres, dalles, composants 3D et leurs occurrences, propriétés déclarées d’une révision | livré | E.6-03 | Seuls les éléments 3D sont écrits ; arcs discrétisés ; cotes, annotations et réglages de visualisation absents ; IfcDoor / IfcWindow seulement si le type est déclaré, sans représentation propre. |
 | `maquette-obj` | OBJ (Wavefront) | OBJ texte ASCII, studio-export-obj/1 (le format ne déclare aucune version) | export | maquette | Géométrie 3D d’une révision (maillage triangulé de la vue 3D) | livré | E.6-04 | Maillage seulement : courbes discrétisées comme dans la vue 3D, coordonnées au micromètre ; mètres déclarés en commentaire (OBJ ne porte aucune unité) ; aucun matériau ; tous les calques écrits, un calque masqué signalé ; ce qui n’est pas une géométrie 3D est compté dans l’en-tête, jamais écrit. |
 | `maquette-stl` | STL ASCII | STL ASCII (solid … endsolid), sans version | export | maquette | Solides d’une révision (facettes triangulées) | livré | E.6-04 | Une seule pièce « solid » : STL ne porte ni unité (mètres), ni identité, ni calque ; facettes des solides seulement, normale unitaire calculée dans le sens des sommets ; courbes discrétisées ; surfaces sans épaisseur et contours plats non écrits (comptés par le bilan de l’export). |
@@ -140,7 +140,7 @@ Entrées : 45 — livrées : 31, non livrées : 14, renoncées : 0.
 
 - Version : SVG (espace de noms W3C, aucune version déclarée dans le fichier)
 - Objet : Document d’une révision de variante (plan 2D)
-- Limite : Plan 2D seulement : solides et hauteurs absents ; calques masqués conservés sous display="none" ; graphismes (splines en courbes de Bézier exactes, traits de hachure, symboles) avec leur transparence (opacity) ; aucun script ni ressource externe.
+- Limite : Plan 2D seulement : solides et hauteurs absents ; calques masqués conservés sous display="none" ; graphismes (splines en courbes de Bézier exactes, traits de hachure, symboles) avec leur transparence (opacity) ; insertions de blocs développées (un groupe data-insertion / data-bloc par insertion, formes de la définition posées ; la définition n’est pas réutilisable dans le fichier) ; contraintes géométriques non écrites (la géométrie résolue l’est) ; aucun script ni ressource externe.
 - Route : `GET /projects/:projectId/studio/studies/:studyId/variants/:variantId/export?format=svg`
 - Contrôle : Tests de l’export ; recette studio-persistance.mjs ; rapport de fidélité servi à côté du fichier.
 - Couverture par entité : rapport de fidélité `svg` (tableau ci-dessous).
@@ -154,7 +154,7 @@ Entrées : 45 — livrées : 31, non livrées : 14, renoncées : 0.
 
 - Version : R12 (AC1009), CRLF, $INSUNITS = 6 (mètre)
 - Objet : Document d’une révision de variante (plan 2D)
-- Limite : R12 seulement ; $INSUNITS n’appartient pas à R12 (variable introduite avec AC1015) : l’unité n’est pas garantie chez un lecteur R12 strict ; ASCII strict (texte échappé, 250 caractères) ; cotes non associatives ; noms de calque réécrits (31 caractères ASCII) ; solides absents ; splines découpées en POLYLINE (16 segments par morceau de Bézier), transparence des graphismes non portée (déclarée en commentaire 999).
+- Limite : R12 seulement ; $INSUNITS n’appartient pas à R12 (variable introduite avec AC1015) : l’unité n’est pas garantie chez un lecteur R12 strict ; ASCII strict (texte échappé, 250 caractères) ; cotes non associatives ; noms de calque réécrits (31 caractères ASCII) ; solides absents ; splines découpées en POLYLINE (16 segments par morceau de Bézier), transparence des graphismes non portée (déclarée en commentaire 999) ; blocs définis par l’utilisateur en section BLOCKS (un BLOCK par définition, nom ASCII dérivé de 31 caractères, éléments sur le calque « 0 ») et INSERT par insertion (facteur x négatif pour la symétrie, rotation en degrés) ; contraintes géométriques non représentables (déclarées en commentaire 999).
 - Route : `GET /projects/:projectId/studio/studies/:studyId/variants/:variantId/export?format=dxf`
 - Contrôle : Tests de l’export ; recette studio-persistance.mjs ; rapport de fidélité servi à côté du fichier.
 - Couverture par entité : rapport de fidélité `dxf` (tableau ci-dessous).
@@ -271,7 +271,8 @@ Entrées : 45 — livrées : 31, non livrées : 14, renoncées : 0.
 - Entité ARC : portée — Arc (angles ramenés en radians), cercle si ses angles se confondent.
 - Entité LWPOLYLINE / POLYLINE 2D : partielle — Polyligne à renflements ; rectangle si fermée à 4 sommets parallèles aux axes ; sinon un segment droit par ligne.
 - Entité Calques (table LAYER) : portée — Repris par nom ou créés, visibilité et verrouillage du fichier.
-- Entité TEXT, INSERT, SPLINE, HATCH, DIMENSION, ELLIPSE… : absente — Non importés comme objets, comptés par type ; conservés comme éléments non natifs (type, handle, nom de bloc, raison) si l’option est cochée.
+- Entité BLOCK / INSERT : partielle — Insertion d’une définition de bloc Studio (position, rotation, échelle uniforme, symétrie) quand toutes les entités du bloc sont prises ; définition créée une fois par bloc inséré, ou reprise à l’identique ; éléments au calque de l’insertion. INSERT à attributs, en réseau, à échelle non uniforme ou d’un bloc non représentable (bloc imbriqué, entité non prise) : compté, conservé comme élément non natif si l’option est cochée.
+- Entité TEXT, SPLINE, HATCH, DIMENSION, ELLIPSE… : absente — Non importés comme objets, comptés par type ; conservés comme éléments non natifs (type, handle, nom de bloc, raison) si l’option est cochée.
 - Entité Polylignes 3D ou lissées, espace papier : absente — Non importées comme objets, comptées ; conservées comme éléments non natifs si l’option est cochée.
 - Code : `packages/atelier-model/src/studio/import-dxf.ts` (`` lireDxfStudio ``)
 - Tests : `packages/atelier-model/src/studio/import-dxf.test.ts` (`` lireDxfStudio ``) ; `apps/web/src/modules/studio/import/import-dxf.test.ts` (`` lireDxfStudio ``)
@@ -565,6 +566,9 @@ Raisons possibles du rapport de fidélité (`studioRapportFidelite`) pour chaque
 | niveaux | niveau | `niveau-hors-2d` (non-couvert) | `niveau-hors-2d` (non-couvert) | `niveau-en-etage` (exact) |
 | composants | composant | `solide-hors-2d` (non-couvert) | `solide-hors-2d` (non-couvert) | `type-partage` (exact) |
 | occurrences | occurrence | `solide-hors-2d` (non-couvert) | `solide-hors-2d` (non-couvert) | `occurrence-partagee` (exact) |
+| blocs | bloc | `bloc-developpe` (approche) | `bloc-en-block` (exact) | `bloc-hors-ifc` (non-couvert) |
+| insertions | insertion | `insertion-developpee` (exact) | `insertion-en-insert` (exact) | `bloc-hors-ifc` (non-couvert) |
+| contraintes | contrainte | `contrainte-hors-export` (non-couvert) | `contrainte-hors-export` (non-couvert) | `contrainte-hors-export` (non-couvert) |
 
 ## Capacités par sens d’échange (EX-079)
 

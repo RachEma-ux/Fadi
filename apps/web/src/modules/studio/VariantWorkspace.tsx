@@ -94,6 +94,7 @@ import { choixVueValide, type ChoixVueNiveau } from "./batiment/batiment-ui";
 import { elementArchitectural, PARAMETRES_ARCHITECTURE_VIDES, type ParametresArchitecture } from "./planche2d/architecture/architecture-ui";
 import { CopieDeTravail } from "./variante/CopieDeTravail";
 import { AlerteStudio, BandeauHistorique, ChoixConflitStudio, EtatConnexionStudio, libelleModePlanche, SOUS_TITRE_PLANCHE, TitreEspace } from "./variante/BandeauVariante";
+import { commandeEclater } from "./blocs/blocs-ui";
 import { DialoguesStudio, type DialogueStudio } from "./variante/DialoguesStudio";
 import { refused } from "./variante/etat-variante";
 import { FormulaireValeurs } from "./variante/FormulaireValeurs";
@@ -184,7 +185,7 @@ function useHauteurDisponible(ref: { current: HTMLElement | null }, minimum: num
 /** Panneaux latéraux qui lisent ou écrivent dans une étude : indisponibles dans la Console (aucun projet). */
 const PANNEAUX_D_ETUDE: ReadonlySet<FonctionStudio> = new Set<FonctionStudio>(["exigences", "publications", "commentaires-observations", "revisions", "metre"]);
 /** Commandes qui passent par le serveur (exports de la révision enregistrée, feuilles du dossier) : indisponibles dans la Console. */
-const COMMANDES_D_ETUDE: ReadonlySet<IdCommandeEditeur> = new Set<IdCommandeEditeur>(["exporter-svg", "exporter-dxf", "exporter-ifc", "exporter-obj", "exporter-stl", "exporter-step", "dossier", "modeles-externes", "illustration", "agents", "approuver"]);
+const COMMANDES_D_ETUDE: ReadonlySet<IdCommandeEditeur> = new Set<IdCommandeEditeur>(["exporter-svg", "exporter-dxf", "exporter-ifc", "exporter-obj", "exporter-stl", "exporter-step", "dossier", "modeles-externes", "illustration", "agents", "approuver", "fusionner-variantes", "annuler-fusion"]);
 
 export function VariantWorkspace({ projectId, studyId, variantId, revisionId, commentairesOuverts = false, domaine = null, planche = null, autonome = false, surEnregistreVersProjet, surAdresse }: VariantWorkspaceProps) {
   const [context, setContext] = useState<StudioContext | null>(() => (autonome ? contexteConsole() : null));
@@ -602,6 +603,15 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     // Graphismes (EX-055) et système de projet (EX-023) : saisis dans leur boîte ; un graphisme sélectionné se retire aussitôt.
     if (toolId === "studio.graphisme.creer") { setDialogue("graphismes"); return; }
     if (toolId === "studio.repere.projet") { setDialogue("systeme-projet"); return; }
+    // Blocs définis par l'utilisateur et contraintes (X.1-01) : saisis dans leur boîte ; une insertion sélectionnée s'éclate aussitôt.
+    if (toolId === "studio.bloc.definir" || toolId === "studio.bloc.inserer") { setDialogue("blocs"); return; }
+    if (toolId === "studio.contrainte.poser") { setDialogue("contraintes"); return; }
+    if (toolId === "studio.bloc.eclater") {
+      const r = commandeEclater(drawing, selectionIds);
+      if ("erreur" in r) { setInfo(r.erreur); return; }
+      if (apply(r.commandes)) select(selectionIds.filter((id) => !r.commandes.some((c) => (c.params as { ids: string[] }).ids.includes(id))));
+      return;
+    }
     // Source importée (EX-014) : elle accompagne un import DXF ; le raccourci ouvre « Importer DXF ».
     if (toolId === "studio.source.declarer") { setDialogue("import-dxf"); setInfo("Une source se déclare avec son import : choisissez le fichier DXF."); return; }
     if (toolId === "studio.graphisme.retirer") {
@@ -742,6 +752,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       case "dossier": return setDialogue("dossier");
       case "echanges": return setDialogue("echanges");
       case "approuver": return setDialogue("approbation");
+      case "fusionner-variantes": return setDialogue("fusion");
+      case "annuler-fusion": return setDialogue("annulation-fusion");
       case "outils": return setDialogue("outils");
       case "palette": return setDialogue("palette");
       case "exigences": {

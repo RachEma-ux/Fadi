@@ -4,7 +4,8 @@
  * `local-2d` du document, en mètres. Un objet d'un calque verrouillé est dessiné mais ni sélectionnable ni modifiable.
  * Les gestes (molette, panoramique, rectangle, glisser) sont interprétés par l'espace de travail.
  * Rendus par type : formes (`rendus/formes.tsx`), cotes (`rendus/cote.tsx`), graphismes (`rendus/graphismes.tsx` :
- * splines, hachures, symboles, transparence), aperçu du geste (`rendus/apercu.tsx`).
+ * splines, hachures, symboles, transparence), insertions de blocs et marques des contraintes (`rendus/blocs.tsx`),
+ * aperçu du geste (`rendus/apercu.tsx`).
  *
  * Moteur (F.1-02) : `svg` par défaut (DEC-08). `canvas` — seulement quand la règle F.1-01 l'autorise
  * (`rendus/moteur-canvas.ts`) — trace le dessin sur un canevas posé au-dessus (`PlancheCanvas`, transparent aux gestes) ;
@@ -22,6 +23,8 @@ import { Apercu } from "./rendus/apercu";
 import { Cote } from "./rendus/cote";
 import { Forme } from "./rendus/formes";
 import { Graphisme } from "./rendus/graphismes";
+import { Insertion, MarquesContraintes } from "./rendus/blocs";
+import { insertionsPosees } from "./selection";
 import { PlancheCanvas } from "./rendus/PlancheCanvas";
 
 export { TraceForme } from "./rendus/formes";
@@ -93,6 +96,10 @@ export function Dessin2D({ svgRef, doc, cadre, pas, outil, selection, trace, sur
       {(doc.graphismes ?? []).filter((g) => visible(g.layerId)).map((g) => (
         <Graphisme key={g.id} g={g} choisie={selection.has(g.id)} selectionnable={estSelectionnable(doc, g.layerId)} surSelection={surSelection} versPlanche={clicsVersPlanche(g)} />
       ))}
+      {insertionsPosees(doc).filter((p) => visible(p.layerId)).map((p) => (
+        <Insertion key={p.id} p={p} nom={doc.blocs?.find((b) => b.id === p.insertion.bloc)?.nom ?? p.insertion.bloc} choisie={selection.has(p.id)} selectionnable={estSelectionnable(doc, p.layerId)} surSelection={surSelection} versPlanche={clicsVersPlanche(p)} />
+      ))}
+      <MarquesContraintes doc={doc} taille={Math.max(cadre.w, cadre.h) / 60} />
       <Apercu cadre={cadre} outil={outil} trace={trace} survol={survol} rectangle={rectangle} apercuForme={apercuForme} sommetsPoses={sommetsPoses} />
       {superposition}
     </svg>

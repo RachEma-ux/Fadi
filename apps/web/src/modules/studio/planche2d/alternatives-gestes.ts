@@ -91,6 +91,11 @@ export const ALTERNATIVES_GESTES: Readonly<Record<string, AlternativeGeste>> = O
   "studio.composant.definir": saisie("panneau-batiment"),
   "studio.composant.placer": saisie("panneau-batiment"),
   "studio.structure.element": saisie("panneau-batiment"),
+  // Lot W3-A (X.1-01) : boîtes « Blocs » et « Contraintes » (valeurs saisies, cibles cochées dans la liste), raccourci propre.
+  "studio.bloc.definir": commande,
+  "studio.bloc.inserer": commande,
+  "studio.bloc.eclater": commande,
+  "studio.contrainte.poser": commande,
 });
 
 /** Gestes de vue et de sélection au pointeur (outils/gestes.ts) → commandes de l'éditeur au clavier (raccourcis.ts). */

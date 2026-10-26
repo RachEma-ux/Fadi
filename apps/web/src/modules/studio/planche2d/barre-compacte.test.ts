@@ -14,7 +14,9 @@ const disposer = (largeur: number, active: IdFamille = "selection", m = mesures(
 
 describe("Barre compacte — familles", () => {
   it("chaque famille garde ses outils les plus utilisés en tête ; Courbes et Annotation sortent de Dessin", () => {
-    expect(ELEMENTS_FAMILLE.get("dessin")?.map((e) => e.id)).toEqual(["studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle"]);
+    // Lot W3-A (X.1-01) : les blocs définis par l'utilisateur (définir, insérer, éclater) après les tracés de base.
+    expect(ELEMENTS_FAMILLE.get("dessin")?.map((e) => e.id)).toEqual(["studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle", "studio.bloc.definir", "studio.bloc.inserer", "studio.bloc.eclater"]);
+    expect(familleDeOutil("studio.contrainte.poser")).toBe("modification");
     expect(ELEMENTS_FAMILLE.get("courbes")?.map((e) => e.id)).toEqual(["studio.dessin.arc", "studio.dessin.polyligne", "terminer-polyligne", "fermer-polyligne"]);
     // Graphismes (EX-055) : créer et retirer, après les annotations.
     expect(ELEMENTS_FAMILLE.get("annotation")?.map((e) => e.id)).toEqual(["studio.dessin.cote", "studio.dessin.cote-angulaire", "studio.dessin.texte", "studio.graphisme.creer", "studio.graphisme.retirer"]);

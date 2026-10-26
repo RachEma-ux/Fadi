@@ -26,11 +26,15 @@ import { studioDimensionValue } from "../objets/cote.js";
 import { measureStudioDimension } from "../document-2d.js";
 import { controlerExigences } from "../facade-exigences.js";
 import { studioAireContour } from "../graphismes/graphismes.js";
+import { studioFormesInsertion } from "../blocs/blocs.js";
+import { studioEvaluerContrainte } from "../contraintes/contraintes.js";
+import { studioSignedArea } from "../courbes.js";
 import { lireDxfStudio } from "../import-dxf.js";
 import { studioSha256 } from "../empreinte-sha256.js";
 import { studioMesh3d } from "../mesh-3d.js";
 import { exportStudioIfc } from "../ifc.js";
 import { studioMembresNiveau } from "../vue-niveau.js";
+import { studioAncetreCommun, studioFusionnerVariantes } from "../fusion-variantes.js";
 import { createHash } from "node:crypto";
 
 const studioSha256Octets = (o: Buffer) => createHash("sha256").update(o).digest("hex");
@@ -79,7 +83,9 @@ function proche(mesure: number | null | undefined, attendu: number, quoi: string
 function comptes(corpus: CorpusStudio): Record<string, number> {
   const c: Record<string, number> = {};
   for (const d of corpus.documents) {
-    for (const e of [...d.objects, ...(d.dimensions ?? []), ...(d.annotations ?? []), ...(d.architecture ?? []), ...(d.solides ?? []), ...(d.exacts ?? []), ...(d.graphismes ?? []), ...(d.occurrences ?? [])]) c[e.type] = (c[e.type] ?? 0) + 1;
+    for (const e of [...d.objects, ...(d.dimensions ?? []), ...(d.annotations ?? []), ...(d.architecture ?? []), ...(d.solides ?? []), ...(d.exacts ?? []), ...(d.graphismes ?? []), ...(d.insertions ?? []), ...(d.occurrences ?? [])]) c[e.type] = (c[e.type] ?? 0) + 1;
+    // Contraintes : comptées ensemble (leur `type` est leur nature, contrôlée à part).
+    if (d.contraintes?.length) c.contrainte = (c.contrainte ?? 0) + d.contraintes.length;
   }
   return c;
 }
@@ -143,7 +149,26 @@ function mesures(corpus: CorpusStudio) {
     for (const e of d.exacts ?? []) { exacts.operations[e.operation] = (exacts.operations[e.operation] ?? 0) + 1; exacts.volume += e.resultat.volume; }
     for (const x of d.sources ?? []) { sources.nombre++; sources.objets += x.objets; }
   }
-  return { totaux, volumeNonEvalues, volumeSolides, cotes: { liees, libres, sommeMesures }, angles: { nombre: angles, sommeDegres }, murs, premier, graphismes, exacts, sources, batiment };
+  // Blocs (définitions, insertions, symétries, aire des carrés posés mesurée sur la géométrie dérivée) et contraintes
+  // (par type, satisfaites selon l'évaluation du modèle).
+  const blocs = { definitions: 0, insertions: 0, symetriques: 0, aireCarres: 0 };
+  const contraintes = { parType: {} as Record<string, number>, satisfaites: 0 };
+  for (const d of corpus.documents) {
+    blocs.definitions += d.blocs?.length ?? 0;
+    const defs = new Map((d.blocs ?? []).map((b) => [b.id, b]));
+    for (const i of d.insertions ?? []) {
+      blocs.insertions++;
+      if (i.symetrie) blocs.symetriques++;
+      const carre = studioFormesInsertion(defs.get(i.bloc)!, i)[0]!;
+      blocs.aireCarres += carre.type === "polyline" ? Math.abs(studioSignedArea(carre.points)) : carre.type === "rectangle" ? carre.width * carre.height : Number.NaN;
+    }
+    const formes = new Map(d.objects.map((o) => [o.id, o]));
+    for (const c of d.contraintes ?? []) {
+      contraintes.parType[c.type] = (contraintes.parType[c.type] ?? 0) + 1;
+      if (studioEvaluerContrainte(c, formes).statut === "satisfaite") contraintes.satisfaites++;
+    }
+  }
+  return { totaux, volumeNonEvalues, volumeSolides, cotes: { liees, libres, sommeMesures }, angles: { nombre: angles, sommeDegres }, murs, premier, graphismes, exacts, sources, batiment, blocs, contraintes };
 }
 
 function controlerOracle(corpus: CorpusStudio, o: OracleCorpus) {
@@ -186,6 +211,11 @@ function controlerOracle(corpus: CorpusStudio, o: OracleCorpus) {
     expect(m.batiment.membresParNiveau, "objets rattachés par niveau").toEqual(o.batiment.membresParNiveau);
     proche(m.batiment.volumeOccurrences, o.batiment.volumeOccurrences, "volume des occurrences (maillage de la définition placée)");
   } else expect([m.batiment.niveaux, m.batiment.occurrences]).toEqual([0, 0]);
+  if (o.blocs) {
+    expect([m.blocs.definitions, m.blocs.insertions, m.blocs.symetriques], "blocs : définitions, insertions, symétriques").toEqual([o.blocs.definitions, o.blocs.insertions, o.blocs.symetriques]);
+    proche(m.blocs.aireCarres, o.blocs.aireCarres, "aire des carrés posés par les insertions");
+  } else expect(m.blocs).toEqual({ definitions: 0, insertions: 0, symetriques: 0, aireCarres: 0 });
+  expect(m.contraintes, "contraintes par type, satisfaites").toEqual(o.contraintes ?? { parType: {}, satisfaites: 0 });
 }
 
 /** Volume d'un maillage fermé orienté (théorème de la divergence). */
@@ -309,6 +339,29 @@ describe("X.1-01 / X.1-02 / X.1-05 — éléments ajoutés au corpus depuis les 
     const svg = referenceVisuelle(c).svg[0]!;
     expect(svg).toMatch(/opacity="0.5"/);
     expect(svg).toMatch(/ C /);
+  });
+
+  it("X.1-01 S1 : blocs définis par l'utilisateur (définition réutilisable, insertions transformées) et contraintes géométriques satisfaites dans chaque motif ; plus aucun élément déclaré absent", () => {
+    const c = genererCorpus("S1", 100), d = c.documents[0]!;
+    // 100 primitives = 5 motifs entiers (95) et un motif entamé de 5 primitives : 5 insertions, 10 contraintes.
+    expect(d.blocs?.map((b) => [b.id, b.elements.map((e) => e.type)])).toEqual([["s1-bloc", ["polyline", "line", "circle"]]]);
+    expect(d.insertions).toHaveLength(Math.floor(100 / 19));
+    // Insertions transformées : rotations par quarts de tour, échelles 0,5 et 1, symétrie une fois sur trois.
+    expect(new Set(d.insertions!.map((i) => i.echelle))).toEqual(new Set([0.5, 1]));
+    expect(d.insertions!.some((i) => i.symetrie) && d.insertions!.some((i) => !i.symetrie)).toBe(true);
+    expect(new Set(d.insertions!.map((i) => i.rotation)).size).toBe(4);
+    expect(d.contraintes?.map((x) => x.type).sort()).toEqual([...Array(5).fill("distance"), ...Array(5).fill("horizontal")]);
+    expect(c.couverture.absents).toEqual([]);
+    expect(c.couverture.representes.join(" ")).toMatch(/blocs définis par l'utilisateur/);
+    expect(c.couverture.representes.join(" ")).toMatch(/contraintes géométriques/);
+    // Fonctions présentes, jamais simulées : une redéfinition du bloc change toutes les insertions, une ligne tournée
+    // fait passer sa contrainte « à résoudre ».
+    const r = applyStudioCommands(d, [{ toolId: "studio.bloc.definir", params: { id: "s1-bloc", nom: "Repère redéfini (synthétique)", base: { x: 0, y: 0 }, elements: [{ id: "point", type: "circle", center: { x: 0, y: 0 }, radius: 0.1 }], redefinir: true } }]);
+    for (const i of r.insertions!) expect(studioFormesInsertion(r.blocs![0]!, i).map((o) => o.type)).toEqual(["circle"]);
+    const t = applyStudioCommands(d, [{ toolId: "studio.dessin.echelle", params: { ids: ["s1-0-ligne"], center: { x: 0, y: 0 }, factor: 2, includeVolumes: false } }]);
+    expect(t.contraintes?.filter((x) => x.aResoudre).map((x) => x.id)).toEqual(["s1-0-c-distance"]);
+    const svg = referenceVisuelle(c).svg[0]!;
+    expect(svg.match(/data-insertion="/g)).toHaveLength(5);
   });
 
   it("X.1-02 S2 : croisements de murs en cours de portée et référence externe déclarée — fond DXF des axes relu, empreinte du fichier recalculée", () => {
@@ -485,6 +538,35 @@ describe("S6 — étude à variantes et révisions (plan rejoué par le modèle)
     for (const [cle, n] of Object.entries(o.revisionsAjoutees)) expect(plan.etapes.filter((e) => e.variante === cle)).toHaveLength(n);
     expect(plan.couverture.representes.length).toBeGreaterThan(0);
     for (const x of plan.couverture.absents) expect(x.raison.length).toBeGreaterThan(0);
+  });
+
+  it("F1 (lot W3-D) : B fusionnée dans C depuis l'ancêtre A1 — conflit de collision attendu, tranché explicitement ; tête fusionnée = oracle", () => {
+    const { plan, tetes, apres } = rejouerS6();
+    const o = oracleS6(), f = plan.fusions[0]!, attendu = o.fusions.F1;
+    // Graphe des révisions du plan : chaque étape suit la précédente de sa variante, une dérivation part de son étape source.
+    const noeuds = plan.etapes.map((e, i) => {
+      const precedente = plan.etapes.slice(0, i).reverse().find((x) => x.variante === e.variante);
+      const v = plan.variantes.find((x) => x.cle === e.variante)!;
+      return { id: e.cle, parents: precedente ? [precedente.cle] : v.depuis ? [v.depuis.apresEtape] : [] };
+    });
+    const tete = (cle: string) => plan.etapes.filter((e) => e.variante === cle).at(-1)!.cle;
+    expect(studioAncetreCommun(noeuds, tete(f.source), tete(f.cible))).toEqual({ ancetre: attendu.ancetre });
+    const base = apres.get(attendu.ancetre)!, source = tetes.get(f.source)!, cible = tetes.get(f.cible)!;
+    const sans = studioFusionnerVariantes(base, source, cible);
+    expect(sans.conflits.map((c) => c.id)).toEqual(attendu.conflits);
+    expect(sans.nonResolus).toEqual(attendu.conflits);
+    const r = studioFusionnerVariantes(base, source, cible, f.resolutions);
+    expect([r.valide, r.nonResolus, r.aFusionner]).toEqual([true, [], true]);
+    const c = comptes({ documents: [r.document!] } as CorpusStudio);
+    expect({ wall: c.wall, opening: c.opening, line: c.line, dimension: c.dimension, text: c.text }).toEqual({ wall: attendu.tete.wall, opening: attendu.tete.opening, line: attendu.tete.line, dimension: attendu.tete.dimension, text: attendu.tete.text });
+    const m = mesures({ documents: [r.document!] } as CorpusStudio).murs;
+    for (const k of ["brut", "deduit", "net"] as const) proche(m[k], attendu.tete.murs[k], `fusion F1 : murs ${k}`);
+    const gardee = r.document!.objects.find((x) => x.id === attendu.ligneGardee.id);
+    expect(gardee?.type === "line" ? gardee.start.y : null).toBe(attendu.ligneGardee.y);
+    expect(r.appliques.filter((a) => a.etat === "supprime").map((a) => a.cle).filter((k) => k.startsWith("architecture:"))).toEqual(attendu.supprimes);
+    // Le texte déplacé dans A3 (héritage de C) et la fenêtre de A2 restent : la fusion ne défait aucun changement de la cible.
+    expect((r.document!.architecture ?? []).some((x) => x.id === "s6-0-fenetre-ajoutee")).toBe(true);
+    expect(JSON.stringify(r.document!.annotations?.find((x) => x.id === "s6-0-piece"))).toBe(JSON.stringify(cible.annotations?.find((x) => x.id === "s6-0-piece")));
   });
 
   it("fixture de la recette API (fixtures/s6-plan.json) identique au plan et à l'oracle générés", () => {
