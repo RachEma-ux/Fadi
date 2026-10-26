@@ -10,7 +10,7 @@
 .geodata-page input,.geodata-page select,.geodata-page textarea{border:1px solid #b9cbd0;border-radius:6px;padding:7px 8px;font:inherit;min-width:0;background:#fff;color:inherit}
 .geodata-page input[type="color"]{padding:2px;height:34px;width:56px}
 .geodata-page :focus-visible{outline:3px solid #c77b35;outline-offset:2px}
-.geodata-page .gd-barre{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;background:#fff;border-bottom:1px solid var(--gd-ligne);position:relative;z-index:5}
+.geodata-page .gd-barre{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;background:#fff;border-bottom:1px solid var(--gd-ligne);position:relative;z-index:8}
 .geodata-page .gd-recherche{display:flex;gap:6px;flex:1 1 320px;position:relative;min-width:0}
 .geodata-page .gd-recherche input{flex:1;min-width:0}
 .geodata-page .gd-resultats{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid var(--gd-ligne);border-radius:8px;box-shadow:0 8px 24px rgba(23,59,67,.15);padding:8px;max-height:60vh;overflow:auto;z-index:20}
@@ -128,3 +128,12 @@
 .geodata-page .gd-dimensions .gd-champ{flex:1 1 120px;min-width:0}
 .geodata-page .gd-theme{border-bottom:1px solid #eef3f3;padding:4px 0}
 .geodata-page .gd-theme>summary{cursor:pointer;font-weight:600;padding:4px 0}
+/* Navigation par niveaux (lot B) : fil posé sur la carte, à droite du bouton « Données ». */
+.geodata-page .gd-niveaux{position:absolute;left:132px;top:10px;z-index:5;display:flex;align-items:center;gap:6px;max-width:calc(100% - 196px);background:#fff;border-radius:999px;padding:4px 6px 4px 12px;box-shadow:0 2px 10px rgba(23,59,67,.18);font-size:.9rem}
+.geodata-page .gd-niveaux ol{display:flex;flex-wrap:wrap;align-items:center;gap:2px 4px;margin:0;padding:0;list-style:none;min-width:0}
+.geodata-page .gd-niveaux li{display:inline-flex;align-items:center;gap:4px;min-width:0}
+.geodata-page .gd-niveaux li button{border:0;background:none;padding:2px 4px;text-decoration:underline;cursor:pointer;color:inherit;font:inherit}
+.geodata-page .gd-niveaux [aria-current]{font-weight:600;padding:2px 4px}
+.geodata-page .gd-niveaux-sep{opacity:.6}
+.geodata-page .gd-niveaux-retour{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:4px 10px}
+.geodata-page .gd-descendre{display:inline-flex;align-items:center;gap:6px;margin:6px 0;font-weight:600}

@@ -25,6 +25,8 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 - Lot A2 (D-GD-17 point 5) : 648 indicateurs HCP par niveau (thème, famille, modalité, milieu, sexe) en tableau CSV,
   arrondissements (41/41 contours OSM niveau 10) ; PR en cours sur `ccr-e71fe633-hjxnjf`. Ensuite, un lot à la fois :
   B, E, C, D, F, G (TASKS).
+- Navigation par niveaux (lot B, D-GD-19) : fil « Maroc › … », Retour (Alt+↑), « Voir ses … » dans la fiche (Alt+↓).
+  Prochain lot : E (fiche territoriale par thème, ventilations, impression).
 - Priorité HCP (D-GD-18) : couche `hcp-rgph2024-villes` (258/338 villes avec les effectifs du HCP), extraits OSM des
   communes / villes / arrondissements sans fiche importable (`donnees/osm-extraits.json`), recherche HCP d'abord.
 - Contours colorés et hiérarchie des limites administratives (D-GD-16).

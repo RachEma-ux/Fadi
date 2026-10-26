@@ -68,6 +68,11 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   population OSM retirée pour ces villes (test), gardée pour 8 villes sans unité HCP ; extraits OSM des communes, villes
   et arrondissements régénérés à l'identique (mêmes empreintes) sans fiche importable ; recherche HCP d'abord. En local :
   import et publication, Casablanca 3 215 935, Ouezzane 57 737 (HCP) au lieu de 58 684 (OSM).
+- Navigation par niveaux (lot B, D-GD-19) : `niveaux.ts` (7 tests : parenté par codes HCP, filtres d'un chemin,
+  intersection, chemin coupé), `panneaux/FilNiveaux.tsx`, bouton « Voir ses … » de la fiche, raccourcis Alt+↑ / Alt+↓
+  sur toute la page ; jeu synthétique `synthetique-regions` / `synthetique-provinces` ; recette `geodata.mjs` conforme
+  en local (7 vérifications de plus) ; vérifié sur les données HCP réelles en local : Tanger-Tétouan-Al Hoceïma →
+  Préfecture de Tanger-Assilah → ses communes, Retour, Maroc.
 - Limites administratives (D-GD-16) : `limites.ts` (3 tests), contours colorés et hiérarchisés, vérifiés visuellement
   en local sur ADM1, ADM2 et communes OSM (opacité 0 %, une couleur par entité).
 - Fournisseurs de fonds (D-GD-15) : modèle pur `fournisseurs.ts` (5 tests), section Paramètres `FournisseursCarte.tsx`,

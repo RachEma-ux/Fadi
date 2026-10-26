@@ -122,6 +122,19 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         immuables : le gestionnaire de données les retire du catalogue s'il le souhaite.
      4. **Recherche** : les unités du HCP sont proposées en premier.
 
+   - D-GD-19 (26 octobre 2026, lot B du plan HCP, sous la délégation GeoData) — **navigation par niveaux** :
+     1. Fil posé sur la carte, à droite du bouton « Données » : « Maroc › Région … › Province … » ; chaque étape ramène à
+        son niveau ; « Retour » (icône, **Alt+↑**) remonte d'un niveau et recadre la carte.
+     2. On descend depuis la fiche d'une entité : « Voir ses provinces et préfectures / communes / arrondissements »
+        (icône, **Alt+↓**). La couche du niveau inférieur est prise dans la carte, sinon au catalogue chez le même
+        producteur des valeurs (ajoutée alors à la carte).
+     3. Parenté lue des **codes du HCP** seulement (`packages/geodata-model/src/niveaux.ts`) : province = code sans ses
+        3 derniers chiffres ; commune = plus long préfixe de province ; arrondissement = commune de 7 chiffres aux
+        6 mêmes premiers. Jamais par la géométrie ni par le nom ; un contour non rattaché ou un code non HCP n'est jamais
+        rangé sous une entité ; un niveau absent de la carte interrompt la descente (aucune parenté devinée).
+     4. Affichage : l'entité seule à son niveau, ses ancêtres au-dessus, ses descendants en dessous ; ce filtre de
+        navigation s'ajoute au filtre de la table (intersection) et n'est pas enregistré dans la carte.
+
 ## Conséquences
 
 - `docs/architecture.md` et `module-registry.ts` déclarent GeoData une fois le code livré.

@@ -75,6 +75,11 @@ await inscrire(page, gestionnaire);
 for (const role of ["gestionnaire-donnees", "responsable-publication"]) npmApi("geodata:role", ["--email", gestionnaire, "--role", role]);
 const sortieImport = npmApi("geodata:import-reference", ["--fiche", "apps/api/test-corpus/geodata/synthetique-unites.fiche.json", "--fichier", "apps/api/test-corpus/geodata/synthetique-unites.geojson", "--preparateur", gestionnaire, "--publier-par", gestionnaire].map((a) => (a.startsWith("apps/") ? join(RACINE, a) : a)));
 check("chaîne administrative : jeu synthétique préparé puis publié (ou déjà présent, même empreinte)", /Version (\S+ )?publiée|Version déjà présente/.test(sortieImport), sortieImport.split("\n").filter((l) => /Version/.test(l)).join(" | "));
+// Navigation par niveaux (lot B) : deux régions et trois provinces synthétiques, codes au format du HCP.
+for (const n of ["regions", "provinces"]) {
+  const sortie = npmApi("geodata:import-reference", ["--fiche", join(RACINE, `apps/api/test-corpus/geodata/synthetique-${n}.fiche.json`), "--fichier", join(RACINE, `apps/api/test-corpus/geodata/synthetique-${n}.geojson`), "--preparateur", gestionnaire, "--publier-par", gestionnaire]);
+  check(`chaîne administrative : ${n === "regions" ? "régions" : "provinces"} synthétiques publiées`, /Version (\S+ )?publiée|Version déjà présente/.test(sortie));
+}
 const sortieRaster = npmApi("geodata:import-reference", ["--fiche", join(RACINE, "apps/api/test-corpus/geodata/synthetique-raster.fiche.json"), "--preparateur", gestionnaire, "--publier-par", gestionnaire]);
 check("chaîne administrative : grille raster synthétique (GeoTIFF) préparée puis publiée", /Version (\S+ )?publiée|Version déjà présente/.test(sortieRaster), sortieRaster.split("\n").filter((l) => /Version|raster/.test(l)).join(" | "));
 await page.context().clearCookies();
@@ -319,6 +324,30 @@ const horsRaster = await (await page.request.get(`${BASE}/geodata/api/raster/${i
 check("raster : valeur au point exacte ; cellule sans donnée « non évaluée » (null, jamais 0)", valeurRaster.valeur === 225 && horsRaster.valeur === null, `${valeurRaster.valeur} / ${horsRaster.valeur}`);
 await onglet(page, "couches");
 await page.locator(`[data-gd-couche-active='${idRaster}']`).getByRole("button", { name: "Retirer" }).click();
+
+// --- Navigation par niveaux (lot B) : descendre depuis la fiche, fil « Maroc › … », couche du niveau inférieur ajoutée, Alt+↑ ---
+await onglet(page, "catalogue");
+await page.locator("[data-gd-type='vecteurs']").click();
+const carteRegions = page.locator("[data-gd-couche-catalogue]").filter({ hasText: "Régions synthétiques (test)" });
+if (!(await carteRegions.count())) await page.locator("[data-gd-entete-categorie='test']").click();
+await carteRegions.locator("[data-gd-ajouter]").click();
+await page.locator("[data-gd-niveaux='0']").waitFor({ timeout: 20_000 });
+check("niveaux : fil « Maroc » affiché dès qu'une couche de limites à codes HCP est sur la carte, Retour inactif", (await page.locator("[data-gd-retour]").isDisabled()) === true);
+await page.locator("[data-gd-recherche]").fill("Région synthétique Nord");
+await page.locator("[data-gd-recherche]").press("Enter");
+await page.locator("[data-gd-resultat='1']").click();
+const descendreBouton = page.locator("[data-gd-fiche='1'] [data-gd-descendre]");
+await descendreBouton.waitFor();
+check("niveaux : la fiche d'une région propose « Voir ses provinces et préfectures » (Alt+↓)", ((await descendreBouton.textContent()) ?? "").includes("Voir ses provinces et préfectures") && (await descendreBouton.getAttribute("aria-keyshortcuts")) === "Alt+ArrowDown");
+await descendreBouton.click();
+await page.locator("[data-gd-niveaux='1']").waitFor();
+check("niveaux : fil « Maroc › Région synthétique Nord »", ((await page.locator("[data-gd-niveaux]").textContent()) ?? "").includes("Région synthétique Nord"));
+await onglet(page, "couches");
+check("niveaux : la couche des provinces du même producteur est ajoutée à la carte", (await page.locator("[data-gd-couche-active]").filter({ hasText: "Provinces synthétiques (test)" }).count()) === 1);
+await page.locator("body").press("Alt+ArrowUp");
+await page.locator("[data-gd-niveaux='0']").waitFor();
+check("niveaux : Alt+↑ remonte au Maroc", (await page.locator("[data-gd-retour]").isDisabled()) === true);
+await page.screenshot({ path: join(OUT, "07-niveaux.png") });
 
 // --- Menu ☰ → Données : catégories et couches (D-GD-14) ---
 await volet(page, "donnees");
