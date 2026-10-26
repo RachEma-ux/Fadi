@@ -106,7 +106,10 @@ describe("Matrice d'échanges : donnée versionnée et cohérente", () => {
     expect(Math.max(...Object.keys(EMPREINTES).map(Number)), "la révision courante est la dernière épinglée").toBe(STUDIO_MATRICE_ECHANGES.revision);
   });
 
-  it("E.6-04 / E.6-05 : DWG, DGN, STEP, OBJ, STL inscrits dans les deux sens, glTF en export, jamais livrés ni conformes", () => {
+  // Libellé cité tel quel par le registre (E.6-05) : depuis le lot PUB, BCF est livré (contrat 2.1 minimal, test
+  // suivant) ; ce contrôle garde les autres formats reportés. Citation du registre à actualiser par l'orchestrateur.
+  it("E.6-04 / E.6-05 : DWG, DGN, BCF, STEP, OBJ, STL inscrits dans les deux sens, glTF en export, jamais livrés ni conformes", () => {
+    for (const sens of ["import", "export"]) expect(entree(`bcf-${sens}`).statut, "BCF : qualifié séparément (lot PUB)").toBe("livre");
     for (const id of ["dwg", "dgn", "step", "obj", "stl"]) for (const sens of ["import", "export"]) {
       const e = STUDIO_MATRICE_ECHANGES.entrees.find((x) => x.id === `${id}-${sens}`);
       expect(e?.statut, `${id}-${sens}`).toBe("non-livre");

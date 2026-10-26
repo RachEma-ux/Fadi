@@ -183,6 +183,27 @@ try {
   await choisirMur(page);
   await page.locator('[data-studio-proprietes-bim="mur-1"] [data-studio-propriete="Indice d’affaiblissement"]').waitFor();
   check("propriété relue après rechargement", true);
+
+  // 6. TEST-027 / EX-065 (lot PUB) : la surface dessinée change (mur allongé), l'exigence reste identique (même version,
+  // même valeur) ; le nouveau contrôle calcule l'écart et l'affiche.
+  const avantModif = (await api("get", `${racine}/${studyId}/exigences`)).body.courante;
+  const teteModif = (await api("get", variante)).body;
+  const murInitial = teteModif.revision.document.architecture.find((x) => x.id === "mur-1");
+  const allonge = await api("post", `${variante}/commands`, {
+    contractVersion: "studio-commands/1", requestId: `recette-${randomUUID()}`, baseRevisionId: teteModif.variant.headRevisionId,
+    commands: [{ toolId: "studio.architecture.modifier", params: { ...murInitial, axis: [{ x: 0, y: 0 }, { x: 20, y: 0 }] } }],
+  });
+  check("TEST-027 : mur allongé par commande (nouvelle révision)", allonge.status === 200, String(allonge.status));
+  await page.reload();
+  await outils.waitFor();
+  await panneau.waitFor();
+  await panneau.locator("[data-studio-controler]").click();
+  await panneau.locator(`[data-studio-controles] li[data-studio-controle-revision="${allonge.body.revision.id}"]`).first().waitFor();
+  const apresModif = (await api("get", `${racine}/${studyId}/exigences`)).body.courante;
+  check("TEST-027 : exigence identique après la modification du dessin (même version, mêmes valeurs)", apresModif.version === avantModif.version && JSON.stringify(apresModif.exigences) === JSON.stringify(avantModif.exigences));
+  const recent = panneau.locator(`[data-studio-controles] li[data-studio-controle-revision="${allonge.body.revision.id}"]`).first();
+  const ecartVolume = recent.locator(`[data-studio-ecart="${idExigence}"]`);
+  check("TEST-027 : écart calculé et visible (mesure 11,6 m³ contre ≤ 10 m³, +1,6)", (await ecartVolume.getAttribute("data-statut")) === "non-satisfaite" && /11,6/.test(await ecartVolume.textContent()) && /\+1,6/.test(await ecartVolume.textContent()), await ecartVolume.textContent());
   check("aucune erreur de page", erreurs.length === 0, erreurs.join(" | "));
 } catch (e) {
   echecs += 1;
