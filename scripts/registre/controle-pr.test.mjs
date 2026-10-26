@@ -62,8 +62,12 @@ test('PR-02, PR-03, PR-04, PR-06, PR-09 — chaque champ du modèle est exigé e
 });
 
 test('PR-05 — branche courte du protocole dont l’Issue est liée ; preuves vérifiables', () => {
-  assert.match(ecarts({ branche: 'ccr-187fd2e6-08dk6e' }).join(), /PR-05 : branche « ccr-187fd2e6-08dk6e » hors du protocole/);
-  assert.match(ecarts({ branche: 'automation/studio-checklist-daily' }).join(), /hors du protocole/);
+  // Nommage conseillé (docs/continuity/README.md, décision P-13) : un autre nom est un avertissement, pas un écart.
+  const imposee = controlerPr({ ...ok, branche: 'ccr-187fd2e6-08dk6e' });
+  assert.deepEqual(imposee.ecarts, []);
+  assert.match(imposee.avertissements.join(), /PR-05 : branche « ccr-187fd2e6-08dk6e » hors du nommage conseillé/);
+  assert.match(controlerPr({ ...ok, branche: 'automation/studio-checklist-daily' }).avertissements.join(), /hors du nommage conseillé/);
+  assert.match(controlerPr({ ...ok, corps: CORPS.replace('Refs #401', 'Refs #156'), branche: 'ccr-x' }).ecarts.join(), /PR-01 : aucune Issue propre/);
   assert.match(ecarts({ branche: 'feat/402-autre' }).join(), /l’Issue #402 de la branche n’est pas liée/);
   const sansPreuve = CORPS.replace('node --test scripts/registre/controle-preuves.test.mjs\n', 'à voir\n').replace(/- \*\*Testé\*\* : .*\n/, '- **Testé** : vérifié à la main.\n');
   assert.match(ecarts({ corps: sansPreuve }).join(), /PR-05 : aucune preuve vérifiable/);

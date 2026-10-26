@@ -9,8 +9,10 @@
  *  - PR-02 : besoin, sources, identifiants d'exigences (au moins un identifiant du référentiel) et périmètre inclus / exclu.
  *  - PR-03 : composant, contrats, décisions et migrations.
  *  - PR-04 : scénarios positifs et négatifs, preuves attendues, retour arrière.
- *  - PR-05 : branche courte `feat|fix|chore|docs/<issue>-<sujet>` dont l'Issue est liée ; preuves fournies (commit, test,
- *            recette, commande ou exécution).
+ *  - PR-05 : branche courte ; le nommage `feat|fix|chore|docs/<issue>-<sujet>` est **conseillé** par le protocole
+ *            (`docs/continuity/README.md`) : un autre nom (branche imposée par l'environnement d'exécution, branche
+ *            historique) est signalé en avertissement, jamais renommé ni refusé (décision P-13) ; si le nom suit le modèle,
+ *            son Issue doit être liée ; preuves fournies (commit, test, recette, commande ou exécution).
  *  - PR-06 : codé, testé, déployé et accepté renseignés séparément ; « Testé » cite des tests ou recettes exécutés — une
  *            capture d'écran seule n'est jamais une preuve métier.
  *  - PR-09 : revalidation à la reprise — le HEAD de main revalidé (SHA) est contenu dans la branche et dans la base, et la
@@ -81,8 +83,9 @@ export function controlerPr({ corps, branche, auteur = '', fichiers = [], contie
   }
   const ids = champ(corps, 'Identifiants d’exigences');
   if (ids && !VIDE.test(ids) && !ID_EXIGENCE.test(ids)) ecarts.push('PR-02 : « Identifiants d’exigences » ne cite aucun identifiant du référentiel (EX-nnn, INV-nnn, TEST-nnn, X.5-02…)');
+  const avertissements = [];
   const b = BRANCHE.exec(branche);
-  if (!b) ecarts.push(`PR-05 : branche « ${branche} » hors du protocole (feat|fix|chore|docs/<issue>-<sujet>, docs/continuity/README.md)`);
+  if (!b) avertissements.push(`PR-05 : branche « ${branche} » hors du nommage conseillé (feat|fix|chore|docs/<issue>-<sujet>, docs/continuity/README.md) ; l’Issue propre liée (PR-01) reste exigée`);
   else if (!issues.includes(Number(b[1]))) ecarts.push(`PR-05 : l’Issue #${b[1]} de la branche n’est pas liée dans la PR`);
   const preuves = [champ(corps, 'Preuves attendues'), champ(corps, 'Testé')].filter(Boolean).join('\n');
   if (preuves && !PREUVE.test(preuves)) ecarts.push('PR-05 : aucune preuve vérifiable (commit, test, recette, commande ou exécution de CI) dans « Preuves attendues » / « Testé »');
@@ -99,7 +102,7 @@ export function controlerPr({ corps, branche, auteur = '', fichiers = [], contie
     else if (!contient(sha)) ecarts.push(`PR-09 : le HEAD revalidé ${sha} n’est pas contenu dans la branche et dans la base (revalider après la reprise)`);
     if (!/\/actions\/runs\/\d+|\bCI\b/i.test(reprise)) ecarts.push('PR-09 : « Revalidation à la reprise » ne cite pas la CI revalidée');
   }
-  return { applicable: true, ecarts, issues: propres };
+  return { applicable: true, ecarts, avertissements, issues: propres };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
@@ -116,6 +119,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     contient: (sha) => ancetre(sha, tete) && ancetre(sha, base),
   });
   if (!r.applicable) { console.log(`Contrôle de PR Studio non applicable : ${r.raison}.`); process.exit(0); }
+  for (const a of r.avertissements) console.log(`::warning::${a}`);
   if (r.ecarts.length) { for (const e of r.ecarts) console.error(e); console.error(`PR non conforme au protocole Studio (${r.ecarts.length} écart(s)).`); process.exit(1); }
   console.log(`PR conforme au protocole Studio (PR-01 à PR-06, PR-09) ; Issues propres : ${r.issues.map((n) => `#${n}`).join(', ')}.`);
   // Numéros des Issues propres, relus par le workflow qui vérifie leur existence (API GitHub).

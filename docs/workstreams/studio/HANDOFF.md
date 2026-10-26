@@ -1,5 +1,18 @@
 # Reprise — Studio
 
+## Achèvement — lot REG : règles de preuve et protocole de PR — 25 octobre 2026
+
+Branche `ccr-187fd2e6-08dk6e`, au-dessus du lot API (PR #326).
+
+Ce qui a été fait :
+- **Règles de preuve en CI** : un « Vérifié » exige désormais une preuve étiquetée, datée, versionnée et, pour un test, l'exécution de CI qui l'a jouée ; 3 416 preuves existantes complétées par des données réelles ; nouvel état « Implémenté ».
+- **Suivi et sécurité** : contrôles du suivi (141 chaînes complètes), documents d'état générés, analyse de secrets (0 constat), protocole de PR contrôlé (décision P-13 : nommage de branche conseillé, Issue propre exigée).
+- **Lot REG** : 24 obligations inscrites « Implémenté » en attendant l'exécution CI de la PR, 8 restent partielles. Détail : [ACHEVEMENT-STUDIO](recettes/ACHEVEMENT-STUDIO.md).
+
+Compteurs recalculés du registre : **0 À définir / 56 À faire / 104 En cours / 24 Implémenté / 11 Bloqué / 376 Vérifié / 59 Accepté**. **P630=435/630**.
+
+Prochaine action : retrouver l'exécution CI verte de la PR, passer les 24 obligations « Vérifié », puis intégrer le lot suivant.
+
 ## Achèvement — lot API : contrats versionnés — 25 octobre 2026
 
 Branche `ccr-187fd2e6-08dk6e`, base `main@227fcd1` (P-12, PR #325).
@@ -9,7 +22,7 @@ Ce qui a été fait :
 - **Contrôle en CI** : toute nouvelle route sans contrat fait échouer les tests ; la recette `studio-contrats-api` est branchée en CI et en préproduction.
 - **Réserve G1 levée** : la réserve « 48 routes non versionnées » de P-11 l'est désormais (revue G1-03 : 79/79 routes). Détail : [ACHEVEMENT-STUDIO](recettes/ACHEVEMENT-STUDIO.md).
 
-Compteurs recalculés du registre : **0 À définir / 57 À faire / 127 En cours / 11 Bloqué / 376 Vérifié / 59 Accepté**. **P630=435/630**.
+Compteurs recalculés du registre : à cette date 376 Vérifié, 59 Accepté, 11 Bloqué, 0 Implémenté, 127 En cours, 57 À faire, 0 À définir ; 435 obligations sur 630 closes.
 
 Prochaine action : intégrer les autres lots d'achèvement un par un.
 

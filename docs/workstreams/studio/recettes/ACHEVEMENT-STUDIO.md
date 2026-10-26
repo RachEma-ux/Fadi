@@ -68,3 +68,37 @@ contrat versionné : la réserve « 48 routes non versionnées » de P-11 est le
 - Un identifiant par route, pour l'entrée et la réponse.
 - La version passe par un en-tête, sur le modèle de `X-Studio-Revision`.
 - Règle d'évolution : un champ facultatif ajouté garde la version ; retirer, renommer ou changer un type impose `/2`.
+
+## Lot REG — outillage du registre et protocole de PR
+
+**Ce qui est livré**
+- Règles de preuve `docs/ai-team/controle_preuves.py` (X.5-02, G2-04, PR-07, PR-08, BLOC-07), en CI (`continuity.yml`) :
+  un « Vérifié » ou « Accepté » exige une preuve étiquetée (`etiquette`), datée, versionnée (`commit`) et, pour un
+  scénario exécuté, l'exécution GitHub Actions où l'étape qui joue le fichier a réussi.
+- État « Implémenté » (code produit, preuve de succès pas encore suffisante), jamais compté dans P630.
+- Outil `scripts/registre/completer_preuves.py` : 3 416 preuves complétées par des données réelles (exécutions de CI et
+  commits retrouvés), aucune inventée ; REC-C-03 et PIL-01 passent en tests « Non applicable » (aucun test cité).
+- Contrôles du suivi `scripts/registre/controles-suivi.mjs` (ARC-08, SUIVI-01/02/07/08/09, X.3-02 : 141 chaînes
+  complètes) et documents d'état générés `docs/ai-team/reports/etat-studio/` (X.3-03, X.4-03, X.5-01).
+- Analyse de secrets `scripts/securite/analyse-secrets.mjs` et workflow `securite-secrets.yml` (SUIVI-10).
+- Protocole de PR `pr-protocole.yml` et `scripts/registre/controle-pr.mjs` (PR-01 à PR-06, PR-09), section
+  « Unité de travail » du modèle de PR.
+- POC G2 joués sur les corpus S1–S7 (G2-03, rapport `etat-studio/POC-CORPUS.md`) ; licence du corpus établie
+  (`packages/atelier-model/src/studio/corpus/LICENCE.md`, X.1-03).
+
+**Restent ouverts (verdict partiel)** : X.1-01/02/04/05/06/07 (éléments absents du corpus qui dépendent de fonctions du
+modèle), X.1-08 (captures raster / 3D de référence sur banc autorisé), SUIVI-01 (branche orpheline
+`automation/studio-checklist-daily` à supprimer par la première exécution du workflow corrigé ou par un détenteur du
+droit de push ; le réglage « Allow GitHub Actions to create pull requests » est un acte d'administration).
+
+**Décision P-13 (déléguée, réversible)** — nommage des branches de PR. Le protocole
+(`docs/continuity/README.md`) dit « Nommage **conseillé** : `feat|fix|chore|docs/<issue>-<sujet>` » et « ne pas renommer
+une branche historique ». Le contrôle PR-05 le traite donc en avertissement, jamais en refus : une branche imposée par
+l'environnement d'exécution (session de travail) ou historique est signalée ; l'Issue propre liée (PR-01) reste exigée
+dans tous les cas, et une branche qui suit le modèle doit lier son Issue. Conséquence : le contrôle reste bloquant sur le
+fond (Issue, champs, preuves, revalidation) sans contredire le protocole. Réversible : passer l'avertissement en écart
+dans `controlerPr`.
+
+**Démarche de preuve à deux temps** : les obligations du lot sont d'abord inscrites « Implémenté » avec des preuves
+« test prescrit » ; elles ne passent « Vérifié » qu'une fois l'exécution CI verte de la PR retrouvée par
+`completer_preuves.py --reference HEAD --branche <branche>`.

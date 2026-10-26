@@ -2,7 +2,7 @@
 
 > Document **généré** par `node scripts/registre/etat-studio.mjs --ecrire` depuis le registre ; la CI (workflow
 > « Continuité de développement ») le recalcule à chaque commit et échoue s’il diffère : il est donc tenu au HEAD testé.
-> Registre lu : `docs/workstreams/studio/task-register.json`, SHA-256 `05e6725cda8085853030e73ef58fdf27a62d121613536152ea66f52fc71b92c7`.
+> Registre lu : `docs/workstreams/studio/task-register.json`, SHA-256 `4b86d9a09c426f545bc5e1c0ab0d257c4bbb19390c79927ffe6ad12a80e993ca`.
 
 **Une CI verte n’est pas une couverture exhaustive** (X.4-03) : elle prouve seulement que les contrôles listés en partie 1
 ont réussi aux exécutions citées. Les scénarios de la partie 2 ne sont pas couverts, quel que soit l’état de la CI.
@@ -14,11 +14,12 @@ ont réussi aux exécutions citées. Les scénarios de la partie 2 ne sont pas c
 | Accepté / Non applicable | 2 |
 | Accepté / Non exécuté | 57 |
 | Bloqué / Non exécuté | 11 |
-| En cours / Non exécuté | 131 |
+| En cours / Non exécuté | 102 |
 | En cours / Partiel | 2 |
-| Vérifié / Exécuté | 274 |
-| Vérifié / Non applicable | 92 |
-| À faire / Non exécuté | 61 |
+| Implémenté / Non exécuté | 24 |
+| Vérifié / Exécuté | 283 |
+| Vérifié / Non applicable | 93 |
+| À faire / Non exécuté | 56 |
 
 ## 1. Contrôles effectivement exécutés
 
@@ -39,9 +40,9 @@ la date et l’environnement de l’étape qui a réussi.
 | `apps/api/src/routes/studio-observations-rapprochement.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 3 | 1 | 2026-10-25 20:25 | 2026-10-25 20:25 |
 | `apps/api/src/routes/studio-permissions.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 3 | 2 | 2 | 2026-10-19 14:33 | 2026-10-19 20:40 |
 | `apps/api/src/routes/studio-profils.preuves-b.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 1 | 1 | 1 | 2026-10-25 21:58 | 2026-10-25 21:58 |
-| `apps/api/src/routes/studio-taches-projets.preuves-bloc02.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 4 | 2 | 1 | 2026-10-25 22:48 | 2026-10-25 22:48 |
+| `apps/api/src/routes/studio-taches-projets.preuves-bloc02.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 4 | 3 | 1 | 2026-10-25 22:48 | 2026-10-25 22:48 |
 | `apps/api/src/routes/studio.preuves-e.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 7 | 3 | 1 | 2026-10-25 21:58 | 2026-10-25 21:58 |
-| `apps/api/src/testing/revue-g1.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 3 | 1 | 1 | 2026-10-25 22:48 | 2026-10-25 22:48 |
+| `apps/api/src/testing/revue-g1.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 3 | 3 | 1 | 2026-10-25 22:48 | 2026-10-25 22:48 |
 | `apps/api/src/testing/studio-comptes.preuves-a.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 1 | 1 | 2026-10-25 21:58 | 2026-10-25 21:58 |
 | `apps/api/src/testing/studio-contrat-commandes.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 14 | 12 | 2 | 2026-10-19 12:39 | 2026-10-25 21:58 |
 | `apps/api/src/testing/studio-ecritures-architecture.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 1 | 1 | 2026-10-19 12:39 | 2026-10-19 12:39 |
@@ -55,27 +56,27 @@ la date et l’environnement de l’étape qui a réussi.
 | `apps/web/e2e/studio-conflits.mjs` | Recette du contrat de commandes Studio — deux comptes, aperçu annulé, conflit signalé et … | 14 | 16 | 3 | 2026-10-19 12:43 | 2026-10-25 16:15 |
 | `apps/web/e2e/studio-corpus-s6.mjs` | Recette du corpus S6 — étude à variantes et révisions créée par l'API, têtes, dossier et … | 2 | 2 | 1 | 2026-10-19 14:40 | 2026-10-19 14:40 |
 | `apps/web/e2e/studio-domaines.mjs` | Recette des domaines Studio — quatre domaines de la référence, planches seulement dans De… | 14 | 10 | 4 | 2026-10-19 14:39 | 2026-10-25 22:05 |
-| `apps/web/e2e/studio-dossier.mjs` | Recette de la production documentaire Studio — TEST-001 (dessin 2D publié sans 3D), feuil… | 30 | 15 | 3 | 2026-10-19 12:44 | 2026-10-25 22:08 |
-| `apps/web/e2e/studio-echanges.mjs` | Recette de la matrice d'échanges Studio — commande Q, entrées livrées et reportées, couve… | 10 | 5 | 2 | 2026-10-19 14:41 | 2026-10-25 20:26 |
+| `apps/web/e2e/studio-dossier.mjs` | Recette de la production documentaire Studio — TEST-001 (dessin 2D publié sans 3D), feuil… | 30 | 16 | 3 | 2026-10-19 12:44 | 2026-10-25 22:08 |
+| `apps/web/e2e/studio-echanges.mjs` | Recette de la matrice d'échanges Studio — commande Q, entrées livrées et reportées, couve… | 10 | 6 | 2 | 2026-10-19 14:41 | 2026-10-25 20:26 |
 | `apps/web/e2e/studio-espace.mjs` | Recette de l'espace de travail Studio — accueil sans redirection, barre des domaines pers… | 3 | 3 | 1 | 2026-10-19 20:47 | 2026-10-19 20:47 |
-| `apps/web/e2e/studio-exact.mjs` | Recette du noyau exact Studio — booléens exacts chargés à la demande, aperçu provisoire, … | 7 | 5 | 1 | 2026-10-25 21:21 | 2026-10-25 21:21 |
-| `apps/web/e2e/studio-faces.mjs` | Recette de la géométrie 3D Studio — édition des faces, direction d'extrusion, profil sour… | 14 | 10 | 1 | 2026-10-25 19:58 | 2026-10-25 19:58 |
+| `apps/web/e2e/studio-exact.mjs` | Recette du noyau exact Studio — booléens exacts chargés à la demande, aperçu provisoire, … | 7 | 6 | 1 | 2026-10-25 21:21 | 2026-10-25 21:21 |
+| `apps/web/e2e/studio-faces.mjs` | Recette de la géométrie 3D Studio — édition des faces, direction d'extrusion, profil sour… | 14 | 11 | 1 | 2026-10-25 19:58 | 2026-10-25 19:58 |
 | `apps/web/e2e/studio-hors-ligne.mjs` | Recette Studio hors ligne — brouillon conservé au rechargement, rejeu des enveloppes (mêm… | 8 | 4 | 2 | 2026-10-19 06:50 | 2026-10-25 16:15 |
-| `apps/web/e2e/studio-memoire.mjs` | Recette de mémoire Studio — 80 fermetures / réouvertures de la vue 3D, compteurs GPU, éco… | 3 | 1 | 1 | 2026-10-25 16:16 | 2026-10-25 16:16 |
-| `apps/web/e2e/studio-navigation.mjs` | Recette de navigation Studio — enveloppe, étude, variantes, historique en lecture seule, … | 100 | 58 | 11 | 2026-10-18 23:02 | 2026-10-25 22:04 |
+| `apps/web/e2e/studio-memoire.mjs` | Recette de mémoire Studio — 80 fermetures / réouvertures de la vue 3D, compteurs GPU, éco… | 3 | 2 | 1 | 2026-10-25 16:16 | 2026-10-25 16:16 |
+| `apps/web/e2e/studio-navigation.mjs` | Recette de navigation Studio — enveloppe, étude, variantes, historique en lecture seule, … | 100 | 59 | 11 | 2026-10-18 23:02 | 2026-10-25 22:04 |
 | `apps/web/e2e/studio-observations.mjs` | Recette des observations Studio — identité réemployée entre domaines, contexte, tâches, d… | 27 | 9 | 4 | 2026-10-19 12:43 | 2026-10-25 22:05 |
 | `apps/web/e2e/studio-persistance.mjs` | Recette Studio par l'API — étude, commandes, rejeu, conflits, droits, historique (apps/we… | 24 | 14 | 4 | 2026-10-18 21:30 | 2026-10-25 22:03 |
-| `apps/web/e2e/studio-preuves-a.mjs` | Preuves Studio, groupe A — mise à jour du service worker pendant que des commandes attend… | 6 | 1 | 1 | 2026-10-25 21:55 | 2026-10-25 21:55 |
+| `apps/web/e2e/studio-preuves-a.mjs` | Preuves Studio, groupe A — mise à jour du service worker pendant que des commandes attend… | 6 | 2 | 1 | 2026-10-25 21:55 | 2026-10-25 21:55 |
 | `apps/web/e2e/studio-preuves-b.mjs` | Preuves Studio, groupe B — profils, catalogue et dépendances, service worker, accrochage … | 21 | 5 | 1 | 2026-10-25 21:54 | 2026-10-25 21:54 |
 | `apps/web/e2e/studio-preuves-c.mjs` | Preuves Studio, groupe C — approbation et diffusion hors connexion jamais affichées acqui… | 6 | 1 | 1 | 2026-10-25 21:54 | 2026-10-25 21:54 |
 | `apps/web/e2e/studio-preuves-d1.mjs` | Preuves Studio, groupe D1 — intégration Fadi / Studio, plein écran, parcours A, B, C, inv… | 72 | 10 | 1 | 2026-10-25 21:55 | 2026-10-25 21:55 |
 | `apps/web/e2e/studio-preuves-d2.mjs` | Preuves Studio, groupe D2 — publication diffusée figée par la base, actions hors connexio… | 13 | 2 | 1 | 2026-10-25 21:55 | 2026-10-25 21:55 |
 | `apps/web/e2e/studio-preuves-e.mjs` | Preuves Studio, groupe E — étapes intactes, publication figée, corps trop grand (413), ré… | 21 | 6 | 1 | 2026-10-25 21:55 | 2026-10-25 21:55 |
-| `apps/web/e2e/studio-profils.mjs` | Recette des profils et favoris d'outils Studio — API (aller-retour, refus, droits) et éto… | 14 | 8 | 2 | 2026-10-19 06:50 | 2026-10-25 16:15 |
+| `apps/web/e2e/studio-profils.mjs` | Recette des profils et favoris d'outils Studio — API (aller-retour, refus, droits) et éto… | 14 | 9 | 2 | 2026-10-19 06:50 | 2026-10-25 16:15 |
 | `apps/web/e2e/studio-publication.mjs` | Recette des publications Studio — cycle, approbation liée, approbation périmée 409, paque… | 24 | 13 | 4 | 2026-10-19 06:50 | 2026-10-25 22:05 |
 | `apps/web/e2e/studio-quantites.mjs` | Recette du métré Studio — ajustements enregistrés et versionnés, rechargement, « à revoir… | 4 | 1 | 1 | 2026-10-19 10:48 | 2026-10-19 10:48 |
 | `apps/web/e2e/studio-rendu.mjs` | Recette du rendu Studio — dégradation sûre de la vue 3D sous charge, types 3D avancés non… | 6 | 3 | 2 | 2026-10-25 20:25 | 2026-10-25 21:21 |
-| `apps/web/e2e/studio-restauration.mjs` | Recette de restauration Studio — archive JSON vers une base neuve, comparaison avant / ap… | 6 | 5 | 3 | 2026-10-19 08:14 | 2026-10-25 13:26 |
+| `apps/web/e2e/studio-restauration.mjs` | Recette de restauration Studio — archive JSON vers une base neuve, comparaison avant / ap… | 6 | 6 | 3 | 2026-10-19 08:14 | 2026-10-25 13:26 |
 | `apps/web/e2e/studio-visualisation.mjs` | Recette de visualisation Studio — rendu et export d'image sans commande ni effet sur le B… | 15 | 3 | 1 | 2026-10-25 21:54 | 2026-10-25 21:54 |
 | `apps/web/src/lib/inventaire-catalogues-outils.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 5 | 2 | 1 | 2026-10-19 12:39 | 2026-10-19 12:39 |
 | `apps/web/src/modules/atelier/nouveau/exact/moteur-exact.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 1 | 1 | 1 | 2026-10-18 22:20 | 2026-10-18 22:20 |
@@ -90,7 +91,7 @@ la date et l’environnement de l’étape qui a réussi.
 | `apps/web/src/modules/studio/contrat-commandes.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 10 | 9 | 1 | 2026-10-19 12:39 | 2026-10-19 12:39 |
 | `apps/web/src/modules/studio/domaines/domaines.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 3 | 3 | 1 | 2026-10-19 14:33 | 2026-10-19 14:33 |
 | `apps/web/src/modules/studio/dossier/dossier-ui.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 1 | 1 | 1 | 2026-10-19 12:39 | 2026-10-19 12:39 |
-| `apps/web/src/modules/studio/echanges/echanges-ui.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 1 | 1 | 1 | 2026-10-19 14:33 | 2026-10-19 14:33 |
+| `apps/web/src/modules/studio/echanges/echanges-ui.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 1 | 2 | 1 | 2026-10-19 14:33 | 2026-10-19 14:33 |
 | `apps/web/src/modules/studio/exact/licence-occt.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 1 | 1 | 1 | 2026-10-25 21:11 | 2026-10-25 21:11 |
 | `apps/web/src/modules/studio/exigences/ecarts-affichage.preuves-c.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 1 | 1 | 1 | 2026-10-25 21:49 | 2026-10-25 21:49 |
 | `apps/web/src/modules/studio/exigences/exigences-ui.preuves-d2.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 1 | 1 | 2026-10-25 21:49 | 2026-10-25 21:49 |
@@ -104,7 +105,7 @@ la date et l’environnement de l’étape qui a réussi.
 | `apps/web/src/modules/studio/planche2d/index-incremental.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 3 | 2 | 1 | 2026-10-25 20:16 | 2026-10-25 20:16 |
 | `apps/web/src/modules/studio/planche2d/index-maintien.preuves-c.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 1 | 1 | 2026-10-25 21:49 | 2026-10-25 21:49 |
 | `apps/web/src/modules/studio/planche2d/index-spatial.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 6 | 4 | 1 | 2026-10-19 06:45 | 2026-10-19 06:45 |
-| `apps/web/src/modules/studio/planche2d/mesure-spatiale.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 3 | 2 | 2026-10-19 14:33 | 2026-10-25 16:08 |
+| `apps/web/src/modules/studio/planche2d/mesure-spatiale.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 4 | 2 | 2026-10-19 14:33 | 2026-10-25 16:08 |
 | `apps/web/src/modules/studio/planche2d/profils.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 8 | 4 | 2 | 2026-10-19 06:45 | 2026-10-19 12:39 |
 | `apps/web/src/modules/studio/planche2d/regle-or.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 4 | 2 | 2 | 2026-10-18 22:56 | 2026-10-18 23:34 |
 | `apps/web/src/modules/studio/planche2d/rendus/comparaison-moteurs.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 1 | 1 | 2026-10-25 20:16 | 2026-10-25 20:16 |
@@ -120,7 +121,7 @@ la date et l’environnement de l’étape qui a réussi.
 | `apps/web/src/modules/studio/variante/droits.preuves-b.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 5 | 1 | 1 | 2026-10-25 21:49 | 2026-10-25 21:49 |
 | `apps/web/src/modules/studio/variante/droits.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 1 | 1 | 2026-10-19 12:39 | 2026-10-19 12:39 |
 | `apps/web/src/modules/studio/vue3d/extrusion.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 1 | 2 | 1 | 2026-10-18 23:43 | 2026-10-18 23:43 |
-| `apps/web/src/modules/studio/vue3d/picking.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 3 | 3 | 2 | 2026-10-19 10:41 | 2026-10-25 13:26 |
+| `apps/web/src/modules/studio/vue3d/picking.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 3 | 4 | 2 | 2026-10-19 10:41 | 2026-10-25 13:26 |
 | `apps/web/src/modules/studio/vue3d/qualite-rendu.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 3 | 3 | 1 | 2026-10-25 20:16 | 2026-10-25 20:16 |
 | `apps/web/src/modules/studio/vue3d/scene-rendu.preuves-b.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 1 | 1 | 1 | 2026-10-25 21:49 | 2026-10-25 21:49 |
 | `apps/web/src/modules/studio/vue3d/scene-rendu.preuves-d2.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 1 | 1 | 2026-10-25 21:49 | 2026-10-25 21:49 |
@@ -140,10 +141,10 @@ la date et l’environnement de l’étape qui a réussi.
 | `packages/atelier-model/src/studio/echanges/matrice-echanges.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 5 | 2 | 1 | 2026-10-19 14:33 | 2026-10-19 14:33 |
 | `packages/atelier-model/src/studio/echanges/modeles-externes.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 3 | 2 | 1 | 2026-10-25 20:16 | 2026-10-25 20:16 |
 | `packages/atelier-model/src/studio/exigences/exigences.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 6 | 3 | 2 | 2026-10-19 08:07 | 2026-10-19 08:46 |
-| `packages/atelier-model/src/studio/f2-booleen.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 1 | 2 | 1 | 2026-10-25 21:11 | 2026-10-25 21:11 |
+| `packages/atelier-model/src/studio/f2-booleen.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 1 | 3 | 1 | 2026-10-25 21:11 | 2026-10-25 21:11 |
 | `packages/atelier-model/src/studio/history.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 2 | 1 | 2026-10-18 22:56 | 2026-10-18 22:56 |
 | `packages/atelier-model/src/studio/identite-bim.preuves-e.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 2 | 1 | 1 | 2026-10-25 21:49 | 2026-10-25 21:49 |
-| `packages/atelier-model/src/studio/import-ifc/import-ifc.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 5 | 2 | 1 | 2026-10-25 20:16 | 2026-10-25 20:16 |
+| `packages/atelier-model/src/studio/import-ifc/import-ifc.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 5 | 3 | 1 | 2026-10-25 20:16 | 2026-10-25 20:16 |
 | `packages/atelier-model/src/studio/manifeste-outils.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 7 | 6 | 1 | 2026-10-19 12:39 | 2026-10-19 12:39 |
 | `packages/atelier-model/src/studio/mesh-3d.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 3 | 2 | 1 | 2026-10-18 23:43 | 2026-10-18 23:43 |
 | `packages/atelier-model/src/studio/objets-3d/objets-3d.test.ts` | suite Vitest / node --test du job validate ou du workflow cité | 7 | 5 | 2 | 2026-10-19 06:45 | 2026-10-25 21:11 |
@@ -163,7 +164,7 @@ Total : 131 fichiers ou traces, 911 libellés exécutés.
 
 ## 2. Scénarios absents ou incomplets
 
-### 2.1 Obligations de recette ouvertes (92)
+### 2.1 Obligations de recette ouvertes (91)
 
 Obligations TEST, NAV, REC, TR et E2E qui ne sont ni « Vérifié » ni « Accepté » : leur scénario n’est pas (entièrement) couvert.
 
@@ -181,7 +182,6 @@ Obligations TEST, NAV, REC, TR et E2E qui ne sont ni « Vérifié » ni « Accep
 | REC-E-02 | À faire | Non exécuté | Point 2 du 25 octobre 2026 (fonction absente) : AC-007 impossible : l'illustration est absente (P-06). AC-008 et AC-010 restent partiels (révisions enregistrées non comparées, outil d'approbation absent de la palette, profil personnel modi… |
 | REC-E-03 | À faire | Non exécuté | Point 2 du 25 octobre 2026 (décision requise) : Le « résultat utile des trois parcours » attend la recette utilisateur du maître d'ouvrage. Le scénario chaîné sur une même étude (contrôle, écart, correction, nouveau contrôle satisfait, app… |
 | REC-I-01 | À faire | Non exécuté | Point 2 du 25 octobre 2026 (décision requise) : Aucune « maquette d'interaction » n'existe ni n'a été validée ; la validation relève d'une recette utilisateur / décision du maître d'ouvrage (R.3-01). Aucun test ne la remplace. |
-| REC-I-03 | À faire | Non exécuté | Point 2 du 25 octobre 2026 (décision requise) : Acte d'acceptation du lot I (restreinte « intégration technique » ou pleine) absent ; décision humaine. Les conditions techniques sont désormais aussi couvertes par studio-preuves-d1.mjs (I.1… |
 | TEST-011 | En cours | Partiel | Annuler / rétablir vérifié au modèle avec métrés et identités (studio-invariants « TEST-011 ») ; « aucune perte de publication » et l’affichage restent à recetter. |
 | TEST-027 | En cours | Partiel | Écart calculé et exigence inchangée vérifiés au modèle (« TEST-027 ») ; le caractère visible de l’écart reste à recetter en CI. |
 | TEST-032 | Bloqué | Non exécuté | Rapprochement du 25 octobre 2026 (non couvert) : La fonction est absente : aucun mode IA n'est retenu (P-06, F.2-03). Seule l'annonce « Non disponible » est testée, ce qui n'est pas le critère. |
@@ -262,9 +262,35 @@ Obligations TEST, NAV, REC, TR et E2E qui ne sont ni « Vérifié » ni « Accep
 | TR-INV-010 | En cours | Non exécuté | Point 2 du 25 octobre 2026 (décision requise) : Aucun chemin de requête IA ou d'extension n'existe (agentExposure: none sur tout le registre) : par décision (F.2-03 « aucun mode IA retenu », acceptée par P-06, RECETTE-PILOTE-2026-10-25.md)… |
 | TR-INV-013 | En cours | Non exécuté | Point 2 du 25 octobre 2026 (partiel) : Depuis le lot F1, diviser la face latérale d'un prisme lié divise l'arête de sa polyligne source : les cotes de cette arête sont réattachées quand c'est prouvé, sinon « à résoudre », jamais rattachées… |
 
-### 2.2 Tests prescrits non exécutés (0)
+### 2.2 Tests prescrits non exécutés (25)
 
-Aucun : chaque test ou recette cité par le registre a une exécution réussie retrouvée.
+| ID | Fichier | Libellés |
+|---|---|---|
+| ARC-08 | `scripts/registre/controles-suivi.test.mjs` | ARC-08 — Studio/ reste documentaire : aucun code produit ne charge ni n’importe un fichier de Studio/ ; dépôt réel — SUIVI-01, ARC-08, SUIVI-02, SUIVI-08, X.3-02 et SUIVI-09 conformes ; 141 chaînes complètes |
+| G2-03 | `apps/web/src/modules/studio/poc/poc-corpus.test.ts` | G2-03 [+] chaque POC autorisé, sur chaque corpus pertinent, est conforme à son oracle ou à sa référence conservée ; G2-03 [+] résultats reproductibles : deuxième exécution, même empreinte des résultats déterministes ; G2-03 [−] une référen… |
+| G2-04 | `scripts/registre/controle-preuves.test.mjs` | G2-04 — chaque preuve porte une étiquette lecture statique / test prescrit / scénario exécuté, cohérente avec ce qu’elle cite |
+| X.1-03 | `packages/atelier-model/src/studio/corpus/corpus.test.ts` | licence du corpus établie : celle du dépôt (aucune licence ouverte déclarée, droits réservés), corpus généré sans source tierce |
+| X.1-03 | `apps/web/src/modules/studio/poc/poc-corpus.test.ts` | G2-03 [+] chaque POC autorisé, sur chaque corpus pertinent, est conforme à son oracle ou à sa référence conservée |
+| X.3-02 | `scripts/registre/controles-suivi.test.mjs` | X.3-02 / SUIVI-07 — chaînes obligation → lot → composants → TEST/NAV → DEC → décision versionnée, contrôlées ; dépôt réel — SUIVI-01, ARC-08, SUIVI-02, SUIVI-08, X.3-02 et SUIVI-09 conformes ; 141 chaînes complètes |
+| X.3-03 | `scripts/registre/controles-suivi.test.mjs` | X.4-03 / X.3-03 — documents d’état : exécutés séparés des absents, preuve et contre-preuve par fiche, « à produire » sinon |
+| X.4-03 | `scripts/registre/controles-suivi.test.mjs` | X.4-03 / X.3-03 — documents d’état : exécutés séparés des absents, preuve et contre-preuve par fiche, « à produire » sinon |
+| X.5-01 | `scripts/registre/controles-suivi.test.mjs` | X.4-03 / X.3-03 — documents d’état : exécutés séparés des absents, preuve et contre-preuve par fiche, « à produire » sinon |
+| X.5-02 | `scripts/registre/controle-preuves.test.mjs` | X.5-02 — un « Vérifié » avec un scénario exécuté complet ou une lecture justifiée complète est conforme ; X.5-02 — « Vérifié » refusé sans preuve conforme : pointeur de source seul, préparation de groupe, commit, date ou environnement abse… |
+| BLOC-07 | `scripts/registre/controle-preuves.test.mjs` | BLOC-07 — non-applicabilité motivée, jamais pour une obligation de produit ; exclusion rattachée à sa décision |
+| SUIVI-02 | `scripts/registre/controles-suivi.test.mjs` | SUIVI-02 — une seule autorité normative : copie (contenu, nom, en-tête) hors de Studio/ refusée ; blob épinglé du registre issu de Studio/ ; dépôt réel — SUIVI-01, ARC-08, SUIVI-02, SUIVI-08, X.3-02 et SUIVI-09 conformes ; 141 chaînes comp… |
+| SUIVI-07 | `scripts/registre/controles-suivi.test.mjs` | X.3-02 / SUIVI-07 — chaînes obligation → lot → composants → TEST/NAV → DEC → décision versionnée, contrôlées ; dépôt réel — SUIVI-01, ARC-08, SUIVI-02, SUIVI-08, X.3-02 et SUIVI-09 conformes ; 141 chaînes complètes |
+| SUIVI-08 | `scripts/registre/controles-suivi.test.mjs` | SUIVI-08 — ADR nommées et rangées selon le protocole, sans doublon ; registre de tâches unique ; décisions uniques ; dépôt réel — SUIVI-01, ARC-08, SUIVI-02, SUIVI-08, X.3-02 et SUIVI-09 conformes ; 141 chaînes complètes |
+| SUIVI-09 | `scripts/registre/controles-suivi.test.mjs` | SUIVI-09 — rapports lourds déclarés avec empreinte et raison ; empreintes des preuves stables ; exécutions citées avec leur verdict ; dépôt réel — SUIVI-01, ARC-08, SUIVI-02, SUIVI-08, X.3-02 et SUIVI-09 conformes ; 141 chaînes complètes |
+| SUIVI-10 | `scripts/securite/analyse-secrets.test.mjs` | SUIVI-10 — chaque règle détecte son motif ; le constat ne montre jamais le secret ; SUIVI-10 — sans faux positif sur les variables et hôtes locaux ; SUIVI-10 — géométries de modèle ou de relevé refusées hors autorisation (IFC, DXF, LAS…) ;… |
+| PR-01 | `scripts/registre/controle-pr.test.mjs` | PR-01 — une Issue propre à l’unité de travail est liée (le programme #156 et le canal #166 ne suffisent pas) ; PR conforme : Issue propre, champs renseignés, branche du protocole, preuves, revalidation contenue ; périmètre — hors Studio no… |
+| PR-02 | `scripts/registre/controle-pr.test.mjs` | PR-02, PR-03, PR-04, PR-06, PR-09 — chaque champ du modèle est exigé et non vide ; PR conforme : Issue propre, champs renseignés, branche du protocole, preuves, revalidation contenue ; périmètre — hors Studio non applicable ; PR automatiqu… |
+| PR-03 | `scripts/registre/controle-pr.test.mjs` | PR-02, PR-03, PR-04, PR-06, PR-09 — chaque champ du modèle est exigé et non vide ; PR conforme : Issue propre, champs renseignés, branche du protocole, preuves, revalidation contenue ; périmètre — hors Studio non applicable ; PR automatiqu… |
+| PR-04 | `scripts/registre/controle-pr.test.mjs` | PR-02, PR-03, PR-04, PR-06, PR-09 — chaque champ du modèle est exigé et non vide ; PR conforme : Issue propre, champs renseignés, branche du protocole, preuves, revalidation contenue ; périmètre — hors Studio non applicable ; PR automatiqu… |
+| PR-05 | `scripts/registre/controle-pr.test.mjs` | PR-05 — branche courte du protocole dont l’Issue est liée ; preuves vérifiables ; PR conforme : Issue propre, champs renseignés, branche du protocole, preuves, revalidation contenue ; périmètre — hors Studio non applicable ; PR automatique… |
+| PR-06 | `scripts/registre/controle-pr.test.mjs` | PR-02, PR-03, PR-04, PR-06, PR-09 — chaque champ du modèle est exigé et non vide ; PR-06 — « Testé » cite des tests exécutés ; une capture de bouton seule n’est pas une preuve métier ; PR conforme : Issue propre, champs renseignés, branche… |
+| PR-07 | `scripts/registre/controle-preuves.test.mjs` | PR-07 — « Implémenté » admis avec une preuve qui cite un fichier, jamais avec la clôture vérifiée ; état inconnu refusé ; PR-07 — compteurs des checkpoints : « Implémenté » compté dans la phrase des quatre checkpoints, facultatif tant qu’i… |
+| PR-08 | `scripts/registre/controle-preuves.test.mjs` | PR-08 — statut, conformité et état des tests distincts et cohérents |
+| PR-09 | `scripts/registre/controle-pr.test.mjs` | PR-02, PR-03, PR-04, PR-06, PR-09 — chaque champ du modèle est exigé et non vide ; PR-09 — revalidation : le HEAD revalidé est contenu dans la branche et la base, la CI est citée ; PR conforme : Issue propre, champs renseignés, branche du … |
 
 ### 2.3 Recettes Studio présentes mais non branchées en CI (0)
 
