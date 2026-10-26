@@ -81,8 +81,9 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         modifications, ne pas laisser entendre un soutien du HCP, respecter l'intégrité des effectifs. Seuls les **fichiers
         de données** sont repris ; les cartes, tableaux de bord et la plateforme Superset `resultats2024.rgphapps.ma` ne
         sont ni reproduits ni aspirés (§ 5 : éléments du site protégés). Débloque GEO-DATA-01.
-     2. **Arabe** : les **données** en arabe (noms des unités, libellés d'indicateurs) sont affichées telles quelles
-        (`translate="no"`, compatible D-163) ; une interface arabe complète (droite à gauche) n'est pas engagée.
+     2. **Arabe : aucun** (décision du maître d'ouvrage du 26 octobre 2026) — ni interface arabe ni bouton AR, ni nom ou
+        libellé arabe affiché dans les couches ajoutées ; les noms arabes du HCP ne servent qu'au rattachement des
+        communes et ne sont pas livrés dans les couches. Les couches existantes ne sont pas modifiées.
      3. **Contours des communes** : OpenStreetMap (déjà en base) ; un fichier officiel du HCP le remplacera s'il est fourni.
      4. **Rattachement** : valeurs HCP rattachées aux contours par une table de correspondance relisible
         (`docs/geodata/sources/correspondances/`), chaque lien contrôlé par la géographie (inclusion dans la région ou la

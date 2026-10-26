@@ -9,7 +9,7 @@
     "libelle": "RGPH 2024 — population légale (fichier Excel HCP) ; contours OpenStreetMap — extraits du 2026-10-23",
     "url": null,
     "fichier": "donnees/hcp-rgph2024-population-communes.geojson",
-    "empreinte": "35044107016d5eba839e7d81b26361e0d314fde54a2ea250e87074b519bc0540",
+    "empreinte": "a4f2c7c5b70e64293d7ebcd24d5b906405061d0be26d256d1e476ad7549f5d98",
     "periode": "Recensement de septembre 2024",
     "licence": "Valeurs : Creative Commons Attribution 4.0 (CC BY 4.0, CGU du HCP v1.0 § 3) ; contours : Open Data Commons Open Database License 1.0 (ODbL)",
     "attribution": "HCP, RGPH 2024 (CC BY 4.0), données retraitées ; © contributeurs OpenStreetMap (ODbL)",
@@ -36,7 +36,6 @@
     "proprietesExposees": [
       "code",
       "nom",
-      "nom_ar",
       "contour",
       "nom_contour",
       "appariement",

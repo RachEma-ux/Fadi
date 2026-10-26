@@ -304,7 +304,8 @@ INDICATEURS_MILIEU = [
 
 
 def entite(f, u, code_contour, nom_contour, methode):
-    props = {"code": u["code"] if u else f"contour:{code_contour}", "nom": u["nom"] if u else nom_contour, "nom_ar": u["nom_ar"] if u else None,
+    # Pas de nom arabe dans les couches (D-GD-17 : aucun arabe affiché) ; il ne sert qu'au rattachement.
+    props = {"code": u["code"] if u else f"contour:{code_contour}", "nom": u["nom"] if u else nom_contour,
              "contour": code_contour, "nom_contour": nom_contour, "appariement": methode if u else "non apparié"}
     for k, *_ in INDICATEURS_BASE + INDICATEURS_MILIEU:
         props[k] = u.get(k) if u else None
@@ -356,7 +357,7 @@ def ecrire(sortie, cle, couche_titre, niveau, entites, base_fiche, desc, milieu,
             "niveau": contours["couche"]["niveau"] or ("OSM8" if niveau == "communes" else None),
             "champCode": "code",
             "champNom": "nom",
-            "proprietesExposees": ["code", "nom", "nom_ar", "contour", "nom_contour", "appariement"] + [k for k, *_ in indicateurs],
+            "proprietesExposees": ["code", "nom", "contour", "nom_contour", "appariement"] + [k for k, *_ in indicateurs],
             "styleDefaut": {"mode": "simple", "couleur": "#2b8cbe"},
         },
         "indicateurs": [{"propriete": k, "titre": t, "unite": "habitants" if k != "menages" else "ménages", "periode": "RGPH 2024", "denominateur": None,
