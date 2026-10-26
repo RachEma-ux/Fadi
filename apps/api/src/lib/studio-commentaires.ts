@@ -30,7 +30,10 @@ import {
   studioObservationTasks, studioRevisions, studioStudies, studioVariants, users,
   type StudioObservationAction, type StudioObservationDecisionNature, type StudioObservationDecisionPortee, type StudioObservationDomaine, type StudioObservationStatut,
   type StudioObservationTacheAction, type StudioObservationTacheStatut, type StudioObservationVueMode,
+  type StudioObservationBcfRef, type StudioObservationCategorie, type StudioObservationGravite, type StudioObservationPiece, volumes,
 } from "../db/schema.js";
+import { attachmentProblem, safeFileName } from "./review-rules.js";
+export { contenuIf010, studioObservationCategorieSchema, studioObservationGraviteSchema, studioObservationPiecesSchema } from "./studio-observations.js";
 import { newId } from "./ids.js";
 import { audit } from "./audit.js";
 import { AudienceError, audienceChangeRefusal, audienceOfNew, audienceSchema, seesTeam, type CommentAudience, type StudioCommentAudience } from "./audience.js";
@@ -39,7 +42,9 @@ import { lockedAccess, StudioRequestError, studioArchivedRefusal, studioIdentifi
 import type { Tx } from "./atelier-validation.js";
 import { capaciteDansPortee } from "@parcours/domain-model";
 import {
-  acteurAutorise, echeanceValide, estAncetreOuEgale, OBSERVATION_TRANSITIONS, peutCreerTache, peutLier, REFUS_ACTEUR, refusCloture, REVISION_EXIGEE, statutApres,
+  acteurAutorise, contratObservation, echeanceValide, estAncetreOuEgale, OBSERVATION_TRANSITIONS, peutCreerTache, peutLier,
+  REFUS_ACTEUR, refusCloture, resolutionObservation, REVISION_EXIGEE, statutApres, type ContratObservation, type ResolutionObservation,
+  contenuIf010, studioObservationCategorieSchema, studioObservationGraviteSchema, studioObservationPiecesSchema,
   TACHE_TRANSITIONS, tacheApres, tacheAutorisee, VUE_MODES, type ActeurObservation, type ObservationTransition, type TacheTransition,
 } from "./studio-observations.js";
 
@@ -136,6 +141,17 @@ export interface StudioObservationView {
   decisions: StudioObservationDecisionView[];
   /** Ce que l'utilisateur courant peut écrire maintenant, relu du serveur (rôle, statut, archive). */
   peut: { lier: boolean; creerTache: boolean; proposer: boolean; decider: boolean };
+  /** IF-010 / EX-084 : identité propre de l'observation, distincte de la note d'origine (`id`). */
+  issueId: string;
+  categorie: StudioObservationCategorie | null;
+  gravite: StudioObservationGravite | null;
+  pieces: StudioObservationPiece[];
+  /** Références BCF reçues, dans leur contexte (jamais l'identité interne). */
+  bcfRefs: StudioObservationBcfRef[];
+  /** IF-009 : résolution pour une publication (clôturée, dérogée par décision, ou ouverte). */
+  resolution: ResolutionObservation;
+  /** Contrat IF-010 relu de l'observation et de sa note. */
+  contrat: ContratObservation;
 }
 
 export interface StudioObservationLienView {
@@ -290,7 +306,7 @@ export function acteurDe(lecteur: Lecteur, responsableId: string, authorId: stri
 /** Observations de la variante (ou d'un seul commentaire), journal compris, avec les passages possibles du lecteur. */
 export async function observationViews(variantId: string, commentId: string | null, lecteur: Lecteur, executor: Pick<typeof db, "select"> = db): Promise<Map<string, StudioObservationView>> {
   const where = and(eq(studioObservations.variantId, variantId), commentId === null ? undefined : eq(studioObservations.commentId, commentId), audienceFilter(lecteur.role));
-  const obs = await executor.select({ o: studioObservations, responsableEmail: users.email, authorId: studioComments.authorId, anchorRevisionId: studioComments.revisionId }).from(studioObservations)
+  const obs = await executor.select({ o: studioObservations, responsableEmail: users.email, authorId: studioComments.authorId, anchorRevisionId: studioComments.revisionId, body: studioComments.body, objectIds: studioComments.objectIds, deletedAt: studioComments.deletedAt }).from(studioObservations)
     .innerJoin(studioComments, eq(studioComments.id, studioObservations.commentId))
     .leftJoin(users, eq(users.id, studioObservations.responsableId)).where(where);
   const result = new Map<string, StudioObservationView>();
@@ -344,10 +360,22 @@ export async function observationViews(variantId: string, commentId: string | nu
       });
     }
   }
-  for (const { o, responsableEmail, authorId, anchorRevisionId } of obs) {
+  for (const { o, responsableEmail, authorId, anchorRevisionId, body, objectIds, deletedAt } of obs) {
     const acteur = acteurDe(lecteur, o.responsableId, authorId, anchorRevisionId);
     const ouverte = !lecteur.archived && o.statut !== "cloturee";
+    const decs = decisions.get(o.commentId) ?? [];
+    const jour = journal.get(o.commentId) ?? [];
+    const vueCitee = o.vueMode ? { mode: o.vueMode, ref: o.vueRef } : null;
+    const lienRows = liens.get(o.commentId) ?? [];
+    const pieces = o.pieces ?? [];
+    const bcfRefs = o.bcfRefs ?? [];
+    const contrat = contratObservation({
+      id: o.commentId, issueId: o.issueId, categorie: o.categorie ?? null, gravite: o.gravite ?? null, pieces, bcfRefs, authorId, responsableId: o.responsableId, statut: o.statut,
+      vue: vueCitee, liens: lienRows, decisions: decs, journal: jour,
+    }, { body: deletedAt ? null : body, revisionId: anchorRevisionId, objectIds: objectIds ?? [] });
     result.set(o.commentId, {
+      issueId: o.issueId, categorie: o.categorie ?? null, gravite: o.gravite ?? null, pieces, bcfRefs,
+      resolution: resolutionObservation(o.statut, decs, jour).resolution, contrat,
       id: o.commentId, authorId, responsableId: o.responsableId, responsableEmail: responsableEmail ?? "", echeance: o.echeance, statut: o.statut,
       correctionRevisionId: o.correctionRevisionId, recontroleRevisionId: o.recontroleRevisionId, createdBy: o.createdBy,
       createdAt: o.createdAt.toISOString(), updatedAt: o.updatedAt.toISOString(), journal: journal.get(o.commentId) ?? [],
@@ -371,6 +399,9 @@ export const studioObservationVueSchema = z.object({
   ref: z.string().trim().min(1).max(256).optional(),
 }).strict();
 export const studioObservationSchema = z.object({
+  categorie: studioObservationCategorieSchema.optional(),
+  gravite: studioObservationGraviteSchema.optional(),
+  pieces: studioObservationPiecesSchema.optional(),
   responsableId: z.string().min(1).max(256),
   echeance: z.string().refine(echeanceValide, "Échéance attendue au format AAAA-MM-JJ.").nullable().optional(),
   note: noteSchema,
@@ -416,7 +447,7 @@ async function observationResult(variantId: string, commentId: string, lecteur: 
  */
 export async function createStudioObservation(scope: StudioScope, actorId: string, commentId: string, input: StudioObservationInput): Promise<StudioObservationView & { replayed: boolean }> {
   // La vue n'entre dans l'empreinte que citée : un rejeu d'une promotion antérieure à ce champ garde son empreinte.
-  const hash = hashOf({ action: "ouvrir", responsableId: input.responsableId, echeance: input.echeance ?? null, note: input.note ?? null, ...(input.vue ? { vue: input.vue } : {}) });
+  const hash = hashOf({ action: "ouvrir", responsableId: input.responsableId, echeance: input.echeance ?? null, note: input.note ?? null, ...(input.vue ? { vue: input.vue } : {}), ...contenuIf010(input) });
   const { variantId, lecteur, replayed } = await db.transaction(async (tx) => {
     const variant = await lockedVariant(tx, scope, actorId, "comment");
     const lecteur = variant.lecteur;
@@ -440,11 +471,30 @@ export async function createStudioObservation(scope: StudioScope, actorId: strin
   return observationResult(variantId, commentId, lecteur, replayed);
 }
 
+/** Pièces justificatives contrôlées (type, signature, taille) et rangées dans `volumes` (identifiant = SHA-256). */
+export async function enregistrerPieces(tx: Tx, pieces: StudioObservationInput["pieces"]): Promise<StudioObservationPiece[]> {
+  const out: StudioObservationPiece[] = [];
+  for (const p of pieces ?? []) {
+    const bytes = Buffer.from(p.contentBase64, "base64");
+    const probleme = attachmentProblem(p.mime, bytes);
+    if (probleme) throw new StudioRequestError(400, { error: "invalid_input", code: "piece_invalide", name: p.name, message: probleme });
+    const sha256 = createHash("sha256").update(bytes).digest("hex");
+    await tx.insert(volumes).values({ id: sha256, mime: p.mime, size: bytes.byteLength, content: bytes, createdAt: new Date() }).onConflictDoNothing();
+    out.push({ name: safeFileName(p.name), mime: p.mime, size: bytes.byteLength, sha256 });
+  }
+  return out;
+}
+
 /** Ouverture : ligne d'observation (statut « ouverte », vue citée) et premier passage du journal (`seq` 1). */
-export async function insertObservationRows(tx: Tx, o: { commentId: string; variantId: string; responsableId: string; input: Pick<StudioObservationInput, "echeance" | "note" | "vue" | "requestId">; actorId: string; hash: string }): Promise<void> {
+export async function insertObservationRows(tx: Tx, o: {
+  commentId: string; variantId: string; responsableId: string; input: Pick<StudioObservationInput, "echeance" | "note" | "vue" | "requestId" | "categorie" | "gravite" | "pieces">; actorId: string; hash: string;
+  bcfRefs?: StudioObservationBcfRef[];
+}): Promise<void> {
+  const pieces = await enregistrerPieces(tx, o.input.pieces);
   await tx.insert(studioObservations).values({
     commentId: o.commentId, variantId: o.variantId, responsableId: o.responsableId, echeance: o.input.echeance ?? null, statut: "ouverte", createdBy: o.actorId,
     vueMode: o.input.vue?.mode ?? null, vueRef: o.input.vue?.ref ?? null,
+    issueId: newId("studio_issue"), categorie: o.input.categorie ?? null, gravite: o.input.gravite ?? null, pieces, bcfRefs: o.bcfRefs ?? [],
   });
   await tx.insert(studioObservationEvents).values({
     id: newId("studio_observation_event"), observationId: o.commentId, seq: 1, action: "ouvrir", fromStatut: null, toStatut: "ouverte", actorId: o.actorId,

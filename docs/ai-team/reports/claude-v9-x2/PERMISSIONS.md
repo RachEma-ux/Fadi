@@ -48,6 +48,8 @@ chargé de tâche — rôle vérifié ensuite par `lib/studio-observations.ts`, 
 | `GET /steps/:stepNumber/studies` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `GET /preferences/outils` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | préférences du compte : aucune écriture du projet |
 | `PUT /preferences/outils` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | préférences du compte (INV-009) : lecture du projet suffit |
+| `GET /preferences/outils/export` | lecture | 404 | admis | admis | admis | admis | admis | admis | 404 not_found | profil du compte (EX-034) : 404 tant qu'aucun profil n'est enregistré |
+| `POST /preferences/outils/import` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | profil du compte (EX-033, INV-009) : lecture du projet suffit ; une capacité exigeant un droit absent est refusée (403 permission_non_conferee) |
 | `GET /preferences/catalogue` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `GET /publications` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `GET /delegations` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | délégations d'approbation (EX-085) : toutes pour le propriétaire, sinon celles dont on est délégant ou délégué |
@@ -85,6 +87,15 @@ chargé de tâche — rôle vérifié ensuite par `lib/studio-observations.ts`, 
 | `POST /studies/:studyId/variants/:variantId/observations/:observationId/taches` | acteur | 404 | 403 | admis | 403 | admis | admis | admis | 201 | propriétaire, ou responsable (éditeur) avec le droit d'écrire |
 | `POST /studies/:studyId/variants/:variantId/observations/:observationId/taches/:taskId/transitions` | acteur | 404 | 403 | admis | 403 | admis | admis | admis | 200 | terminer : personne chargée (éditeur) avec le droit d'écrire, ou propriétaire |
 | `POST /studies/:studyId/variants/:variantId/observations/:observationId/decisions` | acteur | 404 | 403 | admis | admis | admis | admis | admis | 201 | proposition : droit d'écrire (rôle ; le verrou d'édition ne s'y applique pas) |
+| `GET /studies/:studyId/variants/:variantId/observations/bcf` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | export BCF 2.1 minimal (IF-010), audience du fil respectée |
+| `POST /studies/:studyId/variants/:variantId/observations/bcf` | ecriture | 404 | 403 | admis | 423 | admis | 423 | admis | 200 | import BCF : sujets nouveaux dans leur contexte (IF-010) |
+| `GET /studies/:studyId/variants/:variantId/observations/:observationId/pieces/:sha256` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `GET /studies/:studyId/variants/:variantId/resultats-quantitatifs` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `GET /studies/:studyId/section-views` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `POST /studies/:studyId/variants/:variantId/section-views` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 201 |  |
+| `GET /studies/:studyId/section-views/:viewId` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `PATCH /studies/:studyId/section-views/:viewId` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 200 |  |
+| `DELETE /studies/:studyId/section-views/:viewId` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 200 |  |
 | `GET /dossiers` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `GET /studies/:studyId/sheets` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `POST /studies/:studyId/variants/:variantId/sheets` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 201 |  |
@@ -100,6 +111,7 @@ chargé de tâche — rôle vérifié ensuite par `lib/studio-observations.ts`, 
 | `POST /studies/:studyId/variants/:variantId/modeles-externes` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 201 | fichier relu et comparé par le serveur ; la variante n'est pas modifiée |
 | `GET /studies/:studyId/variants/:variantId/modeles-externes/:modelId` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `GET /studies/:studyId/variants/:variantId/modeles-externes/:modelId/contenu` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | fichier reçu tel quel : droit export (lecteur compris, jamais l'accès support) |
+| `GET /studies/:studyId/variants/:variantId/modeles-externes/:modelId/provenance` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | provenance exportée : droit export (lecteur compris, jamais l'accès support) |
 | `POST /studies/:studyId/variants/:variantId/modeles-externes/:modelId/:action` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 200 | action comparer |
 | `POST /studies/:studyId/variants/:variantId/modeles-externes/:modelId/:action` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 200 | action accepter |
 | `POST /studies/:studyId/variants/:variantId/modeles-externes/:modelId/:action` | proprietaire | 404 | 403 | 403 | 403 | admis | 423 | admis | 200 | action refuser |

@@ -35,6 +35,7 @@ import { navigateurEnLigne, useConnexion, useRetourEnLigne } from "../hors-ligne
 import { cleVariante, identifiantsCites, reporterSurTete, restaurerBrouillon, versHorsLigne, type ApercuHorsLigne, type ConflitHorsLigne, type RejetHorsLigne } from "../hors-ligne/persistance";
 import { invalidationsApresEngagement, lectureApplicable } from "./revision-courante";
 import { ecrireBrouillonHorsLigne, memoriserContexte, retirerBrouillonHorsLigne } from "../hors-ligne/stockage";
+import { MESSAGE_QUOTA } from "../hors-ligne/quota";
 import type { RepriseHorsLigne } from "../hors-ligne/useChargementVariante";
 import { warning } from "./etat-variante";
 import { journalStudio } from "../taches/journal-correlation";
@@ -127,6 +128,8 @@ export function useEnregistrement(o: OptionsEnregistrement) {
       try {
         const r = await ecrireBrouillonHorsLigne(cle, h, stamp.current);
         if (r.type === "autre-onglet") { signalerAutreOnglet(); return false; }
+        // EX-044 : quota atteint malgré l'éviction des versions lues en cache — annoncé, le brouillon reste en mémoire.
+        if (r.type === "quota") { if (o.alive.current) o.setError(MESSAGE_QUOTA); return false; }
         stamp.current = r.type === "ecrit" ? r.stamp : null;
         local.current = r.type === "ecrit";
         if (o.alive.current) setConserve(local.current);

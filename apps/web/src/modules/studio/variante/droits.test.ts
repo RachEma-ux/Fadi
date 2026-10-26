@@ -99,7 +99,7 @@ describe("un changement de profil ne modifie ni géométrie, ni révision, ni dr
 
   it("les opérations de profil ne lisent ni n'écrivent le document : il reste octet pour octet identique", () => {
     for (const p of etats) {
-      expect(Object.keys(p).sort()).toEqual(["favoris", "groupes", "personnel", "profil"]);
+      expect(Object.keys(p).sort()).toEqual(["favoris", "groupes", "importeDe", "ordre", "personnel", "profil", "profileId", "raccourcis", "version"]);
       expect(JSON.stringify(p)).not.toContain("revision");
     }
     expect(JSON.stringify(doc)).toBe(gele);

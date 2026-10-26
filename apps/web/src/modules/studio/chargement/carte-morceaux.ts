@@ -12,7 +12,12 @@
  * 2. **classes du précache** du service worker (`classesPrecache`, EX-042) : coquille minimale, ressources du profil
  *    Studio, modules facultatifs ;
  * 3. **disponibilité hors connexion véridique** (EX-043) : les fichiers de chaque moteur, comparés au contenu réel du
- *    cache (`cache-hors-ligne.ts`).
+ *    cache (`cache-hors-ligne.ts`) ;
+ * 4. **détecteur de duplication en octets** (EX-041, `detecterDuplications`) : modules (et octets rendus) de chaque
+ *    morceau du bundle principal ET de chaque bundle de Worker (construits à part par Vite) ; un module présent dans
+ *    plusieurs bundles est une duplication, chiffrée en octets. La granularité n'est pas imposée (aucun « un fichier par
+ *    bouton ») : seule la duplication d'un noyau lourd (three.js, OCCT, Manifold) hors des exceptions déclarées fait
+ *    échouer le build ; le rapport complet est écrit dans la carte (`duplication`).
  *
  * Pur : ni DOM, ni Node, ni React ; seulement les descripteurs de `moteurs.ts`.
  */
@@ -27,7 +32,7 @@ export type Famille = "three" | "occt" | "manifold" | "atelier" | "studio-planch
  * gestionnaire « Outils », jamais l'éditeur, le rendu ni la géométrie de la planche. Tout autre module de
  * `planche2d/` appartient à la famille `studio-planche`.
  */
-export const PLANCHE_PARTAGES_COQUILLE: readonly string[] = Object.freeze(["CatalogueOutils.tsx", "catalogue.ts", "raccourcis.ts", "profils.ts"]);
+export const PLANCHE_PARTAGES_COQUILLE: readonly string[] = Object.freeze(["CatalogueOutils.tsx", "catalogue.ts", "raccourcis.ts", "profils.ts", "etats-outils.ts"]);
 
 const echapper = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -84,6 +89,87 @@ export interface ClassesPrecache {
   readonly facultatif: readonly string[];
 }
 
+/** Module d'un bundle et ses octets rendus (Rollup : `renderedLength`). */
+export interface ModuleBundle { readonly id: string; readonly octets: number }
+export interface BundleModules {
+  readonly fichier: string;
+  /** `principal` : morceau du graphe principal ; `worker` : bundle d'un Worker (construit à part). */
+  readonly nature: "principal" | "worker";
+  readonly modules: readonly ModuleBundle[];
+}
+export interface Duplication {
+  /** Module, chemin relatif au dépôt (`node_modules/…`, `apps/…`, `packages/…`). */
+  readonly module: string;
+  readonly famille: Famille | null;
+  readonly fichiers: readonly string[];
+  /** Octets en trop : la taille rendue du module dans chaque bundle au-delà du premier. */
+  readonly octetsDupliques: number;
+  /** Exception déclarée qui l'admet, ou null. */
+  readonly admise: string | null;
+}
+export interface RapportDuplication {
+  readonly bundles: number;
+  readonly workers: number;
+  readonly duplications: readonly Duplication[];
+  readonly octetsDupliques: number;
+  readonly violations: readonly string[];
+}
+
+/** Familles dont la duplication entre bundles fait échouer le build (noyaux et bibliothèques graphiques lourdes). */
+export const FAMILLES_NON_DUPLIQUABLES: readonly Famille[] = Object.freeze(["three", "occt", "manifold"]);
+
+/**
+ * Duplications admises, chacune motivée (décision Fadi, réversible) : deux Workers ne partagent jamais un morceau
+ * avec le fil principal ni entre eux (bundles séparés par Vite). Le chargeur JavaScript d'OCCT est donc présent dans le
+ * Worker du noyau exact de Studio ET dans celui de l'Atelier — deux produits distincts, jamais chargés ensemble dans un
+ * même écran ; le binaire `.wasm` (le noyau lui-même), lui, reste un seul fichier partagé.
+ */
+export const DUPLICATIONS_ADMISES: readonly { readonly famille: Famille; readonly fichiers: RegExp; readonly motif: string }[] = Object.freeze([
+  { famille: "occt", fichiers: /\/assets\/(noyau-exact\.worker|exact\.worker)-[\w-]+\.js$/, motif: "chargeur OCCT dans le Worker exact de Studio et dans celui de l'Atelier (bundles séparés, binaire .wasm partagé)" },
+]);
+
+/** Identifiant de module ramené au dépôt (sans chemin absolu ni requête) ; null pour un module virtuel. */
+export function moduleRelatif(id: string): string | null {
+  if (id.startsWith("\0")) return null;
+  const sans = id.replace(/\\/g, "/").replace(/[?#].*$/, "");
+  const m = /\/(node_modules|apps|packages)\/(.*)$/.exec(sans);
+  return m ? `${m[1]}/${m[2]}` : sans;
+}
+
+/** Détecteur de duplication en octets entre morceaux et bundles de Workers (EX-041). */
+export function detecterDuplications(bundles: readonly BundleModules[], admises = DUPLICATIONS_ADMISES): RapportDuplication {
+  const parModule = new Map<string, { fichier: string; octets: number }[]>();
+  // Un même fichier émis par deux constructions (même nom empreint = même contenu) n'est qu'un seul téléchargement.
+  const fichiersVus = new Set<string>();
+  for (const b of bundles) {
+    if (fichiersVus.has(b.fichier)) continue;
+    fichiersVus.add(b.fichier);
+    const vus = new Set<string>();
+    for (const m of b.modules) {
+      const id = moduleRelatif(m.id);
+      if (!id || vus.has(id)) continue;
+      vus.add(id);
+      parModule.set(id, [...(parModule.get(id) ?? []), { fichier: b.fichier, octets: m.octets }]);
+    }
+  }
+  const duplications: Duplication[] = [];
+  for (const [module, presences] of [...parModule].sort(([a], [b]) => a.localeCompare(b))) {
+    if (presences.length < 2) continue;
+    const famille = famillesDe([`/${module}`])[0] ?? null;
+    const octetsDupliques = presences.slice(1).reduce((n, p) => n + p.octets, 0);
+    const fichiers = presences.map((p) => p.fichier);
+    const exception = famille ? admises.find((a) => a.famille === famille && fichiers.every((f) => a.fichiers.test(f))) : undefined;
+    duplications.push({ module, famille, fichiers, octetsDupliques, admise: exception?.motif ?? null });
+  }
+  const violations = duplications
+    .filter((d) => d.famille !== null && FAMILLES_NON_DUPLIQUABLES.includes(d.famille) && d.admise === null)
+    .map((d) => `${d.module} (« ${d.famille} ») dupliqué dans ${d.fichiers.join(", ")} : ${d.octetsDupliques} octets en trop`);
+  return {
+    bundles: bundles.length, workers: bundles.filter((b) => b.nature === "worker").length,
+    duplications, octetsDupliques: duplications.reduce((n, d) => n + d.octetsDupliques, 0), violations,
+  };
+}
+
 export interface CarteChargement {
   readonly version: 1;
   readonly build: string;
@@ -93,6 +179,8 @@ export interface CarteChargement {
   readonly moteurs: Readonly<Record<IdMoteur, MoteurCarte>>;
   readonly morceaux: Readonly<Record<string, MorceauCarte>>;
   readonly verification: { readonly ok: boolean; readonly violations: readonly string[] };
+  /** Rapport du détecteur de duplication (EX-041), écrit au build ; absent d'une carte antérieure. */
+  readonly duplication?: Omit<RapportDuplication, "duplications"> & { readonly duplications: readonly Duplication[] };
 }
 
 const servi = (f: string) => (f.startsWith("/") ? f : `/${f}`);

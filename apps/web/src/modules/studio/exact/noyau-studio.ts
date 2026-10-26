@@ -35,12 +35,19 @@ export function ordonnanceurExact(): Ordonnanceur {
   return (ordonnanceur ??= new Ordonnanceur({
     concurrence: 1, reprisesMax: 0, delaiMs: DELAI_OPERATION_EXACT_MS,
     surEvenement: (e) => { journalExact.push(e); if (journalExact.length > TAILLE_JOURNAL) journalExact.splice(0, journalExact.length - TAILLE_JOURNAL); },
-    executer: async ({ charge, signal, delaiMs }) => {
+    // IF-007 : tant que le noyau n'est pas prêt, la tâche est d'abord `loading` (téléchargement et compilation du .wasm).
+    aCharger: () => noyauExactStudio.metriques().etat !== "pret",
+    executer: async ({ charge, signal, delaiMs, demarre }) => {
       const fin = ressourcesStudio.utiliser("noyau-exact", "tache:booleen");
       const mesure = perfStudio.debut("PERF-07", { nature: "booleen" });
       try {
+        await noyauExactStudio.charger();
+        demarre();
         const r = await noyauExactStudio.executer((charge as { entrees: unknown }).entrees, { signal, delaiMs });
         mesure.fin({ issue: "aboutie" });
+        // EX-062 : mémoire linéaire du WebAssembly après ce calcul (relevée par le Worker ; absente = non évaluée).
+        const memoire = noyauExactStudio.metriques().suivi?.memoireWasm;
+        if (typeof memoire === "number") perfStudio.enregistrer("PERF-07", memoire, "octets", { nature: "memoire-wasm" });
         return r;
       } catch (e) {
         mesure.fin({ issue: e instanceof ErreurTache ? e.code : "calcul" });

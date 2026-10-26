@@ -51,8 +51,9 @@ import { empreinteDe } from "../taches/empreinte";
 import { useTache } from "../taches/useTache";
 import { MESSAGES_TACHE } from "../taches/messages";
 import { compteGpu, libererObjet, libererTexturesPartagees, texturesPartagees, vider } from "./ressources-gpu";
-import { cleAspect, objetsVolume, preparer, SceneRendu, type AspectVolume, type DonneesLot, type EntreeRendu, type GeometrieObjet } from "./scene-rendu";
-import { designer, type Impact } from "./picking";
+import { cleAspect, impactDe, objetsVolume, preparer, SceneRendu, type AspectVolume, type EntreeRendu, type GeometrieObjet } from "./scene-rendu";
+import { designer } from "./picking";
+import { basculerMembre, commandeDeplacerGroupe, commandeEchelleGroupe, commandePivoterGroupe, commandeSupprimerGroupe, membresGroupe } from "./groupe-3d";
 import {
   descriptionReduction, ETAT_QUALITE_INITIAL, observerTrame, paliersApplicables, PALIERS_QUALITE, rapportPixels, reglageEffectif, reglageQualite,
   type CapacitesRendu, type EtatQualite, type ReglageQualite,
@@ -66,7 +67,8 @@ import { Icon } from "../../../components/Icon";
 import { estSelectionnable } from "../planche2d/calques";
 import { LOCALE } from "../../../lib/i18n";
 import {
-  auCentimetre, BOITE_VIDE, commandeBoite, commandeDeplacementSolide, commandeDivision, commandeFace, commandePivot, commandePrisme, commandeResolution, DEPLACEMENT_VIDE,
+  AXES_PIVOT, auCentimetre, BOITE_VIDE, commandeBoite, commandeDeplacementSolide, commandeDivision, commandeEchelle3d, commandeFace, commandePivot, commandePrisme, commandeResolution, DEPLACEMENT_VIDE,
+  type AxePivot,
   descriptionLien, descriptionSolide, FACE_VIDE, facesDe, PRISME_VIDE, profilsFermes, RELATIONS_PRISME,
   type ValeursBoite, type ValeursDeplacement, type ValeursFace, type ValeursPrisme,
 } from "./volume-libre";
@@ -78,6 +80,7 @@ import {
   apparenceDe, couleurEntiere, hautCamera, MODE_INITIAL, prochainNomScene, type DemandeVue3d,
 } from "./scenes/scenes-ui";
 import "./vue3d.css";
+import { choisirMoteur3d, texteMoteur3d, type AccesGpu, type ChoixMoteur3d } from "./moteur-3d";
 
 export type Navigation3d = "orbite" | "plan";
 
@@ -105,7 +108,7 @@ export interface Vue3DStudioProps {
   /** Passage orbite / plan demandé par le rappel d'une scène (perspective / orthographique). */
   surNavigation?: (n: Navigation3d) => void;
   /** Provenance du rendu : étude, variante, révision affichée ; `nonEnregistre` : le brouillon diffère de la révision. */
-  provenance?: { etude: { id: string; nom: string }; variante: { id: string; nom: string }; revisionId: string; nonEnregistre: boolean };
+  provenance?: { etude: { id: string; nom: string }; variante: { id: string; nom: string }; revisionId: string; nonEnregistre: boolean; auteur?: { id: string; email: string } | null };
   /**
    * Espace de travail : panneaux de la vue (saisie des solides, solides libres, murs et ouvertures, scènes et rendus,
    * coupe) rendus dans ce conteneur du panneau latéral (portail React : l'état reste celui de la vue). Absent : sous la vue.
@@ -215,7 +218,7 @@ function entreesContenu(l: Lecture): EntreeRendu[] {
   const out: EntreeRendu[] = [];
   for (const s of l.mesh.solids) {
     if (!l.present(s.id)) continue;
-    out.push({ id: s.id, signature: l.cle(s.id), lot: "contenu", geometrie: s, aspect: aspectDe(l.doc, l.mode, s, s.type === "line" ? 0xd9d2c3 : 0xb9d3cf, false, s.kind === "wall-surface") });
+    out.push({ id: s.id, signature: l.cle(s.id), lot: "contenu", instanciable: true, geometrie: s, aspect: aspectDe(l.doc, l.mode, s, s.type === "line" ? 0xd9d2c3 : 0xb9d3cf, false, s.kind === "wall-surface") });
   }
   for (const o of l.mesh.outlines) {
     if (!l.present(o.id)) continue;
@@ -373,13 +376,8 @@ interface Assemble { cache: StudioCacheMaillage; mesh: StudioMesh3d; revision: s
 const PLANS_GARDES = 16;
 let sansCle = 0;
 
-/** Impact d'un rayon three.js : identifiant porté par l'objet seul, ou triangle d'un lot et sa table. */
-function impact(h: THREE.Intersection): Impact {
-  const lot = h.object.userData.lot as DonneesLot | undefined;
-  if (lot) return { distance: h.distance, table: lot.table, triangle: h.faceIndex ?? null };
-  const id = (h.object.userData.solide ?? h.object.userData.architecture) as string | undefined;
-  return id === undefined ? { distance: h.distance } : { distance: h.distance, id };
-}
+/** Impact d'un rayon three.js (objet seul, triangle d'un lot, exemplaire instancié — C.2-02) : `impactDe`. */
+const impact = impactDe;
 
 /** Centre à l'écran (coordonnées client) de l'objet `id` du maillage affiché ; null s'il n'est pas affiché. */
 function centreEcran(m: Moteur, mesh: StudioMesh3d, id: string): { x: number; y: number } | null {
@@ -402,12 +400,28 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   const moteur = useRef<Moteur | null>(null);
   const cadre = useRef(false);
   const [indisponible, setIndisponible] = useState(false);
+  // Moteur (TR-EX-056) : WebGL2 par défaut ; WebGPU demandé en option, repli WebGL2 déclaré avec sa raison (`moteur-3d.ts`).
+  const [webgpuDemande, setWebgpuDemande] = useState(false);
+  const [choix3d, setChoix3d] = useState<ChoixMoteur3d>({ demande: "webgl2", moteur: "webgl2", repli: null });
+  useEffect(() => {
+    let actif = true;
+    void choisirMoteur3d(webgpuDemande ? "webgpu" : "webgl2", typeof navigator !== "undefined" ? (navigator as Navigator & { gpu?: AccesGpu }).gpu : undefined).then((c) => { if (actif) setChoix3d(c); });
+    return () => { actif = false; };
+  }, [webgpuDemande]);
   const [boite, setBoite] = useState<ValeursBoite>(BOITE_VIDE);
   const [prisme, setPrisme] = useState<ValeursPrisme>(PRISME_VIDE);
   const [deplacement, setDeplacement] = useState<ValeursDeplacement>(DEPLACEMENT_VIDE);
   const [face, setFace] = useState<ValeursFace>(FACE_VIDE);
   const [division, setDivision] = useState<ValeursFace>(FACE_VIDE);
   const [pivot, setPivot] = useState(Number.NaN);
+  // A.3-03 : axe du pivot (vertical ou axes horizontaux du solide) et échelle 3D (point fixe en plan, facteur).
+  const [axePivot, setAxePivot] = useState<AxePivot>("z");
+  const [echelle3d, setEchelle3d] = useState({ x: Number.NaN, y: Number.NaN, facteur: Number.NaN });
+  // EX-005 : groupe de solides libres édités ensemble (sélection de l'éditeur, jamais une donnée du document).
+  const [groupe, setGroupe] = useState<ReadonlySet<string>>(() => new Set());
+  const [groupeDeplacement, setGroupeDeplacement] = useState(DEPLACEMENT_VIDE);
+  const [groupeRotation, setGroupeRotation] = useState({ x: Number.NaN, y: Number.NaN, angle: Number.NaN });
+  const [groupeEchelle, setGroupeEchelle] = useState({ x: Number.NaN, y: Number.NaN, facteur: Number.NaN });
   const [coteCoupe, setCoteCoupe] = useState(Number.NaN);
   const [erreur, setErreur] = useState("");
   // Visualisation (lot E.5) : scène choisie, calques montrés par la vue (null : visibilité du dessin), mode, apparence.
@@ -573,6 +587,8 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       },
       rendre: () => {
         const t0 = performance.now();
+        // Rendu à la demande (TR-EX-056) : aucune boucle d'animation ; chaque trame rendue est comptée (recette).
+        renderer.domElement.dataset.studioRendus = String(Number(renderer.domElement.dataset.studioRendus ?? "0") + 1);
         mesurerRendu3d(() => {
           if (m.charge > 0) { const fin = performance.now() + m.charge; while (performance.now() < fin) { /* charge simulée (recette) */ } }
           if (m.presentation) m.presentation.rendre(renderer, scene, m.camera); else renderer.render(scene, m.camera);
@@ -825,6 +841,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   }
   const raisonRendu = indisponible ? "Vue 3D indisponible : aucun rendu ne peut être tiré du canevas."
     : !provenance ? "Provenance inconnue : le rendu n’est pas exporté."
+    : !provenance.auteur ? "Auteur inconnu : le rendu n’est pas exporté (la provenance porte son auteur)."
     : provenance.nonEnregistre ? "Enregistrez d’abord : le rendu porte sur une révision enregistrée, pas sur les modifications non enregistrées."
     : !maillageAJour ? "Maillage en cours de calcul : le rendu attend la géométrie du document affiché." : null;
   /** Rendu du modèle de la vue (qualité complète), PNG portant sa provenance ; null : indisponible (raison affichée). */
@@ -835,7 +852,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       const actif = scenes.find((s) => s.id === sceneActive) ?? null;
       const p = studioProvenanceRendu({
         etude: provenance.etude, variante: provenance.variante, revisionId: provenance.revisionId,
-        scene: actif ? { id: actif.id, nom: actif.name } : null, date: new Date(), camera: cameraCourante(m),
+        scene: actif ? { id: actif.id, nom: actif.name } : null, date: new Date(), camera: cameraCourante(m), auteur: provenance.auteur ?? null,
       });
       const reglage = m.reglage;
       m.qualiteTenue = true;
@@ -867,7 +884,8 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       const actif = scenes.find((s) => s.id === sceneActive) ?? null;
       const p = studioProvenanceRendu({
         etude: provenance.etude, variante: provenance.variante, revisionId: provenance.revisionId,
-        scene: actif ? { id: actif.id, nom: actif.name } : null, date: new Date(), camera: cameraCourante(m),
+        scene: actif ? { id: actif.id, nom: actif.name } : null, date: new Date(), camera: cameraCourante(m), auteur: provenance.auteur ?? null,
+        parametres: { largeurPx: m.renderer.domElement.width, hauteurPx: m.renderer.domElement.height, qualite: "complète" },
       });
       // Le rendu exporté est toujours en qualité complète (la dégradation ne vaut que pour la présentation à l'écran).
       const reglage = m.reglage;
@@ -930,8 +948,14 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   }
   function pivoter(e: FormEvent) {
     e.preventDefault();
-    envoyer(commandePivot(choisi?.id ?? null, pivot), () => setPivot(Number.NaN));
+    envoyer(commandePivot(choisi?.id ?? null, pivot, axePivot), () => setPivot(Number.NaN));
   }
+  function mettreAEchelle(e: FormEvent) {
+    e.preventDefault();
+    envoyer(commandeEchelle3d(choisi ? [choisi.id] : [], { x: echelle3d.x, y: echelle3d.y }, echelle3d.facteur), () => setEchelle3d({ x: Number.NaN, y: Number.NaN, facteur: Number.NaN }));
+  }
+  const membres = membresGroupe(doc, groupe);
+  const editerGroupe = (r: ReturnType<typeof commandeDeplacerGroupe>, apres: () => void) => envoyer(r, apres);
   function supprimer() {
     const id = choisi?.id ?? choisiExact?.id;
     if (!id) return;
@@ -954,6 +978,8 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       <div className="studio-vue3d-bandeau">
         <span role="status" data-studio-vue3d-decompte><span>{`${mesh.solids.length} volume(s)`}</span>{" · "}<span>{`${mesh.nonExtruded} objet(s) non extrudé(s), dessinés à plat`}</span>{libres > 0 && <>{" · "}<span>{`${libres} solide(s) libre(s)`}</span></>}</span>
         <button type="button" onClick={() => { const m = moteur.current; if (m) cadrer(m, mesh); }} disabled={indisponible}>Recadrer la vue 3D</button>
+        <label className="studio-vue3d-case"><input type="checkbox" checked={webgpuDemande} onChange={(e) => setWebgpuDemande(e.target.checked)} data-studio-webgpu-demande /> WebGPU (essai)</label>
+        <span role="status" data-studio-moteur-3d={choix3d.moteur} data-studio-moteur-3d-repli={choix3d.repli?.raison ?? ""}>{texteMoteur3d(choix3d)}</span>
       </div>
       {maillage.message && <p className="studio-alert" role="alert" data-studio-maillage-erreur>{maillage.message}</p>}
       {palierQualite > 0 && (() => {
@@ -1059,9 +1085,10 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
           {solides.map((s) => (
             <li key={s.id}>
               <button type="button" aria-pressed={s.id === selection} onClick={() => surSelection?.(s.id === selection ? null : s.id)} data-studio-solide={s.id} data-studio-solide-type={s.type}
-                data-studio-solide-relation={lienDe(s)?.relation ?? ""} data-studio-solide-lien={lienDe(s)?.etat ?? ""}>
+                data-studio-solide-relation={lienDe(s)?.relation ?? ""} data-studio-solide-lien={lienDe(s)?.etat ?? ""} data-studio-solide-bascule={s.placement.basculement ? "oui" : "non"}>
                 {`${descriptionSolide(s, nombre)} · ${volumeTexte(s)}`}
               </button>
+              <label className="studio-hint"><input type="checkbox" checked={groupe.has(s.id)} onChange={() => setGroupe((g) => basculerMembre(g, s.id))} data-studio-groupe-membre={s.id} />Dans le groupe</label>
               {lienDe(s) && <span className="studio-hint" data-studio-solide-lien-texte={s.id}>{descriptionLien(lienDe(s)!)}</span>}
             </li>
           ))}
@@ -1116,11 +1143,57 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
         </form>}
         {choisi && <form onSubmit={pivoter} data-studio-pivoter={choisi.id} aria-label="Pivoter le solide">
           <fieldset disabled={!modifiable}>
-            <legend>Pivoter autour de l’axe vertical de l’origine</legend>
+            <legend>Pivoter autour d’un axe passant par l’origine</legend>
+            <label>Axe
+              <select name="pivot-axe" value={axePivot} onChange={(e) => setAxePivot(e.target.value as AxePivot)} data-studio-pivot-axe>
+                {AXES_PIVOT.map((a) => <option key={a.valeur} value={a.valeur}>{a.libelle}</option>)}
+              </select>
+            </label>
             <Champ nom="pivot-angle" libelle="Angle (°, sens trigonométrique)" valeur={pivot} surValeur={setPivot} />
             <button type="submit" data-studio-pivoter-solide><Icon name="studio-solid-rotate" size={18} /> Pivoter le solide</button>
           </fieldset>
         </form>}
+        {choisi && <form onSubmit={mettreAEchelle} data-studio-echelle-3d={choisi.id} aria-label="Mettre le solide à l’échelle">
+          <fieldset disabled={!modifiable}>
+            <legend>Mettre à l’échelle (dimensions et volume)</legend>
+            <Champ nom="echelle-x" libelle="Point fixe x (m)" valeur={echelle3d.x} surValeur={(x) => setEchelle3d({ ...echelle3d, x })} />
+            <Champ nom="echelle-y" libelle="Point fixe y (m)" valeur={echelle3d.y} surValeur={(y) => setEchelle3d({ ...echelle3d, y })} />
+            <Champ nom="echelle-facteur" libelle="Facteur" valeur={echelle3d.facteur} surValeur={(facteur) => setEchelle3d({ ...echelle3d, facteur })} />
+            <button type="submit" data-studio-echelle-3d-appliquer><Icon name="studio-scale" size={18} /> Mettre à l’échelle</button>
+          </fieldset>
+        </form>}
+        {membres.length >= 2 && <div className="studio-vue3d-groupe" data-studio-groupe={membres.join(" ")}>
+          <h4>{`Groupe de ${membres.length} solides`}</h4>
+          <form onSubmit={(e) => { e.preventDefault(); editerGroupe(commandeDeplacerGroupe(membres, groupeDeplacement), () => setGroupeDeplacement(DEPLACEMENT_VIDE)); }} aria-label="Déplacer le groupe" data-studio-groupe-deplacer>
+            <fieldset disabled={!modifiable}>
+              <legend>Déplacer le groupe, en mètres</legend>
+              <Champ nom="groupe-dx" libelle="dx (m)" valeur={groupeDeplacement.dx} surValeur={(dx) => setGroupeDeplacement({ ...groupeDeplacement, dx })} />
+              <Champ nom="groupe-dy" libelle="dy (m)" valeur={groupeDeplacement.dy} surValeur={(dy) => setGroupeDeplacement({ ...groupeDeplacement, dy })} />
+              <Champ nom="groupe-dz" libelle="dz (m)" valeur={groupeDeplacement.dz} surValeur={(dz) => setGroupeDeplacement({ ...groupeDeplacement, dz })} />
+              <button type="submit" data-studio-groupe-deplacer-appliquer><Icon name="studio-move" size={18} /> Déplacer le groupe</button>
+            </fieldset>
+          </form>
+          <form onSubmit={(e) => { e.preventDefault(); editerGroupe(commandePivoterGroupe(membres, { x: groupeRotation.x, y: groupeRotation.y }, groupeRotation.angle), () => setGroupeRotation({ x: Number.NaN, y: Number.NaN, angle: Number.NaN })); }} aria-label="Pivoter le groupe" data-studio-groupe-pivoter>
+            <fieldset disabled={!modifiable}>
+              <legend>Pivoter le groupe autour d’un axe vertical</legend>
+              <Champ nom="groupe-cx" libelle="Centre x (m)" valeur={groupeRotation.x} surValeur={(x) => setGroupeRotation({ ...groupeRotation, x })} />
+              <Champ nom="groupe-cy" libelle="Centre y (m)" valeur={groupeRotation.y} surValeur={(y) => setGroupeRotation({ ...groupeRotation, y })} />
+              <Champ nom="groupe-angle" libelle="Angle (°, sens trigonométrique)" valeur={groupeRotation.angle} surValeur={(angle) => setGroupeRotation({ ...groupeRotation, angle })} />
+              <button type="submit" data-studio-groupe-pivoter-appliquer><Icon name="studio-solid-rotate" size={18} /> Pivoter le groupe</button>
+            </fieldset>
+          </form>
+          <form onSubmit={(e) => { e.preventDefault(); editerGroupe(commandeEchelleGroupe(membres, { x: groupeEchelle.x, y: groupeEchelle.y }, groupeEchelle.facteur), () => setGroupeEchelle({ x: Number.NaN, y: Number.NaN, facteur: Number.NaN })); }} aria-label="Mettre le groupe à l’échelle" data-studio-groupe-echelle>
+            <fieldset disabled={!modifiable}>
+              <legend>Mettre le groupe à l’échelle (volumes compris)</legend>
+              <Champ nom="groupe-ex" libelle="Point fixe x (m)" valeur={groupeEchelle.x} surValeur={(x) => setGroupeEchelle({ ...groupeEchelle, x })} />
+              <Champ nom="groupe-ey" libelle="Point fixe y (m)" valeur={groupeEchelle.y} surValeur={(y) => setGroupeEchelle({ ...groupeEchelle, y })} />
+              <Champ nom="groupe-facteur" libelle="Facteur" valeur={groupeEchelle.facteur} surValeur={(facteur) => setGroupeEchelle({ ...groupeEchelle, facteur })} />
+              <button type="submit" data-studio-groupe-echelle-appliquer><Icon name="studio-scale" size={18} /> Mettre le groupe à l’échelle</button>
+            </fieldset>
+          </form>
+          <button type="button" disabled={!modifiable} onClick={() => editerGroupe(commandeSupprimerGroupe(membres), () => setGroupe(new Set()))} data-studio-groupe-supprimer>Supprimer le groupe</button>
+          <button type="button" onClick={() => setGroupe(new Set())} data-studio-groupe-vider>Vider le groupe</button>
+        </div>}
         {choisi && lienChoisi && <div className="studio-vue3d-lien" data-studio-lien-solide={choisi.id} data-studio-lien-etat={lienChoisi.etat} data-studio-lien-relation={lienChoisi.relation}>
           <h4><Icon name="studio-solid-link" size={16} /> Profil source</h4>
           <p role="status">{descriptionLien(lienChoisi)} <span translate="no">{lienChoisi.objectId.slice(0, 8)}</span></p>

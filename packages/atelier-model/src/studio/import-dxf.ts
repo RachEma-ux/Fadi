@@ -82,8 +82,23 @@ export interface StudioDxfCalque {
   /** Nom Studio retenu quand il diffère du nom du fichier (raccourci, suffixe « (2) » pour rester unique). */
   nomStudio?: string;
 }
+/**
+ * Repères source et cible de l'import (EX-080) : repère général (WCS) du fichier, en unités du fichier, vers le repère
+ * `local-2d` du document en mètres ; conversion déclarée (facteur exact, aucune translation ni rotation, Z ignoré).
+ */
+export interface StudioDxfReperes {
+  source: { repere: "dxf-wcs"; unite: StudioDxfUnite | null; espace: "objet" };
+  cible: { repere: "local-2d"; unite: "m" };
+  /** Facteur vers le mètre (null : unité inconnue, rien n'est converti). */
+  echelle: number | null;
+  translation: { x: 0; y: 0 };
+  rotation: 0;
+  z: "ignore";
+}
 export interface StudioDxfRapport {
   unite: { code: number | null; valeur: StudioDxfUnite | null; origine: "fichier" | "choix" | "inconnue" };
+  /** Repères source / cible et conversion (EX-080). */
+  reperes: StudioDxfReperes;
   /** Mètres par unité du fichier ; `null` tant que l'unité est inconnue. */
   facteur: number | null;
   entites: { lignes: number; rectangles: number; segments: number; cercles: number; arcs: number; polylignes: number; total: number };
@@ -651,6 +666,10 @@ export function lireDxfStudio(texte: string, options: StudioDxfOptions = {}): St
   const nombreDe = (t: Forme["type"]) => retenues.filter(({ forme }) => forme.type === t).length;
   const rapport: StudioDxfRapport = {
     unite: { code: s.insunits, valeur: unite, origine },
+    reperes: {
+      source: { repere: "dxf-wcs", unite, espace: "objet" }, cible: { repere: "local-2d", unite: "m" },
+      echelle: unite ? STUDIO_DXF_UNITES[unite].mul / STUDIO_DXF_UNITES[unite].div : null, translation: { x: 0, y: 0 }, rotation: 0, z: "ignore",
+    },
     facteur: unite ? STUDIO_DXF_UNITES[unite].mul / STUDIO_DXF_UNITES[unite].div : null,
     entites: {
       lignes: lignes.filter(({ forme }) => forme.type === "ligne" && !forme.segment).length,

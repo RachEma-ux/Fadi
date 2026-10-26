@@ -167,3 +167,74 @@ synthétiques ; la bascule d'un projet réel reste un acte de production).
 
 **Intégration** : signature du point d'entrée des écritures unifiée (`options.source` porte `agent-mcp`, `options.jobId`
 le job d'essai) ; recettes `studio-lot-f` et `studio-cmd` branchées en CI et en préproduction.
+
+## Lot PUB — publications, observations, quantités, BCF
+
+**Ce qui est livré**
+- Observations à vocabulaire fermé (catégorie, gravité ; absente = « non évaluée »), identité propre (`issueId`), pièces
+  justificatives ; une observation bloquante ouverte refuse soumission, approbation et diffusion (409
+  `blocking_observation_open`) jusqu'à une dérogation ou sa clôture.
+- Manifeste de publication : `usage`, `dossier` et bloc `controles` (seulement s'il n'est pas vide : empreintes des
+  publications existantes inchangées) ; type « dossier-conception » (PDF et JSON).
+- Vues de coupe (`studio_section_views`), rebasées explicitement, protégées tant qu'un dossier les cite.
+- Résultats quantitatifs à identité stable (`studio.metre.<grandeur>/1`), aucun total sur révisions, règles ou unités
+  mélangées, ajustement motivé et signé.
+- BCF 2.1 minimal livré dans les deux sens (Ctrl+Alt+Maj+Y / I) ; repères source et cible des rapports DXF.
+- Conclusions de contrôle (EX-068) : conforme, non conforme, non testé, non applicable justifié (justification relue
+  contre la version d'exigence, auteur et date fixés par le serveur, 400 `justification_invalide`).
+- Provenance des rendus : auteur exigé. **Intégration avec le lot F** : la provenance relue d'un rendu exige aussi son
+  auteur et la vue 3D le transmet à l'illustration (réserve TR-EX-071 du lot F levée).
+
+**Restent partiels** : REC-E-03 (acceptation des trois parcours par le maître d'ouvrage), TR-EX-027 (cas positif : outil
+« échelle » du lot OUT), E.6-04 (DWG, STEP, OBJ, STL sans contrat, motivés). Limites : l'archive de projet n'emporte
+pas encore les vues de coupe ni les pièces des observations ; les `issueId` des observations d'équipe figurent au manifeste.
+
+## Lot REND — graphismes, repères, moteurs qualifiés, provenance des sources
+
+**Ce qui est livré**
+- Système de projet versionné et repères local-objet / local-2d / projet (transformations vérifiées, traces) ; le repère
+  géographique est refusé (aucune projection dans Studio).
+- Graphismes : Bézier cubique, hachure, symbole, opacité (outils `studio.graphisme.creer` Maj+F6,
+  `studio.graphisme.retirer` Maj+F7, `studio.repere.projet` Ctrl+Maj+F2, `studio.source.declarer` Ctrl+Maj+F3, chacun
+  avec icône, barre et raccourci ; alternatives clavier déclarées).
+- Règle des accélérations (gain p95 strict par scène, équivalence dans la tolérance, appareil réel pour le GPU) : index
+  spatial autorisé, moteur Canvas refusé (mesuré en CI), repli WebGPU → WebGL2 déclaré.
+- Provenance des imports DXF / IFC et des modèles externes (`studio-provenance/1`, route
+  `…/modeles-externes/:modelId/provenance` à contrat `studio-api-modele-externe-provenance/1`, droit d'export).
+- Mesures S1–S5 et S7 à 100 / 10 000 / 100 000 primitives dans Chromium (DEC-09, DEC-13) ; chemins optimisés
+  équivalents au chemin direct (REC-C-01).
+
+**Restent ouverts** : TR-EX-059 (mesure pendant un booléen exact lourd ; appareil réel), REC-C-02 (GPU et téléphone
+réels : recette `RECETTE-APPAREILS.md`, `HEADED=1` ou `CDP_URL`).
+
+**Intégration** : matrice d'échanges en révision 6 (illustration PNG, BCF, dossier de conception, graphismes,
+provenances) ; contrat des modèles externes étendu par deux champs (repère source, restrictions : règle d'évolution,
+même version) ; recettes `studio-pub` et `studio-rend` branchées en CI, `studio-rend` en préproduction.
+
+## Lot OUT — outils, chargement, profils
+
+**Ce qui est livré**
+- Contrat d'exécution des outils (EX-028) et fiches d'outils (risques, cas positifs et négatifs, mesures par barre) ;
+  quota d'invocation par compte (600 lots / minute, 20 000 / heure, réglable ; rejeux et installation d'exemple
+  exemptés ; 429 avec `Retry-After`) — limite : compteur propre à chaque processus API.
+- États des tâches IF-007 (`superseded` au remplacement, annulation coopérative) ; messages des Workers validés
+  (« illisible » / « invalide » arrête le Worker) ; noyau exact libéré après 5 minutes d'inactivité.
+- Profils d'outils `fadi-studio-profil/1` (export, import en copie, 409 sur conflit de raccourci avec résolution
+  « écarter », 403 si le profil contient « Publier » sans le droit) ; mécanisme de dépréciation prouvé sur tables d'essai.
+- Caches par build (EX-042), refus de duplication au build pour three / occt / manifold (EX-041), instanciation à partir
+  de 3 exemplaires (C.2-02), basculement canonique (A.3-03), accrochage parallèle (EX-053).
+
+**Reste partiel** : TR-AC-011 (aucune fiche « conforme » tant qu'un build et un profil de charge de référence ne sont pas
+désignés par le maître d'ouvrage : `DESIGNATION_CONFORMITE = null`).
+
+**Intégration** : l'accrochage parallèle prend **Ctrl+Maj+F6** (Maj+F6 est « Créer un graphisme » du lot REND, règle
+d'or : un raccourci par commande) ; fiches d'outils complétées des quatre outils du lot REND ; matrice d'échanges en
+révision 7 ; recette `studio-out` branchée en CI.
+
+## Promotion après la CI verte de main (PR #328 fusionnée, main@4304050)
+
+Les preuves « test prescrit » des lots REG, DEC, F et CMD ont été rattachées par `scripts/registre/completer_preuves.py`
+à l'exécution verte de `main` sur le commit de fusion (libellés présents au commit, étape nommée réussie) : 115 preuves
+complétées, **56 obligations passées « Vérifié »**. Restent « Implémenté » : les obligations des lots PUB, REND et OUT
+(leurs fichiers ne sont pas encore sur `main`), PR-01 à PR-06 et PR-09 (les tests du contrôle de PR tournent sur `main`
+à partir de la prochaine fusion) et TR-EX-046 (suite DB-3 du journal d'accès à rattacher).

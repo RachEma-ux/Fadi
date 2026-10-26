@@ -40,7 +40,8 @@ sys.path.insert(0, str(RACINE / 'docs' / 'ai-team'))
 import controle_preuves as cp  # noqa: E402
 
 DEPOT = 'RachEma-ux/Fadi'
-WORKFLOWS = {'ci': '.github/workflows/ci.yml', 'architecture': '.github/workflows/architecture-guards.yml'}
+WORKFLOWS = {'ci': '.github/workflows/ci.yml', 'architecture': '.github/workflows/architecture-guards.yml',
+             'continuity': '.github/workflows/continuity.yml', 'securite': '.github/workflows/securite-secrets.yml'}
 ZURICH = ZoneInfo('Europe/Zurich')
 
 
@@ -156,6 +157,18 @@ def etape_executante(fichier: str) -> tuple[str, re.Pattern] | None:
         return 'ci', re.compile(re.escape(f'({fichier})') + '|' + re.escape(fichier))
     if fichier.startswith('scripts/migration/'):
         return 'ci', re.compile(r'\(scripts/migration/\)')
+    # Outillage du registre, porte G4 et analyse de secrets : étapes nommées de continuity.yml et securite-secrets.yml
+    # (exécutées sur main à chaque fusion).
+    if fichier == 'scripts/registre/controle-preuves.test.mjs':
+        return 'continuity', re.compile(r'^Règles de preuve du registre Studio')
+    if fichier == 'scripts/registre/controles-suivi.test.mjs':
+        return 'continuity', re.compile(r'^Cohérence du suivi Studio')
+    if fichier == 'scripts/registre/controle-pr.test.mjs':
+        return 'continuity', re.compile(r'^Tests du contrôle de PR')
+    if fichier == 'scripts/validation/porte-g4.test.mjs':
+        return 'continuity', re.compile(r'^Porte G4 Studio')
+    if fichier == 'scripts/securite/analyse-secrets.test.mjs':
+        return 'securite', re.compile(r"^Tests de l'analyse$")
     if fichier == 'scripts/check-frontieres.test.mjs':
         return 'architecture', re.compile(r'^Table des frontières Studio')
     if fichier.startswith('apps/api/src/') and re.search(r'\.test\.tsx?$', fichier):

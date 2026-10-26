@@ -78,6 +78,11 @@ export const ALTERNATIVES_GESTES: Readonly<Record<string, AlternativeGeste>> = O
   "studio.apparence.retirer": commande,
   "studio.nonnatif.conserver": commande,
   "studio.nonnatif.retirer": commande,
+  // Lot REND : boîtes « Graphismes », « Système de projet » et « Déclarer la source » (valeurs saisies, raccourci propre).
+  "studio.graphisme.creer": commande,
+  "studio.graphisme.retirer": commande,
+  "studio.repere.projet": commande,
+  "studio.source.declarer": commande,
 });
 
 /** Gestes de vue et de sélection au pointeur (outils/gestes.ts) → commandes de l'éditeur au clavier (raccourcis.ts). */

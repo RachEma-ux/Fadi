@@ -11,6 +11,7 @@
  *   courant invalident (mêmes règles que l'événement d'effets d'une commande, EX-010).
  */
 import type { StudioDocument } from "@parcours/atelier-model";
+import type { EtatTache } from "../taches/ordonnanceur";
 import { studioEffetsCommande, studioEtatDeriveCoherent, studioLibelleEtatDerive, type StudioDomaineDerive, type StudioEtatDerive } from "@parcours/atelier-model/studio-cmd";
 
 export const LIBELLES_DOMAINES: Readonly<Record<StudioDomaineDerive, string>> = Object.freeze({
@@ -26,7 +27,7 @@ export interface EntreeEtatProjection {
   /** Message d'échec de la tâche de maillage, s'il y en a un. */
   echec: string | null;
   /** État de la tâche de maillage du document courant. */
-  tache: "queued" | "running" | "done" | "failed" | "cancelled" | "timed-out" | "stale" | "inactive";
+  tache: EtatTache | "inactive";
   /** Source du document courant (à mailler) et source du résultat affiché (null : aucun résultat encore). */
   courante: SourceProjection;
   affichee: SourceProjection | null;
@@ -54,7 +55,7 @@ export function etatProjection3d(e: EntreeEtatProjection): EtatProjection {
   if (e.indisponible) etat = { etat: "non-applicable", revision, image, motif: "WebGL n’est pas pris en charge par ce navigateur" };
   else if (e.echec) etat = { etat: "echec", revision, image: image === revision ? null : image, motif: e.echec };
   else if (image === revision) etat = { etat: "a-jour", revision, image, motif: null };
-  else if (e.tache === "running" || e.tache === "queued") etat = { etat: "en-calcul", revision, image, motif: null };
+  else if (e.tache === "running" || e.tache === "queued" || e.tache === "loading" || e.tache === "cancel_requested") etat = { etat: "en-calcul", revision, image, motif: null };
   else etat = { etat: "a-recalculer", revision, image, motif: null };
   const domainesPerimes = e.docAffiche && e.docAffiche !== e.docCourant && image !== revision
     ? studioEffetsCommande(e.docAffiche, e.docCourant, [], { revisionBase: null, revisionSortie: "", source: "vue-3d", auteurId: "", requestId: null }).domainesInvalides

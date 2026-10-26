@@ -1,6 +1,6 @@
 import { ref, refs, studioStepString, type IfcConstruit, type IfcContexte } from "../exporteurs/ifc-step.js";
 import { STUDIO_DEFAULT_LAYER_ID } from "../noyau/limites.js";
-import { directionUnitaire, estDroit, type StudioLienSolide, type StudioSolid } from "./solides.js";
+import { directionUnitaire, estDroit, studioVecteurSolide, type StudioLienSolide, type StudioSolid } from "./solides.js";
 
 /**
  * Écriture IFC d'un solide libre : `IfcBuildingElementProxy` de type prédéfini `.NOTDEFINED.` — jamais un mur, une dalle
@@ -12,7 +12,10 @@ import { directionUnitaire, estDroit, type StudioLienSolide, type StudioSolid } 
  */
 export function studioIfcSolide(s: StudioSolid, c: IfcContexte, lien: StudioLienSolide | null = null): IfcConstruit {
   const { origin, rotation } = s.placement;
-  const placement = c.placed(origin.x, origin.y, origin.z, Math.cos(rotation), Math.sin(rotation));
+  // Solide basculé (A.3-03) : axe z et axe x locaux du placement exprimés dans le repère (orientation complète).
+  const placement = s.placement.basculement
+    ? c.placedAxes(origin.x, origin.y, origin.z, studioVecteurSolide(s.placement, { x: 0, y: 0, z: 1 }), studioVecteurSolide(s.placement, { x: 1, y: 0, z: 0 }))
+    : c.placed(origin.x, origin.y, origin.z, Math.cos(rotation), Math.sin(rotation));
   const sens = s.type === "prism" && s.direction && !(estDroit(s) && directionUnitaire(s).z > 0) ? directionUnitaire(s) : undefined;
   const item = s.type === "box" ? c.rectangleSolid(s.width / 2, s.depth / 2, s.width, s.depth, s.height) : c.arbitrarySolid(s.profile, s.height, sens);
   const rep = c.s.add(`IFCSHAPEREPRESENTATION(${ref(c.body)},'Body','SweptSolid',${refs([item])})`);

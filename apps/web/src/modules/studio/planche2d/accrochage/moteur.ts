@@ -7,7 +7,8 @@
  * Règles de priorité (déterministes, contrôlées par test) :
  *  1. Un angle imposé (« <45 ») l'emporte sur tout : le point reste sur la droite imposée.
  *  2. Points géométriques exacts (extrémité, intersection, milieu, centre, quadrant) ;
- *  3. puis points relatifs au dernier point posé (perpendiculaire, tangente) ;
+ *  3. puis points relatifs au dernier point posé (perpendiculaire, tangente, parallèle — EX-053 : la droite menée du
+ *     dernier point parallèlement à un segment de la vue, point le plus proche du pointeur sur cette droite) ;
  *  4. puis repérage orthogonal (Maj tenue ou bascule) ou polaire ;
  *  5. puis le point le plus proche sur un objet ; à défaut, la grille ou le centimètre (espace de travail).
  *  Dans un même rang, le plus proche du pointeur gagne ; à distance égale (1e-12 m), l'ordre de `MODES_ACCROCHAGE`,
@@ -20,9 +21,9 @@ import type { PointAccroche } from "../geometrie-2d";
 import { boiteAutour, boiteEntite, intersectionBoites, seRecouvrent, surArc, type Boite, type Entite, type IndexAccrochage } from "./entites";
 import { distance, intersectionsEntites, net, netPoint, piedsPerpendiculaires, plusProche, pointsTangence } from "./intersections";
 
-export type ModeAccrochage = "extremite" | "intersection" | "milieu" | "centre" | "quadrant" | "perpendiculaire" | "tangente" | "proche";
+export type ModeAccrochage = "extremite" | "intersection" | "milieu" | "centre" | "quadrant" | "perpendiculaire" | "tangente" | "parallele" | "proche";
 /** Ordre de départage à distance égale (et ordre d'affichage des bascules). */
-export const MODES_ACCROCHAGE: readonly ModeAccrochage[] = Object.freeze(["extremite", "intersection", "milieu", "centre", "quadrant", "perpendiculaire", "tangente", "proche"]);
+export const MODES_ACCROCHAGE: readonly ModeAccrochage[] = Object.freeze(["extremite", "intersection", "milieu", "centre", "quadrant", "perpendiculaire", "tangente", "parallele", "proche"]);
 /** Modes actifs à l'ouverture : les sommets nommés (comportement d'origine) et les intersections. */
 export const MODES_PAR_DEFAUT: ReadonlySet<ModeAccrochage> = new Set<ModeAccrochage>(["extremite", "intersection", "milieu", "centre", "quadrant"]);
 
@@ -30,12 +31,12 @@ export type GenreRepere = ModeAccrochage | "orthogonal" | "polaire" | "angle";
 /** Libellé affiché près du repère (français, traduit par le dictionnaire anglais). */
 export const LIBELLES_REPERE: Readonly<Record<GenreRepere, string>> = Object.freeze({
   extremite: "Extrémité", intersection: "Intersection", milieu: "Milieu", centre: "Centre", quadrant: "Quadrant",
-  perpendiculaire: "Perpendiculaire", tangente: "Tangente", proche: "Proche", orthogonal: "Orthogonal", polaire: "Polaire", angle: "Angle imposé",
+  perpendiculaire: "Perpendiculaire", tangente: "Tangente", parallele: "Parallèle", proche: "Proche", orthogonal: "Orthogonal", polaire: "Polaire", angle: "Angle imposé",
 });
 
 /** Rang de priorité : 0 points exacts, 1 relatifs au dernier point, 2 repérage, 3 plus proche. */
 export const rangRepere = (g: GenreRepere): number =>
-  g === "perpendiculaire" || g === "tangente" ? 1 : g === "orthogonal" || g === "polaire" || g === "angle" ? 2 : g === "proche" ? 3 : 0;
+  g === "perpendiculaire" || g === "tangente" || g === "parallele" ? 1 : g === "orthogonal" || g === "polaire" || g === "angle" ? 2 : g === "proche" ? 3 : 0;
 
 export interface Repere {
   genre: GenreRepere;
@@ -103,11 +104,11 @@ export function candidatsObjets(index: IndexAccrochage, q: RequeteAccrochage, r:
   const formes = index.formes(zone).filter((f) => !q.exclure?.has(f.forme.id));
   const out: Candidat[] = [];
   let seq = 0;
-  const poser = (genre: ModeAccrochage, point: StudioPoint, objets: string[], rang: number, ancre: PointAccroche | null = null) => {
+  const poser = (genre: ModeAccrochage, point: StudioPoint, objets: string[], rang: number, ancre: PointAccroche | null = null, guide?: { de: StudioPoint; vers: StudioPoint }) => {
     if (!r.modes.has(genre)) return;
     const d = distance(point, q.curseur);
     if (d > q.tolerance || (q.vue && !dans(q.vue, point))) return;
-    out.push({ genre, point, objets, ancre, distance: d, rang, seq: seq++ });
+    out.push({ genre, point, objets, ancre, distance: d, rang, seq: seq++, ...(guide ? { guide } : {}) });
   };
 
   const proches: { e: Entite; rang: number }[] = [];
@@ -144,6 +145,23 @@ export function candidatsObjets(index: IndexAccrochage, q: RequeteAccrochage, r:
     if (q.base && r.modes.has("perpendiculaire")) for (const p of piedsPerpendiculaires(e, q.base)) poser("perpendiculaire", p, [e.objectId], rang);
     if (q.base && r.modes.has("tangente")) for (const p of pointsTangence(e, q.base)) poser("tangente", p, [e.objectId], rang);
     if (r.modes.has("proche")) { const p = plusProche(e, q.curseur); if (p) poser("proche", p, [e.objectId], rang); }
+  }
+  // Parallèle (EX-053) : droite menée du dernier point parallèlement à chaque segment de la vue (hors de la zone du
+  // pointeur aussi : le segment de référence est souvent ailleurs), pied du pointeur sur cette droite.
+  if (q.base && r.modes.has("parallele")) {
+    const base = q.base;
+    const reference = q.vue ? index.formes(q.vue).filter((f) => !q.exclure?.has(f.forme.id)) : formes;
+    for (const f of reference) {
+      for (const e of f.entites) {
+        if (e.type !== "segment") continue;
+        const ux = e.b.x - e.a.x, uy = e.b.y - e.a.y, n = Math.hypot(ux, uy);
+        if (!(n > 0)) continue;
+        const t = ((q.curseur.x - base.x) * ux + (q.curseur.y - base.y) * uy) / (n * n);
+        if (Math.abs(t * n) < 1e-9) continue; // sur le dernier point : aucune direction suivie
+        const point = netPoint({ x: base.x + t * ux, y: base.y + t * uy });
+        poser("parallele", point, [e.objectId], f.rang, null, { de: { ...base }, vers: point });
+      }
+    }
   }
   return out.sort(comparer).map(({ rang: _r, seq: _s, ...c }) => c);
 }

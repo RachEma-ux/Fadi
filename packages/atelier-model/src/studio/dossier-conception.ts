@@ -406,8 +406,11 @@ const ligneMetre = (l: LigneBilanQuantites): string[] => [
   l.objetId, l.type, fmt(l.brut), l.deductions.length ? `${fmt(l.deduit)} (${l.deductions.map((d) => d.sourceId).join(", ")})` : fmt(l.deduit), fmt(l.net),
 ];
 
-/** PDF du dossier : sommaire, feuilles dans l'ordre, métré (brut, déductions, net), fidélité. */
-export function pdfDossierConception(d: StudioDossierConception, rendus: readonly StudioSheet[]): Uint8Array {
+/**
+ * PDF du dossier : sommaire, feuilles dans l'ordre, métré (brut, déductions, net), fidélité ; puis, s'il y en a, les pages
+ * propres jointes au dossier (vues de coupe de la maquette, EX-076), chacune avec sa provenance.
+ */
+export function pdfDossierConception(d: StudioDossierConception, rendus: readonly StudioSheet[], pagesJointes: readonly { largeurMm: number; hauteurMm: number; primitives: readonly Primitive[] }[] = []): Uint8Array {
   if (rendus.length !== d.feuilles.length) throw new RangeError("un rendu par feuille attendu");
   const sommaire = pagesTexte(`${d.titre} — sommaire`, ["N°", "Feuille", "Variante · révision", "Empreinte des données"], [20, 40, 110, 160], [
     ...d.feuilles.map((f) => [f.definition.numero, f.definition.titre, `${ou(f.vue.source.variantName)} · ${f.vue.source.revisionId.slice(-8)}`, f.vue.empreinteDonnees.slice(0, 16)]),
@@ -445,5 +448,6 @@ export function pdfDossierConception(d: StudioDossierConception, rendus: readonl
       [f.numero, "solides, propriétés, scènes", "exclu", "hors-plan-2d", String(f.exclus.solides + f.exclus.proprietes + f.exclus.scenes)],
     ])));
   }
+  pages.push(...pagesJointes.map((p) => ({ largeurMm: p.largeurMm, hauteurMm: p.hauteurMm, primitives: [...p.primitives] })));
   return pdfPages(pages, d.titre);
 }

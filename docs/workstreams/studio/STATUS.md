@@ -1,5 +1,44 @@
 # État — Studio
 
+## Achèvement — PR #328 fusionnée, promotion des preuves, intégration PUB / REND / OUT — 26 octobre 2026
+
+Branche `ccr-187fd2e6-08dk6e`, base `main@4304050` (PR #328 : lots REG, DEC, F et CMD, CI verte y compris DB-3).
+
+Ce qui a été fait :
+- **PR #328 fusionnée** ; CI de `main` verte sur le commit de fusion.
+- **Promotion** : 56 obligations des lots REG, DEC, F et CMD passent « Vérifié », leurs preuves rattachées à l'exécution verte de `main`.
+- **Lots PUB, REND et OUT intégrés** sur cette branche (recettes jouées en local : studio-pub, studio-rend, studio-out, studio-navigation, publication, observations, exigences, visualisation, contrats, interface anglaise) ; leurs obligations restent « Implémenté » jusqu'à la CI verte de `main` après fusion. Détail : [ACHEVEMENT-STUDIO](recettes/ACHEVEMENT-STUDIO.md).
+
+Compteurs recalculés du registre : **0 À définir / 39 À faire / 35 En cours / 56 Implémenté / 9 Bloqué / 432 Vérifié / 59 Accepté**. **P630=491/630**.
+
+Prochaine action : CI verte de cette PR, fusion, promotion des obligations PUB / REND / OUT, puis intégration de la vague 2 (lots G1 à G5).
+
+## Achèvement — intégration du lot OUT — 26 octobre 2026
+
+Branche `ccr-187fd2e6-08dk6e`, au-dessus des lots PUB et REND.
+
+Ce qui a été fait :
+- **Lot OUT** : contrat d'exécution et fiches d'outils, quota d'invocation, états des tâches et Workers validés, profils d'outils, caches par build, instanciation, basculement, accrochage parallèle.
+- **Intégration** : raccourci de l'accrochage parallèle déplacé sur Ctrl+Maj+F6 (Maj+F6 reste à « Créer un graphisme »), fiches d'outils complétées des outils du lot REND, matrice d'échanges en révision 7. Détail : [ACHEVEMENT-STUDIO](recettes/ACHEVEMENT-STUDIO.md).
+- **Les huit lots d'achèvement sont intégrés** ; restent les obligations de mesure sur données réelles et d'appareil réel, et les actes du maître d'ouvrage.
+
+Compteurs recalculés du registre : à cette date 376 Vérifié, 59 Accepté, 9 Bloqué, 112 Implémenté, 35 En cours, 39 À faire, 0 À définir ; 435 obligations sur 630 closes.
+
+Prochaine action : CI verte, passage « Vérifié » des obligations « Implémenté », fusion, puis build candidat et bilan.
+
+## Achèvement — intégration des lots PUB et REND — 26 octobre 2026
+
+Branche `ccr-187fd2e6-08dk6e`, au-dessus des lots REG, DEC, F et CMD (PR #328).
+
+Ce qui a été fait :
+- **Lot PUB** : observations bloquantes, manifeste et dossier de conception, vues de coupe, résultats quantitatifs, BCF 2.1 dans les deux sens, conclusions de contrôle.
+- **Lot REND** : graphismes, repères et système de projet, provenance des sources, règle des accélérations (index spatial autorisé, Canvas refusé), mesures S1–S7.
+- **Intégration** : auteur du rendu exigé jusque dans l'illustration (réserve TR-EX-071 levée), matrice d'échanges en révision 6, recettes branchées en CI. Détail : [ACHEVEMENT-STUDIO](recettes/ACHEVEMENT-STUDIO.md).
+
+Compteurs recalculés du registre : à cette date 376 Vérifié, 59 Accepté, 9 Bloqué, 90 Implémenté, 53 En cours, 43 À faire, 0 À définir ; 435 obligations sur 630 closes.
+
+Prochaine action : CI verte, passage « Vérifié » des obligations « Implémenté », fusion, puis lot OUT.
+
 ## Achèvement — intégration des lots REG, DEC, F et CMD — 26 octobre 2026
 
 Branche `ccr-187fd2e6-08dk6e`, base `main@1fd6fbd` (lot API, PR #326).
@@ -9,7 +48,7 @@ Ce qui a été fait :
 - **Réouverture durable (A.1-07)** : la CI redémarre désormais PostgreSQL et l'API entre la phase initiale et la phase de réouverture.
 - **Registre** : 65 obligations inscrites « Implémenté » en attendant l'exécution CI verte de la PR, puis passage « Vérifié » ; les verdicts partiels restent ouverts avec leur suite. Détail : [ACHEVEMENT-STUDIO](recettes/ACHEVEMENT-STUDIO.md).
 
-Compteurs recalculés du registre : **0 À définir / 48 À faire / 73 En cours / 65 Implémenté / 9 Bloqué / 376 Vérifié / 59 Accepté**. **P630=435/630**.
+Compteurs recalculés du registre : à cette date 376 Vérifié, 59 Accepté, 9 Bloqué, 65 Implémenté, 73 En cours, 48 À faire, 0 À définir ; 435 obligations sur 630 closes.
 
 Prochaine action : CI verte de la PR, passage « Vérifié » par `completer_preuves.py`, fusion, puis lots PUB, OUT et REND.
 

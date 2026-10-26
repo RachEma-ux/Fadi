@@ -191,6 +191,18 @@ describe("lot F2 — booléens des solides libres de Studio, instance unique (IF
     expect(() => M.executer({ type: "booleen", op: "intersection", a: { extrusion: { profil: carre(1), z0: 0, hauteur: 1 } }, b: { extrusion: { profil: carre(1, 5, 5), z0: 0, hauteur: 1 } } })).toThrow(/aucun solide|vide/);
   });
 
+  it("TR-EX-062 : allocations WebAssembly mesurées — mémoire linéaire du noyau relevée après chaque calcul, croissante, jamais nulle", async () => {
+    const avant = MoteurExact.memoireWasmOctets();
+    expect(avant).toBeGreaterThan(0);
+    const releves: number[] = [];
+    for (let i = 0; i < 5; i++) {
+      M.executer({ type: "booleen", op: "union", a: { extrusion: { profil: carre(2), z0: 0, hauteur: 2 } }, b: { extrusion: { profil: carre(2, 1 + i * 0.1, 0), z0: 0, hauteur: 2 } } });
+      releves.push(MoteurExact.memoireWasmOctets()!);
+    }
+    // Multiple de la page WebAssembly (64 Kio) et jamais en baisse : c'est la mémoire linéaire réelle, pas une estimation.
+    expect(releves.every((n, i) => n % 65536 === 0 && n >= (i === 0 ? avant! : releves[i - 1]!))).toBe(true);
+  });
+
   it("instance unique : charger deux fois rend le même noyau, une seule instance compilée dans ce processus", async () => {
     const a = await MoteurExact.charger(), b = await MoteurExact.charger();
     expect(a).toBe(b);

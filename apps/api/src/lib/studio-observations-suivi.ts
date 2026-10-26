@@ -35,6 +35,7 @@ import { StudioRequestError, studioArchivedRefusal, studioIdentifierSchema, type
 import {
   acteurDe, assignable, constaterDans, audienceFilter, audienceOrRefuse, conflict, hashOf, insertDecision, insertObservationRows, lockedVariant, notFound, observationViews, participants, scopedVariant,
   STUDIO_COMMENT_MAX_OBJECTS, studioObservationVueSchema, type Lecteur, type StudioObservationView, type StudioParticipant,
+  contenuIf010, studioObservationCategorieSchema, studioObservationGraviteSchema, studioObservationPiecesSchema,
 } from "./studio-commentaires.js";
 import {
   DOMAINE_AVEC_REVISION, echeanceValide, lireRefMetre, OBSERVATION_DOMAINES, peutCreerTache, peutLier, REFUS_TACHE, refusDecision, TACHE_TRANSITIONS, tacheApres,
@@ -70,6 +71,10 @@ export const studioObservationOuvertureSchema = z.object({
   requestId: studioIdentifierSchema.optional(),
   /** Audience (E1) : `equipe` par défaut, `projet` = visible par les lecteurs. */
   audience: audienceSchema.optional(),
+  /** IF-010 (lot PUB) : catégorie, gravité, pièces justificatives. */
+  categorie: studioObservationCategorieSchema.optional(),
+  gravite: studioObservationGraviteSchema.optional(),
+  pieces: studioObservationPiecesSchema.optional(),
 }).strict();
 export type StudioObservationOuverture = z.infer<typeof studioObservationOuvertureSchema>;
 
@@ -98,7 +103,8 @@ export const studioObservationTacheTransitionSchema = z.object({
 
 export const studioObservationDecisionSchema = z.object({
   nature: z.enum(["proposition", "decision"]),
-  portee: z.enum(["cloture", "autre"]),
+  /** `derogation` (IF-009, lot PUB) : décision du propriétaire qui déroge à une observation bloquante pour la publication. */
+  portee: z.enum(["cloture", "autre", "derogation"]),
   texte: z.string().trim().min(1, "Décision vide").max(2000),
   revisionId: studioIdentifierSchema.optional(),
   requestId: studioIdentifierSchema.optional(),
@@ -268,7 +274,9 @@ async function resultat(scope: StudioScope, variantId: string, lecteur: Lecteur,
  */
 export async function openStudioObservation(scope: StudioScope, actorId: string, input: StudioObservationOuverture): Promise<StudioObservationDetail & { replayed: boolean }> {
   const { requestId, ...contenu } = input;
-  const hash = hashOf({ action: "ouvrir-directe", ...contenu });
+  // Champs IF-010 : dans l'empreinte seulement s'ils sont cités (pièces par leur SHA-256, pas par leur contenu).
+  const { categorie: _c, gravite: _g, pieces: _p, ...reste } = contenu;
+  const hash = hashOf({ action: "ouvrir-directe", ...reste, ...contenuIf010(input) });
   const run = () => db.transaction(async (tx) => {
     const v = await varianteEcrite(tx, scope, actorId);
     const done = (id: string, replayed: boolean) => ({ variantId: v.id, lecteur: v.lecteur, id, replayed });
@@ -307,7 +315,7 @@ export async function openStudioObservation(scope: StudioScope, actorId: string,
     }
     const id = newId("studio_comment");
     await tx.insert(studioComments).values({ id, variantId: v.id, revisionId, objectIds, parentId: null, authorId: actorId, body: input.body, requestId: requestId ?? null, payloadHash: hash, audience });
-    await insertObservationRows(tx, { commentId: id, variantId: v.id, responsableId: responsable, input: { echeance: input.echeance, note: input.note, vue: input.vue }, actorId, hash });
+    await insertObservationRows(tx, { commentId: id, variantId: v.id, responsableId: responsable, input: { echeance: input.echeance, note: input.note, vue: input.vue, categorie: input.categorie, gravite: input.gravite, pieces: input.pieces }, actorId, hash });
     for (const l of liens) await tx.insert(studioObservationLinks).values({ id: newId("studio_observation_link"), observationId: id, variantId: v.id, ...l, createdBy: actorId });
     return done(id, false);
   });

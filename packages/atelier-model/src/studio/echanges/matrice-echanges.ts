@@ -27,7 +27,7 @@ import { STUDIO_CAPACITES_EXPORT, STUDIO_RAISONS_FIDELITE, type StudioFormatEcha
 
 export const STUDIO_MATRICE_ECHANGES_SCHEMA = "studio-matrice-echanges/1" as const;
 /** Révision de la matrice : à incrémenter avec toute modification d'une entrée (empreinte épinglée par test). */
-export const STUDIO_MATRICE_ECHANGES_REVISION = 6 as const;
+export const STUDIO_MATRICE_ECHANGES_REVISION = 7 as const;
 /** Date de l'audit qui a établi la révision courante. */
 export const STUDIO_MATRICE_ECHANGES_DATE = "2026-10-25" as const;
 
@@ -123,6 +123,7 @@ export const STUDIO_STATUT_DE_RAISON: Readonly<Record<StudioRaisonFidelite, Stud
   "non-extrude": "non-couvert", "cote-hors-ifc": "non-couvert", "annotation-hors-ifc": "non-couvert", "solide-hors-2d": "non-couvert",
   "visualisation-hors-export": "non-couvert", "type-sans-capacite": "non-couvert", "propriete-non-exportee": "non-couvert",
   "propriete-non-evaluee": "non-couvert", "non-natif-hors-export": "non-couvert", "solide-exact-hors-ifc": "non-couvert",
+  "spline-decoupee": "approche", "transparence-non-portee": "approche", "graphisme-hors-ifc": "non-couvert", "provenance-hors-dessin": "non-couvert",
 });
 
 type Categorie = keyof typeof STUDIO_CAPACITES_EXPORT;
@@ -146,6 +147,8 @@ export const STUDIO_COUVERTURE_EXPORT: { readonly [F in StudioFormatEchange]: Pa
     proprietes: { propriete: ["propriete-non-exportee"] },
     scenes: { scene: VISU, appearance: VISU },
     nonNatifs: { "non-native": NN },
+    graphismes: { spline: ["trace-exact"], hachure: ["trace-exact"], symbole: ["trace-exact"] },
+    sources: { source: ["provenance-hors-dessin"] },
   },
   dxf: {
     objets: { line: TRACE_2D, rectangle: TRACE_2D, circle: TRACE_2D, arc: ["arcs-exacts", "extrusion-non-portee"], polyline: ["trace-exact", "renflements-exacts", "extrusion-non-portee"] },
@@ -157,6 +160,8 @@ export const STUDIO_COUVERTURE_EXPORT: { readonly [F in StudioFormatEchange]: Pa
     proprietes: { propriete: ["propriete-non-exportee"] },
     scenes: { scene: VISU, appearance: VISU },
     nonNatifs: { "non-native": NN },
+    graphismes: { spline: ["spline-decoupee"], hachure: ["trace-exact", "transparence-non-portee"], symbole: ["trace-exact", "transparence-non-portee"] },
+    sources: { source: ["provenance-hors-dessin"] },
   },
   ifc: {
     objets: {
@@ -171,6 +176,8 @@ export const STUDIO_COUVERTURE_EXPORT: { readonly [F in StudioFormatEchange]: Pa
     proprietes: { propriete: ["propriete-en-pset", "propriete-non-evaluee"] },
     scenes: { scene: VISU, appearance: VISU },
     nonNatifs: { "non-native": NN },
+    graphismes: { spline: ["graphisme-hors-ifc"], hachure: ["graphisme-hors-ifc"], symbole: ["graphisme-hors-ifc"] },
+    sources: { source: ["provenance-hors-dessin"] },
   },
 });
 
@@ -266,9 +273,36 @@ const LIVREES: readonly StudioEntreeEchange[] = [
     sources: [S_PLAN, S_LISTE("E.6-02")],
   },
   {
+    id: "natif-profil-outils-export", format: "Profil d’outils Studio (JSON)", versionFormat: "fadi-studio-profil/1", sens: "export", famille: "natif",
+    objet: "Profil d’outils du compte (profileId, version, ordre, raccourcis personnels, visibilité)", taches: ["E.6-02"], statut: "livre",
+    limite: "Préférences du compte seulement : aucune donnée du projet, aucun droit (EX-033, INV-009).",
+    entites: [{ entite: "Profil d’outils", couverture: "portee", detail: "Profil des barres, favoris, liste personnelle, regroupements, ordre des capacités, raccourcis personnels, version." }],
+    controle: "Tests des profils importés et exportés.",
+    preuves: {
+      code: [p(`${API}routes/studio-preferences.ts`, "lireProfilExporte")],
+      tests: [p(`${API}routes/studio-profils-import.test.ts`, "format: \"fadi-studio-profil/1\", profileId: r1.body.profileId")],
+      interfaces: [p(`${WEB}planche2d/CatalogueOutils.tsx`, "lien.download = `profil-studio-${f.profileId}-v${f.version}.json`")],
+      routes: [p(`${API}routes/studio-preferences.ts`, "/outils/export")],
+    },
+    sources: [S_LISTE("E.6-02")],
+  },
+  {
+    id: "natif-profil-outils-import", format: "Profil d’outils Studio (JSON)", versionFormat: "fadi-studio-profil/1", sens: "import", famille: "natif",
+    objet: "Profil d’outils importé dans le compte", taches: ["E.6-02"], statut: "livre",
+    limite: "Aucun droit conféré : une capacité exigeant un droit absent est refusée ; raccourcis en conflit refusés ou écartés sur demande explicite.",
+    entites: [{ entite: "Profil d’outils", couverture: "portee", detail: "Relu, contrôlé (outils du registre, droits, conflits de raccourcis), version +1, provenance gardée." }],
+    controle: "Tests des profils importés et exportés.",
+    preuves: {
+      code: [p(`${API}lib/studio-profils.ts`, "conflitsRaccourcis")],
+      tests: [p(`${API}routes/studio-profils-import.test.ts`, "permission_non_conferee")],
+      routes: [p(`${API}routes/studio-preferences.ts`, "/outils/import")],
+    },
+    sources: [S_LISTE("E.6-02")],
+  },
+  {
     id: "dessin-svg", format: "SVG", versionFormat: "SVG (espace de noms W3C, aucune version déclarée dans le fichier)", sens: "export", famille: "dessin",
     objet: "Document d’une révision de variante (plan 2D)", taches: ["E.6-03"], statut: "livre", fidelite: "svg",
-    limite: "Plan 2D seulement : solides et hauteurs absents ; calques masqués conservés sous display=\"none\" ; aucun script ni ressource externe.",
+    limite: "Plan 2D seulement : solides et hauteurs absents ; calques masqués conservés sous display=\"none\" ; graphismes (splines en courbes de Bézier exactes, traits de hachure, symboles) avec leur transparence (opacity) ; aucun script ni ressource externe.",
     entites: [], controle: "Tests de l’export ; recette studio-persistance.mjs ; rapport de fidélité servi à côté du fichier.",
     route: `GET ${ROUTE_VARIANTE}/export?format=svg`,
     preuves: {
@@ -282,7 +316,7 @@ const LIVREES: readonly StudioEntreeEchange[] = [
   {
     id: "dessin-dxf", format: "DXF ASCII", versionFormat: "R12 (AC1009), CRLF, $INSUNITS = 6 (mètre)", sens: "export", famille: "dessin",
     objet: "Document d’une révision de variante (plan 2D)", taches: ["E.6-03"], statut: "livre", fidelite: "dxf",
-    limite: "R12 seulement ; $INSUNITS n’appartient pas à R12 (variable introduite avec AC1015) : l’unité n’est pas garantie chez un lecteur R12 strict ; ASCII strict (texte échappé, 250 caractères) ; cotes non associatives ; noms de calque réécrits (31 caractères ASCII) ; solides absents.",
+    limite: "R12 seulement ; $INSUNITS n’appartient pas à R12 (variable introduite avec AC1015) : l’unité n’est pas garantie chez un lecteur R12 strict ; ASCII strict (texte échappé, 250 caractères) ; cotes non associatives ; noms de calque réécrits (31 caractères ASCII) ; solides absents ; splines découpées en POLYLINE (16 segments par morceau de Bézier), transparence des graphismes non portée (déclarée en commentaire 999).",
     entites: [], controle: "Tests de l’export ; recette studio-persistance.mjs ; rapport de fidélité servi à côté du fichier.",
     route: `GET ${ROUTE_VARIANTE}/export?format=dxf`,
     preuves: {
@@ -353,7 +387,7 @@ const LIVREES: readonly StudioEntreeEchange[] = [
   {
     id: "modele-externe-ifc", format: "IFC (STEP physique, ISO 10303-21)", versionFormat: "IFC2X3, IFC4, IFC4X1 à IFC4X3 (lecteur de l’import IFC)", sens: "import", famille: "coordination",
     objet: "Modèle d’un partenaire référencé, comparé à la révision courante, accepté ou refusé", taches: ["E.6-04"], statut: "livre",
-    limite: "Référence, auteur, discipline, version, unité et transformation déclarées par l’émetteur ; fichier relu par le serveur dans un document à part, jamais dans la variante ; comparaison par identifiant (GlobalId) avec la révision courante ; acceptation ou refus réservés au propriétaire et aux approbateurs, journalisés, un refus avec motif ; accepté, le modèle s’ajoute au brouillon seulement par une action explicite ; non repris par l’archive du projet.",
+    limite: "Référence, auteur, discipline, version, unité, transformation, repère source et restrictions d’utilisation déclarés par l’émetteur ; fichier relu par le serveur dans un document à part, jamais dans la variante ; comparaison par identifiant (GlobalId) avec la révision courante ; acceptation ou refus réservés au propriétaire et aux approbateurs, journalisés, un refus avec motif ; accepté, le modèle s’ajoute au brouillon seulement par une action explicite ; non repris par l’archive du projet.",
     entites: [
       { entite: "Déclarations de l’émetteur", couverture: "portee", detail: "Conservées telles quelles ; l’unité déclarée est comparée à l’unité lue, jamais substituée." },
       { entite: "Fichier reçu", couverture: "portee", detail: "Conservé tel quel avec son SHA-256 ; lecture et pertes comme l’import IFC." },
@@ -504,10 +538,13 @@ const LIVREES: readonly StudioEntreeEchange[] = [
     sources: [S_PLAN, S_LISTE("E.6-02"), S_LISTE("E.5-03")],
   },
   {
-    id: "paquet-publication", format: "Paquet de publication (SVG, DXF, IFC, feuille PDF)", versionFormat: "studio-publication-manifest/1", sens: "export", famille: "paquet",
+    id: "paquet-publication", format: "Paquet de publication (SVG, DXF, IFC, feuille PDF ; dossier de conception : PDF et JSON)", versionFormat: "studio-publication-manifest/1", sens: "export", famille: "paquet",
     objet: "Fichiers figés d’une publication approuvée et diffusée", taches: ["E.6-02"], statut: "livre",
-    limite: "Fichiers du manifeste approuvé, identifiés par SHA-256 et vérifiables ; dessin 2D indépendant : sans IFC ; mêmes limites que chaque export.",
-    entites: [{ entite: "Fichiers du paquet", couverture: "portee", detail: "SVG, DXF, IFC et feuille PDF calculés par les exporteurs du modèle." }],
+    limite: "Fichiers du manifeste approuvé, identifiés par SHA-256 et vérifiables ; dessin 2D indépendant : sans IFC ; dossier de conception (lot PUB) : PDF et JSON du dossier, feuilles et vues de coupe jointes ; mêmes limites que chaque export.",
+    entites: [
+      { entite: "Fichiers du paquet", couverture: "portee", detail: "SVG, DXF, IFC et feuille PDF calculés par les exporteurs du modèle." },
+      { entite: "Dossier de conception", couverture: "portee", detail: "PDF (sommaire, feuilles, métré, fidélité, vues de coupe) et JSON du dossier ; pièces, origine et présentation déclarées dans le manifeste." },
+    ],
     controle: "Recettes studio-publication.mjs et studio-dossier.mjs (empreintes recalculées).",
     route: "GET /projects/:projectId/studio/studies/:studyId/publications/:publicationId/files/:format",
     preuves: {
@@ -533,6 +570,34 @@ const LIVREES: readonly StudioEntreeEchange[] = [
     sources: [S_PLAN, S_LISTE("E.6-03")],
   },
   {
+    id: "provenance-sources-json", format: "JSON", versionFormat: "studio-provenance/1", sens: "export", famille: "rapport",
+    objet: "Provenance des sources importées dans le dessin (import DXF, EX-014)", taches: ["E.6-04"], statut: "livre",
+    limite: "Déclarée avec l’import (même lot) : fichier, empreinte SHA-256 et version du format lues, horodatage, unité lue et retenue, repère source, transformation (aucune : identité), auteur et restrictions d’utilisation déclarés ou « non déclarés » ; enregistrée par le navigateur depuis le brouillon affiché.",
+    entites: [{ entite: "Sources du document", couverture: "portee", detail: "Chacune telle que déclarée ; un champ inconnu vaut null, jamais une valeur supposée." }],
+    controle: "Tests des sources ; recette studio-rend.mjs (import DXF avec sa provenance, enregistrée et relue).",
+    preuves: {
+      code: [p(`${M}sources/sources.ts`, "studioExportProvenance")],
+      tests: [p(`${M}sources/sources.test.ts`, "studioExportProvenance"), p(`${E2E}studio-rend.mjs`, "check(\"TR-EX-014 : import DXF")],
+      interfaces: [p(`${WEB}import/DialogueImportDxf.tsx`, "export function exporterProvenance(")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-04")],
+  },
+  {
+    id: "provenance-modele-externe-json", format: "JSON", versionFormat: "studio-provenance-modele/1", sens: "export", famille: "coordination",
+    objet: "Provenance d’un modèle externe reçu (EX-014)", taches: ["E.6-04"], statut: "livre",
+    limite: "Ce que l’émetteur déclare (référence, auteur, discipline, version, unité, repère source, transformation, restrictions d’utilisation) et ce que le serveur a lu et calculé (schéma, unité lue, SHA-256, horodatage de réception) ; droit d’export.",
+    entites: [{ entite: "Modèle reçu", couverture: "portee", detail: "Déclarations telles quelles, non déclarées à null ; l’unité lue est comparée, jamais substituée." }],
+    controle: "Tests des sources et des modèles externes ; recette studio-rend.mjs (provenance exportée).",
+    route: `GET ${ROUTE_VARIANTE}/modeles-externes/:modelId/provenance`,
+    preuves: {
+      code: [p(`${M}echanges/modeles-externes.ts`, "studioProvenanceModeleExterne")],
+      tests: [p(`${M}sources/sources.test.ts`, "studioProvenanceModeleExterne"), p(`${E2E}studio-rend.mjs`, "check(\"TR-EX-014 : modèle externe IFC")],
+      routes: [p(`${API}routes/studio-modeles-externes.ts`, "/:modelId/provenance")],
+      interfaces: [p(`${WEB}echanges/PanneauModelesExternes.tsx`, "data-studio-modele-provenance")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-04")],
+  },
+  {
     id: "diagnostic-releve-perf", format: "JSON", versionFormat: "studio-releve-perf/1 (relevé de performances Studio, JSON)", sens: "export", famille: "diagnostic",
     objet: "Mesures de chargement et d’exécution de la session (hors modèle)", taches: ["E.6-02"], statut: "livre",
     limite: "Diagnostic seulement : aucune donnée du projet ; non relu par Studio.",
@@ -544,6 +609,43 @@ const LIVREES: readonly StudioEntreeEchange[] = [
       interfaces: [p(`${WEB}chargement/PanneauRessources.tsx`, "a.download = \"studio-releve-perf.json\"")],
     },
     sources: [S_LISTE("X.1-09")],
+  },
+  {
+    id: "bcf-export", format: "BCF (BIM Collaboration Format, .bcfzip)", versionFormat: "2.1 (bcf.version VersionId 2.1), archive sans compression", sens: "export", famille: "coordination",
+    objet: "Observations d’une variante (sujets BCF)", taches: ["E.6-04"], statut: "livre",
+    limite: "Contrat minimal du lot PUB : sujet (Guid stable dérivé de l’identité interne, type = catégorie, statut, titre, priorité = gravité, objets cités en étiquettes, auteur, responsable, description) et commentaires du journal ; aucun point de vue (caméra) ni pièce jointe ; observations lisibles par l’acteur seulement.",
+    entites: [
+      { entite: "Topic", couverture: "portee", detail: "Guid, TopicType, TopicStatus, Title, Priority, Labels, CreationDate, CreationAuthor, AssignedTo, Description." },
+      { entite: "Comment", couverture: "partielle", detail: "Un commentaire par passage du journal (action et note)." },
+      { entite: "Viewpoints, Components, pièces justificatives", couverture: "absente", detail: "Les observations Studio ne portent pas de point de vue ; les pièces restent dans Studio." },
+    ],
+    controle: "Tests du modèle (export relu, Guid stable) ; recette studio-pub.mjs (export servi par l’API).",
+    route: `GET ${ROUTE_VARIANTE}/observations/bcf`,
+    preuves: {
+      code: [p(`${M}echanges/bcf-observations.ts`, "studioExporterBcf"), p(`${API}lib/studio-observations-bcf.ts`, "exporterObservationsBcf")],
+      tests: [p(`${M}echanges/bcf-observations.test.ts`, "IF-010 [+] export BCF 2.1 relu à l'identique")],
+      routes: [p(`${API}routes/studio-observations.ts`, "${base}/bcf")],
+      interfaces: [p(`${WEB}observations/PanneauObservations.tsx`, "data-studio-bcf-exporter")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-04"), src("docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json", "Contrat IF-010 : identifiants BCF conservés comme références")],
+  },
+  {
+    id: "bcf-import", format: "BCF (BIM Collaboration Format, .bcfzip)", versionFormat: "2.x lu selon le contrat 2.1 minimal ; entrées stockées (sans compression)", sens: "import", famille: "coordination",
+    objet: "Sujets BCF reçus, créés comme observations distinctes de la variante", taches: ["E.6-04"], statut: "livre",
+    limite: "8 Mo au plus ; 500 sujets ; reconnaissance par (Guid, contexte) seulement : un Guid déjà importé dans le même contexte n’est ni recréé ni réécrit, un même Guid venu d’un autre contexte crée une observation distincte, un sujet absent ne clôt rien, un objet cité inconnu reste une référence ; points de vue non repris (avertissement) ; entrées compressées refusées (message).",
+    entites: [
+      { entite: "Topic", couverture: "partielle", detail: "Titre et description en note d’origine ; catégorie et gravité reprises seulement dans le vocabulaire décidé ; Guid et contexte conservés comme références BCF." },
+      { entite: "Viewpoints, Components", couverture: "absente", detail: "Non repris, signalés en avertissement." },
+    ],
+    controle: "Tests du modèle (plan d’import : homonymes, reconnus, absents) ; recette studio-pub.mjs (import servi par l’API, même Guid dans un autre contexte).",
+    route: `POST ${ROUTE_VARIANTE}/observations/bcf`,
+    preuves: {
+      code: [p(`${M}echanges/bcf-observations.ts`, "studioPlanImportBcf"), p(`${API}lib/studio-observations-bcf.ts`, "importerObservationsBcf")],
+      tests: [p(`${M}echanges/bcf-observations.test.ts`, "IF-010 [−] même BCF-ID reçu dans un autre contexte")],
+      routes: [p(`${API}routes/studio-observations.ts`, "${base}/bcf")],
+      interfaces: [p(`${WEB}observations/PanneauObservations.tsx`, "data-studio-bcf-importer")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-04"), src("docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json", "Cas négatif « Même BCF-ID »")],
   },
 ];
 
@@ -562,11 +664,6 @@ const REPORTS: readonly Report[] = [
     id: "dgn", format: "DGN", versionFormat: "non évaluée", sens: ["import", "export"], famille: "dessin", objet: "Dessin 2D", taches: ["E.6-04", "E.6-05"],
     raison: `${RAISON_SANS_CONTRAT} D-179 renonce au DGN pour l’Atelier P2 seulement.`,
     sources: [S_PLAN, S_LISTE("E.6-04"), S_D179],
-  },
-  {
-    id: "bcf", format: "BCF", versionFormat: "non évaluée (2.1 / 3.0)", sens: ["import", "export"], famille: "coordination", objet: "Observations et sujets de coordination", taches: ["E.6-04", "E.6-05"],
-    raison: `${RAISON_SANS_CONTRAT} Les observations Studio (E.2) n’ont pas de contrat BCF ; règle d’identité à tenir : un même identifiant BCF reçu dans un autre contexte n’écrase ni ne clôt une observation.`,
-    sources: [S_PLAN, S_LISTE("E.6-04"), src("docs/workstreams/studio/task-register.json", "Cas négatif « Même BCF-ID »")],
   },
   {
     id: "step", format: "STEP (ISO 10303-21, AP203 / AP214 / AP242)", versionFormat: "non évaluée", sens: ["import", "export"], famille: "maquette", objet: "Solides exacts (brep)", taches: ["E.6-04", "E.6-05"],

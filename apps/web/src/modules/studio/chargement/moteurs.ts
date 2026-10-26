@@ -64,6 +64,10 @@ export const MOTEURS_PAR_BARRE: Readonly<Record<string, readonly IdMoteur[]>> = 
   "volume-libre": ["planche-2d", "rendu-3d"],
   visualisation: ["planche-2d", "rendu-3d"],
   "non-natifs": ["planche-2d"],
+  // Graphismes (EX-055) et système de projet (EX-023) : planche 2D seulement.
+  graphismes: ["planche-2d"],
+  reperes: ["planche-2d"],
+  sources: ["planche-2d"],
 });
 
 /**

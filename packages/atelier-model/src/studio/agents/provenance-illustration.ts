@@ -1,6 +1,6 @@
 import { fail, record } from "../noyau/validation.js";
 import { STUDIO_FRAME_SCENES, validerCameraScene } from "../scenes/scenes.js";
-import { STUDIO_NATURE_RENDU, STUDIO_RENDU_SCHEMA, type StudioProvenanceRendu } from "../scenes/provenance.js";
+import { STUDIO_NATURE_RENDU, STUDIO_RENDU_SCHEMA, studioProvenanceRendu, type StudioProvenanceRendu } from "../scenes/provenance.js";
 import type { StudioCoutDeclare, StudioSourceTransfert } from "./politique-transfert.js";
 
 /**
@@ -75,18 +75,23 @@ const empreinte = (v: unknown, path: string): string => { if (typeof v !== "stri
  * n'est pas un rendu du modèle complet, plutôt que de compléter une provenance inconnue.
  */
 export function studioLireProvenanceRendu(value: unknown): StudioProvenanceRendu {
-  const o = record(value, ["schema", "nature", "etude", "variante", "revisionId", "scene", "date", "repere", "camera"], "rendu");
+  const o = record(value, ["schema", "nature", "etude", "variante", "revisionId", "scene", "date", "repere", "camera", "auteur"], "rendu", ["parametres", "documentHash"]);
   if (o["schema"] !== STUDIO_RENDU_SCHEMA) fail("rendu.schema", "schéma de rendu inconnu");
   if (o["nature"] !== STUDIO_NATURE_RENDU) fail("rendu.nature", "« rendu du modèle » attendu");
   if (o["repere"] !== STUDIO_FRAME_SCENES) fail("rendu.repere", "repère local-3d attendu");
   const ref = (v: unknown, path: string) => { const r = record(v, ["id", "nom"], path); return { id: texte(r["id"], `${path}.id`), nom: texte(r["nom"], `${path}.nom`) }; };
   const date = texte(o["date"], "rendu.date");
   if (Number.isNaN(Date.parse(date))) fail("rendu.date", "date ISO attendue");
-  return {
-    schema: STUDIO_RENDU_SCHEMA, nature: STUDIO_NATURE_RENDU, etude: ref(o["etude"], "rendu.etude"), variante: ref(o["variante"], "rendu.variante"),
-    revisionId: texte(o["revisionId"], "rendu.revisionId"), scene: o["scene"] === null ? null : ref(o["scene"], "rendu.scene"),
-    date, repere: STUDIO_FRAME_SCENES, camera: validerCameraScene(o["camera"], "rendu.camera"),
-  };
+  // TR-EX-071 : l'auteur du rendu fait partie de sa provenance ; un rendu sans auteur est une source inconnue.
+  const a = record(o["auteur"], ["id"], "rendu.auteur", ["email"]);
+  const auteur = { id: texte(a["id"], "rendu.auteur.id"), email: typeof a["email"] === "string" && a["email"].trim() ? a["email"] : null };
+  const p = o["parametres"] === undefined ? undefined : record(o["parametres"], ["largeurPx", "hauteurPx", "qualite"], "rendu.parametres");
+  return studioProvenanceRendu({
+    etude: ref(o["etude"], "rendu.etude"), variante: ref(o["variante"], "rendu.variante"), revisionId: texte(o["revisionId"], "rendu.revisionId"),
+    scene: o["scene"] === null ? null : ref(o["scene"], "rendu.scene"), date: new Date(date), camera: validerCameraScene(o["camera"], "rendu.camera"), auteur,
+    ...(p ? { parametres: { largeurPx: p["largeurPx"] as number, hauteurPx: p["hauteurPx"] as number, qualite: p["qualite"] as string } } : {}),
+    ...(o["documentHash"] !== undefined ? { documentHash: o["documentHash"] as string } : {}),
+  });
 }
 
 /** Limites de reproductibilité déclarées (EX-072) : seul le fournisseur local déterministe promet les mêmes pixels. */

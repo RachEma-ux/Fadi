@@ -9,6 +9,8 @@ export {
   type StudioBox, type StudioPlacement3d, type StudioProfilePrism, type StudioSolid,
   // Lot F1 : direction d'extrusion, relation au profil source, faces.
   directionUnitaire, estDroit, estSolideLie, hauteurPerpendiculaire, STUDIO_RELATIONS_SOURCE, translationSommet, validerDirection,
+  // A.3-03 : basculement autour des axes horizontaux.
+  estBascule, studioBasculerPoint, studioVecteurSolide,
   type StudioFaceSolide, type StudioLienSolide, type StudioMotifLien, type StudioRelationSource, type StudioSourceSolide,
 } from "./solides.js";
 export { studioMaillageSolide, type StudioFreeSolid3d } from "./maillage.js";

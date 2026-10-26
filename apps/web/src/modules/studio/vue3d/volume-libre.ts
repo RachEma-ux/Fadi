@@ -133,11 +133,30 @@ export function commandeDivision(id: string | null, v: ValeursFace): ResultatVol
   return { commandes: [{ toolId: "studio.solide.face-diviser", params: { id, face: v.face as `lateral-${number}`, distance: v.distance } }] };
 }
 
-/** Pivoter : angle saisi en degrés, non nul, signé (sens trigonométrique). */
-export function commandePivot(id: string | null, degres: number): ResultatVolume {
+/** Axe de pivot d'un solide : vertical (z) ou axes horizontaux du solide (y puis x, A.3-03). */
+export type AxePivot = "z" | "y" | "x";
+export const AXES_PIVOT: readonly { valeur: AxePivot; libelle: string }[] = Object.freeze([
+  { valeur: "z", libelle: "Axe vertical (z)" },
+  { valeur: "y", libelle: "Axe horizontal y du solide (basculement)" },
+  { valeur: "x", libelle: "Axe horizontal x du solide (basculement)" },
+]);
+
+/** Pivoter : angle saisi en degrés, non nul, signé (sens trigonométrique), autour de l'axe choisi (z par défaut). */
+export function commandePivot(id: string | null, degres: number, axe: AxePivot = "z"): ResultatVolume {
   if (!id) return { erreur: "Sélectionnez d’abord, dans la vue 3D, le solide à modifier." };
   if (!fini(degres) || degres === 0) return { erreur: "Saisissez un angle non nul, en degrés." };
-  return { commandes: [{ toolId: "studio.solide.pivoter", params: { id, angle: (degres * Math.PI) / 180 } }] };
+  return { commandes: [{ toolId: "studio.solide.pivoter", params: { id, angle: (degres * Math.PI) / 180, ...(axe === "z" ? {} : { axe }) } }] };
+}
+
+/**
+ * Échelle 3D depuis la vue 3D (A.3-03) : facteur strictement positif, différent de 1, autour d'un point du plan (x, y)
+ * saisi ; dimensions, profil, hauteur et cote de l'origine multipliés (« volumes aussi »).
+ */
+export function commandeEchelle3d(ids: readonly string[], centre: { x: number; y: number }, facteur: number): ResultatVolume {
+  if (!ids.length) return { erreur: "Sélectionnez d’abord, dans la vue 3D, le solide à mettre à l’échelle." };
+  if (!fini(centre.x, centre.y)) return { erreur: "Saisissez le point fixe de l’échelle (x, y), en mètres." };
+  if (!fini(facteur) || facteur <= 0 || facteur === 1) return { erreur: "Saisissez un facteur strictement positif, différent de 1." };
+  return { commandes: [{ toolId: "studio.dessin.echelle", params: { ids: [...ids], center: { x: centre.x, y: centre.y }, factor: facteur, includeVolumes: true } }] };
 }
 
 export function commandeResolution(id: string | null, action: "mettre-a-jour" | "detacher"): ResultatVolume {

@@ -13,7 +13,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { STUDIO_SHEET_SCALES, type StudioDocument } from "@parcours/atelier-model";
 import { Icon } from "../../../components/Icon";
-import { api, ApiError, type StudioDossier, type StudioSheet } from "../../../lib/api";
+import { api, ApiError, type StudioDossier, type StudioSectionView, type StudioSheet } from "../../../lib/api";
 import { LOCALE } from "../../../lib/i18n";
 import { Dialogue } from "../planche2d/CatalogueOutils";
 import {
@@ -43,7 +43,9 @@ export function PanneauDossier({ projectId, studyId, variantId, revisionId, revi
   const cleDossiers = ["studio-dossiers", projectId, studyId];
   const feuilles = useQuery({ queryKey: cleFeuilles, queryFn: () => api.studioSheets(projectId, studyId), retry: (n, e) => !refuse(e) && n < 1 });
   const dossiers = useQuery({ queryKey: cleDossiers, queryFn: () => api.studioDossiers(projectId, studyId), retry: (n, e) => !refuse(e) && n < 1 });
-  const relire = async () => { await client.invalidateQueries({ queryKey: cleFeuilles }); await client.invalidateQueries({ queryKey: cleDossiers }); await client.invalidateQueries({ queryKey: ["studio-dossier", projectId, studyId] }); };
+  const cleVues = ["studio-section-views", projectId, studyId];
+  const vues = useQuery({ queryKey: cleVues, queryFn: () => api.studioSectionViews(projectId, studyId), retry: (n, e) => !refuse(e) && n < 1 });
+  const relire = async () => { await client.invalidateQueries({ queryKey: cleFeuilles }); await client.invalidateQueries({ queryKey: cleDossiers }); await client.invalidateQueries({ queryKey: cleVues }); await client.invalidateQueries({ queryKey: ["studio-dossier", projectId, studyId] }); };
   const ecriture = feuilles.data?.canWrite ?? false;
   const liste = feuilles.data?.sheets ?? [];
   return (
@@ -63,10 +65,11 @@ export function PanneauDossier({ projectId, studyId, variantId, revisionId, revi
           )}
           {ecriture && <NouvelleFeuille projectId={projectId} studyId={studyId} variantId={variantId} revisionId={revisionId} revision={revision} feuilles={liste} surCree={relire} />}
         </section>
+        <VuesCoupe projectId={projectId} studyId={studyId} variantId={variantId} vues={vues.data?.vues ?? []} ecriture={ecriture} surChange={relire} />
         <section aria-labelledby="studio-dossier-conception-titre">
           <h3 id="studio-dossier-conception-titre">Dossier de conception</h3>
           {dossiers.isError && <p role="alert">Dossiers indisponibles. <button type="button" onClick={() => void dossiers.refetch()}>Réessayer</button></p>}
-          <Dossiers projectId={projectId} studyId={studyId} variantId={variantId} revisionId={revisionId} feuilles={liste} dossiers={dossiers.data?.dossiers ?? []} ecriture={ecriture} surChange={relire} />
+          <Dossiers projectId={projectId} studyId={studyId} variantId={variantId} revisionId={revisionId} feuilles={liste} vues={vues.data?.vues ?? []} dossiers={dossiers.data?.dossiers ?? []} ecriture={ecriture} surChange={relire} />
         </section>
       </div>
     </Dialogue>
@@ -171,8 +174,77 @@ function NouvelleFeuille({ projectId, studyId, variantId, revisionId, revision, 
   );
 }
 
-function Dossiers({ projectId, studyId, variantId, revisionId, feuilles, dossiers, ecriture, surChange }: {
-  projectId: string; studyId: string; variantId: string; revisionId: string; feuilles: StudioSheet[]; dossiers: StudioDossier[]; ecriture: boolean; surChange: () => Promise<unknown>;
+/**
+ * Vues de coupe enregistrées (EX-075) : niveau (z, repère local-3d), cadrage, échelle, styles et annotations propres ;
+ * chacune lit une révision enregistrée, devient « périmée » quand la variante avance et s'actualise explicitement. Une
+ * annotation de la vue reste à la vue : elle ne modifie jamais un objet du modèle.
+ */
+function VuesCoupe({ projectId, studyId, variantId, vues, ecriture, surChange }: { projectId: string; studyId: string; variantId: string; vues: StudioSectionView[]; ecriture: boolean; surChange: () => Promise<unknown> }) {
+  const [nom, setNom] = useState("Coupe AA");
+  const [z, setZ] = useState("1");
+  const [cadrage, setCadrage] = useState({ xMin: "-1", yMin: "-1", xMax: "20", yMax: "20" });
+  const [echelle, setEchelle] = useState<number>(50);
+  const [trait, setTrait] = useState<"fin" | "moyen" | "fort">("fort");
+  const [hachure, setHachure] = useState<"aucune" | "diagonale" | "croisee">("diagonale");
+  const [annotation, setAnnotation] = useState<Record<string, string>>({});
+  const [erreur, setErreur] = useState("");
+  const [enCours, setEnCours] = useState(false);
+  async function agir(action: () => Promise<unknown>) {
+    if (enCours) return;
+    setEnCours(true); setErreur("");
+    try { await action(); await surChange(); } catch (err) { setErreur(erreurDe(err)); } finally { setEnCours(false); }
+  }
+  const nombre = (v: string) => Number(v.replace(",", "."));
+  function creer(e: FormEvent) {
+    e.preventDefault();
+    const c = { xMin: nombre(cadrage.xMin), yMin: nombre(cadrage.yMin), xMax: nombre(cadrage.xMax), yMax: nombre(cadrage.yMax) };
+    if (![nombre(z), c.xMin, c.yMin, c.xMax, c.yMax].every(Number.isFinite)) { setErreur("Cote et cadrage : nombres attendus (mètres)."); return; }
+    void agir(() => api.createStudioSectionView(projectId, studyId, variantId, { definition: { nom: nom.trim() || "Coupe", niveau: { repere: "local-3d", z: nombre(z) }, cadrage: c, echelle, styles: { trait, hachure }, annotations: [] } }));
+  }
+  return (
+    <section aria-labelledby="studio-dossier-coupes-titre" data-studio-vues-coupe>
+      <h3 id="studio-dossier-coupes-titre">Vues de coupe</h3>
+      {vues.length === 0 && <p data-studio-vues-coupe-vide>Aucune vue de coupe enregistrée dans cette étude.</p>}
+      {vues.length > 0 && <ul className="studio-dossier-feuilles">{vues.map((v) => (
+        <li key={v.id} data-studio-vue-coupe={v.id} data-actualite={v.freshness}>
+          <strong translate="no">{v.definition.nom}</strong>{" "}
+          <span translate="no">{`z = ${v.definition.niveau.z} m · 1:${v.definition.echelle} · ${revisionCourte(v.revisionId)}`}</span>{" "}
+          <span data-studio-vue-coupe-actualite>{v.freshness === "perimee" ? "Périmée : la variante a avancé depuis" : "À jour"}</span>
+          {v.vue && <span translate="no" title={v.vue.empreinteSection}>{` · ${v.vue.coupe.sources.length} solide(s) coupé(s) · ${empreinteAbregee(v.vue.empreinteSection)}`}</span>}
+          {/* Section incomplète (AGENTS.md L9) : les solides non coupés sont nommés, comme sur la page publiée. */}
+          {v.vue && (v.vue.coupe.exactsNonCoupes?.length ?? 0) > 0 && <p role="note" data-studio-vue-coupe-omis={v.vue.coupe.exactsNonCoupes!.join(" ")}>
+            {`Section incomplète : ${v.vue.coupe.exactsNonCoupes!.length} solide(s) non coupé(s), absents de la page : `}<span translate="no">{v.vue.coupe.exactsNonCoupes!.join(", ")}</span></p>}
+          {v.error && <span role="alert">{v.error}</span>}
+          {v.definition.annotations.length > 0 && <ul>{v.definition.annotations.map((a) => <li key={a.id} translate="no">{a.texte}</li>)}</ul>}
+          {ecriture && <div className="studio-dossier-actions">
+            {v.freshness === "perimee" && <button type="button" disabled={enCours} onClick={() => void agir(() => api.updateStudioSectionView(projectId, studyId, v.id, { revisionId: v.headRevisionId }))} data-studio-vue-coupe-actualiser>Actualiser sur la dernière révision</button>}
+            <input aria-label="Annotation de la vue" maxLength={500} value={annotation[v.id] ?? ""} onChange={(e) => setAnnotation({ ...annotation, [v.id]: e.target.value })} data-studio-vue-coupe-annotation-saisie />
+            <button type="button" disabled={enCours || !(annotation[v.id] ?? "").trim()} onClick={() => void agir(async () => {
+              await api.updateStudioSectionView(projectId, studyId, v.id, { annotation: { op: "ajouter", annotation: { id: crypto.randomUUID(), type: "texte", position: { x: v.definition.cadrage.xMin, y: v.definition.cadrage.yMin }, texte: annotation[v.id]!.trim() } } });
+              setAnnotation({ ...annotation, [v.id]: "" });
+            })} data-studio-vue-coupe-annoter>Annoter la vue</button>
+          </div>}
+        </li>
+      ))}</ul>}
+      {ecriture && <form className="studio-dossier-editer" onSubmit={creer} data-studio-vue-coupe-nouvelle>
+        <h4>Nouvelle vue de coupe (révision affichée)</h4>
+        <label>Nom<input value={nom} maxLength={200} onChange={(e) => setNom(e.target.value)} /></label>
+        <label>Cote du plan de coupe (m, repère local 3D)<input inputMode="decimal" value={z} onChange={(e) => setZ(e.target.value)} data-studio-vue-coupe-z /></label>
+        <fieldset><legend>Cadrage (m, repère local du plan)</legend>
+          {(["xMin", "yMin", "xMax", "yMax"] as const).map((k) => <label key={k}>{k}<input inputMode="decimal" value={cadrage[k]} onChange={(e) => setCadrage({ ...cadrage, [k]: e.target.value })} /></label>)}
+        </fieldset>
+        <label>Échelle<select value={echelle} onChange={(e) => setEchelle(Number(e.target.value))}>{STUDIO_SHEET_SCALES.map((n) => <option key={n} value={n}>{`1:${n}`}</option>)}</select></label>
+        <label>Trait de coupe<select value={trait} onChange={(e) => setTrait(e.target.value as typeof trait)}><option value="fin">Fin</option><option value="moyen">Moyen</option><option value="fort">Fort</option></select></label>
+        <label>Hachure<select value={hachure} onChange={(e) => setHachure(e.target.value as typeof hachure)}><option value="aucune">Aucune</option><option value="diagonale">Diagonale</option><option value="croisee">Croisée</option></select></label>
+        <button disabled={enCours} data-studio-vue-coupe-creer>Enregistrer la vue de coupe</button>
+      </form>}
+      {erreur && <p role="alert" data-studio-vue-coupe-erreur>{erreur}</p>}
+    </section>
+  );
+}
+
+function Dossiers({ projectId, studyId, variantId, revisionId, feuilles, vues, dossiers, ecriture, surChange }: {
+  projectId: string; studyId: string; variantId: string; revisionId: string; feuilles: StudioSheet[]; vues: StudioSectionView[]; dossiers: StudioDossier[]; ecriture: boolean; surChange: () => Promise<unknown>;
 }) {
   const [choisi, setChoisi] = useState<string | null>(null);
   const actif = dossiers.find((d) => d.id === choisi) ?? dossiers[0] ?? null;
@@ -201,7 +273,7 @@ function Dossiers({ projectId, studyId, variantId, revisionId, feuilles, dossier
       {dossiers.length === 0 && <p data-studio-dossiers-vide>Aucun dossier de conception dans cette étude.</p>}
       {ecriture && feuilles.length > 0 && (
         // Nouveau dossier : toutes les feuilles de l'étude proposées, dans leur ordre (le formulaire suit les créations).
-        <EditerDossier key={actif?.id ?? `nouveau-${feuilles.map((f) => f.id).join(",")}`} projectId={projectId} studyId={studyId} variantId={variantId} revisionId={revisionId} feuilles={feuilles} dossier={actif} surEnregistre={async (id) => { setChoisi(id); await surChange(); }} />
+        <EditerDossier key={actif?.id ?? `nouveau-${feuilles.map((f) => f.id).join(",")}`} projectId={projectId} studyId={studyId} variantId={variantId} revisionId={revisionId} feuilles={feuilles} vues={vues} dossier={actif} surEnregistre={async (id) => { setChoisi(id); await surChange(); }} />
       )}
     </div>
   );
@@ -237,9 +309,11 @@ function ResumeDossier({ d }: { d: Awaited<ReturnType<typeof api.studioDossier>>
   );
 }
 
-function EditerDossier({ projectId, studyId, variantId, revisionId, feuilles, dossier, surEnregistre }: {
-  projectId: string; studyId: string; variantId: string; revisionId: string; feuilles: StudioSheet[]; dossier: StudioDossier | null; surEnregistre: (id: string) => Promise<void>;
+function EditerDossier({ projectId, studyId, variantId, revisionId, feuilles, vues, dossier, surEnregistre }: {
+  projectId: string; studyId: string; variantId: string; revisionId: string; feuilles: StudioSheet[]; vues: StudioSectionView[]; dossier: StudioDossier | null; surEnregistre: (id: string) => Promise<void>;
 }) {
+  // EX-076 : vues de coupe de la maquette jointes au dossier (publiées avec les feuilles, chacune avec sa source).
+  const [coupes, setCoupes] = useState<string[]>(dossier?.sectionViewIds ?? []);
   const [titre, setTitre] = useState(dossier?.title ?? "Dossier de conception");
   const [ordre, setOrdre] = useState<string[]>(() => (dossier ? dossier.sheetIds.filter((id) => feuilles.some((f) => f.id === id)) : feuilles.map((f) => f.id)));
   const [metre, setMetre] = useState(dossier ? dossier.quantities !== null : true);
@@ -261,7 +335,7 @@ function EditerDossier({ projectId, studyId, variantId, revisionId, feuilles, do
     // réépinglage demandé, qui le porte sur la révision affichée et reprend les ajustements enregistrés depuis.
     const repin = !!metreJoint && !nouveau && metre && reepingler;
     const quantities = metre ? (metreJoint && !nouveau && !repin ? metreJoint : { variantId, revisionId }) : null;
-    const corps = { title: titre.trim(), sheetIds: ordre, quantities, includeFidelity: fidelite };
+    const corps = { title: titre.trim(), sheetIds: ordre, quantities, includeFidelity: fidelite, ...(coupes.length || dossier?.sectionViewIds?.length ? { sectionViewIds: coupes } : {}) };
     setEnCours(true); setErreur("");
     try {
       if (dossier && !nouveau) await surEnregistre((await api.updateStudioDossier(projectId, studyId, dossier.id, repin ? { ...corps, repinQuantities: true } : corps)).id);
@@ -295,6 +369,10 @@ function EditerDossier({ projectId, studyId, variantId, revisionId, feuilles, do
       <label className="studio-dossier-case"><input type="checkbox" checked={metre} onChange={(e) => setMetre(e.target.checked)} data-studio-dossier-metre-case /> {metreJoint ? "Joindre le métré (brut, déductions, net) épinglé" : "Joindre le métré (brut, déductions, net) de la révision affichée"}</label>
       {metreJoint && metre && <label className="studio-dossier-case"><input type="checkbox" checked={reepingler} onChange={(e) => setReepingler(e.target.checked)} data-studio-dossier-reepingler-case /> Réépingler le métré sur la révision affichée <span translate="no">{revisionCourte(revisionId)}</span> (ajustements enregistrés depuis compris)</label>}
       <label className="studio-dossier-case"><input type="checkbox" checked={fidelite} onChange={(e) => setFidelite(e.target.checked)} data-studio-dossier-fidelite-case /> Joindre le rapport de fidélité des feuilles</label>
+      {vues.length > 0 && <fieldset data-studio-dossier-coupes>
+        <legend>Vues de coupe jointes (dérivées de la maquette)</legend>
+        {vues.map((v) => <label key={v.id} className="studio-dossier-case"><input type="checkbox" checked={coupes.includes(v.id)} onChange={(e) => setCoupes(e.target.checked ? [...coupes, v.id] : coupes.filter((x) => x !== v.id))} data-studio-dossier-coupe={v.id} /> <span translate="no">{v.definition.nom}</span></label>)}
+      </fieldset>}
       {erreur && <p role="alert" data-studio-dossier-erreur>{erreur}</p>}
       <button disabled={enCours} data-studio-dossier-enregistrer>{dossier ? "Enregistrer le dossier" : "Créer le dossier"}</button>
       {dossier && <button type="button" disabled={enCours} onClick={(e) => void envoyer(e as unknown as FormEvent, true)} data-studio-dossier-dupliquer>Créer un nouveau dossier</button>}

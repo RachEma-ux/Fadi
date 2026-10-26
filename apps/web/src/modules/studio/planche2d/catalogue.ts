@@ -12,6 +12,7 @@ import { entreeManifeste, STUDIO_TOOLS, type StudioContexteOutil, type StudioDro
 import {
   BARRES_STUDIO, COMMANDES_EDITEUR, libelleRaccourci, type BarreStudio, type CibleRaccourci, type CommandeEditeur, type IdCommandeEditeur, type StudioToolEntry,
 } from "./raccourcis";
+import { termesSupplementaires } from "./etats-outils";
 
 const P2D = ["planche-2d"] as const;
 const V3D = ["vue-3d"] as const;
@@ -25,7 +26,7 @@ export const MANIFESTE_COMMANDES = Object.freeze({
   "terminer-polyligne": P2D, "fermer-polyligne": P2D,
   "zoom-avant": P2D, "zoom-arriere": P2D, cadrer: P2D, "plein-ecran": P2D_V3D, "vue-3d": P2D_V3D, "navigation-3d": V3D, "coupe-3d": V3D,
   "accrochage-sommets": P2D, "accrochage-grille": P2D, "accrochage-milieu": P2D, "accrochage-centre": P2D, "accrochage-quadrant": P2D,
-  "accrochage-intersection": P2D, "accrochage-perpendiculaire": P2D, "accrochage-tangente": P2D, "accrochage-proche": P2D,
+  "accrochage-intersection": P2D, "accrochage-perpendiculaire": P2D, "accrochage-tangente": P2D, "accrochage-parallele": P2D, "accrochage-proche": P2D,
   "reperage-orthogonal": P2D, "reperage-polaire": P2D, "pas-polaire": P2D,
   "importer-dxf": P2D, "importer-ifc": P2D, "modeles-externes": ["planche-2d", "vue-3d", "feuille"], "exporter-svg": P2D, "exporter-dxf": P2D, "exporter-ifc": P2D, feuille: ["feuille"], "exporter-png": V3D, illustration: V3D, agents: ["planche-2d", "vue-3d", "feuille"],
   outils: ["planche-2d", "vue-3d", "feuille"], palette: ["planche-2d", "vue-3d", "feuille"],
@@ -113,7 +114,8 @@ export const normaliser = (s: string): string => s.normalize("NFD").replace(/\p{
 
 /**
  * Pertinence d'une entrée pour une recherche (0 = écartée) : nom commençant par la recherche, puis nom, raccourci
- * (forme du registre ou forme affichée, « Maj+C »), identifiant. `autres` : textes affichés en plus (traduction).
+ * (forme du registre ou forme affichée, « Maj+C »), synonyme (EX-029), identifiant, puis famille (barre) et domaine.
+ * `autres` : textes affichés en plus (traduction). Ne lit que des descripteurs : aucun moteur n'est chargé.
  */
 export function pertinence(e: EntreeCatalogue, recherche: string, autres: readonly string[] = []): number {
   const q = normaliser(recherche);
@@ -123,8 +125,13 @@ export function pertinence(e: EntreeCatalogue, recherche: string, autres: readon
   if (noms.some((n) => n.startsWith(q))) return 4;
   if (noms.some((n) => n.includes(q))) return 3;
   if (e.raccourcis.some((r) => normaliser(r) === q || normaliser(libelleRaccourci(r)) === q)) return 3;
+  const t = termesSupplementaires(e, BARRES_STUDIO.find((b) => b.id === e.barre)?.libelleFR ?? e.barre);
+  const synonymes = t.synonymes.map(normaliser);
+  if (synonymes.some((x) => x === q)) return 3;
   if (normaliser(e.identifiant).includes(q)) return 2;
+  if (synonymes.some((x) => x.includes(q))) return 2;
   if (e.raccourcis.some((r) => normaliser(r).includes(q) || normaliser(libelleRaccourci(r)).includes(q))) return 1;
+  if (normaliser(t.famille).includes(q) || t.domaines.some((d) => normaliser(d).includes(q))) return 1;
   return 0;
 }
 

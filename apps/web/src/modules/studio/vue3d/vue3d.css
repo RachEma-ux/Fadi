@@ -13,3 +13,4 @@
 .studio-vue3d-couverture{font-size:12px;color:#4f666d}
 .studio-vue3d-couverture ul{margin:6px 0 0;padding-left:18px;display:grid;gap:2px}
 .studio-vue3d-qualite{margin:0 0 8px}
+.studio-vue3d-case{flex-direction:row!important;align-items:center;gap:6px!important;margin:0!important}.studio-vue3d-case input{width:auto!important}

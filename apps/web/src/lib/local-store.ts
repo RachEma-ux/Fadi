@@ -424,6 +424,10 @@ export const localStore = {
   studioCompterBrouillons: (userId: string) => safe((d) => d.studioBrouillons.where("userId").equals(userId).count(), null as number | null),
   studioContexte: (cle: string, userId: string) => safe((d) => d.studioContextes.get(cle).then((v) => (v && v.userId === userId ? v : null)), null as StudioContexteEntry | null),
   studioMemoriserContexte: (entry: StudioContexteEntry) => safe((d) => d.studioContextes.put(entry).then(() => undefined), undefined),
+  /** Versions lues d'un compte (clé, date de lecture) : seules évincables sur un dépassement de quota (EX-044). */
+  studioContextesDe: (userId: string) => safe((d) => d.studioContextes.where("userId").equals(userId).toArray().then((l) => l.map((e) => ({ cle: e.cle, luA: e.luA }))), [] as { cle: string; luA: string }[]),
+  /** Évince une version lue (régénérable depuis le serveur) ; vrai si elle a été retirée. */
+  studioSupprimerContexte: (cle: string) => safe((d) => d.studioContextes.delete(cle).then(() => true), false),
   /** Déconnexion ou changement d'utilisateur : brouillons et versions lues de Studio oubliés sur cet appareil. */
   studioOublierTout: () => checked((d) => d.transaction("rw", d.studioBrouillons, d.studioContextes, async () => { await d.studioBrouillons.clear(); await d.studioContextes.clear(); })),
   lotsCount: async (projectId: string): Promise<number | null> => { try { return (await readLots(projectId)).length; } catch { return null; } },

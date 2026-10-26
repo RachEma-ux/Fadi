@@ -9,6 +9,9 @@ import type { StudioAnnotation, StudioShape } from "../objets/formes.js";
 import type { StudioArchitectureItem } from "../architecture/types.js";
 import type { StudioElementVisualisation } from "../scenes/scenes.js";
 import type { StudioNonNatif } from "../non-natifs/non-natifs.js";
+import type { StudioGraphisme } from "../graphismes/graphismes.js";
+import type { StudioSystemeProjet } from "../reperes.js";
+import type { StudioSourceExterne } from "../sources/sources.js";
 
 /** État privé d'un lot de commandes (clone du document, tout ou rien) et contrôles partagés par les familles de commandes. */
 
@@ -29,6 +32,12 @@ export interface Etat {
   scenes: StudioElementVisualisation[];
   /** Éléments non natifs conservés à l’import (`StudioDocument.nonNatifs`, lot F3) ; non éditables. */
   nonNatifs: StudioNonNatif[];
+  /** Splines, hachures et symboles (`StudioDocument.graphismes`, EX-055) ; dessin 2D seulement. */
+  graphismes: StudioGraphisme[];
+  /** Système de projet versionné (`StudioDocument.systemeProjet`, EX-023) ; absent : non déclaré. */
+  systemeProjet?: StudioSystemeProjet;
+  /** Sources externes déclarées (`StudioDocument.sources`, EX-014) ; identifiants propres à la liste. */
+  sources: StudioSourceExterne[];
   /** Identifiants d'objets et de cotes présents : contrôle d'unicité en temps constant (un import peut compter 20 000 créations). */
   ids: Set<string>;
 }

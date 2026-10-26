@@ -10,6 +10,7 @@ import { definirPropriete, elaguerProprietes, retirerPropriete, type StudioPropr
 import { studioExtrudedRingVertices } from "../objets/polyligne.js";
 import { creerScene, definirApparence, modifierScene, retirerApparences, retirerApparencesOrphelines, supprimerScenes } from "../commandes/scenes.js";
 import { conserverNonNatif, retirerNonNatifs } from "../commandes/non-natifs.js";
+import { creerGraphisme, declarerSource, definirSystemeProjet, retirerGraphismes } from "../commandes/graphismes.js";
 import { sortie, validateStudioDocument } from "./document.js";
 import type { Etat, Gestionnaire } from "../commandes/etat.js";
 import { STUDIO_LIMITS } from "../noyau/limites.js";
@@ -72,6 +73,13 @@ const HANDLERS: Record<StudioCommandToolId, Gestionnaire> = {
   // Éléments non natifs (lot F3) : conservés à l’import, retirés explicitement ; aucune autre commande ne les touche.
   "studio.nonnatif.conserver": conserverNonNatif,
   "studio.nonnatif.retirer": retirerNonNatifs,
+  // Graphismes (EX-055) : splines, hachures, symboles et transparence ; retirés explicitement.
+  "studio.graphisme.creer": creerGraphisme,
+  "studio.graphisme.retirer": retirerGraphismes,
+  // Système de projet (EX-023) : une version nouvelle s'ajoute, aucune n'est réécrite.
+  "studio.repere.projet": definirSystemeProjet,
+  // Sources externes (EX-014) : provenance d'un fichier importé, déclarée avec l'import.
+  "studio.source.declarer": declarerSource,
 };
 
 /** Identifiants réellement acceptés par `applyStudioCommands` (contrôlés contre le registre par test). */
@@ -84,8 +92,8 @@ export function applyStudioCommands(document: StudioDocument, commands: readonly
   const avant = studioExtrudedRingVertices(current.objects);
   const state: Etat & { proprietes?: StudioPropriete[] } = {
     proprietes: current.proprietes ?? [],
-    id: current.id, objects: current.objects, layers: current.layers ?? [], dimensions: current.dimensions ?? [], solides: current.solides ?? [], exacts: current.exacts ?? [], annotations: current.annotations ?? [], architecture: current.architecture ?? [], scenes: current.scenes ?? [], nonNatifs: current.nonNatifs ?? [],
-    ids: new Set([...current.objects.map((o) => o.id), ...(current.dimensions ?? []).map((d) => d.id), ...(current.solides ?? []).map((s) => s.id), ...(current.exacts ?? []).flatMap(idsReserves), ...(current.annotations ?? []).map((a) => a.id), ...(current.architecture ?? []).map((a) => a.id), ...(current.nonNatifs ?? []).map((n) => n.id)]),
+    id: current.id, objects: current.objects, layers: current.layers ?? [], dimensions: current.dimensions ?? [], solides: current.solides ?? [], exacts: current.exacts ?? [], annotations: current.annotations ?? [], architecture: current.architecture ?? [], scenes: current.scenes ?? [], nonNatifs: current.nonNatifs ?? [], graphismes: current.graphismes ?? [], sources: current.sources ?? [], ...(current.systemeProjet ? { systemeProjet: current.systemeProjet } : {}),
+    ids: new Set([...current.objects.map((o) => o.id), ...(current.dimensions ?? []).map((d) => d.id), ...(current.solides ?? []).map((s) => s.id), ...(current.exacts ?? []).flatMap(idsReserves), ...(current.annotations ?? []).map((a) => a.id), ...(current.architecture ?? []).map((a) => a.id), ...(current.nonNatifs ?? []).map((n) => n.id), ...(current.graphismes ?? []).map((g) => g.id)]),
   };
   // Solides avant le lot (les solides sont remplacés, jamais modifiés en place) : le suivi des sources en dépend.
   const solidesAvant = new Map((current.solides ?? []).map((s) => [s.id, s]));
@@ -106,7 +114,7 @@ export function applyStudioCommands(document: StudioDocument, commands: readonly
   // Les propriétés d'un objet disparu (supprimé, mur supprimé avec ses ouvertures) disparaissent avec lui.
   const presents = new Set([...state.objects.map((o) => o.id), ...state.architecture.map((a) => a.id)]);
   const proprietes = elaguerProprietes(state.proprietes ?? [], (id) => presents.has(id));
-  const result = validateStudioDocument(sortie(state.id, state.objects, state.layers, state.dimensions, state.solides, state.annotations, state.architecture, proprietes, state.scenes, state.nonNatifs, state.exacts));
+  const result = validateStudioDocument(sortie(state.id, state.objects, state.layers, state.dimensions, state.solides, state.annotations, state.architecture, proprietes, state.scenes, state.nonNatifs, state.exacts, state.graphismes, state.systemeProjet, state.sources));
   // Budget d'écriture des extrusions de polylignes fermées : un lot ne peut pas le dépasser ni l'aggraver une fois
   // dépassé ; une révision enregistrée reste toujours lisible (le budget ne s'applique qu'aux écritures).
   const apres = studioExtrudedRingVertices(result.objects);

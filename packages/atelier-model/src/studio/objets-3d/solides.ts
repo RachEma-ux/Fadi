@@ -10,7 +10,11 @@ import { id, layerId, number, positive } from "../registre/schemas-base.js";
  * déclaré `local-3d` (z vers le haut, mètres). Deux types :
  * - `box` : boîte de largeur (x local), profondeur (y local) et hauteur (z) saisies, coin inférieur à l'origine ;
  * - `prism` : prisme droit d'un profil fermé simple (coordonnées locales du plan), posé à la cote de l'origine.
- * Chaque solide porte son placement : origine (x, y, z) et rotation autour de z (radians, sens trigonométrique).
+ * Chaque solide porte son placement : origine (x, y, z), rotation autour de z (radians, sens trigonométrique) et,
+ * facultatif (A.3-03), un basculement autour de ses axes horizontaux : `y` autour de l'axe y du solide (après la
+ * rotation autour de z), puis `x` autour de l'axe x du solide ainsi incliné — orientation complète
+ * Rz(rotation) · Ry(y) · Rx(x), appliquée au repère local autour de l'origine. Absent : aucun basculement (forme
+ * canonique : jamais un basculement nul stocké).
  *
  * Aucune signification BIM n'est acquise par la géométrie (A.3-09) : ni catégorie, ni matériau, ni classe IFC ne sont
  * déduits des dimensions ; un champ inconnu (`category`, `ifcClass`…) est refusé, jamais ignoré. Aucune valeur par
@@ -30,6 +34,8 @@ export interface StudioPlacement3d {
   origin: StudioPoint3;
   /** Rotation autour de +z, en radians dans [0 ; 2π[ (sens trigonométrique). */
   rotation: number;
+  /** Basculement autour des axes horizontaux du solide (A.3-03), radians dans [0 ; 2π[, au moins un non nul. */
+  basculement?: { x: number; y: number };
 }
 
 export interface StudioBox {
@@ -105,9 +111,13 @@ export type StudioFaceSolide = "base" | "sommet" | `lateral-${number}`;
 // ——— Schémas JSON (registre, document) ———
 
 const point3 = { type: "object", additionalProperties: false, required: ["x", "y", "z"], properties: { x: number, y: number, z: number } } as const;
+const angleSchema = { type: "number", minimum: 0, exclusiveMaximum: 2 * Math.PI } as const;
 const placementSchema = {
   type: "object", additionalProperties: false, required: ["origin", "rotation"],
-  properties: { origin: point3, rotation: { type: "number", minimum: 0, exclusiveMaximum: 2 * Math.PI } },
+  properties: {
+    origin: point3, rotation: angleSchema,
+    basculement: { type: "object", additionalProperties: false, required: ["x", "y"], properties: { x: angleSchema, y: angleSchema } },
+  },
 } as const;
 const dimension = { ...positive, maximum: STUDIO_LIMITES_SOLIDES.dimensionMax } as const;
 const point2 = { type: "object", additionalProperties: false, required: ["x", "y"], properties: { x: number, y: number } } as const;
@@ -146,12 +156,19 @@ function dimensionValue(value: unknown, path: string): number {
 }
 
 export function validerPlacement(value: unknown, path: string): StudioPlacement3d {
-  const p = record(value, ["origin", "rotation"], path);
+  const p = record(value, ["origin", "rotation"], path, ["basculement"]);
   const o = record(p.origin, ["x", "y", "z"], `${path}.origin`);
   const max = STUDIO_LIMITES_SOLIDES.origineMax;
+  let basculement: { x: number; y: number } | undefined;
+  if (Object.hasOwn(p, "basculement")) {
+    const b = record(p.basculement, ["x", "y"], `${path}.basculement`);
+    basculement = { x: angle(b.x, `${path}.basculement.x`), y: angle(b.y, `${path}.basculement.y`) };
+    if (basculement.x === 0 && basculement.y === 0) fail(`${path}.basculement`, "basculement nul : à omettre (forme canonique)");
+  }
   return {
     origin: { x: borne(o.x, max, `${path}.origin.x`), y: borne(o.y, max, `${path}.origin.y`), z: borne(o.z, max, `${path}.origin.z`) },
     rotation: angle(p.rotation, `${path}.rotation`),
+    ...(basculement ? { basculement } : {}),
   };
 }
 
@@ -199,6 +216,7 @@ function validerPrisme(value: unknown, path: string): StudioProfilePrism {
   const source = Object.hasOwn(o, "source") ? { source: validerSource(o.source, `${path}.source`) } : {};
   const placement = validerPlacement(o.placement, `${path}.placement`);
   if (source.source && source.source.relation !== "copie-independante" && placement.rotation !== 0) fail(`${path}.placement.rotation`, "un prisme lié suit sa source en plan : rotation nulle attendue");
+  if (source.source && source.source.relation !== "copie-independante" && placement.basculement) fail(`${path}.placement.basculement`, "un prisme lié suit sa source en plan : aucun basculement");
   return {
     id: identifier(o.id, `${path}.id`), type: "prism", ...layerRef(o, path), placement,
     profile, height: dimensionValue(o.height, `${path}.height`), ...direction, ...source,
@@ -232,6 +250,38 @@ export function profilLocal(s: StudioSolid): StudioPoint[] {
 export function studioSolideVers3d(placement: StudioPlacement3d, p: StudioPoint, z = 0): StudioPoint3 {
   const c = Math.cos(placement.rotation), s = Math.sin(placement.rotation);
   return { x: placement.origin.x + c * p.x - s * p.y, y: placement.origin.y + s * p.x + c * p.y, z: placement.origin.z + z };
+}
+
+/** Le solide est-il basculé autour d'un axe horizontal (A.3-03) ? */
+export const estBascule = (s: { placement: StudioPlacement3d }): boolean => s.placement.basculement !== undefined;
+
+/**
+ * Vecteur du repère local du solide exprimé dans `local-3d` : Rz(rotation) · Ry(basculement.y) · Rx(basculement.x)
+ * (sans basculement : la seule rotation autour de z, exacte pour une rotation nulle).
+ */
+export function studioVecteurSolide(placement: StudioPlacement3d, v: StudioPoint3): StudioPoint3 {
+  let { x, y, z } = v;
+  const b = placement.basculement;
+  if (b) {
+    if (b.x !== 0) { const c = Math.cos(b.x), s = Math.sin(b.x); [y, z] = [c * y - s * z, s * y + c * z]; }
+    if (b.y !== 0) { const c = Math.cos(b.y), s = Math.sin(b.y); [x, z] = [c * x + s * z, -s * x + c * z]; }
+  }
+  if (placement.rotation === 0) return { x, y, z };
+  const c = Math.cos(placement.rotation), s = Math.sin(placement.rotation);
+  return { x: c * x - s * y, y: s * x + c * y, z };
+}
+
+/**
+ * Basculement d'un point de `local-3d` calculé sans basculement (rotation autour de z seule) : il est ramené au repère
+ * local (rotation inverse), basculé, puis replacé — rotation autour de l'origine du solide. Identité sans basculement.
+ */
+export function studioBasculerPoint(placement: StudioPlacement3d, p: StudioPoint3): StudioPoint3 {
+  if (!placement.basculement) return p;
+  const o = placement.origin, c = Math.cos(placement.rotation), s = Math.sin(placement.rotation);
+  const d = { x: p.x - o.x, y: p.y - o.y, z: p.z - o.z };
+  const local = { x: c * d.x + s * d.y, y: -s * d.x + c * d.y, z: d.z };
+  const w = studioVecteurSolide(placement, local);
+  return { x: o.x + w.x, y: o.y + w.y, z: o.z + w.z };
 }
 
 /** Emprise du solide dans le plan (x, y) du repère `local-3d`, profil placé. */

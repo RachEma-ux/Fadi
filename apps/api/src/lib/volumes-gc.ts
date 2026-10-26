@@ -7,7 +7,8 @@
  *   - `atelier_publications.documents` (jsonb) : `DocumentPublie[].volumeId` ;
  *   - `studio_publications.package` (jsonb) : `StudioPublicationPackage.files[].sha256` ;
  *   - `review_packages.files` (jsonb) : fichiers figés d'un paquet de revue au partage (phase 4), `files[].sha256` ;
- *   - `review_findings.attachments` (jsonb) : pièces jointes des constats de revue, `attachments[].sha256`.
+ *   - `review_findings.attachments` (jsonb) : pièces jointes des constats de revue, `attachments[].sha256` ;
+ *   - `studio_observations.pieces` (jsonb) : pièces justificatives des observations Studio (IF-010), `pieces[].sha256`.
  *
  * Prudence : chaque colonne citée est parcourue en entier et **toute** chaîne qui s'y trouve compte comme une
  * référence (pas seulement les champs attendus) ; avant de supprimer quoi que ce soit, le nettoyage vérifie dans le
@@ -27,6 +28,7 @@ export const REFERENCES_VOLUMES: readonly { table: string; colonne: string; chem
   { table: "studio_publications", colonne: "package", chemin: "package.files[].sha256" },
   { table: "review_packages", colonne: "files", chemin: "files[].sha256" },
   { table: "review_findings", colonne: "attachments", chemin: "attachments[].sha256" },
+  { table: "studio_observations", colonne: "pieces", chemin: "pieces[].sha256" },
 ]);
 
 /** Toutes les chaînes d'une valeur JSON (clés comprises), récursivement : relevé volontairement large. */
@@ -88,7 +90,7 @@ export async function nettoyerVolumes(pool: Pool, options: { essai?: boolean; lo
     await client.query(`SET LOCAL lock_timeout = '${Math.max(100, Math.floor(options.lockTimeoutMs ?? 5000))}ms'`);
     // Une écriture en cours (volume rangé, publication pas encore validée) est attendue ; les écritures suivantes
     // attendent la fin du nettoyage. Les lectures ne sont pas bloquées.
-    await client.query("LOCK TABLE volumes, atelier_publications, studio_publications, review_packages, review_findings IN SHARE ROW EXCLUSIVE MODE");
+    await client.query("LOCK TABLE volumes, atelier_publications, studio_publications, review_packages, review_findings, studio_observations IN SHARE ROW EXCLUSIVE MODE");
     const fk = await client.query<{ table: string; colonne: string }>(
       `SELECT tc.table_name AS table, kcu.column_name AS colonne
          FROM information_schema.table_constraints tc

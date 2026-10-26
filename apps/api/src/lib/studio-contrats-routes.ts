@@ -55,6 +55,12 @@ const champsObservation = {
   taches: z.array(tacheObservation),
   decisions: z.array(z.looseObject({ seq: z.number().int(), nature: z.string(), portee: z.string(), texte: z.string(), actorId: z.string() })),
   peut: z.strictObject({ lier: z.boolean(), creerTache: z.boolean(), proposer: z.boolean(), decider: z.boolean() }),
+  // IF-010 / EX-084 / IF-009 (lot PUB) : identité propre, catégorie, gravité, pièces, références BCF, résolution, contrat relu.
+  issueId: ident, categorie: z.string().nullable(), gravite: z.string().nullable(),
+  pieces: z.array(z.strictObject({ name: z.string(), mime: z.string(), size: z.number().int(), sha256: z.string() })),
+  bcfRefs: z.array(z.strictObject({ guid: z.string(), contexte: z.string(), fichierSha256: z.string(), importeLe: instant })),
+  resolution: z.enum(["resolue", "derogee", "ouverte"]),
+  contrat: z.looseObject({ issueId: ident, noteId: ident, conditionCloture: z.string() }),
 };
 /** Observation issue d'un commentaire (vue du fil). */
 const observationDuFil = z.strictObject({ ...champsObservation, replayed: z.boolean().optional() });
@@ -100,6 +106,7 @@ const controle = z.strictObject({
   id: ident, studyId: ident, variantId: ident, revisionId: ident, version: z.number().int().nullable(), execution: z.string(), conclusion: z.string().nullable(),
   documentHash: z.string(), auteur: z.string(), auteurEmail: z.string().nullable(), creeLe: instant,
   resultat: z.looseObject({ execution: z.string(), conclusion: z.string().nullable(), ecarts: z.array(z.unknown()) }),
+  conclusionNormative: z.looseObject({ execution: z.enum(["en-attente", "delai-depasse", "echec-technique", "non-execute", "execute"]), conclusion: z.enum(["conforme", "non-conforme", "non-teste", "non-applicable-justifie"]).nullable(), exigences: z.array(z.unknown()) }),
   rapprochements: z.array(z.unknown()).optional(), replayed: z.boolean().optional(),
 });
 const feuille = z.strictObject({
@@ -111,13 +118,19 @@ const feuille = z.strictObject({
 });
 const dossier = z.strictObject({
   id: ident, studyId: ident, title: z.string(), sheetIds: z.array(ident), quantities: z.strictObject({ variantId: ident, revisionId: ident }).nullable(),
-  includeFidelity: z.boolean(), quantitiesAdjustmentSeq: z.number().int().nullable(), createdBy: qui, createdAt: instant, updatedAt: instant,
+  includeFidelity: z.boolean(), quantitiesAdjustmentSeq: z.number().int().nullable(), sectionViewIds: z.array(ident), createdBy: qui, createdAt: instant, updatedAt: instant,
   files: z.strictObject({ pdf: z.string(), json: z.string() }), replayed: z.boolean().optional(),
   assembly: z.looseObject({ schema: z.literal("studio-dossier-conception/1") }).optional(),
 });
+const vueCoupe = z.strictObject({
+  id: ident, studyId: ident, variantId: ident, revisionId: ident, headRevisionId: ident, freshness: z.enum(["a-jour", "perimee"]),
+  definition: z.looseObject({ nom: z.string(), niveau: z.looseObject({ repere: z.literal("local-3d"), z: z.number() }), echelle: z.number(), annotations: z.array(z.unknown()) }),
+  vue: z.looseObject({ schema: z.literal("studio-vue-coupe/1"), empreinteSection: z.string(), empreinte: z.string() }).nullable(),
+  error: z.string().nullable(), createdBy: z.string(), createdAt: instant, updatedAt: instant,
+});
 const modeleExterne = z.strictObject({
   id: ident, studyId: ident, variantId: ident, reference: z.string(), auteur: z.string(), discipline: z.string(), format: z.string(), version: z.string(),
-  uniteDeclaree: z.string().nullable(), transformation: z.unknown().nullable(), nomFichier: z.string(), contentSha256: z.string(), statut: z.string(),
+  uniteDeclaree: z.string().nullable(), transformation: z.unknown().nullable(), repereSource: z.string().nullable(), restrictions: z.string().nullable(), nomFichier: z.string(), contentSha256: z.string(), statut: z.string(),
   rapport: z.unknown(), comparaison: z.unknown(), revisionComparee: z.string().nullable(),
   decision: z.looseObject({ par: z.string(), parEmail: z.string().nullable(), le: instant.nullable(), motif: z.string().nullable() }).nullable(),
   recuPar: z.string(), recuParEmail: z.string().nullable(), recuLe: instant,
@@ -125,7 +138,12 @@ const modeleExterne = z.strictObject({
   replayed: z.boolean().optional(),
 });
 const etapes = z.strictObject({ steps: z.array(z.strictObject({ number: z.number().int(), createdAt: instant })), available: z.array(z.strictObject({ number: z.number().int(), title: z.string(), phase: z.string() })), canWrite: z.boolean() });
-const preferences = z.strictObject({ profil: z.string(), favoris: z.array(z.string()), personnel: z.array(z.unknown()), groupes: z.array(z.unknown()), retires: z.array(z.string()), manifeste: z.literal("studio-tool-manifest/1"), updatedAt: instant.nullable() });
+const preferences = z.strictObject({
+  profil: z.string(), favoris: z.array(z.string()), personnel: z.array(z.unknown()), groupes: z.array(z.unknown()), retires: z.array(z.string()), manifeste: z.literal("studio-tool-manifest/1"), updatedAt: instant.nullable(),
+  // Profil persistant (EX-034) : raccourcis personnels, ordre des capacités, identifiant, propriétaire, version, provenance.
+  raccourcis: z.record(z.string(), z.string()), ordre: z.array(z.string()), profileId: z.string().nullable(), proprietaire: z.string().nullable(), version: z.number().int().min(0), importeDe: z.string().nullable(),
+});
+const conflitRaccourci = z.strictObject({ raccourci: z.string(), capacite: z.string(), type: z.enum(["doublon", "registre"]), avec: z.string() });
 
 // --- Études et variantes (routes/studio.ts) ---------------------------------------------------------------------------
 
@@ -214,7 +232,7 @@ export const CONTRAT_EXPORT_RAPPORT = contratRoute({
   reponse: z.looseObject({ revisionId: ident, schema: z.literal("studio-rapport-fidelite/1"), format: z.string(), totaux: z.looseObject({ elements: z.number() }), lignes: z.array(z.unknown()) }),
 });
 export const CONTRAT_COMMANDES = contratRoute({
-  id: "studio-api-commandes/1", routes: ["POST /studies/:studyId/variants/:variantId/commands"], objet: "Application d'une enveloppe de commandes `studio-commands/1` ; nouvelle révision (rejeu par `requestId`).",
+  id: "studio-api-commandes/1", routes: ["POST /studies/:studyId/variants/:variantId/commands"], objet: "Application d'une enveloppe de commandes `studio-commands/1` ; nouvelle révision (rejeu par `requestId`) ; quota d'invocation du compte (429 `quota_exceeded`, EX-028).",
   entree: "Corps : enveloppe `{ contractVersion: studio-commands/1, requestId, baseRevisionId, commands }` (schéma `envelopeSchema`).", statuts: [200], corps: "json", reponse: soumission,
 });
 
@@ -267,7 +285,20 @@ export const CONTRAT_PREFERENCES_LIRE = contratRoute({
 });
 export const CONTRAT_PREFERENCES_ECRIRE = contratRoute({
   id: "studio-api-preferences-ecrire/1", routes: ["PUT /preferences/outils"], objet: "Enregistrement des préférences d'outils du compte (INV-009).",
-  entree: "Corps : `{ profil, favoris, personnel, groupes?, retires? }` (schéma `studioToolPreferencesSchema`).", statuts: [200], corps: "json", reponse: preferences,
+  entree: "Corps : `{ profil, favoris, personnel, groupes?, raccourcis?, ordre? }` (schéma `studioToolPreferencesSchema`) ; 409 `shortcut_conflict`, 403 `permission_non_conferee`.", statuts: [200], corps: "json", reponse: preferences,
+});
+export const CONTRAT_PROFIL_EXPORTER = contratRoute({
+  id: "studio-api-profil-exporter/1", routes: ["GET /preferences/outils/export"], objet: "Fichier de profil d'outils du compte `fadi-studio-profil/1` (EX-034) ; 404 tant qu'aucun profil n'est enregistré.",
+  entree: "Aucune.", statuts: [200], corps: "json",
+  reponse: z.strictObject({
+    format: z.literal("fadi-studio-profil/1"), profileId: z.string(), proprietaire: z.string().optional(), version: z.number().int().min(1), manifeste: z.string(),
+    profil: z.string(), favoris: z.array(z.string()), personnel: z.array(z.string()), groupes: z.array(z.unknown()), ordre: z.array(z.string()), raccourcis: z.record(z.string(), z.string()),
+  }),
+});
+export const CONTRAT_PROFIL_IMPORTER = contratRoute({
+  id: "studio-api-profil-importer/1", routes: ["POST /preferences/outils/import"], objet: "Import d'un profil d'outils (EX-033, EX-034, INV-009) : aucun droit conféré, conflits de raccourcis détectés ; version +1.",
+  entree: "Corps : `{ profil: fadi-studio-profil/1, resolution?: \"refuser\" | \"ecarter\" }` ; 400 `invalid_profile` / `unknown_tool`, 403 `permission_non_conferee`, 409 `shortcut_conflict`.",
+  statuts: [200], corps: "json", reponse: preferences.extend({ ecartes: z.array(conflitRaccourci) }),
 });
 export const CONTRAT_CATALOGUE_OUTILS = contratRoute({
   id: "studio-api-catalogue-outils/1", routes: ["GET /preferences/catalogue"], objet: "Catalogue des outils autorisés pour le rôle du compte dans le projet.",
@@ -378,7 +409,41 @@ export const CONTRAT_AJUSTEMENT_CREER = contratRoute({
   }),
 });
 
+export const CONTRAT_RESULTATS_QUANTITATIFS = contratRoute({
+  id: "studio-api-resultats-quantitatifs/1", routes: ["GET /studies/:studyId/variants/:variantId/resultats-quantitatifs"],
+  objet: "Résultats quantitatifs traçables d'une révision (IF-008, EX-077) : jeu de sources, règle et version, exclusions, actualité, ajustement distinct.",
+  entree: "Requête : `revisionId` facultatif (tête par défaut).", statuts: [200], corps: "json",
+  reponse: z.strictObject({
+    studyId: ident, variantId: ident, revisionId: ident, headRevisionId: ident,
+    resultats: z.array(z.looseObject({
+      schema: z.literal("studio-resultat-quantitatif/1"), quantityId: ident, sourceRevisionSet: z.looseObject({ id: z.string(), revisions: z.array(z.unknown()) }),
+      ruleId: z.string(), ruleVersion: z.string(), unit: z.string(), sourceObjectIds: z.array(z.string()), rawValue: z.number().nullable(), deductions: z.array(z.unknown()),
+      exclusions: z.array(z.unknown()), displayValue: z.string(), freshnessStatus: z.enum(["a-jour", "perimee", "source-inconnue"]),
+    })),
+  }),
+});
+
 // --- Observations (routes/studio-observations.ts) ----------------------------------------------------------------------
+
+export const CONTRAT_OBSERVATIONS_BCF_EXPORTER = contratRoute({
+  id: "studio-api-observations-bcf-exporter/1", routes: ["GET /studies/:studyId/variants/:variantId/observations/bcf"],
+  objet: "Export BCF 2.1 minimal (.bcfzip) des observations lisibles (IF-010) ; en-tête `X-Studio-Bcf-Topics`.",
+  entree: "Aucune.", statuts: [200], corps: "fichier", reponse: null, typeFichier: "application/octet-stream",
+});
+export const CONTRAT_OBSERVATIONS_BCF_IMPORTER = contratRoute({
+  id: "studio-api-observations-bcf-importer/1", routes: ["POST /studies/:studyId/variants/:variantId/observations/bcf"],
+  objet: "Import BCF : sujets nouveaux dans leur contexte créés comme observations distinctes ; reconnus, homonymes et absents rapportés sans effet.",
+  entree: "Corps : schéma `studioBcfImportSchema` (`fichierBase64`).", statuts: [200], corps: "json",
+  reponse: z.strictObject({
+    contexte: z.string(), reconnus: z.array(z.unknown()), homonymes: z.array(z.unknown()), absents: z.array(z.unknown()), objetsInconnus: z.array(z.unknown()),
+    crees: z.array(z.strictObject({ guid: z.string(), observationId: ident, issueId: ident })), avertissements: z.array(z.string()), version: z.string().nullable(),
+  }),
+});
+export const CONTRAT_OBSERVATION_PIECE = contratRoute({
+  id: "studio-api-observation-piece/1", routes: ["GET /studies/:studyId/variants/:variantId/observations/:observationId/pieces/:sha256"],
+  objet: "Pièce justificative d'une observation (IF-010), contenu vérifié par son empreinte.", entree: "Adresse : `sha256` de la pièce.",
+  statuts: [200], corps: "fichier", reponse: null, typeFichier: "application/pdf | image/png | image/jpeg",
+});
 
 export const CONTRAT_OBSERVATIONS_LISTER = contratRoute({
   id: "studio-api-observations-lister/1", routes: ["GET /studies/:studyId/variants/:variantId/observations"], objet: "Observations de la variante.",
@@ -469,6 +534,27 @@ export const CONTRAT_DOSSIER_FICHIER = contratRoute({
   entree: "Adresse : `format` (pdf | json).", statuts: [200], corps: "fichier", reponse: null, typeFichier: "application/pdf | application/json",
 });
 
+export const CONTRAT_VUES_COUPE_LISTER = contratRoute({
+  id: "studio-api-vues-coupe-lister/1", routes: ["GET /studies/:studyId/section-views"], objet: "Vues de coupe enregistrées de l'étude (EX-075).",
+  entree: "Aucune.", statuts: [200], corps: "json", reponse: z.strictObject({ vues: z.array(vueCoupe) }),
+});
+export const CONTRAT_VUE_COUPE_CREER = contratRoute({
+  id: "studio-api-vue-coupe-creer/1", routes: ["POST /studies/:studyId/variants/:variantId/section-views"], objet: "Nouvelle vue de coupe épinglée sur une révision (EX-075).",
+  entree: "Corps : schéma `studioVueCoupeCreateSchema`.", statuts: [201], corps: "json", reponse: vueCoupe,
+});
+export const CONTRAT_VUE_COUPE_LIRE = contratRoute({
+  id: "studio-api-vue-coupe-lire/1", routes: ["GET /studies/:studyId/section-views/:viewId"], objet: "Vue de coupe recalculée (section, sources, actualité).",
+  entree: "Aucune.", statuts: [200], corps: "json", reponse: vueCoupe,
+});
+export const CONTRAT_VUE_COUPE_MODIFIER = contratRoute({
+  id: "studio-api-vue-coupe-modifier/1", routes: ["PATCH /studies/:studyId/section-views/:viewId"], objet: "Définition, annotation propre ou réépinglage d'une vue de coupe.",
+  entree: "Corps : schéma `studioVueCoupeUpdateSchema`.", statuts: [200], corps: "json", reponse: vueCoupe,
+});
+export const CONTRAT_VUE_COUPE_SUPPRIMER = contratRoute({
+  id: "studio-api-vue-coupe-supprimer/1", routes: ["DELETE /studies/:studyId/section-views/:viewId"], objet: "Suppression d'une vue de coupe non citée par un dossier.",
+  entree: "Aucune.", statuts: [200], corps: "json", reponse: z.strictObject({ deleted: ident }),
+});
+
 // --- Modèles externes (routes/studio-modeles-externes.ts) --------------------------------------------------------------
 
 export const CONTRAT_MODELES_EXTERNES_LISTER = contratRoute({
@@ -483,6 +569,11 @@ export const CONTRAT_MODELE_EXTERNE_RECEVOIR = contratRoute({
 export const CONTRAT_MODELE_EXTERNE_LIRE = contratRoute({
   id: "studio-api-modele-externe-lire/1", routes: ["GET /studies/:studyId/variants/:variantId/modeles-externes/:modelId"], objet: "Un modèle externe et son journal.",
   entree: "Aucune.", statuts: [200], corps: "json", reponse: modeleExterne,
+});
+export const CONTRAT_MODELE_EXTERNE_PROVENANCE = contratRoute({
+  id: "studio-api-modele-externe-provenance/1", routes: ["GET /studies/:studyId/variants/:variantId/modeles-externes/:modelId/provenance"], objet: "Provenance d'un modèle externe reçu (EX-014) : déclarations de l'émetteur et lectures du serveur (droit export).",
+  entree: "Aucune.", statuts: [200], corps: "json",
+  reponse: z.looseObject({ schema: z.literal("studio-provenance-modele/1"), modeleId: ident, empreinteSha256: z.string(), recuLe: z.string() }),
 });
 export const CONTRAT_MODELE_EXTERNE_CONTENU = contratRoute({
   id: "studio-api-modele-externe-contenu/1", routes: ["GET /studies/:studyId/variants/:variantId/modeles-externes/:modelId/contenu"], objet: "Fichier reçu tel quel, avec son empreinte (droit export).",

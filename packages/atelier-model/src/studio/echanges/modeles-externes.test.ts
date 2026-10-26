@@ -13,7 +13,7 @@ const meta = (x: Partial<StudioMetaModeleExterne> = {}): StudioMetaModeleExterne
 
 describe("Modèle externe — référencement (TR-EX-066)", () => {
   it("métadonnées déclarées : auteur, discipline, format, version, unité, transformation ; champ inconnu refusé", () => {
-    expect(meta()).toEqual({ reference: "Architecte — bâtiment A", auteur: "Cabinet partenaire", discipline: "architecture", format: "ifc", version: "B", uniteDeclaree: "mm", transformation: null, nomFichier: "recette-ifc2x3.ifc" });
+    expect(meta()).toEqual({ reference: "Architecte — bâtiment A", auteur: "Cabinet partenaire", discipline: "architecture", format: "ifc", version: "B", uniteDeclaree: "mm", transformation: null, nomFichier: "recette-ifc2x3.ifc", repereSource: null, restrictions: null });
     expect(meta({ transformation: { dx: 1, dy: 2, dz: 0, rotation: 0 } }).transformation).toEqual({ dx: 1, dy: 2, dz: 0, rotation: 0 });
     expect(() => validerMetaModeleExterne({ ...meta(), statut: "accepte" })).toThrow(/champ inconnu/);
     expect(() => validerMetaModeleExterne({ ...meta(), auteur: " " })).toThrow(StudioValidationError);

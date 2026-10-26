@@ -4,7 +4,7 @@ import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { createRequire } from "node:module";
 import { defineConfig, type Plugin } from "vite";
-import { classesPrecache, construireCarte, type SortieBuild } from "./src/modules/studio/chargement/carte-morceaux";
+import { classesPrecache, construireCarte, detecterDuplications, type BundleModules, type SortieBuild } from "./src/modules/studio/chargement/carte-morceaux";
 import { FICHIER_CARTE } from "./src/modules/studio/chargement/moteurs";
 
 /**
@@ -49,6 +49,23 @@ function publicFiles(dir: string): string[] {
   }
 }
 
+/**
+ * Modules des bundles de Workers (EX-041) : chaque Worker est construit à part par Vite ; ce greffon de la construction
+ * des Workers relève les modules (et leurs octets rendus) de chacun de leurs morceaux, pour le détecteur de duplication.
+ */
+const modulesWorkers: BundleModules[] = [];
+function releveModulesWorkers(): Plugin {
+  return {
+    name: "fadi-releve-modules-workers",
+    generateBundle(_options, bundle) {
+      for (const o of Object.values(bundle)) {
+        if (o.type !== "chunk") continue;
+        modulesWorkers.push({ fichier: `/${o.fileName}`, nature: "worker", modules: Object.entries(o.modules).map(([id, m]) => ({ id, octets: m.renderedLength })) });
+      }
+    },
+  };
+}
+
 function serviceWorkerBuildId(): Plugin {
   let outDir = "dist";
   return {
@@ -64,10 +81,18 @@ function serviceWorkerBuildId(): Plugin {
       const sorties: SortieBuild[] = Object.values(bundle).map((o) => o.type === "chunk"
         ? { type: "chunk", fileName: o.fileName, taille: Buffer.byteLength(o.code), isEntry: o.isEntry, facadeModuleId: o.facadeModuleId, moduleIds: o.moduleIds, imports: o.imports, dynamicImports: o.dynamicImports, css: [...(o.viteMetadata?.importedCss ?? [])] }
         : { type: "asset", fileName: o.fileName, taille: typeof o.source === "string" ? Buffer.byteLength(o.source) : o.source.byteLength, nomsOriginaux: o.originalFileNames ?? [] });
-      const carte = construireCarte(sorties, buildId());
-      if (!carte.verification.ok) {
-        throw new Error(`[fadi-sw-build-id] découpage des bundles non conforme (B.3-06) :\n- ${carte.verification.violations.join("\n- ")}`);
+      const carteBrute = construireCarte(sorties, buildId());
+      if (!carteBrute.verification.ok) {
+        throw new Error(`[fadi-sw-build-id] découpage des bundles non conforme (B.3-06) :\n- ${carteBrute.verification.violations.join("\n- ")}`);
       }
+      // EX-041 : duplication en octets entre morceaux du bundle principal et bundles des Workers (échec du build si un
+      // noyau lourd est dupliqué hors des exceptions déclarées) ; le rapport complet va dans la carte.
+      const principaux: BundleModules[] = Object.values(bundle).flatMap((o) => (o.type === "chunk" ? [{ fichier: `/${o.fileName}`, nature: "principal" as const, modules: Object.entries(o.modules).map(([id, m]) => ({ id, octets: m.renderedLength })) }] : []));
+      const duplication = detecterDuplications([...principaux, ...modulesWorkers]);
+      if (duplication.violations.length) {
+        throw new Error(`[fadi-sw-build-id] duplication d'un noyau entre bundles (EX-041) :\n- ${duplication.violations.join("\n- ")}`);
+      }
+      const carte = { ...carteBrute, duplication };
       const classes = classesPrecache(carte, assets);
       // Carte écrite avec l'identifiant complet du build (celui du cache) ; à défaut, avec le commit.
       const ecrireCarte = (build: string) => writeFileSync(join(outDir, FICHIER_CARTE.slice(1)), JSON.stringify({ ...carte, build }));
@@ -164,7 +189,7 @@ export default defineConfig({
   plugins: [serviceWorkerBuildId(), noticeOcct()],
   // Workers en modules ES (P2-1) : le Worker du noyau exact importe occt-wasm, dont le chargeur découpe son code ;
   // le format IIFE par défaut de Vite refuse ce découpage. Le `.wasm` reste un fichier séparé (`?url`, D-177).
-  worker: { format: "es" },
+  worker: { format: "es", plugins: () => [releveModulesWorkers()] },
   // Le même identifiant de build, lisible par l'application (page Paramètres : « Version »).
   define: { __FADI_BUILD__: JSON.stringify(buildId()) },
   server: {

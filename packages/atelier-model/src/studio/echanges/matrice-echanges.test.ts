@@ -98,16 +98,23 @@ describe("Matrice d'échanges : donnée versionnée et cohérente", () => {
       4: "46bee5f95b4b04bd2cd1e24a1b2c7ae00a5cbdcde8d7a687722778d43479f373",
       // Réserve G1 (P-11) : relevé de performances versionné studio-releve-perf/1 (schéma et contrôle controlerRelevePerf).
       5: "4c5677dd684219719e9f56d31c9ef0f53bb8059f12074f66daedba13ab668ec4",
-      // Lot F (décision P-12) : illustration archivée depuis une vue (PNG « fadi:illustration », non vérifiée).
-      6: "3ee051c0da203c6cd5335d33dc08142dddadc26d6d32692278b0cf9c01ac130d",
+      // Lot F (décision P-12) et lot PUB : illustration archivée depuis une vue (PNG « fadi:illustration », non vérifiée) ;
+      // BCF 2.1 minimal des observations livré (import et export), paquet de publication d'un dossier de conception ;
+      // lot REND : couverture SVG / DXF / IFC des graphismes (EX-055), provenance des sources et des modèles externes (EX-014).
+      6: "eac31b5dcf978f90d43ea3d7a6258164f4535af532e17c08f2c6a749df4e24fa",
+      // Lot OUT (EX-034) : profil d’outils exporté et importé (fadi-studio-profil/1).
+      7: "da45ee1baee0b0a8b15dad3128d40f9cb5ddc884aea22a36b10ce269176efbe0",
     };
     const empreinte = createHash("sha256").update(JSON.stringify({ entrees: STUDIO_MATRICE_ECHANGES.entrees, couverture: STUDIO_COUVERTURE_EXPORT, statuts: STUDIO_STATUT_DE_RAISON })).digest("hex");
     expect(empreinte, `révision ${STUDIO_MATRICE_ECHANGES.revision} : entrées modifiées sans nouvelle révision ? (empreinte calculée ${empreinte})`).toBe(EMPREINTES[STUDIO_MATRICE_ECHANGES.revision]);
     expect(Math.max(...Object.keys(EMPREINTES).map(Number)), "la révision courante est la dernière épinglée").toBe(STUDIO_MATRICE_ECHANGES.revision);
   });
 
+  // Libellé cité tel quel par le registre (E.6-05) : depuis le lot PUB, BCF est livré (contrat 2.1 minimal, test
+  // suivant) ; ce contrôle garde les autres formats reportés. Citation du registre à actualiser par l'orchestrateur.
   it("E.6-04 / E.6-05 : DWG, DGN, BCF, STEP, OBJ, STL inscrits dans les deux sens, glTF en export, jamais livrés ni conformes", () => {
-    for (const id of ["dwg", "dgn", "bcf", "step", "obj", "stl"]) for (const sens of ["import", "export"]) {
+    for (const sens of ["import", "export"]) expect(entree(`bcf-${sens}`).statut, "BCF : qualifié séparément (lot PUB)").toBe("livre");
+    for (const id of ["dwg", "dgn", "step", "obj", "stl"]) for (const sens of ["import", "export"]) {
       const e = STUDIO_MATRICE_ECHANGES.entrees.find((x) => x.id === `${id}-${sens}`);
       expect(e?.statut, `${id}-${sens}`).toBe("non-livre");
       expect(e?.raison).toBeTruthy();
@@ -119,6 +126,26 @@ describe("Matrice d'échanges : donnée versionnée et cohérente", () => {
     expect(dwg.sources.some((s) => s.reference.includes("D-179"))).toBe(true);
     expect(dwg.raison).toMatch(/ne vaut pas pour Studio/);
     expect(STUDIO_MATRICE_ECHANGES.entrees.filter((e) => e.statut === "renonce")).toEqual([]);
+  });
+
+  it("E.6-04 — chaque format est qualifié séparément selon son propre contrat : BCF livré (contrat 2.1 minimal, preuves de code, de test et de route, dans les deux sens), DWG / STEP / OBJ / STL non livrés chacun avec sa raison et ses sources, aucun déclaré conforme", () => {
+    for (const sens of ["import", "export"] as const) {
+      const b = entree(`bcf-${sens}`);
+      expect(b.statut).toBe("livre");
+      expect(b.versionFormat).toMatch(/2\.1/);
+      expect(b.limite).toMatch(/contexte|Contrat minimal/);
+      expect(b.preuves?.code.length && b.preuves.tests.length && b.preuves.routes?.length).toBeTruthy();
+    }
+    expect(STUDIO_MATRICE_ECHANGES.entrees.some((e) => e.id === "bcf-import" && e.limite.includes("même Guid venu d’un autre contexte"))).toBe(true);
+    const raisons = new Set<string>();
+    for (const id of ["dwg", "step", "obj", "stl"]) {
+      const e = entree(`${id}-import`);
+      expect(e.statut).toBe("non-livre");
+      expect(e.sources.length).toBeGreaterThan(0);
+      raisons.add(e.raison!);
+    }
+    expect(raisons.size, "une raison propre par format").toBe(4);
+    expect(STUDIO_MATRICE_ECHANGES.conformite).toBe("non-evaluee");
   });
 
   it("E.6-02 : natif, vues / feuilles, tableaux, rendus et paquets présents et livrés", () => {
@@ -197,6 +224,16 @@ const complet = (): StudioDocument => ({
     { id: "ap1", type: "appearance", target: { kind: "object", id: "m1" }, color: "#c0392b" },
   ],
   nonNatifs: [{ id: "nn1", type: "non-native", origine: { format: "ifc", entite: "IfcColumn" }, raison: "type-sans-equivalent" }],
+  // Graphismes (EX-055) : spline, hachure opaque et transparente, symbole opaque et transparent.
+  graphismes: [
+    { id: "gs1", type: "spline", points: [{ x: 0, y: 30 }, { x: 1, y: 31 }, { x: 2, y: 31 }, { x: 3, y: 30 }] },
+    { id: "gh1", type: "hachure", contour: [{ x: 0, y: 32 }, { x: 2, y: 32 }, { x: 2, y: 34 }, { x: 0, y: 34 }], angle: Math.PI / 4, espacement: 0.25 },
+    { id: "gh2", type: "hachure", contour: [{ x: 3, y: 32 }, { x: 5, y: 32 }, { x: 5, y: 34 }], angle: 0, espacement: 0.5, opacite: 0.5 },
+    { id: "gy1", type: "symbole", symbole: "nord", position: { x: 8, y: 32 }, rotation: 0, echelle: 1 },
+    { id: "gy2", type: "symbole", symbole: "croix", position: { x: 10, y: 32 }, rotation: 0.3, echelle: 0.5, opacite: 0.4 },
+  ],
+  // Source importée (EX-014) : provenance déclarée (empreinte SYNTHÉTIQUE).
+  sources: [{ id: "src1", type: "source", format: "dxf", versionFormat: "AC1009", nomFichier: "plan.dxf", empreinteSha256: "0".repeat(64), recuLe: "2026-10-25T10:00:00.000Z", auteur: null, uniteLue: "mm", uniteRetenue: "mm", facteur: 0.001, repereSource: null, transformation: "identite", restrictions: null, objets: 3 }],
 } as StudioDocument);
 
 describe("E.6-03 : sous-ensemble SVG / DXF / IFC = rapport de fidélité", () => {

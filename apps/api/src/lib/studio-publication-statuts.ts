@@ -166,17 +166,60 @@ export interface ManifesteDocument { format: string; fileName: string; mime: str
  * Contenu d'un dossier : `complet` (SVG, DXF, IFC, feuille PDF) ou `dessin-2d` (E.3-07 : dessin 2D indépendant, publié
  * sans modèle 3D — SVG, DXF et feuille PDF, sans IFC ni variante coordonnée).
  */
-export type ContenuPublication = "complet" | "dessin-2d";
+export type ContenuPublication = "complet" | "dessin-2d" | "dossier-conception";
+
+/**
+ * Références de règles, rapports de contrôle et observations bloquantes de l'ensemble publié (IF-009, lot PUB). Présent
+ * dans le manifeste dès qu'il y a quelque chose à déclarer (forme historique inchangée sinon : mêmes empreintes).
+ */
+export interface ManifesteControles {
+  /** Règles appliquées : version du jeu d'exigences de l'étude ; règles de métré d'un dossier qui joint un métré. */
+  regles: { type: "exigences" | "metre"; id: string; version: string }[];
+  /** Dernier contrôle enregistré de chaque révision source (exécution et conclusion normative, EX-068). */
+  rapports: { controleId: string; variantId: string; revisionId: string; version: number | null; execution: string; conclusion: string | null; documentHash: string }[];
+  /** Observations bloquantes des variantes sources, avec leur résolution (résolue, dérogée, ouverte). */
+  observations: { issueId: string; observationId: string; variantId: string; gravite: "bloquante"; statut: string; resolution: "resolue" | "derogee" | "ouverte" }[];
+}
+/** Dossier de conception publié (EX-074) et ses pièces (EX-076), chacune avec son origine, sa présentation et ses sources. */
+export interface ManifesteDossier {
+  id: string;
+  titre: string;
+  empreinte: string;
+  pieces: { ordre: number; documentId: string; nature: "feuille" | "vue-coupe"; origine: "dessin-2d" | "derive-maquette"; presentation: "document-independant" | "extrait-synchronise"; sources: { variantId: string; revisionId: string; documentHash: string }[]; empreinte: string;
+    /** Vue de coupe incomplète : solides non coupés, absents de la page (absent : section complète). */
+    omis?: string[] }[];
+  /** Source du métré joint (absent : aucun métré) : elle entre dans le périmètre de contrôle (IF-009). */
+  metre?: { variantId: string; revisionId: string; documentHash: string };
+}
+/**
+ * Périmètre de contrôle d'un ensemble publié (IF-009) : sources du manifeste, plus chaque source des pièces du dossier
+ * de conception et de son métré (feuille, vue de coupe ou quantités d'une autre variante comprises), sans doublon.
+ */
+export function perimetreControle(sources: readonly { variantId: string; revisionId: string }[], dossier: Pick<ManifesteDossier, "pieces" | "metre"> | null | undefined): { variantId: string; revisionId: string }[] {
+  const out = new Map<string, { variantId: string; revisionId: string }>();
+  const ajouter = (s: { variantId: string; revisionId: string }) => { const k = `${s.variantId}|${s.revisionId}`; if (!out.has(k)) out.set(k, { variantId: s.variantId, revisionId: s.revisionId }); };
+  sources.forEach(ajouter);
+  for (const p of dossier?.pieces ?? []) p.sources.forEach(ajouter);
+  if (dossier?.metre) ajouter(dossier.metre);
+  return [...out.values()];
+}
 export interface ManifestePublication {
   schema: "studio-publication-manifest/1";
-  /** Absent : dossier complet (forme historique, empreintes inchangées) ; `dessin-2d` : dessin 2D indépendant. */
-  contenu?: "dessin-2d";
+  /** Absent : dossier complet (forme historique, empreintes inchangées) ; `dessin-2d` : dessin 2D indépendant ; `dossier-conception` : dossier de conception. */
+  contenu?: "dessin-2d" | "dossier-conception";
+  /** Intention / usage déclaré de la publication (IF-009) ; absent : non déclaré. */
+  usage?: string;
   sources: ManifesteSource[];
   meta: ManifesteMeta;
   documents: ManifesteDocument[];
+  /** IF-009 : règles, rapports de contrôle et observations bloquantes ; absent : rien à déclarer. */
+  controles?: ManifesteControles;
+  /** EX-074 / EX-076 : dossier de conception publié et ses pièces. */
+  dossier?: ManifesteDossier;
 }
 /** Contenu d'un manifeste (absent : complet). */
-export const contenuDe = (m: { contenu?: string } | null | undefined): ContenuPublication => (m?.contenu === "dessin-2d" ? "dessin-2d" : "complet");
+export const contenuDe = (m: { contenu?: string } | null | undefined): ContenuPublication =>
+  (m?.contenu === "dessin-2d" ? "dessin-2d" : m?.contenu === "dossier-conception" ? "dossier-conception" : "complet");
 /**
  * Diffusions qu'une nouvelle diffusion remplace (E.4-06) : celles de MÊME contenu seulement. Un dessin 2D indépendant ne
  * remplace pas un paquet complet de la même variante, et inversement : chacun reste en vigueur pour son contenu.
@@ -185,13 +228,28 @@ export const contenuDe = (m: { contenu?: string } | null | undefined): ContenuPu
 export function memeContenu<T extends { manifest?: { contenu?: string } | null; package?: { contenu?: string } | null }>(contenu: ContenuPublication, autres: readonly T[]): T[] {
   return autres.filter((a) => contenuDe(a.manifest ?? a.package) === contenu);
 }
-/** Formats d'un paquet, dans l'ordre du paquet, selon son contenu : un dessin 2D indépendant ne porte pas d'IFC. */
-export function formatsDuContenu(contenu: ContenuPublication): ("svg" | "dxf" | "ifc" | "pdf")[] {
-  return contenu === "dessin-2d" ? ["svg", "dxf", "pdf"] : ["svg", "dxf", "ifc", "pdf"];
+/** Formats d'un paquet, dans l'ordre du paquet, selon son contenu : un dessin 2D indépendant ne porte pas d'IFC ; un dossier de conception porte son PDF et son JSON. */
+export function formatsDuContenu(contenu: ContenuPublication): ("svg" | "dxf" | "ifc" | "pdf" | "json")[] {
+  return contenu === "dessin-2d" ? ["svg", "dxf", "pdf"] : contenu === "dossier-conception" ? ["pdf", "json"] : ["svg", "dxf", "ifc", "pdf"];
+}
+
+/** Compléments du manifeste (IF-009, EX-074) : usage, contrôles, dossier ; chacun absent quand il n'y a rien à déclarer. */
+export interface ComplementsManifeste { usage?: string | null; controles?: ManifesteControles | null; dossier?: ManifesteDossier | null }
+const controlesVides = (c: ManifesteControles | null | undefined): boolean => !c || (!c.regles.length && !c.rapports.length && !c.observations.length);
+/** Contrôles normalisés (ordre stable, champs connus seulement) ; null quand il n'y a rien à déclarer. */
+export function normaliserControles(c: ManifesteControles | null | undefined): ManifesteControles | null {
+  if (controlesVides(c)) return null;
+  return {
+    regles: [...c!.regles].sort((a, b) => (`${a.type}|${a.id}` < `${b.type}|${b.id}` ? -1 : 1)).map((r) => ({ type: r.type, id: r.id, version: r.version })),
+    rapports: [...c!.rapports].sort((a, b) => (a.variantId < b.variantId ? -1 : a.variantId > b.variantId ? 1 : 0))
+      .map((r) => ({ controleId: r.controleId, variantId: r.variantId, revisionId: r.revisionId, version: r.version, execution: r.execution, conclusion: r.conclusion, documentHash: r.documentHash })),
+    observations: [...c!.observations].sort((a, b) => (a.issueId < b.issueId ? -1 : a.issueId > b.issueId ? 1 : 0))
+      .map((o) => ({ issueId: o.issueId, observationId: o.observationId, variantId: o.variantId, gravite: o.gravite, statut: o.statut, resolution: o.resolution })),
+  };
 }
 
 /** Manifeste normalisé : une seule source principale en tête, coordonnées triées et sans doublon, documents triés par format. */
-export function construireManifeste(sources: readonly ManifesteSource[], meta: ManifesteMeta, documents: readonly ManifesteDocument[], contenu: ContenuPublication = "complet"): ManifestePublication {
+export function construireManifeste(sources: readonly ManifesteSource[], meta: ManifesteMeta, documents: readonly ManifesteDocument[], contenu: ContenuPublication = "complet", complements: ComplementsManifeste = {}): ManifestePublication {
   const principales = sources.filter((s) => s.role === "principale");
   if (principales.length !== 1) throw new Error("studio_manifest_principal_source");
   const vus = new Set<string>([principales[0]!.variantId]);
@@ -201,15 +259,35 @@ export function construireManifeste(sources: readonly ManifesteSource[], meta: M
   for (const d of documents) { if (formats.has(d.format)) throw new Error("studio_manifest_duplicate_document"); formats.add(d.format); }
   if (contenu === "dessin-2d" && coordonnees.length) throw new Error("studio_manifest_drawing_coordinated");
   if (contenu === "dessin-2d" && documents.some((d) => d.format === "ifc")) throw new Error("studio_manifest_drawing_ifc");
+  if ((contenu === "dossier-conception") !== Boolean(complements.dossier)) throw new Error("studio_manifest_dossier");
+  const c = complements.controles;
   return {
     schema: "studio-publication-manifest/1",
-    ...(contenu === "dessin-2d" ? { contenu } : {}),
+    ...(contenu !== "complet" ? { contenu } : {}),
+    ...(complements.usage?.trim() ? { usage: complements.usage.trim() } : {}),
     sources: [principales[0]!, ...coordonnees].map((s) => ({ role: s.role, variantId: s.variantId, revisionId: s.revisionId, documentHash: s.documentHash })),
     meta: { projectCode: meta.projectCode, projectName: meta.projectName, studyName: meta.studyName, variantName: meta.variantName, revisionCreatedAt: meta.revisionCreatedAt },
     documents: [...documents].sort((a, b) => (a.format < b.format ? -1 : a.format > b.format ? 1 : 0))
       .map((d) => ({ format: d.format, fileName: d.fileName, mime: d.mime, size: d.size, sha256: d.sha256 })),
+    ...(controlesVides(c) ? {} : { controles: normaliserControles(c!)! }),
+    ...(complements.dossier ? { dossier: complements.dossier } : {}),
   };
 }
+
+/**
+ * IF-009 : une publication n'est soumise, approuvée ni diffusée tant qu'une observation bloquante de l'ensemble n'est ni
+ * résolue ni dérogée (409 `blocking_observation_open`, observations nommées). Null : rien ne bloque.
+ */
+export function controlerObservationsBloquantes(m: Pick<ManifestePublication, "controles"> | null | undefined): Refus | null {
+  const ouvertes = (m?.controles?.observations ?? []).filter((o) => o.resolution === "ouverte");
+  if (!ouvertes.length) return null;
+  return { status: 409, body: {
+    error: "blocking_observation_open", observations: ouvertes.map((o) => ({ issueId: o.issueId, observationId: o.observationId, variantId: o.variantId })),
+    message: `${ouvertes.length} observation(s) bloquante(s) ni résolue(s) ni dérogée(s) : la publication est refusée.`,
+  } };
+}
+/** Actions bloquées par une observation bloquante ouverte (le retrait, le refus et l'actualisation restent possibles). */
+export const ACTIONS_BLOQUEES_PAR_OBSERVATION: readonly StudioPublicationTransition[] = Object.freeze(["soumettre", "approuver", "diffuser"]);
 export const empreinteManifeste = (m: ManifestePublication): string => sha256(canonicalJson(m));
 
 /** État courant d'une source : tête de la variante (null si la variante n'existe plus). */
@@ -218,14 +296,16 @@ export type EcartManifeste =
   | { type: "source"; role: RoleSource; variantId: string; revisionFigee: string; revisionCourante: string | null }
   | { type: "meta"; champ: keyof ManifesteMeta; figee: string; courante: string }
   /** Documents régénérés : mêmes sources et mêmes noms, mais octets d'export différents (exporteur modifié, par exemple). */
-  | { type: "documents"; formats: string[] };
+  | { type: "documents"; formats: string[] }
+  /** IF-009 : règles, rapports de contrôle ou observations bloquantes changés depuis le manifeste (nouvelle approbation requise). */
+  | { type: "controles" };
 
 /**
  * Écarts entre le manifeste figé et l'état courant. Les révisions sont immuables : une tête inchangée garde son document
  * et son empreinte ; les métadonnées gelées entrent dans les exports, donc un renommage périme aussi le dossier ; enfin,
  * les documents régénérés (`documents`, quand l'appelant les a recalculés) sont comparés empreinte par empreinte.
  */
-export function ecartsManifeste(m: ManifestePublication, courantes: readonly SourceCourante[], meta: Omit<ManifesteMeta, "revisionCreatedAt">, documents?: readonly ManifesteDocument[] | null): EcartManifeste[] {
+export function ecartsManifeste(m: ManifestePublication, courantes: readonly SourceCourante[], meta: Omit<ManifesteMeta, "revisionCreatedAt">, documents?: readonly ManifesteDocument[] | null, controles?: ManifesteControles | null): EcartManifeste[] {
   const tetes = new Map(courantes.map((c) => [c.variantId, c.headRevisionId]));
   const ecarts: EcartManifeste[] = [];
   for (const s of m.sources) {
@@ -239,6 +319,8 @@ export function ecartsManifeste(m: ManifestePublication, courantes: readonly Sou
     const formats = documentsRegeneres(m.documents, documents);
     if (formats.length) ecarts.push({ type: "documents", formats });
   }
+  // Contrôles : comparés seulement quand l'appelant les a relus (`undefined` : non vérifiés).
+  if (controles !== undefined && canonicalJson(normaliserControles(m.controles)) !== canonicalJson(normaliserControles(controles))) ecarts.push({ type: "controles" });
   return ecarts;
 }
 /** Formats dont le document recalculé diffère du document figé (empreinte, taille, nom ou type), ou qui manquent d'un côté. */
@@ -294,8 +376,9 @@ export type ControleDocuments = "verifiee" | "non-verifiee";
  */
 export function actualiteVue(
   m: ManifestePublication, courantes: readonly SourceCourante[], meta: Omit<ManifesteMeta, "revisionCreatedAt">, documents: readonly ManifesteDocument[] | undefined,
+  controles?: ManifesteControles | null,
 ): { ecarts: EcartManifeste[]; actualite: Actualite; documents: ControleDocuments } {
-  const ecarts = ecartsManifeste(m, courantes, meta, documents ?? null);
+  const ecarts = ecartsManifeste(m, courantes, meta, documents ?? null, controles);
   return { ecarts, actualite: actualiteDe(ecarts), documents: documents ? "verifiee" : "non-verifiee" };
 }
 

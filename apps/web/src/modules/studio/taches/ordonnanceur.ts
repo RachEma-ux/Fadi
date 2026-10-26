@@ -11,8 +11,17 @@
  * Tâche
  * - Clé logique (`cle`, par exemple « studio.maillage-3d ») et empreinte d'entrée (`empreinte.ts` : révision du
  *   document + hachage des paramètres).
- * - État explicite : queued → running → done | failed | cancelled | timed-out, et stale pour un résultat arrivé
- *   après le remplacement de sa tâche.
+ * - État explicite (IF-007) : queued → loading → running → done (`completed` du contrat) | failed | cancelled |
+ *   timed-out, avec les branches cancel_requested (demande d'annulation coopérative) et superseded (remplacée par une
+ *   tâche plus récente de la même clé) ; stale pour le résultat arrivé après ce remplacement. `loading` n'existe que
+ *   si l'exécuteur annonce qu'il doit d'abord charger (`aCharger` : Worker ou noyau pas encore prêt) ; il passe à
+ *   `running` quand l'exécuteur le signale (`demarre`), à la première progression, ou à l'issue. Chaque changement
+ *   d'état est noté avec la **révision source** de la tâche (`historique`, journal) — table de correspondance avec les
+ *   noms du contrat : `STATUTS_IF007`.
+ * - Annulation coopérative (IF-007) : `demanderAnnulation()` ne vaut pas arrêt matériel — la tâche passe à
+ *   `cancel_requested`, le signal de l'exécuteur est levé, son emplacement reste pris. Si le calcul finit quand même,
+ *   son résultat n'est **jamais engagé** : l'issue est `cancelled` avec `nonEngage` (valeur et révision source), que
+ *   seule `engagerApresVerification` peut rendre, après une nouvelle vérification de l'appelant.
  *
  * Remplacement et annulation (D.2-03)
  * - Une nouvelle tâche sur la même clé, d'une autre empreinte, remplace la précédente : en file, elle est annulée sans
@@ -38,7 +47,16 @@
 import { memeEmpreinte, type Empreinte } from "./empreinte";
 
 export type ClasseTache = "interactive" | "fond";
-export type EtatTache = "queued" | "running" | "done" | "failed" | "cancelled" | "timed-out" | "stale";
+export type EtatTache = "queued" | "loading" | "running" | "cancel_requested" | "done" | "failed" | "cancelled" | "superseded" | "timed-out" | "stale";
+
+/** Statuts du contrat IF-007 (`queued → loading → running → completed`, branches) pour chaque état de l'ordonnanceur. */
+export type StatutIF007 = "queued" | "loading" | "running" | "completed" | "cancel_requested" | "cancelled" | "failed" | "superseded" | "timed_out";
+export const STATUTS_IF007: Readonly<Record<EtatTache, StatutIF007>> = Object.freeze({
+  queued: "queued", loading: "loading", running: "running", "cancel_requested": "cancel_requested", done: "completed", failed: "failed",
+  cancelled: "cancelled", superseded: "superseded", "timed-out": "timed_out",
+  // Résultat tardif d'une tâche remplacée : la tâche reste `superseded` au sens du contrat (résultat écarté).
+  stale: "superseded",
+});
 export type CodeEchec = "plantage" | "calcul" | "delai" | "annulee" | "indisponible";
 
 /** Erreur typée d'un exécuteur ; toute autre erreur vaut `calcul`. */
@@ -74,8 +92,22 @@ export interface DemandeTache<C = unknown, R = unknown> {
 export type IssueTache<R> =
   | { etat: "done"; valeur: R }
   | { etat: "failed"; code: Exclude<CodeEchec, "delai" | "annulee">; message: string }
-  | { etat: "cancelled" }
+  /** `nonEngage` : le calcul a fini après une demande d'annulation ; sa valeur n'est engagée qu'après vérification. */
+  | { etat: "cancelled"; nonEngage?: ResultatNonEngage<R> }
+  | { etat: "superseded" }
   | { etat: "timed-out" };
+
+/** Résultat d'une tâche terminée après une demande d'annulation (IF-007) : jamais remis tel quel. */
+export interface ResultatNonEngage<R> { readonly valeur: R; readonly revisionSource: string }
+
+/**
+ * Engagement d'un résultat tardif (IF-007) : seulement si la révision source est encore la révision courante et que la
+ * vérification de l'appelant l'accepte ; sinon null (rien n'est engagé).
+ */
+export function engagerApresVerification<R>(r: ResultatNonEngage<R> | undefined, revisionCourante: string, verifier: (valeur: R) => boolean): R | null {
+  if (!r || r.revisionSource !== revisionCourante) return null;
+  try { return verifier(r.valeur) ? r.valeur : null; } catch { return null; }
+}
 
 /** Vue en lecture d'une tâche (diagnostic, tests, interface). */
 export interface Tache {
@@ -87,6 +119,8 @@ export interface Tache {
   readonly etat: EtatTache;
   /** Nombre de tentatives démarrées (1 sans reprise, 2 après une reprise). */
   readonly tentatives: number;
+  /** Chaque état traversé avec la révision source de la tâche (IF-007). */
+  readonly historique: readonly { readonly etat: EtatTache; readonly revision: string }[];
 }
 
 export interface PoigneeTache<R> {
@@ -97,6 +131,11 @@ export interface PoigneeTache<R> {
   abandonner(): void;
   /** Annulation ferme : le calcul en cours est arrêté et son emplacement libéré. */
   annuler(): void;
+  /**
+   * Demande d'annulation coopérative (IF-007) : en file, annulée tout de suite ; en cours, `cancel_requested` — signal
+   * levé, emplacement gardé jusqu'à la fin réelle du calcul ; un résultat tardif reste non engagé (`nonEngage`).
+   */
+  demanderAnnulation(): void;
 }
 
 export interface ExecutionDemandee {
@@ -110,6 +149,8 @@ export interface ExecutionDemandee {
   /** Tentative de reprise après un plantage : son propre échec ne doit pas être compté une seconde fois par l'hôte. */
   reprise: boolean;
   surProgression: (p: Progression) => void;
+  /** L'exécuteur a fini de charger et calcule : `loading` → `running` (sans effet hors de `loading`). */
+  demarre: () => void;
 }
 export type Executeur = (e: ExecutionDemandee) => Promise<unknown>;
 
@@ -137,6 +178,11 @@ export interface OptionsOrdonnanceur {
   /** Marge de la garde au-delà du délai donné à l'exécuteur (250 ms par défaut). */
   gardeMs?: number;
   surEvenement?: (e: EvenementTache) => void;
+  /**
+   * L'exécuteur doit-il d'abord charger (Worker pas encore créé, noyau pas prêt) ? Vrai : la tâche passe par `loading`
+   * avant `running`. Absent : jamais de `loading`.
+   */
+  aCharger?: (nature: string, emplacement: number) => boolean;
 }
 
 export const CONCURRENCE_DEFAUT = 2;
@@ -150,6 +196,8 @@ interface Execution {
   minuteur: ReturnType<typeof setTimeout> | undefined;
   /** La tâche a été remplacée pendant le calcul : son résultat sera périmé. */
   perimee: boolean;
+  /** Annulation demandée (coopérative) : le résultat éventuel ne sera pas engagé. */
+  annulationDemandee: boolean;
 }
 
 interface Job {
@@ -193,13 +241,13 @@ export class Ordonnanceur {
     // Une tâche remplacée encore en file cède sa place à la nouvelle (même classe) : sans cela, une clé modifiée à
     // chaque frappe repasserait toujours devant les autres tâches de fond, qui ne tourneraient jamais.
     const place = existante && existante.vue.classe === d.classe ? this.files[d.classe].indexOf(existante) : -1;
-    if (existante) this.abandonner(existante);
+    if (existante) this.abandonner(existante, "superseded");
     let resoudre!: (i: IssueTache<unknown>) => void;
     const issue = new Promise<IssueTache<unknown>>((r) => { resoudre = r; });
-    const vue = { id: this.suivant++, cle: d.cle, classe: d.classe, nature: d.nature, empreinte: d.empreinte, etat: "queued" as EtatTache, tentatives: 0 };
+    const vue = { id: this.suivant++, cle: d.cle, classe: d.classe, nature: d.nature, empreinte: d.empreinte, etat: "queued" as EtatTache, tentatives: 0, historique: [] as { etat: EtatTache; revision: string }[] };
     const job: Job = {
       vue, demande: d as DemandeTache, delaiMs: d.delaiMs ?? this.options.delaiMs, resoudre, rendue: false, execution: null, detacher: () => {},
-      poignee: { tache: vue, issue, abandonner: () => this.abandonner(job), annuler: () => this.annuler(job) },
+      poignee: { tache: vue, issue, abandonner: () => this.abandonner(job), annuler: () => this.annuler(job), demanderAnnulation: () => this.demanderAnnulation(job) },
     };
     if (d.signal?.aborted) { this.finir(job, { etat: "cancelled" }); return job.poignee as PoigneeTache<R>; }
     if (d.signal) {
@@ -221,6 +269,7 @@ export class Ordonnanceur {
   }
 
   private noter(job: Job, etat: EtatTache | "requeued"): void {
+    if (etat !== "requeued") (job.vue.historique as { etat: EtatTache; revision: string }[]).push(Object.freeze({ etat, revision: job.vue.empreinte.revision }));
     this.options.surEvenement?.({
       id: job.vue.id, cle: job.vue.cle, classe: job.vue.classe, revision: job.vue.empreinte.revision, etat, tentative: job.vue.tentatives, jobId: jobIdDe(job.vue.id),
       ...(job.demande.commandId ? { commandId: job.demande.commandId } : {}),
@@ -249,11 +298,30 @@ export class Ordonnanceur {
     job.resoudre(issue);
   }
 
-  private abandonner(job: Job): void {
+  /** `superseded` : remplacée par une tâche plus récente de la même clé ; sinon abandon (démontage) = `cancelled`. */
+  private abandonner(job: Job, etat: "cancelled" | "superseded" = "cancelled"): void {
+    if (job.rendue) return;
+    if (this.retirerDeFile(job)) { this.finir(job, { etat }); return; }
+    if (job.execution) job.execution.perimee = true;
+    this.finir(job, { etat });
+  }
+
+  /** Annulation coopérative : signal levé, emplacement gardé ; l'issue attend la fin réelle du calcul (IF-007). */
+  private demanderAnnulation(job: Job): void {
     if (job.rendue) return;
     if (this.retirerDeFile(job)) { this.finir(job, { etat: "cancelled" }); return; }
-    if (job.execution) job.execution.perimee = true;
-    this.finir(job, { etat: "cancelled" });
+    const e = job.execution;
+    if (!e || e.annulationDemandee) return;
+    e.annulationDemandee = true;
+    job.vue.etat = "cancel_requested";
+    this.noter(job, "cancel_requested");
+    e.ctrl.abort();
+  }
+
+  private passerEnCalcul(e: Execution): void {
+    if (e.job.vue.etat !== "loading" || e.job.execution !== e || e.job.rendue) return;
+    e.job.vue.etat = "running";
+    this.noter(e.job, "running");
   }
 
   /** `forcer` : arrête aussi une exécution déjà périmée (fermeture). */
@@ -284,17 +352,19 @@ export class Ordonnanceur {
 
   private demarrer(job: Job, emplacement: number): void {
     job.vue.tentatives += 1;
-    job.vue.etat = "running";
-    const e: Execution = { job, tentative: job.vue.tentatives, emplacement, ctrl: new AbortController(), minuteur: undefined, perimee: false };
+    const charger = this.options.aCharger?.(job.demande.nature, emplacement) === true;
+    job.vue.etat = charger ? "loading" : "running";
+    const e: Execution = { job, tentative: job.vue.tentatives, emplacement, ctrl: new AbortController(), minuteur: undefined, perimee: false, annulationDemandee: false };
     job.execution = e;
     this.emplacements[emplacement] = e;
-    this.noter(job, "running");
+    this.noter(job, job.vue.etat);
     e.minuteur = setTimeout(() => this.expirer(e), job.delaiMs + (this.options.gardeMs ?? 250));
     let promesse: Promise<unknown>;
     try {
       promesse = Promise.resolve(this.options.executer({
         nature: job.demande.nature, charge: job.demande.charge, emplacement, signal: e.ctrl.signal, delaiMs: job.delaiMs, reprise: e.tentative > 1,
-        surProgression: (p) => { if (!e.perimee && !job.rendue && job.execution === e) job.demande.surProgression?.(p); },
+        surProgression: (p) => { if (!e.perimee && !job.rendue && job.execution === e && !e.annulationDemandee) { this.passerEnCalcul(e); job.demande.surProgression?.(p); } },
+        demarre: () => this.passerEnCalcul(e),
       }));
     } catch (err) {
       promesse = Promise.reject(err);
@@ -306,7 +376,8 @@ export class Ordonnanceur {
     if (this.emplacements[e.emplacement] !== e) return;
     this.liberer(e);
     e.ctrl.abort();
-    if (!e.perimee) this.finir(e.job, { etat: "timed-out" });
+    // Annulation demandée puis aucune fin dans le délai : l'annulation est acquise (aucune attente laissée en suspens).
+    if (!e.perimee) this.finir(e.job, e.annulationDemandee ? { etat: "cancelled" } : { etat: "timed-out" });
     this.pomper();
   }
 
@@ -317,6 +388,9 @@ export class Ordonnanceur {
     const job = e.job;
     if (e.perimee || job.rendue) {
       if (r.ok) { job.vue.etat = "stale"; this.noter(job, "stale"); }
+    } else if (e.annulationDemandee) {
+      // Fin réelle après une demande d'annulation : jamais engagé ; une valeur reste disponible pour vérification.
+      this.finir(job, r.ok ? { etat: "cancelled", nonEngage: { valeur: r.valeur, revisionSource: job.vue.empreinte.revision } } : { etat: "cancelled" });
     } else if (r.ok) {
       this.finir(job, { etat: "done", valeur: r.valeur });
     } else {

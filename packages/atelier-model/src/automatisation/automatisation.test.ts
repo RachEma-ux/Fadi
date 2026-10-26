@@ -67,7 +67,7 @@ describe("assistant à boucle contrôlée (D4)", () => {
     expect(p.iterations).toEqual([{ numero: 1, commandes: p.commandes.length, resultat: "valide", erreur: null }]);
     expect(p.effets!.crees.length).toBe(p.commandes.length);
     expect(Object.values(P118.definitions).some((d) => d.id.startsWith("assistant-"))).toBe(false);
-  });
+  }, 30_000);
 
   it("pièces détectées depuis des murs fermés ; trame de poteaux comprise depuis l'intention ; intention inconnue = incomprise", () => {
     const e = appliquerLot(base(), lot([

@@ -6,12 +6,13 @@
  *   POST /studies/:studyId/variants/:variantId/modeles-externes                     réception (201) : relu, comparé à la tête, journalisé
  *   GET  /studies/:studyId/variants/:variantId/modeles-externes/:modelId            un modèle, sa comparaison et son journal
  *   GET  /studies/:studyId/variants/:variantId/modeles-externes/:modelId/contenu    texte du fichier reçu (JSON, droit `export`), pour l'ajouter au brouillon
+ *   GET  /studies/:studyId/variants/:variantId/modeles-externes/:modelId/provenance métadonnées de provenance (EX-014, `studio-provenance-modele/1`, droit `export`)
  *   POST /studies/:studyId/variants/:variantId/modeles-externes/:modelId/:action    comparer | accepter | refuser
  * Aucun de ces passages ne modifie la variante : seul un import explicite dans le brouillon, puis « Enregistrer », le fait.
  */
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { Router, type NextFunction, type Request, type Response } from "express";
-import { STUDIO_ACTIONS_MODELE_EXTERNE, type StudioActionModeleExterne, type StudioMetaModeleExterne } from "@parcours/atelier-model";
+import { STUDIO_ACTIONS_MODELE_EXTERNE, studioProvenanceModeleExterne, type StudioActionModeleExterne, type StudioIfcRapport, type StudioMetaModeleExterne } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
 import { studioExternalModelEvents, studioExternalModels, studioRevisions, studioVariants, users } from "../db/schema.js";
 import type { Tx } from "../lib/atelier-validation.js";
@@ -23,7 +24,7 @@ import {
   decideComparaison, deciderPassage, deciderReception, empreinteRequete, rejeuAdmis, studioModelePassageSchema, studioModeleReceptionSchema, type Decision,
 } from "../lib/studio-modeles-externes.js";
 import { avecContrat } from "../lib/studio-contrats.js";
-import { CONTRAT_MODELES_EXTERNES_LISTER, CONTRAT_MODELE_EXTERNE_LIRE, CONTRAT_MODELE_EXTERNE_CONTENU, CONTRAT_MODELE_EXTERNE_RECEVOIR, CONTRAT_MODELE_EXTERNE_ACTION } from "../lib/studio-contrats-routes.js";
+import { CONTRAT_MODELES_EXTERNES_LISTER, CONTRAT_MODELE_EXTERNE_LIRE, CONTRAT_MODELE_EXTERNE_CONTENU, CONTRAT_MODELE_EXTERNE_PROVENANCE, CONTRAT_MODELE_EXTERNE_RECEVOIR, CONTRAT_MODELE_EXTERNE_ACTION } from "../lib/studio-contrats-routes.js";
 
 export const studioModelesExternesRouter = Router({ mergeParams: true });
 
@@ -56,6 +57,7 @@ async function emails(q: Querier, ids: (string | null)[]): Promise<Map<string, s
 const metaDe = (row: ModelRow): StudioMetaModeleExterne => ({
   reference: row.reference, auteur: row.authorName, discipline: row.discipline, format: row.format, version: row.versionLabel,
   uniteDeclaree: row.declaredUnit, transformation: row.transformation ?? null, nomFichier: row.fileName,
+  repereSource: row.sourceFrame ?? null, restrictions: row.usageRestrictions ?? null,
 });
 function vue(row: ModelRow, email: Map<string, string>, events?: EventRow[]) {
   return {
@@ -119,6 +121,21 @@ studioModelesExternesRouter.get(`${base}/:modelId`, avecContrat(CONTRAT_MODELE_E
   res.json(vue(row, await emails(db, [row.createdBy, row.decidedBy, ...events.map((e) => e.actorId)]), events));
 }));
 
+// Provenance (EX-014) : ce que l'émetteur déclare (auteur, version, unité, repère source, transformation, restrictions)
+// et ce que le serveur a lu et calculé (schéma, unité lue, empreinte SHA-256, horodatage) ; elle sort du projet : `export`.
+studioModelesExternesRouter.get(`${base}/:modelId/provenance`, avecContrat(CONTRAT_MODELE_EXTERNE_PROVENANCE), endpoint(async (req, res) => {
+  const { access, variant } = await lecture(req);
+  assertAccess(access, req.user!.id, "export");
+  const row = await modele(db, variant.id, param(req, "modelId"));
+  const provenance = studioProvenanceModeleExterne({
+    id: row.id, meta: metaDe(row), contentSha256: row.contentDigest, recuLe: row.createdAt.toISOString(), statut: row.status,
+    rapport: row.report as unknown as Pick<StudioIfcRapport, "schema" | "unite">,
+  });
+  res.setHeader("Cache-Control", "private, no-store");
+  res.setHeader("Content-Disposition", `attachment; filename="provenance-${row.id}.json"`);
+  res.json(provenance);
+}));
+
 studioModelesExternesRouter.get(`${base}/:modelId/contenu`, avecContrat(CONTRAT_MODELE_EXTERNE_CONTENU), endpoint(async (req, res) => {
   const { access, variant } = await lecture(req);
   // Le fichier reçu sort du projet tel quel : droit `export` (refusé à l'accès support, lecture seule).
@@ -162,6 +179,7 @@ studioModelesExternesRouter.post(base, avecContrat(CONTRAT_MODELE_EXTERNE_RECEVO
     const [row] = await tx.insert(studioExternalModels).values({
       id, studyId: e.study.id, variantId: e.variant.id, reference: r.meta.reference, authorName: r.meta.auteur, discipline: r.meta.discipline,
       format: r.meta.format, versionLabel: r.meta.version, declaredUnit: r.meta.uniteDeclaree, transformation: r.meta.transformation, fileName: r.meta.nomFichier,
+      sourceFrame: r.meta.repereSource, usageRestrictions: r.meta.restrictions,
       content: input.contenu, contentDigest: r.contentSha256, report: r.rapport as unknown as Record<string, unknown>,
       comparison: r.comparaison as unknown as Record<string, unknown>, comparedRevisionId: t.revisionId, status: "compare",
       createdBy: actorId, requestId: input.requestId ?? null, payloadHash: hash,

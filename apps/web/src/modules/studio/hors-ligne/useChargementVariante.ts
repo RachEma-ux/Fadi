@@ -112,6 +112,8 @@ export function useChargementVariante(o: OptionsChargement): void {
         const conflit = h.conflit ?? (!surTete && !h.plan ? { headRevisionId: c.revision.id, at: new Date().toISOString() } : null);
         f().setContext(base); f().setBrouillon(b);
         reprise({ conflit, conserve: true, depuisCache: null });
+        // EX-044 : file écrite avant une mise à jour de l'application, contrats compatibles : conservée, expliquée.
+        if (lu?.autreBuild) f().setError(`Brouillon conservé depuis une version précédente de l’application (${lu.autreBuild}) : il reste valide et sera envoyé à l’enregistrement.`);
       } catch (e) {
         if (!active) return;
         if (!isNetworkError(e) && navigateurEnLigne()) { f().setLoadError(e); f().setError(refused(e) ? "" : "Étude indisponible ou accès refusé."); return; }

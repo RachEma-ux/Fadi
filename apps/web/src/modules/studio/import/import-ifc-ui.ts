@@ -4,11 +4,12 @@
  * rapport de pertes et des éléments non natifs. Pur : ni React ni DOM.
  */
 import {
-  lireIfcStudio, STUDIO_LIMITS, StudioValidationError, type StudioDocument, type StudioIfcResultat, type StudioMotifPerteIfc, type StudioRaisonNonNatif,
+  lireIfcStudio, STUDIO_LIMITS, StudioValidationError, studioSha256, type StudioDocument, type StudioIfcResultat, type StudioMotifPerteIfc, type StudioRaisonNonNatif,
   type StudioTransformationDeclaree,
 } from "@parcours/atelier-model";
 
-export type LectureIfc = { resultat: StudioIfcResultat } | { erreur: string };
+/** Lecture d'un IFC : résultat du lecteur, plus l'empreinte SHA-256 du texte lu (EX-014). */
+export type LectureIfc = { resultat: StudioIfcResultat; empreinteSha256: string } | { erreur: string };
 
 export const MESSAGE_IFC_ILLISIBLE = "Fichier IFC illisible : seul l’IFC en texte (STEP physique, IFC2X3, IFC4 ou IFC4X3) est lu.";
 
@@ -29,7 +30,7 @@ export function messageImportIfc(e: unknown): string {
 
 export function lireIfc(texte: string, document: StudioDocument, transformation?: StudioTransformationDeclaree | null): LectureIfc {
   try {
-    return { resultat: lireIfcStudio(texte, { document, ...(transformation ? { transformation } : {}) }) };
+    return { resultat: lireIfcStudio(texte, { document, ...(transformation ? { transformation } : {}) }), empreinteSha256: studioSha256(texte) };
   } catch (e) {
     return { erreur: messageImportIfc(e) };
   }

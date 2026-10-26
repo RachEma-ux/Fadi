@@ -710,16 +710,21 @@ try {
     && (await rapportImport.locator("[data-studio-import-unite-fichier]").textContent()).includes("1 unité = 0,001 m"), nonPrisImport.join());
   await boiteImport.locator("[data-studio-import-ajouter]").click();
   await boiteImport.waitFor({ state: "detached" });
-  check("Import DXF : un lot de 5 commandes en attente dans le brouillon", (await portee()).includes("(5 commande(s)"), await portee());
+  // EX-014 : l'import déclare sa source dans le même lot (5 objets + 1 source).
+  check("Import DXF : un lot de 6 commandes (5 objets et la source déclarée) en attente dans le brouillon", (await portee()).includes("(6 commande(s)"), await portee());
   await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press("Control+z");
   check("Import DXF : annulable (Ctrl+Z retire tout le lot)", (await portee()).includes("(0 commande(s)"), await portee());
   await page.keyboard.press("Control+y");
-  check("Import DXF : rétabli (Ctrl+Y)", (await portee()).includes("(5 commande(s)"), await portee());
+  check("Import DXF : rétabli (Ctrl+Y)", (await portee()).includes("(6 commande(s)"), await portee());
   const avantImport = envois.length;
   await page.keyboard.press("Control+s");
   await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
-  const envoiImport = envois[envois.length - 1];
+  const envoiTotal = envois[envois.length - 1];
+  const sourceImport = envoiTotal.commands.find((c) => c.toolId === "studio.source.declarer");
+  check("Import DXF : la source est déclarée avec le lot (fichier, empreinte SHA-256, unité mm lue, aucune transformation)",
+    sourceImport?.params.nomFichier === "plan-mm.dxf" && /^[0-9a-f]{64}$/.test(sourceImport.params.empreinteSha256) && sourceImport.params.uniteLue === "mm" && sourceImport.params.transformation === "identite" && sourceImport.params.objets === 5, JSON.stringify(sourceImport?.params));
+  const envoiImport = { ...envoiTotal, commands: envoiTotal.commands.filter((c) => c.toolId !== "studio.source.declarer") };
   const attendus = [
     { toolId: "studio.dessin.ligne", params: { type: "line", start: { x: 20, y: 20 }, end: { x: 24, y: 20 } } },
     { toolId: "studio.dessin.ligne", params: { type: "line", start: { x: 20, y: 20 }, end: { x: 20, y: 23 } } },
@@ -892,11 +897,14 @@ try {
       for (let i = 1; i <= 8; i++) await page.mouse.move(cx + (dx * i) / 8, cy + (dy * i) / 8);
       await page.mouse.up({ button });
     };
+    // La caméra publiée (data-studio-camera) est arrondie au dixième de millimètre par coordonnée (versLocal3d) :
+    // l'écart de distance dû à l'arrondi est au plus √3 × 1e-4 m.
+    const TOL_ARRONDI = Math.sqrt(3) * 1e-4;
     const c0 = await camera();
     await glisser(120, 40);
     const c1 = await camera();
     check("A.3-05 : orbite (glisser) — la caméra tourne autour de la même cible, à la même distance",
-      c0?.projection === "perspective" && JSON.stringify(c1.target) === JSON.stringify(c0.target) && JSON.stringify(c1.position) !== JSON.stringify(c0.position) && Math.abs(distance(c1) - distance(c0)) < 1e-6 * Math.max(1, distance(c0)),
+      c0?.projection === "perspective" && JSON.stringify(c1.target) === JSON.stringify(c0.target) && JSON.stringify(c1.position) !== JSON.stringify(c0.position) && Math.abs(distance(c1) - distance(c0)) <= Math.max(1e-6 * Math.max(1, distance(c0)), TOL_ARRONDI),
       JSON.stringify([c0, c1]));
     await page.mouse.move(cx, cy);
     await page.mouse.wheel(0, -400);
@@ -906,7 +914,7 @@ try {
     await glisser(80, -60, "right");
     const c3 = await camera();
     check("A.3-05 : panoramique (glisser droit) — cible et caméra translatées ensemble, distance gardée",
-      JSON.stringify(c3.target) !== JSON.stringify(c2.target) && Math.abs(distance(c3) - distance(c2)) < 1e-6 * Math.max(1, distance(c2)), JSON.stringify([c2, c3]));
+      JSON.stringify(c3.target) !== JSON.stringify(c2.target) && Math.abs(distance(c3) - distance(c2)) <= Math.max(1e-6 * Math.max(1, distance(c2)), TOL_ARRONDI), JSON.stringify([c2, c3]));
     page.off("request", surEnvoi);
     check("A.3-05 : orbite, zoom et panoramique ne modifient pas le document — brouillon, solides et envois inchangés",
       (await portee()).includes("(2 commande(s)") && (await vueLibre.getAttribute("data-studio-solides-libres")) === "2" && envoisNav.length === 0, `${await portee()} ${envoisNav.join()}`);
@@ -1027,7 +1035,7 @@ try {
   await maillagePret();
   const journalMaillage = (await page.evaluate((d) => globalThis.__fadiTaches.journal.slice(d), debutJournal)).filter((e) => e.cle === "studio.maillage-3d");
   const remis = journalMaillage.filter((e) => e.etat === "done").map((e) => Number(e.revision));
-  const remplaces = journalMaillage.filter((e) => e.etat === "cancelled" || e.etat === "stale");
+  const remplaces = journalMaillage.filter((e) => e.etat === "cancelled" || e.etat === "superseded" || e.etat === "stale");
   const revisionCourante = Number(await vueLibre.getAttribute("data-studio-revision-courante"));
   const perimesRemis = journalMaillage.filter((e) => e.etat === "stale").filter((s) => journalMaillage.some((e) => e.id === s.id && e.etat === "done"));
   check("tâches : maillages remplacés pendant la rafale annulés, aucun résultat périmé remis ; le dernier maillage affiché est celui de la dernière révision",
@@ -1182,18 +1190,20 @@ try {
   await page.locator("[data-studio-erreur-planche]").filter({ hasText: "Enregistrement partiel : 1 lot(s) sur 2" }).waitFor();
   await page.unroute("**/commands");
   const apresPremier = await a.api("get", cheminInitial);
-  check("Import DXF : refus du second lot — 500 commandes enregistrées, les 100 autres seules en attente, sur la révision du premier lot",
-    apresPremier.revision.document.objects.length === teteInitiale.document.objects.length + 500 && (await portee()).includes("(100 commande(s)")
+  // EX-014 : la source déclarée accompagne le lot (600 lignes + 1 source = 601 commandes : 500 puis 101).
+  check("Import DXF : refus du second lot — 500 commandes enregistrées, les 101 autres (100 lignes et la source) seules en attente, sur la révision du premier lot",
+    apresPremier.revision.document.objects.length === teteInitiale.document.objects.length + 500 && (await portee()).includes("(101 commande(s)")
     && (await page.locator("[data-studio-revision-affichee]").getAttribute("title")) === apresPremier.revision.id
-    && (await page.locator("[data-studio-erreur-planche]").textContent()).includes("100 commande(s) non envoyée(s)"), await portee());
+    && (await page.locator("[data-studio-erreur-planche]").textContent()).includes("101 commande(s) non envoyée(s)"), await portee());
   await cliquerBouton(outils, "Enregistrer");
   await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
   const lotsGrand = envois.slice(avantGrand);
   const grandRelu = await a.api("get", cheminInitial);
-  check("Import DXF : enregistrement en deux enveloppes (500 + 100), la seconde sur la révision de la première",
-    lotsGrand.length === 3 && lotsGrand[0].commands.length === 500 && lotsGrand[1].commands.length === 100 && lotsGrand[0].baseRevisionId === teteInitiale.id
+  check("Import DXF : enregistrement en deux enveloppes (500 + 101, la source comprise), la seconde sur la révision de la première",
+    lotsGrand.length === 3 && lotsGrand[0].commands.length === 500 && lotsGrand[1].commands.length === 101 && lotsGrand[1].commands.at(-1).toolId === "studio.source.declarer" && lotsGrand[0].baseRevisionId === teteInitiale.id
     && lotsGrand[1].baseRevisionId === apresPremier.revision.id && JSON.stringify(lotsGrand[2].commands) === JSON.stringify(lotsGrand[1].commands) && lotsGrand[2].baseRevisionId === apresPremier.revision.id
-    && grandRelu.revision.parentRevisionId === apresPremier.revision.id && grandRelu.revision.document.objects.length === teteInitiale.document.objects.length + 600,
+    && grandRelu.revision.parentRevisionId === apresPremier.revision.id && grandRelu.revision.document.objects.length === teteInitiale.document.objects.length + 600
+    && (grandRelu.revision.document.sources ?? []).some((s) => s.nomFichier === "grand.dxf" && s.objets === 600),
     lotsGrand.map((e) => `${e.commands.length}@${e.baseRevisionId}`).join(" "));
 
   // Accrochage et saisie de précision (moteur `planche2d/accrochage/`) : sur une variante neuve portant deux lignes

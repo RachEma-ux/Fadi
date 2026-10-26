@@ -34,6 +34,9 @@ studioRouter.use(requireAuth);
 studioRouter.use("/studies/:studyId/variants/:variantId/modeles-externes", json({ limit: "6mb" }));
 // Illustrations (lot F) : le rendu de la vue (8 Mo de PNG au plus) voyage en base64 dans le corps JSON, borné à 12 Mo ici seulement.
 studioRouter.use("/studies/:studyId/variants/:variantId/illustrations", json({ limit: "12mb" }));
+// Observations (lot PUB) : pièces justificatives (5 × 2 Mo) et fichier BCF (8 Mo) en base64 dans le corps JSON.
+studioRouter.use("/studies/:studyId/variants/:variantId/observations", json({ limit: "12mb" }));
+studioRouter.use("/studies/:studyId/variants/:variantId/comments", json({ limit: "12mb" }));
 studioRouter.use(json({ limit: "1mb" }));
 studioRouter.use("/preferences", studioPreferencesRouter);
 // `requestId` facultatif : même règle d'identifiant que les enveloppes de commandes ; rejeu = réponse 201 d'origine.
@@ -56,7 +59,11 @@ function endpoint(handler: (req: Request, res: Response) => Promise<void>) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try { await handler(req, res); }
     catch (error) {
-      if (error instanceof StudioRequestError) res.status(error.status).json(error.body);
+      if (error instanceof StudioRequestError) {
+        // Quota d'invocation (EX-028) : délai avant nouvel essai aussi dans l'en-tête standard.
+        if (error.status === 429 && typeof error.body["retryAfterSeconds"] === "number") res.setHeader("Retry-After", String(error.body["retryAfterSeconds"]));
+        res.status(error.status).json(error.body);
+      }
       else next(error);
     }
   };

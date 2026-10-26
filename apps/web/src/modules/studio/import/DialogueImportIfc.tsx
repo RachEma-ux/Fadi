@@ -6,7 +6,7 @@
  * n'est ajouté. La lecture (jusqu'à 5 Mo) est une tâche de fond de l'ordonnanceur, comme celle du DXF.
  */
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
-import type { StudioCommand, StudioDocument, StudioIfcResultat } from "@parcours/atelier-model";
+import { studioSourceIfcLue, type StudioCommand, type StudioDocument, type StudioIfcResultat } from "@parcours/atelier-model";
 import { Icon } from "../../../components/Icon";
 import { LOCALE } from "../../../lib/i18n";
 import { Dialogue } from "../planche2d/CatalogueOutils";
@@ -36,6 +36,8 @@ export function DialogueImportIfc({ doc, modifiable, surAjouter, surFermer }: Di
   const [lecture, setLecture] = useState<{ n: number; valeur: LectureIfc } | null>(null);
   const [etape, setEtape] = useState("attente");
   const [erreurCalcul, setErreurCalcul] = useState("");
+  // Provenance déclarée par l'utilisateur (EX-014) ; vide : non déclarée.
+  const [auteur, setAuteur] = useState(""), [repereSource, setRepereSource] = useState(""), [restrictions, setRestrictions] = useState("");
   const numero = useRef(0);
 
   useEffect(() => {
@@ -85,9 +87,25 @@ export function DialogueImportIfc({ doc, modifiable, surAjouter, surFermer }: Di
         {affichee && "resultat" in affichee && fichier && <RapportIfc nom={fichier.nom} resultat={affichee.resultat} enCours={enCours} />}
         {refus && <p role="alert" data-studio-import-ifc-erreur>Ajout refusé par le modèle : le brouillon est inchangé.</p>}
         {!modifiable && <p role="status">Lecture seule : l’import est indisponible.</p>}
+        {pret && fichier && courante && "resultat" in courante && <fieldset className="studio-import-provenance" data-studio-import-ifc-provenance data-studio-import-empreinte={courante.empreinteSha256}>
+          <legend>Provenance de la source</legend>
+          <p className="studio-dialogue-aide"><span>{`Empreinte SHA-256 : ${courante.empreinteSha256.slice(0, 16)}…`}</span>{" · "}<span>{`Version du format : ${courante.resultat.rapport.schema}`}</span></p>
+          <label>Auteur ou fournisseur (si connu)<input value={auteur} onChange={(e) => setAuteur(e.target.value)} data-studio-import-ifc-auteur /></label>
+          <label>Repère source déclaré<input value={repereSource} onChange={(e) => setRepereSource(e.target.value)} data-studio-import-ifc-repere /></label>
+          <label>Restrictions d’utilisation<input value={restrictions} onChange={(e) => setRestrictions(e.target.value)} data-studio-import-ifc-restrictions /></label>
+        </fieldset>}
         <div className="studio-import-actions">
           <button type="button" disabled={!modifiable || !pret}
-            onClick={() => { if (courante && "resultat" in courante) { const ok = surAjouter(courante.resultat.commandes, courante.resultat); setRefus(!ok); } }} data-studio-import-ifc-ajouter>
+            onClick={() => {
+              if (!courante || !("resultat" in courante) || !fichier) return;
+              const r = courante.resultat;
+              const source = studioSourceIfcLue({ empreinteSha256: courante.empreinteSha256, versionFormat: r.rapport.schema || null }, {
+                id: crypto.randomUUID(), nomFichier: fichier.nom, recuLe: new Date().toISOString(), objets: r.rapport.entites.total,
+                unite: { nom: r.rapport.unite.nom, facteur: r.rapport.unite.facteur }, transformation: r.rapport.transformation, auteur, repereSource, restrictions,
+              });
+              const ok = surAjouter([...r.commandes, { toolId: "studio.source.declarer", params: source }], r);
+              setRefus(!ok);
+            }} data-studio-import-ifc-ajouter>
             <Icon name="studio-import-ifc" size={18} /> Ajouter au brouillon
           </button>
         </div>

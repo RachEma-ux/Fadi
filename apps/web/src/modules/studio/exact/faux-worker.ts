@@ -29,7 +29,7 @@ export class FauxWorker implements WorkerExact {
     this.recus.push(d);
     const r = this.repondre(d, this);
     if (r === "silence") return;
-    const suivi = { instances: this.instances, wasm: { url: "/assets/occt-wasm-x.wasm", transfere: 5_000_000, encode: 5_000_000, decode: 21_177_576 }, chargementMs: 12 };
+    const suivi = { instances: this.instances, wasm: { url: "/assets/occt-wasm-x.wasm", transfere: 5_000_000, encode: 5_000_000, decode: 21_177_576 }, chargementMs: 12, memoireWasm: 65536 * (18 + this.recus.length) };
     const reponse: ReponseNoyauExact = r && typeof r === "object" && "erreur" in (r as object) ? { id: d.id, erreur: (r as { erreur: string }).erreur, suivi } : { id: d.id, valeur: r, suivi };
     queueMicrotask(() => { if (!this.arrete) this.emettre("message", { data: reponse } as MessageEvent); });
   }

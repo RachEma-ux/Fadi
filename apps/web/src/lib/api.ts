@@ -914,8 +914,8 @@ export interface StudioPackageDocument {
   revisionId: string;
   revisionShort: string;
   status: "diffuse" | "retire";
-  /** Contenu (E.3-07) : dossier complet, ou dessin 2D indépendant (sans IFC) ; absent : complet (serveur antérieur). */
-  contenu?: "complet" | "dessin-2d";
+  /** Contenu (E.3-07) : dossier complet, ou dessin 2D indépendant (sans IFC), ou dossier de conception (lot PUB) ; absent : complet (serveur antérieur). */
+  contenu?: "complet" | "dessin-2d" | "dossier-conception";
   diffusedAt: string | null;
   diffusedBy: string | null;
   withdrawnAt: string | null;
@@ -1208,18 +1208,32 @@ export type StudioPublicationTransition = "soumettre" | "approuver" | "refuser" 
 /** Dimensions distinctes (lot E.4) : travail, diffusion ; l'actualité est `freshness`. */
 export type StudioPublicationWorkStatus = "brouillon" | "en-revue" | "approuve" | "refuse";
 export type StudioPublicationDiffusionStatus = "non-diffuse" | "diffuse" | "retire" | "remplace";
-export interface StudioPackageFile { format: "svg" | "dxf" | "ifc" | "pdf"; fileName: string; mime: string; size: number; sha256: string }
+export interface StudioPackageFile { format: "svg" | "dxf" | "ifc" | "pdf" | "json"; fileName: string; mime: string; size: number; sha256: string }
 /** Manifeste figé multi-sources d'un dossier : sources coordonnées, métadonnées gelées, empreintes des documents. */
 export interface StudioPublicationManifest {
   schema: "studio-publication-manifest/1";
   sources: { role: "principale" | "coordonnee"; variantId: string; revisionId: string; documentHash: string }[];
   meta: { projectCode: string; projectName: string; studyName: string; variantName: string; revisionCreatedAt: string };
   documents: { format: string; fileName: string; mime: string; size: number; sha256: string }[];
+  /** Lot PUB (IF-009) : intention / usage déclaré. */
+  usage?: string;
+  /** IF-009 : règles, rapports de contrôle, observations bloquantes et leur résolution. */
+  controles?: {
+    regles: { type: "exigences" | "metre"; id: string; version: string }[];
+    rapports: { controleId: string; variantId: string; revisionId: string; version: number | null; execution: string; conclusion: string | null; documentHash: string }[];
+    observations: { issueId: string; observationId: string; variantId: string; gravite: "bloquante"; statut: string; resolution: "resolue" | "derogee" | "ouverte" }[];
+  };
+  /** EX-074 / EX-076 : dossier de conception publié et ses pièces. */
+  dossier?: {
+    id: string; titre: string; empreinte: string;
+    pieces: { ordre: number; documentId: string; nature: "feuille" | "vue-coupe"; origine: "dessin-2d" | "derive-maquette"; presentation: "document-independant" | "extrait-synchronise"; sources: { variantId: string; revisionId: string; documentHash: string }[]; empreinte: string }[];
+  };
 }
 export type StudioManifestDrift =
   | { type: "source"; role: "principale" | "coordonnee"; variantId: string; revisionFigee: string; revisionCourante: string | null }
   | { type: "meta"; champ: string; figee: string; courante: string }
-  | { type: "documents"; formats: string[] };
+  | { type: "documents"; formats: string[] }
+  | { type: "controles" };
 export interface StudioPublicationEvent {
   id: string; action: "creer" | "remplacer" | StudioPublicationTransition; fromStatus: StudioPublicationStatus | null; toStatus: StudioPublicationStatus;
   workStatus?: StudioPublicationWorkStatus | null; diffusionStatus?: StudioPublicationDiffusionStatus | null; manifestHash?: string | null; relatedPublicationId?: string | null;
@@ -1232,8 +1246,8 @@ export interface StudioPublicationEvent {
 export interface StudioPublication {
   id: string; projectId: string; studyId: string; variantId: string; variantName: string; title: string;
   revisionId: string; documentHash: string; status: StudioPublicationStatus;
-  /** Contenu (E.3-07) : complet, ou dessin 2D indépendant (SVG, DXF, feuille PDF ; sans IFC). */
-  contenu?: "complet" | "dessin-2d";
+  /** Contenu (E.3-07) : complet, ou dessin 2D indépendant (SVG, DXF, feuille PDF ; sans IFC), ou dossier de conception (lot PUB). */
+  contenu?: "complet" | "dessin-2d" | "dossier-conception";
   workStatus: StudioPublicationWorkStatus; diffusionStatus: StudioPublicationDiffusionStatus;
   manifest: StudioPublicationManifest | null; manifestHash: string | null; manifestBuiltAt: string | null;
   createdBy: { id: string; email: string }; createdAt: string; updatedAt: string;
@@ -1287,8 +1301,22 @@ export interface StudioSheet {
   createdBy: { id: string; email: string }; createdAt: string; updatedAt: string;
   files: { svg: string; pdf: string };
 }
+/** Vue de coupe enregistrée (EX-075, lot PUB), recalculée par le serveur depuis sa révision épinglée. */
+export interface StudioVueCoupeDefinitionSaisie {
+  nom: string; niveau: { repere: "local-3d"; z: number }; cadrage: { xMin: number; yMin: number; xMax: number; yMax: number }; echelle: number;
+  visibilite?: { calques: string[] }; styles: { trait: "fin" | "moyen" | "fort"; hachure: "aucune" | "diagonale" | "croisee" };
+  annotations: { id: string; type: "texte" | "repere"; position: { x: number; y: number }; texte: string }[];
+}
+export interface StudioSectionView {
+  id: string; studyId: string; variantId: string; revisionId: string; headRevisionId: string; freshness: "a-jour" | "perimee";
+  definition: StudioVueCoupeDefinitionSaisie;
+  vue: { schema: "studio-vue-coupe/1"; empreinteSection: string; empreinte: string; horsCadrage: number; coupe: { segments: unknown[]; sources: { id: string; segments: number }[]; exactsNonCoupes?: string[] } } | null;
+  error: string | null; createdBy: string; createdAt: string; updatedAt: string;
+}
 export interface StudioDossierInput {
   title: string; sheetIds: string[]; quantities?: { variantId: string; revisionId?: string } | null; includeFidelity?: boolean;
+  /** EX-076 (lot PUB) : vues de coupe de la maquette réunies au dossier. */
+  sectionViewIds?: string[];
   /** Modification seulement : réépingle le métré sur la révision envoyée et reprend les ajustements enregistrés depuis. */
   repinQuantities?: boolean;
 }
@@ -1297,14 +1325,27 @@ export interface StudioDossier {
   quantities: { variantId: string; revisionId: string } | null; includeFidelity: boolean;
   /** Borne du journal des ajustements lue par le métré (séquence max à l'épinglage) ; null : aucun ajustement pris en compte. */
   quantitiesAdjustmentSeq: number | null;
+  /** EX-076 (lot PUB) : vues de coupe jointes ; absent d'un serveur antérieur. */
+  sectionViewIds?: string[];
   createdBy: { id: string; email: string }; createdAt: string; updatedAt: string;
   files: { pdf: string; json: string };
 }
 /** Préférences d'outils Studio du compte : visibilité dans les barres seulement, jamais un droit (B.2-06). */
 export interface StudioGroupeOutilsVue { id: string; nom: string; outils: string[] }
-export interface StudioToolPreferencesInput { profil: string; favoris: string[]; personnel: string[]; groupes?: StudioGroupeOutilsVue[] }
+export interface StudioToolPreferencesInput {
+  profil: string; favoris: string[]; personnel: string[]; groupes?: StudioGroupeOutilsVue[];
+  /** Raccourcis personnels (EX-034) : capacité → combinaison ; absent : inchangés. */
+  raccourcis?: Record<string, string>;
+  /** Ordre des capacités (EX-034) ; absent : inchangé. */
+  ordre?: string[];
+}
 export interface StudioToolPreferences extends StudioToolPreferencesInput {
   groupes: StudioGroupeOutilsVue[];
+  /** Profil persistant (EX-034) : identifiant stable (null tant que rien n'est enregistré), propriétaire, version, provenance. */
+  profileId?: string | null;
+  proprietaire?: string | null;
+  version?: number;
+  importeDe?: string | null;
   /** Outils enregistrés puis retirés du registre (écartés à la lecture). */
   retires: string[];
   /** Version du manifeste du catalogue d'outils du serveur. */
@@ -1312,6 +1353,13 @@ export interface StudioToolPreferences extends StudioToolPreferencesInput {
   updatedAt: string | null;
 }
 /** Catalogue autorisé : droit réel d'exécution de chaque outil pour le compte dans ce projet (B.2-06). */
+/** Fichier de profil d'outils échangé (EX-034, format `fadi-studio-profil/1`). */
+export interface StudioProfilExporte {
+  format: "fadi-studio-profil/1"; profileId: string; proprietaire?: string; version: number; manifeste?: string;
+  profil: string; favoris: string[]; personnel: string[]; groupes: StudioGroupeOutilsVue[]; ordre: string[]; raccourcis: Record<string, string>;
+}
+/** Conflit de raccourci détecté à l'import (EX-034). */
+export interface StudioConflitRaccourci { raccourci: string; capacite: string; type: "doublon" | "registre" | "editeur" | "navigateur"; avec: string }
 export interface StudioCatalogueAutorise {
   manifeste: string;
   role: string;
@@ -1364,7 +1412,7 @@ export const api = {
   /** Détail d'une publication avec son journal. */
   studioPublication: (p: string, s: string, id: string) => request<StudioPublication>(studioPublicationPath(p, s, id)),
   /** Nouvelle publication `travail` d'une révision (tête par défaut) ; `requestId` : renvoi sans doublon. */
-  createStudioPublication: (p: string, s: string, v: string, input: { title?: string; revisionId?: string; coordinatedVariantIds?: string[]; contenu?: "complet" | "dessin-2d"; comment?: string; requestId?: string }) => request<StudioPublication & { replayed: boolean }>(`${studioVariantPath(p, s, v)}/publications`, { method: "POST", body: JSON.stringify(input) }),
+  createStudioPublication: (p: string, s: string, v: string, input: { title?: string; revisionId?: string; coordinatedVariantIds?: string[]; contenu?: "complet" | "dessin-2d" | "dossier-conception"; dossierId?: string; presentations?: Record<string, "document-independant" | "extrait-synchronise">; usage?: string; comment?: string; requestId?: string }) => request<StudioPublication & { replayed: boolean }>(`${studioVariantPath(p, s, v)}/publications`, { method: "POST", body: JSON.stringify(input) }),
   /** Transition (soumettre, approuver, refuser, diffuser, retirer) ; l'approbation porte revisionId + documentHash examinés. */
   transitionStudioPublication: (p: string, s: string, id: string, action: StudioPublicationTransition, input: StudioPublicationTransitionInput) => request<StudioPublication>(`${studioPublicationPath(p, s, id)}/${action}`, { method: "POST", body: JSON.stringify(input) }),
   /** Délégations d'approbation visibles (EX-085) : toutes pour le propriétaire, sinon celles dont on est délégant ou délégué. */
@@ -1384,6 +1432,12 @@ export const api = {
   studioDossiers: (p: string, s: string) => request<{ dossiers: StudioDossier[] }>(`${studioStudyPath(p, s)}/dossiers`),
   createStudioDossier: (p: string, s: string, input: StudioDossierInput & { requestId?: string }) => request<StudioDossier & { replayed: boolean }>(`${studioStudyPath(p, s)}/dossiers`, { method: "POST", body: JSON.stringify(input) }),
   updateStudioDossier: (p: string, s: string, id: string, input: Partial<StudioDossierInput>) => request<StudioDossier>(`${studioStudyPath(p, s)}/dossiers/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(input) }),
+  /** Vues de coupe enregistrées de l'étude (EX-075). */
+  studioSectionViews: (p: string, s: string) => request<{ vues: StudioSectionView[] }>(`${studioStudyPath(p, s)}/section-views`),
+  createStudioSectionView: (p: string, s: string, v: string, input: { definition: StudioVueCoupeDefinitionSaisie; revisionId?: string }) => request<StudioSectionView>(`${studioVariantPath(p, s, v)}/section-views`, { method: "POST", body: JSON.stringify(input) }),
+  /** Définition, annotation propre (sans toucher au modèle) ou réépinglage explicite d'une vue de coupe. */
+  updateStudioSectionView: (p: string, s: string, id: string, input: { definition?: StudioVueCoupeDefinitionSaisie; revisionId?: string; annotation?: { op: "ajouter" | "modifier"; annotation: StudioVueCoupeDefinitionSaisie["annotations"][number] } | { op: "retirer"; id: string } }) =>
+    request<StudioSectionView>(`${studioStudyPath(p, s)}/section-views/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(input) }),
   /** Dossier assemblé (feuilles, métré, fidélité, empreinte), recalculé par le serveur. */
   studioDossier: (p: string, s: string, id: string) => request<StudioDossier & { assembly: StudioDossierConception }>(`${studioStudyPath(p, s)}/dossiers/${encodeURIComponent(id)}`),
   /** Paquets diffusés du projet (pour le module Documents). */
@@ -1392,6 +1446,13 @@ export const api = {
   studioToolPreferences: (p: string) => request<StudioToolPreferences>(`/projects/${encodeURIComponent(p)}/studio/preferences/outils`),
   /** Remplace les préférences d'outils du compte ; un outil hors registre → 400 `unknown_tool`. */
   setStudioToolPreferences: (p: string, prefs: StudioToolPreferencesInput) => request<StudioToolPreferences>(`/projects/${encodeURIComponent(p)}/studio/preferences/outils`, { method: "PUT", body: JSON.stringify(prefs) }),
+  /** Fichier de profil du compte (EX-034) ; 404 tant qu'aucun profil n'est enregistré. */
+  exportStudioProfil: (p: string) => request<StudioProfilExporte>(`/projects/${encodeURIComponent(p)}/studio/preferences/outils/export`),
+  /**
+   * Importe un fichier de profil (EX-033, EX-034) : 403 `permission_non_conferee` (capacité exigeant un droit absent),
+   * 409 `shortcut_conflict` (conflits nommés, rien d'écrit) ; `resolution: "ecarter"` importe sans les raccourcis en conflit.
+   */
+  importStudioProfil: (p: string, profil: unknown, resolution?: "ecarter") => request<StudioToolPreferences & { ecartes: StudioConflitRaccourci[] }>(`/projects/${encodeURIComponent(p)}/studio/preferences/outils/import`, { method: "POST", body: JSON.stringify(resolution ? { profil, resolution } : { profil }) }),
   /** Catalogue autorisé : droit réel d'exécution de chaque outil du manifeste pour le compte (lecture seule). */
   studioCatalogueOutils: (p: string) => request<StudioCatalogueAutorise>(`/projects/${encodeURIComponent(p)}/studio/preferences/catalogue`),
   register: (email: string, password: string) =>

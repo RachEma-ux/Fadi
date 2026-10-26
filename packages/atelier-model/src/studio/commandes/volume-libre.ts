@@ -3,7 +3,7 @@ import { fail, finite, identifier, idList, record } from "../noyau/validation.js
 import { studioSignedArea } from "../courbes.js";
 import type { StudioPoint } from "../noyau/types.js";
 import {
-  directionUnitaire, estDroit, estSolideLie, validerSolide, type StudioBox, type StudioProfilePrism, type StudioSolid,
+  directionUnitaire, estDroit, estSolideLie, studioVecteurSolide, validerSolide, type StudioBox, type StudioProfilePrism, type StudioSolid,
 } from "../objets-3d/solides.js";
 import { studioEmpriseConforme, studioProfilDepuisPolyligne } from "./liens-solides.js";
 import { diviserSegmentPolyligne } from "./division.js";
@@ -146,16 +146,20 @@ export const decalerFace: Gestionnaire = (state, params, path) => {
       const plan = tourner(s.placement.rotation, { x: u.x, y: u.y });
       if (estSolideLie(s) && (plan.x !== 0 || plan.y !== 0)) fail(path, "un prisme lié oblique : sa base suit la polyligne source en plan (détachez-le d’abord)");
       const o = s.placement.origin;
-      image = { ...s, height, placement: { ...s.placement, origin: { x: nul(o.x - plan.x * f), y: nul(o.y - plan.y * f), z: nul(o.z - u.z * f) } } };
+      // Recul de l'origine le long de la direction, exprimé dans le repère (basculement compris, A.3-03).
+      const w = s.placement.basculement ? studioVecteurSolide(s.placement, { x: u.x * f, y: u.y * f, z: u.z * f }) : { x: plan.x * f, y: plan.y * f, z: u.z * f };
+      image = { ...s, height, placement: { ...s.placement, origin: { x: nul(o.x - w.x), y: nul(o.y - w.y), z: nul(o.z - w.z) } } };
     }
   } else if (s.type === "box") {
     const i = face.genre === "laterale" ? face.i : -1;
     const { width, depth } = s;
     const nouvelle = i === 0 || i === 2 ? depth + d : width + d;
     if (!(nouvelle > 0)) franchit();
-    const recul = i === 0 ? tourner(s.placement.rotation, { x: 0, y: d }) : i === 3 ? tourner(s.placement.rotation, { x: d, y: 0 }) : { x: 0, y: 0 };
+    const local = i === 0 ? { x: 0, y: d, z: 0 } : i === 3 ? { x: d, y: 0, z: 0 } : { x: 0, y: 0, z: 0 };
+    // Recul de l'origine des faces x− et y−, exprimé dans le repère (basculement compris, A.3-03).
+    const recul = s.placement.basculement ? studioVecteurSolide(s.placement, local) : { ...tourner(s.placement.rotation, local), z: 0 };
     const o = s.placement.origin;
-    const b: StudioBox = { ...s, ...(i === 0 || i === 2 ? { depth: nouvelle } : { width: nouvelle }), placement: { ...s.placement, origin: { x: nul(o.x - recul.x), y: nul(o.y - recul.y), z: o.z } } };
+    const b: StudioBox = { ...s, ...(i === 0 || i === 2 ? { depth: nouvelle } : { width: nouvelle }), placement: { ...s.placement, origin: { x: nul(o.x - recul.x), y: nul(o.y - recul.y), z: nul(o.z - recul.z) } } };
     image = b;
   } else {
     if (estSolideLie(s)) fail(path, "le profil d’un prisme lié suit sa polyligne source : modifiez la source, ou détachez le solide");
@@ -232,19 +236,38 @@ export const diviserFace: Gestionnaire = (state, params, path) => {
   state.solides[index] = validerSolide(base, path);
 };
 
-/** Pivoter un solide autour de l'axe vertical passant par son origine (angle non nul, radians, sens trigonométrique). */
+/** Angle ramené dans [0 ; 2π[ (zéro exact, jamais −0). */
+const normaliserAngle = (a: number): number => {
+  const deuxPi = 2 * Math.PI;
+  let r = a % deuxPi;
+  if (r < 0) r += deuxPi;
+  if (r >= deuxPi) r = 0;
+  return nul(r);
+};
+
+/**
+ * Pivoter un solide (angle non nul, radians, sens trigonométrique) autour d'un axe passant par son origine :
+ * `z` (défaut) l'axe vertical ; `y` l'axe horizontal y du solide ; `x` l'axe x du solide incliné (A.3-03,
+ * `placement.basculement`). Un basculement revenu à zéro est retiré (forme canonique).
+ */
 export const pivoterSolide: Gestionnaire = (state, params, path) => {
-  const p = record(params, ["id", "angle"], `${path}.params`);
+  const p = record(params, ["id", "angle"], `${path}.params`, ["axe"]);
   const { index, s } = solide(state, p.id, path);
   const angle = finite(p.angle, `${path}.params.angle`);
   if (angle === 0) fail(`${path}.params.angle`, "angle non nul attendu");
   if (Math.abs(angle) > 1e6) fail(`${path}.params.angle`, "angle de valeur absolue 1 000 000 rad au plus");
+  const axe = p.axe === undefined ? "z" : p.axe;
+  if (axe !== "z" && axe !== "x" && axe !== "y") fail(`${path}.params.axe`, "axe « z », « x » ou « y » attendu");
   if (estSolideLie(s)) fail(path, "un prisme lié suit sa polyligne source en plan : il ne pivote pas seul (détachez-le d’abord)");
-  const deuxPi = 2 * Math.PI;
-  let r = (s.placement.rotation + angle) % deuxPi;
-  if (r < 0) r += deuxPi;
-  if (r >= deuxPi) r = 0;
-  state.solides[index] = validerSolide({ ...s, placement: { ...s.placement, rotation: nul(r) } }, path);
+  if (axe === "z") {
+    state.solides[index] = validerSolide({ ...s, placement: { ...s.placement, rotation: normaliserAngle(s.placement.rotation + angle) } }, path);
+    return;
+  }
+  const b = s.placement.basculement ?? { x: 0, y: 0 };
+  const suivant = { ...b, [axe]: normaliserAngle(b[axe] + angle) };
+  const { basculement: _ancien, ...sans } = s.placement;
+  const placement = suivant.x === 0 && suivant.y === 0 ? sans : { ...sans, basculement: suivant };
+  state.solides[index] = validerSolide({ ...s, placement }, path);
 };
 
 /**

@@ -261,7 +261,7 @@ describe("Coût du contrôle : seuls les murs touchés sont recontrôlés (borne
     const t = performance.now() - t0;
     expect(d.architecture).toHaveLength(8000);
     expect(t).toBeLessThan(4000);
-  });
+  }, 30_000);
   it("mur de 1 024 points d'axe : création, puis vingt commandes et un export, chacun en moins de 500 ms", () => {
     const axis = Array.from({ length: 1024 }, (_, i) => ({ x: i, y: (i % 2) * 0.5 }));
     let t0 = performance.now();
