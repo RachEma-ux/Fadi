@@ -542,6 +542,17 @@ const ouverts = await page.evaluate(() => [document.querySelector(".gd-panneau.g
 check("GEO 12 · téléphone : un seul panneau principal ouvert", ouverts === 1);
 check("GEO 12 · téléphone : aucun débordement horizontal", await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
 await page.screenshot({ path: join(OUT, "02-telephone.png") });
+// Mini-carte au téléphone, panneau Données ouvert (posé en bas) : elle reste visible au-dessus du panneau, cliquable.
+if (await page.locator("[data-gd-volet-ouvert]").count()) await page.locator("[data-gd-volet-ouvert] .gd-ligne-titre").getByRole("button", { name: "Fermer" }).click();
+if (!(await page.locator("[data-gd-panneau]").count())) await page.locator("[data-gd-donnees]").click();
+await page.locator("body").press("Alt+m");
+await page.locator("[data-gd-mini-carte] canvas").waitFor({ timeout: 15_000 });
+const miniTel = await page.locator("[data-gd-mini-carte]").boundingBox();
+const panneauTel = await page.locator("[data-gd-panneau]").boundingBox();
+const auDessus = await page.evaluate(() => { const m = document.querySelector("[data-gd-mini-carte]").getBoundingClientRect(); return document.elementFromPoint(m.x + m.width / 2, m.y + m.height / 2)?.closest("[data-gd-mini-carte]") !== null; });
+check("GEO 12 · téléphone : mini-carte au-dessus du panneau ouvert, visible et cliquable", !!miniTel && !!panneauTel && miniTel.y + miniTel.height <= panneauTel.y + 1 && auDessus, JSON.stringify({ miniTel, panneauTel }));
+await page.screenshot({ path: join(OUT, "02b-telephone-mini-carte.png") });
+await page.locator("body").press("Alt+m");
 await page.setViewportSize({ width: 1440, height: 900 });
 
 // --- Fournisseurs de fonds (D-GD-15) : saisis dans Paramètres, MapTiler par défaut, proposés par GeoData ---

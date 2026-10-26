@@ -287,13 +287,19 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     },
     terminerTrace: terminer,
     annulerTrace() { sommets = []; dessinerTrace(); },
-    attendreChargement(delaiMs) {
-      return new Promise((resoudre) => {
-        if (carte.loaded() && carte.areTilesLoaded()) return resoudre(true);
-        const fin = setTimeout(() => resoudre(carte.areTilesLoaded()), delaiMs);
-        carte.once("idle", () => { clearTimeout(fin); resoudre(carte.areTilesLoaded()); });
-        carte.triggerRepaint();
+    async attendreChargement(delaiMs) {
+      // Carte principale, puis mini-carte de situation si elle est affichée (elle charge ses tuiles à part) : une image
+      // n'est produite que si les deux sont complètes, jamais avec un encart vide.
+      const attendre = (m: CarteMapLibre) => new Promise<boolean>((resoudre) => {
+        if (m.loaded() && m.areTilesLoaded()) return resoudre(true);
+        const fin = setTimeout(() => resoudre(m.loaded() && m.areTilesLoaded()), delaiMs);
+        m.once("idle", () => { clearTimeout(fin); resoudre(m.areTilesLoaded()); });
+        m.triggerRepaint();
       });
+      if (!(await attendre(carte))) return false;
+      if (!mini) return true;
+      synchroniserMini();
+      return attendre(mini.carte);
     },
     canevas: () => carte.getCanvas(),
     metresParPixel() {

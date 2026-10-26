@@ -166,4 +166,5 @@
 .geodata-page .gd-mini-carte{position:absolute;left:10px;bottom:34px;width:190px;height:140px;z-index:4;border:2px solid #ffffff;outline:1px solid #29434a;border-radius:4px;overflow:hidden;background:#eef2f0;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 /* Panneau Données ouvert (360 px à gauche) : la mini-carte se place à sa droite, jamais dessous. */
 .geodata-page .gd-mini-carte.gd-mini-decalee{left:380px}
-@media (max-width:640px){.geodata-page .gd-mini-carte,.geodata-page .gd-mini-carte.gd-mini-decalee{left:10px;width:120px;height:90px}}
+/* Téléphone (même seuil que le panneau, posé en bas sur 62 % de la carte) : mini-carte réduite, au-dessus du panneau. */
+@media (max-width:760px){.geodata-page .gd-mini-carte,.geodata-page .gd-mini-carte.gd-mini-decalee{left:10px;width:120px;height:90px}.geodata-page .gd-mini-carte.gd-mini-decalee{bottom:calc(62% + 10px)}}
