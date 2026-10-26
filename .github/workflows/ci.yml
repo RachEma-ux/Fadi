@@ -88,9 +88,19 @@ jobs:
         run: npm run test:db-guard
       - if: ${{ steps.perimetre.outputs.studio == 'true' }}
         run: npm run build
+      # Installation bornée (10 min par essai, 3 essais) : un miroir figé ne bloque plus le job jusqu'à son annulation.
       - name: Installer le Chromium attendu par Playwright
         if: ${{ steps.perimetre.outputs.studio == 'true' }}
-        run: npx playwright install --with-deps chromium
+        run: |
+          for essai in 1 2 3; do
+            timeout 600 npx playwright install --with-deps chromium && exit 0
+            echo "::warning::Installation de Chromium interrompue ou en échec (essai $essai sur 3) : nouvel essai."
+            # Le délai n'arrête que npx : un apt-get lancé par l'installation peut continuer et garder le verrou dpkg.
+            # On attend qu'il finisse (10 min au plus) ; l'essai suivant trouve alors les paquets déjà installés.
+            for attente in $(seq 1 120); do pgrep -x apt-get > /dev/null || pgrep -x dpkg > /dev/null || break; sleep 5; done
+            sleep 5
+          done
+          exit 1
       - name: Profil neuf, recette réelle et redémarrage borné
         if: ${{ steps.perimetre.outputs.studio == 'true' }}
         run: python3 scripts/validation/studio-v1-functional.py
@@ -419,7 +429,18 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --no-audit --no-fund
-      - run: npx playwright install --with-deps chromium
+      # Installation bornée (10 min par essai, 3 essais) : un miroir figé ne bloque plus le job jusqu'à son annulation.
+      - name: Installer le Chromium attendu par Playwright
+        run: |
+          for essai in 1 2 3; do
+            timeout 600 npx playwright install --with-deps chromium && exit 0
+            echo "::warning::Installation de Chromium interrompue ou en échec (essai $essai sur 3) : nouvel essai."
+            # Le délai n'arrête que npx : un apt-get lancé par l'installation peut continuer et garder le verrou dpkg.
+            # On attend qu'il finisse (10 min au plus) ; l'essai suivant trouve alors les paquets déjà installés.
+            for attente in $(seq 1 120); do pgrep -x apt-get > /dev/null || pgrep -x dpkg > /dev/null || break; sleep 5; done
+            sleep 5
+          done
+          exit 1
       - run: npm run db:migrate
       - run: npm run build
       # Clé de signature des archives propre à l'exécution (jamais écrite dans le dépôt, masquée dans les journaux) :

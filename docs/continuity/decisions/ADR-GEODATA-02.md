@@ -171,6 +171,26 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         son titre, sa source et sa date (heure de Zurich), dans une fenêtre d'impression : ni iframe (ARC-10), ni règle de
         style hors de `.geodata-page` (GEO 04) ; fenêtre bloquée par le navigateur = avis, rien d'imprimé en silence.
 
+   - D-GD-23 (26 octobre 2026, demande du maître d'ouvrage : « fais l'import automatique au déploiement » et
+     « demande une quittance de fin de processus et de non-blocage du déploiement automatique ») :
+     1. **Import automatique** : au démarrage de l'API, si `GEODATA_IMPORT_AUTO_PAR` désigne un compte GeoData (rôles
+        « gestionnaire-donnees » et « responsable-publication »), la chaîne d'import (`geodata-reference.js --fiche toutes
+        --preparateur … --publier-par …`) tourne en arrière-plan : chaque fiche livrée est préparée puis publiée si elle
+        n'est pas en base. L'empreinte attendue se lit dans la fiche : une fiche déjà importée n'est ni relue ni
+        retéléchargée (contrôle en moins d'une seconde) ; les empreintes réelles restent contrôlées à la lecture.
+     2. **Retraits déclarés** : `docs/geodata/sources/donnees/retraits-sources.json` (clé, remplaçante, motif, décision) ;
+        les versions de référence publiées de ces sources sont retirées par le même compte, journalisées
+        (`version.retiree`), **seulement si leur remplaçante a une version publiée** (sinon l'ancienne reste
+        consultable et le refus est consigné) — `osm-mar-communes` et `osm-mar-villes` (D-GD-18).
+     3. **Quittance du serveur** : `GET /version/donnees` (commit qui tourne, état de l'import : désactivé, en cours,
+        terminé avec son bilan, échec avec la dernière erreur), sans requête à la base.
+     4. **Quittance de fin de processus** : après chaque fusion, la CI de `main` est suivie jusqu'au vert ; un job tué
+        par l'infrastructure (installation de Chromium figée…) est relancé une fois, un vrai échec est corrigé ; une
+        quittance est déposée sur la PR fusionnée (commit, CI de `main` verte, déploiement automatique non bloqué). Côté
+        serveur, `sudo fadi-preprod status` et `/version/donnees` confirment le commit déployé et l'import.
+     5. **Non-blocage** : l'installation de Chromium de la CI est bornée (10 minutes par essai, 3 essais) au lieu
+        d'attendre l'annulation du job.
+
 ## Conséquences
 
 - `docs/architecture.md` et `module-registry.ts` déclarent GeoData une fois le code livré.

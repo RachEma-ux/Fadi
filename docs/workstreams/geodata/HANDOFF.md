@@ -25,6 +25,10 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 - Lot A2 (D-GD-17 point 5) : 648 indicateurs HCP par niveau (thème, famille, modalité, milieu, sexe) en tableau CSV,
   arrondissements (41/41 contours OSM niveau 10) ; PR en cours sur `ccr-e71fe633-hjxnjf`. Ensuite, un lot à la fois :
   B, E, C, D, F, G (TASKS).
+- Import automatique au déploiement (D-GD-23) : une fois `PREPROD_GEODATA_IMPORT_AUTO_PAR=<compte GeoData>` ajouté à
+  `/opt/fadi-preprod/env/.env.preprod`, chaque déploiement importe les fiches nouvelles et applique les retraits ;
+  quittance serveur : `GET /version/donnees`. Procédure après chaque fusion : suivre la CI de `main` jusqu'au vert
+  (relance unique d'un job tué par l'infrastructure), déposer la quittance sur la PR fusionnée.
 - Fiche territoriale (lot E, D-GD-22) : ventilations, arrondissements, douars (annexe de la fiche des communes :
   `preparer_hcp.py … --douars <base des douars>`), impression Alt+P. Lots suivants : C (libellés), D (palettes,
   classes), F (arbre d'indicateurs), G (mini-carte), un à la fois.

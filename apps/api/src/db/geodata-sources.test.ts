@@ -13,6 +13,7 @@ import { CATEGORIES_CATALOGUE, MAX_PIXELS_RASTER, OBJETS_PAR_COUCHE, USAGES, val
 import { lireGeoTiff } from "../lib/geodata/raster.js";
 import { codesDesObjets } from "../lib/geodata/versions.js";
 import type { FicheSource } from "./geodata-reference.js";
+import { empreinteAttendue } from "../lib/geodata/empreinte-fiche.js";
 
 const DOSSIER = fileURLToPath(new URL("../../../../docs/geodata/sources/", import.meta.url));
 const fiches = readdirSync(DOSSIER).filter((f) => f.endsWith(".json")).sort();
@@ -113,6 +114,30 @@ describe("fiches de source GeoData livrées", () => {
     }
     expect(fautes.slice(0, 5)).toEqual([]);
   }, 30_000);
+
+  it("import automatique (D-GD-23) : l'empreinte attendue lue dans la fiche est celle de la version importée (fichier, tableau, douars)", () => {
+    const sha = (b: Buffer | string) => createHash("sha256").update(b).digest("hex");
+    for (const nom of fiches) {
+      const fiche = JSON.parse(readFileSync(join(DOSSIER, nom), "utf8")) as FicheSource;
+      if (!fiche.version.fichier) continue;
+      const ef = sha(readFileSync(join(DOSSIER, fiche.version.fichier)));
+      const t = fiche.version.tableau;
+      const d = fiche.version.annexes?.douars;
+      const reelle = t ? sha(`${ef}:${sha(readFileSync(join(DOSSIER, t.fichier)))}${d ? `:${sha(readFileSync(join(DOSSIER, d.fichier)))}` : ""}`) : ef;
+      expect(empreinteAttendue(fiche), nom).toBe(reelle);
+    }
+  }, 60_000);
+
+  it("retraits déclarés (D-GD-23) : sources sans fiche importable, remplaçante livrée, motif et décision", () => {
+    const retraits = JSON.parse(readFileSync(join(DOSSIER, "donnees", "retraits-sources.json"), "utf8")) as { cle: string; remplacePar: string; motif: string; decision: string }[];
+    expect(retraits.map((r) => r.cle).sort()).toEqual(["osm-mar-communes", "osm-mar-villes"]);
+    for (const r of retraits) {
+      expect(fiches).not.toContain(`${r.cle}.json`);
+      expect(fiches).toContain(`${r.remplacePar}.json`);
+      expect(r.motif.trim().length).toBeGreaterThanOrEqual(3);
+      expect(r.decision).toMatch(/^D-GD-\d+$/);
+    }
+  });
 
   it("chaque thème déclaré par une fiche livrée a sa catégorie initiale", () => {
     const themes = new Set(CATEGORIES_CATALOGUE.flatMap((c) => c.themes));

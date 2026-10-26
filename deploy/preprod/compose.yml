@@ -103,6 +103,10 @@ services:
       # Organisations-participation (OP-5) : effacement automatique des contacts sans compte 2 ans après la clôture de
       # tous leurs projets — réserve d'OP-2 levée par le maître d'ouvrage ; activé en préproduction (données synthétiques).
       CONTACT_RETENTION_ENABLED: ${PREPROD_CONTACT_RETENTION_ENABLED:-1}
+      # GeoData (D-GD-23) : au démarrage, les fiches de données livrées avec le code sont importées et publiées par ce
+      # compte (rôles GeoData « gestionnaire-donnees » et « responsable-publication »), sans doublon ; vide = désactivé.
+      # État : GET /version/donnees.
+      GEODATA_IMPORT_AUTO_PAR: ${PREPROD_GEODATA_IMPORT_AUTO_PAR:-}
     ports:
       - "127.0.0.1:3101:3001"
     networks:
