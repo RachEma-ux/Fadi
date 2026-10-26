@@ -62,6 +62,7 @@ Décision d’exécution : [ADR-GEODATA-02](../../continuity/decisions/ADR-GEODA
 | D-GD-09 | V1 privée : aucun partage ; le modèle réserve les rôles d’espace collectif sans afficher d’action inopérante. |
 | D-GD-11 | Style « une couleur par entité » : palette qualitative de 12 couleurs, voisins distincts au-delà de 12 unités (graphe de voisinage calculé au serveur) ; rien n'est enregistré dans la composition hors le mode. |
 | D-GD-12 | Couches de sources d'origine ouvertes (OpenStreetMap ODbL, OurAirports domaine public), données livrées avec leur fiche ; raster, > 5 000 objets et droits non établis écartés. |
+| D-GD-17 | Indicateurs HCP sous CC BY 4.0 (fichiers seulement, pas de plateforme aspirée), données arabes affichées, communes OSM, table de correspondance contrôlée ; lot A : population RGPH 2024 sur 3 niveaux. |
 | D-GD-16 | Contours de la couleur de l'entité, opaques ; hiérarchie Région → Province → Commune en superposition. |
 | D-GD-15 | Fournisseurs de fonds réglés dans Paramètres (MapTiler intégré et par défaut, XYZ saisis), stockés dans le navigateur ; fond de fournisseur jamais exportable. |
 | D-GD-14 | Catalogue rangé par catégories gérées (capacité `organiser-catalogue`), barre d'outils verticale flottante (à droite par défaut, déplaçable), bouton « Données », menu ☰ (Données = gestion des catégories et de leurs couches). |

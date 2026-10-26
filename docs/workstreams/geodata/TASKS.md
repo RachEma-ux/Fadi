@@ -6,7 +6,13 @@
 - [x] GEO-OPS-01 — Outils `geodata-role` / `geodata-reference` exécutables dans l'image de production, fiches embarquées, publication d'une version préparée à la relance ; dossier `RELEASE-V1.md`.
 - [ ] GEO-PROD-00 — Phase B du déploiement (`fadi-prod-auto`) ou procédure manuelle de l'exploitant : préalable à toute mise en production (hors délégation).
 - [ ] GEO-PROD-01 — Publication en production : Release GitHub du maître d'ouvrage (hors délégation), puis rôles GeoData et import geoBoundaries sur l'environnement.
-- [ ] GEO-DATA-01 — Qualifier les droits HCP (population RGPH 2024) avant toute publication d'indicateur officiel.
+- [x] GEO-DATA-01 — Droits HCP qualifiés (CC BY 4.0, D-GD-17) ; population légale RGPH 2024 publiée sur 3 niveaux (lot A).
+- [ ] GEO-HCP-B — Navigation par niveaux (fil d'Ariane Royaume → Région → Province, Retour, raccourcis).
+- [ ] GEO-HCP-C — Libellés sur la carte (un par entité, valeur abrégée, affichage / masquage ; glyphes hébergés).
+- [ ] GEO-HCP-D — Palettes prédéfinies, N classes, couleur par classe, seuils naturels (Jenks).
+- [ ] GEO-HCP-E — Fiche territoriale par thème, ventilations, impression.
+- [ ] GEO-HCP-F — Arbre d'indicateurs par thème, avec recherche.
+- [ ] GEO-HCP-G — Mini-carte de situation et impression directe.
 - [ ] GEO-V11 — Extensions V1.1 : partage nominatif, espaces collectifs, KML/KMZ/Shapefile, analyses avancées.
 
 ## En cours

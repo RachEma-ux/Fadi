@@ -116,7 +116,10 @@ Fiche avec `couche.raster` (`unite`, `grandeur`, `palette` parmi `viridis`, `rel
 donne la valeur au point (`null` = non évaluée). Sur la carte : légende en dégradé ou par classes, toucher la carte lit la
 valeur de la couche raster visible la plus haute.
 
-Sources non publiées faute de droits établis : population HCP RGPH 2024 (conditions de réutilisation non qualifiées).
+Population légale RGPH 2024 du HCP (D-GD-17) : fichiers de hcp.ma sous CC BY 4.0, rattachés aux contours par
+`scripts/geodata/preparer_hcp.py --excel <fichier HCP>` ; tables de correspondance dans `sources/correspondances/`
+(une ligne par rattachement, méthode et statut ; `hcp-rgph2024-communes-manuel.csv` pour les liens relus à la main, avec
+leur justification). Trois fiches : `hcp-rgph2024-population-regions`, `-provinces`, `-communes`.
 Un indicateur « Superficie calculée » est produit par GeoData (ellipsoïde WGS 84) : c'est un résultat calculé, pas une
 superficie officielle.
 
