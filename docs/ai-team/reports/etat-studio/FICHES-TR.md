@@ -1,7 +1,7 @@
 # Fiches de traçabilité TR-* (annexe C) — preuve et contre-preuve individuelles
 
 > Document **généré** par `node scripts/registre/etat-studio.mjs --ecrire` depuis le registre et les fiches M004 ; la CI le
-> recalcule à chaque commit. Registre SHA-256 `424a049ac6aecc9f92f72379f5c921ee12f861c6b708ac64edc990812668dca5` ; fiches `docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json`.
+> recalcule à chaque commit. Registre SHA-256 `ad5fb84ab8cada885e05eb81074182ed09f38eb7289889418a2ce14d85716bee` ; fiches `docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json`.
 
 Règle C (Checklist, annexe C) appliquée à chaque fiche : libellé exact, source, responsable, contrat, composant, tests
 positifs et négatifs, preuves, décisions, état et verdict ; **une preuve absente reste « à produire »**. Preuve = contrôle
@@ -9,8 +9,8 @@ positif exécuté (« scénario exécuté », G2-04) ; contre-preuve = contrôle
 l’échec attendu (titre marqué « [−] » ou qui le dit : refus, rejet, échec, interdit, jamais, aucun, conflit, code 4xx…).
 Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction livrée.
 
-**Synthèse** : 141 fiches ; 114 avec preuve exécutée, 117 avec contre-preuve exécutée ;
-27 preuves et 24 contre-preuves « à produire ».
+**Synthèse** : 141 fiches ; 129 avec preuve exécutée, 132 avec contre-preuve exécutée ;
+12 preuves et 9 contre-preuves « à produire ».
 
 ### TR-AC-001
 
@@ -20,9 +20,23 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-01,DEC-02,DEC-09 · **Scénarios** : 003,009,010,011,030
 - **Test positif prescrit** : Mur6×3×0,2 avec ouverture1×2,1 : objectId/hôte stables, net3,180 ; largeur1,2 : net3,096 ; undo/redo/réouverture et publication vérifiés.
 - **Test négatif prescrit** : Modifier depuis autre planche crée copie du mur ou perd hôte/cote/historique : échec critère, aucun succès partiel global.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 15
+  - TR-AC-001 — cote associative sur un mur (objet architectural) > [+] la cote se lie aux sommets du contour du mur ; le document relu la garde liée — `packages/atelier-model/src/studio/commandes/cotes-murs.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - TR-AC-001 — cote associative sur un mur (objet architectural) > [+] le mur modifié (épaisseur 0,25 m depuis la vue 3D, puis déplacé sur la planche) : même cote, même identité du mur, la cote suit — `packages/atelier-model/src/studio/commandes/cotes-murs.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - AC-001 : cote posée sur le mur à la souris — accrochée à ses sommets, valeur mesurée 6,000 m, résolue — `apps/web/e2e/studio-g1.mjs`, commit 2e1564d, 2026-10-26 06:24
+  - AC-001 : enregistrée, la cote est liée au mur (objectId du mur aux deux extrémités), l'ouverture est hébergée par ce mur — `apps/web/e2e/studio-g1.mjs`, commit 2e1564d, 2026-10-26 06:24
+  - TEST-003 / A.4-03 : la Planche 3D porte les mêmes identifiants que la Planche 2D (mur, ouverture) — `apps/web/e2e/studio-g1.mjs`, commit 2e1564d, 2026-10-26 06:24
+  - TEST-010 : ouverture élargie à 1,20 m depuis la Planche 3D — déduction 0,504 m³, net 3,096 m³ — `apps/web/e2e/studio-g1.mjs`, commit 2e1564d, 2026-10-26 06:24
+  - … et 9 autre(s) au registre
+- **Contre-preuve (contrôles négatifs exécutés)** : 9
+  - TR-AC-001 — cote associative sur un mur (objet architectural) > [−] perte de cote : mur supprimé (cascade) — la cote n'est pas supprimée, elle passe « à résoudre », valeur non évaluée — `packages/atelier-model/src/studio/commandes/cotes-murs.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - TR-AC-001 — cote associative sur un mur (objet architectural) > [−] contour changé (axe repris à trois points) : l'indice ne désigne plus le même sommet — lien rompu, « à résoudre », jamais rattachée… — `packages/atelier-model/src/studio/commandes/cotes-murs.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - TR-AC-001 — cote associative sur un mur (objet architectural) > [−] liens refusés : sommet inexistant, ancre non indexée, extrémité différente du sommet, mur absent — rien n'est créé — `packages/atelier-model/src/studio/commandes/cotes-murs.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - TR-AC-001 — cote associative sur un mur (objet architectural) > feuille composée : la vue documentaire garde la cote liée au mur qu'elle reprend (jamais détachée en silence) — `packages/atelier-model/src/studio/commandes/cotes-murs.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - TR-AC-001 — cote associative sur un mur (objet architectural) > copie indépendante du mur : la cote reste sur la source ; modifier la copie ne la touche pas — `packages/atelier-model/src/studio/commandes/cotes-murs.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - A.4-01 / TR-EX-002 (dessin) : mur 6 × 3 × 0,2 m et ouverture 1 × 2,1 m dessinés sur la Planche 2D — brut 3,600, déduction 0,420, net 3,180 m³ — `apps/web/e2e/studio-g1.mjs`, commit 2e1564d, 2026-10-26 06:24
+  - … et 3 autre(s) au registre
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-AC-002
@@ -33,9 +47,19 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-07,DEC-14 · **Scénarios** : 016
 - **Test positif prescrit** : Profil environ20 outils : comparer requêtes/octets/chunks exécutés/mémoire à froid et chaud, sans tous noyaux initialisés.
 - **Test négatif prescrit** : Barre réduite mais précache/init de tous moteurs rares : critère non acquis, aucun taux de réduction supposé.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 6
+  - AC-002 / TEST-016 — verdict contre une référence versionnée, cache froid et chaud — `packages/atelier-model/src/studio/mesures/mesures.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - référence valide : schéma, révision, profil d'environ vingt outils, valeurs mesurées par cache, invariants — `packages/atelier-model/src/studio/mesures/mesures.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - mesure dans les tolérances : verdict « conforme » par cache et par grandeur (requêtes, octets, chunks exécutés, tas) — `packages/atelier-model/src/studio/mesures/mesures.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - régression : octets du cache chaud au-delà de la borne, chunk spécialisé exécuté, moteur rare initialisé, binaire exact demandé — `packages/atelier-model/src/studio/mesures/mesures.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - TR-AC-002 : cache chaud réellement chaud — service worker actif et morceaux servis par lui à chaque répétition — `apps/web/e2e/studio-g4.mjs`, commit 2e1564d, 2026-10-26 06:23
+  - TR-AC-002 : référence versionnée valide (schéma studio-reference-mesures/1, révision, appareil, profil de vingt outils, valeurs mesurées froid et chaud, tolérances, invariants) — `apps/web/e2e/studio-g4.mjs`, commit 2e1564d, 2026-10-26 06:23
+- **Contre-preuve (contrôles négatifs exécutés)** : 4
+  - aucun taux de réduction présumé : une baisse est constatée « amélioration », la référence est à rétablir, le verdict reste conforme — `packages/atelier-model/src/studio/mesures/mesures.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - autre classe d'appareil, autre fenêtre ou grandeur non mesurée : « non évalué », jamais comparé — `packages/atelier-model/src/studio/mesures/mesures.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - TR-AC-002 / TEST-016 : vingt outils ouverts — requêtes, octets transférés, octets du serveur, morceaux exécutés et tas comparés à la référence, cache froid et chaud : verdict « conforme » (aucun taux… — `apps/web/e2e/studio-g4.mjs`, commit 2e1564d, 2026-10-26 06:23
+  - TR-AC-002 : modules spécialisés non initialisés — aucune famille three / studio-3d / atelier / maplibre / manifold exécutée, seuls les moteurs de la planche initialisés, aucun binaire du noyau exact … — `apps/web/e2e/studio-g4.mjs`, commit 2e1564d, 2026-10-26 06:23
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-AC-003
@@ -63,9 +87,16 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-09,DEC-10,DEC-13 · **Scénarios** : 022
 - **Test positif prescrit** : Corpus superposé/densités/intersections/références : mêmes cibles/points que référence dans tolérance avec traces ambiguïtés.
 - **Test négatif prescrit** : Index choisit cible différente après insertion/suppression : critère échoue malgré gain p95.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 6
+  - AC-004 [+] corpus superposé / densités variables / intersections / références liées : mêmes cibles et mêmes points que la référence, mêmes traces d'ambiguïté (grille, puis index incrémental après ins… — `apps/web/src/modules/studio/planche2d/ambiguites.preuves-g2.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - AC-004 [+] cas ambigu tracé puis résolu explicitement : la candidate suivante devient le point posé ; la désignation passe à l'objet superposé suivant — `apps/web/src/modules/studio/planche2d/ambiguites.preuves-g2.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - TR-AC-004 : extrémités confondues — cas ambigu tracé (« 1/n »), la règle retient l1 (ordre du document) — `apps/web/e2e/studio-g2.mjs`, commit 2e1564d, 2026-10-26 06:24
+  - TR-AC-004 : « Cible d'accrochage suivante » (Ctrl+Maj+F1) — la candidate suivante (l2) devient le point posé — `apps/web/e2e/studio-g2.mjs`, commit 2e1564d, 2026-10-26 06:24
+  - TR-AC-004 : la cote enregistrée est liée à l'objet choisi explicitement (début : l2) et à l1 par la règle (fin) — `apps/web/e2e/studio-g2.mjs`, commit 2e1564d, 2026-10-26 06:24
+  - TR-AC-004 : désignation ambiguë au clic (deux lignes confondues) — l'objet suivant sous le clic est désigné explicitement — `apps/web/e2e/studio-g2.mjs`, commit 2e1564d, 2026-10-26 06:24
+- **Contre-preuve (contrôles négatifs exécutés)** : 1
+  - AC-004 [−] un index qui choisit une autre cible après insertion / suppression fait échouer le critère, malgré un gain de p95 — `apps/web/src/modules/studio/planche2d/ambiguites.preuves-g2.test.ts`, commit 2e1564d, 2026-10-26 06:14
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-AC-005
@@ -76,9 +107,17 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-13 · **Scénarios** : 023,025,026
 - **Test positif prescrit** : Comparer sélection/orbite/zoom/pousser-tirer/matériau avant/après optimisation et séparer GPU réel de SwiftShader.
 - **Test négatif prescrit** : GPU CPU confondus ou géométrie modifiée pour gagner FPS : critère non vérifié/non conforme selon résultat.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 8
+  - AC-005 / MES-03 — avant / après optimisation de la vue 3D — `apps/web/src/modules/studio/vue3d/comparaison-optimisation.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - sélection, orbite, zoom, pousser / tirer et matériau : mêmes objets désignés, mêmes distances, mêmes aspects, mêmes triangles ; verdict « fidèle », GPU non évalué — `apps/web/src/modules/studio/vue3d/comparaison-optimisation.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - l'optimisation est réellement active : rien de reconstruit pour orbite et zoom, seul l'objet touché pour sélection, pousser / tirer et matériau ; la référence reconstruit tout — `apps/web/src/modules/studio/vue3d/comparaison-optimisation.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - contrôle par mutation : objet périmé après pousser / tirer, ou couleur d'aspect faussée après le matériau → « infidèle » — `apps/web/src/modules/studio/vue3d/comparaison-optimisation.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - AC-005 / MES-03 — verdict avant / après optimisation, postes mesurés séparément — `packages/atelier-model/src/studio/mesures/mesures.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - cinq opérations fidèles et tous les postes mesurés : « fidèle », GPU « non évalué » — `packages/atelier-model/src/studio/mesures/mesures.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - … et 2 autre(s) au registre
+- **Contre-preuve (contrôles négatifs exécutés)** : 1
+  - cas négatif : temps GPU rapporté sous SwiftShader (GPU et CPU confondus) : rapport refusé — `packages/atelier-model/src/studio/mesures/mesures.test.ts`, commit 2e1564d, 2026-10-26 06:14
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-AC-006
@@ -156,9 +195,16 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-16 · **Scénarios** : 018
 - **Test positif prescrit** : Concepteur découvre Approuver par recherche mais serveur refuse sans permission métier.
 - **Test négatif prescrit** : Importer profil ou acquérir rôle admin technique : toujours refus si droit métier absent.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 2
+  - TR-AC-010 : le concepteur trouve « Approuver » par la recherche de la palette — `apps/web/e2e/studio-g2.mjs`, commit 2e1564d, 2026-10-26 06:24
+  - TR-AC-010 : le propriétaire, qui détient le droit, approuve par la même commande (Ctrl+Maj+F11) — `apps/web/e2e/studio-g2.mjs`, commit 2e1564d, 2026-10-26 06:24
+- **Contre-preuve (contrôles négatifs exécutés)** : 5
+  - AC-010 [+] le catalogue du serveur expose « Approuver » à tous (concepteur : non autorisé ; propriétaire : autorisé) ; le concepteur qui l'exécute reçoit 403, rien n'est écrit — `apps/api/src/routes/studio-g2.preuves-g2.test.ts`, commit 2e1564d, 2026-10-26 06:26
+  - AC-010 [−] importer un profil qui place « Approuver », ou l'écrire dans ses préférences, ne confère rien : refus 403 (permission non conférée) et l'approbation reste refusée — `apps/api/src/routes/studio-g2.preuves-g2.test.ts`, commit 2e1564d, 2026-10-26 06:26
+  - AC-010 [+] un concepteur découvre « Approuver » par recherche (nom, synonyme, raccourci) : commande de la barre Présentation, icône propre, Ctrl+Maj+F11, aucun droit présumé par l'interface — `apps/web/src/modules/studio/publication/approbation-commande.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - AC-010 [−] la boîte propose les publications en revue sans juger du droit ; un refus 403 du serveur est dit tel quel, profil et rôle technique compris — `apps/web/src/modules/studio/publication/approbation-commande.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - TR-AC-010 : exécutée, l'approbation est refusée par le serveur (droit métier absent), rien n'est écrit — `apps/web/e2e/studio-g2.mjs`, commit 2e1564d, 2026-10-26 06:24
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-AC-011
@@ -205,9 +251,17 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-01,DEC-02,DEC-03 · **Scénarios** : 001,002,003
 - **Test positif prescrit** : Suivre une petite étude depuis dessin jusqu'au dossier de conception, avec quatre domaines.
 - **Test négatif prescrit** : Demande de comptabilité ou gestion RH : périmètre explicitement exclu, aucun module métier concurrent créé.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 6
+  - TR-EX-002 (BIM) : propriété déclarée sur le mur, « non évaluée » sans valeur saisie — `apps/web/e2e/studio-g1.mjs`, commit 2e1564d, 2026-10-26 06:24
+  - TR-EX-002 (visualisation) : scène enregistrée ; la révision porte mur, ouverture, cote liée, propriété et scène — `apps/web/e2e/studio-g1.mjs`, commit 2e1564d, 2026-10-26 06:24
+  - TR-EX-002 (métré) : volume net du mur 3,096 m³ dans le métré de Documentation — `apps/web/e2e/studio-g1.mjs`, commit 2e1564d, 2026-10-26 06:24
+  - TR-EX-002 (documentation) : dossier de conception créé — la feuille F-01 et le métré de la révision R3 — `apps/web/e2e/studio-g1.mjs`, commit 2e1564d, 2026-10-26 06:24
+  - TR-EX-002 [+] : dossier de conception publié par l'interface (soumis, approuvé, diffusé) — PDF et JSON relus à leurs empreintes, révision R3 — `apps/web/e2e/studio-g1.mjs`, commit 2e1564d, 2026-10-26 06:24
+  - TR-EX-002 [+] : un parcours unique à travers les quatre domaines (Dessin et modélisation, BIM et coordination, Visualisation, Documentation), une même étude — `apps/web/e2e/studio-g1.mjs`, commit 2e1564d, 2026-10-26 06:24
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - A.4-01 / TR-EX-002 (dessin) : mur 6 × 3 × 0,2 m et ouverture 1 × 2,1 m dessinés sur la Planche 2D — brut 3,600, déduction 0,420, net 3,180 m³ — `apps/web/e2e/studio-g1.mjs`, commit 2e1564d, 2026-10-26 06:24
+  - TR-EX-002 — périmètre explicitement exclu > EX-002 [−] : demande de comptabilité ou de gestion RH refusée par un motif nommé « hors-perimetre » — `packages/atelier-model/src/studio/cmd/cmd.test.ts`, commit 4304050, 2026-10-26 03:10
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-003
@@ -451,9 +505,23 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-01,DEC-02,DEC-03,DEC-12 · **Scénarios** : 014,030
 - **Test positif prescrit** : Changer source R12→R13 : vue devient à recalculer puis en calcul, à jour R13 ou échec explicite.
 - **Test négatif prescrit** : Ancienne image R12 présentée à jour R13 après échec : oracle doit rejeter ce statut.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 12
+  - TR-EX-016 — états des contenus dérivés > EX-016 [+] : source R12 → R13 : à recalculer, en calcul, puis à jour R13 ou échec explicite — `packages/atelier-model/src/studio/cmd/cmd.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - TR-EX-016 — états des contenus dérivés > EX-016 : état d'un contenu affiché par un panneau — les cinq états, toujours cohérents avec la révision courante — `packages/atelier-model/src/studio/cmd/cmd.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - TR-EX-016 — cinq états dérivés du métré, des feuilles et des publications > aperçu de la feuille : composition demandée comparée à l'aperçu affiché ; document vide non applicable — `apps/web/src/modules/studio/taches/etats-contenus.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - TR-EX-016 — cinq états dérivés du métré, des feuilles et des publications > feuille composée : épinglée sur la tête (à jour), plus ancienne (à recalculer), actualisation (en calcul), erreur serveur (… — `apps/web/src/modules/studio/taches/etats-contenus.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - TR-EX-016 — cinq états dérivés du métré, des feuilles et des publications > pastille : état, image et cohérence portés par l'élément affiché — `apps/web/src/modules/studio/taches/etats-contenus.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - TR-EX-016 : métré « À jour pour la révision R » (révision affichée, état dérivé cohérent) — `apps/web/e2e/studio-g1.mjs`, commit 2e1564d, 2026-10-26 06:24
+  - … et 6 autre(s) au registre
+- **Contre-preuve (contrôles négatifs exécutés)** : 8
+  - TR-EX-016 — états des contenus dérivés > EX-016 [−] : ancienne image R12 présentée « à jour R13 » après échec — l'oracle rejette ce statut — `packages/atelier-model/src/studio/cmd/cmd.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - TR-EX-016 — états des contenus dérivés > INV-006 : un résultat calculé sur R12 arrivé quand R13 est courante est ignoré, il n'écrase pas l'état courant — `packages/atelier-model/src/studio/cmd/cmd.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - TR-EX-016 — états des contenus dérivés > EX-051 : domaines périmés après une commande — seuls les domaines invalidés par l'effet passent « à recalculer » — `packages/atelier-model/src/studio/cmd/cmd.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - TR-EX-016 — cinq états dérivés du métré, des feuilles et des publications > métré : à jour pour la révision affichée, à recalculer, en calcul, échec, non applicable (aucun objet) — `apps/web/src/modules/studio/taches/etats-contenus.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - TR-EX-016 — cinq états dérivés du métré, des feuilles et des publications > publication : manifeste à jour, variante avancée, actualisation, refus, retirée ou remplacée — jamais « à jour » sur une im… — `apps/web/src/modules/studio/taches/etats-contenus.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - TR-EX-016 — cinq états dérivés du métré, des feuilles et des publications > libellés traduits en anglais (D-163) : aucun texte des cinq états ne reste en français — `apps/web/src/modules/studio/taches/etats-contenus.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - … et 2 autre(s) au registre
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Métré, aperçu de la feuille, feuilles composées et publications affichent l'un des cinq états dérivés (pastille EtatContenu, data-studio-etat-contenu / data-etat), à côté de leurs statuts propres ; fonction pure studioEtatDeriveContenu (studio-cmd) et adaptateurs taches/etats-contenus.ts. « En calcul » et « Échec » contrôlés par tests unitaires ; la recette e2e contrôle « À jour pour R », « À rec…
 
 ### TR-EX-017
@@ -648,9 +716,21 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-05,DEC-07,DEC-15,DEC-18 · **Scénarios** : 017
 - **Test positif prescrit** : Valider manifeste contenant studio.transform.scale et studio.arch.ladder distincts ; alias ancien résolu.
 - **Test négatif prescrit** : Déclarer deux toolId identiques même si labels distincts : validation rejette sans écrasement de dictionnaire.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 16
+  - registre : mutation de la barre Architecture, Ctrl+Maj+F12, icône propre, acceptée par l'API et appliquée par le modèle ; distincte de la transformation Échelle — `packages/atelier-model/src/studio/architecture/echelle.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - géométrie dérivée : deux montants de section carrée, échelons au pas hauteur / (n + 1), emprise ; orientation suivie — `packages/atelier-model/src/studio/architecture/echelle.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - vue 3D : montants et échelons maillés sous le même identifiant, volume du maillage = volume de matière du métré — `packages/atelier-model/src/studio/architecture/echelle.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - métré : longueur cumulée des montants et des échelons, hauteur, volume ; nombre et pas des échelons dans le métré architectural — `packages/atelier-model/src/studio/architecture/echelle.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - propriétés : valeurs saisies modifiées par « Modifier l'élément architectural » (même identité), propriété BIM déclarée sur l'échelle — `packages/atelier-model/src/studio/architecture/echelle.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - plan : SVG et DXF tracent les montants et le contour des échelons sur le calque de l'échelle — `packages/atelier-model/src/studio/architecture/echelle.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - … et 10 autre(s) au registre
+- **Contre-preuve (contrôles négatifs exécutés)** : 5
+  - aucune valeur par défaut : champ absent, nul, négatif ou non entier refusé ; section qui ne laisse aucun échelon ; échelons qui se touchent ; orientation hors [0 ; 2π[ — `packages/atelier-model/src/studio/architecture/echelle.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - identifiant déjà pris, calque verrouillé, ouverture dans une échelle, changement de nature : refus, document inchangé — `packages/atelier-model/src/studio/architecture/echelle.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - « echelle » de l'Atelier (B.1-05) : transformation au commit courant ; avant 1a6f9b5, ambigu sans fiche, jamais choisi par défaut — `packages/atelier-model/src/studio/manifeste-outils.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - TR-EX-027 : formulaire de l'outil, aucune valeur proposée — `apps/web/e2e/studio-g2.mjs`, commit 2e1564d, 2026-10-26 06:24
+  - TR-EX-027 : enregistrée par le serveur avec les valeurs saisies (aucune ajoutée) — `apps/web/e2e/studio-g2.mjs`, commit 2e1564d, 2026-10-26 06:24
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-028
@@ -1031,9 +1111,15 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-12,DEC-11 · **Scénarios** : 013,021,036
 - **Test positif prescrit** : Réouvrir après coupure et distinguer confirmée/pendante/rejetée/conflit/preview abandonnée.
 - **Test négatif prescrit** : Réenvoyer file incompatible ou déjà confirmée : pas de doublon ni disparition sans état explicite.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 2
+  - EX-049 : un tracé commencé hors ligne est noté avec le brouillon conservé (prévisualisation en cours) — `apps/web/e2e/studio-hors-ligne.mjs`, commit 2e1564d, 2026-10-26 06:21
+  - EX-049 : « Compris » retire l'état de reprise (rien d'autre ne change) — `apps/web/e2e/studio-hors-ligne.mjs`, commit 2e1564d, 2026-10-26 06:21
+- **Contre-preuve (contrôles négatifs exécutés)** : 4
+  - EX-049 : à la reprise, « Prévisualisation abandonnée » est nommée ; le tracé n'a eu aucun effet (brouillon : un seul pas, aucune ligne) — `apps/web/e2e/studio-hors-ligne.mjs`, commit 2e1564d, 2026-10-26 06:21
+  - EX-049 : au retour du réseau, l'enveloppe refusée (B devenu lecteur) est « Rejetée », conservée avec son requestId et sa révision de base — `apps/web/e2e/studio-hors-ligne.mjs`, commit 2e1564d, 2026-10-26 06:21
+  - EX-049 : rien n'est écrit au serveur pour l'enveloppe rejetée — `apps/web/e2e/studio-hors-ligne.mjs`, commit 2e1564d, 2026-10-26 06:21
+  - EX-049 : après rechargement, l'enveloppe reste « Rejetée » avec le même requestId ; rien n'est renvoyé d'office — `apps/web/e2e/studio-hors-ligne.mjs`, commit 2e1564d, 2026-10-26 06:21
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-050
@@ -1562,9 +1648,13 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-16 · **Scénarios** : 028
 - **Test positif prescrit** : Qualifier export IFC séparément de l'import/édition/round-trip dans matrice par entité/version.
 - **Test négatif prescrit** : Export syntaxiquement valide utilisé pour affirmer round-trip/certification : conclusion rejetée faute preuve.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 3
+  - TR-EX-079 : lecture, consultation, édition, export et aller-retour évalués séparément pour chaque format ; chaque entrée rangée sous un format — `packages/atelier-model/src/studio/echanges/matrice-echanges.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - EX-079 aller-retour : profil exporté par un compte puis importé par un autre — ordre, raccourcis, favoris et liste personnelle relus à l'identique — `apps/api/src/routes/studio-profils-import.test.ts`, commit 2e1564d, 2026-10-26 06:26
+  - TR-EX-079 : capacités par sens affichées — IFC lu, consulté, édité, exporté, aller-retour ; STEP exporté seulement ; DWG rien — `apps/web/e2e/studio-echanges.mjs`, commit 2e1564d, 2026-10-26 06:25
+- **Contre-preuve (contrôles négatifs exécutés)** : 1
+  - TR-EX-079 [−] : un export syntaxiquement valide ne prouve pas un aller-retour — aller-retour déclaré sans lecture, sans export ou sans test refusé — `packages/atelier-model/src/studio/echanges/matrice-echanges.test.ts`, commit 2e1564d, 2026-10-26 06:14
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-080
@@ -1866,9 +1956,16 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-13 · **Scénarios** : 025,037
 - **Test positif prescrit** : Mesure cache froid/chaud sur appareil identifié avec build/GPU/réseau/répétitions/distribution.
 - **Test négatif prescrit** : Résultat SwiftShader ou renderer.render CPU annoncé GPU physique : conclusion refusée.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 4
+  - EX-097 — protocole de mesure reproductible — `packages/atelier-model/src/studio/mesures/mesures.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - statistiques : quantile au rang le plus proche, distribution, aberrants de Tukey signalés et conservés — `packages/atelier-model/src/studio/mesures/mesures.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - environnement complet : quatorze champs exigés, rendu logiciel SwiftShader reconnu, GPU « non évalué » — `packages/atelier-model/src/studio/mesures/mesures.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - TR-EX-097 : protocole de mesure complet — matériel, navigateur et version, mémoire, GPU / pilote (moteur WebGL non masqué), écran, caches froid et chaud, réseau, build, commit, répétitions, opération… — `apps/web/e2e/studio-g4.mjs`, commit 2e1564d, 2026-10-26 06:23
+- **Contre-preuve (contrôles négatifs exécutés)** : 3
+  - champ manquant (GPU, caches, répétitions, commit) : protocole incomplet, toute conclusion refusée — `packages/atelier-model/src/studio/mesures/mesures.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - cas négatif : un résultat SwiftShader ou une durée renderer.render() présentés comme coût GPU sont refusés — `packages/atelier-model/src/studio/mesures/mesures.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - TR-EX-097 (cas négatif) : conclusion GPU tirée de renderer.render() refusée ; sous rendu logiciel, tout profil GPU refusé (« non évalué ») — `apps/web/e2e/studio-g4.mjs`, commit 2e1564d, 2026-10-26 06:23
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-098
@@ -1931,9 +2028,17 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-13 · **Scénarios** : 011,018,036,037
 - **Test positif prescrit** : Changement worker/Registry déclenche tests exactitude/historique/droits/persistance/profils concernés.
 - **Test négatif prescrit** : Skip des tests pertinents ou assertion affaiblie pour verdir CI : preuve insuffisante.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 2
+  - EX-101 — tests pertinents d'une modification de Worker ou du registre — `apps/api/src/testing/regressions-pertinentes.test.ts`, commit 2e1564d, 2026-10-26 06:26
+  - cas positif : modifier un Worker ou le registre exige des tests d'exactitude, d'historique, de permissions, de persistance et de profils — `apps/api/src/testing/regressions-pertinentes.test.ts`, commit 2e1564d, 2026-10-26 06:26
+- **Contre-preuve (contrôles négatifs exécutés)** : 6
+  - table contre le dépôt : chaque test listé existe, n'est pas sauté et tourne en CI ; chaque Worker et chaque fichier du registre appartient à une zone — `apps/api/src/testing/regressions-pertinentes.test.ts`, commit 2e1564d, 2026-10-26 06:26
+  - EX-101 — affaiblissement d'une assertion refusé — `apps/api/src/testing/regressions-pertinentes.test.ts`, commit 2e1564d, 2026-10-26 06:26
+  - cas négatif : matcher strict remplacé par un plus faible sur le même sujet (toEqual → toBeDefined, toBe → toBeTruthy) : refusé — `apps/api/src/testing/regressions-pertinentes.test.ts`, commit 2e1564d, 2026-10-26 06:26
+  - cas négatif : skip / only ajoutés, condition rendue toujours vraie, précision abaissée, test pertinent supprimé : refusés — `apps/api/src/testing/regressions-pertinentes.test.ts`, commit 2e1564d, 2026-10-26 06:26
+  - assertions retirées d'un test : refusé, sauf dérogation écrite dans un commit (rapportée) ; un renforcement passe — `apps/api/src/testing/regressions-pertinentes.test.ts`, commit 2e1564d, 2026-10-26 06:26
+  - diff réel de la branche courante (si la base main est connue) : aucun affaiblissement d'assertion — `apps/api/src/testing/regressions-pertinentes.test.ts`, commit 2e1564d, 2026-10-26 06:26
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-102
@@ -2026,9 +2131,14 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-12,DEC-11 · **Scénarios** : 014,015
 - **Test positif prescrit** : Capturer R12, calcul booléen en worker, vérifier droits/contexte puis confirmer transaction et invalider scène.
 - **Test négatif prescrit** : Réponse calcul R12 après modification R13 ou droits révoqués : aucun engagement courant.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 2
+  - IF-003 [+] capture R12 → calcul (noyau exact) → engagement sur R12 : révision R13 engagée, maillage 3D et quantités invalidés, solide exact présent dans la scène — `apps/api/src/routes/studio-g2.preuves-g2.test.ts`, commit 2e1564d, 2026-10-26 06:26
+  - de bout en bout : capture (révision 1) → tâche → résultat exact → aperçu confirmé → commande d'engagement → document avec le solide exact — `apps/web/src/modules/studio/exact/booleen-session.test.ts`, commit d87a82e, 2026-10-25 21:11
+- **Contre-preuve (contrôles négatifs exécutés)** : 3
+  - IF-003 [−] résultat calculé sur R12 rendu après une modification R13, ou après retrait des droits : aucun engagement courant, rien n'est écrit — `apps/api/src/routes/studio-g2.preuves-g2.test.ts`, commit 2e1564d, 2026-10-26 06:26
+  - le brouillon change pendant le calcul : le résultat revient marqué périmé et n'est jamais engagé dans le modèle courant — `apps/web/src/modules/studio/exact/booleen-session.test.ts`, commit d87a82e, 2026-10-25 21:11
+  - résultat prêt puis brouillon modifié avant l'engagement : affiché périmé, engagement refusé — `apps/web/src/modules/studio/exact/booleen-session.test.ts`, commit d87a82e, 2026-10-25 21:11
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-IF-004
@@ -2073,9 +2183,17 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-03,DEC-18 · **Scénarios** : 012,013,035
 - **Test positif prescrit** : Enveloppe requestId/toolId/contractVersion/scope/baseRevision/targets/opération/paramètres/mode est validée avec identité de session serveur.
 - **Test négatif prescrit** : actorId forgé, scope interprojet ou répétition incompatible : refus atomique, aucune permission créée.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 6
+  - IF-006 [+] enveloppe requestId / toolId / contractVersion / scope / baseRevision / targets / opération / paramètres / mode validée ; auteur = session ; essai sans écriture puis application — `apps/api/src/routes/studio-g2.preuves-g2.test.ts`, commit 2e1564d, 2026-10-26 06:26
+  - A.5-01 — écritures du document Studio par le seul contrat de commandes — `apps/api/src/testing/studio-ecritures-architecture.test.ts`, commit 4643cfa, 2026-10-19 12:39
+  - révisions insérées seulement par l'orchestration des commandes (et la restauration signée, telle quelle) — `apps/api/src/testing/studio-ecritures-architecture.test.ts`, commit 4643cfa, 2026-10-19 12:39
+  - seule l'orchestration des commandes avance la tête d'une variante — `apps/api/src/testing/studio-ecritures-architecture.test.ts`, commit 4643cfa, 2026-10-19 12:39
+  - TR-IF-006 : mode essai — enveloppe complète validée, effets calculés (l1 créée), rien n'est écrit (tête inchangée) — `apps/web/e2e/studio-g2.mjs`, commit 2e1564d, 2026-10-26 06:24
+  - TR-IF-006 : mode appliquer — révision écrite, auteur = la session — `apps/web/e2e/studio-g2.mjs`, commit 2e1564d, 2026-10-26 06:24
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - IF-006 [−] portée déclarée d'un autre projet, cible non touchée, opération fausse, actorId forgé, lecteur en essai : refus atomique, aucune écriture ni permission — `apps/api/src/routes/studio-g2.preuves-g2.test.ts`, commit 2e1564d, 2026-10-26 06:26
+  - TR-IF-006 : portée déclarée différente de l'adresse : 400 scope_mismatch, rien n'est écrit — `apps/web/e2e/studio-g2.mjs`, commit 2e1564d, 2026-10-26 06:24
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-IF-007
@@ -2396,9 +2514,20 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-01,DEC-02,DEC-03,DEC-12 · **Scénarios** : 007
 - **Test positif prescrit** : Diviser face portant cote : correspondance topologique démontrée ou cote conservée à résoudre.
 - **Test négatif prescrit** : Deux faces voisines plausibles : aucun rattachement automatique par seule proximité.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 11
+  - création : hauteur (base / sommet), largeur et profondeur (faces latérales opposées), valeurs dérivées ; document valide — `packages/atelier-model/src/studio/objets-3d/cotes-faces.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - pousser / tirer la face référencée : même cote, même face, valeur suivie ; déplacer, pivoter (z et basculement) : inchangée — `packages/atelier-model/src/studio/objets-3d/cotes-faces.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - diviser une autre face : les faces latérales suivantes sont renumérotées et la cote réattachée par preuve (même plan, même arête) — `packages/atelier-model/src/studio/objets-3d/cotes-faces.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - résolution explicite : la même commande, sur la cote « à résoudre », la rattache aux faces choisies par la personne — `packages/atelier-model/src/studio/objets-3d/cotes-faces.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - effets de la commande : la cote est une référence du solide ; la contrainte « à résoudre » apparaît quand la face divisée la portait ; copie indépendante : références reportées — `packages/atelier-model/src/studio/objets-3d/cotes-faces.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - diviser la face qui porte la cote : deux faces voisines coplanaires plausibles — la cote est conservée, marquée « à résoudre », valeur non évaluée, faces inchangées — `packages/atelier-model/src/studio/objets-3d/cotes-faces.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - … et 5 autre(s) au registre
+- **Contre-preuve (contrôles négatifs exécutés)** : 4
+  - création refusée : faces non parallèles, face inexistante, solide absent, état « à résoudre » saisi, faces identiques, champ inconnu — `packages/atelier-model/src/studio/objets-3d/cotes-faces.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - INV-013 : les cotes de face sont déclarées non couvertes par l'IFC, jamais exportées en silence — `packages/atelier-model/src/studio/echanges/rapport-fidelite.test.ts`, commit 2e1564d, 2026-10-26 06:14
+  - TR-INV-013 (règle d'or) : Cote de face 3D (Maj+F12) active l'outil ; aucune face proposée — `apps/web/e2e/studio-g2.mjs`, commit 2e1564d, 2026-10-26 06:24
+  - TR-INV-013 : face cotée divisée — deux moitiés plausibles, aucune choisie : cote conservée « à résoudre » — `apps/web/e2e/studio-g2.mjs`, commit 2e1564d, 2026-10-26 06:24
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-INV-014
