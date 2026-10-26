@@ -211,6 +211,9 @@ function VuesCoupe({ projectId, studyId, variantId, vues, ecriture, surChange }:
           <span translate="no">{`z = ${v.definition.niveau.z} m · 1:${v.definition.echelle} · ${revisionCourte(v.revisionId)}`}</span>{" "}
           <span data-studio-vue-coupe-actualite>{v.freshness === "perimee" ? "Périmée : la variante a avancé depuis" : "À jour"}</span>
           {v.vue && <span translate="no" title={v.vue.empreinteSection}>{` · ${v.vue.coupe.sources.length} solide(s) coupé(s) · ${empreinteAbregee(v.vue.empreinteSection)}`}</span>}
+          {/* Section incomplète (AGENTS.md L9) : les solides non coupés sont nommés, comme sur la page publiée. */}
+          {v.vue && (v.vue.coupe.exactsNonCoupes?.length ?? 0) > 0 && <p role="note" data-studio-vue-coupe-omis={v.vue.coupe.exactsNonCoupes!.join(" ")}>
+            {`Section incomplète : ${v.vue.coupe.exactsNonCoupes!.length} solide(s) non coupé(s), absents de la page : `}<span translate="no">{v.vue.coupe.exactsNonCoupes!.join(", ")}</span></p>}
           {v.error && <span role="alert">{v.error}</span>}
           {v.definition.annotations.length > 0 && <ul>{v.definition.annotations.map((a) => <li key={a.id} translate="no">{a.texte}</li>)}</ul>}
           {ecriture && <div className="studio-dossier-actions">

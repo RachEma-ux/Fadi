@@ -13578,5 +13578,6 @@
 "Tests des sources et des modèles externes ; recette studio-rend.mjs (provenance exportée).": "Source and external model tests; studio-rend.mjs acceptance test (provenance exported).",
 "Référence, auteur, discipline, version, unité, transformation, repère source et restrictions d’utilisation déclarés par l’émetteur ; fichier relu par le serveur dans un document à part, jamais dans la variante ; comparaison par identifiant (GlobalId) avec la révision courante ; acceptation ou refus réservés au propriétaire et aux approbateurs, journalisés, un refus avec motif ; accepté, le modèle s’ajoute au brouillon seulement par une action explicite ; non repris par l’archive du projet.": "Reference, author, discipline, version, unit, transformation, source frame and usage restrictions declared by the sender; file re-read by the server into a separate document, never into the variant; comparison by identifier (GlobalId) with the current revision; acceptance or refusal reserved for the owner and approvers, logged, a refusal with a reason; once accepted, the model is added to the draft only by an explicit action; not carried by the project archive.",
 "studio-provenance/1": "studio-provenance/1",
-"studio-provenance-modele/1": "studio-provenance-modele/1"
+"studio-provenance-modele/1": "studio-provenance-modele/1",
+"Section incomplète : {0} solide(s) non coupé(s), absents de la page : ": "Incomplete section: {0} uncut solid(s), missing from the page: "
 }

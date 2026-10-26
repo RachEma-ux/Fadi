@@ -56,7 +56,7 @@ import { lockProject, type Querier } from "./step-rows.js";
 import { assertAccess, lockedAccess, notFound, StudioRequestError, studioArchivedRefusal, studioFileSegment, studioIdentifierSchema, studyOf } from "./studio-commands.js";
 import { delegationEmployable, delegationsUtilisables, journalDelegation } from "./studio-delegations.js";
 import {
-  ACTIONS_BLOQUEES_PAR_OBSERVATION, controlerObservationsBloquantes, type ManifesteControles, type ManifesteDossier,
+  ACTIONS_BLOQUEES_PAR_OBSERVATION, controlerObservationsBloquantes, perimetreControle, type ManifesteControles, type ManifesteDossier,
   actualiteDe, actualiteParEmpreinte, actualiteVue, besoinTransition, CacheRegeneration, cleRegeneration, type ContenuPublication, contenuDe, formatsDuContenu, type ControleDocuments, canonicalJson, construireManifeste, controlerApprobation, controlerEnsembleExamine, controlerTransition,
   diffusionPlusRecente, dimensionsDe, ecartsManifeste, memeContenu, empreinteManifeste, sha256, statutCombine, STUDIO_PUBLICATION_ACTIONS,
   type Actualite, type Dimensions, type EcartManifeste, type ManifesteDocument, type ManifesteMeta, type ManifesteSource, type StudioPublicationTransition,
@@ -303,7 +303,7 @@ async function views(q: Querier, access: AccessibleProject, actorId: string, row
   const regenerated = await regeneratedDocuments(q, access, rows, states, withEvents);
   // Lecture exacte : contrôles relus maintenant (IF-009), comparés au manifeste figé ; une liste ne les vérifie pas.
   const controlesCourants = new Map<string, ManifesteControles | null>();
-  if (withEvents) for (const row of rows) if (row.manifest) controlesCourants.set(row.id, await controlesDe(q, row.studyId, row.manifest.sources, (row.manifest.controles?.regles ?? []).some((r) => r.type === "metre")));
+  if (withEvents) for (const row of rows) if (row.manifest) controlesCourants.set(row.id, await controlesDe(q, row.studyId, perimetreControle(row.manifest.sources, row.manifest.dossier), (row.manifest.controles?.regles ?? []).some((r) => r.type === "metre")));
   const delegables = await delegationsUtilisables(q, actorId, rows);
   return rows.map((row) => {
     const variant = states.get(row.variantId);
@@ -380,11 +380,13 @@ export interface ParamsContenu {
   dossierId?: string | undefined;
   presentations?: Readonly<Record<string, StudioPresentationPiece>> | undefined;
   usage?: string | null | undefined;
+  /** Présentations relues d'un manifeste figé : réconciliées avec les pièces actuelles du dossier (pièce retirée écartée). */
+  reconcilier?: boolean | undefined;
 }
-/** Paramètres relus d'un manifeste figé (les présentations sont celles de ses pièces). */
+/** Paramètres relus d'un manifeste figé (les présentations sont celles de ses pièces, réconciliées avec le dossier actuel). */
 export function paramsDe(m: StudioPublicationManifest | null): ParamsContenu {
   return {
-    contenu: contenuDe(m), dossierId: m?.dossier?.id, usage: m?.usage ?? null,
+    contenu: contenuDe(m), dossierId: m?.dossier?.id, usage: m?.usage ?? null, reconcilier: true,
     presentations: m?.dossier ? Object.fromEntries(m.dossier.pieces.map((p) => [p.documentId, p.presentation])) : undefined,
   };
 }
@@ -398,7 +400,7 @@ async function fichiersDe(q: Querier, study: Study, variantId: string, revision:
   if (params.contenu !== "dossier-conception") {
     return { files: studioPackageFiles(validateStudioDocument(revision.document), revision.id, meta, `${study.id}|${variantId}`, params.contenu), dossier: null, metreJoint: false };
   }
-  const d = await dossierPourPublication(q, { code: meta.projectCode, name: meta.projectName }, study, params.dossierId!, params.presentations ?? {});
+  const d = await dossierPourPublication(q, { code: meta.projectCode, name: meta.projectName }, study, params.dossierId!, params.presentations ?? {}, { reconcilier: params.reconcilier === true });
   return { files: d.fichiers, dossier: d.manifeste, metreJoint: d.metreJoint };
 }
 
@@ -407,7 +409,7 @@ async function fichiersDe(q: Querier, study: Study, variantId: string, revision:
  * joint un métré), dernier contrôle enregistré de chaque révision source (exécution et conclusion normative, EX-068),
  * observations bloquantes des variantes sources avec leur résolution.
  */
-async function controlesDe(q: Querier, studyId: string, sources: readonly ManifesteSource[], metreJoint: boolean): Promise<ManifesteControles> {
+async function controlesDe(q: Querier, studyId: string, sources: readonly { variantId: string; revisionId: string }[], metreJoint: boolean): Promise<ManifesteControles> {
   const regles: ManifesteControles["regles"] = [];
   const [jeu] = await q.select({ id: studioRequirementSets.id, version: studioRequirementSets.version }).from(studioRequirementSets)
     .where(eq(studioRequirementSets.studyId, studyId)).orderBy(desc(studioRequirementSets.version)).limit(1);
@@ -455,7 +457,8 @@ async function construireDossier(q: Querier, access: ProjetNoms, study: Study, v
   const { files, dossier, metreJoint } = await fichiersDe(q, study, variant.id, revision, meta, params);
   const documents = manifestDocumentsOf(files);
   if (contenu !== "dossier-conception") regenerationCache.set(regenerationKey(documentHash, meta, study.id, variant.id, contenu), documents);
-  const controles = await controlesDe(q, study.id, sources, metreJoint);
+  // IF-009 : périmètre de contrôle = toutes les sources de l'ensemble, pièces et métré du dossier compris.
+  const controles = await controlesDe(q, study.id, perimetreControle(sources, dossier), metreJoint);
   const manifest = construireManifeste(sources, meta, documents, contenu, { usage: params.usage ?? null, controles, dossier });
   return { manifest, manifestHash: empreinteManifeste(manifest), documentHash, meta, files };
 }

@@ -185,7 +185,23 @@ export interface ManifesteDossier {
   id: string;
   titre: string;
   empreinte: string;
-  pieces: { ordre: number; documentId: string; nature: "feuille" | "vue-coupe"; origine: "dessin-2d" | "derive-maquette"; presentation: "document-independant" | "extrait-synchronise"; sources: { variantId: string; revisionId: string; documentHash: string }[]; empreinte: string }[];
+  pieces: { ordre: number; documentId: string; nature: "feuille" | "vue-coupe"; origine: "dessin-2d" | "derive-maquette"; presentation: "document-independant" | "extrait-synchronise"; sources: { variantId: string; revisionId: string; documentHash: string }[]; empreinte: string;
+    /** Vue de coupe incomplète : solides non coupés, absents de la page (absent : section complète). */
+    omis?: string[] }[];
+  /** Source du métré joint (absent : aucun métré) : elle entre dans le périmètre de contrôle (IF-009). */
+  metre?: { variantId: string; revisionId: string; documentHash: string };
+}
+/**
+ * Périmètre de contrôle d'un ensemble publié (IF-009) : sources du manifeste, plus chaque source des pièces du dossier
+ * de conception et de son métré (feuille, vue de coupe ou quantités d'une autre variante comprises), sans doublon.
+ */
+export function perimetreControle(sources: readonly { variantId: string; revisionId: string }[], dossier: Pick<ManifesteDossier, "pieces" | "metre"> | null | undefined): { variantId: string; revisionId: string }[] {
+  const out = new Map<string, { variantId: string; revisionId: string }>();
+  const ajouter = (s: { variantId: string; revisionId: string }) => { const k = `${s.variantId}|${s.revisionId}`; if (!out.has(k)) out.set(k, { variantId: s.variantId, revisionId: s.revisionId }); };
+  sources.forEach(ajouter);
+  for (const p of dossier?.pieces ?? []) p.sources.forEach(ajouter);
+  if (dossier?.metre) ajouter(dossier.metre);
+  return [...out.values()];
 }
 export interface ManifestePublication {
   schema: "studio-publication-manifest/1";

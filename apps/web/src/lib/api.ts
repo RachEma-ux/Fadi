@@ -1310,7 +1310,7 @@ export interface StudioVueCoupeDefinitionSaisie {
 export interface StudioSectionView {
   id: string; studyId: string; variantId: string; revisionId: string; headRevisionId: string; freshness: "a-jour" | "perimee";
   definition: StudioVueCoupeDefinitionSaisie;
-  vue: { schema: "studio-vue-coupe/1"; empreinteSection: string; empreinte: string; horsCadrage: number; coupe: { segments: unknown[]; sources: { id: string; segments: number }[] } } | null;
+  vue: { schema: "studio-vue-coupe/1"; empreinteSection: string; empreinte: string; horsCadrage: number; coupe: { segments: unknown[]; sources: { id: string; segments: number }[]; exactsNonCoupes?: string[] } } | null;
   error: string | null; createdBy: string; createdAt: string; updatedAt: string;
 }
 export interface StudioDossierInput {

@@ -457,18 +457,32 @@ function jsonDossier(dossier: StudioDossierConception, vuesCoupe: readonly Studi
  * livrables contrôlées (feuilles, vues de coupe ; présentation déclarée, synchronisation fondée seulement), sources.
  * Refus 409 `piece_refusee` (codes du modèle) si une pièce est présentée pour ce qu'elle n'est pas.
  */
-export async function dossierPourPublication(q: Querier, projet: Pick<AccessibleProject, "code" | "name">, study: Study, dossierId: string, presentations: Readonly<Record<string, StudioPresentationPiece>> = {}): Promise<{
+export async function dossierPourPublication(q: Querier, projet: Pick<AccessibleProject, "code" | "name">, study: Study, dossierId: string, presentationsDeclarees: Readonly<Record<string, StudioPresentationPiece>> = {}, options: { reconcilier?: boolean } = {}): Promise<{
   manifeste: ManifesteDossier; fichiers: { format: "pdf" | "json"; fileName: string; mime: string; body: Buffer }[]; metreJoint: boolean;
 }> {
   const row = await dossierRow(q, study.id, dossierId);
   const { dossier, pdf, vuesCoupe } = await assembler(q, projet, study, row);
-  const inconnues = Object.keys(presentations).filter((id) => !row.sheetIds.includes(id) && !(row.sectionViewIds ?? []).includes(id));
+  const presente = (id: string) => row.sheetIds.includes(id) || (row.sectionViewIds ?? []).includes(id);
+  // Présentations relues d'un manifeste figé (`reconcilier`) : celles d'une pièce retirée depuis du dossier sont
+  // écartées (la publication reste lisible et s'actualise ; le manifeste recalculé diffère, donc « à actualiser »).
+  // Présentations saisies (création) : une pièce absente du dossier est refusée.
+  const presentations = options.reconcilier
+    ? Object.fromEntries(Object.entries(presentationsDeclarees).filter(([id]) => presente(id))) : presentationsDeclarees;
+  const inconnues = Object.keys(presentations).filter((id) => !presente(id));
   if (inconnues.length) throw new StudioRequestError(400, { error: "invalid_input", code: "piece_inconnue", pieces: inconnues, message: "Présentation déclarée pour une pièce absente du dossier." });
   const r = controlerPiecesLivrables(piecesDuDossier(dossier, vuesCoupe, presentations));
   if ("refus" in r) throw new StudioRequestError(409, { error: "piece_refusee", refus: r.refus, message: "Une pièce du dossier ne peut pas être publiée telle qu'elle est présentée." });
   const base = `${studioFileSegment(study.name, "etude")}-dossier-${studioFileSegment(row.title, "dossier")}`;
   return {
-    manifeste: { id: row.id, titre: dossier.titre, empreinte: dossier.empreinte, pieces: r.pieces.map((p) => ({ ordre: p.ordre, documentId: p.documentId, nature: p.nature, origine: p.origine, presentation: p.presentation, sources: p.sources, empreinte: p.empreinte })) },
+    manifeste: {
+      id: row.id, titre: dossier.titre, empreinte: dossier.empreinte,
+      pieces: r.pieces.map((p) => {
+        // Vue de coupe incomplète : les solides non coupés sont nommés au manifeste (et sur la page), jamais tus.
+        const omis = p.nature === "vue-coupe" ? (vuesCoupe.find((v) => v.id === p.documentId)?.coupe.exactsNonCoupes ?? []) : [];
+        return { ordre: p.ordre, documentId: p.documentId, nature: p.nature, origine: p.origine, presentation: p.presentation, sources: p.sources, empreinte: p.empreinte, ...(omis.length ? { omis: [...omis] } : {}) };
+      }),
+      ...(dossier.metre ? { metre: { variantId: dossier.metre.source.variantId, revisionId: dossier.metre.source.revisionId, documentHash: dossier.metre.source.documentHash } } : {}),
+    },
     fichiers: [
       { format: "pdf", fileName: `${base}.pdf`, mime: "application/pdf", body: Buffer.from(pdf()) },
       { format: "json", fileName: `${base}.json`, mime: "application/json; charset=utf-8", body: jsonDossier(dossier, vuesCoupe) },

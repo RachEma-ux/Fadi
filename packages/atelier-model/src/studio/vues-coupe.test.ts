@@ -5,7 +5,8 @@
  */
 import { describe, expect, it } from "vitest";
 import { applyStudioCommands, newStudioDocument, StudioValidationError, type StudioCommand, type StudioDocument } from "./document-2d.js";
-import { actualiteVueCoupe, annoterVueCoupe, creerVueCoupe, rebaserVueCoupe, validerVueCoupe, type StudioVueCoupeDefinition } from "./vues-coupe.js";
+import { actualiteVueCoupe, annoterVueCoupe, creerVueCoupe, pageVueCoupe, rebaserVueCoupe, validerVueCoupe, type StudioVueCoupeDefinition } from "./vues-coupe.js";
+import { resultatSynthetique } from "./exacts.fixtures.js";
 
 const avec = (doc: StudioDocument, ...cs: unknown[]) => applyStudioCommands(doc, cs.map((c) => c as StudioCommand));
 const R12 = (): StudioDocument => avec(newStudioDocument("coupe"),
@@ -72,5 +73,36 @@ describe("EX-075 — vue de coupe enregistrée", () => {
     expect(() => validerVueCoupe(def({ echelle: 75 as never }))).toThrow(StudioValidationError);
     expect(() => validerVueCoupe(def({ niveau: { repere: "local-2d" as never, z: 1 } }))).toThrow(StudioValidationError);
     expect(() => validerVueCoupe(def({ styles: { trait: "epais" as never, hachure: "aucune" } }))).toThrow(StudioValidationError);
+  });
+});
+
+describe("EX-075 — page d'une vue de coupe incomplète (correctif revue PR #330, AGENTS.md L9)", () => {
+  // Solide exact au maillage synthétique (tétraèdre unité, base à z = 0) : à z = 0 la base est dans le plan, la section
+  // n'est pas dérivable (exactsNonCoupes) ; à z = 0,5 il est coupé.
+  const avecExact = (): StudioDocument => avec(newStudioDocument("omis"),
+    { toolId: "studio.solide.boite", params: { id: "A", type: "box", placement: { origin: { x: 0, y: 0, z: 0 }, rotation: 0 }, width: 2, depth: 2, height: 2 } },
+    { toolId: "studio.solide.boite", params: { id: "B", type: "box", placement: { origin: { x: 1, y: 0, z: 0 }, rotation: 0 }, width: 2, depth: 2, height: 2 } },
+    { toolId: "studio.solide.booleen", params: { id: "E", operation: "union", operandes: ["A", "B"], resultat: resultatSynthetique(12) } },
+  );
+  const textes = (pg: ReturnType<typeof pageVueCoupe>) => pg.primitives.flatMap((p) => (p.type === "texte" ? [p] : []));
+
+  it("EX-075 [−] solide non coupé (plan sur sa face horizontale) : la page le nomme « section incomplète » et rend la liste des omis, jamais une page d'apparence complète", () => {
+    const vue = creerVueCoupe("vc", def({ niveau: { repere: "local-3d", z: 0 } }), avecExact(), src());
+    expect(vue.coupe.exactsNonCoupes).toEqual(["E"]);
+    const page = pageVueCoupe(vue);
+    expect(page.omis).toEqual(["E"]);
+    const mention = textes(page).find((t) => t.objetId === "solides-omis");
+    expect(mention?.texte).toMatch(/^Section incomplète : 1 solide\(s\) non coupé\(s\).*: E$/);
+    // L'omission entre dans l'empreinte de la section : une page complète et une page incomplète ne se confondent pas.
+    const coupee = creerVueCoupe("vc", def({ niveau: { repere: "local-3d", z: 0.5 } }), avecExact(), src());
+    expect(coupee.empreinteSection).not.toBe(vue.empreinteSection);
+  });
+
+  it("EX-075 [+] section complète : aucune mention, liste des omis vide ; un solide omis d'un calque masqué par la vue n'est pas cité", () => {
+    const coupee = creerVueCoupe("vc", def({ niveau: { repere: "local-3d", z: 0.5 } }), avecExact(), src());
+    const page = pageVueCoupe(coupee);
+    expect([page.omis, textes(page).some((t) => t.objetId === "solides-omis")]).toEqual([[], false]);
+    const masque = creerVueCoupe("vc", def({ niveau: { repere: "local-3d", z: 0 }, visibilite: { calques: ["struct"] } }), avecExact(), src());
+    expect([masque.coupe.exactsNonCoupes, pageVueCoupe(masque).omis]).toEqual([[], []]);
   });
 });
