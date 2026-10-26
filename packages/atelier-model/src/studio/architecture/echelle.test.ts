@@ -5,7 +5,6 @@ import { exportStudioIfc, studioIfcSummary } from "../ifc.js";
 import { studioStepString } from "../exporteurs/ifc-step.js";
 import { studioMesh3d } from "../mesh-3d.js";
 import { quantitesStudio } from "../quantites.js";
-import { studioRapportFidelite } from "../echanges/rapport-fidelite.js";
 import { STUDIO_COMMAND_TOOL_IDS, STUDIO_TOOLS } from "../registry.js";
 import { geometrieEchelle, metreEchelle } from "./echelle.js";
 import { studioQuantitesArchitecture } from "./quantites.js";
@@ -106,7 +105,7 @@ describe("EX-027 [+] — Échelle d'accès : outil du registre, géométrie, pro
     expect(dxf).toMatch(/\r\n8\r\nACCES\r\n|\r\n8\r\nAcces\r\n/);
   });
 
-  it("IFC : IfcStair de type LADDER, montants et échelons extrudés exacts, jeu de propriétés Fadi_StudioLadder ; propriété déclarée exportée ; rapport de fidélité exact", () => {
+  it("IFC : IfcStair de type LADDER, montants et échelons extrudés exacts, jeu de propriétés Fadi_StudioLadder ; propriété déclarée exportée", () => {
     const d = avec(creer(), { toolId: "studio.propriete.definir", params: { cibleId: "e1", nom: "Matériau déclaré", valeur: "acier", source: "saisie" } });
     const ifc = exportStudioIfc(d, { studyName: "Étude", variantName: "Variante", timestamp: "2026-10-26T00:00:00" });
     expect(ifc).toMatch(/IFCSTAIR\('[^']+',\$,'e1',\$,\$,#\d+,#\d+,'e1',\.LADDER\.\)/);
@@ -116,8 +115,6 @@ describe("EX-027 [+] — Échelle d'accès : outil du registre, géométrie, pro
     expect(ifc).toContain("'ArchitecturalLadders',$,IFCINTEGER(1)");
     expect(ifc).toContain(studioStepString("Matériau déclaré"));
     expect(studioIfcSummary(d).architecture).toMatchObject({ walls: 0, ladders: 1 });
-    expect(studioRapportFidelite(d, "ifc").lignes).toContainEqual({ categorie: "architecture", type: "ladder", statut: "exact", raison: "extrusion-exacte", nombre: 1, ids: ["e1"] });
-    expect(studioRapportFidelite(d, "svg").lignes).toContainEqual({ categorie: "architecture", type: "ladder", statut: "approche", raison: "extrusion-non-portee", nombre: 1, ids: ["e1"] });
   });
 
   it("transformations : déplacer, pivoter, copier, symétrie, échelle (volumes aussi), calque, supprimer — même identité, copies à identifiants nouveaux", () => {

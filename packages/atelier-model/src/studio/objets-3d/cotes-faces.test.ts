@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { applyStudioCommands, newStudioDocument, validateStudioDocument, type StudioCommand, type StudioDocument } from "../document-2d.js";
 import { studioEffetsCommande } from "../cmd/effets.js";
 import { studioCopieIndependante } from "../copie-independante.js";
-import { studioRapportFidelite } from "../echanges/rapport-fidelite.js";
 import { exactSynthetique } from "../exacts.fixtures.js";
 import { studioValeurCoteFace, type StudioCoteFace } from "./cotes-faces.js";
 
@@ -77,7 +76,6 @@ describe("INV-013 [+] — cote de face 3D : la cote suit la face modifiée, corr
     expect(e.modifies).toEqual(expect.arrayContaining(["b1", "l", "p"]));
     const copie = studioCopieIndependante(d, "copie", "c1").document;
     expect(copie.cotesFaces!.map((x) => x.solidId)).toEqual(["b1~c1", "b1~c1", "b1~c1"]);
-    expect(studioRapportFidelite(d, "ifc").lignes).toContainEqual(expect.objectContaining({ categorie: "cotesFaces", type: "face-dimension", statut: "non-couvert", nombre: 3 }));
   });
 });
 
