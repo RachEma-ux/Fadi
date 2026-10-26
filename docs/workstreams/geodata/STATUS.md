@@ -72,6 +72,11 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   (empreinte attendue = empreinte réelle pour chaque fiche, test), retraits déclarés (test), `GET /version/donnees`
   (test). En local sur l'API construite : 1er démarrage 14 s (2 versions préparées et publiées, 2 retraits, 53 fiches
   déjà en base), 2e démarrage < 1 s (rien refait). CI : installation de Chromium bornée (3 × 10 min).
+- Mini-carte et impression (lot G, D-GD-27) : contrat `MoteurCarte.afficherMiniCarte` / `canevasMiniCarte`, seconde carte
+  MapLibre dans `moteur-maplibre.ts`, encart dans `composerPng`, `ouvrirFenetreImpression` (`export-png.ts`), boutons
+  et raccourcis (Alt+M, Alt+I) dans `BarreOutilsCarte.tsx` et `PageGeoData.tsx`. Recette `geodata.mjs` en local : 106
+  contrôles conformes dont 8 du lot G (mini-carte : Alt+M, bouton, placement à droite du panneau, clic ; impression :
+  refus d'une carte non enregistrée, Alt+I sur une carte enregistrée → fenêtre avec l'image autorisée, 1 312 px).
 - Arbre d'indicateurs (lot F, D-GD-26) : `dimensions.ts` (`arbreIndicateurs`, `normaliserRecherche` ; `arbre.test.ts`, 3
   tests), `panneaux/consultation.tsx` (`ArbreIndicateurs`). Vérifié sur la fiche réelle des communes du HCP : 844
   indicateurs → 9 thèmes, 59 familles ; « chomage » → Taux de chômage, « age logement » → 3 familles « Âge du

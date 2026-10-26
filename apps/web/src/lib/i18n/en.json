@@ -14147,5 +14147,14 @@
 "{0} famille(s) trouvée(s)": "{0} family(ies) found",
 "Aucun indicateur ne correspond.": "No indicator matches.",
 "{0} thème(s)": "{0} theme(s)",
-"{0} déclinaisons": "{0} breakdowns"
+"{0} déclinaisons": "{0} breakdowns",
+"Masquer la mini-carte de situation (Alt+M)": "Hide the locator map (Alt+M)",
+"Afficher la mini-carte de situation (Alt+M)": "Show the locator map (Alt+M)",
+"Imprimer la carte (Alt+I)": "Print the map (Alt+I)",
+"Carte de situation : touchez pour recentrer la carte": "Locator map: tap to recentre the map",
+"Carte de situation": "Locator map",
+"Mini-carte masquée": "Locator map hidden",
+"Mini-carte affichée": "Locator map shown",
+"Enregistrez la carte pour l'imprimer : l'impression suit les mêmes droits que l'export.": "Save the map to print it: printing follows the same rights as export.",
+"Impression de la carte en préparation.": "Preparing the map for printing."
 }

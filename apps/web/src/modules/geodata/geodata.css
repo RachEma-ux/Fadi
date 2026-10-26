@@ -162,3 +162,8 @@
 .geodata-page .gd-arbre-famille{display:flex;flex-wrap:wrap;gap:2px 8px;width:100%;text-align:left;background:none;border:1px solid transparent;border-radius:4px;padding:4px 6px;cursor:pointer}
 .geodata-page .gd-arbre-famille:hover,.geodata-page .gd-arbre-famille:focus-visible{border-color:#29434a}
 .geodata-page .gd-arbre-famille[aria-pressed="true"]{background:#e3eeea;border-color:#29434a;font-weight:600}
+/* Lot G (D-GD-27) : mini-carte de situation, en bas à gauche de la carte, au-dessus de l'échelle. */
+.geodata-page .gd-mini-carte{position:absolute;left:10px;bottom:34px;width:190px;height:140px;z-index:4;border:2px solid #ffffff;outline:1px solid #29434a;border-radius:4px;overflow:hidden;background:#eef2f0;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+/* Panneau Données ouvert (360 px à gauche) : la mini-carte se place à sa droite, jamais dessous. */
+.geodata-page .gd-mini-carte.gd-mini-decalee{left:380px}
+@media (max-width:640px){.geodata-page .gd-mini-carte,.geodata-page .gd-mini-carte.gd-mini-decalee{left:10px;width:120px;height:90px}}

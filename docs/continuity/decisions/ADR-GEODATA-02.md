@@ -226,6 +226,16 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
      son thème, de son nom, d'une modalité ou de son unité (« âge » ne trouve pas « chômage »). Choisir une famille colore
      la couche par sa déclinaison par défaut ; la liste « Coloration » reste disponible. Aucun indicateur n'est renommé
      ni regroupé autrement que par ses dimensions publiées (`arbreIndicateurs`, `packages/geodata-model`).
+   - D-GD-27 (26 octobre 2026, lot G) — **mini-carte de situation et impression directe** :
+     1. Mini-carte : bouton de la barre d'outils (icône propre, Alt+M), masquée par défaut, préférence mémorisée dans ce
+        navigateur seulement ; seconde carte sans interaction propre, zoom de la vue moins 4 niveaux, contours de la
+        limite administrative la plus haute visible (sinon de la première couche vectorielle visible), emprise de la vue
+        en rectangle ; un clic recentre la carte. Placée en bas à gauche, à droite du panneau quand il est ouvert.
+     2. Impression directe : bouton « Imprimer la carte » (icône, Alt+I). Seule une carte **enregistrée** s'imprime, avec
+        **le même verdict du serveur que l'export** (droits des sources, attributions, révision) : l'impression n'est
+        pas un contournement de l'export. La fenêtre est ouverte au clic (sinon bloquée), l'image autorisée (titre,
+        légende, échelle, attributions, mini-carte en encart si elle est affichée) y est posée puis imprimée ; un refus
+        y est expliqué avec ses motifs.
 
 ## Conséquences
 

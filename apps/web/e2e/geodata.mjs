@@ -103,7 +103,7 @@ check("carte : moteur chargé (canevas MapLibre)", (await page.locator(".maplibr
 // --- Disposition (D-GD-14) : barre d'outils verticale à gauche, bouton « Données », menu hamburger ---
 const barreOutils = page.locator("[data-gd-barre-outils]");
 const outils = await barreOutils.locator("[data-gd-barre-outil]").evaluateAll((bs) => bs.map((b) => b.getAttribute("aria-label")));
-check("carte : barre d'outils verticale (zoom, nord, position, plein écran, mesures, zone, annotation, libellés, légende), chaque bouton nommé", outils.length === 11 && outils.every(Boolean), outils.join(" | "));
+check("carte : barre d'outils verticale (zoom, nord, position, plein écran, mesures, zone, annotation, libellés, mini-carte, légende, impression), chaque bouton nommé", outils.length === 13 && outils.every(Boolean), outils.join(" | "));
 const boiteBarre = await barreOutils.boundingBox();
 const boiteCarte = await page.locator("main.gd-carte").boundingBox();
 check("carte : barre d'outils flottante, verticale, à droite par défaut", !!boiteBarre && !!boiteCarte && boiteCarte.x + boiteCarte.width - (boiteBarre.x + boiteBarre.width) < 30 && boiteBarre.height > boiteBarre.width * 3);
@@ -198,6 +198,26 @@ await boutonLibelles.click();
 check("libellés : le bouton les masque", !(await caseLibelles.isChecked()));
 page.off("request", surRequete);
 await onglet(page, "legende");
+
+// --- Mini-carte de situation (lot G, D-GD-27) : Alt+M, bouton, emprise de la vue, clic qui recentre ---
+const boutonMini = page.locator("[data-gd-barre-outil='mini-carte']");
+const annonceGd = page.locator("[data-geodata-page] p.sr-only[role='status']");
+check("mini-carte : masquée par défaut, bouton « Afficher la mini-carte de situation (Alt+M) »", (await page.locator("[data-gd-mini-carte]").count()) === 0 && (await boutonMini.getAttribute("aria-label")) === "Afficher la mini-carte de situation (Alt+M)");
+await page.locator("body").press("Alt+m");
+await page.locator("[data-gd-mini-carte] canvas").waitFor({ timeout: 15_000 });
+check("mini-carte : Alt+M l'affiche (canevas, bouton pressé, annonce)", (await boutonMini.getAttribute("aria-pressed")) === "true" && ((await annonceGd.textContent()) ?? "").includes("Mini-carte affichée"));
+const boiteMini = await page.locator("[data-gd-mini-carte]").boundingBox();
+const boitePanneau = await page.locator("[data-gd-panneau]").boundingBox();
+check("mini-carte : en bas de la carte, à droite du panneau ouvert (jamais dessous)", !!boiteMini && boiteMini.width >= 100 && (!boitePanneau || boiteMini.x >= boitePanneau.x + boitePanneau.width), JSON.stringify({ boiteMini, boitePanneau }));
+await page.waitForTimeout(1000);
+await page.screenshot({ path: join(OUT, "01d-mini-carte.png") });
+await page.locator("[data-gd-mini-carte]").click({ position: { x: 20, y: 20 } });
+check("mini-carte : un clic ne provoque aucune erreur de carte", (await page.locator("[data-gd-erreur-carte]").count()) === 0);
+await boutonMini.click();
+check("mini-carte : le bouton la masque", (await page.locator("[data-gd-mini-carte]").count()) === 0 && (await boutonMini.getAttribute("aria-pressed")) === "false");
+// Impression directe : une carte non enregistrée n'est pas imprimée (mêmes droits que l'export).
+await page.locator("[data-gd-barre-outil='imprimer']").click();
+check("impression : carte non enregistrée → invitation à l'enregistrer (aucune fenêtre)", ((await annonceGd.textContent()) ?? "").includes("Enregistrez la carte pour l'imprimer"));
 
 // --- Classification (lot D, D-GD-25) : méthode, nombre de classes, palette, inversion, couleur d'une classe ---
 const classification = page.locator("[data-gd-legende] [data-gd-classification]").first();
@@ -371,6 +391,31 @@ await page.locator("[data-gd-export-ok]").waitFor();
 const lienFiche = await page.locator("[data-gd-export-ok] a").getAttribute("href");
 const ficheHtml = await (await page.request.get(`${BASE}${lienFiche}`)).text();
 check("GEO 09 · fiche de sources : attribution et nature synthétique déclarées", ficheHtml.includes("Jeu synthétique GeoData — aucune donnée réelle") && ficheHtml.includes("Empreinte SHA-256"));
+
+// --- Impression directe (lot G, D-GD-27) : carte enregistrée, même verdict que l'export, mini-carte en encart ---
+await page.evaluate(() => {
+  window.__impressionsCarte = [];
+  const ouvrir = window.open.bind(window);
+  window.open = (...a) => {
+    const w = ouvrir(...a);
+    if (w) w.print = () => {
+      const img = w.document.querySelector("img");
+      const c = document.createElement("canvas");
+      if (img) { c.width = img.naturalWidth; c.height = img.naturalHeight; c.getContext("2d").drawImage(img, 0, 0); }
+      window.__impressionsCarte.push({ titre: w.document.title, largeur: img?.naturalWidth ?? 0, src: img?.src.slice(0, 5) ?? "", png: img ? c.toDataURL("image/png") : "" });
+    };
+    return w;
+  };
+});
+await page.locator("body").press("Alt+m");
+await page.locator("[data-gd-mini-carte] canvas").waitFor({ timeout: 15_000 });
+await page.waitForTimeout(800);
+await page.locator("body").press("Alt+i");
+await page.waitForFunction(() => window.__impressionsCarte.length > 0, null, { timeout: 30_000 }).catch(() => undefined);
+const impressionsCarte = await page.evaluate(() => window.__impressionsCarte);
+if (impressionsCarte[0]?.png) writeFileSync(join(OUT, "impression-carte.png"), Buffer.from(impressionsCarte[0].png.split(",")[1], "base64"));
+check("impression directe (Alt+I) : fenêtre d'impression avec l'image autorisée de la carte enregistrée", impressionsCarte.length === 1 && impressionsCarte[0].titre.startsWith("Carte de recette") && impressionsCarte[0].largeur > 300 && impressionsCarte[0].src === "blob:", JSON.stringify(impressionsCarte.map(({ png: _p, ...x }) => x)));
+await page.locator("body").press("Alt+m");
 
 // --- Couche raster (D-GD-13) : tuiles d'image, légende en dégradé, valeur au point, nodata « non évaluée » ---
 await onglet(page, "catalogue");

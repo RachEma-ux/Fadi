@@ -242,6 +242,17 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     carte.setLayoutProperty(couche, "visibility", k.visible ? "visible" : "none");
   }
 
+  // Mini-carte de situation (lot G) : une seconde carte, sans interaction propre, recalée sur la vue principale.
+  let mini: { carte: CarteMapLibre; conteneur: HTMLElement; coucheId: string | null } | null = null;
+  function synchroniserMini() {
+    if (!mini) return;
+    const b = carte.getBounds();
+    const anneau: [number, number][] = [[b.getWest(), b.getSouth()], [b.getEast(), b.getSouth()], [b.getEast(), b.getNorth()], [b.getWest(), b.getNorth()], [b.getWest(), b.getSouth()]];
+    (mini.carte.getSource("gd-emprise") as GeoJSONSource | undefined)?.setData({ type: "FeatureCollection", features: [{ type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [anneau] } }] });
+    mini.carte.jumpTo({ center: carte.getCenter(), zoom: Math.max(1, Math.min(carte.getZoom() - 4, 8)) });
+  }
+  carte.on("move", synchroniserMini);
+
   const posees = () => {
     if (carte.getLayer("gd-zones-remplissage")) return;
     carte.addLayer({ id: "gd-zones-remplissage", type: "fill", source: "gd-zones", filter: ["==", ["geometry-type"], "Polygon"], paint: { "fill-color": "#c77b35", "fill-opacity": 0.15 } });
@@ -289,6 +300,35 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       const lat = carte.getCenter().lat;
       return (40_075_016.7 * Math.cos((lat * Math.PI) / 180)) / (512 * 2 ** carte.getZoom());
     },
-    detruire: () => carte.remove(),
+    afficherMiniCarte(conteneurMini, coucheId) {
+      if (mini && (mini.conteneur !== conteneurMini || mini.coucheId !== coucheId)) { mini.carte.remove(); mini = null; }
+      if (!conteneurMini || mini) return;
+      const m = new CarteMapLibre({
+        container: conteneurMini,
+        style: {
+          version: 8,
+          sources: {
+            "gd-emprise": { type: "geojson", data: { type: "FeatureCollection", features: [] } },
+            ...(coucheId ? { "gd-mini-couche": { type: "vector", tiles: [adresseTuiles(coucheId)], minzoom: 0, maxzoom: 14 } } : {}),
+          },
+          layers: [
+            { id: "gd-mini-fond", type: "background", paint: { "background-color": FOND_NEUTRE } },
+            ...(coucheId ? [{ id: "gd-mini-contours", type: "line" as const, source: "gd-mini-couche", "source-layer": "objets", paint: { "line-color": "#29434a", "line-width": 0.7 } }] : []),
+            { id: "gd-mini-emprise", type: "fill", source: "gd-emprise", paint: { "fill-color": "#c77b35", "fill-opacity": 0.25 } },
+            { id: "gd-mini-emprise-bord", type: "line", source: "gd-emprise", paint: { "line-color": "#b0361b", "line-width": 2 } },
+          ],
+        },
+        interactive: false,
+        attributionControl: false,
+        canvasContextAttributes: { preserveDrawingBuffer: true, antialias: true },
+      });
+      // Clic sur la mini-carte : la carte principale se recentre sur le point touché (même zoom).
+      m.getCanvas().style.cursor = "pointer";
+      m.on("click", (e) => carte.easeTo({ center: e.lngLat, duration: 400 }));
+      mini = { carte: m, conteneur: conteneurMini, coucheId };
+      m.on("load", synchroniserMini);
+    },
+    canevasMiniCarte: () => mini?.carte.getCanvas() ?? null,
+    detruire: () => { mini?.carte.remove(); carte.remove(); },
   };
 }
