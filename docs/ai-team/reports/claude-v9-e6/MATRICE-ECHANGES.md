@@ -1,12 +1,12 @@
 # Matrice d’échanges de Studio
 
-<!-- Généré depuis packages/atelier-model/src/studio/echanges/matrice-echanges.ts (studio-matrice-echanges/1, révision 6) : ne pas éditer à la main. -->
+<!-- Généré depuis packages/atelier-model/src/studio/echanges/matrice-echanges.ts (studio-matrice-echanges/1, révision 7) : ne pas éditer à la main. -->
 
-Établie le 2026-10-25 (révision 6, schéma `studio-matrice-echanges/1`), à partir de l’audit des exporteurs et importeurs Studio. Lots E.6-01 à E.6-05 du plan d’implémentation Studio V1.0 (§5.7).
+Établie le 2026-10-25 (révision 7, schéma `studio-matrice-echanges/1`), à partir de l’audit des exporteurs et importeurs Studio. Lots E.6-01 à E.6-05 du plan d’implémentation Studio V1.0 (§5.7).
 
 **Aucune entrée n’est une déclaration de conformité** : « livré » dit ce que le code écrit ou lit et le contrôle qui le vérifie ; la conformité d’un format reste non évaluée. Un format reporté est inscrit « non livré » avec sa raison et sa source ; « renoncé » exige une décision Studio admise (aucune aujourd’hui).
 
-Entrées : 42 — livrées : 23, non livrées : 19, renoncées : 0.
+Entrées : 43 — livrées : 24, non livrées : 19, renoncées : 0.
 
 ## Formats × sens
 
@@ -32,6 +32,7 @@ Entrées : 42 — livrées : 23, non livrées : 19, renoncées : 0.
 | `dossier-json` | JSON | studio-dossier-conception/1 | export | dossier | Dossier de conception (données natives du dossier) | livré | E.6-02 | Export seulement : aucun import de dossier ; empreinte du dossier portée en en-tête. |
 | `tableau-metre-csv` | CSV | UTF-8 avec BOM, séparateur « ; », décimale « , » ou « . » | export | tableau | Tableau du métré d’une révision (brut, déductions, net, ajustements) | livré | E.6-02 | Export seulement ; statut de chaque ajustement écrit en clair ; refusé tant que le métré n’est pas à jour. |
 | `rendu-png` | PNG | PNG (bloc iTXt « fadi:rendu » de provenance) | export | rendu | Rendu du modèle depuis la vue 3D d’une révision enregistrée | livré | E.6-02 | Image du canevas, pixels non modifiés ; refusé sur un brouillon non enregistré ou un maillage en cours ; provenance : étude, variante, révision, scène, caméra, date. |
+| `illustration-png` | PNG | PNG (bloc iTXt « fadi:illustration » de provenance, studio-illustration/1) | export | rendu | Illustration archivée, tirée du rendu du modèle d’une vue (lot F) | livré | E.6-02 | Image séparée « non vérifiée » : ni métrique, ni conforme, aucune donnée du modèle relisible ; provenance : rendu source, empreintes du document avant et après, paramètres, fournisseur, coûts, reproductibilité. |
 | `paquet-publication` | Paquet de publication (SVG, DXF, IFC, feuille PDF) | studio-publication-manifest/1 | export | paquet | Fichiers figés d’une publication approuvée et diffusée | livré | E.6-02 | Fichiers du manifeste approuvé, identifiés par SHA-256 et vérifiables ; dessin 2D indépendant : sans IFC ; mêmes limites que chaque export. |
 | `rapport-fidelite-json` | JSON | studio-rapport-fidelite/1 | export | rapport | Rapport de fidélité d’un export SVG, DXF ou IFC (même révision) | livré | E.6-03 | Décrit le fichier (jamais certifié) : exact, approché, non couvert, par type et par raison ; calques masqués et noms réécrits. |
 | `diagnostic-releve-perf` | JSON | studio-releve-perf/1 (relevé de performances Studio, JSON) | export | diagnostic | Mesures de chargement et d’exécution de la session (hors modèle) | livré | E.6-02 | Diagnostic seulement : aucune donnée du projet ; non relu par Studio. |
@@ -348,6 +349,20 @@ Entrées : 42 — livrées : 23, non livrées : 19, renoncées : 0.
 - Code : `apps/web/src/modules/studio/vue3d/scenes/png.ts` (`` insererTextePng ``)
 - Tests : `apps/web/src/modules/studio/vue3d/scenes/scenes.test.ts` (`` insererTextePng ``) ; `apps/web/e2e/studio-visualisation.mjs` (`` check("PNG : vrai fichier PNG tiré du canevas" ``)
 - Interface : `apps/web/src/modules/studio/vue3d/Vue3DStudio.tsx` (`` lien.download = studioNomFichierRendu(p) ``)
+- Sources : `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-02` — Liste d’exécution Studio V1.0 ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.5-03` — Liste d’exécution Studio V1.0
+
+### `illustration-png` — PNG (export)
+
+- Version : PNG (bloc iTXt « fadi:illustration » de provenance, studio-illustration/1)
+- Objet : Illustration archivée, tirée du rendu du modèle d’une vue (lot F)
+- Limite : Image séparée « non vérifiée » : ni métrique, ni conforme, aucune donnée du modèle relisible ; provenance : rendu source, empreintes du document avant et après, paramètres, fournisseur, coûts, reproductibilité.
+- Route : `GET /projects/:projectId/studio/studies/:studyId/variants/:variantId/illustrations/:illustrationId/image`
+- Contrôle : Tests des routes d’illustration (base simulée) ; recette studio-lot-f.mjs.
+- Entité Vue 3D affichée : partielle — Illustration seulement : le modèle n’est ni exporté ni modifié.
+- Code : `apps/api/src/lib/studio-illustrations.ts` (`` lireImageIllustration ``)
+- Tests : `apps/api/src/routes/studio-illustrations.test.ts` (`` x-studio-verification ``)
+- Routes : `apps/api/src/routes/studio-illustrations.ts` (`` ${base}/:illustrationId/image ``)
+- Interface : `apps/web/src/modules/studio/illustration/DialogueIllustration.tsx` (`` data-studio-illustration-archivee ``)
 - Sources : `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-02` — Liste d’exécution Studio V1.0 ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.5-03` — Liste d’exécution Studio V1.0
 
 ### `paquet-publication` — Paquet de publication (SVG, DXF, IFC, feuille PDF) (export)

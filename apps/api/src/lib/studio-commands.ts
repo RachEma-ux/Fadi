@@ -3,9 +3,9 @@ import { signalerTempsReel } from "./temps-reel-signaux.js";
 import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import { applyStudioCommands, comparerDocumentsStudio, exportStudioDxf, exportStudioIfc, exportStudioSvg, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, studioChevauchements, studioElementsModifies, StudioValidationError, validateStudioDocument, type StudioDifferenceDocuments, type StudioDocument, type StudioEnvelope, type StudioPhaseWorkflow } from "@parcours/atelier-model";
+import { applyStudioCommands, comparerDocumentsStudio, exportStudioDxf, exportStudioIfc, exportStudioSvg, newStudioDocument, STUDIO_COMMAND_TOOL_IDS, STUDIO_CONTRACT, studioChevauchements, studioCopieIndependante, studioElementsModifies, StudioValidationError, validateStudioDocument, type StudioModeDerivation, type StudioDifferenceDocuments, type StudioDocument, type StudioEnvelope, type StudioPhaseWorkflow } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
-import { studioRevisions, studioStudies, studioVariants, type StudioContext, type StudioExampleInstall, type StudioProvenance } from "../db/schema.js";
+import { studioRevisions, studioStudies, studioStudyContexts, studioVariants, type StudioContext, type StudioExampleInstall, type StudioProvenance } from "../db/schema.js";
 import { newId } from "./ids.js";
 import { lockAccessRows } from "./access-locks.js";
 import { loadProjectAccess, projectAccessRefusal, type AccessibleProject, type ProjectNeed } from "./owned-project.js";
@@ -14,6 +14,9 @@ import { orchestrerCommandesDansTransaction, type Tx } from "./atelier-validatio
 import { lockProject, type Querier } from "./step-rows.js";
 import { revaliderBooleensStudio } from "./studio-exact.js";
 import { corpsRefusQuota, quotaCommandesStudio } from "./studio-quotas.js";
+import { studioEffetsCommande, studioHorsPerimetre, type StudioEffetsCommande } from "@parcours/atelier-model/studio-cmd";
+import { lireContexteEtude, validerContexteEtude, type StudioContexteDeclare } from "./studio-contexte.js";
+import { consignerEvenementRevision, controlerCheminEcriture, engagerPuisNotifier, lireEvenementRevision, nouvelleTransaction, type EvenementRevision } from "./studio-journal.js";
 
 export interface StudioScope { projectId: string; studyId: string; variantId: string }
 export class StudioRequestError extends Error {
@@ -31,6 +34,15 @@ const envelopeSchema = z.object({
 }).strict();
 
 export function parseStudioEnvelope(value: unknown): StudioEnvelope {
+  // EX-002 : une demande hors du périmètre du Studio (comptabilité, RH, commerce, chantier, exploitation) est refusée
+  // par un motif nommé, avant la validation du contrat (jamais confondue avec un outil inconnu).
+  const commandes = (value as { commands?: unknown } | null)?.commands;
+  if (Array.isArray(commandes)) {
+    for (const [i, c] of commandes.entries()) {
+      const refus = studioHorsPerimetre((c as { toolId?: unknown } | null)?.toolId);
+      if (refus) throw new StudioRequestError(400, { error: "hors_perimetre", code: refus.code, domaine: refus.domaine, path: `commands[${i}].toolId`, message: refus.message });
+    }
+  }
   const parsed = envelopeSchema.safeParse(value);
   if (!parsed.success) throw new StudioRequestError(400, { error: "invalid_input", details: parsed.error.flatten() });
   // Le noyau public valide les paramètres géométriques, sans second schéma concurrent.
@@ -102,8 +114,10 @@ export async function lockedAccess(tx: Tx, projectId: string, actorId: string): 
 
 /** Lecture d'une variante : `archived` si l'étude ou la variante l'est (alors `canWrite` faux) ; provenance d'une dérivation. */
 export type StudioRead = StudioContext & { archived: boolean; derivedFrom: StudioProvenance | null };
-const provenanceOf = (row: { derivedFromVariantId: string | null; derivedFromRevisionId: string | null }): StudioProvenance | null =>
-  row.derivedFromVariantId && row.derivedFromRevisionId ? { variantId: row.derivedFromVariantId, revisionId: row.derivedFromRevisionId } : null;
+const provenanceOf = (row: { derivedFromVariantId: string | null; derivedFromRevisionId: string | null; derivationMode?: "copie" | null; derivationIdentities?: Record<string, string> | null }, identites = false): StudioProvenance | null =>
+  row.derivedFromVariantId && row.derivedFromRevisionId
+    ? { variantId: row.derivedFromVariantId, revisionId: row.derivedFromRevisionId, ...(row.derivationMode === "copie" ? { mode: "copie" as const, ...(identites && row.derivationIdentities ? { identites: row.derivationIdentities } : {}) } : {}) }
+    : null;
 
 export async function readStudioContext(q: Querier, scope: StudioScope, actorId: string, revisionId?: string): Promise<StudioRead> {
   const access = assertAccess(await loadProjectAccess(scope.projectId, actorId, q), actorId, "read");
@@ -122,7 +136,7 @@ export async function readStudioContext(q: Querier, scope: StudioScope, actorId:
     variant: { id: variant.id, name: variant.name, studyId: study.id, headRevisionId: variant.headRevisionId },
     revision: { id: revision.id, parentRevisionId: revision.parentRevisionId, document: validateStudioDocument(revision.document) },
     canWrite: revisionId === undefined && !archived && projectAccessRefusal(access, actorId, "modify", { studyId: study.id, variantIds: [variant.id] }) === null,
-    archived, derivedFrom: provenanceOf(variant),
+    archived, derivedFrom: provenanceOf(variant, true),
   };
 }
 
@@ -157,8 +171,9 @@ export async function studyOf(q: Querier, projectId: string, studyId: string) {
 export const studioVariantSummaryColumns = {
   id: studioVariants.id, name: studioVariants.name, headRevisionId: studioVariants.headRevisionId, archivedAt: studioVariants.archivedAt,
   derivedFromVariantId: studioVariants.derivedFromVariantId, derivedFromRevisionId: studioVariants.derivedFromRevisionId,
+  derivationMode: studioVariants.derivationMode,
 };
-type VariantSummaryRow = { id: string; name: string; headRevisionId: string; archivedAt: Date | null; derivedFromVariantId: string | null; derivedFromRevisionId: string | null };
+type VariantSummaryRow = { id: string; name: string; headRevisionId: string; archivedAt: Date | null; derivedFromVariantId: string | null; derivedFromRevisionId: string | null; derivationMode?: "copie" | null };
 export const toVariantSummary = (row: VariantSummaryRow): StudioVariantSummary =>
   ({ id: row.id, name: row.name, headRevisionId: row.headRevisionId, archived: row.archivedAt !== null, derivedFrom: provenanceOf(row) });
 
@@ -223,6 +238,8 @@ export interface StudioRevisionChanges {
   commands: StudioEnvelope["commands"];
   changedKeys: string[];
   summary: StudioDifferenceDocuments["resume"];
+  /** Événement du journal (IF-011) et effets (EX-010) de la révision ; null pour une révision d'initialisation. */
+  event: EvenementRevision | null;
 }
 export async function readStudioRevisionChanges(q: Querier, scope: StudioScope, actorId: string, revisionId: string): Promise<StudioRevisionChanges> {
   const context = await readStudioContext(q, scope, actorId, revisionId);
@@ -241,6 +258,7 @@ export async function readStudioRevisionChanges(q: Querier, scope: StudioScope, 
     revisionId: context.revision.id, parentRevisionId: context.revision.parentRevisionId, source: row.source, authorId: row.authorId,
     createdAt: row.createdAt.toISOString(), requestId: envelope ? row.requestId : null, commands: envelope?.commands ?? [],
     changedKeys: studioElementsModifies(parent, context.revision.document), summary: comparerDocumentsStudio(parent, context.revision.document).resume,
+    event: await lireEvenementRevision(q, context.variant.id, context.revision.id),
   };
 }
 
@@ -265,7 +283,7 @@ async function replayCreation(tx: Tx, variantId: string, sources: InitialSource[
  * Options internes d'une création (jamais lues du corps d'une requête) : droit d'écriture, nom de la variante initiale,
  * marquage d'étude exemple (`example_install`, écrit dans la même transaction que l'étude).
  */
-export interface StudioCreationOptions { ecriture?: StudioEcriture; nomVarianteInitiale?: string; exampleInstall?: StudioExampleInstall }
+export interface StudioCreationOptions { ecriture?: StudioEcriture; nomVarianteInitiale?: string; exampleInstall?: StudioExampleInstall; contexte?: StudioContexteDeclare }
 
 export async function createStudioStudy(projectId: string, actorId: string, name: string, requestId?: string, options: StudioCreationOptions = {}): Promise<StudioCreation> {
   refuserPrefixeReserve(requestId, options.ecriture ?? "modify");
@@ -275,8 +293,18 @@ export async function createStudioStudy(projectId: string, actorId: string, name
     if (requestId !== undefined) {
       const [previous] = await tx.select({ initialVariantId: studioStudies.initialVariantId }).from(studioStudies)
         .where(and(eq(studioStudies.projectId, projectId), eq(studioStudies.creationRequestId, requestId))).limit(1);
-      if (previous) return replayCreation(tx, previous.initialVariantId, ["study-initialization"], actorId, name, (r) => r.study.name);
+      if (previous) {
+        const rejeu = await replayCreation(tx, previous.initialVariantId, ["study-initialization"], actorId, name, (r) => r.study.name);
+        // IF-001 : un rejeu porte le même contexte déclaré (ou aucun), sinon c'est une autre demande.
+        const stocke = await lireContexteEtude(tx, rejeu.study.id);
+        const declare = (c: { site: { parcelles: { id: string; revision: number }[] }; sources: { id: string }[] } | null | undefined) =>
+          c ? JSON.stringify({ p: c.site.parcelles.map((x) => [x.id, x.revision]), s: c.sources.map((x) => x.id) }) : null;
+        if (declare(stocke) !== declare(options.contexte)) throw new StudioRequestError(409, { error: "request_conflict", message: "Cet identifiant de requête est déjà utilisé pour un autre contexte d’étude." });
+        return rejeu;
+      }
     }
+    // IF-001 : contexte validé sous le verrou du projet, avant toute insertion (aucune création partielle).
+    const contexte = options.contexte ? await validerContexteEtude(tx, projectId, options.contexte) : null;
     const studyId = newId("studio_study"), variantId = newId("studio_variant"), revisionId = newId("studio_revision");
     const response: StudioContext = {
       study: { id: studyId, name, projectId },
@@ -290,12 +318,16 @@ export async function createStudioStudy(projectId: string, actorId: string, name
       requestId: newId("initialization"), payloadHash: createHash("sha256").update(JSON.stringify({ projectId, studyId, variantId, name })).digest("hex"),
       source: "study-initialization", authorId: actorId, response,
     });
+    if (contexte) await tx.insert(studioStudyContexts).values({ studyId, projectId, version: contexte.version, context: contexte as unknown as Record<string, unknown>, validatedBy: actorId });
     return { ...response, replayed: false };
   });
 }
 
-/** Source d'une dérivation : variante de la même étude, révision donnée (sinon sa tête au moment de la création). */
-export interface StudioDerivationSource { variantId: string; revisionId?: string }
+/**
+ * Source d'une dérivation : variante de la même étude, révision donnée (sinon sa tête au moment de la création) ; `mode`
+ * `version` (défaut : identifiants conservés) ou `copie` (copie indépendante, nouvelles identités — TR-EX-013).
+ */
+export interface StudioDerivationSource { variantId: string; revisionId?: string; mode?: StudioModeDerivation }
 
 /**
  * Nouvelle variante d'une étude active : une seule révision initiale, sans parent. Document vide, ou — dérivation —
@@ -317,13 +349,15 @@ export async function createStudioVariant(projectId: string, studyId: string, ac
         return replayCreation(tx, previous.id, ["variant-initialization", "variant-derivation"], actorId, name, (r) => r.variant.name, (r) => {
           const stored = r.derivedFrom ?? null;
           if (!from) return stored === null;
-          return stored !== null && stored.variantId === from.variantId && (from.revisionId === undefined || stored.revisionId === from.revisionId);
+          return stored !== null && stored.variantId === from.variantId && (from.revisionId === undefined || stored.revisionId === from.revisionId)
+            && (stored.mode ?? "version") === (from.mode ?? "version");
         });
       }
     }
     if (study.archivedAt !== null) return studioArchivedRefusal();
     let document = newStudioDocument(newId("studio_document"));
     let derivedFrom: StudioProvenance | null = null;
+    const variantId = newId("studio_variant"), revisionId = newId("studio_revision");
     if (from) {
       const [source] = await tx.select({ id: studioVariants.id, headRevisionId: studioVariants.headRevisionId }).from(studioVariants)
         .where(and(eq(studioVariants.id, from.variantId), eq(studioVariants.studyId, study.id))).limit(1);
@@ -331,10 +365,16 @@ export async function createStudioVariant(projectId: string, studyId: string, ac
       const [revision] = await tx.select({ id: studioRevisions.id, document: studioRevisions.document }).from(studioRevisions)
         .where(and(eq(studioRevisions.id, from.revisionId ?? source.headRevisionId), eq(studioRevisions.variantId, source.id))).limit(1);
       if (!revision) return notFound();
-      document = structuredClone(validateStudioDocument(revision.document));
-      derivedFrom = { variantId: source.id, revisionId: revision.id };
+      if (from.mode === "copie") {
+        // Copie indépendante (TR-INV-003) : nouvelles identités, provenance par élément, aucune propagation.
+        const copie = studioCopieIndependante(validateStudioDocument(revision.document), newId("studio_document"), variantId.slice(-8));
+        document = copie.document;
+        derivedFrom = { variantId: source.id, revisionId: revision.id, mode: "copie", identites: copie.identites };
+      } else {
+        document = structuredClone(validateStudioDocument(revision.document));
+        derivedFrom = { variantId: source.id, revisionId: revision.id };
+      }
     }
-    const variantId = newId("studio_variant"), revisionId = newId("studio_revision");
     const response: StudioContext = {
       study: { id: study.id, name: study.name, projectId },
       variant: { id: variantId, name, studyId: study.id, headRevisionId: revisionId },
@@ -343,6 +383,7 @@ export async function createStudioVariant(projectId: string, studyId: string, ac
     await tx.insert(studioVariants).values({
       id: variantId, studyId: study.id, name, headRevisionId: revisionId, creationRequestId: requestId ?? null,
       derivedFromVariantId: derivedFrom?.variantId ?? null, derivedFromRevisionId: derivedFrom?.revisionId ?? null,
+      derivationMode: derivedFrom?.mode ?? null, derivationIdentities: derivedFrom?.identites ?? null,
     });
     await tx.insert(studioRevisions).values({
       id: revisionId, variantId, parentRevisionId: null, document, envelope: null,
@@ -452,7 +493,32 @@ async function staleRevisionBody(tx: Tx, variantId: string, envelope: StudioEnve
   };
 }
 
-export async function submitStudioCommands(scope: StudioScope, actorId: string, input: unknown, ecriture: StudioEcriture = "modify"): Promise<StudioContext & { replayed: boolean }> {
+/**
+ * Application EN MÉMOIRE d'un lot à un document (essai, EX-045) : même modèle, aucune écriture. Le point d'entrée des
+ * écritures reste `submitStudioCommands` ; ce module reste le seul à appliquer des commandes Studio (INV-010).
+ */
+export function essayerCommandesStudio(document: StudioDocument, commands: readonly StudioEnvelope["commands"][number][]): StudioDocument {
+  return applyStudioCommands(document, [...commands]);
+}
+
+/** Réponse d'un lot accepté : contexte, rejeu, et (lot neuf) l'événement d'effets engagé avec la révision. */
+export type StudioSoumission = StudioContext & { replayed: boolean; effects?: StudioEffetsCommande; eventId?: string };
+/**
+ * Source d'une révision écrite par ce point d'entrée : `authenticated-session` (l'interface, la console, l'exemple) ou
+ * `agent-mcp` (proposition d'un agent confirmée par la personne dans Studio, `lib/studio-agents.ts`, INV-010). Jamais lue
+ * dans le corps de la requête : seul le serveur la fixe.
+ */
+export type StudioSourceEcriture = "authenticated-session" | "agent-mcp";
+/** Options internes (jamais lues du corps) : job d'essai confirmé (relation du journal), contrôle propre à l'appelant. */
+export interface StudioSoumissionOptions {
+  jobId?: string;
+  avantEcriture?: (tx: Tx, tete: StudioRead) => Promise<void>;
+  /** Dans la même transaction, après l'écriture de la révision (décision consignée avec elle, tout ou rien). */
+  apresEcriture?: (tx: Tx, revisionId: string) => Promise<void>;
+  source?: StudioSourceEcriture;
+}
+
+export async function submitStudioCommands(scope: StudioScope, actorId: string, input: unknown, ecriture: StudioEcriture = "modify", options: StudioSoumissionOptions = {}): Promise<StudioSoumission> {
   // Capture avant le premier await : aucun changement du payload durant les verrous/rejeu.
   scope = Object.freeze({ projectId: scope.projectId, studyId: scope.studyId, variantId: scope.variantId });
   // EX-003 : aucune géométrie sans variante propriétaire — un contexte incomplet est refusé avant toute lecture ou
@@ -461,9 +527,12 @@ export async function submitStudioCommands(scope: StudioScope, actorId: string, 
   const envelope = parseStudioEnvelope(input);
   refuserPrefixeReserve(envelope.requestId, ecriture);
   const payloadHash = studioPayloadHash(envelope);
-  const resultat = await db.transaction(async (tx) => {
+  const source: StudioSourceEcriture = options.source ?? "authenticated-session";
+  // IF-011 : la notification part après l'engagement de la transaction, jamais avant ni après un échec.
+  return engagerPuisNotifier(() => db.transaction(async (tx) => {
     let current: StudioRead | undefined;
-    return orchestrerCommandesDansTransaction<StudioContext & { replayed: boolean }>(tx, { kind: "studio", ...scope }, {
+    const transactionId = nouvelleTransaction();
+    return orchestrerCommandesDansTransaction<StudioSoumission>(tx, { kind: "studio", ...scope }, {
       prepare: async (transaction) => {
         const access = await lockedAccess(transaction, scope.projectId, actorId);
         const [study] = await transaction.select({ id: studioStudies.id }).from(studioStudies)
@@ -484,6 +553,10 @@ export async function submitStudioCommands(scope: StudioScope, actorId: string, 
         }
         return { ...structuredClone(previous.response), replayed: true };
       },
+      cheminEcriture: async (transaction, captured) => {
+        const refus = await controlerCheminEcriture(transaction, captured);
+        if (refus) throw new StudioRequestError(409, refus);
+      },
       execute: async (transaction) => {
         if (!current) throw new Error("studio_scope_not_prepared");
         // Lu sous les verrous du projet et de la variante : un (dés)archivage concurrent est sérialisé avec ce lot.
@@ -498,6 +571,7 @@ export async function submitStudioCommands(scope: StudioScope, actorId: string, 
           throw new StudioRequestError(409, await staleRevisionBody(transaction, scope.variantId, envelope, current.variant.headRevisionId, current.revision.document));
         }
         // Booléens exacts (lot F2) : recalculés par le noyau du serveur, qui remplace le résultat annoncé (R9).
+        await options.avantEcriture?.(transaction, current);
         const refusExact = await revaliderBooleensStudio(current.revision.document, envelope.commands, applyStudioCommands);
         if (refusExact) throw new StudioRequestError(refusExact.status, refusExact.body);
         let document;
@@ -511,15 +585,25 @@ export async function submitStudioCommands(scope: StudioScope, actorId: string, 
           study: current.study, variant: { ...current.variant, headRevisionId: id },
           revision: { id, parentRevisionId: current.variant.headRevisionId, document }, canWrite: true,
         };
-        await transaction.insert(studioRevisions).values({ id, variantId: scope.variantId, parentRevisionId: current.variant.headRevisionId, document, envelope, requestId: envelope.requestId, payloadHash, source: "authenticated-session", authorId: actorId, response });
+        await transaction.insert(studioRevisions).values({ id, variantId: scope.variantId, parentRevisionId: current.variant.headRevisionId, document, envelope, requestId: envelope.requestId, payloadHash, source, authorId: actorId, response });
         await transaction.update(studioVariants).set({ headRevisionId: id }).where(eq(studioVariants.id, scope.variantId));
-        return { ...response, replayed: false };
+        // EX-010 / IF-011 : effets calculés par le serveur et consignés dans la même transaction que la révision.
+        const effects = studioEffetsCommande(current.revision.document, document, envelope.commands, {
+          revisionBase: current.variant.headRevisionId, revisionSortie: id, source: ecriture === "modify" ? source : "installation-exemple", auteurId: actorId, requestId: envelope.requestId,
+        });
+        const eventId = await consignerEvenementRevision(transaction, {
+          transactionId, projectId: scope.projectId, studyId: scope.studyId, variantId: scope.variantId, baseRevisionId: current.variant.headRevisionId,
+          revisionId: id, authorId: actorId, requestId: envelope.requestId, effects, jobId: options.jobId ?? null,
+        });
+        await options.apresEcriture?.(transaction, id);
+        return { ...response, replayed: false, effects, eventId };
       },
     });
+  }), (resultat) => {
+    // EX-028 : un lot engagé (ni rejoué, ni installation d'exemple) consomme le quota d'invocation du compte.
+    if (!resultat.replayed && ecriture === "modify") quotaCommandesStudio.consommer(actorId);
+    // Temps réel (Issue #283), après validation : les sessions de cette variante apprennent qu'une révision plus récente
+    // existe ; elle ne leur est jamais appliquée en silence.
+    if (!resultat.replayed) signalerTempsReel({ type: "studio-revision", projectId: scope.projectId, variantId: scope.variantId, revisionId: resultat.revision.id });
   });
-  // Temps réel (Issue #283), après validation : les sessions de cette variante apprennent qu'une révision plus récente
-  // existe ; elle ne leur est jamais appliquée en silence.
-  if (!resultat.replayed && ecriture === "modify") quotaCommandesStudio.consommer(actorId);
-  if (!resultat.replayed) signalerTempsReel({ type: "studio-revision", projectId: scope.projectId, variantId: scope.variantId, revisionId: resultat.revision.id });
-  return resultat;
 }

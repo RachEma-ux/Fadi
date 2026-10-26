@@ -50,6 +50,17 @@ vérifiés, comme BLOC-02 (tâches serveur comprises). Les quatre défauts élim
   (TEST-025), mais sur un rendu logiciel.
 - **Porte G1** : **franchie avec réserves** (ADR-STUDIO-PILOTE-01 P-11, [REVUE-G1-03](REVUE-G1-03.md)).
 
+### Porte G4 automatisée (X.2-04 / BLOC-06, lot DEC)
+
+`scripts/validation/porte-g4.mjs` refuse la livraison tant qu'un défaut éliminatoire BLOC-01 à BLOC-07 n'est pas
+« Vérifié » ou « Accepté » au registre avec une preuve qui tient (fichier existant, libellé écrit). Chaque refus nomme le
+défaut, la preuve et le propriétaire ; aucune mesure de performance n'entre dans la décision.
+
+- À chaque commit : jouée en signalement (`--avertir`) par `continuity.yml`, rapport dans le résumé de l'exécution.
+- À la publication d'une Release : jouée en mode strict par `porte-g4-release.yml` sur le commit de la Release ; un
+  échec signifie que la Release ne satisfait pas G4 et doit être retirée avant son traitement par `fadi-prod-auto`.
+- État au 26 octobre 2026 : livraison **refusée** (BLOC-06 et BLOC-07 non vérifiés).
+
 ## 4. Procédure d'exploitation et mise en production
 
 - Préproduction : `deploy/preprod/` existe (sync, build, migrate, up, smoke, backup, restore-check).

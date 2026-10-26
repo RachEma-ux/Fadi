@@ -27,7 +27,7 @@ import { STUDIO_CAPACITES_EXPORT, STUDIO_RAISONS_FIDELITE, type StudioFormatEcha
 
 export const STUDIO_MATRICE_ECHANGES_SCHEMA = "studio-matrice-echanges/1" as const;
 /** Révision de la matrice : à incrémenter avec toute modification d'une entrée (empreinte épinglée par test). */
-export const STUDIO_MATRICE_ECHANGES_REVISION = 6 as const;
+export const STUDIO_MATRICE_ECHANGES_REVISION = 7 as const;
 /** Date de l'audit qui a établi la révision courante. */
 export const STUDIO_MATRICE_ECHANGES_DATE = "2026-10-25" as const;
 
@@ -512,6 +512,21 @@ const LIVREES: readonly StudioEntreeEchange[] = [
       code: [p(`${WEB}vue3d/scenes/png.ts`, "insererTextePng")],
       tests: [p(`${WEB}vue3d/scenes/scenes.test.ts`, "insererTextePng"), p(`${E2E}studio-visualisation.mjs`, "check(\"PNG : vrai fichier PNG tiré du canevas\"")],
       interfaces: [p(`${WEB}vue3d/Vue3DStudio.tsx`, "lien.download = studioNomFichierRendu(p)")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-02"), S_LISTE("E.5-03")],
+  },
+  {
+    id: "illustration-png", format: "PNG", versionFormat: "PNG (bloc iTXt « fadi:illustration » de provenance, studio-illustration/1)", sens: "export", famille: "rendu",
+    objet: "Illustration archivée, tirée du rendu du modèle d’une vue (lot F)", taches: ["E.6-02"], statut: "livre",
+    limite: "Image séparée « non vérifiée » : ni métrique, ni conforme, aucune donnée du modèle relisible ; provenance : rendu source, empreintes du document avant et après, paramètres, fournisseur, coûts, reproductibilité.",
+    entites: [{ entite: "Vue 3D affichée", couverture: "partielle", detail: "Illustration seulement : le modèle n’est ni exporté ni modifié." }],
+    controle: "Tests des routes d’illustration (base simulée) ; recette studio-lot-f.mjs.",
+    route: "GET /projects/:projectId/studio/studies/:studyId/variants/:variantId/illustrations/:illustrationId/image",
+    preuves: {
+      code: [p(`${API}lib/studio-illustrations.ts`, "lireImageIllustration")],
+      tests: [p(`${API}routes/studio-illustrations.test.ts`, "x-studio-verification")],
+      routes: [p(`${API}routes/studio-illustrations.ts`, "${base}/:illustrationId/image")],
+      interfaces: [p(`${WEB}illustration/DialogueIllustration.tsx`, "data-studio-illustration-archivee")],
     },
     sources: [S_PLAN, S_LISTE("E.6-02"), S_LISTE("E.5-03")],
   },

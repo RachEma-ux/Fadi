@@ -72,6 +72,7 @@ import { COMMANDES_EDITEUR, OUTILS_MODES, OUTILS_VOLUME_LIBRE, OUTILS_TRACE, typ
 import { basculer, commandesDeplacement, elements, estForme, selectionValide, toutSelectionnable, type Element2D } from "./planche2d/selection";
 import { zoomerAuCentre } from "./planche2d/vue";
 import { aidePlanche, apercuPlanche, outilPlanche } from "./planche2d/outils";
+import { traceGeste } from "./taches/trace-geste";
 import { CONTENU_INITIAL, formulaireInactif, SOMMETS_INITIAUX, soumettre, VALEURS_INITIALES, valeursObjet, type Valeurs } from "./planche2d/outils/formulaire";
 import { useGestesPlanche } from "./planche2d/outils/gestes";
 import { ChampMesures } from "./planche2d/accrochage/ChampMesures";
@@ -110,6 +111,8 @@ import { cleVariante } from "./hors-ligne/persistance";
 import { mesurerCommandes } from "./chargement/mesures-studio";
 import { cheminEtudeStudio, cheminOutilConsoleStudio, cheminVarianteStudio, type OptionsDomaineVariante } from "./routes-studio";
 import { contexteConsole } from "./console/contexte-console";
+import { cibleFocusBascule, deplacerFocusBascule } from "./variante/focus-bascule";
+import { panoramiqueClavier } from "./planche2d/vue-clavier";
 import {
   dansPaletteDuDomaine, definitionDomaine, DOMAINES_STUDIO, domaineDeLAdresse, domaineExecution, montre2d, montre3d, panneauxDuDomaine, PLANCHE_PAR_DEFAUT,
   type DomaineStudio, type FonctionStudio, type ModePlanche,
@@ -178,7 +181,7 @@ function useHauteurDisponible(ref: { current: HTMLElement | null }, minimum: num
 /** Panneaux latéraux qui lisent ou écrivent dans une étude : indisponibles dans la Console (aucun projet). */
 const PANNEAUX_D_ETUDE: ReadonlySet<FonctionStudio> = new Set<FonctionStudio>(["exigences", "publications", "commentaires-observations", "revisions", "metre"]);
 /** Commandes qui passent par le serveur (exports de la révision enregistrée, feuilles du dossier) : indisponibles dans la Console. */
-const COMMANDES_D_ETUDE: ReadonlySet<IdCommandeEditeur> = new Set<IdCommandeEditeur>(["exporter-svg", "exporter-dxf", "exporter-ifc", "dossier", "modeles-externes"]);
+const COMMANDES_D_ETUDE: ReadonlySet<IdCommandeEditeur> = new Set<IdCommandeEditeur>(["exporter-svg", "exporter-dxf", "exporter-ifc", "dossier", "modeles-externes", "illustration", "agents"]);
 
 export function VariantWorkspace({ projectId, studyId, variantId, revisionId, commentairesOuverts = false, domaine = null, planche = null, autonome = false, surEnregistreVersProjet, surAdresse }: VariantWorkspaceProps) {
   const [context, setContext] = useState<StudioContext | null>(() => (autonome ? contexteConsole() : null));
@@ -196,6 +199,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const [accrocheSommets, setAccrocheSommets] = useState(true);
   const [accrocheGrille, setAccrocheGrille] = useState(false);
   const [dialogue, setDialogue] = useState<DialogueStudio>(null);
+  // Lot F : rendu du modèle capturé par la vue 3D pour l'illustration (ouvre la boîte « Illustration depuis la vue »).
+  const [captureIllustration, setCaptureIllustration] = useState<{ png: Uint8Array; provenance: { revisionId: string; scene: { nom: string } | null } } | null>(null);
   // Rapport de fidélité du dernier export lancé (E.6-03) : boîte non modale, fermée à la demande.
   const [rapportExport, setRapportExport] = useState<"exporter-svg" | "exporter-dxf" | "exporter-ifc" | null>(null);
   // Compteur des lancements d'export : chaque export a son propre rapport (jamais celui d'une révision précédente).
@@ -222,6 +227,15 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   /** Ce que montre le canevas : la planche choisie en Dessin, la vue 3D en Visualisation, le plan ailleurs. */
   const affichage: ModePlanche = domaineActif === "dessin" ? modePlanche : domaineActif === "visualisation" ? "3d" : "2d";
   const vue3d = montre3d(affichage), plan2d = montre2d(affichage);
+  /** Planche affichée avant une bascule demandée par l'utilisateur (Maj+D, sélecteur de planche) ; null sinon. */
+  const basculeDemandee = useRef<ModePlanche | null>(null);
+  useEffect(() => {
+    const avant = basculeDemandee.current;
+    if (avant === null) return;
+    basculeDemandee.current = null;
+    const cible = cibleFocusBascule(avant, affichage);
+    return cible && shell.current ? deplacerFocusBascule(shell.current, cible) : undefined;
+  }, [affichage]);
   // Vue 3D : navigation (orbite ou plan), coupe horizontale affichée, solide libre sélectionné.
   const [navigation3d, setNavigation3d] = useState<"orbite" | "plan">("orbite");
   const [coupe3d, setCoupe3d] = useState(false);
@@ -301,6 +315,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   /** Mode des planches de Dessin et modélisation : dans l'adresse si elle porte le domaine, sinon en mémoire locale. */
   function poserPlanche(p: ModePlanche) {
     if (domaineActif !== "dessin") { choisirDomaine("dessin", p); return; }
+    // TR-EX-036 : la bascule demandée déplace le focus, de façon visible, vers la planche qui apparaît.
+    basculeDemandee.current = modePlanche;
     if (adresseSuivie) ecrireAdresse({ domaine: "dessin", planche: p, commentaires: false }, true);
     else setPlancheLocale(p);
   }
@@ -359,6 +375,14 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     base: suite[suite.length - 1] ?? trace?.point ?? null,
   });
   const { cadre, pas, survol, poserCadre, cadreRef } = gestes;
+  /** TR-EX-036 : la planche 2D ayant le focus, les flèches déplacent la vue (Maj : d'une demi-vue), sans glisser. */
+  function panoramiquePlanche(e: { key: string; shiftKey: boolean; altKey: boolean; ctrlKey: boolean; metaKey: boolean; target: EventTarget; preventDefault: () => void }) {
+    if (e.altKey || e.ctrlKey || e.metaKey || !(e.target instanceof SVGSVGElement)) return;
+    const suivant = panoramiqueClavier(cadreRef.current, e.key, e.shiftKey);
+    if (!suivant) return;
+    e.preventDefault();
+    poserCadre(suivant);
+  }
 
   // ——— Session en direct (Issue #283, RTC-2) : présence, vue du présentateur, pointeurs et sélections partagés ———
   const navigate = useNavigate();
@@ -462,9 +486,12 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   /** Applique un lot localement (un pas d'historique) ; rien n'est envoyé avant « Enregistrer ». */
   function apply(cs: StudioCommand[]): boolean {
     if (!brouillon || !writable) return false;
+    // EX-008 : l'intention (outil du geste) précède la commande appliquée au brouillon par le modèle.
+    traceGeste.noter("intention", { outil: tool ? String(tool) : cs[0]?.toolId });
     try {
       const next = mesurerCommandes(cs, () => appliquerBrouillon(brouillon, cs));
       setBrouillon(next);
+      traceGeste.noter("commande", { outil: cs.map((c) => c.toolId).join(" ") });
       const doc = documentBrouillon(next);
       const seul = selectionIds.length === 1 ? selectionIds[0] : undefined;
       const updated = seul ? elements(doc).find(e => e.id === seul) : undefined;
@@ -673,6 +700,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
         shell.current?.querySelector<HTMLAnchorElement>(`a[data-studio-commande="${id}"][href]`)?.click();
         return;
       case "exporter-png": return demander3d("exporter-png");
+      case "illustration": return demander3d("illustration");
+      case "agents": return setDialogue("agents");
       case "importer-dxf": return setDialogue("import-dxf");
       case "importer-ifc": return setDialogue("import-ifc");
       case "modeles-externes": return setDialogue("modeles-externes");
@@ -742,6 +771,9 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
 
   // L'écran de travail (barre, palette, canevas, panneaux, barre d'état) remplit la hauteur sous l'en-tête de Fadi.
   const hauteur = useHauteurDisponible(ecran, telephone ? 560 : 480, !!context && !!drawing && !document.fullscreenElement);
+  // EX-049 : un tracé commencé est une prévisualisation, notée avec le brouillon conservé (abandonnée si la session s'interrompt).
+  const outilApercu = trace && tool ? String(tool) : null;
+  useEffect(() => { enr.noterApercu(outilApercu); }, [outilApercu]);
   if (!loading && refused(loadError)) return <StudioRefus quoi={historical ? "revision" : "variante"} />;
   const toolEntry = STUDIO_TOOLS.find(t => t.toolId === tool);
   const toResolve = drawing?.dimensions?.filter(d => d.toResolve).length ?? 0;
@@ -791,7 +823,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   /** Canevas : Planche 2D, Planche 3D ou les deux (Double vue) ; la vue 3D garde sa place (même moteur d'un domaine à l'autre). */
   const canevas = context && drawing ? <div className="studio-canevas" data-studio-canevas={affichage} data-studio-domaine-canevas={domaineActif}>
     <div className="studio-canevas-vues">
-    {plan2d && <div className="studio-sheet" onPointerMove={enDirect ? pointeurSession : undefined} onPointerLeave={enDirect ? () => pointeurSession(null) : undefined} data-studio-projection-plan={versionPlan(drawing)} title="Molette : zoom sur le pointeur ; bouton du milieu, Espace + glisser ou deux doigts : déplacer la vue." data-studio-aide-vue>
+    {plan2d && <div className="studio-sheet" onKeyDown={panoramiquePlanche} onPointerMove={enDirect ? pointeurSession : undefined} onPointerLeave={enDirect ? () => pointeurSession(null) : undefined} data-studio-projection-plan={versionPlan(drawing)} title="Molette : zoom sur le pointeur ; bouton du milieu, Espace + glisser ou deux doigts : déplacer la vue." data-studio-aide-vue>
       <Dessin2D svgRef={gestes.refPlanche} doc={apercuDoc ?? apercuTransformation ?? drawing} cadre={cadre} pas={pas} outil={tool} selection={selectionSet} trace={trace} survol={survol} rectangle={gestes.rectangle} glissement={!!gestes.apercu}
         apercuForme={apercuForme} sommetsPoses={suite}
         clicsVersPlanche={o => OUTILS_TRACE.has(tool) || (moveWithPointer && (!!trace || selectionSet.has(o.id)))}
@@ -806,7 +838,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       surPointeur3d={enDirect ? (p) => tr.canal.pointeur(p ? { espace: "3d", ...p } : null) : undefined}
       pointeurs3d={enDirect ? pointeursFrais(tr.etat, Date.now()).filter((p) => p.espace === "3d").map((p) => ({ userId: p.userId, nom: p.nom || nomsSession[p.userId] || "", x: p.x, y: p.y, z: p.z ?? 0 })) : undefined}
       hotePanneaux={domaineActif === "visualisation" ? hoteVisualisation : hote3dDessin} visualisation={domaineActif === "visualisation"}
-      provenance={{ etude: { id: context.study.id, nom: context.study.name }, variante: { id: context.variant.id, nom: context.variant.name }, revisionId: context.revision.id, nonEnregistre: commands.length > 0 }} /></div>}
+      provenance={{ etude: { id: context.study.id, nom: context.study.name }, variante: { id: context.variant.id, nom: context.variant.name }, revisionId: context.revision.id, nonEnregistre: commands.length > 0 }}
+      surIllustration={(c) => { setCaptureIllustration(c); setDialogue("illustration"); }} /></div>}
     </div>
     {/* Saisie des mesures et avis : sous les vues (jamais par-dessus le dessin, où ils intercepteraient les clics). */}
     <div className="studio-canevas-avis">
@@ -901,7 +934,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       {historical && <BandeauHistorique projectId={projectId} studyId={studyId} variantId={variantId} adresse={adresseDomaine} />}
       {/* Exemple protégé : par le mode du projet (un lecteur reçoit le motif « role », mais peut copier — revue #208). */}
       {!historical && !autonome && context && (projet.data?.exampleMode === "reference" || catalogueAutorise.data?.droits.motif === "reference-protegee") && <CopieDeTravail projectId={projectId} nomVariante={context.variant.name} adresse={adresseDomaine} />}
-      {!historical && !autonome && <ChoixConflitStudio etat={enr.horsLigne} surRecharger={() => void enr.rechargerServeur()} surReporter={() => void enr.reporter()} />}
+      {!historical && !autonome && <ChoixConflitStudio etat={enr.horsLigne} surRecharger={() => void enr.rechargerServeur()} surReporter={() => void enr.reporter()} surAcquitter={() => enr.acquitterReprise()} />}
       {context && drawing && <div className="studio-corps" data-studio-corps>
         {!telephone && palette}
         {canevas}
@@ -919,6 +952,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       revision={context.revision.document} brouillonNonEnregistre={commands.length > 0}
       cartouche={() => cartoucheInitial({ projet: projet.data, etude: context.study, variante: context.variant, revision: { id: context.revision.id, ...revisionAffichee }, utilisateur: user })}
       portee={{ projectId, studyId, variantId, revisionId: context.revision.id }}
+      captureIllustration={captureIllustration}
       enregistrementConsole={autonome ? { commandes: commands, surEnregistre: (c) => { dirty.current = false; surEnregistreVersProjet?.(c, { domaine: domaineActif, planche: domaineActif === "dessin" ? modePlanche : null }); } } : undefined} />
     {rapportExport && liens[rapportExport] && <RapportExport format={FORMATS_RAPPORT[rapportExport]!} urlExport={liens[rapportExport]!} exportId={`${context?.revision.id ?? ""}#${exportsLances}`} surFermer={() => setRapportExport(null)} />}</>}
   </section>;

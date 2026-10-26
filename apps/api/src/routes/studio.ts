@@ -1,9 +1,10 @@
 /** Module Studio autonome : aucun rattachement au modèle Atelier ; lien de lecture facultatif vers des étapes du Parcours (studio-liens). */
 import { Router, json, type Request, type Response, type NextFunction } from "express";
 import { z } from "zod";
-import { studioRapportFidelite } from "@parcours/atelier-model";
+import { STUDIO_MODES_DERIVATION, studioRapportFidelite } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
 import { requireAuth } from "../middleware/require-auth.js";
+import { journalAccesStudio } from "../lib/studio-journal-acces.js";
 import { compareStudioRevisions, createStudioStudy, createStudioVariant, exportStudioVariant, listStudioRevisions, listStudioStudies, listStudioVariants, parseStudioCompareSide, readStudioContext, readStudioRevisionChanges, readStudioStudy, STUDIO_EXPORT_FORMATS, StudioRequestError, studioIdentifierSchema, submitStudioCommands, type StudioCreation, type StudioScope } from "../lib/studio-commands.js";
 import { createStudioComment, createStudioObservation, deleteStudioComment, listStudioComments, setStudioCommentAudience, studioCommentSchema, studioObservationSchema, studioObservationTransitionSchema, transitionStudioObservation } from "../lib/studio-commentaires.js";
 import { audienceSchema } from "../lib/audience.js";
@@ -18,22 +19,34 @@ import { studioPreferencesRouter } from "./studio-preferences.js";
 import { studioQuantitesRouter } from "./studio-quantites.js";
 import { studioDossiersRouter } from "./studio-dossiers.js";
 import { studioModelesExternesRouter } from "./studio-modeles-externes.js";
+import { studioIllustrationsRouter } from "./studio-illustrations.js";
+import { studioAgentsRouter } from "./studio-agents.js";
+import { studioCmdRouter } from "./studio-cmd.js";
+import { lireContexteEtude, studioContexteSchema } from "../lib/studio-contexte.js";
 import { avecContrat } from "../lib/studio-contrats.js";
 import { CONTRAT_ETUDES_LISTER, CONTRAT_ETUDE_CREER, CONTRAT_ETUDE_LIRE, CONTRAT_ETUDE_RENOMMER, CONTRAT_ETUDE_PHASE, CONTRAT_EXEMPLE_INSTALLER, CONTRAT_ETUDE_ARCHIVAGE, CONTRAT_VARIANTE_ARCHIVAGE, CONTRAT_VARIANTE_RENOMMER, CONTRAT_VARIANTES_COMPARER, CONTRAT_VARIANTES_LISTER, CONTRAT_VARIANTE_CREER, CONTRAT_REVISIONS_LISTER, CONTRAT_VARIANTE_LIRE, CONTRAT_REVISION_CHANGEMENTS, CONTRAT_REVISION_LIRE, CONTRAT_VARIANTE_EXPORTER, CONTRAT_EXPORT_RAPPORT, CONTRAT_COMMANDES, CONTRAT_COMMENTAIRES_LISTER, CONTRAT_COMMENTAIRE_CREER, CONTRAT_COMMENTAIRE_AUDIENCE, CONTRAT_COMMENTAIRE_SUPPRIMER, CONTRAT_COMMENTAIRE_OBSERVATION, CONTRAT_COMMENTAIRE_OBSERVATION_TRANSITION, CONTRAT_ETAPES_LIRE, CONTRAT_ETAPES_REMPLACER, CONTRAT_ETAPE_ETUDES } from "../lib/studio-contrats-routes.js";
 
 export const studioRouter = Router({ mergeParams: true });
+// Journal d'accès (TR-EX-046) : avant l'authentification, pour tracer aussi les 401 (lib/studio-journal-acces.ts).
+studioRouter.use(journalAccesStudio());
 studioRouter.use(requireAuth);
 // Modèles externes (lot F3) : le fichier reçu (5 Mo de texte au plus) voyage dans le corps JSON, borné à 6 Mo ici seulement.
 studioRouter.use("/studies/:studyId/variants/:variantId/modeles-externes", json({ limit: "6mb" }));
+// Illustrations (lot F) : le rendu de la vue (8 Mo de PNG au plus) voyage en base64 dans le corps JSON, borné à 12 Mo ici seulement.
+studioRouter.use("/studies/:studyId/variants/:variantId/illustrations", json({ limit: "12mb" }));
 studioRouter.use(json({ limit: "1mb" }));
 studioRouter.use("/preferences", studioPreferencesRouter);
 // `requestId` facultatif : même règle d'identifiant que les enveloppes de commandes ; rejeu = réponse 201 d'origine.
-const studySchema = z.object({ name: z.string().trim().min(1).max(200), requestId: studioIdentifierSchema.optional() }).strict();
-// Dérivation facultative : `fromVariantId` (même étude) et, si donnée, `fromRevisionId` (de cette variante ; tête sinon).
+// `contexte` facultatif (IF-001) : site / sources / version validés avant toute création (`lib/studio-contexte.ts`).
+const studySchema = z.object({ name: z.string().trim().min(1).max(200), requestId: studioIdentifierSchema.optional(), contexte: studioContexteSchema.optional() }).strict();
+// Dérivation facultative : `fromVariantId` (même étude) et, si donnée, `fromRevisionId` (de cette variante ; tête sinon) ;
+// `mode` : `version` (défaut, identifiants conservés) ou `copie` (copie indépendante à nouvelles identités, TR-EX-013).
 const variantSchema = z.object({
   name: z.string().trim().min(1).max(200), requestId: studioIdentifierSchema.optional(),
   fromVariantId: studioIdentifierSchema.optional(), fromRevisionId: studioIdentifierSchema.optional(),
-}).strict().refine((v) => v.fromRevisionId === undefined || v.fromVariantId !== undefined, { message: "fromRevisionId exige fromVariantId.", path: ["fromRevisionId"] });
+  mode: z.enum(STUDIO_MODES_DERIVATION).optional(),
+}).strict().refine((v) => v.fromRevisionId === undefined || v.fromVariantId !== undefined, { message: "fromRevisionId exige fromVariantId.", path: ["fromRevisionId"] })
+  .refine((v) => v.mode === undefined || v.fromVariantId !== undefined, { message: "mode exige fromVariantId.", path: ["mode"] });
 const exportSchema = z.object({ format: z.enum(STUDIO_EXPORT_FORMATS), revision: studioIdentifierSchema.optional() });
 function scope(req: Request): StudioScope {
   const params = req.params as Record<string, string>;
@@ -78,7 +91,9 @@ studioRouter.get("/studies", avecContrat(CONTRAT_ETUDES_LISTER), endpoint(async 
 studioRouter.post("/studies", avecContrat(CONTRAT_ETUDE_CREER), endpoint(async (req, res) => {
   const parsed = studySchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
-  created(res, await createStudioStudy(scope(req).projectId, req.user!.id, parsed.data.name, parsed.data.requestId));
+  const etude = await createStudioStudy(scope(req).projectId, req.user!.id, parsed.data.name, parsed.data.requestId, parsed.data.contexte ? { contexte: parsed.data.contexte } : {});
+  res.setHeader("Idempotent-Replayed", String(etude.replayed));
+  res.status(201).json({ ...etude, contexte: await lireContexteEtude(db, etude.study.id) });
 }));
 studioRouter.get("/studies/:studyId", avecContrat(CONTRAT_ETUDE_LIRE), endpoint(async (req, res) => {
   const archives = archivesOf(req);
@@ -152,8 +167,8 @@ studioRouter.post("/studies/:studyId/variants", avecContrat(CONTRAT_VARIANTE_CRE
   const parsed = variantSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
   const s = scope(req);
-  const { name, requestId, fromVariantId, fromRevisionId } = parsed.data;
-  const from = fromVariantId === undefined ? undefined : { variantId: fromVariantId, ...(fromRevisionId === undefined ? {} : { revisionId: fromRevisionId }) };
+  const { name, requestId, fromVariantId, fromRevisionId, mode } = parsed.data;
+  const from = fromVariantId === undefined ? undefined : { variantId: fromVariantId, ...(fromRevisionId === undefined ? {} : { revisionId: fromRevisionId }), ...(mode === undefined ? {} : { mode }) };
   created(res, await createStudioVariant(s.projectId, s.studyId, req.user!.id, name, requestId, from));
 }));
 studioRouter.get("/studies/:studyId/variants/:variantId/revisions", avecContrat(CONTRAT_REVISIONS_LISTER), endpoint(async (req, res) => {
@@ -277,3 +292,8 @@ studioRouter.use(studioObservationsRouter);
 studioRouter.use(studioDossiersRouter);
 // Modèles externes (partenaires) d'une variante (lot F3) : réception, comparaison, acceptation ou refus.
 studioRouter.use(studioModelesExternesRouter);
+// Lot F (décision P-12) : illustrations depuis une vue ; jetons, propositions et journal des agents ; extensions.
+studioRouter.use(studioIllustrationsRouter);
+studioRouter.use(studioAgentsRouter);
+// Lot CMD : essais, jobs, journal des révisions, migrations de schéma, bascule Atelier → Studio (`routes/studio-cmd.ts`).
+studioRouter.use(studioCmdRouter);

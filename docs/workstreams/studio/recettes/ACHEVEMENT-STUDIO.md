@@ -68,3 +68,102 @@ contrat versionné : la réserve « 48 routes non versionnées » de P-11 est le
 - Un identifiant par route, pour l'entrée et la réponse.
 - La version passe par un en-tête, sur le modèle de `X-Studio-Revision`.
 - Règle d'évolution : un champ facultatif ajouté garde la version ; retirer, renommer ou changer un type impose `/2`.
+
+## Lot REG — outillage du registre et protocole de PR
+
+**Ce qui est livré**
+- Règles de preuve `docs/ai-team/controle_preuves.py` (X.5-02, G2-04, PR-07, PR-08, BLOC-07), en CI (`continuity.yml`) :
+  un « Vérifié » ou « Accepté » exige une preuve étiquetée (`etiquette`), datée, versionnée (`commit`) et, pour un
+  scénario exécuté, l'exécution GitHub Actions où l'étape qui joue le fichier a réussi.
+- État « Implémenté » (code produit, preuve de succès pas encore suffisante), jamais compté dans P630.
+- Outil `scripts/registre/completer_preuves.py` : 3 416 preuves complétées par des données réelles (exécutions de CI et
+  commits retrouvés), aucune inventée ; REC-C-03 et PIL-01 passent en tests « Non applicable » (aucun test cité).
+- Contrôles du suivi `scripts/registre/controles-suivi.mjs` (ARC-08, SUIVI-01/02/07/08/09, X.3-02 : 141 chaînes
+  complètes) et documents d'état générés `docs/ai-team/reports/etat-studio/` (X.3-03, X.4-03, X.5-01).
+- Analyse de secrets `scripts/securite/analyse-secrets.mjs` et workflow `securite-secrets.yml` (SUIVI-10).
+- Protocole de PR `pr-protocole.yml` et `scripts/registre/controle-pr.mjs` (PR-01 à PR-06, PR-09), section
+  « Unité de travail » du modèle de PR.
+- POC G2 joués sur les corpus S1–S7 (G2-03, rapport `etat-studio/POC-CORPUS.md`) ; licence du corpus établie
+  (`packages/atelier-model/src/studio/corpus/LICENCE.md`, X.1-03).
+
+**Restent ouverts (verdict partiel)** : X.1-01/02/04/05/06/07 (éléments absents du corpus qui dépendent de fonctions du
+modèle), X.1-08 (captures raster / 3D de référence sur banc autorisé), SUIVI-01 (branche orpheline
+`automation/studio-checklist-daily` à supprimer par la première exécution du workflow corrigé ou par un détenteur du
+droit de push ; le réglage « Allow GitHub Actions to create pull requests » est un acte d'administration).
+
+**Décision P-13 (déléguée, réversible)** — nommage des branches de PR. Le protocole
+(`docs/continuity/README.md`) dit « Nommage **conseillé** : `feat|fix|chore|docs/<issue>-<sujet>` » et « ne pas renommer
+une branche historique ». Le contrôle PR-05 le traite donc en avertissement, jamais en refus : une branche imposée par
+l'environnement d'exécution (session de travail) ou historique est signalée ; l'Issue propre liée (PR-01) reste exigée
+dans tous les cas, et une branche qui suit le modèle doit lier son Issue. Conséquence : le contrôle reste bloquant sur le
+fond (Issue, champs, preuves, revalidation) sans contredire le protocole. Réversible : passer l'avertissement en écart
+dans `controlerPr`.
+
+**Démarche de preuve à deux temps** : les obligations du lot sont d'abord inscrites « Implémenté » avec des preuves
+« test prescrit » ; elles ne passent « Vérifié » qu'une fois l'exécution CI verte de la PR retrouvée par
+`completer_preuves.py --reference HEAD --branche <branche>`.
+
+## Lot DEC — décisions P-12 implémentées
+
+**Ce qui est livré**
+- **CAD-07** : inventaire COEX-01 contrôlé (22 composants, aucun « Retirer » ni « Remplacer », chemins existants).
+- **ARC-03** : façade de contexte `modules/studio/contexte/facade-contexte.ts`, seule voie de `StudioShell` vers le compte
+  et le projet ; règle de frontière dans `scripts/frontieres.json`.
+- **ARC-05** : pureté du modèle Studio contrôlée (ni React, ni DOM, ni globaux du navigateur).
+- **TR-EX-013 / TR-INV-003** : dérivation « copie indépendante » (`mode: "copie"`, identités réémises
+  `<id>~<8 derniers caractères de la variante>`), en plus du mode « version », qui reste le défaut ; contrat
+  `studio-api-variante-creer/1` étendu par un champ facultatif.
+- **TR-IF-002** : tolérances des gestes déclarées (`STUDIO_TOLERANCES_GESTES` : ligne en saisie exacte, pointé 1e-9 m).
+- **TR-EX-036** : une alternative sans pointeur par outil, panoramique au clavier, focus visible à la bascule 2D ⇄ 3D.
+- **TR-EX-046** : journal d'accès minimisé `studio_access_events` (refus et exports, ajout seul), conservation 12 mois
+  (`STUDIO_ACCESS_RETENTION_MONTHS`), purges datées ; le journal de publication n'est jamais purgé.
+- **X.2-02** : acceptation d'exigence et invitations refusées sous le verrou d'un autre compte (423) et sur le projet de
+  référence (403). Conséquence : le projet de référence (P.118 importé) ne se partage plus ; la recette `comptes-securite`
+  travaille sur une copie.
+- **MIG-COEX-04** : les montées de version locales v6 / v7 déplacent les données dans une `quarantaine` IndexedDB,
+  consultable et exportable (Paramètres → « Données conservées par ce navigateur »).
+- **X.2-04 / BLOC-06** : porte G4 automatisée `scripts/validation/porte-g4.mjs` (signalement à chaque commit, mode
+  strict à la Release par `porte-g4-release.yml`) — voir [DOSSIER-G4](../DOSSIER-G4.md).
+
+**Reste ouvert** : TR-INV-010 (dépend du lot F, non encore intégré).
+
+Recette `apps/web/e2e/studio-dec.mjs` (27 contrôles) branchée en CI (lot « complements »). Les 12 obligations du lot sont
+inscrites « Implémenté » jusqu'à l'exécution CI verte de la PR (démarche à deux temps du lot REG).
+
+## Lot F — illustrations, agents MCP, extensions
+
+**Ce qui est livré**
+- Modèle pur `@parcours/atelier-model/studio-agents` : contrôle de politique avant tout transfert, fournisseur local
+  déterministe « Illustration dérivée du rendu (locale, sans IA) », provenance et statut « non vérifiée » des
+  illustrations, déclaration et évaluation d'extensions (signature Ed25519, aucun code chargé), protocole du serveur MCP.
+- API : illustrations (image séparée, empreinte du document comparée avant et après : modèle inchangé), fournisseur externe
+  désactivé par défaut (politique, coût déclaré, clé et consentement exigés ; aucun service payant appelé, aucune clé
+  dans le dépôt), jetons et propositions d'agent, confirmation humaine seule écrivante (source `agent-mcp`), serveur MCP
+  `POST /mcp/studio` et relais stdio ; 13 routes à contrat versionné.
+- Interface : « Illustration depuis la vue » (Ctrl+Maj+F4) et « Agents (MCP) » (Ctrl+Maj+F9), chacune avec son icône.
+
+**Restent partiels** : REC-E-01, REC-E-02, F.3-04 (volets d'autres lots). Réserves : TR-EX-071 (auteur absent de la
+provenance du rendu exporté par le navigateur), F.3-03 (session en direct hors mesure).
+
+## Lot CMD — commandes, révisions, migrations, bascule
+
+**Ce qui est livré**
+- Modèle pur `@parcours/atelier-model/studio-cmd` : effets d'une commande, états dérivés, migration
+  `studio-document/1` → `/2` (liste `conserves` des données inconnues), simulation, essai, périmètre.
+- API : effets consignés dans la transaction de la révision et notification après engagement ; essais à portée de
+  révision (job serveur, confirmation distincte, 409 `essai_perime`) ; journal ; migrations accordées par le propriétaire
+  avec retour arrière ; bascule Atelier → Studio (une chaîne d'écriture, 423 sous verrou) ; contexte d'étude
+  `studio-contexte-etude/1` ; 17 routes à contrat versionné.
+- Livrable REC-A-01 `docs/studio/LIVRABLES-LOT-A.md` (72 documents, 72 allers-retours exacts ; 215 données inconnues
+  conservées et rapportées).
+- **A.1-07** : la recette `studio-persistance.mjs` joue désormais en CI la phase initiale, l'arrêt de l'API, le
+  **redémarrage du service PostgreSQL**, la relance de l'API puis la phase de réouverture.
+
+**Restent partiels** : TR-EX-016 (cinq états affichés dans la vue 3D seulement), TR-EX-049 (reprise après coupure sans
+recette navigateur), TR-EX-002 (parcours positif « du dessin au dossier »), TR-EX-014 et TR-INV-013 (modèles externes),
+REC-A-02. Limite connue : les écritures Atelier hors commandes (import d'archive, remplacement à l'import d'exemple) ne
+passent pas par l'orchestrateur et ne sont pas bloquées par la bascule (MIG-COEX-06, mécanisme prouvé sur données
+synthétiques ; la bascule d'un projet réel reste un acte de production).
+
+**Intégration** : signature du point d'entrée des écritures unifiée (`options.source` porte `agent-mcp`, `options.jobId`
+le job d'essai) ; recettes `studio-lot-f` et `studio-cmd` branchées en CI et en préproduction.

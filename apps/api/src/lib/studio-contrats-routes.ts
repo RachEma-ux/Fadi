@@ -20,7 +20,8 @@ const qui = z.looseObject({ id: z.string(), email: z.string().nullable() });
 const quiOuNull = qui.nullable();
 /** Document `studio-document/1` relu par son validateur (jamais une forme approchée). */
 const documentStudio = z.custom<unknown>((d) => { try { validateStudioDocument(d); return true; } catch { return false; } }, "document Studio invalide");
-const provenance = z.object({ variantId: ident, revisionId: ident }).nullable();
+/** Provenance d'une dérivation ; `mode: "copie"` et `identites` (nouvel identifiant → source) pour une copie indépendante (TR-EX-013). */
+const provenance = z.strictObject({ variantId: ident, revisionId: ident, mode: z.literal("copie").optional(), identites: z.record(z.string(), z.string()).optional() }).nullable();
 const phase = z.string().nullable();
 
 const etudeResume = z.strictObject({ id: ident, name: z.string(), projectId: ident });
@@ -34,6 +35,14 @@ const etudeLue = z.strictObject({
 const contexteLu = z.strictObject({ study: etudeResume, variant: varianteContexte, revision: revisionContexte, canWrite: z.boolean(), archived: z.boolean(), derivedFrom: provenance });
 const creation = z.strictObject({ study: etudeResume, variant: varianteContexte, revision: revisionContexte, canWrite: z.boolean(), derivedFrom: provenance.optional(), replayed: z.boolean() });
 const cycleVariante = z.strictObject({ variant: varianteResume, studyArchived: z.boolean() });
+// Lot CMD : effets d'une commande (EX-010), événement du journal (IF-011), contexte d'étude (IF-001), job (EX-088).
+const effets = z.looseObject({ schema: z.literal("studio-effets/1"), crees: z.array(z.string()), modifies: z.array(z.string()), supprimes: z.array(z.string()), domainesInvalides: z.array(z.string()), revisionSortie: z.string() });
+const evenementRevision = z.looseObject({ eventId: ident, transactionId: ident, xactId: z.string().nullable(), studyId: ident, variantId: ident, baseRevisionId: z.string().nullable(), revisionId: ident, authorId: ident, effects: effets, jobId: z.string().nullable(), createdAt: instant });
+const soumission = z.strictObject({ ...creation.shape, effects: effets.optional(), eventId: z.string().optional() });
+const contexteEtude = z.looseObject({ version: z.literal("studio-contexte-etude/1"), site: z.looseObject({ parcelles: z.array(z.unknown()) }), sources: z.array(z.unknown()), validePar: z.string(), valideLe: instant });
+const jobStudio = z.strictObject({ id: ident, kind: z.enum(["essai-commandes", "simulation-migration"]), status: z.string(), projectId: ident, studyId: ident, variantId: z.string().nullable(), sourceRevisionId: z.string().nullable(), result: z.unknown(), createdBy: ident, createdAt: instant, finishedAt: instant.nullable() });
+const migrationEtude = z.strictObject({ id: ident, studyId: ident, jobId: ident, cible: z.literal("studio-document/2"), statut: z.enum(["simulee", "accordee", "appliquee", "retour-arriere"]), verdict: z.string(), pointRetour: z.array(z.strictObject({ variantId: ident, headRevisionId: ident })), accord: z.strictObject({ par: ident, le: instant }).nullable(), appliqueeLe: instant.nullable(), retourArriereLe: instant.nullable(), documentsMigres: z.number().int(), rapport: z.looseObject({ schema: z.literal("studio-simulation-migration/1") }).nullable() });
+const basculeLue = z.strictObject({ projectId: ident, studyId: ident, autorite: z.enum(["atelier", "studio"]), pointRetour: z.unknown(), historique: z.array(z.looseObject({ action: z.string(), autorite: z.string() })), ecriture: z.array(z.string()), lecture: z.array(z.string()) });
 
 const evenementObservation = z.looseObject({ seq: z.number().int(), action: z.string(), fromStatut: z.string().nullable(), toStatut: z.string(), actorId: z.string(), revisionId: z.string().nullable(), at: instant });
 const tacheObservation = z.looseObject({ id: ident, libelle: z.string(), assigneeId: z.string(), statut: z.string(), echeance: z.string().nullable(), journal: z.array(z.looseObject({ seq: z.number().int(), action: z.string() })), possibles: z.array(z.string()) });
@@ -135,7 +144,7 @@ export const CONTRAT_ETUDES_LISTER = contratRoute({
 });
 export const CONTRAT_ETUDE_CREER = contratRoute({
   id: "studio-api-etude-creer/1", routes: ["POST /studies"], objet: "Nouvelle étude et sa variante initiale (rejeu par `requestId`).",
-  entree: "Corps : `{ name, requestId? }` (schéma `studySchema`).", statuts: [201], corps: "json", reponse: creation,
+  entree: "Corps : `{ name, requestId?, contexte? }` (schéma `studySchema` ; contexte `studio-contexte-etude/1`, IF-001).", statuts: [201], corps: "json", reponse: z.strictObject({ ...creation.shape, contexte: contexteEtude.nullable() }),
 });
 export const CONTRAT_ETUDE_LIRE = contratRoute({
   id: "studio-api-etude-lire/1", routes: ["GET /studies/:studyId"], objet: "Étude et ses variantes.",
@@ -169,7 +178,7 @@ export const CONTRAT_VARIANTES_LISTER = contratRoute({
 });
 export const CONTRAT_VARIANTE_CREER = contratRoute({
   id: "studio-api-variante-creer/1", routes: ["POST /studies/:studyId/variants"], objet: "Nouvelle variante, vide ou dérivée d'une révision de l'étude.",
-  entree: "Corps : `{ name, requestId?, fromVariantId?, fromRevisionId? }` (schéma `variantSchema`).", statuts: [201], corps: "json", reponse: creation,
+  entree: "Corps : `{ name, requestId?, fromVariantId?, fromRevisionId?, mode? }` (schéma `variantSchema` ; `mode` : `version` par défaut, ou `copie` — copie indépendante à nouvelles identités).", statuts: [201], corps: "json", reponse: creation,
 });
 export const CONTRAT_VARIANTE_RENOMMER = contratRoute({
   id: "studio-api-variante-renommer/1", routes: ["PATCH /studies/:studyId/variants/:variantId"], objet: "Renommage de la variante.",
@@ -197,7 +206,7 @@ export const CONTRAT_REVISION_CHANGEMENTS = contratRoute({
   entree: "Aucune.", statuts: [200], corps: "json",
   reponse: z.strictObject({
     revisionId: ident, parentRevisionId: z.string().nullable(), source: z.string(), authorId: z.string(), createdAt: instant, requestId: z.string().nullable(),
-    commands: z.array(z.looseObject({ toolId: z.string() })), changedKeys: z.array(z.string()), summary: z.unknown(),
+    commands: z.array(z.looseObject({ toolId: z.string() })), changedKeys: z.array(z.string()), summary: z.unknown(), event: evenementRevision.nullable(),
   }),
 });
 export const CONTRAT_VARIANTE_EXPORTER = contratRoute({
@@ -211,7 +220,7 @@ export const CONTRAT_EXPORT_RAPPORT = contratRoute({
 });
 export const CONTRAT_COMMANDES = contratRoute({
   id: "studio-api-commandes/1", routes: ["POST /studies/:studyId/variants/:variantId/commands"], objet: "Application d'une enveloppe de commandes `studio-commands/1` ; nouvelle révision (rejeu par `requestId`) ; quota d'invocation du compte (429 `quota_exceeded`, EX-028).",
-  entree: "Corps : enveloppe `{ contractVersion: studio-commands/1, requestId, baseRevisionId, commands }` (schéma `envelopeSchema`).", statuts: [200], corps: "json", reponse: creation,
+  entree: "Corps : enveloppe `{ contractVersion: studio-commands/1, requestId, baseRevisionId, commands }` (schéma `envelopeSchema`).", statuts: [200], corps: "json", reponse: soumission,
 });
 
 // --- Commentaires, observations d'un fil et étapes (routes/studio.ts) -------------------------------------------------
@@ -501,4 +510,128 @@ export const CONTRAT_MODELE_EXTERNE_CONTENU = contratRoute({
 export const CONTRAT_MODELE_EXTERNE_ACTION = contratRoute({
   id: "studio-api-modele-externe-action/1", routes: ["POST /studies/:studyId/variants/:variantId/modeles-externes/:modelId/:action"], objet: "Comparer à la tête, accepter ou refuser (motivé).",
   entree: "Adresse : `action` (comparer | accepter | refuser) ; corps : schéma `studioModelePassageSchema`.", statuts: [200], corps: "json", reponse: modeleExterne,
+});
+
+// --- Lot F : illustrations, agents (MCP) et extensions (routes/studio-illustrations.ts, routes/studio-agents.ts) -------
+
+const illustration = z.strictObject({
+  id: ident, studyId: ident, variantId: ident, revisionId: ident, fournisseur: z.strictObject({ id: z.string(), nature: z.enum(["local-deterministe", "ia-externe"]) }),
+  parametres: z.record(z.string(), z.unknown()),
+  provenance: z.looseObject({ nature: z.literal("illustration"), modele: z.looseObject({ inchange: z.literal(true) }), verification: z.looseObject({ statut: z.literal("non-verifiee") }), reproductibilite: z.looseObject({ deterministe: z.boolean() }) }),
+  largeur: z.number().int(), hauteur: z.number().int(), empreinteImage: z.string(), creePar: z.string(), creeParEmail: z.string().nullable(), creeLe: instant, image: z.string(),
+});
+const fournisseurIllustration = z.looseObject({ id: z.enum(["local-derive", "externe"]), nom: z.string(), nature: z.string(), version: z.string(), reseau: z.boolean(), disponible: z.boolean(), manque: z.array(z.string()) });
+const propositionAgent = z.looseObject({ id: ident, studyId: ident, variantId: ident, requestId: ident, statut: z.enum(["en-attente", "confirmee", "refusee", "expiree", "echec"]), revisionId: z.string().nullable() });
+const evaluationExtension = z.looseObject({ etat: z.enum(["refusee", "decouverte", "verifiee", "autorisee"]), chargement: z.literal("aucun"), motifs: z.array(z.string()) });
+const IL = "/studies/:studyId/variants/:variantId/illustrations";
+const jetonAgent = z.looseObject({ id: ident, nom: z.string(), creeLe: instant, expireLe: instant, revoqueLe: z.string().nullable() });
+
+export const CONTRAT_ILLUSTRATIONS_FOURNISSEURS = contratRoute({
+  id: "studio-api-illustrations-fournisseurs/1", routes: [`GET ${IL}/fournisseurs`], objet: "Fournisseurs d'illustration et leur disponibilité réelle (lot F).",
+  entree: "Aucune.", statuts: [200], corps: "json", reponse: z.strictObject({ fournisseurs: z.array(fournisseurIllustration) }),
+});
+export const CONTRAT_ILLUSTRATIONS_LISTER = contratRoute({
+  id: "studio-api-illustrations-lister/1", routes: [`GET ${IL}`], objet: "Illustrations archivées de la variante (lot F).",
+  entree: "Aucune.", statuts: [200], corps: "json", reponse: z.strictObject({ illustrations: z.array(illustration) }),
+});
+export const CONTRAT_ILLUSTRATION_CREER = contratRoute({
+  id: "studio-api-illustration-creer/1", routes: [`POST ${IL}`], objet: "Illustration depuis le rendu de la vue : image séparée, modèle inchangé, transfert externe contrôlé.",
+  entree: "Corps : schéma `studioIllustrationSchema` (rendu PNG en base64, 8 Mo au plus).", statuts: [201], corps: "json", reponse: illustration.extend({ replayed: z.boolean() }),
+});
+export const CONTRAT_ILLUSTRATION_IMAGE = contratRoute({
+  id: "studio-api-illustration-image/1", routes: [`GET ${IL}/:illustrationId/image`], objet: "Image archivée (PNG portant sa provenance fadi:illustration, statut « non vérifiée »).",
+  entree: "Aucune.", statuts: [200], corps: "fichier", reponse: null, typeFichier: "image/png",
+});
+export const CONTRAT_AGENTS_JETONS_LISTER = contratRoute({
+  id: "studio-api-agents-jetons-lister/1", routes: ["GET /agents/jetons"], objet: "Jetons d'agent du compte sur le projet (jamais leur valeur).",
+  entree: "Aucune.", statuts: [200], corps: "json", reponse: z.strictObject({ jetons: z.array(jetonAgent) }),
+});
+export const CONTRAT_AGENTS_JETON_CREER = contratRoute({
+  id: "studio-api-agents-jeton-creer/1", routes: ["POST /agents/jetons"], objet: "Création d'un jeton d'agent, montré une seule fois.",
+  entree: "Corps : schéma `studioJetonSchema` (nom, joursValidite 1 à 90).", statuts: [201], corps: "json", reponse: z.strictObject({ id: ident, nom: z.string(), jeton: z.string().startsWith("fadi_mcp_"), expireLe: instant }),
+});
+export const CONTRAT_AGENTS_JETON_REVOQUER = contratRoute({
+  id: "studio-api-agents-jeton-revoquer/1", routes: ["POST /agents/jetons/:tokenId/revoquer"], objet: "Révocation d'un jeton d'agent du compte.",
+  entree: "Aucune.", statuts: [200], corps: "json", reponse: z.strictObject({ id: ident, revoque: z.literal(true) }),
+});
+export const CONTRAT_AGENTS_PROPOSITIONS = contratRoute({
+  id: "studio-api-agents-propositions/1", routes: ["GET /agents/propositions"], objet: "Propositions des agents du compte, à confirmer ou refuser.",
+  entree: "Aucune.", statuts: [200], corps: "json", reponse: z.strictObject({ propositions: z.array(propositionAgent) }),
+});
+export const CONTRAT_AGENTS_PROPOSITION_CONFIRMER = contratRoute({
+  id: "studio-api-agents-proposition-confirmer/1", routes: ["POST /agents/propositions/:proposalId/confirmer"], objet: "Confirmation humaine : le point d'entrée commun écrit la révision (source agent-mcp).",
+  entree: "Aucune.", statuts: [200], corps: "json", reponse: z.strictObject({ proposition: propositionAgent, revisionId: ident, replayed: z.boolean() }),
+});
+export const CONTRAT_AGENTS_PROPOSITION_REFUSER = contratRoute({
+  id: "studio-api-agents-proposition-refuser/1", routes: ["POST /agents/propositions/:proposalId/refuser"], objet: "Refus d'une proposition d'agent : rien n'est écrit.",
+  entree: "Aucune.", statuts: [200], corps: "json", reponse: z.strictObject({ proposition: propositionAgent }),
+});
+export const CONTRAT_AGENTS_JOURNAL = contratRoute({
+  id: "studio-api-agents-journal/1", routes: ["GET /agents/journal"], objet: "Journal agent / humain du compte sur le projet (INV-010).",
+  entree: "Aucune.", statuts: [200], corps: "json",
+  reponse: z.strictObject({ evenements: z.array(z.looseObject({ id: ident, acteur: z.enum(["agent", "humain"]), action: z.string(), le: instant })) }),
+});
+export const CONTRAT_EXTENSIONS_LISTER = contratRoute({
+  id: "studio-api-extensions-lister/1", routes: ["GET /extensions"], objet: "Extensions déclarées (adaptateur MCP intégré) et leur évaluation.",
+  entree: "Aucune.", statuts: [200], corps: "json", reponse: z.strictObject({ extensions: z.array(z.strictObject({ declaration: z.looseObject({ id: z.string(), version: z.string() }), evaluation: evaluationExtension })) }),
+});
+export const CONTRAT_EXTENSION_EVALUER = contratRoute({
+  id: "studio-api-extension-evaluer/1", routes: ["POST /extensions/evaluer"], objet: "Évaluation d'une déclaration d'extension, sans rien charger ni écrire.",
+  entree: "Corps : `{ declaration }`.", statuts: [200], corps: "json", reponse: z.strictObject({ evaluation: evaluationExtension }),
+});
+
+// --- Lot CMD : contexte, essais, jobs, journal, migrations, bascule (routes/studio-cmd.ts) ------------------------------
+
+export const CONTRAT_ETUDE_CONTEXTE = contratRoute({
+  id: "studio-api-etude-contexte/1", routes: ["GET /studies/:studyId/contexte"], objet: "Contexte validé d'une étude (IF-001) : site, sources, version ; null sans contexte.",
+  entree: "Aucune.", statuts: [200], corps: "json", reponse: z.strictObject({ studyId: ident, contexte: contexteEtude.nullable() }),
+});
+export const CONTRAT_ESSAI_CREER = contratRoute({
+  id: "studio-api-essai-creer/1", routes: ["POST /studies/:studyId/variants/:variantId/essais"], objet: "Essai d'une enveloppe à portée de révision (EX-045) : job serveur, aucune révision écrite.",
+  entree: "Corps : enveloppe `studio-commands/1` (schéma `envelopeSchema`).", statuts: [201], corps: "json", reponse: jobStudio,
+});
+export const CONTRAT_ESSAI_ABANDON = contratRoute({
+  id: "studio-api-essai-abandon/1", routes: ["POST /studies/:studyId/variants/:variantId/essais/:jobId/abandon"], objet: "Abandon d'un essai (aucun effet), idempotent.",
+  entree: "Aucun corps lu.", statuts: [200], corps: "json", reponse: jobStudio,
+});
+export const CONTRAT_ESSAI_CONFIRMER = contratRoute({
+  id: "studio-api-essai-confirmer/1", routes: ["POST /studies/:studyId/variants/:variantId/essais/:jobId/confirmer"], objet: "Confirmation d'un essai sur sa révision (409 `essai_perime` sinon) ; révision reliée au job.",
+  entree: "Aucun corps lu.", statuts: [200], corps: "json", reponse: z.strictObject({ ...soumission.shape, jobId: ident }),
+});
+export const CONTRAT_JOB_LIRE = contratRoute({
+  id: "studio-api-job-lire/1", routes: ["GET /jobs/:jobId"], objet: "Résultat d'un job serveur (EX-088) sous l'autorisation de son étude.",
+  entree: "Aucune.", statuts: [200], corps: "json", reponse: jobStudio,
+});
+export const CONTRAT_JOURNAL_REVISIONS = contratRoute({
+  id: "studio-api-journal-revisions/1", routes: ["GET /studies/:studyId/variants/:variantId/journal"], objet: "Journal des changements de révision (IF-011), du plus ancien au plus récent.",
+  entree: "Aucune.", statuts: [200], corps: "json", reponse: z.strictObject({ variantId: ident, headRevisionId: ident, evenements: z.array(evenementRevision) }),
+});
+export const CONTRAT_MIGRATION_SIMULER = contratRoute({
+  id: "studio-api-migration-simuler/1", routes: ["POST /studies/:studyId/migrations"], objet: "Simulation de migration `studio-document/1` → `/2` (EX-091) : job, rapport, point de retour.",
+  entree: "Corps : `{ cible: studio-document/2 }`.", statuts: [201], corps: "json", reponse: migrationEtude,
+});
+export const CONTRAT_MIGRATIONS_LISTER = contratRoute({
+  id: "studio-api-migrations-lister/1", routes: ["GET /studies/:studyId/migrations"], objet: "Migrations de schéma de l'étude, plus récente d'abord.",
+  entree: "Aucune.", statuts: [200], corps: "json", reponse: z.strictObject({ migrations: z.array(migrationEtude) }),
+});
+export const CONTRAT_MIGRATION_LIRE = contratRoute({
+  id: "studio-api-migration-lire/1", routes: ["GET /studies/:studyId/migrations/:migrationId"], objet: "Une migration de schéma et son rapport.",
+  entree: "Aucune.", statuts: [200], corps: "json", reponse: migrationEtude,
+});
+export const CONTRAT_MIGRATION_PASSAGE = contratRoute({
+  id: "studio-api-migration-passage/1",
+  routes: ["POST /studies/:studyId/migrations/:migrationId/accorder", "POST /studies/:studyId/migrations/:migrationId/appliquer", "POST /studies/:studyId/migrations/:migrationId/retour-arriere"],
+  objet: "Procédure d'accord (propriétaire) : accorder, appliquer les copies /2, retour arrière.", entree: "Aucun corps lu.", statuts: [200], corps: "json", reponse: migrationEtude,
+});
+export const CONTRAT_MIGRATION_DOCUMENT = contratRoute({
+  id: "studio-api-migration-document/1", routes: ["GET /studies/:studyId/migrations/:migrationId/documents/:revisionId"], objet: "Copie `studio-document/2` d'une révision dans une migration appliquée.",
+  entree: "Aucune.", statuts: [200], corps: "json", reponse: z.strictObject({ revisionId: ident, document: z.looseObject({ schemaVersion: z.literal("studio-document/2") }) }),
+});
+export const CONTRAT_BASCULE_LIRE = contratRoute({
+  id: "studio-api-bascule-lire/1", routes: ["GET /bascule"], objet: "Bascule Atelier → Studio du projet (MIG-COEX-06), ou null.",
+  entree: "Aucune.", statuts: [200], corps: "json", reponse: z.strictObject({ bascule: basculeLue.nullable() }),
+});
+export const CONTRAT_BASCULE_PASSAGE = contratRoute({
+  id: "studio-api-bascule-passage/1", routes: ["POST /bascule/preparer", "POST /bascule/basculer", "POST /bascule/retour-arriere"],
+  objet: "Préparer (étude désignée), basculer l'autorité d'écriture vers Studio, retour arrière (propriétaire).", entree: "Corps de `preparer` : `{ studyId }` ; aucun pour les autres.", statuts: [200], corps: "json", reponse: basculeLue,
 });

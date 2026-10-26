@@ -61,7 +61,19 @@ import { invitationView } from "../lib/invitations.js";
 import { accountByEmail, createProjectInvitation, previewProjectInvitation, proposedScopesProblem, resolveInvitationTarget } from "../lib/project-invitations-db.js";
 import { invitationExpiry, memberChangeProblem, parseAccessExpiry, projectRoleFor, proposedRolesFrom } from "../lib/project-invitations.js";
 import { requireAuth } from "../middleware/require-auth.js";
-import { projectOr404, type ProjectRole } from "../lib/owned-project.js";
+import { projectAccessRefusal, projectOr404, type AccessibleProject, type ProjectRole } from "../lib/owned-project.js";
+
+/**
+ * X.2-02 (ADR-STUDIO-PILOTE-01 P-12) : une invitation — ou un changement de rôle par la même route — est refusée sous la
+ * réservation d'édition d'un autre compte (423 `locked`) et sur un projet de référence protégé (403
+ * `reference-protegee`) : choix le plus prudent et réversible. L'aperçu (rien n'est écrit) reste ouvert.
+ */
+function refusInvitation(res: Response, project: AccessibleProject, userId: string): boolean {
+  const refus = projectAccessRefusal(project, userId, "modify");
+  if (!refus) return false;
+  res.status(refus.status).json(refus.body);
+  return true;
+}
 import { lockProject } from "../lib/step-rows.js";
 import { mandateInvitationTarget } from "../lib/mandate-invitations-db.js";
 import { signalerAccesApresEcriture } from "../lib/temps-reel-signaux.js";
@@ -223,7 +235,7 @@ membersRouter.post("/preview", async (req, res) => {
  */
 membersRouter.post("/", async (req, res) => {
   const project = await projectOr404(req, res, "owner");
-  if (!project) return;
+  if (!project || refusInvitation(res, project, req.user!.id)) return;
   const input = readInvitation(req.body);
   if (!input.ok) {
     res.status(400).json({ error: "invalid_input", message: input.problems.join(" ; "), problems: input.problems, details: input.details });
@@ -324,7 +336,7 @@ membersRouter.post("/mandates/:mandateId/preview", async (req, res) => {
 
 membersRouter.post("/mandates/:mandateId", async (req, res) => {
   const ctx = await mandateInvitation(req, res);
-  if (!ctx) return;
+  if (!ctx || refusInvitation(res, ctx.project, req.user!.id)) return;
   const { project, rep, input } = ctx;
   const scopeProblem = await proposedScopesProblem(db, project.id, input.roles);
   if (scopeProblem) {

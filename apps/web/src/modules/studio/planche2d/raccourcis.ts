@@ -18,6 +18,7 @@ export type IdCommandeEditeur =
   | "reperage-orthogonal" | "reperage-polaire" | "pas-polaire"
   | "importer-dxf" | "importer-ifc" | "modeles-externes" | "exporter-svg" | "exporter-dxf" | "exporter-ifc" | "feuille" | "dossier"
   | "exporter-png" | "echanges"
+  | "illustration" | "agents"
   | "outils" | "palette"
   | "exigences";
 export type GroupeCommande = "edition" | "vue" | "accrochage" | "reperage" | "visualisation" | "import" | "export" | "presentation" | "catalogue" | "exigences";
@@ -32,6 +33,7 @@ export type IconeCommande =
   | "studio-track-ortho" | "studio-track-polar" | "studio-track-polar-step"
   | "studio-import-dxf" | "studio-import-ifc" | "studio-external-models" | "studio-export-svg" | "studio-export-dxf" | "studio-export-ifc" | "studio-sheet" | "studio-dossier"
   | "studio-export-png" | "studio-exchanges"
+  | "studio-illustration" | "studio-agents"
   | "studio-catalog" | "studio-palette"
   | "studio-requirements";
 
@@ -96,6 +98,11 @@ export const COMMANDES_EDITEUR: readonly CommandeEditeur[] = Object.freeze([
   { id: "pas-polaire", libelleFR: "Pas polaire suivant", raccourci: "Shift+Y", iconeSymbolique: "studio-track-polar-step", groupe: "reperage", ecrit: false },
   // Rendu du modèle (lot E.5-03) : image PNG de la vue 3D, provenance incluse ; F4, libre et non réservé (F3 l'est).
   { id: "exporter-png", libelleFR: "Exporter le rendu PNG", raccourci: "F4", iconeSymbolique: "studio-export-png", groupe: "visualisation", ecrit: false },
+  // Illustration depuis la vue (lot F, décision P-12) : capture du rendu du modèle, puis boîte « Illustration » ; Ctrl+Maj+F4
+  // (à côté de F4, l'export du rendu), libre et non réservé. Lecture admise : un lecteur consulte les illustrations archivées.
+  { id: "illustration", libelleFR: "Illustration depuis la vue", raccourci: "Ctrl+Shift+F4", iconeSymbolique: "studio-illustration", groupe: "visualisation", ecrit: false },
+  // Agents (MCP, lot F) : jetons d'agent, propositions à confirmer, journal ; Ctrl+Maj+F9, libre et non réservé.
+  { id: "agents", libelleFR: "Agents (MCP)", raccourci: "Ctrl+Shift+F9", iconeSymbolique: "studio-agents", groupe: "catalogue", ecrit: false },
   // Import DXF vers le brouillon (aperçu, unité, entités non prises) : Maj+U (U comme « upload »), libre et non réservé.
   { id: "importer-dxf", libelleFR: "Importer DXF", raccourci: "Shift+U", iconeSymbolique: "studio-import-dxf", groupe: "import", ecrit: true },
   // Import IFC (lot F3, TEST-028) : Maj+F9 (toutes les combinaisons Maj+lettre sont prises, Ctrl+Maj+U est « Pousser /

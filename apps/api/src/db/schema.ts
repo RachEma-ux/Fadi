@@ -983,8 +983,13 @@ export interface StudioContext {
   /** Réponse de création d'une variante : variante et révision sources d'une dérivation, null sinon. */
   derivedFrom?: StudioProvenance | null;
 }
-/** Provenance d'une variante dérivée : variante et révision de la même étude dont le document a été copié. */
-export interface StudioProvenance { variantId: string; revisionId: string }
+/**
+ * Provenance d'une variante dérivée : variante et révision de la même étude dont le document a été copié. `mode` absent :
+ * version du même ensemble d'objets (identifiants conservés, mode historique) ; `copie` : copie indépendante, nouvelles
+ * identités (TR-EX-013 / TR-INV-003) — `identites` (nouvel identifiant → identifiant source) n'est renvoyé qu'avec le
+ * contexte d'une variante (création, lecture), jamais dans les listes.
+ */
+export interface StudioProvenance { variantId: string; revisionId: string; mode?: "copie"; identites?: Record<string, string> }
 
 export const studioStudies = pgTable("studio_studies", {
   id: text("id").primaryKey(),
@@ -1029,6 +1034,10 @@ export const studioVariants = pgTable("studio_variants", {
   // Provenance d'une variante dérivée (paire renseignée ensemble ; FK composite vers la révision source, init.sql).
   derivedFromVariantId: text("derived_from_variant_id"),
   derivedFromRevisionId: text("derived_from_revision_id"),
+  // Mode de dérivation (TR-EX-013) : NULL = version (identifiants conservés) ; 'copie' = copie indépendante, dont la
+  // provenance par élément (nouvel identifiant → identifiant source) est gardée dans `derivation_identities`.
+  derivationMode: text("derivation_mode").$type<"copie">(),
+  derivationIdentities: jsonb("derivation_identities").$type<Record<string, string>>(),
 }, (t) => [uniqueIndex("studio_variants_study_id_unique").on(t.studyId, t.id)]);
 
 /** Append-only : une réponse historique n'est jamais reconstruite depuis le head actuel. */
@@ -1041,7 +1050,7 @@ export const studioRevisions = pgTable("studio_revisions", {
   envelope: jsonb("envelope").$type<StudioEnvelope | null>(),
   requestId: text("request_id").notNull(),
   payloadHash: text("payload_hash").notNull(),
-  source: text("source").$type<"authenticated-session" | "study-initialization" | "variant-initialization" | "variant-derivation">().notNull(),
+  source: text("source").$type<"authenticated-session" | "study-initialization" | "variant-initialization" | "variant-derivation" | "agent-mcp">().notNull(),
   authorId: text("author_id").notNull().references(() => users.id, { onDelete: "restrict" }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   response: jsonb("response").$type<StudioContext>().notNull(),
@@ -1540,6 +1549,180 @@ export const studioExternalModelEvents = pgTable("studio_external_model_events",
   motif: text("motif"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [uniqueIndex("studio_external_model_events_seq_unique").on(t.modelId, t.seq)]);
+
+/**
+ * Journal d'accès Studio (TR-EX-046, `lib/studio-journal-acces.ts`) : refus d'accès et sorties de contenu des routes
+ * Studio, minimisés (ni IP, ni courriel, ni corps) ; conservés 12 mois par défaut puis purgés (purges datées).
+ */
+export const studioAccessEvents = pgTable("studio_access_events", {
+  id: text("id").primaryKey(),
+  occurredAt: timestamp("occurred_at", { withTimezone: true }).defaultNow().notNull(),
+  actorId: text("actor_id").references(() => users.id, { onDelete: "cascade" }),
+  projectId: text("project_id").notNull(),
+  method: text("method").notNull(),
+  route: text("route").notNull(),
+  status: integer("status").notNull(),
+  kind: text("kind").$type<"refus" | "export">().notNull(),
+  motif: text("motif"),
+});
+export const studioAccessPurges = pgTable("studio_access_purges", {
+  id: text("id").primaryKey(),
+  ranAt: timestamp("ran_at", { withTimezone: true }).defaultNow().notNull(),
+  cutoff: timestamp("cutoff", { withTimezone: true }).notNull(),
+  retentionMonths: integer("retention_months").notNull(),
+  deleted: integer("deleted").notNull(),
+});
+
+// Lot F (décision P-12) : illustrations depuis une vue, jetons et propositions d'agent (MCP), journal agent / humain.
+export const studioIllustrations = pgTable("studio_illustrations", {
+  id: text("id").primaryKey(),
+  studyId: text("study_id").notNull().references(() => studioStudies.id, { onDelete: "cascade" }),
+  variantId: text("variant_id").notNull(),
+  revisionId: text("revision_id").notNull(),
+  providerId: text("provider_id").notNull(),
+  providerNature: text("provider_nature").$type<"local-deterministe" | "ia-externe">().notNull(),
+  parameters: jsonb("parameters").$type<Record<string, unknown>>().notNull(),
+  provenance: jsonb("provenance").$type<Record<string, unknown>>().notNull(),
+  sourceDigest: text("source_digest").notNull(),
+  documentDigest: text("document_digest").notNull(),
+  imageBase64: text("image_base64").notNull(),
+  imageDigest: text("image_digest").notNull(),
+  width: integer("width").notNull(),
+  height: integer("height").notNull(),
+  createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
+  requestId: text("request_id").notNull(),
+  payloadHash: text("payload_hash").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("studio_illustrations_variant_idx").on(t.variantId, t.createdAt), uniqueIndex("studio_illustrations_request_unique").on(t.variantId, t.requestId)]);
+
+export const studioAgentTokens = pgTable("studio_agent_tokens", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  tokenHash: text("key_digest").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  revokedAt: timestamp("revoked_at", { withTimezone: true }),
+}, (t) => [uniqueIndex("studio_agent_tokens_hash_unique").on(t.tokenHash), index("studio_agent_tokens_user_idx").on(t.projectId, t.userId)]);
+
+export type StudioAgentProposalStatus = "en-attente" | "confirmee" | "refusee" | "expiree" | "echec";
+export const studioAgentProposals = pgTable("studio_agent_proposals", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  studyId: text("study_id").notNull().references(() => studioStudies.id, { onDelete: "cascade" }),
+  variantId: text("variant_id").notNull().references(() => studioVariants.id, { onDelete: "cascade" }),
+  tokenId: text("agent_key_id").notNull().references(() => studioAgentTokens.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  requestId: text("request_id").notNull(),
+  payloadHash: text("payload_hash").notNull(),
+  envelope: jsonb("envelope").$type<StudioEnvelope>().notNull(),
+  baseRevisionId: text("base_revision_id").notNull(),
+  preview: jsonb("preview").$type<Record<string, unknown>>().notNull(),
+  status: text("status").$type<StudioAgentProposalStatus>().notNull(),
+  revisionId: text("revision_id"),
+  failure: jsonb("failure").$type<Record<string, unknown> | null>(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  decidedAt: timestamp("decided_at", { withTimezone: true }),
+}, (t) => [uniqueIndex("studio_agent_proposals_request_unique").on(t.variantId, t.userId, t.requestId), index("studio_agent_proposals_user_idx").on(t.projectId, t.userId, t.createdAt)]);
+
+export type StudioAgentEventAction = "jeton.creer" | "jeton.revoquer" | "outil.appeler" | "proposition.creer" | "proposition.confirmer" | "proposition.refuser" | "proposition.echec";
+export const studioAgentEvents = pgTable("studio_agent_events", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  actorId: text("actor_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  actorKind: text("actor_kind").$type<"agent" | "humain">().notNull(),
+  tokenId: text("agent_key_id"),
+  action: text("action").$type<StudioAgentEventAction>().notNull(),
+  tool: text("tool"),
+  proposalId: text("proposal_id"),
+  revisionId: text("revision_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("studio_agent_events_project_idx").on(t.projectId, t.createdAt)]);
+
+// ---------------------------------------------------------------------------
+// Lot CMD (miroir de init.sql) : contexte d'étude (IF-001), jobs serveur (EX-088), journal des changements de
+// révision (IF-011), migrations de schéma (EX-019, EX-091), chemin d'écriture unique d'une bascule (MIG-COEX-06).
+// ---------------------------------------------------------------------------
+export const studioStudyContexts = pgTable("studio_study_contexts", {
+  studyId: text("study_id").primaryKey().references(() => studioStudies.id, { onDelete: "cascade" }),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  version: text("version").notNull(),
+  context: jsonb("context").$type<Record<string, unknown>>().notNull(),
+  validatedBy: text("validated_by").notNull().references(() => users.id, { onDelete: "restrict" }),
+  validatedAt: timestamp("validated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+export type StudioJobKind = "essai-commandes" | "simulation-migration";
+export type StudioJobStatus = "en-calcul" | "termine" | "echec" | "abandonne" | "confirme";
+export const studioJobs = pgTable("studio_jobs", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  studyId: text("study_id").notNull().references(() => studioStudies.id, { onDelete: "cascade" }),
+  variantId: text("variant_id").references(() => studioVariants.id, { onDelete: "cascade" }),
+  kind: text("kind").$type<StudioJobKind>().notNull(),
+  status: text("status").$type<StudioJobStatus>().notNull(),
+  sourceRevisionId: text("source_revision_id"),
+  payload: jsonb("payload").$type<unknown>(),
+  payloadHash: text("payload_hash"),
+  result: jsonb("result").$type<unknown>(),
+  createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  finishedAt: timestamp("finished_at", { withTimezone: true }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("studio_jobs_study_idx").on(t.studyId, t.createdAt)]);
+export const studioRevisionEvents = pgTable("studio_revision_events", {
+  eventId: text("event_id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  studyId: text("study_id").notNull().references(() => studioStudies.id, { onDelete: "cascade" }),
+  variantId: text("variant_id").notNull().references(() => studioVariants.id, { onDelete: "cascade" }),
+  revisionId: text("revision_id").notNull(),
+  baseRevisionId: text("base_revision_id"),
+  transactionId: text("transaction_id").notNull(),
+  // Défaut SQL `txid_current()::text` : jamais écrit par l'application.
+  xactId: text("xact_id"),
+  authorId: text("author_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  requestId: text("request_id"),
+  effects: jsonb("effects").$type<unknown>().notNull(),
+  jobId: text("job_id").references(() => studioJobs.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [uniqueIndex("studio_revision_events_revision_unique").on(t.variantId, t.revisionId), index("studio_revision_events_variant_idx").on(t.variantId, t.createdAt)]);
+export type StudioMigrationStatus = "simulee" | "accordee" | "appliquee" | "retour-arriere";
+export const studioMigrations = pgTable("studio_migrations", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  studyId: text("study_id").notNull().references(() => studioStudies.id, { onDelete: "cascade" }),
+  jobId: text("job_id").notNull().references(() => studioJobs.id, { onDelete: "cascade" }),
+  targetSchema: text("target_schema").notNull(),
+  status: text("status").$type<StudioMigrationStatus>().notNull(),
+  rollbackPoint: jsonb("rollback_point").$type<{ variantId: string; headRevisionId: string }[]>().notNull(),
+  verdict: text("verdict").notNull(),
+  agreedBy: text("agreed_by").references(() => users.id, { onDelete: "restrict" }),
+  agreedAt: timestamp("agreed_at", { withTimezone: true }),
+  appliedAt: timestamp("applied_at", { withTimezone: true }),
+  rolledBackAt: timestamp("rolled_back_at", { withTimezone: true }),
+  createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "restrict" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("studio_migrations_study_idx").on(t.studyId, t.createdAt)]);
+export const studioDocumentMigrations = pgTable("studio_document_migrations", {
+  migrationId: text("migration_id").notNull().references(() => studioMigrations.id, { onDelete: "cascade" }),
+  revisionId: text("revision_id").notNull().references(() => studioRevisions.id, { onDelete: "cascade" }),
+  schemaVersion: text("schema_version").notNull(),
+  document: jsonb("document").$type<unknown>().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [primaryKey({ columns: [t.migrationId, t.revisionId] })]);
+export type StudioAutoriteEcriture = "atelier" | "studio";
+export interface StudioPassageBascule { autorite: StudioAutoriteEcriture; action: "preparer" | "basculer" | "retour-arriere"; par: string; le: string; pointRetour: unknown }
+export const studioBascules = pgTable("studio_bascules", {
+  projectId: text("project_id").primaryKey().references(() => projects.id, { onDelete: "cascade" }),
+  studyId: text("study_id").notNull().references(() => studioStudies.id, { onDelete: "cascade" }),
+  authority: text("authority").$type<StudioAutoriteEcriture>().notNull(),
+  rollbackPoint: jsonb("rollback_point").$type<unknown>(),
+  history: jsonb("history").$type<StudioPassageBascule[]>().notNull(),
+  updatedBy: text("updated_by").notNull().references(() => users.id, { onDelete: "restrict" }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
 
 // ---------------------------------------------------------------------------
 // Revue externe — phase 4 (concept partie 4). Miroir de init.sql : paquets de revue figés au partage, affectations

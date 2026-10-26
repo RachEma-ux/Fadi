@@ -98,8 +98,10 @@ describe("Matrice d'échanges : donnée versionnée et cohérente", () => {
       4: "46bee5f95b4b04bd2cd1e24a1b2c7ae00a5cbdcde8d7a687722778d43479f373",
       // Réserve G1 (P-11) : relevé de performances versionné studio-releve-perf/1 (schéma et contrôle controlerRelevePerf).
       5: "4c5677dd684219719e9f56d31c9ef0f53bb8059f12074f66daedba13ab668ec4",
+      // Lot F (décision P-12) : illustration archivée depuis une vue (PNG « fadi:illustration », non vérifiée).
+      6: "3ee051c0da203c6cd5335d33dc08142dddadc26d6d32692278b0cf9c01ac130d",
       // Lot OUT (EX-034) : profil d’outils exporté et importé (fadi-studio-profil/1).
-      6: "0d19038d48a65496698673b656899d5d629f9c4756de4d460e1efe8b7f8cbed7",
+      7: "b769ee4cb94ddf18cfc386529b60c4af704048a0fc20af1eb53ce51fbd7a25d6",
     };
     const empreinte = createHash("sha256").update(JSON.stringify({ entrees: STUDIO_MATRICE_ECHANGES.entrees, couverture: STUDIO_COUVERTURE_EXPORT, statuts: STUDIO_STATUT_DE_RAISON })).digest("hex");
     expect(empreinte, `révision ${STUDIO_MATRICE_ECHANGES.revision} : entrées modifiées sans nouvelle révision ? (empreinte calculée ${empreinte})`).toBe(EMPREINTES[STUDIO_MATRICE_ECHANGES.revision]);
