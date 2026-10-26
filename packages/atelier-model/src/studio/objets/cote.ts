@@ -78,14 +78,20 @@ export function validerCote(value: unknown, path: string): StudioDimension {
   return { id: identifier(o.id, `${path}.id`), type: "dimension", ...layerRef(o, path), start, end, offset, links, toResolve };
 }
 
-/** Chaque extrémité liée existe et coïncide exactement avec le sommet de l'objet lié. */
-export function controlerLiens(d: StudioDimension, shapes: ReadonlyMap<string, StudioShape>, path: string): void {
+/**
+ * Sommet nommé d'un objet lié : `undefined` si l'objet n'existe pas, `null` si ce sommet n'existe pas sur lui. Permet de
+ * lier une cote à d'autres cibles que les formes (murs, `commandes/cotes-murs.ts`) sans que les objets 2D en dépendent.
+ */
+export type StudioResolveurLien = (objectId: string, anchor: StudioAnchor) => StudioPoint | null | undefined;
+
+/** Chaque extrémité liée existe et coïncide exactement avec le sommet de l'objet lié (forme, ou cible du résolveur). */
+export function controlerLiens(d: StudioDimension, cibles: ReadonlyMap<string, StudioShape> | StudioResolveurLien, path: string): void {
+  const resoudre: StudioResolveurLien = typeof cibles === "function" ? cibles : (id, a) => { const t = cibles.get(id); return t ? studioAnchorPoint(t, a) : undefined; };
   for (const end of ["start", "end"] as const) {
     const l = d.links[end];
     if (!l) continue;
-    const target = shapes.get(l.objectId);
-    if (!target) fail(`${path}.links.${end}`, "objet lié introuvable");
-    const anchor = studioAnchorPoint(target, l.anchor);
+    const anchor = resoudre(l.objectId, l.anchor);
+    if (anchor === undefined) fail(`${path}.links.${end}`, "objet lié introuvable");
     if (!anchor) fail(`${path}.links.${end}.anchor`, "sommet incompatible avec l’objet lié");
     if (!same(anchor, d[end])) fail(`${path}.${end}`, "extrémité différente du sommet lié");
   }

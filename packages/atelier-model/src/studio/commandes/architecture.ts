@@ -1,7 +1,7 @@
 import { transformerMur, transformerOuverture } from "../architecture/transformations.js";
 import type { StudioArchitectureItem, StudioOpening, StudioWall } from "../architecture/types.js";
 import { controlerMurs, validerElementArchitectural, validerMur, validerOuverture } from "../architecture/validation.js";
-import { calqueEtat, editable, freeId, type Etat, type Gestionnaire } from "./etat.js";
+import { calqueEtat, contoursCotes, editable, freeId, rompreCotesMurs, suivreCotesMurs, type Etat, type Gestionnaire } from "./etat.js";
 import { STUDIO_DEFAULT_LAYER_ID } from "../noyau/limites.js";
 import { boolean, fail, finite, identifier, idList, point, record, same } from "../noyau/validation.js";
 import { studioEchelle, studioRotation, studioSymetrie, studioTranslation, type StudioTransformation } from "../transformations.js";
@@ -39,8 +39,11 @@ function modifiable(state: Etat, it: StudioArchitectureItem, path: string): void
  * Recontrôle après une commande des seuls murs qu'elle a touchés (et de leurs ouvertures) : refus motivé de la commande
  * entière. Le document complet est revalidé une fois, à la fin du lot (`applyStudioCommands`).
  */
-function controler(state: Etat, murs: Iterable<string>, path: string): void {
-  controlerMurs(state.architecture, murs, path);
+function controler(state: Etat, murs: Iterable<string>, path: string, avant?: ReadonlyMap<string, number>): void {
+  const liste = [...murs];
+  controlerMurs(state.architecture, liste, path);
+  // Cotes associatives sur mur (AC-001) : elles suivent le mur modifié, ou passent « à résoudre » si son contour change.
+  if (avant?.size) suivreCotesMurs(state, avant, liste.filter((id) => avant.has(id)), path);
 }
 function introuvable(state: Etat, id: string, path: string): never {
   return fail(path, state.ids.has(id) ? `ce n’est pas un objet architectural : ${id}` : `objet architectural introuvable : ${id}`);
@@ -76,13 +79,14 @@ export const modifierArchitecture: Gestionnaire = (state, params, path) => {
   if (avant.type !== it.type) fail(path, "la nature de l’objet (mur, ouverture) ne peut pas changer");
   if (avant.type === "wall" && it.type === "wall" && avant.layerId !== it.layerId) fail(path, "le calque se change par studio.objet.calque");
   modifiable(state, avant, path);
+  const contours = contoursCotes(state);
   if (it.type === "opening") {
     const hote = murDe(state, it.hostId);
     if (!hote) fail(`${path}.params.hostId`, `mur hôte introuvable : ${it.hostId}`);
     editable(state, hote, path);
   }
   state.architecture[index] = it;
-  controler(state, [it.type === "wall" ? it.id : it.hostId], path);
+  controler(state, [it.type === "wall" ? it.id : it.hostId], path, contours);
 };
 
 /** Retire les objets architecturaux `ids` ; un mur porteur d'ouvertures exige `cascade` (ses ouvertures partent avec lui). */
@@ -103,6 +107,7 @@ function retirer(state: Etat, ids: readonly string[], cascade: boolean, path: st
   }
   state.architecture = state.architecture.filter((x) => !partants.has(x.id));
   for (const id of partants) state.ids.delete(id);
+  rompreCotesMurs(state, partants, path);
 }
 
 export const supprimerArchitecture: Gestionnaire = (state, params, path) => {
@@ -233,7 +238,8 @@ export function avecArchitecture(base: Gestionnaire, part: keyof typeof PARTS): 
     const autres = liste.filter((id) => !archi.has(id)), siens = liste.filter((id) => archi.has(id));
     if (autres.length) base(state, { ...brut, ids: autres }, path);
     else record(params, Object.keys(brut!), `${path}.params`);
-    controler(state, PARTS[part](state, siens, brut!, path, autres.length), path);
+    const contours = contoursCotes(state);
+    controler(state, PARTS[part](state, siens, brut!, path, autres.length), path, contours);
   };
 }
 
@@ -248,6 +254,7 @@ export function deplacerAvecArchitecture(base: Gestionnaire): Gestionnaire {
     const dx = finite(p.dx, `${path}.params.dx`), dy = finite(p.dy, `${path}.params.dy`);
     if (it.type === "opening") fail(path, `l’ouverture ${it.id} suit son mur ${it.hostId} : modifiez sa position le long du mur`);
     modifiable(state, it, path);
-    controler(state, transformerSurPlace(state, [it.id], studioTranslation(dx, dy)), path);
+    const contours = contoursCotes(state);
+    controler(state, transformerSurPlace(state, [it.id], studioTranslation(dx, dy)), path, contours);
   };
 }
