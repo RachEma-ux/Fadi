@@ -119,7 +119,7 @@ describe("X.1-01 — boîte « Contraintes » (poser, état, résoudre, retirer)
     // Planche : une marque par contrainte, rouge quand elle est à résoudre.
     const rompu = applyStudioCommands(d, [{ toolId: "studio.dessin.rotation", params: { ids: ["l"], center: { x: 0, y: 0 }, angle: 0.2 } }]);
     const planche = renderToStaticMarkup(createElement(Dessin2D, {
-      svgRef: null, doc: rompu, cadre: CADRE_INITIAL, pas: 1, outil: "studio.dessin.selection", selection: new Set(), trace: null, survol: null, rectangle: null, glissement: false,
+      svgRef: null, doc: rompu, cadre: CADRE_INITIAL, pas: 1, outil: "studio.dessin.selection", selection: new Set<string>(), trace: null, survol: null, rectangle: null, glissement: false,
       clicsVersPlanche: () => false, surPlanche: () => {}, surSurvol: () => {}, surPointeurBas: () => {}, surPointeurHaut: () => {}, surClicCapture: () => {}, surSelection: () => {},
     }));
     expect(planche).toMatch(/class="studio-contrainte-marque a-resoudre" data-studio-contrainte-marque="h"/);
