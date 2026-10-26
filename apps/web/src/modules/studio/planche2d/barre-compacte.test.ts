@@ -10,6 +10,7 @@ const largeurRangee = (d: ReturnType<typeof disposerBarre>, m: MesureFamille[], 
     const f = m.find((x) => x.id === e.id)!;
     return s + (e.menu ? f.menu : sep) + f.elements.slice(0, e.enLigne).reduce((a, b) => a + b, 0);
   }, 0) + (d.plus.length ? plus : 0);
+const somme = (v: readonly number[]) => v.reduce((a, b) => a + b, 0);
 const disposer = (largeur: number, active: IdFamille = "selection", m = mesures()) => disposerBarre({ largeur, familles: m, active, plus: 52, separateur: 13 });
 
 describe("Barre compacte — familles", () => {
@@ -80,6 +81,24 @@ describe("Barre compacte — disposition en une rangée", () => {
     const m = mesures().filter((f) => f.id !== "volume");
     const d = disposer(Number.POSITIVE_INFINITY, "selection", m);
     expect(d.rangee.some((e) => e.id === "volume")).toBe(false);
+  });
+});
+
+describe("Barre compacte — familles prioritaires d'un domaine", () => {
+  it("palette d'un domaine : une famille prioritaire passe juste après l'active, avant l'Édition, et reste en rangée quand l'Édition grossit", () => {
+    // Sélection (active), Édition (grossie de deux commandes « à définir ») et Présentation ; place restante après les
+    // menus et la famille active : celle de la plus coûteuse des deux autres familles, qui ne tiennent pas ensemble.
+    const m = mesures().filter((f) => ["selection", "edition", "presentation"].includes(f.id));
+    const edition = m.find((f) => f.id === "edition")!;
+    edition.elements = [...edition.elements, 44, 44];
+    const presentation = m.find((f) => f.id === "presentation")!;
+    const cout = (f: MesureFamille) => somme(f.elements) + 13 - f.menu;
+    const largeur = somme(m.map((f) => f.menu)) + cout(m.find((f) => f.id === "selection")!) + Math.max(cout(edition), cout(presentation));
+    const sans = disposerBarre({ largeur, familles: m, active: "selection", plus: 52, separateur: 13 });
+    const avec = disposerBarre({ largeur, familles: m, active: "selection", prioritaires: ["presentation"], plus: 52, separateur: 13 });
+    expect(sans.rangee.find((e) => e.id === "presentation")!.menu).toBe(true);
+    expect(avec.rangee.find((e) => e.id === "presentation")).toMatchObject({ menu: false, enLigne: presentation.elements.length });
+    expect(largeurRangee(avec, m)).toBeLessThanOrEqual(largeur);
   });
 });
 

@@ -122,7 +122,7 @@ import {
   type DomaineStudio, type FonctionStudio, type ModePlanche,
 } from "./domaines/domaines";
 import { LienPublications, NavigationDomaines, SectionDomaine, SelecteurPlanche, useEcranTelephone } from "./domaines/DomainesStudio";
-import type { ElementBarre } from "./planche2d/barre-compacte";
+import type { ElementBarre, IdFamille } from "./planche2d/barre-compacte";
 import { ActionsEspace, BarreEtat, PanneauLateral } from "./espace/EspaceStudio";
 import { memoriserContexte } from "./accueil/dernier-contexte";
 import "./studio.css";
@@ -154,6 +154,13 @@ export interface VariantWorkspaceProps {
 const FILTRES_PALETTE: Readonly<Record<DomaineStudio, (e: ElementBarre) => boolean>> = Object.freeze(Object.fromEntries(
   DOMAINES_STUDIO.map((d) => [d.id, (e: ElementBarre) => dansPaletteDuDomaine(e, d.id)]),
 ) as Record<DomaineStudio, (e: ElementBarre) => boolean>);
+
+/**
+ * Familles propres à la palette d'un domaine, rangées juste après la famille active : « Feuille » et « Feuilles et
+ * dossier » (Présentation) restent en rangée dans Documentation, métrés et collaboration, même quand des commandes
+ * « à définir » (montrées dans toutes les palettes) s'ajoutent à l'Édition.
+ */
+const PRIORITES_PALETTE: Readonly<Partial<Record<DomaineStudio, readonly IdFamille[]>>> = Object.freeze({ documentation: Object.freeze(["presentation"] as const) });
 
 /** Titre du panneau latéral de chaque fonction (les blocs de la référence, `FONCTIONS_STUDIO`). */
 const TITRES_PANNEAUX: Readonly<Partial<Record<FonctionStudio, string>>> = Object.freeze({
@@ -855,7 +862,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const palette = context && drawing ? <div className="studio-palette" data-studio-palette-outils={domaineActif}>
     <BarreOutils outil={tool} outilDisponible={toolAvailable} commandeDisponible={commandAvailable} raison={raisonCible} libelleCommande={libelleSave}
       basculeActive={basculeActive} lienCommande={liens} surOutil={runTool} surCommande={runCommand} surLien={surLien}
-      filtre={FILTRES_PALETTE[domaineActif]} orientation={telephone ? "horizontale" : "verticale"} libelle={domaineActif === "dessin" ? "Outils de dessin" : `Outils — ${domaine01.libelleFR}`} />
+      filtre={FILTRES_PALETTE[domaineActif]} prioritaires={PRIORITES_PALETTE[domaineActif]} orientation={telephone ? "horizontale" : "verticale"} libelle={domaineActif === "dessin" ? "Outils de dessin" : `Outils — ${domaine01.libelleFR}`} />
   </div> : null;
   /** Bloc d'une fonction de l'espace (`FONCTIONS_STUDIO`), rendu dans un panneau latéral de son domaine. */
   function bloc(f: FonctionStudio): ReactNode {
