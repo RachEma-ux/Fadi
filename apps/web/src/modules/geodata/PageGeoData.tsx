@@ -192,13 +192,14 @@ export function PageGeoData() {
   useEffect(() => {
     for (const k of composition.couches) {
       const id = k.coucheId;
-      if (!rangs.has(id) || unitesNiveaux.has(id)) continue;
+      // Couche indisponible (retirée, inaccessible) : jamais demandée ; un échec reste consigné (liste vide), sans relance.
+      if (!rangs.has(id) || unitesNiveaux.has(id) || (disponibilite[id] && disponibilite[id]!.etat !== "disponible")) continue;
       const connues = categories.get(id);
       if (connues) { setUnitesNiveaux((m) => new Map(m).set(id, connues)); continue; }
       setUnitesNiveaux((m) => new Map(m).set(id, []));
-      api.categories(id).then((r) => setUnitesNiveaux((m) => new Map(m).set(id, r.categories))).catch(() => setUnitesNiveaux((m) => { const n = new Map(m); n.delete(id); return n; }));
+      api.categories(id).then((r) => setUnitesNiveaux((m) => new Map(m).set(id, r.categories))).catch(() => undefined);
     }
-  }, [composition, rangs, unitesNiveaux, categories]);
+  }, [composition, rangs, unitesNiveaux, categories, disponibilite]);
   const couchesNiveau = useMemo<CoucheNiveau[]>(() => composition.couches.flatMap((k) => {
     const rang = rangs.get(k.coucheId), u = unitesNiveaux.get(k.coucheId);
     return rang && u?.length ? [{ coucheId: k.coucheId, rang, codes: u.map((x) => x.code) }] : [];
@@ -334,7 +335,9 @@ export function PageGeoData() {
   const producteurPrincipal = (c: CoucheRecue) => c.version.source.producteur.split(";")[0]!.trim();
   /** Couche du rang inférieur : dans la composition, sinon au catalogue, du même producteur (ajoutée alors à la carte). */
   function coucheEnfant(f: FicheRecue, rang: RangAdministratif): { id: string; aAjouter: CoucheRecue | null } | null {
-    const dans = composition.couches.find((k) => rangs.get(k.coucheId) === rang + 1);
+    // Couche de la carte au rang inférieur, du même producteur des valeurs (une couche geoBoundaries n'est pas la suite
+    // d'une couche du HCP : ses codes ne sont pas ceux du HCP).
+    const dans = composition.couches.find((k) => { const c = couchesConnues.get(k.coucheId); return rangs.get(k.coucheId) === rang + 1 && !!c && producteurPrincipal(c) === producteurPrincipal(f.couche); });
     if (dans) return { id: dans.coucheId, aAjouter: null };
     const c = catalogue?.find((x) => x.typeGeometrie !== "raster" && rangAdministratif(x) === rang + 1 && producteurPrincipal(x) === producteurPrincipal(f.couche));
     return c ? { id: c.id, aAjouter: c } : null;
