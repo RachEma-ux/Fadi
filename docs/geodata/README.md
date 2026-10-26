@@ -103,6 +103,14 @@ la carte se cadre sur l'entité, n'affiche qu'elle à son niveau et ses seuls de
 niveau inférieur est ajoutée depuis le catalogue si elle manque. « Retour » (Alt+↑) remonte d'un niveau. La parenté
 vient des codes du HCP (`packages/geodata-model/src/niveaux.ts`), jamais des géométries ni des noms.
 
+## Import automatique au déploiement et quittance (D-GD-23)
+
+Avec `GEODATA_IMPORT_AUTO_PAR=<compte GeoData>` (préproduction : `PREPROD_GEODATA_IMPORT_AUTO_PAR` dans
+`/opt/fadi-preprod/env/.env.preprod`), l'API importe et publie au démarrage, en arrière-plan, les fiches livrées qui ne
+sont pas encore en base (même empreinte = rien n'est refait), puis applique les retraits de
+`sources/donnees/retraits-sources.json`. État : `GET /version/donnees` (`desactive`, `en-cours`, `termine` + bilan,
+`echec` + dernière erreur). Les imports manuels (`geodata-reference.js --fiche …`) restent possibles.
+
 ## Fiche territoriale (D-GD-22)
 
 La fiche d'une entité range ses indicateurs par thème ; une famille déclinée devient un tableau (modalités ×

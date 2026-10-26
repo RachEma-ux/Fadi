@@ -10,6 +10,7 @@ import { mailRuntime } from "./lib/mailer/index.js";
 import { startAccountWorkers } from "./lib/account-jobs.js";
 import { startSurveillance } from "./lib/studio-surveillance-db.js";
 import { attacherTempsReel } from "./lib/temps-reel-canal.js";
+import { lancerImportAuto } from "./lib/geodata/import-auto.js";
 
 const port = Number(process.env["PORT"] ?? 3001);
 const host = process.env["HOST"];
@@ -98,6 +99,8 @@ Promise.resolve()
     const server = app.listen(host ? { port, host } : { port }, () => {
       // eslint-disable-next-line no-console
       console.log(`Fadi API listening on :${port}${process.env["WEB_DIST"] ? " (sert aussi l'application)" : ""}`);
+      // Données GeoData livrées avec le code (D-GD-23) : importées en arrière-plan si GEODATA_IMPORT_AUTO_PAR est fourni.
+      lancerImportAuto();
     });
     // Connexions persistantes gardées plus longtemps que celles des relais et des clients (60 s) : un client qui
     // réutilise une connexion au moment où le serveur la ferme recevrait sinon un ECONNRESET.

@@ -68,6 +68,10 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   population OSM retirée pour ces villes (test), gardée pour 8 villes sans unité HCP ; extraits OSM des communes, villes
   et arrondissements régénérés à l'identique (mêmes empreintes) sans fiche importable ; recherche HCP d'abord. En local :
   import et publication, Casablanca 3 215 935, Ouezzane 57 737 (HCP) au lieu de 58 684 (OSM).
+- Import automatique au déploiement (D-GD-23) : `lib/geodata/import-auto.ts` (4 tests), `lib/geodata/empreinte-fiche.ts`
+  (empreinte attendue = empreinte réelle pour chaque fiche, test), retraits déclarés (test), `GET /version/donnees`
+  (test). En local sur l'API construite : 1er démarrage 14 s (2 versions préparées et publiées, 2 retraits, 53 fiches
+  déjà en base), 2e démarrage < 1 s (rien refait). CI : installation de Chromium bornée (3 × 10 min).
 - Fiche territoriale (lot E, D-GD-22) : `panneaux/FicheTerritoriale.tsx` (thèmes, tableaux de ventilation via
   `tableauVentilation`, arrondissements, douars, impression Alt+P), table `geodata_douars` et annexe
   `donnees/hcp-rgph2024-douars.tsv` (33 189 douars, 1 279 communes rurales ; `scripts/geodata/douars_hcp.py`), test de

@@ -8,7 +8,9 @@
  * Les données sont lues de `--fichier`, sinon du fichier livré avec la fiche (`version.fichier`, ex. extractions
  * OpenStreetMap de `docs/geodata/sources/osm/`), sinon téléchargées depuis `version.url`.
  *
- * `--fiche toutes` traite une à une toutes les fiches livrées (une déjà importée n'est pas recréée).
+ * `--fiche toutes` traite une à une toutes les fiches livrées (une déjà importée n'est pas recréée, ni relue ni
+ * retéléchargée : l'empreinte attendue se lit dans la fiche), puis applique, avec `--publier-par`, les retraits déclarés
+ * dans `donnees/retraits-sources.json` (D-GD-23 : import automatique au déploiement, `lib/geodata/import-auto.ts`).
  *
  * `--fiche` accepte un chemin, ou le nom d'une fiche qualifiée du dépôt (`docs/geodata/sources/<nom>.json`, copiées à
  * côté du bundle dans `dist/geodata-sources/`). Relancée sur une version déjà préparée (même source, même empreinte),
@@ -31,6 +33,7 @@ import { Pool } from "pg";
 import { bornesRobustes, estMotifAbsence, lireDroits, type MotifAbsence, MAX_PIXELS_RASTER, OBJETS_PAR_COUCHE, validerDeclarationRaster, validerGeoJSON, verifierUsage, type ClasseRaster, type DescriptionRaster, type ObjetImporte, type PaletteRaster, type StyleCouche } from "@parcours/geodata-model";
 import { lireGeoTiff, type GrilleRaster } from "../lib/geodata/raster.js";
 import { lireGeoPackage } from "../lib/geodata/geopackage.js";
+import { empreinteAttendue } from "../lib/geodata/empreinte-fiche.js";
 import { codesDesObjets, ecrireVersion, type IndicateurDeclare, type LigneDouar } from "../lib/geodata/versions.js";
 
 export interface FicheSource {
@@ -119,13 +122,53 @@ function argument(nom: string): string | undefined {
   return i >= 0 ? process.argv[i + 1] : undefined;
 }
 
-/** Fiches qualifiées livrées (dossier `geodata-sources` du bundle, ou `docs/geodata/sources` en développement). */
-function fichesLivrees(): string[] {
+/** Dossier des fiches qualifiées livrées (`geodata-sources` du bundle, ou `docs/geodata/sources` en développement). */
+function dossierFiches(): string {
   for (const base of ["./geodata-sources/", "../../../../docs/geodata/sources/"]) {
     const dossier = fileURLToPath(new URL(base, import.meta.url));
-    if (existsSync(dossier)) return readdirSync(dossier).filter((f) => f.endsWith(".json")).sort().map((f) => join(dossier, f));
+    if (existsSync(dossier)) return dossier;
   }
   throw new Error("Aucun dossier de fiches qualifiées.");
+}
+
+function fichesLivrees(): string[] {
+  const dossier = dossierFiches();
+  return readdirSync(dossier).filter((f) => f.endsWith(".json")).sort().map((f) => join(dossier, f));
+}
+
+/** Retraits déclarés (D-GD-23) : sources de référence remplacées, retirées du catalogue avec leur motif. */
+interface RetraitDeclare { cle: string; motif: string; decision: string }
+
+function lireRetraits(): RetraitDeclare[] {
+  const chemin = join(dossierFiches(), "donnees", "retraits-sources.json");
+  if (!existsSync(chemin)) return [];
+  const brut = JSON.parse(readFileSync(chemin, "utf8")) as unknown;
+  if (!Array.isArray(brut) || !brut.every((r) => r && typeof r.cle === "string" && typeof r.motif === "string" && r.motif.trim().length >= 3 && typeof r.decision === "string")) {
+    throw new Error("retraits-sources.json : liste de { cle, motif (3 caractères au moins), decision } attendue.");
+  }
+  return brut as RetraitDeclare[];
+}
+
+/** Retire les versions de référence publiées des sources déclarées, par le responsable de publication ; journalisé. */
+async function appliquerRetraits(retraits: readonly RetraitDeclare[], publierPar: string) {
+  const pool = new Pool({ connectionString: process.env["DATABASE_URL"] });
+  try {
+    const publieur = (await pool.query("SELECT u.id FROM users u JOIN geodata_roles g ON g.user_id = u.id AND g.role = 'responsable-publication' WHERE lower(u.email) = lower($1)", [publierPar])).rows[0]?.id as string | undefined;
+    if (!publieur) throw new Error(`${publierPar} n'a pas le rôle GeoData « responsable-publication » : aucun retrait appliqué.`);
+    for (const r of retraits) {
+      const ids = (await pool.query(
+        `UPDATE geodata_versions v SET etat = 'retiree', retiree_le = now(), motif_retrait = $2 FROM geodata_sources s
+          WHERE s.id = v.source_id AND s.cle = $1 AND v.espace_id IS NULL AND v.etat = 'publiee' RETURNING v.id`,
+        [r.cle, `${r.motif.trim()} (${r.decision})`.slice(0, 500)],
+      )).rows.map((x) => x.id as string);
+      for (const id of ids) {
+        await pool.query("INSERT INTO geodata_journal (acteur_id, action, ressource, resultat) VALUES ($1, 'version.retiree', $2, 'succes')", [publieur, id]);
+        console.log(`Retrait : ${r.cle} (${id}) — ${r.motif}`);
+      }
+    }
+  } finally {
+    await pool.end();
+  }
 }
 
 async function main() {
@@ -140,12 +183,30 @@ async function main() {
     console.log(`\n=== ${basename(chemin, ".json")} ===`);
     try { await importer(chemin, preparateur); } catch (e) { echecs.push(basename(chemin, ".json")); console.error(e instanceof Error ? e.message : e); }
   }
+  const retraits = lireRetraits();
+  const publierPar = argument("publier-par");
+  if (retraits.length && publierPar) await appliquerRetraits(retraits, publierPar);
+  else if (retraits.length) console.log(`${retraits.length} retrait(s) déclaré(s), non appliqué(s) sans --publier-par.`);
   if (echecs.length) throw new Error(`\nÉchec pour ${echecs.length} fiche(s) : ${echecs.join(", ")}.`);
   console.log("\nToutes les fiches livrées ont été traitées.");
 }
 
 async function importer(chemin: string, preparateur: string) {
   const fiche = JSON.parse(readFileSync(chemin, "utf8")) as FicheSource;
+  if (!argument("fichier")) {
+    // Version déjà en base (empreinte attendue, lue dans la fiche) : ni lecture ni téléchargement ; une version encore en
+    // préparation suit le chemin normal si --publier-par est donné (reprise de la publication).
+    const pre = new Pool({ connectionString: process.env["DATABASE_URL"] });
+    try {
+      const [deja] = (await pre.query("SELECT v.id, v.etat FROM geodata_versions v JOIN geodata_sources s ON s.id = v.source_id WHERE s.cle = $1 AND v.empreinte = $2 AND v.espace_id IS NULL", [fiche.cle, empreinteAttendue(fiche)])).rows;
+      if (deja && !(argument("publier-par") && deja.etat === "preparation")) {
+        console.log(`Version déjà présente (même source, empreinte identique) : ${deja.id} (${deja.etat}) ; aucune nouvelle version.`);
+        return;
+      }
+    } finally {
+      await pre.end();
+    }
+  }
   let octets: Buffer;
   let nomFichier: string;
   // Fichier : --fichier, sinon celui livré avec la fiche (`version.fichier`, sans remontée de dossier), sinon l'adresse.
