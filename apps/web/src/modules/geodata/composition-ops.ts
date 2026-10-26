@@ -90,15 +90,17 @@ export function styleThematique(indicateurId: string, valeurs: readonly ValeurIn
 }
 
 /**
- * Reclassement (lot D) : méthode, nombre de classes, palette ou inversion changés ; seuils recalculés (sauf en seuils
- * manuels, gardés tels quels) et couleurs reprises de la palette — une couleur de classe choisie à la main est remplacée.
+ * Reclassement (lot D) : méthode, nombre de classes, palette ou inversion changés. Les seuils ne sont recalculés que si la
+ * méthode ou le nombre de classes change (jamais en seuils manuels) : changer de palette ou l'inverser ne modifie pas le
+ * regroupement des données. Les couleurs sont reprises de la palette (une couleur choisie à la main est remplacée).
  */
 export function reclasser(style: Thematique, valeurs: readonly ValeurIndicateur[], o: { methode?: MethodeClassification; classes?: number; palette?: IdPalette; inverser?: boolean }): Thematique {
   const methode = o.methode ?? style.methode;
   const palette = o.palette ?? style.palette ?? PALETTE_PAR_DEFAUT;
   const inverser = o.inverser ?? !!style.inverser;
   const classes = o.classes ?? style.seuils.length + 1;
-  const seuils = methode === "manuel" ? [...style.seuils] : calculerSeuils(valeurs, methode, classes);
+  const recalculer = methode !== "manuel" && (methode !== style.methode || (o.classes !== undefined && o.classes !== style.seuils.length + 1));
+  const seuils = recalculer ? calculerSeuils(valeurs, methode, classes) : [...style.seuils];
   const { palette: _p, inverser: _i, ...base } = style;
   return { ...base, methode, seuils, couleurs: couleursPalette(palette, seuils.length + 1, inverser), ...avecPalette(palette, inverser) };
 }

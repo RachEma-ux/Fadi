@@ -63,6 +63,14 @@ describe("composition locale de GeoData", () => {
     const manuel = reclasser({ ...verts, methode: "manuel", seuils: [10, 20, 30] }, vs, {});
     expect(manuel.seuils).toEqual([10, 20, 30]);
     expect(manuel.couleurs).toHaveLength(4);
+    // Valeurs répétées : changer de palette ou l'inverser garde les seuils (aucune classe perdue en route).
+    const repetees = [0, 0, 0, 0, 1, 2, 3, 4, 5, 6].map((v) => ({ valeur: v, motifAbsence: null }) as const);
+    const q = styleThematique("i", repetees);
+    if (q.mode !== "thematique") throw new Error("thématique attendu");
+    const q2 = reclasser(reclasser(reclasser(q, repetees, { palette: "rouges" }), repetees, { inverser: true }), repetees, { palette: "verts" });
+    expect(q2.seuils).toEqual(q.seuils);
+    expect(q2.couleurs).toHaveLength(q.seuils.length + 1);
+    expect(reclasser(q, repetees, { classes: q.seuils.length + 1 }).seuils).toEqual(q.seuils);
     const recolore = recolorerClasse(verts, 1, "#ABCDEF");
     expect(recolore.couleurs).toEqual([verts.couleurs[0], "#abcdef", verts.couleurs[2]]);
     expect(recolorerClasse(verts, 7, "#abcdef")).toBe(verts);

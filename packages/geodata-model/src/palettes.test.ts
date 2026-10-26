@@ -39,6 +39,9 @@ describe("palettes et classes (lot D, D-GD-25)", () => {
     expect(rupturesNaturelles([1, 2, 3, 10, 11, 12], 2)).toEqual([10]);
     expect(calculerSeuils(valeurs([5, 5, 5, 7]), "seuils-naturels", 5)).toEqual([7]);
     expect(rupturesNaturelles([3], 4)).toEqual([]);
+    // Borne à plus de 6 chiffres significatifs : gardée exacte (un arrondi l'aurait mise hors de l'étendue).
+    expect(calculerSeuils(valeurs([1, 2, 3, 1_000_009]), "seuils-naturels", 2)).toEqual([1_000_009]);
+    expect(calculerSeuils(valeurs([1, 2, 3, 1_234_567, 1_234_568]), "seuils-naturels", 2)).toEqual([1_234_567]);
   });
   it("Jenks sur un grand nombre de valeurs : échantillon régulier, seuils croissants dans l'étendue", () => {
     const xs = Array.from({ length: 10_000 }, (_, i) => (i < 5000 ? i % 100 : 1000 + (i % 100)));

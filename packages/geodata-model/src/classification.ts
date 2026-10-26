@@ -37,7 +37,9 @@ export function calculerSeuils(vs: readonly ValeurIndicateur[], methode: Exclude
       bornes.push(xs[bas]! + (xs[haut]! - xs[bas]!) * (pos - bas));
     }
   }
-  const arrondi = bornes.map((b) => Number(b.toPrecision(6)));
+  // Les ruptures de Jenks sont des valeurs observées (début exact d'une classe) : jamais arrondies, sinon une borne peut
+  // sortir de l'étendue ou faire passer une observation dans la classe voisine. Les autres méthodes sont arrondies.
+  const arrondi = methode === "seuils-naturels" ? bornes : bornes.map((b) => Number(b.toPrecision(6)));
   return arrondi.filter((b, i) => i === 0 || b > arrondi[i - 1]!).filter((b) => b > xs[0]! && b <= xs[xs.length - 1]!);
 }
 
