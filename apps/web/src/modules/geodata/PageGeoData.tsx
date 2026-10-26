@@ -23,7 +23,7 @@ import { FilNiveaux } from "./panneaux/FilNiveaux";
 import { AVIS_IMPRESSION_BLOQUEE, FicheObjet, imprimerFiche } from "./panneaux/FicheTerritoriale";
 import { GestionDonnees, rangementDepuis } from "./panneaux/donnees";
 import { lireFondsNavigateur } from "./fonds-navigateur";
-import { composerPng, telecharger } from "./export-png";
+import { composerPng, ouvrirFenetreImpression, telecharger } from "./export-png";
 import "./geodata.css";
 
 type Onglet = "catalogue" | "couches" | "legende";
@@ -105,6 +105,9 @@ export function PageGeoData() {
   const [chemin, setChemin] = useState<EtapeNiveau[]>([]);
   const [unitesNiveaux, setUnitesNiveaux] = useState<Map<string, { code: string; nom: string | null }[]>>(new Map());
   const [pleinEcran, setPleinEcran] = useState(false);
+  // Mini-carte de situation (lot G) : confort mémorisé dans ce navigateur seulement.
+  const [miniCarte, setMiniCarte] = useState(() => lireLocal("geodata.mini-carte") === "1");
+  const conteneurMini = useRef<HTMLDivElement>(null);
 
   // Plein écran de toute la page GeoData (carte, barre, panneaux) ; le canevas suit la nouvelle taille.
   useEffect(() => {
@@ -403,6 +406,10 @@ export function PageGeoData() {
   raccourcisNiveaux.current = (e) => {
     if (e.altKey && (e.key === "p" || e.key === "P" || e.code === "KeyP") && volet === "fiche" && fiche) { e.preventDefault(); if (!imprimerFiche()) setAnnonce(AVIS_IMPRESSION_BLOQUEE); return; }
     const cible = e.target as HTMLElement | null;
+    const saisie = !!cible?.closest("input, select, textarea, [contenteditable='true']");
+    // Alt+M : mini-carte de situation ; Alt+I : impression directe de la carte (boutons de la barre d'outils).
+    if (e.altKey && (e.key === "m" || e.key === "M" || e.code === "KeyM") && !saisie && !erreurCarte) { e.preventDefault(); basculerMiniCarte(); return; }
+    if (e.altKey && (e.key === "i" || e.key === "I" || e.code === "KeyI") && !saisie && !erreurCarte) { e.preventDefault(); imprimerCarte(); return; }
     // Alt+L : libellés de la carte affichés ou masqués (bouton « Libellés » de la barre d'outils).
     if (e.altKey && (e.key === "l" || e.key === "L" || e.code === "KeyL") && !cible?.closest("input, select, textarea, [contenteditable='true']")) { e.preventDefault(); basculerLibelles(); return; }
     if (!e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
@@ -442,9 +449,10 @@ export function PageGeoData() {
   const coucheDeTable = coucheTable ? couchesConnues.get(coucheTable) : undefined;
   const couchesPolygones = composition.couches.map((k) => couchesConnues.get(k.coucheId)).filter((c): c is CoucheRecue => !!c && c.typeGeometrie === "polygone");
 
-  const exporter = async (analyseIds: string[]) => {
+  /** Image autorisée de la carte (export et impression : même verdict du serveur, D-GD-07). */
+  const imageAutorisee = async (analyseIds: string[]) => {
     const r = await api.exporter(carte!.id, carte!.revision, analyseIds);
-    if (r.etat !== "autorise") return r;
+    if (r.etat !== "autorise") return { r, png: null };
     if (!moteur.current) throw new Error("Export autorisé, mais la carte n'est pas affichée (WebGL indisponible) : seule la fiche de sources est produite.");
     const complet = await moteur.current.attendreChargement(10_000);
     if (!complet) throw new Error("Toutes les tuiles ne sont pas chargées : export interrompu pour ne pas produire une image incomplète. Réessayez.");
@@ -457,10 +465,37 @@ export function PageGeoData() {
       const ind = c?.indicateurs.find((i) => i.id === (k.style.mode === "thematique" ? k.style.indicateurId : ""));
       return { titre: `${c?.titre ?? k.coucheId}${ind ? ` — ${ind.titre} (${ind.unite})` : ""}`, entrees: legende(vs, k.style.seuils, k.style.couleurs, (x) => formatNombre(x, Math.abs(x) >= 100 ? 0 : 2)) };
     });
-    const png = await composerPng({ carte: moteur.current.canevas(), titre: carte!.nom, date: new Date(), metresParPixel: moteur.current.metresParPixel(), legendes, attributions: r.attributions, revision: r.carteRevision });
-    telecharger(png, `geodata-${carte!.nom.replace(/[^\p{L}\p{N}_-]+/gu, "-").slice(0, 60)}-r${r.carteRevision}.png`);
+    const png = await composerPng({ carte: moteur.current.canevas(), titre: carte!.nom, date: new Date(), metresParPixel: moteur.current.metresParPixel(), legendes, attributions: r.attributions, revision: r.carteRevision, miniCarte: miniCarte ? moteur.current.canevasMiniCarte() : null });
+    return { r, png };
+  };
+  const exporter = async (analyseIds: string[]) => {
+    const { r, png } = await imageAutorisee(analyseIds);
+    if (png) telecharger(png, `geodata-${carte!.nom.replace(/[^\p{L}\p{N}_-]+/gu, "-").slice(0, 60)}-r${r.carteRevision}.png`);
     return r;
   };
+  /**
+   * Impression directe (lot G, D-GD-27) : carte enregistrée seulement (on imprime exactement ce qui est enregistré), même
+   * autorisation que l'export ; titre, légende, échelle, attributions et mini-carte si elle est affichée.
+   */
+  const imprimerCarte = () => {
+    if (!carte || etat.etat !== "enregistree") { setAnnonce("Enregistrez la carte pour l'imprimer : l'impression suit les mêmes droits que l'export."); return; }
+    const fenetre = ouvrirFenetreImpression(carte.nom);
+    if (!fenetre) { setAnnonce(AVIS_IMPRESSION_BLOQUEE); return; }
+    setAnnonce("Impression de la carte en préparation.");
+    void imageAutorisee([]).then(({ r, png }) => {
+      if (png) fenetre.poser(png);
+      else fenetre.erreur(`Impression refusée : ${r.refus.map((x) => `${x.titre} — ${x.motif}`).join(" ; ") || "export non autorisé."}`);
+    }).catch((e: unknown) => fenetre.erreur(message(e)));
+  };
+  const basculerMiniCarte = () => setMiniCarte((v) => { ecrireLocal("geodata.mini-carte", v ? null : "1"); setAnnonce(v ? "Mini-carte masquée" : "Mini-carte affichée"); return !v; });
+  // Couche des contours de la mini-carte : la limite administrative la plus haute (région) visible, sinon la première
+  // couche vectorielle visible ; sans couche, le fond seul.
+  const coucheSituation = useMemo(() => {
+    const vecteurs = compositionAffichee.couches.filter((k) => k.visible && !rasters.has(k.coucheId));
+    const parRang = vecteurs.filter((k) => rangs.has(k.coucheId)).sort((a, b) => rangs.get(a.coucheId)! - rangs.get(b.coucheId)!);
+    return (parRang[0] ?? vecteurs[0])?.coucheId ?? null;
+  }, [compositionAffichee, rasters, rangs]);
+  useEffect(() => { moteur.current?.afficherMiniCarte(miniCarte ? conteneurMini.current : null, coucheSituation); }, [miniCarte, coucheSituation, chargementMoteur]);
 
   const clavier = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Escape") {
@@ -547,7 +582,9 @@ export function PageGeoData() {
           {(navigationPossible || chemin.length > 0) && <FilNiveaux chemin={chemin} onAller={allerAuNiveau} onRetour={remonter} />}
           <BarreOutilsCarte outil={outil} pleinEcran={pleinEcran} legendeOuverte={panneauOuvert && onglet === "legende"} carteDisponible={!erreurCarte}
             etiquettes={composition.couches.some((k) => k.visible && vectorielles.has(k.coucheId)) ? etiquettesToutesAffichees(composition, vectorielles) : null} onEtiquettes={basculerLibelles}
+            miniCarte={miniCarte} onMiniCarte={basculerMiniCarte} onImprimer={imprimerCarte}
             onZoom={(d) => moteur.current?.zoomer(d)} onNord={() => moteur.current?.orienterNord()} onPosition={localiser} onPleinEcran={basculerPleinEcran} onOutil={choisirOutil} onLegende={basculerLegende} />
+          {miniCarte && !erreurCarte && <div ref={conteneurMini} className={`gd-mini-carte${panneauOuvert ? " gd-mini-decalee" : ""}`} title="Carte de situation : touchez pour recentrer la carte" aria-label="Carte de situation" role="img" data-gd-mini-carte />}
           {chargementMoteur && <p role="status" className="gd-sur-carte">Chargement de la carte…</p>}
           {avisFond && <div role="status" className="gd-sur-carte gd-alerte" data-gd-avis-fond><p>{avisFond}</p><div className="gd-actions"><button type="button" onClick={() => setComposition((c) => ({ ...c, fond: "neutre" }))}>Fond neutre</button><button type="button" onClick={() => setAvisFond(null)}>Fermer</button></div></div>}
           {erreurCarte && <div role="alert" className="gd-sur-carte gd-alerte" data-gd-erreur-carte><p>{erreurCarte}</p></div>}

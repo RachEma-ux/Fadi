@@ -17,7 +17,7 @@
 - [x] GEO-DEPLOI-AUTO — Import automatique des données au déploiement, retraits déclarés, quittance `/version/donnees`, Chromium borné en CI (D-GD-23).
 - [x] GEO-HCP-E — Fiche territoriale par thème, ventilations, impression (Alt+P), arrondissements de la commune, douars de la commune rurale (D-GD-22).
 - [x] GEO-HCP-F — Arbre d'indicateurs par thème, avec recherche (D-GD-26).
-- [ ] GEO-HCP-G — Mini-carte de situation et impression directe.
+- [x] GEO-HCP-G — Mini-carte de situation et impression directe (D-GD-27).
 - [ ] GEO-V11 — Extensions V1.1 : partage nominatif, espaces collectifs, KML/KMZ/Shapefile, analyses avancées.
 
 ## En cours

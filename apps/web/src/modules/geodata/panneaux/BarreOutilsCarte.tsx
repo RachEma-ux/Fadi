@@ -2,7 +2,7 @@
  * Barre d'outils verticale **flottante** de la carte GeoData (organisation inspirée de Kharita) : placée à droite par
  * défaut, déplaçable par sa poignée (souris, doigt ou flèches du clavier), bornée à la carte ; sa position est un confort
  * mémorisé dans ce navigateur seulement. Outils : zoom, nord, position,
- * plein écran, mesures, zone, annotation, libellés (Alt+L), légende. Icônes tracées ici (module isolé). Chaque bouton a un nom accessible
+ * plein écran, mesures, zone, annotation, libellés (Alt+L), mini-carte (Alt+M), légende, impression (Alt+I). Icônes tracées ici (module isolé). Chaque bouton a un nom accessible
  * et une infobulle ; les outils de tracé sont des bascules (aria-pressed) et retournent à la navigation au second appui.
  */
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
@@ -37,6 +37,10 @@ const ICONES = {
   legende: "M4 6h3M4 12h3M4 18h3M10 6h10M10 12h10M10 18h10",
   /** Libellés (D-GD-24) : étiquette « T » posée sur un repère. */
   etiquettes: "M6 5h12M12 5v10M8 19h8M12 15v4",
+  /** Mini-carte de situation (D-GD-27) : petit cadre dans un grand. */
+  miniCarte: "M3 4h18v16H3zM5 13h7v5H5z",
+  /** Impression directe (D-GD-27) : imprimante. */
+  imprimer: "M7 9V3h10v6M7 17H4v-7h16v7h-3M7 14h10v7H7z",
 } as const;
 
 function Pictogramme({ d }: { d: string }) {
@@ -49,6 +53,7 @@ export interface ActionsBarreCarte {
   legendeOuverte: boolean;
   /** Libellés affichés sur toutes les couches vectorielles visibles ; `null` = aucune couche ne peut en avoir. */
   etiquettes: boolean | null;
+  miniCarte: boolean;
   carteDisponible: boolean;
   onZoom(delta: 1 | -1): void;
   onNord(): void;
@@ -57,6 +62,8 @@ export interface ActionsBarreCarte {
   onOutil(o: OutilCarte): void;
   onLegende(): void;
   onEtiquettes(): void;
+  onMiniCarte(): void;
+  onImprimer(): void;
 }
 
 export function BarreOutilsCarte(p: ActionsBarreCarte) {
@@ -114,7 +121,9 @@ export function BarreOutilsCarte(p: ActionsBarreCarte) {
       </div>
       <div className="gd-groupe-outils">
         {bouton("etiquettes", p.etiquettes ? "Masquer les libellés (Alt+L)" : "Afficher les libellés (Alt+L)", ICONES.etiquettes, p.onEtiquettes, { pressed: !!p.etiquettes, disabled: !p.carteDisponible || p.etiquettes === null })}
+        {bouton("mini-carte", p.miniCarte ? "Masquer la mini-carte de situation (Alt+M)" : "Afficher la mini-carte de situation (Alt+M)", ICONES.miniCarte, p.onMiniCarte, { pressed: p.miniCarte, disabled: !p.carteDisponible })}
         {bouton("legende", "Légende", ICONES.legende, p.onLegende, { pressed: p.legendeOuverte })}
+        {bouton("imprimer", "Imprimer la carte (Alt+I)", ICONES.imprimer, p.onImprimer, { disabled: !p.carteDisponible })}
       </div>
     </nav>
   );

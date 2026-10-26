@@ -62,6 +62,13 @@ export interface MoteurCarte {
   canevas(): HTMLCanvasElement;
   /** Échelle approximative au centre : mètres par pixel. */
   metresParPixel(): number;
+  /**
+   * Mini-carte de situation (lot G, D-GD-27) dans `conteneur` (null : retirée) : contours de la couche `coucheId`
+   * (null : fond seul), emprise de la vue courante en rectangle ; un clic y recentre la carte.
+   */
+  afficherMiniCarte(conteneur: HTMLElement | null, coucheId: string | null): void;
+  /** Image de la mini-carte (impression), ou null si elle n'est pas affichée. */
+  canevasMiniCarte(): HTMLCanvasElement | null;
   detruire(): void;
 }
 

@@ -131,6 +131,12 @@ Panneau Couches, « Parcourir les indicateurs » : thèmes puis familles, recher
 début d'un mot ; Échap vide la recherche). Choisir une famille colore la couche ; modalité, milieu et sexe se règlent
 ensuite comme avec la liste « Coloration ». Sur les communes du HCP : 844 indicateurs, 9 thèmes, 59 familles.
 
+## Mini-carte de situation et impression (lot G, D-GD-27)
+
+Barre d'outils : « Mini-carte de situation » (Alt+M) montre l'emprise de la vue sur les limites administratives ; un clic
+y recentre la carte. « Imprimer la carte » (Alt+I) imprime une carte enregistrée, après le même contrôle des droits que
+l'export ; la mini-carte figure en encart si elle est affichée.
+
 ## Fiche territoriale (D-GD-22)
 
 La fiche d'une entité range ses indicateurs par thème ; une famille déclinée devient un tableau (modalités ×
