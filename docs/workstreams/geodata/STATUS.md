@@ -76,7 +76,9 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   le dossier réel), table `geodata_fichiers`, `--archiver` dans `geodata-reference.ts`, lancé à chaque démarrage
   (`import-auto.ts`, 5 tests), test base (ajout, inchangé, modifié, retiré). En local sur la base de développement :
   121 fichiers (53 fiches, 57 données, 6 correspondances, 4 extraits, 1 déclaration), 52 Mo bruts → 35 Mo en base,
-  2,2 s ; second passage 0,4 s, rien réécrit ; deux fichiers plus livrés marqués retirés.
+  2,2 s ; second passage 0,4 s, rien réécrit ; deux fichiers plus livrés marqués retirés. Mode livraison (`--livraison`,
+  sans compte) sur une base neuve (0 compte) : 53 versions publiées, 121 fichiers, découpage MA 12 / 75 / 1 487 / 41 en
+  61 s ; second passage 1 s (53 « déjà présente »). CI : `GEODATA_IMPORT_AUTO=non` sur les recettes et le job `image`.
 - Navigation territoriale (lot H, D-GD-28) : `geodata-model/src/territoires.ts` (déclaration, règles de parent ; 3
   tests), tables `geodata_pays` / `geodata_territoires`, `lib/geodata/territoires.ts` (chargement idempotent, parents
   `codes-hcp` ou `inclusion`), routes `routes/geodata/territoires.ts`, `panneaux/BarreTerritoriale.tsx` (remplace le fil

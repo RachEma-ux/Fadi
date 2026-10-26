@@ -25,8 +25,8 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 - Lot A2 (D-GD-17 point 5) : 648 indicateurs HCP par niveau (thème, famille, modalité, milieu, sexe) en tableau CSV,
   arrondissements (41/41 contours OSM niveau 10) ; PR en cours sur `ccr-e71fe633-hjxnjf`. Ensuite, un lot à la fois :
   B, E, C, D, F, G (TASKS).
-- Import automatique au déploiement (D-GD-23) : une fois `PREPROD_GEODATA_IMPORT_AUTO_PAR=<compte GeoData>` ajouté à
-  `/opt/fadi-preprod/env/.env.preprod`, chaque déploiement importe les fiches nouvelles et applique les retraits ;
+- Import automatique au déploiement (D-GD-23, D-GD-29) : à chaque démarrage, sans réglage ni compte, l'API archive les
+  fichiers livrés, importe et publie les fiches nouvelles, applique les retraits et écrit le découpage territorial ;
   quittance serveur : `GET /version/donnees`. Procédure après chaque fusion : suivre la CI de `main` jusqu'au vert
   (relance unique d'un job tué par l'infrastructure), déposer la quittance sur la PR fusionnée.
 - Fiche territoriale (lot E, D-GD-22) : ventilations, arrondissements, douars (annexe de la fiche des communes :
@@ -43,7 +43,8 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
   d'abord. En préproduction, le découpage arrive avec l'import automatique (`PREPROD_GEODATA_IMPORT_AUTO_PAR`).
 - Règle permanente (D-GD-29, `AGENTS.md`) : interface et base de données toujours distinctes ; aucune donnée dans
   l'application. Tous les fichiers de données livrés sont archivés en base (`geodata_fichiers`) à chaque démarrage de
-  l'API, même sans compte d'import ; le découpage territorial aussi, depuis les versions déjà publiées. Aucune suite
+  l'API, et toutes les fiches livrées sont préparées et publiées par la livraison elle-même (aucun compte, aucun réglage :
+  `PREPROD_GEODATA_IMPORT_AUTO_PAR` est devenu facultatif), retraits appliqués, découpage territorial écrit. Aucune suite
   engagée sans demande du maître d'ouvrage.
 - Arabe là où il est nécessaire (D-GD-21) : une donnée publiée seulement en arabe (noms des douars) est affichée en
   arabe (rtl, jamais traduite) ; sinon le français seul.

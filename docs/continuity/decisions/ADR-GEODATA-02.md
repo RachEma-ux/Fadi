@@ -258,8 +258,14 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         source) par la chaîne d'import (`--archiver`), à chaque démarrage de l'API, même sans
         `GEODATA_IMPORT_AUTO_PAR` (aucun compte requis) ; un fichier inchangé n'est pas réécrit, un fichier qui n'est plus
         livré reste en base, marqué retiré. Bilan dans la quittance `GET /version/donnees`.
-     3. Au même démarrage, le découpage territorial est écrit en base depuis les versions déjà publiées des fiches qui
-        le déclarent (rien n'est publié, aucun compte, aucune commande pour le maître d'ouvrage).
+     3. Au même démarrage, le découpage territorial est écrit en base depuis les versions publiées des fiches qui le
+        déclarent (aucune commande pour le maître d'ouvrage).
+     4. **Aucun réglage, aucun compte** : sans `GEODATA_IMPORT_AUTO_PAR`, les fiches livrées sont préparées et publiées
+        **par la livraison elle-même** (`geodata-reference --livraison` : `preparee_par` et `publiee_par` nuls, journal
+        `{ par: "livraison" }`), et les retraits déclarés appliqués. La responsabilité est celle du dépôt : fiche qualifiée
+        relue en PR, empreinte contrôlée, CI verte. `GEODATA_IMPORT_AUTO_PAR=<courriel>` fait la même chose au nom d'un
+        compte ; `GEODATA_IMPORT_AUTO=non` coupe tout (recettes de la CI). Mesuré sur une base neuve sans aucun compte :
+        53 versions publiées, 121 fichiers archivés, découpage MA (4 rangs) en 61 s ; second démarrage 1 s, rien refait.
 
 ## Conséquences
 

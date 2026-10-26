@@ -10,6 +10,10 @@
  *
  * `--archiver` (seul, ou avec `--fiche toutes`) copie d'abord en base tous les fichiers livrés, tels quels (`geodata_fichiers`,
  * D-GD-29 : l'interface ne garde aucune donnée) ; aucun compte n'est requis.
+ * `--livraison` (D-GD-29, à la place de `--preparateur` / `--publier-par`) : les fiches livrées sont préparées et publiées
+ * par la chaîne de livraison elle-même, sans compte (`preparee_par` et `publiee_par` nuls, journal « livraison ») — c'est
+ * le mode du démarrage de l'API sans `GEODATA_IMPORT_AUTO_PAR` ; la responsabilité est celle du dépôt (fiche relue,
+ * empreinte contrôlée, CI).
  * `--fiche toutes` traite une à une toutes les fiches livrées (une déjà importée n'est pas recréée, ni relue ni
  * retéléchargée : l'empreinte attendue se lit dans la fiche), puis applique, avec `--publier-par`, les retraits déclarés
  * dans `donnees/retraits-sources.json` (D-GD-23 : import automatique au déploiement, `lib/geodata/import-auto.ts`).
@@ -176,11 +180,12 @@ function lireRetraits(): RetraitDeclare[] {
 }
 
 /** Retire les versions de référence publiées des sources déclarées, par le responsable de publication ; journalisé. */
-async function appliquerRetraits(retraits: readonly RetraitDeclare[], publierPar: string) {
+async function appliquerRetraits(retraits: readonly RetraitDeclare[], publierPar: string | null) {
   const pool = new Pool({ connectionString: process.env["DATABASE_URL"] });
   try {
-    const publieur = (await pool.query("SELECT u.id FROM users u JOIN geodata_roles g ON g.user_id = u.id AND g.role = 'responsable-publication' WHERE lower(u.email) = lower($1)", [publierPar])).rows[0]?.id as string | undefined;
-    if (!publieur) throw new Error(`${publierPar} n'a pas le rôle GeoData « responsable-publication » : aucun retrait appliqué.`);
+    // Sans compte (`--livraison`) : acteur nul, journal « livraison ».
+    const publieur = publierPar === null ? null : ((await pool.query("SELECT u.id FROM users u JOIN geodata_roles g ON g.user_id = u.id AND g.role = 'responsable-publication' WHERE lower(u.email) = lower($1)", [publierPar])).rows[0]?.id as string | undefined);
+    if (publieur === undefined) throw new Error(`${publierPar} n'a pas le rôle GeoData « responsable-publication » : aucun retrait appliqué.`);
     for (const r of retraits) {
       // Jamais de couche retirée sans sa remplaçante publiée (import ou publication échoués : l'ancienne reste).
       const remplacante = (await pool.query("SELECT 1 FROM geodata_versions v JOIN geodata_sources s ON s.id = v.source_id WHERE s.cle = $1 AND v.espace_id IS NULL AND v.etat = 'publiee' LIMIT 1", [r.remplacePar])).rows.length > 0;
@@ -194,7 +199,7 @@ async function appliquerRetraits(retraits: readonly RetraitDeclare[], publierPar
         [r.cle, `${r.motif.trim()} (${r.decision})`.slice(0, 500)],
       )).rows.map((x) => x.id as string);
       for (const id of ids) {
-        await pool.query("INSERT INTO geodata_journal (acteur_id, action, ressource, resultat) VALUES ($1, 'version.retiree', $2, 'succes')", [publieur, id]);
+        await pool.query("INSERT INTO geodata_journal (acteur_id, action, ressource, resultat, details) VALUES ($1, 'version.retiree', $2, 'succes', $3)", [publieur, id, JSON.stringify(publieur ? {} : { par: "livraison" })]);
         console.log(`Retrait : ${r.cle} (${id}) — ${r.motif}`);
       }
     }
@@ -224,14 +229,20 @@ async function archiver() {
   }
 }
 
+/** `--livraison` : préparation et publication par la chaîne de livraison, sans compte (D-GD-29). */
+const LIVRAISON = process.argv.includes("--livraison");
+/** Publication demandée : par un compte (`--publier-par`) ou par la livraison. */
+const publicationDemandee = () => LIVRAISON || argument("publier-par") !== undefined;
+
 async function main() {
   const argFiche = argument("fiche");
-  const preparateur = argument("preparateur");
+  const preparateur = argument("preparateur") ?? null;
   if (process.argv.includes("--archiver")) {
     await archiver();
     if (!argFiche) return;
   }
-  if (!argFiche || !preparateur) throw new Error("Usage : --fiche <fiche.json | nom | toutes> --preparateur <courriel> [--fichier <données>] [--table <table>] [--publier-par <courriel>]");
+  if (LIVRAISON && (preparateur || argument("publier-par"))) throw new Error("--livraison ne se combine pas avec --preparateur ni --publier-par.");
+  if (!argFiche || (!preparateur && !LIVRAISON)) throw new Error("Usage : --fiche <fiche.json | nom | toutes> (--preparateur <courriel> [--publier-par <courriel>] | --livraison) [--fichier <données>] [--table <table>] [--archiver]");
   if (argFiche !== "toutes") return importer(cheminFiche(argFiche), preparateur);
   // Toutes les fiches livrées, une à une (une transaction chacune) : un échec n'arrête pas les suivantes ; bilan final.
   if (argument("fichier")) throw new Error("--fichier ne s'emploie pas avec --fiche toutes.");
@@ -241,14 +252,14 @@ async function main() {
     try { await importer(chemin, preparateur); } catch (e) { echecs.push(basename(chemin, ".json")); console.error(e instanceof Error ? e.message : e); }
   }
   const retraits = lireRetraits();
-  const publierPar = argument("publier-par");
-  if (retraits.length && publierPar) await appliquerRetraits(retraits, publierPar);
-  else if (retraits.length) console.log(`${retraits.length} retrait(s) déclaré(s), non appliqué(s) sans --publier-par.`);
+  const publierPar = argument("publier-par") ?? null;
+  if (retraits.length && (publierPar || LIVRAISON)) await appliquerRetraits(retraits, publierPar);
+  else if (retraits.length) console.log(`${retraits.length} retrait(s) déclaré(s), non appliqué(s) sans --publier-par ni --livraison.`);
   if (echecs.length) throw new Error(`\nÉchec pour ${echecs.length} fiche(s) : ${echecs.join(", ")}.`);
   console.log("\nToutes les fiches livrées ont été traitées.");
 }
 
-async function importer(chemin: string, preparateur: string) {
+async function importer(chemin: string, preparateur: string | null) {
   const fiche = JSON.parse(readFileSync(chemin, "utf8")) as FicheSource;
   if (!argument("fichier")) {
     // Version déjà en base (empreinte attendue, lue dans la fiche) : ni lecture ni téléchargement ; une version encore en
@@ -256,7 +267,7 @@ async function importer(chemin: string, preparateur: string) {
     const pre = new Pool({ connectionString: process.env["DATABASE_URL"] });
     try {
       const [deja] = (await pre.query("SELECT v.id, v.etat FROM geodata_versions v JOIN geodata_sources s ON s.id = v.source_id WHERE s.cle = $1 AND v.empreinte = $2 AND v.espace_id IS NULL", [fiche.cle, empreinteAttendue(fiche)])).rows;
-      if (deja && !(argument("publier-par") && deja.etat === "preparation")) {
+      if (deja && !(publicationDemandee() && deja.etat === "preparation")) {
         console.log(`Version déjà présente (même source, empreinte identique) : ${deja.id} (${deja.etat}) ; aucune nouvelle version.`);
         await assurerTerritoires(pre, fiche, empreinteAttendue(fiche));
         return;
@@ -336,32 +347,33 @@ async function importer(chemin: string, preparateur: string) {
   try {
     const role = async (email: string, r: string) => (await client.query("SELECT u.id FROM users u JOIN geodata_roles g ON g.user_id = u.id AND g.role = $2 WHERE lower(u.email) = lower($1)", [email, r])).rows[0]?.id as string | undefined;
     const [deja] = (await client.query("SELECT v.id, v.etat FROM geodata_versions v JOIN geodata_sources s ON s.id = v.source_id WHERE s.cle = $1 AND v.empreinte = $2 AND v.espace_id IS NULL", [fiche.cle, empreinte])).rows;
-    const publierPar = argument("publier-par");
+    const publierPar = argument("publier-par") ?? null;
     // Publication : droits et contrôles relus dans la version ENREGISTRÉE (jamais ceux de la fiche courante), comme la
     // route POST /geodata/api/admin/versions/:id/publier ; une version publiée est immuable, rien n'est corrigé après coup.
+    // Par un compte (`--publier-par`, rôle « responsable-publication »), ou par la livraison (`--livraison`, acteur nul).
     const publier = async (versionId: string) => {
-      const publieurId = await role(publierPar!, "responsable-publication");
-      if (!publieurId) throw new Error(`${publierPar} n'a pas le rôle GeoData « responsable-publication » : version ${versionId} laissée en préparation.`);
+      const publieurId = publierPar === null ? null : await role(publierPar, "responsable-publication");
+      if (publieurId === undefined) throw new Error(`${publierPar} n'a pas le rôle GeoData « responsable-publication » : version ${versionId} laissée en préparation.`);
       const [v] = (await client.query("SELECT droits, (controles->>'ok')::boolean AS ok FROM geodata_versions WHERE id = $1 AND etat = 'preparation'", [versionId])).rows;
       if (!v) throw new Error(`Version ${versionId} absente ou déjà hors préparation : rien n'est publié.`);
       const droits = lireDroits(v.droits);
       const bloque = (["consultation", "tuiles"] as const).map((u) => verifierUsage(droits, u)).filter((d) => !d.ok);
       if (bloque.length || v.ok !== true) throw new Error(`Publication bloquée (droits enregistrés ou contrôles) : version ${versionId} laissée en préparation.`);
       await client.query("UPDATE geodata_versions SET etat = 'publiee', publiee_par = $2, publiee_le = now() WHERE id = $1 AND etat = 'preparation'", [versionId, publieurId]);
-      await client.query("INSERT INTO geodata_journal (acteur_id, action, ressource, resultat) VALUES ($1, 'version.publiee', $2, 'succes')", [publieurId, versionId]);
-      console.log(`Version ${versionId} publiée par ${publierPar}.`);
+      await client.query("INSERT INTO geodata_journal (acteur_id, action, ressource, resultat, details) VALUES ($1, 'version.publiee', $2, 'succes', $3)", [publieurId, versionId, JSON.stringify(publieurId ? {} : { par: "livraison" })]);
+      console.log(`Version ${versionId} publiée par ${publierPar ?? "la livraison"}.`);
     };
     if (deja) {
       console.log(`Version déjà présente (même source, empreinte identique) : ${deja.id} (${deja.etat}) ; aucune nouvelle version.`);
-      if (publierPar && deja.etat === "preparation") {
+      if (publicationDemandee() && deja.etat === "preparation") {
         // Reprise du parcours en deux temps : la version préparée plus tôt est publiée, aux conditions qu'elle porte.
         await publier(deja.id);
       }
       await assurerTerritoires(client, fiche, empreinte);
       return;
     }
-    const prepareParId = await role(preparateur, "gestionnaire-donnees");
-    if (!prepareParId) throw new Error(`${preparateur} n'a pas le rôle GeoData « gestionnaire-donnees ».`);
+    const prepareParId = preparateur === null ? null : await role(preparateur, "gestionnaire-donnees");
+    if (prepareParId === undefined) throw new Error(`${preparateur} n'a pas le rôle GeoData « gestionnaire-donnees ».`);
     await client.query("BEGIN");
     const ecrite = await ecrireVersion(client, {
       source: { cle: fiche.cle, titre: fiche.titre, producteur: fiche.producteur, theme: fiche.theme, couverture: fiche.couverture, description: fiche.description },
@@ -380,7 +392,7 @@ async function importer(chemin: string, preparateur: string) {
     });
     await client.query("COMMIT");
     console.log(`Version préparée : ${ecrite.versionId} (couche ${ecrite.coucheId}, ${ecrite.objets} objets, ${ecrite.reparees} géométrie(s) réparée(s), ${ecrite.indicateurs.length} indicateur(s)).`);
-    if (publierPar) { await publier(ecrite.versionId); await assurerTerritoires(client, fiche, empreinte); }
+    if (publicationDemandee()) { await publier(ecrite.versionId); await assurerTerritoires(client, fiche, empreinte); }
   } catch (e) {
     await client.query("ROLLBACK").catch(() => undefined);
     throw e;

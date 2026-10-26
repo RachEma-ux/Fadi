@@ -1,12 +1,13 @@
 /**
- * Import automatique des données GeoData au déploiement (D-GD-23) : au démarrage de l'API, si
- * `GEODATA_IMPORT_AUTO_PAR` désigne un compte GeoData (rôles « gestionnaire-donnees » et « responsable-publication »),
- * la chaîne administrative d'import (`geodata-reference.js --fiche toutes`) tourne en arrière-plan : chaque fiche
- * qualifiée livrée avec le code est préparée puis publiée si elle n'est pas déjà en base (même empreinte : rien n'est
- * recréé), et les retraits déclarés (`donnees/retraits-sources.json`) sont appliqués. L'API répond pendant l'import.
- * Dans tous les cas, l'outil d'import copie d'abord en base les fichiers de données livrés (`--archiver`, D-GD-29) : sans
- * `GEODATA_IMPORT_AUTO_PAR`, seule cette archive est faite. Outil absent et variable absente : rien n'est fait
- * (« désactivé »). L'état est lu par `GET /version/donnees` (quittance du serveur).
+ * Import automatique des données GeoData au démarrage de l'API (D-GD-23, D-GD-29) : la chaîne d'import
+ * (`geodata-reference.js --archiver --fiche toutes …`) tourne en arrière-plan, l'API répond pendant ce temps :
+ *   1. chaque fichier de données livré avec le code est copié tel quel en base (`geodata_fichiers`) ;
+ *   2. chaque fiche qualifiée est préparée puis publiée si elle n'est pas déjà en base (même empreinte : rien n'est
+ *      recréé), les retraits déclarés (`donnees/retraits-sources.json`) sont appliqués, le découpage territorial est écrit.
+ * Sans réglage, tout est fait **par la livraison** (`--livraison`, aucun compte : l'interface et ses outils ne portent
+ * aucune donnée, la base les reçoit toutes au premier démarrage). `GEODATA_IMPORT_AUTO_PAR=<courriel>` fait la même
+ * chose au nom de ce compte GeoData (rôles « gestionnaire-donnees » et « responsable-publication »).
+ * `GEODATA_IMPORT_AUTO=non` ne lance rien (recettes de la CI, tests). L'état est lu par `GET /version/donnees`.
  */
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
@@ -20,7 +21,7 @@ export interface EtatImportAuto {
   message: string | null;
 }
 
-let etat: EtatImportAuto = { etat: "desactive", debut: null, fin: null, message: "GEODATA_IMPORT_AUTO_PAR absent : import automatique désactivé." };
+let etat: EtatImportAuto = { etat: "desactive", debut: null, fin: null, message: "Import automatique non lancé." };
 
 export const etatImportAuto = (): EtatImportAuto => ({ ...etat });
 
@@ -35,18 +36,16 @@ export function bilanImport(sortie: string): string {
 
 export function lancerImportAuto(env: Record<string, string | undefined> = process.env, script = fileURLToPath(new URL("./geodata-reference.js", import.meta.url))): void {
   if (env["GEODATA_ENABLED"] === "false") return;
+  if (env["GEODATA_IMPORT_AUTO"]?.trim() === "non") { etat = { etat: "desactive", debut: null, fin: null, message: "GEODATA_IMPORT_AUTO=non : import automatique désactivé." }; return; }
   const par = env["GEODATA_IMPORT_AUTO_PAR"]?.trim();
   const debut = new Date().toISOString();
-  if (!par) {
-    if (existsSync(script)) executer(script, ["--archiver"], env, debut, "Archive des fichiers de données en cours (import automatique désactivé : GEODATA_IMPORT_AUTO_PAR absent).", true);
-    return;
-  }
-  if (!COURRIEL.test(par)) { etat = { etat: "echec", debut, fin: debut, message: "GEODATA_IMPORT_AUTO_PAR n'est pas une adresse de courriel." }; return; }
+  if (par && !COURRIEL.test(par)) { etat = { etat: "echec", debut, fin: debut, message: "GEODATA_IMPORT_AUTO_PAR n'est pas une adresse de courriel." }; return; }
   if (!existsSync(script)) { etat = { etat: "echec", debut, fin: debut, message: "Outil d'import absent de cette construction (geodata-reference.js)." }; return; }
-  executer(script, ["--archiver", "--fiche", "toutes", "--preparateur", par, "--publier-par", par], env, debut, "Archive des fichiers et import des fiches livrées en cours.", false);
+  const acteur = par ? ["--preparateur", par, "--publier-par", par] : ["--livraison"];
+  executer(script, ["--archiver", "--fiche", "toutes", ...acteur], env, debut, `Archive des fichiers et import des fiches livrées en cours (${par ? `par ${par}` : "par la livraison"}).`);
 }
 
-function executer(script: string, args: string[], env: Record<string, string | undefined>, debut: string, enCours: string, archiveSeule: boolean): void {
+function executer(script: string, args: string[], env: Record<string, string | undefined>, debut: string, enCours: string): void {
   etat = { etat: "en-cours", debut, fin: null, message: enCours };
   let sortie = "";
   let erreurs = "";
@@ -55,9 +54,7 @@ function executer(script: string, args: string[], env: Record<string, string | u
   enfant.stderr.on("data", (b: Buffer) => { erreurs = (erreurs + b.toString()).slice(-4000); });
   enfant.on("close", (code) => {
     const fin = new Date().toISOString();
-    const bilan = archiveSeule
-      ? `${sortie.match(/^Archive des fichiers : .*$/m)?.[0] ?? "Archive des fichiers : aucun bilan."} Import automatique désactivé (GEODATA_IMPORT_AUTO_PAR absent).`
-      : bilanImport(sortie);
+    const bilan = bilanImport(sortie);
     etat = code === 0
       ? { etat: "termine", debut, fin, message: bilan }
       : { etat: "echec", debut, fin, message: `${bilan} Dernière erreur : ${erreurs.trim().split("\n").filter(Boolean).slice(-2).join(" ").slice(0, 600) || `code ${code}`}` };
