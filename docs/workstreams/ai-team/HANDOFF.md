@@ -2,7 +2,7 @@
 
 ## Studio — rapprochement complet — 25 octobre 2026
 
-Registre Studio : **0 À définir / 61 À faire / 133 En cours / 11 Bloqué / 366 Vérifié / 59 Accepté** ; **P630=425/630**. Détail : `docs/workstreams/studio/STATUS.md`.
+Registre Studio : **0 À définir / 57 À faire / 127 En cours / 11 Bloqué / 376 Vérifié / 59 Accepté** ; **P630=435/630**. Détail : `docs/workstreams/studio/STATUS.md`.
 
 ## Studio — 25 octobre 2026
 

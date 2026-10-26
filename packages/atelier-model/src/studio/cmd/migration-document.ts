@@ -164,11 +164,11 @@ export function studioValiderDocumentV2(value: unknown): StudioDocumentV2 {
 export function studioMigrerDocumentV2V1(value: unknown): { document: StudioDocument; rapport: StudioRapportMigrationDocument } {
   const v2 = studioValiderDocumentV2(value);
   const { conserves = [], schemaVersion: _v, ...reste } = v2;
-  const document = validateStudioDocument({ ...reste, schemaVersion: STUDIO_SCHEMA_DOCUMENT_V1 });
+  const lu = validateStudioDocument({ ...reste, schemaVersion: STUDIO_SCHEMA_DOCUMENT_V1 });
   return {
-    document,
+    document: lu,
     rapport: {
-      de: STUDIO_SCHEMA_DOCUMENT_V2, vers: STUDIO_SCHEMA_DOCUMENT_V1, documentId: document.id, elements: compter(document as unknown as Record<string, unknown>), conserves: [],
+      de: STUDIO_SCHEMA_DOCUMENT_V2, vers: STUDIO_SCHEMA_DOCUMENT_V1, documentId: lu.id, elements: compter(lu as unknown as Record<string, unknown>), conserves: [],
       pertes: conserves.map((c) => ({ chemin: c.chemin, cle: c.cle, motif: `non représentable en ${STUDIO_SCHEMA_DOCUMENT_V1} : ${c.motif}` })),
     },
   };
@@ -199,8 +199,8 @@ export function studioRestaurerSourceV1(value: unknown): Record<string, unknown>
 export function studioLireDocumentVersionne(value: unknown): StudioResultatMigrationDocument {
   const v = (value as Record<string, unknown> | null)?.["schemaVersion"];
   if (v === STUDIO_SCHEMA_DOCUMENT_V2) {
-    const document = studioValiderDocumentV2(value);
-    return { ok: true, document, rapport: { de: STUDIO_SCHEMA_DOCUMENT_V2, vers: STUDIO_SCHEMA_DOCUMENT_V2, documentId: document.id, elements: compter(document as unknown as Record<string, unknown>), conserves: (document.conserves ?? []).map((c) => ({ chemin: c.chemin, cle: c.cle, motif: c.motif })), pertes: [] } };
+    const v2 = studioValiderDocumentV2(value);
+    return { ok: true, document: v2, rapport: { de: STUDIO_SCHEMA_DOCUMENT_V2, vers: STUDIO_SCHEMA_DOCUMENT_V2, documentId: v2.id, elements: compter(v2 as unknown as Record<string, unknown>), conserves: (v2.conserves ?? []).map((c) => ({ chemin: c.chemin, cle: c.cle, motif: c.motif })), pertes: [] } };
   }
   return studioMigrerDocumentV1V2(value);
 }

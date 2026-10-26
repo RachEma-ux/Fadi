@@ -7,7 +7,8 @@
     ".": "./src/index.ts",
     "./studio-corpus": "./src/studio/corpus/index.ts",
     "./studio-exemples": "./src/studio/exemples/index.ts",
-    "./studio-cmd": "./src/studio/cmd/index.ts"
+    "./studio-cmd": "./src/studio/cmd/index.ts",
+    "./studio-cmd-corpus": "./src/studio/cmd/corpus-migration.ts"
   },
   "scripts": {
     "test": "vitest run",

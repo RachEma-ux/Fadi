@@ -189,6 +189,10 @@ describe("TR-EX-091 / TR-EX-019 — migration de schéma simulée, accordée, ap
     expect(sim.body).toMatchObject({ statut: "simulee", verdict: "sans-perte", pointRetour: [{ variantId: "v", headRevisionId: tete() }] });
     expect(sim.body.rapport.comptes.cotes.compares).toBeGreaterThan(0);
     expect((await get("lecteur", `${S}/jobs/${sim.body.jobId}`)).body.kind).toBe("simulation-migration");
+    const liste = await get("lecteur", `${S}/studies/s/migrations`);
+    expect(liste.body.migrations.map((m: { id: string }) => m.id)).toEqual([sim.body.id]);
+    const relue = await get("lecteur", `${S}/studies/s/migrations/${sim.body.id}`);
+    expect(relue.body).toMatchObject({ statut: "simulee", rapport: { schema: "studio-simulation-migration/1" } });
     expect((await post("editeur", `${S}/studies/s/migrations/${sim.body.id}/accorder`)).status).toBe(403);
     expect((await post("proprietaire", `${S}/studies/s/migrations/${sim.body.id}/appliquer`)).body.error).toBe("migration_etat");
     expect((await post("proprietaire", `${S}/studies/s/migrations/${sim.body.id}/accorder`)).body).toMatchObject({ statut: "accordee", accord: { par: "proprietaire" } });

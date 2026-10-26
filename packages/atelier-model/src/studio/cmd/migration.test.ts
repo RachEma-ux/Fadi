@@ -1,10 +1,8 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { applyStudioCommands } from "../composition/commandes.js";
 import { newStudioDocument, validateStudioDocument } from "../composition/document.js";
-import type { StudioDocument } from "../composition/types.js";
-import { genererCorpus, SCENES_DOCUMENTS } from "../corpus/index.js";
-import { convertirExempleP118, lotsDeCommandes } from "../exemples/index.js";
+import { SCENES_DOCUMENTS } from "../corpus/index.js";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { avecInconnues, corpusMigration as corpusDe, rapportCorpusMigration as rapportDe, type Doc, type SourcesCorpusMigration } from "./corpus-migration.js";
 import {
   STUDIO_MIGRATIONS_DOCUMENT, STUDIO_SCHEMA_DOCUMENT_V1, STUDIO_SCHEMA_DOCUMENT_V2, studioLireDocumentVersionne, studioMigrerDocumentV1V2, studioMigrerDocumentV2V1,
   studioRestaurerSourceV1, studioValiderDocumentV2,
@@ -17,47 +15,23 @@ import { studioSimulerMigration } from "./simulation-migration.js";
  * `studio-document/2` avec aller-retour testé ; puis le même corpus enrichi de données inconnues (champ futur,
  * élément refusé) pour prouver la conservation, le rapport et la récupération exacte.
  */
-const RACINE_SRC = new URL("../", import.meta.url);
-type Doc = Record<string, unknown>;
-function documentsJson(): { origine: string; document: Doc }[] {
-  const out: { origine: string; document: Doc }[] = [];
-  const visiter = (valeur: unknown, origine: string) => {
-    if (Array.isArray(valeur)) { valeur.forEach((v, i) => visiter(v, `${origine}[${i}]`)); return; }
-    if (!valeur || typeof valeur !== "object") return;
-    const o = valeur as Doc;
-    if (o["schemaVersion"] === STUDIO_SCHEMA_DOCUMENT_V1 && "objects" in o) { out.push({ origine, document: o }); return; }
-    for (const [k, v] of Object.entries(o)) visiter(v, `${origine}.${k}`);
-  };
-  const parcourir = (dir: URL) => {
+/** Lecture des sources du corpus de migration (fichiers JSON de `src/studio/`, exemple P.118). */
+function lireSourcesCorpus(): SourcesCorpusMigration {
+  const racine = new URL("../", import.meta.url);
+  const fichiersJson: { chemin: string; contenu: string }[] = [];
+  const parcourir = (dir: URL, rel: string) => {
     for (const nom of readdirSync(dir).sort()) {
       const u = new URL(nom, dir);
-      if (statSync(u).isDirectory()) { if (nom !== "node_modules") parcourir(new URL(`${nom}/`, dir)); continue; }
-      if (nom.endsWith(".json")) visiter(JSON.parse(readFileSync(u, "utf8")), `src/studio/${u.pathname.split("/src/studio/")[1]}`);
+      if (statSync(u).isDirectory()) { if (nom !== "node_modules") parcourir(new URL(`${nom}/`, dir), `${rel}${nom}/`); continue; }
+      if (nom.endsWith(".json")) fichiersJson.push({ chemin: `src/studio/${rel}${nom}`, contenu: readFileSync(u, "utf8") });
     }
   };
-  parcourir(RACINE_SRC);
-  return out;
+  parcourir(racine, "");
+  return { fichiersJson, exempleP118: JSON.parse(readFileSync(new URL("../../../../../apps/api/src/data/examples/p118-native-model.json", import.meta.url), "utf8")) };
 }
-function corpusMigration(): { origine: string; document: Doc }[] {
-  const docs = documentsJson();
-  for (const s of SCENES_DOCUMENTS) genererCorpus(s, 100).documents.forEach((d, i) => docs.push({ origine: `corpus ${s} (100) feuillet ${i}`, document: d as unknown as Doc }));
-  const jeu = JSON.parse(readFileSync(new URL("../../../../../apps/api/src/data/examples/p118-native-model.json", import.meta.url), "utf8")) as { domains: Record<string, unknown> };
-  for (const n of convertirExempleP118({ levels: jeu.domains["levels"], floorDesign: jeu.domains["floorDesign"] }).niveaux) {
-    let d: StudioDocument = newStudioDocument(`p118-${n.niveauId}`);
-    for (const lot of lotsDeCommandes(n.commandes)) d = applyStudioCommands(d, lot);
-    docs.push({ origine: `exemple P.118 niveau ${n.niveauId}`, document: d as unknown as Doc });
-  }
-  return docs;
-}
-/** Données inconnues ajoutées à une copie : champ futur d'en-tête, champ futur d'un objet, élément d'un type inconnu. */
-function avecInconnues(d: Doc): Doc {
-  const c = structuredClone(d);
-  c["extensionFuture"] = { origine: "client /3", valeur: 42 };
-  const objets = c["objects"] as Doc[];
-  if (objets.length) objets[0]!["couleurFuture"] = "#ff8800";
-  objets.push({ id: "inconnu-1", type: "spline-future", poles: [[0, 0], [1, 1]] });
-  return c;
-}
+const SOURCES = lireSourcesCorpus();
+const corpusMigration = () => corpusDe(SOURCES);
+const rapportCorpusMigration = () => rapportDe(SOURCES);
 const stable = (v: unknown): string => {
   if (v === null || typeof v !== "object") return JSON.stringify(v) ?? "null";
   if (Array.isArray(v)) return `[${v.map(stable).join(",")}]`;
@@ -96,6 +70,13 @@ describe("TR-EX-019 — migration de schéma studio-document/1 → /2", () => {
     expect(retour.rapport.pertes.length).toBe(m.document.conserves!.length);
     expect(retour.rapport.pertes.every((p) => p.motif.startsWith("non représentable en studio-document/1"))).toBe(true);
     expect(studioRestaurerSourceV1(m.document)).toEqual(src);
+    // Deux éléments refusés dans la même liste : les indices glissent au retrait, la récupération les replace exactement.
+    const ligne = (id: string, x: number) => ({ id, type: "line", start: { x, y: 0 }, end: { x: x + 1, y: 0 } });
+    const deux = { ...(newStudioDocument("d2") as unknown as Doc), objects: [ligne("a", 0), { id: "x1", type: "futur" }, ligne("b", 2), { id: "x2", type: "futur" }, ligne("c", 4)] };
+    const m2 = studioMigrerDocumentV1V2(deux);
+    if (!m2.ok) throw new Error(m2.motif);
+    expect(m2.document.objects.map((o) => o.id)).toEqual(["a", "b", "c"]);
+    expect(studioRestaurerSourceV1(m2.document)).toEqual(deux);
   });
 
   it("EX-019 [−] : migration impossible (unité inconnue) — refus explicite, source rendue intacte, rien ne disparaît", () => {
@@ -140,6 +121,13 @@ describe("REC-A-01 — corpus de migration (P-12)", () => {
     }
     const rapport = { documents: corpus.length, familles: [...origines].length, documentsInconnus, conserves, rapportees };
     console.log(`REC-A-01 corpus de migration : ${JSON.stringify(rapport)}`);
+    // Rapport publié (docs/studio/LIVRABLES-LOT-A.md) : chaque document migré ou refusé explicitement, aller-retour exact.
+    const publie = rapportCorpusMigration();
+    expect(publie.documents).toBe(corpus.length);
+    expect(publie.migres + publie.refusesExplicitement).toBe(publie.documents);
+    expect(publie.allerRetourExacts).toBe(publie.migres);
+    expect(publie.donneesConservees).toBe(publie.donneesRapportees);
+    expect(publie.recuperationsExactes).toBe(publie.documentsAvecInconnues);
     expect(rapport.documents).toBeGreaterThanOrEqual(20);
     expect(conserves).toBe(rapportees);
     expect(conserves).toBeGreaterThanOrEqual(2 * documentsInconnus);
