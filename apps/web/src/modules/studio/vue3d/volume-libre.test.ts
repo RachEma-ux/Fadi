@@ -115,7 +115,7 @@ describe("Volume libre : barre, raccourcis et commandes de la vue 3D (règle d'o
       ["studio.solide.booleen", "Ctrl+Shift+Y"], ["studio.solide.cote-face", "Shift+F12"],
       // X.1-05 : surfaces libres NURBS.
       ["studio.surface.nurbs", "Ctrl+F8"], ["studio.surface.modifier", "Ctrl+F9"], ["studio.surface.epaissir", "Shift+F11"],
-      ["studio.subdivision.creer", "Ctrl+F12"], ["studio.subdivision.solidifier", "Ctrl+Shift+End"],
+      ["studio.subdivision.creer", "Ctrl+Shift+Home"], ["studio.subdivision.solidifier", "Ctrl+Shift+End"],
     ]);
     for (const t of STUDIO_TOOLS.filter((x) => x.groupe === "volume-libre")) {
       expect(cibleRaccourci(t.raccourci)).toEqual({ type: "outil", toolId: t.toolId });

@@ -183,7 +183,7 @@ describe("X.1-05 — panneaux, vue 3D et règle d'or", () => {
       ["studio.surface.nurbs", "Ctrl+F8", "studio-surface-nurbs", "volume-libre"],
       ["studio.surface.modifier", "Ctrl+F9", "studio-surface-edit", "volume-libre"],
       ["studio.surface.epaissir", "Shift+F11", "studio-surface-thicken", "volume-libre"],
-      ["studio.subdivision.creer", "Ctrl+F12", "studio-surface-subdivision", "volume-libre"],
+      ["studio.subdivision.creer", "Ctrl+Shift+Home", "studio-surface-subdivision", "volume-libre"],
       ["studio.subdivision.solidifier", "Ctrl+Shift+End", "studio-surface-solidify", "volume-libre"],
     ]);
     for (const t of outils) {

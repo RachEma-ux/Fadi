@@ -14,7 +14,7 @@
  *  - oracle de forme close : quart de cylindre NURBS rationnel (R 2 m, L 3 m) épaissi de 0,1 m vers l'extérieur —
  *    volume π/4 ((R + e)² − R²) L à 1e-6 près, calculé par le serveur ;
  *  - exports : OBJ écrit la nappe, STEP le solide exact (faces B-spline rationnelles), STL le compte ;
- *  - surfaces de subdivision : Surface de subdivision (Ctrl+F12) — maillage de contrôle saisi au clavier (tétraèdre),
+ *  - surfaces de subdivision : Surface de subdivision (Ctrl+Shift+Home) — maillage de contrôle saisi au clavier (tétraèdre),
  *    niveau de Loop ; sommet de contrôle choisi par un clic sur son repère puis déplacé ; Solidifier la subdivision
  *    (Ctrl+Maj+Fin) : le noyau coud le maillage subdivisé ; oracle de forme close (tétraèdre régulier, niveau 1 :
  *    volume 5 s³ / 24) recalculé par le serveur ; surface ouverte refusée ; exports OBJ / STL / STEP ;
@@ -81,7 +81,7 @@ try {
   await page.goto(`${BASE}/studio/projets/${projet.id}/etudes/${etude.study.id}/variantes/${etude.variant.id}`);
   await page.getByRole("toolbar", { name: "Outils de dessin" }).waitFor();
   await page.waitForTimeout(500);
-  for (const [id, libelle, touches] of [["studio.surface.nurbs", "Surface NURBS", "Control+F8"], ["studio.surface.modifier", "Modifier la surface", "Control+F9"], ["studio.surface.epaissir", "Épaissir la surface", "Shift+F11"], ["studio.subdivision.creer", "Surface de subdivision", "Control+F12"], ["studio.subdivision.solidifier", "Solidifier la subdivision", "Control+Shift+End"]]) {
+  for (const [id, libelle, touches] of [["studio.surface.nurbs", "Surface NURBS", "Control+F8"], ["studio.surface.modifier", "Modifier la surface", "Control+F9"], ["studio.surface.epaissir", "Épaissir la surface", "Shift+F11"], ["studio.subdivision.creer", "Surface de subdivision", "Control+Shift+Home"], ["studio.subdivision.solidifier", "Solidifier la subdivision", "Control+Shift+End"]]) {
     const b = outils.locator(`[data-studio-famille="volume"] [data-studio-outil="${id}"][aria-label="${libelle}"][aria-keyshortcuts="${touches}"]`);
     check(`règle d'or : ${libelle} dans la famille Volume, icône propre (tracé), raccourci ${touches.replace("Control", "Ctrl")}`, (await b.locator("svg path").count()) === 1);
   }
@@ -191,7 +191,7 @@ try {
     obj.includes(`o ${idSurface}`) && obj.includes(`o ${idExact}`) && /RATIONAL_B_SPLINE_SURFACE/.test(step) && step.includes(`'${idExact}'`) && !step.includes(`'${idSurface}'`));
   // ——— Surfaces de subdivision (Loop) ———
   await flou();
-  await page.keyboard.press("Control+F12");
+  await page.keyboard.press("Control+Shift+Home");
   const sub = panneaux3d.locator("[data-studio-subdivision-creer]");
   await sub.waitFor();
   check("Surface de subdivision : aucune valeur proposée (sommets, faces, niveau vides)", (await sub.locator("textarea").evaluateAll((l) => l.every((t) => t.value === ""))) && (await sub.locator('input[name="subdivision-niveau"]').inputValue()) === "");

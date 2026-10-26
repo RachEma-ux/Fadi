@@ -1,7 +1,7 @@
 /**
  * Panneau des surfaces de subdivision de la vue 3D (X.1-05) :
  *
- * - « Surface de subdivision » (Ctrl+F12) : maillage de contrôle saisi au clavier (sommets « x y z », faces « i j k »)
+ * - « Surface de subdivision » (Ctrl+Shift+Home) : maillage de contrôle saisi au clavier (sommets « x y z », faces « i j k »)
  *   et niveau de Loop (0 à 4), rien proposé d'office ;
  * - « Modifier la surface » (Ctrl+F9) sur une surface de subdivision sélectionnée : sommet de contrôle choisi (liste, ou
  *   clic sur son repère dans la vue 3D), position et niveau saisis ; même identité ;
