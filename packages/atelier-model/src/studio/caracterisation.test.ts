@@ -340,6 +340,8 @@ const AJOUTS = {
     // (AC-011, `fiches-outils.ts`) : extensions additives du lot OUT.
     "STUDIO_OUTILS_DEPRECIES", "STUDIO_MODULES_DEPRECIES", "statutOutil", "controlerDepreciations", "outilsDuDocument", "compatibiliteTravail",
     "STUDIO_FICHES_OUTILS", "DESIGNATION_CONFORMITE", "PREUVES_EXECUTION_OUTILS", "evaluerFicheOutil",
+    // Préparation de la désignation du build et du profil de charge de référence (TR-AC-011, lot G5).
+    "APPAREILS_RECETTE", "FORME_BUILD_DESIGNE", "PROFILS_CHARGE_CANDIDATS", "preuveRecevable", "validerDesignation",
     // Basculement des solides libres autour de leurs axes horizontaux (A.3-03, lot OUT).
     "estBascule", "studioBasculerPoint", "studioVecteurSolide",
     // Rapport de fidélité des exports (E.6-03, `echanges/rapport-fidelite.ts`).

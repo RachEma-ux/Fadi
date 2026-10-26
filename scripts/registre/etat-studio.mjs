@@ -7,6 +7,8 @@
  *    (preuves « scénario exécuté » : fichier, étape de CI, première et dernière exécution citées) séparés des scénarios
  *    absents ou incomplets (obligations de recette ouvertes, tests prescrits non exécutés, recettes Studio non branchées
  *    en CI) ; une CI verte n'y vaut jamais couverture exhaustive.
+ *  - `RATTACHEMENT-SOUS-LOTS.md` (X.3-01) et `AGREGATS-RECETTE.md` (rapprochements d'agrégation) : voir
+ *    `rattachements-studio.mjs`.
  *  - `docs/ai-team/reports/etat-studio/FICHES-TR.md` (X.3-03) : les 141 fiches de l'annexe C complétées une à une selon
  *    la règle C — libellé exact (REF-02), source, responsable, contrat, composants, lot, décisions, tests positifs et
  *    négatifs prescrits, **preuve** (contrôles positifs exécutés) et **contre-preuve** (contrôles négatifs exécutés :
@@ -20,6 +22,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { CHECKLIST, SORTIE_AGREGATS, SORTIE_RATTACHEMENT, controlerPreuvesLots, controlerRattachement, documentAgregats, documentRattachement, gardeTest001, lecteurDepot, sousLotsChecklist } from './rattachements-studio.mjs';
 
 export const SORTIE_CONTROLES = 'docs/ai-team/reports/etat-studio/CONTROLES-EXECUTES.md';
 export const SORTIE_FICHES = 'docs/ai-team/reports/etat-studio/FICHES-TR.md';
@@ -177,7 +180,23 @@ export function generer(racine, cheminRegistre = join(racine, REGISTRE)) {
   const wfTextes = WORKFLOWS.filter((w) => existsSync(join(racine, w))).map((w) => readFileSync(join(racine, w), 'utf8')).join('\n');
   const lanceurs = [...new Set([...wfTextes.matchAll(/\bscripts\/[\w/.-]+\.(?:py|mjs|sh)\b/g)].map((m) => m[0]))].filter((f) => existsSync(join(racine, f)));
   const textesLanceurs = [wfTextes, ...lanceurs.map((f) => readFileSync(join(racine, f), 'utf8'))].join('\n');
-  return { [SORTIE_CONTROLES]: `${controlesExecutes(registre, etapes, recettes, empreinte, textesLanceurs)}`, [SORTIE_FICHES]: `${fichesTr(registre, fiches, empreinte)}\n` };
+  // X.3-01 et rapprochements d'agrégation : un écart (sous-lot, identifiant, composant, libellé d'une preuve de lot,
+  // garde A.2-09) fait échouer la génération — donc la CI.
+  const lire = lecteurDepot(racine);
+  const existe = (f) => existsSync(join(racine, f));
+  const sousLots = sousLotsChecklist(readFileSync(join(racine, CHECKLIST), 'utf8'));
+  const ecarts = [
+    ...controlerRattachement(fiches, registre.tasks.map((t) => t.id).filter((id) => /^TR-(?:EX|INV|IF|AC)-/.test(id)), sousLots, existe),
+    ...controlerPreuvesLots(lire),
+    ...gardeTest001(registre),
+  ];
+  if (ecarts.length) throw new Error(`Rattachements Studio incohérents :\n${ecarts.join('\n')}`);
+  return {
+    [SORTIE_CONTROLES]: `${controlesExecutes(registre, etapes, recettes, empreinte, textesLanceurs)}`,
+    [SORTIE_FICHES]: `${fichesTr(registre, fiches, empreinte)}\n`,
+    [SORTIE_RATTACHEMENT]: documentRattachement(fiches, registre, sousLots, existe, empreinte),
+    [SORTIE_AGREGATS]: documentAgregats(registre, lire, empreinte),
+  };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

@@ -8,6 +8,7 @@ import { basculerAncienMoteur } from "./db/bascule.js";
 import { applyRolePasswords } from "./db/role-passwords.js";
 import { mailRuntime } from "./lib/mailer/index.js";
 import { startAccountWorkers } from "./lib/account-jobs.js";
+import { startSurveillance } from "./lib/studio-surveillance-db.js";
 import { attacherTempsReel } from "./lib/temps-reel-canal.js";
 
 const port = Number(process.env["PORT"] ?? 3001);
@@ -91,6 +92,8 @@ Promise.resolve()
     console.log(`Courriel : transport ${config.transport}${config.transport === "disabled" ? " (aucun envoi : liens à copier affichés)" : ""}${config.transport === "smtp" ? (config.allowReservedDomains ? " ; domaines réservés envoyés (MAIL_ALLOW_RESERVED_DOMAINS, serveur de capture)" : " ; domaines réservés jamais envoyés") : ""}.`);
     // File de courriels et anonymisation différée (D-5) ; `ACCOUNT_WORKERS=0` les coupe (deuxième processus, outils).
     if (process.env["ACCOUNT_WORKERS"] !== "0") startAccountWorkers();
+    // Surveillance d'exploitation (R.5-03, OPS-08) : règles d'alerte évaluées chaque minute, transitions journalisées.
+    if (process.env["STUDIO_SURVEILLANCE"] !== "0") startSurveillance();
     const app = createApp();
     const server = app.listen(host ? { port, host } : { port }, () => {
       // eslint-disable-next-line no-console

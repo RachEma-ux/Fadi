@@ -2735,6 +2735,21 @@ describe("gestion des comptes — correctifs de sécurité (revue PR #255)", () 
       expect((await boss.a.get("/admin/audit.csv")).status).toBe(404);
     });
 
+    it("R.5-03 : surveillance d'exploitation réservée à l'administrateur (404 sinon) ; jobs Studio et file des courriels relus dans la base, règles avec seuil sourcé ou non évaluées", async () => {
+      const boss = await account("surveillance-admin");
+      await enableMfa(boss, boss.a);
+      await promoteInDb(boss.id);
+      const autre = await account("surveillance-autre");
+      expect((await autre.a.get("/admin/surveillance")).status).toBe(404);
+      const r = await boss.a.get("/admin/surveillance");
+      expect(r.status).toBe(200);
+      expect(r.body.schema).toBe("studio-surveillance/1");
+      expect(r.body.observation.jobs).toMatchObject({ enCalcul: 0, fenetreMs: 86_400_000 });
+      expect(typeof r.body.observation.courriels.enAttente).toBe("number");
+      expect(r.body.resultats.find((x: { regle: string }) => x.regle === "job.en-calcul-persistant")).toMatchObject({ etat: "normal", valeur: 0, seuil: 1 });
+      expect(r.body.regles.every((x: { seuil: { source?: string; raison?: string } }) => (x.seuil.source ?? x.seuil.raison ?? "").length > 20)).toBe(true);
+    });
+
     it("Mon historique : ses actions, ce qui vise son compte, le support sur ses projets ; jamais l'IP ni un autre compte", async () => {
       const owner = await account("journal-moi");
       const stranger = await account("journal-inconnu");
