@@ -90,6 +90,20 @@ const exigence = { id: "e1", libelle: "Exigence e1", metrique: { type: "nombre" 
 const publication = async () => ({ pub: await creer(`${V}/publications`, { title: "Dossier d'essai", contenu: "dessin-2d" }) });
 const ESSAI = { contractVersion: STUDIO_CONTRACT, requestId: "essai-1", baseRevisionId: "r1", commands: [{ toolId: "studio.dessin.ligne", params: { id: "e", type: "line", start: { x: 0, y: 2 }, end: { x: 1, y: 2 } } }] };
 const essai = async () => ({ job: await creer(`${V}/essais`, ESSAI) });
+// Lot W3-D (X.1-06) : variante dérivée de v (r1) avec une ligne de plus, puis aperçu de sa fusion dans v (préparés par le propriétaire).
+const fusionPreparee = async () => {
+  const v2 = await creer(`${S}/studies/s/variants`, { name: "Variante dérivée", fromVariantId: "v", fromRevisionId: "r1" }, (b) => b?.variant?.id);
+  const tete = await creer(`${S}/studies/s/variants/${v2}/commands`, { contractVersion: STUDIO_CONTRACT, requestId: "fu-1", baseRevisionId: await lireTete(v2), commands: [{ toolId: "studio.dessin.ligne", params: { id: "fu", type: "line", start: { x: 0, y: 4 }, end: { x: 1, y: 4 } } }] }, (b) => b?.revision?.id);
+  const a = await comme("proprietaire")(request(app).post(`${V}/fusion/apercu`)).send({ sourceVariantId: v2 });
+  if (a.status !== 200) throw new Error(`préparation aperçu : ${a.status}`);
+  return { v2, sourceRevisionId: tete, baseRevisionId: a.body.cible.revisionId as string, empreinte: a.body.apercu.empreinte as string };
+};
+const lireTete = async (variantId: string): Promise<string> => (await comme("proprietaire")(request(app).get(`${S}/studies/s/variants/${variantId}`))).body.revision.id;
+const corpsFusion = (c: Contexte) => ({ requestId: "fusion-1", sourceVariantId: c["v2"], sourceRevisionId: c["sourceRevisionId"], baseRevisionId: c["baseRevisionId"], empreinte: c["empreinte"] });
+const fusionAppliquee = async () => {
+  const c = await fusionPreparee();
+  return { ...c, fusionne: await creer(`${V}/fusion`, corpsFusion(c), (b) => b?.revision?.id) };
+};
 const migration = async () => ({ mig: await creer(`${S}/studies/s/migrations`, { cible: "studio-document/2" }) });
 const migrationAppliquee = async () => {
   const { mig } = await migration();
@@ -341,6 +355,10 @@ export const ROUTES: Route[] = [
   { route: "POST /studies/:studyId/variants/:variantId/essais", besoin: "modification", url: () => `${V}/essais`, body: ESSAI, note: "essai à portée de révision : aucune révision écrite" },
   { route: "POST /studies/:studyId/variants/:variantId/essais/:jobId/abandon", besoin: "modification", preparer: essai, url: (c) => `${V}/essais/${c["job"]}/abandon` },
   { route: "POST /studies/:studyId/variants/:variantId/essais/:jobId/confirmer", besoin: "modification", preparer: essai, url: (c) => `${V}/essais/${c["job"]}/confirmer`, note: "l'enveloppe de l'essai passe par le point d'entrée des écritures" },
+  // Lot W3-D (X.1-06) : fusion de variantes — aperçu en lecture, application et annulation sur la variante cible.
+  { route: "POST /studies/:studyId/variants/:variantId/fusion/apercu", besoin: "lecture", preparer: fusionPreparee, url: () => `${V}/fusion/apercu`, corps: (c) => ({ sourceVariantId: c["v2"] }), note: "aperçu : rien n'est écrit" },
+  { route: "POST /studies/:studyId/variants/:variantId/fusion", besoin: "modification", preparer: fusionPreparee, url: () => `${V}/fusion`, corps: corpsFusion, note: "révision `variant-merge` de la cible ; la source n'est que lue" },
+  { route: "POST /studies/:studyId/variants/:variantId/fusion/annulation", besoin: "modification", preparer: fusionAppliquee, url: () => `${V}/fusion/annulation`, corps: (c) => ({ requestId: "annule-1", revisionId: c["fusionne"] }), note: "révision `variant-merge-undo` (document d'avant la fusion)" },
   { route: "GET /jobs/:jobId", besoin: "lecture", preparer: essai, url: (c) => `${S}/jobs/${c["job"]}`, note: "résultat de job sous l'autorisation de l'étude source" },
   { route: "GET /studies/:studyId/variants/:variantId/journal", besoin: "lecture", url: () => `${V}/journal` },
   { route: "POST /studies/:studyId/migrations", besoin: "modification", url: () => `${S}/studies/s/migrations`, body: { cible: "studio-document/2" }, note: "simulation : rien n'est écrit dans les révisions" },

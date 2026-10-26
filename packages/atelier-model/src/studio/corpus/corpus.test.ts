@@ -28,6 +28,7 @@ import { controlerExigences } from "../facade-exigences.js";
 import { studioAireContour } from "../graphismes/graphismes.js";
 import { lireDxfStudio } from "../import-dxf.js";
 import { studioSha256 } from "../empreinte-sha256.js";
+import { studioAncetreCommun, studioFusionnerVariantes } from "../fusion-variantes.js";
 import { createHash } from "node:crypto";
 
 const studioSha256Octets = (o: Buffer) => createHash("sha256").update(o).digest("hex");
@@ -427,6 +428,35 @@ describe("S6 — étude à variantes et révisions (plan rejoué par le modèle)
     for (const [cle, n] of Object.entries(o.revisionsAjoutees)) expect(plan.etapes.filter((e) => e.variante === cle)).toHaveLength(n);
     expect(plan.couverture.representes.length).toBeGreaterThan(0);
     for (const x of plan.couverture.absents) expect(x.raison.length).toBeGreaterThan(0);
+  });
+
+  it("F1 (lot W3-D) : B fusionnée dans C depuis l'ancêtre A1 — conflit de collision attendu, tranché explicitement ; tête fusionnée = oracle", () => {
+    const { plan, tetes, apres } = rejouerS6();
+    const o = oracleS6(), f = plan.fusions[0]!, attendu = o.fusions.F1;
+    // Graphe des révisions du plan : chaque étape suit la précédente de sa variante, une dérivation part de son étape source.
+    const noeuds = plan.etapes.map((e, i) => {
+      const precedente = plan.etapes.slice(0, i).reverse().find((x) => x.variante === e.variante);
+      const v = plan.variantes.find((x) => x.cle === e.variante)!;
+      return { id: e.cle, parents: precedente ? [precedente.cle] : v.depuis ? [v.depuis.apresEtape] : [] };
+    });
+    const tete = (cle: string) => plan.etapes.filter((e) => e.variante === cle).at(-1)!.cle;
+    expect(studioAncetreCommun(noeuds, tete(f.source), tete(f.cible))).toEqual({ ancetre: attendu.ancetre });
+    const base = apres.get(attendu.ancetre)!, source = tetes.get(f.source)!, cible = tetes.get(f.cible)!;
+    const sans = studioFusionnerVariantes(base, source, cible);
+    expect(sans.conflits.map((c) => c.id)).toEqual(attendu.conflits);
+    expect(sans.nonResolus).toEqual(attendu.conflits);
+    const r = studioFusionnerVariantes(base, source, cible, f.resolutions);
+    expect([r.valide, r.nonResolus, r.aFusionner]).toEqual([true, [], true]);
+    const c = comptes({ documents: [r.document!] } as CorpusStudio);
+    expect({ wall: c.wall, opening: c.opening, line: c.line, dimension: c.dimension, text: c.text }).toEqual({ wall: attendu.tete.wall, opening: attendu.tete.opening, line: attendu.tete.line, dimension: attendu.tete.dimension, text: attendu.tete.text });
+    const m = mesures({ documents: [r.document!] } as CorpusStudio).murs;
+    for (const k of ["brut", "deduit", "net"] as const) proche(m[k], attendu.tete.murs[k], `fusion F1 : murs ${k}`);
+    const gardee = r.document!.objects.find((x) => x.id === attendu.ligneGardee.id);
+    expect(gardee?.type === "line" ? gardee.start.y : null).toBe(attendu.ligneGardee.y);
+    expect(r.appliques.filter((a) => a.etat === "supprime").map((a) => a.cle).filter((k) => k.startsWith("architecture:"))).toEqual(attendu.supprimes);
+    // Le texte déplacé dans A3 (héritage de C) et la fenêtre de A2 restent : la fusion ne défait aucun changement de la cible.
+    expect((r.document!.architecture ?? []).some((x) => x.id === "s6-0-fenetre-ajoutee")).toBe(true);
+    expect(JSON.stringify(r.document!.annotations?.find((x) => x.id === "s6-0-piece"))).toBe(JSON.stringify(cible.annotations?.find((x) => x.id === "s6-0-piece")));
   });
 
   it("fixture de la recette API (fixtures/s6-plan.json) identique au plan et à l'oracle générés", () => {

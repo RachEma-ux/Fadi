@@ -977,6 +977,14 @@ export const atelierPropositions = pgTable("atelier_propositions", {
 });
 
 /** Studio V1 : contexte autonome ; les données Atelier et Parcours restent distinctes. */
+/**
+ * Provenance d'une révision de fusion (lot W3-D) : `fusion` — variante et révision sources fusionnées, ancêtre commun,
+ * résolutions explicites (conflit → côté gardé) ; `annulation` — révision de fusion annulée (la révision rend le
+ * document d'avant la fusion). Aucun compte n'y figure (l'auteur est la colonne `author_id`).
+ */
+export type StudioFusionRevision =
+  | { type: "fusion"; sourceVariantId: string; sourceRevisionId: string; ancetreRevisionId: string; resolutions: Record<string, "source" | "cible">; conflits: number; empreinte: string }
+  | { type: "annulation"; revisionAnnulee: string; revisionRendue: string };
 export interface StudioContext {
   study: { id: string; name: string; projectId: string };
   variant: { id: string; name: string; studyId: string; headRevisionId: string };
@@ -1052,10 +1060,12 @@ export const studioRevisions = pgTable("studio_revisions", {
   envelope: jsonb("envelope").$type<StudioEnvelope | null>(),
   requestId: text("request_id").notNull(),
   payloadHash: text("payload_hash").notNull(),
-  source: text("source").$type<"authenticated-session" | "study-initialization" | "variant-initialization" | "variant-derivation" | "agent-mcp">().notNull(),
+  source: text("source").$type<"authenticated-session" | "study-initialization" | "variant-initialization" | "variant-derivation" | "agent-mcp" | "variant-merge" | "variant-merge-undo">().notNull(),
   authorId: text("author_id").notNull().references(() => users.id, { onDelete: "restrict" }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   response: jsonb("response").$type<StudioContext>().notNull(),
+  /** Fusion de variantes (lot W3-D, X.1-06) : provenance d'une révision `variant-merge` ou `variant-merge-undo` ; NULL sinon. */
+  fusion: jsonb("fusion").$type<StudioFusionRevision | null>(),
 }, (t) => [
   uniqueIndex("studio_revisions_request_unique").on(t.variantId, t.requestId),
   uniqueIndex("studio_revisions_variant_id_unique").on(t.variantId, t.id),

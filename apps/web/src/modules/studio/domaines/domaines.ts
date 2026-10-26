@@ -76,6 +76,9 @@ export const DOMAINES_COMMANDES = Object.freeze({
   // (« revues » : Documentation, métrés et collaboration).
   illustration: "visualisation", agents: "documentation",
   exigences: "bim",
+  // Lot W3-D : la fusion de variantes porte sur l'étude et ses variantes, que REF-01 §02 ne range dans aucun domaine
+  // (À définir, comme les échanges) ; ses boîtes s'ouvrent par-dessus le domaine affiché.
+  "fusionner-variantes": A_DEFINIR, "annuler-fusion": A_DEFINIR,
 } as const satisfies Record<IdCommandeEditeur, DomaineAttribue>);
 
 /**
@@ -164,7 +167,7 @@ const SANS_BASCULE = (e: { readonly type: "outil" | "commande"; readonly id: str
     || e.id.startsWith("accrochage-") || e.id.startsWith("reperage-") || e.id === "pas-polaire"
     // Boîtes de dialogue (Feuille, Feuilles et dossier) : ouvertes par-dessus le domaine affiché, qui ne change pas — le
     // focus revient à son origine à la fermeture (accessibilité).
-    || e.id === "feuille" || e.id === "dossier" || e.id === "approuver");
+    || e.id === "feuille" || e.id === "dossier" || e.id === "approuver" || e.id === "fusionner-variantes" || e.id === "annuler-fusion");
 
 /**
  * Domaine où s'exécute un élément lancé depuis le domaine `actif` (raccourci, palette, Tool Manager) : le domaine actif
