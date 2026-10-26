@@ -7,9 +7,10 @@
  * serveur écrit ensuite **son** résultat dans la commande (brep, maillage, mesures) : il fait autorité.
  *
  * X.1-05 : chaque `studio.surface.epaissir` (épaississement d'une surface libre NURBS) suit le même chemin — recalculé
- * depuis la surface du document du serveur (opération `nurbs` du noyau), empreinte comparée, résultat du serveur écrit.
+ * depuis la surface du document du serveur (opération `nurbs` du noyau), empreinte comparée, résultat du serveur écrit ;
+ * de même chaque `studio.subdivision.solidifier` (maillage subdivisé recalculé, opération `polyedre`).
  */
-import { studioCaptureBooleen, studioCaptureEpaississement, studioPiecesStep, type StudioCommand, type StudioDocument } from "@parcours/atelier-model";
+import { studioCaptureBooleen, studioCaptureEpaississement, studioCaptureSolidification, studioPiecesStep, type StudioCommand, type StudioDocument } from "@parcours/atelier-model";
 import { ErreurExacte, type SolideExact } from "@parcours/geometry-exact";
 import { moteurExact } from "./atelier-exact.js";
 import { surveillanceStudio } from "./studio-surveillance.js";
@@ -17,7 +18,9 @@ import { surveillanceStudio } from "./studio-surveillance.js";
 export const TYPE_BOOLEEN_STUDIO = "studio.solide.booleen";
 /** X.1-05 : épaississement exact d'une surface libre, recalculé comme le booléen. */
 export const TYPE_EPAISSIR_STUDIO = "studio.surface.epaissir";
-const TYPES_EXACTS_STUDIO: ReadonlySet<string> = new Set([TYPE_BOOLEEN_STUDIO, TYPE_EPAISSIR_STUDIO]);
+/** X.1-05 : solidification d'une surface de subdivision fermée (polyèdre du maillage subdivisé), recalculée de même. */
+export const TYPE_SOLIDIFIER_STUDIO = "studio.subdivision.solidifier";
+const TYPES_EXACTS_STUDIO: ReadonlySet<string> = new Set([TYPE_BOOLEEN_STUDIO, TYPE_EPAISSIR_STUDIO, TYPE_SOLIDIFIER_STUDIO]);
 
 export interface RefusExactStudio { status: 400; body: Record<string, unknown> }
 
@@ -54,7 +57,12 @@ export async function revaliderBooleensStudio(document: StudioDocument, commands
     }
     const p = (c.params ?? {}) as Brut;
     let entrees: unknown;
-    if (c.toolId === TYPE_EPAISSIR_STUDIO) {
+    if (c.toolId === TYPE_SOLIDIFIER_STUDIO) {
+      // Maillage subdivisé recalculé depuis la surface de CE document (Loop, pur), puis cousu par le noyau.
+      const capture = studioCaptureSolidification(doc, { subdivision: String(p["subdivision"] ?? "") });
+      if (!capture.ok) return refus(`commands[${i}].params`, "studio-invalid", capture.message);
+      entrees = capture.capture.entrees;
+    } else if (c.toolId === TYPE_EPAISSIR_STUDIO) {
       // Surface relue dans CE document ; épaisseur et côté de la commande (validés par la capture, rien par défaut).
       const e = p["epaisseur"];
       const capture = studioCaptureEpaississement(doc, { surface: String(p["surface"] ?? ""), epaisseur: typeof e === "number" ? e : null, sens: String(p["sens"] ?? "") });

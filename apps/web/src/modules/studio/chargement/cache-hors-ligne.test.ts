@@ -54,7 +54,7 @@ describe("Disponibilité hors connexion véridique (B.3-09, EX-043)", () => {
     expect(v.moteurs["noyau-exact"]).toBe(false);
     expect(v.moteurs["rendu-3d"]).toBe(true);
     // X.1-05 : l'épaississement d'une surface libre (même noyau exact) l'est aussi.
-    expect(outilsHorsConnexion(STUDIO_TOOLS, v)?.indisponibles.map((t) => t.toolId)).toEqual(["studio.solide.booleen", "studio.surface.epaissir"]);
+    expect(outilsHorsConnexion(STUDIO_TOOLS, v)?.indisponibles.map((t) => t.toolId)).toEqual(["studio.solide.booleen", "studio.surface.epaissir", "studio.subdivision.solidifier"]);
   });
 
   it("three.js absent du cache : rendu 3D indisponible, les outils 3D listés, les outils 2D restent disponibles", async () => {

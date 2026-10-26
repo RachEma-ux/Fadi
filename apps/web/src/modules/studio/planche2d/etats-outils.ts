@@ -57,6 +57,8 @@ export const SYNONYMES: Readonly<Record<string, readonly string[]>> = Object.fre
   "studio.surface.nurbs": ["surface libre", "B-spline", "nappe", "points de contrôle"],
   "studio.surface.modifier": ["pôle", "point de contrôle", "poids", "cintrer"],
   "studio.surface.epaissir": ["coque mince", "solide exact", "noyau exact"],
+  "studio.subdivision.creer": ["Loop", "maillage de contrôle", "surface lissée"],
+  "studio.subdivision.solidifier": ["polyèdre", "maillage fermé", "solide exact"],
   "studio.architecture.mur": ["cloison", "paroi", "voile"],
   "studio.architecture.ouverture": ["porte", "fenêtre", "baie"],
   "studio.architecture.echelle-acces": ["échelle fixe", "accès", "échelons", "montants"],

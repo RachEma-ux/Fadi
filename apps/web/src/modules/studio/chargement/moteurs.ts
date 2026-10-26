@@ -78,6 +78,8 @@ export const MOTEURS_PAR_OUTIL: Readonly<Record<string, readonly IdMoteur[]>> = 
   "studio.solide.booleen": ["noyau-exact"],
   // X.1-05 : l'épaississement d'une surface libre charge le même noyau exact.
   "studio.surface.epaissir": ["noyau-exact"],
+  // X.1-05 : la solidification d'une surface de subdivision aussi.
+  "studio.subdivision.solidifier": ["noyau-exact"],
 });
 
 /** Carte des morceaux écrite au build à côté de l'application (non empreinte, mise en cache par le service worker). */

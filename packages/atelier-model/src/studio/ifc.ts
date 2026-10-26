@@ -243,6 +243,7 @@ function studioIfc(input: StudioDocument, meta: StudioIfcMeta): { content: strin
     ...(doc.exacts?.length ? [prop("ExactSolidsNotExported", integer(doc.exacts.length))] : []),
     // Surfaces libres NURBS (X.1-05) : non traduites en IFC par Studio ; comptées, jamais omises en silence.
     ...(doc.surfaces?.length ? [prop("FreeSurfacesNotExported", integer(doc.surfaces.length))] : []),
+    ...(doc.subdivisions?.length ? [prop("SubdivisionSurfacesNotExported", integer(doc.subdivisions.length))] : []),
     ...(summary.annotations !== undefined ? [prop("AnnotationsNotExported", integer(summary.annotations))] : []),
     ...(summary.architecture ? [
       prop("ArchitecturalWalls", integer(summary.architecture.walls)), prop("Openings", integer(summary.architecture.openings)),

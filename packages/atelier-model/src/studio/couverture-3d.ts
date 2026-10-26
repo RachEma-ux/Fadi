@@ -60,6 +60,7 @@ const EXACT_TEST = "packages/geometry-exact/src/index.test.ts";
 const SERVEUR_TEST = "apps/api/src/lib/studio-exact.test.ts";
 const SURFACES_TEST = "packages/atelier-model/src/studio/surfaces-libres.test.ts";
 const SURFACES_SERVEUR_TEST = "apps/api/src/lib/studio-surfaces.test.ts";
+const SUBDIVISIONS_TEST = "packages/atelier-model/src/studio/subdivisions.test.ts";
 
 const TYPES = [
   // ——— Types livrés : chacun cite ses tests ———
@@ -113,9 +114,14 @@ const TYPES = [
     manque: "Les courbes exactes de Studio sont planes (arcs, renflements du dessin 2D) ; aucune courbe spatiale.",
   },
   {
-    // X.1-05 : les surfaces NURBS sont livrées (type `surface-nurbs` ci-dessus) ; reste la subdivision.
-    id: "surface-complexe", libelle: "Subdivision (maillage de contrôle)", source: SCENE_S5, etat: "non-disponible", outils: [], tests: [],
-    manque: "Aucune surface de subdivision dans studio-document/1 : les surfaces libres de Studio sont des NURBS (pôles, degrés, poids), épaississables en solide exact ; une subdivision n'a pas d'équivalent exact dans le noyau.",
+    // X.1-05 : surface de subdivision de Loop (maillage de contrôle triangulaire, niveau), solidification polyédrique
+    // d'un maillage fermé par le noyau, recalculée par le serveur.
+    id: "surface-complexe", libelle: "Surface de subdivision (Loop)", source: SCENE_S5, etat: "disponible",
+    outils: ["studio.subdivision.creer", "studio.surface.modifier", "studio.subdivision.solidifier"],
+    tests: [{ fichier: SUBDIVISIONS_TEST, libelle: "X.1-05 subdivision : tétraèdre régulier, niveau 1 — sommets a/4 et points d'arête (a + b)/4, aire s² (3√2/4 + √3/2), volume 5 s³ / 24 ; niveau 2 dans l'enveloppe convexe, volume décroissant" },
+      { fichier: SUBDIVISIONS_TEST, libelle: "X.1-05 subdivision commandes : créer, modifier un sommet de contrôle (même identité), solidifier un maillage fermé (surface conservée), supprimer ; maillage ouvert refusé" },
+      { fichier: EXACT_TEST, libelle: "polyèdre : tétraèdre régulier d'arête 2√2 cousu en solide — volume 8/3, 4 faces, un solide ; reproductible" },
+      { fichier: SURFACES_SERVEUR_TEST, libelle: "X.1-05 serveur : la solidification d'une surface de subdivision est recalculée depuis le maillage du serveur ; volume 5 s³ / 24 ; maillage ouvert refusé sans noyau" }],
   },
   {
     id: "brep-fournisseur", libelle: "BRep fournisseur (import)", source: PERF_07, etat: "non-disponible", outils: [], tests: [],

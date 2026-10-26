@@ -38,8 +38,8 @@ describe("Moteurs de Studio et moments de chargement (B.3-01 à B.3-05)", () => 
     expect(moteursDeOutil("studio.solide.booleen", "volume-libre")).toEqual(["coquille-studio", "planche-2d", "calcul", "rendu-3d", "noyau-exact"]);
     // X.1-05 : l'épaississement d'une surface libre charge le même noyau exact.
     expect(moteursDeOutil("studio.surface.epaissir", "volume-libre")).toEqual(["coquille-studio", "planche-2d", "calcul", "rendu-3d", "noyau-exact"]);
-    for (const t of STUDIO_TOOLS.filter((x) => x.toolId !== "studio.solide.booleen" && x.toolId !== "studio.surface.epaissir")) expect(moteursDeOutil(t.toolId, t.groupe), t.toolId).not.toContain("noyau-exact");
-    expect(Object.keys(MOTEURS_PAR_OUTIL)).toEqual(["studio.solide.booleen", "studio.surface.epaissir"]);
+    for (const t of STUDIO_TOOLS.filter((x) => x.toolId !== "studio.solide.booleen" && x.toolId !== "studio.surface.epaissir" && x.toolId !== "studio.subdivision.solidifier")) expect(moteursDeOutil(t.toolId, t.groupe), t.toolId).not.toContain("noyau-exact");
+    expect(Object.keys(MOTEURS_PAR_OUTIL)).toEqual(["studio.solide.booleen", "studio.surface.epaissir", "studio.subdivision.solidifier"]);
     expect(MOTEURS.find((m) => m.id === "noyau-exact")?.annexes).toBe("(^|/)occt-wasm[^/]*\\.wasm$");
   });
 

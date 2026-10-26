@@ -326,6 +326,8 @@ const AJOUTS = {
     // X.1-05 (extension additive consignée) : surfaces libres NURBS, champ facultatif `surfaces` du document ; solide
     // exact par épaississement (variante additive de `exacts`).
     "studio.surface.nurbs", "studio.surface.modifier", "studio.surface.epaissir",
+    // X.1-05 : surfaces de subdivision (champ facultatif `subdivisions`), solidification (variante additive de `exacts`).
+    "studio.subdivision.creer", "studio.subdivision.solidifier",
   ]),
   types: new Set(["angular-dimension", "text", "wall", "opening", "scene", "appearance", "non-native", "spline", "hachure", "symbole", "source", "ladder", "face-dimension"]),
   exports: new Set([
@@ -416,6 +418,10 @@ const AJOUTS = {
     "estBooleenExact", "SCHEMA_SURFACE_LIBRE", "STUDIO_LIMITES_SURFACES", "STUDIO_SENS_EPAISSEUR", "studioAireApprocheeSurface", "studioMaillageSurface",
     "studioNoeudsUniformes", "studioOperationNurbs", "studioPointSurface", "validerSurfaceLibre",
     "studioCaptureEpaississement", "studioVerifierEpaississement", "studioCommandeEpaississement",
+    // X.1-05 : surfaces de subdivision (`objets-3d/subdivisions.ts`), solidification (`surfaces-exactes.ts`).
+    "SCHEMA_SURFACE_SUBDIVISION", "STUDIO_LIMITES_SUBDIVISION", "studioAireSubdivision", "studioMaillageSubdivise", "studioMaillageSubdivision", "studioOperationPolyedre",
+    "studioSubdivisionFermee", "studioVolumeSubdivision", "validerSurfaceSubdivision",
+    "studioCaptureSolidification", "studioVerifierSolidification", "studioCommandeSolidification",
   ]),
 };
 function sansAjouts(value: unknown): unknown {
@@ -427,7 +433,7 @@ function sansAjouts(value: unknown): unknown {
   if (!value || typeof value !== "object") return value;
   const out = Object.fromEntries(Object.entries(value).map(([k, v]) => [k, sansAjouts(v)]));
   const props = out.properties as Record<string, unknown> | undefined;
-  if (props && "schemaVersion" in props) { delete props.annotations; delete props.architecture; delete props.proprietes; delete props.scenes; delete props.nonNatifs; delete props.exacts; delete props.graphismes; delete props.systemeProjet; delete props.sources; delete props.cotesFaces; delete props.surfaces; }
+  if (props && "schemaVersion" in props) { delete props.annotations; delete props.architecture; delete props.proprietes; delete props.scenes; delete props.nonNatifs; delete props.exacts; delete props.graphismes; delete props.systemeProjet; delete props.sources; delete props.cotesFaces; delete props.surfaces; delete props.subdivisions; }
   // Lot F1 (extension additive consignée) : direction d'extrusion facultative (`extrusion.direction`, `extruder`) et,
   // pour le prisme, direction et source facultatives ; retirées pour comparer à la base.
   if (props && "base" in props && "height" in props) delete props.direction;

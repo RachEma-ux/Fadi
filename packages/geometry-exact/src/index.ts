@@ -2,7 +2,8 @@
  * Noyau exact (P2-1, D-177) — pur, sans interface.
  *
  * Opérations B-rep exécutées par OCCT compilé en WebAssembly (`occt-wasm`) : révolution, extrusion, balayage,
- * lissage, booléens, trou, coque, surface (grille de contrôle épaissie), surface NURBS (pôles, degrés, poids, épaissie), patch (face non plane sur un contour 3D,
+ * lissage, booléens, trou, coque, surface (grille de contrôle épaissie), surface NURBS (pôles, degrés, poids, épaissie),
+ * polyèdre fermé (triangles cousus en solide), patch (face non plane sur un contour 3D,
  * épaissie), congé (toutes les arêtes), import STEP. Un résultat est un `SolideExact` : représentation canonique **brep**
  * (binaire OCCT, base64), maillage dérivé (positions, indices ; mètres, z vers le haut), volume, aire, nombre de
  * faces et de solides, nom et version du moteur, empreinte des octets brep. Le même code tourne dans le navigateur
@@ -41,6 +42,7 @@ export type OperationExacte =
   | { type: "coque"; solide: { brep: string; pose?: Pose }; epaisseur: number; ouvrirDessus: boolean }
   | { type: "surface"; controle: Point3[]; lignes: number; colonnes: number; epaisseur: number }
   | { type: "nurbs"; nurbs: Nurbs; epaisseur: number }
+  | { type: "polyedre"; sommets: Point3[]; triangles: [number, number, number][] }
   | { type: "patch"; contour: Point3[]; epaisseur: number }
   | { type: "conge"; solide: { brep: string; pose?: Pose }; rayon: number }
   | { type: "import-step"; step: string; solide?: number };
@@ -264,6 +266,22 @@ export function validerOperation(brut: unknown): OperationExacte {
     case "nurbs":
       // Surface NURBS (Studio, X.1-05) : pôles, degrés et poids ; épaisseur signée (signe : côté de la normale).
       return { type: "nurbs", nurbs: validerNurbs(o["nurbs"], "nurbs"), epaisseur: nombreNonNul(o["epaisseur"], "epaisseur") };
+    case "polyedre": {
+      // Polyèdre fermé (Studio, X.1-05 : surface de subdivision solidifiée) : triangles cousus en un solide.
+      const sommets = contour3(o["sommets"], "sommets", 4);
+      const t = o["triangles"];
+      if (!Array.isArray(t) || t.length < 4 || t.length > 200000) throw new ErreurExacte("triangles", "4 à 200 000 triangles attendus");
+      const triangles = t.map((x, i): [number, number, number] => {
+        if (!Array.isArray(x) || x.length !== 3 || !x.every((v) => Number.isInteger(v) && v >= 0 && v < sommets.length)) throw new ErreurExacte(`triangles[${i}]`, "trois indices de sommet attendus");
+        if (x[0] === x[1] || x[1] === x[2] || x[0] === x[2]) throw new ErreurExacte(`triangles[${i}]`, "triangle dégénéré (sommets répétés)");
+        return [x[0], x[1], x[2]];
+      });
+      // Fermé : chaque arête portée par exactement deux triangles (sinon le solide n'enferme rien).
+      const aretes = new Map<string, number>();
+      for (const [a, b, c] of triangles) for (const [u, v] of [[a, b], [b, c], [c, a]]) { const k = u! < v! ? `${u}|${v}` : `${v}|${u}`; aretes.set(k, (aretes.get(k) ?? 0) + 1); }
+      for (const [k, n] of aretes) if (n !== 2) throw new ErreurExacte("triangles", `polyèdre non fermé (arête ${k} portée par ${n} triangle(s))`);
+      return { type: "polyedre", sommets, triangles };
+    }
     case "patch": {
       // Patch (DA-03-04) : face non plane tendue sur un contour 3D fermé (≥ 3 points), épaissie.
       const contour = contour3(o["contour"], "contour", 3);
@@ -503,6 +521,15 @@ export class MoteurExact {
           const face = garder(k.fromBREP(brepTexteNurbs(op.nurbs)));
           if (!k.isValid(face)) throw new ErreurExacte("nurbs", "surface invalide (noyau)");
           forme = garder(k.thicken(face, op.epaisseur, 1e-6));
+          break;
+        }
+        case "polyedre": {
+          // Faces planes triangulaires cousues puis fermées en solide (représentation exacte du polyèdre donné).
+          const faces = op.triangles.map(([a, b, c]) => {
+            const [A, B, C] = [op.sommets[a]!, op.sommets[b]!, op.sommets[c]!];
+            return garder(k.makeFace(garder(k.makeWire([garder(k.makeLineEdge(A, B)), garder(k.makeLineEdge(B, C)), garder(k.makeLineEdge(C, A))]))));
+          });
+          forme = garder(k.sewAndSolidify(faces, 1e-6));
           break;
         }
         case "patch": {

@@ -27,9 +27,14 @@ export function commandesDuDocument(doc: StudioDocument): StudioCommand[] {
   const solide = (s: StudioSolid): StudioCommand => (s.type === "box" ? { toolId: "studio.solide.boite", params: s } : { toolId: "studio.solide.prisme", params: s });
   for (const s of doc.solides ?? []) out.push(solide(s));
   for (const e of doc.surfaces ?? []) out.push({ toolId: "studio.surface.nurbs", params: e });
+  for (const e of doc.subdivisions ?? []) out.push({ toolId: "studio.subdivision.creer", params: e });
   for (const e of doc.exacts ?? []) {
     if (e.operation === "epaississement") {
       out.push({ toolId: "studio.surface.nurbs", params: e.surface }, { toolId: "studio.surface.epaissir", params: { id: e.id, surface: e.surface.id, epaisseur: e.epaisseur, sens: e.sens, resultat: e.resultat } });
+      continue;
+    }
+    if (e.operation === "solidification") {
+      out.push({ toolId: "studio.subdivision.creer", params: e.subdivision }, { toolId: "studio.subdivision.solidifier", params: { id: e.id, subdivision: e.subdivision.id, resultat: e.resultat } });
       continue;
     }
     const [a, b] = e.operandes;

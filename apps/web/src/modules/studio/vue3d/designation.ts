@@ -8,7 +8,7 @@ import { estSelectionnable } from "../planche2d/calques";
 
 /** Solides libres, solides exacts (lot F2) et surfaces libres NURBS (X.1-05) désignables du document courant. */
 export function solidesDesignables(doc: StudioDocument): (id: string) => boolean {
-  const ids = new Set([...(doc.solides ?? []), ...(doc.exacts ?? []), ...(doc.surfaces ?? [])].filter((s) => estSelectionnable(doc, s.layerId)).map((s) => s.id));
+  const ids = new Set([...(doc.solides ?? []), ...(doc.exacts ?? []), ...(doc.surfaces ?? []), ...(doc.subdivisions ?? [])].filter((s) => estSelectionnable(doc, s.layerId)).map((s) => s.id));
   return (id) => ids.has(id);
 }
 

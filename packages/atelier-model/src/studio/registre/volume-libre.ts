@@ -2,6 +2,7 @@ import { SCHEMA_COTE_FACE } from "../objets-3d/cotes-faces.js";
 import { SCHEMA_BOITE, SCHEMA_PRISME } from "../objets-3d/solides.js";
 import { SCHEMA_RESULTAT_EXACT, STUDIO_OPERATIONS_BOOLEENNES } from "../objets-3d/exacts.js";
 import { SCHEMA_SURFACE_LIBRE, STUDIO_SENS_EPAISSEUR } from "../objets-3d/surfaces-libres.js";
+import { SCHEMA_SURFACE_SUBDIVISION } from "../objets-3d/subdivisions.js";
 import { mutation } from "./communs.js";
 import { ids } from "./schemas.js";
 import { id, number } from "./schemas-base.js";
@@ -20,6 +21,10 @@ const nonNul = { type: "number", not: { const: 0 } } as const;
  * X.1-05 (surfaces libres) : Surface NURBS (Ctrl+F8), Modifier la surface (Ctrl+F9 : points de contrôle, poids, degrés),
  * Épaissir la surface (Maj+F11 : conversion explicite en solide exact par le noyau OCCT, surface conservée). Maj+F9,
  * prévu d'abord dans la réserve du lot W3-C, est déjà l'import IFC : la coordination a attribué Maj+F11 à la place.
+ * Surfaces de subdivision (X.1-05) : Surface de subdivision (Ctrl+F12) et Solidifier la subdivision (Ctrl+Maj+Fin) ;
+ * leurs sommets de contrôle se modifient par « Modifier la surface ». Ctrl+Maj+F4 et Ctrl+Maj+F9, proposés par la
+ * coordination, sont déjà « Illustration depuis la vue » et « Agents (MCP) » : Ctrl+F12 (libéré par ce lot) et
+ * Ctrl+Maj+Fin, libres et non réservés par le navigateur, les remplacent.
  */
 export const OUTILS_VOLUME_LIBRE = [
   { ...mutation, toolId: "studio.solide.boite", libelleFR: "Boîte", raccourci: "B", iconeSymbolique: "studio-solid-box", groupe: "volume-libre", inputSchema: SCHEMA_BOITE },
@@ -35,6 +40,8 @@ export const OUTILS_VOLUME_LIBRE = [
   // la face modifiée ou passe « à résoudre » ; la même commande, sur une cote existante, la rattache explicitement.
   { ...mutation, toolId: "studio.solide.cote-face", libelleFR: "Cote de face 3D", raccourci: "Shift+F12", iconeSymbolique: "studio-solid-face-dimension", groupe: "volume-libre", inputSchema: SCHEMA_COTE_FACE },
   { ...mutation, toolId: "studio.surface.nurbs", libelleFR: "Surface NURBS", raccourci: "Ctrl+F8", iconeSymbolique: "studio-surface-nurbs", groupe: "volume-libre", inputSchema: SCHEMA_SURFACE_LIBRE },
-  { ...mutation, toolId: "studio.surface.modifier", libelleFR: "Modifier la surface", raccourci: "Ctrl+F9", iconeSymbolique: "studio-surface-edit", groupe: "volume-libre", inputSchema: SCHEMA_SURFACE_LIBRE },
+  { ...mutation, toolId: "studio.surface.modifier", libelleFR: "Modifier la surface", raccourci: "Ctrl+F9", iconeSymbolique: "studio-surface-edit", groupe: "volume-libre", inputSchema: { oneOf: [SCHEMA_SURFACE_LIBRE, SCHEMA_SURFACE_SUBDIVISION] } },
   { ...mutation, toolId: "studio.surface.epaissir", libelleFR: "Épaissir la surface", raccourci: "Shift+F11", iconeSymbolique: "studio-surface-thicken", groupe: "volume-libre", inputSchema: { type: "object", additionalProperties: false, required: ["id", "surface", "epaisseur", "sens", "resultat"], properties: { id, surface: id, epaisseur: { type: "number", minimum: 1e-6, maximum: 1e6 }, sens: { enum: [...STUDIO_SENS_EPAISSEUR] }, resultat: SCHEMA_RESULTAT_EXACT } } },
+  { ...mutation, toolId: "studio.subdivision.creer", libelleFR: "Surface de subdivision", raccourci: "Ctrl+F12", iconeSymbolique: "studio-surface-subdivision", groupe: "volume-libre", inputSchema: SCHEMA_SURFACE_SUBDIVISION },
+  { ...mutation, toolId: "studio.subdivision.solidifier", libelleFR: "Solidifier la subdivision", raccourci: "Ctrl+Shift+End", iconeSymbolique: "studio-surface-solidify", groupe: "volume-libre", inputSchema: { type: "object", additionalProperties: false, required: ["id", "subdivision", "resultat"], properties: { id, subdivision: id, resultat: SCHEMA_RESULTAT_EXACT } } },
 ] as const;

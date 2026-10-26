@@ -294,4 +294,19 @@ describe("surface NURBS épaissie (Studio, X.1-05)", () => {
   });
 });
 
+describe("polyèdre fermé (Studio, X.1-05 : surface de subdivision solidifiée)", () => {
+  const tetra = { sommets: [{ x: 1, y: 1, z: 1 }, { x: 1, y: -1, z: -1 }, { x: -1, y: 1, z: -1 }, { x: -1, y: -1, z: 1 }], triangles: [[0, 1, 2], [0, 3, 1], [0, 2, 3], [1, 3, 2]] };
+  it("polyèdre : tétraèdre régulier d'arête 2√2 cousu en solide — volume 8/3, 4 faces, un solide ; reproductible", () => {
+    const r = M.executer({ type: "polyedre", ...tetra });
+    expect(r.volume).toBeCloseTo(8 / 3, 9);
+    expect([r.faces, r.solides]).toEqual([4, 1]);
+    expect(M.executer({ type: "polyedre", ...tetra }).empreinte).toBe(r.empreinte);
+  });
+  it("polyèdre : non fermé, indice hors sommets, triangle dégénéré — refusés avant le noyau", () => {
+    expect(() => validerOperation({ type: "polyedre", sommets: tetra.sommets, triangles: [...tetra.triangles.slice(0, 3), [0, 1, 2]] })).toThrow(/non fermé/);
+    expect(() => validerOperation({ type: "polyedre", sommets: tetra.sommets, triangles: [...tetra.triangles.slice(0, 3), [1, 3, 9]] })).toThrow(/indices de sommet/);
+    expect(() => validerOperation({ type: "polyedre", sommets: tetra.sommets, triangles: [...tetra.triangles.slice(0, 3), [1, 1, 2]] })).toThrow(/dégénéré/);
+  });
+});
+
 export type _S = SolideExact;

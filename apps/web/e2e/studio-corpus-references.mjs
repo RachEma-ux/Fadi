@@ -85,7 +85,7 @@ try {
     const chemin = `/projects/${projet.id}/studio/studies/${etude.study.id}/variants/${etude.variant.id}`;
     const pose = await api("post", `${chemin}/commands`, { contractVersion: "studio-commands/1", requestId: `ref-${sc.scene}-${randomUUID()}`, baseRevisionId: etude.revision.id, commands: sc.commandes });
     const d = pose.revision.document;
-    const n = d.objects.length + (d.dimensions?.length ?? 0) + (d.annotations?.length ?? 0) + (d.architecture?.length ?? 0) + (d.solides?.length ?? 0) + (d.exacts?.length ?? 0) + (d.surfaces?.length ?? 0) + (d.graphismes?.length ?? 0);
+    const n = d.objects.length + (d.dimensions?.length ?? 0) + (d.annotations?.length ?? 0) + (d.architecture?.length ?? 0) + (d.solides?.length ?? 0) + (d.exacts?.length ?? 0) + (d.surfaces?.length ?? 0) + (d.subdivisions?.length ?? 0) + (d.graphismes?.length ?? 0);
     check(`${sc.scene} : posée par l'API (${sc.primitives} primitives, booléens exacts recalculés par le serveur)`, n === sc.primitives, `${n}`);
 
     await page.goto(`${BASE}/studio/projets/${projet.id}/etudes/${etude.study.id}/variantes/${etude.variant.id}`);

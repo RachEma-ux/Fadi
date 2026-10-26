@@ -7,6 +7,7 @@ import { studioLienSolide } from "./commandes/liens-solides.js";
 import { studioMaillageSolide, type StudioFreeSolid3d } from "./objets-3d/maillage.js";
 import { studioMaillageExact, type StudioExact3d } from "./objets-3d/exacts.js";
 import { studioMaillageSurface, type StudioSurface3d } from "./objets-3d/surfaces-libres.js";
+import { studioMaillageSubdivision, type StudioSubdivision3d } from "./objets-3d/subdivisions.js";
 import { studioMaillageArchitecture, type StudioArchitecture3d } from "./architecture/maillage.js";
 
 export { STUDIO_FRAME_3D, studioLocal2dVers3d, type StudioPoint3, type StudioSolid3d } from "./exporteurs/maillage.js";
@@ -55,6 +56,8 @@ export interface StudioMesh3d {
    * depuis ses pôles, degrés et poids (dérivée, jamais stockée), bords et polygone de contrôle.
    */
   surfaces?: StudioSurface3d[];
+  /** Surfaces de subdivision (X.1-05) des calques visibles, présent seulement si le document en a : maillage subdivisé (Loop). */
+  subdivisions?: StudioSubdivision3d[];
   /**
    * Murs (vides des ouvertures compris) et ouvertures des calques visibles (A.4), présent seulement si le document en a ;
    * mêmes identifiants qu'en 2D.
@@ -99,14 +102,19 @@ export function studioMesh3d(document: StudioDocument): StudioMesh3d {
     if (!studioLayerState(doc, s.layerId)?.visible) { hidden++; continue; }
     surfaces.push(studioMaillageSurface(s));
   }
+  const subdivisions: StudioSubdivision3d[] = [];
+  for (const s of doc.subdivisions ?? []) {
+    if (!studioLayerState(doc, s.layerId)?.visible) { hidden++; continue; }
+    subdivisions.push(studioMaillageSubdivision(s));
+  }
   const architecture = doc.architecture?.length ? studioMaillageArchitecture(doc.architecture, (l) => !!studioLayerState(doc, l)?.visible) : [];
   if (doc.architecture?.length) hidden += doc.architecture.length - architecture.length;
   let bounds: StudioMesh3d["bounds"] = null;
   // Boucle plutôt qu'un étalement : 20 000 objets donnent trop de sommets pour Math.min(...).
-  for (const p of [...solids.flatMap((s) => s.vertices), ...outlines.flatMap((l) => l.points), ...freeSolids.flatMap((s) => s.vertices), ...exacts.flatMap((s) => s.vertices), ...surfaces.flatMap((s) => s.vertices), ...architecture.flatMap((s) => s.vertices)]) {
+  for (const p of [...solids.flatMap((s) => s.vertices), ...outlines.flatMap((l) => l.points), ...freeSolids.flatMap((s) => s.vertices), ...exacts.flatMap((s) => s.vertices), ...surfaces.flatMap((s) => s.vertices), ...subdivisions.flatMap((s) => s.vertices), ...architecture.flatMap((s) => s.vertices)]) {
     if (!bounds) { bounds = { min: { ...p }, max: { ...p } }; continue; }
     bounds.min = { x: Math.min(bounds.min.x, p.x), y: Math.min(bounds.min.y, p.y), z: Math.min(bounds.min.z, p.z) };
     bounds.max = { x: Math.max(bounds.max.x, p.x), y: Math.max(bounds.max.y, p.y), z: Math.max(bounds.max.z, p.z) };
   }
-  return { frame: STUDIO_FRAME_3D, units: "m", source: { frame: "local-2d", conversion: "(x, y) → (x, y, z)" }, solids, outlines, nonExtruded: outlines.length, hidden, ...(doc.solides?.length ? { freeSolids } : {}), ...(doc.exacts?.length ? { exacts } : {}), ...(doc.surfaces?.length ? { surfaces } : {}), ...(doc.architecture?.length ? { architecture } : {}), bounds };
+  return { frame: STUDIO_FRAME_3D, units: "m", source: { frame: "local-2d", conversion: "(x, y) → (x, y, z)" }, solids, outlines, nonExtruded: outlines.length, hidden, ...(doc.solides?.length ? { freeSolids } : {}), ...(doc.exacts?.length ? { exacts } : {}), ...(doc.surfaces?.length ? { surfaces } : {}), ...(doc.subdivisions?.length ? { subdivisions } : {}), ...(doc.architecture?.length ? { architecture } : {}), bounds };
 }

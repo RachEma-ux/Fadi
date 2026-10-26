@@ -128,6 +128,8 @@ const DECLARATIONS = {
   "studio.surface.nurbs": { contextes: V3D },
   "studio.surface.modifier": { contextes: V3D, prerequis: ["studio.surface.nurbs"] },
   "studio.surface.epaissir": { contextes: V3D, prerequis: ["studio.surface.nurbs"] },
+  "studio.subdivision.creer": { contextes: V3D },
+  "studio.subdivision.solidifier": { contextes: V3D, prerequis: ["studio.subdivision.creer"] },
   "studio.architecture.mur": { contextes: P2D },
   "studio.architecture.ouverture": { contextes: P2D, prerequis: ["studio.architecture.mur"] },
   "studio.architecture.modifier": { contextes: P2D, prerequis: ["studio.architecture.mur"] },

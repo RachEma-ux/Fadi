@@ -50,7 +50,7 @@ describe("TR-EX-032 — le Manager ne calcule ni ne valide la géométrie (espio
     const chargerNoyau = vi.fn(async () => ({}));
     const g = new GestionnaireRessources({ dejaCharges: ["coquille-studio", "planche-2d", "rendu-3d"], chargeurs: { "noyau-exact": { charger: chargerNoyau } }, maintenant: () => 0 });
     // X.1-05 : l'épaississement d'une surface libre est l'autre outil du noyau exact.
-    for (const t of STUDIO_TOOLS.filter((x) => x.toolId !== "studio.solide.booleen" && x.toolId !== "studio.surface.epaissir")) await g.activerOutil(t.toolId, t.groupe);
+    for (const t of STUDIO_TOOLS.filter((x) => x.toolId !== "studio.solide.booleen" && x.toolId !== "studio.surface.epaissir" && x.toolId !== "studio.subdivision.solidifier")) await g.activerOutil(t.toolId, t.groupe);
     expect(chargerNoyau).not.toHaveBeenCalled();
     expect(g.lire("noyau-exact").phase).toBe("non-charge");
   });

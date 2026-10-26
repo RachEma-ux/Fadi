@@ -1,8 +1,8 @@
 # Matrice d’échanges de Studio
 
-<!-- Généré depuis packages/atelier-model/src/studio/echanges/matrice-echanges.ts (studio-matrice-echanges/1, révision 10) : ne pas éditer à la main. -->
+<!-- Généré depuis packages/atelier-model/src/studio/echanges/matrice-echanges.ts (studio-matrice-echanges/1, révision 11) : ne pas éditer à la main. -->
 
-Établie le 2026-10-26 (révision 10, schéma `studio-matrice-echanges/1`), à partir de l’audit des exporteurs et importeurs Studio. Lots E.6-01 à E.6-05 du plan d’implémentation Studio V1.0 (§5.7).
+Établie le 2026-10-26 (révision 11, schéma `studio-matrice-echanges/1`), à partir de l’audit des exporteurs et importeurs Studio. Lots E.6-01 à E.6-05 du plan d’implémentation Studio V1.0 (§5.7).
 
 **Aucune entrée n’est une déclaration de conformité** : « livré » dit ce que le code écrit ou lit et le contrôle qui le vérifie ; la conformité d’un format reste non évaluée. Un format reporté est inscrit « non livré » avec sa raison et sa source ; « renoncé » exige une décision Studio admise (aucune aujourd’hui).
 
@@ -206,6 +206,7 @@ Entrées : 45 — livrées : 31, non livrées : 14, renoncées : 0.
 - Entité Objets extrudés, solides libres, solides exacts, murs : partielle — Un objet « o » par élément, nommé par son identifiant Studio (échappé ~XXXX~, réversible), faces triangulaires orientées ; volume relu égal à celui du modèle ; courbes discrétisées.
 - Entité Calques : portée — Un groupe « g » par calque ; un calque masqué est écrit et signalé.
 - Entité Surfaces verticales sans épaisseur : portée — Triangles sans volume, comme dans la vue 3D.
+- Entité Surfaces de subdivision (X.1-05) : partielle — Maillage subdivisé (Loop) au niveau de la surface : un objet « o » par surface ; maillage de contrôle et niveau perdus.
 - Entité Surfaces libres NURBS (X.1-05) : partielle — Nappe ouverte triangulée depuis ses pôles, degrés et poids (maillage d’affichage, 16 échantillons par travée) : un objet « o » par surface ; pôles, poids et degrés perdus.
 - Entité Contours non extrudés : partielle — Lignes « l » à z = 0, courbes discrétisées.
 - Entité Ouvertures : partielle — Vide dans le maillage du mur ; l’ouverture n’est pas un objet du fichier (comptée).
@@ -225,10 +226,11 @@ Entrées : 45 — livrées : 31, non livrées : 14, renoncées : 0.
 - Contrôle : Tests du modèle (STL relu : facettes, normales sortantes, volume total égal au modèle, bilan) ; règle d’or de la commande « Exporter STL ».
 - Entité Objets extrudés, solides libres, solides exacts, murs : partielle — Facettes du maillage de la vue 3D ; volume relu égal à celui du modèle ; identité et calque perdus.
 - Entité Surfaces verticales sans épaisseur, contours non extrudés : absente — Ce ne sont pas des solides : comptés, jamais écrits.
+- Entité Surfaces de subdivision (X.1-05) : partielle — Fermées : facettes du maillage subdivisé (étanche) ; ouvertes : comptées « surface-subdivision-ouverte », jamais écrites.
 - Entité Surfaces libres NURBS non épaissies (X.1-05) : absente — Nappes ouvertes, pas des solides : comptées « surface-libre-non-epaissie », jamais écrites ; épaissies, ce sont des solides exacts (écrits).
 - Entité Cotes, annotations, graphismes, ouvertures, propriétés, scènes, éléments non natifs : absente — Comptés par le bilan de l’export, jamais écrits.
 - Code : `packages/atelier-model/src/studio/export-3d.ts` (`` exportStudioStl ``) ; `apps/api/src/lib/studio-commands.ts` (`` exportStudioVariant ``)
-- Tests : `packages/atelier-model/src/studio/export-3d.test.ts` (`` E.6-04 STL : une pièce solid ``) ; `apps/web/e2e/studio-echanges.mjs` (`` check("Exporter STL : fichier servi ``) ; `packages/atelier-model/src/studio/surfaces-libres.test.ts` (`` X.1-05 exports : OBJ écrit la nappe ``)
+- Tests : `packages/atelier-model/src/studio/export-3d.test.ts` (`` E.6-04 STL : une pièce solid ``) ; `apps/web/e2e/studio-echanges.mjs` (`` check("Exporter STL : fichier servi ``) ; `packages/atelier-model/src/studio/surfaces-libres.test.ts` (`` X.1-05 exports : OBJ écrit la nappe ``) ; `packages/atelier-model/src/studio/subdivisions.test.ts` (`` X.1-05 subdivision exports : STL écrit la surface fermée ``)
 - Routes : `apps/api/src/routes/studio.ts` (`` /studies/:studyId/variants/:variantId/export ``)
 - Interface : `apps/web/src/modules/studio/planche2d/BarreOutils.tsx` (`` download={actif ? "" : undefined} ``) ; `apps/web/src/modules/studio/VariantWorkspace.tsx` (`` "exporter-stl": studioExportUrl( ``)
 - Sources : `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-04` — Liste d’exécution Studio V1.0
@@ -241,6 +243,7 @@ Entrées : 45 — livrées : 31, non livrées : 14, renoncées : 0.
 - Route : `GET /projects/:projectId/studio/studies/:studyId/variants/:variantId/export?format=step`
 - Contrôle : Tests du noyau (STEP nommé relu : noms, solides, volumes, unité, reproductibilité) et du serveur (révision exportée relue par le noyau, égale au modèle) ; règle d’or de la commande « Exporter STEP ».
 - Entité Solides exacts (booléens) : portée — Brep du noyau écrit tel quel.
+- Entité Surfaces de subdivision (X.1-05) : partielle — Sans équivalent exact : comptées « surface-subdivision-non-solidifiee », jamais écrites ; solidifiée (maillage fermé), le solide polyédrique du noyau est écrit (faces planes).
 - Entité Surfaces libres NURBS épaissies (X.1-05) : portée — Solide exact du noyau (faces B-spline rationnelles exactes, pôles et poids de la surface) écrit tel quel ; une surface non épaissie n’est pas un solide : comptée « surface-libre-non-epaissie », jamais écrite.
 - Entité Solides libres (boîtes, prismes) : portée — Extrusion de l’emprise (solide droit) ou lissage réglé entre ses deux faces (solide oblique ou basculé) : faces planes, exactes.
 - Entité Murs : portée — Morceaux pleins juxtaposés (vides des ouvertures déduits), un produit par mur ; volume relu égal au volume net du modèle.
@@ -541,6 +544,7 @@ Raisons possibles du rapport de fidélité (`studioRapportFidelite`) pour chaque
 | solides | prism | `solide-hors-2d` (non-couvert) | `solide-hors-2d` (non-couvert) | `profil-exact` (exact) |
 | exacts | exact | `solide-hors-2d` (non-couvert) | `solide-hors-2d` (non-couvert) | `solide-exact-hors-ifc` (non-couvert) |
 | surfaces | surface-libre | `surface-libre-hors-export` (non-couvert) | `surface-libre-hors-export` (non-couvert) | `surface-libre-hors-export` (non-couvert) |
+| subdivisions | surface-subdivision | `surface-subdivision-hors-export` (non-couvert) | `surface-subdivision-hors-export` (non-couvert) | `surface-subdivision-hors-export` (non-couvert) |
 | cotesFaces | face-dimension | `solide-hors-2d` (non-couvert) | `solide-hors-2d` (non-couvert) | `cote-hors-ifc` (non-couvert) |
 | architecture | wall | `extrusion-non-portee` (approche) | `extrusion-non-portee` (approche) | `extrusion-exacte` (exact) |
 | architecture | opening | `ouverture-en-lacune` (approche) | `ouverture-en-lacune` (approche) | `ouverture-evidee` (exact) |

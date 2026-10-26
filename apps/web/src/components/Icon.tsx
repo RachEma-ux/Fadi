@@ -102,6 +102,8 @@ export type IconName =
   | "studio-surface-nurbs"
   | "studio-surface-edit"
   | "studio-surface-thicken"
+  | "studio-surface-subdivision"
+  | "studio-surface-solidify"
   | "studio-nav-plan"
   | "studio-section-plane"
   | "studio-copy"
@@ -267,6 +269,10 @@ const PATHS: Record<IconName, string> = {
   "studio-surface-edit": "M3 18c4-5 14-5 18 0M12 14V5M9 8l3-3 3 3M10 14h4",
   // Épaissir la surface : nappe doublée d'une seconde nappe parallèle, épaisseur fermée aux bords.
   "studio-surface-thicken": "M3 12c4-5 14-5 18 0M3 17c4-5 14-5 18 0M3 12v5M21 12v5",
+  // Surface de subdivision : maillage de contrôle triangulaire (anguleux) et surface lissée inscrite.
+  "studio-surface-subdivision": "M12 3l9 16H3ZM12 7c4 3 6 7 5 10M12 7c-4 3-6 7-5 10M7 17h10",
+  // Solidifier la subdivision : polyèdre fermé (tétraèdre) plein, flèche de remplissage.
+  "studio-surface-solidify": "M12 3l8 14-8 4-8-4ZM12 3v18M4 17l8-4 8 4M18 4h3M19.5 2.5v3",
   "studio-nav-plan": "M3 17l9 4 9-4-9-4ZM12 3v7M9 7l3 3 3-3M7 3h10",
   "studio-section-plane": "M8 3h8v18H8ZM2 13l4-3h16l-4 3ZM2 13h16",
   // Transformations : deux carrés décalés (copier), flèche circulaire (rotation), axe et deux triangles opposés

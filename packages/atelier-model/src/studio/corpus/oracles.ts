@@ -61,6 +61,11 @@ export interface OracleCorpus {
    * surfaces épaissies (comprises dans `volumeSolides`, hors `exacts.volume`, qui ne porte que les booléens).
    */
   surfaces?: { nombre: number; aire: number; epaissies: number; volumeEpaissies: number };
+  /**
+   * Surfaces de subdivision (X.1-05) : nombre, aire et volume de forme close des maillages subdivisés ; nombre et volume
+   * des solidifiées (comprises dans `volumeSolides` et dans `exacts.operations`, hors `exacts.volume`).
+   */
+  subdivisions?: { nombre: number; aire: number; volume: number; solidifiees: number; volumeSolidifiees: number };
   /** Graphismes : aire totale des contours de hachure, symboles posés par nom, points de contrôle des splines. */
   graphismes?: { aireHachures: number; symboles: Record<string, number>; pointsSplines: number };
   /** Références externes déclarées (S2) : une source par feuillet qui porte des axes, objets venus du fond. */
@@ -213,13 +218,23 @@ export function oracleS5(taille: number): OracleCorpus {
   let volumeSolides = 0;
   const exacts = { operations: {} as Record<string, number>, volume: 0 };
   const surfaces = { nombre: 0, aire: 0, epaissies: 0, volumeEpaissies: 0 };
+  const subdivisions = { nombre: 0, aire: 0, volume: 0, solidifiees: 0, volumeSolidifiees: 0 };
   parcourir(taille, MOTIF_S5, (j, role) => {
     const p = parametresS5(j);
     switch (role) {
       case 0: {
         const V = p.boite.largeur * p.boite.profondeur * p.boite.hauteur;
         const q = p.surface;
-        if (j === SURFACES_S5.surface) {
+        const t = p.subdivision.s;
+        if (j === SURFACES_S5.subdivision) {
+          // Loop niveau 1 d'un tétraèdre régulier : aire s² (3√2/4 + √3/2), volume 5 s³ / 24 (octaèdre et quatre pyramides).
+          a.compter("surface-subdivision"); subdivisions.nombre++;
+          subdivisions.aire += t * t * ((3 * Math.SQRT2) / 4 + Math.sqrt(3) / 2); subdivisions.volume += (5 * t ** 3) / 24;
+        } else if (j === SURFACES_S5.solidifiee) {
+          a.compter("exact"); exacts.operations.solidification = (exacts.operations.solidification ?? 0) + 1;
+          const vs = (5 * t ** 3) / 24;
+          subdivisions.solidifiees++; subdivisions.volumeSolidifiees += vs; volumeSolides += vs;
+        } else if (j === SURFACES_S5.surface) {
           // Quart de cylindre de rayon R, hauteur L : aire π R L / 2.
           a.compter("surface-libre"); surfaces.nombre++; surfaces.aire += (Math.PI * q.rayon * q.hauteur) / 2;
         } else if (j === SURFACES_S5.epaissie) {
@@ -257,7 +272,7 @@ export function oracleS5(taille: number): OracleCorpus {
       default: { const q = p.polygone; a.compter("prism"); volumeSolides += ((q.cotes * q.rayon * q.rayon * Math.sin((2 * Math.PI) / q.cotes)) / 2) * q.hauteur; }
     }
   });
-  return { scene: "S5", taille, primitives: taille, feuillets: feuillets(taille, MOTIF_S5), comptes: a.comptes, totaux: a.totaux, volumeNonEvalues: a.volumeNonEvalues, volumeSolides, exacts, surfaces };
+  return { scene: "S5", taille, primitives: taille, feuillets: feuillets(taille, MOTIF_S5), comptes: a.comptes, totaux: a.totaux, volumeNonEvalues: a.volumeNonEvalues, volumeSolides, exacts, surfaces, subdivisions };
 }
 
 export const oracleS7 = (taille: number): OracleCorpus => oraclePlanDeNiveau("S7", taille);

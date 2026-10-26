@@ -70,6 +70,9 @@ export const ALTERNATIVES_GESTES: Readonly<Record<string, AlternativeGeste>> = O
   "studio.surface.nurbs": saisie("panneau-volume-3d"),
   "studio.surface.modifier": saisie("panneau-volume-3d"),
   "studio.surface.epaissir": commande,
+  // Maillage de contrôle saisi au clavier (sommets, faces, niveau) ; solidification : commande du panneau.
+  "studio.subdivision.creer": saisie("panneau-volume-3d"),
+  "studio.subdivision.solidifier": commande,
   "studio.architecture.mur": saisie("panneau-architecture"),
   "studio.architecture.ouverture": saisie("panneau-architecture"),
   "studio.architecture.echelle-acces": saisie("panneau-architecture"),

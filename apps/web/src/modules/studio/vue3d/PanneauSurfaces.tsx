@@ -133,7 +133,7 @@ export function PanneauSurfaces({ doc, outil, revision, modifiable, selection, l
       </fieldset>
     </form>}
 
-    {outil === "studio.surface.modifier" && <form className="studio-vue3d-formulaire" onSubmit={modifier} data-studio-surface-modifier={choisie?.id ?? ""} aria-labelledby="studio-surface-modifier-titre">
+    {outil === "studio.surface.modifier" && !(doc.subdivisions ?? []).some((x) => x.id === selection) && <form className="studio-vue3d-formulaire" onSubmit={modifier} data-studio-surface-modifier={choisie?.id ?? ""} aria-labelledby="studio-surface-modifier-titre">
       <h3 id="studio-surface-modifier-titre"><Icon name="studio-surface-edit" size={18} /> Modifier la surface</h3>
       {!choisie && <p className="studio-hint" data-studio-surface-indice>Sélectionnez d’abord, dans la vue 3D ou la liste des surfaces, la surface à modifier.</p>}
       {choisie && <fieldset disabled={!modifiable}>

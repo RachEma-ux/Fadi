@@ -1,4 +1,5 @@
-import { calque, construireCorpus, coteGrille, exact, nombreMotifs, objet, solide, surface, type Primitive } from "./commun.js";
+import { calque, construireCorpus, coteGrille, exact, nombreMotifs, objet, solide, subdivision, surface, type Primitive } from "./commun.js";
+import type { StudioSurfaceSubdivision } from "../objets-3d/subdivisions.js";
 import type { StudioSurfaceLibre } from "../objets-3d/surfaces-libres.js";
 import type { StudioPoint } from "../document-2d.js";
 import type { StudioBox } from "../objets-3d/solides.js";
@@ -26,6 +27,13 @@ import type { CorpusStudio } from "./types.js";
  * de son maillage d'affichage), le second est **épaissi** de e vers l'extérieur (le long de la normale) par le noyau
  * OCCT, surface conservée, résultat conservé dans `fixtures/s5-exacts.ts` avec son empreinte ; volume de forme close
  * π/4 ((R + e)² − R²) L.
+ *
+ * Surfaces de subdivision (X.1-05) : dans les deux motifs suivants (`SURFACES_S5.subdivision`, `.solidifiee`), la boîte
+ * devient le **tétraèdre régulier** de sommets s (±1, ±1, ±1) (nombre pair de signes moins) subdivisé une fois par
+ * Loop (maillage de contrôle et niveau 1), posé hors de la grille. Forme close du niveau 1 (valence 3, β = 3/16) :
+ * sommets a/4, points d'arête (a + b)/4 — un octaèdre de demi-diagonale s/2 dont quatre faces portent une pyramide ;
+ * aire s² (3√2/4 + √3/2), volume 5 s³ / 24. Le second est **solidifié** par le noyau (solide polyédrique, résultat
+ * conservé dans `fixtures/s5-exacts.ts`) : même volume, à l'arrondi près.
  */
 
 /** Opérations des booléens du corpus, une par motif (les premiers). */
@@ -42,8 +50,21 @@ export function operandesBooleenS5(j: number): [StudioBox, StudioBox] {
   return [boite("a", 0), boite("b", b.largeur / 2)];
 }
 
-/** Motifs dont la boîte devient une surface libre (`surface`) puis une surface épaissie (`epaissie`), après les booléens. */
-export const SURFACES_S5 = Object.freeze({ surface: BOOLEENS_S5.length, epaissie: BOOLEENS_S5.length + 1 } as const);
+/**
+ * Motifs dont la boîte devient une surface libre (`surface`), une surface épaissie (`epaissie`), une surface de
+ * subdivision (`subdivision`) puis une surface de subdivision solidifiée (`solidifiee`), après les booléens.
+ */
+export const SURFACES_S5 = Object.freeze({ surface: BOOLEENS_S5.length, epaissie: BOOLEENS_S5.length + 1, subdivision: BOOLEENS_S5.length + 2, solidifiee: BOOLEENS_S5.length + 3 } as const);
+
+/** Tétraèdre régulier de demi-arête de cube s, centré en (cx, cy, s), faces orientées vers l'extérieur, niveau de Loop 1. */
+export function tetraedreS5(id: string, layerId: string, cx: number, cy: number, s: number): StudioSurfaceSubdivision {
+  const v = [[1, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]] as const;
+  return {
+    id, type: "surface-subdivision", layerId, niveau: 1,
+    sommets: v.map(([x, y, z]) => ({ x: cx + s * x, y: cy + s * y, z: s + s * z })),
+    faces: [[0, 1, 2], [0, 3, 1], [0, 2, 3], [1, 3, 2]],
+  };
+}
 
 /** Quart de cylindre NURBS rationnel vertical de rayon R et de hauteur L, axe en (cx, cy), base z = 0 (pôles, poids). */
 export function quartCylindreS5(id: string, layerId: string, cx: number, cy: number, R: number, L: number): StudioSurfaceLibre {
@@ -72,6 +93,8 @@ export function parametresS5(j: number) {
     polygone: { cotes: COTES_POLYGONE[j % COTES_POLYGONE.length]!, rayon: 1.5, hauteur: 1 },
     /** Quart de cylindre NURBS (motifs `SURFACES_S5`) : rayon, hauteur, épaisseur (vers l'extérieur) de la surface épaissie. */
     surface: { rayon: 1 + (j % 2) * 0.5, hauteur: 2, epaisseur: 0.1 },
+    /** Tétraèdre de subdivision (motifs `SURFACES_S5.subdivision` et `.solidifiee`) : demi-arête du cube englobant s. */
+    subdivision: { s: 1 + (j % 2) * 0.5 },
   };
 }
 
@@ -95,6 +118,13 @@ export function corpusS5(taille: number): CorpusStudio {
         const resultat = RESULTATS_EXACTS_S5[id("epaissie")];
         if (!resultat) throw new Error(`corpus S5 : résultat exact absent pour ${id("epaissie")} (STUDIO_CORPUS_ECRIRE=1 sur apps/api/src/lib/studio-corpus-s5.test.ts)`);
         return exact({ id: id("epaissie"), type: "exact", layerId: "surfaces", operation: "epaississement", surface: s, epaisseur: q.epaisseur, sens: "normale", resultat });
+      }
+      if (j === SURFACES_S5.subdivision || j === SURFACES_S5.solidifiee) {
+        const t = tetraedreS5(id("subdivision"), "surfaces", -20 * (j + 1), -20, p.subdivision.s);
+        if (j === SURFACES_S5.subdivision) return subdivision(t);
+        const resultat = RESULTATS_EXACTS_S5[id("solidifiee")];
+        if (!resultat) throw new Error(`corpus S5 : résultat exact absent pour ${id("solidifiee")} (STUDIO_CORPUS_ECRIRE=1 sur apps/api/src/lib/studio-corpus-s5.test.ts)`);
+        return exact({ id: id("solidifiee"), type: "exact", layerId: "surfaces", operation: "solidification", subdivision: t, resultat });
       }
       return solide({ id: id("boite"), type: "box", layerId: "solides", placement: { origin: { x, y, z: p.boite.z }, rotation: p.boite.rotation }, width: p.boite.largeur, depth: p.boite.profondeur, height: p.boite.hauteur });
       case 1: {
@@ -127,9 +157,10 @@ export function corpusS5(taille: number): CorpusStudio {
         "solides libres placés et tournés (boîtes, prismes)", "courbes exactes (arc, renflements) métrées sans discrétisation", "profils complexes jusqu'à 1 024 sommets",
         "booléens exacts (union, différence, intersection) calculés par le noyau OCCT, opérandes conservés, résultat conservé avec son empreinte",
         "surface libre NURBS rationnelle (quart de cylindre : pôles, degrés 2 × 1, poids 1, √2/2, 1), épaissie en solide exact par le noyau OCCT, surface conservée, résultat conservé avec son empreinte",
+        "surface de subdivision de Loop (tétraèdre régulier, niveau 1 : aire et volume de forme close), solidifiée en solide polyédrique par le noyau OCCT, surface conservée, résultat conservé avec son empreinte",
       ],
       absents: [
-        { element: "surfaces de subdivision", raison: "les surfaces libres de studio-document/1 sont des NURBS (pôles, degrés, poids) ; aucune surface de subdivision" },
+        { element: "subdivision de Catmull-Clark (faces quadrangulaires)", raison: "les surfaces de subdivision de studio-document/1 suivent le schéma de Loop (faces triangulaires) ; un quadrilatère se saisit en deux triangles" },
       ],
     },
   });

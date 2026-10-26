@@ -126,6 +126,8 @@ const OUTILS_W3C_ATTENDUS = [
   ["studio.surface.nurbs", "Ctrl+F8", "studio-surface-nurbs", "volume-libre"],
   ["studio.surface.modifier", "Ctrl+F9", "studio-surface-edit", "volume-libre"],
   ["studio.surface.epaissir", "Shift+F11", "studio-surface-thicken", "volume-libre"],
+  ["studio.subdivision.creer", "Ctrl+F12", "studio-surface-subdivision", "volume-libre"],
+  ["studio.subdivision.solidifier", "Ctrl+Shift+End", "studio-surface-solidify", "volume-libre"],
 ] as const;
 const OUTILS_W3C: ReadonlySet<string> = new Set(OUTILS_W3C_ATTENDUS.map((t) => t[0]));
 const horsLots = (t: { toolId: string }) => !OUTILS_LOT_G2.has(t.toolId) && !OUTILS_W3C.has(t.toolId);
@@ -178,6 +180,6 @@ describe("Registry Studio minimal", () => {
 
   it("X.1-05 : surfaces libres — Surface NURBS (Ctrl+F8), Modifier la surface (Ctrl+F9), Épaissir la surface (Shift+F11), identités, icônes et raccourcis propres, barre « volume-libre »", () => {
     expect(STUDIO_TOOLS.filter((t) => OUTILS_W3C.has(t.toolId)).map((t) => [t.toolId, t.raccourci, t.iconeSymbolique, t.groupe])).toEqual([...OUTILS_W3C_ATTENDUS]);
-    expect(STUDIO_TOOLS.filter((t) => OUTILS_W3C.has(t.toolId)).map((t) => t.libelleFR)).toEqual(["Surface NURBS", "Modifier la surface", "Épaissir la surface"]);
+    expect(STUDIO_TOOLS.filter((t) => OUTILS_W3C.has(t.toolId)).map((t) => t.libelleFR)).toEqual(["Surface NURBS", "Modifier la surface", "Épaissir la surface", "Surface de subdivision", "Solidifier la subdivision"]);
   });
 });

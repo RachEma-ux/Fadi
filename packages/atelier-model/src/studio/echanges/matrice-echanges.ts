@@ -34,7 +34,7 @@ import { STUDIO_CAPACITES_EXPORT, STUDIO_RAISONS_FIDELITE, type StudioFormatEcha
 
 export const STUDIO_MATRICE_ECHANGES_SCHEMA = "studio-matrice-echanges/1" as const;
 /** Révision de la matrice : à incrémenter avec toute modification d'une entrée (empreinte épinglée par test). */
-export const STUDIO_MATRICE_ECHANGES_REVISION = 10 as const;
+export const STUDIO_MATRICE_ECHANGES_REVISION = 11 as const;
 /** Date de l'audit qui a établi la révision courante. */
 export const STUDIO_MATRICE_ECHANGES_DATE = "2026-10-26" as const;
 
@@ -134,6 +134,7 @@ export const STUDIO_STATUT_DE_RAISON: Readonly<Record<StudioRaisonFidelite, Stud
   "propriete-non-evaluee": "non-couvert", "non-natif-hors-export": "non-couvert", "solide-exact-hors-ifc": "non-couvert",
   "spline-decoupee": "approche", "transparence-non-portee": "approche", "graphisme-hors-ifc": "non-couvert", "provenance-hors-dessin": "non-couvert",
   "surface-libre-hors-export": "non-couvert",
+  "surface-subdivision-hors-export": "non-couvert",
 });
 
 type Categorie = keyof typeof STUDIO_CAPACITES_EXPORT;
@@ -154,6 +155,7 @@ export const STUDIO_COUVERTURE_EXPORT: { readonly [F in StudioFormatEchange]: Pa
     solides: { box: ["solide-hors-2d"], prism: ["solide-hors-2d"] },
     exacts: { exact: ["solide-hors-2d"] },
     surfaces: { "surface-libre": ["surface-libre-hors-export"] },
+    subdivisions: { "surface-subdivision": ["surface-subdivision-hors-export"] },
     cotesFaces: { "face-dimension": ["solide-hors-2d"] },
     architecture: { wall: ["extrusion-non-portee"], opening: ["ouverture-en-lacune"], ladder: ["extrusion-non-portee"] },
     proprietes: { propriete: ["propriete-non-exportee"] },
@@ -169,6 +171,7 @@ export const STUDIO_COUVERTURE_EXPORT: { readonly [F in StudioFormatEchange]: Pa
     solides: { box: ["solide-hors-2d"], prism: ["solide-hors-2d"] },
     exacts: { exact: ["solide-hors-2d"] },
     surfaces: { "surface-libre": ["surface-libre-hors-export"] },
+    subdivisions: { "surface-subdivision": ["surface-subdivision-hors-export"] },
     cotesFaces: { "face-dimension": ["solide-hors-2d"] },
     architecture: { wall: ["extrusion-non-portee"], opening: ["ouverture-en-lacune"], ladder: ["extrusion-non-portee"] },
     proprietes: { propriete: ["propriete-non-exportee"] },
@@ -187,6 +190,7 @@ export const STUDIO_COUVERTURE_EXPORT: { readonly [F in StudioFormatEchange]: Pa
     solides: { box: ["profil-exact"], prism: ["profil-exact"] },
     exacts: { exact: ["solide-exact-hors-ifc"] },
     surfaces: { "surface-libre": ["surface-libre-hors-export"] },
+    subdivisions: { "surface-subdivision": ["surface-subdivision-hors-export"] },
     cotesFaces: { "face-dimension": ["cote-hors-ifc"] },
     architecture: { wall: ["extrusion-exacte"], opening: ["ouverture-evidee"], ladder: ["extrusion-exacte"] },
     proprietes: { propriete: ["propriete-en-pset", "propriete-non-evaluee"] },
@@ -368,6 +372,7 @@ const LIVREES: readonly StudioEntreeEchange[] = [
       { entite: "Objets extrudés, solides libres, solides exacts, murs", couverture: "partielle", detail: "Un objet « o » par élément, nommé par son identifiant Studio (échappé ~XXXX~, réversible), faces triangulaires orientées ; volume relu égal à celui du modèle ; courbes discrétisées." },
       { entite: "Calques", couverture: "portee", detail: "Un groupe « g » par calque ; un calque masqué est écrit et signalé." },
       { entite: "Surfaces verticales sans épaisseur", couverture: "portee", detail: "Triangles sans volume, comme dans la vue 3D." },
+      { entite: "Surfaces de subdivision (X.1-05)", couverture: "partielle", detail: "Maillage subdivisé (Loop) au niveau de la surface : un objet « o » par surface ; maillage de contrôle et niveau perdus." },
       { entite: "Surfaces libres NURBS (X.1-05)", couverture: "partielle", detail: "Nappe ouverte triangulée depuis ses pôles, degrés et poids (maillage d’affichage, 16 échantillons par travée) : un objet « o » par surface ; pôles, poids et degrés perdus." },
       { entite: "Contours non extrudés", couverture: "partielle", detail: "Lignes « l » à z = 0, courbes discrétisées." },
       { entite: "Ouvertures", couverture: "partielle", detail: "Vide dans le maillage du mur ; l’ouverture n’est pas un objet du fichier (comptée)." },
@@ -390,6 +395,7 @@ const LIVREES: readonly StudioEntreeEchange[] = [
     entites: [
       { entite: "Objets extrudés, solides libres, solides exacts, murs", couverture: "partielle", detail: "Facettes du maillage de la vue 3D ; volume relu égal à celui du modèle ; identité et calque perdus." },
       { entite: "Surfaces verticales sans épaisseur, contours non extrudés", couverture: "absente", detail: "Ce ne sont pas des solides : comptés, jamais écrits." },
+      { entite: "Surfaces de subdivision (X.1-05)", couverture: "partielle", detail: "Fermées : facettes du maillage subdivisé (étanche) ; ouvertes : comptées « surface-subdivision-ouverte », jamais écrites." },
       { entite: "Surfaces libres NURBS non épaissies (X.1-05)", couverture: "absente", detail: "Nappes ouvertes, pas des solides : comptées « surface-libre-non-epaissie », jamais écrites ; épaissies, ce sont des solides exacts (écrits)." },
       { entite: "Cotes, annotations, graphismes, ouvertures, propriétés, scènes, éléments non natifs", couverture: "absente", detail: "Comptés par le bilan de l’export, jamais écrits." },
     ],
@@ -397,7 +403,7 @@ const LIVREES: readonly StudioEntreeEchange[] = [
     route: `GET ${ROUTE_VARIANTE}/export?format=stl`,
     preuves: {
       code: [p(`${M}export-3d.ts`, "exportStudioStl"), p(`${API}lib/studio-commands.ts`, "exportStudioVariant")],
-      tests: [p(`${M}export-3d.test.ts`, "E.6-04 STL : une pièce solid"), p(`${E2E}studio-echanges.mjs`, "check(\"Exporter STL : fichier servi"), p(`${M}surfaces-libres.test.ts`, "X.1-05 exports : OBJ écrit la nappe")],
+      tests: [p(`${M}export-3d.test.ts`, "E.6-04 STL : une pièce solid"), p(`${E2E}studio-echanges.mjs`, "check(\"Exporter STL : fichier servi"), p(`${M}surfaces-libres.test.ts`, "X.1-05 exports : OBJ écrit la nappe"), p(`${M}subdivisions.test.ts`, "X.1-05 subdivision exports : STL écrit la surface fermée")],
       routes: [p(`${API}routes/studio.ts`, "/studies/:studyId/variants/:variantId/export")],
       interfaces: [p(`${WEB}planche2d/BarreOutils.tsx`, "download={actif ? \"\" : undefined}"), p(`${WEB}VariantWorkspace.tsx`, "\"exporter-stl\": studioExportUrl(")],
     },
@@ -409,6 +415,7 @@ const LIVREES: readonly StudioEntreeEchange[] = [
     limite: "Écrit côté serveur par le noyau exact (OCCT en WebAssembly, chargé à la demande) ; millimètres déclarés (SI_UNIT .MILLI. .METRE.), géométrie mise à l’échelle × 1 000 depuis les mètres du modèle ; horodatage de la révision ; emprises des objets extrudés discrétisées comme dans la vue 3D ; aucune couleur ni propriété ; révision sans solide : refus 422, jamais un fichier vide.",
     entites: [
       { entite: "Solides exacts (booléens)", couverture: "portee", detail: "Brep du noyau écrit tel quel." },
+      { entite: "Surfaces de subdivision (X.1-05)", couverture: "partielle", detail: "Sans équivalent exact : comptées « surface-subdivision-non-solidifiee », jamais écrites ; solidifiée (maillage fermé), le solide polyédrique du noyau est écrit (faces planes)." },
       { entite: "Surfaces libres NURBS épaissies (X.1-05)", couverture: "portee", detail: "Solide exact du noyau (faces B-spline rationnelles exactes, pôles et poids de la surface) écrit tel quel ; une surface non épaissie n’est pas un solide : comptée « surface-libre-non-epaissie », jamais écrite." },
       { entite: "Solides libres (boîtes, prismes)", couverture: "portee", detail: "Extrusion de l’emprise (solide droit) ou lissage réglé entre ses deux faces (solide oblique ou basculé) : faces planes, exactes." },
       { entite: "Murs", couverture: "portee", detail: "Morceaux pleins juxtaposés (vides des ouvertures déduits), un produit par mur ; volume relu égal au volume net du modèle." },

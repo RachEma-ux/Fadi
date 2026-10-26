@@ -20,7 +20,7 @@ import { panoramiqueClavier, TOUCHES_PANORAMIQUE } from "./vue-clavier";
 import { commandesExtrusion, VALEURS_VIDES } from "../vue3d/extrusion";
 import { commandeBoite, commandeDeplacementSolide, commandeDivision, commandeFace, commandePivot, commandePrisme, BOITE_VIDE, PRISME_VIDE } from "../vue3d/volume-libre";
 import { cibleFocusBascule, SELECTEURS_FOCUS_BASCULE } from "../variante/focus-bascule";
-import { commandeModifierPole, commandeSurfacePlane, valeursPole } from "../vue3d/surfaces-ui";
+import { commandeModifierPole, commandeSubdivision, commandeSurfacePlane, valeursPole } from "../vue3d/surfaces-ui";
 
 let n = 0;
 const creation: ContexteCreation = { nouvelId: () => `k${++n}`, layerId: undefined, decalageCote: 0.5, texte: { contenu: "Repère", hauteur: 0.25, rotation: 0, justification: "left" } };
@@ -76,6 +76,8 @@ const ESSAIS: Record<string, (d: StudioDocument) => StudioCommand[]> = {
     const s = c[0]!.params as StudioSurfaceLibre;
     return [...c, ...ok(commandeModifierPole(s, { ...valeursPole(s, 1, 0), z: 0.8, poids: 0.7 }))];
   },
+  // Maillage de contrôle d'une surface de subdivision saisi au clavier (sommets, faces, niveau).
+  "studio.subdivision.creer": () => ok(commandeSubdivision("1 1 1; 1 -1 -1; -1 1 -1; -1 -1 1", "1 2 3; 1 4 2; 1 3 4; 2 4 3", 1, "sd1")),
   "studio.architecture.mur": () => ok(commandeMur(creation, lireSommets("0 8; 5 8")!, mur)),
   "studio.architecture.ouverture": () => ok(commandeOuverture(creation, "m1", 2, { largeur: 1, hauteur: 2.1, allege: 0, type: "porte" })),
   "studio.architecture.echelle-acces": () => ok(commandeEchelle(creation, { x: 1, y: 9 }, { largeur: 0.5, hauteur: 3, base: 0, echelons: 9, section: 0.04, orientation: 0 })),

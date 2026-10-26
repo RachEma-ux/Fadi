@@ -12,7 +12,9 @@ import { FauxWorker, type CompteurFaux } from "../exact/faux-worker";
 import {
   demandeEpaississement, engagementEpaississement, etatApresEpaississement, etatCourantEpaississement, MESSAGES_EPAISSISSEMENT, tacheEpaississement,
 } from "../exact/epaississement-session";
-import { commandeModifierPole, commandeSurfacePlane, descriptionSurface, SURFACE_VIDE, valeursPole } from "./surfaces-ui";
+import { commandeModifierPole, commandeModifierSommet, commandeSubdivision, commandeSurfacePlane, descriptionSubdivision, descriptionSurface, lireMaillageControle, SURFACE_VIDE, valeursPole, valeursSommet } from "./surfaces-ui";
+import { demandeSolidification, engagementSolidification, etatApresSolidification, tacheSolidification } from "../exact/solidification-session";
+import { PanneauSubdivisions } from "./PanneauSubdivisions";
 import { entreesLibres } from "./entrees-scene";
 import { solidesDesignables } from "./designation";
 import { PanneauSurfaces } from "./PanneauSurfaces";
@@ -176,11 +178,13 @@ describe("X.1-05 — panneaux, vue 3D et règle d'or", () => {
   });
 
   it("X.1-05 règle d'or : Surface NURBS (Ctrl+F8), Modifier la surface (Ctrl+F9), Épaissir la surface (Shift+F11) — icône propre, barre « volume-libre », raccourci libre et non réservé, alternative clavier ; seul Épaissir charge le noyau exact", () => {
-    const outils = STUDIO_TOOLS.filter((t) => t.toolId.startsWith("studio.surface."));
+    const outils = STUDIO_TOOLS.filter((t) => t.toolId.startsWith("studio.surface.") || t.toolId.startsWith("studio.subdivision."));
     expect(outils.map((t) => [t.toolId, t.raccourci, t.iconeSymbolique, t.groupe])).toEqual([
       ["studio.surface.nurbs", "Ctrl+F8", "studio-surface-nurbs", "volume-libre"],
       ["studio.surface.modifier", "Ctrl+F9", "studio-surface-edit", "volume-libre"],
       ["studio.surface.epaissir", "Shift+F11", "studio-surface-thicken", "volume-libre"],
+      ["studio.subdivision.creer", "Ctrl+F12", "studio-surface-subdivision", "volume-libre"],
+      ["studio.subdivision.solidifier", "Ctrl+Shift+End", "studio-surface-solidify", "volume-libre"],
     ]);
     for (const t of outils) {
       expect(cibleRaccourci(t.raccourci)).toEqual({ type: "outil", toolId: t.toolId });
@@ -194,5 +198,75 @@ describe("X.1-05 — panneaux, vue 3D et règle d'or", () => {
     expect(moteursDeOutil("studio.surface.epaissir", "volume-libre")).toContain("noyau-exact");
     expect(moteursDeOutil("studio.surface.nurbs", "volume-libre")).not.toContain("noyau-exact");
     expect(moteursDeOutil("studio.surface.modifier", "volume-libre")).not.toContain("noyau-exact");
+  });
+});
+
+const SOMMETS_TETRA = "1 1 1; 1 -1 -1; -1 1 -1; -1 -1 1";
+const FACES_TETRA = "1 2 3; 1 4 2; 1 3 4; 2 4 3";
+const avecSubdivision = (): StudioDocument => applyStudioCommands(newStudioDocument("ui"), ok(commandeSubdivision(SOMMETS_TETRA, FACES_TETRA, 1, "T")));
+
+describe("X.1-05 — surfaces de subdivision dans l'interface", () => {
+  it("X.1-05 interface : Surface de subdivision — maillage de contrôle saisi au clavier (sommets, faces numérotées à partir de 1, niveau), saisies incomplètes refusées ; sommet modifié, même identité", () => {
+    expect(lireMaillageControle("", FACES_TETRA)).toMatchObject({ erreur: expect.stringMatching(/^Saisissez les sommets/) });
+    expect(lireMaillageControle(SOMMETS_TETRA, "1 2 3; 1 4 9")).toMatchObject({ erreur: expect.stringMatching(/^Saisissez les faces triangulaires/) });
+    expect(lireMaillageControle(SOMMETS_TETRA, "1 2 3 4")).toMatchObject({ erreur: expect.stringMatching(/^Saisissez les faces triangulaires/) });
+    expect(commandeSubdivision(SOMMETS_TETRA, FACES_TETRA, Number.NaN, "T")).toEqual({ erreur: "Saisissez le niveau de subdivision : un entier de 0 à 4." });
+    const [c] = ok(commandeSubdivision(SOMMETS_TETRA, FACES_TETRA, 1, "T", "default"));
+    expect(c).toEqual({ toolId: "studio.subdivision.creer", params: { id: "T", type: "surface-subdivision", niveau: 1, sommets: [{ x: 1, y: 1, z: 1 }, { x: 1, y: -1, z: -1 }, { x: -1, y: 1, z: -1 }, { x: -1, y: -1, z: 1 }], faces: [[0, 1, 2], [0, 3, 1], [0, 2, 3], [1, 3, 2]] } });
+    const d = avecSubdivision(), t = d.subdivisions![0]!;
+    expect(descriptionSubdivision(t, nombre)).toMatch(/^Surface de subdivision 4 sommets, 4 faces, niveau 1, fermée · aire /);
+    expect(valeursSommet(t, 2)).toEqual({ k: 2, x: -1, y: 1, z: -1, niveau: 1 });
+    expect(commandeModifierSommet(null, valeursSommet(t, 2))).toEqual({ erreur: "Sélectionnez d’abord la surface à modifier." });
+    expect(commandeModifierSommet(t, { ...valeursSommet(t, 2), k: 7 })).toEqual({ erreur: "Choisissez le sommet de contrôle à modifier." });
+    const cs = ok(commandeModifierSommet(t, { ...valeursSommet(t, 2), z: -2, niveau: 2 }));
+    expect(cs[0]!.toolId).toBe("studio.surface.modifier");
+    const m = applyStudioCommands(d, cs).subdivisions![0]!;
+    expect(m.id).toBe("T");
+    expect(m.sommets[2]).toEqual({ x: -1, y: 1, z: -2 });
+    expect(m.niveau).toBe(2);
+    expect(m.faces).toEqual(t.faces);
+  });
+
+  it("X.1-05 interface : solidification de bout en bout — tâche « polyedre » au Worker (maillage subdivisé), engagement de la commande ; surface ouverte refusée avant le Worker", async () => {
+    const d = avecSubdivision();
+    const r = demandeSolidification(d, "1", "T", "P");
+    if (!r.ok) throw new Error(r.message);
+    expect(tacheSolidification(r.demande)).toMatchObject({ cle: "studio.exact.solidification", nature: "solidification" });
+    const { ord, vus } = banc();
+    const e = etatApresSolidification(r.demande, await ord.soumettre(tacheSolidification(r.demande)).issue, "1");
+    expect((vus[0] as { type: string; triangles: unknown[] })).toMatchObject({ type: "polyedre" });
+    expect((vus[0] as { triangles: unknown[] }).triangles).toHaveLength(16);
+    const eng = engagementSolidification(e, { doc: d, revision: "1", modifiable: true });
+    if (!eng.ok) throw new Error(eng.message);
+    const apres = applyStudioCommands(d, eng.commandes);
+    expect(apres.subdivisions).toBeUndefined();
+    expect(apres.exacts![0]).toMatchObject({ id: "P", operation: "solidification", subdivision: d.subdivisions![0] });
+    const ouverte = applyStudioCommands(newStudioDocument("ui"), ok(commandeSubdivision("0 0 0; 1 0 0; 0 1 0", "1 2 3", 1, "O")));
+    expect(demandeSolidification(ouverte, "1", "O", "Q")).toMatchObject({ ok: false, message: expect.stringMatching(/^Solidification impossible : surface de subdivision ouverte/) });
+    expect(engagementSolidification(etatApresSolidification(r.demande, await ord.soumettre(tacheSolidification(r.demande)).issue, "2"), { doc: d, revision: "2", modifiable: true }).ok).toBe(false);
+  });
+
+  it("X.1-05 vue 3D : surface de subdivision sélectionnée — maillage de contrôle et un repère désignable par sommet (userData.sommet) ; panneaux : saisies vides, sommet choisi, solidification", () => {
+    const d = avecSubdivision(), mesh = studioMesh3d(d);
+    const lecture = (selection: string | null) => ({ mesh, cle: () => "k", doc: d, mode: "ombre" as never, selection, selectionArchitecture: null, present: () => true });
+    const construire = (e: unknown) => (e as { construire: () => THREE.Object3D[] }).construire();
+    const sd = entreesLibres(lecture("T")).find((x) => x.id === "T")!;
+    const reperes = construire(sd).filter((o) => typeof o.userData.sommet === "number");
+    expect(reperes.map((o) => [o.userData.subdivision, o.userData.sommet, o.position.toArray()])).toEqual(d.subdivisions![0]!.sommets.map((p, k) => ["T", k, [p.x, p.y, p.z]]));
+    expect(construire(entreesLibres(lecture(null)).find((x) => x.id === "T")!).filter((o) => typeof o.userData.sommet === "number")).toHaveLength(0);
+    expect(solidesDesignables(d)("T")).toBe(true);
+    const props = { doc: d, revision: "1", modifiable: true, selection: null, sommet: null, surSommet: () => {} };
+    const creation = renderToStaticMarkup(createElement(PanneauSubdivisions, { ...props, outil: "studio.subdivision.creer" }));
+    expect(creation).toContain('name="subdivision-sommets" required="" rows="3" data-studio-subdivision-sommets="true"></textarea>');
+    expect(creation).toContain('name="subdivision-niveau" value=""');
+    const edition = renderToStaticMarkup(createElement(PanneauSubdivisions, { ...props, outil: "studio.surface.modifier", selection: "T", sommet: 1 }));
+    expect(edition).toContain("data-studio-subdivision-modifier=\"T\"");
+    expect(edition.match(/<option value="\d"/g)).toHaveLength(4);
+    expect(edition).toContain('<option value="1" selected="">Sommet 2</option>');
+    // La surface NURBS n'affiche pas son formulaire de pôle quand une subdivision est sélectionnée.
+    expect(renderToStaticMarkup(createElement(PanneauSurfaces, { doc: d, revision: "1", modifiable: true, selection: "T", pole: null, surPole: () => {}, outil: "studio.surface.modifier" }))).not.toContain("data-studio-surface-modifier");
+    const solidifier = renderToStaticMarkup(createElement(PanneauSubdivisions, { ...props, outil: "studio.subdivision.solidifier" }));
+    expect(solidifier).toContain("data-studio-solidifier");
+    expect(solidifier).toContain('<option value="" selected="">Choisir la surface…</option>');
   });
 });

@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from "vitest";
 import {
-  applyStudioCommands, newStudioDocument, studioCaptureEpaississement, studioIdDepuisNom3d, type StudioCommand, type StudioDocument, type StudioSurfaceLibre,
+  applyStudioCommands, newStudioDocument, studioCaptureEpaississement, studioCaptureSolidification, type StudioSurfaceSubdivision, studioIdDepuisNom3d, type StudioCommand, type StudioDocument, type StudioSurfaceLibre,
 } from "@parcours/atelier-model";
 import { MoteurExact } from "@parcours/geometry-exact";
 import { exportStudioStep, revaliderBooleensStudio } from "./studio-exact.js";
@@ -81,5 +81,34 @@ describe("X.1-05 — épaississement exact recalculé par le serveur", () => {
     expect(step!).toMatch(/RATIONAL_B_SPLINE_SURFACE/);
     // Seule la surface non épaissie : rien à écrire (l'API répond 422).
     expect(await exportStudioStep(doc(), "2026-10-26T08:00:00", "vide.step")).toBeNull();
+  });
+});
+
+/** Tétraèdre régulier (sommets s (±1, ±1, ±1)), faces vers l'extérieur ; maillage de Loop au niveau donné. */
+const tetra = (id: string, s = 1, niveau = 1): StudioSurfaceSubdivision => ({
+  id, type: "surface-subdivision", niveau, faces: [[0, 1, 2], [0, 3, 1], [0, 2, 3], [1, 3, 2]],
+  sommets: [[1, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]].map(([x, y, z]) => ({ x: s * x!, y: s * y!, z: s * z! })),
+});
+
+describe("X.1-05 — solidification d'une surface de subdivision recalculée par le serveur", () => {
+  it("X.1-05 serveur : la solidification d'une surface de subdivision est recalculée depuis le maillage du serveur ; volume 5 s³ / 24 ; maillage ouvert refusé sans noyau", async () => {
+    const d = applyStudioCommands(newStudioDocument("srv"), [{ toolId: "studio.subdivision.creer", params: tetra("T", 2) }]);
+    const c = studioCaptureSolidification(d, { subdivision: "T" });
+    if (!c.ok) throw new Error(c.message);
+    const r = (await MoteurExact.charger()).executer(c.capture.entrees);
+    const cs: StudioCommand[] = [{ toolId: "studio.subdivision.solidifier", params: { id: "P", subdivision: "T", resultat: { ...r, volume: 999 } } }];
+    expect(await revaliderBooleensStudio(d, cs, applyStudioCommands)).toBeNull();
+    const p = cs[0]!.params as { resultat: { volume: number } };
+    expect(Math.abs(p.resultat.volume - (5 * 8) / 24) / p.resultat.volume).toBeLessThan(1e-9);
+    expect(applyStudioCommands(d, cs).exacts![0]).toMatchObject({ id: "P", operation: "solidification", subdivision: tetra("T", 2) });
+    // Calcul du client sur un autre niveau : empreinte différente, refus.
+    const autre = studioCaptureSolidification(applyStudioCommands(newStudioDocument("srv"), [{ toolId: "studio.subdivision.creer", params: tetra("T", 2, 2) }]), { subdivision: "T" });
+    if (!autre.ok) throw new Error(autre.message);
+    const r2 = (await MoteurExact.charger()).executer(autre.capture.entrees);
+    expect(await revaliderBooleensStudio(d, [{ toolId: "studio.subdivision.solidifier", params: { id: "P", subdivision: "T", resultat: r2 } } as StudioCommand], applyStudioCommands)).toMatchObject({ status: 400, body: { code: "exact-mismatch" } });
+    // Maillage ouvert : refus studio-invalid avant tout appel au noyau.
+    const ouverte = { id: "O", type: "surface-subdivision", niveau: 1, sommets: [{ x: 0, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }, { x: 0, y: 1, z: 0 }], faces: [[0, 1, 2]] };
+    const d2 = applyStudioCommands(d, [{ toolId: "studio.subdivision.creer", params: ouverte } as StudioCommand]);
+    expect(await revaliderBooleensStudio(d2, [{ toolId: "studio.subdivision.solidifier", params: { id: "Q", subdivision: "O", resultat: r } } as StudioCommand], applyStudioCommands)).toMatchObject({ status: 400, body: { code: "studio-invalid", message: expect.stringMatching(/^Solidification impossible : surface de subdivision ouverte/) } });
   });
 });

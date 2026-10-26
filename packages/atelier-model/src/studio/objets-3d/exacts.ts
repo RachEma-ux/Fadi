@@ -2,6 +2,7 @@ import type { StudioPoint3 } from "../exporteurs/maillage.js";
 import { array, fail, finite, identifier, layerRef, record } from "../noyau/validation.js";
 import { cotesSolide, empriseSolide, estBascule, estDroit, validerSolide, type StudioSolid } from "./solides.js";
 import { studioMaillageSolide } from "./maillage.js";
+import { SCHEMA_SURFACE_SUBDIVISION, studioSubdivisionFermee, validerSurfaceSubdivision, type StudioSurfaceSubdivision } from "./subdivisions.js";
 import { SCHEMA_SURFACE_LIBRE, STUDIO_SENS_EPAISSEUR, validerEpaisseur, validerSens, validerSurfaceLibre, type StudioSensEpaisseur, type StudioSurfaceLibre } from "./surfaces-libres.js";
 
 /**
@@ -85,10 +86,24 @@ export interface StudioSolideExactEpaissi {
   resultat: StudioResultatExact;
 }
 
-export type StudioSolideExact = StudioSolideExactBooleen | StudioSolideExactEpaissi;
+/**
+ * Solide exact obtenu par **solidification** d'une surface de subdivision fermée (X.1-05) : le maillage subdivisé au
+ * niveau de la surface, cousu en solide polyédrique par le noyau (opération `polyedre`) ; la surface de subdivision est
+ * conservée intacte (R15). Ni lissé ni présenté comme la surface limite.
+ */
+export interface StudioSolideExactSolidifie {
+  id: string;
+  type: "exact";
+  layerId?: string;
+  operation: "solidification";
+  subdivision: StudioSurfaceSubdivision;
+  resultat: StudioResultatExact;
+}
+
+export type StudioSolideExact = StudioSolideExactBooleen | StudioSolideExactEpaissi | StudioSolideExactSolidifie;
 
 /** Le solide exact est-il un booléen (deux opérandes conservés) ? */
-export const estBooleenExact = (s: StudioSolideExact): s is StudioSolideExactBooleen => s.operation !== "epaississement";
+export const estBooleenExact = (s: StudioSolideExact): s is StudioSolideExactBooleen => s.operation !== "epaississement" && s.operation !== "solidification";
 
 const BASE64 = /^[A-Za-z0-9+/]+={0,2}$/;
 const entier = (v: unknown, path: string, min: number): number => {
@@ -151,6 +166,15 @@ function validerExact(value: unknown, path: string, profondeur: number): StudioS
       epaisseur: validerEpaisseur(e.epaisseur, `${path}.epaisseur`), sens: validerSens(e.sens, `${path}.sens`), resultat: validerResultatExact(e.resultat, `${path}.resultat`),
     };
   }
+  if (value && typeof value === "object" && (value as { operation?: unknown }).operation === "solidification") {
+    const e = record(value, ["id", "type", "operation", "subdivision", "resultat"], path, ["layerId"]);
+    if (e.type !== "exact") fail(`${path}.type`, "type « exact » attendu");
+    const subdivision = validerSurfaceSubdivision(e.subdivision, `${path}.subdivision`);
+    if (!studioSubdivisionFermee(subdivision)) fail(`${path}.subdivision`, "surface de subdivision ouverte : jamais solidifiée");
+    const id = identifier(e.id, `${path}.id`);
+    if (subdivision.id === id) fail(`${path}.subdivision`, "la surface conservée a son propre identifiant");
+    return { id, type: "exact", ...layerRef(e, path), operation: "solidification", subdivision, resultat: validerResultatExact(e.resultat, `${path}.resultat`) };
+  }
   const o = record(value, ["id", "type", "operation", "operandes", "resultat"], path, ["layerId"]);
   if (o.type !== "exact") fail(`${path}.type`, "type « exact » attendu");
   const ops = array(o.operandes, `${path}.operandes`);
@@ -171,7 +195,8 @@ export const validerSolideExact = (value: unknown, path: string): StudioSolideEx
  * pour un solide épaissi, celui de sa surface conservée.
  */
 export function studioIdsOperandes(s: StudioSolideExact): string[] {
-  if (!estBooleenExact(s)) return [s.surface.id];
+  if (s.operation === "epaississement") return [s.surface.id];
+  if (s.operation === "solidification") return [s.subdivision.id];
   const out: string[] = [];
   for (const o of s.operandes) { out.push(o.id); if (o.type === "exact") out.push(...studioIdsOperandes(o)); }
   return out;
@@ -318,6 +343,13 @@ export const SCHEMA_SOLIDE_EXACT: Readonly<Record<string, unknown>> = {
         id: { type: "string", minLength: 1, maxLength: 128 }, type: { const: "exact" }, layerId: { type: "string", minLength: 1, maxLength: 128 },
         operation: { const: "epaississement" }, surface: SCHEMA_SURFACE_LIBRE,
         epaisseur: { type: "number", minimum: 1e-6, maximum: 1e6 }, sens: { enum: [...STUDIO_SENS_EPAISSEUR] }, resultat: SCHEMA_RESULTAT_EXACT,
+      },
+    },
+    {
+      type: "object", additionalProperties: false, required: ["id", "type", "operation", "subdivision", "resultat"],
+      properties: {
+        id: { type: "string", minLength: 1, maxLength: 128 }, type: { const: "exact" }, layerId: { type: "string", minLength: 1, maxLength: 128 },
+        operation: { const: "solidification" }, subdivision: SCHEMA_SURFACE_SUBDIVISION, resultat: SCHEMA_RESULTAT_EXACT,
       },
     },
   ],

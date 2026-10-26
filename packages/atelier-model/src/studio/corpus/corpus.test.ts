@@ -22,6 +22,7 @@ import { quantitesStudio, type GrandeurQuantite } from "../quantites.js";
 import { studioQuantitesSolides } from "../solides-libres.js";
 import type { StudioSolideExactBooleen } from "../objets-3d/exacts.js";
 import { studioAireApprocheeSurface, studioPointSurface } from "../objets-3d/surfaces-libres.js";
+import { studioAireSubdivision, studioMaillageSubdivise, studioVolumeSubdivision } from "../objets-3d/subdivisions.js";
 import { studioQuantitesArchitecture } from "../architecture/index.js";
 import { studioAngularValue } from "../objets/cote-angulaire.js";
 import { studioDimensionValue } from "../objets/cote.js";
@@ -78,7 +79,7 @@ function proche(mesure: number | null | undefined, attendu: number, quoi: string
 function comptes(corpus: CorpusStudio): Record<string, number> {
   const c: Record<string, number> = {};
   for (const d of corpus.documents) {
-    for (const e of [...d.objects, ...(d.dimensions ?? []), ...(d.annotations ?? []), ...(d.architecture ?? []), ...(d.solides ?? []), ...(d.exacts ?? []), ...(d.surfaces ?? []), ...(d.graphismes ?? [])]) c[e.type] = (c[e.type] ?? 0) + 1;
+    for (const e of [...d.objects, ...(d.dimensions ?? []), ...(d.annotations ?? []), ...(d.architecture ?? []), ...(d.solides ?? []), ...(d.exacts ?? []), ...(d.surfaces ?? []), ...(d.subdivisions ?? []), ...(d.graphismes ?? [])]) c[e.type] = (c[e.type] ?? 0) + 1;
   }
   return c;
 }
@@ -119,6 +120,7 @@ function mesures(corpus: CorpusStudio) {
   const graphismes = { aireHachures: 0, symboles: {} as Record<string, number>, pointsSplines: 0 };
   const exacts = { operations: {} as Record<string, number>, volume: 0 };
   const surfaces = { nombre: 0, aire: 0, epaissies: 0, volumeEpaissies: 0 };
+  const subdivisions = { nombre: 0, aire: 0, volume: 0, solidifiees: 0, volumeSolidifiees: 0 };
   const sources = { nombre: 0, objets: 0 };
   for (const d of corpus.documents) {
     for (const g of d.graphismes ?? []) {
@@ -129,12 +131,15 @@ function mesures(corpus: CorpusStudio) {
     for (const e of d.exacts ?? []) {
       exacts.operations[e.operation] = (exacts.operations[e.operation] ?? 0) + 1;
       // Surfaces épaissies (X.1-05) : volume du noyau, comparé à part avec sa tolérance.
-      if (e.operation === "epaississement") { surfaces.epaissies++; surfaces.volumeEpaissies += e.resultat.volume; } else exacts.volume += e.resultat.volume;
+      if (e.operation === "epaississement") { surfaces.epaissies++; surfaces.volumeEpaissies += e.resultat.volume; }
+      else if (e.operation === "solidification") { subdivisions.solidifiees++; subdivisions.volumeSolidifiees += e.resultat.volume; }
+      else exacts.volume += e.resultat.volume;
     }
     for (const s of d.surfaces ?? []) { surfaces.nombre++; surfaces.aire += studioAireApprocheeSurface(s); }
+    for (const s of d.subdivisions ?? []) { subdivisions.nombre++; subdivisions.aire += studioAireSubdivision(s); subdivisions.volume += studioVolumeSubdivision(s) ?? Number.NaN; }
     for (const x of d.sources ?? []) { sources.nombre++; sources.objets += x.objets; }
   }
-  return { totaux, volumeNonEvalues, volumeSolides, cotes: { liees, libres, sommeMesures }, angles: { nombre: angles, sommeDegres }, murs, premier, graphismes, exacts, surfaces, sources };
+  return { totaux, volumeNonEvalues, volumeSolides, cotes: { liees, libres, sommeMesures }, angles: { nombre: angles, sommeDegres }, murs, premier, graphismes, exacts, surfaces, subdivisions, sources };
 }
 
 function controlerOracle(corpus: CorpusStudio, o: OracleCorpus) {
@@ -162,7 +167,14 @@ function controlerOracle(corpus: CorpusStudio, o: OracleCorpus) {
     }
   }
   // Volume des solides hors surfaces épaissies (formes closes, TOLERANCE_ORACLE) ; épaissies : tolérance du noyau.
-  proche(m.volumeSolides - m.surfaces.volumeEpaissies, (o.volumeSolides ?? 0) - (o.surfaces?.volumeEpaissies ?? 0), "volume des solides");
+  proche(m.volumeSolides - m.surfaces.volumeEpaissies - m.subdivisions.volumeSolidifiees, (o.volumeSolides ?? 0) - (o.surfaces?.volumeEpaissies ?? 0) - (o.subdivisions?.volumeSolidifiees ?? 0), "volume des solides");
+  if (o.subdivisions) {
+    expect([m.subdivisions.nombre, m.subdivisions.solidifiees], "surfaces de subdivision, solidifiées").toEqual([o.subdivisions.nombre, o.subdivisions.solidifiees]);
+    // Maillage subdivisé de forme close (Loop niveau 1) : aire et volume au calcul flottant près ; solide polyédrique du noyau : tolérance du noyau.
+    proche(m.subdivisions.aire, o.subdivisions.aire, "aire des surfaces de subdivision");
+    proche(m.subdivisions.volume, o.subdivisions.volume, "volume des surfaces de subdivision");
+    expect(Math.abs(m.subdivisions.volumeSolidifiees - o.subdivisions.volumeSolidifiees), "volume des subdivisions solidifiées (noyau)").toBeLessThanOrEqual(TOLERANCE_ORACLE_SURFACES.volumeNoyau * Math.max(1e-12, o.subdivisions.volumeSolidifiees));
+  } else expect(m.subdivisions).toEqual({ nombre: 0, aire: 0, volume: 0, solidifiees: 0, volumeSolidifiees: 0 });
   if (o.surfaces) {
     expect([m.surfaces.nombre, m.surfaces.epaissies], "surfaces libres, surfaces épaissies").toEqual([o.surfaces.nombre, o.surfaces.epaissies]);
     expect(Math.abs(m.surfaces.aire - o.surfaces.aire), `aire des surfaces libres : ${m.surfaces.aire} au lieu de ${o.surfaces.aire}`).toBeLessThanOrEqual(TOLERANCE_ORACLE_SURFACES.aireMaillage * o.surfaces.aire);
@@ -322,12 +334,42 @@ describe("X.1-01 / X.1-02 / X.1-05 — éléments ajoutés au corpus depuis les 
 
   it("X.1-05 S5 : booléens exacts (union, différence, intersection) aux opérandes conservés, maillage du noyau dans la référence 3D", () => {
     const c = genererCorpus("S5", 100), d = c.documents[0]!;
-    expect(d.exacts?.filter((e) => e.operation !== "epaississement").map((e) => [e.operation, (e as StudioSolideExactBooleen).operandes.map((o) => o.id)])).toEqual([
+    expect(d.exacts?.filter((e) => e.operation !== "epaississement" && e.operation !== "solidification").map((e) => [e.operation, (e as StudioSolideExactBooleen).operandes.map((o) => o.id)])).toEqual([
       ["union", ["s5-0-op-a", "s5-0-op-b"]], ["difference", ["s5-1-op-a", "s5-1-op-b"]], ["intersection", ["s5-2-op-a", "s5-2-op-b"]],
     ]);
     // Les opérandes sont conservés, jamais rangés parmi les solides libres.
     expect((d.solides ?? []).some((s) => s.id.includes("-op-"))).toBe(false);
-    expect(c.couverture.absents.map((x) => x.element)).toEqual(["surfaces de subdivision"]);
+    expect(c.couverture.absents.map((x) => x.element)).toEqual(["subdivision de Catmull-Clark (faces quadrangulaires)"]);
+  });
+
+  it("X.1-05 S5 : surface de subdivision de Loop (tétraèdre régulier, niveau 1) et sa solidification polyédrique par le noyau, surface conservée — oracle de forme close (sommets a/4, points d'arête (a + b)/4 ; aire s² (3√2/4 + √3/2), volume 5 s³ / 24), dans l'enveloppe convexe du maillage de contrôle", () => {
+    const c = genererCorpus("S5", 100), d = c.documents[0]!, o = oracleCorpus("S5", 100);
+    const s = d.subdivisions?.[0];
+    expect(d.subdivisions?.map((x) => x.id)).toEqual([`s5-${SURFACES_S5.subdivision}-subdivision`]);
+    expect(s).toMatchObject({ type: "surface-subdivision", niveau: 1, faces: [[0, 1, 2], [0, 3, 1], [0, 2, 3], [1, 3, 2]] });
+    // Forme close indépendante du code de Loop : chaque sommet du niveau 1 est un a/4 ou un (a + b)/4 (centre retiré).
+    const t = parametresS5(SURFACES_S5.subdivision).subdivision.s;
+    const centre = { x: -20 * (SURFACES_S5.subdivision + 1), y: -20, z: t };
+    const attendus = new Set<string>();
+    const v = [[1, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]];
+    const k = (p: number[]) => p.map((x) => (t * x / 4).toFixed(9)).join(",");
+    for (let i = 0; i < 4; i++) { attendus.add(k(v[i]!)); for (let j = i + 1; j < 4; j++) attendus.add(k(v[i]!.map((x, n) => x + v[j]![n]!))); }
+    const m = studioMaillageSubdivise(s!);
+    const obtenus = new Set<string>();
+    for (let i = 0; i < m.positions.length; i += 3) obtenus.add([m.positions[i]! - centre.x, m.positions[i + 1]! - centre.y, m.positions[i + 2]! - centre.z].map((x) => x.toFixed(9)).join(","));
+    expect([...obtenus].sort()).toEqual([...attendus].sort());
+    // Enveloppe convexe du tétraèdre de contrôle : |x| + |y| + |z| ≤ 3 t pour chaque point (inégalités des quatre faces).
+    for (let i = 0; i < m.positions.length; i += 3) {
+      const [x, y, z] = [m.positions[i]! - centre.x, m.positions[i + 1]! - centre.y, m.positions[i + 2]! - centre.z];
+      for (const [a, b, cc] of [[1, 1, -1], [1, -1, 1], [-1, 1, 1], [-1, -1, -1]]) expect(a! * x + b! * y + cc! * z).toBeLessThanOrEqual(t + 1e-12);
+    }
+    proche(studioAireSubdivision(s!), t * t * ((3 * Math.SQRT2) / 4 + Math.sqrt(3) / 2), "aire du niveau 1");
+    proche(studioVolumeSubdivision(s!), (5 * t ** 3) / 24, "volume du niveau 1");
+    const e = d.exacts?.find((x) => x.operation === "solidification");
+    expect(e).toMatchObject({ id: `s5-${SURFACES_S5.solidifiee}-solidifiee`, subdivision: { id: `s5-${SURFACES_S5.solidifiee}-subdivision`, niveau: 1 } });
+    const ts = parametresS5(SURFACES_S5.solidifiee).subdivision.s;
+    expect(Math.abs(e!.resultat.volume - (5 * ts ** 3) / 24) / e!.resultat.volume).toBeLessThan(TOLERANCE_ORACLE_SURFACES.volumeNoyau);
+    expect(o.subdivisions).toMatchObject({ nombre: 1, solidifiees: 1 });
   });
 
   it("X.1-05 S5 : surface libre NURBS (quart de cylindre rationnel, pôles et poids) et surface épaissie par le noyau, surface conservée — oracle de forme close (aire π R L / 2, volume π/4 ((R + e)² − R²) L)", () => {

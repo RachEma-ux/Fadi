@@ -9,8 +9,8 @@
 import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { applyStudioCommands, newStudioDocument, studioCaptureBooleen, studioCaptureEpaississement, type StudioCommand, type StudioResultatExact } from "@parcours/atelier-model";
-import { BOOLEENS_S5, genererCorpus, operandesBooleenS5, parametresS5, quartCylindreS5, RESULTATS_EXACTS_S5, SURFACES_S5 } from "@parcours/atelier-model/studio-corpus";
+import { applyStudioCommands, newStudioDocument, studioCaptureBooleen, studioCaptureEpaississement, studioCaptureSolidification, type StudioCommand, type StudioResultatExact } from "@parcours/atelier-model";
+import { BOOLEENS_S5, genererCorpus, operandesBooleenS5, parametresS5, quartCylindreS5, RESULTATS_EXACTS_S5, SURFACES_S5, tetraedreS5 } from "@parcours/atelier-model/studio-corpus";
 import { MoteurExact } from "@parcours/geometry-exact";
 
 const FICHIER = fileURLToPath(new URL("../../../../packages/atelier-model/src/studio/corpus/fixtures/s5-exacts.ts", import.meta.url));
@@ -43,6 +43,17 @@ describe("X.1-05 — booléens exacts du corpus S5 recalculés par le noyau OCCT
       const attendu = (Math.PI / 4) * ((q.rayon + q.epaisseur) ** 2 - q.rayon ** 2) * q.hauteur;
       expect(Math.abs(r.volume - attendu) / attendu, "surface épaissie : forme close").toBeLessThan(1e-6);
     }
+    // Surface de subdivision solidifiée (X.1-05) : tétraèdre de Loop niveau 1, hors de la grille ; volume 5 s³ / 24.
+    {
+      const j = SURFACES_S5.solidifiee, t = parametresS5(j).subdivision.s;
+      const s = tetraedreS5(`s5-${j}-subdivision`, "surfaces", -20 * (j + 1), -20, t);
+      const doc = applyStudioCommands(newStudioDocument("s5"), [{ toolId: "studio.calque.creer", params: { id: "surfaces", name: "Surfaces libres NURBS (synthétique)", visible: true, locked: false } }, { toolId: "studio.subdivision.creer", params: s }] as StudioCommand[]);
+      const c = studioCaptureSolidification(doc, { subdivision: s.id });
+      if (!c.ok) throw new Error(c.message);
+      const r = M.executer(c.capture.entrees);
+      calcules[`s5-${j}-solidifiee`] = { brep: r.brep, maillage: r.maillage, volume: r.volume, aire: r.aire, faces: r.faces, solides: r.solides, moteur: r.moteur, versionMoteur: r.versionMoteur, empreinte: r.empreinte };
+      expect(Math.abs(r.volume - (5 * t ** 3) / 24) / r.volume, "subdivision solidifiée : forme close").toBeLessThan(1e-9);
+    }
     if (ECRIRE) {
       writeFileSync(FICHIER, `// Généré par apps/api/src/lib/studio-corpus-s5.test.ts (STUDIO_CORPUS_ECRIRE=1) : ne pas éditer à la main.\nimport type { StudioResultatExact } from "../../objets-3d/exacts.js";\n\nexport const RESULTATS_EXACTS_S5: Readonly<Record<string, StudioResultatExact>> = ${JSON.stringify(calcules)};\n`);
       return;
@@ -56,6 +67,7 @@ describe("X.1-05 — booléens exacts du corpus S5 recalculés par le noyau OCCT
     expect(doc.exacts?.map((e) => [e.id, e.operation, e.resultat.empreinte])).toEqual([
       ...BOOLEENS_S5.map((op, j) => [`s5-${j}-booleen`, op, calcules[`s5-${j}-booleen`]!.empreinte]),
       [`s5-${SURFACES_S5.epaissie}-epaissie`, "epaississement", calcules[`s5-${SURFACES_S5.epaissie}-epaissie`]!.empreinte],
+      [`s5-${SURFACES_S5.solidifiee}-solidifiee`, "solidification", calcules[`s5-${SURFACES_S5.solidifiee}-solidifiee`]!.empreinte],
     ]);
   });
 });

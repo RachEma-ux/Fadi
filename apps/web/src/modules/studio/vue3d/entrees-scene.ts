@@ -98,7 +98,33 @@ export function entreesLibres(l: Lecture): EntreeRendu[] {
       },
     };
   });
-  return [...libres, ...exacts, ...surfaces];
+  // Surfaces de subdivision (X.1-05) : maillage subdivisé (deux faces si ouvert) ; sélectionnée, son maillage de contrôle
+  // et un repère désignable par sommet (`userData.sommet`).
+  const subdivisions = (l.mesh.subdivisions ?? []).filter((s) => l.present(s.id)).map((s): EntreeRendu => {
+    const choisie = s.id === l.selection;
+    const aspect = aspectDe(l.doc, l.mode, s, 0xd8c5a8, choisie, !s.fermee);
+    return {
+      id: s.id, signature: `${l.cle(s.id)}|${cleAspect(aspect)}|${choisie ? "sommets" : ""}`, construire: () => {
+        const objets = volumeSeul(s, aspect, s.id, { solide: s.id, subdivision: s.id });
+        if (!choisie) return objets;
+        const reseau = new THREE.BufferGeometry();
+        reseau.setAttribute("position", new THREE.BufferAttribute(new Float32Array(s.controle.segments.flatMap(([a, b]) => { const p = s.controle.points[a]!, q = s.controle.points[b]!; return [p.x, p.y, p.z, q.x, q.y, q.z]; })), 3));
+        const polygone = new THREE.LineSegments(reseau, new THREE.LineDashedMaterial({ color: 0x7a4f1f, dashSize: 0.1, gapSize: 0.06 }));
+        polygone.computeLineDistances();
+        objets.push(polygone);
+        const taille = Math.max(0.03, Math.min(0.2, 0.02 * Math.max(...s.vertices.map((v) => Math.max(Math.abs(v.x), Math.abs(v.y), Math.abs(v.z))), 1) / 4));
+        s.controle.points.forEach((p, k) => {
+          const repere = new THREE.Mesh(new THREE.SphereGeometry(taille, 10, 8), new THREE.MeshBasicMaterial({ color: 0x7a4f1f }));
+          repere.position.set(p.x, p.y, p.z);
+          repere.name = `${s.id}#sommet-${k}`;
+          Object.assign(repere.userData, { subdivision: s.id, sommet: k });
+          objets.push(repere);
+        });
+        return objets;
+      },
+    };
+  });
+  return [...libres, ...exacts, ...surfaces, ...subdivisions];
 }
 
 /**

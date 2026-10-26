@@ -113,6 +113,9 @@ describe("Matrice d'échanges : donnée versionnée et cohérente", () => {
       // Lot W3-C (X.1-05) : catégorie « surfaces » (surfaces libres NURBS : OBJ maillé, STEP une fois épaissies, absentes
       // de SVG / DXF / IFC / STL), raison « surface-libre-hors-export ».
       10: "0cdd01983dd69550bb340aeb5f88fb959a7d2a2aafcf2ae7b77a061d4f1652f2",
+      // Lot W3-C (X.1-05, suite) : catégorie « subdivisions » (surfaces de subdivision : OBJ et STL maillés — STL si fermées —,
+      // STEP une fois solidifiées), raison « surface-subdivision-hors-export ».
+      11: "ba7e4ca422761cbd62b82ca3e0dc5eef4960ace484a5010a16a25863e1c42de4",
     };
     // Depuis la révision 8, l'empreinte couvre aussi les capacités par sens d'échange (EX-079).
     const capacites = STUDIO_MATRICE_ECHANGES.revision >= 8 ? { capacites: STUDIO_CAPACITES_PAR_SENS } : {};
@@ -290,6 +293,8 @@ const complet = (): StudioDocument => ({
     { id: "e1b", type: "box", placement: { origin: { x: 80.5, y: 0, z: 0 }, rotation: 0 }, width: 1, depth: 1, height: 1 },
   ])],
   // X.1-05 : une surface libre NURBS (bilinéaire, plane).
+  // X.1-05 : une surface de subdivision (tétraèdre, niveau 1).
+  subdivisions: [{ id: "sd1", type: "surface-subdivision", niveau: 1, sommets: [{ x: 101, y: 1, z: 1 }, { x: 101, y: -1, z: -1 }, { x: 99, y: 1, z: -1 }, { x: 99, y: -1, z: 1 }], faces: [[0, 1, 2], [0, 3, 1], [0, 2, 3], [1, 3, 2]] }],
   surfaces: [{ id: "sl1", type: "surface-libre", degreU: 1, degreV: 1, lignes: 2, colonnes: 2, controle: [{ x: 90, y: 0, z: 0 }, { x: 91, y: 0, z: 0 }, { x: 90, y: 1, z: 0 }, { x: 91, y: 1, z: 1 }] }],
   architecture: [
     { id: "m1", type: "wall", layerId: "murs", axis: [{ x: 0, y: 20 }, { x: 12, y: 20 }], thickness: 0.2, height: 3, base: 0, justification: "center" },

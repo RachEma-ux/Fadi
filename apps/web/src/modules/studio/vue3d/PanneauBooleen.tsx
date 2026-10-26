@@ -28,6 +28,7 @@ const LIBELLES_NOYAU: Record<string, string> = { absent: "non chargé", chargeme
 
 /** Description d'un opérande possible (solide libre ou solide exact, booléen ou surface épaissie). */
 export function descriptionOperande(s: StudioOperandeExact): string {
+  if (s.type === "exact" && s.operation === "solidification") return `Solide exact (subdivision solidifiée, niveau ${s.subdivision.niveau}) · ${nombre(s.resultat.volume)} m³`;
   if (s.type === "exact" && s.operation === "epaississement") return `Solide exact (surface épaissie de ${nombre(s.epaisseur)} m) · ${nombre(s.resultat.volume)} m³`;
   if (s.type === "exact") return `Solide exact (${LIBELLES_OPERATION[s.operation]}) · ${nombre(s.resultat.volume)} m³`;
   return descriptionSolide(s, nombre);

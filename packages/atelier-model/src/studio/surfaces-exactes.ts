@@ -4,6 +4,7 @@ import {
   STUDIO_SENS_EPAISSEUR, studioOperationNurbs, type StudioOperationNurbs, type StudioSensEpaisseur,
 } from "./objets-3d/surfaces-libres.js";
 import type { StudioResultatExact } from "./objets-3d/exacts.js";
+import { studioOperationPolyedre, type StudioOperationPolyedre } from "./objets-3d/subdivisions.js";
 
 /**
  * Épaississement exact d'une surface libre (X.1-05) — la part pure, sans noyau ni Worker, sur le modèle du booléen
@@ -60,4 +61,41 @@ export function studioVerifierEpaississement(document: StudioDocument, capture: 
 /** ⑦ : commande d'engagement explicite du résultat exact. */
 export function studioCommandeEpaississement(capture: StudioCaptureEpaississement, id: string, resultat: StudioResultatExact): StudioCommand {
   return { toolId: "studio.surface.epaissir", params: { id, surface: capture.surface, epaisseur: capture.epaisseur, sens: capture.sens, resultat } };
+}
+
+// ——— Solidification d'une surface de subdivision fermée (X.1-05) ———
+
+export interface StudioCaptureSolidification {
+  subdivision: string;
+  /** Entrée du noyau exact (opération `polyedre` : maillage subdivisé de la surface). */
+  entrees: StudioOperationPolyedre;
+  /** Empreinte du contenu de la surface au moment de la capture (immuable). */
+  empreinteSurface: string;
+}
+
+export type StudioResultatCaptureSolidification = { ok: true; capture: StudioCaptureSolidification } | { ok: false; message: string };
+
+/** ① ② : capture d'une solidification (maillage fermé seulement ; un maillage ouvert est refusé avec sa raison). */
+export function studioCaptureSolidification(document: StudioDocument, params: { subdivision: string }): StudioResultatCaptureSolidification {
+  const doc = validateStudioDocument(document);
+  if (!params.subdivision) return { ok: false, message: "Choisissez la surface de subdivision à solidifier." };
+  const s = doc.subdivisions?.find((x) => x.id === params.subdivision);
+  if (!s) return { ok: false, message: `Surface de subdivision introuvable : ${params.subdivision}.` };
+  if (studioLayerState(doc, s.layerId)?.locked) return { ok: false, message: "La surface est sur un calque verrouillé." };
+  const op = studioOperationPolyedre(s);
+  if (typeof op === "string") return { ok: false, message: `Solidification impossible : ${op}.` };
+  return { ok: true, capture: Object.freeze({ subdivision: s.id, entrees: op, empreinteSurface: studioEmpreinteContenu([s]) }) };
+}
+
+/** ⑥ : droit d'écriture, surface présente et identique à la capture ; sinon refus (résultat périmé, jamais engagé). */
+export function studioVerifierSolidification(document: StudioDocument, capture: StudioCaptureSolidification, modifiable: boolean): StudioVerificationEpaississement {
+  if (!modifiable) return { ok: false, motif: "droits", message: "Lecture seule : le résultat ne peut pas être engagé." };
+  const s = validateStudioDocument(document).subdivisions?.find((x) => x.id === capture.subdivision);
+  if (!s || studioEmpreinteContenu([s]) !== capture.empreinteSurface) return { ok: false, motif: "perime", message: "Résultat périmé : la surface a changé depuis le calcul ; il n’est pas engagé." };
+  return { ok: true };
+}
+
+/** ⑦ : commande d'engagement explicite du solide polyédrique du noyau. */
+export function studioCommandeSolidification(capture: StudioCaptureSolidification, id: string, resultat: StudioResultatExact): StudioCommand {
+  return { toolId: "studio.subdivision.solidifier", params: { id, subdivision: capture.subdivision, resultat } };
 }

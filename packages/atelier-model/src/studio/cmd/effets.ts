@@ -46,8 +46,8 @@ export interface StudioEffetsCommande {
   origine: StudioOrigineEffets;
 }
 
-type Famille = "objects" | "layers" | "dimensions" | "annotations" | "solides" | "exacts" | "surfaces" | "cotesFaces" | "architecture" | "proprietes" | "scenes" | "nonNatifs";
-const FAMILLES: readonly Famille[] = ["objects", "layers", "dimensions", "annotations", "solides", "exacts", "surfaces", "cotesFaces", "architecture", "proprietes", "scenes", "nonNatifs"];
+type Famille = "objects" | "layers" | "dimensions" | "annotations" | "solides" | "exacts" | "surfaces" | "subdivisions" | "cotesFaces" | "architecture" | "proprietes" | "scenes" | "nonNatifs";
+const FAMILLES: readonly Famille[] = ["objects", "layers", "dimensions", "annotations", "solides", "exacts", "surfaces", "subdivisions", "cotesFaces", "architecture", "proprietes", "scenes", "nonNatifs"];
 
 /** Domaines lus par chaque famille d'éléments (une modification les invalide). Les publications lisent tout. */
 const LECTEURS: Record<Famille, readonly StudioDomaineDerive[]> = {
@@ -59,6 +59,7 @@ const LECTEURS: Record<Famille, readonly StudioDomaineDerive[]> = {
   exacts: ["maillage-3d", "quantites", "exports", "publications"],
   // Surfaces libres (X.1-05) : vue 3D, exports (OBJ ; comptées ailleurs) et publications ; aucun métré.
   surfaces: ["maillage-3d", "exports", "publications"],
+  subdivisions: ["maillage-3d", "exports", "publications"],
   // Cotes de faces 3D (lot G2) : lues par la vue 3D et les publications (aucun format ne les écrit).
   cotesFaces: ["maillage-3d", "publications"],
   architecture: ["plan-2d", "maillage-3d", "quantites", "exports", "publications"],

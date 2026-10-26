@@ -7,7 +7,7 @@ import { aplatir, extruder } from "../commandes/volume.js";
 import { creerBoite, creerPrisme, decalerFace, deplacerSolide, diviserFace, pivoterSolide, resoudreLien, suivreSourcesSolides, supprimerSolides } from "../commandes/volume-libre.js";
 import { creerBooleen, idsReserves } from "../commandes/booleen.js";
 import { creerCoteFace, suivreCotesFaces } from "../commandes/cotes-faces.js";
-import { creerSurface, epaissirSurface, modifierSurface } from "../commandes/surfaces.js";
+import { creerSubdivision, creerSurface, epaissirSurface, modifierSurface, solidifierSubdivision } from "../commandes/surfaces.js";
 import { definirPropriete, elaguerProprietes, retirerPropriete, type StudioPropriete } from "../exigences/proprietes.js";
 import { studioExtrudedRingVertices } from "../objets/polyligne.js";
 import { creerScene, definirApparence, modifierScene, retirerApparences, retirerApparencesOrphelines, supprimerScenes } from "../commandes/scenes.js";
@@ -62,6 +62,9 @@ const HANDLERS: Record<StudioCommandToolId, Gestionnaire> = {
   "studio.surface.nurbs": creerSurface,
   "studio.surface.modifier": modifierSurface,
   "studio.surface.epaissir": epaissirSurface,
+  // X.1-05 : surfaces de subdivision (Loop) ; leurs sommets de contrôle se modifient par `studio.surface.modifier`.
+  "studio.subdivision.creer": creerSubdivision,
+  "studio.subdivision.solidifier": solidifierSubdivision,
   "studio.dessin.cote-angulaire": creerCoteAngulaire,
   "studio.dessin.texte": creerTexte,
   // Architecture (A.4) : murs et ouvertures ; la part architecturale des commandes générales est branchée ci-dessus.
@@ -102,8 +105,8 @@ export function applyStudioCommands(document: StudioDocument, commands: readonly
   const avant = studioExtrudedRingVertices(current.objects);
   const state: Etat & { proprietes?: StudioPropriete[] } = {
     proprietes: current.proprietes ?? [],
-    id: current.id, objects: current.objects, layers: current.layers ?? [], dimensions: current.dimensions ?? [], solides: current.solides ?? [], exacts: current.exacts ?? [], surfaces: current.surfaces ?? [], cotesFaces: current.cotesFaces ?? [], annotations: current.annotations ?? [], architecture: current.architecture ?? [], scenes: current.scenes ?? [], nonNatifs: current.nonNatifs ?? [], graphismes: current.graphismes ?? [], sources: current.sources ?? [], ...(current.systemeProjet ? { systemeProjet: current.systemeProjet } : {}),
-    ids: new Set([...current.objects.map((o) => o.id), ...(current.dimensions ?? []).map((d) => d.id), ...(current.solides ?? []).map((s) => s.id), ...(current.exacts ?? []).flatMap(idsReserves), ...(current.surfaces ?? []).map((s) => s.id), ...(current.annotations ?? []).map((a) => a.id), ...(current.architecture ?? []).map((a) => a.id), ...(current.nonNatifs ?? []).map((n) => n.id), ...(current.graphismes ?? []).map((g) => g.id), ...(current.cotesFaces ?? []).map((c) => c.id)]),
+    id: current.id, objects: current.objects, layers: current.layers ?? [], dimensions: current.dimensions ?? [], solides: current.solides ?? [], exacts: current.exacts ?? [], surfaces: current.surfaces ?? [], subdivisions: current.subdivisions ?? [], cotesFaces: current.cotesFaces ?? [], annotations: current.annotations ?? [], architecture: current.architecture ?? [], scenes: current.scenes ?? [], nonNatifs: current.nonNatifs ?? [], graphismes: current.graphismes ?? [], sources: current.sources ?? [], ...(current.systemeProjet ? { systemeProjet: current.systemeProjet } : {}),
+    ids: new Set([...current.objects.map((o) => o.id), ...(current.dimensions ?? []).map((d) => d.id), ...(current.solides ?? []).map((s) => s.id), ...(current.exacts ?? []).flatMap(idsReserves), ...(current.surfaces ?? []).map((s) => s.id), ...(current.subdivisions ?? []).map((s) => s.id), ...(current.annotations ?? []).map((a) => a.id), ...(current.architecture ?? []).map((a) => a.id), ...(current.nonNatifs ?? []).map((n) => n.id), ...(current.graphismes ?? []).map((g) => g.id), ...(current.cotesFaces ?? []).map((c) => c.id)]),
   };
   // Solides avant le lot (les solides sont remplacés, jamais modifiés en place) : le suivi des sources en dépend.
   const solidesAvant = new Map((current.solides ?? []).map((s) => [s.id, s]));
@@ -131,7 +134,7 @@ export function applyStudioCommands(document: StudioDocument, commands: readonly
   // Les propriétés d'un objet disparu (supprimé, mur supprimé avec ses ouvertures) disparaissent avec lui.
   const presents = new Set([...state.objects.map((o) => o.id), ...state.architecture.map((a) => a.id)]);
   const proprietes = elaguerProprietes(state.proprietes ?? [], (id) => presents.has(id));
-  const result = validateStudioDocument(sortie(state.id, state.objects, state.layers, state.dimensions, state.solides, state.annotations, state.architecture, proprietes, state.scenes, state.nonNatifs, state.exacts, state.graphismes, state.systemeProjet, state.sources, state.cotesFaces, state.surfaces));
+  const result = validateStudioDocument(sortie(state.id, state.objects, state.layers, state.dimensions, state.solides, state.annotations, state.architecture, proprietes, state.scenes, state.nonNatifs, state.exacts, state.graphismes, state.systemeProjet, state.sources, state.cotesFaces, state.surfaces, state.subdivisions));
   // Budget d'écriture des extrusions de polylignes fermées : un lot ne peut pas le dépasser ni l'aggraver une fois
   // dépassé ; une révision enregistrée reste toujours lisible (le budget ne s'applique qu'aux écritures).
   const apres = studioExtrudedRingVertices(result.objects);
