@@ -9,7 +9,7 @@
  * (`pasCouverts`) : ils repartent ensuite, sur la révision que l'enveloppe aura produite.
  * Pur : ni React, ni DOM, ni IndexedDB (l'écriture est dans `lib/local-store.ts`).
  */
-import { studioChevauchements, studioElementsModifies, type StudioCommand } from "@parcours/atelier-model";
+import { STUDIO_CONTRACT, studioChevauchements, studioElementsModifies, type StudioCommand } from "@parcours/atelier-model";
 import type { StudioContext } from "../../../lib/api";
 import type { PlanEnvoi } from "../import/envoi";
 import { annulerBrouillon, appliquerBrouillon, avecPlancher, creerBrouillon, documentBrouillon, peutAnnuler, type Brouillon } from "../planche2d/brouillon";
@@ -22,6 +22,21 @@ export interface ConflitHorsLigne {
   headRevisionId: string | null;
   at: string;
 }
+
+/**
+ * Enveloppe refusée par le serveur pour une autre raison qu'une révision périmée (EX-049) : conservée telle quelle,
+ * avec ses identifiants de déduplication, et affichée « rejetée » à la reprise ; jamais renvoyée d'elle-même.
+ */
+export interface RejetHorsLigne {
+  requestIds: string[];
+  baseRevisionId: string;
+  lots: StudioCommand[][];
+  statut: number;
+  code: string | null;
+  at: string;
+}
+/** Prévisualisation (tracé) en cours au moment de la dernière écriture : à la reprise, elle est « abandonnée ». */
+export interface ApercuHorsLigne { outil: string; depuis: string }
 
 export interface BrouillonHorsLigne {
   version: typeof VERSION_BROUILLON_HORS_LIGNE;
@@ -36,17 +51,21 @@ export interface BrouillonHorsLigne {
   /** Nombre de pas (en tête de `pas`) mis dans `plan` ; 0 sans plan. */
   pasCouverts: number;
   conflit: ConflitHorsLigne | null;
+  /** Version du contrat de commandes des enveloppes (absente : écrite avant EX-049, `studio-commands/1`). */
+  contrat?: string;
+  rejet?: RejetHorsLigne | null;
+  apercu?: ApercuHorsLigne | null;
 }
 
 /** Clé d'une variante POUR un utilisateur : deux comptes du même appareil n'ont jamais la même ligne. */
 export const cleVariante = (userId: string, projectId: string, studyId: string, variantId: string): string => [userId, projectId, studyId, variantId].join("|");
 
-export function versHorsLigne(userId: string, base: StudioContext, b: Brouillon, plan: PlanEnvoi | null, pasCouverts: number, conflit: ConflitHorsLigne | null): BrouillonHorsLigne {
-  return { version: VERSION_BROUILLON_HORS_LIGNE, userId, base, pas: b.pas.map(p => [...p]), refaire: b.refaire.map(p => [...p]), plan, pasCouverts: plan ? pasCouverts : 0, conflit };
+export function versHorsLigne(userId: string, base: StudioContext, b: Brouillon, plan: PlanEnvoi | null, pasCouverts: number, conflit: ConflitHorsLigne | null, extra: { rejet?: RejetHorsLigne | null; apercu?: ApercuHorsLigne | null } = {}): BrouillonHorsLigne {
+  return { version: VERSION_BROUILLON_HORS_LIGNE, userId, base, pas: b.pas.map(p => [...p]), refaire: b.refaire.map(p => [...p]), plan, pasCouverts: plan ? pasCouverts : 0, conflit, contrat: STUDIO_CONTRACT, rejet: extra.rejet ?? null, apercu: extra.apercu ?? null };
 }
 
 /** Rien à conserver : ni commande en attente, ni enveloppe non confirmée, ni conflit. */
-export const horsLigneVide = (h: Pick<BrouillonHorsLigne, "pas" | "plan" | "conflit">): boolean => h.pas.length === 0 && !h.plan && !h.conflit;
+export const horsLigneVide = (h: Pick<BrouillonHorsLigne, "pas" | "plan" | "conflit" | "rejet">): boolean => h.pas.length === 0 && !h.plan && !h.conflit && !h.rejet;
 
 const estObjet = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v);
 const estLots = (v: unknown): v is StudioCommand[][] => Array.isArray(v) && v.every(l => Array.isArray(l) && l.every(c => estObjet(c) && typeof c.toolId === "string"));
@@ -74,11 +93,40 @@ export function lireHorsLigne(json: string, userId: string): BrouillonHorsLigne 
   const c = v.conflit;
   if (c !== null && !(estObjet(c) && (c.headRevisionId === null || typeof c.headRevisionId === "string") && typeof c.at === "string")) throw new Error("conflit illisible");
   const plan = lirePlan(v.plan ?? null);
+  // Contrat des enveloppes : un autre contrat n'est jamais rejoué ni réinterprété (EX-049).
+  if (v.contrat !== undefined && v.contrat !== STUDIO_CONTRACT) throw new Error("contrat de commandes incompatible");
+  const rejet = lireRejet(v.rejet ?? null);
+  const a = v.apercu ?? null;
+  if (a !== null && !(estObjet(a) && typeof a.outil === "string" && typeof a.depuis === "string")) throw new Error("aperçu illisible");
   const n = v.pasCouverts;
   if (typeof n !== "number" || !Number.isInteger(n) || n < 0 || n > v.pas.length || (!plan && n !== 0)) throw new Error("pas couverts illisibles");
   // Les enveloppes portent exactement les pas couverts, dans l'ordre : sinon un rejeu enverrait autre chose.
   if (plan && JSON.stringify(v.pas.slice(0, n).flat()) !== JSON.stringify(plan.lots.flat())) throw new Error("enveloppes et pas incohérents");
-  return { version: VERSION_BROUILLON_HORS_LIGNE, userId: v.userId, base: base as unknown as StudioContext, pas: v.pas, refaire: v.refaire, plan, pasCouverts: n, conflit: (c as ConflitHorsLigne | null) ?? null };
+  return { version: VERSION_BROUILLON_HORS_LIGNE, userId: v.userId, base: base as unknown as StudioContext, pas: v.pas, refaire: v.refaire, plan, pasCouverts: n, conflit: (c as ConflitHorsLigne | null) ?? null, contrat: STUDIO_CONTRACT, rejet, apercu: a as ApercuHorsLigne | null };
+}
+
+function lireRejet(v: unknown): RejetHorsLigne | null {
+  if (v === null) return null;
+  if (!estObjet(v) || !estLots(v.lots) || !Array.isArray(v.requestIds) || typeof v.baseRevisionId !== "string" || typeof v.statut !== "number" || !(v.code === null || typeof v.code === "string") || typeof v.at !== "string") throw new Error("rejet illisible");
+  if (v.requestIds.length !== v.lots.length || !v.requestIds.every((id) => typeof id === "string" && id.length > 0)) throw new Error("identifiants du rejet illisibles");
+  return { requestIds: v.requestIds as string[], baseRevisionId: v.baseRevisionId, lots: v.lots, statut: v.statut, code: v.code as string | null, at: v.at };
+}
+
+/** État d'une opération locale à la reprise d'une session (EX-049). */
+export type EtatOperationReprise = "confirmee" | "en-attente" | "rejetee" | "conflictuelle" | "previsualisation-abandonnee";
+export interface OperationReprise { etat: EtatOperationReprise; requestId: string | null; commandes: number }
+
+/**
+ * Classe les opérations d'un brouillon relu (reprise après interruption) : lots déjà accusés (confirmés), lots non
+ * accusés (en attente de synchronisation — conflictuels si un conflit est conservé), enveloppe rejetée (gardée avec ses
+ * identifiants), prévisualisation abandonnée. Chaque opération garde son identité de déduplication (`requestId`).
+ */
+export function classerReprise(h: Pick<BrouillonHorsLigne, "plan" | "conflit" | "rejet" | "apercu">): OperationReprise[] {
+  const out: OperationReprise[] = [];
+  if (h.plan) h.plan.lots.forEach((lot, i) => out.push({ etat: i < h.plan!.envoyes ? "confirmee" : h.conflit ? "conflictuelle" : "en-attente", requestId: h.plan!.requestIds[i]!, commandes: lot.length }));
+  if (h.rejet) h.rejet.lots.forEach((lot, i) => out.push({ etat: "rejetee", requestId: h.rejet!.requestIds[i]!, commandes: lot.length }));
+  if (h.apercu) out.push({ etat: "previsualisation-abandonnee", requestId: null, commandes: 0 });
+  return out;
 }
 
 /**

@@ -288,7 +288,10 @@ const support = globalThis.__survivor ?? { acct: boss, client: await mfaLogin(bo
 const owner = await register('proprio');
 const imported = await owner.a.call('POST', '/examples/p118-exemple-complet/import');
 check('propriétaire : exemple importé', imported.status === 201, imported.status);
-const pid = imported.body.id;
+// X.2-02 (ADR-STUDIO-PILOTE-01 P-12) : la référence protégée de l'exemple refuse toute invitation ; le scénario travaille
+// donc dans sa copie de travail (même modèle, mêmes documents), où le lecteur peut être invité.
+check('X.2-02 : invitation refusée sur le projet de référence (403 reference-protegee)', (await owner.a.call('POST', `/projects/${imported.body.id}/members`, { email: `ref-${randomUUID().slice(0, 8)}@example.com`, role: 'lecteur' })).body?.motif === 'reference-protegee');
+const pid = (await owner.a.call('POST', `/projects/${imported.body.id}/copies`, { name: 'P.118 · support' })).body.id;
 const upload = await owner.a.call('POST', `/projects/${pid}/steps/1/files`, Buffer.from('contenu confidentiel'), { 'content-type': 'text/plain', 'x-file-name': 'note.txt', 'x-file-type': 'text/plain' });
 check('propriétaire : pièce jointe déposée', upload.status === 201, upload.status);
 const fileId = upload.body?.file?.id;

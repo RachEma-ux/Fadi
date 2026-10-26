@@ -18,8 +18,13 @@
  *   rouvrir la planche sans réseau.
  *   Les deux tables Studio sont vidées à la déconnexion et quand un autre utilisateur se connecte sur l'appareil
  *   (`auth-context`) ; chaque clé commence par l'identifiant de l'utilisateur. La version 6 ajoute ce propriétaire :
- *   les lignes de la version 5, sans propriétaire, ne peuvent être attribuées à personne et sont supprimées (elles ne
- *   sont jamais rejouées sous un autre compte).
+ *   les lignes de la version 5, sans propriétaire, ne peuvent être attribuées à personne : elles ne sont jamais rejouées
+ *   sous un autre compte.
+ * - `quarantaine` (MIG-COEX-04, ADR-STUDIO-PILOTE-01 P-12, règle « ne jamais supprimer ») : les données locales qu'une
+ *   montée de version ne peut attribuer à aucun propriétaire (brouillons et contextes Studio v5, lots de l'Atelier
+ *   antérieurs à la v7) n'y sont plus vidées : elles sont copiées telles quelles en quarantaine, puis retirées de leur
+ *   table d'origine (jamais relues, comptées ni rejouées). La quarantaine se consulte et s'exporte (Paramètres, « Données
+ *   conservées par ce navigateur ») ; aucune tâche ne la vide, ni la déconnexion, ni l'oubli d'un projet.
  *
  * Les caches de lecture restent facultatifs. La file d'écriture, elle,
  * expose tout échec : le brouillon reste en mémoire et peut être enregistré
@@ -101,6 +106,56 @@ export interface StudioContexteEntry {
   luA: string;
 }
 
+/** Donnée locale sans propriétaire mise en quarantaine par une montée de version (MIG-COEX-04). */
+export interface QuarantaineEntry {
+  /** `${table}|${version}|${clé d'origine}` */
+  id: string;
+  /** Table d'origine. */
+  table: "lots" | "studioBrouillons" | "studioContextes";
+  /** Version du schéma dont la montée l'a mise en quarantaine. */
+  version: number;
+  motif: "sans-proprietaire";
+  /** Ligne d'origine, telle quelle (JSON). */
+  donnees: string;
+  misEnQuarantaineA: string;
+}
+export const SCHEMA_QUARANTAINE = "id, table, misEnQuarantaineA";
+
+/** Transaction minimale d'une montée de version (Dexie) : lecture, ajout et vidage d'une table. */
+export interface TransactionMontee {
+  table(nom: string): { toArray(): Promise<unknown[]>; bulkPut(lignes: unknown[]): Promise<unknown>; clear(): Promise<unknown> };
+}
+const CLES_ORIGINE: Record<QuarantaineEntry["table"], string> = { lots: "id", studioBrouillons: "cle", studioContextes: "cle" };
+
+/**
+ * Met en quarantaine toutes les lignes de `table` (aucune n'a de propriétaire attribuable) puis les retire de la table
+ * d'origine : rien n'est perdu. Idempotent pour une même ligne (identifiant stable). Rend le nombre de lignes déplacées.
+ */
+export async function mettreEnQuarantaine(tx: TransactionMontee, table: QuarantaineEntry["table"], version: number, maintenant = new Date().toISOString()): Promise<number> {
+  const lignes = await tx.table(table).toArray();
+  if (lignes.length) {
+    const cle = CLES_ORIGINE[table];
+    await tx.table("quarantaine").bulkPut(lignes.map((ligne, i): QuarantaineEntry => {
+      const origine = (ligne as Record<string, unknown>)[cle];
+      return { id: `${table}|${version}|${typeof origine === "string" ? origine : `#${i}`}`, table, version, motif: "sans-proprietaire", donnees: JSON.stringify(ligne), misEnQuarantaineA: maintenant };
+    }));
+  }
+  await tx.table(table).clear();
+  return lignes.length;
+}
+
+/** Export de la quarantaine (fichier JSON lisible), lignes d'origine restituées. */
+export function exportQuarantaine(entrees: readonly QuarantaineEntry[], maintenant = new Date().toISOString()): string {
+  return JSON.stringify({
+    format: "fadi-quarantaine-locale/1", exporteA: maintenant,
+    entrees: entrees.map((e) => {
+      let ligne: unknown;
+      try { ligne = JSON.parse(e.donnees); } catch { ligne = e.donnees; }
+      return { id: e.id, table: e.table, version: e.version, motif: e.motif, misEnQuarantaineA: e.misEnQuarantaineA, ligne };
+    }),
+  }, null, 2);
+}
+
 class FadiLocalDb extends Dexie {
   modelCache!: EntityTable<ModelCacheEntry, "projectId">;
   keyValue!: EntityTable<KeyValueEntry, "key">;
@@ -108,6 +163,7 @@ class FadiLocalDb extends Dexie {
   studioBrouillons!: EntityTable<StudioBrouillonEntry, "cle">;
   studioContextes!: EntityTable<StudioContexteEntry, "cle">;
   comPhotos!: EntityTable<ComPhotoEntry, "id">;
+  quarantaine!: EntityTable<QuarantaineEntry, "id">;
 
   constructor() {
     super("fadi-local");
@@ -120,17 +176,20 @@ class FadiLocalDb extends Dexie {
       .upgrade((tx) => tx.table("modelCache").clear());
     // Studio hors ligne : deux tables ajoutées, aucune table existante modifiée (les lots de l'Atelier sont intacts).
     this.version(5).stores({ modelCache: "projectId", keyValue: "key", lots: "id, projectId, ordre", studioBrouillons: "cle, projectId", studioContextes: "cle, projectId" });
-    // Studio : propriétaire dans chaque clé ; les lignes v5 sans propriétaire ne sont attribuables à personne (supprimées).
+    // Studio : propriétaire dans chaque clé ; les lignes v5 sans propriétaire ne sont attribuables à personne : mises en
+    // quarantaine (MIG-COEX-04), jamais supprimées.
     this.version(6)
-      .stores({ modelCache: "projectId", keyValue: "key", lots: "id, projectId, ordre", studioBrouillons: "cle, userId, projectId", studioContextes: "cle, userId, projectId" })
-      .upgrade(async (tx) => { await tx.table("studioBrouillons").clear(); await tx.table("studioContextes").clear(); });
+      .stores({ modelCache: "projectId", keyValue: "key", lots: "id, projectId, ordre", studioBrouillons: "cle, userId, projectId", studioContextes: "cle, userId, projectId", quarantaine: "id, table, misEnQuarantaineA" })
+      .upgrade(async (tx) => { await mettreEnQuarantaine(tx, "studioBrouillons", 6); await mettreEnQuarantaine(tx, "studioContextes", 6); });
     // Gestion des comptes (phase 2) : propriétaire de chaque lot de l'Atelier ; les lots antérieurs, sans propriétaire,
     // ne sont attribuables à personne et ne doivent jamais être rejoués sous un autre compte (supprimés, comme Studio v6).
     this.version(7)
-      .stores({ modelCache: "projectId", keyValue: "key", lots: "id, projectId, ordre, userId", studioBrouillons: "cle, userId, projectId", studioContextes: "cle, userId, projectId" })
-      .upgrade(async (tx) => { await tx.table("lots").clear(); });
+      .stores({ modelCache: "projectId", keyValue: "key", lots: "id, projectId, ordre, userId", studioBrouillons: "cle, userId, projectId", studioContextes: "cle, userId, projectId", quarantaine: "id, table, misEnQuarantaineA" })
+      .upgrade(async (tx) => { await mettreEnQuarantaine(tx, "lots", 7); });
     // Communication (lot COM-13) : photos en attente d'envoi, table ajoutée, aucune table existante modifiée.
-    this.version(8).stores({ modelCache: "projectId", keyValue: "key", lots: "id, projectId, ordre, userId", studioBrouillons: "cle, userId, projectId", studioContextes: "cle, userId, projectId", comPhotos: "id, userId, projectId" });
+    this.version(8).stores({ modelCache: "projectId", keyValue: "key", lots: "id, projectId, ordre, userId", studioBrouillons: "cle, userId, projectId", studioContextes: "cle, userId, projectId", comPhotos: "id, userId, projectId", quarantaine: "id, table, misEnQuarantaineA" });
+    // MIG-COEX-04 : la quarantaine existe aussi sur les appareils déjà passés en v8 (table ajoutée, rien d'autre ne change).
+    this.version(9).stores({ modelCache: "projectId", keyValue: "key", lots: "id, projectId, ordre, userId", studioBrouillons: "cle, userId, projectId", studioContextes: "cle, userId, projectId", comPhotos: "id, userId, projectId", quarantaine: "id, table, misEnQuarantaineA" });
   }
 }
 
@@ -331,6 +390,10 @@ export const localStore = {
   },
   /** « Vider les caches locaux » : les modèles mis en cache ; les lots en attente ne sont jamais supprimés (ils repartent au retour du réseau). */
   clearModelCache: () => safe((d) => d.modelCache.clear(), undefined),
+  /** Quarantaine (MIG-COEX-04) : consultation, la plus récente d'abord ; jamais vidée par l'application. */
+  quarantaineLister: () => safe(async (d) => (await d.quarantaine.toArray()).sort((a, b) => b.misEnQuarantaineA.localeCompare(a.misEnQuarantaineA) || a.id.localeCompare(b.id)), [] as QuarantaineEntry[]),
+  /** Quarantaine exportée en JSON (lignes d'origine restituées). */
+  quarantaineExporter: async () => exportQuarantaine(await localStore.quarantaineLister()),
   // --- Lots de commandes de l'Atelier typé ---
   lots: readLots,
   putLot,

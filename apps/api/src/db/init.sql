@@ -832,6 +832,15 @@ ALTER TABLE studio_variants DROP CONSTRAINT IF EXISTS studio_variants_derived_fr
 ALTER TABLE studio_variants DROP CONSTRAINT IF EXISTS studio_variants_derived_from_revision,
   ADD CONSTRAINT studio_variants_derived_from_revision FOREIGN KEY(derived_from_variant_id, derived_from_revision_id)
   REFERENCES studio_revisions(variant_id, id) DEFERRABLE INITIALLY DEFERRED NOT VALID;
+-- Mode de dérivation (TR-EX-013 / TR-INV-003, ADR-STUDIO-PILOTE-01 P-12) : NULL = version du même ensemble d'objets
+-- (identifiants conservés, comportement historique) ; 'copie' = copie indépendante à nouvelles identités, avec sa
+-- provenance par élément (nouvel identifiant → identifiant source). Colonnes nullables, aucune ligne réécrite.
+ALTER TABLE studio_variants ADD COLUMN IF NOT EXISTS derivation_mode text;
+ALTER TABLE studio_variants ADD COLUMN IF NOT EXISTS derivation_identities jsonb;
+ALTER TABLE studio_variants DROP CONSTRAINT IF EXISTS studio_variants_derivation_mode_check,
+  ADD CONSTRAINT studio_variants_derivation_mode_check
+  CHECK ((derivation_mode IS NULL OR (derivation_mode = 'copie' AND derived_from_variant_id IS NOT NULL))
+    AND ((derivation_mode IS NULL) = (derivation_identities IS NULL))) NOT VALID;
 -- Publications Studio (E.4-01 à E.4-06, E.3-06) : une publication porte sur UNE révision d'une variante, identifiée par
 -- son identifiant et l'empreinte SHA-256 de son document ; statuts travail → soumis → approuve | refuse → diffuse, et
 -- retire (jamais de suppression). L'approbation est liée à la révision et à l'empreinte examinées ; la diffusion fige
@@ -1321,6 +1330,41 @@ $$;
 CREATE OR REPLACE TRIGGER studio_external_model_events_no_update BEFORE UPDATE ON studio_external_model_events
   FOR EACH ROW EXECUTE FUNCTION studio_external_model_event_immutable();
 
+-- Journal d'accès Studio (TR-EX-046, ADR-STUDIO-PILOTE-01 P-12, lib/studio-journal-acces.ts) : événements sensibles du
+-- serveur — refus d'accès (401, 403, 404, 423) et sorties de contenu (exports, fichiers) des routes Studio. Minimisation :
+-- ni adresse IP, ni courriel, ni corps, ni géométrie ; la route est enregistrée sous sa forme générique (`:studyId`…).
+-- Conservation : 12 mois par défaut (STUDIO_ACCESS_RETENTION_MONTHS), puis purge par la tâche horaire, chaque purge
+-- datée dans `studio_access_purges`. Les lignes ne sont jamais modifiées (UPDATE refusée) ; seule la purge les supprime.
+-- Le journal d'audit des publications (`studio_publication_events`) n'est pas concerné : il reste immuable.
+CREATE TABLE IF NOT EXISTS studio_access_events (
+  id text PRIMARY KEY,
+  occurred_at timestamptz NOT NULL DEFAULT now(),
+  -- Compte : clé vers users (EX-001) ; la suppression d'un compte efface ses événements (minimisation).
+  actor_id text REFERENCES users(id) ON DELETE CASCADE,
+  project_id text NOT NULL,
+  method text NOT NULL,
+  route text NOT NULL CONSTRAINT studio_access_events_route_length CHECK (length(route) BETWEEN 1 AND 300),
+  status integer NOT NULL,
+  kind text NOT NULL CONSTRAINT studio_access_events_kind_check CHECK (kind IN ('refus', 'export')),
+  motif text
+);
+CREATE INDEX IF NOT EXISTS studio_access_events_occurred_idx ON studio_access_events(occurred_at);
+CREATE INDEX IF NOT EXISTS studio_access_events_project_idx ON studio_access_events(project_id, occurred_at);
+CREATE OR REPLACE FUNCTION studio_access_event_immutable() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'studio_access_event_immutable';
+END;
+$$;
+CREATE OR REPLACE TRIGGER studio_access_events_no_update BEFORE UPDATE ON studio_access_events
+  FOR EACH ROW EXECUTE FUNCTION studio_access_event_immutable();
+CREATE TABLE IF NOT EXISTS studio_access_purges (
+  id text PRIMARY KEY,
+  ran_at timestamptz NOT NULL DEFAULT now(),
+  cutoff timestamptz NOT NULL,
+  retention_months integer NOT NULL CONSTRAINT studio_access_purges_retention_check CHECK (retention_months BETWEEN 1 AND 120),
+  deleted integer NOT NULL CONSTRAINT studio_access_purges_deleted_check CHECK (deleted >= 0)
+);
+
 -- Délégation contrôlée de l'approbation (EX-085, lib/studio-delegations.ts) : délégant, délégué distinct, portée
 -- (projet, étude, variante, publication), période (début inclus, fin exclue), motif ; seule la révocation motivée
 -- modifie la ligne. Journal en ajout seul : création, révocation et chaque emploi (publication et transition).
@@ -1391,6 +1435,110 @@ CREATE INDEX IF NOT EXISTS studio_observation_reconciliations_variant_idx ON stu
 CREATE INDEX IF NOT EXISTS studio_observation_reconciliations_observation_idx ON studio_observation_reconciliations(observation_id);
 CREATE OR REPLACE TRIGGER studio_observation_reconciliations_no_update BEFORE UPDATE ON studio_observation_reconciliations
   FOR EACH ROW EXECUTE FUNCTION studio_observation_event_immutable();
+
+-- Lot F (décision P-12) : illustrations depuis une vue (EX-071, EX-072, AC-007), adaptateur d'agents MCP (TEST-033,
+-- F.3-02), journal agent / humain (INV-010). Additif et idempotent : tables nouvelles, contraintes recréées (DROP … IF
+-- EXISTS puis ADD, NOT VALID). Une révision confirmée depuis une proposition d'agent porte la source `agent-mcp`.
+ALTER TABLE studio_revisions DROP CONSTRAINT IF EXISTS studio_revisions_source_check,
+  ADD CONSTRAINT studio_revisions_source_check
+  CHECK (source IN ('authenticated-session', 'study-initialization', 'variant-initialization', 'variant-derivation', 'agent-mcp')) NOT VALID;
+CREATE TABLE IF NOT EXISTS studio_illustrations (
+  id text PRIMARY KEY,
+  study_id text NOT NULL REFERENCES studio_studies(id) ON DELETE CASCADE,
+  variant_id text NOT NULL,
+  revision_id text NOT NULL,
+  provider_id text NOT NULL,
+  provider_nature text NOT NULL,
+  parameters jsonb NOT NULL,
+  provenance jsonb NOT NULL,
+  source_digest text NOT NULL,
+  document_digest text NOT NULL,
+  image_base64 text NOT NULL,
+  image_digest text NOT NULL,
+  width integer NOT NULL,
+  height integer NOT NULL,
+  created_by text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  request_id text NOT NULL,
+  payload_hash text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS studio_illustrations_variant_idx ON studio_illustrations(variant_id, created_at);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_illustrations_request_unique ON studio_illustrations(variant_id, request_id);
+ALTER TABLE studio_illustrations DROP CONSTRAINT IF EXISTS studio_illustrations_variant_of_study,
+  ADD CONSTRAINT studio_illustrations_variant_of_study FOREIGN KEY(study_id, variant_id)
+  REFERENCES studio_variants(study_id, id) ON DELETE CASCADE NOT VALID;
+ALTER TABLE studio_illustrations DROP CONSTRAINT IF EXISTS studio_illustrations_revision_of_variant,
+  ADD CONSTRAINT studio_illustrations_revision_of_variant FOREIGN KEY(variant_id, revision_id)
+  REFERENCES studio_revisions(variant_id, id) ON DELETE CASCADE NOT VALID;
+ALTER TABLE studio_illustrations DROP CONSTRAINT IF EXISTS studio_illustrations_nature_check,
+  ADD CONSTRAINT studio_illustrations_nature_check CHECK (provider_nature IN ('local-deterministe', 'ia-externe')) NOT VALID;
+ALTER TABLE studio_illustrations DROP CONSTRAINT IF EXISTS studio_illustrations_sha_check,
+  ADD CONSTRAINT studio_illustrations_sha_check CHECK (source_digest ~ '^[0-9a-f]{64}$' AND document_digest ~ '^[0-9a-f]{64}$'
+    AND image_digest ~ '^[0-9a-f]{64}$' AND payload_hash ~ '^[0-9a-f]{64}$') NOT VALID;
+CREATE OR REPLACE FUNCTION studio_illustration_immutable() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'studio_illustration_immutable';
+END;
+$$;
+CREATE OR REPLACE TRIGGER studio_illustrations_no_update BEFORE UPDATE ON studio_illustrations
+  FOR EACH ROW EXECUTE FUNCTION studio_illustration_immutable();
+-- Jetons d'agent : liés à un compte et à un projet ; seule l'empreinte SHA-256 est gardée ; révocables.
+CREATE TABLE IF NOT EXISTS studio_agent_tokens (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  user_id text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name text NOT NULL CONSTRAINT studio_agent_tokens_name_length CHECK (length(btrim(name)) BETWEEN 1 AND 80),
+  key_digest text NOT NULL CONSTRAINT studio_agent_tokens_hash_check CHECK (key_digest ~ '^[0-9a-f]{64}$'),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  expires_at timestamptz NOT NULL,
+  revoked_at timestamptz
+);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_agent_tokens_hash_unique ON studio_agent_tokens(key_digest);
+CREATE INDEX IF NOT EXISTS studio_agent_tokens_user_idx ON studio_agent_tokens(project_id, user_id);
+-- Propositions d'agent : rien n'est écrit avant la confirmation humaine (point d'entrée commun des commandes).
+CREATE TABLE IF NOT EXISTS studio_agent_proposals (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  study_id text NOT NULL REFERENCES studio_studies(id) ON DELETE CASCADE,
+  variant_id text NOT NULL REFERENCES studio_variants(id) ON DELETE CASCADE,
+  agent_key_id text NOT NULL REFERENCES studio_agent_tokens(id) ON DELETE CASCADE,
+  user_id text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  request_id text NOT NULL,
+  payload_hash text NOT NULL CONSTRAINT studio_agent_proposals_hash_check CHECK (payload_hash ~ '^[0-9a-f]{64}$'),
+  envelope jsonb NOT NULL,
+  base_revision_id text NOT NULL,
+  preview jsonb NOT NULL,
+  status text NOT NULL CONSTRAINT studio_agent_proposals_status_check CHECK (status IN ('en-attente', 'confirmee', 'refusee', 'expiree', 'echec')),
+  revision_id text,
+  failure jsonb,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  expires_at timestamptz NOT NULL,
+  decided_at timestamptz
+);
+CREATE UNIQUE INDEX IF NOT EXISTS studio_agent_proposals_request_unique ON studio_agent_proposals(variant_id, user_id, request_id);
+CREATE INDEX IF NOT EXISTS studio_agent_proposals_user_idx ON studio_agent_proposals(project_id, user_id, created_at);
+-- Journal agent / humain (INV-010), en ajout seul : qui (compte), sous quelle forme (agent par jeton, ou humain en session).
+CREATE TABLE IF NOT EXISTS studio_agent_events (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  actor_id text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  actor_kind text NOT NULL CONSTRAINT studio_agent_events_kind_check CHECK (actor_kind IN ('agent', 'humain')),
+  agent_key_id text,
+  action text NOT NULL CONSTRAINT studio_agent_events_action_check
+    CHECK (action IN ('jeton.creer', 'jeton.revoquer', 'outil.appeler', 'proposition.creer', 'proposition.confirmer', 'proposition.refuser', 'proposition.echec')),
+  tool text,
+  proposal_id text,
+  revision_id text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS studio_agent_events_project_idx ON studio_agent_events(project_id, created_at);
+CREATE OR REPLACE FUNCTION studio_agent_event_immutable() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'studio_agent_event_immutable';
+END;
+$$;
+CREATE OR REPLACE TRIGGER studio_agent_events_no_update BEFORE UPDATE ON studio_agent_events
+  FOR EACH ROW EXECUTE FUNCTION studio_agent_event_immutable();
 
 -- ---------------------------------------------------------------------------
 -- Gestion des comptes (docs/workstreams/users-management, Issue #253) — Phase 1.
@@ -2999,6 +3147,105 @@ BEGIN
 END;
 $$;
 CREATE OR REPLACE TRIGGER geodata_analyses_immuables BEFORE UPDATE ON geodata_analyses FOR EACH ROW EXECUTE FUNCTION geodata_analyse_immuable();
+-- Lot CMD (achèvement de Studio, 25/10/2026) : contexte d'étude (IF-001), jobs serveur (EX-088, EX-045), journal des
+-- changements de révision (IF-011, EX-010), migrations de schéma simulées / accordées / retirées (EX-019, EX-091) et
+-- chemin d'écriture unique Atelier → Studio (MIG-COEX-06). Tables nouvelles, additives : aucune ligne existante réécrite.
+-- Contexte validé d'une étude : site (parcelles et révisions), sources (pièces d'étape), version du contrat.
+CREATE TABLE IF NOT EXISTS studio_study_contexts (
+  study_id text PRIMARY KEY REFERENCES studio_studies(id) ON DELETE CASCADE,
+  project_id text NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  version text NOT NULL CONSTRAINT studio_study_contexts_version_check CHECK (version = 'studio-contexte-etude/1'),
+  context jsonb NOT NULL CONSTRAINT studio_study_contexts_context_object CHECK (jsonb_typeof(context) = 'object'),
+  validated_by text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  validated_at timestamptz NOT NULL DEFAULT now()
+);
+-- Jobs serveur Studio : essai de commandes (prévisualisation à portée de révision, recalcul exact compris) et
+-- simulation de migration. Le résultat est lu sous l'autorisation de l'étude source (EX-088).
+CREATE TABLE IF NOT EXISTS studio_jobs (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  study_id text NOT NULL REFERENCES studio_studies(id) ON DELETE CASCADE,
+  variant_id text REFERENCES studio_variants(id) ON DELETE CASCADE,
+  kind text NOT NULL CONSTRAINT studio_jobs_kind_check CHECK (kind IN ('essai-commandes', 'simulation-migration')),
+  status text NOT NULL CONSTRAINT studio_jobs_status_check CHECK (status IN ('en-calcul', 'termine', 'echec', 'abandonne', 'confirme')),
+  source_revision_id text,
+  payload jsonb,
+  payload_hash text CONSTRAINT studio_jobs_payload_hash_check CHECK (payload_hash IS NULL OR payload_hash ~ '^[0-9a-f]{64}$'),
+  result jsonb,
+  created_by text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  finished_at timestamptz,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS studio_jobs_study_idx ON studio_jobs(study_id, created_at);
+-- Journal des changements de révision (IF-011) : un événement par révision engagée, écrit dans la MÊME transaction que
+-- la révision (rien n'existe si elle échoue) ; `xact_id` = transaction PostgreSQL, `created_at` = horloge du serveur.
+CREATE TABLE IF NOT EXISTS studio_revision_events (
+  event_id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  study_id text NOT NULL REFERENCES studio_studies(id) ON DELETE CASCADE,
+  variant_id text NOT NULL REFERENCES studio_variants(id) ON DELETE CASCADE,
+  revision_id text NOT NULL,
+  base_revision_id text,
+  transaction_id text NOT NULL,
+  xact_id text NOT NULL DEFAULT (txid_current()::text),
+  author_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  request_id text,
+  effects jsonb NOT NULL,
+  job_id text REFERENCES studio_jobs(id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT studio_revision_events_revision_unique UNIQUE(variant_id, revision_id),
+  CONSTRAINT studio_revision_events_revision_same_variant FOREIGN KEY(variant_id, revision_id)
+    REFERENCES studio_revisions(variant_id, id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS studio_revision_events_variant_idx ON studio_revision_events(variant_id, created_at);
+CREATE OR REPLACE FUNCTION studio_revision_event_immutable() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'studio_revision_event_immutable';
+END;
+$$;
+CREATE OR REPLACE TRIGGER studio_revision_events_no_update BEFORE UPDATE ON studio_revision_events
+  FOR EACH ROW EXECUTE FUNCTION studio_revision_event_immutable();
+-- Migrations de schéma d'une étude (EX-091) : simulée → accordée (propriétaire) → appliquée (copies migrées des
+-- révisions, sources /1 intactes) → retour arrière (copies retirées) ; point de retour = têtes des variantes.
+CREATE TABLE IF NOT EXISTS studio_migrations (
+  id text PRIMARY KEY,
+  project_id text NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  study_id text NOT NULL REFERENCES studio_studies(id) ON DELETE CASCADE,
+  job_id text NOT NULL REFERENCES studio_jobs(id) ON DELETE CASCADE,
+  target_schema text NOT NULL CONSTRAINT studio_migrations_target_check CHECK (target_schema = 'studio-document/2'),
+  status text NOT NULL CONSTRAINT studio_migrations_status_check CHECK (status IN ('simulee', 'accordee', 'appliquee', 'retour-arriere')),
+  rollback_point jsonb NOT NULL,
+  verdict text NOT NULL,
+  agreed_by text REFERENCES users(id) ON DELETE RESTRICT,
+  agreed_at timestamptz,
+  applied_at timestamptz,
+  rolled_back_at timestamptz,
+  created_by text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS studio_migrations_study_idx ON studio_migrations(study_id, created_at);
+CREATE TABLE IF NOT EXISTS studio_document_migrations (
+  migration_id text NOT NULL REFERENCES studio_migrations(id) ON DELETE CASCADE,
+  revision_id text NOT NULL REFERENCES studio_revisions(id) ON DELETE CASCADE,
+  schema_version text NOT NULL CONSTRAINT studio_document_migrations_schema_check CHECK (schema_version = 'studio-document/2'),
+  document jsonb NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (migration_id, revision_id)
+);
+-- Chemin d'écriture unique d'une bascule Atelier → Studio (MIG-COEX-06) : par projet, l'étude qui reçoit le modèle
+-- Atelier et l'autorité d'écriture courante ('atelier' ou 'studio'). L'orchestrateur commun refuse toute écriture de
+-- l'autre chaîne ; la consultation historique (lectures) reste ouverte aux deux. Historique des passages en ajout seul.
+CREATE TABLE IF NOT EXISTS studio_bascules (
+  project_id text PRIMARY KEY REFERENCES projects(id) ON DELETE CASCADE,
+  study_id text NOT NULL REFERENCES studio_studies(id) ON DELETE CASCADE,
+  authority text NOT NULL CONSTRAINT studio_bascules_authority_check CHECK (authority IN ('atelier', 'studio')),
+  rollback_point jsonb,
+  history jsonb NOT NULL DEFAULT '[]'::jsonb CONSTRAINT studio_bascules_history_array CHECK (jsonb_typeof(history) = 'array'),
+  updated_by text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 -- Lot OP-AUTOCONTROLE (décision OP-6 du 2026-10-25) : séparation des responsabilités. Option « Auto-contrôle » du
 -- compte, changée par l'administration de la plateforme : TRUE (par défaut) = la personne peut approuver un dossier
 -- qu'elle a produit ou soumis, l'approbation est alors marquée ; FALSE = l'API refuse cette approbation (422).

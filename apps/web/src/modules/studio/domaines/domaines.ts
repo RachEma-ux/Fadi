@@ -70,6 +70,9 @@ export const DOMAINES_COMMANDES = Object.freeze({
   "exporter-png": A_DEFINIR, "importer-dxf": A_DEFINIR, "importer-ifc": A_DEFINIR, "modeles-externes": A_DEFINIR, "exporter-svg": A_DEFINIR, "exporter-dxf": A_DEFINIR, "exporter-ifc": A_DEFINIR, echanges: A_DEFINIR,
   feuille: "documentation", dossier: "documentation",
   outils: A_DEFINIR, palette: A_DEFINIR,
+  // Lot F : l’illustration est un rendu (« examiner et présenter » : Visualisation) ; les agents proposent, la personne confirme
+  // (« revues » : Documentation, métrés et collaboration).
+  illustration: "visualisation", agents: "documentation",
   exigences: "bim",
 } as const satisfies Record<IdCommandeEditeur, DomaineAttribue>);
 

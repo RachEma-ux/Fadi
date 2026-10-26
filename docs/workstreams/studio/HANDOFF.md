@@ -1,5 +1,31 @@
 # Reprise — Studio
 
+## Achèvement — intégration des lots REG, DEC, F et CMD — 26 octobre 2026
+
+Branche `ccr-187fd2e6-08dk6e`, base `main@1fd6fbd` (lot API, PR #326).
+
+Ce qui a été fait :
+- **Lots intégrés** : règles de preuve et protocole de PR (REG), décisions P-12 et porte G4 automatisée (DEC), illustrations, agents MCP sous confirmation humaine et extensions (F), effets des commandes, essais, migrations de schéma et bascule (CMD).
+- **Réouverture durable (A.1-07)** : la CI redémarre désormais PostgreSQL et l'API entre la phase initiale et la phase de réouverture.
+- **Registre** : 65 obligations inscrites « Implémenté » en attendant l'exécution CI verte de la PR, puis passage « Vérifié » ; les verdicts partiels restent ouverts avec leur suite. Détail : [ACHEVEMENT-STUDIO](recettes/ACHEVEMENT-STUDIO.md).
+
+Compteurs recalculés du registre : **0 À définir / 48 À faire / 73 En cours / 65 Implémenté / 9 Bloqué / 376 Vérifié / 59 Accepté**. **P630=435/630**.
+
+Prochaine action : CI verte de la PR, passage « Vérifié » par `completer_preuves.py`, fusion, puis lots PUB, OUT et REND.
+
+## Achèvement — lot DEC : décisions P-12 implémentées — 26 octobre 2026
+
+Branche `ccr-187fd2e6-08dk6e`, base `main@1fd6fbd` (lot API, PR #326), avec le lot REG.
+
+Ce qui a été fait :
+- **Décisions P-12** : copie indépendante de variante, tolérances des gestes, alternatives clavier et focus 2D ⇄ 3D, journal d'accès avec purge à 12 mois, refus sous verrou et sur le projet de référence, quarantaine locale des montées de version, façade de contexte et pureté du modèle.
+- **Porte G4 automatisée** : signalée à chaque commit, stricte à la Release ; aujourd'hui la livraison est refusée (BLOC-06 et BLOC-07 non encore vérifiés).
+- **Registre** : 12 obligations du lot DEC et 24 du lot REG inscrites « Implémenté » en attendant l'exécution CI de la PR ; TR-INV-010 attend le lot F. Détail : [ACHEVEMENT-STUDIO](recettes/ACHEVEMENT-STUDIO.md).
+
+Compteurs recalculés du registre : à cette date 376 Vérifié, 59 Accepté, 11 Bloqué, 36 Implémenté, 93 En cours, 55 À faire, 0 À définir ; 435 obligations sur 630 closes.
+
+Prochaine action : retrouver l'exécution CI verte de la PR, passer les 36 obligations « Vérifié », puis intégrer le lot suivant.
+
 ## Achèvement — lot REG : règles de preuve et protocole de PR — 25 octobre 2026
 
 Branche `ccr-187fd2e6-08dk6e`, au-dessus du lot API (PR #326).
@@ -9,7 +35,7 @@ Ce qui a été fait :
 - **Suivi et sécurité** : contrôles du suivi (141 chaînes complètes), documents d'état générés, analyse de secrets (0 constat), protocole de PR contrôlé (décision P-13 : nommage de branche conseillé, Issue propre exigée).
 - **Lot REG** : 24 obligations inscrites « Implémenté » en attendant l'exécution CI de la PR, 8 restent partielles. Détail : [ACHEVEMENT-STUDIO](recettes/ACHEVEMENT-STUDIO.md).
 
-Compteurs recalculés du registre : **0 À définir / 56 À faire / 104 En cours / 24 Implémenté / 11 Bloqué / 376 Vérifié / 59 Accepté**. **P630=435/630**.
+Compteurs recalculés du registre : à cette date 376 Vérifié, 59 Accepté, 11 Bloqué, 24 Implémenté, 104 En cours, 56 À faire, 0 À définir ; 435 obligations sur 630 closes.
 
 Prochaine action : retrouver l'exécution CI verte de la PR, passer les 24 obligations « Vérifié », puis intégrer le lot suivant.
 

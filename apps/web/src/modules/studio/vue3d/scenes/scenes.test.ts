@@ -93,16 +93,30 @@ describe("Réglages de la vue → commandes de visualisation", () => {
   });
 });
 
-describe("Rendus : seul le rendu du modèle existe", () => {
+describe("Rendus : rendu du modèle et illustration contrainte depuis la vue", () => {
   const props = (over: Partial<PanneauVisualisationProps> = {}): PanneauVisualisationProps => ({
     doc: base(), modifiable: true, sceneChoisie: null, sceneActive: null, nom: "", calques: ["default"], mode: "shaded-edges", cible: "", couleur: "#888888", finition: "",
     rendu: { possible: true, raison: null }, surChoix: () => {}, surNom: () => {}, surCalques: () => {}, surMode: () => {}, surVueDessin: () => {},
     surCible: () => {}, surCouleur: () => {}, surFinition: () => {}, surAction: () => {}, ...over,
   });
-  it("trois types annoncés ; deux indisponibles sans aucun bouton ; un seul bouton d'export", () => {
-    expect(TYPES_RENDU.map((t) => [t.id, t.disponible])).toEqual([["rendu-modele", true], ["illustration-ia", false], ["exploration-libre", false]]);
+  it("F.2-03 [+] trois types annoncés ; l'illustration contrainte est disponible avec son déclencheur (honnêtement décrite : locale sans IA par défaut, jamais de mutation) ; l'exploration libre reste indisponible sans bouton ; un seul bouton d'export", () => {
+    expect(TYPES_RENDU.map((t) => [t.id, t.disponible])).toEqual([["rendu-modele", true], ["illustration-ia", true], ["exploration-libre", false]]);
+    const actions: string[] = [];
     const html = renderToStaticMarkup(createElement(PanneauVisualisation, props()));
-    for (const id of ["illustration-ia", "exploration-libre"]) {
+    const illustration = /<li data-studio-rendu="illustration-ia" data-studio-disponible="oui">(.*?)<\/li>/.exec(html);
+    expect(illustration).not.toBeNull();
+    expect(illustration![1]).toMatch(/<button type="button" data-studio-illustrer="true"/);
+    expect(illustration![1]).toContain("sans IA par défaut");
+    expect(illustration![1]).toContain("le modèle n’est jamais modifié");
+    // Le déclencheur demande l'action « illustration » à la vue (capture du rendu, puis boîte de dialogue).
+    const el = PanneauVisualisation(props({ surAction: (a) => actions.push(a) }));
+    const boutons: { props: Record<string, unknown> }[] = [];
+    const parcourir = (n: unknown): void => { if (!n || typeof n !== "object") return; if (Array.isArray(n)) { n.forEach(parcourir); return; } const p = (n as { props?: Record<string, unknown> }).props; if (!p) return; if ("data-studio-illustrer" in p) boutons.push(n as { props: Record<string, unknown> }); parcourir(p["children"]); };
+    parcourir(el);
+    expect(boutons).toHaveLength(1);
+    (boutons[0]!.props["onClick"] as () => void)();
+    expect(actions).toEqual(["illustration"]);
+    for (const id of ["exploration-libre"]) {
       const li = new RegExp(`<li data-studio-rendu="${id}" data-studio-disponible="non">(.*?)</li>`).exec(html);
       expect(li, id).not.toBeNull();
       expect(li![1]).not.toMatch(/<button|<a /);
@@ -113,6 +127,7 @@ describe("Rendus : seul le rendu du modèle existe", () => {
     // Brouillon non enregistré : bouton désactivé, raison affichée.
     const inactif = renderToStaticMarkup(createElement(PanneauVisualisation, props({ rendu: { possible: false, raison: "Enregistrez d’abord : le rendu porte sur une révision enregistrée, pas sur les modifications non enregistrées." } })));
     expect(inactif).toMatch(/<button type="button" disabled="" data-studio-exporter-png/);
+    expect(inactif).toMatch(/<button type="button" disabled="" data-studio-illustrer/);
     // Lecture seule : création et apparence désactivées, rappel possible d'une scène choisie.
     const lecture = renderToStaticMarkup(createElement(PanneauVisualisation, props({ modifiable: false })));
     expect(lecture).toMatch(/disabled="" data-studio-scene-action="studio.scene.creer"/);
@@ -121,7 +136,7 @@ describe("Rendus : seul le rendu du modèle existe", () => {
   it("chaque libellé de la visualisation a sa traduction anglaise", () => {
     const textes = [
       ...TYPES_RENDU.flatMap((t) => [t.libelle, t.description]), ...Object.values(LIBELLES_MODE), ...Object.values(LIBELLES_FINITION),
-      ...STUDIO_TOOLS.filter((t) => t.groupe === "visualisation").map((t) => t.libelleFR), "Exporter le rendu PNG", "Visualisation",
+      ...STUDIO_TOOLS.filter((t) => t.groupe === "visualisation").map((t) => t.libelleFR), "Exporter le rendu PNG", "Illustration depuis la vue…", "Visualisation",
       "Scènes", "Rendus", "Apparence d’affichage", "Calques montrés", "Mode d’affichage", "Nom de la scène",
     ];
     for (const t of textes) expect(en[t], t).toBeTruthy();

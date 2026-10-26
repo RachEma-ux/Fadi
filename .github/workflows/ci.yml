@@ -446,11 +446,25 @@ jobs:
           set -o pipefail
           node apps/web/e2e/parcours-scenario.mjs 2>&1 | tee -a e2e.log
       # Studio (D-0/D-A, #166) : schéma créé par db:migrate ; étude, commandes, rejeu, refus et historique par l'API réelle.
-      - name: Recette Studio par l'API — étude, commandes, rejeu, conflits, droits, historique (apps/web/e2e/studio-persistance.mjs)
+      # A.1-07 : sauvegarde et réouverture durables — phase initiale, arrêt de l'API, REDÉMARRAGE du service PostgreSQL,
+      # relance de l'API, puis phase de réouverture qui relit tout à l'identique (STUDIO_STATE).
+      - name: Recette Studio par l'API — étude, commandes, rejeu, conflits, droits, historique, puis réouverture après redémarrage de PostgreSQL et de l'API (apps/web/e2e/studio-persistance.mjs, A.1-07)
         if: ${{ matrix.shard == 'parcours' }}
         run: |
           set -o pipefail
-          node apps/web/e2e/studio-persistance.mjs 2>&1 | tee -a e2e.log
+          PHASE=initial STUDIO_STATE="$RUNNER_TEMP/studio-state.json" node apps/web/e2e/studio-persistance.mjs 2>&1 | tee -a e2e.log
+          pkill -TERM -f "node apps/api/dist/server.js" || true
+          for i in $(seq 1 30); do pgrep -f "node apps/api/dist/server.js" > /dev/null || break; sleep 1; done
+          pg=$(docker ps -q --filter "ancestor=postgis/postgis:16-3.4")
+          [ -n "$pg" ] || { echo "conteneur PostgreSQL introuvable"; exit 1; }
+          docker restart "$pg"
+          for i in $(seq 1 60); do docker exec "$pg" pg_isready -U fadi > /dev/null 2>&1 && break; sleep 1; done
+          docker exec "$pg" pg_isready -U fadi
+          echo "PostgreSQL redémarré ($(docker inspect -f '{{.State.StartedAt}}' "$pg"))" | tee -a e2e.log
+          nohup node apps/api/dist/server.js >> api.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://localhost:3001/health > /dev/null && break; sleep 1; done
+          curl -sf http://localhost:3001/health
+          PHASE=reopen STUDIO_STATE="$RUNNER_TEMP/studio-state.json" node apps/web/e2e/studio-persistance.mjs 2>&1 | tee -a e2e.log
       - name: Recette de navigation Studio — enveloppe, étude, variantes, historique en lecture seule, adresse inconnue (apps/web/e2e/studio-navigation.mjs)
         if: ${{ matrix.shard == 'parcours' }}
         run: |
@@ -738,6 +752,27 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/studio-contrats-api node apps/web/e2e/studio-contrats-api.mjs 2>&1 | tee -a e2e.log
+      # Lot DEC (P-12) : copie indépendante de variante (TR-EX-013 / TR-INV-003), tolérance de la ligne (TR-IF-002),
+      # alternatives clavier et focus 2D ⇄ 3D (TR-EX-036), journal d'accès et purge (TR-EX-046), refus sous verrou et sur
+      # le projet de référence (X.2-02), quarantaine locale des montées de version (MIG-COEX-04).
+      - name: Décisions P-12 — copie indépendante, tolérances, alternatives clavier, journal d'accès, refus sous verrou, quarantaine (apps/web/e2e/studio-dec.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-dec node apps/web/e2e/studio-dec.mjs 2>&1 | tee -a e2e.log
+      # Lot F (P-12) : illustration depuis la vue (image séparée, modèle inchangé, transfert externe contrôlé), agents MCP
+      # (proposition sans écriture, confirmation humaine, journal), extensions déclarées sans chargement.
+      - name: Lot F — illustrations depuis la vue, agents MCP sous confirmation humaine, extensions (apps/web/e2e/studio-lot-f.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-lot-f node apps/web/e2e/studio-lot-f.mjs 2>&1 | tee -a e2e.log
+      # Lot CMD : effets des commandes, essais à portée de révision, jobs, journal, migrations studio-document/2, bascule.
+      - name: Lot CMD — effets, essais, jobs, journal, migrations de schéma, bascule Atelier → Studio (apps/web/e2e/studio-cmd.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-cmd node apps/web/e2e/studio-cmd.mjs 2>&1 | tee -a e2e.log
       # Organisations-participation, phase 3 (OP-D2 a) : invitation acceptée pour tous, fin de l'ajout direct (UM-8) —
       # aperçu de l'accès, renvoi sans doublon, notification, refus v2.2 (lien transféré, expirée, annulée, déclinée,
       # invitant révoqué, mauvaise fiche, participation terminée, accès expiré), double soumission, nouvel utilisateur ;

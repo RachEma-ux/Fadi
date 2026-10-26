@@ -1090,7 +1090,8 @@ export interface StudioContext {
   derivedFrom?: StudioProvenance | null;
 }
 /** Provenance d'une variante dérivée (même étude). */
-export interface StudioProvenance { variantId: string; revisionId: string }
+/** `mode: "copie"` : copie indépendante ; `identites` (nouvel identifiant → source) avec le contexte d'une variante seulement. */
+export interface StudioProvenance { variantId: string; revisionId: string; mode?: "copie"; identites?: Record<string, string> }
 /** Étude de Studio telle que la liste du projet la renvoie. */
 export interface StudioStudySummary { id: string; name: string; initialVariantId: string; createdAt: string; updatedAt: string | null; archived: boolean; workflowPhase?: StudioPhaseWorkflow | null }
 /** État de l'étude exemple d'un projet issu de l'exemple P.118 (marquage enregistré par le serveur). */
@@ -1114,7 +1115,8 @@ export interface StudioStudyDetail {
   canManage: boolean;
 }
 /** Source d'une dérivation : variante de l'étude et révision (tête si absente). */
-export interface StudioDerivation { fromVariantId: string; fromRevisionId?: string }
+/** Dérivation : `mode` `version` (défaut, identifiants conservés) ou `copie` (copie indépendante, nouvelles identités). */
+export interface StudioDerivation { fromVariantId: string; fromRevisionId?: string; mode?: "version" | "copie" }
 /** Entête d'une révision (historique append-only, de la plus récente à la plus ancienne). */
 export interface StudioRevisionSummary { id: string; parentRevisionId: string | null; source: string; authorId: string; createdAt: string }
 /** Comparaison de deux révisions d'une étude : côtés résolus (tête explicite) et différence pure du modèle. */

@@ -50,6 +50,13 @@ jobs:
           node scripts/registre/controles-suivi.mjs
           echo "Commit testé : $(git rev-parse HEAD)"
           node scripts/registre/etat-studio.mjs
+      # X.2-04 / BLOC-06 : porte G4 automatisée (scripts/validation/porte-g4.mjs). Signalée sans bloquer les lots en cours
+      # (--avertir) ; la Release exige la porte stricte (sortie 0), voir docs/workstreams/studio/DOSSIER-G4.md.
+      - name: Porte G4 Studio — défauts éliminatoires BLOC-01 à BLOC-07 (rapport, non bloquant hors Release)
+        run: |
+          node --test scripts/validation/porte-g4.test.mjs
+          node scripts/validation/porte-g4.mjs --avertir --rapport "$RUNNER_TEMP/porte-g4.json" --markdown "$RUNNER_TEMP/porte-g4.md"
+          cat "$RUNNER_TEMP/porte-g4.md" >> "$GITHUB_STEP_SUMMARY"
       - name: Vérifier les checkpoints des chantiers modifiés (PR seulement)
         if: github.event_name == 'pull_request'
         env:
