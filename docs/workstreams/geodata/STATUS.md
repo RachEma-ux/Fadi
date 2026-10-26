@@ -49,6 +49,11 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   couche), barre d'outils verticale flottante (à droite par défaut, déplaçable, bornée), bouton « Données » ; recette
   `geodata.mjs` conforme en local (63 vérifications, dont téléphone 390 px, axe-core et interface anglaise). Suites API DB-3 non exécutées localement (base
   attestée de la CI seulement).
+- Population RGPH 2024 du HCP (D-GD-17, lot A) : `scripts/geodata/preparer_hcp.py` (fichier Excel HCP SHA-256
+  7e9d3d40…, contours d'empreinte vérifiée), tables `correspondances/hcp-rgph2024-*.csv` (+ table manuelle justifiée),
+  3 fiches CC BY 4.0 : 12/12 régions et 75/75 provinces (sommes = 36 828 330, total national), 1 487/1 498 contours
+  communaux (97,6 % de la population ; 16 communes HCP sans contour OSM, 11 contours sans valeur) ; import et carte
+  thématique vérifiés en local.
 - Limites administratives (D-GD-16) : `limites.ts` (3 tests), contours colorés et hiérarchisés, vérifiés visuellement
   en local sur ADM1, ADM2 et communes OSM (opacité 0 %, une couleur par entité).
 - Fournisseurs de fonds (D-GD-15) : modèle pur `fournisseurs.ts` (5 tests), section Paramètres `FournisseursCarte.tsx`,

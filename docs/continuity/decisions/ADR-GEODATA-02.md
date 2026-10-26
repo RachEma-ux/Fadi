@@ -74,6 +74,24 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
      remplissages ; en superposition, hiérarchie Région (dessus, contour 3,5 px) → Province (2,2 px) → Commune (1,2 px).
      Le rang se lit de la source (niveau `ADM1`/`ADM2`/`ADM3`, ou niveau administratif OpenStreetMap du titre : 4, 5, 8),
      jamais deviné ; une couche hors hiérarchie garde l'ordre de la composition (contour 1,5 px).
+   - D-GD-17 (26 octobre 2026, analyse des cartes du HCP et des sources RGPH 2024 transmise par le maître d'ouvrage ;
+     décisions prises sous la délégation GeoData, sur les options recommandées par l'analyse) :
+     1. **Droits HCP** : les indicateurs téléchargés sur hcp.ma et bds.hcp.ma sont réutilisables sous **CC BY 4.0**, usage
+        commercial compris (CGU du HCP v1.0, § 3, lues le 26 octobre 2026) — citer « HCP, RGPH 2024 », indiquer les
+        modifications, ne pas laisser entendre un soutien du HCP, respecter l'intégrité des effectifs. Seuls les **fichiers
+        de données** sont repris ; les cartes, tableaux de bord et la plateforme Superset `resultats2024.rgphapps.ma` ne
+        sont ni reproduits ni aspirés (§ 5 : éléments du site protégés). Débloque GEO-DATA-01.
+     2. **Arabe : aucun** (décision du maître d'ouvrage du 26 octobre 2026) — ni interface arabe ni bouton AR, ni nom ou
+        libellé arabe affiché dans les couches ajoutées ; les noms arabes du HCP ne servent qu'au rattachement des
+        communes et ne sont pas livrés dans les couches. Les couches existantes ne sont pas modifiées.
+     3. **Contours des communes** : OpenStreetMap (déjà en base) ; un fichier officiel du HCP le remplacera s'il est fourni.
+     4. **Rattachement** : valeurs HCP rattachées aux contours par une table de correspondance relisible
+        (`docs/geodata/sources/correspondances/`), chaque lien contrôlé par la géographie (inclusion dans la région ou la
+        province), nom approché seulement s'il est unique et nettement devant, rattachements manuels justifiés ligne à
+        ligne ; une entité non rattachée garde « non appariée », jamais zéro. Lot A livré : population légale sur
+        3 niveaux (12/12 régions, 75/75 provinces et préfectures, 1 487/1 498 contours communaux, 97,6 % de la population).
+     5. **Suite** (lots B à G de l'analyse : navigation par niveaux, libellés, palettes et classes, fiche territoriale,
+        arbre d'indicateurs, mini-carte et impression) : un lot à la fois, chacun consigné.
 
 ## Conséquences
 

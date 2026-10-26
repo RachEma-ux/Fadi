@@ -1,0 +1,111 @@
+{
+  "cle": "hcp-rgph2024-population-regions",
+  "titre": "Population légale RGPH 2024 — régions",
+  "description": "Population légale des 12 régions selon le RGPH 2024 (HCP), avec ventilation urbain / rural, sur les contours geoBoundaries ADM1. Rattachement aux contours : 12 rattachées, 0 contours sans valeur, 0 unités HCP sans contour ; population rattachée : 36828330 habitants, soit 100,0 % de la population légale nationale (36828330). Table de correspondance relisible : `correspondances/hcp-rgph2024-regions.csv`. Les noms ne sont pas une clé sûre : chaque rattachement est contrôlé par la géographie ; une entité non rattachée garde ses valeurs absentes (« non appariée »), jamais zéro.",
+  "producteur": "Haut-Commissariat au Plan (HCP), Recensement général de la population et de l'habitat 2024 ; contours : geoBoundaries (William & Mary geoLab), d'après OpenStreetMap et Wambacher",
+  "theme": "population",
+  "couverture": "Maroc — 12 régions",
+  "version": {
+    "libelle": "RGPH 2024 — population légale (fichier Excel HCP) ; contours geoBoundaries gbOpen MAR ADM1 — commit 9469f09",
+    "url": null,
+    "fichier": "donnees/hcp-rgph2024-population-regions.geojson",
+    "empreinte": "2cd142d30951c288e5884a6852a2168910f5038e7bd345cb085a8d54e9c08ec0",
+    "periode": "Recensement de septembre 2024",
+    "licence": "Valeurs : Creative Commons Attribution 4.0 (CC BY 4.0, CGU du HCP v1.0 § 3) ; contours : Open Data Commons Open Database License 1.0 (ODbL)",
+    "attribution": "HCP, RGPH 2024 (CC BY 4.0), données retraitées ; © contributeurs OpenStreetMap (ODbL) ; geoBoundaries, wmgeolab",
+    "droits": {
+      "consultation": "autorise",
+      "stockage": "autorise",
+      "calcul": "autorise",
+      "tuiles": "autorise",
+      "commercial": "autorise",
+      "partage": "autorise",
+      "telechargement": "autorise",
+      "export": "autorise"
+    },
+    "precision": "Effectifs officiels (aucun arrondi) ; géométries des contours d'origine reprises telles quelles",
+    "synthetique": false,
+    "conditions": "Valeurs HCP sous CC BY 4.0 (https://www.hcp.ma/Conditions-generales-d-utilisation-Version-1-0_a2194.html) : citer « HCP, RGPH 2024 », indiquer les modifications (rattachement aux contours), ne pas laisser entendre que le HCP soutient Fadi, respecter l'intégrité des données (effectifs repris sans modification). Source : https://www.hcp.ma/file/242341/ (page https://www.hcp.ma/Population-legale-du-Royaume-du-Maroc-repartie-par-regions-provinces-et-prefectures-et-communes-selon-les-resultats-du_a3974.html), fichier Excel SHA-256 7e9d3d402cc2fd0d9c4fc941c4f23c6a5e5ddcbefbba80b7540267f8e2728dca. Contours : ODbL 1.0 : attribution « © contributeurs OpenStreetMap » obligatoire ; une base dérivée redistribuée reste sous ODbL (partage à l'identique) ; une œuvre produite (carte, image) peut être diffusée avec l'attribution."
+  },
+  "couche": {
+    "titre": "Population légale RGPH 2024 — régions",
+    "description": "Valeurs RGPH 2024 rattachées aux contours ; code = code géographique HCP (code du contour d'origine pour une entité non rattachée).",
+    "niveau": "ADM1",
+    "champCode": "code",
+    "champNom": "nom",
+    "proprietesExposees": [
+      "code",
+      "nom",
+      "contour",
+      "nom_contour",
+      "appariement",
+      "population",
+      "marocains",
+      "etrangers",
+      "menages",
+      "population_urbaine",
+      "population_rurale"
+    ],
+    "styleDefaut": {
+      "mode": "simple",
+      "couleur": "#2b8cbe"
+    }
+  },
+  "indicateurs": [
+    {
+      "propriete": "population",
+      "titre": "Population légale",
+      "unite": "habitants",
+      "periode": "RGPH 2024",
+      "denominateur": null,
+      "description": "Population légale (Marocains et étrangers) au 1er septembre 2024.",
+      "motifSiAbsente": "non-appariee"
+    },
+    {
+      "propriete": "marocains",
+      "titre": "Population marocaine",
+      "unite": "habitants",
+      "periode": "RGPH 2024",
+      "denominateur": null,
+      "description": "Population légale de nationalité marocaine.",
+      "motifSiAbsente": "non-appariee"
+    },
+    {
+      "propriete": "etrangers",
+      "titre": "Population étrangère",
+      "unite": "habitants",
+      "periode": "RGPH 2024",
+      "denominateur": null,
+      "description": "Population légale de nationalité étrangère.",
+      "motifSiAbsente": "non-appariee"
+    },
+    {
+      "propriete": "menages",
+      "titre": "Ménages",
+      "unite": "ménages",
+      "periode": "RGPH 2024",
+      "denominateur": null,
+      "description": "Nombre de ménages.",
+      "motifSiAbsente": "non-appariee"
+    },
+    {
+      "propriete": "population_urbaine",
+      "titre": "Population légale — milieu urbain",
+      "unite": "habitants",
+      "periode": "RGPH 2024",
+      "denominateur": null,
+      "description": "Population légale résidant en milieu urbain.",
+      "motifSiAbsente": "non-appariee"
+    },
+    {
+      "propriete": "population_rurale",
+      "titre": "Population légale — milieu rural",
+      "unite": "habitants",
+      "periode": "RGPH 2024",
+      "denominateur": null,
+      "description": "Population légale résidant en milieu rural.",
+      "motifSiAbsente": "non-appariee"
+    }
+  ],
+  "superficie": true
+}

@@ -1,0 +1,91 @@
+{
+  "cle": "hcp-rgph2024-population-communes",
+  "titre": "Population légale RGPH 2024 — communes",
+  "description": "Population légale des communes selon le RGPH 2024 (HCP), sur les contours des communes OpenStreetMap. Rattachement aux contours : 1487 rattachées, 11 contours sans valeur, 16 unités HCP sans contour ; population rattachée : 35957267 habitants, soit 97,6 % de la population légale nationale (36828330). Table de correspondance relisible : `correspondances/hcp-rgph2024-communes.csv`. Les noms ne sont pas une clé sûre : chaque rattachement est contrôlé par la géographie ; une entité non rattachée garde ses valeurs absentes (« non appariée »), jamais zéro.",
+  "producteur": "Haut-Commissariat au Plan (HCP), Recensement général de la population et de l'habitat 2024 ; contours : Contributeurs OpenStreetMap",
+  "theme": "population",
+  "couverture": "Maroc — communes",
+  "version": {
+    "libelle": "RGPH 2024 — population légale (fichier Excel HCP) ; contours OpenStreetMap — extraits du 2026-10-23",
+    "url": null,
+    "fichier": "donnees/hcp-rgph2024-population-communes.geojson",
+    "empreinte": "a4f2c7c5b70e64293d7ebcd24d5b906405061d0be26d256d1e476ad7549f5d98",
+    "periode": "Recensement de septembre 2024",
+    "licence": "Valeurs : Creative Commons Attribution 4.0 (CC BY 4.0, CGU du HCP v1.0 § 3) ; contours : Open Data Commons Open Database License 1.0 (ODbL)",
+    "attribution": "HCP, RGPH 2024 (CC BY 4.0), données retraitées ; © contributeurs OpenStreetMap (ODbL)",
+    "droits": {
+      "consultation": "autorise",
+      "stockage": "autorise",
+      "calcul": "autorise",
+      "tuiles": "autorise",
+      "commercial": "autorise",
+      "partage": "autorise",
+      "telechargement": "autorise",
+      "export": "autorise"
+    },
+    "precision": "Effectifs officiels (aucun arrondi) ; géométries des contours d'origine reprises telles quelles",
+    "synthetique": false,
+    "conditions": "Valeurs HCP sous CC BY 4.0 (https://www.hcp.ma/Conditions-generales-d-utilisation-Version-1-0_a2194.html) : citer « HCP, RGPH 2024 », indiquer les modifications (rattachement aux contours), ne pas laisser entendre que le HCP soutient Fadi, respecter l'intégrité des données (effectifs repris sans modification). Source : https://www.hcp.ma/file/242341/ (page https://www.hcp.ma/Population-legale-du-Royaume-du-Maroc-repartie-par-regions-provinces-et-prefectures-et-communes-selon-les-resultats-du_a3974.html), fichier Excel SHA-256 7e9d3d402cc2fd0d9c4fc941c4f23c6a5e5ddcbefbba80b7540267f8e2728dca. Contours : ODbL 1.0 : attribution « © contributeurs OpenStreetMap » obligatoire ; une base dérivée redistribuée reste sous ODbL (partage à l'identique) ; une œuvre produite (carte, image) peut être diffusée avec l'attribution."
+  },
+  "couche": {
+    "titre": "Population légale RGPH 2024 — communes",
+    "description": "Valeurs RGPH 2024 rattachées aux contours ; code = code géographique HCP (code du contour d'origine pour une entité non rattachée).",
+    "niveau": "OSM8",
+    "champCode": "code",
+    "champNom": "nom",
+    "proprietesExposees": [
+      "code",
+      "nom",
+      "contour",
+      "nom_contour",
+      "appariement",
+      "population",
+      "marocains",
+      "etrangers",
+      "menages"
+    ],
+    "styleDefaut": {
+      "mode": "simple",
+      "couleur": "#2b8cbe"
+    }
+  },
+  "indicateurs": [
+    {
+      "propriete": "population",
+      "titre": "Population légale",
+      "unite": "habitants",
+      "periode": "RGPH 2024",
+      "denominateur": null,
+      "description": "Population légale (Marocains et étrangers) au 1er septembre 2024.",
+      "motifSiAbsente": "non-appariee"
+    },
+    {
+      "propriete": "marocains",
+      "titre": "Population marocaine",
+      "unite": "habitants",
+      "periode": "RGPH 2024",
+      "denominateur": null,
+      "description": "Population légale de nationalité marocaine.",
+      "motifSiAbsente": "non-appariee"
+    },
+    {
+      "propriete": "etrangers",
+      "titre": "Population étrangère",
+      "unite": "habitants",
+      "periode": "RGPH 2024",
+      "denominateur": null,
+      "description": "Population légale de nationalité étrangère.",
+      "motifSiAbsente": "non-appariee"
+    },
+    {
+      "propriete": "menages",
+      "titre": "Ménages",
+      "unite": "ménages",
+      "periode": "RGPH 2024",
+      "denominateur": null,
+      "description": "Nombre de ménages.",
+      "motifSiAbsente": "non-appariee"
+    }
+  ],
+  "superficie": true
+}
