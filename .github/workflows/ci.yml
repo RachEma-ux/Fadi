@@ -238,11 +238,19 @@ jobs:
       API_RATE_LIMIT: "5000"
     steps:
       - uses: actions/checkout@v4
+        with:
+          # EX-101 : le contrôle des régressions pertinentes compare le diff de la PR à sa base.
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: npm ci --no-audit --no-fund
       - run: npm run typecheck
+      # TR-EX-101 : une modification de Worker / registre / géométrie / projection est rattachée à ses tests pertinents ;
+      # tout affaiblissement d'assertion (skip, only, matcher plus faible, précision abaissée, test retiré) est refusé.
+      - name: Régressions pertinentes (EX-101) — tests rattachés aux Workers / registre / géométrie / projections modifiés, affaiblissement d'assertion refusé
+        if: ${{ github.event_name == 'pull_request' }}
+        run: npx tsx apps/api/src/testing/regressions-pertinentes.cli.ts --base "origin/${{ github.base_ref }}"
       - run: npm run db:migrate
       # Gestion des comptes (#253, phase 1) : init.sql rejoué deux fois, défauts des comptes historiques, contraintes
       # CHECK, journal d'audit append-only, conversion des sessions — transactions annulées, base du job seulement.
@@ -550,6 +558,13 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/studio-exact node apps/web/e2e/studio-exact.mjs 2>&1 | tee -a e2e.log
+      # Lot G4 : vingt outils à froid / chaud comparés à la référence versionnée (verdict), Core Web Vitals (DEC-13),
+      # avant / après optimisation de la vue 3D, réactivité pendant un booléen exact lourd (TR-EX-097, TR-AC-002/005, MES-03).
+      - name: Mesures et qualité Studio (lot G4) — vingt outils froid / chaud comparés à la référence versionnée avec verdict, Core Web Vitals (DEC-13), avant / après optimisation 3D, réactivité pendant un booléen exact lourd (apps/web/e2e/studio-g4.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-g4 REPETITIONS=5 node apps/web/e2e/studio-g4.mjs 2>&1 | tee -a e2e.log
       # Mesure seulement (B.3-12, D.3-03) : rapport sans seuil ni verdict, joint aux captures (atelier-captures/). Un
       # incident d'interaction est consigné dans le rapport ; l'étape ne bloque jamais (la recette bloquante est
       # studio-chargement.mjs).
