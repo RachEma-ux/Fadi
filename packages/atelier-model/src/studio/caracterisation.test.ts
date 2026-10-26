@@ -332,6 +332,8 @@ const AJOUTS = {
     // (AC-011, `fiches-outils.ts`) : extensions additives du lot OUT.
     "STUDIO_OUTILS_DEPRECIES", "STUDIO_MODULES_DEPRECIES", "statutOutil", "controlerDepreciations", "outilsDuDocument", "compatibiliteTravail",
     "STUDIO_FICHES_OUTILS", "DESIGNATION_CONFORMITE", "PREUVES_EXECUTION_OUTILS", "evaluerFicheOutil",
+    // Basculement des solides libres autour de leurs axes horizontaux (A.3-03, lot OUT).
+    "estBascule", "studioBasculerPoint", "studioVecteurSolide",
     // Rapport de fidélité des exports (E.6-03, `echanges/rapport-fidelite.ts`).
     "STUDIO_CAPACITES_EXPORT", "STUDIO_FORMATS_ECHANGE", "STUDIO_LISTES_ECHANGE", "STUDIO_RAISONS_FIDELITE", "STUDIO_RAPPORT_FIDELITE_SCHEMA",
     "STUDIO_STATUTS_FIDELITE", "studioRapportFidelite",
