@@ -67,10 +67,12 @@ function Famille({ f }: { f: FamilleIndicateurs<IndicateurFiche> }) {
   const garder = brut.colonnes.map((_, k) => brut.lignes.some((l) => { const i = l.cellules[k]; return !!i && !(i.valeur === null && i.motifAbsence === "sans-objet"); }));
   const t = { colonnes: brut.colonnes.filter((_, k) => garder[k]), lignes: brut.lignes.map((l) => ({ ...l, cellules: l.cellules.filter((_, k) => garder[k]) })) };
   const plusieursMilieux = new Set(t.colonnes.map((c) => c.milieu)).size > 1;
+  // Période de référence de la famille (ex. « CEE 2023/2024 » face au recensement) ; plusieurs périodes sont toutes citées.
+  const periodes = [...new Set(f.indicateurs.map((i) => i.periode).filter((x): x is string => !!x))].join(", ");
   return (
     <div className="gd-ventilation-bloc">
       <table className="gd-ventilation" data-gd-ventilation={f.famille}>
-        <caption translate="no">{`${f.famille}${unite}`}</caption>
+        <caption translate="no">{`${f.famille}${unite}${periodes ? ` — ${periodes}` : ""}`}</caption>
         <thead><tr>
           <th scope="col"><span className="sr-only">Modalité</span></th>
           {t.colonnes.map((c) => <th key={`${c.milieu}-${c.sexe}`} scope="col">{[plusieursMilieux || c.milieu !== "ensemble" ? LIBELLES_MILIEU[c.milieu] : null, c.sexe !== "ensemble" ? LIBELLES_SEXE[c.sexe] : null].filter(Boolean).join(" · ") || "Ensemble"}</th>)}
