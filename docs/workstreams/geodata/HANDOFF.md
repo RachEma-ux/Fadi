@@ -32,8 +32,9 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 - Fiche territoriale (lot E, D-GD-22) : ventilations, arrondissements, douars (annexe de la fiche des communes :
   `preparer_hcp.py … --douars <base des douars>`), impression Alt+P.
 - Libellés sur la carte (lot C, D-GD-24) : case « Libellés » par couche, bouton de la barre d'outils (Alt+L), valeur
-  abrégée en thématique, glyphes Noto Sans hébergés (latin). Lots suivants : D (palettes, classes), F (arbre
-  d'indicateurs), G (mini-carte), un à la fois.
+  abrégée en thématique, glyphes Noto Sans hébergés (latin).
+- Palettes et classes (lot D, D-GD-25) : méthodes dont seuils naturels de Jenks, 2 à 10 classes, palettes ColorBrewer,
+  inversion, couleur par classe depuis la légende. Lots suivants : F (arbre d'indicateurs), G (mini-carte), un à la fois.
 - Arabe là où il est nécessaire (D-GD-21) : une donnée publiée seulement en arabe (noms des douars) est affichée en
   arabe (rtl, jamais traduite) ; sinon le français seul.
 - Indicateurs communaux complémentaires (D-GD-20) : logement urbain, transport domicile – travail, CEE ; régénération :

@@ -118,6 +118,13 @@ couches vectorielles visibles) : le nom de chaque entité, et sa valeur abrégé
 absente n'affiche que le nom). Points d'étiquette : `GET /geodata/api/etiquettes/:couche/:z/:x/:y`. Glyphes : Noto Sans
 Regular (OFL), plages latines, servis par l'application (`/geodata/glyphes/…`, licence `/licences/noto-sans/`).
 
+## Palettes et classes (lot D, D-GD-25)
+
+Légende d'une couche thématique : méthode (quantiles, intervalles égaux, seuils naturels de Jenks, seuils manuels),
+nombre de classes (2 à 10), palette prédéfinie (Bleu-violet par défaut, palettes ColorBrewer séquentielles et
+divergentes) et inversion ; la pastille de chaque classe permet d'en choisir la couleur. Tout est enregistré avec la
+carte ; les valeurs absentes restent hors classes, hachurées.
+
 ## Fiche territoriale (D-GD-22)
 
 La fiche d'une entité range ses indicateurs par thème ; une famille déclinée devient un tableau (modalités ×

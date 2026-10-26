@@ -148,3 +148,8 @@
 .geodata-page .gd-ventilation [dir="rtl"]{text-align:right;font-family:"Noto Naskh Arabic","Geeza Pro","Arial",sans-serif}
 .geodata-page .gd-imprime-seulement{display:none}
 
+/* Lot D (D-GD-25) : pastille de légende cliquable pour choisir la couleur d'une classe. */
+.geodata-page input.gd-pastille-choix{padding:0;width:22px;height:18px;cursor:pointer;background:none;border:1px solid #29434a;border-radius:2px}
+.geodata-page input.gd-pastille-choix::-webkit-color-swatch-wrapper{padding:0}
+.geodata-page input.gd-pastille-choix::-webkit-color-swatch{border:none}
+.geodata-page input.gd-pastille-choix::-moz-color-swatch{border:none}

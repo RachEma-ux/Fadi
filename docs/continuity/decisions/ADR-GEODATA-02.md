@@ -209,6 +209,17 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         par test. Un caractère hors de ces plages (arabe) est retiré du libellé de la carte par le serveur ; s'il ne reste
         rien, le code de l'entité est affiché. Les noms publiés seulement en arabe restent affichés en arabe dans la fiche
         (D-GD-21).
+   - D-GD-25 (26 octobre 2026, lot D) — **palettes et classes** d'une carte thématique :
+     1. Méthodes : quantiles, intervalles égaux, **seuils naturels de Jenks** (algorithme exact de Fisher ; au-delà de
+        2 000 valeurs, un échantillon régulier des valeurs triées est classé), seuils manuels. Les valeurs absentes ne
+        sont jamais classées (entrée « Valeur absente » hachurée, jamais zéro).
+     2. Nombre de classes : 2 à 10 ; moins si les valeurs se répètent (aucune classe vide inventée).
+     3. Palettes prédéfinies : la palette historique « Bleu-violet » (défaut, inchangée) et des palettes ColorBrewer
+        (Cynthia Brewer, licence Apache 2.0) séquentielles (bleus, verts, oranges, rouges, violets, jaune → rouge) et
+        divergentes (rouge ↔ bleu, brun ↔ vert) ; inversion possible ; n couleurs réparties sur toute la palette.
+     4. Couleur par classe : la pastille de chaque classe de la légende est un sélecteur de couleur ; les couleurs
+        enregistrées dans la composition font foi. Composition : `methode` « seuils-naturels », `palette` et `inverser`
+        optionnels (absents par défaut : une carte enregistrée avant le lot D reste identique).
 
 ## Conséquences
 

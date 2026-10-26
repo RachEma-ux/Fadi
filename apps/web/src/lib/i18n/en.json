@@ -14123,5 +14123,22 @@
 "Libellés (nom et valeur abrégée)": "Labels (name and abbreviated value)",
 "Libellés (nom)": "Labels (name)",
 "Libellés masqués": "Labels hidden",
-"Libellés affichés": "Labels shown"
+"Libellés affichés": "Labels shown",
+"Quantiles (effectifs égaux)": "Quantiles (equal counts)",
+"Seuils naturels (Jenks)": "Natural breaks (Jenks)",
+"Nombre de classes": "Number of classes",
+"Palette": "Palette",
+"Inverser la palette": "Reverse the palette",
+"Touchez la pastille d'une classe pour en choisir la couleur.": "Tap a class swatch to choose its colour.",
+"Couleur de la classe {0}": "Colour of class {0}",
+"Aperçu de la palette {0}": "Preview of the {0} palette",
+"Bleu-violet (défaut)": "Blue-purple (default)",
+"Bleus": "Blues",
+"Verts": "Greens",
+"Oranges": "Oranges",
+"Rouges": "Reds",
+"Violets": "Purples",
+"Jaune → rouge": "Yellow → red",
+"Rouge ↔ bleu (divergente)": "Red ↔ blue (diverging)",
+"Brun ↔ vert (divergente)": "Brown ↔ green (diverging)"
 }
