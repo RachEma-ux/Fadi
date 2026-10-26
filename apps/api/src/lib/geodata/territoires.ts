@@ -59,10 +59,9 @@ export async function chargerTerritoires(ex: Executeur, versionId: string, d: De
      ON CONFLICT (code) DO UPDATE SET nom = EXCLUDED.nom, niveaux = geodata_pays.niveaux || EXCLUDED.niveaux, mis_a_jour_le = now()`,
     [d.pays, d.nomPays, String(d.rang), JSON.stringify({ singulier: d.niveau.singulier, pluriel: d.niveau.pluriel, parent: d.parent })], ex);
   const [deja] = await requete<{ n: number }>("SELECT count(*)::int AS n FROM geodata_territoires WHERE pays = $1 AND rang = $2 AND version_id = $3", [d.pays, d.rang, versionId], ex);
-  if (deja && deja.n > 0) {
-    if (regleAvant !== d.parent) await majParents(ex, d.pays, d.rang);
-    return { pays: d.pays, rang: d.rang, unites: deja.n, deja: true };
-  }
+  // Même version déjà chargée et même règle : rien à refaire. Une règle changée rebâtit le rang : elle décide aussi des
+  // codes admis (`codeAdmis`), pas seulement des parents.
+  if (deja && deja.n > 0 && regleAvant === d.parent) return { pays: d.pays, rang: d.rang, unites: deja.n, deja: true };
   await requete("DELETE FROM geodata_territoires WHERE pays = $1 AND rang = $2", [d.pays, d.rang], ex);
   const objets = await requete<{ code: string }>("SELECT code FROM geodata_objets WHERE couche_id = $1 AND ST_Dimension(geom) = 2", [v.couche_id], ex);
   const admis = objets.map((o) => o.code).filter((c) => codeAdmis(c, d.parent));
