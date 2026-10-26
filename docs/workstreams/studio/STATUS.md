@@ -1,5 +1,20 @@
 # État — Studio
 
+## Checkpoint 2026-10-26 (heure suisse 06:35) — promotion de la vague 2 et agrégats de recette
+
+- PR #332 (vague 2 : G1–G5) fusionnée dans `main` (2e1564d7), CI verte sur `main`. `completer_preuves.py --reference
+  origin/main` : 73 preuves rattachées à l'exécution verte ; **28 obligations promues Vérifié** (dont TR-EX-002, TR-EX-016,
+  TR-EX-027, TR-INV-013, TR-IF-003, TR-IF-006, TR-AC-001/002/004/005/010, MES-05, J4, X.1-02/07/08). TR-EX-046 reste
+  Implémenté (suite API DB3 non exécutée sur `main`).
+- Agrégats de recette clos par **jonction des preuves exécutées** de chaque obligation citée (rapprochement
+  `AGREGATS-RECETTE.md`) : REC-A-02, REC-E-01, REC-E-02, F.3-04, J6 → Vérifié. Restent ouverts : REC-B-01 (désignation du
+  build et du profil de référence par le maître d'ouvrage, DEC-13 / TR-AC-011) et REC-C-02 (profils GPU sur appareil réel,
+  EXTERNE).
+- Vague 3 engagée (blocs et contraintes X.1-01, niveaux / composants / structure X.1-04, surfaces libres X.1-05, fusion de
+  variantes X.1-06).
+- Compteurs recalculés du registre : **0 À définir / 29 À faire / 12 En cours / 1 Implémenté / 9 Bloqué / 520 Vérifié / 59 Accepté**. **P630=579/630**.
+- Reprise : intégrer la vague 3, CI, fusion, promotion.
+
 ## Checkpoint 2026-10-26 (heure suisse 06:40) — vague 2 : G2 intégré, revue Codex #332 et TR-EX-059
 
 - **Lot G2** (outils et BIM) intégré dans la PR #332 : échelle d'accès (TR-EX-027), accrochage ambigu résolu (TR-AC-004),
@@ -15,7 +30,7 @@
   982 ms sur la CI, ~3 s ici ; une charge plus lourde dépasse les bornes du résultat exact (vérifié : 448, 512, 640 sommets
   et escalade sur résultat engagé → « résultat illisible »). Seuil retenu : **2,5 × le budget INP (500 ms)**, la
   contre-épreuve de même durée sur le fil principal devant rendre « bloque » (inchangée). Décision technique réversible.
-- Compteurs recalculés du registre : **0 À définir / 34 À faire / 12 En cours / 29 Implémenté / 9 Bloqué / 487 Vérifié / 59 Accepté**. **P630=546/630**.
+- Compteurs recalculés du registre : à cette date 487 Vérifié, 59 Accepté, 9 Bloqué, 29 Implémenté, 12 En cours, 34 À faire, 0 À définir ; 546 obligations sur 630 closes.
 - Reprise : CI de #332, fusion, puis `completer_preuves.py` sur `origin/main` et promotion des obligations de la vague 2.
 
 ## Achèvement — PR #330 fusionnée, promotion, vague 2 (G1, G3, G4, G5) — 26 octobre 2026
