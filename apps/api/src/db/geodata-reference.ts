@@ -136,15 +136,18 @@ function fichesLivrees(): string[] {
   return readdirSync(dossier).filter((f) => f.endsWith(".json")).sort().map((f) => join(dossier, f));
 }
 
-/** Retraits déclarés (D-GD-23) : sources de référence remplacées, retirées du catalogue avec leur motif. */
-interface RetraitDeclare { cle: string; motif: string; decision: string }
+/**
+ * Retraits déclarés (D-GD-23) : sources de référence remplacées, retirées du catalogue avec leur motif — seulement quand
+ * leur remplaçante (`remplacePar`) a une version de référence publiée ; sinon l'ancienne source reste consultable.
+ */
+interface RetraitDeclare { cle: string; remplacePar: string; motif: string; decision: string }
 
 function lireRetraits(): RetraitDeclare[] {
   const chemin = join(dossierFiches(), "donnees", "retraits-sources.json");
   if (!existsSync(chemin)) return [];
   const brut = JSON.parse(readFileSync(chemin, "utf8")) as unknown;
-  if (!Array.isArray(brut) || !brut.every((r) => r && typeof r.cle === "string" && typeof r.motif === "string" && r.motif.trim().length >= 3 && typeof r.decision === "string")) {
-    throw new Error("retraits-sources.json : liste de { cle, motif (3 caractères au moins), decision } attendue.");
+  if (!Array.isArray(brut) || !brut.every((r) => r && typeof r.cle === "string" && typeof r.remplacePar === "string" && r.remplacePar !== r.cle && typeof r.motif === "string" && r.motif.trim().length >= 3 && typeof r.decision === "string")) {
+    throw new Error("retraits-sources.json : liste de { cle, remplacePar, motif (3 caractères au moins), decision } attendue.");
   }
   return brut as RetraitDeclare[];
 }
@@ -156,6 +159,12 @@ async function appliquerRetraits(retraits: readonly RetraitDeclare[], publierPar
     const publieur = (await pool.query("SELECT u.id FROM users u JOIN geodata_roles g ON g.user_id = u.id AND g.role = 'responsable-publication' WHERE lower(u.email) = lower($1)", [publierPar])).rows[0]?.id as string | undefined;
     if (!publieur) throw new Error(`${publierPar} n'a pas le rôle GeoData « responsable-publication » : aucun retrait appliqué.`);
     for (const r of retraits) {
+      // Jamais de couche retirée sans sa remplaçante publiée (import ou publication échoués : l'ancienne reste).
+      const remplacante = (await pool.query("SELECT 1 FROM geodata_versions v JOIN geodata_sources s ON s.id = v.source_id WHERE s.cle = $1 AND v.espace_id IS NULL AND v.etat = 'publiee' LIMIT 1", [r.remplacePar])).rows.length > 0;
+      if (!remplacante) {
+        console.error(`Retrait refusé : ${r.cle} reste consultable, sa remplaçante ${r.remplacePar} n'a pas de version publiée.`);
+        continue;
+      }
       const ids = (await pool.query(
         `UPDATE geodata_versions v SET etat = 'retiree', retiree_le = now(), motif_retrait = $2 FROM geodata_sources s
           WHERE s.id = v.source_id AND s.cle = $1 AND v.espace_id IS NULL AND v.etat = 'publiee' RETURNING v.id`,

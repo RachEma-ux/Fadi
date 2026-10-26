@@ -178,9 +178,10 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         --preparateur … --publier-par …`) tourne en arrière-plan : chaque fiche livrée est préparée puis publiée si elle
         n'est pas en base. L'empreinte attendue se lit dans la fiche : une fiche déjà importée n'est ni relue ni
         retéléchargée (contrôle en moins d'une seconde) ; les empreintes réelles restent contrôlées à la lecture.
-     2. **Retraits déclarés** : `docs/geodata/sources/donnees/retraits-sources.json` (clé, motif, décision) ; les
-        versions de référence publiées de ces sources sont retirées par le même compte, journalisées
-        (`version.retiree`) — `osm-mar-communes` et `osm-mar-villes` (D-GD-18).
+     2. **Retraits déclarés** : `docs/geodata/sources/donnees/retraits-sources.json` (clé, remplaçante, motif, décision) ;
+        les versions de référence publiées de ces sources sont retirées par le même compte, journalisées
+        (`version.retiree`), **seulement si leur remplaçante a une version publiée** (sinon l'ancienne reste
+        consultable et le refus est consigné) — `osm-mar-communes` et `osm-mar-villes` (D-GD-18).
      3. **Quittance du serveur** : `GET /version/donnees` (commit qui tourne, état de l'import : désactivé, en cours,
         terminé avec son bilan, échec avec la dernière erreur), sans requête à la base.
      4. **Quittance de fin de processus** : après chaque fusion, la CI de `main` est suivie jusqu'au vert ; un job tué
