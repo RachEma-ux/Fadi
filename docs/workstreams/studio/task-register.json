@@ -22911,7 +22911,7 @@
           "type": "recette_e2e",
           "fichier": "apps/web/e2e/studio-rendu.mjs",
           "controles": [
-            "A.3-08 : inventaire affiché — sommets et arêtes, groupe, composant, courbe exacte 3D, surface complexe, BRep fournisseur « Non disponible », sans commande",
+            "A.3-08 : inventaire affiché — sommets et arêtes, groupe, courbe exacte 3D, BRep fournisseur « Non disponible », sans commande",
             "A.3-08 : aucun outil de la barre ne propose un type avancé"
           ],
           "rapport": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
