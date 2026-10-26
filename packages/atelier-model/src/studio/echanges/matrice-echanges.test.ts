@@ -110,6 +110,9 @@ describe("Matrice d'échanges : donnée versionnée et cohérente", () => {
       // Lot G2 (EX-027, INV-013) : échelle d’accès (architecture.ladder : SVG / DXF en plan, IFC IfcStair .LADDER. exact) ;
       // catégorie « cotesFaces » (cotes de faces 3D, écrites dans aucun format).
       9: "7f7e636bf4c023b2fa10bc992b666b8a76e1e1c10027037abbc52434e125d6ae",
+      // Lot W3-B (X.1-04) : poteau, poutre, dalle (architecture : SVG / DXF en plan, IFC IfcColumn / IfcBeam / IfcSlab exacts) ;
+      // catégories « niveaux » (IfcBuildingStorey réel), « composants » (type partagé) et « occurrences » (IfcMappedItem).
+      10: "2189adb0283d41ad7b0a61b902adb29eca3922fdd7a03843908c9d46a1748b09",
     };
     // Depuis la révision 8, l'empreinte couvre aussi les capacités par sens d'échange (EX-079).
     const capacites = STUDIO_MATRICE_ECHANGES.revision >= 8 ? { capacites: STUDIO_CAPACITES_PAR_SENS } : {};
@@ -293,7 +296,15 @@ const complet = (): StudioDocument => ({
     { id: "o3", type: "opening", hostId: "m1", position: 9.5, width: 1, height: 1, sill: 1 },
     // Lot G2 (EX-027) : échelle d’accès.
     { id: "ech1", type: "ladder", position: { x: 14, y: 20 }, rotation: 0, width: 0.5, height: 3, base: 0, rungs: 9, section: 0.04 },
+    // Lot W3-B : éléments structurels typés rattachés à un niveau (valeurs SYNTHÉTIQUES).
+    { id: "po1", type: "column", niveauId: "niv1", position: { x: 20, y: 20 }, rotation: 0, width: 0.3, depth: 0.3, height: 3, base: 3 },
+    { id: "pt1", type: "beam", niveauId: "niv1", start: { x: 20, y: 20 }, end: { x: 26, y: 20 }, width: 0.2, height: 0.4, base: 5.6 },
+    { id: "da1", type: "slab", niveauId: "niv1", contour: [{ x: 20, y: 20 }, { x: 26, y: 20 }, { x: 26, y: 26 }, { x: 20, y: 26 }], thickness: 0.2, base: 6 },
   ],
+  // Lot W3-B : niveau, définition de composant et occurrence (géométrie SYNTHÉTIQUE).
+  niveaux: [{ id: "niv1", nom: "Étage 1", cote: 3 }],
+  composants: [{ id: "cp1", nom: "Gaine", solides: [{ id: "g", type: "box", placement: { origin: { x: 0, y: 0, z: 0 }, rotation: 0 }, width: 0.2, depth: 0.2, height: 3 }] }],
+  occurrences: [{ id: "oc1", type: "occurrence", composantId: "cp1", niveauId: "niv1", placement: { origin: { x: 30, y: 20, z: 3 }, rotation: 0 } }],
   proprietes: [
     { cibleId: "m1", nom: "Résistance au feu", valeur: "REI 60", source: "Fiche de recette (synthétique)" },
     { cibleId: "m1", nom: "Isolation" },

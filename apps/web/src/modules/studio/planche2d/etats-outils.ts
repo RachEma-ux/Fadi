@@ -59,6 +59,11 @@ export const SYNONYMES: Readonly<Record<string, readonly string[]>> = Object.fre
   "studio.architecture.echelle-acces": ["échelle fixe", "accès", "échelons", "montants"],
   "studio.architecture.modifier": ["éditer le mur", "épaisseur"],
   "studio.architecture.supprimer": ["effacer le mur"],
+  // Lot W3-B : niveaux, composants 3D, éléments structurels.
+  "studio.niveau.definir": ["étage", "plancher", "altitude", "storey"],
+  "studio.composant.definir": ["bloc 3D", "définition", "élément répété", "famille"],
+  "studio.composant.placer": ["instance", "occurrence", "insérer un composant", "rendre unique"],
+  "studio.structure.element": ["poteau", "poutre", "dalle", "ossature"],
   "studio.propriete.definir": ["attribut", "paramètre", "caractéristique"],
   "studio.propriete.retirer": ["effacer l’attribut"],
   "studio.scene.creer": ["point de vue", "caméra", "vue enregistrée"],
@@ -81,7 +86,7 @@ export const SYNONYMES: Readonly<Record<string, readonly string[]>> = Object.fre
 /** Domaines de travail par barre (français source). */
 export const DOMAINES_PAR_BARRE: Readonly<Record<string, readonly string[]>> = Object.freeze({
   dessin: ["dessin 2D", "annotation"], modification: ["dessin 2D", "transformation"], calques: ["organisation"],
-  volume: ["3D", "volume"], "volume-libre": ["3D", "volume", "modélisation"], architecture: ["architecture", "bâtiment"],
+  volume: ["3D", "volume"], "volume-libre": ["3D", "volume", "modélisation"], architecture: ["architecture", "bâtiment"], batiment: ["architecture", "bâtiment", "structure"],
   proprietes: ["données", "BIM"], exigences: ["données", "contrôle"], "non-natifs": ["échanges", "import"],
   edition: ["édition"], vue: ["affichage", "navigation"], accrochage: ["dessin 2D", "précision"], reperage: ["dessin 2D", "précision"],
   visualisation: ["3D", "présentation"], import: ["échanges", "import"], export: ["échanges", "export"], presentation: ["présentation", "impression"],

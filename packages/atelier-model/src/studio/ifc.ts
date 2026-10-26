@@ -7,6 +7,8 @@ import { studioLienSolide } from "./commandes/liens-solides.js";
 import { studioIfcSolide } from "./objets-3d/ifc.js";
 import { studioIfcArchitecture } from "./architecture/ifc.js";
 import { studioIfcProprietes } from "./exigences/ifc.js";
+import { studioIfcComposants } from "./batiment/ifc.js";
+import { studioNiveauxParCote } from "./batiment/niveaux.js";
 
 export { studioIfcGuid, studioStepReal, studioStepString, type StudioIfcSummary } from "./exporteurs/ifc-step.js";
 
@@ -21,6 +23,12 @@ export { studioIfcGuid, studioStepReal, studioStepString, type StudioIfcSummary 
  *   conversion explicite (x, y) → (x, y, z) ; aucun géoréférencement n'est connu : pas d'`IfcMapConversion` ;
  * - spatial : `IfcProject` (unités SI, mètre) → `IfcSite` (nom de l'étude) → `IfcBuilding` (nom de la variante) →
  *   un `IfcBuildingStorey` de référence à z = 0 ; ni adresse, ni coordonnées géographiques, ni altitude ;
+ * - niveaux (lot W3-B) : chaque niveau du document devient un `IfcBuildingStorey` réel (nom saisi, `Elevation` = cote,
+ *   placement à cette cote), agrégé au bâtiment avec le niveau de référence ; les éléments rattachés y sont contenus, les
+ *   autres restent dans le niveau de référence (leurs placements restent exprimés depuis le niveau de référence, z = 0 :
+ *   aucune cote n'est recalculée) ;
+ * - éléments structurels typés (lot W3-B) : `IfcColumn`, `IfcBeam`, `IfcSlab` (`architecture/ifc.ts`) ; composants 3D :
+ *   `IfcBuildingElementProxyType` à représentation partagée et occurrences `IfcMappedItem` (`batiment/ifc.ts`) ;
  * - seuls les objets dont l'utilisateur a déclaré l'extrusion deviennent des éléments 3D :
  *   ligne avec épaisseur → `IfcWall` (`IfcExtrudedAreaSolid` d'un `IfcRectangleProfileDef` longueur × épaisseur, centré
  *   sur la ligne, placé et orienté le long de la ligne, à la cote `base`, sur la hauteur `height`) ;
@@ -112,7 +120,13 @@ function studioIfc(input: StudioDocument, meta: StudioIfcMeta): { content: strin
   const storey = s.add(`IFCBUILDINGSTOREY(${gid("storey")},$,${studioStepString("Niveau de référence")},${studioStepString("z = 0 du repère local-3d")},$,${ref(storeyPlacement)},$,$,.ELEMENT.,0.)`);
   s.add(`IFCRELAGGREGATES(${gid("rel-project-site")},$,$,$,${ref(project)},${refs([site])})`);
   s.add(`IFCRELAGGREGATES(${gid("rel-site-building")},$,$,$,${ref(site)},${refs([building])})`);
-  s.add(`IFCRELAGGREGATES(${gid("rel-building-storey")},$,$,$,${ref(building)},${refs([storey])})`);
+  // Niveaux du document (lot W3-B) : un `IfcBuildingStorey` par niveau, par cote croissante, à sa cote.
+  const etages = new Map<string, number>();
+  for (const n of studioNiveauxParCote(doc.niveaux)) {
+    const placementNiveau = s.add(`IFCLOCALPLACEMENT(${ref(buildingPlacement)},${ref(s.add(`IFCAXIS2PLACEMENT3D(${ref(pt3(0, 0, n.cote))},$,$)`))})`);
+    etages.set(n.id, s.add(`IFCBUILDINGSTOREY(${gid(`niveau|${n.id}`)},$,${studioStepString(n.nom)},${studioStepString(`Niveau Studio ${n.id}`)},$,${ref(placementNiveau)},$,$,.ELEMENT.,${studioStepReal(n.cote)})`));
+  }
+  s.add(`IFCRELAGGREGATES(${gid("rel-building-storey")},$,$,$,${ref(building)},${refs([storey, ...etages.values()])})`);
 
   const prop = (name: string, value: string) => s.add(`IFCPROPERTYSINGLEVALUE(${studioStepString(name)},$,${value},$)`);
   const length = (v: number) => `IFCLENGTHMEASURE(${studioStepReal(v)})`;
@@ -201,14 +215,40 @@ function studioIfc(input: StudioDocument, meta: StudioIfcMeta): { content: strin
   }
   // Objets architecturaux (A.4) : `IfcWall`, `IfcOpeningElement` + `IfcRelVoidsElement`, `IfcDoor` / `IfcWindow` déclarés.
   const remplissages: number[] = [];
+  const niveauxRemplissages = new Map<number, string>();
   if (doc.architecture?.length) {
     const a = studioIfcArchitecture(doc.architecture, contexte, { pset, prop, length, label });
     for (const b of a.construits) { if (hiddenLayers.has(b.layerId)) summary.onHiddenLayers++; built.push(b); }
     remplissages.push(...a.remplissages);
     for (const [id, e] of a.entites) entites.set(id, e);
-    summary.architecture = { walls: a.murs, openings: a.ouvertures, doors: a.portes, windows: a.fenetres, ...(a.echelles ? { ladders: a.echelles } : {}) };
+    summary.architecture = {
+      walls: a.murs, openings: a.ouvertures, doors: a.portes, windows: a.fenetres, ...(a.echelles ? { ladders: a.echelles } : {}),
+      ...(a.poteaux ? { columns: a.poteaux } : {}), ...(a.poutres ? { beams: a.poutres } : {}), ...(a.dalles ? { slabs: a.dalles } : {}),
+    };
+    for (const [r, n] of a.niveauxRemplissages) niveauxRemplissages.set(r, n);
   }
-  if (built.length) s.add(`IFCRELCONTAINEDINSPATIALSTRUCTURE(${gid("rel-storey-elements")},$,$,$,${refs([...built.map((b) => b.element), ...remplissages])},${ref(storey)})`);
+  // Composants 3D (lot W3-B) : type partagé, occurrences en `IfcMappedItem`.
+  if (doc.composants?.length) {
+    const k = studioIfcComposants(doc.composants, doc.occurrences ?? [], contexte, { pset, prop, length, label });
+    for (const b of k.construits) { if (hiddenLayers.has(b.layerId)) summary.onHiddenLayers++; built.push(b); }
+    for (const [id, e] of k.entites) entites.set(id, e);
+    summary.components = { types: k.types, occurrences: k.occurrences };
+  }
+  if (etages.size) summary.storeys = etages.size;
+  // Contenance : les éléments rattachés à un niveau dans son étage, les autres dans le niveau de référence.
+  const contenus = new Map<number, number[]>();
+  const contenir = (element: number, niveauId: string | undefined) => {
+    const etage = (niveauId !== undefined ? etages.get(niveauId) : undefined) ?? storey;
+    (contenus.get(etage) ?? contenus.set(etage, []).get(etage)!).push(element);
+  };
+  for (const b of built) contenir(b.element, b.niveauId);
+  for (const r of remplissages) contenir(r, niveauxRemplissages.get(r));
+  const reference = contenus.get(storey);
+  if (reference?.length) s.add(`IFCRELCONTAINEDINSPATIALSTRUCTURE(${gid("rel-storey-elements")},$,$,$,${refs(reference)},${ref(storey)})`);
+  for (const [id, etage] of etages) {
+    const liste = contenus.get(etage);
+    if (liste?.length) s.add(`IFCRELCONTAINEDINSPATIALSTRUCTURE(${gid(`rel-niveau-elements|${id}`)},$,$,$,${refs(liste)},${ref(etage)})`);
+  }
 
   // Calques : ordre du document, le calque implicite d'abord s'il n'est pas matérialisé ; un calque vide n'est pas écrit.
   const ordered = [
@@ -246,7 +286,12 @@ function studioIfc(input: StudioDocument, meta: StudioIfcMeta): { content: strin
       prop("ArchitecturalWalls", integer(summary.architecture.walls)), prop("Openings", integer(summary.architecture.openings)),
       prop("DeclaredDoors", integer(summary.architecture.doors)), prop("DeclaredWindows", integer(summary.architecture.windows)),
       ...(summary.architecture.ladders !== undefined ? [prop("ArchitecturalLadders", integer(summary.architecture.ladders))] : []),
+      ...(summary.architecture.columns !== undefined ? [prop("StructuralColumns", integer(summary.architecture.columns))] : []),
+      ...(summary.architecture.beams !== undefined ? [prop("StructuralBeams", integer(summary.architecture.beams))] : []),
+      ...(summary.architecture.slabs !== undefined ? [prop("StructuralSlabs", integer(summary.architecture.slabs))] : []),
     ] : []),
+    ...(summary.storeys !== undefined ? [prop("DeclaredLevels", integer(summary.storeys))] : []),
+    ...(summary.components ? [prop("ComponentTypes", integer(summary.components.types)), prop("ComponentOccurrences", integer(summary.components.occurrences))] : []),
     ...(summary.proprietes ? [
       prop("DeclaredPropertiesExported", integer(summary.proprietes.exported)),
       prop("DeclaredPropertiesNotEvaluated", integer(summary.proprietes.notEvaluated)),

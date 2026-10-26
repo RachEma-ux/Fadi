@@ -34,7 +34,7 @@ import { STUDIO_CAPACITES_EXPORT, STUDIO_RAISONS_FIDELITE, type StudioFormatEcha
 
 export const STUDIO_MATRICE_ECHANGES_SCHEMA = "studio-matrice-echanges/1" as const;
 /** Révision de la matrice : à incrémenter avec toute modification d'une entrée (empreinte épinglée par test). */
-export const STUDIO_MATRICE_ECHANGES_REVISION = 9 as const;
+export const STUDIO_MATRICE_ECHANGES_REVISION = 10 as const;
 /** Date de l'audit qui a établi la révision courante. */
 export const STUDIO_MATRICE_ECHANGES_DATE = "2026-10-26" as const;
 
@@ -133,6 +133,7 @@ export const STUDIO_STATUT_DE_RAISON: Readonly<Record<StudioRaisonFidelite, Stud
   "visualisation-hors-export": "non-couvert", "type-sans-capacite": "non-couvert", "propriete-non-exportee": "non-couvert",
   "propriete-non-evaluee": "non-couvert", "non-natif-hors-export": "non-couvert", "solide-exact-hors-ifc": "non-couvert",
   "spline-decoupee": "approche", "transparence-non-portee": "approche", "graphisme-hors-ifc": "non-couvert", "provenance-hors-dessin": "non-couvert",
+  "niveau-en-etage": "exact", "niveau-hors-2d": "non-couvert", "type-partage": "exact", "occurrence-partagee": "exact",
 });
 
 type Categorie = keyof typeof STUDIO_CAPACITES_EXPORT;
@@ -153,12 +154,13 @@ export const STUDIO_COUVERTURE_EXPORT: { readonly [F in StudioFormatEchange]: Pa
     solides: { box: ["solide-hors-2d"], prism: ["solide-hors-2d"] },
     exacts: { exact: ["solide-hors-2d"] },
     cotesFaces: { "face-dimension": ["solide-hors-2d"] },
-    architecture: { wall: ["extrusion-non-portee"], opening: ["ouverture-en-lacune"], ladder: ["extrusion-non-portee"] },
+    architecture: { wall: ["extrusion-non-portee"], opening: ["ouverture-en-lacune"], ladder: ["extrusion-non-portee"], column: ["extrusion-non-portee"], beam: ["extrusion-non-portee"], slab: ["extrusion-non-portee"] },
     proprietes: { propriete: ["propriete-non-exportee"] },
     scenes: { scene: VISU, appearance: VISU },
     nonNatifs: { "non-native": NN },
     graphismes: { spline: ["trace-exact"], hachure: ["trace-exact"], symbole: ["trace-exact"] },
     sources: { source: ["provenance-hors-dessin"] },
+    niveaux: { niveau: ["niveau-hors-2d"] }, composants: { composant: ["solide-hors-2d"] }, occurrences: { occurrence: ["solide-hors-2d"] },
   },
   dxf: {
     objets: { line: TRACE_2D, rectangle: TRACE_2D, circle: TRACE_2D, arc: ["arcs-exacts", "extrusion-non-portee"], polyline: ["trace-exact", "renflements-exacts", "extrusion-non-portee"] },
@@ -167,12 +169,13 @@ export const STUDIO_COUVERTURE_EXPORT: { readonly [F in StudioFormatEchange]: Pa
     solides: { box: ["solide-hors-2d"], prism: ["solide-hors-2d"] },
     exacts: { exact: ["solide-hors-2d"] },
     cotesFaces: { "face-dimension": ["solide-hors-2d"] },
-    architecture: { wall: ["extrusion-non-portee"], opening: ["ouverture-en-lacune"], ladder: ["extrusion-non-portee"] },
+    architecture: { wall: ["extrusion-non-portee"], opening: ["ouverture-en-lacune"], ladder: ["extrusion-non-portee"], column: ["extrusion-non-portee"], beam: ["extrusion-non-portee"], slab: ["extrusion-non-portee"] },
     proprietes: { propriete: ["propriete-non-exportee"] },
     scenes: { scene: VISU, appearance: VISU },
     nonNatifs: { "non-native": NN },
     graphismes: { spline: ["spline-decoupee"], hachure: ["trace-exact", "transparence-non-portee"], symbole: ["trace-exact", "transparence-non-portee"] },
     sources: { source: ["provenance-hors-dessin"] },
+    niveaux: { niveau: ["niveau-hors-2d"] }, composants: { composant: ["solide-hors-2d"] }, occurrences: { occurrence: ["solide-hors-2d"] },
   },
   ifc: {
     objets: {
@@ -184,12 +187,13 @@ export const STUDIO_COUVERTURE_EXPORT: { readonly [F in StudioFormatEchange]: Pa
     solides: { box: ["profil-exact"], prism: ["profil-exact"] },
     exacts: { exact: ["solide-exact-hors-ifc"] },
     cotesFaces: { "face-dimension": ["cote-hors-ifc"] },
-    architecture: { wall: ["extrusion-exacte"], opening: ["ouverture-evidee"], ladder: ["extrusion-exacte"] },
+    architecture: { wall: ["extrusion-exacte"], opening: ["ouverture-evidee"], ladder: ["extrusion-exacte"], column: ["extrusion-exacte"], beam: ["extrusion-exacte"], slab: ["extrusion-exacte"] },
     proprietes: { propriete: ["propriete-en-pset", "propriete-non-evaluee"] },
     scenes: { scene: VISU, appearance: VISU },
     nonNatifs: { "non-native": NN },
     graphismes: { spline: ["graphisme-hors-ifc"], hachure: ["graphisme-hors-ifc"], symbole: ["graphisme-hors-ifc"] },
     sources: { source: ["provenance-hors-dessin"] },
+    niveaux: { niveau: ["niveau-en-etage"] }, composants: { composant: ["type-partage"] }, occurrences: { occurrence: ["occurrence-partagee"] },
   },
 });
 
@@ -218,6 +222,9 @@ const ECRITURE_IFC: NonNullable<StudioEntreeEchange["ecritureIfc"]> = {
     { entites: ["IfcOpeningElement", "IfcRelVoidsElement"], detail: "Ouverture : boîte .OPENING. reliée au mur hôte, placée relativement au mur." },
     { entites: ["IfcDoor", "IfcWindow", "IfcRelFillsElement"], detail: "Porte ou fenêtre seulement si son type est déclaré : remplit l’ouverture, sans représentation propre." },
     { entites: ["IfcStair"], detail: "Échelle d’accès (EX-027) : type prédéfini .LADDER., montants et échelons extrudés (profils fermés), placée à la cote de son pied ; aucune valeur normative." },
+    { entites: ["IfcBuildingStorey", "IfcRelContainedInSpatialStructure"], detail: "Niveaux du document (lot W3-B) : un IfcBuildingStorey par niveau (nom saisi, Elevation = cote), placé à sa cote ; les éléments rattachés y sont contenus, les autres restent au niveau de référence." },
+    { entites: ["IfcColumn", "IfcBeam", "IfcSlab"], detail: "Poteau, poutre et dalle créés comme tels (lot W3-B) : type prédéfini .NOTDEFINED., sections saisies extrudées ; géométrie seulement, aucune vérification structurelle." },
+    { entites: ["IfcBuildingElementProxyType", "IfcRepresentationMap", "IfcMappedItem", "IfcCartesianTransformationOperator3D", "IfcRelDefinesByType"], detail: "Composant 3D (lot W3-B) : définition en type partagé (représentation des solides écrite une fois), chaque occurrence en IfcBuildingElementProxy dont le corps est un IfcMappedItem de cette représentation." },
     { entites: ["IfcPropertySet", "IfcPropertySingleValue", "IfcRelDefinesByProperties"], detail: "Jeux de propriétés listés ci-dessous, valeurs saisies seulement." },
     { entites: ["IfcPresentationLayerWithStyle"], detail: "Un calque par calque non vide : nom, identifiant Studio, visibilité, verrou ; calque masqué exporté éteint." },
   ],
@@ -227,6 +234,11 @@ const ECRITURE_IFC: NonNullable<StudioEntreeEchange["ecritureIfc"]> = {
     { nom: "Fadi_StudioWall", detail: "Mur : identifiant, épaisseur, hauteur, base, justification, longueur d’axe." },
     { nom: "Fadi_StudioOpening", detail: "Ouverture : identifiant, mur hôte, position, largeur, hauteur, allège, type déclaré." },
     { nom: "Fadi_StudioLadder", detail: "Échelle d’accès : identifiant, entre-axe, hauteur, base, nombre et pas des échelons, section des montants." },
+    { nom: "Fadi_StudioColumn", detail: "Poteau : identifiant, section saisie (largeur, profondeur), hauteur, base, orientation, volume dérivé." },
+    { nom: "Fadi_StudioBeam", detail: "Poutre : identifiant, section saisie (largeur, hauteur), base, longueur d’axe, volume dérivé." },
+    { nom: "Fadi_StudioSlab", detail: "Dalle : identifiant, épaisseur, base, sommets du contour, aire et volume dérivés." },
+    { nom: "Fadi_StudioComponent", detail: "Définition de composant (portée par le type) : identifiant, nom, nombre de solides." },
+    { nom: "Fadi_StudioComponentOccurrence", detail: "Occurrence : identifiant, définition désignée, origine et rotation." },
     { nom: "Fadi_StudioExport", detail: "Projet : document, révision, repère et effectifs (éléments écrits, objets non extrudés, cotes et annotations non exportées)." },
     { nom: "Fadi_ProprietesDeclarees", detail: "Propriétés déclarées valuées de chaque objet porteur ; les propriétés sans valeur sont comptées, jamais écrites." },
   ],
@@ -343,7 +355,7 @@ const LIVREES: readonly StudioEntreeEchange[] = [
   },
   {
     id: "maquette-ifc", format: "IFC (STEP physique, ISO 10303-21)", versionFormat: "IFC4X3_ADD2, ViewDefinition [ReferenceView]", sens: "export", famille: "maquette",
-    objet: "Objets extrudés, solides libres, murs et ouvertures, propriétés déclarées d’une révision", taches: ["E.6-03"], statut: "livre", fidelite: "ifc",
+    objet: "Objets extrudés, solides libres, murs et ouvertures, niveaux, poteaux, poutres, dalles, composants 3D et leurs occurrences, propriétés déclarées d’une révision", taches: ["E.6-03"], statut: "livre", fidelite: "ifc",
     limite: "Seuls les éléments 3D sont écrits ; arcs discrétisés ; cotes, annotations et réglages de visualisation absents ; IfcDoor / IfcWindow seulement si le type est déclaré, sans représentation propre.",
     entites: [], ecritureIfc: ECRITURE_IFC,
     controle: "Tests de l’export ; corpus validé par IfcOpenShell 0.9.0 en CI (schéma, règles EXPRESS, effectifs, propriétés) ; testé, jamais certifié.",
@@ -361,7 +373,7 @@ const LIVREES: readonly StudioEntreeEchange[] = [
     objet: "Géométrie 3D d’une révision (maillage triangulé de la vue 3D)", taches: ["E.6-04"], statut: "livre", export3d: "obj",
     limite: "Maillage seulement : courbes discrétisées comme dans la vue 3D, coordonnées au micromètre ; mètres déclarés en commentaire (OBJ ne porte aucune unité) ; aucun matériau ; tous les calques écrits, un calque masqué signalé ; ce qui n’est pas une géométrie 3D est compté dans l’en-tête, jamais écrit.",
     entites: [
-      { entite: "Objets extrudés, solides libres, solides exacts, murs", couverture: "partielle", detail: "Un objet « o » par élément, nommé par son identifiant Studio (échappé ~XXXX~, réversible), faces triangulaires orientées ; volume relu égal à celui du modèle ; courbes discrétisées." },
+      { entite: "Objets extrudés, solides libres, solides exacts, murs, échelles d’accès, poteaux, poutres, dalles, occurrences de composants", couverture: "partielle", detail: "Un objet « o » par élément, nommé par son identifiant Studio (échappé ~XXXX~, réversible), faces triangulaires orientées ; volume relu égal à celui du modèle ; courbes discrétisées." },
       { entite: "Calques", couverture: "portee", detail: "Un groupe « g » par calque ; un calque masqué est écrit et signalé." },
       { entite: "Surfaces verticales sans épaisseur", couverture: "portee", detail: "Triangles sans volume, comme dans la vue 3D." },
       { entite: "Contours non extrudés", couverture: "partielle", detail: "Lignes « l » à z = 0, courbes discrétisées." },
@@ -383,7 +395,7 @@ const LIVREES: readonly StudioEntreeEchange[] = [
     objet: "Solides d’une révision (facettes triangulées)", taches: ["E.6-04"], statut: "livre", export3d: "stl",
     limite: "Une seule pièce « solid » : STL ne porte ni unité (mètres), ni identité, ni calque ; facettes des solides seulement, normale unitaire calculée dans le sens des sommets ; courbes discrétisées ; surfaces sans épaisseur et contours plats non écrits (comptés par le bilan de l’export).",
     entites: [
-      { entite: "Objets extrudés, solides libres, solides exacts, murs", couverture: "partielle", detail: "Facettes du maillage de la vue 3D ; volume relu égal à celui du modèle ; identité et calque perdus." },
+      { entite: "Objets extrudés, solides libres, solides exacts, murs, échelles d’accès, poteaux, poutres, dalles, occurrences de composants", couverture: "partielle", detail: "Facettes du maillage de la vue 3D ; volume relu égal à celui du modèle ; identité et calque perdus." },
       { entite: "Surfaces verticales sans épaisseur, contours non extrudés", couverture: "absente", detail: "Ce ne sont pas des solides : comptés, jamais écrits." },
       { entite: "Cotes, annotations, graphismes, ouvertures, propriétés, scènes, éléments non natifs", couverture: "absente", detail: "Comptés par le bilan de l’export, jamais écrits." },
     ],
@@ -405,6 +417,8 @@ const LIVREES: readonly StudioEntreeEchange[] = [
       { entite: "Solides exacts (booléens)", couverture: "portee", detail: "Brep du noyau écrit tel quel." },
       { entite: "Solides libres (boîtes, prismes)", couverture: "portee", detail: "Extrusion de l’emprise (solide droit) ou lissage réglé entre ses deux faces (solide oblique ou basculé) : faces planes, exactes." },
       { entite: "Murs", couverture: "portee", detail: "Morceaux pleins juxtaposés (vides des ouvertures déduits), un produit par mur ; volume relu égal au volume net du modèle." },
+      { entite: "Échelles d’accès, poteaux, poutres, dalles", couverture: "portee", detail: "Extrusion de l’emprise de chaque montant et échelon (échelle) ou de l’élément structurel, un produit par élément (lot W3-B)." },
+      { entite: "Occurrences de composants", couverture: "portee", detail: "Solides de la définition placés par l’occurrence (lissage réglé, faces planes exactes), un produit par occurrence ; niveaux et définitions comptés, non écrits (lot W3-B)." },
       { entite: "Objets extrudés fermés, lignes et arcs avec épaisseur", couverture: "partielle", detail: "Extrusion de l’emprise de la vue 3D : cercles et arcs discrétisés." },
       { entite: "Identité", couverture: "portee", detail: "Nom du produit STEP = identifiant Studio (échappé ~XXXX~ hors ASCII imprimable, réversible)." },
       { entite: "Calques, surfaces sans épaisseur, contours, cotes, annotations, graphismes, ouvertures, propriétés, scènes, éléments non natifs", couverture: "absente", detail: "Non écrits ; comptés par le bilan de l’export." },

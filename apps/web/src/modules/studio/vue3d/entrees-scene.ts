@@ -83,12 +83,14 @@ export function entreesArchitecture(l: Lecture): EntreeRendu[] {
   for (const a of l.mesh.architecture ?? []) {
     if (!l.present(a.id)) continue;
     const choisi = a.id === l.selectionArchitecture;
-    if (a.type === "wall" || a.type === "ladder") {
-      // Échelle d'accès (EX-027) : montants et échelons, teinte propre, même désignation que le mur.
-      const aspect = aspectDe(l.doc, l.mode, a, a.type === "ladder" ? 0x9c8a6e : 0xd8d2c4, choisi);
+    if (a.type !== "opening") {
+      // Échelle d'accès (EX-027) : montants et échelons, teinte propre, même désignation que le mur ; poteaux, poutres et
+      // dalles (lot W3-B) : en lots, teinte propre par type.
+      const teinte = a.type === "ladder" ? 0x9c8a6e : a.type === "column" ? 0xa9a396 : a.type === "beam" ? 0xbfb49c : a.type === "slab" ? 0xe3dccd : 0xd8d2c4;
+      const aspect = aspectDe(l.doc, l.mode, a, teinte, choisi);
       out.push(choisi
         ? { id: a.id, signature: `${l.cle(a.id)}|${cleAspect(aspect)}`, construire: () => volumeSeul(a, aspect, a.id, { architecture: a.id }) }
-        : { id: a.id, signature: l.cle(a.id), lot: a.type === "ladder" ? "echelle" : "mur", geometrie: a, aspect });
+        : { id: a.id, signature: l.cle(a.id), lot: a.type === "ladder" ? "echelle" : a.type === "wall" ? "mur" : "structure", geometrie: a, aspect });
       continue;
     }
     // Le vide d'une ouverture ne prend que l'apparence de l'ouverture elle-même (pas celle du calque de son mur).
@@ -106,6 +108,12 @@ export function entreesArchitecture(l: Lecture): EntreeRendu[] {
         return [vide];
       },
     });
+  }
+  // Occurrences de composants (lot W3-B) : géométrie de leur définition placée ; admises à l'instanciation (C.2-02) — les
+  // occurrences de même forme deviennent un seul InstancedMesh dont la table de désignation rend l'occurrence.
+  for (const o of l.mesh.occurrences ?? []) {
+    if (!l.present(o.id)) continue;
+    out.push({ id: o.id, signature: l.cle(o.id), lot: "occurrence", instanciable: true, geometrie: o, aspect: aspectDe(l.doc, l.mode, o, 0x8fb3a0, false) });
   }
   return out;
 }

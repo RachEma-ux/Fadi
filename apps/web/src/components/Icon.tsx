@@ -112,6 +112,10 @@ export type IconName =
   | "studio-architecture-edit"
   | "studio-architecture-delete"
   | "studio-ladder"
+  | "studio-level"
+  | "studio-component"
+  | "studio-component-instance"
+  | "studio-structure"
   | "studio-property-set"
   | "console"
   | "studio-property-remove"
@@ -277,6 +281,12 @@ const PATHS: Record<IconName, string> = {
   "studio-architecture-delete": "M2 9h6v6H2ZM12 9h6v6h-6ZM8 7v10M12 7v10M15 3l6 6M21 3l-6 6",
   // Échelle d’accès (EX-027) : deux montants verticaux et quatre échelons (distincte de la transformation Échelle).
   "studio-ladder": "M7 2v20M17 2v20M7 6h10M7 10h10M7 14h10M7 18h10",
+  // Lot W3-B : niveau (deux planchers superposés et repère de cote) ; composant (cube et ses arêtes cachées) ;
+  // occurrence de composant (deux cubes, l'un reprenant l'autre) ; élément structurel (poteau et poutre en T).
+  "studio-level": "M3 9h13M3 17h13M19 5v16M17 7l2-2 2 2M17 19l2 2 2-2",
+  "studio-component": "M12 3 20 7.5v9L12 21l-8-4.5v-9ZM4 7.5 12 12l8-4.5M12 12v9",
+  "studio-component-instance": "M3 9 8 6.5 13 9v6l-5 2.5L3 15ZM13 9l5-2.5L23 9v6l-5 2.5-5-2.5M8 12v5.5M18 12v5.5",
+  "studio-structure": "M2 5h20v3H2ZM10 8h4v13h-4ZM6 21h12",
   // Propriétés et exigences (E.1) : étiquette et signe plus ; étiquette barrée ; liste cochée et balance (écart).
   "studio-property-set": "M3 4h9l8 8-8 8-9-9ZM7 8h.01M17 3v6M14 6h6",
   "studio-property-remove": "M3 4h9l8 8-8 8-9-9ZM7 8h.01M15 3l6 6M21 3l-6 6",

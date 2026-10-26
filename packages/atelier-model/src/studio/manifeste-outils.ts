@@ -67,6 +67,7 @@ const PROPRIETAIRES: Readonly<Record<StudioToolGroup, StudioProprietaireOutil>> 
   graphismes: { id: "studio.graphismes", module: "packages/atelier-model/src/studio/graphismes" },
   reperes: { id: "studio.reperes", module: "packages/atelier-model/src/studio/reperes.ts" },
   sources: { id: "studio.sources", module: "packages/atelier-model/src/studio/sources" },
+  batiment: { id: "studio.batiment", module: "packages/atelier-model/src/studio/batiment" },
 });
 
 export interface StudioEntreeManifeste {
@@ -144,6 +145,11 @@ const DECLARATIONS = {
   "studio.graphisme.retirer": { contextes: P2D, prerequis: ["studio.graphisme.creer"] },
   "studio.repere.projet": { contextes: P2D },
   "studio.source.declarer": { contextes: P2D },
+  // Lot W3-B : niveaux, composants 3D et éléments structurels — panneau « Bâtiment » de la planche, rendus en vue 3D.
+  "studio.niveau.definir": { contextes: ["planche-2d", "vue-3d"] },
+  "studio.composant.definir": { contextes: ["planche-2d", "vue-3d"] },
+  "studio.composant.placer": { contextes: ["planche-2d", "vue-3d"], prerequis: ["studio.composant.definir"] },
+  "studio.structure.element": { contextes: ["planche-2d", "vue-3d"] },
 } as const satisfies Record<StudioToolId, Declaration>;
 
 const chargeurDe = (contextes: readonly StudioContexteOutil[]): StudioIdChargeur =>

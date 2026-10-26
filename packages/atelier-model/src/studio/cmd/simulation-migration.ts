@@ -43,7 +43,7 @@ const stable = (v: unknown): string => {
   return `{${Object.keys(o).sort().filter((k) => o[k] !== undefined).map((k) => `${JSON.stringify(k)}:${stable(o[k])}`).join(",")}}`;
 };
 
-const LISTES = ["objects", "layers", "dimensions", "solides", "exacts", "annotations", "architecture", "scenes", "nonNatifs"] as const;
+const LISTES = ["objects", "layers", "dimensions", "solides", "exacts", "annotations", "architecture", "scenes", "nonNatifs", "niveaux", "composants", "occurrences"] as const;
 function identites(doc: Record<string, unknown>): Set<string> {
   const s = new Set<string>();
   for (const l of LISTES) for (const x of (doc[l] as { id?: unknown }[] | undefined) ?? []) if (x && typeof x.id === "string") s.add(`${l}:${x.id}`);

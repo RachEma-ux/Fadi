@@ -130,7 +130,8 @@ describe("Registry Studio minimal", () => {
     // jour, rappeler, supprimer ; apparence définir, retirer) ; lot F1 : pousser / tirer la face, diviser la face,
     // pivoter le solide, résoudre le lien du solide ; lot F3 : conserver et retirer les éléments non natifs ; lot F2 : booléen exact.
     // Graphismes et repères (EX-055, EX-023) : comptés à part, test suivant.
-    const socle = STUDIO_TOOLS.filter((t) => t.groupe !== "graphismes" && t.groupe !== "reperes" && t.groupe !== "sources" && !OUTILS_LOT_G2.has(t.toolId));
+    // Lot W3-B (famille « batiment ») : comptée à part (`batiment/batiment.test.ts`).
+    const socle = STUDIO_TOOLS.filter((t) => t.groupe !== "graphismes" && t.groupe !== "reperes" && t.groupe !== "sources" && t.groupe !== "batiment" && !OUTILS_LOT_G2.has(t.toolId));
     expect(socle).toHaveLength(45);
     for (const key of ["toolId", "iconeSymbolique", "raccourci"] as const) {
       expect(new Set(socle.map((tool) => tool[key])).size).toBe(45);
@@ -155,8 +156,9 @@ describe("Registry Studio minimal", () => {
   });
 
   it("publie quarante-neuf identités, icônes et raccourcis propres : graphismes (créer, retirer), système de projet et sources importées compris", () => {
-    expect(STUDIO_TOOLS.filter((t) => !OUTILS_LOT_G2.has(t.toolId))).toHaveLength(49);
-    for (const key of ["toolId", "iconeSymbolique", "raccourci"] as const) expect(new Set(STUDIO_TOOLS.filter((t) => !OUTILS_LOT_G2.has(t.toolId)).map((tool) => tool[key])).size).toBe(49);
+    const anterieurs = STUDIO_TOOLS.filter((t) => !OUTILS_LOT_G2.has(t.toolId) && t.groupe !== "batiment");
+    expect(anterieurs).toHaveLength(49);
+    for (const key of ["toolId", "iconeSymbolique", "raccourci"] as const) expect(new Set(anterieurs.map((tool) => tool[key])).size).toBe(49);
     const ajoutes = STUDIO_TOOLS.filter((t) => t.groupe === "graphismes" || t.groupe === "reperes" || t.groupe === "sources").map((t) => [t.toolId, t.raccourci, t.groupe]);
     expect(ajoutes).toEqual([["studio.graphisme.creer", "Shift+F6", "graphismes"], ["studio.graphisme.retirer", "Shift+F7", "graphismes"], ["studio.repere.projet", "Ctrl+Shift+F2", "reperes"], ["studio.source.declarer", "Ctrl+Shift+F3", "sources"]]);
   });
@@ -165,6 +167,6 @@ describe("Registry Studio minimal", () => {
     const g2 = STUDIO_TOOLS.filter((t) => OUTILS_LOT_G2.has(t.toolId)).map((t) => [t.toolId, t.raccourci, t.iconeSymbolique, t.groupe]);
     expect(g2).toEqual([...OUTILS_LOT_G2_ATTENDUS]);
     for (const key of ["toolId", "iconeSymbolique", "raccourci"] as const) expect(new Set(STUDIO_TOOLS.map((tool) => tool[key])).size).toBe(STUDIO_TOOLS.length);
-    expect(STUDIO_TOOLS).toHaveLength(49 + OUTILS_LOT_G2.size);
+    expect(STUDIO_TOOLS).toHaveLength(49 + OUTILS_LOT_G2.size + STUDIO_TOOLS.filter((t) => t.groupe === "batiment").length);
   });
 });

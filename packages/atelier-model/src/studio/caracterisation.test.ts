@@ -323,8 +323,10 @@ const AJOUTS = {
     "studio.architecture.echelle-acces",
     // Lot G2 (INV-013) : cote de face 3D, champ facultatif `cotesFaces` du document.
     "studio.solide.cote-face",
+    // Lot W3-B (X.1-04, extension additive consignée) : niveaux, composants 3D et éléments structurels typés.
+    "studio.niveau.definir", "studio.composant.definir", "studio.composant.placer", "studio.structure.element",
   ]),
-  types: new Set(["angular-dimension", "text", "wall", "opening", "scene", "appearance", "non-native", "spline", "hachure", "symbole", "source", "ladder", "face-dimension"]),
+  types: new Set(["angular-dimension", "text", "wall", "opening", "scene", "appearance", "non-native", "spline", "hachure", "symbole", "source", "ladder", "face-dimension", "column", "beam", "slab", "occurrence"]),
   exports: new Set([
     // Dérivation en copie indépendante (TR-EX-013 / TR-INV-003) et tolérance contractuelle des gestes (TR-IF-002), P-12.
     "STUDIO_MODES_DERIVATION", "studioCopieIndependante", "studioIdentitesDocument", "studioIdentitesReutilisees",
@@ -409,6 +411,13 @@ const AJOUTS = {
     "SCHEMA_ECHELLE", "STUDIO_ECHELONS_MAX", "validerEchelle", "geometrieEchelle", "metreEchelle", "volumesEchelle",
     // Lot G2 : cotes de faces 3D (INV-013, `objets-3d/cotes-faces.ts`).
     "SCHEMA_COTE_FACE", "STUDIO_TOLERANCE_FACES", "controlerCoteFace", "studioCorrespondanceFace", "studioFaceExiste", "studioPlanFace", "studioValeurCoteFace", "validerCoteFace",
+    // Lot W3-B : éléments structurels typés (`architecture/structure.ts`), niveaux et composants 3D (`batiment/`).
+    "STUDIO_TYPES_STRUCTURELS", "estStructurel", "SCHEMA_DALLE", "SCHEMA_ELEMENT_STRUCTUREL", "SCHEMA_POTEAU", "SCHEMA_POUTRE",
+    "axePoutre", "cotesStructurelles", "empriseStructurelle", "metreStructurel", "STUDIO_LIMITES_STRUCTURE", "transformerStructurel", "validerDalle", "validerPoteau", "validerPoutre", "volumeStructurel",
+    "SCHEMA_NIVEAU", "STUDIO_LIMITES_NIVEAUX", "studioNiveauxParCote", "validerNiveau",
+    "SCHEMA_COMPOSANT", "SCHEMA_OCCURRENCE", "STUDIO_LIMITES_COMPOSANTS", "studioCommandesRendreUnique", "studioInstancesComposants", "studioMaillageComposant",
+    "studioMaillageOccurrence", "studioPointOccurrence", "studioVolumeComposant", "validerComposant", "validerOccurrence",
+    "STUDIO_SANS_NIVEAU", "studioMembresNiveau", "studioVueNiveau",
   ]),
 };
 function sansAjouts(value: unknown): unknown {
@@ -420,7 +429,7 @@ function sansAjouts(value: unknown): unknown {
   if (!value || typeof value !== "object") return value;
   const out = Object.fromEntries(Object.entries(value).map(([k, v]) => [k, sansAjouts(v)]));
   const props = out.properties as Record<string, unknown> | undefined;
-  if (props && "schemaVersion" in props) { delete props.annotations; delete props.architecture; delete props.proprietes; delete props.scenes; delete props.nonNatifs; delete props.exacts; delete props.graphismes; delete props.systemeProjet; delete props.sources; delete props.cotesFaces; }
+  if (props && "schemaVersion" in props) { delete props.annotations; delete props.architecture; delete props.proprietes; delete props.scenes; delete props.nonNatifs; delete props.exacts; delete props.graphismes; delete props.systemeProjet; delete props.sources; delete props.cotesFaces; delete props.niveaux; delete props.composants; delete props.occurrences; }
   // Lot F1 (extension additive consignée) : direction d'extrusion facultative (`extrusion.direction`, `extruder`) et,
   // pour le prisme, direction et source facultatives ; retirées pour comparer à la base.
   if (props && "base" in props && "height" in props) delete props.direction;

@@ -70,6 +70,11 @@ const NEGATIFS: Readonly<Record<StudioToolId, readonly string[]>> = {
   "studio.architecture.modifier": ["architecture/architecture.test.ts", "studio-invariants.test.ts"],
   "studio.architecture.supprimer": ["architecture/architecture.test.ts", "exigences/exigences.test.ts"],
   "studio.architecture.echelle-acces": ["architecture/echelle.test.ts"],
+  // Lot W3-B : refus des niveaux, composants, occurrences et éléments structurels.
+  "studio.niveau.definir": ["batiment/batiment.test.ts"],
+  "studio.composant.definir": ["batiment/batiment.test.ts"],
+  "studio.composant.placer": ["batiment/batiment.test.ts"],
+  "studio.structure.element": ["batiment/batiment.test.ts"],
   "studio.solide.cote-face": ["objets-3d/cotes-faces.test.ts"],
   "studio.calque.creer": ["planche-2d.test.ts", "annotations.test.ts", "transformations-annotations.test.ts"],
   "studio.calque.modifier": ["planche-2d.test.ts", "annotations.test.ts", "transformations-annotations.test.ts"],
@@ -124,6 +129,8 @@ const MESURES_PAR_BARRE: Readonly<Record<string, readonly CodeMesureOutil[]>> = 
   dessin: ["PERF-02", "PERF-03", "PERF-04"], modification: ["PERF-02", "PERF-03", "PERF-04"], calques: ["PERF-02"], volume: ["PERF-02", "PERF-05"],
   "volume-libre": ["PERF-02", "PERF-05"], architecture: ["PERF-02", "PERF-03", "PERF-04"], proprietes: ["PERF-02"], visualisation: ["PERF-02", "PERF-05"], "non-natifs": ["PERF-02"],
   graphismes: ["PERF-02", "PERF-03"], reperes: ["PERF-02"], sources: ["PERF-02"],
+  // Lot W3-B : niveaux, composants 3D (occurrences rendues en vue 3D) et éléments structurels.
+  batiment: ["PERF-02", "PERF-05"],
 };
 
 /** Risques du contrat d'exécution (EX-028) : chaque refus laisse le document intact. */

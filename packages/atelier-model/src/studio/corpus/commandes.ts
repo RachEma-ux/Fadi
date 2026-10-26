@@ -21,7 +21,14 @@ export function commandesDuDocument(doc: StudioDocument): StudioCommand[] {
     }
   }
   // Ordre du document : dans le corpus, un mur précède toujours ses ouvertures.
-  for (const a of doc.architecture ?? []) out.push(a.type === "wall" ? { toolId: "studio.architecture.mur", params: a } : a.type === "ladder" ? { toolId: "studio.architecture.echelle-acces", params: a } : { toolId: "studio.architecture.ouverture", params: a });
+  // Bâtiment (lot W3-B) : niveaux avant les objets qui s'y rattachent ; définitions avant leurs occurrences.
+  for (const n of doc.niveaux ?? []) out.push({ toolId: "studio.niveau.definir", params: n });
+  for (const a of doc.architecture ?? []) {
+    out.push(a.type === "wall" ? { toolId: "studio.architecture.mur", params: a } : a.type === "ladder" ? { toolId: "studio.architecture.echelle-acces", params: a }
+      : a.type === "opening" ? { toolId: "studio.architecture.ouverture", params: a } : { toolId: "studio.structure.element", params: a });
+  }
+  for (const c of doc.composants ?? []) out.push({ toolId: "studio.composant.definir", params: c });
+  for (const o of doc.occurrences ?? []) out.push({ toolId: "studio.composant.placer", params: o });
   for (const d of doc.dimensions ?? []) out.push({ toolId: "studio.dessin.cote", params: d });
   for (const a of doc.annotations ?? []) out.push(a.type === "text" ? { toolId: "studio.dessin.texte", params: a } : { toolId: "studio.dessin.cote-angulaire", params: a });
   const solide = (s: StudioSolid): StudioCommand => (s.type === "box" ? { toolId: "studio.solide.boite", params: s } : { toolId: "studio.solide.prisme", params: s });

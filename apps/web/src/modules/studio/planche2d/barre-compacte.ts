@@ -69,6 +69,8 @@ const DEPUIS_BARRE: Readonly<Record<BarreStudio, IdFamille>> = Object.freeze({
   graphismes: "annotation", reperes: "vue",
   // Sources importées (EX-014) : nées d'un import, rangées avec Importer / Exporter.
   sources: "echanges",
+  // Lot W3-B : niveaux, composants 3D et éléments structurels, avec l'architecture.
+  batiment: "architecture",
   edition: "edition", vue: "vue", accrochage: "vue", reperage: "vue", visualisation: "vue", import: "echanges", export: "echanges", presentation: "presentation", catalogue: "catalogue",
 });
 

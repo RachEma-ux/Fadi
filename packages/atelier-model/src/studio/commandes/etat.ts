@@ -17,6 +17,8 @@ import type { StudioNonNatif } from "../non-natifs/non-natifs.js";
 import type { StudioGraphisme } from "../graphismes/graphismes.js";
 import type { StudioSystemeProjet } from "../reperes.js";
 import type { StudioSourceExterne } from "../sources/sources.js";
+import type { StudioNiveau } from "../batiment/niveaux.js";
+import type { StudioComposant, StudioOccurrence } from "../batiment/composants.js";
 
 /** État privé d'un lot de commandes (clone du document, tout ou rien) et contrôles partagés par les familles de commandes. */
 
@@ -45,6 +47,12 @@ export interface Etat {
   systemeProjet?: StudioSystemeProjet;
   /** Sources externes déclarées (`StudioDocument.sources`, EX-014) ; identifiants propres à la liste. */
   sources: StudioSourceExterne[];
+  /** Niveaux (`StudioDocument.niveaux`, lot W3-B). */
+  niveaux: StudioNiveau[];
+  /** Définitions de composants 3D (`StudioDocument.composants`, lot W3-B). */
+  composants: StudioComposant[];
+  /** Occurrences de composants 3D (`StudioDocument.occurrences`, lot W3-B). */
+  occurrences: StudioOccurrence[];
   /** Identifiants d'objets et de cotes présents : contrôle d'unicité en temps constant (un import peut compter 20 000 créations). */
   ids: Set<string>;
 }

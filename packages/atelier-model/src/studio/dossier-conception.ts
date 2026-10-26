@@ -131,11 +131,13 @@ export function studioDonneesVue(source: StudioDocument, spec: StudioVueSourceSp
   const detacher = <L extends { objectId: string } | null>(l: L, cibles: ReadonlySet<string> = ids): L | null => (l && !cibles.has(l.objectId) ? null : l);
   const dimensions = (doc.dimensions ?? []).filter((d) => garde.has(calque(d))).map((d) => ({ ...d, links: { start: detacher(d.links.start), end: detacher(d.links.end) } }));
   const annotations = (doc.annotations ?? []).filter((a) => garde.has(calque(a))).map((a) => (a.type === "angular-dimension" ? { ...a, links: { first: detacher(a.links.first, formes), second: detacher(a.links.second, formes) } } : a));
-  const architecture = archi.filter((x) => (x.type === "wall" ? murs.has(x.id) : x.type === "ladder" ? garde.has(calque(x)) : murs.has(x.hostId)));
+  const architecture = archi.filter((x) => (x.type === "wall" ? murs.has(x.id) : x.type === "opening" ? murs.has(x.hostId) : garde.has(calque(x))));
   const layers = (doc.layers ?? []).filter((l) => garde.has(l.id)).map((l) => ({ ...l, visible: true }));
   const reduit: StudioDocument = {
     id: doc.id, schemaVersion: doc.schemaVersion, units: doc.units, frame: doc.frame, objects,
     ...(layers.length ? { layers } : {}), ...(dimensions.length ? { dimensions } : {}), ...(annotations.length ? { annotations } : {}), ...(architecture.length ? { architecture } : {}),
+    // Niveaux (lot W3-B) : repris tels quels, les objets gardés peuvent y être rattachés.
+    ...(doc.niveaux?.length ? { niveaux: doc.niveaux } : {}),
   } as StudioDocument;
   const horsCalques = (doc.objects.length - objects.length) + ((doc.dimensions ?? []).length - dimensions.length) + ((doc.annotations ?? []).length - annotations.length) + (archi.length - architecture.length);
   return {

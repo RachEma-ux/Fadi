@@ -41,6 +41,10 @@ export const LIBELLES_RAISON_FIDELITE: Readonly<Record<StudioRaisonFidelite, str
   "propriete-non-exportee": "Propriété déclarée non écrite dans le fichier",
   "propriete-en-pset": "Propriété déclarée écrite dans le jeu de propriétés du projet",
   "propriete-non-evaluee": "Propriété déclarée sans valeur (non évaluée), non écrite",
+  "niveau-en-etage": "Niveau écrit en IfcBuildingStorey (nom, cote)",
+  "niveau-hors-2d": "Niveau non écrit dans le dessin 2D",
+  "type-partage": "Définition de composant écrite en type partagé",
+  "occurrence-partagee": "Occurrence écrite par la représentation partagée de sa définition",
 });
 
 /** Types d'éléments du document ; un type inconnu de cette table s'affiche tel quel (jamais masqué). */
@@ -49,6 +53,7 @@ export const LIBELLES_TYPE_ELEMENT: Readonly<Record<string, string>> = Object.fr
   dimension: "Cote", "angular-dimension": "Cote angulaire", text: "Texte", box: "Boîte", prism: "Prisme", exact: "Solide exact",
   wall: "Mur", opening: "Ouverture", ladder: "Échelle d’accès", "face-dimension": "Cote de face 3D", propriete: "Propriété", scene: "Scène", appearance: "Apparence d’affichage", "non-native": "Élément non natif",
   spline: "Spline", hachure: "Hachure", symbole: "Symbole", source: "Source importée",
+  column: "Poteau", beam: "Poutre", slab: "Dalle", niveau: "Niveau", composant: "Composant", occurrence: "Occurrence de composant",
 });
 export const libelleType = (type: string): string => (Object.hasOwn(LIBELLES_TYPE_ELEMENT, type) ? LIBELLES_TYPE_ELEMENT[type]! : type);
 

@@ -58,6 +58,7 @@ const F1_TEST = "packages/atelier-model/src/studio/composition/f1-geometrie.test
 const F2_TEST = "packages/atelier-model/src/studio/f2-booleen.test.ts";
 const EXACT_TEST = "packages/geometry-exact/src/index.test.ts";
 const SERVEUR_TEST = "apps/api/src/lib/studio-exact.test.ts";
+const BATIMENT_TEST = "packages/atelier-model/src/studio/batiment/batiment.test.ts";
 
 const TYPES = [
   // ——— Types livrés : chacun cite ses tests ———
@@ -83,6 +84,13 @@ const TYPES = [
       { fichier: EXACT_TEST, libelle: "union, soustraction, intersection de deux extrusions (boîtes Studio 2 × 2 × 2 décalées de 1 m) : 12, 4, 4 m³ ; empreinte reproductible" },
       { fichier: SERVEUR_TEST, libelle: "même empreinte : le résultat du serveur remplace celui du client (un maillage altéré par le client est corrigé)" }],
   },
+  {
+    // Lot W3-B (X.1-04) : définition partagée et occurrences placées, géométrie dérivée de la définition.
+    id: "composant-3d", libelle: "Composant 3D", source: OBJETS_PRIMAIRES, etat: "disponible", outils: ["studio.composant.definir", "studio.composant.placer"],
+    tests: [{ fichier: BATIMENT_TEST, libelle: "chaque occurrence dérive sa géométrie de la définition placée ; modifier la définition change toutes ses occurrences dans la même révision" },
+      { fichier: BATIMENT_TEST, libelle: "rendre unique : l'occurrence désigne une copie de la définition ; la définition d'origine modifiée ne la touche plus" },
+      { fichier: BATIMENT_TEST, libelle: "table d'instanciation : une géométrie par définition, l'indice d'instance désigne son occurrence (désignation conservée après instanciation)" }],
+  },
   // ——— Types avancés : non disponibles tant qu'ils n'ont pas de test ———
   {
     id: "sommets-aretes", libelle: "Sommets et arêtes éditables", source: OBJETS_PRIMAIRES, etat: "non-disponible", outils: [], tests: [],
@@ -91,10 +99,6 @@ const TYPES = [
   {
     id: "groupe-3d", libelle: "Groupe 3D", source: OBJETS_PRIMAIRES, etat: "non-disponible", outils: [], tests: [],
     manque: "studio-document/1 n'a pas de groupe de solides.",
-  },
-  {
-    id: "composant-3d", libelle: "Composant 3D", source: OBJETS_PRIMAIRES, etat: "non-disponible", outils: [], tests: [],
-    manque: "studio-document/1 n'a ni définition ni occurrence de composant 3D.",
   },
   {
     id: "courbe-exacte-3d", libelle: "Courbe exacte 3D", source: SCENE_S5, etat: "non-disponible", outils: [], tests: [],

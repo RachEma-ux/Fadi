@@ -7,7 +7,7 @@
  * propriété). Pur : ni React ni DOM.
  */
 import {
-  dessinerCoteAngulaire, geometrieMur, studioArcPoints, type StudioWall, type StudioLadder, geometrieEchelle, studioShapeSegments, studioTextBox, type StudioAnnotation, type StudioCommand, type StudioDimension, type StudioDocument,
+  dessinerCoteAngulaire, empriseStructurelle, geometrieMur, studioArcPoints, type StudioStructuralElement, type StudioWall, type StudioLadder, geometrieEchelle, studioShapeSegments, studioTextBox, type StudioAnnotation, type StudioCommand, type StudioDimension, type StudioDocument,
   type StudioPoint, type StudioShape,
 } from "@parcours/atelier-model";
 import { estSelectionnable } from "./calques";
@@ -30,8 +30,8 @@ export const elements = (doc: StudioDocument): Element2D[] => [...doc.objects, .
  * désigne seule par un clic, pour être modifiée).
  */
 export const murs = (doc: StudioDocument): StudioWall[] => (doc.architecture ?? []).filter((x): x is StudioWall => x.type === "wall");
-/** Objets architecturaux posés librement (murs, échelles d’accès, EX-027) : ils se sélectionnent comme les objets. */
-export type Porteur2D = StudioWall | StudioLadder;
+/** Objets architecturaux posés librement (murs, échelles d’accès, EX-027, poteaux, poutres, dalles, lot W3-B) : ils se sélectionnent comme les objets. */
+export type Porteur2D = StudioWall | StudioLadder | StudioStructuralElement;
 export const porteurs = (doc: StudioDocument): Porteur2D[] => (doc.architecture ?? []).filter((x): x is Porteur2D => x.type !== "opening");
 
 /** Identifiants sélectionnables (affichés, déverrouillés), dans l'ordre du document, murs compris. */
@@ -60,6 +60,11 @@ type Segment = readonly [StudioPoint, StudioPoint];
  * d'une polyligne, lignes d'une cote).
  */
 export function segments(e: Element2D | Porteur2D): Segment[] {
+  if (e.type === "column" || e.type === "beam" || e.type === "slab") {
+    // Emprise de l'élément structurel (lot W3-B).
+    const r = empriseStructurelle(e);
+    return r.map((p, i) => [p, r[(i + 1) % r.length]!] as const);
+  }
   if (e.type === "ladder") {
     // Emprise de l'échelle d'accès (montants compris).
     const r = geometrieEchelle(e).emprise;

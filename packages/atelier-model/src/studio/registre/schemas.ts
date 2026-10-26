@@ -18,6 +18,8 @@ import { SCHEMA_GRAPHISME, STUDIO_LIMITES_GRAPHISMES } from "../graphismes/graph
 import { STUDIO_LIMITE_VERSIONS_PROJET } from "../reperes.js";
 import { SCHEMA_SOURCE, STUDIO_LIMITES_SOURCES } from "../sources/sources.js";
 import { id } from "./schemas-base.js";
+import { SCHEMA_NIVEAU, STUDIO_LIMITES_NIVEAUX } from "../batiment/niveaux.js";
+import { SCHEMA_COMPOSANT, SCHEMA_OCCURRENCE, STUDIO_LIMITES_COMPOSANTS } from "../batiment/composants.js";
 
 /** Schémas JSON du document entier et des listes, composés des schémas déclarés par chaque type d'objet (`objets/`). */
 export const shape = { oneOf: [SCHEMA_LIGNE, SCHEMA_RECTANGLE, SCHEMA_CERCLE, SCHEMA_ARC, SCHEMA_POLYLIGNE] } as const;
@@ -44,6 +46,10 @@ export const STUDIO_DOCUMENT_SCHEMA = {
     nonNatifs: { type: "array", maxItems: STUDIO_LIMITS.objects, items: SCHEMA_NON_NATIF },
     graphismes: { type: "array", maxItems: STUDIO_LIMITES_GRAPHISMES.graphismes, items: SCHEMA_GRAPHISME },
     sources: { type: "array", maxItems: STUDIO_LIMITES_SOURCES.sources, items: SCHEMA_SOURCE },
+    // Lot W3-B : niveaux comme objets, composants 3D (définitions et occurrences).
+    niveaux: { type: "array", maxItems: STUDIO_LIMITES_NIVEAUX.niveaux, items: SCHEMA_NIVEAU },
+    composants: { type: "array", maxItems: STUDIO_LIMITES_COMPOSANTS.composants, items: SCHEMA_COMPOSANT },
+    occurrences: { type: "array", maxItems: STUDIO_LIMITS.objects, items: SCHEMA_OCCURRENCE },
     systemeProjet: {
       type: "object", additionalProperties: false, required: ["versions"],
       properties: {

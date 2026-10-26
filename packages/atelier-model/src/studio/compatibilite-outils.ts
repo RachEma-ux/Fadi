@@ -84,17 +84,22 @@ const OUTIL_DU_TYPE: Readonly<Record<string, StudioToolId>> = Object.freeze({
   line: "studio.dessin.ligne", rectangle: "studio.dessin.rectangle", circle: "studio.dessin.cercle", arc: "studio.dessin.arc",
   polyline: "studio.dessin.polyligne", dimension: "studio.dessin.cote", "angular-dimension": "studio.dessin.cote-angulaire", text: "studio.dessin.texte",
   box: "studio.solide.boite", prism: "studio.solide.prisme", wall: "studio.architecture.mur", opening: "studio.architecture.ouverture",
+  ladder: "studio.architecture.echelle-acces",
+  // Lot W3-B : éléments structurels typés et occurrences de composants.
+  column: "studio.structure.element", beam: "studio.structure.element", slab: "studio.structure.element", occurrence: "studio.composant.placer",
 });
 
-export function outilsDuDocument(doc: Pick<StudioDocument, "objects"> & Partial<Pick<StudioDocument, "dimensions" | "annotations" | "solides" | "exacts" | "architecture">>): { outils: StudioToolId[]; inconnus: string[] } {
+export function outilsDuDocument(doc: Pick<StudioDocument, "objects"> & Partial<Pick<StudioDocument, "dimensions" | "annotations" | "solides" | "exacts" | "architecture" | "niveaux" | "composants" | "occurrences">>): { outils: StudioToolId[]; inconnus: string[] } {
   const types = [
     ...doc.objects.map((o) => o.type), ...(doc.dimensions ?? []).map((o) => o.type), ...(doc.annotations ?? []).map((o) => o.type),
-    ...(doc.solides ?? []).map((o) => o.type), ...(doc.architecture ?? []).map((o) => o.type),
+    ...(doc.solides ?? []).map((o) => o.type), ...(doc.architecture ?? []).map((o) => o.type), ...(doc.occurrences ?? []).map((o) => o.type),
   ] as string[];
   const outils = new Set<StudioToolId>();
   const inconnus = new Set<string>();
   for (const t of types) { const o = Object.hasOwn(OUTIL_DU_TYPE, t) ? OUTIL_DU_TYPE[t] : undefined; if (o) outils.add(o); else inconnus.add(t); }
   if ((doc.exacts ?? []).length) outils.add("studio.solide.booleen");
+  if ((doc.niveaux ?? []).length) outils.add("studio.niveau.definir");
+  if ((doc.composants ?? []).length) outils.add("studio.composant.definir");
   return { outils: STUDIO_TOOL_IDS.filter((id) => outils.has(id)), inconnus: [...inconnus].sort() };
 }
 

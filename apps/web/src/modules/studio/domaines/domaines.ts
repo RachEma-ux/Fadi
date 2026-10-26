@@ -92,6 +92,8 @@ export const DOMAINES_FAMILLES_OUTILS = Object.freeze({
   graphismes: "dessin", reperes: "dessin",
   // Sources importées (EX-014) : nées d'un import, comme lui à définir.
   sources: A_DEFINIR,
+  // Lot W3-B : niveaux, composants 3D et éléments structurels, modélisation du bâtiment comme l'architecture.
+  batiment: "dessin",
 } as const satisfies Record<StudioToolGroup, DomaineAttribue>);
 
 /** Domaine d'une entrée du catalogue (outil du registre ou commande de l'éditeur). */

@@ -5,6 +5,7 @@ import type { StudioArchitectureItem } from "../architecture/types.js";
 import type { StudioSolid } from "../objets-3d/solides.js";
 import type { StudioSolideExact } from "../objets-3d/exacts.js";
 import type { StudioGraphisme } from "../graphismes/graphismes.js";
+import type { StudioOccurrence } from "../batiment/composants.js";
 import { AVERTISSEMENT_CORPUS, GRAINES_CORPUS, LICENCE_CORPUS, type CorpusStudio, type CouvertureCorpus, type SceneCorpus } from "./types.js";
 
 /** Une primitive du corpus et le champ du document qui la range. */
@@ -15,7 +16,9 @@ export type Primitive =
   | { champ: "architecture"; valeur: StudioArchitectureItem }
   | { champ: "solides"; valeur: StudioSolid }
   | { champ: "graphismes"; valeur: StudioGraphisme }
-  | { champ: "exacts"; valeur: StudioSolideExact };
+  | { champ: "exacts"; valeur: StudioSolideExact }
+  /** Lot W3-B : occurrence d'un composant 3D (sa définition est commune au feuillet, `communs`). */
+  | { champ: "occurrences"; valeur: StudioOccurrence };
 
 export const objet = (valeur: StudioShape): Primitive => ({ champ: "objects", valeur });
 export const cote = (valeur: StudioDimension): Primitive => ({ champ: "dimensions", valeur });
@@ -24,6 +27,7 @@ export const architecture = (valeur: StudioArchitectureItem): Primitive => ({ ch
 export const solide = (valeur: StudioSolid): Primitive => ({ champ: "solides", valeur });
 export const graphisme = (valeur: StudioGraphisme): Primitive => ({ champ: "graphismes", valeur });
 export const exact = (valeur: StudioSolideExact): Primitive => ({ champ: "exacts", valeur });
+export const occurrence = (valeur: StudioOccurrence): Primitive => ({ champ: "occurrences", valeur });
 
 /** Calque synthétique visible et déverrouillé. */
 export const calque = (id: string, name: string): StudioLayer => ({ id, name, visible: true, locked: false });
@@ -41,6 +45,11 @@ export interface DefinitionCorpus {
   primitive: (j: number, role: number) => Primitive;
   /** Extensions d'un feuillet assemblé (sources déclarées…), calculées sur le feuillet lui-même ; absentes : aucune. */
   completer?: (feuillet: StudioDocument) => Partial<Pick<StudioDocument, "sources">>;
+  /**
+   * Éléments communs d'un feuillet (lot W3-B : niveaux et définitions de composants), calculés sur ses primitives avant
+   * validation ; ce ne sont pas des primitives (comme les calques). Absent : aucun.
+   */
+  communs?: (primitives: readonly Primitive[]) => Partial<Pick<StudioDocument, "niveaux" | "composants">>;
 }
 
 /** Nombre de motifs entamés pour `taille` primitives. */
@@ -65,10 +74,12 @@ export function construireCorpus(d: DefinitionCorpus): CorpusStudio {
   const documents: StudioDocument[] = [];
   for (let debut = 0, f = 1; debut < d.taille; debut += parFeuillet, f++) {
     const fin = Math.min(d.taille, debut + parFeuillet);
-    const champs = { objects: [] as StudioShape[], dimensions: [] as StudioDimension[], annotations: [] as StudioAnnotation[], architecture: [] as StudioArchitectureItem[], solides: [] as StudioSolid[], graphismes: [] as StudioGraphisme[], exacts: [] as StudioSolideExact[] };
+    const champs = { objects: [] as StudioShape[], dimensions: [] as StudioDimension[], annotations: [] as StudioAnnotation[], architecture: [] as StudioArchitectureItem[], solides: [] as StudioSolid[], graphismes: [] as StudioGraphisme[], exacts: [] as StudioSolideExact[], occurrences: [] as StudioOccurrence[] };
     const employes = new Set<string>();
+    const poses: Primitive[] = [];
     for (let k = debut; k < fin; k++) {
       const p = primitive(d, k);
+      poses.push(p);
       (champs[p.champ] as unknown[]).push(p.valeur);
       const c = calqueDe(p);
       if (c !== undefined) employes.add(c);
@@ -84,6 +95,8 @@ export function construireCorpus(d: DefinitionCorpus): CorpusStudio {
       ...(champs.annotations.length ? { annotations: champs.annotations } : {}),
       ...(champs.architecture.length ? { architecture: champs.architecture } : {}),
       ...(champs.graphismes.length ? { graphismes: champs.graphismes } : {}),
+      ...(d.communs?.(poses) ?? {}),
+      ...(champs.occurrences.length ? { occurrences: champs.occurrences } : {}),
     };
     documents.push(validateStudioDocument({ ...feuillet, ...(d.completer?.(validateStudioDocument(feuillet)) ?? {}) }));
   }
@@ -97,9 +110,9 @@ function primitive(d: DefinitionCorpus, k: number): Primitive {
   return d.primitive(Math.floor(k / d.motif), k % d.motif);
 }
 
-/** Primitives d'un document : objets, cotes, annotations, architecture, solides, solides exacts et graphismes. */
+/** Primitives d'un document : objets, cotes, annotations, architecture, solides, solides exacts, graphismes et occurrences (lot W3-B). */
 export const primitivesDuDocument = (doc: StudioDocument): number =>
-  doc.objects.length + (doc.dimensions?.length ?? 0) + (doc.annotations?.length ?? 0) + (doc.architecture?.length ?? 0) + (doc.solides?.length ?? 0) + (doc.exacts?.length ?? 0) + (doc.graphismes?.length ?? 0);
+  doc.objects.length + (doc.dimensions?.length ?? 0) + (doc.annotations?.length ?? 0) + (doc.architecture?.length ?? 0) + (doc.solides?.length ?? 0) + (doc.exacts?.length ?? 0) + (doc.graphismes?.length ?? 0) + (doc.occurrences?.length ?? 0);
 
 /** Toutes les primitives d'un corpus, dans l'ordre des feuillets. */
 export function primitivesDu(corpus: CorpusStudio): number {

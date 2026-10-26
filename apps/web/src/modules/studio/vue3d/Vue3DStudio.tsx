@@ -282,7 +282,7 @@ const impact = impactDe;
 
 /** Centre à l'écran (coordonnées client) de l'objet `id` du maillage affiché ; null s'il n'est pas affiché. */
 function centreEcran(m: Moteur, mesh: StudioMesh3d, id: string): { x: number; y: number } | null {
-  const e = [...mesh.solids, ...(mesh.freeSolids ?? []), ...(mesh.exacts ?? []), ...(mesh.architecture ?? [])].find((x) => x.id === id);
+  const e = [...mesh.solids, ...(mesh.freeSolids ?? []), ...(mesh.exacts ?? []), ...(mesh.architecture ?? []), ...(mesh.occurrences ?? [])].find((x) => x.id === id);
   if (!e || !e.vertices.length) return null;
   const b = new THREE.Box3().setFromPoints(e.vertices.map((v) => new THREE.Vector3(v.x, v.y, v.z)));
   const c = b.getCenter(new THREE.Vector3()).project(m.camera);
@@ -645,7 +645,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   useEffect(() => {
     const m = moteur.current; if (!m) return;
     const morceaux = assemble?.cache.morceaux;
-    const presents = new Set([...doc.objects.map((o) => o.id), ...(doc.solides ?? []).map((o) => o.id), ...(doc.exacts ?? []).map((o) => o.id), ...(doc.architecture ?? []).map((o) => o.id)]);
+    const presents = new Set([...doc.objects.map((o) => o.id), ...(doc.solides ?? []).map((o) => o.id), ...(doc.exacts ?? []).map((o) => o.id), ...(doc.architecture ?? []).map((o) => o.id), ...(doc.occurrences ?? []).map((o) => o.id)]);
     const l: Lecture = {
       mesh, doc, mode, selection, selectionArchitecture, present: (id) => presents.has(id),
       // Clé de contenu du morceau ; à défaut (jamais pour un maillage assemblé), une clé unique force la reconstruction.
@@ -875,7 +875,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   const architecture = mesh.architecture ?? [];
   return (
     <section className="studio-vue3d" aria-label="Vue 3D" data-studio-vue3d data-studio-maillage={maillage.etat} data-studio-maillage-revision={maillage.revision ?? ""} data-studio-revision-courante={empreinte.revision}
-      data-studio-projection-version={version ? `${version.revision}:${version.contenu}` : ""} data-studio-remailles={assemble?.remailles ?? ""} data-studio-invalidation={assemble ? (assemble.invalidation.complet ? `complet:${assemble.invalidation.raison}` : "partiel") : ""} data-studio-volumes={mesh.solids.length} data-studio-non-extrudes={mesh.nonExtruded} data-studio-solides-libres={libres} data-studio-architecture-3d={architecture.length} data-studio-navigation={navigation}
+      data-studio-projection-version={version ? `${version.revision}:${version.contenu}` : ""} data-studio-remailles={assemble?.remailles ?? ""} data-studio-invalidation={assemble ? (assemble.invalidation.complet ? `complet:${assemble.invalidation.raison}` : "partiel") : ""} data-studio-volumes={mesh.solids.length} data-studio-non-extrudes={mesh.nonExtruded} data-studio-solides-libres={libres} data-studio-occurrences-3d={mesh.occurrences?.length ?? 0} data-studio-architecture-3d={architecture.length} data-studio-navigation={navigation}
       data-studio-affichage={mode} data-studio-scene-active={sceneActive ?? ""} data-studio-calques-montres={calquesMontres?.join(" ") ?? ""}
       data-studio-source-revision={etatProjection.sourceRevisionId ?? ""} data-studio-revision-serveur-courante={provenance?.revisionId ?? ""} data-studio-etat-derive={etatProjection.etat.etat}
       data-studio-domaines-perimes={etatProjection.domainesPerimes.join(" ")}>
@@ -1152,7 +1152,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
           {architecture.map((a) => (
             <li key={a.id}>
               <button type="button" aria-pressed={a.id === selectionArchitecture} disabled={!estSelectionnable(doc, a.layerId)} onClick={() => surSelectionArchitecture?.(a.id === selectionArchitecture ? null : a.id)} data-studio-architecture-3d-objet={a.id} data-studio-type={a.type}>
-                <Icon name={a.type === "wall" ? "studio-wall" : a.type === "ladder" ? "studio-ladder" : "studio-opening"} size={16} /> {a.type === "wall" ? "Mur" : a.type === "ladder" ? "Échelle d’accès" : "Ouverture"} <span translate="no">{a.id.slice(0, 8)}</span>
+                <Icon name={a.type === "wall" ? "studio-wall" : a.type === "ladder" ? "studio-ladder" : a.type === "opening" ? "studio-opening" : "studio-structure"} size={16} /> {a.type === "wall" ? "Mur" : a.type === "ladder" ? "Échelle d’accès" : a.type === "opening" ? "Ouverture" : a.type === "column" ? "Poteau" : a.type === "beam" ? "Poutre" : "Dalle"} <span translate="no">{a.id.slice(0, 8)}</span>
               </button>
             </li>
           ))}

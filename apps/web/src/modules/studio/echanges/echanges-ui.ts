@@ -20,7 +20,7 @@ export const LIBELLES_FAMILLE_ECHANGE: Readonly<Record<StudioFamilleEchange, str
   rendu: "Rendu", paquet: "Paquet", rapport: "Rapport", diagnostic: "Diagnostic", coordination: "Coordination",
 });
 export const LIBELLES_CATEGORIE: Readonly<Record<string, string>> = Object.freeze({
-  objets: "Formes", cotes: "Cotes", annotations: "Annotations", solides: "Solides", exacts: "Solides exacts", cotesFaces: "Cotes de faces 3D", architecture: "Architecture", proprietes: "Propriétés", scenes: "Visualisation", nonNatifs: "Éléments non natifs",
+  objets: "Formes", cotes: "Cotes", annotations: "Annotations", solides: "Solides", exacts: "Solides exacts", cotesFaces: "Cotes de faces 3D", architecture: "Architecture", proprietes: "Propriétés", scenes: "Visualisation", nonNatifs: "Éléments non natifs", niveaux: "Niveaux", composants: "Composants", occurrences: "Occurrences de composants",
 });
 
 export const TEXTES_ECHANGES = Object.freeze({

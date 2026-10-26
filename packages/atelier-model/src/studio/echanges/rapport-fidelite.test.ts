@@ -60,7 +60,7 @@ describe("Table des capacités : source unique, couvre chaque type du modèle", 
       const categorie = parListe[cle] as keyof typeof STUDIO_CAPACITES_EXPORT;
       const table = STUDIO_CAPACITES_EXPORT[categorie] as Record<string, Record<string, unknown>>;
       // Les propriétés déclarées (E.1-01) n'ont pas de discriminant `type` : un seul type, « propriete ».
-      const types = cle === "proprietes" ? ["propriete"] : typesDuSchema((schema as { items: unknown }).items);
+      const types = cle === "proprietes" ? ["propriete"] : cle === "niveaux" ? ["niveau"] : cle === "composants" ? ["composant"] : typesDuSchema((schema as { items: unknown }).items);
       expect(Object.keys(table).sort(), cle).toEqual([...types].sort());
       for (const t of types) for (const f of STUDIO_FORMATS_ECHANGE) expect(typeof table[t]![f], `${cle}.${t}.${f}`).toBe("function");
     }

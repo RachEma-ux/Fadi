@@ -43,7 +43,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Icon } from "../../components/Icon";
-import { STUDIO_DEFAULT_LAYER_ID, STUDIO_RAPPORTS_ACCELERATION, STUDIO_TOOLS, studioVersionProjection, type StudioCameraScene, type StudioCommand, type StudioDocument, type StudioLayer, type StudioPoint, type StudioRapportAcceleration, type StudioLadder, type StudioWall } from "@parcours/atelier-model";
+import { STUDIO_DEFAULT_LAYER_ID, STUDIO_RAPPORTS_ACCELERATION, STUDIO_TOOLS, studioVersionProjection, studioVueNiveau, type StudioCameraScene, type StudioCommand, type StudioDocument, type StudioLayer, type StudioPoint, type StudioRapportAcceleration, type StudioLadder, type StudioWall } from "@parcours/atelier-model";
 import { moteurPlanche, texteMoteurPlanche } from "./planche2d/rendus/moteur-canvas";
 import { useNavigate } from "react-router-dom";
 import { BandeauSession } from "./temps-reel/BandeauSession";
@@ -69,7 +69,7 @@ import { raisonEntree, type EtatDroit } from "./variante/droits";
 import { Dessin2D, type PointPose } from "./planche2d/Dessin2D";
 import { cadrer, emprise } from "./planche2d/geometrie-2d";
 import { PanneauCalques } from "./planche2d/PanneauCalques";
-import { COMMANDES_EDITEUR, OUTILS_MODES, OUTILS_VOLUME_LIBRE, OUTILS_TRACE, type CibleRaccourci, type CommandeEditeur, type IdCommandeEditeur, type StudioToolEntry, type StudioToolId } from "./planche2d/raccourcis";
+import { COMMANDES_EDITEUR, OUTILS_BATIMENT, OUTILS_MODES, OUTILS_VOLUME_LIBRE, OUTILS_TRACE, type CibleRaccourci, type CommandeEditeur, type IdCommandeEditeur, type StudioToolEntry, type StudioToolId } from "./planche2d/raccourcis";
 import { basculer, commandesDeplacement, elements, estForme, selectionValide, toutSelectionnable, type Element2D } from "./planche2d/selection";
 import { zoomerAuCentre } from "./planche2d/vue";
 import { aidePlanche, apercuPlanche, outilPlanche } from "./planche2d/outils";
@@ -89,6 +89,8 @@ import { PanneauQuantites } from "./quantites/PanneauQuantites";
 import { PanneauExigences } from "./exigences/PanneauExigences";
 import { cibleSelection } from "./exigences/exigences-ui";
 import { PanneauArchitecture } from "./planche2d/architecture/PanneauArchitecture";
+import { PanneauBatiment } from "./batiment/PanneauBatiment";
+import { choixVueValide, type ChoixVueNiveau } from "./batiment/batiment-ui";
 import { elementArchitectural, PARAMETRES_ARCHITECTURE_VIDES, type ParametresArchitecture } from "./planche2d/architecture/architecture-ui";
 import { CopieDeTravail } from "./variante/CopieDeTravail";
 import { AlerteStudio, BandeauHistorique, ChoixConflitStudio, EtatConnexionStudio, libelleModePlanche, SOUS_TITRE_PLANCHE, TitreEspace } from "./variante/BandeauVariante";
@@ -259,6 +261,9 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const [hoteVisualisation, setHoteVisualisation] = useState<HTMLElement | null>(null);
   // Colonne des panneaux latéraux : repliable (bureau) ; au téléphone, les panneaux passent sous l'écran de travail.
   const [panneauxOuverts, setPanneauxOuverts] = useState(true);
+  // Vue par niveau (lot W3-B) : la planche et la vue 3D montrent les objets d'un niveau ; les commandes visent le document entier.
+  const [vueNiveau, setVueNiveau] = useState<ChoixVueNiveau>(null);
+  const [masquerLibres, setMasquerLibres] = useState(false);
   const ecran = useRef<HTMLDivElement>(null);
   // Architecture (A.4) : paramètres saisis des outils Mur / Ouverture et objet architectural sélectionné (2D ou 3D).
   const [parametresArchi, setParametresArchi] = useState<ParametresArchitecture>(PARAMETRES_ARCHITECTURE_VIDES);
@@ -809,6 +814,12 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   // EX-049 : un tracé commencé est une prévisualisation, notée avec le brouillon conservé (abandonnée si la session s'interrompt).
   const outilApercu = trace && tool ? String(tool) : null;
   useEffect(() => { enr.noterApercu(outilApercu); }, [outilApercu]);
+  // Document affiché par la planche et la vue 3D : le document entier, ou sa vue par niveau (dérivée, jamais enregistrée).
+  const choixNiveau = choixVueValide(drawing ?? null, vueNiveau);
+  const docVue = (() => {
+    if (!drawing || choixNiveau === null) return drawing;
+    try { return studioVueNiveau(drawing, choixNiveau, { libres: masquerLibres ? "masquer" : "garder" }); } catch { return drawing; }
+  })();
   if (!loading && refused(loadError)) return <StudioRefus quoi={historical ? "revision" : "variante"} />;
   const toolEntry = STUDIO_TOOLS.find(t => t.toolId === tool);
   const toResolve = drawing?.dimensions?.filter(d => d.toResolve).length ?? 0;
@@ -859,7 +870,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const canevas = context && drawing ? <div className="studio-canevas" data-studio-canevas={affichage} data-studio-domaine-canevas={domaineActif}>
     <div className="studio-canevas-vues">
     {plan2d && <div className="studio-sheet" data-studio-moteur-planche={moteur2d.moteur} onKeyDown={panoramiquePlanche} onPointerMove={enDirect ? pointeurSession : undefined} onPointerLeave={enDirect ? () => pointeurSession(null) : undefined} data-studio-projection-plan={versionPlan(drawing)} title="Molette : zoom sur le pointeur ; bouton du milieu, Espace + glisser ou deux doigts : déplacer la vue." data-studio-aide-vue>
-      <Dessin2D svgRef={gestes.refPlanche} doc={apercuDoc ?? apercuTransformation ?? drawing} cadre={cadre} pas={pas} outil={tool} selection={selectionSet} trace={trace} survol={survol} rectangle={gestes.rectangle} glissement={!!gestes.apercu}
+      <Dessin2D svgRef={gestes.refPlanche} doc={apercuDoc ?? apercuTransformation ?? docVue ?? drawing} cadre={cadre} pas={pas} outil={tool} selection={selectionSet} trace={trace} survol={survol} rectangle={gestes.rectangle} glissement={!!gestes.apercu}
         apercuForme={apercuForme} sommetsPoses={suite}
         clicsVersPlanche={o => OUTILS_TRACE.has(tool) || (moveWithPointer && (!!trace || selectionSet.has(o.id)))}
         surPlanche={board} surSurvol={gestes.pointerMove} surPointeurBas={gestes.pointerDown} surPointeurHaut={gestes.pointerUp} surClicCapture={gestes.clickCapture} surSelection={(id, plus) => select(plus ? basculer(selectionIds, id) : [id])}
@@ -868,7 +879,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
         moteur={moteur2d.moteur} />
       {moteur2d.verdict && <p className="studio-moteur-planche" role="status" data-studio-moteur-etat={moteur2d.moteur}>{texteMoteurPlanche(moteur2d)}</p>}
     </div>}
-    {vue3d && <div className="studio-canevas-3d"><Vue3D doc={drawing} outil={tool} modifiable={writable} navigation={navigation3d} coupe={coupe3d} selection={solide3d} layerId={actif?.id ?? STUDIO_DEFAULT_LAYER_ID}
+    {vue3d && <div className="studio-canevas-3d" data-studio-vue-niveau-active={choixNiveau ?? ""}><Vue3D doc={docVue ?? drawing} outil={tool} modifiable={writable} navigation={navigation3d} coupe={coupe3d} selection={solide3d} layerId={actif?.id ?? STUDIO_DEFAULT_LAYER_ID}
       surSelection={setSolide3d} surCommandes={apply} selectionArchitecture={panneauArchi} surSelectionArchitecture={(id) => (id ? choisirArchitecture(id, false) : setSelectionArchi(null))}
       demande={demande3d} surDemandeTraitee={() => setDemande3d(null)} surNavigation={setNavigation3d} remplir
       cameraPartagee={enDirect && tr.suit && !presenteEnDirect ? cameraPartagee : cameraAnnotation} surCameraLocale={partagerCamera}
@@ -898,9 +909,11 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
         {d.id === "dessin" && <PanneauLateral id="proprietes" titre="Propriétés">
           <PanneauProprietes titre={toolEntry?.libelleFR} drawing={drawing} selectionIds={selectionIds} selected={selected} writable={writable} formesChoisies={formesChoisies} extrusion={extrusion}
             surExtrusion={setExtrusion} surExtruder={extrude} surAplatir={() => runTool("studio.objet.aplatir")} surSupprimer={() => runTool("studio.dessin.supprimer")}
-            architecture={<PanneauArchitecture doc={drawing} outil={tool} selection={panneauArchi} modifiable={writable} parametres={parametresArchi} surParametres={setParametresArchi}
-              contexte={() => ({ nouvelId: () => crypto.randomUUID(), layerId: layerId() })} surCommandes={apply} surErreur={setError} surSelection={(id) => (id ? choisirArchitecture(id, false) : select([]))} />}
-            formulaire={tool !== "studio.dessin.selection" && !OUTILS_VOLUME_LIBRE.has(tool) && !tool.startsWith("studio.architecture.") && <FormulaireValeurs tool={tool} selected={selected} desactive={!writable || formulaireInactif(tool, selectionIds, selected) || (tool === "studio.dessin.modifier" && (selected?.type === "dimension" || selected?.type === "angular-dimension") && selected.toResolve)}
+            architecture={<><PanneauArchitecture doc={drawing} outil={tool} selection={panneauArchi} modifiable={writable} parametres={parametresArchi} surParametres={setParametresArchi}
+              contexte={() => ({ nouvelId: () => crypto.randomUUID(), layerId: layerId() })} surCommandes={apply} surErreur={setError} surSelection={(id) => (id ? choisirArchitecture(id, false) : select([]))} />
+              {OUTILS_BATIMENT.has(tool) && <PanneauBatiment doc={drawing} outil={tool} modifiable={writable} contexte={() => ({ nouvelId: () => crypto.randomUUID(), layerId: layerId() })}
+                surCommandes={apply} surErreur={setError} vueNiveau={choixNiveau} surVueNiveau={setVueNiveau} masquerLibres={masquerLibres} surMasquerLibres={setMasquerLibres} />}</>}
+            formulaire={tool !== "studio.dessin.selection" && !OUTILS_VOLUME_LIBRE.has(tool) && !OUTILS_BATIMENT.has(tool) && !tool.startsWith("studio.architecture.") && <FormulaireValeurs tool={tool} selected={selected} desactive={!writable || formulaireInactif(tool, selectionIds, selected) || (tool === "studio.dessin.modifier" && (selected?.type === "dimension" || selected?.type === "angular-dimension") && selected.toResolve)}
               values={values} surValeur={(k, v) => setValues(x => ({ ...x, [k]: v }))} modeArc={modeArc} surModeArc={m => { setModeArc(m); cancelTrace(); }}
               sommetsTexte={sommetsTexte} surSommets={setSommetsTexte} fermee={fermee} surFermee={setFermee} surSoumettre={numeric} texte={texteSaisi} surTexte={setTexteSaisi} />}
             calques={<PanneauCalques doc={drawing} actif={actif?.id ?? STUDIO_DEFAULT_LAYER_ID} modifiable={writable} nom={nomCalque} nomRef={nomRef} surActif={id => setCalqueActif(id)} surNom={setNomCalque} surReglage={setLayer} surRenommer={renameLayer} />} />

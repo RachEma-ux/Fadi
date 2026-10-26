@@ -33,6 +33,8 @@ export * from "./studio/echanges/modeles-externes.js";
 export * from "./studio/solides-libres.js";
 export * from "./studio/booleens-exacts.js";
 export * from "./studio/architecture/index.js";
+export * from "./studio/batiment/index.js";
+export * from "./studio/vue-niveau.js";
 export * from "./studio/facade-exigences.js";
 export * from "./studio/facade-scenes.js";
 export * from "./studio/workflow.js";

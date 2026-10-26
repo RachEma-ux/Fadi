@@ -3,7 +3,7 @@ import type { GrandeurQuantite } from "../quantites.js";
 import { MOTIF_S1, parametresS1 } from "./s1-detail.js";
 import { MOTIF_PLAN, MOTIF_S2, PARAMETRES_S2 } from "./s2-niveau.js";
 import { MOTIF_S3, parametresS3 } from "./s3-dense.js";
-import { MOTIF_S4, PARAMETRES_S4 } from "./s4-immeuble.js";
+import { MOTIF_S4, niveauS4, PARAMETRES_S4, traveesParNiveau } from "./s4-immeuble.js";
 import { BOOLEENS_S5, MOTIF_S5, parametresS5 } from "./s5-libre.js";
 import { SESSION_HORS_RESEAU_S7 } from "./s7-hors-reseau.js";
 import type { SceneCorpus } from "./types.js";
@@ -52,6 +52,11 @@ export interface OracleCorpus {
   graphismes?: { aireHachures: number; symboles: Record<string, number>; pointsSplines: number };
   /** Références externes déclarées (S2) : une source par feuillet qui porte des axes, objets venus du fond. */
   sources?: { nombre: number; objets: number };
+  /**
+   * Bâtiment (S4, lot W3-B) : niveaux distincts employés, définitions de composants distinctes, occurrences, objets
+   * rattachés par niveau (ouvertures comprises, `studioMembresNiveau`) et volume des occurrences (définition placée).
+   */
+  batiment?: { niveaux: number; definitions: number; occurrences: number; membresParNiveau: Record<string, number>; volumeOccurrences: number };
 }
 
 class Accumulateur {
@@ -167,32 +172,44 @@ export function oracleS4(taille: number): OracleCorpus {
   const P = PARAMETRES_S4, a = new Accumulateur();
   const brut = P.travee * P.epaisseur * P.hauteurMur;
   const murs: OracleMurs = { brut: 0, deduit: 0, net: 0 };
-  let volumeSolides = 0;
+  const parNiveau = traveesParNiveau(Math.ceil(taille / MOTIF_S4));
+  const membresParNiveau: Record<string, number> = {};
+  let occurrences = 0;
+  const volumeGaine = P.gaine.cote * P.gaine.cote * P.hauteurNiveau;
   const mur = (deduit: number) => {
     a.compter("wall"); a.ajouter("longueur", P.travee); a.ajouter("volume", brut); a.ajouter("volume-deduit", deduit); a.ajouter("volume-net", brut - deduit);
     murs.brut += brut; murs.deduit += deduit; murs.net += brut - deduit;
   };
-  parcourir(taille, MOTIF_S4, (_j, role, present) => {
+  parcourir(taille, MOTIF_S4, (j, role, present) => {
+    // Murs (et leurs ouvertures), poteau, dalle, poutre et gaine sont rattachés au niveau de leur travée.
+    const niveau = niveauS4(Math.floor(j / parNiveau)).id;
+    if (role <= 6 || role === 8) membresParNiveau[niveau] = (membresParNiveau[niveau] ?? 0) + 1;
     switch (role) {
       case 0: mur(present(1) ? P.fenetre.largeur * P.fenetre.hauteur * P.epaisseur : 0); break;
       case 1: a.compter("opening"); a.ajouter("surface-ouverture", P.fenetre.largeur * P.fenetre.hauteur); break;
       case 2: mur(present(3) ? P.porte.largeur * P.porte.hauteur * P.epaisseur : 0); break;
       case 3: a.compter("opening"); a.ajouter("surface-ouverture", P.porte.largeur * P.porte.hauteur); break;
-      case 4: a.compter("box"); volumeSolides += P.boite.cote * P.boite.cote * P.boite.hauteur; break;
+      // Poteau : section c × c sur la hauteur (le métré n'additionne pas les hauteurs).
+      case 4: a.compter("column"); a.ajouter("volume", P.poteau.cote * P.poteau.cote * P.poteau.hauteur); break;
+      // Dalle carrée de côté c : périmètre 4c, surface c², volume c² × épaisseur.
       case 5: {
-        const c = P.plateau.cote;
-        a.compter("rectangle"); a.ajouter("perimetre", 4 * c); a.ajouter("surface", c * c); a.ajouter("volume", c * c * P.plateau.epaisseur); break;
+        const c = P.dalle.cote;
+        a.compter("slab"); a.ajouter("perimetre", 4 * c); a.ajouter("surface", c * c); a.ajouter("volume", c * c * P.dalle.epaisseur); break;
       }
-      case 6: a.compter("polyline"); a.ajouter("longueur", P.reseau.equerre); break;
-      case 7: a.compter("line"); a.ajouter("longueur", P.reseau.ligne); a.volumeNonEvalues++; break;
-      case 8: {
-        const r = P.descente.rayon;
-        a.compter("circle"); a.ajouter("perimetre", 2 * Math.PI * r); a.ajouter("surface", Math.PI * r * r); a.ajouter("volume", Math.PI * r * r * P.hauteurNiveau); break;
-      }
+      // Poutre : longueur de la travée, section largeur × hauteur.
+      case 6: a.compter("beam"); a.ajouter("longueur", P.travee); a.ajouter("volume", P.poutre.largeur * P.poutre.hauteur * P.travee); break;
+      case 7: a.compter("polyline"); a.ajouter("longueur", P.reseau.equerre); break;
+      // Occurrence de la gaine : volume de la définition (boîte c × c × hauteur de niveau).
+      case 8: a.compter("occurrence"); a.ajouter("volume", volumeGaine); occurrences++; break;
       default: a.compter("text");
     }
   });
-  return { scene: "S4", taille, primitives: taille, feuillets: feuillets(taille, MOTIF_S4), comptes: a.comptes, totaux: a.totaux, volumeNonEvalues: a.volumeNonEvalues, murs, volumeSolides };
+  const motifs = Math.ceil(taille / MOTIF_S4);
+  return {
+    scene: "S4", taille, primitives: taille, feuillets: feuillets(taille, MOTIF_S4), comptes: a.comptes, totaux: a.totaux, volumeNonEvalues: a.volumeNonEvalues, murs, volumeSolides: 0,
+    // Chaque motif entamé porte son mur de façade (rôle 0) : un niveau est employé dès qu'une de ses travées l'est.
+    batiment: { niveaux: Math.ceil(motifs / parNiveau), definitions: occurrences ? 1 : 0, occurrences, membresParNiveau, volumeOccurrences: occurrences * volumeGaine },
+  };
 }
 
 export function oracleS5(taille: number): OracleCorpus {

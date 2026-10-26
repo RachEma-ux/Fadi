@@ -13,6 +13,8 @@ import type { StudioElementVisualisation } from "../scenes/scenes.js";
 import type { StudioNonNatif } from "../non-natifs/non-natifs.js";
 import type { StudioGraphisme } from "../graphismes/graphismes.js";
 import type { StudioSourceExterne } from "../sources/sources.js";
+import type { StudioNiveau } from "../batiment/niveaux.js";
+import type { StudioComposant, StudioOccurrence } from "../batiment/composants.js";
 
 /**
  * Rapport de fidélité d'un export Studio (E.6-03) : pour un document et un format (SVG, DXF, IFC), ce qui est exporté
@@ -58,13 +60,17 @@ export const STUDIO_RAISONS_FIDELITE = Object.freeze([
   "spline-decoupee", "transparence-non-portee", "graphisme-hors-ifc",
   // Sources importées (EX-014) : leur provenance s'exporte à part (`studio-provenance/1`), jamais dans le dessin.
   "provenance-hors-dessin",
+  // Bâtiment (lot W3-B) : niveau → `IfcBuildingStorey` (nom et cote) en IFC, absent du dessin 2D ; définition de
+  // composant → `IfcBuildingElementProxyType` à représentation partagée ; occurrence → `IfcMappedItem` de cette
+  // représentation (aucune géométrie recopiée).
+  "niveau-en-etage", "niveau-hors-2d", "type-partage", "occurrence-partagee",
 ] as const);
 export type StudioRaisonFidelite = (typeof STUDIO_RAISONS_FIDELITE)[number];
 
 /** Catégorie = liste du document qui porte l'élément. */
-export type StudioCategorieEchange = "objets" | "cotes" | "annotations" | "solides" | "exacts" | "cotesFaces" | "architecture" | "proprietes" | "scenes" | "nonNatifs" | "graphismes" | "sources" | "inconnue";
+export type StudioCategorieEchange = "objets" | "cotes" | "annotations" | "solides" | "exacts" | "cotesFaces" | "architecture" | "proprietes" | "scenes" | "nonNatifs" | "graphismes" | "sources" | "niveaux" | "composants" | "occurrences" | "inconnue";
 /** Liste du document de chaque catégorie connue (clé de `StudioDocument`). */
-export const STUDIO_LISTES_ECHANGE = Object.freeze({ objets: "objects", cotes: "dimensions", annotations: "annotations", solides: "solides", exacts: "exacts", cotesFaces: "cotesFaces", architecture: "architecture", proprietes: "proprietes", scenes: "scenes", nonNatifs: "nonNatifs", graphismes: "graphismes", sources: "sources" } as const);
+export const STUDIO_LISTES_ECHANGE = Object.freeze({ objets: "objects", cotes: "dimensions", annotations: "annotations", solides: "solides", exacts: "exacts", cotesFaces: "cotesFaces", architecture: "architecture", proprietes: "proprietes", scenes: "scenes", nonNatifs: "nonNatifs", graphismes: "graphismes", sources: "sources", niveaux: "niveaux", composants: "composants", occurrences: "occurrences" } as const);
 
 export interface StudioJugementFidelite { statut: StudioStatutFidelite; raison: StudioRaisonFidelite }
 type Juge<T> = (item: T) => StudioJugementFidelite;
@@ -136,6 +142,11 @@ export const STUDIO_CAPACITES_EXPORT: {
   readonly graphismes: { readonly [K in StudioGraphisme["type"]]: ParFormat<Extract<StudioGraphisme, { type: K }>> };
   /** Sources importées (EX-014) : provenance exportée à part, dans aucun format de dessin. */
   readonly sources: { readonly source: ParFormat<StudioSourceExterne> };
+  /** Niveaux (lot W3-B) : sans discriminant de type, un seul type « niveau ». */
+  readonly niveaux: { readonly niveau: ParFormat<StudioNiveau> };
+  /** Définitions de composants 3D (lot W3-B) : un seul type « composant ». */
+  readonly composants: { readonly composant: ParFormat<StudioComposant> };
+  readonly occurrences: { readonly occurrence: ParFormat<StudioOccurrence> };
 } = Object.freeze({
   objets: {
     line: { svg: trace2d("trace-exact"), dxf: trace2d("trace-exact"), ifc: ifc3d((o) => exact(o.extrusion && "thickness" in o.extrusion && o.extrusion.thickness !== undefined ? "extrusion-exacte" : "surface-exacte")) },
@@ -170,6 +181,10 @@ export const STUDIO_CAPACITES_EXPORT: {
     opening: { svg: () => approche("ouverture-en-lacune"), dxf: () => approche("ouverture-en-lacune"), ifc: () => exact("ouverture-evidee") },
     // EX-027 (lot G2) : échelle d'accès — plan (montants et échelons) sans hauteur en SVG / DXF ; IFC : IfcStair LADDER, montants et échelons extrudés exacts.
     ladder: { svg: () => approche("extrusion-non-portee"), dxf: () => approche("extrusion-non-portee"), ifc: () => exact("extrusion-exacte") },
+    // Lot W3-B : poteau, poutre, dalle — emprise en plan sans hauteur en SVG / DXF ; IFC : IfcColumn / IfcBeam / IfcSlab extrudés exacts.
+    column: { svg: () => approche("extrusion-non-portee"), dxf: () => approche("extrusion-non-portee"), ifc: () => exact("extrusion-exacte") },
+    beam: { svg: () => approche("extrusion-non-portee"), dxf: () => approche("extrusion-non-portee"), ifc: () => exact("extrusion-exacte") },
+    slab: { svg: () => approche("extrusion-non-portee"), dxf: () => approche("extrusion-non-portee"), ifc: () => exact("extrusion-exacte") },
   },
   // Propriétés déclarées : ni le SVG ni le DXF ne les portent ; l'IFC écrit celles qui ont une valeur.
   proprietes: {
@@ -194,6 +209,16 @@ export const STUDIO_CAPACITES_EXPORT: {
   },
   sources: {
     source: { svg: () => nonCouvert("provenance-hors-dessin"), dxf: () => nonCouvert("provenance-hors-dessin"), ifc: () => nonCouvert("provenance-hors-dessin") },
+  },
+  // Lot W3-B : niveaux en IfcBuildingStorey ; composants et occurrences, 3D seulement, en représentation partagée IFC.
+  niveaux: {
+    niveau: { svg: () => nonCouvert("niveau-hors-2d"), dxf: () => nonCouvert("niveau-hors-2d"), ifc: () => exact("niveau-en-etage") },
+  },
+  composants: {
+    composant: { svg: () => nonCouvert("solide-hors-2d"), dxf: () => nonCouvert("solide-hors-2d"), ifc: () => exact("type-partage") },
+  },
+  occurrences: {
+    occurrence: { svg: () => nonCouvert("solide-hors-2d"), dxf: () => nonCouvert("solide-hors-2d"), ifc: () => exact("occurrence-partagee") },
   },
 });
 
@@ -300,6 +325,10 @@ export function studioRapportFidelite(input: StudioDocument, format: StudioForma
   parcourir("graphismes", doc.graphismes);
   // Sources importées (EX-014) : sans calque.
   for (const s of doc.sources ?? []) poser("sources", "source", STUDIO_CAPACITES_EXPORT.sources.source[format](s), s.id);
+  // Bâtiment (lot W3-B) : niveaux et définitions sans calque ; occurrences comptées sur leur calque.
+  for (const n of doc.niveaux ?? []) poser("niveaux", "niveau", STUDIO_CAPACITES_EXPORT.niveaux.niveau[format](n), n.id);
+  for (const c of doc.composants ?? []) poser("composants", "composant", STUDIO_CAPACITES_EXPORT.composants.composant[format](c), c.id);
+  parcourir("occurrences", doc.occurrences);
   // Liste du document qu'aucune catégorie ne connaît : comptée non couverte, jamais omise.
   for (const [cle, valeur] of Object.entries(doc as unknown as Record<string, unknown>)) {
     if (CLES_CONNUES.has(cle) || !Array.isArray(valeur)) continue;

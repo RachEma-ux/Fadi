@@ -34,15 +34,17 @@ describe("A.3-08 — inventaire de couverture des types 3D", () => {
     expect(studioControlerCouverture3d([offert], testExiste)).toEqual(["groupe-3d : non disponible mais offert par un outil du registre"]);
   });
 
-  it("types avancés du référentiel (§ 4.1, S5, PERF-07) : sommets et arêtes, groupe, composant, courbe exacte 3D, surface complexe, BRep fournisseur — tous non disponibles (le booléen est disponible depuis le lot F2)", () => {
-    expect(studioTypes3dNonDisponibles().map((t) => t.id)).toEqual(["sommets-aretes", "groupe-3d", "composant-3d", "courbe-exacte-3d", "surface-complexe", "brep-fournisseur"]);
+  it("types avancés du référentiel (§ 4.1, S5, PERF-07) : sommets et arêtes, groupe, courbe exacte 3D, surface complexe, BRep fournisseur — tous non disponibles (le booléen est disponible depuis le lot F2, le composant 3D depuis le lot W3-B)", () => {
+    expect(studioTypes3dNonDisponibles().map((t) => t.id)).toEqual(["sommets-aretes", "groupe-3d", "courbe-exacte-3d", "surface-complexe", "brep-fournisseur"]);
+    expect(STUDIO_COUVERTURE_3D.find((t) => t.id === "composant-3d")).toMatchObject({ etat: "disponible", outils: ["studio.composant.definir", "studio.composant.placer"] });
     for (const t of STUDIO_COUVERTURE_3D) expect(t.source.document).toBe("STUDIO-RT-001 V1.0");
     expect(Object.isFrozen(STUDIO_COUVERTURE_3D)).toBe(true);
     expect(Object.isFrozen(STUDIO_COUVERTURE_3D[0]!.tests)).toBe(true);
   });
 
   it("aucun outil du registre ne porte un type non disponible ; les outils des types disponibles existent dans la barre 3D", () => {
-    const outils3d = new Set<string>(STUDIO_TOOLS.filter((t) => t.groupe === "volume-libre").map((t) => t.toolId));
+    // Barre 3D : volume libre ; composants 3D (lot W3-B) : barre « Bâtiment », rendus en vue 3D.
+    const outils3d = new Set<string>(STUDIO_TOOLS.filter((t) => t.groupe === "volume-libre" || t.groupe === "batiment").map((t) => t.toolId));
     for (const t of STUDIO_COUVERTURE_3D.filter((x) => x.etat === "disponible")) for (const o of t.outils) expect(outils3d.has(o), o).toBe(true);
     const libelles = STUDIO_TOOLS.map((t) => t.libelleFR.toLowerCase());
     for (const t of studioTypes3dNonDisponibles()) {

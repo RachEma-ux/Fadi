@@ -161,6 +161,7 @@ export const BARRES_STUDIO: readonly { id: BarreStudio; libelleFR: string }[] = 
   { id: "graphismes", libelleFR: "Graphismes" },
   { id: "reperes", libelleFR: "Repères" },
   { id: "sources", libelleFR: "Sources importées" },
+  { id: "batiment", libelleFR: "Bâtiment" },
   { id: "edition", libelleFR: "Édition" },
   { id: "vue", libelleFR: "Vue" },
   { id: "accrochage", libelleFR: "Accrochage" },
@@ -201,6 +202,8 @@ export const OUTILS_MODES: ReadonlySet<StudioToolId> = new Set<StudioToolId>([
   "studio.dessin.cote-angulaire", "studio.dessin.texte",
   // Architecture (A.4) : poser l'axe d'un mur, désigner le mur d'une ouverture.
   "studio.architecture.mur", "studio.architecture.ouverture", "studio.architecture.echelle-acces",
+  // Lot W3-B : niveaux, composants 3D et éléments structurels (formulaires du panneau « Bâtiment »).
+  "studio.niveau.definir", "studio.composant.definir", "studio.composant.placer", "studio.structure.element",
 ]);
 /** Outils du volume libre : ils agissent dans la vue 3D, qu'ils ouvrent. */
 export const OUTILS_VOLUME_LIBRE: ReadonlySet<StudioToolId> = new Set<StudioToolId>([
@@ -208,6 +211,8 @@ export const OUTILS_VOLUME_LIBRE: ReadonlySet<StudioToolId> = new Set<StudioTool
   "studio.solide.face-decaler", "studio.solide.face-diviser", "studio.solide.pivoter", "studio.solide.resoudre",
   "studio.solide.booleen", "studio.solide.cote-face",
 ]);
+/** Outils du bâtiment (lot W3-B) : leurs formulaires sont dans le panneau « Bâtiment » des propriétés. */
+export const OUTILS_BATIMENT: ReadonlySet<StudioToolId> = new Set<StudioToolId>(["studio.niveau.definir", "studio.composant.definir", "studio.composant.placer", "studio.structure.element"]);
 /** Outils qui posent des points sur la planche. */
 export const OUTILS_TRACE: ReadonlySet<StudioToolId> = new Set<StudioToolId>(["studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle", "studio.dessin.arc", "studio.dessin.polyligne", "studio.dessin.cote", "studio.dessin.cote-angulaire", "studio.dessin.texte", "studio.architecture.mur", "studio.architecture.ouverture", "studio.architecture.echelle-acces"]);
 
