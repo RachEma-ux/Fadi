@@ -1,8 +1,8 @@
 # Matrice d’échanges de Studio
 
-<!-- Généré depuis packages/atelier-model/src/studio/echanges/matrice-echanges.ts (studio-matrice-echanges/1, révision 9) : ne pas éditer à la main. -->
+<!-- Généré depuis packages/atelier-model/src/studio/echanges/matrice-echanges.ts (studio-matrice-echanges/1, révision 10) : ne pas éditer à la main. -->
 
-Établie le 2026-10-26 (révision 9, schéma `studio-matrice-echanges/1`), à partir de l’audit des exporteurs et importeurs Studio. Lots E.6-01 à E.6-05 du plan d’implémentation Studio V1.0 (§5.7).
+Établie le 2026-10-26 (révision 10, schéma `studio-matrice-echanges/1`), à partir de l’audit des exporteurs et importeurs Studio. Lots E.6-01 à E.6-05 du plan d’implémentation Studio V1.0 (§5.7).
 
 **Aucune entrée n’est une déclaration de conformité** : « livré » dit ce que le code écrit ou lit et le contrôle qui le vérifie ; la conformité d’un format reste non évaluée. Un format reporté est inscrit « non livré » avec sa raison et sa source ; « renoncé » exige une décision Studio admise (aucune aujourd’hui).
 
@@ -20,7 +20,7 @@ Entrées : 45 — livrées : 31, non livrées : 14, renoncées : 0.
 | `natif-profil-outils-import` | Profil d’outils Studio (JSON) | fadi-studio-profil/1 | import | natif | Profil d’outils importé dans le compte | livré | E.6-02 | Aucun droit conféré : une capacité exigeant un droit absent est refusée ; raccourcis en conflit refusés ou écartés sur demande explicite. |
 | `dessin-svg` | SVG | SVG (espace de noms W3C, aucune version déclarée dans le fichier) | export | dessin | Document d’une révision de variante (plan 2D) | livré | E.6-03 | Plan 2D seulement : solides et hauteurs absents ; calques masqués conservés sous display="none" ; graphismes (splines en courbes de Bézier exactes, traits de hachure, symboles) avec leur transparence (opacity) ; aucun script ni ressource externe. |
 | `dessin-dxf` | DXF ASCII | R12 (AC1009), CRLF, $INSUNITS = 6 (mètre) | export | dessin | Document d’une révision de variante (plan 2D) | livré | E.6-03 | R12 seulement ; $INSUNITS n’appartient pas à R12 (variable introduite avec AC1015) : l’unité n’est pas garantie chez un lecteur R12 strict ; ASCII strict (texte échappé, 250 caractères) ; cotes non associatives ; noms de calque réécrits (31 caractères ASCII) ; solides absents ; splines découpées en POLYLINE (16 segments par morceau de Bézier), transparence des graphismes non portée (déclarée en commentaire 999). |
-| `maquette-ifc` | IFC (STEP physique, ISO 10303-21) | IFC4X3_ADD2, ViewDefinition [ReferenceView] | export | maquette | Objets extrudés, solides libres, murs et ouvertures, propriétés déclarées d’une révision | livré | E.6-03 | Seuls les éléments 3D sont écrits ; arcs discrétisés ; cotes, annotations et réglages de visualisation absents ; IfcDoor / IfcWindow seulement si le type est déclaré, sans représentation propre. |
+| `maquette-ifc` | IFC (STEP physique, ISO 10303-21) | IFC4X3_ADD2, ViewDefinition [ReferenceView] | export | maquette | Objets extrudés, solides libres, murs et ouvertures, niveaux, poteaux, poutres, dalles, composants 3D et leurs occurrences, propriétés déclarées d’une révision | livré | E.6-03 | Seuls les éléments 3D sont écrits ; arcs discrétisés ; cotes, annotations et réglages de visualisation absents ; IfcDoor / IfcWindow seulement si le type est déclaré, sans représentation propre. |
 | `maquette-obj` | OBJ (Wavefront) | OBJ texte ASCII, studio-export-obj/1 (le format ne déclare aucune version) | export | maquette | Géométrie 3D d’une révision (maillage triangulé de la vue 3D) | livré | E.6-04 | Maillage seulement : courbes discrétisées comme dans la vue 3D, coordonnées au micromètre ; mètres déclarés en commentaire (OBJ ne porte aucune unité) ; aucun matériau ; tous les calques écrits, un calque masqué signalé ; ce qui n’est pas une géométrie 3D est compté dans l’en-tête, jamais écrit. |
 | `maquette-stl` | STL ASCII | STL ASCII (solid … endsolid), sans version | export | maquette | Solides d’une révision (facettes triangulées) | livré | E.6-04 | Une seule pièce « solid » : STL ne porte ni unité (mètres), ni identité, ni calque ; facettes des solides seulement, normale unitaire calculée dans le sens des sommets ; courbes discrétisées ; surfaces sans épaisseur et contours plats non écrits (comptés par le bilan de l’export). |
 | `maquette-step` | STEP (ISO 10303-21) | AP214 (FILE_SCHEMA AUTOMOTIVE_DESIGN, écrit par OCCT 8.0), assemblage XCAF nommé | export | maquette | Solides d’une révision en représentation exacte (brep), un produit nommé par élément | livré | E.6-04 | Écrit côté serveur par le noyau exact (OCCT en WebAssembly, chargé à la demande) ; millimètres déclarés (SI_UNIT .MILLI. .METRE.), géométrie mise à l’échelle × 1 000 depuis les mètres du modèle ; horodatage de la révision ; emprises des objets extrudés discrétisées comme dans la vue 3D ; aucune couleur ni propriété ; révision sans solide : refus 422, jamais un fichier vide. |
@@ -167,7 +167,7 @@ Entrées : 45 — livrées : 31, non livrées : 14, renoncées : 0.
 ### `maquette-ifc` — IFC (STEP physique, ISO 10303-21) (export)
 
 - Version : IFC4X3_ADD2, ViewDefinition [ReferenceView]
-- Objet : Objets extrudés, solides libres, murs et ouvertures, propriétés déclarées d’une révision
+- Objet : Objets extrudés, solides libres, murs et ouvertures, niveaux, poteaux, poutres, dalles, composants 3D et leurs occurrences, propriétés déclarées d’une révision
 - Limite : Seuls les éléments 3D sont écrits ; arcs discrétisés ; cotes, annotations et réglages de visualisation absents ; IfcDoor / IfcWindow seulement si le type est déclaré, sans représentation propre.
 - Route : `GET /projects/:projectId/studio/studies/:studyId/variants/:variantId/export?format=ifc`
 - Contrôle : Tests de l’export ; corpus validé par IfcOpenShell 0.9.0 en CI (schéma, règles EXPRESS, effectifs, propriétés) ; testé, jamais certifié.
@@ -181,6 +181,9 @@ Entrées : 45 — livrées : 31, non livrées : 14, renoncées : 0.
 - Entités IFC écrites `IfcOpeningElement`, `IfcRelVoidsElement` : Ouverture : boîte .OPENING. reliée au mur hôte, placée relativement au mur.
 - Entités IFC écrites `IfcDoor`, `IfcWindow`, `IfcRelFillsElement` : Porte ou fenêtre seulement si son type est déclaré : remplit l’ouverture, sans représentation propre.
 - Entités IFC écrites `IfcStair` : Échelle d’accès (EX-027) : type prédéfini .LADDER., montants et échelons extrudés (profils fermés), placée à la cote de son pied ; aucune valeur normative.
+- Entités IFC écrites `IfcBuildingStorey`, `IfcRelContainedInSpatialStructure` : Niveaux du document (lot W3-B) : un IfcBuildingStorey par niveau (nom saisi, Elevation = cote), placé à sa cote ; les éléments rattachés y sont contenus, les autres restent au niveau de référence.
+- Entités IFC écrites `IfcColumn`, `IfcBeam`, `IfcSlab` : Poteau, poutre et dalle créés comme tels (lot W3-B) : type prédéfini .NOTDEFINED., sections saisies extrudées ; géométrie seulement, aucune vérification structurelle.
+- Entités IFC écrites `IfcBuildingElementProxyType`, `IfcRepresentationMap`, `IfcMappedItem`, `IfcCartesianTransformationOperator3D`, `IfcRelDefinesByType` : Composant 3D (lot W3-B) : définition en type partagé (représentation des solides écrite une fois), chaque occurrence en IfcBuildingElementProxy dont le corps est un IfcMappedItem de cette représentation.
 - Entités IFC écrites `IfcPropertySet`, `IfcPropertySingleValue`, `IfcRelDefinesByProperties` : Jeux de propriétés listés ci-dessous, valeurs saisies seulement.
 - Entités IFC écrites `IfcPresentationLayerWithStyle` : Un calque par calque non vide : nom, identifiant Studio, visibilité, verrou ; calque masqué exporté éteint.
 - Jeu de propriétés `Fadi_StudioExtrusion` : Objet extrudé : identifiant Studio, base, hauteur, épaisseur si saisie.
@@ -188,6 +191,11 @@ Entrées : 45 — livrées : 31, non livrées : 14, renoncées : 0.
 - Jeu de propriétés `Fadi_StudioWall` : Mur : identifiant, épaisseur, hauteur, base, justification, longueur d’axe.
 - Jeu de propriétés `Fadi_StudioOpening` : Ouverture : identifiant, mur hôte, position, largeur, hauteur, allège, type déclaré.
 - Jeu de propriétés `Fadi_StudioLadder` : Échelle d’accès : identifiant, entre-axe, hauteur, base, nombre et pas des échelons, section des montants.
+- Jeu de propriétés `Fadi_StudioColumn` : Poteau : identifiant, section saisie (largeur, profondeur), hauteur, base, orientation, volume dérivé.
+- Jeu de propriétés `Fadi_StudioBeam` : Poutre : identifiant, section saisie (largeur, hauteur), base, longueur d’axe, volume dérivé.
+- Jeu de propriétés `Fadi_StudioSlab` : Dalle : identifiant, épaisseur, base, sommets du contour, aire et volume dérivés.
+- Jeu de propriétés `Fadi_StudioComponent` : Définition de composant (portée par le type) : identifiant, nom, nombre de solides.
+- Jeu de propriétés `Fadi_StudioComponentOccurrence` : Occurrence : identifiant, définition désignée, origine et rotation.
 - Jeu de propriétés `Fadi_StudioExport` : Projet : document, révision, repère et effectifs (éléments écrits, objets non extrudés, cotes et annotations non exportées).
 - Jeu de propriétés `Fadi_ProprietesDeclarees` : Propriétés déclarées valuées de chaque objet porteur ; les propriétés sans valeur sont comptées, jamais écrites.
 - Code : `packages/atelier-model/src/studio/ifc.ts` (`` exportStudioIfc ``) ; `apps/api/src/lib/studio-commands.ts` (`` exportStudioVariant ``)
@@ -203,7 +211,7 @@ Entrées : 45 — livrées : 31, non livrées : 14, renoncées : 0.
 - Limite : Maillage seulement : courbes discrétisées comme dans la vue 3D, coordonnées au micromètre ; mètres déclarés en commentaire (OBJ ne porte aucune unité) ; aucun matériau ; tous les calques écrits, un calque masqué signalé ; ce qui n’est pas une géométrie 3D est compté dans l’en-tête, jamais écrit.
 - Route : `GET /projects/:projectId/studio/studies/:studyId/variants/:variantId/export?format=obj`
 - Contrôle : Tests du modèle (OBJ relu : objets, groupes, volumes égaux au modèle, bilan) ; règle d’or de la commande « Exporter OBJ ».
-- Entité Objets extrudés, solides libres, solides exacts, murs : partielle — Un objet « o » par élément, nommé par son identifiant Studio (échappé ~XXXX~, réversible), faces triangulaires orientées ; volume relu égal à celui du modèle ; courbes discrétisées.
+- Entité Objets extrudés, solides libres, solides exacts, murs, échelles d’accès, poteaux, poutres, dalles, occurrences de composants : partielle — Un objet « o » par élément, nommé par son identifiant Studio (échappé ~XXXX~, réversible), faces triangulaires orientées ; volume relu égal à celui du modèle ; courbes discrétisées.
 - Entité Calques : portée — Un groupe « g » par calque ; un calque masqué est écrit et signalé.
 - Entité Surfaces verticales sans épaisseur : portée — Triangles sans volume, comme dans la vue 3D.
 - Entité Contours non extrudés : partielle — Lignes « l » à z = 0, courbes discrétisées.
@@ -222,7 +230,7 @@ Entrées : 45 — livrées : 31, non livrées : 14, renoncées : 0.
 - Limite : Une seule pièce « solid » : STL ne porte ni unité (mètres), ni identité, ni calque ; facettes des solides seulement, normale unitaire calculée dans le sens des sommets ; courbes discrétisées ; surfaces sans épaisseur et contours plats non écrits (comptés par le bilan de l’export).
 - Route : `GET /projects/:projectId/studio/studies/:studyId/variants/:variantId/export?format=stl`
 - Contrôle : Tests du modèle (STL relu : facettes, normales sortantes, volume total égal au modèle, bilan) ; règle d’or de la commande « Exporter STL ».
-- Entité Objets extrudés, solides libres, solides exacts, murs : partielle — Facettes du maillage de la vue 3D ; volume relu égal à celui du modèle ; identité et calque perdus.
+- Entité Objets extrudés, solides libres, solides exacts, murs, échelles d’accès, poteaux, poutres, dalles, occurrences de composants : partielle — Facettes du maillage de la vue 3D ; volume relu égal à celui du modèle ; identité et calque perdus.
 - Entité Surfaces verticales sans épaisseur, contours non extrudés : absente — Ce ne sont pas des solides : comptés, jamais écrits.
 - Entité Cotes, annotations, graphismes, ouvertures, propriétés, scènes, éléments non natifs : absente — Comptés par le bilan de l’export, jamais écrits.
 - Code : `packages/atelier-model/src/studio/export-3d.ts` (`` exportStudioStl ``) ; `apps/api/src/lib/studio-commands.ts` (`` exportStudioVariant ``)
@@ -241,6 +249,8 @@ Entrées : 45 — livrées : 31, non livrées : 14, renoncées : 0.
 - Entité Solides exacts (booléens) : portée — Brep du noyau écrit tel quel.
 - Entité Solides libres (boîtes, prismes) : portée — Extrusion de l’emprise (solide droit) ou lissage réglé entre ses deux faces (solide oblique ou basculé) : faces planes, exactes.
 - Entité Murs : portée — Morceaux pleins juxtaposés (vides des ouvertures déduits), un produit par mur ; volume relu égal au volume net du modèle.
+- Entité Échelles d’accès, poteaux, poutres, dalles : portée — Extrusion de l’emprise de chaque montant et échelon (échelle) ou de l’élément structurel, un produit par élément (lot W3-B).
+- Entité Occurrences de composants : portée — Solides de la définition placés par l’occurrence (lissage réglé, faces planes exactes), un produit par occurrence ; niveaux et définitions comptés, non écrits (lot W3-B).
 - Entité Objets extrudés fermés, lignes et arcs avec épaisseur : partielle — Extrusion de l’emprise de la vue 3D : cercles et arcs discrétisés.
 - Entité Identité : portée — Nom du produit STEP = identifiant Studio (échappé ~XXXX~ hors ASCII imprimable, réversible).
 - Entité Calques, surfaces sans épaisseur, contours, cotes, annotations, graphismes, ouvertures, propriétés, scènes, éléments non natifs : absente — Non écrits ; comptés par le bilan de l’export.
@@ -541,6 +551,9 @@ Raisons possibles du rapport de fidélité (`studioRapportFidelite`) pour chaque
 | architecture | wall | `extrusion-non-portee` (approche) | `extrusion-non-portee` (approche) | `extrusion-exacte` (exact) |
 | architecture | opening | `ouverture-en-lacune` (approche) | `ouverture-en-lacune` (approche) | `ouverture-evidee` (exact) |
 | architecture | ladder | `extrusion-non-portee` (approche) | `extrusion-non-portee` (approche) | `extrusion-exacte` (exact) |
+| architecture | column | `extrusion-non-portee` (approche) | `extrusion-non-portee` (approche) | `extrusion-exacte` (exact) |
+| architecture | beam | `extrusion-non-portee` (approche) | `extrusion-non-portee` (approche) | `extrusion-exacte` (exact) |
+| architecture | slab | `extrusion-non-portee` (approche) | `extrusion-non-portee` (approche) | `extrusion-exacte` (exact) |
 | proprietes | propriete | `propriete-non-exportee` (non-couvert) | `propriete-non-exportee` (non-couvert) | `propriete-en-pset` (exact), `propriete-non-evaluee` (non-couvert) |
 | scenes | scene | `visualisation-hors-export` (non-couvert) | `visualisation-hors-export` (non-couvert) | `visualisation-hors-export` (non-couvert) |
 | scenes | appearance | `visualisation-hors-export` (non-couvert) | `visualisation-hors-export` (non-couvert) | `visualisation-hors-export` (non-couvert) |
@@ -549,6 +562,9 @@ Raisons possibles du rapport de fidélité (`studioRapportFidelite`) pour chaque
 | graphismes | hachure | `trace-exact` (exact) | `trace-exact` (exact), `transparence-non-portee` (approche) | `graphisme-hors-ifc` (non-couvert) |
 | graphismes | symbole | `trace-exact` (exact) | `trace-exact` (exact), `transparence-non-portee` (approche) | `graphisme-hors-ifc` (non-couvert) |
 | sources | source | `provenance-hors-dessin` (non-couvert) | `provenance-hors-dessin` (non-couvert) | `provenance-hors-dessin` (non-couvert) |
+| niveaux | niveau | `niveau-hors-2d` (non-couvert) | `niveau-hors-2d` (non-couvert) | `niveau-en-etage` (exact) |
+| composants | composant | `solide-hors-2d` (non-couvert) | `solide-hors-2d` (non-couvert) | `type-partage` (exact) |
+| occurrences | occurrence | `solide-hors-2d` (non-couvert) | `solide-hors-2d` (non-couvert) | `occurrence-partagee` (exact) |
 
 ## Capacités par sens d’échange (EX-079)
 

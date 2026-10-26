@@ -51,7 +51,7 @@ try:
     import ifcopenshell.geom
 
     reglages = ifcopenshell.geom.settings()
-    for classe in ("IfcWall", "IfcSlab", "IfcSpace", "IfcColumn", "IfcDoor", "IfcStair", "IfcBuildingElementProxy"):
+    for classe in ("IfcWall", "IfcSlab", "IfcSpace", "IfcColumn", "IfcBeam", "IfcDoor", "IfcStair", "IfcBuildingElementProxy"):
         for p in f.by_type(classe)[:15]:
             # Seuls les produits qui ont un corps (« Body ») ont une forme 3D à construire.
             if not p.Representation or not any(r.RepresentationIdentifier == "Body" for r in p.Representation.Representations):

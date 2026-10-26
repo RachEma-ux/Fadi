@@ -183,7 +183,7 @@ export function oracleS4(taille: number): OracleCorpus {
   parcourir(taille, MOTIF_S4, (j, role, present) => {
     // Murs (et leurs ouvertures), poteau, dalle, poutre et gaine sont rattachés au niveau de leur travée.
     const niveau = niveauS4(Math.floor(j / parNiveau)).id;
-    if (role <= 6 || role === 8) membresParNiveau[niveau] = (membresParNiveau[niveau] ?? 0) + 1;
+    if (role <= 6 || role === 10) membresParNiveau[niveau] = (membresParNiveau[niveau] ?? 0) + 1;
     switch (role) {
       case 0: mur(present(1) ? P.fenetre.largeur * P.fenetre.hauteur * P.epaisseur : 0); break;
       case 1: a.compter("opening"); a.ajouter("surface-ouverture", P.fenetre.largeur * P.fenetre.hauteur); break;
@@ -199,8 +199,13 @@ export function oracleS4(taille: number): OracleCorpus {
       // Poutre : longueur de la travée, section largeur × hauteur.
       case 6: a.compter("beam"); a.ajouter("longueur", P.travee); a.ajouter("volume", P.poutre.largeur * P.poutre.hauteur * P.travee); break;
       case 7: a.compter("polyline"); a.ajouter("longueur", P.reseau.equerre); break;
+      case 8: a.compter("line"); a.ajouter("longueur", P.reseau.ligne); a.volumeNonEvalues++; break;
+      case 9: {
+        const r = P.descente.rayon;
+        a.compter("circle"); a.ajouter("perimetre", 2 * Math.PI * r); a.ajouter("surface", Math.PI * r * r); a.ajouter("volume", Math.PI * r * r * P.hauteurNiveau); break;
+      }
       // Occurrence de la gaine : volume de la définition (boîte c × c × hauteur de niveau).
-      case 8: a.compter("occurrence"); a.ajouter("volume", volumeGaine); occurrences++; break;
+      case 10: a.compter("occurrence"); a.ajouter("volume", volumeGaine); occurrences++; break;
       default: a.compter("text");
     }
   });

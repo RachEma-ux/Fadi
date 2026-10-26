@@ -13810,5 +13810,8 @@
 "Poteau : identifiant, section saisie (largeur, profondeur), hauteur, base, orientation, volume dérivé.": "Column: identifier, entered section (width, depth), height, base, orientation, derived volume.",
 "Poutre : identifiant, section saisie (largeur, hauteur), base, longueur d’axe, volume dérivé.": "Beam: identifier, entered section (width, height), base, axis length, derived volume.",
 "Dalle : identifiant, épaisseur, base, sommets du contour, aire et volume dérivés.": "Slab: identifier, thickness, base, outline vertices, derived area and volume.",
-"Occurrence : identifiant, définition désignée, origine et rotation.": "Instance: identifier, referenced definition, origin and rotation."
+"Occurrence : identifiant, définition désignée, origine et rotation.": "Instance: identifier, referenced definition, origin and rotation.",
+"Niveau de rattachement": "Attachment level",
+"Aucun niveau": "No level",
+"Une ouverture suit le niveau de son mur.": "An opening follows its wall's level."
 }

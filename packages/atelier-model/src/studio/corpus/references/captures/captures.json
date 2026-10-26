@@ -56,15 +56,15 @@
   "S4": {
    "plan": {
     "fichier": "S4-plan.png",
-    "sha256": "a8410614801e5fa51a2a9b9ecc2eefd93a29468965f666ceaef17ac782a24372",
+    "sha256": "19469b0af242a7c30cc32e3248584c663a1b97603e7554e035daf520e9193329",
     "largeur": 802,
     "hauteur": 572
    },
    "vue3d": {
     "fichier": "S4-vue3d.png",
-    "sha256": "92b13f98a0a1936e9baa2b6f5bb8c976dfed09fd1307b8e72346c2b606970063",
+    "sha256": "ae4ab15c6fae65ae5f2f0a0b845f8eaa61a77018614884b234167d84d77c56db",
     "largeur": 788,
-    "hauteur": 429
+    "hauteur": 457
    }
   },
   "S5": {

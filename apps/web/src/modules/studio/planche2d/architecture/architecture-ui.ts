@@ -190,5 +190,15 @@ export function commandeModifierArchitecture(it: StudioArchitectureItem, e: Edit
   return { erreur: "Valeurs d’un autre objet." };
 }
 
+/**
+ * Rattacher (ou détacher, `niveauId` vide) un objet posé librement à un niveau (lot W3-B) : Modifier, même identifiant ;
+ * ses cotes restent absolues (rien ne bouge). Une ouverture suit le niveau de son mur.
+ */
+export function commandeRattacherNiveau(it: StudioArchitectureItem, niveauId: string): ResultatArchitecture {
+  if (it.type === "opening") return { erreur: "Une ouverture suit le niveau de son mur." };
+  const { niveauId: _avant, ...reste } = it;
+  return { commandes: [{ toolId: "studio.architecture.modifier", params: { ...reste, ...(niveauId ? { niveauId } : {}) } as StudioArchitectureItem }] };
+}
+
 /** Libellé d'un objet architectural ou structurel (liste, sélection). */
 export const LIBELLES_STRUCTURE: Readonly<Record<"column" | "beam" | "slab", string>> = { column: "Poteau", beam: "Poutre", slab: "Dalle" };

@@ -12,7 +12,7 @@ import { LOCALE } from "../../../../lib/i18n";
 import { lireSommets } from "../geometrie-2d";
 import type { StudioToolId } from "../raccourcis";
 import {
-  commandeEchelle, commandeModifierArchitecture, commandeMur, commandeOuverture, echellesDu, editionDe, elementArchitectural, LIBELLES_JUSTIFICATION, LIBELLES_STRUCTURE, LIBELLES_TYPE_OUVERTURE, mursDu,
+  commandeEchelle, commandeModifierArchitecture, commandeRattacherNiveau, commandeMur, commandeOuverture, echellesDu, editionDe, elementArchitectural, LIBELLES_JUSTIFICATION, LIBELLES_STRUCTURE, LIBELLES_TYPE_OUVERTURE, mursDu,
   type ContexteArchitecture, type EditionArchitecture, type ParametresArchitecture, type ResultatArchitecture,
 } from "./architecture-ui";
 import "../rendus/architecture.css";
@@ -173,6 +173,10 @@ export function PanneauArchitecture({ doc, outil, selection, modifiable, paramet
         <dt>Longueur des montants et des échelons</dt><dd translate="no">{m(q.longueurMontants + q.longueurEchelons)}</dd>
         <dt>Volume de matière</dt><dd translate="no">{m3(q.volume)}</dd>
       </dl>}
+      {choisi.type !== "opening" && <label>Niveau de rattachement<select value={choisi.niveauId ?? ""} disabled={!modifiable} onChange={(e) => envoyer(commandeRattacherNiveau(choisi, e.target.value))} data-studio-rattacher-niveau={choisi.id}>
+        <option value="">Aucun niveau</option>
+        {[...(doc.niveaux ?? [])].sort((a, b) => a.cote - b.cote).map((n) => <option key={n.id} value={n.id}>{n.nom}</option>)}
+      </select></label>}
       <fieldset disabled={!modifiable}>
         {edition.type === "column" ? <>
           <label>Position (x y)<input type="text" required value={edition.position} onChange={(e) => setEdition({ ...edition, position: e.target.value })} data-studio-champ-architecture="edition-position-poteau" /></label>

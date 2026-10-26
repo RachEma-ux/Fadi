@@ -371,9 +371,9 @@ describe("Commandes qui recréent le corpus (recettes par l'API)", () => {
     // IFC : un étage réel par niveau (en plus du niveau de référence), poteaux, poutres et dalles typés, type partagé.
     const ifc = exportStudioIfc(d, { studyName: "S4", variantName: "S4", timestamp: "2026-10-26T00:00:00" });
     expect(ifc.match(/^#\d+=IFCBUILDINGSTOREY\(/gm)).toHaveLength(4);
-    expect(ifc.match(/^#\d+=IFCCOLUMN\(/gm)).toHaveLength(10);
+    expect(ifc.match(/^#\d+=IFCCOLUMN\(/gm)).toHaveLength(oracleCorpus("S4", 100).comptes.column!);
     expect(ifc.match(/^#\d+=IFCBUILDINGELEMENTPROXYTYPE\(/gm)).toHaveLength(1);
-    expect(ifc.match(/^#\d+=IFCMAPPEDITEM\(/gm)).toHaveLength(10);
+    expect(ifc.match(/^#\d+=IFCMAPPEDITEM\(/gm)).toHaveLength(oracleCorpus("S4", 100).comptes.occurrence!);
   });
 
   it("chaque scène S1–S7 (100 primitives) : les commandes appliquées à un document vide rendent le feuillet à l'identique (graphismes, exacts, sources compris)", () => {

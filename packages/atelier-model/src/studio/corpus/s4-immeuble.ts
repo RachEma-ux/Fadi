@@ -6,10 +6,10 @@ import type { CorpusStudio } from "./types.js";
 
 /**
  * S4 — immeuble multi-niveaux (X.1-04). REF-02 §18.2 : « immeuble multi-niveaux, structure, réseaux et composants
- * répétitifs ». Motif de 10 primitives = une travée de 6 m d'un niveau : mur de façade et mur de refend rattachés au
+ * répétitifs ». Motif de 12 primitives = une travée de 6 m d'un niveau : mur de façade et mur de refend rattachés au
  * niveau (cote de base = cote du niveau), une fenêtre et une porte, un **poteau**, une **dalle** et une **poutre** typés
- * (calque « structure »), une polyligne de réseau (calque « réseaux »), une **occurrence** du composant partagé
- * « Gaine (synthétique) » rattachée au niveau, un texte. Les travées d'un niveau se suivent le long de x ; les niveaux
+ * (calque « structure »), sur le calque « réseaux » une polyligne, une ligne et un cercle extrudé (descente verticale,
+ * géométrie libre), une **occurrence** du composant partagé « Gaine (synthétique) » rattachée au niveau, un texte. Les travées d'un niveau se suivent le long de x ; les niveaux
  * sont des **objets** (`niveaux` : nom et cote) qui s'empilent tous les 3,2 m (hauteur synthétique). Chaque feuillet porte
  * les niveaux et la définition qu'il emploie.
  *
@@ -18,7 +18,7 @@ import type { CorpusStudio } from "./types.js";
  * poteau (A.3-09) : poteaux, poutres et dalles sont créés comme tels.
  */
 
-export const MOTIF_S4 = 10;
+export const MOTIF_S4 = 12;
 export const DEFINITION_S4 = "Scène S4 : immeuble multi-niveaux, structure, réseaux et composants répétitifs.";
 
 /** Dimensions nominales (mètres) : les seules entrées des oracles. */
@@ -29,10 +29,11 @@ export const PARAMETRES_S4 = Object.freeze({
   poteau: { cote: 0.3, hauteur: 3 },
   dalle: { cote: 6, epaisseur: 0.2 },
   poutre: { largeur: 0.2, hauteur: 0.4 },
-  /** Réseau : équerre de 5 + 5 m. */
-  reseau: { equerre: 10 },
-  /** Gaine : composant partagé, boîte de section carrée sur la hauteur d'un niveau, posée en (x + 5,4 ; 5,4). */
-  gaine: { cote: 0.2, position: 5.4 },
+  /** Réseau : équerre de 5 + 5 m, ligne de 5 m. */
+  reseau: { equerre: 10, ligne: 5 },
+  descente: { rayon: 0.1 },
+  /** Gaine : composant partagé, boîte de section carrée sur la hauteur d'un niveau, posée en (x + 4,4 ; 5,4). */
+  gaine: { cote: 0.2, x: 4.4, y: 5.4 },
 });
 
 export const COMPOSANT_S4 = "s4-gaine";
@@ -64,7 +65,9 @@ export function corpusS4(taille: number): CorpusStudio {
       case 5: return architecture({ id: id("dalle"), type: "slab", layerId: "structure", niveauId, contour: [{ x, y: 0 }, { x: x + P.dalle.cote, y: 0 }, { x: x + P.dalle.cote, y: P.dalle.cote }, { x, y: P.dalle.cote }], thickness: P.dalle.epaisseur, base: z + P.hauteurMur });
       case 6: return architecture({ id: id("poutre"), type: "beam", layerId: "structure", niveauId, start: { x, y: P.travee }, end: { x: x + P.travee, y: P.travee }, width: P.poutre.largeur, height: P.poutre.hauteur, base: z + P.hauteurMur - P.poutre.hauteur });
       case 7: return objet({ id: id("reseau"), type: "polyline", layerId: "reseaux", points: [{ x: x + 0.5, y: 5.5 }, { x: x + 5.5, y: 5.5 }, { x: x + 5.5, y: 0.5 }], closed: false });
-      case 8: return occurrence({ id: id("gaine"), type: "occurrence", composantId: COMPOSANT_S4, layerId: "reseaux", niveauId, placement: { origin: { x: x + P.gaine.position, y: P.gaine.position, z }, rotation: 0 } });
+      case 8: return objet({ id: id("branche"), type: "line", layerId: "reseaux", start: { x: x + 0.5, y: 5.5 }, end: { x: x + 0.5, y: 0.5 } });
+      case 9: return objet({ id: id("descente"), type: "circle", layerId: "reseaux", center: { x: x + 5.5, y: 5.5 }, radius: P.descente.rayon, extrusion: { base: z, height: P.hauteurNiveau } });
+      case 10: return occurrence({ id: id("gaine"), type: "occurrence", composantId: COMPOSANT_S4, layerId: "reseaux", niveauId, placement: { origin: { x: x + P.gaine.x, y: P.gaine.y, z }, rotation: 0 } });
       default: return annotation({ id: id("etiquette"), type: "text", position: { x: x + 1, y: 3 }, height: 0.2, rotation: 0, content: `Niveau ${niveau}, travée ${j % parNiveau} (synthétique)`, justification: "left" });
     }
   };
@@ -87,7 +90,7 @@ export function corpusS4(taille: number): CorpusStudio {
       representes: [
         "niveaux comme objets (nom, cote) ; murs, poteaux, poutres, dalles et occurrences rattachés à leur niveau",
         "éléments structurels typés (poteau, poutre, dalle) sur un calque « structure » : géométrie seulement",
-        "réseaux (polylignes, occurrences de la gaine)",
+        "réseaux (polylignes, lignes, cercles extrudés, occurrences de la gaine)",
         "composants répétitifs : une définition partagée (gaine) et une occurrence par travée ; fenêtres et portes répétées par motif",
       ],
       absents: [],
