@@ -80,4 +80,65 @@ describe("TR-AC-001 — cote associative sur un mur (objet architectural)", () =
     expect(modifiee.dimensions).toEqual(base().dimensions);
     expect(valeur(modifiee)).toBeCloseTo(0.2, 12);
   });
+
+  // Revue Codex (PR #332) : une transformation qui renverse l'ordre du contour (symétrie) ne doit pas faire passer la
+  // cote sur la face opposée ; une cote copiée avec son mur se relie au mur copié.
+  const cotePhysique = (d: StudioDocument, id: string) => d.dimensions!.find((x) => x.id === id)!;
+  const contourDe = (d: StudioDocument, murId: string) => studioContourMur(d.architecture!.find((x) => x.id === murId) as StudioWall)!.points;
+  /** Cote de l'épaisseur (base) : départ sur la face y = `y0`, arrivée sur la face y = `y1`, liée aux sommets confondus du contour. */
+  const coteFaceY = (doc: StudioDocument, coteId: string, murId: string, y0: number, y1: number) => {
+    const c = cotePhysique(doc, coteId);
+    const pts = contourDe(doc, murId);
+    const sommet = (a: string) => pts[Number(/^vertex-(\d+)$/.exec(a)![1])]!;
+    return c.toResolve === false && c.links.start?.objectId === murId && c.links.end?.objectId === murId
+      && Math.abs(c.start.y - y0) < 1e-9 && Math.abs(c.end.y - y1) < 1e-9
+      && JSON.stringify(sommet(c.links.start.anchor)) === JSON.stringify(c.start) && JSON.stringify(sommet(c.links.end!.anchor)) === JSON.stringify(c.end);
+  };
+  const axeY5 = { axisStart: { x: 0, y: 5 }, axisEnd: { x: 1, y: 5 } };
+
+  it("symétrie du mur : la cote reste sur la même face physique (face y = 0,1 → image y = 9,9 ; face y = −0,1 → 10,1), indices du contour réattribués, décalage inversé", () => {
+    const d = avec(base(), { toolId: "studio.dessin.symetrie", params: { ids: ["m1"], ...axeY5, keepSource: false } });
+    expect(coteFaceY(d, "c1", "m1", 9.9, 10.1)).toBe(true);
+    expect(cotePhysique(d, "c1").offset).toBe(0.5);
+    expect(valeur(d)).toBeCloseTo(0.2, 12);
+    // Mur et cote choisis ensemble : même face, décalage inversé une seule fois.
+    const ensemble = avec(base(), { toolId: "studio.dessin.symetrie", params: { ids: ["m1", "c1"], ...axeY5, keepSource: false } });
+    expect(coteFaceY(ensemble, "c1", "m1", 9.9, 10.1)).toBe(true);
+    expect(cotePhysique(ensemble, "c1").offset).toBe(0.5);
+  });
+
+  it("transformation sans correspondance prouvée du sommet : la cote passe « à résoudre », jamais rattachée au même indice", () => {
+    // Cote au milieu de la face (mid-0) puis rotation d'un quart de tour : le milieu image existe — cote suivie.
+    const milieu = avec(newStudioDocument("d"), { toolId: "studio.architecture.mur", params: mur() },
+      { toolId: "studio.dessin.cote", params: { id: "c1", type: "dimension", start: { x: 3, y: 0.1 }, end: { x: 3, y: -0.1 }, offset: 0.2, links: { start: { objectId: "m1", anchor: "mid-0" }, end: { objectId: "m1", anchor: "mid-2" } }, toResolve: false } });
+    const tourne = avec(milieu, { toolId: "studio.dessin.rotation", params: { ids: ["m1"], center: { x: 0, y: 0 }, angle: Math.PI / 2 } });
+    expect(cotePhysique(tourne, "c1")).toMatchObject({ toResolve: false, start: { x: -0.1, y: 3 }, end: { x: 0.1, y: 3 } });
+  });
+
+  it("copier [mur, cote] : la cote copiée est reliée au mur copié (même face), la source intacte", () => {
+    const d = avec(base(), { toolId: "studio.dessin.copier", params: { ids: ["m1", "c1"], dx: 0, dy: 3, copies: 1, prefix: "cp" } });
+    const murCopie = d.architecture!.find((x) => x.type === "wall" && x.id !== "m1")!.id;
+    const coteCopie = d.dimensions!.find((x) => x.id !== "c1")!;
+    expect(coteFaceY(d, coteCopie.id, murCopie, 3.1, 2.9)).toBe(true);
+    expect(measureStudioDimension(d, coteCopie.id)!.value).toBeCloseTo(0.2, 12);
+    expect(cotePhysique(d, "c1")).toEqual(cotePhysique(base(), "c1"));
+    // La copie suit ensuite son propre mur, pas la source.
+    const modifiee = avec(d, { toolId: "studio.architecture.modifier", params: { ...(d.architecture!.find((x) => x.id === murCopie) as StudioWall), thickness: 0.4 } });
+    expect(coteFaceY(modifiee, coteCopie.id, murCopie, 3.2, 2.8)).toBe(true);
+    expect(cotePhysique(modifiee, "c1")).toEqual(cotePhysique(base(), "c1"));
+  });
+
+  it("symétrie avec conservation de la source [mur, cote] : la copie est reliée au mur copié, sur l'image physique de la face", () => {
+    const d = avec(base(), { toolId: "studio.dessin.symetrie", params: { ids: ["m1", "c1"], ...axeY5, keepSource: true, prefix: "sy" } });
+    const murCopie = d.architecture!.find((x) => x.type === "wall" && x.id !== "m1")!.id;
+    const coteCopie = d.dimensions!.find((x) => x.id !== "c1")!;
+    expect(coteFaceY(d, coteCopie.id, murCopie, 9.9, 10.1)).toBe(true);
+    expect(coteCopie.offset).toBe(0.5);
+    expect(cotePhysique(d, "c1")).toEqual(cotePhysique(base(), "c1"));
+  });
+
+  it("copier la cote seule (son mur n'est pas copié) : la copie est libre, comme pour une forme non copiée", () => {
+    const d = avec(base(), { toolId: "studio.dessin.copier", params: { ids: ["c1"], dx: 0, dy: 3, copies: 1, prefix: "cp" } });
+    expect(d.dimensions!.find((x) => x.id !== "c1")).toMatchObject({ links: { start: null, end: null }, toResolve: false, start: { x: 0, y: 3.1 } });
+  });
 });

@@ -1,4 +1,5 @@
 import { geometrieMur } from "../architecture/geometrie.js";
+import { studioShapeAnchors } from "../courbes.js";
 import type { StudioArchitectureItem, StudioWall } from "../architecture/types.js";
 import { STUDIO_INDEXED_ANCHOR, type StudioAnchor } from "../noyau/ancres.js";
 import type { StudioPoint } from "../noyau/types.js";
@@ -38,4 +39,20 @@ export function studioResolveurCotes(formes: Iterable<StudioShape>, architecture
   for (const f of formes) cibles.set(f.id, f);
   for (const a of architecture) if (a.type === "wall") cibles.set(a.id, a);
   return (id, anchor) => { const t = cibles.get(id); return t ? studioPointCibleCote(t, anchor) : undefined; };
+}
+
+/**
+ * Sommet (ou milieu) du contour `contour` d'un mur **confondu** avec le point `q` (10⁻⁹ près, relatif), le plus proche ;
+ * null si aucun : jamais de repli sur le même nom de sommet (l'ordre du contour peut avoir changé, p. ex. par symétrie).
+ */
+export function studioAncreContourMur(contour: StudioPolyline, q: StudioPoint): StudioAnchor | null {
+  const tol = 1e-9 * Math.max(1, Math.abs(q.x), Math.abs(q.y));
+  let meilleur: StudioAnchor | null = null, distance = Infinity;
+  for (const a of studioShapeAnchors(contour)) {
+    const p = studioAnchorPoint(contour, a);
+    if (!p) continue;
+    const d = Math.hypot(p.x - q.x, p.y - q.y);
+    if (d <= tol && d < distance) { meilleur = a; distance = d; }
+  }
+  return meilleur;
 }

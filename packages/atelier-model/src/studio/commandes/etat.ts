@@ -1,5 +1,7 @@
 import { controlerLiens, validerCote, type StudioDimension } from "../objets/cote.js";
-import { studioContourMur, studioPointCibleCote, studioResolveurCotes, type StudioCibleCote } from "./cotes-murs.js";
+import { studioAncreContourMur, studioContourMur, studioPointCibleCote, studioResolveurCotes, type StudioCibleCote } from "./cotes-murs.js";
+import { studioDecalageImage, type StudioTransformation } from "../transformations.js";
+import type { StudioPolyline } from "../objets/polyligne.js";
 import { STUDIO_INDEXED_ANCHOR } from "../noyau/ancres.js";
 import { studioAnchorPoint } from "../objets/index.js";
 import { etatCalque, type StudioLayerState } from "../noyau/calques.js";
@@ -87,13 +89,21 @@ export function enteredDimension(state: Etat, params: unknown, path: string): St
   return d;
 }
 
+/** Contours des murs cotés, relevés avant une commande qui les change (`suivreCotesMurs`). */
+export type ContoursCotes = ReadonlyMap<string, StudioPolyline | null>;
+
 /**
- * Cotes liées aux murs `ids` après leur modification (même identité) : chaque extrémité liée suit le sommet (ou le
- * milieu) du contour de l'emprise du mur. Si ce contour n'a plus le même nombre de sommets (axe repris, sommet ajouté ou
- * retiré), l'indice ne désigne plus le même sommet : le lien est rompu et la cote passe « à résoudre » (géométrie
- * gardée, valeur non évaluée) — jamais rattachée en silence à un autre sommet (A.4-05).
+ * Cotes liées aux murs `ids` après leur changement (même identité) :
+ * - transformation connue `t` (Déplacer, Rotation, Symétrie, Échelle) : chaque extrémité liée est l'image par `t` du
+ *   sommet (ou milieu) qu'elle désignait sur le contour d'avant ; elle est rattachée au sommet du nouveau contour
+ *   **confondu** avec cette image (correspondance physique prouvée), dont l'indice peut changer — une symétrie renverse
+ *   l'ordre du contour et l'indice d'avant désignerait la face opposée. Une cote dont les deux extrémités suivent des
+ *   murs transformés, et qui n'est pas elle-même choisie (déjà transformée), prend l'image de son décalage ;
+ * - sans transformation (Modifier) : l'indice est gardé tant que le contour garde le même nombre de sommets.
+ * Sans correspondance prouvée, le lien est rompu et la cote passe « à résoudre » (géométrie gardée, valeur non
+ * évaluée) — jamais rattachée en silence à un autre sommet (A.4-05).
  */
-export function suivreCotesMurs(state: Etat, avant: ReadonlyMap<string, number>, ids: Iterable<string>, path: string): void {
+export function suivreCotesMurs(state: Etat, avant: ContoursCotes, ids: Iterable<string>, path: string, t?: StudioTransformation, choisies: ReadonlySet<string> = new Set()): void {
   const touches = new Set(ids);
   if (!touches.size || !state.dimensions.some((d) => (d.links.start && touches.has(d.links.start.objectId)) || (d.links.end && touches.has(d.links.end.objectId)))) return;
   const murs = new Map(state.architecture.filter((x) => x.type === "wall" && touches.has(x.id)).map((w) => [w.id, w as StudioCibleCote]));
@@ -104,16 +114,29 @@ export function suivreCotesMurs(state: Etat, avant: ReadonlyMap<string, number>,
     const suivre = (l: StudioDimension["links"]["start"], p: StudioDimension["start"]) => {
       if (!l || !murs.has(l.objectId)) return { lien: l, point: p };
       const mur = murs.get(l.objectId)!;
-      const meme = STUDIO_INDEXED_ANCHOR.test(l.anchor) && avant.get(l.objectId) === sommetsContour(mur);
-      const q = meme ? studioPointCibleCote(mur, l.anchor) : null;
-      if (!q) { rompu = true; return { lien: null, point: p }; }
-      return { lien: l, point: q };
+      const ancien = avant.get(l.objectId) ?? null;
+      let lien: StudioDimension["links"]["start"] = null, q: StudioDimension["start"] | null = null;
+      if (STUDIO_INDEXED_ANCHOR.test(l.anchor) && ancien) {
+        if (t) {
+          const origine = studioAnchorPoint(ancien, l.anchor);
+          const nouveau = mur.type === "wall" ? studioContourMur(mur) : null;
+          const anchor = origine && nouveau ? studioAncreContourMur(nouveau, t.point(origine)) : null;
+          if (anchor) { lien = { objectId: l.objectId, anchor }; q = studioAnchorPoint(nouveau!, anchor); }
+        } else if (ancien.points.length === sommetsContour(mur)) { lien = l; q = studioPointCibleCote(mur, l.anchor); }
+      }
+      if (!lien || !q) { rompu = true; return { lien: null, point: p }; }
+      return { lien, point: q };
     };
     const s = suivre(d.links.start, d.start), e = suivre(d.links.end, d.end);
-    if (!rompu && same(s.point, d.start) && same(e.point, d.end)) return d;
+    const suit = !!t && !rompu && lie(d.links.start) && lie(d.links.end) && !choisies.has(d.id);
+    const offset = suit ? studioDecalageImage(d, t!) : d.offset;
+    const memeLiens = s.lien?.anchor === d.links.start?.anchor && e.lien?.anchor === d.links.end?.anchor;
+    if (!rompu && memeLiens && offset === d.offset && same(s.point, d.start) && same(e.point, d.end)) return d;
     editable(state, d, `${path} (cote liée ${d.id})`);
     if (!rompu && same(s.point, e.point)) fail(path, `la cote liée ${d.id} deviendrait de longueur nulle`);
-    return rompu ? { ...d, start: s.point, end: e.point, links: { start: s.lien, end: e.lien }, toResolve: true } : { ...d, start: s.point, end: e.point };
+    return rompu
+      ? { ...d, start: s.point, end: e.point, links: { start: s.lien, end: e.lien }, toResolve: true }
+      : { ...d, start: s.point, end: e.point, offset, links: { start: s.lien, end: e.lien } };
   });
 }
 
@@ -122,13 +145,13 @@ export function sommetsContour(w: StudioCibleCote): number {
   return w.type === "wall" ? studioContourMur(w)?.points.length ?? 0 : 0;
 }
 
-/** Avant une commande qui change des murs : nombre de sommets du contour de chaque mur coté (pour `suivreCotesMurs`). */
-export function contoursCotes(state: Etat): Map<string, number> {
+/** Avant une commande qui change des murs : contour de chaque mur coté (pour `suivreCotesMurs`). */
+export function contoursCotes(state: Etat): Map<string, StudioPolyline | null> {
   const lies = new Set<string>();
   for (const d of state.dimensions) for (const l of [d.links.start, d.links.end]) if (l) lies.add(l.objectId);
-  const m = new Map<string, number>();
+  const m = new Map<string, StudioPolyline | null>();
   if (!lies.size) return m;
-  for (const a of state.architecture) if (a.type === "wall" && lies.has(a.id)) m.set(a.id, sommetsContour(a));
+  for (const a of state.architecture) if (a.type === "wall" && lies.has(a.id)) m.set(a.id, studioContourMur(a));
   return m;
 }
 
