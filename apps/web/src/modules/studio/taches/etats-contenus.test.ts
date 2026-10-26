@@ -4,6 +4,8 @@ import { createElement } from "react";
 import { newStudioDocument } from "@parcours/atelier-model";
 import { documentSansElement, etatApercuFeuille, etatFeuille, etatMetre, etatPublication, MOTIF_FEUILLE_VIDE, MOTIF_METRE_VIDE, MOTIF_PUBLICATION_REMPLACEE, MOTIF_PUBLICATION_RETIREE } from "./etats-contenus";
 import { EtatContenu } from "./EtatContenu";
+import { Traducteur } from "../../../lib/i18n/traduire";
+import dico from "../../../lib/i18n/en.json";
 
 const R12 = "studio_revision_000000000012", R13 = "studio_revision_000000000013";
 
@@ -61,6 +63,22 @@ describe("TR-EX-016 — cinq états dérivés du métré, des feuilles et des pu
     expect(etatPublication({ ...base, echec: "Action refusée par le serveur." }).libelle).toBe("Échec du calcul : Action refusée par le serveur.");
     expect(etatPublication({ ...base, diffusionStatus: "retire" }).libelle).toBe(`Non applicable : ${MOTIF_PUBLICATION_RETIREE}`);
     expect(etatPublication({ ...base, diffusionStatus: "remplace" }).libelle).toBe(`Non applicable : ${MOTIF_PUBLICATION_REMPLACEE}`);
+  });
+
+  it("libellés traduits en anglais (D-163) : aucun texte des cinq états ne reste en français", () => {
+    const t = new Traducteur(dico as Record<string, string>);
+    const base = { revisionId: R13, nonEnregistre: true, courante: "13", affichee: "13", tache: "done" as const, message: null, objets: 0 };
+    const libelles = [
+      etatMetre({ ...base, objets: 1 }).libelle, etatMetre(base).libelle, etatMetre({ ...base, affichee: "12", tache: "running" }).libelle, etatMetre({ ...base, affichee: "12", tache: "inactive" }).libelle,
+      etatApercuFeuille({ revisionId: "00000013", courante: "1", affichee: "1", enCours: false, erreur: null, sansElement: true }).libelle,
+      etatPublication({ revisionId: R12, headRevisionId: R13, freshness: "perimee", diffusionStatus: "retire", replacedBy: null, enCours: false, echec: null }).libelle,
+      etatPublication({ revisionId: R12, headRevisionId: R13, freshness: "perimee", diffusionStatus: "remplace", replacedBy: "p2", enCours: false, echec: null }).libelle,
+    ];
+    expect(libelles.map((l) => t.traduire(l))).toEqual([
+      "Up to date for revision 00000013 (unsaved draft)", "Not applicable: no object to measure", "Computing", "To recompute",
+      "Not applicable: no drawing element to lay out", "Not applicable: publication withdrawn, its content is no longer kept up to date",
+      "Not applicable: publication replaced by a more recent issue",
+    ]);
   });
 
   it("pastille : état, image et cohérence portés par l'élément affiché", () => {
