@@ -35730,11 +35730,11 @@
         ],
         "preparation_initiale": "A + X ; DEC-08/09/10/13/17"
       },
-      "statut": "À faire",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "portee": "Lot REND (achèvement Studio, 26 octobre 2026) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -35798,6 +35798,26 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version du fichier dont le SHA-256 est celui cité, retrouvée dans l’historique de main ; date du commit.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "recette_e2e",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/e2e/studio-rend.mjs",
+          "controles": [
+            "C.1-01 : mesure complète dans le navigateur — 18 corpus (S1–S5, S7 × 100 / 10000 / 100000), 0 divergence index / linéaire, rapport archivé avec machine, navigateur et commit"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/src/modules/studio/planche2d/mesure-spatiale-analyse.test.ts",
+          "controles": [
+            "C.1-02 — choix de l'index selon DEC-09, sur la mesure et l'exactitude > sur une vraie mesure courte (S1, S3 à 100 et 3 000 primitives) : exactitude (0 divergence) et analyse produite"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -35807,12 +35827,12 @@
         "pr_preparation_courante": 172
       },
       "blocage": {
-        "cause": "Appareils/corpus complet, tolérances et budgets non décidés ; aucune mesure exécutée.",
-        "responsable": "A2",
-        "essais_effectues": "Qualification individuelle A2 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
-        "deblocage": "Réemployer LOT-C et oraclesAC004/EX097/098 ; définir protocole avec A5, marquer seuils non décidés."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot REND (achèvement Studio, 26 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (mesure requise) : Mesure complète derrière STUDIO_MESURE_SPATIALE=1, hors CI ; aucun rapport mesures.json / rapport.md versionné avec sa référence de machine et de commit.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "atelier/nouveau/plan2d/accrochage.ts ; vue3d/scene3d.ts",
       "source_checked": false,
       "cloture": {
@@ -35862,6 +35882,13 @@
           "statut": "À faire",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot REND (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "À faire",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -35907,11 +35934,11 @@
         ],
         "preparation_initiale": "A + X ; DEC-08/09/10/13/17"
       },
-      "statut": "À faire",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "portee": "Lot REND (achèvement Studio, 26 octobre 2026) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -35946,6 +35973,28 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/src/modules/studio/planche2d/mesure-spatiale-analyse.test.ts",
+          "controles": [
+            "C.1-02 — choix de l'index selon DEC-09, sur la mesure et l'exactitude > seuil cohérent : linéaire admissible sous 1 000, index plus rapide au-delà, zéro divergence ; croisement relevé",
+            "C.1-02 — choix de l'index selon DEC-09, sur la mesure et l'exactitude > incohérent : index plus lent au-delà du seuil, ou une divergence index / linéaire (résultat inexact)",
+            "C.1-02 — choix de l'index selon DEC-09, sur la mesure et l'exactitude > sur une vraie mesure courte (S1, S3 à 100 et 3 000 primitives) : exactitude (0 divergence) et analyse produite"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/e2e/studio-rend.mjs",
+          "controles": [
+            "C.1-02 : choix de l'index rapproché de la mesure (croisement mesuré, seuil DEC-09 jugé)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -35956,10 +36005,10 @@
       "blocage": {
         "cause": null,
         "responsable": "Chef de projet",
-        "essais_effectues": "Décisions et autorisations levées (ADR-STUDIO-PILOTE-01, P-04 et P-05).",
+        "essais_effectues": "Lot REND (achèvement Studio, 26 octobre 2026)",
         "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (mesure requise) : Choix DEC-09 et exactitude indexé = linéaire testés ; la mesure qui fonde le seuil de 1 000 n'est pas archivée (même manque que C.1-01).",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "atelier/nouveau/plan2d/accrochage.ts ; vue3d/scene3d.ts",
       "source_checked": false,
       "cloture": {
@@ -36001,6 +36050,13 @@
           "statut": "À faire",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot REND (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "À faire",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -37936,11 +37992,11 @@
         ],
         "preparation_initiale": "A + X ; DEC-08/09/10/13/17"
       },
-      "statut": "À faire",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "portee": "Lot REND (achèvement Studio, 26 octobre 2026) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -37975,6 +38031,19 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/src/modules/studio/workers/chemins-optimises.test.ts",
+          "controles": [
+            "REC-C-01 — chemins optimisés et chemin direct : mêmes cotes, mêmes exports SVG / DXF / IFC > brouillon incrémental (commande par commande) et frontière du Worker : exports identiques octet pour octet, cotes identiques",
+            "REC-C-01 — chemins optimisés et chemin direct : mêmes cotes, mêmes exports SVG / DXF / IFC > cote affichée par la planche = mesure du modèle ; extrémités retrouvées par l'accrochage indexé = parcours linéaire",
+            "REC-C-01 — chemins optimisés et chemin direct : mêmes cotes, mêmes exports SVG / DXF / IFC > maillage incrémental (cache de morceaux) = maillage direct : mêmes volumes, donc mêmes quantités et même IFC de départ",
+            "REC-C-01 — chemins optimisés et chemin direct : mêmes cotes, mêmes exports SVG / DXF / IFC > le contrôle porte : un chemin qui perd une cote ou décale un objet est relevé (exports et cotes différents)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -37985,10 +38054,10 @@
       "blocage": {
         "cause": null,
         "responsable": "Chef de projet",
-        "essais_effectues": "Décisions et autorisations levées (ADR-STUDIO-PILOTE-01, P-04 et P-05).",
+        "essais_effectues": "Lot REND (achèvement Studio, 26 octobre 2026)",
         "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (décision requise) : Cibles, points (mode, priorité) et géométrie 3D sont comparés avant / après optimisation. Les cotes (measureStudioDimension) et les exports SVG / DXF / IFC sont calculés sur le serveur directement depuis le document, sans index ni cache de maillage : il n'existe pas de chemin optimisé à comparer. Décision du maître d'ouvrage : acter « sans objet » pour ces deux comparaisons, ou les exiger quand une optimisation touchera ces chemins.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "atelier/nouveau/plan2d/accrochage.ts ; vue3d/scene3d.ts",
       "source_checked": false,
       "cloture": {
@@ -38030,6 +38099,13 @@
           "statut": "À faire",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot REND (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "À faire",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -38105,7 +38181,7 @@
         "essais_effectues": "Décisions et autorisations levées (ADR-STUDIO-PILOTE-01, P-04 et P-05).",
         "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (mesure requise) : TEST-022 à TEST-025 ont leurs tests ; AC-004 a maintenant sa trace des cas ambigus ; AC-005 est couvert pour la fidélité géométrique (poussé / tiré, matériau). Reste l'évaluation des profils GPU séparée des mesures SwiftShader (CI sans GPU) : mesure sur appareil réel.",
+      "suite": "Séparation des profils GPU et des mesures logicielles faite et testée : chaque rapport porte le moteur WebGL relevé et `renduLogiciel` ; la règle refuse toute accélération GPU mesurée en logiciel. Reste l'évaluation des profils GPU sur appareil réel : EXTERNE — aucun GPU physique ni téléphone dans cet environnement (runner Linux, SwiftShader) ; recette `docs/workstreams/studio/recettes/RECETTE-APPAREILS.md` (§3, §4, §5 REC-C-02).",
       "composants_candidats": "atelier/nouveau/plan2d/accrochage.ts ; vue3d/scene3d.ts",
       "source_checked": false,
       "cloture": {
@@ -38146,6 +38222,13 @@
           "statut_precedent": "À faire",
           "statut": "À faire",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
+          "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot REND (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "À faire",
+          "statut": "À faire",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
         }
       ],
@@ -46511,7 +46594,7 @@
         "essais_effectues": "Décisions et autorisations levées (ADR-STUDIO-PILOTE-01, P-04 et P-05).",
         "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (décision requise) : Le critère « selon leurs propres contrats et preuves » demande un contrat par format (DWG, BCF, STEP/OBJ/STL…). Aucun n'existe ; les tests montrent seulement des entrées « non livré » avec raison et source. Écrire ces contrats (ou y renoncer, comme D-179 pour DWG/DGN dans l'Atelier) revient au maître d'ouvrage.",
+      "suite": "BCF qualifié et livré (export / import, matrice révision 6). DWG, STEP, OBJ, STL n'ont pas encore de contrat propre : non livrés, chacun avec sa raison. Le registre cite encore l'ancien libellé « E.6-04 / E.6-05 : … jamais livrés ni conformes » (conservé, corps mis à jour) : citation à actualiser par l'orchestrateur (REG).",
       "composants_candidats": "atelier-model/src/documents ; apps/api/src/db/schema.ts atelierPublications ; modules/documents",
       "source_checked": false,
       "cloture": {
@@ -46552,6 +46635,13 @@
           "statut_precedent": "À faire",
           "statut": "À faire",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
+          "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "À faire",
+          "statut": "À faire",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
         }
       ],
@@ -47038,7 +47128,7 @@
         "essais_effectues": "Décisions et autorisations levées (ADR-STUDIO-PILOTE-01, P-04 et P-05).",
         "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (décision requise) : Le « résultat utile des trois parcours » attend la recette utilisateur du maître d'ouvrage. Le scénario chaîné sur une même étude (contrôle, écart, correction, nouveau contrôle satisfait, approbation, diffusion) n'est pas écrit.",
+      "suite": "Scénario enchaîné vérifié (base simulée simplifiée : pas d'orderBy/limit ; cycle complet sur base réelle dans studio-pub.mjs). La recette d'usage des trois parcours par le maître d'ouvrage est EXTERNE (acte du maître d'ouvrage).",
       "composants_candidats": "atelier-model/src/documents ; apps/api/src/db/schema.ts atelierPublications ; modules/documents",
       "source_checked": false,
       "cloture": {
@@ -47080,6 +47170,13 @@
           "statut": "À faire",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "À faire",
+          "statut": "À faire",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
         }
       ],
       "preparation_documentaire": {
@@ -47103,11 +47200,11 @@
         ],
         "preparation_initiale": "Autorisation option ; DEC-08/15/17"
       },
-      "statut": "À faire",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "portee": "Lot REND (achèvement Studio, 26 octobre 2026) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -47142,6 +47239,33 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/accelerations.test.ts",
+          "controles": [
+            "F.1-01 — une accélération n'est activée qu'après preuve du gain ET de la non-régression > rapport qualifiant (gain sur chaque scène, chaque critère exigé mesuré dans sa tolérance) : autorisée, gains relevés",
+            "F.1-01 — une accélération n'est activée qu'après preuve du gain ET de la non-régression > sans rapport : refusée (rapport-absent) ; rapport d'une autre accélération ou d'autres chemins : refusé",
+            "F.1-01 — une accélération n'est activée qu'après preuve du gain ET de la non-régression > gain non prouvé : une scène plus lente, égale ou non mesurée refuse l'accélération",
+            "F.1-01 — une accélération n'est activée qu'après preuve du gain ET de la non-régression > EX-098 (cas négatif) : gain p95 avec accrochage ou sélection différents hors tolérance → accélération rejetée",
+            "F.1-01 — une accélération n'est activée qu'après preuve du gain ET de la non-régression > critère exigé absent, non évalué, ou tolérance plus large que celle déclarée : refus",
+            "F.1-01 — une accélération n'est activée qu'après preuve du gain ET de la non-régression > moteur effectif : le moteur demandé seulement si la règle l'autorise, sinon la référence avec le verdict",
+            "TR-EX-056 / F.1-01 — blocage d'un remplacement de moteur sans preuve > registre : chaque accélération active a sa preuve ; Canvas et WebGPU restent inactives (aucun rapport versionné)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/e2e/studio-rend.mjs",
+          "controles": [
+            "F.1-01 / TR-EX-098 : rapport réel SVG / Canvas mesuré ici et jugé par la règle — verdict rendu avec ses motifs (gain ET non-régression exigés)",
+            "TR-EX-098 : index spatial — gain p95 mesuré ET mêmes cibles d'accrochage / même sélection, jugé par la règle"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -47152,10 +47276,10 @@
       "blocage": {
         "cause": null,
         "responsable": "Chef de projet",
-        "essais_effectues": "Décisions et autorisations levées (ADR-STUDIO-PILOTE-01, P-04 et P-05).",
+        "essais_effectues": "Lot REND (achèvement Studio, 26 octobre 2026)",
         "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (décision requise) : Il faut une règle générale (gain ET non-régression pour toute accélération supplémentaire) ; DEC-08 / DEC-09 sont partielles : décision du maître d'ouvrage.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "Option non engagée",
       "source_checked": false,
       "cloture": {
@@ -47197,6 +47321,13 @@
           "statut": "À faire",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot REND (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "À faire",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -47220,11 +47351,11 @@
         ],
         "preparation_initiale": "Autorisation option ; DEC-08/15/17"
       },
-      "statut": "À faire",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "portee": "Lot REND (achèvement Studio, 26 octobre 2026) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -47259,6 +47390,33 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/src/modules/studio/planche2d/rendus/graphismes-rendu.test.ts",
+          "controles": [
+            "F.1-02 — moteur Canvas de la planche, derrière la règle F.1-01 (défaut SVG, DEC-08) > sans rapport : SVG ; rapport qualifiant : Canvas ; rapport qui ne prouve pas le gain : SVG avec le motif dit",
+            "F.1-02 — moteur Canvas de la planche, derrière la règle F.1-01 (défaut SVG, DEC-08) > la planche en Canvas trace les mêmes traits que le SVG de référence, au cadre de la vue (axe y retourné)",
+            "F.1-02 — moteur Canvas de la planche, derrière la règle F.1-01 (défaut SVG, DEC-08) > mêmes coordonnées que la planche SVG : un point du document tombe au même pixel ; même désignation et même accrochage quel que soit le moteur"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/e2e/studio-rend.mjs",
+          "controles": [
+            "F.1-02 : par défaut, la planche est rendue en SVG (DEC-08) : aucun canevas, aucun état de moteur affiché",
+            "F.1-02 : rapport qualifiant → canevas posé exactement sur la planche (mêmes bords), planche SVG conservée (traits transparents), état « Canvas » annoncé",
+            "F.1-02 : mêmes coordonnées — le milieu de chaque ligne de la planche SVG tombe sur un trait du canevas",
+            "F.1-02 : même désignation — un clic au même point (sous le canevas, transparent aux gestes) désigne le même objet qu'en SVG",
+            "F.1-02 : rapport retiré → retour au SVG (aucun canevas)",
+            "F.1-01 / TR-EX-098 : rapport réel SVG / Canvas mesuré ici et jugé par la règle — verdict rendu avec ses motifs (gain ET non-régression exigés)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -47269,10 +47427,10 @@
       "blocage": {
         "cause": null,
         "responsable": "Chef de projet",
-        "essais_effectues": "Décisions et autorisations levées (ADR-STUDIO-PILOTE-01, P-04 et P-05).",
+        "essais_effectues": "Lot REND (achèvement Studio, 26 octobre 2026)",
         "deblocage": null
       },
-      "suite": "Rapprochement du 25 octobre 2026 (hors pilote) : DEC-08 retient le rendu SVG/React et n'autorise aucun renderer alternatif sans mesure comparée (TEST-025 non écrit) : rien à implémenter dans le pilote.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "Option non engagée",
       "source_checked": false,
       "cloture": {
@@ -47307,6 +47465,13 @@
           "statut": "À faire",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Lot REND (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "À faire",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -71878,11 +72043,11 @@
         ],
         "preparation_initiale": "Corpus autorisé, SHA/build, contrats ; bases jetables pour tests mutateurs"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Partiel",
-        "portee": "Annuler / rétablir une opération mur/ouverture avec métrés et publication à recetter."
+        "etat": "Non exécuté",
+        "portee": "Lot PUB (achèvement Studio, 26 octobre 2026) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -71917,6 +72082,36 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/studio-invariants.test.ts",
+          "controles": [
+            "TEST-011 [+] annuler puis rétablir la modification d'une baie : mêmes identités, volume net 3,18 puis 3,096 m³, documents identiques"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/api/src/routes/studio-pub.preuves-pub.test.ts",
+          "controles": [
+            "TEST-011 [+] API : après annuler puis rétablir l'opération, la publication diffusée reste lisible et vérifiable (mêmes empreintes), son manifeste inchangé"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/e2e/studio-pub.mjs",
+          "controles": [
+            "TEST-011 : chaque fichier du paquet relu à la même empreinte"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -71927,10 +72122,10 @@
       "blocage": {
         "cause": null,
         "responsable": "Chef de projet",
-        "essais_effectues": "Rapprochement des assertions existantes (rapport).",
+        "essais_effectues": "Lot PUB (achèvement Studio, 26 octobre 2026)",
         "deblocage": null
       },
-      "suite": "Annuler / rétablir vérifié au modèle avec métrés et identités (studio-invariants « TEST-011 ») ; « aucune perte de publication » et l’affichage restent à recetter.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "apps/web/e2e ; tests packages ; scripts/bench ; workflows",
       "source_checked": false,
       "cloture": {
@@ -71965,6 +72160,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -73972,11 +74174,11 @@
         ],
         "preparation_initiale": "Corpus autorisé, SHA/build, contrats ; bases jetables pour tests mutateurs"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
-        "etat": "Partiel",
-        "portee": "Cas surface dessinée vs surface programmée ; recette studio-exigences hors CI."
+        "etat": "Non exécuté",
+        "portee": "Lot PUB (achèvement Studio, 26 octobre 2026) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -74011,6 +74213,28 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/studio-invariants.test.ts",
+          "controles": [
+            "TEST-027 [+] modifier le rectangle dessiné (2 × 1 → 3 × 1) fait passer l'écart signé de 0 à +1 m² ; l'exigence n'est pas réécrite"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/e2e/studio-exigences.mjs",
+          "controles": [
+            "TEST-027 : mur allongé par commande (nouvelle révision)",
+            "TEST-027 : exigence identique après la modification du dessin (même version, mêmes valeurs)",
+            "TEST-027 : écart calculé et visible (mesure 11,6 m³ contre ≤ 10 m³, +1,6)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -74021,10 +74245,10 @@
       "blocage": {
         "cause": null,
         "responsable": "Chef de projet",
-        "essais_effectues": "Rapprochement des assertions existantes (rapport).",
+        "essais_effectues": "Lot PUB (achèvement Studio, 26 octobre 2026)",
         "deblocage": null
       },
-      "suite": "Écart calculé et exigence inchangée vérifiés au modèle (« TEST-027 ») ; le caractère visible de l’écart reste à recetter en CI.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "apps/web/e2e ; tests packages ; scripts/bench ; workflows",
       "source_checked": false,
       "cloture": {
@@ -74059,6 +74283,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -79749,11 +79980,11 @@
         "preparation_initiale": "REF-02 texte exact + contrat + composant + scénario + preuve + décision",
         "decisions_applicables_a_instruire": "DEC-01,DEC-02,DEC-03,DEC-12"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Oracles individuels prescrits et extraction documentaire vérifiée, aucune recette Studio"
+        "portee": "Lot REND (achèvement Studio, 26 octobre 2026) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -79803,6 +80034,50 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/sources/sources.test.ts",
+          "controles": [
+            "TR-EX-014 — provenance d'une source DXF importée > cas positif : import DXF en mm, repère et restrictions déclarés → source portée par le document, exportée avec toutes ses métadonnées",
+            "TR-EX-014 — provenance d'une source DXF importée > champs inconnus : auteur, repère source, restrictions et version absents → null (non déclarés), jamais inventés",
+            "TR-EX-014 — provenance d'une source DXF importée > cas négatif : unité inconnue → aucune commande et aucune source (jamais des mètres supposés) ; unité choisie → lue null, retenue déclarée",
+            "TR-EX-014 — provenance d'un modèle externe reçu (IFC) > restrictions d'utilisation et repère source déclarés, unités déclarée et lue, transformation, empreinte et horodatage exportés"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/api/src/lib/studio-modeles-externes.test.ts",
+          "controles": [
+            "Modèles externes (TR-EX-066) — réception relue par le serveur > TR-EX-014 : repère source et restrictions d'utilisation déclarés conservés (null s'ils sont absents), colonnes additives"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/e2e/studio-rend.mjs",
+          "controles": [
+            "TR-EX-014 : import DXF — source enregistrée avec auteur, format et version lue (AC1015), horodatage, unité mm lue, repère, transformation, restrictions et SHA-256 du fichier",
+            "TR-EX-014 : modèle externe IFC — provenance exportée (auteur, version, schéma lu, unités déclarée et lue, repère source, transformation, restrictions, SHA-256, horodatage)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/e2e/studio-navigation.mjs",
+          "controles": [
+            "Import DXF : la source est déclarée avec le lot (fichier, empreinte SHA-256, unité mm lue, aucune transformation)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -79811,12 +80086,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Contrat et preuves actuelles Studio non validés ; décisions applicables ouvertes.",
-        "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot REND (achèvement Studio, 26 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Non traité dans ce lot (fichiers des modèles externes et de l'import DXF, propres au lot F3 / F) : manquent toujours les restrictions d'utilisation, le repère source déclaré en propre, l'export des métadonnées de provenance et la provenance de l'import DXF.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "Voir matrice A1-exigences.csv",
       "source_checked": false,
       "cloture": {
@@ -79858,6 +80133,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot REND (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -81223,11 +81505,11 @@
         "preparation_initiale": "REF-02 texte exact + contrat + composant + scénario + preuve + décision",
         "decisions_applicables_a_instruire": "DEC-01,DEC-02,DEC-09"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Oracles individuels prescrits et extraction documentaire vérifiée, aucune recette Studio"
+        "portee": "Lot REND (achèvement Studio, 26 octobre 2026) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -81277,6 +81559,43 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/reperes.test.ts",
+          "controles": [
+            "TR-EX-023 — système de projet et transformations versionnées document / local / projet > cas positif : un point du document converti explicitement vers le système de projet (version 1, puis version 2), valeurs et unité comparées, trace de la transformation",
+            "TR-EX-023 — système de projet et transformations versionnées document / local / projet > local d'objet → document → projet : la pose d'un symbole (position, rotation, échelle) composée avec le système de projet",
+            "TR-EX-023 — système de projet et transformations versionnées document / local / projet > transformations vérifiées : aller-retour exact, inverse, échelle et unités explicites ; une transformation incohérente est refusée",
+            "TR-EX-023 — système de projet et transformations versionnées document / local / projet > cas négatifs : pixels, repère d'écran, repère géographique ou repère qui ne correspond pas à la transformation — refus explicites, rien n'est converti",
+            "TR-EX-023 — système de projet et transformations versionnées document / local / projet > commande studio.repere.projet : version suivante exigée (jamais réécrite), versions sans trou à la validation"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/src/modules/studio/graphismes/graphismes-ui.test.ts",
+          "controles": [
+            "Graphismes et système de projet : saisie > système de projet : version suivante saisie, conversion du point avec la version employée ; sans déclaration, rien n'est converti"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/e2e/studio-rend.mjs",
+          "controles": [
+            "TR-EX-023 : sans déclaration, « Système de projet non déclaré : aucune conversion n’est supposée. »",
+            "TR-EX-023 : point (3 ; 1) du dessin converti vers le projet par la version 1 (rotation 90°) : (2 599 999 ; 1 200 003) m, trace de la version",
+            "TR-EX-023 : version 2 ajoutée (la version 1 reste) ; conversion par la version en vigueur et retour exact dans le dessin",
+            "TR-EX-023 : versions 1 et 2 enregistrées dans la révision (origine, rotation en radians)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -81285,12 +81604,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Contrat et preuves actuelles Studio non validés ; décisions applicables ouvertes.",
-        "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot REND (achèvement Studio, 26 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (fonction absente) : Le refus des pixels et du repère d'écran est testé ; le système de projet et les transformations versionnées document / local / projet n'existent pas (cas positif impossible à tester).",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "Voir matrice A1-exigences.csv",
       "source_checked": false,
       "cloture": {
@@ -81325,6 +81644,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot REND (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -81952,7 +82278,7 @@
         "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
         "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
       },
-      "suite": "Point 2 du 25 octobre 2026 (partiel) : Cas négatif couvert (doublon à libellés distincts rejeté sans écrasement). Cas positif impossible : aucune capacité d'objet d'accès (studio.arch.ladder) n'existe pour vérifier sa distinction avec la transformation d'échelle.",
+      "suite": "Cas négatif vérifié (préexistant). Le cas positif demande une nouvelle capacité d'outil (échelle, studio.arch.ladder) au registre des outils, propriété du lot OUT : non implémentée dans le lot PUB pour ne pas réécrire ses fichiers.",
       "composants_candidats": "Voir matrice A1-exigences.csv",
       "source_checked": false,
       "cloture": {
@@ -81986,6 +82312,13 @@
           "statut_precedent": "En cours",
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
+          "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "En cours",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
         }
       ],
@@ -85570,11 +85903,11 @@
         "preparation_initiale": "REF-02 texte exact + contrat + composant + scénario + preuve + décision",
         "decisions_applicables_a_instruire": "DEC-09,DEC-10,DEC-13"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Oracles individuels prescrits et extraction documentaire vérifiée, aucune recette Studio"
+        "portee": "Lot REND (achèvement Studio, 26 octobre 2026) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -85624,6 +85957,38 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/src/modules/studio/planche2d/mesure-spatiale-analyse.test.ts",
+          "controles": [
+            "TR-EX-052 — recherches comparées à la cible DEC-13 (INP p75 ≤ 200 ms), chemin pris aujourd'hui > le p75 du chemin effectivement pris est comparé au budget ; au-delà, hors cible"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/src/modules/studio/planche2d/mesure-spatiale.test.ts",
+          "controles": [
+            "Mesure des recherches spatiales : contrôle du script > mêmes sélections et mêmes candidats par l'index et par le parcours linéaire (S1, S2, S3, S4 à 100 et 1 000 primitives)",
+            "Mesure des recherches spatiales : contrôle du script > TEST-022 — S1–S3 : même repère résolu (point, genre, objet, priorité) par l'index et le parcours linéaire"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/e2e/studio-rend.mjs",
+          "controles": [
+            "TR-EX-052 : chaque recherche comparée à la cible DEC-13 par le chemin pris (p75)",
+            "C.1-01 : mesure complète dans le navigateur — 18 corpus (S1–S5, S7 × 100 / 10000 / 100000), 0 divergence index / linéaire, rapport archivé avec machine, navigateur et commit"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -85632,12 +85997,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Contrat et preuves actuelles Studio non validés ; décisions applicables ouvertes.",
-        "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot REND (achèvement Studio, 26 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (mesure requise) : La mesure S1/S3 complète tourne derrière STUDIO_MESURE_SPATIALE=1 (hors CI) et son rapport est « sans seuil ni verdict ». Comparer aux cibles demande des cibles décidées (DEC-13) et une mesure sur appareil désigné. L'oracle index = linéaire est déjà couvert.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "Voir matrice A1-exigences.csv",
       "source_checked": false,
       "cloture": {
@@ -85672,6 +86037,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot REND (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -85987,11 +86359,11 @@
         "preparation_initiale": "REF-02 texte exact + contrat + composant + scénario + preuve + décision",
         "decisions_applicables_a_instruire": "DEC-08,DEC-10,DEC-17"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Oracles individuels prescrits et extraction documentaire vérifiée, aucune recette Studio"
+        "portee": "Lot REND (achèvement Studio, 26 octobre 2026) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -86041,6 +86413,55 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/graphismes.test.ts",
+          "controles": [
+            "TR-EX-055 — graphismes du document 2D (spline, hachure, symbole, transparence) > création par commande, document relu à l'identique ; opacité 1 non stockée (opaque = absente)",
+            "TR-EX-055 — graphismes du document 2D (spline, hachure, symbole, transparence) > refus explicites : spline sans 3n + 1 points, contour d'aire nulle, espacement nul ou trop fin, opacité hors ]0 ; 1], symbole inconnu, identifiant pris",
+            "TR-EX-055 — graphismes du document 2D (spline, hachure, symbole, transparence) > géométrie : Bézier exacte aux extrémités, découpe déclarée ; traits de hachure dans le contour, ancrés sur l'origine, à l'espacement saisi",
+            "TR-EX-055 — graphismes du document 2D (spline, hachure, symbole, transparence) > export SVG : courbe de Bézier `C` exacte, traits de hachure, symbole posé, opacité ; DXF : polyligne découpée, transparence déclarée ; rapport de fidélité"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/src/modules/studio/planche2d/rendus/graphismes-rendu.test.ts",
+          "controles": [
+            "TR-EX-055 — splines, hachures, symboles et transparences : rendu SVG et comparaison Canvas / GPU > rendu SVG du modèle : chaque famille présente (Bézier `C`, traits de hachure, symboles, opacité), lecture sans perte",
+            "TR-EX-055 — splines, hachures, symboles et transparences : rendu SVG et comparaison Canvas / GPU > Canvas = SVG : mêmes primitives, mêmes positions, même opacité (aucun trait manquant ni en trop, écart < 1e-6 m)",
+            "TR-EX-055 — splines, hachures, symboles et transparences : rendu SVG et comparaison Canvas / GPU > le contrôle porte : un moteur qui ignore la transparence, omet une spline ou un trait de hachure est relevé",
+            "TR-EX-055 — splines, hachures, symboles et transparences : rendu SVG et comparaison Canvas / GPU > GPU : splines découpées au pas déclaré, opacité portée par segment, textes non tracés et comptés"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/src/modules/studio/graphismes/graphismes-ui.test.ts",
+          "controles": [
+            "Graphismes et système de projet : saisie > spline, hachure et symbole saisis → commande studio.graphisme.creer appliquée par le brouillon ; opacité en pour cent",
+            "Graphismes et système de projet : saisie > refus dits : points illisibles, champs vides, opacité hors bornes, géométrie refusée par le modèle"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/e2e/studio-rend.mjs",
+          "controles": [
+            "TR-EX-055 : Maj+F6 crée spline, hachure et symbole ; la planche SVG les rend (courbe de Bézier `C`, traits de hachure, symbole posé, opacité 0,5)",
+            "TR-EX-055 : enregistrés (révision serveur : 3 graphismes) et exportés en SVG par le serveur (data-graphisme, opacity, C)",
+            "TR-EX-055 : scène de fidélité dans le navigateur — Canvas = SVG (aucun trait manquant ni en trop, Bézier et opacités comprises), GPU découpé avec opacités 0,3 / 0,5 / 0,75 / 1"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -86049,12 +86470,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Contrat et preuves actuelles Studio non validés ; décisions applicables ouvertes.",
-        "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot REND (achèvement Studio, 26 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (fonction absente) : Splines, hachures, symboles et transparences n'existent pas dans le modèle 2D de Studio : impossible de comparer leur rendu. Il n'y a qu'un renderer dans l'application (SVG, DEC-08) ; Canvas et GPU ne sont comparés qu'en preuve (comparaison-moteurs). Texte et calques sont couverts.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "Voir matrice A1-exigences.csv",
       "source_checked": false,
       "cloture": {
@@ -86089,6 +86510,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot REND (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -86115,11 +86543,11 @@
         "preparation_initiale": "REF-02 texte exact + contrat + composant + scénario + preuve + décision",
         "decisions_applicables_a_instruire": "DEC-08,DEC-10,DEC-17"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Oracles individuels prescrits et extraction documentaire vérifiée, aucune recette Studio"
+        "portee": "Lot REND (achèvement Studio, 26 octobre 2026) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -86169,6 +86597,41 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/src/modules/studio/vue3d/moteur-3d.test.ts",
+          "controles": [
+            "TR-EX-056 — moteur de la vue 3D : WebGL2 par défaut, repli WebGPU → WebGL2 déclaré > WebGL2 demandé (défaut) : WebGL2, aucun repli",
+            "TR-EX-056 — moteur de la vue 3D : WebGL2 par défaut, repli WebGPU → WebGL2 déclaré > WebGPU demandé sans navigator.gpu, sans adaptateur ou en erreur : repli WebGL2 avec la raison",
+            "TR-EX-056 — moteur de la vue 3D : WebGL2 par défaut, repli WebGPU → WebGL2 déclaré > WebGPU disponible mais non qualifié (aucun rapport, ou mesure en rendu logiciel) : repli par la règle F.1-01",
+            "TR-EX-056 — moteur de la vue 3D : WebGL2 par défaut, repli WebGPU → WebGL2 déclaré > qualifié sur appareil réel : retenu seulement si la vue sait le rendre (la vue Studio rend en WebGL2 : repli déclaré)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/accelerations.test.ts",
+          "controles": [
+            "TR-EX-056 / F.1-01 — blocage d'un remplacement de moteur sans preuve > moteur par défaut : SVG (planche, DEC-08) et WebGL2 (vue 3D) ; tout défaut différent de la référence sans rapport qualifiant fait échouer ce test",
+            "TR-EX-056 / F.1-01 — blocage d'un remplacement de moteur sans preuve > le contrôle porte : un défaut Canvas ou WebGPU sans rapport (ou avec un rapport qui ne qualifie pas) est refusé ; avec un rapport qualifiant, admis"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/e2e/studio-rend.mjs",
+          "controles": [
+            "TR-EX-056 : rendu à la demande sur S4 — aucune trame pendant 1,5 s de repos, des trames pendant l'orbite, aucune après",
+            "TR-EX-056 : WebGPU demandé → repli WebGL2 déclaré, avec la raison constatée dans ce navigateur"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -86177,12 +86640,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Contrat et preuves actuelles Studio non validés ; décisions applicables ouvertes.",
-        "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot REND (achèvement Studio, 26 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (fonction absente) : Aucun repli WebGPU dans Studio, et le rendu à la demande n'est pas qualifié sur corpus (seul le batching l'est). Le blocage d'un remplacement de moteur sans preuve n'est pas un mécanisme : il relève de la décision (DEC-08 retient SVG pour la 2D).",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "Voir matrice A1-exigences.csv",
       "source_checked": false,
       "cloture": {
@@ -86217,6 +86680,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot REND (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -86616,7 +87086,7 @@
         "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
         "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
       },
-      "suite": "Point 2 du 25 octobre 2026 (mesure requise) : Mesurer que le fil principal reste disponible pendant un calcul lourd demande une mesure sur appareil réel (hors CI) ; aucun booléen n'existe dans Studio (cas positif prescrit sans objet).",
+      "suite": "Mesuré en CI (Chromium logiciel) sur la lecture d'un DXF de 4,2 Mo dans le Worker : trame la plus longue 16,8 ms contre une tâche longue de 682 ms pour la même lecture sur le fil principal (local). Manque : (1) la même mesure pendant un booléen exact lourd (noyau OCCT dans son Worker, cas positif prescrit) n'est pas faite ; (2) la mesure sur appareil réel (EXTERNE : aucun appareil physique dans cet environnement) — RECETTE-APPAREILS.md §5.",
       "composants_candidats": "Voir matrice A1-exigences.csv",
       "source_checked": false,
       "cloture": {
@@ -86650,6 +87120,13 @@
           "statut_precedent": "En cours",
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
+          "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot REND (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "En cours",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
         }
       ],
@@ -87423,11 +87900,11 @@
         "preparation_initiale": "REF-02 texte exact + contrat + composant + scénario + preuve + décision",
         "decisions_applicables_a_instruire": "DEC-02,DEC-16"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Oracles individuels prescrits et extraction documentaire vérifiée, aucune recette Studio"
+        "portee": "Lot PUB (achèvement Studio, 26 octobre 2026) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -87477,6 +87954,27 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/studio-invariants.test.ts",
+          "controles": [
+            "TEST-027 [+] modifier le rectangle dessiné (2 × 1 → 3 × 1) fait passer l'écart signé de 0 à +1 m² ; l'exigence n'est pas réécrite"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/e2e/studio-exigences.mjs",
+          "controles": [
+            "TEST-027 : exigence identique après la modification du dessin (même version, mêmes valeurs)",
+            "TEST-027 : écart calculé et visible (mesure 11,6 m³ contre ≤ 10 m³, +1,6)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -87485,12 +87983,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Contrat et preuves actuelles Studio non validés ; décisions applicables ouvertes.",
-        "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (partiel) : L'affichage explicite de l'écart n'est vérifié que par studio-exigences.mjs, hors CI : à brancher en CI (orchestrateur).",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "Voir matrice A1-exigences.csv",
       "source_checked": false,
       "cloture": {
@@ -87525,6 +88023,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -87892,11 +88397,11 @@
         "preparation_initiale": "REF-02 texte exact + contrat + composant + scénario + preuve + décision",
         "decisions_applicables_a_instruire": "DEC-02,DEC-16"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Oracles individuels prescrits et extraction documentaire vérifiée, aucune recette Studio"
+        "portee": "Lot PUB (achèvement Studio, 26 octobre 2026) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -87946,6 +88451,40 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/conclusions-controle.test.ts",
+          "controles": [
+            "EX-068 [+] un contrôle exécuté conclut conforme, non conforme, non testé ou non applicable justifié",
+            "EX-068 [+] la justification « non applicable » est vérifiable : exigence de la version examinée, motif, auteur, date",
+            "EX-068 [−] en attente, délai dépassé ou échec technique : jamais conforme, aucune conclusion"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/api/src/routes/studio-pub.preuves-pub.test.ts",
+          "controles": [
+            "EX-068 [+] [−] API : contrôle conclu conforme / non conforme / non applicable justifié (justification vérifiée, auteur et version du serveur) ; justification invalide refusée"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/e2e/studio-exigences.mjs",
+          "controles": [
+            "EX-068 : non applicable justifié enregistré (motif, auteur et version posés par le serveur), le reste conclu normalement",
+            "EX-068 : conclusion normative et justification affichées",
+            "EX-068 : justification visant une exigence absente de la version refusée (400)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -87954,12 +88493,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Contrat et preuves actuelles Studio non validés ; décisions applicables ouvertes.",
-        "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : la valeur « non applicable justifié » n'existe pas dans les conclusions de contrôle ; aucun état « en attente / délai dépassé » d'un contrôle n'existe à tester.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "Voir matrice A1-exigences.csv",
       "source_checked": false,
       "cloture": {
@@ -87994,6 +88533,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -88347,7 +88893,7 @@
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Lot F (achèvement Studio, IA, MCP, extensions, 26 octobre 2026) — test prescrit, exécution CI de la PR attendue"
+        "portee": "Lot PUB (achèvement Studio, 26 octobre 2026) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -88418,6 +88964,17 @@
           ],
           "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
           "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/scenes/scenes.test.ts",
+          "controles": [
+            "EX-071 [+] le rendu conserve son auteur, ses paramètres et l'empreinte du document quand elle est disponible",
+            "EX-071 [−] sans auteur, le rendu est refusé (jamais d'auteur inventé) ; empreinte ou paramètres illisibles refusés"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -88428,7 +88985,7 @@
       "blocage": {
         "cause": null,
         "responsable": "Chef de projet",
-        "essais_effectues": "Lot F (achèvement Studio, IA, MCP, extensions, 26 octobre 2026)",
+        "essais_effectues": "Lot PUB (achèvement Studio, 26 octobre 2026)",
         "deblocage": null
       },
       "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
@@ -88470,6 +89027,13 @@
         {
           "origine": "Lot F (achèvement Studio, IA, MCP, extensions, 26 octobre 2026)",
           "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
+        },
+        {
+          "origine": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "Implémenté",
           "statut": "Implémenté",
           "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
           "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
@@ -88792,11 +89356,11 @@
         "preparation_initiale": "REF-02 texte exact + contrat + composant + scénario + preuve + décision",
         "decisions_applicables_a_instruire": "DEC-16"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Oracles individuels prescrits et extraction documentaire vérifiée, aucune recette Studio"
+        "portee": "Lot PUB (achèvement Studio, 26 octobre 2026) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -88846,6 +89410,38 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/chaine-documentaire.test.ts",
+          "controles": [
+            "EX-074 [+] un dossier assemblé de feuilles se publie : rôles distincts (vue, feuille à format et échelle déclarés, dossier), empreintes propres",
+            "EX-074 [−] une planche d'édition présentée comme feuille publiée est refusée ; une feuille sans échelle aussi"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/api/src/lib/studio-publication-manifeste.preuves-pub.test.ts",
+          "controles": [
+            "EX-074 [+] contenu « dossier-conception » : PDF et JSON du dossier, pièces ordonnées avec origine, présentation et sources distinctes",
+            "EX-074 [−] un dossier sans contenu « dossier-conception » (ou l'inverse) est refusé"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/api/src/routes/studio-pub.preuves-pub.test.ts",
+          "controles": [
+            "EX-074 [+] API : un dossier de conception se publie (revue, approbation, diffusion) ; paquet PDF + JSON, manifeste avec dossier et pièces"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -88854,12 +89450,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Contrat et preuves actuelles Studio non validés ; décisions applicables ouvertes.",
-        "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : un dossier de conception ne se publie pas (contenu de publication limité à « complet » et « dessin-2d ») ; le refus d'une planche présentée comme feuille publiée n'a pas d'objet à tester.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "Voir matrice A1-exigences.csv",
       "source_checked": false,
       "cloture": {
@@ -88894,6 +89490,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -88920,11 +89523,11 @@
         "preparation_initiale": "REF-02 texte exact + contrat + composant + scénario + preuve + décision",
         "decisions_applicables_a_instruire": "DEC-16"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Oracles individuels prescrits et extraction documentaire vérifiée, aucune recette Studio"
+        "portee": "Lot PUB (achèvement Studio, 26 octobre 2026) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -88974,6 +89577,41 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/vues-coupe.test.ts",
+          "controles": [
+            "EX-075 [+] conserve révision source, niveau et repère, cadrage, échelle, visibilité, styles et annotations propres",
+            "EX-075 [+] R12 → R13 : la vue dérivée devient périmée ; rebasée, elle garde cadrage, styles et annotations",
+            "EX-075 [−] annotation de coupe modifiée : ne devient pas un paramètre de l'objet source, le document et la section ne changent pas",
+            "EX-075 [−] définition incomplète refusée : cadrage vide, échelle libre, repère non déclaré, style inconnu"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/api/src/routes/studio-pub.preuves-pub.test.ts",
+          "controles": [
+            "EX-075 [+] API : la vue enregistrée garde révision, niveau, cadrage, échelle, styles et annotations ; périmée après une nouvelle révision, rebasée explicitement",
+            "EX-075 [−] API : modifier une annotation de la vue n'écrit aucune révision ni aucun paramètre du solide ; la section ne change pas"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/e2e/studio-pub.mjs",
+          "controles": [
+            "EX-075 : vue dérivée périmée après modification du modèle",
+            "EX-075 : vue rebasée explicitement (définition conservée)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -88982,12 +89620,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Contrat et preuves actuelles Studio non validés ; décisions applicables ouvertes.",
-        "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : aucune vue de coupe enregistrée avec cadrage, styles et annotations propres.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "Voir matrice A1-exigences.csv",
       "source_checked": false,
       "cloture": {
@@ -89022,6 +89660,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -89048,11 +89693,11 @@
         "preparation_initiale": "REF-02 texte exact + contrat + composant + scénario + preuve + décision",
         "decisions_applicables_a_instruire": "DEC-16"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Oracles individuels prescrits et extraction documentaire vérifiée, aucune recette Studio"
+        "portee": "Lot PUB (achèvement Studio, 26 octobre 2026) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -89102,6 +89747,37 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/chaine-documentaire.test.ts",
+          "controles": [
+            "EX-076 [+] détail 2D autonome et coupe de maquette publiés ensemble, chacun avec sa source distincte",
+            "EX-076 [−] le détail indépendant annoncé « synchronisé » avec la maquette sans association : présentation refusée"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/api/src/routes/studio-pub.preuves-pub.test.ts",
+          "controles": [
+            "EX-076 [+] [−] API : détail 2D et coupe de maquette publiés ensemble avec sources distinctes ; le détail annoncé « synchronisé » sans association est refusé (409 piece_refusee)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/e2e/studio-pub.mjs",
+          "controles": [
+            "EX-076 [−] : détail 2D annoncé synchronisé sans association refusé (409 piece_refusee)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -89110,12 +89786,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Contrat et preuves actuelles Studio non validés ; décisions applicables ouvertes.",
-        "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : aucune publication ne réunit un détail 2D autonome et une coupe de modèle ; aucune présentation « synchronisée » à refuser.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "Voir matrice A1-exigences.csv",
       "source_checked": false,
       "cloture": {
@@ -89150,6 +89826,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -89176,11 +89859,11 @@
         "preparation_initiale": "REF-02 texte exact + contrat + composant + scénario + preuve + décision",
         "decisions_applicables_a_instruire": "DEC-16"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Oracles individuels prescrits et extraction documentaire vérifiée, aucune recette Studio"
+        "portee": "Lot PUB (achèvement Studio, 26 octobre 2026) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -89230,6 +89913,27 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/resultats-quantitatifs.test.ts",
+          "controles": [
+            "EX-077 [+] précision interne pleine, arrondi de présentation déclaré séparé ; exclusions (cote, grandeur non évaluée) listées avec motif ; identité stable",
+            "IF-008 [−] ajustement manuel sans motif, sans auteur ou d'une unité incohérente : refusé, rawValue conservée ; recevable, il reste distinct"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/api/src/routes/studio-pub.preuves-pub.test.ts",
+          "controles": [
+            "IF-008 [+] API : chaque quantité porte quantityId, sourceRevisionSet, ruleId / ruleVersion, objets, unité, valeur brute, affichage et actualité"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -89238,12 +89942,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Contrat et preuves actuelles Studio non validés ; décisions applicables ouvertes.",
-        "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : la quantité ne porte ni identifiant / version de règle de calcul, ni précision interne, ni liste d'exclusions.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "Voir matrice A1-exigences.csv",
       "source_checked": false,
       "cloture": {
@@ -89278,6 +89982,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -89304,11 +90015,11 @@
         "preparation_initiale": "REF-02 texte exact + contrat + composant + scénario + preuve + décision",
         "decisions_applicables_a_instruire": "DEC-16"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Oracles individuels prescrits et extraction documentaire vérifiée, aucune recette Studio"
+        "portee": "Lot PUB (achèvement Studio, 26 octobre 2026) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -89358,6 +90069,18 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/resultats-quantitatifs.test.ts",
+          "controles": [
+            "EX-078 [+] quantités homogènes : brut, déductions, net, non testées et corrections manuelles distingués",
+            "EX-078 [−] révisions hétérogènes (jeux de sources distincts) : signalé, aucun total produit",
+            "EX-078 [−] règles incompatibles (autre version) ou unités différentes (m² et m³) : signalé, aucun total produit"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -89366,12 +90089,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Contrat et preuves actuelles Studio non validés ; décisions applicables ouvertes.",
-        "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (partiel) : Défaut corrigé (totaliserQuantites additionnait une valeur d'une autre unité que sa grandeur). Reste : aucune somme de quantités de révisions ou de règles hétérogènes n'existe à signaler (métré d'un seul document).",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "Voir matrice A1-exigences.csv",
       "source_checked": false,
       "cloture": {
@@ -89406,6 +90129,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -89560,11 +90290,11 @@
         "preparation_initiale": "REF-02 texte exact + contrat + composant + scénario + preuve + décision",
         "decisions_applicables_a_instruire": "DEC-16"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Oracles individuels prescrits et extraction documentaire vérifiée, aucune recette Studio"
+        "portee": "Lot PUB (achèvement Studio, 26 octobre 2026) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -89614,6 +90344,18 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/reperes-echanges.test.ts",
+          "controles": [
+            "EX-080 [+] import DXF en millimètres : repère WCS du fichier vers local-2d en mètres, facteur exact, sans translation ni rotation, Z ignoré",
+            "EX-080 [−] unité inconnue : le repère source garde une unité nulle, aucun facteur n'est substitué, aucune commande",
+            "EX-080 [+] chaque export déclare son repère source (local-2d, m) et son repère cible, sans géoréférencement"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -89622,12 +90364,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Contrat et preuves actuelles Studio non validés ; décisions applicables ouvertes.",
-        "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : le repère source / cible n'est pas un champ des rapports d'import DXF et d'export (seule la transformation déclarée de l'import IFC est rapportée).",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "Voir matrice A1-exigences.csv",
       "source_checked": false,
       "cloture": {
@@ -89662,6 +90404,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -90144,11 +90893,11 @@
         "preparation_initiale": "REF-02 texte exact + contrat + composant + scénario + preuve + décision",
         "decisions_applicables_a_instruire": "DEC-16"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Oracles individuels prescrits et extraction documentaire vérifiée, aucune recette Studio"
+        "portee": "Lot PUB (achèvement Studio, 26 octobre 2026) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -90198,6 +90947,17 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/api/src/lib/studio-observations-contrat.preuves-pub.test.ts",
+          "controles": [
+            "EX-084 [+] l'observation a sa propre identité (issueId) distincte de la note qui la porte (noteId), reliées",
+            "EX-084 [−] une proposition (même de clôture ou de dérogation), une tâche faite ou un commentaire ne résolvent pas l'observation ; seule une décision ou la clôture le font"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -90206,12 +90966,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Contrat et preuves actuelles Studio non validés ; décisions applicables ouvertes.",
-        "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (partiel) : L'observation partage par conception l'identité du commentaire promu (E.2-01) : identités distinctes note / observation non réalisées — lecture du critère à trancher.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "Voir matrice A1-exigences.csv",
       "source_checked": false,
       "cloture": {
@@ -90246,6 +91006,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -92297,11 +93064,11 @@
         "preparation_initiale": "REF-02 texte exact + contrat + composant + scénario + preuve + décision",
         "decisions_applicables_a_instruire": "DEC-13"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Oracles individuels prescrits et extraction documentaire vérifiée, aucune recette Studio"
+        "portee": "Lot REND (achèvement Studio, 26 octobre 2026) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -92351,6 +93118,39 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/accelerations.test.ts",
+          "controles": [
+            "F.1-01 — une accélération n'est activée qu'après preuve du gain ET de la non-régression > EX-098 (cas négatif) : gain p95 avec accrochage ou sélection différents hors tolérance → accélération rejetée",
+            "F.1-01 — une accélération n'est activée qu'après preuve du gain ET de la non-régression > rapport qualifiant (gain sur chaque scène, chaque critère exigé mesuré dans sa tolérance) : autorisée, gains relevés"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/src/modules/studio/workers/chemins-optimises.test.ts",
+          "controles": [
+            "REC-C-01 — chemins optimisés et chemin direct : mêmes cotes, mêmes exports SVG / DXF / IFC > brouillon incrémental (commande par commande) et frontière du Worker : exports identiques octet pour octet, cotes identiques",
+            "REC-C-01 — chemins optimisés et chemin direct : mêmes cotes, mêmes exports SVG / DXF / IFC > maillage incrémental (cache de morceaux) = maillage direct : mêmes volumes, donc mêmes quantités et même IFC de départ"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/e2e/studio-rend.mjs",
+          "controles": [
+            "TR-EX-098 : index spatial — gain p95 mesuré ET mêmes cibles d'accrochage / même sélection, jugé par la règle",
+            "F.1-01 / TR-EX-098 : rapport réel SVG / Canvas mesuré ici et jugé par la règle — verdict rendu avec ses motifs (gain ET non-régression exigés)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -92359,12 +93159,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Contrat et preuves actuelles Studio non validés ; décisions applicables ouvertes.",
-        "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot REND (achèvement Studio, 26 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (mesure requise) : Comparer un gain de performance (p95) couplé à l'équivalence fonctionnelle demande des mesures sur appareil réel ; aucune règle de rejet automatique d'un gain hors tolérance n'existe.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "Voir matrice A1-exigences.csv",
       "source_checked": false,
       "cloture": {
@@ -92399,6 +93199,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot REND (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -96834,11 +97641,11 @@
         "preparation_initiale": "REF-02 contrat exact + DEC applicable",
         "decisions_applicables_a_instruire": "DEC-16"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Oracles individuels prescrits et extraction documentaire vérifiée, aucune recette Studio"
+        "portee": "Lot PUB (achèvement Studio, 26 octobre 2026) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -96888,6 +97695,39 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/resultats-quantitatifs.test.ts",
+          "controles": [
+            "IF-008 [+] la quantité du mur porte quantityId, sourceRevisionSet, ruleId / ruleVersion, sourceObjectIds, unit, rawValue, deductions, displayValue, freshnessStatus",
+            "IF-008 [+] freshnessStatus : à jour sur la tête, périmée après une nouvelle révision, source inconnue si la variante disparaît",
+            "IF-008 [−] ajustement manuel sans motif, sans auteur ou d'une unité incohérente : refusé, rawValue conservée ; recevable, il reste distinct"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/api/src/lib/studio-quantites.test.ts",
+          "controles": [
+            "IF-008 [+] l'ajustement en vigueur est porté à part (motif, auteur, date), rawValue intacte, freshnessStatus contre la tête",
+            "IF-008 [−] un ajustement dont la cible a changé (à revoir) n'est pas porté comme correction : la valeur calculée seule fait foi"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/api/src/routes/studio-pub.preuves-pub.test.ts",
+          "controles": [
+            "IF-008 [+] API : chaque quantité porte quantityId, sourceRevisionSet, ruleId / ruleVersion, objets, unité, valeur brute, affichage et actualité"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -96896,12 +97736,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Contrat et preuves actuelles Studio non validés ; décisions applicables ouvertes.",
-        "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : le résultat quantitatif ne porte ni quantityId, ni sourceRevisionSet, ni ruleId / ruleVersion, ni freshnessStatus (aucun de ces champs dans quantites.ts ni bilan-quantites.ts). Le négatif (ajustement sans motif ni auteur, unité incohérente, brute conservée) est couvert ; la structure physique reste ouverte selon la fiche (décision).",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "Commandes/API/worker/observations/publications existants à adapter",
       "source_checked": false,
       "cloture": {
@@ -96936,6 +97776,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -96962,11 +97809,11 @@
         "preparation_initiale": "REF-02 contrat exact + DEC applicable",
         "decisions_applicables_a_instruire": "DEC-16"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Oracles individuels prescrits et extraction documentaire vérifiée, aucune recette Studio"
+        "portee": "Lot PUB (achèvement Studio, 26 octobre 2026) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -97016,6 +97863,38 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/api/src/lib/studio-publication-manifeste.preuves-pub.test.ts",
+          "controles": [
+            "IF-009 [+] le manifeste porte usage, documents ordonnés et empreintes, sources (modèles), règles, rapports de contrôle et observations bloquantes résolues",
+            "IF-009 [−] observation bloquante ni résolue ni dérogée : soumission, approbation et diffusion refusées (409 blocking_observation_open)",
+            "IF-009 [−] contrôles changés depuis le manifeste (observation résolue, nouveau rapport) : écart « controles », l'approbation de l'ancien ensemble ne vaut plus"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/api/src/routes/studio-pub.preuves-pub.test.ts",
+          "controles": [
+            "IF-009 [−] API : observation bloquante ouverte → soumission refusée (409 blocking_observation_open) ; dérogée par décision du propriétaire → manifeste à actualiser, puis soumission admise"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/e2e/studio-pub.mjs",
+          "controles": [
+            "IF-009 : publication dérogée approuvée puis diffusée"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -97024,12 +97903,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Contrat et preuves actuelles Studio non validés ; décisions applicables ouvertes.",
-        "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : le manifeste (studio-publication-statuts.ts) ne porte ni références de règles, ni rapports de contrôle, ni observations bloquantes ; la publication n'est jamais refusée pour une observation bloquante non résolue ou non dérogée. Pièce changée et documents/empreintes ordonnés sont couverts (INV-001, studio-publication).",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "Commandes/API/worker/observations/publications existants à adapter",
       "source_checked": false,
       "cloture": {
@@ -97064,6 +97943,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -97090,11 +97976,11 @@
         "preparation_initiale": "REF-02 contrat exact + DEC applicable",
         "decisions_applicables_a_instruire": "DEC-02,DEC-16"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Oracles individuels prescrits et extraction documentaire vérifiée, aucune recette Studio"
+        "portee": "Lot PUB (achèvement Studio, 26 octobre 2026) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -97144,6 +98030,62 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/echanges/bcf-observations.test.ts",
+          "controles": [
+            "IF-010 [+] export BCF 2.1 relu à l'identique : Guid stable, catégorie, gravité, statut, objets, commentaires",
+            "IF-010 [+] import : sujets nouveaux créés, objets inconnus conservés comme références",
+            "IF-010 [−] même BCF-ID reçu dans un autre contexte : nouvelle observation distincte, l'identité interne n'est ni écrasée ni fusionnée ; un sujet absent ne clôt rien",
+            "IF-010 [−] sujet sans Guid valide : non repris, avertissement ; fichier sans sujet signalé"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/api/src/lib/studio-observations-contrat.preuves-pub.test.ts",
+          "controles": [
+            "IF-010 [+] l'observation garde issueId, catégorie, source du contrôle, révisions, objets, vue, auteur, gravité, description, pièces, responsable, état, décisions, recontrôles, clôture et références BCF",
+            "IF-010 [+] catégorie, gravité et pièces se saisissent à l'ouverture ; une gravité ou une pièce hors vocabulaire est refusée ; l'empreinte de rejeu cite les pièces par leur SHA-256",
+            "IF-010 [−] valeur absente : catégorie et gravité « non évaluées » (null), aucune pièce ni référence BCF inventée"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/api/src/routes/studio-pub.preuves-pub.test.ts",
+          "controles": [
+            "IF-010 [+] API : l'observation porte issueId distinct, catégorie, gravité et pièce justificative téléchargeable, vérifiée par empreinte",
+            "IF-010 [−] API : même BCF-ID reçu dans un autre contexte → observation distincte ; même contexte → reconnu sans réécriture ; l'export relu garde les Guid"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/src/modules/collaboration/commandes-collaboration.test.ts",
+          "controles": [
+            "Lot PUB (IF-010) : exporter et importer en BCF — Ctrl+Alt+Maj+Y, I, dans la barre du panneau Observations"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/e2e/studio-pub.mjs",
+          "controles": [
+            "IF-010 : export BCF (.bcfzip) servi"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -97152,12 +98094,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Contrat et preuves actuelles Studio non validés ; décisions applicables ouvertes.",
-        "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+        "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : une observation (table studio_observations, lib/studio-observations.ts) ne porte ni catégorie, ni gravité, ni pièces justificatives ; BCF n'est pas livré (matrice des échanges, « jamais livrés »), donc le négatif « même BCF-ID dans un autre contexte » est intestable.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "Commandes/API/worker/observations/publications existants à adapter",
       "source_checked": false,
       "cloture": {
@@ -97192,6 +98134,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot PUB (achèvement Studio, 26 octobre 2026)",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {

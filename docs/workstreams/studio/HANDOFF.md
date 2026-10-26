@@ -1,5 +1,18 @@
 # Reprise — Studio
 
+## Achèvement — intégration des lots PUB et REND — 26 octobre 2026
+
+Branche `ccr-187fd2e6-08dk6e`, au-dessus des lots REG, DEC, F et CMD (PR #328).
+
+Ce qui a été fait :
+- **Lot PUB** : observations bloquantes, manifeste et dossier de conception, vues de coupe, résultats quantitatifs, BCF 2.1 dans les deux sens, conclusions de contrôle.
+- **Lot REND** : graphismes, repères et système de projet, provenance des sources, règle des accélérations (index spatial autorisé, Canvas refusé), mesures S1–S7.
+- **Intégration** : auteur du rendu exigé jusque dans l'illustration (réserve TR-EX-071 levée), matrice d'échanges en révision 6, recettes branchées en CI. Détail : [ACHEVEMENT-STUDIO](recettes/ACHEVEMENT-STUDIO.md).
+
+Compteurs recalculés du registre : **0 À définir / 43 À faire / 53 En cours / 90 Implémenté / 9 Bloqué / 376 Vérifié / 59 Accepté**. **P630=435/630**.
+
+Prochaine action : CI verte, passage « Vérifié » des obligations « Implémenté », fusion, puis lot OUT.
+
 ## Achèvement — intégration des lots REG, DEC, F et CMD — 26 octobre 2026
 
 Branche `ccr-187fd2e6-08dk6e`, base `main@1fd6fbd` (lot API, PR #326).
@@ -9,7 +22,7 @@ Ce qui a été fait :
 - **Réouverture durable (A.1-07)** : la CI redémarre désormais PostgreSQL et l'API entre la phase initiale et la phase de réouverture.
 - **Registre** : 65 obligations inscrites « Implémenté » en attendant l'exécution CI verte de la PR, puis passage « Vérifié » ; les verdicts partiels restent ouverts avec leur suite. Détail : [ACHEVEMENT-STUDIO](recettes/ACHEVEMENT-STUDIO.md).
 
-Compteurs recalculés du registre : **0 À définir / 48 À faire / 73 En cours / 65 Implémenté / 9 Bloqué / 376 Vérifié / 59 Accepté**. **P630=435/630**.
+Compteurs recalculés du registre : à cette date 376 Vérifié, 59 Accepté, 9 Bloqué, 65 Implémenté, 73 En cours, 48 À faire, 0 À définir ; 435 obligations sur 630 closes.
 
 Prochaine action : CI verte de la PR, passage « Vérifié » par `completer_preuves.py`, fusion, puis lots PUB, OUT et REND.
 

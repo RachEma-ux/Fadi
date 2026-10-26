@@ -1,7 +1,7 @@
 # Fiches de traçabilité TR-* (annexe C) — preuve et contre-preuve individuelles
 
 > Document **généré** par `node scripts/registre/etat-studio.mjs --ecrire` depuis le registre et les fiches M004 ; la CI le
-> recalcule à chaque commit. Registre SHA-256 `3b8661bedca3e62c17f9163a2e1468966a16bfecddf9ccbade8c64d3d265418b` ; fiches `docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json`.
+> recalcule à chaque commit. Registre SHA-256 `002337c5f9d4153708af3f5f599bfa8f03023de92e05232579f2dba95b9eb90e` ; fiches `docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json`.
 
 Règle C (Checklist, annexe C) appliquée à chaque fiche : libellé exact, source, responsable, contrat, composant, tests
 positifs et négatifs, preuves, décisions, état et verdict ; **une preuve absente reste « à produire »**. Preuve = contrôle
@@ -387,8 +387,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Unité/repère inconnus : signaler inconnue et empêcher calcul silencieux en mètres supposés.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Non traité dans ce lot (fichiers des modèles externes et de l'import DXF, propres au lot F3 / F) : manquent toujours les restrictions d'utilisation, le repère source déclaré en propre, l'export des métadonnées de provenance et la provenance de l'import DXF.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-015
 
@@ -534,8 +534,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Entrée pixels traitée comme mètres ou géographie mélangée au local : refus/erreur explicite.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Le refus des pixels et du repère d'écran est testé ; le système de projet et les transformations versionnées document / local / projet n'existent pas (cas positif impossible à tester).
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-024
 
@@ -602,7 +602,7 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
 - **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (partiel) : Cas négatif couvert (doublon à libellés distincts rejeté sans écrasement). Cas positif impossible : aucune capacité d'objet d'accès (studio.arch.ladder) n'existe pour vérifier sa distinction avec la transformation d'échelle.
+- **Suite** : Cas négatif vérifié (préexistant). Le cas positif demande une nouvelle capacité d'outil (échelle, studio.arch.ladder) au registre des outils, propriété du lot OUT : non implémentée dans le lot PUB pour ne pas réécrire ses fichiers.
 
 ### TR-EX-028
 
@@ -961,8 +961,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Objet hors candidats mais intersectant la vue : oracle révèle omission ; balayage correct reste repli autorisé.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (mesure requise) : La mesure S1/S3 complète tourne derrière STUDIO_MESURE_SPATIALE=1 (hors CI) et son rapport est « sans seuil ni verdict ». Comparer aux cibles demande des cibles décidées (DEC-13) et une mesure sur appareil désigné. L'oracle index = linéaire est déjà couvert.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-053
 
@@ -1005,8 +1005,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Renderer alternatif omet texte/hachure ou modifie accrochage : non-régression échoue même si plus rapide.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Splines, hachures, symboles et transparences n'existent pas dans le modèle 2D de Studio : impossible de comparer leur rendu. Il n'y a qu'un renderer dans l'application (SVG, DEC-08) ; Canvas et GPU ne sont comparés qu'en preuve (comparaison-moteurs). Texte et calques sont couverts.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-056
 
@@ -1018,8 +1018,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Remplacer moteur sans gain/conformité prouvés : décision bloquée, pas réécriture automatique.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Aucun repli WebGPU dans Studio, et le rendu à la demande n'est pas qualifié sur corpus (seul le batching l'est). Le blocage d'un remplacement de moteur sans preuve n'est pas un mécanisme : il relève de la décision (DEC-08 retient SVG pour la 2D).
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-057
 
@@ -1066,7 +1066,7 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
 - **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (mesure requise) : Mesurer que le fil principal reste disponible pendant un calcul lourd demande une mesure sur appareil réel (hors CI) ; aucun booléen n'existe dans Studio (cas positif prescrit sans objet).
+- **Suite** : Mesuré en CI (Chromium logiciel) sur la lecture d'un DXF de 4,2 Mo dans le Worker : trame la plus longue 16,8 ms contre une tâche longue de 682 ms pour la même lecture sur le fil principal (local). Manque : (1) la même mesure pendant un booléen exact lourd (noyau OCCT dans son Worker, cas positif prescrit) n'est pas faite ; (2) la mesure sur appareil réel (EXTERNE : aucun appareil physique dans c…
 
 ### TR-EX-060
 
@@ -1154,8 +1154,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Modifier surface dessinée : ne réécrit pas cible à 26 ; commande exigence sans droit refusée.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (partiel) : L'affichage explicite de l'écart n'est vérifié que par studio-exigences.mjs, hors CI : à brancher en CI (orchestrateur).
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-066
 
@@ -1208,8 +1208,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Timeout ou exécution en attente : ne devient jamais conforme.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : la valeur « non applicable justifié » n'existe pas dans les conclusions de contrôle ; aucun état « en attente / délai dépassé » d'un contrôle n'existe à tester.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-069
 
@@ -1299,8 +1299,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Planche d'édition seule présentée comme feuille publiée : recette refuse livraison.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : un dossier de conception ne se publie pas (contenu de publication limité à « complet » et « dessin-2d ») ; le refus d'une planche présentée comme feuille publiée n'a pas d'objet à tester.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-075
 
@@ -1312,8 +1312,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Annotation de coupe modifiée : ne devient pas paramètre autoritaire du mur.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : aucune vue de coupe enregistrée avec cadrage, styles et annotations propres.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-076
 
@@ -1325,8 +1325,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Détail indépendant annoncé synchronisé avec maquette sans association : présentation refusée.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : aucune publication ne réunit un détail 2D autonome et une coupe de modèle ; aucune présentation « synchronisée » à refuser.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-077
 
@@ -1338,8 +1338,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Override manuel écrase rawValue sans auteur/motif : refuser ou conserver comme ajustement distinct.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : la quantité ne porte ni identifiant / version de règle de calcul, ni précision interne, ni liste d'exclusions.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-078
 
@@ -1351,8 +1351,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Mélanger m² et m³ ou règles/révisions incompatibles : signaler et ne produire aucun total trompeur.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (partiel) : Défaut corrigé (totaliserQuantites additionnait une valeur d'une autre unité que sa grandeur). Reste : aucune somme de quantités de révisions ou de règles hétérogènes n'existe à signaler (métré d'un seul document).
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-079
 
@@ -1377,8 +1377,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Parser ignore entité sans rapport ou remplace unité inconnue : échec de couverture explicite.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : le repère source / cible n'est pas un champ des rapports d'import DXF et d'export (seule la transformation déclarée de l'import IFC est rapportée).
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-081
 
@@ -1445,8 +1445,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Commentaire présenté comme décision approuvée ou tâche clôturant observation : aucune transition implicite.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (partiel) : L'observation partage par conception l'identité du commentaire promu (E.2-01) : identités distinctes note / observation non réalisées — lecture du critère à trancher.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-085
 
@@ -1662,8 +1662,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Gain p95 avec snapping ou volume différent hors tolérance : optimisation rejetée.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (mesure requise) : Comparer un gain de performance (p95) couplé à l'équivalence fonctionnelle demande des mesures sur appareil réel ; aucune règle de rejet automatique d'un gain hors tolérance n'existe.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-099
 
@@ -1865,8 +1865,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : manualAdjustment sans motif/auteur ou unit incompatible : refus/signalement, rawValue conservé.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : le résultat quantitatif ne porte ni quantityId, ni sourceRevisionSet, ni ruleId / ruleVersion, ni freshnessStatus (aucun de ces champs dans quantites.ts ni bilan-quantites.ts). Le négatif (ajustement sans motif ni auteur, unité incohérente, brute conservée) est couvert ; la structure physique reste ouverte selon la fiche (décision…
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-IF-009
 
@@ -1878,8 +1878,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Pièce changée/manquante ou observation bloquante sans résolution/dérogation : publication refusée.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : le manifeste (studio-publication-statuts.ts) ne porte ni références de règles, ni rapports de contrôle, ni observations bloquantes ; la publication n'est jamais refusée pour une observation bloquante non résolue ou non dérogée. Pièce changée et documents/empreintes ordonnés sont couverts (INV-001, studio-publication).
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-IF-010
 
@@ -1891,8 +1891,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Même BCF-ID reçu dans autre contexte : ne pas écraser ID interne ni clore par disparition objet.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : une observation (table studio_observations, lib/studio-observations.ts) ne porte ni catégorie, ni gravité, ni pièces justificatives ; BCF n'est pas livré (matrice des échanges, « jamais livrés »), donc le négatif « même BCF-ID dans un autre contexte » est intestable.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-IF-011
 
