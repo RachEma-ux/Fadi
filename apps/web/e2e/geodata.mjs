@@ -103,7 +103,7 @@ check("carte : moteur chargé (canevas MapLibre)", (await page.locator(".maplibr
 // --- Disposition (D-GD-14) : barre d'outils verticale à gauche, bouton « Données », menu hamburger ---
 const barreOutils = page.locator("[data-gd-barre-outils]");
 const outils = await barreOutils.locator("[data-gd-barre-outil]").evaluateAll((bs) => bs.map((b) => b.getAttribute("aria-label")));
-check("carte : barre d'outils verticale (zoom, nord, position, plein écran, mesures, zone, annotation, légende), chaque bouton nommé", outils.length === 10 && outils.every(Boolean), outils.join(" | "));
+check("carte : barre d'outils verticale (zoom, nord, position, plein écran, mesures, zone, annotation, libellés, légende), chaque bouton nommé", outils.length === 11 && outils.every(Boolean), outils.join(" | "));
 const boiteBarre = await barreOutils.boundingBox();
 const boiteCarte = await page.locator("main.gd-carte").boundingBox();
 check("carte : barre d'outils flottante, verticale, à droite par défaut", !!boiteBarre && !!boiteCarte && boiteCarte.x + boiteCarte.width - (boiteBarre.x + boiteBarre.width) < 30 && boiteBarre.height > boiteBarre.width * 3);
@@ -170,6 +170,34 @@ const absente = page.locator("[data-gd-legende] [data-classe='absente']");
 await absente.waitFor();
 check("GEO 06 · légende : entrée « Valeur absente (1) » distincte des classes", ((await absente.textContent()) ?? "").includes("Valeur absente (1)"));
 check("GEO 06 · légende : la valeur absente est hachurée (pas seulement une couleur)", (await absente.locator(".gd-hachure").count()) === 1);
+
+// --- Libellés (lot C, D-GD-24) : bouton de la barre d'outils et Alt+L ; glyphes hébergés par Fadi ; points d'étiquette ---
+const boutonLibelles = page.locator("[data-gd-barre-outil='etiquettes']");
+check("libellés : bouton « Afficher les libellés (Alt+L) » dans la barre d'outils, non pressé", (await boutonLibelles.getAttribute("aria-label")) === "Afficher les libellés (Alt+L)" && (await boutonLibelles.getAttribute("aria-pressed")) === "false" && !(await boutonLibelles.isDisabled()));
+const glyphes = page.waitForResponse((r) => r.url().includes("/geodata/glyphes/NotoSans-Regular/") && r.status() === 200, { timeout: 20_000 }).catch(() => null);
+const pointsEtiquette = page.waitForResponse((r) => /\/geodata\/api\/etiquettes\//.test(r.url()) && r.status() === 200, { timeout: 20_000 }).catch(() => null);
+const policesTierces = [];
+const surRequete = (r) => { if (/fonts|glyphs/i.test(r.url()) && !r.url().startsWith(new URL(page.url()).origin)) policesTierces.push(r.url()); };
+page.on("request", surRequete);
+await page.locator("body").press("Alt+l");
+check("libellés : Alt+L les affiche (bouton pressé, case « Libellés » de la couche cochée)", (await boutonLibelles.getAttribute("aria-pressed")) === "true" && (await boutonLibelles.getAttribute("aria-label")) === "Masquer les libellés (Alt+L)");
+const [repGlyphes, repPoints] = await Promise.all([glyphes, pointsEtiquette]);
+check("libellés : glyphes servis par Fadi (/geodata/glyphes, 200), aucune police tierce", !!repGlyphes && policesTierces.length === 0, policesTierces.join(" "));
+check("libellés : points d'étiquette lus seulement une fois les libellés affichés (/etiquettes, 200)", !!repPoints && (repPoints.headers()["content-type"] ?? "").includes("vector-tile"));
+await page.waitForTimeout(800);
+check("libellés : aucune erreur de carte", (await page.locator("[data-gd-erreur-carte]").count()) === 0);
+await page.screenshot({ path: join(OUT, "01b-libelles.png") });
+await onglet(page, "couches");
+const caseLibelles = page.locator("[data-gd-couche-active]").first().locator("[data-gd-etiquettes]");
+check("libellés : la couche thématique annonce « nom et valeur abrégée », case cochée", (await caseLibelles.isChecked()) && ((await caseLibelles.locator("xpath=..").textContent()) ?? "").includes("Libellés (nom et valeur abrégée)"));
+await caseLibelles.uncheck();
+check("libellés : décochés sur la couche → bouton non pressé", (await boutonLibelles.getAttribute("aria-pressed")) === "false");
+await boutonLibelles.click();
+check("libellés : le bouton les rétablit", (await caseLibelles.isChecked()) && (await boutonLibelles.getAttribute("aria-pressed")) === "true");
+await boutonLibelles.click();
+check("libellés : le bouton les masque", !(await caseLibelles.isChecked()));
+page.off("request", surRequete);
+await onglet(page, "legende");
 
 // Recherche : coordonnées étiquetées, paire nue refusée, unité par code à zéro initial.
 const recherche = page.locator("[data-gd-recherche]");

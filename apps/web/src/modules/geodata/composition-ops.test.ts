@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { COMPOSITION_INITIALE, validerComposition } from "@parcours/geodata-model";
-import { ajouterCouche, basculerVisibilite, definirOpacite, deplacerCouche, etatDepuis, lireSeuilsManuels, retirerCouche, styleThematique } from "./composition-ops";
+import { ajouterCouche, basculerEtiquettes, basculerToutesEtiquettes, basculerVisibilite, etiquettesToutesAffichees, definirOpacite, deplacerCouche, etatDepuis, lireSeuilsManuels, retirerCouche, styleThematique } from "./composition-ops";
 
 const simple = { mode: "simple", couleur: "#2b8cbe" } as const;
 
@@ -29,5 +29,24 @@ describe("composition locale de GeoData", () => {
     if (s.mode === "thematique") expect(s.couleurs).toHaveLength(3);
     expect(lireSeuilsManuels("10 ; 20,5 ; 50")).toEqual([10, 20.5, 50]);
     expect(lireSeuilsManuels("20 ; 10")).toBeNull();
+  });
+  it("libellés (D-GD-24) : bascule par couche ; bouton : tout afficher si l'une manque, sinon tout masquer (rasters et couches masquées exclus)", () => {
+    let c = ajouterCouche(ajouterCouche(ajouterCouche(COMPOSITION_INITIALE, "a", "va", simple), "b", "vb", simple), "r", "vr", { mode: "raster" });
+    const vect = new Set(["a", "b"]);
+    expect(basculerEtiquettes(c, "a").couches[0]!.etiquettes).toBe(true);
+    expect("etiquettes" in basculerEtiquettes(basculerEtiquettes(c, "a"), "a").couches[0]!).toBe(false);
+    c = basculerEtiquettes(c, "a");
+    expect(etiquettesToutesAffichees(c, vect)).toBe(false);
+    const toutes = basculerToutesEtiquettes(c, vect);
+    expect(toutes.couches.map((k) => !!k.etiquettes)).toEqual([true, true, false]);
+    expect(etiquettesToutesAffichees(toutes, vect)).toBe(true);
+    expect(basculerToutesEtiquettes(toutes, vect).couches.some((k) => "etiquettes" in k)).toBe(false);
+    const bCachee = basculerVisibilite(c, "b");
+    // « b » masquée ne compte pas : « a » seule a déjà ses libellés, le bouton les masque.
+    expect(basculerToutesEtiquettes(bCachee, vect).couches.some((k) => "etiquettes" in k)).toBe(false);
+    const seulRaster = basculerVisibilite(basculerVisibilite(c, "a"), "b");
+    expect(basculerToutesEtiquettes(seulRaster, vect)).toBe(seulRaster);
+    expect(basculerToutesEtiquettes(COMPOSITION_INITIALE, vect)).toBe(COMPOSITION_INITIALE);
+    expect(validerComposition(toutes).ok).toBe(true);
   });
 });

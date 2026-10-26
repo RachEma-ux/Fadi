@@ -166,7 +166,7 @@ function ChoixColoration(p: { couche: CoucheRecue; coucheId: string; style: Styl
 
 export function PanneauCouches(p: {
   composition: Composition; couches: Map<string, CoucheRecue>; disponibilite: Record<string, Disponibilite>;
-  onVisibilite(id: string): void; onOpacite(id: string, o: number): void; onDeplacer(id: string, s: 1 | -1): void; onRetirer(id: string): void;
+  onVisibilite(id: string): void; onOpacite(id: string, o: number): void; onEtiquettes(id: string): void; onDeplacer(id: string, s: 1 | -1): void; onRetirer(id: string): void;
   onStyle(id: string, s: StyleCouche): void; onTable(id: string): void; valeursDe(indicateurId: string): Promise<ValeurIndicateur[]>;
 }) {
   if (!p.composition.couches.length) return <p className="gd-etat">Aucune couche active : ajoutez-en depuis le Catalogue.</p>;
@@ -185,6 +185,7 @@ export function PanneauCouches(p: {
             {indispo && <p role="status" className="gd-alerte" data-gd-indisponible>{d.motif}</p>}
             {d?.etat === "disponible" && d.versionPlusRecente && <p className="gd-discret">Une version plus récente de cette source est publiée ; la carte garde la version enregistrée.</p>}
             <label className="gd-champ">{`Opacité : ${Math.round(k.opacite * 100)} %`}<input type="range" min={0} max={100} value={Math.round(k.opacite * 100)} onChange={(e) => p.onOpacite(k.coucheId, Number(e.target.value) / 100)} /></label>
+            {c && !c.raster && <label className="gd-case"><input type="checkbox" checked={!!k.etiquettes} onChange={() => p.onEtiquettes(k.coucheId)} data-gd-etiquettes={k.coucheId} />{k.style.mode === "thematique" ? "Libellés (nom et valeur abrégée)" : "Libellés (nom)"}</label>}
             {c?.raster && <p className="gd-discret" data-gd-raster-info={k.coucheId}><span translate="no">{`${c.raster.grandeur}${c.raster.unite ? ` (${c.raster.unite})` : ""}`}</span> · Couche raster : symbologie de la source, touchez la carte pour lire une valeur.</p>}
             {c && !c.raster && (
               <ChoixColoration couche={c} style={k.style} onStyle={(st) => p.onStyle(k.coucheId, st)} valeursDe={p.valeursDe} coucheId={k.coucheId} />

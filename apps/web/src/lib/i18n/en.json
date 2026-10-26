@@ -14117,5 +14117,11 @@
 "Imprimer la fiche": "Print the record",
 "Imprimer la fiche (Alt+P)": "Print the record (Alt+P)",
 "Tableaux : « … » sans objet, « . » non publiée, « n.d. » autre valeur absente (motif au survol) ; une colonne sans objet pour cette entité est masquée.": "Tables: “…” not applicable, “.” not published, “n.d.” other missing value (reason on hover); a column not applicable to this entity is hidden.",
-"La fenêtre d'impression a été bloquée par le navigateur : autorisez les fenêtres de GeoData pour imprimer la fiche.": "The print window was blocked by the browser: allow GeoData windows to print the record."
+"La fenêtre d'impression a été bloquée par le navigateur : autorisez les fenêtres de GeoData pour imprimer la fiche.": "The print window was blocked by the browser: allow GeoData windows to print the record.",
+"Masquer les libellés (Alt+L)": "Hide labels (Alt+L)",
+"Afficher les libellés (Alt+L)": "Show labels (Alt+L)",
+"Libellés (nom et valeur abrégée)": "Labels (name and abbreviated value)",
+"Libellés (nom)": "Labels (name)",
+"Libellés masqués": "Labels hidden",
+"Libellés affichés": "Labels shown"
 }

@@ -184,6 +184,27 @@ describe("GEO 07 / GEO 08 — import personnel et isolation", () => {
     expect(tuile.status).toBe(200);
     expect(tuile.headers["cache-control"]).toBe("private, no-store");
   });
+  it("points d'étiquette (D-GD-24) : un point par entité, nom réduit aux glyphes livrés, mêmes accès que les tuiles", async () => {
+    const alice = await compte("gd-etq@example.com");
+    const contenu = JSON.stringify({ type: "FeatureCollection", features: [{ type: "Feature", properties: { nom: "Aït Secteur الرباط" }, geometry: { type: "Polygon", coordinates: carre(-7.1, 33, 0.2) } }] });
+    const ok = await alice.client.post(`${API}/imports`).send({ requestId: "req-etiquettes-1", nomFichier: "e.geojson", contenu });
+    const conf = await alice.client.post(`${API}/imports/${ok.body.id}/confirmer`).send({ titre: "Étiquettes" });
+    const t = await alice.client.get(`${API}/etiquettes/${conf.body.coucheId}/8/123/103`).buffer(true).parse((r, fin) => { const b: Buffer[] = []; r.on("data", (x: Buffer) => b.push(x)); r.on("end", () => fin(null, Buffer.concat(b))); });
+    expect(t.status).toBe(200);
+    expect(t.headers["content-type"]).toContain("application/vnd.mapbox-vector-tile");
+    expect(t.headers["cache-control"]).toBe("private, no-store");
+    const octets = t.body as Buffer;
+    expect(octets.includes(Buffer.from("etiquettes"))).toBe(true);
+    expect(octets.includes(Buffer.from("Aït Secteur"))).toBe(true);
+    expect(octets.includes(Buffer.from("الرباط"))).toBe(false);
+    // Tuile voisine, que l'entité chevauche : son point n'y est pas (aucun libellé doublé au bord des tuiles).
+    const voisine = await alice.client.get(`${API}/etiquettes/${conf.body.coucheId}/8/122/103`);
+    expect(voisine.status).toBe(200);
+    expect(Number(voisine.headers["content-length"] ?? 0)).toBe(0);
+    const bob = await compte("gd-etq-bob@example.com");
+    expect((await bob.client.get(`${API}/etiquettes/${conf.body.coucheId}/8/123/103`)).status).toBe(404);
+    expect((await alice.client.get(`${API}/etiquettes/${conf.body.coucheId}/8/999/102`)).status).toBe(400);
+  });
   it("cartes, zones, analyses et fiches d'export d'un tiers : 404, y compris en accès direct", async () => {
     const alice = await compte("gd-a8@example.com");
     const bob = await compte("gd-b8@example.com");

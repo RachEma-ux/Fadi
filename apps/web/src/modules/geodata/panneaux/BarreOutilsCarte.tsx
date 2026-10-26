@@ -2,7 +2,7 @@
  * Barre d'outils verticale **flottante** de la carte GeoData (organisation inspirée de Kharita) : placée à droite par
  * défaut, déplaçable par sa poignée (souris, doigt ou flèches du clavier), bornée à la carte ; sa position est un confort
  * mémorisé dans ce navigateur seulement. Outils : zoom, nord, position,
- * plein écran, mesures, zone, annotation, légende. Icônes tracées ici (module isolé). Chaque bouton a un nom accessible
+ * plein écran, mesures, zone, annotation, libellés (Alt+L), légende. Icônes tracées ici (module isolé). Chaque bouton a un nom accessible
  * et une infobulle ; les outils de tracé sont des bascules (aria-pressed) et retournent à la navigation au second appui.
  */
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
@@ -35,6 +35,8 @@ const ICONES = {
   zone: "M4 4h16v16H4z M4 9h16M9 4v16",
   annotation: "M5 20l4-1 10-10-3-3L6 16l-1 4ZM14 7l3 3",
   legende: "M4 6h3M4 12h3M4 18h3M10 6h10M10 12h10M10 18h10",
+  /** Libellés (D-GD-24) : étiquette « T » posée sur un repère. */
+  etiquettes: "M6 5h12M12 5v10M8 19h8M12 15v4",
 } as const;
 
 function Pictogramme({ d }: { d: string }) {
@@ -45,6 +47,8 @@ export interface ActionsBarreCarte {
   outil: OutilCarte;
   pleinEcran: boolean;
   legendeOuverte: boolean;
+  /** Libellés affichés sur toutes les couches vectorielles visibles ; `null` = aucune couche ne peut en avoir. */
+  etiquettes: boolean | null;
   carteDisponible: boolean;
   onZoom(delta: 1 | -1): void;
   onNord(): void;
@@ -52,6 +56,7 @@ export interface ActionsBarreCarte {
   onPleinEcran(): void;
   onOutil(o: OutilCarte): void;
   onLegende(): void;
+  onEtiquettes(): void;
 }
 
 export function BarreOutilsCarte(p: ActionsBarreCarte) {
@@ -108,6 +113,7 @@ export function BarreOutilsCarte(p: ActionsBarreCarte) {
         {trace("annotation", "Poser une annotation", ICONES.annotation)}
       </div>
       <div className="gd-groupe-outils">
+        {bouton("etiquettes", p.etiquettes ? "Masquer les libellés (Alt+L)" : "Afficher les libellés (Alt+L)", ICONES.etiquettes, p.onEtiquettes, { pressed: !!p.etiquettes, disabled: !p.carteDisponible || p.etiquettes === null })}
         {bouton("legende", "Légende", ICONES.legende, p.onLegende, { pressed: p.legendeOuverte })}
       </div>
     </nav>

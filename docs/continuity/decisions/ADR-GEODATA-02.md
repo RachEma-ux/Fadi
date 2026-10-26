@@ -189,7 +189,26 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         quittance est déposée sur la PR fusionnée (commit, CI de `main` verte, déploiement automatique non bloqué). Côté
         serveur, `sudo fadi-preprod status` et `/version/donnees` confirment le commit déployé et l'import.
      5. **Non-blocage** : l'installation de Chromium de la CI est bornée (10 minutes par essai, 3 essais) au lieu
-        d'attendre l'annulation du job.
+        d'attendre l'annulation du job ; avant un nouvel essai, l'apt-get laissé par l'essai interrompu est attendu
+        (10 minutes au plus), sinon son verrou dpkg ferait échouer les essais suivants.
+   - D-GD-24 (26 octobre 2026, lot C, demande du maître d'ouvrage : « continue avec le lot C ») — **libellés sur la
+     carte** :
+     1. Un libellé par entité : son nom, et pour une couche thématique sa valeur **abrégée** (« 36,8 M », « 12,3 k »,
+        « 12,5 % » ; `packages/geodata-model/src/etiquettes.ts`). Une valeur absente n'affiche que le nom, jamais « 0 » ;
+        la valeur complète reste dans la fiche et la table. Collisions résolues par le moteur (un libellé qui en chevauche
+        un autre n'est pas tracé).
+     2. Affichage par couche (case « Libellés » du panneau Couches, enregistrée dans la composition : clé `etiquettes`,
+        absente quand ils sont masqués, si bien qu'une carte enregistrée avant le lot C reste identique) et pour toutes
+        les couches vectorielles visibles par le bouton « Libellés » de la barre d'outils (icône propre, raccourci Alt+L).
+     3. Points d'étiquette servis par `GET /geodata/api/etiquettes/:couche/:z/:x/:y` (MVT, couche `etiquettes`), lus
+        seulement quand les libellés d'une couche sont affichés : `ST_PointOnSurface` (toujours sur l'entité), dans la
+        seule tuile qui le contient (aucun libellé doublé), mêmes règles d'accès et de cache que les tuiles.
+     4. **Glyphes hébergés par Fadi** (aucune police tierce) : Noto Sans Regular (SIL OFL 1.1) au format PBF
+        d'OpenMapTiles, six plages latines seulement (`apps/web/public/geodata/glyphes/NotoSans-Regular/`, ≈ 540 Ko,
+        chargées à la demande) ; provenance, empreintes et licence dans `apps/web/public/licences/noto-sans/`, contrôlées
+        par test. Un caractère hors de ces plages (arabe) est retiré du libellé de la carte par le serveur ; s'il ne reste
+        rien, le code de l'entité est affiché. Les noms publiés seulement en arabe restent affichés en arabe dans la fiche
+        (D-GD-21).
 
 ## Conséquences
 

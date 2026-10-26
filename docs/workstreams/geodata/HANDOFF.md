@@ -30,8 +30,10 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
   quittance serveur : `GET /version/donnees`. Procédure après chaque fusion : suivre la CI de `main` jusqu'au vert
   (relance unique d'un job tué par l'infrastructure), déposer la quittance sur la PR fusionnée.
 - Fiche territoriale (lot E, D-GD-22) : ventilations, arrondissements, douars (annexe de la fiche des communes :
-  `preparer_hcp.py … --douars <base des douars>`), impression Alt+P. Lots suivants : C (libellés), D (palettes,
-  classes), F (arbre d'indicateurs), G (mini-carte), un à la fois.
+  `preparer_hcp.py … --douars <base des douars>`), impression Alt+P.
+- Libellés sur la carte (lot C, D-GD-24) : case « Libellés » par couche, bouton de la barre d'outils (Alt+L), valeur
+  abrégée en thématique, glyphes Noto Sans hébergés (latin). Lots suivants : D (palettes, classes), F (arbre
+  d'indicateurs), G (mini-carte), un à la fois.
 - Arabe là où il est nécessaire (D-GD-21) : une donnée publiée seulement en arabe (noms des douars) est affichée en
   arabe (rtl, jamais traduite) ; sinon le français seul.
 - Indicateurs communaux complémentaires (D-GD-20) : logement urbain, transport domicile – travail, CEE ; régénération :

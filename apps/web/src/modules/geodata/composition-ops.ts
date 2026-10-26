@@ -45,6 +45,31 @@ export const definirOpacite = (c: Composition, coucheId: string, opacite: number
 export const definirStyle = (c: Composition, coucheId: string, style: StyleCouche) => modifier(c, coucheId, (k) => ({ ...k, style }));
 export const definirFiltre = (c: Composition, coucheId: string, filtre: FiltreCouche | null) => modifier(c, coucheId, (k) => ({ ...k, filtre }));
 
+/** Libellés d'une couche (lot C, D-GD-24) : affichés ↔ masqués ; « masqués » n'écrit aucune clé dans la composition. */
+export const basculerEtiquettes = (c: Composition, coucheId: string) => modifier(c, coucheId, ({ etiquettes, ...k }) => (etiquettes ? k : { ...k, etiquettes: true as const }));
+
+/**
+ * Bouton « Libellés » de la barre d'outils (Alt+L) : sur les couches vectorielles visibles, affiche tous les libellés si
+ * l'une d'elles n'en a pas, sinon les masque tous. Sans couche admissible, la composition est rendue telle quelle.
+ */
+export function basculerToutesEtiquettes(c: Composition, admissibles: ReadonlySet<string>): Composition {
+  const cibles = c.couches.filter((k) => k.visible && admissibles.has(k.coucheId));
+  if (!cibles.length) return c;
+  const afficher = cibles.some((k) => !k.etiquettes);
+  const ids = new Set(cibles.map((k) => k.coucheId));
+  return avecCouches(c, c.couches.map((k) => {
+    if (!ids.has(k.coucheId)) return k;
+    const { etiquettes: _e, ...reste } = k;
+    return afficher ? { ...reste, etiquettes: true as const } : reste;
+  }));
+}
+
+/** Les libellés de toutes les couches vectorielles visibles sont-ils affichés ? (état du bouton de la barre d'outils) */
+export const etiquettesToutesAffichees = (c: Composition, admissibles: ReadonlySet<string>): boolean => {
+  const cibles = c.couches.filter((k) => k.visible && admissibles.has(k.coucheId));
+  return cibles.length > 0 && cibles.every((k) => k.etiquettes);
+};
+
 /** Monte (+1, vers le dessus) ou descend (−1) une couche dans l'ordre d'affichage. */
 export function deplacerCouche(c: Composition, coucheId: string, sens: 1 | -1): Composition {
   const i = c.couches.findIndex((k) => k.coucheId === coucheId);
