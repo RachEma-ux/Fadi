@@ -154,7 +154,7 @@ export const STUDIO_JSON_FIELDS_WITHOUT_ACCOUNTS: Readonly<Partial<Record<Studio
   // Pièces justificatives (nom, type, taille, empreinte) et références BCF reçues (Guid, contexte) d'une observation (IF-010) : aucun compte.
   studio_observations: ["pieces", "bcf_refs"],
   studio_publications: ["package", "manifest"],
-  studio_tool_preferences: ["favorites", "personal", "groups"],
+  studio_tool_preferences: ["favorites", "personal", "groups", "shortcuts", "capability_order"],
 });
 
 /** Colonnes qui portent l'identifiant du projet (remplacé par celui du projet restauré). */

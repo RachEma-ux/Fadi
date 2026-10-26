@@ -1,5 +1,18 @@
 # Reprise — Studio
 
+## Achèvement — intégration du lot OUT — 26 octobre 2026
+
+Branche `ccr-187fd2e6-08dk6e`, au-dessus des lots PUB et REND.
+
+Ce qui a été fait :
+- **Lot OUT** : contrat d'exécution et fiches d'outils, quota d'invocation, états des tâches et Workers validés, profils d'outils, caches par build, instanciation, basculement, accrochage parallèle.
+- **Intégration** : raccourci de l'accrochage parallèle déplacé sur Ctrl+Maj+F6 (Maj+F6 reste à « Créer un graphisme »), fiches d'outils complétées des outils du lot REND, matrice d'échanges en révision 7. Détail : [ACHEVEMENT-STUDIO](recettes/ACHEVEMENT-STUDIO.md).
+- **Les huit lots d'achèvement sont intégrés** ; restent les obligations de mesure sur données réelles et d'appareil réel, et les actes du maître d'ouvrage.
+
+Compteurs recalculés du registre : **0 À définir / 39 À faire / 35 En cours / 112 Implémenté / 9 Bloqué / 376 Vérifié / 59 Accepté**. **P630=435/630**.
+
+Prochaine action : CI verte, passage « Vérifié » des obligations « Implémenté », fusion, puis build candidat et bilan.
+
 ## Achèvement — intégration des lots PUB et REND — 26 octobre 2026
 
 Branche `ccr-187fd2e6-08dk6e`, au-dessus des lots REG, DEC, F et CMD (PR #328).
@@ -9,7 +22,7 @@ Ce qui a été fait :
 - **Lot REND** : graphismes, repères et système de projet, provenance des sources, règle des accélérations (index spatial autorisé, Canvas refusé), mesures S1–S7.
 - **Intégration** : auteur du rendu exigé jusque dans l'illustration (réserve TR-EX-071 levée), matrice d'échanges en révision 6, recettes branchées en CI. Détail : [ACHEVEMENT-STUDIO](recettes/ACHEVEMENT-STUDIO.md).
 
-Compteurs recalculés du registre : **0 À définir / 43 À faire / 53 En cours / 90 Implémenté / 9 Bloqué / 376 Vérifié / 59 Accepté**. **P630=435/630**.
+Compteurs recalculés du registre : à cette date 376 Vérifié, 59 Accepté, 9 Bloqué, 90 Implémenté, 53 En cours, 43 À faire, 0 À définir ; 435 obligations sur 630 closes.
 
 Prochaine action : CI verte, passage « Vérifié » des obligations « Implémenté », fusion, puis lot OUT.
 

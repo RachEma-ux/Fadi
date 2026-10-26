@@ -1408,6 +1408,12 @@ export const studioToolPreferences = pgTable("studio_tool_preferences", {
   personal: jsonb("personal").$type<string[]>().notNull().default([]),
   groups: jsonb("groups").$type<{ id: string; nom: string; outils: string[] }[]>(),
   manifestVersion: text("manifest_version"),
+  /** Profil persistant (EX-034) : identifiant stable, version, raccourcis personnels, ordre des capacités, provenance. */
+  profileId: text("profile_id"),
+  profileVersion: integer("profile_version"),
+  shortcuts: jsonb("shortcuts").$type<Record<string, string>>(),
+  capabilityOrder: jsonb("capability_order").$type<string[]>(),
+  importedFrom: text("imported_from"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 

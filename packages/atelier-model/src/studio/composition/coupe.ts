@@ -1,6 +1,7 @@
 import type { StudioPoint } from "../noyau/types.js";
 import { fail, finite, record } from "../noyau/validation.js";
 import { cotesSolide, empriseSolide, translationSommet } from "../objets-3d/solides.js";
+import { studioMaillageSolide } from "../objets-3d/maillage.js";
 import { studioLayerState, validateStudioDocument } from "./document.js";
 import type { StudioDocument } from "./types.js";
 
@@ -76,8 +77,19 @@ export function couperStudio(document: StudioDocument, plan: StudioPlanCoupe): S
   const segments: StudioSegmentCoupe[] = [];
   const sources: StudioCoupe["sources"] = [];
   let hidden = 0;
+  const exactsNonCoupes: string[] = [];
   for (const s of doc.solides ?? []) {
     if (!studioLayerState(doc, s.layerId)?.visible) { hidden++; continue; }
+    if (s.placement.basculement) {
+      // Solide basculé (A.3-03) : section exacte de son maillage par le plan horizontal.
+      const m = studioMaillageSolide(s);
+      const morceaux = couperMaillage(m.vertices.flatMap((v) => [v.x, v.y, v.z]), m.triangles.flat(), z);
+      if (morceaux === null) { exactsNonCoupes.push(s.id); continue; }
+      if (!morceaux.length) continue;
+      morceaux.forEach((mo, i) => segments.push({ id: `${s.id}#${i}`, source: s.id, start: mo.start, end: mo.end }));
+      sources.push({ id: s.id, segments: morceaux.length });
+      continue;
+    }
     const { zMin, zMax } = cotesSolide(s);
     if (z < zMin || z > zMax) continue;
     // Prisme oblique (direction saisie, lot F1) : la section à la cote z est l'emprise translatée de la part de la
@@ -88,7 +100,6 @@ export function couperStudio(document: StudioDocument, plan: StudioPlanCoupe): S
     ring.forEach((a, i) => segments.push({ id: `${s.id}#${i}`, source: s.id, start: a, end: ring[(i + 1) % ring.length]! }));
     sources.push({ id: s.id, segments: ring.length });
   }
-  const exactsNonCoupes: string[] = [];
   for (const e of doc.exacts ?? []) {
     if (!studioLayerState(doc, e.layerId)?.visible) { hidden++; continue; }
     const morceaux = couperMaillage(e.resultat.maillage.positions, e.resultat.maillage.indices, z);

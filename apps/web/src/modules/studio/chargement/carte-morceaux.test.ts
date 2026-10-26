@@ -33,7 +33,7 @@ describe("Carte des morceaux et contrôle du découpage (B.3-06)", () => {
   });
 
   it("famille planche : tout planche2d/, sauf les modules légers partagés avec la coquille (liste explicite)", () => {
-    expect(PLANCHE_PARTAGES_COQUILLE).toEqual(["CatalogueOutils.tsx", "catalogue.ts", "raccourcis.ts", "profils.ts"]);
+    expect(PLANCHE_PARTAGES_COQUILLE).toEqual(["CatalogueOutils.tsx", "catalogue.ts", "raccourcis.ts", "profils.ts", "etats-outils.ts"]);
     for (const m of PLANCHE_PARTAGES_COQUILLE) {
       expect(famillesDe([`${W}/planche2d/${m}`]), m).toEqual([]);
       expect(existsSync(new URL(`../planche2d/${m}`, import.meta.url)), m).toBe(true);

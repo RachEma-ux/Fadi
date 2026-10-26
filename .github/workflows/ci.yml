@@ -787,6 +787,13 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/studio-rend node apps/web/e2e/studio-rend.mjs 2>&1 | tee -a e2e.log
+      # Lot OUT : profils d'outils exportés et importés (409, « écarter », 403), basculement et échelle 3D, édition de
+      # groupe annulée d'un seul Ctrl+Z.
+      - name: Lot OUT — profils d'outils, basculement et échelle 3D, édition de groupe (apps/web/e2e/studio-out.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-out node apps/web/e2e/studio-out.mjs 2>&1 | tee -a e2e.log
       # Organisations-participation, phase 3 (OP-D2 a) : invitation acceptée pour tous, fin de l'ajout direct (UM-8) —
       # aperçu de l'accès, renvoi sans doublon, notification, refus v2.2 (lien transféré, expirée, annulée, déclinée,
       # invitant révoqué, mauvaise fiche, participation terminée, accès expiré), double soumission, nouvel utilisateur ;

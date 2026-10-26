@@ -102,6 +102,8 @@ describe("Matrice d'échanges : donnée versionnée et cohérente", () => {
       // BCF 2.1 minimal des observations livré (import et export), paquet de publication d'un dossier de conception ;
       // lot REND : couverture SVG / DXF / IFC des graphismes (EX-055), provenance des sources et des modèles externes (EX-014).
       6: "eac31b5dcf978f90d43ea3d7a6258164f4535af532e17c08f2c6a749df4e24fa",
+      // Lot OUT (EX-034) : profil d’outils exporté et importé (fadi-studio-profil/1).
+      7: "da45ee1baee0b0a8b15dad3128d40f9cb5ddc884aea22a36b10ce269176efbe0",
     };
     const empreinte = createHash("sha256").update(JSON.stringify({ entrees: STUDIO_MATRICE_ECHANGES.entrees, couverture: STUDIO_COUVERTURE_EXPORT, statuts: STUDIO_STATUT_DE_RAISON })).digest("hex");
     expect(empreinte, `révision ${STUDIO_MATRICE_ECHANGES.revision} : entrées modifiées sans nouvelle révision ? (empreinte calculée ${empreinte})`).toBe(EMPREINTES[STUDIO_MATRICE_ECHANGES.revision]);

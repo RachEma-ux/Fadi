@@ -84,7 +84,7 @@ describe("ordonnanceur : empreinte, remplacement et résultat périmé (D.2-03)"
     const remis: unknown[] = [];
     const a = ord.soumettre(dem("m", "fond", "1", { surResultat: (v) => remis.push(v) }));
     const b = ord.soumettre(dem("m", "fond", "2", { surResultat: (v) => remis.push(v) }));
-    await expect(a.issue).resolves.toEqual({ etat: "cancelled" });
+    await expect(a.issue).resolves.toEqual({ etat: "superseded" });
     // L'ancienne tâche tourne encore (pas d'arrêt du Worker) ; la nouvelle attend l'emplacement de fond.
     expect(appels).toHaveLength(1);
     expect(appels[0]!.e.signal.aborted).toBe(false);
@@ -119,7 +119,7 @@ describe("ordonnanceur : empreinte, remplacement et résultat périmé (D.2-03)"
     ord.soumettre(dem("x", "fond"));
     const a = ord.soumettre(dem("m", "fond", "1"));
     ord.soumettre(dem("m", "fond", "2"));
-    await expect(a.issue).resolves.toEqual({ etat: "cancelled" });
+    await expect(a.issue).resolves.toEqual({ etat: "superseded" });
     expect(a.tache.tentatives).toBe(0);
     appels[0]!.resoudre(0);
     await flush();

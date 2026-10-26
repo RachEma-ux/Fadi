@@ -35,6 +35,7 @@ function Symbole({ genre, p, s }: { genre: Repere["genre"]; p: StudioPoint; s: n
     case "intersection": return <path d={`M${x - s} ${y - s}L${x + s} ${y + s}M${x + s} ${y - s}L${x - s} ${y + s}`} />;
     case "perpendiculaire": return <path d={`M${x - s} ${y + s}L${x + s} ${y + s}M${x} ${y + s}L${x} ${y - s}M${x} ${y + s / 3}L${x + (2 * s) / 3} ${y + s / 3}L${x + (2 * s) / 3} ${y + s}`} />;
     case "tangente": return <><circle cx={x} cy={y} r={s * 0.75} /><path d={`M${x - s * 1.3} ${y - s * 0.75}L${x + s * 1.3} ${y - s * 0.75}`} /></>;
+    case "parallele": return <path d={`M${x - s} ${y + s}L${x} ${y - s}M${x} ${y + s}L${x + s} ${y - s}`} />;
     case "proche": return <path d={`M${x - s} ${y - s}L${x + s} ${y - s}L${x - s} ${y + s}L${x + s} ${y + s}Z`} />;
     default: return <path d={`M${x - s} ${y}L${x + s} ${y}M${x} ${y - s}L${x} ${y + s}`} />;
   }

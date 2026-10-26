@@ -2,7 +2,7 @@
 
 > Document **généré** par `node scripts/registre/etat-studio.mjs --ecrire` depuis le registre ; la CI (workflow
 > « Continuité de développement ») le recalcule à chaque commit et échoue s’il diffère : il est donc tenu au HEAD testé.
-> Registre lu : `docs/workstreams/studio/task-register.json`, SHA-256 `002337c5f9d4153708af3f5f599bfa8f03023de92e05232579f2dba95b9eb90e`.
+> Registre lu : `docs/workstreams/studio/task-register.json`, SHA-256 `31ebc3e455bd42564e2db2b669e4cad28bbcbafd55a181154002c85990328a1f`.
 
 **Une CI verte n’est pas une couverture exhaustive** (X.4-03) : elle prouve seulement que les contrôles listés en partie 1
 ont réussi aux exécutions citées. Les scénarios de la partie 2 ne sont pas couverts, quel que soit l’état de la CI.
@@ -14,11 +14,11 @@ ont réussi aux exécutions citées. Les scénarios de la partie 2 ne sont pas c
 | Accepté / Non applicable | 2 |
 | Accepté / Non exécuté | 57 |
 | Bloqué / Non exécuté | 9 |
-| En cours / Non exécuté | 53 |
-| Implémenté / Non exécuté | 90 |
+| En cours / Non exécuté | 35 |
+| Implémenté / Non exécuté | 112 |
 | Vérifié / Exécuté | 283 |
 | Vérifié / Non applicable | 93 |
-| À faire / Non exécuté | 43 |
+| À faire / Non exécuté | 39 |
 
 ## 1. Contrôles effectivement exécutés
 
@@ -175,8 +175,8 @@ Obligations TEST, NAV, REC, TR et E2E qui ne sont ni « Vérifié » ni « Accep
 | REC-B-02 | À faire | Non exécuté | Point 2 du 25 octobre 2026 (partiel) : TEST-036 est maintenant couvert (studio-preuves-b, partie 4) et TEST-019 sur document non vide. Restent TEST-016 et AC-002 : relevés à cache froid / chaud sans référence de comparaison ni verdict (mes… |
 | REC-C-01 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | REC-C-02 | À faire | Non exécuté | Séparation des profils GPU et des mesures logicielles faite et testée : chaque rapport porte le moteur WebGL relevé et `renduLogiciel` ; la règle refuse toute accélération GPU mesurée en logiciel. Reste l'évaluation des profils GPU sur app… |
-| REC-D-01 | À faire | Non exécuté | Point 2 du 25 octobre 2026 (fonction absente) : TEST-014, TEST-015, TEST-037 et AC-006 portent sur une tâche exacte / un Worker OCCT : Studio n'en a aucun (OCCT interdit par la carte des morceaux, PERF-07 non applicable). Seul l'analogue d… |
-| REC-D-02 | À faire | Non exécuté | Point 2 du 25 octobre 2026 (partiel) : Absence de corruption désormais vérifiée sur le groupe Studio : le vrai code du Worker, derrière une copie structurée, altère sa copie puis plante ; document, brouillon (tête, lots, enveloppe) inchang… |
+| REC-D-01 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
+| REC-D-02 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | REC-E-01 | À faire | Non exécuté | Volet TEST-032 désormais couvert (fonction livrée). Les autres volets de REC-E-01 (TEST-010, 018, 027, 028, 035, TEST-001…) ne relèvent pas du lot F et restent à l'état du registre. |
 | REC-E-02 | À faire | Non exécuté | AC-007 couvert (illustration livrée). AC-008 et AC-010 restent hors du lot F (registre inchangé). |
 | REC-E-03 | À faire | Non exécuté | Scénario enchaîné vérifié (base simulée simplifiée : pas d'orderBy/limit ; cycle complet sur base réelle dans studio-pub.mjs). La recette d'usage des trois parcours par le maître d'ouvrage est EXTERNE (acte du maître d'ouvrage). |
@@ -189,12 +189,12 @@ Obligations TEST, NAV, REC, TR et E2E qui ne sont ni « Vérifié » ni « Accep
 | TR-AC-002 | En cours | Non exécuté | Point 2 du 25 octobre 2026 (mesure requise) : La comparaison requêtes / octets / chunks exécutés / mémoire à une référence, cache froid et chaud, n'existe que dans studio-mesures-chargement.mjs (mesure sans verdict, hors CI) ; elle demande… |
 | TR-AC-004 | En cours | Non exécuté | Point 2 du 25 octobre 2026 (partiel) : Depuis F5, l'index réutilisé est éprouvé sur des suites d'insertions et de suppressions contre le parcours linéaire. Fonction absente : aucune trace des cas ambigus (plusieurs cibles à égalité) n'est … |
 | TR-AC-005 | En cours | Non exécuté | Point 2 du 25 octobre 2026 (mesure requise) : Orbite, zoom, pousser / tirer et changement de matériau ne sont pas comparés avant / après optimisation (seules la sélection et l'égalité du maillage incrémental le sont) ; la séparation GPU ré… |
-| TR-AC-006 | En cours | Non exécuté | Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente dans Studio : aucune opération Studio n'exécute OCCT/WASM (le lot F2 « noyau exact » est en cours ailleurs) ; l'échec forcé d'OCCT pendant une opération, la résolution des at… |
+| TR-AC-006 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-AC-007 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-AC-010 | En cours | Non exécuté | Point 2 du 25 octobre 2026 (partiel) : Refus serveur de l'approbation au concepteur et au rôle d'administration technique (accès support) désormais testés. Fonction absente : « Approuver » n'est pas un outil du catalogue (aucune découverte… |
-| TR-AC-011 | En cours | Non exécuté | Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : le manifeste d'outils (manifeste-outils.ts) vérifie propriétaire, contrat, contexte, droit et chargeur, mais ne porte ni risques, ni mesures, ni jeux d'essai, ni la règle «… |
+| TR-AC-011 | En cours | Non exécuté | Fiches d'outils (fiches-outils.ts) : risques, mesures PERF, jeux positifs / négatifs, règle prêt à développer / conforme testée. Reste : désigner le build et le profil de charge de référence (DESIGNATION_CONFORMITE = null) et joindre les p… |
 | TR-EX-002 | En cours | Non exécuté | Cas négatif livré (refus nommé 400 hors_perimetre). Reste le cas positif : un parcours unique d'une petite étude du dessin au dossier de conception à travers quatre domaines (recette à composer avec les lots PUB / dossiers). |
-| TR-EX-005 | En cours | Non exécuté | Lot F1 : l'édition de face est livrée et recettée (studio-faces, « TEST-002 / TR-EX-005 »), y compris l'étude neuve sans dessin 2D. L'édition de groupe reste absente. |
+| TR-EX-005 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-EX-008 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-EX-010 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-EX-013 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
@@ -203,28 +203,28 @@ Obligations TEST, NAV, REC, TR et E2E qui ne sont ni « Vérifié » ni « Accep
 | TR-EX-019 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-EX-023 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-EX-027 | En cours | Non exécuté | Cas négatif vérifié (préexistant). Le cas positif demande une nouvelle capacité d'outil (échelle, studio.arch.ladder) au registre des outils, propriété du lot OUT : non implémentée dans le lot PUB pour ne pas réécrire ses fichiers. |
-| TR-EX-028 | En cours | Non exécuté | Point 2 du 25 octobre 2026 (fonction absente) : Permission, contexte, paramètres et révision sont contrôlés à l'exécution ; aucun quota d'invocation (par compte ou par période) n'existe, seulement des bornes de schéma et de document. |
-| TR-EX-029 | En cours | Non exécuté | Point 2 du 25 octobre 2026 (partiel) : Recherche par nom, identifiant, contexte (filtre) et barre couverte, sans lancement de moteur. Absents : recherche par synonyme et par domaine (pertinence ne lit que nom, raccourci et identifiant) et … |
-| TR-EX-030 | En cours | Non exécuté | Point 2 du 25 octobre 2026 (fonction absente) : Aucun statut « déprécié » d'outil ou de module dans le manifeste, ni plan de compatibilité associé : le cas « déprécier un outil puis rouvrir un document qui l'emploie » n'est pas réalisable.… |
+| TR-EX-028 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
+| TR-EX-029 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
+| TR-EX-030 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-EX-031 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
-| TR-EX-033 | En cours | Non exécuté | Point 2 du 25 octobre 2026 (fonction absente) : Cas négatif prescrit impossible : aucun import de profil, aucun outil « Publier » au registre. Retrait d'un bouton et changement de profil sans révision déjà couverts. |
-| TR-EX-034 | En cours | Non exécuté | Point 2 du 25 octobre 2026 (fonction absente) : Le profil n'a ni profileId, ni version, ni raccourcis personnels ; aucun import, donc aucun conflit de raccourcis à détecter (vérifié dans planche2d/profils.ts). |
+| TR-EX-033 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
+| TR-EX-034 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-EX-036 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
-| TR-EX-040 | En cours | Non exécuté | Point 2 du 25 octobre 2026 (fonction absente) : Studio n'a aucun outil exact (OCCT interdit par la carte des morceaux) : les cas « outil exact, première puis seconde activation » et « un autre outil ne crée pas un second noyau » ne peuvent… |
-| TR-EX-041 | En cours | Non exécuté | Point 2 du 25 octobre 2026 (fonction absente) : Aucun détecteur de duplication en octets : la carte des morceaux (chargement.json) ne relève que des familles par fichier, pas les modules par morceau, et les bundles séparés des Workers n'y … |
-| TR-EX-042 | En cours | Non exécuté | Point 2 du 25 octobre 2026 (fonction absente) : Un seul cache par build, et tout le build est précaché à l'installation : ni caches distincts (coquille, profil, modules, données/file), ni téléchargement facultatif à la demande. |
-| TR-EX-044 | En cours | Non exécuté | Point 2 du 25 octobre 2026 (fonction absente) : Le buildId n'est pas enregistré dans la file locale (persistance.ts / contrats.ts : brouillon ↔ commandes ↔ schéma seulement), et rien ne gère le quota (aucune éviction, aucune erreur de quot… |
+| TR-EX-040 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
+| TR-EX-041 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
+| TR-EX-042 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
+| TR-EX-044 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-EX-045 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-EX-046 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-EX-049 | En cours | Non exécuté | États « Rejetée » et « Prévisualisation abandonnée » livrés (bandeau, persistance du brouillon : rejet avec ses requestId, aperçu en cours, contrat des enveloppes ; reprise par useChargementVariante). Manque une recette navigateur de repri… |
 | TR-EX-051 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-EX-052 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
-| TR-EX-053 | En cours | Non exécuté | Point 2 du 25 octobre 2026 (partiel) : Départage sous permutation de l'index désormais prouvé : 720 ordres d'insertion, égalités de distance réelles. Mutation tuée : tri par rang de l'index retiré. Reste absent : le mode d'accrochage « par… |
+| TR-EX-053 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-EX-055 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-EX-056 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-EX-059 | En cours | Non exécuté | Mesuré en CI (Chromium logiciel) sur la lecture d'un DXF de 4,2 Mo dans le Worker : trame la plus longue 16,8 ms contre une tâche longue de 682 ms pour la même lecture sur le fil principal (local). Manque : (1) la même mesure pendant un bo… |
-| TR-EX-062 | En cours | Non exécuté | Lot F2 : taille transférée et décodée, instance unique, durée de chargement et 50 ouvertures sans croissance sont recettés (studio-exact, « TR-EX-062 : … »). Reste : allocations internes au WASM, que le noyau n'expose pas. |
-| TR-EX-063 | En cours | Non exécuté | Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : HoteWorker accepte toute « valeur » rattachée à un identifiant connu ; aucune validation applicative de la forme du message reçu d'un Worker interne (message bien formé mai… |
+| TR-EX-062 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
+| TR-EX-063 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-EX-065 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-EX-068 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-EX-071 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
@@ -246,9 +246,9 @@ Obligations TEST, NAV, REC, TR et E2E qui ne sont ni « Vérifié » ni « Accep
 | TR-IF-001 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-IF-002 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-IF-003 | En cours | Non exécuté | Rapprochement du 25 octobre 2026 (non couvert) : Aucun calcul booléen dans Studio V1 (déclaré par le test « PERF-07 déclaré non applicable (aucun booléen exact dans Studio V1), jamais simulé », apps/web/src/modules/studio/chargement/perf.t… |
-| TR-IF-005 | En cours | Non exécuté | Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : le cycle d'activation ne connaît pas les états « vérification de contexte/droits », « résolution des dépendances », « suspendu », ni les erreurs « incompatible », « permiss… |
+| TR-IF-005 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-IF-006 | En cours | Non exécuté | Point 2 du 25 octobre 2026 (partiel) : Négatif désormais complet (actorId forgé refusé 400, portée d'un autre projet 404, même requestId au contenu différent 409, aucune écriture, membres inchangés, lecteur toujours refusé). Positif : fonc… |
-| TR-IF-007 | En cours | Non exécuté | Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : l'ordonnanceur connaît queued / running / done / failed / cancelled / timed-out / stale, sans loading, cancel_requested ni superseded nommés, et sans révision source tracée… |
+| TR-IF-007 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-IF-008 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-IF-009 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-IF-010 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
@@ -257,11 +257,11 @@ Obligations TEST, NAV, REC, TR et E2E qui ne sont ni « Vérifié » ni « Accep
 | TR-INV-003 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-INV-006 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-INV-007 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
-| TR-INV-009 | En cours | Non exécuté | Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : aucun import de profil d'outils (ni route ni interface) et aucun outil « Publier » au catalogue Studio ; le cas négatif prescrit (« importer un profil avec Publier sans dro… |
+| TR-INV-009 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-INV-010 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-INV-013 | En cours | Non exécuté | Non traité dans ce lot : une annotation référencée à une face 3D elle-même exige un nouveau type de cote sur les faces de solides (géométrie 3D, lot F) ; la preuve reste celle de l'arête source (lot F1). |
 
-### 2.2 Tests prescrits non exécutés (178)
+### 2.2 Tests prescrits non exécutés (216)
 
 | ID | Fichier | Libellés |
 |---|---|---|
@@ -272,6 +272,9 @@ Obligations TEST, NAV, REC, TR et E2E qui ne sont ni « Vérifié » ni « Accep
 | G2-03 | `apps/web/src/modules/studio/poc/poc-corpus.test.ts` | G2-03 [+] chaque POC autorisé, sur chaque corpus pertinent, est conforme à son oracle ou à sa référence conservée ; G2-03 [+] résultats reproductibles : deuxième exécution, même empreinte des résultats déterministes ; G2-03 [−] une référen… |
 | G2-04 | `scripts/registre/controle-preuves.test.mjs` | G2-04 — chaque preuve porte une étiquette lecture statique / test prescrit / scénario exécuté, cohérente avec ce qu’elle cite |
 | A.1-07 | `apps/web/e2e/studio-persistance.mjs` | réouverture : variante relue après redémarrage ; réouverture : même tête de révision ; réouverture : document identique (empreinte) ; réouverture : historique identique, plus récente d'abord |
+| A.3-03 | `packages/atelier-model/src/studio/composition/basculement.test.ts` | basculer de 90° autour de l'axe y : la boîte de 4 m de haut se couche le long de x ; volume, coupe et emprise suivent ; basculer autour de x après un pivot autour de z : orientation Rz · Ry · Rx, maillage exact ; revenir à zéro retire le b… |
+| A.3-03 | `apps/web/src/modules/studio/vue3d/groupe-3d.test.ts` | le pivot choisit l'axe (z par défaut) ; l'échelle 3D multiplie dimensions et volume |
+| A.3-03 | `apps/web/e2e/studio-out.mjs` | A.3-03 : le pivot propose l'axe vertical et les deux axes horizontaux du solide ; A.3-03 : solide basculé de 90° autour de son axe horizontal y (une commande), volume toujours évalué ; A.3-03 : échelle 3D × 2 — dimensions et volume multipl… |
 | REC-A-01 | `packages/atelier-model/src/studio/cmd/migration.test.ts` | REC-A-01 : tout le corpus studio-document/1 du dépôt migré vers /2, aller-retour exact, données inconnues conservées et rapportées |
 | REC-A-01 | `apps/api/src/testing/livrables-lot-a.test.ts` | REC-A-01 : chaque preuve citée par le livrable est un libellé présent mot pour mot dans son fichier ; REC-A-01 : docs/studio/LIVRABLES-LOT-A.md est celui que ce test calcule (schémas, contrats, API, éditeurs, journal, corpus de migration) |
 | X.1-03 | `packages/atelier-model/src/studio/corpus/corpus.test.ts` | licence du corpus établie : celle du dépôt (aucune licence ouverte déclarée, droits réservés), corpus généré sans source tierce |
@@ -289,7 +292,16 @@ Obligations TEST, NAV, REC, TR et E2E qui ne sont ni « Vérifié » ni « Accep
 | C.1-01 | `apps/web/src/modules/studio/planche2d/mesure-spatiale-analyse.test.ts` | C.1-02 — choix de l'index selon DEC-09, sur la mesure et l'exactitude > sur une vraie mesure courte (S1, S3 à 100 et 3 000 primitives) : exactitude (0 divergence) et analyse produite |
 | C.1-02 | `apps/web/src/modules/studio/planche2d/mesure-spatiale-analyse.test.ts` | C.1-02 — choix de l'index selon DEC-09, sur la mesure et l'exactitude > seuil cohérent : linéaire admissible sous 1 000, index plus rapide au-delà, zéro divergence ; croisement relevé ; C.1-02 — choix de l'index selon DEC-09, sur la mesure… |
 | C.1-02 | `apps/web/e2e/studio-rend.mjs` | C.1-02 : choix de l'index rapproché de la mesure (croisement mesuré, seuil DEC-09 jugé) |
+| C.2-02 | `apps/web/src/modules/studio/vue3d/instanciation.test.ts` | cinq poteaux identiques et un différent : un InstancedMesh de cinq exemplaires (un objet de rendu), chaque clic rend son poteau ; objet supprimé du document : son exemplaire ne désigne jamais lui ; après mise à jour, les autres gardent leu… |
 | REC-C-01 | `apps/web/src/modules/studio/workers/chemins-optimises.test.ts` | REC-C-01 — chemins optimisés et chemin direct : mêmes cotes, mêmes exports SVG / DXF / IFC > brouillon incrémental (commande par commande) et frontière du Worker : exports identiques octet pour octet, cotes identiques ; REC-C-01 — chemins … |
+| D.3-02 | `apps/web/src/modules/studio/chargement/cycle-activation.test.ts` | noyau exact inactif : libération planifiée après la durée de la politique (5 min), Worker arrêté ; un nouvel usage avant l'échéance l'annule ; aucune politique pour les moteurs sans WebAssembly : planche et 3D jamais libérés automatiquemen… |
+| D.3-02 | `apps/web/e2e/studio-memoire.mjs` | TEST-037 : les cycles n'écrivent rien (révision de tête inchangée) |
+| REC-D-01 | `apps/web/e2e/studio-exact.mjs` | TEST-014 : le résultat calculé pour l'ancienne révision est marqué périmé, aucun bouton d'engagement, rien d'engagé ; TEST-015 : coupure du Worker — erreur affichée, noyau en échec, Worker arrêté, aucune attente en suspens ; TEST-015 : pas… |
+| REC-D-01 | `apps/web/e2e/studio-memoire.mjs` | TEST-037 : les cycles n'écrivent rien (révision de tête inchangée) |
+| REC-D-01 | `apps/web/src/modules/studio/exact/ac006-echec-occt.test.ts` | plantage pendant le calcul avec une seconde tâche en attente : les deux attentes résolues, erreur intelligible, aucune mutation ; relance : un seul solide exact, révision courante conservée |
+| REC-D-02 | `apps/web/src/modules/studio/taches/plantage-integrite.preuves-c.test.ts` | document et brouillon intacts, charge de reprise intacte, résultat identique à l'appel direct et remis une seule fois |
+| REC-D-02 | `apps/web/src/modules/studio/exact/ac006-echec-occt.test.ts` | plantage pendant le calcul avec une seconde tâche en attente : les deux attentes résolues, erreur intelligible, aucune mutation ; relance : un seul solide exact, révision courante conservée |
+| REC-D-02 | `apps/web/e2e/studio-exact.mjs` | TEST-015 : coupure du Worker — erreur affichée, noyau en échec, Worker arrêté, aucune attente en suspens ; TEST-015 : aucune relance silencieuse — le calcul suivant est refusé (relancez), aucun nouveau Worker, attente résolue ; TEST-015 : … |
 | E.5-04 | `apps/web/src/modules/studio/vue3d/scenes/scenes.test.ts` | F.2-03 [+] trois types annoncés ; l'illustration contrainte est disponible avec son déclencheur (honnêtement décrite : locale sans IA par défaut, jamais de mutation) ; l'exploration libre reste indisponible sans bouton ; un seul bouton d'e… |
 | F.1-01 | `packages/atelier-model/src/studio/accelerations.test.ts` | F.1-01 — une accélération n'est activée qu'après preuve du gain ET de la non-régression > rapport qualifiant (gain sur chaque scène, chaque critère exigé mesuré dans sa tolérance) : autorisée, gains relevés ; F.1-01 — une accélération n'es… |
 | F.1-01 | `apps/web/e2e/studio-rend.mjs` | F.1-01 / TR-EX-098 : rapport réel SVG / Canvas mesuré ici et jugé par la règle — verdict rendu avec ses motifs (gain ET non-régression exigés) ; TR-EX-098 : index spatial — gain p95 mesuré ET mêmes cibles d'accrochage / même sélection, jug… |
@@ -338,6 +350,8 @@ Obligations TEST, NAV, REC, TR et E2E qui ne sont ni « Vérifié » ni « Accep
 | TEST-032 | `apps/web/e2e/studio-lot-f.mjs` | TEST-032 : aucune révision écrite par l'illustration (tête inchangée) ; illustration archivée avec ses paramètres et sa provenance ; image : vrai PNG, provenance « fadi:illustration » et en-tête « non vérifiée » |
 | TEST-033 | `apps/api/src/routes/studio-agents.test.ts` | TEST-033 [+] F.3-02 [+] l'agent propose, rien n'est écrit ; la personne confirme dans Studio ; la révision est celle que la route humaine écrit pour la même enveloppe ; TEST-033 [+] idempotence : proposer à nouveau le même requestId rend l… |
 | TEST-033 | `apps/web/e2e/studio-lot-f.mjs` | MCP : proposition en attente de confirmation, rien n'est écrit ; TEST-033 : la confirmation écrit une révision, par le point d'entrée commun ; TEST-033 : idempotence — la même proposition rejouée rend son état confirmé, sans nouvelle écrit… |
+| TR-EX-005 | `apps/web/src/modules/studio/vue3d/groupe-3d.test.ts` | étude neuve sans dessin 2D : choisir A et C, les déplacer ensemble en un seul lot ; B ne bouge pas ; une annulation rend l'état initial ; pivoter le groupe autour d'un axe vertical, le mettre à l'échelle (volumes compris), puis le supprime… |
+| TR-EX-005 | `apps/web/e2e/studio-out.mjs` | TR-EX-005 : étude neuve — aucun objet 2D, deux solides libres ; TR-EX-005 : déplacement du groupe = un seul lot (2 commandes) ; un seul Ctrl+Z le retire en entier, les deux solides reviennent ; TR-EX-005 : relu par le serveur — A et B dépl… |
 | TR-EX-008 | `apps/web/src/modules/studio/taches/trace-geste.test.ts` | EX-008 [+] : geste confirmé — intention, commande, mutation canonique puis scène invalidée, dans cet ordre ; EX-008 [−] : scène sans mutation canonique préalable, ou d'une autre révision — l'ordre n'est pas établi |
 | TR-EX-008 | `apps/web/e2e/studio-cmd.mjs` | EX-008 : un seul geste horodaté — intention → commande → mutation canonique → scène invalidée, dans cet ordre |
 | TR-EX-010 | `packages/atelier-model/src/studio/cmd/cmd.test.ts` | EX-010 [+] : créer, modifier, supprimer — identifiants, relations, domaines dérivés, révision et origine cohérents ; EX-010 [+] : références et contraintes modifiées — cote rendue « à résoudre » par la suppression de son objet lié ; EX-010… |
@@ -354,10 +368,24 @@ Obligations TEST, NAV, REC, TR et E2E qui ne sont ni « Vérifié » ni « Accep
 | TR-EX-023 | `packages/atelier-model/src/studio/reperes.test.ts` | TR-EX-023 — système de projet et transformations versionnées document / local / projet > cas positif : un point du document converti explicitement vers le système de projet (version 1, puis version 2), valeurs et unité comparées, trace de … |
 | TR-EX-023 | `apps/web/src/modules/studio/graphismes/graphismes-ui.test.ts` | Graphismes et système de projet : saisie > système de projet : version suivante saisie, conversion du point avec la version employée ; sans déclaration, rien n'est converti |
 | TR-EX-023 | `apps/web/e2e/studio-rend.mjs` | TR-EX-023 : sans déclaration, « Système de projet non déclaré : aucune conversion n’est supposée. » ; TR-EX-023 : point (3 ; 1) du dessin converti vers le projet par la version 1 (rotation 90°) : (2 599 999 ; 1 200 003) m, trace de la vers… |
+| TR-EX-028 | `apps/api/src/routes/studio-quotas.test.ts` | compteur glissant : refus au-delà de la limite de la période, délai avant nouvel essai, libéré quand la fenêtre passe ; route réelle : deux lots admis, le troisième au schéma valide refusé à l'exécution (429, Retry-After), rien écrit ; un … |
+| TR-EX-029 | `apps/web/src/modules/studio/planche2d/etats-outils.test.ts` | synonyme : « miroir » trouve la Symétrie, « cloison » le Mur, « cube » la Boîte, « offset » le Décalage ; famille (barre) et domaine : « architecture » et « bâtiment » trouvent les outils d'architecture ; « 3D » les volumes ; la recherche … |
+| TR-EX-030 | `packages/atelier-model/src/studio/compatibilite-outils.test.ts` | tables réelles : aucun outil ni module déprécié, déclarations valides ; un outil du registre est actif, un identifiant inconnu est inconnu ; cas négatif : déprécier l'outil Rectangle puis rouvrir un document qui l'emploie — le document se … |
 | TR-EX-031 | `packages/atelier-model/src/studio/agents/agents.test.ts` | TR-EX-031 [+] extension signée par une clé de confiance : vérifiée, puis autorisée seulement pour cette version ; l'adaptateur MCP intégré est déclaré ; TR-EX-031 [−] trouvée dans le registre sans signature valide : découverte, non autoris… |
 | TR-EX-031 | `apps/api/src/routes/studio-agents.test.ts` | F.3-01 [−] adaptateur désactivé par l'administrateur : plus aucun outil n'agit ; déclaration avec script : refusée, rien n'est chargé ni écrit |
+| TR-EX-033 | `apps/api/src/routes/studio-profils-import.test.ts` | profil importé contenant « Publier » sans le droit de publier (éditeur, lecteur) : refusé 403, rien n'est écrit ; le propriétaire, qui publie, l'importe |
+| TR-EX-033 | `apps/web/e2e/studio-out.mjs` | TR-EX-033 / TR-INV-009 : profil contenant « Publier » importé par un éditeur sans droit de publier → 403 permission_non_conferee, rien d'écrit ; TR-EX-033 : le propriétaire, qui publie, importe ce même profil |
+| TR-EX-034 | `apps/api/src/routes/studio-profils-import.test.ts` | enregistrer un profil avec ordre et raccourcis puis le rouvrir dans une autre session : même profileId, propriétaire, version croissante ; import par un autre compte : le compte importateur devient propriétaire, la provenance est gardée, l… |
+| TR-EX-034 | `apps/web/src/modules/studio/planche2d/profils-raccourcis.test.ts` | conflits explicités : doublon, raccourci natif d'un autre outil, commande de l'éditeur, combinaison du navigateur ; table appliquée : seuls les raccourcis sans conflit, outils du registre seulement, jamais une combinaison native |
+| TR-EX-034 | `apps/web/e2e/studio-out.mjs` | TR-EX-034 : profil enregistré en base — profileId, propriétaire, version 1, ordre et raccourci personnel ; TR-EX-034 : export — format fadi-studio-profil/1, même profileId, version 2 ; TR-EX-034 : import en conflit avec un raccourci du reg… |
 | TR-EX-036 | `apps/web/src/modules/studio/planche2d/alternatives-gestes.test.ts` | TR-EX-036 [+] chaque outil du manifeste a exactement une alternative déclarée ; chaque geste au pointeur a son essai sans pointeur ; TR-EX-036 [+] chaque saisie numérique déclarée produit, sans pointeur, la commande de l'outil, acceptée pa… |
 | TR-EX-036 | `apps/web/e2e/studio-dec.mjs` | TR-EX-036 : Maj+D (2D → 3D) déplace le focus sur la vue 3D, avec un contour visible ; TR-EX-036 : Maj+D (3D → 2D) ramène le focus sur la planche 2D, avec un contour visible ; TR-EX-036 : flèche droite sur la planche ayant le focus — la vue… |
+| TR-EX-040 | `apps/web/src/modules/studio/chargement/cycle-activation.test.ts` | première activation : charge module et noyau ; seconde activation et autres outils entre-temps : même noyau, aucune réinitialisation ; cas négatif : échec du module rare — état récupérable ; la relance réussit avec un seul noyau vivant |
+| TR-EX-041 | `apps/web/src/modules/studio/chargement/duplication.test.ts` | cas positif : deux outils partagent géométrie et noyau dans un même morceau — un seul exemplaire, aucune duplication ; cas négatif : un morceau par bouton qui embarque chacun le noyau et three.js — duplication détectée en octets, build ref… |
+| TR-EX-042 | `apps/web/src/modules/studio/chargement/service-worker.test.ts` | installation : coquille et profil mis en cache avant les modules facultatifs, tous dans le cache du build ; une liste simple (ancienne forme) reste acceptée ; mise à jour avec une page ouverte : le dernier ancien cache est gardé, la page e… |
+| TR-EX-042 | `apps/web/src/modules/studio/chargement/cache-hors-ligne.test.ts` | sans service worker, sans cache de ce build ou avec la carte d'un autre build : non évalué, jamais disponible ; tout en cache : chaque moteur et chaque outil disponibles ; lot F2 : .wasm du noyau exact absent du cache (jamais préchargé) : … |
+| TR-EX-042 | `apps/web/e2e/studio-hors-ligne.mjs` | service worker : caches de ce build distincts (coquille, profil, modules — EX-042), coquille du même build, aucune réponse de l'API en cache |
+| TR-EX-044 | `apps/web/src/modules/studio/hors-ligne/quota-build.test.ts` | la file enregistre build, contrat des commandes, schéma du document et manifeste ; relue par le même build, rien n'est signalé ; mise à jour du build avec une file en attente : relue par le nouveau build, conservée intacte et rejouable, l'… |
 | TR-EX-045 | `apps/api/src/routes/studio-cmd.test.ts` | EX-045 [+] : prévisualisation sur R1 sans mutation permanente, puis confirmation sur base valide (journal relié au job) ; EX-045 [−] : essai R1 confirmé après R2, essai abandonné, base périmée : refusés, aucun engagement |
 | TR-EX-045 | `packages/atelier-model/src/studio/cmd/cmd.test.ts` | EX-045 [−] : résultat d'essai R12 reçu après R13, essai abandonné : refusés sans effet |
 | TR-EX-045 | `apps/web/e2e/studio-cmd.mjs` | EX-045 [+] : essai à portée de révision — résultat (géométrie, effets, validité) sans révision écrite ; EX-045 [−] : essai calculé sur R12 confirmé quand R13 est la tête — refusé (essai_perime), rien d'engagé |
@@ -370,6 +398,7 @@ Obligations TEST, NAV, REC, TR et E2E qui ne sont ni « Vérifié » ni « Accep
 | TR-EX-052 | `apps/web/src/modules/studio/planche2d/mesure-spatiale-analyse.test.ts` | TR-EX-052 — recherches comparées à la cible DEC-13 (INP p75 ≤ 200 ms), chemin pris aujourd'hui > le p75 du chemin effectivement pris est comparé au budget ; au-delà, hors cible |
 | TR-EX-052 | `apps/web/src/modules/studio/planche2d/mesure-spatiale.test.ts` | Mesure des recherches spatiales : contrôle du script > mêmes sélections et mêmes candidats par l'index et par le parcours linéaire (S1, S2, S3, S4 à 100 et 1 000 primitives) ; Mesure des recherches spatiales : contrôle du script > TEST-022… |
 | TR-EX-052 | `apps/web/e2e/studio-rend.mjs` | TR-EX-052 : chaque recherche comparée à la cible DEC-13 par le chemin pris (p75) ; C.1-01 : mesure complète dans le navigateur — 18 corpus (S1–S5, S7 × 100 / 10000 / 100000), 0 divergence index / linéaire, rapport archivé avec machine, nav… |
+| TR-EX-053 | `apps/web/src/modules/studio/planche2d/accrochage/parallele.test.ts` | depuis le dernier point, le pointeur proche de la parallèle à un segment éloigné s'accroche sur cette droite (point exact, ligne guide) ; tolérance : au-delà, aucune parallèle ; sans dernier point, aucune ; mode coupé, aucune ; priorités :… |
 | TR-EX-055 | `packages/atelier-model/src/studio/graphismes.test.ts` | TR-EX-055 — graphismes du document 2D (spline, hachure, symbole, transparence) > création par commande, document relu à l'identique ; opacité 1 non stockée (opaque = absente) ; TR-EX-055 — graphismes du document 2D (spline, hachure, symbol… |
 | TR-EX-055 | `apps/web/src/modules/studio/planche2d/rendus/graphismes-rendu.test.ts` | TR-EX-055 — splines, hachures, symboles et transparences : rendu SVG et comparaison Canvas / GPU > rendu SVG du modèle : chaque famille présente (Bézier `C`, traits de hachure, symboles, opacité), lecture sans perte ; TR-EX-055 — splines, … |
 | TR-EX-055 | `apps/web/src/modules/studio/graphismes/graphismes-ui.test.ts` | Graphismes et système de projet : saisie > spline, hachure et symbole saisis → commande studio.graphisme.creer appliquée par le brouillon ; opacité en pour cent ; Graphismes et système de projet : saisie > refus dits : points illisibles, c… |
@@ -377,6 +406,9 @@ Obligations TEST, NAV, REC, TR et E2E qui ne sont ni « Vérifié » ni « Accep
 | TR-EX-056 | `apps/web/src/modules/studio/vue3d/moteur-3d.test.ts` | TR-EX-056 — moteur de la vue 3D : WebGL2 par défaut, repli WebGPU → WebGL2 déclaré > WebGL2 demandé (défaut) : WebGL2, aucun repli ; TR-EX-056 — moteur de la vue 3D : WebGL2 par défaut, repli WebGPU → WebGL2 déclaré > WebGPU demandé sans n… |
 | TR-EX-056 | `packages/atelier-model/src/studio/accelerations.test.ts` | TR-EX-056 / F.1-01 — blocage d'un remplacement de moteur sans preuve > moteur par défaut : SVG (planche, DEC-08) et WebGL2 (vue 3D) ; tout défaut différent de la référence sans rapport qualifiant fait échouer ce test ; TR-EX-056 / F.1-01 —… |
 | TR-EX-056 | `apps/web/e2e/studio-rend.mjs` | TR-EX-056 : rendu à la demande sur S4 — aucune trame pendant 1,5 s de repos, des trames pendant l'orbite, aucune après ; TR-EX-056 : WebGPU demandé → repli WebGL2 déclaré, avec la raison constatée dans ce navigateur |
+| TR-EX-062 | `packages/geometry-exact/src/index.test.ts` | TR-EX-062 : allocations WebAssembly mesurées — mémoire linéaire du noyau relevée après chaque calcul, croissante, jamais nulle |
+| TR-EX-062 | `apps/web/e2e/studio-exact.mjs` | TR-EX-062 : allocations WASM — mémoire linéaire du noyau (WebAssembly.Memory) relevée après le calcul, multiple de 64 Kio, enregistrée en PERF-07 ; TR-EX-062 : après les cycles, le noyau calcule toujours (même instance) |
+| TR-EX-063 | `apps/web/src/modules/studio/workers/validation-messages.test.ts` | chaque traitement du Worker de Studio a son validateur, et une nature sans validateur est refusée ; cas positif : le vrai Worker rend le maillage 3D et le métré, acceptés par la validation et identiques au calcul direct ; message bien form… |
 | TR-EX-065 | `packages/atelier-model/src/studio/studio-invariants.test.ts` | TEST-027 [+] modifier le rectangle dessiné (2 × 1 → 3 × 1) fait passer l'écart signé de 0 à +1 m² ; l'exigence n'est pas réécrite |
 | TR-EX-065 | `apps/web/e2e/studio-exigences.mjs` | TEST-027 : exigence identique après la modification du dessin (même version, mêmes valeurs) ; TEST-027 : écart calculé et visible (mesure 11,6 m³ contre ≤ 10 m³, +1,6) |
 | TR-EX-068 | `packages/atelier-model/src/studio/conclusions-controle.test.ts` | EX-068 [+] un contrôle exécuté conclut conforme, non conforme, non testé ou non applicable justifié ; EX-068 [+] la justification « non applicable » est vérifiable : exigence de la version examinée, motif, auteur, date ; EX-068 [−] en atte… |
@@ -421,12 +453,16 @@ Obligations TEST, NAV, REC, TR et E2E qui ne sont ni « Vérifié » ni « Accep
 | TR-INV-006 | `apps/web/src/modules/studio/vue3d/etat-projection.test.ts` | INV-006 [−] : un résultat calculé sur R12 n'est jamais présenté à jour pour R13 ; échec explicite avec l'ancienne image |
 | TR-INV-006 | `apps/web/e2e/studio-cmd.mjs` | EX-016 / INV-006 : après l'enregistrement, la vue 3D est « À jour pour la révision » de la nouvelle tête, sans données périmées |
 | TR-INV-007 | `packages/atelier-model/src/studio/cmd/cmd.test.ts` | INV-007 [+] : optimisation (maillage incrémental) comparée en p95 ET en résultats métier — préservée dans la tolérance ; INV-007 [−] : gain de p95 avec un résultat hors tolérance (volume différent) — optimisation rejetée |
+| TR-INV-009 | `apps/api/src/routes/studio-profils-import.test.ts` | INV-009 : un lecteur importe un profil qui montre la Ligne — préférences changées, mais ni données, ni droits, ni révision : ses commandes restent refusées |
+| TR-INV-009 | `apps/web/e2e/studio-out.mjs` | TR-INV-009 : le catalogue autorisé de l'éditeur est inchangé — Publier toujours refusé |
 | TR-INV-010 | `apps/api/src/routes/studio-agents.test.ts` | TR-INV-010 [+] historique des révisions : source « agent-mcp » pour la proposition confirmée, « authenticated-session » pour l'enregistrement humain ; journal : appels de l'agent (jeton) et décisions de la personne ; TR-INV-010 [−] un corp… |
 | TR-INV-010 | `apps/web/e2e/studio-lot-f.mjs` | TR-INV-010 : la révision confirmée porte la source « agent-mcp » ; l'enregistrement humain garde « authenticated-session » ; TR-INV-010 : journal agent / humain |
 | TR-IF-001 | `apps/api/src/routes/studio-cmd.test.ts` | IF-001 [+] : rattacher une étude à un projet autorisé avec site, sources et version — contexte validé, identifiant stable ; IF-001 [−] : source indisponible, conflit de version, droits insuffisants — erreur explicite sans création partielle |
 | TR-IF-001 | `apps/web/e2e/studio-cmd.mjs` | IF-001 : étude rattachée avec ses sources et sa version — contexte validé et identifiant stable ; source indisponible refusée sans création partielle |
 | TR-IF-002 | `apps/web/src/modules/studio/planche2d/outils/tolerance-ligne.test.ts` | TR-IF-002 [+] la tolérance est déclarée dans le contrat de commandes : saisie 0, pointé 1e-9 m ; TR-IF-002 [+] valeur saisie : la ligne engagée porte exactement les coordonnées tapées (écart nul) ; TR-IF-002 [+] valeur pointée : après accr… |
 | TR-IF-002 | `apps/web/e2e/studio-dec.mjs` | TR-IF-002 [−] Ligne commencée puis Échap : aucune commande en attente, document du serveur inchangé |
+| TR-IF-005 | `apps/web/src/modules/studio/chargement/cycle-activation.test.ts` | cas positif : découvert → vérification → résolution → chargement → initialisation → prêt → actif, puis suspendu, repris et désactivé ; cas négatifs : incompatible et permission refusée arrêtent à la vérification — rien n'est chargé, l'outi… |
+| TR-IF-007 | `apps/web/src/modules/studio/taches/statuts-if007.test.ts` | cas positif : queued → loading → running → completed, chaque statut tracé avec sa révision source, résultat remis une fois ; loading passe à running à la première progression ; sans chargement annoncé, la tâche démarre directement en runni… |
 | TR-IF-008 | `packages/atelier-model/src/studio/resultats-quantitatifs.test.ts` | IF-008 [+] la quantité du mur porte quantityId, sourceRevisionSet, ruleId / ruleVersion, sourceObjectIds, unit, rawValue, deductions, displayValue, freshnessStatus ; IF-008 [+] freshnessStatus : à jour sur la tête, périmée après une nouvel… |
 | TR-IF-008 | `apps/api/src/lib/studio-quantites.test.ts` | IF-008 [+] l'ajustement en vigueur est porté à part (motif, auteur, date), rawValue intacte, freshnessStatus contre la tête ; IF-008 [−] un ajustement dont la cible a changé (à revoir) n'est pas porté comme correction : la valeur calculée … |
 | TR-IF-008 | `apps/api/src/routes/studio-pub.preuves-pub.test.ts` | IF-008 [+] API : chaque quantité porte quantityId, sourceRevisionSet, ruleId / ruleVersion, objets, unité, valeur brute, affichage et actualité |
@@ -440,6 +476,8 @@ Obligations TEST, NAV, REC, TR et E2E qui ne sont ni « Vérifié » ni « Accep
 | TR-IF-010 | `apps/web/e2e/studio-pub.mjs` | IF-010 : export BCF (.bcfzip) servi |
 | TR-IF-011 | `apps/api/src/routes/studio-cmd.test.ts` | IF-011 [+] : après engagement durable, l'événement garde eventId, transaction, auteur, étude, variante, base, issue, effets, horodatage serveur ; IF-011 [−] : transaction échouée — aucun événement, aucune révision, aucune notification ; la… |
 | TR-IF-011 | `apps/web/e2e/studio-cmd.mjs` | IF-011 : un événement par révision engagée — eventId, transaction (applicative et PostgreSQL), auteur, étude, variante, base, issue, effets, horodatage serveur ; EX-045 [+] / IF-011 : confirmation sur base valide — révision écrite, événeme… |
+| TR-AC-006 | `apps/web/src/modules/studio/exact/ac006-echec-occt.test.ts` | plantage pendant le calcul avec une seconde tâche en attente : les deux attentes résolues, erreur intelligible, aucune mutation ; relance : un seul solide exact, révision courante conservée |
+| TR-AC-006 | `apps/web/e2e/studio-exact.mjs` | TEST-015 : pas de corruption — document identique (empreinte de contenu), aucune commande en attente ; TEST-015 : relance après retour au binaire distribué — prêt, une instance |
 | TR-AC-007 | `packages/atelier-model/src/studio/agents/agents.test.ts` | TR-AC-007 [+] / [−] l'illustration atteste le modèle inchangé et se déclare « non vérifiée » ; un modèle modifié ou une autre révision refusent l'illustration |
 | TR-AC-007 | `apps/api/src/routes/studio-illustrations.test.ts` | TEST-032 [+] un éditeur produit une illustration locale depuis le rendu de la vue : 201, aucune révision, tête inchangée, provenance complète dans la réponse et dans le PNG archivé |
 | TR-AC-007 | `apps/web/e2e/studio-lot-f.mjs` | illustration produite : « non vérifiée », modèle source inchangé |

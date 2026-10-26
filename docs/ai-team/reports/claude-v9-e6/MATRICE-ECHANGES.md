@@ -1,12 +1,12 @@
 # Matrice d’échanges de Studio
 
-<!-- Généré depuis packages/atelier-model/src/studio/echanges/matrice-echanges.ts (studio-matrice-echanges/1, révision 6) : ne pas éditer à la main. -->
+<!-- Généré depuis packages/atelier-model/src/studio/echanges/matrice-echanges.ts (studio-matrice-echanges/1, révision 7) : ne pas éditer à la main. -->
 
-Établie le 2026-10-25 (révision 6, schéma `studio-matrice-echanges/1`), à partir de l’audit des exporteurs et importeurs Studio. Lots E.6-01 à E.6-05 du plan d’implémentation Studio V1.0 (§5.7).
+Établie le 2026-10-25 (révision 7, schéma `studio-matrice-echanges/1`), à partir de l’audit des exporteurs et importeurs Studio. Lots E.6-01 à E.6-05 du plan d’implémentation Studio V1.0 (§5.7).
 
 **Aucune entrée n’est une déclaration de conformité** : « livré » dit ce que le code écrit ou lit et le contrôle qui le vérifie ; la conformité d’un format reste non évaluée. Un format reporté est inscrit « non livré » avec sa raison et sa source ; « renoncé » exige une décision Studio admise (aucune aujourd’hui).
 
-Entrées : 43 — livrées : 26, non livrées : 17, renoncées : 0.
+Entrées : 45 — livrées : 28, non livrées : 17, renoncées : 0.
 
 ## Formats × sens
 
@@ -16,6 +16,8 @@ Entrées : 43 — livrées : 26, non livrées : 17, renoncées : 0.
 | `natif-archive-export` | Archive de projet (section Studio, JSON) | fadi-studio-archive/1 (document studio-document/1) | export | natif | Études, variantes, révisions immuables, commentaires, observations, publications et leurs fichiers figés, exigences, journal du métré | livré | E.6-02 | Section signée (HMAC-SHA256 du manifeste, clé du serveur) ; empreintes de contenu conservées ; rien n’est recalculé. |
 | `natif-archive-import` | Archive de projet (section Studio, JSON) | fadi-studio-archive/1 (document studio-document/1) | import | natif | Restauration de la section Studio dans un nouveau projet | livré | E.6-02 | Manifeste et empreintes contrôlés (refus 422) ; sans signature vérifiée par ce serveur, auteurs et approbations ne sont pas crus ; identifiant déjà présent : partie Studio non restaurée, réserve signalée. |
 | `natif-file-locale` | File locale hors ligne (JSON) | fadi-studio-file-locale/1 | export | natif | Copie de secours d’une file locale de commandes non synchronisée | livré | E.6-02 | Export de secours seulement : Studio ne relit pas ce fichier ; la ligne exportée est relue du stockage, jamais de la mémoire. |
+| `natif-profil-outils-export` | Profil d’outils Studio (JSON) | fadi-studio-profil/1 | export | natif | Profil d’outils du compte (profileId, version, ordre, raccourcis personnels, visibilité) | livré | E.6-02 | Préférences du compte seulement : aucune donnée du projet, aucun droit (EX-033, INV-009). |
+| `natif-profil-outils-import` | Profil d’outils Studio (JSON) | fadi-studio-profil/1 | import | natif | Profil d’outils importé dans le compte | livré | E.6-02 | Aucun droit conféré : une capacité exigeant un droit absent est refusée ; raccourcis en conflit refusés ou écartés sur demande explicite. |
 | `dessin-svg` | SVG | SVG (espace de noms W3C, aucune version déclarée dans le fichier) | export | dessin | Document d’une révision de variante (plan 2D) | livré | E.6-03 | Plan 2D seulement : solides et hauteurs absents ; calques masqués conservés sous display="none" ; graphismes (splines en courbes de Bézier exactes, traits de hachure, symboles) avec leur transparence (opacity) ; aucun script ni ressource externe. |
 | `dessin-dxf` | DXF ASCII | R12 (AC1009), CRLF, $INSUNITS = 6 (mètre) | export | dessin | Document d’une révision de variante (plan 2D) | livré | E.6-03 | R12 seulement ; $INSUNITS n’appartient pas à R12 (variable introduite avec AC1015) : l’unité n’est pas garantie chez un lecteur R12 strict ; ASCII strict (texte échappé, 250 caractères) ; cotes non associatives ; noms de calque réécrits (31 caractères ASCII) ; solides absents ; splines découpées en POLYLINE (16 segments par morceau de Bézier), transparence des graphismes non portée (déclarée en commentaire 999). |
 | `maquette-ifc` | IFC (STEP physique, ISO 10303-21) | IFC4X3_ADD2, ViewDefinition [ReferenceView] | export | maquette | Objets extrudés, solides libres, murs et ouvertures, propriétés déclarées d’une révision | livré | E.6-03 | Seuls les éléments 3D sont écrits ; arcs discrétisés ; cotes, annotations et réglages de visualisation absents ; IfcDoor / IfcWindow seulement si le type est déclaré, sans représentation propre. |
@@ -108,6 +110,31 @@ Entrées : 43 — livrées : 26, non livrées : 17, renoncées : 0.
 - Tests : `apps/web/src/modules/studio/hors-ligne/file-locale.test.ts` (`` preparerExportFileLocale ``)
 - Interface : `apps/web/src/modules/studio/hors-ligne/AvisFileLocale.tsx` (`` a.download = "studio-file-locale.json" ``)
 - Sources : `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-02` — Liste d’exécution Studio V1.0
+
+### `natif-profil-outils-export` — Profil d’outils Studio (JSON) (export)
+
+- Version : fadi-studio-profil/1
+- Objet : Profil d’outils du compte (profileId, version, ordre, raccourcis personnels, visibilité)
+- Limite : Préférences du compte seulement : aucune donnée du projet, aucun droit (EX-033, INV-009).
+- Contrôle : Tests des profils importés et exportés.
+- Entité Profil d’outils : portée — Profil des barres, favoris, liste personnelle, regroupements, ordre des capacités, raccourcis personnels, version.
+- Code : `apps/api/src/routes/studio-preferences.ts` (`` lireProfilExporte ``)
+- Tests : `apps/api/src/routes/studio-profils-import.test.ts` (`` format: "fadi-studio-profil/1", profileId: r1.body.profileId ``)
+- Routes : `apps/api/src/routes/studio-preferences.ts` (`` /outils/export ``)
+- Interface : `apps/web/src/modules/studio/planche2d/CatalogueOutils.tsx` (`` lien.download = `profil-studio-${f.profileId}-v${f.version}.json` ``)
+- Sources : `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-02` — Liste d’exécution Studio V1.0
+
+### `natif-profil-outils-import` — Profil d’outils Studio (JSON) (import)
+
+- Version : fadi-studio-profil/1
+- Objet : Profil d’outils importé dans le compte
+- Limite : Aucun droit conféré : une capacité exigeant un droit absent est refusée ; raccourcis en conflit refusés ou écartés sur demande explicite.
+- Contrôle : Tests des profils importés et exportés.
+- Entité Profil d’outils : portée — Relu, contrôlé (outils du registre, droits, conflits de raccourcis), version +1, provenance gardée.
+- Code : `apps/api/src/lib/studio-profils.ts` (`` conflitsRaccourcis ``)
+- Tests : `apps/api/src/routes/studio-profils-import.test.ts` (`` permission_non_conferee ``)
+- Routes : `apps/api/src/routes/studio-preferences.ts` (`` /outils/import ``)
+- Sources : `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-02` — Liste d’exécution Studio V1.0
 
 ### `dessin-svg` — SVG (export)
 

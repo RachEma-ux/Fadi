@@ -27,7 +27,7 @@ import { STUDIO_CAPACITES_EXPORT, STUDIO_RAISONS_FIDELITE, type StudioFormatEcha
 
 export const STUDIO_MATRICE_ECHANGES_SCHEMA = "studio-matrice-echanges/1" as const;
 /** Révision de la matrice : à incrémenter avec toute modification d'une entrée (empreinte épinglée par test). */
-export const STUDIO_MATRICE_ECHANGES_REVISION = 6 as const;
+export const STUDIO_MATRICE_ECHANGES_REVISION = 7 as const;
 /** Date de l'audit qui a établi la révision courante. */
 export const STUDIO_MATRICE_ECHANGES_DATE = "2026-10-25" as const;
 
@@ -271,6 +271,33 @@ const LIVREES: readonly StudioEntreeEchange[] = [
       interfaces: [p(`${WEB}hors-ligne/AvisFileLocale.tsx`, "a.download = \"studio-file-locale.json\"")],
     },
     sources: [S_PLAN, S_LISTE("E.6-02")],
+  },
+  {
+    id: "natif-profil-outils-export", format: "Profil d’outils Studio (JSON)", versionFormat: "fadi-studio-profil/1", sens: "export", famille: "natif",
+    objet: "Profil d’outils du compte (profileId, version, ordre, raccourcis personnels, visibilité)", taches: ["E.6-02"], statut: "livre",
+    limite: "Préférences du compte seulement : aucune donnée du projet, aucun droit (EX-033, INV-009).",
+    entites: [{ entite: "Profil d’outils", couverture: "portee", detail: "Profil des barres, favoris, liste personnelle, regroupements, ordre des capacités, raccourcis personnels, version." }],
+    controle: "Tests des profils importés et exportés.",
+    preuves: {
+      code: [p(`${API}routes/studio-preferences.ts`, "lireProfilExporte")],
+      tests: [p(`${API}routes/studio-profils-import.test.ts`, "format: \"fadi-studio-profil/1\", profileId: r1.body.profileId")],
+      interfaces: [p(`${WEB}planche2d/CatalogueOutils.tsx`, "lien.download = `profil-studio-${f.profileId}-v${f.version}.json`")],
+      routes: [p(`${API}routes/studio-preferences.ts`, "/outils/export")],
+    },
+    sources: [S_LISTE("E.6-02")],
+  },
+  {
+    id: "natif-profil-outils-import", format: "Profil d’outils Studio (JSON)", versionFormat: "fadi-studio-profil/1", sens: "import", famille: "natif",
+    objet: "Profil d’outils importé dans le compte", taches: ["E.6-02"], statut: "livre",
+    limite: "Aucun droit conféré : une capacité exigeant un droit absent est refusée ; raccourcis en conflit refusés ou écartés sur demande explicite.",
+    entites: [{ entite: "Profil d’outils", couverture: "portee", detail: "Relu, contrôlé (outils du registre, droits, conflits de raccourcis), version +1, provenance gardée." }],
+    controle: "Tests des profils importés et exportés.",
+    preuves: {
+      code: [p(`${API}lib/studio-profils.ts`, "conflitsRaccourcis")],
+      tests: [p(`${API}routes/studio-profils-import.test.ts`, "permission_non_conferee")],
+      routes: [p(`${API}routes/studio-preferences.ts`, "/outils/import")],
+    },
+    sources: [S_LISTE("E.6-02")],
   },
   {
     id: "dessin-svg", format: "SVG", versionFormat: "SVG (espace de noms W3C, aucune version déclarée dans le fichier)", sens: "export", famille: "dessin",

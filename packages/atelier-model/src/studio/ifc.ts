@@ -125,6 +125,8 @@ function studioIfc(input: StudioDocument, meta: StudioIfcMeta): { content: strin
   const shape = (reps: number[]) => s.add(`IFCPRODUCTDEFINITIONSHAPE($,$,${refs(reps)})`);
   const placed = (x: number, y: number, z: number, ux = 1, uy = 0) =>
     s.add(`IFCLOCALPLACEMENT(${ref(storeyPlacement)},${ref(s.add(`IFCAXIS2PLACEMENT3D(${ref(pt3(x, y, z))},${ref(zAxis)},${ref(dir3(ux, uy, 0))})`))})`);
+  const placedAxes = (x: number, y: number, z: number, axe: { x: number; y: number; z: number }, refx: { x: number; y: number; z: number }) =>
+    s.add(`IFCLOCALPLACEMENT(${ref(storeyPlacement)},${ref(s.add(`IFCAXIS2PLACEMENT3D(${ref(pt3(x, y, z))},${ref(dir3(axe.x, axe.y, axe.z))},${ref(dir3(refx.x, refx.y, refx.z))})`))})`);
   const rectangleSolid = (cx: number, cy: number, xDim: number, yDim: number, depth: number) => {
     const profile = s.add(`IFCRECTANGLEPROFILEDEF(.AREA.,$,${ref(s.add(`IFCAXIS2PLACEMENT2D(${ref(pt2(cx, cy))},$)`))},${studioStepReal(xDim)},${studioStepReal(yDim)})`);
     return s.add(`IFCEXTRUDEDAREASOLID(${ref(profile)},$,${ref(zAxis)},${studioStepReal(depth)})`);
@@ -161,7 +163,7 @@ function studioIfc(input: StudioDocument, meta: StudioIfcMeta): { content: strin
     for (let i = 1; i < n; i++) faces.push(`(${i},${i + 1},${n + i + 1})`, `(${i},${n + i + 1},${n + i})`);
     return s.add(`IFCTRIANGULATEDFACESET(${ref(list)},$,.F.,(${faces.join(",")}),$)`);
   };
-  const contexte: IfcContexte = { s, zAxis, body, axis, summary, gid, pt2, shape, placed, rectangleSolid, arbitrarySolid, proxy, stripItem, layerOf };
+  const contexte: IfcContexte = { s, zAxis, body, axis, summary, gid, pt2, shape, placed, placedAxes, rectangleSolid, arbitrarySolid, proxy, stripItem, layerOf };
 
   for (const o of doc.objects) {
     if (!o.extrusion) { summary.nonExtruded++; continue; }

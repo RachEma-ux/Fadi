@@ -59,7 +59,11 @@ function endpoint(handler: (req: Request, res: Response) => Promise<void>) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try { await handler(req, res); }
     catch (error) {
-      if (error instanceof StudioRequestError) res.status(error.status).json(error.body);
+      if (error instanceof StudioRequestError) {
+        // Quota d'invocation (EX-028) : délai avant nouvel essai aussi dans l'en-tête standard.
+        if (error.status === 429 && typeof error.body["retryAfterSeconds"] === "number") res.setHeader("Retry-After", String(error.body["retryAfterSeconds"]));
+        res.status(error.status).json(error.body);
+      }
       else next(error);
     }
   };

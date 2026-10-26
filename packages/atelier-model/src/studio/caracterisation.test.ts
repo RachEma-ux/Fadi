@@ -336,6 +336,12 @@ const AJOUTS = {
     // Manifeste versionné du catalogue d'outils, chargeurs et alias de migration (B.1, `manifeste-outils.ts`).
     "STUDIO_ALIAS_OUTILS", "STUDIO_CHARGEURS_OUTILS", "STUDIO_CONTEXTES_OUTILS", "STUDIO_MANIFESTE_OUTILS", "STUDIO_MANIFESTE_OUTILS_VERSION",
     "controlerManifesteOutils", "entreeManifeste", "resoudreAliasOutil", "toolIdCanonique",
+    // Dépréciation et plan de compatibilité (EX-030, `compatibilite-outils.ts`) ; fiches d'outils et règle prêt / conforme
+    // (AC-011, `fiches-outils.ts`) : extensions additives du lot OUT.
+    "STUDIO_OUTILS_DEPRECIES", "STUDIO_MODULES_DEPRECIES", "statutOutil", "controlerDepreciations", "outilsDuDocument", "compatibiliteTravail",
+    "STUDIO_FICHES_OUTILS", "DESIGNATION_CONFORMITE", "PREUVES_EXECUTION_OUTILS", "evaluerFicheOutil",
+    // Basculement des solides libres autour de leurs axes horizontaux (A.3-03, lot OUT).
+    "estBascule", "studioBasculerPoint", "studioVecteurSolide",
     // Rapport de fidélité des exports (E.6-03, `echanges/rapport-fidelite.ts`).
     "STUDIO_CAPACITES_EXPORT", "STUDIO_FORMATS_ECHANGE", "STUDIO_LISTES_ECHANGE", "STUDIO_RAISONS_FIDELITE", "STUDIO_RAPPORT_FIDELITE_SCHEMA",
     "STUDIO_STATUTS_FIDELITE", "studioRapportFidelite",

@@ -70,7 +70,7 @@ export function resultatDe(valeur: unknown): StudioResultatExact | null {
 
 /** ⑤ ⑥ : état après le retour de la tâche, jugé sur la révision courante du brouillon. */
 export function etatApresIssue(d: DemandeBooleen, issue: IssueTache<unknown>, revisionCourante: string): EtatBooleen {
-  if (issue.etat === "cancelled") return { etape: "inactif" };
+  if (issue.etat === "cancelled" || issue.etat === "superseded") return { etape: "inactif" };
   if (issue.etat === "timed-out") return { etape: "echec", demande: d, message: "Le noyau exact n’a pas répondu à temps : le calcul est abandonné, le document n’a pas été modifié. Relancez le noyau exact.", relancer: true };
   if (issue.etat === "failed") {
     if (issue.code === "calcul") return { etape: "echec", demande: d, message: MESSAGES_BOOLEEN.calculRefuse.replace("{0}", issue.message), relancer: false };

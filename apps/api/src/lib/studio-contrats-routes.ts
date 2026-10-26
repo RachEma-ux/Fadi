@@ -138,7 +138,12 @@ const modeleExterne = z.strictObject({
   replayed: z.boolean().optional(),
 });
 const etapes = z.strictObject({ steps: z.array(z.strictObject({ number: z.number().int(), createdAt: instant })), available: z.array(z.strictObject({ number: z.number().int(), title: z.string(), phase: z.string() })), canWrite: z.boolean() });
-const preferences = z.strictObject({ profil: z.string(), favoris: z.array(z.string()), personnel: z.array(z.unknown()), groupes: z.array(z.unknown()), retires: z.array(z.string()), manifeste: z.literal("studio-tool-manifest/1"), updatedAt: instant.nullable() });
+const preferences = z.strictObject({
+  profil: z.string(), favoris: z.array(z.string()), personnel: z.array(z.unknown()), groupes: z.array(z.unknown()), retires: z.array(z.string()), manifeste: z.literal("studio-tool-manifest/1"), updatedAt: instant.nullable(),
+  // Profil persistant (EX-034) : raccourcis personnels, ordre des capacités, identifiant, propriétaire, version, provenance.
+  raccourcis: z.record(z.string(), z.string()), ordre: z.array(z.string()), profileId: z.string().nullable(), proprietaire: z.string().nullable(), version: z.number().int().min(0), importeDe: z.string().nullable(),
+});
+const conflitRaccourci = z.strictObject({ raccourci: z.string(), capacite: z.string(), type: z.enum(["doublon", "registre"]), avec: z.string() });
 
 // --- Études et variantes (routes/studio.ts) ---------------------------------------------------------------------------
 
@@ -227,7 +232,7 @@ export const CONTRAT_EXPORT_RAPPORT = contratRoute({
   reponse: z.looseObject({ revisionId: ident, schema: z.literal("studio-rapport-fidelite/1"), format: z.string(), totaux: z.looseObject({ elements: z.number() }), lignes: z.array(z.unknown()) }),
 });
 export const CONTRAT_COMMANDES = contratRoute({
-  id: "studio-api-commandes/1", routes: ["POST /studies/:studyId/variants/:variantId/commands"], objet: "Application d'une enveloppe de commandes `studio-commands/1` ; nouvelle révision (rejeu par `requestId`).",
+  id: "studio-api-commandes/1", routes: ["POST /studies/:studyId/variants/:variantId/commands"], objet: "Application d'une enveloppe de commandes `studio-commands/1` ; nouvelle révision (rejeu par `requestId`) ; quota d'invocation du compte (429 `quota_exceeded`, EX-028).",
   entree: "Corps : enveloppe `{ contractVersion: studio-commands/1, requestId, baseRevisionId, commands }` (schéma `envelopeSchema`).", statuts: [200], corps: "json", reponse: soumission,
 });
 
@@ -280,7 +285,20 @@ export const CONTRAT_PREFERENCES_LIRE = contratRoute({
 });
 export const CONTRAT_PREFERENCES_ECRIRE = contratRoute({
   id: "studio-api-preferences-ecrire/1", routes: ["PUT /preferences/outils"], objet: "Enregistrement des préférences d'outils du compte (INV-009).",
-  entree: "Corps : `{ profil, favoris, personnel, groupes?, retires? }` (schéma `studioToolPreferencesSchema`).", statuts: [200], corps: "json", reponse: preferences,
+  entree: "Corps : `{ profil, favoris, personnel, groupes?, raccourcis?, ordre? }` (schéma `studioToolPreferencesSchema`) ; 409 `shortcut_conflict`, 403 `permission_non_conferee`.", statuts: [200], corps: "json", reponse: preferences,
+});
+export const CONTRAT_PROFIL_EXPORTER = contratRoute({
+  id: "studio-api-profil-exporter/1", routes: ["GET /preferences/outils/export"], objet: "Fichier de profil d'outils du compte `fadi-studio-profil/1` (EX-034) ; 404 tant qu'aucun profil n'est enregistré.",
+  entree: "Aucune.", statuts: [200], corps: "json",
+  reponse: z.strictObject({
+    format: z.literal("fadi-studio-profil/1"), profileId: z.string(), proprietaire: z.string().optional(), version: z.number().int().min(1), manifeste: z.string(),
+    profil: z.string(), favoris: z.array(z.string()), personnel: z.array(z.string()), groupes: z.array(z.unknown()), ordre: z.array(z.string()), raccourcis: z.record(z.string(), z.string()),
+  }),
+});
+export const CONTRAT_PROFIL_IMPORTER = contratRoute({
+  id: "studio-api-profil-importer/1", routes: ["POST /preferences/outils/import"], objet: "Import d'un profil d'outils (EX-033, EX-034, INV-009) : aucun droit conféré, conflits de raccourcis détectés ; version +1.",
+  entree: "Corps : `{ profil: fadi-studio-profil/1, resolution?: \"refuser\" | \"ecarter\" }` ; 400 `invalid_profile` / `unknown_tool`, 403 `permission_non_conferee`, 409 `shortcut_conflict`.",
+  statuts: [200], corps: "json", reponse: preferences.extend({ ecartes: z.array(conflitRaccourci) }),
 });
 export const CONTRAT_CATALOGUE_OUTILS = contratRoute({
   id: "studio-api-catalogue-outils/1", routes: ["GET /preferences/catalogue"], objet: "Catalogue des outils autorisés pour le rôle du compte dans le projet.",

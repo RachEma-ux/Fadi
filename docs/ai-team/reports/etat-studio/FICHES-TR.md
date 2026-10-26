@@ -1,7 +1,7 @@
 # Fiches de traçabilité TR-* (annexe C) — preuve et contre-preuve individuelles
 
 > Document **généré** par `node scripts/registre/etat-studio.mjs --ecrire` depuis le registre et les fiches M004 ; la CI le
-> recalcule à chaque commit. Registre SHA-256 `002337c5f9d4153708af3f5f599bfa8f03023de92e05232579f2dba95b9eb90e` ; fiches `docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json`.
+> recalcule à chaque commit. Registre SHA-256 `31ebc3e455bd42564e2db2b669e4cad28bbcbafd55a181154002c85990328a1f` ; fiches `docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json`.
 
 Règle C (Checklist, annexe C) appliquée à chaque fiche : libellé exact, source, responsable, contrat, composant, tests
 positifs et négatifs, preuves, décisions, état et verdict ; **une preuve absente reste « à produire »**. Preuve = contrôle
@@ -91,8 +91,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Crash laisse mutation partielle ou pending infini : échec critère.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente dans Studio : aucune opération Studio n'exécute OCCT/WASM (le lot F2 « noyau exact » est en cours ailleurs) ; l'échec forcé d'OCCT pendant une opération, la résolution des attentes et la relance sans doublon ne sont donc pas testables. Seuls l'échec de Worker (DXF, feuille) et le réessai du moteur de planche le sont.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-AC-007
 
@@ -166,7 +166,7 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
 - **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : le manifeste d'outils (manifeste-outils.ts) vérifie propriétaire, contrat, contexte, droit et chargeur, mais ne porte ni risques, ni mesures, ni jeux d'essai, ni la règle « prêt à développer / conforme seulement après preuve sur build et profil désignés » (la règle [+]/[−] n'est contrôlée que pour les INV). Remplir ces champs par …
+- **Suite** : Fiches d'outils (fiches-outils.ts) : risques, mesures PERF, jeux positifs / négatifs, règle prêt à développer / conforme testée. Reste : désigner le build et le profil de charge de référence (DESIGNATION_CONFORMITE = null) et joindre les preuves d'exécution — décision du maître d'ouvrage ; tant qu'elle manque, aucune fiche n'est « conforme ».
 
 ### TR-EX-001
 
@@ -250,8 +250,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Nouvelle étude sans dessin 2D : l'édition 3D reste possible ; une vue sans édition ne suffit pas.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Lot F1 : l'édition de face est livrée et recettée (studio-faces, « TEST-002 / TR-EX-005 »), y compris l'étude neuve sans dessin 2D. L'édition de groupe reste absente.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-006
 
@@ -614,8 +614,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Modifier droits après build ou forger entrée/quota : contrôle runtime refuse malgré schéma statique valide.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Permission, contexte, paramètres et révision sont contrôlés à l'exécution ; aucun quota d'invocation (par compte ou par période) n'existe, seulement des bornes de schéma et de document.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-029
 
@@ -627,8 +627,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Échec loader/interdit/offline : résultat reste découvrable avec état exact, pas faux prêt ni moteur lancé par recherche.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (partiel) : Recherche par nom, identifiant, contexte (filtre) et barre couverte, sans lancement de moteur. Absents : recherche par synonyme et par domaine (pertinence ne lit que nom, raccourci et identifiant) et l'affichage par outil des huit états prescrits (découvert, non disponible, incompatible, interdit, non installé hors ligne, en chargement, prêt, erreur).
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-030
 
@@ -640,8 +640,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Déprécier outil puis ouvrir un travail le nécessitant : pas d'objet perdu ou de commande locale effacée.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Aucun statut « déprécié » d'outil ou de module dans le manifeste, ni plan de compatibilité associé : le cas « déprécier un outil puis rouvrir un document qui l'emploie » n'est pas réalisable. Les alias de renommage et la file locale incompatible existent.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-031
 
@@ -680,8 +680,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Importer profil avec Publier sans droit : exécution refusée ; masquer outil ne supprime pas ses objets.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Cas négatif prescrit impossible : aucun import de profil, aucun outil « Publier » au registre. Retrait d'un bouton et changement de profil sans révision déjà couverts.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-034
 
@@ -693,8 +693,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Importer deux raccourcis en conflit : conflit visible et configuration source préservée.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Le profil n'a ni profileId, ni version, ni raccourcis personnels ; aucun import, donc aucun conflit de raccourcis à détecter (vérifié dans planche2d/profils.ts).
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-035
 
@@ -786,8 +786,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Échec d'un module rare : état récupérable ; un autre outil compatible ne crée pas sans raison un second noyau.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Studio n'a aucun outil exact (OCCT interdit par la carte des morceaux) : les cas « outil exact, première puis seconde activation » et « un autre outil ne crée pas un second noyau » ne peuvent pas être exercés. Le mécanisme générique est prouvé sur rendu-3d, planche et calcul.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-041
 
@@ -799,8 +799,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Un chunk par bouton duplique le même noyau : détecter octets/instances sans imposer découpage arbitraire.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Aucun détecteur de duplication en octets : la carte des morceaux (chargement.json) ne relève que des familles par fichier, pas les modules par morceau, et les bundles séparés des Workers n'y sont pas comparés au bundle principal. Il faudrait relever moduleIds par morceau (vite.config.ts) puis comparer, y compris Worker ↔ principal.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-042
 
@@ -812,8 +812,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Service worker précache tout le build : ne déclarer ce fait équivalent au chargement différé.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Un seul cache par build, et tout le build est précaché à l'installation : ni caches distincts (coquille, profil, modules, données/file), ni téléchargement facultatif à la demande.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-043
 
@@ -844,8 +844,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Ancien contrat incompatible ou quota atteint : résolution/migration explicite, aucune purge de file silencieuse.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Le buildId n'est pas enregistré dans la file locale (persistance.ts / contrats.ts : brouillon ↔ commandes ↔ schéma seulement), et rien ne gère le quota (aucune éviction, aucune erreur de quota traitée). Le scénario « mise à jour du build avec file pendante » n'est pas écrit.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-045
 
@@ -974,8 +974,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Permutation index ou égalité de distances : même règle de départage/tolérance qu'oracle.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (partiel) : Départage sous permutation de l'index désormais prouvé : 720 ordres d'insertion, égalités de distance réelles. Mutation tuée : tri par rang de l'index retiré. Reste absent : le mode d'accrochage « parallèle » n'existe pas (MODES_ACCROCHAGE).
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-054
 
@@ -1113,8 +1113,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Second OCCT simultané ou croissance mémoire : pas de conformité sans courbe/limite décidée.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Lot F2 : taille transférée et décodée, instance unique, durée de chargement et 50 ouvertures sans croissance sont recettés (studio-exact, « TR-EX-062 : … »). Reste : allocations internes au WASM, que le noyau n'expose pas.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-063
 
@@ -1126,8 +1126,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Réutiliser tampon détaché ou message worker forgé : validation refuse, pas de corruption canonique.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : HoteWorker accepte toute « valeur » rattachée à un identifiant connu ; aucune validation applicative de la forme du message reçu d'un Worker interne (message bien formé mais forgé) n'existe.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-064
 
@@ -1826,8 +1826,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Hors ligne/permission/loader/noyau en erreur : état distinct et geste rendu ou protégé, pas attente infinie.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : le cycle d'activation ne connaît pas les états « vérification de contexte/droits », « résolution des dépendances », « suspendu », ni les erreurs « incompatible », « permission refusée », « échec du noyau » ; aucune préservation d'un geste inachevé pendant une transition n'est implémentée. Seuls téléchargé / initialisé / actif / ho…
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-IF-006
 
@@ -1852,8 +1852,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : cancel_requested suivi completion ou timeout/crash : résultat non engagé sans nouvelle vérification et pending résolu.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : l'ordonnanceur connaît queued / running / done / failed / cancelled / timed-out / stale, sans loading, cancel_requested ni superseded nommés, et sans révision source tracée par statut ; l'annulation est immédiate (aucun état « annulation demandée » suivi d'une fin de calcul dont le résultat attendrait une nouvelle vérification).
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-IF-008
 
@@ -2042,8 +2042,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Importer profil avec Publier sans droit : exécution refusée ; masquer outil ne supprime pas ses objets.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : aucun import de profil d'outils (ni route ni interface) et aucun outil « Publier » au catalogue Studio ; le cas négatif prescrit (« importer un profil avec Publier sans droit ») ne peut être exécuté que par substitut (profil personnel écrit par PUT /preferences/outils). Le cas positif est couvert.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-INV-010
 

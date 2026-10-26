@@ -14,7 +14,7 @@ export type IdCommandeEditeur =
   | "zoom-avant" | "zoom-arriere" | "cadrer" | "plein-ecran" | "vue-3d" | "navigation-3d" | "coupe-3d"
   | "accrochage-sommets" | "accrochage-grille"
   | "accrochage-milieu" | "accrochage-centre" | "accrochage-quadrant" | "accrochage-intersection"
-  | "accrochage-perpendiculaire" | "accrochage-tangente" | "accrochage-proche"
+  | "accrochage-perpendiculaire" | "accrochage-tangente" | "accrochage-parallele" | "accrochage-proche"
   | "reperage-orthogonal" | "reperage-polaire" | "pas-polaire"
   | "importer-dxf" | "importer-ifc" | "modeles-externes" | "exporter-svg" | "exporter-dxf" | "exporter-ifc" | "feuille" | "dossier"
   | "exporter-png" | "echanges"
@@ -29,7 +29,7 @@ export type IconeCommande =
   | "studio-zoom-in" | "studio-zoom-out" | "studio-frame" | "studio-fullscreen" | "studio-view-3d" | "studio-nav-plan" | "studio-section-plane"
   | "studio-snap-vertex" | "studio-snap-grid"
   | "studio-snap-midpoint" | "studio-snap-center" | "studio-snap-quadrant" | "studio-snap-intersection"
-  | "studio-snap-perpendicular" | "studio-snap-tangent" | "studio-snap-nearest"
+  | "studio-snap-perpendicular" | "studio-snap-tangent" | "studio-snap-parallel" | "studio-snap-nearest"
   | "studio-track-ortho" | "studio-track-polar" | "studio-track-polar-step"
   | "studio-import-dxf" | "studio-import-ifc" | "studio-external-models" | "studio-export-svg" | "studio-export-dxf" | "studio-export-ifc" | "studio-sheet" | "studio-dossier"
   | "studio-export-png" | "studio-exchanges"
@@ -88,6 +88,8 @@ export const COMMANDES_EDITEUR: readonly CommandeEditeur[] = Object.freeze([
   { id: "accrochage-intersection", libelleFR: "Accrocher aux intersections", raccourci: "X", iconeSymbolique: "studio-snap-intersection", groupe: "accrochage", ecrit: false, bascule: true },
   { id: "accrochage-perpendiculaire", libelleFR: "Accrocher en perpendiculaire", raccourci: "N", iconeSymbolique: "studio-snap-perpendicular", groupe: "accrochage", ecrit: false, bascule: true },
   { id: "accrochage-tangente", libelleFR: "Accrocher en tangente", raccourci: "U", iconeSymbolique: "studio-snap-tangent", groupe: "accrochage", ecrit: false, bascule: true },
+  // Parallèle (EX-053) : Ctrl+Maj+F6, libre et non réservé (Maj+F6 est « Créer un graphisme », lot REND).
+  { id: "accrochage-parallele", libelleFR: "Accrocher en parallèle", raccourci: "Ctrl+Shift+F6", iconeSymbolique: "studio-snap-parallel", groupe: "accrochage", ecrit: false, bascule: true },
   { id: "accrochage-proche", libelleFR: "Accrocher au plus proche", raccourci: "Shift+J", iconeSymbolique: "studio-snap-nearest", groupe: "accrochage", ecrit: false, bascule: true },
   // Repérage depuis le dernier point : orthogonal (F8, comme les logiciels de DAO ; Maj tenue l'impose le temps du
   // geste), polaire (F10) et son pas 15° / 30° / 45° / 90° (Maj+Y le fait tourner).

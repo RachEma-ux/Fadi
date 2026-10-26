@@ -61,6 +61,7 @@ export type IconName =
   | "studio-snap-intersection"
   | "studio-snap-perpendicular"
   | "studio-snap-tangent"
+  | "studio-snap-parallel"
   | "studio-snap-nearest"
   | "studio-track-ortho"
   | "studio-track-polar"
@@ -197,6 +198,7 @@ const PATHS: Record<IconName, string> = {
   "studio-snap-intersection": "M3 3l18 18M21 3 3 21M9 9h6v6H9Z",
   "studio-snap-perpendicular": "M3 20h18M12 20V4M12 15h5v5",
   "studio-snap-tangent": "M10 8a6 6 0 1 0 0 12 6 6 0 0 0 0-12ZM2 8h20M10 6v4",
+  "studio-snap-parallel": "M4 18 14 6M10 18 20 6",
   "studio-snap-nearest": "M4 20 20 6M9 9h6l-6 6h6Z",
   // Repérage : équerre orthogonale ; rayons polaires depuis un point ; pas polaire (rayons et flèche de rotation).
   "studio-track-ortho": "M5 19h15M5 19V4M5 19l-2-2M9 15h2v2",

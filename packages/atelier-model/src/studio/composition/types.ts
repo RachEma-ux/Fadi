@@ -112,7 +112,7 @@ export type StudioCommand =
   | { toolId: "studio.solide.supprimer"; params: { ids: string[] } }
   | { toolId: "studio.solide.face-decaler"; params: { id: string; face: StudioFaceSolide; distance: number } }
   | { toolId: "studio.solide.face-diviser"; params: { id: string; face: `lateral-${number}`; distance: number } }
-  | { toolId: "studio.solide.pivoter"; params: { id: string; angle: number } }
+  | { toolId: "studio.solide.pivoter"; params: { id: string; angle: number; axe?: "z" | "x" | "y" } }
   | { toolId: "studio.solide.resoudre"; params: { id: string; action: "mettre-a-jour" | "detacher" } }
   | { toolId: "studio.solide.booleen"; params: { id: string; operation: StudioOperationBooleenne; operandes: [string, string]; resultat: StudioResultatExact } }
   | { toolId: "studio.architecture.mur"; params: StudioWall }

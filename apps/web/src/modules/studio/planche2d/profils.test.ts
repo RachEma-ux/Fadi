@@ -62,7 +62,7 @@ describe("profils d'outils : visibilité dans les barres seulement", () => {
   it("normalise les préférences relues : profil inconnu → standard, identifiants hors registre et doublons écartés", () => {
     expect(normaliserPreferences(null)).toEqual(PREFERENCES_DEFAUT);
     expect(normaliserPreferences({ profil: "metier:inconnu", favoris: ["studio.dessin.arc", "x", "studio.dessin.arc"], personnel: "non" }))
-      .toEqual({ profil: "standard", favoris: ["studio.dessin.arc"], personnel: [], groupes: [] });
+      .toEqual({ ...PREFERENCES_DEFAUT, profil: "standard", favoris: ["studio.dessin.arc"], personnel: [], groupes: [] });
     expect(normaliserPreferences({ profil: "metier:volume", favoris: [], personnel: [] }).profil).toBe("metier:volume");
   });
 });
@@ -190,7 +190,7 @@ describe("regroupements personnels (B.2-02)", () => {
       { id: "MAJ", nom: "id invalide", outils: [] }, { id: "b", nom: "", outils: [] }, "texte",
     ] });
     expect(p.groupes).toEqual([{ id: "a", nom: "Mes murs", outils: ["studio.architecture.mur"] }]);
-    expect(corpsPreferences(p)).toEqual({ profil: "standard", favoris: [], personnel: [], groupes: [{ id: "a", nom: "Mes murs", outils: ["studio.architecture.mur"] }] });
+    expect(corpsPreferences(p)).toEqual({ profil: "standard", favoris: [], personnel: [], groupes: [{ id: "a", nom: "Mes murs", outils: ["studio.architecture.mur"] }], raccourcis: {}, ordre: [] });
   });
 
   it("un regroupement ne change pas les barres (visibilité réglée par le profil seul)", () => {

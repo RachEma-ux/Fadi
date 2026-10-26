@@ -210,3 +210,23 @@ réels : recette `RECETTE-APPAREILS.md`, `HEADED=1` ou `CDP_URL`).
 **Intégration** : matrice d'échanges en révision 6 (illustration PNG, BCF, dossier de conception, graphismes,
 provenances) ; contrat des modèles externes étendu par deux champs (repère source, restrictions : règle d'évolution,
 même version) ; recettes `studio-pub` et `studio-rend` branchées en CI, `studio-rend` en préproduction.
+
+## Lot OUT — outils, chargement, profils
+
+**Ce qui est livré**
+- Contrat d'exécution des outils (EX-028) et fiches d'outils (risques, cas positifs et négatifs, mesures par barre) ;
+  quota d'invocation par compte (600 lots / minute, 20 000 / heure, réglable ; rejeux et installation d'exemple
+  exemptés ; 429 avec `Retry-After`) — limite : compteur propre à chaque processus API.
+- États des tâches IF-007 (`superseded` au remplacement, annulation coopérative) ; messages des Workers validés
+  (« illisible » / « invalide » arrête le Worker) ; noyau exact libéré après 5 minutes d'inactivité.
+- Profils d'outils `fadi-studio-profil/1` (export, import en copie, 409 sur conflit de raccourci avec résolution
+  « écarter », 403 si le profil contient « Publier » sans le droit) ; mécanisme de dépréciation prouvé sur tables d'essai.
+- Caches par build (EX-042), refus de duplication au build pour three / occt / manifold (EX-041), instanciation à partir
+  de 3 exemplaires (C.2-02), basculement canonique (A.3-03), accrochage parallèle (EX-053).
+
+**Reste partiel** : TR-AC-011 (aucune fiche « conforme » tant qu'un build et un profil de charge de référence ne sont pas
+désignés par le maître d'ouvrage : `DESIGNATION_CONFORMITE = null`).
+
+**Intégration** : l'accrochage parallèle prend **Ctrl+Maj+F6** (Maj+F6 est « Créer un graphisme » du lot REND, règle
+d'or : un raccourci par commande) ; fiches d'outils complétées des quatre outils du lot REND ; matrice d'échanges en
+révision 7 ; recette `studio-out` branchée en CI.

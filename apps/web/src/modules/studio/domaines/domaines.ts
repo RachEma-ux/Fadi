@@ -65,7 +65,7 @@ export const DOMAINES_COMMANDES = Object.freeze({
   "terminer-polyligne": "dessin", "fermer-polyligne": "dessin",
   "zoom-avant": "dessin", "zoom-arriere": "dessin", cadrer: "dessin", "plein-ecran": "dessin", "vue-3d": "dessin", "navigation-3d": "dessin", "coupe-3d": "dessin",
   "accrochage-sommets": "dessin", "accrochage-grille": "dessin", "accrochage-milieu": "dessin", "accrochage-centre": "dessin", "accrochage-quadrant": "dessin",
-  "accrochage-intersection": "dessin", "accrochage-perpendiculaire": "dessin", "accrochage-tangente": "dessin", "accrochage-proche": "dessin",
+  "accrochage-intersection": "dessin", "accrochage-perpendiculaire": "dessin", "accrochage-tangente": "dessin", "accrochage-parallele": "dessin", "accrochage-proche": "dessin",
   "reperage-orthogonal": "dessin", "reperage-polaire": "dessin", "pas-polaire": "dessin",
   "exporter-png": A_DEFINIR, "importer-dxf": A_DEFINIR, "importer-ifc": A_DEFINIR, "modeles-externes": A_DEFINIR, "exporter-svg": A_DEFINIR, "exporter-dxf": A_DEFINIR, "exporter-ifc": A_DEFINIR, echanges: A_DEFINIR,
   feuille: "documentation", dossier: "documentation",

@@ -14,6 +14,19 @@
 import { GestionnaireRessources } from "./gestionnaire-ressources";
 import { echantillonMemoire, perfStudio } from "./perf";
 
+/**
+ * Politique documentée de conservation / libération (D.3-02, EX-040, EX-062) — choix de Fadi, réversible :
+ * - `noyau-exact` : conservé tant qu'il sert, puis **libéré après 5 minutes sans usage** (Worker arrêté, instance
+ *   WebAssembly relâchée ; ~20 Mo de binaire décodé et la mémoire linéaire d'OCCT). Cinq minutes couvrent une séance
+ *   de booléens successifs sans recompilation ; au-delà, la mémoire est rendue et le prochain usage recharge le noyau
+ *   (le binaire reste dans le cache HTTP et le cache du service worker).
+ * - `calcul` (Workers partagés, sans WebAssembly) et les modules (`planche-2d`, `rendu-3d`) : conservés pour la
+ *   session (coût de maintien faible, réinitialisation coûteuse à chaque frappe) ; libération manuelle seulement.
+ */
+export const POLITIQUES_LIBERATION = Object.freeze({
+  "noyau-exact": Object.freeze({ inactiviteMs: 300_000, motif: "noyau WebAssembly : mémoire rendue après 5 minutes sans usage" }),
+});
+
 let liberateurCalcul: (() => void) | null = null;
 /** Le groupe de Workers déclare comment se libérer (appelé une fois, à sa création). */
 export function enregistrerLiberationCalcul(f: () => void): void { liberateurCalcul = f; }
@@ -25,11 +38,14 @@ export const ressourcesStudio = new GestionnaireRessources({
     "rendu-3d": { charger: () => import("../vue3d/Vue3DStudio") },
     calcul: { liberer: () => { liberateurCalcul?.(); echantillonMemoire("liberation-calcul"); } },
     "noyau-exact": {
-      charger: () => import("../exact/noyau-studio").then(async (m) => { await m.chargerNoyauExactStudio(); return m; }),
+      // Code (module et Worker) puis initialisation du noyau (.wasm) : un échec de cette seconde étape est un « échec du noyau ».
+      charger: () => import("../exact/noyau-studio"),
+      initialiser: (m) => (m as typeof import("../exact/noyau-studio")).chargerNoyauExactStudio(),
       liberer: () => { void import("../exact/noyau-studio").then((m) => m.noyauExactStudio.arreter()); echantillonMemoire("liberation-noyau-exact"); },
     },
   },
   enLigne: () => (typeof navigator === "undefined" ? true : navigator.onLine !== false),
+  politiques: POLITIQUES_LIBERATION,
   surActivation: (m) => {
     perfStudio.enregistrer("PERF-02", m.dureeMs, "ms", { outil: m.outil, nature: m.nature, moteurs: m.moteursCharges.join(",") || "aucun" });
     echantillonMemoire(`outil:${m.outil}`);

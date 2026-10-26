@@ -125,6 +125,10 @@ try {
     (await apercu.textContent()).startsWith("Aperçu provisoire, jamais engagé") && (await apercu.getAttribute("data-studio-exact-apercu-volume")) === "12"
     && (await apercu.getAttribute("data-studio-exact-apercu-verdict")) === "confirme" && Math.abs(Number(await panneau.locator("[data-studio-exact-resultat]").getAttribute("data-studio-exact-volume")) - 12) < 1e-9);
   check("IF-003 : le calcul n'a rien engagé (brouillon inchangé, aucune commande en attente)", (await enAttente()) === "0" && (await panneau.getAttribute("data-studio-exact-document")) === docAvant);
+  const memoireWasm = (await metriques()).suivi?.memoireWasm;
+  const perfMemoire = await page.evaluate(() => globalThis.__fadiPerf.mesures("PERF-07").filter((m) => m.etiquettes.nature === "memoire-wasm").map((m) => m.valeur));
+  check("TR-EX-062 : allocations WASM — mémoire linéaire du noyau (WebAssembly.Memory) relevée après le calcul, multiple de 64 Kio, enregistrée en PERF-07",
+    Number.isInteger(memoireWasm) && memoireWasm > 0 && memoireWasm % 65536 === 0 && perfMemoire.at(-1) === memoireWasm, JSON.stringify({ memoireWasm, perfMemoire }));
   const empreinteClient = await panneau.locator("[data-studio-exact-resultat]").getAttribute("data-studio-exact-empreinte");
   await panneau.locator("[data-studio-exact-engager]").click();
   await attendre(1);

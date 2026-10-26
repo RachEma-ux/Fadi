@@ -32,6 +32,7 @@ function bac(build: string, classes: unknown, o: { anciens?: string[]; pagesOuve
   };
   const cachesApi = {
     open: async (n: string) => { if (!caches.has(n)) caches.set(n, new FauxCache()); return caches.get(n)!; },
+    has: async (n: string) => caches.has(n),
     keys: async () => [...caches.keys()],
     delete: async (n: string) => caches.delete(n),
     match: async (r: Request) => { for (const c of caches.values()) { const x = await c.match(r); if (x) return x; } return undefined; },
@@ -65,7 +66,10 @@ describe("Service worker : précache par classes et mises à jour (B.3-07, B.3-1
     for (const essentiel of ["/index.html", "/assets/index-a.js", "/chargement.json", "/assets/planche-b.js"]) {
       for (const fac of CLASSES.facultatif) expect(i(essentiel), `${essentiel} avant ${fac}`).toBeLessThan(i(fac));
     }
-    expect([...b.caches.get("fadi-shell-b2")!.contenu.keys()].sort()).toEqual([...CLASSES.coquille, ...CLASSES.profil, ...CLASSES.facultatif].sort());
+    // EX-042 : une classe par cache du build (coquille, profil, modules facultatifs).
+    expect([...b.caches.get("fadi-shell-b2")!.contenu.keys()].sort()).toEqual([...CLASSES.coquille].sort());
+    expect([...b.caches.get("fadi-profil-b2")!.contenu.keys()].sort()).toEqual([...CLASSES.profil].sort());
+    expect([...b.caches.get("fadi-modules-b2")!.contenu.keys()].sort()).toEqual([...CLASSES.facultatif].sort());
   });
 
   it("une liste simple (ancienne forme) reste acceptée", async () => {
@@ -99,7 +103,7 @@ describe("Service worker : précache par classes et mises à jour (B.3-07, B.3-1
     let buildServi = "b3";
     const b = bac("b2", CLASSES, { reseau: (u) => new Response(u === "/chargement.json" ? JSON.stringify({ version: 1, build: buildServi }) : "x", { headers: { "content-type": u.endsWith(".html") ? "text/html" : "text/javascript" } }) });
     await b.attendre("install");
-    const cache = b.caches.get("fadi-shell-b2")!;
+    const cache = b.caches.get("fadi-profil-b2")!;
     expect(cache.contenu.has("/chargement.json")).toBe(false);
     // Lecture réseau d'une carte d'un autre build : rendue à la page, jamais enregistrée.
     let reponse: Promise<Response> | null = null;
@@ -124,5 +128,40 @@ describe("Service worker : précache par classes et mises à jour (B.3-07, B.3-1
     let intercepte = false;
     b.handlers.fetch!({ request: new Request("https://fadi.test/projects/p1/studio/preferences/outils"), respondWith: () => { intercepte = true; } });
     expect(intercepte).toBe(false);
+  });
+});
+
+describe("TR-EX-042 — caches différenciés : coquille, profil, modules facultatifs, données hors service worker", () => {
+  it("trois caches distincts par build ; un module lu plus tard rejoint le cache de sa classe ; hors ligne, chaque classe est servie depuis son cache", async () => {
+    let enLigne = true;
+    const b = bac("b2", CLASSES, { reseau: (u) => { if (!enLigne) throw new TypeError("hors ligne"); return new Response(u === "/index.html" ? '<html><meta name="fadi-build" content="b2"></html>' : u === "/chargement.json" ? '{"build":"b2"}' : `code ${u}`, { headers: { "content-type": u.endsWith(".html") ? "text/html" : "text/javascript" } }); } });
+    await b.attendre("install");
+    expect([...b.caches.keys()].sort()).toEqual(["fadi-modules-b2", "fadi-profil-b2", "fadi-shell-b2"]);
+    // Module facultatif hors liste anticipée (téléchargé à la demande, au premier usage) : rangé dans le cache des modules.
+    let reponse: Promise<Response> | null = null;
+    b.handlers.fetch!({ request: new Request("https://fadi.test/assets/noyau-exact.worker-e.js"), respondWith: (p: Promise<Response>) => { reponse = p; } });
+    await reponse!;
+    expect(b.caches.get("fadi-modules-b2")!.contenu.has("/assets/noyau-exact.worker-e.js")).toBe(true);
+    expect(b.caches.get("fadi-shell-b2")!.contenu.has("/assets/noyau-exact.worker-e.js")).toBe(false);
+    enLigne = false;
+    for (const [chemin, attendu] of [["/assets/index-a.js", "code /assets/index-a.js"], ["/assets/planche-b.js", "code /assets/planche-b.js"], ["/assets/three-c.js", "code /assets/three-c.js"]] as const) {
+      b.handlers.fetch!({ request: new Request(`https://fadi.test${chemin}`), respondWith: (p: Promise<Response>) => { reponse = p; } });
+      expect(await (await reponse!).text()).toBe(attendu);
+    }
+  });
+
+  it("le précache n'est pas un chargement : le binaire du noyau exact n'est jamais préchargé (téléchargement facultatif à la demande) ; les données et la file restent hors du service worker", () => {
+    const config = readFileSync(new URL("../../../../vite.config.ts", import.meta.url), "utf8");
+    // Liste anticipée : extensions de code et de page seulement — aucun .wasm.
+    expect(config).toMatch(/\.filter\(\(p\) => \/\\\.\(js\|css\|html\|svg\|woff2\?\|png\|json\)\$\/\.test\(p\)/);
+    expect(SOURCE).toMatch(/const API = /);
+    const code = SOURCE.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+    expect(code).not.toMatch(/indexedDB|IDB|Dexie/);
+  });
+
+  it("mise à jour avec une page ouverte : les trois caches du build précédent restent ensemble, les plus anciens sont purgés", async () => {
+    const b = bac("b3", CLASSES, { anciens: ["fadi-shell-b1", "fadi-profil-b1", "fadi-modules-b1", "fadi-shell-b2", "fadi-profil-b2", "fadi-modules-b2"], pagesOuvertes: 1 });
+    await b.attendre("activate");
+    expect([...b.caches.keys()].sort()).toEqual(["fadi-modules-b2", "fadi-profil-b2", "fadi-shell-b2"]);
   });
 });

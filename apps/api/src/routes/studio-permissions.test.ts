@@ -198,6 +198,12 @@ export const ROUTES: Route[] = [
   { route: "GET /steps/:stepNumber/studies", besoin: "lecture", url: () => `${S}/steps/1/studies` },
   { route: "GET /preferences/outils", besoin: "lecture", url: () => `${S}/preferences/outils`, note: "préférences du compte : aucune écriture du projet" },
   { route: "PUT /preferences/outils", besoin: "lecture", url: () => `${S}/preferences/outils`, body: { profil: "standard", favoris: ["studio.dessin.ligne"], personnel: [] }, note: "préférences du compte (INV-009) : lecture du projet suffit" },
+  { route: "GET /preferences/outils/export", besoin: "lecture", url: () => `${S}/preferences/outils/export`, note: "profil du compte (EX-034) : 404 tant qu'aucun profil n'est enregistré" },
+  {
+    route: "POST /preferences/outils/import", besoin: "lecture", url: () => `${S}/preferences/outils/import`,
+    body: { profil: { format: "fadi-studio-profil/1", profileId: "p-1", version: 1, profil: "standard", favoris: [], personnel: [], groupes: [], ordre: ["studio.dessin.ligne"], raccourcis: {} } },
+    note: "profil du compte (EX-033, INV-009) : lecture du projet suffit ; une capacité exigeant un droit absent est refusée (403 permission_non_conferee)",
+  },
   { route: "GET /preferences/catalogue", besoin: "lecture", url: () => `${S}/preferences/catalogue` },
   { route: "GET /publications", besoin: "lecture", url: () => `${S}/publications` },
   { route: "GET /delegations", besoin: "lecture", url: () => `${S}/delegations`, note: "délégations d'approbation (EX-085) : toutes pour le propriétaire, sinon celles dont on est délégant ou délégué" },
@@ -357,6 +363,7 @@ export const ROUTES: Route[] = [
 const REPONSES: Readonly<Record<string, string>> = {
   "POST /studies": "201", "POST /studies/:studyId/variants": "201",
   "POST /exemple": "409 exemple_indisponible",
+  "GET /preferences/outils/export": "404 not_found",
   "POST /studies/:studyId/variants/:variantId/archive": "400 initial_variant",
   "POST /studies/:studyId/variants/:variantId/comments": "201", "POST /studies/:studyId/variants/:variantId/comments/:commentId/observation": "201",
   "POST /studies/:studyId/variants/:variantId/comments/:commentId/observation/transitions": "403 forbidden",

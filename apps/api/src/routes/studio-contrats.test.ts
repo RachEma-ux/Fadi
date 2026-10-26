@@ -187,6 +187,15 @@ export const CAS: Cas[] = [
   // Préférences.
   { libelle: "studio-api-preferences-lire/1 — GET /preferences/outils : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_PREFERENCES_LIRE, route: "GET /preferences/outils", url: () => `${S}/preferences/outils` },
   { libelle: "studio-api-preferences-ecrire/1 — PUT /preferences/outils : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_PREFERENCES_ECRIRE, route: "PUT /preferences/outils", url: () => `${S}/preferences/outils`, corps: fixe({ profil: "standard", favoris: ["studio.dessin.ligne"], personnel: [] }) },
+  {
+    libelle: "studio-api-profil-exporter/1 — GET /preferences/outils/export : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_PROFIL_EXPORTER, route: "GET /preferences/outils/export",
+    url: () => `${S}/preferences/outils/export`, preparer: async () => { await exiger("put", `${S}/preferences/outils`, { profil: "standard", favoris: [], personnel: [] }); return {}; },
+  },
+  {
+    libelle: "studio-api-profil-importer/1 — POST /preferences/outils/import : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_PROFIL_IMPORTER, route: "POST /preferences/outils/import",
+    url: () => `${S}/preferences/outils/import`,
+    corps: fixe({ profil: { format: "fadi-studio-profil/1", profileId: "p-1", version: 1, profil: "standard", favoris: [], personnel: [], groupes: [], ordre: ["studio.dessin.ligne"], raccourcis: { "studio.dessin.ligne": "Ctrl+Shift+M" } } }),
+  },
   { libelle: "studio-api-catalogue-outils/1 — GET /preferences/catalogue : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_CATALOGUE_OUTILS, route: "GET /preferences/catalogue", url: () => `${S}/preferences/catalogue` },
   // Publications et délégations.
   { libelle: "studio-api-paquets-lister/1 — GET /publications : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_PAQUETS_LISTER, route: "GET /publications", url: () => `${S}/publications`, preparer: diffusee },

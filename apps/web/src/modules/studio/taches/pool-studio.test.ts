@@ -130,7 +130,7 @@ describe("groupe de Workers sous l'ordonnanceur", () => {
     const a = ord.soumettre(dem("m", "1"));
     ord.soumettre(dem("m", "2"));
     expect(dernier().termine).toBe(false);
-    await expect(a.issue).resolves.toEqual({ etat: "cancelled" });
+    await expect(a.issue).resolves.toEqual({ etat: "superseded" });
     const c = new AbortController();
     ord.soumettre(dem("dxf", "1", { signal: c.signal }));
     dernier().repondre("v1 périmé", 0);

@@ -142,6 +142,8 @@ export interface IfcContexte {
   pt2(x: number, y: number): number;
   shape(reps: number[]): number;
   placed(x: number, y: number, z: number, ux?: number, uy?: number): number;
+  /** Placement d'orientation quelconque : axe z local (`axe`) et axe x local (`ref`), unitaires et orthogonaux. */
+  placedAxes(x: number, y: number, z: number, axe: { x: number; y: number; z: number }, ref: { x: number; y: number; z: number }): number;
   rectangleSolid(cx: number, cy: number, xDim: number, yDim: number, depth: number): number;
   /** Profil fermé discrétisé (coordonnées absolues du plan, sens trigonométrique), extrudé depuis la cote de base. */
   arbitrarySolid(ring: StudioPoint[], depth: number, direction?: { x: number; y: number; z: number }): number;

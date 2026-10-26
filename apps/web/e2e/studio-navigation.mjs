@@ -1032,7 +1032,7 @@ try {
   await maillagePret();
   const journalMaillage = (await page.evaluate((d) => globalThis.__fadiTaches.journal.slice(d), debutJournal)).filter((e) => e.cle === "studio.maillage-3d");
   const remis = journalMaillage.filter((e) => e.etat === "done").map((e) => Number(e.revision));
-  const remplaces = journalMaillage.filter((e) => e.etat === "cancelled" || e.etat === "stale");
+  const remplaces = journalMaillage.filter((e) => e.etat === "cancelled" || e.etat === "superseded" || e.etat === "stale");
   const revisionCourante = Number(await vueLibre.getAttribute("data-studio-revision-courante"));
   const perimesRemis = journalMaillage.filter((e) => e.etat === "stale").filter((s) => journalMaillage.some((e) => e.id === s.id && e.etat === "done"));
   check("tâches : maillages remplacés pendant la rafale annulés, aucun résultat périmé remis ; le dernier maillage affiché est celui de la dernière révision",

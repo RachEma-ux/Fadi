@@ -26,6 +26,11 @@ export interface SuiviWasm {
   wasm: { url: string; transfere: number; encode: number; decode: number } | null;
   /** Durée du premier chargement (téléchargement, compilation, initialisation), ms. */
   chargementMs: number | null;
+  /**
+   * Allocations WebAssembly (EX-062) : taille de la mémoire linéaire du noyau après le dernier calcul, octets
+   * (`WebAssembly.Memory.buffer.byteLength`) ; null : non évaluée. Facultatif (anciens messages).
+   */
+  memoireWasm?: number | null;
 }
 
 export type ReponseNoyauExact = { id: number; valeur?: unknown; erreur?: string; suivi: SuiviWasm };
@@ -48,7 +53,7 @@ function suivi(): SuiviWasm {
     const e = (performance.getEntriesByType("resource") as PerformanceResourceTiming[]).filter((r) => /\.wasm(\?|$)/.test(r.name)).pop();
     if (e) wasm = { url: new URL(e.name).pathname, transfere: e.transferSize, encode: e.encodedBodySize, decode: e.decodedBodySize };
   } catch { /* Resource Timing indisponible : non évalué */ }
-  return { instances: MoteurExact.instancesCreees, wasm, chargementMs };
+  return { instances: MoteurExact.instancesCreees, wasm, chargementMs, memoireWasm: MoteurExact.memoireWasmOctets() };
 }
 
 portee.onmessage = async (e: MessageEvent<DemandeNoyauExact>) => {

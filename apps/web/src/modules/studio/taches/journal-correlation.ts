@@ -115,6 +115,7 @@ export class JournalCorrelation {
   private readonly lignes: EntreeJournal[] = [];
   private readonly commandeDeRevision = new Map<string, string>();
   private readonly debuts = new Map<string, number>();
+  private readonly enChargement = new Set<string>();
 
   constructor(private readonly o: { taille?: number; horloge?: () => number; memoire?: () => number | null } = {}) {}
 
@@ -146,11 +147,13 @@ export class JournalCorrelation {
   /** Changement d'état d'une tâche (`surEvenement` de l'ordonnanceur). */
   noterTache(e: EvenementTache): void {
     const t = this.maintenant();
-    if (e.etat === "running") this.debuts.set(e.jobId, t);
+    // Une tâche passée par `loading` (IF-007) compte sa durée depuis le début du chargement.
+    if (e.etat === "loading") { this.enChargement.add(e.jobId); this.debuts.set(e.jobId, t); }
+    else if (e.etat === "running" && !this.enChargement.delete(e.jobId)) this.debuts.set(e.jobId, t);
     const debut = this.debuts.get(e.jobId);
-    const final = e.etat === "done" || e.etat === "failed" || e.etat === "cancelled" || e.etat === "timed-out" || e.etat === "stale";
+    const final = e.etat === "done" || e.etat === "failed" || e.etat === "cancelled" || e.etat === "superseded" || e.etat === "timed-out" || e.etat === "stale";
     const memoire = final ? this.o.memoire?.() ?? null : null;
-    if (final) this.debuts.delete(e.jobId);
+    if (final) { this.debuts.delete(e.jobId); this.enChargement.delete(e.jobId); }
     this.ajouter({
       type: "tache", t, jobId: e.jobId, commandId: e.commandId ?? this.commandeDeRevision.get(e.revision) ?? null, cle: e.cle, classe: e.classe,
       evenement: e.etat, revision: e.revision, tentative: e.tentative,

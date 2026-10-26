@@ -1,5 +1,5 @@
 import { prism, type StudioPoint3 } from "../exporteurs/maillage.js";
-import { cotesSolide, empriseSolide, translationSommet, type StudioLienSolide, type StudioSolid } from "./solides.js";
+import { cotesSolide, empriseSolide, studioBasculerPoint, translationSommet, type StudioLienSolide, type StudioSolid } from "./solides.js";
 
 /**
  * Maillage dérivé d'un solide libre (vue 3D) : prisme sur l'emprise placée, entre les cotes inférieure et supérieure,
@@ -33,5 +33,7 @@ export function studioMaillageSolide(s: StudioSolid, lien: StudioLienSolide | nu
       g.vertices[i] = { x: v.x + t.x, y: v.y + t.y, z: v.z };
     }
   }
+  // Solide basculé autour d'un axe horizontal (A.3-03) : tout le maillage tourne autour de l'origine du solide.
+  if (s.placement.basculement) g.vertices = g.vertices.map((v) => studioBasculerPoint(s.placement, v));
   return { id: s.id, type: s.type, ...(s.layerId !== undefined ? { layerId: s.layerId } : {}), kind: "prism", ...g, ...(lien ? { lien } : {}) };
 }

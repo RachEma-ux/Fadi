@@ -1,6 +1,7 @@
 import type { StudioPoint3 } from "../exporteurs/maillage.js";
 import { array, fail, finite, identifier, layerRef, record } from "../noyau/validation.js";
-import { cotesSolide, empriseSolide, estDroit, validerSolide, type StudioSolid } from "./solides.js";
+import { cotesSolide, empriseSolide, estBascule, estDroit, validerSolide, type StudioSolid } from "./solides.js";
+import { studioMaillageSolide } from "./maillage.js";
 
 /**
  * Solides exacts de Studio (lot F2, IF-003, R15) : résultat d'une opération booléenne (union, différence, intersection)
@@ -155,6 +156,7 @@ export const OP_NOYAU: Readonly<Record<StudioOperationBooleenne, StudioOperation
 export function studioOperandeNoyau(s: StudioOperandeExact): StudioOperandeNoyau | string {
   if (s.type === "exact") return { brep: s.resultat.brep };
   if (!estDroit(s)) return "prisme oblique : le booléen exact de Studio n’accepte que des solides droits (direction +Z ou −Z)";
+  if (estBascule(s)) return "solide basculé : le booléen exact de Studio n’accepte que des solides à profil horizontal (aucun basculement)";
   const { zMin, zMax } = cotesSolide(s);
   return { extrusion: { profil: empriseSolide(s).map((p) => ({ x: p.x, y: p.y })), z0: zMin, hauteur: zMax - zMin } };
 }
@@ -173,6 +175,14 @@ export function studioBoiteEnglobante(s: StudioOperandeExact): StudioBoiteEnglob
       max.x = Math.max(max.x, p[i]!); max.y = Math.max(max.y, p[i + 1]!); max.z = Math.max(max.z, p[i + 2]!);
     }
     return { min, max };
+  }
+  if (estBascule(s)) {
+    // Solide basculé (A.3-03) : boîte englobante de son maillage.
+    const v = studioMaillageSolide(s).vertices;
+    return {
+      min: { x: Math.min(...v.map((p) => p.x)), y: Math.min(...v.map((p) => p.y)), z: Math.min(...v.map((p) => p.z)) },
+      max: { x: Math.max(...v.map((p) => p.x)), y: Math.max(...v.map((p) => p.y)), z: Math.max(...v.map((p) => p.z)) },
+    };
   }
   const e = empriseSolide(s);
   const { zMin, zMax } = cotesSolide(s);

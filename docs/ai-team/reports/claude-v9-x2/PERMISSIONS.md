@@ -48,6 +48,8 @@ chargé de tâche — rôle vérifié ensuite par `lib/studio-observations.ts`, 
 | `GET /steps/:stepNumber/studies` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `GET /preferences/outils` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | préférences du compte : aucune écriture du projet |
 | `PUT /preferences/outils` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | préférences du compte (INV-009) : lecture du projet suffit |
+| `GET /preferences/outils/export` | lecture | 404 | admis | admis | admis | admis | admis | admis | 404 not_found | profil du compte (EX-034) : 404 tant qu'aucun profil n'est enregistré |
+| `POST /preferences/outils/import` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | profil du compte (EX-033, INV-009) : lecture du projet suffit ; une capacité exigeant un droit absent est refusée (403 permission_non_conferee) |
 | `GET /preferences/catalogue` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `GET /publications` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `GET /delegations` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | délégations d'approbation (EX-085) : toutes pour le propriétaire, sinon celles dont on est délégant ou délégué |
