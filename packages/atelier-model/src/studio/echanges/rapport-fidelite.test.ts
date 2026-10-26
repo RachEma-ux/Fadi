@@ -12,7 +12,8 @@ import {
 /** Types déclarés par le schéma d'une liste du document (un `oneOf` de types, ou un type seul). */
 function typesDuSchema(items: unknown): string[] {
   const it = items as { oneOf?: { properties: { type: { const: string } } }[]; properties?: { type: { const: string } } };
-  return it.oneOf ? it.oneOf.map((s) => s.properties.type.const) : [it.properties!.type.const];
+  // Types distincts : un même type peut avoir plusieurs formes (solide exact booléen ou épaissi, X.1-05).
+  return it.oneOf ? [...new Set(it.oneOf.map((s) => s.properties.type.const))] : [it.properties!.type.const];
 }
 
 /** Document qui contient chaque type d'élément, extrudé ou non, sur des calques visibles, masqués et réécrits. */

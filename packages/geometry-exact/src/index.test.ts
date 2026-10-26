@@ -251,4 +251,47 @@ describe("noyau exact — STEP nommé (E.6-04)", () => {
   });
 });
 
+describe("surface NURBS épaissie (Studio, X.1-05)", () => {
+  /** Quart de cylindre de rayon R et de longueur L : arc rationnel quadratique (poids 1, √2/2, 1) × segment de degré 1. */
+  const quartCylindre = (R: number, L: number) => {
+    const arc = [{ x: R, y: 0 }, { x: R, y: R }, { x: 0, y: R }], w = [1, Math.SQRT1_2, 1];
+    const controle: { x: number; y: number; z: number }[] = [], poids: number[] = [];
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) { controle.push({ x: arc[i]!.x, y: arc[i]!.y, z: j * L }); poids.push(w[i]!); }
+    return { degreU: 2, degreV: 1, lignes: 3, colonnes: 2, controle, poids };
+  };
+
+  it("NURBS rationnelle : quart de cylindre R 2 m, L 3 m épaissi de 0,1 m vers l'extérieur — volume π/4 ((R + e)² − R²) L, intérieur π/4 (R² − (R − e)²) L", () => {
+    const ext = M.executer({ type: "nurbs", nurbs: quartCylindre(2, 3), epaisseur: 0.1 });
+    expect(ext.solides).toBe(1);
+    expect(Math.abs(ext.volume - (Math.PI / 4) * (2.1 ** 2 - 4) * 3) / ext.volume).toBeLessThan(1e-6);
+    const int = M.executer({ type: "nurbs", nurbs: quartCylindre(2, 3), epaisseur: -0.1 });
+    expect(Math.abs(int.volume - (Math.PI / 4) * (4 - 1.9 ** 2) * 3) / int.volume).toBeLessThan(1e-6);
+    // Reproductible : même brep, même empreinte (le serveur recalcule).
+    expect(M.executer({ type: "nurbs", nurbs: quartCylindre(2, 3), epaisseur: 0.1 }).empreinte).toBe(ext.empreinte);
+  });
+
+  it("NURBS : les pôles ne sont pas des points de passage — plaque bilinéaire 2 × 3 épaissie de 0,1 m : volume 0,6 ; poids changés : autre surface", () => {
+    const plaque = { degreU: 1, degreV: 1, lignes: 2, colonnes: 2, controle: [{ x: 0, y: 0, z: 0 }, { x: 2, y: 0, z: 0 }, { x: 0, y: 3, z: 0 }, { x: 2, y: 3, z: 0 }] };
+    expect(M.executer({ type: "nurbs", nurbs: plaque, epaisseur: 0.1 }).volume).toBeCloseTo(0.6, 9);
+    // Bosse de degré 2 × 2 sur une grille 3 × 3 : le pôle central relevé de 1 m ne relève le centre que de 0,25 m (Bézier), pas de 1 m.
+    const bosse = (w: number) => ({ degreU: 2, degreV: 2, lignes: 3, colonnes: 3, controle: Array.from({ length: 9 }, (_, k) => ({ x: k % 3, y: Math.floor(k / 3), z: k === 4 ? 1 : 0 })), poids: Array.from({ length: 9 }, (_, k) => (k === 4 ? w : 1)) });
+    const a = M.executer({ type: "nurbs", nurbs: bosse(1), epaisseur: 0.01 }), b = M.executer({ type: "nurbs", nurbs: bosse(3), epaisseur: 0.01 });
+    const zMax = (r: SolideExact) => Math.max(...r.maillage.positions.filter((_, i) => i % 3 === 2));
+    // Normale ∂S/∂u × ∂S/∂v vers le bas ici (u le long de y, v le long de x) : l'épaisseur est sous la nappe.
+    expect(zMax(a)).toBeGreaterThan(0.2); expect(zMax(a)).toBeLessThanOrEqual(0.25 + 1e-6);
+    expect(zMax(b)).toBeGreaterThan(zMax(a) + 0.1);
+    expect(a.empreinte).not.toBe(b.empreinte);
+  });
+
+  it("NURBS : entrées refusées — degré > lignes − 1, pôles en nombre faux, poids nul, épaisseur nulle, bord réduit à un point", () => {
+    const q = quartCylindre(2, 3);
+    expect(() => validerOperation({ type: "nurbs", nurbs: { ...q, degreU: 3 }, epaisseur: 0.1 })).toThrow(/degreU/);
+    expect(() => validerOperation({ type: "nurbs", nurbs: { ...q, controle: q.controle.slice(1) }, epaisseur: 0.1 })).toThrow(/6 pôles/);
+    expect(() => validerOperation({ type: "nurbs", nurbs: { ...q, poids: q.poids.map((w, i) => (i ? w : 0)) }, epaisseur: 0.1 })).toThrow(/strictement positif/);
+    expect(() => validerOperation({ type: "nurbs", nurbs: q, epaisseur: 0 })).toThrow(/non nulle/);
+    const cone = { ...q, controle: q.controle.map((p, k) => (k % 2 === 1 ? { x: 0, y: 0, z: 3 } : p)) };
+    expect(() => validerOperation({ type: "nurbs", nurbs: cone, epaisseur: 0.1 })).toThrow(/réduit à un point/);
+  });
+});
+
 export type _S = SolideExact;

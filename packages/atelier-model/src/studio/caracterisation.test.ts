@@ -323,6 +323,9 @@ const AJOUTS = {
     "studio.architecture.echelle-acces",
     // Lot G2 (INV-013) : cote de face 3D, champ facultatif `cotesFaces` du document.
     "studio.solide.cote-face",
+    // X.1-05 (extension additive consignée) : surfaces libres NURBS, champ facultatif `surfaces` du document ; solide
+    // exact par épaississement (variante additive de `exacts`).
+    "studio.surface.nurbs", "studio.surface.modifier", "studio.surface.epaissir",
   ]),
   types: new Set(["angular-dimension", "text", "wall", "opening", "scene", "appearance", "non-native", "spline", "hachure", "symbole", "source", "ladder", "face-dimension"]),
   exports: new Set([
@@ -409,6 +412,10 @@ const AJOUTS = {
     "SCHEMA_ECHELLE", "STUDIO_ECHELONS_MAX", "validerEchelle", "geometrieEchelle", "metreEchelle", "volumesEchelle",
     // Lot G2 : cotes de faces 3D (INV-013, `objets-3d/cotes-faces.ts`).
     "SCHEMA_COTE_FACE", "STUDIO_TOLERANCE_FACES", "controlerCoteFace", "studioCorrespondanceFace", "studioFaceExiste", "studioPlanFace", "studioValeurCoteFace", "validerCoteFace",
+    // X.1-05 : surfaces libres NURBS (`objets-3d/surfaces-libres.ts`) et leur épaississement exact (`surfaces-exactes.ts`).
+    "estBooleenExact", "SCHEMA_SURFACE_LIBRE", "STUDIO_LIMITES_SURFACES", "STUDIO_SENS_EPAISSEUR", "studioAireApprocheeSurface", "studioMaillageSurface",
+    "studioNoeudsUniformes", "studioOperationNurbs", "studioPointSurface", "validerSurfaceLibre",
+    "studioCaptureEpaississement", "studioVerifierEpaississement", "studioCommandeEpaississement",
   ]),
 };
 function sansAjouts(value: unknown): unknown {
@@ -420,7 +427,7 @@ function sansAjouts(value: unknown): unknown {
   if (!value || typeof value !== "object") return value;
   const out = Object.fromEntries(Object.entries(value).map(([k, v]) => [k, sansAjouts(v)]));
   const props = out.properties as Record<string, unknown> | undefined;
-  if (props && "schemaVersion" in props) { delete props.annotations; delete props.architecture; delete props.proprietes; delete props.scenes; delete props.nonNatifs; delete props.exacts; delete props.graphismes; delete props.systemeProjet; delete props.sources; delete props.cotesFaces; }
+  if (props && "schemaVersion" in props) { delete props.annotations; delete props.architecture; delete props.proprietes; delete props.scenes; delete props.nonNatifs; delete props.exacts; delete props.graphismes; delete props.systemeProjet; delete props.sources; delete props.cotesFaces; delete props.surfaces; }
   // Lot F1 (extension additive consignée) : direction d'extrusion facultative (`extrusion.direction`, `extruder`) et,
   // pour le prisme, direction et source facultatives ; retirées pour comparer à la base.
   if (props && "base" in props && "height" in props) delete props.direction;

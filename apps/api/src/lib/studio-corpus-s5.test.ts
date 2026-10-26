@@ -2,13 +2,15 @@
  * X.1-05 — booléens exacts du corpus S5 : le résultat conservé dans `packages/atelier-model/src/studio/corpus/fixtures/
  * s5-exacts.ts` est recalculé ici par le noyau exact (occt-wasm en Node, même chemin que le serveur : `studioCaptureBooleen`
  * puis `executer`) et comparé à l'empreinte du brep ; son volume est comparé à la forme close (union 1,5 V, différence
- * 0,5 V, intersection 0,5 V). `STUDIO_CORPUS_ECRIRE=1` réécrit la donnée (changement délibéré du noyau ou du motif).
+ * 0,5 V, intersection 0,5 V). Surface épaissie (X.1-05) : même chemin (`studioCaptureEpaississement` puis `executer`),
+ * volume comparé à la forme close π/4 ((R + e)² − R²) L. `STUDIO_CORPUS_ECRIRE=1` réécrit la donnée (changement délibéré
+ * du noyau ou du motif).
  */
 import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { applyStudioCommands, newStudioDocument, studioCaptureBooleen, type StudioCommand, type StudioResultatExact } from "@parcours/atelier-model";
-import { BOOLEENS_S5, genererCorpus, operandesBooleenS5, parametresS5, RESULTATS_EXACTS_S5 } from "@parcours/atelier-model/studio-corpus";
+import { applyStudioCommands, newStudioDocument, studioCaptureBooleen, studioCaptureEpaississement, type StudioCommand, type StudioResultatExact } from "@parcours/atelier-model";
+import { BOOLEENS_S5, genererCorpus, operandesBooleenS5, parametresS5, quartCylindreS5, RESULTATS_EXACTS_S5, SURFACES_S5 } from "@parcours/atelier-model/studio-corpus";
 import { MoteurExact } from "@parcours/geometry-exact";
 
 const FICHIER = fileURLToPath(new URL("../../../../packages/atelier-model/src/studio/corpus/fixtures/s5-exacts.ts", import.meta.url));
@@ -29,6 +31,18 @@ describe("X.1-05 — booléens exacts du corpus S5 recalculés par le noyau OCCT
       const p = parametresS5(j).boite, V = p.largeur * p.profondeur * p.hauteur;
       expect(r.volume, `${operation} : forme close`).toBeCloseTo(operation === "union" ? 1.5 * V : 0.5 * V, 9);
     }
+    // Surface épaissie (X.1-05) : la surface du motif, hors de la grille (même position pour toutes les tailles).
+    {
+      const j = SURFACES_S5.epaissie, q = parametresS5(j).surface;
+      const s = quartCylindreS5(`s5-${j}-surface`, "surfaces", -20 * (j + 1), -20, q.rayon, q.hauteur);
+      const doc = applyStudioCommands(newStudioDocument("s5"), [{ toolId: "studio.calque.creer", params: { id: "surfaces", name: "Surfaces libres NURBS (synthétique)", visible: true, locked: false } }, { toolId: "studio.surface.nurbs", params: s }] as StudioCommand[]);
+      const c = studioCaptureEpaississement(doc, { surface: s.id, epaisseur: q.epaisseur, sens: "normale" });
+      if (!c.ok) throw new Error(c.message);
+      const r = M.executer(c.capture.entrees);
+      calcules[`s5-${j}-epaissie`] = { brep: r.brep, maillage: r.maillage, volume: r.volume, aire: r.aire, faces: r.faces, solides: r.solides, moteur: r.moteur, versionMoteur: r.versionMoteur, empreinte: r.empreinte };
+      const attendu = (Math.PI / 4) * ((q.rayon + q.epaisseur) ** 2 - q.rayon ** 2) * q.hauteur;
+      expect(Math.abs(r.volume - attendu) / attendu, "surface épaissie : forme close").toBeLessThan(1e-6);
+    }
     if (ECRIRE) {
       writeFileSync(FICHIER, `// Généré par apps/api/src/lib/studio-corpus-s5.test.ts (STUDIO_CORPUS_ECRIRE=1) : ne pas éditer à la main.\nimport type { StudioResultatExact } from "../../objets-3d/exacts.js";\n\nexport const RESULTATS_EXACTS_S5: Readonly<Record<string, StudioResultatExact>> = ${JSON.stringify(calcules)};\n`);
       return;
@@ -39,6 +53,9 @@ describe("X.1-05 — booléens exacts du corpus S5 recalculés par le noyau OCCT
     }
     // Le corpus généré porte exactement ces résultats (opérandes conservés).
     const doc = genererCorpus("S5", 100).documents[0]!;
-    expect(doc.exacts?.map((e) => [e.id, e.operation, e.resultat.empreinte])).toEqual(BOOLEENS_S5.map((op, j) => [`s5-${j}-booleen`, op, calcules[`s5-${j}-booleen`]!.empreinte]));
+    expect(doc.exacts?.map((e) => [e.id, e.operation, e.resultat.empreinte])).toEqual([
+      ...BOOLEENS_S5.map((op, j) => [`s5-${j}-booleen`, op, calcules[`s5-${j}-booleen`]!.empreinte]),
+      [`s5-${SURFACES_S5.epaissie}-epaissie`, "epaississement", calcules[`s5-${SURFACES_S5.epaissie}-epaissie`]!.empreinte],
+    ]);
   });
 });

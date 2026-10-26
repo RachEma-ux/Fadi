@@ -1,6 +1,7 @@
 import { SCHEMA_COTE_FACE } from "../objets-3d/cotes-faces.js";
 import { SCHEMA_BOITE, SCHEMA_PRISME } from "../objets-3d/solides.js";
 import { SCHEMA_RESULTAT_EXACT, STUDIO_OPERATIONS_BOOLEENNES } from "../objets-3d/exacts.js";
+import { SCHEMA_SURFACE_LIBRE, STUDIO_SENS_EPAISSEUR } from "../objets-3d/surfaces-libres.js";
 import { mutation } from "./communs.js";
 import { ids } from "./schemas.js";
 import { id, number } from "./schemas-base.js";
@@ -16,6 +17,9 @@ const nonNul = { type: "number", not: { const: 0 } } as const;
  * ces combinaisons Ctrl+Maj ne sont pas réservées par le navigateur (`RACCOURCIS_RESERVES`).
  * Lot F2 (noyau exact, IF-003) : Booléen exact (Ctrl+Maj+Y) — union, différence ou intersection de deux solides, calculée
  * par le noyau exact chargé à la demande, puis engagée explicitement.
+ * X.1-05 (surfaces libres) : Surface NURBS (Ctrl+F8), Modifier la surface (Ctrl+F9 : points de contrôle, poids, degrés),
+ * Épaissir la surface (Maj+F11 : conversion explicite en solide exact par le noyau OCCT, surface conservée). Maj+F9,
+ * prévu d'abord dans la réserve du lot W3-C, est déjà l'import IFC : la coordination a attribué Maj+F11 à la place.
  */
 export const OUTILS_VOLUME_LIBRE = [
   { ...mutation, toolId: "studio.solide.boite", libelleFR: "Boîte", raccourci: "B", iconeSymbolique: "studio-solid-box", groupe: "volume-libre", inputSchema: SCHEMA_BOITE },
@@ -30,4 +34,7 @@ export const OUTILS_VOLUME_LIBRE = [
   // Lot G2 (INV-013) : Cote de face 3D (Maj+F12) — distance entre deux faces parallèles d'un solide libre, qui suit
   // la face modifiée ou passe « à résoudre » ; la même commande, sur une cote existante, la rattache explicitement.
   { ...mutation, toolId: "studio.solide.cote-face", libelleFR: "Cote de face 3D", raccourci: "Shift+F12", iconeSymbolique: "studio-solid-face-dimension", groupe: "volume-libre", inputSchema: SCHEMA_COTE_FACE },
+  { ...mutation, toolId: "studio.surface.nurbs", libelleFR: "Surface NURBS", raccourci: "Ctrl+F8", iconeSymbolique: "studio-surface-nurbs", groupe: "volume-libre", inputSchema: SCHEMA_SURFACE_LIBRE },
+  { ...mutation, toolId: "studio.surface.modifier", libelleFR: "Modifier la surface", raccourci: "Ctrl+F9", iconeSymbolique: "studio-surface-edit", groupe: "volume-libre", inputSchema: SCHEMA_SURFACE_LIBRE },
+  { ...mutation, toolId: "studio.surface.epaissir", libelleFR: "Épaissir la surface", raccourci: "Shift+F11", iconeSymbolique: "studio-surface-thicken", groupe: "volume-libre", inputSchema: { type: "object", additionalProperties: false, required: ["id", "surface", "epaisseur", "sens", "resultat"], properties: { id, surface: id, epaisseur: { type: "number", minimum: 1e-6, maximum: 1e6 }, sens: { enum: [...STUDIO_SENS_EPAISSEUR] }, resultat: SCHEMA_RESULTAT_EXACT } } },
 ] as const;

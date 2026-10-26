@@ -1,7 +1,8 @@
 /**
  * Entrées de la scène de rendu de la vue 3D (lot C.2, extraites de `Vue3DStudio.tsx` pour être partagées avec la
  * comparaison avant / après optimisation, AC-005) : ce que la scène incrémentale (`scene-rendu.ts`) reçoit pour chaque
- * objet affiché — volumes en lots (murs, objets extrudés), objets construits seuls (solides libres et exacts, ouvertures,
+ * objet affiché — volumes en lots (murs, objets extrudés), objets construits seuls (solides libres et exacts, surfaces
+ * libres NURBS et leurs pôles, ouvertures,
  * contours, sélection), avec leur aspect (sélection, apparence d'affichage, défaut). Ni React ni DOM : three.js seulement.
  */
 import * as THREE from "three";
@@ -71,7 +72,33 @@ export function entreesLibres(l: Lecture): EntreeRendu[] {
     const aspect = aspectDe(l.doc, l.mode, s, 0xa9c7e8, s.id === l.selection);
     return { id: s.id, signature: `${l.cle(s.id)}|${cleAspect(aspect)}`, construire: () => volumeSeul(s, aspect, s.id, { solide: s.id }) };
   });
-  return [...libres, ...exacts];
+  // Surfaces libres NURBS (X.1-05) : nappe ouverte (deux faces), bords ; sélectionnée, son polygone de contrôle et un
+  // repère par pôle (désignable : `userData.pole`, édition des points de contrôle).
+  const surfaces = (l.mesh.surfaces ?? []).filter((s) => l.present(s.id)).map((s): EntreeRendu => {
+    const choisie = s.id === l.selection;
+    const aspect = aspectDe(l.doc, l.mode, s, 0xa8d8b9, choisie, true);
+    return {
+      id: s.id, signature: `${l.cle(s.id)}|${cleAspect(aspect)}|${choisie ? "poles" : ""}`, construire: () => {
+        const objets = volumeSeul(s, aspect, s.id, { solide: s.id, surface: s.id });
+        if (!choisie) return objets;
+        const reseau = new THREE.BufferGeometry();
+        reseau.setAttribute("position", new THREE.BufferAttribute(new Float32Array(s.controle.segments.flatMap(([a, b]) => { const p = s.controle.points[a]!, q = s.controle.points[b]!; return [p.x, p.y, p.z, q.x, q.y, q.z]; })), 3));
+        const polygone = new THREE.LineSegments(reseau, new THREE.LineDashedMaterial({ color: 0x1f6f4a, dashSize: 0.1, gapSize: 0.06 }));
+        polygone.computeLineDistances();
+        objets.push(polygone);
+        const taille = Math.max(0.03, Math.min(0.2, 0.02 * Math.max(...s.vertices.map((v) => Math.max(Math.abs(v.x), Math.abs(v.y), Math.abs(v.z))), 1) / 4));
+        s.controle.points.forEach((p, k) => {
+          const repere = new THREE.Mesh(new THREE.SphereGeometry(taille, 10, 8), new THREE.MeshBasicMaterial({ color: 0x1f6f4a }));
+          repere.position.set(p.x, p.y, p.z);
+          repere.name = `${s.id}#pole-${k}`;
+          Object.assign(repere.userData, { surface: s.id, pole: k });
+          objets.push(repere);
+        });
+        return objets;
+      },
+    };
+  });
+  return [...libres, ...exacts, ...surfaces];
 }
 
 /**

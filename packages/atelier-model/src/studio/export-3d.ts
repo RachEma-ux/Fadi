@@ -18,11 +18,13 @@ import { morceauxVolume } from "./architecture/geometrie.js";
  *   écrites : leur vide est déjà dans le maillage du mur.
  * - **STL** (ASCII, `exportStudioStl`) : une seule pièce `solid`, facettes triangulées des **solides** seulement (objets
  *   extrudés, solides libres, solides exacts, murs) avec leur normale calculée ; STL ne porte ni unité, ni identité, ni
- *   calque : ils sont perdus (déclaré). Les surfaces verticales sans épaisseur et les contours plats ne sont pas écrits.
+ *   calque : ils sont perdus (déclaré). Les surfaces verticales sans épaisseur, les surfaces libres NURBS non épaissies
+ *   (X.1-05 : nappes ouvertes, écrites en OBJ seulement) et les contours plats ne sont pas écrits.
  * - **STEP** (`studioPiecesStep`) : ce module ne calcule aucune géométrie exacte ; il décrit, pour le noyau exact
  *   (`@parcours/geometry-exact`, `exporterStepPieces`, côté serveur), une **pièce nommée** par élément solide : extrusion
  *   de l'emprise (objet extrudé, solide droit, morceaux pleins d'un mur), lissage réglé entre les deux faces (solide
- *   oblique ou basculé) ou brep du noyau (solide exact). Le document n'est jamais modifié : un objet paramétrique reste
+ *   oblique ou basculé) ou brep du noyau (solide exact, dont une surface libre épaissie). Une surface libre non épaissie
+ *   n'est pas un solide : comptée « surface-libre-non-epaissie », jamais écrite. Le document n'est jamais modifié : un objet paramétrique reste
  *   canonique, son extrusion n'est qu'une entrée de l'écriture (R15).
  *
  * Tous les calques sont écrits (un calque masqué l'est aussi, ses éléments sont comptés « masqués » dans l'en-tête), pour
@@ -66,7 +68,7 @@ export interface StudioBilanExport3d {
   nonEcrits: Readonly<Record<string, number>>;
 }
 
-interface Element3d { id: string; layerId?: string; categorie: "objet" | "solide" | "exact" | "mur" | "surface"; vertices: StudioPoint3[]; triangles: [number, number, number][] }
+interface Element3d { id: string; layerId?: string; categorie: "objet" | "solide" | "exact" | "mur" | "surface" | "surface-libre"; vertices: StudioPoint3[]; triangles: [number, number, number][] }
 
 function elements3d(mesh: StudioMesh3d): Element3d[] {
   const out: Element3d[] = [];
@@ -74,6 +76,7 @@ function elements3d(mesh: StudioMesh3d): Element3d[] {
   for (const s of mesh.solids) out.push({ id: s.id, ...lay(s.layerId), categorie: s.kind === "prism" ? "objet" : "surface", vertices: s.vertices, triangles: s.triangles });
   for (const s of mesh.freeSolids ?? []) out.push({ id: s.id, ...lay(s.layerId), categorie: "solide", vertices: s.vertices, triangles: s.triangles });
   for (const s of mesh.exacts ?? []) out.push({ id: s.id, ...lay(s.layerId), categorie: "exact", vertices: s.vertices, triangles: s.triangles });
+  for (const s of mesh.surfaces ?? []) out.push({ id: s.id, ...lay(s.layerId), categorie: "surface-libre", vertices: s.vertices, triangles: s.triangles });
   for (const s of mesh.architecture ?? []) if (s.type === "wall") out.push({ id: s.id, ...lay(s.layerId), categorie: "mur", vertices: s.vertices, triangles: s.triangles });
   return out;
 }
@@ -110,8 +113,9 @@ export function studioBilanExport3d(document: StudioDocument, format: StudioForm
   if (format === "obj") {
     ecrits = els;
   } else {
-    ecrits = els.filter((e) => e.categorie !== "surface");
-    ajouter("surface-sans-epaisseur", els.length - ecrits.length);
+    ecrits = els.filter((e) => e.categorie !== "surface" && e.categorie !== "surface-libre");
+    ajouter("surface-sans-epaisseur", els.filter((e) => e.categorie === "surface").length);
+    ajouter("surface-libre-non-epaissie", els.filter((e) => e.categorie === "surface-libre").length);
     ajouter("contour-non-extrude", mesh.outlines.length);
   }
   const lignes = format === "obj" ? mesh.outlines.length : 0;
@@ -181,7 +185,7 @@ export function exportStudioStl(document: StudioDocument): string {
   const l: string[] = [`solid ${nom}`];
   const p = (v: StudioPoint3) => `${nb(v.x)} ${nb(v.y)} ${nb(v.z)}`;
   for (const e of elements3d(mesh)) {
-    if (e.categorie === "surface") continue;
+    if (e.categorie === "surface" || e.categorie === "surface-libre") continue;
     for (const [a, b, c] of e.triangles) {
       const A = e.vertices[a]!, B = e.vertices[b]!, C = e.vertices[c]!;
       const n = normale(A, B, C);
@@ -243,6 +247,7 @@ export function studioPiecesStep(document: StudioDocument): { pieces: StudioPiec
     poser({ nom: studioNomEchange3d(s.id), categorie: "solide", solides: [solide] }, s.layerId);
   }
   for (const s of doc.exacts ?? []) poser({ nom: studioNomEchange3d(s.id), categorie: "exact", solides: [{ brep: s.resultat.brep }] }, s.layerId);
+  for (const _ of doc.surfaces ?? []) ajouter("surface-libre-non-epaissie");
   if (doc.architecture?.length) {
     const lue = lireArchitecture(doc.architecture);
     for (const { mur, geometrie, ouvertures } of lue.murs.values()) {

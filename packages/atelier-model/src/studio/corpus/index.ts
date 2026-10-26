@@ -26,7 +26,7 @@ export { corpusS2, COUVERTURE_S2, DEFINITION_S2, fondAxesS2, MOTIF_PLAN, MOTIF_S
 export { corpusS3, DEFINITION_S3, MOTIF_S3 } from "./s3-dense.js";
 export { corpusS4, DEFINITION_S4, MOTIF_S4 } from "./s4-immeuble.js";
 export { RESULTATS_EXACTS_S5 } from "./fixtures/s5-exacts.js";
-export { BOOLEENS_S5, corpusS5, DEFINITION_S5, MOTIF_S5, operandesBooleenS5, parametresS5 } from "./s5-libre.js";
+export { BOOLEENS_S5, corpusS5, DEFINITION_S5, MOTIF_S5, operandesBooleenS5, parametresS5, quartCylindreS5, SURFACES_S5 } from "./s5-libre.js";
 export { DEFINITION_S6, planS6, type CleVarianteS6, type EtapeS6, type ExigenceS6, type PlanS6, type VarianteS6 } from "./s6-variantes.js";
 export { corpusS7, COUVERTURE_S7, DEFINITION_S7, SESSION_HORS_RESEAU_S7 } from "./s7-hors-reseau.js";
 export * from "./oracles.js";

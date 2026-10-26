@@ -197,6 +197,8 @@ export const OUTILS_MODES: ReadonlySet<StudioToolId> = new Set<StudioToolId>([
   "studio.solide.booleen",
   // Lot G2 (INV-013) : cote de face 3D (formulaire de la vue 3D, solide sélectionné).
   "studio.solide.cote-face",
+  // X.1-05 : surfaces libres NURBS (formulaires de la vue 3D ; épaississement par le noyau exact chargé à la demande).
+  "studio.surface.nurbs", "studio.surface.modifier", "studio.surface.epaissir",
   "studio.dessin.copier", "studio.dessin.rotation", "studio.dessin.symetrie", "studio.dessin.echelle",
   "studio.dessin.cote-angulaire", "studio.dessin.texte",
   // Architecture (A.4) : poser l'axe d'un mur, désigner le mur d'une ouverture.
@@ -207,6 +209,7 @@ export const OUTILS_VOLUME_LIBRE: ReadonlySet<StudioToolId> = new Set<StudioTool
   "studio.solide.boite", "studio.solide.prisme", "studio.solide.deplacer", "studio.solide.supprimer",
   "studio.solide.face-decaler", "studio.solide.face-diviser", "studio.solide.pivoter", "studio.solide.resoudre",
   "studio.solide.booleen", "studio.solide.cote-face",
+  "studio.surface.nurbs", "studio.surface.modifier", "studio.surface.epaissir",
 ]);
 /** Outils qui posent des points sur la planche. */
 export const OUTILS_TRACE: ReadonlySet<StudioToolId> = new Set<StudioToolId>(["studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle", "studio.dessin.arc", "studio.dessin.polyligne", "studio.dessin.cote", "studio.dessin.cote-angulaire", "studio.dessin.texte", "studio.architecture.mur", "studio.architecture.ouverture", "studio.architecture.echelle-acces"]);

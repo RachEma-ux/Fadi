@@ -6,7 +6,7 @@
  * clavier. La bascule Planche 2D ⇄ 3D déplace le focus vers la planche qui apparaît (`variante/focus-bascule.ts`).
  */
 import { describe, expect, it } from "vitest";
-import { applyStudioCommands, newStudioDocument, STUDIO_MANIFESTE_OUTILS, STUDIO_TOOLS, type StudioCommand, type StudioDocument } from "@parcours/atelier-model";
+import { applyStudioCommands, newStudioDocument, STUDIO_MANIFESTE_OUTILS, STUDIO_TOOLS, type StudioCommand, type StudioDocument, type StudioSurfaceLibre } from "@parcours/atelier-model";
 import { commandeEchelle, commandeModifierArchitecture, commandeMur, commandeOuverture, editionDe } from "./architecture/architecture-ui";
 import { appliquerSaisie } from "./accrochage";
 import { ALTERNATIVES_GESTES, ALTERNATIVES_GESTES_VUE, controlerAlternatives } from "./alternatives-gestes";
@@ -20,6 +20,7 @@ import { panoramiqueClavier, TOUCHES_PANORAMIQUE } from "./vue-clavier";
 import { commandesExtrusion, VALEURS_VIDES } from "../vue3d/extrusion";
 import { commandeBoite, commandeDeplacementSolide, commandeDivision, commandeFace, commandePivot, commandePrisme, BOITE_VIDE, PRISME_VIDE } from "../vue3d/volume-libre";
 import { cibleFocusBascule, SELECTEURS_FOCUS_BASCULE } from "../variante/focus-bascule";
+import { commandeModifierPole, commandeSurfacePlane, valeursPole } from "../vue3d/surfaces-ui";
 
 let n = 0;
 const creation: ContexteCreation = { nouvelId: () => `k${++n}`, layerId: undefined, decalageCote: 0.5, texte: { contenu: "Repère", hauteur: 0.25, rotation: 0, justification: "left" } };
@@ -68,6 +69,13 @@ const ESSAIS: Record<string, (d: StudioDocument) => StudioCommand[]> = {
   "studio.solide.face-decaler": () => ok(commandeFace("b1", { face: "sommet", distance: 0.5 })),
   "studio.solide.face-diviser": () => ok(commandeDivision("b1", { face: "lateral-0", distance: 0.4 })),
   "studio.solide.pivoter": () => ok(commandePivot("b1", 30)),
+  // X.1-05 : grille de pôles saisie ; pôle modifié saisi (ligne, colonne, position, poids), sans pointeur.
+  "studio.surface.nurbs": () => ok(commandeSurfacePlane({ x: 40, y: 0, z: 0, largeur: 2, profondeur: 1, lignes: 3, colonnes: 2, degreU: 2, degreV: 1 }, "sf1")),
+  "studio.surface.modifier": () => {
+    const c = ok(commandeSurfacePlane({ x: 40, y: 0, z: 0, largeur: 2, profondeur: 1, lignes: 3, colonnes: 2, degreU: 2, degreV: 1 }, "sf2"));
+    const s = c[0]!.params as StudioSurfaceLibre;
+    return [...c, ...ok(commandeModifierPole(s, { ...valeursPole(s, 1, 0), z: 0.8, poids: 0.7 }))];
+  },
   "studio.architecture.mur": () => ok(commandeMur(creation, lireSommets("0 8; 5 8")!, mur)),
   "studio.architecture.ouverture": () => ok(commandeOuverture(creation, "m1", 2, { largeur: 1, hauteur: 2.1, allege: 0, type: "porte" })),
   "studio.architecture.echelle-acces": () => ok(commandeEchelle(creation, { x: 1, y: 9 }, { largeur: 0.5, hauteur: 3, base: 0, echelons: 9, section: 0.04, orientation: 0 })),

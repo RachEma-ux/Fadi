@@ -65,6 +65,11 @@ export const ALTERNATIVES_GESTES: Readonly<Record<string, AlternativeGeste>> = O
   "studio.solide.resoudre": commande,
   "studio.solide.booleen": commande,
   "studio.solide.cote-face": commande,
+  // X.1-05 : grille de pôles et pôle modifié saisis au clavier (le clic sur un pôle n'est qu'un raccourci de la liste) ;
+  // épaississement : commande du panneau (bouton nommé et raccourci), comme le booléen.
+  "studio.surface.nurbs": saisie("panneau-volume-3d"),
+  "studio.surface.modifier": saisie("panneau-volume-3d"),
+  "studio.surface.epaissir": commande,
   "studio.architecture.mur": saisie("panneau-architecture"),
   "studio.architecture.ouverture": saisie("panneau-architecture"),
   "studio.architecture.echelle-acces": saisie("panneau-architecture"),

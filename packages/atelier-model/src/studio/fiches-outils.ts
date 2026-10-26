@@ -71,6 +71,10 @@ const NEGATIFS: Readonly<Record<StudioToolId, readonly string[]>> = {
   "studio.architecture.supprimer": ["architecture/architecture.test.ts", "exigences/exigences.test.ts"],
   "studio.architecture.echelle-acces": ["architecture/echelle.test.ts"],
   "studio.solide.cote-face": ["objets-3d/cotes-faces.test.ts"],
+  // X.1-05 : surfaces libres NURBS et leur épaississement exact.
+  "studio.surface.nurbs": ["surfaces-libres.test.ts"],
+  "studio.surface.modifier": ["surfaces-libres.test.ts"],
+  "studio.surface.epaissir": ["surfaces-libres.test.ts"],
   "studio.calque.creer": ["planche-2d.test.ts", "annotations.test.ts", "transformations-annotations.test.ts"],
   "studio.calque.modifier": ["planche-2d.test.ts", "annotations.test.ts", "transformations-annotations.test.ts"],
   "studio.objet.calque": ["planche-2d.test.ts", "annotations.test.ts", "transformations-annotations.test.ts"],
@@ -135,7 +139,7 @@ function risquesDe(nature: "lecture" | "mutation", toolId: string): string[] {
     "Droit d'écriture absent ou retiré : refus 403 / 423 à l'exécution.",
     "Quota d'invocation du compte atteint : refus 429, rien n'est écrit.",
   ];
-  if (toolId === "studio.solide.booleen") r.push("Échec ou coupure du noyau exact : aucune mutation partielle, attente résolue, relance explicite (AC-006).");
+  if (toolId === "studio.solide.booleen" || toolId === "studio.surface.epaissir") r.push("Échec ou coupure du noyau exact : aucune mutation partielle, attente résolue, relance explicite (AC-006).");
   return r;
 }
 
@@ -151,7 +155,7 @@ export const STUDIO_FICHES_OUTILS: readonly FicheOutil[] = Object.freeze(STUDIO_
     permission: m.droit,
     effets: t.nature === "mutation" ? "Mutation du document par une commande validée (nouvelle révision)." : "Lecture seule : aucune commande persistée.",
     risques: risquesDe(t.nature, t.toolId),
-    mesures: [...(MESURES_PAR_BARRE[t.groupe] ?? []), ...(t.toolId === "studio.solide.booleen" ? ["PERF-07" as const] : [])],
+    mesures: [...(MESURES_PAR_BARRE[t.groupe] ?? []), ...(t.toolId === "studio.solide.booleen" || t.toolId === "studio.surface.epaissir" ? ["PERF-07" as const] : [])],
     jeuxEssai: [
       { cas: "positif" as const, fichier: POSITIFS[t.toolId] ?? CARACTERISATION },
       ...(NEGATIFS[t.toolId] ?? []).map((fichier) => ({ cas: "negatif" as const, fichier })),

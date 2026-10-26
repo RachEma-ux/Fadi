@@ -32,6 +32,7 @@ export * from "./studio/echanges/matrice-echanges.js";
 export * from "./studio/echanges/modeles-externes.js";
 export * from "./studio/solides-libres.js";
 export * from "./studio/booleens-exacts.js";
+export * from "./studio/surfaces-exactes.js";
 export * from "./studio/architecture/index.js";
 export * from "./studio/facade-exigences.js";
 export * from "./studio/facade-scenes.js";

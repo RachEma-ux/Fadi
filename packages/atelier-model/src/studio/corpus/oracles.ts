@@ -4,7 +4,7 @@ import { MOTIF_S1, parametresS1 } from "./s1-detail.js";
 import { MOTIF_PLAN, MOTIF_S2, PARAMETRES_S2 } from "./s2-niveau.js";
 import { MOTIF_S3, parametresS3 } from "./s3-dense.js";
 import { MOTIF_S4, PARAMETRES_S4 } from "./s4-immeuble.js";
-import { BOOLEENS_S5, MOTIF_S5, parametresS5 } from "./s5-libre.js";
+import { BOOLEENS_S5, MOTIF_S5, parametresS5, SURFACES_S5 } from "./s5-libre.js";
 import { SESSION_HORS_RESEAU_S7 } from "./s7-hors-reseau.js";
 import type { SceneCorpus } from "./types.js";
 
@@ -25,6 +25,14 @@ import type { SceneCorpus } from "./types.js";
 
 /** Tolérance relative des comparaisons d'oracle (arrondi flottant des sommes ; aucune approximation géométrique). */
 export const TOLERANCE_ORACLE = 1e-9;
+
+/**
+ * Tolérances déclarées des surfaces libres (X.1-05), choisies par Fadi (pas des valeurs métier) : l'aire d'une surface
+ * NURBS lue par le métré est celle de son **maillage d'affichage** (16 échantillons par travée), donc approchée — écart
+ * relatif de 1e-3 au plus à la forme close ; le volume d'une surface épaissie est intégré par le noyau OCCT — écart
+ * relatif de 1e-6 au plus.
+ */
+export const TOLERANCE_ORACLE_SURFACES = Object.freeze({ aireMaillage: 1e-3, volumeNoyau: 1e-6 } as const);
 
 export interface OracleMurs { brut: number; deduit: number; net: number }
 
@@ -48,6 +56,11 @@ export interface OracleCorpus {
   volumeSolides?: number;
   /** Solides exacts : nombre par opération et volume total (forme close des booléens de boîtes). */
   exacts?: { operations: Record<string, number>; volume: number };
+  /**
+   * Surfaces libres NURBS (X.1-05) : nombre et aire de forme close des surfaces ; nombre et volume de forme close des
+   * surfaces épaissies (comprises dans `volumeSolides`, hors `exacts.volume`, qui ne porte que les booléens).
+   */
+  surfaces?: { nombre: number; aire: number; epaissies: number; volumeEpaissies: number };
   /** Graphismes : aire totale des contours de hachure, symboles posés par nom, points de contrôle des splines. */
   graphismes?: { aireHachures: number; symboles: Record<string, number>; pointsSplines: number };
   /** Références externes déclarées (S2) : une source par feuillet qui porte des axes, objets venus du fond. */
@@ -199,12 +212,22 @@ export function oracleS5(taille: number): OracleCorpus {
   const a = new Accumulateur();
   let volumeSolides = 0;
   const exacts = { operations: {} as Record<string, number>, volume: 0 };
+  const surfaces = { nombre: 0, aire: 0, epaissies: 0, volumeEpaissies: 0 };
   parcourir(taille, MOTIF_S5, (j, role) => {
     const p = parametresS5(j);
     switch (role) {
       case 0: {
         const V = p.boite.largeur * p.boite.profondeur * p.boite.hauteur;
-        if (j < BOOLEENS_S5.length) {
+        const q = p.surface;
+        if (j === SURFACES_S5.surface) {
+          // Quart de cylindre de rayon R, hauteur L : aire π R L / 2.
+          a.compter("surface-libre"); surfaces.nombre++; surfaces.aire += (Math.PI * q.rayon * q.hauteur) / 2;
+        } else if (j === SURFACES_S5.epaissie) {
+          // Épaissi de e vers l'extérieur : secteur annulaire d'un quart de tour, π/4 ((R + e)² − R²) L.
+          a.compter("exact"); exacts.operations.epaississement = (exacts.operations.epaississement ?? 0) + 1;
+          const ve = (Math.PI / 4) * ((q.rayon + q.epaisseur) ** 2 - q.rayon ** 2) * q.hauteur;
+          surfaces.epaissies++; surfaces.volumeEpaissies += ve; volumeSolides += ve;
+        } else if (j < BOOLEENS_S5.length) {
           // Deux boîtes de volume V décalées d'une demi-largeur : union 1,5 V, différence et intersection 0,5 V.
           const op = BOOLEENS_S5[j]!;
           a.compter("exact"); exacts.operations[op] = (exacts.operations[op] ?? 0) + 1;
@@ -234,7 +257,7 @@ export function oracleS5(taille: number): OracleCorpus {
       default: { const q = p.polygone; a.compter("prism"); volumeSolides += ((q.cotes * q.rayon * q.rayon * Math.sin((2 * Math.PI) / q.cotes)) / 2) * q.hauteur; }
     }
   });
-  return { scene: "S5", taille, primitives: taille, feuillets: feuillets(taille, MOTIF_S5), comptes: a.comptes, totaux: a.totaux, volumeNonEvalues: a.volumeNonEvalues, volumeSolides, exacts };
+  return { scene: "S5", taille, primitives: taille, feuillets: feuillets(taille, MOTIF_S5), comptes: a.comptes, totaux: a.totaux, volumeNonEvalues: a.volumeNonEvalues, volumeSolides, exacts, surfaces };
 }
 
 export const oracleS7 = (taille: number): OracleCorpus => oraclePlanDeNiveau("S7", taille);

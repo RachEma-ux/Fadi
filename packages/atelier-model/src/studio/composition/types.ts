@@ -10,6 +10,7 @@ import type { StudioBox, StudioFaceSolide, StudioProfilePrism, StudioSolid } fro
 import type { StudioText } from "../objets/texte.js";
 import type { StudioOperationBooleenne, StudioResultatExact, StudioSolideExact } from "../objets-3d/exacts.js";
 import type { StudioCoteFace } from "../objets-3d/cotes-faces.js";
+import type { StudioSensEpaisseur, StudioSurfaceLibre } from "../objets-3d/surfaces-libres.js";
 import type { STUDIO_CONTRACT } from "../noyau/limites.js";
 import type { StudioLayer, StudioPoint } from "../noyau/types.js";
 import type { StudioArchitectureItem, StudioLadder, StudioOpening, StudioWall } from "../architecture/types.js";
@@ -43,6 +44,11 @@ export interface StudioDocument {
    * exact, opérandes conservés (`objets-3d/exacts.ts`) ; absent ou vide : aucun (forme canonique).
    */
   exacts?: StudioSolideExact[];
+  /**
+   * Surfaces libres (extension additive, facultative, X.1-05) : surfaces NURBS définies par leurs pôles, degrés et
+   * poids (`objets-3d/surfaces-libres.ts`), repère `local-3d` ; absent ou vide : aucune (forme canonique).
+   */
+  surfaces?: StudioSurfaceLibre[];
   /**
    * Cotes de faces 3D (extension additive, facultative, lot G2, INV-013) : distance entre deux faces parallèles d'un
    * solide libre, référencées par leurs faces (`objets-3d/cotes-faces.ts`) ; absent ou vide : aucune (forme canonique).
@@ -122,6 +128,9 @@ export type StudioCommand =
   | { toolId: "studio.solide.resoudre"; params: { id: string; action: "mettre-a-jour" | "detacher" } }
   | { toolId: "studio.solide.booleen"; params: { id: string; operation: StudioOperationBooleenne; operandes: [string, string]; resultat: StudioResultatExact } }
   | { toolId: "studio.solide.cote-face"; params: StudioCoteFace }
+  | { toolId: "studio.surface.nurbs"; params: StudioSurfaceLibre }
+  | { toolId: "studio.surface.modifier"; params: StudioSurfaceLibre }
+  | { toolId: "studio.surface.epaissir"; params: { id: string; surface: string; epaisseur: number; sens: StudioSensEpaisseur; resultat: StudioResultatExact } }
   | { toolId: "studio.architecture.mur"; params: StudioWall }
   | { toolId: "studio.architecture.ouverture"; params: StudioOpening }
   | { toolId: "studio.architecture.echelle-acces"; params: StudioLadder }

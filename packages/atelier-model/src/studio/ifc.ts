@@ -241,6 +241,8 @@ function studioIfc(input: StudioDocument, meta: StudioIfcMeta): { content: strin
     ...(solides.length ? [prop("FreeSolids", integer(solides.length))] : []),
     // Solides exacts (lot F2) : leur brep n'est pas traduit en IFC par Studio ; ils sont comptés, jamais omis en silence.
     ...(doc.exacts?.length ? [prop("ExactSolidsNotExported", integer(doc.exacts.length))] : []),
+    // Surfaces libres NURBS (X.1-05) : non traduites en IFC par Studio ; comptées, jamais omises en silence.
+    ...(doc.surfaces?.length ? [prop("FreeSurfacesNotExported", integer(doc.surfaces.length))] : []),
     ...(summary.annotations !== undefined ? [prop("AnnotationsNotExported", integer(summary.annotations))] : []),
     ...(summary.architecture ? [
       prop("ArchitecturalWalls", integer(summary.architecture.walls)), prop("Openings", integer(summary.architecture.openings)),

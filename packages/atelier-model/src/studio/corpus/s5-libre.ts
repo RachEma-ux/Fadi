@@ -1,4 +1,5 @@
-import { calque, construireCorpus, coteGrille, exact, nombreMotifs, objet, solide, type Primitive } from "./commun.js";
+import { calque, construireCorpus, coteGrille, exact, nombreMotifs, objet, solide, surface, type Primitive } from "./commun.js";
+import type { StudioSurfaceLibre } from "../objets-3d/surfaces-libres.js";
 import type { StudioPoint } from "../document-2d.js";
 import type { StudioBox } from "../objets-3d/solides.js";
 import type { StudioOperationBooleenne } from "../objets-3d/exacts.js";
@@ -18,6 +19,13 @@ import type { CorpusStudio } from "./types.js";
  * `apps/api/src/lib/studio-corpus-s5.test.ts` et conservé dans `fixtures/s5-exacts.ts` avec son empreinte ; le
  * générateur reste pur (il ne charge aucun noyau) et refuse un résultat absent. Volumes attendus en forme close : union
  * 1,5 V, différence 0,5 V, intersection 0,5 V (V : volume d'une boîte).
+ *
+ * Surfaces libres (X.1-05) : dans les deux motifs suivants (`SURFACES_S5`), la boîte est remplacée par un **quart de
+ * cylindre NURBS rationnel** vertical (arc de degré 2, poids 1, √2/2, 1 ; génératrice de degré 1) de rayon R et de
+ * hauteur L, posé hors de la grille en (−20 (j + 1) ; −20) : le premier reste une surface libre (aire exacte π R L / 2 ; le métré lit l'aire approchée
+ * de son maillage d'affichage), le second est **épaissi** de e vers l'extérieur (le long de la normale) par le noyau
+ * OCCT, surface conservée, résultat conservé dans `fixtures/s5-exacts.ts` avec son empreinte ; volume de forme close
+ * π/4 ((R + e)² − R²) L.
  */
 
 /** Opérations des booléens du corpus, une par motif (les premiers). */
@@ -32,6 +40,17 @@ export function operandesBooleenS5(j: number): [StudioBox, StudioBox] {
   const b = parametresS5(j).boite, x = -20 * (j + 1), y = -20;
   const boite = (cle: string, dx: number): StudioBox => ({ id: `s5-${j}-op-${cle}`, type: "box", layerId: "solides", placement: { origin: { x: x + dx, y, z: b.z }, rotation: 0 }, width: b.largeur, depth: b.profondeur, height: b.hauteur });
   return [boite("a", 0), boite("b", b.largeur / 2)];
+}
+
+/** Motifs dont la boîte devient une surface libre (`surface`) puis une surface épaissie (`epaissie`), après les booléens. */
+export const SURFACES_S5 = Object.freeze({ surface: BOOLEENS_S5.length, epaissie: BOOLEENS_S5.length + 1 } as const);
+
+/** Quart de cylindre NURBS rationnel vertical de rayon R et de hauteur L, axe en (cx, cy), base z = 0 (pôles, poids). */
+export function quartCylindreS5(id: string, layerId: string, cx: number, cy: number, R: number, L: number): StudioSurfaceLibre {
+  const arc = [{ x: R, y: 0 }, { x: R, y: R }, { x: 0, y: R }], w = [1, Math.SQRT1_2, 1];
+  const controle = [], poids = [];
+  for (let i = 0; i < 3; i++) for (let k = 0; k < 2; k++) { controle.push({ x: cx + arc[i]!.x, y: cy + arc[i]!.y, z: k * L }); poids.push(w[i]!); }
+  return { id, type: "surface-libre", layerId, degreU: 2, degreV: 1, lignes: 3, colonnes: 2, controle, poids };
 }
 
 export const MOTIF_S5 = 6;
@@ -51,6 +70,8 @@ export function parametresS5(j: number) {
     renfle: { cote: 1 + (j % 3) * 0.5, hauteur: 2 },
     cylindre: { rayon: 0.5 + (j % 4) * 0.25, hauteur: 1 + (j % 2) },
     polygone: { cotes: COTES_POLYGONE[j % COTES_POLYGONE.length]!, rayon: 1.5, hauteur: 1 },
+    /** Quart de cylindre NURBS (motifs `SURFACES_S5`) : rayon, hauteur, épaisseur (vers l'extérieur) de la surface épaissie. */
+    surface: { rayon: 1 + (j % 2) * 0.5, hauteur: 2, epaisseur: 0.1 },
   };
 }
 
@@ -66,6 +87,14 @@ export function corpusS5(taille: number): CorpusStudio {
         const resultat = RESULTATS_EXACTS_S5[id("booleen")];
         if (!resultat) throw new Error(`corpus S5 : résultat exact absent pour ${id("booleen")} (STUDIO_CORPUS_ECRIRE=1 sur apps/api/src/lib/studio-corpus-s5.test.ts)`);
         return exact({ id: id("booleen"), type: "exact", layerId: "solides", operation: BOOLEENS_S5[j]!, operandes: operandesBooleenS5(j), resultat });
+      }
+      if (j === SURFACES_S5.surface || j === SURFACES_S5.epaissie) {
+        // Hors de la grille en (−20 (j + 1) ; −20), comme les booléens : même résultat exact pour toutes les tailles.
+        const q = p.surface, s = quartCylindreS5(id("surface"), "surfaces", -20 * (j + 1), -20, q.rayon, q.hauteur);
+        if (j === SURFACES_S5.surface) return surface(s);
+        const resultat = RESULTATS_EXACTS_S5[id("epaissie")];
+        if (!resultat) throw new Error(`corpus S5 : résultat exact absent pour ${id("epaissie")} (STUDIO_CORPUS_ECRIRE=1 sur apps/api/src/lib/studio-corpus-s5.test.ts)`);
+        return exact({ id: id("epaissie"), type: "exact", layerId: "surfaces", operation: "epaississement", surface: s, epaisseur: q.epaisseur, sens: "normale", resultat });
       }
       return solide({ id: id("boite"), type: "box", layerId: "solides", placement: { origin: { x, y, z: p.boite.z }, rotation: p.boite.rotation }, width: p.boite.largeur, depth: p.boite.profondeur, height: p.boite.hauteur });
       case 1: {
@@ -92,14 +121,15 @@ export function corpusS5(taille: number): CorpusStudio {
   };
   return construireCorpus({
     scene: "S5", definition: DEFINITION_S5, taille, motif: MOTIF_S5, primitive,
-    calques: [calque("solides", "Solides libres (synthétique)"), calque("courbes", "Courbes extrudées (synthétique)")],
+    calques: [calque("solides", "Solides libres (synthétique)"), calque("courbes", "Courbes extrudées (synthétique)"), calque("surfaces", "Surfaces libres NURBS (synthétique)")],
     couverture: {
       representes: [
         "solides libres placés et tournés (boîtes, prismes)", "courbes exactes (arc, renflements) métrées sans discrétisation", "profils complexes jusqu'à 1 024 sommets",
         "booléens exacts (union, différence, intersection) calculés par le noyau OCCT, opérandes conservés, résultat conservé avec son empreinte",
+        "surface libre NURBS rationnelle (quart de cylindre : pôles, degrés 2 × 1, poids 1, √2/2, 1), épaissie en solide exact par le noyau OCCT, surface conservée, résultat conservé avec son empreinte",
       ],
       absents: [
-        { element: "surfaces libres (NURBS, subdivision)", raison: "aucun type de surface libre dans studio-document/1 ; profils polygonaux seulement" },
+        { element: "surfaces de subdivision", raison: "les surfaces libres de studio-document/1 sont des NURBS (pôles, degrés, poids) ; aucune surface de subdivision" },
       ],
     },
   });

@@ -2,6 +2,7 @@ import type { StudioPoint3 } from "../exporteurs/maillage.js";
 import { array, fail, finite, identifier, layerRef, record } from "../noyau/validation.js";
 import { cotesSolide, empriseSolide, estBascule, estDroit, validerSolide, type StudioSolid } from "./solides.js";
 import { studioMaillageSolide } from "./maillage.js";
+import { SCHEMA_SURFACE_LIBRE, STUDIO_SENS_EPAISSEUR, validerEpaisseur, validerSens, validerSurfaceLibre, type StudioSensEpaisseur, type StudioSurfaceLibre } from "./surfaces-libres.js";
 
 /**
  * Solides exacts de Studio (lot F2, IF-003, R15) : résultat d'une opération booléenne (union, différence, intersection)
@@ -57,7 +58,7 @@ export interface StudioResultatExact {
 
 export type StudioOperandeExact = StudioSolid | StudioSolideExact;
 
-export interface StudioSolideExact {
+export interface StudioSolideExactBooleen {
   id: string;
   type: "exact";
   layerId?: string;
@@ -66,6 +67,28 @@ export interface StudioSolideExact {
   operandes: [StudioOperandeExact, StudioOperandeExact];
   resultat: StudioResultatExact;
 }
+
+/**
+ * Solide exact obtenu par **épaississement** d'une surface libre (X.1-05) : la surface NURBS est conservée intacte
+ * (R15 : la commande `studio.surface.epaissir` est l'acte explicite de conversion), avec l'épaisseur et son côté ; le
+ * résultat est celui du noyau exact (opération `nurbs`), recalculé par le serveur.
+ */
+export interface StudioSolideExactEpaissi {
+  id: string;
+  type: "exact";
+  layerId?: string;
+  operation: "epaississement";
+  surface: StudioSurfaceLibre;
+  /** m, > 0. */
+  epaisseur: number;
+  sens: StudioSensEpaisseur;
+  resultat: StudioResultatExact;
+}
+
+export type StudioSolideExact = StudioSolideExactBooleen | StudioSolideExactEpaissi;
+
+/** Le solide exact est-il un booléen (deux opérandes conservés) ? */
+export const estBooleenExact = (s: StudioSolideExact): s is StudioSolideExactBooleen => s.operation !== "epaississement";
 
 const BASE64 = /^[A-Za-z0-9+/]+={0,2}$/;
 const entier = (v: unknown, path: string, min: number): number => {
@@ -117,6 +140,17 @@ function validerOperande(value: unknown, path: string, profondeur: number): Stud
 
 function validerExact(value: unknown, path: string, profondeur: number): StudioSolideExact {
   if (profondeur > STUDIO_LIMITES_EXACTS.profondeur) fail(path, `opérandes imbriqués sur ${STUDIO_LIMITES_EXACTS.profondeur} niveaux au plus`);
+  if (value && typeof value === "object" && (value as { operation?: unknown }).operation === "epaississement") {
+    const e = record(value, ["id", "type", "operation", "surface", "epaisseur", "sens", "resultat"], path, ["layerId"]);
+    if (e.type !== "exact") fail(`${path}.type`, "type « exact » attendu");
+    const surface = validerSurfaceLibre(e.surface, `${path}.surface`);
+    const id = identifier(e.id, `${path}.id`);
+    if (surface.id === id) fail(`${path}.surface`, "la surface conservée a son propre identifiant");
+    return {
+      id, type: "exact", ...layerRef(e, path), operation: "epaississement", surface,
+      epaisseur: validerEpaisseur(e.epaisseur, `${path}.epaisseur`), sens: validerSens(e.sens, `${path}.sens`), resultat: validerResultatExact(e.resultat, `${path}.resultat`),
+    };
+  }
   const o = record(value, ["id", "type", "operation", "operandes", "resultat"], path, ["layerId"]);
   if (o.type !== "exact") fail(`${path}.type`, "type « exact » attendu");
   const ops = array(o.operandes, `${path}.operandes`);
@@ -132,8 +166,12 @@ function validerExact(value: unknown, path: string, profondeur: number): StudioS
 /** Solide exact validé (copie canonique privée) ; un champ inconnu est refusé, jamais ignoré. */
 export const validerSolideExact = (value: unknown, path: string): StudioSolideExact => validerExact(value, path, 1);
 
-/** Identifiants des opérandes conservés d'un solide exact, à toute profondeur (ils restent uniques dans le document). */
+/**
+ * Identifiants des opérandes conservés d'un solide exact, à toute profondeur (ils restent uniques dans le document) ;
+ * pour un solide épaissi, celui de sa surface conservée.
+ */
 export function studioIdsOperandes(s: StudioSolideExact): string[] {
+  if (!estBooleenExact(s)) return [s.surface.id];
   const out: string[] = [];
   for (const o of s.operandes) { out.push(o.id); if (o.type === "exact") out.push(...studioIdsOperandes(o)); }
   return out;
@@ -259,13 +297,28 @@ export const SCHEMA_RESULTAT_EXACT: Readonly<Record<string, unknown>> = {
     empreinte: { type: "string", pattern: "^[0-9a-f]{16}$" },
   },
 } as const;
-/** Solide exact du document : opérandes conservés (solide libre ou solide exact, décrits par leurs propres schémas). */
+/**
+ * Solide exact du document : booléen (opérandes conservés, solide libre ou solide exact décrits par leurs propres
+ * schémas) ou épaississement d'une surface libre (surface conservée, X.1-05).
+ */
 export const SCHEMA_SOLIDE_EXACT: Readonly<Record<string, unknown>> = {
-  type: "object", additionalProperties: false, required: ["id", "type", "operation", "operandes", "resultat"],
-  properties: {
-    id: { type: "string", minLength: 1, maxLength: 128 }, type: { const: "exact" }, layerId: { type: "string", minLength: 1, maxLength: 128 },
-    operation: { enum: [...STUDIO_OPERATIONS_BOOLEENNES] },
-    operandes: { type: "array", minItems: 2, maxItems: 2, items: { type: "object", description: "solide libre (boîte, prisme) ou solide exact, conservé tel quel" } },
-    resultat: SCHEMA_RESULTAT_EXACT,
-  },
+  oneOf: [
+    {
+      type: "object", additionalProperties: false, required: ["id", "type", "operation", "operandes", "resultat"],
+      properties: {
+        id: { type: "string", minLength: 1, maxLength: 128 }, type: { const: "exact" }, layerId: { type: "string", minLength: 1, maxLength: 128 },
+        operation: { enum: [...STUDIO_OPERATIONS_BOOLEENNES] },
+        operandes: { type: "array", minItems: 2, maxItems: 2, items: { type: "object", description: "solide libre (boîte, prisme) ou solide exact, conservé tel quel" } },
+        resultat: SCHEMA_RESULTAT_EXACT,
+      },
+    },
+    {
+      type: "object", additionalProperties: false, required: ["id", "type", "operation", "surface", "epaisseur", "sens", "resultat"],
+      properties: {
+        id: { type: "string", minLength: 1, maxLength: 128 }, type: { const: "exact" }, layerId: { type: "string", minLength: 1, maxLength: 128 },
+        operation: { const: "epaississement" }, surface: SCHEMA_SURFACE_LIBRE,
+        epaisseur: { type: "number", minimum: 1e-6, maximum: 1e6 }, sens: { enum: [...STUDIO_SENS_EPAISSEUR] }, resultat: SCHEMA_RESULTAT_EXACT,
+      },
+    },
+  ],
 } as const;

@@ -20,6 +20,8 @@ import { describe, expect, it, vi } from "vitest";
 import { applyStudioCommands, newStudioDocument, STUDIO_LIMITS, validateStudioDocument, type StudioDocument } from "../document-2d.js";
 import { quantitesStudio, type GrandeurQuantite } from "../quantites.js";
 import { studioQuantitesSolides } from "../solides-libres.js";
+import type { StudioSolideExactBooleen } from "../objets-3d/exacts.js";
+import { studioAireApprocheeSurface, studioPointSurface } from "../objets-3d/surfaces-libres.js";
 import { studioQuantitesArchitecture } from "../architecture/index.js";
 import { studioAngularValue } from "../objets/cote-angulaire.js";
 import { studioDimensionValue } from "../objets/cote.js";
@@ -33,7 +35,7 @@ import { createHash } from "node:crypto";
 const studioSha256Octets = (o: Buffer) => createHash("sha256").update(o).digest("hex");
 import {
   commandesDuDocument, empreinteCorpus, fondAxesS2, primitivesDuDocument, REFERENCE_S2, empreintePlanS6, genererCorpus, oracleCorpus, oracleS6, oracleSessionS7, planS6, primitivesDu, referenceVisuelle,
-  LICENCE_CORPUS, SCENES_DOCUMENTS, TAILLES_ILLUSTRATIVES, TOLERANCE_ORACLE, type CorpusStudio, type OracleCorpus, type SceneDocuments,
+  LICENCE_CORPUS, parametresS5, SCENES_DOCUMENTS, SURFACES_S5, TAILLES_ILLUSTRATIVES, TOLERANCE_ORACLE, TOLERANCE_ORACLE_SURFACES, type CorpusStudio, type OracleCorpus, type SceneDocuments,
 } from "./index.js";
 
 // Plateforme exigée par les références visuelles (cotes formatées en fr-FR) : échec explicite plutôt qu'un écart d'octets.
@@ -76,7 +78,7 @@ function proche(mesure: number | null | undefined, attendu: number, quoi: string
 function comptes(corpus: CorpusStudio): Record<string, number> {
   const c: Record<string, number> = {};
   for (const d of corpus.documents) {
-    for (const e of [...d.objects, ...(d.dimensions ?? []), ...(d.annotations ?? []), ...(d.architecture ?? []), ...(d.solides ?? []), ...(d.exacts ?? []), ...(d.graphismes ?? [])]) c[e.type] = (c[e.type] ?? 0) + 1;
+    for (const e of [...d.objects, ...(d.dimensions ?? []), ...(d.annotations ?? []), ...(d.architecture ?? []), ...(d.solides ?? []), ...(d.exacts ?? []), ...(d.surfaces ?? []), ...(d.graphismes ?? [])]) c[e.type] = (c[e.type] ?? 0) + 1;
   }
   return c;
 }
@@ -116,6 +118,7 @@ function mesures(corpus: CorpusStudio) {
   // Graphismes (aire des contours, symboles posés, points des splines), solides exacts (volume du noyau), sources.
   const graphismes = { aireHachures: 0, symboles: {} as Record<string, number>, pointsSplines: 0 };
   const exacts = { operations: {} as Record<string, number>, volume: 0 };
+  const surfaces = { nombre: 0, aire: 0, epaissies: 0, volumeEpaissies: 0 };
   const sources = { nombre: 0, objets: 0 };
   for (const d of corpus.documents) {
     for (const g of d.graphismes ?? []) {
@@ -123,10 +126,15 @@ function mesures(corpus: CorpusStudio) {
       else if (g.type === "symbole") graphismes.symboles[g.symbole] = (graphismes.symboles[g.symbole] ?? 0) + 1;
       else graphismes.pointsSplines += g.points.length;
     }
-    for (const e of d.exacts ?? []) { exacts.operations[e.operation] = (exacts.operations[e.operation] ?? 0) + 1; exacts.volume += e.resultat.volume; }
+    for (const e of d.exacts ?? []) {
+      exacts.operations[e.operation] = (exacts.operations[e.operation] ?? 0) + 1;
+      // Surfaces épaissies (X.1-05) : volume du noyau, comparé à part avec sa tolérance.
+      if (e.operation === "epaississement") { surfaces.epaissies++; surfaces.volumeEpaissies += e.resultat.volume; } else exacts.volume += e.resultat.volume;
+    }
+    for (const s of d.surfaces ?? []) { surfaces.nombre++; surfaces.aire += studioAireApprocheeSurface(s); }
     for (const x of d.sources ?? []) { sources.nombre++; sources.objets += x.objets; }
   }
-  return { totaux, volumeNonEvalues, volumeSolides, cotes: { liees, libres, sommeMesures }, angles: { nombre: angles, sommeDegres }, murs, premier, graphismes, exacts, sources };
+  return { totaux, volumeNonEvalues, volumeSolides, cotes: { liees, libres, sommeMesures }, angles: { nombre: angles, sommeDegres }, murs, premier, graphismes, exacts, surfaces, sources };
 }
 
 function controlerOracle(corpus: CorpusStudio, o: OracleCorpus) {
@@ -153,7 +161,13 @@ function controlerOracle(corpus: CorpusStudio, o: OracleCorpus) {
       for (const k of ["brut", "deduit", "net"] as const) proche(m.premier?.[k], o.murs.premier[k], `premier mur ${k}`);
     }
   }
-  proche(m.volumeSolides, o.volumeSolides ?? 0, "volume des solides");
+  // Volume des solides hors surfaces épaissies (formes closes, TOLERANCE_ORACLE) ; épaissies : tolérance du noyau.
+  proche(m.volumeSolides - m.surfaces.volumeEpaissies, (o.volumeSolides ?? 0) - (o.surfaces?.volumeEpaissies ?? 0), "volume des solides");
+  if (o.surfaces) {
+    expect([m.surfaces.nombre, m.surfaces.epaissies], "surfaces libres, surfaces épaissies").toEqual([o.surfaces.nombre, o.surfaces.epaissies]);
+    expect(Math.abs(m.surfaces.aire - o.surfaces.aire), `aire des surfaces libres : ${m.surfaces.aire} au lieu de ${o.surfaces.aire}`).toBeLessThanOrEqual(TOLERANCE_ORACLE_SURFACES.aireMaillage * o.surfaces.aire);
+    expect(Math.abs(m.surfaces.volumeEpaissies - o.surfaces.volumeEpaissies), `volume des surfaces épaissies (noyau) : ${m.surfaces.volumeEpaissies} au lieu de ${o.surfaces.volumeEpaissies}`).toBeLessThanOrEqual(TOLERANCE_ORACLE_SURFACES.volumeNoyau * Math.max(1e-12, o.surfaces.volumeEpaissies));
+  } else expect(m.surfaces).toEqual({ nombre: 0, aire: 0, epaissies: 0, volumeEpaissies: 0 });
   if (o.graphismes) {
     proche(m.graphismes.aireHachures, o.graphismes.aireHachures, "aire des hachures");
     expect(m.graphismes.symboles, "symboles posés").toEqual(o.graphismes.symboles);
@@ -308,12 +322,29 @@ describe("X.1-01 / X.1-02 / X.1-05 — éléments ajoutés au corpus depuis les 
 
   it("X.1-05 S5 : booléens exacts (union, différence, intersection) aux opérandes conservés, maillage du noyau dans la référence 3D", () => {
     const c = genererCorpus("S5", 100), d = c.documents[0]!;
-    expect(d.exacts?.map((e) => [e.operation, e.operandes.map((o) => o.id)])).toEqual([
+    expect(d.exacts?.filter((e) => e.operation !== "epaississement").map((e) => [e.operation, (e as StudioSolideExactBooleen).operandes.map((o) => o.id)])).toEqual([
       ["union", ["s5-0-op-a", "s5-0-op-b"]], ["difference", ["s5-1-op-a", "s5-1-op-b"]], ["intersection", ["s5-2-op-a", "s5-2-op-b"]],
     ]);
     // Les opérandes sont conservés, jamais rangés parmi les solides libres.
     expect((d.solides ?? []).some((s) => s.id.includes("-op-"))).toBe(false);
-    expect(c.couverture.absents.map((x) => x.element)).toEqual(["surfaces libres (NURBS, subdivision)"]);
+    expect(c.couverture.absents.map((x) => x.element)).toEqual(["surfaces de subdivision"]);
+  });
+
+  it("X.1-05 S5 : surface libre NURBS (quart de cylindre rationnel, pôles et poids) et surface épaissie par le noyau, surface conservée — oracle de forme close (aire π R L / 2, volume π/4 ((R + e)² − R²) L)", () => {
+    const c = genererCorpus("S5", 100), d = c.documents[0]!, o = oracleCorpus("S5", 100);
+    const s = d.surfaces?.[0];
+    expect(d.surfaces?.map((x) => x.id)).toEqual([`s5-${SURFACES_S5.surface}-surface`]);
+    expect(s).toMatchObject({ type: "surface-libre", degreU: 2, degreV: 1, lignes: 3, colonnes: 2, poids: [1, 1, Math.SQRT1_2, Math.SQRT1_2, 1, 1] });
+    // Chaque point de la nappe est à la distance R de l'axe : le quart de cylindre est exact (rationnel), pas approché.
+    const q = parametresS5(SURFACES_S5.surface).surface, axe = s!.controle[2]!;
+    const cx = axe.x - q.rayon, cy = axe.y - q.rayon;
+    for (const u of [0, 0.1, 0.37, 0.5, 0.9, 1]) { const P = studioPointSurface(s!, u, 0.5); expect(Math.hypot(P.x - cx, P.y - cy)).toBeCloseTo(q.rayon, 12); }
+    const e = d.exacts?.find((x) => x.operation === "epaississement");
+    expect(e).toMatchObject({ id: `s5-${SURFACES_S5.epaissie}-epaissie`, epaisseur: 0.1, sens: "normale", surface: { id: `s5-${SURFACES_S5.epaissie}-surface`, type: "surface-libre" } });
+    expect(o.surfaces).toMatchObject({ nombre: 1, epaissies: 1 });
+    const p = parametresS5(SURFACES_S5.epaissie).surface;
+    expect(Math.abs(e!.resultat.volume - (Math.PI / 4) * ((p.rayon + p.epaisseur) ** 2 - p.rayon ** 2) * p.hauteur) / e!.resultat.volume).toBeLessThan(TOLERANCE_ORACLE_SURFACES.volumeNoyau);
+    expect(Math.abs(studioAireApprocheeSurface(s!) - (Math.PI * q.rayon * q.hauteur) / 2) / ((Math.PI * q.rayon * q.hauteur) / 2)).toBeLessThan(TOLERANCE_ORACLE_SURFACES.aireMaillage);
   });
 });
 

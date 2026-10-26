@@ -99,6 +99,9 @@ export type IconName =
   | "studio-solid-link"
   | "studio-solid-boolean"
   | "studio-solid-face-dimension"
+  | "studio-surface-nurbs"
+  | "studio-surface-edit"
+  | "studio-surface-thicken"
   | "studio-nav-plan"
   | "studio-section-plane"
   | "studio-copy"
@@ -258,6 +261,12 @@ const PATHS: Record<IconName, string> = {
   "studio-solid-boolean": "M3 7h10v10H3ZM11 11h10v10H11ZM11 11h2v6h-2M15 3v4M13 5h4",
   // Cote de face 3D (INV-013) : boîte en perspective et cote entre ses faces haute et basse, flèches aux extrémités.
   "studio-solid-face-dimension": "M4 8l5-3h9v11l-5 3H4ZM4 8h9v11M13 8l5-3M21 5v14M19 7l2-2 2 2M19 17l2 2 2-2",
+  // X.1-05 : nappe NURBS cintrée sur sa grille de pôles (points aux coins et au centre relevé).
+  "studio-surface-nurbs": "M3 17c4-6 14-6 18 0M3 17l3-9M21 17l-3-9M6 8c3-3 9-3 12 0M12 5v1M3 17h.01M21 17h.01M12 11h.01",
+  // Modifier la surface : nappe et pôle déplacé (flèche vers le haut depuis le point de contrôle).
+  "studio-surface-edit": "M3 18c4-5 14-5 18 0M12 14V5M9 8l3-3 3 3M10 14h4",
+  // Épaissir la surface : nappe doublée d'une seconde nappe parallèle, épaisseur fermée aux bords.
+  "studio-surface-thicken": "M3 12c4-5 14-5 18 0M3 17c4-5 14-5 18 0M3 12v5M21 12v5",
   "studio-nav-plan": "M3 17l9 4 9-4-9-4ZM12 3v7M9 7l3 3 3-3M7 3h10",
   "studio-section-plane": "M8 3h8v18H8ZM2 13l4-3h16l-4 3ZM2 13h16",
   // Transformations : deux carrés décalés (copier), flèche circulaire (rotation), axe et deux triangles opposés

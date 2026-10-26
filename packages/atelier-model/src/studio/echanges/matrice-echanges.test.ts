@@ -110,6 +110,9 @@ describe("Matrice d'échanges : donnée versionnée et cohérente", () => {
       // Lot G2 (EX-027, INV-013) : échelle d’accès (architecture.ladder : SVG / DXF en plan, IFC IfcStair .LADDER. exact) ;
       // catégorie « cotesFaces » (cotes de faces 3D, écrites dans aucun format).
       9: "7f7e636bf4c023b2fa10bc992b666b8a76e1e1c10027037abbc52434e125d6ae",
+      // Lot W3-C (X.1-05) : catégorie « surfaces » (surfaces libres NURBS : OBJ maillé, STEP une fois épaissies, absentes
+      // de SVG / DXF / IFC / STL), raison « surface-libre-hors-export ».
+      10: "0cdd01983dd69550bb340aeb5f88fb959a7d2a2aafcf2ae7b77a061d4f1652f2",
     };
     // Depuis la révision 8, l'empreinte couvre aussi les capacités par sens d'échange (EX-079).
     const capacites = STUDIO_MATRICE_ECHANGES.revision >= 8 ? { capacites: STUDIO_CAPACITES_PAR_SENS } : {};
@@ -286,6 +289,8 @@ const complet = (): StudioDocument => ({
     { id: "e1a", type: "box", placement: { origin: { x: 80, y: 0, z: 0 }, rotation: 0 }, width: 1, depth: 1, height: 1 },
     { id: "e1b", type: "box", placement: { origin: { x: 80.5, y: 0, z: 0 }, rotation: 0 }, width: 1, depth: 1, height: 1 },
   ])],
+  // X.1-05 : une surface libre NURBS (bilinéaire, plane).
+  surfaces: [{ id: "sl1", type: "surface-libre", degreU: 1, degreV: 1, lignes: 2, colonnes: 2, controle: [{ x: 90, y: 0, z: 0 }, { x: 91, y: 0, z: 0 }, { x: 90, y: 1, z: 0 }, { x: 91, y: 1, z: 1 }] }],
   architecture: [
     { id: "m1", type: "wall", layerId: "murs", axis: [{ x: 0, y: 20 }, { x: 12, y: 20 }], thickness: 0.2, height: 3, base: 0, justification: "center" },
     { id: "o1", type: "opening", hostId: "m1", position: 2.5, width: 1, height: 2.1, sill: 0, kind: "porte" },

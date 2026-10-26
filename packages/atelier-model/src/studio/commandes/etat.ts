@@ -7,6 +7,7 @@ import { studioAnchorPoint } from "../objets/index.js";
 import { etatCalque, type StudioLayerState } from "../noyau/calques.js";
 import type { StudioSolid } from "../objets-3d/solides.js";
 import type { StudioSolideExact } from "../objets-3d/exacts.js";
+import type { StudioSurfaceLibre } from "../objets-3d/surfaces-libres.js";
 import type { StudioCoteFace } from "../objets-3d/cotes-faces.js";
 import type { StudioLayer } from "../noyau/types.js";
 import { fail, same } from "../noyau/validation.js";
@@ -29,6 +30,8 @@ export interface Etat {
   solides: StudioSolid[];
   /** Solides exacts (lot F2, `StudioDocument.exacts`) : résultats du noyau exact, opérandes conservés. */
   exacts: StudioSolideExact[];
+  /** Surfaces libres NURBS (X.1-05, `StudioDocument.surfaces`). */
+  surfaces: StudioSurfaceLibre[];
   /** Cotes de faces 3D (INV-013, lot G2, `StudioDocument.cotesFaces`). */
   cotesFaces: StudioCoteFace[];
   /** Cotes angulaires et textes (`StudioDocument.annotations`). */

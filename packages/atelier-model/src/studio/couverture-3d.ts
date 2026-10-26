@@ -58,6 +58,8 @@ const F1_TEST = "packages/atelier-model/src/studio/composition/f1-geometrie.test
 const F2_TEST = "packages/atelier-model/src/studio/f2-booleen.test.ts";
 const EXACT_TEST = "packages/geometry-exact/src/index.test.ts";
 const SERVEUR_TEST = "apps/api/src/lib/studio-exact.test.ts";
+const SURFACES_TEST = "packages/atelier-model/src/studio/surfaces-libres.test.ts";
+const SURFACES_SERVEUR_TEST = "apps/api/src/lib/studio-surfaces.test.ts";
 
 const TYPES = [
   // ——— Types livrés : chacun cite ses tests ———
@@ -83,6 +85,16 @@ const TYPES = [
       { fichier: EXACT_TEST, libelle: "union, soustraction, intersection de deux extrusions (boîtes Studio 2 × 2 × 2 décalées de 1 m) : 12, 4, 4 m³ ; empreinte reproductible" },
       { fichier: SERVEUR_TEST, libelle: "même empreinte : le résultat du serveur remplace celui du client (un maillage altéré par le client est corrigé)" }],
   },
+  {
+    // X.1-05 : surface NURBS (pôles, degrés, poids), maillage d'affichage dérivé, épaississement exact par le noyau OCCT
+    // (Worker à la demande), recalculé par le serveur.
+    id: "surface-nurbs", libelle: "Surface libre NURBS (pôles, degrés, poids)", source: SCENE_S5, etat: "disponible",
+    outils: ["studio.surface.nurbs", "studio.surface.modifier", "studio.surface.epaissir"],
+    tests: [{ fichier: SURFACES_TEST, libelle: "X.1-05 NURBS : quart de cylindre rationnel (poids 1, √2/2, 1) — chaque point évalué est à la distance R de l'axe, aire approchée → π R L / 2" },
+      { fichier: SURFACES_TEST, libelle: "X.1-05 commandes : créer, modifier un pôle et son poids (même identité), épaissir (surface conservée dans le solide exact), supprimer ; refus nommés" },
+      { fichier: EXACT_TEST, libelle: "NURBS rationnelle : quart de cylindre R 2 m, L 3 m épaissi de 0,1 m vers l'extérieur — volume π/4 ((R + e)² − R²) L, intérieur π/4 (R² − (R − e)²) L" },
+      { fichier: SURFACES_SERVEUR_TEST, libelle: "X.1-05 serveur : l'épaississement est recalculé depuis la surface du document du serveur ; son résultat remplace celui du client" }],
+  },
   // ——— Types avancés : non disponibles tant qu'ils n'ont pas de test ———
   {
     id: "sommets-aretes", libelle: "Sommets et arêtes éditables", source: OBJETS_PRIMAIRES, etat: "non-disponible", outils: [], tests: [],
@@ -101,8 +113,9 @@ const TYPES = [
     manque: "Les courbes exactes de Studio sont planes (arcs, renflements du dessin 2D) ; aucune courbe spatiale.",
   },
   {
-    id: "surface-complexe", libelle: "Surface complexe (NURBS, subdivision)", source: SCENE_S5, etat: "non-disponible", outils: [], tests: [],
-    manque: "Aucun type de surface libre dans studio-document/1 ; profils polygonaux seulement.",
+    // X.1-05 : les surfaces NURBS sont livrées (type `surface-nurbs` ci-dessus) ; reste la subdivision.
+    id: "surface-complexe", libelle: "Subdivision (maillage de contrôle)", source: SCENE_S5, etat: "non-disponible", outils: [], tests: [],
+    manque: "Aucune surface de subdivision dans studio-document/1 : les surfaces libres de Studio sont des NURBS (pôles, degrés, poids), épaississables en solide exact ; une subdivision n'a pas d'équivalent exact dans le noyau.",
   },
   {
     id: "brep-fournisseur", libelle: "BRep fournisseur (import)", source: PERF_07, etat: "non-disponible", outils: [], tests: [],

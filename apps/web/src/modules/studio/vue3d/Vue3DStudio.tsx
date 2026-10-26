@@ -15,6 +15,9 @@
  * Lot F2 : l'outil « Booléen exact » (`PanneauBooleen`) calcule union, différence ou intersection de deux solides par le
  * noyau exact (Worker OCCT chargé à l'activation de l'outil) ; les solides exacts sont dessinés depuis le maillage du
  * noyau conservé dans le document (aucun noyau chargé pour les afficher), désignables et supprimables.
+ * X.1-05 : surfaces libres NURBS (`PanneauSurfaces`) — créer une grille de pôles, modifier un pôle et son poids (liste
+ * ou clic sur son repère), épaissir en solide exact par le noyau (surface conservée) ; nappe dessinée depuis le
+ * maillage d'affichage dérivé, polygone de contrôle et pôles de la surface sélectionnée.
  * Coupe horizontale (A.3-07, Maj+K) : `couperStudio` à la cote saisie, dessinée en surimpression dérivée, non
  * modifiable, chaque contour rattaché à son solide. Studio n'importe aucun module de l'Atelier.
  * Maillage en tâche de fond (D.1/D.2, `taches/`) : le maillage tourne dans le groupe de Workers ; le maillage
@@ -75,6 +78,8 @@ import {
 } from "./volume-libre";
 import { CLE_PROVENANCE_PNG, insererTextePng } from "./scenes/png";
 import { descriptionOperande, PanneauBooleen } from "./PanneauBooleen";
+import { PanneauSurfaces } from "./PanneauSurfaces";
+import { descriptionSurface } from "./surfaces-ui";
 import { PanneauVisualisation } from "./scenes/PanneauVisualisation";
 import {
   calquesVisualisation, cameraScene, commandeApparence, commandeMiseAJourScene, commandeNouvelleScene, commandeRetraitApparence, commandeSuppressionScene,
@@ -282,7 +287,7 @@ const impact = impactDe;
 
 /** Centre à l'écran (coordonnées client) de l'objet `id` du maillage affiché ; null s'il n'est pas affiché. */
 function centreEcran(m: Moteur, mesh: StudioMesh3d, id: string): { x: number; y: number } | null {
-  const e = [...mesh.solids, ...(mesh.freeSolids ?? []), ...(mesh.exacts ?? []), ...(mesh.architecture ?? [])].find((x) => x.id === id);
+  const e = [...mesh.solids, ...(mesh.freeSolids ?? []), ...(mesh.exacts ?? []), ...(mesh.surfaces ?? []), ...(mesh.architecture ?? [])].find((x) => x.id === id);
   if (!e || !e.vertices.length) return null;
   const b = new THREE.Box3().setFromPoints(e.vertices.map((v) => new THREE.Vector3(v.x, v.y, v.z)));
   const c = b.getCenter(new THREE.Vector3()).project(m.camera);
@@ -326,6 +331,8 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   const [groupeRotation, setGroupeRotation] = useState({ x: Number.NaN, y: Number.NaN, angle: Number.NaN });
   const [groupeEchelle, setGroupeEchelle] = useState({ x: Number.NaN, y: Number.NaN, facteur: Number.NaN });
   const [coteCoupe, setCoteCoupe] = useState(Number.NaN);
+  // X.1-05 : pôle choisi de la surface sélectionnée (liste du panneau ou clic sur son repère).
+  const [poleSurface, setPoleSurface] = useState<{ i: number; j: number } | null>(null);
   const [erreur, setErreur] = useState("");
   // Visualisation (lot E.5) : scène choisie, calques montrés par la vue (null : visibilité du dessin), mode, apparence.
   const [sceneChoisie, setSceneChoisie] = useState<string | null>(null);
@@ -432,6 +439,12 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       const p = rayon.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), new THREE.Vector3());
       if (p) { setBoite((v) => ({ ...v, x: auCentimetre(p.x), y: auCentimetre(p.y), z: 0 })); setErreur(""); }
       return;
+    }
+    // X.1-05 : avec « Modifier la surface », un clic sur le repère d'un pôle de la surface sélectionnée le choisit.
+    if (outil === "studio.surface.modifier") {
+      const s = (doc.surfaces ?? []).find((x) => x.id === selection);
+      const h = s ? rayon.intersectObjects(m.libres.children, false).find((x) => x.object.userData.surface === s.id && typeof x.object.userData.pole === "number") : undefined;
+      if (s && h) { const k = h.object.userData.pole as number; setPoleSurface({ i: Math.floor(k / s.colonnes), j: k % s.colonnes }); return; }
     }
     // Désignation (C.2-02, C.2-03) : objet seul par son identifiant, lot par sa table (triangle → identifiant) ; un
     // identifiant absent du document courant (objet supprimé, maillage affiché encore antérieur) laisse passer l'objet
@@ -645,7 +658,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   useEffect(() => {
     const m = moteur.current; if (!m) return;
     const morceaux = assemble?.cache.morceaux;
-    const presents = new Set([...doc.objects.map((o) => o.id), ...(doc.solides ?? []).map((o) => o.id), ...(doc.exacts ?? []).map((o) => o.id), ...(doc.architecture ?? []).map((o) => o.id)]);
+    const presents = new Set([...doc.objects.map((o) => o.id), ...(doc.solides ?? []).map((o) => o.id), ...(doc.exacts ?? []).map((o) => o.id), ...(doc.surfaces ?? []).map((o) => o.id), ...(doc.architecture ?? []).map((o) => o.id)]);
     const l: Lecture = {
       mesh, doc, mode, selection, selectionArchitecture, present: (id) => presents.has(id),
       // Clé de contenu du morceau ; à défaut (jamais pour un maillage assemblé), une clé unique force la reconstruction.
@@ -665,6 +678,13 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   useEffect(() => {
     const crochet = {
       ecran: (id: string) => { const m = moteur.current; return m ? centreEcran(m, mesh, id) : null; },
+      // Recette X.1-05 : position à l'écran du pôle k d'une surface libre (pour cliquer sur son repère).
+      pole: (surfaceId: string, k: number) => {
+        const m = moteur.current, p = (doc.surfaces ?? []).find((x) => x.id === surfaceId)?.controle[k];
+        if (!m || !p) return null;
+        const c = new THREE.Vector3(p.x, p.y, p.z).project(m.camera), r = m.renderer.domElement.getBoundingClientRect();
+        return { x: r.left + ((c.x + 1) / 2) * r.width, y: r.top + ((1 - c.y) / 2) * r.height };
+      },
       // Recette TR-EX-057 : charge simulée (ms ajoutées à chaque rendu, 0 pour l'ôter) et lecture du réglage appliqué.
       charge: (ms: number) => { const m = moteur.current; if (m) m.charge = Number.isFinite(ms) && ms > 0 ? ms : 0; },
       qualite: () => { const m = moteur.current; return m ? { palier: m.qualite.palier, changements: m.qualite.changements, ...m.reglage, pixelRatio: m.renderer.getPixelRatio() } : null; },
@@ -672,7 +692,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     };
     (globalThis as { __fadiVue3d?: unknown }).__fadiVue3d = crochet;
     return () => { if ((globalThis as { __fadiVue3d?: unknown }).__fadiVue3d === crochet) delete (globalThis as { __fadiVue3d?: unknown }).__fadiVue3d; };
-  }, [mesh]);
+  }, [mesh, doc]);
 
   useEffect(() => {
     const m = moteur.current; if (!m) return;
@@ -875,7 +895,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   const architecture = mesh.architecture ?? [];
   return (
     <section className="studio-vue3d" aria-label="Vue 3D" data-studio-vue3d data-studio-maillage={maillage.etat} data-studio-maillage-revision={maillage.revision ?? ""} data-studio-revision-courante={empreinte.revision}
-      data-studio-projection-version={version ? `${version.revision}:${version.contenu}` : ""} data-studio-remailles={assemble?.remailles ?? ""} data-studio-invalidation={assemble ? (assemble.invalidation.complet ? `complet:${assemble.invalidation.raison}` : "partiel") : ""} data-studio-volumes={mesh.solids.length} data-studio-non-extrudes={mesh.nonExtruded} data-studio-solides-libres={libres} data-studio-architecture-3d={architecture.length} data-studio-navigation={navigation}
+      data-studio-projection-version={version ? `${version.revision}:${version.contenu}` : ""} data-studio-remailles={assemble?.remailles ?? ""} data-studio-invalidation={assemble ? (assemble.invalidation.complet ? `complet:${assemble.invalidation.raison}` : "partiel") : ""} data-studio-volumes={mesh.solids.length} data-studio-non-extrudes={mesh.nonExtruded} data-studio-solides-libres={libres} data-studio-surfaces-libres={mesh.surfaces?.length ?? 0} data-studio-architecture-3d={architecture.length} data-studio-navigation={navigation}
       data-studio-affichage={mode} data-studio-scene-active={sceneActive ?? ""} data-studio-calques-montres={calquesMontres?.join(" ") ?? ""}
       data-studio-source-revision={etatProjection.sourceRevisionId ?? ""} data-studio-revision-serveur-courante={provenance?.revisionId ?? ""} data-studio-etat-derive={etatProjection.etat.etat}
       data-studio-domaines-perimes={etatProjection.domainesPerimes.join(" ")}>
@@ -978,6 +998,9 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
 
       {outil === "studio.solide.booleen" && <PanneauBooleen doc={doc} revision={empreinte.revision} modifiable={modifiable} surCommandes={surCommandes} surSelection={surSelection} />}
 
+      <PanneauSurfaces doc={doc} outil={outil} revision={empreinte.revision} modifiable={modifiable} selection={selection} {...(layerId ? { layerId } : {})}
+        pole={poleSurface} surPole={setPoleSurface} {...(surCommandes ? { surCommandes } : {})} {...(surSelection ? { surSelection } : {})} />
+
       {!choisi && outil && ["studio.solide.face-decaler", "studio.solide.face-diviser", "studio.solide.pivoter", "studio.solide.resoudre", "studio.solide.cote-face"].includes(outil) && <p className="studio-hint" data-studio-face-indice>Sélectionnez d’abord, dans la vue 3D ou la liste des solides, le solide à modifier.</p>}
 
       {(solides.length > 0 || exacts.length > 0) && <div className="studio-vue3d-solides" data-studio-solides>
@@ -986,8 +1009,8 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
           {exacts.map((s) => (
             <li key={s.id}>
               <button type="button" aria-pressed={s.id === selection} onClick={() => surSelection?.(s.id === selection ? null : s.id)} data-studio-solide={s.id} data-studio-solide-type="exact" data-studio-solide-operation={s.operation}
-                data-studio-solide-operandes={s.operandes.map((o) => o.id).join(" ")}>
-                <Icon name="studio-solid-boolean" size={16} /> {`${descriptionOperande(s)} (noyau exact)`}
+                data-studio-solide-operandes={s.operation === "epaississement" ? s.surface.id : s.operandes.map((o) => o.id).join(" ")}>
+                <Icon name={s.operation === "epaississement" ? "studio-surface-thicken" : "studio-solid-boolean"} size={16} /> {`${descriptionOperande(s)} (noyau exact)`}
               </button>
             </li>
           ))}
@@ -1003,8 +1026,12 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
           ))}
         </ul>
         {choisiExact && <div data-studio-exact-choisi={choisiExact.id} aria-label="Solide exact sélectionné">
-          <p>{`Sélection : ${descriptionOperande(choisiExact)}, ${choisiExact.resultat.faces} face(s), opérandes conservés : ${choisiExact.operandes.map((o) => descriptionOperande(o)).join(" ; ")}`}</p>
-          <p className="studio-hint">Solide exact : son brep est celui du noyau exact ; il ne se déplace ni ne se modifie par ses faces. Annulez le booléen pour retrouver ses opérandes.</p>
+          {choisiExact.operation === "epaississement"
+            ? <p>{`Sélection : ${descriptionOperande(choisiExact)}, ${choisiExact.resultat.faces} face(s), surface conservée : ${descriptionSurface(choisiExact.surface, nombre)}`}</p>
+            : <p>{`Sélection : ${descriptionOperande(choisiExact)}, ${choisiExact.resultat.faces} face(s), opérandes conservés : ${choisiExact.operandes.map((o) => descriptionOperande(o)).join(" ; ")}`}</p>}
+          <p className="studio-hint">{choisiExact.operation === "epaississement"
+            ? "Solide exact : son brep est celui du noyau exact ; il ne se déplace ni ne se modifie par ses faces. Annulez l’épaississement pour retrouver la surface."
+            : "Solide exact : son brep est celui du noyau exact ; il ne se déplace ni ne se modifie par ses faces. Annulez le booléen pour retrouver ses opérandes."}</p>
           <fieldset disabled={!modifiable}>
             <legend>Solide exact</legend>
             <button type="button" onClick={supprimer} data-studio-supprimer-solide><Icon name="studio-solid-delete" size={18} /> Supprimer le solide</button>

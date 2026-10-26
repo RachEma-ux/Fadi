@@ -4,6 +4,7 @@ import { validerForme } from "../objets/index.js";
 import { validerSolide, type StudioSolid } from "../objets-3d/solides.js";
 import { studioIdsOperandes, validerSolideExact, type StudioSolideExact } from "../objets-3d/exacts.js";
 import { controlerCoteFace, validerCotesFaces, type StudioCoteFace } from "../objets-3d/cotes-faces.js";
+import { validerSurfaceLibre, type StudioSurfaceLibre } from "../objets-3d/surfaces-libres.js";
 import { controlerLiensAnnotation, validerAnnotation } from "../objets/annotation.js";
 import { studioAngularValue } from "../objets/cote-angulaire.js";
 import { etatCalque, validerCalque, type StudioLayerState } from "../noyau/calques.js";
@@ -24,13 +25,14 @@ import type { StudioDocument } from "./types.js";
 /** Document Studio : forme canonique, validation complète, création, lectures (sélection, mesure d'une cote). */
 
 /** Forme canonique : `layers`, `dimensions`, `solides` et `annotations` vides sont omis. */
-export function sortie(id: string, objects: StudioShape[], layers: StudioLayer[], dimensions: StudioDimension[], solides: StudioSolid[] = [], annotations: StudioAnnotation[] = [], architecture: StudioArchitectureItem[] = [], proprietes: StudioPropriete[] = [], scenes: StudioElementVisualisation[] = [], nonNatifs: StudioNonNatif[] = [], exacts: StudioSolideExact[] = [], graphismes: StudioGraphisme[] = [], systemeProjet?: StudioSystemeProjet, sources: StudioSourceExterne[] = [], cotesFaces: StudioCoteFace[] = []): StudioDocument {
+export function sortie(id: string, objects: StudioShape[], layers: StudioLayer[], dimensions: StudioDimension[], solides: StudioSolid[] = [], annotations: StudioAnnotation[] = [], architecture: StudioArchitectureItem[] = [], proprietes: StudioPropriete[] = [], scenes: StudioElementVisualisation[] = [], nonNatifs: StudioNonNatif[] = [], exacts: StudioSolideExact[] = [], graphismes: StudioGraphisme[] = [], systemeProjet?: StudioSystemeProjet, sources: StudioSourceExterne[] = [], cotesFaces: StudioCoteFace[] = [], surfaces: StudioSurfaceLibre[] = []): StudioDocument {
   return {
     id, schemaVersion: "studio-document/1", units: "m", frame: "local-2d", objects,
     ...(layers.length ? { layers } : {}),
     ...(dimensions.length ? { dimensions } : {}),
     ...(solides.length ? { solides } : {}),
     ...(exacts.length ? { exacts } : {}),
+    ...(surfaces.length ? { surfaces } : {}),
     ...(cotesFaces.length ? { cotesFaces } : {}),
     ...(annotations.length ? { annotations } : {}),
     ...(architecture.length ? { architecture } : {}),
@@ -45,7 +47,7 @@ export function sortie(id: string, objects: StudioShape[], layers: StudioLayer[]
 
 /** Returns a private, canonical copy (empty `layers` / `dimensions` / `annotations` omitted) or throws `StudioValidationError`. */
 export function validateStudioDocument(value: unknown): StudioDocument {
-  const d = record(value, ["id", "schemaVersion", "units", "frame", "objects"], "document", ["layers", "dimensions", "solides", "annotations", "architecture", "proprietes", "scenes", "nonNatifs", "exacts", "graphismes", "systemeProjet", "sources", "cotesFaces"]);
+  const d = record(value, ["id", "schemaVersion", "units", "frame", "objects"], "document", ["layers", "dimensions", "solides", "annotations", "architecture", "proprietes", "scenes", "nonNatifs", "exacts", "graphismes", "systemeProjet", "sources", "cotesFaces", "surfaces"]);
   if (d.schemaVersion !== "studio-document/1") fail("studioDocument.schemaVersion", "version non prise en charge");
   if (d.units !== "m") fail("studioDocument.units", "unité m attendue");
   if (d.frame !== "local-2d") fail("studioDocument.frame", "repère local-2d attendu");
@@ -95,6 +97,16 @@ export function validateStudioDocument(value: unknown): StudioDocument {
     }
     if (s.layerId !== undefined && !layerIds.has(s.layerId)) fail("studioDocument.exacts", "calque inconnu");
   }
+  // Surfaces libres (X.1-05) : identifiants uniques dans tout le document (surfaces conservées des solides épaissis
+  // comprises, ci-dessus), calque connu.
+  const rawSurfaces = Object.hasOwn(d, "surfaces") ? array(d.surfaces, "studioDocument.surfaces") : [];
+  if (rawObjects.length + rawDimensions.length + rawAnnotations.length + rawSolides.length + rawExacts.length + rawSurfaces.length > STUDIO_LIMITS.objects) fail("studioDocument.surfaces", `${STUDIO_LIMITS.objects} objets au plus, surfaces libres comprises`);
+  const surfaces = rawSurfaces.map((o, i) => validerSurfaceLibre(o, `studioDocument.surfaces[${i}]`));
+  for (const s of surfaces) {
+    if (shapes.has(s.id) || dimensionIds.has(s.id)) fail("studioDocument.surfaces", "identifiant dupliqué");
+    dimensionIds.add(s.id);
+    if (s.layerId !== undefined && !layerIds.has(s.layerId)) fail("studioDocument.surfaces", "calque inconnu");
+  }
   const annotations = rawAnnotations.map((o, i) => validerAnnotation(o, `studioDocument.annotations[${i}]`));
   const annotationIds = new Set<string>();
   annotations.forEach((o, i) => {
@@ -121,7 +133,7 @@ export function validateStudioDocument(value: unknown): StudioDocument {
   // Visualisation (lot E.5) : scènes et apparences, identifiants propres à la liste, calques et objets 3D connus.
   const rawScenes = Object.hasOwn(d, "scenes") ? array(d.scenes, "studioDocument.scenes") : [];
   const scenes = rawScenes.map((o, i) => validerElementVisualisation(o, `studioDocument.scenes[${i}]`));
-  if (scenes.length) controlerVisualisation(scenes, { calques: layerIds, objets: new Set([...shapes.keys(), ...solides.map((s) => s.id), ...exacts.map((s) => s.id), ...architecture.map((a) => a.id)]) }, "studioDocument.scenes");
+  if (scenes.length) controlerVisualisation(scenes, { calques: layerIds, objets: new Set([...shapes.keys(), ...solides.map((s) => s.id), ...exacts.map((s) => s.id), ...surfaces.map((s) => s.id), ...architecture.map((a) => a.id)]) }, "studioDocument.scenes");
   // Éléments non natifs (lot F3) : identifiants uniques dans tout le document, calque connu ; jamais métrés ni exportés.
   const rawNonNatifs = Object.hasOwn(d, "nonNatifs") ? array(d.nonNatifs, "studioDocument.nonNatifs") : [];
   if (rawNonNatifs.length > STUDIO_LIMITS.objects) fail("studioDocument.nonNatifs", `${STUDIO_LIMITS.objects} éléments non natifs au plus`);
@@ -153,7 +165,7 @@ export function validateStudioDocument(value: unknown): StudioDocument {
     if (c.layerId !== undefined && !layerIds.has(c.layerId)) fail("studioDocument.cotesFaces", "calque inconnu");
     controlerCoteFace(c, solides, `studioDocument.cotesFaces[${i}]`);
   }
-  return sortie(identifier(d.id, "studioDocument.id"), objects, layers, dimensions, solides, annotations, architecture, proprietes, scenes, nonNatifs, exacts, graphismes, systemeProjet, sources, cotesFaces);
+  return sortie(identifier(d.id, "studioDocument.id"), objects, layers, dimensions, solides, annotations, architecture, proprietes, scenes, nonNatifs, exacts, graphismes, systemeProjet, sources, cotesFaces, surfaces);
 }
 
 /** Valeur mesurée d'une cote angulaire (degrés), dérivée ; « non évaluée » (null) tant qu'elle est à résoudre. */

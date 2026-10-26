@@ -6,6 +6,7 @@ import type { StudioAnnotation, StudioShape } from "../objets/formes.js";
 import type { StudioDimension } from "../objets/cote.js";
 import type { StudioSolid } from "../objets-3d/solides.js";
 import type { StudioSolideExact } from "../objets-3d/exacts.js";
+import type { StudioSurfaceLibre } from "../objets-3d/surfaces-libres.js";
 import type { StudioCoteFace } from "../objets-3d/cotes-faces.js";
 import type { StudioArchitectureItem } from "../architecture/types.js";
 import type { StudioPropriete } from "../exigences/proprietes.js";
@@ -53,6 +54,8 @@ export const STUDIO_RAISONS_FIDELITE = Object.freeze([
   "propriete-non-exportee", "propriete-en-pset", "propriete-non-evaluee",
   // Solides exacts (lot F2) : leur brep n'est traduit dans aucun format d'échange de Studio (compté, jamais omis).
   "solide-exact-hors-ifc",
+  // Surfaces libres NURBS (X.1-05) : nappe 3D, écrite dans aucun format de dessin ni en IFC (OBJ et, épaissie, STEP).
+  "surface-libre-hors-export",
   // Graphismes (EX-055) : spline découpée en DXF R12 (pas de courbe de Bézier), transparence non portée en DXF R12,
   // graphismes absents de l'IFC (dessin 2D seulement).
   "spline-decoupee", "transparence-non-portee", "graphisme-hors-ifc",
@@ -62,9 +65,9 @@ export const STUDIO_RAISONS_FIDELITE = Object.freeze([
 export type StudioRaisonFidelite = (typeof STUDIO_RAISONS_FIDELITE)[number];
 
 /** Catégorie = liste du document qui porte l'élément. */
-export type StudioCategorieEchange = "objets" | "cotes" | "annotations" | "solides" | "exacts" | "cotesFaces" | "architecture" | "proprietes" | "scenes" | "nonNatifs" | "graphismes" | "sources" | "inconnue";
+export type StudioCategorieEchange = "objets" | "cotes" | "annotations" | "solides" | "exacts" | "surfaces" | "cotesFaces" | "architecture" | "proprietes" | "scenes" | "nonNatifs" | "graphismes" | "sources" | "inconnue";
 /** Liste du document de chaque catégorie connue (clé de `StudioDocument`). */
-export const STUDIO_LISTES_ECHANGE = Object.freeze({ objets: "objects", cotes: "dimensions", annotations: "annotations", solides: "solides", exacts: "exacts", cotesFaces: "cotesFaces", architecture: "architecture", proprietes: "proprietes", scenes: "scenes", nonNatifs: "nonNatifs", graphismes: "graphismes", sources: "sources" } as const);
+export const STUDIO_LISTES_ECHANGE = Object.freeze({ objets: "objects", cotes: "dimensions", annotations: "annotations", solides: "solides", exacts: "exacts", surfaces: "surfaces", cotesFaces: "cotesFaces", architecture: "architecture", proprietes: "proprietes", scenes: "scenes", nonNatifs: "nonNatifs", graphismes: "graphismes", sources: "sources" } as const);
 
 export interface StudioJugementFidelite { statut: StudioStatutFidelite; raison: StudioRaisonFidelite }
 type Juge<T> = (item: T) => StudioJugementFidelite;
@@ -125,6 +128,8 @@ export const STUDIO_CAPACITES_EXPORT: {
   readonly solides: { readonly [K in StudioSolid["type"]]: ParFormat<Extract<StudioSolid, { type: K }>> };
   /** Solides exacts (lot F2) : résultat du noyau exact (brep), absent des trois formats. */
   readonly exacts: { readonly exact: ParFormat<StudioSolideExact> };
+  /** Surfaces libres NURBS (X.1-05) : absentes des trois formats (OBJ les écrit, STEP les écrit une fois épaissies). */
+  readonly surfaces: { readonly "surface-libre": ParFormat<StudioSurfaceLibre> };
   /** Cotes de faces 3D (lot G2, INV-013) : annotations du modèle 3D, écrites dans aucun format de dessin ni en IFC. */
   readonly cotesFaces: { readonly "face-dimension": ParFormat<StudioCoteFace> };
   readonly architecture: { readonly [K in StudioArchitectureItem["type"]]: ParFormat<Extract<StudioArchitectureItem, { type: K }>> };
@@ -161,6 +166,9 @@ export const STUDIO_CAPACITES_EXPORT: {
   },
   exacts: {
     exact: { svg: () => nonCouvert("solide-hors-2d"), dxf: () => nonCouvert("solide-hors-2d"), ifc: () => nonCouvert("solide-exact-hors-ifc") },
+  },
+  surfaces: {
+    "surface-libre": { svg: () => nonCouvert("surface-libre-hors-export"), dxf: () => nonCouvert("surface-libre-hors-export"), ifc: () => nonCouvert("surface-libre-hors-export") },
   },
   cotesFaces: {
     "face-dimension": { svg: () => nonCouvert("solide-hors-2d"), dxf: () => nonCouvert("solide-hors-2d"), ifc: () => nonCouvert("cote-hors-ifc") },
@@ -284,6 +292,7 @@ export function studioRapportFidelite(input: StudioDocument, format: StudioForma
   parcourir("annotations", doc.annotations);
   parcourir("solides", doc.solides);
   parcourir("exacts", doc.exacts);
+  parcourir("surfaces", doc.surfaces);
   // Cotes de faces 3D (lot G2) : comptées sur leur calque, écrites dans aucun format.
   parcourir("cotesFaces", doc.cotesFaces);
   // Une ouverture n'a pas de calque propre : elle suit celui de son mur hôte.
