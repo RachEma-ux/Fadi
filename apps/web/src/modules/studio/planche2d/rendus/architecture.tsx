@@ -25,7 +25,7 @@ export interface PropsArchitecture2D {
 export function Architecture2D({ doc, selection, surSelection, versPlanche }: PropsArchitecture2D) {
   const plan = useMemo(() => { try { return studioPlanArchitecture(doc.architecture); } catch { return null; } }, [doc.architecture]);
   if (!plan || !doc.architecture?.length) return null;
-  const element = (id: string, layerId: string | undefined, nom: string, type: "wall" | "opening", contenu: ReactNode) => {
+  const element = (id: string, layerId: string | undefined, nom: string, type: "wall" | "opening" | "ladder", contenu: ReactNode) => {
     const selectionnable = estSelectionnable(doc, layerId);
     return (
       <g key={id} role="button" tabIndex={selectionnable ? 0 : -1} aria-label={`${nom} ${id}`} aria-pressed={selection.has(id)} aria-disabled={!selectionnable || undefined}
@@ -42,5 +42,7 @@ export function Architecture2D({ doc, selection, surSelection, versPlanche }: Pr
       <>{m.morceaux.map((q, i) => <polygon key={i} points={points(q)} />)}</>))}
     {plan.ouvertures.filter((o) => estVisible(doc, o.layerId)).map((o) => element(o.id, o.layerId, o.kind ? LIBELLES_TYPE_OUVERTURE[o.kind as keyof typeof LIBELLES_TYPE_OUVERTURE] : "Ouverture", "opening",
       <><polygon className="studio-architecture-vide" points={points(o.contour)} />{o.montants.map(([a, b], i) => <line key={i} x1={a.x} y1={a.y} x2={b.x} y2={b.y} />)}</>))}
+    {(plan.echelles ?? []).filter((e) => estVisible(doc, e.echelle.layerId)).map((e) => element(e.echelle.id, e.echelle.layerId, "Échelle d’accès", "ladder",
+      <>{[...e.montants, e.echelons].map((q, i) => <polygon key={i} points={points(q)} />)}</>))}
   </g>;
 }

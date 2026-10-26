@@ -1,7 +1,10 @@
 import { ref, refs, studioStepReal, studioStepString, type IfcConstruit, type IfcContexte } from "../exporteurs/ifc-step.js";
 import { STUDIO_DEFAULT_LAYER_ID } from "../noyau/limites.js";
 import { lateraux } from "./geometrie.js";
-import type { StudioArchitectureItem } from "./types.js";
+import type { StudioArchitectureItem, StudioLadder } from "./types.js";
+import { geometrieEchelle } from "./echelle.js";
+import { studioSignedArea } from "../courbes.js";
+import type { StudioPoint } from "../noyau/types.js";
 import { lireArchitecture } from "./validation.js";
 
 /**
@@ -49,12 +52,43 @@ export interface IfcArchitecture {
   ouvertures: number;
   portes: number;
   fenetres: number;
+  /** Échelles d'accès (EX-027) écrites en `IfcStair` `.LADDER.`. */
+  echelles: number;
+}
+
+/**
+ * Échelle d'accès (EX-027, lot G2) → `IfcStair` de type prédéfini `.LADDER.` (IFC4X3) : un corps `SweptSolid` qui réunit
+ * un `IfcExtrudedAreaSolid` par montant (section carrée saisie, sur la hauteur) et par échelon (même section, placé à la
+ * cote de son axe), placé à la cote du pied ; jeu de propriétés `Fadi_StudioLadder` (valeurs saisies et pas dérivé).
+ * Le calque est porté par la représentation (`IfcLayeredItem`). Aucune valeur normative n'est écrite.
+ */
+function ladderIfc(e: StudioLadder, c: IfcContexte, p: IfcOutilsProprietes, res: IfcArchitecture): void {
+  const { s } = c;
+  const g = geometrieEchelle(e), demi = e.section / 2;
+  const profil = (ring: readonly StudioPoint[]) => {
+    const r = studioSignedArea(ring) < 0 ? [...ring].reverse() : ring;
+    return s.add(`IFCARBITRARYCLOSEDPROFILEDEF(.AREA.,$,${ref(s.add(`IFCPOLYLINE(${refs([...r, r[0]!].map((q) => c.pt2(q.x, q.y)))})`))})`);
+  };
+  const solide = (ring: readonly StudioPoint[], dz: number, profondeur: number) => {
+    const position = s.add(`IFCAXIS2PLACEMENT3D(${ref(s.add(`IFCCARTESIANPOINT((0.,0.,${studioStepReal(dz)}))`))},$,$)`);
+    return s.add(`IFCEXTRUDEDAREASOLID(${ref(profil(ring))},${ref(position)},${ref(c.zAxis)},${studioStepReal(profondeur)})`);
+  };
+  const items = [...g.montants.map((m) => solide(m, 0, e.height)), ...g.cotesEchelons.map((z) => solide(g.echelons, z - e.base - demi, e.section))];
+  const rep = s.add(`IFCSHAPEREPRESENTATION(${ref(c.body)},'Body','SweptSolid',${refs(items)})`);
+  const stair = s.add(`IFCSTAIR(${c.gid(e.id)},$,${studioStepString(e.id)},$,$,${ref(c.placed(0, 0, e.base))},${ref(c.shape([rep]))},${studioStepString(e.id)},.LADDER.)`);
+  p.pset(`ladder|${e.id}`, "Fadi_StudioLadder", stair, [
+    p.prop("StudioId", p.label(e.id)), p.prop("Width", p.length(e.width)), p.prop("Height", p.length(e.height)), p.prop("Base", p.length(e.base)),
+    p.prop("RungCount", `IFCINTEGER(${e.rungs})`), p.prop("RungSpacing", p.length(g.pas)), p.prop("MemberSection", p.length(e.section)),
+  ]);
+  res.construits.push({ element: stair, item: rep, layerId: e.layerId ?? STUDIO_DEFAULT_LAYER_ID });
+  res.entites.set(e.id, stair);
+  res.echelles++;
 }
 
 export function studioIfcArchitecture(items: readonly StudioArchitectureItem[], c: IfcContexte, p: IfcOutilsProprietes): IfcArchitecture {
   const { s } = c;
   const lue = lireArchitecture(items);
-  const res: IfcArchitecture = { construits: [], remplissages: [], entites: new Map(), murs: 0, ouvertures: 0, portes: 0, fenetres: 0 };
+  const res: IfcArchitecture = { construits: [], remplissages: [], entites: new Map(), murs: 0, ouvertures: 0, portes: 0, fenetres: 0, echelles: 0 };
   for (const { mur, geometrie, ouvertures } of lue.murs.values()) {
     const placement = c.placed(0, 0, mur.base);
     const item = c.arbitrarySolid(geometrie.anneau, mur.height);
@@ -103,5 +137,6 @@ export function studioIfcArchitecture(items: readonly StudioArchitectureItem[], 
       }
     }
   }
+  for (const it of items) if (it.type === "ladder") ladderIfc(it, c, p, res);
   return res;
 }

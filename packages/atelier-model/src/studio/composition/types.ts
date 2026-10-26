@@ -11,7 +11,7 @@ import type { StudioText } from "../objets/texte.js";
 import type { StudioOperationBooleenne, StudioResultatExact, StudioSolideExact } from "../objets-3d/exacts.js";
 import type { STUDIO_CONTRACT } from "../noyau/limites.js";
 import type { StudioLayer, StudioPoint } from "../noyau/types.js";
-import type { StudioArchitectureItem, StudioOpening, StudioWall } from "../architecture/types.js";
+import type { StudioArchitectureItem, StudioLadder, StudioOpening, StudioWall } from "../architecture/types.js";
 import type { StudioPropriete } from "../exigences/proprietes.js";
 import type { StudioApparence, StudioElementVisualisation, StudioScene } from "../scenes/scenes.js";
 import type { StudioNonNatif } from "../non-natifs/non-natifs.js";
@@ -117,6 +117,7 @@ export type StudioCommand =
   | { toolId: "studio.solide.booleen"; params: { id: string; operation: StudioOperationBooleenne; operandes: [string, string]; resultat: StudioResultatExact } }
   | { toolId: "studio.architecture.mur"; params: StudioWall }
   | { toolId: "studio.architecture.ouverture"; params: StudioOpening }
+  | { toolId: "studio.architecture.echelle-acces"; params: StudioLadder }
   | { toolId: "studio.architecture.modifier"; params: StudioArchitectureItem }
   | { toolId: "studio.architecture.supprimer"; params: { ids: string[]; cascade: boolean } }
   | { toolId: "studio.propriete.definir"; params: StudioPropriete }

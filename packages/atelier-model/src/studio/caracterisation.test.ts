@@ -319,8 +319,10 @@ const AJOUTS = {
     "studio.graphisme.creer", "studio.graphisme.retirer", "studio.repere.projet",
     // Sources importées (EX-014), champ facultatif `sources` du document.
     "studio.source.declarer",
+    // Lot G2 (extension additive consignée) : échelle d’accès (EX-027), objet `ladder` de `architecture`.
+    "studio.architecture.echelle-acces",
   ]),
-  types: new Set(["angular-dimension", "text", "wall", "opening", "scene", "appearance", "non-native", "spline", "hachure", "symbole", "source"]),
+  types: new Set(["angular-dimension", "text", "wall", "opening", "scene", "appearance", "non-native", "spline", "hachure", "symbole", "source", "ladder"]),
   exports: new Set([
     // Dérivation en copie indépendante (TR-EX-013 / TR-INV-003) et tolérance contractuelle des gestes (TR-IF-002), P-12.
     "STUDIO_MODES_DERIVATION", "studioCopieIndependante", "studioIdentitesDocument", "studioIdentitesReutilisees",
@@ -399,6 +401,8 @@ const AJOUTS = {
     "STUDIO_RAPPORT_ACCELERATION_SCHEMA", "STUDIO_CRITERES_EQUIVALENCE", "STUDIO_MOTEURS", "STUDIO_ACCELERATIONS", "STUDIO_MOTEURS_DE_REFERENCE", "STUDIO_MOTEURS_PAR_DEFAUT", "STUDIO_ACCELERATION_DU_MOTEUR", "studioEvaluerAcceleration", "studioMoteurEffectif", "studioControlerMoteursParDefaut", "STUDIO_RAPPORTS_ACCELERATION",
     // Sources importées et provenance (EX-014, `sources/sources.ts`).
     "STUDIO_PROVENANCE_SCHEMA", "STUDIO_FORMATS_SOURCE", "STUDIO_LIMITES_SOURCES", "validerSource", "validerSources", "studioVersionDxf", "studioSourceDxf", "studioSourceDxfLue", "studioSourceIfcLue", "studioExportProvenance", "studioProvenanceModeleExterne", "SCHEMA_SOURCE",
+    // Lot G2 : échelle d’accès (EX-027, `architecture/echelle.ts`).
+    "SCHEMA_ECHELLE", "STUDIO_ECHELONS_MAX", "validerEchelle", "geometrieEchelle", "metreEchelle", "volumesEchelle",
   ]),
 };
 function sansAjouts(value: unknown): unknown {

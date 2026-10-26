@@ -107,6 +107,7 @@ export type IconName =
   | "studio-opening"
   | "studio-architecture-edit"
   | "studio-architecture-delete"
+  | "studio-ladder"
   | "studio-property-set"
   | "console"
   | "studio-property-remove"
@@ -263,6 +264,8 @@ const PATHS: Record<IconName, string> = {
   "studio-opening": "M2 8h7v8H2ZM15 8h7v8h-7ZM9 6v12M15 6v12M10.5 12h3",
   "studio-architecture-edit": "M2 13h11v6H2ZM6 13l-4 4M10 13l-6 6M14 14l7-7 2 2-7 7h-2Z",
   "studio-architecture-delete": "M2 9h6v6H2ZM12 9h6v6h-6ZM8 7v10M12 7v10M15 3l6 6M21 3l-6 6",
+  // Échelle d’accès (EX-027) : deux montants verticaux et quatre échelons (distincte de la transformation Échelle).
+  "studio-ladder": "M7 2v20M17 2v20M7 6h10M7 10h10M7 14h10M7 18h10",
   // Propriétés et exigences (E.1) : étiquette et signe plus ; étiquette barrée ; liste cochée et balance (écart).
   "studio-property-set": "M3 4h9l8 8-8 8-9-9ZM7 8h.01M17 3v6M14 6h6",
   "studio-property-remove": "M3 4h9l8 8-8 8-9-9ZM7 8h.01M15 3l6 6M21 3l-6 6",

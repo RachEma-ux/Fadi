@@ -91,17 +91,27 @@ describe("alias de migration des identifiants (B.1-04)", () => {
 
   it("« echelle » de l'Atelier (B.1-05) : transformation au commit courant ; avant 1a6f9b5, ambigu sans fiche, jamais choisi par défaut", () => {
     expect(resoudreAliasOutil("echelle", { catalogue: "atelier" })).toMatchObject({ statut: "alias", toolId: "studio.dessin.echelle" });
-    expect(resoudreAliasOutil("echelle-acces", { catalogue: "atelier" })).toMatchObject({ statut: "hors-studio" });
+    expect(resoudreAliasOutil("echelle-acces", { catalogue: "atelier" })).toMatchObject({ statut: "alias", toolId: "studio.architecture.echelle-acces" });
     const ancien = resoudreAliasOutil("echelle", { catalogue: "atelier", periode: "avant-1a6f9b5" });
     expect(ancien.statut).toBe("ambigu");
-    expect(ancien.statut === "ambigu" && ancien.alternatives.map((a) => a.toolId)).toEqual([null, "studio.dessin.echelle"]);
-    expect(resoudreAliasOutil("echelle", { catalogue: "atelier", periode: "avant-1a6f9b5", contexte: "DA-07-13" })).toMatchObject({ statut: "hors-studio" });
+    expect(ancien.statut === "ambigu" && ancien.alternatives.map((a) => a.toolId)).toEqual(["studio.architecture.echelle-acces", "studio.dessin.echelle"]);
+    expect(resoudreAliasOutil("echelle", { catalogue: "atelier", periode: "avant-1a6f9b5", contexte: "DA-07-13" })).toMatchObject({ statut: "alias", toolId: "studio.architecture.echelle-acces" });
     expect(resoudreAliasOutil("echelle", { catalogue: "atelier", periode: "avant-1a6f9b5", contexte: "DA-02-05" })).toMatchObject({ statut: "alias", toolId: "studio.dessin.echelle" });
   });
 
-  it("Studio n'a qu'un outil « échelle » (transformation) et aucun objet d'accès : pas de collision dans le registre", () => {
+  it("EX-027 [+] manifeste valide avec deux capacités « échelle » distinctes (transformation et échelle d'accès) ; identifiants du référentiel et alias anciens résolus", () => {
+    expect(controlerManifesteOutils()).toEqual([]);
     const echelles = STUDIO_TOOLS.filter((t) => /echelle|scale|ladder/i.test(t.toolId) || /échelle/i.test(t.libelleFR));
-    expect(echelles.map((t) => [t.toolId, t.groupe])).toEqual([["studio.dessin.echelle", "modification"]]);
+    expect(echelles.map((t) => [t.toolId, t.groupe, t.libelleFR])).toEqual([
+      ["studio.dessin.echelle", "modification", "Échelle"], ["studio.architecture.echelle-acces", "architecture", "Échelle d’accès"],
+    ]);
     expect(new Set(STUDIO_TOOL_IDS).size).toBe(STUDIO_TOOL_IDS.length);
+    expect(entreeManifeste("studio.architecture.echelle-acces")).toMatchObject({ contextes: ["planche-2d"], droit: "ecriture", chargeur: "planche-2d", proprietaire: { id: "studio.architecture" } });
+    expect(resoudreAliasOutil("studio.transform.scale", { catalogue: "referentiel" })).toMatchObject({ statut: "alias", toolId: "studio.dessin.echelle" });
+    expect(resoudreAliasOutil("studio.arch.ladder", { catalogue: "referentiel" })).toMatchObject({ statut: "alias", toolId: "studio.architecture.echelle-acces" });
+    expect(resoudreAliasOutil("studio.draw.line2d", { catalogue: "referentiel" })).toMatchObject({ statut: "alias", toolId: "studio.dessin.ligne" });
+    // Un identifiant canonique reste canonique ; un identifiant du référentiel n'est jamais un outil Studio en soi.
+    expect(resoudreAliasOutil("studio.architecture.echelle-acces")).toEqual({ statut: "canonique", toolId: "studio.architecture.echelle-acces" });
+    expect(toolIdCanonique("studio.arch.ladder")).toBeNull();
   });
 });

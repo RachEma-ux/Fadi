@@ -66,6 +66,7 @@ export const ALTERNATIVES_GESTES: Readonly<Record<string, AlternativeGeste>> = O
   "studio.solide.booleen": commande,
   "studio.architecture.mur": saisie("panneau-architecture"),
   "studio.architecture.ouverture": saisie("panneau-architecture"),
+  "studio.architecture.echelle-acces": saisie("panneau-architecture"),
   "studio.architecture.modifier": saisie("panneau-architecture"),
   "studio.architecture.supprimer": commande,
   "studio.propriete.definir": commande,

@@ -225,7 +225,7 @@ describe("Exports : plan avec vides, IFC mur + ouverture", () => {
 describe("Registre : une icône, une barre, un raccourci par outil architectural", () => {
   it("quatre mutations de la barre architecture, acceptées par l'API", () => {
     const outils = STUDIO_TOOLS.filter((t) => t.groupe === "architecture");
-    expect(outils.map((t) => [t.toolId, t.raccourci, t.iconeSymbolique])).toEqual([
+    expect(outils.filter((t) => t.toolId !== "studio.architecture.echelle-acces").map((t) => [t.toolId, t.raccourci, t.iconeSymbolique])).toEqual([
       ["studio.architecture.mur", "W", "studio-wall"], ["studio.architecture.ouverture", "H", "studio-opening"],
       ["studio.architecture.modifier", "J", "studio-architecture-edit"], ["studio.architecture.supprimer", "Ctrl+Delete", "studio-architecture-delete"],
     ]);

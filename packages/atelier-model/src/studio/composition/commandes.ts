@@ -1,4 +1,4 @@
-import { avecArchitecture, creerMur, creerOuverture, deplacerAvecArchitecture, modifierArchitecture, supprimerArchitecture } from "../commandes/architecture.js";
+import { avecArchitecture, creerEchelle, creerMur, creerOuverture, deplacerAvecArchitecture, modifierArchitecture, supprimerArchitecture } from "../commandes/architecture.js";
 import { creerCalque, modifierCalque, placerSurCalque } from "../commandes/calques.js";
 import { CREATION_FORMES, creerCote, creerCoteAngulaire, creerTexte } from "../commandes/dessin.js";
 import { decaler, deplacer, modifier, supprimer } from "../commandes/modification.js";
@@ -59,6 +59,8 @@ const HANDLERS: Record<StudioCommandToolId, Gestionnaire> = {
   // Architecture (A.4) : murs et ouvertures ; la part architecturale des commandes générales est branchée ci-dessus.
   "studio.architecture.mur": creerMur,
   "studio.architecture.ouverture": creerOuverture,
+  // EX-027 (lot G2) : échelle d'accès, objet d'accès posé librement (montants et échelons saisis).
+  "studio.architecture.echelle-acces": creerEchelle,
   "studio.architecture.modifier": modifierArchitecture,
   "studio.architecture.supprimer": supprimerArchitecture,
   // Propriétés BIM déclarées (E.1-01), rangées dans `StudioDocument.proprietes`.

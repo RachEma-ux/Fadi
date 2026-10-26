@@ -55,6 +55,7 @@ export const SYNONYMES: Readonly<Record<string, readonly string[]>> = Object.fre
   "studio.solide.booleen": ["union", "soustraction", "intersection", "noyau exact"],
   "studio.architecture.mur": ["cloison", "paroi", "voile"],
   "studio.architecture.ouverture": ["porte", "fenêtre", "baie"],
+  "studio.architecture.echelle-acces": ["échelle fixe", "accès", "échelons", "montants"],
   "studio.architecture.modifier": ["éditer le mur", "épaisseur"],
   "studio.architecture.supprimer": ["effacer le mur"],
   "studio.propriete.definir": ["attribut", "paramètre", "caractéristique"],

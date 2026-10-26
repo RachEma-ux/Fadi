@@ -129,7 +129,7 @@ export function studioDonneesVue(source: StudioDocument, spec: StudioVueSourceSp
   const annotations = (doc.annotations ?? []).filter((a) => garde.has(calque(a))).map((a) => (a.type === "angular-dimension" ? { ...a, links: { first: detacher(a.links.first), second: detacher(a.links.second) } } : a));
   const archi = doc.architecture ?? [];
   const murs = new Set(archi.filter((x) => x.type === "wall" && garde.has(calque(x))).map((x) => x.id));
-  const architecture = archi.filter((x) => (x.type === "wall" ? murs.has(x.id) : murs.has(x.hostId)));
+  const architecture = archi.filter((x) => (x.type === "wall" ? murs.has(x.id) : x.type === "ladder" ? garde.has(calque(x)) : murs.has(x.hostId)));
   const layers = (doc.layers ?? []).filter((l) => garde.has(l.id)).map((l) => ({ ...l, visible: true }));
   const reduit: StudioDocument = {
     id: doc.id, schemaVersion: doc.schemaVersion, units: doc.units, frame: doc.frame, objects,

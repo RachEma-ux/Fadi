@@ -13,13 +13,13 @@ import type { ContexteClic } from "../outils/type";
 import { Architecture2D } from "../rendus/architecture";
 import { commandesDeplacement, selectionParRectangle, toutSelectionnable } from "../selection";
 import {
-  commandeModifierArchitecture, commandeMur, contoursMurs, commandeOuverture, editionDe, ERREUR_PARAMETRES_MUR, ERREUR_PARAMETRES_OUVERTURE, murSousPoint, PARAMETRES_ARCHITECTURE_VIDES,
+  commandeEchelle, commandeModifierArchitecture, commandeMur, contoursEchelles, contoursMurs, commandeOuverture, editionDe, ERREUR_PARAMETRES_ECHELLE, ERREUR_PARAMETRES_MUR, ERREUR_PARAMETRES_OUVERTURE, murSousPoint, PARAMETRES_ARCHITECTURE_VIDES, radiansOrientation,
   type ParametresArchitecture,
 } from "./architecture-ui";
 import { PanneauArchitecture } from "./PanneauArchitecture";
 
 const pp = (x: number, y: number): PointPose => ({ point: { x, y }, accroche: null });
-const PARAMS: ParametresArchitecture = { mur: { epaisseur: 0.2, hauteur: 3, base: 0, justification: "center" }, ouverture: { largeur: 1, hauteur: 2.1, allege: 0, type: "" } };
+const PARAMS: ParametresArchitecture = { mur: { epaisseur: 0.2, hauteur: 3, base: 0, justification: "center" }, ouverture: { largeur: 1, hauteur: 2.1, allege: 0, type: "" }, echelle: { largeur: 0.5, hauteur: 3, base: 0, echelons: 9, section: 0.04, orientation: 90 } };
 const ctx = (architecture: ParametresArchitecture | undefined, document?: StudioDocument): ContexteClic => {
   let n = 0;
   return { nouvelId: () => `id-${++n}`, layerId: undefined, decalageCote: 0.5, tolerance: 0.1, architecture, document };
@@ -115,5 +115,44 @@ describe("Correctifs de revue A.4 : désignation, visibilité, sélection des mu
     const { commandes } = commandesDeplacement(d, ["m1"], 1, 2);
     expect((applyStudioCommands(d, commandes).architecture![0] as { axis: unknown }).axis).toEqual([{ x: 1, y: 2 }, { x: 7, y: 2 }]);
     expect(contoursMurs(d, () => true)).toEqual([{ id: "m1", type: "polyline", closed: true, points: expect.any(Array) }]);
+  });
+});
+
+describe("EX-027 (lot G2) — outil Échelle d'accès sur la planche : un clic, valeurs saisies, panneau, plan, sélection", () => {
+  it("EX-027 [+] un clic pose le pied avec les valeurs saisies (orientation en degrés) ; l'échelle est dessinée, sélectionnable, déplaçable, accrochable et modifiable depuis le panneau", () => {
+    const a = outilPlanche("studio.architecture.echelle-acces")!.premierClic!(pp(2, 1), ctx(PARAMS));
+    expect(a).toEqual({ type: "commandes", apres: "fin-trace", commandes: [{ toolId: "studio.architecture.echelle-acces", params: { id: "id-1", type: "ladder", position: { x: 2, y: 1 }, rotation: Math.PI / 2, width: 0.5, height: 3, base: 0, rungs: 9, section: 0.04 } }] });
+    const d = applyStudioCommands(newStudioDocument("ex027"), (a as { commandes: StudioCommand[] }).commandes);
+    const html = renderToStaticMarkup(createElement("svg", null, createElement(Architecture2D, { doc: d, selection: new Set(["id-1"]), surSelection: () => {}, versPlanche: false })));
+    expect(html).toContain('data-studio-architecture="id-1" data-studio-type="ladder"');
+    expect((html.match(/<polygon/g) ?? []).length).toBe(3);
+    expect(toutSelectionnable(d)).toEqual(["id-1"]);
+    expect(selectionParRectangle(d, { x: 1, y: 0 }, { x: 3, y: 2 })).toEqual(["id-1"]);
+    const { commandes } = commandesDeplacement(d, ["id-1"], 1, 0);
+    expect(applyStudioCommands(d, commandes).architecture![0]).toMatchObject({ position: { x: 3, y: 1 } });
+    expect(contoursEchelles(d, () => true)).toEqual([{ id: "id-1", type: "polyline", closed: true, points: expect.any(Array) }]);
+    const e = editionDe(d.architecture![0]!);
+    expect(e).toEqual({ type: "ladder", pied: "2 1", orientation: 90, largeur: 0.5, hauteur: 3, base: 0, echelons: 9, section: 0.04 });
+    const m = commandeModifierArchitecture(d.architecture![0]!, { ...e, echelons: 11, hauteur: 3.6 } as typeof e, lireSommets);
+    expect(applyStudioCommands(d, (m as { commandes: StudioCommand[] }).commandes).architecture![0]).toMatchObject({ id: "id-1", rungs: 11, height: 3.6 });
+    // Vue 3D : même identifiant, type « ladder ».
+    expect(studioMesh3d(d).architecture?.map((x) => [x.id, x.type])).toEqual([["id-1", "ladder"]]);
+    // Panneau : formulaire de l'outil (aucune valeur proposée), puis métré de l'échelle sélectionnée.
+    const panneau = (outil: string, selection: string | null, parametres = PARAMETRES_ARCHITECTURE_VIDES) => renderToStaticMarkup(createElement(PanneauArchitecture, {
+      doc: d, outil: outil as never, selection, modifiable: true, parametres, surParametres: () => {}, contexte: () => ({ nouvelId: () => "x", layerId: undefined }), surCommandes: () => true, surErreur: () => {}, surSelection: () => {},
+    }));
+    const vide = panneau("studio.architecture.echelle-acces", null);
+    expect(vide).toContain("data-studio-architecture-echelle-formulaire");
+    expect(vide).toContain('data-studio-champ-architecture="echelle-largeur" name="echelle-largeur" value=""');
+    expect(panneau("studio.dessin.selection", "id-1")).toContain('data-studio-echelons="9"');
+  });
+
+  it("EX-027 [−] sans valeurs saisies, l'outil refuse avec un message (rien n'est proposé) ; un pied invalide au panneau est refusé", () => {
+    expect(outilPlanche("studio.architecture.echelle-acces")!.premierClic!(pp(2, 1), ctx(PARAMETRES_ARCHITECTURE_VIDES))).toEqual({ type: "erreur", message: ERREUR_PARAMETRES_ECHELLE });
+    expect(commandeEchelle({ nouvelId: () => "e", layerId: undefined }, { x: 0, y: 0 }, { ...PARAMS.echelle, section: Number.NaN })).toEqual({ erreur: ERREUR_PARAMETRES_ECHELLE });
+    const d = applyStudioCommands(newStudioDocument("x"), (commandeEchelle({ nouvelId: () => "e", layerId: undefined }, { x: 0, y: 0 }, PARAMS.echelle) as { commandes: StudioCommand[] }).commandes);
+    expect(commandeModifierArchitecture(d.architecture![0]!, { ...(editionDe(d.architecture![0]!) as { type: "ladder" }), pied: "1 2 ; 3 4" } as never, lireSommets)).toEqual({ erreur: "Pied : saisissez un point « x y », en mètres." });
+    expect(radiansOrientation(-90)).toBeCloseTo((3 * Math.PI) / 2, 12);
+    expect(radiansOrientation(360)).toBe(0);
   });
 });

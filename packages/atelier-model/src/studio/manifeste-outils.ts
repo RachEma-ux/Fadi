@@ -15,8 +15,8 @@
  * converti en silence : `resoudreAliasOutil` rend alors les alternatives (ex. « echelle » de l'Atelier avant #173).
  *
  * Requalification de la collision « echelle » (B.1-05), constatée au commit de réalisation : voir
- * `docs/ai-team/reports/claude-v8-b1/B1-CATALOGUE-OUTILS.md`. Studio n'a qu'un `studio.dessin.echelle` (transformation) et aucun
- * objet d'accès ; la palette de l'Atelier a séparé `echelle-acces` (objet d'accès) de `echelle` (transformation) au
+ * `docs/ai-team/reports/claude-v8-b1/B1-CATALOGUE-OUTILS.md`. Depuis le lot G2 (EX-027), Studio a deux capacités distinctes :
+ * `studio.dessin.echelle` (transformation) et `studio.architecture.echelle-acces` (objet d'accès) ; la palette de l'Atelier a séparé `echelle-acces` de `echelle` au
  * commit 1a6f9b5 (#173). Pur : ni React, ni DOM, ni base.
  */
 import { STUDIO_TOOLS, STUDIO_TOOL_IDS, type StudioToolGroup, type StudioToolId } from "./registry.js";
@@ -128,6 +128,7 @@ const DECLARATIONS = {
   "studio.architecture.ouverture": { contextes: P2D, prerequis: ["studio.architecture.mur"] },
   "studio.architecture.modifier": { contextes: P2D, prerequis: ["studio.architecture.mur"] },
   "studio.architecture.supprimer": { contextes: P2D, prerequis: ["studio.architecture.mur"] },
+  "studio.architecture.echelle-acces": { contextes: P2D },
   "studio.propriete.definir": { contextes: P2D },
   "studio.propriete.retirer": { contextes: P2D, prerequis: ["studio.propriete.definir"] },
   "studio.scene.creer": { contextes: V3D },
@@ -175,7 +176,8 @@ export const entreeManifeste = (toolId: string): StudioEntreeManifeste | null =>
 // ---------------------------------------------------------------------------------------------------------------
 
 /** Catalogues dont un identifiant peut être migré vers Studio. */
-export type StudioCatalogueSource = "studio" | "planche" | "atelier";
+/** Catalogues dont un identifiant peut être migré vers Studio ; `referentiel` : identifiants cités par le Référentiel technique (RT-001, EX-027). */
+export type StudioCatalogueSource = "studio" | "planche" | "atelier" | "referentiel";
 /**
  * Règle d'un alias : `equivalent` (même capacité dans un autre catalogue), `renomme` (ancien identifiant Studio),
  * `hors-studio` (capacité sans équivalent Studio : jamais convertie vers un outil voisin).
@@ -214,10 +216,13 @@ export const STUDIO_ALIAS_OUTILS: readonly StudioAliasOutil[] = Object.freeze([
   eq("atelier", "miroir", "studio.dessin.symetrie"), eq("atelier", "echelle", "studio.dessin.echelle"), eq("atelier", "decaler", "studio.dessin.decaler"),
   eq("atelier", "supprimer", "studio.dessin.supprimer"), eq("atelier", "cotation", "studio.dessin.cote"), eq("atelier", "texte", "studio.dessin.texte"),
   eq("atelier", "mur", "studio.architecture.mur"), eq("atelier", "ouverture", "studio.architecture.ouverture"),
-  { catalogue: "atelier", periode: "courante", idHistorique: "echelle-acces", regle: "hors-studio", toolId: null },
+  eq("atelier", "echelle-acces", "studio.architecture.echelle-acces"),
   // Atelier avant 1a6f9b5 (#173) : deux outils portaient « echelle ». Seule la fiche lève l'ambiguïté.
-  { catalogue: "atelier", periode: "avant-1a6f9b5", idHistorique: "echelle", contexte: "DA-07-13", regle: "hors-studio", toolId: null },
+  { catalogue: "atelier", periode: "avant-1a6f9b5", idHistorique: "echelle", contexte: "DA-07-13", regle: "equivalent", toolId: "studio.architecture.echelle-acces" },
   { catalogue: "atelier", periode: "avant-1a6f9b5", idHistorique: "echelle", contexte: "DA-02-05", regle: "equivalent", toolId: "studio.dessin.echelle" },
+  // Référentiel technique RT-001 (EX-027) : identifiants d'exemple du texte source, distincts, résolus vers Studio.
+  eq("referentiel", "studio.draw.line2d", "studio.dessin.ligne"), eq("referentiel", "studio.transform.scale", "studio.dessin.echelle"),
+  eq("referentiel", "studio.arch.ladder", "studio.architecture.echelle-acces"),
 ].map((a) => Object.freeze(a)) as StudioAliasOutil[]);
 
 export type StudioResolutionAlias =

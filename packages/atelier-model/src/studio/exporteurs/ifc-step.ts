@@ -113,7 +113,7 @@ export interface StudioIfcSummary {
    */
   annotations?: number;
   /** Objets architecturaux (A.4), présents seulement quand le document en compte : murs, ouvertures, portes, fenêtres. */
-  architecture?: { walls: number; openings: number; doors: number; windows: number };
+  architecture?: { walls: number; openings: number; doors: number; windows: number; /** EX-027 : échelles d’accès (IfcStair .LADDER.), présent seulement s’il y en a. */ ladders?: number };
   /**
    * Propriétés déclarées (E.1-01), présent seulement quand le document en porte : écrites dans `Fadi_ProprietesDeclarees`
    * (valuées) et non écrites (sans valeur, « non évaluées »).

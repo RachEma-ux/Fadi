@@ -162,6 +162,8 @@ export const STUDIO_CAPACITES_EXPORT: {
   architecture: {
     wall: { svg: () => approche("extrusion-non-portee"), dxf: () => approche("extrusion-non-portee"), ifc: () => exact("extrusion-exacte") },
     opening: { svg: () => approche("ouverture-en-lacune"), dxf: () => approche("ouverture-en-lacune"), ifc: () => exact("ouverture-evidee") },
+    // EX-027 (lot G2) : échelle d'accès — plan (montants et échelons) sans hauteur en SVG / DXF ; IFC : IfcStair LADDER, montants et échelons extrudés exacts.
+    ladder: { svg: () => approche("extrusion-non-portee"), dxf: () => approche("extrusion-non-portee"), ifc: () => exact("extrusion-exacte") },
   },
   // Propriétés déclarées : ni le SVG ni le DXF ne les portent ; l'IFC écrit celles qui ont une valeur.
   proprietes: {
