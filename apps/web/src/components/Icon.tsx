@@ -124,6 +124,10 @@ export type IconName =
   | "studio-agents"
   | "studio-non-native-keep"
   | "studio-non-native-remove"
+  | "studio-graphic-add"
+  | "studio-graphic-remove"
+  | "studio-project-frame"
+  | "studio-source-declare"
   | "studio-comments";
 
 const PATHS: Record<IconName, string> = {
@@ -283,6 +287,14 @@ const PATHS: Record<IconName, string> = {
   "studio-non-native-keep": "M4 8h3M10 8h4M17 8h3v3M20 14v3h-3M14 17h-4M7 17H4v-3M4 11V8M9 3h6v5H9ZM12 11v3",
   // Retirer les éléments non natifs : boîte en pointillés barrée d’une croix.
   "studio-non-native-remove": "M4 6h3M10 6h4M17 6h3v3M20 12v3h-3M14 15h-4M7 15H4v-3M4 9V6M9 18l4 4M13 18l-4 4M15 19h6",
+  // Créer un graphisme (EX-055) : spline au-dessus d'un carré hachuré, signe plus.
+  "studio-graphic-add": "M3 8c3-6 6-6 9 0s5 4 6 2M3 13h9v8H3ZM3 17l4-4M5 21l7-7M8 21l4-4M18 14v6M15 17h6",
+  // Retirer les graphismes : carré hachuré et spline, croix.
+  "studio-graphic-remove": "M3 7c3-5 6-5 9 0M3 11h9v9H3ZM3 15l4-4M5 20l7-7M15 14l6 6M21 14l-6 6",
+  // Système de projet (EX-023) : axes du document et axes du projet tournés, origine déportée.
+  // Déclarer une source importée (EX-014) : feuille de fichier avec empreinte (dièse) et flèche d'entrée.
+  "studio-source-declare": "M6 2h8l4 4v6M14 2v4h4M6 2v20h7M9 10h2M8 13h4M10 9l-1 5M12 9l-1 5M15 19h7M19 16l3 3-3 3",
+  "studio-project-frame": "M3 21V9M3 21h12M3 9l-1.5 2M3 9l1.5 2M15 21l-2-1.5M15 21l-2 1.5M12 12l8-6M12 12l5 7M20 6l-2.5.3M20 6l-.8 2.3M9 15l3-3",
   // Bascule du panneau des commentaires (barre de l’espace ; ni outil ni commande).
   "studio-comments": "M20.5 11.5c0 4.1-3.8 7.5-8.5 7.5-1.2 0-2.3-.2-3.3-.6L4 20l1.3-3.6C4.2 15 3.5 13.3 3.5 11.5 3.5 7.4 7.3 4 12 4s8.5 3.4 8.5 7.5ZM8 10h8M8 13.5h5",
 };

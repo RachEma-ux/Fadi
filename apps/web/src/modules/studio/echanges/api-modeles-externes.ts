@@ -10,6 +10,8 @@ export interface ModeleExterneLu {
   id: string; studyId: string; variantId: string;
   reference: string; auteur: string; discipline: string; format: "ifc"; version: string; uniteDeclaree: StudioUniteDeclaree;
   transformation: StudioTransformationDeclaree | null; nomFichier: string; contentSha256: string;
+  /** EX-014 : repère source et restrictions d'utilisation déclarés ; null : non déclarés. */
+  repereSource: string | null; restrictions: string | null;
   statut: StudioStatutModeleExterne; rapport: StudioIfcRapport; comparaison: StudioComparaisonModeleExterne; revisionComparee: string;
   decision: { par: string; parEmail: string | null; le: string | null; motif: string | null } | null;
   recuPar: string; recuParEmail: string | null; recuLe: string;
@@ -19,6 +21,7 @@ export interface ListeModeles { peutRecevoir: boolean; peutDecider: boolean; tet
 export interface ReceptionModele {
   reference: string; auteur: string; discipline: string; format: "ifc"; version: string; uniteDeclaree: StudioUniteDeclaree;
   transformation: StudioTransformationDeclaree | null; nomFichier: string; contenu: string; requestId: string;
+  repereSource?: string | null; restrictions?: string | null;
 }
 
 export class ErreurModeleExterne extends Error {
@@ -36,6 +39,8 @@ async function appel<T>(chemin: string, init?: RequestInit): Promise<T> {
 }
 const e = encodeURIComponent;
 export const cheminModeles = (p: string, s: string, v: string) => `/projects/${e(p)}/studio/studies/${e(s)}/variants/${e(v)}/modeles-externes`;
+/** Provenance exportée d'un modèle reçu (EX-014, `studio-provenance-modele/1`, droit d'export). */
+export const cheminProvenance = (p: string, s: string, v: string, id: string) => `${cheminModeles(p, s, v)}/${e(id)}/provenance`;
 
 export const apiModelesExternes = {
   lister: (p: string, s: string, v: string) => appel<ListeModeles>(cheminModeles(p, s, v)),

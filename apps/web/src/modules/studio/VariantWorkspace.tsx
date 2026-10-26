@@ -43,7 +43,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Icon } from "../../components/Icon";
-import { STUDIO_DEFAULT_LAYER_ID, STUDIO_TOOLS, studioVersionProjection, type StudioCameraScene, type StudioCommand, type StudioDocument, type StudioLayer, type StudioPoint, type StudioWall } from "@parcours/atelier-model";
+import { STUDIO_DEFAULT_LAYER_ID, STUDIO_RAPPORTS_ACCELERATION, STUDIO_TOOLS, studioVersionProjection, type StudioCameraScene, type StudioCommand, type StudioDocument, type StudioLayer, type StudioPoint, type StudioRapportAcceleration, type StudioWall } from "@parcours/atelier-model";
+import { moteurPlanche, texteMoteurPlanche } from "./planche2d/rendus/moteur-canvas";
 import { useNavigate } from "react-router-dom";
 import { BandeauSession } from "./temps-reel/BandeauSession";
 import { Superposition2D } from "./temps-reel/Superposition2D";
@@ -205,6 +206,15 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const [exportsLances, setExportsLances] = useState(0);
   const { user } = useAuth();
   const [calqueActif, setCalqueActif] = useState<string>(STUDIO_DEFAULT_LAYER_ID);
+  // Moteur de la planche (F.1-02) : Canvas seulement avec un rapport de comparaison qualifiant (règle F.1-01) — rapport
+  // versionné du dépôt, ou proposé par une recette (`__fadiStudioRendu.proposer`) ; SVG sinon (DEC-08).
+  const [rapportCanvas, setRapportCanvas] = useState<StudioRapportAcceleration | null>(() => STUDIO_RAPPORTS_ACCELERATION.find((r) => r.acceleration === "rendu-canvas-planche") ?? null);
+  const moteur2d = useMemo(() => moteurPlanche(rapportCanvas), [rapportCanvas]);
+  useEffect(() => {
+    const crochet = { proposer: (r: StudioRapportAcceleration | null) => setRapportCanvas(r), moteur: () => moteur2d };
+    (globalThis as { __fadiStudioRendu?: unknown }).__fadiStudioRendu = crochet;
+    return () => { if ((globalThis as { __fadiStudioRendu?: unknown }).__fadiStudioRendu === crochet) delete (globalThis as { __fadiStudioRendu?: unknown }).__fadiStudioRendu; };
+  }, [moteur2d]);
   const [nomCalque, setNomCalque] = useState("");
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
@@ -582,6 +592,21 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       if (b) b.click(); else setInfo("Sélectionnez d’abord un mur, une ouverture ou un objet extrudé.");
       return;
     }
+    // Graphismes (EX-055) et système de projet (EX-023) : saisis dans leur boîte ; un graphisme sélectionné se retire aussitôt.
+    if (toolId === "studio.graphisme.creer") { setDialogue("graphismes"); return; }
+    if (toolId === "studio.repere.projet") { setDialogue("systeme-projet"); return; }
+    // Source importée (EX-014) : elle accompagne un import DXF ; le raccourci ouvre « Importer DXF ».
+    if (toolId === "studio.source.declarer") { setDialogue("import-dxf"); setInfo("Une source se déclare avec son import : choisissez le fichier DXF."); return; }
+    if (toolId === "studio.graphisme.retirer") {
+      const ids = selectionIds.filter((id) => drawing.graphismes?.some((g) => g.id === id));
+      if (ids.length) { if (apply([{ toolId: "studio.graphisme.retirer", params: { ids } }])) select(selectionIds.filter((id) => !ids.includes(id))); }
+      else setDialogue("graphismes");
+      return;
+    }
+    if (toolId === "studio.dessin.supprimer" && selectionIds.length && selectionIds.every((id) => drawing.graphismes?.some((g) => g.id === id))) {
+      if (apply([{ toolId: "studio.graphisme.retirer", params: { ids: selectionIds } }])) setSelection([]);
+      return;
+    }
     // Éléments non natifs (lot F3) : ils naissent d'un import (Importer IFC) ; on les retire depuis « Éléments du dessin ».
     if (toolId === "studio.nonnatif.conserver") { setDialogue("import-ifc"); setInfo("Un élément non natif naît d’un import : choisissez le fichier IFC."); return; }
     if (toolId === "studio.nonnatif.retirer") {
@@ -818,13 +843,15 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   /** Canevas : Planche 2D, Planche 3D ou les deux (Double vue) ; la vue 3D garde sa place (même moteur d'un domaine à l'autre). */
   const canevas = context && drawing ? <div className="studio-canevas" data-studio-canevas={affichage} data-studio-domaine-canevas={domaineActif}>
     <div className="studio-canevas-vues">
-    {plan2d && <div className="studio-sheet" onKeyDown={panoramiquePlanche} onPointerMove={enDirect ? pointeurSession : undefined} onPointerLeave={enDirect ? () => pointeurSession(null) : undefined} data-studio-projection-plan={versionPlan(drawing)} title="Molette : zoom sur le pointeur ; bouton du milieu, Espace + glisser ou deux doigts : déplacer la vue." data-studio-aide-vue>
+    {plan2d && <div className="studio-sheet" data-studio-moteur-planche={moteur2d.moteur} onKeyDown={panoramiquePlanche} onPointerMove={enDirect ? pointeurSession : undefined} onPointerLeave={enDirect ? () => pointeurSession(null) : undefined} data-studio-projection-plan={versionPlan(drawing)} title="Molette : zoom sur le pointeur ; bouton du milieu, Espace + glisser ou deux doigts : déplacer la vue." data-studio-aide-vue>
       <Dessin2D svgRef={gestes.refPlanche} doc={apercuDoc ?? apercuTransformation ?? drawing} cadre={cadre} pas={pas} outil={tool} selection={selectionSet} trace={trace} survol={survol} rectangle={gestes.rectangle} glissement={!!gestes.apercu}
         apercuForme={apercuForme} sommetsPoses={suite}
         clicsVersPlanche={o => OUTILS_TRACE.has(tool) || (moveWithPointer && (!!trace || selectionSet.has(o.id)))}
         surPlanche={board} surSurvol={gestes.pointerMove} surPointeurBas={gestes.pointerDown} surPointeurHaut={gestes.pointerUp} surClicCapture={gestes.clickCapture} surSelection={(id, plus) => select(plus ? basculer(selectionIds, id) : [id])}
         architecture={{ selection: new Set([...selectionIds, ...(selectionArchi ? [selectionArchi] : [])]), surSelection: choisirArchitecture, versPlanche: OUTILS_TRACE.has(tool) }}
-        superposition={enDirect ? <Superposition2D doc={drawing} cadre={cadre} pointeurs={pointeursFrais(tr.etat, Date.now())} selections={tr.etat.selections} noms={nomsSession} /> : undefined} />
+        superposition={enDirect ? <Superposition2D doc={drawing} cadre={cadre} pointeurs={pointeursFrais(tr.etat, Date.now())} selections={tr.etat.selections} noms={nomsSession} /> : undefined}
+        moteur={moteur2d.moteur} />
+      {moteur2d.verdict && <p className="studio-moteur-planche" role="status" data-studio-moteur-etat={moteur2d.moteur}>{texteMoteurPlanche(moteur2d)}</p>}
     </div>}
     {vue3d && <div className="studio-canevas-3d"><Vue3D doc={drawing} outil={tool} modifiable={writable} navigation={navigation3d} coupe={coupe3d} selection={solide3d} layerId={actif?.id ?? STUDIO_DEFAULT_LAYER_ID}
       surSelection={setSolide3d} surCommandes={apply} selectionArchitecture={panneauArchi} surSelectionArchitecture={(id) => (id ? choisirArchitecture(id, false) : setSelectionArchi(null))}
@@ -948,7 +975,8 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       cartouche={() => cartoucheInitial({ projet: projet.data, etude: context.study, variante: context.variant, revision: { id: context.revision.id, ...revisionAffichee }, utilisateur: user })}
       portee={{ projectId, studyId, variantId, revisionId: context.revision.id }}
       captureIllustration={captureIllustration}
-      enregistrementConsole={autonome ? { commandes: commands, surEnregistre: (c) => { dirty.current = false; surEnregistreVersProjet?.(c, { domaine: domaineActif, planche: domaineActif === "dessin" ? modePlanche : null }); } } : undefined} />
+      enregistrementConsole={autonome ? { commandes: commands, surEnregistre: (c) => { dirty.current = false; surEnregistreVersProjet?.(c, { domaine: domaineActif, planche: domaineActif === "dessin" ? modePlanche : null }); } } : undefined}
+      surAppliquer={writable ? (cs) => apply(cs) : undefined} calqueActif={actif?.id} selection={selectionIds} />
     {rapportExport && liens[rapportExport] && <RapportExport format={FORMATS_RAPPORT[rapportExport]!} urlExport={liens[rapportExport]!} exportId={`${context?.revision.id ?? ""}#${exportsLances}`} surFermer={() => setRapportExport(null)} />}</>}
   </section>;
 }

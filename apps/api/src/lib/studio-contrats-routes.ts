@@ -552,6 +552,11 @@ export const CONTRAT_MODELE_EXTERNE_LIRE = contratRoute({
   id: "studio-api-modele-externe-lire/1", routes: ["GET /studies/:studyId/variants/:variantId/modeles-externes/:modelId"], objet: "Un modèle externe et son journal.",
   entree: "Aucune.", statuts: [200], corps: "json", reponse: modeleExterne,
 });
+export const CONTRAT_MODELE_EXTERNE_PROVENANCE = contratRoute({
+  id: "studio-api-modele-externe-provenance/1", routes: ["GET /studies/:studyId/variants/:variantId/modeles-externes/:modelId/provenance"], objet: "Provenance d'un modèle externe reçu (EX-014) : déclarations de l'émetteur et lectures du serveur (droit export).",
+  entree: "Aucune.", statuts: [200], corps: "json",
+  reponse: z.looseObject({ schema: z.literal("studio-provenance-modele/1"), modeleId: ident, empreinteSha256: z.string(), recuLe: z.string() }),
+});
 export const CONTRAT_MODELE_EXTERNE_CONTENU = contratRoute({
   id: "studio-api-modele-externe-contenu/1", routes: ["GET /studies/:studyId/variants/:variantId/modeles-externes/:modelId/contenu"], objet: "Fichier reçu tel quel, avec son empreinte (droit export).",
   entree: "Aucune.", statuts: [200], corps: "json",

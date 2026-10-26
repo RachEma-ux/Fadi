@@ -86,6 +86,10 @@ export const DOMAINES_FAMILLES_OUTILS = Object.freeze({
   proprietes: "bim", visualisation: "visualisation",
   // Éléments non natifs (lot F3) : la référence ne fixe pas leur domaine (comme l’import) : à définir.
   "non-natifs": A_DEFINIR,
+  // Graphismes (EX-055) et système de projet (EX-023) : dessin 2D et repères du dessin, Dessin et modélisation.
+  graphismes: "dessin", reperes: "dessin",
+  // Sources importées (EX-014) : nées d'un import, comme lui à définir.
+  sources: A_DEFINIR,
 } as const satisfies Record<StudioToolGroup, DomaineAttribue>);
 
 /** Domaine d'une entrée du catalogue (outil du registre ou commande de l'éditeur). */

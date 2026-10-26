@@ -314,8 +314,13 @@ const AJOUTS = {
     "studio.solide.face-decaler", "studio.solide.face-diviser", "studio.solide.pivoter", "studio.solide.resoudre",
     // Noyau exact du lot F2 (extension additive consignée) : booléen exact, champ facultatif `exacts` du document.
     "studio.solide.booleen",
+    // Graphismes (EX-055) et système de projet (EX-023), extensions additives consignées (champs facultatifs
+    // `graphismes` et `systemeProjet` du document).
+    "studio.graphisme.creer", "studio.graphisme.retirer", "studio.repere.projet",
+    // Sources importées (EX-014), champ facultatif `sources` du document.
+    "studio.source.declarer",
   ]),
-  types: new Set(["angular-dimension", "text", "wall", "opening", "scene", "appearance", "non-native"]),
+  types: new Set(["angular-dimension", "text", "wall", "opening", "scene", "appearance", "non-native", "spline", "hachure", "symbole", "source"]),
   exports: new Set([
     // Dérivation en copie indépendante (TR-EX-013 / TR-INV-003) et tolérance contractuelle des gestes (TR-IF-002), P-12.
     "STUDIO_MODES_DERIVATION", "studioCopieIndependante", "studioIdentitesDocument", "studioIdentitesReutilisees",
@@ -381,6 +386,13 @@ const AJOUTS = {
     // Lot PUB : résultats quantitatifs (IF-008), vues de coupe (EX-075), chaîne documentaire (EX-074 / EX-076),
     // conclusions normatives (EX-068), repères des exports (EX-080), BCF des observations (IF-010).
     "STUDIO_BCF_LIMITES", "STUDIO_BCF_LIMITES_EXPORT", "STUDIO_BCF_VERSION", "STUDIO_CONCLUSIONS_NORMATIVES", "STUDIO_HACHURES_COUPE", "STUDIO_LIMITES_VUE_COUPE", "STUDIO_MESSAGES_REFUS_PIECE", "STUDIO_NON_EVALUE_QUANTITE", "STUDIO_PIECES_LIVRABLES_SCHEMA", "STUDIO_PRESENTATIONS_PIECE", "STUDIO_REGLES_METRE", "STUDIO_REPERES_EXPORT", "STUDIO_RESULTAT_QUANTITATIF_SCHEMA", "STUDIO_TRAITS_COUPE", "STUDIO_VUE_COUPE_SCHEMA", "actualiteVueCoupe", "ajusterResultat", "annoterVueCoupe", "chaineDocumentaire", "conclureControle", "conclusionDemande", "controlerPiecesLivrables", "creerVueCoupe", "estConforme", "etatDemandeControle", "executionDe", "fraicheurResultats", "jeuSourcesQuantite", "pageVueCoupe", "piecesDuDossier", "rebaserVueCoupe", "resultatsQuantitatifs", "studioContexteBcf", "studioExporterBcf", "studioGuidBcf", "studioLireBcf", "studioPlanImportBcf", "studioSujetsBcf", "totaliserResultats", "uniteDeGrandeur", "valeurAffichee", "valeurRetenue", "validerVueCoupe", "verifierJustification",
+    // Graphismes (EX-055, `graphismes/`), repères et système de projet (EX-023, `reperes.ts`), règle des accélérations
+    // (F.1-01, `accelerations.ts`) : extensions additives.
+    "STUDIO_SYMBOLES", "STUDIO_LIMITES_GRAPHISMES", "STUDIO_SEGMENTS_PAR_BEZIER", "STUDIO_TYPES_GRAPHISMES", "studioDefinitionSymbole", "studioAireContour", "studioNombreDroitesHachure", "validerGraphisme", "studioPointBezier", "studioPointsSpline", "studioTraitsHachure", "studioPrimitivesSymbole", "studioPrimitivesGraphisme", "studioPointsGraphisme", "primitiveSvg", "graphismeSvg", "graphismeDxf", "SCHEMA_GRAPHISME",
+    "STUDIO_REPERES", "STUDIO_TOLERANCE_REPERE", "studioPointRepere", "studioTransformationRepere", "studioAppliquerTransformation", "studioInverserTransformation", "studioVerifierTransformation", "studioConvertirPoint", "studioComposerTransformations", "STUDIO_LIMITE_VERSIONS_PROJET", "validerVersionSystemeProjet", "validerSystemeProjet", "studioTransformationProjet", "studioVersProjet", "studioDepuisProjet", "studioTransformationPose",
+    "STUDIO_RAPPORT_ACCELERATION_SCHEMA", "STUDIO_CRITERES_EQUIVALENCE", "STUDIO_MOTEURS", "STUDIO_ACCELERATIONS", "STUDIO_MOTEURS_DE_REFERENCE", "STUDIO_MOTEURS_PAR_DEFAUT", "STUDIO_ACCELERATION_DU_MOTEUR", "studioEvaluerAcceleration", "studioMoteurEffectif", "studioControlerMoteursParDefaut", "STUDIO_RAPPORTS_ACCELERATION",
+    // Sources importées et provenance (EX-014, `sources/sources.ts`).
+    "STUDIO_PROVENANCE_SCHEMA", "STUDIO_FORMATS_SOURCE", "STUDIO_LIMITES_SOURCES", "validerSource", "validerSources", "studioVersionDxf", "studioSourceDxf", "studioSourceDxfLue", "studioSourceIfcLue", "studioExportProvenance", "studioProvenanceModeleExterne", "SCHEMA_SOURCE",
   ]),
 };
 function sansAjouts(value: unknown): unknown {
@@ -392,7 +404,7 @@ function sansAjouts(value: unknown): unknown {
   if (!value || typeof value !== "object") return value;
   const out = Object.fromEntries(Object.entries(value).map(([k, v]) => [k, sansAjouts(v)]));
   const props = out.properties as Record<string, unknown> | undefined;
-  if (props && "schemaVersion" in props) { delete props.annotations; delete props.architecture; delete props.proprietes; delete props.scenes; delete props.nonNatifs; delete props.exacts; }
+  if (props && "schemaVersion" in props) { delete props.annotations; delete props.architecture; delete props.proprietes; delete props.scenes; delete props.nonNatifs; delete props.exacts; delete props.graphismes; delete props.systemeProjet; delete props.sources; }
   // Lot F1 (extension additive consignée) : direction d'extrusion facultative (`extrusion.direction`, `extruder`) et,
   // pour le prisme, direction et source facultatives ; retirées pour comparer à la base.
   if (props && "base" in props && "height" in props) delete props.direction;

@@ -33,6 +33,9 @@ export const studioModeleReceptionSchema = z.object({
   uniteDeclaree: z.enum(["m", "cm", "mm", "ft", "in"]),
   transformation: z.object({ dx: z.number(), dy: z.number(), dz: z.number(), rotation: z.number() }).strict().nullable(),
   nomFichier: z.string().max(STUDIO_LIMITES_MODELE_EXTERNE.nomFichier + 50),
+  // EX-014 : repère source et restrictions d'utilisation déclarés (facultatifs ; absents ou null : non déclarés).
+  repereSource: z.string().max(STUDIO_LIMITES_MODELE_EXTERNE.repereSource + 50).nullable().optional(),
+  restrictions: z.string().max(STUDIO_LIMITES_MODELE_EXTERNE.restrictions + 50).nullable().optional(),
   contenu: z.string().min(1).max(STUDIO_MODELE_EXTERNE_OCTETS),
   requestId: identifier.optional(),
 }).strict();

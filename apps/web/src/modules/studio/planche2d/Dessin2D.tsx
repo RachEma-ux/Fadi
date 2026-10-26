@@ -3,9 +3,14 @@
  * d'accrochage, rectangle de sélection (fenêtre ou capture) et grille au pas de la vue. Coordonnées SVG = repère
  * `local-2d` du document, en mètres. Un objet d'un calque verrouillé est dessiné mais ni sélectionnable ni modifiable.
  * Les gestes (molette, panoramique, rectangle, glisser) sont interprétés par l'espace de travail.
- * Rendus par type : formes (`rendus/formes.tsx`), cotes (`rendus/cote.tsx`), aperçu du geste (`rendus/apercu.tsx`).
+ * Rendus par type : formes (`rendus/formes.tsx`), cotes (`rendus/cote.tsx`), graphismes (`rendus/graphismes.tsx` :
+ * splines, hachures, symboles, transparence), aperçu du geste (`rendus/apercu.tsx`).
+ *
+ * Moteur (F.1-02) : `svg` par défaut (DEC-08). `canvas` — seulement quand la règle F.1-01 l'autorise
+ * (`rendus/moteur-canvas.ts`) — trace le dessin sur un canevas posé au-dessus (`PlancheCanvas`, transparent aux gestes) ;
+ * la planche SVG garde tous ses éléments (désignation, accrochage, accessibilité), leurs traits devenus transparents.
  */
-import type { MouseEvent, PointerEvent, ReactNode, Ref } from "react";
+import { useCallback, useRef, type MouseEvent, type PointerEvent, type ReactNode, type Ref } from "react";
 import type { StudioDocument, StudioPoint, StudioShape } from "@parcours/atelier-model";
 import { estSelectionnable, estVisible } from "./calques";
 import { viewBox, type Cadre, type PointAccroche } from "./geometrie-2d";
@@ -16,6 +21,8 @@ import { Architecture2D } from "./rendus/architecture";
 import { Apercu } from "./rendus/apercu";
 import { Cote } from "./rendus/cote";
 import { Forme } from "./rendus/formes";
+import { Graphisme } from "./rendus/graphismes";
+import { PlancheCanvas } from "./rendus/PlancheCanvas";
 
 export { TraceForme } from "./rendus/formes";
 
@@ -55,12 +62,20 @@ export interface Dessin2DProps {
   architecture?: { selection: ReadonlySet<string>; surSelection: (id: string, ajouter: boolean) => void; versPlanche: boolean };
   /** Surimpression dessinée par-dessus (sessions en direct : pointeurs et sélections des autres participants), jamais une donnée. */
   superposition?: ReactNode;
+  /** Moteur de rendu effectif (règle F.1-01) : `svg` par défaut. */
+  moteur?: "svg" | "canvas";
 }
 
-export function Dessin2D({ svgRef, doc, cadre, pas, outil, selection, trace, survol, rectangle, glissement, apercuForme, sommetsPoses = [], clicsVersPlanche, surPlanche, surSurvol, surPointeurBas, surPointeurHaut, surClicCapture, surSelection, architecture, superposition }: Dessin2DProps) {
+export function Dessin2D({ svgRef, doc, cadre, pas, outil, selection, trace, survol, rectangle, glissement, apercuForme, sommetsPoses = [], clicsVersPlanche, surPlanche, surSurvol, surPointeurBas, surPointeurHaut, surClicCapture, surSelection, architecture, superposition, moteur = "svg" }: Dessin2DProps) {
   const visible = (layerId: string | undefined) => estVisible(doc, layerId);
-  return (
-    <svg ref={svgRef} viewBox={viewBox(cadre)} role="group" aria-label="Planche de dessin 2D" data-studio-outil-actif={outil} data-studio-glissement={glissement || undefined}
+  const interne = useRef<SVGSVGElement | null>(null);
+  const poserRef = useCallback((el: SVGSVGElement | null) => {
+    interne.current = el;
+    if (typeof svgRef === "function") svgRef(el); else if (svgRef) (svgRef as { current: SVGSVGElement | null }).current = el;
+  }, [svgRef]);
+  return (<>
+    <svg ref={poserRef} viewBox={viewBox(cadre)} role="group" aria-label="Planche de dessin 2D" data-studio-outil-actif={outil} data-studio-glissement={glissement || undefined}
+      data-studio-moteur={moteur === "canvas" ? "canvas" : undefined} className={moteur === "canvas" ? "studio-moteur-canvas" : undefined}
       onPointerMove={surSurvol} onPointerDown={surPointeurBas} onPointerUp={surPointeurHaut} onPointerCancel={surPointeurHaut} onClickCapture={surClicCapture} onClick={surPlanche}
       onAuxClick={(e) => e.preventDefault()}>
       <defs><pattern id="studio-grid" width={pas} height={pas} patternUnits="userSpaceOnUse"><path d={`M ${pas} 0 L 0 0 0 ${pas}`} fill="none" stroke="#dbe5eb" strokeWidth={pas * 0.025} /></pattern></defs>
@@ -75,8 +90,12 @@ export function Dessin2D({ svgRef, doc, cadre, pas, outil, selection, trace, sur
       {(doc.annotations ?? []).filter((a) => visible(a.layerId)).map((a) => (
         <Annotation key={a.id} a={a} choisie={selection.has(a.id)} selectionnable={estSelectionnable(doc, a.layerId)} surSelection={surSelection} versPlanche={clicsVersPlanche(a)} />
       ))}
+      {(doc.graphismes ?? []).filter((g) => visible(g.layerId)).map((g) => (
+        <Graphisme key={g.id} g={g} choisie={selection.has(g.id)} selectionnable={estSelectionnable(doc, g.layerId)} surSelection={surSelection} versPlanche={clicsVersPlanche(g)} />
+      ))}
       <Apercu cadre={cadre} outil={outil} trace={trace} survol={survol} rectangle={rectangle} apercuForme={apercuForme} sommetsPoses={sommetsPoses} />
       {superposition}
     </svg>
-  );
+    {moteur === "canvas" && <PlancheCanvas doc={doc} cadre={cadre} svgRef={interne} />}
+  </>);
 }

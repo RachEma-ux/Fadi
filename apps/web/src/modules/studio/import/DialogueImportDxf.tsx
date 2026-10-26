@@ -7,9 +7,14 @@
  * La lecture (jusqu'à 5 Mo) est une tâche de fond de l'ordonnanceur (`taches/`, groupe de Workers) : l'interface reste réactive,
  * l'étape en cours est annoncée et « Annuler la lecture » arrête le calcul. Un nouveau choix (fichier, unité,
  * brouillon) remplace la lecture en cours ; seul le dernier résultat est retenu et « Ajouter » attend qu'il soit prêt.
+ *
+ * Provenance (EX-014) : l'import déclare sa source (`studio.source.declarer`) dans le même lot — nom du fichier, empreinte
+ * SHA-256 et version du format calculées par le Worker sur le texte lu, unité lue ou choisie, horodatage, et ce que
+ * l'utilisateur déclare (auteur ou fournisseur, repère source, restrictions d'utilisation ; vides : « non déclaré »).
+ * « Exporter la provenance » enregistre celle de toutes les sources du dessin (`studio-provenance/1`).
  */
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
-import type { StudioCommand, StudioDocument, StudioDxfResultat, StudioDxfUnite } from "@parcours/atelier-model";
+import { studioExportProvenance, studioSourceDxfLue, type StudioCommand, type StudioDocument, type StudioDxfResultat, type StudioDxfUnite } from "@parcours/atelier-model";
 import { Icon } from "../../../components/Icon";
 import { LOCALE } from "../../../lib/i18n";
 import { Dialogue } from "../planche2d/CatalogueOutils";
@@ -51,6 +56,8 @@ export function DialogueImportDxf({ doc, modifiable, surAjouter, surFermer }: Di
   const [etape, setEtape] = useState("attente");
   const [erreurCalcul, setErreurCalcul] = useState("");
   const [cleChamp, setCleChamp] = useState(0);
+  // Provenance déclarée par l'utilisateur (EX-014) ; vide : non déclarée.
+  const [auteur, setAuteur] = useState(""), [repereSource, setRepereSource] = useState(""), [restrictions, setRestrictions] = useState("");
   const numero = useRef(0);
   const controleur = useRef<AbortController | null>(null);
 
@@ -116,9 +123,29 @@ export function DialogueImportDxf({ doc, modifiable, surAjouter, surFermer }: Di
         {affichee && "resultat" in affichee && fichier && <Rapport nom={fichier.nom} resultat={affichee.resultat} unite={unite} surUnite={setUnite} enCours={enCours} />}
         {refus && <p role="alert" data-studio-import-erreur>Ajout refusé par le modèle : le brouillon est inchangé.</p>}
         {!modifiable && <p role="status">Lecture seule : l’import est indisponible.</p>}
+        {courante && "resultat" in courante && courante.resultat.statut === "pret" && fichier && <fieldset className="studio-import-provenance" data-studio-import-provenance data-studio-import-empreinte={courante.empreinteSha256}>
+          <legend>Provenance de la source</legend>
+          <p className="studio-dialogue-aide"><span>{`Empreinte SHA-256 : ${courante.empreinteSha256.slice(0, 16)}…`}</span>{" · "}<span>{courante.versionFormat ? `Version du format : ${courante.versionFormat}` : "Version du format : non déclarée par le fichier"}</span>{" · "}<span>Transformation : aucune (coordonnées du fichier dans le repère du dessin)</span></p>
+          <label>Auteur ou fournisseur (si connu)<input value={auteur} onChange={(e) => setAuteur(e.target.value)} data-studio-import-auteur /></label>
+          <label>Repère source déclaré<input value={repereSource} onChange={(e) => setRepereSource(e.target.value)} data-studio-import-repere /></label>
+          <label>Restrictions d’utilisation<input value={restrictions} onChange={(e) => setRestrictions(e.target.value)} data-studio-import-restrictions /></label>
+        </fieldset>}
+        {(doc.sources?.length ?? 0) > 0 && <section aria-label="Sources du dessin" data-studio-sources={doc.sources!.length}>
+          <p>{`Sources du dessin : ${doc.sources!.length}`}</p>
+          <button type="button" onClick={() => exporterProvenance(doc)} data-studio-exporter-provenance>Exporter la provenance</button>
+        </section>}
         <div className="studio-import-actions">
           <button type="button" disabled={!modifiable || !courante || !("resultat" in courante) || courante.resultat.statut !== "pret" || courante.resultat.commandes.length === 0}
-            onClick={() => { if (courante && "resultat" in courante) { const ok = surAjouter(courante.resultat.commandes, courante.resultat); setRefus(!ok); } }} data-studio-import-ajouter>
+            onClick={() => {
+              if (!courante || !("resultat" in courante) || !fichier) return;
+              const r = courante.resultat;
+              const source = studioSourceDxfLue({ empreinteSha256: courante.empreinteSha256, versionFormat: courante.versionFormat }, {
+                id: crypto.randomUUID(), nomFichier: fichier.nom, recuLe: new Date().toISOString(), objets: r.rapport.entites.total,
+                unite: { valeur: r.rapport.unite.valeur, origine: r.rapport.unite.origine }, facteur: r.rapport.facteur, auteur, repereSource, restrictions,
+              });
+              const ok = surAjouter([...r.commandes, { toolId: "studio.source.declarer", params: source }], r);
+              setRefus(!ok);
+            }} data-studio-import-ajouter>
             <Icon name="studio-import-dxf" size={18} /> Ajouter au brouillon
           </button>
         </div>
@@ -162,4 +189,13 @@ export function Rapport({ nom, resultat, unite, surUnite, enCours = false }: { n
       ))}</ul></>}
     </section>
   );
+}
+
+/** Télécharge la provenance des sources du dessin (`studio-provenance/1`, JSON). */
+export function exporterProvenance(doc: StudioDocument): void {
+  const url = URL.createObjectURL(new Blob([`${JSON.stringify(studioExportProvenance(doc), null, 2)}\n`], { type: "application/json" }));
+  const a = document.createElement("a");
+  a.href = url; a.download = `provenance-${doc.id}.json`; a.rel = "noopener";
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
 }

@@ -1546,6 +1546,9 @@ export const studioExternalModels = pgTable("studio_external_models", {
   declaredUnit: text("declared_unit").$type<"m" | "cm" | "mm" | "ft" | "in">().notNull(),
   transformation: jsonb("transformation").$type<{ dx: number; dy: number; dz: number; rotation: number } | null>(),
   fileName: text("file_name").notNull(),
+  // EX-014 : repère source et restrictions d'utilisation déclarés par l'émetteur ; null : non déclarés.
+  sourceFrame: text("source_frame"),
+  usageRestrictions: text("usage_restrictions"),
   content: text("content").notNull(),
   contentDigest: text("content_digest").notNull(),
   report: jsonb("report").$type<Record<string, unknown>>().notNull(),

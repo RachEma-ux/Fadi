@@ -16,11 +16,12 @@ describe("Barre compacte — familles", () => {
   it("chaque famille garde ses outils les plus utilisés en tête ; Courbes et Annotation sortent de Dessin", () => {
     expect(ELEMENTS_FAMILLE.get("dessin")?.map((e) => e.id)).toEqual(["studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle"]);
     expect(ELEMENTS_FAMILLE.get("courbes")?.map((e) => e.id)).toEqual(["studio.dessin.arc", "studio.dessin.polyligne", "terminer-polyligne", "fermer-polyligne"]);
-    expect(ELEMENTS_FAMILLE.get("annotation")?.map((e) => e.id)).toEqual(["studio.dessin.cote", "studio.dessin.cote-angulaire", "studio.dessin.texte"]);
+    // Graphismes (EX-055) : créer et retirer, après les annotations.
+    expect(ELEMENTS_FAMILLE.get("annotation")?.map((e) => e.id)).toEqual(["studio.dessin.cote", "studio.dessin.cote-angulaire", "studio.dessin.texte", "studio.graphisme.creer", "studio.graphisme.retirer"]);
     expect(ELEMENTS_FAMILLE.get("selection")?.map((e) => e.id)).toEqual(["studio.dessin.selection", "tout-selectionner"]);
     expect(ELEMENTS_FAMILLE.get("vue")?.map((e) => e.id)).toContain("accrochage-grille");
     // Lot F3 : les deux outils des éléments non natifs (registre) en tête, puis Importer IFC et Modèles externes.
-    expect(ELEMENTS_FAMILLE.get("echanges")?.map((e) => e.id)).toEqual(["studio.nonnatif.conserver", "studio.nonnatif.retirer", "importer-dxf", "importer-ifc", "modeles-externes", "exporter-svg", "exporter-dxf", "exporter-ifc", "echanges"]);
+    expect(ELEMENTS_FAMILLE.get("echanges")?.map((e) => e.id)).toEqual(["studio.nonnatif.conserver", "studio.nonnatif.retirer", "studio.source.declarer", "importer-dxf", "importer-ifc", "modeles-externes", "exporter-svg", "exporter-dxf", "exporter-ifc", "echanges"]);
     expect(familleDeOutil("studio.dessin.cote")).toBe("annotation");
     expect(familleDeOutil("studio.objet.extruder")).toBe("volume");
   });

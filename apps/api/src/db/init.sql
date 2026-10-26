@@ -1357,6 +1357,13 @@ ALTER TABLE studio_external_models DROP CONSTRAINT IF EXISTS studio_external_mod
 ALTER TABLE studio_external_models DROP CONSTRAINT IF EXISTS studio_external_models_text_lengths,
   ADD CONSTRAINT studio_external_models_text_lengths CHECK (length(btrim(reference)) BETWEEN 1 AND 200 AND length(btrim(author_name)) BETWEEN 1 AND 200
     AND length(btrim(discipline)) BETWEEN 1 AND 80 AND length(btrim(version_label)) BETWEEN 1 AND 80 AND length(btrim(file_name)) BETWEEN 1 AND 255) NOT VALID;
+-- EX-014 (provenance) : repère source et restrictions d'utilisation déclarés par l'émetteur ; null : non déclarés.
+-- Additif et idempotent : colonnes facultatives, bornes recréées à chaque application (NOT VALID).
+ALTER TABLE studio_external_models ADD COLUMN IF NOT EXISTS source_frame text;
+ALTER TABLE studio_external_models ADD COLUMN IF NOT EXISTS usage_restrictions text;
+ALTER TABLE studio_external_models DROP CONSTRAINT IF EXISTS studio_external_models_provenance_lengths,
+  ADD CONSTRAINT studio_external_models_provenance_lengths CHECK ((source_frame IS NULL OR length(btrim(source_frame)) BETWEEN 1 AND 200)
+    AND (usage_restrictions IS NULL OR length(btrim(usage_restrictions)) BETWEEN 1 AND 2000)) NOT VALID;
 CREATE TABLE IF NOT EXISTS studio_external_model_events (
   id text PRIMARY KEY,
   model_id text NOT NULL REFERENCES studio_external_models(id) ON DELETE CASCADE,

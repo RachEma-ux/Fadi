@@ -53,4 +53,16 @@ describe("Modèles externes (TR-EX-066) — réception relue par le serveur", ()
     expect(initSql).toContain("CHECK (action IN ('recevoir', 'comparer', 'accepter', 'refuser'))");
     expect(initSql).toContain("CREATE OR REPLACE TRIGGER studio_external_model_events_no_update BEFORE UPDATE ON studio_external_model_events");
   });
+
+  it("TR-EX-014 : repère source et restrictions d'utilisation déclarés conservés (null s'ils sont absents), colonnes additives", () => {
+    const r = deciderReception(entree({ repereSource: "repère du modèle architecte", restrictions: "coordination seulement" }), tete);
+    if (!("ok" in r)) throw new Error(JSON.stringify(r.refus));
+    expect([r.ok.meta.repereSource, r.ok.meta.restrictions]).toEqual(["repère du modèle architecte", "coordination seulement"]);
+    const sans = deciderReception(entree(), tete);
+    if (!("ok" in sans)) throw new Error(JSON.stringify(sans.refus));
+    expect([sans.ok.meta.repereSource, sans.ok.meta.restrictions]).toEqual([null, null]);
+    expect(studioModeleReceptionSchema.safeParse({ ...entree(), restrictions: "x".repeat(3000) }).success).toBe(false);
+    expect(initSql).toContain("ALTER TABLE studio_external_models ADD COLUMN IF NOT EXISTS source_frame text;");
+    expect(initSql).toContain("ALTER TABLE studio_external_models ADD COLUMN IF NOT EXISTS usage_restrictions text;");
+  });
 });

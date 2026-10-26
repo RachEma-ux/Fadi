@@ -99,7 +99,8 @@ describe("Matrice d'échanges : donnée versionnée et cohérente", () => {
       // Réserve G1 (P-11) : relevé de performances versionné studio-releve-perf/1 (schéma et contrôle controlerRelevePerf).
       5: "4c5677dd684219719e9f56d31c9ef0f53bb8059f12074f66daedba13ab668ec4",
       // Lot F (décision P-12) et lot PUB : illustration archivée depuis une vue (PNG « fadi:illustration », non vérifiée) ;
-      // BCF 2.1 minimal des observations livré (import et export), paquet de publication d'un dossier de conception.
+      // BCF 2.1 minimal des observations livré (import et export), paquet de publication d'un dossier de conception ;
+      // lot REND : couverture SVG / DXF / IFC des graphismes (EX-055), provenance des sources et des modèles externes (EX-014).
       6: "A_CALCULER",
     };
     const empreinte = createHash("sha256").update(JSON.stringify({ entrees: STUDIO_MATRICE_ECHANGES.entrees, couverture: STUDIO_COUVERTURE_EXPORT, statuts: STUDIO_STATUT_DE_RAISON })).digest("hex");
@@ -221,6 +222,16 @@ const complet = (): StudioDocument => ({
     { id: "ap1", type: "appearance", target: { kind: "object", id: "m1" }, color: "#c0392b" },
   ],
   nonNatifs: [{ id: "nn1", type: "non-native", origine: { format: "ifc", entite: "IfcColumn" }, raison: "type-sans-equivalent" }],
+  // Graphismes (EX-055) : spline, hachure opaque et transparente, symbole opaque et transparent.
+  graphismes: [
+    { id: "gs1", type: "spline", points: [{ x: 0, y: 30 }, { x: 1, y: 31 }, { x: 2, y: 31 }, { x: 3, y: 30 }] },
+    { id: "gh1", type: "hachure", contour: [{ x: 0, y: 32 }, { x: 2, y: 32 }, { x: 2, y: 34 }, { x: 0, y: 34 }], angle: Math.PI / 4, espacement: 0.25 },
+    { id: "gh2", type: "hachure", contour: [{ x: 3, y: 32 }, { x: 5, y: 32 }, { x: 5, y: 34 }], angle: 0, espacement: 0.5, opacite: 0.5 },
+    { id: "gy1", type: "symbole", symbole: "nord", position: { x: 8, y: 32 }, rotation: 0, echelle: 1 },
+    { id: "gy2", type: "symbole", symbole: "croix", position: { x: 10, y: 32 }, rotation: 0.3, echelle: 0.5, opacite: 0.4 },
+  ],
+  // Source importée (EX-014) : provenance déclarée (empreinte SYNTHÉTIQUE).
+  sources: [{ id: "src1", type: "source", format: "dxf", versionFormat: "AC1009", nomFichier: "plan.dxf", empreinteSha256: "0".repeat(64), recuLe: "2026-10-25T10:00:00.000Z", auteur: null, uniteLue: "mm", uniteRetenue: "mm", facteur: 0.001, repereSource: null, transformation: "identite", restrictions: null, objets: 3 }],
 } as StudioDocument);
 
 describe("E.6-03 : sous-ensemble SVG / DXF / IFC = rapport de fidélité", () => {

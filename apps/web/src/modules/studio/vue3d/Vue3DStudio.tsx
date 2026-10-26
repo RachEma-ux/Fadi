@@ -78,6 +78,7 @@ import {
   apparenceDe, couleurEntiere, hautCamera, MODE_INITIAL, prochainNomScene, type DemandeVue3d,
 } from "./scenes/scenes-ui";
 import "./vue3d.css";
+import { choisirMoteur3d, texteMoteur3d, type AccesGpu, type ChoixMoteur3d } from "./moteur-3d";
 
 export type Navigation3d = "orbite" | "plan";
 
@@ -402,6 +403,14 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   const moteur = useRef<Moteur | null>(null);
   const cadre = useRef(false);
   const [indisponible, setIndisponible] = useState(false);
+  // Moteur (TR-EX-056) : WebGL2 par défaut ; WebGPU demandé en option, repli WebGL2 déclaré avec sa raison (`moteur-3d.ts`).
+  const [webgpuDemande, setWebgpuDemande] = useState(false);
+  const [choix3d, setChoix3d] = useState<ChoixMoteur3d>({ demande: "webgl2", moteur: "webgl2", repli: null });
+  useEffect(() => {
+    let actif = true;
+    void choisirMoteur3d(webgpuDemande ? "webgpu" : "webgl2", typeof navigator !== "undefined" ? (navigator as Navigator & { gpu?: AccesGpu }).gpu : undefined).then((c) => { if (actif) setChoix3d(c); });
+    return () => { actif = false; };
+  }, [webgpuDemande]);
   const [boite, setBoite] = useState<ValeursBoite>(BOITE_VIDE);
   const [prisme, setPrisme] = useState<ValeursPrisme>(PRISME_VIDE);
   const [deplacement, setDeplacement] = useState<ValeursDeplacement>(DEPLACEMENT_VIDE);
@@ -573,6 +582,8 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       },
       rendre: () => {
         const t0 = performance.now();
+        // Rendu à la demande (TR-EX-056) : aucune boucle d'animation ; chaque trame rendue est comptée (recette).
+        renderer.domElement.dataset.studioRendus = String(Number(renderer.domElement.dataset.studioRendus ?? "0") + 1);
         mesurerRendu3d(() => {
           if (m.charge > 0) { const fin = performance.now() + m.charge; while (performance.now() < fin) { /* charge simulée (recette) */ } }
           if (m.presentation) m.presentation.rendre(renderer, scene, m.camera); else renderer.render(scene, m.camera);
@@ -956,6 +967,8 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       <div className="studio-vue3d-bandeau">
         <span role="status" data-studio-vue3d-decompte><span>{`${mesh.solids.length} volume(s)`}</span>{" · "}<span>{`${mesh.nonExtruded} objet(s) non extrudé(s), dessinés à plat`}</span>{libres > 0 && <>{" · "}<span>{`${libres} solide(s) libre(s)`}</span></>}</span>
         <button type="button" onClick={() => { const m = moteur.current; if (m) cadrer(m, mesh); }} disabled={indisponible}>Recadrer la vue 3D</button>
+        <label className="studio-vue3d-case"><input type="checkbox" checked={webgpuDemande} onChange={(e) => setWebgpuDemande(e.target.checked)} data-studio-webgpu-demande /> WebGPU (essai)</label>
+        <span role="status" data-studio-moteur-3d={choix3d.moteur} data-studio-moteur-3d-repli={choix3d.repli?.raison ?? ""}>{texteMoteur3d(choix3d)}</span>
       </div>
       {maillage.message && <p className="studio-alert" role="alert" data-studio-maillage-erreur>{maillage.message}</p>}
       {palierQualite > 0 && (() => {
