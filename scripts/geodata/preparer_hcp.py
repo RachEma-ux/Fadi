@@ -351,7 +351,9 @@ def ecrire(sortie, cle, couche_titre, niveau, entites, base_fiche, desc, milieu,
         "couche": {
             "titre": couche_titre,
             "description": f"Valeurs RGPH 2024 rattachées aux contours ; code = code géographique HCP (code du contour d'origine pour une entité non rattachée).",
-            "niveau": contours["couche"]["niveau"],
+            # Rang administratif (D-GD-16) : niveau des contours ; les communes OSM (sans niveau déclaré) sont au niveau
+            # administratif OpenStreetMap 8, lu par `rangAdministratif` sous la forme « OSM8 ».
+            "niveau": contours["couche"]["niveau"] or ("OSM8" if niveau == "communes" else None),
             "champCode": "code",
             "champNom": "nom",
             "proprietesExposees": ["code", "nom", "nom_ar", "contour", "nom_contour", "appariement"] + [k for k, *_ in indicateurs],

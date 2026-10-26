@@ -30,7 +30,7 @@
   "couche": {
     "titre": "Population légale RGPH 2024 — communes",
     "description": "Valeurs RGPH 2024 rattachées aux contours ; code = code géographique HCP (code du contour d'origine pour une entité non rattachée).",
-    "niveau": null,
+    "niveau": "OSM8",
     "champCode": "code",
     "champNom": "nom",
     "proprietesExposees": [
