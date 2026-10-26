@@ -1906,7 +1906,8 @@ describe("Partage du projet — membres, rôles vérifiés côté serveur", () =
     const readerList = (await reader.get("/projects")).body as { id: string; role: string; ownerEmail: string }[];
     expect(readerList).toHaveLength(1);
     expect(readerList[0]).toMatchObject({ id: pid, role: "lecteur", ownerEmail: "share-owner@example.com" });
-    expect((await owner.get("/projects")).body[0]).toMatchObject({ id: pid, role: "proprietaire", ownerEmail: "share-owner@example.com" });
+    // Le propriétaire voit la référence importée et sa copie de travail (partagée).
+    expect(((await owner.get("/projects")).body as { id: string }[]).find((p) => p.id === pid)).toMatchObject({ id: pid, role: "proprietaire", ownerEmail: "share-owner@example.com" });
     expect((await reader.get(`/projects/${pid}`)).body).toMatchObject({ role: "lecteur", ownerEmail: "share-owner@example.com" });
     expect((await editor.get(`/projects/${pid}`)).body.role).toBe("editeur");
     const members = (await reader.get(`/projects/${pid}/members`)).body;
