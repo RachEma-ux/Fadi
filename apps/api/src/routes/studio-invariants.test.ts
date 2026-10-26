@@ -349,7 +349,7 @@ describe("INV-010 — une requête IA ou extension passe par les mêmes validati
     expect(ecrivains).toEqual(["lib/studio-agents.ts", "lib/studio-archive.ts", "lib/studio-commands.ts"]);
     const agents = readFileSync(`${racine}lib/studio-agents.ts`, "utf8");
     expect(agents).not.toMatch(/insert\(studioRevisions\)|update\(studioVariants\)|INSERT\s+INTO\s+"?studio_revisions/i);
-    expect(agents).toMatch(/submitStudioCommands\(scope, userId, structuredClone\(p\.envelope\), "modify", \{ source: "agent-mcp" \}\)/);
+    expect(agents).toMatch(/submitStudioCommands\(scope, userId, structuredClone\(p\.envelope\), "modify", \{\s*source: "agent-mcp"/);
   });
   it("INV-010 [−] import d'archive : un document de révision invalide refuse la section entière (validation centrale), avant toute écriture", async () => {
     const tables = emptyStudioTables();

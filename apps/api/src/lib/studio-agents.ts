@@ -34,8 +34,8 @@ const sha = (s: string) => createHash("sha256").update(s).digest("hex");
 
 export interface ContexteAgent { projectId: string; userId: string; tokenId: string }
 
-async function journal(projectId: string, actorId: string, kind: "agent" | "humain", action: StudioAgentEventAction, x: { tokenId?: string | null; tool?: string | null; proposalId?: string | null; revisionId?: string | null } = {}): Promise<void> {
-  await db.insert(studioAgentEvents).values({ id: newId("studio_agent_event"), projectId, actorId, actorKind: kind, action, tokenId: x.tokenId ?? null, tool: x.tool ?? null, proposalId: x.proposalId ?? null, revisionId: x.revisionId ?? null });
+async function journal(projectId: string, actorId: string, kind: "agent" | "humain", action: StudioAgentEventAction, x: { tokenId?: string | null; tool?: string | null; proposalId?: string | null; revisionId?: string | null } = {}, q: Pick<typeof db, "insert"> = db): Promise<void> {
+  await q.insert(studioAgentEvents).values({ id: newId("studio_agent_event"), projectId, actorId, actorKind: kind, action, tokenId: x.tokenId ?? null, tool: x.tool ?? null, proposalId: x.proposalId ?? null, revisionId: x.revisionId ?? null });
 }
 
 // ——— Extensions (EX-031) : l'adaptateur MCP est une extension intégrée, évaluée comme les autres ———
@@ -163,38 +163,64 @@ export async function listerPropositions(projectId: string, userId: string, main
   return { propositions: rows.map((r) => vueProposition(r.status === "en-attente" && new Date(r.expiresAt) <= maintenant ? { ...r, status: "expiree" } : r)) };
 }
 
-/** Confirmation par la personne (session humaine) : le point d'entrée commun écrit la révision, source `agent-mcp`. */
+/**
+ * Confirmation par la personne (session humaine) : le point d'entrée commun écrit la révision, source `agent-mcp`. La
+ * décision est prise DANS la transaction de la révision : la proposition y est verrouillée (`for update`) et doit être
+ * encore en attente ; statut, révision et journal sont engagés avec la révision, tout ou rien. Une confirmation et un refus
+ * simultanés sont ainsi sérialisés : le second trouve la proposition close (409) et rien n'est écrit en double.
+ */
 export async function confirmerProposition(projectId: string, userId: string, id: string, maintenant = new Date()) {
   const p = await propositionDe(projectId, userId, id);
   const scope: StudioScope = { projectId, studyId: p.studyId, variantId: p.variantId };
   if (p.status === "refusee" || p.status === "echec") throw new StudioRequestError(409, { error: "proposition_close", statut: p.status, message: "Cette proposition est close : rien n’est écrit." });
   if (p.status === "en-attente" && new Date(p.expiresAt) <= maintenant) {
-    await db.update(studioAgentProposals).set({ status: "expiree", decidedAt: maintenant }).where(eq(studioAgentProposals.id, id));
+    await db.update(studioAgentProposals).set({ status: "expiree", decidedAt: maintenant }).where(and(eq(studioAgentProposals.id, id), eq(studioAgentProposals.status, "en-attente")));
     throw new StudioRequestError(409, { error: "proposition_close", statut: "expiree", message: "Cette proposition a expiré : rien n’est écrit." });
   }
   if (p.status === "expiree") throw new StudioRequestError(409, { error: "proposition_close", statut: "expiree", message: "Cette proposition a expiré : rien n’est écrit." });
+  const enAttente = p.status === "en-attente";
   let r;
-  try { r = await submitStudioCommands(scope, userId, structuredClone(p.envelope), "modify", { source: "agent-mcp" }); }
-  catch (err) {
-    if (err instanceof StudioRequestError && p.status === "en-attente" && (err.status === 409 || err.status === 400)) {
-      await db.update(studioAgentProposals).set({ status: "echec", failure: { status: err.status, ...err.body }, decidedAt: maintenant }).where(eq(studioAgentProposals.id, id));
-      await journal(projectId, userId, "humain", "proposition.echec", { tokenId: p.tokenId, proposalId: id });
+  try {
+    r = await submitStudioCommands(scope, userId, structuredClone(p.envelope), "modify", {
+      source: "agent-mcp",
+      ...(enAttente ? {
+        avantEcriture: async (tx) => {
+          const [l] = await tx.select({ status: studioAgentProposals.status }).from(studioAgentProposals).where(eq(studioAgentProposals.id, id)).for("update");
+          if (l?.status !== "en-attente") throw new StudioRequestError(409, { error: "proposition_close", statut: l?.status ?? "inconnue", message: "Cette proposition n’est plus en attente : rien n’est écrit." });
+        },
+        apresEcriture: async (tx, revisionId) => {
+          await tx.update(studioAgentProposals).set({ status: "confirmee", revisionId, decidedAt: maintenant }).where(eq(studioAgentProposals.id, id));
+          await journal(projectId, userId, "humain", "proposition.confirmer", { tokenId: p.tokenId, proposalId: id, revisionId }, tx);
+        },
+      } : {}),
+    });
+  } catch (err) {
+    if (err instanceof StudioRequestError && enAttente && (err.status === 409 || err.status === 400) && err.body["error"] !== "proposition_close") {
+      // Échec de l'écriture (base périmée, lot refusé) : la proposition passe en échec si elle est TOUJOURS en attente.
+      const corps = err.body;
+      await db.transaction(async (tx) => {
+        const [l] = await tx.select({ status: studioAgentProposals.status }).from(studioAgentProposals).where(eq(studioAgentProposals.id, id)).for("update");
+        if (l?.status !== "en-attente") return;
+        await tx.update(studioAgentProposals).set({ status: "echec", failure: { status: err.status, ...corps }, decidedAt: maintenant }).where(eq(studioAgentProposals.id, id));
+        await journal(projectId, userId, "humain", "proposition.echec", { tokenId: p.tokenId, proposalId: id }, tx);
+      });
     }
     throw err;
-  }
-  if (p.status === "en-attente") {
-    await db.update(studioAgentProposals).set({ status: "confirmee", revisionId: r.revision.id, decidedAt: maintenant }).where(eq(studioAgentProposals.id, id));
-    await journal(projectId, userId, "humain", "proposition.confirmer", { tokenId: p.tokenId, proposalId: id, revisionId: r.revision.id });
   }
   return { proposition: vueProposition((await propositionDe(projectId, userId, id))), revisionId: r.revision.id, replayed: r.replayed };
 }
 
+/** Refus : décision conditionnelle sous verrou de ligne ; une proposition confirmée entre-temps n'est jamais déclarée refusée. */
 export async function refuserProposition(projectId: string, userId: string, id: string, maintenant = new Date()) {
-  const p = await propositionDe(projectId, userId, id);
-  if (p.status === "en-attente") {
-    await db.update(studioAgentProposals).set({ status: "refusee", decidedAt: maintenant }).where(eq(studioAgentProposals.id, id));
-    await journal(projectId, userId, "humain", "proposition.refuser", { tokenId: p.tokenId, proposalId: id });
-  } else if (p.status !== "refusee") throw new StudioRequestError(409, { error: "proposition_close", statut: p.status, message: "Cette proposition n’est plus en attente." });
+  await propositionDe(projectId, userId, id);
+  const statut = await db.transaction(async (tx) => {
+    const [l] = await tx.select({ status: studioAgentProposals.status, tokenId: studioAgentProposals.tokenId }).from(studioAgentProposals).where(eq(studioAgentProposals.id, id)).for("update");
+    if (l?.status !== "en-attente") return l?.status ?? "inconnue";
+    await tx.update(studioAgentProposals).set({ status: "refusee", decidedAt: maintenant }).where(eq(studioAgentProposals.id, id));
+    await journal(projectId, userId, "humain", "proposition.refuser", { tokenId: l.tokenId, proposalId: id }, tx);
+    return "refusee";
+  });
+  if (statut !== "refusee") throw new StudioRequestError(409, { error: "proposition_close", statut, message: "Cette proposition n’est plus en attente." });
   return { proposition: vueProposition(await propositionDe(projectId, userId, id)) };
 }
 

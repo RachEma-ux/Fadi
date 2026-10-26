@@ -509,7 +509,13 @@ export type StudioSoumission = StudioContext & { replayed: boolean; effects?: St
  */
 export type StudioSourceEcriture = "authenticated-session" | "agent-mcp";
 /** Options internes (jamais lues du corps) : job d'essai confirmé (relation du journal), contrôle propre à l'appelant. */
-export interface StudioSoumissionOptions { jobId?: string; avantEcriture?: (tx: Tx, tete: StudioRead) => Promise<void>; source?: StudioSourceEcriture }
+export interface StudioSoumissionOptions {
+  jobId?: string;
+  avantEcriture?: (tx: Tx, tete: StudioRead) => Promise<void>;
+  /** Dans la même transaction, après l'écriture de la révision (décision consignée avec elle, tout ou rien). */
+  apresEcriture?: (tx: Tx, revisionId: string) => Promise<void>;
+  source?: StudioSourceEcriture;
+}
 
 export async function submitStudioCommands(scope: StudioScope, actorId: string, input: unknown, ecriture: StudioEcriture = "modify", options: StudioSoumissionOptions = {}): Promise<StudioSoumission> {
   // Capture avant le premier await : aucun changement du payload durant les verrous/rejeu.
@@ -582,6 +588,7 @@ export async function submitStudioCommands(scope: StudioScope, actorId: string, 
           transactionId, projectId: scope.projectId, studyId: scope.studyId, variantId: scope.variantId, baseRevisionId: current.variant.headRevisionId,
           revisionId: id, authorId: actorId, requestId: envelope.requestId, effects, jobId: options.jobId ?? null,
         });
+        await options.apresEcriture?.(transaction, id);
         return { ...response, replayed: false, effects, eventId };
       },
     });

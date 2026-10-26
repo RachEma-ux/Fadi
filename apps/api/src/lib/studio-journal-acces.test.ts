@@ -80,6 +80,7 @@ describe("TR-EX-046 — journal d'accès Studio : minimisation, conservation 12 
     for (const s of [401, 403, 404, 423]) expect(genreEvenementAcces("POST", "/studies/:studyId/variants", s)).toBe("refus");
     expect(genreEvenementAcces("GET", "/studies/:studyId/variants/:variantId/export", 200)).toBe("export");
     expect(genreEvenementAcces("GET", "/studies/:studyId/publications/:publicationId/files/:format", 200)).toBe("export");
+    expect(genreEvenementAcces("GET", "/studies/:studyId/variants/:variantId/illustrations/:illustrationId/image", 200)).toBe("export");
     expect(genreEvenementAcces("GET", "/studies/:studyId/variants/:variantId", 200)).toBeNull();
     expect(genreEvenementAcces("POST", "/studies/:studyId/variants/:variantId/commands", 409)).toBeNull();
     expect(routeGenerique("/projects/p1/studio/studies/s1/variants/v1/export?format=ifc", { projectId: "p1", studyId: "s1", variantId: "v1" })).toBe("/studies/:studyId/variants/:variantId/export");

@@ -18,7 +18,7 @@ import express from "express";
 import request from "supertest";
 import { studioProvenanceRendu } from "@parcours/atelier-model";
 import { STUDIO_CLE_PROVENANCE_ILLUSTRATION, STUDIO_CLE_PROVENANCE_RENDU } from "@parcours/atelier-model/studio-agents";
-import { studioIllustrations, studioRevisions, studioStudies, studioVariants } from "../db/schema.js";
+import { projectMembers, studioIllustrations, studioRevisions, studioStudies, studioVariants } from "../db/schema.js";
 import { transportExterne } from "../lib/studio-illustration-externe.js";
 import { ecrirePng, lirePng } from "../lib/studio-png.js";
 import { studioRouter } from "./studio.js";
@@ -187,5 +187,32 @@ describe("TR-EX-094 / TR-EX-071 — service externe : désactivé par défaut, j
     configurerExterne();
     expect((await poster("lecteur", corps({ fournisseur: "externe", classification: "interne", consentement }))).status).toBe(403);
     expect(appelsExternes).toEqual([]);
+  });
+});
+
+describe("Revue de la PR #328 — téléchargement soumis au droit d'export ; requestId réservé avant le fournisseur facturé", () => {
+  it("TEST-032 [−] l'image archivée est un téléchargement : un lecteur à qui le propriétaire n'a pas accordé l'export reçoit 403 ; avec l'export, 200", async () => {
+    const r = await poster("proprietaire", corps());
+    expect(r.status).toBe(201);
+    expect((await lire("lecteur", r.body.image)).status).toBe(200);
+    const membre = banc.lignes.get(projectMembers)!.find((m) => m["userId"] === "lecteur")!;
+    membre["canExport"] = false;
+    const refus = await lire("lecteur", r.body.image);
+    expect(refus.status).toBe(403);
+    expect(refus.headers["content-type"]).not.toMatch(/image\/png/);
+    // La liste reste lisible (aucun contenu téléchargé).
+    expect((await lire("lecteur", `${V}/illustrations`)).status).toBe(200);
+  });
+  it("TR-EX-072 [+] deux demandes simultanées de même requestId au fournisseur externe : un seul appel facturé, la seconde rejoue l'illustration archivée", async () => {
+    configurerExterne();
+    const reel = transportExterne.fetch;
+    transportExterne.fetch = (async (url: string, init: RequestInit) => { await new Promise((ok) => setTimeout(ok, 30)); return reel(url, init); }) as typeof fetch;
+    const b = corps({ requestId: "illu-simultanee", fournisseur: "externe", classification: "interne", consentement });
+    const [a, c] = await Promise.all([poster("editeur", b), poster("editeur", b)]);
+    expect([a.status, c.status]).toEqual([201, 201]);
+    expect(appelsExternes).toHaveLength(1);
+    expect([a.body.replayed, c.body.replayed].sort()).toEqual([false, true]);
+    expect(a.body.id).toBe(c.body.id);
+    expect(nbIllustrations()).toBe(1);
   });
 });

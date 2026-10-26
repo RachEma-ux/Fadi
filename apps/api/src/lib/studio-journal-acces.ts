@@ -46,7 +46,7 @@ export function limiteConservation(maintenant: Date, mois: number): Date {
 export type GenreEvenementAcces = "refus" | "export";
 const REFUS = new Set([401, 403, 404, 423]);
 /** Routes génériques qui sortent du contenu (GET réussi). */
-const SORTIES = [/\/export$/, /\/export\/rapport$/, /\/files\/:format$/, /\/contenu$/];
+const SORTIES = [/\/export$/, /\/export\/rapport$/, /\/files\/:format$/, /\/contenu$/, /\/illustrations\/:illustrationId\/image$/];
 
 /** Genre d'un événement sensible, ou null (événement ordinaire, non journalisé). */
 export function genreEvenementAcces(method: string, route: string, status: number): GenreEvenementAcces | null {

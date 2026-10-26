@@ -9,7 +9,7 @@
  * commande Studio n'est émise, aucune révision n'est écrite : le modèle ne peut pas changer. Idempotent par `requestId`.
  */
 import { createHash } from "node:crypto";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { StudioValidationError, type StudioProvenanceRendu } from "@parcours/atelier-model";
 import {
@@ -91,6 +91,8 @@ export async function listerIllustrations(scope: StudioScope, actorId: string): 
 
 export async function lireImageIllustration(scope: StudioScope, actorId: string, id: string): Promise<{ png: Buffer; ligne: Ligne }> {
   await readStudioContext(db, scope, actorId);
+  // Téléchargement d'un fichier : droit d'export exigé (accès support et lecteur sans export refusés, comme les autres sorties).
+  assertAccess(await loadProjectAccess(scope.projectId, actorId), actorId, "export");
   const [r] = await db.select().from(studioIllustrations).where(and(eq(studioIllustrations.id, id), eq(studioIllustrations.variantId, scope.variantId), eq(studioIllustrations.studyId, scope.studyId))).limit(1);
   if (!r) return notFound();
   return { png: Buffer.from(r.imageBase64, "base64"), ligne: r };
@@ -120,6 +122,13 @@ export async function creerIllustration(scope: StudioScope, actorId: string, e: 
   if (tete.archived) return studioArchivedRefusal();
   const deja = await rejouer();
   if (deja) return deja;
+  // Réservation de l'identifiant de requête AVANT toute génération (fournisseur externe facturé) : deux requêtes simultanées
+  // de même requestId sont sérialisées par un verrou transactionnel ; la seconde rejoue l'illustration archivée par la
+  // première, sans second appel au service.
+  return db.transaction(async (tx) => {
+  await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`studio_illustration:${scope.variantId}:${e.requestId}`}, 0))`);
+  const dejaReserve = await rejouer();
+  if (dejaReserve) return dejaReserve;
 
   let parametres;
   try { parametres = studioValiderParametresIllustration(e.parametres); }
@@ -176,7 +185,7 @@ export async function creerIllustration(scope: StudioScope, actorId: string, e: 
   const final = ecrirePng(image, { [STUDIO_CLE_PROVENANCE_ILLUSTRATION]: JSON.stringify(provenance) });
   const id = newId("studio_illustration");
   try {
-    await db.insert(studioIllustrations).values({
+    await tx.insert(studioIllustrations).values({
       id, studyId: scope.studyId, variantId: scope.variantId, revisionId: rendu.revisionId, providerId: fournisseur.id, providerNature: fournisseur.nature,
       parameters: { ...parametres }, provenance: provenance as unknown as Record<string, unknown>, sourceDigest: empreinteSource, documentDigest: empreinteApres,
       imageBase64: final.toString("base64"), imageDigest: sha(final), width: image.largeur, height: image.hauteur, createdBy: actorId, requestId: e.requestId, payloadHash, createdAt: maintenant,
@@ -185,6 +194,7 @@ export async function creerIllustration(scope: StudioScope, actorId: string, e: 
     if ((err as { code?: string }).code === "23505") { const r = await rejouer(); if (r) return r; }
     throw err;
   }
-  const [l] = await db.select().from(studioIllustrations).where(eq(studioIllustrations.id, id)).limit(1);
+  const [l] = await tx.select().from(studioIllustrations).where(eq(studioIllustrations.id, id)).limit(1);
   return { ...vue(scope, l!, await email(actorId)), replayed: false };
+  });
 }

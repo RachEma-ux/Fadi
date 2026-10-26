@@ -106,7 +106,7 @@ chargé de tâche — rôle vérifié ensuite par `lib/studio-observations.ts`, 
 | `GET /studies/:studyId/variants/:variantId/illustrations/fournisseurs` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `GET /studies/:studyId/variants/:variantId/illustrations` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
 | `POST /studies/:studyId/variants/:variantId/illustrations` | modification | 404 | 403 | admis | 423 | admis | 423 | 403 réf. | 201 | image séparée tirée du rendu ; aucune révision écrite, le modèle n'est pas modifié |
-| `GET /studies/:studyId/variants/:variantId/illustrations/:illustrationId/image` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 |  |
+| `GET /studies/:studyId/variants/:variantId/illustrations/:illustrationId/image` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | téléchargement : droit d'export exigé (lecteur sans export et accès support refusés) |
 | `GET /agents/jetons` | lecture | 404 | admis | admis | admis | admis | admis | admis | 200 | jetons du compte seulement |
 | `POST /agents/jetons` | lecture | 404 | admis | admis | admis | admis | admis | admis | 201 | tout membre : l'agent n'a que les droits de son titulaire, revérifiés à chaque appel |
 | `POST /agents/jetons/:tokenId/revoquer` | acteur | 404 | admis | admis | admis | admis | admis | admis | 200 | titulaire du jeton seulement ; un autre compte : 404 |

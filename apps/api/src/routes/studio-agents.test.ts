@@ -227,3 +227,41 @@ describe("Transport stdio — relais des messages MCP vers /mcp/studio", () => {
     expect(() => creerRelais({ url: "http://x/mcp/studio", jeton: "cookie-de-session" })).toThrow();
   });
 });
+
+describe("Revue de la PR #328 — décision sur une proposition engagée avec sa révision, tout ou rien", () => {
+  it("F.3-02 [−] confirmation et refus simultanés : une seule décision l'emporte ; l'autre reçoit 409 ; statut, révision et journal concordent", async () => {
+    const j = await jeton("editeur");
+    const p = await outil(j, "studio_proposer_commandes", proposition("q-concur"));
+    const id = p.structuredContent.proposition.id as string;
+    const avant = nbRevisions();
+    const [c, r] = await Promise.all([humain("editeur").post(`${S}/agents/propositions/${id}/confirmer`), humain("editeur").post(`${S}/agents/propositions/${id}/refuser`)]);
+    expect([c.status, r.status].sort()).toEqual([200, 409]);
+    const ligneP = banc.lignes.get(studioAgentProposals)!.find((x) => x.id === id)!;
+    const decisions = banc.lignes.get(studioAgentEvents)!.filter((e) => e["proposalId"] === id && String(e["action"]).match(/confirmer|refuser/));
+    expect(decisions).toHaveLength(1);
+    if (c.status === 200) {
+      expect(ligneP).toMatchObject({ status: "confirmee", revisionId: c.body.revisionId });
+      expect(nbRevisions()).toBe(avant + 1);
+      expect(decisions[0]!["action"]).toBe("proposition.confirmer");
+    } else {
+      expect(ligneP["status"]).toBe("refusee");
+      expect(nbRevisions()).toBe(avant);
+      expect(decisions[0]!["action"]).toBe("proposition.refuser");
+    }
+  });
+  it("F.3-02 [−] une panne entre l'écriture de la révision et la décision annule les deux : aucune révision, proposition toujours en attente, aucun journal de décision", async () => {
+    const j = await jeton("editeur");
+    const p = await outil(j, "studio_proposer_commandes", proposition("q-panne"));
+    const id = p.structuredContent.proposition.id as string;
+    const avant = nbRevisions();
+    banc.panneSur = studioAgentProposals;
+    try { expect((await humain("editeur").post(`${S}/agents/propositions/${id}/confirmer`)).status).toBe(500); }
+    finally { banc.panneSur = null; }
+    expect(nbRevisions()).toBe(avant);
+    expect(tete()).toBe("r1");
+    expect(banc.lignes.get(studioAgentProposals)!.find((x) => x.id === id)!["status"]).toBe("en-attente");
+    expect(banc.lignes.get(studioAgentEvents)!.filter((e) => e["proposalId"] === id && e["action"] === "proposition.confirmer")).toHaveLength(0);
+    // La personne peut ensuite confirmer normalement.
+    expect((await humain("editeur").post(`${S}/agents/propositions/${id}/confirmer`)).status).toBe(200);
+  });
+});

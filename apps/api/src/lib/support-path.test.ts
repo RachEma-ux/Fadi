@@ -22,7 +22,7 @@ describe("accès support : chemins d'export (défense supplémentaire)", () => {
     "/documents/surfaces", "/documents/programme", "/documents/fiches", "/documents/dossier-exemple", "/documents/plan/rdc",
     "/documents/atelier/modele.ifc", "/documents/dessins/x", "/archive", "/copies", "/steps/1/files/abc", "/steps/harmonie/rapport",
     "/steps/3/harmonie/rapport", "/design-review/rapport", "/atelier/journal.csv", "/atelier/planches/p/export.ifc",
-    "/atelier/solides-exacts/o/export.step", "/atelier/publications/p/fichiers/v", "/studio/studies/s/variants/v/export",
+    "/atelier/solides-exacts/o/export.step", "/atelier/publications/p/fichiers/v", "/studio/studies/s/variants/v/export", "/studio/studies/s/variants/v/illustrations/i/image",
     "/studio/studies/s/sheets/f/files/pdf", "/studio/studies/s/publications/p/files/ifc",
   ])("%s : export", (sub) => { expect(EXPORT_PATH.test(sub)).toBe(true); });
   it.each(["", "/steps", "/steps/1", "/documents", "/atelier/model", "/programme", "/collaboration", "/support-grants"])("%s : lecture", (sub) => {
