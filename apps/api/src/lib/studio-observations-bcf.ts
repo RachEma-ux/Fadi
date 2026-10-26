@@ -25,6 +25,7 @@ import { roleAllows } from "./owned-project.js";
 import { StudioRequestError, studioArchivedRefusal, studioIdentifierSchema, type StudioScope } from "./studio-commands.js";
 import { assignable, audienceFilter, constaterDans, hashOf, insertObservationRows, lockedVariant, notFound, observationViews, scopedVariant, type Lecteur } from "./studio-commentaires.js";
 import { OBSERVATION_CATEGORIES, OBSERVATION_GRAVITES } from "./studio-observations.js";
+import { inflateBcfBorne } from "./studio-bcf-inflate.js";
 
 export const studioBcfImportSchema = z.object({
   /** Fichier `.bcfzip` encodé en base64 (8 Mo au plus une fois décodé). */
@@ -66,7 +67,8 @@ export async function importerObservationsBcf(scope: StudioScope, actorId: strin
   const octets = new Uint8Array(Buffer.from(input.fichierBase64, "base64"));
   if (octets.byteLength === 0 || octets.byteLength > 8 * 1024 * 1024) throw new StudioRequestError(400, { error: "invalid_input", code: "bcf_taille", message: "Fichier BCF vide ou de plus de 8 Mo." });
   let lecture: Awaited<ReturnType<typeof studioLireBcf>>;
-  try { lecture = await studioLireBcf(octets); }
+  // Entrées DEFLATE (méthode 8) décompressées par `node:zlib`, bornées par entrée et par archive.
+  try { lecture = await studioLireBcf(octets, inflateBcfBorne()); }
   catch (e) { throw new StudioRequestError(400, { error: "invalid_input", code: "bcf_illisible", message: e instanceof Error ? e.message : "Fichier BCF illisible." }); }
   const fichierSha256 = sha(octets);
   const contexte = studioContexteBcf(lecture.projetId, fichierSha256);

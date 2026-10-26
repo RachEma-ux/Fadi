@@ -145,7 +145,10 @@ function deriver(def: StudioVueCoupeDefinition, doc: StudioDocument): { coupe: S
   });
   const compte = new Map<string, number>();
   for (const s of segments) compte.set(s.source, (compte.get(s.source) ?? 0) + 1);
-  return { coupe: { ...brute, segments, sources: brute.sources.filter((s) => compte.has(s.id)).map((s) => ({ id: s.id, segments: compte.get(s.id)! })) }, horsCadrage };
+  // Solides non coupés (plan sur une face horizontale d'un maillage, section non dérivable) : gardés, filtrés seulement
+  // par la visibilité déclarée de la vue — jamais tus (la page et le manifeste les nomment, AGENTS.md L9).
+  const exactsNonCoupes = brute.exactsNonCoupes.filter((id) => !garde || garde.has(calqueDe.get(id) ?? "default"));
+  return { coupe: { ...brute, segments, sources: brute.sources.filter((s) => compte.has(s.id)).map((s) => ({ id: s.id, segments: compte.get(s.id)! })), exactsNonCoupes }, horsCadrage };
 }
 
 function validerSource(s: StudioSourceVueCoupe): StudioSourceVueCoupe {
@@ -205,12 +208,19 @@ export function rebaserVueCoupe(vue: StudioVueCoupe, doc: StudioDocument, source
 const A4_PAYSAGE = { largeur: 297, hauteur: 210 };
 const TRAIT_DE: Readonly<Record<StudioTraitCoupe, Trait>> = Object.freeze({ fin: "fin", moyen: "vue", fort: "coupe" });
 
+/** Mention portée par une page de coupe incomplète (solides non coupés), ou null si la section est complète. */
+export function mentionSolidesOmis(omis: readonly string[]): string | null {
+  return omis.length ? `Section incomplète : ${omis.length} solide(s) non coupé(s) — plan sur une face horizontale ou section non dérivable — absents de cette page : ${omis.join(", ")}` : null;
+}
+
 /**
  * Page A4 paysage d'une vue de coupe (dossier, publication) : fenêtre du cadrage à l'échelle déclarée (réduite si elle
  * déborde, et alors déclarée), segments de la section au trait choisi, annotations propres, cartouche de provenance
- * (révision, empreinte de la section, repère et niveau). Rien n'est ajouté au modèle.
+ * (révision, empreinte de la section, repère et niveau). Rien n'est ajouté au modèle. Une section incomplète (solides
+ * non coupés, `coupe.exactsNonCoupes`) n'est jamais présentée comme complète : la page porte la mention nommant chaque
+ * solide omis et rend la liste (`omis`), reprise au manifeste de publication.
  */
-export function pageVueCoupe(vue: StudioVueCoupe): { largeurMm: number; hauteurMm: number; primitives: Primitive[]; echelleImprimee: number } {
+export function pageVueCoupe(vue: StudioVueCoupe): { largeurMm: number; hauteurMm: number; primitives: Primitive[]; echelleImprimee: number; omis: string[] } {
   const d = vue.definition;
   const zone = { x: 15, y: 30, l: A4_PAYSAGE.largeur - 30, h: A4_PAYSAGE.hauteur - 55 };
   const lm = d.cadrage.xMax - d.cadrage.xMin, hm = d.cadrage.yMax - d.cadrage.yMin;
@@ -229,5 +239,8 @@ export function pageVueCoupe(vue: StudioVueCoupe): { largeurMm: number; hauteurM
   const src = vue.sources[0]!;
   const ligne = `Coupe à z = ${d.niveau.z} m (local-3d → local-2d) · échelle 1:${echelleImprimee}${echelleImprimee !== d.echelle ? ` (déclarée 1:${d.echelle}, réduite pour tenir)` : ""} · hachure ${d.styles.hachure} · variante ${src.variantId} · révision ${src.revisionId} · empreinte de la section ${vue.empreinteSection.slice(0, 16)}`;
   primitives.push({ type: "texte", position: { x: 15, y: 12 }, texte: ligne, hauteurMm: 2.2, ancre: "debut", angle: 0, trait: "annotation", objetId: "provenance" });
-  return { largeurMm: A4_PAYSAGE.largeur, hauteurMm: A4_PAYSAGE.hauteur, primitives, echelleImprimee };
+  const omis = [...(vue.coupe.exactsNonCoupes ?? [])];
+  const mention = mentionSolidesOmis(omis);
+  if (mention) primitives.push({ type: "texte", position: { x: 15, y: 20 }, texte: mention, hauteurMm: 3, ancre: "debut", angle: 0, trait: "coupe", objetId: "solides-omis" });
+  return { largeurMm: A4_PAYSAGE.largeur, hauteurMm: A4_PAYSAGE.hauteur, primitives, echelleImprimee, omis };
 }
