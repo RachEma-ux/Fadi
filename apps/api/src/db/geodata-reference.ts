@@ -28,14 +28,21 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { basename, dirname, join } from "node:path";
 import { Pool } from "pg";
-import { bornesRobustes, lireDroits, MAX_PIXELS_RASTER, OBJETS_PAR_COUCHE, validerDeclarationRaster, validerGeoJSON, verifierUsage, type ClasseRaster, type DescriptionRaster, type ObjetImporte, type PaletteRaster, type StyleCouche } from "@parcours/geodata-model";
+import { bornesRobustes, estMotifAbsence, lireDroits, type MotifAbsence, MAX_PIXELS_RASTER, OBJETS_PAR_COUCHE, validerDeclarationRaster, validerGeoJSON, verifierUsage, type ClasseRaster, type DescriptionRaster, type ObjetImporte, type PaletteRaster, type StyleCouche } from "@parcours/geodata-model";
 import { lireGeoTiff, type GrilleRaster } from "../lib/geodata/raster.js";
 import { lireGeoPackage } from "../lib/geodata/geopackage.js";
 import { codesDesObjets, ecrireVersion, type IndicateurDeclare } from "../lib/geodata/versions.js";
 
 export interface FicheSource {
   cle: string; titre: string; producteur: string; theme: string; couverture: string; description: string;
-  version: { libelle: string; url: string | null; /** Fichier livré avec la fiche (chemin relatif au dossier des fiches), à défaut d'adresse. */ fichier?: string; empreinte: string; periode: string | null; licence: string; attribution: string; droits: Record<string, string>; precision: string | null; synthetique: boolean; conditions?: string };
+  version: {
+    libelle: string; url: string | null; /** Fichier livré avec la fiche (chemin relatif au dossier des fiches), à défaut d'adresse. */ fichier?: string; empreinte: string; periode: string | null; licence: string; attribution: string; droits: Record<string, string>; precision: string | null; synthetique: boolean; conditions?: string;
+    /**
+     * Tableau de valeurs livré avec la fiche (D-GD-17, lot A2) : CSV « code,colonne… », une ligne par objet ; chaque
+     * indicateur lit sa colonne (`propriete`). Les signes conventionnels déclarés donnent leur motif d'absence.
+     */
+    tableau?: { fichier: string; empreinte: string; signes?: Record<string, string> };
+  };
   couche: {
     titre: string; description: string; niveau: string | null; champCode: string; champNom: string | null; proprietesExposees: string[]; styleDefaut: StyleCouche;
     /** Couche raster (données GeoTIFF) : symbologie ; bornes absentes = 2ᵉ et 98ᵉ centiles des valeurs. */
@@ -43,6 +50,31 @@ export interface FicheSource {
   };
   indicateurs?: IndicateurDeclare[];
   superficie?: boolean;
+}
+
+/**
+ * Tableau de valeurs livré avec une fiche : CSV simple (séparateur virgule, sans guillemets), première colonne = code.
+ * Une cellule numérique devient un nombre ; un signe conventionnel reste un texte (motif à la lecture) ; vide = absent.
+ */
+function lireTableau(fiche: FicheSource, chemin: string) {
+  const t = fiche.version.tableau;
+  if (!t) return null;
+  if (!/^[a-z0-9/_.-]+\.csv$/.test(t.fichier) || t.fichier.includes("..")) throw new Error(`Tableau de valeurs refusé : ${t.fichier}`);
+  const octets = readFileSync(join(dirname(chemin), t.fichier));
+  const empreinte = createHash("sha256").update(octets).digest("hex");
+  const [entete, ...lignes] = octets.toString("utf8").split(/\r?\n/).filter((l) => l.length);
+  const noms = entete!.split(",");
+  const colonnes = new Map<string, Map<string, number | string | null>>(noms.slice(1).map((n) => [n, new Map()]));
+  for (const l of lignes) {
+    const cellules = l.split(",");
+    const code = cellules[0]!;
+    for (let j = 1; j < noms.length; j++) {
+      const brut = (cellules[j] ?? "").trim();
+      colonnes.get(noms[j]!)!.set(code, brut === "" ? null : /^-?\d+(\.\d+)?$/.test(brut) ? Number(brut) : brut);
+    }
+  }
+  const signes = Object.fromEntries(Object.entries(t.signes ?? {}).filter(([, m]) => estMotifAbsence(m))) as Record<string, MotifAbsence>;
+  return { ok: empreinte === t.empreinte.toLowerCase(), empreinte, lignes: lignes.length, colonnes, signes };
 }
 
 /** Chemin de la fiche : chemin donné, sinon fiche qualifiée nommée (à côté du bundle, ou dans le dépôt en développement). */
@@ -102,8 +134,11 @@ async function importer(chemin: string, preparateur: string) {
     octets = Buffer.from(await r.arrayBuffer());
     nomFichier = basename(new URL(fiche.version.url).pathname);
   }
-  const empreinte = createHash("sha256").update(octets).digest("hex");
-  const empreinteOk = empreinte === fiche.version.empreinte.toLowerCase();
+  const empreinteFichier = createHash("sha256").update(octets).digest("hex");
+  const empreinteOk = empreinteFichier === fiche.version.empreinte.toLowerCase();
+  // Tableau de valeurs (lot A2) : empreinte contrôlée ; l'empreinte de la version couvre le fichier ET le tableau.
+  const tableau = lireTableau(fiche, chemin);
+  const empreinte = tableau ? createHash("sha256").update(`${empreinteFichier}:${tableau.empreinte}`).digest("hex") : empreinteFichier;
   let crsSource = "WGS 84 (CRS84)";
   let objets: ObjetImporte[] = [];
   let controles: Record<string, unknown> & { ok: boolean };
@@ -141,8 +176,9 @@ async function importer(chemin: string, preparateur: string) {
     objets = v.ok ? [...v.objets] : [];
     const { doublons, manquants } = codesDesObjets(objets, fiche.couche.champCode);
     controles = {
-      ok: empreinteOk && v.ok && doublons.length === 0 && manquants === 0,
-      empreinte: { attendue: fiche.version.empreinte, calculee: empreinte, conforme: empreinteOk },
+      ok: empreinteOk && v.ok && doublons.length === 0 && manquants === 0 && (!tableau || tableau.ok),
+      empreinte: { attendue: fiche.version.empreinte, calculee: empreinteFichier, conforme: empreinteOk },
+      ...(tableau ? { tableau: { fichier: fiche.version.tableau!.fichier, empreinte: tableau.empreinte, conforme: tableau.ok, lignes: tableau.lignes, colonnes: tableau.colonnes.size } } : {}),
       validation: v.rapport, codes: { champ: fiche.couche.champCode, doublons, manquants }, controleLe: new Date().toISOString(),
     };
     console.log(JSON.stringify({ fichier: nomFichier, objets: v.rapport.objets, sommets: v.rapport.sommets, controlesOk: controles.ok, empreinteOk, doublons: doublons.length, manquants, diagnostics: v.rapport.diagnostics.slice(0, 10) }, null, 2));
@@ -191,7 +227,7 @@ async function importer(chemin: string, preparateur: string) {
         controles, synthetique: fiche.version.synthetique,
       },
       couche: { ...fiche.couche, styleDefaut: raster ? { mode: "raster" } : fiche.couche.styleDefaut },
-      objets, indicateurs: raster ? [] : (fiche.indicateurs ?? []), superficie: !raster && fiche.superficie !== false, preparePar: prepareParId,
+      objets, indicateurs: raster ? [] : (fiche.indicateurs ?? []).map((i) => (tableau ? { ...i, valeurs: tableau.colonnes.get(i.propriete) ?? new Map(), signes: tableau.signes } : i)), superficie: !raster && fiche.superficie !== false, preparePar: prepareParId,
       ...(raster ? { raster } : {}),
     });
     await client.query("COMMIT");

@@ -5,7 +5,7 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 100710303,Commune d'Aouint Yghomane,r2885953,Aouint Yghomane,nom français + inclusion dans la province,apparie
 100710305,Commune de Touizgui,r2891016,Touizgui,nom français + inclusion dans la province,apparie
 100710501,Commune d'Al Mahbass,r2891023,Al Mahbass,nom français + inclusion dans la province,apparie
-100710503,Commune de Labouirat,r2891028,Labouirat,nom approché (0.88) + inclusion dans la province,apparie
+100710503,Commune de Labouirat,r2891028,Labouirat,nom français + inclusion dans la province,apparie
 102610101,Commune de Bouizakarne,r2885863,Bouizakarne,nom français + inclusion dans la province,apparie
 102610103,Commune de Guelmim,r2885914,Guelmim,nom français + inclusion dans la province,apparie
 102610301,Commune d'Aday,r2885852,Aday,nom français + inclusion dans la province,apparie
@@ -21,12 +21,12 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 102610521,Commune de Tiglit,r2885916,Tiglit,nom français + inclusion dans la province,apparie
 102610701,Commune d'Abaynou,r2885907,Abaynou,nom français + inclusion dans la province,apparie
 102610707,Commune d'Echatea El Abied,r2885943,Echatea El Abied,nom français + inclusion dans la province,apparie
-102610711,Commune de Labyar,r2885948,Labyar,nom arabe + inclusion dans la province,apparie
-102610713,Commune de Laqsabi Tagoust,r2885947,Laqsabi Tagoust,nom approché (0.93) + inclusion dans la province,apparie
+102610711,Commune de Labyar,r2885948,Labyar,nom français + inclusion dans la province,apparie
+102610713,Commune de Laqsabi Tagoust,r2885947,Laqsabi Tagoust,nom français + inclusion dans la province,apparie
 102610715,Commune de Rass Oumlil,r2885951,Rass Oumlil,nom français + inclusion dans la province,apparie
 102610717,Commune de Taliouine Assaka,r2885945,Taliouine Assaka,nom français + inclusion dans la province,apparie
 102610719,Commune de Targa Wassay,r2885944,Targa Wassay,nom français + inclusion dans la province,apparie
-104730101,Commune de Lakhsas,r2886017,Lakhsas,nom arabe + inclusion dans la province,apparie
+104730101,Commune de Lakhsas,r2886017,Lakhsas,nom français + inclusion dans la province,apparie
 104730103,Commune de Sidi Ifni,r2886004,Sidi Ifni,nom français + inclusion dans la province,apparie
 104730501,Commune d'Arbaa Ait Abdellah,r2886015,Arbaa Aït Abdellah,nom français + inclusion dans la province,apparie
 104730503,Commune d'Imi-N'fast,r2885997,Imi N'Fast,nom français + inclusion dans la province,apparie
@@ -88,14 +88,14 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 111210101,Commune de Boujdour,r3552424,Boujdour,nom français + inclusion dans la province,apparie
 111210301,Commune de Gueltat Zemmour,r3552440,Gueltat Zemmour,nom français + inclusion dans la province,apparie
 111210303,Commune de Jraifia,r3552447,Jraïfia,nom français + inclusion dans la province,apparie
-111210305,Commune de Lamssid,r3665498,Lamssid,nom arabe + inclusion dans la province,apparie
+111210305,Commune de Lamssid,r3665498,Lamssid,nom français + inclusion dans la province,apparie
 112210101,Commune d'Es-Semara,r3666523,Smara,nom arabe + inclusion dans la province,apparie
 112210301,Commune d'Amgala,r3666591,Amgala,nom français + inclusion dans la province,apparie
 112210303,Commune de Haouza,r3666695,Haouza,nom français + inclusion dans la province,apparie
 112210305,Commune de Jdiriya,r3666707,Jdiriya,nom français + inclusion dans la province,apparie
 112210307,Commune de Sidi Ahmed Laaroussi,r3666522,Sidi Ahmed Laaroussi,nom français + inclusion dans la province,apparie
 112210309,Commune de Tifariti,r6054811,Tifariti,nom français + inclusion dans la province,apparie
-113210103,Commune de Laâyoune,r3409845,Laâyoune,nom arabe + inclusion dans la province,apparie
+113210103,Commune de Laâyoune,r3409845,Laâyoune,nom français + inclusion dans la province,apparie
 113210301,Commune de Boukraa,r3409841,Boukraa,nom français + inclusion dans la province,apparie
 113210303,Commune de Dcheira,r3409848,Dcheira,nom français + inclusion dans la province,apparie
 11510101,Commune de Chefchaouen,r4666456,Chefchaouen,nom français + inclusion dans la province,apparie
@@ -108,7 +108,7 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 11510507,Commune de Bni Salah,r2563391,Bni Salah,nom français + inclusion dans la province,apparie
 11510509,Commune de Derdara,r2563413,Dardara,nom arabe + inclusion dans la province,apparie
 11510511,Commune de Fifi,r2563390,Fifi,nom français + inclusion dans la province,apparie
-11510513,Commune de Laghdir,r2563393,Laghdir,nom arabe + inclusion dans la province,apparie
+11510513,Commune de Laghdir,r2563393,Laghdir,nom français + inclusion dans la province,apparie
 11510515,Commune de Tanaqoub,r2563392,Tanaqoub,nom français + inclusion dans la province,apparie
 11510605,Commune de Bni Ahmed Cherqia,r2563411,Bni Ahmed Charqia,nom arabe + inclusion dans la province,apparie
 11510607,Commune de Bni Ahmed Gharbia,r3587342,Bni Ahmed Gharbia,nom français + inclusion dans la province,apparie
@@ -131,7 +131,7 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 115370305,Commune d'El Hagounia,r3409843,El Hagounia,nom français + inclusion dans la province,apparie
 115370501,Commune d'Akhfennir,r2891051,Akhfennir,nom français + inclusion dans la province,apparie
 115370507,Commune de Tah,r3409846,Tah,nom français + inclusion dans la province,apparie
-120660103,Commune de Lagouira*,r6182716,Lagouira,nom approché (0.86) + inclusion dans la province,apparie
+120660103,Commune de Lagouira*,r6182716,Lagouira,nom français + inclusion dans la province,apparie
 120660303,Commune d'Aghouinite*,r6054151,Aghouinite,nom français + inclusion dans la province,apparie
 120660305,Commune d'Aousserd,r5199604,Aousserd,nom français + inclusion dans la province,apparie
 120660307,Commune de Tichla,r5199611,Tichla,nom français + inclusion dans la province,apparie
@@ -151,7 +151,7 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 123910507,Commune d'Oum Dreyga,r3679557,Oum Dreyga,nom français + inclusion dans la province,apparie
 123910903,Commune d'Imlili,r3679581,Imlili,nom français + inclusion dans la province,apparie
 13310101,Commune de Ksar El Kebir,r2563448,Ksar el Kebir,nom français + inclusion dans la province,apparie
-13310103,Commune de Larache,r2754034,Larache,nom arabe + inclusion dans la province,apparie
+13310103,Commune de Larache,r2754034,Larache,nom français + inclusion dans la province,apparie
 13310701,Commune de Boujedyane,r2563446,Boujediane,nom arabe + inclusion dans la province,apparie
 13310703,Commune de Ksar Bjir,r2563440,Ksar Bjir,nom français + inclusion dans la province,apparie
 13310705,Commune de Laouamra,r2754180,Aouamra,nom arabe + inclusion dans la province,apparie
@@ -180,7 +180,7 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 14050909,Commune de Moqrissat,r2563387,Moqrisset,nom arabe + inclusion dans la province,apparie
 14051107,Commune de Kalaat Bouqorra,r2563389,Kalaat Booqorra,nom arabe + inclusion dans la province,apparie
 14051111,Commune de Zoumi,r2563388,Zoumi,nom français + inclusion dans la province,apparie
-14051303,Commune de Lamjaara,r2753147,Lamjaara,nom approché (0.86) + inclusion dans la province,apparie
+14051303,Commune de Lamjaara,r2753147,Lamjaara,nom français + inclusion dans la province,apparie
 14051309,Commune d'Ouannana,r2810046,Ounnana,nom approché (0.93) + inclusion dans la province,apparie
 14051311,Commune de Sidi Ahmed Cherif,r2753148,Sidi Ahmed Cherif,nom français + inclusion dans la province,apparie
 14051313,Commune de Sidi Bousber,r2753149,Sidi Bousber,nom français + inclusion dans la province,apparie
@@ -196,7 +196,7 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 15110501,Commune d'Al Manzla,r2752819,Al Manzla,nom français + inclusion dans la province,apparie
 15110505,Commune de Sebt Azzinate,r2752821,Azzinate,nom (0.90) + province voisine à moins de 10 km (limites différentes),apparie
 15110507,Commune de Dar Chaoui,r2752820,Dar Chaoui,nom français + inclusion dans la province,apparie
-15110517,Commune de Laaouama,r2752880,Laaouama,nom arabe + inclusion dans la province,apparie
+15110517,Commune de Laaouama,r2752880,Laaouama,nom français + inclusion dans la province,apparie
 15110519,Commune de Hjar Ennhal,r2758747,Hjar Ennhal,nom français + inclusion dans la province,apparie
 15710107,Commune d'Oued Laou,r2480069,Oued Laou,nom français + inclusion dans la province,apparie
 15710111,Commune de Tétouan,r2464649,Tétouan,nom français + inclusion dans la province,apparie
@@ -231,7 +231,7 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 21130129,Commune de Sidi Slimane Echcharaa,r2457839,Sidi Slimane Echcharaa,nom français + inclusion dans la province,apparie
 21130301,Commune d'Aghbal,r2447392,Aghbal,nom français + inclusion dans la province,apparie
 21130307,Commune de Fezouane,r2457840,Fezouane,nom français + inclusion dans la province,apparie
-21130309,Commune de Laatamna,r2447390,Laâtamna,nom arabe + inclusion dans la province,apparie
+21130309,Commune de Laatamna,r2447390,Laâtamna,nom français + inclusion dans la province,apparie
 21130311,Commune de Madagh,r2447393,Madagh,nom français + inclusion dans la province,apparie
 21130503,Commune de Boughriba,r2457842,Boughriba,nom français + inclusion dans la province,apparie
 21130505,Commune de Chouihia,r2502043,Chouihia,nom français + inclusion dans la province,apparie
@@ -279,7 +279,7 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 22650501,Commune d'Assebbab,r2816173,Assebbab,nom français + inclusion dans la province,apparie
 22650503,Commune de Barkine,r2816189,Barkine,nom français + inclusion dans la province,apparie
 22650505,Commune de Houara Oulad Raho,r2816174,Houara Oulad Raho,nom français + inclusion dans la province,apparie
-22650507,Commune de Lamrija,r2759221,Lamrija,nom arabe + inclusion dans la province,apparie
+22650507,Commune de Lamrija,r2759221,Lamrija,nom français + inclusion dans la province,apparie
 22650515,Commune de Saka,r2754004,Saka,nom français + inclusion dans la province,apparie
 22650709,Commune de Mazguitam,r2754006,Mazguitam,nom français + inclusion dans la province,apparie
 22650711,Commune d'Oulad Bourima,r2754000,Oulad Bourima,nom français + inclusion dans la province,apparie
@@ -293,7 +293,7 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 22750513,Commune d'Ouled Ghziyel,r2528001,Ouled Ghziyel,nom français + inclusion dans la province,apparie
 22750515,Commune d'Ouled Sidi Abdelhakem,r2528003,Ouled Sidi Abdelhakem,nom français + inclusion dans la province,apparie
 22750703,Commune de Gafait,r2528009,Guefaït,nom arabe + inclusion dans la province,apparie
-22750707,Commune de Laaouinate,r2528008,Laaouinate,nom approché (0.89) + inclusion dans la province,apparie
+22750707,Commune de Laaouinate,r2528008,Laaouinate,nom français + inclusion dans la province,apparie
 22750709,Commune de Lebkhata,r3551309,Lebkhata,nom français + inclusion dans la province,apparie
 22750905,Commune de Guenfouda,r2528007,Guenfouda,nom français + inclusion dans la province,apparie
 22750913,Commune de Ras Asfour,r2527995,Ras Asfour,nom français + inclusion dans la province,apparie
@@ -398,7 +398,7 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 31710501,Commune d'Ait Boubidmane,r2759250,Aït Boubidmane,nom français + inclusion dans la province,apparie
 31710503,Commune d'Ait Harz Allah,r2819548,Aït Harz Allah,nom français + inclusion dans la province,apparie
 31710505,Commune de Bitit,r2808813,Aït Oullal Bitit,nom arabe + inclusion dans la province,apparie
-31710507,Commune de Laqsir,r2759247,Laqsir,nom arabe + inclusion dans la province,apparie
+31710507,Commune de Laqsir,r2759247,Laqsir,nom français + inclusion dans la province,apparie
 31710701,Commune d'Ait Bourzouine,r2819569,Aït Bourzouine,nom français + inclusion dans la province,apparie
 31710703,Commune d'Ait Naamane,r2819554,Aït Naamane,nom français + inclusion dans la province,apparie
 31710705,Commune d'Iqaddar,r2819564,Iqaddar,nom français + inclusion dans la province,apparie
@@ -437,7 +437,7 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 34510703,Commune d'Ahl Sidi Lahcen,r2808821,Ahl Sidi Lahcen,nom français + inclusion dans la province,apparie
 34510705,Commune d'Azzaba,r2808820,Azzaba,nom français + inclusion dans la province,apparie
 34510707,Commune de Kandar Sidi Khiar,r2808816,Kandar Sidi Khiar,nom français + inclusion dans la province,apparie
-34510709,Commune de Laanoussar,r2808819,Laanoussar,nom approché (0.89) + inclusion dans la province,apparie
+34510709,Commune de Laanoussar,r2808819,Laanoussar,nom français + inclusion dans la province,apparie
 34510711,Commune de Sidi Youssef Ben Ahmed,r2808835,Sidi Youssef Ben Ahmed,nom français + inclusion dans la province,apparie
 34510713,Commune de Tazouta,r2808838,Tazouta,nom français + inclusion dans la province,apparie
 35310101,Commune de Rhafsai,r2753146,Ghafsaï,nom arabe + inclusion dans la province,apparie
@@ -534,7 +534,7 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 35910307,Commune de Sebt Loudaya,r2808806,Sebt Loudaya,nom français + inclusion dans la province,apparie
 35910501,Commune d'Ain Bou Ali,r2813704,Aïn Bou Ali,nom français + inclusion dans la province,apparie
 35910502,Commune d'Ain Kansara,r2813700,Aïn Kansra,nom arabe + inclusion dans la province,apparie
-35910503,Commune de Laajajra,r2813718,Laajajra,nom approché (0.86) + inclusion dans la province,apparie
+35910503,Commune de Laajajra,r2813718,Laajajra,nom français + inclusion dans la province,apparie
 35910505,Commune de Louadaine,r2813692,Louadaïne,nom français + inclusion dans la province,apparie
 35910507,Commune d'Oulad Mimoun,r2813725,Oulad Mimoun,nom français + inclusion dans la province,apparie
 35910509,Commune de Sidi Daoud,r2813736,Sidi Daoud,nom français + inclusion dans la province,apparie
@@ -556,7 +556,7 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 42810913,Commune de Sidi Mohamed Lahmar,r2753079,Sidi Mohamed Lahmar,nom français + inclusion dans la province,apparie
 42810915,Commune de Souk Tlet El Gharb,r2753068,Souk Tlet El Gharb,nom français + inclusion dans la province,apparie
 42811103,Commune de Chouafaa,r2753065,Chouafaa,nom français + inclusion dans la province,apparie
-42811105,Commune de Lalla Mimouna,r2753070,Lalla Mimouna,nom approché (0.92) + inclusion dans la province,apparie
+42811105,Commune de Lalla Mimouna,r2753070,Lalla Mimouna,nom français + inclusion dans la province,apparie
 42811107,Commune de Moulay Bousselham,r2753074,Moulay Bousselham,nom français + inclusion dans la province,apparie
 42811111,Commune de Sidi Boubker El Haj,r2753071,Sidi Boubker el Haj,nom français + inclusion dans la province,apparie
 42910101,Commune de Khémisset,r2808190,Khémisset,nom français + inclusion dans la province,apparie
@@ -583,7 +583,7 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 42910705,Commune de Brachoua,r2808245,Brachoua,nom français + inclusion dans la province,apparie
 42910707,Commune d'Ezzhiliga,r2808267,Ezzhiliga,nom français + inclusion dans la province,apparie
 42910709,Commune de Jemaat Moul Blad,r2808255,Jemaat Moul Blad,nom français + inclusion dans la province,apparie
-42910711,Commune de Laghoualem,r2808268,Laghoualem,nom arabe + inclusion dans la province,apparie
+42910711,Commune de Laghoualem,r2808268,Laghoualem,nom français + inclusion dans la province,apparie
 42910713,Commune de Marchouch,r2808250,Marchouch,nom français + inclusion dans la province,apparie
 42910715,Commune de My Driss Aghbal,r2808241,Moulay Driss Aghbal,nom arabe + inclusion dans la province,apparie
 42910902,Commune d'Ain Johra-Sidi Boukhalkhal,r2808221,Aïn Johra-Sidi Boukhalkhal,nom français + inclusion dans la province,apparie
@@ -615,7 +615,7 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 44810507,Commune de Nouirate,r2827071,Nouirate,nom français + inclusion dans la province,apparie
 44810509,Commune de Sefsaf,r2753067,Sefsaf,nom français + inclusion dans la province,apparie
 44810705,Commune de Khnichet,r2813812,Khnichet,nom français + inclusion dans la province,apparie
-44810707,Commune de Lamrabih,r2755115,Lamrabih,nom arabe + inclusion dans la province,apparie
+44810707,Commune de Lamrabih,r2755115,Lamrabih,nom français + inclusion dans la province,apparie
 44810711,Commune d'Oulad Nouel,r2827069,Oulad Nouel,nom français + inclusion dans la province,apparie
 44810719,Commune de Sidi M'hamed Chelh,r2827068,Sidi M'Hamed Chelh,nom français + inclusion dans la province,apparie
 44810721,Commune de Taoughilt,r2813804,Taoughilt,nom français + inclusion dans la province,apparie
@@ -778,7 +778,7 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 53110703,Commune de Bni Smir,r2879695,Bni Smir,nom français + inclusion dans la province,apparie
 53110705,Commune de Braksa,r2879800,Braksa,nom français + inclusion dans la province,apparie
 53110707,Commune de Kasbat Troch,r2879653,Kasbat Troch,nom français + inclusion dans la province,apparie
-53110709,Commune de Lagnadiz,r2879638,Lagnadiz,nom approché (0.86) + inclusion dans la province,apparie
+53110709,Commune de Lagnadiz,r2879638,Lagnadiz,nom français + inclusion dans la province,apparie
 53110711,Commune de Maadna,r2879663,Maadna,nom français + inclusion dans la province,apparie
 53110713,Commune d'Oulad Aissa,r2879816,Oulad Aïssa,nom français + inclusion dans la province,apparie
 53110715,Commune d'Oulad Boughadi,r2879634,Oulad Boughadi,nom français + inclusion dans la province,apparie
@@ -806,8 +806,8 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 61170111,Commune d'Oulad Abbou,r2866430,Oulad Abbou,nom français + inclusion dans la province,apparie
 61170113,Commune de Sidi Rahal Chatai,r2806134,Sidi Rahal Chataï,nom français + inclusion dans la province,apparie
 61170501,Commune de Ben Maachou,r2866424,Ben Maachou,nom français + inclusion dans la province,apparie
-61170511,Commune de Laghnimyine,r2866414,Laghnimyine,nom arabe + inclusion dans la province,apparie
-61170513,Commune de Lahsasna,r2822727,Lahsasna,nom arabe + inclusion dans la province,apparie
+61170511,Commune de Laghnimyine,r2866414,Laghnimyine,nom français + inclusion dans la province,apparie
+61170513,Commune de Lahsasna,r2822727,Lahsasna,nom français + inclusion dans la province,apparie
 61170527,Commune de Sidi Abdelkhaleq,r2822994,Sidi Abdelkhaleq,nom français + inclusion dans la province,apparie
 61170529,Commune de Sidi El Mekki,r2821549,Sidi El Mekki,nom français + inclusion dans la province,apparie
 61170535,Commune de Zaouiat Sidi Ben Hamdoun,r2866431,Zaouiat Sidi Ben Hamdoun,nom français + inclusion dans la province,apparie
@@ -827,8 +827,8 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 61810103,Commune d'El Jadida,r2806096,El Jadida,nom français + inclusion dans la province,apparie
 61810105,Commune de Lbir Jdid,r2806138,Bir Jdid,nom approché (0.94) + inclusion dans la province,apparie
 61810301,Commune de Chtouka,r2806140,Chtouka,nom français + inclusion dans la province,apparie
-61810305,Commune de Laghdira,r2866411,Laghdira,nom arabe + inclusion dans la province,apparie
-61810307,Commune de Lamharza Essahel,r2806139,Lamharza Essahel,nom arabe + inclusion dans la province,apparie
+61810305,Commune de Laghdira,r2866411,Laghdira,nom français + inclusion dans la province,apparie
+61810307,Commune de Lamharza Essahel,r2806139,Lamharza Essahel,nom français + inclusion dans la province,apparie
 61810311,Commune de Sidi Ali Ben Hamdouche,r3549781,Sidi Ali Ben Hamdouche,nom français + inclusion dans la province,apparie
 61810501,Commune de My Abdellah,r2806106,Moulay Abdellah Amghar,nom arabe + inclusion dans la province,apparie
 61810503,Commune d'Oulad Aissa,r2806128,Oulad Aïssa,nom français + inclusion dans la province,apparie
@@ -850,7 +850,7 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 61810919,Commune de Sidi Smail,r2823019,Sidi Smaïl,nom français + inclusion dans la province,apparie
 61810921,Commune de Zaouiat Saiss,r2823029,Zaouiat Saïss,nom français + inclusion dans la province,apparie
 61810923,Commune de Zaouiat Lakouacem,r2822973,Zaouiat Lakouacem,nom français + inclusion dans la province,apparie
-63550101,Commune de Lahraouyine,r2523591,Lahraouyine,nom approché (0.90) + inclusion dans la province,apparie
+63550101,Commune de Lahraouyine,r2523591,Lahraouyine,nom français + inclusion dans la province,apparie
 63550103,Commune de Mediouna,r2522569,Médiouna,nom français + inclusion dans la province,apparie
 63550105,Commune de Tit Mellil,r2523590,Tit Mellil,nom français + inclusion dans la province,apparie
 63550107,Commune d'Almajjatia Oulad Taleb,r2522570,El Majjatia Ouled Taleb,nom approché (0.89) + inclusion dans la province,apparie
@@ -874,7 +874,7 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 64610701,Commune d'Ain Blal,r2879968,Aïn Blal,nom français + inclusion dans la province,apparie
 64610703,Commune de Bni Khloug,r2879993,Bni Khloug,nom français + inclusion dans la province,apparie
 64610705,Commune de Dar Chaffai,r2879971,Dar Chaffaï,nom français + inclusion dans la province,apparie
-64610707,Commune de Laqraqra,r2879988,Laqraqra,nom arabe + inclusion dans la province,apparie
+64610707,Commune de Laqraqra,r2879988,Laqraqra,nom français + inclusion dans la province,apparie
 64610709,Commune de Meskoura,r2879989,Meskoura,nom français + inclusion dans la province,apparie
 64610711,Commune d'Oulad Amer,r2879987,Oulad Amer,nom français + inclusion dans la province,apparie
 64610713,Commune d'Oulad Bouali Nouaja,r2880020,Oulad Bouali Nouaja,nom français + inclusion dans la province,apparie
@@ -884,7 +884,7 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 64610721,Commune de Sidi Boumehdi,r2880000,Sidi Boumehdi,nom français + inclusion dans la province,apparie
 64611102,Commune d'Ain Dorbane-Lahlaf,r2879952,Aïn Dorbane-Lahlaf,nom français + inclusion dans la province,apparie
 64611103,Commune de Bouguargouh,r2822772,Bouguargouh,nom français + inclusion dans la province,apparie
-64611107,Commune de Lakhzazra,r2822805,Lakhzazra,nom approché (0.88) + inclusion dans la province,apparie
+64611107,Commune de Lakhzazra,r2822805,Lakhzazra,nom français + inclusion dans la province,apparie
 64611113,Commune de M'garto,r2822778,M'Garto,nom français + inclusion dans la province,apparie
 64611115,Commune de N'khila,r2880019,N'khila,nom français + inclusion dans la province,apparie
 64611123,Commune d'Ouled M'hamed,r2822792,Oulad M'Hamed,nom arabe + inclusion dans la province,apparie
@@ -900,7 +900,7 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 64611333,Commune de Sidi Hajjaj,r2880012,Sidi Hajjaj,nom français + inclusion dans la province,apparie
 64611505,Commune de Gdana,r2866433,Gdana,nom français + inclusion dans la province,apparie
 64611509,Commune de Khemisset Chaouia,r2879962,Khemisset Chaouia,nom français + inclusion dans la province,apparie
-64611511,Commune de Lahouaza,r2879958,Lahouaza,nom arabe + inclusion dans la province,apparie
+64611511,Commune de Lahouaza,r2879958,Lahouaza,nom français + inclusion dans la province,apparie
 64611514,Commune de Mzamza Janoubia,r5911518,Mzamza Janoubia,nom français + inclusion dans la province,apparie
 64611515,Commune de Mzoura,r2866436,Mzoura,nom français + inclusion dans la province,apparie
 64611519,Commune d'Oulad Said,r2866435,Oulad Saïd,nom français + inclusion dans la province,apparie
@@ -917,22 +917,22 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 64670301,Commune de Bni Hilal,r2823033,Bni Hilal,nom français + inclusion dans la province,apparie
 64670303,Commune de Bni Tsiriss,r2823006,Bni Tsiriss,nom français + inclusion dans la province,apparie
 64670309,Commune de Khmis Ksiba,r2846745,Khmis Ksiba,nom français + inclusion dans la province,apparie
-64670317,Commune de Laamria,r2823004,Laamria,nom (0.93) + province voisine à moins de 10 km (limites différentes),apparie
-64670319,Commune de Laaounate,r2823011,Laaounate,nom approché (0.88) + inclusion dans la province,apparie
+64670317,Commune de Laamria,r2823004,Laamria,nom français + inclusion dans la province,apparie
+64670319,Commune de Laaounate,r2823011,Laaounate,nom français + inclusion dans la province,apparie
 64670325,Commune de Metrane,r2846733,Metrane,nom français + inclusion dans la province,apparie
 64670331,Commune d'Oulad Boussaken,r2846730,Oulad Boussaken,nom français + inclusion dans la province,apparie
 64670511,Commune de Koudiat Bni Dghough,r2823077,Koudiat Bni Dghough,nom français + inclusion dans la province,apparie
 64670513,Commune de Kridid,r2823080,Kridid,nom français + inclusion dans la province,apparie
-64670515,Commune de Laagagcha,r2823081,Laagagcha,nom approché (0.88) + inclusion dans la province,apparie
+64670515,Commune de Laagagcha,r2823081,Laagagcha,nom français + inclusion dans la province,apparie
 64670529,Commune d'Oulad Amrane,r2823078,Oulad Amrane,nom français + inclusion dans la province,apparie
 64670535,Commune de Tamda,r2823075,Tamda,nom français + inclusion dans la province,apparie
 64670705,Commune de Bouhmame,r2823041,Bouhmame,nom français + inclusion dans la province,apparie
 64670707,Commune de Jabria,r2846748,Jabria,nom français + inclusion dans la province,apparie
-64670721,Commune de Laatatra,r2823036,Laatatra,nom arabe + inclusion dans la province,apparie
+64670721,Commune de Laatatra,r2823036,Laatatra,nom français + inclusion dans la province,apparie
 64670723,Commune de Lmechrek,r3549746,Lmechrek,nom français + inclusion dans la province,apparie
 64670727,Commune de M'tal,r2823085,M'Tal,nom français + inclusion dans la province,apparie
 64670733,Commune d'Oulad Si Bouhya,r2823034,Oulad Si Bouhya,nom français + inclusion dans la province,apparie
-64671101,Commune de Laghnadra,r2823084,Laghnadra,nom arabe + inclusion dans la province,apparie
+64671101,Commune de Laghnadra,r2823084,Laghnadra,nom français + inclusion dans la province,apparie
 64671103,Commune de Lgharbia,r2823064,Lgharbia,nom français + inclusion dans la province,apparie
 64671107,Commune d'Oulad Sbaita,r2823063,Oulad Sbaïta,nom français + inclusion dans la province,apparie
 64671109,Commune de Saniat Berguig,r2823072,Saniat Berguig,nom français + inclusion dans la province,apparie
@@ -950,7 +950,7 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 70410505,Commune d'Anougal,r3535502,Anougal,nom français + inclusion dans la province,apparie
 70410507,Commune d'Azgour,r3534191,Azgour,nom français + inclusion dans la province,apparie
 70410509,Commune de Dar Jamaa,r3534190,Dar Jamaa,nom français + inclusion dans la province,apparie
-70410511,Commune de Lalla Takarkoust,r3534184,Lalla Takarkoust,nom arabe + inclusion dans la province,apparie
+70410511,Commune de Lalla Takarkoust,r3534184,Lalla Takarkoust,nom français + inclusion dans la province,apparie
 70410513,Commune d'Ouazguita,r3549660,Ouazguita,nom français + inclusion dans la province,apparie
 70410515,Commune d'Oulad Mtaa,r3534187,Oulad Mtaa,nom français + inclusion dans la province,apparie
 70410517,Commune de Sidi Badhaj,r3534185,Sidi Badhaj,nom français + inclusion dans la province,apparie
@@ -980,7 +980,7 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 71610103,Commune d'Imintanoute,r2830905,Imintanoute,nom français + inclusion dans la province,apparie
 71610301,Commune d'Ahdil,r2821117,Ahdil,nom français + inclusion dans la province,apparie
 71610303,Commune d'Ait Hadi,r2830947,Aït Hadi,nom français + inclusion dans la province,apparie
-71610305,Commune de Lamzoudia,r2821122,Mzoudia,nom français + inclusion dans la province,apparie
+71610305,Commune de Lamzoudia,r2821122,Mzoudia,nom (0.93) + province voisine à moins de 10 km (limites différentes),apparie
 71610307,Commune d'Oulad Moumna,r2830881,Oulad Moumna,nom français + inclusion dans la province,apparie
 71610309,Commune de Saidate,r2830945,Saïdate,nom français + inclusion dans la province,apparie
 71610311,Commune de Sid L'mokhtar,r2821115,Sidi El Mokhtar,nom arabe + inclusion dans la province,apparie
@@ -990,7 +990,7 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 71610503,Commune d'Ain Tazitounte,r2830907,Aïn Tazitounte,nom français + inclusion dans la province,apparie
 71610505,Commune d'Ait Haddou Youssef,r2830920,Aït Haddou Youssef,nom français + inclusion dans la province,apparie
 71610507,Commune d'Irohalen,r2830912,Irohalen,nom français + inclusion dans la province,apparie
-71610509,Commune de Lalla Aaziza,r2830921,Lalla Aaziza,nom arabe + inclusion dans la province,apparie
+71610509,Commune de Lalla Aaziza,r2830921,Lalla Aaziza,nom français + inclusion dans la province,apparie
 71610511,Commune de Nfifa,r2830904,Nfifa,nom français + inclusion dans la province,apparie
 71610513,Commune d'Ouad L'bour,r2830902,Oued L'Bour,nom arabe + inclusion dans la province,apparie
 71610515,Commune de Sidi Ghanem,r2830923,Sidi Ghanem,nom français + inclusion dans la province,apparie
@@ -1019,7 +1019,7 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 71910505,Commune de Choara,r2881881,Choara,nom français + inclusion dans la province,apparie
 71910507,Commune de Dzouz,r2881936,Dzouz,nom français + inclusion dans la province,apparie
 71910509,Commune de Fraita,r2881935,Fraïta,nom français + inclusion dans la province,apparie
-71910515,Commune de Laatamna,r2881939,Laatamna,nom arabe + inclusion dans la province,apparie
+71910515,Commune de Laatamna,r2881939,Laatamna,nom français + inclusion dans la province,apparie
 71910516,Commune de Laattaouia Ech-Chaibia,r2881941,Laattaouia Ech-Chaybia,nom arabe + inclusion dans la province,apparie
 71910521,Commune d'Ouargui,r2881886,Ouargui,nom français + inclusion dans la province,apparie
 71910523,Commune d'Oulad Aarrad,r5176915,Oulad Aarrad,nom français + inclusion dans la province,apparie
@@ -1099,8 +1099,8 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 72110901,Commune d'Ait Said,r2820965,Aït Saïd,nom français + inclusion dans la province,apparie
 72110907,Commune de Kechoula,r2820970,Kechoula,nom français + inclusion dans la province,apparie
 72110909,Commune de Korimate,r2820957,Korimate,nom français + inclusion dans la province,apparie
-72110911,Commune de Lagdadra,r2821031,Lagdadra,nom arabe + inclusion dans la province,apparie
-72110913,Commune de Lahsinate,r2821033,Lahsinate,nom arabe + inclusion dans la province,apparie
+72110911,Commune de Lagdadra,r2821031,Lagdadra,nom français + inclusion dans la province,apparie
+72110913,Commune de Lahsinate,r2821033,Lahsinate,nom français + inclusion dans la province,apparie
 72110915,Commune de Mejji,r2821028,Mejji,nom français + inclusion dans la province,apparie
 72110917,Commune de Meskala,r2820954,Meskala,nom français + inclusion dans la province,apparie
 72110919,Commune de Mouarid,r2820963,Mouarid,nom français + inclusion dans la province,apparie
@@ -1132,7 +1132,7 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 74270703,Commune d'Ait Taleb,r2881792,Aït Taleb,nom français + inclusion dans la province,apparie
 74270705,Commune de Bouchane,r2881799,Bouchane,nom français + inclusion dans la province,apparie
 74270707,Commune de Jaafra,r2881869,Jaafra,nom français + inclusion dans la province,apparie
-74270709,Commune de Labrikiyne,r2881798,Labrikiyne,nom approché (0.89) + inclusion dans la province,apparie
+74270709,Commune de Labrikiyne,r2881798,Labrikiyne,nom français + inclusion dans la province,apparie
 74270711,Commune d'Oulad Aamer Tizmarine,r2881800,Oulad Aamer Tizmarine,nom français + inclusion dans la province,apparie
 74270713,Commune d'Oulad Hassoune Hamri,r2881794,Oulad Hassoune Hamri,nom français + inclusion dans la province,apparie
 74270715,Commune de Sidi Abdellah,r2881796,Sidi Abdallah,nom arabe + inclusion dans la province,apparie
@@ -1145,7 +1145,7 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 74270903,Commune de Bourrous,r2881814,Bourrous,nom français + inclusion dans la province,apparie
 74270905,Commune de Jaidate,r2881839,Jaïdate,nom français + inclusion dans la province,apparie
 74270906,Commune de Jbilate,r5175843,Jbilate,nom français + inclusion dans la province,apparie
-74270907,Commune de Lamharra,r2881854,Lamharra,nom arabe + inclusion dans la province,apparie
+74270907,Commune de Lamharra,r2881854,Lamharra,nom français + inclusion dans la province,apparie
 74270909,Commune de Nzalat Laadam,r2881811,Nzalat Laadam,nom français + inclusion dans la province,apparie
 74270911,Commune d'Oulad Imloul,r2881849,Oulad Imloul,nom français + inclusion dans la province,apparie
 74270913,Commune de Ras Ain Rhamna,r2881840,Ras Aïn Rhamna,nom français + inclusion dans la province,apparie
@@ -1157,17 +1157,17 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 74310301,Commune de Bouguedra,r2827839,Bouguedra,nom français + inclusion dans la province,apparie
 74310302,Commune de Chahda,r5173348,Chahda,nom français + inclusion dans la province,apparie
 74310303,Commune d'El Gouraani,r2827834,El Gouraani,nom français + inclusion dans la province,apparie
-74310305,Commune de Labkhati,r2827833,Labkhati,nom arabe + inclusion dans la province,apparie
+74310305,Commune de Labkhati,r2827833,Labkhati,nom français + inclusion dans la province,apparie
 74310307,Commune de Lahdar,r2827832,Lahdar,table relue à la main (justification consignée),apparie
-74310309,Commune de Lamrasla,r2827853,Lamrasla,nom arabe + inclusion dans la province,apparie
-74310311,Commune de Lamsabih,r2827887,Lamsabih,nom arabe + inclusion dans la province,apparie
+74310309,Commune de Lamrasla,r2827853,Lamrasla,nom français + inclusion dans la province,apparie
+74310311,Commune de Lamsabih,r2827887,Lamsabih,nom français + inclusion dans la province,apparie
 74310313,Commune de Sidi Aissa,r2827831,Sidi Aïssa,nom français + inclusion dans la province,apparie
 74310315,Commune de Sidi Ettiji,r2827852,Sidi Ettiji,nom français + inclusion dans la province,apparie
 74310701,Commune d'Atouabet,r2827798,Atouabet,nom français + inclusion dans la province,apparie
 74310703,Commune d'El Ghiate,r2827802,El Ghiate,nom français + inclusion dans la province,apparie
 74310705,Commune de Khatazakane,r2827813,Khatazakane,nom français + inclusion dans la province,apparie
-74310707,Commune de Laamamra,r2827856,Laamamra,nom arabe + inclusion dans la province,apparie
-74310709,Commune de Lamaachate,r2827799,Lamaachate,nom arabe + inclusion dans la province,apparie
+74310707,Commune de Laamamra,r2827856,Laamamra,nom français + inclusion dans la province,apparie
+74310709,Commune de Lamaachate,r2827799,Lamaachate,nom français + inclusion dans la province,apparie
 74310711,Commune de Nagga,r2827808,Nagga,nom français + inclusion dans la province,apparie
 74310713,Commune d'Ouled Salmane,r2827797,Oulad Salmane,nom arabe + inclusion dans la province,apparie
 74310901,Commune d'Ayir,r2827826,Ayir,nom français + inclusion dans la province,apparie
@@ -1185,7 +1185,7 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 75850701,Commune d'Atiamim,r2827870,Atiamim,nom français + inclusion dans la province,apparie
 75850703,Commune d'El Gantour,r2827886,El Gantour,nom français + inclusion dans la province,apparie
 75850705,Commune d'Esbiaat,r2827882,Esbiaat,nom français + inclusion dans la province,apparie
-75850713,Commune de Lakhoualqa,r2827879,Lakhoualqa,nom arabe + inclusion dans la province,apparie
+75850713,Commune de Lakhoualqa,r2827879,Lakhoualqa,nom français + inclusion dans la province,apparie
 75850715,Commune de Ras El Ain,r2827873,Ras El Aïn,nom français + inclusion dans la province,apparie
 82010101,Commune d'Arfoud,r2884805,Erfoud,nom arabe + inclusion dans la province,apparie
 82010103,Commune de Boudnib,r2827114,Boudnib,nom français + inclusion dans la province,apparie
@@ -1382,7 +1382,7 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 95410421,Commune d'Ida-Ougoummad,r2888880,Ida Ougoummad,nom français + inclusion dans la province,apparie
 95410423,Commune d'Igli,r2889063,Igli,nom français + inclusion dans la province,apparie
 95410425,Commune d'Igoudar Mnabha,r2890489,Igoudar Mnabha,nom français + inclusion dans la province,apparie
-95410429,Commune de Lamhara,r2890497,Lamhara,nom arabe + inclusion dans la province,apparie
+95410429,Commune de Lamhara,r2890497,Lamhara,nom français + inclusion dans la province,apparie
 95410433,Commune d'Oulad Aissa,r2889065,Ouled Aïssa,nom arabe + inclusion dans la province,apparie
 95410435,Commune d'Ouneine,r2890517,Ouneine,nom français + inclusion dans la province,apparie
 95410439,Commune de Sidi Abdellah Ou Said,r2888993,Sidi Abdellah Ou Saïd,nom français + inclusion dans la province,apparie
@@ -1396,9 +1396,9 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 95410501,Commune d'Ahl Ramel,r2835895,Ahl Ramel,nom français + inclusion dans la province,apparie
 95410505,Commune d'Assads,r2875684,Assads,nom français + inclusion dans la province,apparie
 95410511,Commune d'El Koudia El Beida,r2835877,El Koudia El Beida,nom français + inclusion dans la province,apparie
-95410517,Commune de Lagfifat,r2835879,Lagfifat,nom approché (0.86) + inclusion dans la province,apparie
-95410519,Commune de Lakhnafif,r2835897,Lakhnafif,nom approché (0.88) + inclusion dans la province,apparie
-95410521,Commune de Lamhadi,r2875680,Lamhadi,nom arabe + inclusion dans la province,apparie
+95410517,Commune de Lagfifat,r2835879,Lagfifat,nom français + inclusion dans la province,apparie
+95410519,Commune de Lakhnafif,r2835897,Lakhnafif,nom français + inclusion dans la province,apparie
+95410521,Commune de Lamhadi,r2875680,Lamhadi,nom français + inclusion dans la province,apparie
 95410523,Commune de Machraa El Ain,r2835922,Machraa El Aïn,nom français + inclusion dans la province,apparie
 95410525,Commune de Sidi Ahmed Ou Amar,r2835876,Sidi Ahmed Ou Amar,nom français + inclusion dans la province,apparie
 95410527,Commune de Sidi Boumoussa,r2835873,Sidi Boumoussa,nom français + inclusion dans la province,apparie
@@ -1438,7 +1438,7 @@ code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
 95411115,Commune d'Issen,r2835864,Issen,nom français + inclusion dans la province,apparie
 95411119,Commune d'Ida Ou Moumen,r2882900,Ida Ou Moumen,nom français + inclusion dans la province,apparie
 95411129,Commune de Sidi Moussa Lhamri,r2835862,Sidi Moussa Lhamri,nom français + inclusion dans la province,apparie
-95411131,Commune de Lamnizla,r2835858,Lamnizla,nom arabe + inclusion dans la province,apparie
+95411131,Commune de Lamnizla,r2835858,Lamnizla,nom français + inclusion dans la province,apparie
 95411133,Commune de Talmakante,r2882922,Talmakante,nom français + inclusion dans la province,apparie
 95411171,Commune de Zaouia Sidi Tahar,r2882899,Zaouia Sidi Tahar,nom français + inclusion dans la province,apparie
 95510101,Commune d'Akka,r2885797,Akka,nom français + inclusion dans la province,apparie

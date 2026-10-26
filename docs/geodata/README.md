@@ -119,7 +119,12 @@ valeur de la couche raster visible la plus haute.
 Population légale RGPH 2024 du HCP (D-GD-17) : fichiers de hcp.ma sous CC BY 4.0, rattachés aux contours par
 `scripts/geodata/preparer_hcp.py --excel <fichier HCP>` ; tables de correspondance dans `sources/correspondances/`
 (une ligne par rattachement, méthode et statut ; `hcp-rgph2024-communes-manuel.csv` pour les liens relus à la main, avec
-leur justification). Trois fiches : `hcp-rgph2024-population-regions`, `-provinces`, `-communes`.
+leur justification). Quatre fiches : `hcp-rgph2024-population-regions`, `-provinces`, `-communes` et
+`hcp-rgph2024-arrondissements` (lot A2 : `--indicateurs <fichier HCP>` ajoute les 648 indicateurs démographiques et
+socio-économiques, livrés dans un tableau `donnees/<clé>.csv` déclaré par `version.tableau` ; « … » = sans objet,
+« . » = non publiée, jamais zéro). Contours des arrondissements : OpenStreetMap niveau 10
+(`donnees/osm-mar-arrondissements.geojson`, extrait par `extraire_sources.py`, sans fiche propre : il ne sert qu'au
+rattachement).
 Un indicateur « Superficie calculée » est produit par GeoData (ellipsoïde WGS 84) : c'est un résultat calculé, pas une
 superficie officielle.
 

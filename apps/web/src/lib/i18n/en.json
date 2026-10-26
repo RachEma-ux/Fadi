@@ -14069,5 +14069,18 @@
 "Occurrence : identifiant, définition désignée, origine et rotation.": "Instance: identifier, referenced definition, origin and rotation.",
 "Niveau de rattachement": "Attachment level",
 "Aucun niveau": "No level",
-"Une ouverture suit le niveau de son mur.": "An opening follows its wall's level."
+"Une ouverture suit le niveau de son mur.": "An opening follows its wall's level.",
+"Modalité": "Category",
+"Sans modalité": "No category",
+"Milieu de résidence": "Area of residence",
+"Sexe": "Sex",
+"Ensemble": "All",
+"Urbain": "Urban",
+"Rural": "Rural",
+"Masculin": "Male",
+"Féminin": "Female",
+"{0} indicateurs, regroupés en familles :": "{0} indicators, grouped into families:",
+"({0} déclinaison(s))": "({0} breakdown(s))",
+"{0} indicateurs principaux sur {1} ; la fiche d'un objet les montre tous.": "{0} main indicators out of {1}; an object's record shows them all.",
+"Sans objet (n'a pas lieu de figurer)": "Not applicable (no value to report)"
 }

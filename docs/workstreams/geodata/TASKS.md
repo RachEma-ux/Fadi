@@ -7,6 +7,8 @@
 - [ ] GEO-PROD-00 — Phase B du déploiement (`fadi-prod-auto`) ou procédure manuelle de l'exploitant : préalable à toute mise en production (hors délégation).
 - [ ] GEO-PROD-01 — Publication en production : Release GitHub du maître d'ouvrage (hors délégation), puis rôles GeoData et import geoBoundaries sur l'environnement.
 - [x] GEO-DATA-01 — Droits HCP qualifiés (CC BY 4.0, D-GD-17) ; population légale RGPH 2024 publiée sur 3 niveaux (lot A).
+- [x] GEO-HCP-A2 — Indicateurs démographiques et socio-économiques HCP (648 par niveau, dimensions) et arrondissements
+  (41/41 contours OSM niveau 10).
 - [ ] GEO-HCP-B — Navigation par niveaux (fil d'Ariane Royaume → Région → Province, Retour, raccourcis).
 - [ ] GEO-HCP-C — Libellés sur la carte (un par entité, valeur abrégée, affichage / masquage ; glyphes hébergés).
 - [ ] GEO-HCP-D — Palettes prédéfinies, N classes, couleur par classe, seuils naturels (Jenks).

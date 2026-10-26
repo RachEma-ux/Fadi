@@ -35,19 +35,25 @@ export function lireVersion(r: Record<string, unknown>) {
   };
 }
 
+/** Dimensions d'un indicateur (D-GD-17, lot A2) ; nulles pour les indicateurs sans déclinaison. */
+const dimensions = (l: Record<string, unknown>) => ({ theme: l["theme"] ?? null, famille: l["famille"] ?? null, modalite: l["modalite"] ?? null, milieu: l["milieu"] ?? null, sexe: l["sexe"] ?? null });
+
 async function indicateursDe(coucheIds: string[]) {
   if (!coucheIds.length) return new Map<string, unknown[]>();
   const lignes = await requete(
+    // Comptes d'absences enregistrés à l'import (lot A2 : des centaines d'indicateurs par couche), sinon recomptés.
     `SELECT i.id, i.couche_id, i.titre, i.unite, i.periode, i.nature, i.methode, i.denominateur, i.description,
-            count(*) FILTER (WHERE va.valeur IS NULL) AS absentes, count(*) AS total
-       FROM geodata_indicateurs i LEFT JOIN geodata_valeurs va ON va.indicateur_id = i.id
-      WHERE i.couche_id = ANY($1) GROUP BY i.id ORDER BY i.nature, i.titre`,
+            i.theme, i.famille, i.modalite, i.milieu, i.sexe,
+            coalesce(i.nb_absentes, (SELECT count(*) FROM geodata_valeurs va WHERE va.indicateur_id = i.id AND va.valeur IS NULL)) AS absentes,
+            coalesce(i.nb_total, (SELECT count(*) FROM geodata_valeurs va WHERE va.indicateur_id = i.id)) AS total
+       FROM geodata_indicateurs i
+      WHERE i.couche_id = ANY($1) ORDER BY i.nature DESC, i.ordre, i.titre`,
     [coucheIds],
   );
   const m = new Map<string, unknown[]>();
   for (const l of lignes) {
     const liste = m.get(l["couche_id"] as string) ?? [];
-    liste.push({ id: l["id"], titre: l["titre"], unite: l["unite"], periode: l["periode"], nature: l["nature"], methode: l["methode"], denominateur: l["denominateur"], description: l["description"], absentes: Number(l["absentes"]), total: Number(l["total"]) });
+    liste.push({ id: l["id"], titre: l["titre"], unite: l["unite"], periode: l["periode"], nature: l["nature"], methode: l["methode"], denominateur: l["denominateur"], description: l["description"], absentes: Number(l["absentes"]), total: Number(l["total"]), ...dimensions(l) });
     m.set(l["couche_id"] as string, liste);
   }
   return m;
@@ -284,8 +290,8 @@ consultationRouter.get("/couches/:id/objets/:code", async (req, res) => {
        FROM geodata_objets o WHERE o.couche_id = $1 AND o.code = $2`, [req.params.id, req.params.code]);
   if (!o) return introuvable(res);
   const valeurs = await requete(
-    `SELECT i.id, i.titre, i.unite, i.periode, i.nature, i.methode, i.denominateur, va.valeur, va.motif_absence
-       FROM geodata_indicateurs i LEFT JOIN geodata_valeurs va ON va.indicateur_id = i.id AND va.code = $2 WHERE i.couche_id = $1 ORDER BY i.nature, i.titre`,
+    `SELECT i.id, i.titre, i.unite, i.periode, i.nature, i.methode, i.denominateur, i.theme, i.famille, i.modalite, i.milieu, i.sexe, va.valeur, va.motif_absence
+       FROM geodata_indicateurs i LEFT JOIN geodata_valeurs va ON va.indicateur_id = i.id AND va.code = $2 WHERE i.couche_id = $1 ORDER BY i.nature DESC, i.ordre, i.titre`,
     [req.params.id, req.params.code],
   );
   const exposees = (couche["proprietes_exposees"] as string[]) ?? [];
@@ -295,7 +301,7 @@ consultationRouter.get("/couches/:id/objets/:code", async (req, res) => {
     emprise: JSON.parse(o["emprise"] as string), centre: JSON.parse(o["centre"] as string),
     proprietes: Object.fromEntries(exposees.filter((p) => Object.hasOwn(o["proprietes"] as object, p)).map((p) => [p, (o["proprietes"] as Record<string, unknown>)[p]])),
     indicateurs: valeurs.map((v) => ({
-      id: v["id"], titre: v["titre"], unite: v["unite"], periode: v["periode"], nature: v["nature"], methode: v["methode"], denominateur: v["denominateur"],
+      id: v["id"], titre: v["titre"], unite: v["unite"], periode: v["periode"], nature: v["nature"], methode: v["methode"], denominateur: v["denominateur"], ...dimensions(v),
       // Ligne de valeur absente pour cette unité : « non appariée », jamais zéro.
       valeur: v["valeur"] ?? null, motifAbsence: v["valeur"] === null || v["valeur"] === undefined ? (v["motif_absence"] ?? "non-appariee") : null,
     })),

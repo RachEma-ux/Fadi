@@ -2,7 +2,7 @@
  * Client minimal de GeoData : le SEUL fichier du module qui appelle le serveur, et seulement sous `/geodata/api` (test
  * d'indépendance). Le client d'API général de Fadi n'est jamais importé : aucune notion de projet, aucun contexte de projet.
  */
-import type { Composition, DescriptionRaster, DroitsVersion, MotifAbsence, RapportImport, StyleCouche } from "@parcours/geodata-model";
+import type { Composition, DescriptionRaster, DroitsVersion, Milieu, MotifAbsence, RapportImport, Sexe, StyleCouche } from "@parcours/geodata-model";
 
 export const RACINE_API = "/geodata/api";
 
@@ -30,7 +30,11 @@ const envoyer = <T,>(chemin: string, methode: string, corps?: unknown) => appele
 export interface Fond { id: string; libelle: string; type: "neutre" | "raster"; tuiles: string[] | null; attribution: string; export: boolean; zoomMax: number | null }
 export interface EspaceRecu { espace: { id: string; type: string; creeLe: string }; roles: string[]; capacites: string[]; fonds: Fond[]; geocodage: { externe: boolean; message: string } }
 
-export interface IndicateurRecu { id: string; titre: string; unite: string; periode: string | null; nature: "source" | "calcule"; methode: string; denominateur: string | null; description: string; absentes: number; total: number }
+export interface IndicateurRecu {
+  id: string; titre: string; unite: string; periode: string | null; nature: "source" | "calcule"; methode: string; denominateur: string | null; description: string; absentes: number; total: number;
+  /** Dimensions (D-GD-17, lot A2) : null pour un indicateur sans famille. */
+  theme: string | null; famille: string | null; modalite: string | null; milieu: Milieu | null; sexe: Sexe | null;
+}
 export interface VersionRecue {
   id: string; libelle: string; empreinte: string; urlSource: string | null; recupereLe: string | null; periode: string | null; licence: string; attribution: string;
   droits: DroitsVersion; crsSource: string; precision: string | null; transformations: string[]; synthetique: boolean; etat: string; publieeLe: string | null; privee: boolean;

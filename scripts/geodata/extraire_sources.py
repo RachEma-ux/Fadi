@@ -82,6 +82,7 @@ COUCHES_OSM = [
     ("osm-mar-vignobles", "Vignobles du Maroc (OpenStreetMap)", "agriculture", "landuse=vineyard", egal("landuse", "vineyard"), "surface", ["name", "crop"]),
     ("osm-mar-serres-horticoles", "Zones horticoles sous serre du Maroc (OpenStreetMap)", "agriculture", "landuse=greenhouse_horticulture", egal("landuse", "greenhouse_horticulture"), "surface", ["name", "operator"]),
     ("osm-mar-communes", "Communes du Maroc (OpenStreetMap, niveau administratif 8)", "limites-administratives", "relations boundary=administrative et admin_level=8", et(egal("boundary", "administrative"), egal("admin_level", "8")), "aire", ["name", "name:fr", "name:ar", "ref", "admin_level", "wikidata"]),
+    ("osm-mar-arrondissements", "Arrondissements et subdivisions des communes du Maroc (OpenStreetMap, niveau administratif 10)", "limites-administratives", "relations boundary=administrative et admin_level=10", et(egal("boundary", "administrative"), egal("admin_level", "10")), "aire", ["name", "name:fr", "name:ar", "ref", "admin_level", "wikidata"]),
     ("osm-mar-canaux", "Canaux d'eau du Maroc (OpenStreetMap)", "hydrologie", "voies waterway=canal", egal("waterway", "canal"), "ligne", ["name", "name:fr", "name:ar", "usage"]),
 ]
 
@@ -213,6 +214,10 @@ class Lecteur(osmium.SimpleHandler):
                 self._garder(cle, code, t, geom, c)
 
 
+# Extraits livrés sans fiche : ils ne servent qu'au rattachement des arrondissements du HCP (`preparer_hcp.py`).
+SANS_FICHE = {"osm-mar-arrondissements"}
+
+
 def ecrire(sortie, cle, titre, theme, features, meta, resultat):
     ligne = {"cle": cle, "titre": titre, "objets": len(features)}
     if not features or len(features) > MAX_OBJETS:
@@ -254,8 +259,12 @@ def ecrire(sortie, cle, titre, theme, features, meta, resultat):
         "indicateurs": [],
         "superficie": all(t in ("Polygon", "MultiPolygon") for t in types),
     }
-    with open(os.path.join(sortie, f"{cle}.json"), "w", encoding="utf-8") as fh:
-        fh.write(json.dumps(fiche, ensure_ascii=False, indent=2) + "\n")
+    if cle in SANS_FICHE:
+        # Contours de rattachement seulement (noms arabes non livrés, D-GD-17) : aucune fiche, donc aucune couche publiée.
+        ligne["sansFiche"] = True
+    else:
+        with open(os.path.join(sortie, f"{cle}.json"), "w", encoding="utf-8") as fh:
+            fh.write(json.dumps(fiche, ensure_ascii=False, indent=2) + "\n")
     ligne.update({"types": types, "octets": len(octets), "empreinte": empreinte})
     resultat.append(ligne)
     print(f"  {cle} : {len(features)} objets ({', '.join(types)}), {len(octets) // 1024} Kio", file=sys.stderr)

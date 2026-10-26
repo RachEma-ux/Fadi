@@ -1,6 +1,6 @@
 # GeoData — Statut
 
-Mis à jour : 2026-10-25 (UTC).
+Mis à jour : 2026-10-26 (UTC).
 État relevé après la fusion de la PR #301.
 
 ## État
@@ -54,6 +54,15 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   3 fiches CC BY 4.0 : 12/12 régions et 75/75 provinces (sommes = 36 828 330, total national), 1 487/1 498 contours
   communaux (97,6 % de la population ; 16 communes HCP sans contour OSM, 11 contours sans valeur) ; import et carte
   thématique vérifiés en local.
+- Lot A2 (D-GD-17 point 5) : `scripts/geodata/indicateurs_hcp.py` (fichier « Indicateurs démographiques et
+  socio-économiques » du HCP : 648 indicateurs, 2 016 unités) ; tableau CSV par fiche (`version.tableau`, empreinte
+  contrôlée par `geodata-sources.test.ts` : colonnes = indicateurs déclarés, codes connus de la couche, cellules
+  numériques ou signes déclarés) ; colonnes `theme`, `famille`, `modalite`, `milieu`, `sexe`, `ordre`, `nb_absentes`,
+  `nb_total` sur `geodata_indicateurs`, motif « sans-objet » ; `dimensions.ts` (5 tests) ; arrondissements : 41/41
+  rattachés (OSM niveau 10, inclusion dans la commune mère ; normalisation « de La… » corrigée, mêmes liens communaux).
+  En local : import et publication des 4 fiches (communes : 1 498 objets × 651 indicateurs en 45 s), Casablanca
+  3 215 935 habitants, signes stockés comme motifs ; sélecteur famille / modalité / milieu / sexe, légende, table
+  (24 indicateurs principaux) et fiche par thème vérifiés dans le navigateur.
 - Limites administratives (D-GD-16) : `limites.ts` (3 tests), contours colorés et hiérarchisés, vérifiés visuellement
   en local sur ADM1, ADM2 et communes OSM (opacité 0 %, une couleur par entité).
 - Fournisseurs de fonds (D-GD-15) : modèle pur `fournisseurs.ts` (5 tests), section Paramètres `FournisseursCarte.tsx`,

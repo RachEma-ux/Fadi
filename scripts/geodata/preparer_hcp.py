@@ -34,9 +34,13 @@ import urllib.request
 import openpyxl
 from shapely.geometry import shape
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from indicateurs_hcp import lire_indicateurs  # noqa: E402
+
 RACINE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 FICHES = os.path.join(RACINE, "docs", "geodata", "sources")
 URL_HCP = "https://www.hcp.ma/file/242341/"
+URL_IND = "https://www.hcp.ma/file/242671/"
 PAGE_HCP = "https://www.hcp.ma/Population-legale-du-Royaume-du-Maroc-repartie-par-regions-provinces-et-prefectures-et-communes-selon-les-resultats-du_a3974.html"
 CGU_HCP = "https://www.hcp.ma/Conditions-generales-d-utilisation-Version-1-0_a2194.html"
 UA = "Fadi-GeoData/1 (+https://www.fadimmo.com)"
@@ -55,7 +59,7 @@ def normaliser(nom):
     n = nom or ""
     n = re.sub(r"[؀-ۿⴰ-⵿]+.*$", "", n)  # partie arabe ou tifinagh d'un nom bilingue
     n = re.sub(r"\((milieu|.*?)\)", "", n)
-    n = re.sub(r"^(région|region|province|préfecture|prefecture|commune|arrondissement|cercle)( of| de la| de l'| des| du| de| d'| d’)?\s*", "", n.strip(), flags=re.I)
+    n = re.sub(r"^(région|region|province|préfecture|prefecture|commune|arrondissement|cercle)( of| de la\b| de l'| des\b| du\b| de\b| d'| d’)?\s*", "", n.strip(), flags=re.I)
     n = re.sub(r"\s+(province|prefecture|préfecture)$", "", n.strip(), flags=re.I)
     n = unicodedata.normalize("NFKD", n).encode("ascii", "ignore").decode()
     n = re.sub(r"[^a-z0-9]+", " ", n.lower()).strip()
@@ -91,6 +95,8 @@ def lire_hcp(chemin):
             niveau = "province"
         elif type_ == "Commune":
             niveau = "commune"
+        elif type_ == "Arrondissement" and len(code) == 8:
+            niveau = "arrondissement"
         else:
             continue
         unites.setdefault((niveau, code), {
@@ -104,8 +110,15 @@ def lire_hcp(chemin):
             u["population_rurale"] = mi.get("rural", 0)
     provinces = sorted((c for (n, c) in unites if n == "province"), key=len, reverse=True)
     for (niveau, code), u in unites.items():
-        if niveau == "commune":
+        if niveau in ("commune", "arrondissement"):
             u["province"] = next((p for p in provinces if code.startswith(p)), None)
+    communes_7 = [c for (n, c) in unites if n == "commune" and len(c) == 7]
+    for (niveau, code), u in unites.items():
+        if niveau == "arrondissement":
+            # Code d'arrondissement (8 chiffres) = 6 premiers chiffres de sa commune (7 chiffres) + rang : rattachement
+            # retenu seulement s'il est unique.
+            parents = [c for c in communes_7 if c[:6] == code[:6]]
+            u["commune"] = parents[0] if len(parents) == 1 else None
         if niveau == "province":
             u["region"] = code[:-3]
     return unites
@@ -291,77 +304,184 @@ def apparier(hcp, adm1, adm2, communes):
     return lignes
 
 
-INDICATEURS_BASE = [
-    ("population", "Population légale", "Population légale (Marocains et étrangers) au 1er septembre 2024."),
-    ("marocains", "Population marocaine", "Population légale de nationalité marocaine."),
-    ("etrangers", "Population étrangère", "Population légale de nationalité étrangère."),
-    ("menages", "Ménages", "Nombre de ménages."),
-]
-INDICATEURS_MILIEU = [
-    ("population_urbaine", "Population légale — milieu urbain", "Population légale résidant en milieu urbain."),
-    ("population_rurale", "Population légale — milieu rural", "Population légale résidant en milieu rural."),
+# Noms d'arrondissements différents entre le HCP et OpenStreetMap, sans ressemblance de graphie : « Assoukhour
+# Assawda » est la transcription de l'arabe « الصخور السوداء », c'est-à-dire « Roches noires » (Casablanca). Le
+# rattachement reste contrôlé par l'inclusion dans la commune.
+ALIAS_ARRONDISSEMENTS = {"roches noires": "asoukhour assawda"}
+
+
+def charger_arrondissements():
+    chemin = os.path.join(FICHES, "donnees", "osm-mar-arrondissements.geojson")
+    with open(chemin, "rb") as f:
+        octets = f.read()
+    return json.loads(octets), hashlib.sha256(octets).hexdigest()
+
+
+def apparier_arrondissements(hcp, communes, adm2, arrondissements):
+    """Arrondissements HCP (8 chiffres) ↔ contours OSM de niveau 10 : le point intérieur du contour doit tomber dans la
+    commune mère (contour de commune rattaché), à défaut dans sa province ; puis nom normalisé, nom inclus ou nom
+    approché, retenu seulement s'il est unique (et nettement devant le suivant)."""
+    arr = {c: u for (n, c), u in hcp.items() if n == "arrondissement"}
+    geo_comm = {f["_code"]: shape(f["geometry"]) for f in communes["features"] if f.get("_code")}
+    geo_prov = {f["_code"]: shape(f["geometry"]) for f in adm2["features"] if f.get("_code")}
+    lignes, utilises = [], {}
+    for f in arrondissements["features"]:
+        p = f["properties"]
+        f["_code"], f["_methode"] = None, ""
+        nom = p.get("name:fr") or p.get("nom") or ""
+        fr = normaliser(nom)
+        fr = ALIAS_ARRONDISSEMENTS.get(fr, fr)
+        if not fr:
+            continue
+        pt = shape(f["geometry"]).representative_point()
+        cands, controle = [], ""
+        for c, u in arr.items():
+            g = geo_comm.get(u.get("commune"))
+            if g is not None and g.contains(pt):
+                cands.append(c)
+                controle = "inclusion dans la commune"
+        if not cands:
+            cands = [c for c, u in arr.items() if geo_prov.get(u["province"]) is not None and geo_prov[u["province"]].contains(pt)]
+            controle = "inclusion dans la province"
+        if not cands:
+            continue
+        retenu, methode = None, ""
+        exacts = [c for c in cands if normaliser(arr[c]["nom"]) == fr]
+        inclus = [c for c in cands if (lambda a, b: a and b and (a <= b or b <= a) and sum(len(t) for t in a & b) >= 5)(set(fr.split()), set(normaliser(arr[c]["nom"]).split()))]
+        if len(exacts) == 1:
+            retenu, methode = exacts[0], f"nom normalisé + {controle}"
+        elif len(inclus) == 1:
+            retenu, methode = inclus[0], f"nom inclus + {controle}"
+        else:
+            notes = sorted(((difflib.SequenceMatcher(None, fr, normaliser(arr[c]["nom"])).ratio(), c) for c in cands), reverse=True)
+            if notes and notes[0][0] >= 0.85 and (len(notes) == 1 or notes[0][0] - notes[1][0] >= 0.1):
+                retenu, methode = notes[0][1], f"nom approché ({notes[0][0]:.2f}) + {controle}"
+        if retenu and retenu in utilises:
+            autre = utilises[retenu]
+            autre["_code"], autre["_methode"] = None, "conflit : deux contours pour un arrondissement"
+            retenu, methode = None, "conflit : deux contours pour un arrondissement"
+        f["_code"], f["_methode"] = retenu, methode
+        if retenu:
+            utilises[retenu] = f
+    for f in arrondissements["features"]:
+        p = f["properties"]
+        if f["_code"] or f["_methode"].startswith("conflit"):
+            r = f["_code"]
+            lignes.append({"code_hcp": r or "", "nom_hcp": arr[r]["nom"] if r else "", "code_contour": p["code"], "nom_contour": p.get("name:fr") or p.get("nom") or "",
+                           "methode": f["_methode"], "statut": "apparie" if r else "non apparie"})
+    pris = {f["_code"] for f in arrondissements["features"] if f["_code"]}
+    for c, u in arr.items():
+        if c not in pris:
+            lignes.append({"code_hcp": c, "nom_hcp": u["nom"], "code_contour": "", "nom_contour": "", "methode": "", "statut": "sans contour"})
+    return lignes
+
+
+# Population légale selon la nationalité (fichier de population légale, lot A) : seule donnée de ce fichier absente du
+# fichier d'indicateurs ; rangée avec les autres sous « Démographie ».
+NATIONALITE = [
+    ("pl_marocains", "marocains", "Marocains", "Population légale de nationalité marocaine."),
+    ("pl_etrangers", "etrangers", "Étrangers", "Population légale de nationalité étrangère."),
 ]
 
 
 def entite(f, u, code_contour, nom_contour, methode):
-    # Pas de nom arabe dans les couches (D-GD-17 : aucun arabe affiché) ; il ne sert qu'au rattachement.
+    # Pas de nom arabe dans les couches (D-GD-17 : aucun arabe affiché) ; il ne sert qu'au rattachement. Les valeurs
+    # sont dans le tableau livré à côté (lot A2), jamais dans les propriétés des objets.
     props = {"code": u["code"] if u else f"contour:{code_contour}", "nom": u["nom"] if u else nom_contour,
              "contour": code_contour, "nom_contour": nom_contour, "appariement": methode if u else "non apparié"}
-    for k, *_ in INDICATEURS_BASE + INDICATEURS_MILIEU:
-        props[k] = u.get(k) if u else None
     return {"type": "Feature", "properties": props, "geometry": f["geometry"]}
 
 
-def ecrire(sortie, cle, couche_titre, niveau, entites, base_fiche, desc, milieu, empreinte_excel, lignes, comptes):
+def cellule(v):
+    if v is None:
+        return ""
+    if isinstance(v, str):
+        return v
+    if isinstance(v, float) and v.is_integer():
+        return str(int(v))
+    return repr(round(v, 6)) if isinstance(v, float) else str(v)
+
+
+NIVEAUX = {
+    "regions": ("12 régions", "geoboundaries-mar-adm1"),
+    "provinces": ("75 provinces et préfectures", "geoboundaries-mar-adm2"),
+    "communes": ("communes", "osm-mar-communes"),
+    "arrondissements": ("arrondissements des communes urbaines", None),
+}
+
+
+def ecrire(sortie, cle, couche_titre, niveau, entites, desc, sources, lignes, comptes, declarations, valeurs, hcp_par_code, contours_osm_arr):
     os.makedirs(os.path.join(sortie, "donnees"), exist_ok=True)
     os.makedirs(os.path.join(sortie, "correspondances"), exist_ok=True)
     fc = {"type": "FeatureCollection", "features": sorted(entites, key=lambda e: e["properties"]["code"])}
     octets = json.dumps(fc, ensure_ascii=False, separators=(",", ":"), sort_keys=True).encode()
     with open(os.path.join(sortie, "donnees", f"{cle}.geojson"), "wb") as f:
         f.write(octets)
+    # Tableau de valeurs : une ligne par entité rattachée (code HCP), une colonne par indicateur.
+    colonnes = [d["propriete"] for d in declarations] + [k for k, *_ in NATIONALITE]
+    lignes_tab = [",".join(["code"] + colonnes)]
+    for e in fc["features"]:
+        code = e["properties"]["code"]
+        if code.startswith("contour:"):
+            continue
+        v = valeurs.get(code, {})
+        u = hcp_par_code.get(code, {})
+        lignes_tab.append(",".join([code] + [cellule(v.get(c)) for c in colonnes[:len(declarations)]] + [cellule(u.get(k)) for _, k, *_ in NATIONALITE]))
+    tab = ("\n".join(lignes_tab) + "\n").encode()
+    with open(os.path.join(sortie, "donnees", f"{cle}.csv"), "wb") as f:
+        f.write(tab)
     nom_csv = f"correspondances/hcp-rgph2024-{niveau}.csv"
     with open(os.path.join(sortie, nom_csv), "w", encoding="utf-8", newline="") as f:
         w = csv.DictWriter(f, fieldnames=["code_hcp", "nom_hcp", "code_contour", "nom_contour", "methode", "statut"])
         w.writeheader()
         w.writerows(sorted(lignes, key=lambda l: (l["statut"], l["code_hcp"], l["code_contour"])))
-    contours = fiche(base_fiche)
-    indicateurs = INDICATEURS_BASE + (INDICATEURS_MILIEU if milieu else [])
+    couverture, base = NIVEAUX[niveau]
+    contours = fiche(base) if base else None
+    prod_contours = contours["producteur"] if contours else "Contributeurs OpenStreetMap"
+    lic_contours = contours["version"]["licence"] if contours else "Open Data Commons Open Database License 1.0 (ODbL)"
+    attr_contours = contours["version"]["attribution"] if contours else "© contributeurs OpenStreetMap (ODbL)"
+    cond_contours = contours["version"]["conditions"] if contours else "ODbL 1.0 : attribution « © contributeurs OpenStreetMap » obligatoire ; une base dérivée redistribuée reste sous ODbL."
+    lib_contours = contours["version"]["libelle"] if contours else f"OpenStreetMap niveau administratif 10, extraits du 2026-10-23 (fichier `donnees/osm-mar-arrondissements.geojson`, SHA-256 {contours_osm_arr})"
+    niveau_couche = {"regions": "ADM1", "provinces": "ADM2", "communes": "OSM8", "arrondissements": "OSM10"}[niveau]
+    nat = [{"propriete": k, "titre": f"Population légale selon la nationalité — {mod}", "unite": "personnes", "periode": "RGPH 2024", "denominateur": None,
+            "description": f"HCP, RGPH 2024 — {d}", "motifSiAbsente": "non-appariee", "theme": "Démographie", "famille": "Population légale selon la nationalité",
+            "modalite": mod, "milieu": "ensemble", "sexe": "ensemble", "ordre": len(declarations) + i} for i, (k, _, mod, d) in enumerate(NATIONALITE)]
     fi = {
         "cle": cle,
         "titre": couche_titre,
         "description": desc + f" Rattachement aux contours : {comptes}. Table de correspondance relisible : `{nom_csv}`. "
-                       "Les noms ne sont pas une clé sûre : chaque rattachement est contrôlé par la géographie ; une entité non rattachée garde ses valeurs absentes (« non appariée »), jamais zéro.",
-        "producteur": "Haut-Commissariat au Plan (HCP), Recensement général de la population et de l'habitat 2024 ; contours : " + contours["producteur"],
+                       "Les noms ne sont pas une clé sûre : chaque rattachement est contrôlé par la géographie ; une entité non rattachée garde ses valeurs absentes (« non appariée »), jamais zéro. "
+                       "Signes du HCP : « … » = sans objet (n'a pas lieu de figurer), « . » = indisponible ; jamais zéro.",
+        "producteur": "Haut-Commissariat au Plan (HCP), Recensement général de la population et de l'habitat 2024 ; contours : " + prod_contours,
         "theme": "population",
-        "couverture": "Maroc — " + {"regions": "12 régions", "provinces": "75 provinces et préfectures", "communes": "communes"}[niveau],
+        "couverture": "Maroc — " + couverture,
         "version": {
-            "libelle": "RGPH 2024 — population légale (fichier Excel HCP) ; contours " + contours["version"]["libelle"],
+            "libelle": "RGPH 2024 — population légale et indicateurs démographiques et socio-économiques (fichiers Excel HCP) ; contours " + lib_contours,
             "url": None,
             "fichier": f"donnees/{cle}.geojson",
             "empreinte": hashlib.sha256(octets).hexdigest(),
+            "tableau": {"fichier": f"donnees/{cle}.csv", "empreinte": hashlib.sha256(tab).hexdigest(), "signes": {"…": "sans-objet", ".": "non-publiee"}},
             "periode": "Recensement de septembre 2024",
-            "licence": "Valeurs : Creative Commons Attribution 4.0 (CC BY 4.0, CGU du HCP v1.0 § 3) ; contours : " + contours["version"]["licence"],
-            "attribution": "HCP, RGPH 2024 (CC BY 4.0), données retraitées ; " + contours["version"]["attribution"],
+            "licence": "Valeurs : Creative Commons Attribution 4.0 (CC BY 4.0, CGU du HCP v1.0 § 3) ; contours : " + lic_contours,
+            "attribution": "HCP, RGPH 2024 (CC BY 4.0), données retraitées ; " + attr_contours,
             "droits": {u: "autorise" for u in ["consultation", "stockage", "calcul", "tuiles", "commercial", "partage", "telechargement", "export"]},
-            "precision": "Effectifs officiels (aucun arrondi) ; géométries des contours d'origine reprises telles quelles",
+            "precision": "Effectifs et taux officiels repris sans modification (taux arrondis au dixième par le HCP) ; géométries des contours d'origine reprises telles quelles",
             "synthetique": False,
-            "conditions": f"Valeurs HCP sous CC BY 4.0 ({CGU_HCP}) : citer « HCP, RGPH 2024 », indiquer les modifications (rattachement aux contours), "
-                          "ne pas laisser entendre que le HCP soutient Fadi, respecter l'intégrité des données (effectifs repris sans modification). "
-                          f"Source : {URL_HCP} (page {PAGE_HCP}), fichier Excel SHA-256 {empreinte_excel}. Contours : {contours['version']['conditions']}",
+            "conditions": f"Valeurs HCP sous CC BY 4.0 ({CGU_HCP}) : citer « HCP, RGPH 2024 », indiquer les modifications (rattachement aux contours, mise en tableau), "
+                          "ne pas laisser entendre que le HCP soutient Fadi, respecter l'intégrité des données (valeurs reprises sans modification). "
+                          f"Sources : {URL_HCP} (SHA-256 {sources['population']}) et {URL_IND} (SHA-256 {sources['indicateurs']}). Contours : {cond_contours}",
         },
         "couche": {
             "titre": couche_titre,
-            "description": f"Valeurs RGPH 2024 rattachées aux contours ; code = code géographique HCP (code du contour d'origine pour une entité non rattachée).",
-            # Rang administratif (D-GD-16) : niveau des contours ; les communes OSM (sans niveau déclaré) sont au niveau
-            # administratif OpenStreetMap 8, lu par `rangAdministratif` sous la forme « OSM8 ».
-            "niveau": contours["couche"]["niveau"] or ("OSM8" if niveau == "communes" else None),
+            "description": "Valeurs RGPH 2024 rattachées aux contours ; code = code géographique HCP (code du contour d'origine pour une entité non rattachée).",
+            # Rang administratif (D-GD-16) : ADM1, ADM2, communes OSM (niveau 8), arrondissements OSM (niveau 10).
+            "niveau": niveau_couche,
             "champCode": "code",
             "champNom": "nom",
-            "proprietesExposees": ["code", "nom", "contour", "nom_contour", "appariement"] + [k for k, *_ in indicateurs],
+            "proprietesExposees": ["code", "nom", "contour", "nom_contour", "appariement"],
             "styleDefaut": {"mode": "simple", "couleur": "#2b8cbe"},
         },
-        "indicateurs": [{"propriete": k, "titre": t, "unite": "habitants" if k != "menages" else "ménages", "periode": "RGPH 2024", "denominateur": None,
-                         "description": d, "motifSiAbsente": "non-appariee"} for k, t, d in indicateurs],
+        "indicateurs": declarations + nat,
         "superficie": True,
     }
     with open(os.path.join(sortie, f"{cle}.json"), "w", encoding="utf-8") as f:
@@ -371,37 +491,47 @@ def ecrire(sortie, cle, couche_titre, niveau, entites, base_fiche, desc, milieu,
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--excel", required=True)
+    ap.add_argument("--excel", required=True, help="Population légale RGPH 2024 (https://www.hcp.ma/file/242341/)")
+    ap.add_argument("--indicateurs", required=True, help="Indicateurs démographiques et socio-économiques RGPH 2024 (https://www.hcp.ma/file/242671/)")
     ap.add_argument("--sortie", default=FICHES)
     a = ap.parse_args()
-    with open(a.excel, "rb") as f:
-        empreinte_excel = hashlib.sha256(f.read()).hexdigest()
+    sources = {}
+    for k, chemin in (("population", a.excel), ("indicateurs", a.indicateurs)):
+        with open(chemin, "rb") as f:
+            sources[k] = hashlib.sha256(f.read()).hexdigest()
     hcp = lire_hcp(a.excel)
+    declarations, valeurs = lire_indicateurs(a.indicateurs)
     adm1, adm2, communes = charger_contours()
+    arrondissements, empreinte_arr = charger_arrondissements()
     lignes = apparier(hcp, adm1, adm2, communes)
+    lignes["arrondissements"] = apparier_arrondissements(hcp, communes, adm2, arrondissements)
     def compte(ls):
         n = lambda s: sum(1 for l in ls if l["statut"] == s)
         return f"{n('apparie')} rattachées, {n('non apparie') + n('sans valeur')} contours sans valeur, {n('sans contour')} unités HCP sans contour"
     par_code = {c: u for (n, c), u in hcp.items()}
+    national = sum(u["population"] for (n, c), u in hcp.items() if n == "region")
     jeux = [
-        ("hcp-rgph2024-population-regions", "Population légale RGPH 2024 — régions", "regions", adm1, "geoboundaries-mar-adm1", lambda f: (f["properties"]["shapeISO"], f["properties"]["shapeName"]), True,
-         "Population légale des 12 régions selon le RGPH 2024 (HCP), avec ventilation urbain / rural, sur les contours geoBoundaries ADM1."),
-        ("hcp-rgph2024-population-provinces", "Population légale RGPH 2024 — provinces et préfectures", "provinces", adm2, "geoboundaries-mar-adm2", lambda f: (f["properties"]["shapeID"], f["properties"]["shapeName"]), True,
-         "Population légale des 75 provinces et préfectures selon le RGPH 2024 (HCP), avec ventilation urbain / rural, sur les contours geoBoundaries ADM2."),
-        ("hcp-rgph2024-population-communes", "Population légale RGPH 2024 — communes", "communes", communes, "osm-mar-communes", lambda f: (f["properties"]["code"], f["properties"].get("nom") or ""), False,
-         "Population légale des communes selon le RGPH 2024 (HCP), sur les contours des communes OpenStreetMap."),
+        ("hcp-rgph2024-population-regions", "RGPH 2024 — régions", "regions", adm1, lambda f: (f["properties"]["shapeISO"], f["properties"]["shapeName"]),
+         "Population légale et indicateurs démographiques et socio-économiques des 12 régions selon le RGPH 2024 (HCP), par milieu (ensemble, urbain, rural) et par sexe, sur les contours geoBoundaries ADM1."),
+        ("hcp-rgph2024-population-provinces", "RGPH 2024 — provinces et préfectures", "provinces", adm2, lambda f: (f["properties"]["shapeID"], f["properties"]["shapeName"]),
+         "Population légale et indicateurs démographiques et socio-économiques des 75 provinces et préfectures selon le RGPH 2024 (HCP), par milieu et par sexe, sur les contours geoBoundaries ADM2."),
+        ("hcp-rgph2024-population-communes", "RGPH 2024 — communes", "communes", communes, lambda f: (f["properties"]["code"], f["properties"].get("nom") or ""),
+         "Population légale et indicateurs démographiques et socio-économiques des communes selon le RGPH 2024 (HCP), par milieu et par sexe, sur les contours des communes OpenStreetMap."),
+        ("hcp-rgph2024-arrondissements", "RGPH 2024 — arrondissements", "arrondissements", arrondissements, lambda f: (f["properties"]["code"], f["properties"].get("nom") or ""),
+         "Population légale et indicateurs démographiques et socio-économiques des arrondissements des grandes communes urbaines selon le RGPH 2024 (HCP), sur les contours OpenStreetMap de niveau administratif 10 (seuls les contours rattachés à un arrondissement du HCP sont livrés)."),
     ]
-    for cle, titre, niveau, geo, base, ident, milieu, desc in jeux:
+    for cle, titre, niveau, geo, ident, desc in jeux:
         entites = []
         for f in geo["features"]:
+            if niveau == "arrondissements" and not f.get("_code"):
+                continue  # subdivision OSM sans arrondissement HCP (quartier…) : non livrée
             code_contour, nom_contour = ident(f)
             u = par_code.get(f["_code"]) if f.get("_code") else None
-            entites.append(entite(f, u, code_contour, nom_contour, f.get("_methode") or ("code officiel" if niveau == "regions" else "nom normalisé + inclusion")))
-        national = sum(u["population"] for (n, c), u in hcp.items() if n == "region")
-        couverte = sum(e["properties"]["population"] or 0 for e in entites)
+            entites.append(entite(f, u, code_contour, nom_contour, f.get("_methode") or "nom normalisé + inclusion"))
+        couverte = sum(par_code[e["properties"]["code"]]["population"] for e in entites if e["properties"]["code"] in par_code)
         pourcent = str(round(100 * couverte / national, 1)).replace(".", ",")
         part = f"{compte(lignes[niveau])} ; population rattachée : {couverte} habitants, soit {pourcent} % de la population légale nationale ({national})"
-        ecrire(a.sortie, cle, titre, niveau, entites, base, desc, milieu, empreinte_excel, lignes[niveau], part)
+        ecrire(a.sortie, cle, titre, niveau, entites, desc, sources, lignes[niveau], part, declarations, valeurs, par_code, empreinte_arr)
         print(f"{cle} : {part}")
 
 

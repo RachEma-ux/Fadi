@@ -7,8 +7,8 @@
  * réparation est **comptée et consignée** dans les transformations de la version (jamais silencieuse).
  */
 import type { PoolClient } from "pg";
-import type { DescriptionRaster, DroitsVersion, MotifAbsence, ObjetImporte, StyleCouche } from "@parcours/geodata-model";
-import { estMotifAbsence } from "@parcours/geodata-model";
+import type { DescriptionRaster, DroitsVersion, Milieu, MotifAbsence, ObjetImporte, Sexe, StyleCouche } from "@parcours/geodata-model";
+import { estMilieu, estMotifAbsence, estSexe } from "@parcours/geodata-model";
 import { newId } from "../ids.js";
 import { compresser, type GrilleRaster } from "./raster.js";
 
@@ -22,6 +22,19 @@ export interface IndicateurDeclare {
   readonly description: string;
   /** Motif inscrit quand la propriété est vide ou absente (jamais zéro). */
   readonly motifSiAbsente: MotifAbsence;
+  /** Dimensions (D-GD-17, lot A2) : thème, famille, modalité, milieu, sexe ; ordre d'affichage. */
+  readonly theme?: string | null;
+  readonly famille?: string | null;
+  readonly modalite?: string | null;
+  readonly milieu?: Milieu | null;
+  readonly sexe?: Sexe | null;
+  readonly ordre?: number;
+  /**
+   * Valeurs lues d'un tableau livré avec la fiche (code → nombre ou signe conventionnel) au lieu des propriétés des
+   * objets ; un signe déclaré dans `signes` donne son motif, tout autre absence le motif `motifSiAbsente`.
+   */
+  readonly valeurs?: ReadonlyMap<string, number | string | null>;
+  readonly signes?: Readonly<Record<string, MotifAbsence>>;
 }
 
 export interface VersionAEcrire {
@@ -150,13 +163,36 @@ export async function ecrireVersion(client: PoolClient, v: VersionAEcrire): Prom
     reparees += Number(r.rows[0]?.reparees ?? 0);
   }
   const indicateurs: string[] = [];
-  for (const ind of v.indicateurs) {
+  let codesCouche: string[] | null = null;
+  for (const [rang, ind] of v.indicateurs.entries()) {
     const id = newId("gdind");
     await client.query(
-      `INSERT INTO geodata_indicateurs (id, couche_id, titre, unite, periode, nature, methode, denominateur, description) VALUES ($1, $2, $3, $4, $5, 'source', $6, $7, $8)`,
-      [id, coucheId, ind.titre, ind.unite, ind.periode, `Valeur de la propriété « ${ind.propriete} » de la source, sans transformation`, ind.denominateur, ind.description],
+      `INSERT INTO geodata_indicateurs (id, couche_id, titre, unite, periode, nature, methode, denominateur, description, theme, famille, modalite, milieu, sexe, ordre)
+       VALUES ($1, $2, $3, $4, $5, 'source', $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+      [id, coucheId, ind.titre, ind.unite, ind.periode,
+        ind.valeurs ? `Valeur de la colonne « ${ind.propriete} » du tableau livré avec la source, sans transformation` : `Valeur de la propriété « ${ind.propriete} » de la source, sans transformation`,
+        ind.denominateur, ind.description, ind.theme ?? null, ind.famille ?? null, ind.modalite ?? null,
+        estMilieu(ind.milieu) ? ind.milieu : null, estSexe(ind.sexe) ? ind.sexe : null, ind.ordre ?? rang],
     );
     const motif = estMotifAbsence(ind.motifSiAbsente) ? ind.motifSiAbsente : "non-evaluee";
+    if (ind.valeurs) {
+      // Tableau livré : une valeur par code d'objet ; un signe conventionnel déclaré donne son motif ; jamais zéro.
+      codesCouche ??= (await client.query<{ code: string }>(`SELECT code FROM geodata_objets WHERE couche_id = $1`, [coucheId])).rows.map((r) => r.code);
+      const lignes = codesCouche.map((code) => {
+        const x = ind.valeurs!.get(code);
+        if (typeof x === "number" && Number.isFinite(x)) return { code, valeur: x, motif: null };
+        const m = typeof x === "string" ? ind.signes?.[x.trim()] : undefined;
+        return { code, valeur: null, motif: m && estMotifAbsence(m) ? m : motif };
+      });
+      await client.query(
+        `INSERT INTO geodata_valeurs (indicateur_id, code, valeur, motif_absence)
+         SELECT $1, e.code, e.valeur, e.motif FROM jsonb_to_recordset($2::jsonb) AS e(code text, valeur double precision, motif text)`,
+        [id, JSON.stringify(lignes)],
+      );
+      await client.query(`UPDATE geodata_indicateurs SET nb_absentes = $2, nb_total = $3 WHERE id = $1`, [id, lignes.filter((l) => l.valeur === null).length, lignes.length]);
+      indicateurs.push(id);
+      continue;
+    }
     // Une valeur non numérique ou vide n'est jamais convertie en zéro : elle reçoit le motif déclaré par la fiche.
     await client.query(
       `INSERT INTO geodata_valeurs (indicateur_id, code, valeur, motif_absence)
