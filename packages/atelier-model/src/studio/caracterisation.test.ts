@@ -386,7 +386,7 @@ const AJOUTS = {
     "STUDIO_REPERES", "STUDIO_TOLERANCE_REPERE", "studioPointRepere", "studioTransformationRepere", "studioAppliquerTransformation", "studioInverserTransformation", "studioVerifierTransformation", "studioConvertirPoint", "studioComposerTransformations", "STUDIO_LIMITE_VERSIONS_PROJET", "validerVersionSystemeProjet", "validerSystemeProjet", "studioTransformationProjet", "studioVersProjet", "studioDepuisProjet", "studioTransformationPose",
     "STUDIO_RAPPORT_ACCELERATION_SCHEMA", "STUDIO_CRITERES_EQUIVALENCE", "STUDIO_MOTEURS", "STUDIO_ACCELERATIONS", "STUDIO_MOTEURS_DE_REFERENCE", "STUDIO_MOTEURS_PAR_DEFAUT", "STUDIO_ACCELERATION_DU_MOTEUR", "studioEvaluerAcceleration", "studioMoteurEffectif", "studioControlerMoteursParDefaut", "STUDIO_RAPPORTS_ACCELERATION",
     // Sources importées et provenance (EX-014, `sources/sources.ts`).
-    "STUDIO_PROVENANCE_SCHEMA", "STUDIO_FORMATS_SOURCE", "STUDIO_LIMITES_SOURCES", "validerSource", "validerSources", "studioVersionDxf", "studioSourceDxf", "studioSourceDxfLue", "studioExportProvenance", "SCHEMA_SOURCE",
+    "STUDIO_PROVENANCE_SCHEMA", "STUDIO_FORMATS_SOURCE", "STUDIO_LIMITES_SOURCES", "validerSource", "validerSources", "studioVersionDxf", "studioSourceDxf", "studioSourceDxfLue", "studioSourceIfcLue", "studioExportProvenance", "studioProvenanceModeleExterne", "SCHEMA_SOURCE",
   ]),
 };
 function sansAjouts(value: unknown): unknown {

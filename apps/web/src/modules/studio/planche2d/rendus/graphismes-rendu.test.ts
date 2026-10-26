@@ -7,10 +7,8 @@
  * qualifiant ; mêmes coordonnées que la planche SVG (cadre de vue identique), même désignation et même accrochage.
  */
 import { describe, expect, it } from "vitest";
-import {
-  applyStudioCommands, exportStudioSvg, newStudioDocument, STUDIO_RAPPORT_ACCELERATION_SCHEMA, STUDIO_SEGMENTS_PAR_BEZIER,
-  type StudioCommand, type StudioDocument, type StudioRapportAcceleration,
-} from "@parcours/atelier-model";
+import { exportStudioSvg, STUDIO_RAPPORT_ACCELERATION_SCHEMA, STUDIO_SEGMENTS_PAR_BEZIER, type StudioRapportAcceleration } from "@parcours/atelier-model";
+import { sceneFidelite } from "./scene-fidelite";
 import {
   cadreViewBox, comparerTraits, compterElementsSvg, dessinerCanvas, EnregistreurCanvas, lirePrimitivesSvg, SEGMENTS_BEZIER_GPU, segmentsGpu, traitsCanvas, traitsSvg,
 } from "./comparaison-moteurs";
@@ -19,29 +17,6 @@ import { ecranVersPlanche } from "../vue";
 import { indexLineaire, MODES_ACCROCHAGE, resoudre, type ReglagesAccrochage } from "../accrochage";
 
 const L = 1200, H = 800;
-
-/** Scène de fidélité EX-055 : toutes les familles de tracé du renderer 2D, deux calques dont un masqué. */
-export function sceneFidelite(): StudioDocument {
-  const cs: StudioCommand[] = [
-    { toolId: "studio.calque.creer", params: { id: "plan", name: "Plan", visible: true, locked: false } },
-    { toolId: "studio.calque.creer", params: { id: "cache", name: "Caché", visible: false, locked: false } },
-    { toolId: "studio.dessin.ligne", params: { id: "l", type: "line", start: { x: 0, y: 0 }, end: { x: 6, y: 0 } } },
-    { toolId: "studio.dessin.rectangle", params: { id: "r", type: "rectangle", origin: { x: 0, y: 1 }, width: 3, height: 2, layerId: "plan" } },
-    { toolId: "studio.dessin.cercle", params: { id: "c", type: "circle", center: { x: 9, y: 2 }, radius: 1.5 } },
-    { toolId: "studio.dessin.arc", params: { id: "a", type: "arc", center: { x: 13, y: 2 }, radius: 1.2, startAngle: 0.3, endAngle: 2.6 } },
-    { toolId: "studio.dessin.polyligne", params: { id: "p", type: "polyline", points: [{ x: 0, y: 5 }, { x: 4, y: 5 }, { x: 4, y: 8 }], closed: false, bulges: [0.4, 0] } },
-    { toolId: "studio.dessin.ligne", params: { id: "cachee", type: "line", start: { x: 0, y: 9 }, end: { x: 3, y: 9 }, layerId: "cache" } },
-    { toolId: "studio.dessin.cote", params: { id: "d", type: "dimension", start: { x: 0, y: 0 }, end: { x: 6, y: 0 }, offset: -0.6, links: { start: { objectId: "l", anchor: "start" }, end: { objectId: "l", anchor: "end" } }, toResolve: false } },
-    { toolId: "studio.dessin.texte", params: { id: "t", type: "text", position: { x: 6, y: 6 }, height: 0.4, rotation: 0.4, content: "Séjour", justification: "center" } },
-    { toolId: "studio.graphisme.creer", params: { id: "sp", type: "spline", points: [{ x: 6, y: 9 }, { x: 7, y: 11 }, { x: 9, y: 11 }, { x: 10, y: 9 }, { x: 11, y: 7 }, { x: 13, y: 7 }, { x: 14, y: 9 }] } },
-    { toolId: "studio.graphisme.creer", params: { id: "ha", type: "hachure", contour: [{ x: 15, y: 0 }, { x: 19, y: 0 }, { x: 19, y: 4 }, { x: 17, y: 2 }, { x: 15, y: 4 }], angle: Math.PI / 4, espacement: 0.4, opacite: 0.5, layerId: "plan" } },
-    { toolId: "studio.graphisme.creer", params: { id: "hb", type: "hachure", contour: [{ x: 15, y: 5 }, { x: 19, y: 5 }, { x: 19, y: 8 }, { x: 15, y: 8 }], angle: 0, espacement: 0.5 } },
-    { toolId: "studio.graphisme.creer", params: { id: "sn", type: "symbole", symbole: "nord", position: { x: 22, y: 2 }, rotation: Math.PI / 6, echelle: 2, opacite: 0.75 } },
-    { toolId: "studio.graphisme.creer", params: { id: "sc", type: "symbole", symbole: "croix", position: { x: 22, y: 6 }, rotation: 0, echelle: 1 } },
-    { toolId: "studio.graphisme.creer", params: { id: "sv", type: "symbole", symbole: "niveau", position: { x: 22, y: 9 }, rotation: 0, echelle: 1.5, opacite: 0.3 } },
-  ];
-  return applyStudioCommands(newStudioDocument("fidelite-ex055"), cs);
-}
 
 /** Rapport qualifiant SYNTHÉTIQUE (forme seulement) : il exerce le chemin d'activation, ce n'est pas une mesure. */
 const rapportSynthetique = (): StudioRapportAcceleration => ({

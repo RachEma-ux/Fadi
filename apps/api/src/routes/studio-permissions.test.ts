@@ -265,6 +265,8 @@ export const ROUTES: Route[] = [
   { route: `POST ${MX}`, besoin: "modification", url: () => `${V}/modeles-externes`, body: receptionModele, note: "fichier relu et comparé par le serveur ; la variante n'est pas modifiée" },
   { route: `GET ${MX}/:modelId`, besoin: "lecture", preparer: modeleExterne, url: (c) => `${V}/modeles-externes/${c["mx"]}` },
   { route: `GET ${MX}/:modelId/contenu`, besoin: "lecture", preparer: modeleExterne, url: (c) => `${V}/modeles-externes/${c["mx"]}/contenu`, note: "fichier reçu tel quel : droit export (lecteur compris, jamais l'accès support)" },
+  // EX-014 : provenance exportée (déclarations et lectures), droit export comme le fichier reçu.
+  { route: `GET ${MX}/:modelId/provenance`, besoin: "lecture", preparer: modeleExterne, url: (c) => `${V}/modeles-externes/${c["mx"]}/provenance`, note: "provenance exportée : droit export (lecteur compris, jamais l'accès support)" },
   { route: `POST ${MX}/:modelId/:action`, besoin: "modification", preparer: modeleExterne, url: (c) => `${V}/modeles-externes/${c["mx"]}/comparer`, body: {}, note: "action comparer" },
   ...(["accepter", "refuser"] as const).map((action): Route => ({
     route: `POST ${MX}/:modelId/:action`, besoin: "proprietaire", preparer: modeleExterne, url: (c) => `${V}/modeles-externes/${c["mx"]}/${action}`, body: { motif: "Motif d'essai" }, note: `action ${action}`,

@@ -3,7 +3,8 @@ import { array, fail, finite, identifier, record } from "../noyau/validation.js"
 import { id } from "../registre/schemas-base.js";
 
 /**
- * Sources externes d'un document Studio (EX-014, TR-EX-014) : chaque fichier importé directement dans le dessin (DXF)
+ * Sources externes d'un document Studio (EX-014, TR-EX-014) : chaque fichier importé directement dans le dessin (DXF,
+ * IFC, ou modèle externe ajouté au brouillon)
  * est **déclaré** dans l'extension additive et facultative `StudioDocument.sources` avec sa provenance : auteur ou
  * fournisseur (s'il est connu), format et version du format lue, horodatage de réception, unité lue dans le fichier et
  * unité retenue, repère source, transformation appliquée vers le repère du dessin, restrictions d'utilisation déclarées
@@ -14,11 +15,13 @@ import { id } from "../registre/schemas-base.js";
  */
 
 export const STUDIO_PROVENANCE_SCHEMA = "studio-provenance/1" as const;
-export const STUDIO_FORMATS_SOURCE = Object.freeze(["dxf"] as const);
+export const STUDIO_FORMATS_SOURCE = Object.freeze(["dxf", "ifc"] as const);
 export type StudioFormatSource = (typeof STUDIO_FORMATS_SOURCE)[number];
 
 /** Bornes techniques des textes déclarés (pas des valeurs métier). */
 export const STUDIO_LIMITES_SOURCES = Object.freeze({ sources: 1000, texte: 200, restrictions: 2000, nomFichier: 255 } as const);
+
+export interface StudioTransformationSource { dx: number; dy: number; dz: number; rotation: number }
 
 export interface StudioSourceExterne {
   id: string;
@@ -40,8 +43,12 @@ export interface StudioSourceExterne {
   facteur: number;
   /** Repère source déclaré (texte libre : « repère du fichier », « CH1903+ / LV95 »…) ; null : non déclaré. */
   repereSource: string | null;
-  /** Transformation appliquée vers le repère `local-2d` : l'import DXF n'en applique aucune (identité, déclarée). */
-  transformation: "identite";
+  /**
+   * Transformation appliquée vers le repère `local-2d` : `identite` (l'import DXF n'en applique aucune ; IFC sans
+   * transformation déclarée), sinon la transformation déclarée appliquée à l'import IFC (translation en m, rotation en
+   * radians autour de z).
+   */
+  transformation: "identite" | StudioTransformationSource;
   /** Restrictions d'utilisation déclarées ; null : non déclarées. */
   restrictions: string | null;
   /** Objets natifs créés par l'import. */
@@ -58,7 +65,7 @@ const texteOuNull = (v: unknown, max: number, path: string): string | null => {
 export function validerSource(value: unknown, path: string): StudioSourceExterne {
   const o = record(value, ["id", "type", "format", "versionFormat", "nomFichier", "empreinteSha256", "recuLe", "auteur", "uniteLue", "uniteRetenue", "facteur", "repereSource", "transformation", "restrictions", "objets"], path);
   if (o.type !== "source") fail(`${path}.type`, "source attendu");
-  if (!(STUDIO_FORMATS_SOURCE as readonly unknown[]).includes(o.format)) fail(`${path}.format`, "format dxf attendu");
+  if (!(STUDIO_FORMATS_SOURCE as readonly unknown[]).includes(o.format)) fail(`${path}.format`, "format dxf ou ifc attendu");
   if (typeof o.empreinteSha256 !== "string" || !/^[0-9a-f]{64}$/.test(o.empreinteSha256)) fail(`${path}.empreinteSha256`, "empreinte SHA-256 (64 caractères hexadécimaux) attendue");
   if (typeof o.recuLe !== "string" || Number.isNaN(Date.parse(o.recuLe))) fail(`${path}.recuLe`, "horodatage ISO 8601 attendu");
   const uniteRetenue = texteOuNull(o.uniteRetenue, 16, `${path}.uniteRetenue`);
@@ -67,7 +74,12 @@ export function validerSource(value: unknown, path: string): StudioSourceExterne
   if (!(facteur > 0)) fail(`${path}.facteur`, "facteur strictement positif attendu");
   const objets = finite(o.objets, `${path}.objets`);
   if (!Number.isInteger(objets) || objets < 0) fail(`${path}.objets`, "entier positif ou nul attendu");
-  if (o.transformation !== "identite") fail(`${path}.transformation`, "identite attendue (l’import DXF n’applique aucune transformation)");
+  let transformation: StudioSourceExterne["transformation"] = "identite";
+  if (o.transformation !== "identite") {
+    if (o.format === "dxf") fail(`${path}.transformation`, "identite attendue (l’import DXF n’applique aucune transformation)");
+    const t = record(o.transformation, ["dx", "dy", "dz", "rotation"], `${path}.transformation`);
+    transformation = { dx: finite(t.dx, `${path}.transformation.dx`), dy: finite(t.dy, `${path}.transformation.dy`), dz: finite(t.dz, `${path}.transformation.dz`), rotation: finite(t.rotation, `${path}.transformation.rotation`) };
+  }
   return {
     id: identifier(o.id, `${path}.id`), type: "source", format: o.format as StudioFormatSource,
     versionFormat: texteOuNull(o.versionFormat, 32, `${path}.versionFormat`),
@@ -76,7 +88,7 @@ export function validerSource(value: unknown, path: string): StudioSourceExterne
     auteur: texteOuNull(o.auteur, STUDIO_LIMITES_SOURCES.texte, `${path}.auteur`),
     uniteLue: texteOuNull(o.uniteLue, 16, `${path}.uniteLue`), uniteRetenue, facteur,
     repereSource: texteOuNull(o.repereSource, STUDIO_LIMITES_SOURCES.texte, `${path}.repereSource`),
-    transformation: "identite",
+    transformation,
     restrictions: texteOuNull(o.restrictions, STUDIO_LIMITES_SOURCES.restrictions, `${path}.restrictions`),
     objets,
   };
@@ -122,6 +134,24 @@ export function studioSourceDxfLue(lu: { empreinteSha256: string; versionFormat:
   }, "source");
 }
 
+export interface StudioDeclarationSourceIfc {
+  id: string; nomFichier: string; recuLe: string; objets: number;
+  /** Unité lue dans le fichier (`IfcSIUnit`), son nom et son facteur ; null : inconnue (aucune source n'est déclarée). */
+  unite: { nom: string | null; facteur: number | null };
+  transformation: StudioTransformationSource | null;
+  auteur?: string | null; repereSource?: string | null; restrictions?: string | null;
+}
+
+/** Source d'un import IFC : empreinte et schéma lus (`FILE_SCHEMA`), unité lue, transformation déclarée appliquée. */
+export function studioSourceIfcLue(lu: { empreinteSha256: string; versionFormat: string | null }, d: StudioDeclarationSourceIfc): StudioSourceExterne {
+  const vide = (s: string | null | undefined) => (s && s.trim() ? s.trim() : null);
+  return validerSource({
+    id: d.id, type: "source", format: "ifc", versionFormat: lu.versionFormat, nomFichier: d.nomFichier, empreinteSha256: lu.empreinteSha256, recuLe: d.recuLe,
+    auteur: vide(d.auteur), uniteLue: d.unite.nom, uniteRetenue: d.unite.nom, facteur: d.unite.facteur,
+    repereSource: vide(d.repereSource), transformation: d.transformation ?? "identite", restrictions: vide(d.restrictions), objets: d.objets,
+  }, "source");
+}
+
 export interface StudioProvenance {
   schema: typeof STUDIO_PROVENANCE_SCHEMA;
   documentId: string;
@@ -145,7 +175,8 @@ export const SCHEMA_SOURCE = {
     nomFichier: { type: "string", minLength: 1, maxLength: STUDIO_LIMITES_SOURCES.nomFichier, pattern: "\\S" },
     empreinteSha256: { type: "string", pattern: "^[0-9a-f]{64}$" }, recuLe: { type: "string", minLength: 1 },
     auteur: texteNullable(STUDIO_LIMITES_SOURCES.texte), uniteLue: texteNullable(16), uniteRetenue: { type: "string", minLength: 1, maxLength: 16 },
-    facteur: { type: "number", exclusiveMinimum: 0 }, repereSource: texteNullable(STUDIO_LIMITES_SOURCES.texte), transformation: { const: "identite" },
+    facteur: { type: "number", exclusiveMinimum: 0 }, repereSource: texteNullable(STUDIO_LIMITES_SOURCES.texte),
+    transformation: { anyOf: [{ const: "identite" }, { type: "object", additionalProperties: false, required: ["dx", "dy", "dz", "rotation"], properties: { dx: { type: "number" }, dy: { type: "number" }, dz: { type: "number" }, rotation: { type: "number" } } }] },
     restrictions: texteNullable(STUDIO_LIMITES_SOURCES.restrictions), objets: { type: "integer", minimum: 0 },
   },
 } as const;

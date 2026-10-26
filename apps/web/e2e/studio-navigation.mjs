@@ -710,16 +710,21 @@ try {
     && (await rapportImport.locator("[data-studio-import-unite-fichier]").textContent()).includes("1 unité = 0,001 m"), nonPrisImport.join());
   await boiteImport.locator("[data-studio-import-ajouter]").click();
   await boiteImport.waitFor({ state: "detached" });
-  check("Import DXF : un lot de 5 commandes en attente dans le brouillon", (await portee()).includes("(5 commande(s)"), await portee());
+  // EX-014 : l'import déclare sa source dans le même lot (5 objets + 1 source).
+  check("Import DXF : un lot de 6 commandes (5 objets et la source déclarée) en attente dans le brouillon", (await portee()).includes("(6 commande(s)"), await portee());
   await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.press("Control+z");
   check("Import DXF : annulable (Ctrl+Z retire tout le lot)", (await portee()).includes("(0 commande(s)"), await portee());
   await page.keyboard.press("Control+y");
-  check("Import DXF : rétabli (Ctrl+Y)", (await portee()).includes("(5 commande(s)"), await portee());
+  check("Import DXF : rétabli (Ctrl+Y)", (await portee()).includes("(6 commande(s)"), await portee());
   const avantImport = envois.length;
   await page.keyboard.press("Control+s");
   await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
-  const envoiImport = envois[envois.length - 1];
+  const envoiTotal = envois[envois.length - 1];
+  const sourceImport = envoiTotal.commands.find((c) => c.toolId === "studio.source.declarer");
+  check("Import DXF : la source est déclarée avec le lot (fichier, empreinte SHA-256, unité mm lue, aucune transformation)",
+    sourceImport?.params.nomFichier === "plan-mm.dxf" && /^[0-9a-f]{64}$/.test(sourceImport.params.empreinteSha256) && sourceImport.params.uniteLue === "mm" && sourceImport.params.transformation === "identite" && sourceImport.params.objets === 5, JSON.stringify(sourceImport?.params));
+  const envoiImport = { ...envoiTotal, commands: envoiTotal.commands.filter((c) => c.toolId !== "studio.source.declarer") };
   const attendus = [
     { toolId: "studio.dessin.ligne", params: { type: "line", start: { x: 20, y: 20 }, end: { x: 24, y: 20 } } },
     { toolId: "studio.dessin.ligne", params: { type: "line", start: { x: 20, y: 20 }, end: { x: 20, y: 23 } } },
@@ -1182,18 +1187,20 @@ try {
   await page.locator("[data-studio-erreur-planche]").filter({ hasText: "Enregistrement partiel : 1 lot(s) sur 2" }).waitFor();
   await page.unroute("**/commands");
   const apresPremier = await a.api("get", cheminInitial);
-  check("Import DXF : refus du second lot — 500 commandes enregistrées, les 100 autres seules en attente, sur la révision du premier lot",
-    apresPremier.revision.document.objects.length === teteInitiale.document.objects.length + 500 && (await portee()).includes("(100 commande(s)")
+  // EX-014 : la source déclarée accompagne le lot (600 lignes + 1 source = 601 commandes : 500 puis 101).
+  check("Import DXF : refus du second lot — 500 commandes enregistrées, les 101 autres (100 lignes et la source) seules en attente, sur la révision du premier lot",
+    apresPremier.revision.document.objects.length === teteInitiale.document.objects.length + 500 && (await portee()).includes("(101 commande(s)")
     && (await page.locator("[data-studio-revision-affichee]").getAttribute("title")) === apresPremier.revision.id
-    && (await page.locator("[data-studio-erreur-planche]").textContent()).includes("100 commande(s) non envoyée(s)"), await portee());
+    && (await page.locator("[data-studio-erreur-planche]").textContent()).includes("101 commande(s) non envoyée(s)"), await portee());
   await cliquerBouton(outils, "Enregistrer");
   await page.getByRole("status").filter({ hasText: /^Enregistré sur le serveur$/ }).waitFor();
   const lotsGrand = envois.slice(avantGrand);
   const grandRelu = await a.api("get", cheminInitial);
-  check("Import DXF : enregistrement en deux enveloppes (500 + 100), la seconde sur la révision de la première",
-    lotsGrand.length === 3 && lotsGrand[0].commands.length === 500 && lotsGrand[1].commands.length === 100 && lotsGrand[0].baseRevisionId === teteInitiale.id
+  check("Import DXF : enregistrement en deux enveloppes (500 + 101, la source comprise), la seconde sur la révision de la première",
+    lotsGrand.length === 3 && lotsGrand[0].commands.length === 500 && lotsGrand[1].commands.length === 101 && lotsGrand[1].commands.at(-1).toolId === "studio.source.declarer" && lotsGrand[0].baseRevisionId === teteInitiale.id
     && lotsGrand[1].baseRevisionId === apresPremier.revision.id && JSON.stringify(lotsGrand[2].commands) === JSON.stringify(lotsGrand[1].commands) && lotsGrand[2].baseRevisionId === apresPremier.revision.id
-    && grandRelu.revision.parentRevisionId === apresPremier.revision.id && grandRelu.revision.document.objects.length === teteInitiale.document.objects.length + 600,
+    && grandRelu.revision.parentRevisionId === apresPremier.revision.id && grandRelu.revision.document.objects.length === teteInitiale.document.objects.length + 600
+    && (grandRelu.revision.document.sources ?? []).some((s) => s.nomFichier === "grand.dxf" && s.objets === 600),
     lotsGrand.map((e) => `${e.commands.length}@${e.baseRevisionId}`).join(" "));
 
   // Accrochage et saisie de précision (moteur `planche2d/accrochage/`) : sur une variante neuve portant deux lignes

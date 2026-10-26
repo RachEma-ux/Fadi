@@ -6,7 +6,7 @@
  * ajouté au brouillon par l'import (« Ajouter au brouillon »), puis enregistré comme toute modification.
  */
 import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from "react";
-import type { StudioCommand, StudioDocument, StudioIfcResultat, StudioUniteDeclaree } from "@parcours/atelier-model";
+import { studioSourceIfcLue, type StudioCommand, type StudioDocument, type StudioIfcResultat, type StudioUniteDeclaree } from "@parcours/atelier-model";
 import { Icon } from "../../../components/Icon";
 import { LOCALE } from "../../../lib/i18n";
 import { Dialogue } from "../planche2d/CatalogueOutils";
@@ -84,7 +84,13 @@ export function PanneauModelesExternes({ projectId, studyId, variantId, brouillo
               const l = lireIfc(c.contenu, brouillon, c.transformation);
               if ("erreur" in l) { setErreur(l.erreur); return; }
               if (l.resultat.statut !== "pret" || !l.resultat.commandes.length) { setErreur("Rien à ajouter : l’unité du fichier n’est pas évaluée ou le modèle est vide."); return; }
-              if (!surAjouter(l.resultat.commandes, l.resultat)) setErreur("Ajout refusé par le modèle : le brouillon est inchangé.");
+              // EX-014 : la provenance du modèle reçu (déclarations de l'émetteur, empreinte, réception) accompagne l'ajout.
+              const source = studioSourceIfcLue({ empreinteSha256: l.empreinteSha256, versionFormat: l.resultat.rapport.schema || null }, {
+                id: crypto.randomUUID(), nomFichier: ouvert.nomFichier, recuLe: ouvert.recuLe, objets: l.resultat.rapport.entites.total,
+                unite: { nom: l.resultat.rapport.unite.nom, facteur: l.resultat.rapport.unite.facteur }, transformation: c.transformation,
+                auteur: ouvert.auteur, repereSource: ouvert.repereSource, restrictions: ouvert.restrictions,
+              });
+              if (!surAjouter([...l.resultat.commandes, { toolId: "studio.source.declarer", params: source }], l.resultat)) setErreur("Ajout refusé par le modèle : le brouillon est inchangé.");
             } catch (e) { setErreur(message(e)); }
           }} />}
       </div>

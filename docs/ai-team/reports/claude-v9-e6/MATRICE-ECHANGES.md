@@ -6,7 +6,7 @@
 
 **Aucune entrée n’est une déclaration de conformité** : « livré » dit ce que le code écrit ou lit et le contrôle qui le vérifie ; la conformité d’un format reste non évaluée. Un format reporté est inscrit « non livré » avec sa raison et sa source ; « renoncé » exige une décision Studio admise (aucune aujourd’hui).
 
-Entrées : 40 — livrées : 21, non livrées : 19, renoncées : 0.
+Entrées : 42 — livrées : 23, non livrées : 19, renoncées : 0.
 
 ## Formats × sens
 
@@ -21,7 +21,7 @@ Entrées : 40 — livrées : 21, non livrées : 19, renoncées : 0.
 | `maquette-ifc` | IFC (STEP physique, ISO 10303-21) | IFC4X3_ADD2, ViewDefinition [ReferenceView] | export | maquette | Objets extrudés, solides libres, murs et ouvertures, propriétés déclarées d’une révision | livré | E.6-03 | Seuls les éléments 3D sont écrits ; arcs discrétisés ; cotes, annotations et réglages de visualisation absents ; IfcDoor / IfcWindow seulement si le type est déclaré, sans représentation propre. |
 | `dessin-dxf-import` | DXF ASCII | R12 et suivantes (codes de groupe), CRLF ou LF ; DXF binaire refusé | import | dessin | Plan 2D ajouté au brouillon d’une variante, par commandes | livré | E.6-03 | 5 Mo au plus ; unité lue dans $INSUNITS (16 codes reconnus ; tout autre code, 0 ou absent : unité inconnue, choisie par l’utilisateur, jamais devinée) ; un calque déjà verrouillé dans le document (calque implicite compris) qui recevrait des objets fait échouer l’import ; Z ignoré (compté) ; tout le reste compté par type dans le rapport d’import, jamais écarté en silence. |
 | `maquette-ifc-import` | IFC (STEP physique, ISO 10303-21) | IFC2X3, IFC4, IFC4X1 à IFC4X3 (FILE_SCHEMA lu) ; ifcXML et ifcZIP refusés | import | maquette | Maquette d’un autre logiciel ajoutée au brouillon d’une variante, par commandes | livré | E.6-04 | 5 Mo au plus ; lecteur STEP propre, sans web-ifc ; unité de longueur lue dans l’IfcUnitAssignment du projet (IfcSIUnit et son préfixe, ou IfcConversionBasedUnit dont le facteur est déclaré), absente : rien n’est importé, jamais supposée ; seules les extrusions verticales (IfcExtrudedAreaSolid d’un IfcRectangleProfileDef ou d’un IfcArbitraryClosedProfileDef droit) placées par IfcLocalPlacement tourné autour de z sont traduites ; toute autre entité ou géométrie est conservée comme élément non natif, et chaque information non reprise est comptée dans le rapport de pertes. |
-| `modele-externe-ifc` | IFC (STEP physique, ISO 10303-21) | IFC2X3, IFC4, IFC4X1 à IFC4X3 (lecteur de l’import IFC) | import | coordination | Modèle d’un partenaire référencé, comparé à la révision courante, accepté ou refusé | livré | E.6-04 | Référence, auteur, discipline, version, unité et transformation déclarées par l’émetteur ; fichier relu par le serveur dans un document à part, jamais dans la variante ; comparaison par identifiant (GlobalId) avec la révision courante ; acceptation ou refus réservés au propriétaire et aux approbateurs, journalisés, un refus avec motif ; accepté, le modèle s’ajoute au brouillon seulement par une action explicite ; non repris par l’archive du projet. |
+| `modele-externe-ifc` | IFC (STEP physique, ISO 10303-21) | IFC2X3, IFC4, IFC4X1 à IFC4X3 (lecteur de l’import IFC) | import | coordination | Modèle d’un partenaire référencé, comparé à la révision courante, accepté ou refusé | livré | E.6-04 | Référence, auteur, discipline, version, unité, transformation, repère source et restrictions d’utilisation déclarés par l’émetteur ; fichier relu par le serveur dans un document à part, jamais dans la variante ; comparaison par identifiant (GlobalId) avec la révision courante ; acceptation ou refus réservés au propriétaire et aux approbateurs, journalisés, un refus avec motif ; accepté, le modèle s’ajoute au brouillon seulement par une action explicite ; non repris par l’archive du projet. |
 | `feuille-svg` | SVG | studio-sheet/1 (SVG en millimètres) | export | feuille | Feuille de présentation d’une révision (format, échelle, cartouche) | livré | E.6-02 | A4 à A1 ; échelle choisie ou ajustée ; dessin découpé au cadre ; valeur absente du cartouche imprimée « non évalué ». |
 | `feuille-pdf` | PDF | PDF 1.4 (une page) | export | feuille | Feuille de présentation d’une révision | livré | E.6-02 | Mêmes primitives que la feuille SVG ; aucune conformité PDF/A déclarée. |
 | `feuille-composee-svg` | SVG | studio-feuille-composee/1 (feuille studio-sheet/1 avec ligne de provenance) | export | feuille | Feuille composée enregistrée (vue source, révision épinglée) | livré | E.6-02 | Lit une révision enregistrée, jamais le brouillon ; provenance recalculée par le serveur (révision, empreintes du document et de la vue). |
@@ -32,6 +32,8 @@ Entrées : 40 — livrées : 21, non livrées : 19, renoncées : 0.
 | `rendu-png` | PNG | PNG (bloc iTXt « fadi:rendu » de provenance) | export | rendu | Rendu du modèle depuis la vue 3D d’une révision enregistrée | livré | E.6-02 | Image du canevas, pixels non modifiés ; refusé sur un brouillon non enregistré ou un maillage en cours ; provenance : étude, variante, révision, scène, caméra, date. |
 | `paquet-publication` | Paquet de publication (SVG, DXF, IFC, feuille PDF) | studio-publication-manifest/1 | export | paquet | Fichiers figés d’une publication approuvée et diffusée | livré | E.6-02 | Fichiers du manifeste approuvé, identifiés par SHA-256 et vérifiables ; dessin 2D indépendant : sans IFC ; mêmes limites que chaque export. |
 | `rapport-fidelite-json` | JSON | studio-rapport-fidelite/1 | export | rapport | Rapport de fidélité d’un export SVG, DXF ou IFC (même révision) | livré | E.6-03 | Décrit le fichier (jamais certifié) : exact, approché, non couvert, par type et par raison ; calques masqués et noms réécrits. |
+| `provenance-sources-json` | JSON | studio-provenance/1 | export | rapport | Provenance des sources importées dans le dessin (import DXF, EX-014) | livré | E.6-04 | Déclarée avec l’import (même lot) : fichier, empreinte SHA-256 et version du format lues, horodatage, unité lue et retenue, repère source, transformation (aucune : identité), auteur et restrictions d’utilisation déclarés ou « non déclarés » ; enregistrée par le navigateur depuis le brouillon affiché. |
+| `provenance-modele-externe-json` | JSON | studio-provenance-modele/1 | export | coordination | Provenance d’un modèle externe reçu (EX-014) | livré | E.6-04 | Ce que l’émetteur déclare (référence, auteur, discipline, version, unité, repère source, transformation, restrictions d’utilisation) et ce que le serveur a lu et calculé (schéma, unité lue, SHA-256, horodatage de réception) ; droit d’export. |
 | `diagnostic-releve-perf` | JSON | Relevé de performances Studio (sans schéma versionné) | export | diagnostic | Mesures de chargement et d’exécution de la session (hors modèle) | livré | E.6-02 | Diagnostic seulement : aucune donnée du projet ; non relu par Studio. |
 | `dwg-import` | DWG | non évaluée | import | dessin | Dessin 2D | non livré | E.6-04, E.6-05 | Non livré ; aucune conformité évaluée. |
 | `dwg-export` | DWG | non évaluée | export | dessin | Dessin 2D | non livré | E.6-04, E.6-05 | Non livré ; aucune conformité évaluée. |
@@ -204,7 +206,7 @@ Entrées : 40 — livrées : 21, non livrées : 19, renoncées : 0.
 
 - Version : IFC2X3, IFC4, IFC4X1 à IFC4X3 (lecteur de l’import IFC)
 - Objet : Modèle d’un partenaire référencé, comparé à la révision courante, accepté ou refusé
-- Limite : Référence, auteur, discipline, version, unité et transformation déclarées par l’émetteur ; fichier relu par le serveur dans un document à part, jamais dans la variante ; comparaison par identifiant (GlobalId) avec la révision courante ; acceptation ou refus réservés au propriétaire et aux approbateurs, journalisés, un refus avec motif ; accepté, le modèle s’ajoute au brouillon seulement par une action explicite ; non repris par l’archive du projet.
+- Limite : Référence, auteur, discipline, version, unité, transformation, repère source et restrictions d’utilisation déclarés par l’émetteur ; fichier relu par le serveur dans un document à part, jamais dans la variante ; comparaison par identifiant (GlobalId) avec la révision courante ; acceptation ou refus réservés au propriétaire et aux approbateurs, journalisés, un refus avec motif ; accepté, le modèle s’ajoute au brouillon seulement par une action explicite ; non repris par l’archive du projet.
 - Route : `POST /projects/:projectId/studio/studies/:studyId/variants/:variantId/modeles-externes`
 - Contrôle : Tests des règles (modèle et serveur) ; recette studio-echanges.mjs (réception, comparaison, acceptation journalisée).
 - Entité Déclarations de l’émetteur : portée — Conservées telles quelles ; l’unité déclarée est comparée à l’unité lue, jamais substituée.
@@ -350,6 +352,32 @@ Entrées : 40 — livrées : 21, non livrées : 19, renoncées : 0.
 - Routes : `apps/api/src/routes/studio.ts` (`` /studies/:studyId/variants/:variantId/export/rapport ``)
 - Sources : `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-03` — Liste d’exécution Studio V1.0
 
+### `provenance-sources-json` — JSON (export)
+
+- Version : studio-provenance/1
+- Objet : Provenance des sources importées dans le dessin (import DXF, EX-014)
+- Limite : Déclarée avec l’import (même lot) : fichier, empreinte SHA-256 et version du format lues, horodatage, unité lue et retenue, repère source, transformation (aucune : identité), auteur et restrictions d’utilisation déclarés ou « non déclarés » ; enregistrée par le navigateur depuis le brouillon affiché.
+- Contrôle : Tests des sources ; recette studio-rend.mjs (import DXF avec sa provenance, enregistrée et relue).
+- Entité Sources du document : portée — Chacune telle que déclarée ; un champ inconnu vaut null, jamais une valeur supposée.
+- Code : `packages/atelier-model/src/studio/sources/sources.ts` (`` studioExportProvenance ``)
+- Tests : `packages/atelier-model/src/studio/sources/sources.test.ts` (`` studioExportProvenance ``) ; `apps/web/e2e/studio-rend.mjs` (`` check("TR-EX-014 : import DXF ``)
+- Interface : `apps/web/src/modules/studio/import/DialogueImportDxf.tsx` (`` export function exporterProvenance( ``)
+- Sources : `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-04` — Liste d’exécution Studio V1.0
+
+### `provenance-modele-externe-json` — JSON (export)
+
+- Version : studio-provenance-modele/1
+- Objet : Provenance d’un modèle externe reçu (EX-014)
+- Limite : Ce que l’émetteur déclare (référence, auteur, discipline, version, unité, repère source, transformation, restrictions d’utilisation) et ce que le serveur a lu et calculé (schéma, unité lue, SHA-256, horodatage de réception) ; droit d’export.
+- Route : `GET /projects/:projectId/studio/studies/:studyId/variants/:variantId/modeles-externes/:modelId/provenance`
+- Contrôle : Tests des sources et des modèles externes ; recette studio-rend.mjs (provenance exportée).
+- Entité Modèle reçu : portée — Déclarations telles quelles, non déclarées à null ; l’unité lue est comparée, jamais substituée.
+- Code : `packages/atelier-model/src/studio/echanges/modeles-externes.ts` (`` studioProvenanceModeleExterne ``)
+- Tests : `packages/atelier-model/src/studio/sources/sources.test.ts` (`` studioProvenanceModeleExterne ``) ; `apps/web/e2e/studio-rend.mjs` (`` check("TR-EX-014 : modèle externe IFC ``)
+- Routes : `apps/api/src/routes/studio-modeles-externes.ts` (`` /:modelId/provenance ``)
+- Interface : `apps/web/src/modules/studio/echanges/PanneauModelesExternes.tsx` (`` data-studio-modele-provenance ``)
+- Sources : `Studio/Fadi_Studio_Plan_Implementation_V1_0.md, §5.7` — Plan d’implémentation Studio V1.0 (E.6, interopérabilité) ; `Studio/Fadi_Studio_Checklist_Execution_V1_0.md, E.6-04` — Liste d’exécution Studio V1.0
+
 ### `diagnostic-releve-perf` — JSON (export)
 
 - Version : Relevé de performances Studio (sans schéma versionné)
@@ -388,6 +416,7 @@ Raisons possibles du rapport de fidélité (`studioRapportFidelite`) pour chaque
 | graphismes | spline | `trace-exact` (exact) | `spline-decoupee` (approche) | `graphisme-hors-ifc` (non-couvert) |
 | graphismes | hachure | `trace-exact` (exact) | `trace-exact` (exact), `transparence-non-portee` (approche) | `graphisme-hors-ifc` (non-couvert) |
 | graphismes | symbole | `trace-exact` (exact) | `trace-exact` (exact), `transparence-non-portee` (approche) | `graphisme-hors-ifc` (non-couvert) |
+| sources | source | `provenance-hors-dessin` (non-couvert) | `provenance-hors-dessin` (non-couvert) | `provenance-hors-dessin` (non-couvert) |
 
 ## Formats reportés (E.6-04, E.6-05)
 

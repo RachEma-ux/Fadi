@@ -360,7 +360,7 @@ const LIVREES: readonly StudioEntreeEchange[] = [
   {
     id: "modele-externe-ifc", format: "IFC (STEP physique, ISO 10303-21)", versionFormat: "IFC2X3, IFC4, IFC4X1 à IFC4X3 (lecteur de l’import IFC)", sens: "import", famille: "coordination",
     objet: "Modèle d’un partenaire référencé, comparé à la révision courante, accepté ou refusé", taches: ["E.6-04"], statut: "livre",
-    limite: "Référence, auteur, discipline, version, unité et transformation déclarées par l’émetteur ; fichier relu par le serveur dans un document à part, jamais dans la variante ; comparaison par identifiant (GlobalId) avec la révision courante ; acceptation ou refus réservés au propriétaire et aux approbateurs, journalisés, un refus avec motif ; accepté, le modèle s’ajoute au brouillon seulement par une action explicite ; non repris par l’archive du projet.",
+    limite: "Référence, auteur, discipline, version, unité, transformation, repère source et restrictions d’utilisation déclarés par l’émetteur ; fichier relu par le serveur dans un document à part, jamais dans la variante ; comparaison par identifiant (GlobalId) avec la révision courante ; acceptation ou refus réservés au propriétaire et aux approbateurs, journalisés, un refus avec motif ; accepté, le modèle s’ajoute au brouillon seulement par une action explicite ; non repris par l’archive du projet.",
     entites: [
       { entite: "Déclarations de l’émetteur", couverture: "portee", detail: "Conservées telles quelles ; l’unité déclarée est comparée à l’unité lue, jamais substituée." },
       { entite: "Fichier reçu", couverture: "portee", detail: "Conservé tel quel avec son SHA-256 ; lecture et pertes comme l’import IFC." },
@@ -523,6 +523,34 @@ const LIVREES: readonly StudioEntreeEchange[] = [
       routes: [p(`${API}routes/studio.ts`, "/studies/:studyId/variants/:variantId/export/rapport")],
     },
     sources: [S_PLAN, S_LISTE("E.6-03")],
+  },
+  {
+    id: "provenance-sources-json", format: "JSON", versionFormat: "studio-provenance/1", sens: "export", famille: "rapport",
+    objet: "Provenance des sources importées dans le dessin (import DXF, EX-014)", taches: ["E.6-04"], statut: "livre",
+    limite: "Déclarée avec l’import (même lot) : fichier, empreinte SHA-256 et version du format lues, horodatage, unité lue et retenue, repère source, transformation (aucune : identité), auteur et restrictions d’utilisation déclarés ou « non déclarés » ; enregistrée par le navigateur depuis le brouillon affiché.",
+    entites: [{ entite: "Sources du document", couverture: "portee", detail: "Chacune telle que déclarée ; un champ inconnu vaut null, jamais une valeur supposée." }],
+    controle: "Tests des sources ; recette studio-rend.mjs (import DXF avec sa provenance, enregistrée et relue).",
+    preuves: {
+      code: [p(`${M}sources/sources.ts`, "studioExportProvenance")],
+      tests: [p(`${M}sources/sources.test.ts`, "studioExportProvenance"), p(`${E2E}studio-rend.mjs`, "check(\"TR-EX-014 : import DXF")],
+      interfaces: [p(`${WEB}import/DialogueImportDxf.tsx`, "export function exporterProvenance(")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-04")],
+  },
+  {
+    id: "provenance-modele-externe-json", format: "JSON", versionFormat: "studio-provenance-modele/1", sens: "export", famille: "coordination",
+    objet: "Provenance d’un modèle externe reçu (EX-014)", taches: ["E.6-04"], statut: "livre",
+    limite: "Ce que l’émetteur déclare (référence, auteur, discipline, version, unité, repère source, transformation, restrictions d’utilisation) et ce que le serveur a lu et calculé (schéma, unité lue, SHA-256, horodatage de réception) ; droit d’export.",
+    entites: [{ entite: "Modèle reçu", couverture: "portee", detail: "Déclarations telles quelles, non déclarées à null ; l’unité lue est comparée, jamais substituée." }],
+    controle: "Tests des sources et des modèles externes ; recette studio-rend.mjs (provenance exportée).",
+    route: `GET ${ROUTE_VARIANTE}/modeles-externes/:modelId/provenance`,
+    preuves: {
+      code: [p(`${M}echanges/modeles-externes.ts`, "studioProvenanceModeleExterne")],
+      tests: [p(`${M}sources/sources.test.ts`, "studioProvenanceModeleExterne"), p(`${E2E}studio-rend.mjs`, "check(\"TR-EX-014 : modèle externe IFC")],
+      routes: [p(`${API}routes/studio-modeles-externes.ts`, "/:modelId/provenance")],
+      interfaces: [p(`${WEB}echanges/PanneauModelesExternes.tsx`, "data-studio-modele-provenance")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-04")],
   },
   {
     id: "diagnostic-releve-perf", format: "JSON", versionFormat: "Relevé de performances Studio (sans schéma versionné)", sens: "export", famille: "diagnostic",
