@@ -823,6 +823,13 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/studio-g1 node apps/web/e2e/studio-g1.mjs 2>&1 | tee -a e2e.log
+      # Lot G2 : échelle d'accès (TR-EX-027), accrochage ambigu résolu (TR-AC-004), cote de face 3D (TR-INV-013),
+      # « Approuver » trouvé et refusé puis accordé selon le rôle (TR-AC-010), enveloppe complète (TR-IF-006).
+      - name: Lot G2 — échelle d'accès, accrochage ambigu, cote de face 3D, Approuver par rôle, enveloppe complète (apps/web/e2e/studio-g2.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-g2 node apps/web/e2e/studio-g2.mjs 2>&1 | tee -a e2e.log
       # Organisations-participation, phase 3 (OP-D2 a) : invitation acceptée pour tous, fin de l'ajout direct (UM-8) —
       # aperçu de l'accès, renvoi sans doublon, notification, refus v2.2 (lien transféré, expirée, annulée, déclinée,
       # invitant révoqué, mauvaise fiche, participation terminée, accès expiré), double soumission, nouvel utilisateur ;

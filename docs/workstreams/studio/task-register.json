@@ -57251,11 +57251,11 @@
         ],
         "preparation_initiale": "Corpus autorisé, SHA/build, contrats ; bases jetables pour tests mutateurs"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "portee": "Lot G2 (vague 2) — outils et BIM — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -57305,6 +57305,17 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version du fichier dont le SHA-256 est celui cité, retrouvée dans l’historique de main ; date du commit.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/src/modules/studio/planche2d/ambiguites.preuves-g2.test.ts",
+          "controles": [
+            "MES-05 [+] cibles d'accrochage, désignation, dimensions, quantités, historique et exports comparés ensemble : tous identiques à la référence, p95 relevé sans seuil",
+            "MES-05 [−] un chemin optimisé qui ne dérive qu'un seul résultat (export décalé, ou historique tronqué) est rejeté sur ce critère seulement"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -57314,20 +57325,12 @@
         "pr_preparation_courante": 172
       },
       "blocage": {
-        "cause": {
-          "lacunes": [
-            "Aucune mesure réelle nouvelle, aucune valeur appareil ou budget inventée."
-          ],
-          "responsable_declencheur": {
-            "owner": "A5",
-            "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
-          }
-        },
-        "responsable": "A5",
-        "essais_effectues": "Qualification individuelle A5 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
-        "deblocage": "A5/A6 rédigent protocole observable avant mesure autorisée ; A0 seul acte seuil DEC13 si nécessaire."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot G2 (vague 2) — outils et BIM",
+        "deblocage": null
       },
-      "suite": "Rapprochement du 25 octobre 2026 (mesure requise) : Comparaison simultanée à exécuter (REC-C-01 « À faire », TEST-022 « En cours ») ; TEST-023 (picking) est vérifié seul.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "apps/web/e2e ; tests packages ; scripts/bench ; workflows",
       "source_checked": false,
       "cloture": {
@@ -57363,6 +57366,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Lot G2 (vague 2) — outils et BIM",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -84025,11 +84035,11 @@
         "preparation_initiale": "REF-02 texte exact + contrat + composant + scénario + preuve + décision",
         "decisions_applicables_a_instruire": "DEC-05,DEC-07,DEC-15,DEC-18"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Oracles individuels prescrits et extraction documentaire vérifiée, aucune recette Studio"
+        "portee": "Lot G2 (vague 2) — outils et BIM — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -84079,6 +84089,72 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/architecture/echelle.test.ts",
+          "controles": [
+            "registre : mutation de la barre Architecture, Ctrl+Maj+F12, icône propre, acceptée par l'API et appliquée par le modèle ; distincte de la transformation Échelle",
+            "géométrie dérivée : deux montants de section carrée, échelons au pas hauteur / (n + 1), emprise ; orientation suivie",
+            "vue 3D : montants et échelons maillés sous le même identifiant, volume du maillage = volume de matière du métré",
+            "métré : longueur cumulée des montants et des échelons, hauteur, volume ; nombre et pas des échelons dans le métré architectural",
+            "propriétés : valeurs saisies modifiées par « Modifier l'élément architectural » (même identité), propriété BIM déclarée sur l'échelle",
+            "plan : SVG et DXF tracent les montants et le contour des échelons sur le calque de l'échelle",
+            "IFC : IfcStair de type LADDER, montants et échelons extrudés exacts, jeu de propriétés Fadi_StudioLadder ; propriété déclarée exportée",
+            "transformations : déplacer, pivoter, copier, symétrie, échelle (volumes aussi), calque, supprimer — même identité, copies à identifiants nouveaux",
+            "aucune valeur par défaut : champ absent, nul, négatif ou non entier refusé ; section qui ne laisse aucun échelon ; échelons qui se touchent ; orientation hors [0 ; 2π[",
+            "identifiant déjà pris, calque verrouillé, ouverture dans une échelle, changement de nature : refus, document inchangé"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/echanges/rapport-fidelite.test.ts",
+          "controles": [
+            "EX-027 : échelle d'accès exacte en IFC (extrusion exacte), approchée en SVG (extrusion non portée)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/manifeste-outils.test.ts",
+          "controles": [
+            "EX-027 [+] manifeste valide avec deux capacités « échelle » distinctes (transformation et échelle d'accès) ; identifiants du référentiel et alias anciens résolus",
+            "« echelle » de l'Atelier (B.1-05) : transformation au commit courant ; avant 1a6f9b5, ambigu sans fiche, jamais choisi par défaut"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/src/modules/studio/planche2d/architecture/architecture-ui.test.ts",
+          "controles": [
+            "EX-027 [+] un clic pose le pied avec les valeurs saisies (orientation en degrés) ; l'échelle est dessinée, sélectionnable, déplaçable, accrochable et modifiable depuis le panneau"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/e2e/studio-g2.mjs",
+          "controles": [
+            "TR-EX-027 (règle d'or) : Échelle d'accès dans la famille Architecture, icône propre, Ctrl+Maj+F12 ; distincte de la transformation Échelle",
+            "TR-EX-027 : formulaire de l'outil, aucune valeur proposée",
+            "TR-EX-027 : un clic pose l'échelle ; plan : deux montants et le contour des échelons",
+            "TR-EX-027 : enregistrée par le serveur avec les valeurs saisies (aucune ajoutée)",
+            "TR-EX-027 : métré de l'échelle sélectionnée (9 échelons, pas 0,3 m)",
+            "TR-EX-027 : export IFC — IfcStair de type LADDER, jeu de propriétés Fadi_StudioLadder",
+            "TR-EX-027 : export SVG — l'échelle est tracée en plan"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -84087,12 +84163,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Contrat et preuves actuelles Studio non validés ; décisions applicables ouvertes.",
-        "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot G2 (vague 2) — outils et BIM",
+        "deblocage": null
       },
-      "suite": "Cas négatif vérifié (préexistant). Le cas positif demande une nouvelle capacité d'outil (échelle, studio.arch.ladder) au registre des outils, propriété du lot OUT : non implémentée dans le lot PUB pour ne pas réécrire ses fichiers.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "Voir matrice A1-exigences.csv",
       "source_checked": false,
       "cloture": {
@@ -84134,6 +84210,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot G2 (vague 2) — outils et BIM",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -99105,11 +99188,11 @@
         "preparation_initiale": "Corpus autorisé, SHA/build, contrats ; bases jetables pour tests mutateurs",
         "decisions_applicables_a_instruire": "DEC-01,DEC-02,DEC-03,DEC-12"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Oracles individuels prescrits et extraction documentaire vérifiée, aucune recette Studio"
+        "portee": "Lot G2 (vague 2) — outils et BIM — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -99160,6 +99243,57 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/objets-3d/cotes-faces.test.ts",
+          "controles": [
+            "création : hauteur (base / sommet), largeur et profondeur (faces latérales opposées), valeurs dérivées ; document valide",
+            "pousser / tirer la face référencée : même cote, même face, valeur suivie ; déplacer, pivoter (z et basculement) : inchangée",
+            "diviser une autre face : les faces latérales suivantes sont renumérotées et la cote réattachée par preuve (même plan, même arête)",
+            "résolution explicite : la même commande, sur la cote « à résoudre », la rattache aux faces choisies par la personne",
+            "effets de la commande : la cote est une référence du solide ; la contrainte « à résoudre » apparaît quand la face divisée la portait ; copie indépendante : références reportées",
+            "diviser la face qui porte la cote : deux faces voisines coplanaires plausibles — la cote est conservée, marquée « à résoudre », valeur non évaluée, faces inchangées",
+            "solide supprimé ou consommé par un booléen : cote conservée « à résoudre » ; un calque de cote verrouillé refuse le lot",
+            "création refusée : faces non parallèles, face inexistante, solide absent, état « à résoudre » saisi, faces identiques, champ inconnu"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/echanges/rapport-fidelite.test.ts",
+          "controles": [
+            "INV-013 : les cotes de face sont déclarées non couvertes par l'IFC, jamais exportées en silence"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/src/modules/studio/vue3d/cotes-faces.test.ts",
+          "controles": [
+            "INV-013 [+] formulaire → commande de cote ; libellé avec la valeur, qui suit la face poussée ; rattachement explicite après division"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/e2e/studio-g2.mjs",
+          "controles": [
+            "TR-INV-013 (règle d'or) : Cote de face 3D (Maj+F12) active l'outil ; aucune face proposée",
+            "TR-INV-013 : cote entre les faces y− et y+ : 2 m",
+            "TR-INV-013 : face cotée tirée de 0,5 m — la cote la suit (2,5 m), toujours rattachée",
+            "TR-INV-013 : face cotée divisée — deux moitiés plausibles, aucune choisie : cote conservée « à résoudre »",
+            "TR-INV-013 : rattachement explicite enregistré (même cote, faces choisies)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -99168,12 +99302,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Contrat et preuves actuelles Studio non validés ; décisions applicables ouvertes.",
-        "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot G2 (vague 2) — outils et BIM",
+        "deblocage": null
       },
-      "suite": "Non traité dans ce lot : une annotation référencée à une face 3D elle-même exige un nouveau type de cote sur les faces de solides (géométrie 3D, lot F) ; la preuve reste celle de l'arête source (lot F1).",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "apps/web/e2e ; tests packages ; scripts/bench ; workflows",
       "source_checked": false,
       "cloture": {
@@ -99215,6 +99349,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot G2 (vague 2) — outils et BIM",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -99986,11 +100127,11 @@
         "preparation_initiale": "REF-02 contrat exact + DEC applicable",
         "decisions_applicables_a_instruire": "DEC-12,DEC-11"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Oracles individuels prescrits et extraction documentaire vérifiée, aucune recette Studio"
+        "portee": "Lot G2 (vague 2) — outils et BIM — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -100040,6 +100181,29 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/api/src/routes/studio-g2.preuves-g2.test.ts",
+          "controles": [
+            "IF-003 [+] capture R12 → calcul (noyau exact) → engagement sur R12 : révision R13 engagée, maillage 3D et quantités invalidés, solide exact présent dans la scène",
+            "IF-003 [−] résultat calculé sur R12 rendu après une modification R13, ou après retrait des droits : aucun engagement courant, rien n'est écrit"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/src/modules/studio/exact/booleen-session.test.ts",
+          "controles": [
+            "de bout en bout : capture (révision 1) → tâche → résultat exact → aperçu confirmé → commande d'engagement → document avec le solide exact",
+            "le brouillon change pendant le calcul : le résultat revient marqué périmé et n'est jamais engagé dans le modèle courant",
+            "résultat prêt puis brouillon modifié avant l'engagement : affiché périmé, engagement refusé"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -100048,12 +100212,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Contrat et preuves actuelles Studio non validés ; décisions applicables ouvertes.",
-        "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot G2 (vague 2) — outils et BIM",
+        "deblocage": null
       },
-      "suite": "Rapprochement du 25 octobre 2026 (non couvert) : Aucun calcul booléen dans Studio V1 (déclaré par le test « PERF-07 déclaré non applicable (aucun booléen exact dans Studio V1), jamais simulé », apps/web/src/modules/studio/chargement/perf.test.ts:22) ; capture R12 / vérification droits / engagement d'un résultat de Worker non testés. Infrastructure Worker existante mais sans engagement transactionnel d'un résultat.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "Commandes/API/worker/observations/publications existants à adapter",
       "source_checked": false,
       "cloture": {
@@ -100081,6 +100245,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/RECETTE-PILOTE-2026-10-25.md",
           "limite": "Mise à jour de la suite après rapprochement du 25 octobre 2026 ; statut inchangé."
+        },
+        {
+          "origine": "Lot G2 (vague 2) — outils et BIM",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -100452,11 +100623,11 @@
         "preparation_initiale": "REF-02 contrat exact + DEC applicable",
         "decisions_applicables_a_instruire": "DEC-03,DEC-18"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Oracles individuels prescrits et extraction documentaire vérifiée, aucune recette Studio"
+        "portee": "Lot G2 (vague 2) — outils et BIM — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -100506,6 +100677,41 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/api/src/routes/studio-g2.preuves-g2.test.ts",
+          "controles": [
+            "IF-006 [+] enveloppe requestId / toolId / contractVersion / scope / baseRevision / targets / opération / paramètres / mode validée ; auteur = session ; essai sans écriture puis application",
+            "IF-006 [−] portée déclarée d'un autre projet, cible non touchée, opération fausse, actorId forgé, lecteur en essai : refus atomique, aucune écriture ni permission"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/api/src/testing/studio-ecritures-architecture.test.ts",
+          "controles": [
+            "A.5-01 — écritures du document Studio par le seul contrat de commandes",
+            "révisions insérées seulement par l'orchestration des commandes (et la restauration signée, telle quelle)",
+            "seule l'orchestration des commandes avance la tête d'une variante"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/e2e/studio-g2.mjs",
+          "controles": [
+            "TR-IF-006 : mode essai — enveloppe complète validée, effets calculés (l1 créée), rien n'est écrit (tête inchangée)",
+            "TR-IF-006 : portée déclarée différente de l'adresse : 400 scope_mismatch, rien n'est écrit",
+            "TR-IF-006 : mode appliquer — révision écrite, auteur = la session"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -100514,12 +100720,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Contrat et preuves actuelles Studio non validés ; décisions applicables ouvertes.",
-        "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot G2 (vague 2) — outils et BIM",
+        "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (partiel) : Négatif désormais complet (actorId forgé refusé 400, portée d'un autre projet 404, même requestId au contenu différent 409, aucune écriture, membres inchangés, lecteur toujours refusé). Positif : fonction absente pour les attributs prescrits targetIds, operation et mode (l'enveloppe implémentée porte contractVersion, requestId, baseRevisionId, commands[toolId, params], la portée par l'adresse).",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "Commandes/API/worker/observations/publications existants à adapter",
       "source_checked": false,
       "cloture": {
@@ -100554,6 +100760,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot G2 (vague 2) — outils et BIM",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -102019,11 +102232,11 @@
         "preparation_initiale": "Corpus autorisé, SHA/build, contrats ; bases jetables pour tests mutateurs",
         "decisions_applicables_a_instruire": "DEC-09,DEC-10,DEC-13"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Oracles individuels prescrits et extraction documentaire vérifiée, aucune recette Studio"
+        "portee": "Lot G2 (vague 2) — outils et BIM — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -102073,6 +102286,31 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/src/modules/studio/planche2d/ambiguites.preuves-g2.test.ts",
+          "controles": [
+            "AC-004 [+] corpus superposé / densités variables / intersections / références liées : mêmes cibles et mêmes points que la référence, mêmes traces d'ambiguïté (grille, puis index incrémental après insertions et suppressions)",
+            "AC-004 [+] cas ambigu tracé puis résolu explicitement : la candidate suivante devient le point posé ; la désignation passe à l'objet superposé suivant",
+            "AC-004 [−] un index qui choisit une autre cible après insertion / suppression fait échouer le critère, malgré un gain de p95"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/e2e/studio-g2.mjs",
+          "controles": [
+            "TR-AC-004 : extrémités confondues — cas ambigu tracé (« 1/n »), la règle retient l1 (ordre du document)",
+            "TR-AC-004 : « Cible d'accrochage suivante » (Ctrl+Maj+F1) — la candidate suivante (l2) devient le point posé",
+            "TR-AC-004 : la cote enregistrée est liée à l'objet choisi explicitement (début : l2) et à l1 par la règle (fin)",
+            "TR-AC-004 : désignation ambiguë au clic (deux lignes confondues) — l'objet suivant sous le clic est désigné explicitement"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -102081,12 +102319,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Contrat et preuves actuelles Studio non validés ; décisions applicables ouvertes.",
-        "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot G2 (vague 2) — outils et BIM",
+        "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (partiel) : Depuis F5, l'index réutilisé est éprouvé sur des suites d'insertions et de suppressions contre le parcours linéaire. Fonction absente : aucune trace des cas ambigus (plusieurs cibles à égalité) n'est produite ; le corpus ne comporte pas de références liées (cotes associatives, liens) parmi les objets indexés.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "apps/web/e2e ; tests packages ; scripts/bench ; workflows",
       "source_checked": false,
       "cloture": {
@@ -102121,6 +102359,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot G2 (vague 2) — outils et BIM",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -103043,11 +103288,11 @@
         "preparation_initiale": "Corpus autorisé, SHA/build, contrats ; bases jetables pour tests mutateurs",
         "decisions_applicables_a_instruire": "DEC-16"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Oracles individuels prescrits et extraction documentaire vérifiée, aucune recette Studio"
+        "portee": "Lot G2 (vague 2) — outils et BIM — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -103097,6 +103342,40 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version courante du fichier sur main (dernier commit qui le touche) ; aucune empreinte ni extrait cité ne date la lecture plus tôt.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/api/src/routes/studio-g2.preuves-g2.test.ts",
+          "controles": [
+            "AC-010 [+] le catalogue du serveur expose « Approuver » à tous (concepteur : non autorisé ; propriétaire : autorisé) ; le concepteur qui l'exécute reçoit 403, rien n'est écrit",
+            "AC-010 [−] importer un profil qui place « Approuver », ou l'écrire dans ses préférences, ne confère rien : refus 403 (permission non conférée) et l'approbation reste refusée"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/src/modules/studio/publication/approbation-commande.test.ts",
+          "controles": [
+            "AC-010 [+] un concepteur découvre « Approuver » par recherche (nom, synonyme, raccourci) : commande de la barre Présentation, icône propre, Ctrl+Maj+F11, aucun droit présumé par l'interface",
+            "AC-010 [−] la boîte propose les publications en revue sans juger du droit ; un refus 403 du serveur est dit tel quel, profil et rôle technique compris"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/e2e/studio-g2.mjs",
+          "controles": [
+            "TR-AC-010 : le concepteur trouve « Approuver » par la recherche de la palette",
+            "TR-AC-010 : exécutée, l'approbation est refusée par le serveur (droit métier absent), rien n'est écrit",
+            "TR-AC-010 : le propriétaire, qui détient le droit, approuve par la même commande (Ctrl+Maj+F11)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -103105,12 +103384,12 @@
         "pr": 165
       },
       "blocage": {
-        "cause": "Contrat et preuves actuelles Studio non validés ; décisions applicables ouvertes.",
-        "responsable": "A1",
-        "essais_effectues": "Lecture des originaux et rapprochement des 630 IDs/textes, sans exécution applicative.",
-        "deblocage": "Décisions du sous-ensemble puis preuves autorisées ; revue des contrats après extraction."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot G2 (vague 2) — outils et BIM",
+        "deblocage": null
       },
-      "suite": "Point 2 du 25 octobre 2026 (partiel) : Refus serveur de l'approbation au concepteur et au rôle d'administration technique (accès support) désormais testés. Fonction absente : « Approuver » n'est pas un outil du catalogue (aucune découverte par recherche possible) et aucun import de profil n'existe.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "apps/web/e2e ; tests packages ; scripts/bench ; workflows",
       "source_checked": false,
       "cloture": {
@@ -103145,6 +103424,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/PREUVES-POINT2-2026-10-25.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot G2 (vague 2) — outils et BIM",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {

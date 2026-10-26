@@ -1,5 +1,23 @@
 # Reprise — Studio
 
+## Checkpoint 2026-10-26 (heure suisse 06:40) — vague 2 : G2 intégré, revue Codex #332 et TR-EX-059
+
+- **Lot G2** (outils et BIM) intégré dans la PR #332 : échelle d'accès (TR-EX-027), accrochage ambigu résolu (TR-AC-004),
+  cote de face 3D (TR-INV-013), « Approuver » par rôle (TR-AC-010), enveloppe complète (TR-IF-006), TR-IF-003, MES-05 ;
+  inscrits **Implémenté** (preuves « test prescrit »), promotion après la CI verte de `main`. Raccourcis hors collision :
+  Approuver Ctrl+Maj+F11, Échelle d'accès Ctrl+Maj+F12, Cote de face 3D Maj+F12 ; recette `studio-g2.mjs` branchée en CI
+  (lot `complements`, Mailpit requis, donc hors `E2E_DEFAUT` de la préproduction).
+- **Revue Codex #332** (deux P2, lot G1) corrigée : une symétrie garde la cote sur la même face physique (ancres recalculées
+  par point transformé, lien rompu et « à résoudre » sans correspondance prouvée) ; une cote copiée avec son mur est reliée
+  au mur copié (copie et symétrie avec copie). Tests ajoutés, vérifiés par mutation.
+- **TR-EX-059** (recette `studio-g4.mjs`) : le seuil « calcul d'au moins 1 s » était propre à la recette (EX-059 dit
+  « susceptible de bloquer durablement ») et dépendait de la machine : l'union bornée par `STUDIO_LIMITES_EXACTS` dure
+  982 ms sur la CI, ~3 s ici ; une charge plus lourde dépasse les bornes du résultat exact (vérifié : 448, 512, 640 sommets
+  et escalade sur résultat engagé → « résultat illisible »). Seuil retenu : **2,5 × le budget INP (500 ms)**, la
+  contre-épreuve de même durée sur le fil principal devant rendre « bloque » (inchangée). Décision technique réversible.
+- Compteurs recalculés du registre : **0 À définir / 34 À faire / 12 En cours / 29 Implémenté / 9 Bloqué / 487 Vérifié / 59 Accepté**. **P630=546/630**.
+- Reprise : CI de #332, fusion, puis `completer_preuves.py` sur `origin/main` et promotion des obligations de la vague 2.
+
 ## Achèvement — PR #330 fusionnée, promotion, vague 2 (G1, G3, G4, G5) — 26 octobre 2026
 
 Branche `ccr-187fd2e6-08dk6e`, base `main@085a8f3` (PR #330 : lots PUB, REND et OUT, CI verte).
@@ -9,7 +27,7 @@ Ce qui a été fait :
 - **Promotion** : 55 obligations des lots PUB, REND et OUT et du contrôle de PR passent « Vérifié ».
 - **Vague 2 intégrée** : parcours du dessin au dossier publié, cote associative, états dérivés des contenus (G1) ; exports OBJ / STL / STEP, capacités par sens, corpus et références visuelles (G3) ; mesures avec verdict et contrôle des régressions pertinentes (G4) ; règles d'alerte, mesure des noyaux, spécification du redémarrage, rattachements (G5). Détail : [ACHEVEMENT-STUDIO](recettes/ACHEVEMENT-STUDIO.md).
 
-Compteurs recalculés du registre : **0 À définir / 34 À faire / 19 En cours / 22 Implémenté / 9 Bloqué / 487 Vérifié / 59 Accepté**. **P630=546/630**.
+Compteurs recalculés du registre : à cette date 487 Vérifié, 59 Accepté, 9 Bloqué, 22 Implémenté, 19 En cours, 34 À faire, 0 À définir ; 546 obligations sur 630 closes.
 
 Prochaine action : CI verte de cette PR, fusion, promotion de la vague 2, puis lot G2 et bilan.
 

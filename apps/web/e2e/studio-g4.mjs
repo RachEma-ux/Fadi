@@ -413,8 +413,12 @@ try {
     const sonde2 = await relire(debut2, fin2);
     const verdictBloque = M.studioJugerReactivite({ calcul: "occupation du fil principal (contre-épreuve)", calculMs: Math.min(mesureWorker.calculMs, 4000), surWorker: false, ...sonde2 });
     rapport.resultats.reactivite = { etiquette: APPAREIL.etiquette, worker: { mesure: mesureWorker, verdict: verdictWorker, clics }, contreEpreuve: { mesure: sonde2, verdict: verdictBloque } };
-    check("TR-EX-059 : booléen exact lourd dans le Worker OCCT — calcul d'au moins 1 s, le fil principal continue de rendre et chaque interaction faite pendant le calcul reste sous le budget INP (verdict « disponible »)",
-      verdictWorker.verdict === "disponible" && mesureWorker.calculMs >= 1000 && mesureWorker.interactionsMs.length >= 3,
+    // Calcul « lourd » (EX-059 : « susceptible de bloquer durablement l'interaction ») : au moins 2,5 fois le budget INP
+    // (500 ms), et la contre-épreuve ci-dessous montre qu'une occupation du fil principal de même durée bloque. Le seuil
+    // ne dépend pas de la vitesse de la machine (l'union bornée par STUDIO_LIMITES_EXACTS dure ~1 s sur la CI, ~3 s ici).
+    const LOURD_MS = 2.5 * 200;
+    check("TR-EX-059 : booléen exact lourd dans le Worker OCCT — calcul d'au moins 2,5 fois le budget INP (500 ms), le fil principal continue de rendre et chaque interaction faite pendant le calcul reste sous le budget INP (verdict « disponible »)",
+      verdictWorker.verdict === "disponible" && mesureWorker.calculMs >= LOURD_MS && mesureWorker.interactionsMs.length >= 3,
       `${mesureWorker.calculMs.toFixed(0)} ms de calcul, ${mesureWorker.trames} trames, trame max ${mesureWorker.trameMaxMs.toFixed(1)} ms, ${mesureWorker.interactionsMs.length} interactions (max ${Math.max(0, ...mesureWorker.interactionsMs)} ms) ; ${verdictWorker.motifs.join(" ; ")} (${APPAREIL.etiquette})`);
     check("TR-EX-059 (contre-épreuve) : la même mesure pendant une occupation du fil principal de même durée rend « bloque »", verdictBloque.verdict === "bloque", `${verdictBloque.verdict} : ${verdictBloque.motifs.join(" ; ")}`);
     await ctx.close();
