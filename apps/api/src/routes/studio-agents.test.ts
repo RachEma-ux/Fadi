@@ -138,7 +138,7 @@ describe("TEST-033 — appel MCP sur une commande protégée : même schéma, m�
     expect(nbRevisions()).toBe(apresHumain);
     expect(avant).toBeLessThan(apresHumain);
   });
-  it("TEST-033 [−] jeton révoqué, expiré, inconnu ou d'un compte suspendu : 401 ; un membre retiré du projet perd l'accès à l'appel suivant", async () => {
+  it("TEST-033 [−] jeton révoqué, expiré, inconnu ou d'un compte suspendu : 401", async () => {
     const j = await jeton("editeur");
     expect((await mcp(j, "ping")).status).toBe(200);
     expect((await mcp("fadi_mcp_inconnu", "ping")).status).toBe(401);
