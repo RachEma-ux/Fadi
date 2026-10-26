@@ -22896,7 +22896,7 @@
           "fichier": "packages/atelier-model/src/studio/couverture-3d.test.ts",
           "controles": [
             "échoue si un type est annoncé disponible sans test associé, ou avec un test introuvable",
-            "types avancés du référentiel (§ 4.1, S5, PERF-07) : sommets et arêtes, groupe, composant, courbe exacte 3D, surface complexe, BRep fournisseur — tous non disponibles (le booléen est disponible depuis le lot F2)"
+            "types avancés du référentiel (§ 4.1, S5, PERF-07) : sommets et arêtes, groupe, courbe exacte 3D, BRep fournisseur — non disponibles (booléen depuis le lot F2, composant 3D depuis le lot W3-B, surfaces NURBS et de subdivision depuis X.1-05 : disponibles)"
           ],
           "rapport": "docs/workstreams/studio/recettes/LOTS-FONCTIONS-2026-10-25.md",
           "limite": "Fonction construite le 25 octobre 2026 ; tests exécutés localement puis en CI ; les suites API sur base attestée tournent seulement en CI.",
@@ -32234,11 +32234,11 @@
         ],
         "preparation_initiale": "Corpus autorisé, SHA/build, contrats ; bases jetables pour tests mutateurs"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "portee": "Lot W3-A (vague 3) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -32288,6 +32288,90 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version du fichier dont le SHA-256 est celui cité, retrouvée dans l’historique de main ; date du commit.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/blocs/blocs.test.ts",
+          "controles": [
+            "X.1-01 blocs : une définition réutilisable et ses insertions transformées (position, rotation, échelle, symétrie) — géométrie dérivée exacte, document relu à l'identique",
+            "X.1-01 blocs : redéfinir le bloc se répercute sur toutes ses insertions",
+            "X.1-01 blocs : éclater une insertion rend ses formes posées, objets du document",
+            "X.1-01 blocs : définition depuis la sélection, formes remplacées par une insertion au point de base (dessin identique)",
+            "X.1-01 blocs : commandes générales sur les insertions (Déplacer, Rotation, Symétrie, Échelle, Copier, calque, Supprimer)",
+            "X.1-01 blocs : refus explicites (définition vide, élément extrudé ou sur un calque, nom répété, bloc absent, échelle nulle, rotation hors [0 ; 2π[, insertion inconnue)",
+            "X.1-01 blocs : un document antérieur reste valide et relu à l'identique (extension facultative, forme canonique)",
+            "X.1-01 blocs : DXF écrit BLOCKS / INSERT et relu en définition et insertions identiques (aller-retour), SVG développé",
+            "X.1-01 blocs : import DXF — INSERT à attributs, en réseau, à échelle non uniforme ou d'un bloc non représentable compté, jamais deviné"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/contraintes/contraintes.test.ts",
+          "controles": [
+            "X.1-01 contraintes : chaque type est résolu — horizontal, vertical, parallélisme, perpendicularité, tangence, coïncidence, égalité de longueur, distance fixée",
+            "X.1-01 contraintes : résolution déterministe — mêmes formes, mêmes contraintes, même document au bit près ; la géométrie bouge le moins possible",
+            "X.1-01 contraintes : système insatisfaisable refusé, jamais résolu en silence",
+            "X.1-01 contraintes : sur-contrainte signalée et refusée, la contrainte redondante nommée",
+            "X.1-01 contraintes : la géométrie change, la contrainte passe « à résoudre » ; résolue sur demande seulement",
+            "X.1-01 contraintes : les cotes liées suivent la géométrie résolue ; refus explicites des cibles et des valeurs"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/corpus/corpus.test.ts",
+          "controles": [
+            "X.1-01 S1 : blocs définis par l'utilisateur (définition réutilisable, insertions transformées) et contraintes géométriques satisfaites dans chaque motif ; plus aucun élément déclaré absent",
+            "X.1-01 S1 : hachures, symboles (blocs de bibliothèque) et splines dans chaque motif, rendus dans le SVG de référence",
+            "chaque scène S1–S7 (100 primitives) : les commandes appliquées à un document vide rendent le feuillet à l'identique (graphismes, exacts, sources compris)",
+            "X.1-08 captures de référence versionnées : chaque image (planche 2D et vue 3D, S1–S7) existe avec son empreinte SHA-256"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/document-2d.test.ts",
+          "controles": [
+            "lot W3-A (X.1-01) : blocs (définir, insérer, éclater) et contraintes (contraindre), identités, icônes et raccourcis propres ; registre entier sans doublon"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/src/modules/studio/blocs/blocs-ui.test.ts",
+          "controles": [
+            "X.1-01 interface blocs : définir depuis la sélection, insérer, modifier la pose, éclater et retirer — commandes du modèle, refus dits",
+            "X.1-01 interface blocs : une insertion se sélectionne (clic, rectangle, tout sélectionner), se déplace et compte dans le cadrage ; la planche la dessine",
+            "X.1-01 interface contraintes : poser depuis la sélection et résoudre, refus de l'insatisfaisable dit, état « à résoudre » affiché puis résolu",
+            "X.1-01 interface : règle d'or des quatre outils (icône, barre, raccourci libre et non réservé, alternative clavier) ; textes traduits"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/e2e/studio-w3a.mjs",
+          "controles": [
+            "Redéfinir le bloc : les deux insertions suivent la nouvelle définition (une ligne, plus de cercle), sans recopie",
+            "Ctrl+F12 : l'insertion est éclatée en formes du dessin (identifiant insertion.élément)",
+            "Export du serveur : DXF en BLOCK / INSERT (nom ASCII dérivé), SVG développé (data-insertion, data-bloc)",
+            "Insatisfaisable (horizontale puis verticale de la même ligne) : refusé avec son motif, jamais résolu en silence",
+            "API : une rotation de la ligne contrainte est acceptée ; le serveur marque sa contrainte « à résoudre » (géométrie gardée)",
+            "« Résoudre les contraintes cochées » : satisfaite de nouveau, sur demande seulement"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -32297,20 +32381,12 @@
         "pr_preparation_courante": 172
       },
       "blocage": {
-        "cause": {
-          "lacunes": [
-            "Hachures/blocs/contraintes/courbes, sérialisation contrat et attentes complètes."
-          ],
-          "responsable_declencheur": {
-            "owner": "A5",
-            "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
-          }
-        },
-        "responsable": "A5",
-        "essais_effectues": "Qualification individuelle A5 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
-        "deblocage": "Contrat données/commandes pertinent adopté avant adaptation exploitable ; seuil DEC13 seulement si oracle dépend du budget."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot W3-A (vague 3)",
+        "deblocage": null
       },
-      "suite": "S1 (motif de 16) porte désormais hachures (contour, angle, espacement saisis, transparence), symboles nord et croix posés comme blocs de bibliothèque et splines de Bézier, avec leurs oracles (aire des hachures, symboles par nom, points des splines). Reste : blocs définis par l'utilisateur (définition réutilisable + insertions) et contraintes géométriques (parallélisme, tangence…) — fonctions absentes de studio-document/1 (aucun type, aucune commande) ; le corpus les déclare absentes, jamais simulées. Elles relèvent de leurs propres exigences de modèle, hors du lot G3.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "apps/web/e2e ; tests packages ; scripts/bench ; workflows",
       "source_checked": false,
       "cloture": {
@@ -32367,6 +32443,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot W3-A (vague 3)",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -32826,11 +32909,11 @@
         ],
         "preparation_initiale": "Corpus autorisé, SHA/build, contrats ; bases jetables pour tests mutateurs"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "portee": "Lot W3-B (vague 3) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -32880,6 +32963,97 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version du fichier dont le SHA-256 est celui cité, retrouvée dans l’historique de main ; date du commit.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/corpus/corpus.test.ts",
+          "controles": [
+            "X.1-04 S4 : niveaux comme objets, structure typée (poteau, poutre, dalle) et composant répété — déplacer un niveau translate ses seuls objets, modifier la gaine change toutes ses occurrences",
+            "chaque scène S1–S7 (100 primitives) : les commandes appliquées à un document vide rendent le feuillet à l'identique (graphismes, exacts, sources compris)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/batiment/batiment.test.ts",
+          "controles": [
+            "niveau nommé avec sa cote ; murs, échelle, poteau, poutre, dalle et occurrences rattachés ; l'ouverture suit son mur",
+            "déplacer un niveau (nouvelle cote) translate tous ses objets du même écart, dans la même commande ; les autres ne bougent pas",
+            "refus : niveau inconnu, nom vide, cote non finie, champ inconnu ; objet rattaché sur un calque verrouillé (rien n'est déplacé en partie)",
+            "supprimer un niveau détache ses objets (géométrie et cotes gardées), rien n'est supprimé avec lui",
+            "vue par niveau : document dérivé valide, objets du niveau seulement (ou sans niveau) ; la géométrie libre gardée ou masquée sur demande",
+            "chaque occurrence dérive sa géométrie de la définition placée ; modifier la définition change toutes ses occurrences dans la même révision",
+            "rendre unique : l'occurrence désigne une copie de la définition ; la définition d'origine modifiée ne la touche plus",
+            "table d'instanciation : une géométrie par définition, l'indice d'instance désigne son occurrence (désignation conservée après instanciation)",
+            "refus : définition sans solide, solide avec calque, source ou basculement, identifiants de solide dupliqués ; occurrence d'une définition inconnue ; définition encore employée",
+            "emprise, volume 3D et métré des seules valeurs saisies ; aucune masse ni vérification",
+            "refus : axe de poutre nul, contour de dalle croisé, section nulle ou absente, type inconnu, champ métier inconnu (matériau, classe)",
+            "A.3-09 : une boîte libre n'acquiert jamais le type poteau ; seul l'outil Élément structurel crée un poteau, et aucune constante normative n'est écrite",
+            "un IfcBuildingStorey par niveau (nom, Elevation = cote) en plus du niveau de référence ; chaque élément rattaché contenu dans son étage",
+            "poteau, poutre, dalle → IfcColumn, IfcBeam, IfcSlab (.NOTDEFINED., SweptSolid) ; composant → IfcBuildingElementProxyType à représentation partagée, occurrences IfcMappedItem reliées par IfcRelDefinesByType",
+            "un document sans niveau, composant ni élément structurel reste valide et relu à l'identique (extension additive)",
+            "modifier une définition invalide la projection de ses seules occurrences ; les effets citent la définition et les relations occurrence → définition"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/couverture-3d.test.ts",
+          "controles": [
+            "cohérent : chaque type disponible cite au moins un test existant (fichier et libellé exact), chaque type avancé est non disponible sans outil ni test"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/api/src/testing/studio-contrat-commandes.test.ts",
+          "controles": [
+            "X.1-04 serveur : les quatre outils du bâtiment sont acceptés par le schéma de l'API et appliqués par le serveur ; déplacer le niveau translate ses objets dans la révision enregistrée",
+            "X.1-04 serveur [−] niveau inconnu, définition inconnue, champ métier ajouté : 400, rien n'est écrit"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/src/modules/studio/batiment/batiment-ui.test.ts",
+          "controles": [
+            "élément structurel : poteau, poutre, dalle depuis la saisie ; refus sans type, sans section ou avec une géométrie incomplète ; le modèle les accepte",
+            "rendre unique : une définition copiée et l'occurrence replacée sur elle, en un seul lot accepté"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/e2e/studio-w3b.mjs",
+          "controles": [
+            "X.1-04 (règle d'or) : Niveau Ctrl+F2, Composant Ctrl+F3, Occurrence Ctrl+F6, Élément structurel Ctrl+F7 — chacun son icône, famille Architecture",
+            "X.1-04 : déplacer l'étage (3,2 → 4 m) translate de 0,8 m ses poteau, poutre, dalle, mur et occurrence ; l'occurrence du rez ne bouge pas",
+            "X.1-04 : vue par niveau — la planche n'affiche que les objets du niveau choisi (rez : aucun, étage : mur, poteau, poutre, dalle)",
+            "X.1-04 : export IFC — trois IfcBuildingStorey (référence, rez, étage à 4 m), IfcColumn / IfcBeam / IfcSlab, deux IfcMappedItem d'un type partagé"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "document",
+          "etiquette": "lecture statique",
+          "fichier": "apps/api/test-corpus/ifc/generer-studio.ts",
+          "controles": [
+            "exportStudioIfc"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -32889,20 +33063,12 @@
         "pr_preparation_courante": 172
       },
       "blocage": {
-        "cause": {
-          "lacunes": [
-            "Structure/réseaux/composants adaptés immeuble ; pas validation réglementaire inventée."
-          ],
-          "responsable_declencheur": {
-            "owner": "A5",
-            "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
-          }
-        },
-        "responsable": "A5",
-        "essais_effectues": "Qualification individuelle A5 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
-        "deblocage": "Contrat données/commandes pertinent adopté avant adaptation exploitable ; seuil DEC13 seulement si oracle dépend du budget."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot W3-B (vague 3)",
+        "deblocage": null
       },
-      "suite": "Inchangé dans ce lot : niveaux comme objets, composants (définition partagée + occurrences) et éléments structurels typés restent absents de studio-document/1 (aucun type ni commande : couverture-3d.ts les inventorie « non disponible »). Le corpus les déclare absents. Fonctions de modèle à livrer par leurs exigences propres (A.3, C.2), pas par le corpus.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "apps/web/e2e ; tests packages ; scripts/bench ; workflows",
       "source_checked": false,
       "cloture": {
@@ -32959,6 +33125,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot W3-B (vague 3)",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -33011,11 +33184,11 @@
         ],
         "preparation_initiale": "Corpus autorisé, SHA/build, contrats ; bases jetables pour tests mutateurs"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "portee": "Lot W3-C (vague 3) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -33065,6 +33238,149 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version du fichier dont le SHA-256 est celui cité, retrouvée dans l’historique de main ; date du commit.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/corpus/corpus.test.ts",
+          "controles": [
+            "X.1-05 S5 : surface libre NURBS (quart de cylindre rationnel, pôles et poids) et surface épaissie par le noyau, surface conservée — oracle de forme close (aire π R L / 2, volume π/4 ((R + e)² − R²) L)",
+            "X.1-05 S5 : booléens exacts (union, différence, intersection) aux opérandes conservés, maillage du noyau dans la référence 3D",
+            "chaque scène S1–S7 (100 primitives) : les commandes appliquées à un document vide rendent le feuillet à l'identique (graphismes, exacts, sources compris)",
+            "X.1-05 S5 : surface de subdivision de Loop (tétraèdre régulier, niveau 1) et sa solidification polyédrique par le noyau, surface conservée — oracle de forme close (sommets a/4, points d'arête (a + b)/4 ; aire s² (3√2/4 + √3/2), volume 5 s³ / 24), dans l'enveloppe convexe du maillage de contrôle"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/api/src/lib/studio-corpus-s5.test.ts",
+          "controles": [
+            "X.1-05 booléens S5 : union, différence et intersection recalculées par le noyau — même empreinte que la donnée conservée, volumes de forme close"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/geometry-exact/src/index.test.ts",
+          "controles": [
+            "NURBS rationnelle : quart de cylindre R 2 m, L 3 m épaissi de 0,1 m vers l'extérieur — volume π/4 ((R + e)² − R²) L, intérieur π/4 (R² − (R − e)²) L",
+            "NURBS : les pôles ne sont pas des points de passage — plaque bilinéaire 2 × 3 épaissie de 0,1 m : volume 0,6 ; poids changés : autre surface",
+            "NURBS : entrées refusées — degré > lignes − 1, pôles en nombre faux, poids nul, épaisseur nulle, bord réduit à un point",
+            "polyèdre : tétraèdre régulier d'arête 2√2 cousu en solide — volume 8/3, 4 faces, un solide ; reproductible",
+            "polyèdre : non fermé, indice hors sommets, triangle dégénéré — refusés avant le noyau"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/surfaces-libres.test.ts",
+          "controles": [
+            "X.1-05 NURBS : quart de cylindre rationnel (poids 1, √2/2, 1) — chaque point évalué est à la distance R de l'axe, aire approchée → π R L / 2",
+            "X.1-05 NURBS : les pôles ne sont pas des points de passage — la nappe passe par ses quatre coins ; nœuds uniformes bornés dérivés",
+            "X.1-05 validation : degré > lignes − 1, pôles ou poids en nombre faux, poids ≤ 0, bord réduit à un point, coins confondus, champ inconnu — refusés avec leur chemin",
+            "X.1-05 commandes : créer, modifier un pôle et son poids (même identité), épaissir (surface conservée dans le solide exact), supprimer ; refus nommés",
+            "X.1-05 calque verrouillé : créer, modifier, épaissir et supprimer une surface sont refusés",
+            "X.1-05 document : extension additive de studio-document/1 — un document sans surface est relu à l'identique ; identifiants uniques dans tout le document",
+            "X.1-05 limites : résultat de l'épaississement borné par STUDIO_LIMITES_EXACTS (triangles, brep), grille de 64 × 64 pôles au plus",
+            "X.1-05 épaississement : capture immuable (entrée nurbs du noyau, épaisseur signée selon le côté), refus nommés, résultat périmé si la surface change, commande d'engagement",
+            "X.1-05 vue 3D : maillage d'affichage dérivé (calque masqué non rendu), assemblage par morceaux identique à studioMesh3d",
+            "X.1-05 exports : OBJ écrit la nappe ; STL et STEP la comptent « surface-libre-non-epaissie » ; épaissie, elle est un solide exact écrit en STL et STEP ; IFC et rapport de fidélité la déclarent"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/api/src/lib/studio-surfaces.test.ts",
+          "controles": [
+            "X.1-05 serveur : l'épaississement est recalculé depuis la surface du document du serveur ; son résultat remplace celui du client",
+            "X.1-05 serveur : empreinte d'un calcul sur une autre surface ou d'un autre côté — refus 400 exact-mismatch ; surface absente ou épaisseur manquante — refus 400 studio-invalid, sans noyau",
+            "X.1-05 serveur : la surface créée dans le même lot est relue après la création (préfixe appliqué), puis épaissie",
+            "X.1-05 STEP serveur : la surface épaissie part en brep exact, relue par le noyau avec son volume ; une surface non épaissie n'est pas écrite",
+            "X.1-05 serveur : la solidification d'une surface de subdivision est recalculée depuis le maillage du serveur ; volume 5 s³ / 24 ; maillage ouvert refusé sans noyau"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/src/modules/studio/vue3d/surfaces.test.ts",
+          "controles": [
+            "X.1-05 interface : Surface NURBS — grille plane de pôles saisie (normale +z), champs vides refusés, aucune valeur proposée",
+            "X.1-05 interface : Modifier la surface — le pôle choisi reprend ses valeurs, position et poids saisis, même identité ; refus nommés",
+            "X.1-05 interface : épaississement de bout en bout — capture, tâche « nurbs » au Worker, résultat, engagement de la commande ; surface conservée",
+            "X.1-05 interface : résultat périmé (révision ou surface changée), lecture seule, panne du Worker — jamais engagé, document intact",
+            "X.1-05 interface : panneaux — formulaire vide (aucune valeur proposée), pôles de la surface sélectionnée, épaississement sans côté choisi ; lecture seule désactivée",
+            "X.1-05 vue 3D : nappe à deux faces, désignable ; sélectionnée, son polygone de contrôle et un repère désignable par pôle (userData.pole)",
+            "X.1-05 règle d'or : Surface NURBS (Ctrl+F8), Modifier la surface (Ctrl+F9), Épaissir la surface (Shift+F11) — icône propre, barre « volume-libre », raccourci libre et non réservé, alternative clavier ; seul Épaissir charge le noyau exact",
+            "X.1-05 interface : Surface de subdivision — maillage de contrôle saisi au clavier (sommets, faces numérotées à partir de 1, niveau), saisies incomplètes refusées ; sommet modifié, même identité",
+            "X.1-05 interface : solidification de bout en bout — tâche « polyedre » au Worker (maillage subdivisé), engagement de la commande ; surface ouverte refusée avant le Worker",
+            "X.1-05 vue 3D : surface de subdivision sélectionnée — maillage de contrôle et un repère désignable par sommet (userData.sommet) ; panneaux : saisies vides, sommet choisi, solidification"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/document-2d.test.ts",
+          "controles": [
+            "X.1-05 : surfaces libres — Surface NURBS (Ctrl+F8), Modifier la surface (Ctrl+F9), Épaissir la surface (Shift+F11), identités, icônes et raccourcis propres, barre « volume-libre »"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/e2e/studio-w3c.mjs",
+          "controles": [
+            "Modifier la surface : un clic sur le repère du pôle central (canevas WebGL) le choisit dans le formulaire",
+            "oracle : volume du noyau dans le navigateur = π/4 ((R + e)² − R²) L à 1e-6 près ; rien d'engagé par le calcul",
+            "enregistrement : le serveur a recalculé l'épaississement (même empreinte), volume de forme close à 1e-6 près, surface conservée",
+            "R9 : empreinte qui ne reproduit pas le calcul du serveur — refus 400 exact-mismatch, rien n'est écrit",
+            "exports : OBJ écrit la nappe éditée et le solide épaissi ; STEP le solide exact (faces B-spline rationnelles) ; la surface non épaissie n'y est pas",
+            "Modifier la surface (subdivision) : un clic sur le repère du sommet 1 le choisit, ses valeurs reprises (x −9, y 1, z 2)",
+            "oracle : tétraèdre régulier subdivisé (Loop, niveau 1) cousu par le noyau — volume 5/24 m³ à 1e-9 près",
+            "enregistrement : le serveur a recalculé la solidification (même volume 5/24), surface de subdivision conservée",
+            "surface de subdivision ouverte : solidification refusée (400 studio-invalid), rien n'est écrit"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/subdivisions.test.ts",
+          "controles": [
+            "X.1-05 subdivision : tétraèdre régulier, niveau 1 — sommets a/4 et points d'arête (a + b)/4, aire s² (3√2/4 + √3/2), volume 5 s³ / 24 ; niveau 2 dans l'enveloppe convexe, volume décroissant",
+            "X.1-05 subdivision validation : face non triangulaire, indice hors sommets, face dégénérée, orientation incohérente, arête non manifold, sommet inutilisé, niveau hors bornes ou trop de triangles — refusés avec leur chemin",
+            "X.1-05 subdivision commandes : créer, modifier un sommet de contrôle (même identité), solidifier un maillage fermé (surface conservée), supprimer ; maillage ouvert refusé",
+            "X.1-05 subdivision calque verrouillé : créer, modifier, solidifier et supprimer sont refusés ; document sans subdivision relu à l'identique",
+            "X.1-05 subdivision : solidification — capture (entrée polyèdre du maillage subdivisé), maillage ouvert ou orienté vers l'intérieur refusé, résultat périmé, commande d'engagement",
+            "X.1-05 subdivision vue 3D : maillage subdivisé dérivé, bords libres d'une surface ouverte, aucun bord d'une surface fermée, assemblage par morceaux identique",
+            "X.1-05 subdivision exports : STL écrit la surface fermée, compte la surface ouverte ; OBJ les écrit ; STEP compte la surface non solidifiée, écrit le solide ; IFC et rapport de fidélité la déclarent"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/couverture-3d.test.ts",
+          "controles": [
+            "types avancés du référentiel (§ 4.1, S5, PERF-07) : sommets et arêtes, groupe, courbe exacte 3D, BRep fournisseur — non disponibles (booléen depuis le lot F2, composant 3D depuis le lot W3-B, surfaces NURBS et de subdivision depuis X.1-05 : disponibles)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -33074,20 +33390,12 @@
         "pr_preparation_courante": 172
       },
       "blocage": {
-        "cause": {
-          "lacunes": [
-            "Booléens/courbes/surfaces complexes représentatives, oracles topologiques et format stable."
-          ],
-          "responsable_declencheur": {
-            "owner": "A5",
-            "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
-          }
-        },
-        "responsable": "A5",
-        "essais_effectues": "Qualification individuelle A5 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
-        "deblocage": "Contrat données/commandes pertinent adopté avant adaptation exploitable ; seuil DEC13 seulement si oracle dépend du budget."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot W3-C (vague 3)",
+        "deblocage": null
       },
-      "suite": "S5 porte désormais trois booléens exacts (union, différence, intersection de deux boîtes, opérandes conservés), résultat du noyau OCCT conservé avec son empreinte (fixtures/s5-exacts.ts), recalculé par le serveur à la pose (recette studio-corpus-references) ; oracle de forme close (1,5 V, 0,5 V, 0,5 V). Reste : surfaces libres NURBS / subdivision — absentes de studio-document/1 (le noyau sait épaissir une surface B-spline, aucune commande Studio ne la crée) ; déclarées absentes.",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "apps/web/e2e ; tests packages ; scripts/bench ; workflows",
       "source_checked": false,
       "cloture": {
@@ -33144,6 +33452,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot W3-C (vague 3)",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {
@@ -33196,11 +33511,11 @@
         ],
         "preparation_initiale": "Corpus autorisé, SHA/build, contrats ; bases jetables pour tests mutateurs"
       },
-      "statut": "En cours",
+      "statut": "Implémenté",
       "conformite": "Non évaluée pour le produit Studio",
       "tests": {
         "etat": "Non exécuté",
-        "portee": "Aucune exécution Studio déduite de la préparation"
+        "portee": "Lot W3-D (vague 3) — test prescrit, exécution CI de la PR attendue"
       },
       "preuves": [
         {
@@ -33250,6 +33565,104 @@
           "environnement": "Lecture du dépôt Git RachEma-ux/Fadi (fichier versionné), sans exécution",
           "methode": "Version du fichier dont le SHA-256 est celui cité, retrouvée dans l’historique de main ; date du commit.",
           "etiquette": "lecture statique"
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/fusion-variantes.test.ts",
+          "controles": [
+            "fusion sans conflit : changements de la source repris, ceux de la cible conservés, ancêtre respecté",
+            "par propriété : deux propriétés différentes du même objet modifiées de chaque côté sont fusionnées sans conflit",
+            "même objet modifié des deux côtés : conflit par propriété, provisoire (cible gardée) jusqu'à la résolution explicite",
+            "supprimé d'un côté, modifié de l'autre : conflit « suppression-modification », dans les deux sens",
+            "identifiants en collision : même identifiant ajouté des deux côtés avec des contenus différents",
+            "référence cassée : ouverture ajoutée dans la cible sur un mur supprimé par la source",
+            "référence cassée : cote associative ajoutée sur une ligne supprimée de l'autre côté",
+            "référence cassée : objet placé dans la cible sur un calque supprimé par la source",
+            "opérandes exacts : solide consommé par un booléen dans la source, modifié dans la cible (suppression + opérande en double)",
+            "combinaison invalide : propriétés reprises des deux côtés dont l'assemblage est refusé (ouverture hors du mur)",
+            "révision de dérivation la plus proche ; une fusion déplace l'ancêtre ; aucune histoire commune ; ambiguïté refusée"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "packages/atelier-model/src/studio/corpus/corpus.test.ts",
+          "controles": [
+            "F1 (lot W3-D) : B fusionnée dans C depuis l'ancêtre A1 — conflit de collision attendu, tranché explicitement ; tête fusionnée = oracle",
+            "A1 recrée exactement le plan de base ; têtes A, B, C conformes à l'oracle ; REC-A-03 3,180 puis 3,096 m³"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/api/src/routes/studio-fusion.test.ts",
+          "controles": [
+            "aperçu : ancêtre = révision de dérivation, changements des deux côtés, conflit par propriété, rien n'est écrit",
+            "application : refusée tant qu'un conflit n'est pas résolu ; résolue, une seule révision `variant-merge` de la cible, journalisée",
+            "annulation : nouvelle révision `variant-merge-undo` au document d'avant ; la fusion annulée sort de l'histoire suivie",
+            "droits : seul un rôle qui peut modifier la cible fusionne (lecteur 403, verrou d'un autre 423, étranger 404) ; rien n'est écrit",
+            "cible archivée refusée (409 archived) ; source archivée lisible et fusionnable",
+            "têtes changées et aperçu périmé : stale_revision, source_changee, apercu_perime ; résolution inconnue 400 ; rien à fusionner 409",
+            "aucun ancêtre commun (variante créée vide, copie indépendante) : 409 fusion_sans_ancetre ; même variante : 400"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/api/src/routes/studio-contrats.test.ts",
+          "controles": [
+            "studio-api-fusion-apercu/1 — POST …/fusion/apercu : réponse conforme, en-tête X-Studio-Contrat",
+            "studio-api-fusion-appliquer/1 — POST …/fusion : réponse conforme, en-tête X-Studio-Contrat",
+            "studio-api-fusion-annuler/1 — POST …/fusion/annulation : réponse conforme, en-tête X-Studio-Contrat"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/api/src/testing/studio-ecritures-architecture.test.ts",
+          "controles": [
+            "fusion de variantes (lot W3-D) : sa révision est écrite par le même module, sous la même orchestration (verrous, rejeu, chemin d'écriture, journal)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "test_automatise",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/src/modules/studio/fusion/fusion-ui.test.ts",
+          "controles": [
+            "W3-D [+] « Fusionner une variante » (Ctrl+F10) et « Annuler la dernière fusion » (Ctrl+F11) : icône propre, barre Édition, raccourci libre, trouvées par recherche, ouvertes par-dessus le domaine",
+            "W3-D [−] en lecture seule (lecteur, révision historique), les deux commandes sont indisponibles ; le serveur reste seul juge",
+            "W3-D [−] aucun conflit n'a de choix par défaut : la fusion reste bloquée tant qu'un conflit n'est pas tranché ; brouillon non enregistré bloquant",
+            "W3-D [+] le corps d'application reprend l'aperçu accepté (têtes, empreinte exacte) et seulement les choix qui désignent un conflit",
+            "W3-D [−] refus du serveur dits en français (droits, archive, têtes changées, aperçu périmé, conflits, rien à fusionner, aucun ancêtre)",
+            "W3-D [+] chaque texte de la boîte et des règles a sa traduction anglaise (en.json)"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
+        },
+        {
+          "type": "recette_e2e",
+          "etiquette": "test prescrit",
+          "fichier": "apps/web/e2e/studio-w3d.mjs",
+          "controles": [
+            "Ctrl+F10 ouvre la boîte « Fusionner une variante »",
+            "chaque conflit tranché au clavier (« Garder la source ») : la fusion devient possible",
+            "la source B n'est pas écrite",
+            "Ctrl+F11 : annulation en une nouvelle révision `variant-merge-undo` au document d'avant la fusion",
+            "aperçu périmé (A changée entre-temps) : 409 stale_revision, rien n'est fusionné"
+          ],
+          "rapport": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Contrôle exécuté localement puis en CI ; acceptation produit non déduite."
         }
       ],
       "github": {
@@ -33259,20 +33672,12 @@
         "pr_preparation_courante": 172
       },
       "blocage": {
-        "cause": {
-          "lacunes": [
-            "Dossiers/modèles/contrôles effectifs du contrat, sérialisation/manifeste hash et snapshots restaurables."
-          ],
-          "responsable_declencheur": {
-            "owner": "A5",
-            "trigger": "Avant exécution du lot dépendant autorisé, sans bloquer la préparation documentaire indépendante"
-          }
-        },
-        "responsable": "A5",
-        "essais_effectues": "Qualification individuelle A5 et rapprochement A0 du texte/ID/propriétaire/source exacts.",
-        "deblocage": "Contrat données/commandes pertinent adopté avant adaptation exploitable ; seuil DEC13 seulement si oracle dépend du budget."
+        "cause": null,
+        "responsable": "Chef de projet",
+        "essais_effectues": "Lot W3-D (vague 3)",
+        "deblocage": null
       },
-      "suite": "Inchangé : la fusion de variantes n'existe pas dans Studio (aucune fonction, route ni commande) ; le plan S6 dérive et compare, il ne fusionne pas (déclaré absent). Les exigences réglementaires ne sont jamais inventées (exigences de recette synthétiques). La tête de A est désormais photographiée (référence rendue S6).",
+      "suite": "Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.",
       "composants_candidats": "apps/web/e2e ; tests packages ; scripts/bench ; workflows",
       "source_checked": false,
       "cloture": {
@@ -33329,6 +33734,13 @@
           "statut": "En cours",
           "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
           "limite": "Suite mise à jour après le lot ; critère pas entièrement prouvé."
+        },
+        {
+          "origine": "Lot W3-D (vague 3)",
+          "statut_precedent": "En cours",
+          "statut": "Implémenté",
+          "preuve": "docs/workstreams/studio/recettes/ACHEVEMENT-STUDIO.md",
+          "limite": "Fonction construite et contrôlée par test exécuté localement puis en CI ; aucune case source cochée ; acceptation produit non déduite."
         }
       ],
       "preparation_documentaire": {

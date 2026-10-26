@@ -64,7 +64,7 @@ OWNER_UID=$(id -u)
 # Sauf aussi studio-preuves-e : elle écrit directement en SQL et démarre une seconde API sur la même base (base jetable).
 E2E_DEFAUT="accueils-design studio-exemple-p118 studio-domaines studio-corpus-s6 studio-corpus-s7 studio-corpus-references studio-chargement studio-memoire studio-faces studio-rendu
 studio-exact studio-g4 studio-mesures-chargement studio-accessibilite studio-echanges atelier-nouveau atelier-documents atelier-echanges atelier-complements
-studio-visualisation studio-exigences studio-preuves-b studio-preuves-c studio-preuves-a studio-contrats-api studio-lot-f studio-cmd studio-rend studio-g1 collaboration-support-telephone atelier-canevas planche planche-modification
+studio-visualisation studio-exigences studio-preuves-b studio-preuves-c studio-preuves-a studio-contrats-api studio-lot-f studio-cmd studio-rend studio-g1 studio-w3a studio-w3b studio-w3c collaboration-support-telephone atelier-canevas planche planche-modification
 planche-outils planche-pousser-aretes planche-pousser-modes planche-objets planche-clavier planche-pousser-l10a planche-liens planche-suivez-moi
 planche-revolution planche-profiles planche-assemblages planche-debit planche-texte-3d planche-pieces-edition planche-modification-l18
 planche-diagnostics-l19 planche-etirement-plis planche-epaissir planche-effilement-loft planche-lots-4-6 planche-lot-5 sandbox-module sandbox-axes

@@ -12,24 +12,24 @@ manquant ; aucun test citant une exigence inconnue des fiches ; aucun lien de CI
 
 ## EX-100 — critère de preuve (preuves d'exécution du registre)
 
-Preuves d'exécution (`test_automatise`, `recette_e2e`) : 1106 ; conformité attribuable : 0.
+Preuves d'exécution (`test_automatise`, `recette_e2e`) : 1218 ; conformité attribuable : 0.
 
 | Champ exigé | Preuves où il manque |
 |---|---:|
-| build | 1078 |
-| commit | 74 |
-| contrat | 1106 |
-| corpus | 1106 |
-| environnement | 74 |
-| executant | 1106 |
-| date | 74 |
-| verdict | 1106 |
+| build | 1170 |
+| commit | 30 |
+| contrat | 1218 |
+| corpus | 1218 |
+| environnement | 30 |
+| executant | 1218 |
+| date | 30 |
+| verdict | 1218 |
 | log | 578 |
 | reference | 1 |
 | scenario | 0 |
 
-Refus « preuve sans SHA » : 74 preuves, 29 tâches. Refus « lien de CI sans scénario » : 0.
-Tâches « Vérifié » ou « Accepté » dont aucune preuve d'exécution n'est attribuable : 394 (le statut documentaire du registre n'est pas une conformité ; aucune n'est déclarée conforme).
+Refus « preuve sans SHA » : 30 preuves, 5 tâches. Refus « lien de CI sans scénario » : 0.
+Tâches « Vérifié » ou « Accepté » dont aucune preuve d'exécution n'est attribuable : 427 (le statut documentaire du registre n'est pas une conformité ; aucune n'est déclarée conforme).
 
 ## EX-102 — lien bidirectionnel (104 fiches EX)
 
@@ -47,7 +47,7 @@ Tâches « Vérifié » ou « Accepté » dont aucune preuve d'exécution n'est 
 
 Composants candidats cités sans source dans le dépôt : 0.
 Tests citant une exigence inconnue des fiches : 0.
-Contrôles consignés au registre introuvables mot pour mot dans le fichier cité (libellé composé, déplacé ou reformulé) : 176.
+Contrôles consignés au registre introuvables mot pour mot dans le fichier cité (libellé composé, déplacé ou reformulé) : 190.
 
 Fiches EX avec au moins un test lié (registre ou titre de test) :
 
@@ -216,7 +216,7 @@ Fiches critiques : 141 ; déclarées conformes : 0 ; pouvant l'être aujourd'hui
 | Champ | Fiches critiques où il manque |
 |---|---:|
 | test | 2 |
-| resultat | 18 |
+| resultat | 3 |
 | build | 141 |
 | preuve | 141 |
 | decision | 0 |

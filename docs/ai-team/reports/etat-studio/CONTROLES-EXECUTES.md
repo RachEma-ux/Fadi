@@ -2,7 +2,7 @@
 
 > Document **généré** par `node scripts/registre/etat-studio.mjs --ecrire` depuis le registre ; la CI (workflow
 > « Continuité de développement ») le recalcule à chaque commit et échoue s’il diffère : il est donc tenu au HEAD testé.
-> Registre lu : `docs/workstreams/studio/task-register.json`, SHA-256 `ad5fb84ab8cada885e05eb81074182ed09f38eb7289889418a2ce14d85716bee`.
+> Registre lu : `docs/workstreams/studio/task-register.json`, SHA-256 `28a90ff32e27b0139b61eb4f787d3fa6155dbdd2adacc36349013f298daf30d2`.
 
 **Une CI verte n’est pas une couverture exhaustive** (X.4-03) : elle prouve seulement que les contrôles listés en partie 1
 ont réussi aux exécutions citées. Les scénarios de la partie 2 ne sont pas couverts, quel que soit l’état de la CI.
@@ -14,8 +14,8 @@ ont réussi aux exécutions citées. Les scénarios de la partie 2 ne sont pas c
 | Accepté / Non applicable | 2 |
 | Accepté / Non exécuté | 57 |
 | Bloqué / Non exécuté | 9 |
-| En cours / Non exécuté | 12 |
-| Implémenté / Non exécuté | 1 |
+| En cours / Non exécuté | 8 |
+| Implémenté / Non exécuté | 5 |
 | Vérifié / Exécuté | 427 |
 | Vérifié / Non applicable | 93 |
 | À faire / Non exécuté | 29 |
@@ -272,10 +272,39 @@ Obligations TEST, NAV, REC, TR et E2E qui ne sont ni « Vérifié » ni « Accep
 | TR-EX-046 | Implémenté | Non exécuté | Conserver la preuve ; recette utilisateur sur appareil réel non évaluée. |
 | TR-EX-059 | En cours | Non exécuté | Point (1) fait : booléen exact lourd (union de deux prismes en étoile de 320 sommets, 2,2–3,8 s dans le Worker OCCT) mesuré : trame max ≈ 50–67 ms, 14–20 interactions pendant le calcul, max 80–112 ms (< 200 ms) ; contre-épreuve « bloque » … |
 
-### 2.2 Tests prescrits non exécutés (5)
+### 2.2 Tests prescrits non exécutés (34)
 
 | ID | Fichier | Libellés |
 |---|---|---|
+| X.1-01 | `packages/atelier-model/src/studio/blocs/blocs.test.ts` | X.1-01 blocs : une définition réutilisable et ses insertions transformées (position, rotation, échelle, symétrie) — géométrie dérivée exacte, document relu à l'identique ; X.1-01 blocs : redéfinir le bloc se répercute sur toutes ses insert… |
+| X.1-01 | `packages/atelier-model/src/studio/contraintes/contraintes.test.ts` | X.1-01 contraintes : chaque type est résolu — horizontal, vertical, parallélisme, perpendicularité, tangence, coïncidence, égalité de longueur, distance fixée ; X.1-01 contraintes : résolution déterministe — mêmes formes, mêmes contraintes… |
+| X.1-01 | `packages/atelier-model/src/studio/corpus/corpus.test.ts` | X.1-01 S1 : blocs définis par l'utilisateur (définition réutilisable, insertions transformées) et contraintes géométriques satisfaites dans chaque motif ; plus aucun élément déclaré absent ; X.1-01 S1 : hachures, symboles (blocs de bibliot… |
+| X.1-01 | `packages/atelier-model/src/studio/document-2d.test.ts` | lot W3-A (X.1-01) : blocs (définir, insérer, éclater) et contraintes (contraindre), identités, icônes et raccourcis propres ; registre entier sans doublon |
+| X.1-01 | `apps/web/src/modules/studio/blocs/blocs-ui.test.ts` | X.1-01 interface blocs : définir depuis la sélection, insérer, modifier la pose, éclater et retirer — commandes du modèle, refus dits ; X.1-01 interface blocs : une insertion se sélectionne (clic, rectangle, tout sélectionner), se déplace … |
+| X.1-01 | `apps/web/e2e/studio-w3a.mjs` | Redéfinir le bloc : les deux insertions suivent la nouvelle définition (une ligne, plus de cercle), sans recopie ; Ctrl+F12 : l'insertion est éclatée en formes du dessin (identifiant insertion.élément) ; Export du serveur : DXF en BLOCK / … |
+| X.1-04 | `packages/atelier-model/src/studio/corpus/corpus.test.ts` | X.1-04 S4 : niveaux comme objets, structure typée (poteau, poutre, dalle) et composant répété — déplacer un niveau translate ses seuls objets, modifier la gaine change toutes ses occurrences ; chaque scène S1–S7 (100 primitives) : les comm… |
+| X.1-04 | `packages/atelier-model/src/studio/batiment/batiment.test.ts` | niveau nommé avec sa cote ; murs, échelle, poteau, poutre, dalle et occurrences rattachés ; l'ouverture suit son mur ; déplacer un niveau (nouvelle cote) translate tous ses objets du même écart, dans la même commande ; les autres ne bougen… |
+| X.1-04 | `packages/atelier-model/src/studio/couverture-3d.test.ts` | cohérent : chaque type disponible cite au moins un test existant (fichier et libellé exact), chaque type avancé est non disponible sans outil ni test |
+| X.1-04 | `apps/api/src/testing/studio-contrat-commandes.test.ts` | X.1-04 serveur : les quatre outils du bâtiment sont acceptés par le schéma de l'API et appliqués par le serveur ; déplacer le niveau translate ses objets dans la révision enregistrée ; X.1-04 serveur [−] niveau inconnu, définition inconnue… |
+| X.1-04 | `apps/web/src/modules/studio/batiment/batiment-ui.test.ts` | élément structurel : poteau, poutre, dalle depuis la saisie ; refus sans type, sans section ou avec une géométrie incomplète ; le modèle les accepte ; rendre unique : une définition copiée et l'occurrence replacée sur elle, en un seul lot … |
+| X.1-04 | `apps/web/e2e/studio-w3b.mjs` | X.1-04 (règle d'or) : Niveau Ctrl+F2, Composant Ctrl+F3, Occurrence Ctrl+F6, Élément structurel Ctrl+F7 — chacun son icône, famille Architecture ; X.1-04 : déplacer l'étage (3,2 → 4 m) translate de 0,8 m ses poteau, poutre, dalle, mur et o… |
+| X.1-05 | `packages/atelier-model/src/studio/corpus/corpus.test.ts` | X.1-05 S5 : surface libre NURBS (quart de cylindre rationnel, pôles et poids) et surface épaissie par le noyau, surface conservée — oracle de forme close (aire π R L / 2, volume π/4 ((R + e)² − R²) L) ; X.1-05 S5 : booléens exacts (union, … |
+| X.1-05 | `apps/api/src/lib/studio-corpus-s5.test.ts` | X.1-05 booléens S5 : union, différence et intersection recalculées par le noyau — même empreinte que la donnée conservée, volumes de forme close |
+| X.1-05 | `packages/geometry-exact/src/index.test.ts` | NURBS rationnelle : quart de cylindre R 2 m, L 3 m épaissi de 0,1 m vers l'extérieur — volume π/4 ((R + e)² − R²) L, intérieur π/4 (R² − (R − e)²) L ; NURBS : les pôles ne sont pas des points de passage — plaque bilinéaire 2 × 3 épaissie d… |
+| X.1-05 | `packages/atelier-model/src/studio/surfaces-libres.test.ts` | X.1-05 NURBS : quart de cylindre rationnel (poids 1, √2/2, 1) — chaque point évalué est à la distance R de l'axe, aire approchée → π R L / 2 ; X.1-05 NURBS : les pôles ne sont pas des points de passage — la nappe passe par ses quatre coins… |
+| X.1-05 | `apps/api/src/lib/studio-surfaces.test.ts` | X.1-05 serveur : l'épaississement est recalculé depuis la surface du document du serveur ; son résultat remplace celui du client ; X.1-05 serveur : empreinte d'un calcul sur une autre surface ou d'un autre côté — refus 400 exact-mismatch ;… |
+| X.1-05 | `apps/web/src/modules/studio/vue3d/surfaces.test.ts` | X.1-05 interface : Surface NURBS — grille plane de pôles saisie (normale +z), champs vides refusés, aucune valeur proposée ; X.1-05 interface : Modifier la surface — le pôle choisi reprend ses valeurs, position et poids saisis, même identi… |
+| X.1-05 | `packages/atelier-model/src/studio/document-2d.test.ts` | X.1-05 : surfaces libres — Surface NURBS (Ctrl+F8), Modifier la surface (Ctrl+F9), Épaissir la surface (Shift+F11), identités, icônes et raccourcis propres, barre « volume-libre » |
+| X.1-05 | `apps/web/e2e/studio-w3c.mjs` | Modifier la surface : un clic sur le repère du pôle central (canevas WebGL) le choisit dans le formulaire ; oracle : volume du noyau dans le navigateur = π/4 ((R + e)² − R²) L à 1e-6 près ; rien d'engagé par le calcul ; enregistrement : le… |
+| X.1-05 | `packages/atelier-model/src/studio/subdivisions.test.ts` | X.1-05 subdivision : tétraèdre régulier, niveau 1 — sommets a/4 et points d'arête (a + b)/4, aire s² (3√2/4 + √3/2), volume 5 s³ / 24 ; niveau 2 dans l'enveloppe convexe, volume décroissant ; X.1-05 subdivision validation : face non triang… |
+| X.1-05 | `packages/atelier-model/src/studio/couverture-3d.test.ts` | types avancés du référentiel (§ 4.1, S5, PERF-07) : sommets et arêtes, groupe, courbe exacte 3D, BRep fournisseur — non disponibles (booléen depuis le lot F2, composant 3D depuis le lot W3-B, surfaces NURBS et de subdivision depuis X.1-05 … |
+| X.1-06 | `packages/atelier-model/src/studio/fusion-variantes.test.ts` | fusion sans conflit : changements de la source repris, ceux de la cible conservés, ancêtre respecté ; par propriété : deux propriétés différentes du même objet modifiées de chaque côté sont fusionnées sans conflit ; même objet modifié des … |
+| X.1-06 | `packages/atelier-model/src/studio/corpus/corpus.test.ts` | F1 (lot W3-D) : B fusionnée dans C depuis l'ancêtre A1 — conflit de collision attendu, tranché explicitement ; tête fusionnée = oracle ; A1 recrée exactement le plan de base ; têtes A, B, C conformes à l'oracle ; REC-A-03 3,180 puis 3,096 … |
+| X.1-06 | `apps/api/src/routes/studio-fusion.test.ts` | aperçu : ancêtre = révision de dérivation, changements des deux côtés, conflit par propriété, rien n'est écrit ; application : refusée tant qu'un conflit n'est pas résolu ; résolue, une seule révision `variant-merge` de la cible, journalis… |
+| X.1-06 | `apps/api/src/routes/studio-contrats.test.ts` | studio-api-fusion-apercu/1 — POST …/fusion/apercu : réponse conforme, en-tête X-Studio-Contrat ; studio-api-fusion-appliquer/1 — POST …/fusion : réponse conforme, en-tête X-Studio-Contrat ; studio-api-fusion-annuler/1 — POST …/fusion/annul… |
+| X.1-06 | `apps/api/src/testing/studio-ecritures-architecture.test.ts` | fusion de variantes (lot W3-D) : sa révision est écrite par le même module, sous la même orchestration (verrous, rejeu, chemin d'écriture, journal) |
+| X.1-06 | `apps/web/src/modules/studio/fusion/fusion-ui.test.ts` | W3-D [+] « Fusionner une variante » (Ctrl+F10) et « Annuler la dernière fusion » (Ctrl+F11) : icône propre, barre Édition, raccourci libre, trouvées par recherche, ouvertes par-dessus le domaine ; W3-D [−] en lecture seule (lecteur, révisi… |
+| X.1-06 | `apps/web/e2e/studio-w3d.mjs` | Ctrl+F10 ouvre la boîte « Fusionner une variante » ; chaque conflit tranché au clavier (« Garder la source ») : la fusion devient possible ; la source B n'est pas écrite ; Ctrl+F11 : annulation en une nouvelle révision `variant-merge-undo`… |
 | E.5-04 | `apps/web/src/modules/studio/vue3d/scenes/scenes.test.ts` | F.2-03 [+] trois types annoncés ; l'illustration contrainte est disponible avec son déclencheur (honnêtement décrite : locale sans IA par défaut, jamais de mutation) ; l'exploration libre reste indisponible sans bouton ; un seul bouton d'e… |
 | F.2-02 | `apps/web/src/modules/studio/vue3d/scenes/scenes.test.ts` | F.2-03 [+] trois types annoncés ; l'illustration contrainte est disponible avec son déclencheur (honnêtement décrite : locale sans IA par défaut, jamais de mutation) ; l'exploration libre reste indisponible sans bouton ; un seul bouton d'e… |
 | TR-EX-046 | `apps/api/src/lib/studio-journal-acces.test.ts` | TR-EX-046 [+] conservation de 12 mois par défaut, paramétrable par STUDIO_ACCESS_RETENTION_MONTHS (1 à 120), limite en mois civils ; TR-EX-046 [+] purge datée : supprime seulement les événements antérieurs à la limite, puis date la purge (… |

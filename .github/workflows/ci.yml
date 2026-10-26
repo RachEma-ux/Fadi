@@ -830,6 +830,30 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/studio-g2 node apps/web/e2e/studio-g2.mjs 2>&1 | tee -a e2e.log
+      # X.1-01 : blocs (définition, insertions, redéfinition, éclatement) et contraintes 2D (résolution, sur-contrainte refusée).
+      - name: Lot W3-A — blocs définis par l'utilisateur et contraintes géométriques (apps/web/e2e/studio-w3a.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-w3a node apps/web/e2e/studio-w3a.mjs 2>&1 | tee -a e2e.log
+      # X.1-04 : niveaux comme objets, composants (définition et occurrences), poteaux / poutres / dalles.
+      - name: Lot W3-B — niveaux, composants 3D et éléments structurels (apps/web/e2e/studio-w3b.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-w3b node apps/web/e2e/studio-w3b.mjs 2>&1 | tee -a e2e.log
+      # X.1-05 : surfaces NURBS et de subdivision de Loop, conversion explicite en solide recalculée par le serveur.
+      - name: Lot W3-C — surfaces libres NURBS et de subdivision (apps/web/e2e/studio-w3c.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-w3c node apps/web/e2e/studio-w3c.mjs 2>&1 | tee -a e2e.log
+      # X.1-06 : aperçu, conflits résolus explicitement, application et annulation de la fusion (Mailpit requis).
+      - name: Lot W3-D — fusion de variantes à trois voies (apps/web/e2e/studio-w3d.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-w3d node apps/web/e2e/studio-w3d.mjs 2>&1 | tee -a e2e.log
       # Organisations-participation, phase 3 (OP-D2 a) : invitation acceptée pour tous, fin de l'ajout direct (UM-8) —
       # aperçu de l'accès, renvoi sans doublon, notification, refus v2.2 (lien transféré, expirée, annulée, déclinée,
       # invitant révoqué, mauvaise fiche, participation terminée, accès expiré), double soumission, nouvel utilisateur ;
