@@ -159,6 +159,61 @@ export function selectionParRectangle(doc: StudioDocument, a: StudioPoint, b: St
     .map((t) => t.e.id);
 }
 
+// ——— Désignation au point et cas ambigus (AC-004) ———
+
+const distanceSegment = (p: StudioPoint, [a, b]: Segment): number => {
+  const dx = b.x - a.x, dy = b.y - a.y, l2 = dx * dx + dy * dy;
+  const t = l2 > 0 ? Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2)) : 0;
+  return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
+};
+
+/**
+ * Désignation au point (AC-004) : éléments sélectionnables dont le tracé passe à `tolerance` du point, les plus proches
+ * d'abord ; à distance égale (1e-12 m), le dernier dessiné (au-dessus) d'abord. `ambigus` : les candidats à égalité
+ * avec le premier — plusieurs cibles possibles (objets superposés, contour commun) ; vide si le premier est seul. Le
+ * premier est celui que désigne le clic ; la commande « Cible d'accrochage suivante » passe **explicitement** au suivant.
+ */
+export interface TraceDesignation {
+  point: StudioPoint;
+  tolerance: number;
+  candidats: { id: string; distance: number }[];
+  ambigus: string[];
+}
+
+function classerDesignation(point: StudioPoint, tolerance: number, traces: readonly { t: Trace; rang: number }[]): TraceDesignation {
+  const candidats = traces
+    .map(({ t, rang }) => ({ id: t.e.id, rang, distance: Math.min(...t.segments.map((s) => distanceSegment(point, s))) }))
+    .filter((c) => c.distance <= tolerance)
+    .sort((a, b) => (Math.abs(a.distance - b.distance) > 1e-12 ? a.distance - b.distance : b.rang - a.rang))
+    .map(({ id, distance }) => ({ id, distance }));
+  const tete = candidats[0];
+  const egaux = tete ? candidats.filter((c) => Math.abs(c.distance - tete.distance) <= 1e-12).map((c) => c.id) : [];
+  return { point: { ...point }, tolerance, candidats, ambigus: egaux.length > 1 ? egaux : [] };
+}
+
+/** Désignation au point par parcours linéaire (référence de l'index). */
+export function designationAuPointLineaire(doc: StudioDocument, point: StudioPoint, tolerance: number): TraceDesignation {
+  const tous = [...elements(doc), ...murs(doc)];
+  return classerDesignation(point, tolerance, tous.map((e, rang) => ({ e, rang })).filter(({ e }) => estSelectionnable(doc, e.layerId)).map(({ e, rang }) => ({ t: trace(e), rang })));
+}
+
+/** Désignation au point : au-dessus du seuil, l'index de sélection borne l'examen ; même résultat que la référence. */
+export function designationAuPoint(doc: StudioDocument, point: StudioPoint, tolerance: number, seuil = SEUIL_INDEX_SPATIAL): TraceDesignation {
+  const n = doc.objects.length + (doc.dimensions?.length ?? 0) + (doc.annotations?.length ?? 0) + (doc.architecture?.length ?? 0);
+  if (n < seuil) return designationAuPointLineaire(doc, point, tolerance);
+  const rangs = new Map([...elements(doc), ...murs(doc)].map((e, i) => [e, i]));
+  const m = tolerance + 1e-9 * (1 + Math.abs(point.x) + Math.abs(point.y));
+  const zone = { min: { x: point.x - m, y: point.y - m }, max: { x: point.x + m, y: point.y + m } };
+  return classerDesignation(point, tolerance, indexSelection(doc).chercher(zone).filter(({ e }) => estSelectionnable(doc, e.layerId)).map((t) => ({ t, rang: rangs.get(t.e)! })));
+}
+
+/** Candidat suivant d'un cas ambigu (cycle), à partir de l'identifiant désigné ; null si la désignation n'est pas ambiguë. */
+export function designationSuivante(t: TraceDesignation, actuel: string | undefined): string | null {
+  if (t.ambigus.length < 2) return null;
+  const i = actuel === undefined ? -1 : t.ambigus.indexOf(actuel);
+  return t.ambigus[(i + 1) % t.ambigus.length]!;
+}
+
 /** Union ordonnée (Maj + rectangle : ajoute à la sélection). */
 export const ajouter = (ids: readonly string[], autres: readonly string[]): string[] => [...new Set([...ids, ...autres])];
 

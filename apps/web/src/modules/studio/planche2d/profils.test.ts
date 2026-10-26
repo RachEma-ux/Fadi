@@ -216,7 +216,7 @@ describe("filtres du catalogue (B.2-01)", () => {
     expect(v3d).toContain("studio.solide.boite");
     expect(v3d).toContain("exporter-png");
     expect(v3d).not.toContain("studio.dessin.ligne");
-    expect(filtrerCatalogue(CATALOGUE, { contexte: "feuille" }, sources).map((e) => e.identifiant)).toEqual(["agents", "modeles-externes", "echanges", "feuille", "dossier", "outils", "palette"]);
+    expect(filtrerCatalogue(CATALOGUE, { contexte: "feuille" }, sources).map((e) => e.identifiant)).toEqual(["agents", "modeles-externes", "echanges", "feuille", "dossier", "approuver", "outils", "palette"]);
     expect(filtrerCatalogue(CATALOGUE, { nature: "lecture" }, sources).map((e) => e.identifiant)).toEqual(["studio.dessin.selection", "studio.scene.rappeler"]);
     // Favoris : outils du registre seulement.
     expect(filtrerCatalogue(CATALOGUE, { favoris: true }, sources).map((e) => e.identifiant)).toEqual(["studio.dessin.cote"]);

@@ -63,6 +63,7 @@ export type IconName =
   | "studio-snap-tangent"
   | "studio-snap-parallel"
   | "studio-snap-nearest"
+  | "studio-snap-next"
   | "studio-track-ortho"
   | "studio-track-polar"
   | "studio-track-polar-step"
@@ -119,6 +120,7 @@ export type IconName =
   | "studio-export-png"
   | "studio-dossier"
   | "studio-exchanges"
+  | "studio-approve"
   | "studio-import-ifc"
   | "studio-external-models"
   | "studio-illustration"
@@ -200,6 +202,8 @@ const PATHS: Record<IconName, string> = {
   "studio-snap-tangent": "M10 8a6 6 0 1 0 0 12 6 6 0 0 0 0-12ZM2 8h20M10 6v4",
   "studio-snap-parallel": "M4 18 14 6M10 18 20 6",
   "studio-snap-nearest": "M4 20 20 6M9 9h6l-6 6h6Z",
+  // Cible d’accrochage suivante (AC-004) : deux repères superposés et une flèche circulaire de passage au suivant.
+  "studio-snap-next": "M4 8h6v6H4ZM8 12h6v6H8ZM16 6a5 5 0 0 1 4 8M20 14l1-3M20 14l-3-1",
   // Repérage : équerre orthogonale ; rayons polaires depuis un point ; pas polaire (rayons et flèche de rotation).
   "studio-track-ortho": "M5 19h15M5 19V4M5 19l-2-2M9 15h2v2",
   "studio-track-polar": "M4 20h16M4 20 18 6M4 20l8-14M4 20A9 9 0 0 1 13 11",
@@ -277,6 +281,8 @@ const PATHS: Record<IconName, string> = {
   "studio-dossier": "M3 6h6l2 2h10v12H3ZM7 11h10v6H7ZM9 13h6M9 15h4",
   // Matrice d'échanges (E.6) : grille de trois colonnes traversée par deux flèches opposées (import / export).
   "studio-exchanges": "M3 4h18v16H3ZM9 4v16M15 4v16M5 9h14M17 7l2 2-2 2M5 15h14M7 13l-2 2 2 2",
+  // Approuver (AC-010, lot G2) : feuille de dossier portant un sceau rond et une coche.
+  "studio-approve": "M5 3h10l4 4v14H5ZM15 3v4h4M8 9h6M8 12h4M15 17a3 3 0 1 0 0.01 0M13.6 17l1 1 1.8-2",
   // Import IFC (lot F3) : fichier, petit volume et flèche entrant par la gauche (le pendant de l’export IFC).
   "studio-import-ifc": "M9 3h7l4 4v14H9v-4M16 3v4h4M12 10l3-2 3 2v4l-3 2-3-2ZM12 10l3 2 3-2M15 12v4M2 13h7M6 10l3 3-3 3",
   // Modèles externes (lot F3) : deux maquettes côte à côte reliées par une coche de validation.

@@ -13578,5 +13578,11 @@
 "Tests des sources et des modèles externes ; recette studio-rend.mjs (provenance exportée).": "Source and external model tests; studio-rend.mjs acceptance test (provenance exported).",
 "Référence, auteur, discipline, version, unité, transformation, repère source et restrictions d’utilisation déclarés par l’émetteur ; fichier relu par le serveur dans un document à part, jamais dans la variante ; comparaison par identifiant (GlobalId) avec la révision courante ; acceptation ou refus réservés au propriétaire et aux approbateurs, journalisés, un refus avec motif ; accepté, le modèle s’ajoute au brouillon seulement par une action explicite ; non repris par l’archive du projet.": "Reference, author, discipline, version, unit, transformation, source frame and usage restrictions declared by the sender; file re-read by the server into a separate document, never into the variant; comparison by identifier (GlobalId) with the current revision; acceptance or refusal reserved for the owner and approvers, logged, a refusal with a reason; once accepted, the model is added to the draft only by an explicit action; not carried by the project archive.",
 "studio-provenance/1": "studio-provenance/1",
-"studio-provenance-modele/1": "studio-provenance-modele/1"
+"studio-provenance-modele/1": "studio-provenance-modele/1",
+"Approuver une publication soumise de cette étude. Le serveur vérifie votre droit d’approbation : la commande est visible de tous les membres, mais elle n’est exécutée que pour qui détient ce droit.": "Approve a submitted publication of this study. The server checks your approval right: the command is visible to every member, but it is only executed for those who hold this right.",
+"Cible d’accrochage suivante": "Next snap target",
+"Aucune publication soumise dans cette étude.": "No submitted publication in this study.",
+"Publication approuvée : la décision est consignée par le serveur.": "Publication approved: the decision is recorded by the server.",
+"Approbation non confirmée : rechargez la liste avant de réessayer.": "Approval not confirmed: reload the list before trying again.",
+"Approbation refusée par le serveur : vous ne détenez pas le droit d’approuver dans ce projet. Ni vos préférences, ni un profil importé, ni un rôle d’administration technique ne le donnent.": "Approval refused by the server: you do not hold the right to approve in this project. Neither your preferences, nor an imported profile, nor a technical administration role grant it."
 }

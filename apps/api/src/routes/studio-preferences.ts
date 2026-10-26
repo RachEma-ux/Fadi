@@ -31,7 +31,7 @@ import { newId } from "../lib/ids.js";
 import { accessAllows, loadProjectAccess, projectAccessRefusal, type AccessibleProject } from "../lib/owned-project.js";
 import { catalogueAutorise, lireCorpsPreferences, lireLignePreferences, motifRefusEcriture } from "../lib/studio-preferences.js";
 import {
-  capacitesInconnues, capacitesSansDroit, conflitsRaccourcis, ecarterConflits, estCapacite, importProfilSchema, profilExporteSchema, STUDIO_FORMAT_PROFIL,
+  capacitesInconnues, STUDIO_CAPACITES_HORS_REGISTRE, capacitesSansDroit, conflitsRaccourcis, ecarterConflits, estCapacite, importProfilSchema, profilExporteSchema, STUDIO_FORMAT_PROFIL,
   type ConflitRaccourci,
 } from "../lib/studio-profils.js";
 import { avecContrat } from "../lib/studio-contrats.js";
@@ -145,5 +145,8 @@ studioPreferencesRouter.post("/outils/import", avecContrat(CONTRAT_PROFIL_IMPORT
 }));
 
 studioPreferencesRouter.get("/catalogue", avecContrat(CONTRAT_CATALOGUE_OUTILS), endpoint(async (req, res, access) => {
-  res.json(catalogueAutorise(motifRefusEcriture(projectAccessRefusal(access, req.user!.id, "modify")), access.role));
+  // AC-010 (lot G2) : capacités hors registre (Publier, Approuver) avec le verdict réel du droit métier ; découvrir une
+  // capacité ne la rend pas exécutable, et aucune préférence ni profil importé ne change ce verdict.
+  const droits = droitsDe(access);
+  res.json({ ...catalogueAutorise(motifRefusEcriture(projectAccessRefusal(access, req.user!.id, "modify")), access.role), capacites: STUDIO_CAPACITES_HORS_REGISTRE.map((c) => ({ id: c.id, libelle: c.libelle, droit: c.droit, autorise: droits[c.droit] })) });
 }));

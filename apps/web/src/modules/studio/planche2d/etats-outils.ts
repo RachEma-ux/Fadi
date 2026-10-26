@@ -72,6 +72,7 @@ export const SYNONYMES: Readonly<Record<string, readonly string[]>> = Object.fre
   "vue-3d": ["volume", "perspective"], "coupe-3d": ["section", "plan de coupe"],
   "importer-dxf": ["ouvrir un dxf", "autocad"], "importer-ifc": ["ouvrir un ifc", "maquette bim"],
   "exporter-svg": ["image vectorielle"], "exporter-dxf": ["autocad"], "exporter-ifc": ["maquette bim"], "exporter-png": ["image", "capture"],
+  approuver: ["approbation", "valider la publication", "viser"],
   feuille: ["mise en page", "planche imprimée", "pdf"], palette: ["recherche de commande"], outils: ["catalogue"],
 });
 

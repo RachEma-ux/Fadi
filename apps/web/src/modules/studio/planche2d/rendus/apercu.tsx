@@ -41,7 +41,7 @@ function Symbole({ genre, p, s }: { genre: Repere["genre"]; p: StudioPoint; s: n
   }
 }
 
-function RepereAccrochage({ repere, cadre, r }: { repere: Repere; cadre: Cadre; r: number }) {
+function RepereAccrochage({ repere, cadre, r, ambiguite }: { repere: Repere; cadre: Cadre; r: number; ambiguite?: PointRepere["ambiguite"] }) {
   const p = repere.point, s = r * 1.3;
   const portee = cadre.w + cadre.h;
   // Ligne guide : du dernier point au-delà du point suivi, dans le sens du pointeur, jusqu'au bord de la vue.
@@ -53,10 +53,11 @@ function RepereAccrochage({ repere, cadre, r }: { repere: Repere; cadre: Cadre; 
   }
   return (
     <g className={`studio-repere ${repere.genre}`} data-studio-accroche-mode={repere.genre} data-studio-accroche-point={`${p.x} ${p.y}`}
-      data-studio-accroche={repere.ancre ? `${repere.ancre.objectId}:${repere.ancre.anchor}` : undefined} data-studio-accroche-objets={repere.objets.join(" ") || undefined}>
+      data-studio-accroche={repere.ancre ? `${repere.ancre.objectId}:${repere.ancre.anchor}` : undefined} data-studio-accroche-objets={repere.objets.join(" ") || undefined}
+      data-studio-accroche-ambigu={ambiguite ? `${ambiguite.k + 1}/${ambiguite.n}` : undefined}>
       {guide && <line className="studio-guide" x1={guide.de.x} y1={guide.de.y} x2={guide.vers.x} y2={guide.vers.y} />}
       <Symbole genre={repere.genre} p={p} s={s} />
-      <text x={p.x + s * 1.6} y={p.y - s * 1.6} fontSize={r * 2.6}>{libelleRepere(repere)}</text>
+      <text x={p.x + s * 1.6} y={p.y - s * 1.6} fontSize={r * 2.6}>{libelleRepere(repere)}{ambiguite ? ` (${ambiguite.k + 1}/${ambiguite.n})` : ""}</text>
     </g>
   );
 }
@@ -73,7 +74,7 @@ export function Apercu({ cadre, outil, trace, survol, rectangle, apercuForme, so
           : <line x1={(sommetsPoses[sommetsPoses.length - 1] ?? trace.point).x} y1={(sommetsPoses[sommetsPoses.length - 1] ?? trace.point).y} x2={fin.x} y2={fin.y} />)}
       {trace && <circle className="studio-point-pose" cx={trace.point.x} cy={trace.point.y} r={r} />}
       {sommetsPoses.map((p, i) => <circle key={i} className="studio-point-pose" data-studio-sommet-pose={i} cx={p.x} cy={p.y} r={r * 0.8} />)}
-      {survol?.repere ? <RepereAccrochage repere={survol.repere} cadre={cadre} r={r} />
+      {survol?.repere ? <RepereAccrochage repere={survol.repere} cadre={cadre} r={r} ambiguite={survol.ambiguite} />
         : survol?.accroche && <rect className="studio-accroche" data-studio-accroche={`${survol.accroche.objectId}:${survol.accroche.anchor}`} x={survol.accroche.point.x - r} y={survol.accroche.point.y - r} width={2 * r} height={2 * r} />}
       {zone && rectangle && <rect className={`studio-rectangle-selection ${rectangle.mode}`} data-studio-rectangle-selection={rectangle.mode}
         x={zone.min.x} y={zone.min.y} width={zone.max.x - zone.min.x} height={zone.max.y - zone.min.y} />}

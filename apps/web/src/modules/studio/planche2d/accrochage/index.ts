@@ -14,4 +14,6 @@ export * from "./moteur";
 /** Point posé ou survolé, avec le repère d'accrochage qui l'a donné (affiché par l'aperçu, jamais une donnée). */
 export interface PointRepere extends PointPose {
   repere?: Repere | null;
+  /** Cas ambigu (AC-004) : candidate retenue `k` (0 = règles) parmi `n` ; choix explicite par « Cible d’accrochage suivante ». */
+  ambiguite?: { cle: string; n: number; k: number } | null;
 }

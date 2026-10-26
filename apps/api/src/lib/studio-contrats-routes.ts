@@ -39,6 +39,7 @@ const cycleVariante = z.strictObject({ variant: varianteResume, studyArchived: z
 const effets = z.looseObject({ schema: z.literal("studio-effets/1"), crees: z.array(z.string()), modifies: z.array(z.string()), supprimes: z.array(z.string()), domainesInvalides: z.array(z.string()), revisionSortie: z.string() });
 const evenementRevision = z.looseObject({ eventId: ident, transactionId: ident, xactId: z.string().nullable(), studyId: ident, variantId: ident, baseRevisionId: z.string().nullable(), revisionId: ident, authorId: ident, effects: effets, jobId: z.string().nullable(), createdAt: instant });
 const soumission = z.strictObject({ ...creation.shape, effects: effets.optional(), eventId: z.string().optional() });
+const essaiCommandes = z.strictObject({ mode: z.literal("essai"), written: z.literal(false), baseRevisionId: ident, document: documentStudio, effects: effets });
 const contexteEtude = z.looseObject({ version: z.literal("studio-contexte-etude/1"), site: z.looseObject({ parcelles: z.array(z.unknown()) }), sources: z.array(z.unknown()), validePar: z.string(), valideLe: instant });
 const jobStudio = z.strictObject({ id: ident, kind: z.enum(["essai-commandes", "simulation-migration"]), status: z.string(), projectId: ident, studyId: ident, variantId: z.string().nullable(), sourceRevisionId: z.string().nullable(), result: z.unknown(), createdBy: ident, createdAt: instant, finishedAt: instant.nullable() });
 const migrationEtude = z.strictObject({ id: ident, studyId: ident, jobId: ident, cible: z.literal("studio-document/2"), statut: z.enum(["simulee", "accordee", "appliquee", "retour-arriere"]), verdict: z.string(), pointRetour: z.array(z.strictObject({ variantId: ident, headRevisionId: ident })), accord: z.strictObject({ par: ident, le: instant }).nullable(), appliqueeLe: instant.nullable(), retourArriereLe: instant.nullable(), documentsMigres: z.number().int(), rapport: z.looseObject({ schema: z.literal("studio-simulation-migration/1") }).nullable() });
@@ -233,7 +234,7 @@ export const CONTRAT_EXPORT_RAPPORT = contratRoute({
 });
 export const CONTRAT_COMMANDES = contratRoute({
   id: "studio-api-commandes/1", routes: ["POST /studies/:studyId/variants/:variantId/commands"], objet: "Application d'une enveloppe de commandes `studio-commands/1` ; nouvelle révision (rejeu par `requestId`) ; quota d'invocation du compte (429 `quota_exceeded`, EX-028).",
-  entree: "Corps : enveloppe `{ contractVersion: studio-commands/1, requestId, baseRevisionId, commands }` (schéma `envelopeSchema`).", statuts: [200], corps: "json", reponse: soumission,
+  entree: "Corps : enveloppe `{ contractVersion: studio-commands/1, requestId, baseRevisionId, commands[toolId, params, targetIds?, operation?], scope?, mode? }` (schéma `envelopeSchema`, IF-006 : portée comparée à l'adresse, cibles et opérations vérifiées, `mode: essai` sans écriture).", statuts: [200], corps: "json", reponse: z.union([soumission, essaiCommandes]),
 });
 
 // --- Commentaires, observations d'un fil et étapes (routes/studio.ts) -------------------------------------------------
@@ -306,6 +307,7 @@ export const CONTRAT_CATALOGUE_OUTILS = contratRoute({
   reponse: z.strictObject({
     manifeste: z.literal("studio-tool-manifest/1"), role: z.string(), droits: z.strictObject({ lecture: z.boolean(), ecriture: z.boolean(), motif: z.string().nullable() }),
     entrees: z.array(z.strictObject({ toolId: z.string(), droit: z.string(), autorise: z.boolean() })),
+    capacites: z.array(z.strictObject({ id: z.string(), libelle: z.string(), droit: z.enum(["publish", "approve"]), autorise: z.boolean() })).optional(),
   }),
 });
 

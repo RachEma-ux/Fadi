@@ -14,13 +14,13 @@ export type IdCommandeEditeur =
   | "zoom-avant" | "zoom-arriere" | "cadrer" | "plein-ecran" | "vue-3d" | "navigation-3d" | "coupe-3d"
   | "accrochage-sommets" | "accrochage-grille"
   | "accrochage-milieu" | "accrochage-centre" | "accrochage-quadrant" | "accrochage-intersection"
-  | "accrochage-perpendiculaire" | "accrochage-tangente" | "accrochage-parallele" | "accrochage-proche"
+  | "accrochage-perpendiculaire" | "accrochage-tangente" | "accrochage-parallele" | "accrochage-proche" | "accrochage-cible-suivante"
   | "reperage-orthogonal" | "reperage-polaire" | "pas-polaire"
   | "importer-dxf" | "importer-ifc" | "modeles-externes" | "exporter-svg" | "exporter-dxf" | "exporter-ifc" | "feuille" | "dossier"
   | "exporter-png" | "echanges"
   | "illustration" | "agents"
   | "outils" | "palette"
-  | "exigences";
+  | "exigences" | "approuver";
 export type GroupeCommande = "edition" | "vue" | "accrochage" | "reperage" | "visualisation" | "import" | "export" | "presentation" | "catalogue" | "exigences";
 export type BarreStudio = StudioToolGroup | GroupeCommande;
 export type IconeCommande =
@@ -29,13 +29,13 @@ export type IconeCommande =
   | "studio-zoom-in" | "studio-zoom-out" | "studio-frame" | "studio-fullscreen" | "studio-view-3d" | "studio-nav-plan" | "studio-section-plane"
   | "studio-snap-vertex" | "studio-snap-grid"
   | "studio-snap-midpoint" | "studio-snap-center" | "studio-snap-quadrant" | "studio-snap-intersection"
-  | "studio-snap-perpendicular" | "studio-snap-tangent" | "studio-snap-parallel" | "studio-snap-nearest"
+  | "studio-snap-perpendicular" | "studio-snap-tangent" | "studio-snap-parallel" | "studio-snap-nearest" | "studio-snap-next"
   | "studio-track-ortho" | "studio-track-polar" | "studio-track-polar-step"
   | "studio-import-dxf" | "studio-import-ifc" | "studio-external-models" | "studio-export-svg" | "studio-export-dxf" | "studio-export-ifc" | "studio-sheet" | "studio-dossier"
   | "studio-export-png" | "studio-exchanges"
   | "studio-illustration" | "studio-agents"
   | "studio-catalog" | "studio-palette"
-  | "studio-requirements";
+  | "studio-requirements" | "studio-approve";
 
 export interface CommandeEditeur {
   readonly id: IdCommandeEditeur;
@@ -91,6 +91,10 @@ export const COMMANDES_EDITEUR: readonly CommandeEditeur[] = Object.freeze([
   // Parallèle (EX-053) : Ctrl+Maj+F6, libre et non réservé (Maj+F6 est « Créer un graphisme », lot REND).
   { id: "accrochage-parallele", libelleFR: "Accrocher en parallèle", raccourci: "Ctrl+Shift+F6", iconeSymbolique: "studio-snap-parallel", groupe: "accrochage", ecrit: false, bascule: true },
   { id: "accrochage-proche", libelleFR: "Accrocher au plus proche", raccourci: "Shift+J", iconeSymbolique: "studio-snap-nearest", groupe: "accrochage", ecrit: false, bascule: true },
+  // Cas ambigus (AC-004, lot G2) : plusieurs cibles à égalité (objets superposés, extrémités confondues) — la candidate
+  // suivante devient le point posé, ou l'objet suivant sous le clic est désigné ; choix explicite, jamais en silence.
+  // Ctrl+Maj+F1, libre et non réservé (F1 seul l'est).
+  { id: "accrochage-cible-suivante", libelleFR: "Cible d’accrochage suivante", raccourci: "Ctrl+Shift+F1", iconeSymbolique: "studio-snap-next", groupe: "accrochage", ecrit: false },
   // Repérage depuis le dernier point : orthogonal (F8, comme les logiciels de DAO ; Maj tenue l'impose le temps du
   // geste), polaire (F10) et son pas 15° / 30° / 45° / 90° (Maj+Y le fait tourner).
   { id: "reperage-orthogonal", libelleFR: "Mode orthogonal", raccourci: "F8", iconeSymbolique: "studio-track-ortho", groupe: "reperage", ecrit: false, bascule: true },
@@ -124,6 +128,10 @@ export const COMMANDES_EDITEUR: readonly CommandeEditeur[] = Object.freeze([
   // Feuilles composées et dossier de conception (E.3) : Ctrl+Maj+D (D comme dossier) ; toutes les lettres Maj+… sont
   // prises et Ctrl+D (marque-page) reste au navigateur. Lecture admise : un lecteur consulte et télécharge.
   { id: "dossier", libelleFR: "Feuilles et dossier", raccourci: "Ctrl+Shift+D", iconeSymbolique: "studio-dossier", groupe: "presentation", ecrit: false },
+  // Approuver (AC-010, lot G2) : la commande d'approbation d'une publication soumise, découverte par recherche comme toute
+  // commande ; le serveur seul juge du droit métier (canApprove) — un concepteur sans ce droit reçoit son refus.
+  // Ctrl+Maj+F7, libre et non réservé (F7 seul l'est). Lecture du document admise : l'approbation n'écrit pas la variante.
+  { id: "approuver", libelleFR: "Approuver", raccourci: "Ctrl+Shift+F7", iconeSymbolique: "studio-approve", groupe: "presentation", ecrit: false },
   { id: "outils", libelleFR: "Outils", raccourci: "Shift+O", iconeSymbolique: "studio-catalog", groupe: "catalogue", ecrit: false },
   { id: "palette", libelleFR: "Palette de commandes", raccourci: "Ctrl+K", iconeSymbolique: "studio-palette", groupe: "catalogue", ecrit: false, dansUnChamp: true },
   // Exigences et écarts (E.1) : F comme « fiche d’exigences » (lettre seule libre et non réservée ; V appartient à la Visualisation) ; lecture admise.
