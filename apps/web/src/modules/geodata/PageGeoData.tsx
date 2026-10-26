@@ -13,7 +13,7 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { type PaysTerritorial, combinerFiltres, COMPOSITION_INITIALE, couleurCategorie, estCodeHcp, filtresNiveaux, LIBELLES_ENFANTS, parentHcp, rangAdministratif, type CoucheNiveau, type EtapeNiveau, type RangAdministratif, formatNombre, legende, lireValeur, valeursEtiquettes, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
-import { api, ErreurGeoData, type ValeurRasterRecue, type CarteRecue, type RangementRecu, type Fond, type CoucheRecue, type EspaceRecu, type FicheRecue, type ResultatRecherche, type ZoneRecue } from "./client";
+import { api, ErreurGeoData, type ValeurRasterRecue, type CarteRecue, type RangementRecu, type Fond, type CoucheRecue, type EspaceRecu, type FicheRecue, type ResultatRecherche, type ZoneRecue, type ExportRecu } from "./client";
 import { ajouterCouche, basculerEtiquettes, basculerToutesEtiquettes, basculerVisibilite, etiquettesToutesAffichees, definirFiltre, definirOpacite, definirStyle, deplacerCouche, etatDepuis, LIBELLES_ENREGISTREMENT, entreesCategories, entreesRaster, retirerCouche, type Categorie, type EtatEnregistrement } from "./composition-ops";
 import { webglDisponible, type MoteurCarte, type OutilCarte } from "./carte/moteur";
 import { FicheValeur, PanneauCatalogue, PanneauCouches, PanneauLegende, TableAttributs } from "./panneaux/consultation";
@@ -348,10 +348,12 @@ export function PageGeoData() {
    * Barre territoriale (lot H) : une unité du découpage en base devient le niveau courant — chemin = ses ancêtres puis
    * elle, carte cadrée sur son emprise, contour tracé ; les couches à codes du même découpage sont filtrées (lot B).
    */
-  async function allerUnite(code: string, rang?: number): Promise<boolean> {
-    if (!paysCourant) return false;
+  async function allerUnite(code: string, rang?: number, versionId?: string): Promise<boolean> {
+    if (!versionId && !paysCourant) return false;
     try {
-      const u = await api.uniteTerritoriale(paysCourant, code, rang);
+      // Depuis une fiche, l'unité est retrouvée par la version de sa couche : son pays peut différer du pays affiché.
+      const u = versionId ? await api.uniteTerritorialeDeVersion(versionId, code, rang) : await api.uniteTerritoriale(paysCourant!, code, rang);
+      if (u.pays !== paysCourant) { setPaysCourant(u.pays); ecrireLocal("geodata.pays", u.pays); }
       setChemin([...u.ancetres, u].map((e) => ({ coucheId: "", rang: e.rang as RangAdministratif, code: e.code, nom: e.nom })));
       setContourTerritoire({ contour: u.contour, attribution: u.attribution });
       moteur.current?.allerA({ emprise: u.emprise as [number, number, number, number] });
@@ -429,7 +431,7 @@ export function PageGeoData() {
     if (enfant.aAjouter) { const c = enfant.aAjouter; connaitre([c]); setComposition((x) => ajouterCouche(x, c.id, c.version.id, c.styleDefaut)); }
     if (!composition.couches.some((k) => k.coucheId === f.couche.id)) setComposition((x) => ajouterCouche(x, f.couche.id, f.couche.version.id, f.couche.styleDefaut));
     // L'entité est cherchée dans le découpage en base (barre territoriale) ; à défaut, le chemin se lit des couches.
-    void allerUnite(f.code, r).then((trouvee) => {
+    void allerUnite(f.code, r, f.couche.version.id).then((trouvee) => {
       if (trouvee) return;
       const e: EtapeNiveau = { coucheId: f.couche.id, rang: r, code: f.code, nom: f.nom ?? f.code };
       setChemin(cheminVers(e));
@@ -497,7 +499,18 @@ export function PageGeoData() {
     const r = await api.exporter(carte!.id, carte!.revision, analyseIds);
     if (r.etat !== "autorise") return { r, png: null };
     if (!moteur.current) throw new Error("Export autorisé, mais la carte n'est pas affichée (WebGL indisponible) : seule la fiche de sources est produite.");
-    const complet = await moteur.current.attendreChargement(10_000);
+    // Le contour de la barre territoriale est une aide de navigation, hors de la carte enregistrée : il n'entre ni dans
+    // l'image ni dans ses attributions (l'export n'autorise que les couches de la carte).
+    const m = moteur.current;
+    await m.masquerTerritoire(true);
+    try {
+      return await composer(m, r);
+    } finally {
+      await m.masquerTerritoire(false);
+    }
+  };
+  const composer = async (m: MoteurCarte, r: ExportRecu) => {
+    const complet = await m.attendreChargement(10_000);
     if (!complet) throw new Error("Toutes les tuiles ne sont pas chargées : export interrompu pour ne pas produire une image incomplète. Réessayez.");
     const legendes = [...compositionAffichee.couches].reverse().filter((k) => k.visible).map((k) => {
       const c = couchesConnues.get(k.coucheId);
@@ -508,7 +521,7 @@ export function PageGeoData() {
       const ind = c?.indicateurs.find((i) => i.id === (k.style.mode === "thematique" ? k.style.indicateurId : ""));
       return { titre: `${c?.titre ?? k.coucheId}${ind ? ` — ${ind.titre} (${ind.unite})` : ""}`, entrees: legende(vs, k.style.seuils, k.style.couleurs, (x) => formatNombre(x, Math.abs(x) >= 100 ? 0 : 2)) };
     });
-    const png = await composerPng({ carte: moteur.current.canevas(), titre: carte!.nom, date: new Date(), metresParPixel: moteur.current.metresParPixel(), legendes, attributions: r.attributions, revision: r.carteRevision, miniCarte: miniCarte ? moteur.current.canevasMiniCarte() : null });
+    const png = await composerPng({ carte: m.canevas(), titre: carte!.nom, date: new Date(), metresParPixel: m.metresParPixel(), legendes, attributions: r.attributions, revision: r.carteRevision, miniCarte: miniCarte ? m.canevasMiniCarte() : null });
     return { r, png };
   };
   const exporter = async (analyseIds: string[]) => {

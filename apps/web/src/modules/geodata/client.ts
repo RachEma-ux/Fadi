@@ -81,6 +81,7 @@ export interface RangementRecu { readonly categories: readonly CategorieRecue[];
 
 /** Unité du découpage territorial (lot H) : ancêtres, emprise, contour simplifié pour l'affichage, attribution. */
 export interface UniteTerritorialeRecue extends UniteTerritoriale {
+  readonly pays: string;
   readonly ancetres: readonly { code: string; nom: string; rang: 1 | 2 | 3 | 4 }[];
   readonly enfants: number;
   readonly contour: unknown;
@@ -92,6 +93,8 @@ export const api = {
   territoires: () => appeler<{ pays: PaysTerritorial[] }>("/territoires"),
   unitesTerritoriales: (pays: string, parent: string | null) => appeler<{ unites: UniteTerritoriale[] }>(`/territoires/${encodeURIComponent(pays)}/unites${parent ? `?parent=${encodeURIComponent(parent)}` : ""}`),
   uniteTerritoriale: (pays: string, code: string, rang?: number) => appeler<UniteTerritorialeRecue>(`/territoires/${encodeURIComponent(pays)}/unites/${encodeURIComponent(code)}${rang ? `?rang=${rang}` : ""}`),
+  /** Unité retrouvée par la version de la couche d'une entité : le pays est celui de cette version, jamais le pays affiché. */
+  uniteTerritorialeDeVersion: (versionId: string, code: string, rang?: number) => appeler<UniteTerritorialeRecue>(`/territoires/version/${encodeURIComponent(versionId)}/unites/${encodeURIComponent(code)}${rang ? `?rang=${rang}` : ""}`),
   espace: () => appeler<EspaceRecu>("/espace"),
   catalogue: (q = "") => appeler<{ couches: CoucheRecue[] }>(`/catalogue${q ? `?q=${encodeURIComponent(q)}` : ""}`),
   couche: (id: string) => appeler<CoucheRecue>(`/couches/${encodeURIComponent(id)}`),

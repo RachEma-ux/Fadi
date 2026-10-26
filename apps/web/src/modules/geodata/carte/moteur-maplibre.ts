@@ -346,6 +346,15 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       };
       if (pret) f(); else carte.once("load", f);
     },
+    async masquerTerritoire(masque) {
+      if (!pret) return;
+      for (const id of ["gd-territoire-lisere", "gd-territoire-trait"]) if (carte.getLayer(id)) carte.setLayoutProperty(id, "visibility", masque ? "none" : "visible");
+      await new Promise<void>((resoudre) => {
+        const fin = setTimeout(resoudre, 2000);
+        carte.once("idle", () => { clearTimeout(fin); resoudre(); });
+        carte.triggerRepaint();
+      });
+    },
     canevasMiniCarte: () => mini?.carte.getCanvas() ?? null,
     detruire: () => { mini?.carte.remove(); carte.remove(); },
   };

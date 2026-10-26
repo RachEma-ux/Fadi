@@ -4,6 +4,7 @@
  */
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
+import { createHash } from "node:crypto";
 import { COMPOSITION_INITIALE, DROITS_IMPORT_PERSONNEL, validerGeoJSON, type DroitsVersion } from "@parcours/geodata-model";
 import { createApp } from "../app.js";
 import { pool } from "../db/client.js";
@@ -467,7 +468,7 @@ describe("découpage territorial en base (lot H, D-GD-28)", () => {
       const e = await ecrireVersion(client, {
         source: { cle, titre: cle, producteur: "Test", theme: "test", couverture: "Fictive", description: "Jeu synthétique" },
         espaceId: null,
-        version: { libelle: "v1", empreinte: cle.padEnd(64, "0").slice(0, 64), fichierNom: "t.geojson", fichierTaille: 1, urlSource: null, recupereLe: null, periode: null, licence: "Test", attribution: `Attribution ${cle}`, droits: TOUT, crsSource: "CRS84", precision: null, transformations: [], controles: { ok: true }, synthetique: true },
+        version: { libelle: "v1", empreinte: createHash("sha256").update(cle).digest("hex"), fichierNom: "t.geojson", fichierTaille: 1, urlSource: null, recupereLe: null, periode: null, licence: "Test", attribution: `Attribution ${cle}`, droits: TOUT, crsSource: "CRS84", precision: null, transformations: [], controles: { ok: true }, synthetique: true },
         couche: { titre: cle, description: "", niveau: "TEST", champCode: "code", champNom: "nom", proprietesExposees: ["code", "nom"], styleDefaut: { mode: "simple", couleur: "#123456" } },
         objets: v.objets, indicateurs: [], superficie: false, preparePar: null,
       });
@@ -522,6 +523,15 @@ describe("découpage territorial en base (lot H, D-GD-28)", () => {
     expect((await alice.client.get(`${API}/territoires/zz/unites`)).status).toBe(400);
     const nonPubliee = await publierLimites("api-brouillon", [{ code: "3", nom: "R3", x: 0, y: 0, d: 0.1 }], false);
     await expect(chargerTerritoires(pool, nonPubliee, niveau(1))).rejects.toThrow(/non publiée/);
+    // Depuis une fiche : unité retrouvée par la version de sa couche, avec son pays.
+    expect((await alice.client.get(`${API}/territoires/version/${vp}/unites/1001`)).body).toMatchObject({ pays: "ZZ", code: "1001", ancetres: [{ code: "1" }] });
+    expect((await alice.client.get(`${API}/territoires/version/${vr}/unites/1001`)).status).toBe(404);
+    // Version retirée : ses unités ne sont plus servies (pays, listes, détail), sans attendre un nouveau chargement.
+    await pool.query("UPDATE geodata_versions SET etat = 'retiree', retiree_le = now(), motif_retrait = 'Remplacée (test)' WHERE id = $1", [vp]);
+    expect((await alice.client.get(`${API}/territoires`)).body.pays[0].niveaux.map((n: { rang: number }) => n.rang)).toEqual([1]);
+    expect((await alice.client.get(`${API}/territoires/ZZ/unites?parent=1`)).body.unites).toEqual([]);
+    expect((await alice.client.get(`${API}/territoires/ZZ/unites/1001`)).status).toBe(404);
+    expect((await alice.client.get(`${API}/territoires/version/${vp}/unites/1001`)).status).toBe(404);
   });
 });
 
