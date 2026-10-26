@@ -157,6 +157,20 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
      2. Quand un nom existe en français (régions, provinces, communes, arrondissements, villes), seul le français est
         affiché, comme décidé le 26 octobre 2026 ; l'interface reste en français et en anglais (aucune interface arabe).
 
+   - D-GD-22 (26 octobre 2026, lot E du plan HCP, sous la délégation GeoData) — **fiche territoriale** :
+     1. La fiche d'une entité range ses indicateurs par thème ; une famille déclinée est un **tableau de ventilation**
+        (modalités en lignes, milieu × sexe en colonnes). Cellule absente : signe du HCP (« … » sans objet, « . » non
+        publiée, « n.d. » autre absence) avec le motif complet en infobulle, jamais zéro ; une colonne entièrement sans
+        objet pour l'entité (l'urbain d'une commune rurale) est masquée.
+     2. Fiche d'une commune : chiffres de ses **arrondissements** (population légale, ménages), lus dans la couche des
+        arrondissements du même producteur, chacun ouvrant sa propre fiche.
+     3. Fiche d'une commune rurale : ses **douars** (annexe `geodata_douars` de la version, 33 189 douars rattachés par
+        le code à 1 279 communes) — code, fraction et nom en arabe (D-GD-21, de droite à gauche), type, ménages,
+        population, sexe et grands groupes d'âge ; « X » du HCP = secret statistique, jamais zéro ; aucune somme.
+     4. **Impression** : « Imprimer la fiche » (icône, **Alt+P**) imprime la fiche seule, toutes sections dépliées, avec
+        son titre, sa source et sa date (heure de Zurich), dans une fenêtre d'impression : ni iframe (ARC-10), ni règle de
+        style hors de `.geodata-page` (GEO 04) ; fenêtre bloquée par le navigateur = avis, rien d'imprimé en silence.
+
 ## Conséquences
 
 - `docs/architecture.md` et `module-registry.ts` déclarent GeoData une fois le code livré.

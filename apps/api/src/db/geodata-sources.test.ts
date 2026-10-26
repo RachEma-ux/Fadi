@@ -95,6 +95,25 @@ describe("fiches de source GeoData livrées", () => {
     }
   });
 
+  it("douars en annexe (lot E) : empreinte de la fiche, colonnes attendues, code rangé sous sa commune, aucun zéro mis pour « X »", () => {
+    const fiche = JSON.parse(readFileSync(join(DOSSIER, "hcp-rgph2024-population-communes.json"), "utf8")) as FicheSource;
+    const a = fiche.version.annexes?.douars;
+    expect(a).toBeTruthy();
+    const octets = readFileSync(join(DOSSIER, a!.fichier));
+    expect(createHash("sha256").update(octets).digest("hex")).toBe(a!.empreinte);
+    const [entete, ...lignes] = octets.toString("utf8").split("\n").filter((l) => l.length);
+    expect(entete!.split("\t")).toEqual(["code", "commune", "fraction", "nom", "type", "menages", "population", "masculin", "feminin", "moins_15", "de_15_a_59", "plus_60"]);
+    expect(lignes.length).toBeGreaterThan(30_000);
+    const fautes: string[] = [];
+    for (const l of lignes) {
+      const [code, commune, , , type, ...nombres] = l.split("\t");
+      // Code du douar : province + cercle + commune (7 chiffres) = fin du code de sa commune du RGPH.
+      if (!/^\d{13}$/.test(code!) || !commune!.endsWith(code!.slice(0, 7)) || !["groupé", "éclaté", "dispersé"].includes(type!)) fautes.push(code!);
+      for (const x of nombres) if (!(x === "" || x === "X" || /^-?\d+(\.\d+)?$/.test(x))) fautes.push(`${code} : ${x}`);
+    }
+    expect(fautes.slice(0, 5)).toEqual([]);
+  }, 30_000);
+
   it("chaque thème déclaré par une fiche livrée a sa catégorie initiale", () => {
     const themes = new Set(CATEGORIES_CATALOGUE.flatMap((c) => c.themes));
     for (const nom of fiches) expect(themes.has((JSON.parse(readFileSync(join(DOSSIER, nom), "utf8")) as FicheSource).theme)).toBe(true);

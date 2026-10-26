@@ -3189,6 +3189,27 @@ ALTER TABLE geodata_indicateurs DROP CONSTRAINT IF EXISTS geodata_indicateurs_se
 ALTER TABLE geodata_indicateurs ADD CONSTRAINT geodata_indicateurs_sexe_check CHECK (sexe IS NULL OR sexe IN ('ensemble', 'masculin', 'feminin'));
 ALTER TABLE geodata_valeurs DROP CONSTRAINT IF EXISTS geodata_valeurs_motif_absence_check;
 ALTER TABLE geodata_valeurs ADD CONSTRAINT geodata_valeurs_motif_absence_check CHECK (motif_absence IN ('non-publiee', 'secret-statistique', 'hors-couverture', 'non-appariee', 'non-comparable', 'non-evaluee', 'sans-objet'));
+-- Douars du RGPH 2024 (lot E, D-GD-20, D-GD-21) : annexe d'une version, sans géométrie, affichée dans la fiche de la
+-- commune rurale. Nom et fraction tels que publiés (en arabe) ; secret = pourcentages supprimés par le HCP (« X »).
+CREATE TABLE IF NOT EXISTS geodata_douars (
+  version_id text NOT NULL REFERENCES geodata_versions(id) ON DELETE CASCADE,
+  code text NOT NULL,
+  commune text NOT NULL,
+  fraction text NOT NULL DEFAULT '',
+  nom text NOT NULL DEFAULT '',
+  type text CHECK (type IS NULL OR type IN ('groupé', 'éclaté', 'dispersé')),
+  menages integer,
+  population integer,
+  masculin double precision,
+  feminin double precision,
+  moins_15 double precision,
+  de_15_a_59 double precision,
+  plus_60 double precision,
+  secret boolean NOT NULL DEFAULT false,
+  PRIMARY KEY (version_id, code)
+);
+CREATE INDEX IF NOT EXISTS geodata_douars_commune ON geodata_douars (version_id, commune);
+
 -- Catégories du catalogue (D-GD-14) : communes à tous les comptes, gérées par un gestionnaire de données (créer, renommer,
 -- ordonner, supprimer) ; une source y est rangée explicitement, sinon par les thèmes déclarés de la catégorie, sinon
 -- « Autres ». Les catégories initiales (modèle `CATEGORIES_CATALOGUE`) sont semées une seule fois par l'API, à la

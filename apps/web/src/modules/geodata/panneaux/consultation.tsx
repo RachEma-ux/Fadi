@@ -5,7 +5,7 @@
  */
 import { useEffect, useState } from "react";
 import { categorieDe, declinaisonParDefaut, declinaisonProche, grouperIndicateurs, indicateursPrincipaux, LIBELLES_MILIEU, LIBELLES_SEXE, type FamilleIndicateurs, type Milieu, type Sexe, compterParType, type RangementCatalogue, couleursPour, degradeCss, regrouperCatalogue, type TypeCatalogue, formatNombre, legende, libelleAbsence, LIBELLES_USAGES, USAGES, type Composition, type MethodeClassification, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
-import { api, type IndicateurRecu, type ValeurRasterRecue, type CoucheRecue, type Disponibilite, type FicheRecue, type LigneTable, type ValeurRecue } from "../client";
+import { api, type IndicateurRecu, type ValeurRasterRecue, type CoucheRecue, type Disponibilite, type LigneTable, type ValeurRecue } from "../client";
 import { entreesCategories, lireSeuilsManuels, styleThematique, type Categorie } from "../composition-ops";
 
 /** Valeur de l'option « une couleur par entité » (jamais un identifiant d'indicateur : ceux-ci commencent par une lettre). */
@@ -291,46 +291,6 @@ function Seuils({ style, valeurs, onChange }: { style: Extract<StyleCouche, { mo
         </form>
       )}
     </div>
-  );
-}
-
-export function FicheObjet(p: { fiche: FicheRecue | null; chargement: boolean; erreur: string | null; onFermer(): void; onCentrer(f: FicheRecue): void; descendre?: { libelle: string; onDescendre(): void } | null }) {
-  if (p.chargement) return <p role="status" className="gd-etat">Chargement de la fiche…</p>;
-  if (p.erreur) return <p role="alert" className="gd-etat">{p.erreur}</p>;
-  if (!p.fiche) return <p className="gd-etat">Sélectionnez un objet sur la carte, dans la table ou par la recherche.</p>;
-  const f = p.fiche;
-  return (
-    <article className="gd-fiche" data-gd-fiche={f.code}>
-      <h3 translate="no">{f.nom ?? f.code}</h3>
-      <p className="gd-discret" translate="no">{`${f.couche.titre} · ${f.code}${f.niveau ? ` · ${f.niveau}` : ""}`}</p>
-      {p.descendre && (
-        <button type="button" className="gd-descendre" onClick={p.descendre.onDescendre} title={`${p.descendre.libelle} (Alt+↓)`} aria-keyshortcuts="Alt+ArrowDown" data-gd-descendre>
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M6 13l6 6 6-6" /></svg>
-          <span>{p.descendre.libelle}</span>
-        </button>
-      )}
-      {f.geometrieReparee && <p className="gd-alerte">Géométrie réparée à l'import (consignée dans la fiche de la version).</p>}
-      <h4>Indicateurs</h4>
-      {f.indicateurs.length === 0 && <p className="gd-discret">Aucun indicateur pour cette couche.</p>}
-      {(() => {
-        // Par thème (D-GD-17, lot A2) : un indicateur sans thème va sous « Autres indicateurs » ; le premier thème est ouvert.
-        const valeur = (i: (typeof f.indicateurs)[number]) => <div key={i.id} data-gd-valeur={i.id} data-absente={i.valeur === null ? "" : undefined}><dt translate="no">{`${i.titre}${i.periode ? ` (${i.periode})` : ""}`}</dt><dd>{formaterValeur(i, i.unite)}{i.nature === "calcule" && <span className="gd-discret"> · résultat calculé</span>}</dd></div>;
-        const themes = [...new Set(f.indicateurs.map((i) => i.theme ?? "Autres indicateurs"))];
-        if (themes.length <= 1) return <dl className="gd-valeurs">{f.indicateurs.map(valeur)}</dl>;
-        return themes.map((t, n) => (
-          <details key={t} className="gd-theme" open={n === 0} data-gd-theme={t}>
-            <summary translate="no">{t}</summary>
-            <dl className="gd-valeurs">{f.indicateurs.filter((i) => (i.theme ?? "Autres indicateurs") === t).map(valeur)}</dl>
-          </details>
-        ));
-      })()}
-      <h4>Attributs</h4>
-      <dl className="gd-valeurs">{Object.entries(f.proprietes).map(([k, v]) => <div key={k}><dt translate="no">{k}</dt><dd translate="no">{v === null || v === "" ? "—" : String(v)}</dd></div>)}</dl>
-      <h4>Source</h4>
-      <p translate="no">{`${f.couche.version.source.titre} — ${f.couche.version.libelle}`}</p>
-      <p className="gd-discret" translate="no">{f.couche.version.attribution}</p>
-      <div className="gd-actions"><button type="button" onClick={() => p.onCentrer(f)}>Centrer la carte</button><button type="button" onClick={p.onFermer}>Fermer la fiche</button></div>
-    </article>
   );
 }
 

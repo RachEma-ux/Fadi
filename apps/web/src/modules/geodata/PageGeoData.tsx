@@ -16,10 +16,11 @@ import { cheminValide, combinerFiltres, COMPOSITION_INITIALE, couleurCategorie, 
 import { api, ErreurGeoData, type ValeurRasterRecue, type CarteRecue, type RangementRecu, type Fond, type CoucheRecue, type EspaceRecu, type FicheRecue, type ResultatRecherche, type ZoneRecue } from "./client";
 import { ajouterCouche, basculerVisibilite, definirFiltre, definirOpacite, definirStyle, deplacerCouche, etatDepuis, LIBELLES_ENREGISTREMENT, entreesCategories, entreesRaster, retirerCouche, type Categorie, type EtatEnregistrement } from "./composition-ops";
 import { webglDisponible, type MoteurCarte, type OutilCarte } from "./carte/moteur";
-import { FicheObjet, FicheValeur, PanneauCatalogue, PanneauCouches, PanneauLegende, TableAttributs } from "./panneaux/consultation";
+import { FicheValeur, PanneauCatalogue, PanneauCouches, PanneauLegende, TableAttributs } from "./panneaux/consultation";
 import { Etudes, Export, Import, MesCartes, type TraceEnCours } from "./panneaux/travail";
 import { BarreOutilsCarte } from "./panneaux/BarreOutilsCarte";
 import { FilNiveaux } from "./panneaux/FilNiveaux";
+import { AVIS_IMPRESSION_BLOQUEE, FicheObjet, imprimerFiche } from "./panneaux/FicheTerritoriale";
 import { GestionDonnees, rangementDepuis } from "./panneaux/donnees";
 import { lireFondsNavigateur } from "./fonds-navigateur";
 import { composerPng, telecharger } from "./export-png";
@@ -342,6 +343,8 @@ export function PageGeoData() {
     const c = catalogue?.find((x) => x.typeGeometrie !== "raster" && rangAdministratif(x) === rang + 1 && producteurPrincipal(x) === producteurPrincipal(f.couche));
     return c ? { id: c.id, aAjouter: c } : null;
   }
+  /** Couche des arrondissements du même producteur (fiche d'une commune : chiffres de ses arrondissements). */
+  const coucheArrondissementsDe = (f: FicheRecue) => catalogue?.find((x) => x.typeGeometrie !== "raster" && rangAdministratif(x) === 4 && producteurPrincipal(x) === producteurPrincipal(f.couche)) ?? null;
   const rangDe = (f: FicheRecue | null) => (f ? rangs.get(f.couche.id) ?? rangAdministratif(f.couche) : null);
   const descentePossible = (f: FicheRecue | null): RangAdministratif | null => {
     const r = rangDe(f);
@@ -386,6 +389,7 @@ export function PageGeoData() {
   // Alt+↑ remonte, Alt+↓ descend dans l'entité de la fiche ouverte ; jamais pendant une saisie.
   const raccourcisNiveaux = useRef<(e: globalThis.KeyboardEvent) => void>(() => undefined);
   raccourcisNiveaux.current = (e) => {
+    if (e.altKey && (e.key === "p" || e.key === "P" || e.code === "KeyP") && volet === "fiche" && fiche) { e.preventDefault(); if (!imprimerFiche()) setAnnonce(AVIS_IMPRESSION_BLOQUEE); return; }
     if (!e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
     const cible = e.target as HTMLElement | null;
     if (cible?.closest("input, select, textarea, [contenteditable='true']")) return;
@@ -531,7 +535,7 @@ export function PageGeoData() {
           <aside className="gd-volet gd-ouvert" aria-label={({ fiche: "Fiche d'information", valeur: "Valeur au point", donnees: "Données", cartes: "Mes cartes", etudes: "Études", import: "Importer", export: "Exporter" })[volet]} data-gd-volet-ouvert={volet}>
             <div className="gd-ligne-titre"><h2>{({ fiche: "Fiche d'information", valeur: "Valeur au point", donnees: "Données : catégories et couches", cartes: "Mes cartes", etudes: "Études", import: "Importer des données", export: "Exporter" })[volet]}</h2><button type="button" onClick={() => setVolet(null)}>Fermer</button></div>
             {volet === "valeur" && valeurPoint && <FicheValeur {...valeurPoint} onFermer={() => { setVolet(null); setValeurPoint(null); }} />}
-            {volet === "fiche" && <FicheObjet descendre={(() => { const r = descentePossible(fiche); return r && fiche ? { libelle: `Voir ses ${LIBELLES_ENFANTS[(r + 1) as RangAdministratif]}`, onDescendre: () => descendre(fiche) } : null; })()} fiche={fiche} chargement={ficheEtat.chargement} erreur={ficheEtat.erreur} onFermer={() => { setVolet(null); setSelection(null); }} onCentrer={(f) => { const e = empriseDe(f.emprise.coordinates); if (e) moteur.current?.allerA({ emprise: e }); }} />}
+            {volet === "fiche" && <FicheObjet coucheArrondissements={fiche && rangDe(fiche) === 3 ? coucheArrondissementsDe(fiche) : null} onFiche={(id, code) => { setSelection({ coucheId: id, code }); void ouvrirFiche(id, code); }} descendre={(() => { const r = descentePossible(fiche); return r && fiche ? { libelle: `Voir ses ${LIBELLES_ENFANTS[(r + 1) as RangAdministratif]}`, onDescendre: () => descendre(fiche) } : null; })()} fiche={fiche} chargement={ficheEtat.chargement} erreur={ficheEtat.erreur} onFermer={() => { setVolet(null); setSelection(null); }} onCentrer={(f) => { const e = empriseDe(f.emprise.coordinates); if (e) moteur.current?.allerA({ emprise: e }); }} />}
             {volet === "donnees" && <GestionDonnees rangement={rangement} erreur={erreurRangement} couches={catalogue} onChange={chargerRangement} />}
             {volet === "cartes" && <MesCartes carte={carte} nouvelle={!carte} onOuvrir={(id) => void ouvrirCarte(id)} onCarteModifiee={(c) => { setCarte(c); setEtatForce(null); }}
               onNouvelle={() => { setCarte(null); setComposition(compositionNeuve(composition.camera)); setEtatForce(null); ecrireLocal(CLE_DERNIERE_CARTE, null); }}

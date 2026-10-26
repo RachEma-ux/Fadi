@@ -137,3 +137,14 @@
 .geodata-page .gd-niveaux-sep{opacity:.6}
 .geodata-page .gd-niveaux-retour{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:4px 10px}
 .geodata-page .gd-descendre{display:inline-flex;align-items:center;gap:6px;margin:6px 0;font-weight:600}
+/* Fiche territoriale (lot E) : tableaux de ventilation, douars (noms en arabe, de droite à gauche) ; l'impression passe par
+   un document isolé (FicheTerritoriale.tsx), jamais par une règle hors de .geodata-page. */
+.geodata-page .gd-valeurs>div.gd-ventilation-bloc{display:block}
+.geodata-page .gd-ventilation-bloc{overflow-x:auto;padding:4px 0;border-bottom:1px solid #eef3f3}
+.geodata-page .gd-ventilation{border-collapse:collapse;width:100%;font-size:.86rem}
+.geodata-page .gd-ventilation caption{text-align:left;font-weight:600;padding:4px 0;caption-side:top}
+.geodata-page .gd-ventilation th,.geodata-page .gd-ventilation td{border-bottom:1px solid #eef3f3;padding:3px 6px;text-align:right;white-space:nowrap}
+.geodata-page .gd-ventilation th[scope="row"],.geodata-page .gd-ventilation thead th:first-child{text-align:left;white-space:normal}
+.geodata-page .gd-ventilation [dir="rtl"]{text-align:right;font-family:"Noto Naskh Arabic","Geeza Pro","Arial",sans-serif}
+.geodata-page .gd-imprime-seulement{display:none}
+

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { choisirDeclinaison, declinaisonParDefaut, declinaisonProche, grouperIndicateurs, indicateursPrincipaux } from "./dimensions.js";
+import { choisirDeclinaison, tableauVentilation, declinaisonParDefaut, declinaisonProche, grouperIndicateurs, indicateursPrincipaux } from "./dimensions.js";
 import { MOTIFS_ABSENCE } from "./valeurs.js";
 
 const ind = (id: string, famille: string | null, modalite: string | null, milieu: "ensemble" | "urbain" | "rural" | null, sexe: "ensemble" | "masculin" | "feminin" | null, theme: string | null = "Démographie") =>
@@ -35,6 +35,11 @@ describe("dimensions d'indicateur (D-GD-17, lot A2)", () => {
   it("indicateurs principaux : tous sous le seuil, sinon sans modalité et ensemble seulement", () => {
     expect(indicateursPrincipaux(liste, 10)).toHaveLength(5);
     expect(indicateursPrincipaux(liste, 2).map((i) => i.id)).toEqual(["e"]);
+  });
+  it("tableau de ventilation : modalités en lignes, milieu × sexe présents en colonnes, cellule absente = null", () => {
+    const t = tableauVentilation(grouperIndicateurs(liste)[0]!);
+    expect(t.colonnes).toEqual([{ milieu: "ensemble", sexe: "ensemble" }, { milieu: "urbain", sexe: "masculin" }]);
+    expect(t.lignes.map((l) => [l.modalite, l.cellules.map((c) => c?.id ?? null)])).toEqual([["0-4 ans", ["a", "c"]], ["5-9 ans", ["b", null]]]);
   });
   it("motif « sans objet » distinct des autres absences", () => {
     expect(MOTIFS_ABSENCE["sans-objet"]).toContain("Sans objet");

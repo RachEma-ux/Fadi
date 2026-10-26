@@ -103,6 +103,13 @@ la carte se cadre sur l'entité, n'affiche qu'elle à son niveau et ses seuls de
 niveau inférieur est ajoutée depuis le catalogue si elle manque. « Retour » (Alt+↑) remonte d'un niveau. La parenté
 vient des codes du HCP (`packages/geodata-model/src/niveaux.ts`), jamais des géométries ni des noms.
 
+## Fiche territoriale (D-GD-22)
+
+La fiche d'une entité range ses indicateurs par thème ; une famille déclinée devient un tableau (modalités ×
+milieu × sexe ; « … » sans objet, « . » non publiée, motif au survol). La fiche d'une commune donne les chiffres de ses
+arrondissements ; celle d'une commune rurale, ses douars (annexe `donnees/hcp-rgph2024-douars.tsv` de la fiche des
+communes, table `geodata_douars`, noms en arabe tels que publiés). « Imprimer la fiche » (Alt+P) imprime la fiche seule.
+
 ## Fonds de carte et fournisseurs (D-GD-15)
 
 Paramètres → « Fournisseurs de fonds de carte » : MapTiler est intégré et fournisseur par défaut (Satellite, Satellite et

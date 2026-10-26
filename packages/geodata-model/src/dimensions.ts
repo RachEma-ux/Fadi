@@ -85,3 +85,17 @@ export function indicateursPrincipaux<T extends IndicateurDimensionne>(liste: re
   if (liste.length <= max) return [...liste];
   return liste.filter((i) => i.modalite === null && (i.milieu ?? "ensemble") === "ensemble" && (i.sexe ?? "ensemble") === "ensemble").slice(0, max);
 }
+
+/**
+ * Tableau de ventilation d'une famille (fiche territoriale, lot E) : une ligne par modalité, une colonne par croisement
+ * milieu × sexe présent dans la famille (ensemble, urbain, rural ; puis ensemble, masculin, féminin) ; une cellule sans
+ * déclinaison publiée est null (affichée « — », jamais zéro).
+ */
+export function tableauVentilation<T extends IndicateurDimensionne>(f: FamilleIndicateurs<T>): {
+  colonnes: { milieu: Milieu; sexe: Sexe }[];
+  lignes: { modalite: string | null; cellules: (T | null)[] }[];
+} {
+  const colonnes = MILIEUX.flatMap((milieu) => SEXES.map((sexe) => ({ milieu, sexe })))
+    .filter((c) => f.indicateurs.some((i) => (i.milieu ?? "ensemble") === c.milieu && (i.sexe ?? "ensemble") === c.sexe));
+  return { colonnes, lignes: f.modalites.map((modalite) => ({ modalite, cellules: colonnes.map((c) => choisirDeclinaison(f, modalite, c.milieu, c.sexe)) })) };
+}

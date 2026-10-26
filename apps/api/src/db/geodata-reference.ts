@@ -31,7 +31,7 @@ import { Pool } from "pg";
 import { bornesRobustes, estMotifAbsence, lireDroits, type MotifAbsence, MAX_PIXELS_RASTER, OBJETS_PAR_COUCHE, validerDeclarationRaster, validerGeoJSON, verifierUsage, type ClasseRaster, type DescriptionRaster, type ObjetImporte, type PaletteRaster, type StyleCouche } from "@parcours/geodata-model";
 import { lireGeoTiff, type GrilleRaster } from "../lib/geodata/raster.js";
 import { lireGeoPackage } from "../lib/geodata/geopackage.js";
-import { codesDesObjets, ecrireVersion, type IndicateurDeclare } from "../lib/geodata/versions.js";
+import { codesDesObjets, ecrireVersion, type IndicateurDeclare, type LigneDouar } from "../lib/geodata/versions.js";
 
 export interface FicheSource {
   cle: string; titre: string; producteur: string; theme: string; couverture: string; description: string;
@@ -42,6 +42,8 @@ export interface FicheSource {
      * indicateur lit sa colonne (`propriete`). Les signes conventionnels déclarés donnent leur motif d'absence.
      */
     tableau?: { fichier: string; empreinte: string; signes?: Record<string, string> };
+    /** Annexes sans géométrie (lot E) : douars du RGPH 2024, TSV d'empreinte contrôlée, rangés sous leur commune. */
+    annexes?: { douars?: { fichier: string; empreinte: string; description?: string } };
   };
   couche: {
     titre: string; description: string; niveau: string | null; champCode: string; champNom: string | null; proprietesExposees: string[]; styleDefaut: StyleCouche;
@@ -75,6 +77,29 @@ function lireTableau(fiche: FicheSource, chemin: string) {
   }
   const signes = Object.fromEntries(Object.entries(t.signes ?? {}).filter(([, m]) => estMotifAbsence(m))) as Record<string, MotifAbsence>;
   return { ok: empreinte === t.empreinte.toLowerCase(), empreinte, lignes: lignes.length, colonnes, signes };
+}
+
+/** Douars en annexe (TSV : code, commune, fraction, nom, type, ménages, population, %) ; « X » = secret statistique. */
+function lireDouars(fiche: FicheSource, chemin: string): { ok: boolean; empreinte: string; lignes: LigneDouar[] } | null {
+  const a = fiche.version.annexes?.douars;
+  if (!a) return null;
+  if (!/^donnees\/[a-z0-9-]+\.tsv$/.test(a.fichier)) throw new Error(`Annexe des douars refusée : ${a.fichier}`);
+  const octets = readFileSync(join(dirname(chemin), a.fichier));
+  const empreinte = createHash("sha256").update(octets).digest("hex");
+  const [entete, ...corps] = octets.toString("utf8").split("\n").filter((l) => l.length);
+  const noms = entete!.split("\t");
+  const nombre = (x: string | undefined) => (x && /^-?\d+(\.\d+)?$/.test(x) ? Number(x) : null);
+  const lignes = corps.map((l) => {
+    const c = Object.fromEntries(l.split("\t").map((x, i) => [noms[i]!, x]));
+    const type = ["groupé", "éclaté", "dispersé"].includes(c["type"] ?? "") ? (c["type"] as LigneDouar["type"]) : null;
+    return {
+      code: c["code"]!, commune: c["commune"]!, fraction: c["fraction"] ?? "", nom: c["nom"] ?? "", type,
+      menages: nombre(c["menages"]), population: nombre(c["population"]), masculin: nombre(c["masculin"]), feminin: nombre(c["feminin"]),
+      moins_15: nombre(c["moins_15"]), de_15_a_59: nombre(c["de_15_a_59"]), plus_60: nombre(c["plus_60"]),
+      secret: ["masculin", "feminin", "moins_15", "de_15_a_59", "plus_60"].some((k) => c[k] === "X"),
+    };
+  });
+  return { ok: empreinte === a.empreinte.toLowerCase(), empreinte, lignes };
 }
 
 /** Chemin de la fiche : chemin donné, sinon fiche qualifiée nommée (à côté du bundle, ou dans le dépôt en développement). */
@@ -138,7 +163,8 @@ async function importer(chemin: string, preparateur: string) {
   const empreinteOk = empreinteFichier === fiche.version.empreinte.toLowerCase();
   // Tableau de valeurs (lot A2) : empreinte contrôlée ; l'empreinte de la version couvre le fichier ET le tableau.
   const tableau = lireTableau(fiche, chemin);
-  const empreinte = tableau ? createHash("sha256").update(`${empreinteFichier}:${tableau.empreinte}`).digest("hex") : empreinteFichier;
+  const douars = lireDouars(fiche, chemin);
+  const empreinte = tableau ? createHash("sha256").update(`${empreinteFichier}:${tableau.empreinte}${douars ? `:${douars.empreinte}` : ""}`).digest("hex") : empreinteFichier;
   let crsSource = "WGS 84 (CRS84)";
   let objets: ObjetImporte[] = [];
   let controles: Record<string, unknown> & { ok: boolean };
@@ -176,8 +202,9 @@ async function importer(chemin: string, preparateur: string) {
     objets = v.ok ? [...v.objets] : [];
     const { doublons, manquants } = codesDesObjets(objets, fiche.couche.champCode);
     controles = {
-      ok: empreinteOk && v.ok && doublons.length === 0 && manquants === 0 && (!tableau || tableau.ok),
+      ok: empreinteOk && v.ok && doublons.length === 0 && manquants === 0 && (!tableau || tableau.ok) && (!douars || douars.ok),
       empreinte: { attendue: fiche.version.empreinte, calculee: empreinteFichier, conforme: empreinteOk },
+      ...(douars ? { douars: { fichier: fiche.version.annexes!.douars!.fichier, empreinte: douars.empreinte, conforme: douars.ok, lignes: douars.lignes.length } } : {}),
       ...(tableau ? { tableau: { fichier: fiche.version.tableau!.fichier, empreinte: tableau.empreinte, conforme: tableau.ok, lignes: tableau.lignes, colonnes: tableau.colonnes.size } } : {}),
       validation: v.rapport, codes: { champ: fiche.couche.champCode, doublons, manquants }, controleLe: new Date().toISOString(),
     };
@@ -228,6 +255,7 @@ async function importer(chemin: string, preparateur: string) {
       },
       couche: { ...fiche.couche, styleDefaut: raster ? { mode: "raster" } : fiche.couche.styleDefaut },
       objets, indicateurs: raster ? [] : (fiche.indicateurs ?? []).map((i) => (tableau ? { ...i, valeurs: tableau.colonnes.get(i.propriete) ?? new Map(), signes: tableau.signes } : i)), superficie: !raster && fiche.superficie !== false, preparePar: prepareParId,
+      ...(douars ? { douars: douars.lignes } : {}),
       ...(raster ? { raster } : {}),
     });
     await client.query("COMMIT");
