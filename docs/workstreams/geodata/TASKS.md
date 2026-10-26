@@ -10,7 +10,7 @@
 - [x] GEO-HCP-A2 — Indicateurs démographiques et socio-économiques HCP (648 par niveau, dimensions) et arrondissements
   (41/41 contours OSM niveau 10).
 - [x] GEO-HCP-PRIO — Priorité HCP sur OpenStreetMap (D-GD-18) : villes, catalogue sans doublon, recherche.
-- [ ] GEO-HCP-B — Navigation par niveaux (fil d'Ariane Royaume → Région → Province, Retour, raccourcis).
+- [x] GEO-HCP-B — Navigation par niveaux (fil « Maroc › Région › Province », Retour Alt+↑, descente Alt+↓ ; D-GD-19).
 - [ ] GEO-HCP-C — Libellés sur la carte (un par entité, valeur abrégée, affichage / masquage ; glyphes hébergés).
 - [ ] GEO-HCP-D — Palettes prédéfinies, N classes, couleur par classe, seuils naturels (Jenks).
 - [ ] GEO-HCP-E — Fiche territoriale par thème, ventilations, impression.

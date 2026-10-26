@@ -95,6 +95,14 @@ au-dessus de tous les remplissages. Entre couches de limites administratives, la
 épais), puis la province, puis la commune, quel que soit l'ordre des couches ; le rang vient de la source (ADM1, ADM2,
 niveau administratif OpenStreetMap).
 
+## Navigation par niveaux (D-GD-19)
+
+Dès qu'une couche de limites à codes du HCP est sur la carte, un fil « Maroc › Région … › Province … » s'affiche à
+droite du bouton « Données ». La fiche d'une région, d'une province ou d'une commune propose « Voir ses … » (Alt+↓) :
+la carte se cadre sur l'entité, n'affiche qu'elle à son niveau et ses seuls descendants en dessous ; la couche du
+niveau inférieur est ajoutée depuis le catalogue si elle manque. « Retour » (Alt+↑) remonte d'un niveau. La parenté
+vient des codes du HCP (`packages/geodata-model/src/niveaux.ts`), jamais des géométries ni des noms.
+
 ## Fonds de carte et fournisseurs (D-GD-15)
 
 Paramètres → « Fournisseurs de fonds de carte » : MapTiler est intégré et fournisseur par défaut (Satellite, Satellite et

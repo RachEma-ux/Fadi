@@ -294,7 +294,7 @@ function Seuils({ style, valeurs, onChange }: { style: Extract<StyleCouche, { mo
   );
 }
 
-export function FicheObjet(p: { fiche: FicheRecue | null; chargement: boolean; erreur: string | null; onFermer(): void; onCentrer(f: FicheRecue): void }) {
+export function FicheObjet(p: { fiche: FicheRecue | null; chargement: boolean; erreur: string | null; onFermer(): void; onCentrer(f: FicheRecue): void; descendre?: { libelle: string; onDescendre(): void } | null }) {
   if (p.chargement) return <p role="status" className="gd-etat">Chargement de la fiche…</p>;
   if (p.erreur) return <p role="alert" className="gd-etat">{p.erreur}</p>;
   if (!p.fiche) return <p className="gd-etat">Sélectionnez un objet sur la carte, dans la table ou par la recherche.</p>;
@@ -303,6 +303,12 @@ export function FicheObjet(p: { fiche: FicheRecue | null; chargement: boolean; e
     <article className="gd-fiche" data-gd-fiche={f.code}>
       <h3 translate="no">{f.nom ?? f.code}</h3>
       <p className="gd-discret" translate="no">{`${f.couche.titre} · ${f.code}${f.niveau ? ` · ${f.niveau}` : ""}`}</p>
+      {p.descendre && (
+        <button type="button" className="gd-descendre" onClick={p.descendre.onDescendre} title={`${p.descendre.libelle} (Alt+↓)`} aria-keyshortcuts="Alt+ArrowDown" data-gd-descendre>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M6 13l6 6 6-6" /></svg>
+          <span>{p.descendre.libelle}</span>
+        </button>
+      )}
       {f.geometrieReparee && <p className="gd-alerte">Géométrie réparée à l'import (consignée dans la fiche de la version).</p>}
       <h4>Indicateurs</h4>
       {f.indicateurs.length === 0 && <p className="gd-discret">Aucun indicateur pour cette couche.</p>}

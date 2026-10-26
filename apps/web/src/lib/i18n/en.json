@@ -14082,5 +14082,16 @@
 "{0} indicateurs, regroupés en familles :": "{0} indicators, grouped into families:",
 "({0} déclinaison(s))": "({0} breakdown(s))",
 "{0} indicateurs principaux sur {1} ; la fiche d'un objet les montre tous.": "{0} main indicators out of {1}; an object's record shows them all.",
-"Sans objet (n'a pas lieu de figurer)": "Not applicable (no value to report)"
+"Sans objet (n'a pas lieu de figurer)": "Not applicable (no value to report)",
+"Navigation par niveaux": "Navigation by levels",
+"Retour": "Back",
+"Retour au niveau supérieur": "Back to the upper level",
+"Retour au niveau supérieur (Alt+↑)": "Back to the upper level (Alt+↑)",
+"Voir ses {0}": "Show its {0}",
+"Voir ses {0} (Alt+↓)": "Show its {0} (Alt+↓)",
+"régions": "regions",
+"provinces et préfectures": "provinces and prefectures",
+"communes": "municipalities",
+"arrondissements": "districts",
+"Niveau : {0}": "Level: {0}"
 }

@@ -12,13 +12,14 @@
  * droite (Données, Mes cartes, Études, Importer, Exporter).
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { COMPOSITION_INITIALE, couleurCategorie, rangAdministratif, formatNombre, legende, lireValeur, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
+import { cheminValide, combinerFiltres, COMPOSITION_INITIALE, couleurCategorie, estCodeHcp, filtresNiveaux, LIBELLES_ENFANTS, parentHcp, rangAdministratif, type CoucheNiveau, type EtapeNiveau, type RangAdministratif, formatNombre, legende, lireValeur, type Composition, type FiltreCouche, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
 import { api, ErreurGeoData, type ValeurRasterRecue, type CarteRecue, type RangementRecu, type Fond, type CoucheRecue, type EspaceRecu, type FicheRecue, type ResultatRecherche, type ZoneRecue } from "./client";
 import { ajouterCouche, basculerVisibilite, definirFiltre, definirOpacite, definirStyle, deplacerCouche, etatDepuis, LIBELLES_ENREGISTREMENT, entreesCategories, entreesRaster, retirerCouche, type Categorie, type EtatEnregistrement } from "./composition-ops";
 import { webglDisponible, type MoteurCarte, type OutilCarte } from "./carte/moteur";
 import { FicheObjet, FicheValeur, PanneauCatalogue, PanneauCouches, PanneauLegende, TableAttributs } from "./panneaux/consultation";
 import { Etudes, Export, Import, MesCartes, type TraceEnCours } from "./panneaux/travail";
 import { BarreOutilsCarte } from "./panneaux/BarreOutilsCarte";
+import { FilNiveaux } from "./panneaux/FilNiveaux";
 import { GestionDonnees, rangementDepuis } from "./panneaux/donnees";
 import { lireFondsNavigateur } from "./fonds-navigateur";
 import { composerPng, telecharger } from "./export-png";
@@ -99,6 +100,9 @@ export function PageGeoData() {
   /** Composition d'une nouvelle carte : fond du fournisseur par défaut quand il est utilisable, sinon fond neutre. */
   const compositionNeuve = (camera = COMPOSITION_INITIALE.camera): Composition => ({ ...COMPOSITION_INITIALE, camera, fond: lireFondsNavigateur().defaut ?? COMPOSITION_INITIALE.fond });
   const [erreurRangement, setErreurRangement] = useState<string | null>(null);
+  // Navigation par niveaux (lot B) : chemin Maroc → région → province → commune, et codes / noms des couches de limites.
+  const [chemin, setChemin] = useState<EtapeNiveau[]>([]);
+  const [unitesNiveaux, setUnitesNiveaux] = useState<Map<string, { code: string; nom: string | null }[]>>(new Map());
   const [pleinEcran, setPleinEcran] = useState(false);
 
   // Plein écran de toute la page GeoData (carte, barre, panneaux) ; le canevas suit la nouvelle taille.
@@ -184,6 +188,28 @@ export function PageGeoData() {
   const rasters = useMemo(() => new Set([...couchesConnues.values()].filter((c) => c.typeGeometrie === "raster").map((c) => c.id)), [couchesConnues]);
   // Rang administratif des couches de limites (D-GD-16), lu de leur niveau ou du niveau OpenStreetMap de leur titre.
   const rangs = useMemo(() => new Map([...couchesConnues.values()].flatMap((c) => { const r = rangAdministratif(c); return r ? [[c.id, r] as const] : []; })), [couchesConnues]);
+  // Codes et noms des couches de limites de la composition (lus une fois par couche ; contenu d'une version figé).
+  useEffect(() => {
+    for (const k of composition.couches) {
+      const id = k.coucheId;
+      if (!rangs.has(id) || unitesNiveaux.has(id)) continue;
+      const connues = categories.get(id);
+      if (connues) { setUnitesNiveaux((m) => new Map(m).set(id, connues)); continue; }
+      setUnitesNiveaux((m) => new Map(m).set(id, []));
+      api.categories(id).then((r) => setUnitesNiveaux((m) => new Map(m).set(id, r.categories))).catch(() => setUnitesNiveaux((m) => { const n = new Map(m); n.delete(id); return n; }));
+    }
+  }, [composition, rangs, unitesNiveaux, categories]);
+  const couchesNiveau = useMemo<CoucheNiveau[]>(() => composition.couches.flatMap((k) => {
+    const rang = rangs.get(k.coucheId), u = unitesNiveaux.get(k.coucheId);
+    return rang && u?.length ? [{ coucheId: k.coucheId, rang, codes: u.map((x) => x.code) }] : [];
+  }), [composition, rangs, unitesNiveaux]);
+  // Une couche retirée de la composition coupe le chemin à l'étape qui l'utilisait.
+  useEffect(() => {
+    const presentes = new Set(composition.couches.map((k) => k.coucheId));
+    setChemin((c) => { const v = cheminValide(c, presentes); return v.length === c.length ? c : v; });
+  }, [composition]);
+  const filtresAffiches = useMemo(() => combinerFiltres(filtres, filtresNiveaux(chemin, couchesNiveau)), [filtres, chemin, couchesNiveau]);
+  const navigationPossible = couchesNiveau.some((c) => c.codes.some(estCodeHcp));
   const rastersCourants = useRef<{ rasters: Set<string>; couches: Map<string, CoucheRecue> }>({ rasters, couches: couchesConnues });
   rastersCourants.current = { rasters, couches: couchesConnues };
   const zonesGeo = useMemo(() => ({ type: "FeatureCollection" as const, features: zones.map((z) => ({ type: "Feature", properties: { id: z.id, nom: z.nom }, geometry: z.geometrie })) }), [zones]);
@@ -223,8 +249,8 @@ export function PageGeoData() {
   }, [webgl]);
 
   useEffect(() => {
-    moteur.current?.appliquer(compositionAffichee, fond, { valeurs, categories: couleursCategories, rangs, rasters, filtres, selection, zones: zonesGeo, attributions });
-  }, [compositionAffichee, fond, valeurs, couleursCategories, rangs, rasters, filtres, selection, zonesGeo, attributions, chargementMoteur]);
+    moteur.current?.appliquer(compositionAffichee, fond, { valeurs, categories: couleursCategories, rangs, rasters, filtres: filtresAffiches, selection, zones: zonesGeo, attributions });
+  }, [compositionAffichee, fond, valeurs, couleursCategories, rangs, rasters, filtresAffiches, selection, zonesGeo, attributions, chargementMoteur]);
   useEffect(() => { moteur.current?.definirOutil(outil); setTrace(null); setTracePret(null); }, [outil, chargementMoteur]);
 
   compositionCourante.current = composition;
@@ -293,6 +319,81 @@ export function PageGeoData() {
     setSelection({ coucheId: r.coucheId, code: r.code });
     void ouvrirFiche(r.coucheId, r.code);
   }
+
+  /** Cadre la carte sur une entité (emprise de sa fiche) ; le pays entier pour la racine. */
+  async function cadrerSur(e: EtapeNiveau | undefined) {
+    if (!e) {
+      const racineCouche = couchesNiveau.reduce<CoucheNiveau | null>((m, c) => (!m || c.rang < m.rang ? c : m), null);
+      const em = empriseDe(racineCouche ? couchesConnues.get(racineCouche.coucheId)?.emprise?.coordinates : undefined);
+      if (em) moteur.current?.allerA({ emprise: em });
+      return;
+    }
+    try { const f = await api.fiche(e.coucheId, e.code); const em = empriseDe(f.emprise.coordinates); if (em) moteur.current?.allerA({ emprise: em }); } catch { /* cadrage seulement */ }
+  }
+  // Producteur des valeurs (avant « ; contours : … ») : les couches HCP d'un niveau à l'autre ont des contours différents.
+  const producteurPrincipal = (c: CoucheRecue) => c.version.source.producteur.split(";")[0]!.trim();
+  /** Couche du rang inférieur : dans la composition, sinon au catalogue, du même producteur (ajoutée alors à la carte). */
+  function coucheEnfant(f: FicheRecue, rang: RangAdministratif): { id: string; aAjouter: CoucheRecue | null } | null {
+    const dans = composition.couches.find((k) => rangs.get(k.coucheId) === rang + 1);
+    if (dans) return { id: dans.coucheId, aAjouter: null };
+    const c = catalogue?.find((x) => x.typeGeometrie !== "raster" && rangAdministratif(x) === rang + 1 && producteurPrincipal(x) === producteurPrincipal(f.couche));
+    return c ? { id: c.id, aAjouter: c } : null;
+  }
+  const rangDe = (f: FicheRecue | null) => (f ? rangs.get(f.couche.id) ?? rangAdministratif(f.couche) : null);
+  const descentePossible = (f: FicheRecue | null): RangAdministratif | null => {
+    const r = rangDe(f);
+    return f && r && r < 4 && estCodeHcp(f.code) && coucheEnfant(f, r) ? r : null;
+  };
+  /** Chemin complet jusqu'à une entité : ses ancêtres sont retrouvés par les codes HCP des couches de la carte. */
+  function cheminVers(e: EtapeNiveau): EtapeNiveau[] {
+    const etapes = [e];
+    let courant = e;
+    while (courant.rang > 1) {
+      const rang = (courant.rang - 1) as RangAdministratif;
+      const couche = couchesNiveau.find((c) => c.rang === rang);
+      if (!couche) break;
+      const p = parentHcp(courant.code, courant.rang, new Set(couche.codes));
+      if (!p) break;
+      const nom = unitesNiveaux.get(couche.coucheId)?.find((u) => u.code === p)?.nom ?? p;
+      courant = { coucheId: couche.coucheId, rang, code: p, nom };
+      etapes.unshift(courant);
+    }
+    return etapes;
+  }
+  function descendre(f: FicheRecue) {
+    const r = descentePossible(f);
+    if (!r) return;
+    const enfant = coucheEnfant(f, r)!;
+    if (enfant.aAjouter) { const c = enfant.aAjouter; connaitre([c]); setComposition((x) => ajouterCouche(x, c.id, c.version.id, c.styleDefaut)); }
+    if (!composition.couches.some((k) => k.coucheId === f.couche.id)) setComposition((x) => ajouterCouche(x, f.couche.id, f.couche.version.id, f.couche.styleDefaut));
+    const e: EtapeNiveau = { coucheId: f.couche.id, rang: r, code: f.code, nom: f.nom ?? f.code };
+    setChemin(cheminVers(e));
+    const em = empriseDe(f.emprise.coordinates);
+    if (em) moteur.current?.allerA({ emprise: em });
+    setAnnonce(`Niveau : ${e.nom}`);
+  }
+  function allerAuNiveau(longueur: number) {
+    const c = chemin.slice(0, longueur);
+    setChemin(c);
+    void cadrerSur(c[c.length - 1]);
+    setAnnonce(`Niveau : ${c[c.length - 1]?.nom ?? "Maroc"}`);
+  }
+  const remonter = () => { if (chemin.length) allerAuNiveau(chemin.length - 1); };
+  // Raccourcis de la navigation par niveaux, sur toute la page (le focus peut être sur le corps après un clic) :
+  // Alt+↑ remonte, Alt+↓ descend dans l'entité de la fiche ouverte ; jamais pendant une saisie.
+  const raccourcisNiveaux = useRef<(e: globalThis.KeyboardEvent) => void>(() => undefined);
+  raccourcisNiveaux.current = (e) => {
+    if (!e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
+    const cible = e.target as HTMLElement | null;
+    if (cible?.closest("input, select, textarea, [contenteditable='true']")) return;
+    if (e.key === "ArrowUp" && chemin.length) { e.preventDefault(); remonter(); }
+    if (e.key === "ArrowDown" && volet === "fiche" && fiche && descentePossible(fiche)) { e.preventDefault(); descendre(fiche); }
+  };
+  useEffect(() => {
+    const ecouter = (e: globalThis.KeyboardEvent) => raccourcisNiveaux.current(e);
+    window.addEventListener("keydown", ecouter);
+    return () => window.removeEventListener("keydown", ecouter);
+  }, []);
 
   const changerStyle = (id: string, s: StyleCouche) => setComposition((c) => definirStyle(c, id, s));
   const ouvrirVolet = (v: Volet) => { setVolet(volet === v ? null : v); if (estTelephone()) setPanneauOuvert(false); };
@@ -415,6 +516,7 @@ export function PageGeoData() {
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d="M12 3 3 8l9 5 9-5-9-5ZM3 12l9 5 9-5M3 16l9 5 9-5" /></svg>
             <span>Données</span>
           </button>
+          {(navigationPossible || chemin.length > 0) && <FilNiveaux chemin={chemin} onAller={allerAuNiveau} onRetour={remonter} />}
           <BarreOutilsCarte outil={outil} pleinEcran={pleinEcran} legendeOuverte={panneauOuvert && onglet === "legende"} carteDisponible={!erreurCarte}
             onZoom={(d) => moteur.current?.zoomer(d)} onNord={() => moteur.current?.orienterNord()} onPosition={localiser} onPleinEcran={basculerPleinEcran} onOutil={choisirOutil} onLegende={basculerLegende} />
           {chargementMoteur && <p role="status" className="gd-sur-carte">Chargement de la carte…</p>}
@@ -426,7 +528,7 @@ export function PageGeoData() {
           <aside className="gd-volet gd-ouvert" aria-label={({ fiche: "Fiche d'information", valeur: "Valeur au point", donnees: "Données", cartes: "Mes cartes", etudes: "Études", import: "Importer", export: "Exporter" })[volet]} data-gd-volet-ouvert={volet}>
             <div className="gd-ligne-titre"><h2>{({ fiche: "Fiche d'information", valeur: "Valeur au point", donnees: "Données : catégories et couches", cartes: "Mes cartes", etudes: "Études", import: "Importer des données", export: "Exporter" })[volet]}</h2><button type="button" onClick={() => setVolet(null)}>Fermer</button></div>
             {volet === "valeur" && valeurPoint && <FicheValeur {...valeurPoint} onFermer={() => { setVolet(null); setValeurPoint(null); }} />}
-            {volet === "fiche" && <FicheObjet fiche={fiche} chargement={ficheEtat.chargement} erreur={ficheEtat.erreur} onFermer={() => { setVolet(null); setSelection(null); }} onCentrer={(f) => { const e = empriseDe(f.emprise.coordinates); if (e) moteur.current?.allerA({ emprise: e }); }} />}
+            {volet === "fiche" && <FicheObjet descendre={(() => { const r = descentePossible(fiche); return r && fiche ? { libelle: `Voir ses ${LIBELLES_ENFANTS[(r + 1) as RangAdministratif]}`, onDescendre: () => descendre(fiche) } : null; })()} fiche={fiche} chargement={ficheEtat.chargement} erreur={ficheEtat.erreur} onFermer={() => { setVolet(null); setSelection(null); }} onCentrer={(f) => { const e = empriseDe(f.emprise.coordinates); if (e) moteur.current?.allerA({ emprise: e }); }} />}
             {volet === "donnees" && <GestionDonnees rangement={rangement} erreur={erreurRangement} couches={catalogue} onChange={chargerRangement} />}
             {volet === "cartes" && <MesCartes carte={carte} nouvelle={!carte} onOuvrir={(id) => void ouvrirCarte(id)} onCarteModifiee={(c) => { setCarte(c); setEtatForce(null); }}
               onNouvelle={() => { setCarte(null); setComposition(compositionNeuve(composition.camera)); setEtatForce(null); ecrireLocal(CLE_DERNIERE_CARTE, null); }}
