@@ -58,6 +58,14 @@ describe("INV-013 [+] — cote de face 3D : la cote suit la face modifiée, corr
     const r = avec(d, cote("p", ["lateral-1", "lateral-3"]));
     expect(coteDe(r, "p")).toMatchObject({ faces: ["lateral-1", "lateral-3"], toResolve: false });
     expect(valeur(r, "p")).toBeCloseTo(2, 12);
+    // Dans un seul lot (brouillon enregistré d'un coup) : chaque commande est suivie à son tour — la cote créée, la
+    // face divisée, puis la cote rattachée aux faces du solide tel qu'il est alors ; une face renumérotée puis tirée suit.
+    const lot = avec(newStudioDocument("lot"), boite, cote("p", ["lateral-0", "lateral-2"]), cote("l", ["lateral-1", "lateral-3"]),
+      { toolId: "studio.solide.face-diviser", params: { id: "b1", face: "lateral-0", distance: 1 } }, cote("p", ["lateral-1", "lateral-3"]),
+      { toolId: "studio.solide.face-decaler", params: { id: "b1", face: "lateral-2", distance: 0.5 } });
+    expect(coteDe(lot, "p")).toMatchObject({ faces: ["lateral-1", "lateral-3"], toResolve: false });
+    expect(coteDe(lot, "l")).toMatchObject({ faces: ["lateral-2", "lateral-4"], toResolve: false });
+    expect(valeur(lot, "l")).toBeCloseTo(4.5, 12);
   });
 
   it("effets de la commande : la cote est une référence du solide ; la contrainte « à résoudre » apparaît quand la face divisée la portait ; copie indépendante : références reportées", () => {

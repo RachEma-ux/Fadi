@@ -109,12 +109,17 @@ export function applyStudioCommands(document: StudioDocument, commands: readonly
     const c = record(batch[i], ["toolId", "params"], path);
     const toolId = c.toolId;
     if (typeof toolId !== "string" || !Object.hasOwn(HANDLERS, toolId)) fail(`${path}.toolId`, "outil de mutation non pris en charge");
+    // Cotes de faces 3D (INV-013) : suivies commande par commande (une cote créée ou rattachée dans le lot désigne les
+    // faces du solide tel qu'il est à ce moment-là).
+    const solidesAvantCommande = state.cotesFaces.length ? new Map(state.solides.map((s) => [s.id, s])) : null;
     HANDLERS[toolId as StudioCommandToolId](state, c.params, path);
+    if (solidesAvantCommande) suivreCotesFaces(state, solidesAvantCommande, path);
   }
   // Prismes liés à une polyligne (lot F1) : recalculés, ou refus si une commande a changé seule leur emprise liée.
+  const solidesAvantSources = state.cotesFaces.length ? new Map(state.solides.map((s) => [s.id, s])) : null;
   if (state.solides.length) suivreSourcesSolides(state, solidesAvant, "commands");
-  // Cotes de faces 3D (INV-013) : conservées, réattachées de façon prouvée, ou « à résoudre ».
-  suivreCotesFaces(state, solidesAvant, "commands");
+  // Cotes de faces 3D (INV-013) : un prisme lié recalculé depuis sa source (ci-dessus) est suivi de même.
+  if (solidesAvantSources) suivreCotesFaces(state, solidesAvantSources, "commands");
   // L'apparence d'un objet supprimé disparaît avec lui (lot E.5).
   retirerApparencesOrphelines(state);
   // Contrôle final : limites, unicité et liens sur le document entier, avant de rendre la copie.
