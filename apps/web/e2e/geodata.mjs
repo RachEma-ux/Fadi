@@ -344,6 +344,21 @@ await page.locator("[data-gd-niveaux='1']").waitFor();
 check("niveaux : fil « Maroc › Région synthétique Nord »", ((await page.locator("[data-gd-niveaux]").textContent()) ?? "").includes("Région synthétique Nord"));
 await onglet(page, "couches");
 check("niveaux : la couche des provinces du même producteur est ajoutée à la carte", (await page.locator("[data-gd-couche-active]").filter({ hasText: "Provinces synthétiques (test)" }).count()) === 1);
+// Fiche territoriale (lot E) : impression de la fiche seule (bouton et Alt+P) dans une fenêtre d'impression, sections
+// dépliées, sans boutons ; la page n'est pas modifiée. L'impression est interceptée (aucune boîte de dialogue en recette).
+await page.evaluate(() => {
+  window.__impressions = [];
+  const ouvrir = window.open.bind(window);
+  window.open = (...a) => {
+    const w = ouvrir(...a);
+    w.print = () => { const d = w.document; window.__impressions.push({ titre: d.querySelector(".gd-fiche h3")?.textContent ?? "", fermees: d.querySelectorAll("details:not([open])").length, boutons: w.getComputedStyle(d.querySelector("[data-gd-imprimer]")).display }); };
+    return w;
+  };
+});
+await page.locator("[data-gd-imprimer]").click();
+await page.locator("body").press("Alt+p");
+const impressions = await page.evaluate(() => window.__impressions);
+check("fiche territoriale : « Imprimer la fiche » (et Alt+P) imprime la fiche seule, sections dépliées, sans boutons", impressions.length === 2 && impressions.every((x) => x.titre === "Région synthétique Nord" && x.fermees === 0 && x.boutons === "none"), JSON.stringify(impressions));
 await page.locator("body").press("Alt+ArrowUp");
 await page.locator("[data-gd-niveaux='0']").waitFor();
 check("niveaux : Alt+↑ remonte au Maroc", (await page.locator("[data-gd-retour]").isDisabled()) === true);

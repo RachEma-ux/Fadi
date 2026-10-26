@@ -36,6 +36,7 @@ from shapely.geometry import shape
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from indicateurs_hcp import lire_indicateurs  # noqa: E402
+from douars_hcp import ecrire_douars, lire_douars  # noqa: E402
 from sources_hcp_communales import SIGNE_VIDE, lire_cee, lire_logement, lire_transport  # noqa: E402
 
 RACINE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
@@ -664,10 +665,11 @@ def main():
     ap.add_argument("--logement", help="Indicateurs communaux du parc logement urbain 2024 (HCP)")
     ap.add_argument("--transport", help="Indicateurs communaux : mode de transport domicile – lieu de travail, RGPH 2024 (HCP)")
     ap.add_argument("--cee", help="Cartographie des établissements économiques 2023/2024, principaux résultats par commune (HCP)")
+    ap.add_argument("--douars", help="Population et ménages par douars, RGPH 2024 (HCP, octobre 2025) : annexe de la fiche des communes")
     ap.add_argument("--sortie", default=FICHES)
     a = ap.parse_args()
     sources = {}
-    for k, chemin in (("population", a.excel), ("indicateurs", a.indicateurs), ("logement", a.logement), ("transport", a.transport), ("cee", a.cee)):
+    for k, chemin in (("population", a.excel), ("indicateurs", a.indicateurs), ("logement", a.logement), ("transport", a.transport), ("cee", a.cee), ("douars", a.douars)):
         if not chemin:
             continue
         with open(chemin, "rb") as f:
@@ -718,6 +720,25 @@ def main():
         part = f"{compte(lignes[niveau])} ; population rattachée : {couverte} habitants, soit {pourcent} % de la population légale nationale ({national})"
         ecrire(a.sortie, cle, titre, niveau, entites, desc, sources, lignes[niveau], part, declarations, valeurs, par_code, empreinte_arr)
         print(f"{cle} : {part}")
+    if a.douars:
+        # Annexe de la fiche des communes (lot E) : douars rattachés à leur commune rurale par le code (D-GD-20, D-GD-21).
+        lignes_d, ecartes = lire_douars(a.douars, [c for (n, c) in hcp if n == "commune"])
+        if ecartes:
+            sys.exit(f"{len(ecartes)} douars sans commune unique du RGPH (ex. {ecartes[:3]}) : vérifier la lecture des codes.")
+        octets_d = ecrire_douars(os.path.join(a.sortie, "donnees", "hcp-rgph2024-douars.tsv"), lignes_d)
+        chemin_fiche = os.path.join(a.sortie, "hcp-rgph2024-population-communes.json")
+        with open(chemin_fiche, encoding="utf-8") as f:
+            fc = json.load(f)
+        fc["version"]["annexes"] = {"douars": {
+            "fichier": "donnees/hcp-rgph2024-douars.tsv", "empreinte": hashlib.sha256(octets_d).hexdigest(),
+            "description": f"{len(lignes_d)} douars de {len({l['commune'] for l in lignes_d})} communes rurales : code, fraction et nom (publiés en arabe seulement, "
+                           "D-GD-21), type (groupé, éclaté, dispersé), ménages, population, sexe et grands groupes d'âge (%) ; « X » = donnée supprimée par le HCP "
+                           f"(secret statistique). Source : « Population et ménages par douars, RGPH 2024 » (HCP, octobre 2025, SHA-256 {sources['douars']}).",
+        }}
+        with open(chemin_fiche, "w", encoding="utf-8") as f:
+            json.dump(fc, f, ensure_ascii=False, indent=2)
+            f.write("\n")
+        print(f"douars : {len(lignes_d)} douars rattachés à {len({l['commune'] for l in lignes_d})} communes rurales")
     fi_villes, villes = extrait_osm("osm-mar-villes")
     # Communes entièrement urbaines : population légale rurale « … » (sans objet) dans le fichier d'indicateurs.
     rural = next(d["propriete"] for d in declarations if d["famille"] == "Population légale" and d["milieu"] == "rural" and d["sexe"] == "ensemble")

@@ -55,6 +55,13 @@ export interface LigneTable { code: string; nom: string | null; niveau: string |
 export interface FicheRecue {
   code: string; nom: string | null; niveau: string | null; geometrieReparee: boolean; emprise: { coordinates: number[][][] }; centre: { coordinates: [number, number] };
   proprietes: Record<string, unknown>; indicateurs: (IndicateurRecu & ValeurRecue)[]; couche: CoucheRecue;
+  /** Douars d'une commune rurale (lot E) ; vide ailleurs. */
+  douars?: DouarRecu[];
+}
+/** Douar du RGPH 2024 : nom et fraction tels que publiés (en arabe) ; secret = pourcentages supprimés par le HCP. */
+export interface DouarRecu {
+  code: string; fraction: string; nom: string; type: "groupé" | "éclaté" | "dispersé" | null; menages: number | null; population: number | null; secret: boolean;
+  pourcentages: { masculin: number | null; feminin: number | null; moins15: number | null; de15a59: number | null; plus60: number | null };
 }
 export type Disponibilite = { etat: "disponible"; versionPlusRecente: string | null } | { etat: "retiree" | "inaccessible"; motif: string };
 export interface CarteRecue { id: string; nom: string; revision: number; etat: "active" | "archivee"; collectionId: string | null; creeLe: string; modifieLe: string; composition: Composition; disponibilite: Record<string, Disponibilite> }

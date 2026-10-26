@@ -14,7 +14,7 @@
 - [x] GEO-HCP-B — Navigation par niveaux (fil « Maroc › Région › Province », Retour Alt+↑, descente Alt+↓ ; D-GD-19).
 - [ ] GEO-HCP-C — Libellés sur la carte (un par entité, valeur abrégée, affichage / masquage ; glyphes hébergés).
 - [ ] GEO-HCP-D — Palettes prédéfinies, N classes, couleur par classe, seuils naturels (Jenks).
-- [ ] GEO-HCP-E — Fiche territoriale par thème, ventilations, impression ; douars de la commune rurale (code, nom en arabe, type, ménages, population ; D-GD-20, D-GD-21).
+- [x] GEO-HCP-E — Fiche territoriale par thème, ventilations, impression (Alt+P), arrondissements de la commune, douars de la commune rurale (D-GD-22).
 - [ ] GEO-HCP-F — Arbre d'indicateurs par thème, avec recherche.
 - [ ] GEO-HCP-G — Mini-carte de situation et impression directe.
 - [ ] GEO-V11 — Extensions V1.1 : partage nominatif, espaces collectifs, KML/KMZ/Shapefile, analyses avancées.

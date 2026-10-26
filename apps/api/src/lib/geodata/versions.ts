@@ -37,6 +37,13 @@ export interface IndicateurDeclare {
   readonly signes?: Readonly<Record<string, MotifAbsence>>;
 }
 
+/** Douar du RGPH 2024 : nombres tels que publiés ; null = absent ; secret = pourcentages supprimés par le HCP. */
+export interface LigneDouar {
+  readonly code: string; readonly commune: string; readonly fraction: string; readonly nom: string; readonly type: "groupé" | "éclaté" | "dispersé" | null;
+  readonly menages: number | null; readonly population: number | null; readonly masculin: number | null; readonly feminin: number | null;
+  readonly moins_15: number | null; readonly de_15_a_59: number | null; readonly plus_60: number | null; readonly secret: boolean;
+}
+
 export interface VersionAEcrire {
   readonly source: { readonly cle: string; readonly titre: string; readonly producteur: string; readonly theme: string; readonly couverture: string; readonly description: string };
   readonly espaceId: string | null;
@@ -73,6 +80,8 @@ export interface VersionAEcrire {
   readonly preparePar: string | null;
   /** Couche raster (D-GD-13) : grille et symbologie ; `objets` est alors vide. */
   readonly raster?: { readonly grille: GrilleRaster; readonly description: DescriptionRaster };
+  /** Douars (annexe sans géométrie, lot E) : rangés sous leur commune, affichés dans sa fiche. */
+  readonly douars?: readonly LigneDouar[];
 }
 
 export interface VersionEcrite {
@@ -203,6 +212,15 @@ export async function ecrireVersion(client: PoolClient, v: VersionAEcrire): Prom
       [id, coucheId, ind.propriete, motif],
     );
     indicateurs.push(id);
+  }
+  for (let i = 0; i < (v.douars?.length ?? 0); i += 5000) {
+    await client.query(
+      `INSERT INTO geodata_douars (version_id, code, commune, fraction, nom, type, menages, population, masculin, feminin, moins_15, de_15_a_59, plus_60, secret)
+       SELECT $1, d.code, d.commune, d.fraction, d.nom, d.type, d.menages, d.population, d.masculin, d.feminin, d.moins_15, d.de_15_a_59, d.plus_60, d.secret
+         FROM jsonb_to_recordset($2::jsonb) AS d(code text, commune text, fraction text, nom text, type text, menages integer, population integer,
+              masculin double precision, feminin double precision, moins_15 double precision, de_15_a_59 double precision, plus_60 double precision, secret boolean)`,
+      [versionId, JSON.stringify(v.douars!.slice(i, i + 5000))],
+    );
   }
   if (v.superficie && typeCouche(v.objets) === "polygone") {
     const id = newId("gdind");
