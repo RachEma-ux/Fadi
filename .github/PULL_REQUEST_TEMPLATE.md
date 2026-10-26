@@ -8,7 +8,7 @@
 
 <!-- Obligatoire pour toute PR qui touche le chantier Studio (Studio/, docs/workstreams/studio/, docs/ai-team/, modules et
 paquets Studio, recettes studio-*) : contrôlé par le workflow « PR — protocole Studio » (scripts/registre/controle-pr.mjs).
-Branche : feat|fix|chore|docs/<issue>-<sujet>. Renseigner chaque champ ; « Non » ou « Non applicable : raison » sont admis. -->
+Branche : nommage conseillé feat|fix|chore|docs/<issue>-<sujet> (décision P-13 : un autre nom est signalé, l’Issue propre reste exigée). Renseigner chaque champ ; « Non » ou « Non applicable : raison » sont admis. -->
 
 - **Issue de l’unité de travail** : Refs #NN
 - **Besoin** :

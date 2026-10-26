@@ -80,7 +80,12 @@ export function analyserFichiers(fichiers, lire) {
   return out;
 }
 
-/** Applique les autorisations : rend les constats restants et les autorisations invalides ou inutilisées. */
+/**
+ * Applique les autorisations : rend les constats restants et les autorisations invalides ou inutilisées. Une autorisation
+ * qui porte `commit` (préfixe de SHA, ≥ 7 caractères) ne couvre que les constats de l'historique de ce commit — une ligne
+ * ajoutée puis retirée, qui reste dans l'historique ; elle n'est jamais déclarée inutilisée (l'historique relu dépend de la
+ * base de comparaison).
+ */
 export function filtrer(constats, autorisations) {
   const servies = new Set();
   const erreurs = [];
@@ -88,11 +93,12 @@ export function filtrer(constats, autorisations) {
     if (!a.fichier || !a.regle || !(typeof a.raison === 'string' && a.raison.trim().length >= 15)) erreurs.push(`autorisation ${i} : fichier, règle et raison (≥ 15 caractères) obligatoires`);
   });
   const restants = constats.filter((c) => {
-    const i = autorisations.findIndex((a) => a.regle === c.regle && correspond(a.fichier, c.fichier) && (!a.motif || c.extrait.startsWith(a.motif.slice(0, 4))));
+    const i = autorisations.findIndex((a) => a.regle === c.regle && correspond(a.fichier, c.fichier) && (!a.motif || c.extrait.startsWith(a.motif.slice(0, 4)))
+      && (!a.commit || (typeof c.commit === 'string' && a.commit.length >= 7 && c.commit.startsWith(a.commit))));
     if (i >= 0) { servies.add(i); return false; }
     return true;
   });
-  autorisations.forEach((a, i) => { if (!servies.has(i)) erreurs.push(`autorisation inutilisée (à retirer) : ${a.fichier} / ${a.regle}`); });
+  autorisations.forEach((a, i) => { if (!servies.has(i) && !a.commit) erreurs.push(`autorisation inutilisée (à retirer) : ${a.fichier} / ${a.regle}`); });
   return { restants, erreurs };
 }
 

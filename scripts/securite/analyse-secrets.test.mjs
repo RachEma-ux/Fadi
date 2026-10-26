@@ -91,3 +91,12 @@ test('SUIVI-10 — dépôt réel : aucun secret, URL sensible ni géométrie pri
   assert.deepEqual(r.restants, []);
   assert.deepEqual(r.erreurs, []);
 });
+
+test('autorisation liée à un commit : ne couvre que l’historique de ce commit, jamais déclarée inutilisée', () => {
+  const a = [{ fichier: 'x.mjs', regle: 'url-identifiants', commit: '23a4533569c6', raison: 'Exemple de format dans un commentaire, retiré ensuite.' }];
+  const historique = { fichier: 'x.mjs', ligne: 0, regle: 'url-identifiants', extrait: 'sche…', commit: '23a4533569c6aa' };
+  assert.deepEqual(filtrer([historique], a).restants, []);
+  assert.equal(filtrer([{ ...historique, commit: undefined }], a).restants.length, 1);
+  assert.equal(filtrer([{ ...historique, commit: 'ffffffffffff' }], a).restants.length, 1);
+  assert.deepEqual(filtrer([], a).erreurs, []);
+});
