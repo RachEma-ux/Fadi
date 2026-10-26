@@ -11,6 +11,7 @@ const lire = (f: string) => { try { return readFileSync(join(RACINE, f), "utf8")
 // Marques écrites par morceaux : ce fichier ne doit pas lui-même porter de saut.
 const SKIP = ["it", "skip"].join(".");
 const ONLY = ["describe", "only"].join(".");
+const OU_VRAI = ["||", "true"].join(" ");
 
 /** Diff unifié d'un fichier (lignes retirées puis ajoutées). */
 const diffDe = (fichier: string, retirees: string[], ajoutees: string[], supprime = false) => [
@@ -82,7 +83,7 @@ describe("EX-101 — affaiblissement d'une assertion refusé", () => {
   it("cas négatif : skip / only ajoutés, condition rendue toujours vraie, précision abaissée, test pertinent supprimé : refusés", () => {
     const d = lireDiff([
       diffDe(F, [], [`${SKIP}("équivalence Worker", () => {`, `${ONLY}("bloc", () => {`]),
-      diffDe("apps/web/e2e/studio-exact.mjs", ["check(\"volume\", Math.abs(v - 12) < 1e-9);", "check(\"empreinte\", e === attendu, e);"], ["check(\"volume\", Math.abs(v - 12) < 1e-9 || true);", "check(\"empreinte\", true, e);"]),
+      diffDe("apps/web/e2e/studio-exact.mjs", ["check(\"volume\", Math.abs(v - 12) < 1e-9);", "check(\"empreinte\", e === attendu, e);"], [`check("volume", Math.abs(v - 12) < 1e-9 ${OU_VRAI});`, "check(\"empreinte\", true, e);"]),
       diffDe("packages/atelier-model/src/studio/mesh-3d.test.ts", ["expect(volume).toBeCloseTo(12, 9);"], ["expect(volume).toBeCloseTo(12, 2);"]),
       diffDe("apps/web/src/modules/studio/exact/client-exact.test.ts", [], [], true),
     ].join("\n"));

@@ -311,7 +311,7 @@ try {
         const { initial, scenario } = G.sceneComparaison(3);
         rapports.push(G.comparerOptimisation(initial, scenario, fabrique, { etiquette, renduLogiciel }));
       }
-      return { rapports, verdicts: rapports.map((r) => G.studioJugerOptimisation(r)), webgl2: !!canvas.getContext("webgl2") || true };
+      return { rapports, verdicts: rapports.map((r) => G.studioJugerOptimisation(r)) };
     }, { rep: REPETITIONS, etiquette: APPAREIL.etiquette, renduLogiciel: APPAREIL.renduLogiciel });
     await ctx.close();
     const ops = M.STUDIO_OPERATIONS_FIDELITE;
