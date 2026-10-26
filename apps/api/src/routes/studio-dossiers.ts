@@ -12,6 +12,11 @@
  *   GET    /studies/:studyId/dossiers/:dossierId                  détail et dossier assemblé
  *   PATCH  /studies/:studyId/dossiers/:dossierId                  titre, feuilles ordonnées, métré, fidélité
  *   GET    /studies/:studyId/dossiers/:dossierId/files/:format    pdf | json
+ *   GET    /studies/:studyId/section-views                        vues de coupe enregistrées de l'étude (EX-075, lot PUB)
+ *   POST   /studies/:studyId/variants/:variantId/section-views    nouvelle vue de coupe sur une révision de la variante (201)
+ *   GET    /studies/:studyId/section-views/:viewId                vue recalculée (section, sources, actualité)
+ *   PATCH  /studies/:studyId/section-views/:viewId                définition, annotation propre, réépinglage
+ *   DELETE /studies/:studyId/section-views/:viewId                suppression (409 si un dossier la cite)
  * Aucune de ces routes n'écrit une révision : la planche de travail n'est jamais modifiée.
  */
 import { Router, type NextFunction, type Request, type Response } from "express";
@@ -22,7 +27,11 @@ import {
   updateStudioDossier, updateStudioSheet,
 } from "../lib/studio-dossiers.js";
 import { avecContrat } from "../lib/studio-contrats.js";
-import { CONTRAT_DOSSIERS_PROJET, CONTRAT_FEUILLES_LISTER, CONTRAT_FEUILLE_CREER, CONTRAT_FEUILLE_MODIFIER, CONTRAT_FEUILLE_SUPPRIMER, CONTRAT_FEUILLE_FICHIER, CONTRAT_DOSSIERS_LISTER, CONTRAT_DOSSIER_CREER, CONTRAT_DOSSIER_LIRE, CONTRAT_DOSSIER_MODIFIER, CONTRAT_DOSSIER_FICHIER } from "../lib/studio-contrats-routes.js";
+import { CONTRAT_DOSSIERS_PROJET, CONTRAT_FEUILLES_LISTER, CONTRAT_FEUILLE_CREER, CONTRAT_FEUILLE_MODIFIER, CONTRAT_FEUILLE_SUPPRIMER, CONTRAT_FEUILLE_FICHIER, CONTRAT_DOSSIERS_LISTER, CONTRAT_DOSSIER_CREER, CONTRAT_DOSSIER_LIRE, CONTRAT_DOSSIER_MODIFIER, CONTRAT_DOSSIER_FICHIER, CONTRAT_VUES_COUPE_LISTER, CONTRAT_VUE_COUPE_CREER, CONTRAT_VUE_COUPE_LIRE, CONTRAT_VUE_COUPE_MODIFIER, CONTRAT_VUE_COUPE_SUPPRIMER } from "../lib/studio-contrats-routes.js";
+
+import {
+  createStudioVueCoupe, deleteStudioVueCoupe, listStudioVuesCoupe, readStudioVueCoupe, studioVueCoupeCreateSchema, studioVueCoupeUpdateSchema, updateStudioVueCoupe,
+} from "../lib/studio-vues-coupe.js";
 
 export const studioDossiersRouter = Router({ mergeParams: true });
 
@@ -104,4 +113,27 @@ studioDossiersRouter.patch(dossier, avecContrat(CONTRAT_DOSSIER_MODIFIER), endpo
 studioDossiersRouter.get(`${dossier}/files/:format`, avecContrat(CONTRAT_DOSSIER_FICHIER), endpoint(async (req, res) => {
   const out = await readStudioDossierFile(param(req, "projectId"), param(req, "studyId"), param(req, "dossierId"), req.user!.id, param(req, "format"));
   sendFile(res, out, { "X-Studio-Dossier-Hash": out.empreinte });
+}));
+
+const vueCoupe = "/studies/:studyId/section-views/:viewId";
+studioDossiersRouter.get("/studies/:studyId/section-views", avecContrat(CONTRAT_VUES_COUPE_LISTER), endpoint(async (req, res) => {
+  res.setHeader("Cache-Control", "private, no-store");
+  res.json(await listStudioVuesCoupe(param(req, "projectId"), param(req, "studyId"), req.user!.id));
+}));
+studioDossiersRouter.post("/studies/:studyId/variants/:variantId/section-views", avecContrat(CONTRAT_VUE_COUPE_CREER), endpoint(async (req, res) => {
+  const parsed = studioVueCoupeCreateSchema.safeParse(req.body ?? {});
+  if (!parsed.success) { invalid(res, parsed.error.flatten()); return; }
+  res.status(201).json(await createStudioVueCoupe(param(req, "projectId"), param(req, "studyId"), param(req, "variantId"), req.user!.id, parsed.data));
+}));
+studioDossiersRouter.get(vueCoupe, avecContrat(CONTRAT_VUE_COUPE_LIRE), endpoint(async (req, res) => {
+  res.setHeader("Cache-Control", "private, no-store");
+  res.json(await readStudioVueCoupe(param(req, "projectId"), param(req, "studyId"), param(req, "viewId"), req.user!.id));
+}));
+studioDossiersRouter.patch(vueCoupe, avecContrat(CONTRAT_VUE_COUPE_MODIFIER), endpoint(async (req, res) => {
+  const parsed = studioVueCoupeUpdateSchema.safeParse(req.body ?? {});
+  if (!parsed.success) { invalid(res, parsed.error.flatten()); return; }
+  res.json(await updateStudioVueCoupe(param(req, "projectId"), param(req, "studyId"), param(req, "viewId"), req.user!.id, parsed.data));
+}));
+studioDossiersRouter.delete(vueCoupe, avecContrat(CONTRAT_VUE_COUPE_SUPPRIMER), endpoint(async (req, res) => {
+  res.json(await deleteStudioVueCoupe(param(req, "projectId"), param(req, "studyId"), param(req, "viewId"), req.user!.id));
 }));

@@ -85,7 +85,7 @@ describe("F.2-03 — illustration locale : honnêtement nommée, déterministe, 
 });
 
 // ——— Provenance, vérification, reproductibilité ———
-const rendu = studioProvenanceRendu({ etude: { id: "s", nom: "Étude" }, variante: { id: "v", nom: "Variante" }, revisionId: "r1", scene: null, date: new Date("2026-10-25T10:00:00Z"), camera: { projection: "perspective", position: { x: 10, y: -10, z: 8 }, target: { x: 0, y: 0, z: 0 }, fov: 50 } });
+const rendu = studioProvenanceRendu({ etude: { id: "s", nom: "Étude" }, variante: { id: "v", nom: "Variante" }, revisionId: "r1", scene: null, date: new Date("2026-10-25T10:00:00Z"), camera: { projection: "perspective", position: { x: 10, y: -10, z: 8 }, target: { x: 0, y: 0, z: 0 }, fov: 50 } , auteur: { id: "proprietaire", email: null } });
 const entreeLocale = (): EntreeProvenanceIllustration => ({
   rendu, empreinteImageSource: SHA_A, modele: { revisionId: "r1", empreinteAvant: SHA_B, empreinteApres: SHA_B }, parametres: { style: "trait", intensite: 0.5 },
   auteurId: "editeur", date: new Date("2026-10-25T10:01:00Z"),

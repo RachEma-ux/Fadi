@@ -5,6 +5,8 @@
  *                                                                      statut de chaque ajustement pour la tête
  *   POST /studies/:studyId/variants/:variantId/ajustements-quantites   nouvel ajustement (201 ; `baseSequence` exacte,
  *                                                                      révision de tête, rejeu par requestId)
+ *   GET  /studies/:studyId/variants/:variantId/resultats-quantitatifs  résultats quantitatifs traçables (IF-008, EX-077)
+ *                                                                      d'une révision (`?revisionId=`, tête par défaut)
  * Un ajustement n'écrit que sa ligne de journal : jamais le document, jamais la quantité brute.
  */
 import { and, asc, eq, inArray } from "drizzle-orm";
@@ -17,9 +19,10 @@ import { loadProjectAccess, projectAccessRefusal } from "../lib/owned-project.js
 import type { Querier } from "../lib/step-rows.js";
 import { assertAccess, lockedAccess, notFound, studioArchivedRefusal, StudioRequestError, studyOf } from "../lib/studio-commands.js";
 import { rejeuAdmis } from "../lib/studio-exigences.js";
-import { ajustementDe, deciderAjustement, empreinteAjustement, studioAjustementSchema, type LigneAjustement } from "../lib/studio-quantites.js";
+import { ajustementDe, deciderAjustement, empreinteAjustement, resultatsDeRevision, studioAjustementSchema, type LigneAjustement } from "../lib/studio-quantites.js";
+import { studioDocumentHash } from "../lib/studio-publications.js";
 import { avecContrat } from "../lib/studio-contrats.js";
-import { CONTRAT_AJUSTEMENTS_LISTER, CONTRAT_AJUSTEMENT_CREER } from "../lib/studio-contrats-routes.js";
+import { CONTRAT_AJUSTEMENTS_LISTER, CONTRAT_AJUSTEMENT_CREER, CONTRAT_RESULTATS_QUANTITATIFS } from "../lib/studio-contrats-routes.js";
 
 export const studioQuantitesRouter = Router({ mergeParams: true });
 
@@ -71,6 +74,23 @@ studioQuantitesRouter.get(chemin, avecContrat(CONTRAT_AJUSTEMENTS_LISTER), endpo
     peutAjuster: study.archivedAt === null && variant.archivedAt === null && projectAccessRefusal(access, actorId, "modify", { studyId: study.id, variantIds: [variant.id] }) === null,
     ajustements, statuts,
   });
+}));
+
+studioQuantitesRouter.get("/studies/:studyId/variants/:variantId/resultats-quantitatifs", avecContrat(CONTRAT_RESULTATS_QUANTITATIFS), endpoint(async (req, res) => {
+  const actorId = req.user!.id;
+  const access = assertAccess(await loadProjectAccess(param(req, "projectId"), actorId), actorId, "read");
+  const study = await studyOf(db, access.id, param(req, "studyId"));
+  const variant = await varianteDe(db, study.id, param(req, "variantId"));
+  const demandee = typeof req.query["revisionId"] === "string" ? req.query["revisionId"] : variant.headRevisionId;
+  const [revision] = await db.select({ id: studioRevisions.id, document: studioRevisions.document }).from(studioRevisions)
+    .where(and(eq(studioRevisions.id, demandee), eq(studioRevisions.variantId, variant.id))).limit(1);
+  if (!revision) return notFound();
+  const rows = await journalDe(db, variant.id);
+  const email = await emails(db, rows.map((r) => r.authorId));
+  const resultats = resultatsDeRevision(revision.document, { studyId: study.id, variantId: variant.id, revisionId: revision.id, documentHash: studioDocumentHash(revision.document) },
+    variant.headRevisionId, rows.map((r) => ajustementDe(r, email)), new Date());
+  res.setHeader("Cache-Control", "private, no-store");
+  res.json({ studyId: study.id, variantId: variant.id, revisionId: revision.id, headRevisionId: variant.headRevisionId, resultats });
 }));
 
 studioQuantitesRouter.post(chemin, avecContrat(CONTRAT_AJUSTEMENT_CREER), endpoint(async (req, res) => {

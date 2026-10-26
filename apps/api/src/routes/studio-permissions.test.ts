@@ -34,7 +34,7 @@ import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import express from "express";
 import request from "supertest";
-import { STUDIO_CONTRACT } from "@parcours/atelier-model";
+import { STUDIO_CONTRACT, studioExporterBcf, studioSujetsBcf } from "@parcours/atelier-model";
 import { studioProvenanceRendu } from "@parcours/atelier-model";
 import { creerJetonAgent, proposerCommandes } from "../lib/studio-agents.js";
 import { ecrirePng } from "../lib/studio-png.js";
@@ -114,7 +114,7 @@ const MX = "/studies/:studyId/variants/:variantId/modeles-externes";
 // Lot F : rendu du modèle portant sa provenance, illustration, jeton et proposition d'agent (préparés par le propriétaire).
 const IL = "/studies/:studyId/variants/:variantId/illustrations";
 const corpsIllustration = () => {
-  const prov = studioProvenanceRendu({ etude: { id: "s", nom: "Étude" }, variante: { id: "v", nom: "Variante" }, revisionId: "r1", scene: null, date: new Date("2026-10-25T09:00:00Z"), camera: { projection: "perspective", position: { x: 5, y: -5, z: 4 }, target: { x: 0, y: 0, z: 0 }, fov: 45 } });
+  const prov = studioProvenanceRendu({ etude: { id: "s", nom: "Étude" }, variante: { id: "v", nom: "Variante" }, revisionId: "r1", scene: null, date: new Date("2026-10-25T09:00:00Z"), camera: { projection: "perspective", position: { x: 5, y: -5, z: 4 }, target: { x: 0, y: 0, z: 0 }, fov: 45 } , auteur: { id: "proprietaire", email: null } });
   return { requestId: "illu-p", fournisseur: "local-derive", image: ecrirePng({ largeur: 4, hauteur: 4, rgba: new Uint8Array(64).fill(180) }, { "fadi:rendu": JSON.stringify(prov) }).toString("base64"), parametres: { style: "trait", intensite: 0.5 } };
 };
 const illustration = async () => ({ il: await creer(`${V}/illustrations`, corpsIllustration()) });
@@ -124,6 +124,15 @@ const propositionAgent = async () => {
   const r = await proposerCommandes({ projectId: "p", userId: "proprietaire", tokenId: j.id }, { studyId: "s", variantId: "v", requestId: "agent-p", baseRevisionId: "r1", commands: [{ toolId: "studio.dessin.ligne", params: { id: "ag", type: "line", start: { x: 0, y: 3 }, end: { x: 1, y: 3 } } }] });
   return { pr: r.proposition.id };
 };
+// Lot PUB : vue de coupe (EX-075), observation avec pièce justificative (IF-010), fichier BCF d'essai.
+const VUE_COUPE = { nom: "Coupe AA", niveau: { repere: "local-3d", z: 1 }, cadrage: { xMin: -1, yMin: -1, xMax: 5, yMax: 5 }, echelle: 50, styles: { trait: "fort", hachure: "diagonale" }, annotations: [] };
+const vueCoupe = async () => ({ vc: await creer(`${V}/section-views`, { definition: VUE_COUPE }) });
+const observationPiece = async () => {
+  const res = await comme("proprietaire")(request(app).post(`${V}/observations`)).send({ body: "Observation avec pièce", responsableId: "editeur", audience: "projet", pieces: [{ name: "releve.png", mime: "image/png", contentBase64: "iVBORw0KGgo=" }] });
+  if (res.status !== 201) throw new Error(`préparation observation : ${res.status}`);
+  return { obs: res.body.id as string, sha: res.body.pieces[0].sha256 as string };
+};
+const BCF = Buffer.from(studioExporterBcf(studioSujetsBcf([{ issueId: "x1", titre: "Sujet", description: "", statut: "Open", categorie: null, gravite: null, creeLe: "2026-10-25T08:00:00.000Z", auteur: "a@x", responsable: null, objets: [], journal: [] }]), { id: "partenaire", nom: "Partenaire" })).toString("base64");
 
 /**
  * Règles d'acteur des observations (`lib/studio-observations.ts`), l'observation étant ouverte par le propriétaire
@@ -276,6 +285,15 @@ export const ROUTES: Route[] = [
     route: `POST ${OBS}/:observationId/decisions`, besoin: "acteur", preparer: observation, url: (c) => `${V}/observations/${c["obs"]}/decisions`, body: { nature: "proposition", portee: "autre", texte: "Proposition" },
     note: "proposition : droit d'écrire (rôle ; le verrou d'édition ne s'y applique pas)", acteurs: { etranger: "404", lecteur: "403" },
   },
+  { route: `GET ${OBS}/bcf`, besoin: "lecture", preparer: observation, url: () => `${V}/observations/bcf`, note: "export BCF 2.1 minimal (IF-010), audience du fil respectée" },
+  { route: `POST ${OBS}/bcf`, besoin: "ecriture", url: () => `${V}/observations/bcf`, body: { fichierBase64: BCF }, note: "import BCF : sujets nouveaux dans leur contexte (IF-010)" },
+  { route: `GET ${OBS}/:observationId/pieces/:sha256`, besoin: "lecture", preparer: observationPiece, url: (c) => `${V}/observations/${c["obs"]}/pieces/${c["sha"]}` },
+  { route: "GET /studies/:studyId/variants/:variantId/resultats-quantitatifs", besoin: "lecture", url: () => `${V}/resultats-quantitatifs` },
+  { route: "GET /studies/:studyId/section-views", besoin: "lecture", url: () => `${S}/studies/s/section-views` },
+  { route: "POST /studies/:studyId/variants/:variantId/section-views", besoin: "modification", url: () => `${V}/section-views`, body: { definition: VUE_COUPE } },
+  { route: "GET /studies/:studyId/section-views/:viewId", besoin: "lecture", preparer: vueCoupe, url: (c) => `${S}/studies/s/section-views/${c["vc"]}` },
+  { route: "PATCH /studies/:studyId/section-views/:viewId", besoin: "modification", preparer: vueCoupe, url: (c) => `${S}/studies/s/section-views/${c["vc"]}`, body: { definition: { ...VUE_COUPE, nom: "Coupe BB" } } },
+  { route: "DELETE /studies/:studyId/section-views/:viewId", besoin: "modification", preparer: vueCoupe, url: (c) => `${S}/studies/s/section-views/${c["vc"]}` },
   { route: "GET /dossiers", besoin: "lecture", url: () => `${S}/dossiers` },
   { route: "GET /studies/:studyId/sheets", besoin: "lecture", url: () => `${S}/studies/s/sheets` },
   { route: "POST /studies/:studyId/variants/:variantId/sheets", besoin: "modification", url: () => `${V}/sheets`, body: { number: "A-02", title: "Plan", format: "A3", orientation: "paysage", scale: "ajuster" } },
@@ -362,6 +380,7 @@ const REPONSES: Readonly<Record<string, string>> = {
   "POST /studies/:studyId/variants/:variantId/essais": "201", "POST /studies/:studyId/migrations": "201",
   "POST /studies/:studyId/migrations/:migrationId/appliquer": "409 migration_etat", "POST /studies/:studyId/migrations/:migrationId/retour-arriere": "409 migration_etat",
   "POST /bascule/basculer": "409 bascule_absente", "POST /bascule/retour-arriere": "409 bascule_absente",
+  "POST /studies/:studyId/variants/:variantId/section-views": "201",
 };
 const cleReponse = (r: Route) => `${r.route}${r.note?.startsWith("action ") ? ` ${r.note.slice(7)}` : ""}`;
 export const reponseProprietaire = (r: Route): string => REPONSES[cleReponse(r)] ?? "200";

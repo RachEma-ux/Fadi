@@ -12,15 +12,16 @@ describe("volumes-gc — relevé des références", () => {
       studio_publications: [{ schema: "studio-publication-package/1", files: [{ format: "svg", sha256: h("c") }, { format: "pdf", sha256: h("d") }] }],
       review_packages: [[{ format: "svg", sha256: h("5") }]],
       review_findings: [[{ name: "note.pdf", sha256: h("6") }]],
+      studio_observations: [[{ name: "releve.pdf", mime: "application/pdf", size: 10, sha256: h("7") }]],
     });
-    for (const id of [h("a"), h("b"), h("c"), h("d"), h("5"), h("6")]) expect(refs.has(id)).toBe(true);
+    for (const id of [h("a"), h("b"), h("c"), h("d"), h("5"), h("6"), h("7")]) expect(refs.has(id)).toBe(true);
   });
 
   it("prudent : toute chaîne d'une colonne de référence compte, même hors des champs attendus ou en texte JSON", () => {
     const refs = collecterReferencesVolumes({
       atelier_publications: [JSON.stringify([{ ancien: { contenu: h("e") } }])],
       studio_publications: [{ files: [{ autreNom: h("f") }], extra: [[h("1")]] }],
-      review_packages: [], review_findings: [],
+      review_packages: [], review_findings: [], studio_observations: [],
     });
     expect([h("e"), h("f"), h("1")].every((id) => refs.has(id))).toBe(true);
     expect(chainesDe({ [h("2")]: 3 }).has(h("2"))).toBe(true);
@@ -28,7 +29,7 @@ describe("volumes-gc — relevé des références", () => {
 
   it("refuse un relevé incomplet ou illisible au lieu de supprimer à l'aveugle", () => {
     expect(() => collecterReferencesVolumes({ atelier_publications: [] })).toThrow(/studio_publications/);
-    expect(() => collecterReferencesVolumes({ atelier_publications: ["{pas du json"], studio_publications: [], review_packages: [], review_findings: [] })).toThrow();
+    expect(() => collecterReferencesVolumes({ atelier_publications: ["{pas du json"], studio_publications: [], review_packages: [], review_findings: [], studio_observations: [] })).toThrow();
   });
 
   it("ne désigne jamais un volume cité ; les autres sont orphelins", () => {

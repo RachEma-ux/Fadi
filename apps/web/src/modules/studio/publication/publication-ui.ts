@@ -92,6 +92,7 @@ export function libelleEcart(e: StudioManifestDrift): string {
       : `${quoi} introuvable (révision ${court(e.revisionFigee)} figée).`;
   }
   if (e.type === "documents") return `Documents régénérés : ${e.formats.map((f) => f.toUpperCase()).join(", ")}.`;
+  if (e.type === "controles") return "Contrôles changés depuis le manifeste (règles, rapports ou observations bloquantes) : actualisez, puis faites approuver le nouvel ensemble.";
   return `Métadonnée modifiée : ${LIBELLE_CHAMP[e.champ] ?? e.champ}.`;
 }
 
@@ -107,6 +108,11 @@ export function messageRefus(status: number, body: unknown): string {
   if (status === 409 && b["error"] === "manifest_outdated") return "Une source a changé depuis le manifeste : actualisez le dossier avant de le soumettre ou de l’approuver.";
   if (status === 409 && b["error"] === "manifest_missing") return "Ce dossier n’a pas de manifeste approuvé : actualisez-le, soumettez-le et faites-le approuver.";
   if (status === 409 && b["error"] === "manifest_current") return "Le manifeste est déjà à jour : rien à actualiser.";
+  if (status === 409 && b["error"] === "blocking_observation_open") {
+    const n = Array.isArray(b["observations"]) ? (b["observations"] as unknown[]).length : 0;
+    return `Publication refusée : ${n} observation(s) bloquante(s) ni clôturée(s) ni dérogée(s). Clôturez-les ou faites décider une dérogation par le propriétaire, puis actualisez.`;
+  }
+  if (status === 409 && b["error"] === "piece_refusee") return "Publication refusée : une pièce du dossier est présentée pour ce qu’elle n’est pas (planche présentée comme feuille, ou dessin 2D annoncé synchronisé sans maquette associée).";
   if (status === 409 && b["error"] === "revision_mismatch") return "Approbation refusée : l’ensemble examiné n’est pas celui de la publication.";
   if (status === 409 && b["error"] === "invalid_transition") return "Transition refusée : le statut a changé entre-temps. Rechargez la liste.";
   if (status === 409 && b["error"] === "archived") return "Étude ou variante archivée : publication impossible.";

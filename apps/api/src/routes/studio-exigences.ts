@@ -24,6 +24,7 @@ import { assertAccess, lockedAccess, notFound, studioArchivedRefusal, StudioRequ
 import {
   deciderAcceptation, deciderEdition, empreinte, rejeuAdmis, resultatControle, studioControleSchema, studioExigenceAcceptationSchema,
   studioExigencesEditionSchema, versionExaminee, type Decision,
+  conclusionNormativeControle, normativeDe,
 } from "../lib/studio-exigences.js";
 import { avecContrat } from "../lib/studio-contrats.js";
 import { CONTRAT_EXIGENCES_LIRE, CONTRAT_EXIGENCES_VERSION, CONTRAT_EXIGENCES_ENREGISTRER, CONTRAT_EXIGENCES_ACCEPTER, CONTRAT_CONTROLES_LISTER, CONTRAT_CONTROLE_LIRE, CONTRAT_CONTROLE_EXECUTER } from "../lib/studio-contrats-routes.js";
@@ -65,6 +66,8 @@ function controleDe(row: CheckRow, email: Map<string, string>) {
     id: row.id, studyId: row.studyId, variantId: row.variantId, revisionId: row.revisionId, version: row.setVersion,
     execution: row.execution, conclusion: row.conclusion, documentHash: row.documentHash,
     auteur: row.authorId, auteurEmail: email.get(row.authorId) ?? null, creeLe: row.createdAt.toISOString(), resultat: row.result,
+    // EX-068 (lot PUB) : conclusion normative (conforme, non conforme, non testé, non applicable justifié) ; null hors exécution.
+    conclusionNormative: normativeDe(row.result),
   };
 }
 async function derniere(q: Querier, studyId: string): Promise<SetRow | null> {
@@ -214,10 +217,13 @@ studioExigencesRouter.post(controlesPath, avecContrat(CONTRAT_CONTROLE_EXECUTER)
     const versions = (await tx.select({ version: studioRequirementSets.version }).from(studioRequirementSets).where(eq(studioRequirementSets.studyId, study.id))).map((r) => r.version);
     const version = unwrap(versionExaminee(versions, input.version));
     const [jeu] = version === null ? [] : await tx.select().from(studioRequirementSets).where(and(eq(studioRequirementSets.studyId, study.id), eq(studioRequirementSets.version, version))).limit(1);
-    const { result, execution, conclusion } = resultatControle(study.id, revision.id, revision.document, jeu ? { version: jeu.version, exigences: jeu.requirements } : null);
+    const jeuExamine = jeu ? { version: jeu.version, exigences: jeu.requirements } : null;
+    const { result, execution, conclusion } = resultatControle(study.id, revision.id, revision.document, jeuExamine);
+    const normative = conclusionNormativeControle(result, jeuExamine, input.nonApplicables ?? [], actorId, new Date());
+    if ("refus" in normative) throw new StudioRequestError(normative.refus.status, normative.refus.body);
     const [row] = await tx.insert(studioRequirementChecks).values({
       id: newId("studio_requirement_check"), studyId: study.id, variantId: variant.id, revisionId: revision.id, setVersion: version,
-      execution, conclusion, result, documentHash: empreinte(revision.document), authorId: actorId, requestId: input.requestId ?? null,
+      execution, conclusion, result: { ...result, normative: normative.ok }, documentHash: empreinte(revision.document), authorId: actorId, requestId: input.requestId ?? null,
     }).returning();
     // Réexamen (EX-086) : les observations non clôturées de la variante sont rapprochées de la révision contrôlée, dans
     // la même transaction ; aucun statut d'observation n'est modifié (objet disparu : marqué, jamais clos).

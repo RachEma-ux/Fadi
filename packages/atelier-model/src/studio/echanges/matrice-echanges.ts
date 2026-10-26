@@ -504,10 +504,13 @@ const LIVREES: readonly StudioEntreeEchange[] = [
     sources: [S_PLAN, S_LISTE("E.6-02"), S_LISTE("E.5-03")],
   },
   {
-    id: "paquet-publication", format: "Paquet de publication (SVG, DXF, IFC, feuille PDF)", versionFormat: "studio-publication-manifest/1", sens: "export", famille: "paquet",
+    id: "paquet-publication", format: "Paquet de publication (SVG, DXF, IFC, feuille PDF ; dossier de conception : PDF et JSON)", versionFormat: "studio-publication-manifest/1", sens: "export", famille: "paquet",
     objet: "Fichiers figés d’une publication approuvée et diffusée", taches: ["E.6-02"], statut: "livre",
-    limite: "Fichiers du manifeste approuvé, identifiés par SHA-256 et vérifiables ; dessin 2D indépendant : sans IFC ; mêmes limites que chaque export.",
-    entites: [{ entite: "Fichiers du paquet", couverture: "portee", detail: "SVG, DXF, IFC et feuille PDF calculés par les exporteurs du modèle." }],
+    limite: "Fichiers du manifeste approuvé, identifiés par SHA-256 et vérifiables ; dessin 2D indépendant : sans IFC ; dossier de conception (lot PUB) : PDF et JSON du dossier, feuilles et vues de coupe jointes ; mêmes limites que chaque export.",
+    entites: [
+      { entite: "Fichiers du paquet", couverture: "portee", detail: "SVG, DXF, IFC et feuille PDF calculés par les exporteurs du modèle." },
+      { entite: "Dossier de conception", couverture: "portee", detail: "PDF (sommaire, feuilles, métré, fidélité, vues de coupe) et JSON du dossier ; pièces, origine et présentation déclarées dans le manifeste." },
+    ],
     controle: "Recettes studio-publication.mjs et studio-dossier.mjs (empreintes recalculées).",
     route: "GET /projects/:projectId/studio/studies/:studyId/publications/:publicationId/files/:format",
     preuves: {
@@ -545,6 +548,43 @@ const LIVREES: readonly StudioEntreeEchange[] = [
     },
     sources: [S_LISTE("X.1-09")],
   },
+  {
+    id: "bcf-export", format: "BCF (BIM Collaboration Format, .bcfzip)", versionFormat: "2.1 (bcf.version VersionId 2.1), archive sans compression", sens: "export", famille: "coordination",
+    objet: "Observations d’une variante (sujets BCF)", taches: ["E.6-04"], statut: "livre",
+    limite: "Contrat minimal du lot PUB : sujet (Guid stable dérivé de l’identité interne, type = catégorie, statut, titre, priorité = gravité, objets cités en étiquettes, auteur, responsable, description) et commentaires du journal ; aucun point de vue (caméra) ni pièce jointe ; observations lisibles par l’acteur seulement.",
+    entites: [
+      { entite: "Topic", couverture: "portee", detail: "Guid, TopicType, TopicStatus, Title, Priority, Labels, CreationDate, CreationAuthor, AssignedTo, Description." },
+      { entite: "Comment", couverture: "partielle", detail: "Un commentaire par passage du journal (action et note)." },
+      { entite: "Viewpoints, Components, pièces justificatives", couverture: "absente", detail: "Les observations Studio ne portent pas de point de vue ; les pièces restent dans Studio." },
+    ],
+    controle: "Tests du modèle (export relu, Guid stable) ; recette studio-pub.mjs (export servi par l’API).",
+    route: `GET ${ROUTE_VARIANTE}/observations/bcf`,
+    preuves: {
+      code: [p(`${M}echanges/bcf-observations.ts`, "studioExporterBcf"), p(`${API}lib/studio-observations-bcf.ts`, "exporterObservationsBcf")],
+      tests: [p(`${M}echanges/bcf-observations.test.ts`, "IF-010 [+] export BCF 2.1 relu à l'identique")],
+      routes: [p(`${API}routes/studio-observations.ts`, "${base}/bcf")],
+      interfaces: [p(`${WEB}observations/PanneauObservations.tsx`, "data-studio-bcf-exporter")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-04"), src("docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json", "Contrat IF-010 : identifiants BCF conservés comme références")],
+  },
+  {
+    id: "bcf-import", format: "BCF (BIM Collaboration Format, .bcfzip)", versionFormat: "2.x lu selon le contrat 2.1 minimal ; entrées stockées (sans compression)", sens: "import", famille: "coordination",
+    objet: "Sujets BCF reçus, créés comme observations distinctes de la variante", taches: ["E.6-04"], statut: "livre",
+    limite: "8 Mo au plus ; 500 sujets ; reconnaissance par (Guid, contexte) seulement : un Guid déjà importé dans le même contexte n’est ni recréé ni réécrit, un même Guid venu d’un autre contexte crée une observation distincte, un sujet absent ne clôt rien, un objet cité inconnu reste une référence ; points de vue non repris (avertissement) ; entrées compressées refusées (message).",
+    entites: [
+      { entite: "Topic", couverture: "partielle", detail: "Titre et description en note d’origine ; catégorie et gravité reprises seulement dans le vocabulaire décidé ; Guid et contexte conservés comme références BCF." },
+      { entite: "Viewpoints, Components", couverture: "absente", detail: "Non repris, signalés en avertissement." },
+    ],
+    controle: "Tests du modèle (plan d’import : homonymes, reconnus, absents) ; recette studio-pub.mjs (import servi par l’API, même Guid dans un autre contexte).",
+    route: `POST ${ROUTE_VARIANTE}/observations/bcf`,
+    preuves: {
+      code: [p(`${M}echanges/bcf-observations.ts`, "studioPlanImportBcf"), p(`${API}lib/studio-observations-bcf.ts`, "importerObservationsBcf")],
+      tests: [p(`${M}echanges/bcf-observations.test.ts`, "IF-010 [−] même BCF-ID reçu dans un autre contexte")],
+      routes: [p(`${API}routes/studio-observations.ts`, "${base}/bcf")],
+      interfaces: [p(`${WEB}observations/PanneauObservations.tsx`, "data-studio-bcf-importer")],
+    },
+    sources: [S_PLAN, S_LISTE("E.6-04"), src("docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json", "Cas négatif « Même BCF-ID »")],
+  },
 ];
 
 interface Report { id: string; format: string; versionFormat: string; sens: readonly StudioSensEchange[]; famille: StudioFamilleEchange; objet: string; taches: readonly StudioTacheEchange[]; raison: string; sources: readonly StudioSourceEchange[]; limite?: string }
@@ -562,11 +602,6 @@ const REPORTS: readonly Report[] = [
     id: "dgn", format: "DGN", versionFormat: "non évaluée", sens: ["import", "export"], famille: "dessin", objet: "Dessin 2D", taches: ["E.6-04", "E.6-05"],
     raison: `${RAISON_SANS_CONTRAT} D-179 renonce au DGN pour l’Atelier P2 seulement.`,
     sources: [S_PLAN, S_LISTE("E.6-04"), S_D179],
-  },
-  {
-    id: "bcf", format: "BCF", versionFormat: "non évaluée (2.1 / 3.0)", sens: ["import", "export"], famille: "coordination", objet: "Observations et sujets de coordination", taches: ["E.6-04", "E.6-05"],
-    raison: `${RAISON_SANS_CONTRAT} Les observations Studio (E.2) n’ont pas de contrat BCF ; règle d’identité à tenir : un même identifiant BCF reçu dans un autre contexte n’écrase ni ne clôt une observation.`,
-    sources: [S_PLAN, S_LISTE("E.6-04"), src("docs/workstreams/studio/task-register.json", "Cas négatif « Même BCF-ID »")],
   },
   {
     id: "step", format: "STEP (ISO 10303-21, AP203 / AP214 / AP242)", versionFormat: "non évaluée", sens: ["import", "export"], famille: "maquette", objet: "Solides exacts (brep)", taches: ["E.6-04", "E.6-05"],

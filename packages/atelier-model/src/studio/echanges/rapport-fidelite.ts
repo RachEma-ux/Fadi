@@ -182,10 +182,28 @@ export interface StudioLigneFidelite {
 /** Traitement des calques masqués par le format. */
 export type StudioTraitementCalquesMasques = "contenu-masque" | "calque-eteint";
 
+/**
+ * Unités et repères d'un export (EX-080) : repère source du document (`local-2d`, et `local-3d` dérivé par extrusion
+ * pour l'IFC), repère cible du fichier et conversion appliquée, déclarés pour chaque format — jamais implicites.
+ */
+export interface StudioReperesExport {
+  source: { repere: "local-2d"; unite: "m"; derive3d?: "local-3d" };
+  cible: { repere: string; unite: "m"; declaration: string };
+  conversion: string;
+  georeferencement: "aucun";
+}
+export const STUDIO_REPERES_EXPORT: Readonly<Record<StudioFormatEchange, StudioReperesExport>> = Object.freeze({
+  svg: { source: { repere: "local-2d", unite: "m" }, cible: { repere: "svg-utilisateur", unite: "m", declaration: "viewBox en mètres (1 unité utilisateur = 1 m)" }, conversion: "(x, y) → (x, −y) : axe y retourné, aucune mise à l'échelle", georeferencement: "aucun" },
+  dxf: { source: { repere: "local-2d", unite: "m" }, cible: { repere: "dxf-wcs", unite: "m", declaration: "$INSUNITS = 6 (mètre)" }, conversion: "(x, y) → (x, y, 0) : identité, aucune translation ni rotation", georeferencement: "aucun" },
+  ifc: { source: { repere: "local-2d", unite: "m", derive3d: "local-3d" }, cible: { repere: "ifc-projet", unite: "m", declaration: "IfcUnitAssignment SI (mètre), IfcLocalPlacement relatif au niveau z = 0" }, conversion: "(x, y) → (x, y, z) : z de l'extrusion déclarée, aucune translation ni rotation", georeferencement: "aucun" },
+});
+
 export interface StudioRapportFidelite {
   schema: typeof STUDIO_RAPPORT_FIDELITE_SCHEMA;
   format: StudioFormatEchange;
   documentId: string;
+  /** Unités et repères source / cible de l'export (EX-080). */
+  reperes: StudioReperesExport;
   totaux: { elements: number; exact: number; approche: number; nonCouvert: number };
   lignes: StudioLigneFidelite[];
   calques: {
@@ -270,7 +288,7 @@ export function studioRapportFidelite(input: StudioDocument, format: StudioForma
     ? layers.filter((l) => nomsDxf[l.id] !== undefined && nomsDxf[l.id] !== l.name).map((l) => ({ id: l.id, nom: l.name, nomExporte: nomsDxf[l.id]! }))
     : [];
   return {
-    schema: STUDIO_RAPPORT_FIDELITE_SCHEMA, format, documentId: doc.id, totaux, lignes,
+    schema: STUDIO_RAPPORT_FIDELITE_SCHEMA, format, documentId: doc.id, reperes: STUDIO_REPERES_EXPORT[format], totaux, lignes,
     calques: {
       total: layers.length, masques: masques.size, verrouilles: layers.filter((l) => l.locked).length,
       elementsSurCalquesMasques: surMasques, traitementMasques: TRAITEMENT_MASQUES[format], renommes,

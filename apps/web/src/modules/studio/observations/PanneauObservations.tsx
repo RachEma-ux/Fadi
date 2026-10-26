@@ -21,9 +21,12 @@ import { IconeCollaboration, RaccourciCollaboration } from "../../collaboration/
 import { ObservationCommentaire } from "../commentaires/Observation";
 import { STATUT_LIBELLE } from "../commentaires/observations";
 import { apiExigences } from "../exigences/api-exigences";
-import { apiObservations, type DomaineObservation, type NatureDecision, type ObservationSuivie, type PassageTache, type PorteeDecision, type RapprochementLu, type TacheObservation, type VueObservation } from "./api-observations";
 import {
-  compterSuivi, dernierRapprochement, LIBELLE_SUIVI_RAPPROCHEMENT, DOMAINES, FILTRES_SUIVI, libelleDecision, libelleLien, LIBELLE_DOMAINE, LIBELLE_FILTRE_SUIVI, LIBELLE_JOURNAL_TACHE, LIBELLE_PASSAGE_TACHE,
+  apiObservations, CATEGORIES_OBSERVATION, GRAVITES_OBSERVATION, type CategorieObservation, type DomaineObservation, type GraviteObservation, type NatureDecision, type ObservationSuivie,
+  type PassageTache, type PieceSaisie, type PorteeDecision, type RapprochementLu, type TacheObservation, type VueObservation,
+} from "./api-observations";
+import {
+  compterSuivi, dernierRapprochement, enBase64, LIBELLE_CATEGORIE, LIBELLE_GRAVITE, LIBELLE_RESOLUTION, LIBELLE_SUIVI_RAPPROCHEMENT, DOMAINES, FILTRES_SUIVI, libelleDecision, libelleLien, LIBELLE_DOMAINE, LIBELLE_FILTRE_SUIVI, LIBELLE_JOURNAL_TACHE, LIBELLE_PASSAGE_TACHE,
   LIBELLE_STATUT_TACHE, LIBELLE_VUE, lireRefus, optionsLien, passeFiltreSuivi, suiviPar, type FiltreSuivi, type SourcesLien,
 } from "./suivi-ui";
 import "./observations.css";
@@ -105,8 +108,24 @@ export function PanneauObservations(props: PanneauObservationsProps) {
       void client.invalidateQueries({ queryKey: [...cle, "rapprochements"] });
     } catch (err) { setRapprochement({ enCours: false, message: lireRefus(err, "Rapprochement refusé par le serveur.").message }); }
   }
+  // Échange BCF 2.1 minimal (IF-010) : export des observations lisibles ; import réservé au propriétaire et aux éditeurs.
+  const lienBcf = useRef<HTMLAnchorElement>(null);
+  const fichierBcf = useRef<HTMLInputElement>(null);
+  const [importBcf, setImportBcf] = useState<{ enCours: boolean; message: string | null }>({ enCours: false, message: null });
+  async function importerBcf(f: File) {
+    setImportBcf({ enCours: true, message: null });
+    try {
+      const r = await apiObservations.importerBcf(projectId, studyId, variantId, enBase64(new Uint8Array(await f.arrayBuffer())));
+      setImportBcf({ enCours: false, message: `Import BCF : ${r.crees.length} observation(s) créée(s), ${r.reconnus.length} sujet(s) déjà importé(s) dans ce contexte, ${r.homonymes.length} identifiant(s) déjà connu(s) dans un autre contexte (observations distinctes), ${r.absents.length} sujet(s) absent(s) (aucune clôture).` });
+      ctx.relire();
+    } catch (err) { setImportBcf({ enCours: false, message: lireRefus(err, "Import BCF refusé par le serveur.").message }); }
+  }
   return <section className="studio-revisions studio-observations" aria-labelledby="studio-observations-titre" data-studio-observations tabIndex={-1}
-    onKeyDown={(e) => { if (peutRapprocher && declenche(e, "rapprocher-observations")) { e.preventDefault(); void rapprocher(); } }}>
+    onKeyDown={(e) => {
+      if (peutRapprocher && declenche(e, "rapprocher-observations")) { e.preventDefault(); void rapprocher(); }
+      else if (declenche(e, "exporter-bcf")) { e.preventDefault(); lienBcf.current?.click(); }
+      else if (ctx.equipe && declenche(e, "importer-bcf")) { e.preventDefault(); fichierBcf.current?.click(); }
+    }}>
     <h2 id="studio-observations-titre">Observations</h2>
     <p className="studio-revisions-sub">Une observation garde la même identité dans chaque domaine (objet, métré, exigence, revue). Seul le propriétaire du projet la clôture ; un éditeur propose.</p>
     {lecture.isPending && <p role="status">Chargement des observations…</p>}
@@ -117,7 +136,15 @@ export function PanneauObservations(props: PanneauObservationsProps) {
       {peutRapprocher && <button type="button" disabled={rapprochement.enCours} onClick={() => void rapprocher()} data-studio-suivi-rapprocher {...propsRaccourci("rapprocher-observations")}>
         <IconeCollaboration commande="rapprocher-observations" /> Rapprocher avec la révision courante <RaccourciCollaboration commande="rapprocher-observations" />
       </button>}
+      <a ref={lienBcf} className="studio-bouton" href={apiObservations.urlExportBcf(projectId, studyId, variantId)} download data-studio-bcf-exporter {...propsRaccourci("exporter-bcf")}>
+        <IconeCollaboration commande="exporter-bcf" /> Exporter en BCF <RaccourciCollaboration commande="exporter-bcf" />
+      </a>
+      {ctx.equipe && <button type="button" disabled={importBcf.enCours} onClick={() => fichierBcf.current?.click()} data-studio-bcf-importer {...propsRaccourci("importer-bcf")}>
+        <IconeCollaboration commande="importer-bcf" /> Importer un fichier BCF <RaccourciCollaboration commande="importer-bcf" />
+      </button>}
+      <input ref={fichierBcf} type="file" accept=".bcfzip,.bcf,application/zip" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) void importerBcf(f); }} data-studio-bcf-fichier />
     </div>}
+    {importBcf.message && <p role="status" data-studio-bcf-message>{importBcf.message}</p>}
     {rapprochement.message && <p role="status" data-studio-suivi-rapprochement-message>{rapprochement.message}</p>}
     {ouvrir && <Ouverture ctx={ctx} surFermer={() => setOuvrir(false)} />}
     {liste.length > 0 && <div className="studio-commentaires-filtres" role="group" aria-label="Filtrer le suivi des observations" data-studio-suivi-filtres>
@@ -165,7 +192,18 @@ function Ouverture({ ctx, surFermer }: { ctx: Ctx; surFermer: () => void }) {
   const [refLien, setRef] = useState("");
   const [envoi, setEnvoi] = useState(false);
   const [refus, setRefus] = useState<{ message: string; observationId: string | null } | null>(null);
+  const [categorie, setCategorie] = useState<CategorieObservation | "">("");
+  const [gravite, setGravite] = useState<GraviteObservation | "">("");
+  const [pieces, setPieces] = useState<PieceSaisie[]>([]);
   const demande = useDemande();
+  async function lirePieces(files: FileList | null) {
+    const lues: PieceSaisie[] = [];
+    for (const f of [...(files ?? [])].slice(0, 5)) {
+      if (f.type !== "application/pdf" && f.type !== "image/png" && f.type !== "image/jpeg") continue;
+      lues.push({ name: f.name, mime: f.type, contentBase64: enBase64(new Uint8Array(await f.arrayBuffer())) });
+    }
+    setPieces(lues);
+  }
   const known = new Set([...ctx.revision.objects.map((o) => o.id), ...(ctx.revision.dimensions ?? []).map((d) => d.id)]);
   const citables = ctx.selection.filter((id) => known.has(id));
   const deja = domaine && refLien ? suiviPar(ctx.liste, domaine, refLien) : null;
@@ -178,6 +216,7 @@ function Ouverture({ ctx, surFermer }: { ctx: Ctx; surFermer: () => void }) {
       ...(citer && citables.length ? { objectIds: citables, revisionId: ctx.revisionId } : {}),
       ...(domaine && refLien ? { liens: [{ domaine, ref: refLien, ...(domaine === "objet" || domaine === "metre" ? { revisionId: ctx.revisionId } : {}) }] } : {}),
       ...(ctx.equipe && lecteurs ? { audience: "projet" as const } : {}),
+      ...(categorie ? { categorie } : {}), ...(gravite ? { gravite } : {}), ...(pieces.length ? { pieces } : {}),
     };
     try {
       await apiObservations.ouvrir(ctx.projectId, ctx.studyId, ctx.variantId, { ...input, requestId: demande.id(JSON.stringify(input)) });
@@ -196,6 +235,19 @@ function Ouverture({ ctx, surFermer }: { ctx: Ctx; surFermer: () => void }) {
     {assignables.length === 0 && <p className="studio-info">Aucun membre ne peut être responsable (propriétaire ou éditeur requis).</p>}
     <label htmlFor="studio-suivi-echeance">Échéance (facultative)</label>
     <input id="studio-suivi-echeance" type="date" value={echeance} onChange={(e) => setEcheance(e.target.value)} />
+    <label htmlFor="studio-suivi-categorie">Catégorie</label>
+    <select id="studio-suivi-categorie" value={categorie} onChange={(e) => setCategorie(e.target.value as CategorieObservation | "")} data-studio-suivi-categorie>
+      <option value="">Non évaluée</option>
+      {CATEGORIES_OBSERVATION.map((c) => <option key={c} value={c}>{LIBELLE_CATEGORIE[c]}</option>)}
+    </select>
+    <label htmlFor="studio-suivi-gravite">Gravité</label>
+    <select id="studio-suivi-gravite" value={gravite} onChange={(e) => setGravite(e.target.value as GraviteObservation | "")} data-studio-suivi-gravite>
+      <option value="">Non évaluée</option>
+      {GRAVITES_OBSERVATION.map((g) => <option key={g} value={g}>{LIBELLE_GRAVITE[g]}</option>)}
+    </select>
+    {gravite === "bloquante" && <p className="studio-info">Une observation bloquante empêche la publication tant qu’elle n’est ni clôturée ni dérogée par une décision du propriétaire.</p>}
+    <label htmlFor="studio-suivi-pieces">Pièces justificatives (PDF, PNG ou JPEG ; 5 au plus, 2 Mo chacune)</label>
+    <input id="studio-suivi-pieces" type="file" multiple accept="application/pdf,image/png,image/jpeg" onChange={(e) => void lirePieces(e.target.files)} data-studio-suivi-pieces />
     {citables.length > 0 && <label className="studio-commentaires-ancre"><input type="checkbox" checked={citer} onChange={(e) => setCiter(e.target.checked)} /> {`Citer la sélection (${citables.length} objet(s))`}</label>}
     <p className="studio-info">{`Vue citée : ${LIBELLE_VUE[ctx.vue]}`}</p>
     {ctx.equipe && <label className="studio-commentaires-ancre"><input type="checkbox" checked={lecteurs} onChange={(e) => setLecteurs(e.target.checked)} data-studio-audience {...propsRaccourci("visible-lecteurs")} /><IconeCollaboration commande="visible-lecteurs" /> Visible par les lecteurs <RaccourciCollaboration commande="visible-lecteurs" /></label>}
@@ -228,6 +280,16 @@ function Fiche({ o, ctx }: { o: ObservationSuivie; ctx: Ctx }) {
       <span data-studio-audience-etat={o.audience ?? "projet"}>{(o.audience ?? "projet") === "projet" ? "Visible par les lecteurs" : "Équipe"}</span>
     </p>
     <p className="studio-commentaire-texte" translate="no">{o.body}</p>
+    <p className="studio-suivi-contexte" data-studio-suivi-qualification data-gravite={o.gravite ?? ""} data-resolution={o.resolution ?? ""}>
+      {o.issueId && <span>Identifiant <span translate="no" title={o.issueId}>{court(o.issueId)}</span></span>}
+      <span>{`Catégorie : ${o.categorie ? LIBELLE_CATEGORIE[o.categorie] : "non évaluée"}`}</span>
+      <span>{`Gravité : ${o.gravite ? LIBELLE_GRAVITE[o.gravite] : "non évaluée"}`}</span>
+      {o.gravite === "bloquante" && o.resolution && <span data-studio-suivi-resolution>{LIBELLE_RESOLUTION[o.resolution]}</span>}
+    </p>
+    {(o.pieces?.length ?? 0) > 0 && <ul className="studio-suivi-liste" data-studio-suivi-pieces-liste>{o.pieces!.map((p) => <li key={p.sha256}>
+      <a href={apiObservations.urlPiece(ctx.projectId, ctx.studyId, ctx.variantId, o.id, p.sha256)} download={p.name} translate="no">{p.name}</a> <span translate="no">{`(${p.mime}, ${p.size} o)`}</span>
+    </li>)}</ul>}
+    {(o.bcfRefs?.length ?? 0) > 0 && <p className="studio-info" data-studio-suivi-bcf>{"Références BCF reçues (conservées, distinctes de l’identifiant interne) : "}<span translate="no">{o.bcfRefs!.map((r) => `${r.guid} · ${r.contexte}`).join(" ; ")}</span></p>}
     <p className="studio-suivi-contexte" data-studio-suivi-contexte>
       {o.contexte.revisionId && <span>Révision <span translate="no" title={o.contexte.revisionId}>{court(o.contexte.revisionId)}</span></span>}
       {o.contexte.objectIds.length > 0 && <button type="button" onClick={() => ctx.surSelection(o.contexte.objectIds)}>{`Sélectionner les objets cités (${o.contexte.objectIds.length})`}</button>}
@@ -391,8 +453,8 @@ function Decision({ o, ctx, surFermer }: { o: ObservationSuivie; ctx: Ctx; surFe
   const [envoi, setEnvoi] = useState(false);
   const [error, setError] = useState("");
   const demande = useDemande();
-  // La décision de clôture se prend par le passage « Clôturer » (après recontrôle) : jamais ici.
-  const porteeAdmise = nature === "decision" ? "autre" : portee;
+  // La décision de clôture se prend par le passage « Clôturer » (après recontrôle) : jamais ici ; la dérogation (IF-009) se décide ici.
+  const porteeAdmise = nature === "decision" && portee === "cloture" ? "autre" : portee;
   async function envoyer(e: FormEvent) {
     e.preventDefault();
     if (!texte.trim() || envoi) return;
@@ -413,13 +475,12 @@ function Decision({ o, ctx, surFermer }: { o: ObservationSuivie; ctx: Ctx; surFe
         <option value="decision">Décision</option>
       </select>
     </>}
-    {nature === "proposition" && <>
-      <label htmlFor={`${id}-portee`}>Portée</label>
-      <select id={`${id}-portee`} value={portee} onChange={(e) => setPortee(e.target.value as PorteeDecision)} data-studio-decision-portee>
-        <option value="autre">Autre</option>
-        <option value="cloture">Clôture de l’observation</option>
-      </select>
-    </>}
+    <label htmlFor={`${id}-portee`}>Portée</label>
+    <select id={`${id}-portee`} value={porteeAdmise} onChange={(e) => setPortee(e.target.value as PorteeDecision)} data-studio-decision-portee>
+      <option value="autre">Autre</option>
+      {nature === "proposition" && <option value="cloture">Clôture de l’observation</option>}
+      <option value="derogation">Dérogation pour la publication</option>
+    </select>
     {nature === "decision" && <p className="studio-info">La décision de clôture se prend par le passage « Clôturer », après recontrôle.</p>}
     <label htmlFor={`${id}-texte`}>Texte</label>
     <textarea id={`${id}-texte`} required maxLength={2000} rows={2} value={texte} onChange={(e) => setTexte(e.target.value)} />

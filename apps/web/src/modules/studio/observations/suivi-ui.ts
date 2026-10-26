@@ -45,8 +45,23 @@ export function dernierRapprochement(liste: readonly RapprochementLu[], revision
 }
 
 export function libelleDecision(d: Pick<DecisionObservation, "nature" | "portee">): string {
+  if (d.portee === "derogation") return d.nature === "decision" ? "Décision de dérogation" : "Proposition de dérogation";
   if (d.nature === "decision") return d.portee === "cloture" ? "Décision de clôture" : "Décision";
   return d.portee === "cloture" ? "Proposition de clôture" : "Proposition";
+}
+
+/** IF-010 : libellés des vocabulaires décidés (catégorie, gravité) et de la résolution pour une publication (IF-009). */
+export const LIBELLE_CATEGORIE: Readonly<Record<string, string>> = {
+  coordination: "Coordination", conformite: "Conformité", geometrie: "Géométrie", documentation: "Documentation", metre: "Métré", autre: "Autre",
+};
+export const LIBELLE_GRAVITE: Readonly<Record<string, string>> = { bloquante: "Bloquante", majeure: "Majeure", mineure: "Mineure", information: "Information" };
+export const LIBELLE_RESOLUTION: Readonly<Record<string, string>> = { resolue: "Résolue (clôturée)", derogee: "Dérogée par décision", ouverte: "Ni résolue ni dérogée" };
+
+/** Fichier lu en base64 (contenu brut, sans préfixe `data:`). */
+export function enBase64(octets: Uint8Array): string {
+  let s = "";
+  for (let i = 0; i < octets.length; i += 0x8000) s += String.fromCharCode(...octets.subarray(i, i + 0x8000));
+  return btoa(s);
 }
 
 export type FiltreSuivi = "toutes" | "mes-taches" | "ouvertes" | "a-cloturer";

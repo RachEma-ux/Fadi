@@ -23,7 +23,7 @@ vi.mock("../lib/atelier-refexterne.js", () => ({ controlerRattachements: vi.fn()
 import { readFileSync } from "node:fs";
 import express from "express";
 import request from "supertest";
-import { STUDIO_CONTRACT } from "@parcours/atelier-model";
+import { STUDIO_CONTRACT, studioExporterBcf, studioSujetsBcf } from "@parcours/atelier-model";
 import { projects } from "../db/schema.js";
 import { STUDIO_CONTRAT_ENTETE, studioReponseRefus, type StudioContratRoute, type StudioGestionnaireContrat } from "../lib/studio-contrats.js";
 import * as C from "../lib/studio-contrats-routes.js";
@@ -106,7 +106,7 @@ const modeleExterne = async () => ({ mx: await creer(`${V}/modeles-externes`, RE
 const IL = "/studies/:studyId/variants/:variantId/illustrations";
 const renduSource = () => {
   const rgba = new Uint8Array(4 * 4 * 4).fill(200);
-  const prov = studioProvenanceRendu({ etude: { id: "s", nom: "Étude" }, variante: { id: "v", nom: "Variante" }, revisionId: "r1", scene: null, date: new Date("2026-10-25T09:00:00Z"), camera: { projection: "perspective", position: { x: 5, y: -5, z: 4 }, target: { x: 0, y: 0, z: 0 }, fov: 45 } });
+  const prov = studioProvenanceRendu({ etude: { id: "s", nom: "Étude" }, variante: { id: "v", nom: "Variante" }, revisionId: "r1", scene: null, date: new Date("2026-10-25T09:00:00Z"), camera: { projection: "perspective", position: { x: 5, y: -5, z: 4 }, target: { x: 0, y: 0, z: 0 }, fov: 45 } , auteur: { id: "proprietaire", email: null } });
   return ecrirePng({ largeur: 4, hauteur: 4, rgba }, { "fadi:rendu": JSON.stringify(prov) }).toString("base64");
 };
 const CORPS_ILLUSTRATION = () => ({ requestId: "illu-c", fournisseur: "local-derive", image: renduSource(), parametres: { style: "trait", intensite: 0.5 } });
@@ -129,6 +129,15 @@ const essaiCmd = async () => ({ job: await creer(`${V}/essais`, { ...ENVELOPPE, 
 const migrationCmd = async () => ({ mig: await creer(`${S}/studies/s/migrations`, { cible: "studio-document/2" }) });
 const migrationAppliqueeCmd = async () => { const c = await migrationCmd(); for (const p of ["accorder", "appliquer"]) await exiger("post", `${S}/studies/s/migrations/${c.mig}/${p}`); return c; };
 const basculePreparee = async () => { await exiger("post", `${S}/bascule/preparer`, { studyId: "s" }); return {}; };
+// Lot PUB : vue de coupe, observation avec pièce justificative, fichier BCF d'essai.
+const VUE_COUPE = { nom: "Coupe AA", niveau: { repere: "local-3d", z: 1 }, cadrage: { xMin: -1, yMin: -1, xMax: 5, yMax: 5 }, echelle: 50, styles: { trait: "fort", hachure: "diagonale" }, annotations: [{ id: "a1", type: "texte", position: { x: 0, y: 0 }, texte: "Note" }] };
+const vueCoupe = async () => ({ vc: await creer(`${V}/section-views`, { definition: VUE_COUPE }) });
+const PNG = "iVBORw0KGgo=";
+const observationPiece = async () => {
+  const b = await exiger("post", `${V}/observations`, { body: "Observation avec pièce", responsableId: "editeur", audience: "projet", categorie: "coordination", gravite: "majeure", pieces: [{ name: "releve.png", mime: "image/png", contentBase64: PNG }] });
+  return { obs: b["id"] as string, sha: b["pieces"][0]["sha256"] as string };
+};
+const BCF = Buffer.from(studioExporterBcf(studioSujetsBcf([{ issueId: "x1", titre: "Sujet", description: "Description", statut: "Open", categorie: "coordination", gravite: "mineure", creeLe: "2026-10-25T08:00:00.000Z", auteur: "a@x", responsable: null, objets: [], journal: [] }]), { id: "partenaire", nom: "Partenaire" })).toString("base64");
 
 export const CAS: Cas[] = [
   // Études et variantes.
@@ -231,6 +240,18 @@ export const CAS: Cas[] = [
     preparer: async () => { const { obs } = await observation(); return { obs, t: await creer(`${V}/observations/${obs}/taches`, { libelle: "Reprendre", assigneeId: "editeur" }, (b) => b?.taches?.at(-1)?.id) }; },
   },
   { libelle: "studio-api-observation-decision/1 — POST …/observations/:observationId/decisions : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_OBSERVATION_DECISION, route: `POST ${OBS}/:observationId/decisions`, url: (c) => `${V}/observations/${c["obs"]}/decisions`, corps: fixe({ nature: "proposition", portee: "autre", texte: "Proposition" }), preparer: observation },
+  // Observations, lot PUB (IF-010) : BCF et pièces justificatives.
+  { libelle: "studio-api-observations-bcf-exporter/1 — GET …/observations/bcf : fichier BCF, en-tête X-Studio-Contrat", contrat: C.CONTRAT_OBSERVATIONS_BCF_EXPORTER, route: `GET ${OBS}/bcf`, url: () => `${V}/observations/bcf`, preparer: observation },
+  { libelle: "studio-api-observations-bcf-importer/1 — POST …/observations/bcf : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_OBSERVATIONS_BCF_IMPORTER, route: `POST ${OBS}/bcf`, url: () => `${V}/observations/bcf`, corps: fixe({ fichierBase64: BCF }) },
+  { libelle: "studio-api-observation-piece/1 — GET …/observations/:observationId/pieces/:sha256 : fichier, en-tête X-Studio-Contrat", contrat: C.CONTRAT_OBSERVATION_PIECE, route: `GET ${OBS}/:observationId/pieces/:sha256`, url: (c) => `${V}/observations/${c["obs"]}/pieces/${c["sha"]}`, preparer: observationPiece },
+  // Résultats quantitatifs (IF-008).
+  { libelle: "studio-api-resultats-quantitatifs/1 — GET …/resultats-quantitatifs : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_RESULTATS_QUANTITATIFS, route: "GET /studies/:studyId/variants/:variantId/resultats-quantitatifs", url: () => `${V}/resultats-quantitatifs` },
+  // Vues de coupe (EX-075).
+  { libelle: "studio-api-vues-coupe-lister/1 — GET /studies/:studyId/section-views : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_VUES_COUPE_LISTER, route: "GET /studies/:studyId/section-views", url: () => `${S}/studies/s/section-views`, preparer: vueCoupe },
+  { libelle: "studio-api-vue-coupe-creer/1 — POST …/variants/:variantId/section-views : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_VUE_COUPE_CREER, route: "POST /studies/:studyId/variants/:variantId/section-views", url: () => `${V}/section-views`, corps: fixe({ definition: VUE_COUPE }) },
+  { libelle: "studio-api-vue-coupe-lire/1 — GET /studies/:studyId/section-views/:viewId : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_VUE_COUPE_LIRE, route: "GET /studies/:studyId/section-views/:viewId", url: (c) => `${S}/studies/s/section-views/${c["vc"]}`, preparer: vueCoupe },
+  { libelle: "studio-api-vue-coupe-modifier/1 — PATCH /studies/:studyId/section-views/:viewId : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_VUE_COUPE_MODIFIER, route: "PATCH /studies/:studyId/section-views/:viewId", url: (c) => `${S}/studies/s/section-views/${c["vc"]}`, corps: fixe({ annotation: { op: "retirer", id: "a1" } }), preparer: vueCoupe },
+  { libelle: "studio-api-vue-coupe-supprimer/1 — DELETE /studies/:studyId/section-views/:viewId : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_VUE_COUPE_SUPPRIMER, route: "DELETE /studies/:studyId/section-views/:viewId", url: (c) => `${S}/studies/s/section-views/${c["vc"]}`, preparer: vueCoupe },
   // Feuilles et dossiers.
   { libelle: "studio-api-dossiers-projet/1 — GET /dossiers : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_DOSSIERS_PROJET, route: "GET /dossiers", url: () => `${S}/dossiers`, preparer: dossier },
   { libelle: "studio-api-feuilles-lister/1 — GET /studies/:studyId/sheets : réponse conforme, en-tête X-Studio-Contrat", contrat: C.CONTRAT_FEUILLES_LISTER, route: "GET /studies/:studyId/sheets", url: () => `${S}/studies/s/sheets`, preparer: feuille },

@@ -10,7 +10,7 @@ import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { BASCULES, COMMANDES_COLLABORATION, COMMANDES_COM, COMMANDES_TEMPS_REEL, COMMANDES_TRACABILITE, declenche, propsRaccourci, type CommandeCollaboration } from "./commandes-collaboration";
+import { BASCULES, COMMANDES_COLLABORATION, COMMANDES_COM, COMMANDES_ECHANGE_OBSERVATIONS, COMMANDES_TEMPS_REEL, COMMANDES_TRACABILITE, declenche, propsRaccourci, type CommandeCollaboration } from "./commandes-collaboration";
 import { IconeCollaboration, RaccourciCollaboration } from "./IconeCollaboration";
 
 const SRC = new URL("../../", import.meta.url).pathname;
@@ -48,6 +48,9 @@ const ECRANS: Record<CommandeCollaboration, string[]> = {
   "deleguer-approbation": ["modules/studio/publication/PanneauDelegations.tsx"],
   "revoquer-delegation": ["modules/studio/publication/PanneauDelegations.tsx"],
   "rapprocher-observations": ["modules/studio/observations/PanneauObservations.tsx"],
+  // Lot PUB : barre du panneau Observations (IF-010).
+  "exporter-bcf": ["modules/studio/observations/PanneauObservations.tsx"],
+  "importer-bcf": ["modules/studio/observations/PanneauObservations.tsx"],
 } as Record<CommandeCollaboration, string[]>;
 
 function sources(dir: string): string[] {
@@ -153,6 +156,14 @@ describe("Règle d'or — commandes de collaboration (audience, export du lecteu
     const t = (code: string, ctrlKey = true) => ({ code, altKey: true, shiftKey: true, ctrlKey, metaKey: false });
     expect(declenche(t("KeyB"), "deleguer-approbation") && declenche(t("KeyX"), "revoquer-delegation") && declenche(t("KeyM"), "rapprocher-observations")).toBe(true);
     expect(declenche(t("KeyB", false), "deleguer-approbation")).toBe(false);
+  });
+
+  it("Lot PUB (IF-010) : exporter et importer en BCF — Ctrl+Alt+Maj+Y, I, dans la barre du panneau Observations", () => {
+    expect(COMMANDES_ECHANGE_OBSERVATIONS.map((c) => [c, COMMANDES_COLLABORATION[c].raccourci.libelle, COMMANDES_COLLABORATION[c].barre])).toEqual([
+      ["exporter-bcf", "Ctrl+Alt+Maj+Y", "observations"], ["importer-bcf", "Ctrl+Alt+Maj+I", "observations"],
+    ]);
+    const t = (code: string) => ({ code, altKey: true, shiftKey: true, ctrlKey: true, metaKey: false });
+    expect(declenche(t("KeyY"), "exporter-bcf") && declenche(t("KeyI"), "importer-bcf")).toBe(true);
   });
 
   it("rendu : icône SVG décorative, raccourci affiché", () => {

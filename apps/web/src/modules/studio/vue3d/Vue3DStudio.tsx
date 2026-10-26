@@ -105,7 +105,7 @@ export interface Vue3DStudioProps {
   /** Passage orbite / plan demandé par le rappel d'une scène (perspective / orthographique). */
   surNavigation?: (n: Navigation3d) => void;
   /** Provenance du rendu : étude, variante, révision affichée ; `nonEnregistre` : le brouillon diffère de la révision. */
-  provenance?: { etude: { id: string; nom: string }; variante: { id: string; nom: string }; revisionId: string; nonEnregistre: boolean };
+  provenance?: { etude: { id: string; nom: string }; variante: { id: string; nom: string }; revisionId: string; nonEnregistre: boolean; auteur?: { id: string; email: string } | null };
   /**
    * Espace de travail : panneaux de la vue (saisie des solides, solides libres, murs et ouvertures, scènes et rendus,
    * coupe) rendus dans ce conteneur du panneau latéral (portail React : l'état reste celui de la vue). Absent : sous la vue.
@@ -825,6 +825,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   }
   const raisonRendu = indisponible ? "Vue 3D indisponible : aucun rendu ne peut être tiré du canevas."
     : !provenance ? "Provenance inconnue : le rendu n’est pas exporté."
+    : !provenance.auteur ? "Auteur inconnu : le rendu n’est pas exporté (la provenance porte son auteur)."
     : provenance.nonEnregistre ? "Enregistrez d’abord : le rendu porte sur une révision enregistrée, pas sur les modifications non enregistrées."
     : !maillageAJour ? "Maillage en cours de calcul : le rendu attend la géométrie du document affiché." : null;
   /** Rendu du modèle de la vue (qualité complète), PNG portant sa provenance ; null : indisponible (raison affichée). */
@@ -835,7 +836,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       const actif = scenes.find((s) => s.id === sceneActive) ?? null;
       const p = studioProvenanceRendu({
         etude: provenance.etude, variante: provenance.variante, revisionId: provenance.revisionId,
-        scene: actif ? { id: actif.id, nom: actif.name } : null, date: new Date(), camera: cameraCourante(m),
+        scene: actif ? { id: actif.id, nom: actif.name } : null, date: new Date(), camera: cameraCourante(m), auteur: provenance.auteur ?? null,
       });
       const reglage = m.reglage;
       m.qualiteTenue = true;
@@ -867,7 +868,8 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
       const actif = scenes.find((s) => s.id === sceneActive) ?? null;
       const p = studioProvenanceRendu({
         etude: provenance.etude, variante: provenance.variante, revisionId: provenance.revisionId,
-        scene: actif ? { id: actif.id, nom: actif.name } : null, date: new Date(), camera: cameraCourante(m),
+        scene: actif ? { id: actif.id, nom: actif.name } : null, date: new Date(), camera: cameraCourante(m), auteur: provenance.auteur ?? null,
+        parametres: { largeurPx: m.renderer.domElement.width, hauteurPx: m.renderer.domElement.height, qualite: "complète" },
       });
       // Le rendu exporté est toujours en qualité complète (la dégradation ne vaut que pour la présentation à l'écran).
       const reglage = m.reglage;

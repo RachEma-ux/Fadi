@@ -146,6 +146,9 @@ export function Rapport({ nom, resultat, unite, surUnite, enCours = false }: { n
       {r.entites.cercles + r.entites.arcs + r.entites.polylignes > 0 && <p data-studio-import-courbes>{`Courbes : ${r.entites.cercles} cercle(s), ${r.entites.arcs} arc(s), ${r.entites.polylignes} polyligne(s).`}</p>}
       {r.bornes && <p data-studio-import-bornes>{`Étendue : X de ${metres(r.bornes.min.x, LOCALE)} à ${metres(r.bornes.max.x, LOCALE)} m, Y de ${metres(r.bornes.min.y, LOCALE)} à ${metres(r.bornes.max.y, LOCALE)} m (repère local).`}</p>}
       {r.nonNatifs !== undefined && r.nonNatifs > 0 && <p data-studio-import-non-natifs={r.nonNatifs}>{`${r.nonNatifs} entité(s) conservée(s) comme éléments non natifs (non éditables, exclues des métrés).`}</p>}
+      <p data-studio-import-reperes={`${r.reperes.source.repere}>${r.reperes.cible.repere}`}>{r.reperes.echelle === null
+        ? "Repères : repère général (WCS) du fichier vers le repère local du document (m) ; conversion en attente de l’unité."
+        : `Repères : repère général (WCS) du fichier vers le repère local du document (m) · facteur ${metres(r.reperes.echelle, LOCALE)} · aucune translation ni rotation · Z ignoré.`}</p>
       {r.zIgnores > 0 && <p>{`${r.zIgnores} entité(s) avec une cote Z non nulle : projetée(s) sur le plan, Z ignoré.`}</p>}
       {nonPris === 0
         ? <p data-studio-import-tout-pris>Toutes les entités lues sont prises.</p>

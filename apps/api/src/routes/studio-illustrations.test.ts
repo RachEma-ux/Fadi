@@ -31,7 +31,7 @@ app.use((err: unknown, _req: unknown, res: { status: (n: number) => { json: (b: 
 const V = "/projects/p/studio/studies/s/variants/v";
 const camera = { projection: "perspective" as const, position: { x: 12, y: -9, z: 7 }, target: { x: 0, y: 0, z: 0 }, fov: 45 };
 function rendu(over: { etude?: string; variante?: string; revisionId?: string } = {}) {
-  return studioProvenanceRendu({ etude: { id: over.etude ?? "s", nom: "Étude" }, variante: { id: over.variante ?? "v", nom: "Variante" }, revisionId: over.revisionId ?? "r1", scene: null, date: new Date("2026-10-25T09:00:00Z"), camera });
+  return studioProvenanceRendu({ etude: { id: over.etude ?? "s", nom: "Étude" }, variante: { id: over.variante ?? "v", nom: "Variante" }, revisionId: over.revisionId ?? "r1", scene: null, date: new Date("2026-10-25T09:00:00Z"), camera , auteur: { id: "proprietaire", email: null } });
 }
 function pixels(w = 16, h = 12) {
   const rgba = new Uint8Array(w * h * 4);
