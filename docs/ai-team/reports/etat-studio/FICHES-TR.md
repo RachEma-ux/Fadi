@@ -1,7 +1,7 @@
 # Fiches de traçabilité TR-* (annexe C) — preuve et contre-preuve individuelles
 
 > Document **généré** par `node scripts/registre/etat-studio.mjs --ecrire` depuis le registre et les fiches M004 ; la CI le
-> recalcule à chaque commit. Registre SHA-256 `67f954cc41b424da018289340722a8e4efaf9e1dd00c8f73b64b723a03b61f9e` ; fiches `docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json`.
+> recalcule à chaque commit. Registre SHA-256 `424a049ac6aecc9f92f72379f5c921ee12f861c6b708ac64edc990812668dca5` ; fiches `docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json`.
 
 Règle C (Checklist, annexe C) appliquée à chaque fiche : libellé exact, source, responsable, contrat, composant, tests
 positifs et négatifs, preuves, décisions, état et verdict ; **une preuve absente reste « à produire »**. Preuve = contrôle
@@ -65,8 +65,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Index choisit cible différente après insertion/suppression : critère échoue malgré gain p95.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (partiel) : Depuis F5, l'index réutilisé est éprouvé sur des suites d'insertions et de suppressions contre le parcours linéaire. Fonction absente : aucune trace des cas ambigus (plusieurs cibles à égalité) n'est produite ; le corpus ne comporte pas de références liées (cotes associatives, liens) parmi les objets indexés.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-AC-005
 
@@ -158,8 +158,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Importer profil ou acquérir rôle admin technique : toujours refus si droit métier absent.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (partiel) : Refus serveur de l'approbation au concepteur et au rôle d'administration technique (accès support) désormais testés. Fonction absente : « Approuver » n'est pas un outil du catalogue (aucune découverte par recherche possible) et aucun import de profil n'existe.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-AC-011
 
@@ -650,8 +650,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Déclarer deux toolId identiques même si labels distincts : validation rejette sans écrasement de dictionnaire.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Cas négatif vérifié (préexistant). Le cas positif demande une nouvelle capacité d'outil (échelle, studio.arch.ladder) au registre des outils, propriété du lot OUT : non implémentée dans le lot PUB pour ne pas réécrire ses fichiers.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-028
 
@@ -2028,8 +2028,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Réponse calcul R12 après modification R13 ou droits révoqués : aucun engagement courant.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Rapprochement du 25 octobre 2026 (non couvert) : Aucun calcul booléen dans Studio V1 (déclaré par le test « PERF-07 déclaré non applicable (aucun booléen exact dans Studio V1), jamais simulé », apps/web/src/modules/studio/chargement/perf.test.ts:22) ; capture R12 / vérification droits / engagement d'un résultat de Worker non testés. Infrastructure Worker existante mais sans engagement transaction…
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-IF-004
 
@@ -2075,8 +2075,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : actorId forgé, scope interprojet ou répétition incompatible : refus atomique, aucune permission créée.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (partiel) : Négatif désormais complet (actorId forgé refusé 400, portée d'un autre projet 404, même requestId au contenu différent 409, aucune écriture, membres inchangés, lecteur toujours refusé). Positif : fonction absente pour les attributs prescrits targetIds, operation et mode (l'enveloppe implémentée porte contractVersion, requestId, baseRevisionId, commands[toolI…
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-IF-007
 
@@ -2398,8 +2398,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Deux faces voisines plausibles : aucun rattachement automatique par seule proximité.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Non traité dans ce lot : une annotation référencée à une face 3D elle-même exige un nouveau type de cote sur les faces de solides (géométrie 3D, lot F) ; la preuve reste celle de l'arête source (lot F1).
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-INV-014
 
