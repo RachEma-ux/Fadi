@@ -67,6 +67,8 @@ export interface MoteurCarte {
    * (null : fond seul), emprise de la vue courante en rectangle ; un clic y recentre la carte.
    */
   afficherMiniCarte(conteneur: HTMLElement | null, coucheId: string | null): void;
+  /** Contour de l'unité choisie dans la barre territoriale (lot H), en GeoJSON WGS 84 ; null : retiré. */
+  afficherTerritoire(contour: unknown | null): void;
   /** Image de la mini-carte (impression), ou null si elle n'est pas affichée. */
   canevasMiniCarte(): HTMLCanvasElement | null;
   detruire(): void;

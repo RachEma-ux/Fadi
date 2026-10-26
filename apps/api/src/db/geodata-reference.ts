@@ -30,11 +30,12 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { basename, dirname, join } from "node:path";
 import { Pool } from "pg";
-import { bornesRobustes, estMotifAbsence, lireDroits, type MotifAbsence, MAX_PIXELS_RASTER, OBJETS_PAR_COUCHE, validerDeclarationRaster, validerGeoJSON, verifierUsage, type ClasseRaster, type DescriptionRaster, type ObjetImporte, type PaletteRaster, type StyleCouche } from "@parcours/geodata-model";
+import { validerDeclarationTerritoire, bornesRobustes, estMotifAbsence, lireDroits, type MotifAbsence, MAX_PIXELS_RASTER, OBJETS_PAR_COUCHE, validerDeclarationRaster, validerGeoJSON, verifierUsage, type ClasseRaster, type DescriptionRaster, type ObjetImporte, type PaletteRaster, type StyleCouche } from "@parcours/geodata-model";
 import { lireGeoTiff, type GrilleRaster } from "../lib/geodata/raster.js";
 import { lireGeoPackage } from "../lib/geodata/geopackage.js";
 import { empreinteAttendue } from "../lib/geodata/empreinte-fiche.js";
 import { codesDesObjets, ecrireVersion, type IndicateurDeclare, type LigneDouar } from "../lib/geodata/versions.js";
+import { chargerTerritoires, type Executeur } from "../lib/geodata/territoires.js";
 
 export interface FicheSource {
   cle: string; titre: string; producteur: string; theme: string; couverture: string; description: string;
@@ -55,6 +56,25 @@ export interface FicheSource {
   };
   indicateurs?: IndicateurDeclare[];
   superficie?: boolean;
+  /**
+   * Place de la couche dans le découpage territorial d'un pays (lot H, D-GD-28) : une fois la version publiée, ses unités
+   * sont chargées dans `geodata_territoires` (barre territoriale de l'interface, indépendante des couches affichées).
+   */
+  territoire?: unknown;
+}
+
+/**
+ * Découpage territorial de la fiche (lot H) : chargé depuis la version publiée de cette source et de cette empreinte ;
+ * rien si la fiche ne déclare pas `territoire`. Une déclaration invalide est une erreur (jamais ignorée en silence).
+ */
+async function assurerTerritoires(ex: Executeur, fiche: FicheSource, empreinte: string) {
+  if (fiche.territoire === undefined) return;
+  const d = validerDeclarationTerritoire(fiche.territoire);
+  if (!d.ok) throw new Error(`Fiche ${fiche.cle} : ${d.erreurs.join(" ; ")}`);
+  const [v] = (await ex.query("SELECT v.id FROM geodata_versions v JOIN geodata_sources s ON s.id = v.source_id WHERE s.cle = $1 AND v.empreinte = $2 AND v.espace_id IS NULL AND v.etat = 'publiee'", [fiche.cle, empreinte])).rows as { id: string }[];
+  if (!v) { console.log(`Découpage territorial ${d.declaration.pays} (rang ${d.declaration.rang}) : version non publiée, rien de chargé.`); return; }
+  const b = await chargerTerritoires(ex, v.id, d.declaration);
+  console.log(`Découpage territorial ${b.pays} (rang ${b.rang}, ${d.declaration.niveau.pluriel}) : ${b.unites} unité(s) ${b.deja ? "déjà chargée(s)" : "chargée(s)"}.`);
 }
 
 /**
@@ -210,6 +230,7 @@ async function importer(chemin: string, preparateur: string) {
       const [deja] = (await pre.query("SELECT v.id, v.etat FROM geodata_versions v JOIN geodata_sources s ON s.id = v.source_id WHERE s.cle = $1 AND v.empreinte = $2 AND v.espace_id IS NULL", [fiche.cle, empreinteAttendue(fiche)])).rows;
       if (deja && !(argument("publier-par") && deja.etat === "preparation")) {
         console.log(`Version déjà présente (même source, empreinte identique) : ${deja.id} (${deja.etat}) ; aucune nouvelle version.`);
+        await assurerTerritoires(pre, fiche, empreinteAttendue(fiche));
         return;
       }
     } finally {
@@ -308,6 +329,7 @@ async function importer(chemin: string, preparateur: string) {
         // Reprise du parcours en deux temps : la version préparée plus tôt est publiée, aux conditions qu'elle porte.
         await publier(deja.id);
       }
+      await assurerTerritoires(client, fiche, empreinte);
       return;
     }
     const prepareParId = await role(preparateur, "gestionnaire-donnees");
@@ -330,7 +352,7 @@ async function importer(chemin: string, preparateur: string) {
     });
     await client.query("COMMIT");
     console.log(`Version préparée : ${ecrite.versionId} (couche ${ecrite.coucheId}, ${ecrite.objets} objets, ${ecrite.reparees} géométrie(s) réparée(s), ${ecrite.indicateurs.length} indicateur(s)).`);
-    if (publierPar) await publier(ecrite.versionId);
+    if (publierPar) { await publier(ecrite.versionId); await assurerTerritoires(client, fiche, empreinte); }
   } catch (e) {
     await client.query("ROLLBACK").catch(() => undefined);
     throw e;

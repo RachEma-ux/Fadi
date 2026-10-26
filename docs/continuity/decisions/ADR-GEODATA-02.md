@@ -236,6 +236,19 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         pas un contournement de l'export. La fenêtre est ouverte au clic (sinon bloquée), l'image autorisée (titre,
         légende, échelle, attributions, mini-carte en encart si elle est affichée) y est posée puis imprimée ; un refus
         y est expliqué avec ses motifs.
+   - D-GD-28 (26 octobre 2026, lot H) — **navigation territoriale permanente, découpage du pays en base** (choix du
+     maître d'ouvrage : « Fadi neutre, données du pays en base » ; aucun référentiel territorial dans le code) :
+     1. La barre de navigation (pays › niveau 1 › … › niveau 4, une liste par niveau, Retour Alt+↑) fait partie de
+        l'interface : elle est toujours affichée et ne dépend ni des couches posées ni de la source des couches.
+     2. Le découpage vit en base : `geodata_pays` (code ISO alpha-2, nom, noms des niveaux) et `geodata_territoires`
+        (pays, rang 1–4, code, nom, parent, contour, version source). Il se charge à la publication d'une fiche
+        qualifiée qui déclare `territoire` { pays, nomPays, rang, niveau { singulier, pluriel }, parent } ; le
+        chargement est idempotent par version et rejoué par la chaîne d'import (aussi pour une version déjà présente).
+     3. Le parent se déduit par une règle déclarée dans la fiche : `codes-hcp` (code HCP du niveau supérieur) ou
+        `inclusion` (point intérieur du contour dans le contour du niveau supérieur, PostGIS). Le Maroc (fiches HCP
+        RGPH 2024, rangs 1 à 4) est le premier pays ; un autre pays s'ajoute par ses fiches, sans code.
+     4. Choisir une unité cadre la carte sur son emprise et trace son contour (attribution de la version source) ;
+        une base sans découpage l'annonce, sans rien inventer.
 
 ## Conséquences
 

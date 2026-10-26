@@ -37,7 +37,11 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
   inversion, couleur par classe depuis la légende.
 - Arbre d'indicateurs (lot F, D-GD-26) : thèmes, familles, recherche sans accents.
 - Mini-carte de situation (Alt+M) et impression directe (Alt+I, mêmes droits que l'export) (lot G, D-GD-27). Lots A2 à G
-  livrés ; aucune suite engagée sans demande du maître d'ouvrage.
+  livrés.
+- Navigation territoriale permanente (lot H, D-GD-28) : barre pays › niveaux toujours affichée, découpage en base
+  (`geodata_pays`, `geodata_territoires`) chargé depuis les fiches qui déclarent `territoire` ; Maroc (HCP, 4 niveaux)
+  d'abord. En préproduction, le découpage arrive avec l'import automatique (`PREPROD_GEODATA_IMPORT_AUTO_PAR`). Aucune
+  suite engagée sans demande du maître d'ouvrage.
 - Arabe là où il est nécessaire (D-GD-21) : une donnée publiée seulement en arabe (noms des douars) est affichée en
   arabe (rtl, jamais traduite) ; sinon le français seul.
 - Indicateurs communaux complémentaires (D-GD-20) : logement urbain, transport domicile – travail, CEE ; régénération :

@@ -12717,5 +12717,15 @@
       "ordre": 843
     }
   ],
-  "superficie": true
+  "superficie": true,
+  "territoire": {
+    "pays": "MA",
+    "nomPays": "Maroc",
+    "rang": 4,
+    "niveau": {
+      "singulier": "Arrondissement",
+      "pluriel": "Arrondissements"
+    },
+    "parent": "codes-hcp"
+  }
 }

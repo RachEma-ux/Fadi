@@ -41,5 +41,15 @@
     }
   },
   "indicateurs": [],
-  "superficie": true
+  "superficie": true,
+  "territoire": {
+    "pays": "ZZ",
+    "nomPays": "Pays synthétique (test)",
+    "rang": 1,
+    "niveau": {
+      "singulier": "Région",
+      "pluriel": "Régions"
+    },
+    "parent": "codes-hcp"
+  }
 }

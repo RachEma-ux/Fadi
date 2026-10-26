@@ -137,6 +137,15 @@ Barre d'outils : « Mini-carte de situation » (Alt+M) montre l'emprise de la vu
 y recentre la carte. « Imprimer la carte » (Alt+I) imprime une carte enregistrée, après le même contrôle des droits que
 l'export ; la mini-carte figure en encart si elle est affichée.
 
+## Navigation territoriale (lot H, D-GD-28)
+
+Au-dessus de la carte, en permanence : pays, puis une liste par niveau (Région › Province ou préfecture › Commune ›
+Arrondissement pour le Maroc) et Retour (Alt+↑). Elle ne dépend d'aucune couche affichée : le découpage est en base
+(`geodata_pays`, `geodata_territoires`), chargé par la chaîne d'import depuis les fiches qui déclarent `territoire`
+(`pays`, `nomPays`, `rang` 1–4, `niveau` { `singulier`, `pluriel` }, `parent` : `codes-hcp` ou `inclusion`). API :
+`GET /geodata/api/territoires`, `…/territoires/:pays/unites?parent=`, `…/territoires/:pays/unites/:code?rang=`
+(ancêtres, nombre d'enfants, contour simplifié, attribution).
+
 ## Fiche territoriale (D-GD-22)
 
 La fiche d'une entité range ses indicateurs par thème ; une famille déclinée devient un tableau (modalités ×

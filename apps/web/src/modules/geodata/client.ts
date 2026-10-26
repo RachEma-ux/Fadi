@@ -2,7 +2,7 @@
  * Client minimal de GeoData : le SEUL fichier du module qui appelle le serveur, et seulement sous `/geodata/api` (test
  * d'indépendance). Le client d'API général de Fadi n'est jamais importé : aucune notion de projet, aucun contexte de projet.
  */
-import type { Composition, DescriptionRaster, DroitsVersion, Milieu, MotifAbsence, RapportImport, Sexe, StyleCouche } from "@parcours/geodata-model";
+import type { Composition, DescriptionRaster, DroitsVersion, Milieu, MotifAbsence, PaysTerritorial, RapportImport, Sexe, StyleCouche, UniteTerritoriale } from "@parcours/geodata-model";
 
 export const RACINE_API = "/geodata/api";
 
@@ -79,7 +79,19 @@ export interface ExportRecu { id: string; etat: "autorise" | "refuse"; carteRevi
 export interface CategorieRecue { readonly id: string; readonly libelle: string; readonly ordre: number; readonly themes: readonly string[] }
 export interface RangementRecu { readonly categories: readonly CategorieRecue[]; readonly affectations: Readonly<Record<string, string>>; readonly modifiable: boolean }
 
+/** Unité du découpage territorial (lot H) : ancêtres, emprise, contour simplifié pour l'affichage, attribution. */
+export interface UniteTerritorialeRecue extends UniteTerritoriale {
+  readonly ancetres: readonly { code: string; nom: string; rang: 1 | 2 | 3 | 4 }[];
+  readonly enfants: number;
+  readonly contour: unknown;
+  readonly attribution: string;
+}
+
 export const api = {
+  /** Découpage territorial en base (lot H, D-GD-28) : pays chargés, unités d'un niveau, une unité. */
+  territoires: () => appeler<{ pays: PaysTerritorial[] }>("/territoires"),
+  unitesTerritoriales: (pays: string, parent: string | null) => appeler<{ unites: UniteTerritoriale[] }>(`/territoires/${encodeURIComponent(pays)}/unites${parent ? `?parent=${encodeURIComponent(parent)}` : ""}`),
+  uniteTerritoriale: (pays: string, code: string, rang?: number) => appeler<UniteTerritorialeRecue>(`/territoires/${encodeURIComponent(pays)}/unites/${encodeURIComponent(code)}${rang ? `?rang=${rang}` : ""}`),
   espace: () => appeler<EspaceRecu>("/espace"),
   catalogue: (q = "") => appeler<{ couches: CoucheRecue[] }>(`/catalogue${q ? `?q=${encodeURIComponent(q)}` : ""}`),
   couche: (id: string) => appeler<CoucheRecue>(`/couches/${encodeURIComponent(id)}`),

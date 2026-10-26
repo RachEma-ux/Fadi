@@ -18,6 +18,7 @@
 - [x] GEO-HCP-E — Fiche territoriale par thème, ventilations, impression (Alt+P), arrondissements de la commune, douars de la commune rurale (D-GD-22).
 - [x] GEO-HCP-F — Arbre d'indicateurs par thème, avec recherche (D-GD-26).
 - [x] GEO-HCP-G — Mini-carte de situation et impression directe (D-GD-27).
+- [x] GEO-HCP-H — Navigation territoriale permanente, découpage du pays en base (MA d'abord) (D-GD-28).
 - [ ] GEO-V11 — Extensions V1.1 : partage nominatif, espaces collectifs, KML/KMZ/Shapefile, analyses avancées.
 
 ## En cours

@@ -12717,5 +12717,15 @@
       "ordre": 843
     }
   ],
-  "superficie": true
+  "superficie": true,
+  "territoire": {
+    "pays": "MA",
+    "nomPays": "Maroc",
+    "rang": 1,
+    "niveau": {
+      "singulier": "Région",
+      "pluriel": "Régions"
+    },
+    "parent": "codes-hcp"
+  }
 }
