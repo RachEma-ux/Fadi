@@ -147,7 +147,15 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         non publiée ; jamais zéro.
      4. Les deux autres fichiers transmis sont ceux déjà intégrés (mêmes empreintes). La base des **douars** (33 000
         douars, sans contour, noms en arabe seulement) n'est pas une couche : elle ira dans la fiche territoriale de la
-        commune rurale (lot E), par code, type de douar, ménages et population, sans les noms arabes (D-GD-17).
+        commune rurale (lot E), par code, nom (en arabe, D-GD-21), type de douar, ménages et population.
+
+   - D-GD-21 (26 octobre 2026, consigne du maître d'ouvrage : « là où l'arabe est nécessaire, utilise-la ») —
+     **arabe là où il est nécessaire**, précision de D-GD-17 point 2 :
+     1. Une donnée publiée **seulement en arabe** (noms des douars, de leur fraction et de leur commune dans la base des
+        douars du HCP) est affichée en arabe, telle quelle : écriture de droite à gauche (`dir="rtl"`, `lang="ar"`),
+        jamais traduite ni translittérée par Fadi (`translate="no"`).
+     2. Quand un nom existe en français (régions, provinces, communes, arrondissements, villes), seul le français est
+        affiché, comme décidé le 26 octobre 2026 ; l'interface reste en français et en anglais (aucune interface arabe).
 
 ## Conséquences
 

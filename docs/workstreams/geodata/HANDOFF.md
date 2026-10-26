@@ -25,6 +25,8 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 - Lot A2 (D-GD-17 point 5) : 648 indicateurs HCP par niveau (thème, famille, modalité, milieu, sexe) en tableau CSV,
   arrondissements (41/41 contours OSM niveau 10) ; PR en cours sur `ccr-e71fe633-hjxnjf`. Ensuite, un lot à la fois :
   B, E, C, D, F, G (TASKS).
+- Arabe là où il est nécessaire (D-GD-21) : une donnée publiée seulement en arabe (noms des douars) est affichée en
+  arabe (rtl, jamais traduite) ; sinon le français seul.
 - Indicateurs communaux complémentaires (D-GD-20) : logement urbain, transport domicile – travail, CEE ; régénération :
   `preparer_hcp.py --excel … --indicateurs … --logement … --transport … --cee …` (fichiers HCP hors dépôt, empreintes
   dans les fiches).
