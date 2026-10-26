@@ -258,6 +258,8 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         source) par la chaîne d'import (`--archiver`), à chaque démarrage de l'API, même sans
         `GEODATA_IMPORT_AUTO_PAR` (aucun compte requis) ; un fichier inchangé n'est pas réécrit, un fichier qui n'est plus
         livré reste en base, marqué retiré. Bilan dans la quittance `GET /version/donnees`.
+     3. Au même démarrage, le découpage territorial est écrit en base depuis les versions déjà publiées des fiches qui
+        le déclarent (rien n'est publié, aucun compte, aucune commande pour le maître d'ouvrage).
 
 ## Conséquences
 

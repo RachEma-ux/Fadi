@@ -203,11 +203,22 @@ async function appliquerRetraits(retraits: readonly RetraitDeclare[], publierPar
   }
 }
 
-/** Archive en base de tous les fichiers livrés (D-GD-29) ; aucun compte requis, idempotent par empreinte. */
+/**
+ * Archive en base de tous les fichiers livrés (D-GD-29), puis découpage territorial (D-GD-28) chargé depuis les versions
+ * **déjà publiées** des fiches qui le déclarent : rien n'est publié ici, aucun compte n'est requis ; idempotent.
+ */
 async function archiver() {
   const pool = new Pool({ connectionString: process.env["DATABASE_URL"] });
   try {
     console.log(ligneBilanArchive(await archiverFichiers(pool, dossierFiches())));
+    for (const chemin of fichesLivrees()) {
+      try {
+        const fiche = JSON.parse(readFileSync(chemin, "utf8")) as FicheSource;
+        if (fiche.territoire !== undefined) await assurerTerritoires(pool, fiche, empreinteAttendue(fiche));
+      } catch (e) {
+        console.error(`Découpage territorial non chargé (${basename(chemin, ".json")}) : ${e instanceof Error ? e.message : e}`);
+      }
+    }
   } finally {
     await pool.end();
   }

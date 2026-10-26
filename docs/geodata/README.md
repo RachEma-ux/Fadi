@@ -151,7 +151,8 @@ Arrondissement pour le Maroc) et Retour (Alt+↑). Elle ne dépend d'aucune couc
 L'application ne contient aucune donnée : elle lit la base par l'API. Au démarrage de l'API, l'outil d'import copie
 chaque fichier livré du dossier `docs/geodata/sources/` dans `geodata_fichiers` (rôle `fiche`, `donnees`,
 `correspondance`, `extrait` ou `declaration` ; SHA-256 ; contenu compressé par PostgreSQL), puis importe les fiches si
-`GEODATA_IMPORT_AUTO_PAR` est fourni. À la main : `node apps/api/dist/geodata-reference.js --archiver`.
+`GEODATA_IMPORT_AUTO_PAR` est fourni. Le découpage territorial est aussi écrit en base à chaque démarrage, depuis les
+versions déjà publiées, sans compte ni commande. À la main : `node apps/api/dist/geodata-reference.js --archiver`.
 
 ## Fiche territoriale (D-GD-22)
 

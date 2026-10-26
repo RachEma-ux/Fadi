@@ -43,7 +43,8 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
   d'abord. En préproduction, le découpage arrive avec l'import automatique (`PREPROD_GEODATA_IMPORT_AUTO_PAR`).
 - Règle permanente (D-GD-29, `AGENTS.md`) : interface et base de données toujours distinctes ; aucune donnée dans
   l'application. Tous les fichiers de données livrés sont archivés en base (`geodata_fichiers`) à chaque démarrage de
-  l'API, même sans compte d'import. Aucune suite engagée sans demande du maître d'ouvrage.
+  l'API, même sans compte d'import ; le découpage territorial aussi, depuis les versions déjà publiées. Aucune suite
+  engagée sans demande du maître d'ouvrage.
 - Arabe là où il est nécessaire (D-GD-21) : une donnée publiée seulement en arabe (noms des douars) est affichée en
   arabe (rtl, jamais traduite) ; sinon le français seul.
 - Indicateurs communaux complémentaires (D-GD-20) : logement urbain, transport domicile – travail, CEE ; régénération :
