@@ -897,11 +897,14 @@ try {
       for (let i = 1; i <= 8; i++) await page.mouse.move(cx + (dx * i) / 8, cy + (dy * i) / 8);
       await page.mouse.up({ button });
     };
+    // La caméra publiée (data-studio-camera) est arrondie au dixième de millimètre par coordonnée (versLocal3d) :
+    // l'écart de distance dû à l'arrondi est au plus √3 × 1e-4 m.
+    const TOL_ARRONDI = Math.sqrt(3) * 1e-4;
     const c0 = await camera();
     await glisser(120, 40);
     const c1 = await camera();
     check("A.3-05 : orbite (glisser) — la caméra tourne autour de la même cible, à la même distance",
-      c0?.projection === "perspective" && JSON.stringify(c1.target) === JSON.stringify(c0.target) && JSON.stringify(c1.position) !== JSON.stringify(c0.position) && Math.abs(distance(c1) - distance(c0)) < 1e-6 * Math.max(1, distance(c0)),
+      c0?.projection === "perspective" && JSON.stringify(c1.target) === JSON.stringify(c0.target) && JSON.stringify(c1.position) !== JSON.stringify(c0.position) && Math.abs(distance(c1) - distance(c0)) <= Math.max(1e-6 * Math.max(1, distance(c0)), TOL_ARRONDI),
       JSON.stringify([c0, c1]));
     await page.mouse.move(cx, cy);
     await page.mouse.wheel(0, -400);
@@ -911,7 +914,7 @@ try {
     await glisser(80, -60, "right");
     const c3 = await camera();
     check("A.3-05 : panoramique (glisser droit) — cible et caméra translatées ensemble, distance gardée",
-      JSON.stringify(c3.target) !== JSON.stringify(c2.target) && Math.abs(distance(c3) - distance(c2)) < 1e-6 * Math.max(1, distance(c2)), JSON.stringify([c2, c3]));
+      JSON.stringify(c3.target) !== JSON.stringify(c2.target) && Math.abs(distance(c3) - distance(c2)) <= Math.max(1e-6 * Math.max(1, distance(c2)), TOL_ARRONDI), JSON.stringify([c2, c3]));
     page.off("request", surEnvoi);
     check("A.3-05 : orbite, zoom et panoramique ne modifient pas le document — brouillon, solides et envois inchangés",
       (await portee()).includes("(2 commande(s)") && (await vueLibre.getAttribute("data-studio-solides-libres")) === "2" && envoisNav.length === 0, `${await portee()} ${envoisNav.join()}`);
