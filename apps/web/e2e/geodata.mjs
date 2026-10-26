@@ -422,6 +422,8 @@ check("Paramètres : fournisseur saisi puis modifié", ((await pf.locator("[data
 const stockage = await pf.evaluate(() => localStorage.getItem("fadi.fournisseurs-carte.v1") ?? "");
 await pf.goto(`${BASE}/geodata`);
 await pf.locator("[data-gd-fond]").waitFor();
+// Les fournisseurs saisis sont relus après le montage : attendre leur option avant de lire la liste (sans changer le critère).
+await pf.locator("[data-gd-fond] option", { hasText: "Fournisseur recette modifié" }).waitFor({ state: "attached", timeout: 15_000 }).catch(() => {});
 const optionsFond = await pf.locator("[data-gd-fond] option:not([disabled])").allTextContents();
 check("GeoData : fonds MapTiler et fournisseur saisi proposés ; nouvelle carte sur le fond MapTiler par défaut", optionsFond.includes("MapTiler — Satellite") && optionsFond.includes("Fournisseur recette modifié") && (await pf.locator("[data-gd-fond]").inputValue()) === "navigateur:maptiler:satellite", optionsFond.join(" | "));
 await pf.locator("[data-gd-avis-fond]").waitFor({ timeout: 15_000 });
