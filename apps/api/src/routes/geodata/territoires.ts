@@ -23,12 +23,13 @@ const T = `(SELECT t.* FROM geodata_territoires t JOIN geodata_versions v ON v.i
 
 territoiresRouter.get("/territoires", async (_req, res) => {
   const pays = await requete<{ code: string; nom: string; niveaux: Record<string, { singulier: string; pluriel: string }> }>("SELECT code, nom, niveaux FROM geodata_pays ORDER BY nom");
-  const comptes = await requete<{ pays: string; rang: number; n: number }>(`SELECT pays, rang, count(*)::int AS n FROM ${T} x GROUP BY pays, rang`);
+  const comptes = await requete<{ pays: string; rang: number; n: number; versions: string[] }>(`SELECT pays, rang, count(*)::int AS n, array_agg(DISTINCT version_id) AS versions FROM ${T} x GROUP BY pays, rang`);
   res.json({
     pays: pays.map((p) => ({
       code: p.code, nom: p.nom,
       niveaux: Object.entries(p.niveaux).map(([r, n]) => ({ rang: Number(r), singulier: n.singulier, pluriel: n.pluriel, unites: comptes.find((c) => c.pays === p.code && c.rang === Number(r))?.n ?? 0 }))
         .filter((n) => n.unites > 0).sort((a, b) => a.rang - b.rang),
+      versions: [...new Set(comptes.filter((c) => c.pays === p.code).flatMap((c) => c.versions))].sort(),
     })).filter((p) => p.niveaux.length > 0),
   });
 });

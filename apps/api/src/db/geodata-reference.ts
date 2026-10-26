@@ -35,13 +35,13 @@ import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { basename, dirname, join } from "node:path";
-import { Pool } from "pg";
+import { Pool, type PoolClient } from "pg";
 import { validerDeclarationTerritoire, bornesRobustes, estMotifAbsence, lireDroits, type MotifAbsence, MAX_PIXELS_RASTER, OBJETS_PAR_COUCHE, validerDeclarationRaster, validerGeoJSON, verifierUsage, type ClasseRaster, type DescriptionRaster, type ObjetImporte, type PaletteRaster, type StyleCouche } from "@parcours/geodata-model";
 import { lireGeoTiff, type GrilleRaster } from "../lib/geodata/raster.js";
 import { lireGeoPackage } from "../lib/geodata/geopackage.js";
 import { empreinteAttendue } from "../lib/geodata/empreinte-fiche.js";
 import { codesDesObjets, ecrireVersion, type IndicateurDeclare, type LigneDouar } from "../lib/geodata/versions.js";
-import { chargerTerritoires, type Executeur } from "../lib/geodata/territoires.js";
+import { chargerTerritoires } from "../lib/geodata/territoires.js";
 import { archiverFichiers, ligneBilanArchive } from "../lib/geodata/archive-fichiers.js";
 
 export interface FicheSource {
@@ -74,14 +74,26 @@ export interface FicheSource {
  * Découpage territorial de la fiche (lot H) : chargé depuis la version publiée de cette source et de cette empreinte ;
  * rien si la fiche ne déclare pas `territoire`. Une déclaration invalide est une erreur (jamais ignorée en silence).
  */
-async function assurerTerritoires(ex: Executeur, fiche: FicheSource, empreinte: string) {
+async function assurerTerritoires(ex: Pool | PoolClient, fiche: FicheSource, empreinte: string) {
   if (fiche.territoire === undefined) return;
   const d = validerDeclarationTerritoire(fiche.territoire);
   if (!d.ok) throw new Error(`Fiche ${fiche.cle} : ${d.erreurs.join(" ; ")}`);
   const [v] = (await ex.query("SELECT v.id FROM geodata_versions v JOIN geodata_sources s ON s.id = v.source_id WHERE s.cle = $1 AND v.empreinte = $2 AND v.espace_id IS NULL AND v.etat = 'publiee'", [fiche.cle, empreinte])).rows as { id: string }[];
   if (!v) { console.log(`Découpage territorial ${d.declaration.pays} (rang ${d.declaration.rang}) : version non publiée, rien de chargé.`); return; }
-  const b = await chargerTerritoires(ex, v.id, d.declaration);
-  console.log(`Découpage territorial ${b.pays} (rang ${b.rang}, ${d.declaration.niveau.pluriel}) : ${b.unites} unité(s) ${b.deja ? "déjà chargée(s)" : "chargée(s)"}.`);
+  // Une transaction propre (client dédié si l'appelant donne un pool) : le remplacement du rang et le recalcul des parents
+  // sont atomiques ; en cas d'échec, l'ancien découpage reste servi.
+  const client = ex instanceof Pool ? await ex.connect() : ex;
+  try {
+    await client.query("BEGIN");
+    const b = await chargerTerritoires(client, v.id, d.declaration);
+    await client.query("COMMIT");
+    console.log(`Découpage territorial ${b.pays} (rang ${b.rang}, ${d.declaration.niveau.pluriel}) : ${b.unites} unité(s) ${b.deja ? "déjà chargée(s)" : "chargée(s)"}.`);
+  } catch (e) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw e;
+  } finally {
+    if (ex instanceof Pool) (client as PoolClient).release();
+  }
 }
 
 /**

@@ -32,7 +32,6 @@ export interface CoucheNiveau { readonly coucheId: string; readonly rang: RangAd
 /** Étape du chemin : une entité dans laquelle on est descendu. */
 export interface EtapeNiveau { readonly coucheId: string; readonly rang: RangAdministratif; readonly code: string; readonly nom: string }
 
-export const LIBELLES_ENFANTS: Record<RangAdministratif, string> = { 1: "régions", 2: "provinces et préfectures", 3: "communes", 4: "arrondissements" };
 
 /** Une couche est navigable si elle porte au moins un code HCP. */
 export const coucheNavigable = (c: CoucheNiveau): boolean => c.codes.some(estCodeHcp);

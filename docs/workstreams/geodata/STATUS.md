@@ -79,6 +79,11 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   2,2 s ; second passage 0,4 s, rien réécrit ; deux fichiers plus livrés marqués retirés. Mode livraison (`--livraison`,
   sans compte) sur une base neuve (0 compte) : 53 versions publiées, 121 fichiers, découpage MA 12 / 75 / 1 487 / 41 en
   61 s ; second passage 1 s (53 « déjà présente »). CI : `GEODATA_IMPORT_AUTO=non` sur les recettes et le job `image`.
+  Revue adversariale après fusion (#349) : chargement du découpage en transaction propre, déclaration d'une fiche
+  répercutée sans nouvelle donnée (parents recalculés si la règle change ; test base), import arrêté avec l'API
+  (SIGTERM ; test), barre : « (…) » tant que la base n'a pas répondu (jamais « (0) »), sélecteur de pays nommé par un
+  span traduisible, « Retour » toujours suivi d'effet (repli par les couches), chemin appliqué aux seules couches des
+  versions du découpage courant (`versions` dans `/territoires`).
 - Navigation territoriale (lot H, D-GD-28) : `geodata-model/src/territoires.ts` (déclaration, règles de parent ; 3
   tests), tables `geodata_pays` / `geodata_territoires`, `lib/geodata/territoires.ts` (chargement idempotent, parents
   `codes-hcp` ou `inclusion`), routes `routes/geodata/territoires.ts`, `panneaux/BarreTerritoriale.tsx` (remplace le fil

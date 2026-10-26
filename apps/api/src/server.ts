@@ -10,7 +10,7 @@ import { mailRuntime } from "./lib/mailer/index.js";
 import { startAccountWorkers } from "./lib/account-jobs.js";
 import { startSurveillance } from "./lib/studio-surveillance-db.js";
 import { attacherTempsReel } from "./lib/temps-reel-canal.js";
-import { lancerImportAuto } from "./lib/geodata/import-auto.js";
+import { arreterImportAuto, lancerImportAuto } from "./lib/geodata/import-auto.js";
 
 const port = Number(process.env["PORT"] ?? 3001);
 const host = process.env["HOST"];
@@ -99,7 +99,8 @@ Promise.resolve()
     const server = app.listen(host ? { port, host } : { port }, () => {
       // eslint-disable-next-line no-console
       console.log(`Fadi API listening on :${port}${process.env["WEB_DIST"] ? " (sert aussi l'application)" : ""}`);
-      // Données GeoData livrées avec le code : fichiers archivés en base (D-GD-29), puis importés si GEODATA_IMPORT_AUTO_PAR est fourni (D-GD-23).
+      // Données GeoData livrées avec le code (D-GD-23, D-GD-29) : au démarrage, fichiers archivés en base, fiches importées et
+      // publiées par la livraison (ou au nom de GEODATA_IMPORT_AUTO_PAR), découpage territorial écrit ; GEODATA_IMPORT_AUTO=non coupe.
       lancerImportAuto();
     });
     // Connexions persistantes gardées plus longtemps que celles des relais et des clients (60 s) : un client qui
@@ -109,7 +110,7 @@ Promise.resolve()
     // Temps réel (Issue #283) : canal WebSocket sur le même serveur, drapeau FADI_TEMPS_REEL ; mêmes origines que la garde CSRF.
     const arreterTempsReel = attacherTempsReel(server, { origines: (process.env["WEB_ORIGIN"] ?? "http://localhost:5173").split(",") });
     // Arrêt (déploiement) : les clients sont prévenus (1001) puis le processus s'arrête comme avant, sans attendre les connexions.
-    process.once("SIGTERM", () => { arreterTempsReel(); setTimeout(() => process.exit(0), 200); });
+    process.once("SIGTERM", () => { arreterTempsReel(); arreterImportAuto(); setTimeout(() => process.exit(0), 200); });
   })
   .catch((err: unknown) => {
     // eslint-disable-next-line no-console

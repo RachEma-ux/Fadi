@@ -19,7 +19,8 @@ export function BarreTerritoriale(p: {
 }) {
   const pays = p.pays?.find((x) => x.code === p.paysCourant) ?? null;
   // Listes des niveaux, par parent (null = premier niveau), lues en base au besoin et gardées le temps de la page.
-  const [listes, setListes] = useState<Map<string, UniteTerritoriale[] | "erreur">>(new Map());
+  // « chargement » tant que la base n'a pas répondu : un compte inconnu n'est jamais affiché comme 0.
+  const [listes, setListes] = useState<Map<string, UniteTerritoriale[] | "erreur" | "chargement">>(new Map());
   const cle = (parent: string | null) => `${p.paysCourant}|${parent ?? ""}`;
   // Parent de chaque liste affichée : premier niveau (null), puis chaque unité choisie, jusqu'au niveau le plus fin.
   const parents: (string | null)[] = pays ? pays.niveaux.slice(0, p.chemin.length + 1).map((_, i) => (i === 0 ? null : p.chemin[i - 1]!.code)) : [];
@@ -28,7 +29,7 @@ export function BarreTerritoriale(p: {
     for (const parent of parents) {
       const k = cle(parent);
       if (listes.has(k)) continue;
-      setListes((m) => new Map(m).set(k, []));
+      setListes((m) => new Map(m).set(k, "chargement"));
       api.unitesTerritoriales(p.paysCourant, parent)
         .then((r) => setListes((m) => new Map(m).set(k, r.unites)))
         .catch(() => setListes((m) => new Map(m).set(k, "erreur")));
@@ -46,7 +47,10 @@ export function BarreTerritoriale(p: {
           <ol>
             <li>
               {p.pays.length > 1
-                ? <select aria-label="Pays" value={pays.code} onChange={(e) => p.onPays(e.target.value)} data-gd-pays translate="no">{p.pays.map((x) => <option key={x.code} value={x.code}>{x.nom}</option>)}</select>
+                ? <>
+                  <span id="gd-territoires-pays" className="sr-only">Pays</span>
+                  <select aria-labelledby="gd-territoires-pays" value={pays.code} onChange={(e) => p.onPays(e.target.value)} data-gd-pays>{p.pays.map((x) => <option key={x.code} value={x.code} translate="no">{x.nom}</option>)}</select>
+                </>
                 : n === 0 ? <span aria-current="location" translate="no" data-gd-pays-nom>{pays.nom}</span>
                 : <button type="button" onClick={() => p.onChoisir(0, null)} translate="no" data-gd-pays-nom>{pays.nom}</button>}
             </li>
@@ -60,7 +64,7 @@ export function BarreTerritoriale(p: {
                   <span aria-hidden="true" className="gd-niveaux-sep">›</span>
                   {/* Nom du niveau : donnée du découpage en base (jamais traduite), nom accessible de la liste. */}
                   <span id={`gd-niveau-${niveau.rang}`} className="sr-only" translate="no">{niveau.singulier}</span>
-                  <select aria-labelledby={`gd-niveau-${niveau.rang}`} value={choisi} onChange={(e) => p.onChoisir(i, e.target.value || null)} disabled={liste === "erreur" || (Array.isArray(liste) && !liste.length && !choisi)} data-gd-niveau-select={niveau.rang} translate="no">
+                  <select aria-labelledby={`gd-niveau-${niveau.rang}`} value={choisi} onChange={(e) => p.onChoisir(i, e.target.value || null)} disabled={!choisi && !(Array.isArray(liste) && liste.length > 0)} data-gd-niveau-select={niveau.rang} data-gd-niveau-etat={Array.isArray(liste) ? "recu" : liste ?? "chargement"} translate="no">
                     <option value="">{`${niveau.pluriel} (${Array.isArray(liste) ? liste.length : "…"})`}</option>
                     {Array.isArray(liste) && liste.map((u) => <option key={u.code} value={u.code}>{u.nom}</option>)}
                     {choisi && Array.isArray(liste) && !liste.some((u) => u.code === choisi) && <option value={choisi}>{p.chemin[i]!.nom}</option>}

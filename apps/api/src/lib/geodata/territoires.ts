@@ -5,6 +5,8 @@
  * remplace l'ancienne ; recharger la même version ne refait rien. Les parents sont recalculés pour ce rang et pour le
  * rang en dessous (chargé avant ou après, peu importe l'ordre des fiches) — jamais devinés : règle « codes-hcp » par les
  * codes, règle « inclusion » par un point intérieur contenu dans l'unité du rang supérieur.
+ * L'appelant encadre l'appel d'une transaction (remplacement d'un rang et recalcul des parents atomiques, invisibles tant
+ * qu'ils ne sont pas terminés) : voir `assurerTerritoires` dans `db/geodata-reference.ts`.
  */
 import { codeAdmis, parentsParCodes, type DeclarationTerritoire, type RangAdministratif, type RegleParent } from "@parcours/geodata-model";
 import type { PoolClient, QueryResultRow } from "pg";
@@ -49,12 +51,18 @@ export async function chargerTerritoires(ex: Executeur, versionId: string, d: De
   const [v] = await requete<{ couche_id: string; etat: string }>("SELECT c.id AS couche_id, v.etat FROM geodata_versions v JOIN geodata_couches c ON c.version_id = v.id WHERE v.id = $1", [versionId], ex);
   if (!v) throw new Error(`Version ${versionId} sans couche : découpage territorial non chargé.`);
   if (v.etat !== "publiee") throw new Error(`Version ${versionId} non publiée (${v.etat}) : découpage territorial non chargé.`);
-  const [deja] = await requete<{ n: number }>("SELECT count(*)::int AS n FROM geodata_territoires WHERE pays = $1 AND rang = $2 AND version_id = $3", [d.pays, d.rang, versionId], ex);
-  if (deja && deja.n > 0) return { pays: d.pays, rang: d.rang, unites: deja.n, deja: true };
+  // La déclaration de la fiche (nom du pays, noms du niveau, règle de parenté) est toujours répercutée, même quand les
+  // unités de cette version sont déjà en base : une fiche corrigée sans nouvelle donnée change la barre au redéploiement.
+  const regleAvant = await regleDuRang(ex, d.pays, d.rang);
   await requete(
     `INSERT INTO geodata_pays (code, nom, niveaux) VALUES ($1, $2, jsonb_build_object($3::text, $4::jsonb))
      ON CONFLICT (code) DO UPDATE SET nom = EXCLUDED.nom, niveaux = geodata_pays.niveaux || EXCLUDED.niveaux, mis_a_jour_le = now()`,
     [d.pays, d.nomPays, String(d.rang), JSON.stringify({ singulier: d.niveau.singulier, pluriel: d.niveau.pluriel, parent: d.parent })], ex);
+  const [deja] = await requete<{ n: number }>("SELECT count(*)::int AS n FROM geodata_territoires WHERE pays = $1 AND rang = $2 AND version_id = $3", [d.pays, d.rang, versionId], ex);
+  if (deja && deja.n > 0) {
+    if (regleAvant !== d.parent) await majParents(ex, d.pays, d.rang);
+    return { pays: d.pays, rang: d.rang, unites: deja.n, deja: true };
+  }
   await requete("DELETE FROM geodata_territoires WHERE pays = $1 AND rang = $2", [d.pays, d.rang], ex);
   const objets = await requete<{ code: string }>("SELECT code FROM geodata_objets WHERE couche_id = $1 AND ST_Dimension(geom) = 2", [v.couche_id], ex);
   const admis = objets.map((o) => o.code).filter((c) => codeAdmis(c, d.parent));

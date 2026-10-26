@@ -10,11 +10,9 @@ describe("archive en base des fichiers de données livrés (D-GD-29)", () => {
   const par = new Map(inventaire.map((f) => [f.chemin, f]));
 
   it("chaque fichier livré est inventorié, avec un rôle connu, sa taille et un type de média", () => {
-    const fichiers = [
-      ...readdirSync(DOSSIER).filter((f) => f.endsWith(".json")),
-      ...readdirSync(`${DOSSIER}donnees`).map((f) => `donnees/${f}`),
-      ...readdirSync(`${DOSSIER}correspondances`).map((f) => `correspondances/${f}`),
-    ].filter((f) => !f.split("/").pop()!.startsWith("."));
+    // Parcours indépendant de l'inventaire (récursif, fichiers cachés écartés) : tout fichier livré doit y être.
+    const parcourir = (d: string, prefixe: string): string[] => readdirSync(d, { withFileTypes: true }).filter((e) => !e.name.startsWith(".")).flatMap((e) => (e.isDirectory() ? parcourir(`${d}${e.name}/`, `${prefixe}${e.name}/`) : [`${prefixe}${e.name}`]));
+    const fichiers = parcourir(DOSSIER, "");
     expect(inventaire.map((f) => f.chemin).sort()).toEqual(fichiers.sort());
     for (const f of inventaire) {
       expect(ROLES_FICHIER).toContain(f.role);
