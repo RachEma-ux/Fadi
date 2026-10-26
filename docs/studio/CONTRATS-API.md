@@ -1,0 +1,155 @@
+# Contrats versionnés de l'API Studio
+
+Fichier **généré et vérifié** par `apps/api/src/testing/studio-contrats.test.ts` (ne pas éditer à la main : le test
+échoue si ce fichier diffère des contrats déclarés ; `STUDIO_CONTRATS_ECRIRE=1` le régénère). Source :
+`apps/api/src/lib/studio-contrats-routes.ts` (un contrat par constante) et `apps/api/src/lib/studio-contrats.ts`
+(mécanisme). Réserve G1 de l'ADR-STUDIO-PILOTE-01 (P-11) : chaque route de l'API Studio a un contrat versionné.
+
+77 contrats servent les 79 routes déclarées par `apps/api/src/routes/studio*.ts` (sous `/projects/:projectId/studio`).
+
+## Règles
+
+- **Identifiant** : `studio-api-<nom>/<version>`, un par contrat ; il couvre l'entrée (adresse, requête, corps validé par
+  le schéma zod de la route) et la réponse (statuts de succès, nature du corps, schéma zod de la réponse JSON).
+- **Exposition** : en-tête `X-Studio-Contrat` sur toute réponse de la route, succès comme refus (même convention
+  que `X-Studio-Revision` et `X-Studio-Package`) ; le corps n'est pas modifié, le client web existant est inchangé.
+- **Version demandée** : un client peut envoyer `X-Studio-Contrat: <identifiant>` ; un identifiant autre que celui
+  que la route sert est refusé avant tout accès : `400 { error: "contrat_incompatible", attendu, recu, message }`,
+  rien n'est lu ni écrit. Sans en-tête, la version courante est servie.
+- **Réponse** : schéma strict au premier niveau (un champ ajouté ou retiré fait échouer le test de contrat de la
+  route), typé en profondeur là où le client lit ; un document Studio est relu par le validateur de
+  `studio-document/1`. Un refus (4xx) porte au moins `{ error, message? }`.
+- **Évolution** : un champ facultatif ajouté, un statut de refus ou un paramètre facultatif nouveau gardent la version
+  (le schéma est mis à jour) ; retirer ou renommer un champ, en changer le type ou le sens, rendre obligatoire une
+  entrée facultative exigent une nouvelle version (`/2`), déclarée par un nouveau contrat.
+- **Nouvelle route Studio** : un contrat dans `lib/studio-contrats-routes.ts`, `avecContrat(CONTRAT_…)` sur la
+  déclaration (avant le gestionnaire), un cas dans `apps/api/src/routes/studio-contrats.test.ts`, puis ce document
+  régénéré. Sinon `testing/studio-contrats.test.ts` et la revue G1-03 (`testing/revue-g1.test.ts`) échouent.
+
+Contrôles : `apps/api/src/routes/studio-contrats.test.ts` (réponse conforme au schéma, statut, en-tête, refus d'une
+version incompatible sans écriture, inventaire à l'exécution) et `apps/api/src/testing/studio-contrats.test.ts`
+(inventaire statique, entrée, présent document).
+
+## `apps/api/src/routes/studio.ts`
+
+| Contrat | Route(s) | Objet | Entrée | Schémas zod d'entrée atteints | Succès | Réponse |
+|---|---|---|---|---|---|---|
+| `studio-api-etudes-lister/1` | `GET /studies` | Études du projet, et état de l'étude exemple du P.118. | Requête : `archives=1` facultatif (seul paramètre admis). | — | 200 | JSON : `studies`, `exemple` |
+| `studio-api-etude-creer/1` | `POST /studies` | Nouvelle étude et sa variante initiale (rejeu par `requestId`). | Corps : `{ name, requestId? }` (schéma `studySchema`). | `studySchema` | 201 | JSON : `study`, `variant`, `revision`, `canWrite`, `derivedFrom?`, `replayed` |
+| `studio-api-etude-lire/1` | `GET /studies/:studyId` | Étude et ses variantes. | Requête : `archives=1` facultatif. | — | 200 | JSON : `study`, `variants`, `canWrite`, `canManage` |
+| `studio-api-etude-renommer/1` | `PATCH /studies/:studyId` | Renommage de l'étude ; rend l'étude relue. | Corps : `{ name }` (schéma `studioRenameSchema`). | `studioRenameSchema` | 200 | JSON : `study`, `variants`, `canWrite`, `canManage` |
+| `studio-api-etude-phase/1` | `PATCH /studies/:studyId/workflow` | Phase déclarée du workflow de conception (REF-01 §06). | Corps : `{ phase: cadrer \| … \| publier \| null }` (schéma `studioWorkflowSchema`). | `studioWorkflowSchema` | 200 | JSON : `study`, `variants`, `canWrite`, `canManage` |
+| `studio-api-exemple-installer/1` | `POST /exemple` | Étude exemple du projet P.118 (propriétaire) ; 201 créée ou reprise, 200 déjà complète. | Aucun corps lu. | `envelopeSchema` | 200, 201 | JSON : `created`, `etude`, `rapport` |
+| `studio-api-etude-archivage/1` | `POST /studies/:studyId/archive`<br>`POST /studies/:studyId/unarchive` | Archivage ou désarchivage de l'étude, sans suppression (idempotent). | Aucun corps lu. | — | 200 | JSON : `study`, `variants`, `canWrite`, `canManage` |
+| `studio-api-variantes-comparer/1` | `GET /studies/:studyId/compare` | Comparaison de deux révisions de l'étude (lecture seule). | Requête : `from` et `to` = `variantId[:revisionId]`, seuls paramètres. | — | 200 | JSON : `from`, `to`, `difference` |
+| `studio-api-variantes-lister/1` | `GET /studies/:studyId/variants` | Variantes de l'étude. | Requête : `archives=1` facultatif. | — | 200 | JSON : `variants` |
+| `studio-api-variante-creer/1` | `POST /studies/:studyId/variants` | Nouvelle variante, vide ou dérivée d'une révision de l'étude. | Corps : `{ name, requestId?, fromVariantId?, fromRevisionId? }` (schéma `variantSchema`). | `variantSchema` | 201 | JSON : `study`, `variant`, `revision`, `canWrite`, `derivedFrom?`, `replayed` |
+| `studio-api-variante-renommer/1` | `PATCH /studies/:studyId/variants/:variantId` | Renommage de la variante. | Corps : `{ name }` (schéma `studioRenameSchema`). | `studioRenameSchema` | 200 | JSON : `variant`, `studyArchived` |
+| `studio-api-variante-archivage/1` | `POST /studies/:studyId/variants/:variantId/archive`<br>`POST /studies/:studyId/variants/:variantId/unarchive` | Archivage ou désarchivage d'une variante (la variante initiale n'est pas archivée). | Aucun corps lu. | — | 200 | JSON : `variant`, `studyArchived` |
+| `studio-api-variante-lire/1` | `GET /studies/:studyId/variants/:variantId` | Variante et document de sa tête. | Aucune. | — | 200 | JSON : `study`, `variant`, `revision`, `canWrite`, `archived`, `derivedFrom` |
+| `studio-api-revisions-lister/1` | `GET /studies/:studyId/variants/:variantId/revisions` | Révisions de la variante. | Aucune. | — | 200 | JSON : `revisions` |
+| `studio-api-revision-lire/1` | `GET /studies/:studyId/variants/:variantId/revisions/:revisionId` | Document d'une révision (lecture seule). | Aucune. | — | 200 | JSON : `study`, `variant`, `revision`, `canWrite`, `archived`, `derivedFrom` |
+| `studio-api-revision-changements/1` | `GET /studies/:studyId/variants/:variantId/revisions/:revisionId/changes` | Commandes enregistrées et delta d'une révision (A.5-07). | Aucune. | — | 200 | JSON : `revisionId`, `parentRevisionId`, `source`, `authorId`, `createdAt`, `requestId`, `commands`, `changedKeys`, `summary?` |
+| `studio-api-variante-exporter/1` | `GET /studies/:studyId/variants/:variantId/export` | Fichier SVG, DXF ou IFC d'une révision (tête par défaut) ; en-tête `X-Studio-Revision`. | Requête : `format` (svg \| dxf \| ifc), `revision` facultative (schéma `exportSchema`). | `exportSchema` | 200 | fichier (image/svg+xml \| application/dxf \| application/x-step) |
+| `studio-api-export-rapport/1` | `GET /studies/:studyId/variants/:variantId/export/rapport` | Rapport de fidélité de l'export (E.6-03), `studio-rapport-fidelite/1`. | Requête : `format`, `revision` facultative (schéma `exportSchema`). | `exportSchema` | 200 | JSON : `revisionId`, `schema`, `format`, `totaux`, `lignes` |
+| `studio-api-commandes/1` | `POST /studies/:studyId/variants/:variantId/commands` | Application d'une enveloppe de commandes `studio-commands/1` ; nouvelle révision (rejeu par `requestId`). | Corps : enveloppe `{ contractVersion: studio-commands/1, requestId, baseRevisionId, commands }` (schéma `envelopeSchema`). | `envelopeSchema` | 200 | JSON : `study`, `variant`, `revision`, `canWrite`, `derivedFrom?`, `replayed` |
+| `studio-api-commentaires-lister/1` | `GET /studies/:studyId/variants/:variantId/comments` | Commentaires de la variante (audience filtrée par le serveur). | Aucune. | — | 200 | JSON : `comments`, `participants`, `archived`, `me` |
+| `studio-api-commentaire-creer/1` | `POST /studies/:studyId/variants/:variantId/comments` | Nouveau commentaire (rejeu par `requestId`). | Corps : schéma `studioCommentSchema`. | `audienceSchema`, `studioCommentSchema` | 201 | JSON : `id`, `variantId`, `parentId`, `revisionId`, `objectIds`, `authorId`, `authorEmail`, `body`, `createdAt`, `deletedAt`, `mine`, `audience`, `reviewPackageId`, `observation`, `replayed?` |
+| `studio-api-commentaire-audience/1` | `PATCH /studies/:studyId/variants/:variantId/comments/:commentId` | Audience du fil (E1), par son auteur ou le propriétaire. | Corps : `{ audience }` (schéma `audienceSchema`). | `audienceSchema` | 200 | JSON : `id`, `variantId`, `parentId`, `revisionId`, `objectIds`, `authorId`, `authorEmail`, `body`, `createdAt`, `deletedAt`, `mine`, `audience`, `reviewPackageId`, `observation`, `replayed?` |
+| `studio-api-commentaire-supprimer/1` | `DELETE /studies/:studyId/variants/:variantId/comments/:commentId` | Suppression douce par l'auteur. | Aucune. | — | 204 | aucun corps |
+| `studio-api-commentaire-observation/1` | `POST /studies/:studyId/variants/:variantId/comments/:commentId/observation` | Un commentaire devient une observation (E.2). | Corps : schéma `studioObservationSchema`. | `noteSchema`, `studioObservationSchema`, `studioObservationVueSchema` | 201 | JSON : `id`, `authorId`, `responsableId`, `responsableEmail`, `echeance`, `statut`, `correctionRevisionId`, `recontroleRevisionId`, `createdBy`, `createdAt`, `updatedAt`, `journal`, `assignedToMe`, `possibles`, `vue`, `liens`, `taches`, `decisions`, `peut`, `replayed?` |
+| `studio-api-commentaire-observation-transition/1` | `POST /studies/:studyId/variants/:variantId/comments/:commentId/observation/transitions` | Passage d'une observation de fil (corriger, recontrôler, clôturer, rouvrir, réattribuer). | Corps : schéma `studioObservationTransitionSchema`. | `noteSchema`, `studioObservationTransitionSchema` | 200 | JSON : `id`, `authorId`, `responsableId`, `responsableEmail`, `echeance`, `statut`, `correctionRevisionId`, `recontroleRevisionId`, `createdBy`, `createdAt`, `updatedAt`, `journal`, `assignedToMe`, `possibles`, `vue`, `liens`, `taches`, `decisions`, `peut`, `replayed?` |
+| `studio-api-etapes-lire/1` | `GET /studies/:studyId/steps` | Étapes du Parcours rattachées à l'étude, et étapes proposées. | Aucune. | — | 200 | JSON : `steps`, `available`, `canWrite` |
+| `studio-api-etapes-remplacer/1` | `PUT /studies/:studyId/steps` | Remplacement de la liste des étapes rattachées (idempotent). | Corps : `{ steps: number[] }` (schéma `studioStudyStepsSchema`). | `studioStudyStepsSchema` | 200 | JSON : `steps`, `available`, `canWrite` |
+| `studio-api-etape-etudes/1` | `GET /steps/:stepNumber/studies` | Études Studio rattachées à une étape du Parcours. | Adresse : `stepNumber` entier positif. | — | 200 | JSON : `studies` |
+
+## `apps/api/src/routes/studio-preferences.ts`
+
+| Contrat | Route(s) | Objet | Entrée | Schémas zod d'entrée atteints | Succès | Réponse |
+|---|---|---|---|---|---|---|
+| `studio-api-preferences-lire/1` | `GET /preferences/outils` | Préférences d'outils du compte (manifeste `studio-tool-manifest/1`). | Aucune. | — | 200 | JSON : `profil`, `favoris`, `personnel`, `groupes`, `retires`, `manifeste`, `updatedAt` |
+| `studio-api-preferences-ecrire/1` | `PUT /preferences/outils` | Enregistrement des préférences d'outils du compte (INV-009). | Corps : `{ profil, favoris, personnel, groupes?, retires? }` (schéma `studioToolPreferencesSchema`). | `studioToolPreferencesSchema` | 200 | JSON : `profil`, `favoris`, `personnel`, `groupes`, `retires`, `manifeste`, `updatedAt` |
+| `studio-api-catalogue-outils/1` | `GET /preferences/catalogue` | Catalogue des outils autorisés pour le rôle du compte dans le projet. | Aucune. | — | 200 | JSON : `manifeste`, `role`, `droits`, `entrees` |
+
+## `apps/api/src/routes/studio-publications.ts`
+
+| Contrat | Route(s) | Objet | Entrée | Schémas zod d'entrée atteints | Succès | Réponse |
+|---|---|---|---|---|---|---|
+| `studio-api-paquets-lister/1` | `GET /publications` | Paquets diffusés ou retirés du projet (module Documents). | Aucune. | — | 200 | JSON : `packages` |
+| `studio-api-publications-lister/1` | `GET /studies/:studyId/publications` | Publications de l'étude, tous statuts. | Aucune. | — | 200 | JSON : `publications` |
+| `studio-api-publication-creer/1` | `POST /studies/:studyId/variants/:variantId/publications` | Nouvelle publication `travail` (rejeu par `requestId`). | Corps : schéma `studioPublicationCreateSchema`. | `studioPublicationCreateSchema` | 201 | JSON : `id`, `projectId`, `studyId`, `variantId`, `variantName`, `title`, `revisionId`, `documentHash`, `contenu`, `status`, `workStatus`, `diffusionStatus`, `manifest`, `manifestHash`, `manifestBuiltAt`, `createdBy`, `createdAt`, `updatedAt`, `approval`, `approvedSelfControl`, `diffusion`, `headRevisionId`, `freshness`, `drift`, `documentsCheck`, `replacedBy`, `replacement`, `withdrawal`, `allowed`, `delegation`, `events?`, `replayed?` |
+| `studio-api-publication-lire/1` | `GET /studies/:studyId/publications/:publicationId` | Publication, manifeste et journal. | Aucune. | — | 200 | JSON : `id`, `projectId`, `studyId`, `variantId`, `variantName`, `title`, `revisionId`, `documentHash`, `contenu`, `status`, `workStatus`, `diffusionStatus`, `manifest`, `manifestHash`, `manifestBuiltAt`, `createdBy`, `createdAt`, `updatedAt`, `approval`, `approvedSelfControl`, `diffusion`, `headRevisionId`, `freshness`, `drift`, `documentsCheck`, `replacedBy`, `replacement`, `withdrawal`, `allowed`, `delegation`, `events?`, `replayed?` |
+| `studio-api-publication-controle-approbation/1` | `GET /studies/:studyId/publications/:publicationId/controle-approbation` | Aperçu de l'auto-contrôle avant d'approuver (OP-6). | Aucune. | — | 200 | JSON : `autoControle`, `revisionsAuteur`, `soumisParLui`, `autorise`, `approvers` |
+| `studio-api-publication-verification/1` | `GET /studies/:studyId/publications/:publicationId/verification` | Recalcul déterministe des empreintes du paquet diffusé. | Aucune. | — | 200 | JSON : `publicationId`, `packageHash`, `packageHashRecomputed`, `documentHash`, `manifestHash`, `manifestDocuments`, `files`, `identical` |
+| `studio-api-publication-fichier/1` | `GET /studies/:studyId/publications/:publicationId/files/:format` | Fichier figé du paquet ; en-têtes `X-Content-SHA256`, `X-Studio-Package`, statuts. | Adresse : `format` (svg \| dxf \| ifc \| pdf). | — | 200 | fichier (type du fichier figé) |
+| `studio-api-delegations-lister/1` | `GET /delegations` | Délégations d'approbation visibles par le compte (EX-085). | Aucune. | — | 200 | JSON : `delegations` |
+| `studio-api-delegation-creer/1` | `POST /delegations` | Nouvelle délégation d'approbation (201 ; rejeu : 200). | Corps : schéma `studioDelegationCreateSchema`. | `studioDelegationCreateSchema` | 200, 201 | JSON : `id`, `projectId`, `delegator`, `delegate`, `scope`, `startsAt`, `endsAt`, `reason`, `createdAt`, `state`, `revocation`, `canRevoke`, `events`, `replayed?` |
+| `studio-api-delegation-revoquer/1` | `POST /delegations/:delegationId/revoquer` | Révocation motivée d'une délégation. | Corps : `{ reason }` (schéma `studioDelegationRevokeSchema`). | `studioDelegationRevokeSchema` | 200 | JSON : `id`, `projectId`, `delegator`, `delegate`, `scope`, `startsAt`, `endsAt`, `reason`, `createdAt`, `state`, `revocation`, `canRevoke`, `events`, `replayed?` |
+| `studio-api-publication-transition/1` | `POST /studies/:studyId/publications/:publicationId/:action` | Transition : soumettre, actualiser, approuver, refuser, diffuser, retirer. | Adresse : `action` ; corps : schéma `studioPublicationTransitionSchema`. | `studioPublicationTransitionSchema` | 200 | JSON : `id`, `projectId`, `studyId`, `variantId`, `variantName`, `title`, `revisionId`, `documentHash`, `contenu`, `status`, `workStatus`, `diffusionStatus`, `manifest`, `manifestHash`, `manifestBuiltAt`, `createdBy`, `createdAt`, `updatedAt`, `approval`, `approvedSelfControl`, `diffusion`, `headRevisionId`, `freshness`, `drift`, `documentsCheck`, `replacedBy`, `replacement`, `withdrawal`, `allowed`, `delegation`, `events?`, `replayed?` |
+
+## `apps/api/src/routes/studio-exigences.ts`
+
+| Contrat | Route(s) | Objet | Entrée | Schémas zod d'entrée atteints | Succès | Réponse |
+|---|---|---|---|---|---|---|
+| `studio-api-exigences-lire/1` | `GET /studies/:studyId/exigences` | Jeu d'exigences courant et versions de l'étude. | Aucune. | — | 200 | JSON : `studyId`, `peutAccepter`, `courante`, `versions` |
+| `studio-api-exigences-version/1` | `GET /studies/:studyId/exigences/versions/:version` | Une version du jeu d'exigences. | Adresse : `version` entière. | — | 200 | JSON : `studyId`, `version`, `exigences`, `auteur`, `auteurEmail`, `creeLe`, `motif?`, `replayed?` |
+| `studio-api-exigences-enregistrer/1` | `POST /studies/:studyId/exigences` | Nouvelle version du jeu d'exigences (version de base exigée). | Corps : schéma `studioExigencesEditionSchema`. | `studioExigencesEditionSchema` | 200, 201 | JSON : `studyId`, `version`, `exigences`, `auteur`, `auteurEmail`, `creeLe`, `motif?`, `replayed?` |
+| `studio-api-exigences-accepter/1` | `POST /studies/:studyId/exigences/acceptations` | Acceptation d'une exigence par le propriétaire. | Corps : schéma `studioExigenceAcceptationSchema`. | `studioExigenceAcceptationSchema` | 200, 201 | JSON : `studyId`, `version`, `exigences`, `auteur`, `auteurEmail`, `creeLe`, `motif?`, `replayed?` |
+| `studio-api-controles-lister/1` | `GET /studies/:studyId/variants/:variantId/controles` | Contrôles d'exigences de la variante. | Aucune. | — | 200 | JSON : `controles` |
+| `studio-api-controle-lire/1` | `GET /studies/:studyId/variants/:variantId/controles/:checkId` | Un contrôle et son résultat. | Aucune. | — | 200 | JSON : `id`, `studyId`, `variantId`, `revisionId`, `version`, `execution`, `conclusion`, `documentHash`, `auteur`, `auteurEmail`, `creeLe`, `resultat`, `rapprochements?`, `replayed?` |
+| `studio-api-controle-executer/1` | `POST /studies/:studyId/variants/:variantId/controles` | Exécution d'un contrôle sur la tête (rejeu par `requestId`). | Corps : schéma `studioControleSchema`. | `studioControleSchema` | 200, 201 | JSON : `id`, `studyId`, `variantId`, `revisionId`, `version`, `execution`, `conclusion`, `documentHash`, `auteur`, `auteurEmail`, `creeLe`, `resultat`, `rapprochements?`, `replayed?` |
+
+## `apps/api/src/routes/studio-quantites.ts`
+
+| Contrat | Route(s) | Objet | Entrée | Schémas zod d'entrée atteints | Succès | Réponse |
+|---|---|---|---|---|---|---|
+| `studio-api-ajustements-lister/1` | `GET /studies/:studyId/variants/:variantId/ajustements-quantites` | Journal des ajustements du métré et leur état sur la tête. | Aucune. | — | 200 | JSON : `studyId`, `variantId`, `headRevisionId`, `sequence`, `peutAjuster`, `ajustements`, `statuts` |
+| `studio-api-ajustement-creer/1` | `POST /studies/:studyId/variants/:variantId/ajustements-quantites` | Nouvel ajustement manuel motivé (E.3-05). | Corps : schéma `studioAjustementSchema`. | `studioAjustementSchema` | 200, 201 | JSON : `id`, `sequence`, `revisionId`, `cible`, `grandeur`, `unite`, `valeur`, `motif`, `derivee`, `etatCible?`, `auteur`, `auteurEmail`, `date`, `replayed?` |
+
+## `apps/api/src/routes/studio-observations.ts`
+
+| Contrat | Route(s) | Objet | Entrée | Schémas zod d'entrée atteints | Succès | Réponse |
+|---|---|---|---|---|---|---|
+| `studio-api-observations-lister/1` | `GET /studies/:studyId/variants/:variantId/observations` | Observations de la variante. | Aucune. | `domaineSchema` | 200 | JSON : `observations`, `participants`, `archived`, `me` |
+| `studio-api-observation-creer/1` | `POST /studies/:studyId/variants/:variantId/observations` | Observation ouverte directement (E.2-01, E.2-02). | Corps : schéma `studioObservationOuvertureSchema`. | `audienceSchema`, `domaineSchema`, `studioObservationLienSchema`, `studioObservationOuvertureSchema`, `studioObservationVueSchema` | 201 | JSON : `id`, `authorId`, `responsableId`, `responsableEmail`, `echeance`, `statut`, `correctionRevisionId`, `recontroleRevisionId`, `createdBy`, `createdAt`, `updatedAt`, `journal`, `assignedToMe`, `possibles`, `vue`, `liens`, `taches`, `decisions`, `peut`, `body`, `authorEmail`, `audience`, `contexte`, `replayed?` |
+| `studio-api-rapprochements-lister/1` | `GET /studies/:studyId/variants/:variantId/observations/rapprochements` | Rapprochements consignés (EX-086). | Aucune. | — | 200 | JSON : `rapprochements` |
+| `studio-api-rapprochement-demander/1` | `POST /studies/:studyId/variants/:variantId/observations/rapprochements` | Rapprochement des observations avec la tête, sur demande (EX-086). | Corps : schéma `studioRapprochementSchema`. | `studioRapprochementSchema` | 200 | JSON : `revisionId`, `checkId`, `resultats` |
+| `studio-api-observation-lire/1` | `GET /studies/:studyId/variants/:variantId/observations/:observationId` | Une observation et son contexte. | Aucune. | — | 200 | JSON : `id`, `authorId`, `responsableId`, `responsableEmail`, `echeance`, `statut`, `correctionRevisionId`, `recontroleRevisionId`, `createdBy`, `createdAt`, `updatedAt`, `journal`, `assignedToMe`, `possibles`, `vue`, `liens`, `taches`, `decisions`, `peut`, `body`, `authorEmail`, `audience`, `contexte`, `replayed?` |
+| `studio-api-observation-transition/1` | `POST /studies/:studyId/variants/:variantId/observations/:observationId/transitions` | Passage de l'observation (vue du fil rendue). | Corps : schéma `studioObservationTransitionSchema`. | `noteSchema`, `studioObservationTransitionSchema` | 200 | JSON : `id`, `authorId`, `responsableId`, `responsableEmail`, `echeance`, `statut`, `correctionRevisionId`, `recontroleRevisionId`, `createdBy`, `createdAt`, `updatedAt`, `journal`, `assignedToMe`, `possibles`, `vue`, `liens`, `taches`, `decisions`, `peut`, `replayed?` |
+| `studio-api-observation-lier/1` | `POST /studies/:studyId/variants/:variantId/observations/:observationId/liens` | Élément d'un domaine suivi par l'observation (E.2-01). | Corps : schéma `studioObservationLienAjoutSchema`. | `domaineSchema`, `studioObservationLienAjoutSchema` | 200, 201 | JSON : `id`, `authorId`, `responsableId`, `responsableEmail`, `echeance`, `statut`, `correctionRevisionId`, `recontroleRevisionId`, `createdBy`, `createdAt`, `updatedAt`, `journal`, `assignedToMe`, `possibles`, `vue`, `liens`, `taches`, `decisions`, `peut`, `body`, `authorEmail`, `audience`, `contexte`, `replayed?` |
+| `studio-api-observation-tache-creer/1` | `POST /studies/:studyId/variants/:variantId/observations/:observationId/taches` | Tâche attribuée (E.2-03). | Corps : schéma `studioObservationTacheSchema`. | `studioObservationTacheSchema` | 200, 201 | JSON : `id`, `authorId`, `responsableId`, `responsableEmail`, `echeance`, `statut`, `correctionRevisionId`, `recontroleRevisionId`, `createdBy`, `createdAt`, `updatedAt`, `journal`, `assignedToMe`, `possibles`, `vue`, `liens`, `taches`, `decisions`, `peut`, `body`, `authorEmail`, `audience`, `contexte`, `replayed?` |
+| `studio-api-observation-tache-transition/1` | `POST /studies/:studyId/variants/:variantId/observations/:observationId/taches/:taskId/transitions` | Passage d'une tâche. | Corps : schéma `studioObservationTacheTransitionSchema`. | `studioObservationTacheTransitionSchema` | 200 | JSON : `id`, `authorId`, `responsableId`, `responsableEmail`, `echeance`, `statut`, `correctionRevisionId`, `recontroleRevisionId`, `createdBy`, `createdAt`, `updatedAt`, `journal`, `assignedToMe`, `possibles`, `vue`, `liens`, `taches`, `decisions`, `peut`, `body`, `authorEmail`, `audience`, `contexte`, `replayed?` |
+| `studio-api-observation-decision/1` | `POST /studies/:studyId/variants/:variantId/observations/:observationId/decisions` | Proposition ou décision (E.2-03, E.2-04). | Corps : schéma `studioObservationDecisionSchema`. | `studioObservationDecisionSchema` | 200, 201 | JSON : `id`, `authorId`, `responsableId`, `responsableEmail`, `echeance`, `statut`, `correctionRevisionId`, `recontroleRevisionId`, `createdBy`, `createdAt`, `updatedAt`, `journal`, `assignedToMe`, `possibles`, `vue`, `liens`, `taches`, `decisions`, `peut`, `body`, `authorEmail`, `audience`, `contexte`, `replayed?` |
+
+## `apps/api/src/routes/studio-dossiers.ts`
+
+| Contrat | Route(s) | Objet | Entrée | Schémas zod d'entrée atteints | Succès | Réponse |
+|---|---|---|---|---|---|---|
+| `studio-api-dossiers-projet/1` | `GET /dossiers` | Dossiers de conception du projet (module Documents). | Aucune. | — | 200 | JSON : `dossiers` |
+| `studio-api-feuilles-lister/1` | `GET /studies/:studyId/sheets` | Feuilles composées de l'étude. | Aucune. | — | 200 | JSON : `sheets`, `canWrite` |
+| `studio-api-feuille-creer/1` | `POST /studies/:studyId/variants/:variantId/sheets` | Nouvelle feuille composée, épinglée à la tête. | Corps : schéma `studioSheetCreateSchema`. | `studioSheetCreateSchema` | 200, 201 | JSON : `id`, `studyId`, `variantId`, `variantName`, `revisionId`, `headRevisionId`, `freshness`, `definition`, `provenance`, `error`, `createdBy`, `createdAt`, `updatedAt`, `files`, `replayed?` |
+| `studio-api-feuille-modifier/1` | `PATCH /studies/:studyId/sheets/:sheetId` | Modification ou réépinglage d'une feuille. | Corps : schéma `studioSheetUpdateSchema`. | `studioSheetUpdateSchema` | 200 | JSON : `id`, `studyId`, `variantId`, `variantName`, `revisionId`, `headRevisionId`, `freshness`, `definition`, `provenance`, `error`, `createdBy`, `createdAt`, `updatedAt`, `files`, `replayed?` |
+| `studio-api-feuille-supprimer/1` | `DELETE /studies/:studyId/sheets/:sheetId` | Suppression d'une feuille non citée par un dossier. | Aucune. | — | 200 | JSON : `deleted` |
+| `studio-api-feuille-fichier/1` | `GET /studies/:studyId/sheets/:sheetId/files/:format` | Fichier SVG ou PDF de la feuille. | Adresse : `format` (svg \| pdf). | — | 200 | fichier (image/svg+xml \| application/pdf) |
+| `studio-api-dossiers-lister/1` | `GET /studies/:studyId/dossiers` | Dossiers de conception de l'étude. | Aucune. | — | 200 | JSON : `dossiers` |
+| `studio-api-dossier-creer/1` | `POST /studies/:studyId/dossiers` | Nouveau dossier de conception (feuilles ordonnées, métré, fidélité). | Corps : schéma `studioDossierCreateSchema`. | `studioDossierCreateSchema` | 200, 201 | JSON : `id`, `studyId`, `title`, `sheetIds`, `quantities`, `includeFidelity`, `quantitiesAdjustmentSeq`, `createdBy`, `createdAt`, `updatedAt`, `files`, `replayed?`, `assembly?` |
+| `studio-api-dossier-lire/1` | `GET /studies/:studyId/dossiers/:dossierId` | Dossier et son assemblage `studio-dossier-conception/1`. | Aucune. | — | 200 | JSON : `id`, `studyId`, `title`, `sheetIds`, `quantities`, `includeFidelity`, `quantitiesAdjustmentSeq`, `createdBy`, `createdAt`, `updatedAt`, `files`, `replayed?`, `assembly?` |
+| `studio-api-dossier-modifier/1` | `PATCH /studies/:studyId/dossiers/:dossierId` | Modification d'un dossier. | Corps : schéma `studioDossierUpdateSchema`. | `studioDossierUpdateSchema` | 200 | JSON : `id`, `studyId`, `title`, `sheetIds`, `quantities`, `includeFidelity`, `quantitiesAdjustmentSeq`, `createdBy`, `createdAt`, `updatedAt`, `files`, `replayed?`, `assembly?` |
+| `studio-api-dossier-fichier/1` | `GET /studies/:studyId/dossiers/:dossierId/files/:format` | Fichier PDF ou JSON (`studio-dossier-conception/1`) du dossier. | Adresse : `format` (pdf \| json). | — | 200 | fichier (application/pdf \| application/json) |
+
+## `apps/api/src/routes/studio-modeles-externes.ts`
+
+| Contrat | Route(s) | Objet | Entrée | Schémas zod d'entrée atteints | Succès | Réponse |
+|---|---|---|---|---|---|---|
+| `studio-api-modeles-externes-lister/1` | `GET /studies/:studyId/variants/:variantId/modeles-externes` | Modèles externes reçus pour la variante (lot F3). | Aucune. | — | 200 | JSON : `peutRecevoir`, `peutDecider`, `teteRevisionId`, `modeles` |
+| `studio-api-modele-externe-recevoir/1` | `POST /studies/:studyId/variants/:variantId/modeles-externes` | Réception d'un modèle externe, relu et comparé par le serveur. | Corps : schéma `studioModeleReceptionSchema` (fichier de 5 Mo de texte au plus). | `studioModeleReceptionSchema` | 200, 201 | JSON : `id`, `studyId`, `variantId`, `reference`, `auteur`, `discipline`, `format`, `version`, `uniteDeclaree`, `transformation?`, `nomFichier`, `contentSha256`, `statut`, `rapport?`, `comparaison?`, `revisionComparee`, `decision`, `recuPar`, `recuParEmail`, `recuLe`, `journal?`, `replayed?` |
+| `studio-api-modele-externe-lire/1` | `GET /studies/:studyId/variants/:variantId/modeles-externes/:modelId` | Un modèle externe et son journal. | Aucune. | — | 200 | JSON : `id`, `studyId`, `variantId`, `reference`, `auteur`, `discipline`, `format`, `version`, `uniteDeclaree`, `transformation?`, `nomFichier`, `contentSha256`, `statut`, `rapport?`, `comparaison?`, `revisionComparee`, `decision`, `recuPar`, `recuParEmail`, `recuLe`, `journal?`, `replayed?` |
+| `studio-api-modele-externe-contenu/1` | `GET /studies/:studyId/variants/:variantId/modeles-externes/:modelId/contenu` | Fichier reçu tel quel, avec son empreinte (droit export). | Aucune. | — | 200 | JSON : `id`, `statut`, `nomFichier`, `contentSha256`, `transformation?`, `contenu` |
+| `studio-api-modele-externe-action/1` | `POST /studies/:studyId/variants/:variantId/modeles-externes/:modelId/:action` | Comparer à la tête, accepter ou refuser (motivé). | Adresse : `action` (comparer \| accepter \| refuser) ; corps : schéma `studioModelePassageSchema`. | `studioModelePassageSchema` | 200 | JSON : `id`, `studyId`, `variantId`, `reference`, `auteur`, `discipline`, `format`, `version`, `uniteDeclaree`, `transformation?`, `nomFichier`, `contentSha256`, `statut`, `rapport?`, `comparaison?`, `revisionComparee`, `decision`, `recuPar`, `recuParEmail`, `recuLe`, `journal?`, `replayed?` |
+
+## Format de diagnostic
+
+Le relevé de performances exporté par le Tool Manager (`studio-releve-perf.json`, entrée `diagnostic-releve-perf` de la
+matrice d'échanges) porte `schema: "studio-releve-perf/1"` ; `controlerRelevePerf`
+(`apps/web/src/modules/studio/chargement/perf.ts`) le relit et nomme chaque écart (test :
+`apps/web/src/modules/studio/chargement/perf.test.ts`).

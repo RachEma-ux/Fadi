@@ -34,6 +34,8 @@ import {
   capacitesInconnues, capacitesSansDroit, conflitsRaccourcis, ecarterConflits, estCapacite, importProfilSchema, profilExporteSchema, STUDIO_FORMAT_PROFIL,
   type ConflitRaccourci,
 } from "../lib/studio-profils.js";
+import { avecContrat } from "../lib/studio-contrats.js";
+import { CONTRAT_CATALOGUE_OUTILS, CONTRAT_PREFERENCES_ECRIRE, CONTRAT_PREFERENCES_LIRE, CONTRAT_PROFIL_EXPORTER, CONTRAT_PROFIL_IMPORTER } from "../lib/studio-contrats-routes.js";
 
 export const studioPreferencesRouter = Router({ mergeParams: true });
 
@@ -68,12 +70,12 @@ const refusConflit = (res: Response, conflits: ConflitRaccourci[]) => res.status
   message: "Raccourcis personnels en conflit : rien n'a été enregistré. Résolvez les conflits, ou importez sans les raccourcis en conflit.",
 });
 
-studioPreferencesRouter.get("/outils", endpoint(async (req, res) => {
+studioPreferencesRouter.get("/outils", avecContrat(CONTRAT_PREFERENCES_LIRE), endpoint(async (req, res) => {
   const row = await ligneDu(req.user!.id);
   res.json({ ...lireLignePreferences(row), updatedAt: row ? row.updatedAt.toISOString() : null });
 }));
 
-studioPreferencesRouter.put("/outils", endpoint(async (req, res, access) => {
+studioPreferencesRouter.put("/outils", avecContrat(CONTRAT_PREFERENCES_ECRIRE), endpoint(async (req, res, access) => {
   const lu = lireCorpsPreferences(req.body);
   if (!lu.ok) { res.status(400).json(lu.body); return; }
   const { profil, favoris, personnel, groupes, raccourcis, ordre } = lu.preferences;
@@ -98,7 +100,7 @@ studioPreferencesRouter.put("/outils", endpoint(async (req, res, access) => {
   res.json({ ...lireLignePreferences(row), retires: [], updatedAt: at.toISOString() });
 }));
 
-studioPreferencesRouter.get("/outils/export", endpoint(async (req, res) => {
+studioPreferencesRouter.get("/outils/export", avecContrat(CONTRAT_PROFIL_EXPORTER), endpoint(async (req, res) => {
   const row = await ligneDu(req.user!.id);
   const p = lireLignePreferences(row);
   if (!p.profileId) { res.status(404).json({ error: "not_found", message: "Aucun profil enregistré pour ce compte : enregistrez d'abord vos préférences." }); return; }
@@ -108,7 +110,7 @@ studioPreferencesRouter.get("/outils/export", endpoint(async (req, res) => {
   });
 }));
 
-studioPreferencesRouter.post("/outils/import", endpoint(async (req, res, access) => {
+studioPreferencesRouter.post("/outils/import", avecContrat(CONTRAT_PROFIL_IMPORTER), endpoint(async (req, res, access) => {
   const corps = importProfilSchema.safeParse(req.body);
   if (!corps.success) { res.status(400).json({ error: "invalid_input", details: corps.error.flatten() }); return; }
   const lu = profilExporteSchema.safeParse(corps.data.profil);
@@ -136,6 +138,6 @@ studioPreferencesRouter.post("/outils/import", endpoint(async (req, res, access)
   res.json({ ...lireLignePreferences(row), retires: [], ecartes, updatedAt: at.toISOString() });
 }));
 
-studioPreferencesRouter.get("/catalogue", endpoint(async (req, res, access) => {
+studioPreferencesRouter.get("/catalogue", avecContrat(CONTRAT_CATALOGUE_OUTILS), endpoint(async (req, res, access) => {
   res.json(catalogueAutorise(motifRefusEcriture(projectAccessRefusal(access, req.user!.id, "modify")), access.role));
 }));
