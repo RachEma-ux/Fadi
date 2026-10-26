@@ -9,7 +9,8 @@
     "./studio-agents": "./src/studio/agents/index.ts",
     "./studio-exemples": "./src/studio/exemples/index.ts",
     "./studio-cmd": "./src/studio/cmd/index.ts",
-    "./studio-cmd-corpus": "./src/studio/cmd/corpus-migration.ts"
+    "./studio-cmd-corpus": "./src/studio/cmd/corpus-migration.ts",
+    "./studio-mesures": "./src/studio/mesures/index.ts"
   },
   "scripts": {
     "test": "vitest run",

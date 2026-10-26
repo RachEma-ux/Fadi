@@ -7,7 +7,7 @@
  * propriété). Pur : ni React ni DOM.
  */
 import {
-  dessinerCoteAngulaire, geometrieMur, studioArcPoints, type StudioWall, studioShapeSegments, studioTextBox, type StudioAnnotation, type StudioCommand, type StudioDimension, type StudioDocument,
+  dessinerCoteAngulaire, geometrieMur, studioArcPoints, type StudioWall, type StudioLadder, geometrieEchelle, studioShapeSegments, studioTextBox, type StudioAnnotation, type StudioCommand, type StudioDimension, type StudioDocument,
   type StudioPoint, type StudioShape,
 } from "@parcours/atelier-model";
 import { estSelectionnable } from "./calques";
@@ -30,10 +30,13 @@ export const elements = (doc: StudioDocument): Element2D[] => [...doc.objects, .
  * désigne seule par un clic, pour être modifiée).
  */
 export const murs = (doc: StudioDocument): StudioWall[] => (doc.architecture ?? []).filter((x): x is StudioWall => x.type === "wall");
+/** Objets architecturaux posés librement (murs, échelles d’accès, EX-027) : ils se sélectionnent comme les objets. */
+export type Porteur2D = StudioWall | StudioLadder;
+export const porteurs = (doc: StudioDocument): Porteur2D[] => (doc.architecture ?? []).filter((x): x is Porteur2D => x.type !== "opening");
 
 /** Identifiants sélectionnables (affichés, déverrouillés), dans l'ordre du document, murs compris. */
 export const toutSelectionnable = (doc: StudioDocument): string[] =>
-  [...elements(doc), ...murs(doc)].filter((e) => estSelectionnable(doc, e.layerId)).map((e) => e.id);
+  [...elements(doc), ...porteurs(doc)].filter((e) => estSelectionnable(doc, e.layerId)).map((e) => e.id);
 
 /** Sélection nettoyée : objets encore présents et sélectionnables, sans doublon, ordre conservé. */
 export function selectionValide(doc: StudioDocument, ids: readonly string[]): string[] {
@@ -56,7 +59,12 @@ type Segment = readonly [StudioPoint, StudioPoint];
  * Segments dessinés d'un élément (traits de la ligne, côtés du rectangle, contour discrétisé d'un cercle, d'un arc ou
  * d'une polyligne, lignes d'une cote).
  */
-export function segments(e: Element2D | StudioWall): Segment[] {
+export function segments(e: Element2D | Porteur2D): Segment[] {
+  if (e.type === "ladder") {
+    // Emprise de l'échelle d'accès (montants compris).
+    const r = geometrieEchelle(e).emprise;
+    return r.map((p, i) => [p, r[(i + 1) % r.length]!] as const);
+  }
   if (e.type === "wall") {
     // Contour de l'emprise du mur (onglets compris).
     const g = geometrieMur(e);
@@ -95,7 +103,7 @@ export function segmentTouche(r: Rectangle2D, [a, b]: Segment): boolean {
 }
 
 /** L'élément est-il retenu par le rectangle selon le mode (fenêtre : entièrement dedans ; capture : touché) ? */
-export function retenu(e: Element2D | StudioWall, r: Rectangle2D, mode: ModeRectangle): boolean {
+export function retenu(e: Element2D | Porteur2D, r: Rectangle2D, mode: ModeRectangle): boolean {
   const s = segments(e);
   return mode === "fenetre" ? s.every(([a, b]) => dedans(r, a) && dedans(r, b)) : s.some((x) => segmentTouche(r, x));
 }
@@ -103,13 +111,13 @@ export function retenu(e: Element2D | StudioWall, r: Rectangle2D, mode: ModeRect
 /** Sélection par rectangle, parcours linéaire de tous les éléments (référence de l'index, et règle sous le seuil). */
 export function selectionParRectangleLineaire(doc: StudioDocument, a: StudioPoint, b: StudioPoint): string[] {
   const r = rectangleEntre(a, b), mode = modeRectangle(a, b);
-  return [...elements(doc), ...murs(doc)].filter((e) => estSelectionnable(doc, e.layerId) && retenu(e, r, mode)).map((e) => e.id);
+  return [...elements(doc), ...porteurs(doc)].filter((e) => estSelectionnable(doc, e.layerId) && retenu(e, r, mode)).map((e) => e.id);
 }
 
 /** Tracé mémorisé d'un élément (objet immuable du document) et son emprise ; emprise infinie s'il n'a aucun segment. */
-interface Trace { e: Element2D | StudioWall; segments: Segment[]; boite: Boite2D }
-const TRACES = new WeakMap<Element2D | StudioWall, Trace>();
-function trace(e: Element2D | StudioWall): Trace {
+interface Trace { e: Element2D | Porteur2D; segments: Segment[]; boite: Boite2D }
+const TRACES = new WeakMap<Element2D | Porteur2D, Trace>();
+function trace(e: Element2D | Porteur2D): Trace {
   let t = TRACES.get(e);
   if (!t) {
     const s = segments(e);
@@ -133,7 +141,7 @@ const SUIVI_SELECTION = suiviIncremental<Trace>((t) => t.boite);
 let documentIndexe: { doc: StudioDocument; index: IndexSpatial<Trace> } | null = null;
 function indexSelection(doc: StudioDocument): IndexSpatial<Trace> {
   if (documentIndexe?.doc === doc) return documentIndexe.index;
-  const traces = [...elements(doc), ...murs(doc)].map(trace);
+  const traces = [...elements(doc), ...porteurs(doc)].map(trace);
   const index = SUIVI_SELECTION.suivre(traces) ?? indexGrille(traces, (t) => t.boite);
   documentIndexe = { doc, index };
   return index;
@@ -159,6 +167,61 @@ export function selectionParRectangle(doc: StudioDocument, a: StudioPoint, b: St
     .map((t) => t.e.id);
 }
 
+// ——— Désignation au point et cas ambigus (AC-004) ———
+
+const distanceSegment = (p: StudioPoint, [a, b]: Segment): number => {
+  const dx = b.x - a.x, dy = b.y - a.y, l2 = dx * dx + dy * dy;
+  const t = l2 > 0 ? Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2)) : 0;
+  return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
+};
+
+/**
+ * Désignation au point (AC-004) : éléments sélectionnables dont le tracé passe à `tolerance` du point, les plus proches
+ * d'abord ; à distance égale (1e-12 m), le dernier dessiné (au-dessus) d'abord. `ambigus` : les candidats à égalité
+ * avec le premier — plusieurs cibles possibles (objets superposés, contour commun) ; vide si le premier est seul. Le
+ * premier est celui que désigne le clic ; la commande « Cible d'accrochage suivante » passe **explicitement** au suivant.
+ */
+export interface TraceDesignation {
+  point: StudioPoint;
+  tolerance: number;
+  candidats: { id: string; distance: number }[];
+  ambigus: string[];
+}
+
+function classerDesignation(point: StudioPoint, tolerance: number, traces: readonly { t: Trace; rang: number }[]): TraceDesignation {
+  const candidats = traces
+    .map(({ t, rang }) => ({ id: t.e.id, rang, distance: Math.min(...t.segments.map((s) => distanceSegment(point, s))) }))
+    .filter((c) => c.distance <= tolerance)
+    .sort((a, b) => (Math.abs(a.distance - b.distance) > 1e-12 ? a.distance - b.distance : b.rang - a.rang))
+    .map(({ id, distance }) => ({ id, distance }));
+  const tete = candidats[0];
+  const egaux = tete ? candidats.filter((c) => Math.abs(c.distance - tete.distance) <= 1e-12).map((c) => c.id) : [];
+  return { point: { ...point }, tolerance, candidats, ambigus: egaux.length > 1 ? egaux : [] };
+}
+
+/** Désignation au point par parcours linéaire (référence de l'index). */
+export function designationAuPointLineaire(doc: StudioDocument, point: StudioPoint, tolerance: number): TraceDesignation {
+  const tous = [...elements(doc), ...porteurs(doc)];
+  return classerDesignation(point, tolerance, tous.map((e, rang) => ({ e, rang })).filter(({ e }) => estSelectionnable(doc, e.layerId)).map(({ e, rang }) => ({ t: trace(e), rang })));
+}
+
+/** Désignation au point : au-dessus du seuil, l'index de sélection borne l'examen ; même résultat que la référence. */
+export function designationAuPoint(doc: StudioDocument, point: StudioPoint, tolerance: number, seuil = SEUIL_INDEX_SPATIAL): TraceDesignation {
+  const n = doc.objects.length + (doc.dimensions?.length ?? 0) + (doc.annotations?.length ?? 0) + (doc.architecture?.length ?? 0);
+  if (n < seuil) return designationAuPointLineaire(doc, point, tolerance);
+  const rangs = new Map([...elements(doc), ...porteurs(doc)].map((e, i) => [e, i]));
+  const m = tolerance + 1e-9 * (1 + Math.abs(point.x) + Math.abs(point.y));
+  const zone = { min: { x: point.x - m, y: point.y - m }, max: { x: point.x + m, y: point.y + m } };
+  return classerDesignation(point, tolerance, indexSelection(doc).chercher(zone).filter(({ e }) => estSelectionnable(doc, e.layerId)).map((t) => ({ t, rang: rangs.get(t.e)! })));
+}
+
+/** Candidat suivant d'un cas ambigu (cycle), à partir de l'identifiant désigné ; null si la désignation n'est pas ambiguë. */
+export function designationSuivante(t: TraceDesignation, actuel: string | undefined): string | null {
+  if (t.ambigus.length < 2) return null;
+  const i = actuel === undefined ? -1 : t.ambigus.indexOf(actuel);
+  return t.ambigus[(i + 1) % t.ambigus.length]!;
+}
+
 /** Union ordonnée (Maj + rectangle : ajoute à la sélection). */
 export const ajouter = (ids: readonly string[], autres: readonly string[]): string[] => [...new Set([...ids, ...autres])];
 
@@ -176,7 +239,7 @@ export interface Deplacement {
 export function commandesDeplacement(doc: StudioDocument, ids: readonly string[], dx: number, dy: number): Deplacement {
   if (!Number.isFinite(dx) || !Number.isFinite(dy) || (dx === 0 && dy === 0)) return { commandes: [], cotesLiees: [] };
   const commandes: StudioCommand[] = [], cotesLiees: string[] = [];
-  const parId = new Map<string, Element2D | StudioWall>([...elements(doc), ...murs(doc)].map((e) => [e.id, e]));
+  const parId = new Map<string, Element2D | Porteur2D>([...elements(doc), ...porteurs(doc)].map((e) => [e.id, e]));
   for (const id of selectionValide(doc, ids)) {
     const e = parId.get(id)!;
     if (e.type === "dimension" && (e.links.start || e.links.end)) { cotesLiees.push(id); continue; }

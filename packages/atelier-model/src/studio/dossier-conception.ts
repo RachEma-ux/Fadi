@@ -123,13 +123,15 @@ export function studioDonneesVue(source: StudioDocument, spec: StudioVueSourceSp
   }
   const garde = new Set(retenus);
   const objects = doc.objects.filter((o) => garde.has(calque(o)));
-  const ids = new Set(objects.map((o) => o.id));
-  const detacher = <L extends { objectId: string } | null>(l: L): L | null => (l && !ids.has(l.objectId) ? null : l);
-  const dimensions = (doc.dimensions ?? []).filter((d) => garde.has(calque(d))).map((d) => ({ ...d, links: { start: detacher(d.links.start), end: detacher(d.links.end) } }));
-  const annotations = (doc.annotations ?? []).filter((a) => garde.has(calque(a))).map((a) => (a.type === "angular-dimension" ? { ...a, links: { first: detacher(a.links.first), second: detacher(a.links.second) } } : a));
   const archi = doc.architecture ?? [];
   const murs = new Set(archi.filter((x) => x.type === "wall" && garde.has(calque(x))).map((x) => x.id));
-  const architecture = archi.filter((x) => (x.type === "wall" ? murs.has(x.id) : murs.has(x.hostId)));
+  // Une cote reste liée à une forme ou à un mur repris par la vue (cote associative sur mur, AC-001).
+  const ids = new Set([...objects.map((o) => o.id), ...murs]);
+  const formes = new Set(objects.map((o) => o.id));
+  const detacher = <L extends { objectId: string } | null>(l: L, cibles: ReadonlySet<string> = ids): L | null => (l && !cibles.has(l.objectId) ? null : l);
+  const dimensions = (doc.dimensions ?? []).filter((d) => garde.has(calque(d))).map((d) => ({ ...d, links: { start: detacher(d.links.start), end: detacher(d.links.end) } }));
+  const annotations = (doc.annotations ?? []).filter((a) => garde.has(calque(a))).map((a) => (a.type === "angular-dimension" ? { ...a, links: { first: detacher(a.links.first, formes), second: detacher(a.links.second, formes) } } : a));
+  const architecture = archi.filter((x) => (x.type === "wall" ? murs.has(x.id) : x.type === "ladder" ? garde.has(calque(x)) : murs.has(x.hostId)));
   const layers = (doc.layers ?? []).filter((l) => garde.has(l.id)).map((l) => ({ ...l, visible: true }));
   const reduit: StudioDocument = {
     id: doc.id, schemaVersion: doc.schemaVersion, units: doc.units, frame: doc.frame, objects,

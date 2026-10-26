@@ -1133,7 +1133,7 @@ const studioArchives = (archives?: boolean) => (archives ? "?archives=1" : "");
  * Adresse d'export d'une variante (pièce jointe SVG, DXF ou IFC produite par le serveur, même origine : le cookie de session
  * suit le lien). Sans `revisionId`, le serveur exporte la tête ; avec, la révision historique affichée.
  */
-export function studioExportUrl(p: string, s: string, v: string, format: "svg" | "dxf" | "ifc", revisionId?: string | null): string {
+export function studioExportUrl(p: string, s: string, v: string, format: "svg" | "dxf" | "ifc" | "obj" | "stl" | "step", revisionId?: string | null): string {
   return `${studioVariantPath(p, s, v)}/export?format=${format}${revisionId ? `&revision=${encodeURIComponent(revisionId)}` : ""}`;
 }
 /** Commentaire d'une variante (règles de la Collaboration : tout membre commente, l'auteur seul supprime). */

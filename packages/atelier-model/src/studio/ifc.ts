@@ -206,7 +206,7 @@ function studioIfc(input: StudioDocument, meta: StudioIfcMeta): { content: strin
     for (const b of a.construits) { if (hiddenLayers.has(b.layerId)) summary.onHiddenLayers++; built.push(b); }
     remplissages.push(...a.remplissages);
     for (const [id, e] of a.entites) entites.set(id, e);
-    summary.architecture = { walls: a.murs, openings: a.ouvertures, doors: a.portes, windows: a.fenetres };
+    summary.architecture = { walls: a.murs, openings: a.ouvertures, doors: a.portes, windows: a.fenetres, ...(a.echelles ? { ladders: a.echelles } : {}) };
   }
   if (built.length) s.add(`IFCRELCONTAINEDINSPATIALSTRUCTURE(${gid("rel-storey-elements")},$,$,$,${refs([...built.map((b) => b.element), ...remplissages])},${ref(storey)})`);
 
@@ -245,6 +245,7 @@ function studioIfc(input: StudioDocument, meta: StudioIfcMeta): { content: strin
     ...(summary.architecture ? [
       prop("ArchitecturalWalls", integer(summary.architecture.walls)), prop("Openings", integer(summary.architecture.openings)),
       prop("DeclaredDoors", integer(summary.architecture.doors)), prop("DeclaredWindows", integer(summary.architecture.windows)),
+      ...(summary.architecture.ladders !== undefined ? [prop("ArchitecturalLadders", integer(summary.architecture.ladders))] : []),
     ] : []),
     ...(summary.proprietes ? [
       prop("DeclaredPropertiesExported", integer(summary.proprietes.exported)),

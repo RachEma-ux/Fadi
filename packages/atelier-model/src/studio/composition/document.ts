@@ -1,7 +1,9 @@
 import { controlerLiens, studioDimensionValue, validerCote, type StudioDimension } from "../objets/cote.js";
+import { studioResolveurCotes } from "../commandes/cotes-murs.js";
 import { validerForme } from "../objets/index.js";
 import { validerSolide, type StudioSolid } from "../objets-3d/solides.js";
 import { studioIdsOperandes, validerSolideExact, type StudioSolideExact } from "../objets-3d/exacts.js";
+import { controlerCoteFace, validerCotesFaces, type StudioCoteFace } from "../objets-3d/cotes-faces.js";
 import { controlerLiensAnnotation, validerAnnotation } from "../objets/annotation.js";
 import { studioAngularValue } from "../objets/cote-angulaire.js";
 import { etatCalque, validerCalque, type StudioLayerState } from "../noyau/calques.js";
@@ -22,13 +24,14 @@ import type { StudioDocument } from "./types.js";
 /** Document Studio : forme canonique, validation complète, création, lectures (sélection, mesure d'une cote). */
 
 /** Forme canonique : `layers`, `dimensions`, `solides` et `annotations` vides sont omis. */
-export function sortie(id: string, objects: StudioShape[], layers: StudioLayer[], dimensions: StudioDimension[], solides: StudioSolid[] = [], annotations: StudioAnnotation[] = [], architecture: StudioArchitectureItem[] = [], proprietes: StudioPropriete[] = [], scenes: StudioElementVisualisation[] = [], nonNatifs: StudioNonNatif[] = [], exacts: StudioSolideExact[] = [], graphismes: StudioGraphisme[] = [], systemeProjet?: StudioSystemeProjet, sources: StudioSourceExterne[] = []): StudioDocument {
+export function sortie(id: string, objects: StudioShape[], layers: StudioLayer[], dimensions: StudioDimension[], solides: StudioSolid[] = [], annotations: StudioAnnotation[] = [], architecture: StudioArchitectureItem[] = [], proprietes: StudioPropriete[] = [], scenes: StudioElementVisualisation[] = [], nonNatifs: StudioNonNatif[] = [], exacts: StudioSolideExact[] = [], graphismes: StudioGraphisme[] = [], systemeProjet?: StudioSystemeProjet, sources: StudioSourceExterne[] = [], cotesFaces: StudioCoteFace[] = []): StudioDocument {
   return {
     id, schemaVersion: "studio-document/1", units: "m", frame: "local-2d", objects,
     ...(layers.length ? { layers } : {}),
     ...(dimensions.length ? { dimensions } : {}),
     ...(solides.length ? { solides } : {}),
     ...(exacts.length ? { exacts } : {}),
+    ...(cotesFaces.length ? { cotesFaces } : {}),
     ...(annotations.length ? { annotations } : {}),
     ...(architecture.length ? { architecture } : {}),
     ...(proprietes.length ? { proprietes } : {}),
@@ -42,7 +45,7 @@ export function sortie(id: string, objects: StudioShape[], layers: StudioLayer[]
 
 /** Returns a private, canonical copy (empty `layers` / `dimensions` / `annotations` omitted) or throws `StudioValidationError`. */
 export function validateStudioDocument(value: unknown): StudioDocument {
-  const d = record(value, ["id", "schemaVersion", "units", "frame", "objects"], "document", ["layers", "dimensions", "solides", "annotations", "architecture", "proprietes", "scenes", "nonNatifs", "exacts", "graphismes", "systemeProjet", "sources"]);
+  const d = record(value, ["id", "schemaVersion", "units", "frame", "objects"], "document", ["layers", "dimensions", "solides", "annotations", "architecture", "proprietes", "scenes", "nonNatifs", "exacts", "graphismes", "systemeProjet", "sources", "cotesFaces"]);
   if (d.schemaVersion !== "studio-document/1") fail("studioDocument.schemaVersion", "version non prise en charge");
   if (d.units !== "m") fail("studioDocument.units", "unité m attendue");
   if (d.frame !== "local-2d") fail("studioDocument.frame", "repère local-2d attendu");
@@ -69,11 +72,10 @@ export function validateStudioDocument(value: unknown): StudioDocument {
     shapes.set(o.id, o);
   }
   const dimensionIds = new Set<string>();
-  dimensions.forEach((o, i) => {
+  for (const o of dimensions) {
     if (shapes.has(o.id) || dimensionIds.has(o.id)) fail("studioDocument.dimensions", "identifiant dupliqué");
     dimensionIds.add(o.id);
-    controlerLiens(o, shapes, `studioDocument.dimensions[${i}]`);
-  });
+  }
   for (const o of [...objects, ...dimensions]) {
     if (o.layerId !== undefined && !layerIds.has(o.layerId)) fail(`studioDocument.${o.type === "dimension" ? "dimensions" : "objects"}`, "calque inconnu");
   }
@@ -108,9 +110,12 @@ export function validateStudioDocument(value: unknown): StudioDocument {
   for (const o of architecture) {
     if (shapes.has(o.id) || dimensionIds.has(o.id) || annotationIds.has(o.id)) fail("studioDocument.architecture", "identifiant dupliqué");
     annotationIds.add(o.id);
-    if (o.type === "wall" && o.layerId !== undefined && !layerIds.has(o.layerId)) fail("studioDocument.architecture", "calque inconnu");
+    if (o.type !== "opening" && o.layerId !== undefined && !layerIds.has(o.layerId)) fail("studioDocument.architecture", "calque inconnu");
   }
   controlerArchitecture(architecture, "studioDocument.architecture");
+  // Liens des cotes : vers une forme, ou vers un mur (cote associative sur objet architectural, AC-001).
+  const ciblesCotes = studioResolveurCotes(shapes.values(), architecture);
+  dimensions.forEach((o, i) => controlerLiens(o, ciblesCotes, `studioDocument.dimensions[${i}]`));
   // Propriétés déclarées (E.1-01) : cible présente et dans le périmètre pilote, clé (cible, nom) unique.
   const proprietes = Object.hasOwn(d, "proprietes") ? validerProprietes(d.proprietes, objects, architecture, "studioDocument.proprietes") : [];
   // Visualisation (lot E.5) : scènes et apparences, identifiants propres à la liste, calques et objets 3D connus.
@@ -139,7 +144,16 @@ export function validateStudioDocument(value: unknown): StudioDocument {
   const systemeProjet = Object.hasOwn(d, "systemeProjet") ? validerSystemeProjet(d.systemeProjet, "studioDocument.systemeProjet") : undefined;
   // Sources externes (EX-014) : identifiants propres à la liste, provenance validée.
   const sources = Object.hasOwn(d, "sources") ? validerSources(d.sources, "studioDocument.sources") : [];
-  return sortie(identifier(d.id, "studioDocument.id"), objects, layers, dimensions, solides, annotations, architecture, proprietes, scenes, nonNatifs, exacts, graphismes, systemeProjet, sources);
+  // Cotes de faces 3D (lot G2, INV-013) : identifiants uniques dans tout le document, calque connu ; une cote rattachée
+  // porte sur deux faces parallèles existantes d'un solide libre ; une cote « à résoudre » est conservée telle quelle.
+  const cotesFaces = Object.hasOwn(d, "cotesFaces") ? validerCotesFaces(d.cotesFaces, "studioDocument.cotesFaces") : [];
+  for (const [i, c] of cotesFaces.entries()) {
+    if (shapes.has(c.id) || dimensionIds.has(c.id) || annotationIds.has(c.id)) fail("studioDocument.cotesFaces", "identifiant dupliqué");
+    dimensionIds.add(c.id);
+    if (c.layerId !== undefined && !layerIds.has(c.layerId)) fail("studioDocument.cotesFaces", "calque inconnu");
+    controlerCoteFace(c, solides, `studioDocument.cotesFaces[${i}]`);
+  }
+  return sortie(identifier(d.id, "studioDocument.id"), objects, layers, dimensions, solides, annotations, architecture, proprietes, scenes, nonNatifs, exacts, graphismes, systemeProjet, sources, cotesFaces);
 }
 
 /** Valeur mesurée d'une cote angulaire (degrés), dérivée ; « non évaluée » (null) tant qu'elle est à résoudre. */

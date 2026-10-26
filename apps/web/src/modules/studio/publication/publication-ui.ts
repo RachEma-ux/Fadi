@@ -125,3 +125,17 @@ export function messageRefus(status: number, body: unknown): string {
   if (status === 423) return "Édition réservée par un autre compte : réessayez plus tard.";
   return "Action refusée par le serveur.";
 }
+
+/**
+ * Commande « Approuver » du catalogue (AC-010, lot G2) : publications qu'elle propose — celles en revue, dans l'ordre
+ * reçu. Le droit n'est **pas** jugé ici : un concepteur sans droit d'approbation les voit, et le serveur seul refuse.
+ */
+export function publicationsAApprouver<P extends Pick<StudioPublication, "workStatus">>(publications: readonly P[]): P[] {
+  return publications.filter((p) => p.workStatus === "en-revue");
+}
+
+/** Refus de l'approbation lancée par la commande : un 403 dit que ni les préférences ni un profil n'y changent rien. */
+export function messageRefusApprobation(status: number, body: unknown): string {
+  if (status === 403) return "Approbation refusée par le serveur : vous ne détenez pas le droit d’approuver dans ce projet. Ni vos préférences, ni un profil importé, ni un rôle d’administration technique ne le donnent.";
+  return messageRefus(status, body);
+}

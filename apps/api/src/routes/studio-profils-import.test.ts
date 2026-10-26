@@ -57,6 +57,18 @@ describe("TR-EX-034 — profil persistant : profileId, propriétaire, version, o
     expect(exporte.body).toMatchObject({ format: "fadi-studio-profil/1", profileId: r1.body.profileId, proprietaire: "editeur", version: 2 });
   });
 
+  it("EX-079 aller-retour : profil exporté par un compte puis importé par un autre — ordre, raccourcis, favoris et liste personnelle relus à l'identique", async () => {
+    const a = comme("editeur");
+    await a.put(P, { profil: "personnel", favoris: ["studio.dessin.arc"], personnel: ["studio.dessin.ligne", "studio.dessin.arc"], ordre: ["studio.dessin.arc", "studio.dessin.ligne"], raccourcis: { "studio.dessin.arc": "Ctrl+Shift+M" } });
+    const exporte = (await a.get(`${P}/export`)).body as Record<string, unknown>;
+    expect(exporte.format).toBe("fadi-studio-profil/1");
+    const r = await comme("lecteur").post(`${P}/import`, { profil: exporte });
+    expect(r.status).toBe(200);
+    const relu = (await comme("lecteur").get(`${P}/export`)).body as Record<string, unknown>;
+    for (const champ of ["profil", "favoris", "personnel", "ordre", "raccourcis", "groupes"]) expect(relu[champ], champ).toEqual(exporte[champ]);
+    expect(relu.importeDe ?? r.body.importeDe).toBe(`${String(exporte.profileId)}@${String(exporte.version)}`);
+  });
+
   it("import par un autre compte : le compte importateur devient propriétaire, la provenance est gardée, la version est la sienne", async () => {
     const r = await comme("lecteur").post(`${P}/import`, { profil: fichier() });
     expect(r.status).toBe(200);

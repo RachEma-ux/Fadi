@@ -14,13 +14,14 @@ export type IdCommandeEditeur =
   | "zoom-avant" | "zoom-arriere" | "cadrer" | "plein-ecran" | "vue-3d" | "navigation-3d" | "coupe-3d"
   | "accrochage-sommets" | "accrochage-grille"
   | "accrochage-milieu" | "accrochage-centre" | "accrochage-quadrant" | "accrochage-intersection"
-  | "accrochage-perpendiculaire" | "accrochage-tangente" | "accrochage-parallele" | "accrochage-proche"
+  | "accrochage-perpendiculaire" | "accrochage-tangente" | "accrochage-parallele" | "accrochage-proche" | "accrochage-cible-suivante"
   | "reperage-orthogonal" | "reperage-polaire" | "pas-polaire"
   | "importer-dxf" | "importer-ifc" | "modeles-externes" | "exporter-svg" | "exporter-dxf" | "exporter-ifc" | "feuille" | "dossier"
+  | "exporter-obj" | "exporter-stl" | "exporter-step"
   | "exporter-png" | "echanges"
   | "illustration" | "agents"
   | "outils" | "palette"
-  | "exigences";
+  | "exigences" | "approuver";
 export type GroupeCommande = "edition" | "vue" | "accrochage" | "reperage" | "visualisation" | "import" | "export" | "presentation" | "catalogue" | "exigences";
 export type BarreStudio = StudioToolGroup | GroupeCommande;
 export type IconeCommande =
@@ -29,13 +30,14 @@ export type IconeCommande =
   | "studio-zoom-in" | "studio-zoom-out" | "studio-frame" | "studio-fullscreen" | "studio-view-3d" | "studio-nav-plan" | "studio-section-plane"
   | "studio-snap-vertex" | "studio-snap-grid"
   | "studio-snap-midpoint" | "studio-snap-center" | "studio-snap-quadrant" | "studio-snap-intersection"
-  | "studio-snap-perpendicular" | "studio-snap-tangent" | "studio-snap-parallel" | "studio-snap-nearest"
+  | "studio-snap-perpendicular" | "studio-snap-tangent" | "studio-snap-parallel" | "studio-snap-nearest" | "studio-snap-next"
   | "studio-track-ortho" | "studio-track-polar" | "studio-track-polar-step"
   | "studio-import-dxf" | "studio-import-ifc" | "studio-external-models" | "studio-export-svg" | "studio-export-dxf" | "studio-export-ifc" | "studio-sheet" | "studio-dossier"
+  | "studio-export-obj" | "studio-export-stl" | "studio-export-step"
   | "studio-export-png" | "studio-exchanges"
   | "studio-illustration" | "studio-agents"
   | "studio-catalog" | "studio-palette"
-  | "studio-requirements";
+  | "studio-requirements" | "studio-approve";
 
 export interface CommandeEditeur {
   readonly id: IdCommandeEditeur;
@@ -51,7 +53,7 @@ export interface CommandeEditeur {
   /** Bascule (bouton enfoncé ou non) : accrochages. */
   readonly bascule?: boolean;
   /** Téléchargement par un lien (export) plutôt qu'une action de la page. */
-  readonly telechargement?: "svg" | "dxf" | "ifc";
+  readonly telechargement?: "svg" | "dxf" | "ifc" | "obj" | "stl" | "step";
   /** Le raccourci reste actif quand le focus est dans un champ de saisie. */
   readonly dansUnChamp?: boolean;
 }
@@ -91,6 +93,10 @@ export const COMMANDES_EDITEUR: readonly CommandeEditeur[] = Object.freeze([
   // Parallèle (EX-053) : Ctrl+Maj+F6, libre et non réservé (Maj+F6 est « Créer un graphisme », lot REND).
   { id: "accrochage-parallele", libelleFR: "Accrocher en parallèle", raccourci: "Ctrl+Shift+F6", iconeSymbolique: "studio-snap-parallel", groupe: "accrochage", ecrit: false, bascule: true },
   { id: "accrochage-proche", libelleFR: "Accrocher au plus proche", raccourci: "Shift+J", iconeSymbolique: "studio-snap-nearest", groupe: "accrochage", ecrit: false, bascule: true },
+  // Cas ambigus (AC-004, lot G2) : plusieurs cibles à égalité (objets superposés, extrémités confondues) — la candidate
+  // suivante devient le point posé, ou l'objet suivant sous le clic est désigné ; choix explicite, jamais en silence.
+  // Ctrl+Maj+F1, libre et non réservé (F1 seul l'est).
+  { id: "accrochage-cible-suivante", libelleFR: "Cible d’accrochage suivante", raccourci: "Ctrl+Shift+F1", iconeSymbolique: "studio-snap-next", groupe: "accrochage", ecrit: false },
   // Repérage depuis le dernier point : orthogonal (F8, comme les logiciels de DAO ; Maj tenue l'impose le temps du
   // geste), polaire (F10) et son pas 15° / 30° / 45° / 90° (Maj+Y le fait tourner).
   { id: "reperage-orthogonal", libelleFR: "Mode orthogonal", raccourci: "F8", iconeSymbolique: "studio-track-ortho", groupe: "reperage", ecrit: false, bascule: true },
@@ -116,6 +122,13 @@ export const COMMANDES_EDITEUR: readonly CommandeEditeur[] = Object.freeze([
   { id: "exporter-dxf", libelleFR: "Exporter DXF", raccourci: "Shift+X", iconeSymbolique: "studio-export-dxf", groupe: "export", ecrit: false, telechargement: "dxf" },
   // IFC4X3 des seuls objets extrudés (Maj+I : I comme IFC, libre et non réservé).
   { id: "exporter-ifc", libelleFR: "Exporter IFC", raccourci: "Shift+I", iconeSymbolique: "studio-export-ifc", groupe: "export", ecrit: false, telechargement: "ifc" },
+  // Exports 3D de la révision (E.6-04), chacun son contrat : OBJ (maillage nommé), STL (facettes des solides), STEP
+  // (solides exacts nommés, noyau du serveur). Toutes les combinaisons Maj+lettre sont prises : Ctrl+Maj+F7, F8 et F10,
+  // libres et non réservées (F7 seul est la navigation au curseur, F10 seul est la barre de menus : les variantes
+  // Ctrl+Maj restent à la page). Lecture admise : un lecteur télécharge.
+  { id: "exporter-obj", libelleFR: "Exporter OBJ", raccourci: "Ctrl+Shift+F7", iconeSymbolique: "studio-export-obj", groupe: "export", ecrit: false, telechargement: "obj" },
+  { id: "exporter-stl", libelleFR: "Exporter STL", raccourci: "Ctrl+Shift+F8", iconeSymbolique: "studio-export-stl", groupe: "export", ecrit: false, telechargement: "stl" },
+  { id: "exporter-step", libelleFR: "Exporter STEP", raccourci: "Ctrl+Shift+F10", iconeSymbolique: "studio-export-step", groupe: "export", ecrit: false, telechargement: "step" },
   // Matrice d'échanges (E.6-01 à E.6-05), en lecture seule : Q, dernière lettre seule libre (non réservée, hors des
   // lettres d'outils) ; toutes les combinaisons Maj+lettre sont prises. Lecture admise.
   { id: "echanges", libelleFR: "Matrice d’échanges", raccourci: "Q", iconeSymbolique: "studio-exchanges", groupe: "export", ecrit: false },
@@ -124,6 +137,10 @@ export const COMMANDES_EDITEUR: readonly CommandeEditeur[] = Object.freeze([
   // Feuilles composées et dossier de conception (E.3) : Ctrl+Maj+D (D comme dossier) ; toutes les lettres Maj+… sont
   // prises et Ctrl+D (marque-page) reste au navigateur. Lecture admise : un lecteur consulte et télécharge.
   { id: "dossier", libelleFR: "Feuilles et dossier", raccourci: "Ctrl+Shift+D", iconeSymbolique: "studio-dossier", groupe: "presentation", ecrit: false },
+  // Approuver (AC-010, lot G2) : la commande d'approbation d'une publication soumise, découverte par recherche comme toute
+  // commande ; le serveur seul juge du droit métier (canApprove) — un concepteur sans ce droit reçoit son refus.
+  // Ctrl+Maj+F11, libre et non réservé (F11 seul, plein écran, l'est). Lecture du document admise : l'approbation n'écrit pas la variante.
+  { id: "approuver", libelleFR: "Approuver", raccourci: "Ctrl+Shift+F11", iconeSymbolique: "studio-approve", groupe: "presentation", ecrit: false },
   { id: "outils", libelleFR: "Outils", raccourci: "Shift+O", iconeSymbolique: "studio-catalog", groupe: "catalogue", ecrit: false },
   { id: "palette", libelleFR: "Palette de commandes", raccourci: "Ctrl+K", iconeSymbolique: "studio-palette", groupe: "catalogue", ecrit: false, dansUnChamp: true },
   // Exigences et écarts (E.1) : F comme « fiche d’exigences » (lettre seule libre et non réservée ; V appartient à la Visualisation) ; lecture admise.
@@ -178,19 +195,21 @@ export const OUTILS_MODES: ReadonlySet<StudioToolId> = new Set<StudioToolId>([
   "studio.solide.face-decaler", "studio.solide.face-diviser", "studio.solide.pivoter", "studio.solide.resoudre",
   // Lot F2 : booléen exact (formulaire de la vue 3D, noyau exact chargé à la demande).
   "studio.solide.booleen",
+  // Lot G2 (INV-013) : cote de face 3D (formulaire de la vue 3D, solide sélectionné).
+  "studio.solide.cote-face",
   "studio.dessin.copier", "studio.dessin.rotation", "studio.dessin.symetrie", "studio.dessin.echelle",
   "studio.dessin.cote-angulaire", "studio.dessin.texte",
   // Architecture (A.4) : poser l'axe d'un mur, désigner le mur d'une ouverture.
-  "studio.architecture.mur", "studio.architecture.ouverture",
+  "studio.architecture.mur", "studio.architecture.ouverture", "studio.architecture.echelle-acces",
 ]);
 /** Outils du volume libre : ils agissent dans la vue 3D, qu'ils ouvrent. */
 export const OUTILS_VOLUME_LIBRE: ReadonlySet<StudioToolId> = new Set<StudioToolId>([
   "studio.solide.boite", "studio.solide.prisme", "studio.solide.deplacer", "studio.solide.supprimer",
   "studio.solide.face-decaler", "studio.solide.face-diviser", "studio.solide.pivoter", "studio.solide.resoudre",
-  "studio.solide.booleen",
+  "studio.solide.booleen", "studio.solide.cote-face",
 ]);
 /** Outils qui posent des points sur la planche. */
-export const OUTILS_TRACE: ReadonlySet<StudioToolId> = new Set<StudioToolId>(["studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle", "studio.dessin.arc", "studio.dessin.polyligne", "studio.dessin.cote", "studio.dessin.cote-angulaire", "studio.dessin.texte", "studio.architecture.mur", "studio.architecture.ouverture"]);
+export const OUTILS_TRACE: ReadonlySet<StudioToolId> = new Set<StudioToolId>(["studio.dessin.ligne", "studio.dessin.rectangle", "studio.dessin.cercle", "studio.dessin.arc", "studio.dessin.polyligne", "studio.dessin.cote", "studio.dessin.cote-angulaire", "studio.dessin.texte", "studio.architecture.mur", "studio.architecture.ouverture", "studio.architecture.echelle-acces"]);
 
 export const outilsDeBarre = (barre: BarreStudio): StudioToolEntry[] => STUDIO_TOOLS.filter((t) => t.groupe === barre);
 export const commandesDeBarre = (barre: BarreStudio): CommandeEditeur[] => COMMANDES_EDITEUR.filter((c) => c.groupe === barre);

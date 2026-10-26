@@ -121,6 +121,12 @@ describe("Planche 2D de Studio — règle d'or", () => {
     expect(cibleRaccourci("Shift+I")).toEqual({ type: "commande", id: "exporter-ifc" });
     expect(cibleRaccourci("Ctrl+Shift+I")).toBeNull();
     expect(COMMANDES_EDITEUR.find((c) => c.id === "exporter-ifc")).toMatchObject({ groupe: "export", ecrit: false, telechargement: "ifc", iconeSymbolique: "studio-export-ifc" });
+    // Exports 3D (E.6-04) : Ctrl+Maj+F7 (OBJ), Ctrl+Maj+F8 (STL), Ctrl+Maj+F10 (STEP), barre Exporter, icônes propres, lecture admise.
+    for (const [id, r, f] of [["exporter-obj", "Ctrl+Shift+F7", "obj"], ["exporter-stl", "Ctrl+Shift+F8", "stl"], ["exporter-step", "Ctrl+Shift+F10", "step"]] as const) {
+      expect(cibleRaccourci(r)).toEqual({ type: "commande", id });
+      expect(COMMANDES_EDITEUR.find((c) => c.id === id)).toMatchObject({ groupe: "export", ecrit: false, telechargement: f, iconeSymbolique: `studio-export-${f}` });
+      expect(studioExportUrl("p", "s", "v", f)).toBe(`/projects/p/studio/studies/s/variants/v/export?format=${f}`);
+    }
     expect(outilsDeBarre("volume").map((t) => t.toolId)).toEqual(["studio.objet.extruder", "studio.objet.aplatir"]);
     expect(COMMANDES_EDITEUR.find((c) => c.id === "vue-3d")).toMatchObject({ groupe: "vue", bascule: true, ecrit: false, iconeSymbolique: "studio-view-3d" });
     // Feuille de présentation : Maj+P, barre Présentation, icône propre ; Ctrl+P (impression) reste au navigateur.
@@ -129,7 +135,7 @@ describe("Planche 2D de Studio — règle d'or", () => {
     expect(RACCOURCIS_RESERVES).toContain("Ctrl+P");
     expect(COMMANDES_EDITEUR.find((c) => c.id === "feuille")).toMatchObject({ groupe: "presentation", ecrit: false, iconeSymbolique: "studio-sheet" });
     // Feuilles composées et dossier de conception (E.3) : Ctrl+Maj+D, même barre, icône propre.
-    expect(commandesDeBarre("presentation").map((c) => c.id)).toEqual(["feuille", "dossier"]);
+    expect(commandesDeBarre("presentation").map((c) => c.id)).toEqual(["feuille", "dossier", "approuver"]);
     expect(cibleRaccourci("Ctrl+Shift+D")).toEqual({ type: "commande", id: "dossier" });
     expect(COMMANDES_EDITEUR.find((c) => c.id === "dossier")).toMatchObject({ groupe: "presentation", ecrit: false, iconeSymbolique: "studio-dossier" });
     // Import DXF : Maj+U, barre Importer, icône propre, indisponible en lecture seule (commande d'écriture), pas un lien.
@@ -257,7 +263,7 @@ describe("Catalogue « Outils » et palette (#166, Registry)", () => {
   it("recherche par nom (sans accents), raccourci (registre ou affiché) et identifiant", () => {
     expect(rechercher("Ligne")[0]?.identifiant).toBe("studio.dessin.ligne");
     expect(rechercher("selection").map((e) => e.identifiant)).toContain("studio.dessin.selection");
-    expect(rechercher("Cote").map((e) => e.identifiant)).toEqual(["studio.dessin.cote", "studio.dessin.cote-angulaire"]);
+    expect(rechercher("Cote").map((e) => e.identifiant)).toEqual(["studio.dessin.cote", "studio.dessin.cote-angulaire", "studio.solide.cote-face"]);
     expect(rechercher("Maj+C")[0]?.identifiant).toBe("studio.dessin.cote");
     expect(rechercher("Shift+C")[0]?.identifiant).toBe("studio.dessin.cote");
     expect(rechercher("studio.calque").map((e) => e.identifiant)).toEqual(["studio.calque.creer", "studio.calque.modifier"]);

@@ -66,11 +66,12 @@ export function validerPropriete(value: unknown, path: string): StudioPropriete 
 }
 
 /** Nature de la cible dans le périmètre pilote, ou motif de refus. */
-export type CiblePropriete = { type: "mur" | "ouverture" | "objet-extrude"; layerId?: string } | { refus: string };
+export type CiblePropriete = { type: "mur" | "ouverture" | "echelle-acces" | "objet-extrude"; layerId?: string } | { refus: string };
 
 export function ciblePropriete(objects: readonly StudioShape[], architecture: readonly StudioArchitectureItem[], id: string): CiblePropriete {
   const a = architecture.find((x) => x.id === id);
   if (a?.type === "wall") return { type: "mur", ...(a.layerId !== undefined ? { layerId: a.layerId } : {}) };
+  if (a?.type === "ladder") return { type: "echelle-acces", ...(a.layerId !== undefined ? { layerId: a.layerId } : {}) };
   if (a?.type === "opening") {
     const hote = architecture.find((x) => x.id === a.hostId);
     return { type: "ouverture", ...(hote?.type === "wall" && hote.layerId !== undefined ? { layerId: hote.layerId } : {}) };

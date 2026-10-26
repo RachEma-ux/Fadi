@@ -42,8 +42,8 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { mesurerRendu3d } from "../chargement/mesures-studio";
 import {
-  couperStudio, projectionsAInvalider, studioApparenceResolue, studioAssemblerMaillage, studioDocumentToutVisible, studioFiltrerMaillageScene, studioFusionnerMorceaux, studioMaillerObjets,
-  studioLienSolide, studioNomFichierRendu, studioProvenanceRendu, studioScenes, studioVersionProjection, studioVolumeSolide, type StudioSolid,
+  couperStudio, projectionsAInvalider, studioAssemblerMaillage, studioDocumentToutVisible, studioFiltrerMaillageScene, studioFusionnerMorceaux, studioMaillerObjets,
+  studioLienSolide, studioNomFichierRendu, studioProvenanceRendu, studioScenes, studioValeurCoteFace, studioVersionProjection, studioVolumeSolide, type StudioSolid,
   type StudioCacheMaillage, type StudioCameraScene, type StudioCommand, type StudioCoupe, type StudioDocument, type StudioFinitionAffichage, type StudioInvalidation, type StudioMesh3d,
   type StudioModeAffichage, type StudioMorceauMaillage, type StudioScene,
 } from "@parcours/atelier-model";
@@ -51,7 +51,8 @@ import { empreinteDe } from "../taches/empreinte";
 import { useTache } from "../taches/useTache";
 import { MESSAGES_TACHE } from "../taches/messages";
 import { compteGpu, libererObjet, libererTexturesPartagees, texturesPartagees, vider } from "./ressources-gpu";
-import { cleAspect, impactDe, objetsVolume, preparer, SceneRendu, type AspectVolume, type EntreeRendu, type GeometrieObjet } from "./scene-rendu";
+import { impactDe, SceneRendu } from "./scene-rendu";
+import { entreesArchitecture, entreesContenu, entreesLibres, type Lecture } from "./entrees-scene";
 import { designer } from "./picking";
 import { basculerMembre, commandeDeplacerGroupe, commandeEchelleGroupe, commandePivoterGroupe, commandeSupprimerGroupe, membresGroupe } from "./groupe-3d";
 import {
@@ -67,7 +68,7 @@ import { Icon } from "../../../components/Icon";
 import { estSelectionnable } from "../planche2d/calques";
 import { LOCALE } from "../../../lib/i18n";
 import {
-  AXES_PIVOT, auCentimetre, BOITE_VIDE, commandeBoite, commandeDeplacementSolide, commandeDivision, commandeEchelle3d, commandeFace, commandePivot, commandePrisme, commandeResolution, DEPLACEMENT_VIDE,
+  AXES_PIVOT, auCentimetre, BOITE_VIDE, commandeBoite, commandeCoteFace, commandeDeplacementSolide, commandeDivision, descriptionCoteFace, commandeEchelle3d, commandeFace, commandePivot, commandePrisme, commandeResolution, DEPLACEMENT_VIDE,
   type AxePivot,
   descriptionLien, descriptionSolide, FACE_VIDE, facesDe, PRISME_VIDE, profilsFermes, RELATIONS_PRISME,
   type ValeursBoite, type ValeursDeplacement, type ValeursFace, type ValeursPrisme,
@@ -77,7 +78,7 @@ import { descriptionOperande, PanneauBooleen } from "./PanneauBooleen";
 import { PanneauVisualisation } from "./scenes/PanneauVisualisation";
 import {
   calquesVisualisation, cameraScene, commandeApparence, commandeMiseAJourScene, commandeNouvelleScene, commandeRetraitApparence, commandeSuppressionScene,
-  apparenceDe, couleurEntiere, hautCamera, MODE_INITIAL, prochainNomScene, type DemandeVue3d,
+  apparenceDe, hautCamera, MODE_INITIAL, prochainNomScene, type DemandeVue3d,
 } from "./scenes/scenes-ui";
 import "./vue3d.css";
 import { choisirMoteur3d, texteMoteur3d, type AccesGpu, type ChoixMoteur3d } from "./moteur-3d";
@@ -183,106 +184,6 @@ const nombre = (v: number) => v.toLocaleString(LOCALE, { maximumFractionDigits: 
 const MAILLAGE_VIDE: StudioMesh3d = Object.freeze({
   frame: "local-3d", units: "m", source: { frame: "local-2d", conversion: "(x, y) → (x, y, z)" }, solids: [], outlines: [], nonExtruded: 0, hidden: 0, bounds: null,
 }) as StudioMesh3d;
-
-/** Aspect d'un volume : la sélection l'emporte, puis l'apparence d'affichage (objet, sinon calque), puis le défaut. */
-function aspectDe(doc: StudioDocument, mode: StudioModeAffichage, o: { id: string; layerId?: string }, defaut: number, choisi: boolean, double = false): AspectVolume {
-  const a = studioApparenceResolue(doc, o.id, o.layerId);
-  if (choisi) return { couleur: 0xf0b44c, mode, apparence: false, double };
-  return a ? { couleur: couleurEntiere(a.color), ...(a.finish ? { finition: a.finish } : {}), mode, apparence: true, double } : { couleur: defaut, mode, apparence: false, double };
-}
-
-/** Volume construit seul : surface (nommée, données de désignation) et arêtes selon le mode. */
-function volumeSeul(g: GeometrieObjet, aspect: AspectVolume, nom: string, donnees: Record<string, string>): THREE.Object3D[] {
-  const { surface, aretes } = objetsVolume([preparer(g)], aspect);
-  surface.name = nom;
-  const objets: THREE.Object3D[] = aretes ? [surface, aretes] : [surface];
-  for (const o of objets) Object.assign(o.userData, donnees);
-  return objets;
-}
-
-/** Ce que la scène de rendu lit : maillage affiché, clés de contenu de ses morceaux, document et réglages courants. */
-interface Lecture {
-  mesh: StudioMesh3d;
-  /** Clé de projection de chaque morceau affiché (signature de son objet three.js). */
-  cle: (id: string) => string;
-  doc: StudioDocument;
-  mode: StudioModeAffichage;
-  selection: string | null;
-  selectionArchitecture: string | null;
-  /** Objet encore présent dans le document courant (un objet supprimé disparaît sans attendre le maillage suivant). */
-  present: (id: string) => boolean;
-}
-
-/** Volumes des objets 2D extrudés (en lots) et contours plats (seuls). */
-function entreesContenu(l: Lecture): EntreeRendu[] {
-  const out: EntreeRendu[] = [];
-  for (const s of l.mesh.solids) {
-    if (!l.present(s.id)) continue;
-    out.push({ id: s.id, signature: l.cle(s.id), lot: "contenu", instanciable: true, geometrie: s, aspect: aspectDe(l.doc, l.mode, s, s.type === "line" ? 0xd9d2c3 : 0xb9d3cf, false, s.kind === "wall-surface") });
-  }
-  for (const o of l.mesh.outlines) {
-    if (!l.present(o.id)) continue;
-    out.push({
-      id: o.id, signature: l.cle(o.id), construire: () => {
-        const g = new THREE.BufferGeometry().setFromPoints(o.points.map((p) => new THREE.Vector3(p.x, p.y, p.z)));
-        const mat = new THREE.LineDashedMaterial({ color: 0x8a6a3a, dashSize: 0.15, gapSize: 0.1 });
-        const ligne = o.closed ? new THREE.LineLoop(g, mat) : new THREE.Line(g, mat);
-        ligne.computeLineDistances();
-        return [ligne];
-      },
-    });
-  }
-  return out;
-}
-
-/** Solides libres et solides exacts (lot F2), construits seuls et désignables. */
-function entreesLibres(l: Lecture): EntreeRendu[] {
-  const libres = (l.mesh.freeSolids ?? []).filter((s) => l.present(s.id)).map((s): EntreeRendu => {
-    // Un solide lié « à résoudre » garde sa dernière géométrie, dans une teinte distincte (jamais comme à jour).
-    const aspect = aspectDe(l.doc, l.mode, s, s.lien?.etat === "a-resoudre" ? 0xe0a8a0 : 0xc9bde3, s.id === l.selection);
-    return { id: s.id, signature: `${l.cle(s.id)}|${cleAspect(aspect)}`, construire: () => volumeSeul(s, aspect, s.id, { solide: s.id }) };
-  });
-  const exacts = (l.mesh.exacts ?? []).filter((s) => l.present(s.id)).map((s): EntreeRendu => {
-    const aspect = aspectDe(l.doc, l.mode, s, 0xa9c7e8, s.id === l.selection);
-    return { id: s.id, signature: `${l.cle(s.id)}|${cleAspect(aspect)}`, construire: () => volumeSeul(s, aspect, s.id, { solide: s.id }) };
-  });
-  return [...libres, ...exacts];
-}
-
-/**
- * Murs opaques (en lots, sauf le mur sélectionné, construit seul à sa couleur de sélection) et ouvertures (boîte du
- * vide, translucide, seule) ; chaque objet seul porte l'identifiant de son objet, chaque lot sa table de désignation.
- */
-function entreesArchitecture(l: Lecture): EntreeRendu[] {
-  const out: EntreeRendu[] = [];
-  for (const a of l.mesh.architecture ?? []) {
-    if (!l.present(a.id)) continue;
-    const choisi = a.id === l.selectionArchitecture;
-    if (a.type === "wall") {
-      const aspect = aspectDe(l.doc, l.mode, a, 0xd8d2c4, choisi);
-      out.push(choisi
-        ? { id: a.id, signature: `${l.cle(a.id)}|${cleAspect(aspect)}`, construire: () => volumeSeul(a, aspect, a.id, { architecture: a.id }) }
-        : { id: a.id, signature: l.cle(a.id), lot: "mur", geometrie: a, aspect });
-      continue;
-    }
-    // Le vide d'une ouverture ne prend que l'apparence de l'ouverture elle-même (pas celle du calque de son mur).
-    const propre = studioApparenceResolue(l.doc, a.id, undefined);
-    const teinte = choisi ? 0xf0b44c : propre?.source === "object" ? couleurEntiere(propre.color) : 0x7fb2d6;
-    out.push({
-      id: a.id, signature: `${l.cle(a.id)}|${teinte.toString(16)}|${choisi ? 1 : 0}`, construire: () => {
-        const g = new THREE.BufferGeometry();
-        const p = preparer(a);
-        g.setAttribute("position", new THREE.BufferAttribute(p.positions, 3));
-        g.setIndex(new THREE.BufferAttribute(p.index, 1));
-        const vide = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: teinte, transparent: true, opacity: choisi ? 0.45 : 0.2, depthWrite: false }));
-        vide.name = a.id;
-        vide.userData.architecture = a.id;
-        return [vide];
-      },
-    });
-  }
-  return out;
-}
 
 /** Caméra relevée de la vue (repère de rendu = `local-3d`, conversion `cameraScene`). */
 function cameraCourante(m: Moteur): StudioCameraScene {
@@ -413,6 +314,8 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
   const [deplacement, setDeplacement] = useState<ValeursDeplacement>(DEPLACEMENT_VIDE);
   const [face, setFace] = useState<ValeursFace>(FACE_VIDE);
   const [division, setDivision] = useState<ValeursFace>(FACE_VIDE);
+  // Cote de face 3D (INV-013) : deux faces du solide choisi ; `rattacher` = identifiant d'une cote existante à rattacher.
+  const [coteFaces, setCoteFaces] = useState<{ a: string; b: string; rattacher: string }>({ a: "", b: "", rattacher: "" });
   const [pivot, setPivot] = useState(Number.NaN);
   // A.3-03 : axe du pivot (vertical ou axes horizontaux du solide) et échelle 3D (point fixe en plan, facteur).
   const [axePivot, setAxePivot] = useState<AxePivot>("z");
@@ -946,6 +849,12 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
     e.preventDefault();
     envoyer(commandeDivision(choisi?.id ?? null, division), () => setDivision(FACE_VIDE));
   }
+  function coter(e: FormEvent) {
+    e.preventDefault();
+    const id = coteFaces.rattacher || crypto.randomUUID();
+    const existante = (doc.cotesFaces ?? []).find((c) => c.id === coteFaces.rattacher);
+    envoyer(commandeCoteFace(id, choisi?.id ?? null, coteFaces, existante?.layerId ?? choisi?.layerId), () => setCoteFaces({ a: "", b: "", rattacher: "" }));
+  }
   function pivoter(e: FormEvent) {
     e.preventDefault();
     envoyer(commandePivot(choisi?.id ?? null, pivot, axePivot), () => setPivot(Number.NaN));
@@ -1069,7 +978,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
 
       {outil === "studio.solide.booleen" && <PanneauBooleen doc={doc} revision={empreinte.revision} modifiable={modifiable} surCommandes={surCommandes} surSelection={surSelection} />}
 
-      {!choisi && outil && ["studio.solide.face-decaler", "studio.solide.face-diviser", "studio.solide.pivoter", "studio.solide.resoudre"].includes(outil) && <p className="studio-hint" data-studio-face-indice>Sélectionnez d’abord, dans la vue 3D ou la liste des solides, le solide à modifier.</p>}
+      {!choisi && outil && ["studio.solide.face-decaler", "studio.solide.face-diviser", "studio.solide.pivoter", "studio.solide.resoudre", "studio.solide.cote-face"].includes(outil) && <p className="studio-hint" data-studio-face-indice>Sélectionnez d’abord, dans la vue 3D ou la liste des solides, le solide à modifier.</p>}
 
       {(solides.length > 0 || exacts.length > 0) && <div className="studio-vue3d-solides" data-studio-solides>
         <h3>Solides libres</h3>
@@ -1141,6 +1050,37 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
             <button type="submit" data-studio-diviser-face><Icon name="studio-solid-split-face" size={18} /> Diviser la face</button>
           </fieldset>
         </form>}
+        {choisi && <form onSubmit={coter} data-studio-cote-face={choisi.id} aria-label="Coter deux faces du solide">
+          <fieldset disabled={!modifiable}>
+            <legend>{coteFaces.rattacher ? "Rattacher la cote de face à deux faces" : "Coter deux faces parallèles"}</legend>
+            <label>Première face
+              <select name="cote-face-a" required value={coteFaces.a} onChange={(e) => setCoteFaces({ ...coteFaces, a: e.target.value })} data-studio-cote-face-a>
+                <option value="">Choisir la face…</option>
+                {facesChoisi.map((f) => <option key={f.valeur} value={f.valeur}>{f.libelle}</option>)}
+              </select>
+            </label>
+            <label>Seconde face
+              <select name="cote-face-b" required value={coteFaces.b} onChange={(e) => setCoteFaces({ ...coteFaces, b: e.target.value })} data-studio-cote-face-b>
+                <option value="">Choisir la face…</option>
+                {facesChoisi.map((f) => <option key={f.valeur} value={f.valeur}>{f.libelle}</option>)}
+              </select>
+            </label>
+            <p className="studio-hint">La cote suit la face poussée, tirée, déplacée ou pivotée. Si la face cotée est divisée, aucune des deux moitiés n’est choisie à votre place : la cote passe « à résoudre » et se rattache ici.</p>
+            <button type="submit" data-studio-coter-faces><Icon name="studio-solid-face-dimension" size={18} /> {coteFaces.rattacher ? "Rattacher la cote" : "Coter les faces"}</button>
+          </fieldset>
+        </form>}
+        {(doc.cotesFaces?.length ?? 0) > 0 && <div data-studio-cotes-faces="">
+          <h4>Cotes de faces 3D</h4>
+          <ul>
+            {(doc.cotesFaces ?? []).map((c) => {
+              const s = solides.find((x) => x.id === c.solidId);
+              return <li key={c.id} data-studio-cote-face-etat={c.toResolve ? "a-resoudre" : "rattachee"} data-studio-cote-face-id={c.id}>
+                <span>{descriptionCoteFace(c, studioValeurCoteFace(solides, c), nombre, s)}</span>
+                <button type="button" disabled={!modifiable || !s} aria-pressed={coteFaces.rattacher === c.id} onClick={() => { if (s) surSelection?.(s.id); setCoteFaces({ a: "", b: "", rattacher: coteFaces.rattacher === c.id ? "" : c.id }); }} data-studio-cote-face-rattacher={c.id}>Rattacher</button>
+              </li>;
+            })}
+          </ul>
+        </div>}
         {choisi && <form onSubmit={pivoter} data-studio-pivoter={choisi.id} aria-label="Pivoter le solide">
           <fieldset disabled={!modifiable}>
             <legend>Pivoter autour d’un axe passant par l’origine</legend>
@@ -1212,7 +1152,7 @@ export function Vue3DStudio({ doc, outil, modifiable = false, navigation = "orbi
           {architecture.map((a) => (
             <li key={a.id}>
               <button type="button" aria-pressed={a.id === selectionArchitecture} disabled={!estSelectionnable(doc, a.layerId)} onClick={() => surSelectionArchitecture?.(a.id === selectionArchitecture ? null : a.id)} data-studio-architecture-3d-objet={a.id} data-studio-type={a.type}>
-                <Icon name={a.type === "wall" ? "studio-wall" : "studio-opening"} size={16} /> {a.type === "wall" ? "Mur" : "Ouverture"} <span translate="no">{a.id.slice(0, 8)}</span>
+                <Icon name={a.type === "wall" ? "studio-wall" : a.type === "ladder" ? "studio-ladder" : "studio-opening"} size={16} /> {a.type === "wall" ? "Mur" : a.type === "ladder" ? "Échelle d’accès" : "Ouverture"} <span translate="no">{a.id.slice(0, 8)}</span>
               </button>
             </li>
           ))}

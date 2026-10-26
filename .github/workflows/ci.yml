@@ -238,11 +238,19 @@ jobs:
       API_RATE_LIMIT: "5000"
     steps:
       - uses: actions/checkout@v4
+        with:
+          # EX-101 : le contrôle des régressions pertinentes compare le diff de la PR à sa base.
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: npm ci --no-audit --no-fund
       - run: npm run typecheck
+      # TR-EX-101 : une modification de Worker / registre / géométrie / projection est rattachée à ses tests pertinents ;
+      # tout affaiblissement d'assertion (skip, only, matcher plus faible, précision abaissée, test retiré) est refusé.
+      - name: Régressions pertinentes (EX-101) — tests rattachés aux Workers / registre / géométrie / projections modifiés, affaiblissement d'assertion refusé
+        if: ${{ github.event_name == 'pull_request' }}
+        run: npx tsx apps/api/src/testing/regressions-pertinentes.cli.ts --base "origin/${{ github.base_ref }}"
       - run: npm run db:migrate
       # Gestion des comptes (#253, phase 1) : init.sql rejoué deux fois, défauts des comptes historiques, contraintes
       # CHECK, journal d'audit append-only, conversion des sessions — transactions annulées, base du job seulement.
@@ -520,6 +528,13 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/studio-corpus-s7 node apps/web/e2e/studio-corpus-s7.mjs 2>&1 | tee -a e2e.log
+      # X.1-08 : références visuelles des corpus S1–S7 (planche 2D et vue 3D) photographiées dans Chromium, comparées aux
+      # captures versionnées avec leur empreinte (tolérance déclarée, écart signalé).
+      - name: Références visuelles des corpus S1–S7 — planche 2D et vue 3D comparées aux captures versionnées (apps/web/e2e/studio-corpus-references.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-corpus-references node apps/web/e2e/studio-corpus-references.mjs 2>&1 | tee -a e2e.log
       - name: Recette du contrat de commandes Studio — deux comptes, aperçu annulé, conflit signalé et report revalidé, chevauchement confirmé, annulation concurrente, coupure rejouée, refus atomique (apps/web/e2e/studio-conflits.mjs)
         if: ${{ matrix.shard == 'parcours' }}
         run: |
@@ -550,6 +565,13 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/studio-exact node apps/web/e2e/studio-exact.mjs 2>&1 | tee -a e2e.log
+      # Lot G4 : vingt outils à froid / chaud comparés à la référence versionnée (verdict), Core Web Vitals (DEC-13),
+      # avant / après optimisation de la vue 3D, réactivité pendant un booléen exact lourd (TR-EX-097, TR-AC-002/005, MES-03).
+      - name: Mesures et qualité Studio (lot G4) — vingt outils froid / chaud comparés à la référence versionnée avec verdict, Core Web Vitals (DEC-13), avant / après optimisation 3D, réactivité pendant un booléen exact lourd (apps/web/e2e/studio-g4.mjs)
+        if: ${{ matrix.shard == 'parcours' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-g4 REPETITIONS=5 node apps/web/e2e/studio-g4.mjs 2>&1 | tee -a e2e.log
       # Mesure seulement (B.3-12, D.3-03) : rapport sans seuil ni verdict, joint aux captures (atelier-captures/). Un
       # incident d'interaction est consigné dans le rapport ; l'étape ne bloque jamais (la recette bloquante est
       # studio-chargement.mjs).
@@ -794,6 +816,20 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/studio-out node apps/web/e2e/studio-out.mjs 2>&1 | tee -a e2e.log
+      # Lot G1 : parcours d'une petite étude du dessin au dossier publié à travers quatre domaines (TR-EX-002), états
+      # dérivés des contenus (TR-EX-016), association mur / ouverture / cote et copie indépendante (J4, TEST-003/010/011/012).
+      - name: Lot G1 — parcours du dessin au dossier publié, états dérivés des contenus, association mur / cote, copie indépendante (apps/web/e2e/studio-g1.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-g1 node apps/web/e2e/studio-g1.mjs 2>&1 | tee -a e2e.log
+      # Lot G2 : échelle d'accès (TR-EX-027), accrochage ambigu résolu (TR-AC-004), cote de face 3D (TR-INV-013),
+      # « Approuver » trouvé et refusé puis accordé selon le rôle (TR-AC-010), enveloppe complète (TR-IF-006).
+      - name: Lot G2 — échelle d'accès, accrochage ambigu, cote de face 3D, Approuver par rôle, enveloppe complète (apps/web/e2e/studio-g2.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-g2 node apps/web/e2e/studio-g2.mjs 2>&1 | tee -a e2e.log
       # Organisations-participation, phase 3 (OP-D2 a) : invitation acceptée pour tous, fin de l'ajout direct (UM-8) —
       # aperçu de l'accès, renvoi sans doublon, notification, refus v2.2 (lien transféré, expirée, annulée, déclinée,
       # invitant révoqué, mauvaise fiche, participation terminée, accès expiré), double soumission, nouvel utilisateur ;

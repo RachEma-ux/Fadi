@@ -554,8 +554,9 @@ try {
   await gestionnaire.waitFor();
   check("Outils : le catalogue liste tout le registre", (await gestionnaire.locator("[data-studio-catalogue-entree]").count()) >= 25 && (await gestionnaire.locator('[data-studio-catalogue-entree="studio.dessin.ligne"] [data-studio-exposition="none"]').count()) === 1);
   await gestionnaire.getByLabel("Rechercher un outil", { exact: true }).fill("Cote");
-  check("Outils : la recherche « Cote » trouve les outils Cote et Cote angulaire, et eux seuls", (await gestionnaire.locator("[data-studio-catalogue-entree]").count()) === 2 && (await gestionnaire.locator('[data-studio-catalogue-entree="studio.dessin.cote"]').isVisible())
-    && (await gestionnaire.locator('[data-studio-catalogue-entree="studio.dessin.cote-angulaire"]').isVisible()));
+  check("Outils : la recherche « Cote » trouve les outils Cote, Cote angulaire et Cote de face 3D, et eux seuls", (await gestionnaire.locator("[data-studio-catalogue-entree]").count()) === 3 && (await gestionnaire.locator('[data-studio-catalogue-entree="studio.dessin.cote"]').isVisible())
+    && (await gestionnaire.locator('[data-studio-catalogue-entree="studio.dessin.cote-angulaire"]').isVisible())
+    && (await gestionnaire.locator('[data-studio-catalogue-entree="studio.solide.cote-face"]').isVisible()));
   await page.getByRole("dialog").getByRole("button", { name: "Fermer", exact: true }).click();
   await gestionnaire.waitFor({ state: "detached" });
 

@@ -43,7 +43,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Icon } from "../../components/Icon";
-import { STUDIO_DEFAULT_LAYER_ID, STUDIO_RAPPORTS_ACCELERATION, STUDIO_TOOLS, studioVersionProjection, type StudioCameraScene, type StudioCommand, type StudioDocument, type StudioLayer, type StudioPoint, type StudioRapportAcceleration, type StudioWall } from "@parcours/atelier-model";
+import { STUDIO_DEFAULT_LAYER_ID, STUDIO_RAPPORTS_ACCELERATION, STUDIO_TOOLS, studioVersionProjection, type StudioCameraScene, type StudioCommand, type StudioDocument, type StudioLayer, type StudioPoint, type StudioRapportAcceleration, type StudioLadder, type StudioWall } from "@parcours/atelier-model";
 import { moteurPlanche, texteMoteurPlanche } from "./planche2d/rendus/moteur-canvas";
 import { useNavigate } from "react-router-dom";
 import { BandeauSession } from "./temps-reel/BandeauSession";
@@ -182,7 +182,7 @@ function useHauteurDisponible(ref: { current: HTMLElement | null }, minimum: num
 /** Panneaux latéraux qui lisent ou écrivent dans une étude : indisponibles dans la Console (aucun projet). */
 const PANNEAUX_D_ETUDE: ReadonlySet<FonctionStudio> = new Set<FonctionStudio>(["exigences", "publications", "commentaires-observations", "revisions", "metre"]);
 /** Commandes qui passent par le serveur (exports de la révision enregistrée, feuilles du dossier) : indisponibles dans la Console. */
-const COMMANDES_D_ETUDE: ReadonlySet<IdCommandeEditeur> = new Set<IdCommandeEditeur>(["exporter-svg", "exporter-dxf", "exporter-ifc", "dossier", "modeles-externes", "illustration", "agents"]);
+const COMMANDES_D_ETUDE: ReadonlySet<IdCommandeEditeur> = new Set<IdCommandeEditeur>(["exporter-svg", "exporter-dxf", "exporter-ifc", "exporter-obj", "exporter-stl", "exporter-step", "dossier", "modeles-externes", "illustration", "agents", "approuver"]);
 
 export function VariantWorkspace({ projectId, studyId, variantId, revisionId, commentairesOuverts = false, domaine = null, planche = null, autonome = false, surEnregistreVersProjet, surAdresse }: VariantWorkspaceProps) {
   const [context, setContext] = useState<StudioContext | null>(() => (autonome ? contexteConsole() : null));
@@ -363,11 +363,11 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   const selectionSet = new Set(selectionIds);
   const itemDe = (id: string | undefined) => (id && drawing ? elements(drawing).find(e => e.id === id) ?? null : null);
   // Calque d'un élément choisi, murs (A.4) compris : `elements` ne parcourt pas `architecture`.
-  const calqueDe = (id: string): string => itemDe(id)?.layerId ?? drawing?.architecture?.find((a): a is StudioWall => a.id === id && a.type === "wall")?.layerId ?? STUDIO_DEFAULT_LAYER_ID;
+  const calqueDe = (id: string): string => itemDe(id)?.layerId ?? drawing?.architecture?.find((a): a is StudioWall | StudioLadder => a.id === id && a.type !== "opening")?.layerId ?? STUDIO_DEFAULT_LAYER_ID;
   const selected = selectionIds.length === 1 ? itemDe(selectionIds[0]) : null;
   // Objet du panneau Architecture : l'ouverture ou le mur désigné, ou le seul mur de la sélection.
   const panneauArchi = elementArchitectural(drawing, selectionArchi) ? selectionArchi
-    : selectionIds.length === 1 && elementArchitectural(drawing, selectionIds[0]!)?.type === "wall" ? selectionIds[0]! : null;
+    : selectionIds.length === 1 && (elementArchitectural(drawing, selectionIds[0]!)?.type ?? "opening") !== "opening" ? selectionIds[0]! : null;
   const calques = drawing ? listeCalques(drawing) : [];
   const { calque: actif, repli: calqueReplie } = calqueActifOuPremier(calques, calqueActif);
   // Le calque actif a disparu : le premier calque devient réellement actif (il ne reviendra pas seul après un rétablir).
@@ -488,7 +488,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
   function choisirArchitecture(id: string, ajouter: boolean) {
     const it = elementArchitectural(drawing, id);
     if (!it) return;
-    if (it.type === "wall") select(ajouter ? basculer(selectionIds, id) : [id]);
+    if (it.type !== "opening") select(ajouter ? basculer(selectionIds, id) : [id]);
     else select([]);
     if (!ajouter) setSelectionArchi(id);
   }
@@ -694,6 +694,9 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     "exporter-svg": studioExportUrl(projectId, studyId, variantId, "svg", revisionId),
     "exporter-dxf": studioExportUrl(projectId, studyId, variantId, "dxf", revisionId),
     "exporter-ifc": studioExportUrl(projectId, studyId, variantId, "ifc", revisionId),
+    "exporter-obj": studioExportUrl(projectId, studyId, variantId, "obj", revisionId),
+    "exporter-stl": studioExportUrl(projectId, studyId, variantId, "stl", revisionId),
+    "exporter-step": studioExportUrl(projectId, studyId, variantId, "step", revisionId),
   };
   function runCommand(id: CommandeEditeur["id"]) {
     switch (id) {
@@ -720,7 +723,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       case "coupe-3d": ouvrir3d(); return setCoupe3d(v => !(vue3d && v));
       case "accrochage-sommets": return setAccrocheSommets(v => !v);
       case "accrochage-grille": return setAccrocheGrille(v => !v);
-      case "exporter-svg": case "exporter-dxf": case "exporter-ifc":
+      case "exporter-svg": case "exporter-dxf": case "exporter-ifc": case "exporter-obj": case "exporter-stl": case "exporter-step":
         // Le lien de la barre télécharge (même origine, cookie de session) : le raccourci le suit.
         shell.current?.querySelector<HTMLAnchorElement>(`a[data-studio-commande="${id}"][href]`)?.click();
         return;
@@ -733,6 +736,7 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
       case "feuille": return setDialogue("feuille");
       case "dossier": return setDialogue("dossier");
       case "echanges": return setDialogue("echanges");
+      case "approuver": return setDialogue("approbation");
       case "outils": return setDialogue("outils");
       case "palette": return setDialogue("palette");
       case "exigences": {
@@ -746,6 +750,12 @@ export function VariantWorkspace({ projectId, studyId, variantId, revisionId, co
     }
   }
   function surLien(id: IdCommandeEditeur) {
+    if (id === "exporter-obj" || id === "exporter-stl" || id === "exporter-step") {
+      // Exports 3D (E.6-04) : la géométrie 3D seulement ; leur bilan est dans la matrice d’échanges (rien n’est écarté en silence).
+      setInfo("L’export 3D porte sur la révision enregistrée affichée ; cotes, textes et graphismes, qui ne sont pas des géométries 3D, n’y sont pas écrits (matrice d’échanges).");
+      setExportsLances((n) => n + 1);
+      return;
+    }
     if (id !== "exporter-svg" && id !== "exporter-dxf" && id !== "exporter-ifc") return;
     if (commands.length) setInfo("L’export porte sur la révision enregistrée affichée, pas sur les modifications non enregistrées.");
     setExportsLances((n) => n + 1);

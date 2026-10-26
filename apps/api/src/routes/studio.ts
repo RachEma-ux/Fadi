@@ -5,7 +5,7 @@ import { STUDIO_MODES_DERIVATION, studioRapportFidelite } from "@parcours/atelie
 import { db } from "../db/client.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { journalAccesStudio } from "../lib/studio-journal-acces.js";
-import { compareStudioRevisions, createStudioStudy, createStudioVariant, exportStudioVariant, listStudioRevisions, listStudioStudies, listStudioVariants, parseStudioCompareSide, readStudioContext, readStudioRevisionChanges, readStudioStudy, STUDIO_EXPORT_FORMATS, StudioRequestError, studioIdentifierSchema, submitStudioCommands, type StudioCreation, type StudioScope } from "../lib/studio-commands.js";
+import { compareStudioRevisions, createStudioStudy, createStudioVariant, exportStudioVariant, listStudioRevisions, listStudioStudies, listStudioVariants, parseStudioCompareSide, readStudioContext, readStudioRevisionChanges, readStudioStudy, soumettreEnveloppeStudio, STUDIO_EXPORT_FORMATS, STUDIO_RAPPORT_FORMATS, StudioRequestError, studioIdentifierSchema, type StudioCreation, type StudioScope } from "../lib/studio-commands.js";
 import { createStudioComment, createStudioObservation, deleteStudioComment, listStudioComments, setStudioCommentAudience, studioCommentSchema, studioObservationSchema, studioObservationTransitionSchema, transitionStudioObservation } from "../lib/studio-commentaires.js";
 import { audienceSchema } from "../lib/audience.js";
 import { clientIp } from "../lib/audit.js";
@@ -51,6 +51,8 @@ const variantSchema = z.object({
 }).strict().refine((v) => v.fromRevisionId === undefined || v.fromVariantId !== undefined, { message: "fromRevisionId exige fromVariantId.", path: ["fromRevisionId"] })
   .refine((v) => v.mode === undefined || v.fromVariantId !== undefined, { message: "mode exige fromVariantId.", path: ["mode"] });
 const exportSchema = z.object({ format: z.enum(STUDIO_EXPORT_FORMATS), revision: studioIdentifierSchema.optional() });
+/** Rapport de fidélité : SVG, DXF et IFC seulement (les exports 3D OBJ, STL, STEP ont leur bilan, E.6-04). */
+const rapportSchema = z.object({ format: z.enum(STUDIO_RAPPORT_FORMATS), revision: studioIdentifierSchema.optional() });
 function scope(req: Request): StudioScope {
   const params = req.params as Record<string, string>;
   return { projectId: params["projectId"] ?? "", studyId: params["studyId"] ?? "", variantId: params["variantId"] ?? "" };
@@ -188,7 +190,7 @@ studioRouter.get("/studies/:studyId/variants/:variantId/revisions/:revisionId/ch
 studioRouter.get("/studies/:studyId/variants/:variantId/revisions/:revisionId", avecContrat(CONTRAT_REVISION_LIRE), endpoint(async (req, res) => {
   res.json(await readStudioContext(db, scope(req), req.user!.id, req.params["revisionId"] as string));
 }));
-/** Fichier SVG, DXF ou IFC d'une révision (tête par défaut) ; droits et refus identiques à la lecture de la variante. */
+/** Fichier SVG, DXF, IFC, OBJ, STL ou STEP d'une révision (tête par défaut) ; droits et refus identiques à la lecture de la variante. */
 studioRouter.get("/studies/:studyId/variants/:variantId/export", avecContrat(CONTRAT_VARIANTE_EXPORTER), endpoint(async (req, res) => {
   const parsed = exportSchema.safeParse(req.query);
   if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
@@ -200,7 +202,7 @@ studioRouter.get("/studies/:studyId/variants/:variantId/export", avecContrat(CON
   res.setHeader("X-Content-Type-Options", "nosniff");
   // Un SVG ouvert directement n'exécute aucun script et ne charge aucune ressource.
   if (file.format === "svg") res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox");
-  // Tampon : Express n'ajoute pas de charset au type déclaré (le DXF et l'IFC sont de l'ASCII strict).
+  // Tampon : Express n'ajoute pas de charset au type déclaré (DXF, IFC, OBJ, STL et STEP sont de l'ASCII strict).
   res.status(200).send(Buffer.from(file.body, "utf8"));
 }));
 /**
@@ -208,14 +210,14 @@ studioRouter.get("/studies/:studyId/variants/:variantId/export", avecContrat(CON
  * raison, pour la même révision (tête par défaut) ; JSON, mêmes droits et refus que l'export.
  */
 studioRouter.get("/studies/:studyId/variants/:variantId/export/rapport", avecContrat(CONTRAT_EXPORT_RAPPORT), endpoint(async (req, res) => {
-  const parsed = exportSchema.safeParse(req.query);
+  const parsed = rapportSchema.safeParse(req.query);
   if (!parsed.success) { res.status(400).json({ error: "invalid_input", details: parsed.error.flatten() }); return; }
   const context = await readStudioContext(db, scope(req), req.user!.id, parsed.data.revision);
   res.setHeader("Cache-Control", "private, no-store");
   res.json({ revisionId: context.revision.id, ...studioRapportFidelite(context.revision.document, parsed.data.format) });
 }));
 studioRouter.post("/studies/:studyId/variants/:variantId/commands", avecContrat(CONTRAT_COMMANDES), endpoint(async (req, res) => {
-  res.json(await submitStudioCommands(scope(req), req.user!.id, req.body));
+  res.json(await soumettreEnveloppeStudio(scope(req), req.user!.id, req.body));
 }));
 /**
  * Commentaires d'une variante (règles de la Collaboration) : lecture `read`, écriture `comment` (tout membre),

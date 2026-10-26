@@ -208,6 +208,69 @@ export function resoudre(index: IndexAccrochage, q: RequeteAccrochage, r: Reglag
   return fort ?? suivre(q, r) ?? objets[0] ?? null;
 }
 
+// ——— Cas ambigus (AC-004) ———
+
+/** Règle de départage qui a séparé le repère retenu du suivant, à rang et distance égaux. */
+export type RegleDepartage = "mode" | "ordre-document" | "construction";
+
+/**
+ * Trace d'un cas ambigu (AC-004) : plusieurs cibles d'accrochage au même rang de priorité et à la même distance du
+ * pointeur (1e-12 m) — objets superposés, extrémités confondues, points symétriques. Le moteur en retient une par ses
+ * règles déterministes (`regle`), mais la trace nomme toutes les candidates, dans l'ordre du classement, pour que la
+ * personne choisisse **explicitement** une autre (commande « Cible d'accrochage suivante »). `cle` identifie le cas
+ * (mêmes candidates, mêmes points) pour garder ce choix tant que le pointeur reste sur le même cas.
+ */
+export interface TraceAmbiguite {
+  cle: string;
+  curseur: StudioPoint;
+  rang: number;
+  distance: number;
+  candidats: readonly Repere[];
+  regle: RegleDepartage;
+}
+
+const cleRepere = (c: Repere) => `${c.genre}@${c.point.x},${c.point.y}#${c.objets.join("+")}${c.ancre ? `:${c.ancre.anchor}` : ""}`;
+
+/** Ambiguïté en tête d'une liste de candidats déjà classée (`candidatsObjets`), ou null. */
+export function traceAmbiguite(classes: readonly Repere[], curseur: StudioPoint, rangs?: ReadonlyMap<string, number>): TraceAmbiguite | null {
+  const tete = classes[0];
+  if (!tete) return null;
+  const egaux = classes.filter((c) => rangRepere(c.genre) === rangRepere(tete.genre) && Math.abs(c.distance - tete.distance) <= 1e-12);
+  const distincts = [...new Map(egaux.map((c) => [cleRepere(c), c])).values()];
+  if (distincts.length < 2) return null;
+  const [a, b] = distincts as [Repere, Repere];
+  const ordre = (c: Repere) => Math.min(...c.objets.map((id) => rangs?.get(id) ?? Number.POSITIVE_INFINITY));
+  const regle: RegleDepartage = a.genre !== b.genre ? "mode" : ordre(a) !== ordre(b) ? "ordre-document" : "construction";
+  return { cle: distincts.map(cleRepere).join("|"), curseur: { ...curseur }, rang: rangRepere(tete.genre), distance: tete.distance, candidats: distincts, regle };
+}
+
+export interface ResolutionTracee {
+  repere: Repere | null;
+  /** Cas ambigu parmi les cibles d'objets, quand le repère retenu en vient ; null sinon. */
+  ambiguite: TraceAmbiguite | null;
+  /** Rang (0 = celui des règles) de la candidate retenue dans `ambiguite.candidats`. */
+  choix: number;
+}
+
+/**
+ * Résolution avec trace (AC-004) : même repère que `resoudre` par défaut ; `choix` (rang voulu parmi les candidates
+ * d'un cas ambigu, gardé tant que `cleChoix` désigne le même cas) l'applique **explicitement**, jamais en silence.
+ */
+export function resoudreTrace(index: IndexAccrochage, q: RequeteAccrochage, r: ReglagesAccrochage, choix?: { cle: string; rang: number } | null): ResolutionTracee {
+  if (q.base && q.verrouAngle !== null && q.verrouAngle !== undefined) return { repere: suivre(q, r), ambiguite: null, choix: 0 };
+  const objets = candidatsObjets(index, q, r);
+  const fort = objets[0] && rangRepere(objets[0].genre) <= 1 ? objets[0] : null;
+  const repere = fort ?? suivre(q, r) ?? objets[0] ?? null;
+  if (!repere || repere !== objets[0]) return { repere, ambiguite: null, choix: 0 };
+  const rangs = new Map<string, number>();
+  const zone = boiteAutour(q.curseur, q.tolerance);
+  for (const f of index.formes(zone)) rangs.set(f.forme.id, f.rang);
+  const ambiguite = traceAmbiguite(objets, q.curseur, rangs);
+  if (!ambiguite) return { repere, ambiguite: null, choix: 0 };
+  const k = choix && choix.cle === ambiguite.cle ? ((choix.rang % ambiguite.candidats.length) + ambiguite.candidats.length) % ambiguite.candidats.length : 0;
+  return { repere: ambiguite.candidats[k]!, ambiguite, choix: k };
+}
+
 /** Libellé du repère : « Polaire 45° » pour le repérage polaire, le nom du mode sinon. */
 export function libelleRepere(rep: Pick<Repere, "genre" | "angle">): string {
   if ((rep.genre === "polaire" || rep.genre === "angle" || rep.genre === "orthogonal") && rep.angle !== undefined) {

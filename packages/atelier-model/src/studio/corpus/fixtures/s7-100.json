@@ -8,16 +8,13 @@
   "representes": [
    "état de départ de la session hors réseau : plan de niveau synthétique (murs, ouvertures, axes, cotes liées, textes)",
    "session hors réseau puis reconnectée, jouée par la recette studio-corpus-s7.mjs : dessin au clavier, rechargement depuis l'appareil, enregistrement hors ligne, reconnexion",
-   "après reconnexion : une seule révision ajoutée, corpus de départ intact à l'octet, ajout hors ligne présent"
+   "après reconnexion : une seule révision ajoutée, corpus de départ intact à l'octet, ajout hors ligne présent",
+   "écriture concurrente pendant une seconde coupure : un autre appareil ajoute une ligne, la reconnexion signale le conflit sans écraser sa révision, le report garde les deux ajouts"
   ],
   "absents": [
    {
     "element": "session dans le document",
     "raison": "studio-document/1 ne porte ni session ni état de connexion : la session est jouée par la recette e2e, le corpus n'en est que l'état de départ"
-   },
-   {
-    "element": "écriture concurrente pendant la coupure",
-    "raison": "un seul appareil dans S7 : le conflit sans écrasement est couvert par studio-hors-ligne.mjs, pas par ce corpus"
    }
   ]
  },
@@ -3466,6 +3463,30 @@
     "deduit": 0.42000000000000004,
     "net": 3.1800000000000006
    }
+  },
+  "concurrente": {
+   "revisionsAjoutees": 2,
+   "rectangle": {
+    "origin": {
+     "x": -10,
+     "y": -13
+    },
+    "width": 1,
+    "height": 1
+   },
+   "ligne": {
+    "id": "s7-autre-appareil-ligne",
+    "type": "line",
+    "start": {
+     "x": -10,
+     "y": -15
+    },
+    "end": {
+     "x": -6,
+     "y": -15
+    }
+   },
+   "primitives": 103
   }
  }
 }

@@ -22,4 +22,16 @@ export const SCHEMA_OUVERTURE = {
   },
 } as const;
 
-export const SCHEMA_ARCHITECTURE = { oneOf: [SCHEMA_MUR, SCHEMA_OUVERTURE] } as const;
+/** Échelle d'accès (EX-027, lot G2) : valeurs saisies ; section < entre-axe et pas > section contrôlés par le modèle. */
+export const SCHEMA_ECHELLE = {
+  type: "object", additionalProperties: false, required: ["id", "type", "position", "rotation", "width", "height", "base", "rungs", "section"],
+  properties: {
+    id, type: { const: "ladder" }, layerId, position: point,
+    rotation: { type: "number", minimum: 0, exclusiveMaximum: 2 * Math.PI },
+    width: positive, height: positive, base: number,
+    rungs: { type: "integer", minimum: 1, maximum: 1000 },
+    section: positive,
+  },
+} as const;
+
+export const SCHEMA_ARCHITECTURE = { oneOf: [SCHEMA_MUR, SCHEMA_OUVERTURE, SCHEMA_ECHELLE] } as const;

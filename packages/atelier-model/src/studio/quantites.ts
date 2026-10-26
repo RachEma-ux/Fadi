@@ -287,10 +287,15 @@ export function quantitesStudio(doc: StudioDocument): QuantitesStudio {
   try { lus = studioQuantitesArchitecture(architecture); } catch { lus = null; }
   architecture.forEach((it, i) => {
     const l = lus?.[i];
-    const calqueId = (it.type === "wall" ? it.layerId : l?.layerId) ?? STUDIO_DEFAULT_LAYER_ID;
+    const calqueId = (it.type !== "opening" ? it.layerId : l?.layerId) ?? STUDIO_DEFAULT_LAYER_ID;
     if (!infos.has(calqueId)) infos.set(calqueId, { nom: calqueId, masque: false, implicite: false });
     const base = { objetId: it.id, type: it.type, calqueId, calqueMasque: infos.get(calqueId)!.masque };
-    const q: QuantitesObjet = it.type === "wall"
+    // Échelle d'accès (EX-027) : longueur cumulée des montants et des échelons, hauteur, volume de matière.
+    const q: QuantitesObjet = it.type === "ladder"
+      ? { ...base, nature: "echelle-acces", valeurs: l?.type === "ladder"
+        ? [val("longueur", l.longueurMontants + l.longueurEchelons), val("hauteur", l.hauteur), val("volume", l.volume)]
+        : [val("longueur", null), val("hauteur", null), val("volume", null)] }
+      : it.type === "wall"
       ? { ...base, nature: "mur-architectural", valeurs: l?.type === "wall"
         ? [val("longueur", l.longueur), val("hauteur", l.hauteur), val("volume", l.volumeBrut), val("volume-deduit", l.deduction), val("volume-net", l.volumeNet)]
         : [val("longueur", null), val("hauteur", null), val("volume", null), val("volume-deduit", null), val("volume-net", null)] }

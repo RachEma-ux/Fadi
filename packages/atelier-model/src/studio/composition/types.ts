@@ -9,9 +9,10 @@ import type { StudioRectangle } from "../objets/rectangle.js";
 import type { StudioBox, StudioFaceSolide, StudioProfilePrism, StudioSolid } from "../objets-3d/solides.js";
 import type { StudioText } from "../objets/texte.js";
 import type { StudioOperationBooleenne, StudioResultatExact, StudioSolideExact } from "../objets-3d/exacts.js";
+import type { StudioCoteFace } from "../objets-3d/cotes-faces.js";
 import type { STUDIO_CONTRACT } from "../noyau/limites.js";
 import type { StudioLayer, StudioPoint } from "../noyau/types.js";
-import type { StudioArchitectureItem, StudioOpening, StudioWall } from "../architecture/types.js";
+import type { StudioArchitectureItem, StudioLadder, StudioOpening, StudioWall } from "../architecture/types.js";
 import type { StudioPropriete } from "../exigences/proprietes.js";
 import type { StudioApparence, StudioElementVisualisation, StudioScene } from "../scenes/scenes.js";
 import type { StudioNonNatif } from "../non-natifs/non-natifs.js";
@@ -42,6 +43,11 @@ export interface StudioDocument {
    * exact, opérandes conservés (`objets-3d/exacts.ts`) ; absent ou vide : aucun (forme canonique).
    */
   exacts?: StudioSolideExact[];
+  /**
+   * Cotes de faces 3D (extension additive, facultative, lot G2, INV-013) : distance entre deux faces parallèles d'un
+   * solide libre, référencées par leurs faces (`objets-3d/cotes-faces.ts`) ; absent ou vide : aucune (forme canonique).
+   */
+  cotesFaces?: StudioCoteFace[];
   /**
    * Annotations (extension additive, facultative) : cotes angulaires et textes, séparés de `objects` et `dimensions` pour
    * qu'un lecteur antérieur ne les interprète jamais à tort ; absent ou vide : aucune annotation (forme canonique).
@@ -115,8 +121,10 @@ export type StudioCommand =
   | { toolId: "studio.solide.pivoter"; params: { id: string; angle: number; axe?: "z" | "x" | "y" } }
   | { toolId: "studio.solide.resoudre"; params: { id: string; action: "mettre-a-jour" | "detacher" } }
   | { toolId: "studio.solide.booleen"; params: { id: string; operation: StudioOperationBooleenne; operandes: [string, string]; resultat: StudioResultatExact } }
+  | { toolId: "studio.solide.cote-face"; params: StudioCoteFace }
   | { toolId: "studio.architecture.mur"; params: StudioWall }
   | { toolId: "studio.architecture.ouverture"; params: StudioOpening }
+  | { toolId: "studio.architecture.echelle-acces"; params: StudioLadder }
   | { toolId: "studio.architecture.modifier"; params: StudioArchitectureItem }
   | { toolId: "studio.architecture.supprimer"; params: { ids: string[]; cascade: boolean } }
   | { toolId: "studio.propriete.definir"; params: StudioPropriete }

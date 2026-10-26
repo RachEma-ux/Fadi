@@ -69,6 +69,8 @@ const NEGATIFS: Readonly<Record<StudioToolId, readonly string[]>> = {
   "studio.architecture.ouverture": ["architecture/architecture.test.ts", "studio-invariants.test.ts", "exigences/exigences.test.ts"],
   "studio.architecture.modifier": ["architecture/architecture.test.ts", "studio-invariants.test.ts"],
   "studio.architecture.supprimer": ["architecture/architecture.test.ts", "exigences/exigences.test.ts"],
+  "studio.architecture.echelle-acces": ["architecture/echelle.test.ts"],
+  "studio.solide.cote-face": ["objets-3d/cotes-faces.test.ts"],
   "studio.calque.creer": ["planche-2d.test.ts", "annotations.test.ts", "transformations-annotations.test.ts"],
   "studio.calque.modifier": ["planche-2d.test.ts", "annotations.test.ts", "transformations-annotations.test.ts"],
   "studio.objet.calque": ["planche-2d.test.ts", "annotations.test.ts", "transformations-annotations.test.ts"],
@@ -180,4 +182,80 @@ export function evaluerFicheOutil(f: FicheOutil, preuves: readonly PreuveExecuti
   if (manques.length) return { etat: "incomplet", manques };
   const prouve = designation !== null && preuves.some((p) => p.toolId === f.toolId && p.resultat === "reussi" && p.build === designation.build && designation.profilsCharge.includes(p.profilCharge));
   return { etat: prouve ? "conforme" : "pret-a-developper", manques: prouve ? [] : ["preuve d'exécution sur build et profil de charge désignés"] };
+}
+
+// --- Préparation de la désignation (lot G5, TR-AC-011) ------------------------------------------------------------
+//
+// Rien n'est désigné ici : la désignation du build et du profil de charge de référence appartient au maître d'ouvrage
+// (DEC-13). Ce qui suit fixe seulement ce qu'elle devra contenir pour être utilisable par `evaluerFicheOutil`, et les
+// profils de charge que le dépôt sait déjà exécuter (corpus et appareils de recette existants) — sans seuil ni verdict.
+
+/** Appareils de recette du pilote (DEC-13) ; tout autre appareil reste « non évalué » tant qu'il n'est pas désigné. */
+export const APPAREILS_RECETTE = Object.freeze(["chromium-bureau-ci", "chromium-telephone-ci"] as const);
+export type AppareilRecette = (typeof APPAREILS_RECETTE)[number];
+
+/** Profil de charge que le dépôt sait exécuter : jeu de données, appareil, état des caches ; réseau non relevé. */
+export interface ProfilChargeCandidat {
+  readonly id: string;
+  /** Jeu de données : corpus S1–S7 ou profil de vingt outils. */
+  readonly jeu: string;
+  /** Fichier du dépôt qui définit le jeu de données. */
+  readonly fichier: string;
+  readonly appareil: AppareilRecette;
+  readonly caches: "froid" | "chaud" | "froid-et-chaud";
+  /** Réseau : non relevé par les recettes actuelles (DOSSIER-PILOTE, protocole de mesure) — jamais présumé. */
+  readonly reseau: "non-evalue";
+  /** Recette qui exécute ce profil aujourd'hui. */
+  readonly recette: string;
+}
+
+const corpusCandidat = (n: string, f: string): ProfilChargeCandidat => ({
+  id: `${n}-chromium-bureau-ci`, jeu: `corpus ${n}`, fichier: `packages/atelier-model/src/studio/corpus/${f}`, appareil: "chromium-bureau-ci",
+  caches: "froid", reseau: "non-evalue", recette: "packages/atelier-model/src/studio/corpus/corpus.test.ts",
+});
+const vingtOutils = (appareil: AppareilRecette): ProfilChargeCandidat => ({
+  id: `profil-20-outils-${appareil}`, jeu: "profil de vingt outils usuels, étude d'exemple", fichier: "apps/web/e2e/studio-mesures-chargement.mjs", appareil,
+  caches: "froid-et-chaud", reseau: "non-evalue", recette: "apps/web/e2e/studio-mesures-chargement.mjs",
+});
+/** Candidats à la désignation (aucun n'est désigné) ; chaque fichier et chaque recette sont contrôlés au dépôt. */
+export const PROFILS_CHARGE_CANDIDATS: readonly ProfilChargeCandidat[] = Object.freeze([
+  vingtOutils("chromium-bureau-ci"), vingtOutils("chromium-telephone-ci"),
+  corpusCandidat("S1", "s1-detail.ts"), corpusCandidat("S2", "s2-niveau.ts"), corpusCandidat("S3", "s3-dense.ts"), corpusCandidat("S4", "s4-immeuble.ts"),
+  corpusCandidat("S5", "s5-libre.ts"), corpusCandidat("S6", "s6-variantes.ts"), corpusCandidat("S7", "s7-hors-reseau.ts"),
+].map((p) => Object.freeze(p)));
+
+/**
+ * Forme du build désigné : commit Git complet (40 hexadécimaux) et empreinte SHA-256 de l'artefact construit (image ou
+ * `dist`), « <commit>+sha256:<empreinte> » — un build se rejoue et se vérifie, un nom de branche ou un commit abrégé non.
+ */
+export const FORME_BUILD_DESIGNE = /^[0-9a-f]{40}\+sha256:[0-9a-f]{64}$/;
+
+/** Ce que la désignation devra porter en plus du build et des profils : la décision qui la prend. */
+export interface DemandeDesignation extends DesignationConformite {
+  /** Référence de la décision du maître d'ouvrage (D-xxx, ADR-…, #Issue) : jamais déduite. */
+  readonly decision: string;
+  /** Date de la décision (AAAA-MM-JJ). */
+  readonly date: string;
+}
+
+/** Écarts d'une désignation proposée (vide = utilisable par `evaluerFicheOutil`). Pur ; ne désigne rien. */
+export function validerDesignation(d: DemandeDesignation, candidats: readonly ProfilChargeCandidat[] = PROFILS_CHARGE_CANDIDATS): string[] {
+  const out: string[] = [];
+  if (!FORME_BUILD_DESIGNE.test(d.build)) out.push("build : « <commit 40 hexadécimaux>+sha256:<empreinte 64 hexadécimaux> » attendu");
+  if (!d.profilsCharge.length) out.push("profils de charge : au moins un profil désigné");
+  const ids = new Set(candidats.map((p) => p.id));
+  for (const p of d.profilsCharge) if (!ids.has(p)) out.push(`profil de charge inconnu du dépôt : ${p}`);
+  if (new Set(d.profilsCharge).size !== d.profilsCharge.length) out.push("profil de charge cité deux fois");
+  if (!/^(?:D-\d+|ADR-[A-Z0-9-]+|#\d+)(?:\s|$|,|;)/.test(`${d.decision.trim()} `)) out.push("décision : référence D-xxx, ADR-… ou #Issue du maître d'ouvrage attendue");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d.date)) out.push("date : AAAA-MM-JJ attendue");
+  return out;
+}
+
+/** Une preuve d'exécution n'est recevable que sur un profil candidat et un build de la forme désignée. */
+export function preuveRecevable(p: PreuveExecution, candidats: readonly ProfilChargeCandidat[] = PROFILS_CHARGE_CANDIDATS): string[] {
+  const out: string[] = [];
+  if (!FORME_BUILD_DESIGNE.test(p.build)) out.push(`${p.toolId} : build de forme non désignable (${p.build})`);
+  if (!candidats.some((c) => c.id === p.profilCharge)) out.push(`${p.toolId} : profil de charge inconnu (${p.profilCharge})`);
+  if (!p.recette.trim()) out.push(`${p.toolId} : recette absente`);
+  return out;
 }

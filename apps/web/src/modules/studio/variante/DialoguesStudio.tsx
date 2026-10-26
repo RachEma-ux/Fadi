@@ -13,6 +13,7 @@ import { DialogueImportIfc } from "../import/DialogueImportIfc";
 import { PanneauModelesExternes } from "../echanges/PanneauModelesExternes";
 import { PanneauDossier } from "../dossier/PanneauDossier";
 import { PanneauEchanges } from "../echanges/PanneauEchanges";
+import { DialogueApprobation } from "../publication/DialogueApprobation";
 import { DialogueEnregistrerConsole } from "../console/DialogueEnregistrerConsole";
 import { DialogueIllustration, type DialogueIllustrationProps } from "../illustration/DialogueIllustration";
 import { PanneauAgents } from "../illustration/PanneauAgents";
@@ -22,7 +23,7 @@ import type { Cible } from "../console/transfert";
 import { appartientAuDialogue, focalisables, suivantDansLePiege } from "./piege-focus";
 import type { RaisonIndisponible } from "./droits";
 
-export type DialogueStudio = "outils" | "palette" | "feuille" | "import-dxf" | "import-ifc" | "modeles-externes" | "dossier" | "echanges" | "enregistrer-console" | "illustration" | "agents" | "graphismes" | "systeme-projet" | null;
+export type DialogueStudio = "outils" | "palette" | "feuille" | "import-dxf" | "import-ifc" | "modeles-externes" | "dossier" | "echanges" | "enregistrer-console" | "illustration" | "agents" | "graphismes" | "systeme-projet" | "approbation" | null;
 
 export interface PropsDialoguesStudio {
   dialogue: DialogueStudio;
@@ -136,6 +137,7 @@ export function DialoguesStudio({ dialogue, surFermer, disponible, raison, surEx
     {dialogue === "feuille" && <PanneauFeuille doc={revision} brouillonNonEnregistre={brouillonNonEnregistre} surFermer={surFermer} cartouche={cartouche()} />}
     {dialogue === "dossier" && <PanneauDossier {...portee} revision={revision} brouillonNonEnregistre={brouillonNonEnregistre} surFermer={surFermer} />}
     {dialogue === "echanges" && <PanneauEchanges surFermer={surFermer} />}
+    {dialogue === "approbation" && <DialogueApprobation projectId={portee.projectId} studyId={portee.studyId} surFermer={surFermer} />}
     {dialogue === "illustration" && <DialogueIllustration projectId={portee.projectId} studyId={portee.studyId} variantId={portee.variantId} capture={captureIllustration} modifiable={ecritureServeur} surFermer={surFermer} />}
     {dialogue === "agents" && <PanneauAgents projectId={portee.projectId} surFermer={surFermer} />}
     {dialogue === "enregistrer-console" && enregistrementConsole && <DialogueEnregistrerConsole commandes={enregistrementConsole.commandes} surFermer={surFermer} surEnregistre={enregistrementConsole.surEnregistre} />}

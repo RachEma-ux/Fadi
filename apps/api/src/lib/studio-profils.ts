@@ -17,7 +17,8 @@
  *
  * Décisions (Fadi, réversibles) : format d'échange `fadi-studio-profil/1` (JSON) ; capacités hors registre admises
  * dans un profil : `studio.publication.publier` (« Publier », droit `publish`) — la commande de publication de la
- * variante (`/publications`), qui n'est pas un outil de dessin du registre ; le propriétaire d'un profil importé est le
+ * variante (`/publications`), qui n'est pas un outil de dessin du registre ; `studio.publication.approuver` (« Approuver »,
+ * droit `approve`, AC-010 : la commande Approuver du catalogue de l'éditeur, lot G2) ; le propriétaire d'un profil importé est le
  * compte qui l'importe (la provenance `profileId@version` est gardée dans `importeDe`).
  */
 import { z } from "zod";
@@ -29,6 +30,8 @@ export const STUDIO_FORMAT_PROFIL = "fadi-studio-profil/1" as const;
 /** Capacités hors registre qu'un profil peut placer, avec le droit de projet qu'elles exigent. */
 export const STUDIO_CAPACITES_HORS_REGISTRE: readonly { id: string; libelle: string; droit: "publish" | "approve" }[] = Object.freeze([
   { id: "studio.publication.publier", libelle: "Publier", droit: "publish" },
+  // AC-010 (lot G2) : « Approuver » (commande `approuver` du catalogue de l'éditeur) exige le droit métier `approve`.
+  { id: "studio.publication.approuver", libelle: "Approuver", droit: "approve" },
 ]);
 
 const OUTILS: ReadonlySet<string> = new Set(STUDIO_TOOL_IDS as readonly string[]);

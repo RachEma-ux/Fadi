@@ -4,20 +4,23 @@
  * l'affichage par `en.json`. Pur : ni React ni DOM.
  */
 import {
-  STUDIO_MATRICE_ECHANGES, studioCouvertureFormat,
-  type StudioCouvertureEntite, type StudioEntreeEchange, type StudioFamilleEchange, type StudioSensEchange, type StudioStatutEchange,
+  STUDIO_CAPACITES_PAR_SENS, STUDIO_MATRICE_ECHANGES, STUDIO_SENS_CAPACITE, studioCouvertureFormat,
+  type StudioCapacitesFormat, type StudioSensCapacite, type StudioCouvertureEntite, type StudioEntreeEchange, type StudioFamilleEchange, type StudioSensEchange, type StudioStatutEchange,
 } from "@parcours/atelier-model";
 import { LIBELLES_RAISON_FIDELITE, LIBELLES_STATUT_FIDELITE, libelleType } from "../variante/rapport-export";
 
 export const LIBELLES_STATUT_ECHANGE: Readonly<Record<StudioStatutEchange, string>> = Object.freeze({ livre: "Livré", "non-livre": "Non livré", renonce: "Renoncé" });
 export const LIBELLES_SENS_ECHANGE: Readonly<Record<StudioSensEchange, string>> = Object.freeze({ import: "Import", export: "Export" });
+/** Sens d'échange évalués séparément (EX-079). */
+export const LIBELLES_SENS_CAPACITE: Readonly<Record<StudioSensCapacite, string>> = Object.freeze({ lecture: "Lecture", consultation: "Consultation", edition: "Édition", export: "Export", "aller-retour": "Aller-retour" });
+export const LIBELLES_STATUT_CAPACITE: Readonly<Record<"livre" | "non-livre", string>> = Object.freeze({ livre: "Livré", "non-livre": "Non livré" });
 export const LIBELLES_COUVERTURE_ENTITE: Readonly<Record<StudioCouvertureEntite, string>> = Object.freeze({ portee: "Portée", partielle: "Partielle", absente: "Absente" });
 export const LIBELLES_FAMILLE_ECHANGE: Readonly<Record<StudioFamilleEchange, string>> = Object.freeze({
   natif: "Données natives", dessin: "Dessin", maquette: "Maquette", feuille: "Feuille", dossier: "Dossier", tableau: "Tableau",
   rendu: "Rendu", paquet: "Paquet", rapport: "Rapport", diagnostic: "Diagnostic", coordination: "Coordination",
 });
 export const LIBELLES_CATEGORIE: Readonly<Record<string, string>> = Object.freeze({
-  objets: "Formes", cotes: "Cotes", annotations: "Annotations", solides: "Solides", exacts: "Solides exacts", architecture: "Architecture", proprietes: "Propriétés", scenes: "Visualisation", nonNatifs: "Éléments non natifs",
+  objets: "Formes", cotes: "Cotes", annotations: "Annotations", solides: "Solides", exacts: "Solides exacts", cotesFaces: "Cotes de faces 3D", architecture: "Architecture", proprietes: "Propriétés", scenes: "Visualisation", nonNatifs: "Éléments non natifs",
 });
 
 export const TEXTES_ECHANGES = Object.freeze({
@@ -42,7 +45,15 @@ export const TEXTES_ECHANGES = Object.freeze({
   sources: "Sources",
   famille: "Famille",
   aucune: "Aucune entrée pour ce statut.",
+  capacites: "Capacités par sens d’échange",
+  capacitesAide: "Lecture, consultation, édition, export et aller-retour sont évalués séparément pour chaque format. Un aller-retour n’est livré qu’avec la lecture et l’export livrés et un test qui relit l’export par le lecteur de Studio : un export seul, même valide, ne le prouve jamais.",
+  colonneFormat: "Format",
 });
+
+/** Lignes du tableau des capacités par sens (EX-079) : une par format, une cellule par sens. */
+export function lignesCapacites(capacites: readonly StudioCapacitesFormat[] = STUDIO_CAPACITES_PAR_SENS) {
+  return capacites.map((c) => ({ id: c.id, format: c.format, cellules: STUDIO_SENS_CAPACITE.map((sens) => ({ sens, statut: c.sens[sens].statut, libelle: LIBELLES_STATUT_CAPACITE[c.sens[sens].statut], detail: c.sens[sens].detail })) }));
+}
 
 export type FiltreStatut = StudioStatutEchange | "tous";
 export const FILTRES_STATUT: readonly FiltreStatut[] = Object.freeze(["tous", "livre", "non-livre", "renonce"] as const);
@@ -80,7 +91,8 @@ export function textesAffiches(): string[] {
   const t = new Set<string>();
   const ajouter = (s: string | undefined) => { if (s && /\p{L}/u.test(s)) t.add(s); };
   for (const v of Object.values(TEXTES_ECHANGES)) (Array.isArray(v) ? v : [v]).forEach((x) => ajouter(x as string));
-  for (const tab of [LIBELLES_STATUT_ECHANGE, LIBELLES_SENS_ECHANGE, LIBELLES_COUVERTURE_ENTITE, LIBELLES_FAMILLE_ECHANGE]) Object.values(tab).forEach(ajouter);
+  for (const tab of [LIBELLES_STATUT_ECHANGE, LIBELLES_SENS_ECHANGE, LIBELLES_COUVERTURE_ENTITE, LIBELLES_FAMILLE_ECHANGE, LIBELLES_SENS_CAPACITE, LIBELLES_STATUT_CAPACITE]) Object.values(tab).forEach(ajouter);
+  for (const l of lignesCapacites()) { ajouter(l.format); for (const c of l.cellules) ajouter(c.detail); }
   for (const e of STUDIO_MATRICE_ECHANGES.entrees) {
     [e.format, e.versionFormat, e.objet, e.limite, e.controle, e.raison, nomDetails(e)].forEach(ajouter);
     for (const x of e.entites) { ajouter(x.entite); ajouter(x.detail); }

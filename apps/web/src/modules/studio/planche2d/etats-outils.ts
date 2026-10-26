@@ -53,8 +53,10 @@ export const SYNONYMES: Readonly<Record<string, readonly string[]>> = Object.fre
   "studio.solide.pivoter": ["tourner le solide", "rotation 3D"],
   "studio.solide.resoudre": ["recalculer", "lien au profil"],
   "studio.solide.booleen": ["union", "soustraction", "intersection", "noyau exact"],
+  "studio.solide.cote-face": ["cote 3D", "distance entre faces", "épaisseur", "hauteur du solide"],
   "studio.architecture.mur": ["cloison", "paroi", "voile"],
   "studio.architecture.ouverture": ["porte", "fenêtre", "baie"],
+  "studio.architecture.echelle-acces": ["échelle fixe", "accès", "échelons", "montants"],
   "studio.architecture.modifier": ["éditer le mur", "épaisseur"],
   "studio.architecture.supprimer": ["effacer le mur"],
   "studio.propriete.definir": ["attribut", "paramètre", "caractéristique"],
@@ -71,7 +73,8 @@ export const SYNONYMES: Readonly<Record<string, readonly string[]>> = Object.fre
   "zoom-avant": ["agrandir la vue"], "zoom-arriere": ["réduire la vue"], cadrer: ["tout voir", "recentrer"],
   "vue-3d": ["volume", "perspective"], "coupe-3d": ["section", "plan de coupe"],
   "importer-dxf": ["ouvrir un dxf", "autocad"], "importer-ifc": ["ouvrir un ifc", "maquette bim"],
-  "exporter-svg": ["image vectorielle"], "exporter-dxf": ["autocad"], "exporter-ifc": ["maquette bim"], "exporter-png": ["image", "capture"],
+  "exporter-svg": ["image vectorielle"], "exporter-dxf": ["autocad"], "exporter-ifc": ["maquette bim"], "exporter-obj": ["maillage", "wavefront"], "exporter-stl": ["impression 3d", "facettes"], "exporter-step": ["iso 10303", "solides exacts"], "exporter-png": ["image", "capture"],
+  approuver: ["approbation", "valider la publication", "viser"],
   feuille: ["mise en page", "planche imprimée", "pdf"], palette: ["recherche de commande"], outils: ["catalogue"],
 });
 

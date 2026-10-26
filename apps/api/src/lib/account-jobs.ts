@@ -19,6 +19,7 @@ import { contactRetentionEnabled } from "./participants.js";
 import { relabelShareInviter, revokeSharesOfUser } from "./project-access-db.js";
 import { audit } from "./audit.js";
 import { processMailOutbox } from "./mailer/outbox.js";
+import { surveillanceStudio, type SurveillanceStudio } from "./studio-surveillance.js";
 import { anonymisationAt, anonymisedEmail, DELETED_LABEL, DELETION_GRACE_DAYS } from "./security/deletion.js";
 import type { Tx } from "./admin-eligibility.js";
 
@@ -79,34 +80,44 @@ export async function runDeletionJob(now = new Date()): Promise<{ anonymised: nu
 }
 
 /** Démarre les boucles de fond ; renvoie l'arrêt (tests, arrêt propre). */
-export function startAccountWorkers(log: (line: string) => void = (l) => console.log(l)): () => void {
+/** Périodes des boucles de fond (ms), déclarées aussi à la surveillance d'exploitation (R.5-03). */
+export const PERIODE_COURRIELS_MS = 5_000;
+export const PERIODE_HORAIRE_MS = 3_600_000;
+
+export function startAccountWorkers(log: (line: string) => void = (l) => console.log(l), s: SurveillanceStudio = surveillanceStudio): () => void {
+  // Chaque boucle est déclarée à la surveillance : succès et échecs comptés, règle « worker.echec » (R.5-03).
+  s.declarerWorker("mail_outbox", PERIODE_COURRIELS_MS);
+  for (const nom of ["account_deletion_job", "studio_access_retention_job", ...(contactRetentionEnabled() ? ["contact_retention_job"] : [])]) s.declarerWorker(nom, PERIODE_HORAIRE_MS);
   let busy = false;
   const mail = setInterval(() => {
     if (busy) return;
     busy = true;
-    processMailOutbox().catch((err: unknown) => log(JSON.stringify({ level: "error", message: "mail_outbox", detail: (err as Error).message })))
+    processMailOutbox().then(() => s.workerReussi("mail_outbox"), (err: unknown) => { s.workerEchoue("mail_outbox", err); log(JSON.stringify({ level: "error", message: "mail_outbox", detail: (err as Error).message })); })
       .finally(() => { busy = false; });
-  }, 5_000);
+  }, PERIODE_COURRIELS_MS);
   const deletion = async () => {
     try {
       const r = await runDeletionJob();
+      s.workerReussi("account_deletion_job");
       if (r.anonymised || r.blocked) log(JSON.stringify({ level: "info", message: "account_deletion_job", ...r }));
-    } catch (err) { log(JSON.stringify({ level: "error", message: "account_deletion_job", detail: (err as Error).message })); }
+    } catch (err) { s.workerEchoue("account_deletion_job", err); log(JSON.stringify({ level: "error", message: "account_deletion_job", detail: (err as Error).message })); }
     // Journal d'accès Studio (TR-EX-046) : événements au-delà de la durée de conservation (12 mois par défaut) purgés,
     // chaque purge datée dans `studio_access_purges` ; le journal des publications n'est jamais touché.
     try {
       const p = await runStudioAccessRetentionJob(new Date(), process.env, log);
+      s.workerReussi("studio_access_retention_job");
       if (p.supprimes) log(JSON.stringify({ level: "info", message: "studio_access_retention_job", supprimes: p.supprimes, limite: p.limite.toISOString() }));
-    } catch (err) { log(JSON.stringify({ level: "error", message: "studio_access_retention_job", detail: (err as Error).message })); }
+    } catch (err) { s.workerEchoue("studio_access_retention_job", err); log(JSON.stringify({ level: "error", message: "studio_access_retention_job", detail: (err as Error).message })); }
     // Contacts sans compte (Issue #262, OP-D9 / OP-2) : effacés 2 ans après la clôture de tous leurs projets — seulement
     // si l'effacement automatique est activé (OP-4, réserve juridique).
     if (!contactRetentionEnabled()) return;
     try {
       const c = await runContactRetentionJob();
+      s.workerReussi("contact_retention_job");
       if (c.erased) log(JSON.stringify({ level: "info", message: "contact_retention_job", ...c }));
-    } catch (err) { log(JSON.stringify({ level: "error", message: "contact_retention_job", detail: (err as Error).message })); }
+    } catch (err) { s.workerEchoue("contact_retention_job", err); log(JSON.stringify({ level: "error", message: "contact_retention_job", detail: (err as Error).message })); }
   };
-  const daily = setInterval(deletion, 3_600_000);
+  const daily = setInterval(deletion, PERIODE_HORAIRE_MS);
   void deletion();
   mail.unref(); daily.unref();
   return () => { clearInterval(mail); clearInterval(daily); };

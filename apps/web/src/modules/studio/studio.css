@@ -40,3 +40,11 @@
 .studio-page-entete h1{font-size:clamp(20px,2.4vw,28px)}
 /* TR-EX-036 : focus déplacé à la bascule Planche 2D ⇄ 3D, toujours visible (même après un clic). */
 .studio-workspace [data-studio-focus-bascule]:focus{outline:3px solid #c77b35;outline-offset:3px}
+
+/* EX-016 : état d'un contenu dérivé (métré, feuille, publication), à côté de ses statuts propres. */
+.studio-etat-contenu-ligne { margin: 0; }
+.studio-etat-contenu { display: inline-block; font-size: 0.8rem; border-radius: 999px; padding: 1px 8px; border: 1px solid rgba(127, 127, 127, 0.5); overflow-wrap: anywhere; }
+.studio-etat-contenu-a-jour { font-weight: 600; }
+.studio-etat-contenu-a-recalculer, .studio-etat-contenu-en-calcul { font-style: italic; }
+.studio-etat-contenu-echec { border-style: dashed; font-weight: 600; }
+.studio-etat-contenu-non-applicable { opacity: 0.8; }

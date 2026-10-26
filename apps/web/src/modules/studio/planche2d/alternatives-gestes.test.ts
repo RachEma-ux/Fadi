@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { applyStudioCommands, newStudioDocument, STUDIO_MANIFESTE_OUTILS, STUDIO_TOOLS, type StudioCommand, type StudioDocument } from "@parcours/atelier-model";
-import { commandeModifierArchitecture, commandeMur, commandeOuverture, editionDe } from "./architecture/architecture-ui";
+import { commandeEchelle, commandeModifierArchitecture, commandeMur, commandeOuverture, editionDe } from "./architecture/architecture-ui";
 import { appliquerSaisie } from "./accrochage";
 import { ALTERNATIVES_GESTES, ALTERNATIVES_GESTES_VUE, controlerAlternatives } from "./alternatives-gestes";
 import { lireSommets } from "./geometrie-2d";
@@ -70,6 +70,7 @@ const ESSAIS: Record<string, (d: StudioDocument) => StudioCommand[]> = {
   "studio.solide.pivoter": () => ok(commandePivot("b1", 30)),
   "studio.architecture.mur": () => ok(commandeMur(creation, lireSommets("0 8; 5 8")!, mur)),
   "studio.architecture.ouverture": () => ok(commandeOuverture(creation, "m1", 2, { largeur: 1, hauteur: 2.1, allege: 0, type: "porte" })),
+  "studio.architecture.echelle-acces": () => ok(commandeEchelle(creation, { x: 1, y: 9 }, { largeur: 0.5, hauteur: 3, base: 0, echelons: 9, section: 0.04, orientation: 0 })),
   "studio.architecture.modifier": (d) => { const m = d.architecture![0]!; return ok(commandeModifierArchitecture(m, { ...editionDe(m), hauteur: 2.8 } as never, lireSommets)); },
 };
 

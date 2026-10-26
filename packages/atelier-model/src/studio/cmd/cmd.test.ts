@@ -7,7 +7,7 @@ import { exportStudioDxf } from "../export.js";
 import type { StudioOpening, StudioWall } from "../architecture/types.js";
 import { studioEffetsCommande, studioRelations, STUDIO_DOMAINES_DERIVES } from "./effets.js";
 import {
-  studioDomainesPerimes, studioEtatDeriveCoherent, studioEtatDeriveInitial, studioEtatsDomainesInitiaux, studioInvaliderDomaines, studioLibelleEtatDerive,
+  studioDomainesPerimes, studioEtatDeriveCoherent, studioEtatDeriveContenu, studioEtatDeriveInitial, studioEtatsDomainesInitiaux, studioInvaliderDomaines, studioLibelleEtatDerive,
   studioTransitionDerive, type StudioEtatDerive,
 } from "./etats-derives.js";
 import { studioEvaluerOptimisation, studioP95 } from "./optimisation.js";
@@ -114,6 +114,24 @@ describe("TR-EX-016 — états des contenus dérivés", () => {
     expect(studioDomainesPerimes(etats)).toEqual(["plan-2d", "exports"]);
     expect(etats["maillage-3d"]).toEqual({ etat: "a-jour", revision: "R13", image: "R13", motif: null });
     expect(STUDIO_DOMAINES_DERIVES.every((d) => studioEtatDeriveCoherent(etats[d], "R13"))).toBe(true);
+  });
+
+  it("EX-016 : état d'un contenu affiché par un panneau — les cinq états, toujours cohérents avec la révision courante", () => {
+    const base = { revision: "R13", image: "R12", enCours: false, echec: null, nonApplicable: null };
+    const etats = [
+      studioEtatDeriveContenu({ ...base, image: "R13" }),
+      studioEtatDeriveContenu(base),
+      studioEtatDeriveContenu({ ...base, enCours: true }),
+      studioEtatDeriveContenu({ ...base, echec: "vue illisible" }),
+      studioEtatDeriveContenu({ ...base, nonApplicable: "aucun objet" }),
+    ];
+    expect(etats.map((e) => e.etat)).toEqual(["a-jour", "a-recalculer", "en-calcul", "echec", "non-applicable"]);
+    expect(etats.every((e) => studioEtatDeriveCoherent(e, "R13"))).toBe(true);
+    // Échec du calcul de la révision courante : l'image n'est jamais la révision courante (aucune image « à jour »).
+    expect(studioEtatDeriveContenu({ ...base, image: "R13", echec: "délai dépassé" })).toEqual({ etat: "echec", revision: "R13", image: null, motif: "délai dépassé" });
+    // Un résultat de la révision courante prime sur un calcul en cours ; sans résultat, « à recalculer » (jamais « à jour »).
+    expect(studioEtatDeriveContenu({ ...base, image: "R13", enCours: true }).etat).toBe("a-jour");
+    expect(studioEtatDeriveContenu({ ...base, image: null }).etat).toBe("a-recalculer");
   });
 });
 
