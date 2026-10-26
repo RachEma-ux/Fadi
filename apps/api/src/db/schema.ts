@@ -13,7 +13,7 @@
  */
 import { sql } from "drizzle-orm";
 import { bigint, bigserial, boolean, customType, pgSchema, date, doublePrecision, index, integer, jsonb, pgTable, pgView, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
-import type { ConclusionControle, EtatExecution, ExigenceStudio, GrandeurQuantite, ResultatControle, StudioDocument, StudioEnvelope, StudioFeuilleComposeeDefinition, StudioPhaseWorkflow, StudioVueCoupeDefinition, UniteQuantite } from "@parcours/atelier-model";
+import type { ConclusionControle, ConclusionControleNormative, EtatExecution, ExigenceStudio, GrandeurQuantite, ResultatControle, StudioDocument, StudioEnvelope, StudioFeuilleComposeeDefinition, StudioPhaseWorkflow, StudioVueCoupeDefinition, UniteQuantite } from "@parcours/atelier-model";
 
 /** Colonne PostGIS brute : on ne fait pas transiter la géométrie par du JS côté serveur, on la laisse en WKT/EWKT et on laisse Postgres faire le travail spatial. */
 const geography = customType<{ data: string; driverData: string }>({
@@ -1441,7 +1441,7 @@ export const studioRequirementChecks = pgTable("studio_requirement_checks", {
   setVersion: integer("set_version"),
   execution: text("execution").$type<EtatExecution>().notNull(),
   conclusion: text("conclusion").$type<ConclusionControle | null>(),
-  result: jsonb("result").$type<ResultatControle>().notNull(),
+  result: jsonb("result").$type<ResultatControle & { normative?: ConclusionControleNormative }>().notNull(),
   documentHash: text("document_hash").notNull(),
   authorId: text("author_id").notNull().references(() => users.id, { onDelete: "restrict" }),
   requestId: text("request_id"),

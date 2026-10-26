@@ -13261,5 +13261,13 @@
 "Tests du modèle (plan d’import : homonymes, reconnus, absents) ; recette studio-pub.mjs (import servi par l’API, même Guid dans un autre contexte).": "Model tests (import plan: homonyms, recognised, missing); studio-pub.mjs acceptance run (import served by the API, same Guid in another context).",
 "Titre et description en note d’origine ; catégorie et gravité reprises seulement dans le vocabulaire décidé ; Guid et contexte conservés comme références BCF.": "Title and description as the original note; category and severity kept only within the decided vocabulary; Guid and context kept as BCF references.",
 "Viewpoints, Components": "Viewpoints, Components",
-"Non repris, signalés en avertissement.": "Not imported, reported as a warning."
+"Non repris, signalés en avertissement.": "Not imported, reported as a warning.",
+"Conclusion normative : {0}": "Normative conclusion: {0}",
+"Aucune conclusion normative (contrôle non exécuté : jamais conforme)": "No normative conclusion (check not run: never compliant)",
+" : non applicable — ": ": not applicable — ",
+"Exigence non applicable": "Non-applicable requirement",
+"Déclarer non applicable (justifié)": "Declare not applicable (justified)",
+"{0} exigence(s) déclarée(s) non applicable(s) pour le prochain contrôle.": "{0} requirement(s) declared not applicable for the next check.",
+"Délai dépassé : aucun résultat reçu, aucune conclusion (jamais conforme).": "Time limit exceeded: no result received, no conclusion (never compliant).",
+"Contrôle en attente : aucune conclusion tant qu’il n’a pas tourné.": "Check pending: no conclusion until it has run."
 }

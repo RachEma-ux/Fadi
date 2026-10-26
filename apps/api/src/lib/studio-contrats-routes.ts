@@ -97,6 +97,7 @@ const controle = z.strictObject({
   id: ident, studyId: ident, variantId: ident, revisionId: ident, version: z.number().int().nullable(), execution: z.string(), conclusion: z.string().nullable(),
   documentHash: z.string(), auteur: z.string(), auteurEmail: z.string().nullable(), creeLe: instant,
   resultat: z.looseObject({ execution: z.string(), conclusion: z.string().nullable(), ecarts: z.array(z.unknown()) }),
+  conclusionNormative: z.looseObject({ execution: z.enum(["en-attente", "delai-depasse", "echec-technique", "non-execute", "execute"]), conclusion: z.enum(["conforme", "non-conforme", "non-teste", "non-applicable-justifie"]).nullable(), exigences: z.array(z.unknown()) }),
   rapprochements: z.array(z.unknown()).optional(), replayed: z.boolean().optional(),
 });
 const feuille = z.strictObject({

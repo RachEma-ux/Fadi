@@ -35,7 +35,7 @@
 import { and, asc, desc, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
-  composerFeuilleStudio, conclureControle, exportStudioDxf, exportStudioIfc, exportStudioSvg, STUDIO_PRESENTATIONS_PIECE, STUDIO_REGLES_METRE, studioSheetPdf, validateStudioDocument,
+  composerFeuilleStudio, exportStudioDxf, exportStudioIfc, exportStudioSvg, STUDIO_PRESENTATIONS_PIECE, STUDIO_REGLES_METRE, studioSheetPdf, validateStudioDocument,
   type StudioDocument, type StudioPresentationPiece,
 } from "@parcours/atelier-model";
 import { db } from "../db/client.js";
@@ -63,6 +63,7 @@ import {
 } from "./studio-publication-statuts.js";
 import { dossierPourPublication } from "./studio-dossiers.js";
 import { resolutionObservation } from "./studio-observations.js";
+import { normativeDe } from "./studio-exigences.js";
 
 export { canonicalJson, STUDIO_PUBLICATION_ACTIONS, type StudioPublicationTransition };
 export const STUDIO_PACKAGE_FORMATS: readonly StudioPackageFormat[] = ["svg", "dxf", "ifc", "pdf"];
@@ -417,7 +418,7 @@ async function controlesDe(q: Querier, studyId: string, sources: readonly Manife
     const [c] = await q.select().from(studioRequirementChecks).where(and(eq(studioRequirementChecks.variantId, s.variantId), eq(studioRequirementChecks.revisionId, s.revisionId)))
       .orderBy(desc(studioRequirementChecks.createdAt), desc(studioRequirementChecks.id)).limit(1);
     if (!c) continue;
-    const n = conclureControle(c.result, null);
+    const n = normativeDe(c.result);
     rapports.push({ controleId: c.id, variantId: s.variantId, revisionId: s.revisionId, version: c.setVersion ?? null, execution: n.execution, conclusion: n.conclusion, documentHash: c.documentHash });
   }
   const variantIds = [...new Set(sources.map((s) => s.variantId))];

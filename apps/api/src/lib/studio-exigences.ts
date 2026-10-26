@@ -21,6 +21,7 @@ import { z } from "zod";
 import {
   accepterExigence, controlerExigences, preparerVersion, StudioValidationError, validerExigences, type ExigenceStudio, type JeuExigences,
   type ResultatControle,
+  conclureControle, verifierJustification, type ConclusionControleNormative,
 } from "@parcours/atelier-model";
 
 const identifier = z.string().min(1).max(128).regex(/^[A-Za-z0-9._:-]+$/);
@@ -42,6 +43,11 @@ export const studioControleSchema = z.object({
   revisionId: identifier.optional(),
   /** Version du jeu examinée ; version courante par défaut. */
   version: z.number().int().min(1).optional(),
+  /**
+   * EX-068 (lot PUB) : exigences déclarées « non applicables », chacune justifiée (motif) ; l'auteur et la date sont ceux
+   * du serveur, la version celle examinée. Une justification qui ne se vérifie pas contre le jeu est refusée (400).
+   */
+  nonApplicables: z.array(z.object({ exigenceId: z.string().min(1).max(128), motif: z.string().trim().min(1).max(2000) }).strict()).max(200).optional(),
   requestId: identifier.optional(),
 }).strict();
 export type StudioExigencesEdition = z.infer<typeof studioExigencesEditionSchema>;
@@ -116,6 +122,23 @@ export function resultatControle(studyId: string, revisionId: string, document: 
   const result = controlerExigences(studyId, revisionId, document, jeu);
   return { result, execution: result.execution, conclusion: result.execution === "execute" ? result.conclusion : null };
 }
+
+/**
+ * Conclusion normative d'un contrôle (EX-068) : conforme, non conforme, non testé, non applicable justifié ; jamais
+ * « conforme » hors exécution. Les justifications de non-applicabilité sont vérifiées contre la version examinée.
+ */
+export function conclusionNormativeControle(
+  result: ResultatControle, jeu: Pick<JeuExigences, "version" | "exigences"> | null, nonApplicables: readonly { exigenceId: string; motif: string }[], auteur: string, date: Date,
+): { ok: ConclusionControleNormative } | { refus: RefusExigences } {
+  const justifications = nonApplicables.map((n) => ({ exigenceId: n.exigenceId, motif: n.motif, version: jeu?.version ?? 0, auteur, date: date.toISOString() }));
+  for (const j of justifications) {
+    const r = verifierJustification(j, jeu);
+    if (r) return { refus: { status: 400, body: { error: "invalid_input", code: "justification_invalide", exigenceId: j.exigenceId, motif: r, message: "Justification de non-applicabilité refusée : elle doit viser une exigence de la version examinée, avec un motif." } } };
+  }
+  return { ok: conclureControle(result, jeu, justifications) };
+}
+/** Conclusion normative d'un contrôle enregistré (stockée avec le résultat ; recalculée pour un contrôle antérieur au lot). */
+export const normativeDe = (result: ResultatControle & { normative?: ConclusionControleNormative }): ConclusionControleNormative => result.normative ?? conclureControle(result, null);
 
 /** Rejeu d'une écriture identifiée par `requestId` : même auteur et même contenu, sinon 409. */
 export function rejeuAdmis(stocke: { authorId: string; payloadHash: string | null }, acteurId: string, payloadHash: string): RefusExigences | null {

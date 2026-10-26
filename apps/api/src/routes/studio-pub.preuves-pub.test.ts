@@ -182,6 +182,22 @@ describe("EX-074 / EX-076 — publication d'un dossier de conception (API)", () 
   });
 });
 
+describe("EX-068 — conclusion normative d'un contrôle (API)", () => {
+  it("EX-068 [+] [−] API : contrôle conclu conforme / non conforme / non applicable justifié (justification vérifiée, auteur et version du serveur) ; justification invalide refusée", async () => {
+    await ok("post", `${S}/studies/s/exigences`, { baseVersion: 0, exigences: [
+      { id: "e1", libelle: "Au plus 1 objet", metrique: { type: "nombre" }, comparaison: "<=", valeur: 1, unite: "u", source: "Programme saisi (essai)" },
+      { id: "e2", libelle: "Au moins 100 objets", metrique: { type: "nombre" }, comparaison: ">=", valeur: 100, unite: "u", source: "Programme saisi (essai)" },
+    ] });
+    const sans = await ok("post", `${V}/controles`, {});
+    expect(sans["conclusionNormative"]).toMatchObject({ execution: "execute", conclusion: "non-conforme" });
+    const na = await ok("post", `${V}/controles`, { nonApplicables: [{ exigenceId: "e2", motif: "Sans objet pour ce lot" }] });
+    expect(na["conclusionNormative"]["exigences"].find((x: Record<string, any>) => x.exigenceId === "e2")).toMatchObject({ conclusion: "non-applicable-justifie", justification: { motif: "Sans objet pour ce lot", auteur: "proprietaire", version: 1 } });
+    expect((await ok("get", `${V}/controles/${na["id"]}`))["conclusionNormative"]["exigences"][1]["conclusion"]).toBe("non-applicable-justifie");
+    const refus = await appel("post", `${V}/controles`, { nonApplicables: [{ exigenceId: "absente", motif: "x" }] });
+    expect([refus.status, refus.body["code"], refus.body["motif"]]).toEqual([400, "justification_invalide", "exigence-inconnue"]);
+  });
+});
+
 describe("TEST-011 / REC-E-03 — aucune perte de publication, chaîne contrôlée jusqu'à la diffusion", () => {
   it("TEST-011 [+] API : après annuler puis rétablir l'opération, la publication diffusée reste lisible et vérifiable (mêmes empreintes), son manifeste inchangé", async () => {
     const pub = await ok("post", `${V}/publications`, { title: "Dessin", contenu: "dessin-2d" });
