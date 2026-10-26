@@ -238,3 +238,36 @@ Les preuves « test prescrit » des lots REG, DEC, F et CMD ont été rattachée
 complétées, **56 obligations passées « Vérifié »**. Restent « Implémenté » : les obligations des lots PUB, REND et OUT
 (leurs fichiers ne sont pas encore sur `main`), PR-01 à PR-06 et PR-09 (les tests du contrôle de PR tournent sur `main`
 à partir de la prochaine fusion) et TR-EX-046 (suite DB-3 du journal d'accès à rattacher).
+
+## Promotion après la CI verte de main (PR #330 fusionnée, main@085a8f3)
+
+Les preuves des lots PUB, REND et OUT, et celles du contrôle de PR (PR-01 à PR-06, PR-09), ont été rattachées à
+l'exécution verte de `main` sur le commit de fusion : 100 preuves complétées, **55 obligations passées « Vérifié »**.
+Reste « Implémenté » TR-EX-046 : sa suite DB-3 (`routes/studio-journal-acces.test.ts`) figure dans la liste des suites
+DB-3, que l'outil de complétion n'attribue jamais à une exécution sans base attestée.
+
+## Vague 2 — lots G1, G3, G4 et G5
+
+- **G1 (parcours et association)** : parcours d'une petite étude du dessin au dossier publié à travers quatre domaines
+  (TR-EX-002), cinq états dérivés affichés dans le métré, les feuilles et les publications (TR-EX-016), reprise après
+  coupure (« Rejetée », « Prévisualisation abandonnée », TR-EX-049), cote associative sur un mur qui suit le mur et passe
+  « à résoudre » s'il disparaît (TR-AC-001), association et copie indépendante recettées (J4, PASS-05). Recette
+  `studio-g1`.
+- **G3 (échanges et corpus)** : exports OBJ, STL (maillage) et STEP (noyau exact, un produit par élément, millimètres
+  déclarés, AP214) avec leurs contrats ; DWG non livré (D-179) ; capacités par sens (lecture, consultation, édition,
+  export, aller-retour) dans la matrice d'échanges (révision 8) ; corpus S1, S2, S5, S7 complétés ; références visuelles
+  S1–S7 versionnées avec empreintes (recette `studio-corpus-references`). Restent partiels X.1-01/04/05/06 : blocs
+  utilisateur, contraintes, niveaux objets, NURBS et fusion de variantes n'existent pas encore dans le modèle (déclarés
+  absents, jamais simulés).
+- **G4 (mesures et qualité)** : protocole EX-097, vingt outils à froid / chaud comparés à une référence versionnée avec
+  verdict, comparaisons avant / après optimisation de la vue 3D, mesures séparées (MES-03), réactivité pendant un booléen
+  exact lourd, contrôle EX-101 des régressions pertinentes (en CI sur chaque PR). Restent externes : appareil physique et
+  GPU réel (TR-EX-059, J5).
+- **G5 (suivi et exploitation)** : 11 règles d'alerte (4 à seuil fondé sur une règle écrite, 7 « non évaluées »),
+  mesure de la consommation des noyaux, route `GET /admin/surveillance` et procédure post-déploiement
+  (`docs/studio/SURVEILLANCE-EXPLOITATION.md`) ; spécification du redémarrage du noyau exact (D.2-04) ; rattachement
+  des 141 fiches aux sous-lots et rapport d'agrégats de recette générés et contrôlés. L'observation en production réelle
+  (R.5-03, OPS-08) attend un déploiement.
+
+Les obligations de la vague 2 sont inscrites « Implémenté » jusqu'à la CI verte de `main` après fusion. Le lot G2
+(outils et BIM) suivra dans une PR distincte.

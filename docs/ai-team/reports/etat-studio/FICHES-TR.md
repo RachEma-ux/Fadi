@@ -1,7 +1,7 @@
 # Fiches de traçabilité TR-* (annexe C) — preuve et contre-preuve individuelles
 
 > Document **généré** par `node scripts/registre/etat-studio.mjs --ecrire` depuis le registre et les fiches M004 ; la CI le
-> recalcule à chaque commit. Registre SHA-256 `cc22bf2d5ecffb3aebfc7b964e66664300b592199a740024aece66ada60d0b96` ; fiches `docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json`.
+> recalcule à chaque commit. Registre SHA-256 `67f954cc41b424da018289340722a8e4efaf9e1dd00c8f73b64b723a03b61f9e` ; fiches `docs/ai-team/reports/mission-004/A1/studio-141-fiches-v2.json`.
 
 Règle C (Checklist, annexe C) appliquée à chaque fiche : libellé exact, source, responsable, contrat, composant, tests
 positifs et négatifs, preuves, décisions, état et verdict ; **une preuve absente reste « à produire »**. Preuve = contrôle
@@ -9,8 +9,8 @@ positif exécuté (« scénario exécuté », G2-04) ; contre-preuve = contrôle
 l’échec attendu (titre marqué « [−] » ou qui le dit : refus, rejet, échec, interdit, jamais, aucun, conflit, code 4xx…).
 Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction livrée.
 
-**Synthèse** : 141 fiches ; 80 avec preuve exécutée, 82 avec contre-preuve exécutée ;
-61 preuves et 59 contre-preuves « à produire ».
+**Synthèse** : 141 fiches ; 114 avec preuve exécutée, 117 avec contre-preuve exécutée ;
+27 preuves et 24 contre-preuves « à produire ».
 
 ### TR-AC-001
 
@@ -22,8 +22,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Modifier depuis autre planche crée copie du mur ou perd hôte/cote/historique : échec critère, aucun succès partiel global.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (partiel) : Ajoutés : annuler / rétablir la modification du mur (identités, hôte, métré, plan, 3D) et dossier publié conservant la version examinée sur le cas du mur. Reste : le négatif « perte de cote » est intestable — aucune cote ne peut être liée à un mur (les cotes se lient aux formes 2D) ; fonction absente : cote associative sur objet architectural.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-AC-002
 
@@ -35,8 +35,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Barre réduite mais précache/init de tous moteurs rares : critère non acquis, aucun taux de réduction supposé.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (mesure requise) : La comparaison requêtes / octets / chunks exécutés / mémoire à une référence, cache froid et chaud, n'existe que dans studio-mesures-chargement.mjs (mesure sans verdict, hors CI) ; elle demande un profil de charge et un appareil désignés, sans taux présumé : mesure à conduire hors CI, à verdict humain.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-AC-003
 
@@ -78,8 +78,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : GPU CPU confondus ou géométrie modifiée pour gagner FPS : critère non vérifié/non conforme selon résultat.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (mesure requise) : Orbite, zoom, pousser / tirer et changement de matériau ne sont pas comparés avant / après optimisation (seules la sélection et l'égalité du maillage incrémental le sont) ; la séparation GPU réel / SwiftShader exige un appareil à GPU réel (DEC-13 : « non évalué ») et n'existe que dans studio-mesures-chargement.mjs, hors CI.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-AC-006
 
@@ -89,9 +89,12 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-11,DEC-13 · **Scénarios** : 015
 - **Test positif prescrit** : Forcer échec OCCT pendant opération puis relancer : attente résolue, erreur lisible et révision intacte sans doublon.
 - **Test négatif prescrit** : Crash laisse mutation partielle ou pending infini : échec critère.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 1
+  - TEST-015 : relance après retour au binaire distribué — prêt, une instance — `apps/web/e2e/studio-exact.mjs`, commit d87a82e, 2026-10-25 21:21
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - plantage pendant le calcul avec une seconde tâche en attente : les deux attentes résolues, erreur intelligible, aucune mutation ; relance : un seul solide exact, révision courante conservée — `apps/web/src/modules/studio/exact/ac006-echec-occt.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - TEST-015 : pas de corruption — document identique (empreinte de contenu), aucune commande en attente — `apps/web/e2e/studio-exact.mjs`, commit d87a82e, 2026-10-25 21:21
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-AC-007
@@ -169,7 +172,7 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
 - **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Fiches d'outils (fiches-outils.ts) : risques, mesures PERF, jeux positifs / négatifs, règle prêt à développer / conforme testée. Reste : désigner le build et le profil de charge de référence (DESIGNATION_CONFORMITE = null) et joindre les preuves d'exécution — décision du maître d'ouvrage ; tant qu'elle manque, aucune fiche n'est « conforme ».
+- **Suite** : Préparé (fiches-outils.ts) : forme du build désigné (FORME_BUILD_DESIGNE : commit 40 hex + sha256 de l'artefact), profils de charge que le dépôt sait exécuter (PROFILS_CHARGE_CANDIDATS : profil de vingt outils sur Chromium bureau / téléphone de la CI, corpus S1 à S7 ; réseau « non évalué »), validerDesignation (build, profils candidats, décision D-xxx / ADR / #Issue datée) et preuveRecevable. Rie…
 
 ### TR-EX-001
 
@@ -204,8 +207,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Demande de comptabilité ou gestion RH : périmètre explicitement exclu, aucun module métier concurrent créé.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Cas négatif livré (refus nommé 400 hors_perimetre). Reste le cas positif : un parcours unique d'une petite étude du dessin au dossier de conception à travers quatre domaines (recette à composer avec les lots PUB / dossiers).
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-003
 
@@ -251,9 +254,15 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-01,DEC-02,DEC-03 · **Scénarios** : 002
 - **Test positif prescrit** : Créer volume directement dans l'espace, éditer face et groupe, sauver et produire une coupe.
 - **Test négatif prescrit** : Nouvelle étude sans dessin 2D : l'édition 3D reste possible ; une vue sans édition ne suffit pas.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 2
+  - pivoter le groupe autour d'un axe vertical, le mettre à l'échelle (volumes compris), puis le supprimer : chaque fois un lot, le reste intact — `apps/web/src/modules/studio/vue3d/groupe-3d.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - TR-EX-005 : déplacement du groupe = un seul lot (2 commandes) ; un seul Ctrl+Z le retire en entier, les deux solides reviennent — `apps/web/e2e/studio-out.mjs`, commit 085a8f3, 2026-10-26 04:41
+- **Contre-preuve (contrôles négatifs exécutés)** : 4
+  - étude neuve sans dessin 2D : choisir A et C, les déplacer ensemble en un seul lot ; B ne bouge pas ; une annulation rend l'état initial — `apps/web/src/modules/studio/vue3d/groupe-3d.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - garde-fous : moins de deux membres, déplacement nul, facteur 1 → refus lisible, aucune commande ; un membre supprimé sort du groupe — `apps/web/src/modules/studio/vue3d/groupe-3d.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - TR-EX-005 : étude neuve — aucun objet 2D, deux solides libres — `apps/web/e2e/studio-out.mjs`, commit 085a8f3, 2026-10-26 04:41
+  - TR-EX-005 : relu par le serveur — A et B déplacés de (1, 2, 0), toujours aucun objet 2D — `apps/web/e2e/studio-out.mjs`, commit 085a8f3, 2026-10-26 04:41
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-006
@@ -403,9 +412,17 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-01,DEC-02,DEC-03,DEC-12 · **Scénarios** : 028
 - **Test positif prescrit** : Importer source avec unité m, repère local, transformation et provenance, puis exporter métadonnées.
 - **Test négatif prescrit** : Unité/repère inconnus : signaler inconnue et empêcher calcul silencieux en mètres supposés.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 5
+  - TR-EX-014 — provenance d'une source DXF importée > cas positif : import DXF en mm, repère et restrictions déclarés → source portée par le document, exportée avec toutes ses métadonnées — `packages/atelier-model/src/studio/sources/sources.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - TR-EX-014 — provenance d'un modèle externe reçu (IFC) > restrictions d'utilisation et repère source déclarés, unités déclarée et lue, transformation, empreinte et horodatage exportés — `packages/atelier-model/src/studio/sources/sources.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - Modèles externes (TR-EX-066) — réception relue par le serveur > TR-EX-014 : repère source et restrictions d'utilisation déclarés conservés (null s'ils sont absents), colonnes additives — `apps/api/src/lib/studio-modeles-externes.test.ts`, commit 085a8f3, 2026-10-26 04:45
+  - TR-EX-014 : import DXF — source enregistrée avec auteur, format et version lue (AC1015), horodatage, unité mm lue, repère, transformation, restrictions et SHA-256 du fichier — `apps/web/e2e/studio-rend.mjs`, commit 085a8f3, 2026-10-26 04:40
+  - TR-EX-014 : modèle externe IFC — provenance exportée (auteur, version, schéma lu, unités déclarée et lue, repère source, transformation, restrictions, SHA-256, horodatage) — `apps/web/e2e/studio-rend.mjs`, commit 085a8f3, 2026-10-26 04:40
+- **Contre-preuve (contrôles négatifs exécutés)** : 3
+  - TR-EX-014 — provenance d'une source DXF importée > champs inconnus : auteur, repère source, restrictions et version absents → null (non déclarés), jamais inventés — `packages/atelier-model/src/studio/sources/sources.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - TR-EX-014 — provenance d'une source DXF importée > cas négatif : unité inconnue → aucune commande et aucune source (jamais des mètres supposés) ; unité choisie → lue null, retenue déclarée — `packages/atelier-model/src/studio/sources/sources.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - Import DXF : la source est déclarée avec le lot (fichier, empreinte SHA-256, unité mm lue, aucune transformation) — `apps/web/e2e/studio-navigation.mjs`, commit 085a8f3, 2026-10-26 04:40
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-015
@@ -436,8 +453,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Ancienne image R12 présentée à jour R13 après échec : oracle doit rejeter ce statut.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Machine d'états pure (a-jour R / a-recalculer / en-calcul / echec / non-applicable) et oracle livrés ; la vue 3D l'affiche. Reste : le métré, les feuilles et les publications gardent leurs propres statuts (à jour / périmée) sans les cinq états — à brancher sur studioEtatsDomaines dans leurs panneaux.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Métré, aperçu de la feuille, feuilles composées et publications affichent l'un des cinq états dérivés (pastille EtatContenu, data-studio-etat-contenu / data-etat), à côté de leurs statuts propres ; fonction pure studioEtatDeriveContenu (studio-cmd) et adaptateurs taches/etats-contenus.ts. « En calcul » et « Échec » contrôlés par tests unitaires ; la recette e2e contrôle « À jour pour R », « À rec…
 
 ### TR-EX-017
 
@@ -554,9 +571,19 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-01,DEC-02,DEC-09 · **Scénarios** : 001,002,028
 - **Test positif prescrit** : Convertir coordonnées document/local/projet avec transformation versionnée et comparer valeurs/unité.
 - **Test négatif prescrit** : Entrée pixels traitée comme mètres ou géographie mélangée au local : refus/erreur explicite.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 6
+  - TR-EX-023 — système de projet et transformations versionnées document / local / projet > cas positif : un point du document converti explicitement vers le système de projet (version 1, puis version 2… — `packages/atelier-model/src/studio/reperes.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - TR-EX-023 — système de projet et transformations versionnées document / local / projet > local d'objet → document → projet : la pose d'un symbole (position, rotation, échelle) composée avec le systèm… — `packages/atelier-model/src/studio/reperes.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - Graphismes et système de projet : saisie > système de projet : version suivante saisie, conversion du point avec la version employée ; sans déclaration, rien n'est converti — `apps/web/src/modules/studio/graphismes/graphismes-ui.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - TR-EX-023 : point (3 ; 1) du dessin converti vers le projet par la version 1 (rotation 90°) : (2 599 999 ; 1 200 003) m, trace de la version — `apps/web/e2e/studio-rend.mjs`, commit 085a8f3, 2026-10-26 04:40
+  - TR-EX-023 : version 2 ajoutée (la version 1 reste) ; conversion par la version en vigueur et retour exact dans le dessin — `apps/web/e2e/studio-rend.mjs`, commit 085a8f3, 2026-10-26 04:40
+  - TR-EX-023 : versions 1 et 2 enregistrées dans la révision (origine, rotation en radians) — `apps/web/e2e/studio-rend.mjs`, commit 085a8f3, 2026-10-26 04:40
+- **Contre-preuve (contrôles négatifs exécutés)** : 4
+  - TR-EX-023 — système de projet et transformations versionnées document / local / projet > transformations vérifiées : aller-retour exact, inverse, échelle et unités explicites ; une transformation inc… — `packages/atelier-model/src/studio/reperes.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - TR-EX-023 — système de projet et transformations versionnées document / local / projet > cas négatifs : pixels, repère d'écran, repère géographique ou repère qui ne correspond pas à la transformation… — `packages/atelier-model/src/studio/reperes.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - TR-EX-023 — système de projet et transformations versionnées document / local / projet > commande studio.repere.projet : version suivante exigée (jamais réécrite), versions sans trou à la validation — `packages/atelier-model/src/studio/reperes.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - TR-EX-023 : sans déclaration, « Système de projet non déclaré : aucune conversion n’est supposée. » — `apps/web/e2e/studio-rend.mjs`, commit 085a8f3, 2026-10-26 04:40
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-024
@@ -635,8 +662,11 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test positif prescrit** : Manifeste valide au build, invocation autorisée avec paramètres/révision/quotas valides réussit.
 - **Test négatif prescrit** : Modifier droits après build ou forger entrée/quota : contrôle runtime refuse malgré schéma statique valide.
 - **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Contre-preuve (contrôles négatifs exécutés)** : 3
+  - compteur glissant : refus au-delà de la limite de la période, délai avant nouvel essai, libéré quand la fenêtre passe — `apps/api/src/routes/studio-quotas.test.ts`, commit 085a8f3, 2026-10-26 04:45
+  - route réelle : deux lots admis, le troisième au schéma valide refusé à l'exécution (429, Retry-After), rien écrit ; un autre compte n'est pas touché — `apps/api/src/routes/studio-quotas.test.ts`, commit 085a8f3, 2026-10-26 04:45
+  - un lot refusé pour une autre raison (révision dépassée, droit retiré après coup) ne consomme pas le quota ; le contrôle de droit reste à l'exécution — `apps/api/src/routes/studio-quotas.test.ts`, commit 085a8f3, 2026-10-26 04:45
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-029
@@ -647,9 +677,13 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-05,DEC-07,DEC-15,DEC-18 · **Scénarios** : 017,020
 - **Test positif prescrit** : Chercher par nom, synonyme, famille, domaine, contexte et toolId et voir état fidèle.
 - **Test négatif prescrit** : Échec loader/interdit/offline : résultat reste découvrable avec état exact, pas faux prêt ni moteur lancé par recherche.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 2
+  - synonyme : « miroir » trouve la Symétrie, « cloison » le Mur, « cube » la Boîte, « offset » le Décalage — `apps/web/src/modules/studio/planche2d/etats-outils.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - famille (barre) et domaine : « architecture » et « bâtiment » trouvent les outils d'architecture ; « 3D » les volumes — `apps/web/src/modules/studio/planche2d/etats-outils.test.ts`, commit 085a8f3, 2026-10-26 04:35
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - la recherche ne lance aucun moteur : aucun chargeur appelé, aucun état de moteur changé — `apps/web/src/modules/studio/planche2d/etats-outils.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - chaque état est atteint, avec son libellé ; un échec de chargeur, un refus ou le hors-ligne gardent l'outil découvrable avec son état exact — `apps/web/src/modules/studio/planche2d/etats-outils.test.ts`, commit 085a8f3, 2026-10-26 04:35
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-030
@@ -660,9 +694,14 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-05,DEC-07,DEC-15,DEC-18 · **Scénarios** : 036
 - **Test positif prescrit** : Réouvrir document/profil ancien avec compatibilité/alias ou migration explicitement fournie.
 - **Test négatif prescrit** : Déprécier outil puis ouvrir un travail le nécessitant : pas d'objet perdu ou de commande locale effacée.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 1
+  - outil retiré (absent du registre) ou type d'objet inconnu : travail signalé non réouvrable, rien n'est réinterprété — `packages/atelier-model/src/studio/compatibilite-outils.test.ts`, commit 085a8f3, 2026-10-26 04:35
+- **Contre-preuve (contrôles négatifs exécutés)** : 4
+  - tables réelles : aucun outil ni module déprécié, déclarations valides ; un outil du registre est actif, un identifiant inconnu est inconnu — `packages/atelier-model/src/studio/compatibilite-outils.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - cas négatif : déprécier l'outil Rectangle puis rouvrir un document qui l'emploie — le document se relit, aucun objet perdu, l'emploi est signalé — `packages/atelier-model/src/studio/compatibilite-outils.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - commandes hors ligne en attente de l'outil déprécié : conservées et toujours applicables (aucune commande locale effacée) ; profil enregistré : suit le remplacement déclaré — `packages/atelier-model/src/studio/compatibilite-outils.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - plan incomplet ou incohérent refusé : remplacement absent, remplacement lui-même déprécié, version invalide, doublon — `packages/atelier-model/src/studio/compatibilite-outils.test.ts`, commit 085a8f3, 2026-10-26 04:35
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-031
@@ -703,9 +742,12 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-04,DEC-06 · **Scénarios** : 018,019
 - **Test positif prescrit** : Changer standard→métier→personnel et masquer bouton : modèle/révision/droits inchangés et outil retrouvable.
 - **Test négatif prescrit** : Importer profil avec Publier sans droit : exécution refusée ; masquer outil ne supprime pas ses objets.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 1
+  - TR-EX-033 : le propriétaire, qui publie, importe ce même profil — `apps/web/e2e/studio-out.mjs`, commit 085a8f3, 2026-10-26 04:41
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - profil importé contenant « Publier » sans le droit de publier (éditeur, lecteur) : refusé 403, rien n'est écrit ; le propriétaire, qui publie, l'importe — `apps/api/src/routes/studio-profils-import.test.ts`, commit 085a8f3, 2026-10-26 04:45
+  - TR-EX-033 / TR-INV-009 : profil contenant « Publier » importé par un éditeur sans droit de publier → 403 permission_non_conferee, rien d'écrit — `apps/web/e2e/studio-out.mjs`, commit 085a8f3, 2026-10-26 04:41
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-034
@@ -716,9 +758,19 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-04,DEC-06 · **Scénarios** : 019
 - **Test positif prescrit** : Enregistrer profil avec profileId/propriétaire/version/ordre/raccourcis puis rouvrir sur autre session.
 - **Test négatif prescrit** : Importer deux raccourcis en conflit : conflit visible et configuration source préservée.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 5
+  - enregistrer un profil avec ordre et raccourcis puis le rouvrir dans une autre session : même profileId, propriétaire, version croissante — `apps/api/src/routes/studio-profils-import.test.ts`, commit 085a8f3, 2026-10-26 04:45
+  - import par un autre compte : le compte importateur devient propriétaire, la provenance est gardée, la version est la sienne — `apps/api/src/routes/studio-profils-import.test.ts`, commit 085a8f3, 2026-10-26 04:45
+  - conflits explicités : doublon, raccourci natif d'un autre outil, commande de l'éditeur, combinaison du navigateur — `apps/web/src/modules/studio/planche2d/profils-raccourcis.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - TR-EX-034 : profil enregistré en base — profileId, propriétaire, version 1, ordre et raccourci personnel — `apps/web/e2e/studio-out.mjs`, commit 085a8f3, 2026-10-26 04:41
+  - TR-EX-034 : export — format fadi-studio-profil/1, même profileId, version 2 — `apps/web/e2e/studio-out.mjs`, commit 085a8f3, 2026-10-26 04:41
+- **Contre-preuve (contrôles négatifs exécutés)** : 5
+  - cas négatif : deux raccourcis en conflit (doublon, raccourci natif d'un autre outil) → 409, conflits explicités, rien d'écrit, fichier source intact ; « écarter » importe le reste — `apps/api/src/routes/studio-profils-import.test.ts`, commit 085a8f3, 2026-10-26 04:45
+  - fichier forgé : format inconnu ou capacité hors registre → refusé, rien n'est écrit — `apps/api/src/routes/studio-profils-import.test.ts`, commit 085a8f3, 2026-10-26 04:45
+  - table appliquée : seuls les raccourcis sans conflit, outils du registre seulement, jamais une combinaison native — `apps/web/src/modules/studio/planche2d/profils-raccourcis.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - TR-EX-034 : import en conflit avec un raccourci du registre → 409, conflit nommé (Ctrl+Maj+U, Pousser / tirer la face), rien d'écrit — `apps/web/e2e/studio-out.mjs`, commit 085a8f3, 2026-10-26 04:41
+  - TR-EX-034 : « écarter » — l'éditeur devient propriétaire de sa copie, provenance gardée, raccourci en conflit rendu — `apps/web/e2e/studio-out.mjs`, commit 085a8f3, 2026-10-26 04:41
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-035
@@ -818,9 +870,11 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-07,DEC-14 · **Scénarios** : 015,016
 - **Test positif prescrit** : Activer outil exact pour la première fois, puis seconde fois et comparer instance/dépendances mutualisées.
 - **Test négatif prescrit** : Échec d'un module rare : état récupérable ; un autre outil compatible ne crée pas sans raison un second noyau.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 1
+  - cas négatif : échec du module rare — état récupérable ; la relance réussit avec un seul noyau vivant — `apps/web/src/modules/studio/chargement/cycle-activation.test.ts`, commit 085a8f3, 2026-10-26 04:35
+- **Contre-preuve (contrôles négatifs exécutés)** : 1
+  - première activation : charge module et noyau ; seconde activation et autres outils entre-temps : même noyau, aucune réinitialisation — `apps/web/src/modules/studio/chargement/cycle-activation.test.ts`, commit 085a8f3, 2026-10-26 04:35
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-041
@@ -831,9 +885,13 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-07,DEC-14 · **Scénarios** : 016
 - **Test positif prescrit** : Activer deux outils partageant géométrie/noyau, mesurer un exemplaire compatible de dépendance.
 - **Test négatif prescrit** : Un chunk par bouton duplique le même noyau : détecter octets/instances sans imposer découpage arbitraire.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 2
+  - Worker ↔ principal comparés ; même fichier émis deux fois compté une seule fois ; exception déclarée seulement pour ses fichiers — `apps/web/src/modules/studio/chargement/duplication.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - branché sur la construction : la configuration relève les modules des Workers et refuse le build sur violation — `apps/web/src/modules/studio/chargement/duplication.test.ts`, commit 085a8f3, 2026-10-26 04:35
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - cas positif : deux outils partagent géométrie et noyau dans un même morceau — un seul exemplaire, aucune duplication — `apps/web/src/modules/studio/chargement/duplication.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - cas négatif : un morceau par bouton qui embarque chacun le noyau et three.js — duplication détectée en octets, build refusé — `apps/web/src/modules/studio/chargement/duplication.test.ts`, commit 085a8f3, 2026-10-26 04:35
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-042
@@ -844,9 +902,23 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-07,DEC-14 · **Scénarios** : 016,036
 - **Test positif prescrit** : Observer caches distincts shell/profil/modules/file et téléchargement facultatif au besoin.
 - **Test négatif prescrit** : Service worker précache tout le build : ne déclarer ce fait équivalent au chargement différé.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 13
+  - installation : coquille et profil mis en cache avant les modules facultatifs, tous dans le cache du build — `apps/web/src/modules/studio/chargement/service-worker.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - une liste simple (ancienne forme) reste acceptée — `apps/web/src/modules/studio/chargement/service-worker.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - mise à jour avec une page ouverte : le dernier ancien cache est gardé, la page est prévenue, sans rechargement imposé — `apps/web/src/modules/studio/chargement/service-worker.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - carte des morceaux : seule celle de CE build est enregistrée (installation et lecture réseau) — `apps/web/src/modules/studio/chargement/service-worker.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - trois caches distincts par build ; un module lu plus tard rejoint le cache de sa classe ; hors ligne, chaque classe est servie depuis son cache — `apps/web/src/modules/studio/chargement/service-worker.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - mise à jour avec une page ouverte : les trois caches du build précédent restent ensemble, les plus anciens sont purgés — `apps/web/src/modules/studio/chargement/service-worker.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - … et 7 autre(s) au registre
+- **Contre-preuve (contrôles négatifs exécutés)** : 9
+  - mise à jour sans page ouverte : tous les anciens caches purgés ; première installation : aucune « mise à jour » annoncée — `apps/web/src/modules/studio/chargement/service-worker.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - la file locale (IndexedDB) n'est jamais lue ni modifiée par le service worker — `apps/web/src/modules/studio/chargement/service-worker.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - carte des morceaux : réseau d'abord, copie de ce build hors ligne ; API jamais interceptée — `apps/web/src/modules/studio/chargement/service-worker.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - le précache n'est pas un chargement : le binaire du noyau exact n'est jamais préchargé (téléchargement facultatif à la demande) ; les données et la file restent hors du service worker — `apps/web/src/modules/studio/chargement/service-worker.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - sans service worker, sans cache de ce build ou avec la carte d'un autre build : non évalué, jamais disponible — `apps/web/src/modules/studio/chargement/cache-hors-ligne.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - lot F2 : .wasm du noyau exact absent du cache (jamais préchargé) : le seul Booléen exact est indisponible hors connexion, véridiquement — `apps/web/src/modules/studio/chargement/cache-hors-ligne.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - … et 3 autre(s) au registre
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-043
@@ -876,9 +948,15 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-07,DEC-14 · **Scénarios** : 036
 - **Test positif prescrit** : Mettre à jour build avec file pendante et préserver relation build/contrat/schéma et données non synchronisées.
 - **Test négatif prescrit** : Ancien contrat incompatible ou quota atteint : résolution/migration explicite, aucune purge de file silencieuse.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 3
+  - la file enregistre build, contrat des commandes, schéma du document et manifeste ; relue par le même build, rien n'est signalé — `apps/web/src/modules/studio/hors-ligne/quota-build.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - mise à jour du build avec une file en attente : relue par le nouveau build, conservée intacte et rejouable, l'ancien build signalé — `apps/web/src/modules/studio/hors-ligne/quota-build.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - quota atteint : les versions lues en cache (sauf celle de la variante ouverte) sont évincées, les plus anciennes d'abord, puis le brouillon est écrit — `apps/web/src/modules/studio/hors-ligne/quota-build.test.ts`, commit 085a8f3, 2026-10-26 04:35
+- **Contre-preuve (contrôles négatifs exécutés)** : 3
+  - cas négatif : ancien contrat incompatible (format futur, outil hors contrat) — résolution explicite, la ligne n'est jamais purgée — `apps/web/src/modules/studio/hors-ligne/quota-build.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - quota toujours atteint après l'éviction : erreur « quota » rendue à l'interface, aucun brouillon effacé, rien d'autre que les versions lues touché — `apps/web/src/modules/studio/hors-ligne/quota-build.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - politique : jamais la variante ouverte ; reconnaissance du dépassement enveloppé — `apps/web/src/modules/studio/hors-ligne/quota-build.test.ts`, commit 085a8f3, 2026-10-26 04:35
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-045
@@ -955,8 +1033,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Réenvoyer file incompatible ou déjà confirmée : pas de doublon ni disparition sans état explicite.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : États « Rejetée » et « Prévisualisation abandonnée » livrés (bandeau, persistance du brouillon : rejet avec ses requestId, aperçu en cours, contrat des enveloppes ; reprise par useChargementVariante). Manque une recette navigateur de reprise après coupure réelle : studio-hors-ligne.mjs n'a pas pu être jouée jusqu'au bout ici (serveur de courriel Mailpit absent, localhost:8025).
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-050
 
@@ -1002,9 +1080,14 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-09,DEC-10,DEC-13 · **Scénarios** : 022
 - **Test positif prescrit** : Sur S1 petite scène et S3 dense, mesurer filtrage emprise avant calcul précis et comparer cibles.
 - **Test négatif prescrit** : Objet hors candidats mais intersectant la vue : oracle révèle omission ; balayage correct reste repli autorisé.
-- **Preuve (contrôles positifs exécutés)** : à produire
+- **Preuve (contrôles positifs exécutés)** : 5
+  - TR-EX-052 — recherches comparées à la cible DEC-13 (INP p75 ≤ 200 ms), chemin pris aujourd'hui > le p75 du chemin effectivement pris est comparé au budget ; au-delà, hors cible — `apps/web/src/modules/studio/planche2d/mesure-spatiale-analyse.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - Mesure des recherches spatiales : contrôle du script > mêmes sélections et mêmes candidats par l'index et par le parcours linéaire (S1, S2, S3, S4 à 100 et 1 000 primitives) — `apps/web/src/modules/studio/planche2d/mesure-spatiale.test.ts`, commit 44c6ef4, 2026-10-25 16:08
+  - Mesure des recherches spatiales : contrôle du script > TEST-022 — S1–S3 : même repère résolu (point, genre, objet, priorité) par l'index et le parcours linéaire — `apps/web/src/modules/studio/planche2d/mesure-spatiale.test.ts`, commit 44c6ef4, 2026-10-25 16:08
+  - TR-EX-052 : chaque recherche comparée à la cible DEC-13 par le chemin pris (p75) — `apps/web/e2e/studio-rend.mjs`, commit 085a8f3, 2026-10-26 04:40
+  - C.1-01 : mesure complète dans le navigateur — 18 corpus (S1–S5, S7 × 100 / 10000 / 100000), 0 divergence index / linéaire, rapport archivé avec machine, navigateur et commit — `apps/web/e2e/studio-rend.mjs`, commit 085a8f3, 2026-10-26 04:40
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-053
@@ -1015,9 +1098,13 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-09,DEC-10,DEC-13 · **Scénarios** : 022
 - **Test positif prescrit** : Tester extrémité/milieu/intersection/centre/tangente/perpendiculaire/ortho/parallèle avec priorités.
 - **Test négatif prescrit** : Permutation index ou égalité de distances : même règle de départage/tolérance qu'oracle.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 3
+  - depuis le dernier point, le pointeur proche de la parallèle à un segment éloigné s'accroche sur cette droite (point exact, ligne guide) — `apps/web/src/modules/studio/planche2d/accrochage/parallele.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - priorités : un point exact (extrémité) l'emporte sur la parallèle ; la parallèle (rang relatif) l'emporte sur le plus proche ; départage stable sous permutation — `apps/web/src/modules/studio/planche2d/accrochage/parallele.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - bascule propre (règle d'or) : commande « Accrocher en parallèle », Ctrl+Maj+F6, icône propre, barre Accrochage — `apps/web/src/modules/studio/planche2d/accrochage/parallele.test.ts`, commit 085a8f3, 2026-10-26 04:35
+- **Contre-preuve (contrôles négatifs exécutés)** : 1
+  - tolérance : au-delà, aucune parallèle ; sans dernier point, aucune ; mode coupé, aucune — `apps/web/src/modules/studio/planche2d/accrochage/parallele.test.ts`, commit 085a8f3, 2026-10-26 04:35
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-054
@@ -1046,9 +1133,21 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-08,DEC-10,DEC-17 · **Scénarios** : 025
 - **Test positif prescrit** : Rendre scène avec ligne/arc/spline/hachure/cote/texte/calques puis comparer export et coordonnées.
 - **Test négatif prescrit** : Renderer alternatif omet texte/hachure ou modifie accrochage : non-régression échoue même si plus rapide.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 8
+  - TR-EX-055 — graphismes du document 2D (spline, hachure, symbole, transparence) > création par commande, document relu à l'identique ; opacité 1 non stockée (opaque = absente) — `packages/atelier-model/src/studio/graphismes.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - TR-EX-055 — graphismes du document 2D (spline, hachure, symbole, transparence) > géométrie : Bézier exacte aux extrémités, découpe déclarée ; traits de hachure dans le contour, ancrés sur l'origine, … — `packages/atelier-model/src/studio/graphismes.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - TR-EX-055 — graphismes du document 2D (spline, hachure, symbole, transparence) > export SVG : courbe de Bézier `C` exacte, traits de hachure, symbole posé, opacité ; DXF : polyligne découpée, transpa… — `packages/atelier-model/src/studio/graphismes.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - TR-EX-055 — splines, hachures, symboles et transparences : rendu SVG et comparaison Canvas / GPU > le contrôle porte : un moteur qui ignore la transparence, omet une spline ou un trait de hachure est… — `apps/web/src/modules/studio/planche2d/rendus/graphismes-rendu.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - TR-EX-055 — splines, hachures, symboles et transparences : rendu SVG et comparaison Canvas / GPU > GPU : splines découpées au pas déclaré, opacité portée par segment, textes non tracés et comptés — `apps/web/src/modules/studio/planche2d/rendus/graphismes-rendu.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - Graphismes et système de projet : saisie > spline, hachure et symbole saisis → commande studio.graphisme.creer appliquée par le brouillon ; opacité en pour cent — `apps/web/src/modules/studio/graphismes/graphismes-ui.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - … et 2 autre(s) au registre
+- **Contre-preuve (contrôles négatifs exécutés)** : 5
+  - TR-EX-055 — graphismes du document 2D (spline, hachure, symbole, transparence) > refus explicites : spline sans 3n + 1 points, contour d'aire nulle, espacement nul ou trop fin, opacité hors ]0 ; 1], … — `packages/atelier-model/src/studio/graphismes.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - TR-EX-055 — splines, hachures, symboles et transparences : rendu SVG et comparaison Canvas / GPU > rendu SVG du modèle : chaque famille présente (Bézier `C`, traits de hachure, symboles, opacité), le… — `apps/web/src/modules/studio/planche2d/rendus/graphismes-rendu.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - TR-EX-055 — splines, hachures, symboles et transparences : rendu SVG et comparaison Canvas / GPU > Canvas = SVG : mêmes primitives, mêmes positions, même opacité (aucun trait manquant ni en trop, éca… — `apps/web/src/modules/studio/planche2d/rendus/graphismes-rendu.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - Graphismes et système de projet : saisie > refus dits : points illisibles, champs vides, opacité hors bornes, géométrie refusée par le modèle — `apps/web/src/modules/studio/graphismes/graphismes-ui.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - TR-EX-055 : scène de fidélité dans le navigateur — Canvas = SVG (aucun trait manquant ni en trop, Bézier et opacités comprises), GPU découpé avec opacités 0,3 / 0,5 / 0,75 / 1 — `apps/web/e2e/studio-rend.mjs`, commit 085a8f3, 2026-10-26 04:40
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-056
@@ -1059,9 +1158,17 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-08,DEC-10,DEC-17 · **Scénarios** : 023,025
 - **Test positif prescrit** : Qualifier rendu à la demande/batching/WebGL2/repli WebGPU existants sur corpus.
 - **Test négatif prescrit** : Remplacer moteur sans gain/conformité prouvés : décision bloquée, pas réécriture automatique.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 4
+  - TR-EX-056 — moteur de la vue 3D : WebGL2 par défaut, repli WebGPU → WebGL2 déclaré > WebGPU demandé sans navigator.gpu, sans adaptateur ou en erreur : repli WebGL2 avec la raison — `apps/web/src/modules/studio/vue3d/moteur-3d.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - TR-EX-056 — moteur de la vue 3D : WebGL2 par défaut, repli WebGPU → WebGL2 déclaré > qualifié sur appareil réel : retenu seulement si la vue sait le rendre (la vue Studio rend en WebGL2 : repli décla… — `apps/web/src/modules/studio/vue3d/moteur-3d.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - TR-EX-056 / F.1-01 — blocage d'un remplacement de moteur sans preuve > moteur par défaut : SVG (planche, DEC-08) et WebGL2 (vue 3D) ; tout défaut différent de la référence sans rapport qualifiant fai… — `packages/atelier-model/src/studio/accelerations.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - TR-EX-056 : WebGPU demandé → repli WebGL2 déclaré, avec la raison constatée dans ce navigateur — `apps/web/e2e/studio-rend.mjs`, commit 085a8f3, 2026-10-26 04:40
+- **Contre-preuve (contrôles négatifs exécutés)** : 4
+  - TR-EX-056 — moteur de la vue 3D : WebGL2 par défaut, repli WebGPU → WebGL2 déclaré > WebGL2 demandé (défaut) : WebGL2, aucun repli — `apps/web/src/modules/studio/vue3d/moteur-3d.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - TR-EX-056 — moteur de la vue 3D : WebGL2 par défaut, repli WebGPU → WebGL2 déclaré > WebGPU disponible mais non qualifié (aucun rapport, ou mesure en rendu logiciel) : repli par la règle F.1-01 — `apps/web/src/modules/studio/vue3d/moteur-3d.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - TR-EX-056 / F.1-01 — blocage d'un remplacement de moteur sans preuve > le contrôle porte : un défaut Canvas ou WebGPU sans rapport (ou avec un rapport qui ne qualifie pas) est refusé ; avec un rappor… — `packages/atelier-model/src/studio/accelerations.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - TR-EX-056 : rendu à la demande sur S4 — aucune trame pendant 1,5 s de repos, des trames pendant l'orbite, aucune après — `apps/web/e2e/studio-rend.mjs`, commit 085a8f3, 2026-10-26 04:40
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-057
@@ -1109,7 +1216,7 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
 - **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Mesuré en CI (Chromium logiciel) sur la lecture d'un DXF de 4,2 Mo dans le Worker : trame la plus longue 16,8 ms contre une tâche longue de 682 ms pour la même lecture sur le fil principal (local). Manque : (1) la même mesure pendant un booléen exact lourd (noyau OCCT dans son Worker, cas positif prescrit) n'est pas faite ; (2) la mesure sur appareil réel (EXTERNE : aucun appareil physique dans c…
+- **Suite** : Point (1) fait : booléen exact lourd (union de deux prismes en étoile de 320 sommets, 2,2–3,8 s dans le Worker OCCT) mesuré : trame max ≈ 50–67 ms, 14–20 interactions pendant le calcul, max 80–112 ms (< 200 ms) ; contre-épreuve « bloque » (trame 3,3 s, interaction 3,2 s). Reste EXTERNE : la même mesure sur appareil réel (aucun appareil physique ; RECETTE-APPAREILS.md §5).
 
 ### TR-EX-060
 
@@ -1154,9 +1261,12 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-11,DEC-13 · **Scénarios** : 037
 - **Test positif prescrit** : Ouvrir/fermer outil exact 50 fois, suivre transfert/allocations/résiduel avec instance justifiée.
 - **Test négatif prescrit** : Second OCCT simultané ou croissance mémoire : pas de conformité sans courbe/limite décidée.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 2
+  - TR-EX-062 : allocations WASM — mémoire linéaire du noyau (WebAssembly.Memory) relevée après le calcul, multiple de 64 Kio, enregistrée en PERF-07 — `apps/web/e2e/studio-exact.mjs`, commit 085a8f3, 2026-10-26 04:44
+  - TR-EX-062 : après les cycles, le noyau calcule toujours (même instance) — `apps/web/e2e/studio-exact.mjs`, commit 085a8f3, 2026-10-26 04:44
+- **Contre-preuve (contrôles négatifs exécutés)** : 1
+  - TR-EX-062 : allocations WebAssembly mesurées — mémoire linéaire du noyau relevée après chaque calcul, croissante, jamais nulle — `packages/geometry-exact/src/index.test.ts`, commit 085a8f3, 2026-10-26 04:35
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-063
@@ -1167,9 +1277,15 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-11,DEC-13 · **Scénarios** : 015
 - **Test positif prescrit** : Transférer buffer selon contrat de propriété puis valider message reçu.
 - **Test négatif prescrit** : Réutiliser tampon détaché ou message worker forgé : validation refuse, pas de corruption canonique.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 1
+  - cas positif : le vrai Worker rend le maillage 3D et le métré, acceptés par la validation et identiques au calcul direct — `apps/web/src/modules/studio/workers/validation-messages.test.ts`, commit 085a8f3, 2026-10-26 04:35
+- **Contre-preuve (contrôles négatifs exécutés)** : 5
+  - chaque traitement du Worker de Studio a son validateur, et une nature sans validateur est refusée — `apps/web/src/modules/studio/workers/validation-messages.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - message bien formé mais forgé : maillage dont un triangle vise un sommet absent → demande rejetée « invalide », Worker arrêté, rien rendu — `apps/web/src/modules/studio/workers/validation-messages.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - lecture DXF forgée : une commande d'un outil hors registre (ou une commande sans paramètres) est refusée, jamais appliquée — `apps/web/src/modules/studio/workers/validation-messages.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - enveloppe forgée (deux réponses, identifiant non entier, progression hors forme) : refusée comme illisible, Worker arrêté — `apps/web/src/modules/studio/workers/validation-messages.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - tampon déjà transféré : sa réutilisation est refusée (propriété du tampon établie par le protocole) — `apps/web/src/modules/studio/workers/validation-messages.test.ts`, commit 085a8f3, 2026-10-26 04:35
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-064
@@ -1195,9 +1311,12 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-02,DEC-16 · **Scénarios** : 027
 - **Test positif prescrit** : Exigence 28m² et dessin 26m² : afficher écart -2m² et conserver exigence versionnée.
 - **Test négatif prescrit** : Modifier surface dessinée : ne réécrit pas cible à 26 ; commande exigence sans droit refusée.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 2
+  - TEST-027 : exigence identique après la modification du dessin (même version, mêmes valeurs) — `apps/web/e2e/studio-exigences.mjs`, commit 085a8f3, 2026-10-26 04:38
+  - TEST-027 : écart calculé et visible (mesure 11,6 m³ contre ≤ 10 m³, +1,6) — `apps/web/e2e/studio-exigences.mjs`, commit 085a8f3, 2026-10-26 04:38
+- **Contre-preuve (contrôles négatifs exécutés)** : 1
+  - TEST-027 [+] modifier le rectangle dessiné (2 × 1 → 3 × 1) fait passer l'écart signé de 0 à +1 m² ; l'exigence n'est pas réécrite — `packages/atelier-model/src/studio/studio-invariants.test.ts`, commit 44c6ef4, 2026-10-25 16:08
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-066
@@ -1249,9 +1368,16 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-02,DEC-16 · **Scénarios** : 029
 - **Test positif prescrit** : Contrôle exécuté donne conforme/non conforme/non testé/non applicable motivé.
 - **Test négatif prescrit** : Timeout ou exécution en attente : ne devient jamais conforme.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 4
+  - EX-068 [+] un contrôle exécuté conclut conforme, non conforme, non testé ou non applicable justifié — `packages/atelier-model/src/studio/conclusions-controle.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - EX-068 [+] la justification « non applicable » est vérifiable : exigence de la version examinée, motif, auteur, date — `packages/atelier-model/src/studio/conclusions-controle.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - EX-068 : non applicable justifié enregistré (motif, auteur et version posés par le serveur), le reste conclu normalement — `apps/web/e2e/studio-exigences.mjs`, commit 085a8f3, 2026-10-26 04:38
+  - EX-068 : conclusion normative et justification affichées — `apps/web/e2e/studio-exigences.mjs`, commit 085a8f3, 2026-10-26 04:38
+- **Contre-preuve (contrôles négatifs exécutés)** : 3
+  - EX-068 [−] en attente, délai dépassé ou échec technique : jamais conforme, aucune conclusion — `packages/atelier-model/src/studio/conclusions-controle.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - EX-068 [+] [−] API : contrôle conclu conforme / non conforme / non applicable justifié (justification vérifiée, auteur et version du serveur) ; justification invalide refusée — `apps/api/src/routes/studio-pub.preuves-pub.test.ts`, commit 085a8f3, 2026-10-26 04:45
+  - EX-068 : justification visant une exigence absente de la version refusée (400) — `apps/web/e2e/studio-exigences.mjs`, commit 085a8f3, 2026-10-26 04:38
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-069
@@ -1299,9 +1425,14 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-15,DEC-17 · **Scénarios** : 032
 - **Test positif prescrit** : Rendu conserve révision/caméra/auteur/date/provenance et IA optionnelle conserve fournisseur/sources/coûts.
 - **Test négatif prescrit** : Appel IA sans autorisation de transfert ou version fournisseur inconnue : refus ou inconnue déclarée, pas provenance inventée.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 3
+  - TR-EX-071 [+] la provenance porte révision, caméra, paramètres, auteur, date, empreintes ; l'IA externe y ajoute fournisseur, version « inconnue », sources envoyées, consentement, coûts et quotas — `packages/atelier-model/src/studio/agents/agents.test.ts`, commit 4304050, 2026-10-26 03:10
+  - TR-EX-094 [+] TR-EX-071 [+] politique, consentement au coût déclaré et clé fournie : un seul appel au double, provenance avec fournisseur, version « inconnue », source envoyée, consentement, coûts, q… — `apps/api/src/routes/studio-illustrations.test.ts`, commit 4304050, 2026-10-26 03:21
+  - EX-071 [+] le rendu conserve son auteur, ses paramètres et l'empreinte du document quand elle est disponible — `packages/atelier-model/src/studio/scenes/scenes.test.ts`, commit 085a8f3, 2026-10-26 04:35
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - TR-EX-071 [−] appel externe sans autorisation de transfert ou sans coût : refusé, jamais une provenance complétée — `packages/atelier-model/src/studio/agents/agents.test.ts`, commit 4304050, 2026-10-26 03:10
+  - EX-071 [−] sans auteur, le rendu est refusé (jamais d'auteur inventé) ; empreinte ou paramètres illisibles refusés — `packages/atelier-model/src/studio/scenes/scenes.test.ts`, commit 085a8f3, 2026-10-26 04:35
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-072
@@ -1343,9 +1474,14 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-16 · **Scénarios** : 001,038
 - **Test positif prescrit** : Composer vue→feuille à échelle→dossier→publication en conservant rôles distincts.
 - **Test négatif prescrit** : Planche d'édition seule présentée comme feuille publiée : recette refuse livraison.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 3
+  - EX-074 [+] un dossier assemblé de feuilles se publie : rôles distincts (vue, feuille à format et échelle déclarés, dossier), empreintes propres — `packages/atelier-model/src/studio/chaine-documentaire.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - EX-074 [+] contenu « dossier-conception » : PDF et JSON du dossier, pièces ordonnées avec origine, présentation et sources distinctes — `apps/api/src/lib/studio-publication-manifeste.preuves-pub.test.ts`, commit 085a8f3, 2026-10-26 04:45
+  - EX-074 [+] API : un dossier de conception se publie (revue, approbation, diffusion) ; paquet PDF + JSON, manifeste avec dossier et pièces — `apps/api/src/routes/studio-pub.preuves-pub.test.ts`, commit 085a8f3, 2026-10-26 04:45
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - EX-074 [−] une planche d'édition présentée comme feuille publiée est refusée ; une feuille sans échelle aussi — `packages/atelier-model/src/studio/chaine-documentaire.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - EX-074 [−] un dossier sans contenu « dossier-conception » (ou l'inverse) est refusé — `apps/api/src/lib/studio-publication-manifeste.preuves-pub.test.ts`, commit 085a8f3, 2026-10-26 04:45
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-075
@@ -1356,9 +1492,17 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-16 · **Scénarios** : 030
 - **Test positif prescrit** : Créer coupe R12 avec cadrage/styles/annotations puis changer modèle R13 et marquer vue périmée.
 - **Test négatif prescrit** : Annotation de coupe modifiée : ne devient pas paramètre autoritaire du mur.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 2
+  - EX-075 [+] conserve révision source, niveau et repère, cadrage, échelle, visibilité, styles et annotations propres — `packages/atelier-model/src/studio/vues-coupe.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - EX-075 : vue rebasée explicitement (définition conservée) — `apps/web/e2e/studio-pub.mjs`, commit 085a8f3, 2026-10-26 04:39
+- **Contre-preuve (contrôles négatifs exécutés)** : 6
+  - EX-075 [+] R12 → R13 : la vue dérivée devient périmée ; rebasée, elle garde cadrage, styles et annotations — `packages/atelier-model/src/studio/vues-coupe.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - EX-075 [−] annotation de coupe modifiée : ne devient pas un paramètre de l'objet source, le document et la section ne changent pas — `packages/atelier-model/src/studio/vues-coupe.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - EX-075 [−] définition incomplète refusée : cadrage vide, échelle libre, repère non déclaré, style inconnu — `packages/atelier-model/src/studio/vues-coupe.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - EX-075 [+] API : la vue enregistrée garde révision, niveau, cadrage, échelle, styles et annotations ; périmée après une nouvelle révision, rebasée explicitement — `apps/api/src/routes/studio-pub.preuves-pub.test.ts`, commit 085a8f3, 2026-10-26 04:45
+  - EX-075 [−] API : modifier une annotation de la vue n'écrit aucune révision ni aucun paramètre du solide ; la section ne change pas — `apps/api/src/routes/studio-pub.preuves-pub.test.ts`, commit 085a8f3, 2026-10-26 04:45
+  - EX-075 : vue dérivée périmée après modification du modèle — `apps/web/e2e/studio-pub.mjs`, commit 085a8f3, 2026-10-26 04:39
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-076
@@ -1369,9 +1513,13 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-16 · **Scénarios** : 001,038
 - **Test positif prescrit** : Publier détail 2D autonome et coupe de modèle ensemble avec sources distinctes.
 - **Test négatif prescrit** : Détail indépendant annoncé synchronisé avec maquette sans association : présentation refusée.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 1
+  - EX-076 [+] détail 2D autonome et coupe de maquette publiés ensemble, chacun avec sa source distincte — `packages/atelier-model/src/studio/chaine-documentaire.test.ts`, commit 085a8f3, 2026-10-26 04:35
+- **Contre-preuve (contrôles négatifs exécutés)** : 3
+  - EX-076 [−] le détail indépendant annoncé « synchronisé » avec la maquette sans association : présentation refusée — `packages/atelier-model/src/studio/chaine-documentaire.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - EX-076 [+] [−] API : détail 2D et coupe de maquette publiés ensemble avec sources distinctes ; le détail annoncé « synchronisé » sans association est refusé (409 piece_refusee) — `apps/api/src/routes/studio-pub.preuves-pub.test.ts`, commit 085a8f3, 2026-10-26 04:45
+  - EX-076 [−] : détail 2D annoncé synchronisé sans association refusé (409 piece_refusee) — `apps/web/e2e/studio-pub.mjs`, commit 085a8f3, 2026-10-26 04:39
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-077
@@ -1382,9 +1530,12 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-16 · **Scénarios** : 009,010
 - **Test positif prescrit** : Retrouver règle/version/objets/unité/brut/déductions/date et ajustement attribué pour quantité mur.
 - **Test négatif prescrit** : Override manuel écrase rawValue sans auteur/motif : refuser ou conserver comme ajustement distinct.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 2
+  - EX-077 [+] précision interne pleine, arrondi de présentation déclaré séparé ; exclusions (cote, grandeur non évaluée) listées avec motif ; identité stable — `packages/atelier-model/src/studio/resultats-quantitatifs.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - IF-008 [+] API : chaque quantité porte quantityId, sourceRevisionSet, ruleId / ruleVersion, objets, unité, valeur brute, affichage et actualité — `apps/api/src/routes/studio-pub.preuves-pub.test.ts`, commit 085a8f3, 2026-10-26 04:45
+- **Contre-preuve (contrôles négatifs exécutés)** : 1
+  - IF-008 [−] ajustement manuel sans motif, sans auteur ou d'une unité incohérente : refusé, rawValue conservée ; recevable, il reste distinct — `packages/atelier-model/src/studio/resultats-quantitatifs.test.ts`, commit 085a8f3, 2026-10-26 04:35
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-078
@@ -1395,9 +1546,12 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-16 · **Scénarios** : 009,010
 - **Test positif prescrit** : Sommer quantités homogènes en distinguant brut/net/déduction/non testé/ajustement.
 - **Test négatif prescrit** : Mélanger m² et m³ ou règles/révisions incompatibles : signaler et ne produire aucun total trompeur.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 1
+  - EX-078 [+] quantités homogènes : brut, déductions, net, non testées et corrections manuelles distingués — `packages/atelier-model/src/studio/resultats-quantitatifs.test.ts`, commit 085a8f3, 2026-10-26 04:35
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - EX-078 [−] révisions hétérogènes (jeux de sources distincts) : signalé, aucun total produit — `packages/atelier-model/src/studio/resultats-quantitatifs.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - EX-078 [−] règles incompatibles (autre version) ou unités différentes (m² et m³) : signalé, aucun total produit — `packages/atelier-model/src/studio/resultats-quantitatifs.test.ts`, commit 085a8f3, 2026-10-26 04:35
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-079
@@ -1410,8 +1564,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Export syntaxiquement valide utilisé pour affirmer round-trip/certification : conclusion rejetée faute preuve.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (fonction absente) : Fonction absente : la matrice d'échanges ne connaît que les sens import / export (StudioSensEchange) ; lecture, consultation, édition et aller-retour ne sont pas évalués séparément.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-080
 
@@ -1421,9 +1575,12 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-16 · **Scénarios** : 028
 - **Test positif prescrit** : Importer entité inconnue et exporter sous-ensemble ; produire rapport unités/repères/pertes/IDs.
 - **Test négatif prescrit** : Parser ignore entité sans rapport ou remplace unité inconnue : échec de couverture explicite.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 2
+  - EX-080 [+] import DXF en millimètres : repère WCS du fichier vers local-2d en mètres, facteur exact, sans translation ni rotation, Z ignoré — `packages/atelier-model/src/studio/reperes-echanges.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - EX-080 [+] chaque export déclare son repère source (local-2d, m) et son repère cible, sans géoréférencement — `packages/atelier-model/src/studio/reperes-echanges.test.ts`, commit 085a8f3, 2026-10-26 04:35
+- **Contre-preuve (contrôles négatifs exécutés)** : 1
+  - EX-080 [−] unité inconnue : le repère source garde une unité nulle, aucun facteur n'est substitué, aucune commande — `packages/atelier-model/src/studio/reperes-echanges.test.ts`, commit 085a8f3, 2026-10-26 04:35
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-081
@@ -1489,9 +1646,11 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-16 · **Scénarios** : 029
 - **Test positif prescrit** : Créer note/observation/tâche/décision avec identités/rôles distincts et liens.
 - **Test négatif prescrit** : Commentaire présenté comme décision approuvée ou tâche clôturant observation : aucune transition implicite.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 1
+  - EX-084 [+] l'observation a sa propre identité (issueId) distincte de la note qui la porte (noteId), reliées — `apps/api/src/lib/studio-observations-contrat.preuves-pub.test.ts`, commit 085a8f3, 2026-10-26 04:45
+- **Contre-preuve (contrôles négatifs exécutés)** : 1
+  - EX-084 [−] une proposition (même de clôture ou de dérogation), une tâche faite ou un commentaire ne résolvent pas l'observation ; seule une décision ou la clôture le font — `apps/api/src/lib/studio-observations-contrat.preuves-pub.test.ts`, commit 085a8f3, 2026-10-26 04:45
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-085
@@ -1709,8 +1868,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Résultat SwiftShader ou renderer.render CPU annoncé GPU physique : conclusion refusée.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Rapprochement du 25 octobre 2026 (non couvert) : Seule la recette studio-mesures-chargement.mjs (hors CI, non comptée) traite SwiftShader ; aucun contrôle en CI d'une mesure cache froid/chaud sur appareil identifié ni refus d'un résultat SwiftShader présenté comme GPU.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-098
 
@@ -1720,9 +1879,15 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-13 · **Scénarios** : 022,023,025
 - **Test positif prescrit** : Comparer performance ET cibles/quantités/historique/export avant/après optimisation.
 - **Test négatif prescrit** : Gain p95 avec snapping ou volume différent hors tolérance : optimisation rejetée.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 5
+  - F.1-01 — une accélération n'est activée qu'après preuve du gain ET de la non-régression > rapport qualifiant (gain sur chaque scène, chaque critère exigé mesuré dans sa tolérance) : autorisée, gains … — `packages/atelier-model/src/studio/accelerations.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - REC-C-01 — chemins optimisés et chemin direct : mêmes cotes, mêmes exports SVG / DXF / IFC > brouillon incrémental (commande par commande) et frontière du Worker : exports identiques octet pour octet… — `apps/web/src/modules/studio/workers/chemins-optimises.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - REC-C-01 — chemins optimisés et chemin direct : mêmes cotes, mêmes exports SVG / DXF / IFC > maillage incrémental (cache de morceaux) = maillage direct : mêmes volumes, donc mêmes quantités et même I… — `apps/web/src/modules/studio/workers/chemins-optimises.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - TR-EX-098 : index spatial — gain p95 mesuré ET mêmes cibles d'accrochage / même sélection, jugé par la règle — `apps/web/e2e/studio-rend.mjs`, commit 085a8f3, 2026-10-26 04:40
+  - F.1-01 / TR-EX-098 : rapport réel SVG / Canvas mesuré ici et jugé par la règle — verdict rendu avec ses motifs (gain ET non-régression exigés) — `apps/web/e2e/studio-rend.mjs`, commit 085a8f3, 2026-10-26 04:40
+- **Contre-preuve (contrôles négatifs exécutés)** : 1
+  - F.1-01 — une accélération n'est activée qu'après preuve du gain ET de la non-régression > EX-098 (cas négatif) : gain p95 avec accrochage ou sélection différents hors tolérance → accélération rejetée — `packages/atelier-model/src/studio/accelerations.test.ts`, commit 085a8f3, 2026-10-26 04:35
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-099
@@ -1768,8 +1933,8 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test négatif prescrit** : Skip des tests pertinents ou assertion affaiblie pour verdir CI : preuve insuffisante.
 - **Preuve (contrôles positifs exécutés)** : à produire
 - **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : En cours · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
-- **Suite** : Point 2 du 25 octobre 2026 (partiel) : Skip / only / todo refusés dans les suites tracées (registre) ; aucun mécanisme ne relie une modification de Worker / Registry à ses tests pertinents et l'affaiblissement d'une assertion n'est pas détecté.
+- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-EX-102
 
@@ -1892,9 +2057,12 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-07,DEC-14 · **Scénarios** : 017,020,NAV-007
 - **Test positif prescrit** : Tracer découverte→contrôle→dépendances→code→initialisation→prêt→actif→désactivation sans perte de geste.
 - **Test négatif prescrit** : Hors ligne/permission/loader/noyau en erreur : état distinct et geste rendu ou protégé, pas attente infinie.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 1
+  - cas positif : découvert → vérification → résolution → chargement → initialisation → prêt → actif, puis suspendu, repris et désactivé — `apps/web/src/modules/studio/chargement/cycle-activation.test.ts`, commit 085a8f3, 2026-10-26 04:35
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - cas négatifs : incompatible et permission refusée arrêtent à la vérification — rien n'est chargé, l'outil précédent reste actif, le geste est rendu — `apps/web/src/modules/studio/chargement/cycle-activation.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - erreurs distinctes : échec du noyau (initialisation), échec de chargement du code, hors ligne — jamais d'attente infinie, geste conservé et visible — `apps/web/src/modules/studio/chargement/cycle-activation.test.ts`, commit 085a8f3, 2026-10-26 04:35
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-IF-006
@@ -1918,9 +2086,16 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-11,DEC-13 · **Scénarios** : 014,015
 - **Test positif prescrit** : Job parcourt queued/loading/running/completed avec source et suivi puis résultat validé.
 - **Test négatif prescrit** : cancel_requested suivi completion ou timeout/crash : résultat non engagé sans nouvelle vérification et pending résolu.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 4
+  - cas positif : queued → loading → running → completed, chaque statut tracé avec sa révision source, résultat remis une fois — `apps/web/src/modules/studio/taches/statuts-if007.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - loading passe à running à la première progression ; sans chargement annoncé, la tâche démarre directement en running — `apps/web/src/modules/studio/taches/statuts-if007.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - demande d'annulation d'une tâche encore en file : annulée sans avoir tourné — `apps/web/src/modules/studio/taches/statuts-if007.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - première tâche : loading tant que le Worker n'a rien répondu, running à sa première progression ; tâche suivante sur le Worker vivant : running directement — `apps/web/src/modules/studio/taches/statuts-if007.test.ts`, commit 085a8f3, 2026-10-26 04:35
+- **Contre-preuve (contrôles négatifs exécutés)** : 3
+  - cas négatif : cancel_requested n'arrête pas matériellement — emplacement gardé ; le calcul finit quand même : résultat NON engagé, puis seulement après vérification — `apps/web/src/modules/studio/taches/statuts-if007.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - cancel_requested puis échec ou délai : attente résolue « cancelled », jamais laissée en suspens — `apps/web/src/modules/studio/taches/statuts-if007.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - superseded : une tâche plus récente de la même clé remplace la précédente ; son résultat tardif est stale, jamais remis ; timed_out nommé — `apps/web/src/modules/studio/taches/statuts-if007.test.ts`, commit 085a8f3, 2026-10-26 04:35
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-IF-008
@@ -1931,9 +2106,15 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-16 · **Scénarios** : 009,010
 - **Test positif prescrit** : Quantité mur retrouve sourceRevisionSet/ruleVersion/sourceObjectIds/unité/raw/deductions/display/freshness.
 - **Test négatif prescrit** : manualAdjustment sans motif/auteur ou unit incompatible : refus/signalement, rawValue conservé.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 3
+  - IF-008 [+] la quantité du mur porte quantityId, sourceRevisionSet, ruleId / ruleVersion, sourceObjectIds, unit, rawValue, deductions, displayValue, freshnessStatus — `packages/atelier-model/src/studio/resultats-quantitatifs.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - IF-008 [+] l'ajustement en vigueur est porté à part (motif, auteur, date), rawValue intacte, freshnessStatus contre la tête — `apps/api/src/lib/studio-quantites.test.ts`, commit 085a8f3, 2026-10-26 04:45
+  - IF-008 [+] API : chaque quantité porte quantityId, sourceRevisionSet, ruleId / ruleVersion, objets, unité, valeur brute, affichage et actualité — `apps/api/src/routes/studio-pub.preuves-pub.test.ts`, commit 085a8f3, 2026-10-26 04:45
+- **Contre-preuve (contrôles négatifs exécutés)** : 3
+  - IF-008 [+] freshnessStatus : à jour sur la tête, périmée après une nouvelle révision, source inconnue si la variante disparaît — `packages/atelier-model/src/studio/resultats-quantitatifs.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - IF-008 [−] ajustement manuel sans motif, sans auteur ou d'une unité incohérente : refusé, rawValue conservée ; recevable, il reste distinct — `packages/atelier-model/src/studio/resultats-quantitatifs.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - IF-008 [−] un ajustement dont la cible a changé (à revoir) n'est pas porté comme correction : la valeur calculée seule fait foi — `apps/api/src/lib/studio-quantites.test.ts`, commit 085a8f3, 2026-10-26 04:45
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-IF-009
@@ -1944,9 +2125,14 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-16 · **Scénarios** : 030,038
 - **Test positif prescrit** : Manifeste ordonné contient documentId/version/empreinte, modèles/règles/contrôles et décision de l’ensemble exact.
 - **Test négatif prescrit** : Pièce changée/manquante ou observation bloquante sans résolution/dérogation : publication refusée.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 2
+  - IF-009 [+] le manifeste porte usage, documents ordonnés et empreintes, sources (modèles), règles, rapports de contrôle et observations bloquantes résolues — `apps/api/src/lib/studio-publication-manifeste.preuves-pub.test.ts`, commit 085a8f3, 2026-10-26 04:45
+  - IF-009 : publication dérogée approuvée puis diffusée — `apps/web/e2e/studio-pub.mjs`, commit 085a8f3, 2026-10-26 04:39
+- **Contre-preuve (contrôles négatifs exécutés)** : 3
+  - IF-009 [−] observation bloquante ni résolue ni dérogée : soumission, approbation et diffusion refusées (409 blocking_observation_open) — `apps/api/src/lib/studio-publication-manifeste.preuves-pub.test.ts`, commit 085a8f3, 2026-10-26 04:45
+  - IF-009 [−] contrôles changés depuis le manifeste (observation résolue, nouveau rapport) : écart « controles », l'approbation de l'ancien ensemble ne vaut plus — `apps/api/src/lib/studio-publication-manifeste.preuves-pub.test.ts`, commit 085a8f3, 2026-10-26 04:45
+  - IF-009 [−] API : observation bloquante ouverte → soumission refusée (409 blocking_observation_open) ; dérogée par décision du propriétaire → manifeste à actualiser, puis soumission admise — `apps/api/src/routes/studio-pub.preuves-pub.test.ts`, commit 085a8f3, 2026-10-26 04:45
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-IF-010
@@ -1957,9 +2143,20 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Décisions** : DEC-02,DEC-16 · **Scénarios** : 029
 - **Test positif prescrit** : Observation garde issueId/catégorie/règle/révisions/objets/vue/auteur/gravité/pièces/responsable/journal/recontrôles/clôture.
 - **Test négatif prescrit** : Même BCF-ID reçu dans autre contexte : ne pas écraser ID interne ni clore par disparition objet.
-- **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Preuve (contrôles positifs exécutés)** : 6
+  - IF-010 [+] export BCF 2.1 relu à l'identique : Guid stable, catégorie, gravité, statut, objets, commentaires — `packages/atelier-model/src/studio/echanges/bcf-observations.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - IF-010 [+] import : sujets nouveaux créés, objets inconnus conservés comme références — `packages/atelier-model/src/studio/echanges/bcf-observations.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - IF-010 [+] l'observation garde issueId, catégorie, source du contrôle, révisions, objets, vue, auteur, gravité, description, pièces, responsable, état, décisions, recontrôles, clôture et références B… — `apps/api/src/lib/studio-observations-contrat.preuves-pub.test.ts`, commit 085a8f3, 2026-10-26 04:45
+  - IF-010 [+] API : l'observation porte issueId distinct, catégorie, gravité et pièce justificative téléchargeable, vérifiée par empreinte — `apps/api/src/routes/studio-pub.preuves-pub.test.ts`, commit 085a8f3, 2026-10-26 04:45
+  - Lot PUB (IF-010) : exporter et importer en BCF — Ctrl+Alt+Maj+Y, I, dans la barre du panneau Observations — `apps/web/src/modules/collaboration/commandes-collaboration.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - IF-010 : export BCF (.bcfzip) servi — `apps/web/e2e/studio-pub.mjs`, commit 085a8f3, 2026-10-26 04:39
+- **Contre-preuve (contrôles négatifs exécutés)** : 5
+  - IF-010 [−] même BCF-ID reçu dans un autre contexte : nouvelle observation distincte, l'identité interne n'est ni écrasée ni fusionnée ; un sujet absent ne clôt rien — `packages/atelier-model/src/studio/echanges/bcf-observations.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - IF-010 [−] sujet sans Guid valide : non repris, avertissement ; fichier sans sujet signalé — `packages/atelier-model/src/studio/echanges/bcf-observations.test.ts`, commit 085a8f3, 2026-10-26 04:35
+  - IF-010 [+] catégorie, gravité et pièces se saisissent à l'ouverture ; une gravité ou une pièce hors vocabulaire est refusée ; l'empreinte de rejeu cite les pièces par leur SHA-256 — `apps/api/src/lib/studio-observations-contrat.preuves-pub.test.ts`, commit 085a8f3, 2026-10-26 04:45
+  - IF-010 [−] valeur absente : catégorie et gravité « non évaluées » (null), aucune pièce ni référence BCF inventée — `apps/api/src/lib/studio-observations-contrat.preuves-pub.test.ts`, commit 085a8f3, 2026-10-26 04:45
+  - IF-010 [−] API : même BCF-ID reçu dans un autre contexte → observation distincte ; même contexte → reconnu sans réécriture ; l'export relu garde les Guid — `apps/api/src/routes/studio-pub.preuves-pub.test.ts`, commit 085a8f3, 2026-10-26 04:45
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-IF-011
@@ -2127,8 +2324,10 @@ Cette fiche ne déclare pas, à elle seule, l’exigence conforme ni la fonction
 - **Test positif prescrit** : Changer standard→métier→personnel et masquer bouton : modèle/révision/droits inchangés et outil retrouvable.
 - **Test négatif prescrit** : Importer profil avec Publier sans droit : exécution refusée ; masquer outil ne supprime pas ses objets.
 - **Preuve (contrôles positifs exécutés)** : à produire
-- **Contre-preuve (contrôles négatifs exécutés)** : à produire
-- **État** : Implémenté · **Tests** : Non exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
+- **Contre-preuve (contrôles négatifs exécutés)** : 2
+  - INV-009 : un lecteur importe un profil qui montre la Ligne — préférences changées, mais ni données, ni droits, ni révision : ses commandes restent refusées — `apps/api/src/routes/studio-profils-import.test.ts`, commit 085a8f3, 2026-10-26 04:45
+  - TR-INV-009 : le catalogue autorisé de l'éditeur est inchangé — Publier toujours refusé — `apps/web/e2e/studio-out.mjs`, commit 085a8f3, 2026-10-26 04:41
+- **État** : Vérifié · **Tests** : Exécuté · **Verdict de conformité** : Non évaluée pour le produit Studio
 - **Suite** : Conserver la preuve ; recette utilisateur sur appareil réel non évaluée.
 
 ### TR-INV-010
