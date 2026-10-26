@@ -809,6 +809,13 @@ jobs:
         run: |
           set -o pipefail
           OUT=atelier-captures/studio-out node apps/web/e2e/studio-out.mjs 2>&1 | tee -a e2e.log
+      # Lot G1 : parcours d'une petite étude du dessin au dossier publié à travers quatre domaines (TR-EX-002), états
+      # dérivés des contenus (TR-EX-016), association mur / ouverture / cote et copie indépendante (J4, TEST-003/010/011/012).
+      - name: Lot G1 — parcours du dessin au dossier publié, états dérivés des contenus, association mur / cote, copie indépendante (apps/web/e2e/studio-g1.mjs)
+        if: ${{ matrix.shard == 'complements' }}
+        run: |
+          set -o pipefail
+          OUT=atelier-captures/studio-g1 node apps/web/e2e/studio-g1.mjs 2>&1 | tee -a e2e.log
       # Organisations-participation, phase 3 (OP-D2 a) : invitation acceptée pour tous, fin de l'ajout direct (UM-8) —
       # aperçu de l'accès, renvoi sans doublon, notification, refus v2.2 (lien transféré, expirée, annulée, déclinée,
       # invitant révoqué, mauvaise fiche, participation terminée, accès expiré), double soumission, nouvel utilisateur ;

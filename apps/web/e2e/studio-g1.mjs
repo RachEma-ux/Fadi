@@ -18,7 +18,7 @@
  *      « À recalculer » après une nouvelle révision, puis « À jour » après actualisation ; « Non applicable » (métré d'une
  *      variante vide, publication retirée).
  *
- * BASE_URL=http://localhost:3001 [MAILPIT_URL=… | API_LOG=…] OUT=atelier-captures/studio-g1 node apps/web/e2e/studio-g1.mjs
+ * BASE_URL=http://localhost:3001 OUT=atelier-captures/studio-g1 node apps/web/e2e/studio-g1.mjs
  */
 import { chromium } from "playwright";
 import { createHash, randomUUID } from "node:crypto";
