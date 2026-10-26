@@ -4,7 +4,7 @@
  * (`translate="no"`), arabe compris. Une valeur absente est écrite « Valeur absente » avec son motif, jamais « 0 ».
  */
 import { useEffect, useState } from "react";
-import { categorieDe, declinaisonParDefaut, declinaisonProche, grouperIndicateurs, indicateursPrincipaux, LIBELLES_MILIEU, LIBELLES_SEXE, type FamilleIndicateurs, type Milieu, type Sexe, compterParType, type RangementCatalogue, degradeCss, regrouperCatalogue, type TypeCatalogue, formatNombre, legende, libelleAbsence, LIBELLES_USAGES, USAGES, CLASSES_MAX, CLASSES_MIN, couleursPalette, PALETTE_PAR_DEFAUT, PALETTES_CLASSES, type IdPalette, type Composition, type MethodeClassification, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
+import { arbreIndicateurs, categorieDe, declinaisonParDefaut, declinaisonProche, grouperIndicateurs, indicateursPrincipaux, LIBELLES_MILIEU, LIBELLES_SEXE, type FamilleIndicateurs, type Milieu, type Sexe, compterParType, type RangementCatalogue, degradeCss, regrouperCatalogue, type TypeCatalogue, formatNombre, legende, libelleAbsence, LIBELLES_USAGES, USAGES, CLASSES_MAX, CLASSES_MIN, couleursPalette, PALETTE_PAR_DEFAUT, PALETTES_CLASSES, type IdPalette, type Composition, type MethodeClassification, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
 import { api, type IndicateurRecu, type ValeurRasterRecue, type CoucheRecue, type Disponibilite, type LigneTable, type ValeurRecue } from "../client";
 import { entreesCategories, lireSeuilsManuels, reclasser, recolorerClasse, styleThematique, type Categorie } from "../composition-ops";
 
@@ -135,6 +135,7 @@ function ChoixColoration(p: { couche: CoucheRecue; coucheId: string; style: Styl
           {themes.length === 1 && themes[0] === "Autres indicateurs" ? familles.map(option) : themes.map((t) => <optgroup key={t} label={t} translate="no">{familles.filter((f) => f.theme === t).map(option)}</optgroup>)}
         </select>
       </label>
+      {c.indicateurs.length > 0 && <ArbreIndicateurs couche={c} coucheId={p.coucheId} courant={courant} onChoix={(f) => void appliquer(representant(f).id)} />}
       {famille && courant && famille.indicateurs.length > 1 && (
         <div className="gd-dimensions" data-gd-dimensions={p.coucheId}>
           {famille.modalites.length > 1 && (
@@ -161,6 +162,50 @@ function ChoixColoration(p: { couche: CoucheRecue; coucheId: string; style: Styl
         </div>
       )}
     </>
+  );
+}
+
+/**
+ * Arbre d'indicateurs (lot F, D-GD-26) : thèmes puis familles, repliés ; une recherche (sans accents ni casse, chaque mot
+ * au début d'un mot) déplie les thèmes retenus. Choisir une famille colore la couche par sa déclinaison par défaut
+ * (ou celle en cours) ; les dimensions se règlent ensuite comme avec la liste « Coloration ».
+ */
+function ArbreIndicateurs(p: { couche: CoucheRecue; coucheId: string; courant: IndicateurRecu | null; onChoix(f: FamilleIndicateurs<IndicateurRecu>): void }) {
+  const [recherche, setRecherche] = useState("");
+  const arbre = arbreIndicateurs(p.couche.indicateurs, recherche);
+  const familles = arbre.reduce((n, b) => n + b.familles.length, 0);
+  const cherche = recherche.trim() !== "";
+  return (
+    <details className="gd-arbre" data-gd-arbre={p.coucheId}>
+      <summary>{`Parcourir les indicateurs (${p.couche.indicateurs.length})`}</summary>
+      <label className="gd-champ">Rechercher un indicateur
+        <input type="search" value={recherche} onChange={(e) => setRecherche(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape" && recherche) { e.preventDefault(); setRecherche(""); } }} placeholder="Ex. : chômage, âge, logement" data-gd-arbre-recherche />
+      </label>
+      <p className="gd-discret" role="status" data-gd-arbre-compte>{cherche ? (familles ? `${familles} famille(s) trouvée(s)` : "Aucun indicateur ne correspond.") : `${arbre.length} thème(s)`}</p>
+      <ul className="gd-arbre-themes">
+        {arbre.map((b) => (
+          <li key={b.theme}>
+            <details open={cherche || (p.courant !== null && b.familles.some((f) => f.indicateurs.includes(p.courant!)))} data-gd-arbre-theme={b.theme}>
+              <summary><span translate="no">{b.theme}</span>{` (${b.familles.length})`}</summary>
+              <ul>
+                {b.familles.map((f) => {
+                  const actif = p.courant !== null && f.indicateurs.includes(p.courant);
+                  return (
+                    <li key={f.famille}>
+                      <button type="button" className="gd-arbre-famille" aria-pressed={actif} onClick={() => p.onChoix(f)} data-gd-arbre-famille={f.famille}>
+                        <span translate="no">{f.famille}</span>
+                        <span className="gd-discret" translate="no">{f.indicateurs[0]!.unite}</span>
+                        {f.indicateurs.length > 1 && <span className="gd-discret">{`${f.indicateurs.length} déclinaisons`}</span>}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </details>
+          </li>
+        ))}
+      </ul>
+    </details>
   );
 }
 

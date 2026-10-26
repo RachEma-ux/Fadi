@@ -99,3 +99,33 @@ export function tableauVentilation<T extends IndicateurDimensionne>(f: FamilleIn
     .filter((c) => f.indicateurs.some((i) => (i.milieu ?? "ensemble") === c.milieu && (i.sexe ?? "ensemble") === c.sexe));
   return { colonnes, lignes: f.modalites.map((modalite) => ({ modalite, cellules: colonnes.map((c) => choisirDeclinaison(f, modalite, c.milieu, c.sexe)) })) };
 }
+
+/** Texte comparable pour la recherche : minuscules, sans accents ni ponctuation, espaces resserrés. */
+export function normaliserRecherche(texte: string): string {
+  return texte.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^\p{L}\p{N}%]+/gu, " ").trim();
+}
+
+export interface BrancheIndicateurs<T extends IndicateurDimensionne> {
+  readonly theme: string;
+  readonly familles: readonly FamilleIndicateurs<T>[];
+  /** Nombre d'indicateurs (déclinaisons comprises) du thème retenus. */
+  readonly effectif: number;
+}
+
+/**
+ * Arbre d'indicateurs (lot F, D-GD-26) : thèmes puis familles, dans l'ordre reçu. Avec une recherche, ne garde que les
+ * familles dont le thème, le nom, une modalité ou l'unité contiennent **tous** les mots cherchés, chacun au début d'un
+ * mot (sans tenir compte des accents ni de la casse) ; un thème sans famille retenue disparaît. Aucun indicateur n'est inventé ni renommé.
+ */
+export function arbreIndicateurs<T extends IndicateurDimensionne & { readonly unite?: string }>(liste: readonly T[], recherche = ""): BrancheIndicateurs<T>[] {
+  const mots = normaliserRecherche(recherche).split(" ").filter(Boolean);
+  const retenue = (f: FamilleIndicateurs<T>) => {
+    if (!mots.length) return true;
+    const motsTexte = normaliserRecherche([f.theme, f.famille, ...f.modalites.filter((m): m is string => !!m), f.indicateurs[0]?.unite ?? ""].join(" ")).split(" ");
+    // Chaque mot cherché doit commencer un mot du texte (« âge » ne trouve pas « chômage »).
+    return mots.every((m) => motsTexte.some((t) => t.startsWith(m)));
+  };
+  const branches = new Map<string, FamilleIndicateurs<T>[]>();
+  for (const f of grouperIndicateurs(liste)) if (retenue(f)) (branches.get(f.theme) ?? branches.set(f.theme, []).get(f.theme)!).push(f);
+  return [...branches].map(([theme, familles]) => ({ theme, familles, effectif: familles.reduce((n, f) => n + f.indicateurs.length, 0) }));
+}

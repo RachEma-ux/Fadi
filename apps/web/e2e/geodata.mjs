@@ -221,6 +221,25 @@ check("couleur d'une classe choisie dans la légende, les autres inchangées", c
 await page.waitForTimeout(1500);
 await page.screenshot({ path: join(OUT, "01c-classification.png") });
 
+// --- Arbre d'indicateurs (lot F, D-GD-26) : thèmes et familles, recherche sans accents, choix d'une famille ---
+await onglet(page, "couches");
+const arbre = page.locator("[data-gd-couche-active]").first().locator("[data-gd-arbre]");
+await arbre.locator("summary").first().click();
+const rechercheArbre = arbre.locator("[data-gd-arbre-recherche]");
+await rechercheArbre.fill("EFFECTIF synthetique");
+const familleTrouvee = arbre.locator("[data-gd-arbre-famille='Effectif synthétique']");
+check("arbre d'indicateurs : recherche sans accents ni casse, thème déplié, famille trouvée", (await familleTrouvee.isVisible()) && ((await arbre.locator("[data-gd-arbre-compte]").textContent()) ?? "").includes("1 famille(s) trouvée(s)"));
+await rechercheArbre.fill("introuvable");
+check("arbre d'indicateurs : recherche sans résultat annoncée", ((await arbre.locator("[data-gd-arbre-compte]").textContent()) ?? "").includes("Aucun indicateur ne correspond."));
+await rechercheArbre.press("Escape");
+check("arbre d'indicateurs : Échap vide la recherche", (await rechercheArbre.inputValue()) === "");
+await page.locator("[data-gd-couche-active]").first().locator("[data-gd-indicateur]").selectOption("");
+await arbre.locator("[data-gd-arbre-theme] summary").first().click();
+await familleTrouvee.click();
+await page.waitForFunction(() => document.querySelector("[data-gd-couche-active] [data-gd-arbre-famille='Effectif synthétique']")?.getAttribute("aria-pressed") === "true", null, { timeout: 10_000 }).catch(() => undefined);
+check("arbre d'indicateurs : choisir une famille colore la couche (famille marquée, liste « Coloration » à jour)", (await familleTrouvee.getAttribute("aria-pressed")) === "true" && (await page.locator("[data-gd-couche-active]").first().locator("[data-gd-indicateur]").inputValue()) === optionEffectif);
+await onglet(page, "legende");
+
 // Recherche : coordonnées étiquetées, paire nue refusée, unité par code à zéro initial.
 const recherche = page.locator("[data-gd-recherche]");
 await recherche.fill("33.5, -7.6");

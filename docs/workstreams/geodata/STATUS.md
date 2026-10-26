@@ -72,6 +72,10 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   (empreinte attendue = empreinte réelle pour chaque fiche, test), retraits déclarés (test), `GET /version/donnees`
   (test). En local sur l'API construite : 1er démarrage 14 s (2 versions préparées et publiées, 2 retraits, 53 fiches
   déjà en base), 2e démarrage < 1 s (rien refait). CI : installation de Chromium bornée (3 × 10 min).
+- Arbre d'indicateurs (lot F, D-GD-26) : `dimensions.ts` (`arbreIndicateurs`, `normaliserRecherche` ; `arbre.test.ts`, 3
+  tests), `panneaux/consultation.tsx` (`ArbreIndicateurs`). Vérifié sur la fiche réelle des communes du HCP : 844
+  indicateurs → 9 thèmes, 59 familles ; « chomage » → Taux de chômage, « age logement » → 3 familles « Âge du
+  logement ». Recette `geodata.mjs` en local : 99 contrôles conformes dont 4 de l'arbre.
 - Palettes et classes (lot D, D-GD-25) : `classification.ts` (palettes, `couleursPalette`, `rupturesNaturelles` de
   Fisher-Jenks, méthode `seuils-naturels`), composition (`palette`, `inverser`), `composition-ops.ts` (`reclasser`,
   `recolorerClasse`), légende (`Seuils` : méthode, classes, palette, inversion ; pastille = sélecteur de couleur). Tests :

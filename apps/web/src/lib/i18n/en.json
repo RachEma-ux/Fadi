@@ -14140,5 +14140,12 @@
 "Violets": "Purples",
 "Jaune → rouge": "Yellow → red",
 "Rouge ↔ bleu (divergente)": "Red ↔ blue (diverging)",
-"Brun ↔ vert (divergente)": "Brown ↔ green (diverging)"
+"Brun ↔ vert (divergente)": "Brown ↔ green (diverging)",
+"Parcourir les indicateurs ({0})": "Browse indicators ({0})",
+"Rechercher un indicateur": "Search for an indicator",
+"Ex. : chômage, âge, logement": "E.g.: unemployment, age, housing",
+"{0} famille(s) trouvée(s)": "{0} family(ies) found",
+"Aucun indicateur ne correspond.": "No indicator matches.",
+"{0} thème(s)": "{0} theme(s)",
+"{0} déclinaisons": "{0} breakdowns"
 }
