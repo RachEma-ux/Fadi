@@ -101,6 +101,7 @@ consultationRouter.get("/couches/:id", async (req, res) => {
 });
 
 /** Recherche : coordonnées étiquetées, sinon unités par nom ou code dans les couches consultables (20 résultats au plus). */
+// Recherche : les unités du HCP d'abord (D-GD-18, priorité HCP quand une donnée existe aussi dans OpenStreetMap).
 consultationRouter.get("/recherche", async (req, res) => {
   const q = typeof req.query["q"] === "string" ? req.query["q"].trim().slice(0, 120) : "";
   if (q.length < 2) return erreur(res, 400, "invalid_input", "Saisissez au moins deux caractères.", { champs: ["q"] });
@@ -114,7 +115,7 @@ consultationRouter.get("/recherche", async (req, res) => {
             ST_AsGeoJSON(ST_Envelope(o.geom), 6) AS emprise, ST_AsGeoJSON(ST_PointOnSurface(o.geom), 6) AS centre
        FROM geodata_objets o JOIN geodata_couches c ON c.id = o.couche_id JOIN geodata_versions v ON v.id = c.version_id JOIN geodata_sources s ON s.id = v.source_id
       WHERE ${VERSION_CONSULTABLE("v", "$1")} AND ${DERNIERE_VERSION("v", "$1")} AND (lower(o.nom) LIKE '%' || $2 || '%' OR lower(o.code) = $2)
-      ORDER BY (lower(o.nom) LIKE $2 || '%') DESC, length(o.nom), o.nom LIMIT 20`,
+      ORDER BY (s.producteur LIKE 'Haut-Commissariat au Plan%') DESC, (lower(o.nom) LIKE $2 || '%') DESC, length(o.nom), o.nom LIMIT 20`,
     [espaceId, t],
   );
   res.json({

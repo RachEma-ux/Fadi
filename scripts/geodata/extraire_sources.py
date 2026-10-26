@@ -214,8 +214,10 @@ class Lecteur(osmium.SimpleHandler):
                 self._garder(cle, code, t, geom, c)
 
 
-# Extraits livrés sans fiche : ils ne servent qu'au rattachement des arrondissements du HCP (`preparer_hcp.py`).
-SANS_FICHE = {"osm-mar-arrondissements"}
+# Extraits livrés sans fiche propre (D-GD-17, D-GD-18 « priorité HCP ») : ils servent de contours ou de points aux couches
+# du HCP (`preparer_hcp.py`), qui portent les noms et les valeurs du HCP ; leur fiche est consignée dans
+# `donnees/osm-extraits.json` (licence, empreinte), lue par `preparer_hcp.py`, jamais importée comme couche.
+SANS_FICHE = {"osm-mar-arrondissements", "osm-mar-communes", "osm-mar-villes"}
 
 
 def ecrire(sortie, cle, titre, theme, features, meta, resultat):
@@ -260,8 +262,15 @@ def ecrire(sortie, cle, titre, theme, features, meta, resultat):
         "superficie": all(t in ("Polygon", "MultiPolygon") for t in types),
     }
     if cle in SANS_FICHE:
-        # Contours de rattachement seulement (noms arabes non livrés, D-GD-17) : aucune fiche, donc aucune couche publiée.
         ligne["sansFiche"] = True
+        chemin = os.path.join(sortie, "donnees", "osm-extraits.json")
+        extraits = json.load(open(chemin, encoding="utf-8")) if os.path.exists(chemin) else {}
+        extraits[cle] = fiche
+        with open(chemin, "w", encoding="utf-8") as fh:
+            fh.write(json.dumps(dict(sorted(extraits.items())), ensure_ascii=False, indent=2) + "\n")
+        ancienne = os.path.join(sortie, f"{cle}.json")
+        if os.path.exists(ancienne):
+            os.remove(ancienne)
     else:
         with open(os.path.join(sortie, f"{cle}.json"), "w", encoding="utf-8") as fh:
             fh.write(json.dumps(fiche, ensure_ascii=False, indent=2) + "\n")

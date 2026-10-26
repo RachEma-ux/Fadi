@@ -72,6 +72,29 @@ describe("fiches de source GeoData livrées", () => {
     }, 30_000);
   }
 
+  it("extraits OpenStreetMap sans couche propre (D-GD-18) : fiche consignée, empreinte vérifiée, aucune fiche importable", () => {
+    const extraits = JSON.parse(readFileSync(join(DOSSIER, "donnees", "osm-extraits.json"), "utf8")) as Record<string, FicheSource>;
+    expect(Object.keys(extraits).sort()).toEqual(["osm-mar-arrondissements", "osm-mar-communes", "osm-mar-villes"]);
+    for (const [cle, f] of Object.entries(extraits)) {
+      expect(f.cle).toBe(cle);
+      expect(fiches).not.toContain(`${cle}.json`);
+      expect(createHash("sha256").update(readFileSync(join(DOSSIER, f.version.fichier ?? ""))).digest("hex")).toBe(f.version.empreinte);
+    }
+  });
+
+  it("priorité HCP (D-GD-18) : une ville rattachée au HCP n'a plus la population d'OpenStreetMap", () => {
+    const villes = JSON.parse(readFileSync(join(DOSSIER, "donnees", "hcp-rgph2024-villes.geojson"), "utf8")) as { features: { properties: Record<string, unknown> }[] };
+    const rattachees = villes.features.filter((f) => f.properties["code_hcp"]);
+    expect(rattachees.length).toBeGreaterThan(200);
+    for (const f of rattachees) {
+      expect(f.properties["population"]).toBeUndefined();
+      expect(f.properties["source_population"]).toBe("HCP, RGPH 2024");
+    }
+    for (const f of villes.features.filter((x) => !x.properties["code_hcp"] && x.properties["population"] !== undefined)) {
+      expect(f.properties["source_population"]).toBe("OpenStreetMap (aucune donnée HCP rattachée)");
+    }
+  });
+
   it("chaque thème déclaré par une fiche livrée a sa catégorie initiale", () => {
     const themes = new Set(CATEGORIES_CATALOGUE.flatMap((c) => c.themes));
     for (const nom of fiches) expect(themes.has((JSON.parse(readFileSync(join(DOSSIER, nom), "utf8")) as FicheSource).theme)).toBe(true);

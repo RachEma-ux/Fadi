@@ -6,7 +6,7 @@
   "theme": "population",
   "couverture": "Maroc — arrondissements des communes urbaines",
   "version": {
-    "libelle": "RGPH 2024 — population légale et indicateurs démographiques et socio-économiques (fichiers Excel HCP) ; contours OpenStreetMap niveau administratif 10, extraits du 2026-10-23 (fichier `donnees/osm-mar-arrondissements.geojson`, SHA-256 3a2cad32174da9d4b2e6b971e066d3fca0b825787d8abfcabb606f3b1eb38829)",
+    "libelle": "RGPH 2024 — population légale et indicateurs démographiques et socio-économiques (fichiers Excel HCP) ; contours OpenStreetMap — extraits du 2026-10-23",
     "url": null,
     "fichier": "donnees/hcp-rgph2024-arrondissements.geojson",
     "empreinte": "f93f0808c1a2bd5e5a7509243c0b8bc4a0537a8dd3b9baed4c63ccfad4f7ccad",
@@ -33,7 +33,7 @@
     },
     "precision": "Effectifs et taux officiels repris sans modification (taux arrondis au dixième par le HCP) ; géométries des contours d'origine reprises telles quelles",
     "synthetique": false,
-    "conditions": "Valeurs HCP sous CC BY 4.0 (https://www.hcp.ma/Conditions-generales-d-utilisation-Version-1-0_a2194.html) : citer « HCP, RGPH 2024 », indiquer les modifications (rattachement aux contours, mise en tableau), ne pas laisser entendre que le HCP soutient Fadi, respecter l'intégrité des données (valeurs reprises sans modification). Sources : https://www.hcp.ma/file/242341/ (SHA-256 7e9d3d402cc2fd0d9c4fc941c4f23c6a5e5ddcbefbba80b7540267f8e2728dca) et https://www.hcp.ma/file/242671/ (SHA-256 f3d96fcae3c10a2c194b2fe97ee8352a242fb3f36b1b63d4d2a7006176dc7c3e). Contours : ODbL 1.0 : attribution « © contributeurs OpenStreetMap » obligatoire ; une base dérivée redistribuée reste sous ODbL."
+    "conditions": "Valeurs HCP sous CC BY 4.0 (https://www.hcp.ma/Conditions-generales-d-utilisation-Version-1-0_a2194.html) : citer « HCP, RGPH 2024 », indiquer les modifications (rattachement aux contours, mise en tableau), ne pas laisser entendre que le HCP soutient Fadi, respecter l'intégrité des données (valeurs reprises sans modification). Sources : https://www.hcp.ma/file/242341/ (SHA-256 7e9d3d402cc2fd0d9c4fc941c4f23c6a5e5ddcbefbba80b7540267f8e2728dca) et https://www.hcp.ma/file/242671/ (SHA-256 f3d96fcae3c10a2c194b2fe97ee8352a242fb3f36b1b63d4d2a7006176dc7c3e). Contours : ODbL 1.0 : attribution « © contributeurs OpenStreetMap » obligatoire ; une base dérivée redistribuée reste sous ODbL (partage à l'identique) ; une œuvre produite (carte, image) peut être diffusée avec l'attribution."
   },
   "couche": {
     "titre": "RGPH 2024 — arrondissements",

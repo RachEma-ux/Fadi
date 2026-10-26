@@ -63,6 +63,11 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   En local : import et publication des 4 fiches (communes : 1 498 objets × 651 indicateurs en 45 s), Casablanca
   3 215 935 habitants, signes stockés comme motifs ; sélecteur famille / modalité / milieu / sexe, légende, table
   (24 indicateurs principaux) et fiche par thème vérifiés dans le navigateur.
+- Priorité HCP (D-GD-18) : `hcp-rgph2024-villes` — 258/338 villes rattachées à une commune urbaine ou à un centre
+  urbain du HCP (table `correspondances/hcp-rgph2024-villes.csv`, contrôle relu des 31 noms approchés ou inclus) ;
+  population OSM retirée pour ces villes (test), gardée pour 8 villes sans unité HCP ; extraits OSM des communes, villes
+  et arrondissements régénérés à l'identique (mêmes empreintes) sans fiche importable ; recherche HCP d'abord. En local :
+  import et publication, Casablanca 3 215 935, Ouezzane 57 737 (HCP) au lieu de 58 684 (OSM).
 - Limites administratives (D-GD-16) : `limites.ts` (3 tests), contours colorés et hiérarchisés, vérifiés visuellement
   en local sur ADM1, ADM2 et communes OSM (opacité 0 %, une couleur par entité).
 - Fournisseurs de fonds (D-GD-15) : modèle pur `fournisseurs.ts` (5 tests), section Paramètres `FournisseursCarte.tsx`,

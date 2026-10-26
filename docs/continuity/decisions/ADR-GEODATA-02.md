@@ -107,6 +107,21 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
      6. **Suite** (lots B à G de l'analyse : navigation par niveaux, libellés, palettes et classes, fiche territoriale,
         arbre d'indicateurs, mini-carte et impression) : un lot à la fois, chacun consigné.
 
+   - D-GD-18 (26 octobre 2026, consigne du maître d'ouvrage : « si des données existent dans HCP et OpenStreetMap,
+     utilise celles du HCP ») — **priorité HCP** :
+     1. Noms, codes et effectifs : ceux du HCP dès qu'une unité HCP est rattachée ; OpenStreetMap ne fournit alors que la
+        géométrie (contour ou point). Sans unité HCP, la donnée OSM reste, avec sa source déclarée.
+     2. **Villes** : la couche `hcp-rgph2024-villes` (points OSM place=city / town) porte la population légale, les
+        ménages et la nationalité du HCP pour 258 villes sur 338, rattachées à une commune entièrement urbaine ou à un
+        centre urbain (« dont le centre urbain de … ») contenant le point, de même nom (jamais l'effectif d'une commune
+        rurale) ; l'attribut `population` d'OSM est alors retiré. 8 villes sans unité HCP gardent la population OSM,
+        signalée par `source_population`.
+     3. **Pas de doublon au catalogue** : les extraits OSM des communes, des villes et des arrondissements n'ont plus de
+        fiche importable ; leur fiche (licence, empreinte) est consignée dans `docs/geodata/sources/donnees/osm-extraits.json`
+        et ne sert qu'aux couches du HCP. Les versions déjà publiées (`osm-mar-communes`, `osm-mar-villes`) restent
+        immuables : le gestionnaire de données les retire du catalogue s'il le souhaite.
+     4. **Recherche** : les unités du HCP sont proposées en premier.
+
 ## Conséquences
 
 - `docs/architecture.md` et `module-registry.ts` déclarent GeoData une fois le code livré.

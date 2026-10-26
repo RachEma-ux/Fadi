@@ -59,7 +59,8 @@ def normaliser(nom):
     n = nom or ""
     n = re.sub(r"[؀-ۿⴰ-⵿]+.*$", "", n)  # partie arabe ou tifinagh d'un nom bilingue
     n = re.sub(r"\((milieu|.*?)\)", "", n)
-    n = re.sub(r"^(région|region|province|préfecture|prefecture|commune|arrondissement|cercle)( of| de la\b| de l'| des\b| du\b| de\b| d'| d’)?\s*", "", n.strip(), flags=re.I)
+    n = re.sub(r"^dont le centre urbain", "centre", n.strip(), flags=re.I)
+    n = re.sub(r"^(région|region|province|préfecture|prefecture|commune|arrondissement|cercle|centre)( of| de la\b| de l'| des\b| du\b| de\b| d'| d’)?\s*", "", n.strip(), flags=re.I)
     n = re.sub(r"\s+(province|prefecture|préfecture)$", "", n.strip(), flags=re.I)
     n = unicodedata.normalize("NFKD", n).encode("ascii", "ignore").decode()
     n = re.sub(r"[^a-z0-9]+", " ", n.lower()).strip()
@@ -97,6 +98,8 @@ def lire_hcp(chemin):
             niveau = "commune"
         elif type_ == "Arrondissement" and len(code) == 8:
             niveau = "arrondissement"
+        elif nom.startswith("dont le centre urbain"):
+            niveau = "centre"  # centre urbain d'une commune rurale (D-GD-18 : population des villes)
         else:
             continue
         unites.setdefault((niveau, code), {
@@ -110,8 +113,12 @@ def lire_hcp(chemin):
             u["population_rurale"] = mi.get("rural", 0)
     provinces = sorted((c for (n, c) in unites if n == "province"), key=len, reverse=True)
     for (niveau, code), u in unites.items():
-        if niveau in ("commune", "arrondissement"):
+        if niveau in ("commune", "arrondissement", "centre"):
             u["province"] = next((p for p in provinces if code.startswith(p)), None)
+    toutes_communes = sorted((c for (n, c) in unites if n == "commune"), key=len, reverse=True)
+    for (niveau, code), u in unites.items():
+        if niveau == "centre":
+            u["commune"] = next((c for c in toutes_communes if code.startswith(c) and c != code), None)
     communes_7 = [c for (n, c) in unites if n == "commune" and len(c) == 7]
     for (niveau, code), u in unites.items():
         if niveau == "arrondissement":
@@ -138,17 +145,23 @@ def fiche(cle):
         return json.load(f)
 
 
+def extrait_osm(cle):
+    """Fiche d'un extrait OpenStreetMap livré sans couche propre (D-GD-18), avec son GeoJSON d'empreinte vérifiée."""
+    with open(os.path.join(FICHES, "donnees", "osm-extraits.json"), encoding="utf-8") as f:
+        fi = json.load(f)[cle]
+    with open(os.path.join(FICHES, fi["version"]["fichier"]), "rb") as f:
+        octets = f.read()
+    if hashlib.sha256(octets).hexdigest() != fi["version"]["empreinte"]:
+        sys.exit(f"Empreinte inattendue pour {cle}")
+    return fi, json.loads(octets)
+
+
 def charger_contours():
     adm = {}
     for n in (1, 2):
         fi = fiche(f"geoboundaries-mar-adm{n}")
         adm[n] = telecharger(fi["version"]["url"], fi["version"]["empreinte"])
-    fi = fiche("osm-mar-communes")
-    with open(os.path.join(FICHES, fi["version"]["fichier"]), "rb") as f:
-        octets = f.read()
-    if hashlib.sha256(octets).hexdigest() != fi["version"]["empreinte"]:
-        sys.exit("Empreinte inattendue pour les communes OpenStreetMap")
-    return adm[1], adm[2], json.loads(octets)
+    return adm[1], adm[2], extrait_osm("osm-mar-communes")[1]
 
 
 def apparier(hcp, adm1, adm2, communes):
@@ -311,10 +324,8 @@ ALIAS_ARRONDISSEMENTS = {"roches noires": "asoukhour assawda"}
 
 
 def charger_arrondissements():
-    chemin = os.path.join(FICHES, "donnees", "osm-mar-arrondissements.geojson")
-    with open(chemin, "rb") as f:
-        octets = f.read()
-    return json.loads(octets), hashlib.sha256(octets).hexdigest()
+    fi, geo = extrait_osm("osm-mar-arrondissements")
+    return geo, fi["version"]["empreinte"]
 
 
 def apparier_arrondissements(hcp, communes, adm2, arrondissements):
@@ -376,6 +387,154 @@ def apparier_arrondissements(hcp, communes, adm2, arrondissements):
     return lignes
 
 
+def apparier_villes(hcp, communes, adm2, villes, urbaines):
+    """Villes OSM (nœuds place=city / town) ↔ unités urbaines du HCP (D-GD-18, priorité HCP) : la commune qui contient le
+    point (contour rattaché), sinon la province ; candidat = cette commune ou un de ses centres urbains (« dont le centre
+    urbain de … ») ; nom normalisé égal, sinon nom approché unique et nettement devant. Deux points pour une même unité :
+    aucun des deux n'est retenu."""
+    comm = {c: u for (n, c), u in hcp.items() if n == "commune"}
+    centres = {c: u for (n, c), u in hcp.items() if n == "centre"}
+    geo_comm = {f["_code"]: shape(f["geometry"]) for f in communes["features"] if f.get("_code")}
+    geo_prov = {f["_code"]: shape(f["geometry"]) for f in adm2["features"] if f.get("_code")}
+    par_commune = {}
+    for c, u in centres.items():
+        par_commune.setdefault(u["commune"], []).append(c)
+    # Une ville ne reçoit que l'effectif d'une unité urbaine : commune entièrement urbaine ou centre urbain d'une commune
+    # rurale ; jamais celui d'une commune rurale (territoire et population plus larges que la ville).
+    comm = {c: u for c, u in comm.items() if c in urbaines}
+    unites = {**comm, **centres}
+    lignes, utilises = [], {}
+    for f in villes["features"]:
+        p = f["properties"]
+        f["_code"], f["_methode"] = None, ""
+        nom = normaliser(p.get("name:fr") or p.get("nom") or "")
+        if not nom:
+            continue
+        pt = shape(f["geometry"])
+        mere = next((c for c, g in geo_comm.items() if g.contains(pt)), None)
+        if mere:
+            cands, controle = ([mere] if mere in comm else []) + par_commune.get(mere, []), "point dans la commune"
+        else:
+            prov = next((c for c, g in geo_prov.items() if g.contains(pt)), None)
+            cands = [c for c, u in unites.items() if prov and u.get("province") == prov]
+            controle = "point dans la province"
+        exacts = [c for c in cands if normaliser(unites[c]["nom"]) == nom]
+        inclus = [c for c in cands if (lambda a, b: a and b and (a <= b or b <= a) and sum(len(t) for t in a & b) >= 5)(set(nom.split()), set(normaliser(unites[c]["nom"]).split()))]
+        retenu, methode = None, ""
+        if len(exacts) == 1:
+            retenu, methode = exacts[0], f"nom normalisé + {controle}"
+        elif not exacts and mere and len(inclus) == 1:
+            retenu, methode = inclus[0], f"nom inclus + {controle}"
+        elif not exacts and mere:
+            notes = sorted(((difflib.SequenceMatcher(None, nom, normaliser(unites[c]["nom"])).ratio(), c) for c in cands), reverse=True)
+            if notes and notes[0][0] >= 0.85 and (len(notes) == 1 or notes[0][0] - notes[1][0] >= 0.1):
+                retenu, methode = notes[0][1], f"nom approché ({notes[0][0]:.2f}) + {controle}"
+        if retenu and retenu in utilises:
+            autre = utilises[retenu]
+            autre["_code"], autre["_methode"] = None, "conflit : deux points pour une unité"
+            retenu, methode = None, "conflit : deux points pour une unité"
+        f["_code"], f["_methode"] = retenu, methode
+        if retenu:
+            utilises[retenu] = f
+    for f in villes["features"]:
+        p, r = f["properties"], f["_code"]
+        lignes.append({"code_hcp": r or "", "nom_hcp": unites[r]["nom"] if r else "", "code_contour": p["code"], "nom_contour": p.get("name:fr") or p.get("nom") or "",
+                       "methode": f["_methode"] or "aucune", "statut": "apparie" if r else "non apparie"})
+    return lignes, unites
+
+
+def nom_lieu(nom_hcp):
+    """Nom de lieu du HCP sans son préfixe administratif (« Commune de Fès » → « Fès », « dont le centre urbain d'Anjra » → « Anjra »)."""
+    return re.sub(r"^(dont le centre urbain|commune)\s+(de la |de l'|des |du |de |d'|d’)?", "", nom_hcp, flags=re.I).strip()
+
+
+VALEURS_VILLES = [
+    ("population", "population", "Population légale", "personnes", "Population légale de la commune urbaine ou du centre urbain rattaché."),
+    ("menages", "menages", "Ménages", "ménages", "Nombre de ménages de l'unité rattachée."),
+    ("marocains", "marocains", "Population légale selon la nationalité — Marocains", "personnes", "Population légale de nationalité marocaine."),
+    ("etrangers", "etrangers", "Population légale selon la nationalité — Étrangers", "personnes", "Population légale de nationalité étrangère."),
+]
+
+
+def ecrire_villes(sortie, villes, fi_villes, lignes, unites, sources):
+    """Couche « villes » (D-GD-18) : points et noms OSM ; nom, code et effectifs du HCP quand la ville est rattachée (les
+    attributs `population` d'OSM sont alors retirés) ; OSM seul sinon, valeurs HCP « non appariée »."""
+    cle = "hcp-rgph2024-villes"
+    entites, tab = [], ["code," + ",".join(k for k, *_ in VALEURS_VILLES)]
+    for f in villes["features"]:
+        p = dict(f["properties"])
+        p.pop("name:ar", None)
+        p.pop("name", None)  # nom multilingue (arabe, tifinagh) : non affiché (D-GD-17)
+        u = unites.get(f["_code"]) if f.get("_code") else None
+        if u:
+            p.pop("population", None)
+            p.pop("population:date", None)
+            p.update({"nom": nom_lieu(u["nom"]), "nom_osm": f["properties"].get("name:fr") or f["properties"].get("nom"), "code_hcp": u["code"],
+                      "unite_hcp": u["nom"], "source_population": "HCP, RGPH 2024", "appariement": f["_methode"]})
+            tab.append(",".join([p["code"]] + [cellule(u.get(k)) for _, k, *_ in VALEURS_VILLES]))
+        else:
+            p.update({"appariement": "non apparié (aucune unité urbaine du HCP de même nom)"})
+            if "population" in p:
+                p["source_population"] = "OpenStreetMap (aucune donnée HCP rattachée)"
+        entites.append({"type": "Feature", "properties": p, "geometry": f["geometry"]})
+    fc = {"type": "FeatureCollection", "features": sorted(entites, key=lambda e: e["properties"]["code"])}
+    octets = json.dumps(fc, ensure_ascii=False, separators=(",", ":"), sort_keys=True).encode()
+    tab_octets = ("\n".join(tab) + "\n").encode()
+    with open(os.path.join(sortie, "donnees", f"{cle}.geojson"), "wb") as f:
+        f.write(octets)
+    with open(os.path.join(sortie, "donnees", f"{cle}.csv"), "wb") as f:
+        f.write(tab_octets)
+    nom_csv = "correspondances/hcp-rgph2024-villes.csv"
+    with open(os.path.join(sortie, nom_csv), "w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=["code_hcp", "nom_hcp", "code_contour", "nom_contour", "methode", "statut"])
+        w.writeheader()
+        w.writerows(sorted(lignes, key=lambda l: (l["statut"], l["code_hcp"], l["code_contour"])))
+    n_app = sum(1 for l in lignes if l["statut"] == "apparie")
+    n_osm = sum(1 for e in entites if e["properties"].get("source_population", "").startswith("OpenStreetMap"))
+    v = fi_villes["version"]
+    fi = {
+        "cle": cle,
+        "titre": "Villes du Maroc — population RGPH 2024",
+        "description": f"Villes OpenStreetMap (nœuds place=city ou town, {len(entites)} points) ; priorité au HCP (D-GD-18) : {n_app} villes rattachées à une commune "
+                       f"urbaine ou à un centre urbain du HCP portent son nom, son code et ses effectifs RGPH 2024 (l'attribut « population » d'OSM est alors retiré) ; "
+                       f"{len(entites) - n_app} villes sans unité HCP de même nom gardent leurs seules données OSM ({n_osm} avec un attribut « population » d'OSM, "
+                       f"signalé par « source_population »). Table de correspondance relisible : `{nom_csv}`. Une valeur HCP absente reste « non appariée », jamais zéro.",
+        "producteur": "Haut-Commissariat au Plan (HCP), RGPH 2024 ; points : contributeurs OpenStreetMap",
+        "theme": "population",
+        "couverture": fi_villes["couverture"],
+        "version": {
+            "libelle": "RGPH 2024 — population légale (fichier Excel HCP) ; points " + v["libelle"],
+            "url": None,
+            "fichier": f"donnees/{cle}.geojson",
+            "empreinte": hashlib.sha256(octets).hexdigest(),
+            "tableau": {"fichier": f"donnees/{cle}.csv", "empreinte": hashlib.sha256(tab_octets).hexdigest()},
+            "periode": "Recensement de septembre 2024 ; " + v["periode"],
+            "licence": "Valeurs : Creative Commons Attribution 4.0 (CC BY 4.0, CGU du HCP v1.0 § 3) ; points : " + v["licence"],
+            "attribution": "HCP, RGPH 2024 (CC BY 4.0), données retraitées ; " + v["attribution"],
+            "droits": v["droits"],
+            "precision": "Effectifs officiels repris sans modification ; " + v["precision"],
+            "synthetique": False,
+            "conditions": f"Valeurs HCP sous CC BY 4.0 ({CGU_HCP}) : citer « HCP, RGPH 2024 », indiquer les modifications (rattachement aux points OSM). "
+                          f"Source : {URL_HCP} (SHA-256 {sources['population']}). Points : {v['conditions']}",
+        },
+        "couche": {
+            "titre": "Villes du Maroc — population RGPH 2024",
+            "description": "Code = identifiant OSM du point ; code_hcp = code géographique HCP de l'unité rattachée.",
+            "niveau": None, "champCode": "code", "champNom": "nom",
+            "proprietesExposees": ["code", "osm", "nom", "nom_osm", "name:fr", "place", "code_hcp", "unite_hcp", "source_population", "population", "population:date", "appariement"],
+            "styleDefaut": fi_villes["couche"]["styleDefaut"],
+        },
+        "indicateurs": [{"propriete": k, "titre": t, "unite": un, "periode": "RGPH 2024", "denominateur": None, "description": f"HCP, RGPH 2024 — {d}",
+                         "motifSiAbsente": "non-appariee", "theme": "Démographie", "famille": t.split(" — ")[0], "modalite": (t.split(" — ") + [None])[1],
+                         "milieu": "ensemble", "sexe": "ensemble", "ordre": i} for i, (k, _, t, un, d) in enumerate(VALEURS_VILLES)],
+        "superficie": False,
+    }
+    with open(os.path.join(sortie, f"{cle}.json"), "w", encoding="utf-8") as f:
+        json.dump(fi, f, ensure_ascii=False, indent=2)
+        f.write("\n")
+    print(f"{cle} : {n_app}/{len(entites)} villes rattachées au HCP ; {n_osm} gardent la population OSM (aucune unité HCP)")
+
+
 # Population légale selon la nationalité (fichier de population légale, lot A) : seule donnée de ce fichier absente du
 # fichier d'indicateurs ; rangée avec les autres sous « Démographie ».
 NATIONALITE = [
@@ -406,7 +565,7 @@ NIVEAUX = {
     "regions": ("12 régions", "geoboundaries-mar-adm1"),
     "provinces": ("75 provinces et préfectures", "geoboundaries-mar-adm2"),
     "communes": ("communes", "osm-mar-communes"),
-    "arrondissements": ("arrondissements des communes urbaines", None),
+    "arrondissements": ("arrondissements des communes urbaines", "osm-mar-arrondissements"),
 }
 
 
@@ -436,7 +595,7 @@ def ecrire(sortie, cle, couche_titre, niveau, entites, desc, sources, lignes, co
         w.writeheader()
         w.writerows(sorted(lignes, key=lambda l: (l["statut"], l["code_hcp"], l["code_contour"])))
     couverture, base = NIVEAUX[niveau]
-    contours = fiche(base) if base else None
+    contours = (extrait_osm(base)[0] if base.startswith("osm-") else fiche(base)) if base else None
     prod_contours = contours["producteur"] if contours else "Contributeurs OpenStreetMap"
     lic_contours = contours["version"]["licence"] if contours else "Open Data Commons Open Database License 1.0 (ODbL)"
     attr_contours = contours["version"]["attribution"] if contours else "© contributeurs OpenStreetMap (ODbL)"
@@ -533,6 +692,12 @@ def main():
         part = f"{compte(lignes[niveau])} ; population rattachée : {couverte} habitants, soit {pourcent} % de la population légale nationale ({national})"
         ecrire(a.sortie, cle, titre, niveau, entites, desc, sources, lignes[niveau], part, declarations, valeurs, par_code, empreinte_arr)
         print(f"{cle} : {part}")
+    fi_villes, villes = extrait_osm("osm-mar-villes")
+    # Communes entièrement urbaines : population légale rurale « … » (sans objet) dans le fichier d'indicateurs.
+    rural = next(d["propriete"] for d in declarations if d["famille"] == "Population légale" and d["milieu"] == "rural" and d["sexe"] == "ensemble")
+    urbaines = {c for (n, c) in hcp if n == "commune" and valeurs.get(c, {}).get(rural) == "…"}
+    l_villes, unites = apparier_villes(hcp, communes, adm2, villes, urbaines)
+    ecrire_villes(a.sortie, villes, fi_villes, l_villes, unites, sources)
 
 
 if __name__ == "__main__":
