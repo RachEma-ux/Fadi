@@ -95,7 +95,10 @@ jobs:
           for essai in 1 2 3; do
             timeout 600 npx playwright install --with-deps chromium && exit 0
             echo "::warning::Installation de Chromium interrompue ou en échec (essai $essai sur 3) : nouvel essai."
-            sleep 15
+            # Le délai n'arrête que npx : un apt-get lancé par l'installation peut continuer et garder le verrou dpkg.
+            # On attend qu'il finisse (10 min au plus) ; l'essai suivant trouve alors les paquets déjà installés.
+            for attente in $(seq 1 120); do pgrep -x apt-get > /dev/null || pgrep -x dpkg > /dev/null || break; sleep 5; done
+            sleep 5
           done
           exit 1
       - name: Profil neuf, recette réelle et redémarrage borné
@@ -432,7 +435,10 @@ jobs:
           for essai in 1 2 3; do
             timeout 600 npx playwright install --with-deps chromium && exit 0
             echo "::warning::Installation de Chromium interrompue ou en échec (essai $essai sur 3) : nouvel essai."
-            sleep 15
+            # Le délai n'arrête que npx : un apt-get lancé par l'installation peut continuer et garder le verrou dpkg.
+            # On attend qu'il finisse (10 min au plus) ; l'essai suivant trouve alors les paquets déjà installés.
+            for attente in $(seq 1 120); do pgrep -x apt-get > /dev/null || pgrep -x dpkg > /dev/null || break; sleep 5; done
+            sleep 5
           done
           exit 1
       - run: npm run db:migrate
