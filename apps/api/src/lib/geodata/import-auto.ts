@@ -48,13 +48,16 @@ export function lancerImportAuto(env: Record<string, string | undefined> = proce
   if (env["GEODATA_IMPORT_AUTO"]?.trim() === "non") { etat = { etat: "desactive", debut: null, fin: null, message: "GEODATA_IMPORT_AUTO=non : import automatique désactivé." }; return; }
   const par = env["GEODATA_IMPORT_AUTO_PAR"]?.trim();
   const debut = new Date().toISOString();
-  if (par && !COURRIEL.test(par)) { etat = { etat: "echec", debut, fin: debut, message: "GEODATA_IMPORT_AUTO_PAR n'est pas une adresse de courriel." }; return; }
   if (!existsSync(script)) { etat = { etat: "echec", debut, fin: debut, message: "Outil d'import absent de cette construction (geodata-reference.js)." }; return; }
-  const acteur = par ? ["--preparateur", par, "--publier-par", par] : ["--livraison"];
-  executer(script, ["--archiver", "--fiche", "toutes", ...acteur], env, debut, `Archive des fichiers et import des fiches livrées en cours (${par ? `par ${par}` : "par la livraison"}).`);
+  // Un réglage qui n'est pas une adresse de courriel (vide, texte d'exemple…) n'empêche jamais les données d'arriver en
+  // base : il est ignoré, signalé dans la quittance, et la livraison fait l'import.
+  const compte = par && COURRIEL.test(par) ? par : null;
+  const note = par && !compte ? " GEODATA_IMPORT_AUTO_PAR ignoré (pas une adresse de courriel) : import par la livraison." : "";
+  const acteur = compte ? ["--preparateur", compte, "--publier-par", compte] : ["--livraison"];
+  executer(script, ["--archiver", "--fiche", "toutes", ...acteur], env, debut, `Archive des fichiers et import des fiches livrées en cours (${compte ? `par ${compte}` : "par la livraison"}).${note}`, note);
 }
 
-function executer(script: string, args: string[], env: Record<string, string | undefined>, debut: string, enCours: string): void {
+function executer(script: string, args: string[], env: Record<string, string | undefined>, debut: string, enCours: string, note = ""): void {
   etat = { etat: "en-cours", debut, fin: null, message: enCours };
   let sortie = "";
   let erreurs = "";
@@ -66,7 +69,7 @@ function executer(script: string, args: string[], env: Record<string, string | u
     if (enfantCourant === enfant) enfantCourant = null;
     if (etat.etat !== "en-cours") return; // interrompu par l'arrêt de l'API : état déjà consigné
     const fin = new Date().toISOString();
-    const bilan = bilanImport(sortie);
+    const bilan = bilanImport(sortie) + note;
     etat = code === 0
       ? { etat: "termine", debut, fin, message: bilan }
       : { etat: "echec", debut, fin, message: `${bilan} Dernière erreur : ${erreurs.trim().split("\n").filter(Boolean).slice(-2).join(" ").slice(0, 600) || `code ${code}`}` };
