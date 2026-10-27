@@ -6,8 +6,9 @@ Population légale RGPH 2024 du HCP rattachée aux contours de GeoData (D-GD-17,
 
 Source des valeurs : fichier Excel « Population légale du Royaume du Maroc selon les résultats du RGPH 2024 »
 (https://www.hcp.ma/file/242341/), sous CC BY 4.0 (conditions générales d'utilisation du HCP, version 1.0, § 3).
-Contours : geoBoundaries gbOpen MAR ADM1 / ADM2 (empreintes des fiches existantes) et communes OpenStreetMap
-(`donnees/osm-mar-communes.geojson`). Les noms ne sont pas une clé sûre : chaque rattachement est contrôlé par la
+Contours : communes OpenStreetMap (`donnees/osm-mar-communes.geojson`) ; les régions et les provinces livrées sont
+**construites par union des communes** (`construire_niveaux.py`, D-GD-33) — geoBoundaries gbOpen MAR ADM1 / ADM2
+(fiches de référence) ne sert plus qu'au rattachement des communes par la géographie. Les noms ne sont pas une clé sûre : chaque rattachement est contrôlé par la
 géographie, et consigné dans une table de correspondance relisible (`correspondances/hcp-rgph2024-<niveau>.csv`).
 
   - Régions : code HCP n ↔ code ISO 3166-2 MA-nn (même ordre officiel), nom contrôlé.
@@ -744,6 +745,10 @@ def main():
             json.dump(fc, f, ensure_ascii=False, indent=2)
             f.write("\n")
         print(f"douars : {len(lignes_d)} douars rattachés à {len({l['commune'] for l in lignes_d})} communes rurales")
+    # Niveaux supérieurs construits à partir des communes (D-GD-33) : union par code HCP, topologie partagée simplifiée
+    # une seule fois ; réécrit les trois GeoJSON, leurs fiches, les tables des provinces et des régions, et le rapport.
+    from construire_niveaux import construire  # noqa: E402
+    construire(a.sortie)
     fi_villes, villes = extrait_osm("osm-mar-villes")
     # Communes entièrement urbaines : population légale rurale « … » (sans objet) dans le fichier d'indicateurs.
     rural = next(d["propriete"] for d in declarations if d["famille"] == "Population légale" and d["milieu"] == "rural" and d["sexe"] == "ensemble")

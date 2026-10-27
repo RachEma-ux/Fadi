@@ -309,6 +309,29 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         fonctionnent.
      4. Règles inchangées : un seul indicateur actif à la fois (à revoir plus tard) ; hors périmètre : choix de
         l'entité par la barre territoriale, multi-indicateurs.
+   - D-GD-33 (27 octobre 2026) — **régions et provinces construites à partir des communes** (constat du maître
+     d'ouvrage : sur la préproduction, les limites de régions et de provinces, venues de geoBoundaries, traversaient les
+     communes OpenStreetMap ; chaque couche était en outre simplifiée séparément) :
+     1. Les niveaux supérieurs ne sont plus des contours indépendants : chaque commune OSM rattachée porte son code HCP de
+        commune, de province (plus long code de province préfixe du sien) et de région (code de province sans ses trois
+        derniers chiffres) ; une province / préfecture est l'**union des communes** de son code, une région l'**union des
+        provinces** de son code. Une commune sans code ou au rattachement ambigu est signalée, jamais devinée.
+     2. **Une seule simplification, sur la topologie partagée** (`scripts/geodata/construire_niveaux.py`, mapshaper 0.7.98 :
+        accrochage, Visvalingam intervalle 20 m avec petites formes conservées, nettoyage) : une frontière commune n'existe
+        qu'en un exemplaire, repris par les trois niveaux. Les tuiles de l'API et le contour du territoire ne simplifient
+        plus séparément (quantification MVT seule) : les limites se superposent exactement à tous les zooms.
+     3. geoBoundaries n'est plus utilisé pour aucun contour livré (régions, provinces) ; ses fiches de référence ne servent
+        plus qu'au rattachement des communes par la géographie dans `preparer_hcp.py`. Les codes HCP restent la clé des
+        indicateurs RGPH 2024 à chaque niveau (tableaux de valeurs inchangés).
+     4. Comptes et contrôles (`docs/workstreams/geodata/CONTOURS-NIVEAUX.md`, régénéré par le script) : 12 régions, 75
+        provinces / préfectures, 1 487 communes livrées ; 16 communes HCP sans contour OSM (listées, lacunes signalées, non
+        comblées) ; 11 contours OSM sans unité HCP, entièrement inclus dans une commune rattachée, non livrés ; 0
+        chevauchement à chaque niveau ; frontières de provinces et de régions entièrement incluses dans celles des
+        communes (0 m hors) ; deux lacunes de couverture (105 km² dans la province d'Ifrane, 13 km² dans la province de
+        Kénitra — secteur sans commune dans les deux sources, d'après les communes voisines la lagune de Moulay
+        Bousselham) ; les 44 anneaux intérieurs des communes sont des enclaves d'autres communes.
+     5. Le fichier des communes (OSM) peut être remplacé par un fichier officiel du HCP sans changer la logique : les
+        provinces et les régions sont recalculées.
 
 ## Conséquences
 

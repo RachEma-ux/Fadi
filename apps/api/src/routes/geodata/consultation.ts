@@ -127,9 +127,10 @@ consultationRouter.get("/recherche", async (req, res) => {
 });
 
 /**
- * Tuiles vectorielles (MVT) d'une couche consultable : autorisation vérifiée AVANT toute lecture ; la simplification est
- * propre à l'affichage (tolérance d'un demi-pixel au zoom demandé), la géométrie de référence n'est pas modifiée (INV-09).
- * Cache : `private` (jamais un cache partagé) ; versions privées `no-store`.
+ * Tuiles vectorielles (MVT) d'une couche consultable : autorisation vérifiée AVANT toute lecture. Aucune simplification
+ * propre à une couche (D-GD-33) : la seule réduction est la quantification de `ST_AsMVTGeom` sur la grille de la tuile,
+ * identique pour toutes les couches, pour qu'une frontière partagée (région, province, commune) se superpose exactement à
+ * tous les zooms ; la géométrie de référence n'est pas modifiée (INV-09). Cache : `private` ; versions privées `no-store`.
  */
 consultationRouter.get("/tuiles/:coucheId/:z/:x/:y", async (req, res) => {
   const z = Number(req.params.z);
@@ -140,17 +141,16 @@ consultationRouter.get("/tuiles/:coucheId/:z/:x/:y", async (req, res) => {
   if (!couche) return introuvable(res);
   const droit = verifierUsage(lireDroits(couche["droits"]), "tuiles");
   if (!droit.ok) return erreur(res, 403, "usage_refuse", droit.motif, { usage: "tuiles", etat: droit.etat });
-  const tolerance = 40_075_016.7 / (256 * 2 ** z) / 2;
   const [r] = await requete<{ mvt: Buffer | null }>(
     `WITH b AS (SELECT ST_TileEnvelope($2, $3, $4) AS e),
      m AS (
-       SELECT ST_AsMVTGeom(ST_SimplifyPreserveTopology(ST_Transform(ST_ClipByBox2D(o.geom, ST_MakeEnvelope(-180, -85.05, 180, 85.05, 4326)), 3857), $5), b.e, 4096, 64, true) AS geom,
+       SELECT ST_AsMVTGeom(ST_Transform(ST_ClipByBox2D(o.geom, ST_MakeEnvelope(-180, -85.05, 180, 85.05, 4326)), 3857), b.e, 4096, 64, true) AS geom,
               o.code, coalesce(o.nom, o.code) AS nom
          FROM geodata_objets o, b
         WHERE o.couche_id = $1 AND o.geom && ST_Transform(b.e, 4326)
      )
      SELECT ST_AsMVT(m.*, 'objets', 4096, 'geom') AS mvt FROM m WHERE m.geom IS NOT NULL`,
-    [req.params.coucheId, z, x, y, tolerance],
+    [req.params.coucheId, z, x, y],
   );
   res.setHeader("Content-Type", "application/vnd.mapbox-vector-tile");
   res.setHeader("Cache-Control", couche["privee"] ? "private, no-store" : "private, max-age=300");

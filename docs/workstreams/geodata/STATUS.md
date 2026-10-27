@@ -76,6 +76,11 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   couches, `indicateurPourCle`, `unionIndicateurs` ; 3 tests), `panneaux/consultation.tsx` (rubrique du catalogue après
   « Géologie », arbre et dimensions ; option Afficher / Masquer sur les cartes de couche), `PageGeoData.tsx` (indicateur
   actif, application à toutes les couches qui le portent, couches chargées ensuite). Recette `geodata.mjs` adaptée.
+- Régions et provinces construites par union des communes (D-GD-33) : `scripts/geodata/construire_niveaux.py` (mapshaper,
+  topologie partagée simplifiée une seule fois, rapport `CONTOURS-NIVEAUX.md`), fiches et GeoJSON des trois niveaux
+  régénérés, tuiles et contour de territoire sans simplification propre (`consultation.ts`, `territoires.ts`). Contrôles :
+  12 / 75 / 1 487, 0 chevauchement, frontières partagées à 0 m ; 16 communes HCP sans contour listées. Vérifié en local
+  (import des trois versions, captures avant / après autour de Tétouan), recette `geodata.mjs` 121 contrôles.
 - Indicateur = valeur affichée, jamais une coloration (D-GD-32) : liste « Coloration » réduite aux deux modes de style,
   classification du lot D retirée de l'interface (`sansColorationThematique` à l'ouverture d'une carte, test), couche de
   rendu `-valeurs` distincte des libellés (`carte/moteur-maplibre.ts`), case « Afficher l'indicateur — [nom] » dérivée

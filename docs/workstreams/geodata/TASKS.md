@@ -22,6 +22,7 @@
 - [x] GEO-UI-BD — Interface et base distinctes ; tous les fichiers de données archivés en base (`geodata_fichiers`) (D-GD-29).
 - [x] GEO-INDICATEURS-1 — Rubrique « Indicateurs » du catalogue, un indicateur actif appliqué à toutes les couches chargées, Afficher / Masquer par couche (D-GD-31, étape 1).
 - [x] GEO-INDICATEURS-2 — Étape 1 consolidée : l'indicateur est une valeur affichée en texte propre, jamais une coloration ; liste « Coloration » réduite aux modes de style ; nom et valeur indépendants (D-GD-32).
+- [x] GEO-CONTOURS-NIVEAUX — Régions et provinces construites par union des communes (codes HCP), topologie partagée simplifiée une seule fois, tuiles sans simplification propre ; rapport `CONTOURS-NIVEAUX.md` (D-GD-33).
 - [x] GEO-SOURCE-UNIQUE — Une seule source par niveau administratif sous « Limites administratives » ; geoBoundaries retiré (D-GD-30).
 - [ ] GEO-V11 — Extensions V1.1 : partage nominatif, espaces collectifs, KML/KMZ/Shapefile, analyses avancées.
 

@@ -14,13 +14,13 @@
   {
     "cle": "geoboundaries-mar-adm1",
     "remplacePar": "hcp-rgph2024-population-regions",
-    "motif": "Remplacée par « Limites administratives — régions (RGPH 2024) » : mêmes contours geoBoundaries, noms, codes et valeurs du HCP ; une seule source par niveau",
+    "motif": "Remplacée par « Limites administratives — régions (RGPH 2024) » : contours construits par union des communes (D-GD-33), noms, codes et valeurs du HCP ; une seule source par niveau",
     "decision": "D-GD-30"
   },
   {
     "cle": "geoboundaries-mar-adm2",
     "remplacePar": "hcp-rgph2024-population-provinces",
-    "motif": "Remplacée par « Limites administratives — provinces et préfectures (RGPH 2024) » : mêmes contours geoBoundaries, noms, codes et valeurs du HCP ; une seule source par niveau",
+    "motif": "Remplacée par « Limites administratives — provinces et préfectures (RGPH 2024) » : contours construits par union des communes (D-GD-33), noms, codes et valeurs du HCP ; une seule source par niveau",
     "decision": "D-GD-30"
   }
 ]
