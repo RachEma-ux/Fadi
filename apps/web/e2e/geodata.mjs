@@ -273,6 +273,14 @@ check("indicateur actif : « Masquer » rend la coloration normale, l'indicateur
 await carteIndicateur.locator("[data-gd-indicateur-affiche] input").click();
 await page.waitForFunction((attendu) => document.querySelector("[data-gd-couche-active] [data-gd-indicateur]")?.value === attendu, optionEffectif, { timeout: 10_000 }).catch(() => undefined);
 check("indicateur actif : « Afficher » le remet sur la couche", (await carteIndicateur.locator("[data-gd-indicateur]").inputValue()) === optionEffectif);
+// Couche retirée puis rechargée : elle repart comme une couche nouvelle et reçoit l'indicateur actif (option « Afficher »).
+await carteIndicateur.getByRole("button", { name: "Retirer", exact: true }).click();
+await onglet(page, "catalogue");
+if (!(await carteCatalogue.isVisible())) await page.locator("[data-gd-entete-categorie='test']").click();
+await carteCatalogue.locator("[data-gd-ajouter]").click();
+await onglet(page, "couches");
+await page.waitForFunction((attendu) => document.querySelector("[data-gd-couche-active] [data-gd-indicateur]")?.value === attendu, optionEffectif, { timeout: 10_000 }).catch(() => undefined);
+check("indicateur actif : une couche retirée puis rechargée le reçoit à nouveau, option « Afficher »", (await carteIndicateur.locator("[data-gd-indicateur]").inputValue()) === optionEffectif && (await carteIndicateur.locator("[data-gd-indicateur-affiche] input").isChecked()));
 await onglet(page, "legende");
 
 // Recherche : coordonnées étiquetées, paire nue refusée, unité par code à zéro initial.

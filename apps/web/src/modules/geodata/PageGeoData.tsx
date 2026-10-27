@@ -65,6 +65,7 @@ export function PageGeoData() {
   const [indicateurActif, setIndicateurActif] = useState<CleIndicateur | null>(null);
   const [indicateursMasques, setIndicateursMasques] = useState<ReadonlySet<string>>(new Set());
   const indicateurApplique = useRef<Set<string>>(new Set());
+  const indicateurAttendu = useRef<Map<string, string>>(new Map());
   const [composition, setComposition] = useState<Composition>(COMPOSITION_INITIALE);
   const [carte, setCarte] = useState<CarteRecue | null>(null);
   const [etatForce, setEtatForce] = useState<EtatEnregistrement | null>(null);
@@ -500,14 +501,19 @@ export function PageGeoData() {
   const changerStyle = (id: string, s: StyleCouche) => setComposition((c) => definirStyle(c, id, s));
   /** Réunion des indicateurs des couches vectorielles du catalogue (rubrique « Indicateurs », D-GD-31). */
   const indicateursCatalogue = useMemo(() => unionIndicateurs((catalogue ?? []).filter((c) => c.typeGeometrie !== "raster")), [catalogue]);
-  /** Applique l'indicateur actif aux couches données qui le portent (coloration thématique) ; les autres gardent leur style. */
+  /**
+   * Applique l'indicateur actif aux couches données qui le portent (coloration thématique) ; les autres gardent leur style.
+   * `indicateurAttendu` note, par couche, l'indicateur dont la réponse est attendue : une réponse arrivée après un autre choix
+   * (ou après « Masquer ») est ignorée, pour que la carte montre toujours l'indicateur affiché comme actif.
+   */
   const appliquerIndicateur = useCallback((cle: CleIndicateur, ids: readonly string[]) => {
     for (const id of ids) {
       const c = couchesConnues.get(id) ?? catalogue?.find((x) => x.id === id);
       const i = c ? indicateurPourCle(c.indicateurs, cle) : null;
       if (!i) continue;
       indicateurApplique.current.add(id);
-      void valeursDe(i.id).then((vs) => changerStyle(id, styleThematique(i.id, vs))).catch(() => undefined);
+      indicateurAttendu.current.set(id, i.id);
+      void valeursDe(i.id).then((vs) => { if (indicateurAttendu.current.get(id) === i.id) changerStyle(id, styleThematique(i.id, vs)); }).catch(() => undefined);
     }
   }, [couchesConnues, catalogue, valeursDe]);
   const choisirIndicateur = (i: IndicateurRecu) => {
@@ -515,19 +521,25 @@ export function PageGeoData() {
     setIndicateurActif(cle);
     setIndicateursMasques(new Set());
     indicateurApplique.current = new Set();
+    indicateurAttendu.current = new Map();
     appliquerIndicateur(cle, composition.couches.map((k) => k.coucheId));
     setAnnonce(`Indicateur « ${i.titre} » appliqué aux couches qui le portent.`);
   };
   const afficherIndicateur = (id: string, afficher: boolean) => {
     setIndicateursMasques((m) => { const n = new Set(m); if (afficher) n.delete(id); else n.add(id); return n; });
     if (afficher && indicateurActif) { appliquerIndicateur(indicateurActif, [id]); return; }
+    indicateurAttendu.current.delete(id);
     const c = couchesConnues.get(id);
     if (c) changerStyle(id, c.styleDefaut.mode === "simple" || c.styleDefaut.mode === "categories" ? c.styleDefaut : { mode: "simple", couleur: "#2b8cbe" });
   };
-  // Couche chargée après le choix : elle reçoit l'indicateur actif (option sur « Afficher »), une seule fois.
+  // Couche chargée après le choix : elle reçoit l'indicateur actif (option sur « Afficher »), une seule fois. Une couche
+  // retirée (ou une nouvelle carte) oublie son application et son masquage : rechargée, elle repart comme une couche nouvelle.
   useEffect(() => {
+    const presentes = new Set(composition.couches.map((k) => k.coucheId));
+    for (const id of [...indicateurApplique.current]) if (!presentes.has(id)) { indicateurApplique.current.delete(id); indicateurAttendu.current.delete(id); }
+    if ([...indicateursMasques].some((id) => !presentes.has(id))) { setIndicateursMasques(new Set([...indicateursMasques].filter((id) => presentes.has(id)))); return; }
     if (!indicateurActif) return;
-    const nouvelles = composition.couches.map((k) => k.coucheId).filter((id) => !indicateurApplique.current.has(id) && !indicateursMasques.has(id) && (couchesConnues.has(id) || catalogue?.some((x) => x.id === id)));
+    const nouvelles = [...presentes].filter((id) => !indicateurApplique.current.has(id) && !indicateursMasques.has(id) && (couchesConnues.has(id) || catalogue?.some((x) => x.id === id)));
     if (nouvelles.length) appliquerIndicateur(indicateurActif, nouvelles);
   }, [composition, indicateurActif, indicateursMasques, couchesConnues, catalogue, appliquerIndicateur]);
   const ouvrirVolet = (v: Volet) => { setVolet(volet === v ? null : v); if (estTelephone()) setPanneauOuvert(false); };
