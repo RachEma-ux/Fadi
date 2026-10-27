@@ -95,13 +95,13 @@ au-dessus de tous les remplissages. Entre couches de limites administratives, la
 épais), puis la province, puis la commune, quel que soit l'ordre des couches ; le rang vient de la source (ADM1, ADM2,
 niveau administratif OpenStreetMap).
 
-## Navigation par niveaux (D-GD-19)
+## Navigation par niveaux (D-GD-19 ; barre territoriale du lot H)
 
-Dès qu'une couche de limites à codes du HCP est sur la carte, un fil « Maroc › Région … › Province … » s'affiche à
-droite du bouton « Données ». La fiche d'une région, d'une province ou d'une commune propose « Voir ses … » (Alt+↓) :
-la carte se cadre sur l'entité, n'affiche qu'elle à son niveau et ses seuls descendants en dessous ; la couche du
-niveau inférieur est ajoutée depuis le catalogue si elle manque. « Retour » (Alt+↑) remonte d'un niveau. La parenté
-vient des codes du HCP (`packages/geodata-model/src/niveaux.ts`), jamais des géométries ni des noms.
+Le fil « Maroc › Région › Province » du lot B est remplacé par la barre territoriale permanente (lot H, D-GD-28,
+ci-dessous), lue en base. Restent du lot B : « Voir ses … » dans la fiche d'une entité (Alt+↓ ; nom du niveau inférieur
+lu dans le découpage en base, jamais dans le code), Retour (Alt+↑) et le filtrage des couches de la carte par le chemin
+courant — pour les seules couches dont la version forme le découpage du pays courant. Une couche à codes HCP sans
+découpage en base garde le repli du lot B (chemin lu dans les couches).
 
 ## Import automatique au déploiement et quittance (D-GD-23)
 
@@ -150,8 +150,8 @@ Arrondissement pour le Maroc) et Retour (Alt+↑). Elle ne dépend d'aucune couc
 
 L'application ne contient aucune donnée : elle lit la base par l'API. Au démarrage de l'API, l'outil d'import copie
 chaque fichier livré du dossier `docs/geodata/sources/` dans `geodata_fichiers` (rôle `fiche`, `donnees`,
-`correspondance`, `extrait` ou `declaration` ; SHA-256 ; contenu compressé par PostgreSQL), puis importe les fiches si
-puis prépare et publie toutes les fiches livrées **par la livraison elle-même** (`--livraison`, aucun compte ni réglage :
+`correspondance`, `extrait` ou `declaration` ; SHA-256 ; contenu compressé par PostgreSQL), puis prépare et publie
+toutes les fiches livrées **par la livraison elle-même** (`--livraison`, aucun compte ni réglage :
 `preparee_par` / `publiee_par` nuls, journal « livraison »), applique les retraits déclarés et écrit le découpage
 territorial. `GEODATA_IMPORT_AUTO_PAR=<courriel>` fait la même chose au nom d'un compte GeoData ;
 `GEODATA_IMPORT_AUTO=non` coupe tout (CI). À la main : `node apps/api/dist/geodata-reference.js --archiver --fiche toutes

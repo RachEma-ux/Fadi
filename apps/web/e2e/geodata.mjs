@@ -479,7 +479,8 @@ await page.locator("[data-gd-recherche]").press("Enter");
 await page.locator("[data-gd-resultat='1']").click();
 const descendreBouton = page.locator("[data-gd-fiche='1'] [data-gd-descendre]");
 await descendreBouton.waitFor();
-check("niveaux : la fiche d'une région propose « Voir ses provinces et préfectures » (Alt+↓)", ((await descendreBouton.textContent()) ?? "").includes("Voir ses provinces et préfectures") && (await descendreBouton.getAttribute("aria-keyshortcuts")) === "Alt+ArrowDown");
+// Le nom du niveau inférieur vient du découpage en base (pays ZZ : « Provinces »), jamais d'un référentiel du code.
+check("niveaux : la fiche d'une région propose « Voir ses provinces » (nom du niveau lu en base, Alt+↓)", ((await descendreBouton.textContent()) ?? "").includes("Voir ses provinces") && !((await descendreBouton.textContent()) ?? "").includes("préfectures") && (await descendreBouton.getAttribute("aria-keyshortcuts")) === "Alt+ArrowDown");
 await descendreBouton.click();
 await page.locator("[data-gd-niveaux='1']").waitFor();
 check("niveaux : la barre territoriale passe à « Pays synthétique (test) › Région synthétique Nord »", (await page.locator("[data-gd-niveau-select='1']").inputValue()) === "1");

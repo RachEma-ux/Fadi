@@ -2,7 +2,7 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { bilanImport, etatImportAuto, lancerImportAuto } from "./import-auto.js";
+import { arreterImportAuto, bilanImport, etatImportAuto, lancerImportAuto } from "./import-auto.js";
 
 const attendreFin = async () => {
   for (let i = 0; i < 100 && etatImportAuto().etat === "en-cours"; i++) await new Promise((r) => setTimeout(r, 50));
@@ -45,6 +45,18 @@ console.log("Archive des fichiers : 121 ajouté(s), 0 modifié(s), 0 inchangé(s
     lancerImportAuto({}, script);
     expect(etatImportAuto().message).toContain("par la livraison");
     expect(await attendreFin()).toMatchObject({ etat: "termine", message: "Archive des fichiers : 121 ajouté(s), 0 modifié(s), 0 inchangé(s), 0 retiré(s). 1 version(s) préparée(s), 1 publiée(s), 0 retirée(s), 0 fiche(s) déjà en base." });
+  });
+  it("arrêt de l'API : l'import en cours est arrêté avec elle, l'état le dit et la fermeture de l'enfant ne le réécrit pas", async () => {
+    const dossier = mkdtempSync(join(tmpdir(), "gd-arret-"));
+    const script = join(dossier, "long.mjs");
+    writeFileSync(script, `setTimeout(() => console.log("Version préparée : tard"), 20_000);`);
+    lancerImportAuto({}, script);
+    expect(etatImportAuto().etat).toBe("en-cours");
+    arreterImportAuto();
+    expect(etatImportAuto()).toMatchObject({ etat: "echec", message: expect.stringContaining("arrêt de l'API") });
+    await new Promise((r) => setTimeout(r, 400));
+    expect(etatImportAuto()).toMatchObject({ etat: "echec", message: expect.stringContaining("arrêt de l'API") });
+    arreterImportAuto(); // plus d'enfant : sans effet
   });
   it("bilan : compte les lignes du journal de la chaîne d'import", () => {
     expect(bilanImport("")).toBe("0 version(s) préparée(s), 0 publiée(s), 0 retirée(s), 0 fiche(s) déjà en base.");

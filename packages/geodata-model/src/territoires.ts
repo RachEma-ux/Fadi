@@ -52,7 +52,12 @@ export function parentsParCodes(enfants: readonly string[], rangEnfant: RangAdmi
 }
 
 /** Pays tel que servi par l'API : ses niveaux chargés, du plus haut au plus fin. */
-export interface PaysTerritorial { readonly code: string; readonly nom: string; readonly niveaux: readonly (NomNiveau & { readonly rang: RangAdministratif; readonly unites: number })[] }
+export interface PaysTerritorial {
+  readonly code: string; readonly nom: string;
+  readonly niveaux: readonly (NomNiveau & { readonly rang: RangAdministratif; readonly unites: number })[];
+  /** Versions (publiées) dont les unités forment ce découpage : seules les couches de ces versions suivent le chemin de la barre. */
+  readonly versions: readonly string[];
+}
 
 /** Unité servie par l'API (liste d'un niveau) ; emprise [ouest, sud, est, nord] en WGS 84. */
 export interface UniteTerritoriale { readonly code: string; readonly nom: string; readonly rang: RangAdministratif; readonly emprise: readonly [number, number, number, number] }

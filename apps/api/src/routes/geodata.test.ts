@@ -503,6 +503,26 @@ describe("découpage territorial en base (lot H, D-GD-28)", () => {
     expect(rows).toEqual([{ code: "a1", parent_code: "A" }, { code: "b1", parent_code: null }]);
   });
 
+  it("déclaration corrigée sans nouvelle donnée : nom du pays et du niveau répercutés, parents recalculés si la règle change", async () => {
+    const vr = await publierLimites("decl-regions", [{ code: "1", nom: "R Nord", x: -8.2, y: 30.9, d: 0.5 }]);
+    const vp = await publierLimites("decl-provinces", [{ code: "1001", nom: "P codée", x: -8, y: 31, d: 0.1 }, { code: "9001", nom: "P sans parent codé", x: -8.1, y: 31.2, d: 0.1 }, { code: "contour:x", nom: "Hors code", x: -8.15, y: 31, d: 0.05 }]);
+    await chargerTerritoires(pool, vr, niveau(1));
+    expect(await chargerTerritoires(pool, vp, niveau(2))).toMatchObject({ deja: false, unites: 2 });
+    const parents = async () => (await pool.query("SELECT code, parent_code FROM geodata_territoires WHERE pays = 'ZZ' AND rang = 2 ORDER BY code")).rows;
+    expect(await parents()).toEqual([{ code: "1001", parent_code: "1" }, { code: "9001", parent_code: null }]);
+    // Même version, noms corrigés, même règle : rien n'est rechargé, la déclaration est répercutée.
+    expect(await chargerTerritoires(pool, vp, { ...niveau(2), nomPays: "Pays synthétique (corrigé)", niveau: { singulier: "Province", pluriel: "Provinces (corrigé)" } })).toMatchObject({ deja: true, unites: 2 });
+    const [p] = (await pool.query("SELECT nom, niveaux -> '2' ->> 'pluriel' AS pluriel, niveaux -> '2' ->> 'parent' AS regle FROM geodata_pays WHERE code = 'ZZ'")).rows;
+    expect(p).toEqual({ nom: "Pays synthétique (corrigé)", pluriel: "Provinces (corrigé)", regle: "codes-hcp" });
+    // Règle changée (« inclusion ») : le rang est rebâti — les codes admis changent (« contour:x » entre) — et les
+    // parents sont recalculés par la nouvelle règle.
+    expect(await chargerTerritoires(pool, vp, niveau(2, "inclusion"))).toMatchObject({ deja: false, unites: 3 });
+    expect(await parents()).toEqual([{ code: "1001", parent_code: "1" }, { code: "9001", parent_code: "1" }, { code: "contour:x", parent_code: "1" }]);
+    // Retour à « codes-hcp » : « contour:x » ressort, le parent de 9001 redevient inconnu (jamais inventé).
+    expect(await chargerTerritoires(pool, vp, niveau(2))).toMatchObject({ deja: false, unites: 2 });
+    expect(await parents()).toEqual([{ code: "1001", parent_code: "1" }, { code: "9001", parent_code: null }]);
+  });
+
   it("API : pays et niveaux de la base, unités d'un niveau, unité avec ancêtres, contour et attribution ; version non publiée refusée", async () => {
     const alice = await compte("gd-terr@example.com");
     expect((await alice.client.get(`${API}/territoires`)).body).toEqual({ pays: [] });
@@ -511,7 +531,7 @@ describe("découpage territorial en base (lot H, D-GD-28)", () => {
     await chargerTerritoires(pool, vr, niveau(1));
     await chargerTerritoires(pool, vp, niveau(2));
     const pays = (await alice.client.get(`${API}/territoires`)).body.pays;
-    expect(pays).toEqual([{ code: "ZZ", nom: "Pays synthétique", niveaux: [{ rang: 1, singulier: "Région", pluriel: "Régions", unites: 1 }, { rang: 2, singulier: "Province", pluriel: "Provinces", unites: 1 }] }]);
+    expect(pays).toEqual([{ code: "ZZ", nom: "Pays synthétique", niveaux: [{ rang: 1, singulier: "Région", pluriel: "Régions", unites: 1 }, { rang: 2, singulier: "Province", pluriel: "Provinces", unites: 1 }], versions: [vr, vp].sort() }]);
     const racine = (await alice.client.get(`${API}/territoires/ZZ/unites`)).body.unites;
     expect(racine.map((u: { code: string }) => u.code)).toEqual(["1"]);
     expect(racine[0].emprise.map((x: number) => Number(x.toFixed(1)))).toEqual([-8.2, 30.9, -7.7, 31.4]);
@@ -528,7 +548,7 @@ describe("découpage territorial en base (lot H, D-GD-28)", () => {
     expect((await alice.client.get(`${API}/territoires/version/${vr}/unites/1001`)).status).toBe(404);
     // Version retirée : ses unités ne sont plus servies (pays, listes, détail), sans attendre un nouveau chargement.
     await pool.query("UPDATE geodata_versions SET etat = 'retiree', retiree_le = now(), motif_retrait = 'Remplacée (test)' WHERE id = $1", [vp]);
-    expect((await alice.client.get(`${API}/territoires`)).body.pays[0].niveaux.map((n: { rang: number }) => n.rang)).toEqual([1]);
+    expect((await alice.client.get(`${API}/territoires`)).body.pays[0]).toMatchObject({ niveaux: [{ rang: 1 }], versions: [vr] });
     expect((await alice.client.get(`${API}/territoires/ZZ/unites?parent=1`)).body.unites).toEqual([]);
     expect((await alice.client.get(`${API}/territoires/ZZ/unites/1001`)).status).toBe(404);
     expect((await alice.client.get(`${API}/territoires/version/${vp}/unites/1001`)).status).toBe(404);

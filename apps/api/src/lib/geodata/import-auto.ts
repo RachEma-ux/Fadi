@@ -25,6 +25,15 @@ let etat: EtatImportAuto = { etat: "desactive", debut: null, fin: null, message:
 
 export const etatImportAuto = (): EtatImportAuto => ({ ...etat });
 
+let enfantCourant: import("node:child_process").ChildProcess | null = null;
+
+/** Arrêt de l'API (SIGTERM) : l'import en cours est arrêté avec elle, jamais laissé tourner seul. */
+export function arreterImportAuto(): void {
+  if (!enfantCourant || enfantCourant.exitCode !== null) return;
+  etat = { ...etat, etat: "echec", fin: new Date().toISOString(), message: "Import interrompu par l'arrêt de l'API ; il reprend au prochain démarrage." };
+  enfantCourant.kill("SIGTERM");
+}
+
 const COURRIEL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 /** Bilan d'une sortie de `geodata-reference.js --fiche toutes` (lignes de journal de la chaîne d'import). */
@@ -50,9 +59,12 @@ function executer(script: string, args: string[], env: Record<string, string | u
   let sortie = "";
   let erreurs = "";
   const enfant = spawn(process.execPath, [script, ...args], { env: { ...process.env, ...env }, stdio: ["ignore", "pipe", "pipe"] });
+  enfantCourant = enfant;
   enfant.stdout.on("data", (b: Buffer) => { sortie += b.toString(); if (sortie.length > 2_000_000) sortie = sortie.slice(-1_000_000); });
   enfant.stderr.on("data", (b: Buffer) => { erreurs = (erreurs + b.toString()).slice(-4000); });
   enfant.on("close", (code) => {
+    if (enfantCourant === enfant) enfantCourant = null;
+    if (etat.etat !== "en-cours") return; // interrompu par l'arrêt de l'API : état déjà consigné
     const fin = new Date().toISOString();
     const bilan = bilanImport(sortie);
     etat = code === 0
