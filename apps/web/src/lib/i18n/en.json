@@ -12646,6 +12646,7 @@
 "Système EPSG:4326 déclaré : lu en longitude puis latitude, comme l'impose RFC 7946.": "EPSG:4326 system declared: read as longitude then latitude, as RFC 7946 requires.",
 "Système de coordonnées « {0} » non pris en charge : seul WGS 84 (CRS84) est accepté, aucune transformation n'est devinée.": "Coordinate system “{0}” not supported: only WGS 84 (CRS84) is accepted, no transformation is guessed.",
 "Système source": "Source system",
+"Sélection : {0}": "Selected: {0}",
 "Sélectionnez un objet sur la carte, dans la table ou par la recherche.": "Select a feature on the map, in the table or through search.",
 "Table des attributs": "Attribute table",
 "Terminer le tracé": "Finish the drawing",

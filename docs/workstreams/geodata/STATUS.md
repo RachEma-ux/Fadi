@@ -76,6 +76,10 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   couches, `indicateurPourCle`, `unionIndicateurs` ; 3 tests), `panneaux/consultation.tsx` (rubrique du catalogue après
   « Géologie », arbre et dimensions ; option Afficher / Masquer sur les cartes de couche), `PageGeoData.tsx` (indicateur
   actif, application à toutes les couches qui le portent, couches chargées ensuite). Recette `geodata.mjs` adaptée.
+- Sélection par nombre de clics (D-GD-34) : `geodata-model/src/selection-clics.ts` (3 tests), moteur MapLibre (série de
+  clics, double-clic sans zoom, couche `gd-entite`), page (niveaux chargés ou découpage en base, parents par `ancetres`),
+  route `GET /territoires/:pays/point` (test API), `versionId` / `coucheId` dans l'unité servie ; recette `geodata.mjs`
+  : carte vierge (1, 2, 3 clics, clic hors entité) et couches chargées (provinces + régions).
 - Régions et provinces construites par union des communes (D-GD-33) : `scripts/geodata/construire_niveaux.py` (mapshaper,
   topologie partagée simplifiée une seule fois, rapport `CONTOURS-NIVEAUX.md`), fiches et GeoJSON des trois niveaux
   régénérés, tuiles et contour de territoire sans simplification propre (`consultation.ts`, `territoires.ts`). Contrôles :

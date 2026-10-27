@@ -45,6 +45,8 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
   portent ; hors périmètre : entité par la barre, multi-indicateurs. Consolidation D-GD-32 : l'indicateur n'est jamais une
   coloration (liste « Coloration » = couleur unie / une couleur par entité seulement), sa valeur s'affiche en texte propre
   sur chaque entité, case « Afficher l'indicateur — [nom] » cochée par défaut, indépendante de « Libellés (nom) ».
+- Sélection par nombre de clics (D-GD-34) : 1 clic → plus petit niveau, clics rapides suivants → niveaux au-dessus ;
+  couches chargées ou, carte vierge, découpage du pays courant en base ; double-clic sans zoom.
 - Régions et provinces construites par union des communes (D-GD-33) : plus aucun contour geoBoundaries livré ;
   `construire_niveaux.py` après `preparer_hcp.py` (ou seul) ; 16 communes HCP sans contour OSM à reprendre à la source
   (liste dans `CONTOURS-NIVEAUX.md`) ; deux lacunes de couverture (Ifrane 105 km², Kénitra 13 km²) signalées.

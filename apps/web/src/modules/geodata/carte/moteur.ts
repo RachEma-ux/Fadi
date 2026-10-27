@@ -32,8 +32,12 @@ export interface DonneesAffichage {
 
 export interface EvenementsMoteur {
   surDeplacement(camera: Composition["camera"]): void;
-  /** Clic en navigation : objet touché (ou null) et point cliqué (valeur d'une couche raster). */
-  surClic(objet: ObjetDesigne | null, point: { lon: number; lat: number }): void;
+  /**
+   * Clic en navigation : objets touchés (toutes les couches, la plus haute d'abord ; vide = aucun), point cliqué et rang du
+   * clic dans sa série (1 = premier, 2 = second clic rapide au même endroit… ; D-GD-34). Aucun retard : chaque clic est
+   * transmis tout de suite, le double-clic ne zoome jamais.
+   */
+  surClic(objets: readonly ObjetDesigne[], point: { lon: number; lat: number }, nbClics: number): void;
   /** Tracé en cours : sommets [lon, lat] (mesures en direct). */
   surTrace(outil: OutilCarte, sommets: readonly [number, number][]): void;
   /** Tracé terminé (double-clic, Entrée ou « Terminer »). */
@@ -69,6 +73,8 @@ export interface MoteurCarte {
   afficherMiniCarte(conteneur: HTMLElement | null, coucheId: string | null): void;
   /** Contour de l'unité choisie dans la barre territoriale (lot H), en GeoJSON WGS 84 ; null : retiré. */
   afficherTerritoire(contour: unknown | null): void;
+  /** Entité sélectionnée par clic sans couche chargée (D-GD-34) : contour et mise en évidence, ou rien. */
+  afficherEntite(contour: unknown | null): void;
   /** Masque (ou rétablit) le contour territorial le temps d'une capture ; résolu une fois la carte redessinée. */
   masquerTerritoire(masque: boolean): Promise<void>;
   /** Image de la mini-carte (impression), ou null si elle n'est pas affichée. */

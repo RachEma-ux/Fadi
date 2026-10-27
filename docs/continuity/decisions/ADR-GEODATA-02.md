@@ -332,6 +332,28 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         Bousselham) ; les 44 anneaux intérieurs des communes sont des enclaves d'autres communes.
      5. Le fichier des communes (OSM) peut être remplacé par un fichier officiel du HCP sans changer la logique : les
         provinces et les régions sont recalculées.
+   - D-GD-34 (27 octobre 2026) — **sélection par nombre de clics, du plus élémentaire au plus global** (spécification du
+     maître d'ouvrage ; avant : un clic sélectionnait toujours la région, couche la plus haute) :
+     1. Des clics rapides au même endroit (délai du navigateur, ~300 ms, pointeur immobile à 8 px près) montrent les
+        niveaux un par un : 1 clic → commune, 2 → province / préfecture, 3 → région. Le premier clic sélectionne tout de
+        suite le plus petit niveau (aucun retard) ; chaque clic suivant remplace la sélection par le niveau au-dessus ;
+        au-delà du dernier niveau, rien ne change ; un délai dépassé ou un pointeur déplacé recommence au plus petit.
+     2. Couches de limites visibles sur la carte : seuls leurs niveaux comptent, du plus petit au plus grand (provinces et
+        régions chargées : 1 clic → province, 2 → région ; un seul niveau : les clics suivants n'y changent rien).
+        L'entité du premier clic est celle touchée dans la couche du plus petit niveau ; ses parents viennent de la
+        hiérarchie des codes HCP lue en base (`ancetres` de `/territoires/version/:versionId/unites/:code`), jamais d'un
+        second test géométrique.
+     3. Carte vierge (aucune couche de limites) : les unités du **pays courant** de la barre territoriale qui contiennent
+        le point (`GET /territoires/:pays/point?lon=&lat=`, de la plus élémentaire à la plus globale) ; l'entité
+        sélectionnée est affichée seule (contour et mise en évidence, couche de rendu propre `gd-entite`), sans ajouter
+        de couche à l'onglet Couches ; elle disparaît quand la sélection est effacée. Un clic hors du pays ou sur une
+        zone sans entité efface la sélection.
+     4. Le double-clic et la double-tape ne zooment plus (le zoom reste par les boutons, la molette et le pincement) ;
+        mobile : même logique avec des tapes rapides. Ce que « sélectionner » déclenche (mise en évidence, fiche d'objet)
+        est inchangé ; les clics d'un outil actif (dessin, mesure) servent à l'outil et ne sélectionnent rien.
+     5. Précédences conservées : un objet d'une couche qui n'est pas une limite (point d'intérêt, ligne) garde la
+        sélection simple ; sans couche de limites, une couche raster visible garde la lecture de sa valeur au point
+        (D-GD-13). Logique pure `geodata-model/src/selection-clics.ts` (comptage, niveaux, rang du n-ième clic), testée.
 
 ## Conséquences
 

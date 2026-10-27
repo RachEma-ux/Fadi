@@ -541,6 +541,16 @@ describe("découpage territorial en base (lot H, D-GD-28)", () => {
     expect(u.contour.type).toBe("Polygon");
     expect((await alice.client.get(`${API}/territoires/ZZ/unites/9999`)).status).toBe(404);
     expect((await alice.client.get(`${API}/territoires/zz/unites`)).status).toBe(400);
+    // Unités contenant un point (D-GD-34) : de la plus élémentaire à la plus globale, avec la couche de leur version ;
+    // hors de tout découpage : liste vide ; coordonnées invalides refusées.
+    const auPoint = (await alice.client.get(`${API}/territoires/ZZ/point?lon=-7.98&lat=31.02`)).body.unites;
+    expect(auPoint.map((x: { code: string; rang: number }) => [x.code, x.rang])).toEqual([["1001", 2], ["1", 1]]);
+    expect(auPoint[0]).toMatchObject({ pays: "ZZ", nom: "P Nord", versionId: vp });
+    expect(typeof auPoint[0].coucheId).toBe("string");
+    expect(u).toMatchObject({ versionId: vp, coucheId: auPoint[0].coucheId });
+    expect((await alice.client.get(`${API}/territoires/ZZ/point?lon=10&lat=10`)).body).toEqual({ unites: [] });
+    expect((await alice.client.get(`${API}/territoires/XX/point?lon=-7.98&lat=31.02`)).body).toEqual({ unites: [] });
+    expect((await alice.client.get(`${API}/territoires/ZZ/point?lon=abc&lat=1`)).status).toBe(400);
     const nonPubliee = await publierLimites("api-brouillon", [{ code: "3", nom: "R3", x: 0, y: 0, d: 0.1 }], false);
     await expect(chargerTerritoires(pool, nonPubliee, niveau(1))).rejects.toThrow(/non publiée/);
     // Depuis une fiche : unité retrouvée par la version de sa couche, avec son pays.
