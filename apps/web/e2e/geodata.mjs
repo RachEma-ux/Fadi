@@ -241,23 +241,38 @@ check("couleur d'une classe choisie dans la légende, les autres inchangées", c
 await page.waitForTimeout(1500);
 await page.screenshot({ path: join(OUT, "01c-classification.png") });
 
-// --- Arbre d'indicateurs (lot F, D-GD-26) : thèmes et familles, recherche sans accents, choix d'une famille ---
+// --- Rubrique « Indicateurs » du catalogue (lot F, D-GD-26 ; D-GD-31) : recherche, choix, application à toutes les couches chargées, Afficher / Masquer ---
 await onglet(page, "couches");
-const arbre = page.locator("[data-gd-couche-active]").first().locator("[data-gd-arbre]");
-await arbre.locator("summary").first().click();
+await page.locator("[data-gd-couche-active]").first().locator("[data-gd-indicateur]").selectOption("");
+await onglet(page, "catalogue");
+check("catalogue : « Parcourir les indicateurs » n'est plus sur les cartes de couche ; la rubrique « Indicateurs » est parmi les vecteurs", (await page.locator("[data-gd-couche-active] [data-gd-arbre]").count()) === 0 && (await page.locator("[data-gd-entete-categorie='indicateurs']").count()) === 1);
+const entetesCat = await page.locator("[data-gd-entete-categorie]").evaluateAll((bs) => bs.map((b) => b.getAttribute("data-gd-entete-categorie")));
+check("catalogue : la rubrique « Indicateurs » suit « Géologie » (ou ferme la liste quand « Géologie » est vide)", entetesCat.includes("geologie") ? entetesCat.indexOf("indicateurs") === entetesCat.indexOf("geologie") + 1 : entetesCat[entetesCat.length - 1] === "indicateurs", entetesCat.join(","));
+await page.locator("[data-gd-entete-categorie='indicateurs']").click();
+const arbre = page.locator("[data-gd-arbre='catalogue']");
+await arbre.waitFor();
 const rechercheArbre = arbre.locator("[data-gd-arbre-recherche]");
 await rechercheArbre.fill("EFFECTIF synthetique");
 const familleTrouvee = arbre.locator("[data-gd-arbre-famille='Effectif synthétique']");
-check("arbre d'indicateurs : recherche sans accents ni casse, thème déplié, famille trouvée", (await familleTrouvee.isVisible()) && ((await arbre.locator("[data-gd-arbre-compte]").textContent()) ?? "").includes("1 famille(s) trouvée(s)"));
+check("rubrique Indicateurs : recherche sans accents ni casse, thème déplié, famille trouvée", (await familleTrouvee.isVisible()) && ((await arbre.locator("[data-gd-arbre-compte]").textContent()) ?? "").includes("1 famille(s) trouvée(s)"));
 await rechercheArbre.fill("introuvable");
-check("arbre d'indicateurs : recherche sans résultat annoncée", ((await arbre.locator("[data-gd-arbre-compte]").textContent()) ?? "").includes("Aucun indicateur ne correspond."));
+check("rubrique Indicateurs : recherche sans résultat annoncée", ((await arbre.locator("[data-gd-arbre-compte]").textContent()) ?? "").includes("Aucun indicateur ne correspond."));
 await rechercheArbre.press("Escape");
-check("arbre d'indicateurs : Échap vide la recherche", (await rechercheArbre.inputValue()) === "");
-await page.locator("[data-gd-couche-active]").first().locator("[data-gd-indicateur]").selectOption("");
-await arbre.locator("[data-gd-arbre-theme] summary").first().click();
+check("rubrique Indicateurs : Échap vide la recherche", (await rechercheArbre.inputValue()) === "");
+await rechercheArbre.fill("Effectif");
 await familleTrouvee.click();
-await page.waitForFunction(() => document.querySelector("[data-gd-couche-active] [data-gd-arbre-famille='Effectif synthétique']")?.getAttribute("aria-pressed") === "true", null, { timeout: 10_000 }).catch(() => undefined);
-check("arbre d'indicateurs : choisir une famille colore la couche (famille marquée, liste « Coloration » à jour)", (await familleTrouvee.getAttribute("aria-pressed")) === "true" && (await page.locator("[data-gd-couche-active]").first().locator("[data-gd-indicateur]").inputValue()) === optionEffectif);
+await page.waitForFunction(() => document.querySelector("[data-gd-arbre='catalogue'] [data-gd-arbre-famille='Effectif synthétique']")?.getAttribute("aria-pressed") === "true", null, { timeout: 10_000 }).catch(() => undefined);
+check("rubrique Indicateurs : la famille choisie est marquée active", (await familleTrouvee.getAttribute("aria-pressed")) === "true");
+await onglet(page, "couches");
+const carteIndicateur = page.locator("[data-gd-couche-active]").first();
+await page.waitForFunction((attendu) => document.querySelector("[data-gd-couche-active] [data-gd-indicateur]")?.value === attendu, optionEffectif, { timeout: 10_000 }).catch(() => undefined);
+check("indicateur actif : appliqué à la couche chargée qui le porte (liste « Coloration » à jour), option « Masquer l'indicateur » proposée", (await carteIndicateur.locator("[data-gd-indicateur]").inputValue()) === optionEffectif && (await carteIndicateur.locator("[data-gd-indicateur-affiche] input").isChecked()));
+await carteIndicateur.locator("[data-gd-indicateur-affiche] input").click();
+await page.waitForFunction(() => document.querySelector("[data-gd-couche-active] [data-gd-indicateur]")?.value === "", null, { timeout: 10_000 }).catch(() => undefined);
+check("indicateur actif : « Masquer » rend la coloration normale, l'indicateur reste mémorisé", (await carteIndicateur.locator("[data-gd-indicateur]").inputValue()) === "" && ((await carteIndicateur.locator("[data-gd-indicateur-affiche]").textContent()) ?? "").includes("Afficher l'indicateur"));
+await carteIndicateur.locator("[data-gd-indicateur-affiche] input").click();
+await page.waitForFunction((attendu) => document.querySelector("[data-gd-couche-active] [data-gd-indicateur]")?.value === attendu, optionEffectif, { timeout: 10_000 }).catch(() => undefined);
+check("indicateur actif : « Afficher » le remet sur la couche", (await carteIndicateur.locator("[data-gd-indicateur]").inputValue()) === optionEffectif);
 await onglet(page, "legende");
 
 // Recherche : coordonnées étiquetées, paire nue refusée, unité par code à zéro initial.

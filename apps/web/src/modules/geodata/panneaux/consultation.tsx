@@ -4,7 +4,7 @@
  * (`translate="no"`), arabe compris. Une valeur absente est écrite « Valeur absente » avec son motif, jamais « 0 ».
  */
 import { useEffect, useState } from "react";
-import { arbreIndicateurs, categorieDe, declinaisonParDefaut, declinaisonProche, grouperIndicateurs, indicateursPrincipaux, LIBELLES_MILIEU, LIBELLES_SEXE, type FamilleIndicateurs, type Milieu, type Sexe, compterParType, type RangementCatalogue, degradeCss, regrouperCatalogue, type TypeCatalogue, formatNombre, legende, libelleAbsence, LIBELLES_USAGES, USAGES, CLASSES_MAX, CLASSES_MIN, couleursPalette, PALETTE_PAR_DEFAUT, PALETTES_CLASSES, type IdPalette, type Composition, type MethodeClassification, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
+import { arbreIndicateurs, categorieDe, declinaisonParDefaut, declinaisonProche, grouperIndicateurs, indicateurPourCle, type CleIndicateur, indicateursPrincipaux, LIBELLES_MILIEU, LIBELLES_SEXE, type FamilleIndicateurs, type Milieu, type Sexe, compterParType, type RangementCatalogue, degradeCss, regrouperCatalogue, type TypeCatalogue, formatNombre, legende, libelleAbsence, LIBELLES_USAGES, USAGES, CLASSES_MAX, CLASSES_MIN, couleursPalette, PALETTE_PAR_DEFAUT, PALETTES_CLASSES, type IdPalette, type Composition, type MethodeClassification, type StyleCouche, type ValeurIndicateur } from "@parcours/geodata-model";
 import { api, type IndicateurRecu, type ValeurRasterRecue, type CoucheRecue, type Disponibilite, type LigneTable, type ValeurRecue } from "../client";
 import { entreesCategories, lireSeuilsManuels, reclasser, recolorerClasse, styleThematique, type Categorie } from "../composition-ops";
 
@@ -17,7 +17,7 @@ export const formaterValeur = (v: ValeurRecue | ValeurIndicateur | undefined, un
   return `${formatNombre(v.valeur, Math.abs(v.valeur) >= 100 || Number.isInteger(v.valeur) ? 0 : 2)}${unite ? ` ${unite}` : ""}`;
 };
 
-export function PanneauCatalogue(p: { rangement?: RangementCatalogue | undefined; couches: CoucheRecue[] | null; erreur: string | null; composition: Composition; onAjouter(c: CoucheRecue): void; onRecharger(): void }) {
+export function PanneauCatalogue(p: { rangement?: RangementCatalogue | undefined; couches: CoucheRecue[] | null; erreur: string | null; composition: Composition; onAjouter(c: CoucheRecue): void; onRecharger(): void; indicateurs?: RubriqueIndicateurs | undefined }) {
   const [filtre, setFiltre] = useState("");
   const [details, setDetails] = useState<string | null>(null);
   const [type, setType] = useState<TypeCatalogue>("vecteurs");
@@ -39,10 +39,23 @@ export function PanneauCatalogue(p: { rangement?: RangementCatalogue | undefined
       {p.couches.length === 0 && <p className="gd-etat">Catalogue vide : aucune couche n'est encore publiée ni importée pour ce compte.</p>}
       {p.couches.length > 0 && groupes.length === 0 && <p className="gd-etat">{f ? "Aucune couche de ce type ne correspond au filtre." : "Aucune couche de ce type au catalogue."}</p>}
       <ul className="gd-categories">
-        {groupes.map(({ categorie, couches, actives: n }) => {
+        {groupes.flatMap(({ categorie, couches, actives: n }, index) => {
+          // Rubrique « Indicateurs » (D-GD-31) : parmi les vecteurs, après « Géologie » (ou en dernier), jamais filtrée.
+          const rubrique = p.indicateurs && type === "vecteurs" && p.indicateurs.liste.length > 0 && (categorie.cle === "geologie" || (index === groupes.length - 1 && !groupes.some((g) => g.categorie.cle === "geologie")));
+          const ouverteInd = ouvertes.has("indicateurs");
+          const blocIndicateurs = rubrique ? (
+            <li key="indicateurs" className="gd-categorie" data-gd-categorie="indicateurs">
+              <button type="button" className="gd-entete-categorie" aria-expanded={ouverteInd} aria-controls="gd-categorie-indicateurs" onClick={() => basculer("indicateurs")} data-gd-entete-categorie="indicateurs">
+                <span aria-hidden="true" className="gd-chevron">{ouverteInd ? "▾" : "▸"}</span>
+                <span className="gd-nom-categorie">Indicateurs</span>
+                <span className={`gd-compte${p.indicateurs!.actif ? " gd-compte-actif" : ""}`} title={`${p.indicateurs!.liste.length} indicateur(s)`}>{String(p.indicateurs!.liste.length)}</span>
+              </button>
+              {ouverteInd && <div id="gd-categorie-indicateurs"><RubriqueIndicateursContenu {...p.indicateurs!} /></div>}
+            </li>
+          ) : null;
           // Avec un filtre, les catégories qui ont un résultat s'ouvrent d'elles-mêmes.
           const ouverte = !!f || ouvertes.has(categorie.cle);
-          return (
+          const bloc = (
             <li key={categorie.cle} className="gd-categorie" data-gd-categorie={categorie.cle}>
               <button type="button" className="gd-entete-categorie" aria-expanded={ouverte} aria-controls={`gd-categorie-${categorie.cle}`} onClick={() => basculer(categorie.cle)} data-gd-entete-categorie={categorie.cle}>
                 <span aria-hidden="true" className="gd-chevron">{ouverte ? "▾" : "▸"}</span>
@@ -70,6 +83,7 @@ export function PanneauCatalogue(p: { rangement?: RangementCatalogue | undefined
               )}
             </li>
           );
+          return blocIndicateurs ? [bloc, blocIndicateurs] : [bloc];
         })}
       </ul>
     </div>
@@ -113,6 +127,7 @@ function ChoixColoration(p: { couche: CoucheRecue; coucheId: string; style: Styl
   const famille = courant ? (familles.find((f) => f.indicateurs.includes(courant)) ?? null) : null;
   const representant = (f: FamilleIndicateurs<IndicateurRecu>) => (f === famille && courant ? courant : declinaisonParDefaut(f));
   const appliquer = async (id: string) => p.onStyle(styleThematique(id, await p.valeursDe(id)));
+  void representant;
   const changer = (dim: "modalite" | "milieu" | "sexe", modalite: string | null, milieu: Milieu, sexe: Sexe) => {
     const i = famille && declinaisonProche(famille, modalite, milieu, sexe, dim);
     if (i) void appliquer(i.id);
@@ -135,7 +150,6 @@ function ChoixColoration(p: { couche: CoucheRecue; coucheId: string; style: Styl
           {themes.length === 1 && themes[0] === "Autres indicateurs" ? familles.map(option) : themes.map((t) => <optgroup key={t} label={t} translate="no">{familles.filter((f) => f.theme === t).map(option)}</optgroup>)}
         </select>
       </label>
-      {c.indicateurs.length > 0 && <ArbreIndicateurs couche={c} coucheId={p.coucheId} courant={courant} onChoix={(f) => void appliquer(representant(f).id)} />}
       {famille && courant && famille.indicateurs.length > 1 && (
         <div className="gd-dimensions" data-gd-dimensions={p.coucheId}>
           {famille.modalites.length > 1 && (
@@ -166,18 +180,17 @@ function ChoixColoration(p: { couche: CoucheRecue; coucheId: string; style: Styl
 }
 
 /**
- * Arbre d'indicateurs (lot F, D-GD-26) : thèmes puis familles, repliés ; une recherche (sans accents ni casse, chaque mot
- * au début d'un mot) déplie les thèmes retenus. Choisir une famille colore la couche par sa déclinaison par défaut
- * (ou celle en cours) ; les dimensions se règlent ensuite comme avec la liste « Coloration ».
+ * Arbre d'indicateurs (lot F, D-GD-26 ; rubrique « Indicateurs » du catalogue depuis D-GD-31) : thèmes puis familles,
+ * repliés ; une recherche (sans accents ni casse, chaque mot au début d'un mot) déplie les thèmes retenus. Choisir une
+ * famille retient sa déclinaison par défaut (ou celle en cours) ; les dimensions se règlent ensuite en dessous.
  */
-function ArbreIndicateurs(p: { couche: CoucheRecue; coucheId: string; courant: IndicateurRecu | null; onChoix(f: FamilleIndicateurs<IndicateurRecu>): void }) {
+function ArbreIndicateurs(p: { liste: readonly IndicateurRecu[]; cle: string; courant: IndicateurRecu | null; onChoix(f: FamilleIndicateurs<IndicateurRecu>): void }) {
   const [recherche, setRecherche] = useState("");
-  const arbre = arbreIndicateurs(p.couche.indicateurs, recherche);
+  const arbre = arbreIndicateurs(p.liste, recherche);
   const familles = arbre.reduce((n, b) => n + b.familles.length, 0);
   const cherche = recherche.trim() !== "";
   return (
-    <details className="gd-arbre" data-gd-arbre={p.coucheId}>
-      <summary>{`Parcourir les indicateurs (${p.couche.indicateurs.length})`}</summary>
+    <div className="gd-arbre" data-gd-arbre={p.cle}>
       <label className="gd-champ">Rechercher un indicateur
         <input type="search" value={recherche} onChange={(e) => setRecherche(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape" && recherche) { e.preventDefault(); setRecherche(""); } }} placeholder="Ex. : chômage, âge, logement" data-gd-arbre-recherche />
       </label>
@@ -205,7 +218,53 @@ function ArbreIndicateurs(p: { couche: CoucheRecue; coucheId: string; courant: I
           </li>
         ))}
       </ul>
-    </details>
+    </div>
+  );
+}
+
+/** Rubrique « Indicateurs » du catalogue (D-GD-31) : réunion des indicateurs des couches du catalogue, un seul actif. */
+export interface RubriqueIndicateurs { readonly liste: readonly IndicateurRecu[]; readonly actif: CleIndicateur | null; onChoix(i: IndicateurRecu): void }
+
+function RubriqueIndicateursContenu(p: RubriqueIndicateurs) {
+  const familles = grouperIndicateurs(p.liste);
+  const courant = p.actif ? indicateurPourCle(p.liste, p.actif) : null;
+  const famille = courant ? (familles.find((f) => f.indicateurs.includes(courant)) ?? null) : null;
+  const milieu = courant?.milieu ?? "ensemble";
+  const sexe = courant?.sexe ?? "ensemble";
+  const changer = (dim: "modalite" | "milieu" | "sexe", modalite: string | null, m: Milieu, s: Sexe) => {
+    const i = famille && declinaisonProche(famille, modalite, m, s, dim);
+    if (i) p.onChoix(i);
+  };
+  return (
+    <div className="gd-rubrique-indicateurs" data-gd-rubrique-indicateurs>
+      <p className="gd-discret">Un indicateur choisi ici colore toutes les couches chargées qui le portent ; une à la fois.</p>
+      <ArbreIndicateurs liste={p.liste} cle="catalogue" courant={courant} onChoix={(f) => p.onChoix(f === famille && courant ? courant : declinaisonParDefaut(f))} />
+      {famille && courant && famille.indicateurs.length > 1 && (
+        <div className="gd-dimensions" data-gd-dimensions="catalogue">
+          {famille.modalites.length > 1 && (
+            <label className="gd-champ">Modalité
+              <select data-gd-dimension="modalite" value={courant.modalite ?? ""} onChange={(e) => changer("modalite", e.target.value || null, milieu, sexe)}>
+                {famille.modalites.map((m) => (m === null ? <option key="" value="">Sans modalité</option> : <option key={m} value={m} translate="no">{m}</option>))}
+              </select>
+            </label>
+          )}
+          {famille.milieux.length > 1 && (
+            <label className="gd-champ">Milieu de résidence
+              <select data-gd-dimension="milieu" value={milieu} onChange={(e) => changer("milieu", courant.modalite, e.target.value as Milieu, sexe)}>
+                {famille.milieux.map((m) => <option key={m} value={m}>{LIBELLES_MILIEU[m]}</option>)}
+              </select>
+            </label>
+          )}
+          {famille.sexes.length > 1 && (
+            <label className="gd-champ">Sexe
+              <select data-gd-dimension="sexe" value={sexe} onChange={(e) => changer("sexe", courant.modalite, milieu, e.target.value as Sexe)}>
+                {famille.sexes.map((x) => <option key={x} value={x}>{LIBELLES_SEXE[x]}</option>)}
+              </select>
+            </label>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -213,6 +272,8 @@ export function PanneauCouches(p: {
   composition: Composition; couches: Map<string, CoucheRecue>; disponibilite: Record<string, Disponibilite>;
   onVisibilite(id: string): void; onOpacite(id: string, o: number): void; onEtiquettes(id: string): void; onDeplacer(id: string, s: 1 | -1): void; onRetirer(id: string): void;
   onStyle(id: string, s: StyleCouche): void; onTable(id: string): void; valeursDe(indicateurId: string): Promise<ValeurIndicateur[]>;
+  /** Indicateur actif du catalogue (D-GD-31) et couches où il est masqué. */
+  indicateurActif?: CleIndicateur | null | undefined; masques?: ReadonlySet<string> | undefined; onAfficherIndicateur?(id: string, afficher: boolean): void;
 }) {
   if (!p.composition.couches.length) return <p className="gd-etat">Aucune couche active : ajoutez-en depuis le Catalogue.</p>;
   const ordre = [...p.composition.couches].reverse();
@@ -232,6 +293,13 @@ export function PanneauCouches(p: {
             <label className="gd-champ">{`Opacité : ${Math.round(k.opacite * 100)} %`}<input type="range" min={0} max={100} value={Math.round(k.opacite * 100)} onChange={(e) => p.onOpacite(k.coucheId, Number(e.target.value) / 100)} /></label>
             {c && !c.raster && <label className="gd-case"><input type="checkbox" checked={!!k.etiquettes} onChange={() => p.onEtiquettes(k.coucheId)} data-gd-etiquettes={k.coucheId} />{k.style.mode === "thematique" ? "Libellés (nom et valeur abrégée)" : "Libellés (nom)"}</label>}
             {c?.raster && <p className="gd-discret" data-gd-raster-info={k.coucheId}><span translate="no">{`${c.raster.grandeur}${c.raster.unite ? ` (${c.raster.unite})` : ""}`}</span> · Couche raster : symbologie de la source, touchez la carte pour lire une valeur.</p>}
+            {c && p.indicateurActif && indicateurPourCle(c.indicateurs, p.indicateurActif) && (
+              <label className="gd-case" data-gd-indicateur-affiche={k.coucheId}>
+                <input type="checkbox" checked={!p.masques?.has(k.coucheId)} onChange={(e) => p.onAfficherIndicateur?.(k.coucheId, e.target.checked)} />
+                {p.masques?.has(k.coucheId) ? "Afficher l'indicateur" : "Masquer l'indicateur"}
+                <span className="gd-discret" translate="no">{` — ${indicateurPourCle(c.indicateurs, p.indicateurActif)!.titre}`}</span>
+              </label>
+            )}
             {c && !c.raster && (
               <ChoixColoration couche={c} style={k.style} onStyle={(st) => p.onStyle(k.coucheId, st)} valeursDe={p.valeursDe} coucheId={k.coucheId} />
             )}

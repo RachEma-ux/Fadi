@@ -281,6 +281,18 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
      3. Les métadonnées d'une source (titre, producteur, thème, couverture, description) suivent la fiche, même sans
         nouvelle version (`assurerSource`, `ecrireVersion` ON CONFLICT) : une fiche corrigée range la source au bon
         endroit au redéploiement.
+   - D-GD-31 (27 octobre 2026, étape 1) — **rubrique « Indicateurs » du catalogue** (spécification du maître d'ouvrage) :
+     1. « Parcourir les indicateurs » quitte les cartes de couche de l'onglet Couches ; il devient la rubrique
+        **▸ Indicateurs** de Catalogue › Vecteurs, après « Géologie » (recherche, thèmes et compteurs : réunion des
+        indicateurs des couches vectorielles du catalogue, une entrée par clé thème / famille / modalité / milieu / sexe).
+     2. Parcours : charger des entités administratives depuis « Limites administratives », choisir un indicateur dans
+        « Indicateurs » : il s'applique à **toutes** les couches chargées qui le portent (reconnu par sa clé, jamais par
+        son identifiant, différent d'une couche à l'autre) ; une couche qui ne le porte pas garde sa coloration.
+     3. Un seul indicateur actif à la fois (un nouveau choix remplace le précédent partout ; règle à revoir plus tard).
+        Chaque carte de couche concernée a l'option « Afficher / Masquer l'indicateur » (Afficher par défaut ; Masquer
+        rend la coloration normale, l'indicateur reste mémorisé). Une couche chargée après le choix reçoit l'indicateur
+        actif, option sur Afficher. L'indicateur actif n'est pas enregistré avec la carte (les colorations le sont).
+     4. Hors périmètre : choix de l'entité par la barre territoriale, multi-indicateurs.
 
 ## Conséquences
 

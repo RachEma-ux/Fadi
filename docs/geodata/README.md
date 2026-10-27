@@ -124,11 +124,14 @@ nombre de classes (2 à 10), palette prédéfinie (Bleu-violet par défaut, pale
 divergentes) et inversion ; la pastille de chaque classe permet d'en choisir la couleur. Tout est enregistré avec la
 carte ; les valeurs absentes restent hors classes, hachurées.
 
-## Arbre d'indicateurs (lot F, D-GD-26)
+## Rubrique « Indicateurs » du catalogue (lot F, D-GD-26 ; D-GD-31)
 
-Panneau Couches, « Parcourir les indicateurs » : thèmes puis familles, recherche sans accents ni casse (chaque mot au
-début d'un mot ; Échap vide la recherche). Choisir une famille colore la couche ; modalité, milieu et sexe se règlent
-ensuite comme avec la liste « Coloration ». Sur les communes du HCP : 844 indicateurs, 9 thèmes, 59 familles.
+Catalogue › Vecteurs › **Indicateurs** (après « Géologie ») : recherche sans accents ni casse (chaque mot au début d'un
+mot ; Échap vide la recherche), thèmes puis familles, réunion des indicateurs de toutes les couches vectorielles du
+catalogue. Choisir une famille applique sa déclinaison (modalité, milieu, sexe réglables en dessous) à **toutes** les
+couches chargées qui portent cet indicateur ; une seule à la fois. Sur chaque carte de couche concernée (onglet Couches) :
+« Masquer / Afficher l'indicateur » (Masquer rend la coloration normale, l'indicateur reste mémorisé) ; une couche
+chargée ensuite reçoit l'indicateur actif. La liste « Coloration » de chaque couche reste disponible.
 
 ## Mini-carte de situation et impression (lot G, D-GD-27)
 

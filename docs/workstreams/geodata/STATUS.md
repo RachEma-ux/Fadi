@@ -72,6 +72,10 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   (empreinte attendue = empreinte réelle pour chaque fiche, test), retraits déclarés (test), `GET /version/donnees`
   (test). En local sur l'API construite : 1er démarrage 14 s (2 versions préparées et publiées, 2 retraits, 53 fiches
   déjà en base), 2e démarrage < 1 s (rien refait). CI : installation de Chromium bornée (3 × 10 min).
+- Rubrique « Indicateurs » (D-GD-31, étape 1) : `geodata-model/src/indicateur-actif.ts` (clé d'indicateur commune aux
+  couches, `indicateurPourCle`, `unionIndicateurs` ; 3 tests), `panneaux/consultation.tsx` (rubrique du catalogue après
+  « Géologie », arbre et dimensions ; option Afficher / Masquer sur les cartes de couche), `PageGeoData.tsx` (indicateur
+  actif, application à toutes les couches qui le portent, couches chargées ensuite). Recette `geodata.mjs` adaptée.
 - Une seule source par niveau (D-GD-30) : 4 fiches HCP sous `limites-administratives` (titres « Limites administratives —
   … (RGPH 2024) »), fiches geoBoundaries déplacées dans `sources/references/` (rôle `reference` à l'archive), retraits
   déclarés de `geoboundaries-mar-adm1` / `adm2` au profit des couches HCP (test), métadonnées de source suivies par la

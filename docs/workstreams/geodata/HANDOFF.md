@@ -41,6 +41,8 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 - Navigation territoriale permanente (lot H, D-GD-28) : barre pays › niveaux toujours affichée, découpage en base
   (`geodata_pays`, `geodata_territoires`) chargé depuis les fiches qui déclarent `territoire` ; Maroc (HCP, 4 niveaux)
   d'abord. En préproduction, le découpage arrive avec l'import automatique au démarrage, sans réglage (D-GD-29).
+- Rubrique « Indicateurs » du catalogue (D-GD-31, étape 1) : un indicateur actif pour toutes les couches chargées qui le
+  portent, Afficher / Masquer par couche ; hors périmètre : entité par la barre, multi-indicateurs.
 - Une seule source par niveau administratif (D-GD-30) : couches HCP sous « Limites administratives », geoBoundaries
   retiré du catalogue (fiches dans `sources/references/`), métadonnées de source suivies par la fiche.
 - Règle permanente (D-GD-29, `AGENTS.md`) : interface et base de données toujours distinctes ; aucune donnée dans
