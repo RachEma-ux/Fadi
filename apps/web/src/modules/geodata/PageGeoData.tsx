@@ -574,11 +574,14 @@ export function PageGeoData() {
     if (!complet) throw new Error("Toutes les tuiles ne sont pas chargées : export interrompu pour ne pas produire une image incomplète. Réessayez.");
     const legendes = [...compositionAffichee.couches].reverse().filter((k) => k.visible).map((k) => {
       const c = couchesConnues.get(k.coucheId);
-      if (k.style.mode === "simple") return { titre: c?.titre ?? k.coucheId, entrees: null, couleur: k.style.couleur };
-      if (k.style.mode === "categories") return { titre: c?.titre ?? k.coucheId, entrees: entreesCategories(categories.get(k.coucheId) ?? []), sansEffectif: true };
+      // Valeurs de l'indicateur actif affichées sur la couche (D-GD-32) : la légende exportée nomme ce que sont ces nombres.
+      const i = valeursAffichees.has(k.coucheId) ? indicateursParCouche.get(k.coucheId) : undefined;
+      const titre = `${c?.titre ?? k.coucheId}${i ? ` — valeurs affichées : ${i.titre} (${i.unite})${i.periode ? `, ${i.periode}` : ""}` : ""}`;
+      if (k.style.mode === "simple") return { titre, entrees: null, couleur: k.style.couleur };
+      if (k.style.mode === "categories") return { titre, entrees: entreesCategories(categories.get(k.coucheId) ?? []), sansEffectif: true };
       if (k.style.mode === "raster") return { titre: `${c?.titre ?? k.coucheId}${c?.raster ? ` — ${c.raster.grandeur}${c.raster.unite ? ` (${c.raster.unite})` : ""}` : ""}`, entrees: c?.raster ? entreesRaster(c.raster) : null, sansEffectif: true };
       // Ancien style thématique (avant D-GD-32) : plus rendu, la couche est en couleur unie par défaut.
-      return { titre: c?.titre ?? k.coucheId, entrees: null, couleur: "#2b8cbe" };
+      return { titre, entrees: null, couleur: "#2b8cbe" };
     });
     const png = await composerPng({ carte: m.canevas(), titre: carte!.nom, date: new Date(), metresParPixel: m.metresParPixel(), legendes, attributions: r.attributions, revision: r.carteRevision, miniCarte: miniCarte ? m.canevasMiniCarte() : null });
     return { r, png };
