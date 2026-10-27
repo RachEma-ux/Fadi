@@ -88,7 +88,7 @@ couche. API : `GET/POST /geodata/api/categories`, `PATCH/DELETE /categories/:id`
 
 ## Contours et limites administratives (D-GD-16)
 
-Le contour d'une entité prend sa couleur (couleur unie, une couleur par entité ou classe thématique) et reste opaque même
+Le contour d'une entité prend sa couleur (couleur unie ou une couleur par entité) et reste opaque même
 quand l'opacité du remplissage est à 0 % : régler l'opacité à 0 % montre les seules limites. Les contours passent
 au-dessus de tous les remplissages. Entre couches de limites administratives, la région est au-dessus (contour le plus
 épais), puis la province, puis la commune, quel que soit l'ordre des couches ; le rang vient de la source (ADM1, ADM2,
@@ -113,25 +113,33 @@ sont pas encore en base (même empreinte = rien n'est refait), puis applique les
 ## Libellés sur la carte (lot C, D-GD-24)
 
 Case « Libellés » de chaque couche (panneau Couches) ou bouton « Libellés » de la barre d'outils (Alt+L, toutes les
-couches vectorielles visibles) : le nom de chaque entité, et sa valeur abrégée pour une couche thématique (une valeur
-absente n'affiche que le nom). Points d'étiquette : `GET /geodata/api/etiquettes/:couche/:z/:x/:y`. Glyphes : Noto Sans
+couches vectorielles visibles) : le nom de chaque entité, et rien d'autre (la valeur de l'indicateur actif est un texte
+distinct, D-GD-32 ci-dessous). Points d'étiquette : `GET /geodata/api/etiquettes/:couche/:z/:x/:y`. Glyphes : Noto Sans
 Regular (OFL), plages latines, servis par l'application (`/geodata/glyphes/…`, licence `/licences/noto-sans/`).
 
-## Palettes et classes (lot D, D-GD-25)
+## Coloration des couches (D-GD-32)
 
-Légende d'une couche thématique : méthode (quantiles, intervalles égaux, seuils naturels de Jenks, seuils manuels),
-nombre de classes (2 à 10), palette prédéfinie (Bleu-violet par défaut, palettes ColorBrewer séquentielles et
-divergentes) et inversion ; la pastille de chaque classe permet d'en choisir la couleur. Tout est enregistré avec la
-carte ; les valeurs absentes restent hors classes, hachurées.
+La liste « Coloration » d'une couche ne propose que deux modes de style : **Couleur unie** et **Une couleur par entité**.
+Aucun indicateur ne s'y choisit et aucun code ne colore une couche d'après un indicateur : la classification par classes
+du lot D (D-GD-25) est retirée de l'interface ; une carte enregistrée avant D-GD-32 avec une coloration thématique
+revient à la couleur unie à l'ouverture (`sansColorationThematique`). Les fonctions pures de classification et de
+palettes restent dans `geodata-model` (sans usage dans l'interface).
 
-## Rubrique « Indicateurs » du catalogue (lot F, D-GD-26 ; D-GD-31)
+## Rubrique « Indicateurs » du catalogue (lot F, D-GD-26 ; D-GD-31, D-GD-32)
 
-Catalogue › Vecteurs › **Indicateurs** (après « Géologie ») : recherche sans accents ni casse (chaque mot au début d'un
-mot ; Échap vide la recherche), thèmes puis familles, réunion des indicateurs de toutes les couches vectorielles du
-catalogue. Choisir une famille applique sa déclinaison (modalité, milieu, sexe réglables en dessous) à **toutes** les
-couches chargées qui portent cet indicateur ; une seule à la fois. Sur chaque carte de couche concernée (onglet Couches) :
-« Masquer / Afficher l'indicateur » (Masquer rend la coloration normale, l'indicateur reste mémorisé) ; une couche
-chargée ensuite reçoit l'indicateur actif. La liste « Coloration » de chaque couche reste disponible.
+Catalogue › Vecteurs › **Indicateurs** (après « Géologie », même style que les autres rubriques) : recherche sans accents
+ni casse (chaque mot au début d'un mot ; Échap vide la recherche), neuf thèmes avec leurs compteurs puis les familles,
+réunion des indicateurs de toutes les couches vectorielles du catalogue. Le choix d'un indicateur se fait **uniquement**
+ici. Choisir une famille rend sa déclinaison (modalité, milieu, sexe réglables en dessous) active sur **toutes** les
+couches chargées qui portent cet indicateur (reconnu par sa clé thème / famille / modalité / milieu / sexe, jamais par son
+identifiant) ; un seul indicateur actif à la fois ; une couche chargée ensuite le reçoit aussi. L'indicateur ne recolore
+**jamais** la couche : sa **valeur** s'affiche, abrégée, sur chaque entité, dans un texte propre (couche de rendu
+`-valeurs`, sous le point d'étiquette), tant que la case « Afficher l'indicateur — [nom] » de la carte de couche est
+cochée (cochée par défaut, y compris sur une couche chargée après ; décochée : valeurs masquées, indicateur mémorisé ;
+une couche retirée puis rechargée repart cochée). « Libellés (nom) » et « Afficher l'indicateur » sont deux textes
+indépendants (nom au-dessus du point, valeur au-dessous), sans état ni logique partagés : aucun texte, nom seul, valeur
+seule ou les deux. L'indicateur actif n'est pas enregistré avec la carte. Hors périmètre : choix de l'entité par la barre
+territoriale, multi-indicateurs.
 
 ## Mini-carte de situation et impression (lot G, D-GD-27)
 

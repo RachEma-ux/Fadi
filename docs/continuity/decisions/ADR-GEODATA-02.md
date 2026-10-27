@@ -293,6 +293,22 @@ l’évaluer, de créer un plan propre, puis « Exécute non stop de A à Z sans
         rend la coloration normale, l'indicateur reste mémorisé). Une couche chargée après le choix reçoit l'indicateur
         actif, option sur Afficher. L'indicateur actif n'est pas enregistré avec la carte (les colorations le sont).
      4. Hors périmètre : choix de l'entité par la barre territoriale, multi-indicateurs.
+   - D-GD-32 (27 octobre 2026, étape 1 consolidée) — **l'indicateur est une valeur affichée, jamais une coloration**
+     (spécification consolidée du maître d'ouvrage, corrections de D-GD-31) :
+     1. La liste « Coloration » d'une couche ne garde que les modes de style « Couleur unie » et « Une couleur par
+        entité » ; tous les groupes et options d'indicateurs en sont retirés ; aucun code ne recolore une couche d'après
+        un indicateur (classification du lot D retirée de l'interface ; une carte enregistrée avec une coloration
+        thématique revient à la couleur unie à l'ouverture). Le choix d'un indicateur se fait uniquement dans la rubrique
+        « Indicateurs » du catalogue.
+     2. Case « Afficher l'indicateur — [nom] », seul contrôle lié à l'indicateur sur la carte de couche : cochée, la
+        valeur de l'indicateur actif s'affiche sur chaque entité (texte abrégé, valeur absente sans texte) ; décochée,
+        les valeurs sont masquées et l'indicateur reste mémorisé ; cochée par défaut dès qu'un indicateur est choisi, sur
+        toutes les couches chargées, y compris celles chargées après ; aucun effet sur la coloration.
+     3. « Libellés (nom) » et « Afficher l'indicateur » : deux textes indépendants (nom de l'entité, valeur de
+        l'indicateur), jamais fusionnés, deux couches de rendu, aucun état ni logique partagés ; les quatre combinaisons
+        fonctionnent.
+     4. Règles inchangées : un seul indicateur actif à la fois (à revoir plus tard) ; hors périmètre : choix de
+        l'entité par la barre territoriale, multi-indicateurs.
 
 ## Conséquences
 

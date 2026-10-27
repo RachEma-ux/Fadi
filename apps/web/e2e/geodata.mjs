@@ -162,14 +162,12 @@ check("catalogue : compte des couches actives de la catégorie (1/n)", /^1\/\d+$
 await onglet(page, "couches");
 const coucheActive = page.locator("[data-gd-couche-active]").first();
 await coucheActive.waitFor();
-const choixIndicateur = coucheActive.locator("[data-gd-indicateur]");
-const optionEffectif = await choixIndicateur.locator("option").filter({ hasText: "Effectif synthétique" }).getAttribute("value");
-await choixIndicateur.selectOption(optionEffectif);
+const choixColoration = coucheActive.locator("[data-gd-coloration]");
+const optionsColoration = await choixColoration.locator("option").evaluateAll((os) => os.map((o) => o.value));
+check("coloration (D-GD-32) : la liste ne propose que « Couleur unie » et « Une couleur par entité », aucun indicateur, aucun groupe", optionsColoration.join(",") === ",__entites__" && (await coucheActive.locator("optgroup").count()) === 0, optionsColoration.join(","));
+check("coloration : aucun endroit de l'onglet Couches ne permet de choisir un indicateur", (await page.locator("[data-gd-couche-active] [data-gd-indicateur], [data-gd-couche-active] [data-gd-arbre]").count()) === 0);
 await onglet(page, "legende");
-const absente = page.locator("[data-gd-legende] [data-classe='absente']");
-await absente.waitFor();
-check("GEO 06 · légende : entrée « Valeur absente (1) » distincte des classes", ((await absente.textContent()) ?? "").includes("Valeur absente (1)"));
-check("GEO 06 · légende : la valeur absente est hachurée (pas seulement une couleur)", (await absente.locator(".gd-hachure").count()) === 1);
+check("légende : couleur unie de la couche (aucune classe d'indicateur)", (await page.locator("[data-gd-legende] .gd-pastille").count()) === 1 && (await page.locator("[data-gd-legende] [data-classe]").count()) === 0);
 
 // --- Libellés (lot C, D-GD-24) : bouton de la barre d'outils et Alt+L ; glyphes hébergés par Fadi ; points d'étiquette ---
 const boutonLibelles = page.locator("[data-gd-barre-outil='etiquettes']");
@@ -189,7 +187,7 @@ check("libellés : aucune erreur de carte", (await page.locator("[data-gd-erreur
 await page.screenshot({ path: join(OUT, "01b-libelles.png") });
 await onglet(page, "couches");
 const caseLibelles = page.locator("[data-gd-couche-active]").first().locator("[data-gd-etiquettes]");
-check("libellés : la couche thématique annonce « nom et valeur abrégée », case cochée", (await caseLibelles.isChecked()) && ((await caseLibelles.locator("xpath=..").textContent()) ?? "").includes("Libellés (nom et valeur abrégée)"));
+check("libellés : la case « Libellés (nom) » de la couche est cochée (le nom seul, jamais « nom + valeur »)", (await caseLibelles.isChecked()) && ((await caseLibelles.locator("xpath=..").textContent()) ?? "").trim() === "Libellés (nom)");
 await caseLibelles.uncheck();
 check("libellés : décochés sur la couche → bouton non pressé", (await boutonLibelles.getAttribute("aria-pressed")) === "false");
 await boutonLibelles.click();
@@ -219,33 +217,11 @@ check("mini-carte : le bouton la masque", (await page.locator("[data-gd-mini-car
 await page.locator("[data-gd-barre-outil='imprimer']").click();
 check("impression : carte non enregistrée → invitation à l'enregistrer (aucune fenêtre)", ((await annonceGd.textContent()) ?? "").includes("Enregistrez la carte pour l'imprimer"));
 
-// --- Classification (lot D, D-GD-25) : méthode, nombre de classes, palette, inversion, couleur d'une classe ---
-const classification = page.locator("[data-gd-legende] [data-gd-classification]").first();
-await classification.waitFor();
-const methodes = await classification.locator("[data-gd-methode] option").evaluateAll((os) => os.map((o) => o.value));
-check("classification : quatre méthodes, dont « Seuils naturels (Jenks) »", methodes.join(",") === "quantiles,intervalles-egaux,seuils-naturels,manuel", methodes.join(","));
-await classification.locator("[data-gd-methode]").selectOption("seuils-naturels");
-await classification.locator("[data-gd-classes]").selectOption("3");
-const classesNumeriques = () => page.locator("[data-gd-legende] [data-classe]:not([data-classe='absente'])");
-check("classification : seuils naturels en 3 classes au plus, valeur absente toujours à part et hachurée", (await classesNumeriques().count()) <= 3 && (await classesNumeriques().count()) >= 2 && (await page.locator("[data-gd-legende] [data-classe='absente'] .gd-hachure").count()) === 1);
-await classification.locator("[data-gd-palette]").selectOption("verts");
-const couleursClasses = () => page.locator("[data-gd-legende] [data-gd-couleur-classe]").evaluateAll((is) => is.map((i) => i.value));
-let cs = await couleursClasses();
-check("palette « Verts » : de la plus claire à la plus foncée", cs[0] === "#f7fcf5" && cs[cs.length - 1] === "#00441b", cs.join(" "));
-await classification.locator("[data-gd-inverser]").check();
-cs = await couleursClasses();
-check("palette inversée : la plus foncée pour les petites valeurs", cs[0] === "#00441b" && cs[cs.length - 1] === "#f7fcf5", cs.join(" "));
-await page.locator("[data-gd-legende] [data-gd-couleur-classe='0']").fill("#ff0000");
-cs = await couleursClasses();
-check("couleur d'une classe choisie dans la légende, les autres inchangées", cs[0] === "#ff0000" && cs[cs.length - 1] === "#f7fcf5", cs.join(" "));
-await page.waitForTimeout(1500);
-await page.screenshot({ path: join(OUT, "01c-classification.png") });
-
-// --- Rubrique « Indicateurs » du catalogue (lot F, D-GD-26 ; D-GD-31) : recherche, choix, application à toutes les couches chargées, Afficher / Masquer ---
+// --- Rubrique « Indicateurs » du catalogue (D-GD-31, D-GD-32) : choix dans le catalogue seulement ; valeur affichée en texte propre, jamais de coloration ---
 await onglet(page, "couches");
-await page.locator("[data-gd-couche-active]").first().locator("[data-gd-indicateur]").selectOption("");
+check("catalogue : « Parcourir les indicateurs » n'est plus sur les cartes de couche", (await page.locator("[data-gd-couche-active] [data-gd-arbre]").count()) === 0);
 await onglet(page, "catalogue");
-check("catalogue : « Parcourir les indicateurs » n'est plus sur les cartes de couche ; la rubrique « Indicateurs » est parmi les vecteurs", (await page.locator("[data-gd-couche-active] [data-gd-arbre]").count()) === 0 && (await page.locator("[data-gd-entete-categorie='indicateurs']").count()) === 1);
+check("catalogue : la rubrique « Indicateurs » est parmi les vecteurs", (await page.locator("[data-gd-entete-categorie='indicateurs']").count()) === 1);
 const entetesCat = await page.locator("[data-gd-entete-categorie]").evaluateAll((bs) => bs.map((b) => b.getAttribute("data-gd-entete-categorie")));
 check("catalogue : la rubrique « Indicateurs » suit « Géologie » (ou ferme la liste quand « Géologie » est vide)", entetesCat.includes("geologie") ? entetesCat.indexOf("indicateurs") === entetesCat.indexOf("geologie") + 1 : entetesCat[entetesCat.length - 1] === "indicateurs", entetesCat.join(","));
 await page.locator("[data-gd-entete-categorie='indicateurs']").click();
@@ -265,22 +241,33 @@ await page.waitForFunction(() => document.querySelector("[data-gd-arbre='catalog
 check("rubrique Indicateurs : la famille choisie est marquée active", (await familleTrouvee.getAttribute("aria-pressed")) === "true");
 await onglet(page, "couches");
 const carteIndicateur = page.locator("[data-gd-couche-active]").first();
-await page.waitForFunction((attendu) => document.querySelector("[data-gd-couche-active] [data-gd-indicateur]")?.value === attendu, optionEffectif, { timeout: 10_000 }).catch(() => undefined);
-check("indicateur actif : appliqué à la couche chargée qui le porte (liste « Coloration » à jour), option « Masquer l'indicateur » proposée", (await carteIndicateur.locator("[data-gd-indicateur]").inputValue()) === optionEffectif && (await carteIndicateur.locator("[data-gd-indicateur-affiche] input").isChecked()));
-await carteIndicateur.locator("[data-gd-indicateur-affiche] input").click();
-await page.waitForFunction(() => document.querySelector("[data-gd-couche-active] [data-gd-indicateur]")?.value === "", null, { timeout: 10_000 }).catch(() => undefined);
-check("indicateur actif : « Masquer » rend la coloration normale, l'indicateur reste mémorisé", (await carteIndicateur.locator("[data-gd-indicateur]").inputValue()) === "" && ((await carteIndicateur.locator("[data-gd-indicateur-affiche]").textContent()) ?? "").includes("Afficher l'indicateur"));
-await carteIndicateur.locator("[data-gd-indicateur-affiche] input").click();
-await page.waitForFunction((attendu) => document.querySelector("[data-gd-couche-active] [data-gd-indicateur]")?.value === attendu, optionEffectif, { timeout: 10_000 }).catch(() => undefined);
-check("indicateur actif : « Afficher » le remet sur la couche", (await carteIndicateur.locator("[data-gd-indicateur]").inputValue()) === optionEffectif);
-// Couche retirée puis rechargée : elle repart comme une couche nouvelle et reçoit l'indicateur actif (option « Afficher »).
+const caseIndicateur = carteIndicateur.locator("[data-gd-indicateur-affiche] input");
+const caseNoms = carteIndicateur.locator("[data-gd-etiquettes]");
+const valeursAffichees = async () => ((await page.locator("[data-geodata-page]").getAttribute("data-gd-valeurs-affichees")) ?? "").split(" ").filter(Boolean);
+await page.waitForFunction(() => ((document.querySelector("[data-geodata-page]")?.getAttribute("data-gd-valeurs-affichees")) ?? "") !== "", null, { timeout: 10_000 }).catch(() => undefined);
+check("indicateur actif : case « Afficher l'indicateur — Effectif synthétique » cochée par défaut, valeurs affichées sur la couche", (await caseIndicateur.isChecked()) && ((await carteIndicateur.locator("[data-gd-indicateur-affiche]").textContent()) ?? "").includes("Afficher l'indicateur — Effectif synthétique") && (await valeursAffichees()).length === 1);
+check("indicateur actif : la coloration de la couche n'a pas changé (couleur unie), aucune classe en légende", (await carteIndicateur.locator("[data-gd-coloration]").inputValue()) === "");
+// Les quatre combinaisons nom / valeur : deux cases sans aucun lien entre elles.
+check("nom / valeur : état de départ — noms masqués, valeurs affichées", !(await caseNoms.isChecked()) && (await caseIndicateur.isChecked()));
+await caseNoms.check();
+check("nom / valeur : les deux textes (cocher « Libellés » ne touche pas l'indicateur)", (await caseNoms.isChecked()) && (await caseIndicateur.isChecked()) && (await valeursAffichees()).length === 1);
+await caseIndicateur.uncheck();
+check("nom / valeur : nom seul (décocher l'indicateur masque ses valeurs, les libellés restent, l'indicateur reste mémorisé)", (await caseNoms.isChecked()) && !(await caseIndicateur.isChecked()) && (await valeursAffichees()).length === 0 && ((await carteIndicateur.locator("[data-gd-indicateur-affiche]").textContent()) ?? "").includes("Effectif synthétique"));
+await caseNoms.uncheck();
+check("nom / valeur : aucun texte (décocher « Libellés » ne recoche pas l'indicateur)", !(await caseNoms.isChecked()) && !(await caseIndicateur.isChecked()) && (await valeursAffichees()).length === 0);
+await caseIndicateur.check();
+check("nom / valeur : valeur seule (recocher l'indicateur n'affiche pas les noms)", !(await caseNoms.isChecked()) && (await caseIndicateur.isChecked()) && (await valeursAffichees()).length === 1);
+await page.waitForTimeout(800);
+check("indicateur actif : aucune erreur de carte avec les valeurs affichées", (await page.locator("[data-gd-erreur-carte]").count()) === 0);
+await page.screenshot({ path: join(OUT, "01c-valeurs-indicateur.png") });
+// Couche retirée puis rechargée : elle repart comme une couche nouvelle et reçoit l'indicateur actif (case cochée).
 await carteIndicateur.getByRole("button", { name: "Retirer", exact: true }).click();
 await onglet(page, "catalogue");
 if (!(await carteCatalogue.isVisible())) await page.locator("[data-gd-entete-categorie='test']").click();
 await carteCatalogue.locator("[data-gd-ajouter]").click();
 await onglet(page, "couches");
-await page.waitForFunction((attendu) => document.querySelector("[data-gd-couche-active] [data-gd-indicateur]")?.value === attendu, optionEffectif, { timeout: 10_000 }).catch(() => undefined);
-check("indicateur actif : une couche retirée puis rechargée le reçoit à nouveau, option « Afficher »", (await carteIndicateur.locator("[data-gd-indicateur]").inputValue()) === optionEffectif && (await carteIndicateur.locator("[data-gd-indicateur-affiche] input").isChecked()));
+await page.waitForFunction(() => ((document.querySelector("[data-geodata-page]")?.getAttribute("data-gd-valeurs-affichees")) ?? "") !== "", null, { timeout: 10_000 }).catch(() => undefined);
+check("indicateur actif : une couche retirée puis rechargée le reçoit à nouveau, case cochée", (await caseIndicateur.isChecked()) && (await valeursAffichees()).length === 1);
 await onglet(page, "legende");
 
 // Recherche : coordonnées étiquetées, paire nue refusée, unité par code à zéro initial.
@@ -298,16 +285,16 @@ const valeurAbsente = fiche.locator("[data-gd-valeur][data-absente]");
 check("GEO 06 · fiche : « Valeur absente — Valeur couverte par le secret statistique », jamais 0", ((await valeurAbsente.textContent()) ?? "").includes("Valeur absente — Valeur couverte par le secret statistique"));
 await page.screenshot({ path: join(OUT, "01-carte-thematique.png") });
 
-// Une couleur par entité : six unités → six couleurs distinctes en légende, puis retour à l'indicateur.
+// Une couleur par entité : six unités → six couleurs distinctes en légende, puis retour à la couleur unie.
 await onglet(page, "couches");
-await page.locator("[data-gd-couche-active]").first().locator("[data-gd-indicateur]").selectOption("__entites__");
+await page.locator("[data-gd-couche-active]").first().locator("[data-gd-coloration]").selectOption("__entites__");
 await onglet(page, "legende");
 const entites = page.locator("[data-gd-legende] [data-gd-entite]");
 await entites.first().waitFor();
 const pastilles = await entites.locator(".gd-pastille").evaluateAll((els) => els.map((e) => getComputedStyle(e).backgroundColor));
 check("une couleur par entité : six unités, six couleurs distinctes en légende", (await entites.count()) === 6 && new Set(pastilles).size === 6, `${await entites.count()} / ${new Set(pastilles).size}`);
 await onglet(page, "couches");
-await page.locator("[data-gd-couche-active]").first().locator("[data-gd-indicateur]").selectOption(optionEffectif);
+await page.locator("[data-gd-couche-active]").first().locator("[data-gd-coloration]").selectOption("");
 
 // Table : zéro affiché 0, absence affichée « Valeur absente ».
 await onglet(page, "couches");
@@ -332,7 +319,7 @@ await page.goto(`${BASE}/geodata`);
 await page.locator("[data-gd-etat-enregistrement='enregistree']").waitFor({ timeout: 20_000 });
 const compositionApres = await page.evaluate(async (id) => (await (await fetch(`/geodata/api/cartes/${id}`)).json()).composition, compositionAvant.id);
 check("GEO 05 · après reconnexion : la dernière carte se rouvre, composition, versions et seuils identiques", JSON.stringify(compositionApres) === JSON.stringify(compositionAvant.composition));
-check("GEO 05 · la couche reste thématique avec ses seuils enregistrés", compositionApres.couches[0]?.style?.mode === "thematique" && Array.isArray(compositionApres.couches[0].style.seuils));
+check("GEO 05 · la coloration enregistrée est un mode de style (couleur unie), jamais une classe d'indicateur", compositionApres.couches[0]?.style?.mode === "simple" && !JSON.stringify(compositionApres).includes("thematique"));
 
 // --- GEO 13 : deux onglets ---
 const onglet2 = await contexte.newPage();

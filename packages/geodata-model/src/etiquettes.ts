@@ -1,7 +1,7 @@
 /**
- * Libellés de la carte (lot C, D-GD-24) : un libellé par entité (son nom) et, pour une couche thématique, la valeur de
- * l'indicateur **abrégée** (« 1,2 M », « 35 k », « 12,5 % »). Une valeur absente n'a pas de valeur affichée — jamais
- * « 0 » —, le nom reste ; la valeur complète est dans la fiche et la table. Les polices de la carte sont hébergées par
+ * Textes de la carte (lot C, D-GD-24 ; D-GD-32) : un libellé par entité (son nom) et, quand un indicateur est actif et
+ * affiché sur la couche, sa valeur **abrégée** (« 1,2 M », « 35 k », « 12,5 % ») dans un texte distinct. Une valeur
+ * absente n'a pas de texte — jamais « 0 » —, le nom reste ; la valeur complète est dans la fiche et la table. Les polices de la carte sont hébergées par
  * Fadi et ne couvrent que l'écriture latine (`CARACTERES_ETIQUETTE`) : un caractère hors de ces plages ne peut pas être
  * tracé, il est retiré du libellé de la carte (le nom complet reste dans la fiche).
  */

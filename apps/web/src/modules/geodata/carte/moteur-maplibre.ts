@@ -8,7 +8,7 @@ import { AttributionControl, Map as CarteMapLibre, ScaleControl, setWorkerUrl, t
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Feature, FeatureCollection } from "geojson";
 import urlWorker from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
-import { COULEUR_ABSENTE, epaisseurContour, ordreAffichage, POLICE_ETIQUETTES, type Composition } from "@parcours/geodata-model";
+import { epaisseurContour, ordreAffichage, POLICE_ETIQUETTES, type Composition } from "@parcours/geodata-model";
 import { adresseEtiquettes, adresseGlyphes, adresseRaster, adresseTuiles, type Fond } from "../client";
 import type { DonneesAffichage, EvenementsMoteur, MoteurCarte, OutilCarte } from "./moteur";
 
@@ -16,17 +16,6 @@ setWorkerUrl(urlWorker);
 
 const PREFIXE = "gd-couche-";
 const FOND_NEUTRE = "#eef2f0";
-
-function hachures(): ImageData {
-  const n = 8;
-  const data = new Uint8ClampedArray(n * n * 4);
-  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
-    const i = (y * n + x) * 4;
-    const trait = (x + y) % n < 2;
-    data[i] = 70; data[i + 1] = 70; data[i + 2] = 70; data[i + 3] = trait ? 200 : 0;
-  }
-  return new ImageData(data, n, n);
-}
 
 export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev: EvenementsMoteur): MoteurCarte {
   const carte = new CarteMapLibre({
@@ -54,7 +43,6 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
   let fondCourant = "neutre";
 
   carte.on("load", () => {
-    carte.addImage("gd-hachures", hachures(), { pixelRatio: 1 });
     carte.addSource("gd-zones", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
     carte.addSource("gd-trace", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
     carte.addSource("gd-territoire", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
@@ -130,7 +118,7 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
     const voulues = composition.couches.map((k) => `${PREFIXE}${k.coucheId}`);
     for (const id of couchesAffichees) {
       if (voulues.includes(id)) continue;
-      for (const suffixe of ["-remplissage", "-absentes", "-contour", "-selection", "-lignes", "-points", "-raster", "-etiquettes"]) if (carte.getLayer(id + suffixe)) carte.removeLayer(id + suffixe);
+      for (const suffixe of ["-remplissage", "-contour", "-selection", "-lignes", "-points", "-raster", "-etiquettes", "-valeurs"]) if (carte.getLayer(id + suffixe)) carte.removeLayer(id + suffixe);
       if (carte.getSource(id)) carte.removeSource(id);
       if (carte.getSource(`${id}-etq`)) carte.removeSource(`${id}-etq`);
     }
@@ -152,7 +140,6 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       if (!carte.getSource(id)) {
         carte.addSource(id, { type: "vector", tiles: [adresseTuiles(k.coucheId)], minzoom: 0, maxzoom: 14, promoteId: "code" });
         carte.addLayer({ id: `${id}-remplissage`, type: "fill", source: id, "source-layer": "objets", filter: ["==", ["geometry-type"], "Polygon"], paint: { "fill-color": "#2b8cbe", "fill-opacity": 0.8 } });
-        carte.addLayer({ id: `${id}-absentes`, type: "fill", source: id, "source-layer": "objets", filter: ["==", ["geometry-type"], "Polygon"], paint: { "fill-pattern": "gd-hachures", "fill-opacity": 0 } });
         carte.addLayer({ id: `${id}-contour`, type: "line", source: id, "source-layer": "objets", filter: ["==", ["geometry-type"], "Polygon"], paint: { "line-color": "#29434a", "line-width": 0.8 } });
         carte.addLayer({ id: `${id}-lignes`, type: "line", source: id, "source-layer": "objets", filter: ["==", ["geometry-type"], "LineString"], paint: { "line-color": "#2b8cbe", "line-width": 2 } });
         carte.addLayer({ id: `${id}-points`, type: "circle", source: id, "source-layer": "objets", filter: ["==", ["geometry-type"], "Point"], paint: { "circle-color": "#2b8cbe", "circle-radius": 5, "circle-stroke-color": "#ffffff", "circle-stroke-width": 1 } });
@@ -160,9 +147,9 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       }
       // Ordre : la première couche est dessous ; les remplissages ici, les contours et objets linéaires ensuite, au-dessus
       // de tous les remplissages (une bordure n'est jamais masquée par le remplissage d'une autre couche).
-      for (const suffixe of ["-remplissage", "-absentes"]) carte.moveLayer(id + suffixe, "gd-zones-remplissage");
+      carte.moveLayer(`${id}-remplissage`, "gd-zones-remplissage");
       const visible = k.visible ? "visible" : "none";
-      for (const suffixe of ["-remplissage", "-absentes", "-contour", "-lignes", "-points", "-selection"]) carte.setLayoutProperty(id + suffixe, "visibility", visible);
+      for (const suffixe of ["-remplissage", "-contour", "-lignes", "-points", "-selection"]) carte.setLayoutProperty(id + suffixe, "visibility", visible);
       const codes = d.filtres.get(k.coucheId);
       const filtreCode: ExpressionSpecification | null = codes ? ["in", ["get", "code"], ["literal", [...codes]]] : null;
       const avec = (geom: string): ExpressionSpecification => (filtreCode ? ["all", ["==", ["geometry-type"], geom], filtreCode] : ["==", ["geometry-type"], geom]);
@@ -170,30 +157,16 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       carte.setFilter(`${id}-contour`, avec("Polygon"));
       carte.setFilter(`${id}-lignes`, avec("LineString"));
       carte.setFilter(`${id}-points`, avec("Point"));
+      // Coloration : couleur unie ou une couleur par entité (D-GD-32 : aucune coloration dérivée d'un indicateur).
       let couleur: string | ExpressionSpecification = "#2b8cbe";
-      const absentes: string[] = [];
       if (k.style.mode === "simple") couleur = k.style.couleur;
       else if (k.style.mode === "categories") {
         // Une couleur par entité ; tant que les couleurs ne sont pas reçues, la couleur par défaut.
         const branches = [...(d.categories.get(k.coucheId) ?? new Map<string, string>())].flat();
         couleur = branches.length ? (["match", ["get", "code"], ...branches, "#2b8cbe"] as unknown as ExpressionSpecification) : "#2b8cbe";
-      } else if (k.style.mode === "thematique") {
-        const valeurs = d.valeurs.get(k.style.indicateurId);
-        const branches: (string | number)[] = [];
-        const { seuils, couleurs } = k.style;
-        for (const [code, v] of valeurs ?? []) {
-          if (v.valeur === null) { absentes.push(code); continue; }
-          let c = 0;
-          while (c < seuils.length && v.valeur >= seuils[c]!) c++;
-          branches.push(code, couleurs[c] ?? COULEUR_ABSENTE);
-        }
-        couleur = branches.length ? (["match", ["get", "code"], ...branches, COULEUR_ABSENTE] as unknown as ExpressionSpecification) : COULEUR_ABSENTE;
-        // Une unité sans ligne de valeur (non appariée) est aussi « absente » : grise et hachurée.
-        carte.setFilter(`${id}-absentes`, ["all", ["==", ["geometry-type"], "Polygon"], ...(filtreCode ? [filtreCode] : []), ["any", ["in", ["get", "code"], ["literal", absentes]], ["!", ["in", ["get", "code"], ["literal", [...(valeurs?.keys() ?? [])]]]]]]);
       }
       carte.setPaintProperty(`${id}-remplissage`, "fill-color", couleur);
       carte.setPaintProperty(`${id}-remplissage`, "fill-opacity", k.opacite);
-      carte.setPaintProperty(`${id}-absentes`, "fill-opacity", k.style.mode === "thematique" ? Math.min(1, k.opacite + 0.1) : 0);
       // Contour de la couleur de l'entité, opaque même à 0 % de remplissage ; épaisseur selon le rang administratif.
       carte.setPaintProperty(`${id}-contour`, "line-color", couleur);
       carte.setPaintProperty(`${id}-contour`, "line-width", epaisseurContour(d.rangs.get(k.coucheId) ?? null));
@@ -203,7 +176,8 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       carte.setPaintProperty(`${id}-lignes`, "line-opacity", k.opacite);
       carte.setPaintProperty(`${id}-points`, "circle-opacity", k.opacite);
       carte.setFilter(`${id}-selection`, ["==", ["get", "code"], d.selection?.coucheId === k.coucheId ? d.selection.code : "__aucun__"]);
-      etiqueter(id, k, filtreCode, d);
+      etiqueter(id, k, filtreCode);
+      afficherValeurs(id, k, filtreCode, d);
     }
     for (const k of ordre) {
       const id = `${PREFIXE}${k.coucheId}`;
@@ -211,37 +185,61 @@ export function creerMoteur(conteneur: HTMLElement, composition: Composition, ev
       for (const suffixe of ["-contour", "-lignes", "-points", "-selection"]) carte.moveLayer(id + suffixe, "gd-zones-remplissage");
     }
     for (const t of ["gd-territoire-lisere", "gd-territoire-trait"]) if (carte.getLayer(t)) carte.moveLayer(t, "gd-trace-ligne");
-    // Libellés au-dessus de tous les objets (et sous le tracé en cours), dans l'ordre des couches.
-    for (const k of ordre) if (carte.getLayer(`${PREFIXE}${k.coucheId}-etiquettes`)) carte.moveLayer(`${PREFIXE}${k.coucheId}-etiquettes`, "gd-trace-ligne");
+    // Libellés et valeurs au-dessus de tous les objets (et sous le tracé en cours), dans l'ordre des couches.
+    for (const k of ordre) for (const suffixe of ["-etiquettes", "-valeurs"]) if (carte.getLayer(`${PREFIXE}${k.coucheId}${suffixe}`)) carte.moveLayer(`${PREFIXE}${k.coucheId}${suffixe}`, "gd-trace-ligne");
     couchesAffichees = voulues;
     (carte.getSource("gd-zones") as GeoJSONSource).setData(d.zones as FeatureCollection);
     attribution.options.customAttribution = [...d.attributions, ...(fond.attribution ? [fond.attribution] : [])];
     (attribution as unknown as { _updateAttributions(): void })._updateAttributions();
   }
 
+  /** Source des points d'étiquette d'une couche (un point par entité), lue seulement une fois un texte demandé. */
+  function sourceEtiquettes(id: string, coucheId: string) {
+    if (!carte.getSource(`${id}-etq`)) carte.addSource(`${id}-etq`, { type: "vector", tiles: [adresseEtiquettes(coucheId)], minzoom: 0, maxzoom: 14 });
+  }
+  const PEINTURE_TEXTE = { "text-color": "#1d2b30", "text-halo-color": "#ffffff", "text-halo-width": 1.4, "text-halo-blur": 0.3 } as const;
+
   /**
-   * Libellés d'une couche vectorielle (D-GD-24) : nom de l'entité, puis sa valeur abrégée (couche thématique) ; points
-   * d'étiquette lus seulement une fois les libellés demandés. Les collisions sont résolues par MapLibre (un libellé qui
-   * en chevauche un autre n'est pas tracé) ; une valeur absente n'affiche que le nom.
+   * Libellés d'une couche vectorielle (D-GD-24) : le nom de l'entité, au-dessus de son point d'étiquette. Les collisions
+   * sont résolues par MapLibre (un libellé qui en chevauche un autre n'est pas tracé). Indépendant des valeurs (D-GD-32).
    */
-  function etiqueter(id: string, k: Composition["couches"][number], filtreCode: ExpressionSpecification | null, d: DonneesAffichage) {
+  function etiqueter(id: string, k: Composition["couches"][number], filtreCode: ExpressionSpecification | null) {
     const couche = `${id}-etiquettes`;
     if (!k.etiquettes) { if (carte.getLayer(couche)) carte.setLayoutProperty(couche, "visibility", "none"); return; }
-    if (!carte.getSource(`${id}-etq`)) carte.addSource(`${id}-etq`, { type: "vector", tiles: [adresseEtiquettes(k.coucheId)], minzoom: 0, maxzoom: 14 });
+    sourceEtiquettes(id, k.coucheId);
     if (!carte.getLayer(couche)) {
       carte.addLayer({
         id: couche, type: "symbol", source: `${id}-etq`, "source-layer": "etiquettes",
-        layout: { "text-font": [POLICE_ETIQUETTES], "text-size": 12, "text-max-width": 9, "text-line-height": 1.15, "text-padding": 2, "text-allow-overlap": false },
-        paint: { "text-color": "#1d2b30", "text-halo-color": "#ffffff", "text-halo-width": 1.4, "text-halo-blur": 0.3 },
+        layout: { "text-field": ["get", "nom"], "text-font": [POLICE_ETIQUETTES], "text-size": 12, "text-max-width": 9, "text-line-height": 1.15, "text-padding": 2, "text-allow-overlap": false, "text-anchor": "bottom", "text-offset": [0, -0.3] },
+        paint: PEINTURE_TEXTE,
       });
     }
-    const branches = [...(d.etiquettes.get(k.coucheId) ?? new Map<string, string>())].flat();
-    const valeur = ["match", ["get", "code"], ...branches, ""] as unknown as ExpressionSpecification;
-    carte.setLayoutProperty(couche, "text-field", branches.length
-      ? (["format", ["get", "nom"], {}, ["case", ["==", valeur, ""], "", ["concat", "\n", valeur]], { "font-scale": 0.92 }] as unknown as ExpressionSpecification)
-      : ["get", "nom"]);
     carte.setFilter(couche, filtreCode);
     carte.setLayoutProperty(couche, "visibility", k.visible ? "visible" : "none");
+  }
+
+  /**
+   * Valeur de l'indicateur actif (D-GD-32) : un texte propre à chaque entité, sous son point d'étiquette, abrégé
+   * (« 1,2 M », « 12,5 % ») ; une entité sans valeur n'a aucun texte (jamais « 0 »). Couche de rendu distincte des
+   * libellés : aucun des deux textes ne dépend de l'autre.
+   */
+  function afficherValeurs(id: string, k: Composition["couches"][number], filtreCode: ExpressionSpecification | null, d: DonneesAffichage) {
+    const couche = `${id}-valeurs`;
+    const valeurs = d.valeursAffichees.get(k.coucheId);
+    if (!valeurs || !k.visible) { if (carte.getLayer(couche)) carte.setLayoutProperty(couche, "visibility", "none"); return; }
+    sourceEtiquettes(id, k.coucheId);
+    if (!carte.getLayer(couche)) {
+      carte.addLayer({
+        id: couche, type: "symbol", source: `${id}-etq`, "source-layer": "etiquettes",
+        // Toujours tracée et jamais prise en compte dans les collisions : la valeur ne masque aucun nom (textes indépendants).
+        layout: { "text-font": [POLICE_ETIQUETTES], "text-size": 11, "text-padding": 2, "text-allow-overlap": true, "text-ignore-placement": true, "text-anchor": "top", "text-offset": [0, 0.3] },
+        paint: PEINTURE_TEXTE,
+      });
+    }
+    const branches = [...valeurs].flat();
+    carte.setLayoutProperty(couche, "text-field", branches.length ? (["match", ["get", "code"], ...branches, ""] as unknown as ExpressionSpecification) : "");
+    carte.setFilter(couche, filtreCode);
+    carte.setLayoutProperty(couche, "visibility", "visible");
   }
 
   // Mini-carte de situation (lot G) : une seconde carte, sans interaction propre, recalée sur la vue principale.
