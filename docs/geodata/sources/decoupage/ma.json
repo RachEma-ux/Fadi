@@ -1,0 +1,22 @@
+{
+  "pays": "MA",
+  "nomPays": "Maroc",
+  "source": "Haut-Commissariat au Plan (HCP), « Population légale du Royaume du Maroc répartie par régions, provinces et préfectures et communes selon les résultats du RGPH 2024 »",
+  "url": "https://www.hcp.ma/file/242341/",
+  "periode": "RGPH 2024 (septembre 2024)",
+  "licence": "Creative Commons Attribution 4.0 (CC BY 4.0, CGU du HCP v1.0 § 3)",
+  "decision": "D-GD-35",
+  "original": {
+    "fichier": "decoupage/originaux/hcp-rgph2024-population-legale.xlsx",
+    "empreinte": "7e9d3d402cc2fd0d9c4fc941c4f23c6a5e5ddcbefbba80b7540267f8e2728dca"
+  },
+  "niveaux": {
+    "fichier": "decoupage/ma-niveaux.csv",
+    "empreinte": "e400c60ea63c3ccb0e3d31aff4dd878d1f3f8bd03370ee3c2c697624d69db1b3"
+  },
+  "entites": {
+    "fichier": "decoupage/hcp-rgph2024-entites.csv",
+    "empreinte": "9067883c2490a2e3608c2fa3b891e81cac67a8d8d0e974aed33b73f31a0b574e"
+  },
+  "script": "scripts/geodata/decoupage_hcp.py"
+}

@@ -1,6 +1,6 @@
 # GeoData — Statut
 
-Mis à jour : 2026-10-26 (UTC).
+Mis à jour : 2026-10-27 (UTC).
 État relevé après la fusion de la PR #301.
 
 ## État
@@ -9,6 +9,7 @@ Mis à jour : 2026-10-26 (UTC).
 
 ## Faits vérifiés
 
+- Niveaux infra-communaux (D-GD-35, **en préparation**, attend la CI verte de #356) : fichier HCP RGPH 2024 livré tel quel, table des niveaux en données, script `scripts/geodata/decoupage_hcp.py` (1 639 entités, 0 sans parent, sommes de population conformes, relance sans doublon) ; voir `DECOUPAGE-INFRA-COMMUNAL.md` et `INVENTAIRE-DECOUPAGE.md`.
 Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
 
 - Base : `main@0ff0638` ; branche `ccr-e71fe633-hjxnjf`.

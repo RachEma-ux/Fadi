@@ -1,0 +1,306 @@
+# Inventaire du découpage administratif du Maroc (D-GD-35)
+
+Généré par `scripts/geodata/decoupage_hcp.py` le 2026-10-27 ; relancer le script régénère ce rapport.
+
+## Source
+
+- Fichier HCP « Population légale du Royaume du Maroc … selon les résultats du RGPH 2024 » (https://www.hcp.ma/file/242341/), SHA-256 `7e9d3d402cc2fd0d9c4fc941c4f23c6a5e5ddcbefbba80b7540267f8e2728dca`, livré tel quel : `decoupage/originaux/hcp-rgph2024-population-legale.xlsx`.
+- Niveaux : table de données `decoupage/ma-niveaux.csv` (aucun niveau dans le code) ; entités et parents : lus dans le fichier (libellé de la ligne, emboîtement des lignes). Données : `decoupage/hcp-rgph2024-entites.csv`.
+
+## Comptes par niveau (du plus global au plus fin)
+
+| Rang | Niveau | Entités | Types |
+| --- | --- | --- | --- |
+| 1 | Régions | 12 | Région : 12 |
+| 2 | Provinces et préfectures | 75 | Province : 62, Préfecture : 13 |
+| 3 | Communes | 1503 | Commune hors cercle : 242, Commune rattachée à un cercle : 1261 |
+| 4 | Préfectures d'arrondissements | 8 | Préfecture d'arrondissement : 2, Préfecture d'arrondissements : 6 |
+| 5 | Arrondissements | 41 | Arrondissement : 41 |
+
+Total : 1639 entités. Lignes du fichier qui ne sont pas des entités d'un niveau : Cercle (213), dont le centre urbain (164), ligne par milieu (urbain / rural) (198), total ou ligne sans code (8).
+
+## Profondeur de la hiérarchie (lue par les liens parent → enfant)
+
+- 3 niveaux : commune → province ou préfecture → région — 1497 entité(s) élémentaire(s)
+- 4 niveaux : arrondissement → commune → province ou préfecture → région — 25 entité(s) élémentaire(s)
+- 5 niveaux : arrondissement → préfecture d'arrondissements → commune → province ou préfecture → région — 16 entité(s) élémentaire(s)
+
+## Communes à arrondissements (6)
+
+- **Commune de Tanger** (1511010, 1275428 hab.) — Région de Tanger-Tétouan-Al Hoceima › Préfecture de Tanger-Assilah
+  - Arrondissement de Bni Makada (15110103, 567465 hab.)
+  - Arrondissement de Mghogha (15110105, 252656 hab.)
+  - Arrondissement de Souani (15110106, 111772 hab.)
+  - Arrondissement de Médina (15110107, 343535 hab.)
+  - somme des arrondissements : 1275428 ; population de la commune : 1275428 — égales
+- **Commune de Fès** (3231010, 1167842 hab.) — Région de Fès-Meknès › Préfecture de Fès
+  - Arrondissement d'Agdal (32310101, 128030 hab.)
+  - Arrondissement de Saiss (32310105, 237242 hab.)
+  - Arrondissement de Fès-Médina (32310107, 49775 hab.)
+  - Arrondissement de Jnan El Ouard (32310109, 187737 hab.)
+  - Arrondissement d'El Mariniyine (32310111, 206427 hab.)
+  - Arrondissement de Zouagha (32310113, 358631 hab.)
+  - somme des arrondissements : 1167842 ; population de la commune : 1167842 — égales
+- **Commune de Rabat** (4421010, 509916 hab.) — Région de Rabat-Salé-Kénitra › Préfecture de Rabat
+  - Arrondissement d'Agdal Riyad (44210101, 70435 hab.)
+  - Arrondissement d'El Youssoufia (44210103, 157587 hab.)
+  - Arrondissement de Hassan (44210105, 92454 hab.)
+  - Arrondissement de Souissi (44210106, 21049 hab.)
+  - Arrondissement de Yacoub El Mansour (44210109, 168391 hab.)
+  - somme des arrondissements : 509916 ; population de la commune : 509916 — égales
+- **Commune de Salé** (4441010, 945101 hab.) — Région de Rabat-Salé-Kénitra › Préfecture de Salé
+  - Arrondissement de Bab Lamrissa (44410103, 167319 hab.)
+  - Arrondissement de Bettana (44410105, 76233 hab.)
+  - Arrondissement de Hssaine (44410106, 234326 hab.)
+  - Arrondissement de Layayda (44410107, 229838 hab.)
+  - Arrondissement de Tabriquet (44410109, 237385 hab.)
+  - somme des arrondissements : 945101 ; population de la commune : 945101 — égales
+- **Commune de Casablanca** (6141010, 3215935 hab.) — Région de Casablanca-Settat › Préfecture de Casablanca
+  - Préfecture d'arrondissements de Casablanca-Anfa (61410100, 344165 hab.) : Arrondissement d'Anfa (61410101, 66202), Arrondissement de Maârif (61410103, 139669), Arrondissement de Sidi Belyout (61410107, 138294)
+  - Préfecture d'arrondissements d'Al-Fida-Mers-Sultan (61410110, 224072 hab.) : Arrondissement d'Al-Fida (61410111, 125933), Arrondissement de Mers-Sultan (61410113, 98139)
+  - Préfecture d'arrondissements d'Aïn-Sebaâ-Hay Mohammadi (61410120, 364835 hab.) : Arrondissement d'Aïn-Sebaâ (61410121, 155828), Arrondissement d'Asoukhour Assawda (61410123, 104775), Arrondissement de Hay-Mohammadi (61410125, 104232)
+  - Préfecture d'arrondissement de Hay-Hassani (61410130, 537509 hab.) : Arrondissement de Hay-Hassani (61410131, 537509)
+  - Préfecture d'arrondissement d'Aïn-Chock (61410140, 374707 hab.) : Arrondissement d'Aïn-Chock (61410141, 374707)
+  - Préfecture d'arrondissements de Sidi Bernoussi (61410150, 706362 hab.) : Arrondissement de Sidi Bernoussi (61410151, 154919), Arrondissement de Sidi Moumen (61410153, 551443)
+  - Préfecture d'arrondissements de Ben M'sick (61410160, 207252 hab.) : Arrondissement de Ben-M'sick (61410161, 105612), Arrondissement de Sbata (61410163, 101640)
+  - Préfecture d'arrondissements de Moulay Rachid (61410170, 457033 hab.) : Arrondissement de Moulay Rachid (61410171, 245139), Arrondissement de Sidi Othmane (61410173, 211894)
+  - somme des arrondissements : 3215935 ; population de la commune : 3215935 — égales
+- **Commune de Marrakech** (7351010, 1002697 hab.) — Région de Marrakech-Safi › Préfecture de Marrakech
+  - Arrondissement d'Annakhil (73510103, 71506 hab.)
+  - Arrondissement de Gueliz (73510105, 219863 hab.)
+  - Arrondissement de Marrakech-Médina (73510107, 81103 hab.)
+  - Arrondissement de Ménara (73510109, 522259 hab.)
+  - Arrondissement de Sidi Youssef Ben Ali (73510111, 107966 hab.)
+  - somme des arrondissements : 1002697 ; population de la commune : 1002697 — égales
+
+## Contrôles
+
+- Entités sans parent hors du niveau le plus global : 0
+- Parents absents du fichier : 0 ; parent d'un rang qui n'est pas plus global : 0.
+- Somme des populations des enfants = population du parent, pour chaque entité qui a des enfants : 101 / 101
+- Rattachement des communes à un cercle confronté à leur population rurale (« … » = entièrement urbaine) dans le fichier d'indicateurs ; le statut urbain / rural n'est pas déduit (non évalué) : 1482 accord(s), 21 désaccord(s)
+  - 15730107 Commune d'Allyene : Commune hors cercle, population rurale 8111 (commune hors cercle qui compte une population rurale)
+  - 15730109 Commune de Belyounech : Commune hors cercle, population rurale 5208 (commune hors cercle qui compte une population rurale)
+  - 32310115 Commune d'Oulad Tayeb : Commune hors cercle, population rurale 11738 (commune hors cercle qui compte une population rurale)
+  - 32710107 Commune de Tizguite : Commune hors cercle, population rurale 12204 (commune hors cercle qui compte une population rurale)
+  - 32710105 Commune de Dayat-Aoua : Commune hors cercle, population rurale 12050 (commune hors cercle qui compte une population rurale)
+  - 35910103 Commune d'Ain Chkef : Commune hors cercle, population rurale 42708 (commune hors cercle qui compte une population rurale)
+  - 44410113 Commune d'Ameur : Commune hors cercle, population rurale 51971 (commune hors cercle qui compte une population rurale)
+  - 44410111 Commune de Shoul : Commune hors cercle, population rurale 24913 (commune hors cercle qui compte une population rurale)
+  - 42810113 Commune de Sidi Taibi : Commune hors cercle, population rurale 8972 (commune hors cercle qui compte une population rurale)
+  - 63710105 Commune de Bni Yakhlef : Commune hors cercle, population rurale 28122 (commune hors cercle qui compte une population rurale)
+  - 63710107 Commune d'Ech-challalate : Commune hors cercle, population rurale 45393 (commune hors cercle qui compte une population rurale)
+  - 63850107 Commune d'Oulad Azzouz : Commune hors cercle, population rurale 81048 (commune hors cercle qui compte une population rurale)
+  - 63850105 Commune d'Ouled Salah : Commune hors cercle, population rurale 18436 (commune hors cercle qui compte une population rurale)
+  - 63550109 Commune de Sidi Hajjaj Oued Hassar : Commune hors cercle, population rurale 76362 (commune hors cercle qui compte une population rurale)
+  - 63550107 Commune d'Almajjatia Oulad Taleb : Commune hors cercle, population rurale 95457 (commune hors cercle qui compte une population rurale)
+  - 64670105 Commune de Loualidia : Commune hors cercle, population rurale 11953 (commune hors cercle qui compte une population rurale)
+  - 73510113 Commune de Tassoultante : Commune hors cercle, population rurale 106013 (commune hors cercle qui compte une population rurale)
+  - 83630115 Commune de Boumia : Commune hors cercle, population rurale 2280 (commune hors cercle qui compte une population rurale)
+  - 91630101 Commune d'Ait Amira : Commune hors cercle, population rurale 35073 (commune hors cercle qui compte une population rurale)
+  - 91630127 Commune de Sidi Bibi : Commune hors cercle, population rurale 60570 (commune hors cercle qui compte une population rurale)
+  - 104730107 Commune de Mirleft : Commune hors cercle, population rurale 2571 (commune hors cercle qui compte une population rurale)
+
+## Différences avec la livraison précédente
+
+- Ajoutées : 0 ; modifiées : 1503 ; retirées : 0.
+  - 100710101 : type
+  - 100710103 : type
+  - 100710301 : type
+  - 100710303 : type
+  - 100710305 : type
+  - 100710501 : type
+  - 100710503 : type
+  - 102610101 : type
+  - 102610103 : type
+  - 102610301 : type
+  - 102610303 : type
+  - 102610305 : type
+  - 102610307 : type
+  - 102610309 : type
+  - 102610311 : type
+  - 102610313 : type
+  - 102610503 : type
+  - 102610505 : type
+  - 102610509 : type
+  - 102610521 : type
+  - 102610701 : type
+  - 102610707 : type
+  - 102610711 : type
+  - 102610713 : type
+  - 102610715 : type
+  - 102610717 : type
+  - 102610719 : type
+  - 104730101 : type
+  - 104730103 : type
+  - 104730107 : type
+  - 104730501 : type
+  - 104730503 : type
+  - 104730505 : type
+  - 104730509 : type
+  - 104730511 : type
+  - 104730513 : type
+  - 104730515 : type
+  - 104730701 : type
+  - 104730703 : type
+  - 104730705 : type
+  - 104730707 : type
+  - 104730709 : type
+  - 104730711 : type
+  - 104730713 : type
+  - 104730715 : type
+  - 104730717 : type
+  - 10510101 : type
+  - 10510103 : type
+  - 10510105 : type
+  - 10510107 : type
+  - 10510109 : type
+  - 10510301 : type
+  - 10510303 : type
+  - 10510305 : type
+  - 10510307 : type
+  - 10510703 : type
+  - 10510705 : type
+  - 10510707 : type
+  - 10510711 : type
+  - 10510719 : type
+  - 10510721 : type
+  - 10510727 : type
+  - 10510901 : type
+  - 10510909 : type
+  - 10510913 : type
+  - 10510915 : type
+  - 10510917 : type
+  - 10510923 : type
+  - 10510925 : type
+  - 10511101 : type
+  - 10511107 : type
+  - 10511109 : type
+  - 10511115 : type
+  - 10511121 : type
+  - 10511125 : type
+  - 10511303 : type
+  - 10511305 : type
+  - 10511311 : type
+  - 10511313 : type
+  - 10511317 : type
+  - 10511319 : type
+  - 10511323 : type
+  - 105210101 : type
+  - 105210103 : type
+  - 105210301 : type
+  - 105210303 : type
+  - 105210501 : type
+  - 105210503 : type
+  - 105210505 : type
+  - 111210101 : type
+  - 111210301 : type
+  - 111210303 : type
+  - 111210305 : type
+  - 112210101 : type
+  - 112210301 : type
+  - 112210303 : type
+  - 112210305 : type
+  - 112210307 : type
+  - 112210309 : type
+  - 113210101 : type
+  - 113210103 : type
+  - 113210301 : type
+  - 113210303 : type
+  - 113210305 : type
+  - 11510101 : type
+  - 11510303 : type
+  - 11510313 : type
+  - 11510323 : type
+  - 11510501 : type
+  - 11510503 : type
+  - 11510505 : type
+  - 11510507 : type
+  - 11510509 : type
+  - 11510511 : type
+  - 11510513 : type
+  - 11510515 : type
+  - 11510605 : type
+  - 11510607 : type
+  - 11510615 : type
+  - 11510621 : type
+  - 11510701 : type
+  - 11510707 : type
+  - 11510709 : type
+  - 11510711 : type
+  - 11510713 : type
+  - 11510901 : type
+  - 11510909 : type
+  - 11510911 : type
+  - 11510917 : type
+  - 11510919 : type
+  - 11511103 : type
+  - 11511105 : type
+  - 115370105 : type
+  - 115370303 : type
+  - 115370305 : type
+  - 115370501 : type
+  - 115370507 : type
+  - 120660103 : type
+  - 120660303 : type
+  - 120660305 : type
+  - 120660307 : type
+  - 120660309 : type
+  - 120660503 : type
+  - 12270305 : type
+  - 12270311 : type
+  - 12270313 : type
+  - 12270321 : type
+  - 12270501 : type
+  - 12270505 : type
+  - 12270509 : type
+  - 123910101 : type
+  - 123910501 : type
+  - 123910503 : type
+  - 123910505 : type
+  - 123910507 : type
+  - 123910901 : type
+  - 123910903 : type
+  - 13310101 : type
+  - 13310103 : type
+  - 13310701 : type
+  - 13310703 : type
+  - 13310705 : type
+  - 13310711 : type
+  - 13310715 : type
+  - 13310717 : type
+  - 13310901 : type
+  - 13310903 : type
+  - 13310905 : type
+  - 13310913 : type
+  - 13310915 : type
+  - 13311103 : type
+  - 13311107 : type
+  - 13311109 : type
+  - 13311111 : type
+  - 13311112 : type
+  - 13311113 : type
+  - 14050109 : type
+  - 14050701 : type
+  - 14050705 : type
+  - 14050707 : type
+  - 14050715 : type
+  - 14050901 : type
+  - 14050903 : type
+  - 14050905 : type
+  - 14050909 : type
+  - 14051107 : type
+  - 14051111 : type
+  - 14051303 : type
+  - 14051309 : type
+  - 14051311 : type
+  - 14051313 : type
+  - 14051317 : type
+  - 14051319 : type
+  - 1511010 : type
+  - 15110101 : type
+  - 15110109 : type
+  - 15110303 : type
+  - 15110311 : type
+  - 15110313 : type
+  - 15110315 : type
