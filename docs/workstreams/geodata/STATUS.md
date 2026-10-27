@@ -76,6 +76,11 @@ Relevés le 25 octobre 2026 sur une base PostGIS 16 jetable locale.
   couches, `indicateurPourCle`, `unionIndicateurs` ; 3 tests), `panneaux/consultation.tsx` (rubrique du catalogue après
   « Géologie », arbre et dimensions ; option Afficher / Masquer sur les cartes de couche), `PageGeoData.tsx` (indicateur
   actif, application à toutes les couches qui le portent, couches chargées ensuite). Recette `geodata.mjs` adaptée.
+- Indicateur = valeur affichée, jamais une coloration (D-GD-32) : liste « Coloration » réduite aux deux modes de style,
+  classification du lot D retirée de l'interface (`sansColorationThematique` à l'ouverture d'une carte, test), couche de
+  rendu `-valeurs` distincte des libellés (`carte/moteur-maplibre.ts`), case « Afficher l'indicateur — [nom] » dérivée
+  (cochée par défaut, masquage mémorisé par couche). Recette `geodata.mjs` : combinaisons nom / valeur, retrait puis
+  rechargement, coloration sans indicateur.
 - Une seule source par niveau (D-GD-30) : 4 fiches HCP sous `limites-administratives` (titres « Limites administratives —
   … (RGPH 2024) »), fiches geoBoundaries déplacées dans `sources/references/` (rôle `reference` à l'archive), retraits
   déclarés de `geoboundaries-mar-adm1` / `adm2` au profit des couches HCP (test), métadonnées de source suivies par la

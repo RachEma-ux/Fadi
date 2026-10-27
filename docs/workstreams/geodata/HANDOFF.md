@@ -42,7 +42,9 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
   (`geodata_pays`, `geodata_territoires`) chargé depuis les fiches qui déclarent `territoire` ; Maroc (HCP, 4 niveaux)
   d'abord. En préproduction, le découpage arrive avec l'import automatique au démarrage, sans réglage (D-GD-29).
 - Rubrique « Indicateurs » du catalogue (D-GD-31, étape 1) : un indicateur actif pour toutes les couches chargées qui le
-  portent, Afficher / Masquer par couche ; hors périmètre : entité par la barre, multi-indicateurs.
+  portent ; hors périmètre : entité par la barre, multi-indicateurs. Consolidation D-GD-32 : l'indicateur n'est jamais une
+  coloration (liste « Coloration » = couleur unie / une couleur par entité seulement), sa valeur s'affiche en texte propre
+  sur chaque entité, case « Afficher l'indicateur — [nom] » cochée par défaut, indépendante de « Libellés (nom) ».
 - Une seule source par niveau administratif (D-GD-30) : couches HCP sous « Limites administratives », geoBoundaries
   retiré du catalogue (fiches dans `sources/references/`), métadonnées de source suivies par la fiche.
 - Règle permanente (D-GD-29, `AGENTS.md`) : interface et base de données toujours distinctes ; aucune donnée dans

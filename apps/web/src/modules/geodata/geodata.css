@@ -60,7 +60,6 @@
 .geodata-page .gd-entrees{list-style:none;margin:4px 0;padding:0}
 .geodata-page .gd-entree{display:flex;align-items:center;gap:8px;margin:2px 0}
 .geodata-page .gd-pastille{display:inline-block;width:18px;height:14px;border:1px solid #29434a;flex:0 0 auto}
-.geodata-page .gd-hachure{background:repeating-linear-gradient(45deg,#9e9e9e 0 3px,#464646 3px 5px)}
 .geodata-page .gd-valeurs{margin:0}
 .geodata-page .gd-valeurs>div{display:grid;grid-template-columns:minmax(110px,40%) 1fr;gap:8px;padding:3px 0;border-bottom:1px solid #eef3f3}
 .geodata-page .gd-valeurs dt{font-weight:600;overflow-wrap:anywhere}
@@ -149,10 +148,6 @@
 .geodata-page .gd-imprime-seulement{display:none}
 
 /* Lot D (D-GD-25) : pastille de légende cliquable pour choisir la couleur d'une classe. */
-.geodata-page input.gd-pastille-choix{padding:0;width:22px;height:18px;cursor:pointer;background:none;border:1px solid #29434a;border-radius:2px}
-.geodata-page input.gd-pastille-choix::-webkit-color-swatch-wrapper{padding:0}
-.geodata-page input.gd-pastille-choix::-webkit-color-swatch{border:none}
-.geodata-page input.gd-pastille-choix::-moz-color-swatch{border:none}
 /* Lot F (D-GD-26) : arbre d'indicateurs par thème, avec recherche. */
 .geodata-page .gd-arbre{margin:6px 0;border:1px solid #d5dfdb;border-radius:6px;padding:6px 8px}
 .geodata-page .gd-rubrique-indicateurs{padding:4px 8px 8px}

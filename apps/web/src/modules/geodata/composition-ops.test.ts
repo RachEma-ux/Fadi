@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { COMPOSITION_INITIALE, couleursPalette, validerComposition } from "@parcours/geodata-model";
-import { reclasser, recolorerClasse, ajouterCouche, basculerEtiquettes, basculerToutesEtiquettes, basculerVisibilite, etiquettesToutesAffichees, definirOpacite, deplacerCouche, etatDepuis, lireSeuilsManuels, retirerCouche, styleThematique } from "./composition-ops";
+import { COMPOSITION_INITIALE, validerComposition } from "@parcours/geodata-model";
+import { ajouterCouche, basculerEtiquettes, basculerToutesEtiquettes, basculerVisibilite, etiquettesToutesAffichees, definirOpacite, deplacerCouche, etatDepuis, retirerCouche, sansColorationThematique } from "./composition-ops";
 
 const simple = { mode: "simple", couleur: "#2b8cbe" } as const;
 
@@ -22,13 +22,20 @@ describe("composition locale de GeoData", () => {
     expect(etatDepuis(COMPOSITION_INITIALE, COMPOSITION_INITIALE).etat).toBe("enregistree");
     expect(etatDepuis(deplacee, COMPOSITION_INITIALE).etat).toBe("non-enregistree");
   });
-  it("style thématique : seuils sans les absences, une couleur par classe ; seuils manuels croissants", () => {
-    const vs = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((v) => ({ valeur: v, motifAbsence: null }) as const);
-    const s = styleThematique("i", [...vs, { valeur: null, motifAbsence: "non-publiee" }], "intervalles-egaux", 3);
-    expect(s).toMatchObject({ mode: "thematique", seuils: [3, 6] });
-    if (s.mode === "thematique") expect(s.couleurs).toHaveLength(3);
-    expect(lireSeuilsManuels("10 ; 20,5 ; 50")).toEqual([10, 20.5, 50]);
-    expect(lireSeuilsManuels("20 ; 10")).toBeNull();
+  it("D-GD-32 : un ancien style thématique enregistré revient à la couleur unie ; une composition sans en est rendue telle quelle", () => {
+    const c = ajouterCouche(ajouterCouche(COMPOSITION_INITIALE, "a", "va", simple), "b", "vb", { mode: "thematique", indicateurId: "i", methode: "quantiles", seuils: [1, 2], couleurs: ["#111111", "#222222", "#333333"] });
+    const sans = sansColorationThematique(c);
+    expect(sans.couches.map((k) => k.style.mode)).toEqual(["simple", "simple"]);
+    expect(sans.couches[1]!.style).toEqual(simple);
+    expect(sansColorationThematique(sans)).toBe(sans);
+    expect(validerComposition(sans).ok).toBe(true);
+    // Rien d'autre ne change : visibilité, opacité, filtre, libellés et ordre des couches sont conservés.
+    const avecLibelles = basculerEtiquettes(definirOpacite(c, "b", 0.4), "b");
+    const normalisee = sansColorationThematique(avecLibelles);
+    expect(normalisee.couches.map((k) => k.coucheId)).toEqual(["a", "b"]);
+    expect(normalisee.couches[1]).toMatchObject({ visible: true, opacite: 0.4, filtre: null, etiquettes: true, style: simple });
+    expect(normalisee.couches[0]).toBe(avecLibelles.couches[0]);
+    expect(sansColorationThematique(COMPOSITION_INITIALE)).toBe(COMPOSITION_INITIALE);
   });
   it("libellés (D-GD-24) : bascule par couche ; bouton : tout afficher si l'une manque, sinon tout masquer (rasters et couches masquées exclus)", () => {
     let c = ajouterCouche(ajouterCouche(ajouterCouche(COMPOSITION_INITIALE, "a", "va", simple), "b", "vb", simple), "r", "vr", { mode: "raster" });
@@ -48,34 +55,5 @@ describe("composition locale de GeoData", () => {
     expect(basculerToutesEtiquettes(seulRaster, vect)).toBe(seulRaster);
     expect(basculerToutesEtiquettes(COMPOSITION_INITIALE, vect)).toBe(COMPOSITION_INITIALE);
     expect(validerComposition(toutes).ok).toBe(true);
-  });
-  it("classification (D-GD-25) : méthode, classes, palette, inversion ; seuils manuels gardés ; couleur d'une classe ; composition valide", () => {
-    const vs = [1, 2, 3, 4, 50, 51, 52, 200, 201, 202].map((v) => ({ valeur: v, motifAbsence: null }) as const);
-    const base = styleThematique("i", vs);
-    if (base.mode !== "thematique") throw new Error("thématique attendu");
-    expect("palette" in base).toBe(false);
-    const jenks = reclasser(base, vs, { methode: "seuils-naturels", classes: 3 });
-    expect(jenks.seuils).toEqual([50, 200]);
-    expect(jenks.couleurs).toEqual(couleursPalette("bleu-violet", 3));
-    const verts = reclasser(jenks, vs, { palette: "verts", inverser: true });
-    expect(verts).toMatchObject({ palette: "verts", inverser: true, seuils: [50, 200], couleurs: couleursPalette("verts", 3, true) });
-    expect("inverser" in reclasser(verts, vs, { inverser: false })).toBe(false);
-    const manuel = reclasser({ ...verts, methode: "manuel", seuils: [10, 20, 30] }, vs, {});
-    expect(manuel.seuils).toEqual([10, 20, 30]);
-    expect(manuel.couleurs).toHaveLength(4);
-    // Valeurs répétées : changer de palette ou l'inverser garde les seuils (aucune classe perdue en route).
-    const repetees = [0, 0, 0, 0, 1, 2, 3, 4, 5, 6].map((v) => ({ valeur: v, motifAbsence: null }) as const);
-    const q = styleThematique("i", repetees);
-    if (q.mode !== "thematique") throw new Error("thématique attendu");
-    const q2 = reclasser(reclasser(reclasser(q, repetees, { palette: "rouges" }), repetees, { inverser: true }), repetees, { palette: "verts" });
-    expect(q2.seuils).toEqual(q.seuils);
-    expect(q2.couleurs).toHaveLength(q.seuils.length + 1);
-    expect(reclasser(q, repetees, { classes: q.seuils.length + 1 }).seuils).toEqual(q.seuils);
-    const recolore = recolorerClasse(verts, 1, "#ABCDEF");
-    expect(recolore.couleurs).toEqual([verts.couleurs[0], "#abcdef", verts.couleurs[2]]);
-    expect(recolorerClasse(verts, 7, "#abcdef")).toBe(verts);
-    expect(recolorerClasse(verts, 0, "rouge")).toBe(verts);
-    const c = { ...COMPOSITION_INITIALE, couches: [{ coucheId: "a", versionId: "v", visible: true, opacite: 1, style: recolore, filtre: null }] };
-    expect(validerComposition(c).ok).toBe(true);
   });
 });

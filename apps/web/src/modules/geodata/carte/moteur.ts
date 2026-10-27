@@ -22,8 +22,8 @@ export interface DonneesAffichage {
   /** Codes retenus par le filtre d'une couche ; absent = pas de filtre. */
   readonly filtres: ReadonlyMap<string, readonly string[]>;
   readonly selection: ObjetDesigne | null;
-  /** Valeur abrégée (code → texte) des couches thématiques dont les libellés sont affichés ; absente = aucune valeur. */
-  readonly etiquettes: ReadonlyMap<string, ReadonlyMap<string, string>>;
+  /** Valeur abrégée (code → texte) de l'indicateur actif, par couche où il est affiché (D-GD-32) ; absente = aucun texte. */
+  readonly valeursAffichees: ReadonlyMap<string, ReadonlyMap<string, string>>;
   /** Zones et annotations de l'espace, en GeoJSON WGS 84. */
   readonly zones: { readonly type: "FeatureCollection"; readonly features: readonly unknown[] };
   /** Attributions des couches affichées (toujours visibles sur la carte). */
