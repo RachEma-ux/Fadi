@@ -1,76 +1,76 @@
 code_hcp,nom_hcp,code_contour,nom_contour,methode,statut
-10071,Province d'Assa-Zag,96644757B62254917052717,Assa-Zag Province,nom normalisé + inclusion dans la région,apparie
-10261,Province de Guelmim,96644757B36466177595872,Guelmim Province,nom normalisé + inclusion dans la région,apparie
-10473,Province de Sidi Ifni,96644757B51161748863193,Sidi Ifni Province,nom normalisé + inclusion dans la région,apparie
-1051,Province d'Al Hoceima,96644757B99920267922653,Al Hoceima Province,nom normalisé + inclusion dans la région,apparie
-10521,Province de Tan-Tan,96644757B8060198419886,Province de Tan-Tan إقليم طانطان,nom normalisé + inclusion dans la région,apparie
-11121,Province de Boujdour,96644757B48127384361052,Boujdour Province,nom normalisé + inclusion dans la région,apparie
-11221,Province d'Es-Semara,96644757B70524131405695,Province d'Es-Semara إقليم السمارة,nom normalisé + inclusion dans la région,apparie
-11321,Province de Laâyoune,96644757B90795389022281,Laayoune Province,nom normalisé + inclusion dans la région,apparie
-1151,Province de Chefchaouen,96644757B54306876372793,Chefchaouen Province,nom normalisé + inclusion dans la région,apparie
-11537,Province de Tarfaya,96644757B75888110493475,Tarfaya Province,nom normalisé + inclusion dans la région,apparie
-12066,Province d'Aousserd,96644757B25593504689486,Province d'Aousserd إقليم أوسرد,nom normalisé + inclusion dans la région,apparie
-1227,Province de Fahs-Anjra,96644757B56432502406176,Fahs-Anjra Province,nom normalisé + inclusion dans la région,apparie
-12391,Province d'Oued Ed-Dahab,96644757B78111329468616,Oued Ed-Dahab Province,nom normalisé + inclusion dans la région,apparie
-1331,Province de Larache,96644757B18768670389586,Larache Province,nom normalisé + inclusion dans la région,apparie
-1405,Province d'Ouezzane,96644757B93440982531475,Province d'Ouezzane إقليم وزان,nom normalisé + inclusion dans la région,apparie
-1511,Préfecture de Tanger-Assilah,96644757B99361415702964,Prefecture of Tangier - Assilah,nom normalisé + inclusion dans la région,apparie
-1571,Province de Tétouan,96644757B84561517472973,Tetouan Province,nom normalisé + inclusion dans la région,apparie
-1573,Préfecture de M'diq-Fnideq,96644757B89687162507810,Préfecture de M'diq-Fnideq عمالة المضيق الفنيدق,nom normalisé + inclusion dans la région,apparie
-2113,Province de Berkane,96644757B69343874835814,Province de Berkane إقليم بركان,nom normalisé + inclusion dans la région,apparie
-2167,Province de Driouch,96644757B88930410593624,Province de Driouch إقليم الدريوش,nom normalisé + inclusion dans la région,apparie
-2251,Province de Figuig,96644757B25874170222857,Province de Figuig إقليم الناظور,nom normalisé + inclusion dans la région,apparie
-2265,Province de Guercif,96644757B63064605054668,Province de Guercif إقليم جرسيف,nom normalisé + inclusion dans la région,apparie
-2275,Province de Jerada,96644757B21390270390615,Province de Jerada إقليم جرادة,nom normalisé + inclusion dans la région,apparie
-2381,Province de Nador,96644757B25654465299878,Province de Nador إقليم الناظور,nom normalisé + inclusion dans la région,apparie
-2411,Préfecture d'Oujda-Angad,96644757B53695376753874,Préfecture d'Oujda-Angad عمالة وجدة - أنجاد,nom normalisé + inclusion dans la région,apparie
-2533,Province de Taourirt,96644757B4563753155162,Province de Taourirt إقليم تاوريرت,nom normalisé + inclusion dans la région,apparie
-3061,Préfecture de Meknès,96644757B60043813814440,Prefecture de Meknès عمالة مكناس,nom normalisé + inclusion dans la région,apparie
-3131,Province de Boulemane,96644757B81090244987905,Province de Boulemane إقليم بولمان,nom normalisé + inclusion dans la région,apparie
-3171,Province d'El Hajeb,96644757B90056368806308,Province d'El Hajeb إقليم الحاجب,nom normalisé + inclusion dans la région,apparie
-3231,Préfecture de Fès,96644757B2759448404756,Préfecture de Fès عمالة فاس,nom normalisé + inclusion dans la région,apparie
-3271,Province d'Ifrane,96644757B64717664824106,Province d'Ifrane ⵜⴰⵙⴳⴰ ⵏ ⵉⴼⵔⴰⵏ إقليم إفران,nom normalisé + inclusion dans la région,apparie
-3451,Province de Sefrou,96644757B1478822582790,Province de Sefrou إقليم صفرو,nom normalisé + inclusion dans la région,apparie
-3531,Province de Taounate,96644757B36967765471663,Province de Taounate إقليم تاونات,nom normalisé + inclusion dans la région,apparie
-3561,Province de Taza,96644757B85287588144355,Province de Taza اقليم تازة,nom normalisé + inclusion dans la région,apparie
-3591,Province de Moulay Yacoub,96644757B42104761334354,Province de Moulay Yacoub إقليم مولاي يعقوب,nom normalisé + inclusion dans la région,apparie
-4281,Province de Kénitra,96644757B12662883146655,Province de Kenitra إقليم القنيطرة,nom normalisé + inclusion dans la région,apparie
-4291,Province de Khémisset,96644757B24539393832458,Province de Khémisset إقليم الخميسات,nom normalisé + inclusion dans la région,apparie
-4421,Préfecture de Rabat,96644757B91545835536411,Prefecture of Rabat,nom normalisé + inclusion dans la région,apparie
-4441,Préfecture de Salé,96644757B6720908192283,Prefecture of Salé,nom normalisé + inclusion dans la région,apparie
-4481,Province de Sidi Kacem,96644757B9718685225615,Province de Sidi Kacem إقليم سيدي قاسم,nom normalisé + inclusion dans la région,apparie
-4491,Province de Sidi Slimane,96644757B64432809888793,Province de Sidi Slimane إقليم سيدي سليمان,nom normalisé + inclusion dans la région,apparie
-4501,Préfecture de Skhirate-Témara,96644757B91342156363380,Préfecture de Skhirate-Témara عمالة الصخيرات-تمارة,nom normalisé + inclusion dans la région,apparie
-5081,Province d'Azilal,96644757B10773066300421,Province d'Azilal إقليم أزيلال,nom normalisé + inclusion dans la région,apparie
-5091,Province de Béni Mellal,96644757B40957387644980,Province de Beni Mellal إقليم بني ملال,nom normalisé + inclusion dans la région,apparie
-5255,Province de Fquih Ben Salah,96644757B50122508033550,Province de Fquih Ben Saleh إقليم الفقيه بن صالح,nom approché + inclusion dans la région,apparie
-5301,Province de Khénifra,96644757B52871738396395,Province de Khénifra إقليم خنيفرة,nom normalisé + inclusion dans la région,apparie
-5311,Province de Khouribga,96644757B15248572972708,Province de Khouribga إقليم خريبكة,nom normalisé + inclusion dans la région,apparie
-6111,Province de Benslimane,96644757B34372354169334,Province de Benslimane إقليم بن سليمان,nom normalisé + inclusion dans la région,apparie
-6117,Province de Berrechid,96644757B26045285741175,Berrechid Province,nom normalisé + inclusion dans la région,apparie
-6141,Préfecture de Casablanca,96644757B69656421663665,Prefecture of Casablanca,nom normalisé + inclusion dans la région,apparie
-6181,Province d'El Jadida,96644757B5863178934624,El Jadida Province,nom normalisé + inclusion dans la région,apparie
-6355,Province de Médiouna,96644757B92138134403299,Médiouna Province,nom normalisé + inclusion dans la région,apparie
-6371,Préfecture de Mohammadia,96644757B27397508075839,Prefecture of Mohammédia,nom approché + inclusion dans la région,apparie
-6385,Province de Nouaceur,96644757B89345886069248,Nouaceur Province,nom normalisé + inclusion dans la région,apparie
-6461,Province de Settat,96644757B9799798831472,Settat Province,nom normalisé + inclusion dans la région,apparie
-6467,Province de Sidi Bennour,96644757B30309850889145,Province de Sidi Bennour إقليم سيدي بنور,nom normalisé + inclusion dans la région,apparie
-7041,Province d'Al Haouz,96644757B698999344864,Al Haouz Province,nom normalisé + inclusion dans la région,apparie
-7161,Province de Chichaoua,96644757B46616002618727,Chichaoua Province,nom normalisé + inclusion dans la région,apparie
-7191,Province d'El Kelâa Des-Sraghna,96644757B21870556317795,Province d'El Kelâat Es-Sraghna إقليم قلعة السراغنة,nom normalisé + inclusion dans la région,apparie
-7211,Province d'Essaouira,96644757B53936679900609,Essaouira Province,nom normalisé + inclusion dans la région,apparie
-7351,Préfecture de Marrakech,96644757B80339347175881,Préfecture de Marrakech عمالة مراكش,nom normalisé + inclusion dans la région,apparie
-7427,Province de Rehamna,96644757B21316479060137,Rhamna Province,nom approché + inclusion dans la région,apparie
-7431,Province de Safi,96644757B23117375948520,Province de Safi إقليم أسفي,nom normalisé + inclusion dans la région,apparie
-7585,Province de Youssoufia,96644757B54259280648674,Province de Youssoufia إقليم اليوسفية,nom normalisé + inclusion dans la région,apparie
-8201,Province d'Errachidia,96644757B35891480133263,Province d'Errachidia إقليم الرشيدية,nom normalisé + inclusion dans la région,apparie
-8363,Province de Midelt,96644757B71822601453569,Province de Midelt إقليم ميدلت,nom normalisé + inclusion dans la région,apparie
-8401,Province d'Ouarzazate,96644757B41522516415054,Ouarzazate Province,nom normalisé + inclusion dans la région,apparie
-8577,Province de Tinghir,96644757B39685617616684,Province de Tinghir إقليم تنغير,nom normalisé + inclusion dans la région,apparie
-8587,Province de Zagora,96644757B83322507681707,Zagora Province,nom normalisé + inclusion dans la région,apparie
-9001,Préfecture d'Agadir-Ida-Ou-Tanane,96644757B63187791317705,Agadir Ida-Outanane Prefecture,nom normalisé + inclusion dans la région,apparie
-9163,Province de Chtouka-Aït Baha,96644757B99021473747258,Chtouka-Ait Baha Province,nom normalisé + inclusion dans la région,apparie
-9273,Préfecture d'Inezgane-Aït Melloul,96644757B99662254658575,Inezgane-Ait Melloul Prefecture,nom normalisé + inclusion dans la région,apparie
-9541,Province de Taroudannt,96644757B53703826618026,Taroudant Province,nom approché + inclusion dans la région,apparie
-9551,Province de Tata,96644757B26550498921337,Tata Province,nom normalisé + inclusion dans la région,apparie
-9581,Province de Tiznit,96644757B52167870329218,Tiznit Province,nom normalisé + inclusion dans la région,apparie
+10071,Province d'Assa-Zag,union:7 communes,,union des communes de même code HCP (D-GD-33),apparie
+10261,Province de Guelmim,union:20 communes,,union des communes de même code HCP (D-GD-33),apparie
+10473,Province de Sidi Ifni,union:18 communes,,union des communes de même code HCP (D-GD-33),apparie
+1051,Province d'Al Hoceima,union:35 communes,,union des communes de même code HCP (D-GD-33),apparie
+10521,Province de Tan-Tan,union:6 communes,,union des communes de même code HCP (D-GD-33),apparie
+11121,Province de Boujdour,union:4 communes,,union des communes de même code HCP (D-GD-33),apparie
+11221,Province d'Es-Semara,union:6 communes,,union des communes de même code HCP (D-GD-33),apparie
+11321,Province de Laâyoune,union:3 communes,,union des communes de même code HCP (D-GD-33),apparie
+1151,Province de Chefchaouen,union:28 communes,,union des communes de même code HCP (D-GD-33),apparie
+11537,Province de Tarfaya,union:5 communes,,union des communes de même code HCP (D-GD-33),apparie
+12066,Province d'Aousserd,union:6 communes,,union des communes de même code HCP (D-GD-33),apparie
+1227,Province de Fahs-Anjra,union:7 communes,,union des communes de même code HCP (D-GD-33),apparie
+12391,Province d'Oued Ed-Dahab,union:6 communes,,union des communes de même code HCP (D-GD-33),apparie
+1331,Province de Larache,union:19 communes,,union des communes de même code HCP (D-GD-33),apparie
+1405,Province d'Ouezzane,union:17 communes,,union des communes de même code HCP (D-GD-33),apparie
+1511,Préfecture de Tanger-Assilah,union:12 communes,,union des communes de même code HCP (D-GD-33),apparie
+1571,Province de Tétouan,union:22 communes,,union des communes de même code HCP (D-GD-33),apparie
+1573,Préfecture de M'diq-Fnideq,union:4 communes,,union des communes de même code HCP (D-GD-33),apparie
+2113,Province de Berkane,union:15 communes,,union des communes de même code HCP (D-GD-33),apparie
+2167,Province de Driouch,union:23 communes,,union des communes de même code HCP (D-GD-33),apparie
+2251,Province de Figuig,union:13 communes,,union des communes de même code HCP (D-GD-33),apparie
+2265,Province de Guercif,union:10 communes,,union des communes de même code HCP (D-GD-33),apparie
+2275,Province de Jerada,union:14 communes,,union des communes de même code HCP (D-GD-33),apparie
+2381,Province de Nador,union:21 communes,,union des communes de même code HCP (D-GD-33),apparie
+2411,Préfecture d'Oujda-Angad,union:10 communes,,union des communes de même code HCP (D-GD-33),apparie
+2533,Province de Taourirt,union:14 communes,,union des communes de même code HCP (D-GD-33),apparie
+3061,Préfecture de Meknès,union:21 communes,,union des communes de même code HCP (D-GD-33),apparie
+3131,Province de Boulemane,union:21 communes,,union des communes de même code HCP (D-GD-33),apparie
+3171,Province d'El Hajeb,union:16 communes,,union des communes de même code HCP (D-GD-33),apparie
+3231,Préfecture de Fès,union:5 communes,,union des communes de même code HCP (D-GD-33),apparie
+3271,Province d'Ifrane,union:10 communes,,union des communes de même code HCP (D-GD-33),apparie
+3451,Province de Sefrou,union:23 communes,,union des communes de même code HCP (D-GD-33),apparie
+3531,Province de Taounate,union:49 communes,,union des communes de même code HCP (D-GD-33),apparie
+3561,Province de Taza,union:38 communes,,union des communes de même code HCP (D-GD-33),apparie
+3591,Province de Moulay Yacoub,union:11 communes,,union des communes de même code HCP (D-GD-33),apparie
+4281,Province de Kénitra,union:21 communes,,union des communes de même code HCP (D-GD-33),apparie
+4291,Province de Khémisset,union:35 communes,,union des communes de même code HCP (D-GD-33),apparie
+4421,Préfecture de Rabat,union:2 communes,,union des communes de même code HCP (D-GD-33),apparie
+4441,Préfecture de Salé,union:4 communes,,union des communes de même code HCP (D-GD-33),apparie
+4481,Province de Sidi Kacem,union:29 communes,,union des communes de même code HCP (D-GD-33),apparie
+4491,Province de Sidi Slimane,union:11 communes,,union des communes de même code HCP (D-GD-33),apparie
+4501,Préfecture de Skhirate-Témara,union:9 communes,,union des communes de même code HCP (D-GD-33),apparie
+5081,Province d'Azilal,union:44 communes,,union des communes de même code HCP (D-GD-33),apparie
+5091,Province de Béni Mellal,union:22 communes,,union des communes de même code HCP (D-GD-33),apparie
+5255,Province de Fquih Ben Salah,union:16 communes,,union des communes de même code HCP (D-GD-33),apparie
+5301,Province de Khénifra,union:22 communes,,union des communes de même code HCP (D-GD-33),apparie
+5311,Province de Khouribga,union:31 communes,,union des communes de même code HCP (D-GD-33),apparie
+6111,Province de Benslimane,union:15 communes,,union des communes de même code HCP (D-GD-33),apparie
+6117,Province de Berrechid,union:22 communes,,union des communes de même code HCP (D-GD-33),apparie
+6141,Préfecture de Casablanca,union:2 communes,,union des communes de même code HCP (D-GD-33),apparie
+6181,Province d'El Jadida,union:27 communes,,union des communes de même code HCP (D-GD-33),apparie
+6355,Province de Médiouna,union:5 communes,,union des communes de même code HCP (D-GD-33),apparie
+6371,Préfecture de Mohammadia,union:6 communes,,union des communes de même code HCP (D-GD-33),apparie
+6385,Province de Nouaceur,union:5 communes,,union des communes de même code HCP (D-GD-33),apparie
+6461,Province de Settat,union:46 communes,,union des communes de même code HCP (D-GD-33),apparie
+6467,Province de Sidi Bennour,union:24 communes,,union des communes de même code HCP (D-GD-33),apparie
+7041,Province d'Al Haouz,union:40 communes,,union des communes de même code HCP (D-GD-33),apparie
+7161,Province de Chichaoua,union:35 communes,,union des communes de même code HCP (D-GD-33),apparie
+7191,Province d'El Kelâa Des-Sraghna,union:43 communes,,union des communes de même code HCP (D-GD-33),apparie
+7211,Province d'Essaouira,union:57 communes,,union des communes de même code HCP (D-GD-33),apparie
+7351,Préfecture de Marrakech,union:15 communes,,union des communes de même code HCP (D-GD-33),apparie
+7427,Province de Rehamna,union:25 communes,,union des communes de même code HCP (D-GD-33),apparie
+7431,Province de Safi,union:25 communes,,union des communes de même code HCP (D-GD-33),apparie
+7585,Province de Youssoufia,union:11 communes,,union des communes de même code HCP (D-GD-33),apparie
+8201,Province d'Errachidia,union:29 communes,,union des communes de même code HCP (D-GD-33),apparie
+8363,Province de Midelt,union:29 communes,,union des communes de même code HCP (D-GD-33),apparie
+8401,Province d'Ouarzazate,union:17 communes,,union des communes de même code HCP (D-GD-33),apparie
+8577,Province de Tinghir,union:25 communes,,union des communes de même code HCP (D-GD-33),apparie
+8587,Province de Zagora,union:25 communes,,union des communes de même code HCP (D-GD-33),apparie
+9001,Préfecture d'Agadir-Ida-Ou-Tanane,union:12 communes,,union des communes de même code HCP (D-GD-33),apparie
+9163,Province de Chtouka-Aït Baha,union:22 communes,,union des communes de même code HCP (D-GD-33),apparie
+9273,Préfecture d'Inezgane-Aït Melloul,union:6 communes,,union des communes de même code HCP (D-GD-33),apparie
+9541,Province de Taroudannt,union:89 communes,,union des communes de même code HCP (D-GD-33),apparie
+9551,Province de Tata,union:20 communes,,union des communes de même code HCP (D-GD-33),apparie
+9581,Province de Tiznit,union:25 communes,,union des communes de même code HCP (D-GD-33),apparie

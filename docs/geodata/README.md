@@ -94,6 +94,18 @@ au-dessus de tous les remplissages. Entre couches de limites administratives, la
 épais), puis la province, puis la commune, quel que soit l'ordre des couches ; le rang vient de la source (ADM1, ADM2,
 niveau administratif OpenStreetMap).
 
+## Régions et provinces construites à partir des communes (D-GD-33)
+
+Les contours des régions et des provinces / préfectures ne viennent plus d'une source indépendante : ils sont **construits
+par union des communes** OpenStreetMap rattachées à leur code HCP (`scripts/geodata/construire_niveaux.py`, appelé en fin
+de `preparer_hcp.py` ; relançable seul : `python3 scripts/geodata/construire_niveaux.py [--intervalle 20] [--mapshaper …]`,
+mapshaper via npm). La topologie partagée est accrochée, simplifiée **une seule fois** (intervalle 20 m, petites formes
+conservées) et nettoyée ; province = union des communes de son code, région = union des provinces. Les tuiles
+(`/tuiles/:couche/:z/:x/:y`) et le contour du territoire (`/territoires/…`) ne simplifient plus séparément : une limite de
+région ou de province se superpose exactement aux limites des communes à tout zoom. Comptes et contrôles (lacunes,
+chevauchements, communes sans contour) : `docs/workstreams/geodata/CONTOURS-NIVEAUX.md`. Le fichier des communes peut
+être remplacé par un fichier officiel du HCP sans changer la logique.
+
 ## Navigation par niveaux (D-GD-19 ; barre territoriale du lot H)
 
 Le fil « Maroc › Région › Province » du lot B est remplacé par la barre territoriale permanente (lot H, D-GD-28,

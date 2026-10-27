@@ -54,11 +54,11 @@ territoiresRouter.get("/territoires/:pays/unites", async (req, res) => {
 
 /** Détail d'une unité (pays connu, ou retrouvé par la version de sa couche). */
 async function unite(res: import("express").Response, filtre: { pays: string } | { versionId: string }, code: string, rang: number | null) {
-  // Contour simplifié pour l'affichage seulement (tolérance d'environ 1/2000 de l'emprise) ; la géométrie de référence
-  // reste intacte en base.
+  // Contour tel qu'en base (D-GD-33 : aucune simplification propre, pour qu'il se superpose exactement aux tuiles des
+  // couches de limites, qui partagent la même topologie) ; la géométrie de référence reste intacte.
   const [u] = await requete<{ pays: string; code: string; nom: string; rang: number; parent_code: string | null; emprise: number[]; contour: string; attribution: string }>(
     `SELECT t.pays, t.code, t.nom, t.rang, t.parent_code, ${emprise} AS emprise,
-            ST_AsGeoJSON(ST_SimplifyPreserveTopology(t.geom, greatest(ST_XMax(e) - ST_XMin(e), ST_YMax(e) - ST_YMin(e)) / 2000), 6) AS contour,
+            ST_AsGeoJSON(t.geom, 6) AS contour,
             v.attribution
        FROM (SELECT *, ST_Envelope(geom) AS e FROM ${T} x
               WHERE ${"pays" in filtre ? "pays = $1" : "version_id = $1"} AND code = $2 AND ($3::int IS NULL OR rang = $3) ORDER BY rang LIMIT 1) t
