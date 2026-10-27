@@ -14,3 +14,4 @@ export * from "./niveaux.js";
 export * from "./dimensions.js";
 export * from "./etiquettes.js";
 export * from "./territoires.js";
+export * from "./indicateur-actif.js";
