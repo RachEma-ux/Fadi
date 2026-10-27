@@ -346,7 +346,7 @@ export function PageGeoData() {
       for (const u of us) if (!s.unites.has(u.rang)) s.unites.set(u.rang, { code: u.code, nom: u.nom, coucheId: u.coucheId, pays: u.pays, enCouche: false });
       const rang = rangPourClics(s.niveaux, s.attendu);
       if (rang) appliquerNiveau(s, rang);
-    }).catch(() => effacerSelection());
+    }).catch(() => { if (serie.current === s) effacerSelection(); });
   };
   const clicRef = useRef(clicCarte);
   clicRef.current = clicCarte;
@@ -798,7 +798,7 @@ export function PageGeoData() {
           <aside className="gd-volet gd-ouvert" aria-label={({ fiche: "Fiche d'information", valeur: "Valeur au point", donnees: "Données", cartes: "Mes cartes", etudes: "Études", import: "Importer", export: "Exporter" })[volet]} data-gd-volet-ouvert={volet}>
             <div className="gd-ligne-titre"><h2>{({ fiche: "Fiche d'information", valeur: "Valeur au point", donnees: "Données : catégories et couches", cartes: "Mes cartes", etudes: "Études", import: "Importer des données", export: "Exporter" })[volet]}</h2><button type="button" onClick={() => setVolet(null)}>Fermer</button></div>
             {volet === "valeur" && valeurPoint && <FicheValeur {...valeurPoint} onFermer={() => { setVolet(null); setValeurPoint(null); }} />}
-            {volet === "fiche" && <FicheObjet coucheArrondissements={fiche && rangDe(fiche) === 3 ? coucheArrondissementsDe(fiche) : null} onFiche={(id, code) => { setSelection({ coucheId: id, code }); void ouvrirFiche(id, code); }} descendre={(() => { const r = descentePossible(fiche); if (!r || !fiche) return null; const n = nomNiveauEnfant(fiche, r); return { libelle: n ? `Voir ses ${n}` : "Voir le niveau inférieur", onDescendre: () => descendre(fiche) }; })()} fiche={fiche} chargement={ficheEtat.chargement} erreur={ficheEtat.erreur} onFermer={() => { setVolet(null); setSelection(null); }} onCentrer={(f) => { const e = empriseDe(f.emprise.coordinates); if (e) moteur.current?.allerA({ emprise: e }); }} />}
+            {volet === "fiche" && <FicheObjet coucheArrondissements={fiche && rangDe(fiche) === 3 ? coucheArrondissementsDe(fiche) : null} onFiche={(id, code) => { setSelection({ coucheId: id, code }); void ouvrirFiche(id, code); }} descendre={(() => { const r = descentePossible(fiche); if (!r || !fiche) return null; const n = nomNiveauEnfant(fiche, r); return { libelle: n ? `Voir ses ${n}` : "Voir le niveau inférieur", onDescendre: () => descendre(fiche) }; })()} fiche={fiche} chargement={ficheEtat.chargement} erreur={ficheEtat.erreur} onFermer={() => { setVolet(null); effacerSelection(); }} onCentrer={(f) => { const e = empriseDe(f.emprise.coordinates); if (e) moteur.current?.allerA({ emprise: e }); }} />}
             {volet === "donnees" && <GestionDonnees rangement={rangement} erreur={erreurRangement} couches={catalogue} onChange={chargerRangement} />}
             {volet === "cartes" && <MesCartes carte={carte} nouvelle={!carte} onOuvrir={(id) => void ouvrirCarte(id)} onCarteModifiee={(c) => { setCarte(c); setEtatForce(null); }}
               onNouvelle={() => { setCarte(null); setComposition(compositionNeuve(composition.camera)); setEtatForce(null); ecrireLocal(CLE_DERNIERE_CARTE, null); }}
