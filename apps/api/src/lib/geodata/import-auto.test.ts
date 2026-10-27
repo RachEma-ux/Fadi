@@ -14,9 +14,7 @@ describe("import automatique des données GeoData au déploiement (D-GD-23)", ()
     lancerImportAuto({ GEODATA_IMPORT_AUTO: "non" }, "/inexistant.js");
     expect(etatImportAuto()).toMatchObject({ etat: "desactive", message: expect.stringContaining("GEODATA_IMPORT_AUTO=non") });
   });
-  it("adresse invalide ou outil absent : échec déclaré, jamais un import silencieux", () => {
-    lancerImportAuto({ GEODATA_IMPORT_AUTO_PAR: "pas-une-adresse" }, "/inexistant.js");
-    expect(etatImportAuto()).toMatchObject({ etat: "echec", message: expect.stringContaining("courriel") });
+  it("outil absent : échec déclaré, jamais un import silencieux", () => {
     lancerImportAuto({ GEODATA_IMPORT_AUTO_PAR: "donnees@example.test" }, "/inexistant.js");
     expect(etatImportAuto()).toMatchObject({ etat: "echec", message: expect.stringContaining("absent") });
     lancerImportAuto({}, "/inexistant.js");
@@ -57,6 +55,16 @@ console.log("Archive des fichiers : 121 ajouté(s), 0 modifié(s), 0 inchangé(s
     await new Promise((r) => setTimeout(r, 400));
     expect(etatImportAuto()).toMatchObject({ etat: "echec", message: expect.stringContaining("arrêt de l'API") });
     arreterImportAuto(); // plus d'enfant : sans effet
+  });
+  it("réglage qui n'est pas une adresse : ignoré et signalé, l'import se fait quand même par la livraison", async () => {
+    const dossier = mkdtempSync(join(tmpdir(), "gd-regl-"));
+    const script = join(dossier, "livraison.mjs");
+    writeFileSync(script, `const a = process.argv.slice(2).join(" ");
+if (a !== "--archiver --fiche toutes --livraison") { console.error("arguments : " + a); process.exit(2); }
+console.log("Archive des fichiers : 0 ajouté(s), 0 modifié(s), 121 inchangé(s), 0 retiré(s).");`);
+    lancerImportAuto({ GEODATA_IMPORT_AUTO_PAR: "<adresse du compte GeoData>" }, script);
+    expect(etatImportAuto()).toMatchObject({ etat: "en-cours", message: expect.stringContaining("ignoré") });
+    expect(await attendreFin()).toMatchObject({ etat: "termine", message: expect.stringContaining("ignoré (pas une adresse de courriel) : import par la livraison") });
   });
   it("bilan : compte les lignes du journal de la chaîne d'import", () => {
     expect(bilanImport("")).toBe("0 version(s) préparée(s), 0 publiée(s), 0 retirée(s), 0 fiche(s) déjà en base.");
