@@ -29,6 +29,13 @@ describe("composition locale de GeoData", () => {
     expect(sans.couches[1]!.style).toEqual(simple);
     expect(sansColorationThematique(sans)).toBe(sans);
     expect(validerComposition(sans).ok).toBe(true);
+    // Rien d'autre ne change : visibilité, opacité, filtre, libellés et ordre des couches sont conservés.
+    const avecLibelles = basculerEtiquettes(definirOpacite(c, "b", 0.4), "b");
+    const normalisee = sansColorationThematique(avecLibelles);
+    expect(normalisee.couches.map((k) => k.coucheId)).toEqual(["a", "b"]);
+    expect(normalisee.couches[1]).toMatchObject({ visible: true, opacite: 0.4, filtre: null, etiquettes: true, style: simple });
+    expect(normalisee.couches[0]).toBe(avecLibelles.couches[0]);
+    expect(sansColorationThematique(COMPOSITION_INITIALE)).toBe(COMPOSITION_INITIALE);
   });
   it("libellés (D-GD-24) : bascule par couche ; bouton : tout afficher si l'une manque, sinon tout masquer (rasters et couches masquées exclus)", () => {
     let c = ajouterCouche(ajouterCouche(ajouterCouche(COMPOSITION_INITIALE, "a", "va", simple), "b", "vb", simple), "r", "vr", { mode: "raster" });
