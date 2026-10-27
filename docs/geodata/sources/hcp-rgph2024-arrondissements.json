@@ -1,9 +1,9 @@
 {
   "cle": "hcp-rgph2024-arrondissements",
-  "titre": "RGPH 2024 — arrondissements",
+  "titre": "Limites administratives — arrondissements (RGPH 2024)",
   "description": "Population légale et indicateurs démographiques et socio-économiques des arrondissements des grandes communes urbaines selon le RGPH 2024 (HCP), sur les contours OpenStreetMap de niveau administratif 10 (seuls les contours rattachés à un arrondissement du HCP sont livrés). Rattachement aux contours : 41 rattachées, 0 contours sans valeur, 0 unités HCP sans contour ; population rattachée : 8116919 habitants, soit 22,0 % de la population légale nationale (36828330). Table de correspondance relisible : `correspondances/hcp-rgph2024-arrondissements.csv`. Les noms ne sont pas une clé sûre : chaque rattachement est contrôlé par la géographie ; une entité non rattachée garde ses valeurs absentes (« non appariée »), jamais zéro. Signes du HCP : « … » et « _ » = sans objet (n'a pas lieu de figurer), « . » = indisponible ; cellule vide ou unité absente d'un fichier = « vide » (non publiée) ; jamais zéro.",
   "producteur": "Haut-Commissariat au Plan (HCP), Recensement général de la population et de l'habitat 2024 ; contours : Contributeurs OpenStreetMap",
-  "theme": "population",
+  "theme": "limites-administratives",
   "couverture": "Maroc — arrondissements des communes urbaines",
   "version": {
     "libelle": "RGPH 2024 — population légale et indicateurs démographiques et socio-économiques (fichiers Excel HCP) ; contours OpenStreetMap — extraits du 2026-10-23",

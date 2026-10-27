@@ -1290,8 +1290,8 @@ jobs:
           # (fadi_app, sans DDL), comme `create-admin.mjs` ; les fiches de source qualifiées sont embarquées.
           docker exec fadi node apps/api/dist/geodata-role.js --email image@example.com --role gestionnaire-donnees | grep -q "attribué"
           docker exec fadi test -f apps/api/dist/geodata-reference.js
-          docker exec fadi test -f apps/api/dist/geodata-sources/geoboundaries-mar-adm1.json
-          docker exec fadi test -f apps/api/dist/geodata-sources/geoboundaries-mar-adm2.json
+          docker exec fadi test -f apps/api/dist/geodata-sources/hcp-rgph2024-population-regions.json
+          docker exec fadi test -f apps/api/dist/geodata-sources/hcp-rgph2024-population-communes.json
           # Sources ouvertes (D-GD-12) : une fiche dont les données sont livrées dans l'image se prépare sans réseau.
           docker exec fadi node apps/api/dist/geodata-reference.js --fiche ourairports-mar-aerodromes --preparateur image@example.com | tee /dev/stderr | grep -q "Version préparée"
       - name: Journal du conteneur

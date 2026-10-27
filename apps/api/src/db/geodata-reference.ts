@@ -3,7 +3,7 @@
  *
  *   npm run geodata:import-reference -- --fiche <fiche.json | nom | toutes> [--fichier <données.geojson|.gpkg>] [--table <table>]
  *        --preparateur <courriel> [--publier-par <courriel>]
- *   (image de production : node apps/api/dist/geodata-reference.js --fiche geoboundaries-mar-adm1 --preparateur …)
+ *   (image de production : node apps/api/dist/geodata-reference.js --fiche hcp-rgph2024-population-regions --preparateur …)
  *
  * Les données sont lues de `--fichier`, sinon du fichier livré avec la fiche (`version.fichier`, ex. extractions
  * OpenStreetMap de `docs/geodata/sources/osm/`), sinon téléchargées depuis `version.url`.
@@ -144,6 +144,17 @@ function lireDouars(fiche: FicheSource, chemin: string): { ok: boolean; empreint
   return { ok: empreinte === a.empreinte.toLowerCase(), empreinte, lignes };
 }
 
+/**
+ * Les métadonnées d'une source (titre, producteur, thème, couverture, description) suivent toujours la fiche, même sans
+ * nouvelle version : une fiche corrigée range la source au bon endroit du catalogue au redéploiement.
+ */
+async function assurerSource(ex: Pool | PoolClient, fiche: FicheSource) {
+  await ex.query(
+    "UPDATE geodata_sources SET titre = $2, producteur = $3, theme = $4, couverture = $5, description = $6 WHERE cle = $1 AND espace_id IS NULL AND (titre, producteur, theme, couverture, description) IS DISTINCT FROM ($2, $3, $4, $5, $6)",
+    [fiche.cle, fiche.titre, fiche.producteur, fiche.theme, fiche.couverture, fiche.description],
+  );
+}
+
 /** Chemin de la fiche : chemin donné, sinon fiche qualifiée nommée (à côté du bundle, ou dans le dépôt en développement). */
 function cheminFiche(valeur: string): string {
   if (existsSync(valeur)) return valeur;
@@ -281,6 +292,7 @@ async function importer(chemin: string, preparateur: string | null) {
       const [deja] = (await pre.query("SELECT v.id, v.etat FROM geodata_versions v JOIN geodata_sources s ON s.id = v.source_id WHERE s.cle = $1 AND v.empreinte = $2 AND v.espace_id IS NULL", [fiche.cle, empreinteAttendue(fiche)])).rows;
       if (deja && !(publicationDemandee() && deja.etat === "preparation")) {
         console.log(`Version déjà présente (même source, empreinte identique) : ${deja.id} (${deja.etat}) ; aucune nouvelle version.`);
+        await assurerSource(pre, fiche);
         await assurerTerritoires(pre, fiche, empreinteAttendue(fiche));
         return;
       }
@@ -377,6 +389,7 @@ async function importer(chemin: string, preparateur: string | null) {
     };
     if (deja) {
       console.log(`Version déjà présente (même source, empreinte identique) : ${deja.id} (${deja.etat}) ; aucune nouvelle version.`);
+      await assurerSource(client, fiche);
       if (publicationDemandee() && deja.etat === "preparation") {
         // Reprise du parcours en deux temps : la version préparée plus tôt est publiée, aux conditions qu'elle porte.
         await publier(deja.id);

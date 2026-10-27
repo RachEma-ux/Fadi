@@ -29,12 +29,11 @@ docker compose --env-file .env.deploy exec app node apps/api/dist/geodata-role.j
 docker compose --env-file .env.deploy exec app node apps/api/dist/geodata-role.js --email <compte> --role gestionnaire-donnees
 docker compose --env-file .env.deploy exec app node apps/api/dist/geodata-role.js --email <compte> --role responsable-publication
 
-# Limites geoBoundaries du Maroc : préparation (rapport de contrôle affiché), puis publication après examen.
-docker compose --env-file .env.deploy exec app node apps/api/dist/geodata-reference.js --fiche geoboundaries-mar-adm1 --preparateur <gestionnaire>
-docker compose --env-file .env.deploy exec app node apps/api/dist/geodata-reference.js --fiche geoboundaries-mar-adm1 --preparateur <gestionnaire> --publier-par <responsable>
-# (idem avec geoboundaries-mar-adm2)
+# Limites administratives du Maroc (HCP, RGPH 2024) : préparation (rapport de contrôle affiché), puis publication après examen.
+docker compose --env-file .env.deploy exec app node apps/api/dist/geodata-reference.js --fiche hcp-rgph2024-population-regions --preparateur <gestionnaire>
+docker compose --env-file .env.deploy exec app node apps/api/dist/geodata-reference.js --fiche hcp-rgph2024-population-regions --preparateur <gestionnaire> --publier-par <responsable>
 
-# Toutes les fiches livrées d'un coup (geoBoundaries, OpenStreetMap, OurAirports) : une déjà importée n'est pas recréée.
+# Toutes les fiches livrées d'un coup (HCP, OpenStreetMap, OurAirports, rasters) : une déjà importée n'est pas recréée.
 docker compose --env-file .env.deploy exec app node apps/api/dist/geodata-reference.js --fiche toutes --preparateur <gestionnaire> --publier-par <responsable>
 ```
 
@@ -145,6 +144,15 @@ Arrondissement pour le Maroc) et Retour (Alt+↑). Elle ne dépend d'aucune couc
 (`pays`, `nomPays`, `rang` 1–4, `niveau` { `singulier`, `pluriel` }, `parent` : `codes-hcp` ou `inclusion`). API :
 `GET /geodata/api/territoires`, `…/territoires/:pays/unites?parent=`, `…/territoires/:pays/unites/:code?rang=`
 (ancêtres, nombre d'enfants, contour simplifié, attribution).
+
+## Une seule source par niveau administratif (D-GD-30)
+
+Sous « Limites administratives », une couche par niveau : régions, provinces et préfectures, communes, arrondissements
+(RGPH 2024). Chaque couche porte tous les contours d'origine (geoBoundaries pour régions et provinces, OpenStreetMap
+pour communes et arrondissements) avec les noms, codes et valeurs du HCP là où le rattachement existe ; un contour sans
+rattachement garde ses attributs d'origine. Les fiches geoBoundaries sont dans `sources/references/` (contours pour
+`preparer_hcp.py`, jamais importées) et leurs anciennes versions sont retirées par `donnees/retraits-sources.json`.
+Les métadonnées d'une source (titre, thème…) suivent la fiche à chaque démarrage, même sans nouvelle version.
 
 ## Interface et base de données (D-GD-29)
 

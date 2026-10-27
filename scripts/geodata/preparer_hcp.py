@@ -143,8 +143,13 @@ def telecharger(url, empreinte):
 
 
 def fiche(cle):
-    with open(os.path.join(FICHES, f"{cle}.json"), encoding="utf-8") as f:
-        return json.load(f)
+    # Fiche livrée (racine) ou fiche de référence des contours (`references/`, non importée : D-GD-30, une seule source par niveau).
+    for dossier in (FICHES, os.path.join(FICHES, "references")):
+        chemin = os.path.join(dossier, f"{cle}.json")
+        if os.path.exists(chemin):
+            with open(chemin, encoding="utf-8") as f:
+                return json.load(f)
+    raise FileNotFoundError(cle)
 
 
 def extrait_osm(cle):

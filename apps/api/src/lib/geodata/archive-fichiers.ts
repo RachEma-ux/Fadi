@@ -1,7 +1,8 @@
 /**
  * Archive en base des fichiers de données livrés (D-GD-29) : chaque fichier du dossier des sources qualifiées — fiches,
  * données (GeoJSON, CSV, TSV, GeoTIFF), tables de correspondance, extraits sans fiche importable, retraits déclarés —
- * est copié tel quel dans `geodata_fichiers` (contenu, taille, empreinte SHA-256, rôle, source). L'interface et ses
+ * est copié tel quel dans `geodata_fichiers` (contenu, taille, empreinte SHA-256, rôle, source). Rôle `reference` :
+ * fiche de `references/`, lue par les scripts de préparation (contours d'origine), jamais importée comme couche (D-GD-30). L'interface et ses
  * outils ne gardent aucune donnée : les données vivent en base. Un fichier inchangé (même empreinte) n'est pas réécrit ;
  * un fichier qui n'est plus livré reste en base, marqué retiré (jamais effacé en silence). Ce module n'ouvre aucun pool.
  */
@@ -12,7 +13,7 @@ import type { PoolClient } from "pg";
 
 export type Executeur = Pick<PoolClient, "query">;
 
-export const ROLES_FICHIER = ["fiche", "donnees", "correspondance", "extrait", "declaration"] as const;
+export const ROLES_FICHIER = ["fiche", "donnees", "correspondance", "extrait", "declaration", "reference"] as const;
 export type RoleFichier = (typeof ROLES_FICHIER)[number];
 
 export interface FichierLivre {
@@ -55,7 +56,7 @@ export function inventaireFichiers(dossier: string): FichierLivre[] {
   const sourceDe = new Map<string, string>();
   const fiches = new Map<string, string>();
   for (const c of chemins) {
-    if (c.includes("/") || !c.endsWith(".json")) continue;
+    if (!c.endsWith(".json") || (c.includes("/") && !c.startsWith("references/"))) continue;
     try {
       const fiche = JSON.parse(readFileSync(join(dossier, c), "utf8")) as { cle?: unknown };
       if (typeof fiche.cle !== "string") continue;
@@ -65,6 +66,7 @@ export function inventaireFichiers(dossier: string): FichierLivre[] {
   }
   return chemins.map((chemin) => {
     const role: RoleFichier = !chemin.includes("/") ? "fiche"
+      : chemin.startsWith("references/") ? "reference"
       : chemin.startsWith("correspondances/") ? "correspondance"
       : chemin === "donnees/retraits-sources.json" ? "declaration"
       : sourceDe.has(chemin) ? "donnees" : "extrait";
