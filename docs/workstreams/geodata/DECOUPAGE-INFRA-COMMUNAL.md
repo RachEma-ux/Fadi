@@ -27,13 +27,25 @@ soit **5 clics** à Casablanca et non 4. L'implémentation suivra le fichier (r�
 mémoire ») sauf décision contraire. Type des communes : le fichier ne publie pas le statut urbain / rural ; le type
 retenu est « rattachée à un cercle » / « hors cercle » (21 communes hors cercle comptent une population rurale).
 
+## Règle d'exploitation : import unique sur le serveur (maître d'ouvrage, 27 octobre 2026)
+
+L'import du découpage HCP s'effectue **une seule fois**, sur le serveur VPS, où les données sont enregistrées en base :
+
+- commande d'exploitation dédiée (`geodata-reference.js --decoupage`, image de production), lancée une fois par
+  l'exploitant ; **le démarrage de l'API ne relance pas cet import** (contrairement aux fiches de couches, D-GD-23) ;
+- la base garde la trace de l'import (fichier source, empreinte, date, bilan) ; relancée par erreur sur le même fichier,
+  la commande ne fait rien (« déjà importé ») ; un nouveau fichier HCP fait l'objet d'un import volontaire, sans doublon
+  (mise à jour des entités par leur code HCP, rapport ajoutées / modifiées / sans parent) ;
+- l'interface et les traitements lisent ensuite uniquement la base du serveur.
+
 ## Reste à faire (après #356 verte)
 
 1. `construire_niveaux.py` : union de bas en haut suivant les liens parent (feuilles = arrondissements + communes),
    une seule simplification sur la topologie partagée ; couche « Préfectures d'arrondissements » (fiche créée par
    `decoupage_hcp.py --indicateurs`, valeurs RGPH 2024 du HCP).
-2. Base : tables `geodata_niveaux_administratifs`, `geodata_entites_administratives` ; chargeur idempotent (upsert,
-   rapport ajoutées / modifiées / sans parent) au démarrage ; rang du découpage sans borne fixe.
+2. Base : tables `geodata_niveaux_administratifs`, `geodata_entites_administratives` et journal des imports du découpage ;
+   commande d'import unique (upsert, rapport ajoutées / modifiées / sans parent), jamais lancée au démarrage ;
+   rang du découpage sans borne fixe.
 3. API : parenté par les liens en base (`/territoires`), niveau de chaque couche, découpage servi à l'interface.
 4. Interface : sélection par clics suivant les niveaux réels du point ; catalogue « Limites administratives » généré
    depuis la table des niveaux ; navigation et fiche sans règle de codes.

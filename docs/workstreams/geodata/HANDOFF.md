@@ -15,7 +15,7 @@ GeoData V1 implémenté : paquet `packages/geodata-model`, schéma `geodata_*` (
 
 ## Dernier checkpoint
 
-- Niveaux infra-communaux (D-GD-35) : **préparation poussée** sur `claude/maroc-infra-communal-levels-5abxes` (base : #356) ; implémentation à reprendre quand la CI de #356 est verte — plan et point à arbitrer (Casablanca : 5 niveaux selon le fichier HCP) dans `DECOUPAGE-INFRA-COMMUNAL.md`.
+- Niveaux infra-communaux (D-GD-35) : **préparation poussée** sur `claude/maroc-infra-communal-levels-5abxes` (base : #356) ; implémentation à reprendre quand la CI de #356 est verte — plan et point à arbitrer (Casablanca : 5 niveaux selon le fichier HCP) dans `DECOUPAGE-INFRA-COMMUNAL.md`. Règle : l'import du découpage HCP est **unique**, lancé une fois sur le VPS (jamais au démarrage de l'API).
 - PR #307 fusionnée (outils d'exploitation dans l'image, dossier `RELEASE-V1.md`).
 - Préproduction : rôles et geoBoundaries ADM1/ADM2 importés le 25 octobre 2026 ; recette d'usage constatée par le maître
   d'ouvrage (carte, fiche, recherche, enregistrement, export).
